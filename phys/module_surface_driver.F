@@ -321,7 +321,7 @@ CONTAINS
    USE module_sf_gfs
    USE module_sf_noahdrv                           ! danli mosaic, the " ,only : lsm " needs to be deleted 
    USE module_sf_noahlsm, only : LOW_DENSITY_RESIDENTIAL, HIGH_DENSITY_RESIDENTIAL, HIGH_INTENSITY_INDUSTRIAL
-   USE module_sf_noahmpdrv, only : noahmplsm
+   USE module_sf_noahmpdrv, only : noahmplsm, noahmp_urban
    USE module_sf_noahmp_groundwater
    USE module_sf_noah_seaice_drv
 #ifdef WRF_USE_CLM
@@ -2889,13 +2889,13 @@ CONTAINS
          if(HYDRO_dt .ge. 0) HYDRO_dt = dtbl
 #endif
          CALL wrf_debug(100,'in NOAHMP DRV')
-         CALL noahmplsm(ITIMESTEP,       YR, JULIAN_IN,   COSZEN, XLAT_URB2D, &
+         CALL noahmplsm(ITIMESTEP,       YR, JULIAN_IN,   COSZEN, XLAT,XLONG, &
 	           DZ8W,     DTBL,      DZS,     NUM_SOIL_LAYERS,         DX, &
 		 IVGTYP,   ISLTYP,   VEGFRA,   SHDMAX,       TMN,             &
 		  XLAND,     XICE,     XICE_THRESHOLD,                        &
                   IDVEG, IOPT_CRS, IOPT_BTR, IOPT_RUN,  IOPT_SFC,   IOPT_FRZ, &
 	       IOPT_INF, IOPT_RAD, IOPT_ALB, IOPT_SNF, IOPT_TBOT,   IOPT_STC, &
-	       IOPT_GLA, IOPT_RSF,  IZ0TLND,                                            &
+	       IOPT_GLA, IOPT_RSF,  IZ0TLND, SF_URBAN_PHYSICS,                &
 		  T_PHY,  QV_CURR,    U_PHY,    V_PHY,    SWDOWN,        GLW, &
 		    P8W,   RAINBL,       SR,                                  &
 		    TSK,      HFX,      QFX,       LH,    GRDFLX,     SMSTAV, &
@@ -2926,6 +2926,57 @@ CONTAINS
 ! variables below are optional
                 MP_RAINC =  RAINCV, MP_RAINNC =    RAINNCV, MP_SHCV = RAINSHV,&
 		MP_SNOW  = SNOWNCV, MP_GRAUP  = GRAUPELNCV, MP_HAIL = HAILNCV )
+
+         IF(SF_URBAN_PHYSICS > 0 ) THEN  !urban
+         
+	   call noahmp_urban (sf_urban_physics,     NUM_SOIL_LAYERS,     IVGTYP,ITIMESTEP,  & ! IN : Model configuration 
+                                 DT,         COSZEN,     XLAT_URB2D,                        & ! IN : Time/Space-related
+                              T_PHY,        QV_CURR,          U_PHY,      V_PHY,   SWDOWN,  & ! IN : Forcing
+		                GLW,            P8W,         RAINBL,       DZ8W,      ZNT,  & ! IN : Forcing
+                                TSK,            HFX,            QFX,         LH,   GRDFLX,  & ! IN/OUT : LSM 
+		             ALBEDO,          EMISS,           QSFC,                        & ! IN/OUT : LSM 
+                            ids,ide,        jds,jde,        kds,kde,                        &
+                            ims,ime,        jms,jme,        kms,kme,                        &
+              i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,                        &
+                         cmr_sfcdif,     chr_sfcdif,     cmc_sfcdif,                        &
+	                 chc_sfcdif,    cmgr_sfcdif,    chgr_sfcdif,                        &
+                           tr_urb2d,       tb_urb2d,       tg_urb2d,                        & !H urban
+	                   tc_urb2d,       qc_urb2d,       uc_urb2d,                        & !H urban
+                         xxxr_urb2d,     xxxb_urb2d,     xxxg_urb2d, xxxc_urb2d,            & !H urban
+                          trl_urb3d,      tbl_urb3d,      tgl_urb3d,                        & !H urban
+                           sh_urb2d,       lh_urb2d,        g_urb2d,   rn_urb2d,  ts_urb2d, & !H urban
+                         psim_urb2d,     psih_urb2d,      u10_urb2d,  v10_urb2d,            & !O urban
+                       GZ1OZ0_urb2d,     AKMS_URB2D,                                        & !O urban
+                          th2_urb2d,       q2_urb2d,      ust_urb2d,                        & !O urban
+                             declin,          hrang,                                        & !I urban
+                    num_roof_layers,num_wall_layers,num_road_layers,                        & !I urban
+                                dzr,            dzb,            dzg,                        & !I urban
+                         cmcr_urb2d,      tgr_urb2d,     tgrl_urb3d,  smr_urb3d,            & !H urban
+                        drelr_urb2d,    drelb_urb2d,    drelg_urb2d,                        & !H urban
+                      flxhumr_urb2d,  flxhumb_urb2d,  flxhumg_urb2d,                        & !H urban
+                             julian,          julyr,                                        & !H urban
+                          frc_urb2d,    utype_urb2d,                                        & !I urban
+                                chs,           chs2,           cqs2,                        & !H
+                   num_urban_layers,                                                        & !I multi-layer urban
+                       num_urban_hi,                                                        & !I multi-layer urban
+                          trb_urb4d,      tw1_urb4d,      tw2_urb4d,  tgb_urb4d,            & !H multi-layer urban
+                         tlev_urb3d,     qlev_urb3d,                                        & !H multi-layer urban
+                       tw1lev_urb3d,   tw2lev_urb3d,                                        & !H multi-layer urban
+                        tglev_urb3d,    tflev_urb3d,                                        & !H multi-layer urban
+                        sf_ac_urb3d,    lf_ac_urb3d,    cm_ac_urb3d,                        & !H multi-layer urban
+                       sfvent_urb3d,   lfvent_urb3d,                                        & !H multi-layer urban
+                       sfwin1_urb3d,   sfwin2_urb3d,                                        & !H multi-layer urban
+                         sfw1_urb3d,     sfw2_urb3d,      sfr_urb3d,  sfg_urb3d,            & !H multi-layer urban
+                           lp_urb2d,       hi_urb2d,       lb_urb2d,  hgt_urb2d,            & !H multi-layer urban
+                           mh_urb2d,     stdh_urb2d,       lf_urb2d,                        & !SLUCM
+                             th_phy,            rho,          p_phy,        ust,            & !I multi-layer urban
+                                gmt,         julday,          xlong,       xlat,            & !I multi-layer urban
+                            a_u_bep,        a_v_bep,        a_t_bep,    a_q_bep,            & !O multi-layer urban
+                            a_e_bep,        b_u_bep,        b_v_bep,                        & !O multi-layer urban
+                            b_t_bep,        b_q_bep,        b_e_bep,    dlg_bep,            & !O multi-layer urban
+                           dl_u_bep,         sf_bep,         vl_bep)                          !O multi-layer urban
+	 
+	 ENDIF 
 
   if(iopt_run.eq.5.and.mod(itimestep,STEPWTD).eq.0)then
            CALL wrf_debug( 100, 'calling WTABLE' )
@@ -3040,7 +3091,11 @@ CONTAINS
                  ENDIF
                    TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**ROVCP
 !             ELSEIF (IVGTYP(I,J) == ISURBAN .OR. IVGTYP(I,J) == ISICE .OR. FVEGXY(I,J) == 0.0 ) THEN
-              ELSEIF (IVGTYP(I,J) == ISURBAN  .OR. (IVGTYP(I,J) == ISICE .AND. XICE(I,J) .LT. XICE_THRESHOLD)) THEN
+              ELSEIF (IVGTYP(I,J) == ISURBAN                   .or. &
+	              IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL   .or. & !urban
+                      IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL  .or. & !urban
+	              IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL .or. & !urban
+	              (IVGTYP(I,J) == ISICE .AND. XICE(I,J) .LT. XICE_THRESHOLD)) THEN
                    Q2(I,J)  = Q2MBXY(I,J)
                    T2(I,J)  = T2MBXY(I,J)
                    TH2(I,J) = T2(i,j)*(1.E5/PSFC(i,j))**RCP
@@ -3059,6 +3114,43 @@ CONTAINS
 !             i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
 
 !jref: sfc diagnostics end
+
+         IF(SF_URBAN_PHYSICS.eq.1) THEN
+           DO j=j_start(ij),j_end(ij)                             !urban
+             DO i=i_start(ij),i_end(ij)                           !urban
+              IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &  !urban
+                  IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL ) THEN !urban
+                 Q2(I,J)  = (FVEGXY(I,J)*Q2MVXY(I,J) + (1.-FVEGXY(I,J))*Q2MBXY(I,J))*(1.-FRC_URB2D(I,J)) +   &
+                             Q2_URB2D(I,J)*FRC_URB2D(I,J)
+                 T2(I,J)  = (FVEGXY(I,J)*T2MVXY(I,J) + (1.-FVEGXY(I,J))*T2MBXY(I,J))*(1.-FRC_URB2D(I,J)) +   &
+                             (TH2_URB2D(i,j)/((1.E5/PSFC(i,j))**RCP))*FRC_URB2D(I,J)
+                 TH2(I,J) = T2(i,j)*(1.E5/PSFC(i,j))**RCP
+                 U10(I,J)  = U10_URB2D(I,J)                       !urban
+                 V10(I,J)  = V10_URB2D(I,J)                       !urban
+                 PSIM(I,J) = PSIM_URB2D(I,J)                      !urban
+                 PSIH(I,J) = PSIH_URB2D(I,J)                      !urban
+                 GZ1OZ0(I,J) = GZ1OZ0_URB2D(I,J)                  !urban
+                 AKHS(I,J) = CHS(I,J)                             !urban
+                 AKMS(I,J) = AKMS_URB2D(I,J)                      !urban
+               END IF                                             !urban
+             ENDDO                                                !urban
+           ENDDO                                                  !urban
+         ENDIF
+
+         IF((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.eq.3)) THEN
+           DO j=j_start(ij),j_end(ij)                             !urban
+             DO i=i_start(ij),i_end(ij)                           !urban
+              IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &  !urban
+                  IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL ) THEN !urban
+                T2(I,J)   = TH_PHY(i,1,j)/((1.E5/PSFC(I,J))**RCP) !urban
+                TH2(I,J) = TH_PHY(i,1,j) !urban
+                Q2(I,J)   = qv_curr(i,1,j)  !urban
+                U10(I,J)  = U_phy(I,1,J)                       !urban
+                V10(I,J)  = V_phy(I,1,J)                       !urban
+               END IF                                             !urban
+             ENDDO                                                !urban
+           ENDDO                                                  !urban
+         ENDIF
 
 !------------------------------------------------------------------
 

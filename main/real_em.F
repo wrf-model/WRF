@@ -136,6 +136,7 @@ real::t1,t2
    CALL nl_set_use_wps_input ( 1 , REALONLY )
 
    CALL check_nml_consistency
+   CALL setup_physics_suite
    CALL set_physics_rconfigs
 
    CALL nl_get_debug_level ( 1, debug_level )

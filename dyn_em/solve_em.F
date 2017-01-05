@@ -80,7 +80,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
 ! RASM Climate Diagnostics - JR, AS, MS  - October 2016
 !----------------------------------------------------------------------
    USE module_streams
-   USE module_diag_misc
+   USE module_diag_rasm
 !----------------------------------------------------------------------
 ! end RASM Climate Diagnostics
 !----------------------------------------------------------------------

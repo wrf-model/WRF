@@ -1,0 +1,31 @@
+The RASM Climate Diagnostics provides time-step averaging output for surface 
+meteorology (PSFC, TSK, PMSL, T2, TH2, Q2, U10, V10) and fluxes at the surface 
+(HFX, LH, SWDNB, GLW, LWUPB, SWUPB) and fluxes at the TOA (SWUPT, SWDNT, LWUPT, 
+LWDNT). The averaging can be set by the user with some interval of seconds, 
+minutes, hours, days, or month. The average output file is set to use auxhist5. 
+Additionally, diurnal averaging is provide which creates monthly averages for 
+three hour periods of time during the day (00-03, 03-06, etc.). The diurnal 
+average output is set to use auxhist6. The intended application for the RASM 
+Climate Diagnostics is for regional climate simulations and the elimination of 
+the need to produce the high-volume and I/O intensive instantaneous WRF history 
+files for long duration simulations.
+
+namelist.input settings for RASM Climate Diagnostics in &time_control
+-setting to specify RASM diagnostic output and interval frequency:
+
+
+
+-use the standard WRF namelist settings for auxhist5 and auxhist6:
+
+ auxhist5_outname                    = "wrf_mean_d<domain>_<date>.nc",
+ io_form_auxhist5                    = 2,
+ frames_per_auxhist5                 = 1,
+
+ auxhist6_outname                    = "wrf_diurnal_d<domain>_<date>.nc",
+ io_form_auxhist6                    = 2,
+ frames_per_auxhist6                 = 1,
+
+Acknoledgement:
+The RASM Climate Diagnostics for WRF was developed and implemented as a part
+of the Regional Arctic System Model (RASM) project funded by the United States 
+Department of Energy - Regional and Global Climate Modeling Program.

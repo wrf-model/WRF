@@ -54,7 +54,7 @@ state    real  LWDNT_DIURN     i{dc}j  misc        1         -     rh6        "L
 state  character OUTDATE_DIURN -       misc        -         -     -          ""               ""
 state  integer NSTEPS_DIURN    -       misc        -         -     r          "NSTEP_D"        "NUMBER OF DIURNAL STEPS ACCUMULATED"
 
-state:xlong,xlat,xlong_u,xlat_u,xlong_v,xlat_v,psfc_diurn,tsk_diurn,t2_diurn,th2_diurn,q2_diurn,u10_diurn,v10_diurn,hfx_diurn,lh_diurn,swdnb_diurn,glw_diurn,lwupb_diurn,swupb_diurn,swupt_diurn,swdnt_dirun,lwupt_diurn,lwdnt_diurn
+state:psfc_diurn,tsk_diurn,t2_diurn,th2_diurn,q2_diurn,u10_diurn,v10_diurn,hfx_diurn,lh_diurn,swdnb_diurn,glw_diurn,lwupb_diurn,swupb_diurn,swupt_diurn,swdnt_dirun,lwupt_diurn,lwdnt_diurn
 
 # Climate: Diurnal variables to computer intermediate avereges
 state    real  PSFC_DTMP       ij      misc        1         -     r          "PSFC_DTM"       "DIRUNUAL TEMP AVERAGE SURFACE PRESSURE"                            "Pa"
@@ -79,13 +79,13 @@ state  integer NSTEPSMEAN_DIURN  -     misc        -         -     r          "N
 # Package declaration for RASM diagnostic climate output
 
 # -Climate: Mean
-package   mean_freq_off      mean_freq==0                  -    state:xlong,xlat,xlong_u,xlat_u,xlong_v,xlat_v,psfc_mean,tsk_mean,pmsl_mean,t2_mean,th2_mean,q2_mean,u10_mean,v10_mean,hfx_mean,lh_mean,swdnb_mean,glw_mean,lwupb_mean,swupb_mean,swupt_mean,swdnt_mean,lwupt_mean,lwdnt_mean
-package   mean_freq_secs     mean_freq==1                  -    state:xlong,xlat,xlong_u,xlat_u,xlong_v,xlat_v,psfc_mean,tsk_mean,pmsl_mean,t2_mean,th2_mean,q2_mean,u10_mean,v10_mean,hfx_mean,lh_mean,swdnb_mean,glw_mean,lwupb_mean,swupb_mean,swupt_mean,swdnt_mean,lwupt_mean,lwdnt_mean
-package   mean_freq_mins     mean_freq==2                  -    state:xlong,xlat,xlong_u,xlat_u,xlong_v,xlat_v,psfc_mean,tsk_mean,pmsl_mean,t2_mean,th2_mean,q2_mean,u10_mean,v10_mean,hfx_mean,lh_mean,swdnb_mean,glw_mean,lwupb_mean,swupb_mean,swupt_mean,swdnt_mean,lwupt_mean,lwdnt_mean
-package   mean_freq_hrs      mean_freq==3                  -    state:xlong,xlat,xlong_u,xlat_u,xlong_v,xlat_v,psfc_mean,tsk_mean,pmsl_mean,t2_mean,th2_mean,q2_mean,u10_mean,v10_mean,hfx_mean,lh_mean,swdnb_mean,glw_mean,lwupb_mean,swupb_mean,swupt_mean,swdnt_mean,lwupt_mean,lwdnt_mean
-package   mean_freq_days     mean_freq==4                  -    state:xlong,xlat,xlong_u,xlat_u,xlong_v,xlat_v,psfc_mean,tsk_mean,pmsl_mean,t2_mean,th2_mean,q2_mean,u10_mean,v10_mean,hfx_mean,lh_mean,swdnb_mean,glw_mean,lwupb_mean,swupb_mean,swupt_mean,swdnt_mean,lwupt_mean,lwdnt_mean
-package   mean_freq_mon      mean_freq==5                  -    state:xlong,xlat,xlong_u,xlat_u,xlong_v,xlat_v,psfc_mean,tsk_mean,pmsl_mean,t2_mean,th2_mean,q2_mean,u10_mean,v10_mean,hfx_mean,lh_mean,swdnb_mean,glw_mean,lwupb_mean,swupb_mean,swupt_mean,swdnt_mean,lwupt_mean,lwdnt_mean
+package   mean_freq_off      mean_freq==0                  -    state:psfc_mean,tsk_mean,pmsl_mean,t2_mean,th2_mean,q2_mean,u10_mean,v10_mean,hfx_mean,lh_mean,swdnb_mean,glw_mean,lwupb_mean,swupb_mean,swupt_mean,swdnt_mean,lwupt_mean,lwdnt_mean
+package   mean_freq_secs     mean_freq==1                  -    state:psfc_mean,tsk_mean,pmsl_mean,t2_mean,th2_mean,q2_mean,u10_mean,v10_mean,hfx_mean,lh_mean,swdnb_mean,glw_mean,lwupb_mean,swupb_mean,swupt_mean,swdnt_mean,lwupt_mean,lwdnt_mean
+package   mean_freq_mins     mean_freq==2                  -    state:psfc_mean,tsk_mean,pmsl_mean,t2_mean,th2_mean,q2_mean,u10_mean,v10_mean,hfx_mean,lh_mean,swdnb_mean,glw_mean,lwupb_mean,swupb_mean,swupt_mean,swdnt_mean,lwupt_mean,lwdnt_mean
+package   mean_freq_hrs      mean_freq==3                  -    state:psfc_mean,tsk_mean,pmsl_mean,t2_mean,th2_mean,q2_mean,u10_mean,v10_mean,hfx_mean,lh_mean,swdnb_mean,glw_mean,lwupb_mean,swupb_mean,swupt_mean,swdnt_mean,lwupt_mean,lwdnt_mean
+package   mean_freq_days     mean_freq==4                  -    state:psfc_mean,tsk_mean,pmsl_mean,t2_mean,th2_mean,q2_mean,u10_mean,v10_mean,hfx_mean,lh_mean,swdnb_mean,glw_mean,lwupb_mean,swupb_mean,swupt_mean,swdnt_mean,lwupt_mean,lwdnt_mean
+package   mean_freq_mon      mean_freq==5                  -    state:psfc_mean,tsk_mean,pmsl_mean,t2_mean,th2_mean,q2_mean,u10_mean,v10_mean,hfx_mean,lh_mean,swdnb_mean,glw_mean,lwupb_mean,swupb_mean,swupt_mean,swdnt_mean,lwupt_mean,lwdnt_mean
 
 # -Climate: Diurnal
 package   diurnal_cycle_off      diurnal_cycle==0          -    -
-package   diurnal_cycle_on       diurnal_cycle==1          -    state:xlong,xlat,xlong_u,xlat_u,xlong_v,xlat_v,psfc_diurn,tsk_diurn,t2_diurn,th2_diurn,q2_diurn,u10_diurn,v10_diurn,hfx_diurn,lh_diurn,swdnb_diurn,glw_diurn,lwupb_diurn,swupb_diurn,swupt_diurn,swdnt_dirun,lwupt_diurn,lwdnt_diurn
+package   diurnal_cycle_on       diurnal_cycle==1          -    state:psfc_diurn,tsk_diurn,t2_diurn,th2_diurn,q2_diurn,u10_diurn,v10_diurn,hfx_diurn,lh_diurn,swdnb_diurn,glw_diurn,lwupb_diurn,swupb_diurn,swupt_diurn,swdnt_dirun,lwupt_diurn,lwdnt_diurn

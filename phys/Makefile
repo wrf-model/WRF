@@ -186,6 +186,7 @@ DIAGNOSTIC_MODULES_EM = \
 	module_diag_afwa_hail.o \
 	module_diag_cl.o \
 	module_diag_misc.o \
+        module_diag_rasm.o \
 	module_diag_pld.o \
 	module_diag_zld.o
   

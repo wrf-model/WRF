@@ -603,9 +603,15 @@ module_shallowcu_driver.o: \
 		../frame/module_state_description.o \
 		../share/module_model_constants.o
 
+module_cugf_wrfdrv.o: \
+		module_cu_gf_deep.o \
+		module_cu_gf_sh.o
+module_cu_gf_sh.o: \
+		module_cu_gf_deep.o
 module_cumulus_driver.o: \
 		module_cu_kf.o \
 		module_cu_g3.o \
+		module_cugf_wrfdrv.o \
 		module_cu_kfeta.o \
 		module_cu_bmj.o \
 		module_cu_gd.o \

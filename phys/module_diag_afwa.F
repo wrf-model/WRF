@@ -2702,7 +2702,7 @@ CONTAINS
                                               ,           lidx
 
     REAL, INTENT(IN) ::                                     dt
-    LOGICAL, INTENT(IN) ::                        do_buoy_calc  &
+    LOGICAL, INTENT(IN) ::                        do_buoy_calc
 
     ! Local
     ! -----

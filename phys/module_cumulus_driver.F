@@ -163,7 +163,7 @@ CONTAINS
    USE module_cu_mskf   , ONLY : mskf_cps
 #endif
    USE module_cu_gd     , ONLY : grelldrv
-   USE module_cugf_wrfdrv     , ONLY : gfdrv
+   USE module_cu_gf_wrfdrv     , ONLY : gfdrv
    USE module_cu_g3     , ONLY : g3drv,conv_grell_spread3d
    USE module_cu_sas    , ONLY : cu_sas
    USE module_cu_scalesas    , ONLY : cu_scalesas

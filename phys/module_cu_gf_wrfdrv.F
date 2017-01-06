@@ -1,7 +1,7 @@
 !WRF:MODEL_LAYER:PHYSICS
 !
 
-MODULE module_cugf_wrfdrv
+MODULE module_cu_gf_wrfdrv
 use module_gfs_physcons, g => con_g,                           &
                          cp => con_cp,                         &
                          xlv => con_hvap,                      &
@@ -724,4 +724,4 @@ CONTAINS
  100    continue
 
    END SUBROUTINE GFDRV
-END MODULE MODULE_CUGF_WRFDRV
+END MODULE MODULE_CU_GF_WRFDRV

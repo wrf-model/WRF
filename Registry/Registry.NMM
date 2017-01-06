@@ -391,6 +391,14 @@ state  real   mixht     ij    dyn_nmm   1    -     rh        "MIXHT"            
 state  real   ustar     ij    dyn_nmm   1    -     irh023d=(DownNear) "USTAR"    "Friction velocity"                    "m s-1"
 state  real   z0        ij    dyn_nmm   1    -     i01rh023d=(DownNear) "Z0"   "Thermal Roughness length"                    "m"
 state  real   mz0       ij    dyn_nmm   1    -       h        "MZ0"       "momentum Roughness length"                     "m"
+state  real   scurx     ij    dyn_nmm   1    -     irh023d=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "SCURX"       "Surface Currents(X)"                    "m s-1"
+state  real   scury     ij    dyn_nmm   1    -     irh023d=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "SCURY"       "Surface Currents(Y)"                     "m s-1"
+state  real   charn     ij    dyn_nmm   1    -     irh023d=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "CHARN"       "Charnock Coeff"                    " "
+state  real   msang     ij    dyn_nmm   1    -     irh023d=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "MSANG"       "Wind/Stress Angle"                    "Radian"
+state  real   rchno     ij    dyn_nmm   1    -     irh023      "RCHNO"       "Richardson number"                    " "
+state  real   zsig1     ij    dyn_nmm   1    -     irh023      "ZSIG1"       "Height of lowest model level"                "m"
+state  real   ulowl     ij    dyn_nmm   1    -     irh023      "ULOWL"       "U at Lowest Level"         "m s-1"
+state  real   vlowl     ij    dyn_nmm   1    -     irh023      "VLOWL"       "V at Lowest Level"         "m s-1"
 state  real     rc2d    ij    dyn_nmm   1    -       h        "RC2D"     "critical Richardson number" "m"
 state  real   dku3d    ijk    dyn_nmm   1    -      rh      "DKU3D"     "Momentum Diffusivity" "m*m/s"
 state  real   dkt3d    ijk    dyn_nmm   1    -      rh      "DKT3D"     "Thermal Diffusivity" "m*m/s"
@@ -1467,6 +1475,7 @@ endif
 rconfig   integer random_seed             namelist,physics     max_domains    0       irh    "random_seed"  "random number generator seed"
 
 rconfig   integer icoef_sf                namelist,physics     max_domains    0       irh012     3  "icoef_sf"   "Option for exchange coefficients in the surface flux scheme" ""
+rconfig   integer iwavecpl                namelist,physics     max_domains    0       irh012     3  "iwavecpl"   "Option for activate coupling to sea surface wave model" ""
 rconfig   logical lcurr_sf                namelist,physics     max_domains    .false. irh012     3  "lcurr_sf"   "Option to include ocean currents in the surface flux calculations" ""
 
 ifdef HWRF=1
@@ -1872,7 +1881,7 @@ halo HALO_NMM_INIT_5	dyn_nmm 120:CPGFU,CURV,FCP
 halo HALO_NMM_INIT_6	dyn_nmm 120:FDIV,FAD,F
 halo HALO_NMM_INIT_7	dyn_nmm 120:DDMPU,DDMPV,GLAT
 halo HALO_NMM_INIT_8	dyn_nmm 120:GLON,EPSR,TG
-halo HALO_NMM_INIT_9	dyn_nmm 120:GFFC,SST,ALBASE
+halo HALO_NMM_INIT_9    dyn_nmm 120:GFFC,SST,ALBASE,SCURX,SCURY,CHARN,MSANG
 #halo HALO_NMM_INIT_10	dyn_nmm 120:HDAC,HDACV,IVGTYP
 halo HALO_NMM_INIT_10	dyn_nmm 120:HDAC,HDACV
 #halo HALO_NMM_INIT_11	dyn_nmm 120:ISLTYP,ISLOPE,VEGFRC
@@ -1936,7 +1945,7 @@ halo      HALO_NMM_TURBL_B  dyn_nmm 8:dudt,dvdt
 # following halos added for nesting purpose  (gopal's doing):
 
 halo HALO_NMM_TRACK dyn_nmm 120:sm,pdyn,mslp,sqws
-halo HALO_NMM_FORCE_DOWN_SST dyn_nmm 120:sst
+halo HALO_NMM_FORCE_DOWN_SST dyn_nmm 120:sst,scurx,scury,charn,msang
 halo HALO_NMM_WEIGHTS dyn_nmm 48:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4,HNEAR_I,HNEAR_J
 
 #halo HALO_NMM_FORCE_DOWN1 dyn_nmm 24:t,u,v,q,q2,cwm,pint,pd,hres_fis,fis,pdyn_parent,pdyn_smooth

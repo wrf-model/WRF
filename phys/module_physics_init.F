@@ -2164,6 +2164,7 @@ integer myproc
    USE module_sf_noahdrv
    USE module_sf_noahlsm, only : LOW_DENSITY_RESIDENTIAL, HIGH_DENSITY_RESIDENTIAL, HIGH_INTENSITY_INDUSTRIAL
    USE module_sf_noahmpdrv
+   USE noahmp_tables, ONLY: LOW_DENSITY_RESIDENTIAL_TABLE, HIGH_DENSITY_RESIDENTIAL_TABLE, HIGH_INTENSITY_INDUSTRIAL_TABLE
 #ifdef WRF_USE_CLM
    USE module_sf_clm, only : clminit
 #endif
@@ -2821,6 +2822,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      t2mvxy   ,t2mbxy   ,chstarxy ,            &
                      num_soil_layers, restart,                 &
                      allowed_to_read, iopt_run ,               &
+                     sf_urban_physics,                         &  ! urban scheme
                      ids,ide, jds,jde, kds,kde,                &
                      ims,ime, jms,jme, kms,kme,                &
                      its,ite, jts,jte, kts,kte                 &
@@ -2830,6 +2832,46 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      fdepthxy ,ht       ,riverbedxy ,eqzwt ,rivercondxy ,pexpxy              &
 #endif
                      )
+
+          IF ((SF_URBAN_PHYSICS.eq.1).OR.(SF_URBAN_PHYSICS.EQ.2).OR.(SF_URBAN_PHYSICS.EQ.3)) THEN
+             IF ( PRESENT( FRC_URB2D ) .AND. PRESENT( UTYPE_URB2D )) THEN
+                CALL urban_param_init(DZR,DZB,DZG,num_soil_layers,                   & !urban
+                                sf_urban_physics)
+                CALL urban_var_init(ISURBAN,TSK,TSLB,TMN,IVGTYP,               & !urban
+                              ims,ime,jms,jme,kms,kme,num_soil_layers,         & !urban
+                              LOW_DENSITY_RESIDENTIAL_TABLE,                   &
+		              HIGH_DENSITY_RESIDENTIAL_TABLE,                  &
+		              HIGH_INTENSITY_INDUSTRIAL_TABLE,                 &
+                              restart,sf_urban_physics,                        & !urban
+                              XXXR_URB2D,XXXB_URB2D,XXXG_URB2D,XXXC_URB2D,     & !urban
+                              TR_URB2D,TB_URB2D,TG_URB2D,TC_URB2D,QC_URB2D,    & !urban
+                              TRL_URB3D,TBL_URB3D,TGL_URB3D,                   & !urban
+                              SH_URB2D,LH_URB2D,G_URB2D,RN_URB2D, TS_URB2D,    & !urban
+                              num_urban_layers,                                & !urban
+                              num_urban_hi,                                    & !urban
+                              TRB_URB4D,TW1_URB4D,TW2_URB4D,TGB_URB4D,         & !urban
+                              TLEV_URB3D,QLEV_URB3D,                           & !urban
+                              TW1LEV_URB3D,TW2LEV_URB3D,                       & !urban
+                              TGLEV_URB3D,TFLEV_URB3D,                         & !urban
+                              SF_AC_URB3D,LF_AC_URB3D,CM_AC_URB3D,             & !urban
+                              SFVENT_URB3D,LFVENT_URB3D,                       & !urban
+                              SFWIN1_URB3D,SFWIN2_URB3D,                       & !urban
+                              SFW1_URB3D,SFW2_URB3D,SFR_URB3D,SFG_URB3D,       & !urban
+                              LP_URB2D,HI_URB2D,LB_URB2D,                      & !urban
+                              HGT_URB2D,MH_URB2D,STDH_URB2D,                   & !urban
+                              LF_URB2D,                                        & !urban
+                              CMCR_URB2D,TGR_URB2D,TGRL_URB3D,SMR_URB3D,       & !urban
+                              DRELR_URB2D,DRELB_URB2D,DRELG_URB2D,             & !urban
+                              FLXHUMR_URB2D, FLXHUMB_URB2D, FLXHUMG_URB2D,     & !urban
+                              A_U_BEP,A_V_BEP,A_T_BEP,A_Q_BEP,                 & !multi-layer urban
+                              A_E_BEP,B_U_BEP,B_V_BEP,                         & !multi-layer urban
+                              B_T_BEP,B_Q_BEP,B_E_BEP,DLG_BEP,                 & !multi-layer urban
+                              DL_U_BEP,SF_BEP,VL_BEP,                          & !multi-layer urban
+                              FRC_URB2D, UTYPE_URB2D)                            !urban
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling urban model' )
+             ENDIF
+          ENDIF
 
       CASE (RUCLSMSCHEME)
 !          if(isfc .ne. 2)CALL wrf_error_fatal &

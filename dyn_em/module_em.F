@@ -531,7 +531,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 ! also use weno for monotonic scalar option so that the h_ and z_tendency arrays are not needed
 
         CALL advect_scalar_weno ( t, t, t_tend, ru, rv, ww,     &
-                                 mut, time_step,                &
+                                 c1h, c2h, mut, time_step,      &
                                  config_flags,                  &
                                  msfux, msfuy, msfvx, msfvy,    &
                                  msftx, msfty, fnm, fnp,        &

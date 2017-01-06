@@ -60,7 +60,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,f_effr,f_ice_effr,f_tot_effr                      &
                       ,f_qic_effr,f_qip_effr,f_qid_effr                  &                 
                       ,cu_used                                           &
-                      ,qrcuten, qscuten, qicuten, qccten                 &
+                      ,qrcuten, qscuten, qicuten, qccuten                &
                       ,mu, c1, c2h            &
                       ,qt_curr,f_qt                                      &
                       ,mp_restart_state,tbpvs_state,tbpvs0_state         & ! for etampnew or fer_mp_hires

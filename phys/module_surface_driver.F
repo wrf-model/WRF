@@ -271,6 +271,8 @@ CONTAINS
      &          ,TS_RUL2D_mosaic                                      &  !danli mosaic     
      &          ,ZOL                                                  &  !ckay
      &          ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas  &  !fasdas
+     &          ,spp_lsm,pattern_spp_lsm,field_sf                     &  !SPP
+     &          ,spp_pbl,pattern_spp_pbl                              &  !SPP
      &                                                             )
 
 #if ( ! NMM_CORE == 1 )
@@ -808,6 +810,11 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN )::   Z
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::   TKE_PBL
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),INTENT(INOUT),OPTIONAL ::   pattern_spp_lsm,field_sf
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),INTENT(INOUT),OPTIONAL ::   pattern_spp_pbl
+   INTEGER, INTENT(IN), OPTIONAL                 ::     spp_lsm,spp_pbl
+
    REAL, DIMENSION(1:num_soil_layers), INTENT(IN)::   DZS
    REAL, DIMENSION(1:num_soil_layers), INTENT(IN)::   ZS
    REAL, INTENT(IN )::   DT
@@ -2169,6 +2176,7 @@ CONTAINS
                &itimestep,ch,th_phy,pi_phy,qc_curr,rho,            &
                &tsq,qsq,cov,Sh3d,el_pbl,qcg,                       &
                &icloud_bl,qc_bl,cldfra_bl,                         &
+               &spp_pbl,pattern_spp_pbl,                           &
                XICE,SST,TSK_SEA,                                   &
                CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,&
                HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,    &
@@ -2188,6 +2196,7 @@ CONTAINS
                &itimestep,ch,th_phy,pi_phy,qc_curr,rho,            &
                &tsq,qsq,cov,Sh3D,el_pbl,qcg,                       &
                &icloud_bl,qc_bl,cldfra_bl,                         &
+               &spp_pbl,pattern_spp_pbl,                           &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij),j_start(ij),j_end(ij),kts,kte,&
@@ -3079,7 +3088,7 @@ CONTAINS
            PRESENT(qcg)        .AND.  PRESENT(soilt1)  .AND.    &
            PRESENT(tsnav)      .AND.  PRESENT(smfr3d)  .AND.    &
            PRESENT(keepfr3dflag) .AND. PRESENT(rainbl) .AND.    &
-           PRESENT(dew)                                .AND.    &
+           PRESENT(dew)                                 .AND.   &
                                                       .TRUE. ) THEN
 
            IF( PRESENT(sr) ) THEN
@@ -4625,6 +4634,7 @@ CONTAINS
                &itimestep,ch,th3d,pi3d,qc3d,rho,                   &
                &tsq,qsq,cov,Sh3d,el_pbl,qcg,                       &
                &icloud_bl,qc_bl,cldfra_bl,                         &
+               &spp_pbl,pattern_spp_pbl,                           &
 XICE,SST,TSK_SEA,                                                  &
 CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
 HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
@@ -4644,6 +4654,10 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
      INTEGER,  INTENT(IN )   ::        ISFFLX,bl_mynn_cloudpdf,icloud_bl
      REAL,     INTENT(IN )   ::        SVP1,SVP2,SVP3,SVPT0
      REAL,     INTENT(IN )   ::        EP1,EP2,KARMAN
+
+     INTEGER,  INTENT(IN)      ::     spp_pbl
+     REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )             &
+                             ::   pattern_spp_pbl
 
      REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
                INTENT(IN   )   ::                           dz8w
@@ -4881,6 +4895,7 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                &itimestep,ch,th3d,pi3d,qc3d,rho,                   &
                &tsq,qsq,cov,sh3d,el_pbl,qcg,                       &
                &icloud_bl,qc_bl,cldfra_bl,                         &
+               &spp_pbl,pattern_spp_pbl,                           &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                its,ite, jts,jte, kts,kte,                          &
@@ -4968,6 +4983,7 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                &itimestep,CH_SEA,th3d,pi3d,qc3d,rho,               &
                &tsq,qsq,cov,sh3d,el_pbl,qcg,                       &
                &icloud_bl,qc_bl,cldfra_bl,                         &
+               &spp_pbl,pattern_spp_pbl,                           &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                its,ite, jts,jte, kts,kte,                          &

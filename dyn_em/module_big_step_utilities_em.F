@@ -5249,7 +5249,7 @@ END SUBROUTINE phy_prep
 
     ENDIF
 
-END SUBROUTINE phy_prep2
+END SUBROUTINE phy_prep_part2
 !------------------------------------------------------------
 
    SUBROUTINE moist_physics_prep_em( t_new, t_old, t0, rho, al, alb, &

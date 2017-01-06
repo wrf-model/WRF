@@ -318,9 +318,9 @@ call wrf_message("**************************************************************
          call wrf_error_fatal("ERROR: wet scavenging option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) or 11 (CAMMGMP) or 17/18/22 NSSL_2mom to function.")
        endif
      elseif( id == 1 ) then
-       if ( config_flags%mp_physics /= 8 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 17  &
+       if ( config_flags%mp_physics /= 6 .and. config_flags%mp_physics /= 8 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 17  &
             .and. config_flags%mp_physics /= 18 .and. config_flags%mp_physics /= 22) then
-         call wrf_error_fatal("ERROR: wet scavenging option for MOZART,MOZCART requires mp_phys = 8 (Thompson) or 10 (Morrison) .or 17/18/22 (NSSL 2-moment) to function.")
+         call wrf_error_fatal("ERROR: wet scavenging option for MOZART,MOZCART requires mp_phys = 6 (WSM6) or 8 (Thompson) or 10 (Morrison) .or 17/18/22 (NSSL 2-moment) to function.")
        else
          write(message_txt,*) 'chem_init: calling wetscav_mozcart_init for domain ',id
          call wrf_message( trim(message_txt) )

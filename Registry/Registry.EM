@@ -18,6 +18,7 @@ include registry.afwa
 include registry.sbm
 include registry.elec
 include registry.bdy_perturb
+include registry.hyb_coord
 include registry.new3d_wif
 
 # added to output 5 for ESMF

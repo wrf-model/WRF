@@ -1,3 +1,18 @@
+! sed -e "s/grid%mu/gridmu/g" -e "s/grid%Mu/gridMu/g" dfi.F | cpp -DHYBRID_COORD | sed -e "s/gridmu/grid%mu/g" -e "s/gridMu/grid%Mu/g" >> dfi.next
+#if ( HYBRID_COORD==1 )
+#  define gridmu_2(...) (grid%c1h(k)*XXPC2HXX(__VA_ARGS__))
+#  define XXPC2HXX(...) grid%mu_2(__VA_ARGS__)
+
+#  define gridmub(...) (grid%c1h(k)*XXPCBHXX(__VA_ARGS__)+grid%c2h(k))
+#  define XXPCBHXX(...) grid%mub(__VA_ARGS__)
+
+#  define gridMu_2(...) (grid%c1f(k)*XXPC2FXX(__VA_ARGS__))
+#  define XXPC2FXX(...) grid%Mu_2(__VA_ARGS__)
+
+#  define gridMub(...) (grid%c1f(k)*XXPCBFXX(__VA_ARGS__)+grid%c2f(k))
+#  define XXPCBFXX(...) grid%Mub(__VA_ARGS__)
+#endif
+
    SUBROUTINE dfi_accumulate( grid )
 
       USE module_domain, ONLY : domain
@@ -25,7 +40,7 @@
       hn = grid%hcoeff(grid%itimestep+1)
 
       ! accumulate dynamic variables
-       grid%dfi_mu(:,:)    = grid%dfi_mu(:,:)    + grid%mu_2(:,:)    * hn
+       grid%dfi_mu(:,:)    = grid%dfi_mu(:,:)    + grid%MU_2(:,:)    * hn
        grid%dfi_u(:,:,:)   = grid%dfi_u(:,:,:)   + grid%u_2(:,:,:)   * hn
        grid%dfi_v(:,:,:)   = grid%dfi_v(:,:,:)   + grid%v_2(:,:,:)   * hn
        grid%dfi_w(:,:,:)   = grid%dfi_w(:,:,:)   + grid%w_2(:,:,:)   * hn
@@ -660,7 +675,7 @@
       ! divide by total DFI coefficient
 
 #if (EM_CORE == 1)
-      grid%mu_2(:,:)    = grid%dfi_mu(:,:)      / grid%hcoeff_tot
+      grid%MU_2(:,:)    = grid%dfi_mu(:,:)      / grid%hcoeff_tot
       grid%u_2(:,:,:)   = grid%dfi_u(:,:,:)     / grid%hcoeff_tot
       grid%v_2(:,:,:)   = grid%dfi_v(:,:,:)     / grid%hcoeff_tot
       grid%w_2(:,:,:)   = grid%dfi_w(:,:,:)     / grid%hcoeff_tot
@@ -3295,7 +3310,7 @@ call wrf_message(mess)
                                      ims, ime, jms, jme, kms, kme, &
                                      its, ite, jts, jte, kts, kte, &
                                      ips, ipe, jps, jpe, kps, kpe, &
-                                     i, j, k, ispe, ktf
+                                     i, j, k, kk, ispe, ktf
 
       SELECT CASE ( model_data_order )
          CASE ( DATA_ORDER_ZXY )
@@ -3362,50 +3377,53 @@ call wrf_message(mess)
                !  Integrate the hydrostatic equation (from the RHS of the bigstep vertical momentum
                !  equation) down from the top to get the pressure perturbation.  First get the pressure
                !  perturbation, moisture, and inverse density (total and perturbation) at the top-most level.
-               k = kte-1
+               kk = kte-1
+               k=kk+1
 
                qtot = 0.
                DO ispe=PARAM_FIRST_SCALAR,n_moist
-                 qtot = qtot + 0.5*(moist(i,k,j,ispe)+moist(i,k,j,ispe))
+                 qtot = qtot + 0.5*(moist(i,kk,j,ispe)+moist(i,kk,j,ispe))
                ENDDO
                qvf2 = 1./(1.+qtot)
                qvf1 = qtot*qvf2
 
-               grid%p(i,k,j) = - 0.5*(grid%mu_2(i,j)+qvf1*grid%mub(i,j))/grid%rdnw(k)/qvf2
-               qvf = 1.+rvovrd*moist(i,k,j,P_QV)
-               grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_2(i,k,j)+t0)*qvf*         &
-                      (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
-               grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
-               grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
+               grid%p(i,kk,j) = - 0.5*(grid%Mu_2(i,j)+qvf1*grid%Mub(i,j))/grid%rdnw(kk)/qvf2
+               qvf = 1.+rvovrd*moist(i,kk,j,P_QV)
+               grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf*         &
+                      (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
+               grid%al(i,kk,j) = grid%alt(i,kk,j) - grid%alb(i,kk,j)
+               grid%p_hyd(i,kk,j) = grid%p(i,kk,j) + grid%pb(i,kk,j)
 
                !  Now, integrate down the column to compute the pressure perturbation, and diagnose the two
                !  inverse density fields (total and perturbation).
 
-           DO k=kte-2,1,-1
+           DO kk=kte-2,1,-1
+               k = kk + 1
                qtot = 0.
                DO ispe=PARAM_FIRST_SCALAR,n_moist
-               qtot = qtot + 0.5*(  moist(i,k  ,j,ispe) + moist(i,k+1,j,ispe) )
+               qtot = qtot + 0.5*(  moist(i,kk  ,j,ispe) + moist(i,kk+1,j,ispe) )
                ENDDO
                qvf2 = 1./(1.+qtot)
                qvf1 = qtot*qvf2
-               grid%p(i,k,j) = grid%p(i,k+1,j) - (grid%mu_2(i,j) +       &
-                               qvf1*grid%mub(i,j))/qvf2/grid%rdn(k+1)
-               qvf = 1. + rvovrd*moist(i,k,j,P_QV)
-               grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_2(i,k,j)+t0)*qvf* &
-                           (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
-               grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
-               grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
+               grid%p(i,kk,j) = grid%p(i,kk+1,j) - (grid%Mu_2(i,j) +       &
+                               qvf1*grid%Mub(i,j))/qvf2/grid%rdn(kk+1)
+               qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
+               grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf* &
+                           (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
+               grid%al(i,kk,j) = grid%alt(i,kk,j) - grid%alb(i,kk,j)
+               grid%p_hyd(i,kk,j) = grid%p(i,kk,j) + grid%pb(i,kk,j)
            ENDDO
 
                !  This is the hydrostatic equation used in the model after the small timesteps.  In
                !  the model, grid%al (inverse density) is computed from the geopotential.
 
                IF (grid%hypsometric_opt == 1) THEN
-                  DO k  = 2,kte
-                     grid%ph_2(i,k,j) = grid%ph_2(i,k-1,j) - &
-                                   grid%dnw(k-1) * ( (grid%mub(i,j)+grid%mu_2(i,j))*grid%al(i,k-1,j) &
-                                 + grid%mu_2(i,j)*grid%alb(i,k-1,j) )
-                     grid%ph0(i,k,j) = grid%ph_2(i,k,j) + grid%phb(i,k,j)
+                  DO kk  = 2,kte
+                     k = kk - 1 
+                     grid%ph_2(i,kk,j) = grid%ph_2(i,kk-1,j) - &
+                                   grid%dnw(kk-1) * ( (grid%mub(i,j)+grid%mu_2(i,j))*grid%al(i,kk-1,j) &
+                                 + grid%mu_2(i,j)*grid%alb(i,kk-1,j) )
+                     grid%ph0(i,kk,j) = grid%ph_2(i,kk,j) + grid%phb(i,kk,j)
                   END DO
                ELSE IF (grid%hypsometric_opt == 2) THEN
                 ! Alternative hydrostatic eq.: dZ = -al*p*dLOG(p), where p is
@@ -3416,9 +3434,15 @@ call wrf_message(mess)
 
                   grid%ph_2(i,1,j) = grid%phb(i,1,j)
                   DO k = 2,kte
+#if  !( HYBRID_COORD==1 )
                      pfu = ( grid%mub(i,j)+grid%mu_2(i,j))*grid%znw(k)   + grid%p_top
                      pfd = ( grid%mub(i,j)+grid%mu_2(i,j))*grid%znw(k-1) + grid%p_top
                      phm = ( grid%mub(i,j)+grid%mu_2(i,j))*grid%znu(k-1) + grid%p_top
+#elif ( HYBRID_COORD==1 )
+                     pfu = grid%c3f(k  )*(grid%MUB(i,j)+grid%MU_2(i,j)) + grid%c4f(k  ) + grid%p_top
+                     pfd = grid%c3f(k-1)*(grid%MUB(i,j)+grid%MU_2(i,j)) + grid%c4f(k-1) + grid%p_top
+                     phm = grid%c3h(k-1)*(grid%MUB(i,j)+grid%MU_2(i,j)) + grid%c4h(k-1) + grid%p_top
+#endif
                      grid%ph_2(i,k,j) = grid%ph_2(i,k-1,j) + grid%alt(i,k-1,j)*phm*LOG(pfd/pfu)
                   END DO
 

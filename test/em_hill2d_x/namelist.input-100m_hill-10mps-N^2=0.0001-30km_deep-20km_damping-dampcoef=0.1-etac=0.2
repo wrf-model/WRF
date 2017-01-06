@@ -1,6 +1,6 @@
  &time_control
  run_days                            = 0,
- run_hours                           = 10,
+ run_hours                           = 5,
  run_minutes                         = 0,
  run_seconds                         = 0,
  start_year                          = 0001,
@@ -16,7 +16,7 @@
  end_minute                          = 00,
  end_second                          = 00,
  history_interval                    = 60,
- frames_per_outfile                  = 1000,
+ frames_per_outfile                  = 1,
  restart                             = .false.,
  restart_interval                    = 120,
  io_form_history                     = 2
@@ -77,8 +77,6 @@
  h_sca_adv_order                     = 5,
  v_sca_adv_order                     = 3,
  non_hydrostatic                     = .true.,
- hybrid_opt                          = 2
- etac                                = 0.2
  /
 
  &bdy_control

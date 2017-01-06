@@ -187,8 +187,9 @@ BENCH_END(init_zero_tend_tim)
 
         CALL wrf_debug ( 200 , ' call phy_prep' )
         CALL phy_prep ( config_flags,                                    &
-                        grid%mut, grid%muu, grid%muv, grid%u_2,          &
-                        grid%v_2, grid%p, grid%pb, grid%alt,             &
+                        grid%mut, grid%muu, grid%muv,                    &
+                        grid%c1h, grid%c2h, grid%c1f, grid%c2f,          &
+                        grid%u_2, grid%v_2, grid%p, grid%pb, grid%alt,   &
                         grid%ph_2, grid%phb, grid%t_2, grid%tsk, moist, num_moist,   &
                         grid%rho,th_phy, p_phy, pi_phy, grid%u_phy, grid%v_phy,      &
                         p8w, t_phy, t8w, grid%z, grid%z_at_w, dz8w,      &

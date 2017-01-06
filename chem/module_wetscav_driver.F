@@ -376,11 +376,9 @@ REAL,  DIMENSION( ims:ime , kms:kme , jms:jme , ntot_amode ),       &
        if( config_flags%mp_physics == THOMPSON ) then
          rainrate(:,:,:) = rainprod(:,:,:)
          evaprate(:,:,:) = evapprod(:,:,:)
-!++mmb scav
        elseif( config_flags%mp_physics == WSM6SCHEME ) then
          rainrate(:,:,:) = rainprod(:,:,:)
          evaprate(:,:,:) = evapprod(:,:,:)
-!--mmb scav
        elseif( config_flags%mp_physics == CAMMGMPSCHEME ) then
          rainrate(:,:,:) = prain3d(:,:,:)
          evaprate(:,:,:) = nevapr3d(:,:,:)
@@ -412,11 +410,9 @@ REAL,  DIMENSION( ims:ime , kms:kme , jms:jme , ntot_amode ),       &
        if( config_flags%mp_physics == THOMPSON ) then
          rainrate(:,:,:) = rainprod(:,:,:)
          evaprate(:,:,:) = evapprod(:,:,:)
-!++mmb scav
        elseif( config_flags%mp_physics == WSM6SCHEME ) then
          rainrate(:,:,:) = rainprod(:,:,:)
          evaprate(:,:,:) = evapprod(:,:,:)
-!--mmb scav
        elseif( config_flags%mp_physics == CAMMGMPSCHEME ) then
          rainrate(:,:,:) = prain3d(:,:,:)
          evaprate(:,:,:) = nevapr3d(:,:,:)

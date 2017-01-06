@@ -76,11 +76,9 @@ CONTAINS
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,its,ite, jts,jte, kts,kte                        &
-!++mmb scav
 #ifdef WRF_CHEM
                  ,evapprod, rainprod                               &
 #endif
-!--mmb scav
                                                                    )
 !-------------------------------------------------------------------
   IMPLICIT NONE
@@ -147,7 +145,6 @@ CONTAINS
         INTENT(INOUT) ::                                 graupel, &
                                                       graupelncv
 
-!++mmb wetscav
 #ifdef WRF_CHEM
   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ), INTENT(INOUT) :: &
                                                       rainprod,   &
@@ -157,7 +154,6 @@ CONTAINS
                                                       rainprod2d, &
                                                       evapprod2d
 #endif
-!--mmb wetscav
 
 ! LOCAL VAR
   REAL, DIMENSION( its:ite , kts:kte ) ::   t
@@ -204,11 +200,9 @@ CONTAINS
                     ,its,ite, jts,jte, kts,kte                     &
                     ,snow,snowncv                                  &
                     ,graupel,graupelncv                            &
-!++mmb wetscav
 #ifdef WRF_CHEM
                    ,rainprod2d, evapprod2d                        &
 #endif
-!--mmb wetscav
                                                                    )
          DO K=kts,kte
          DO I=its,ite
@@ -266,7 +260,6 @@ CONTAINS
           enddo   
         endif     ! has_reqc, etc...
 !+---+-----------------------------------------------------------------+
-!++mmb scav
 #ifdef WRF_CHEM
         do i=its,ite
           do k=kts,kte
@@ -275,7 +268,6 @@ CONTAINS
           enddo
         enddo
 #endif
-!--mmb scav
       ENDDO
   END SUBROUTINE wsm6
 !===================================================================
@@ -294,11 +286,9 @@ CONTAINS
                    ,its,ite, jts,jte, kts,kte                     &
                    ,snow,snowncv                                  &
                    ,graupel,graupelncv                            &
-!++mmb wetscav
 #ifdef WRF_CHEM
                    ,rainprod2d, evapprod2d                        &
 #endif
-!--mmb wetscav
                                                                   )
 !-------------------------------------------------------------------
   IMPLICIT NONE
@@ -391,13 +381,11 @@ CONTAINS
         INTENT(INOUT) ::                                 graupel, &
                                                       graupelncv
 
-!++mmb wetscav
 #ifdef WRF_CHEM
   REAL, DIMENSION( its:ite , kts:kte ), INTENT(INOUT)  ::         &
                                                       rainprod2d, &
                                                       evapprod2d
 #endif
-!--mmb wetscav
 
 ! LOCAL VAR
   REAL, DIMENSION( its:ite , kts:kte , 3) ::                      &
@@ -1507,12 +1495,10 @@ CONTAINS
       enddo
       enddo                  ! big loops
 
-!++mmb wetscav 
 #ifdef WRF_CHEM
       rainprod2d = praut+pracw+praci+psaci+pgaci+psacw+pgacw+paacw+psaut
       evapprod2d = -(prevp+psevp+pgevp+psdep+pgdep)
 #endif
-!--mmb wetscav
 
   END SUBROUTINE wsm62d
 ! ...................................................................

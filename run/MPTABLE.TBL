@@ -38,6 +38,7 @@
  ISICE                     = 24
  ISCROP                    =  2
  EBLFOREST                 = 13
+ NATURAL                   =  5
  LOW_DENSITY_RESIDENTIAL   = 31
  HIGH_DENSITY_RESIDENTIAL  = 32
  HIGH_INTENSITY_INDUSTRIAL = 33
@@ -181,6 +182,7 @@
  ISICE                     = 15
  ISCROP                    = 12
  EBLFOREST                 =  2
+ NATURAL                   = 14
  LOW_DENSITY_RESIDENTIAL   = 31
  HIGH_DENSITY_RESIDENTIAL  = 32
  HIGH_INTENSITY_INDUSTRIAL = 33

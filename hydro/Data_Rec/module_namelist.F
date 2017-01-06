@@ -71,7 +71,7 @@ CONTAINS
        
           integer ::CHRTOUT_DOMAIN           ! Netcdf point timeseries output at all channel points
           integer ::CHRTOUT_GRID                ! Netcdf grid of channel streamflow values
-          integer ::LSMOUT_DOMAN              ! Netcdf grid of variables passed between LSM and routing components
+          integer ::LSMOUT_DOMAIN              ! Netcdf grid of variables passed between LSM and routing components
           integer ::RTOUT_DOMAIN                ! Netcdf grid of terrain routing variables on routing grid
           integer  :: output_gw
           integer  :: outlake
@@ -103,7 +103,7 @@ CONTAINS
                     route_direction_f,route_order_f,gwbasmskfil, geo_finegrid_flnm,&
                     gwstrmfil,GW_RESTART,RSTRT_SWC,TERADJ_SOLAR, sys_cpl, &
                     order_to_write , rst_typ, rst_bi_in, rst_bi_out, gwsoilcpl, &
-                    CHRTOUT_DOMAIN,CHRTOUT_GRID,LSMOUT_DOMAN,RTOUT_DOMAIN, output_gw, outlake, udmap_file, &
+                    CHRTOUT_DOMAIN,CHRTOUT_GRID,LSMOUT_DOMAIN,RTOUT_DOMAIN, output_gw, outlake, udmap_file, &
                     UDMP_OPT, GWBUCKPARM_file, iocflag
 
    UDMP_OPT = 0
@@ -238,7 +238,7 @@ CONTAINS
   call mpp_land_bcast_int1(output_gw)
   call mpp_land_bcast_int1(outlake)
   call mpp_land_bcast_int1(CHRTOUT_GRID)
-  call mpp_land_bcast_int1(LSMOUT_DOMAN)
+  call mpp_land_bcast_int1(LSMOUT_DOMAIN)
   call mpp_land_bcast_int1(RTOUT_DOMAIN)
   call mpp_land_bcast_int1(UDMP_OPT)
 #ifdef WRF_HYDRO_NUDGING
@@ -263,7 +263,7 @@ CONTAINS
     nlst%output_gw      = output_gw
     nlst%outlake      = outlake
     nlst%CHRTOUT_GRID = CHRTOUT_GRID
-    nlst%LSMOUT_DOMAN = LSMOUT_DOMAN
+    nlst%LSMOUT_DOMAIN = LSMOUT_DOMAIN
     nlst%RTOUT_DOMAIN = RTOUT_DOMAIN
     nlst%RT_OPTION = RT_OPTION
     nlst%CHANRTSWCRT = CHANRTSWCRT
@@ -274,6 +274,9 @@ CONTAINS
     nlst%DTRT_CH   = DTRT_CH
     nlst%DTCT      = DTRT_CH   ! small time step for grid based channel routing
 
+#ifdef MPP_LAND
+  if(my_id .eq. IO_id) then
+#endif
     if(nlst%DT .lt. DTRT_CH) then 
           print*, "nlst%DT,  DTRT_CH = ",nlst%DT,  DTRT_CH
           print*, "reset DTRT_CH=nlst%DT "
@@ -292,6 +295,9 @@ CONTAINS
          print*, "nlst%DT,  DTRT_CH = ",nlst%DT,  DTRT_CH
          call hydro_stop("module_namelist: DT not a multiple of DTRT_CH")
     endif
+#ifdef MPP_LAND
+  endif
+#endif
 
     nlst%SUBRTSWCRT = SUBRTSWCRT
     nlst%OVRTSWCRT = OVRTSWCRT

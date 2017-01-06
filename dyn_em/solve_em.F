@@ -3520,7 +3520,7 @@ BENCH_END(advance_ppt_tim)
    DO ij = 1 , grid%num_tiles
         CALL wrf_debug ( 200 , ' call phy_prep_part2' )
         CALL phy_prep_part2 ( config_flags,                              &
-                        grid%muts, grid%muus, grid%muvs,                 &
+                        grid%muts, muus, muvs,                           &
                         grid%rthraten,                                   &
                         grid%rthblten, grid%rublten, grid%rvblten,       &
                         grid%rqvblten, grid%rqcblten, grid%rqiblten,     &

@@ -790,11 +790,20 @@ integer myproc
          config_flags%mp_physics  .eq. WSM5SCHEME .or.      & ! syb+
          config_flags%mp_physics  .eq. WSM6SCHEME .or.      & ! syb+
          config_flags%mp_physics  .eq. WDM5SCHEME .or.      & ! syb+
-         config_flags%mp_physics  .eq. WDM6SCHEME ) ) then    ! syb+
+         config_flags%mp_physics  .eq. WDM6SCHEME .or.      &
+         config_flags%mp_physics  .eq. P3_1CATEGORY .or.    &
+         config_flags%mp_physics  .eq. P3_1CATEGORY_NC    ) ) then    ! P3
       has_reqc = 1
       has_reqi = 1
       has_reqs = 1
    endif
+
+! for P3, to ensure correct coupling with predicted effective radii
+   if (config_flags%mp_physics .eq. P3_1CATEGORY .or.       &
+       config_flags%mp_physics .eq. P3_1CATEGORY_NC       ) then
+      has_reqs = 0
+   end if
+
    ENDIF
 
 !-- should be from the namelist
@@ -2146,7 +2155,9 @@ integer myproc
    USE module_bl_shinhong
    USE module_bl_mrf
    USE module_bl_gfs
-   USE module_bl_gfs2011, only : gfs2011init
+#if (HWRF==1)
+   USE module_bl_gfsedmf, only : gfsedmfinit
+#endif
    USE module_bl_acm
    USE module_sf_myjsfc
    USE module_sf_qnsesfc
@@ -3038,13 +3049,13 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                         ids, ide, jds, jde, kds, kde,         &
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
-#if (NMM_CORE == 1)
-      CASE (GFS2011SCHEME)
+#if (HWRF == 1)
+      CASE (GFSEDMFSCHEME)
            if(isfc .ne. 2)CALL wrf_error_fatal &
             ( 'module_physics_init: use myjsfc scheme for this pbl option' )
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
             ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
-           CALL gfs2011init(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,&
+           CALL gfsedmfinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,&
                         RQCBLTEN,RQIBLTEN,P_QI,               &
                         PARAM_FIRST_SCALAR,                   &
                         restart,                              &
@@ -3052,6 +3063,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                         ids, ide, jds, jde, kds, kde,         &
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
+
 #endif
       CASE (MYJPBLSCHEME)
            if(isfc .ne. 2)CALL wrf_error_fatal &
@@ -3220,7 +3232,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_cu_gd,  ONLY : GDINIT
    USE module_cu_g3,  ONLY : G3INIT
    USE module_cu_sas
-   USE module_cu_mesosas
+   USE module_cu_scalesas
    USE module_cu_osas
    USE module_cu_camzm_driver, ONLY : zm_conv_init
    USE module_cu_nsas
@@ -3394,6 +3406,15 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
 
+     CASE (SCALESASSCHEME)
+          CALL scalesasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,  &
+                      RUCUTEN,RVCUTEN,                            &   
+                      restart,P_QC,P_QI,PARAM_FIRST_SCALAR,       &
+                      allowed_to_read ,                           &
+                      ids, ide, jds, jde, kds, kde,               &
+                      ims, ime, jms, jme, kms, kme,               &
+                      its, ite, jts, jte, kts, kte                )
+
 #if ( EM_CORE == 1 )
           !BSINGH - For WRFCuP Scheme
     CASE (KFCUPSCHEME)  !wig: 18-Sep-2006
@@ -3411,15 +3432,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
     !BSINGH - ENDS
 #endif
-
-     CASE (MESO_SAS)   !Kwon
-          CALL msasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,       &
-                      RUCUTEN,RVCUTEN,                            &   ! gopal's doing for SAS
-                      restart,P_QC,P_QI,PARAM_FIRST_SCALAR,       &
-                      allowed_to_read ,                           &
-                      ids, ide, jds, jde, kds, kde,               &
-                      ims, ime, jms, jme, kms, kme,               &
-                      its, ite, jts, jte, kts, kte                )
 
      CASE (OSASSCHEME)
           CALL osasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,      &
@@ -3526,6 +3538,17 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    STEPCU = nint(CUDT*60./DT)
    STEPCU = max(STEPCU,1)
 
+!-- initialization
+
+   IF(start_of_simulation)THEN
+     DO j=jts,jtf
+     DO i=its,itf
+        RAINC(i,j)=0.
+        RAINCV(i,j)=0.
+     ENDDO
+     ENDDO
+   ENDIF
+
 !-- independent shallow convection schemes
    shcu_select: SELECT CASE(config_flags%shcu_physics)
 
@@ -3586,6 +3609,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_mp_full_sbm
    USE module_mp_fast_sbm
    USE module_mp_morr_two_moment
+   USE module_mp_p3
    USE module_mp_milbrandt2mom
 !  USE module_mp_milbrandt3mom
    USE module_mp_wdm5
@@ -3733,6 +3757,10 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
      CASE (MORR_TWO_MOMENT)
          CALL morr_two_moment_init( config_flags%hail_opt )
+     CASE (P3_1CATEGORY)
+         CALL p3_init('./p3_lookup_table_1.dat','./p3_lookup_table_2.dat',1)
+     CASE (P3_1CATEGORY_NC)
+         CALL p3_init('./p3_lookup_table_1.dat','./p3_lookup_table_2.dat',1)
      CASE (MILBRANDT2MOM)
          CALL milbrandt2mom_init
 !      CASE (MILBRANDT3MOM)

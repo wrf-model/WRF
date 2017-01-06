@@ -97,6 +97,15 @@ MODULES =                                 \
         module_mosaic_wetscav.o           \
         module_mosaic_therm.o             \
         module_phot_mad.o                 \
+        params.mod.o                      \
+        numer.o                           \
+        rdxs.o                            \
+        rxn.o                             \
+        params_mod.o                      \
+        module_phot_tuv.o                 \
+        module_subs_tuv.o                 \
+        rtrans.o                          \
+        la_srb.o                          \
         module_radm.o                     \
         module_sorgam_aqchem.o            \
         module_sorgam_vbs_aqchem.o        \

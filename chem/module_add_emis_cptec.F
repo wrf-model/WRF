@@ -85,7 +85,7 @@ CONTAINS
     tign  = real(idays)*24.*3600.
     ! Modulacao da queimada media durante o ciclo diurno(unidade: 1/s)
     ! com a int( r_q dt) (0 - 24h)= 1.
-    timeq= ( time + float(itime1)*0.01*3600. - tign )
+    timeq= ( time + float(itime1)*3600. - tign )
     timeq=mod(timeq,86400.)
 
 

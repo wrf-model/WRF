@@ -56,8 +56,8 @@ subroutine da_transform_xtoxa(grid, wpec_on)
             p(kte+1)=0.0
 
             do k=kte,kts,-1
-               p(k)=p(k+1)-(mu*(1.0+mr_b(k)) &
-                       + grid%xb%psac(i,j)*mr_a(k))*grid%xb%dnw(k)
+               p(k)=p(k+1)-(c1h(k)*mu*(1.0+mr_b(k)) &
+                       + (c1h(k)*grid%xb%psac(i,j)+c2h(k))*mr_a(k))*grid%xb%dnw(k)
 
                grid%xa%p(i,j,k)=0.5*(p(k)+p(k+1))
             end do
@@ -91,8 +91,9 @@ subroutine da_transform_xtoxa(grid, wpec_on)
                (fg_format==fg_format_wrf_arw_global  ) ) then
                geoh(kts)=0.0
                do k=kts,kte
-                  geoh(k+1)=geoh(k)+(-grid%xa%mu(i,j) &
-                          + grid%xa%rho(i,j,k)*grid%xb%psac(i,j)/grid%xb%rho(i,j,k))*grid%xb%dnw(k)/grid%xb%rho(i,j,k)
+                  geoh(k+1)=geoh(k)+(-c1h(k)*grid%xa%mu(i,j) &
+                          + grid%xa%rho(i,j,k)*(c1h(k)*grid%xb%psac(i,j)+c2h(k)) &
+                          /grid%xb%rho(i,j,k))* grid%xb%dnw(k)/grid%xb%rho(i,j,k)
                   grid%xa%geoh(i,j,k)=0.5*(geoh(k)+geoh(k+1))
                end do
             end if
@@ -198,11 +199,9 @@ subroutine da_transform_xtoxa(grid, wpec_on)
 #endif
    end if
 
-   if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) ) then
-      if ( cloud_cv_options == 1 .and. use_3dvar_phy)then
-         ! Partition of hydrometeor increments via warm rain process
-         call da_moist_phys_lin(grid)
-      end if
+   if ( cloud_cv_options == 1 )then
+      ! Partition of hydrometeor increments via warm rain process
+      call da_moist_phys_lin(grid)
    end if
 
    !---------------------------------------------------------------

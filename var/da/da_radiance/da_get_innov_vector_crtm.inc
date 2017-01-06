@@ -307,7 +307,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
       ! Gamma correction from VarBC
       !----------------------------
-#ifdef CRTM_MODIF
+!#ifdef CRTM_MODIF
       if ( use_varbc .or. freeze_varbc ) then
          gammapred = iv%instid(inst)%varbc_info%gammapred 
          do k = 1, nchanl
@@ -322,16 +322,6 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          end do
       end if
       RTSolution_K(:,1)%Gamma = 0.0
-#endif
-
-!      ! Allocate Overcast Radiances for  Cloud Detection (MMR)
-      !----------------------------------------------------------------
-!#ifdef CRTM_MODIF
-!      if (use_clddet_mmr .or. use_clddet_ecmwf ) then
-!         do i = 1, nchanl
-!            allocate(RTSolution(i,1)%Overcast(Atmosphere(1)%n_Layers))
-!         end do		         
-!      end if   
 !#endif
 
       if ( use_mspps_emis(inst) ) allocate(em_mspps(nchanl))
@@ -455,6 +445,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                   ' where the pressure is not monotonic'
                call da_warning(__FILE__,__LINE__,message(1:1))
                iv%instid(inst)%tb_inv(:,n) = missing_r
+               iv%instid(inst)%info%proc_domain(:,n) = .false.
                cycle pixel_loop
             end if
          end do
@@ -627,14 +618,13 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
          ! Compute Overcast Radiances for AIRS Cloud Detection (MMR)
          !----------------------------------------------------------------
-#ifdef CRTM_MODIF
-     if (use_clddet_mmr .or. use_clddet_ecmwf ) then
-	    do i = 1, nchanl
-               iv%instid(inst)%rad_ovc(i,kts:kte,n)=RTSolution(i,1)%Overcast(:)
-	    end do		         
-	 end if   
-#endif
-	
+         if (use_clddet_mmr .or. use_clddet_ecmwf ) then
+            do i = 1, nchanl
+               !crtm_2.2.3 contains Upwelling_Overcast_Radiance
+               iv%instid(inst)%rad_ovc(i,kts:kte,n)=RTSolution(i,1)%Upwelling_Overcast_Radiance(:)
+            end do
+         end if
+
    !---------------------------------------------------------------------------
    ! Precondition satellite control variable (Cloud Cover(s)):
    !---------------------------------------------------------------------------
@@ -697,9 +687,9 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                iv%instid(inst)%ts_jacobian(k,n) = Surface_k(k,1)%water_temperature
                iv%instid(inst)%windspeed_jacobian(k,n) = Surface_k(k,1)%wind_speed
                iv%instid(inst)%emiss_jacobian(k,n) = RTSolution_k(k,1)%surface_emissivity
-#ifdef CRTM_MODIF
+!#ifdef CRTM_MODIF
                iv%instid(inst)%gamma_jacobian(k,n) = RTSolution_k(k,1)%Gamma
-#endif
+!#endif
 	    end if   
          end do
 
@@ -782,45 +772,45 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                end do
             end do
          end if
-#ifdef CRTM_MODIF		 
-         if (use_clddet_ecmwf) then	 	  !begin ecmwf cloud detection
-		 !kmin_t,kmax_p corresponding tropopause and KBPL
-         ! find the k index of tropopause
-         t_tropp = 999.0  ! initialize
-         k_tropp = kte    ! initialize the k index of tropopause
+
+         if (use_clddet_ecmwf) then  !begin ecmwf cloud detection
+            !kmin_t,kmax_p corresponding tropopause and KBPL
+            ! find the k index of tropopause
+            t_tropp = 999.0  ! initialize
+            k_tropp = kte    ! initialize the k index of tropopause
             do k = kte, kts, -1
                do j = jts, jte
-                  do i = its, ite     
+                  do i = its, ite
                      if ( grid%xb%t(i,j,k) < t_tropp(i,j) .and.  &
-                      grid%xb%p(i,j,k) > 5000.0 ) then  ! tropopause should not be higher than 50 hPa
-                      t_tropp(i,j) = grid%xb%t(i,j,k)
-                      k_tropp(i,j) = k			   
-                      iv%instid(inst)%kmin_t(n)=Atmosphere(1)%n_layers-k_tropp(i,j)+1   
-		             end if
+                          grid%xb%p(i,j,k) > 5000.0 ) then  ! tropopause should not be higher than 50 hPa
+                         t_tropp(i,j) = grid%xb%t(i,j,k)
+                         k_tropp(i,j) = k
+                         iv%instid(inst)%kmin_t(n)=Atmosphere(1)%n_layers-k_tropp(i,j)+1
+                     end if
                   end do
                end do
             end do
-            iv%instid(inst)%kmax_p(n)=Atmosphere(1)%n_layers-grid%kpbl(i,j)+1	
-  !       write(unit=stdout,fmt='(A)') 'preparing ECMWF cloud detection input using cloud sensitivity to rank channels'			 		
-            do l=1,nchanl	
-	        temp1=0	 	 
-               do k=1,Atmosphere(1)%n_layers  !     rad_ovc(l,1,n) top
-	           iv%instid(inst)%sensitivity_ratio(l,k,n) = abs(iv%instid(inst)%rad_xb(l,n)-iv%instid(inst)%rad_ovc(l,k,n))
-               iv%instid(inst)%sensitivity_ratio(l,k,n) = iv%instid(inst)%sensitivity_ratio(l,k,n)/iv%instid(inst)%rad_xb(l,n)               
+            iv%instid(inst)%kmax_p(n)=Atmosphere(1)%n_layers-grid%kpbl(i,j)+1
+            !write(unit=stdout,fmt='(A)') &
+            !   'preparing ECMWF cloud detection input using cloud sensitivity to rank channels'
+            do l=1,nchanl
+               temp1=0
+               do k=1,Atmosphere(1)%n_layers  !rad_ovc(l,1,n) top
+                  iv%instid(inst)%sensitivity_ratio(l,k,n) = abs(iv%instid(inst)%rad_xb(l,n)-iv%instid(inst)%rad_ovc(l,k,n))
+                  iv%instid(inst)%sensitivity_ratio(l,k,n) = iv%instid(inst)%sensitivity_ratio(l,k,n)/iv%instid(inst)%rad_xb(l,n)
                end do
-            end do 
-	 
-            do l=1,nchanl	
-	        temp1=0	 	 
-               do k=Atmosphere(1)%n_layers,1,-1 !      sensitivity_ratio(l,1,n) top
+            end do
+            do l=1,nchanl
+               temp1=0
+               do k=Atmosphere(1)%n_layers,1,-1 ! sensitivity_ratio(l,1,n) top
                   if( iv%instid(inst)%sensitivity_ratio(l,k,n) > 0.01 ) then
-                  iv%instid(inst)%p_chan_level(l,n) = real(k)                            !  the peak level 
-                  exit		
-                  end if                 
+                     iv%instid(inst)%p_chan_level(l,n) = real(k) ! the peak level
+                     exit
+                  end if
                end do
-            end do 	 	 
+            end do
          end if     !end ecmwf cloud detection
-#endif		 
+
          !----------------------------------------------
          ! [4.0] store surface information to innovation structure
          !----------------------------------------------

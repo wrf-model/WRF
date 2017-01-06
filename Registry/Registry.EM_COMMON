@@ -51,7 +51,7 @@
 #<Table> <Type> <Sym>         <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>
 #
 state    real  XLAT             ij      misc        1         -     i0123rh01{22}{23}du=(copy_fcnm)      "XLAT"                "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
-state    real  XLONG            ij      misc        1         -     i0123rh01{22}{23}du=(copy_fcnm)      "XLONG"               "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
+state    real  XLONG            ij      misc        1         -     i0123rh01{22}{23}d=(interp_fcn_blint_ll:xlat,input_from_file)u=(copy_fcnm)      "XLONG"               "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
 
 # It is required that LU_INDEX appears before any variable that is
 # interpolated with a mask, as lu_index supplies that mask.
@@ -121,34 +121,34 @@ state    real   qg_gc          igj      dyn_em      1        Z     i1  "QG"    "
 state    real   qh_gc          igj      dyn_em      1        Z     i1  "QH"    "hail mixing ratio"   "kg kg-1"
 state    real   qni_gc         igj      dyn_em      1        Z     i1  "QNI"   "ice num concentration"   "m-3"
 state    real   qnr_gc         igj      dyn_em      1        Z     i1  "QNR"   "rain num concentration"   "m-3"
-state    real   qnwfa_gc       igj      dyn_em      1        Z     i1  "QNWFA"   "water-friendly aerosol  num concentration"   "m-3"
-state    real   qnifa_gc       igj      dyn_em      1        Z     i1  "QNIFA"   "water-friendly aerosol  num concentration"   "m-3"
-state    real   qnwfa_now      igj      dyn_em      1        Z     -   "QNWFA_NOW"   "num water-friendly aerosol Now"   "kg-1"
-state    real   qnwfa_jan      igj      dyn_em      1        Z     i1  "QNWFA_JAN"   "num water-friendly aerosol Jan"   "kg-1"
-state    real   qnwfa_feb      igj      dyn_em      1        Z     i1  "QNWFA_FEB"   "num water-friendly aerosol Feb"   "kg-1"
-state    real   qnwfa_mar      igj      dyn_em      1        Z     i1  "QNWFA_MAR"   "num water-friendly aerosol Mar"   "kg-1"
-state    real   qnwfa_apr      igj      dyn_em      1        Z     i1  "QNWFA_APR"   "num water-friendly aerosol Apr"   "kg-1"
-state    real   qnwfa_may      igj      dyn_em      1        Z     i1  "QNWFA_MAY"   "num water-friendly aerosol May"   "kg-1"
-state    real   qnwfa_jun      igj      dyn_em      1        Z     i1  "QNWFA_JUN"   "num water-friendly aerosol Jun"   "kg-1"
-state    real   qnwfa_jul      igj      dyn_em      1        Z     i1  "QNWFA_JUL"   "num water-friendly aerosol Jul"   "kg-1"
-state    real   qnwfa_aug      igj      dyn_em      1        Z     i1  "QNWFA_AUG"   "num water-friendly aerosol Aug"   "kg-1"
-state    real   qnwfa_sep      igj      dyn_em      1        Z     i1  "QNWFA_SEP"   "num water-friendly aerosol Sep"   "kg-1"
-state    real   qnwfa_oct      igj      dyn_em      1        Z     i1  "QNWFA_OCT"   "num water-friendly aerosol Oct"   "kg-1"
-state    real   qnwfa_nov      igj      dyn_em      1        Z     i1  "QNWFA_NOV"   "num water-friendly aerosol Nov"   "kg-1"
-state    real   qnwfa_dec      igj      dyn_em      1        Z     i1  "QNWFA_DEC"   "num water-friendly aerosol Dec"   "kg-1"
-state    real   qnifa_now      igj      dyn_em      1        Z     -   "QNIFA_NOW"   "num ice-friendly aerosol Now"   "kg-1"
-state    real   qnifa_jan      igj      dyn_em      1        Z     i1  "QNIFA_JAN"   "num ice-friendly aerosol Jan"   "kg-1"
-state    real   qnifa_feb      igj      dyn_em      1        Z     i1  "QNIFA_FEB"   "num ice-friendly aerosol Feb"   "kg-1"
-state    real   qnifa_mar      igj      dyn_em      1        Z     i1  "QNIFA_MAR"   "num ice-friendly aerosol Mar"   "kg-1"
-state    real   qnifa_apr      igj      dyn_em      1        Z     i1  "QNIFA_APR"   "num ice-friendly aerosol Apr"   "kg-1"
-state    real   qnifa_may      igj      dyn_em      1        Z     i1  "QNIFA_MAY"   "num ice-friendly aerosol May"   "kg-1"
-state    real   qnifa_jun      igj      dyn_em      1        Z     i1  "QNIFA_JUN"   "num ice-friendly aerosol Jun"   "kg-1"
-state    real   qnifa_jul      igj      dyn_em      1        Z     i1  "QNIFA_JUL"   "num ice-friendly aerosol Jul"   "kg-1"
-state    real   qnifa_aug      igj      dyn_em      1        Z     i1  "QNIFA_AUG"   "num ice-friendly aerosol Aug"   "kg-1"
-state    real   qnifa_sep      igj      dyn_em      1        Z     i1  "QNIFA_SEP"   "num ice-friendly aerosol Sep"   "kg-1"
-state    real   qnifa_oct      igj      dyn_em      1        Z     i1  "QNIFA_OCT"   "num ice-friendly aerosol Oct"   "kg-1"
-state    real   qnifa_nov      igj      dyn_em      1        Z     i1  "QNIFA_NOV"   "num ice-friendly aerosol Nov"   "kg-1"
-state    real   qnifa_dec      igj      dyn_em      1        Z     i1  "QNIFA_DEC"   "num ice-friendly aerosol Dec"   "kg-1"
+state    real   qnwfa_gc       igj      dyn_em      1        Z     i1  "QNWFA"   "water-friendly aerosol  num concentration"   "# kg-1"
+state    real   qnifa_gc       igj      dyn_em      1        Z     i1  "QNIFA"   "water-friendly aerosol  num concentration"   "# kg-1"
+state    real   qnwfa_now      igj      dyn_em      1        Z     -   "QNWFA_NOW"   "num water-friendly aerosol Now"   "# kg-1"
+state    real   qnwfa_jan      igj      dyn_em      1        Z     i1  "QNWFA_JAN"   "num water-friendly aerosol Jan"   "# kg-1"
+state    real   qnwfa_feb      igj      dyn_em      1        Z     i1  "QNWFA_FEB"   "num water-friendly aerosol Feb"   "# kg-1"
+state    real   qnwfa_mar      igj      dyn_em      1        Z     i1  "QNWFA_MAR"   "num water-friendly aerosol Mar"   "# kg-1"
+state    real   qnwfa_apr      igj      dyn_em      1        Z     i1  "QNWFA_APR"   "num water-friendly aerosol Apr"   "# kg-1"
+state    real   qnwfa_may      igj      dyn_em      1        Z     i1  "QNWFA_MAY"   "num water-friendly aerosol May"   "# kg-1"
+state    real   qnwfa_jun      igj      dyn_em      1        Z     i1  "QNWFA_JUN"   "num water-friendly aerosol Jun"   "# kg-1"
+state    real   qnwfa_jul      igj      dyn_em      1        Z     i1  "QNWFA_JUL"   "num water-friendly aerosol Jul"   "# kg-1"
+state    real   qnwfa_aug      igj      dyn_em      1        Z     i1  "QNWFA_AUG"   "num water-friendly aerosol Aug"   "# kg-1"
+state    real   qnwfa_sep      igj      dyn_em      1        Z     i1  "QNWFA_SEP"   "num water-friendly aerosol Sep"   "# kg-1"
+state    real   qnwfa_oct      igj      dyn_em      1        Z     i1  "QNWFA_OCT"   "num water-friendly aerosol Oct"   "# kg-1"
+state    real   qnwfa_nov      igj      dyn_em      1        Z     i1  "QNWFA_NOV"   "num water-friendly aerosol Nov"   "# kg-1"
+state    real   qnwfa_dec      igj      dyn_em      1        Z     i1  "QNWFA_DEC"   "num water-friendly aerosol Dec"   "# kg-1"
+state    real   qnifa_now      igj      dyn_em      1        Z     -   "QNIFA_NOW"   "num ice-friendly aerosol Now"   "# kg-1"
+state    real   qnifa_jan      igj      dyn_em      1        Z     i1  "QNIFA_JAN"   "num ice-friendly aerosol Jan"   "# kg-1"
+state    real   qnifa_feb      igj      dyn_em      1        Z     i1  "QNIFA_FEB"   "num ice-friendly aerosol Feb"   "# kg-1"
+state    real   qnifa_mar      igj      dyn_em      1        Z     i1  "QNIFA_MAR"   "num ice-friendly aerosol Mar"   "# kg-1"
+state    real   qnifa_apr      igj      dyn_em      1        Z     i1  "QNIFA_APR"   "num ice-friendly aerosol Apr"   "# kg-1"
+state    real   qnifa_may      igj      dyn_em      1        Z     i1  "QNIFA_MAY"   "num ice-friendly aerosol May"   "# kg-1"
+state    real   qnifa_jun      igj      dyn_em      1        Z     i1  "QNIFA_JUN"   "num ice-friendly aerosol Jun"   "# kg-1"
+state    real   qnifa_jul      igj      dyn_em      1        Z     i1  "QNIFA_JUL"   "num ice-friendly aerosol Jul"   "# kg-1"
+state    real   qnifa_aug      igj      dyn_em      1        Z     i1  "QNIFA_AUG"   "num ice-friendly aerosol Aug"   "# kg-1"
+state    real   qnifa_sep      igj      dyn_em      1        Z     i1  "QNIFA_SEP"   "num ice-friendly aerosol Sep"   "# kg-1"
+state    real   qnifa_oct      igj      dyn_em      1        Z     i1  "QNIFA_OCT"   "num ice-friendly aerosol Oct"   "# kg-1"
+state    real   qnifa_nov      igj      dyn_em      1        Z     i1  "QNIFA_NOV"   "num ice-friendly aerosol Nov"   "# kg-1"
+state    real   qnifa_dec      igj      dyn_em      1        Z     i1  "QNIFA_DEC"   "num ice-friendly aerosol Dec"   "# kg-1"
 state    real   qntemp         imj      dyn_em      1        Z     -   "QNTEMP"     "temporary var for time interp"    ""
 state    real   qntemp2        ij       dyn_em      1        -     -   "QNTEMP2"    "temporary var2D for time interp"  ""
 state    real   t_max_p        ij       dyn_em      1        -     i0d  "T_MAX_P"   "temperature at max pressure"         "K"
@@ -523,17 +523,18 @@ state   real    qnn            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QNCCN"         "CCN Number concentration" "# kg(-1)"
 state   real    qnc            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QNCLOUD"       "cloud water Number concentration" "# kg(-1)"
-state   real    qnwfa          ikjftb  scalar      1         -     \
-   i0rhusdf=(bdy_interp:dt)    "QNWFA"         "water-friendly aerosol number con" "# kg(-1)"
-state   real    qnifa          ikjftb  scalar      1         -     \
-   i0rhusdf=(bdy_interp:dt)    "QNIFA"         "ice-friendly aerosol number con"   "# kg(-1)"
 state   real    qvolg          ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QVGRAUPEL"     "Graupel Particle Volume" "m(3) kg(-1)"
 state   real    qvolh          ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QVHAIL"        "Hail Particle Volume" "m(3) kg(-1)"
 state   real    qrimef         ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QRIMEF"        "rime factor * qi" "kg kg-1"
-
+state   real    qir            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QIR"           "Rime ice mass-1 mixing ratio" "kg kg(-1)"
+state   real    qib            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QIB"           "Rime ice volume-1 mixing ratio" "m(3) kg(-1)"
+state   real    ssat           ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "SSAT"           "Absolute supersaturation" "kg kg(-1)"
 
 state   real    -              ikjftb  dfi_scalar      1         -     -   -
 state   real    dfi_qndrop     ikjftb  dfi_scalar      1         -     \
@@ -554,14 +555,16 @@ state   real    dfi_qnn        ikjftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNCC"      "DFI CNN Number concentration"   "# kg(-1)"
 state   real    dfi_qnc        ikjftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNCLOUD"   "DFI Cloud Number concentration" "# kg(-1)"
-state   real    dfi_qnwfa      ikjftb  dfi_scalar      1         -     \
-   i0rhusdf=(bdy_interp:dt) "DFI_QNWFA"     "DFI water-friendly aerosol number con" "# kg(-1)"
-state   real    dfi_qnifa      ikjftb  dfi_scalar      1         -     \
-   i0rhusdf=(bdy_interp:dt) "DFI_QNIFA"     "DFI ice-friendly aerosol number con"   "# kg(-1)"
 state   real    dfi_qvolg      ikjftb  dfi_scalar      1         -     \
    rhusdf=(bdy_interp:dt)   "DFI_QVGRAUPEL" "DFI Graupel Particle Volume" "m(3) kg(-1)"
 state   real    dfi_qvolh     ikjftb  dfi_scalar      1         -     \
    rhusdf=(bdy_interp:dt)   "DFI_QVHAIL"    "DFI Hail Particle Volume" "m(3) kg(-1)"
+state   real    dfi_qir        ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)    "DFI_QIR"    "DFI Rime ice mass-1 mixing ratio" "kg kg(-1)"
+state   real    dfi_qib        ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)    "DFI_QIB"    "DFI Rime ice volume-1 mixing ratio" "m(3) kg(-1)"
+state   real    dfi_ssat       ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)    "DFI_SSAT"   "DFI Absolute supersaturation" "kg kg(-1)"
 state   real    dfi_qke_adv   ikjftb  dfi_scalar      1         -      \
    rusdf=(bdy_interp:dt) "dfi_qke_adv"   "DFI twice TKE from MYNN"      "m2 s-2"
 
@@ -1292,6 +1295,9 @@ state    real  SNOWNCV          ij      misc        1         -      r        "S
 state    real  GRAUPELNCV       ij      misc        1         -      r        "GRAUPELNCV"            "TIME-STEP NONCONVECTIVE GRAUPEL"                         "mm"
 state    real  HAILNCV          ij      misc        1         -      r        "HAILNCV"               "TIME-STEP NONCONVECTIVE HAIL"                            "mm"
 state    real    refl_10cm      ikj     dyn_em      1         -      hdu       "refl_10cm"             "Radar reflectivity (lamda = 10 cm)"  "dBZ"
+state    real    vmi3d          ikj     misc        1         -     hdu       "v_ice"                 "Mass-weighted ice fallspeed"  "m s-1"
+state    real    di3d           ikj     misc        1         -     hdu       "d_ice"                 "Mass-weighted mean ice size"  "m"
+state    real    rhopo3d        ikj     misc        1         -     hdu       "rho_ice"               "Mass-weighted mean ice density"  "kg m-3"
 # LIGHTNING NUDGING
 #state    real    ltg_dat        ij      misc        1         -      r         "ltg_dat"               "gridded lightning data"  "Flash per xkm x xkm per LAD_INT sec"
 # END LIGHTNING NUDGING
@@ -1479,9 +1485,9 @@ state    real  OLR              ij      misc        1         -      rh        "
 # these next 2 are for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
 # with wave model, only if compiled with -DMCELIO, JM 2003/05/29
 state    real  XLAT_U           ij      dyn_em      1         X     i012rh01du=(copy_fcnm)       "XLAT_U"              "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
-state    real  XLONG_U          ij      dyn_em      1         X     i012rh01du=(copy_fcnm)       "XLONG_U"             "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
+state    real  XLONG_U          ij      dyn_em      1         X     i012rh01d=(interp_fcn_blint_ll:xlat_u,input_from_file)u=(copy_fcnm)       "XLONG_U"             "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
 state    real  XLAT_V           ij      dyn_em      1         Y     i012rh01du=(copy_fcnm)       "XLAT_V"              "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
-state    real  XLONG_V          ij      dyn_em      1         Y     i012rh01du=(copy_fcnm)       "XLONG_V"             "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
+state    real  XLONG_V          ij      dyn_em      1         Y     i012rh01d=(interp_fcn_blint_ll:xlat_v,input_from_file)u=(copy_fcnm)       "XLONG_V"             "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
 state    real  ALBEDO           ij      misc        1         -      rh          "ALBEDO"                   "ALBEDO"
 state    real  CLAT             ij      misc        1         -     i012rhdu=(copy_fcnm)         "CLAT"                "COMPUTATIONAL GRID LATITUDE, SOUTH IS NEGATIVE"                       "degree_north"
 state    real  ALBBCK           ij      misc        1         -     i0124rh   "ALBBCK"                "BACKGROUND ALBEDO"        ""
@@ -2611,6 +2617,8 @@ package   nssl_1mom       mp_physics==19               -             moist:qv,qc
 package   nssl_1momlfo    mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
 package   nssl_2momg      mp_physics==22               -             moist:qv,qc,qr,qi,qs,qg;scalar:qndrop,qnr,qni,qns,qng,qvolg;state:re_cloud,re_ice,re_snow
 package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow,qnwfa2d,taod5503d,taod5502d
+package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi;scalar:qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm
+package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi;scalar:qnc,ssat,qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 
 package   radar_refl      compute_radar_ref==1         -             state:refl_10cm,refd_max
@@ -2637,6 +2645,8 @@ package   nssl_2mom_dficcn  mp_physics_dfi==18       -             dfi_moist:dfi
 package   nssl_1mom_dfi     mp_physics_dfi==19       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qvolg
 package   nssl_1momlfo_dfi  mp_physics_dfi==21       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
 package   thompsonaero_dfi  mp_physics_dfi==28       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qnc,dfi_qnwfa,dfi_qnifa;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
+package   p3_1category_dfi  mp_physics_dfi==50       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
+package   p3_1category_nc_dfi  mp_physics_dfi==51    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qnc,dfi_ssat,dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
 package   etampnew_dfi      mp_physics_dfi==95       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs;dfi_scalar:dfi_qt
 
 package   noprogn       progn==0                     -             -
@@ -2714,7 +2724,7 @@ package   nocuscheme     cu_physics==0               -             -
 package   kfetascheme    cu_physics==1               -             state:w0avg
 package   bmjscheme      cu_physics==2               -             -
 package   gfscheme       cu_physics==3               -             state:cugd_qvten,cugd_tten,cugd_qvtens,cugd_ttens,cugd_qcten,xmb_shallow,k22_shallow,kbcon_shallow,ktop_shallow
-package   osasscheme     cu_physics==4               -             -
+package   scalesasscheme cu_physics==4               -             -
 package   g3scheme       cu_physics==5               -             state:cugd_qvten,cugd_tten,cugd_qvtens,cugd_ttens,cugd_qcten,xmb_shallow,k22_shallow,kbcon_shallow,ktop_shallow
 package   tiedtkescheme  cu_physics==6               -             -
 package   camzmscheme    cu_physics==7               -             state:precz,zmdt,zmdq,zmdice,zmdliq,evaptzm,fzsntzm,evsntzm,evapqzm,zmflxprc,zmflxsnw,zmntprpd,zmntsnpd,zmeiheat,cmfmc,cmfmcdzm,preccdzm,pconvb,pconvt,cape,zmmtu,zmmtv,zmmu,zmmd,zmupgu,zmupgd,zmvpgu,zmvpgd,zmicuu,zmicud,zmicvu,zmicvd,evapcdp3d,icwmrdp3d,rprddp3d,dp3d,du3d,ed3d,eu3d,md3d,mu3d,dsubcld2d,ideep2d,jt2d,maxg2d,lengath2d,dlf,rliq,tpert2d
@@ -2723,8 +2733,8 @@ package   mskfscheme     cu_physics==11              -             state:w0avg,w
 package   nsasscheme     cu_physics==14              -             -
 package   ntiedtkescheme cu_physics==16              -             -
 package   gdscheme       cu_physics==93              -             -
-package   sasscheme      cu_physics==84              -             -
-package   meso_sas       cu_physics==85              -             -
+package   sasscheme      cu_physics==94              -             -
+package   osasscheme     cu_physics==95               -             -
 package   kfscheme       cu_physics==99              -             state:w0avg
 
 package   g3tave         cu_diag==1                  -             state:GD_CLOUD,GD_CLOUD2,GD_CLDFR,GD_CLOUD_A,GD_CLOUD2_A,kbcon_deep,ktop_deep,k22_deep
@@ -2771,8 +2781,6 @@ package   scmopt         scm_force==1               -              state:z_force
 package   prec_acc       prec_acc_opt==1            -              state:prec_acc_c,prec_acc_nc,snow_acc_nc
 package   bucketropt     bucketr_opt==1             -              state:i_rainc,i_rainnc
 
-package   restofwrf      use_wps_input==0            -             -
-
 package   original_mom   momentum_adv_opt==1
 package   weno_mom       momentum_adv_opt==3
 
@@ -2797,10 +2805,6 @@ package   dfi_dfl        dfi_opt==1                  -             state:dfi_u,d
 package   dfi_ddfi       dfi_opt==2                  -             state:dfi_u,dfi_v,dfi_w,dfi_ph,dfi_phb,dfi_ph0,dfi_php,dfi_t,dfi_p,dfi_ww,dfi_mu,dfi_tke,dfi_pb,dfi_al,dfi_alt,dfi_TSLB,dfi_SMOIS,dfi_SNOW,dfi_SNOWH,dfi_CANWAT,dfi_SMFR3D,dfi_KEEPFR3DFLAG,dfi_TSK,dfi_SOILT1,dfi_TSNAV,dfi_SNOWC,dfi_QVG,dfi_rh,dfi_tten_rad
 package   dfi_tdfi       dfi_opt==3                  -             state:dfi_u,dfi_v,dfi_w,dfi_ph,dfi_phb,dfi_ph0,dfi_php,dfi_t,dfi_p,dfi_ww,dfi_mu,dfi_tke,dfi_pb,dfi_al,dfi_alt,dfi_TSLB,dfi_SMOIS,dfi_SNOW,dfi_SNOWH,dfi_CANWAT,dfi_SMFR3D,dfi_KEEPFR3DFLAG,dfi_TSK,dfi_SOILT1,dfi_TSNAV,dfi_SNOWC,dfi_QVG,dfi_rh,dfi_tten_rad
 
-package   realonly       use_wps_input==1            -            state:u_gc,v_gc,t_gc,rh_gc,ght_gc,p_gc,xlat_gc,xlong_gc,ht_gc,tsk_gc,tavgsfc,tmn_gc,pslv_gc,sct_dom_gc,scb_dom_gc,greenfrac,albedo12m,lai12m,pd_gc,psfc_gc,intq_gc,pdhs,sh_gc,cl_gc,cf_gc,qv_gc,qr_gc,qc_gc,qs_gc,qi_gc,qg_gc,qh_gc,qni_gc,icefrac_gc,prho_gc,pdrho_gc,qnr_gc,soil_layers,soil_levels,st,sm,sw,soilt,soilm,sm000007,sm007028,sm028100,sm100255,st000007,st007028,st028100,st100255,sm000010,sm010040,sm040100,sm100200,sm010200,soilm000,soilm005,soilm020,soilm040,soilm160,soilm300,sw000010,sw010040,sw040100,sw100200,sw010200,soilw000,soilw005,soilw020,soilw040,soilw160,soilw300,st000010,st010040,st040100,st100200,st010200,soilt000,soilt005,soilt020,soilt040,soilt160,soilt300,fad0_urb2d,fad135_urb2d,fad45_urb2d,pad_urb2d,fad90_urb2d,rad_urb2d,car_urb2d,h2w_urb2d,svf_urb2d,z0s_urb2d,z0r_urb2d,z0m_urb2d,zds_urb2d,zdm_urb2d,zdr_urb2d,qnwfa_gc,qnwfa_now,qnwfa_jan,qnwfa_feb,qnwfa_mar,qnwfa_apr,qnwfa_may,qnwfa_jun,qnwfa_jul,qnwfa_aug,qnwfa_sep,qnwfa_oct,qnwfa_nov,qnwfa_dec,qnifa_gc,qnifa_now,qnifa_jan,qnifa_feb,qnifa_mar,qnifa_apr,qnifa_may,qnifa_jun,qnifa_jul,qnifa_aug,qnifa_sep,qnifa_oct,qnifa_nov,qnifa_dec,qntemp,qntemp2,hgtmaxw,pmaxw,tmaxw,umaxw,vmaxw,hgttrop,ptrop,ttrop,utrop,vtrop,urb_param
-
-package   tconly         use_wps_input==2            -             state:u_gc,v_gc,t_gc,rh_gc,ght_gc,p_gc,xlat_gc,xlong_gc,ht_gc,tsk_gc,tavgsfc,tmn_gc,pslv_gc,sct_dom_gc,scb_dom_gc,greenfrac,albedo12m,pd_gc,psfc_gc,intq_gc,pdhs,sh_gc,qv_gc,qr_gc,qc_gc,qs_gc,qi_gc,qg_gc,qh_gc,qni_gc,icefrac_gc
-
 package   reg_interp    nest_interp_coord==0         -             - 
 package   flat_p_interp nest_interp_coord==1         -             state:t_max_p,ght_max_p,max_p,t_min_p,ght_min_p,min_p
 
@@ -2824,7 +2828,22 @@ package   icedepth_one   seaice_thickness_opt==1     -             state:icedept
 #Time series options for text output
 package   notseries   process_time_series==0                 -             -
 package   tseries     process_time_series==1                 -             state:ts_hour,ts_u,ts_v,ts_q,ts_t,ts_psfc,ts_glw,ts_gsw,ts_hfx,ts_lh,ts_tsk,ts_tslb,ts_clw,ts_rainc,ts_rainnc,ts_u_profile,ts_v_profile,ts_gph_profile,ts_th_profile
-                                                
+
+# WRF-HAILCAST
+state    real   HAILCAST_DHAIL1   ij     misc        1         -      -          "HAILCAST_DHAIL1"     "WRF-HAILCAST Hail Diameter, 1st rank order"     "mm"
+state    real   HAILCAST_DHAIL2   ij     misc        1         -      -          "HAILCAST_DHAIL2"     "WRF-HAILCAST Hail Diameter, 2nd rank order"     "mm"
+state    real   HAILCAST_DHAIL3   ij     misc        1         -      -          "HAILCAST_DHAIL3"     "WRF-HAILCAST Hail Diameter, 3rd rank order"     "mm"
+state    real   HAILCAST_DHAIL4   ij     misc        1         -      -          "HAILCAST_DHAIL4"     "WRF-HAILCAST Hail Diameter, 4th rank order"     "mm"
+state    real   HAILCAST_DHAIL5   ij     misc        1         -      -          "HAILCAST_DHAIL5"     "WRF-HAILCAST Hail Diameter, 5th rank order"     "mm"
+state    real   HAILCAST_DIAM_MEAN  ij   misc        1         -      rh02       "HAILCAST_DIAM_MEAN"  "WRF-HAILCAST Mean Hail Diameter"        "mm"
+state    real   HAILCAST_DIAM_STD   ij   misc        1         -      rh02       "HAILCAST_DIAM_STD"   "WRF-HAILCAST Stand. Dev. Hail Diameter" "mm"
+state    real   HAILCAST_WUP_MASK   ij     misc        1         -      r        "HAILCAST_WUP_MASK"           "Updraft mask, 1 if > 10m/s"                             ""
+state    real   HAILCAST_WDUR       ij     misc        1         -      r        "HAILCAST_WDUR"               "Updraft duration"                                       "sec"
+
+package   hailcast  hailcast_opt==1        -                    state:hailcast_diam_mean,hailcast_diam_std,hailcast_dhail1,hailcast_dhail2,hailcast_dhail3,hailcast_dhail4,hailcast_dhail5
+rconfig   integer   hailcast_opt       namelist,physics           max_domains    0       rh    "hailcast_opt"        "WRF-HAILCAST option, 1: on"                   ""
+halo      HALO_EM_PHYS_HCW   dyn_em 8:hailcast_wup_mask, hailcast_wdur
+
 # lightning
 
 state    real    ic_flashcount     ij     misc    1   -   rh    "ic_flashcount"      "Accumulated IC flash count"     "#"

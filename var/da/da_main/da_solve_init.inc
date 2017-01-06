@@ -167,7 +167,7 @@ if ( .not. anal_type_hybrid_dual_res ) then
    endif
    grid%ep%v5=0.
 
-#ifdef CLOUD_CV
+ if ( alpha_hydrometeors ) then
    !
    ! allocate grid%ep%cw
    !
@@ -213,7 +213,8 @@ if ( .not. anal_type_hybrid_dual_res ) then
       call da_error(__FILE__,__LINE__,message(1:1))
    endif
    grid%ep%gr=0.
-#endif
+ end if ! alpha_hydrometeors
+
 end if !not anal_type_hybrid_dual_res
 
    if (trace_use) call da_trace_exit("da_solve_init")

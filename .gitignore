@@ -12,4 +12,7 @@
 *.exe
 *.o
 *.mod
+*.a
 configure.wrf*
+*.backup
+*.f90

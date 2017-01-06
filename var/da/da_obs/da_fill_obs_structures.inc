@@ -138,6 +138,7 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
          ob % synop(n) % q = iv % synop(n) % q % inv
          ob % synop(n) % p = iv % synop(n) % p % inv
 
+        if ( q_error_options == 1 ) then
          ! Calculate q error from rh error:
 
          if (.not. present(uvq_direct) .or. (present(uvq_direct) .and. (.not. uvq_direct))) then
@@ -158,6 +159,7 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
 
          ! end if
          end if
+        end if !q_error_options
       end do      
    end if
 
@@ -410,10 +412,6 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
          end do
       end do
    end if
-   
-   ! [2.14] Setup pseudo observations:
-
-   if (iv%info(pseudo)%nlocal > 0) call da_setup_pseudo_obs(iv, ob)
 
    ! [2.15] Transfer scatterometer obs:
 

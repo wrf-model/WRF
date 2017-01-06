@@ -30,6 +30,12 @@ use strict;
 my $username;
 my $go_on = "";
 
+# First off: check if we are on master, and quit if we are not. We want the branch switch to be transparent to users
+my $curr_branch = `git rev-parse --abbrev-ref HEAD`;
+chomp $curr_branch;
+die "\nERROR ERROR ERROR:\nYou are currently on the branch $curr_branch\n\nThis script must be run from the master branch.\n\nCheck out the master branch, then run this script, then check out your working branch $curr_branch when the update is finished\n\n" unless $curr_branch eq "master";
+
+
 # Prompt user for their username
 print "Please enter your Github username:\n";
    while ($go_on eq "") {
@@ -56,10 +62,9 @@ print "\nStep 2: Setting the 'push' url for 'upstream' to the user's fork, to av
 ! system("git", "remote", "set-url", "--push", "upstream", $fork) or die "Can not add set push repository '$fork': $!\n";
 
 # Checkout master, fetch "upstream" commits, and perform a fastforward merge
-print "\nStep 3: Checking out master, fetching 'upstream' commits, and performing fastforward merge\n\n";
-! system("git", "checkout", "master") or die "Can not checkout master: $!\nWhat on earth did you do??\n";
-! system("git", "fetch", "upstream", "master") or die "Can not fetch upstream changes from : $!\nWhat on earth did you do??\n";
-! system("git", "merge", "--no-commit", "upstream/master") or die "\nCan not perform fastforward merge from upstream/master: $!\n\nTroubleshooting info:\n\n 1. If you receive a message 'fatal: 'upstream/master' does not point to a commit', your git version may be too old. On yellowstone, try `module load git`\n 2. If you receive a different message, there may be intervening changes; if this is expected, issue the command 'git merge upstream/master'\n";
+print "\nStep 3: Fetching 'upstream' commits, and performing fastforward merge\n\n";
+! system("git", "fetch", "upstream", "master") or die "Can not fetch upstream changes from : $!\nSomething has gone seriously wrong! Perhaps you don't have internet access?\n";
+! system("git", "merge", "--ff-only", "upstream/master") or die "\nCan not perform fastforward merge from upstream/master: $!\n\nTroubleshooting info:\n\n 1. If you receive a message 'fatal: 'upstream/master' does not point to a commit', your git version may be too old. On yellowstone, try `module load git`\n 2. If you receive a message' fatal: Not possible to fast-forward, aborting.', you have likely made local changes to the master branch of your fork. All work should be done on branches of your fork, not the master!\n";
 
 # Finally, push updated master to the Github copy of your fork:
 print "\nStep 4: Pushing updated master to fork\n\n";

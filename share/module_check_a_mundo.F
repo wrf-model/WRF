@@ -1385,6 +1385,16 @@
       END IF
 
 !-----------------------------------------------------------------------
+!  The hybrid vertical coordinate does not work with vertical refinement.
+!-----------------------------------------------------------------------
+     DO i=1,model_config_rec%max_dom
+        IF ((model_config_rec%vert_refine_method(i) .EQ. 2) .AND. (model_config_rec%hybrid_opt .EQ. 2)) THEN
+           WRITE(wrf_err_message,'(A)') '--- ERROR: The hybrid vertical coordinate does not work with vertical refinement.'
+           CALL wrf_message( wrf_err_message )
+        ENDIF
+     END DO 
+
+!-----------------------------------------------------------------------
 !  DJW Check that we're not using ndown and vertical nesting.
 !-----------------------------------------------------------------------
      DO i=1,model_config_rec%max_dom

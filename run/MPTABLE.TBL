@@ -37,6 +37,7 @@
  ISBARREN                  = 19
  ISICE                     = 24
  EBLFOREST                 = 13
+ NATURAL                   =  5
  LOW_DENSITY_RESIDENTIAL   = 31
  HIGH_DENSITY_RESIDENTIAL  = 32
  HIGH_INTENSITY_INDUSTRIAL = 33
@@ -179,6 +180,7 @@
  ISBARREN                  = 16
  ISICE                     = 15
  EBLFOREST                 =  2
+ NATURAL                   = 14
  LOW_DENSITY_RESIDENTIAL   = 31
  HIGH_DENSITY_RESIDENTIAL  = 32
  HIGH_INTENSITY_INDUSTRIAL = 33

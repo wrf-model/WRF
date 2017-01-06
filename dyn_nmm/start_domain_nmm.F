@@ -2184,6 +2184,7 @@
      &                WTXY=grid%WTXY, LFMASSXY=grid%LFMASSXY, RTMASSXY=grid%RTMASSXY,    & ! Optional Noah-MP
      &                STMASSXY=grid%STMASSXY, WOODXY=grid%WOODXY,                        & ! Optional Noah-MP
      &                GRAINXY=grid%GRAINXY, GDDXY=grid%GDDXY,                            & ! Optional Noah-MP
+     &                CROPTYPE=grid%CROPTYPE, CROPCAT=grid%CROPCAT,                      & ! Optional Noah-MP
      &                STBLCPXY=grid%STBLCPXY, FASTCPXY=grid%FASTCPXY,                    & ! Optional Noah-MP
      &                XSAIXY=grid%XSAIXY,LAI=grid%LAI,                                   & ! Optional Noah-MP
      &                T2MVXY=grid%T2MVXY, T2MBXY=grid%T2MBXY, CHSTARXY=grid%CHSTARXY,    & ! Optional Noah-MP

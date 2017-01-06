@@ -12,7 +12,8 @@ CONTAINS
   SUBROUTINE noahmplsm(ITIMESTEP,        YR,   JULIAN,   COSZIN,XLAT,XLONG, & ! IN : Time/Space-related
                   DZ8W,       DT,       DZS,    NSOIL,       DX,            & ! IN : Model configuration 
 	        IVGTYP,   ISLTYP,    VEGFRA,   VEGMAX,      TMN,            & ! IN : Vegetation/Soil characteristics
-		 XLAND,     XICE,XICE_THRES,                                & ! IN : Vegetation/Soil characteristics
+		 XLAND,     XICE,XICE_THRES,  CROPCAT,                      & ! IN : Vegetation/Soil characteristics
+	       PLANTING,  HARVEST,SEASON_GDD,                               &
                  IDVEG, IOPT_CRS,  IOPT_BTR, IOPT_RUN, IOPT_SFC, IOPT_FRZ,  & ! IN : User options
               IOPT_INF, IOPT_RAD,  IOPT_ALB, IOPT_SNF,IOPT_TBOT, IOPT_STC,  & ! IN : User options
               IOPT_GLA, IOPT_RSF,   IZ0TLND, SF_URBAN_PHYSICS,              & ! IN : User options
@@ -28,7 +29,7 @@ CONTAINS
                QSNOWXY, WSLAKEXY,    ZWTXY,      WAXY,     WTXY,    TSNOXY, & ! IN/OUT Noah MP only
 	       ZSNSOXY,  SNICEXY,  SNLIQXY,  LFMASSXY, RTMASSXY,  STMASSXY, & ! IN/OUT Noah MP only
 	        WOODXY, STBLCPXY, FASTCPXY,    XLAIXY,   XSAIXY,   TAUSSXY, & ! IN/OUT Noah MP only
-	       SMOISEQ, SMCWTDXY,DEEPRECHXY,   RECHXY,  GRAINXY,    GDDXY,  & ! IN/OUT Noah MP only
+	       SMOISEQ, SMCWTDXY,DEEPRECHXY,   RECHXY,  GRAINXY,    GDDXY,PGSXY,  & ! IN/OUT Noah MP only
 	        T2MVXY,   T2MBXY,    Q2MVXY,   Q2MBXY,                      & ! OUT Noah MP only
 	        TRADXY,    NEEXY,    GPPXY,     NPPXY,   FVEGXY,   RUNSFXY, & ! OUT Noah MP only
 	       RUNSBXY,   ECANXY,   EDIRXY,   ETRANXY,    FSAXY,    FIRAXY, & ! OUT Noah MP only
@@ -51,7 +52,7 @@ CONTAINS
     USE MODULE_SF_NOAHMPLSM
 !    USE MODULE_SF_NOAHMPLSM, only: noahmp_options, NOAHMP_SFLX, noahmp_parameters
     USE module_sf_noahmp_glacier
-    USE NOAHMP_TABLES, ONLY: ISICE_TABLE, CO2_TABLE, O2_TABLE, ISURBAN_TABLE, NATURAL_TABLE, &
+    USE NOAHMP_TABLES, ONLY: ISICE_TABLE, CO2_TABLE, O2_TABLE, DEFAULT_CROP_TABLE, ISURBAN_TABLE, NATURAL_TABLE, &
                              LOW_DENSITY_RESIDENTIAL_TABLE, HIGH_DENSITY_RESIDENTIAL_TABLE, HIGH_INTENSITY_INDUSTRIAL_TABLE
     USE module_sf_urban,    only: IRI_SCHEME
     USE module_ra_gfdleta,  only: cal_mon_day
@@ -113,6 +114,16 @@ CONTAINS
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ), OPTIONAL ::  MP_SNOW   ! snow precipitation entering land model [mm]       ! MB/AN : v3.7
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ), OPTIONAL ::  MP_GRAUP  ! graupel precipitation entering land model [mm]    ! MB/AN : v3.7
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ), OPTIONAL ::  MP_HAIL   ! hail precipitation entering land model [mm]       ! MB/AN : v3.7
+
+! Crop Model
+    INTEGER, DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  CROPCAT   ! crop catagory
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  PLANTING  ! planting date
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  HARVEST   ! harvest date
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  SEASON_GDD! growing season GDD
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  GRAINXY   ! mass of grain XING [g/m2]
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  GDDXY     ! growing degree days XING (based on 10C) 
+ INTEGER,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  PGSXY
+
 #ifdef WRF_HYDRO
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  sfcheadrt,INFXSRT,soldrain   ! for WRF-Hydro
 #endif
@@ -182,8 +193,6 @@ CONTAINS
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  RTMASSXY  ! mass of fine roots [g/m2]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  STMASSXY  ! stem mass [g/m2]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  WOODXY    ! mass of wood (incl. woody roots) [g/m2]
-    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  GRAINXY   ! mass of grain XING [g/m2]
-    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  GDDXY     ! growing degree days XING (based on 10C) 
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  STBLCPXY  ! stable carbon in deep soil [g/m2]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  FASTCPXY  ! short-lived carbon, shallow soil [g/m2]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  XLAIXY    ! leaf area index
@@ -254,6 +263,7 @@ CONTAINS
     REAL                                :: Z_ML         ! model height [m]
     INTEGER                             :: VEGTYP       ! vegetation type
     INTEGER                             :: SOILTYP      ! soil type
+    INTEGER                             :: CROPTYPE     ! crop type
     REAL                                :: FVEG         ! vegetation fraction [-]
     REAL                                :: FVGMAX       ! annual max vegetation fraction []
     REAL                                :: TBOT         ! deep soil temperature [K]
@@ -319,7 +329,8 @@ CONTAINS
     REAL                                :: STMASS       ! stem mass [g/m2]
     REAL                                :: WOOD         ! mass of wood (incl. woody roots) [g/m2]
     REAL                                :: GRAIN        ! mass of grain XING [g/m2]
-    REAL                                :: GDD        ! mass of grain XING[g/m2]
+    REAL                                :: GDD          ! mass of grain XING[g/m2]
+    INTEGER                             :: PGS          !stem respiration [g/m2/s]
     REAL                                :: STBLCP       ! stable carbon in deep soil [g/m2]
     REAL                                :: FASTCP       ! short-lived carbon, shallow soil [g/m2]
     REAL                                :: PLAI         ! leaf area index
@@ -508,6 +519,15 @@ CONTAINS
        PSFC   = P8W3D(I,1,J)                          ! surface pressure defined a full levels [Pa]
        PRCP   = PRECIP_IN (I,J) / DT                  ! timestep total precip rate (glacier) [mm/s]! MB: v3.7
 
+       CROPTYPE = 0
+       IF (IDVEG == 10) CROPTYPE = DEFAULT_CROP_TABLE ! default croptype is generic dynamic vegetation crop
+       IF (IDVEG == 10 .AND. CROPCAT(I,J) > 0) THEN
+         CROPTYPE = CROPCAT(I,J)                      ! crop type
+	 VEGTYP = 12
+         FVGMAX = 0.95
+	 FVEG   = 0.95
+       END IF
+
        IF (PRESENT(MP_RAINC) .AND. PRESENT(MP_RAINNC) .AND. PRESENT(MP_SHCV) .AND. &
            PRESENT(MP_SNOW)  .AND. PRESENT(MP_GRAUP)  .AND. PRESENT(MP_HAIL)   ) THEN
 
@@ -567,8 +587,6 @@ CONTAINS
        RTMASS                = RTMASSXY(I,J)                ! root mass
        STMASS                = STMASSXY(I,J)                ! stem mass
        WOOD                  = WOODXY  (I,J)                ! mass of wood (incl. woody roots) [g/m2]
-       GRAIN                 = GRAINXY (I,J)                ! mass of grain XING [g/m2]
-       GDD                   = GDDXY (I,J)                  ! growing degree days XING
        STBLCP                = STBLCPXY(I,J)                ! stable carbon pool
        FASTCP                = FASTCPXY(I,J)                ! fast carbon pool
        PLAI                  = XLAIXY  (I,J)                ! leaf area index [-] (no snow effects)
@@ -614,7 +632,21 @@ CONTAINS
 !       parameters%refdk  = REFDK_2D (I,J)         ! Reference Soil Conductivity
 !       parameters%refkdt = REFKDT_2D(I,J)         ! Soil Infiltration Parameter
 
-       CALL TRANSFER_MP_PARAMETERS(VEGTYP,SOILTYP,SLOPETYP,SOILCOLOR,parameters)
+       CALL TRANSFER_MP_PARAMETERS(VEGTYP,SOILTYP,SLOPETYP,SOILCOLOR,CROPTYPE,parameters)
+       
+       GRAIN = GRAINXY (I,J)                ! mass of grain XING [g/m2]
+       GDD   = GDDXY (I,J)                  ! growing degree days XING
+       PGS   = PGSXY (I,J)                  ! growing degree days XING
+
+       if(idveg == 10 .and. croptype > 0) then
+         parameters%PLTDAY = PLANTING(I,J)
+	 parameters%HSDAY  = HARVEST (I,J)
+	 parameters%GDDS1  = SEASON_GDD(I,J) / 1770.0 * parameters%GDDS1
+	 parameters%GDDS2  = SEASON_GDD(I,J) / 1770.0 * parameters%GDDS2
+	 parameters%GDDS3  = SEASON_GDD(I,J) / 1770.0 * parameters%GDDS3
+	 parameters%GDDS4  = SEASON_GDD(I,J) / 1770.0 * parameters%GDDS4
+	 parameters%GDDS5  = SEASON_GDD(I,J) / 1770.0 * parameters%GDDS5
+       end if
 
 !=== hydrological processes for vegetation in urban model ===
 !=== irrigate vegetaion only in urban area, MAY-SEP, 9-11pm
@@ -740,7 +772,7 @@ CONTAINS
          CALL NOAHMP_SFLX (parameters, &
             I       , J       , LAT     , YEARLEN , JULIAN  , COSZ    , & ! IN : Time/Space-related
             DT      , DX      , DZ8W1D  , NSOIL   , ZSOIL   , NSNOW   , & ! IN : Model configuration 
-            FVEG    , FVGMAX  , VEGTYP  , ICE     , IST     ,           & ! IN : Vegetation/Soil characteristics
+            FVEG    , FVGMAX  , VEGTYP  , ICE     , IST     , CROPTYPE, & ! IN : Vegetation/Soil characteristics
             SMCEQ   ,                                                   & ! IN : Vegetation/Soil characteristics
             T_ML    , P_ML    , PSFC    , U_ML    , V_ML    , Q_ML    , & ! IN : Forcing
             QC      , SWDN    , LWDN    ,                               & ! IN : Forcing
@@ -753,7 +785,7 @@ CONTAINS
             ZWT     , WA      , WT      , WSLAKE  , LFMASS  , RTMASS  , & ! IN/OUT : 
             STMASS  , WOOD    , STBLCP  , FASTCP  , PLAI    , PSAI    , & ! IN/OUT : 
             CM      , CH      , TAUSS   ,                               & ! IN/OUT : 
-            GRAIN   , GDD     ,                                         & ! IN/OUT 
+            GRAIN   , GDD     , PGS     ,                               & ! IN/OUT 
             SMCWTD  ,DEEPRECH , RECH    ,                               & ! IN/OUT :
             Z0WRF   ,                                                   &
             FSA     , FSR     , FIRA    , FSH     , SSOIL   , FCEV    , & ! OUT : 
@@ -834,8 +866,6 @@ CONTAINS
              RTMASSXY (I,J)                = RTMASS
              STMASSXY (I,J)                = STMASS
              WOODXY   (I,J)                = WOOD
-             GRAINXY  (I,J)                = GRAIN !GRAIN XING
-             GDDXY    (I,J)                = GDD   !XING 
              STBLCPXY (I,J)                = STBLCP
              FASTCPXY (I,J)                = FASTCP
              XLAIXY   (I,J)                = PLAI
@@ -894,6 +924,10 @@ CONTAINS
              DEEPRECHXY(I,J)               = DEEPRECHXY(I,J) + DEEPRECH
              SMCWTDXY(I,J)                 = SMCWTD
 
+             GRAINXY  (I,J) = GRAIN !GRAIN XING
+             GDDXY    (I,J) = GDD   !XING 
+	     PGSXY    (I,J) = PGS
+
           ENDIF                                                         ! endif of land-sea test
 
       ENDDO ILOOP                                                       ! of I loop
@@ -903,7 +937,7 @@ CONTAINS
   END SUBROUTINE noahmplsm
 !------------------------------------------------------
 
-SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,parameters)
+SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,parameters)
 
   USE NOAHMP_TABLES
   USE MODULE_SF_NOAHMPLSM
@@ -914,6 +948,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,parameter
   INTEGER, INTENT(IN)    :: SOILTYPE
   INTEGER, INTENT(IN)    :: SLOPETYPE
   INTEGER, INTENT(IN)    :: SOILCOLOR
+  INTEGER, INTENT(IN)    :: CROPTYPE
     
   type (noahmp_parameters), intent(inout) :: parameters
     
@@ -925,6 +960,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,parameter
   parameters%ISWATER   =   ISWATER_TABLE
   parameters%ISBARREN  =  ISBARREN_TABLE
   parameters%ISICE     =     ISICE_TABLE
+  parameters%ISCROP    =    ISCROP_TABLE
   parameters%EBLFOREST = EBLFOREST_TABLE
 
   parameters%URBAN_FLAG = .FALSE.
@@ -1008,44 +1044,46 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,parameter
 ! Transfer crop parameters
 !------------------------------------------------------------------------------------------!
 
-   parameters%PLTDAY    =    PLTDAY_TABLE(1)    ! Planting date
-   parameters%HSDAY     =     HSDAY_TABLE(1)    ! Harvest date
-   parameters%PLANTPOP  =  PLANTPOP_TABLE(1)    ! Plant density [per ha] - used?
-   parameters%IRRI      =      IRRI_TABLE(1)    ! Irrigation strategy 0= non-irrigation 1=irrigation (no water-stress)
-   parameters%GDDTBASE  =  GDDTBASE_TABLE(1)    ! Base temperature for GDD accumulation [C]
-   parameters%GDDTCUT   =   GDDTCUT_TABLE(1)    ! Upper temperature for GDD accumulation [C]
-   parameters%GDDS1     =     GDDS1_TABLE(1)    ! GDD from seeding to emergence
-   parameters%GDDS2     =     GDDS2_TABLE(1)    ! GDD from seeding to initial vegetative 
-   parameters%GDDS3     =     GDDS3_TABLE(1)    ! GDD from seeding to post vegetative 
-   parameters%GDDS4     =     GDDS4_TABLE(1)    ! GDD from seeding to intial reproductive
-   parameters%GDDS5     =     GDDS5_TABLE(1)    ! GDD from seeding to pysical maturity 
-   parameters%C3C4      =      C3C4_TABLE(1)    ! photosynthetic pathway:  1. = c3 2. = c4
-   parameters%AREF      =      AREF_TABLE(1)    ! reference maximum CO2 assimulation rate 
-   parameters%PSNRF     =     PSNRF_TABLE(1)    ! CO2 assimulation reduction factor(0-1) (caused by non-modeling part,e.g.pest,weeds)
-   parameters%I2PAR     =     I2PAR_TABLE(1)    ! Fraction of incoming solar radiation to photosynthetically active radiation
-   parameters%TASSIM0   =   TASSIM0_TABLE(1)    ! Minimum temperature for CO2 assimulation [C]
-   parameters%TASSIM1   =   TASSIM1_TABLE(1)    ! CO2 assimulation linearly increasing until temperature reaches T1 [C]
-   parameters%TASSIM2   =   TASSIM2_TABLE(1)    ! CO2 assmilation rate remain at Aref until temperature reaches T2 [C]
-   parameters%K         =         K_TABLE(1)    ! light extinction coefficient
-   parameters%EPSI      =      EPSI_TABLE(1)    ! initial light use efficiency
-   parameters%Q10MR     =     Q10MR_TABLE(1)    ! q10 for maintainance respiration
-   parameters%FOLN_MX   =   FOLN_MX_TABLE(1)    ! foliage nitrogen concentration when f(n)=1 (%)
-   parameters%LEFREEZ   =   LEFREEZ_TABLE(1)    ! characteristic T for leaf freezing [K]
-   parameters%DILE_FC   =   DILE_FC_TABLE(1,:)  ! coeficient for temperature leaf stress death [1/s]
-   parameters%DILE_FW   =   DILE_FW_TABLE(1,:)  ! coeficient for water leaf stress death [1/s]
-   parameters%FRA_GR    =    FRA_GR_TABLE(1)    ! fraction of growth respiration
-   parameters%LF_OVRC   =   LF_OVRC_TABLE(1,:)  ! fraction of leaf turnover  [1/s]
-   parameters%ST_OVRC   =   ST_OVRC_TABLE(1,:)  ! fraction of stem turnover  [1/s]
-   parameters%RT_OVRC   =   RT_OVRC_TABLE(1,:)  ! fraction of root tunrover  [1/s]
-   parameters%LFMR25    =    LFMR25_TABLE(1)    ! leaf maintenance respiration at 25C [umol CO2/m**2  /s]
-   parameters%STMR25    =    STMR25_TABLE(1)    ! stem maintenance respiration at 25C [umol CO2/kg bio/s]
-   parameters%RTMR25    =    RTMR25_TABLE(1)    ! root maintenance respiration at 25C [umol CO2/kg bio/s]
-   parameters%GRAINMR25 = GRAINMR25_TABLE(1)    ! grain maintenance respiration at 25C [umol CO2/kg bio/s]
-   parameters%LFPT      =      LFPT_TABLE(1,:)  ! fraction of carbohydrate flux to leaf
-   parameters%STPT      =      STPT_TABLE(1,:)  ! fraction of carbohydrate flux to stem
-   parameters%RTPT      =      RTPT_TABLE(1,:)  ! fraction of carbohydrate flux to root
-   parameters%GRAINPT   =   GRAINPT_TABLE(1,:)  ! fraction of carbohydrate flux to grain
-   parameters%BIO2LAI   =   BIO2LAI_TABLE(1)    ! leaf are per living leaf biomass [m^2/kg]
+  IF(CROPTYPE > 0) THEN
+   parameters%PLTDAY    =    PLTDAY_TABLE(CROPTYPE)    ! Planting date
+   parameters%HSDAY     =     HSDAY_TABLE(CROPTYPE)    ! Harvest date
+   parameters%PLANTPOP  =  PLANTPOP_TABLE(CROPTYPE)    ! Plant density [per ha] - used?
+   parameters%IRRI      =      IRRI_TABLE(CROPTYPE)    ! Irrigation strategy 0= non-irrigation 1=irrigation (no water-stress)
+   parameters%GDDTBASE  =  GDDTBASE_TABLE(CROPTYPE)    ! Base temperature for GDD accumulation [C]
+   parameters%GDDTCUT   =   GDDTCUT_TABLE(CROPTYPE)    ! Upper temperature for GDD accumulation [C]
+   parameters%GDDS1     =     GDDS1_TABLE(CROPTYPE)    ! GDD from seeding to emergence
+   parameters%GDDS2     =     GDDS2_TABLE(CROPTYPE)    ! GDD from seeding to initial vegetative 
+   parameters%GDDS3     =     GDDS3_TABLE(CROPTYPE)    ! GDD from seeding to post vegetative 
+   parameters%GDDS4     =     GDDS4_TABLE(CROPTYPE)    ! GDD from seeding to intial reproductive
+   parameters%GDDS5     =     GDDS5_TABLE(CROPTYPE)    ! GDD from seeding to pysical maturity 
+   parameters%C3C4      =      C3C4_TABLE(CROPTYPE)    ! photosynthetic pathway:  1. = c3 2. = c4
+   parameters%AREF      =      AREF_TABLE(CROPTYPE)    ! reference maximum CO2 assimulation rate 
+   parameters%PSNRF     =     PSNRF_TABLE(CROPTYPE)    ! CO2 assimulation reduction factor(0-1) (caused by non-modeling part,e.g.pest,weeds)
+   parameters%I2PAR     =     I2PAR_TABLE(CROPTYPE)    ! Fraction of incoming solar radiation to photosynthetically active radiation
+   parameters%TASSIM0   =   TASSIM0_TABLE(CROPTYPE)    ! Minimum temperature for CO2 assimulation [C]
+   parameters%TASSIM1   =   TASSIM1_TABLE(CROPTYPE)    ! CO2 assimulation linearly increasing until temperature reaches T1 [C]
+   parameters%TASSIM2   =   TASSIM2_TABLE(CROPTYPE)    ! CO2 assmilation rate remain at Aref until temperature reaches T2 [C]
+   parameters%K         =         K_TABLE(CROPTYPE)    ! light extinction coefficient
+   parameters%EPSI      =      EPSI_TABLE(CROPTYPE)    ! initial light use efficiency
+   parameters%Q10MR     =     Q10MR_TABLE(CROPTYPE)    ! q10 for maintainance respiration
+   parameters%FOLN_MX   =   FOLN_MX_TABLE(CROPTYPE)    ! foliage nitrogen concentration when f(n)=1 (%)
+   parameters%LEFREEZ   =   LEFREEZ_TABLE(CROPTYPE)    ! characteristic T for leaf freezing [K]
+   parameters%DILE_FC   =   DILE_FC_TABLE(CROPTYPE,:)  ! coeficient for temperature leaf stress death [1/s]
+   parameters%DILE_FW   =   DILE_FW_TABLE(CROPTYPE,:)  ! coeficient for water leaf stress death [1/s]
+   parameters%FRA_GR    =    FRA_GR_TABLE(CROPTYPE)    ! fraction of growth respiration
+   parameters%LF_OVRC   =   LF_OVRC_TABLE(CROPTYPE,:)  ! fraction of leaf turnover  [1/s]
+   parameters%ST_OVRC   =   ST_OVRC_TABLE(CROPTYPE,:)  ! fraction of stem turnover  [1/s]
+   parameters%RT_OVRC   =   RT_OVRC_TABLE(CROPTYPE,:)  ! fraction of root tunrover  [1/s]
+   parameters%LFMR25    =    LFMR25_TABLE(CROPTYPE)    ! leaf maintenance respiration at 25C [umol CO2/m**2  /s]
+   parameters%STMR25    =    STMR25_TABLE(CROPTYPE)    ! stem maintenance respiration at 25C [umol CO2/kg bio/s]
+   parameters%RTMR25    =    RTMR25_TABLE(CROPTYPE)    ! root maintenance respiration at 25C [umol CO2/kg bio/s]
+   parameters%GRAINMR25 = GRAINMR25_TABLE(CROPTYPE)    ! grain maintenance respiration at 25C [umol CO2/kg bio/s]
+   parameters%LFPT      =      LFPT_TABLE(CROPTYPE,:)  ! fraction of carbohydrate flux to leaf
+   parameters%STPT      =      STPT_TABLE(CROPTYPE,:)  ! fraction of carbohydrate flux to stem
+   parameters%RTPT      =      RTPT_TABLE(CROPTYPE,:)  ! fraction of carbohydrate flux to root
+   parameters%GRAINPT   =   GRAINPT_TABLE(CROPTYPE,:)  ! fraction of carbohydrate flux to grain
+   parameters%BIO2LAI   =   BIO2LAI_TABLE(CROPTYPE)    ! leaf are per living leaf biomass [m^2/kg]
+  END IF
 
 !------------------------------------------------------------------------------------------!
 ! Transfer global parameters
@@ -1113,6 +1151,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,parameter
        wtxy     ,tsnoxy   ,zsnsoxy  ,snicexy  ,snliqxy  ,lfmassxy ,rtmassxy , &
        stmassxy ,woodxy   ,stblcpxy ,fastcpxy ,xsaixy   ,lai      ,           &
        grainxy  ,gddxy    ,                                                   &
+       croptype ,cropcat  ,                      &
 !jref:start
        t2mvxy   ,t2mbxy   ,chstarxy,            &
 !jref:end       
@@ -1122,8 +1161,8 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,parameter
        ids,ide, jds,jde, kds,kde,                &
        ims,ime, jms,jme, kms,kme,                &
        its,ite, jts,jte, kts,kte,                &
-       smoiseq  ,smcwtdxy ,rechxy   ,deeprechxy, areaxy, dx, dy, msftx, msfty,&     ! Optional groundwater
-       wtddt    ,stepwtd  ,dt       ,qrfsxy     ,qspringsxy  , qslatxy    ,  &      ! Optional groundwater
+       smoiseq  ,smcwtdxy ,rechxy   ,deeprechxy, areaxy, dx, dy, msftx, msfty,& ! Optional groundwater
+       wtddt    ,stepwtd  ,dt       ,qrfsxy     ,qspringsxy  , qslatxy    ,   & ! Optional groundwater
        fdepthxy ,ht     ,riverbedxy ,eqzwt     ,rivercondxy ,pexpxy            )    ! Optional groundwater
 
   USE NOAHMP_TABLES
@@ -1197,6 +1236,9 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,parameter
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: fastcpxy    !short-lived carbon, shallow soil [g/m2]
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: xsaixy      !stem area index
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: lai         !leaf area index
+
+    INTEGER, DIMENSION(ims:ime,  jms:jme), INTENT(OUT) :: cropcat
+    REAL   , DIMENSION(ims:ime,5,jms:jme), INTENT(IN ) :: croptype
 
 ! IOPT_RUN = 5 option
 
@@ -1405,6 +1447,9 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,parameter
              woodxy     (I,J) = 0.0
              stblcpxy   (I,J) = 0.0
              fastcpxy   (I,J) = 0.0
+             grainxy    (I,J) = 1E-10
+             gddxy      (I,J) = 0
+	     cropcat    (I,J) = 0
 
 	   ELSE
 	     
@@ -1418,8 +1463,44 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,parameter
              woodxy     (I,J) = 500.0                          ! in the table or read from initialization
              stblcpxy   (I,J) = 1000.0                         !
              fastcpxy   (I,J) = 1000.0                         !
-             grainxy    (I,J) = 1E-10         ! add by XING
-             gddxy      (I,J) = 0          ! add by XING
+             grainxy    (I,J) = 1E-10
+             gddxy      (I,J) = 0    
+
+	     if(croptype(i,5,j) >= 0.5) then
+               lai     (i,j) = 0.05
+               xsaixy  (i,j) = 0.05
+               rtmassxy(i,j) = 0.0
+               woodxy  (i,j) = 0.0                    
+
+	       if(    croptype(i,1,j) > croptype(i,2,j) .and. &
+		      croptype(i,1,j) > croptype(i,3,j) .and. &
+		      croptype(i,1,j) > croptype(i,4,j) ) then   ! choose corn
+
+		   cropcat (i,j) = 1
+                   lfmassxy(i,j) = 0.05/0.035
+                   stmassxy(i,j) = 0.05/0.003
+
+	       elseif(croptype(i,2,j) > croptype(i,1,j) .and. &
+		      croptype(i,2,j) > croptype(i,3,j) .and. &
+		      croptype(i,2,j) > croptype(i,4,j) ) then   ! choose soybean
+
+		   cropcat (i,j) = 2
+                   lfmassxy(i,j) = 0.05/0.015
+                   stmassxy(i,j) = 0.05/0.003
+
+	       else
+
+		   cropcat (i,j) = default_crop_table
+                   lfmassxy(i,j) = 0.05/0.035
+                   stmassxy(i,j) = 0.05/0.003
+
+	       end if
+
+	     else   ! croptype(i,5,j) < 0.5
+
+	       cropcat (i,j) = default_crop_table
+
+	     end if
 
 	   END IF
 

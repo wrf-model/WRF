@@ -3740,7 +3740,7 @@ BENCH_START(micro_driver_tim)
       &        , QVOLH_CURR=scalar(ims,kms,jms,P_QVOLH), F_QVOLH=F_QVOLH    & ! for nssl_2mom
       &        , cu_used=config_flags%cu_used                             &
       &        , qrcuten=grid%rqrcuten, qscuten=grid%rqscuten             &
-      &        , qicuten=grid%rqicuten, qccuten=grid%rqccuten,mu=grid%mut &
+      &        , qicuten=grid%rqicuten, qccuten=grid%rqccuten             &
       &        , HAIL=config_flags%gsfcgce_hail                           & ! for gsfcgce
       &        , ICE2=config_flags%gsfcgce_2ice                           & ! for gsfcgce
 !     &        , ccntype=config_flags%milbrandt_ccntype                   & ! for milbrandt (2mom)

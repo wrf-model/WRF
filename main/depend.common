@@ -722,6 +722,7 @@ module_diagnostics_driver.o: \
 		module_diag_pld.o 			\
 		module_diag_zld.o 			\
 		module_diag_afwa.o 			\
+                module_diag_rasm.o                      \
 		../frame/module_comm_dm.o		\
 		../frame/module_state_description.o 	\
 		../frame/module_domain.o 		\

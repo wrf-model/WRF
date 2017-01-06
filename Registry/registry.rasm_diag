@@ -8,8 +8,10 @@ dimspec    dc      2     constant=8                        z     diurnal_cycles
 # Namelist parameters
 
 rconfig   integer  mean_freq              namelist,time_control   1              0      -    "mean output frequency"
-rconfig   integer  mean_interval          namelist,time_control		1              0      -    "mean output interval"
+rconfig   integer  mean_interval          namelist,time_control   1              0      -    "mean output interval"
 rconfig   integer  diurnal_cycle          namelist,time_control   1              0      -    "diurnal output mode"
+rconfig   integer  mean_diag              namelist,time_control   1              0      -    "mean diagnostics flag"
+rconfig   integer  diurnal_diag           namelist,time_control   1              0      -    "diurnal diagnostics flag"
 
 # Climate: Mean - output arrays of averages
 state    real  PSFC_MEAN       ij      misc        1         -     rh5        "PSFC_M"         "AVERAGE SURFACE PRESSURE"                                     "Pa"

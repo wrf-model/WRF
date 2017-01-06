@@ -18,12 +18,9 @@ MODULE module_diag_rasm
 CONTAINS
 
   SUBROUTINE mean_output_calc(                    &
-        ids, ide, jds, jde, kds, kde              &
-       ,ims, ime, jms, jme, kms, kme              &
-       ,ips, ipe, jps, jpe, kps, kpe              & ! patch  dims
-       ,i_start, i_end, j_start, j_end            &
-       ,num_tiles, is_restart                     &
-       ,mean_interval, dt, xtime                  &
+        is_restart, currentTime                   &
+       ,stats_interval, output_freq, run_days     &
+       ,dt, xtime                                 &
        ,psfc, psfc_mean, tsk, tsk_mean            &
        ,pmsl_mean, t2, t2_mean                    &
        ,t, p, pb, moist, ht                       & ! vars for pmsl calc
@@ -34,15 +31,21 @@ CONTAINS
        ,lwupb, lwupb_mean, swupb, swupb_mean      &
        ,swupt, swupt_mean, swdnt, swdnt_mean      &
        ,lwupt, lwupt_mean, lwdnt, lwdnt_mean      &
-       ,currenttime                               &
-       ,output_freq, avgoutalarm, avgOutDateStr   &
+       ,avgoutalarm, avgOutDateStr   &
        ,nsteps                                    &
+       ,ids, ide, jds, jde, kds, kde              &
+       ,ims, ime, jms, jme, kms, kme              &
+       ,ips, ipe, jps, jpe, kps, kpe              & ! patch  dims
+       ,i_start, i_end, j_start, j_end            &
+       ,num_tiles                                 &
        )
     !----------------------------------------------------------------------
 
     ! USES:
     USE module_utility
     USE module_model_constants
+    USE module_streams
+    USE module_domain, ONLY : domain_clock_get
 
     IMPLICIT NONE
     !======================================================================
@@ -66,11 +69,12 @@ CONTAINS
     INTEGER, INTENT(IN)                       :: ids, ide, jds, jde, kds, kde
     INTEGER, INTENT(IN)                       :: ips, ipe, jps, jpe, kps, kpe
     INTEGER, INTENT(IN)                       :: num_tiles
-    INTEGER, INTENT(IN)                       :: mean_interval
+    INTEGER, INTENT(IN)                       :: stats_interval
+    INTEGER, INTENT(IN)                       :: output_freq            ! interval type
+    INTEGER, INTENT(IN)                       :: run_days
     INTEGER, DIMENSION(num_tiles), INTENT(IN) :: i_start, i_end, j_start, j_end
     TYPE(WRFU_Time), INTENT(IN)               :: currentTime
     TYPE(WRFU_Alarm), INTENT(INOUT)           :: avgOutAlarm
-    INTEGER, INTENT(IN)                       :: output_freq            ! interval type
     INTEGER, INTENT(INOUT)                    :: nsteps                 ! number of step accumulated
     CHARACTER(*), INTENT(INOUT)               :: avgOutDateStr
 
@@ -102,8 +106,35 @@ CONTAINS
     LOGICAL     :: is_reset               ! reset averages
     LOGICAL     :: compute_avg            ! compute averages
 
+    INTEGER            :: mean_interval   ! interval (s) of mean calculations
+    
     ! DEBUG LOCAL  VAR
     CHARACTER (LEN=1024)  :: message
+   
+    IF ( output_freq .eq. MONTHLY) THEN  
+      mean_interval = (run_days + 1) * 24 * 60 * 60
+      WRITE(message, *) "RASM Diagnostics: Set average output to MONTHLY_INTERVAL ... "
+      CALL wrf_debug(200, message) 
+    ELSE IF (output_freq .eq. DAYS ) THEN
+      mean_interval = stats_interval  * 24 * 60 * 60
+      WRITE(message, *) "RASM Diagnostics: Set average output to DAYS  ... mean_interval (secs) =", mean_interval
+      CALL wrf_debug(200, message)   
+    ELSE IF (output_freq .eq. HRS ) THEN    
+      mean_interval =  stats_interval * 60 * 60
+      WRITE(message, *) "RASM Diagnostics: Set average output to HRS  ... mean_interval (secs) =", mean_interval
+      CALL wrf_debug(200, message)  
+    ELSE IF (output_freq .eq. MINS ) THEN    
+      mean_interval = stats_interval * 60
+      WRITE(message, *) "RASM Diagnostics: Set average output to MINS  ... mean_interval (secs) =", mean_interval
+      CALL wrf_debug(200, message)   
+    ELSE IF (output_freq .eq. SECS ) THEN 
+      mean_interval = stats_interval
+      WRITE(message, *) "RASM Diagnostics: Set average output to SECS  ... mean_interval (secs) =", mean_interval
+      CALL wrf_debug(200, message)    
+    ELSE
+      !WRITE (wrf_err_message , * )"RASM Diagnostics:: ERROR -- error -- ERROR -- error : NO valid interval provided in namelist.input, please provided"
+      !CALL wrf_error_fatal ( TRIM(wrf_err_message) )  
+    END IF
  
     CALL getResetState(currentTime, xtime, dt, mean_interval, output_freq, is_reset)
 
@@ -241,11 +272,7 @@ CONTAINS
 
   ! RASM: Diurnal
   SUBROUTINE diurnalcycle_output_calc(            &
-        ids, ide, jds, jde, kds, kde              &
-       ,ims, ime, jms, jme, kms, kme              &
-       ,ips, ipe, jps, jpe, kps, kpe              & ! patch  dims
-       ,i_start, i_end, j_start, j_end            &
-       ,num_tiles, is_restart                     &
+        is_restart, currentTime                   &
        ,dt, xtime                                 &
        ,psfc, psfc_dtmp, tsk, tsk_dtmp            &
        ,t2, t2_dtmp                               &
@@ -257,7 +284,7 @@ CONTAINS
        ,lwupb, lwupb_dtmp, swupb, swupb_dtmp      &
        ,swupt, swupt_dtmp, swdnt, swdnt_dtmp      &
        ,lwupt, lwupt_dtmp, lwdnt, lwdnt_dtmp      &
-       ,currenttime, avgoutalarm                  &
+       ,avgoutalarm                  &
        ,diurnOutDateStr, avg_nsteps               &
        ,diurnal_nsteps                            &
        ,psfc_diurn, tsk_diurn, t2_diurn           &
@@ -267,12 +294,17 @@ CONTAINS
        ,lwupb_diurn, swupb_diurn                  &
        ,swupt_diurn, swdnt_diurn                  &
        ,lwupt_diurn, lwdnt_diurn                  &
-       )
+       ,ids, ide, jds, jde, kds, kde              &
+       ,ims, ime, jms, jme, kms, kme              &
+       ,ips, ipe, jps, jpe, kps, kpe              & ! patch  dims
+       ,i_start, i_end, j_start, j_end            &
+       ,num_tiles         )
 
     !----------------------------------------------------------------------
     ! USES:
     USE module_utility
     USE module_model_constants
+    USE module_domain, ONLY : domain_clock_get
 
     IMPLICIT NONE
     !======================================================================
@@ -344,7 +376,7 @@ CONTAINS
     LOGICAL     :: is_diurnal_reset       ! reset dirurnal cycle
     LOGICAL     :: compute_avg            ! compute averages
     LOGICAL     :: compute_diurnalcycle   ! compute dirurnal cycle
- 
+
     ! DEBUG LOCAL  VAR
     CHARACTER (LEN=1024)  :: message
     CHARACTER (LEN=1024)  :: EmptyStr

@@ -175,7 +175,7 @@ rconfig integer corral_y     namelist,domains     max_domains    5   h "corral_y
 state  real   pdyn       ij     dyn_nmm     1      -    rh  "PDYN"  "Dynamic pressure at mean sea level" 
 state  real   mslp       ij     dyn_nmm     1      -    rh  "MSLP"  "Shuell Mean Sea Level Pressure" "Pa"
 ifdef HWRF=1
-state  real   best_mslp  ij     dyn_nmm     1      -    rh0123  "BEST_MSLP"  "Best Mean Sea Level Pressure (Shuell or Membrane)" "Pa"
+state  real   best_mslp  ij     dyn_nmm     1      -    rh0123d=(DownCopy)  "BEST_MSLP"  "Best Mean Sea Level Pressure (Shuell or Membrane)" "Pa"
 endif
 state  real   sqws       ij     dyn_nmm     1      -    r  "SQWS"  "SQUARE OF WIND SPEED AT LEVEL 10"
 state integer xloc         -    dyn_nmm     2      -    r  "XLOC"  "I-LOCATION OF MINIMUM DYNAMIC PRESSURE"
@@ -426,12 +426,12 @@ state  real   mavail    ij    dyn_nmm   1    -     i
 state  real   qsh       ij    dyn_nmm   1    -     irh023d=(DownCopy) "QS"       "Surface specific humidity"            "kg kg-1"
 state  real   twbs      ij    dyn_nmm   1    -     irh0123      "TWBS"     "Instantaneous sensible heat flux"     "W m-2"
 state  real   qwbs      ij    dyn_nmm   1    -     irh0123      "QWBS"     "Instantaneous latent heat flux"       "W m-2"
-state  real   taux      ij    dyn_nmm   1    -     irh0123      "TAUX"     "Instantaneous stress along X direction in KG/M/S^2" 
-state  real   tauy      ij    dyn_nmm   1    -     irh0123      "TAUY"     "Instantaneous stress along Y direction in KG/M/S^2" 
+state  real   taux      ij    dyn_nmm   1    -     irh0123d=(DownCopy)      "TAUX"     "Instantaneous stress along X direction in KG/M/S^2" 
+state  real   tauy      ij    dyn_nmm   1    -     irh0123d=(DownCopy)      "TAUY"     "Instantaneous stress along Y direction in KG/M/S^2" 
 state  real   prec      ij    dyn_nmm   1    -     rh023       "PREC"     "Precipitation in physics timestep"    "m"
 state  real   aprec     ij    dyn_nmm   1    -     rh
 state  real   acprec    ij    dyn_nmm   1    -     rh0123d=(DownCopy) "ACPREC"   "Accumulatedtotal precipitation"      "m"
-state  real   cuprec    ij    dyn_nmm   1    -     rh023       "CUPREC"   "Accumulated convective precipitation" "m"
+state  real   cuprec    ij    dyn_nmm   1    -     rh0123d=(DownCopy)       "CUPREC"   "Accumulated convective precipitation" "m"
 state  real   lspa      ij    dyn_nmm   1    -     h023        "LSPA"     "Land Surface Precipitation Accumulation"   "kg m-2"
 state  real   ddata     ij    dyn_nmm   1    -     -        "DDATA"    "Observed precip to each physics timestep"  "kg m-2"
 state  real   accliq    ij    dyn_nmm   1    -     r
@@ -455,8 +455,8 @@ state  real   AKMS_OUT  ij    dyn_nmm   1    -     rh023       "AKMS_OUT"  "Outp
 #
 # module_PHYS
 #
-state  real   cd_out    ij    dyn_nmm   1    -     rh023       "CD_OUT"  "sfc exch coeff for momentum"        "m2 s-1"
-state  real   ch_out    ij    dyn_nmm   1    -     rh023       "CH_OUT"  "sfc exch coeff for heat"            "m2 s-1"
+state  real   cd_out    ij    dyn_nmm   1    -     rh0123d=(DownCopy)       "CD_OUT"  "sfc exch coeff for momentum"        "m2 s-1"
+state  real   ch_out    ij    dyn_nmm   1    -     rh0123d=(DownCopy)       "CH_OUT"  "sfc exch coeff for heat"            "m2 s-1"
 
 state  real   albase    ij    dyn_nmm   1    -     i01rh023d=(DownCopy) "ALBASE"    "Base albedo"            ""
 state  real   albedo    ij    dyn_nmm   1    -     irh023      "ALBEDO"    "Dynamic albedo"         ""
@@ -567,6 +567,11 @@ rconfig   real    aer_aod550_val          namelist,physics      max_domains   0.
 rconfig   real    aer_angexp_val          namelist,physics      max_domains   1.3     irh    "aer_angexp_val" "fixed value for aerosol Angstrom exponent. Valid when aer_angexp_opt=1" ""
 rconfig   real    aer_ssa_val             namelist,physics      max_domains   0.85    irh    "aer_ssa_val"    "fixed value for aerosol single-scattering albedo. Valid when aer_ssa_opt=1" ""
 rconfig   real    aer_asy_val             namelist,physics      max_domains   0.90    irh    "aer_asy_val"    "fixed value for aerosol asymmetry parameter. Valid when aer_asy_opt=1" ""
+
+#
+# module_IGWAVE_ADJUST.F
+
+state  real   avgPchg   -     dyn_nmm   1    -     rh    "avgPchg" "Average global change (hPa/3h)" "hPa/3h"
 
 # module_CLDWTR.F
 #
@@ -1575,7 +1580,7 @@ rconfig   real    c_k                     namelist,dynamics     max_domains    0
 rconfig   real    smdiv                   namelist,dynamics	max_domains    0.      h    "smdiv"         ""      ""
 rconfig   real    emdiv                   namelist,dynamics	max_domains    0.      h    "emdiv"         ""      ""
 rconfig   real    epssm                   namelist,dynamics	max_domains    .1      h    "epssm"         ""      ""
-rconfig   logical keepnh                  namelist,dynamics     max_domains  .true.   rh   "KEEPNH"         "When .false., non-hydrostatic state is discarded at nest move."        ""
+rconfig   integer nhmove                  namelist,dynamics     max_domains    -1   rh   "NHMOVE"         "Action when nest move: 0=discard non-hydro state -1=keep nh state everywhere 1=keep except near nest edge" ""
 rconfig   logical non_hydrostatic         namelist,dynamics	max_domains  .true.   irh  "non_hydrostatic"    ""   ""
 rconfig   integer time_step_sound         namelist,dynamics	max_domains    10      h     "time_step_sound"               ""      ""
 rconfig   integer     h_mom_adv_order     namelist,dynamics	max_domains    3       rh       "h_mom_adv_order"               ""      ""
@@ -1604,6 +1609,8 @@ rconfig   real    codamp                  namelist,dynamics     max_domains   6.
 rconfig   real    coac                    namelist,dynamics     max_domains   1.6     irh  "coac"  "horizontal diffusion weighting factor (larger = more diffusion) " ""
 rconfig   real    slophc                  namelist,dynamics     max_domains   6.363961e-3     irh  "slophc"  "Maximum model level slope (dZ/dy) for which hor diffusion is applied" ""
 rconfig   real    wp                      namelist,dynamics     max_domains   0.    irh  "wp"  "Off-centering weight in the updating of nonhyrostatic eps"
+rconfig   real    dwdt_damping_lev        namelist,dynamics     max_domains   0.    irh  "dwdt_damping_lev"  "specify the non-hydro dw/dt damping level in stratosphere (in Pa), 0: no damping "
+
 
 rconfig   integer terrain_smoothing       namelist,dynamics     1             1     irh  "parallel_smooth" "nest_terrain smoothing method 0=none, 1=old, 2=new"
 

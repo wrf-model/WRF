@@ -33,6 +33,34 @@
 !
 !-----------------------------------------------------------------------
 !***********************************************************************
+      SUBROUTINE QITEND_FER_HIRES_ADVECT(QI,QRIMEF,QITEND)
+        IMPLICIT NONE
+        REAL, INTENT(INOUT) :: QI, QRIMEF
+        REAL, INTENT(IN) :: QITEND
+        REAL :: F_RIMEF
+        real, parameter :: max_f_rimef = 60.0, min_f_rimef=1.0
+
+        ! For the advected Ferrier-Aligo, we have to handle the QRIMEF
+        ! during tendency updates.
+
+        ! Determine old rime factor from old QI and old QRIMEF:
+        IF(QI<EPSQ) THEN
+           F_RIMEF=1.
+        ELSE
+           F_RIMEF=max(min_f_rimef,min(max_f_rimef,QRIMEF/QI))
+        ENDIF
+
+        ! Decide new QI and new QRIMEF based on QC and RQIBLTEN:
+        QI=QI+QITEND
+        IF(QI<EPSQ) THEN
+           QRIMEF=QI
+        ELSE
+           QRIMEF=QI*F_RIMEF
+        ENDIF
+      END SUBROUTINE QITEND_FER_HIRES_ADVECT
+
+!***********************************************************************
+
       SUBROUTINE RADIATION(NTSD,DT,JULDAY,JULYR,XTIME,JULIAN            &
      &                    ,IHRST,NPHS,GLAT,GLON                         &
      &                    ,NRADS,NRADL                                  &
@@ -719,7 +747,7 @@
 !***********************************************************************
 !-----------------------------------------------------------------------
       SUBROUTINE TURBL(NTSD,DT,NPHS,RESTRT                              &
-     &                ,N_MOIST,NSOIL,SLDPTH,DZSOIL                      &
+     &                ,N_MOIST,N_SCALAR,NSOIL,SLDPTH,DZSOIL             &
      &                ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2,PDTOP,PT       &
      &                ,SM,HBM2,VBM2,DX_ARRAY,DFRLG                      &
      &                ,CZEN,CZMEAN,SIGT4,RLWIN,RSWIN,RADOT              &
@@ -728,7 +756,7 @@
      &                ,Q2,U,V,THS,TSFC,SST,PREC,SNO                     &
      &                ,SCURX,SCURY                                      &
      &                ,FIS,Z0,MZ0,Z0BASE,USTAR,MIXHT,PBLH,LPBL,EL_MYJ   &   !MZ0: MOMENTUM Z0 (KWON)
-     &                ,MOIST,RMOL,MOL                                   &
+     &                ,MOIST,SCALAR,RMOL,MOL                            &
      &                ,EXCH_H,EXCH_M,F,AKHS,AKMS,AKHS_OUT,AKMS_OUT      &
      &                ,THZ0,QZ0,UZ0,VZ0,QS,MAVAIL                       &
      &                ,STC,SMC,CMC,SMSTAV,SMSTOT,SSROFF,BGROFF          &
@@ -811,7 +839,7 @@
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,IPS,IPE,JPS,JPE,KPS,KPE                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
-     &                     ,N_MOIST,NPHS,NSOIL,NTSD
+     &                     ,N_MOIST,NPHS,NSOIL,NTSD,N_SCALAR
 !
       INTEGER, DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW,IVE,IVW
 !
@@ -936,6 +964,9 @@
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,N_MOIST)                   &
      &                                           ,INTENT(INOUT) :: MOIST
+!
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,N_SCALAR)                  &
+     &                                           ,INTENT(INOUT) :: SCALAR
 !
       LOGICAL,INTENT(IN) :: RESTRT
 !
@@ -2003,7 +2034,17 @@
           MOIST(I,J,K,P_QV)=MAX(EPSQ,(MOIST(I,J,K,P_QV)+RQVBLTEN(I,K,J)*DTPHS) )
           CWM(I,J,K)=0.
 !
-          pbl_check1:  IF (.NOT.ETAMP_PHYSICS) THEN
+          pbl_check1:  IF(config_flags%mp_physics==fer_mp_hires_advect) then
+             ! Update QI and QRIMEF:
+             call QITEND_FER_HIRES_ADVECT( &
+                  MOIST(I,J,K,P_QI), &
+                  SCALAR(I,J,K,P_QRIMEF), &
+                  RQIBLTEN(I,K,J)*DTPHS)
+
+             ! Update QC:
+             MOIST(I,J,K,P_QC)=MAX(EPSQ,(MOIST(I,J,K,P_QC)+RQCBLTEN(I,K,J)*DTPHS))
+          ELSEIF (.NOT.ETAMP_PHYSICS) THEN
+
             DO I_M=1,N_MOIST
               IF(I_M==P_QC) THEN
                 MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQCBLTEN(I,K,J)*DTPHS) )
@@ -2215,8 +2256,8 @@
 !-----------------------------------------------------------------------
       SUBROUTINE CUCNVC(NTSD,DT,NCNVC,NRADS,NRADL                       &
      &                 ,GPS,RESTRT,HYDRO                                &
-     &                 ,CLDEFI,N_MOIST,ENSDIM                           &
-     &                 ,MOIST                                           &
+     &                 ,CLDEFI,N_MOIST,N_SCALAR,ENSDIM                  &
+     &                 ,MOIST,SCALAR                                    &
      &                 ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2               &
      &                 ,F_ICE,F_RAIN                                    &
 !***  Changes for other cu-schemes, most for gd scheme
@@ -2280,7 +2321,7 @@
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,IPS,IPE,JPS,JPE,KPS,KPE                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE                     &
-     &                     ,N_MOIST,NCNVC,NTSD,NRADS,NRADL
+     &                     ,N_MOIST,NCNVC,NTSD,NRADS,NRADL,N_SCALAR
 !
       INTEGER, DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW
 !
@@ -2370,6 +2411,10 @@
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,N_MOIST)                   &
      &                                           ,INTENT(INOUT) :: MOIST
 !
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,N_SCALAR)                  &
+     &                                           ,INTENT(INOUT) :: SCALAR
+!
+
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: GD_CLOUD &
      &                                                        ,GD_CLOUD2
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: KTOP_DEEP
@@ -2891,6 +2936,9 @@
           if(have_swath) then
              if(grid%interesting(i,j)/=0) then
                 grid%precip_swath(i,j) = grid%precip_swath(i,j) + PCPCOL
+                if(size(grid%cuprecip_swath)>0) then
+                   grid%cuprecip_swath(i,j) = grid%cuprecip_swath(i,j) + PCPCOL
+                endif
              endif
           endif
 #endif
@@ -2964,7 +3012,13 @@
           cps_select: SELECT CASE(config_flags%cu_physics)
 !
           CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,SCALESASSCHEME,OSASSCHEME,NSASSCHEME,TIEDTKESCHEME)
-            IF (ETAMP_Regional) THEN
+           IF(config_flags%mp_physics==fer_mp_hires_advect) THEN
+             ! Update QI and QRIMEF:
+             call QITEND_FER_HIRES_ADVECT( &
+                  MOIST_TRANS(I,K,J,P_QI), &
+                  SCALAR(I,J,K,P_QRIMEF), &
+                  RQICUTEN(I,K,J)*DTCNVC)
+            ELSEIF (ETAMP_Regional) THEN
               MOIST_TRANS(I,K,J,P_QS)=MAX(0.,MOIST_TRANS(I,K,J,P_QS)+RQICUTEN(I,K,J)*DTCNVC+RQSCUTEN(I,K,J)*DTCNVC)
             ELSE
               MOIST_TRANS(I,K,J,P_QI)=MAX(0.,MOIST_TRANS(I,K,J,P_QI)+RQICUTEN(I,K,J)*DTCNVC)

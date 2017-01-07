@@ -1324,6 +1324,8 @@ CONTAINS
 ! local vars
    REAL, DIMENSION( ims:ime, jms:jme )                 ::   HFXOLD, QFXOLD
    REAL                                                ::   HFX_KAY, QFX_KAY
+! local var for SPP_LSM
+   INTEGER                                             ::   spp_lsm_loc
 !
 !------------------------------------------------------------------
 ! Initialize local variables
@@ -1378,6 +1380,13 @@ CONTAINS
         &              max_edom, cplmask, VOCE )
      
   END IF
+
+#if (EM_CORE==1)
+     spp_lsm_loc = spp_lsm
+#else
+     spp_lsm_loc = 0
+#endif
+
   
 !$OMP PARALLEL DO &
 !$OMP PRIVATE (ij, i, j, k)
@@ -3083,9 +3092,8 @@ CONTAINS
            PRESENT(qcg)        .AND.  PRESENT(soilt1)  .AND.    &
            PRESENT(tsnav)      .AND.  PRESENT(smfr3d)  .AND.    &
            PRESENT(keepfr3dflag) .AND. PRESENT(rainbl) .AND.    &
-           PRESENT(dew)        .AND.  PRESENT(acrunoff).AND.    &
-           PRESENT(spp_lsm)    .AND.  PRESENT(pattern_spp_lsm) .AND. &
-           PRESENT(field_sf)   .AND.                 .TRUE. ) THEN
+           PRESENT(dew)        .AND.                            &
+           .TRUE. ) THEN
 
            IF( PRESENT(sr) ) THEN
                frpcpn=.true.
@@ -3139,9 +3147,11 @@ CONTAINS
               ENDIF
            ENDIF
 
-           CALL LSMRUC(spp_lsm,pattern_spp_lsm,field_sf,        &
+           CALL LSMRUC( spp_lsm_loc,                            &
+#if (EM_CORE==1)
+                pattern_spp_lsm,field_sf,                       &
+#endif
                 dtbl,itimestep,num_soil_layers,                 &
-
 #if (EM_CORE==1)
                 lakemodel,lakemask,                             &
                 graupelncv,snowncv,rainncv,                     &

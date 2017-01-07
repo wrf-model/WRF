@@ -51,7 +51,7 @@
 #<Table> <Type> <Sym>         <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>
 #
 state    real  XLAT             ij      misc        1         -     i0123rh01{22}{23}du=(copy_fcnm)      "XLAT"                "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
-state    real  XLONG            ij      misc        1         -     i0123rh01{22}{23}du=(copy_fcnm)      "XLONG"               "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
+state    real  XLONG            ij      misc        1         -     i0123rh01{22}{23}d=(interp_fcn_blint_ll:xlat,input_from_file)u=(copy_fcnm)      "XLONG"               "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
 
 # It is required that LU_INDEX appears before any variable that is
 # interpolated with a mask, as lu_index supplies that mask.
@@ -529,7 +529,12 @@ state   real    qvolh          ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QVHAIL"        "Hail Particle Volume" "m(3) kg(-1)"
 state   real    qrimef         ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QRIMEF"        "rime factor * qi" "kg kg-1"
-
+state   real    qir            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QIR"           "Rime ice mass-1 mixing ratio" "kg kg(-1)"
+state   real    qib            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QIB"           "Rime ice volume-1 mixing ratio" "m(3) kg(-1)"
+state   real    ssat           ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "SSAT"           "Absolute supersaturation" "kg kg(-1)"
 
 state   real    -              ikjftb  dfi_scalar      1         -     -   -
 state   real    dfi_qndrop     ikjftb  dfi_scalar      1         -     \
@@ -554,6 +559,12 @@ state   real    dfi_qvolg      ikjftb  dfi_scalar      1         -     \
    rhusdf=(bdy_interp:dt)   "DFI_QVGRAUPEL" "DFI Graupel Particle Volume" "m(3) kg(-1)"
 state   real    dfi_qvolh     ikjftb  dfi_scalar      1         -     \
    rhusdf=(bdy_interp:dt)   "DFI_QVHAIL"    "DFI Hail Particle Volume" "m(3) kg(-1)"
+state   real    dfi_qir        ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)    "DFI_QIR"    "DFI Rime ice mass-1 mixing ratio" "kg kg(-1)"
+state   real    dfi_qib        ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)    "DFI_QIB"    "DFI Rime ice volume-1 mixing ratio" "m(3) kg(-1)"
+state   real    dfi_ssat       ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)    "DFI_SSAT"   "DFI Absolute supersaturation" "kg kg(-1)"
 state   real    dfi_qke_adv   ikjftb  dfi_scalar      1         -      \
    rusdf=(bdy_interp:dt) "dfi_qke_adv"   "DFI twice TKE from MYNN"      "m2 s-2"
 
@@ -1284,6 +1295,9 @@ state    real  SNOWNCV          ij      misc        1         -      r        "S
 state    real  GRAUPELNCV       ij      misc        1         -      r        "GRAUPELNCV"            "TIME-STEP NONCONVECTIVE GRAUPEL"                         "mm"
 state    real  HAILNCV          ij      misc        1         -      r        "HAILNCV"               "TIME-STEP NONCONVECTIVE HAIL"                            "mm"
 state    real    refl_10cm      ikj     dyn_em      1         -      hdu       "refl_10cm"             "Radar reflectivity (lamda = 10 cm)"  "dBZ"
+state    real    vmi3d          ikj     misc        1         -     hdu       "v_ice"                 "Mass-weighted ice fallspeed"  "m s-1"
+state    real    di3d           ikj     misc        1         -     hdu       "d_ice"                 "Mass-weighted mean ice size"  "m"
+state    real    rhopo3d        ikj     misc        1         -     hdu       "rho_ice"               "Mass-weighted mean ice density"  "kg m-3"
 # LIGHTNING NUDGING
 #state    real    ltg_dat        ij      misc        1         -      r         "ltg_dat"               "gridded lightning data"  "Flash per xkm x xkm per LAD_INT sec"
 # END LIGHTNING NUDGING
@@ -1471,9 +1485,9 @@ state    real  OLR              ij      misc        1         -      rh        "
 # these next 2 are for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
 # with wave model, only if compiled with -DMCELIO, JM 2003/05/29
 state    real  XLAT_U           ij      dyn_em      1         X     i012rh01du=(copy_fcnm)       "XLAT_U"              "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
-state    real  XLONG_U          ij      dyn_em      1         X     i012rh01du=(copy_fcnm)       "XLONG_U"             "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
+state    real  XLONG_U          ij      dyn_em      1         X     i012rh01d=(interp_fcn_blint_ll:xlat_u,input_from_file)u=(copy_fcnm)       "XLONG_U"             "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
 state    real  XLAT_V           ij      dyn_em      1         Y     i012rh01du=(copy_fcnm)       "XLAT_V"              "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
-state    real  XLONG_V          ij      dyn_em      1         Y     i012rh01du=(copy_fcnm)       "XLONG_V"             "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
+state    real  XLONG_V          ij      dyn_em      1         Y     i012rh01d=(interp_fcn_blint_ll:xlat_v,input_from_file)u=(copy_fcnm)       "XLONG_V"             "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
 state    real  ALBEDO           ij      misc        1         -      rh          "ALBEDO"                   "ALBEDO"
 state    real  CLAT             ij      misc        1         -     i012rhdu=(copy_fcnm)         "CLAT"                "COMPUTATIONAL GRID LATITUDE, SOUTH IS NEGATIVE"                       "degree_north"
 state    real  ALBBCK           ij      misc        1         -     i0124rh   "ALBBCK"                "BACKGROUND ALBEDO"        ""
@@ -1524,8 +1538,6 @@ state    real   lfmassxy   ij      -       1      -     i02rhd=(interp_mask_fiel
 state    real   rtmassxy   ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "rtmass"     "mass of fine roots"                  "g/m2"
 state    real   stmassxy   ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "stmass"     "stem mass"                           "g/m2"
 state    real   woodxy     ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "wood"       "mass of wood"                        "g/m2"
-state    real   grainxy    ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "grain"      "mass of grain"                       "g/m2"
-state    real   gddxy      ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "gdd"        "growing degree days"                 ""
 state    real   stblcpxy   ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "stblcp"     "stable carbon pool"                  "g/m2"
 state    real   fastcpxy   ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "fastcp"     "short-lived carbon"                  "g/m2"
 state    real   xsaixy     ij      -       1      -     i02rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "xsai"       "stem area index"                     "-"
@@ -1595,6 +1607,17 @@ state    real   rechclim   ij      -       1      -     i012rd=(interp_mask_fiel
 state    real   rivermask  ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "RIVERMASK"  "fraction of grid that is river"       "fraction"
 state    real   riverbedxy ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "RIVERBED"   "river bed depth"       "m"
 state    real   nonriverxy ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "NONRIVER"   "non-river elevation"       "m"
+
+# Crop model only
+
+state    real   grainxy    ij      -       1      -     irhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "grain"        "mass of grain"                       "g/m2"
+state    real   gddxy      ij      -       1      -     irhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "gdd"          "growing degree days"                 ""
+state    real   croptype i{crop}j  -       1      Z     ird=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "croptype"     "crop type"                           "fraction"
+state    real   planting   ij      -       1      -     ird=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "planting"     "planting date"                       "julian day"
+state    real   harvest    ij      -       1      -     ird=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "harvest"      "harvest date"                        "julian day"
+state    real   season_gdd ij      -       1      -     ird=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "season_gdd"   "growing season GDD"                  "C"
+state integer   cropcat    ij      -       1      -     rh                                                        "cropcat"      "dominant crop category"              "category"
+state integer   pgsxy      ij      -       1      -     rh                                                        "pgs"          "pgs"                                 ""
 
 # For Noah-Mosaic  danli
 
@@ -2606,6 +2629,8 @@ package   nssl_1mom       mp_physics==19               -             moist:qv,qc
 package   nssl_1momlfo    mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
 package   nssl_2momg      mp_physics==22               -             moist:qv,qc,qr,qi,qs,qg;scalar:qndrop,qnr,qni,qns,qng,qvolg;state:re_cloud,re_ice,re_snow
 package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow,qnwfa2d,taod5503d,taod5502d
+package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi;scalar:qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm
+package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi;scalar:qnc,ssat,qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 
 package   radar_refl      compute_radar_ref==1         -             state:refl_10cm,refd_max
@@ -2632,6 +2657,8 @@ package   nssl_2mom_dficcn  mp_physics_dfi==18       -             dfi_moist:dfi
 package   nssl_1mom_dfi     mp_physics_dfi==19       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qvolg
 package   nssl_1momlfo_dfi  mp_physics_dfi==21       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
 package   thompsonaero_dfi  mp_physics_dfi==28       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qnc,dfi_qnwfa,dfi_qnifa;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
+package   p3_1category_dfi  mp_physics_dfi==50       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
+package   p3_1category_nc_dfi  mp_physics_dfi==51    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qnc,dfi_ssat,dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
 package   etampnew_dfi      mp_physics_dfi==95       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs;dfi_scalar:dfi_qt
 
 package   noprogn       progn==0                     -             -
@@ -2675,7 +2702,7 @@ package   bep_bemscheme  sf_urban_physics==3         -             state:a_u_bep
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn,smcrel
 package   ruclsmscheme   sf_surface_physics==3       -             state:smfr3d,keepfr3dflag,soilt1,rhosnf,snowfallac,precipfr
-package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,rechclim,rivermask,nonriverxy,gddxy,grainxy
+package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,rechclim,rivermask,nonriverxy,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy
 package   clmscheme      sf_surface_physics==5       -             state:numc,nump,sabv,sabg,lwup,lhsoi,lhveg,lhtran,snl,snowdp,wtc,wtp,h2osno,t_grnd,t_veg,h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm,t_ref2m,h2osoi_liq_s1,h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,h2osoi_ice_s1,h2osoi_ice_s2,h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,t_soisno4,t_soisno5,t_soisno6,t_soisno7,t_soisno8,t_soisno9,t_soisno10,dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,h2osoi_vol7,h2osoi_vol8,h2osoi_vol9,h2osoi_vol10,albedosubgrid,lhsubgrid,hfxsubgrid,lwupsubgrid,q2subgrid,sabvsubgrid,sabgsubgrid,nrasubgrid,swupsubgrid
 package   pxlsmscheme    sf_surface_physics==7       -             state:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old,vegf_px,imperv,canfra
 package   ssibscheme     sf_surface_physics==8       -             state:ssib_fm,ssib_fh,ssib_cm,ssibxdd,ssib_br,ssib_lhf,ssib_shf,ssib_ghf,ssib_egs,ssib_eci,ssib_ect,ssib_egi,ssib_egt,ssib_sdn,ssib_sup,ssib_ldn,ssib_lup,ssib_wat,ssib_shc,ssib_shg,ssib_lai,ssib_vcf,ssib_z00,ssib_veg,isnow,swe,snowden,snowdepth,tkair,dzo1,wo1,tssn1,tssno1,bwo1,bto1,cto1,fio1,flo1,bio1,blo1,ho1,dzo2,wo2,tssn2,tssno2,bwo2,bto2,cto2,fio2,flo2,bio2,blo2,ho2,dzo3,wo3,tssn3,tssno3,bwo3,bto3,cto3,fio3,flo3,bio3,blo3,ho3,dzo4,wo4,tssn4,tssno4,bwo4,bto4,cto4,fio4,flo4,bio4,blo4,ho4
@@ -2813,7 +2840,22 @@ package   icedepth_one   seaice_thickness_opt==1     -             state:icedept
 #Time series options for text output
 package   notseries   process_time_series==0                 -             -
 package   tseries     process_time_series==1                 -             state:ts_hour,ts_u,ts_v,ts_q,ts_t,ts_psfc,ts_glw,ts_gsw,ts_hfx,ts_lh,ts_tsk,ts_tslb,ts_clw,ts_rainc,ts_rainnc,ts_u_profile,ts_v_profile,ts_gph_profile,ts_th_profile
-                                                
+
+# WRF-HAILCAST
+state    real   HAILCAST_DHAIL1   ij     misc        1         -      -          "HAILCAST_DHAIL1"     "WRF-HAILCAST Hail Diameter, 1st rank order"     "mm"
+state    real   HAILCAST_DHAIL2   ij     misc        1         -      -          "HAILCAST_DHAIL2"     "WRF-HAILCAST Hail Diameter, 2nd rank order"     "mm"
+state    real   HAILCAST_DHAIL3   ij     misc        1         -      -          "HAILCAST_DHAIL3"     "WRF-HAILCAST Hail Diameter, 3rd rank order"     "mm"
+state    real   HAILCAST_DHAIL4   ij     misc        1         -      -          "HAILCAST_DHAIL4"     "WRF-HAILCAST Hail Diameter, 4th rank order"     "mm"
+state    real   HAILCAST_DHAIL5   ij     misc        1         -      -          "HAILCAST_DHAIL5"     "WRF-HAILCAST Hail Diameter, 5th rank order"     "mm"
+state    real   HAILCAST_DIAM_MEAN  ij   misc        1         -      rh02       "HAILCAST_DIAM_MEAN"  "WRF-HAILCAST Mean Hail Diameter"        "mm"
+state    real   HAILCAST_DIAM_STD   ij   misc        1         -      rh02       "HAILCAST_DIAM_STD"   "WRF-HAILCAST Stand. Dev. Hail Diameter" "mm"
+state    real   HAILCAST_WUP_MASK   ij     misc        1         -      r        "HAILCAST_WUP_MASK"           "Updraft mask, 1 if > 10m/s"                             ""
+state    real   HAILCAST_WDUR       ij     misc        1         -      r        "HAILCAST_WDUR"               "Updraft duration"                                       "sec"
+
+package   hailcast  hailcast_opt==1        -                    state:hailcast_diam_mean,hailcast_diam_std,hailcast_dhail1,hailcast_dhail2,hailcast_dhail3,hailcast_dhail4,hailcast_dhail5
+rconfig   integer   hailcast_opt       namelist,physics           max_domains    0       rh    "hailcast_opt"        "WRF-HAILCAST option, 1: on"                   ""
+halo      HALO_EM_PHYS_HCW   dyn_em 8:hailcast_wup_mask, hailcast_wdur
+
 # lightning
 
 state    real    ic_flashcount     ij     misc    1   -   rh    "ic_flashcount"      "Accumulated IC flash count"     "#"

@@ -33,7 +33,7 @@ end
 
 
 #coupler
-( cd util/wkc; make clean )
+( cd util/wkc; make clean; make -f Makefile.tuv clean )
 
 
 

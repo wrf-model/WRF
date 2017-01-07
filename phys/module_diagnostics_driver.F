@@ -74,7 +74,7 @@ CONTAINS
       USE module_diag_pld, ONLY : pld
       USE module_diag_zld, ONLY : zld
       USE module_diag_afwa, ONLY : afwa_diagnostics_driver
-
+      USE module_diag_hailcast, ONLY : hailcast_diagnostic_driver
 
       IMPLICIT NONE
 
@@ -219,6 +219,33 @@ CONTAINS
       END IF LIGHTNING
 
 
+      !WRF-HAILCAST diagnostic - hail size prediction
+      HAILCAST: IF ( config_flags%hailcast_opt /= 0 ) THEN
+
+      IF ( ( config_flags%history_interval == 0 ) ) THEN
+            WRITE (diag_message , * ) &
+            "HAILCAST Error : No 'history_interval' defined in namelist"
+            CALL wrf_error_fatal ( diag_message )
+        END IF
+
+        !$OMP PARALLEL DO   &
+        !$OMP PRIVATE ( ij )
+        DO ij = 1 , grid%num_tiles
+
+           CALL wrf_debug ( 100 ,                                             &
+             '--> CALL DIAGNOSTICS PACKAGE: HAILCAST_DIAGNOSTIC_DRIVER' )
+
+           CALL hailcast_diagnostic_driver (    grid , config_flags           &
+                         ,moist, grid%rho                                     &
+                         ,ids, ide, jds, jde, kds, kde                        &
+                         ,ims, ime, jms, jme, kms, kme                        &
+                         ,ips, ipe, jps, jpe, kps, kpe                        &
+                         ,ITS=grid%i_start(ij),ITE=grid%i_end(ij)             &
+                         ,JTS=grid%j_start(ij),JTE=grid%j_end(ij)             &
+                         ,K_START=k_start,K_END=k_end                         )
+        END DO
+        !$OMP END PARALLEL DO
+      END IF HAILCAST
 
 
       !  Mostly surface values, precip, column integrated quantities.

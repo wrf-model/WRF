@@ -52,7 +52,7 @@ module da_test
       da_psichi_to_uv, da_psichi_to_uv_adj
    use da_ffts, only : da_solve_poissoneqn_fct
    use da_minimisation, only : da_transform_vtoy_adj,da_transform_vtoy, da_swap_xtraj, &
-       da_read_basicstates, da_calculate_j
+       da_read_basicstates, da_calculate_j, da_calculate_gradj
    use da_obs, only : da_transform_xtoy,da_transform_xtoy_adj
    use da_par_util, only : da_patch_to_global, da_system, da_cv_to_global
 #ifdef DM_PARALLEL

@@ -61,7 +61,9 @@ MODULES = \
 	module_cu_tiedtke.o\
 	module_cu_ntiedtke.o\
 	module_cu_gd.o \
-	module_cu_gf.o \
+	module_cu_gf_wrfdrv.o \
+	module_cu_gf_deep.o \
+	module_cu_gf_sh.o \
 	module_cu_nsas.o \
 	module_cu_sas.o \
 	module_cu_scalesas.o \
@@ -83,6 +85,7 @@ MODULES = \
 	module_ltng_lpi.o \
 	module_mp_gsfcgce.o \
 	module_mp_morr_two_moment.o \
+        module_mp_p3.o \
 	module_mp_milbrandt2mom.o \
 	module_mp_nssl_2mom.o \
 	module_mp_wdm5.o \
@@ -183,8 +186,8 @@ FIRE_MODULES = \
   
 DIAGNOSTIC_MODULES_EM = \
 	module_diag_afwa.o \
-	module_diag_afwa_hail.o \
 	module_diag_cl.o \
+        module_diag_hailcast.o \
 	module_diag_misc.o \
 	module_diag_pld.o \
 	module_diag_zld.o

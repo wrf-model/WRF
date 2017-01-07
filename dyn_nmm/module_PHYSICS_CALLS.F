@@ -1440,7 +1440,7 @@
      &          ,QSG=QSG,QVG=QVG,QCG=QCG,SOILT1=SOILT1                  &
      &          ,TSNAV=TSNAV,SMFR3D=SMFR3D,KEEPFR3DFLAG=KEEPFR3DFLAG    &
      &          ,POTEVP=POTEVP,SNOPCX=SNOPCX,SOILTB=SOILTB,SR=SR        &
-     &          ,DEW=DEW                                                &
+     &          ,DEW=DEW,ACRUNOFF=grid%ACRUNOFF                         &
      &          ,MOSAIC_LU=CONFIG_FLAGS%MOSAIC_LU                       &
      &          ,MOSAIC_SOIL=CONFIG_FLAGS%MOSAIC_SOIL                   &
      &          ,LANDUSEF=grid%landusef                                 &

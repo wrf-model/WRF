@@ -55,7 +55,7 @@ subroutine da_obs_sensitivity(ktr, iv)
 
    call da_get_unit(iunit)
        
-        if (num_pseudo > 0) then
+        if ( pseudo_uvtpq ) then
             do n=1, iv%info(pseudo)%nlocal
 	       if (.not. iv%info(pseudo)%proc_domain(1,n)) cycle
 	       iv%pseudo(n)%u%sens = ktr%pseudo(n)%u / (iv%pseudo(n)%u%error **2)

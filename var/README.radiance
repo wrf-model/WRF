@@ -7,7 +7,7 @@ required for radiance data assimilation.
 Please see also Chapter 6 of WRF ARW User's Guide for more details.
 
 RTM (Radiative Transfer Model) that can be used in WRFDA:
-  CRTM REL-2.1.3
+  CRTM REL-2.2.3
   RTTOV v11
 =============================================================================
 
@@ -25,9 +25,9 @@ in README.basics, the following extra files are required for radiance:
   ln -sf WRFDA/var/run/radiance_info    ./radiance_info  # radiance_info is a directory
   ln -sf WRFDA/var/run/VARBC.in         ./VARBC.in
   (CRTM only)
-     Either ln -sf WRFDA/var/run/crtm_coeffs_2.1.3 ./crtm_coeffs  # crtm_coeffs is a directory
+     Either ln -sf WRFDA/var/run/crtm_coeffs_2.2.3 ./crtm_coeffs  # crtm_coeffs is a directory
      or set namelist variable crtm_coef_path to the location of coef files
-        crtm_coef_path='/user/WRFDA/var/run/crtm_coeffs_2.1.3'
+        crtm_coef_path='/user/WRFDA/var/run/crtm_coeffs_2.2.3'
   (RTTOV only) ln -sf rttov10/rtcoef_rttov10/rttov7pred51L ./rttov_coeffs  # rttov_coeffs is a directory
 
 2. namelist.input
@@ -73,13 +73,13 @@ time_window_max="2008-02-05_13:30:00.0000",
 (1) for CRTM
 
 Some CRTM coefficient files are included in the WRFDA tar file under
-WRFDA/var/run/crtm_coeffs_2.1.3 directory (please see also WRFDA/var/run/README).
+WRFDA/var/run/crtm_coeffs_2.2.3 directory (please see also WRFDA/var/run/README).
 The full set of CRTM coefficients can be downloaded from:
-ftp://ftp.emc.ncep.noaa.gov/jcsda/CRTM/REL-2.1.3/REL-2.1.3.CRTM.tar.gz
-After unzip/untar REL-2.1.3.CRTM.tar.gz, you will find all the coefficient files
+ftp://ftp.emc.ncep.noaa.gov/jcsda/CRTM/REL-2.2.3/crtm_v2.2.3.tar.gz
+After unzip/untar crtm_v2.2.3.tar.gz, you will find all the coefficient files
 under the directory fix. You will need to create another directory to copy or link 
 the files that will be used in WRFDA. Please see also the CRTM user guide
-ftp://ftp.emc.ncep.noaa.gov/jcsda/CRTM/REL-2.1.3/REL-2.1.3.CRTM_User_Guide.pdf
+ftp://ftp.emc.ncep.noaa.gov/jcsda/CRTM/CRTM_User_Guide.pdf
 for the options of proper coefficient files for your applications.
 
 (2) for RTTOV

@@ -20,6 +20,7 @@ module da_define_structures
       mtgirs, tamdar, tamdar_sfc, pseudo, radar, radiance, airsr, sonde_sfc, rain, &
       trace_use_dull,comm, num_pseudo
    use da_control, only : cloud_cv_options, use_cv_w
+   use da_control, only : pseudo_uvtpq
 
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_tools_serial, only : da_array_print
@@ -1079,6 +1080,7 @@ module da_define_structures
 contains
 
 #include "da_allocate_background_errors.inc"
+#include "da_allocate_obs_info.inc"
 #include "da_allocate_observations.inc"
 #include "da_allocate_observations_rain.inc"
 #include "da_allocate_y.inc"

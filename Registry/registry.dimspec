@@ -45,6 +45,7 @@ dimspec    n       -     constant=(0:6)                    c
 ifdef HWRF=1
 dimspec    otrak   -     namelist=num_old_fixes            c     old_fixes
 endif
+dimspec    maxkid  -     constant=100                      c     max_nest_domain_id
 endif
 
 dimspec    snly    2     namelist=num_snow_layers          z     snow_layers
@@ -76,6 +77,7 @@ dimspec    =       -     constant=4                        c     num_bands
 dimspec    lake_ssl  2   constant=15                       z     snow_and_soil_levels
 dimspec    lake_intl 2   constant=16                       z     interface_levels
 dimspec    lake_sll  2   constant=10                       z     soil_levels_or_lake_levels
+dimspec    crop    2     constant=5                        z     crop_types
 
 # Dimensions required only for Chemistry
 

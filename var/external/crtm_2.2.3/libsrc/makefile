@@ -48,3 +48,12 @@ include make.dependencies
 #           $(SFC) $(FCFLAGS_CRTM) -c $*.f90 ; \
 #        fi
 	$(RM) $*.f90
+
+Sort_Utility.o:
+	x=`echo "$(SFC)" | awk '{print $$1}'` ; export x ; \
+        if [ $$x = "pgf90" ] ; then \
+           $(SFC) -c $(FCFLAGS_CRTM) -tp=px $*.f90 ; \
+        else \
+           $(SFC) -c $(FCFLAGS_CRTM) $*.f90 ; \
+        fi
+

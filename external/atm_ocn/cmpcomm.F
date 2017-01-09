@@ -133,7 +133,7 @@
       call MPI_COMM_SIZE(MPI_COMM_WORLD,nprocs_global,ierr)
       if (component_nprocs.eq.nprocs_global) then
         if(process_rank_local.eq.0) then
-           call wrf_message('CMP_INIT: standalone mode')
+           call wrf_debug(2,'CMP_INIT: standalone mode')
            endif
         Coupler_id=-1
         RETURN
@@ -150,12 +150,12 @@
       call GLOB_ABORT(ierr,'CMP_INIT: error in MPI_RECV',1)
       Coupler_rank=ibuffer(2)
       if (ibuffer(1).ne.Coupler_id) then
-        call wrf_message('CMP_INIT: stopped, rcvd ibuffer(1) value '    &
+        call wrf_debug(2,'CMP_INIT: stopped, rcvd ibuffer(1) value '    &
      &         //'is not C id: ',ibuffer(1))
         CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
       end if
       if (ibuffer(3).ne.ibuffer_size) then
-        call wrf_message('CMP_INIT: stopped, rcvd ibuffer(3) value ',   &
+        call wrf_debug(2,'CMP_INIT: stopped, rcvd ibuffer(3) value ',   &
      &   ibuffer(3),' is not ibuffer_size=',ibuffer_size)
         CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
       end if
@@ -214,7 +214,7 @@
         tag=my_id+54321
             write(message,*) 'CMP_INTRO: to call MPI_SEND ',            &
      &      process_rank_local, process_rank_global
-            call wrf_message(message)
+            call wrf_debug(2,message)
         call MPI_SEND(ibuf,3,MPI_INTEGER,Coupler_rank,tag, &
      &  MPI_COMM_WORLD,ierr)
         if (ierr.ne.0) then
@@ -557,7 +557,7 @@
       tag=my_id
       write(message,*) 'CMP_INTEGER_SEND: to call MPI_SEND; F=',        &
      &      F,' N=',N,' Coupler_rank=',Coupler_rank,' tag=',tag
-      call wrf_message(message)
+      call wrf_debug(2,message)
       call MPI_SEND(F,N,MPI_INTEGER,Coupler_rank,tag, &
      &MPI_COMM_WORLD,ierr)
       call GLOB_ABORT(ierr,'CMP_INTEGER_SEND: error in MPI_SEND',1)
@@ -801,7 +801,7 @@
 
           write(message,'("*** CMP_gnr_RECV: illegal value of FlexLev",'&
      &    //'i9/ "*** STOPPED")') FlexLev
-          call wrf_message(message)
+          call wrf_debug(2,message)
 
         end if
 
@@ -832,7 +832,7 @@
 
       if (process_rank_local.eq.component_master_rank_local) then
          if(nunit==0 .or. nunit==6) then
-            call wrf_debug(1,s)
+            call wrf_debug(2,s)
          else
         write(nunit,*) trim(s)
          endif
@@ -897,7 +897,7 @@
       
       open(6,file=trim(s),form='formatted',status='unknown')
 
-      call wrf_message('CMP_STDOUT: unit 6 closed, reopened as '        &
+      call wrf_debug(2,'CMP_STDOUT: unit 6 closed, reopened as '        &
      &                 //trim(s))
 
       return

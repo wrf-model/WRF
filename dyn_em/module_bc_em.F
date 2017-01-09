@@ -1338,10 +1338,10 @@ CONTAINS
                                 mu_bdy_ys, mu_bdy_ye,                  &
                                 mu_bdy_tend_xs, mu_bdy_tend_xe,        &
                                 mu_bdy_tend_ys, mu_bdy_tend_ye,        &
-                                t_bdy_xs, t_bdy_xe,                    &
-                                t_bdy_ys, t_bdy_ye,                    &
-                                t_bdy_tend_xs, t_bdy_tend_xe,          &
-                                t_bdy_tend_ys, t_bdy_tend_ye,          &
+                                orig_t_bdy_xs, orig_t_bdy_xe,          &
+                                orig_t_bdy_ys, orig_t_bdy_ye,          &
+                                orig_t_bdy_tend_xs, orig_t_bdy_tend_xe,&
+                                orig_t_bdy_tend_ys, orig_t_bdy_tend_ye,&
                                 moist_bdy_xs, moist_bdy_xe,            &
                                 moist_bdy_ys, moist_bdy_ye,            &
                                 moist_bdy_tend_xs, moist_bdy_tend_xe,  &
@@ -1378,10 +1378,10 @@ CONTAINS
       REAL,  DIMENSION( jms:jme , 1       , spec_bdy_width ), INTENT(IN   ) :: mu_bdy_tend_xs, mu_bdy_tend_xe
       REAL,  DIMENSION( ims:ime , 1       , spec_bdy_width ), INTENT(IN   ) :: mu_bdy_tend_ys, mu_bdy_tend_ye
 
-      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(INOUT) :: t_bdy_xs, t_bdy_xe
-      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(INOUT) :: t_bdy_ys, t_bdy_ye
-      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(INOUT) :: t_bdy_tend_xs, t_bdy_tend_xe
-      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(INOUT) :: t_bdy_tend_ys, t_bdy_tend_ye
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(INOUT) :: orig_t_bdy_xs, orig_t_bdy_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(INOUT) :: orig_t_bdy_ys, orig_t_bdy_ye
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(INOUT) :: orig_t_bdy_tend_xs, orig_t_bdy_tend_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(INOUT) :: orig_t_bdy_tend_ys, orig_t_bdy_tend_ye
 
       REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(IN   ) :: moist_bdy_xs, moist_bdy_xe
       REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(IN   ) :: moist_bdy_ys, moist_bdy_ye
@@ -1389,6 +1389,19 @@ CONTAINS
       REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(IN   ) :: moist_bdy_tend_ys, moist_bdy_tend_ye
 
       !  Local variables
+#ifdef _OPENMP
+      INTEGER, EXTERNAL :: omp_get_thread_num
+#endif
+
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ) :: t_bdy_xs, t_bdy_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ) :: t_bdy_ys, t_bdy_ye
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ) :: t_bdy_tend_xs, t_bdy_tend_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ) :: t_bdy_tend_ys, t_bdy_tend_ye
+
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ) :: new_t_bdy_xs, new_t_bdy_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ) :: new_t_bdy_ys, new_t_bdy_ye
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ) :: new_t_bdy_tend_xs, new_t_bdy_tend_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ) :: new_t_bdy_tend_ys, new_t_bdy_tend_ye
 
       INTEGER    :: i, j, k, ii, jj
 
@@ -1448,17 +1461,23 @@ CONTAINS
       !  serial, OpenMP, or MPI.  For OpenMP, we do not want any overlap between tiles that
       !  are on the same task (either OpenMP only, or OpenMP+MPI).
 
-      IF ( its .EQ. ips ) THEN
-         i_min = ips-4
+      IF      ( its .EQ. ids ) THEN
+         i_min = its
+      ELSE IF ( its .EQ. ips ) THEN
+         i_min = ims
       ELSE
          i_min = its
       END IF
+      i_min = MAX(ids,i_min)
 
-      IF ( ite .EQ. ipe ) THEN
-         i_max = ipe+4
+      IF      ( ite .EQ. ide ) THEN
+         i_max = ite
+      ELSE IF ( ite .EQ. ipe ) THEN
+         i_max = ime
       ELSE
          i_max = ite
       END IF
+      i_max = MIN(i_max,ide-1)
 
       !  South and north lateral boundaries.  This is the i-extent of its through ite, but j only
       !  goes to within spec_bdy_width of the top and bottom (north and south) boundaries.
@@ -1469,9 +1488,16 @@ CONTAINS
       DO jj = MAX(jts,1) , MIN(jte,jde-1,spec_bdy_width)
          j = jj
          DO k = kts , kte-1
-!           DO i = MAX(1,its-4) , MIN(ite+4,ide-1)
-!           DO i = MAX(1,its,ips-4) , MIN(ite,ipe+4,ide-1)
-            DO i = MAX(1,i_min) , MIN(i_max,ide-1)
+            DO i = i_min , i_max
+              t_bdy_ys     (i,k,j) = orig_t_bdy_ys     (i,k,j)
+              t_bdy_tend_ys(i,k,j) = orig_t_bdy_tend_ys(i,k,j)
+            END DO
+         END DO
+      END DO
+      DO jj = MAX(jts,1) , MIN(jte,jde-1,spec_bdy_width)
+         j = jj
+         DO k = kts , kte-1
+            DO i = i_min , i_max
                mu_old_bdy_ys         =   mu_bdy_ys(i,1,j)    + mub(i,jj)
                t_old_bdy_ys          = ( t_bdy_ys(i,k,j)                                            ) / mu_old_bdy_ys
                moist_old_bdy_ys      = ( moist_bdy_ys(i,k,j)                                        ) / mu_old_bdy_ys
@@ -1481,12 +1507,12 @@ CONTAINS
                t_old_bdy_tend_ys     = ( t_new_bdy_ys        - t_old_bdy_ys                         ) / dt_interval
                moist_old_bdy_tend_ys = ( moist_new_bdy_ys    - moist_old_bdy_ys                     ) / dt_interval
                IF ( theta_to_thetam ) THEN
-                  t_bdy_ys(i,k,j) = ( ( ( t_old_bdy_ys + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_ys ) ) - T0 ) * mu_old_bdy_ys
-                  t_bdy_tend_ys(i,k,j) = ( ( mu_new_bdy_ys * ( ( t_new_bdy_ys + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_ys ) - T0 ) ) - &
+                  new_t_bdy_ys(i,k,j) = ( ( ( t_old_bdy_ys + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_ys ) ) - T0 ) * mu_old_bdy_ys
+                  new_t_bdy_tend_ys(i,k,j) = ( ( mu_new_bdy_ys * ( ( t_new_bdy_ys + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_ys ) - T0 ) ) - &
                                            ( mu_old_bdy_ys * ( ( t_old_bdy_ys + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_ys ) - T0 ) ) ) / dt_interval
                ELSE
-                  t_bdy_ys(i,k,j) = ( ( ( t_old_bdy_ys + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_ys ) ) - T0 ) * mu_old_bdy_ys
-                  t_bdy_tend_ys(i,k,j) = ( ( mu_new_bdy_ys * ( ( t_new_bdy_ys + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_ys ) - T0 ) ) - &
+                  new_t_bdy_ys(i,k,j) = ( ( ( t_old_bdy_ys + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_ys ) ) - T0 ) * mu_old_bdy_ys
+                  new_t_bdy_tend_ys(i,k,j) = ( ( mu_new_bdy_ys * ( ( t_new_bdy_ys + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_ys ) - T0 ) ) - &
                                            ( mu_old_bdy_ys * ( ( t_old_bdy_ys + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_ys ) - T0 ) ) ) / dt_interval
                END IF
             END DO
@@ -1499,9 +1525,16 @@ CONTAINS
       DO jj = MIN(jde-1,jte) , MAX(jde-spec_bdy_width,jts) , -1
          j = jde-jj
          DO k = kts , kte-1
-!           DO i = MAX(1,its-4) , MIN(ite+4,ide-1)
-!           DO i = MAX(1,its,ips-4) , MIN(ite,ipe+4,ide-1)
-            DO i = MAX(1,i_min) , MIN(i_max,ide-1)
+            DO i = i_min , i_max
+               t_bdy_ye     (i,k,j) = orig_t_bdy_ye     (i,k,j)
+               t_bdy_tend_ye(i,k,j) = orig_t_bdy_tend_ye(i,k,j)
+            END DO
+         END DO
+      END DO
+      DO jj = MIN(jde-1,jte) , MAX(jde-spec_bdy_width,jts) , -1
+         j = jde-jj
+         DO k = kts , kte-1
+            DO i = i_min , i_max
                mu_old_bdy_ye         =   mu_bdy_ye(i,1,j)    + mub(i,jj)
                t_old_bdy_ye          = ( t_bdy_ye(i,k,j)                                            ) / mu_old_bdy_ye
                moist_old_bdy_ye      = ( moist_bdy_ye(i,k,j)                                        ) / mu_old_bdy_ye
@@ -1511,12 +1544,12 @@ CONTAINS
                t_old_bdy_tend_ye     = ( t_new_bdy_ye        - t_old_bdy_ye                         ) / dt_interval
                moist_old_bdy_tend_ye = ( moist_new_bdy_ye    - moist_old_bdy_ye                     ) / dt_interval
                IF ( theta_to_thetam ) THEN
-                  t_bdy_ye(i,k,j) = ( ( ( t_old_bdy_ye + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_ye ) ) - T0 ) * mu_old_bdy_ye
-                  t_bdy_tend_ye(i,k,j) = ( ( mu_new_bdy_ye * ( ( t_new_bdy_ye + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_ye ) - T0 ) ) - &
+                  new_t_bdy_ye(i,k,j) = ( ( ( t_old_bdy_ye + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_ye ) ) - T0 ) * mu_old_bdy_ye
+                  new_t_bdy_tend_ye(i,k,j) = ( ( mu_new_bdy_ye * ( ( t_new_bdy_ye + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_ye ) - T0 ) ) - &
                                            ( mu_old_bdy_ye * ( ( t_old_bdy_ye + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_ye ) - T0 ) ) ) / dt_interval
                ELSE
-                  t_bdy_ye(i,k,j) = ( ( ( t_old_bdy_ye + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_ye ) ) - T0 ) * mu_old_bdy_ye
-                  t_bdy_tend_ye(i,k,j) = ( ( mu_new_bdy_ye * ( ( t_new_bdy_ye + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_ye ) - T0 ) ) - &
+                  new_t_bdy_ye(i,k,j) = ( ( ( t_old_bdy_ye + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_ye ) ) - T0 ) * mu_old_bdy_ye
+                  new_t_bdy_tend_ye(i,k,j) = ( ( mu_new_bdy_ye * ( ( t_new_bdy_ye + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_ye ) - T0 ) ) - &
                                            ( mu_old_bdy_ye * ( ( t_old_bdy_ye + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_ye ) - T0 ) ) ) / dt_interval
                END IF
             END DO
@@ -1527,17 +1560,23 @@ CONTAINS
       !  serial, OpenMP, or MPI.  For OpenMP, we do not want any overlap between tiles that
       !  are on the same task (either OpenMP only, or OpenMP+MPI).
 
-      IF ( jts .EQ. jps ) THEN
-         j_min = jps-4
+      IF      ( jts .EQ. jds ) THEN
+         j_min = jts
+      ELSE IF ( jts .EQ. jps ) THEN
+         j_min = jms
       ELSE
          j_min = jts
       END IF
+      j_min = MAX(jds,j_min)
 
-      IF ( jte .EQ. jpe ) THEN
-         j_max = jpe+4
+      IF      ( jte .EQ. jde ) THEN
+         j_max = jte
+      ELSE IF ( jte .EQ. jpe ) THEN
+         j_max = jme
       ELSE
          j_max = jte
       END IF
+      j_max = MIN(j_max,jde-1)
 
       !  West and east lateral boundaries.  This is the j-extent of jts through jte, but i only
       !  goes to within spec_bdy_width of the left and right (west and east) boundaries.
@@ -1548,9 +1587,16 @@ CONTAINS
       DO ii = MAX(its,1) , MIN(ite,ide-1,spec_bdy_width)
          i = ii
          DO k = kts , kte-1
-!           DO j = MAX(1,jts-4) , MIN(jte+4,jde-1)
-!           DO j = MAX(1,jts,jps-4) , MIN(jte,jpe+4,jde-1)
-            DO j = MAX(1,j_min) , MIN(j_max,jde-1)
+            DO j = j_min , j_max
+               t_bdy_xs     (j,k,i) = orig_t_bdy_xs     (j,k,i)
+               t_bdy_tend_xs(j,k,i) = orig_t_bdy_tend_xs(j,k,i)
+            END DO
+         END DO
+      END DO
+      DO ii = MAX(its,1) , MIN(ite,ide-1,spec_bdy_width)
+         i = ii
+         DO k = kts , kte-1
+            DO j = j_min , j_max
                mu_old_bdy_xs         =   mu_bdy_xs(j,1,i)    + mub(ii,j)
                t_old_bdy_xs          = ( t_bdy_xs(j,k,i)                                            ) / mu_old_bdy_xs
                moist_old_bdy_xs      = ( moist_bdy_xs(j,k,i)                                        ) / mu_old_bdy_xs
@@ -1560,12 +1606,12 @@ CONTAINS
                t_old_bdy_tend_xs     = ( t_new_bdy_xs        - t_old_bdy_xs                         ) / dt_interval
                moist_old_bdy_tend_xs = ( moist_new_bdy_xs    - moist_old_bdy_xs                     ) / dt_interval
                IF ( theta_to_thetam ) THEN
-                  t_bdy_xs(j,k,i) = ( ( ( t_old_bdy_xs + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_xs ) ) - T0 ) * mu_old_bdy_xs
-                  t_bdy_tend_xs(j,k,i) = ( ( mu_new_bdy_xs * ( ( t_new_bdy_xs + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_xs ) - T0 ) ) - &
+                  new_t_bdy_xs(j,k,i) = ( ( ( t_old_bdy_xs + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_xs ) ) - T0 ) * mu_old_bdy_xs
+                  new_t_bdy_tend_xs(j,k,i) = ( ( mu_new_bdy_xs * ( ( t_new_bdy_xs + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_xs ) - T0 ) ) - &
                                            ( mu_old_bdy_xs * ( ( t_old_bdy_xs + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_xs ) - T0 ) ) ) / dt_interval
                ELSE
-                  t_bdy_xs(j,k,i) = ( ( ( t_old_bdy_xs + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_xs ) ) - T0 ) * mu_old_bdy_xs
-                  t_bdy_tend_xs(j,k,i) = ( ( mu_new_bdy_xs * ( ( t_new_bdy_xs + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_xs ) - T0 ) ) - &
+                  new_t_bdy_xs(j,k,i) = ( ( ( t_old_bdy_xs + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_xs ) ) - T0 ) * mu_old_bdy_xs
+                  new_t_bdy_tend_xs(j,k,i) = ( ( mu_new_bdy_xs * ( ( t_new_bdy_xs + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_xs ) - T0 ) ) - &
                                            ( mu_old_bdy_xs * ( ( t_old_bdy_xs + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_xs ) - T0 ) ) ) / dt_interval
                END IF
             END DO
@@ -1578,9 +1624,16 @@ CONTAINS
       DO ii = MIN(ide-1,ite) , MAX(ide-spec_bdy_width,its) , -1
          i = ide-ii
          DO k = kts , kte-1
-!           DO j = MAX(1,jts-4) , MIN(jte+4,jde-1)
-!           DO j = MAX(1,jts,jps-4) , MIN(jte,jpe+4,jde-1)
-            DO j = MAX(1,j_min) , MIN(j_max,jde-1)
+            DO j = j_min , j_max
+               t_bdy_xe     (j,k,i) = orig_t_bdy_xe     (j,k,i)
+               t_bdy_tend_xe(j,k,i) = orig_t_bdy_tend_xe(j,k,i)
+            END DO
+         END DO
+      END DO
+      DO ii = MIN(ide-1,ite) , MAX(ide-spec_bdy_width,its) , -1
+         i = ide-ii
+         DO k = kts , kte-1
+            DO j = j_min , j_max
                mu_old_bdy_xe         =   mu_bdy_xe(j,1,i)    + mub(ii,j)
                t_old_bdy_xe          = ( t_bdy_xe(j,k,i)                                            ) / mu_old_bdy_xe
                moist_old_bdy_xe      = ( moist_bdy_xe(j,k,i)                                        ) / mu_old_bdy_xe
@@ -1590,14 +1643,57 @@ CONTAINS
                t_old_bdy_tend_xe     = ( t_new_bdy_xe        - t_old_bdy_xe                         ) / dt_interval
                moist_old_bdy_tend_xe = ( moist_new_bdy_xe    - moist_old_bdy_xe                     ) / dt_interval
                IF ( theta_to_thetam ) THEN
-                  t_bdy_xe(j,k,i) = ( ( ( t_old_bdy_xe + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_xe ) ) - T0 ) * mu_old_bdy_xe
-                  t_bdy_tend_xe(j,k,i) = ( ( mu_new_bdy_xe * ( ( t_new_bdy_xe + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_xe ) - T0 ) ) - &
+                  new_t_bdy_xe(j,k,i) = ( ( ( t_old_bdy_xe + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_xe ) ) - T0 ) * mu_old_bdy_xe
+                  new_t_bdy_tend_xe(j,k,i) = ( ( mu_new_bdy_xe * ( ( t_new_bdy_xe + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_xe ) - T0 ) ) - &
                                            ( mu_old_bdy_xe * ( ( t_old_bdy_xe + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_xe ) - T0 ) ) ) / dt_interval
                ELSE
-                  t_bdy_xe(j,k,i) = ( ( ( t_old_bdy_xe + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_xe ) ) - T0 ) * mu_old_bdy_xe
-                  t_bdy_tend_xe(j,k,i) = ( ( mu_new_bdy_xe * ( ( t_new_bdy_xe + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_xe ) - T0 ) ) - &
+                  new_t_bdy_xe(j,k,i) = ( ( ( t_old_bdy_xe + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_xe ) ) - T0 ) * mu_old_bdy_xe
+                  new_t_bdy_tend_xe(j,k,i) = ( ( mu_new_bdy_xe * ( ( t_new_bdy_xe + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_xe ) - T0 ) ) - &
                                            ( mu_old_bdy_xe * ( ( t_old_bdy_xe + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_xe ) - T0 ) ) ) / dt_interval
                END IF
+            END DO
+         END DO
+      END DO
+
+      !  Put the final values for the tendencies into the arrays that get passed 
+      !  back out to the calling routine.
+
+      DO jj = MAX(jts,1) , MIN(jte,jde-1,spec_bdy_width)
+         j = jj
+         DO k = kts , kte-1
+            DO i = i_min , i_max
+              orig_t_bdy_ys     (i,k,j) = new_t_bdy_ys     (i,k,j)
+              orig_t_bdy_tend_ys(i,k,j) = new_t_bdy_tend_ys(i,k,j)
+            END DO
+         END DO
+      END DO
+
+      DO jj = MIN(jde-1,jte) , MAX(jde-spec_bdy_width,jts) , -1
+         j = jde-jj
+         DO k = kts , kte-1
+            DO i = i_min , i_max
+               orig_t_bdy_ye     (i,k,j) = new_t_bdy_ye     (i,k,j)
+               orig_t_bdy_tend_ye(i,k,j) = new_t_bdy_tend_ye(i,k,j)
+            END DO
+         END DO
+      END DO
+
+      DO ii = its , MIN(ite,ide-1,spec_bdy_width)
+         i = ii
+         DO k = kts , kte-1
+            DO j = j_min , j_max
+               orig_t_bdy_xs     (j,k,i) = new_t_bdy_xs     (j,k,i)
+               orig_t_bdy_tend_xs(j,k,i) = new_t_bdy_tend_xs(j,k,i)
+            END DO
+         END DO
+      END DO
+
+      DO ii = MIN(ide-1,ite) , MAX(ide-spec_bdy_width,its) , -1
+         i = ide-ii
+         DO k = kts , kte-1
+            DO j = j_min , j_max
+               orig_t_bdy_xe     (j,k,i) = new_t_bdy_xe     (j,k,i)
+               orig_t_bdy_tend_xe(j,k,i) = new_t_bdy_tend_xe(j,k,i)
             END DO
          END DO
       END DO

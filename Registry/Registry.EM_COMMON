@@ -2289,6 +2289,7 @@ rconfig   real    mp_tend_lim             namelist,physics      1             10
 rconfig   real    prec_acc_dt             namelist,physics      max_domains    0.      h     "prec_acc_dt" "bucket reset time interval between outputs for cumulus or grid scale precipitation"   "minutes"
 rconfig   integer prec_acc_opt            derived               1              0       -     "prec_acc_opt" "option to output precip in a time window"          ""
 rconfig   integer bucketr_opt             derived               1              0       -     "bucketr_opt"  "option to output water accum based on bucket_mm "          ""
+rconfig   integer bucketf_opt             derived               1              0       -     "bucketf_opt"  "option to output radiation accum based on bucket_J "          ""
 
 rconfig   integer process_time_series     derived               1              0       -     "process_time_series" "0=no, 1=yes"  ""
 
@@ -2792,7 +2793,7 @@ package   scmopt         scm_force==1               -              state:z_force
 
 package   prec_acc       prec_acc_opt==1            -              state:prec_acc_c,prec_acc_nc,snow_acc_nc
 package   bucketropt     bucketr_opt==1             -              state:i_rainc,i_rainnc
-
+package   bucketfopt     bucketf_opt==1             -              state:I_ACSWUPT,I_ACSWUPTC,I_ACSWDNT,I_ACSWDNTC,I_ACSWUPB,I_ACSWUPBC,I_ACSWDNB,I_ACSWDNBC,I_ACLWUPT,I_ACLWUPTC,I_ACLWDNT,I_ACLWDNTC,I_ACLWUPB,I_ACLWUPBC,I_ACLWDNB,I_ACLWDNBC
 package   original_mom   momentum_adv_opt==1
 package   weno_mom       momentum_adv_opt==3
 

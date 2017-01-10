@@ -1139,6 +1139,7 @@ pkg_loop:  do pkg = 1,pkg_max
 !-----------------------------------------------------------------------------
    type(domain), intent(in) :: grid
 
+   integer, parameter :: nVerbotten = 8
 !-----------------------------------------------------------------------------
 !  local variables
 !-----------------------------------------------------------------------------
@@ -1150,6 +1151,10 @@ pkg_loop:  do pkg = 1,pkg_max
    logical         :: valid
    type(statevar), allocatable :: St_Vars_wrk(:,:)
    logical, allocatable :: St_Vars_msk_wrk(:,:)
+   character(len=9) :: Verbotten(nVerbotten) = (/ 'zx       ', 'zy       ', &
+                                                  'RUNDGTEN ', 'RVNDGTEN ', &
+                                                  'U_NDG_OLD', 'V_NDG_OLD', &
+                                                  'U_NDG_NEW', 'V_NDG_NEW'/)
 
 !-----------------------------------------------------------------------------
 !  just get the count
@@ -1165,6 +1170,14 @@ pkg_loop:  do pkg = 1,pkg_max
        valid = p%MemoryOrder(:3) == 'XZY'
        if( valid .and. p%Ndim == 3 ) then
          valid = p%em2 == kme
+         if( valid ) then
+           do m = 1,nVerbotten
+             if( trim(Verbotten(m)) == trim(p%Varname) ) then
+               valid = .false.
+               exit
+             endif
+           enddo
+         endif
        endif
      endif
      if( valid ) then
@@ -1225,6 +1238,14 @@ pkg_loop:  do pkg = 1,pkg_max
 !                (p%Ndim == 3 .and. p%MemoryOrder(:3) == 'XZY')
          if( valid .and. p%Ndim == 3 ) then
            valid = p%em2 == kme
+           if( valid ) then
+             do m = 1,nVerbotten
+               if( trim(Verbotten(m)) == trim(p%Varname) ) then
+                 valid = .false.
+                 exit
+               endif
+             enddo
+           endif
          endif
          if( valid ) then
            cnt = cnt + 1
@@ -1667,6 +1688,8 @@ pkg_has_active_traj: &
                allocate( chem(ims:ime,kms:kme,jms:jme,m+offset), &
                          St_Vars_buf_ndx(m+offset),stat=ios )
              endif
+           case default
+             ios = 0
          end select
          if( ios /= 0 ) then
            write(err_mes,'(''trajectory_driver: failed to allocate wrk4d: error = '',i6)') ios

@@ -2325,10 +2325,12 @@ subroutine trajectory (     grid,config_flags,               &
    i_beg = max( 1,its-1 )
    i_end = min( ite+2,ide-1 )
    do j=max(1,jts-1),min(jte+2,jde-1)
+     do k=kms,kme-1
+       u(its:i_end,k,j)=ru_m(its:i_end,k,j)/MUU(its:i_end,j)*msfu(its:i_end,j)
+       v(its:i_end,k,j)=rv_m(its:i_end,k,j)/MUV(its:i_end,j)*msfv(its:i_end,j)
+     enddo
      do k=kms,kme
-       u(its:i_end,k,j)=ru_m(its:i_end,k,j)/muu(its:i_end,j)*msfu(its:i_end,j)
-       v(its:i_end,k,j)=rv_m(its:i_end,k,j)/muv(its:i_end,j)*msfv(its:i_end,j)
-       w(its:i_end,k,j)=ww_m(its:i_end,k,j)/mut(its:i_end,j)*msft(its:i_end,j)
+       w(its:i_end,k,j)=ww_m(its:i_end,k,j)/MUT(its:i_end,j)*msft(its:i_end,j)
      enddo
    enddo
           has_proj_map  = &

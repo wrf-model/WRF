@@ -28,6 +28,7 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
                nids, nide, nkds, nkde, njds, njde, &
                nims, nime, nkms, nkme, njms, njme, &
                nips, nipe, nkps, nkpe, njps, njpe
+   integer  :: nvar
 
 #ifdef DM_PARALLEL
    ! HALO STUFF
@@ -65,13 +66,13 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
    allocate( input_t(nims:nime,nkms:nkme,njms:njme) )
    allocate( input_q(nims:nime,nkms:nkme,njms:njme) )
    allocate( input_p(nims:nime,1:1,njms:njme) )
-#ifdef CLOUD_CV
-   allocate( input_qcw(nims:nime,nkms:nkme,njms:njme) )
-   allocate( input_qrn(nims:nime,nkms:nkme,njms:njme) )
-   allocate( input_qci(nims:nime,nkms:nkme,njms:njme) )
-   allocate( input_qsn(nims:nime,nkms:nkme,njms:njme) )
-   allocate( input_qgr(nims:nime,nkms:nkme,njms:njme) )
-#endif
+   if ( alpha_hydrometeors ) then
+      allocate( input_qcw(nims:nime,nkms:nkme,njms:njme) )
+      allocate( input_qrn(nims:nime,nkms:nkme,njms:njme) )
+      allocate( input_qci(nims:nime,nkms:nkme,njms:njme) )
+      allocate( input_qsn(nims:nime,nkms:nkme,njms:njme) )
+      allocate( input_qgr(nims:nime,nkms:nkme,njms:njme) )
+   end if
 
    ! Output is low-res domain
    allocate( output_u(cims:cime,ckms:ckme,cjms:cjme) )
@@ -79,26 +80,26 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
    allocate( output_t(cims:cime,ckms:ckme,cjms:cjme) )
    allocate( output_q(cims:cime,ckms:ckme,cjms:cjme) )
    allocate( output_p(cims:cime,1:1,cjms:cjme) )
-#ifdef CLOUD_CV
-   allocate( output_qcw(cims:cime,ckms:ckme,cjms:cjme) )
-   allocate( output_qrn(cims:cime,ckms:ckme,cjms:cjme) )
-   allocate( output_qci(cims:cime,ckms:ckme,cjms:cjme) )
-   allocate( output_qsn(cims:cime,ckms:ckme,cjms:cjme) )
-   allocate( output_qgr(cims:cime,ckms:ckme,cjms:cjme) )
-#endif
+   if ( alpha_hydrometeors ) then
+      allocate( output_qcw(cims:cime,ckms:ckme,cjms:cjme) )
+      allocate( output_qrn(cims:cime,ckms:ckme,cjms:cjme) )
+      allocate( output_qci(cims:cime,ckms:ckme,cjms:cjme) )
+      allocate( output_qsn(cims:cime,ckms:ckme,cjms:cjme) )
+      allocate( output_qgr(cims:cime,ckms:ckme,cjms:cjme) )
+   end if
 
    output_u = 0. ; input_u = 0.
    output_v = 0. ; input_v = 0.
    output_t = 0. ; input_t = 0.
    output_q = 0. ; input_q = 0.
    output_p = 0. ; input_p = 0.
-#ifdef CLOUD_CV
-   output_qcw = 0. ; input_qcw = 0.
-   output_qrn = 0. ; input_qrn = 0.
-   output_qci = 0. ; input_qci = 0.
-   output_qsn = 0. ; input_qsn = 0.
-   output_qgr = 0. ; input_qgr = 0.
-#endif
+   if ( alpha_hydrometeors ) then
+      output_qcw = 0. ; input_qcw = 0.
+      output_qrn = 0. ; input_qrn = 0.
+      output_qci = 0. ; input_qci = 0.
+      output_qsn = 0. ; input_qsn = 0.
+      output_qgr = 0. ; input_qgr = 0.
+   end if
 
    !
    ! Get input (hi-res) data into (x,z,y) order for interpolation
@@ -111,18 +112,25 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
             input_v(i,k,j) = xa%v(i,j,k)
             input_t(i,k,j) = xa%t(i,j,k)
             input_q(i,k,j) = xa%q(i,j,k)
-#ifdef CLOUD_CV
-            input_qcw(i,k,j) = xa%qcw(i,j,k)
-            input_qrn(i,k,j) = xa%qrn(i,j,k)
-            input_qci(i,k,j) = xa%qci(i,j,k)
-            input_qsn(i,k,j) = xa%qsn(i,j,k)
-            input_qgr(i,k,j) = xa%qgr(i,j,k)
-#endif
          end do
       end do
    end do
 
    input_p(:,1,:) = xa%psfc(:,:)
+
+   if ( alpha_hydrometeors ) then
+      do j = jte, jts, -1
+         do k = kte, kts, -1
+            do i = ite, its, -1
+               input_qcw(i,k,j) = xa%qcw(i,j,k)
+               input_qrn(i,k,j) = xa%qrn(i,j,k)
+               input_qci(i,k,j) = xa%qci(i,j,k)
+               input_qsn(i,k,j) = xa%qsn(i,j,k)
+               input_qgr(i,k,j) = xa%qgr(i,j,k)
+            end do
+         end do
+      end do
+   end if ! alpha_hydrometeors
 
    write (unit=message(1),fmt='(A,2I8)')' istart, jstart = ',grid%i_parent_start, grid%j_parent_start
    call wrf_debug(2, message(1))
@@ -137,6 +145,11 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
    !!!!!! DO HALO STUFF !!!!!!!!!!!!!!!
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+   nvar = 4
+   if ( alpha_hydrometeors ) then
+      nvar = 9
+   end if
+
    CALL rsl_comm_iter_init(4,njps,njpe)
    DO WHILE ( rsl_comm_iter( grid%id , grid%is_intermediate, 4 , &
                          0 , njds,njde,njps,njpe, grid%njds, grid%njde, &
@@ -146,11 +159,7 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
       CALL RSL_LITE_INIT_EXCH ( local_communicator, 4, 0,          &
            rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
            rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-#ifdef CLOUD_CV
-           9, 1, RWORDSIZE, &
-#else
-           4, 1, RWORDSIZE, &
-#endif
+           nvar, 1, RWORDSIZE, &
            0, 0, IWORDSIZE, &
            0, 0, DWORDSIZE, &
            0, 0, LWORDSIZE, &
@@ -212,7 +221,7 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
            nims, nime, njms, njme, 1, 1,                           &
            nips, nipe, njps, njpe, 1, 1   )
         ENDIF
-#ifdef CLOUD_CV
+if ( alpha_hydrometeors ) then
         IF ( SIZE(input_qcw,1)*SIZE(input_qcw,3) .GT. 1 ) THEN
            CALL RSL_LITE_PACK ( local_communicator,                &
            input_qcw, 4,                                           &
@@ -268,7 +277,7 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
            nims, nime, njms, njme, nkms, nkme,                     &
            nips, nipe, njps, njpe, nkps, nkpe   )
         ENDIF
-#endif
+end if ! alpha_hydrometeors
 
         CALL RSL_LITE_EXCH_Y ( local_communicator , myproc, ntasks, ntasks_x, ntasks_y, &
                           rsl_sendw_m,  rsl_sendw_p, rsl_recvw_m,  rsl_recvw_p    )
@@ -328,7 +337,7 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
            nims, nime, njms, njme, 1, 1,                           &
            nips, nipe, njps, njpe, 1, 1   )
         ENDIF
-#ifdef CLOUD_CV
+if ( alpha_hydrometeors ) then
         IF ( SIZE(input_qcw,1)*SIZE(input_qcw,3) .GT. 1 ) THEN
            CALL RSL_LITE_PACK ( local_communicator,                &
            input_qcw, 4,                                           &
@@ -384,7 +393,7 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
            nims, nime, njms, njme, nkms, nkme,                     &
            nips, nipe, njps, njpe, nkps, nkpe   )
         ENDIF
-#endif
+end if ! alpha_hydrometeors
 
       ENDDO
 
@@ -397,11 +406,7 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
       CALL RSL_LITE_INIT_EXCH ( local_communicator, 4, 1,          &
            rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
            rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-#ifdef CLOUD_CV
-           9, 1, RWORDSIZE, &
-#else
-           4, 1, RWORDSIZE, &
-#endif
+           nvar, 1, RWORDSIZE, &
            0, 0, IWORDSIZE, &
            0, 0, DWORDSIZE, &
            0, 0, LWORDSIZE, &
@@ -463,7 +468,7 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
            nims, nime, njms, njme, 1, 1,                           &
            nips, nipe, njps, njpe, 1, 1   )
         ENDIF
-#ifdef CLOUD_CV
+if ( alpha_hydrometeors ) then
         IF ( SIZE(input_qcw,1)*SIZE(input_qcw,3) .GT. 1 ) THEN
            CALL RSL_LITE_PACK ( local_communicator,                &
            input_qcw, 4,                                           &
@@ -519,7 +524,7 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
            nims, nime, njms, njme, nkms, nkme,                     &
            nips, nipe, njps, njpe, nkps, nkpe   )
         ENDIF
-#endif
+end if ! alpha_hydrometeors
 
       CALL RSL_LITE_EXCH_X ( local_communicator , myproc, ntasks, ntasks_x, ntasks_y, &
                           rsl_sendw_m,  rsl_sendw_p, rsl_recvw_m,  rsl_recvw_p    )
@@ -579,7 +584,7 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
            nims, nime, njms, njme, 1, 1,                           &
            nips, nipe, njps, njpe, 1, 1   )
         ENDIF
-#ifdef CLOUD_CV
+if ( alpha_hydrometeors ) then
         IF ( SIZE(input_qcw,1)*SIZE(input_qcw,3) .GT. 1 ) THEN
            CALL RSL_LITE_PACK ( local_communicator,                &
            input_qcw, 4,                                           &
@@ -635,7 +640,7 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
            nims, nime, njms, njme, nkms, nkme,                     &
            nips, nipe, njps, njpe, nkps, nkpe   )
         ENDIF
-#endif
+end if ! alpha_hydrometeors
 
    ENDDO
 
@@ -667,7 +672,18 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
             output_q(ob_locs(n)%i+1,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dx   * input_q( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_q(ob_locs(n)%i+1,k,ob_locs(n)%j)
             output_q(ob_locs(n)%i  ,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dxm  * input_q( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_q(ob_locs(n)%i  ,k,ob_locs(n)%j+1)
             output_q(ob_locs(n)%i+1,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dx   * input_q( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_q(ob_locs(n)%i+1,k,ob_locs(n)%j+1)
-#ifdef CLOUD_CV
+         end do
+
+         output_p(ob_locs(n)%i  ,1,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dxm  * input_p( ob_locs(n)%xx,1,ob_locs(n)%yy) + output_p(ob_locs(n)%i  ,1,ob_locs(n)%j)
+         output_p(ob_locs(n)%i+1,1,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dx   * input_p( ob_locs(n)%xx,1,ob_locs(n)%yy) + output_p(ob_locs(n)%i+1,1,ob_locs(n)%j)
+         output_p(ob_locs(n)%i  ,1,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dxm  * input_p( ob_locs(n)%xx,1,ob_locs(n)%yy) + output_p(ob_locs(n)%i  ,1,ob_locs(n)%j+1)
+         output_p(ob_locs(n)%i+1,1,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dx   * input_p( ob_locs(n)%xx,1,ob_locs(n)%yy) + output_p(ob_locs(n)%i+1,1,ob_locs(n)%j+1)
+
+      end do
+
+   if ( alpha_hydrometeors ) then
+      do n=1,total_here
+         do k = kts,kte
             output_qcw(ob_locs(n)%i  ,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dxm  * input_qcw( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qcw(ob_locs(n)%i  ,k,ob_locs(n)%j)
             output_qcw(ob_locs(n)%i+1,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dx   * input_qcw( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qcw(ob_locs(n)%i+1,k,ob_locs(n)%j)
             output_qcw(ob_locs(n)%i  ,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dxm  * input_qcw( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qcw(ob_locs(n)%i  ,k,ob_locs(n)%j+1)
@@ -692,15 +708,9 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
             output_qgr(ob_locs(n)%i+1,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dx   * input_qgr( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qgr(ob_locs(n)%i+1,k,ob_locs(n)%j)
             output_qgr(ob_locs(n)%i  ,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dxm  * input_qgr( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qgr(ob_locs(n)%i  ,k,ob_locs(n)%j+1)
             output_qgr(ob_locs(n)%i+1,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dx   * input_qgr( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qgr(ob_locs(n)%i+1,k,ob_locs(n)%j+1)
-#endif
          end do
-
-         output_p(ob_locs(n)%i  ,1,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dxm  * input_p( ob_locs(n)%xx,1,ob_locs(n)%yy) + output_p(ob_locs(n)%i  ,1,ob_locs(n)%j)
-         output_p(ob_locs(n)%i+1,1,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dx   * input_p( ob_locs(n)%xx,1,ob_locs(n)%yy) + output_p(ob_locs(n)%i+1,1,ob_locs(n)%j)
-         output_p(ob_locs(n)%i  ,1,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dxm  * input_p( ob_locs(n)%xx,1,ob_locs(n)%yy) + output_p(ob_locs(n)%i  ,1,ob_locs(n)%j+1)
-         output_p(ob_locs(n)%i+1,1,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dx   * input_p( ob_locs(n)%xx,1,ob_locs(n)%yy) + output_p(ob_locs(n)%i+1,1,ob_locs(n)%j+1)
-
       end do
+   end if ! alpha_hydrometeors
 
    write (unit=message(1), fmt='(A,2F12.5)') ' min/max U  Input = ',minval(input_u),maxval(input_u)
    call wrf_debug(2, message(1))
@@ -734,6 +744,22 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
    do n = ne, 1, -1
       ii = (iobwin-1)*ensdim_alpha + n
 
+      if ( alpha_hydrometeors ) then
+         do j = jte_int, jts_int, -1
+            do k = kte_int, kts_int, -1
+               do i = ite_int, its_int, -1
+                  alpha = 0.0
+                  alpha = alpha + ep % gr(i,j,k,ii) * output_qgr(i,k,j)
+                  alpha = alpha + ep % sn(i,j,k,ii) * output_qsn(i,k,j)
+                  alpha = alpha + ep % ci(i,j,k,ii) * output_qci(i,k,j)
+                  alpha = alpha + ep % rn(i,j,k,ii) * output_qrn(i,k,j)
+                  alpha = alpha + ep % cw(i,j,k,ii) * output_qcw(i,k,j)
+                  vp % alpha(i,j,k,n) = vp % alpha(i,j,k,n) + alpha
+               end do
+            end do
+         end do
+      end if ! alpha_hydrometeors
+
       ! ps:
       vp % alpha(its_int:ite_int,jts_int:jte_int,1,n) =      &
            vp % alpha(its_int:ite_int,jts_int:jte_int,1,n) + &
@@ -745,13 +771,6 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
             do i = ite_int, its_int, -1
 
                   alpha = 0.0
-#ifdef CLOUD_CV
-                  alpha = alpha + ep % gr(i,j,k,ii) * output_qgr(i,k,j)
-                  alpha = alpha + ep % sn(i,j,k,ii) * output_qsn(i,k,j)
-                  alpha = alpha + ep % ci(i,j,k,ii) * output_qci(i,k,j)
-                  alpha = alpha + ep % rn(i,j,k,ii) * output_qrn(i,k,j)
-                  alpha = alpha + ep % cw(i,j,k,ii) * output_qcw(i,k,j)
-#endif
                   alpha = alpha + ep % v4(i,j,k,ii) * output_q(i,k,j)
                   alpha = alpha + ep % v3(i,j,k,ii) * output_t(i,k,j)
                   alpha = alpha + ep % v2(i,j,k,ii) * output_v(i,k,j)
@@ -767,10 +786,10 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
    ! Clean-up
    deallocate(output_u,output_v,output_t,output_q,output_p)
    deallocate(input_u,input_v,input_t,input_q,input_p)
-#ifdef CLOUD_CV
-   deallocate(output_qcw,output_qrn,output_qci,output_qsn,output_qgr)
-   deallocate(input_qcw,input_qrn,input_qci,input_qsn,input_qgr)
-#endif
+   if ( alpha_hydrometeors ) then
+      deallocate(output_qcw,output_qrn,output_qci,output_qsn,output_qgr)
+      deallocate(input_qcw,input_qrn,input_qci,input_qsn,input_qgr)
+   end if
 
    if (trace_use) call da_trace_exit("da_calc_flow_dependence_xa_adj_dual_res")
 

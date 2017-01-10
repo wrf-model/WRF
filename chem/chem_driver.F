@@ -26,6 +26,7 @@
   USE module_dep_simple
   USE module_bioemi_simple
   USE module_phot_mad
+  USE module_phot_tuv,    only : tuv_timestep_init
   USE module_ftuv_driver, only : ftuv_timestep_init
   USE module_aerosols_sorgam
   USE module_chem_utilities
@@ -892,9 +893,10 @@
          call wrf_debug(15,'calling photolysis driver')
          call photolysis_driver (grid%id,curr_secs,ktau,grid%dt,                      &
               config_flags,haveaer,                                                   &
+              grid%dt_cld,grid%af_dir,grid%af_dn,grid%af_up,grid%ph_par,grid%ph_erythema,   &
               grid%gmt,ijulian,t_phy,moist,grid%aerwrf,p8w,t8w,p_phy,             &
               chem,rho,dz8w,grid%xlat,grid%xlong,                                     &
-              z_at_w,                                                                 &
+              zmid,z_at_w,                                                            &
               grid%qc_cu,grid%qi_cu,                                                  &
               grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,grid%ph_no3o2,       &
               grid%ph_no3o,grid%ph_hno2,grid%ph_hno3,grid%ph_hno4,grid%ph_h2o2,       &

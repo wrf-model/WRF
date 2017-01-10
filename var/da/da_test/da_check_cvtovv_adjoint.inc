@@ -50,26 +50,26 @@ subroutine da_check_cvtovv_adjoint(grid, cv_size, xbx, be, cv, vv)
    !----------------------------------------------------------------------
    ! [3.0] Calculate LHS of adjoint test equation:
    !----------------------------------------------------------------------
-#ifdef CLOUD_CV
    adj_par_lhs = sum(vv % v1(its:ite,jts:jte,1:be%v1%mz)**2) &
                + sum(vv % v2(its:ite,jts:jte,1:be%v2%mz)**2) &
                + sum(vv % v3(its:ite,jts:jte,1:be%v3%mz)**2) &
                + sum(vv % v4(its:ite,jts:jte,1:be%v4%mz)**2) &
-               + sum(vv % v5(its:ite,jts:jte,1:be%v5%mz)**2) &
-               + sum(vv % v6(its:ite,jts:jte,1:be%v6%mz)**2) &
-               + sum(vv % v7(its:ite,jts:jte,1:be%v7%mz)**2) &
-               + sum(vv % v8(its:ite,jts:jte,1:be%v8%mz)**2) &
-               + sum(vv % v9(its:ite,jts:jte,1:be%v9%mz)**2) &
-               + sum(vv % v10(its:ite,jts:jte,1:be%v10%mz)**2)  &
-               + sum(vv % v11(its:ite,jts:jte,1:be%v11%mz)**2)
-#else
-   adj_par_lhs = sum(vv % v1(its:ite,jts:jte,1:be%v1%mz)**2) &
-               + sum(vv % v2(its:ite,jts:jte,1:be%v2%mz)**2) &
-               + sum(vv % v3(its:ite,jts:jte,1:be%v3%mz)**2) &
-               + sum(vv % v4(its:ite,jts:jte,1:be%v4%mz)**2) &
-               + sum(vv % v5(its:ite,jts:jte,1:be%v5%mz)**2) 
+               + sum(vv % v5(its:ite,jts:jte,1:be%v5%mz)**2)
 
-#endif
+   if ( cloud_cv_options >= 2 ) then
+      adj_par_lhs = adj_par_lhs                                   &
+                  + sum(vv % v6(its:ite,jts:jte,1:be%v6%mz)**2)   &
+                  + sum(vv % v7(its:ite,jts:jte,1:be%v7%mz)**2)   &
+                  + sum(vv % v8(its:ite,jts:jte,1:be%v8%mz)**2)   &
+                  + sum(vv % v9(its:ite,jts:jte,1:be%v9%mz)**2)   &
+                  + sum(vv % v10(its:ite,jts:jte,1:be%v10%mz)**2)
+   end if
+
+   if ( use_cv_w ) then
+      adj_par_lhs = adj_par_lhs                                   &
+                  + sum(vv % v11(its:ite,jts:jte,1:be%v11%mz)**2)
+   end if
+
    if (be % ne > 0) then
 !     adj_par_lhs = adj_par_lhs + sum(vv % alpha(its:ite,jts:jte,1:be%alpha%mz,1:be%ne)**2)
       adj_par_lhs = adj_par_lhs + sum(vv % alpha(its_int:ite_int,jts_int:jte_int,1:be%alpha%mz,1:be%ne)**2)

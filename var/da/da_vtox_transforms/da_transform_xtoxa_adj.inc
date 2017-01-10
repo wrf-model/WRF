@@ -51,11 +51,9 @@ subroutine da_transform_xtoxa_adj(grid, wpec_on)
       if ( .not. var4d .and. cloud_cv_options == 1 ) call da_uvprho_to_w_adj(grid)
    end if
 
-   if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) ) then
-      if ( cloud_cv_options == 1 .and. use_3dvar_phy) then
-         ! Partition of hydrometeor increments via warm rain process
-         call da_moist_phys_adj(grid)
-      end if
+   if ( cloud_cv_options == 1 ) then
+      ! Partition of hydrometeor increments via warm rain process
+      call da_moist_phys_adj(grid)
    end if
 
    !-------------------------------------------------------------------------

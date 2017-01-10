@@ -66,6 +66,7 @@
       USE MODULE_CLEAR_HALOS, only: clear_ij_halos
       USE MODULE_STATS_FOR_MOVE, only: vorttrak_init
       USE MODULE_SWATH, only: init_swath
+      USE MODULE_SF_EXCHCOEF, only: znot_wind10m
 #endif
       USE MODULE_TIMING
 #if ( HWRF == 1 )
@@ -159,7 +160,7 @@
       INTEGER :: I_M
 !
       INTEGER :: ILPAD2,IRPAD2,JBPAD2,JTPAD2
-      INTEGER :: ITS,ITE,JTS,JTE,KTS,KTE
+      INTEGER :: ITS,ITE,JTS,JTE,KTS,KTE, nhki, nhkj
 !
       INTEGER,DIMENSION(3) :: LPTOP
 !
@@ -168,9 +169,12 @@
      &       ,SLPM,TERM1,THLM,TIME,TLM,TSFCK,ULM,VLM
 !
 !!!   REAL :: BLDT,CWML,EXNSFC,G_INV,PLYR,PSFC,ROG,SFCZ,THSIJ,TL
-      REAL :: CWML,EXNSFC,G_INV,PLYR,PSURF,ROG,SFCZ,THSIJ,TL,ZOQING
+      REAL :: CWML,EXNSFC,G_INV,PLYR,PSURF,ROG,SFCZ,THSIJ,TL
       REAL :: TEND, TEMPDX,TEMPDY
 #if ( HWRF == 1 )
+! For calculating 10-m wind from lowest model level wind
+      INTEGER :: ITER
+      REAL :: windlmtmp,wind10tmp,wind10new,znotmtmp,znotttmp
 !zhang's doing 
       REAL :: TSTART
 !zhang's doing ends
@@ -704,14 +708,22 @@
                             IMS,IME,JMS,JME,KMS,KME, &
                             ITS,ITE,JTS,JTE,KTS,KTE)
          call init_swath(grid, config_flags, &
-              (allowed_to_read .and. .not. restrt) )
+              (allowed_to_read .and. .not. restrt),&
+              allowed_to_read)
     ENDIF
     IF(ANAL .or. allowed_to_read) THEN
+       call wrf_debug(1,'Request update to area of interest in start_domain_nmm.')
        grid%update_interest=.true.
     ENDIF
 ! End Sam Trahan's doing for vortex tracker initialization
 #endif
 #if ( HWRF == 1 )
+! Begin Sam Trahan's change to merge two log messages for WRF_NMM
+    IF(allowed_to_read .and. .not. restrt) THEN
+       grid%avgPchg=0
+    ENDIF
+! End Sam Trahan's change to merge two log messages for WRF_NMM
+
 !zhang's doing
   IF((.NOT.RESTRT .AND. .NOT.ANAL) .OR. .NOT.allowed_to_read)THEN
 !end of zhang's doing
@@ -1533,26 +1545,27 @@
 #endif
           grid%th10(I,J)=FAC2*grid%ths(I,J)+FAC1*THLM
           grid%q10(I,J)=FAC2*grid%qsh(I,J)+FAC1*QLM
-#if ( HWRF == 1 )
+#if (HWRF == 1)
           IF(grid%sm(I,J).LT.0.5)THEN
-              grid%u10(I,J)=ULM*(log(10./grid%z0(I,J))/log(DZLM/grid%z0(I,J)))      ! this is all Qingfu's doing
+              grid%u10(I,J)=ULM*(log(10./grid%z0(I,J))/log(DZLM/grid%z0(I,J)))
               grid%v10(I,J)=VLM*(log(10./grid%z0(I,J))/log(DZLM/grid%z0(I,J)))
-              ZOQING=1.944*SQRT(grid%u10(I,J)*grid%u10(I,J)+grid%v10(I,J)*grid%v10(I,J))
-            IF(ZOQING.GT.60.)THEN
-              grid%u10(I,J)=grid%u10(I,J)*(1.12-7.2/ZOQING)
-              grid%v10(I,J)=grid%v10(I,J)*(1.12-7.2/ZOQING)
-             ENDIF
           ELSE
-             ZOQING=(0.074*SQRT(ULM*ULM+VLM*VLM)-0.58)*1.0e-3
-             ZOQING=MAX(ZOQING,grid%z0(I,J))          ! for winds greater than 12.5 m/s
-             grid%u10(I,J)=ULM*(log(10./ZOQING))/log(DZLM/ZOQING)      ! this is all Qingfu's doing
-             grid%v10(I,J)=VLM*(log(10./ZOQING))/log(DZLM/ZOQING)
-             ZOQING=1.944*SQRT(grid%u10(I,J)*grid%u10(I,J)+grid%v10(I,J)*grid%v10(I,J))
-           IF(ZOQING.GT.60.)THEN
-              grid%u10(I,J)=grid%u10(I,J)*(1.12-7.2/ZOQING)
-              grid%v10(I,J)=grid%v10(I,J)*(1.12-7.2/ZOQING)
-           END IF
-          ENDIF          
+             windlmtmp=SQRT(ULM*ULM+VLM*VLM)
+             wind10tmp=windlmtmp
+             DO ITER=1,10
+               call znot_wind10m(wind10tmp,znotttmp,znotmtmp,config_flags%icoef_sf)
+               znotmtmp=MAX(znotmtmp,1.e-6)
+               wind10new=windlmtmp*(log(10./znotmtmp))/log(DZLM/znotmtmp)
+               IF (ABS(wind10new-wind10tmp) .LE. 1.e-3 ) EXIT
+               wind10tmp=wind10new
+               IF ( ITER .GE. 10 ) THEN
+                 write(message,*) 'Warning: reached the 10th iteration step in calculating U10 from ULM'
+                 CALL wrf_message( message )
+               ENDIF
+             ENDDO
+             grid%u10(I,J)=ULM*(log(10./znotmtmp))/log(DZLM/znotmtmp)
+             grid%v10(I,J)=VLM*(log(10./znotmtmp))/log(DZLM/znotmtmp)
+          ENDIF
 #else
           grid%u10(I,J)=ULM
           grid%v10(I,J)=VLM
@@ -1625,17 +1638,24 @@
 !
 !!!!	SHOULD grid%dwdt BE REDEFINED IF RESTRT?
 
+      if(grid%nhmove<0) then
+         nhki=1
+         nhkj=1
+      elseif(grid%nhmove>0) then
+         nhki=3
+         nhkj=6
+      endif
+
       IF((.NOT.RESTRT.OR.NEST).AND. allowed_to_read)THEN ! This is gopal's inclusion for moving nest
         DO K=KPS,KPE
           DO J=JFS,JFE
-             if(.not. grid%keepnh .or. .not. nestmove &
-                    .or. j<7 .or. j+6>jfe) then
+             if(grid%nhmove==0 .or. .not. nestmove .or. j<nhkj+1 .or. j+nhkj>jfe) then
                 DO I=IFS,IFE
                    grid%dwdt(I,J,K)=1.
                 ENDDO
              else
-                grid%dwdt(1:3,j,k)=1.
-                grid%dwdt(ife-2:ife,j,k)=1.
+                grid%dwdt(1:nhki,j,k)=1.
+                grid%dwdt(ife-nhki+1:ife,j,k)=1.
              endif
           ENDDO
         ENDDO
@@ -1687,28 +1707,44 @@
         enddo
 #endif
         if(nestmove) then
-           if(.not.grid%keepnh) then
-              call wrf_message('Discarding non-hydrostatic state at nest move.  Set keepnh=T to retain the state.')
-           else
+           if(grid%nhmove==0) then
+              call wrf_message('Discarding non-hydrostatic state at nest move.  Set nhmove=-1 to retain the state everywhere or nhmove=1 to discard only at the boundaries.')
+           elseif(grid%nhmove>0) then
               call wrf_message('Retaining non-hydrostatic state at nest move except at nest boundaries.')
+           else
+              call wrf_message('Retaining non-hydrostatic state at nest move.')
            endif
+        endif
+
+        if(grid%nhmove<0) then
+           nhki=1
+           nhkj=1
+        elseif(grid%nhmove>0) then
+           nhki=3
+           nhkj=6
         endif
 
         DO K=KPS,KPE
         DO J=JFS,JFE
-           if(.not.nestmove .or. .not. grid%keepnh .or. j<7 .or. j+6>=jfe) then
+           if(grid%nhmove==0 .or. .not.nestmove .or. j<nhkj+1 .or. j+nhkj>=jfe) then
               DO I=IFS,IFE
                  grid%pint(I,J,K)=grid%eta1(K)*grid%pdtop+grid%eta2(K)*grid%pdsl(I,J)+grid%pt
                  grid%z(I,J,K)=grid%pint(I,J,K)
                  grid%w(I,J,K)=0.
               ENDDO
            else
-              grid%pint(1:3,J,K)=grid%eta1(K)*grid%pdtop+grid%eta2(K)*grid%pdsl(I,J)+grid%pt
-              grid%z(1:3,J,K)=grid%pint(I,J,K)
-              grid%w(1:3,J,K)=0.
-              grid%pint(ife-2:ife,J,K)=grid%eta1(K)*grid%pdtop+grid%eta2(K)*grid%pdsl(I,J)+grid%pt
-              grid%z(ife-2:ife,J,K)=grid%pint(I,J,K)
-              grid%w(ife-2:ife,J,K)=0.
+              ! Rotated West boundary:
+              do I=1,nhki
+                 grid%pint(I,J,K)=grid%eta1(K)*grid%pdtop+grid%eta2(K)*grid%pdsl(I,J)+grid%pt
+                 grid%z(I,J,K)=grid%pint(I,J,K)
+                 grid%w(I,J,K)=0.
+              enddo
+              ! Rotated East boundary:
+              do I=ife-nhki+1,ife
+                 grid%pint(I,J,K)=grid%eta1(K)*grid%pdtop+grid%eta2(K)*grid%pdsl(I,J)+grid%pt
+                 grid%z(I,J,K)=grid%pint(I,J,K)
+                 grid%w(I,J,K)=0.
+              enddo
            endif
         ENDDO
         ENDDO
@@ -2148,6 +2184,7 @@
      &                WTXY=grid%WTXY, LFMASSXY=grid%LFMASSXY, RTMASSXY=grid%RTMASSXY,    & ! Optional Noah-MP
      &                STMASSXY=grid%STMASSXY, WOODXY=grid%WOODXY,                        & ! Optional Noah-MP
      &                GRAINXY=grid%GRAINXY, GDDXY=grid%GDDXY,                            & ! Optional Noah-MP
+     &                CROPTYPE=grid%CROPTYPE, CROPCAT=grid%CROPCAT,                      & ! Optional Noah-MP
      &                STBLCPXY=grid%STBLCPXY, FASTCPXY=grid%FASTCPXY,                    & ! Optional Noah-MP
      &                XSAIXY=grid%XSAIXY,LAI=grid%LAI,                                   & ! Optional Noah-MP
      &                T2MVXY=grid%T2MVXY, T2MBXY=grid%T2MBXY, CHSTARXY=grid%CHSTARXY,    & ! Optional Noah-MP

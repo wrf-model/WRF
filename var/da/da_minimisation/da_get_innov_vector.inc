@@ -129,15 +129,12 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       if (iv%info(ships)%nlocal     > 0) &
          call da_get_innov_vector_ships     (it, num_qcstat_conv,grid, ob, iv)
 
-      if ( (use_gpspwObs .and. iv%info(gpspw)%nlocal > 0) .or. &
-           (pseudo_var(1:3) == 'tpw' .and. iv%info(pseudo)%nlocal > 0) ) then
+      if ( use_gpspwObs .and. iv%info(gpspw)%nlocal > 0 ) then
          call da_get_innov_vector_gpspw     (it, num_qcstat_conv,grid, ob, iv)
-      else if ( (use_gpsztdObs .and. iv%info(gpspw)%nlocal > 0) .or. &
-           (pseudo_var(1:3) == 'ztd' .and. iv%info(pseudo)%nlocal > 0) ) then
+      else if ( use_gpsztdObs .and. iv%info(gpspw)%nlocal > 0 ) then
          call da_get_innov_vector_gpsztd    ( it, num_qcstat_conv, grid, ob, iv )
-      endif 
-      if ( (iv%info(gpsref)%nlocal  > 0  ) .or. &
-           (pseudo_var(1:3) == 'ref' .and. iv%info(pseudo)%nlocal > 0) ) &
+      endif
+      if ( iv%info(gpsref)%nlocal  > 0  ) &
          call da_get_innov_vector_gpsref    (it, num_qcstat_conv, grid, ob, iv)
       if (iv%info(ssmi_tb)%nlocal   > 0) &
          call da_get_innov_vector_ssmi_tb   (it, grid, ob, iv)
@@ -164,7 +161,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 #if defined(CRTM) || defined(RTTOV)
       if (use_rad                      ) call da_get_innov_vector_radiance (it, grid, ob, iv)
 #endif
-      if (iv%info(pseudo)%nlocal    ==1) call da_get_innov_vector_pseudo   (grid, ob, iv)
+      if (iv%info(pseudo)%nlocal    ==1) call da_get_innov_vector_pseudo   (it, grid, ob, iv)
       if (iv%info(airsr)%nlocal     > 0) &
       call da_get_innov_vector_airsr    (it,num_qcstat_conv, grid, ob, iv)
 

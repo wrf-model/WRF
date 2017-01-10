@@ -30,6 +30,22 @@ subroutine da_calc_flow_dependence_xa_adj (ne, ep, xa, vp, nobwin)
    do n = ne, 1, -1
       ii = (iobwin-1)*ensdim_alpha + n
 
+      if ( alpha_hydrometeors ) then
+         do k = kte, kts, -1
+            do j = jte, jts, -1
+               do i = ite, its, -1
+                  alpha = 0.0
+                  alpha = alpha + ep % gr(i,j,k,ii) * xa % qgr(i,j,k)
+                  alpha = alpha + ep % sn(i,j,k,ii) * xa % qsn(i,j,k)
+                  alpha = alpha + ep % ci(i,j,k,ii) * xa % qci(i,j,k)
+                  alpha = alpha + ep % rn(i,j,k,ii) * xa % qrn(i,j,k)
+                  alpha = alpha + ep % cw(i,j,k,ii) * xa % qcw(i,j,k)
+                  vp % alpha(i,j,k,n) = vp % alpha(i,j,k,n) + alpha
+               end do
+            end do
+         end do
+      end if ! alpha_hydrometeors
+
       ! ps:
       vp % alpha(its:ite,jts:jte,1,n) = vp % alpha(its:ite,jts:jte,1,n) + &
                                         ep % v5(its:ite,jts:jte,1,ii) *   & ! v5 = ps
@@ -37,19 +53,12 @@ subroutine da_calc_flow_dependence_xa_adj (ne, ep, xa, vp, nobwin)
       do k = kte, kts, -1
          do j = jte, jts, -1
             do i = ite, its, -1
-                  alpha = 0.0
-#ifdef CLOUD_CV
-                  alpha = alpha + ep % gr(i,j,k,ii) * xa % qgr(i,j,k)
-                  alpha = alpha + ep % sn(i,j,k,ii) * xa % qsn(i,j,k)
-                  alpha = alpha + ep % ci(i,j,k,ii) * xa % qci(i,j,k)
-                  alpha = alpha + ep % rn(i,j,k,ii) * xa % qrn(i,j,k)
-                  alpha = alpha + ep % cw(i,j,k,ii) * xa % qcw(i,j,k)
-#endif
-                  alpha = alpha + ep % v4(i,j,k,ii) * xa % q(i,j,k)
-                  alpha = alpha + ep % v3(i,j,k,ii) * xa % t(i,j,k)
-                  alpha = alpha + ep % v2(i,j,k,ii) * xa % v(i,j,k)
-                  alpha = alpha + ep % v1(i,j,k,ii) * xa % u(i,j,k)
-                  vp % alpha(i,j,k,n) = vp % alpha(i,j,k,n) + alpha
+               alpha = 0.0
+               alpha = alpha + ep % v4(i,j,k,ii) * xa % q(i,j,k)
+               alpha = alpha + ep % v3(i,j,k,ii) * xa % t(i,j,k)
+               alpha = alpha + ep % v2(i,j,k,ii) * xa % v(i,j,k)
+               alpha = alpha + ep % v1(i,j,k,ii) * xa % u(i,j,k)
+               vp % alpha(i,j,k,n) = vp % alpha(i,j,k,n) + alpha
             end do
          end do
       end do

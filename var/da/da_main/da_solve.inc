@@ -195,13 +195,38 @@
          ' Resetting ntmax = 0 for analysis_type = randomcv' 
    end if
 
-#ifdef CLOUD_CV
-   if ( cv_options == 3 ) then
-      write(unit=message(1),fmt='(A,I3)') &
-         'cloud_cv does NOT work with cv_options = ', cv_options
-      call da_error(__FILE__,__LINE__,message(1:1))
+   if ( cv_options == 3 .and. cloud_cv_options > 0 ) then
+      write(unit=message(1),fmt='(A)') &
+         'Cloud control variables are not implemented for cv_options = 3'
+      write(unit=message(2),fmt='(A)') &
+         'Resetting cloud_cv_options = 0 for cv_options = 3'
+      cloud_cv_options = 0
+      call da_warning(__FILE__,__LINE__,message(1:1))
    end if
-#endif
+
+   if ( use_radarobs ) then
+      if ( use_radar_rf .and. use_radar_rhv ) then
+         write(unit=message(1),fmt='(A)') "Both 'use_radar_rf' and 'use_radar_rhv' are set to true"
+         write(unit=message(2),fmt='(A)') "You must only choose one of these options"
+         call da_error(__FILE__,__LINE__,message(1:2))
+      end if
+      if ( use_radar_rf .and. cloud_cv_options /= 1 ) then
+         write(unit=message(1),fmt='(A)') "Please set cloud_cv_options=1 for use_radar_rf"
+         call da_error(__FILE__,__LINE__,message(1:1))
+      end if
+      if ( use_radar_rhv .and. cloud_cv_options == 1 ) then
+         write(unit=message(1),fmt='(A)') "Please set cloud_cv_options=3 or 2 (2 requires cloudy be.dat) for use_radar_rhv"
+         call da_error(__FILE__,__LINE__,message(1:1))
+      end if
+   end if
+
+   if ( ensdim_alpha > 0 .and. alpha_hydrometeors ) then
+      if ( cloud_cv_options == 1 ) then
+         write(unit=message(1),fmt='(A)') "alpha_hydrometeors is not implemented for cloud_cv_options=1"
+         write(unit=message(2),fmt='(A)') "Please choose cloud_cv_options=3"
+         call da_error(__FILE__,__LINE__,message(1:2))
+      end if
+   end if
 
    !---------------------------------------------------------------------------
    ! [2.0] Initialise wrfvar parameters:
@@ -478,14 +503,12 @@
       be % v3 % mz = 0
       be % v4 % mz = 0
       be % v5 % mz = 0
-#ifdef CLOUD_CV
       be % v6  % mz = 0
       be % v7  % mz = 0
       be % v8  % mz = 0
       be % v9  % mz = 0
       be % v10 % mz = 0
       be % v11 % mz = 0
-#endif
    end if
 
     ! overwrite variables defined in da_setup_cv.inc set in the call to da_setup_background_errors
@@ -756,7 +779,7 @@
                              be,iv,xhat,qhat,cvt,re,y,j,eignvec,eignval,neign)
           ! Output Cost Function
             call da_calculate_j(it, 1, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
-                             be%cv%size_jl, xbx, be, iv, xhat, cvt, re, y, j, xhat, grid, config_flags )
+                             be%cv%size_jl, xbx, be, iv, xhat, cvt, re, y, j, grid, config_flags )
 
          else
             call da_minimise_lz(grid, config_flags, it, cv_size, xbx,& 

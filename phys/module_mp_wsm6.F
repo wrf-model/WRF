@@ -76,6 +76,9 @@ CONTAINS
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,its,ite, jts,jte, kts,kte                        &
+#ifdef WRF_CHEM
+                 ,evapprod, rainprod                               &
+#endif
                                                                    )
 !-------------------------------------------------------------------
   IMPLICIT NONE
@@ -141,6 +144,17 @@ CONTAINS
   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,                 &
         INTENT(INOUT) ::                                 graupel, &
                                                       graupelncv
+
+#ifdef WRF_CHEM
+  REAL, DIMENSION( ims:ime , kms:kme, jms:jme ), INTENT(INOUT) :: &
+                                                      rainprod,   &
+                                                      evapprod
+! local variable
+  REAL, DIMENSION( its:ite , kts:kte )                 ::         &
+                                                      rainprod2d, &
+                                                      evapprod2d
+#endif
+
 ! LOCAL VAR
   REAL, DIMENSION( its:ite , kts:kte ) ::   t
   REAL, DIMENSION( its:ite , kts:kte, 2 ) ::   qci
@@ -186,6 +200,9 @@ CONTAINS
                     ,its,ite, jts,jte, kts,kte                     &
                     ,snow,snowncv                                  &
                     ,graupel,graupelncv                            &
+#ifdef WRF_CHEM
+                   ,rainprod2d, evapprod2d                        &
+#endif
                                                                    )
          DO K=kts,kte
          DO I=its,ite
@@ -243,7 +260,14 @@ CONTAINS
           enddo   
         endif     ! has_reqc, etc...
 !+---+-----------------------------------------------------------------+
-
+#ifdef WRF_CHEM
+        do i=its,ite
+          do k=kts,kte
+            rainprod(i,k,j) = rainprod2d(i,k)
+            evapprod(i,k,j) = evapprod2d(i,k)
+          enddo
+        enddo
+#endif
       ENDDO
   END SUBROUTINE wsm6
 !===================================================================
@@ -262,6 +286,9 @@ CONTAINS
                    ,its,ite, jts,jte, kts,kte                     &
                    ,snow,snowncv                                  &
                    ,graupel,graupelncv                            &
+#ifdef WRF_CHEM
+                   ,rainprod2d, evapprod2d                        &
+#endif
                                                                   )
 !-------------------------------------------------------------------
   IMPLICIT NONE
@@ -353,6 +380,13 @@ CONTAINS
   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL,                  &
         INTENT(INOUT) ::                                 graupel, &
                                                       graupelncv
+
+#ifdef WRF_CHEM
+  REAL, DIMENSION( its:ite , kts:kte ), INTENT(INOUT)  ::         &
+                                                      rainprod2d, &
+                                                      evapprod2d
+#endif
+
 ! LOCAL VAR
   REAL, DIMENSION( its:ite , kts:kte , 3) ::                      &
                                                               rh, &
@@ -1460,6 +1494,12 @@ CONTAINS
         enddo
       enddo
       enddo                  ! big loops
+
+#ifdef WRF_CHEM
+      rainprod2d = praut+pracw+praci+psaci+pgaci+psacw+pgacw+paacw+psaut
+      evapprod2d = -(prevp+psevp+pgevp+psdep+pgdep)
+#endif
+
   END SUBROUTINE wsm62d
 ! ...................................................................
       REAL FUNCTION rgmma(x)

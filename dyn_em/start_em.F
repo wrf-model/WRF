@@ -1067,11 +1067,13 @@ endif
                       grid%WSLAKEXY, grid%ZWTXY, grid%WAXY, grid%WTXY, grid%LFMASSXY, grid%RTMASSXY, & ! Optional Noah-MP
                       grid%STMASSXY, grid%WOODXY, grid%STBLCPXY, grid%FASTCPXY,                 &   ! Optional Noah-MP
                       grid%GRAINXY, grid%GDDXY,                                                 &   ! Optional Noah-MP
+                      grid%CROPTYPE, grid%CROPCAT,                                                 &   ! Optional Noah-MP
                       grid%XSAIXY,grid%LAI,                                                     &   ! Optional Noah-MP
                       grid%T2MVXY, grid%T2MBXY, grid%CHSTARXY,                                  &   ! Optional Noah-MP
                       grid%SMOISEQ  ,grid%SMCWTDXY ,grid%RECHXY, grid%DEEPRECHXY, grid%AREAXY,  & ! Optional Noah-MP
                       config_flags%wtddt ,grid%stepwtd ,grid%QRFSXY ,grid%QSPRINGSXY ,grid%QSLATXY, & ! Optional Noah-MP
                       grid%FDEPTHXY, grid%RIVERBEDXY, grid%EQZWT, grid%RIVERCONDXY, grid%PEXPXY, & ! Optional Noah-MP
+                      grid%rechclim  ,grid%rivermask ,grid%nonriverxy,                           & ! Optional Noah-MP
                       grid%msftx, grid%msfty,                              &
                       grid%DZR, grid%DZB, grid%DZG,                          & !Optional urban
                       grid%TR_URB2D,grid%TB_URB2D,grid%TG_URB2D,grid%TC_URB2D,    & !Optional urban

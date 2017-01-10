@@ -43,7 +43,6 @@ CONTAINS
 
     ! USES:
     USE module_utility
-    USE module_model_constants
     USE module_streams
     USE module_domain, ONLY : domain_clock_get
 
@@ -77,6 +76,13 @@ CONTAINS
     TYPE(WRFU_Alarm), INTENT(INOUT)           :: avgOutAlarm
     INTEGER, INTENT(INOUT)                    :: nsteps                 ! number of step accumulated
     CHARACTER(*), INTENT(INOUT)               :: avgOutDateStr
+
+    INTEGER, PARAMETER :: NONE = 0
+    INTEGER, PARAMETER :: SECS = 1
+    INTEGER, PARAMETER :: MINS = 2
+    INTEGER, PARAMETER :: HRS  = 3
+    INTEGER, PARAMETER :: DAYS = 4
+    INTEGER, PARAMETER :: MONTHLY = 5
 
     REAL, INTENT(IN)                                  :: dt, xtime
     REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)  :: ht
@@ -303,7 +309,6 @@ CONTAINS
     !----------------------------------------------------------------------
     ! USES:
     USE module_utility
-    USE module_model_constants
     USE module_domain, ONLY : domain_clock_get
 
     IMPLICIT NONE
@@ -335,6 +340,15 @@ CONTAINS
     INTEGER, INTENT(INOUT)                    :: avg_nsteps             ! number of avg steps accumulated
     INTEGER, INTENT(INOUT)                    :: diurnal_nsteps         ! number of diurnal steps accumulated
     CHARACTER(*), INTENT(INOUT)               :: diurnOutDateStr
+
+    INTEGER, PARAMETER :: NONE = 0
+    INTEGER, PARAMETER :: SECS = 1
+    INTEGER, PARAMETER :: MINS = 2
+    INTEGER, PARAMETER :: HRS  = 3
+    INTEGER, PARAMETER :: DAYS = 4
+    INTEGER, PARAMETER :: MONTHLY = 5
+    INTEGER, PARAMETER :: NUM_DIURN_CYCLES = 8
+    INTEGER, PARAMETER :: DIURNAL_3HR      = 10800   ! three hour period in seconds
 
     REAL, INTENT(IN)                                  :: dt, xtime
     REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)  :: psfc, tsk, t2, th2, q2 
@@ -839,7 +853,6 @@ CONTAINS
 
     ! USES:
     USE module_utility
-    USE module_model_constants
     !USE ESMF_Mod
 
     IMPLICIT NONE
@@ -849,6 +862,13 @@ CONTAINS
     REAL, INTENT(IN)              :: dt, xtime 
     INTEGER, INTENT(IN)           :: output_freq
     LOGICAL, INTENT(INOUT)        :: is_reset
+
+    INTEGER, PARAMETER :: NONE = 0
+    INTEGER, PARAMETER :: SECS = 1
+    INTEGER, PARAMETER :: MINS = 2
+    INTEGER, PARAMETER :: HRS  = 3
+    INTEGER, PARAMETER :: DAYS = 4
+    INTEGER, PARAMETER :: MONTHLY = 5
    
     ! LOCAL VARIABLES:
     TYPE(WRFU_TimeInterval) :: off
@@ -905,7 +925,6 @@ CONTAINS
 
    ! USES:
     USE module_utility
-    USE module_model_constants
     !USE ESMF_Mod
 
     IMPLICIT NONE
@@ -921,6 +940,13 @@ CONTAINS
     TYPE(WRFU_TimeInterval) :: off
     TYPE(WRFU_Time)         :: nextTime
     TYPE(WRFU_Time)         :: prevTime
+
+    INTEGER, PARAMETER :: NONE = 0
+    INTEGER, PARAMETER :: SECS = 1
+    INTEGER, PARAMETER :: MINS = 2
+    INTEGER, PARAMETER :: HRS  = 3
+    INTEGER, PARAMETER :: DAYS = 4
+    INTEGER, PARAMETER :: MONTHLY = 5
  
     integer :: yr         !nstep year
     integer :: mon        !nstep months (1 -> 12)
@@ -1035,7 +1061,6 @@ CONTAINS
 
    ! USES:
     USE module_utility
-    USE module_model_constants
     !USE ESMF_Mod
 
     IMPLICIT NONE
@@ -1046,6 +1071,13 @@ CONTAINS
     integer, INTENT(IN)           :: diurn_interval
     LOGICAL, INTENT(INOUT)        :: compute_diurn
     CHARACTER(*), INTENT(INOUT)   :: OutDateStr
+
+    INTEGER, PARAMETER :: NONE = 0
+    INTEGER, PARAMETER :: SECS = 1
+    INTEGER, PARAMETER :: MINS = 2
+    INTEGER, PARAMETER :: HRS  = 3
+    INTEGER, PARAMETER :: DAYS = 4
+    INTEGER, PARAMETER :: MONTHLY = 5
 
     ! LOCAL VARIABLES:
     TYPE(WRFU_TimeInterval) :: off
@@ -1142,7 +1174,6 @@ CONTAINS
 
     ! USES:
     USE module_utility
-    USE module_model_constants
     !USE ESMF_Mod
 
     IMPLICIT NONE
@@ -1150,6 +1181,13 @@ CONTAINS
     TYPE(WRFU_Time), INTENT(IN)   :: currentTime
     REAL, INTENT(IN)              :: dt, xtime 
     INTEGER, INTENT(INOUT)        :: diurn_cycle
+
+    INTEGER, PARAMETER :: NONE = 0
+    INTEGER, PARAMETER :: SECS = 1
+    INTEGER, PARAMETER :: MINS = 2
+    INTEGER, PARAMETER :: HRS  = 3
+    INTEGER, PARAMETER :: DAYS = 4
+    INTEGER, PARAMETER :: MONTHLY = 5
 
     ! LOCAL VARIABLES:
     TYPE(WRFU_TimeInterval) :: off

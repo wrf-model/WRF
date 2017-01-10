@@ -7,10 +7,9 @@ dimspec    dc      2     constant=8                        z     diurnal_cycles
 
 # Namelist parameters
 
+rconfig   integer  mean_diag              namelist,time_control   1              0      -    "mean diagnostics flag"
 rconfig   integer  mean_freq              namelist,time_control   1              0      -    "mean output frequency"
 rconfig   integer  mean_interval          namelist,time_control   1              0      -    "mean output interval"
-rconfig   integer  diurnal_cycle          namelist,time_control   1              0      -    "diurnal output mode"
-rconfig   integer  mean_diag              namelist,time_control   1              0      -    "mean diagnostics flag"
 rconfig   integer  diurnal_diag           namelist,time_control   1              0      -    "diurnal diagnostics flag"
 
 # Climate: Mean - output arrays of averages
@@ -56,8 +55,6 @@ state    real  LWDNT_DIURN     i{dc}j  misc        1         -     rh6        "L
 state  character OUTDATE_DIURN -       misc        -         -     -          ""               ""
 state  integer NSTEPS_DIURN    -       misc        -         -     r          "NSTEP_D"        "NUMBER OF DIURNAL STEPS ACCUMULATED"
 
-state:psfc_diurn,tsk_diurn,t2_diurn,th2_diurn,q2_diurn,u10_diurn,v10_diurn,hfx_diurn,lh_diurn,swdnb_diurn,glw_diurn,lwupb_diurn,swupb_diurn,swupt_diurn,swdnt_dirun,lwupt_diurn,lwdnt_diurn
-
 # Climate: Diurnal variables to computer intermediate avereges
 state    real  PSFC_DTMP       ij      misc        1         -     r          "PSFC_DTM"       "DIRUNUAL TEMP AVERAGE SURFACE PRESSURE"                            "Pa"
 state    real  TSK_DTMP        ij      misc        1         -     r          "TSK_DTM"        "DIRUNUAL TEMP AVERAGE SURFACE SKIN TEMPERATURE"                    "K"
@@ -78,16 +75,12 @@ state    real  LWUPT_DTMP      ij      misc        1         -     r          "L
 state    real  LWDNT_DTMP      ij      misc        1         -     r          "LWDNT_DTM"      "DIRUNUAL TEMP AVERAGE DOWNWELLING LONGWAVE FLUX AT TOP"            "W m-2"
 state  integer NSTEPSMEAN_DIURN  -     misc        -         -     r          "NSTEP_DTM"      "NUMBER OF MEAN STEPS ACCUMULATED IN DIURNAL Calculation"
 
-# Package declaration for RASM diagnostic climate output
+# Package declaration for RASM diagnostic output
 
-# -Climate: Mean
-package   mean_freq_off      mean_freq==0                  -    state:psfc_mean,tsk_mean,pmsl_mean,t2_mean,th2_mean,q2_mean,u10_mean,v10_mean,hfx_mean,lh_mean,swdnb_mean,glw_mean,lwupb_mean,swupb_mean,swupt_mean,swdnt_mean,lwupt_mean,lwdnt_mean
-package   mean_freq_secs     mean_freq==1                  -    state:psfc_mean,tsk_mean,pmsl_mean,t2_mean,th2_mean,q2_mean,u10_mean,v10_mean,hfx_mean,lh_mean,swdnb_mean,glw_mean,lwupb_mean,swupb_mean,swupt_mean,swdnt_mean,lwupt_mean,lwdnt_mean
-package   mean_freq_mins     mean_freq==2                  -    state:psfc_mean,tsk_mean,pmsl_mean,t2_mean,th2_mean,q2_mean,u10_mean,v10_mean,hfx_mean,lh_mean,swdnb_mean,glw_mean,lwupb_mean,swupb_mean,swupt_mean,swdnt_mean,lwupt_mean,lwdnt_mean
-package   mean_freq_hrs      mean_freq==3                  -    state:psfc_mean,tsk_mean,pmsl_mean,t2_mean,th2_mean,q2_mean,u10_mean,v10_mean,hfx_mean,lh_mean,swdnb_mean,glw_mean,lwupb_mean,swupb_mean,swupt_mean,swdnt_mean,lwupt_mean,lwdnt_mean
-package   mean_freq_days     mean_freq==4                  -    state:psfc_mean,tsk_mean,pmsl_mean,t2_mean,th2_mean,q2_mean,u10_mean,v10_mean,hfx_mean,lh_mean,swdnb_mean,glw_mean,lwupb_mean,swupb_mean,swupt_mean,swdnt_mean,lwupt_mean,lwdnt_mean
-package   mean_freq_mon      mean_freq==5                  -    state:psfc_mean,tsk_mean,pmsl_mean,t2_mean,th2_mean,q2_mean,u10_mean,v10_mean,hfx_mean,lh_mean,swdnb_mean,glw_mean,lwupb_mean,swupb_mean,swupt_mean,swdnt_mean,lwupt_mean,lwdnt_mean
+# -RASM_DIAG: Mean
+package   mean_diag_off      mean_diag==0                  -    -
+package   mean_diag_on       mean_diag==1                  -    state:psfc_mean,tsk_mean,pmsl_mean,t2_mean,th2_mean,q2_mean,u10_mean,v10_mean,hfx_mean,lh_mean,swdnb_mean,glw_mean,lwupb_mean,swupb_mean,swupt_mean,swdnt_mean,lwupt_mean,lwdnt_mean
 
-# -Climate: Diurnal
-package   diurnal_cycle_off      diurnal_cycle==0          -    -
-package   diurnal_cycle_on       diurnal_cycle==1          -    state:psfc_diurn,tsk_diurn,t2_diurn,th2_diurn,q2_diurn,u10_diurn,v10_diurn,hfx_diurn,lh_diurn,swdnb_diurn,glw_diurn,lwupb_diurn,swupb_diurn,swupt_diurn,swdnt_dirun,lwupt_diurn,lwdnt_diurn
+# -RASM_DIAG: Diurnal
+package   diurnal_diag_off   diurnal_diag==0               -    -
+package   diurnal_diag_on    diurnal_diag==1               -    state:psfc_diurn,tsk_diurn,t2_diurn,th2_diurn,q2_diurn,u10_diurn,v10_diurn,hfx_diurn,lh_diurn,swdnb_diurn,glw_diurn,lwupb_diurn,swupb_diurn,swupt_diurn,swdnt_dirun,lwupt_diurn,lwdnt_diurn

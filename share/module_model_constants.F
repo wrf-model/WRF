@@ -156,21 +156,6 @@
    !  Fraction into the year (from perhelion) of the
    !  occurrence of the Northern Spring Equinox
    REAL , PARAMETER :: EQUINOX_FRACTION= 0.0
-!----------------------------------------------------------------------
-! RASM Climate Diagnostics - JR, AS, MS  - October 2016
-!----------------------------------------------------------------------
-   INTEGER , PARAMETER :: DIURNAL_ON       = 1 
-   INTEGER , PARAMETER :: NUM_DIURN_CYCLES = 8
-   INTEGER , PARAMETER :: DIURNAL_3HR      = 10800   ! three hour period in seconds
-   INTEGER , PARAMETER :: NONE = 0
-   INTEGER , PARAMETER :: SECS = 1
-   INTEGER , PARAMETER :: MINS = 2
-   INTEGER , PARAMETER :: HRS  = 3
-   INTEGER , PARAMETER :: DAYS = 4
-   INTEGER , PARAMETER :: MONTHLY = 5
-!----------------------------------------------------------------------
-! end RASM Climate Diagnostics
-!----------------------------------------------------------------------
 
 ! 2012103
 #if (EM_CORE == 1)

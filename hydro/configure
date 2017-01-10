@@ -46,7 +46,7 @@
      print "   9. Linux ifort compiler dmpar (WCOSS Luna)   \n";
      print "   0. exit only \n";
 
-     printf "\nEnter selection [%d-%d] : ",1,5 ;
+     printf "\nEnter selection [%d-%d] : ",0,9 ;
 
      $response = <STDIN> ;
      chop($response);

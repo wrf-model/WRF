@@ -1,0 +1,15 @@
+.SUFFIXES: .c .o
+
+include ../../configure.kpp
+
+DEBUG = -g 
+OBJ = tuv_kpp.o
+
+tuv_kpp : $(OBJ)
+	$(SCC) -o tuv_kpp $(DEBUG) $(OBJ)
+
+.c.o :
+	$(SCC) -c $(DEBUG) $<
+
+clean:
+	/bin/rm -f $(OBJ)

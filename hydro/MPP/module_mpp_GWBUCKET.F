@@ -132,6 +132,65 @@ MODULE MODULE_mpp_GWBUCKET
       if(allocated(vbuff)) deallocate(vbuff)
   end subroutine gw_write_io_real
 
+  subroutine gw_write_io_int(numbasns,inV,ind,outV)
+      implicit none
+      integer, intent(in) :: numbasns
+      integer :: i, ierr, tag, tag2,k
+      integer,intent(in), dimension(numbasns) :: inV
+      integer,intent(in), dimension(numbasns) :: ind
+      integer, dimension(:) :: outV
+      integer, allocatable,dimension(:) :: vbuff
+      integer, allocatable,dimension(:) :: ibuff
+ 
+      if(gw_ini .ne. 99) then
+         stop "FATAL ERROR: mpp_GWBUCKET not initialized."        
+      endif 
+ 
+      if(my_id .eq. IO_id) then
+          outV = 0.0
+          allocate(vbuff(maxSizeInd))
+          allocate(ibuff(maxSizeInd))
+      else
+          allocate(vbuff(1))
+          allocate(ibuff(1))
+      endif
+ 
+      if(my_id .ne. IO_id) then
+         if(numbasns .gt. 0) then
+           tag = 62
+           call mpi_send(inV,numbasns,MPI_INTEGER, IO_id,     &
+                 tag,MPI_COMM_WORLD,ierr)
+           tag2 = 63
+           call mpi_send(ind,numbasns,MPI_INTEGER, IO_id,     &
+                 tag2,MPI_COMM_WORLD,ierr)
+         endif
+       else
+ 
+           do k = 1, numbasns
+               outV(ind(k)) = inV(k)  
+           end do
+ 
+           do i = 0, numprocs - 1
+             if(i .ne. IO_id) then
+                if(sizeInd(i+1) .gt. 0) then
+                   tag = 62
+                   call mpi_recv(vbuff(1:sizeInd(i+1)),sizeInd(i+1),&
+                       MPI_INTEGER,i,tag,MPI_COMM_WORLD,mpp_status,ierr)
+                   tag2 = 63
+                   call mpi_recv(ibuff(1:sizeInd(i+1)),sizeInd(i+1),&
+                       MPI_INTEGER,i,tag2,MPI_COMM_WORLD,mpp_status,ierr)
+    
+                   do k = 1, sizeInd(i+1)
+                      outV(ibuff(k)) = vbuff(k) 
+                   end do
+                endif 
+              end if
+            end do
+       end if
+       deallocate(ibuff)
+       deallocate(vbuff)
+   end subroutine gw_write_io_int
+
   subroutine gw_decompose_real(gnumbasns,numbasns,ind,inV,outV)
      implicit none
      integer, intent(in) :: numbasns, gnumbasns

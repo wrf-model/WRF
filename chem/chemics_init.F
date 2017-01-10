@@ -33,6 +33,7 @@
    USE module_phot_mad
 
    USE module_ftuv_driver, only : ftuv_init
+   USE module_phot_tuv,    only : tuv_init
    USE module_mozcart_wetscav, only : wetscav_mozcart_init
    USE module_aerosols_sorgam
    USE module_aerosols_soa_vbs, only: aerosols_soa_vbs_init
@@ -280,6 +281,18 @@ call wrf_message("**************************************************************
                               ims, ime, jms, jme, kms, kme,    &
                               its, ite, jts, jte, kts )
    endif
+!-----------------------------------------------------------------------
+!  Check TUV photolysis for chem_opt compatability
+!-----------------------------------------------------------------------
+   if (config_flags%phot_opt == TUV ) then
+     if (config_flags%chem_opt /= mozart_mosaic_4bin_kpp .and. &
+              config_flags%chem_opt /= mozart_mosaic_4bin_aq_kpp .and. &
+              config_flags%chem_opt /= mozcart_kpp ) THEN
+       write(message_txt,'(''--- ERROR: chem_opt '',a,'' not setup for TUV photolysis at this time'')') &
+              config_flags%chem_opt
+       CALL wrf_error_fatal( trim(message_txt) )
+     endif
+   endif
 
 !!! TUCCELLA
    if ( config_flags%wetscav_onoff == 1 ) then
@@ -305,9 +318,9 @@ call wrf_message("**************************************************************
          call wrf_error_fatal("ERROR: wet scavenging option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) or 11 (CAMMGMP) or 17/18/22 NSSL_2mom to function.")
        endif
      elseif( id == 1 ) then
-       if ( config_flags%mp_physics /= 8 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 17  &
+       if ( config_flags%mp_physics /= 6 .and. config_flags%mp_physics /= 8 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 17  &
             .and. config_flags%mp_physics /= 18 .and. config_flags%mp_physics /= 22) then
-         call wrf_error_fatal("ERROR: wet scavenging option for MOZART,MOZCART requires mp_phys = 8 (Thompson) or 10 (Morrison) .or 17/18/22 (NSSL 2-moment) to function.")
+         call wrf_error_fatal("ERROR: wet scavenging option for MOZART,MOZCART requires mp_phys = 6 (WSM6) or 8 (Thompson) or 10 (Morrison) .or 17/18/22 (NSSL 2-moment) to function.")
        else
          write(message_txt,*) 'chem_init: calling wetscav_mozcart_init for domain ',id
          call wrf_message( trim(message_txt) )
@@ -354,7 +367,9 @@ call wrf_message("**************************************************************
    endif
 
    if ( config_flags%bio_emiss_opt .EQ. 3 .AND. config_flags%ne_area .LT. num_chem ) then
-      call wrf_error_fatal("ERROR: MEGAN biogenics requires ne_area to be equal or greater than num_chem")
+      write(message_txt,'(''ERROR: MEGAN biogenics requires ne_area('',i6,'') >= num_chem('',i6,'')'')') config_flags%ne_area,num_chem
+!     call wrf_error_fatal("ERROR: MEGAN biogenics requires ne_area to be equal or greater than num_chem")
+      call wrf_error_fatal( trim(message_txt) )
    endif
 
     IF ( config_flags%chem_opt == 0 .AND. config_flags%aer_ra_feedback .NE. 0 ) THEN
@@ -594,6 +609,20 @@ end if
 
         call ftuv_init( id, its, ite, jts, jte, kte, &
                   ide, jde, config_flags,config_flags%num_land_cat,mminlu_loc )
+     CASE (TUV)
+       if( config_flags%cld_od_opt > 3 .or. config_flags%cld_od_opt < 1 ) then
+         call wrf_error_fatal("cld_od_opt must be {1,2,3}")
+       endif
+       if( config_flags%pht_cldfrc_opt > 2 .or. config_flags%pht_cldfrc_opt < 1 ) then
+         call wrf_error_fatal("pht_cldfrc_opt must be {1,2}")
+       endif
+       write(message_txt,'(''chemics_init('',i2.2,''): call tuv phot initialization'')') id
+       CALL wrf_debug( 0,trim(message_txt) )
+       call tuv_init( id, config_flags, z_at_w, aerwrf, g, &
+                      grid%af_lambda_start, grid%af_lambda_end,grid%lambda_cutoff,&
+                      ids,ide, jds,jde, kds,kde, &
+                      ims,ime, jms,jme, kms,kme, &
+                      its,ite, jts,jte, kts,kte  )
 !---
 
   END SELECT phot_select

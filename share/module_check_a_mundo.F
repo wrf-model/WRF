@@ -376,28 +376,6 @@
          model_config_rec%sf_urban_physics(i) = d1_value
       END DO
 
-!-----------------------------------------------------------------------
-! Check for consistency in the Noah-MP options
-!-----------------------------------------------------------------------
-
-      DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec%sf_surface_physics(i) == NOAHMPSCHEME ) THEN
-
-            ! Noah-MP does not work with the urban schemes
-
-            IF ( model_config_rec%sf_urban_physics(i) /= 0 ) THEN
-               WRITE(wrf_err_message, '(" --- ERROR:   Noah-MP LSM scheme (sf_surface_physics==", I2, ")")') NOAHMPSCHEME
-               CALL wrf_message ( TRIM ( wrf_err_message ) )
-               WRITE(wrf_err_message, '("              does not work with urban physics schemes")')
-         !      CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         fatal_error = .true.
-         count_fatal_error = count_fatal_error + 1
-            ENDIF
-
-         END IF
-      END DO
-
 !------------------------------------------------------------------------
 ! Mills (2011) sea-ice albedo treatment only for Noah LSM and Noah-MP LSM
 !------------------------------------------------------------------------
@@ -1095,6 +1073,20 @@
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
       END IF
+
+!-----------------------------------------------------------------------
+! If hailcast_opt = 1, horizontal grid spacing must be 4 km or finer.
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec%hailcast_opt(i) .NE. 0 ) .AND. &
+              ( model_config_rec%dx(i) .GT. 4000 ) ) THEN
+            wrf_err_message = '--- WARNING:  hailcast_opt requires a grid-spacing of 4 km or finer.'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '---          hailcast_opt is now 0.'
+            CALL wrf_message ( wrf_err_message )
+            model_config_rec%hailcast_opt(i) = 0
+         ENDIF
+      ENDDO
 
 !-----------------------------------------------------------------------
 ! Name change in the namelist.input file.  We used to only have the

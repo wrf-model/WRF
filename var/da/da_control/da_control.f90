@@ -532,6 +532,11 @@ module da_control
       "rain          " &
    /)
 
+   logical :: pseudo_tpw
+   logical :: pseudo_ztd
+   logical :: pseudo_ref
+   logical :: pseudo_uvtpq
+
    integer, parameter :: max_no_fm = 290
 
    integer, parameter :: num_ob_vars=10

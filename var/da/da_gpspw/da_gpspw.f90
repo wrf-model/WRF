@@ -13,6 +13,7 @@ module da_gpspw
       fails_error_max,pseudo_err,pseudo_x, pseudo_y, stdout, &
       pseudo_z,pseudo_val,max_error_ref, trace_use_dull, pseudo, its,ite,jts,jte,&
       ob_vars,qcstat_conv_unit
+   use da_control, only : pseudo_tpw, pseudo_ztd
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &
       bad_data_type, x_type, number_type, bad_data_type, &
       maxmin_type, da_allocate_observations

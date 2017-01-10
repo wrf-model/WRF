@@ -29,7 +29,7 @@
                     ,FNS,FEW,FNE,FSE                                    &
                     ,T,U,V,W,W_TOT,Q,CWM                                      &
                     ,DEF3D,HDAC,BARO                                    &
-                    ,WP                                                 &    
+                    ,WP,dwdt_damping_lev                                                 &    
                     ,IHE,IHW,IVE,IVW                                    &
                     ,IDS,IDE,JDS,JDE,KDS,KDE                            &
                     ,IMS,IME,JMS,JME,KMS,KME                            &
@@ -83,6 +83,8 @@
       INTEGER,INTENT(IN) :: NTSD
 !
       REAL,INTENT(IN) :: DT,DY,PDTOP,PT,WP
+! level where starts dwdt damping, read in from namelist
+      real,INTENT(IN) :: dwdt_damping_lev
 !
       REAL,DIMENSION(KMS:KME-1),INTENT(IN) :: DETA1,DETA2,AETA1
 !
@@ -391,6 +393,29 @@
        ENDDO
       ENDDO
      endif
+
+!dumping dwdt at stratsphere, Zhan
+
+      if ( dwdt_damping_lev .ge. 0.001 ) then
+        lsltp=0
+        SLTP=(PT+AETA1(KTE-1)*PDTOP+PT+AETA1(KTE)*PDTOP)*0.5
+        DO L=KTE,2,-1
+          PAVG=PT+PDTOP*(AETA1(L)+AETA1(L-1))*0.5
+          ARG=( PAVG-SLTP )/dwdt_damping_lev
+          if(arg.gt.1.) exit
+          why(l)=1.-cos(arg*pi*0.5)**2
+          lsltp=l
+        enddo
+!
+      DO l=lsltp,KTE
+       DO J=MYJS2_P1,MYJE2_P1
+        DO I=MYIS1_P1,MYIE1_P1
+            dwdt(i,j,l)=dwdt(i,j,l)*why(l)
+        ENDDO
+       ENDDO
+      ENDDO
+      endif
+!dumping dwdt at stratsphere, Zhan
 
 !$omp parallel do                                                       &
 !$omp& private(dwdtt,i,j,k)

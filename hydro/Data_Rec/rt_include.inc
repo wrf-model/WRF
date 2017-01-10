@@ -136,12 +136,10 @@
 
   INTEGER, allocatable, DIMENSION(:) :: LAKEIDX ! integer index for lakes, mapped to linkid
 
-#ifndef HYDRO_REALTIME
 !!! accumulated variables for reach beased rt
   REAL, allocatable, DIMENSION(:)    :: accLndRunOff, accQLateral, accStrmvolrt, accBucket
-#else
+  !REAL, allocatable, DIMENSION(:)    :: qqLndRunOff, qqStrmvolrt, qqBucket
   REAL, allocatable, DIMENSION(:)    :: QLateral, velocity
-#endif
 
 #ifdef MPP_LAND
   INTEGER, allocatable, DIMENSION(:)    :: lake_index,nlinks_index

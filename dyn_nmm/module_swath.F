@@ -12,15 +12,16 @@ module module_swath
 
   private
 
-  public :: update_interest, init_swath
+  public :: update_interest, init_swath, sustained_wind, check_for_kid_move
 
 contains
 
-  subroutine init_swath(grid,config_flags,init)
+  subroutine init_swath(grid,config_flags,init,reinit)
     USE MODULE_CONFIGURE, ONLY : grid_config_rec_type
     type(domain), intent(inout) :: grid
     type(grid_config_rec_type), intent(in) :: config_flags
-    logical, intent(in) :: init ! .true. = first initialization in wrf.exe
+    logical, intent(in) :: init ! .true. = first initialization in wrf.exe, non-restart run
+    logical, intent(in) :: reinit ! .true. = first initialization in this execution of wrf.exe (may be restart)
     character*255 :: message
     if(init) then
 3088   format('Grid ',I0,' is resetting swath data.')
@@ -29,8 +30,107 @@ contains
        if(size(grid%interesting)>1)   grid%interesting=0
        if(size(grid%precip_swath)>1)  grid%precip_swath=0
        if(size(grid%windsq_swath)>1)  grid%windsq_swath=0
+       if(size(grid%suswind)>1)       grid%suswind=0
+       if(size(grid%suswind_swath)>1) grid%suswind_swath=0
+       if(size(grid%wind10_ratio)>1)  grid%wind10_ratio=1
+       grid%suswind_time=0
+    endif
+    if(reinit) then
+3000   format('Grid ',I0,' is resetting wind sustainment timer.')
+       write(message,3000) grid%id
+       call wrf_message(message)
+       grid%suswind_time=0
     endif
   end subroutine init_swath
+
+  subroutine sustained_wind(grid,config_flags,ips,ipe,jps,jpe,turbl_step)
+    USE MODULE_CONFIGURE, ONLY : grid_config_rec_type
+    type(domain), intent(inout) :: grid
+    type(grid_config_rec_type), intent(in) :: config_flags
+    integer, intent(in) :: ips,ipe,jps,jpe
+    logical, intent(in) :: turbl_step ! .true. = PBL and surface layer just called
+    integer :: i,j
+    real :: windsq, wind10sq, maxsus,minsus
+    if(size(grid%wind10_ratio)<=1) return
+
+    update_sustained: if(turbl_step) then
+       ! Update ratio of wind and use 10m wind to update sustained
+       ! wind calculation
+       !write(0,*) 'Update wind10_ratio and sustain wind with 10m wind.'
+       maxsus=-999
+       minsus=999
+       do j=jps,jpe
+          do i=ips,ipe
+             windsq=grid%u(i,j,1)*grid%u(i,j,1) + grid%v(i,j,1)*grid%v(i,j,1)
+             wind10sq=grid%u10(i,j)*grid%u10(i,j) + grid%v10(i,j)*grid%v10(i,j)
+             if(wind10sq<1e-12) then
+                grid%wind10_ratio(i,j)=1.0
+             else
+                grid%wind10_ratio(i,j)=sqrt(windsq/wind10sq)
+             endif
+             if(grid%suswind_time>1e-5 .and. grid%suswind(i,j)>1e-3) then
+                grid%suswind(i,j)=min(grid%suswind(i,j),sqrt(wind10sq))
+             else
+                grid%suswind(i,j)=sqrt(wind10sq)
+             endif
+             maxsus=max(grid%suswind(i,j),maxsus)
+             minsus=min(grid%suswind(i,j),minsus)
+          enddo
+       enddo
+       !write(0,*) 'suswind range:',maxsus,minsus
+    else
+       ! Use lowest model level wind adjusted by previous TURBL step
+       ! wind ratio to update sustained wind calculation.
+       !write(0,*) 'Update sustain wind with lowest model level wind and wind10_ratio.'
+       maxsus=-999
+       minsus=999
+       do j=jps,jpe
+          do i=ips,ipe
+             windsq=grid%u(i,j,1)*grid%u(i,j,1) + grid%v(i,j,1)*grid%v(i,j,1)
+             if(grid%wind10_ratio(i,j)>1e-3) then
+                wind10sq=windsq/grid%wind10_ratio(i,j)
+             else
+                wind10sq=windsq
+             endif
+             if(grid%suswind_time>1e-5 .and. grid%suswind(i,j)>1e-3) then
+                grid%suswind(i,j)=min(grid%suswind(i,j),sqrt(wind10sq))
+             else
+                grid%suswind(i,j)=sqrt(wind10sq)
+             endif
+             maxsus=max(grid%suswind(i,j),maxsus)
+             minsus=min(grid%suswind(i,j),minsus)
+          enddo
+       enddo
+       !write(0,*) 'suswind range:',maxsus,minsus
+    end if update_sustained
+
+    ! Update wind sustainment time and maximum sustained wind swath:
+    grid%suswind_time = grid%suswind_time + grid%dt
+
+    !write(0,*) 'add to suswind_time: ',grid%dt
+
+    ! FIXME: grid%suswind_accum_time
+    update_swath: if(grid%suswind_time>60.0) then
+       !write(0,*) 'update suswind_swath with max of itself and suswind'
+       maxsus=-999
+       minsus=999
+       do j=jps,jpe
+          do i=ips,ipe
+             if(grid%interesting(i,j)/=0) then
+                grid%suswind_swath(i,j)=max(grid%suswind(i,j),grid%suswind_swath(i,j))
+             endif
+             wind10sq=grid%u10(i,j)*grid%u10(i,j) + grid%v10(i,j)*grid%v10(i,j)
+             grid%suswind(i,j)=sqrt(wind10sq)
+             maxsus=max(grid%suswind(i,j),maxsus)
+             minsus=min(grid%suswind(i,j),minsus)
+          enddo
+       enddo
+       grid%suswind_time=0
+       !write(0,*) 'suswind_swath range:',maxsus,minsus
+    else
+       !write(0,*) 'Not yet time to sustain: ',grid%suswind_time
+    endif update_swath
+  end subroutine sustained_wind
 
   function dx_at(grid, i,j,  ips,ipe,jps,jpe) result(dx)
     include 'mpif.h'
@@ -63,7 +163,7 @@ contains
          ids,ide,jds,jde,kds,kde, &
          ims,ime,jms,jme,kms,kme, &
          ips,ipe,jps,jpe,kps,kpe  )
-    
+
     sdistsq=grid%interest_rad_storm**2*1e6
     do j=max(jps,jds),min(jpe,jde)
        do i=max(ips,ids),min(ipe,ide)
@@ -74,10 +174,12 @@ contains
     enddo
   end subroutine storm_interest
 
-  subroutine kid_scanner(parent,nest)
+  subroutine kid_scanner(parent,nest,check)
     ! Sets parent%interest to 1 within nest%intrest_rad_parent
     ! kilometers of the nest parent center.
     type(domain), intent(inout) :: parent,nest
+    logical, intent(inout), optional :: check
+
     integer :: ni1,nj1,ni2,nj2, nimid, njmid
     integer :: nims,nime,njms,njme,nkms,nkme
     integer :: nids,nide,njds,njde,nkds,nkde
@@ -122,6 +224,18 @@ contains
               I0," (ki1=",I0," kj1=",I0," ki2=",I0," kj2=",I0,")")
     endif
 
+    if(present(check)) then
+       ! Just check, do not update anything
+       if ( parent%nest_imid(nest%id) /= nimid .or. &
+            parent%nest_jmid(nest%id) /= njmid ) then
+          check=.true.
+       endif
+       return
+    else
+       parent%nest_imid(nest%id) = nimid
+       parent%nest_jmid(nest%id) = njmid
+    endif
+    
     ispan =ceiling(1e3*nest%interest_rad_parent/dx)+1
     istart=max(pids,  nimid-ispan)
     iend  =min(pide-1,nimid+ispan)
@@ -185,7 +299,7 @@ contains
     count=wrf_dm_sum_integer(count)
 #endif
 308 format('grid ',I0,': ',I0,' of ',I0,' points (',F0.2,'%) are in area of interest.')
-    write(message,308) grid%id,count,total,real(count)/total
+    write(message,308) grid%id,count,total,real(count)/total*100.0
     call wrf_debug(1,message)
   end subroutine print_interest
 
@@ -224,6 +338,25 @@ contains
     enddo
   end subroutine self_interest
 
+  logical function check_for_kid_move(grid,config_flags)
+    USE MODULE_CONFIGURE, ONLY : grid_config_rec_type
+    type(domain), intent(inout) :: grid
+    type(grid_config_rec_type), intent(in) :: config_flags
+    integer :: ikid
+    check_for_kid_move=.false.
+
+    if(config_flags%interest_kids==1) then
+       do ikid=1,grid%num_nests
+          if(associated(grid%nests(ikid)%ptr)) &
+               call kid_scanner(grid,grid%nests(ikid)%ptr,check_for_kid_move)
+       enddo
+    else
+       call wrf_debug('Not checking if kid moved since I have no kids yet.')
+    endif
+    if(check_for_kid_move) &
+         call  wrf_debug(1,'At least one of my nests moved.')
+  end function check_for_kid_move
+  
   subroutine update_interest(grid,config_flags)
     USE MODULE_CONFIGURE, ONLY : grid_config_rec_type
     type(domain), intent(inout) :: grid
@@ -231,6 +364,7 @@ contains
     integer :: max_dom, nestid, parent_id, ikid, ki0,kj0,kni,knj
     logical :: nestless
 
+    call wrf_debug(1,'Reset and recalculate area of interest.')
     grid%interesting=0
 
     likes_kids: if(config_flags%interest_kids==1) then

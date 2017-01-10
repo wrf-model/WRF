@@ -302,7 +302,6 @@ subroutine da_qc_iasi (it, i, nchan, ob, iv)
       close(fgat_rad_unit)
       call da_free_unit(fgat_rad_unit)
    end if
-    close(iunit)
    if (trace_use_dull) call da_trace_exit("da_qc_iasi")
 
 end subroutine da_qc_iasi

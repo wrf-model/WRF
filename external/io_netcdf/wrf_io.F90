@@ -1,3 +1,4 @@
+#define WRFIO_NCD_LARGE_FILE_SUPPORT
 !*------------------------------------------------------------------------------
 !*  Standard Disclaimer
 !*

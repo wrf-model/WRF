@@ -1,3 +1,4 @@
+#define WRFIO_NCD_LARGE_FILE_SUPPORT
 !  Program Name:
 !  Author(s)/Contact(s):
 !  Abstract:

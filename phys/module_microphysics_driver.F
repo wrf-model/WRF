@@ -61,7 +61,6 @@ SUBROUTINE microphysics_driver(                                          &
                       ,f_qic_effr,f_qip_effr,f_qid_effr                  &                 
                       ,cu_used                                           &
                       ,qrcuten, qscuten, qicuten, qccuten                &
-                      ,mu, c1, c2h            &
                       ,qt_curr,f_qt                                      &
                       ,mp_restart_state,tbpvs_state,tbpvs0_state         & ! for etampnew or fer_mp_hires
                       ,hail,ice2                                         & ! for mp_gsfcgce
@@ -492,12 +491,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          INTENT(INOUT) :: qv_b4mp, qc_b4mp, qi_b4mp, qs_b4mp
 #endif
-   REAL, DIMENSION( ims:ime, jms:jme ),                           &
-         OPTIONAL,                                                &
-         INTENT(IN) :: mu
-   REAL, DIMENSION( kms:kme),                                     &
-         OPTIONAL,                                                &
-         INTENT(IN) :: c1, c2h
 ! YLIN
 ! Added RI_CURR similar to microphysics fields above
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
@@ -961,8 +954,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
          PRESENT (QR_CURR) .AND. PRESENT (QI_CURR) .AND. &
          PRESENT (QNS_CURR) .AND. PRESENT (QNI_CURR).AND. &
          PRESENT (QNR_CURR) .AND. PRESENT (QNG_CURR).AND. &
-         PRESENT (MU) .AND. PRESENT (QSCUTEN).AND. &
-         PRESENT (C1) .AND. PRESENT (C2H) .AND. &
+         PRESENT (QSCUTEN).AND. &
          PRESENT (QRCUTEN) .AND. PRESENT (QICUTEN).AND. &
          PRESENT (RAINNC ) .AND. PRESENT (RAINNCV) .AND. &
          PRESENT ( W      )  ) THEN
@@ -999,7 +991,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                     ,qrcuten=qrcuten                     &  ! hm
                     ,qscuten=qscuten                     &  ! hm
                     ,qicuten=qicuten                     &  ! hm
-                    ,mu=mu,c1=c1,c2=c2h                  &  ! hm
                     ,F_QNDROP=f_qndrop                   &  ! hm for wrf-chem
                  ,QNDROP=qndrop_curr                     &  ! hm for wrf-chem
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
@@ -1023,7 +1014,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 !         PRESENT (QNG_CURR) .AND. &
 !         PRESENT (QNC_CURR) .AND. PRESENT (QNI_CURR).AND. &
 !         PRESENT (QNR_CURR) .AND. &
-!         PRESENT (MU) .AND. PRESENT (QSCUTEN).AND. &
+!         PRESENT (QSCUTEN).AND. &
 !         PRESENT (QRCUTEN) .AND. PRESENT (QICUTEN).AND. &
 !         PRESENT (RAINNC ) .AND. PRESENT (RAINNCV) .AND. &
 !         PRESENT (Z      ) .AND.PRESENT ( W      )  ) THEN
@@ -1072,7 +1063,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 !         PRESENT (QNG_CURR) .AND. &
 !         PRESENT (QNC_CURR) .AND. PRESENT (QNI_CURR).AND. &
 !         PRESENT (QNR_CURR) .AND. &
-!         PRESENT (MU) .AND. PRESENT (QSCUTEN).AND. &
+!         PRESENT (QSCUTEN).AND. &
 !         PRESENT (QRCUTEN) .AND. PRESENT (QICUTEN).AND. &
 !         PRESENT (RAINNC ) .AND. PRESENT (RAINNCV) .AND. &
 !         PRESENT (Z      ) .AND.PRESENT ( W      )  ) THEN
@@ -1395,7 +1386,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      qscuten=qscuten,                    &  ! hm
                      qicuten=qicuten,                    &  ! hm
                      qccuten=qccuten,                    &  ! hm
-                     mu=mu          ,                    &  ! hm
                      re_cloud=re_cloud,                  &
                      re_ice=re_ice,                      &
                      re_snow=re_snow,                    &
@@ -1471,7 +1461,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      qscuten=qscuten,                    &  ! hm
                      qicuten=qicuten,                    &  ! hm
                      qccuten=qccuten,                    &  ! hm
-                     mu=mu          ,                    &  ! hm
                      re_cloud=re_cloud,                  &
                      re_ice=re_ice,                      &
                      re_snow=re_snow,                    &
@@ -1554,7 +1543,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      qscuten=qscuten,                    &  ! hm
                      qicuten=qicuten,                    &  ! hm
                      qccuten=qccuten,                    &  ! hm
-                     mu=mu          ,                    &  ! hm
                      re_cloud=re_cloud,                  &
                      re_ice=re_ice,                      &
                      re_snow=re_snow,                    &

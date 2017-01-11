@@ -5419,22 +5419,14 @@ END SUBROUTINE G_ZERO_TEND2D
 ! output
 ! output
 ! params
+!01/2017 decoupling mu in G_PHY_PREP is moved to G_PHY_PREP_part2
 SUBROUTINE G_PHY_PREP(config_flags, mu, mud, muu, muud, muv, muvd, u, ud&
-&  , v, vd, p, pd, pb, alt, altd, ph, phd, phb, t, td, tsk, moist, moistd&
+&  , v, vd, p, pd, pb, alt, altd, ph, phd, phb, t, td, moist, moistd&
 &  , n_moist, rho, rhod, th_phy, th_phyd, p_phy, p_phyd, pi_phy, pi_phyd&
 &  , u_phy, u_phyd, v_phy, v_phyd, p8w, p8wd, t_phy, t_phyd, t8w, t8wd, z&
 &  , zd, z_at_w, z_at_wd, dz8w, dz8wd, p_hyd, p_hydd, p_hyd_w, p_hyd_wd, &
-&  dnw, fzm, fzp, znw, p_top, rthraten, rthratend, rthblten, rthbltend, &
-&  rublten, rubltend, rvblten, rvbltend, rqvblten, rqvbltend, rqcblten, &
-&  rqcbltend, rqiblten, rqibltend, rucuten, rucutend, rvcuten, rvcutend, &
-&  rthcuten, rthcutend, rqvcuten, rqvcutend, rqccuten, rqccutend, &
-&  rqrcuten, rqrcutend, rqicuten, rqicutend, rqscuten, rqscutend, rushten&
-&  , rushtend, rvshten, rvshtend, rthshten, rthshtend, rqvshten, &
-&  rqvshtend, rqcshten, rqcshtend, rqrshten, rqrshtend, rqishten, &
-&  rqishtend, rqsshten, rqsshtend, rqgshten, rqgshtend, rthften, rthftend&
-&  , rqvften, rqvftend, rundgdten, rundgdtend, rvndgdten, rvndgdtend, &
-&  rthndgdten, rthndgdtend, rphndgdten, rphndgdtend, rqvndgdten, &
-&  rqvndgdtend, rmundgdten, landmask, xland, ids, ide, jds, jde, kds, kde, ims, ime, jms, &
+&  dnw, fzm, fzp, znw, p_top, &
+&  ids, ide, jds, jde, kds, kde, ims, ime, jms, &
 &  jme, kms, kme, its, ite, jts, jte, kts, kte)
   IMPLICIT NONE
 !----------------------------------------------------------------------
@@ -5446,7 +5438,7 @@ SUBROUTINE G_PHY_PREP(config_flags, mu, mud, muu, muud, muv, muvd, u, ud&
 &  moist
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme, n_moist), INTENT(IN) :: &
 &  moistd
-  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: tsk, mu, muu, muv
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: mu, muu, muv
   REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: mud, muud, muvd
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(OUT) :: u_phy, &
 &  v_phy, pi_phy, p_phy, p8w, t_phy, th_phy, t8w, rho, z, dz8w, z_at_w
@@ -5464,34 +5456,6 @@ SUBROUTINE G_PHY_PREP(config_flags, mu, mud, muu, muud, muv, muvd, u, ud&
 &  altd, phd, td
   REAL, DIMENSION(kms:kme), INTENT(IN) :: fzm, fzp
   REAL, DIMENSION(kms:kme), INTENT(IN) :: znw, dnw
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rthraten
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rthratend
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rucuten, &
-&  rvcuten, rthcuten, rqvcuten, rqccuten, rqrcuten, rqicuten, rqscuten, &
-&  rushten, rvshten, rthshten, rqvshten, rqcshten, rqrshten, rqishten, &
-&  rqsshten, rqgshten
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rucutend&
-&  , rvcutend, rthcutend, rqvcutend, rqccutend, rqrcutend, rqicutend, &
-&  rqscutend, rushtend, rvshtend, rthshtend, rqvshtend, rqcshtend, &
-&  rqrshtend, rqishtend, rqsshtend, rqgshtend
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rublten, &
-&  rvblten, rthblten, rqvblten, rqcblten, rqiblten
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rubltend&
-&  , rvbltend, rthbltend, rqvbltend, rqcbltend, rqibltend
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rthften, &
-&  rqvften
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rthftend&
-&  , rqvftend
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rundgdten&
-&  , rvndgdten, rthndgdten, rphndgdten, rqvndgdten
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: &
-&  rundgdtend, rvndgdtend, rthndgdtend, rphndgdtend, rqvndgdtend
-  REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: rmundgdten
-!jdf
-  REAL,  DIMENSION( ims:ime, jms:jme )                            , &
-          INTENT(INOUT)   ::                               landmask, &
-                                                              xland
-!jdf
   INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end, i_startu, &
 &  j_startv
   INTEGER :: i, j, k
@@ -5508,9 +5472,7 @@ SUBROUTINE G_PHY_PREP(config_flags, mu, mud, muu, muud, muv, muvd, u, ud&
 !<DESCRIPTION>
 !
 !  phys_prep calculates a number of diagnostic quantities needed by
-!  the physics routines.  It also decouples the physics tendencies from
-!  the column dry-air mass (the physics routines expect to see/update the
-!  uncoupled tendencies).
+!  the physics routines.
 !
 !</DESCRIPTION>
 !  set up loop bounds for this grid's boundary conditions
@@ -5532,14 +5494,6 @@ SUBROUTINE G_PHY_PREP(config_flags, mu, mud, muu, muud, muv, muvd, u, ud&
   ELSE
     k_end = kte
   END IF
-
-!jdf
-!    do j = j_start,j_end
-!    do i = i_start, i_end
-!      if(landmask(i,j).lt.0.5) xland(i,j)=2.0
-!    enddo
-!    enddo
-!jdf
 
 !  compute thermodynamics and velocities at pressure points (or half levels)
   DO j=j_start,j_end
@@ -5697,6 +5651,82 @@ SUBROUTINE G_PHY_PREP(config_flags, mu, mud, muu, muud, muv, muvd, u, ud&
       END DO
     END DO
   END DO
+END SUBROUTINE G_PHY_PREP
+
+SUBROUTINE G_PHY_PREP_part2(config_flags, mu, mud, muu, muud, muv, muvd, &
+&  rthraten, rthratend, rthblten, rthbltend, &
+&  rublten, rubltend, rvblten, rvbltend, rqvblten, rqvbltend, rqcblten, &
+&  rqcbltend, rqiblten, rqibltend, rucuten, rucutend, rvcuten, rvcutend, &
+&  rthcuten, rthcutend, rqvcuten, rqvcutend, rqccuten, rqccutend, &
+&  rqrcuten, rqrcutend, rqicuten, rqicutend, rqscuten, rqscutend, rushten&
+&  , rushtend, rvshten, rvshtend, rthshten, rthshtend, rqvshten, &
+&  rqvshtend, rqcshten, rqcshtend, rqrshten, rqrshtend, rqishten, &
+&  rqishtend, rqsshten, rqsshtend, rqgshten, rqgshtend, rthften, rthftend&
+&  , rqvften, rqvftend, rundgdten, rundgdtend, rvndgdten, rvndgdtend, &
+&  rthndgdten, rthndgdtend, rphndgdten, rphndgdtend, rqvndgdten, &
+&  rqvndgdtend, rmundgdten, ids, ide, jds, jde, kds, kde, ims, ime, jms, &
+&  jme, kms, kme, its, ite, jts, jte, kts, kte)
+  IMPLICIT NONE
+!----------------------------------------------------------------------
+  TYPE(GRID_CONFIG_REC_TYPE), INTENT(IN) :: config_flags
+  INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, &
+&  jme, kms, kme, its, ite, jts, jte, kts, kte
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: mu, muu, muv
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: mud, muud, muvd
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rthraten
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rthratend
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rucuten, &
+&  rvcuten, rthcuten, rqvcuten, rqccuten, rqrcuten, rqicuten, rqscuten, &
+&  rushten, rvshten, rthshten, rqvshten, rqcshten, rqrshten, rqishten, &
+&  rqsshten, rqgshten
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rucutend&
+&  , rvcutend, rthcutend, rqvcutend, rqccutend, rqrcutend, rqicutend, &
+&  rqscutend, rushtend, rvshtend, rthshtend, rqvshtend, rqcshtend, &
+&  rqrshtend, rqishtend, rqsshtend, rqgshtend
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rublten, &
+&  rvblten, rthblten, rqvblten, rqcblten, rqiblten
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rubltend&
+&  , rvbltend, rthbltend, rqvbltend, rqcbltend, rqibltend
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rthften, &
+&  rqvften
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rthftend&
+&  , rqvftend
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rundgdten&
+&  , rvndgdten, rthndgdten, rphndgdten, rqvndgdten
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: &
+&  rundgdtend, rvndgdtend, rthndgdtend, rphndgdtend, rqvndgdtend
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: rmundgdten
+  INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end, i_startu, &
+&  j_startv
+  INTEGER :: i, j, k
+!-----------------------------------------------------------------------
+!<DESCRIPTION>
+!
+!  phys_prep_part2 decouples the physics tendencies from
+!  the column dry-air mass (the physics routines expect to see/update the
+!  uncoupled tendencies).
+!
+!</DESCRIPTION>
+!  set up loop bounds for this grid's boundary conditions
+  i_start = its
+  IF (ite .GT. ide - 1) THEN
+    i_end = ide - 1
+  ELSE
+    i_end = ite
+  END IF
+  j_start = jts
+  IF (jte .GT. jde - 1) THEN
+    j_end = jde - 1
+  ELSE
+    j_end = jte
+  END IF
+  k_start = kts
+  IF (kte .GT. kde - 1) THEN
+    k_end = kde - 1
+  ELSE
+    k_end = kte
+  END IF
+
 ! decouple all physics tendencies
   IF (config_flags%ra_lw_physics .GT. 0 .OR. config_flags%ra_sw_physics &
 &      .GT. 0) THEN
@@ -6008,7 +6038,7 @@ SUBROUTINE G_PHY_PREP(config_flags, mu, mud, muu, muud, muv, muvd, u, ud&
       END IF
     END IF
   END IF
-END SUBROUTINE G_PHY_PREP
+END SUBROUTINE G_PHY_PREP_part2
 
 !        Generated by TAPENADE     (INRIA, Tropics team)
 !  Tapenade 3.5 (r3785) - 22 Mar 2011 18:35

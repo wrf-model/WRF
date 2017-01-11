@@ -177,11 +177,6 @@ CONTAINS
 #     include "HALO_EM_PHYS_A.inc"
 #endif
 
-    if ( config_flags%cu_physics .gt. 0 ) then
-      CALL PUSHREAL8ARRAY ( grid%rthcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
-      CALL PUSHREAL8ARRAY ( grid%rqvcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
-    end if
-
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij )
       DO ij = 1 , grid%num_tiles
@@ -190,26 +185,11 @@ CONTAINS
         CALL phy_prep ( config_flags,                                    &
                         grid%mut, grid%muu, grid%muv, grid%u_2,          &
                         grid%v_2, grid%p, grid%pb, grid%alt,             &
-                        grid%ph_2, grid%phb, grid%t_2, grid%tsk, moist, num_moist,   &
+                        grid%ph_2, grid%phb, grid%t_2, moist, num_moist, &
                         grid%rho,th_phy, p_phy, pi_phy, grid%u_phy, grid%v_phy,         &
                         p8w, t_phy, t8w, grid%z, grid%z_at_w, dz8w,      &
                         grid%p_hyd, grid%p_hyd_w, grid%dnw,              &
                         grid%fnm, grid%fnp, grid%znw, grid%p_top,        &
-                        grid%rthraten,                                   &
-                        grid%rthblten, grid%rublten, grid%rvblten,       &
-                        grid%rqvblten, grid%rqcblten, grid%rqiblten,     &
-                        grid%rucuten,  grid%rvcuten,  grid%rthcuten,     &
-                        grid%rqvcuten, grid%rqccuten, grid%rqrcuten,     &
-                        grid%rqicuten, grid%rqscuten,                    &
-                        grid%rushten,  grid%rvshten,  grid%rthshten,     &
-                        grid%rqvshten, grid%rqcshten, grid%rqrshten,     &
-                        grid%rqishten, grid%rqsshten, grid%rqgshten,     &
-                        grid%rthften,  grid%rqvften,                     &
-                        grid%RUNDGDTEN, grid%RVNDGDTEN, grid%RTHNDGDTEN, &
-                        grid%RPHNDGDTEN,grid%RQVNDGDTEN, grid%RMUNDGDTEN,&
-!jdf
-                        grid%landmask,grid%xland,                 &
-!jdf
                         ids, ide, jds, jde, kds, kde,                    &
                         ims, ime, jms, jme, kms, kme,                    &
                         grid%i_start(ij), grid%i_end(ij),                &
@@ -446,10 +426,6 @@ BENCH_START(a_pbl_driver_tim)
 
 BENCH_END(a_pbl_driver_tim)
 
-    if ( config_flags%cu_physics .gt. 0 ) then
-      CALL POPREAL8ARRAY ( grid%rqvcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
-      CALL POPREAL8ARRAY ( grid%rthcuten, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
-    end if
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij )
       DO ij = 1 , grid%num_tiles
@@ -460,7 +436,7 @@ BENCH_END(a_pbl_driver_tim)
                         grid%u_2,grid%a_u_2, grid%v_2,grid%a_v_2,             &
                         grid%p,grid%a_p, grid%pb, grid%alt,grid%a_alt,        &
                         grid%ph_2,grid%a_ph_2, grid%phb, grid%t_2,grid%a_t_2, &
-                        grid%tsk, moist,a_moist, num_moist,        &
+                        moist,a_moist, num_moist,                             &
                         grid%rho,grid%a_rho, th_phy,a_th_phy, p_phy,a_p_phy, pi_phy,a_pi_phy, &
                         grid%u_phy,grid%a_u_phy, grid%v_phy,grid%a_v_phy,                         &
                         p8w,a_p8w, grid%t_phy,grid%a_t_phy, t8w,a_t8w, grid%z,grid%a_z, &
@@ -468,22 +444,6 @@ BENCH_END(a_pbl_driver_tim)
                         grid%p_hyd,grid%a_p_hyd, grid%p_hyd_w,grid%a_p_hyd_w, &
                         grid%dnw,                                             &
                         grid%fnm, grid%fnp, grid%znw, grid%p_top,             &
-                        grid%rthraten, grid%a_rthraten,                       &
-                        grid%rthblten, grid%a_rthblten,                       &
-                        grid%rublten, grid%a_rublten, grid%rvblten, grid%a_rvblten,            &
-                        grid%rqvblten, grid%a_rqvblten, grid%rqcblten, grid%a_rqcblten, grid%rqiblten, grid%a_rqiblten,         &
-                        grid%rucuten,  grid%a_rucuten , grid%rvcuten, grid%a_rvcuten,  grid%rthcuten, grid%a_rthcuten,    &
-                        grid%rqvcuten, grid%a_rqvcuten, grid%rqccuten, grid%a_rqccuten, grid%rqrcuten, grid%a_rqrcuten,    &
-                        grid%rqicuten, grid%a_rqicuten, grid%rqscuten, grid%a_rqscuten,                    &
-                        grid%rushten,  grid%a_rushten, grid%rvshten,  grid%a_rvshten, grid%rthshten, grid%a_rthshten,    &
-                        grid%rqvshten, grid%a_rqvshten, grid%rqcshten, grid%a_rqcshten, grid%rqrshten, grid%a_rqrshten,    &
-                        grid%rqishten, grid%g_rqishten, grid%rqsshten, grid%a_rqsshten, grid%rqgshten, grid%a_rqgshten,    &
-                        grid%rthften,  grid%a_rthften, grid%rqvften, grid%a_rqvften,                    &
-                        grid%RUNDGDTEN, grid%a_RUNDGDTEN, grid%RVNDGDTEN, grid%a_RVNDGDTEN, grid%RTHNDGDTEN, grid%a_RTHNDGDTEN, &
-                        grid%RPHNDGDTEN,grid%a_RPHNDGDTEN,grid%RQVNDGDTEN, grid%a_RQVNDGDTEN,grid%RMUNDGDTEN,&
-!jdf
-                        grid%landmask,grid%xland,                 &
-!jdf
                         ids, ide, jds, jde, kds, kde,           &
                         ims, ime, jms, jme, kms, kme,           &
                         grid%i_start(ij), grid%i_end(ij),       &

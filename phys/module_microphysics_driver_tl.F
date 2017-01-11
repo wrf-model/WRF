@@ -38,7 +38,7 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
 &  qzh_curr, qns_curr, qnr_curr, qng_curr, qnn_curr, qnc_curr, qvolg_curr, qvolh_curr &
 &  , f_qv, f_qc, f_qr, f_qi, f_qs, f_qg, f_qndrop, f_qni, f_qns, f_qnr, &
 &  f_qng, f_qnc, f_qnn, f_qh, f_qnh, f_qzr, f_qzi, f_qzs, f_qzg, f_qzh, &
-&  f_qvolg, f_qvolh, qrcuten, qscuten, qicuten, mu, qt_curr, f_qt, &
+&  f_qvolg, f_qvolh, qrcuten, qscuten, qicuten, qt_curr, f_qt, &
 &  mp_restart_state, tbpvs_state, tbpvs0_state, hail, ice2, w, z, rainnc&
 &  , rainncd, rainncv, rainncvd, snownc, snowncv, hailnc, hailncv, &
 &  graupelnc, graupelncv, refl_10cm, ri_curr, diagflag, do_radar_ref)
@@ -315,7 +315,6 @@ SUBROUTINE G_MICROPHYSICS_DRIVER(th, thd, rho, rhod, pi_phy, pi_phyd, p&
 &  qv_currd, qc_currd, qr_currd
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(IN) :: &
 &  qrcuten, qscuten, qicuten
-  REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN) :: mu
 ! YLIN
 ! Added RI_CURR similar to microphysics fields above
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT) ::&

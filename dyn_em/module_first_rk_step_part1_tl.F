@@ -218,7 +218,7 @@ BENCH_END(g_init_zero_tend_tim)
                         grid%u_2,grid%g_u_2, grid%v_2,grid%g_v_2,             &
                         grid%p,grid%g_p, grid%pb, grid%alt,grid%g_alt,        &
                         grid%ph_2,grid%g_ph_2, grid%phb, grid%t_2,grid%g_t_2, &
-                        grid%tsk, moist,g_moist, num_moist,        &
+                        moist,g_moist, num_moist,                             &
                         grid%rho,grid%g_rho, th_phy,g_th_phy, p_phy,g_p_phy, pi_phy,g_pi_phy, &
                         grid%u_phy,grid%g_u_phy, grid%v_phy,grid%g_v_phy,                         &
                         p8w,g_p8w, grid%t_phy,grid%g_t_phy, t8w,g_t8w, grid%z,grid%g_z, &
@@ -226,22 +226,6 @@ BENCH_END(g_init_zero_tend_tim)
                         grid%p_hyd,grid%g_p_hyd, grid%p_hyd_w,grid%g_p_hyd_w, &
                         grid%dnw,                                             &
                         grid%fnm, grid%fnp, grid%znw, grid%p_top,             &
-                        grid%rthraten, grid%g_rthraten,                       &
-                        grid%rthblten, grid%g_rthblten,                       &
-                        grid%rublten, grid%g_rublten, grid%rvblten, grid%g_rvblten,            &
-                        grid%rqvblten, grid%g_rqvblten, grid%rqcblten, grid%g_rqcblten, grid%rqiblten, grid%g_rqiblten,         &
-                        grid%rucuten,  grid%g_rucuten , grid%rvcuten, grid%g_rvcuten,  grid%rthcuten, grid%g_rthcuten,    &
-                        grid%rqvcuten, grid%g_rqvcuten, grid%rqccuten, grid%g_rqccuten, grid%rqrcuten, grid%g_rqrcuten,    &
-                        grid%rqicuten, grid%g_rqicuten, grid%rqscuten, grid%g_rqscuten,                    &
-                        grid%rushten,  grid%g_rushten, grid%rvshten,  grid%g_rvshten, grid%rthshten, grid%g_rthshten,    &
-                        grid%rqvshten, grid%g_rqvshten, grid%rqcshten, grid%g_rqcshten, grid%rqrshten, grid%g_rqrshten,    &
-                        grid%rqishten, grid%g_rqishten, grid%rqsshten, grid%g_rqsshten, grid%rqgshten, grid%g_rqgshten,    &
-                        grid%rthften,  grid%g_rthften, grid%rqvften, grid%g_rqvften,                    &
-                        grid%RUNDGDTEN, grid%g_RUNDGDTEN, grid%RVNDGDTEN, grid%g_RVNDGDTEN, grid%RTHNDGDTEN, grid%g_RTHNDGDTEN, &
-                        grid%RPHNDGDTEN,grid%g_RPHNDGDTEN,grid%RQVNDGDTEN, grid%g_RQVNDGDTEN,grid%RMUNDGDTEN,&
-!jdf
-                        grid%landmask,grid%xland,                 &
-!jdf
                         ids, ide, jds, jde, kds, kde,           &
                         ims, ime, jms, jme, kms, kme,           &
                         grid%i_start(ij), grid%i_end(ij),       &

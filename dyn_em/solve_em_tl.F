@@ -3361,6 +3361,34 @@ BENCH_END(g_advance_ppt_tim)
    ENDDO
   !$OMP END PARALLEL DO
 
+   !$OMP PARALLEL DO   &
+   !$OMP PRIVATE ( ij )
+   DO ij = 1 , grid%num_tiles
+
+     CALL wrf_debug ( 200 , ' call g_phy_prep_part2' )
+     CALL g_phy_prep_part2 ( config_flags,                           &
+                        grid%mut,grid%g_mut, grid%muu, grid%g_muu, grid%muv, grid%g_muv, &
+                        grid%rthraten, grid%g_rthraten,                       &
+                        grid%rthblten, grid%g_rthblten,                       &
+                        grid%rublten, grid%g_rublten, grid%rvblten, grid%g_rvblten,            &
+                        grid%rqvblten, grid%g_rqvblten, grid%rqcblten, grid%g_rqcblten, grid%rqiblten, grid%g_rqiblten,         &
+                        grid%rucuten,  grid%g_rucuten , grid%rvcuten, grid%g_rvcuten,  grid%rthcuten, grid%g_rthcuten,    &
+                        grid%rqvcuten, grid%g_rqvcuten, grid%rqccuten, grid%g_rqccuten, grid%rqrcuten, grid%g_rqrcuten,    &
+                        grid%rqicuten, grid%g_rqicuten, grid%rqscuten, grid%g_rqscuten,                    &
+                        grid%rushten,  grid%g_rushten, grid%rvshten,  grid%g_rvshten, grid%rthshten, grid%g_rthshten,    &
+                        grid%rqvshten, grid%g_rqvshten, grid%rqcshten, grid%g_rqcshten, grid%rqrshten, grid%g_rqrshten,    &
+                        grid%rqishten, grid%g_rqishten, grid%rqsshten, grid%g_rqsshten, grid%rqgshten, grid%g_rqgshten,    &
+                        grid%rthften,  grid%g_rthften, grid%rqvften, grid%g_rqvften,                    &
+                        grid%RUNDGDTEN, grid%g_RUNDGDTEN, grid%RVNDGDTEN, grid%g_RVNDGDTEN, grid%RTHNDGDTEN, grid%g_RTHNDGDTEN, &
+                        grid%RPHNDGDTEN,grid%g_RPHNDGDTEN,grid%RQVNDGDTEN, grid%g_RQVNDGDTEN,grid%RMUNDGDTEN,&
+                        ids, ide, jds, jde, kds, kde,           &
+                        ims, ime, jms, jme, kms, kme,           &
+                        grid%i_start(ij), grid%i_end(ij),       &
+                        grid%j_start(ij), grid%j_end(ij),       &
+                        k_start, k_end                         )
+   ENDDO
+   !$OMP END PARALLEL DO
+
 !<DESCRIPTION>
 !<pre>
 ! (5) time-split physics.
@@ -3524,7 +3552,7 @@ BENCH_START(g_micro_driver_tim)
       &        , QVOLG_CURR=scalar(ims,kms,jms,P_QVOLG), F_QVOLG=F_QVOLG    & ! for nssl_2mom
       &        , QVOLH_CURR=scalar(ims,kms,jms,P_QVOLH), F_QVOLH=F_QVOLH    & ! for nssl_2mom
       &        , qrcuten=grid%rqrcuten, qscuten=grid%rqscuten             &
-      &        , qicuten=grid%rqicuten,mu=grid%mut                        &
+      &        , qicuten=grid%rqicuten                                    &
       &        , HAIL=config_flags%gsfcgce_hail                           & ! for gsfcgce
       &        , ICE2=config_flags%gsfcgce_2ice                           & ! for gsfcgce
 !     &        , ccntype=config_flags%milbrandt_ccntype                   & ! for milbrandt (2mom)

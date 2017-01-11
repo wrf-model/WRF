@@ -11899,12 +11899,9 @@ END SUBROUTINE A_ZERO_TEND2D
 ! output
 ! output
 ! params
-SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
-&  , v, vb, p, pb0, pb, alt, altb, ph, phb0, phb, t, tb, tsk, moist, &
-&  moistb, n_moist, rho, rhob, th_phy, th_phyb, p_phy, p_phyb, pi_phy, &
-&  pi_phyb, u_phy, u_phyb, v_phy, v_phyb, p8w, p8wb, t_phy, t_phyb, t8w, &
-&  t8wb, z, zb, z_at_w, z_at_wb, dz8w, dz8wb, p_hyd, p_hydb, p_hyd_w, &
-&  p_hyd_wb, dnw, fzm, fzp, znw, p_top, rthraten, rthratenb, rthblten, &
+!01/2017 decoupling mu in A_PHY_PREP is moved to A_PHY_PREP_part2
+SUBROUTINE A_PHY_PREP_part2(config_flags, mu, mub, muu, muub, muv, muvb, &
+&  rthraten, rthratenb, rthblten, &
 &  rthbltenb, rublten, rubltenb, rvblten, rvbltenb, rqvblten, rqvbltenb, &
 &  rqcblten, rqcbltenb, rqiblten, rqibltenb, rucuten, rucutenb, rvcuten, &
 &  rvcutenb, rthcuten, rthcutenb, rqvcuten, rqvcutenb, rqccuten, &
@@ -11914,32 +11911,15 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
 &  rqishten, rqishtenb, rqsshten, rqsshtenb, rqgshten, rqgshtenb, rthften&
 &  , rthftenb, rqvften, rqvftenb, rundgdten, rundgdtenb, rvndgdten, &
 &  rvndgdtenb, rthndgdten, rthndgdtenb, rphndgdten, rphndgdtenb, &
-&  rqvndgdten, rqvndgdtenb, rmundgdten, landmask, xland, ids, ide, jds, jde, kds, kde, ims&
+&  rqvndgdten, rqvndgdtenb, rmundgdten, ids, ide, jds, jde, kds, kde, ims&
 &  , ime, jms, jme, kms, kme, its, ite, jts, jte, kts, kte)
   IMPLICIT NONE
 !----------------------------------------------------------------------
   TYPE(GRID_CONFIG_REC_TYPE), INTENT(IN) :: config_flags
   INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, &
 &  jme, kms, kme, its, ite, jts, jte, kts, kte
-  INTEGER, INTENT(IN) :: n_moist
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme, n_moist), INTENT(IN) :: &
-&  moist
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme, n_moist) :: moistb
-  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: tsk, mu, muu, muv
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: mu, muu, muv
   REAL, DIMENSION(ims:ime, jms:jme) :: mub, muub, muvb
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: u_phy, v_phy, pi_phy, &
-&  p_phy, p8w, t_phy, th_phy, t8w, rho, z, dz8w, z_at_w
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: u_phyb, v_phyb, pi_phyb&
-&  , p_phyb, p8wb, t_phyb, th_phyb, t8wb, rhob, zb, dz8wb, z_at_wb
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: p_hyd, p_hyd_w
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: p_hydb, p_hyd_wb
-  REAL, INTENT(IN) :: p_top
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: pb, p, u, v&
-&  , alt, ph, phb, t
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: pb0, ub, vb, altb, phb0&
-&  , tb
-  REAL, DIMENSION(kms:kme), INTENT(IN) :: fzm, fzp
-  REAL, DIMENSION(kms:kme), INTENT(IN) :: znw, dnw
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rthraten
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: rthratenb
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: rucuten, &
@@ -11962,26 +11942,10 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: rundgdtenb, rvndgdtenb, &
 &  rthndgdtenb, rphndgdtenb, rqvndgdtenb
   REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: rmundgdten
-!jdf
-  REAL,  DIMENSION( ims:ime, jms:jme )                            , &
-          INTENT(INOUT)   ::                               landmask, &
-                                                              xland
-!jdf
   INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end, i_startu, &
 &  j_startv
   INTEGER :: i, j, k
-  REAL :: w1, w2, z0, z1, z2
-  REAL :: w1b, w2b, z0b, z1b, z2b
-  REAL :: qtot
-  REAL :: qtotb
-  INTEGER :: n
   INTEGER :: branch
-  REAL :: temp0
-  REAL :: tempb4
-  REAL :: tempb3
-  REAL :: tempb2
-  REAL :: tempb1
-  REAL :: tempb0
   REAL :: temp1b29
   REAL :: temp1b28
   REAL :: temp1b27
@@ -11992,7 +11956,6 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
   REAL :: temp1b22
   REAL :: temp1b21
   REAL :: temp1b20
-  REAL :: tempb
   REAL :: temp1b19
   REAL :: temp1b18
   REAL :: temp1b17
@@ -12006,20 +11969,18 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
   REAL :: temp1b9
   REAL :: temp1b8
   REAL :: temp1b7
-  REAL :: temp1b
   REAL :: temp1b6
-  REAL :: temp
   REAL :: temp1b5
   REAL :: temp1b4
   REAL :: temp1b3
   REAL :: temp1b2
   REAL :: temp1b1
   REAL :: temp1b0
+  REAL :: temp1b
 !-----------------------------------------------------------------------
 !<DESCRIPTION>
 !
-!  phys_prep calculates a number of diagnostic quantities needed by
-!  the physics routines.  It also decouples the physics tendencies from
+!  phys_prep_part2 decouples the physics tendencies from
 !  the column dry-air mass (the physics routines expect to see/update the
 !  uncoupled tendencies).
 !
@@ -12043,51 +12004,6 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
   ELSE
     k_end = kte
   END IF
-!jdf
-!    do j = j_start,j_end
-!    do i = i_start, i_end
-!      if(landmask(i,j).lt.0.5) xland(i,j)=2.0
-!    enddo
-!    enddo
-!jdf
-!  compute thermodynamics and velocities at pressure points (or half levels)
-  DO j=j_start,j_end
-    DO k=k_start,k_end
-      DO i=i_start,i_end
-        th_phy(i, k, j) = t(i, k, j) + t0
-        p_phy(i, k, j) = p(i, k, j) + pb(i, k, j)
-        pi_phy(i, k, j) = (p_phy(i, k, j)/p1000mb)**rcp
-        t_phy(i, k, j) = th_phy(i, k, j)*pi_phy(i, k, j)
-      END DO
-    END DO
-  END DO
-!  compute z at w points
-  DO j=j_start,j_end
-    DO k=k_start,kte
-      DO i=i_start,i_end
-        z_at_w(i, k, j) = (phb(i, k, j)+ph(i, k, j))/g
-      END DO
-    END DO
-  END DO
-!  compute z at p points or half levels (average of z at full levels)
-  DO j=j_start,j_end
-    DO k=k_start,k_end
-      DO i=i_start,i_end
-        z(i, k, j) = 0.5*(z_at_w(i, k, j)+z_at_w(i, k+1, j))
-      END DO
-    END DO
-  END DO
-  DO j=j_start,j_end
-    DO k=kte-1,k_start,-1
-      DO i=i_start,i_end
-        CALL PUSHREAL8(qtot)
-        qtot = 0.
-        DO n=param_first_scalar,n_moist
-          qtot = qtot + moist(i, k, j, n)
-        END DO
-      END DO
-    END DO
-  END DO
 ! decouple all physics tendencies
   IF (config_flags%ra_lw_physics .GT. 0 .OR. config_flags%ra_sw_physics &
 &      .GT. 0) THEN
@@ -12515,6 +12431,121 @@ SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
       END DO
     END DO
   END IF
+END SUBROUTINE A_PHY_PREP_part2
+SUBROUTINE A_PHY_PREP(config_flags, mu, mub, muu, muub, muv, muvb, u, ub&
+&  , v, vb, p, pb0, pb, alt, altb, ph, phb0, phb, t, tb, moist, &
+&  moistb, n_moist, rho, rhob, th_phy, th_phyb, p_phy, p_phyb, pi_phy, &
+&  pi_phyb, u_phy, u_phyb, v_phy, v_phyb, p8w, p8wb, t_phy, t_phyb, t8w, &
+&  t8wb, z, zb, z_at_w, z_at_wb, dz8w, dz8wb, p_hyd, p_hydb, p_hyd_w, &
+&  p_hyd_wb, dnw, fzm, fzp, znw, p_top, &
+&  ids, ide, jds, jde, kds, kde, ims&
+&  , ime, jms, jme, kms, kme, its, ite, jts, jte, kts, kte)
+  IMPLICIT NONE
+!----------------------------------------------------------------------
+  TYPE(GRID_CONFIG_REC_TYPE), INTENT(IN) :: config_flags
+  INTEGER, INTENT(IN) :: ids, ide, jds, jde, kds, kde, ims, ime, jms, &
+&  jme, kms, kme, its, ite, jts, jte, kts, kte
+  INTEGER, INTENT(IN) :: n_moist
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme, n_moist), INTENT(IN) :: &
+&  moist
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme, n_moist) :: moistb
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN) :: mu, muu, muv
+  REAL, DIMENSION(ims:ime, jms:jme) :: mub, muub, muvb
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: u_phy, v_phy, pi_phy, &
+&  p_phy, p8w, t_phy, th_phy, t8w, rho, z, dz8w, z_at_w
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: u_phyb, v_phyb, pi_phyb&
+&  , p_phyb, p8wb, t_phyb, th_phyb, t8wb, rhob, zb, dz8wb, z_at_wb
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: p_hyd, p_hyd_w
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: p_hydb, p_hyd_wb
+  REAL, INTENT(IN) :: p_top
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) :: pb, p, u, v&
+&  , alt, ph, phb, t
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme) :: pb0, ub, vb, altb, phb0&
+&  , tb
+  REAL, DIMENSION(kms:kme), INTENT(IN) :: fzm, fzp
+  REAL, DIMENSION(kms:kme), INTENT(IN) :: znw, dnw
+  INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end, i_startu, &
+&  j_startv
+  INTEGER :: i, j, k
+  REAL :: w1, w2, z0, z1, z2
+  REAL :: w1b, w2b, z0b, z1b, z2b
+  REAL :: qtot
+  REAL :: qtotb
+  INTEGER :: n
+  INTEGER :: branch
+  REAL :: temp0
+  REAL :: tempb4
+  REAL :: tempb3
+  REAL :: tempb2
+  REAL :: tempb1
+  REAL :: tempb0
+  REAL :: tempb
+  REAL :: temp
+!-----------------------------------------------------------------------
+!<DESCRIPTION>
+!
+!  phys_prep calculates a number of diagnostic quantities needed by
+!  the physics routines.
+!
+!</DESCRIPTION>
+!  set up loop bounds for this grid's boundary conditions
+  i_start = its
+  IF (ite .GT. ide - 1) THEN
+    i_end = ide - 1
+  ELSE
+    i_end = ite
+  END IF
+  j_start = jts
+  IF (jte .GT. jde - 1) THEN
+    j_end = jde - 1
+  ELSE
+    j_end = jte
+  END IF
+  k_start = kts
+  IF (kte .GT. kde - 1) THEN
+    k_end = kde - 1
+  ELSE
+    k_end = kte
+  END IF
+
+!  compute thermodynamics and velocities at pressure points (or half levels)
+  DO j=j_start,j_end
+    DO k=k_start,k_end
+      DO i=i_start,i_end
+        th_phy(i, k, j) = t(i, k, j) + t0
+        p_phy(i, k, j) = p(i, k, j) + pb(i, k, j)
+        pi_phy(i, k, j) = (p_phy(i, k, j)/p1000mb)**rcp
+        t_phy(i, k, j) = th_phy(i, k, j)*pi_phy(i, k, j)
+      END DO
+    END DO
+  END DO
+!  compute z at w points
+  DO j=j_start,j_end
+    DO k=k_start,kte
+      DO i=i_start,i_end
+        z_at_w(i, k, j) = (phb(i, k, j)+ph(i, k, j))/g
+      END DO
+    END DO
+  END DO
+!  compute z at p points or half levels (average of z at full levels)
+  DO j=j_start,j_end
+    DO k=k_start,k_end
+      DO i=i_start,i_end
+        z(i, k, j) = 0.5*(z_at_w(i, k, j)+z_at_w(i, k+1, j))
+      END DO
+    END DO
+  END DO
+  DO j=j_start,j_end
+    DO k=kte-1,k_start,-1
+      DO i=i_start,i_end
+        CALL PUSHREAL8(qtot)
+        qtot = 0.
+        DO n=param_first_scalar,n_moist
+          qtot = qtot + moist(i, k, j, n)
+        END DO
+      END DO
+    END DO
+  END DO
   DO j=j_end,j_start,-1
     DO k=k_end,k_start,-1
       DO i=i_end,i_start,-1

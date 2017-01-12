@@ -2174,6 +2174,7 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
    IF ( adjust ) THEN 
      CALL adjust_io_timestr( grid%io_intervals( alarm_id ), CT, ST, timestr )
    ENDIF
+#if (DA_CORE != 1 && NMM_CORE != 1)
 !----------------------------------------------------------------------
 ! RASM Climate Diagnostics - JR, AS, MS  - October 2016
 !----------------------------------------------------------------------
@@ -2193,6 +2194,7 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
 !----------------------------------------------------------------------
 ! end RASM Climate Diagnostics
 !----------------------------------------------------------------------
+#endif
    CALL construct_filename2a ( fname , hist_outname, &
                                grid%id , 2 , timestr )
    stream_l = stream-auxhist1_only+1

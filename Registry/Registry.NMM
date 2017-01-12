@@ -576,7 +576,7 @@ rconfig   real    aer_asy_val             namelist,physics      max_domains   0.
 #
 # module_IGWAVE_ADJUST.F
 
-state  real   avgPchg   -     dyn_nmm   1    -     rh    "avgPchg" "Average global change (hPa/3h)" "hPa/3h"
+state  real   avgPchg   -     dyn_nmm   1    -     r     "avgPchg" "Average global change (hPa/3h)" "hPa/3h"
 
 # module_CLDWTR.F
 #

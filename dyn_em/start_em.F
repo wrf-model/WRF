@@ -27,6 +27,7 @@
    USE module_lightning_driver, ONLY : lightning_init
    USE module_fr_fire_driver_wrf, ONLY : fire_driver_em_init
    USE module_stoch, ONLY : setup_rand_perturb, rand_seed, update_stoch, initialize_stoch
+   USE module_trajectory, ONLY : trajectory_init
 #if (WRF_CHEM == 1)
    USE module_aerosols_sorgam, ONLY: sum_pm_sorgam
    USE module_gocart_aerosols, ONLY: sum_pm_gocart
@@ -1907,6 +1908,12 @@ if(config_flags%ifire.eq.2)then
             ,ips,ipe, kps,kpe, jps,jpe ) 
 
    CALL wrf_debug ( 100 , 'start_domain_em: After call to fire_driver_em_init' )
+endif
+
+if( grid%traj_opt /= no_trajectory ) then
+     call trajectory_init( grid, config_flags, &
+                           ims,ime, jms,jme, kms,kme )
+     CALL wrf_debug ( 100 , 'start_domain_em: After call to trajectory_init' )
 endif
 
 

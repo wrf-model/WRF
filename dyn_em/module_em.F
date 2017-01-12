@@ -2237,6 +2237,12 @@ subroutine trajectory (     grid,config_flags,               &
                             its, ite, jts, jte, kts, kte    )
 
 !---------------------------------------------------------------------------------------------------
+
+  use module_date_time
+  use module_utility
+  use module_domain, only  : domain_clock_get
+  use module_trajectory, only  : traject, traj_cnt
+
   implicit none
 !---------------------------------------------------------------------------------------------------
 ! Subroutine trajectory calculates forward Lagrangian trajectory  
@@ -2278,7 +2284,10 @@ subroutine trajectory (     grid,config_flags,               &
   real, dimension(ims:ime,kms:kme,jms:jme)::u,v,w
   real, dimension(ims:ime,jms:jme),intent(in)::msft,msfu,msfv
   real, dimension(ims:ime,jms:jme),intent(in)::muu,muv,mut
-  integer :: i_traj,j_traj,k_traj,tjk,k
+  integer :: j,k
+  integer :: i_beg,i_end
+  integer :: i_traj,j_traj,k_traj,tjk
+  integer :: dm
   real :: traj_u,traj_v,traj_w
   real :: rdx_grid,rdy_grid,rdz_grid
   real :: deltx, delty, deltz,ax
@@ -2292,9 +2301,14 @@ subroutine trajectory (     grid,config_flags,               &
   real :: w_temp_upper,w_temp_lower
   real :: eta_old, eta_new
   integer :: keta, keta_temp
+  character(len=19)  :: current_timestr, next_timestr, wrk_timestr
+  character(len=256) :: dbg_mes
+  logical :: has_proj_map
 ! varalbe for map projectory
   real:: known_lat, known_lon
-  TYPE (grid_config_rec_type)                       :: config_flags_temp
+  TYPE (grid_config_rec_type) :: config_flags_temp
+  TYPE(WRFU_Time) :: current_time, next_time
+  TYPE(WRFU_Time) :: start_time, stop_time
 
   config_flags_temp = config_flags
   call trajmapproj(grid, config_flags_temp,proj)
@@ -2302,19 +2316,25 @@ subroutine trajectory (     grid,config_flags,               &
 
 ! convert ru_m, rv_m and ww_m in u,v,w 
    const1=1.0/2.0/sqrt(2.0)
-do k=kms,kme
-   u(:,k,:)=ru_m(:,k,:)/muu(:,:)*msfu(:,:)
-   v(:,k,:)=rv_m(:,k,:)/muv(:,:)*msfv(:,:)
-   w(:,k,:)=ww_m(:,k,:)/mut(:,:)*msft(:,:)
-enddo
-do tjk = 1,config_flags%num_traj
-    eta_old = 0.0
-    eta_new = 0.0
-    keta=0
-    keta_temp=0
-    if (traj_i(tjk) .ne. -9999.0) then                                                         
-      if ( ( proj%code .EQ. PROJ_LC           ) .OR. &
-           ( proj%code .EQ. PROJ_PS           ) .OR. &
+
+   dm = grid%id
+
+   write(dbg_mes,'(''trajectory('',i2.2,''): Entering trajectory'')') dm
+   call wrf_debug(200,trim(dbg_mes) )
+
+   i_beg = max( 1,its-1 )
+   i_end = min( ite+2,ide-1 )
+   do j=max(1,jts-1),min(jte+2,jde-1)
+     do k=kms,kme-1
+       u(its:i_end,k,j)=ru_m(its:i_end,k,j)/MUU(its:i_end,j)*msfu(its:i_end,j)
+       v(its:i_end,k,j)=rv_m(its:i_end,k,j)/MUV(its:i_end,j)*msfv(its:i_end,j)
+     enddo
+     do k=kms,kme
+       w(its:i_end,k,j)=ww_m(its:i_end,k,j)/MUT(its:i_end,j)*msft(its:i_end,j)
+     enddo
+   enddo
+          has_proj_map  = &
+           ( proj%code .EQ. PROJ_LC           ) .OR. &
            ( proj%code .EQ. PROJ_PS_WGS84     ) .OR. &
            ( proj%code .EQ. PROJ_ALBERS_NAD83 ) .OR. &
            ( proj%code .EQ. PROJ_MERC         ) .OR. &
@@ -2322,16 +2342,49 @@ do tjk = 1,config_flags%num_traj
            ( proj%code .EQ. PROJ_CYL          ) .OR. &
            ( proj%code .EQ. PROJ_CASSINI      ) .OR. &
            ( proj%code .EQ. PROJ_GAUSS        ) .OR. &
-           ( proj%code .EQ. PROJ_ROTLL        ) ) THEN
-         call latlon_to_ij (proj, traj_lat(tjk),traj_long(tjk),traj_i(tjk),traj_j(tjk))
-      end if
-      i_traj=floor(traj_i(tjk)) ! find the lower_left_bottom corner for trajectory 
-      j_traj=floor(traj_j(tjk)) ! 
-      k_traj=floor(traj_k(tjk)) ! 
-       if ((i_traj .ge. its .and. i_traj .le. ite .and. i_traj .lt. ide) .and. &
-           (j_traj .ge. jts .and. j_traj .le. jte .and. j_traj .lt. jde) .and. &
-           (k_traj .le. kte .and. k_traj .lt. kde)) then
+           ( proj%code .EQ. PROJ_ROTLL        )
 
+traj_loop: &
+do tjk = 1,traj_cnt(dm)
+!do tjk = 1,config_flags%num_traj
+traj_is_active: &
+    if (traj_i(tjk) .ne. -9999.0) then
+      eta_old = 0.0
+      eta_new = 0.0
+      keta      = 0
+      keta_temp = 0
+      if( has_proj_map ) then
+        call latlon_to_ij (proj, &
+traj_lat(tjk),traj_long(tjk),traj_i(tjk),traj_j(tjk))
+      end if
+
+      i_traj = floor(traj_i(tjk)) ! find the lower_left_bottom corner for
+!trajectory 
+      j_traj = floor(traj_j(tjk)) ! 
+      k_traj = floor(traj_k(tjk)) ! 
+traj_in_domain: &
+      if ((i_traj .ge. its .and. i_traj .le. ite .and. i_traj .lt. ide) .and. &
+          (j_traj .ge. jts .and. j_traj .le. jte .and. j_traj .lt. jde) .and. &
+          (k_traj .le. kte .and. k_traj .lt. kde)) then
+!-----------------------------------------------------------------------------
+!  is trajectory in time interval?
+!-----------------------------------------------------------------------------
+         call domain_clock_get( grid, current_time=current_time, &
+current_timestr=current_timestr)
+         call geth_newdate( next_timestr, current_timestr, int(grid%dt) )
+         call wrf_atotime( next_timestr, next_time )
+         wrk_timestr(1:19) = traject(tjk,dm)%start_time(1:19)
+!        write(*,*) ' '
+!        write(*,*) traject(tjk,dm)
+!        write(dbg_mes,'(''trajectory('',i2,2,''): tjk,start_time = '',i3,1x,a)') &
+!                     dm,tjk,wrk_timestr
+!        call wrf_debug( 200,trim(dbg_mes) )
+         call wrf_atotime( wrk_timestr(1:19), start_time )
+         wrk_timestr(1:19) = traject(tjk,dm)%stop_time(1:19)
+         call wrf_atotime( wrk_timestr(1:19), stop_time )
+is_in_time_interval: &
+         if( next_time .ge. start_time .and. next_time .le. stop_time &
+                                       .and. .not. traject(tjk,dm)%is_stationary ) then
 ! for u : check x stagger
         if (traj_i(tjk)-real(floor(traj_i(tjk))) .ge. 0.5 ) then
           i_u=floor(traj_i(tjk)) + 1
@@ -2472,32 +2525,25 @@ do tjk = 1,config_flags%num_traj
             traj_k(tjk) = traj_k(tjk)-0.5
         endif
 !! convert i,j,k into lon, lat 
-      if ( ( proj%code .EQ. PROJ_LC           ) .OR. &
-           ( proj%code .EQ. PROJ_PS           ) .OR. &
-           ( proj%code .EQ. PROJ_PS_WGS84     ) .OR. &
-           ( proj%code .EQ. PROJ_ALBERS_NAD83 ) .OR. &
-           ( proj%code .EQ. PROJ_MERC         ) .OR. &
-           ( proj%code .EQ. PROJ_LATLON       ) .OR. &
-           ( proj%code .EQ. PROJ_CYL          ) .OR. &
-           ( proj%code .EQ. PROJ_CASSINI      ) .OR. &
-           ( proj%code .EQ. PROJ_GAUSS        ) .OR. &
-           ( proj%code .EQ. PROJ_ROTLL        ) ) THEN
-         call ij_to_latlon (proj, traj_i(tjk), traj_j(tjk),traj_lat(tjk),traj_long(tjk))
-      end if
-     else
+        if( has_proj_map ) then
+          call ij_to_latlon (proj, traj_i(tjk), &
+                             traj_j(tjk),traj_lat(tjk),traj_long(tjk))
+        endif
+      endif is_in_time_interval
+     else traj_in_domain
         traj_i(tjk) = -9999.0
         traj_j(tjk) = -9999.0
         traj_k(tjk) = -9999.0
         traj_long(tjk) = -9999.0
         traj_lat(tjk) = -9999.0
-     endif
- endif
-    traj_i(tjk) = wrf_dm_max_real(traj_i(tjk))! save the information from highest fomain
-    traj_j(tjk) = wrf_dm_max_real(traj_j(tjk))
-    traj_k(tjk) = wrf_dm_max_real(traj_k(tjk))
-    traj_long(tjk) = wrf_dm_max_real(traj_long(tjk))
-    traj_lat(tjk) = wrf_dm_max_real(traj_lat(tjk))
-enddo                                                                                            
+     endif traj_in_domain
+ endif traj_is_active
+     traj_i(tjk) = wrf_dm_max_real(traj_i(tjk))
+     traj_j(tjk) = wrf_dm_max_real(traj_j(tjk))
+     traj_k(tjk) = wrf_dm_max_real(traj_k(tjk))
+     traj_long(tjk) = wrf_dm_max_real(traj_long(tjk))
+     traj_lat(tjk)  = wrf_dm_max_real(traj_lat(tjk))
+enddo traj_loop
 !end trajectory
 
 END SUBROUTINE trajectory

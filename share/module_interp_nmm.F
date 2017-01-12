@@ -5,96 +5,96 @@
 ! Copy from C array to N array:
 #define FCOPY(N,C,i,j,k) \
   N(k,i-nits+1)=W1(i,j)*C(II(i,j)  ,JJ(i,j)  ,k)  \
- +W2(i,j)*C(II(i,j)+1,JJ(i,j)  ,k)  \
- +W3(i,j)*C(II(i,j)+a,JJ(i,j)-1,k)  \
- +W4(i,j)*C(II(i,j)+a,JJ(i,j)+1,k)
+  +W2(i,j)*C(II(i,j)+1,JJ(i,j)  ,k)  \
+  +W3(i,j)*C(II(i,j)+a,JJ(i,j)-1,k)  \
+  +W4(i,j)*C(II(i,j)+a,JJ(i,j)+1,k)
 
 ! Copy from C array to (k,used) indexed N array:
 #define uFCOPY(N,C,i,j,k) \
- N(k,used)=W1(i,j)*C(II(i,j)  ,JJ(i,j)  ,k)  \
- +W2(i,j)*C(II(i,j)+1,JJ(i,j)  ,k)  \
- +W3(i,j)*C(II(i,j)+a,JJ(i,j)-1,k)  \
- +W4(i,j)*C(II(i,j)+a,JJ(i,j)+1,k)
+  N(k,used)=W1(i,j)*C(II(i,j)  ,JJ(i,j)  ,k)  \
+  +W2(i,j)*C(II(i,j)+1,JJ(i,j)  ,k)  \
+  +W3(i,j)*C(II(i,j)+a,JJ(i,j)-1,k)  \
+  +W4(i,j)*C(II(i,j)+a,JJ(i,j)+1,k)
 
 ! ICOPY: Grab from C array, but do not assign:
 #define ICOPY(C,i,j,k) \
- (W1(i,j)*C(II(i,j)  ,JJ(i,j)  ,k)  \
- +W2(i,j)*C(II(i,j)+1,JJ(i,j)  ,k)  \
- +W3(i,j)*C(II(i,j)+a,JJ(i,j)-1,k)  \
- +W4(i,j)*C(II(i,j)+a,JJ(i,j)+1,k))
+   (W1(i,j)*C(II(i,j)  ,JJ(i,j)  ,k)  \
+  + W2(i,j)*C(II(i,j)+1,JJ(i,j)  ,k)  \
+  + W3(i,j)*C(II(i,j)+a,JJ(i,j)-1,k)  \
+  + W4(i,j)*C(II(i,j)+a,JJ(i,j)+1,k))
 
 ! IKJCOPY: grab from IKJ C array, do not assign:
 #define IKJCOPY(C,i,k,j) \
-  (W1(i,j)*C(II(i,j)  ,k,JJ(i,j)  )  \
- +W2(i,j)*C(II(i,j)+1,k,JJ(i,j)  )  \
- +W3(i,j)*C(II(i,j)+a,k,JJ(i,j)-1)  \
- +W4(i,j)*C(II(i,j)+a,k,JJ(i,j)+1))
+   (W1(i,j)*C(II(i,j)  ,k,JJ(i,j)  )  \
+  + W2(i,j)*C(II(i,j)+1,k,JJ(i,j)  )  \
+  + W3(i,j)*C(II(i,j)+a,k,JJ(i,j)-1)  \
+  + W4(i,j)*C(II(i,j)+a,k,JJ(i,j)+1))
 
 ! ICOPY2D: grab from IJ C array, do not assign:
 #define ICOPY2D(C,i,j) \
-  (W1(i,j)*C(II(i,j)  ,JJ(i,j)  )  \
- +W2(i,j)*C(II(i,j)+1,JJ(i,j)  )  \
- +W3(i,j)*C(II(i,j)+a,JJ(i,j)-1)  \
- +W4(i,j)*C(II(i,j)+a,JJ(i,j)+1))
+   (W1(i,j)*C(II(i,j)  ,JJ(i,j)  )  \
+  + W2(i,j)*C(II(i,j)+1,JJ(i,j)  )  \
+  + W3(i,j)*C(II(i,j)+a,JJ(i,j)-1)  \
+  + W4(i,j)*C(II(i,j)+a,JJ(i,j)+1))
 
 ! Copying from N array to C array:
 #define UPCOPY(C,N,i,j,k,ni,nj) \
- C(k,i-istart+1)=(N(ni,nj+2,k) \
- +N(ni-a  ,nj+1,k)+ N(ni+1-a,nj+1,k) \
- +N(ni-1,nj  ,k)+ N(ni,nj  ,k)  + N(ni+1,nj  ,k) \
- +N(ni-a  ,nj-1,k)+ N(ni+1-a,nj-1,k) \
- +N(ni,nj-2,k) \
-)/9
+  C(k,i-istart+1)=(N(ni,nj+2,k) \
+ + N(ni-a  ,nj+1,k)+ N(ni+1-a,nj+1,k) \
+ + N(ni-1,nj  ,k)+ N(ni,nj  ,k)  + N(ni+1,nj  ,k) \
+ + N(ni-a  ,nj-1,k)+ N(ni+1-a,nj-1,k) \
+ +  N(ni,nj-2,k) \
+  ) / 9
 
 ! Average to C points from N points without assignment:
 #define NGRAB(N,ni,nj,nk) \
 (N(ni,nj+2,nk) \
- +N(ni-a  ,nj+1,nk)+ N(ni+1-a,nj+1,nk)\
- +N(ni-1,nj  ,nk)  + N(ni,nj  ,nk)  + N(ni+1,nj  ,nk)\
- +N(ni-a  ,nj-1,nk)+ N(ni+1-a,nj-1,nk)\
- +N(ni,nj-2,nk) \
-)/9
+ + N(ni-a  ,nj+1,nk)+ N(ni+1-a,nj+1,nk)\
+ + N(ni-1,nj  ,nk)  + N(ni,nj  ,nk)  + N(ni+1,nj  ,nk)\
+ + N(ni-a  ,nj-1,nk)+ N(ni+1-a,nj-1,nk)\
+ +  N(ni,nj-2,nk) \
+  ) / 9
 
 ! Average to C points from N points without assignment on an IKJ grid:
 #define NGRABIKJ(N,ni,nk,nj) \
 (N(ni,nk,nj+2) \
- +N(ni-a,nk,nj+1)+ N(ni+1-a,nk,nj+1) \
- +N(ni-1,nk,nj ) + N(ni,nk,nj) + N(ni+1,nk,nj)\
- +N(ni-a,nk,nj-1)+ N(ni+1-a,nk,nj-1)\
- +N(ni,nk,nj-2) \
-)/9
+ + N(ni-a  ,nk,nj+1)+ N(ni+1-a,nk,nj+1)   \
+ + N(ni-1,nk,nj  )  + N(ni,nk,nj  )  + N(ni+1,nk,nj  )\
+ + N(ni-a  ,nk,nj-1)+ N(ni+1-a,nk,nj-1)\
+ +  N(ni,nk,nj-2) \
+  ) / 9
 
 ! Average to C points from N points without assignment, no vertical levels:
 #define NGRAB2D(N,ni,nj) \
 (N(ni,nj+2) \
- +N(ni-a  ,nj+1)+ N(ni+1-a,nj+1)\
- +N(ni-1,nj  )  + N(ni,nj  )  + N(ni+1,nj  )\
- +N(ni-a  ,nj-1)+ N(ni+1-a,nj-1)\
- +N(ni,nj-2) \
-)/9
+ + N(ni-a  ,nj+1)+ N(ni+1-a,nj+1)\
+ + N(ni-1,nj  )  + N(ni,nj  )  + N(ni+1,nj  )\
+ + N(ni-a  ,nj-1)+ N(ni+1-a,nj-1)\
+ +  N(ni,nj-2) \
+  ) / 9
 
 ! Copying from N array to I array:
 #define N2ICOPY(C,N,i,j,k,ni,nj) \
- C(i,j,k)=( N(ni,nj+2,k) \
- +N(ni-a  ,nj+1,k)+ N(ni+1-a,nj+1,k) \
- +N(ni-1,nj  ,k)+ N(ni,nj  ,k)  + N(ni+1,nj  ,k) \
- +N(ni-a  ,nj-1,k)+ N(ni+1-a,nj-1,k) \
- +N(ni,nj-2,k) \
-)/9
+  C(i,j,k)=( N(ni,nj+2,k) \
+ + N(ni-a  ,nj+1,k)+ N(ni+1-a,nj+1,k) \
+ + N(ni-1,nj  ,k)+ N(ni,nj  ,k)  + N(ni+1,nj  ,k) \
+ + N(ni-a  ,nj-1,k)+ N(ni+1-a,nj-1,k) \
+ +  N(ni,nj-2,k) \
+  ) / 9
 
 ! Maximum value from N array to C array:
 #define N2I_SET_MAX(C,N,i,j,k,ni,nj) \
- C(i,j,k)=max(C(i,j,k),max(N(ni,nj+2,k),   \
- max(N(ni-1,nj  ,k),max(N(ni,nj  ,k),  max(N(ni+1,nj  ,k),\
- max(N(ni-a  ,nj-1,k),max(N(ni+1-a,nj-1,k),\
+  C(i,j,k)=max(C(i,j,k),max(N(ni,nj+2,k),   \
+  max(N(ni-1,nj  ,k),max(N(ni,nj  ,k),  max(N(ni+1,nj  ,k),\
+  max(N(ni-a  ,nj-1,k),max(N(ni+1-a,nj-1,k),\
  N(ni,nj-2,k) )))))))
 
 ! Maximum value from N array to C array:
 #define N2I_SET_MAX_IJ(C,N,i,j,ni,nj) \
- C(i,j)=max(C(i,j), max(N(ni,nj+2),\
+  C(i,j)=max(C(i,j), max(N(ni,nj+2),\
  max(N(ni-1,nj  ),max(N(ni,nj  ),  max(N(ni+1,nj  ),  \
- max(N(ni-a  ,nj-1),max(N(ni+1-a,nj-1), \
- N(ni,nj-2) )))))))
+   max(N(ni-a  ,nj-1),max(N(ni+1-a,nj-1), \
+    N(ni,nj-2) )))))))
        
 
 module module_interp_nmm

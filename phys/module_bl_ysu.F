@@ -1669,9 +1669,6 @@ contains
       !value could be found to work best in all conditions.
       !---------------------------------------------------------------
 
-
-
-
       INTEGER,INTENT(IN) :: KTS,KTE
       REAL, INTENT(OUT) :: zi
       REAL, INTENT(IN) :: landsea

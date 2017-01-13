@@ -739,7 +739,7 @@ rate_loop: &
 #endif
        endif has_daylight
 
-#include <tuv2wrf_jvals.inc>
+#include "tuv2wrf_jvals.inc"
 
      end do long_loop
    end do lat_loop

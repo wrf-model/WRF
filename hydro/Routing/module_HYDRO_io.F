@@ -1729,12 +1729,12 @@ end subroutine get_albedo12m_netcdf
 #ifdef HYDRO_D
        print*, 'output_flnm = "'//trim(output_flnm)//'"'
 #endif
-#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
-       write(6,*) "using large netcdf file for RTOUT_DOMAIN"
-       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
-#else
+#ifdef WRFIO_NCD_NO_LARGE_FILE_SUPPORT
        write(6,*) "using normal netcdf file for RTOUT_DOMAIN"
        iret = nf_create(trim(output_flnm), NF_CLOBBER, ncid)
+#else
+       write(6,*) "using large netcdf file for RTOUT_DOMAIN"
+       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
 #endif
        if (iret /= 0) then
          call hydro_stop("In output_rt() - Problem nf_create")
@@ -2240,10 +2240,10 @@ iret = nf_put_vara_int(ncid, varid, (/1/), (/1/), seconds_since)
 #endif
 
 
-#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
-       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
-#else
+#ifdef WRFIO_NCD_NO_LARGE_FILE_SUPPORT
        iret = nf_create(trim(output_flnm), NF_CLOBBER, ncid)
+#else
+       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
 #endif
 
        if (iret /= 0) then
@@ -2585,10 +2585,10 @@ subroutine sub_output_gw(igrid, split_output_count, ixrt, jxrt, nsoil, &
 #endif
 
 
-#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
-       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
-#else
+#ifdef WRFIO_NCD_NO_LARGE_FILE_SUPPORT
        iret = nf_create(trim(output_flnm), NF_CLOBBER, ncid)
+#else
+       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
 #endif
 
        if (iret /= 0) then
@@ -3008,19 +3008,19 @@ subroutine sub_output_gw(igrid, split_output_count, ixrt, jxrt, nsoil, &
         print*, 'output_flnm = "'//trim(output_flnm)//'"'
 #endif
 
-#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
-       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
-#else
+#ifdef WRFIO_NCD_NO_LARGE_FILE_SUPPORT
        iret = nf_create(trim(output_flnm), NF_CLOBBER, ncid)
+#else
+       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
 #endif
         if (iret /= 0) then
            call hydro_stop("In output_chrt() - Problem nf_create points")
         endif
 
-#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
-       iret = nf_create(trim(output_flnm2), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid2)
-#else
+#ifdef WRFIO_NCD_NO_LARGE_FILE_SUPPORT
        iret = nf_create(trim(output_flnm2), NF_CLOBBER, ncid2)
+#else
+       iret = nf_create(trim(output_flnm2), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid2)
 #endif
         if (iret /= 0) then
             call hydro_stop("In output_chrt() - Problem nf_create observation")
@@ -3718,19 +3718,19 @@ end subroutine output_chrt
         print*, 'output_flnm = "'//trim(output_flnm)//'"'
 #endif
 
-#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
-       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
-#else
+#ifdef WRFIO_NCD_NO_LARGE_FILE_SUPPORT
        iret = nf_create(trim(output_flnm), NF_CLOBBER, ncid)
+#else
+       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
 #endif
         if (iret /= 0) then
            call hydro_stop("In output_chrt() - Problem nf_create points")
         endif
 
-#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
-       iret = nf_create(trim(output_flnm2), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid2)
-#else
+#ifdef WRFIO_NCD_NO_LARGE_FILE_SUPPORT
        iret = nf_create(trim(output_flnm2), NF_CLOBBER, ncid2)
+#else
+       iret = nf_create(trim(output_flnm2), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid2)
 #endif
         if (iret /= 0) then
             call hydro_stop("In output_chrt() - Problem nf_create observation")
@@ -4578,10 +4578,10 @@ end subroutine mpp_output_chrt
       print*, 'output_flnm = "'//trim(output_flnm)//'"'
 #endif
 
-#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
-       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
-#else
+#ifdef WRFIO_NCD_NO_LARGE_FILE_SUPPORT
        iret = nf_create(trim(output_flnm), NF_CLOBBER, ncid)
+#else
+       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
 #endif
 
       if (iret /= 0) then
@@ -4818,10 +4818,10 @@ end subroutine mpp_output_chrt
       print*, 'output_flnm = "'//trim(output_flnm)//'"'
 #endif
 
-#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
-       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
-#else
+#ifdef WRFIO_NCD_NO_LARGE_FILE_SUPPORT
        iret = nf_create(trim(output_flnm), NF_CLOBBER, ncid)
+#else
+       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
 #endif
 
       if (iret /= 0) then
@@ -5042,10 +5042,10 @@ end subroutine mpp_output_chrt
  
 
 !--- define dimension
-#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
-       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
-#else
+#ifdef WRFIO_NCD_NO_LARGE_FILE_SUPPORT
        iret = nf_create(trim(output_flnm), NF_CLOBBER, ncid)
+#else
+       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
 #endif
 
         if (iret /= 0) then
@@ -5417,10 +5417,10 @@ end subroutine mpp_output_chrt
      if(IO_id.eq.my_id) &
 #endif
 
-#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
-       iret = nf_create(trim(outFile), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
-#else
+#ifdef WRFIO_NCD_NO_LARGE_FILE_SUPPORT
        iret = nf_create(trim(outFile), NF_CLOBBER, ncid)
+#else
+       iret = nf_create(trim(outFile), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
 #endif
 
 #ifdef MPP_LAND
@@ -5519,16 +5519,16 @@ end subroutine mpp_output_chrt
      if(IO_id.eq.my_id) &
 #endif
 
-#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
-       iret = nf_create(trim(outFile), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
-#ifdef HYDRO_D
-       write(6,*) "yyywww using large netcdf file definition. "
-       call flush(6)
-#endif
-#else
+#ifdef WRFIO_NCD_NO_LARGE_FILE_SUPPORT
        iret = nf_create(trim(outFile), NF_CLOBBER, ncid)
 #ifdef HYDRO_D
        write(6,*) "yyywww do not use large netcdf file definition. "
+       call flush(6)
+#endif
+#else
+       iret = nf_create(trim(outFile), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
+#ifdef HYDRO_D
+       write(6,*) "yyywww using large netcdf file definition. "
        call flush(6)
 #endif
 #endif
@@ -8083,10 +8083,10 @@ end subroutine mpp_output_chrt
         integer :: iret, nodes, i, ncid, dimid_n, varid
 
         nodes = size(chlon,1)         
-#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
-       iret = nf_create("nodeInfor.nc", IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
-#else
+#ifdef WRFIO_NCD_NO_LARGE_FILE_SUPPORT
        iret = nf_create("nodeInfor.nc", NF_CLOBBER, ncid)
+#else
+       iret = nf_create("nodeInfor.nc", IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
 #endif
        iret = nf_def_dim(ncid, "node", nodes, dimid_n)  !-- make a decimated grid
 !  define the varialbes
@@ -8801,10 +8801,10 @@ end subroutine mpp_output_chrt2
         print*, 'output_flnm = "'//trim(output_flnm)//'"'
 #endif
 
-#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
-       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
-#else
+#ifdef WRFIO_NCD_NO_LARGE_FILE_SUPPORT
        iret = nf_create(trim(output_flnm), NF_CLOBBER, ncid)
+#else
+       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
 #endif
         if (iret /= 0) then
            print*,  "Problem nf_create points"
@@ -9180,10 +9180,10 @@ end subroutine output_chrt2
       print*, 'output_flnm = "'//trim(output_flnm)//'"'
 #endif
 
-#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
-       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
-#else
+#ifdef WRFIO_NCD_NO_LARGE_FILE_SUPPORT
        iret = nf_create(trim(output_flnm), NF_CLOBBER, ncid)
+#else
+       iret = nf_create(trim(output_flnm), IOR(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
 #endif
 
       if (iret /= 0) then
@@ -9865,12 +9865,12 @@ end subroutine output_chrt2
        flush(6)
 #endif
 
-#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
-       write(6,*) "using large netcdf file for LAKE TYPES"
-       iret = nf_create(trim(output_flnm), ior(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
-#else
+#ifdef WRFIO_NCD_NO_LARGE_FILE_SUPPORT
        write(6,*) "using normal netcdf file for LAKE TYPES"
        iret = nf_create(trim(output_flnm), NF_CLOBBER, ncid)
+#else
+       write(6,*) "using large netcdf file for LAKE TYPES"
+       iret = nf_create(trim(output_flnm), ior(NF_CLOBBER,NF_64BIT_OFFSET), ncid)
 #endif
 
        if (iret /= 0) then

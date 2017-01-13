@@ -1237,6 +1237,38 @@ state   real    p_strat        -       misc         -         -     i02rh     "p
 state   real    max_msftx      -       misc         -         -      rh       "max_mstfx"             "Max map factor in domain"  ""
 state   real    max_msfty      -       misc         -         -      rh       "max_mstfy"             "Max map factor in domain"  ""
 
+#BEGIN EMK...For Goddard 2014 Radiation and 4ICE
+state   real    phys_tot       ikj      misc        1         -     h         "PHYS_TOT"              "TOTAL LATENT HEATING RATE"                       "K s-1"
+state   real    physc          ikj      misc        1         -     -         "PHYSC"                 "LATENT HEATING RATE DUE TO CONDENSATION"         "K s-1"
+state   real    physe          ikj      misc        1         -     -         "PHYSE"                 "LATENT HEATING RATE DUE TO EVAPORATION"          "K s-1"
+state   real    physd          ikj      misc        1         -     -         "PHYSD"                 "LATENT HEATING RATE DUE TO DEPOSITION"           "K s-1"
+state   real    physs          ikj      misc        1         -     -         "PHYSS"                 "LATENT HEATING RATE DUE TO SUBLIMATION"          "K s-1"
+state   real    physm          ikj      misc        1         -     -         "PHYSM"                 "LATENT HEATING RATE DUE TO MELTING"              "K s-1"
+state   real    physf          ikj      misc        1         -     -         "PHYSF"                 "LATENT HEATING RATE DUE TO FREEZING"             "K s-1"
+state   real    acphys_tot       ikj      misc        1         -     r       "ACPHYS_TOT"            "ACCUMULATED TOTAL LATENT HEATING"                "K"
+state   real    acphysc          ikj      misc        1         -     r       "ACPHYSC"               "ACCUMULATED LATENT HEATING DUE TO CONDENSATION"  "K"
+state   real    acphyse          ikj      misc        1         -     r       "ACPHYSE"               "ACCUMULATED LATENT HEATING DUE TO EVAPORATION"   "K"
+state   real    acphysd          ikj      misc        1         -     r       "ACPHYSD"               "ACCUMULATED LATENT HEATING DUE TO DEPOSITION"    "K"
+state   real    acphyss          ikj      misc        1         -     r       "ACPHYSS"               "ACCUMULATED LATENT HEATING DUE TO SUBLIMATION"   "K"
+state   real    acphysm          ikj      misc        1         -     r       "ACPHYSM"               "ACCUMULATED LATENT HEATING DUE TO MELTING"       "K"
+state   real    acphysf          ikj      misc        1         -     r       "ACPHYSF"               "ACCUMULATED LATENT HEATING DUE TO FREEZING"      "K"
+state   real    comdbz         ij       misc        1         -     h         "COMDBZ"                "COMPOSITE RADAR REFLECTIVITIES"             "dBZ"
+state   real    refc          ikj      misc        1          -     rh         "REFC"                  "Cloud Water effective radius"       "micron"
+state   real    refr          ikj      misc        1          -     rh         "REFR"                  "Rain Water effective radius"        "micron"
+state   real    refi          ikj      misc        1          -     rh         "REFI"                  "Cloud Ice effective radius"         "micron"
+state   real    refs          ikj      misc        1          -     rh         "REFS"                  "Snow effective radius"              "micron"
+state   real    refg          ikj      misc        1          -     rh         "REFG"                  "Graupel Water effective radius"     "micron"
+state   real    refh          ikj      misc        1          -     rh         "REFH"                  "Hail Water effective radius"        "micron"
+state   real    preci3d       ikj      misc        1         -     -       "PRECI3D"                   "Sedimentation Fluxes for cloud ice"             "KG/M^2/S"
+state   real    precs3d       ikj      misc        1         -     -       "PRECS3D"                   "Sedimentation Fluxes for snow"                  "KG/M^2/S"
+state   real    precg3d       ikj      misc        1         -     -       "PRECG3D"                   "Sedimentation Fluxes for graupel"               "KG/M^2/S"
+state   real    prech3d       ikj      misc        1         -     -       "PRECH3D"                   "Sedimentation Fluxes for hail"               "KG/M^2/S"
+state   real    precr3d       ikj      misc        1         -     -       "PRECR3D"                   "Sedimentation Fluxes for rain"                  "KG/M^2/S"
+state    real  COD2D_OUT       ij      misc        1         -      h         "COD2D_OUT"           "Column Cloud Optical Depth"   " "
+state    real  CTOP2D_OUT      ij      misc        1         -      h         "CTOP2D_OUT"          "Cloud-Top Pressure"          "mb"
+
+#END EMK...For Goddard 2014 Radiation and 4ICE
+
 # State variables for Goddard LW and SW radiation
 state    real  TLWDN           ij      misc        1         -      h         "TLWDN"                 "TOA LW downwelling flux"           "W m-2"
 state    real  TLWUP           ij      misc        1         -      h         "TLWUP"                 "TOA LW upwelling flux"             "W m-2"
@@ -1674,7 +1706,7 @@ state    real  TMN              ij      misc        1         -     i012rhd=(int
 state    real  TYR              ij      misc        1         -     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "TYR"        "ANNUAL MEAN SFC TEMPERATURE"           "K"
 state    real  TYRA             ij      misc        1         -     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "TYRA"   "ACCUMULATED YEARLY SFC TEMPERATURE FOR CURRENT YEAR"  "K"
 state    real  TDLY             ij      misc        1         -     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "TDLY"     "ACCUMULATED DAILY SFC TEMPERATURE FOR CURRENT DAY"  "K"
-state    real  TLAG             i&j     misc        1         -     d=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "TLAG"         "DAILY MEAN SFC TEMPERATURE OF PRIOR DAYS"       "K"
+state    real  TLAG             i&j     misc        1         -     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "TLAG"         "DAILY MEAN SFC TEMPERATURE OF PRIOR DAYS"       "K"
 state    integer NYEAR          -       misc        1         -     r        "NYEAR"                  "ACCUM DAYS IN A YEAR"                         ""
 state    real    NDAY           -       misc        1         -     r        "NDAY"                  "ACCUM TIMESTEPS IN A DAY"                      ""
 state    real  XLAND            ij      misc        1         -     i02rhd=(interp_fcnm_imask)u=(copy_fcnm)       "XLAND"                 "LAND MASK (1 FOR LAND, 2 FOR WATER)"          ""      
@@ -2133,6 +2165,10 @@ rconfig   integer     do_radar_ref        namelist,physics      1              0
 rconfig   integer     compute_radar_ref   derived               1              0       -        "compute_radar_ref" "0/1 flag: compute radar reflectivity, either do_radar_ref=1 .or. (milbrandt or NSSL schemes)"
 rconfig   integer     ra_lw_physics       namelist,physics	max_domains    0       rh       "ra_lw_physics"         ""      ""
 rconfig   integer     ra_sw_physics       namelist,physics	max_domains    0       rh       "ra_sw_physics"         ""      ""
+#BEGIN EMK...For Goddard 2014 radiation
+rconfig   integer    goddardrad_2014_skip namelist,physics      1              0       rh       "goddard radiation skip(1) or not(0)"   ""   ""
+#END EMK...For Goddard 2014 radiation
+
 rconfig   real    radt                    namelist,physics	max_domains    0       h    "RADT"          ""      ""
 rconfig   real    naer                    namelist,physics      max_domains    1e9     rh   "NAER"          ""      ""
 rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    0       rh       "sf_sfclay_physics"             ""      ""
@@ -2610,6 +2646,9 @@ package   nssl_1mom       mp_physics==19               -             moist:qv,qc
 package   nssl_1momlfo    mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
 package   nssl_2momg      mp_physics==22               -             moist:qv,qc,qr,qi,qs,qg;scalar:qndrop,qnr,qni,qns,qng,qvolg;state:re_cloud,re_ice,re_snow
 package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow,qnwfa2d,taod5503d,taod5502d
+#BEGIN EMK...Goddard 4ICE scheme
+package   gsfcgce4ice     mp_physics==56             -               moist:qv,qc,qr,qi,qs,qg,qh
+#END EMK...Goddard 4ICE scheme
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 
 package   radar_refl      compute_radar_ref==1         -             state:refl_10cm,refd_max
@@ -2651,6 +2690,9 @@ package   rrtmg_lwscheme_fast  ra_lw_physics==24     -             ozmixm:mth01,
 package   goddardlwscheme  ra_lw_physics==5          -             state:tlwdn,tlwup,slwdn,slwup,taucldc,taucldi
 package   flglwscheme      ra_lw_physics==7          -             -
 package   heldsuarez       ra_lw_physics==31         -             -
+#BEGIN EMK...Goddard 2014 radiation
+package   goddardlwscheme_2014 ra_lw_physics==56     -             state:tlwdn,tlwup,slwdn,slwup
+#END EMK...Goddard 2014 radiation
 package   gfdllwscheme     ra_lw_physics==99         -             -
 
 package   swradscheme     ra_sw_physics==1           -             -
@@ -2660,6 +2702,9 @@ package   rrtmg_swscheme  ra_sw_physics==4           -             ozmixm:mth01,
 package   rrtmg_swscheme_fast  ra_sw_physics==24     -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,i_acswupt,i_acswuptc,i_acswdnt,i_acswdntc,i_acswupb,i_acswupbc,i_acswdnb,i_acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,o3rad;aerod:ocarbon,seasalt,dust,bcarbon,sulfate,upperaer
 package   goddardswscheme ra_sw_physics==5           -             state:tswdn,tswup,sswdn,sswup,taucldc,taucldi
 package   flgswscheme     ra_sw_physics==7           -             -
+#BEGIN EMK...Goddard 2014 radiation
+package   goddardswscheme_2014  ra_sw_physics==56    -             state:tswdn,tswup,sswdn,sswup
+#END EMK...Goddard 2014 radiation
 package   gfdlswscheme    ra_sw_physics==99          -             -
 
 package   sfclayrevscheme    sf_sfclay_physics==1        -             -

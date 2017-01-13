@@ -96,6 +96,7 @@ package tracer_option_2 ntracers==4 - szj:szj1,szj2,szj3,szj4;s1z:s1z1,s1z2,s1z3
 #
 state    real  LU_INDEX         ij      misc        1         f     irhd=(DownNear)u=(UpNear)   "LU_INDEX"              "LAND USE CATEGORY"         ""
 state    real  LU_MASK          ij      misc        1         f     i3h     "LU_MASK"              "0 land 1 water"         ""
+state    real   TLAG            i&j     misc        1         -     -       "TLAG"         "DAILY MEAN SFC TEMPERATURE OF PRIOR DAYS"       "K"
 ################################################################################
 ################################################################################
 
@@ -158,6 +159,7 @@ state  logical relaxmask ij     dyn_nmm     1      -    r  "relaxmask" "Mask arr
 # For the Inlined GFDL/NCEP Tracker
 #
 rconfig   integer vortex_tracker          namelist,physics      max_domains    1      -      "vortex_tracker" "Vortex Tracking Algorithm" ""
+rconfig   integer goddardrad_2014_skip    namelist,physics      1              0       rh       "goddard radiation skip(1) or not(0)"   ""   ""
 ifdef HWRF=1
 include registry.tracker
 endif
@@ -285,6 +287,7 @@ state  real   v         ijkb    dyn_nmm     1      v      i01rh023u=(UpVel)d=(Do
 state  real   told      ijk    dyn_nmm     1      -      r       "TOLD"    "T from previous timestep"                      "K"
 state  real   uold      ijk    dyn_nmm     1      -      r       "UOLD"    "U from previous timestep"                      "m s-1"
 state  real   vold      ijk    dyn_nmm     1      -      r       "VOLD"    "V from previous timestep"                      "m s-1"
+
 #
 # NMM DFI
 #
@@ -1671,6 +1674,7 @@ package   fer_mp_hires  mp_physics==5                -             moist:qv,qc,q
 package   fer_mp_hires_advect  mp_physics==15        -             moist:qv,qc,qr,qi;scalar:qrimef
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg;state:re_cloud,re_ice,re_snow
 package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
+package   gsfcgce4ice   mp_physics==56               -             -
 package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow
 package   thompsonaero  mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow
 package   milbrandt2mom mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
@@ -1713,6 +1717,7 @@ package   camlwscheme   ra_lw_physics==3             -             ozmixm:mth01,
 package   rrtmg_lwscheme  ra_lw_physics==4           -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,o3rad
 package   rrtmg_lwscheme_fast  ra_lw_physics==24     -             -
 package   goddardlwscheme  ra_lw_physics==5          -             -
+package   goddardlwscheme_2014  ra_lw_physics==56          -             -
 package   flglwscheme   ra_lw_physics==7             -             -
 package   gfdllwscheme  ra_lw_physics==99            -             -
 package   hwrflwscheme  ra_lw_physics==98            -             state:o3rad
@@ -1723,6 +1728,7 @@ package   camswscheme   ra_sw_physics==3             -             ozmixm:mth01,
 package   rrtmg_swscheme  ra_sw_physics==4           -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,o3rad
 package   rrtmg_swscheme_fast  ra_sw_physics==24     -             -
 package   goddardswscheme  ra_sw_physics==5          -             -
+package   goddardswscheme_2014  ra_sw_physics==56          -             -
 package   flgswscheme   ra_sw_physics==7             -             -
 package   gfdlswscheme  ra_sw_physics==99            -             -
 package   hwrfswscheme  ra_sw_physics==98            -             state:o3rad

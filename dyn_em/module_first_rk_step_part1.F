@@ -331,6 +331,9 @@ BENCH_START(rad_driver_tim)
      &        , TSWDN=grid%tswdn, TSWUP=grid%tswup                        & ! goddard schemes
      &        , SSWDN=grid%sswdn, SSWUP=grid%sswup                        & ! goddard schemes
 !JJS 20101020 ^^^^^
+     &        , refc=grid%refc, refr=grid%refr                        & ! mchen goddard 2016
+     &        , refi=grid%refi, refs=grid%refs                        & ! mchen goddard 2016
+     &        , refg=grid%refg, refh=grid%refh                        & ! mchen goddard 2016
 !ZCX+ cloud fraction for CLWRF
      &        , CLDT=grid%cldt, ZNU=grid%znu                              &
 !ZCX-
@@ -381,6 +384,8 @@ BENCH_START(rad_driver_tim)
      &        ,ICLOUD_CU=config_flags%ICLOUD_CU                            &
      &        ,QC_CU=grid%QC_CU , QI_CU=grid%QI_CU                         &
 #if (WRF_CHEM == 1)
+     &        ,CHEM_OPT=config_flags%chem_opt                             & !CuP, rce 22-aug-2011 !BSINGH - For WRFCuP scheme
+     &        ,gsfcrad_gocart_coupling =config_flags%gsfcrad_gocart_coupling         & !CuP, rce 22-aug-2011 !BSINGH - For WRFCuP scheme
      &        ,AER_RA_FEEDBACK=config_flags%aer_ra_feedback                &
      &        ,PM2_5_DRY=grid%pm2_5_dry, PM2_5_WATER=grid%pm2_5_water               &
      &        ,PM2_5_DRY_EC=grid%pm2_5_dry_ec                                  &

@@ -497,6 +497,7 @@ module_physics_init.o : \
 		module_ra_cam_support.o		\
 		module_ra_sw.o			\
 		module_ra_gsfcsw.o		\
+                module_ra_goddard_2014.o        \
 		module_ra_gfdleta.o		\
 		module_ra_HWRF.o		\
 		module_ra_hs.o			\
@@ -559,6 +560,7 @@ module_physics_init.o : \
 		module_fddaobs_rtfdda.o		\
 		module_mp_thompson.o            \
 		module_mp_gsfcgce.o 		\
+                module_mp_gsfcgce_4ice.o        \
                 module_mp_morr_two_moment.o     \
                 module_mp_milbrandt2mom.o     \
                 module_mp_nssl_2mom.o         \
@@ -587,6 +589,7 @@ module_microphysics_driver.o: \
 		module_mp_fer_hires.o module_mp_HWRF.o  \
 		module_mp_thompson.o            \
 		module_mp_gsfcgce.o 		\
+                module_mp_gsfcgce_4ice.o        \
                 module_mp_morr_two_moment.o     \
                 module_mp_milbrandt2mom.o     \
                 module_mp_nssl_2mom.o         \
@@ -663,6 +666,7 @@ module_radiation_driver.o: \
 		module_ra_HWRF.o \
 		module_ra_hs.o \
 		module_ra_goddard.o \
+                module_ra_goddard_2014.o \
                 module_ra_flg.o \
                 module_ra_aerosol.o \
                 module_mp_thompson.o \
@@ -854,6 +858,25 @@ module_ltng_iccg.o :
 
 module_ra_aerosol.o :\
 	../frame/module_wrf_error.o
+
+#BEGIN EMK...Goddard 2014 radiation and 4ICE microphysics
+module_gocart_coupling.o:
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b > $*.f90
+	$(RM) $*.b
+	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(INCLUDE_MODULES) \
+		$(PROMOTION) $(FCSUFFIX) $*.f90
+
+module_ra_goddard_2014.o: ../frame/module_wrf_error.o \
+                          module_gocart_coupling.o \
+                          module_checkerror.o
+
+module_mp_gsfcgce_4ice.o: ../frame/module_wrf_error.o \
+                          module_checkerror.o \
+                          module_mp_radar.o
+
+#END EMK...Goddard 2014 radiation and 4ICE microphysics
 
 # End of DEPENDENCIES for phys
 

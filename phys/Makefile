@@ -44,6 +44,7 @@ MODULES = \
 	module_bl_gwdo.o \
 	module_bl_myjurb.o \
 	module_bl_boulac.o \
+        module_checkerror.o \
 	module_bl_camuwpbl_driver.o \
 	module_bl_mfshconvpbl.o \
 	module_shcu_camuwshcu_driver.o \
@@ -82,6 +83,7 @@ MODULES = \
 	module_mp_fast_sbm.o \
 	module_ltng_lpi.o \
 	module_mp_gsfcgce.o \
+        module_mp_gsfcgce_4ice.o \
 	module_mp_morr_two_moment.o \
 	module_mp_milbrandt2mom.o \
 	module_mp_nssl_2mom.o \
@@ -92,6 +94,8 @@ MODULES = \
 	module_ra_clWRF_support.o  \
 	module_ra_gsfcsw.o \
 	module_ra_goddard.o \
+        module_ra_goddard_2014.o \
+        module_gocart_coupling.o \
 	module_ra_rrtm.o  \
 	module_ra_rrtmg_lw.o  \
 	module_ra_rrtmg_sw.o  \

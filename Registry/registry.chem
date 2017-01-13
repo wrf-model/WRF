@@ -28,6 +28,14 @@ state    real    preci           ikj    misc        1         -      rdu      "p
 state    real    precs           ikj    misc        1         -      rdu      "precs"               "SNOW PRECIPITATION RATE"        "KG/M2/S"
 state    real    precg           ikj    misc        1         -      rdu      "precg"               "GRAUPEL PRECIPITATION RATE"     "KG/M2/S"
 
+#BEGIN EMK...Goddard 2014 radiation and 4ICE microphysics
+state   real    aod_out         ikj      misc        1       -      h "AOD_OUT"               "Aerosol Optical Depth"          " "
+state   real    aod2d_out        ij      misc        1       -      h "AOD2D_OUT"           "COLUMN Aerosol Optical Depth"          " "
+state   real    atop2d_out       ij      misc        1       -      h "ATOP2D_OUT"          "Aerosol-Top Pressure"          "mb"
+state   real    icn_diag        ikj      misc        1       -      h "ICN_DIAG"              "IN concentration"          "#/Litre "
+state   real    nc_diag         ikj      misc        1       -      h "NC_DIAG"               "cloud concentration"       "#/cm3 "
+#END EMK...Goddard 2014 radiation and 4ICE microphysics
+
 #
 # Timing variables for chemistry
 #
@@ -3762,6 +3770,12 @@ rconfig   integer     aer_op_opt          namelist,chem          max_domains    
 rconfig   integer     opt_pars_out        namelist,chem          1    0       h    "opt_pars_out"          ""      ""
 rconfig   integer     diagnostic_dep      namelist,chem          max_domains    0       rh    "diagnostic_dep"     ""      ""
 
+#BEGIN EMK...For Goddard 2014 radiation and 4ICE microphysics
+rconfig   integer     gsfcgce_gocart_coupling namelist,chem     1           1       rh       "gsfcgce_gocart_coupling" "activate aerosol coupling in GSFC mp_physics, 0=no, 1=yes" ""
+rconfig   integer     gsfcrad_gocart_coupling namelist,chem     1           1       rh       "gsfcrad_gocart_coupling" "activate aerosol coupling in GSFC radiation, 0=no, 1=yes" ""
+
+#END EMK...For Goddard 2014 radiation and 4ICE microphysics
+
 # aircraft emissions
 rconfig   integer    aircraft_emiss_opt           namelist,chem    max_domains  0                                     rh    "aircraft_emiss_opt"                      ""    ""
 rconfig   integer    kemit_aircraft               namelist,chem       1         1                                     irh   "kemit_aircraft"                          ""    ""
@@ -3801,7 +3815,7 @@ rconfig   real        depo_fact           namelist,chem          max_domains    
 
 # track input
 rconfig   integer    track_chem_num       namelist,chem       1               0       -    "number of track chem requested"    ""    ""
-rconfig   character  track_chem_name      namelist,chem       max_trackchem   ""      -    "name of track chem requested"      ""    ""
+rconfig   character  track_chem_name      namelist,chem       max_trackchem   " "      -    "name of track chem requested"      ""    ""
 rconfig   integer    track_rad_num        namelist,chem       1               17      -    "nw-1 in module_wave_data"          ""    ""
 rconfig   integer    track_tuv_num        namelist,chem       1               58      -    "tuv_jmax in module_wave_data"      ""    ""
 rconfig   integer    track_tuv_lev        namelist,chem       1               51      -    "nref in module_ftuv_driver"        ""    ""

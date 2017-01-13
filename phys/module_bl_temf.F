@@ -4,6 +4,7 @@
 !
 !
 module module_bl_temf
+use , intrinsic :: ieee_arithmetic
 contains
 !
 !-------------------------------------------------------------------
@@ -912,7 +913,7 @@ contains
          cf3d_temfx(i,1) = 0.0
          cfm_temfx(i) = 0.0
          do k = 2,kte
-            ! if (wupd_temfx(i,k-1) >= 1.0e-15 .AND. wupd_temfx(i,k) >= 1.0e-15 .AND. .NOT. isnan(wupd_temfx(i,k-1)) .AND. .NOT. isnan(wupd_temfx(i,k))) then
+            ! if (wupd_temfx(i,k-1) >= 1.0e-15 .AND. wupd_temfx(i,k) >= 1.0e-15 .AND. .NOT. IEEE_IS_NAN(wupd_temfx(i,k-1)) .AND. .NOT. IEEE_IS_NAN(wupd_temfx(i,k))) then
             if (wupd_temfx(i,k-1) >= 1.0e-15 .AND. wupd_temfx(i,k) >= 1.0e-15) then
                au(i,k) = ((mf_temfx(i,k-1)+mf_temfx(i,k))/2.0) / ((wupd_temfx(i,k-1)+wupd_temfx(i,k))/2.0)  ! WA average before divide, is that best?
             else

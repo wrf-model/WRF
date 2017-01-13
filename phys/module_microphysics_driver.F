@@ -61,6 +61,21 @@ SUBROUTINE microphysics_driver(                                          &
                       ,qt_curr,f_qt                                      &
                       ,mp_restart_state,tbpvs_state,tbpvs0_state         & ! for etampnew or fer_mp_hires
                       ,hail,ice2                                         & ! for mp_gsfcgce
+!BEGIN EMK...For 4ICE scheme
+#if ( EM_CORE == 1 )
+                      ,phys_tot, physc, physe, physd, physs,physm, physf   & 
+                      ,acphys_tot, acphysc, acphyse, acphysd       & 
+                      ,acphyss, acphysm, acphysf                   & 
+                      ,comdbz                                      & 
+                      ,refc, refr, refi, refs, refg, refh          &
+                      ,precr3d, preci3d, precs3d, precg3d, prech3d &
+#if ( WRF_CHEM == 1 )
+                      ,icn_diag, nc_diag  &  ! inline gocart
+                      ,gsfcgce_gocart_coupling                           &
+#endif
+#endif
+!END EMK...For 4ICE
+
 !                     ,ccntype                                           & ! for mp_milbrandt2mom
                       ,u,v,w,z                                          &   
                       ,rainnc,    rainncv                                &
@@ -99,15 +114,27 @@ SUBROUTINE microphysics_driver(                                          &
                     ,WSM6SCHEME, ETAMPNEW, FER_MP_HIRES, etamp_HWRF,THOMPSON, THOMPSONAERO, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN, NSSL_2MOMG  &
                     ,NSSL_1MOM,NSSL_1MOMLFO, FER_MP_HIRES_ADVECT &
-                    ,MILBRANDT2MOM !,MILBRANDT3MOM 
+                    ,MILBRANDT2MOM, GSFCGCE4ICE
 #else
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
                     ,WSM6SCHEME, ETAMPNEW, FER_MP_HIRES, THOMPSON, THOMPSONAERO, FAST_KHAIN_LYNN, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN, NSSL_2MOMG  &
                     ,NSSL_1MOM,NSSL_1MOMLFO, FER_MP_HIRES_ADVECT & ! ,NSSL_3MOM       &
-                    ,MILBRANDT2MOM , CAMMGMPSCHEME,FULL_KHAIN_LYNN  !,MILBRANDT3MOM
+                    ,MILBRANDT2MOM , CAMMGMPSCHEME,FULL_KHAIN_LYNN, GSFCGCE4ICE
 #endif
+
+!BEGIN EMK...For 4ICE
+#if ( WRF_CHEM == 1 )
+   USE module_state_description, ONLY :              &
+                     num_chem                        & !inline gocart
+                    ,p_bc1, p_bc2, p_oc1, p_oc2      & !inline gocart
+                    ,p_dust_1, p_dust_2, p_dust_3    & !inline gocart
+                    ,p_dust_4, p_dust_5              & !inline gocart
+                    ,p_sulf, p_seas_1, p_seas_2      & !inline gocart
+                    ,p_seas_3, p_seas_4
+#endif
+!END EMK...For 4ICE
 
 #ifdef DM_PARALLEL
   USE module_dm, ONLY : &
@@ -147,6 +174,9 @@ SUBROUTINE microphysics_driver(                                          &
 # endif
 !  USE module_mp_milbrandt3mom
    USE module_mp_nssl_2mom
+# if (EM_CORE == 1)
+   USE module_mp_gsfcgce_4ice, only: gsfcgce_4ice ! EMK 4ICE scheme
+# endif
 
    USE module_mp_HWRF
    USE module_mixactivate, only: prescribe_aerosol_mixactivate
@@ -341,6 +371,42 @@ SUBROUTINE microphysics_driver(                                          &
                                                                  p8w, &
                                                               pi_phy, &
                                                                    p
+
+!BEGIN EMK...For 4ICE
+# if (EM_CORE == 1)
+   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                    &
+         INTENT(INOUT) ::                                  phys_tot,  &
+                                                           physc,     &
+                                                           physe,     &
+                                                           physd,     &
+                                                           physs,     &
+                                                           physm,     &
+                                                           physf,     &
+                                                           acphys_tot,  &
+                                                           acphysc,     &
+                                                           acphyse,     &
+                                                           acphysd,     &
+                                                           acphyss,     &
+                                                           acphysm,     &
+                                                           acphysf
+  REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
+        INTENT(INOUT) ::                               refc,      &
+                                                       refr,      &
+                                                       refi,      &
+                                                       refs,      &
+                                                       refg,      &
+                                                       refh
+   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                    &
+         OPTIONAL,          &
+         INTENT(INOUT) ::   &
+         precr3d, & ! rain precipitation rate at all levels (kg/m2/s)
+         preci3d, & ! ice precipitation rate at all levels (kg/m2/s)
+         precs3d, & ! snow precipitation rate at all levels (kg/m2/s)
+         precg3d, & ! graupel precipitation rate at all levels (kg/m2/s)
+         prech3d    ! graupel precipitation rate at all levels (kg/m2/s)     
+#endif 
+!END EMK...For 4ICE
+
     REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),INTENT(INOUT), OPTIONAL :: th_old,qv_old
     REAL,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT), OPTIONAL   :: scalar
     INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(IN), OPTIONAL::   IVGTYP
@@ -508,6 +574,25 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                                                       ,GRAUPELNCV &
                                                           ,HAILNC &
                                                          ,HAILNCV
+
+!BEGIN EMK...For 4ICE
+#if (EM_CORE == 1)
+   REAL, DIMENSION( ims:ime , jms:jme ),                          &
+         INTENT(INOUT),                                           &
+         OPTIONAL   ::                                            &
+                                                           comdbz
+#endif
+#if ( WRF_CHEM == 1)
+ integer :: i24h
+ INTEGER, PARAMETER :: num_go = 14  ! number of the gocart aerosol species
+ REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_go) :: aero
+ REAL, DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(OUT) :: icn_diag
+ REAL, DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(OUT) :: nc_diag
+ integer, intent(in) :: gsfcgce_gocart_coupling ! EMK
+ REAL, PARAMETER :: frac(4)=(/ 0.01053,0.08421,0.25263,0.65263 /) !fraction for fine dust         
+#endif
+!END EMK...For 4ICE
+
    INTEGER,OPTIONAL,INTENT(IN   )    ::                        id
 
    REAL , DIMENSION( ims:ime , jms:jme ) , OPTIONAL ,             &
@@ -618,6 +703,15 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
             ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
             )
 
+!BEGIN EMK
+#if (EM_CORE == 1)
+       call calc_comdbz(comdbz,refl_10cm,diagflag,do_radar_ref &
+            ,ids,ide,jds,jde,kds,kde &
+            ,ims,ime,jms,jme,kms,kme &
+            ,its,ite,jts,jte,kts,kte)
+#endif
+!END EMK
+
    ELSE
 #endif
 
@@ -681,6 +775,57 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
        END IF
        END IF
 
+!BEGIN EMK...For 4ICE
+#if ( WRF_CHEM == 1)
+       if (itimestep .eq. 1) then
+          print *,'in microphysics_driver, num_chem = ', num_chem
+       endif
+       ! Pack gocart aerosol species
+       ! All aerosol species in chem are in "ug/kg-dryair"
+       !  and converted to (g/m**3)
+       aero(:,:,:,:) = 0.
+       do j = jts, jte
+          do k = kts, kte             
+             do i = its, ite
+                aero(i,k,j, 1) = & ! 1 = SO4
+                     max(0.0, chem(i,k,j,p_sulf)*1.0e-6*p(i,k,j)* &
+                     96.0/(8.314*th(i,k,j)*pi_phy(i,k,j)))
+                aero(i,k,j, 2) = & ! 2 = BC1+BC2
+                     max(0.0, (chem(i,k,j,p_bc1)+chem(i,k,j,p_bc2))* &
+                     1.0e-6*rho(i,k,j))
+                aero(i,k,j, 3) = & !  3 = OC1
+                     max(0.0, chem(i,k,j,p_oc1)*1.0e-6*rho(i,k,j)* &
+                     1.4e0)
+                aero(i,k,j, 4) = & !  4 = OC2
+                     max(0.0, chem(i,k,j,p_oc2)*1.0e-6*rho(i,k,j)* &
+                     1.4e0)
+                aero(i,k,j, 5) = & !  5 = SS1
+                     max(0.0, chem(i,k,j,p_seas_1)*1.0e-6*rho(i,k,j)) 
+                aero(i,k,j, 6) = & !  6 = SS2+SS3+SS4
+                     max(0.0, (chem(i,k,j,p_seas_2)+chem(i,k,j,p_seas_3)+  &
+                     chem(i,k,j,p_seas_4))*1.0e-6*rho(i,k,j))
+                aero(i,k,j, 7) = & !  7 = DU1 dust mode 1
+                     max(0.0, chem(i,k,j,p_dust_1)*1.0e-6*rho(i,k,j)*frac(1))
+                aero(i,k,j, 8) = & !  8 = DU1 dust mode 2
+                     max(0.0, chem(i,k,j,p_dust_1)*1.0e-6*rho(i,k,j)*frac(2))
+                aero(i,k,j, 9) = & !  9 = DU1 dust mode 3
+                     max(0.0, chem(i,k,j,p_dust_1)*1.0e-6*rho(i,k,j)*frac(3))
+                aero(i,k,j,10) = & ! 10 = DU1 dust mode 4
+                     max(0.0, chem(i,k,j,p_dust_1)*1.0e-6*rho(i,k,j)*frac(4))
+                aero(i,k,j,11) = & ! 11 = DU2 dust mode 5
+                     max(0.0, chem(i,k,j,p_dust_2)*1.0e-6*rho(i,k,j))
+                aero(i,k,j,12) = & ! 12 = DU3 dust mode 6
+                     max(0.0, chem(i,k,j,p_dust_3)*1.0e-6*rho(i,k,j))
+                aero(i,k,j,13) = & ! 13 = DU4 dust mode 7
+                     max(0.0, chem(i,k,j,p_dust_4)*1.0e-6*rho(i,k,j))
+                aero(i,k,j,14) = & ! 14 = DU5 dust mode 8
+                     max(0.0, chem(i,k,j,p_dust_5)*1.0e-6*rho(i,k,j))     
+             enddo ! !
+          enddo ! k
+       enddo ! j   
+#endif
+!END EMK...For 4ICE
+
      micro_select: SELECT CASE(mp_physics)
 
         CASE (KESSLERSCHEME)
@@ -703,6 +848,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
                                                                     )
+
+               ! EMK...No reflectivity, so no COMDBZ
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling kessler' )
              ENDIF
@@ -768,6 +915,16 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde, &
                  IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
                  ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
+
+             ! BEGIN EMK
+#if (EM_CORE == 1)
+             call calc_comdbz(comdbz,refl_10cm,diagflag,do_radar_ref &
+                  ,ids,ide,jds,jde,kds,kde &
+                  ,ims,ime,jms,jme,kms,kme &
+                  ,its,ite,jts,jte,kts,kte)
+#endif
+             ! END EMK
+
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling thompson_et_al' )
              ENDIF
@@ -826,6 +983,16 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde, &
                  IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
                  ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
+
+             !BEGIN EMK
+#if (EM_CORE == 1)
+             call calc_comdbz(comdbz,refl_10cm,diagflag,do_radar_ref &
+                  ,ids,ide,jds,jde,kds,kde &
+                  ,ims,ime,jms,jme,kms,kme &
+                  ,its,ite,jts,jte,kts,kte)
+#endif
+             !END EMK
+
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling thompson_et_al' )
              ENDIF
@@ -867,6 +1034,12 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,SR=sr                               &
                                          )
 
+               !BEGIN EMK
+               call calc_comdbz(comdbz,refl_10cm,diagflag,do_radar_ref &
+                  ,ids,ide,jds,jde,kds,kde &
+                  ,ims,ime,jms,jme,kms,kme &
+                  ,its,ite,jts,jte,kts,kte)
+               !END EMK
 !
        CASE (FULL_KHAIN_LYNN)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling sbm' )
@@ -934,6 +1107,14 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,HAILNCV=hailncv                     &
                  ,SR=sr                               &
                                                       )
+
+               !BEGIN EMK
+
+               call calc_comdbz(comdbz,refl_10cm,diagflag,do_radar_ref &
+                  ,ids,ide,jds,jde,kds,kde &
+                  ,ims,ime,jms,jme,kms,kme &
+                  ,its,ite,jts,jte,kts,kte)
+               !END EMK
 #endif
 
 !
@@ -995,6 +1176,15 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 #endif
                  ,PRECR=precr,PRECI=preci,PRECS=precs,PRECG=precg   & ! jdf for wrf-chem
                                                                     )
+         !BEGIN EMK
+#if ( EM_CORE == 1 )
+         call calc_comdbz(comdbz,refl_10cm,diagflag,do_radar_ref &
+                  ,ids,ide,jds,jde,kds,kde &
+                  ,ims,ime,jms,jme,kms,kme &
+                  ,its,ite,jts,jte,kts,kte)
+#endif
+         !END EMK
+
         ELSE
            Call wrf_error_fatal( 'arguments not present for calling morrison two moment')
         ENDIF
@@ -1053,6 +1243,16 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte  &
                                                                     )
+         !BEGIN EMK...This scheme always calculates reflectivity
+# if (EM_CORE ==1)
+         call calc_comdbz(comdbz=comdbz, refl_10cm=refl_10cm &
+              ,diagflag=.true., do_radar_ref=1 &
+              ,ids=ids, ide=ide, jds=jds, jde=jde, kds=kds, kde=kde &
+              ,ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme &
+              ,its=its, ite=ite, jts=jts, jte=jte, kts=kts, kte=kte)
+#endif
+         !END EMK...This scheme always calculates reflectivity
+
         ELSE
            Call wrf_error_fatal( 'arguments not present for calling milbrandt2mom')
         ENDIF
@@ -1163,6 +1363,17 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte  &
                                                                     )
+
+         ! BEGIN EMK
+# if (EM_CORE ==1)
+         call calc_comdbz(comdbz=comdbz, refl_10cm=refl_10cm &
+              ,diagflag=diagflag, do_radar_ref=1 &
+              ,ids=ids, ide=ide, jds=jds, jde=jde, kds=kds, kde=kde &
+              ,ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme &
+              ,its=its, ite=ite, jts=jts, jte=jte, kts=kts, kte=kte)
+#endif
+         ! END EMK
+
         ELSE
            Call wrf_error_fatal( 'arguments not present for calling nssl_1mom')
         ENDIF
@@ -1212,6 +1423,17 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte  &
                                                                     )
+
+         !BEGIN EMK
+# if (EM_CORE ==1)
+         call calc_comdbz(comdbz=comdbz, refl_10cm=refl_10cm &
+              ,diagflag=diagflag, do_radar_ref=1 &
+              ,ids=ids, ide=ide, jds=jds, jde=jde, kds=kds, kde=kde &
+              ,ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme &
+              ,its=its, ite=ite, jts=jts, jte=jte, kts=kts, kte=kte)         
+#endif
+         !END EMK
+
         ELSE
            Call wrf_error_fatal( 'arguments not present for calling nssl_1momlfo')
         ENDIF
@@ -1287,6 +1509,16 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte  &
                                                                     )
 
+         !BEGIN EMK
+# if (EM_CORE ==1)
+         call calc_comdbz(comdbz=comdbz, refl_10cm=refl_10cm &
+              ,diagflag=diagflag, do_radar_ref=1 &
+              ,ids=ids, ide=ide, jds=jds, jde=jde, kds=kds, kde=kde &
+              ,ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme &
+              ,its=its, ite=ite, jts=jts, jte=jte, kts=kts, kte=kte)
+#endif
+         !END EMK
+
         ELSE
            Call wrf_error_fatal( 'arguments not present for calling nssl_2mom')
         ENDIF
@@ -1356,6 +1588,16 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte  &
                                                                     )
+
+         !BEGIN EMK
+# if (EM_CORE ==1)
+         call calc_comdbz(comdbz=comdbz, refl_10cm=refl_10cm &
+              ,diagflag=diagflag, do_radar_ref=1 &
+              ,ids=ids, ide=ide, jds=jds, jde=jde, kds=kds, kde=kde &
+              ,ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme &
+              ,its=its, ite=ite, jts=jts, jte=jte, kts=kts, kte=kte)
+#endif
+         !END EMK
 
         ELSE
            Call wrf_error_fatal( 'arguments not present for calling nssl_2momg')
@@ -1433,6 +1675,17 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte  &
                                                                     )
+
+         !BEGIN EMK
+# if (EM_CORE ==1)
+         call calc_comdbz(comdbz=comdbz, refl_10cm=refl_10cm &
+              ,diagflag=diagflag, do_radar_ref=1 &
+              ,ids=ids, ide=ide, jds=jds, jde=jde, kds=kds, kde=kde &
+              ,ims=ims, ime=ime, jms=jms, jme=jme, kms=kms, kme=kme &
+              ,its=its, ite=ite, jts=jts, jte=jte, kts=kts, kte=kte)
+#endif
+         !END EMK
+
         ELSE
            Call wrf_error_fatal( 'arguments not present for calling nssl_2momccn')
         ENDIF
@@ -1476,9 +1729,96 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 !        2,  run gsfcgce with only graupel, ice
 !        0,  run gsfcgce with snow, ice and hail/graupel   <---- default
 
+               !BEGIN EMK
+# if (EM_CORE ==1)
+               call calc_comdbz(comdbz,refl_10cm,diagflag,do_radar_ref &
+                    ,ids,ide,jds,jde,kds,kde &
+                    ,ims,ime,jms,jme,kms,kme &
+                    ,its,ite,jts,jte,kts,kte)
+#endif
+               !END EMK
+
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling GSFCGCE' )
              ENDIF
+
+!BEGIN EMK...Goddard 4ICE scheme
+# if (EM_CORE ==1)
+        CASE (GSFCGCE4ICE)
+           CALL wrf_debug ( 100 , 'microphysics_driver: calling GSFCGCE4ICE' )
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
+                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
+                  PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR ) .AND.  &
+                  PRESENT( QH_CURR )                           .AND.  &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
+                  PRESENT( HAIL    ) .AND. PRESENT ( ICE2    ) .AND.  &
+                  PRESENT( Z       ) .AND. PRESENT ( W       )  ) THEN
+               CALL gsfcgce_4ice(                                   &
+                  TH=th                                             &
+                 ,QV=qv_curr                                        &
+                 ,QL=qc_curr                                        &
+                 ,QR=qr_curr                                        &
+                 ,QI=qi_curr                                        &
+                 ,QS=qs_curr                                        &
+                 ,QH=qh_curr                                        &
+                 ,RHO=rho, PII=pi_phy, P=p, DT_IN=dt, Z=z           &
+                 ,HT=ht, DZ8W=dz8w, GRAV=G, W=w                     &
+                 ,RHOWATER=rhowater, RHOSNOW=rhosnow                &
+                 ,ITIMESTEP=itimestep, XLAND=xland, DX=dx           &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                 ,RAINNC=rainnc, RAINNCV=rainncv                    &
+                 ,SNOWNC=snownc, SNOWNCV=snowncv ,SR=sr             &
+                 ,GRAUPELNC=graupelnc ,GRAUPELNCV=graupelncv        &
+                 ,HAILNC=hailnc, HAILNCV=hailncv                    &
+                 ,REFL_10CM=refl_10cm                               &
+                 ,diagflag=diagflag                                 &
+                 ,do_radar_ref=do_radar_ref                         &
+                 ,F_QG=f_qg                                         &
+                 ,QG=qg_curr                                        &
+                 ,PHYSC=physc, PHYSE=physe, PHYSD=physd             &
+                 ,PHYSS=physs, PHYSM=physm, PHYSF=physf             &
+                 ,ACPHYSC=acphysc, ACPHYSE=acphyse, ACPHYSD=acphysd  &
+                 ,ACPHYSS=acphyss, ACPHYSM=acphysm, ACPHYSF=acphysf  &
+                 ,REFC=refc, REFR=refr, REFI=refi                   &
+                 ,REFS=refs, REFG=refg, REFH=refh                   &
+                 ,PRECR3D=precr3d,PRECI3D=preci3d,PRECS3D=precs3d   &
+                 ,PRECG3D=precg3d,PRECH3D=prech3d                   &
+#if ( WRF_CHEM == 1)
+                 ,AERO=aero                                         &
+                 ,ICN_DIAG=icn_diag, NC_DIAG=nc_diag, GID=ID        &
+                 ,CHEM_OPT=chem_opt                                 &
+                 ,GSFCGCE_GOCART_COUPLING=gsfcgce_gocart_coupling   &
+#endif
+                 )
+
+               call calc_comdbz(comdbz,refl_10cm,diagflag,do_radar_ref &
+                    ,ids,ide,jds,jde,kds,kde &
+                    ,ims,ime,jms,jme,kms,kme &
+                    ,its,ite,jts,jte,kts,kte)
+
+               do j=jts,jte
+                  do k=kts,kte
+                     do i=its,ite
+                        ! Snapshot total latent heating rate [K/s]
+                        phys_tot(i,k,j) = physc(i,k,j) + physe(i,k,j) + &
+                             physd(i,k,j) + physs(i,k,j) + &
+                             physm(i,k,j) + physf(i,k,j)
+                        ! Accumulated total latent heating [K]
+                        acphys_tot(i,k,j) = acphysc(i,k,j) + acphyse(i,k,j) + &
+                             acphysd(i,k,j) + acphyss(i,k,j) + &
+                             acphysm(i,k,j) + acphysf(i,k,j)
+                     end do
+                  end do
+               end do
+
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling GSFCGCE4ICE' )
+             ENDIF
+#endif
+
+!END EMK...Goddard 4ICE scheme
 
         CASE (LINSCHEME)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling lin_et_al' )
@@ -1516,6 +1856,16 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,QG=qg_curr                                        &
                  ,QNDROP=qndrop_curr                                &
                                                                     )
+
+               !BEGIN EMK
+#if (EM_CORE == 1 )
+               call calc_comdbz(comdbz,refl_10cm,diagflag,do_radar_ref &
+                    ,ids,ide,jds,jde,kds,kde &
+                    ,ims,ime,jms,jme,kms,kme &
+                    ,its,ite,jts,jte,kts,kte)
+#endif
+               !END EMK
+
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling lin_et_al' )
              ENDIF
@@ -1557,6 +1907,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 !                 ,QG=qg_curr                                        &
 !                 ,QNDROP=qndrop_curr                                &
                                                                      )
+
+               !EMK...No reflectivity, so no COMDBZ
+
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling sbu_ylin' )
              ENDIF
@@ -1595,6 +1948,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
                                                                     )
+
+               !EMK...No reflectivity, so no COMDBZ
+
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling wsm3' )
              ENDIF
@@ -1638,6 +1994,15 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
                                                                     )
+             !BEGIN EMK
+#if (EM_CORE == 1 )
+             call calc_comdbz(comdbz,refl_10cm,diagflag,do_radar_ref &
+                  ,ids,ide,jds,jde,kds,kde &
+                  ,ims,ime,jms,jme,kms,kme &
+                  ,its,ite,jts,jte,kts,kte)
+#endif
+             !END EMK
+
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling wsm5' )
              ENDIF
@@ -1681,6 +2046,16 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
                                                                     )
+
+             !BEGIN EMK
+#if (EM_CORE == 1 )
+             call calc_comdbz(comdbz,refl_10cm,diagflag,do_radar_ref &
+                  ,ids,ide,jds,jde,kds,kde &
+                  ,ims,ime,jms,jme,kms,kme &
+                  ,its,ite,jts,jte,kts,kte)
+#endif
+             !END EMK
+
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling wsm6' )
              ENDIF
@@ -1726,6 +2101,16 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
                                                                     )
+
+             !BEGIN EMK
+#if (EM_CORE == 1 )
+             call calc_comdbz(comdbz,refl_10cm,diagflag,do_radar_ref &
+                  ,ids,ide,jds,jde,kds,kde &
+                  ,ims,ime,jms,jme,kms,kme &
+                  ,its,ite,jts,jte,kts,kte)
+#endif
+             !END EMK
+
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling wdm5')
              ENDIF
@@ -1774,6 +2159,16 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
                                                                     )
+
+             ! BEGIN EMK
+#if (EM_CORE == 1 )
+             call calc_comdbz(comdbz,refl_10cm,diagflag,do_radar_ref &
+                  ,ids,ide,jds,jde,kds,kde &
+                  ,ims,ime,jms,jme,kms,kme &
+                  ,its,ite,jts,jte,kts,kte)
+#endif
+             ! END EMK
+
              ELSE
                CALL wrf_error_fatal ( 'arguments not present for calling wdm6')
              ENDIF
@@ -1801,6 +2196,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
                                                                     )
+               ! EMK...No reflectivity, so no COMDBZ
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling etampnew' )
              ENDIF
@@ -1831,6 +2227,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,MP_RESTART_STATE=mp_restart_state                 &
                  ,TBPVS_STATE=tbpvs_state,TBPVS0_STATE=tbpvs0_state &
                                                                     )
+               ! EMK...No reflectivity, so no COMDBZ
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling etampnew' )
              ENDIF
@@ -1863,6 +2260,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                   ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                   ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
                                                                      )
+
+               ! EMK...No reflectivity, so no COMDBZ
+
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling fer_hires' )
              ENDIF
@@ -1895,6 +2295,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                   ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                   ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
                                                                      )
+               ! EMK...No reflectivity, so no COMDBZ
+
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling fer_hires' )
              ENDIF
@@ -1955,6 +2357,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 #endif
                      ,XLAND=XLAND,SNOWH=SNOWH                                     &
                      )
+
+               ! EMK...No reflectivity, so no COMDBZ
+
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling CAMMGMP SCHEME' )
              ENDIF
@@ -1998,5 +2403,50 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    RETURN
 
    END SUBROUTINE microphysics_driver
+
+
+   !BEGIN EMK...For 4ICE
+   subroutine calc_comdbz(comdbz,refl_10cm,diagflag,do_radar_ref &
+        ,ids,ide,jds,jde,kds,kde &
+        ,ims,ime,jms,jme,kms,kme &
+        ,its,ite,jts,jte,kts,kte)
+
+      implicit none
+
+      ! Arguments
+      real,optional,intent(inout) :: comdbz(ims:ime,jms:jme)
+      real,optional,intent(in) :: refl_10cm(ims:ime,kms:kme,jms:jme)
+      logical,optional,intent(in) :: diagflag
+      integer,optional,intent(in) :: do_radar_ref
+      integer,intent(in) :: ids,ide,jds,jde,kds,kde
+      integer,intent(in) :: ims,ime,jms,jme,kms,kme
+      integer,intent(in) :: its,ite,jts,jte,kts,kte
+
+      ! Local variables
+      integer :: i,j,k
+
+      if (present(comdbz) .and. present(refl_10cm) .and. &
+           present(diagflag) .and. present(do_radar_ref)) then
+
+        if (diagflag .and. do_radar_ref == 1) then
+           do j=jts,min(jte,jde-1)
+              do i=its,min(ite,ide-1)
+                 comdbz(i,j) =  max(refl_10cm(i,kts,j),-35.)
+              end do
+           end do
+           do j=jts,min(jte,jde-1)
+              do k=kts+1,kte
+                 do i=its,min(ite,ide-1)
+                    if (refl_10cm(i,k,j) .gt. comdbz(i,j)) then
+                       comdbz(i,j) = refl_10cm(i,k,j)
+                    end if
+                 enddo !i
+               enddo !k
+            enddo !j
+         end if
+      end if
+
+   end subroutine calc_comdbz
+   !END EMK...For 4ICE
 
 END MODULE module_microphysics_driver

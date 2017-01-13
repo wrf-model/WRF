@@ -179,6 +179,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
 ! Define benchmarking timers if -DBENCH is compiled
 #include "bench_solve_em_def.h"
 
+
 !----------------------
 ! Executable statements
 !----------------------
@@ -216,6 +217,17 @@ SUBROUTINE solve_em ( grid , config_flags  &
 
 ! Initialize timers if compiled with -DBENCH
 #include "bench_solve_em_init.h"
+
+   !EMK...Initialize arrays for halo exchange
+#if ( EM_CORE == 1)
+   moist_old = 0
+   scalar_old = 0
+   p_phy = 0
+   pi_phy = 0
+   dz8w = 0
+   th_phy = 0
+   chem_old = 0
+#endif
 
 !  set runge-kutta solver (2nd or 3rd order)
 
@@ -3711,6 +3723,41 @@ BENCH_START(micro_driver_tim)
       &        , qicuten=grid%rqicuten,mu=grid%mut                        &
       &        , HAIL=config_flags%gsfcgce_hail                           & ! for gsfcgce
       &        , ICE2=config_flags%gsfcgce_2ice                           & ! for gsfcgce
+!BEGIN EMK...GSFC 4ICE scheme
+#if ( EM_CORE == 1)
+      &        , PHYS_TOT=grid%phys_tot                                   &
+      &        , PHYSC=grid%physc                                         &
+      &        , PHYSE=grid%physe                                         &
+      &        , PHYSD=grid%physd                                         &
+      &        , PHYSS=grid%physs                                         &
+      &        , PHYSM=grid%physm                                         &
+      &        , PHYSF=grid%physf                                         &
+      &        , ACPHYS_TOT=grid%acphys_tot                               &
+      &        , ACPHYSC=grid%acphysc                                     &
+      &        , ACPHYSE=grid%acphyse                                     &
+      &        , ACPHYSD=grid%acphysd                                     &
+      &        , ACPHYSS=grid%acphyss                                     &
+      &        , ACPHYSM=grid%acphysm                                     &
+      &        , ACPHYSF=grid%acphysf                                     &
+      &        , COMDBZ=grid%comdbz                                       &
+      &        , REFC=grid%refc                                           &
+      &        , REFR=grid%refr                                           &
+      &        , REFI=grid%refi                                           &
+      &        , REFS=grid%refs                                           &
+      &        , REFG=grid%refg                                           &
+      &        , REFH=grid%refh                                           &
+      &        , PRECR3D=grid%precr3d, PRECI3D=grid%preci3d               &
+      &        , PRECS3D=grid%precs3d  &
+      &        , PRECG3D=grid%precg3d, PRECH3D=grid%prech3d               &
+#if ( WRF_CHEM == 1)
+      &        , GSFCGCE_GOCART_COUPLING=config_flags%gsfcgce_gocart_coupling &
+      &        , ICN_DIAG=grid%icn_diag                                   & 
+      &        , NC_DIAG=grid%nc_diag                                     & 
+#endif
+#endif
+
+!END EMK...GSFC 4ICE scheme
+
 !     &        , ccntype=config_flags%milbrandt_ccntype                   & ! for milbrandt (2mom)
 ! YLIN
 ! RI_CURR INPUT

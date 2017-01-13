@@ -1668,6 +1668,9 @@ integer myproc
    USE module_ra_sw        , ONLY : swinit
    USE module_ra_gsfcsw    , ONLY : gsfc_swinit
    USE module_ra_gfdleta   , ONLY : gfdletainit
+#if(EM_CORE==1)
+   USE module_ra_goddard_2014 , ONLY : init_goddardrad_2014 ! EMK
+#endif
 #if(NMM_CORE==1)
    USE module_ra_hwrf      , ONLY : hwrfrainit
 #endif
@@ -1822,6 +1825,17 @@ integer myproc
 
    lwrad_select: SELECT CASE(config_flags%ra_lw_physics)
 
+!BEGIN EMK...Goddard 2014 radiation
+#if(EM_CORE==1)
+      CASE (goddardlwscheme_2014)
+         CALL init_goddardrad_2014(                         &
+              allowed_to_read,                              &
+              ids, ide, jds, jde, kds, kde,                 &
+              ims, ime, jms, jme, kms, kme,                 &
+              its, ite, jts, jte, kts, kte                  )
+#endif
+!END EMK...Goddard 2014 radiation
+
         CASE (RRTMSCHEME)
              CALL rrtminit(                                 &
                            p_top, allowed_to_read ,         &
@@ -1917,6 +1931,17 @@ integer myproc
 !-- initialize short wave radiation scheme
 
    swrad_select: SELECT CASE(config_flags%ra_sw_physics)
+
+!BEGIN EMK...Goddard 2014 radiation
+#if(EM_CORE==1)
+      CASE (goddardswscheme_2014)
+         CALL init_goddardrad_2014(                        &
+              allowed_to_read,                             &
+              ids, ide, jds, jde, kds, kde,                &
+              ims, ime, jms, jme, kms, kme,                &
+              its, ite, jts, jte, kts, kte                 )
+#endif
+!END EMK...Goddard 2014 radiation
 
         CASE (SWRADSCHEME)
              CALL swinit(                                  &

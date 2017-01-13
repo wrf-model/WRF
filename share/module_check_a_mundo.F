@@ -584,6 +584,13 @@
          model_config_rec%num_traj = 0 
    END IF
 
+#elif( NMM_CORE == 1 )
+!----------------------------------------------------------------------------
+! If NMM core and trajectories are on then halt.
+!----------------------------------------------------------------------------
+   IF ( model_config_rec%traj_opt /= 0 ) THEN
+     call wrf_error_fatal( 'Trajectories not supported in NMM core' )
+   END IF
 #endif
 
 #if (EM_CORE == 1)

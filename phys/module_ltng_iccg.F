@@ -82,8 +82,8 @@
 !
 ! Boccippio et al 2001 NLDN/OTD 1995-1999 CONUS climatology
 !
-! Boccippio, D. et al. 2001: Combined Satellite- and Surface-Based Estimation of the Intracloud–Cloud-to-Ground
-! Lightning Ratio over the Continental United States. Mon. Wea. Rev., 129, 108–122.
+! Boccippio, D. et al. 2001: Combined Satellite- and Surface-Based Estimation of the Intracloud-Cloud-to-Ground
+! Lightning Ratio over the Continental United States. Mon. Wea. Rev., 129, 108-122.
 ! doi: http://dx.doi.org/10.1175/1520-0493(2001)129<0108:CSASBE>2.0.CO;2
 !
 ! Areas outside U.S. uses user prescribed ratio defined by iccg_prescribed_num
@@ -170,8 +170,8 @@
 !
 ! Price and Rind 1993 base on cold cloud depth (CCD)
 !
-! Price, C. and D. Rind (1993), What determines the cloud‐to‐ground lightning
-! fraction in thunderstorms?, Geophys. Res. Lett., 20(6), 463–466, doi:10.1029/93GL00226.
+! Price, C. and D. Rind (1993), What determines the cloud-to-ground lightning
+! fraction in thunderstorms?, Geophys. Res. Lett., 20(6), 463-466, doi:10.1029/93GL00226.
 !
 ! Valid range of CCD is set to 5.5-14 km. Beyond this range CCD is assumed
 ! to be 5.5 or 14 for continuity.
@@ -194,7 +194,7 @@
 ! Inputs
  INTEGER, DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) :: kLNB
  REAL,                                            INTENT(IN   ) :: cldtop_adjustment
- REAL,    DIMENSION( ims:ims, kms:kme, jms:jme ), INTENT(IN   ) :: t, z
+ REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   ) :: t, z
 
 ! Order dependent args for domain, mem, and tile dims
  INTEGER, INTENT(IN   )    ::       ids,ide, jds,jde, kds,kde

@@ -15826,11 +15826,6 @@ integer,external :: omp_get_thread_num
 !Mukul change the flags here with reference to the new effective cloud/ice/snow radius
          IF (ICLOUD .ne. 0) THEN
             IF ( has_reqc .ne. 0) THEN
-               IF ( wrf_dm_on_monitor() ) THEN
-                 WRITE(message,*)'RRTMG: pre-computed cloud droplet effective '// &
-                                 'radius found, setting inflglw=3'
-                 call wrf_debug(150, message)
-               ENDIF
                inflglw = 3
                DO K=kts,kte
                   recloud1D(icol,K) = MAX(2.5, re_cloud(I,K,J)*1.E6)
@@ -15849,10 +15844,6 @@ integer,external :: omp_get_thread_num
             ENDIF
 
             IF ( has_reqi .ne. 0) THEN
-               IF ( wrf_dm_on_monitor() ) THEN
-                 WRITE(message,*)'RRTMG: pre-computed cloud ice effective radius found, setting inflglw=4 and iceflglw=4'
-                 call wrf_debug(150, message)
-               ENDIF
                inflglw  = 4
                iceflglw = 4
                DO K=kts,kte
@@ -15873,10 +15864,6 @@ integer,external :: omp_get_thread_num
             ENDIF
 
             IF ( has_reqs .ne. 0) THEN
-               IF ( wrf_dm_on_monitor() ) THEN
-                 WRITE(message,*)'RRTMG: pre-computed snow effective radius found, setting inflglw=5 and iceflglw=5'
-                 call wrf_debug(150, message)
-               ENDIF
                inflglw  = 5
                iceflglw = 5
                DO K=kts,kte

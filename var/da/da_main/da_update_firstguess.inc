@@ -1,7 +1,7 @@
 subroutine da_update_firstguess(grid, out_filename) 
 
 !---------------------------------------------------------------------------
-!  Purpose: Only replce the fields touched by WRFDA, other than re-generate 
+!  Purpose: Only replace the fields touched by WRFDA, rather than re-generate 
 !           whole wrfvar_output from the scratch.
 !
 !  Update  :   jliu@ucar.edu Apr 1, 2013
@@ -838,7 +838,7 @@ subroutine da_update_firstguess(grid, out_filename)
 #endif
 
 !-------------Update QCLOUD, QRAIN, QICE, QSNOW & QGROUP 
-if ( (use_radarobs .and. use_radar_rhv) .or. (use_radarobs .and. use_radar_rqv) .or. (use_rad .and. crtm_cloud) ) then
+if ( cloud_cv_options >= 1 ) then ! update qcw and qrn
    if (size(grid%moist,dim=4) >= 4) then         ! update QCLOUD & QRAIN
 !
 !  update QCLOUD
@@ -941,7 +941,9 @@ if ( (use_radarobs .and. use_radar_rhv) .or. (use_radarobs .and. use_radar_rqv) 
 #endif
 
    end if    ! end of update QCLOUD & QRAIN
+end if ! cloud_cv_options >= 1
 
+if ( cloud_cv_options >= 2 ) then ! update qci, qsn, qgr
    if (size(grid%moist,dim=4) >= 6) then     ! update QICE & QSNOW
 !
 !  update QICE
@@ -1097,7 +1099,7 @@ if ( (use_radarobs .and. use_radar_rhv) .or. (use_radarobs .and. use_radar_rqv) 
 #endif
 
    end if     ! end of update QGRAUP
-end if        ! end of radar or radiance
+end if ! cloud_cv_options >= 2
 !-------------End of update QCLOUD, QRAIN, QICE, QSNOW & QGROUP
 
   if (rootproc) then

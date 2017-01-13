@@ -421,11 +421,11 @@ subroutine da_read_obs_bufriasi (obstype,iv,infile)
      end do read_loop
   end do
   call closbf(lnbufr)
+
+  !Deallocate temporary array for next bufrfile do loop
+  deallocate(data_all)
 end do bufrfile
 
-deallocate(data_all) ! Deallocate data arrays
-
-  
    if (thinning .and. num_iasi_global > 0 ) then
 
 #ifdef DM_PARALLEL 

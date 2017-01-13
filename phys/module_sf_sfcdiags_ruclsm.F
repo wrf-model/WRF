@@ -5,7 +5,7 @@ MODULE module_sf_sfcdiags_ruclsm
 CONTAINS
 
    SUBROUTINE SFCDIAGS_RUCLSM(HFX,QFX,TSK,QSFC,CQS,CQS2,CHS,CHS2,T2,TH2,Q2,  &
-                     T3D,QV3D,RHO3D,P3D,PSFC2D,                              &
+                     T3D,QV3D,RHO3D,P3D,PSFC2D,SNOW,                         &
                      CP,R_d,ROVCP,                                           &
                      ids,ide, jds,jde, kds,kde,                              &
                      ims,ime, jms,jme, kms,kme,                              &        
@@ -19,6 +19,7 @@ CONTAINS
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                 INTENT(IN)                  ::                HFX, &
                                                               QFX, &
+                                                             SNOW, &
                                                               TSK, &
                                                              QSFC
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
@@ -58,9 +59,9 @@ CONTAINS
 
     if ( flux ) then
 !!! 2-m Temperature - T2 
-!           if(CHS2(I,J).lt.1.E-5) then
+           if(CHS2(I,J).lt.1.E-5) then
 ! may be to small treshold?
-         if(CHS2(I,J).lt.3.E-3 .AND. HFX(I,J).lt.0.) then
+!         if(CHS2(I,J).lt.3.E-3 .AND. HFX(I,J).lt.0.) then
 ! when stable - let 2-m temperature be equal the first atm. level temp.
 !             TH2(I,J) = TSK(I,J)*(1.E5/PSFC(I,J))**ROVCP 
              TH2(I,J) = t3d(i,1,j)*(1.E5/PSFC)**ROVCP 

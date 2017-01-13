@@ -17,7 +17,7 @@ contains
                   rqvblten,rqcblten,rqiblten,flag_qi,                          &
                   cp,g,rovcp,rd,rovg,ep1,ep2,karman,xlv,rv,                    &
                   dz8w,psfc,                                                   &
-                  znu,znw,mut,p_top,                                           &
+                  znu,znw,p_top,                                               &
                   znt,ust,hpbl,psim,psih,                                      &
                   xland,hfx,qfx,wspd,br,                                       &
                   dt,kpbl2d,                                                   &
@@ -192,9 +192,6 @@ contains
              intent(in   )   ::                                           znu, &
                                                                           znw
 !
-   real,     dimension( ims:ime, jms:jme )                                   , &
-             optional                                                        , &
-             intent(in   )   ::                                           mut
 !
    real,     optional, intent(in   )   ::                               p_top
 !
@@ -217,24 +214,12 @@ contains
    qv2d(its:ite,:) = 0.0
 !
    do j = jts,jte
-     if(present(mut))then
-!
-! For ARW we will replace p and p8w with dry hydrostatic pressure
-!
-        do k = kts,kte+1
-          do i = its,ite
-             if(k.le.kte)pdh(i,k) = mut(i,j)*znu(k) + p_top
-             pdhi(i,k) = mut(i,j)*znw(k) + p_top
-          enddo
+      do k = kts,kte+1
+        do i = its,ite
+          if(k.le.kte)pdh(i,k) = p3d(i,k,j)
+          pdhi(i,k) = p3di(i,k,j)
         enddo
-      else
-        do k = kts,kte+1
-          do i = its,ite
-            if(k.le.kte)pdh(i,k) = p3d(i,k,j)
-            pdhi(i,k) = p3di(i,k,j)
-          enddo
-        enddo
-      endif
+      enddo
       do k = kts,kte
         do i = its,ite
           qv2d(i,k) = qv3d(i,k,j)
@@ -1314,8 +1299,8 @@ contains
        ad(i,1) = 1.+ust(i)**2/wspd1(i)*rhox(i)*g/del(i,1)*dt2                  &
         *(wspd1(i)/wspd(i))**2
      endif
-     f1(i,1) = ux(i,1)+uox(i)*ust(i)**2*g/del(i,1)*dt2/wspd1(i)
-     f2(i,1) = vx(i,1)+vox(i)*ust(i)**2*g/del(i,1)*dt2/wspd1(i)
+     f1(i,1) = ux(i,1)+uox(i)*ust(i)**2*rhox(i)*g/del(i,1)*dt2/wspd1(i)*(wspd1(i)/wspd(i))**2
+     f2(i,1) = vx(i,1)+vox(i)*ust(i)**2*rhox(i)*g/del(i,1)*dt2/wspd1(i)*(wspd1(i)/wspd(i))**2
    enddo
 !
    do k = kts,kte-1

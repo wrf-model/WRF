@@ -1,7 +1,7 @@
 subroutine da_radar_rf (ra,rs,rg,tc1,ro1,rze)
 
    !-----------------------------------------------------------------------
-   ! Purpose: TBD
+   ! Purpose: calculate background/model radar equivalent reflectivity factor
    !-----------------------------------------------------------------------
 
    implicit none
@@ -11,7 +11,6 @@ subroutine da_radar_rf (ra,rs,rg,tc1,ro1,rze)
 
    real                :: zrr, zds, zws, zgr
    real                :: zerr, zews, zeds, zegr
-   real                :: czr
 
    if (trace_use) call da_trace_entry("da_radar_rf")
 
@@ -27,17 +26,10 @@ subroutine da_radar_rf (ra,rs,rg,tc1,ro1,rze)
    zeds = zds*(ro1*rs)**1.75
    zegr = zgr*(ro1*rg)**1.75
 
-   if (tc1.ge.5.0) then
-      rze = zerr
-   elseif (tc1.le.5.0 .and. tc1 .ge.-5.0) then
-      czr = (tc1+5.0)/10.0
-      if (tc1.le.0.0) then
-         rze = czr*zerr + (1.0-czr)*(zeds+zegr)
-      else
-         rze = czr*zerr + (1.0-czr)*(zews+zegr)
-      end if
-   elseif (tc1.lt.-5.0) then
-       rze = zeds + zegr
+   if (tc1.lt.0.0) then
+      rze = zerr + zeds + zegr
+   else
+      rze = zerr + zews + zegr
    end if
 
    if (rze.lt.1.0e-20) rze=1.0e-20

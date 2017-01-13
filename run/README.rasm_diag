@@ -1,0 +1,48 @@
+The RASM Climate Diagnostics provides time-step averaging output for surface 
+meteorology (PSFC, TSK, PMSL, T2, TH2, Q2, U10, V10) and fluxes at the surface 
+(HFX, LH, SWDNB, GLW, LWUPB, SWUPB) and fluxes at the TOA (SWUPT, SWDNT, LWUPT, 
+LWDNT). The averaging can be set by the user with some interval of seconds, 
+minutes, hours, days, or month. The average output file is set to use auxhist5. 
+
+Additionally, diurnal averaging is provide which creates monthly averages for 
+three hour periods of time during the day (00-03, 03-06, etc.). The diurnal 
+average output is set to use auxhist6. 
+
+The intended application for the RASM Diagnostics is for regional climate
+simulations and the elimination of the need to produce the high-volume and I/O
+intenstive instantaneous WRF history files for long duration simulations.
+
+namelist.input settings for RASM Climate Diagnostics in &time_control
+-settings for RASM diagnostic mean output:
+ -flag to turn on the mean diagnostic output (1 = on, 0 = off)
+ mean_diag                           = 1,
+ -flag indicating the type of time interval for the mean frequency
+  1 = seconds, 2 = minutes, 3 = hours, 4 = days, 5 = monthly
+ mean_freq                           = 4,
+ -quanity of interval based on mean_freq
+ mean_interval                       = 1,
+ -use the standard WRF namelist settings for auxhist5:
+ auxhist5_outname                    = "wrf_mean_d<domain>_<date>.nc",
+ io_form_auxhist5                    = 2,
+ frames_per_auxhist5                 = 1,
+
+-settings for RASM diagnostic dirunal output:
+ -flag to turn on the diurnal diagnostic output (1 = on, 0 = off)
+ diurnal_diag                        = 1,
+-use the standard WRF namelist settings for auxhist5 and auxhist6:
+ auxhist6_outname                    = "wrf_diurnal_d<domain>_<date>.nc",
+ io_form_auxhist6                    = 2,
+ frames_per_auxhist6                 = 1,
+Note: Currently, the dirunal output is hard coded for three-hourly intervals
+(8 values in a day) and output in monthly files. Future modifications to
+the namelist.input settings will provide more flexibility.
+
+WARNING: These namelist.input settings are temporary and will be updated to
+new more WRF-like namelist settings in the near future.
+
+Acknoledgement:
+The RASM Climate Diagnostics for WRF was developed and implemented as a part
+of the Regional Arctic System Model (RASM) project funded by the United States 
+Department of Energy - Regional and Global Climate Modeling Program.
+
+09 January 2017

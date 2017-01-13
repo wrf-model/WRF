@@ -648,6 +648,8 @@ CONTAINS
    HFX_PHY = 0.0   ! initialize
    QFX_PHY = 0.0
    XQNORM  = 0.0
+   XSDA_HFX = 0.0
+   XSDA_QFX = 0.0
 !
 !  END FASDAS
 !
@@ -1045,6 +1047,21 @@ CONTAINS
           SMC(NS) = 1.0
           SMAV(NS) = 1.0
        ENDDO
+!
+!  FASDAS
+!
+       IF( fasdas == 1 ) THEN
+
+         DZQ = DZ8W(I,1,J)
+         XSDA_HFX= SDA_HFX(I,J)*RHO(I,1,J)*CPM(I,J)*DZQ  ! W/m^2
+         XSDA_QFX= 0.0          ! Kg/m2/s of water
+         XQNORM = 0.0
+
+       ENDIF
+!
+!  END FASDAS
+!
+
        CALL SFLX_GLACIAL(I,J,ISICE,FFROZP,DT,ZLVL,NSOIL,SLDPTH,   &    !C
             &    LWDN,SOLNET,SFCPRS,PRCP,SFCTMP,Q2K,              &    !F
             &    TH2,Q2SAT,DQSDT2,                                &    !I
@@ -2839,6 +2856,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
    HFX_PHY = 0.0   ! initialize
    QFX_PHY = 0.0
    XQNORM  = 0.0
+   XSDA_HFX = 0.0
+   XSDA_QFX = 0.0
 !
 !  END FASDAS
 !

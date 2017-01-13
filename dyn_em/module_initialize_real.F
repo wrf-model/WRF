@@ -163,6 +163,8 @@ integer::oops1,oops2
 
       INTEGER :: j_save
 
+      LOGICAL :: wif_upside_down
+
       !  Dimension information stored in grid data structure.
 
       CALL cpu_time(t_start)
@@ -1437,7 +1439,7 @@ integer::oops1,oops2
               DO WHILE (grid%id .GT. id)
                 id = id+1
                 ks = ks+model_config_rec%e_vert(id-1)
-                ke = ks+model_config_rec%e_vert(id)
+                ke = ks+model_config_rec%e_vert(id)-1
               ENDDO
             ENDIF
             eta_levels(1:kde) = model_config_rec%eta_levels(ks:ke)
@@ -2016,6 +2018,400 @@ integer::oops1,oops2
                END IF
             END DO
          END IF
+
+!=========================================================================================
+!    START OF OPTIONAL 3D DATA, USUALLY AEROSOLS
+!=========================================================================================
+
+         !  Insert source code here to vertically interpolate an extra set of 3d arrays
+         !  that could be on a different vertical structure than the input atmospheric
+         !  data.  Mostly, this is expected to be for monthly data (such as background
+         !  aerosol information).
+
+#if ( WRF_CHEM == 1 )
+         ! OPTIONAL DATA #1: GCA - Go Cart Aerosols: OH, H2O2, NO3
+         !       Pressure name: p_gca
+         !       Number of vertical levels: num_gca_levels
+         !       Variable names (assumed to end with _jan, _feb, _mar, ..., _nov, _dec): oh, h2o2, no3
+         !       Option to interpolate data: gca_input_opt = 1
+         !       Not stored in scalar arrays.
+
+         IF ( config_flags%gca_input_opt .EQ. 1 ) THEN
+
+            CALL wrf_debug ( 0 , 'Using monthly GOcart Aerosol input: OH, H2O2, NO3 from metgrid input file' )
+
+            !  There are three fields - they are 3d, so no easy way to loop over them.
+            !  OH - Hydroxyl
+            !  H2O2 - Hydrogen Peroxide
+            !  NO3 - Nitrate
+
+            DO k = 1, config_flags%num_gca_levels
+               WRITE(a_message,*) '  transferring each K-level ', k, ' to   OH, sample Jan data, ', grid %  oh_gca_jan(its,k,jts)
+               CALL wrf_debug ( 1 , a_message)
+               DO j = jts, MIN(jte,jde-1)
+                  DO i = its, MIN(ite,ide-1)
+                     grid%qntemp(i, 1, j) = grid %  oh_gca_jan(i,k,j)
+                     grid%qntemp(i, 2, j) = grid %  oh_gca_feb(i,k,j)
+                     grid%qntemp(i, 3, j) = grid %  oh_gca_mar(i,k,j)
+                     grid%qntemp(i, 4, j) = grid %  oh_gca_apr(i,k,j)
+                     grid%qntemp(i, 5, j) = grid %  oh_gca_may(i,k,j)
+                     grid%qntemp(i, 6, j) = grid %  oh_gca_jun(i,k,j)
+                     grid%qntemp(i, 7, j) = grid %  oh_gca_jul(i,k,j)
+                     grid%qntemp(i, 8, j) = grid %  oh_gca_aug(i,k,j)
+                     grid%qntemp(i, 9, j) = grid %  oh_gca_sep(i,k,j)
+                     grid%qntemp(i,10, j) = grid %  oh_gca_oct(i,k,j)
+                     grid%qntemp(i,11, j) = grid %  oh_gca_nov(i,k,j)
+                     grid%qntemp(i,12, j) = grid %  oh_gca_dec(i,k,j)
+                  END DO
+               END DO
+               IF ( k .EQ. 1 ) THEN
+                  WRITE(a_message,*) ' GOcart Aerosols   OH (jan and feb) ', grid%qntemp(its,1,jts),grid%qntemp(its,2,jts)
+                  CALL wrf_debug ( 1 , a_message)
+               END IF
+               CALL monthly_interp_to_date ( grid%qntemp , current_date , grid%qntemp2 , &
+                                             ids , ide , jds , jde , kds , kde , &
+                                             ims , ime , jms , jme , kms , kme , &
+                                             its , ite , jts , jte , kts , kte )
+               IF ( k .eq. 1 ) THEN
+                  write(a_message,*) ' GOcart Aerosols   OH (now) ', grid%qntemp2(its,jts)
+                  CALL wrf_debug ( 1 , a_message)
+               END IF
+               DO j = jts, MIN(jte,jde-1)
+                  DO i = its, MIN(ite,ide-1)
+                     grid %  oh_gca_now(i,k,j) = grid%qntemp2(i,j)
+                  END DO
+               END DO
+            END DO
+
+            CALL vert_interp ( grid %  oh_gca_now , grid%p_gca , grid%backg_oh   , grid%pb , &
+                               grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                               grid%pmaxwnn , grid%ptropnn , &
+                               0 , 0 , &
+                               config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
+                               config_flags%maxw_above_this_level , &
+                               config_flags%num_gca_levels , 'Q' , &
+                               interp_type , lagrange_order , extrap_type , &
+                               lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                               zap_close_levels , force_sfc_in_vinterp , grid%id , &
+                               ids , ide , jds , jde , kds , kde , &
+                               ims , ime , jms , jme , kms , kme , &
+                               its , ite , jts , jte , kts , kte )
+
+            DO k = 1, config_flags%num_gca_levels
+               WRITE(a_message,*) '  transferring each K-level ', k, ' to H2O2, sample Jan data, ', grid %h2o2_gca_jan(its,k,jts)
+               CALL wrf_debug ( 1 , a_message)
+               DO j = jts, MIN(jte,jde-1)
+                  DO i = its, MIN(ite,ide-1)
+                     grid%qntemp(i, 1, j) = grid %h2o2_gca_jan(i,k,j)
+                     grid%qntemp(i, 2, j) = grid %h2o2_gca_feb(i,k,j)
+                     grid%qntemp(i, 3, j) = grid %h2o2_gca_mar(i,k,j)
+                     grid%qntemp(i, 4, j) = grid %h2o2_gca_apr(i,k,j)
+                     grid%qntemp(i, 5, j) = grid %h2o2_gca_may(i,k,j)
+                     grid%qntemp(i, 6, j) = grid %h2o2_gca_jun(i,k,j)
+                     grid%qntemp(i, 7, j) = grid %h2o2_gca_jul(i,k,j)
+                     grid%qntemp(i, 8, j) = grid %h2o2_gca_aug(i,k,j)
+                     grid%qntemp(i, 9, j) = grid %h2o2_gca_sep(i,k,j)
+                     grid%qntemp(i,10, j) = grid %h2o2_gca_oct(i,k,j)
+                     grid%qntemp(i,11, j) = grid %h2o2_gca_nov(i,k,j)
+                     grid%qntemp(i,12, j) = grid %h2o2_gca_dec(i,k,j)
+                  END DO
+               END DO
+               IF ( k .EQ. 1 ) THEN
+                  WRITE(a_message,*) ' GOcart Aerosols H2O2 (jan and feb) ', grid%qntemp(its,1,jts),grid%qntemp(its,2,jts)
+                  CALL wrf_debug ( 1 , a_message)
+               END IF
+               CALL monthly_interp_to_date ( grid%qntemp , current_date , grid%qntemp2 , &
+                                             ids , ide , jds , jde , kds , kde , &
+                                             ims , ime , jms , jme , kms , kme , &
+                                             its , ite , jts , jte , kts , kte )
+               IF ( k .eq. 1 ) THEN
+                  write(a_message,*) ' GOcart Aerosols H2O2 (now) ', grid%qntemp2(its,jts)
+                  CALL wrf_debug ( 1 , a_message)
+               END IF
+               DO j = jts, MIN(jte,jde-1)
+                  DO i = its, MIN(ite,ide-1)
+                     grid %h2o2_gca_now(i,k,j) = grid%qntemp2(i,j)
+                  END DO
+               END DO
+            END DO
+
+            CALL vert_interp ( grid %h2o2_gca_now , grid%p_gca , grid%backg_h2o2 , grid%pb , &
+                               grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                               grid%pmaxwnn , grid%ptropnn , &
+                               0 , 0 , &
+                               config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
+                               config_flags%maxw_above_this_level , &
+                               config_flags%num_gca_levels , 'Q' , &
+                               interp_type , lagrange_order , extrap_type , &
+                               lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                               zap_close_levels , force_sfc_in_vinterp , grid%id , &
+                               ids , ide , jds , jde , kds , kde , &
+                               ims , ime , jms , jme , kms , kme , &
+                               its , ite , jts , jte , kts , kte )
+
+            DO k = 1, config_flags%num_gca_levels
+               WRITE(a_message,*) '  transferring each K-level ', k, ' to  NO3, sample Jan data, ', grid % no3_gca_jan(its,k,jts)
+               CALL wrf_debug ( 1 , a_message)
+               DO j = jts, MIN(jte,jde-1)
+                  DO i = its, MIN(ite,ide-1)
+                     grid%qntemp(i, 1, j) = grid % no3_gca_jan(i,k,j)
+                     grid%qntemp(i, 2, j) = grid % no3_gca_feb(i,k,j)
+                     grid%qntemp(i, 3, j) = grid % no3_gca_mar(i,k,j)
+                     grid%qntemp(i, 4, j) = grid % no3_gca_apr(i,k,j)
+                     grid%qntemp(i, 5, j) = grid % no3_gca_may(i,k,j)
+                     grid%qntemp(i, 6, j) = grid % no3_gca_jun(i,k,j)
+                     grid%qntemp(i, 7, j) = grid % no3_gca_jul(i,k,j)
+                     grid%qntemp(i, 8, j) = grid % no3_gca_aug(i,k,j)
+                     grid%qntemp(i, 9, j) = grid % no3_gca_sep(i,k,j)
+                     grid%qntemp(i,10, j) = grid % no3_gca_oct(i,k,j)
+                     grid%qntemp(i,11, j) = grid % no3_gca_nov(i,k,j)
+                     grid%qntemp(i,12, j) = grid % no3_gca_dec(i,k,j)
+                  END DO
+               END DO
+               IF ( k .EQ. 1 ) THEN
+                  WRITE(a_message,*) ' GOcart Aerosols  NO3 (jan and feb) ', grid%qntemp(its,1,jts),grid%qntemp(its,2,jts)
+                  CALL wrf_debug ( 1 , a_message)
+               END IF
+               CALL monthly_interp_to_date ( grid%qntemp , current_date , grid%qntemp2 , &
+                                             ids , ide , jds , jde , kds , kde , &
+                                             ims , ime , jms , jme , kms , kme , &
+                                             its , ite , jts , jte , kts , kte )
+               IF ( k .eq. 1 ) THEN
+                  write(a_message,*) ' GOcart Aerosols  NO3 (now) ', grid%qntemp2(its,jts)
+                  CALL wrf_debug ( 1 , a_message)
+               END IF
+               DO j = jts, MIN(jte,jde-1)
+                  DO i = its, MIN(ite,ide-1)
+                     grid % no3_gca_now(i,k,j) = grid%qntemp2(i,j)
+                  END DO
+               END DO
+            END DO
+
+            CALL vert_interp ( grid % no3_gca_now , grid%p_gca , grid%backg_no3 , grid%pb , &
+                               grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                               grid%pmaxwnn , grid%ptropnn , &
+                               0 , 0 , &
+                               config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
+                               config_flags%maxw_above_this_level , &
+                               config_flags%num_gca_levels , 'Q' , &
+                               interp_type , lagrange_order , extrap_type , &
+                               lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                               zap_close_levels , force_sfc_in_vinterp , grid%id , &
+                               ids , ide , jds , jde , kds , kde , &
+                               ims , ime , jms , jme , kms , kme , &
+                               its , ite , jts , jte , kts , kte )
+         END IF
+#endif
+
+         ! OPTIONAL DATA #2: Thompson Water-Friendly Ice-Friendly Aerosols
+         !       Pressure name (assumed to end with _jan, _feb, _mar, ..., _nov, _dec): p_wif
+         !       Number of vertical levels: num_wif_levels
+         !       Variable names (assumed to end with _jan, _feb, _mar, ..., _nov, _dec): w_wif, i_wif
+         !       Option to interpolate data: wif_input_opt = 1
+         !       Stored in scalar arrays, tested and assumed to be upside down.
+
+         IF ( ( config_flags%wif_input_opt .EQ. 1 ) .AND. &
+              ( config_flags%mp_physics .EQ. THOMPSONAERO ) .AND. &
+              ( flag_qnwfa .EQ. 1 ) .AND.  &
+              ( flag_qnifa .EQ. 1 ) ) THEN
+
+            CALL wrf_debug ( 0 , 'Using monthly Water-Friendly and Ice-Friendly aerosols from metgrid input file' )
+
+            !  There are two data fields plus pressure - they are 3d, so no easy way to loop over them.
+            !  QNWFA - Number concentration water-friendly aerosols
+            !  QNIFA - Number concentration ice-friendly aerosols
+
+            !  First, get the pressure temporally interpolated to the correct date/time since 
+            !  this is a hybrid coordinate (not isobaric), and the pressure changes by month.
+            !  NOTE: The input pressure is not vertically interpolated, but the other two input   
+            !  fields (QNWFA, QNIFA) are interpolated to the WRF eta coordinate.
+
+            wif_upside_down = .FALSE.
+            IF ( grid%p_wif_jan(its,config_flags%num_wif_levels/2-1,jts) - &
+                 grid%p_wif_jan(its,config_flags%num_wif_levels/2+1,jts) .LT. 0 ) THEN
+               wif_upside_down = .TRUE.
+            END IF
+
+            DO k = 1, config_flags%num_wif_levels
+               WRITE(a_message,*) '  transferring each K-level ', k, ' to Prs WIF, sample Jan data, ', grid %p_wif_jan(its,k,jts)
+               CALL wrf_debug ( 1 , a_message)
+               DO j = jts, MIN(jte,jde-1)
+                  DO i = its, MIN(ite,ide-1)
+                     grid%qntemp(i, 1, j) = grid %p_wif_jan(i,k,j)
+                     grid%qntemp(i, 2, j) = grid %p_wif_feb(i,k,j)
+                     grid%qntemp(i, 3, j) = grid %p_wif_mar(i,k,j)
+                     grid%qntemp(i, 4, j) = grid %p_wif_apr(i,k,j)
+                     grid%qntemp(i, 5, j) = grid %p_wif_may(i,k,j)
+                     grid%qntemp(i, 6, j) = grid %p_wif_jun(i,k,j)
+                     grid%qntemp(i, 7, j) = grid %p_wif_jul(i,k,j)
+                     grid%qntemp(i, 8, j) = grid %p_wif_aug(i,k,j)
+                     grid%qntemp(i, 9, j) = grid %p_wif_sep(i,k,j)
+                     grid%qntemp(i,10, j) = grid %p_wif_oct(i,k,j)
+                     grid%qntemp(i,11, j) = grid %p_wif_nov(i,k,j)
+                     grid%qntemp(i,12, j) = grid %p_wif_dec(i,k,j)
+                  END DO
+               END DO
+               IF ( k .EQ. 1 ) THEN
+                  WRITE(a_message,*) ' Prs WIF (jan and feb) ', grid%qntemp(its,1,jts),grid%qntemp(its,2,jts)
+                  CALL wrf_debug ( 1 , a_message)
+               END IF
+               CALL monthly_interp_to_date ( grid%qntemp , current_date , grid%qntemp2 , &
+                                             ids , ide , jds , jde , kds , kde , &
+                                             ims , ime , jms , jme , kms , kme , &
+                                             its , ite , jts , jte , kts , kte )
+               IF ( k .eq. 1 ) THEN
+                  write(a_message,*) ' Prs WIF (now) ', grid%qntemp2(its,jts)
+                  CALL wrf_debug ( 1 , a_message)
+               END IF
+               IF      (       wif_upside_down ) THEN
+                  DO j = jts, MIN(jte,jde-1)
+                     DO i = its, MIN(ite,ide-1)
+                        grid %p_wif_now(i,config_flags%num_wif_levels+1-k,j) = grid%qntemp2(i,j)
+                     END DO
+                  END DO
+               ELSE IF ( .NOT. wif_upside_down ) THEN
+                  DO j = jts, MIN(jte,jde-1)
+                     DO i = its, MIN(ite,ide-1)
+                        grid %p_wif_now(i,                              k,j) = grid%qntemp2(i,j)
+                     END DO
+                  END DO
+               END IF
+            END DO
+
+            DO k = 1, config_flags%num_wif_levels
+               WRITE(a_message,*) '  transferring each K-level ', k, ' to   QNWFA, sample Jan data, ', grid %w_wif_jan(its,k,jts)
+               CALL wrf_debug ( 1 , a_message)
+               DO j = jts, MIN(jte,jde-1)
+                  DO i = its, MIN(ite,ide-1)
+                     grid%qntemp(i, 1, j) = grid %w_wif_jan(i,k,j)
+                     grid%qntemp(i, 2, j) = grid %w_wif_feb(i,k,j)
+                     grid%qntemp(i, 3, j) = grid %w_wif_mar(i,k,j)
+                     grid%qntemp(i, 4, j) = grid %w_wif_apr(i,k,j)
+                     grid%qntemp(i, 5, j) = grid %w_wif_may(i,k,j)
+                     grid%qntemp(i, 6, j) = grid %w_wif_jun(i,k,j)
+                     grid%qntemp(i, 7, j) = grid %w_wif_jul(i,k,j)
+                     grid%qntemp(i, 8, j) = grid %w_wif_aug(i,k,j)
+                     grid%qntemp(i, 9, j) = grid %w_wif_sep(i,k,j)
+                     grid%qntemp(i,10, j) = grid %w_wif_oct(i,k,j)
+                     grid%qntemp(i,11, j) = grid %w_wif_nov(i,k,j)
+                     grid%qntemp(i,12, j) = grid %w_wif_dec(i,k,j)
+                  END DO
+               END DO
+               IF ( k .EQ. 1 ) THEN
+                  WRITE(a_message,*) ' QNWFA (jan and feb) ', grid%qntemp(its,1,jts),grid%qntemp(its,2,jts)
+                  CALL wrf_debug ( 1 , a_message)
+               END IF
+               CALL monthly_interp_to_date ( grid%qntemp , current_date , grid%qntemp2 , &
+                                             ids , ide , jds , jde , kds , kde , &
+                                             ims , ime , jms , jme , kms , kme , &
+                                             its , ite , jts , jte , kts , kte )
+               IF ( k .eq. 1 ) THEN
+                  write(a_message,*) ' QNWFA (now) ', grid%qntemp2(its,jts)
+                  CALL wrf_debug ( 1 , a_message)
+               END IF
+               IF      (       wif_upside_down ) THEN
+                  DO j = jts, MIN(jte,jde-1)
+                     DO i = its, MIN(ite,ide-1)
+                        grid %w_wif_now(i,config_flags%num_wif_levels+1-k,j) = grid%qntemp2(i,j)
+                     END DO
+                  END DO
+               ELSE IF ( .NOT. wif_upside_down ) THEN
+                  DO j = jts, MIN(jte,jde-1)
+                     DO i = its, MIN(ite,ide-1)
+                        grid %w_wif_now(i,                              k,j) = grid%qntemp2(i,j)
+                     END DO
+                  END DO
+               END IF
+            END DO
+
+            CALL vert_interp ( grid %w_wif_now , grid%p_wif_now , scalar(:,:,:,P_qnwfa) , grid%pb , &
+                               grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                               grid%pmaxwnn , grid%ptropnn , &
+                               0 , 0 , &
+                               config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
+                               config_flags%maxw_above_this_level , &
+                               config_flags%num_wif_levels , 'Q' , &
+                               interp_type , lagrange_order , extrap_type , &
+                               lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                               zap_close_levels , force_sfc_in_vinterp , grid%id , &
+                               ids , ide , jds , jde , kds , kde , &
+                               ims , ime , jms , jme , kms , kme , &
+                               its , ite , jts , jte , kts , kte )
+
+            DO k = 1, config_flags%num_wif_levels
+               WRITE(a_message,*) '  transferring each K-level ', k, ' to QNIFA, sample Jan data, ', grid %i_wif_jan(its,k,jts)
+               CALL wrf_debug ( 1 , a_message)
+               DO j = jts, MIN(jte,jde-1)
+                  DO i = its, MIN(ite,ide-1)
+                     grid%qntemp(i, 1, j) = grid %i_wif_jan(i,k,j)
+                     grid%qntemp(i, 2, j) = grid %i_wif_feb(i,k,j)
+                     grid%qntemp(i, 3, j) = grid %i_wif_mar(i,k,j)
+                     grid%qntemp(i, 4, j) = grid %i_wif_apr(i,k,j)
+                     grid%qntemp(i, 5, j) = grid %i_wif_may(i,k,j)
+                     grid%qntemp(i, 6, j) = grid %i_wif_jun(i,k,j)
+                     grid%qntemp(i, 7, j) = grid %i_wif_jul(i,k,j)
+                     grid%qntemp(i, 8, j) = grid %i_wif_aug(i,k,j)
+                     grid%qntemp(i, 9, j) = grid %i_wif_sep(i,k,j)
+                     grid%qntemp(i,10, j) = grid %i_wif_oct(i,k,j)
+                     grid%qntemp(i,11, j) = grid %i_wif_nov(i,k,j)
+                     grid%qntemp(i,12, j) = grid %i_wif_dec(i,k,j)
+                  END DO
+               END DO
+               IF ( k .EQ. 1 ) THEN
+                  WRITE(a_message,*) ' QNIFA (jan and feb) ', grid%qntemp(its,1,jts),grid%qntemp(its,2,jts)
+                  CALL wrf_debug ( 1 , a_message)
+               END IF
+               CALL monthly_interp_to_date ( grid%qntemp , current_date , grid%qntemp2 , &
+                                             ids , ide , jds , jde , kds , kde , &
+                                             ims , ime , jms , jme , kms , kme , &
+                                             its , ite , jts , jte , kts , kte )
+               IF ( k .eq. 1 ) THEN
+                  write(a_message,*) ' QNIFA (now) ', grid%qntemp2(its,jts)
+                  CALL wrf_debug ( 1 , a_message)
+               END IF
+               IF      (       wif_upside_down ) THEN
+                  DO j = jts, MIN(jte,jde-1)
+                     DO i = its, MIN(ite,ide-1)
+                        grid %i_wif_now(i,config_flags%num_wif_levels+1-k,j) = grid%qntemp2(i,j)
+                     END DO
+                  END DO
+               ELSE IF ( .NOT. wif_upside_down ) THEN
+                  DO j = jts, MIN(jte,jde-1)
+                     DO i = its, MIN(ite,ide-1)
+                        grid %i_wif_now(i,                              k,j) = grid%qntemp2(i,j)
+                     END DO
+                  END DO
+               END IF
+            END DO
+
+            CALL vert_interp ( grid %i_wif_now , grid%p_wif_now , scalar(:,:,:,P_qnifa) , grid%pb , &
+                               grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
+                               grid%pmaxwnn , grid%ptropnn , &
+                               0 , 0 , &
+                               config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
+                               config_flags%maxw_above_this_level , &
+                               config_flags%num_wif_levels , 'Q' , &
+                               interp_type , lagrange_order , extrap_type , &
+                               lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                               zap_close_levels , force_sfc_in_vinterp , grid%id , &
+                               ids , ide , jds , jde , kds , kde , &
+                               ims , ime , jms , jme , kms , kme , &
+                               its , ite , jts , jte , kts , kte )
+
+         ELSE IF ( ( config_flags%wif_input_opt .EQ. 1 ) .AND. &
+                   ( config_flags%mp_physics .EQ. THOMPSONAERO ) .AND. &
+                   ( ( flag_qnwfa .NE. 1 ) .OR.  &
+                     ( flag_qnifa .NE. 1 ) ) ) THEN
+            WRITE (a_message,*) 'COMMENT: QNWFA or QNIFA flags not set in metgrid input, cannot have wif_input_opt=1'
+            CALL wrf_debug ( 0 , a_message)
+            WRITE (a_message,*) 'COMMENT: QNWFA and QNIFA will be initialized to zero values'
+            CALL wrf_debug ( 0 , a_message)
+
+         END IF
+
+!=========================================================================================
+!    END OF OPTIONAL 3D DATA, USUALLY AEROSOLS
+!=========================================================================================
 
          !  If this is UM data, put the dry rho-based pressure back into the dry pressure array.
          !  Since the dry pressure is no longer needed, no biggy.
@@ -3776,6 +4172,21 @@ endif
 !     CALL wrf_debug ( 0 , '   DONE routine to add snow in high mountain peaks')
 !+---+-----------------------------------------------------------------+
 
+! checking whether var_sso exists in the domain
+      ! if so, we set got_var_sso flag to true.  This is later used in external/RSL_LITE/module_dm.F
+      ! to check for this, when the topo_wind option is used.
+      grid%got_var_sso = .FALSE.
+      DO j=jts,MIN(jde-1,jte)
+         DO i=its,MIN(ide-1,ite)
+           IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
+               IF(grid%var_sso(i,j) .NE. 0) THEN
+                    grid%got_var_sso = .true.
+               ENDIF
+         END DO
+      END DO
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
+      grid%got_var_sso = wrf_dm_lor_logical ( grid%got_var_sso )
+#endif
 
 #ifdef DM_PARALLEL
 #   include "HALO_EM_INIT_1.inc"

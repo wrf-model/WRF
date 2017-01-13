@@ -1,7 +1,7 @@
 subroutine da_write_diagnostics(it, grid,num_qcstat_conv, ob, iv, re, y, j)
 
    !---------------------------------------------------------------------------
-   ! Purpose: Output data assmiilation diagnostics
+   ! Purpose: Output data assimilation diagnostics
    !---------------------------------------------------------------------------
 
    implicit none
@@ -62,7 +62,7 @@ subroutine da_write_diagnostics(it, grid,num_qcstat_conv, ob, iv, re, y, j)
    if (iv%num_inst > 0) call da_oi_stats_rad (stats_unit, iv)
 #endif
 
-   if (num_pseudo > 0) call da_oi_stats_pseudo (stats_unit, iv)
+   if ( pseudo_uvtpq ) call da_oi_stats_pseudo (stats_unit, iv)
 
    !---- ----------------------------------------------------------------------
    ! [2.0] Calculate residual vector (O-A) statistics:
@@ -100,7 +100,7 @@ if (.not. anal_type_verify) then
    if (iv%num_inst > 0) call da_ao_stats_rad (stats_unit, iv, re)
 #endif
 
-   if (num_pseudo > 0) call da_ao_stats_pseudo (stats_unit, iv, re)
+   if ( pseudo_uvtpq ) call da_ao_stats_pseudo (stats_unit, iv, re)
 
    !---------------------------------------------------------------------------
    ! [3.0] Calculate analysis increment (A-B) statistics:
@@ -115,6 +115,15 @@ if (.not. anal_type_verify) then
    call da_get_var_diagnostics (it, iv, j)
 
 end if
+
+   if ( num_pseudo > 0 ) then
+      if (rootproc .and. print_detail_outerloop) then
+          close(stats_unit)
+          call da_free_unit (stats_unit)
+      end if
+      if (trace_use) call da_trace_exit("da_write_diagnostics")
+      return
+   end if
 
    !---- -------------------------------------------------------------------------
    !  [5.0] Write observation data (O, O-B, O-A, y=hx'):

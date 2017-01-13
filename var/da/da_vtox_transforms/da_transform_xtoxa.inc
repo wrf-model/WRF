@@ -1,7 +1,7 @@
-subroutine da_transform_xtoxa(grid)
+subroutine da_transform_xtoxa(grid, wpec_on)
 
    !--------------------------------------------------------------------------------------------------
-   ! Purpose: Transfers fields from WRF TL fields to dignostic fields needed by observational operators
+   ! Purpose: Transfers fields from WRF TL fields to diagnostic fields needed by observational operators
    !    Updated for Analysis on Arakawa-C grid
    !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
    !--------------------------------------------------------------------------------------------------
@@ -9,6 +9,7 @@ subroutine da_transform_xtoxa(grid)
    implicit none
 
    type(domain),   intent(inout) :: grid
+   logical, intent(in), optional :: wpec_on
 
    integer :: i, j, k
    real    :: sdmd, s1md, mu
@@ -16,6 +17,8 @@ subroutine da_transform_xtoxa(grid)
    real    :: mr_a(kms:kme)
    real    :: mr_b(kms:kme)
    real    :: PU, PD, coeff
+   real    :: geoh(kms:kme)
+   logical :: calc_wpec_term
 
    if (trace_use) call da_trace_entry("da_transform_xtoxa")
 
@@ -23,7 +26,12 @@ subroutine da_transform_xtoxa(grid)
    ! [4.0]: Move the following:
    !----------------------------------------------------------------------
 
-   if ( .not. var4d ) then ! for 4dvar the xa%p is come from the model
+   calc_wpec_term = .false.
+   if ( present(wpec_on) ) then
+      if ( wpec_on ) calc_wpec_term =.true.
+   end if
+
+   if ( .not. var4d ) then ! for 4dvar, xa%p comes from the model
 
    do j=jts,jte
       do i=its,ite
@@ -41,12 +49,15 @@ subroutine da_transform_xtoxa(grid)
             end do
 
             mu=-(grid%xa%psfc(i,j)+grid%xb%psac(i,j)*sdmd)/s1md
+            if ( calc_wpec_term ) then
+               grid%xa%mu(i,j) = mu
+            end if
 
             p(kte+1)=0.0
 
             do k=kte,kts,-1
-               p(k)=p(k+1)-(mu*(1.0+mr_b(k)) &
-                       + grid%xb%psac(i,j)*mr_a(k))*grid%xb%dnw(k)
+               p(k)=p(k+1)-(c1h(k)*mu*(1.0+mr_b(k)) &
+                       + (c1h(k)*grid%xb%psac(i,j)+c2h(k))*mr_a(k))*grid%xb%dnw(k)
 
                grid%xa%p(i,j,k)=0.5*(p(k)+p(k+1))
             end do
@@ -72,7 +83,24 @@ subroutine da_transform_xtoxa(grid)
    endif ! only for 3dvar
 
    call da_pt_to_rho_lin(grid)
- 
+
+   if ( .not. var4d .and. calc_wpec_term ) then
+      do j=jts,jte
+         do i=its,ite
+            if ((fg_format==fg_format_wrf_arw_regional) .or. &
+               (fg_format==fg_format_wrf_arw_global  ) ) then
+               geoh(kts)=0.0
+               do k=kts,kte
+                  geoh(k+1)=geoh(k)+(-c1h(k)*grid%xa%mu(i,j) &
+                          + grid%xa%rho(i,j,k)*(c1h(k)*grid%xb%psac(i,j)+c2h(k)) &
+                          /grid%xb%rho(i,j,k))* grid%xb%dnw(k)/grid%xb%rho(i,j,k)
+                  grid%xa%geoh(i,j,k)=0.5*(geoh(k)+geoh(k+1))
+               end do
+            end if
+         end do
+      end do
+   end if
+
 #ifdef A2C
   if ((fg_format==fg_format_wrf_arw_regional  .or. &
        fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then
@@ -89,6 +117,13 @@ subroutine da_transform_xtoxa(grid)
 #ifdef DM_PARALLEL
 #include "HALO_XA.inc"
 #endif
+
+  if ( .not. var4d .and. calc_wpec_term ) then
+#ifdef DM_PARALLEL
+#include "HALO_XA_WPEC.inc"
+#include "HALO_XB_WPEC.inc"
+#endif
+  end if
 
 #ifdef A2C
   if ((fg_format==fg_format_wrf_arw_regional  .or. &
@@ -164,11 +199,9 @@ subroutine da_transform_xtoxa(grid)
 #endif
    end if
 
-   if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) ) then
-      if ( cloud_cv_options == 1 .and. use_3dvar_phy)then
-         ! Partition of hydrometeor increments via warm rain process
-         call da_moist_phys_lin(grid)
-      end if
+   if ( cloud_cv_options == 1 )then
+      ! Partition of hydrometeor increments via warm rain process
+      call da_moist_phys_lin(grid)
    end if
 
    !---------------------------------------------------------------

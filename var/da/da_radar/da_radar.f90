@@ -14,11 +14,16 @@ module da_radar
       fg_format_kma_global,max_error_rv,max_error_rf, &
       far_below_model_surface,kms,kme,kts,kte, trace_use_dull,filename_len,&
       myproc, analysis_date, num_procs , ierr, comm, es_beta, es_gamma, a_ew
+   use da_control, only : its, ite, jts, jte, ids, ide, jds, jde, ims, ime, jms, jme
+   use da_control, only : cloudbase_calc_opt, &
+      radar_non_precip_rf, radar_non_precip_opt, radar_rqv_thresh1, radar_rqv_thresh2, &
+      radar_rqv_rh1, radar_rqv_rh2, radar_non_precip_rh_w, radar_non_precip_rh_i, &
+      radar_rqv_h_lbound, radar_rqv_h_ubound, radar_saturated_rf
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &
       bad_data_type, x_type, number_type, bad_data_type, &
       infa_type, field_type
    use da_interpolation, only : da_to_zk, da_interp_lin_3d,da_interp_lin_3d_adj
-   use da_par_util, only :da_proc_stats_combine
+   use da_par_util, only :da_proc_stats_combine, da_patch_to_global
    use da_par_util1, only : da_proc_sum_int
    use da_statistics, only : da_stats_calculate
    use da_tools, only : da_residual, map_info, da_llxy_wrf, da_llxy_default, da_convert_zk

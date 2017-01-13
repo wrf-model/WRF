@@ -11,7 +11,7 @@ contains
                   rqvblten,rqcblten,rqiblten,flag_qi,                          &
                   cp,g,rovcp,rd,rovg,ep1,ep2,karman,xlv,rv,                    &
                   dz8w,psfc,                                                   &
-                  znu,znw,mut,p_top,                                           &
+                  znu,znw,p_top,                                               &
                   znt,ust,hpbl,psim,psih,                                      &
                   xland,hfx,qfx,wspd,br,                                       &
                   dt,kpbl2d,                                                   &
@@ -66,7 +66,6 @@ contains
 !-- psfc        pressure at the surface (pa)
 !-- znu         eta values on half (mass) levels  
 !-- znw         eta values on full (w) levels
-!-- mut         mass in column (pa)
 !-- p_top       pressure top of the model (pa)
 !-- znt         roughness length (m)
 !-- ust	        u* in similarity theory (m/s)
@@ -178,8 +177,6 @@ contains
              intent(inout), optional    ::                             regime
 !
    real,     dimension( ims:ime, jms:jme )                                   , &
-             intent(in   ), optional    ::                                mut
-   real,     dimension( ims:ime, jms:jme )                                   , &
              intent(in   ), optional    ::                              ctopo, &
                                                                        ctopo2
 !
@@ -205,24 +202,12 @@ contains
    qv2d(its:ite,:) = 0.0
 !
    do j = jts,jte
-     if(present(mut))then
-!
-! For ARW we will replace p and p8w with dry hydrostatic pressure
-!
-       do k = kts,kte+1
-         do i = its,ite
-           if(k.le.kte)pdh(i,k) = mut(i,j)*znu(k) + p_top
-           pdhi(i,k) = mut(i,j)*znw(k) + p_top
-         enddo
+     do k = kts,kte+1
+       do i = its,ite
+         if(k.le.kte)pdh(i,k) = p3d(i,k,j)
+         pdhi(i,k) = p3di(i,k,j)
        enddo
-     else
-       do k = kts,kte+1
-         do i = its,ite
-           if(k.le.kte)pdh(i,k) = p3d(i,k,j)
-           pdhi(i,k) = p3di(i,k,j)
-         enddo
-       enddo
-     endif
+     enddo
      do k = kts,kte
        do i = its,ite
          qv2d(i,k) = qv3d(i,k,j)

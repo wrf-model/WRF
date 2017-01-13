@@ -19,6 +19,8 @@ module da_define_structures
       metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, &
       mtgirs, tamdar, tamdar_sfc, pseudo, radar, radiance, airsr, sonde_sfc, rain, &
       trace_use_dull,comm, num_pseudo
+   use da_control, only : cloud_cv_options, use_cv_w
+   use da_control, only : pseudo_uvtpq
 
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_tools_serial, only : da_array_print
@@ -497,6 +499,7 @@ module da_define_structures
       integer, pointer     :: tb_qc(:,:)
       real,    pointer     :: tb_error(:,:)
       real,    pointer     :: tb_xb(:,:) 
+      real,    pointer     :: tb_xb_clr(:,:) 
       real,    pointer     :: tb_sens(:,:)
       real,    pointer     :: tb_imp(:,:)
       real,    pointer     :: rad_xb(:,:)
@@ -953,28 +956,28 @@ module da_define_structures
       integer :: size3c      ! Complex size of CV array of 3rd variable error.
       integer :: size4c      ! Complex size of CV array of 4th variable error.
       integer :: size5c      ! Complex size of CV array of 5th variable error.
-#ifdef CLOUD_CV
+
       integer :: size6c      ! Complex size of CV array of 6th variable error.
       integer :: size7c      ! Complex size of CV array of 7th variable error.
       integer :: size8c      ! Complex size of CV array of 8th variable error.
       integer :: size9c      ! Complex size of CV array of 9th variable error.
       integer :: size10c     ! Complex size of CV array of 10th variable error.
       integer :: size11c     ! Complex size of CV array of 11th variable error.
-#endif
+
       integer :: size_alphac ! Size of alpha control variable (complex).
       integer :: size1       ! Size of CV array of 1st variable error.
       integer :: size2       ! Size of CV array of 2nd variable error.
       integer :: size3       ! Size of CV array of 3rd variable error.
       integer :: size4       ! Size of CV array of 4th variable error.
       integer :: size5       ! Size of CV array of 5th variable error.
-#ifdef CLOUD_CV
+
       integer :: size6       ! Size of CV array of 6th variable error.
       integer :: size7       ! Size of CV array of 7th variable error.
       integer :: size8       ! Size of CV array of 8th variable error.
       integer :: size9       ! Size of CV array of 9th variable error.
       integer :: size10      ! Size of CV array of 10th variable error.
       integer :: size11i     ! Size of CV array of 11th variable error.
-#endif
+
       integer :: size1l      ! Size of CV array of 1st variable lbc error.
       integer :: size2l      ! Size of CV array of 2nd variable lbc error.
       integer :: size3l      ! Size of CV array of 3rd variable lbc error.
@@ -1003,6 +1006,8 @@ module da_define_structures
    end type be_subtype
 
    type be_type
+      integer           :: ncv_mz      ! number of variables for cv_mz
+      integer, pointer  :: cv_mz(:)    ! array to hold mz of each cv
       integer           :: ne
       integer           :: max_wave           ! Smallest spectral mode (global).
       integer           :: mix
@@ -1012,14 +1017,14 @@ module da_define_structures
       type (be_subtype) :: v3
       type (be_subtype) :: v4
       type (be_subtype) :: v5
-#ifdef CLOUD_CV
+
       type (be_subtype) :: v6
       type (be_subtype) :: v7
       type (be_subtype) :: v8
       type (be_subtype) :: v9
       type (be_subtype) :: v10
       type (be_subtype) :: v11
-#endif
+
       type (be_subtype) :: alpha
       real*8, pointer     :: pb_vert_reg(:,:,:)
 
@@ -1075,6 +1080,7 @@ module da_define_structures
 contains
 
 #include "da_allocate_background_errors.inc"
+#include "da_allocate_obs_info.inc"
 #include "da_allocate_observations.inc"
 #include "da_allocate_observations_rain.inc"
 #include "da_allocate_y.inc"

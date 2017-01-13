@@ -4650,27 +4650,12 @@ END SUBROUTINE pole_point_bc
 
    SUBROUTINE phy_prep ( config_flags,                                &  ! input
                          mu, muu, muv, u, v, p, pb, alt, ph,          &  ! input
-                         phb, t, tsk, moist, n_moist,                 &  ! input
+                         phb, t, moist, n_moist,                      &  ! input
                          rho, th_phy, p_phy , pi_phy ,                &  ! output
                          u_phy, v_phy, p8w, t_phy, t8w,               &  ! output
                          z, z_at_w, dz8w,                             &  ! output
                          p_hyd, p_hyd_w, dnw,                         &  ! output
                          fzm, fzp, znw, p_top,                        &  ! params
-                         RTHRATEN,                                    &
-                         RTHBLTEN, RUBLTEN, RVBLTEN,                  &
-                         RQVBLTEN, RQCBLTEN, RQIBLTEN,                &
-                         RUCUTEN,  RVCUTEN,  RTHCUTEN,                &
-                         RQVCUTEN, RQCCUTEN, RQRCUTEN,                &
-                         RQICUTEN, RQSCUTEN,                          &
-                         RUSHTEN,  RVSHTEN,  RTHSHTEN,                &
-                         RQVSHTEN, RQCSHTEN, RQRSHTEN,                &
-                         RQISHTEN, RQSSHTEN, RQGSHTEN,                &
-                         RTHFTEN,  RQVFTEN,                           &
-                         RUNDGDTEN, RVNDGDTEN, RTHNDGDTEN,            &
-                         RPHNDGDTEN,RQVNDGDTEN, RMUNDGDTEN,           &
-!jdf
-                         landmask, xland,                             &
-!jdf
                          ids, ide, jds, jde, kds, kde,                &
                          ims, ime, jms, jme, kms, kme,                &
                          its, ite, jts, jte, kts, kte                )
@@ -4688,7 +4673,7 @@ END SUBROUTINE pole_point_bc
    REAL, DIMENSION( ims:ime, kms:kme , jms:jme , n_moist ), INTENT(IN) :: moist
 
 
-   REAL , DIMENSION( ims:ime, jms:jme ), INTENT(IN   )   ::     TSK, mu, muu, muv
+   REAL , DIMENSION( ims:ime, jms:jme ), INTENT(IN   )   ::     mu, muu, muv
 
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) ,                 &
           INTENT(  OUT)                                  ::   u_phy, &
@@ -4727,54 +4712,6 @@ END SUBROUTINE pole_point_bc
    REAL , DIMENSION( kms:kme ) ,           INTENT(IN   ) ::     znw, &
                                                                 dnw
 
-   REAL,  DIMENSION( ims:ime , kms:kme, jms:jme ),                   &
-          INTENT(INOUT)   ::                               RTHRATEN  
-
-   REAL,  DIMENSION( ims:ime , kms:kme, jms:jme ),                   &
-          INTENT(INOUT)   ::                                RUCUTEN, &
-                                                            RVCUTEN, &
-                                                           RTHCUTEN, &
-                                                           RQVCUTEN, &
-                                                           RQCCUTEN, &
-                                                           RQRCUTEN, &
-                                                           RQICUTEN, &
-                                                           RQSCUTEN, &
-                                                            RUSHTEN, &
-                                                            RVSHTEN, &
-                                                           RTHSHTEN, &
-                                                           RQVSHTEN, &
-                                                           RQCSHTEN, &
-                                                           RQRSHTEN, &
-                                                           RQISHTEN, &
-                                                           RQSSHTEN, &
-                                                           RQGSHTEN
-
-   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                   , &
-          INTENT(INOUT)   ::                                RUBLTEN, &
-                                                            RVBLTEN, &
-                                                           RTHBLTEN, &
-                                                           RQVBLTEN, &
-                                                           RQCBLTEN, &
-                                                           RQIBLTEN
-
-   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                   , &
-          INTENT(INOUT)   ::                                RTHFTEN, &
-                                                            RQVFTEN
-
-   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                   , &
-          INTENT(INOUT)   ::                                RUNDGDTEN, &
-                                                            RVNDGDTEN, &
-                                                           RTHNDGDTEN, &
-                                                           RPHNDGDTEN, &
-                                                           RQVNDGDTEN
-
-   REAL,  DIMENSION( ims:ime, jms:jme )                            , &
-          INTENT(INOUT)   ::                               RMUNDGDTEN
-!jdf
-   REAL,  DIMENSION( ims:ime, jms:jme )                            , &
-          INTENT(INOUT)   ::                               landmask, &
-                                                              xland
-!jdf
 
    INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end, i_startu, j_startv
    INTEGER :: i, j, k
@@ -4787,9 +4724,7 @@ END SUBROUTINE pole_point_bc
 !<DESCRIPTION>
 !
 !  phys_prep calculates a number of diagnostic quantities needed by
-!  the physics routines.  It also decouples the physics tendencies from
-!  the column dry-air mass (the physics routines expect to see/update the
-!  uncoupled tendencies).
+!  the physics routines.  
 !
 !</DESCRIPTION>
 
@@ -4802,13 +4737,6 @@ END SUBROUTINE pole_point_bc
 
     k_start = kts
     k_end = min( kte, kde-1 )
-!jdf
-!    do j = j_start,j_end
-!    do i = i_start, i_end
-!      if(landmask(i,j).lt.0.5) xland(i,j)=2.0
-!    enddo
-!    enddo
-!jdf
 
 !  compute thermodynamics and velocities at pressure points (or half levels)
 
@@ -4936,6 +4864,109 @@ END SUBROUTINE pole_point_bc
     enddo
     enddo
     enddo
+
+END SUBROUTINE phy_prep
+
+
+!======================================================================
+!   routine to decouple physics tendencies
+!======================================================================
+
+   SUBROUTINE phy_prep_part2 ( config_flags,                          &
+                         mu,muu,muv,                                  &
+                         RTHRATEN,                                    &
+                         RTHBLTEN, RUBLTEN, RVBLTEN,                  &
+                         RQVBLTEN, RQCBLTEN, RQIBLTEN,                &
+                         RUCUTEN,  RVCUTEN,  RTHCUTEN,                &
+                         RQVCUTEN, RQCCUTEN, RQRCUTEN,                &
+                         RQICUTEN, RQSCUTEN,                          &
+                         RUSHTEN,  RVSHTEN,  RTHSHTEN,                &
+                         RQVSHTEN, RQCSHTEN, RQRSHTEN,                &
+                         RQISHTEN, RQSSHTEN, RQGSHTEN,                &
+                         RTHFTEN,  RQVFTEN,                           &
+                         RUNDGDTEN, RVNDGDTEN, RTHNDGDTEN,            &
+                         RPHNDGDTEN,RQVNDGDTEN, RMUNDGDTEN,           &
+                         ids, ide, jds, jde, kds, kde,                &
+                         ims, ime, jms, jme, kms, kme,                &
+                         its, ite, jts, jte, kts, kte                )
+!----------------------------------------------------------------------
+   IMPLICIT NONE
+!----------------------------------------------------------------------
+
+   TYPE(grid_config_rec_type) ,     INTENT(IN   ) :: config_flags
+
+   INTEGER ,        INTENT(IN   ) ::   ids, ide, jds, jde, kds, kde, &
+                                       ims, ime, jms, jme, kms, kme, &
+                                       its, ite, jts, jte, kts, kte
+
+   REAL , DIMENSION( ims:ime, jms:jme ), INTENT(IN   )   ::     mu, muu, muv
+
+   REAL,  DIMENSION( ims:ime , kms:kme, jms:jme ),                   &
+          INTENT(INOUT)   ::                               RTHRATEN  
+
+   REAL,  DIMENSION( ims:ime , kms:kme, jms:jme ),                   &
+          INTENT(INOUT)   ::                                RUCUTEN, &
+                                                            RVCUTEN, &
+                                                           RTHCUTEN, &
+                                                           RQVCUTEN, &
+                                                           RQCCUTEN, &
+                                                           RQRCUTEN, &
+                                                           RQICUTEN, &
+                                                           RQSCUTEN, &
+                                                            RUSHTEN, &
+                                                            RVSHTEN, &
+                                                           RTHSHTEN, &
+                                                           RQVSHTEN, &
+                                                           RQCSHTEN, &
+                                                           RQRSHTEN, &
+                                                           RQISHTEN, &
+                                                           RQSSHTEN, &
+                                                           RQGSHTEN
+
+   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                   , &
+          INTENT(INOUT)   ::                                RUBLTEN, &
+                                                            RVBLTEN, &
+                                                           RTHBLTEN, &
+                                                           RQVBLTEN, &
+                                                           RQCBLTEN, &
+                                                           RQIBLTEN
+
+   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                   , &
+          INTENT(INOUT)   ::                                RTHFTEN, &
+                                                            RQVFTEN
+
+   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                   , &
+          INTENT(INOUT)   ::                                RUNDGDTEN, &
+                                                            RVNDGDTEN, &
+                                                           RTHNDGDTEN, &
+                                                           RPHNDGDTEN, &
+                                                           RQVNDGDTEN
+
+   REAL,  DIMENSION( ims:ime, jms:jme )                            , &
+          INTENT(INOUT)   ::                               RMUNDGDTEN
+
+   INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end, i_startu, j_startv
+   INTEGER :: i, j, k
+
+!-----------------------------------------------------------------------
+
+!<DESCRIPTION>
+!
+!  It decouples the physics tendencies from
+!  the column dry-air mass (the physics routines expect to see/update the
+!  uncoupled tendencies).
+!
+!</DESCRIPTION>
+
+!  set up loop bounds for this grid's boundary conditions
+
+    i_start = its
+    i_end   = min( ite,ide-1 )
+    j_start = jts
+    j_end   = min( jte,jde-1 )
+
+    k_start = kts
+    k_end = min( kte, kde-1 )
 
 ! decouple all physics tendencies
 
@@ -5218,8 +5249,7 @@ END SUBROUTINE pole_point_bc
 
     ENDIF
 
-END SUBROUTINE phy_prep
-
+END SUBROUTINE phy_prep_part2
 !------------------------------------------------------------
 
    SUBROUTINE moist_physics_prep_em( t_new, t_old, t0, rho, al, alb, &

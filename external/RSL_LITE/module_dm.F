@@ -1478,6 +1478,37 @@ CONTAINS
 #endif
    END FUNCTION wrf_dm_bxor_integer
 
+
+LOGICAL FUNCTION wrf_dm_lor_logical ( inval )
+      IMPLICIT NONE
+#ifndef STUBMPI
+      LOGICAL inval, retval
+      INTEGER comm, ierr
+      CALL wrf_get_dm_communicator(comm)
+      CALL mpi_allreduce ( inval, retval , 1, MPI_LOGICAL, MPI_LOR, comm, ierr )
+      wrf_dm_lor_logical = retval
+#else
+      LOGICAL inval
+      wrf_dm_lor_logical = inval
+#endif
+   END FUNCTION wrf_dm_lor_logical
+
+
+LOGICAL FUNCTION wrf_dm_land_logical ( inval )
+      IMPLICIT NONE
+#ifndef STUBMPI
+      LOGICAL inval, retval
+      INTEGER comm, ierr
+      CALL wrf_get_dm_communicator(comm)
+      CALL mpi_allreduce ( inval, retval , 1, MPI_LOGICAL, MPI_LAND, comm, ierr )
+      wrf_dm_land_logical = retval
+#else
+      LOGICAL inval
+      wrf_dm_land_logical = inval
+#endif
+   END FUNCTION wrf_dm_land_logical
+
+
    SUBROUTINE wrf_dm_maxval_real ( val, idex, jdex )
 # ifndef STUBMPI
       use mpi
@@ -4186,17 +4217,17 @@ endif
       
          !  Uncouple the variables moist and t_2 that are used to calculate ph_2
 
-         DO j = jps,jpe
-            DO i = ips,ipe
-               DO k=kps,kpe-1
+         DO j = MAX(jds,jps),MIN(jde-1,jpe)
+            DO i = MAX(ids,ips),MIN(ide-1,ipe)
+               DO k=kds,kde-1
                   grid%t_2(i,k,j) = grid%t_2(i,k,j)/(grid%mub(i,j) + grid%mu_2(i,j))
                   moist(i,k,j,P_QV) = moist(i,k,j,P_QV)/(grid%mub(i,j) + grid%mu_2(i,j))
                END DO
             END DO
          END DO
     
-         DO j = jps, jpe
-            DO i = ips,ipe
+         DO j = MAX(jds,jps),MIN(jde-1,jpe)
+            DO i = MAX(ids,ips),MIN(ide-1,ipe)
 
                DO k = 1, kpe-1
                   grid%pb(i,k,j) = ngrid%znu(k)*grid%mub(i,j)+ngrid%p_top
@@ -4240,8 +4271,8 @@ endif
          ALLOCATE( p (ips:ipe, kps:kpe, jps:jpe) )
          ALLOCATE( al(ips:ipe, kps:kpe, jps:jpe) )
 
-         DO j = jps, jpe
-            DO i = ips, ipe
+         DO j = MAX(jds,jps),MIN(jde-1,jpe)
+            DO i = MAX(ids,ips),MIN(ide-1,ipe)
 
                !  Integrate the hydrostatic equation (from the RHS of the bigstep vertical momentum
                !  equation) down from the top to get the pressure perturbation.  First get the pressure
@@ -4308,15 +4339,15 @@ endif
          DEALLOCATE(al)
       
          ! Couple the variables moist and t_2, and the newly calculated ph_2
-         DO j = jps, jpe
-            DO i = ips,ipe
+         DO j = MAX(jds,jps),MIN(jde-1,jpe)
+            DO i = MAX(ids,ips),MIN(ide-1,ipe)
                DO k=kps,kpe
                grid%ph_2(i,k,j) = grid%ph_2(i,k,j)*(grid%mub(i,j) + grid%mu_2(i,j))
                END DO
             END DO
          END DO
-         DO j = jps, jpe
-            DO i = ips,ipe
+         DO j = MAX(jds,jps),MIN(jde-1,jpe)
+            DO i = MAX(ids,ips),MIN(ide-1,ipe)
                DO k=kps,kpe-1
                grid%t_2(i,k,j) = grid%t_2(i,k,j)*(grid%mub(i,j) + grid%mu_2(i,j))
                moist(i,k,j,P_QV) = moist(i,k,j,P_QV)*(grid%mub(i,j) + grid%mu_2(i,j))

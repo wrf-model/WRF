@@ -83,7 +83,7 @@ subroutine da_calculate_residual(iv, y, re)
    if (iv%info(satem)%nlocal > 0) &
       call da_residual_satem(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
 
-   if (num_pseudo > 0) &
+   if ( pseudo_uvtpq ) &
       call da_residual_pseudo(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
 
    if (iv%info(qscat)%nlocal > 0) &

@@ -23,7 +23,7 @@ program da_wrfvar_main
 
    implicit none
 
-   ! Split initialisation into 2 parts so we can start and stop trace here
+   ! Split initialization into 2 parts so we can start and stop trace here
 
    call disable_quilting
 

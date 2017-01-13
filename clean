@@ -48,7 +48,7 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
   endif
   if ( "$arg" != '-aa' ) then
     ( cd run ; /bin/rm -f gm* out* fort* ideal* *.exe input_sounding ; \
-	  /bin/cp -f namelist.input namelist.input.backup ; \
+	  /bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; \
 	  /bin/rm -f namelist.input ) >& /dev/null
     ( cd test/exp_real ; /bin/rm -f gm* out* fort* real* )
     ( cd test ; rm -f */*.exe */ETAMPNEW_DATA* */GENPARM.TBL */LANDUSE.TBL */README.namelist \
@@ -67,7 +67,7 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
   else if ( "$arg" == '-aa' ) then
     /bin/rm -f configure.wrf.backup
     /bin/rm -f Registry/Registry.backup
-    /bin/rm -f run/namelist.input.backup
+    /bin/rm -f run/namelist.input.backup.*
   endif
 endif
 

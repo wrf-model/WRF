@@ -14,8 +14,7 @@ subroutine da_qc_iasi (it, i, nchan, ob, iv)
 
 
    ! local variables
-   logical   :: lmix,lcould_read
-   real    :: satzen
+   logical   :: lmix
    integer   :: n,k,isflg,ios,fgat_rad_unit,sensor_id
    integer :: scanpos
    integer   :: ngood(nchan),nrej(nchan),nrej_omb_abs(nchan), &
@@ -23,13 +22,12 @@ subroutine da_qc_iasi (it, i, nchan, ob, iv)
                 nrej_landsurface,nrej_windowchshort,nrej_windowchlong,    &
                 nrej_clw,nrej_sst,nrej_eccloud, num_proc_domain, nrej_mixsurface
 
-   real      :: SST_model, SST_airs, SST_pred, diffSST, diffSST2
    real      :: inv_grosscheck
 
    character(len=30)  :: filename
 
    ! iasi Cloud Detection Variables
-   integer              :: kmin, kmax, ndim, iunit
+   integer              :: kmin, kmax, ndim
    integer, allocatable  :: k_cloud_flag(:) ! cloud flags   
    ! mmr Cloud Detection Variables
    integer              :: kts_100hPa(1), kte_surf,kts_200hPa(1)
@@ -302,7 +300,6 @@ subroutine da_qc_iasi (it, i, nchan, ob, iv)
       close(fgat_rad_unit)
       call da_free_unit(fgat_rad_unit)
    end if
-    close(iunit)
    if (trace_use_dull) call da_trace_exit("da_qc_iasi")
 
 end subroutine da_qc_iasi

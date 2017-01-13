@@ -3430,7 +3430,7 @@ BENCH_END(bc_end_tim)
 
            call trajectory (grid,config_flags,                                     &
                             grid%dt,grid%itimestep,grid%ru_m, grid%rv_m, grid%ww_m,&
-                            grid%mut,grid%muu,grid%muv,                            &
+                            grid%muts,muus,muvs,                                   &
                             grid%rdx, grid%rdy, grid%rdn, grid%rdnw,grid%rdzw,     &
                             grid%traj_i,grid%traj_j,grid%traj_k,                   &
                             grid%traj_long,grid%traj_lat,                          &

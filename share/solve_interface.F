@@ -8,6 +8,9 @@ SUBROUTINE solve_interface ( grid )
    USE module_driver_constants
    USE module_configure
    USE module_wrf_error
+#if( EM_CORE == 1 )
+   USE module_trajectory, only : trajectory_driver
+#endif
 
    IMPLICIT NONE
 
@@ -30,6 +33,7 @@ SUBROUTINE solve_interface ( grid )
    TYPE (grid_config_rec_type)   :: config_flags
 
    INTEGER     :: idum1, idum2
+   CHARACTER(len=256) :: dbg_msg
 
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
    CALL set_scalar_indices_from_config ( grid%id , idum1 , idum2 )
@@ -52,6 +56,17 @@ SUBROUTINE solve_interface ( grid )
    ENDIF
 # endif
 #endif
+
+# if ( EM_CORE == 1 )
+   if( grid%traj_opt /= no_trajectory ) then
+     write(dbg_msg,'(''solve_xface('',i2.2,''): Before call to trajectory_driver'')') grid%id
+     call wrf_debug( 200,trim(dbg_msg) )
+     call trajectory_driver( grid )
+     write(dbg_msg,'(''solve_xface('',i2.2,''): After  call to trajectory_driver'')') grid%id
+     call wrf_debug( 200,trim(dbg_msg) )
+   endif
+# endif
+
 #if (NMM_CORE == 1)
    CALL solve_nmm  ( grid , config_flags   &
 !

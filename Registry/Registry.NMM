@@ -164,6 +164,11 @@ ifdef HWRF=1
 include registry.tracker
 endif
 
+# For compilation only; any setting other than zero will cause the simulation to halt
+rconfig   integer traj_opt                namelist,physics      1            0         h     "traj_opt"    "activate trajectory calculation  0=no, 1=on"   ""
+rconfig   logical dm_has_traj             namelist,physics      max_domains  .false.   rh    "has_traj"    "activate trajectory calculation per domain"   ""
+rconfig   integer num_traj                namelist,domains      1            1000     irh    "num_traj" "#of trajectory" ""
+
 # Nest motion safeguard: don't let nest get close to parent boundary.
 # Default values are lowest possible - anything lower would read
 # outside of memory in intermediate domain.

@@ -1550,7 +1550,8 @@
 !
 ! Based on the selection of physics suite provided in the namelist, sets the
 ! values of other namelist options (mp_physics, cu_physics, ra_lw_physics,
-! ra_sw_physics, bl_pbl_physics, and sf_surface_physics) to reflect that suite.
+! ra_sw_physics, bl_pbl_physics, sf_sfclay_physics, and sf_surface_physics)
+! to reflect that suite.
 !
 !</DESCRIPTION>
 
@@ -1560,8 +1561,8 @@
       INTEGER :: i
       INTEGER :: max_dom
       LOGICAL :: have_mods
-      INTEGER, DIMENSION( max_domains ) :: orig_mp_physics, orig_cu_physics, orig_ra_lw_physics, orig_ra_sw_physics, orig_bl_pbl_physics, orig_sf_surface_physics
-      CHARACTER, DIMENSION( max_domains ) :: modified_mp_option, modified_cu_option, modified_ra_lw_option, modified_ra_sw_option, modified_bl_pbl_option, modified_sf_surface_option
+      INTEGER, DIMENSION( max_domains ) :: orig_mp_physics, orig_cu_physics, orig_ra_lw_physics, orig_ra_sw_physics, orig_bl_pbl_physics, orig_sf_sfclay_physics, orig_sf_surface_physics
+      CHARACTER, DIMENSION( max_domains ) :: modified_mp_option, modified_cu_option, modified_ra_lw_option, modified_ra_sw_option, modified_bl_pbl_option, modified_sf_sfclay_option, modified_sf_surface_option
 
       max_dom = model_config_rec % max_dom
 
@@ -1584,6 +1585,9 @@
       modified_bl_pbl_option(1:max_dom) = ' '
       orig_bl_pbl_physics(1:max_dom) = model_config_rec % bl_pbl_physics(1:max_dom)
 
+      modified_sf_sfclay_option(1:max_dom) = ' '
+      orig_sf_sfclay_physics(1:max_dom) = model_config_rec % sf_sfclay_physics(1:max_dom)
+
       modified_sf_surface_option(1:max_dom) = ' '
       orig_sf_surface_physics(1:max_dom) = model_config_rec % sf_surface_physics(1:max_dom)
 
@@ -1604,6 +1608,7 @@
             IF ( model_config_rec % ra_lw_physics(i) == -1 ) model_config_rec % ra_lw_physics(i) = 4             ! RRTMG LW
             IF ( model_config_rec % ra_sw_physics(i) == -1 ) model_config_rec % ra_sw_physics(i) = 4             ! RRTMG SW
             IF ( model_config_rec % bl_pbl_physics(i) == -1 ) model_config_rec % bl_pbl_physics(i) = 2           ! MYJ
+            IF ( model_config_rec % sf_sfclay_physics(i) == -1 ) model_config_rec % sf_sfclay_physics(i) = 2     ! MYJ
             IF ( model_config_rec % sf_surface_physics(i) == -1 ) model_config_rec % sf_surface_physics(i) = 2   ! Noah
 
          END DO
@@ -1616,6 +1621,7 @@
             IF ( model_config_rec % ra_lw_physics(i) == -1 ) model_config_rec % ra_lw_physics(i) = 4             ! RRTMG LW
             IF ( model_config_rec % ra_sw_physics(i) == -1 ) model_config_rec % ra_sw_physics(i) = 4             ! RRTMG SW
             IF ( model_config_rec % bl_pbl_physics(i) == -1 ) model_config_rec % bl_pbl_physics(i) = 1           ! YSU
+            IF ( model_config_rec % sf_sfclay_physics(i) == -1 ) model_config_rec % sf_sfclay_physics(i) = 91    ! MM5
             IF ( model_config_rec % sf_surface_physics(i) == -1 ) model_config_rec % sf_surface_physics(i) = 2   ! Noah
 
          END DO
@@ -1663,6 +1669,13 @@
       CALL wrf_message (wrf_err_message)
 
       !
+      ! Print surface layer options
+      !
+      WHERE (model_config_rec % sf_sfclay_physics(1:max_dom) == orig_sf_sfclay_physics(1:max_dom)) modified_sf_sfclay_option(1:max_dom) = '*'
+      WRITE (wrf_err_message, FMT='(A35,*(I6,A1))') 'sf_sfclay_physics: ', (model_config_rec % sf_sfclay_physics(i), modified_sf_sfclay_option(i), i=1,max_dom)
+      CALL wrf_message (wrf_err_message)
+
+      !
       ! Print surface options
       !
       WHERE (model_config_rec % sf_surface_physics(1:max_dom) == orig_sf_surface_physics(1:max_dom)) modified_sf_surface_option(1:max_dom) = '*'
@@ -1677,6 +1690,7 @@
              .OR. ANY (modified_ra_lw_option(1:max_dom) == '*') &
              .OR. ANY (modified_ra_sw_option(1:max_dom) == '*') &
              .OR. ANY (modified_bl_pbl_option(1:max_dom) == '*') &
+             .OR. ANY (modified_sf_sfclay_option(1:max_dom) == '*') &
              .OR. ANY (modified_sf_surface_option(1:max_dom) == '*')
 
       IF (have_mods) THEN

@@ -23,7 +23,6 @@ ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=$(IWORDSIZE) -DDWORDSIZE=$(DWORDSIZ
                       -DGRIB1 \
                       -DINTIO \
                       -DKEEP_INT_AROUND \
-                      -DHYBRID_COORD=1 \
                       -DLIMIT_ARGS \
                       -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) \
                       -DMAX_DOMAINS_F=$(MAX_DOMAINS) \

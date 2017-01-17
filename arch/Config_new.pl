@@ -51,6 +51,8 @@ $sw_gpfs_lib  = "-lgpfs";
 $sw_curl_path = "";
 $sw_curl_lib  = "-lcurl";
 $sw_terrain_and_landuse = "";
+$sw_tfl = "" ;
+$sw_cfl = "" ;
 while ( substr( $ARGV[0], 0, 1 ) eq "-" )
  {
   if ( substr( $ARGV[0], 1, 5 ) eq "perl=" )
@@ -205,6 +207,14 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
   if ( substr( $ARGV[0], 1, 12 ) eq "ompparallel=" )
   {
     $sw_ompparallel=substr( $ARGV[0], 13 ) ;
+  }
+  if ( substr( $ARGV[0], 1, 4 ) eq "tfl=" )
+  {
+    $sw_tfl=substr( $ARGV[0], 5 ) ;
+  }
+  if ( substr( $ARGV[0], 1, 4 ) eq "cfl=" )
+  {
+    $sw_cfl=substr( $ARGV[0], 5 ) ;
   }
   shift @ARGV ;
  }
@@ -445,6 +455,8 @@ while ( <CONFIGURE_DEFAULTS> )
     $_ =~ s/CONFIGURE_DMPARALLEL/$sw_dmparallelflag/g ;
     $_ =~ s/CONFIGURE_STUBMPI/$sw_stubmpi/g ;
     $_ =~ s/CONFIGURE_NESTOPT/$sw_nest_opt/g ;
+    $_ =~ s/CONFIGURE_TRADFLAG/$sw_tfl/g ;
+    $_ =~ s/CONFIGURE_CPPFLAGS/$sw_cfl/g ;
     $_ =~ s/CONFIGURE_4DVAR_FLAG/$sw_4dvar_flag/g ;
     $_ =~ s/CONFIGURE_WRFPLUS_PATH/$sw_wrfplus_path/g ;
     $_ =~ s/CONFIGURE_CRTM_FLAG/$sw_crtm_flag/g ;

@@ -206,7 +206,7 @@ contains
        if(need_to_relax==0) then
  38       format('end mslp relax loop at ',I0)
           write(message,38) ipres
-          call wrf_debug(1,message)
+          call wrf_debug(2,message)
           exit
        endif
 
@@ -417,9 +417,9 @@ contains
 
 1234 format('grid ',I0,': size(',A,') = ',I0)
    write(message,1234) grid%id,'grid%p700rv',size(grid%p700rv)
-   call wrf_message(trim(message))
+   call wrf_debug(2,trim(message))
    write(message,1234) grid%id,'grid%p700u',size(grid%p700u)
-   call wrf_message(trim(message))
+   call wrf_debug(2,trim(message))
 
    wantuv=(grid%vortex_tracker == 7) ! do I need to calc. presu & presv?
 

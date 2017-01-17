@@ -54,6 +54,7 @@
        pcnst =>pcnst_runtime, numgas_mam, cam_mam_aerosols
   USE module_cu_camzm_driver, only: zm_conv_tend_2
   USE module_cam_mam_gas_wetdep_driver, only: cam_mam_gas_wetdep_driver
+  USE module_trajectory, only: trajectory_dchm_tstep_init, trajectory_dchm_tstep_set
 
   IMPLICIT NONE
 
@@ -1135,7 +1136,9 @@
 ! Calculate rate of n2o5 hydrolysis 
      call wrf_debug(15,'calling calc_het_n2o5')
 
-
+     write(msg,'(''chem_driver('',i2.2,''): Calling dchm_tstep_init'')') grid%id
+     call wrf_debug( 200,trim(msg) )
+     call trajectory_dchm_tstep_init( grid, do_chemstep )
 
 !
 ! For the chemistry tracer mode, only emissions and vertical mixing are done.
@@ -1225,6 +1228,10 @@ CALL kpp_mechanism_driver (chem,                                                
        chem(its:ite,kts:kte,jts:jte,p_so2)=vcso2_old(its:ite,kts:kte,jts:jte)
 !      chem(its:ite,kts:kte,jts:jte,p_h2o2)=vch2o2_old(its:ite,kts:kte,jts:jte)
    endif
+
+   write(msg,'(''chem_driver('',i2.2,''): Calling dchm_tstep_set'')') grid%id
+   call wrf_debug( 200,trim(msg) )
+   call trajectory_dchm_tstep_set( grid )
 
    IF(config_flags%conv_tr_aqchem == 0 ) THEN
       so2so4_selecta: SELECT CASE(config_flags%chem_opt)

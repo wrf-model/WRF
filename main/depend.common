@@ -731,6 +731,7 @@ module_diagnostics_driver.o: \
 		module_diag_zld.o 			\
 		module_diag_afwa.o 			\
                 module_diag_rasm.o                      \
+		module_diag_hailcast.o 			\
 		../frame/module_comm_dm.o		\
 		../frame/module_state_description.o 	\
 		../frame/module_domain.o 		\
@@ -765,6 +766,15 @@ module_diag_afwa.o: \
 
 module_diag_rasm.o: \
                 module_cam_shr_const_mod.o
+
+module_diag_hailcast.o: \
+		../frame/module_configure.o 		\
+		../frame/module_domain.o 		\
+		../frame/module_dm.o 			\
+		../frame/module_state_description.o 	\
+		../frame/module_streams.o           	\
+		../external/esmf_time_f90/module_utility.o \
+		../share/module_model_constants.o
 
 module_diag_refl.o: \
 		../frame/module_dm.o			\

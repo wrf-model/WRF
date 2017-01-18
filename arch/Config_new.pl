@@ -53,6 +53,7 @@ $sw_curl_lib  = "-lcurl";
 $sw_terrain_and_landuse = "";
 $sw_tfl = "" ;
 $sw_cfl = "" ;
+$sw_config_line = "" ;
 while ( substr( $ARGV[0], 0, 1 ) eq "-" )
  {
   if ( substr( $ARGV[0], 1, 5 ) eq "perl=" )
@@ -215,6 +216,10 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
   if ( substr( $ARGV[0], 1, 4 ) eq "cfl=" )
   {
     $sw_cfl=substr( $ARGV[0], 5 ) ;
+  }
+  if ( substr( $ARGV[0], 1, 12 ) eq "config_line=" )
+  {
+    $sw_config_line=substr( $ARGV[0], 13 ) ;
   }
   shift @ARGV ;
  }
@@ -411,6 +416,8 @@ until ( $validresponse ) {
   { $validresponse = 1 ; }
   else
   { printf("\nInvalid response (%d)\n",$response);}
+  $response_opt = $response ; 
+  chop $response_opt ;
 }
 printf "------------------------------------------------------------------------\n" ;
 
@@ -675,6 +682,7 @@ while ( <CONFIGURE_DEFAULTS> )
         if ( $response == 0 ) {
           if ( ! ( $paropt eq 'serial' || $paropt eq 'smpar' ) ) { $response = 1 ; }
         } 
+        $response_nesting = $response ;
         if ( ( $response == 1 ) || ( $response == 2 ) || ( $response == 3 ) ) {
           if ( ( $paropt eq 'serial' || $paropt eq 'smpar' ) ) {   # nesting without MPI
             $sw_stubmpi = "-DSTUBMPI" ;
@@ -784,6 +792,9 @@ while ( <ARCH_PREAMBLE> )
   $_ =~ s:CONFIGURE_NMM_CORE:$sw_nmm_core:g ;
   $_ =~ s:CONFIGURE_COAMPS_CORE:$sw_coamps_core:g ;
   $_ =~ s:CONFIGURE_EXP_CORE:$sw_exp_core:g ;
+  $_ =~ s/CONFIGURE_CONFIG_LINE/$sw_config_line/g ;
+  $_ =~ s/CONFIGURE_CONFIG_NUM/Compiler choice: $response_opt/g ;
+  $_ =~ s/CONFIGURE_CONFIG_NEST/Nesting option: $response_nesting/g ;
 
   $_ =~ s/CONFIGURE_DEP_LIB_PATH/$sw_dep_lib_path/g ;
 

@@ -4969,7 +4969,8 @@ END SUBROUTINE phy_prep
 !======================================================================
 
    SUBROUTINE phy_prep_part2 ( config_flags,                          &
-                         mu,muu,muv,                                  &
+                         mut,muu,muv,                                 &
+                         c1h, c2h, c1f, c2f,                          &
                          RTHRATEN,                                    &
                          RTHBLTEN, RUBLTEN, RVBLTEN,                  &
                          RQVBLTEN, RQCBLTEN, RQIBLTEN,                &
@@ -4995,7 +4996,7 @@ END SUBROUTINE phy_prep
                                        ims, ime, jms, jme, kms, kme, &
                                        its, ite, jts, jte, kts, kte
 
-   REAL , DIMENSION( ims:ime, jms:jme ), INTENT(IN   )   ::     mu, muu, muv
+   REAL , DIMENSION( ims:ime, jms:jme ), INTENT(IN   )   ::     mut, muu, muv
 
    REAL,  DIMENSION( ims:ime , kms:kme, jms:jme ),                   &
           INTENT(INOUT)   ::                               RTHRATEN  
@@ -5041,6 +5042,10 @@ END SUBROUTINE phy_prep
    REAL,  DIMENSION( ims:ime, jms:jme )                            , &
           INTENT(INOUT)   ::                               RMUNDGDTEN
 
+   REAL, DIMENSION( kms:kme ) ,            INTENT(IN   ) ::     c1h, c2h, c1f, c2f
+
+   REAL, DIMENSION( kms:kme ) :: c1, c2
+
    INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end, i_startu, j_startv
    INTEGER :: i, j, k
 
@@ -5063,6 +5068,9 @@ END SUBROUTINE phy_prep
 
     k_start = kts
     k_end = min( kte, kde-1 )
+
+    c1 = c1h
+    c2 = c2h
 
 ! decouple all physics tendencies
 

@@ -580,7 +580,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
      ELSE IF ( F_QC .and. F_QI ) THEN
 ! For Ferrier (note fixed after V3.8.1 for hires window Ferrier)
       q(ii,kk,ixcldice) = max(0.,qi3d(i,k,j)/(1.+qv3d(i,k,j)))
-      q(ii,kk,ixcldliq) = max(0.,qc3d(i,k,j)/(1.+qv3d(i,k,j))*(1.-f_ice_phy(i,k,j))*(1.-f_rain_phy(i,k,j)))
+      q(ii,kk,ixcldliq) = max(0.,qc3d(i,k,j)/(1.+qv3d(i,k,j)))
      ELSE IF ( F_QC .and. F_QR ) THEN
 ! Warm rain or simple ice
       q(ii,kk,ixcldliq) = 0.

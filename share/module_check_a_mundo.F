@@ -376,28 +376,6 @@
          model_config_rec%sf_urban_physics(i) = d1_value
       END DO
 
-!-----------------------------------------------------------------------
-! Check for consistency in the Noah-MP options
-!-----------------------------------------------------------------------
-
-      DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec%sf_surface_physics(i) == NOAHMPSCHEME ) THEN
-
-            ! Noah-MP does not work with the urban schemes
-
-            IF ( model_config_rec%sf_urban_physics(i) /= 0 ) THEN
-               WRITE(wrf_err_message, '(" --- ERROR:   Noah-MP LSM scheme (sf_surface_physics==", I2, ")")') NOAHMPSCHEME
-               CALL wrf_message ( TRIM ( wrf_err_message ) )
-               WRITE(wrf_err_message, '("              does not work with urban physics schemes")')
-         !      CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         fatal_error = .true.
-         count_fatal_error = count_fatal_error + 1
-            ENDIF
-
-         END IF
-      END DO
-
 !------------------------------------------------------------------------
 ! Mills (2011) sea-ice albedo treatment only for Noah LSM and Noah-MP LSM
 !------------------------------------------------------------------------
@@ -606,6 +584,13 @@
          model_config_rec%num_traj = 0 
    END IF
 
+#elif( NMM_CORE == 1 )
+!----------------------------------------------------------------------------
+! If NMM core and trajectories are on then halt.
+!----------------------------------------------------------------------------
+   IF ( model_config_rec%traj_opt /= 0 ) THEN
+     call wrf_error_fatal( 'Trajectories not supported in NMM core' )
+   END IF
 #endif
 
 #if (EM_CORE == 1)

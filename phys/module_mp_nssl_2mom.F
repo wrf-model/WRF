@@ -1531,7 +1531,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
 ! 20130903 acd_mb_washout start
                               rainprod, evapprod,                                       & ! wrf-chem 
 ! 20130903 acd_mb_washout end
-                              cu_used, qrcuten, qscuten, qicuten, qccuten, mu,          & ! hm added
+                              cu_used, qrcuten, qscuten, qicuten, qccuten,              & ! hm added
                               ids,ide, jds,jde, kds,kde,                                &  ! domain dims
                               ims,ime, jms,jme, kms,kme,                                &  ! memory dims
                               its,ite, jts,jte, kts,kte)                                   ! tile dims
@@ -1607,9 +1607,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
 ! qrcuten, rain tendency from parameterized cumulus convection
 ! qscuten, snow tendency from parameterized cumulus convection
 ! qicuten, cloud ice tendency from parameterized cumulus convection
-! mu : air mass in column
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), optional, INTENT(IN):: qrcuten, qscuten, qicuten, qccuten
-   REAL, DIMENSION(ims:ime, jms:jme), optional, INTENT(IN)::  mu
    INTEGER, optional, intent(in) :: cu_used
 
 !
@@ -1961,22 +1959,22 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
          call calcnfromq(nx,ny,nz,an,na,nor,nor,dn1)
        ENDIF
 
-      IF ( present( mu ) .and. present(cu_used) .and.         &
+      IF ( present(cu_used) .and.         &
            ( present( qrcuten ) .or. present( qscuten ) .or.  &
              present( qicuten ) .or. present( qccuten ) ) ) THEN
 
        IF ( cu_used == 1 ) THEN
        DO kz = kts,kte
         DO ix = its,ite
-!         IF ( present( qrcuten ) ) qrcuten2d(ix,kz)   = qrcuten(ix,kz,jy)/mu(ix,jy)
-!         IF ( present( qscuten ) ) qscuten2d(ix,kz)   = qscuten(ix,kz,jy)/mu(ix,jy)
-!         IF ( present( qicuten ) ) qicuten2d(ix,kz)   = qicuten(ix,kz,jy)/mu(ix,jy)
-!         IF ( present( qccuten ) ) qccuten2d(ix,kz)   = qccuten(ix,kz,jy)/mu(ix,jy)
+!         IF ( present( qrcuten ) ) qrcuten2d(ix,kz)   = qrcuten(ix,kz,jy)
+!         IF ( present( qscuten ) ) qscuten2d(ix,kz)   = qscuten(ix,kz,jy)
+!         IF ( present( qicuten ) ) qicuten2d(ix,kz)   = qicuten(ix,kz,jy)
+!         IF ( present( qccuten ) ) qccuten2d(ix,kz)   = qccuten(ix,kz,jy)
 
-         IF ( present( qrcuten ) ) ancuten(ix,1,kz,lr) = dtp*qrcuten(ix,kz,jy)/mu(ix,jy)
-         IF ( present( qscuten ) ) ancuten(ix,1,kz,ls) = dtp*qscuten(ix,kz,jy)/mu(ix,jy)
-         IF ( present( qicuten ) ) ancuten(ix,1,kz,li) = dtp*qicuten(ix,kz,jy)/mu(ix,jy)
-         IF ( present( qccuten ) ) ancuten(ix,1,kz,lc) = dtp*qccuten(ix,kz,jy)/mu(ix,jy)
+         IF ( present( qrcuten ) ) ancuten(ix,1,kz,lr) = dtp*qrcuten(ix,kz,jy)
+         IF ( present( qscuten ) ) ancuten(ix,1,kz,ls) = dtp*qscuten(ix,kz,jy)
+         IF ( present( qicuten ) ) ancuten(ix,1,kz,li) = dtp*qicuten(ix,kz,jy)
+         IF ( present( qccuten ) ) ancuten(ix,1,kz,lc) = dtp*qccuten(ix,kz,jy)
          
         ENDDO
        ENDDO

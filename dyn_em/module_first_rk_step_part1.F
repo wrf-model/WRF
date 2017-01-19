@@ -189,26 +189,11 @@ BENCH_END(init_zero_tend_tim)
         CALL phy_prep ( config_flags,                                    &
                         grid%mut, grid%muu, grid%muv, grid%u_2,          &
                         grid%v_2, grid%p, grid%pb, grid%alt,             &
-                        grid%ph_2, grid%phb, grid%t_2, grid%tsk, moist, num_moist,   &
+                        grid%ph_2, grid%phb, grid%t_2, moist, num_moist,   &
                         grid%rho,th_phy, p_phy, pi_phy, grid%u_phy, grid%v_phy,      &
                         p8w, t_phy, t8w, grid%z, grid%z_at_w, dz8w,      &
                         grid%p_hyd, grid%p_hyd_w, grid%dnw,              &
                         grid%fnm, grid%fnp, grid%znw, grid%p_top,        &
-                        grid%rthraten,                                   &
-                        grid%rthblten, grid%rublten, grid%rvblten,       &
-                        grid%rqvblten, grid%rqcblten, grid%rqiblten,     &
-                        grid%rucuten,  grid%rvcuten,  grid%rthcuten,     &
-                        grid%rqvcuten, grid%rqccuten, grid%rqrcuten,     &
-                        grid%rqicuten, grid%rqscuten,                    &
-                        grid%rushten,  grid%rvshten,  grid%rthshten,     &
-                        grid%rqvshten, grid%rqcshten, grid%rqrshten,     &
-                        grid%rqishten, grid%rqsshten, grid%rqgshten,     &
-                        grid%rthften,  grid%rqvften,                     &
-                        grid%RUNDGDTEN, grid%RVNDGDTEN, grid%RTHNDGDTEN, &
-                        grid%RPHNDGDTEN,grid%RQVNDGDTEN, grid%RMUNDGDTEN,&
-!jdf
-                        grid%landmask,grid%xland,                 &
-!jdf
                         ids, ide, jds, jde, kds, kde,                    &
                         ims, ime, jms, jme, kms, kme,                    &
                         grid%i_start(ij), grid%i_end(ij),                &
@@ -479,8 +464,8 @@ BENCH_START(surf_driver_tim)
      &        ,QSHLTR=grid%qshltr      ,QZ0=grid%qz0            ,RAINCV=grid%raincv      &
      &        ,RA_LW_PHYSICS=config_flags%ra_lw_physics         ,RHO=grid%rho            &
      &        ,RMOL=grid%rmol          ,SFCEVP=grid%sfcevp      ,SFCEXC=grid%sfcexc      &
-     &        ,SFCRUNOFF=grid%sfcrunoff                                        &
-     &        ,opt_thcnd=config_flags%opt_thcnd                                                   &
+     &        ,SFCRUNOFF=grid%sfcrunoff,ACRUNOFF=grid%ACRUNOFF                           &
+     &        ,opt_thcnd=config_flags%opt_thcnd                                          &
      &        ,SF_SFCLAY_PHYSICS=config_flags%sf_sfclay_physics                        &
      &        ,SF_SURFACE_PHYSICS=config_flags%sf_surface_physics  ,SH2O=grid%sh2o          &
      &        ,SHDMAX=grid%shdmax      ,SHDMIN=grid%shdmin      ,SMOIS=grid%smois        &
@@ -726,7 +711,9 @@ BENCH_START(surf_driver_tim)
      &        , zsnsoxy=grid%zsnsoxy  , snicexy=grid%snicexy , snliqxy=grid%snliqxy  &
      &        ,lfmassxy=grid%lfmassxy ,rtmassxy=grid%rtmassxy,stmassxy=grid%stmassxy &
      &        ,  woodxy=grid%woodxy   ,stblcpxy=grid%stblcpxy,fastcpxy=grid%fastcpxy &
-     &        , grainxy=grid%grainxy  ,   gddxy=grid%gddxy                           &
+     &        , grainxy=grid%grainxy  ,   gddxy=grid%gddxy   ,   pgsxy=grid%pgsxy    &
+     &        , cropcat=grid%cropcat                                                 &
+     &        ,planting=grid%planting , harvest=grid%harvest ,season_gdd=grid%season_gdd  &
      &        ,  xsaixy=grid%xsaixy   , taussxy=grid%taussxy                         &
      &        ,  t2mvxy=grid%t2mvxy   ,  t2mbxy=grid%t2mbxy                          &
      &        ,  q2mvxy=grid%q2mvxy   ,  q2mbxy=grid%q2mbxy                          & 

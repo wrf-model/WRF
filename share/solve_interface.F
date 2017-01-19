@@ -72,7 +72,7 @@ SUBROUTINE solve_interface ( grid )
 # endif
 #endif
 
-# if ( EM_CORE == 1 )
+# if ( EM_CORE == 1 && WRFPLUS != 1 )
    if( grid%traj_opt /= no_trajectory ) then
      write(dbg_msg,'(''solve_xface('',i2.2,''): Before call to trajectory_driver'')') grid%id
      call wrf_debug( 200,trim(dbg_msg) )

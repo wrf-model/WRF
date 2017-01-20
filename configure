@@ -419,7 +419,7 @@ fi
 # For the hybrid build, stay away from NMM and DA; Vertical nesting is 
 # a problem for ARW
 
-if [ -n "$WRF_NMM_CORE" -a $WRF_NMM_CORE = 1 ] ; then
+if [ -n "$WRF_NMM_CORE" -a "$WRF_NMM_CORE" = "1" ] ; then
     TFL="-traditional-cpp"
     CFL="-P"
 elif [ "$wrf_core" = "DA_CORE" -o "$wrf_core" = "4D_DA_CORE" ] ; then

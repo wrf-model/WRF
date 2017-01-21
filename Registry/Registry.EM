@@ -19,6 +19,7 @@ include registry.rasm_diag
 include registry.sbm
 include registry.elec
 include registry.bdy_perturb
+include registry.hyb_coord
 include registry.new3d_wif
 
 

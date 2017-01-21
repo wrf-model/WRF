@@ -1,3 +1,8 @@
+#if ( HYBRID_COORD==1 )
+#  define mu(...) (c1h(k)*XXPCXX(__VA_ARGS__)+c2h(k))
+#  define XXPCXX(...) mu(__VA_ARGS__)
+#endif
+
 !WRF:MEDIATION_LAYER:FIRE_MODEL
 ! Routines dealing with the atmosphere
 
@@ -14,7 +19,7 @@ SUBROUTINE fire_tendency( &
     its,ite, kts,kte, jts,jte,   &
     grnhfx,grnqfx,canhfx,canqfx, & ! heat fluxes summed up to  atm grid 
     alfg,alfc,z1can,             & ! coeffients, properties, geometry 
-    zs,z_at_w,dz8w,mu,rho,       &
+    zs,z_at_w,dz8w,mu,c1h,c2h,rho, &
     rthfrten,rqvfrten)             ! theta and Qv tendencies 
 
 ! This routine is atmospheric physics 
@@ -36,6 +41,7 @@ SUBROUTINE fire_tendency( &
    REAL, INTENT(in), DIMENSION( ims:ime,jms:jme ) :: canhfx,canqfx  ! W/m^2
    REAL, INTENT(in), DIMENSION( ims:ime,jms:jme ) :: zs  ! topography (m abv sealvl)
    REAL, INTENT(in), DIMENSION( ims:ime,jms:jme ) :: mu  ! dry air mass (Pa)
+   REAL, INTENT(in), DIMENSION( kms:kme         ) :: c1h, c2h ! Hybrid coordinate weights
 
    REAL, INTENT(in), DIMENSION( ims:ime,kms:kme,jms:jme ) :: z_at_w ! m abv sealvl
    REAL, INTENT(in), DIMENSION( ims:ime,kms:kme,jms:jme ) :: dz8w   ! dz across w-lvl

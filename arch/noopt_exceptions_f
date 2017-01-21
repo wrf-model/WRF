@@ -7,7 +7,6 @@
 # mediation_interp_domain.o : mediation_interp_domain.F
 
 # compile these without high optimization to speed compile
-mediation_integrate.o : mediation_integrate.F
 track_driver.o : track_driver.F
 convert_nmm.o : convert_nmm.F
 init_modules_em.o : init_modules_em.F
@@ -20,7 +19,6 @@ module_comm_dm_2.o : module_comm_dm_2.F
 module_comm_dm_3.o : module_comm_dm_3.F
 module_comm_nesting_dm.o : module_comm_nesting_dm.F
 module_configure.o : module_configure.F
-module_dm.o : module_dm.F
 module_domain.o : module_domain.F
 module_domain_type.o : module_domain_type.F
 module_alloc_space_0.o : module_alloc_space_0.F
@@ -34,14 +32,8 @@ module_alloc_space_7.o : module_alloc_space_7.F
 module_alloc_space_8.o : module_alloc_space_8.F
 module_alloc_space_9.o : module_alloc_space_9.F
 module_tiles.o : module_tiles.F
-module_fddaobs_rtfdda.o : module_fddaobs_rtfdda.F
 module_initialize.o : module_initialize.F
 module_physics_init.o : module_physics_init.F 
-module_initialize_b_wave.o : module_initialize_b_wave.F
-module_initialize_hill2d_x.o : module_initialize_hill2d_x.F
-module_initialize_quarter_ss.o : module_initialize_quarter_ss.F
-module_initialize_real.o : module_initialize_real.F
-module_initialize_real.o: module_initialize_real.F
 module_initialize_squall2d_x.o : module_initialize_squall2d_x.F
 module_initialize_squall2d_y.o : module_initialize_squall2d_y.F
 module_initialize_scm_xy.o : module_initialize_scm_xy.F
@@ -54,7 +46,6 @@ module_state_description.o : module_state_description.F
 output_wrf.o : output_wrf.F
 solve_interface.o : solve_interface.F
 start_domain.o : start_domain.F
-start_em.o : start_em.F
 wrf_bdyin.o : wrf_bdyin.F
 wrf_bdyout.o : wrf_bdyout.F
 wrf_ext_read_field.o : wrf_ext_read_field.F
@@ -72,17 +63,10 @@ nl_get_1_routines.o : nl_get_1_routines.F
 nl_set_0_routines.o : nl_set_0_routines.F
 nl_set_1_routines.o : nl_set_1_routines.F
 
-mediation_integrate.o \
 track_driver.o \
 convert_nmm.o \
 init_modules_em.o \
-module_dm.o \
-module_fddaobs_rtfdda.o \
 module_initialize.o \
-module_initialize_b_wave.o \
-module_initialize_hill2d_x.o \
-module_initialize_quarter_ss.o \
-module_initialize_real.o \
 module_initialize_squall2d_x.o \
 module_initialize_squall2d_y.o \
 module_initialize_scm_xy.o \
@@ -95,7 +79,6 @@ module_tiles.o \
 output_wrf.o \
 solve_interface.o \
 start_domain.o \
-start_em.o \
 wrf_fddaobs_in.o \
 wrf_tsin.o :
 	$(RM) $@

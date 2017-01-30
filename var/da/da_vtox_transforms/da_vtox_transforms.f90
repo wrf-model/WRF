@@ -8,7 +8,7 @@ module da_vtox_transforms
    use module_dm, only : wrf_dm_sum_real,wrf_dm_sum_reals
 #ifdef DM_PARALLEL
    use module_dm, only : local_communicator, mytask, ntasks, ntasks_x, & 
-      ntasks_y, data_order_xy, data_order_xyz, data_order_xzy, get_dm_max_halo_width
+      ntasks_y, data_order_xy, data_order_xyz
    use module_comm_dm, only : halo_psichi_uv_adj_sub,halo_ssmi_xa_sub,halo_sfc_xa_sub, &
       halo_radar_xa_w_sub, halo_xa_sub, halo_psichi_uv_sub, &
       halo_psichi_uv_sub, halo_xa_wpec_sub,halo_xb_wpec_sub
@@ -49,7 +49,7 @@ module da_vtox_transforms
                           ims_int,ime_int,jms_int,jme_int,kms_int,kme_int, &
                           ids_int,ide_int,jds_int,jde_int,kds_int,kde_int, &
                           ips_int,ipe_int,jps_int,jpe_int,kps_int,kpe_int
-   use da_control, only : dual_res_type, ob_locs, total_here
+   use da_control, only : dual_res_type, aens_locs
    use da_control, only : c1h, c2h, use_cv_w, alpha_hydrometeors
 
    use da_define_structures, only : be_type, xbx_type,da_zero_vp_type,da_zero_x

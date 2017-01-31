@@ -17,7 +17,8 @@ subroutine da_get_time_slots(nt,tmin,tana,tmax,time_slots,itime_ana)
    integer   :: min_yyyy,min_mm,min_dd,min_hh,min_mn,min_ss
    integer   :: max_yyyy,max_mm,max_dd,max_hh,max_mn,max_ss
    character :: s
-   real      :: dt, time_ana
+   real      :: dt
+   real*8    :: time_ana, time_tmp
    integer   :: it
 
    if (trace_use) call da_trace_entry("da_get_time_slots")
@@ -56,9 +57,11 @@ subroutine da_get_time_slots(nt,tmin,tana,tmax,time_slots,itime_ana)
    if ( nt == 1 .or.  abs(time_ana-time_slots(0)) < 0.1 ) then
       itime_ana = 1
    else
-      do it = 2, nt
-         if ( abs(time_ana-(time_slots(it)-time_slots(it-1))*0.5) < 0.1 ) then
+      do it = 2, nt-1
+         time_tmp = time_slots(0) + (it-1) * dt
+         if ( abs(time_ana-time_tmp) < 0.1 ) then
             itime_ana = it
+            exit
          end if
       end do
    end if

@@ -404,10 +404,6 @@ has_daylight : &
          do wn = 1,nwave
            e_fld(:,wn) = 0.
          end do
-!        k = int( z_top(i,j) )
-!        n_exo_z = 25 - k + 1
-!        n_tuv_z = kte + n_exo_z + 5
-!        nlev = n_tuv_z + 1
          wrk(1) = m2km*(z(i,kte,j) - z_at_w(i,kts,j))
          call setzgrid( wrk(1), n_exo_z, zexo_grd )
          n_tuv_z = kte + n_exo_z
@@ -745,7 +741,7 @@ rate_loop: &
 #endif
        endif has_daylight
 
-#include <tuv2wrf_jvals.inc>
+#include "tuv2wrf_jvals.inc"
 
      end do long_loop
    end do lat_loop
@@ -805,6 +801,10 @@ rate_loop: &
    CONTAINS
 
    subroutine setzgrid( ztop, nexo, zexo_grd )
+!---------------------------------------------------------------------
+!  set the vertical grid above model top up to 50 km for photorate
+!  calculation
+!---------------------------------------------------------------------
 
    integer, intent(out) :: nexo
    real, intent(in)     :: ztop
@@ -1059,7 +1059,7 @@ is_initialized: &
       if( .not. tuv_is_initialized ) then
         has_exo_coldens = config_flags%has_o3_exo_coldens .or. config_flags%scale_o3_to_grnd_exo_coldens
         is_full_tuv = config_flags%is_full_tuv
-#include <tuvdef_jvals.inc>
+#include "tuvdef_jvals.inc"
         call get_xsqy_tab
         if( .not. is_full_tuv ) then
           allocate( xsqy_is_zdep(nj),stat=astat )

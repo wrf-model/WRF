@@ -88,6 +88,11 @@ subroutine da_scan_obs_radar (iv, filename, grid)
 
       read (unit=char_ned (69:74), fmt='(I6)', iostat = iost) platform % stn % numobs
 
+      if(char_ned (1:5).ne."RADAR") then
+         write(unit=message(1),fmt='(A,I3)')'Error reading header information for station number ',n
+         call da_error(__FILE__,__LINE__,message(1:1))
+      end if
+
       ! 3.4 skip two lines
 
       read (unit=iunit, fmt = '(A)', iostat = iost)
@@ -107,6 +112,13 @@ subroutine da_scan_obs_radar (iv, filename, grid)
                       platform % info % lon,       &
                       platform % info % elv,       &
                       platform % info % levels
+
+         if (iost /= 0) then
+            write(unit=message(1),fmt='(A)')'Error reading next observation for '
+            write(unit=message(2),fmt='(A)')char_ned
+            write(unit=message(3),fmt='(A,I6,A,I6)')'Observation number ',j,' out of ',platform % stn % numobs
+            call da_error(__FILE__,__LINE__,message(1:3))
+         end if
 
          if (platform%info%lon == 180.0  ) platform%info%lon =-180.000
          ! Fix funny wind direction at Poles

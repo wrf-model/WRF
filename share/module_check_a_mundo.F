@@ -1389,7 +1389,11 @@
      IF (model_config_rec%hybrid_opt .NE. 0) THEN
         WRITE(wrf_err_message,'(A)') '--- ERROR: The code was not built with hybrid vertical coordinate enabled'
         CALL wrf_message( wrf_err_message )
-        WRITE(wrf_err_message,'(A)') '---        Either set hybrid_opt=0, or re-compile with HVC enabled'       
+        WRITE(wrf_err_message,'(A)') '---        Either set hybrid_opt=0 in the namelist.input file, or '
+        CALL wrf_message( wrf_err_message )
+        WRITE(wrf_err_message,'(A)') '---        re-compile with the hybrid vertical coordinate enabled'       
+        CALL wrf_message( wrf_err_message )
+        WRITE(wrf_err_message,'(A)') '---        For example: clean -a ; configure -hyb ; compile em_real '
         CALL wrf_message( wrf_err_message )
         fatal_error = .true.
         count_fatal_error = count_fatal_error + 1

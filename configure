@@ -420,20 +420,20 @@ fi
 # a problem for ARW
 
 if [ -n "$WRF_NMM_CORE" -a "$WRF_NMM_CORE" = "1" ] ; then
-    TFL="-traditional-cpp"
-    CFL="-P"
+  TFL="-traditional-cpp"
+  CFL="-P -nostdinc"
 elif [ "$wrf_core" = "DA_CORE" -o "$wrf_core" = "4D_DA_CORE" ] ; then
   TFL="-traditional-cpp"
-  CFL="-P"
+  CFL="-P -nostdinc"
 elif [ "$vnest" = "VN" ] ; then
   TFL="-traditional-cpp"
-  CFL="-P"
+  CFL="-P -nostdinc"
 elif [ "$hyb" = "NOHYB" ] ; then
   TFL="-traditional-cpp"
-  CFL="-P"
+  CFL="-P -nostdinc"
 else
   TFL=" "
-  CFL="-P -C"
+  CFL="-P -C -nostdinc"
   compileflags="${compileflags}!-DHYBRID_COORD=1"
 fi
 

@@ -802,15 +802,13 @@
 
          ! adding the ensemble contribution
          if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
-            if ( use_4denvar ) then
-               num_subtwindow = num_fgat_time
-            else
-               num_subtwindow = 1
-            end if
-            do iwin = num_subtwindow, 1 , -1
-               call da_transform_vpatox (grid,be,grid%ep,grid%vp,iwin)
-               call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
-            end do
+            ! add it to the analysis time ifgat_ana
+            ! ifgat_ana is declared in da_control.f90 and defined in da_get_time_slots.inc
+            write(unit=message(1),fmt='(a)')    ''
+            write(unit=message(2),fmt='(a,i3)') 'Applying ensemble contribution to FGAT time: ', ifgat_ana
+            call da_message(message(1:2))
+            call da_transform_vpatox (grid,be,grid%ep,grid%vp,ifgat_ana)
+            call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
          end if !ne>0
       else
          call da_transform_vtox (grid,be%cv%size_jb,xbx,be,grid%ep,xhat(1:be%cv%size_jb),grid%vv,grid%vp)

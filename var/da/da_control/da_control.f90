@@ -652,6 +652,7 @@ module da_control
                       299.9,  249.9, 199.9, 149.9, 99.9, 49.9/)
 
    real*8, allocatable :: time_slots(:)
+   integer             :: ifgat_ana !index of First Guess at Appropriate Time of analysis
 
    logical :: global
 

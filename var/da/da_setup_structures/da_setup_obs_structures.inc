@@ -241,7 +241,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
 
    allocate ( time_slots(0:num_fgat_time) )
    call da_get_time_slots(num_fgat_time,time_window_min,analysis_date, &
-                          time_window_max, time_slots)
+                          time_window_max, time_slots, ifgat_ana)
 
    if (use_obsgts) then
       ! Conventional obs can be in BUFR or ascii format

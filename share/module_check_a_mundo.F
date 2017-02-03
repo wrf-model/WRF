@@ -1382,7 +1382,9 @@
      END DO 
 
 !-----------------------------------------------------------------------
-!  The hybrid vertical coordinate requires the code to be built.
+!  The hybrid vertical coordinate (HVC) namelist.input option (hybrid_opt=2) 
+!  requires the code to be built with the HVC code enabled.  This is a run-time
+!  test to make sure the correct compile-time capabilities are available.
 !-----------------------------------------------------------------------
 #if ( HYBRID_COORD==1 )
 #else

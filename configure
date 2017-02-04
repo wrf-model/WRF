@@ -50,7 +50,7 @@ if [ -n "$print_usage" ] ; then
   echo '-d    build with debugging information and no optimization'
   echo '-D    build with -d AND floating traps, traceback, uninitialized variables'
   echo '-r8   build with 8 byte reals'
-  echo '-vn   build with vertical nesting (no hybrid option for ARW)'
+  echo '-hyb  build with hybrid vertical coordinate (HVC) for ARW only'
   echo '-help print this message'
   echo '*****************************************************************************'
   echo ' '

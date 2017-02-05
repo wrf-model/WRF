@@ -1555,6 +1555,8 @@
 !
 !</DESCRIPTION>
 
+      USE module_domain, ONLY : change_to_lower_case
+
       IMPLICIT NONE
 #if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
 
@@ -1565,6 +1567,7 @@
                                            orig_bl_pbl_physics, orig_sf_sfclay_physics, orig_sf_surface_physics
       CHARACTER, DIMENSION( max_domains ) :: modified_mp_option, modified_cu_option, modified_ra_lw_option, modified_ra_sw_option, &
                                              modified_bl_pbl_option, modified_sf_sfclay_option, modified_sf_surface_option
+      CHARACTER (LEN=256) :: physics_suite_lowercase
 
       max_dom = model_config_rec % max_dom
 
@@ -1593,19 +1596,21 @@
       modified_sf_surface_option(1:max_dom) = ' '
       orig_sf_surface_physics(1:max_dom) = model_config_rec % sf_surface_physics(1:max_dom)
 
+      CALL change_to_lower_case(trim(model_config_rec % physics_suite), physics_suite_lowercase)
+
       CALL wrf_message ('*************************************')
-      CALL wrf_message ('Configuring physics suite '''//trim(model_config_rec % physics_suite)//'''')
+      CALL wrf_message ('Configuring physics suite '''//trim(physics_suite_lowercase)//'''')
       CALL wrf_message ('')
 
       !
       ! Set options based on the suite selection
       !
-      SELECT CASE ( trim(model_config_rec % physics_suite) )
+      SELECT CASE ( trim(physics_suite_lowercase) )
 
       !
       ! CONUS suite
       !
-      CASE ('CONUS')
+      CASE ('conus')
          DO i = 1, max_dom
 
             IF ( model_config_rec % cu_physics(i) == -1 ) model_config_rec % cu_physics(i) = TIEDTKESCHEME               ! Tiedtke

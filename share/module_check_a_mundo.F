@@ -1603,9 +1603,9 @@
       SELECT CASE ( trim(model_config_rec % physics_suite) )
 
       !
-      ! Continental convection suite
+      ! CONUS suite
       !
-      CASE ('continental_convection')
+      CASE ('CONUS')
          DO i = 1, max_dom
 
             IF ( model_config_rec % cu_physics(i) == -1 ) model_config_rec % cu_physics(i) = TIEDTKESCHEME               ! Tiedtke
@@ -1619,9 +1619,9 @@
          END DO
 
       !
-      ! Tropical convection suite
+      ! Tropical suite
       !
-      CASE ('tropical_convection')
+      CASE ('tropical')
          DO i = 1, max_dom
 
             IF ( model_config_rec % cu_physics(i) == -1 ) model_config_rec % cu_physics(i) = NTIEDTKESCHEME              ! New Tiedtke

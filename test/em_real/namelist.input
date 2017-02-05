@@ -52,7 +52,7 @@
  /
 
  &physics
- physics_suite                       = 'continental_convection'
+ physics_suite                       = 'CONUS'
  radt                                = 30,    30,    30,
  bldt                                = 0,     0,     0,
  cudt                                = 5,     5,     5,

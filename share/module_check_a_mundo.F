@@ -1568,6 +1568,7 @@
       CHARACTER, DIMENSION( max_domains ) :: modified_mp_option, modified_cu_option, modified_ra_lw_option, modified_ra_sw_option, &
                                              modified_bl_pbl_option, modified_sf_sfclay_option, modified_sf_surface_option
       CHARACTER (LEN=256) :: physics_suite_lowercase
+      CHARACTER (LEN=32) :: formatstring
 
       max_dom = model_config_rec % max_dom
 
@@ -1646,11 +1647,13 @@
 
       END SELECT
 
+      WRITE (formatstring, '(A,I3,A)') '(A21,', max_dom, '(I6,A1))'
+
       !
       ! Print microphysics options
       !
       WHERE (model_config_rec % mp_physics(1:max_dom) == orig_mp_physics(1:max_dom)) modified_mp_option(1:max_dom) = '*'
-      WRITE (wrf_err_message, FMT='(A21,*(I6,A1))') 'mp_physics: ', &
+      WRITE (wrf_err_message, FMT=TRIM(formatstring)) 'mp_physics: ', &
                                                     (model_config_rec % mp_physics(i), modified_mp_option(i), i=1,max_dom)
       CALL wrf_message (wrf_err_message)
 
@@ -1658,7 +1661,7 @@
       ! Print cumulus options
       !
       WHERE (model_config_rec % cu_physics(1:max_dom) == orig_cu_physics(1:max_dom)) modified_cu_option(1:max_dom) = '*'
-      WRITE (wrf_err_message, FMT='(A21,*(I6,A1))') 'cu_physics: ', &
+      WRITE (wrf_err_message, FMT=TRIM(formatstring)) 'cu_physics: ', &
                                                     (model_config_rec % cu_physics(i), modified_cu_option(i), i=1,max_dom)
       CALL wrf_message (wrf_err_message)
 
@@ -1666,7 +1669,7 @@
       ! Print LW radiation options
       !
       WHERE (model_config_rec % ra_lw_physics(1:max_dom) == orig_ra_lw_physics(1:max_dom)) modified_ra_lw_option(1:max_dom) = '*'
-      WRITE (wrf_err_message, FMT='(A21,*(I6,A1))') 'ra_lw_physics: ', &
+      WRITE (wrf_err_message, FMT=TRIM(formatstring)) 'ra_lw_physics: ', &
                                                     (model_config_rec % ra_lw_physics(i), modified_ra_lw_option(i), i=1,max_dom)
       CALL wrf_message (wrf_err_message)
 
@@ -1674,7 +1677,7 @@
       ! Print SW radiation options
       !
       WHERE (model_config_rec % ra_sw_physics(1:max_dom) == orig_ra_sw_physics(1:max_dom)) modified_ra_sw_option(1:max_dom) = '*'
-      WRITE (wrf_err_message, FMT='(A21,*(I6,A1))') 'ra_sw_physics: ', &
+      WRITE (wrf_err_message, FMT=TRIM(formatstring)) 'ra_sw_physics: ', &
                                                     (model_config_rec % ra_sw_physics(i), modified_ra_sw_option(i), i=1,max_dom)
       CALL wrf_message (wrf_err_message)
 
@@ -1682,7 +1685,7 @@
       ! Print boundary layer options
       !
       WHERE (model_config_rec % bl_pbl_physics(1:max_dom) == orig_bl_pbl_physics(1:max_dom)) modified_bl_pbl_option(1:max_dom) = '*'
-      WRITE (wrf_err_message, FMT='(A21,*(I6,A1))') 'bl_pbl_physics: ', &
+      WRITE (wrf_err_message, FMT=TRIM(formatstring)) 'bl_pbl_physics: ', &
                                                     (model_config_rec % bl_pbl_physics(i), modified_bl_pbl_option(i), i=1,max_dom)
       CALL wrf_message (wrf_err_message)
 
@@ -1691,7 +1694,7 @@
       !
       WHERE (model_config_rec % sf_sfclay_physics(1:max_dom) == orig_sf_sfclay_physics(1:max_dom)) &
             modified_sf_sfclay_option(1:max_dom) = '*'
-      WRITE (wrf_err_message, FMT='(A21,*(I6,A1))') &
+      WRITE (wrf_err_message, FMT=TRIM(formatstring)) &
             'sf_sfclay_physics: ', (model_config_rec % sf_sfclay_physics(i), modified_sf_sfclay_option(i), i=1,max_dom)
       CALL wrf_message (wrf_err_message)
 
@@ -1700,7 +1703,7 @@
       !
       WHERE (model_config_rec % sf_surface_physics(1:max_dom) == orig_sf_surface_physics(1:max_dom)) &
             modified_sf_surface_option(1:max_dom) = '*'
-      WRITE (wrf_err_message, FMT='(A21,*(I6,A1))') &
+      WRITE (wrf_err_message, FMT=TRIM(formatstring)) &
             'sf_surface_physics: ', (model_config_rec % sf_surface_physics(i), modified_sf_surface_option(i), i=1,max_dom)
       CALL wrf_message (wrf_err_message)
  

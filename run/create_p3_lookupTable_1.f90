@@ -7,8 +7,8 @@ PROGRAM make_p3_lookuptable1
 !
 !  Note:  compile with double-precision (pgf90 -r8 create_p3_lookupTable_1.f90)
 !
-! P3 package version: v2.2-b05
-! Last modified     : 2016-06-17
+! P3 package version: v2.3.2
+! Last modified     : 2017-01-23
 !______________________________________________________________________________________
 
  implicit none

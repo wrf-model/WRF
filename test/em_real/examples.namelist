@@ -547,5 +547,5 @@ which can be changed by the user for sensitivity testing purposes.
 
 &time_control
  write_input                         = .TRUE.,
- inputout_interval_m                 = 60,
+ inputout_interval_m                 = 60, 60, 60
  input_outname                       = "wrfinput_out_d<domain>_<date>"

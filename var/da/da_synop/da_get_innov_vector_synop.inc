@@ -140,6 +140,9 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
                iv%synop(n)%t%error = iv%synop(n)%t%error * err_inflate_fac
                iv%synop(n)%p%error = iv%synop(n)%p%error * err_inflate_fac
                iv%synop(n)%q%error = iv%synop(n)%q%error * err_inflate_fac
+               if ( abs(iv%synop(n)%t%error) > abs(missing_r)) iv%synop(n)%t%error = missing_r
+               if ( abs(iv%synop(n)%p%error) > abs(missing_r)) iv%synop(n)%p%error = missing_r
+               if ( abs(iv%synop(n)%q%error) > abs(missing_r)) iv%synop(n)%q%error = missing_r
             end if
 
          else if (ob % synop(n) % p > 1.0) then

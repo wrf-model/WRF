@@ -133,7 +133,7 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
                end if
             end if
 
-            if ( it == 1 .and. obs_err_inflate ) then
+            if ( (it == 1) .and. (obs_err_inflate) .and. (abs(hd) <= Max_StHeight_Diff) ) then
                err_inflate_fac = MIN(exp(abs(hd)/stn_ht_diff_scale),100.)
                !iv%synop(n)%u%error = iv%synop(n)%u%error * err_inflate_fac
                !iv%synop(n)%v%error = iv%synop(n)%v%error * err_inflate_fac

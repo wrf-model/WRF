@@ -1624,6 +1624,15 @@
       END IF
 
 !-----------------------------------------------------------------------
+! This WRF version does not support trajectories on a global domain
+!-----------------------------------------------------------------------
+      IF (  model_config_rec % polar(1) .AND. &
+            model_config_rec % fft_filter_lat .LT. 90. .AND. &
+            model_config_rec % traj_opt .NE. 0 ) THEN
+         CALL wrf_error_fatal ( '--- ERROR: Trajectories not supported on global domain' )
+      END IF
+
+!-----------------------------------------------------------------------
 ! If any CAM scheme is turned on, then there are a few shared variables.
 ! These need to be allocated when any CAM scheme is active.
 !-----------------------------------------------------------------------

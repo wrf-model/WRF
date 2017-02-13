@@ -134,15 +134,12 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
             end if
 
             if ( it == 1 .and. obs_err_inflate ) then
-               err_inflate_fac = exp(abs(hd)/stn_ht_diff_scale)
+               err_inflate_fac = MIN(exp(abs(hd)/stn_ht_diff_scale),100.)
                !iv%synop(n)%u%error = iv%synop(n)%u%error * err_inflate_fac
                !iv%synop(n)%v%error = iv%synop(n)%v%error * err_inflate_fac
                iv%synop(n)%t%error = iv%synop(n)%t%error * err_inflate_fac
                iv%synop(n)%p%error = iv%synop(n)%p%error * err_inflate_fac
                iv%synop(n)%q%error = iv%synop(n)%q%error * err_inflate_fac
-               if ( abs(iv%synop(n)%t%error) > abs(missing_r)) iv%synop(n)%t%error = missing_r
-               if ( abs(iv%synop(n)%p%error) > abs(missing_r)) iv%synop(n)%p%error = missing_r
-               if ( abs(iv%synop(n)%q%error) > abs(missing_r)) iv%synop(n)%q%error = missing_r
             end if
 
          else if (ob % synop(n) % p > 1.0) then

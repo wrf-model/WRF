@@ -2117,7 +2117,7 @@ rconfig   real    vmax_ratio           namelist,tc      max_bogus      -999.   i
 rconfig   real    rankine_lid          namelist,tc      1              -999.   irh    "top pressure limit for the tc bogus scheme"
 
 # Physics
-rconfig   character  physics_suite        namelist,physics      1           "CONUS" rh "Physics suite selection" "physics suite to use for all domains: CONUS or tropical" "character string"
+rconfig   character  physics_suite        namelist,physics      1           "none" rh "Physics suite selection" "physics suite to use for all domains: CONUS, tropical, or none" "character string"
 rconfig   logical  force_read_thompson   namelist,physics      1           .false.
 rconfig   logical  write_thompson_tables   namelist,physics     1           .true.
 rconfig   integer     mp_physics          namelist,physics	max_domains    -1     irh       "mp_physics"            ""      ""

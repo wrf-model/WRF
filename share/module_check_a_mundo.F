@@ -1599,6 +1599,17 @@
 
       CALL change_to_lower_case(trim(model_config_rec % physics_suite), physics_suite_lowercase)
 
+      !
+      ! If physics suite is 'none', we can return early
+      !
+      IF ( trim(physics_suite_lowercase) == 'none' ) THEN
+         CALL wrf_message ('*************************************')
+         CALL wrf_message ('No physics suite selected.')
+         CALL wrf_message ('Physics options will be used directly from the namelist.')
+         CALL wrf_message ('*************************************')
+         RETURN
+      END IF
+
       CALL wrf_message ('*************************************')
       CALL wrf_message ('Configuring physics suite '''//trim(physics_suite_lowercase)//'''')
       CALL wrf_message ('')
@@ -1639,8 +1650,6 @@
             IF ( model_config_rec % sf_surface_physics(i) == -1 ) model_config_rec % sf_surface_physics(i) = LSMSCHEME   ! Noah
 
          END DO
-
-      CASE ('none')
 
       CASE DEFAULT
          CALL wrf_error_fatal ( 'Unrecognized physics suite' )

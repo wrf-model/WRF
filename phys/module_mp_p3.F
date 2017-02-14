@@ -441,7 +441,7 @@ END SUBROUTINE P3_INIT
                               diag_zdbz_3d,diag_effc_3d,diag_effi_3d,                    &
                               diag_vmi_3d,diag_di_3d,diag_rhopo_3d,                      &
                               qi1_3d,qni1_3d,qir1_3d,qib1_3d,                            &
-                              qi2_3d,qni2_3d,qir2_3d,qib2_3d,nc_3d,ssat_3d,log_predictNc)
+                              qi2_3d,qni2_3d,qir2_3d,qib2_3d,nc_3d)
 
   !------------------------------------------------------------------------------------------!
   ! This subroutine is the main WRF interface with the P3 microphysics scheme.  It takes     !
@@ -506,14 +506,14 @@ END SUBROUTINE P3_INIT
                                                                qib1_3d
    real, dimension(ims:ime, kms:kme, jms:jme), intent(inout), optional :: qi2_3d,qni2_3d, &
                                                                           qir2_3d,qib2_3d
-   real, dimension(ims:ime, kms:kme, jms:jme), intent(inout), optional :: nc_3d,ssat_3d
+   real, dimension(ims:ime, kms:kme, jms:jme), intent(inout), optional :: nc_3d
 
    real, dimension(ims:ime, kms:kme, jms:jme), intent(in) :: pii,p,dz,w
    real, dimension(ims:ime, jms:jme), intent(inout) :: RAINNC,RAINNCV,SR,SNOWNC,SNOWNCV
    real, intent(in)    :: dt
    integer, intent(in) :: itimestep
    integer, intent(in) :: n_iceCat
-   logical, intent(in) :: log_predictNc
+   logical :: log_predictNc
 
    !--- local variables/parameters:
 
@@ -537,6 +537,9 @@ END SUBROUTINE P3_INIT
    allocate (diag_effi(ims:ime, kms:kme,n_iceCat))  ! effective radius, ice            [m]
 
    !------------------------------------------------------------------------------------------!
+
+   log_predictNc=.false.
+   if (present(nc_3d)) log_predictNc = .true.
 
    do j = jts,jte      ! j loop (north-south)
 

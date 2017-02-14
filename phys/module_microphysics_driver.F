@@ -1032,7 +1032,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      QIB1_3d=qib_curr,                 &
                      th_old_3d=th_old,                 &
                      qv_old_3d=qv_old,                 &
-                     log_predictNc=.false.,            &
                      PII=pi_phy,                         &
                      P=p,                                &
                      DT=dt,                           &
@@ -1084,7 +1083,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      th_old_3d=th_old,                 &
                      qv_old_3d=qv_old,                 &
                      nc_3d=qnc_curr,                   &
-                     log_predictNc=.true.,             &
                      PII=pi_phy,                         &
                      P=p,                                &
                      DT=dt,                           &

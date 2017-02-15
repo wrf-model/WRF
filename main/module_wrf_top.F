@@ -184,6 +184,7 @@ CONTAINS
 
    CALL set_derived_rconfigs
    CALL check_nml_consistency
+   CALL setup_physics_suite
    CALL set_physics_rconfigs
 
 #ifdef _ACCEL

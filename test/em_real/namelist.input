@@ -52,15 +52,9 @@
  /
 
  &physics
- mp_physics                          = 3,     3,     3,
- ra_lw_physics                       = 1,     1,     1,
- ra_sw_physics                       = 1,     1,     1,
+ physics_suite                       = 'CONUS'
  radt                                = 30,    30,    30,
- sf_sfclay_physics                   = 1,     1,     1,
- sf_surface_physics                  = 2,     2,     2,
- bl_pbl_physics                      = 1,     1,     1,
  bldt                                = 0,     0,     0,
- cu_physics                          = 1,     1,     0,
  cudt                                = 5,     5,     5,
  isfflx                              = 1,
  ifsnow                              = 1,

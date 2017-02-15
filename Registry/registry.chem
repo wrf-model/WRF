@@ -4002,10 +4002,10 @@ package   vashso2 emiss_opt_vol==2                   -             emis_vol:e_va
 
 #cms--
 
-package   photmad       phot_opt==1                  -             -
+package   photmad       phot_opt==1                  -             state:uvrad
 package   photfastj     phot_opt==2                  -             -
-package   ftuv          phot_opt==3                  -             -
-package   tuv           phot_opt==4                  -             -
+package   ftuv          phot_opt==3                  -             state:radfld,adjcoe,phrate
+package   tuv           phot_opt==4                  -             state:uvrad,dt_cld,af_dir,af_dn,af_up,ph_par,ph_erythema
 package   wesely        gas_drydep_opt==1            -             -
 #
 # diagnostic packages, first for deposition velocities (original package for Mozart)

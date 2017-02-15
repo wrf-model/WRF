@@ -77,7 +77,8 @@ CONTAINS
                      ,apr_gr,apr_w,apr_mc,apr_st,apr_as,apr_capma     &
                      ,apr_capme,apr_capmi,edt_out,clos_choice         &
                      ,mass_flux,xf_ens,pr_ens,cugd_avedx,imomentum    &
-                     ,ishallow,cugd_tten,cugd_qvten,cugd_qcten        &
+                     ,ishallow                                        &
+                     ,cugd_tten,cugd_qvten,cugd_qcten                 &
                      ,cugd_ttens,cugd_qvtens                          &
                      ,gd_cloud,gd_cloud2                              &
                  ! Optional output arguments for CAMZM scheme
@@ -111,6 +112,7 @@ CONTAINS
                      ,rucuten,rvcuten                                 &
                      ,rthcuten,rthraten,rthblten,rthften              &
                      ,mommix,store_rand                               &
+                     ,dudt_phy,dvdt_phy                               &   !gf
 ! Optional variables for tiedtke scheme - add by ZCX&YQW 
                      ,znu                                             &
                  ! Optional moisture tracer flags 
@@ -161,7 +163,7 @@ CONTAINS
    USE module_cu_mskf   , ONLY : mskf_cps
 #endif
    USE module_cu_gd     , ONLY : grelldrv
-   USE module_cu_gf     , ONLY : gfdrv
+   USE module_cu_gfdrvr , ONLY : gfdrvr         !gf
    USE module_cu_g3     , ONLY : g3drv,conv_grell_spread3d
    USE module_cu_sas    , ONLY : cu_sas
    USE module_cu_scalesas    , ONLY : cu_scalesas
@@ -180,13 +182,14 @@ CONTAINS
    !
    !  1. Kain & Fritsch (1993)
    !  2. Betts-Miller-Janjic (Janjic, 1994)
-   !  3. Grell-Devenyi (Grell and Devenyi, 2002)
+   !  3. Grell-Freitas (Grell and Freitas, 2013)
    !  4. Simplified Arakawa-Schubert scheme (NCEP)
    !     (adapted by Zhang and Wang to work with ARW in V3.3)
    !  5. Grell 3D ensemble scheme
    !  6. Modified Tiedtke scheme (Zhang and Wang 2010)
    ! 14. New simplified Arakawa-Schubert scheme (NCEP, YSU)
    ! 16. New Tiedtke scheme (Bechtold et al. 2004, 2008, 2014)
+   ! 93. Grell-Devenyi (Grell and Devenyi, 2002)
    !
 !----------------------------------------------------------------------
    IMPLICIT NONE
@@ -522,6 +525,9 @@ CONTAINS
 !
 ! optional arguments
 !
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &   !gf
+                   INTENT(INOUT) :: dudt_phy,dvdt_phy                !gf
+
    INTEGER, DIMENSION( ims:ime, jms:jme ),                       &
          OPTIONAL, INTENT(INOUT) ::                              &
      k22_shallow,kbcon_shallow,ktop_shallow,ideep2d,jt2d,maxg2d, &
@@ -1184,10 +1190,10 @@ CONTAINS
 #endif                                 
                                                                 )
      CASE (GFSCHEME)
-          CALL wrf_debug(100,'in grelldrv')
+          CALL wrf_debug(100,'in GFdrvr')
 #if ( WRF_DFI_RADAR == 1 )
           if (do_capsuppress == 1) then
-            WRITE( wrf_err_message , * ) 'G3 do CAP suppress',its,jts,min( jte,jde-1 ),min( ite,ide-1 ),kte
+            WRITE( wrf_err_message , * ) 'GF do CAP suppress',its,jts,min( jte,jde-1 ),min( ite,ide-1 ),kte
             CALL wrf_debug(200, wrf_err_message)
             DO j = jts, min( jte,jde-1 )
             DO i = its, min( ite,ide-1 )
@@ -1196,47 +1202,44 @@ CONTAINS
             ENDDO
          endif
 #endif
-          CALL GFDRV(                                           &
-                DT=dt, ITIMESTEP=itimestep, DX=dx               &
-               ,U=u,V=v,T=t,W=w ,RHO=rho                        &
-               ,P=p,PI=pi,Q=qv_curr,RAINCV=raincv               &
-               ,DZ8W=dz8w ,P8W=p8w,XLV=xlv,CP=cp,G=g,R_V=r_v    &
-               ,APR_GR=apr_gr,APR_W=apr_w,APR_MC=apr_mc         &
-               ,APR_ST=apr_st,APR_AS=apr_as,PRATEC=tmppratec    &
-               ,APR_CAPMA=apr_capma,APR_CAPME=apr_capme         &
-               ,APR_CAPMI=apr_capmi,MASS_FLUX=mass_flux         &
-               ,HT=ht,qfx=qfx,hfx=hfx                           &
-               ,xland=xland,gsw=gsw,edt_out=edt_out             &
+          CALL GFDRVR(                                          &
+                DT=dt                                           &
+               ,DX2D=dx2d,DY=dynmm                              & 
+               ,RHO=rho,RAINCV=raincv,PRATEC=tmppratec          &
+               ,U=u,V=v,T=t,W=w                                 &
+               ,Q=qv_curr,P=p,PI=pi                             &
+               ,DZ8W=dz8w ,P8W=p8w                              &
+               ,htop=htop,hbot=hbot                             &
+               ,ktop_deep=ktop_deep                             &
+               ,HT=ht,hfx=hfx,qfx=qfx                           &
+               ,xland=xland                                     &
                ,GDC=gd_cloud,GDC2=gd_cloud2,kpbl=kpbl           &
                ,k22_shallow=k22_shallow                         &
                ,kbcon_shallow=kbcon_shallow                     &
                ,ktop_shallow=ktop_shallow                       &
-               ,ktop_deep=ktop_deep                             &
                ,xmb_shallow=xmb_shallow                         &
-               ,cugd_tten=cugd_tten,cugd_qvten=cugd_qvten       &
-               ,cugd_ttens=cugd_ttens,cugd_qvtens=cugd_qvtens   &
-               ,cugd_qcten=cugd_qcten,cugd_avedx=cugd_avedx     &
-               ,imomentum=imomentum,ishallow_g3=ishallow        &
+               ,ishallow_g3=ishallow                            &
                ,ichoice=clos_choice                             &
-               ,htop=htop,hbot=hbot                             &
-               ,CU_ACT_FLAG=CU_ACT_FLAG,warm_rain=warm_rain     &
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
-!              ,IPS=ips,IPE=ipe,JPS=jps,JPE=jpe,KPS=kps,KPE=kpe &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                ,PERIODIC_X=periodic_x,PERIODIC_Y=periodic_y     &
+               ,RQVCUTEN=RQVCUTEN,RQCCUTEN=RQCCUTEN             &
               ! optionals
 #if (NMM_CORE == 1 )
-               ,RTHCUTEN=RTHCUTEN ,RTHFTEN=forcet               &
-               ,RTHRATEN=RTHRATEN                               &
-               ,RQICUTEN=RQICUTEN ,RQVFTEN=forceq               &
+               ,RQICUTEN=RQICUTEN               &
+               ,RQVFTEN=forceq                  &
+               ,RTHFTEN=forcet                  & 
+               ,RTHCUTEN=RTHCUTEN               &
 #else
-               ,RTHCUTEN=RTHCUTEN ,RTHFTEN=RTHFTEN              &
-               ,RTHRATEN=RTHRATEN                               &
-               ,RQICUTEN=RQICUTEN ,RQVFTEN=RQVFTEN              &
-               ,rqvblten=rqvblten,rthblten=rthblten             &
+               ,RTHCUTEN=RTHCUTEN            &
+               ,RTHFTEN=RTHFTEN              &
+               ,RQICUTEN=RQICUTEN            &
+               ,RQVFTEN=RQVFTEN              &
 #endif
-               ,RQVCUTEN=RQVCUTEN,RQCCUTEN=RQCCUTEN             &
+               ,RTHRATEN=RTHRATEN                               &
+               ,RQVBLTEN=RQVBLTEN,RTHBLTEN=RTHBLTEN             &
+               ,DUDT_PHY=DUDT_PHY, DVDT_PHY=DVDT_PHY            &
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
 #if ( WRF_DFI_RADAR == 1 )
@@ -1244,7 +1247,12 @@ CONTAINS
               ,do_capsuppress=do_capsuppress                    &
               ,cap_suppress_loc=cap_suppress_loc                &
 #endif                                 
+#if (NMM_CORE == 1 )
+               ,SCALEFUN=SCALEFUN                  & ! CNV scale functions
+               ,SIGMU=SIGMU                        & ! CNV updraft fractions
+#endif
                                                                 )
+
      CASE (CAMZMSCHEME)
           IF (PRESENT(z_at_w) .AND. PRESENT(mavail)                 &
                  .AND. PRESENT(pblh) .AND. PRESENT(psfc).AND.PRESENT(RQCNCUTEN))THEN

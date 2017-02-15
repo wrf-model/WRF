@@ -412,10 +412,6 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
          end do
       end do
    end if
-   
-   ! [2.14] Setup pseudo observations:
-
-   if (iv%info(pseudo)%nlocal > 0) call da_setup_pseudo_obs(iv, ob)
 
    ! [2.15] Transfer scatterometer obs:
 

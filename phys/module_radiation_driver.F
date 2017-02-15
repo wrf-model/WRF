@@ -3003,6 +3003,16 @@ CONTAINS
             ENDIF
          ENDIF
 
+! for P3, mp option 50 or 51
+         IF ( F_QI .and. F_QC .and. .not. F_QS) THEN
+            QCLD = QI(i,k,j)+QC(i,k,j)
+            IF (QCLD .LT. QCLDMIN) THEN
+               weight = 0.
+            ELSE
+               weight = (QI(i,k,j)) / QCLD
+            ENDIF
+         ENDIF
+
 ! mji - For MP options 1 and 3, (qc only)
 !  For MP=1, qc = liquid, for MP=3, qc = liquid or ice depending on temperature
          IF ( F_QC .and. .not. F_QI .and. .not. F_QS ) THEN

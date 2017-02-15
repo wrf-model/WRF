@@ -316,7 +316,8 @@ BENCH_START(cal_phy_tend)
       DO ij = 1 , grid%num_tiles
 
         CALL wrf_debug ( 200 , ' call calculate_phy_tend' )
-        CALL calculate_phy_tend (config_flags,grid%mut,grid%muu,grid%muv,pi_phy, &
+        CALL calculate_phy_tend (config_flags,grid%c1h,grid%c2h,       &
+                     grid%mut,grid%muu,grid%muv,pi_phy,                &
                      grid%rthraten,                                    &
                      grid%rublten,grid%rvblten,grid%rthblten,          &
                      grid%rqvblten,grid%rqcblten,grid%rqiblten,        &
@@ -713,7 +714,7 @@ BENCH_END(update_phy_ten_tim)
                                grid%ru_tendf_stoch,                          &
                                grid%rv_tendf_stoch,                          &
                                grid%rt_tendf_stoch,                          &
-                               grid%mu_2 , grid%mub,                         &
+                               grid%mu_2, grid%mub, grid%c1h, grid%c2h,      &
                                ids, ide, jds, jde, kds, kde,                 &
                                ims, ime, jms, jme, kms, kme,                 &
                                grid%i_start(ij), grid%i_end(ij),             &
@@ -747,6 +748,12 @@ BENCH_END(update_phy_ten_tim)
        ! do rayleigh (and zonal-average newtonian) damping during
        ! first iteration of RK loop only
 
+=============================================================
+INTENTIONALLY PLACED HERE TO BREAK COMPILE
+The DAMPTOP routine needs to have 1d column arrays c1 and c2
+to correctly use the column pressures mut, muu, and muv.
+=============================================================
+
        IF ( (config_flags%damp_opt == 101) .OR. &
             (config_flags%damp_opt == 103)      ) THEN
          !$OMP PARALLEL DO   &
@@ -778,7 +785,7 @@ BENCH_START(tke_rhs_tim)
                          grid%defor33,                                &
                          grid%defor12,grid%defor13,grid%defor23,      &
                          grid%u_2,grid%v_2,grid%w_2,grid%div,         &
-                         grid%tke_2,grid%mut,                         &
+                         grid%tke_2,grid%mut,grid%c1h,grid%c2h,       &
                          th_phy,p_phy,p8w,t8w,grid%z,grid%fnm,        & 
                          grid%fnp,grid%cf1,grid%cf2,grid%cf3,         &     
                          grid%msftx,grid%msfty,grid%xkmh,             &
@@ -821,7 +828,7 @@ BENCH_START(vert_diff_tim)
                                       tracer_tend, num_tracer,                     &
                                       grid%u_2, grid%v_2,                                  &
                                       grid%t_2,grid%u_base,grid%v_base,grid%t_base,grid%qv_base,          &
-                                      grid%mut,grid%tke_2,config_flags, &
+                                      grid%tke_2, config_flags,              &
                                       grid%defor13,grid%defor23,grid%defor33,                   &
                                       nba_mij, num_nba_mij,          & !JDM
                                       grid%div, moist, chem, scalar,tracer,         &
@@ -853,7 +860,7 @@ BENCH_START(hor_diff_tim)
                                       scalar_tend, num_scalar,                 &
                                       tracer_tend, num_tracer,                 &
                                       grid%t_2, th_phy,                           &
-                                      grid%mut, grid%tke_2, config_flags,              &
+                                      grid%tke_2, config_flags,              &
                                       grid%defor11, grid%defor22, grid%defor12,             &
                                       grid%defor13, grid%defor23,   &
                                       nba_mij, num_nba_mij,         & !JDM
@@ -918,7 +925,7 @@ BENCH_END(hor_diff_tim)
                    model_config_rec%nobs_err_flds,                      &
                    grid%fdob%nstat, grid%fdob%varobs, grid%fdob%errf,   &
                    grid%dx, grid%KPBL,grid%HT,                          &
-                   grid%mut, grid%muu, grid%muv,                        &
+                   grid%mut, grid%muu, grid%muv, grid%c1h, grid%c2h,    &
                    grid%msftx, grid%msfty, grid%msfux, grid%msfuy, grid%msfvx, grid%msfvy, &
                    p_phy, t_tendf, t0,                                  &
                    grid%u_2, grid%v_2, grid%t_2,                        &

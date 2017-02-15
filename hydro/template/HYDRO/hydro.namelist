@@ -37,7 +37,7 @@
  CHRTOUT_DOMAIN = 1           ! 0: nooutput. 1: Netcdf point timeseries output at all channel points
                               ! 2 : for fast output of stream flow variable.
  CHRTOUT_GRID = 1                ! Netcdf grid of channel streamflow values
- LSMOUT_DOMAN = 0              ! Netcdf grid of variables passed between LSM and routing components
+ LSMOUT_DOMAIN = 0              ! Netcdf grid of variables passed between LSM and routing components
  RTOUT_DOMAIN = 0               ! Netcdf grid of terrain routing variables on routing grid
  output_gw = 0                 ! Netcdf grid of GW
  outlake  = 0                  ! Netcdf grid of lake

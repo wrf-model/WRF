@@ -163,7 +163,7 @@ CONTAINS
    USE module_cu_mskf   , ONLY : mskf_cps
 #endif
    USE module_cu_gd     , ONLY : grelldrv
-   USE module_cu_gf     , ONLY : gfdrv
+   USE module_cu_gf_wrfdrv     , ONLY : gfdrv
    USE module_cu_g3     , ONLY : g3drv,conv_grell_spread3d
    USE module_cu_sas    , ONLY : cu_sas
    USE module_cu_scalesas    , ONLY : cu_scalesas
@@ -283,8 +283,8 @@ CONTAINS
 !-- RTHRATEN      radiative temp forcing for Grell-Devenyi scheme
 !-- RTHBLTEN      PBL temp forcing for Grell-Devenyi scheme
 !-- RQVBLTEN      PBL moisture forcing for Grell-Devenyi scheme
-!-- RTHFTEN
-!-- RQVFTEN
+!-- RTHFTEN       Advective tendency for theta
+!-- RQVFTEN       Advective tendency for vapor
 !-- MASS_FLUX
 !-- XF_ENS
 !-- PR_ENS
@@ -651,6 +651,15 @@ CONTAINS
                                                      ,f_qg
    LOGICAL, INTENT(IN), OPTIONAL ::                   f_flux
 
+!beka - random pattern  arrays, if not existing, set to zero
+!
+!     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),INTENT(INOUT),OPTIONAL :: &
+!           pattern_spp_conv,field_conv
+!     INTEGER, OPTIONAL :: spp_conv
+     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: &
+           pattern_spp_conv,field_conv
+     INTEGER  :: spp_conv
+
 #if ( WRF_DFI_RADAR == 1 )
 !
 !  option of cap suppress: 
@@ -670,6 +679,10 @@ CONTAINS
 
 
 !-----------------------------------------------------------------
+    pattern_spp_conv=0.
+    field_conv=0.
+    spp_conv=0
+
 
    l_flux=.FALSE.
    if (present(f_flux)) l_flux=f_flux
@@ -781,7 +794,7 @@ CONTAINS
    END IF
 
 #if  ( EM_CORE == 1 )
-      if(cu_physics .eq. 5 .or. cu_physics .eq. 16) then
+      if(cu_physics == G3SCHEME .or. cu_physics == NTIEDTKESCHEME) then
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij,i,j,k,its,ite,jts,jte )
 
@@ -1171,37 +1184,27 @@ CONTAINS
             ENDDO
          endif
 #endif
-          CALL GFDRV(                                           &
-                DT=dt, ITIMESTEP=itimestep, DX=dx               &
-               ,U=u,V=v,T=t,W=w ,RHO=rho                        &
-               ,P=p,PI=pi,Q=qv_curr,RAINCV=raincv               &
-               ,DZ8W=dz8w ,P8W=p8w,XLV=xlv,CP=cp,G=g,R_V=r_v    &
-               ,APR_GR=apr_gr,APR_W=apr_w,APR_MC=apr_mc         &
-               ,APR_ST=apr_st,APR_AS=apr_as,PRATEC=tmppratec    &
-               ,APR_CAPMA=apr_capma,APR_CAPME=apr_capme         &
-               ,APR_CAPMI=apr_capmi,MASS_FLUX=mass_flux         &
-               ,HT=ht,qfx=qfx,hfx=hfx                           &
-               ,xland=xland,gsw=gsw,edt_out=edt_out             &
+
+         CALL GFDRV(spp_conv,pattern_spp_conv,field_conv,       &
+                DT=dt,DX=dx                                     &
+               ,RHO=rho,RAINCV=raincv,PRATEC=tmppratec          &
+               ,U=u,V=v,T=t,W=w,Q=qv_curr,P=p,PI=pi             &
+               ,DZ8W=dz8w ,P8W=p8w                              &
+               ,htop=htop,hbot=hbot,ktop_deep=ktop_deep         &
+               ,HT=ht,hfx=hfx,qfx=qfx,xland=xland               &
                ,GDC=gd_cloud,GDC2=gd_cloud2,kpbl=kpbl           &
                ,k22_shallow=k22_shallow                         &
                ,kbcon_shallow=kbcon_shallow                     &
                ,ktop_shallow=ktop_shallow                       &
-               ,ktop_deep=ktop_deep                             &
                ,xmb_shallow=xmb_shallow                         &
-               ,cugd_tten=cugd_tten,cugd_qvten=cugd_qvten       &
-               ,cugd_ttens=cugd_ttens,cugd_qvtens=cugd_qvtens   &
-               ,cugd_qcten=cugd_qcten,cugd_avedx=cugd_avedx     &
-               ,imomentum=imomentum,ishallow_g3=ishallow        &
-               ,ichoice=clos_choice                             &
-               ,htop=htop,hbot=hbot                             &
-               ,CU_ACT_FLAG=CU_ACT_FLAG,warm_rain=warm_rain     &
+               ,ichoice=clos_choice,ishallow_g3=ishallow        &
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
 !              ,IPS=ips,IPE=ipe,JPS=jps,JPE=jpe,KPS=kps,KPE=kpe &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                ,PERIODIC_X=periodic_x,PERIODIC_Y=periodic_y     &
               ! optionals
-#if (NMM_CORE == 1 )
+#if (NMM_CORE == 1 ) 
                ,RTHCUTEN=RTHCUTEN ,RTHFTEN=forcet               &
                ,RTHRATEN=RTHRATEN                               &
                ,RQICUTEN=RQICUTEN ,RQVFTEN=forceq               &
@@ -1212,13 +1215,12 @@ CONTAINS
                ,rqvblten=rqvblten,rthblten=rthblten             &
 #endif
                ,RQVCUTEN=RQVCUTEN,RQCCUTEN=RQCCUTEN             &
-               ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
-               ,F_QI=f_qi,F_QS=f_qs                             &
+               ,dudt_phy=rucuten, dvdt_phy=rvcuten              &
 #if ( WRF_DFI_RADAR == 1 )
                  ! Optional CAP suppress option
-              ,do_capsuppress=do_capsuppress                    &
-              ,cap_suppress_loc=cap_suppress_loc                &
-#endif                                 
+               ,do_capsuppress=do_capsuppress                   &
+               ,cap_suppress_loc=cap_suppress_loc               &
+#endif 
                                                                 )
      CASE (CAMZMSCHEME)
           IF (PRESENT(z_at_w) .AND. PRESENT(mavail)                 &

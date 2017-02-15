@@ -1,3 +1,8 @@
+#if ( HYBRID_COORD==1 )
+#define MU(...) (c1h(k)*XXPCXX(__VA_ARGS__)+c2h(k))
+#define XXPCXX(...) MU(__VA_ARGS__)
+#endif
+
 !WRF:MODEL_LAYER:PHYSICS
 !
 MODULE module_fddaobs_rtfdda
@@ -1519,7 +1524,8 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
 !-----------------------------------------------------------------------
   SUBROUTINE nudob(j, ivar, aten, inest, ifrest, ktau, ktaur,         &
-                       xtime, mu, msfx, msfy, nndgv, nerrf, niobf, maxdom,   &
+                       xtime, mu, c1h, c2h, msfx, msfy,               &
+                       nndgv, nerrf, niobf, maxdom,                   &
                        npfi, ionf, rinxy, twindo,                     &
                        nudge_pbl,                                     &
                        sfcfact, sfcfacr,                              &
@@ -1645,7 +1651,9 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   REAL, INTENT(IN)     :: pbase( ims:ime, kms:kme )  ! Base pressure.
   REAL, INTENT(IN)     :: ptop
   REAL, INTENT(IN)     :: pp( ims:ime, kms:kme ) ! Pressure perturbation (Pa)
-  REAL, INTENT(IN)     :: mu(ims:ime)   ! Air mass on u, v, or mass-grid
+  REAL, INTENT(IN) , DIMENSION(ims:ime)    :: mu   ! Air mass on u, v, or mass-grid
+  REAL, INTENT(IN) , DIMENSION(kms:kme)    :: c1h  ! Hybrid coordinate weight
+  REAL, INTENT(IN) , DIMENSION(kms:kme)    :: c2h  ! Hybrid coordinate weight
   REAL, INTENT(IN)     :: msfx(ims:ime)  ! Map scale (only used for vars u & v)
   REAL, INTENT(IN)     :: msfy(ims:ime)  ! Map scale (only used for vars u & v)
   INTEGER, intent(in)  :: iswind        ! Nudge flag for wind
@@ -2699,7 +2707,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !            scratch = GITQ*MU(I)*W2EOWT*TFACI*ISTQ*GFACTOR
 !            write(6,*) 'ATEN calc: k = ',k
 !            write(6,*) 'T before: aten = ',aten(i,k),' scr = ',scratch
-!            write(6,*) 'GITQ = ',gitq,' MU = ',mu(i),                  &
+!            write(6,*) 'GITQ = ',gitq,' MU = ',MU(i),                  &
 !                       ' W2EOWT = ',w2eowt
 !            write(6,*) ' TFACI = ',tfaci,' ISTQ = ',istq,              &
 !                       ' GFACTOR = ',gfactor
@@ -2709,7 +2717,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !            scratch = GITQ*MU(I)*W2EOWT*TFACI*ISTQ*GFACTOR
 !            write(6,*) 'ATEN calc: k = ',k
 !            write(6,*) 'Q before: aten = ',aten(i,k),' scr = ',scratch
-!            write(6,*) 'GITQ = ',gitq,' MU = ',mu(i),
+!            write(6,*) 'GITQ = ',gitq,' MU = ',MU(i),
 !     $                 ' W2EOWT = ',w2eowt
 !            write(6,*) ' TFACI = ',tfaci,' ISTQ = ',istq,
 !     $                 ' GFACTOR = ',gfactor

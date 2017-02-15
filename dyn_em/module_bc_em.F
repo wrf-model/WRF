@@ -1,19 +1,33 @@
+#if ( HYBRID_COORD==1 ) 
+#  define mut(...) (c1(k)*XXPCTXX(__VA_ARGS__)+c2(k))
+#  define XXPCTXX(...) mut(__VA_ARGS__)
+
+#  define muts(...) (c1(k)*XXPCTSXX(__VA_ARGS__)+c2(k))
+#  define XXPCTSXX(...) muts(__VA_ARGS__)
+
+#  define mu_old(...) (c1(k)*XXPCOLDXX(__VA_ARGS__)+c2(k))
+#  define XXPCOLDXX(...) mu_old(__VA_ARGS__)
+#endif
+
 !WRF:MODEL_LAYER:BOUNDARY
 !
 MODULE module_bc_em
 
-   USE module_bc
-   USE module_configure
+   USE module_bc, ONLY: set_physical_bc2d, set_physical_bc3d, spec_bdytend, &
+                        spec_bdytend_perturb, relax_bdytend_tile, relax_bdytend, &
+                        spec_bdytend_perturb_chem
+   USE module_configure, ONLY: grid_config_rec_type
    USE module_wrf_error
-   USE module_model_constants
+   USE module_model_constants, ONLY: R_d, R_v, T0
 
 CONTAINS
 
 !------------------------------------------------------------------------
 
-   SUBROUTINE spec_bdyupdate_ph( ph_save, field,      &
-                               field_tend, mu_tend, muts, dt,     &
-                               variable_in, config_flags, & 
+   SUBROUTINE spec_bdyupdate_ph( ph_save, field,           &
+                               field_tend, mu_tend, muts,  &
+                               c1, c2, dt,                 &
+                               variable_in, config_flags,  & 
                                spec_zone,                  &
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
@@ -38,6 +52,7 @@ CONTAINS
       REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: field
       REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: field_tend, ph_save
       REAL,  DIMENSION( ims:ime , jms:jme ), INTENT(IN   ) :: mu_tend, muts
+      REAL,  DIMENSION( kms:kme ), INTENT(IN   ) :: c1, c2
       TYPE( grid_config_rec_type ) config_flags
 
       CHARACTER  :: variable
@@ -81,7 +96,7 @@ CONTAINS
           DO k = kts, ktf
             DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
 
-              mu_old(i,j) = muts(i,j) - dt*mu_tend(i,j)
+              MU_OLD(i,j) = MUTS(i,j) - dt*MU_TEND(i,j)
 
               field(i,k,j) = field(i,k,j)*mu_old(i,j)/muts(i,j) + &
                    dt*field_tend(i,k,j)/muts(i,j) +               &
@@ -100,7 +115,7 @@ CONTAINS
           DO k = kts, ktf 
             DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
 
-              mu_old(i,j) = muts(i,j) - dt*mu_tend(i,j)
+              MU_OLD(i,j) = MUTS(i,j) - dt*MU_TEND(i,j)
 
               field(i,k,j) = field(i,k,j)*mu_old(i,j)/muts(i,j) + &
                    dt*field_tend(i,k,j)/muts(i,j) +               &
@@ -119,7 +134,7 @@ CONTAINS
           DO k = kts, ktf
             DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
 
-              mu_old(i,j) = muts(i,j) - dt*mu_tend(i,j)
+              MU_OLD(i,j) = MUTS(i,j) - dt*MU_TEND(i,j)
 
               field(i,k,j) = field(i,k,j)*mu_old(i,j)/muts(i,j) + &
                    dt*field_tend(i,k,j)/muts(i,j) +               &
@@ -137,7 +152,7 @@ CONTAINS
           DO k = kts, ktf
             DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
 
-              mu_old(i,j) = muts(i,j) - dt*mu_tend(i,j)
+              MU_OLD(i,j) = MUTS(i,j) - dt*MU_TEND(i,j)
 
               field(i,k,j) = field(i,k,j)*mu_old(i,j)/muts(i,j) + &
                    dt*field_tend(i,k,j)/muts(i,j) +               &
@@ -155,7 +170,7 @@ CONTAINS
 
    SUBROUTINE relax_bdy_dry ( config_flags,                                    &
                               ru_tendf, rv_tendf, ph_tendf, t_tendf,           &
-                              rw_tendf, mu_tend,                               &
+                              rw_tendf, mu_tend, c1h, c2h, c1f, c2f,           &
                               ru, rv, ph, t,                                   &
                               w, mu, mut,                                      &
                               u_bxs,u_bxe,u_bys,u_bye,                         &
@@ -200,6 +215,9 @@ CONTAINS
                                                                       rw_tendf, &
                                                                       t_tendf
    REAL , DIMENSION( ims:ime , jms:jme  ) , INTENT(INOUT)          :: mu_tend
+
+   REAL , DIMENSION( kms:kme ) , INTENT(IN   ) :: c1h, c2h, c1f, c2f
+
    REAL , DIMENSION( spec_bdy_width) , INTENT(IN   ) :: fcx, gcx
 
    REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width    ), INTENT(IN   ) :: u_bxs,u_bxe, &
@@ -263,13 +281,18 @@ CONTAINS
            j_start = max(jts-1, jds)
            j_end = min(jte+1, jde-1)
 
-           DO j=j_start,j_end
-           DO k=kts,kte
-           DO i=i_start,i_end
-              rfield(i,k,j) = ph(i,k,j)*mut(i,j)
-           ENDDO
-           ENDDO
-           ENDDO
+!          CALL mass_weight ( ph , mut , rfield , c1f, c2f, &
+!                             ids,ide, jds,jde, kds,kde,    &        ! domain dims
+!                             ims,ime, jms,jme, kms,kme,    &        ! memory dims
+!                             i_start,i_end, j_start,j_end, kts,kte)  ! tile dims
+do j = j_start,j_end
+do k = kts,kte
+do i = i_start,i_end
+rfield(i,k,j) = ph(i,k,j)*(c1f(k)*MUT(i,j)+c2f(k))
+end do
+end do
+end do
+
            CALL relax_bdytend_tile ( rfield, ph_tendf,             &
                                ph_bxs,ph_bxe,ph_bys,ph_bye, ph_btxs,ph_btxe,ph_btys,ph_btye,       &
                                'h'        , config_flags, &
@@ -280,13 +303,19 @@ CONTAINS
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                                its,ite, jts,jte, kts,kte,  &
                                its-1, ite+1, jts-1,jte+1,kts,kte )  ! dims of first argument
-           DO j=j_start,j_end
-           DO k=kts,kte-1
-           DO i=i_start,i_end
-              rfield(i,k,j) = t(i,k,j)*mut(i,j)
-           ENDDO
-           ENDDO
-           ENDDO
+
+!          CALL mass_weight ( t,   mut , rfield , c1h, c2h, &
+!                             ids,ide, jds,jde, kds,kde,    &         ! domain dims
+!                             ims,ime, jms,jme, kms,kme,    &         ! memory dims
+!                             i_start,i_end, j_start,j_end, kts,kte-1) ! tile dims
+do j = j_start,j_end
+do k = kts,kte-1
+do i = i_start,i_end
+rfield(i,k,j) = t(i,k,j)*(c1h(k)*MUT(i,j)+c2h(k))
+end do
+end do
+end do
+
            CALL relax_bdytend_tile ( rfield, t_tendf,              &
                                t_bxs,t_bxe,t_bys,t_bye, t_btxs,t_btxe,t_btys,t_btye,       &
                                't'        , config_flags, &
@@ -297,6 +326,7 @@ CONTAINS
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                                its,ite, jts,jte, kts,kte,  &
                                its-1, ite+1, jts-1,jte+1,kts,kte )  ! dims of first argument
+
            CALL relax_bdytend ( mu, mu_tend,               &
                                mu_bxs,mu_bxe,mu_bys,mu_bye, mu_btxs,mu_btxe,mu_btys,mu_btye,                &
                                'm'        , config_flags,  &
@@ -314,14 +344,18 @@ CONTAINS
            j_start = max(jts-1, jds)
            j_end = min(jte+1, jde-1)
 
-           DO j=j_start,j_end
-           DO k=kts,kte
-           DO i=i_start,i_end
-              rfield(i,k,j) = w(i,k,j)*mut(i,j)
-           ENDDO
-           ENDDO
-           ENDDO
-           
+!          CALL mass_weight ( w , mut , rfield , c1f, c2f, &
+!                             ids,ide, jds,jde, kds,kde,   &        ! domain dims
+!                             ims,ime, jms,jme, kms,kme,   &        ! memory dims
+!                             i_start,i_end, j_start,j_end, kts,kte) ! tile dims
+do j = j_start,j_end
+do k = kts,kte
+do i = i_start,i_end
+rfield(i,k,j) = w(i,k,j)*(c1f(k)*MUT(i,j)+c2f(k))
+end do
+end do
+end do
+
            CALL relax_bdytend_tile ( rfield, rw_tendf,             &
                                w_bxs,w_bxe,w_bys,w_bye, w_btxs,w_btxe,w_btys,w_btye,       &
                                'h'        , config_flags, &
@@ -334,11 +368,10 @@ CONTAINS
                                its-1, ite+1, jts-1,jte+1,kts,kte )  ! dims of first argument
 
         END IF
-
    END SUBROUTINE relax_bdy_dry 
 !------------------------------------------------------------------------
    SUBROUTINE relax_bdy_scalar ( scalar_tend,                &
-                                 scalar, mu,                 &
+                                 scalar, mu, c1h, c2h,       &
                                  scalar_bxs,scalar_bxe,scalar_bys,scalar_bye, &
                                  scalar_btxs,scalar_btxe,scalar_btys,scalar_btye, &
                                  spec_bdy_width, spec_zone, relax_zone,       &
@@ -368,6 +401,7 @@ CONTAINS
                                                                                scalar_btxs,scalar_btxe
    REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width    ), INTENT(IN   ) :: scalar_bys,scalar_bye, &
                                                                                scalar_btys,scalar_btye
+   REAL , DIMENSION( kms:kme ) , INTENT(IN   ) :: c1h, c2h
    REAL, INTENT(IN   ) :: dtbc
 !Local
    INTEGER :: i,j,k, i_start, i_end, j_start, j_end
@@ -381,13 +415,10 @@ CONTAINS
            j_start = max(jts-1, jds)
            j_end = min(jte+1, jde-1)
 
-           DO j=j_start,j_end
-           DO k=kts,min(kte,kde-1)
-           DO i=i_start,i_end
-              rscalar(i,k,j) = scalar(i,k,j)*mu(i,j)
-           ENDDO
-           ENDDO
-           ENDDO
+           CALL mass_weight ( scalar , mu , rscalar, c1h, c2h, &
+                              ids,ide, jds,jde, kds,kde,   &          ! domain dims
+                              ims,ime, jms,jme, kms,kme,   &          ! memory dims
+                              i_start,i_end, j_start,j_end, kts,kte-1) ! tile dims
 
            CALL relax_bdytend (rscalar, scalar_tend,             &
                                scalar_bxs,scalar_bxe,scalar_bys,scalar_bye, scalar_btxs,scalar_btxe,scalar_btys,scalar_btye,       &
@@ -532,7 +563,7 @@ CONTAINS
 !------------------------------------------------------------------------
 
    SUBROUTINE spec_bdy_dry_perturb ( config_flags,                                   &
-                                     ru_tend, rv_tend, t_tend,mu_2, mub,             &
+                                     ru_tend, rv_tend, t_tend,mu_2, mub, c1, c2,     &
       			             msfu, msfv, msft,                               &
                                      field_u_tend_perturb,field_v_tend_perturb,field_t_tend_perturb, &
 				     spec_bdy_width, spec_zone,  &
@@ -563,13 +594,15 @@ CONTAINS
    REAL,  DIMENSION( ims:ime ,           jms:jme ), INTENT(IN     )   :: msfu
    REAL,  DIMENSION( ims:ime ,           jms:jme ), INTENT(IN     )   :: msfv
    REAL,  DIMENSION( ims:ime ,           jms:jme ), INTENT(IN     )   :: msft
+   REAL,  DIMENSION(           kms:kme           ), INTENT(IN     )   :: c1, c2
 
    REAL,  DIMENSION( ims:ime , kms:kme_stoch , jms:jme ), INTENT(IN     )   :: field_u_tend_perturb, &
                                                                          field_v_tend_perturb, &
                                                                          field_t_tend_perturb
 
          CALL spec_bdytend_perturb (   ru_tend,            &
-                               field_u_tend_perturb, mu_2,mub,   &
+                               field_u_tend_perturb,       &
+                               mu_2,mub, c1, c2,           &
                                'u', msfu, config_flags,    &
                                spec_bdy_width, spec_zone,  & 
                                kme_stoch,                  & ! stoch  dims
@@ -578,7 +611,8 @@ CONTAINS
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                                its,ite, jts,jte, kts,kte )
          CALL spec_bdytend_perturb (   rv_tend,            &
-                               field_v_tend_perturb,mu_2,mub,    &
+                               field_v_tend_perturb,       &
+                               mu_2,mub, c1, c2,           &
                                'v', msfv, config_flags,    &
                                spec_bdy_width, spec_zone,  &
                                kme_stoch,                  & ! stoch  dims
@@ -588,7 +622,8 @@ CONTAINS
                                its,ite, jts,jte, kts,kte )
 
          CALL spec_bdytend_perturb (   t_tend,             &
-                               field_t_tend_perturb,mu_2,mub,    &
+                               field_t_tend_perturb,       &
+                               mu_2,mub, c1, c2,           &
                                't', msft, config_flags,    &
                                spec_bdy_width, spec_zone,  &
                                kme_stoch,                  & ! stoch  dims
@@ -700,7 +735,7 @@ CONTAINS
                                  its,ite, jts,jte, kts,kte      )
 
 !
-!  this is just a wraper to call the boundary condition routines
+!  this is just a wrapper to call the boundary condition routines
 !  for each variable
 !
 
@@ -803,7 +838,7 @@ CONTAINS
                                  its,ite, jts,jte, kts,kte        )
 
 !
-!  this is just a wraper to call the boundary condition routines
+!  this is just a wrapper to call the boundary condition routines
 !  for each variable
 !
 
@@ -905,7 +940,7 @@ CONTAINS
                                        its,ite, jts,jte, kts,kte      )
 
 !
-!  this is just a wraper to call the boundary condition routines
+!  this is just a wrapper to call the boundary condition routines
 !  for each variable
 !
 
@@ -954,7 +989,7 @@ CONTAINS
                                 its,ite, jts,jte, kts,kte  )
 
 !
-!  this is just a wraper to call the boundary condition routines
+!  this is just a wrapper to call the boundary condition routines
 !  for each variable
 !
 
@@ -1039,7 +1074,7 @@ CONTAINS
                                its,ite, jts,jte, kts,kte  )
 
 !
-!  this is just a wraper to call the boundary condition routines
+!  this is just a wrapper to call the boundary condition routines
 !  for each variable
 !
 
@@ -1338,10 +1373,10 @@ CONTAINS
                                 mu_bdy_ys, mu_bdy_ye,                  &
                                 mu_bdy_tend_xs, mu_bdy_tend_xe,        &
                                 mu_bdy_tend_ys, mu_bdy_tend_ye,        &
-                                t_bdy_xs, t_bdy_xe,                    &
-                                t_bdy_ys, t_bdy_ye,                    &
-                                t_bdy_tend_xs, t_bdy_tend_xe,          &
-                                t_bdy_tend_ys, t_bdy_tend_ye,          &
+                                orig_t_bdy_xs, orig_t_bdy_xe,          &
+                                orig_t_bdy_ys, orig_t_bdy_ye,          &
+                                orig_t_bdy_tend_xs, orig_t_bdy_tend_xe,&
+                                orig_t_bdy_tend_ys, orig_t_bdy_tend_ye,&
                                 moist_bdy_xs, moist_bdy_xe,            &
                                 moist_bdy_ys, moist_bdy_ye,            &
                                 moist_bdy_tend_xs, moist_bdy_tend_xe,  &
@@ -1378,10 +1413,10 @@ CONTAINS
       REAL,  DIMENSION( jms:jme , 1       , spec_bdy_width ), INTENT(IN   ) :: mu_bdy_tend_xs, mu_bdy_tend_xe
       REAL,  DIMENSION( ims:ime , 1       , spec_bdy_width ), INTENT(IN   ) :: mu_bdy_tend_ys, mu_bdy_tend_ye
 
-      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(INOUT) :: t_bdy_xs, t_bdy_xe
-      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(INOUT) :: t_bdy_ys, t_bdy_ye
-      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(INOUT) :: t_bdy_tend_xs, t_bdy_tend_xe
-      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(INOUT) :: t_bdy_tend_ys, t_bdy_tend_ye
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(INOUT) :: orig_t_bdy_xs, orig_t_bdy_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(INOUT) :: orig_t_bdy_ys, orig_t_bdy_ye
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(INOUT) :: orig_t_bdy_tend_xs, orig_t_bdy_tend_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(INOUT) :: orig_t_bdy_tend_ys, orig_t_bdy_tend_ye
 
       REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(IN   ) :: moist_bdy_xs, moist_bdy_xe
       REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(IN   ) :: moist_bdy_ys, moist_bdy_ye
@@ -1389,6 +1424,19 @@ CONTAINS
       REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(IN   ) :: moist_bdy_tend_ys, moist_bdy_tend_ye
 
       !  Local variables
+#ifdef _OPENMP
+      INTEGER, EXTERNAL :: omp_get_thread_num
+#endif
+
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ) :: t_bdy_xs, t_bdy_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ) :: t_bdy_ys, t_bdy_ye
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ) :: t_bdy_tend_xs, t_bdy_tend_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ) :: t_bdy_tend_ys, t_bdy_tend_ye
+
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ) :: new_t_bdy_xs, new_t_bdy_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ) :: new_t_bdy_ys, new_t_bdy_ye
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ) :: new_t_bdy_tend_xs, new_t_bdy_tend_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ) :: new_t_bdy_tend_ys, new_t_bdy_tend_ye
 
       INTEGER    :: i, j, k, ii, jj
 
@@ -1448,17 +1496,23 @@ CONTAINS
       !  serial, OpenMP, or MPI.  For OpenMP, we do not want any overlap between tiles that
       !  are on the same task (either OpenMP only, or OpenMP+MPI).
 
-      IF ( its .EQ. ips ) THEN
-         i_min = ips-4
+      IF      ( its .EQ. ids ) THEN
+         i_min = its
+      ELSE IF ( its .EQ. ips ) THEN
+         i_min = ims
       ELSE
          i_min = its
       END IF
+      i_min = MAX(ids,i_min)
 
-      IF ( ite .EQ. ipe ) THEN
-         i_max = ipe+4
+      IF      ( ite .EQ. ide ) THEN
+         i_max = ite
+      ELSE IF ( ite .EQ. ipe ) THEN
+         i_max = ime
       ELSE
          i_max = ite
       END IF
+      i_max = MIN(i_max,ide-1)
 
       !  South and north lateral boundaries.  This is the i-extent of its through ite, but j only
       !  goes to within spec_bdy_width of the top and bottom (north and south) boundaries.
@@ -1469,9 +1523,16 @@ CONTAINS
       DO jj = MAX(jts,1) , MIN(jte,jde-1,spec_bdy_width)
          j = jj
          DO k = kts , kte-1
-!           DO i = MAX(1,its-4) , MIN(ite+4,ide-1)
-!           DO i = MAX(1,its,ips-4) , MIN(ite,ipe+4,ide-1)
-            DO i = MAX(1,i_min) , MIN(i_max,ide-1)
+            DO i = i_min , i_max
+              t_bdy_ys     (i,k,j) = orig_t_bdy_ys     (i,k,j)
+              t_bdy_tend_ys(i,k,j) = orig_t_bdy_tend_ys(i,k,j)
+            END DO
+         END DO
+      END DO
+      DO jj = MAX(jts,1) , MIN(jte,jde-1,spec_bdy_width)
+         j = jj
+         DO k = kts , kte-1
+            DO i = i_min , i_max
                mu_old_bdy_ys         =   mu_bdy_ys(i,1,j)    + mub(i,jj)
                t_old_bdy_ys          = ( t_bdy_ys(i,k,j)                                            ) / mu_old_bdy_ys
                moist_old_bdy_ys      = ( moist_bdy_ys(i,k,j)                                        ) / mu_old_bdy_ys
@@ -1481,12 +1542,12 @@ CONTAINS
                t_old_bdy_tend_ys     = ( t_new_bdy_ys        - t_old_bdy_ys                         ) / dt_interval
                moist_old_bdy_tend_ys = ( moist_new_bdy_ys    - moist_old_bdy_ys                     ) / dt_interval
                IF ( theta_to_thetam ) THEN
-                  t_bdy_ys(i,k,j) = ( ( ( t_old_bdy_ys + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_ys ) ) - T0 ) * mu_old_bdy_ys
-                  t_bdy_tend_ys(i,k,j) = ( ( mu_new_bdy_ys * ( ( t_new_bdy_ys + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_ys ) - T0 ) ) - &
+                  new_t_bdy_ys(i,k,j) = ( ( ( t_old_bdy_ys + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_ys ) ) - T0 ) * mu_old_bdy_ys
+                  new_t_bdy_tend_ys(i,k,j) = ( ( mu_new_bdy_ys * ( ( t_new_bdy_ys + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_ys ) - T0 ) ) - &
                                            ( mu_old_bdy_ys * ( ( t_old_bdy_ys + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_ys ) - T0 ) ) ) / dt_interval
                ELSE
-                  t_bdy_ys(i,k,j) = ( ( ( t_old_bdy_ys + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_ys ) ) - T0 ) * mu_old_bdy_ys
-                  t_bdy_tend_ys(i,k,j) = ( ( mu_new_bdy_ys * ( ( t_new_bdy_ys + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_ys ) - T0 ) ) - &
+                  new_t_bdy_ys(i,k,j) = ( ( ( t_old_bdy_ys + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_ys ) ) - T0 ) * mu_old_bdy_ys
+                  new_t_bdy_tend_ys(i,k,j) = ( ( mu_new_bdy_ys * ( ( t_new_bdy_ys + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_ys ) - T0 ) ) - &
                                            ( mu_old_bdy_ys * ( ( t_old_bdy_ys + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_ys ) - T0 ) ) ) / dt_interval
                END IF
             END DO
@@ -1499,9 +1560,16 @@ CONTAINS
       DO jj = MIN(jde-1,jte) , MAX(jde-spec_bdy_width,jts) , -1
          j = jde-jj
          DO k = kts , kte-1
-!           DO i = MAX(1,its-4) , MIN(ite+4,ide-1)
-!           DO i = MAX(1,its,ips-4) , MIN(ite,ipe+4,ide-1)
-            DO i = MAX(1,i_min) , MIN(i_max,ide-1)
+            DO i = i_min , i_max
+               t_bdy_ye     (i,k,j) = orig_t_bdy_ye     (i,k,j)
+               t_bdy_tend_ye(i,k,j) = orig_t_bdy_tend_ye(i,k,j)
+            END DO
+         END DO
+      END DO
+      DO jj = MIN(jde-1,jte) , MAX(jde-spec_bdy_width,jts) , -1
+         j = jde-jj
+         DO k = kts , kte-1
+            DO i = i_min , i_max
                mu_old_bdy_ye         =   mu_bdy_ye(i,1,j)    + mub(i,jj)
                t_old_bdy_ye          = ( t_bdy_ye(i,k,j)                                            ) / mu_old_bdy_ye
                moist_old_bdy_ye      = ( moist_bdy_ye(i,k,j)                                        ) / mu_old_bdy_ye
@@ -1511,12 +1579,12 @@ CONTAINS
                t_old_bdy_tend_ye     = ( t_new_bdy_ye        - t_old_bdy_ye                         ) / dt_interval
                moist_old_bdy_tend_ye = ( moist_new_bdy_ye    - moist_old_bdy_ye                     ) / dt_interval
                IF ( theta_to_thetam ) THEN
-                  t_bdy_ye(i,k,j) = ( ( ( t_old_bdy_ye + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_ye ) ) - T0 ) * mu_old_bdy_ye
-                  t_bdy_tend_ye(i,k,j) = ( ( mu_new_bdy_ye * ( ( t_new_bdy_ye + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_ye ) - T0 ) ) - &
+                  new_t_bdy_ye(i,k,j) = ( ( ( t_old_bdy_ye + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_ye ) ) - T0 ) * mu_old_bdy_ye
+                  new_t_bdy_tend_ye(i,k,j) = ( ( mu_new_bdy_ye * ( ( t_new_bdy_ye + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_ye ) - T0 ) ) - &
                                            ( mu_old_bdy_ye * ( ( t_old_bdy_ye + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_ye ) - T0 ) ) ) / dt_interval
                ELSE
-                  t_bdy_ye(i,k,j) = ( ( ( t_old_bdy_ye + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_ye ) ) - T0 ) * mu_old_bdy_ye
-                  t_bdy_tend_ye(i,k,j) = ( ( mu_new_bdy_ye * ( ( t_new_bdy_ye + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_ye ) - T0 ) ) - &
+                  new_t_bdy_ye(i,k,j) = ( ( ( t_old_bdy_ye + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_ye ) ) - T0 ) * mu_old_bdy_ye
+                  new_t_bdy_tend_ye(i,k,j) = ( ( mu_new_bdy_ye * ( ( t_new_bdy_ye + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_ye ) - T0 ) ) - &
                                            ( mu_old_bdy_ye * ( ( t_old_bdy_ye + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_ye ) - T0 ) ) ) / dt_interval
                END IF
             END DO
@@ -1527,17 +1595,23 @@ CONTAINS
       !  serial, OpenMP, or MPI.  For OpenMP, we do not want any overlap between tiles that
       !  are on the same task (either OpenMP only, or OpenMP+MPI).
 
-      IF ( jts .EQ. jps ) THEN
-         j_min = jps-4
+      IF      ( jts .EQ. jds ) THEN
+         j_min = jts
+      ELSE IF ( jts .EQ. jps ) THEN
+         j_min = jms
       ELSE
          j_min = jts
       END IF
+      j_min = MAX(jds,j_min)
 
-      IF ( jte .EQ. jpe ) THEN
-         j_max = jpe+4
+      IF      ( jte .EQ. jde ) THEN
+         j_max = jte
+      ELSE IF ( jte .EQ. jpe ) THEN
+         j_max = jme
       ELSE
          j_max = jte
       END IF
+      j_max = MIN(j_max,jde-1)
 
       !  West and east lateral boundaries.  This is the j-extent of jts through jte, but i only
       !  goes to within spec_bdy_width of the left and right (west and east) boundaries.
@@ -1548,9 +1622,16 @@ CONTAINS
       DO ii = MAX(its,1) , MIN(ite,ide-1,spec_bdy_width)
          i = ii
          DO k = kts , kte-1
-!           DO j = MAX(1,jts-4) , MIN(jte+4,jde-1)
-!           DO j = MAX(1,jts,jps-4) , MIN(jte,jpe+4,jde-1)
-            DO j = MAX(1,j_min) , MIN(j_max,jde-1)
+            DO j = j_min , j_max
+               t_bdy_xs     (j,k,i) = orig_t_bdy_xs     (j,k,i)
+               t_bdy_tend_xs(j,k,i) = orig_t_bdy_tend_xs(j,k,i)
+            END DO
+         END DO
+      END DO
+      DO ii = MAX(its,1) , MIN(ite,ide-1,spec_bdy_width)
+         i = ii
+         DO k = kts , kte-1
+            DO j = j_min , j_max
                mu_old_bdy_xs         =   mu_bdy_xs(j,1,i)    + mub(ii,j)
                t_old_bdy_xs          = ( t_bdy_xs(j,k,i)                                            ) / mu_old_bdy_xs
                moist_old_bdy_xs      = ( moist_bdy_xs(j,k,i)                                        ) / mu_old_bdy_xs
@@ -1560,12 +1641,12 @@ CONTAINS
                t_old_bdy_tend_xs     = ( t_new_bdy_xs        - t_old_bdy_xs                         ) / dt_interval
                moist_old_bdy_tend_xs = ( moist_new_bdy_xs    - moist_old_bdy_xs                     ) / dt_interval
                IF ( theta_to_thetam ) THEN
-                  t_bdy_xs(j,k,i) = ( ( ( t_old_bdy_xs + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_xs ) ) - T0 ) * mu_old_bdy_xs
-                  t_bdy_tend_xs(j,k,i) = ( ( mu_new_bdy_xs * ( ( t_new_bdy_xs + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_xs ) - T0 ) ) - &
+                  new_t_bdy_xs(j,k,i) = ( ( ( t_old_bdy_xs + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_xs ) ) - T0 ) * mu_old_bdy_xs
+                  new_t_bdy_tend_xs(j,k,i) = ( ( mu_new_bdy_xs * ( ( t_new_bdy_xs + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_xs ) - T0 ) ) - &
                                            ( mu_old_bdy_xs * ( ( t_old_bdy_xs + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_xs ) - T0 ) ) ) / dt_interval
                ELSE
-                  t_bdy_xs(j,k,i) = ( ( ( t_old_bdy_xs + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_xs ) ) - T0 ) * mu_old_bdy_xs
-                  t_bdy_tend_xs(j,k,i) = ( ( mu_new_bdy_xs * ( ( t_new_bdy_xs + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_xs ) - T0 ) ) - &
+                  new_t_bdy_xs(j,k,i) = ( ( ( t_old_bdy_xs + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_xs ) ) - T0 ) * mu_old_bdy_xs
+                  new_t_bdy_tend_xs(j,k,i) = ( ( mu_new_bdy_xs * ( ( t_new_bdy_xs + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_xs ) - T0 ) ) - &
                                            ( mu_old_bdy_xs * ( ( t_old_bdy_xs + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_xs ) - T0 ) ) ) / dt_interval
                END IF
             END DO
@@ -1578,9 +1659,16 @@ CONTAINS
       DO ii = MIN(ide-1,ite) , MAX(ide-spec_bdy_width,its) , -1
          i = ide-ii
          DO k = kts , kte-1
-!           DO j = MAX(1,jts-4) , MIN(jte+4,jde-1)
-!           DO j = MAX(1,jts,jps-4) , MIN(jte,jpe+4,jde-1)
-            DO j = MAX(1,j_min) , MIN(j_max,jde-1)
+            DO j = j_min , j_max
+               t_bdy_xe     (j,k,i) = orig_t_bdy_xe     (j,k,i)
+               t_bdy_tend_xe(j,k,i) = orig_t_bdy_tend_xe(j,k,i)
+            END DO
+         END DO
+      END DO
+      DO ii = MIN(ide-1,ite) , MAX(ide-spec_bdy_width,its) , -1
+         i = ide-ii
+         DO k = kts , kte-1
+            DO j = j_min , j_max
                mu_old_bdy_xe         =   mu_bdy_xe(j,1,i)    + mub(ii,j)
                t_old_bdy_xe          = ( t_bdy_xe(j,k,i)                                            ) / mu_old_bdy_xe
                moist_old_bdy_xe      = ( moist_bdy_xe(j,k,i)                                        ) / mu_old_bdy_xe
@@ -1590,14 +1678,57 @@ CONTAINS
                t_old_bdy_tend_xe     = ( t_new_bdy_xe        - t_old_bdy_xe                         ) / dt_interval
                moist_old_bdy_tend_xe = ( moist_new_bdy_xe    - moist_old_bdy_xe                     ) / dt_interval
                IF ( theta_to_thetam ) THEN
-                  t_bdy_xe(j,k,i) = ( ( ( t_old_bdy_xe + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_xe ) ) - T0 ) * mu_old_bdy_xe
-                  t_bdy_tend_xe(j,k,i) = ( ( mu_new_bdy_xe * ( ( t_new_bdy_xe + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_xe ) - T0 ) ) - &
+                  new_t_bdy_xe(j,k,i) = ( ( ( t_old_bdy_xe + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_xe ) ) - T0 ) * mu_old_bdy_xe
+                  new_t_bdy_tend_xe(j,k,i) = ( ( mu_new_bdy_xe * ( ( t_new_bdy_xe + T0 ) * ( 1. + (R_v/R_d) * moist_new_bdy_xe ) - T0 ) ) - &
                                            ( mu_old_bdy_xe * ( ( t_old_bdy_xe + T0 ) * ( 1. + (R_v/R_d) * moist_old_bdy_xe ) - T0 ) ) ) / dt_interval
                ELSE
-                  t_bdy_xe(j,k,i) = ( ( ( t_old_bdy_xe + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_xe ) ) - T0 ) * mu_old_bdy_xe
-                  t_bdy_tend_xe(j,k,i) = ( ( mu_new_bdy_xe * ( ( t_new_bdy_xe + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_xe ) - T0 ) ) - &
+                  new_t_bdy_xe(j,k,i) = ( ( ( t_old_bdy_xe + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_xe ) ) - T0 ) * mu_old_bdy_xe
+                  new_t_bdy_tend_xe(j,k,i) = ( ( mu_new_bdy_xe * ( ( t_new_bdy_xe + T0 ) / ( 1. + (R_v/R_d) * moist_new_bdy_xe ) - T0 ) ) - &
                                            ( mu_old_bdy_xe * ( ( t_old_bdy_xe + T0 ) / ( 1. + (R_v/R_d) * moist_old_bdy_xe ) - T0 ) ) ) / dt_interval
                END IF
+            END DO
+         END DO
+      END DO
+
+      !  Put the final values for the tendencies into the arrays that get passed 
+      !  back out to the calling routine.
+
+      DO jj = MAX(jts,1) , MIN(jte,jde-1,spec_bdy_width)
+         j = jj
+         DO k = kts , kte-1
+            DO i = i_min , i_max
+              orig_t_bdy_ys     (i,k,j) = new_t_bdy_ys     (i,k,j)
+              orig_t_bdy_tend_ys(i,k,j) = new_t_bdy_tend_ys(i,k,j)
+            END DO
+         END DO
+      END DO
+
+      DO jj = MIN(jde-1,jte) , MAX(jde-spec_bdy_width,jts) , -1
+         j = jde-jj
+         DO k = kts , kte-1
+            DO i = i_min , i_max
+               orig_t_bdy_ye     (i,k,j) = new_t_bdy_ye     (i,k,j)
+               orig_t_bdy_tend_ye(i,k,j) = new_t_bdy_tend_ye(i,k,j)
+            END DO
+         END DO
+      END DO
+
+      DO ii = its , MIN(ite,ide-1,spec_bdy_width)
+         i = ii
+         DO k = kts , kte-1
+            DO j = j_min , j_max
+               orig_t_bdy_xs     (j,k,i) = new_t_bdy_xs     (j,k,i)
+               orig_t_bdy_tend_xs(j,k,i) = new_t_bdy_tend_xs(j,k,i)
+            END DO
+         END DO
+      END DO
+
+      DO ii = MIN(ide-1,ite) , MAX(ide-spec_bdy_width,its) , -1
+         i = ide-ii
+         DO k = kts , kte-1
+            DO j = j_min , j_max
+               orig_t_bdy_xe     (j,k,i) = new_t_bdy_xe     (j,k,i)
+               orig_t_bdy_tend_xe(j,k,i) = new_t_bdy_tend_xe(j,k,i)
             END DO
          END DO
       END DO
@@ -1605,5 +1736,34 @@ CONTAINS
    END SUBROUTINE theta_and_thetam_lbc_only
 
 !------------------------------------------------------------------------
+
+   SUBROUTINE mass_weight  ( field , mut, rfield , c1 , c2 , &
+                             ids,ide, jds,jde, kds,kde,      &       ! domain dims
+                             ims,ime, jms,jme, kms,kme,      &       ! memory dims
+                             its,ite, jts,jte, kts,kte )             ! tile dims
+
+      IMPLICIT NONE
+
+      INTEGER , INTENT(IN   ) :: ids,ide, jds,jde, kds,kde, &
+                                 ims,ime, jms,jme, kms,kme, &
+                                 its,ite, jts,jte, kts,kte 
+      REAL , DIMENSION(ims:ime, kms:kme, jms:jme) , INTENT(IN   ) :: field
+      REAL , DIMENSION(ims:ime,          jms:jme) , INTENT(IN   ) :: mut
+      REAL , DIMENSION(         kms:kme         ) , INTENT(IN   ) :: c1, c2
+      REAL , DIMENSION(ims:ime, kms:kme, jms:jme) , INTENT(  OUT) :: rfield
+
+      !  Local loop counters
+
+      INTEGER :: i , j , k
+
+      DO j = jts , jte
+         DO k = kts , kte
+            DO i = its , ite
+               rfield(i,k,j) = field(i,k,j) * mut(i,j)
+            END DO
+         END DO
+      END DO
+
+   END SUBROUTINE mass_weight
   
 END MODULE module_bc_em

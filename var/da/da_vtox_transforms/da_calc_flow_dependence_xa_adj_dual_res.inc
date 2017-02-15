@@ -22,20 +22,9 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
    real, allocatable, dimension(:,:,:)  :: output_qcw,output_qrn,output_qci,output_qsn, output_qgr
    real, allocatable, dimension(:,:,:)  :: input_qcw,input_qrn,input_qci,input_qsn,input_qgr
 
-   integer  :: cids, cide, ckds, ckde, cjds, cjde, &
-               cims, cime, ckms, ckme, cjms, cjme, &
-               cips, cipe, ckps, ckpe, cjps, cjpe, &
-               nids, nide, nkds, nkde, njds, njde, &
-               nims, nime, nkms, nkme, njms, njme, &
-               nips, nipe, nkps, nkpe, njps, njpe
+   integer  :: cims, cime, ckms, ckme, cjms, cjme, &
+               nims, nime, nkms, nkme, njms, njme
    integer  :: nvar
-
-#ifdef DM_PARALLEL
-   ! HALO STUFF
-   integer :: rsl_sendw_p, rsl_sendbeg_p, rsl_recvw_p, rsl_recvbeg_p
-   integer :: rsl_sendw_m, rsl_sendbeg_m, rsl_recvw_m, rsl_recvbeg_m
-   logical, external :: rsl_comm_iter
-#endif
 
    if (trace_use) call da_trace_entry("da_calc_flow_dependence_xa_adj_dual_res")
 
@@ -45,47 +34,45 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
    end if
 
    ! Get coarse (ensemble) grid dimensions ( grid%intermediate_grid)
-   CALL get_ijk_from_grid (  grid%intermediate_grid ,               &
-                             cids, cide, cjds, cjde, ckds, ckde,    &
-                             cims, cime, cjms, cjme, ckms, ckme,    &
-                             cips, cipe, cjps, cjpe, ckps, ckpe    )
+   cims = ims_int; cime = ime_int
+   cjms = jms_int; cjme = jme_int
+   ckms = kms_int; ckme = kme_int
 
    ! Get fine (analysis) grid dimensions (grid)
-   CALL get_ijk_from_grid (  grid,                                  &
-                             nids, nide, njds, njde, nkds, nkde,    &
-                             nims, nime, njms, njme, nkms, nkme,    &
-                             nips, nipe, njps, njpe, nkps, nkpe   )
+   nims = ims;     nime = ime
+   njms = jms;     njme = jme
+   nkms = kms;     nkme = kme
 
    !
    ! Allocate and initialize arrays
    !
 
    ! Input is hi-res domain
-   allocate( input_u(nims:nime,nkms:nkme,njms:njme) )
-   allocate( input_v(nims:nime,nkms:nkme,njms:njme) )
-   allocate( input_t(nims:nime,nkms:nkme,njms:njme) )
-   allocate( input_q(nims:nime,nkms:nkme,njms:njme) )
-   allocate( input_p(nims:nime,1:1,njms:njme) )
+   allocate( input_u(nims:nime,njms:njme,nkms:nkme) )
+   allocate( input_v(nims:nime,njms:njme,nkms:nkme) )
+   allocate( input_t(nims:nime,njms:njme,nkms:nkme) )
+   allocate( input_q(nims:nime,njms:njme,nkms:nkme) )
+   allocate( input_p(nims:nime,njms:njme,1:1) )
    if ( alpha_hydrometeors ) then
-      allocate( input_qcw(nims:nime,nkms:nkme,njms:njme) )
-      allocate( input_qrn(nims:nime,nkms:nkme,njms:njme) )
-      allocate( input_qci(nims:nime,nkms:nkme,njms:njme) )
-      allocate( input_qsn(nims:nime,nkms:nkme,njms:njme) )
-      allocate( input_qgr(nims:nime,nkms:nkme,njms:njme) )
+      allocate( input_qcw(nims:nime,njms:njme,nkms:nkme) )
+      allocate( input_qrn(nims:nime,njms:njme,nkms:nkme) )
+      allocate( input_qci(nims:nime,njms:njme,nkms:nkme) )
+      allocate( input_qsn(nims:nime,njms:njme,nkms:nkme) )
+      allocate( input_qgr(nims:nime,njms:njme,nkms:nkme) )
    end if
 
    ! Output is low-res domain
-   allocate( output_u(cims:cime,ckms:ckme,cjms:cjme) )
-   allocate( output_v(cims:cime,ckms:ckme,cjms:cjme) )
-   allocate( output_t(cims:cime,ckms:ckme,cjms:cjme) )
-   allocate( output_q(cims:cime,ckms:ckme,cjms:cjme) )
-   allocate( output_p(cims:cime,1:1,cjms:cjme) )
+   allocate( output_u(cims:cime,cjms:cjme,ckms:ckme) )
+   allocate( output_v(cims:cime,cjms:cjme,ckms:ckme) )
+   allocate( output_t(cims:cime,cjms:cjme,ckms:ckme) )
+   allocate( output_q(cims:cime,cjms:cjme,ckms:ckme) )
+   allocate( output_p(cims:cime,cjms:cjme,1:1) )
    if ( alpha_hydrometeors ) then
-      allocate( output_qcw(cims:cime,ckms:ckme,cjms:cjme) )
-      allocate( output_qrn(cims:cime,ckms:ckme,cjms:cjme) )
-      allocate( output_qci(cims:cime,ckms:ckme,cjms:cjme) )
-      allocate( output_qsn(cims:cime,ckms:ckme,cjms:cjme) )
-      allocate( output_qgr(cims:cime,ckms:ckme,cjms:cjme) )
+      allocate( output_qcw(cims:cime,cjms:cjme,ckms:ckme) )
+      allocate( output_qrn(cims:cime,cjms:cjme,ckms:ckme) )
+      allocate( output_qci(cims:cime,cjms:cjme,ckms:ckme) )
+      allocate( output_qsn(cims:cime,cjms:cjme,ckms:ckme) )
+      allocate( output_qgr(cims:cime,cjms:cjme,ckms:ckme) )
    end if
 
    output_u = 0. ; input_u = 0.
@@ -102,31 +89,31 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
    end if
 
    !
-   ! Get input (hi-res) data into (x,z,y) order for interpolation
+   ! Get input (hi-res) data for interpolation
    !
 
-   do j = jte, jts, -1
-      do k = kte, kts, -1
+   do k = kte, kts, -1
+      do j = jte, jts, -1
          do i = ite, its, -1
-            input_u(i,k,j) = xa%u(i,j,k)
-            input_v(i,k,j) = xa%v(i,j,k)
-            input_t(i,k,j) = xa%t(i,j,k)
-            input_q(i,k,j) = xa%q(i,j,k)
+            input_u(i,j,k) = xa%u(i,j,k)
+            input_v(i,j,k) = xa%v(i,j,k)
+            input_t(i,j,k) = xa%t(i,j,k)
+            input_q(i,j,k) = xa%q(i,j,k)
          end do
       end do
    end do
 
-   input_p(:,1,:) = xa%psfc(:,:)
+   input_p(:,:,1) = xa%psfc(:,:)
 
    if ( alpha_hydrometeors ) then
-      do j = jte, jts, -1
-         do k = kte, kts, -1
+      do k = kte, kts, -1
+         do j = jte, jts, -1
             do i = ite, its, -1
-               input_qcw(i,k,j) = xa%qcw(i,j,k)
-               input_qrn(i,k,j) = xa%qrn(i,j,k)
-               input_qci(i,k,j) = xa%qci(i,j,k)
-               input_qsn(i,k,j) = xa%qsn(i,j,k)
-               input_qgr(i,k,j) = xa%qgr(i,j,k)
+               input_qcw(i,j,k) = xa%qcw(i,j,k)
+               input_qrn(i,j,k) = xa%qrn(i,j,k)
+               input_qci(i,j,k) = xa%qci(i,j,k)
+               input_qsn(i,j,k) = xa%qsn(i,j,k)
+               input_qgr(i,j,k) = xa%qgr(i,j,k)
             end do
          end do
       end do
@@ -140,574 +127,75 @@ subroutine da_calc_flow_dependence_xa_adj_dual_res (ne, ep, grid, xa, vp, nobwin
    call wrf_debug(2, message(3))
    !call da_message(message(1:3))
 
-#ifdef DM_PARALLEL
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   !!!!!! DO HALO STUFF !!!!!!!!!!!!!!!
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-   nvar = 4
-   if ( alpha_hydrometeors ) then
-      nvar = 9
-   end if
-
-   CALL rsl_comm_iter_init(4,njps,njpe)
-   DO WHILE ( rsl_comm_iter( grid%id , grid%is_intermediate, 4 , &
-                         0 , njds,njde,njps,njpe, grid%njds, grid%njde, &
-                         rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   &
-                         rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p    ))
-
-      CALL RSL_LITE_INIT_EXCH ( local_communicator, 4, 0,          &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           nvar, 1, RWORDSIZE, &
-           0, 0, IWORDSIZE, &
-           0, 0, DWORDSIZE, &
-           0, 0, LWORDSIZE, &
-           myproc, ntasks, ntasks_x, ntasks_y,   &
-           nips, nipe, njps, njpe, nkps, MAX(1,1,nkpe) )
-
-        IF ( SIZE(input_u,1)*SIZE(input_u,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_u, 4,                                             &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_v,1)*SIZE(input_v,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_v, 4,                                             &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_t,1)*SIZE(input_t,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_t, 4,                                             &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_q,1)*SIZE(input_q,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_q, 4,                                             &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_p,1)*SIZE(input_p,2) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_p(:,1,:), 4,                                      &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 0, 0, DATA_ORDER_XY, 0,                      &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, 1, 1,                           &
-           nims, nime, njms, njme, 1, 1,                           &
-           nips, nipe, njps, njpe, 1, 1   )
-        ENDIF
-if ( alpha_hydrometeors ) then
-        IF ( SIZE(input_qcw,1)*SIZE(input_qcw,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_qcw, 4,                                           &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_qrn,1)*SIZE(input_qrn,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_qrn, 4,                                           &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_qci,1)*SIZE(input_qci,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_qci, 4,                                           &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_qsn,1)*SIZE(input_qsn,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_qsn, 4,                                           &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_qgr,1)*SIZE(input_qgr,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_qgr, 4,                                           &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-end if ! alpha_hydrometeors
-
-        CALL RSL_LITE_EXCH_Y ( local_communicator , myproc, ntasks, ntasks_x, ntasks_y, &
-                          rsl_sendw_m,  rsl_sendw_p, rsl_recvw_m,  rsl_recvw_p    )
-
-        IF ( SIZE(input_u,1)*SIZE(input_u,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_u, 4,                                             &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_v,1)*SIZE(input_v,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_v, 4,                                             &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_t,1)*SIZE(input_t,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_t, 4,                                             &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_q,1)*SIZE(input_q,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_q, 4,                                             &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_p,1)*SIZE(input_p,2) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_p(:,1,:), 4,                                      &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 0, 1, DATA_ORDER_XY, 0,                      &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, 1, 1,                           &
-           nims, nime, njms, njme, 1, 1,                           &
-           nips, nipe, njps, njpe, 1, 1   )
-        ENDIF
-if ( alpha_hydrometeors ) then
-        IF ( SIZE(input_qcw,1)*SIZE(input_qcw,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_qcw, 4,                                           &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_qrn,1)*SIZE(input_qrn,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_qrn, 4,                                           &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_qci,1)*SIZE(input_qci,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_qci, 4,                                           &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_qsn,1)*SIZE(input_qsn,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_qsn, 4,                                           &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_qgr,1)*SIZE(input_qgr,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_qgr, 4,                                           &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-end if ! alpha_hydrometeors
-
-      ENDDO
-
-   CALL rsl_comm_iter_init(4,nips,nipe)
-   DO WHILE ( rsl_comm_iter( grid%id , grid%is_intermediate, 4 , &
-                         1 , nids,nide,nips,nipe, grid%nids, grid%nide, &
-                         rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   &
-                         rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p    ))
-
-      CALL RSL_LITE_INIT_EXCH ( local_communicator, 4, 1,          &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           nvar, 1, RWORDSIZE, &
-           0, 0, IWORDSIZE, &
-           0, 0, DWORDSIZE, &
-           0, 0, LWORDSIZE, &
-           myproc, ntasks, ntasks_x, ntasks_y,   &
-           nips, nipe, njps, njpe, nkps, MAX(1,1,nkpe) )
-
-        IF ( SIZE(input_u,1)*SIZE(input_u,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_u, 4,                                             &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_v,1)*SIZE(input_v,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_v, 4,                                             &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_t,1)*SIZE(input_t,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_t, 4,                                             &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_q,1)*SIZE(input_q,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_q, 4,                                             &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_p,1)*SIZE(input_p,2) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_p(:,1,:), 4,                                      &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 1, 0, DATA_ORDER_XY, 0,                      &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, 1, 1,                           &
-           nims, nime, njms, njme, 1, 1,                           &
-           nips, nipe, njps, njpe, 1, 1   )
-        ENDIF
-if ( alpha_hydrometeors ) then
-        IF ( SIZE(input_qcw,1)*SIZE(input_qcw,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_qcw, 4,                                           &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_qrn,1)*SIZE(input_qrn,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_qrn, 4,                                           &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_qci,1)*SIZE(input_qci,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_qci, 4,                                           &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_qsn,1)*SIZE(input_qsn,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_qsn, 4,                                           &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_qgr,1)*SIZE(input_qgr,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_qgr, 4,                                           &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-end if ! alpha_hydrometeors
-
-      CALL RSL_LITE_EXCH_X ( local_communicator , myproc, ntasks, ntasks_x, ntasks_y, &
-                          rsl_sendw_m,  rsl_sendw_p, rsl_recvw_m,  rsl_recvw_p    )
-
-        IF ( SIZE(input_u,1)*SIZE(input_u,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_u, 4,                                             &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_v,1)*SIZE(input_v,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_v, 4,                                             &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_t,1)*SIZE(input_t,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_t, 4,                                             &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_q,1)*SIZE(input_q,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_q, 4,                                             &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_p,1)*SIZE(input_p,2) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_p(:,1,:), 4,                                      &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 1, 1, DATA_ORDER_XY, 0,                      &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, 1, 1,                           &
-           nims, nime, njms, njme, 1, 1,                           &
-           nips, nipe, njps, njpe, 1, 1   )
-        ENDIF
-if ( alpha_hydrometeors ) then
-        IF ( SIZE(input_qcw,1)*SIZE(input_qcw,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_qcw, 4,                                           &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_qrn,1)*SIZE(input_qrn,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_qrn, 4,                                           &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_qci,1)*SIZE(input_qci,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_qci, 4,                                           &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_qsn,1)*SIZE(input_qsn,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_qsn, 4,                                           &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-        IF ( SIZE(input_qgr,1)*SIZE(input_qgr,3) .GT. 1 ) THEN
-           CALL RSL_LITE_PACK ( local_communicator,                &
-           input_qgr, 4,                                           &
-           rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
-           rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-           RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
-           myproc, ntasks, ntasks_x, ntasks_y,                     &
-           nids, nide, njds, njde, nkds, nkde,                     &
-           nims, nime, njms, njme, nkms, nkme,                     &
-           nips, nipe, njps, njpe, nkps, nkpe   )
-        ENDIF
-end if ! alpha_hydrometeors
-
-   ENDDO
-
-   !!!!!!!!! END HALO STUFF !!!!!!!!!!!!!!!!!!!!!!!!!!!
-#endif
-
    !
    ! Now interpolate grid%xa from hi-res to low-res
    !
       !call da_message((/'Using adjoint of bilinear interpolation'/))
-      do n=1,total_here
-         do k = kts,kte
-            output_u(ob_locs(n)%i  ,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dxm  * input_u( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_u(ob_locs(n)%i  ,k,ob_locs(n)%j)
-            output_u(ob_locs(n)%i+1,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dx   * input_u( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_u(ob_locs(n)%i+1,k,ob_locs(n)%j)
-            output_u(ob_locs(n)%i  ,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dxm  * input_u( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_u(ob_locs(n)%i  ,k,ob_locs(n)%j+1)
-            output_u(ob_locs(n)%i+1,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dx   * input_u( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_u(ob_locs(n)%i+1,k,ob_locs(n)%j+1)
+   do k = kts,kte
+      do j = jts,jte
+         do i = its,ite
+            output_u(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dxm  * input_u(i,j,k) + output_u(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)
+            output_u(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dx   * input_u(i,j,k) + output_u(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)
+            output_u(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dxm  * input_u(i,j,k) + output_u(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k)
+            output_u(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dx   * input_u(i,j,k) + output_u(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k)
 
-            output_v(ob_locs(n)%i  ,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dxm  * input_v( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_v(ob_locs(n)%i  ,k,ob_locs(n)%j)
-            output_v(ob_locs(n)%i+1,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dx   * input_v( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_v(ob_locs(n)%i+1,k,ob_locs(n)%j)
-            output_v(ob_locs(n)%i  ,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dxm  * input_v( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_v(ob_locs(n)%i  ,k,ob_locs(n)%j+1)
-            output_v(ob_locs(n)%i+1,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dx   * input_v( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_v(ob_locs(n)%i+1,k,ob_locs(n)%j+1)
+            output_v(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dxm  * input_v(i,j,k) + output_v(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)
+            output_v(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dx   * input_v(i,j,k) + output_v(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)
+            output_v(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dxm  * input_v(i,j,k) + output_v(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k)
+            output_v(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dx   * input_v(i,j,k) + output_v(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k)
 
-            output_t(ob_locs(n)%i  ,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dxm  * input_t( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_t(ob_locs(n)%i  ,k,ob_locs(n)%j)
-            output_t(ob_locs(n)%i+1,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dx   * input_t( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_t(ob_locs(n)%i+1,k,ob_locs(n)%j)
-            output_t(ob_locs(n)%i  ,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dxm  * input_t( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_t(ob_locs(n)%i  ,k,ob_locs(n)%j+1)
-            output_t(ob_locs(n)%i+1,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dx   * input_t( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_t(ob_locs(n)%i+1,k,ob_locs(n)%j+1)
+            output_t(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dxm  * input_t(i,j,k) + output_t(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)
+            output_t(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dx   * input_t(i,j,k) + output_t(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)
+            output_t(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dxm  * input_t(i,j,k) + output_t(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k)
+            output_t(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dx   * input_t(i,j,k) + output_t(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k)
 
-            output_q(ob_locs(n)%i  ,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dxm  * input_q( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_q(ob_locs(n)%i  ,k,ob_locs(n)%j)
-            output_q(ob_locs(n)%i+1,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dx   * input_q( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_q(ob_locs(n)%i+1,k,ob_locs(n)%j)
-            output_q(ob_locs(n)%i  ,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dxm  * input_q( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_q(ob_locs(n)%i  ,k,ob_locs(n)%j+1)
-            output_q(ob_locs(n)%i+1,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dx   * input_q( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_q(ob_locs(n)%i+1,k,ob_locs(n)%j+1)
+            output_q(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dxm  * input_q(i,j,k) + output_q(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)
+            output_q(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dx   * input_q(i,j,k) + output_q(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)
+            output_q(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dxm  * input_q(i,j,k) + output_q(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k)
+            output_q(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dx   * input_q(i,j,k) + output_q(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k)
          end do
+      end do
+   end do
 
-         output_p(ob_locs(n)%i  ,1,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dxm  * input_p( ob_locs(n)%xx,1,ob_locs(n)%yy) + output_p(ob_locs(n)%i  ,1,ob_locs(n)%j)
-         output_p(ob_locs(n)%i+1,1,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dx   * input_p( ob_locs(n)%xx,1,ob_locs(n)%yy) + output_p(ob_locs(n)%i+1,1,ob_locs(n)%j)
-         output_p(ob_locs(n)%i  ,1,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dxm  * input_p( ob_locs(n)%xx,1,ob_locs(n)%yy) + output_p(ob_locs(n)%i  ,1,ob_locs(n)%j+1)
-         output_p(ob_locs(n)%i+1,1,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dx   * input_p( ob_locs(n)%xx,1,ob_locs(n)%yy) + output_p(ob_locs(n)%i+1,1,ob_locs(n)%j+1)
+   do j = jts,jte
+      do i = its,ite
+         output_p(aens_locs(i,j)%i  ,aens_locs(i,j)%j,1)   = aens_locs(i,j)%dym * aens_locs(i,j)%dxm  * input_p(i,j,1) + output_p(aens_locs(i,j)%i  ,aens_locs(i,j)%j,1)
+         output_p(aens_locs(i,j)%i+1,aens_locs(i,j)%j,1)   = aens_locs(i,j)%dym * aens_locs(i,j)%dx   * input_p(i,j,1) + output_p(aens_locs(i,j)%i+1,aens_locs(i,j)%j,1)
+         output_p(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,1) = aens_locs(i,j)%dy  * aens_locs(i,j)%dxm  * input_p(i,j,1) + output_p(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,1)
+         output_p(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,1) = aens_locs(i,j)%dy  * aens_locs(i,j)%dx   * input_p(i,j,1) + output_p(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,1)
 
       end do
+   end do
 
    if ( alpha_hydrometeors ) then
-      do n=1,total_here
-         do k = kts,kte
-            output_qcw(ob_locs(n)%i  ,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dxm  * input_qcw( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qcw(ob_locs(n)%i  ,k,ob_locs(n)%j)
-            output_qcw(ob_locs(n)%i+1,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dx   * input_qcw( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qcw(ob_locs(n)%i+1,k,ob_locs(n)%j)
-            output_qcw(ob_locs(n)%i  ,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dxm  * input_qcw( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qcw(ob_locs(n)%i  ,k,ob_locs(n)%j+1)
-            output_qcw(ob_locs(n)%i+1,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dx   * input_qcw( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qcw(ob_locs(n)%i+1,k,ob_locs(n)%j+1)
+      do k = kts,kte
+         do j = jts,jte
+            do i = its,ite
+               output_qcw(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dxm  * input_qcw(i,j,k) + output_qcw(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)
+               output_qcw(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dx   * input_qcw(i,j,k) + output_qcw(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)
+               output_qcw(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dxm  * input_qcw(i,j,k) + output_qcw(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k)
+               output_qcw(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dx   * input_qcw(i,j,k) + output_qcw(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k)
 
-            output_qrn(ob_locs(n)%i  ,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dxm  * input_qrn( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qrn(ob_locs(n)%i  ,k,ob_locs(n)%j)
-            output_qrn(ob_locs(n)%i+1,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dx   * input_qrn( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qrn(ob_locs(n)%i+1,k,ob_locs(n)%j)
-            output_qrn(ob_locs(n)%i  ,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dxm  * input_qrn( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qrn(ob_locs(n)%i  ,k,ob_locs(n)%j+1)
-            output_qrn(ob_locs(n)%i+1,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dx   * input_qrn( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qrn(ob_locs(n)%i+1,k,ob_locs(n)%j+1)
+               output_qrn(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dxm  * input_qrn(i,j,k) + output_qrn(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)
+               output_qrn(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dx   * input_qrn(i,j,k) + output_qrn(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)
+               output_qrn(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dxm  * input_qrn(i,j,k) + output_qrn(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k)
+               output_qrn(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dx   * input_qrn(i,j,k) + output_qrn(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k)
 
-            output_qci(ob_locs(n)%i  ,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dxm  * input_qci( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qci(ob_locs(n)%i  ,k,ob_locs(n)%j)
-            output_qci(ob_locs(n)%i+1,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dx   * input_qci( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qci(ob_locs(n)%i+1,k,ob_locs(n)%j)
-            output_qci(ob_locs(n)%i  ,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dxm  * input_qci( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qci(ob_locs(n)%i  ,k,ob_locs(n)%j+1)
-            output_qci(ob_locs(n)%i+1,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dx   * input_qci( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qci(ob_locs(n)%i+1,k,ob_locs(n)%j+1)
+               output_qci(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dxm  * input_qci(i,j,k) + output_qci(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)
+               output_qci(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dx   * input_qci(i,j,k) + output_qci(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)
+               output_qci(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dxm  * input_qci(i,j,k) + output_qci(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k)
+               output_qci(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dx   * input_qci(i,j,k) + output_qci(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k)
 
-            output_qsn(ob_locs(n)%i  ,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dxm  * input_qsn( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qsn(ob_locs(n)%i  ,k,ob_locs(n)%j)
-            output_qsn(ob_locs(n)%i+1,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dx   * input_qsn( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qsn(ob_locs(n)%i+1,k,ob_locs(n)%j)
-            output_qsn(ob_locs(n)%i  ,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dxm  * input_qsn( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qsn(ob_locs(n)%i  ,k,ob_locs(n)%j+1)
-            output_qsn(ob_locs(n)%i+1,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dx   * input_qsn( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qsn(ob_locs(n)%i+1,k,ob_locs(n)%j+1)
+               output_qsn(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dxm  * input_qsn(i,j,k) + output_qsn(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)
+               output_qsn(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dx   * input_qsn(i,j,k) + output_qsn(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)
+               output_qsn(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dxm  * input_qsn(i,j,k) + output_qsn(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k)
+               output_qsn(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dx   * input_qsn(i,j,k) + output_qsn(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k)
 
-            output_qgr(ob_locs(n)%i  ,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dxm  * input_qgr( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qgr(ob_locs(n)%i  ,k,ob_locs(n)%j)
-            output_qgr(ob_locs(n)%i+1,k,ob_locs(n)%j)   = ob_locs(n)%dym * ob_locs(n)%dx   * input_qgr( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qgr(ob_locs(n)%i+1,k,ob_locs(n)%j)
-            output_qgr(ob_locs(n)%i  ,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dxm  * input_qgr( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qgr(ob_locs(n)%i  ,k,ob_locs(n)%j+1)
-            output_qgr(ob_locs(n)%i+1,k,ob_locs(n)%j+1) = ob_locs(n)%dy  * ob_locs(n)%dx   * input_qgr( ob_locs(n)%xx,k,ob_locs(n)%yy) + output_qgr(ob_locs(n)%i+1,k,ob_locs(n)%j+1)
+               output_qgr(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dxm  * input_qgr(i,j,k) + output_qgr(aens_locs(i,j)%i  ,aens_locs(i,j)%j,k)
+               output_qgr(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)   = aens_locs(i,j)%dym * aens_locs(i,j)%dx   * input_qgr(i,j,k) + output_qgr(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k)
+               output_qgr(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dxm  * input_qgr(i,j,k) + output_qgr(aens_locs(i,j)%i  ,aens_locs(i,j)%j+1,k)
+               output_qgr(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k) = aens_locs(i,j)%dy  * aens_locs(i,j)%dx   * input_qgr(i,j,k) + output_qgr(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k)
+            end do
          end do
       end do
    end if ! alpha_hydrometeors
@@ -745,15 +233,15 @@ end if ! alpha_hydrometeors
       ii = (iobwin-1)*ensdim_alpha + n
 
       if ( alpha_hydrometeors ) then
-         do j = jte_int, jts_int, -1
-            do k = kte_int, kts_int, -1
+         do k = kte_int, kts_int, -1
+            do j = jte_int, jts_int, -1
                do i = ite_int, its_int, -1
                   alpha = 0.0
-                  alpha = alpha + ep % gr(i,j,k,ii) * output_qgr(i,k,j)
-                  alpha = alpha + ep % sn(i,j,k,ii) * output_qsn(i,k,j)
-                  alpha = alpha + ep % ci(i,j,k,ii) * output_qci(i,k,j)
-                  alpha = alpha + ep % rn(i,j,k,ii) * output_qrn(i,k,j)
-                  alpha = alpha + ep % cw(i,j,k,ii) * output_qcw(i,k,j)
+                  alpha = alpha + ep % gr(i,j,k,ii) * output_qgr(i,j,k)
+                  alpha = alpha + ep % sn(i,j,k,ii) * output_qsn(i,j,k)
+                  alpha = alpha + ep % ci(i,j,k,ii) * output_qci(i,j,k)
+                  alpha = alpha + ep % rn(i,j,k,ii) * output_qrn(i,j,k)
+                  alpha = alpha + ep % cw(i,j,k,ii) * output_qcw(i,j,k)
                   vp % alpha(i,j,k,n) = vp % alpha(i,j,k,n) + alpha
                end do
             end do
@@ -764,17 +252,17 @@ end if ! alpha_hydrometeors
       vp % alpha(its_int:ite_int,jts_int:jte_int,1,n) =      &
            vp % alpha(its_int:ite_int,jts_int:jte_int,1,n) + &
            ep % v5(its_int:ite_int,jts_int:jte_int,1,ii) *   & ! v5 = ps
-           output_p(its_int:ite_int,1,jts_int:jte_int)
+           output_p(its_int:ite_int,jts_int:jte_int,1)
 
-      do j = jte_int, jts_int, -1
-         do k = kte_int, kts_int, -1
+      do k = kte_int, kts_int, -1
+         do j = jte_int, jts_int, -1
             do i = ite_int, its_int, -1
 
                   alpha = 0.0
-                  alpha = alpha + ep % v4(i,j,k,ii) * output_q(i,k,j)
-                  alpha = alpha + ep % v3(i,j,k,ii) * output_t(i,k,j)
-                  alpha = alpha + ep % v2(i,j,k,ii) * output_v(i,k,j)
-                  alpha = alpha + ep % v1(i,j,k,ii) * output_u(i,k,j)
+                  alpha = alpha + ep % v4(i,j,k,ii) * output_q(i,j,k)
+                  alpha = alpha + ep % v3(i,j,k,ii) * output_t(i,j,k)
+                  alpha = alpha + ep % v2(i,j,k,ii) * output_v(i,j,k)
+                  alpha = alpha + ep % v1(i,j,k,ii) * output_u(i,j,k)
 
                   vp % alpha(i,j,k,n) = vp % alpha(i,j,k,n) + alpha
 

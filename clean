@@ -48,7 +48,7 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
   endif
   if ( "$arg" != '-aa' ) then
     ( cd run ; /bin/rm -f gm* out* fort* ideal* *.exe input_sounding ; \
-	  /bin/cp -f namelist.input namelist.input.backup ; \
+	  /bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; \
 	  /bin/rm -f namelist.input ) >& /dev/null
     ( cd test/exp_real ; /bin/rm -f gm* out* fort* real* )
     ( cd test ; rm -f */*.exe */ETAMPNEW_DATA* */GENPARM.TBL */LANDUSE.TBL */README.namelist \
@@ -61,13 +61,13 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
 	  */ozone.formatted */ozone_lat.formatted */ozone_plev.formatted \
 	  */aerosol.formatted */aerosol_lat.formatted */aerosol_plev.formatted */aerosol_lon.formatted \
 	  */kernels.asc_s_0_03_0_9 */bulkradii.asc_s_0_03_0_9 */bulkdens.asc_s_0_03_0_9 \
-	  */constants.asc \
+	  */constants.asc */p3_lookup_table_1.dat \
 	  */masses.asc */kernels_z.asc */capacity.asc */termvels.asc */coeff_p.asc */coeff_q.asc \
 	  */gribmap.txt */tr??t?? */co2_trans */namelist.output ) >& /dev/null
   else if ( "$arg" == '-aa' ) then
     /bin/rm -f configure.wrf.backup
     /bin/rm -f Registry/Registry.backup
-    /bin/rm -f run/namelist.input.backup
+    /bin/rm -f run/namelist.input.backup.*
   endif
 endif
 

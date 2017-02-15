@@ -1,3 +1,38 @@
+#if ( HYBRID_COORD==1 ) 
+#  define mut(...) (c1f(k)*XXPCTXX(__VA_ARGS__)+c2f(k))
+#  define XXPCTXX(...) mut(__VA_ARGS__)
+
+#  define muu(...) (c1h(k)*XXPCUXX(__VA_ARGS__)+c2h(k))
+#  define XXPCUXX(...) muu(__VA_ARGS__)
+
+#  define muv(...) (c1h(k)*XXPCVXX(__VA_ARGS__)+c2h(k))
+#  define XXPCVXX(...) muv(__VA_ARGS__)
+
+#  define mu(...) (c1(k)*XXPCXX(__VA_ARGS__))
+#  define XXPCXX(...) mu(__VA_ARGS__)
+
+#  define mub(...) (c1(k)*XXPCBXX(__VA_ARGS__)+c2(k))
+#  define XXPCBXX(...) mub(__VA_ARGS__)
+
+#  define muts(...) (c1(k)*XXPCTSXX(__VA_ARGS__)+c2(k))
+#  define XXPCTSXX(...) muts(__VA_ARGS__)
+
+#  define muuf(...) (c1f(k)*XXPCUFXX(__VA_ARGS__)+c2f(k))
+#  define XXPCUFXX(...) muuf(__VA_ARGS__)
+
+#  define muvf(...) (c1f(k)*XXPCVFXX(__VA_ARGS__)+c2f(k))
+#  define XXPCVFXX(...) muvf(__VA_ARGS__)
+
+#  define muf(...) (c1f(k)*XXPCFXX(__VA_ARGS__))
+#  define XXPCFXX(...) muf(__VA_ARGS__)
+
+#  define mubf(...) (c1f(k)*XXPCBFXX(__VA_ARGS__)+c2f(k))
+#  define XXPCBFXX(...) mubf(__VA_ARGS__)
+
+#  define MUT(...) (c1(k)*XXPCTHXX(__VA_ARGS__)+c2(k))
+#  define XXPCTHXX(...) MUT(__VA_ARGS__)
+#endif
+
 !wrf:MODEL_LAYER:DYNAMICS
 !
 
@@ -60,58 +95,58 @@ SUBROUTINE calc_mu_uv ( config_flags,                 &
       IF      ( ( its .NE. ids ) .AND. ( ite .NE. ide ) ) THEN
          DO j=jts,jtf
          DO i=its,itf
-            muu(i,j) = 0.5*(mu(i,j)+mu(i-1,j)+mub(i,j)+mub(i-1,j))
+            MUU(i,j) = 0.5*(MU(i,j)+MU(i-1,j)+MUB(i,j)+MUB(i-1,j))
          ENDDO
          ENDDO
       ELSE IF ( ( its .EQ. ids ) .AND. ( ite .NE. ide ) ) THEN
          DO j=jts,jtf
          DO i=its+1,itf
-            muu(i,j) = 0.5*(mu(i,j)+mu(i-1,j)+mub(i,j)+mub(i-1,j))
+            MUU(i,j) = 0.5*(MU(i,j)+MU(i-1,j)+MUB(i,j)+MUB(i-1,j))
          ENDDO
          ENDDO
          i=its
          im = its
          if(config_flags%periodic_x) im = its-1
          DO j=jts,jtf
-!            muu(i,j) =      mu(i,j)          +mub(i,j)
+!            MUU(i,j) =      MU(i,j)          +MUB(i,j)
 !  fix for periodic b.c., 13 march 2004, wcs
-            muu(i,j) = 0.5*(mu(i,j)+mu(im,j)+mub(i,j)+mub(im,j))
+            MUU(i,j) = 0.5*(MU(i,j)+MU(im,j)+MUB(i,j)+MUB(im,j))
          ENDDO
       ELSE IF ( ( its .NE. ids ) .AND. ( ite .EQ. ide ) ) THEN
          DO j=jts,jtf
          DO i=its,itf-1
-            muu(i,j) = 0.5*(mu(i,j)+mu(i-1,j)+mub(i,j)+mub(i-1,j))
+            MUU(i,j) = 0.5*(MU(i,j)+MU(i-1,j)+MUB(i,j)+MUB(i-1,j))
          ENDDO
          ENDDO
          i=ite
          im = ite-1
          if(config_flags%periodic_x) im = ite
          DO j=jts,jtf
-!            muu(i,j) =      mu(i-1,j)        +mub(i-1,j)
+!            MUU(i,j) =      MU(i-1,j)        +MUB(i-1,j)
 !  fix for periodic b.c., 13 march 2004, wcs
-            muu(i,j) = 0.5*(mu(i-1,j)+mu(im,j)+mub(i-1,j)+mub(im,j))
+            MUU(i,j) = 0.5*(MU(i-1,j)+MU(im,j)+MUB(i-1,j)+MUB(im,j))
          ENDDO
       ELSE IF ( ( its .EQ. ids ) .AND. ( ite .EQ. ide ) ) THEN
          DO j=jts,jtf
          DO i=its+1,itf-1
-            muu(i,j) = 0.5*(mu(i,j)+mu(i-1,j)+mub(i,j)+mub(i-1,j))
+            MUU(i,j) = 0.5*(MU(i,j)+MU(i-1,j)+MUB(i,j)+MUB(i-1,j))
          ENDDO
          ENDDO
          i=its
          im = its
          if(config_flags%periodic_x) im = its-1
          DO j=jts,jtf
-!            muu(i,j) =      mu(i,j)          +mub(i,j)
+!            MUU(i,j) =      MU(i,j)          +MUB(i,j)
 !  fix for periodic b.c., 13 march 2004, wcs
-            muu(i,j) = 0.5*(mu(i,j)+mu(im,j)+mub(i,j)+mub(im,j))
+            MUU(i,j) = 0.5*(MU(i,j)+MU(im,j)+MUB(i,j)+MUB(im,j))
          ENDDO
          i=ite
          im = ite-1
          if(config_flags%periodic_x) im = ite
          DO j=jts,jtf
-!            muu(i,j) =      mu(i-1,j)        +mub(i-1,j)
+!            MUU(i,j) =      MU(i-1,j)        +MUB(i-1,j)
 !  fix for periodic b.c., 13 march 2004, wcs
-            muu(i,j) = 0.5*(mu(i-1,j)+mu(im,j)+mub(i-1,j)+mub(im,j))
+            MUU(i,j) = 0.5*(MU(i-1,j)+MU(im,j)+MUB(i-1,j)+MUB(im,j))
          ENDDO
       END IF
 
@@ -121,58 +156,58 @@ SUBROUTINE calc_mu_uv ( config_flags,                 &
       IF      ( ( jts .NE. jds ) .AND. ( jte .NE. jde ) ) THEN
          DO j=jts,jtf
          DO i=its,itf
-             muv(i,j) = 0.5*(mu(i,j)+mu(i,j-1)+mub(i,j)+mub(i,j-1))
+             MUV(i,j) = 0.5*(MU(i,j)+MU(i,j-1)+MUB(i,j)+MUB(i,j-1))
          ENDDO
          ENDDO
       ELSE IF ( ( jts .EQ. jds ) .AND. ( jte .NE. jde ) ) THEN
          DO j=jts+1,jtf
          DO i=its,itf
-             muv(i,j) = 0.5*(mu(i,j)+mu(i,j-1)+mub(i,j)+mub(i,j-1))
+             MUV(i,j) = 0.5*(MU(i,j)+MU(i,j-1)+MUB(i,j)+MUB(i,j-1))
          ENDDO
          ENDDO
          j=jts
          jm = jts
          if(config_flags%periodic_y) jm = jts-1
          DO i=its,itf
-!             muv(i,j) =      mu(i,j)          +mub(i,j)
+!             MUV(i,j) =      MU(i,j)          +MUB(i,j)
 !  fix for periodic b.c., 13 march 2004, wcs
-             muv(i,j) = 0.5*(mu(i,j)+mu(i,jm)+mub(i,j)+mub(i,jm))
+             MUV(i,j) = 0.5*(MU(i,j)+MU(i,jm)+MUB(i,j)+MUB(i,jm))
          ENDDO
       ELSE IF ( ( jts .NE. jds ) .AND. ( jte .EQ. jde ) ) THEN
          DO j=jts,jtf-1
          DO i=its,itf
-             muv(i,j) = 0.5*(mu(i,j)+mu(i,j-1)+mub(i,j)+mub(i,j-1))
+             MUV(i,j) = 0.5*(MU(i,j)+MU(i,j-1)+MUB(i,j)+MUB(i,j-1))
          ENDDO
          ENDDO
          j=jte
          jm = jte-1
          if(config_flags%periodic_y) jm = jte
          DO i=its,itf
-!            muv(i,j) =      mu(i,j-1)        +mub(i,j-1)
+!            MUV(i,j) =      MU(i,j-1)        +MUB(i,j-1)
 !  fix for periodic b.c., 13 march 2004, wcs
-             muv(i,j) = 0.5*(mu(i,j-1)+mu(i,jm)+mub(i,j-1)+mub(i,jm))
+             MUV(i,j) = 0.5*(MU(i,j-1)+MU(i,jm)+MUB(i,j-1)+MUB(i,jm))
          ENDDO
       ELSE IF ( ( jts .EQ. jds ) .AND. ( jte .EQ. jde ) ) THEN
          DO j=jts+1,jtf-1
          DO i=its,itf
-             muv(i,j) = 0.5*(mu(i,j)+mu(i,j-1)+mub(i,j)+mub(i,j-1))
+             MUV(i,j) = 0.5*(MU(i,j)+MU(i,j-1)+MUB(i,j)+MUB(i,j-1))
          ENDDO
          ENDDO
          j=jts
          jm = jts
          if(config_flags%periodic_y) jm = jts-1
          DO i=its,itf
-!             muv(i,j) =      mu(i,j)          +mub(i,j)
+!             MUV(i,j) =      MU(i,j)          +MUB(i,j)
 !  fix for periodic b.c., 13 march 2004, wcs
-             muv(i,j) = 0.5*(mu(i,j)+mu(i,jm)+mub(i,j)+mub(i,jm))
+             MUV(i,j) = 0.5*(MU(i,j)+MU(i,jm)+MUB(i,j)+MUB(i,jm))
          ENDDO
          j=jte
          jm = jte-1
          if(config_flags%periodic_y) jm = jte
          DO i=its,itf
-!             muv(i,j) =      mu(i,j-1)        +mub(i,j-1)
+!             MUV(i,j) =      MU(i,j-1)        +MUB(i,j-1)
 !  fix for periodic b.c., 13 march 2004, wcs
-             muv(i,j) = 0.5*(mu(i,j-1)+mu(i,jm)+mub(i,j-1)+mub(i,jm))
+             MUV(i,j) = 0.5*(MU(i,j-1)+MU(i,jm)+MUB(i,j-1)+MUB(i,jm))
          ENDDO
       END IF
 
@@ -217,50 +252,50 @@ SUBROUTINE calc_mu_uv_1 ( config_flags,                 &
       IF      ( ( its .NE. ids ) .AND. ( ite .NE. ide ) ) THEN
          DO j=jts,jtf
          DO i=its,itf
-            muu(i,j) = 0.5*(mu(i,j)+mu(i-1,j))
+            MUU(i,j) = 0.5*(MU(i,j)+MU(i-1,j))
          ENDDO
          ENDDO
       ELSE IF ( ( its .EQ. ids ) .AND. ( ite .NE. ide ) ) THEN
          DO j=jts,jtf
          DO i=its+1,itf
-            muu(i,j) = 0.5*(mu(i,j)+mu(i-1,j))
+            MUU(i,j) = 0.5*(MU(i,j)+MU(i-1,j))
          ENDDO
          ENDDO
          i=its
          im = its
          if(config_flags%periodic_x) im = its-1
          DO j=jts,jtf
-            muu(i,j) = 0.5*(mu(i,j)+mu(im,j))
+            MUU(i,j) = 0.5*(MU(i,j)+MU(im,j))
          ENDDO
       ELSE IF ( ( its .NE. ids ) .AND. ( ite .EQ. ide ) ) THEN
          DO j=jts,jtf
          DO i=its,itf-1
-            muu(i,j) = 0.5*(mu(i,j)+mu(i-1,j))
+            MUU(i,j) = 0.5*(MU(i,j)+MU(i-1,j))
          ENDDO
          ENDDO
          i=ite
          im = ite-1
          if(config_flags%periodic_x) im = ite
          DO j=jts,jtf
-            muu(i,j) = 0.5*(mu(i-1,j)+mu(im,j))
+            MUU(i,j) = 0.5*(MU(i-1,j)+MU(im,j))
          ENDDO
       ELSE IF ( ( its .EQ. ids ) .AND. ( ite .EQ. ide ) ) THEN
          DO j=jts,jtf
          DO i=its+1,itf-1
-            muu(i,j) = 0.5*(mu(i,j)+mu(i-1,j))
+            MUU(i,j) = 0.5*(MU(i,j)+MU(i-1,j))
          ENDDO
          ENDDO
          i=its
          im = its
          if(config_flags%periodic_x) im = its-1
          DO j=jts,jtf
-            muu(i,j) = 0.5*(mu(i,j)+mu(im,j))
+            MUU(i,j) = 0.5*(MU(i,j)+MU(im,j))
          ENDDO
          i=ite
          im = ite-1
          if(config_flags%periodic_x) im = ite
          DO j=jts,jtf
-            muu(i,j) = 0.5*(mu(i-1,j)+mu(im,j))
+            MUU(i,j) = 0.5*(MU(i-1,j)+MU(im,j))
          ENDDO
       END IF
 
@@ -270,50 +305,50 @@ SUBROUTINE calc_mu_uv_1 ( config_flags,                 &
       IF      ( ( jts .NE. jds ) .AND. ( jte .NE. jde ) ) THEN
          DO j=jts,jtf
          DO i=its,itf
-             muv(i,j) = 0.5*(mu(i,j)+mu(i,j-1))
+             MUV(i,j) = 0.5*(MU(i,j)+MU(i,j-1))
          ENDDO
          ENDDO
       ELSE IF ( ( jts .EQ. jds ) .AND. ( jte .NE. jde ) ) THEN
          DO j=jts+1,jtf
          DO i=its,itf
-             muv(i,j) = 0.5*(mu(i,j)+mu(i,j-1))
+             MUV(i,j) = 0.5*(MU(i,j)+MU(i,j-1))
          ENDDO
          ENDDO
          j=jts
          jm = jts
          if(config_flags%periodic_y) jm = jts-1
          DO i=its,itf
-             muv(i,j) = 0.5*(mu(i,j)+mu(i,jm))
+             MUV(i,j) = 0.5*(MU(i,j)+MU(i,jm))
          ENDDO
       ELSE IF ( ( jts .NE. jds ) .AND. ( jte .EQ. jde ) ) THEN
          DO j=jts,jtf-1
          DO i=its,itf
-             muv(i,j) = 0.5*(mu(i,j)+mu(i,j-1))
+             MUV(i,j) = 0.5*(MU(i,j)+MU(i,j-1))
          ENDDO
          ENDDO
          j=jte
          jm = jte-1
          if(config_flags%periodic_y) jm = jte
          DO i=its,itf
-             muv(i,j) = 0.5*(mu(i,j-1)+mu(i,jm))
+             MUV(i,j) = 0.5*(MU(i,j-1)+MU(i,jm))
          ENDDO
       ELSE IF ( ( jts .EQ. jds ) .AND. ( jte .EQ. jde ) ) THEN
          DO j=jts+1,jtf-1
          DO i=its,itf
-             muv(i,j) = 0.5*(mu(i,j)+mu(i,j-1))
+             MUV(i,j) = 0.5*(MU(i,j)+MU(i,j-1))
          ENDDO
          ENDDO
          j=jts
          jm = jts
          if(config_flags%periodic_y) jm = jts-1
          DO i=its,itf
-             muv(i,j) = 0.5*(mu(i,j)+mu(i,jm))
+             MUV(i,j) = 0.5*(MU(i,j)+MU(i,jm))
          ENDDO
          j=jte
          jm = jte-1
          if(config_flags%periodic_y) jm = jte
          DO i=its,itf
-             muv(i,j) = 0.5*(mu(i,j-1)+mu(i,jm))
+             MUV(i,j) = 0.5*(MU(i,j-1)+MU(i,jm))
          ENDDO
       END IF
 
@@ -328,6 +363,7 @@ END SUBROUTINE calc_mu_uv_1
 SUBROUTINE couple_momentum ( muu, ru, u, msfu,              &
                              muv, rv, v, msfv, msfv_inv,    &
                              mut, rw, w, msft,              &
+                             c1h, c2h, c1f, c2f,            &
                              ids, ide, jds, jde, kds, kde,  &
                              ims, ime, jms, jme, kms, kme,  &
                              its, ite, jts, jte, kts, kte  )
@@ -346,6 +382,7 @@ SUBROUTINE couple_momentum ( muu, ru, u, msfu,              &
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: msfu, msfv, msft, msfv_inv
    
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(IN   ) :: u, v, w
+   REAL , DIMENSION( kms:kme ) ,    INTENT(IN   ) :: c1h, c2h, c1f, c2f
    
    ! Local data
    
@@ -378,7 +415,6 @@ SUBROUTINE couple_momentum ( muu, ru, u, msfu,              &
       DO k=kts,ktf
       DO i=its,itf
            rv(i,k,j)=v(i,k,j)*muv(i,j)*msfv_inv(i,j)
-!           rv(i,k,j)=v(i,k,j)*muv(i,j)/msfv(i,j)
       ENDDO
       ENDDO
       ENDDO
@@ -431,42 +467,42 @@ SUBROUTINE calc_mu_staggered ( mu, mub, muu, muv,            &
       IF      ( ( its .NE. ids ) .AND. ( ite .NE. ide ) ) THEN
          DO j=jts,jtf
          DO i=its,itf
-            muu(i,j) = 0.5*(mu(i,j)+mu(i-1,j)+mub(i,j)+mub(i-1,j))
+            MUU(i,j) = 0.5*(MU(i,j)+MU(i-1,j)+MUB(i,j)+MUB(i-1,j))
          ENDDO
          ENDDO
       ELSE IF ( ( its .EQ. ids ) .AND. ( ite .NE. ide ) ) THEN
          DO j=jts,jtf
          DO i=its+1,itf
-            muu(i,j) = 0.5*(mu(i,j)+mu(i-1,j)+mub(i,j)+mub(i-1,j))
+            MUU(i,j) = 0.5*(MU(i,j)+MU(i-1,j)+MUB(i,j)+MUB(i-1,j))
          ENDDO
          ENDDO
          i=its
          DO j=jts,jtf
-            muu(i,j) =      mu(i,j)          +mub(i,j)
+            MUU(i,j) =      MU(i,j)          +MUB(i,j)
          ENDDO
       ELSE IF ( ( its .NE. ids ) .AND. ( ite .EQ. ide ) ) THEN
          DO j=jts,jtf
          DO i=its,itf-1
-            muu(i,j) = 0.5*(mu(i,j)+mu(i-1,j)+mub(i,j)+mub(i-1,j))
+            MUU(i,j) = 0.5*(MU(i,j)+MU(i-1,j)+MUB(i,j)+MUB(i-1,j))
          ENDDO
          ENDDO
          i=ite
          DO j=jts,jtf
-            muu(i,j) =      mu(i-1,j)        +mub(i-1,j)
+            MUU(i,j) =      MU(i-1,j)        +MUB(i-1,j)
          ENDDO
       ELSE IF ( ( its .EQ. ids ) .AND. ( ite .EQ. ide ) ) THEN
          DO j=jts,jtf
          DO i=its+1,itf-1
-            muu(i,j) = 0.5*(mu(i,j)+mu(i-1,j)+mub(i,j)+mub(i-1,j))
+            MUU(i,j) = 0.5*(MU(i,j)+MU(i-1,j)+MUB(i,j)+MUB(i-1,j))
          ENDDO
          ENDDO
          i=its
          DO j=jts,jtf
-            muu(i,j) =      mu(i,j)          +mub(i,j)
+            MUU(i,j) =      MU(i,j)          +MUB(i,j)
          ENDDO
          i=ite
          DO j=jts,jtf
-            muu(i,j) =      mu(i-1,j)        +mub(i-1,j)
+            MUU(i,j) =      MU(i-1,j)        +MUB(i-1,j)
          ENDDO
       END IF
 
@@ -476,42 +512,42 @@ SUBROUTINE calc_mu_staggered ( mu, mub, muu, muv,            &
       IF      ( ( jts .NE. jds ) .AND. ( jte .NE. jde ) ) THEN
          DO j=jts,jtf
          DO i=its,itf
-             muv(i,j) = 0.5*(mu(i,j)+mu(i,j-1)+mub(i,j)+mub(i,j-1))
+             MUV(i,j) = 0.5*(MU(i,j)+MU(i,j-1)+MUB(i,j)+MUB(i,j-1))
          ENDDO
          ENDDO
       ELSE IF ( ( jts .EQ. jds ) .AND. ( jte .NE. jde ) ) THEN
          DO j=jts+1,jtf
          DO i=its,itf
-             muv(i,j) = 0.5*(mu(i,j)+mu(i,j-1)+mub(i,j)+mub(i,j-1))
+             MUV(i,j) = 0.5*(MU(i,j)+MU(i,j-1)+MUB(i,j)+MUB(i,j-1))
          ENDDO
          ENDDO
          j=jts
          DO i=its,itf
-             muv(i,j) =      mu(i,j)          +mub(i,j)
+             MUV(i,j) =      MU(i,j)          +MUB(i,j)
          ENDDO
       ELSE IF ( ( jts .NE. jds ) .AND. ( jte .EQ. jde ) ) THEN
          DO j=jts,jtf-1
          DO i=its,itf
-             muv(i,j) = 0.5*(mu(i,j)+mu(i,j-1)+mub(i,j)+mub(i,j-1))
+             MUV(i,j) = 0.5*(MU(i,j)+MU(i,j-1)+MUB(i,j)+MUB(i,j-1))
          ENDDO
          ENDDO
          j=jte
          DO i=its,itf
-             muv(i,j) =      mu(i,j-1)        +mub(i,j-1)
+             MUV(i,j) =      MU(i,j-1)        +MUB(i,j-1)
          ENDDO
       ELSE IF ( ( jts .EQ. jds ) .AND. ( jte .EQ. jde ) ) THEN
          DO j=jts+1,jtf-1
          DO i=its,itf
-             muv(i,j) = 0.5*(mu(i,j)+mu(i,j-1)+mub(i,j)+mub(i,j-1))
+             MUV(i,j) = 0.5*(MU(i,j)+MU(i,j-1)+MUB(i,j)+MUB(i,j-1))
          ENDDO
          ENDDO
          j=jts
          DO i=its,itf
-             muv(i,j) =      mu(i,j)          +mub(i,j)
+             MUV(i,j) =      MU(i,j)          +MUB(i,j)
          ENDDO
          j=jte
          DO i=its,itf
-             muv(i,j) =      mu(i,j-1)        +mub(i,j-1)
+             MUV(i,j) =      MU(i,j-1)        +MUB(i,j-1)
          ENDDO
       END IF
 
@@ -520,7 +556,7 @@ END SUBROUTINE calc_mu_staggered
 !-------------------------------------------------------------------------------
 
 SUBROUTINE couple ( mu, mub, rfield, field, name, &
-                    msf,                          &
+                    msf, c1h, c2h, c1, c2,        &
                     ids, ide, jds, jde, kds, kde, &
                     ims, ime, jms, jme, kms, kme, &
                     its, ite, jts, jte, kts, kte )
@@ -540,6 +576,8 @@ SUBROUTINE couple ( mu, mub, rfield, field, name, &
    REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: mu, mub, msf
    
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(IN   ) :: field
+
+   REAL , DIMENSION( kms:kme ) ,    INTENT(IN   ) :: c1h, c2h, c1, c2
    
    ! Local data
    
@@ -633,7 +671,7 @@ END SUBROUTINE couple
 
 !-------------------------------------------------------------------------------
 
-SUBROUTINE calc_ww_cp ( u, v, mup, mub, ww,              &
+SUBROUTINE calc_ww_cp ( u, v, mup, mub, c1h, c2h, ww,    &
                         rdx, rdy, msftx, msfty,          &
                         msfux, msfuy, msfvx, msfvx_inv,  &
                         msfvy, dnw,                      &
@@ -657,6 +695,7 @@ SUBROUTINE calc_ww_cp ( u, v, mup, mub, ww,              &
                                                             msfvx, msfvy, &
                                                             msfvx_inv
    REAL , DIMENSION( kms:kme ) , INTENT(IN   ) :: dnw
+   REAL , DIMENSION( kms:kme ) , INTENT(IN   ) :: c1h, c2h
    
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT  ) :: ww
    REAL , INTENT(IN   )  :: rdx, rdy
@@ -693,15 +732,14 @@ SUBROUTINE calc_ww_cp ( u, v, mup, mub, ww,              &
       DO j=jts,jtf
       DO i=its,min(ite+1,ide)
         ! u is always coupled with my
-        muu(i,j) = 0.5*(mup(i,j)+mub(i,j)+mup(i-1,j)+mub(i-1,j))/msfuy(i,j)
+        MUU(i,j) = 0.5*(MUP(i,j)+MUB(i,j)+MUP(i-1,j)+MUB(i-1,j))/msfuy(i,j)
       ENDDO
       ENDDO
 
       DO j=jts,min(jte+1,jde)
       DO i=its,itf
        ! v is always coupled with mx
-!        muv(i,j) = 0.5*(mup(i,j)+mub(i,j)+mup(i,j-1)+mub(i,j-1))/msfvx(i,j)
-        muv(i,j) = 0.5*(mup(i,j)+mub(i,j)+mup(i,j-1)+mub(i,j-1))*msfvx_inv(i,j)
+        MUV(i,j) = 0.5*(MUP(i,j)+MUB(i,j)+MUP(i,j-1)+MUB(i,j-1))*msfvx_inv(i,j)
       ENDDO
       ENDDO
 
@@ -770,7 +808,7 @@ SUBROUTINE calc_ww_cp ( u, v, mup, mub, ww,              &
 !                                     +rdx*(ru(i+1,k-1,j)-ru(i,k-1,j))  &
 !                                     +rdy*(rv(i,k-1,j+1)-rv(i,k-1,j)) )
 
-           ww(i,k,j)=ww(i,k-1,j) - dnw(k-1)*dmdt(i) - divv(i,k-1)
+           ww(i,k,j)=ww(i,k-1,j) - dnw(k-1)*c1h(k-1)*dmdt(i) - divv(i,k-1)
 
         ENDDO
         ENDDO
@@ -949,8 +987,10 @@ END SUBROUTINE calc_alt
 !----------------------------------------------------------------------
 
 SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
-                            al, alb, mu, muts, ph, phb, p, pb,     &
-                            t, p0, t0, ptop, znu, znw, dnw, rdnw,  &
+                            al, alb, mu, muts,                    &
+                            c1, c2, c3h, c4h, c3f, c4f,           &
+                            ph, phb, p, pb,                       &
+                            t, p0, t0, ptop, znu, znw, dnw, rdnw, &
                             rdn, non_hydrostatic,          &
                             ids, ide, jds, jde, kds, kde,  &
                             ims, ime, jms, jme, kms, kme,  &
@@ -983,11 +1023,13 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
 
   REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: znu, znw, dnw, rdnw, rdn
 
+  REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: c1, c2, c3h, c4h, c3f, c4f
+
   REAL,   INTENT(IN   ) :: t0, p0, ptop
 
   ! Local stuff
 
-  INTEGER :: i, j, k, itf, jtf, ktf, ispe
+  INTEGER :: i, j, k, kk, itf, jtf, ktf, ispe
   REAL    :: qvf, qtot, qf1, qf2
   REAL, DIMENSION( its:ite) :: temp,cpovcv_v
   REAL    :: pfu, phm, pfd
@@ -1035,9 +1077,15 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
         DO j=jts,jtf
         DO k=kts,ktf
         DO i=its,itf
+#if  !( HYBRID_COORD==1 ) 
           pfu = muts(i,j)*znw(k+1)+ptop
           pfd = muts(i,j)*znw(k)  +ptop
           phm = muts(i,j)*znu(k)  +ptop
+#elif ( HYBRID_COORD==1 ) 
+          pfu = c3f(k+1)*MUTS(i,j) + c4f(k+1) + ptop
+          pfd = c3f(k  )*MUTS(i,j) + c4f(k  ) + ptop
+          phm = c3h(k  )*MUTS(i,j) + c4h(k  ) + ptop
+#endif
           al(i,k,j) = (ph(i,k+1,j)-ph(i,k,j)+phb(i,k+1,j)-phb(i,k,j))/phm/LOG(pfd/pfu)-alb(i,k,j)
         END DO
         END DO
@@ -1163,11 +1211,12 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
 
      IF (hypsometric_opt == 1) THEN
         DO j=jts,jtf
-          DO k=2,ktf+1  ! integrate hydrostatic equation for geopotential
+          DO kk=2,ktf+1  ! integrate hydrostatic equation for geopotential
+            k = kk-1
             DO i=its,itf
-              ph(i,k,j) = ph(i,k-1,j) - (dnw(k-1))*(           &
-                           (muts(i,j))*al(i,k-1,j)+            &
-                            mu(i,j)*alb(i,k-1,j)  )
+              ph(i,k+1,j) = ph(i,k,j) - (dnw(k))*(           &
+                           (muts(i,j))*al(i,k,j)+            &
+                            mu(i,j)*alb(i,k,j)  )
             ENDDO
           ENDDO
         ENDDO
@@ -1182,9 +1231,15 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
 
         DO k=kts+1,ktf+1
           DO i=its,itf
+#if  !( HYBRID_COORD==1 ) 
             pfu = muts(i,j)*znw(k)  +ptop
             pfd = muts(i,j)*znw(k-1)+ptop
             phm = muts(i,j)*znu(k-1)+ptop
+#elif ( HYBRID_COORD==1 ) 
+            pfu = c3f(k  )*MUTS(i,j) + c4f(k  ) + ptop
+            pfd = c3f(k-1)*MUTS(i,j) + c4f(k-1) + ptop
+            phm = c3h(k-1)*MUTS(i,j) + c4h(k-1) + ptop
+#endif
             ph(i,k,j) = ph(i,k-1,j) + (al(i,k-1,j)+alb(i,k-1,j))*phm*LOG(pfd/pfu)
           ENDDO
         ENDDO
@@ -1247,7 +1302,8 @@ END SUBROUTINE calc_php
 
 !-------------------------------------------------------------------------------
 
-SUBROUTINE diagnose_w( ph_tend, ph_new, ph_old, w, mu, dt,  &
+SUBROUTINE diagnose_w( ph_tend, ph_new, ph_old, w, mut,     &
+                       c1f, c2f, dt,                        &
                        u, v, ht,                            &
                        cf1, cf2, cf3, rdx, rdy,             &
                        msftx, msfty,                        &
@@ -1270,7 +1326,9 @@ SUBROUTINE diagnose_w( ph_tend, ph_new, ph_old, w, mu, dt,  &
 
    REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(  OUT) :: w
 
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: mu, ht, msftx, msfty
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: mut, ht, msftx, msfty
+
+   REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: c1f, c2f
 
    REAL, INTENT(IN   ) :: dt, cf1, cf2, cf3, rdx, rdy
 
@@ -1328,7 +1386,7 @@ SUBROUTINE diagnose_w( ph_tend, ph_new, ph_old, w, mu, dt,  &
      DO k = 2, kte
      DO i = its, itf
        w(i,k,j) =  msfty(i,j)*(  (ph_new(i,k,j)-ph_old(i,k,j))/dt       &
-                               - ph_tend(i,k,j)/mu(i,j)        )/g 
+                               - ph_tend(i,k,j)/mut(i,j)        )/g 
 
      ENDDO
      ENDDO
@@ -1341,7 +1399,8 @@ END SUBROUTINE diagnose_w
 
 SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
                    ph, ph_old, phb, w,              &
-                   mut, muu, muv,                   &
+                   mut, muuf, muvf,                 &
+                   c1f, c2f,                        &
                    fnm, fnp,                        &
                    rdnw, cfn, cfn1, rdx, rdy,       &
                    msfux, msfuy, msfvx,             &
@@ -1371,13 +1430,16 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
    REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(INOUT) :: ph_tend
 
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: muu, muv, mut,   &
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: muuf, muvf, mut,   &
                                                             msfux, msfuy, &
                                                             msfvx, msfvy, &
                                                             msftx, msfty, &
                                                             msfvx_inv
 
    REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: rdnw, fnm, fnp
+
+   REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: c1f, c2f
+   
 
    REAL,  INTENT(IN   ) :: cfn, cfn1, rdx, rdy
 
@@ -1486,9 +1548,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      DO k = 2, kte-1
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdy/msfty(i,j))*          &
-                 ( muv(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)*   &
+                 ( muvf(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)*   &
                   (phb(i,k,j+1)-phb(i,k,j  )+ph(i,k,j+1)-ph(i,k,j  ))   &
-                  +muv(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  )*   &
+                  +muvf(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  )*   &
                   (phb(i,k,j  )-phb(i,k,j-1)+ph(i,k,j  )-ph(i,k,j-1)) )
      ENDDO
      ENDDO
@@ -1496,9 +1558,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      k = kte
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdy/msfty(i,j))*                        &
-                  ( muv(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)*    &
+                  ( muvf(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)*    &
                    (phb(i,k,j+1)-phb(i,k,j  )+ph(i,k,j+1)-ph(i,k,j  ))               &
-                   +muv(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j  )*    &
+                   +muvf(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j  )*    &
                    (phb(i,k,j  )-phb(i,k,j-1)+ph(i,k,j  )-ph(i,k,j-1))              )
      ENDDO
 
@@ -1519,9 +1581,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      DO k = 2, kte-1
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdx/msfty(i,j))*         &
-                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)*  &
+                 ( muuf(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)*  &
                   (phb(i+1,k,j)-phb(i  ,k,j)+ph(i+1,k,j)-ph(i  ,k,j))  &
-                  +muu(i  ,j)*(u(i  ,k,j)+u(i  ,k-1,j))*msfux(i  ,j)*  &
+                  +muuf(i  ,j)*(u(i  ,k,j)+u(i  ,k-1,j))*msfux(i  ,j)*  &
                   (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))  )
      ENDDO
      ENDDO
@@ -1529,9 +1591,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      k = kte
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*                        &
-                  ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)*    &
+                  ( muuf(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)*    &
                    (phb(i+1,k,j)-phb(i  ,k,j)+ph(i+1,k,j)-ph(i  ,k,j))               &
-                   +muu(i  ,j)*(cfn*u(i  ,k-1,j)+cfn1*u(i  ,k-2,j))*msfux(  i,j)*    &
+                   +muuf(i  ,j)*(cfn*u(i  ,k-1,j)+cfn1*u(i  ,k-2,j))*msfux(  i,j)*    &
                    (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))             )
      ENDDO
 
@@ -1554,8 +1616,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      DO k = 2, kte-1
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdy/msfty(i,j))*(                     &
-                 ( muv(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)                &
-                  +muv(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  ))* (1./12.)*(   &
+                 ( muvf(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)                &
+                  +muvf(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  ))* (1./12.)*(   &
                     8.*(ph(i,k,j+1)-ph(i,k,j-1))                                    &
                       -(ph(i,k,j+2)-ph(i,k,j-2))                                    &
                    +8.*(phb(i,k,j+1)-phb(i,k,j-1))                                  &
@@ -1568,8 +1630,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      k = kte
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdy/msfty(i,j))*(                                 &
-                 ( muv(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)                &
-                  +muv(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j  ))* (1./12.)*(   &
+                 ( muvf(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)                &
+                  +muvf(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j  ))* (1./12.)*(   &
                     8.*(ph(i,k,j+1)-ph(i,k,j-1))                                               &
                       -(ph(i,k,j+2)-ph(i,k,j-2))                                               &
                    +8.*(phb(i,k,j+1)-phb(i,k,j-1))                                             &
@@ -1587,9 +1649,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      DO k = 2, kte-1
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdy/msfty(i,j))*          &
-                 ( muv(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)*   &
+                 ( muvf(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)*   &
                   (phb(i,k,j+1)-phb(i,k,j  )+ph(i,k,j+1)-ph(i,k,j  ))   &
-                  +muv(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  )*   &
+                  +muvf(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  )*   &
                   (phb(i,k,j  )-phb(i,k,j-1)+ph(i,k,j  )-ph(i,k,j-1)) )
      ENDDO
      ENDDO
@@ -1597,9 +1659,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      k = kte
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdy/msfty(i,j))*                        &
-                  ( muv(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)*    &
+                  ( muvf(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)*    &
                    (phb(i,k,j+1)-phb(i,k,j  )+ph(i,k,j+1)-ph(i,k,j  ))               &
-                   +muv(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j  )*    &
+                   +muvf(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j  )*    &
                    (phb(i,k,j  )-phb(i,k,j-1)+ph(i,k,j  )-ph(i,k,j-1))              )
      ENDDO
 
@@ -1611,9 +1673,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      DO k = 2, kte-1
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdy/msfty(i,j))*          &
-                 ( muv(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)*   &
+                 ( muvf(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)*   &
                   (phb(i,k,j+1)-phb(i,k,j  )+ph(i,k,j+1)-ph(i,k,j  ))   &
-                  +muv(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  )*   &
+                  +muvf(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  )*   &
                   (phb(i,k,j  )-phb(i,k,j-1)+ph(i,k,j  )-ph(i,k,j-1)) )
      ENDDO
      ENDDO
@@ -1621,9 +1683,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      k = kte
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdy/msfty(i,j))*                        &
-                  ( muv(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)*    &
+                  ( muvf(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)*    &
                    (phb(i,k,j+1)-phb(i,k,j  )+ph(i,k,j+1)-ph(i,k,j  ))               &
-                   +muv(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j  )*    &
+                   +muvf(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j  )*    &
                    (phb(i,k,j  )-phb(i,k,j-1)+ph(i,k,j  )-ph(i,k,j-1))              )
      ENDDO
 
@@ -1644,8 +1706,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      DO k = 2, kte-1
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdx/msfty(i,j))*(                    &
-                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)               &
-                  +muu(i,j  )*(u(i  ,k,j)+u(i  ,k-1,j))*msfux(i  ,j) )* (1./12.)*( &
+                 ( muuf(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)               &
+                  +muuf(i,j  )*(u(i  ,k,j)+u(i  ,k-1,j))*msfux(i  ,j) )* (1./12.)*( &
                     8.*(ph(i+1,k,j)-ph(i-1,k,j))                                   &
                       -(ph(i+2,k,j)-ph(i-2,k,j))                                   &
                    +8.*(phb(i+1,k,j)-phb(i-1,k,j))                                 &
@@ -1656,8 +1718,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      k = kte
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*(                                 &
-                 ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)                &
-                  +muu(i,j  )*(cfn*u(i  ,k-1,j)+cfn1*u(i  ,k-2,j))*msfux(i  ,j) )* (1./12.)*(  &
+                 ( muuf(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)                &
+                  +muuf(i,j  )*(cfn*u(i  ,k-1,j)+cfn1*u(i  ,k-2,j))*msfux(i  ,j) )* (1./12.)*(  &
                     8.*(ph(i+1,k,j)-ph(i-1,k,j))                                               &
                       -(ph(i+2,k,j)-ph(i-2,k,j))                                               &
                    +8.*(phb(i+1,k,j)-phb(i-1,k,j))                                             &
@@ -1675,9 +1737,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      DO j = j_start, jtf
      DO k = 2, kte-1
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdx/msfty(i,j))*         &
-                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)*  &
+                 ( muuf(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)*  &
                   (phb(i+1,k,j)-phb(i  ,k,j)+ph(i+1,k,j)-ph(i  ,k,j))  &
-                  +muu(i  ,j)*(u(i  ,k,j)+u(i  ,k-1,j))*msfux(i  ,j)*  &
+                  +muuf(i  ,j)*(u(i  ,k,j)+u(i  ,k-1,j))*msfux(i  ,j)*  &
                   (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))  )
      ENDDO
      ENDDO
@@ -1685,9 +1747,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      k = kte
      DO j = j_start, jtf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*                        &
-                  ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)*    &
+                  ( muuf(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)*    &
                    (phb(i+1,k,j)-phb(i  ,k,j)+ph(i+1,k,j)-ph(i  ,k,j))               &
-                   +muu(i  ,j)*(cfn*u(i  ,k-1,j)+cfn1*u(i  ,k-2,j))*msfux(  i,j)*    &
+                   +muuf(i  ,j)*(cfn*u(i  ,k-1,j)+cfn1*u(i  ,k-2,j))*msfux(  i,j)*    &
                    (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))             )
      ENDDO
 
@@ -1699,9 +1761,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      DO j = j_start, jtf
      DO k = 2, kte-1
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdx/msfty(i,j))*         &
-                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)*  &
+                 ( muuf(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)*  &
                   (phb(i+1,k,j)-phb(i  ,k,j)+ph(i+1,k,j)-ph(i  ,k,j))  &
-                  +muu(i  ,j)*(u(i  ,k,j)+u(i  ,k-1,j))*msfux(i  ,j)*  &
+                  +muuf(i  ,j)*(u(i  ,k,j)+u(i  ,k-1,j))*msfux(i  ,j)*  &
                   (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))  )
      ENDDO
      ENDDO
@@ -1709,9 +1771,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      k = kte
      DO j = j_start, jtf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*                        &
-                  ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)*    &
+                  ( muuf(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)*    &
                    (phb(i+1,k,j)-phb(i  ,k,j)+ph(i+1,k,j)-ph(i  ,k,j))               &
-                   +muu(i  ,j)*(cfn*u(i  ,k-1,j)+cfn1*u(i  ,k-2,j))*msfux(  i,j)*    &
+                   +muuf(i  ,j)*(cfn*u(i  ,k-1,j)+cfn1*u(i  ,k-2,j))*msfux(  i,j)*    &
                    (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))             )
      ENDDO
 
@@ -1739,8 +1801,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      DO k = 2, kte-1
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdy/msfty(i,j))* (                    &
-                 ( muv(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)                &
-                  +muv(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  ) )* (1./60.)*(  &
+                 ( muvf(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)                &
+                  +muvf(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  ) )* (1./60.)*(  &
                    45.*(ph(i,k,j+1)-ph(i,k,j-1))                                    &
                    -9.*(ph(i,k,j+2)-ph(i,k,j-2))                                    &
                       +(ph(i,k,j+3)-ph(i,k,j-3))                                    &
@@ -1755,8 +1817,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      k = kte
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdy/msfty(i,j))* (                                &
-                 ( muv(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)                &
-                  +muv(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j  ) )* (1./60.)*(  &
+                 ( muvf(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)                &
+                  +muvf(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j  ) )* (1./60.)*(  &
                    45.*(ph(i,k,j+1)-ph(i,k,j-1))                                               &
                    -9.*(ph(i,k,j+2)-ph(i,k,j-2))                                               &
                       +(ph(i,k,j+3)-ph(i,k,j-3))                                               &
@@ -1776,8 +1838,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      DO k = 2, kte-1
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdy/msfty(i,j))* (                     &
-                 ( muv(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)                &
-                  +muv(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  ) )* (1./12.)*(  &
+                 ( muvf(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)                &
+                  +muvf(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  ) )* (1./12.)*(  &
                     8.*(ph(i,k,j+1)-ph(i,k,j-1))                                    &
                       -(ph(i,k,j+2)-ph(i,k,j-2))                                    &
                    +8.*(phb(i,k,j+1)-phb(i,k,j-1))                                  &
@@ -1790,8 +1852,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      k = kte
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdy/msfty(i,j))* (                              &
-                 ( muv(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)              &
-                  +muv(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j) )* (1./12.)*(  &
+                 ( muvf(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)              &
+                  +muvf(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j) )* (1./12.)*(  &
                     8.*(ph(i,k,j+1)-ph(i,k,j-1))                                             &
                       -(ph(i,k,j+2)-ph(i,k,j-2))                                             &
                    +8.*(phb(i,k,j+1)-phb(i,k,j-1))                                           &
@@ -1806,8 +1868,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      DO k = 2, kte-1
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdy/msfty(i,j))* (                  &
-                 ( muv(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)              &
-                  +muv(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j) )* (1./12.)*(  &
+                 ( muvf(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)              &
+                  +muvf(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j) )* (1./12.)*(  &
                     8.*(ph(i,k,j+1)-ph(i,k,j-1))                                  &
                       -(ph(i,k,j+2)-ph(i,k,j-2))                                  &
                    +8.*(phb(i,k,j+1)-phb(i,k,j-1))                                &
@@ -1820,8 +1882,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      k = kte
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdy/msfty(i,j))* (                              &
-                 ( muv(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)              &
-                  +muv(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j) )* (1./12.)*(  &
+                 ( muvf(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)              &
+                  +muvf(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j) )* (1./12.)*(  &
                     8.*(ph(i,k,j+1)-ph(i,k,j-1))                                             &
                       -(ph(i,k,j+2)-ph(i,k,j-2))                                             &
                    +8.*(phb(i,k,j+1)-phb(i,k,j-1))                                           &
@@ -1839,9 +1901,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      DO k = 2, kte-1
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdy/msfty(i,j))*          &
-                 ( muv(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)*   &
+                 ( muvf(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)*   &
                   (phb(i,k,j+1)-phb(i,k,j  )+ph(i,k,j+1)-ph(i,k,j  ))   &
-                  +muv(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  )*   &
+                  +muvf(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  )*   &
                   (phb(i,k,j  )-phb(i,k,j-1)+ph(i,k,j  )-ph(i,k,j-1)) )
      ENDDO
      ENDDO
@@ -1849,9 +1911,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      k = kte
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdy/msfty(i,j))*                        &
-                  ( muv(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)*    &
+                  ( muvf(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)*    &
                    (phb(i,k,j+1)-phb(i,k,j  )+ph(i,k,j+1)-ph(i,k,j  ))               &
-                   +muv(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j  )*    &
+                   +muvf(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j  )*    &
                    (phb(i,k,j  )-phb(i,k,j-1)+ph(i,k,j  )-ph(i,k,j-1))              )
      ENDDO
 
@@ -1863,9 +1925,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      DO k = 2, kte-1
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdy/msfty(i,j))*          &
-                 ( muv(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)*   &
+                 ( muvf(i,j+1)*(v(i,k,j+1)+v(i,k-1,j+1))*msfvy(i,j+1)*   &
                   (phb(i,k,j+1)-phb(i,k,j  )+ph(i,k,j+1)-ph(i,k,j  ))   &
-                  +muv(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  )*   &
+                  +muvf(i,j  )*(v(i,k,j  )+v(i,k-1,j  ))*msfvy(i,j  )*   &
                   (phb(i,k,j  )-phb(i,k,j-1)+ph(i,k,j  )-ph(i,k,j-1)) )
      ENDDO
      ENDDO
@@ -1873,9 +1935,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      k = kte
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdy/msfty(i,j))*                        &
-                  ( muv(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)*    &
+                  ( muvf(i,j+1)*(cfn*v(i,k-1,j+1)+cfn1*v(i,k-2,j+1))*msfvy(i,j+1)*    &
                    (phb(i,k,j+1)-phb(i,k,j  )+ph(i,k,j+1)-ph(i,k,j  ))               &
-                   +muv(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j  )*    &
+                   +muvf(i,j  )*(cfn*v(i,k-1,j  )+cfn1*v(i,k-2,j  ))*msfvy(i,j  )*    &
                    (phb(i,k,j  )-phb(i,k,j-1)+ph(i,k,j  )-ph(i,k,j-1))              )
      ENDDO
 
@@ -1896,8 +1958,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      DO k = 2, kte-1
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdx/msfty(i,j))*(                   &
-                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)              &
-                  +muu(i,j  )*(u(i,k,j  )+u(i,k-1,j  ))*msfux(i,j) )* (1./60.)*(  &
+                 ( muuf(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)              &
+                  +muuf(i,j  )*(u(i,k,j  )+u(i,k-1,j  ))*msfux(i,j) )* (1./60.)*(  &
                    45.*(ph(i+1,k,j)-ph(i-1,k,j))                                  &
                    -9.*(ph(i+2,k,j)-ph(i-2,k,j))                                  &
                       +(ph(i+3,k,j)-ph(i-3,k,j))                                  &
@@ -1910,8 +1972,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      k = kte
      DO i = i_start, itf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*(                             &
-                 ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)            &
-                  +muu(i,j  )*(cfn*u(i  ,k-1,j)+cfn1*u(i,k-2,j))*msfux(i,j) )* (1./60.)*(  &
+                 ( muuf(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)            &
+                  +muuf(i,j  )*(cfn*u(i  ,k-1,j)+cfn1*u(i,k-2,j))*msfux(i,j) )* (1./60.)*(  &
                    45.*(ph(i+1,k,j)-ph(i-1,k,j))                                           &
                    -9.*(ph(i+2,k,j)-ph(i-2,k,j))                                           &
                       +(ph(i+3,k,j)-ph(i-3,k,j))                                           &
@@ -1929,8 +1991,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      DO j = j_start, jtf
        DO k = 2, kte-1
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdx/msfty(i,j))*(                   &
-                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)              &
-                  +muu(i,j  )*(u(i,k,j  )+u(i,k-1,j  ))*msfux(i,j) )* (1./12.)*(  &
+                 ( muuf(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)              &
+                  +muuf(i,j  )*(u(i,k,j  )+u(i,k-1,j  ))*msfux(i,j) )* (1./12.)*(  &
                     8.*(ph(i+1,k,j)-ph(i-1,k,j))                                  &
                       -(ph(i+2,k,j)-ph(i-2,k,j))                                  &
                    +8.*(phb(i+1,k,j)-phb(i-1,k,j))                                &
@@ -1938,8 +2000,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
        ENDDO
        k = kte
        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*(                             &
-                ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)            &
-                 +muu(i,j  )*(cfn*u(i  ,k-1,j)+cfn1*u(i,k-2,j))*msfux(i,j) )* (1./12.)*(  &
+                ( muuf(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)            &
+                 +muuf(i,j  )*(cfn*u(i  ,k-1,j)+cfn1*u(i,k-2,j))*msfux(i,j) )* (1./12.)*(  &
                    8.*(ph(i+1,k,j)-ph(i-1,k,j))                                           &
                      -(ph(i+2,k,j)-ph(i-2,k,j))                                           &
                   +8.*(phb(i+1,k,j)-phb(i-1,k,j))                                         &
@@ -1953,8 +2015,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      DO j = j_start, jtf
        DO k = 2, kte-1
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdx/msfty(i,j))*(                   &
-                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)              &
-                  +muu(i,j  )*(u(i,k,j  )+u(i,k-1,j  ))*msfux(i,j) )* (1./12.)*(  &
+                 ( muuf(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)              &
+                  +muuf(i,j  )*(u(i,k,j  )+u(i,k-1,j  ))*msfux(i,j) )* (1./12.)*(  &
                     8.*(ph(i+1,k,j)-ph(i-1,k,j))                                  &
                       -(ph(i+2,k,j)-ph(i-2,k,j))                                  &
                    +8.*(phb(i+1,k,j)-phb(i-1,k,j))                                &
@@ -1962,8 +2024,8 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
        ENDDO
        k = kte
        ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*(                             &
-                ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)            &
-                 +muu(i,j  )*(cfn*u(i  ,k-1,j)+cfn1*u(i,k-2,j))*msfux(i,j) )* (1./12.)*(  &
+                ( muuf(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)            &
+                 +muuf(i,j  )*(cfn*u(i  ,k-1,j)+cfn1*u(i,k-2,j))*msfux(i,j) )* (1./12.)*(  &
                    8.*(ph(i+1,k,j)-ph(i-1,k,j))                                           &
                      -(ph(i+2,k,j)-ph(i-2,k,j))                                           &
                   +8.*(phb(i+1,k,j)-phb(i-1,k,j))                                         &
@@ -1981,9 +2043,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      DO j = j_start, jtf
      DO k = 2, kte-1
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdx/msfty(i,j))*         &
-                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)*  &
+                 ( muuf(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)*  &
                   (phb(i+1,k,j)-phb(i  ,k,j)+ph(i+1,k,j)-ph(i  ,k,j))  &
-                  +muu(i  ,j)*(u(i  ,k,j)+u(i  ,k-1,j))*msfux(i  ,j)*  &
+                  +muuf(i  ,j)*(u(i  ,k,j)+u(i  ,k-1,j))*msfux(i  ,j)*  &
                   (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))  )
      ENDDO
      ENDDO
@@ -1991,9 +2053,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      k = kte
      DO j = j_start, jtf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*                        &
-                  ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)*    &
+                  ( muuf(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)*    &
                    (phb(i+1,k,j)-phb(i  ,k,j)+ph(i+1,k,j)-ph(i  ,k,j))               &
-                   +muu(i  ,j)*(cfn*u(i  ,k-1,j)+cfn1*u(i  ,k-2,j))*msfux(  i,j)*    &
+                   +muuf(i  ,j)*(cfn*u(i  ,k-1,j)+cfn1*u(i  ,k-2,j))*msfux(  i,j)*    &
                    (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))             )
      ENDDO
 
@@ -2005,9 +2067,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      DO j = j_start, jtf
      DO k = 2, kte-1
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.25*rdx/msfty(i,j))*         &
-                 ( muu(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)*  &
+                 ( muuf(i+1,j)*(u(i+1,k,j)+u(i+1,k-1,j))*msfux(i+1,j)*  &
                   (phb(i+1,k,j)-phb(i  ,k,j)+ph(i+1,k,j)-ph(i  ,k,j))  &
-                  +muu(i  ,j)*(u(i  ,k,j)+u(i  ,k-1,j))*msfux(i  ,j)*  &
+                  +muuf(i  ,j)*(u(i  ,k,j)+u(i  ,k-1,j))*msfux(i  ,j)*  &
                   (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))  )
      ENDDO
      ENDDO
@@ -2015,9 +2077,9 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
      k = kte
      DO j = j_start, jtf
         ph_tend(i,k,j)=ph_tend(i,k,j) - (0.5*rdx/msfty(i,j))*                        &
-                  ( muu(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)*    &
+                  ( muuf(i+1,j)*(cfn*u(i+1,k-1,j)+cfn1*u(i+1,k-2,j))*msfux(i+1,j)*    &
                    (phb(i+1,k,j)-phb(i  ,k,j)+ph(i+1,k,j)-ph(i  ,k,j))               &
-                   +muu(i  ,j)*(cfn*u(i  ,k-1,j)+cfn1*u(i  ,k-2,j))*msfux(  i,j)*    &
+                   +muuf(i  ,j)*(cfn*u(i  ,k-1,j)+cfn1*u(i  ,k-2,j))*msfux(  i,j)*    &
                    (phb(i  ,k,j)-phb(i-1,k,j)+ph(i  ,k,j)-ph(i-1,k,j))             )
      ENDDO
 
@@ -2136,7 +2198,7 @@ SUBROUTINE rhs_ph( ph_tend, u, v, ww,               &
 
 SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
                                          ph,alt,p,pb,al,php,cqu,cqv,     &
-                                         muu,muv,mu,fnm,fnp,rdnw,        &
+                                         muu,muv,mu,c1h,c2h,fnm,fnp,rdnw,&
                                          cf1,cf2,cf3,cfn,cfn1,           &
                                          rdx,rdy,msfux,msfuy,&
                                          msfvx,msfvy,msftx,msfty,        &
@@ -2181,11 +2243,14 @@ SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
 
    REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: rdnw, fnm, fnp
 
+   REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: c1h, c2h
+
    REAL,  INTENT(IN   ) :: rdx, rdy, cf1, cf2, cf3, cfn, cfn1
 
    INTEGER :: i,j,k, itf, jtf, ktf, i_start, j_start
    REAL, DIMENSION( ims:ime, kms:kme ) :: dpn
    REAL :: dpx, dpy
+   REAL, DIMENSION( kms:kme ) :: c1
 
    LOGICAL :: specified
 
@@ -2197,6 +2262,7 @@ SUBROUTINE horizontal_pressure_gradient( ru_tend,rv_tend,                &
 !
 !</DESCRIPTION>
 
+   c1 = c1h
    specified = .false.
    if(config_flags%specified .or. config_flags%nested) specified = .true.
 
@@ -2366,7 +2432,8 @@ END SUBROUTINE horizontal_pressure_gradient
 
 !-------------------------------------------------------------------------------
 
-SUBROUTINE pg_buoy_w( rw_tend, p, cqw, mu, mub,       &
+SUBROUTINE pg_buoy_w( rw_tend, p, cqw, muf, mubf,     &
+                      c1f, c2f,                       &
                       rdnw, rdn, g, msftx, msfty,     &
                       ids, ide, jds, jde, kds, kde,   &
                       ims, ime, jms, jme, kms, kme,   &
@@ -2386,9 +2453,11 @@ SUBROUTINE pg_buoy_w( rw_tend, p, cqw, mu, mub,       &
 
    REAL, DIMENSION( ims:ime, kms:kme , jms:jme ), INTENT(INOUT) ::  rw_tend
 
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: mub, mu, msftx, msfty
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: mubf, muf, msftx, msfty
 
    REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: rdnw, rdn
+
+   REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: c1f, c2f
 
    REAL,  INTENT(IN   ) :: g
 
@@ -2426,7 +2495,7 @@ SUBROUTINE pg_buoy_w( rw_tend, p, cqw, mu, mub,       &
        cq2 = cqw(i,k-1,j)*cq1
        rw_tend(i,k,j) = rw_tend(i,k,j)+(1./msfty(i,j))*g*(      &
                         cq1*2.*rdnw(k-1)*(  -p(i,k-1,j))  &
-                        -mu(i,j)-cq2*mub(i,j)            )
+                        -muf(i,j)-cq2*mubf(i,j)            )
      END DO
 
      DO k = 2, kde-1
@@ -2436,7 +2505,7 @@ SUBROUTINE pg_buoy_w( rw_tend, p, cqw, mu, mub,       &
       cqw(i,k,j) = cq1
       rw_tend(i,k,j) = rw_tend(i,k,j)+(1./msfty(i,j))*g*(      &
                        cq1*rdn(k)*(p(i,k,j)-p(i,k-1,j))  &
-                       -mu(i,j)-cq2*mub(i,j)            )
+                       -muf(i,j)-cq2*mubf(i,j)            )
      END DO
      ENDDO           
 
@@ -2448,13 +2517,13 @@ END SUBROUTINE pg_buoy_w
 !-------------------------------------------------------------------------------
 
 SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
-                      u, v, ww, w, mut, rdnw,         &
-                      rdx, rdy, msfux, msfuy,         &
-                      msfvx, msfvy, dt,               &
-                      config_flags,                   &
-                      ids, ide, jds, jde, kds, kde,   &
-                      ims, ime, jms, jme, kms, kme,   &
-                      its, ite, jts, jte, kts, kte   )
+                      u, v, ww, w, mut, c1f, c2f, rdnw, &
+                      rdx, rdy, msfux, msfuy,           &
+                      msfvx, msfvy, dt,                 &
+                      config_flags,                     &
+                      ids, ide, jds, jde, kds, kde,     &
+                      ims, ime, jms, jme, kms, kme,     &
+                      its, ite, jts, jte, kts, kte     )
 
    USE module_llxy
    IMPLICIT NONE
@@ -2478,6 +2547,8 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: mut
 
    REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: rdnw
+
+   REAL, DIMENSION( kms:kme ), INTENT(IN   ) :: c1f, c2f
 
    REAL, INTENT(IN)    :: dt
    REAL, INTENT(IN)    :: rdx, rdy
@@ -2660,7 +2731,7 @@ END SUBROUTINE w_damp
 
 !-------------------------------------------------------------------------------
 
-SUBROUTINE horizontal_diffusion ( name, field, tendency, mu,           &
+SUBROUTINE horizontal_diffusion ( name, field, tendency, MUT, c1, c2,  &
                                   config_flags,                        &
                                   msfux, msfuy, msfvx, msfvx_inv,      &
                                   msfvy, msftx, msfty,                 &
@@ -2685,7 +2756,7 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, mu,           &
 
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: tendency
 
-   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: mu
+   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: MUT
 
    REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: msfux,      &
                                                                     msfuy,      &
@@ -2694,6 +2765,8 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, mu,           &
                                                                     msfvy,      &
                                                                     msftx,      &
                                                                     msfty
+
+   REAL , DIMENSION( kms:kme )           , INTENT(IN   ) :: c1, c2
 
    REAL ,                                      INTENT(IN   ) :: rdx,       &
                                                                 rdy,       &
@@ -2744,14 +2817,14 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, mu,           &
          ! The interior is grad: (m_x*d/dx), the exterior is div: (m_x*m_y*d/dx(/m_y))
          ! setting up different averagings of m^2 partial d/dX and m^2 partial d/dY
 
-         mkrdxm=(msftx(i-1,j)/msfty(i-1,j))*mu(i-1,j)*xkmhd(i-1,k,j)*rdx
-         mkrdxp=(msftx(i,j)/msfty(i,j))*mu(i,j)*xkmhd(i,k,j)*rdx
+         mkrdxm=(msftx(i-1,j)/msfty(i-1,j))*MUT(i-1,j)*xkmhd(i-1,k,j)*rdx
+         mkrdxp=(msftx(i,j)/msfty(i,j))*MUT(i,j)*xkmhd(i,k,j)*rdx
          mrdx=msfux(i,j)*msfuy(i,j)*rdx 
          mkrdym=( (msfuy(i,j)+msfuy(i,j-1))/(msfux(i,j)+msfux(i,j-1)) )* &
-                0.25*(mu(i,j)+mu(i,j-1)+mu(i-1,j-1)+mu(i-1,j))* &
+                0.25*(MUT(i,j)+MUT(i,j-1)+MUT(i-1,j-1)+MUT(i-1,j))* &
                 0.25*(xkmhd(i,k,j)+xkmhd(i,k,j-1)+xkmhd(i-1,k,j-1)+xkmhd(i-1,k,j))*rdy
          mkrdyp=( (msfuy(i,j)+msfuy(i,j+1))/(msfux(i,j)+msfux(i,j+1)) )* &
-                0.25*(mu(i,j)+mu(i,j+1)+mu(i-1,j+1)+mu(i-1,j))* &
+                0.25*(MUT(i,j)+MUT(i,j+1)+MUT(i-1,j+1)+MUT(i-1,j))* &
                 0.25*(xkmhd(i,k,j)+xkmhd(i,k,j+1)+xkmhd(i-1,k,j+1)+xkmhd(i-1,k,j))*rdy
          ! need to do four-corners (t) for diffusion coefficient as there are
          ! no values at u,v points
@@ -2791,10 +2864,10 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, mu,           &
       DO i = i_start, i_end
 
          mkrdxm=( (msfvx(i,j)+msfvx(i-1,j))/(msfvy(i,j)+msfvy(i-1,j)) )*    &
-                0.25*(mu(i,j)+mu(i,j-1)+mu(i-1,j-1)+mu(i-1,j))* &
+                0.25*(MUT(i,j)+MUT(i,j-1)+MUT(i-1,j-1)+MUT(i-1,j))* &
                 0.25*(xkmhd(i,k,j)+xkmhd(i,k,j-1)+xkmhd(i-1,k,j-1)+xkmhd(i-1,k,j))*rdx
          mkrdxp=( (msfvx(i,j)+msfvx(i+1,j))/(msfvy(i,j)+msfvy(i+1,j)) )*    &
-                0.25*(mu(i,j)+mu(i,j-1)+mu(i+1,j-1)+mu(i+1,j))* &
+                0.25*(MUT(i,j)+MUT(i,j-1)+MUT(i+1,j-1)+MUT(i+1,j))* &
                 0.25*(xkmhd(i,k,j)+xkmhd(i,k,j-1)+xkmhd(i+1,k,j-1)+xkmhd(i+1,k,j))*rdx
          mrdx=msfvx(i,j)*msfvy(i,j)*rdx
          mkrdym=(msfty(i,j-1)/msftx(i,j-1))*xkmhd(i,k,j-1)*rdy
@@ -2829,19 +2902,19 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, mu,           &
       DO i = i_start, i_end
 
          mkrdxm=(msfux(i,j)/msfuy(i,j))*   &
-                0.25*(mu(i,j)+mu(i-1,j)+mu(i,j)+mu(i-1,j))* &
+                0.25*(MUT(i,j)+MUT(i-1,j)+MUT(i,j)+MUT(i-1,j))* &
                 0.25*(xkmhd(i,k,j)+xkmhd(i-1,k,j)+xkmhd(i,k-1,j)+xkmhd(i-1,k-1,j))*rdx
          mkrdxp=(msfux(i+1,j)/msfuy(i+1,j))*   &
-                0.25*(mu(i+1,j)+mu(i,j)+mu(i+1,j)+mu(i,j))* &
+                0.25*(MUT(i+1,j)+MUT(i,j)+MUT(i+1,j)+MUT(i,j))* &
                 0.25*(xkmhd(i+1,k,j)+xkmhd(i,k,j)+xkmhd(i+1,k-1,j)+xkmhd(i,k-1,j))*rdx
          mrdx=msftx(i,j)*msfty(i,j)*rdx
 !         mkrdym=(msfvy(i,j)/msfvx(i,j))*   &
          mkrdym=(msfvy(i,j)*msfvx_inv(i,j))*   &
-                0.25*(mu(i,j)+mu(i,j-1)+mu(i,j)+mu(i,j-1))* &
+                0.25*(MUT(i,j)+MUT(i,j-1)+MUT(i,j)+MUT(i,j-1))* &
                 0.25*(xkmhd(i,k,j)+xkmhd(i,k,j-1)+xkmhd(i,k-1,j)+xkmhd(i,k-1,j-1))*rdy
 !         mkrdyp=(msfvy(i,j+1)/msfvx(i,j+1))*   &
          mkrdyp=(msfvy(i,j+1)*msfvx_inv(i,j+1))*   &
-                0.25*(mu(i,j+1)+mu(i,j)+mu(i,j+1)+mu(i,j))* &
+                0.25*(MUT(i,j+1)+MUT(i,j)+MUT(i,j+1)+MUT(i,j))* &
                 0.25*(xkmhd(i,k,j+1)+xkmhd(i,k,j)+xkmhd(i,k-1,j+1)+xkmhd(i,k-1,j))*rdy
          mrdy=msftx(i,j)*msfty(i,j)*rdy
 
@@ -2873,13 +2946,13 @@ SUBROUTINE horizontal_diffusion ( name, field, tendency, mu,           &
       DO k=kts,ktf
       DO i = i_start, i_end
 
-         mkrdxm=(msfux(i,j)/msfuy(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i-1,k,j))*0.5*(mu(i,j)+mu(i-1,j))*rdx
-         mkrdxp=(msfux(i+1,j)/msfuy(i+1,j))*0.5*(xkmhd(i+1,k,j)+xkmhd(i,k,j))*0.5*(mu(i+1,j)+mu(i,j))*rdx
+         mkrdxm=(msfux(i,j)/msfuy(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i-1,k,j))*0.5*(MUT(i,j)+MUT(i-1,j))*rdx
+         mkrdxp=(msfux(i+1,j)/msfuy(i+1,j))*0.5*(xkmhd(i+1,k,j)+xkmhd(i,k,j))*0.5*(MUT(i+1,j)+MUT(i,j))*rdx
          mrdx=msftx(i,j)*msfty(i,j)*rdx
-!         mkrdym=(msfvy(i,j)/msfvx(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(mu(i,j)+mu(i,j-1))*rdy
-         mkrdym=(msfvy(i,j)*msfvx_inv(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(mu(i,j)+mu(i,j-1))*rdy
-!         mkrdyp=(msfvy(i,j+1)/msfvx(i,j+1))*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*0.5*(mu(i,j+1)+mu(i,j))*rdy
-         mkrdyp=(msfvy(i,j+1)*msfvx_inv(i,j+1))*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*0.5*(mu(i,j+1)+mu(i,j))*rdy
+!         mkrdym=(msfvy(i,j)/msfvx(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(MUT(i,j)+MUT(i,j-1))*rdy
+         mkrdym=(msfvy(i,j)*msfvx_inv(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(MUT(i,j)+MUT(i,j-1))*rdy
+!         mkrdyp=(msfvy(i,j+1)/msfvx(i,j+1))*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*0.5*(MUT(i,j+1)+MUT(i,j))*rdy
+         mkrdyp=(msfvy(i,j+1)*msfvx_inv(i,j+1))*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*0.5*(MUT(i,j+1)+MUT(i,j))*rdy
          mrdy=msftx(i,j)*msfty(i,j)*rdy
 
             tendency(i,k,j)=tendency(i,k,j)+( &
@@ -2897,7 +2970,7 @@ END SUBROUTINE horizontal_diffusion
 
 !-----------------------------------------------------------------------------------------
 
-SUBROUTINE horizontal_diffusion_3dmp ( name, field, tendency, mu,           &
+SUBROUTINE horizontal_diffusion_3dmp ( name, field, tendency, MUT, c1, c2,  &
                                        config_flags, base_3d,               &
                                        msfux, msfuy, msfvx, msfvx_inv,      &
                                        msfvy, msftx, msfty,                 &
@@ -2924,7 +2997,7 @@ SUBROUTINE horizontal_diffusion_3dmp ( name, field, tendency, mu,           &
 
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: tendency
 
-   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: mu
+   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: MUT
 
    REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: msfux,      &
                                                                     msfuy,      &
@@ -2933,6 +3006,8 @@ SUBROUTINE horizontal_diffusion_3dmp ( name, field, tendency, mu,           &
                                                                     msfvy,      &
                                                                     msftx,      &
                                                                     msfty
+
+   REAL , DIMENSION( kms:kme )           , INTENT(IN   ) :: c1, c2
 
    REAL ,                                      INTENT(IN   ) :: rdx,       &
                                                                 rdy,       &
@@ -2978,13 +3053,13 @@ SUBROUTINE horizontal_diffusion_3dmp ( name, field, tendency, mu,           &
       DO k=kts,ktf
       DO i = i_start, i_end
 
-         mkrdxm=(msfux(i,j)/msfuy(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i-1,k,j))*0.5*(mu(i,j)+mu(i-1,j))*rdx
-         mkrdxp=(msfux(i+1,j)/msfuy(i+1,j))*0.5*(xkmhd(i+1,k,j)+xkmhd(i,k,j))*0.5*(mu(i+1,j)+mu(i,j))*rdx
+         mkrdxm=(msfux(i,j)/msfuy(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i-1,k,j))*0.5*(MUT(i,j)+MUT(i-1,j))*rdx
+         mkrdxp=(msfux(i+1,j)/msfuy(i+1,j))*0.5*(xkmhd(i+1,k,j)+xkmhd(i,k,j))*0.5*(MUT(i+1,j)+MUT(i,j))*rdx
          mrdx=msftx(i,j)*msfty(i,j)*rdx
-!         mkrdym=(msfvy(i,j)/msfvx(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(mu(i,j)+mu(i,j-1))*rdy
-!         mkrdyp=(msfvy(i,j+1)/msfvx(i,j+1))*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*0.5*(mu(i,j+1)+mu(i,j))*rdy
-         mkrdym=(msfvy(i,j)*msfvx_inv(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(mu(i,j)+mu(i,j-1))*rdy
-         mkrdyp=(msfvy(i,j+1)*msfvx_inv(i,j+1))*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*0.5*(mu(i,j+1)+mu(i,j))*rdy
+!         mkrdym=(msfvy(i,j)/msfvx(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(MUT(i,j)+MUT(i,j-1))*rdy
+!         mkrdyp=(msfvy(i,j+1)/msfvx(i,j+1))*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*0.5*(MUT(i,j+1)+MUT(i,j))*rdy
+         mkrdym=(msfvy(i,j)*msfvx_inv(i,j))*0.5*(xkmhd(i,k,j)+xkmhd(i,k,j-1))*0.5*(MUT(i,j)+MUT(i,j-1))*rdy
+         mkrdyp=(msfvy(i,j+1)*msfvx_inv(i,j+1))*0.5*(xkmhd(i,k,j+1)+xkmhd(i,k,j))*0.5*(MUT(i,j+1)+MUT(i,j))*rdy
          mrdy=msftx(i,j)*msfty(i,j)*rdy
 
             tendency(i,k,j)=tendency(i,k,j)+(                        &
@@ -3006,8 +3081,8 @@ END SUBROUTINE horizontal_diffusion_3dmp
 !-----------------------------------------------------------------------------------------
 
 SUBROUTINE vertical_diffusion ( name, field, tendency,        &
-                                config_flags,                 &
-                                alt, mut, rdn, rdnw, kvdif,   &
+                                config_flags, c1, c2,         &
+                                alt, MUT, rdn, rdnw, kvdif,   &
                                 ids, ide, jds, jde, kds, kde, &
                                 ims, ime, jms, jme, kms, kme, &
                                 its, ite, jts, jte, kts, kte )
@@ -3031,9 +3106,11 @@ SUBROUTINE vertical_diffusion ( name, field, tendency,        &
 
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: tendency
 
-   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: mut
+   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: MUT
 
    REAL , DIMENSION( kms:kme ) ,                   INTENT(IN   ) :: rdn, rdnw
+
+   REAL , DIMENSION( kms:kme )   ,                 INTENT(IN   ) :: c1, c2
 
    REAL ,                                      INTENT(IN   ) :: kvdif
    
@@ -3084,7 +3161,7 @@ j_loop_w : DO j = j_start, j_end
      DO k=kts+1,ktf
        DO i = i_start, i_end
             tendency(i,k,j)=tendency(i,k,j)                                         &
-                              +rdn(k)*g*g/mut(i,j)/(0.5*(alt(i,k,j)+alt(i,k-1,j)))  &
+                              +rdn(k)*g*g/MUT(i,j)/(0.5*(alt(i,k,j)+alt(i,k-1,j)))  &
                                          *(vflux(i,k)-vflux(i,k-1))
        ENDDO
      ENDDO
@@ -3117,7 +3194,7 @@ j_loop_s : DO j = j_start, j_end
 
      DO k=kts,ktf
        DO i = i_start, i_end
-         tendency(i,k,j)=tendency(i,k,j)+g*g/mut(i,j)/alt(i,k,j)  &
+         tendency(i,k,j)=tendency(i,k,j)+g*g/MUT(i,j)/alt(i,k,j)  &
                 *rdnw(k)*(vflux(i,k)-vflux(i,k-1))
        ENDDO
      ENDDO
@@ -3132,8 +3209,8 @@ END SUBROUTINE vertical_diffusion
 !-------------------------------------------------------------------------------
 
 SUBROUTINE vertical_diffusion_mp ( field, tendency, config_flags, &
-                                   base,                          &
-                                   alt, mut, rdn, rdnw, kvdif,    &
+                                   base, c1, c2,                  &
+                                   alt, MUT, rdn, rdnw, kvdif,    &
                                    ids, ide, jds, jde, kds, kde,  &
                                    ims, ime, jms, jme, kms, kme,  &
                                    its, ite, jts, jte, kts, kte  )
@@ -3155,11 +3232,13 @@ SUBROUTINE vertical_diffusion_mp ( field, tendency, config_flags, &
 
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: tendency
 
-   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: mut
+   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: MUT
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: rdn,  &
                                                                   rdnw, &
                                                                   base
+
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: c1, c2
 
    REAL ,                                      INTENT(IN   ) :: kvdif
    
@@ -3211,7 +3290,7 @@ j_loop_s : DO j = j_start, j_end
 
      DO k=kts,ktf
        DO i = i_start, i_end
-         tendency(i,k,j)=tendency(i,k,j)+g*g/mut(i,j)/alt(i,k,j)  &
+         tendency(i,k,j)=tendency(i,k,j)+g*g/MUT(i,j)/alt(i,k,j)  &
                 *rdnw(k)*(vflux(i,k)-vflux(i,k-1))
        ENDDO
      ENDDO
@@ -3224,8 +3303,8 @@ END SUBROUTINE vertical_diffusion_mp
 !-------------------------------------------------------------------------------
 
 SUBROUTINE vertical_diffusion_3dmp ( field, tendency, config_flags, &
-                                     base_3d,                       &
-                                     alt, mut, rdn, rdnw, kvdif,    &
+                                     base_3d, c1, c2,               &
+                                     alt, MUT, rdn, rdnw, kvdif,    &
                                      ids, ide, jds, jde, kds, kde,  &
                                      ims, ime, jms, jme, kms, kme,  &
                                      its, ite, jts, jte, kts, kte  )
@@ -3248,10 +3327,12 @@ SUBROUTINE vertical_diffusion_3dmp ( field, tendency, config_flags, &
 
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: tendency
 
-   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: mut
+   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: MUT
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: rdn,  &
                                                                   rdnw
+
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: c1, c2
 
    REAL ,                                      INTENT(IN   ) :: kvdif
    
@@ -3304,7 +3385,7 @@ j_loop_s : DO j = j_start, j_end
 
      DO k=kts,ktf
        DO i = i_start, i_end
-         tendency(i,k,j)=tendency(i,k,j)+g*g/mut(i,j)/alt(i,k,j)  &
+         tendency(i,k,j)=tendency(i,k,j)+g*g/MUT(i,j)/alt(i,k,j)  &
                 *rdnw(k)*(vflux(i,k)-vflux(i,k-1))
        ENDDO
      ENDDO
@@ -3318,7 +3399,7 @@ END SUBROUTINE vertical_diffusion_3dmp
 
 
 SUBROUTINE vertical_diffusion_u ( field, tendency,              &
-                                  config_flags, u_base,         &
+                                  config_flags, u_base, c1h,c2h,&
                                   alt, muu, rdn, rdnw, kvdif,   &
                                   ids, ide, jds, jde, kds, kde, &
                                   ims, ime, jms, jme, kms, kme, &
@@ -3344,6 +3425,8 @@ SUBROUTINE vertical_diffusion_u ( field, tendency,              &
    REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: muu
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: rdn, rdnw, u_base
+
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: c1h, c2h
 
    REAL ,                                      INTENT(IN   ) :: kvdif
    
@@ -3419,7 +3502,7 @@ END SUBROUTINE vertical_diffusion_u
 
 
 SUBROUTINE vertical_diffusion_v ( field, tendency,              &
-                                  config_flags, v_base,         &
+                                  config_flags, v_base, c1h,c2h,&
                                   alt, muv, rdn, rdnw, kvdif,   &
                                   ids, ide, jds, jde, kds, kde, &
                                   ims, ime, jms, jme, kms, kme, &
@@ -3440,6 +3523,8 @@ SUBROUTINE vertical_diffusion_v ( field, tendency,              &
                                                INTENT(IN   ) :: field,    &
                                                                 alt
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: rdn, rdnw, v_base
+
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: c1h, c2h
 
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: tendency
 
@@ -3780,7 +3865,7 @@ END SUBROUTINE coriolis
 SUBROUTINE perturbation_coriolis ( ru_in, rv_in, rw, ru_tend, rv_tend, rw_tend, &
                                    config_flags,                                &
                                    u_base, v_base, z_base,                      &
-                                   muu, muv, phb, ph,                           &
+                                   muu, muv, c1h, c2h, phb, ph,                 &
                                    msftx, msfty, msfux, msfuy, msfvx, msfvy,    &
                                    f, e, sina, cosa, fzm, fzp,                  &
                                    ids, ide, jds, jde, kds, kde,                &
@@ -3829,6 +3914,8 @@ SUBROUTINE perturbation_coriolis ( ru_in, rv_in, rw, ru_tend, rv_tend, rw_tend, 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: u_base,  &
                                                                   v_base,  &
                                                                   z_base
+
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: c1h, c2h
    
    ! Local storage
 
@@ -4392,6 +4479,8 @@ SUBROUTINE curvature ( ru, rv, rw, u, v, w, ru_tend, rv_tend, rw_tend, &
 
 END SUBROUTINE curvature
 
+#if 0
+DANGER - this is a bad routine to have laying around - someone could use it
 !------------------------------------------------------------------------------
 
 SUBROUTINE decouple ( rr, rfield, field, name, config_flags, &
@@ -4488,6 +4577,7 @@ SUBROUTINE decouple ( rr, rfield, field, name, config_flags, &
    ENDIF
 
 END SUBROUTINE decouple
+#endif
 
 !-------------------------------------------------------------------------------
 
@@ -4649,28 +4739,15 @@ END SUBROUTINE pole_point_bc
 !======================================================================
 
    SUBROUTINE phy_prep ( config_flags,                                &  ! input
-                         mu, muu, muv, u, v, p, pb, alt, ph,          &  ! input
-                         phb, t, tsk, moist, n_moist,                 &  ! input
+                         mut, muu, muv,                               &
+                         c1h, c2h, c1f, c2f,                          &
+                         u, v, p, pb, alt, ph,                        &  ! input
+                         phb, t, moist, n_moist,                      &  ! input
                          rho, th_phy, p_phy , pi_phy ,                &  ! output
                          u_phy, v_phy, p8w, t_phy, t8w,               &  ! output
                          z, z_at_w, dz8w,                             &  ! output
                          p_hyd, p_hyd_w, dnw,                         &  ! output
                          fzm, fzp, znw, p_top,                        &  ! params
-                         RTHRATEN,                                    &
-                         RTHBLTEN, RUBLTEN, RVBLTEN,                  &
-                         RQVBLTEN, RQCBLTEN, RQIBLTEN,                &
-                         RUCUTEN,  RVCUTEN,  RTHCUTEN,                &
-                         RQVCUTEN, RQCCUTEN, RQRCUTEN,                &
-                         RQICUTEN, RQSCUTEN,                          &
-                         RUSHTEN,  RVSHTEN,  RTHSHTEN,                &
-                         RQVSHTEN, RQCSHTEN, RQRSHTEN,                &
-                         RQISHTEN, RQSSHTEN, RQGSHTEN,                &
-                         RTHFTEN,  RQVFTEN,                           &
-                         RUNDGDTEN, RVNDGDTEN, RTHNDGDTEN,            &
-                         RPHNDGDTEN,RQVNDGDTEN, RMUNDGDTEN,           &
-!jdf
-                         landmask, xland,                             &
-!jdf
                          ids, ide, jds, jde, kds, kde,                &
                          ims, ime, jms, jme, kms, kme,                &
                          its, ite, jts, jte, kts, kte                )
@@ -4688,7 +4765,7 @@ END SUBROUTINE pole_point_bc
    REAL, DIMENSION( ims:ime, kms:kme , jms:jme , n_moist ), INTENT(IN) :: moist
 
 
-   REAL , DIMENSION( ims:ime, jms:jme ), INTENT(IN   )   ::     TSK, mu, muu, muv
+   REAL , DIMENSION( ims:ime, jms:jme ), INTENT(IN   )   ::     mut, muu, muv
 
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) ,                 &
           INTENT(  OUT)                                  ::   u_phy, &
@@ -4727,55 +4804,9 @@ END SUBROUTINE pole_point_bc
    REAL , DIMENSION( kms:kme ) ,           INTENT(IN   ) ::     znw, &
                                                                 dnw
 
-   REAL,  DIMENSION( ims:ime , kms:kme, jms:jme ),                   &
-          INTENT(INOUT)   ::                               RTHRATEN  
+   REAL, DIMENSION( kms:kme ) ,            INTENT(IN   ) ::     c1h, c2h, c1f, c2f
 
-   REAL,  DIMENSION( ims:ime , kms:kme, jms:jme ),                   &
-          INTENT(INOUT)   ::                                RUCUTEN, &
-                                                            RVCUTEN, &
-                                                           RTHCUTEN, &
-                                                           RQVCUTEN, &
-                                                           RQCCUTEN, &
-                                                           RQRCUTEN, &
-                                                           RQICUTEN, &
-                                                           RQSCUTEN, &
-                                                            RUSHTEN, &
-                                                            RVSHTEN, &
-                                                           RTHSHTEN, &
-                                                           RQVSHTEN, &
-                                                           RQCSHTEN, &
-                                                           RQRSHTEN, &
-                                                           RQISHTEN, &
-                                                           RQSSHTEN, &
-                                                           RQGSHTEN
-
-   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                   , &
-          INTENT(INOUT)   ::                                RUBLTEN, &
-                                                            RVBLTEN, &
-                                                           RTHBLTEN, &
-                                                           RQVBLTEN, &
-                                                           RQCBLTEN, &
-                                                           RQIBLTEN
-
-   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                   , &
-          INTENT(INOUT)   ::                                RTHFTEN, &
-                                                            RQVFTEN
-
-   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                   , &
-          INTENT(INOUT)   ::                                RUNDGDTEN, &
-                                                            RVNDGDTEN, &
-                                                           RTHNDGDTEN, &
-                                                           RPHNDGDTEN, &
-                                                           RQVNDGDTEN
-
-   REAL,  DIMENSION( ims:ime, jms:jme )                            , &
-          INTENT(INOUT)   ::                               RMUNDGDTEN
-!jdf
-   REAL,  DIMENSION( ims:ime, jms:jme )                            , &
-          INTENT(INOUT)   ::                               landmask, &
-                                                              xland
-!jdf
-
+   REAL, DIMENSION( kms:kme ) :: c1, c2
    INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end, i_startu, j_startv
    INTEGER :: i, j, k
    REAL    :: w1, w2, z0, z1, z2
@@ -4787,12 +4818,12 @@ END SUBROUTINE pole_point_bc
 !<DESCRIPTION>
 !
 !  phys_prep calculates a number of diagnostic quantities needed by
-!  the physics routines.  It also decouples the physics tendencies from
-!  the column dry-air mass (the physics routines expect to see/update the
-!  uncoupled tendencies).
+!  the physics routines.  
 !
 !</DESCRIPTION>
 
+    c1 = c1h
+    c2 = c2h
 !  set up loop bounds for this grid's boundary conditions
 
     i_start = its
@@ -4802,13 +4833,6 @@ END SUBROUTINE pole_point_bc
 
     k_start = kts
     k_end = min( kte, kde-1 )
-!jdf
-!    do j = j_start,j_end
-!    do i = i_start, i_end
-!      if(landmask(i,j).lt.0.5) xland(i,j)=2.0
-!    enddo
-!    enddo
-!jdf
 
 !  compute thermodynamics and velocities at pressure points (or half levels)
 
@@ -4921,7 +4945,7 @@ END SUBROUTINE pole_point_bc
        do n = PARAM_FIRST_SCALAR,n_moist
               qtot = qtot + moist(i,k,j,n)
        enddo
-       p_hyd_w(i,k,j) = p_hyd_w(i,k+1,j) - (1.+qtot)*mu(i,j)*dnw(k)
+       p_hyd_w(i,k,j) = p_hyd_w(i,k+1,j) - (1.+qtot)*MUT(i,j)*dnw(k)
 !      p_hyd_w(i,k,j) = p_hyd_w(i,k+1,j)+1./alt(i,k,j)*(1.+moist(i,k,j,P_QV))*g*dz8w(i,k,j)
     enddo
     enddo
@@ -4937,6 +4961,117 @@ END SUBROUTINE pole_point_bc
     enddo
     enddo
 
+END SUBROUTINE phy_prep
+
+
+!======================================================================
+!   routine to decouple physics tendencies
+!======================================================================
+
+   SUBROUTINE phy_prep_part2 ( config_flags,                          &
+                         mut,muu,muv,                                 &
+                         c1h, c2h, c1f, c2f,                          &
+                         RTHRATEN,                                    &
+                         RTHBLTEN, RUBLTEN, RVBLTEN,                  &
+                         RQVBLTEN, RQCBLTEN, RQIBLTEN,                &
+                         RUCUTEN,  RVCUTEN,  RTHCUTEN,                &
+                         RQVCUTEN, RQCCUTEN, RQRCUTEN,                &
+                         RQICUTEN, RQSCUTEN,                          &
+                         RUSHTEN,  RVSHTEN,  RTHSHTEN,                &
+                         RQVSHTEN, RQCSHTEN, RQRSHTEN,                &
+                         RQISHTEN, RQSSHTEN, RQGSHTEN,                &
+                         RTHFTEN,  RQVFTEN,                           &
+                         RUNDGDTEN, RVNDGDTEN, RTHNDGDTEN,            &
+                         RPHNDGDTEN,RQVNDGDTEN, RMUNDGDTEN,           &
+                         ids, ide, jds, jde, kds, kde,                &
+                         ims, ime, jms, jme, kms, kme,                &
+                         its, ite, jts, jte, kts, kte                )
+!----------------------------------------------------------------------
+   IMPLICIT NONE
+!----------------------------------------------------------------------
+
+   TYPE(grid_config_rec_type) ,     INTENT(IN   ) :: config_flags
+
+   INTEGER ,        INTENT(IN   ) ::   ids, ide, jds, jde, kds, kde, &
+                                       ims, ime, jms, jme, kms, kme, &
+                                       its, ite, jts, jte, kts, kte
+
+   REAL , DIMENSION( ims:ime, jms:jme ), INTENT(IN   )   ::     mut, muu, muv
+
+   REAL,  DIMENSION( ims:ime , kms:kme, jms:jme ),                   &
+          INTENT(INOUT)   ::                               RTHRATEN  
+
+   REAL,  DIMENSION( ims:ime , kms:kme, jms:jme ),                   &
+          INTENT(INOUT)   ::                                RUCUTEN, &
+                                                            RVCUTEN, &
+                                                           RTHCUTEN, &
+                                                           RQVCUTEN, &
+                                                           RQCCUTEN, &
+                                                           RQRCUTEN, &
+                                                           RQICUTEN, &
+                                                           RQSCUTEN, &
+                                                            RUSHTEN, &
+                                                            RVSHTEN, &
+                                                           RTHSHTEN, &
+                                                           RQVSHTEN, &
+                                                           RQCSHTEN, &
+                                                           RQRSHTEN, &
+                                                           RQISHTEN, &
+                                                           RQSSHTEN, &
+                                                           RQGSHTEN
+
+   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                   , &
+          INTENT(INOUT)   ::                                RUBLTEN, &
+                                                            RVBLTEN, &
+                                                           RTHBLTEN, &
+                                                           RQVBLTEN, &
+                                                           RQCBLTEN, &
+                                                           RQIBLTEN
+
+   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                   , &
+          INTENT(INOUT)   ::                                RTHFTEN, &
+                                                            RQVFTEN
+
+   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                   , &
+          INTENT(INOUT)   ::                                RUNDGDTEN, &
+                                                            RVNDGDTEN, &
+                                                           RTHNDGDTEN, &
+                                                           RPHNDGDTEN, &
+                                                           RQVNDGDTEN
+
+   REAL,  DIMENSION( ims:ime, jms:jme )                            , &
+          INTENT(INOUT)   ::                               RMUNDGDTEN
+
+   REAL, DIMENSION( kms:kme ) ,            INTENT(IN   ) ::     c1h, c2h, c1f, c2f
+
+   REAL, DIMENSION( kms:kme ) :: c1, c2
+
+   INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end, i_startu, j_startv
+   INTEGER :: i, j, k
+
+!-----------------------------------------------------------------------
+
+!<DESCRIPTION>
+!
+!  It decouples the physics tendencies from
+!  the column dry-air mass (the physics routines expect to see/update the
+!  uncoupled tendencies).
+!
+!</DESCRIPTION>
+
+!  set up loop bounds for this grid's boundary conditions
+
+    i_start = its
+    i_end   = min( ite,ide-1 )
+    j_start = jts
+    j_end   = min( jte,jde-1 )
+
+    k_start = kts
+    k_end = min( kte, kde-1 )
+
+    c1 = c1h
+    c2 = c2h
+
 ! decouple all physics tendencies
 
    IF (config_flags%ra_lw_physics .gt. 0 .or. config_flags%ra_sw_physics .gt. 0) THEN
@@ -4944,7 +5079,7 @@ END SUBROUTINE pole_point_bc
       DO J=j_start,j_end
       DO K=k_start,k_end
       DO I=i_start,i_end
-         RTHRATEN(I,K,J)=RTHRATEN(I,K,J)/mu(I,J)
+         RTHRATEN(I,K,J)=RTHRATEN(I,K,J)/MUT(I,J)
       ENDDO
       ENDDO
       ENDDO
@@ -4956,9 +5091,9 @@ END SUBROUTINE pole_point_bc
       DO J=j_start,j_end
       DO I=i_start,i_end
       DO K=k_start,k_end
-         RUCUTEN(I,K,J) =RUCUTEN(I,K,J)/mu(I,J)
-         RVCUTEN(I,K,J) =RVCUTEN(I,K,J)/mu(I,J)
-         RTHCUTEN(I,K,J)=RTHCUTEN(I,K,J)/mu(I,J)
+         RUCUTEN(I,K,J) =RUCUTEN(I,K,J)/MUT(I,J)
+         RVCUTEN(I,K,J) =RVCUTEN(I,K,J)/MUT(I,J)
+         RTHCUTEN(I,K,J)=RTHCUTEN(I,K,J)/MUT(I,J)
       ENDDO
       ENDDO
       ENDDO
@@ -4967,7 +5102,7 @@ END SUBROUTINE pole_point_bc
          DO J=j_start,j_end
          DO I=i_start,i_end
          DO K=k_start,k_end
-            RQVCUTEN(I,K,J)=RQVCUTEN(I,K,J)/mu(I,J)
+            RQVCUTEN(I,K,J)=RQVCUTEN(I,K,J)/MUT(I,J)
          ENDDO
          ENDDO
          ENDDO
@@ -4977,7 +5112,7 @@ END SUBROUTINE pole_point_bc
          DO J=j_start,j_end
          DO I=i_start,i_end
          DO K=k_start,k_end
-            RQCCUTEN(I,K,J)=RQCCUTEN(I,K,J)/mu(I,J)
+            RQCCUTEN(I,K,J)=RQCCUTEN(I,K,J)/MUT(I,J)
          ENDDO
          ENDDO
          ENDDO
@@ -4987,7 +5122,7 @@ END SUBROUTINE pole_point_bc
          DO J=j_start,j_end
          DO I=i_start,i_end
          DO K=k_start,k_end
-            RQRCUTEN(I,K,J)=RQRCUTEN(I,K,J)/mu(I,J)
+            RQRCUTEN(I,K,J)=RQRCUTEN(I,K,J)/MUT(I,J)
          ENDDO
          ENDDO
          ENDDO
@@ -4997,7 +5132,7 @@ END SUBROUTINE pole_point_bc
          DO J=j_start,j_end
          DO I=i_start,i_end
          DO K=k_start,k_end
-            RQICUTEN(I,K,J)=RQICUTEN(I,K,J)/mu(I,J)
+            RQICUTEN(I,K,J)=RQICUTEN(I,K,J)/MUT(I,J)
          ENDDO
          ENDDO
          ENDDO
@@ -5007,7 +5142,7 @@ END SUBROUTINE pole_point_bc
          DO J=j_start,j_end
          DO I=i_start,i_end
          DO K=k_start,k_end
-            RQSCUTEN(I,K,J)=RQSCUTEN(I,K,J)/mu(I,J)
+            RQSCUTEN(I,K,J)=RQSCUTEN(I,K,J)/MUT(I,J)
          ENDDO
          ENDDO
          ENDDO
@@ -5020,9 +5155,9 @@ END SUBROUTINE pole_point_bc
       DO J=j_start,j_end
       DO I=i_start,i_end
       DO K=k_start,k_end
-         RUSHTEN(I,K,J) =RUSHTEN(I,K,J)/mu(I,J)
-         RVSHTEN(I,K,J) =RVSHTEN(I,K,J)/mu(I,J)
-         RTHSHTEN(I,K,J)=RTHSHTEN(I,K,J)/mu(I,J)
+         RUSHTEN(I,K,J) =RUSHTEN(I,K,J)/MUT(I,J)
+         RVSHTEN(I,K,J) =RVSHTEN(I,K,J)/MUT(I,J)
+         RTHSHTEN(I,K,J)=RTHSHTEN(I,K,J)/MUT(I,J)
       ENDDO
       ENDDO
       ENDDO
@@ -5031,7 +5166,7 @@ END SUBROUTINE pole_point_bc
          DO J=j_start,j_end
          DO I=i_start,i_end
          DO K=k_start,k_end
-            RQVSHTEN(I,K,J)=RQVSHTEN(I,K,J)/mu(I,J)
+            RQVSHTEN(I,K,J)=RQVSHTEN(I,K,J)/MUT(I,J)
          ENDDO
          ENDDO
          ENDDO
@@ -5041,7 +5176,7 @@ END SUBROUTINE pole_point_bc
          DO J=j_start,j_end
          DO I=i_start,i_end
          DO K=k_start,k_end
-            RQCSHTEN(I,K,J)=RQCSHTEN(I,K,J)/mu(I,J)
+            RQCSHTEN(I,K,J)=RQCSHTEN(I,K,J)/MUT(I,J)
          ENDDO
          ENDDO
          ENDDO
@@ -5051,7 +5186,7 @@ END SUBROUTINE pole_point_bc
          DO J=j_start,j_end
          DO I=i_start,i_end
          DO K=k_start,k_end
-            RQRSHTEN(I,K,J)=RQRSHTEN(I,K,J)/mu(I,J)
+            RQRSHTEN(I,K,J)=RQRSHTEN(I,K,J)/MUT(I,J)
          ENDDO
          ENDDO
          ENDDO
@@ -5061,7 +5196,7 @@ END SUBROUTINE pole_point_bc
          DO J=j_start,j_end
          DO I=i_start,i_end
          DO K=k_start,k_end
-            RQISHTEN(I,K,J)=RQISHTEN(I,K,J)/mu(I,J)
+            RQISHTEN(I,K,J)=RQISHTEN(I,K,J)/MUT(I,J)
          ENDDO
          ENDDO
          ENDDO
@@ -5071,7 +5206,7 @@ END SUBROUTINE pole_point_bc
          DO J=j_start,j_end
          DO I=i_start,i_end
          DO K=k_start,k_end
-            RQSSHTEN(I,K,J)=RQSSHTEN(I,K,J)/mu(I,J)
+            RQSSHTEN(I,K,J)=RQSSHTEN(I,K,J)/MUT(I,J)
          ENDDO
          ENDDO
          ENDDO
@@ -5081,7 +5216,7 @@ END SUBROUTINE pole_point_bc
          DO J=j_start,j_end
          DO I=i_start,i_end
          DO K=k_start,k_end
-            RQGSHTEN(I,K,J)=RQGSHTEN(I,K,J)/mu(I,J)
+            RQGSHTEN(I,K,J)=RQGSHTEN(I,K,J)/MUT(I,J)
          ENDDO
          ENDDO
          ENDDO
@@ -5094,9 +5229,9 @@ END SUBROUTINE pole_point_bc
       DO J=j_start,j_end
       DO K=k_start,k_end
       DO I=i_start,i_end
-         RUBLTEN(I,K,J) =RUBLTEN(I,K,J)/mu(I,J)
-         RVBLTEN(I,K,J) =RVBLTEN(I,K,J)/mu(I,J)
-         RTHBLTEN(I,K,J)=RTHBLTEN(I,K,J)/mu(I,J)
+         RUBLTEN(I,K,J) =RUBLTEN(I,K,J)/MUT(I,J)
+         RVBLTEN(I,K,J) =RVBLTEN(I,K,J)/MUT(I,J)
+         RTHBLTEN(I,K,J)=RTHBLTEN(I,K,J)/MUT(I,J)
       ENDDO
       ENDDO
       ENDDO
@@ -5105,7 +5240,7 @@ END SUBROUTINE pole_point_bc
          DO J=j_start,j_end
          DO K=k_start,k_end
          DO I=i_start,i_end
-            RQVBLTEN(I,K,J)=RQVBLTEN(I,K,J)/mu(I,J)
+            RQVBLTEN(I,K,J)=RQVBLTEN(I,K,J)/MUT(I,J)
          ENDDO
          ENDDO
          ENDDO
@@ -5115,7 +5250,7 @@ END SUBROUTINE pole_point_bc
          DO J=j_start,j_end
          DO K=k_start,k_end
          DO I=i_start,i_end
-           RQCBLTEN(I,K,J)=RQCBLTEN(I,K,J)/mu(I,J)
+           RQCBLTEN(I,K,J)=RQCBLTEN(I,K,J)/MUT(I,J)
          ENDDO
          ENDDO
          ENDDO
@@ -5125,7 +5260,7 @@ END SUBROUTINE pole_point_bc
          DO J=j_start,j_end
          DO K=k_start,k_end
          DO I=i_start,i_end
-            RQIBLTEN(I,K,J)=RQIBLTEN(I,K,J)/mu(I,J)
+            RQIBLTEN(I,K,J)=RQIBLTEN(I,K,J)/MUT(I,J)
          ENDDO
          ENDDO
          ENDDO
@@ -5146,7 +5281,7 @@ END SUBROUTINE pole_point_bc
       DO J=j_start,j_end
       DO I=i_start,i_end
          DO K=k_start,k_end
-            RTHFTEN(I,K,J)=RTHFTEN(I,K,J)/mu(I,J)
+            RTHFTEN(I,K,J)=RTHFTEN(I,K,J)/MUT(I,J)
          ENDDO
       ENDDO
       ENDDO
@@ -5155,7 +5290,7 @@ END SUBROUTINE pole_point_bc
          DO J=j_start,j_end
          DO I=i_start,i_end
             DO K=k_start,k_end
-               RQVFTEN(I,K,J)=RQVFTEN(I,K,J)/mu(I,J)
+               RQVFTEN(I,K,J)=RQVFTEN(I,K,J)/MUT(I,J)
             ENDDO
          ENDDO
          ENDDO
@@ -5189,7 +5324,7 @@ END SUBROUTINE pole_point_bc
       DO J=j_start,j_end
       DO K=k_start,k_end
       DO I=i_start,i_end
-         RTHNDGDTEN(I,K,J)=RTHNDGDTEN(I,K,J)/mu(I,J)
+         RTHNDGDTEN(I,K,J)=RTHNDGDTEN(I,K,J)/MUT(I,J)
 !        RMUNDGDTEN(I,J) - no coupling
       ENDDO
       ENDDO
@@ -5199,7 +5334,7 @@ END SUBROUTINE pole_point_bc
       DO J=j_start,j_end
       DO K=k_start,kte
       DO I=i_start,i_end
-         RPHNDGDTEN(I,K,J)=RPHNDGDTEN(I,K,J)/mu(I,J)
+         RPHNDGDTEN(I,K,J)=RPHNDGDTEN(I,K,J)/mut(I,J)
       ENDDO
       ENDDO
       ENDDO
@@ -5209,7 +5344,7 @@ END SUBROUTINE pole_point_bc
          DO J=j_start,j_end
          DO K=k_start,k_end
          DO I=i_start,i_end
-            RQVNDGDTEN(I,K,J)=RQVNDGDTEN(I,K,J)/mu(I,J)
+            RQVNDGDTEN(I,K,J)=RQVNDGDTEN(I,K,J)/MUT(I,J)
          ENDDO
          ENDDO
          ENDDO
@@ -5218,8 +5353,7 @@ END SUBROUTINE pole_point_bc
 
     ENDIF
 
-END SUBROUTINE phy_prep
-
+END SUBROUTINE phy_prep_part2
 !------------------------------------------------------------
 
    SUBROUTINE moist_physics_prep_em( t_new, t_old, t0, rho, al, alb, &
@@ -5606,6 +5740,7 @@ END SUBROUTINE set_tend
     SUBROUTINE rk_rayleigh_damp( ru_tendf, rv_tendf,              &
                                  rw_tendf, t_tendf,               &
                                  u, v, w, t, t_init,              &
+                                 c1h, c2h, c1f, c2f,              &
                                  mut, muu, muv, ph, phb,          &
                                  u_base, v_base, t_base, z_base,  &
                                  dampcoef, zdamp,                 &
@@ -5662,6 +5797,9 @@ END SUBROUTINE set_tend
     REAL, DIMENSION( kms:kme ) ,  INTENT(IN   )  &
     :: u_base, v_base, t_base, z_base
 
+    REAL, DIMENSION( kms:kme ) ,  INTENT(IN   )  &
+    :: c1h, c2h, c1f, c2f
+
     REAL, INTENT(IN   )   &
     :: dampcoef, zdamp
 
@@ -5669,6 +5807,9 @@ END SUBROUTINE set_tend
 
     INTEGER  &
     :: i_start, i_end, j_start, j_end, k_start, k_end, i, j, k, ktf, k1, k2
+
+    REAL, DIMENSION( kms:kme ) &
+    :: c1, c2
 
     REAL  &
     :: pii, dcoef, z, ztop
@@ -5679,6 +5820,9 @@ END SUBROUTINE set_tend
 
 ! End declarations.
 !-----------------------------------------------------------------------
+
+    c1 = c1h
+    c2 = c2h
 
     pii = 2.0 * asin(1.0)
 
@@ -5857,7 +6001,7 @@ END SUBROUTINE set_tend
         dcoef = 1.0 - MIN( 1.0, ( ztop - z00(k) ) / zdamp )
         dcoef = (SIN( 0.5 * pii * dcoef ) )**2
         t_tendf(i,k,j) = t_tendf(i,k,j) -                      &
-                         mut(i,j) * ( dcoef * dampcoef )  *    &
+                         MUT(i,j) * ( dcoef * dampcoef )  *    &
                          ( t(i,k,j) - t00(k) )
       END DO
 
@@ -5873,7 +6017,7 @@ END SUBROUTINE set_tend
 !==============================================================================
 
  SUBROUTINE theta_relaxation( t_tendf, t, t_init,              &
-                              mut, ph, phb,                    &
+                              MUT, c1, c2, ph, phb,            &
                               t_base, z_base,                  &
                               ids, ide, jds, jde, kds, kde,    &
                               ims, ime, jms, jme, kms, kme,    &
@@ -5904,7 +6048,10 @@ END SUBROUTINE set_tend
     :: t, t_init, ph, phb
 
     REAL, DIMENSION( ims:ime, jms:jme ),  INTENT( IN )  &
-    :: mut
+    :: MUT
+
+    REAL, DIMENSION( kms:kme),  INTENT( IN )  &
+    :: c1, c2
 
     REAL, DIMENSION( kms:kme ) ,  INTENT(IN   )  &
     :: t_base, z_base
@@ -5964,7 +6111,7 @@ END SUBROUTINE set_tend
         ! limit rterm:
         rterm = min( rterm , rmax )
         rterm = max( rterm , rmin )
-        t_tendf(i,k,j) = t_tendf(i,k,j) + mut(i,j)*rterm
+        t_tendf(i,k,j) = t_tendf(i,k,j) + MUT(i,j)*rterm
       END DO
 
     END DO
@@ -5975,8 +6122,8 @@ END SUBROUTINE set_tend
 !==============================================================================
 !==============================================================================
                                                                                 
-      SUBROUTINE sixth_order_diffusion( name, field, tendency, mu, dt,  &
-                                        config_flags,                   &
+      SUBROUTINE sixth_order_diffusion( name, field, tendency, MUT, dt,  &
+                                        config_flags, c1, c2,           &
                                         diff_6th_opt, diff_6th_factor,  &
                                         ids, ide, jds, jde, kds, kde,   &
                                         ims, ime, jms, jme, kms, kme,   &
@@ -6013,7 +6160,10 @@ END SUBROUTINE set_tend
     :: field
  
     REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)  &
-    :: mu
+    :: MUT
+ 
+    REAL, DIMENSION( kms:kme ), INTENT(IN)  &
+    :: c1, c2
  
     REAL, INTENT(IN)  &
     :: dt
@@ -6146,26 +6296,26 @@ END SUBROUTINE set_tend
 ! Apply 6th-order diffusion in x direction.
  
       IF      ( name .EQ. 'u' ) THEN
-        mu_avg_p0 = mu(i-1,j)
-        mu_avg_p1 = mu(i  ,j)
+        mu_avg_p0 = MUT(i-1,j)
+        mu_avg_p1 = MUT(i  ,j)
       ELSE IF ( name .EQ. 'v' ) THEN
         mu_avg_p0 = 0.25 * (       &
-                    mu(i-1,j-1) +  &
-                    mu(i  ,j-1) +  &
-                    mu(i-1,j  ) +  &
-                    mu(i  ,j  ) )
+                    MUT(i-1,j-1) +  &
+                    MUT(i  ,j-1) +  &
+                    MUT(i-1,j  ) +  &
+                    MUT(i  ,j  ) )
         mu_avg_p1 = 0.25 * (       &
-                    mu(i  ,j-1) +  &
-                    mu(i+1,j-1) +  &
-                    mu(i  ,j  ) +  &
-                    mu(i+1,j  ) )
+                    MUT(i  ,j-1) +  &
+                    MUT(i+1,j-1) +  &
+                    MUT(i  ,j  ) +  &
+                    MUT(i+1,j  ) )
       ELSE
         mu_avg_p0 = 0.5 * (        &
-                    mu(i-1,j) +    &
-                    mu(i  ,j) )
+                    MUT(i-1,j) +    &
+                    MUT(i  ,j) )
         mu_avg_p1 = 0.5 * (        &
-                    mu(i  ,j) +    &
-                    mu(i+1,j) )
+                    MUT(i  ,j) +    &
+                    MUT(i+1,j) )
       END IF
  
       tendency_x = diff_6th_coef *  &
@@ -6206,25 +6356,25 @@ END SUBROUTINE set_tend
  
       IF      ( name .EQ. 'u' ) THEN
         mu_avg_p0 = 0.25 * (       &
-                    mu(i-1,j-1) +  &
-                    mu(i  ,j-1) +  &
-                    mu(i-1,j  ) +  &
-                    mu(i  ,j  ) )
+                    MUT(i-1,j-1) +  &
+                    MUT(i  ,j-1) +  &
+                    MUT(i-1,j  ) +  &
+                    MUT(i  ,j  ) )
         mu_avg_p1 = 0.25 * (       &
-                    mu(i-1,j  ) +  &
-                    mu(i  ,j  ) +  &
-                    mu(i-1,j+1) +  &
-                    mu(i  ,j+1) )
+                    MUT(i-1,j  ) +  &
+                    MUT(i  ,j  ) +  &
+                    MUT(i-1,j+1) +  &
+                    MUT(i  ,j+1) )
       ELSE IF ( name .EQ. 'v' ) THEN
-        mu_avg_p0 = mu(i,j-1)
-        mu_avg_p1 = mu(i,j  )
+        mu_avg_p0 = MUT(i,j-1)
+        mu_avg_p1 = MUT(i,j  )
       ELSE
         mu_avg_p0 = 0.5 * (      &
-                    mu(i,j-1) +  &
-                    mu(i,j  ) )
+                    MUT(i,j-1) +  &
+                    MUT(i,j  ) )
         mu_avg_p1 = 0.5 * (      &
-                    mu(i,j  ) +  &
-                    mu(i,j+1) )
+                    MUT(i,j  ) +  &
+                    MUT(i,j+1) )
       END IF
  
       tendency_y = diff_6th_coef *  &

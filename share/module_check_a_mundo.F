@@ -376,28 +376,6 @@
          model_config_rec%sf_urban_physics(i) = d1_value
       END DO
 
-!-----------------------------------------------------------------------
-! Check for consistency in the Noah-MP options
-!-----------------------------------------------------------------------
-
-      DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec%sf_surface_physics(i) == NOAHMPSCHEME ) THEN
-
-            ! Noah-MP does not work with the urban schemes
-
-            IF ( model_config_rec%sf_urban_physics(i) /= 0 ) THEN
-               WRITE(wrf_err_message, '(" --- ERROR:   Noah-MP LSM scheme (sf_surface_physics==", I2, ")")') NOAHMPSCHEME
-               CALL wrf_message ( TRIM ( wrf_err_message ) )
-               WRITE(wrf_err_message, '("              does not work with urban physics schemes")')
-         !      CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         fatal_error = .true.
-         count_fatal_error = count_fatal_error + 1
-            ENDIF
-
-         END IF
-      END DO
-
 !------------------------------------------------------------------------
 ! Mills (2011) sea-ice albedo treatment only for Noah LSM and Noah-MP LSM
 !------------------------------------------------------------------------
@@ -606,6 +584,13 @@
          model_config_rec%num_traj = 0 
    END IF
 
+#elif( NMM_CORE == 1 )
+!----------------------------------------------------------------------------
+! If NMM core and trajectories are on then halt.
+!----------------------------------------------------------------------------
+   IF ( model_config_rec%traj_opt /= 0 ) THEN
+     call wrf_error_fatal( 'Trajectories not supported in NMM core' )
+   END IF
 #endif
 
 #if (EM_CORE == 1)
@@ -1090,6 +1075,20 @@
       END IF
 
 !-----------------------------------------------------------------------
+! If hailcast_opt = 1, horizontal grid spacing must be 4 km or finer.
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec%hailcast_opt(i) .NE. 0 ) .AND. &
+              ( model_config_rec%dx(i) .GT. 4000 ) ) THEN
+            wrf_err_message = '--- WARNING:  hailcast_opt requires a grid-spacing of 4 km or finer.'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '---          hailcast_opt is now 0.'
+            CALL wrf_message ( wrf_err_message )
+            model_config_rec%hailcast_opt(i) = 0
+         ENDIF
+      ENDDO
+
+!-----------------------------------------------------------------------
 ! Name change in the namelist.input file.  We used to only have the
 ! ocean mixed layer option (omlcall=1).  With the addition of a 3D ocean,
 ! now let's change the name of the option.  If the old name is present,
@@ -1369,6 +1368,39 @@
          wrf_err_message = 'resetting scalar_pblmix = 1'
          CALL wrf_message ( wrf_err_message )
       END IF
+
+!-----------------------------------------------------------------------
+!  The hybrid vertical coordinate does not work with vertical refinement.
+!-----------------------------------------------------------------------
+     DO i=1,model_config_rec%max_dom
+        IF ((model_config_rec%vert_refine_method(i) .EQ. 2) .AND. (model_config_rec%hybrid_opt .EQ. 2)) THEN
+           WRITE(wrf_err_message,'(A)') '--- ERROR: The hybrid vertical coordinate does not work with vertical refinement.'
+           CALL wrf_message( wrf_err_message )
+           fatal_error = .true.
+           count_fatal_error = count_fatal_error + 1
+        ENDIF
+     END DO 
+
+!-----------------------------------------------------------------------
+!  The hybrid vertical coordinate (HVC) namelist.input option (hybrid_opt=2) 
+!  requires the code to be built with the HVC code enabled.  This is a run-time
+!  test to make sure the correct compile-time capabilities are available.
+!-----------------------------------------------------------------------
+#if ( HYBRID_COORD==1 )
+#else
+     IF (model_config_rec%hybrid_opt .NE. 0) THEN
+        WRITE(wrf_err_message,'(A)') '--- ERROR: The code was not built with hybrid vertical coordinate enabled'
+        CALL wrf_message( wrf_err_message )
+        WRITE(wrf_err_message,'(A)') '---        Either set hybrid_opt=0 in the namelist.input file, or '
+        CALL wrf_message( wrf_err_message )
+        WRITE(wrf_err_message,'(A)') '---        re-compile with the hybrid vertical coordinate enabled'       
+        CALL wrf_message( wrf_err_message )
+        WRITE(wrf_err_message,'(A)') '---        For example: clean -a ; configure -hyb ; compile em_real '
+        CALL wrf_message( wrf_err_message )
+        fatal_error = .true.
+        count_fatal_error = count_fatal_error + 1
+     ENDIF
+#endif
 
 !-----------------------------------------------------------------------
 !  DJW Check that we're not using ndown and vertical nesting.

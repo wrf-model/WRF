@@ -1,3 +1,11 @@
+#if ( HYBRID_COORD==1 ) 
+#  define mub(...) (c1(k)*XXPCBXX(__VA_ARGS__)+c2(k))
+#  define XXPCBXX(...) mub(__VA_ARGS__)
+
+#  define mu(...)  (c1(k)*XXPCXX(__VA_ARGS__))
+#  define XXPCXX(...) mu(__VA_ARGS__)
+#endif
+
 MODULE module_polarfft
 
   USE module_model_constants
@@ -7,7 +15,7 @@ MODULE module_polarfft
 CONTAINS
 
 SUBROUTINE couple_scalars_for_filter ( field    &
-                 ,mu,mub                        &
+                 ,mu,mub,c1,c2                  &
                  ,ids,ide,jds,jde,kds,kde       &
                  ,ims,ime,jms,jme,kms,kme       &
                  ,ips,ipe,jps,jpe,kps,kpe       )
@@ -17,6 +25,7 @@ SUBROUTINE couple_scalars_for_filter ( field    &
                          ,ips,ipe,jps,jpe,kps,kpe
    REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(INOUT) :: field
    REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: mu,mub
+   REAL , DIMENSION(kms:kme) , INTENT(IN) :: c1,c2
 
    INTEGER :: i , j , k
 
@@ -31,7 +40,7 @@ SUBROUTINE couple_scalars_for_filter ( field    &
 END SUBROUTINE couple_scalars_for_filter
 
 SUBROUTINE uncouple_scalars_for_filter ( field    &
-                 ,mu,mub                        &
+                 ,mu,mub,c1,c2                  &
                  ,ids,ide,jds,jde,kds,kde       &
                  ,ims,ime,jms,jme,kms,kme       &
                  ,ips,ipe,jps,jpe,kps,kpe       )
@@ -41,6 +50,7 @@ SUBROUTINE uncouple_scalars_for_filter ( field    &
                          ,ips,ipe,jps,jpe,kps,kpe
    REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(INOUT) :: field
    REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: mu,mub
+   REAL , DIMENSION(kms:kme) , INTENT(IN) :: c1,c2
 
    INTEGER :: i , j , k
 
@@ -599,7 +609,7 @@ SUBROUTINE polar_filter_3d( f, xlat, piggyback, fft_filter_lat, dvlat, &
   ! Variables will stay in domain form since this routine is meaningless
   ! unless tile extent is the same as domain extent in E/W direction, i.e.,
   ! the processor has access to all grid points in E/W direction.
-  ! There may be other ways of doing FFTs, but we haven't learned them yet...
+  ! There may be other ways of doing FFTs, but we have not learned them yet...
 
   ! Check to make sure we have full access to all E/W points
   IF ((its /= ids) .OR. (ite /= ide)) THEN
@@ -885,7 +895,7 @@ END SUBROUTINE polar_filter_fft_2d_ncar
          DO j = MIN(j_lat_neg,jte) , jts , -1
 !           i_kicker = MIN( MAX ( NINT(msftx(its,j)/2) , 1 ) , (ide - ids) / 2 )
             i_kicker = MIN( MAX ( NINT(msftx(its,j)/mf_fft/2) , 1 ) , (ide - ids) / 2 )
-!           WRITE (message,FMT='(a,i4,a,i4,f6.2,1x,f6.1,f6.1)') 'DAVE SOUTH j = ' , j, ', kicker = ',i_kicker,xlat(its,j),msftx(its,j),mf_fft
+!           WRITE (message,FMT='(a,i4,a,i4,f6.2,1x,f6.1,f6.1)') 'SOUTH j = ' , j, ', kicker = ',i_kicker,xlat(its,j),msftx(its,j),mf_fft
 !           CALL wrf_debug ( 0 , TRIM(message) )
             DO i = its , MIN(ide-1,ite)
                sum = 0.
@@ -915,7 +925,7 @@ END SUBROUTINE polar_filter_fft_2d_ncar
          DO j = MAX(j_lat_pos,jts) , MIN(jde-1,jte)
 !           i_kicker = MIN( MAX ( NINT(msftx(its,j)/2) , 1 ) , (ide - ids) / 2 )
             i_kicker = MIN( MAX ( NINT(msftx(its,j)/mf_fft/2) , 1 ) , (ide - ids) / 2 )
-!           WRITE (message,FMT='(a,i4,a,i4,f6.2,1x,f6.1,f6.1)') 'DAVE NORTH j = ' , j, ', kicker = ',i_kicker,xlat(its,j),msftx(its,j),mf_fft
+!           WRITE (message,FMT='(a,i4,a,i4,f6.2,1x,f6.1,f6.1)') 'NORTH j = ' , j, ', kicker = ',i_kicker,xlat(its,j),msftx(its,j),mf_fft
 !           CALL wrf_debug ( 0 , TRIM(message) )
             DO i = its , MIN(ide-1,ite)
                count = 0

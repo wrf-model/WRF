@@ -1769,7 +1769,6 @@ CONTAINS
 #ifdef DM_PARALLEL
     USE module_dm, ONLY: wrf_dm_sum_real, wrf_dm_maxval
 #endif
-    USE module_diag_afwa_hail
 
     IMPLICIT NONE
 
@@ -1835,7 +1834,7 @@ CONTAINS
                                               ,           llws  &
                                               ,         pwater
 
-    LOGICAL :: do_buoy_calc, do_hailcast_calc
+    LOGICAL :: do_buoy_calc
     REAL :: zlfc_msl, dum1, dum2, dum3, wind_vel, wind_blend
     REAL :: prate_mm_per_hr, factor
     REAL :: u1km, v1km, ublend, vblend, u2000, v2000, us, vs
@@ -2110,13 +2109,6 @@ CONTAINS
             grid%midrh_min_old(i,j) = grid%midrh_min(i,j) ! Save old midrh_min
             grid%midrh_min(i,j) = 999.
             grid%afwa_hail(i,j) = 0.
-            IF ( config_flags % afwa_hailcast_opt == 1 ) THEN
-              grid%afwa_hail_new1(i,j) = 0.
-              grid%afwa_hail_new2(i,j) = 0.
-              grid%afwa_hail_new3(i,j) = 0.
-              grid%afwa_hail_new4(i,j) = 0.
-              grid%afwa_hail_new5(i,j) = 0.
-            ENDIF
           ENDDO
         ENDDO
       ENDIF  ! is_after_history_dump
@@ -2125,12 +2117,6 @@ CONTAINS
         do_buoy_calc = .true.
       ELSE
         do_buoy_calc = .false.
-      ENDIF
-
-      IF ( config_flags % afwa_hailcast_opt == 1 ) THEN
-        do_hailcast_calc = .true.
-      ELSE
-        do_hailcast_calc = .false.
       ENDIF
 
       !-->RAS
@@ -2162,11 +2148,6 @@ CONTAINS
                              , grid % midrh_min_old             &
                              , grid % midrh_min                 &
                              , grid % afwa_hail                 &
-                             , grid % afwa_hail_new1            &
-                             , grid % afwa_hail_new2            &
-                             , grid % afwa_hail_new3            &
-                             , grid % afwa_hail_new4            &
-                             , grid % afwa_hail_new5            &
                              , grid % afwa_cape                 &
                              , grid % afwa_cin                  &
 !                             , grid % afwa_cape_mu              &
@@ -2185,8 +2166,6 @@ CONTAINS
                              , grid % t2                        &
                              , grid % z                         &
                              , grid % ht                        &
-                             , grid % wup_mask                  &
-                             , grid % wdur                      &
                              , grid % tornado_mask              &
                              , grid % tornado_dur               &
                              , grid % dt                        &
@@ -2203,7 +2182,6 @@ CONTAINS
                              , dz8w                             &
                              , rh                               &
                              , do_buoy_calc                     &
-                             , do_hailcast_calc                 &
                              , ims, ime, jms, jme, kms, kme     &
                              , its, ite, jts, jte               &
                              , k_start, k_end                   &
@@ -2284,28 +2262,6 @@ CONTAINS
         ENDDO
       ENDDO
  
-      ! Calculate the mean and standard deviation of the hail diameter
-      ! distribution over different embryo sizes
-      ! ----------------------------------------
-      IF ( config_flags % afwa_hailcast_opt == 1 ) THEN
-        DO j = jms, jme
-          DO i = ims, ime
-            !mean
-            grid%afwa_hail_newmean(i,j)=(grid%afwa_hail_new1(i,j)+&
-               grid%afwa_hail_new2(i,j) +grid%afwa_hail_new3(i,j)+&
-               grid%afwa_hail_new4(i,j) +grid%afwa_hail_new5(i,j))/5.
-            !sample standard deviation
-            grid%afwa_hail_newstd(i,j) = SQRT( ( &
-            (grid%afwa_hail_new1(i,j)-grid%afwa_hail_newmean(i,j))**2.+&
-            (grid%afwa_hail_new2(i,j)-grid%afwa_hail_newmean(i,j))**2.+&
-            (grid%afwa_hail_new3(i,j)-grid%afwa_hail_newmean(i,j))**2.+&
-            (grid%afwa_hail_new4(i,j)-grid%afwa_hail_newmean(i,j))**2.+&
-            (grid%afwa_hail_new5(i,j)-grid%afwa_hail_newmean(i,j))**2.)&
-            / 4.0)
-          ENDDO
-        ENDDO
-      ENDIF
-
       ! Calculate buoyancy parameters.
       ! ------------------------------
       IF ( config_flags % afwa_buoy_opt == 1 ) THEN
@@ -2643,11 +2599,6 @@ CONTAINS
                              , midrh_min_old                    &
                              , midrh_min                        &
                              , afwa_hail                        &
-                             , afwa_hail_new1                   &
-                             , afwa_hail_new2                   &
-                             , afwa_hail_new3                   &
-                             , afwa_hail_new4                   &
-                             , afwa_hail_new5                   &
                              , cape                             &
                              , cin                              &
 !                             , cape_mu                          &
@@ -2666,8 +2617,6 @@ CONTAINS
                              , t2                               &
                              , z                                &
                              , ht                               &
-                             , wup_mask                         &
-                             , wdur                             &
                              , tornado_mask                     &
                              , tornado_dur                      &
                              , dt                               &
@@ -2684,13 +2633,11 @@ CONTAINS
                              , dz8w                             &
                              , rh                               &
                              , do_buoy_calc                     &
-                             , do_hailcast_calc                 &
                              , ims, ime, jms, jme, kms, kme     &
                              , its, ite, jts, jte               &
                              , k_start, k_end                   &
                              , j_start, j_end, i_start, i_end   )
 
-    USE module_diag_afwa_hail
 
     INTEGER, INTENT(IN) :: its, ite, jts, jte, k_start, k_end   &
                          , ims, ime, jms, jme, kms, kme         &
@@ -2733,15 +2680,8 @@ CONTAINS
                                               ,      tcoli_max  &
                                               ,      midrh_min  &
                                               ,      afwa_hail  &
-                                              , afwa_hail_new1  &
-                                              , afwa_hail_new2  &
-                                              , afwa_hail_new3  &
-                                              , afwa_hail_new4  &
-                                              , afwa_hail_new5  &
                                               ,   afwa_tornado  &
                                               ,   grpl_flx_max  &
-                                              ,       wup_mask  &
-                                              ,           wdur  &
                                               ,   tornado_mask  &
                                               ,    tornado_dur 
 
@@ -2762,8 +2702,7 @@ CONTAINS
                                               ,           lidx
 
     REAL, INTENT(IN) ::                                     dt
-    LOGICAL, INTENT(IN) ::                        do_buoy_calc  &
-                                           ,  do_hailcast_calc
+    LOGICAL, INTENT(IN) ::                        do_buoy_calc
 
     ! Local
     ! -----
@@ -2776,11 +2715,8 @@ CONTAINS
     INTEGER :: nz, ostat
     REAL, DIMENSION( ims:ime, jms:jme ) ::                w_up  &
                                               ,           w_dn  &
-                                              ,  wup_mask_prev  &
-                                              ,      wdur_prev  &
                                            , tornado_mask_prev  &
                                            ,  tornado_dur_prev
-    REAL :: dhail1,dhail2,dhail3,dhail4,dhail5
     REAL :: time_factor, time_factor_prev
     LOGICAL :: is_target_level
 
@@ -2857,107 +2793,6 @@ CONTAINS
         ENDIF
       ENDDO
     ENDDO
-
-    ! Hailcast calculation.  Please note: this is VERY
-    ! expensive, and needs to be optimized in the future to
-    ! reduce its expense. Currently, on domains with plenty
-    ! of convection, we have seen timesteps increase upwards
-    ! of 300%.  Also, because it is not calculated at every
-    ! grid point, only where there is an updraft, this can 
-    ! lead to very unpredictable run time behavior.  Until
-    ! we are able to speed it up significantly (either by 
-    ! modifications to the algorithm, or by calling it less
-    ! frequently) we are not running this in production at
-    ! AFWA and are turning it off by default.  To run hailcast
-    ! please use afwa_hailcast_opt=1 in the namelist. GAC2014
-    ! --------------------------------------------------------
-    IF ( do_hailcast_calc ) THEN
-
-      ! --> RAS
-      ! Make a copy of the updraft duration, mask variables
-      ! ---------------------------------------------------
-      wdur_prev(:,:) = wdur(:,:)
-      wup_mask_prev(:,:) = wup_mask(:,:)
-
-      ! Determine updraft mask (where updraft greater than some threshold)
-      ! ---------------------------------------------------
-      DO j = jts, jte
-        DO i = its, ite
-          wup_mask(i,j) = 0
-          wdur(i,j) = 0
-
-          DO k = k_start, k_end
-            IF ( w_2(i,k,j) .ge. 10. ) THEN
-                wup_mask(i,j) = 1
-            ENDIF
-          ENDDO
-        ENDDO
-      ENDDO
-
-      ! Determine updraft duration; make sure not to call point outside the domain
-      ! ---------------------------------------------------
-      DO j = j_start, j_end
-        DO i = i_start, i_end
-
-          ! Determine updraft duration using updraft masks
-          ! ---------------------------------------------------
-          IF ( (wup_mask(i,j).eq.1) .OR.                 &
-             (MAXVAL(wup_mask_prev(i-1:i+1,j-1:j+1)).eq.1) ) THEN
-             wdur(i,j) = MAXVAL(wdur_prev(i-1:i+1,j-1:j+1)) + dt
-          ENDIF
-        ENDDO
-      ENDDO
-
-
-      ! Hail diameter in millimeters (HAILCAST)
-      ! ---------------------------------------------------
-      nz = k_end - k_start
-      DO j = jts, jte
-        DO i = its, ite
-
-          ! Only call hailstone driver if updraft has been
-          ! around longer than 15 min
-          ! ----------------------------------------------
-          IF (wdur(i,j) .gt. 900) THEN
-            CALL hailstone_driver ( t_phy(i,kms:kme,j), &
-                                z(i,kms:kme,j),     &
-                                ht(i,       j),     &
-                                p(i,kms:kme,j),     &
-                                rho(i,kms:kme,j),   &
-                                qv(i,kms:kme,j),    &
-                                qi(i,kms:kme,j),    &
-                                qc(i,kms:kme,j),    &
-                                qr(i,kms:kme,j),    &
-                                qs(i,kms:kme,j),    &
-                                qg(i,kms:kme,j),    &
-                                ng(i,kms:kme,j),    &
-                                w_2(i,kms:kme,j),   &
-                                wdur(i,j),          &
-                                nz,                 &
-                                dhail1, dhail2,     &
-                                dhail3, dhail4,     &
-                                dhail5              )
-            IF (dhail1 .gt. afwa_hail_new1(i,j)) THEN
-                afwa_hail_new1(i,j) = dhail1
-            ENDIF
-            IF (dhail2 .gt. afwa_hail_new2(i,j)) THEN
-                afwa_hail_new2(i,j) = dhail2
-            ENDIF
-            IF (dhail3 .gt. afwa_hail_new3(i,j)) THEN
-                afwa_hail_new3(i,j) = dhail3
-            ENDIF
-            IF (dhail4 .gt. afwa_hail_new4(i,j)) THEN
-                afwa_hail_new4(i,j) = dhail4
-            ENDIF
-            IF (dhail5 .gt. afwa_hail_new5(i,j)) THEN
-                afwa_hail_new5(i,j) = dhail5
-            ENDIF
-          ENDIF
-        ENDDO
-      ENDDO
-      ! <-- RAS
-
-    ENDIF  !~ End if do_hailcast_calc
 
     ! Lightning (total column-integrated cloud ice)
     ! Note this formula is basically stolen from the VIL calculation.

@@ -1,3 +1,11 @@
+#if ( HYBRID_COORD==1 ) 
+#  define mu(...) (c1h(k)*XXPCXX(__VA_ARGS__))
+#  define XXPCXX(...) mu(__VA_ARGS__)
+
+#  define mub(...) (c1h(k)*XXPCBXX(__VA_ARGS__)+c2h(k))
+#  define XXPCBXX(...) mub(__VA_ARGS__)
+#endif
+
 module module_stoch
 !***********************************************************************
 !
@@ -764,7 +772,7 @@ IF (grid%sppt_on==1) then
 !     ------------------------------------------------------------------
       SUBROUTINE UPDATE_STOCH_TEN(ru_tendf,rv_tendf,t_tendf, &
                        ru_tendf_stoch,rv_tendf_stoch,rt_tendf_stoch,& 
-                       mu,mub,                                      & 
+                       mu,mub,c1h,c2h,                              & 
                        ids, ide, jds, jde, kds, kde,                &
                        ims, ime, jms, jme, kms, kme,                &
                        its, ite, jts, jte, kts, kte,                &
@@ -783,6 +791,7 @@ IF (grid%sppt_on==1) then
                       ru_tendf_stoch,rv_tendf_stoch,rt_tendf_stoch 
 
        REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: mu,mub
+       REAL , DIMENSION(kms:kme) , INTENT(IN) :: c1h,c2h
 
        INTEGER :: I,J,K,kh
        REAL  :: dt,xm

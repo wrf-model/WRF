@@ -3526,8 +3526,8 @@
         POINTS=I_BY_J
         DO K=KTE,KTS,-1
           F_MEAN=SUMF_0(K)/POINTS
-          ST_DEV=SQRT((POINTS*SUMF2_0(K)-SUMF_0(K)*SUMF_0(K))/         &
-     &                (POINTS*(POINTS-1)))
+          ST_DEV=SQRT((AMAX1(0.0,POINTS*SUMF2_0(K)-SUMF_0(K)*SUMF_0(K))/ &
+     &                (POINTS*(POINTS-1))))
           RMS=SQRT(SUMF2_0(K)/POINTS)
           KFLIP=KTE-K+1
           WRITE(message,101)KFLIP,FMAX_0(K),FMIN_0(K)

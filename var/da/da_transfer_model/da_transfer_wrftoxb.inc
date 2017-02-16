@@ -41,6 +41,9 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
    real   :: uu, vv
 #endif
 
+   real              :: zlclg(ids:ide,jds:jde)
+   real              :: zlcl(ims:ime,jms:jme)
+
 
    call sfclayinit !for da_sfc_wtq
 
@@ -949,6 +952,34 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
    end if
 
    deallocate (xbx % latc_mean)
+
+   ! calculate background/model LCL to be used by use_radar_rqv
+   if ( use_radarobs .and. use_radar_rqv .and. cloudbase_calc_opt == 2 ) then
+      do j = jts, jte
+         do i = its, ite
+            zlcl(i,j) = 125.0*(grid%xb%t(i,j,1)-grid%xb%td(i,j,1))
+         end do
+      end do
+      ij = (ide-ids+1)*(jde-jds+1)
+#ifdef DM_PARALLEL
+      call da_patch_to_global (grid, zlcl, zlclg)
+      call wrf_dm_bcast_real( zlclg, ij )
+#else
+      do j = jds, jde
+         do i = ids, ide
+            zlclg(i,j) = zlcl(i,j)
+         end do
+      end do
+#endif
+      ! Calculate the domain grid mean LCL
+      zlcl_mean = 0.0
+      do j = jds, jde
+         do i = ids, ide
+            zlcl_mean = zlcl_mean + zlclg(i,j)
+         end do
+      end do
+      zlcl_mean = zlcl_mean/float(ij)
+   end if ! lcl for use_radar_rqv
 
    if (trace_use) call da_trace_exit("da_transfer_wrftoxb")
 

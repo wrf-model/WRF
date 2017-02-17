@@ -2317,16 +2317,26 @@ CONTAINS
          ENDIF
       ENDIF
       IF (ICLOUD == 3) THEN
-        IF (PRESENT(CLDFRA) .AND.                                       &
-            PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
-           DO j = jts,jte
-           DO k = kts,kte
-           DO i = its,ite
-              qc(i,k,j) = qc_save(i,k,j)
-              qi(i,k,j) = qi_save(i,k,j)
-           ENDDO
-           ENDDO
-           ENDDO
+        IF (PRESENT(CLDFRA) ) THEN
+           CALL wrf_debug (150, 'DEBUG-GT, back to micro-only Qc and Qi')
+           IF (PRESENT(F_QC)) THEN
+              DO j = jts,jte
+              DO k = kts,kte
+              DO i = its,ite
+                 qc(i,k,j) = qc_save(i,k,j)
+              ENDDO
+              ENDDO
+              ENDDO
+           ENDIF
+           IF (PRESENT(F_QI)) THEN
+              DO j = jts,jte
+              DO k = kts,kte
+              DO i = its,ite
+                 qi(i,k,j) = qi_save(i,k,j)
+              ENDDO
+              ENDDO
+              ENDDO
+           ENDIF
            IF (PRESENT(F_QS)) THEN
               DO j = jts,jte
               DO k = kts,kte
@@ -3225,11 +3235,11 @@ CONTAINS
       REAL, INTENT(IN):: gridkm
 
 !..Local vars.
-      REAL:: RH_00L, RH_00O, RH_00, RHI_max
+      REAL:: RH_00L, RH_00O, RH_00, RHI_max, entrmnt
       REAL, DIMENSION(ims:ime,kms:kme,jms:jme):: qvsat
       INTEGER:: i,j,k
-      REAL:: TK, TC, qvsi, qvsw, RHUM
-      REAL, DIMENSION(kms:kme):: qvs1d, cfr1d, T1d,                     &
+      REAL:: TK, TC, qvsi, qvsw, RHUM, xx, yy
+      REAL, DIMENSION(kts:kte):: qvs1d, cfr1d, T1d,                     &
      &                           P1d, R1d, qc1d, qi1d, qs1d
 
       character*512 dbg_msg
@@ -3243,8 +3253,11 @@ CONTAINS
 !.. to get near 100% RH as grid spacing moves toward 1.0km, but higher
 !.. RH over ocean required as compared to over land.
 
-      RH_00L = 0.781 + SQRT(1./(35.0+gridkm*gridkm*gridkm*0.5))
-      RH_00O = 0.831 + SQRT(1./(70.0+gridkm*gridkm*gridkm*0.5))
+!      RH_00L = 0.781 + SQRT(1./(35.0+gridkm*gridkm*gridkm*0.5))
+!      RH_00O = 0.831 + SQRT(1./(70.0+gridkm*gridkm*gridkm*0.5))
+      RH_00L = 0.7  + SQRT(1./(25.0+gridkm*gridkm*gridkm))
+      RH_00O = 0.81 + SQRT(1./(50.0+gridkm*gridkm*gridkm))
+
 
       DO j = jts,jte
       DO k = kts,kte
@@ -3252,7 +3265,7 @@ CONTAINS
          RHI_max = 0.0
          CLDFRA(I,K,J) = 0.0
 
-         if (qc(i,k,j)+qi(i,k,j)+qs(i,k,j) .gt. 1.E-7) then
+         if (qc(i,k,j).gt.1.E-6 .or. qi(i,k,j).ge.1.E-7 .or. qs(i,k,j).gt.1.E-5) then
             CLDFRA(I,K,J) = 1.0
             qvsat(i,k,j) = qv(i,k,j)
          else
@@ -3265,12 +3278,12 @@ CONTAINS
 
             if (tc .ge. -12.0) then
                qvsat(i,k,j) = qvsw
-            elseif (tc .lt. -30.0) then
+            elseif (tc .lt. -20.0) then
                qvsat(i,k,j) = qvsi
             else
-               qvsat(i,k,j) = qvsw - (qvsw-qvsi)*(-12.0-tc)/(-12.0+30.)
+               qvsat(i,k,j) = qvsw - (qvsw-qvsi)*(-12.0-tc)/(-12.0+20.)
             endif
-            RHUM = qv(i,k,j)/qvsat(i,k,j)
+            RHUM = MAX(0.01, MIN(qv(i,k,j)/qvsat(i,k,j), 0.9999))
 
             IF ((XLAND(I,J)-1.5).GT.0.) THEN                             !--- Ocean
                RH_00 = RH_00O
@@ -3281,13 +3294,12 @@ CONTAINS
             if (tc .ge. -12.0) then
                RHUM = MIN(0.999, RHUM)
                CLDFRA(I,K,J) = MAX(0.0, 1.0-SQRT((1.0-RHUM)/(1.-RH_00)))
-            elseif (tc.lt.-12..and.tc.gt.-70. .and. RHUM.gt.RH_00O) then
+            elseif (tc.lt.-12..and.tc.gt.-70. .and. RHUM.gt.RH_00L) then
+               RHUM = MAX(0.01, MIN(qv(i,k,j)/qvsat(i,k,j), qvsw/qvsi - 1.E-6))
                RHI_max = MAX(RHUM+1.E-6, qvsw/qvsi)
-               CLDFRA(I,K,J) = MAX(0., ((RH_00O-RHUM)/(RH_00O-RHI_max)) &
-     &                                *((RH_00O-RHUM)/(RH_00O-RHI_max)))
+               CLDFRA(I,K,J) = MAX(0., 1.0-SQRT((RHI_max-RHUM)/(RHI_max-RH_00L)))
             endif
-
-            CLDFRA(I,K,J) = MIN(0.95, CLDFRA(I,K,J))
+            CLDFRA(I,K,J) = MIN(0.90, CLDFRA(I,K,J))
 
          endif
       ENDDO
@@ -3303,6 +3315,13 @@ CONTAINS
 !        else
 !           debug_flag = .false.
 !        endif
+
+!        if (rand_perturb_on .eq. 1) then
+!           entrmnt = MAX(0.01, MIN(0.99, 0.5 + rand_pert(i,1,j)*0.5))
+!        else
+            entrmnt = 0.5
+!        endif
+
          DO k = kts,kte
             qvs1d(k) = qvsat(i,k,j)
             cfr1d(k) = cldfra(i,k,j)
@@ -3318,7 +3337,7 @@ CONTAINS
 !       WRITE (dbg_msg,*) 'DEBUG-GT: finding cloud layers at point  (', i, ', ', j, ')'
 !       CALL wrf_debug (150, dbg_msg)
 !     endif
-         call find_cloudLayers(qvs1d, cfr1d, T1d, P1d, R1d,             &
+         call find_cloudLayers(qvs1d, cfr1d, T1d, P1d, R1d, entrmnt,    &
      &                         debug_flag, qc1d, qi1d, qs1d, kts,kte)
 
          DO k = kts,kte
@@ -3337,13 +3356,14 @@ CONTAINS
 !.. a reasonable value of LWP or IWP that might be contained in that depth,
 !.. unless existing LWC/IWC is already there.
 
-      SUBROUTINE find_cloudLayers(qvs1d, cfr1d, T1d, P1d, R1d,          &
+      SUBROUTINE find_cloudLayers(qvs1d, cfr1d, T1d, P1d, R1d, entrmnt,    &
      &                            debugfl, qc1d, qi1d, qs1d, kts,kte)
 !
       IMPLICIT NONE
 !
       INTEGER, INTENT(IN):: kts, kte
       LOGICAL, INTENT(IN):: debugfl
+      REAL, INTENT(IN):: entrmnt
       REAL, DIMENSION(kts:kte), INTENT(IN):: qvs1d,T1d,P1d,R1d
       REAL, DIMENSION(kts:kte), INTENT(INOUT):: cfr1d
       REAL, DIMENSION(kts:kte), INTENT(INOUT):: qc1d, qi1d, qs1d
@@ -3351,7 +3371,7 @@ CONTAINS
 !..Local vars.
       REAL, DIMENSION(kts:kte):: theta, dz
       REAL:: Z1, Z2, theta1, theta2, ht1, ht2
-      INTEGER:: k, k2, k_tropo, k_m12C, k_m40C, k_cldb, k_cldt
+      INTEGER:: k, k2, k_tropo, k_m12C, k_m40C, k_cldb, k_cldt, kbot
       LOGICAL:: in_cloud
       character*512 dbg_msg
 
@@ -3361,8 +3381,9 @@ CONTAINS
       k_m40C = 0
       DO k = kte, kts, -1
          theta(k) = T1d(k)*((100000.0/P1d(k))**(287.05/1004.))
-         if (T1d(k)-273.16 .gt. -40.0) k_m40C = MAX(k_m40C, k)
-         if (T1d(k)-273.16 .gt. -12.0) k_m12C = MAX(k_m12C, k)
+         if (T1d(k)-273.16 .gt. -40.0 .and. P1d(k).gt.7000.0) k_m40C = MAX(k_m40C, k)
+         if (T1d(k)-273.16 .gt. -12.0 .and. P1d(k).gt.10000.0) k_m12C = MAX(k_m12C, k)
+
       ENDDO
       if (k_m40C .le. kts) k_m40C = kts
       if (k_m12C .le. kts) k_m12C = kts
@@ -3411,6 +3432,19 @@ CONTAINS
          endif
       ENDDO
 
+!..We would like to prevent fractional clouds below LCL in idealized
+!.. situation with deep well-mixed convective PBL, that otherwise is
+!.. likely to get clouds in more realistic capping inversion layer.
+
+      kbot = kts+2
+      DO k = kbot, k_m12C
+         if ( (theta(k)-theta(k-1)) .gt. 0.05E-3*dz(k)) EXIT
+      ENDDO
+      kbot = MAX(kts+1, k-2)
+      DO k = kts, kbot
+         if (cfr1d(k).gt.0.0 .and. cfr1d(k).lt.0.999) cfr1d(k) = 0.
+      ENDDO
+
 
 !..Starting below tropo height, if cloud fraction greater than 1 percent,
 !.. compute an approximate total layer depth of cloud, determine a total 
@@ -3444,25 +3478,30 @@ CONTAINS
 !       CALL wrf_debug (150, dbg_msg)
 !     endif
             call adjust_cloudIce(cfr1d, qi1d, qs1d, qvs1d, T1d,R1d,dz,  &
-     &                           k_cldb,k_cldt,kts,kte)
+     &                           entrmnt, k_cldb,k_cldt,kts,kte)
             k = k_cldb
+         else
+            if (cfr1d(k_cldb).gt.0.and.qi1d(k_cldb).lt.1.E-6)           &
+     &               qi1d(k_cldb)=1.E-5*cfr1d(k_cldb)
          endif
+
+
          k = k - 1
       ENDDO
 
 
       k_cldb = k_tropo
       in_cloud = .false.
-      k = k_m12C
-      DO WHILE (.not. in_cloud .AND. k.gt.kts)
+      k = k_m12C + 2
+      DO WHILE (.not. in_cloud .AND. k.gt.kbot)
          k_cldt = 0
          if (cfr1d(k).ge.0.01) then
             in_cloud = .true.
             k_cldt = MAX(k_cldt, k)
          endif
          if (in_cloud) then
-            DO k2 = k_cldt-1, kts, -1
-               if (cfr1d(k2).lt.0.01 .or. k2.eq.kts) then
+            DO k2 = k_cldt-1, kbot, -1
+               if (cfr1d(k2).lt.0.01 .or. k2.eq.kbot) then
                   k_cldb = k2+1
                   goto 88
                endif
@@ -3477,8 +3516,11 @@ CONTAINS
 !       CALL wrf_debug (150, dbg_msg)
 !     endif
             call adjust_cloudH2O(cfr1d, qc1d, qvs1d, T1d,R1d,dz,        &
-     &                           k_cldb,k_cldt,kts,kte)
+     &                           entrmnt, k_cldb,k_cldt,kts,kte)
             k = k_cldb
+         else
+            if (cfr1d(k_cldb).gt.0.and.qc1d(k_cldb).lt.1.E-6)           &
+     &               qc1d(k_cldb)=1.E-5*cfr1d(k_cldb)
          endif
          k = k - 1
       ENDDO
@@ -3508,68 +3550,90 @@ CONTAINS
 
 !+---+-----------------------------------------------------------------+
 
-      SUBROUTINE adjust_cloudIce(cfr,qi,qs,qvs, T,Rho,dz, k1,k2,kts,kte)
+      SUBROUTINE adjust_cloudIce(cfr,qi,qs,qvs, T,Rho,dz, entr, k1,k2,kts,kte)
 !
       IMPLICIT NONE
 !
       INTEGER, INTENT(IN):: k1,k2, kts,kte
+      REAL, INTENT(IN):: entr
       REAL, DIMENSION(kts:kte), INTENT(IN):: cfr, qvs, T, Rho, dz
       REAL, DIMENSION(kts:kte), INTENT(INOUT):: qi, qs
-      REAL:: iwp, xiwp, max_iwp, tdz, this_iwp
-      INTEGER:: k
-      REAL, PARAMETER:: entr=0.35
-
-      max_iwp = ABS(qvs(k2-1)-qvs(k2))*Rho(k2-1)*dz(k2-1)
+      REAL:: iwc, max_iwc, tdz, this_iwc, this_dz, iwp_exists
+      INTEGER:: k, kmid
 
       tdz = 0.
-      iwp = 0.
       do k = k1, k2
          tdz = tdz + dz(k)
-         iwp = iwp + MAX(0., (qvs(k-1)-qvs(k))*Rho(k)*dz(k))
       enddo
-      max_iwp = MAX(max_iwp*(1.-entr), MIN(1.0, iwp*(1.0-entr)))
+      kmid = NINT(0.5*(k1+k2))
+      max_iwc = ABS(qvs(k2-1)-qvs(k1))
+!     print*, ' max_iwc = ', max_iwc, ' over DZ=',tdz
 
+      iwp_exists = 0.
       do k = k1, k2
-         this_iwp = max_iwp*dz(k)/tdz
+         iwp_exists = iwp_exists + (qi(k)+qs(k))*Rho(k)*dz(k)
+      enddo
+      if (iwp_exists .gt. 1.0) RETURN
+
+      this_dz = 0.0
+      do k = k1, k2
+         if (k.eq.k1) then
+            this_dz = this_dz + 0.5*dz(k)
+         else
+            this_dz = this_dz + dz(k)
+         endif
+         this_iwc = max_iwc*this_dz/tdz
+         iwc = MAX(1.E-6, this_iwc*(1.-entr))
          if (cfr(k).gt.0.01.and.cfr(k).lt.0.99.and.T(k).ge.203.16) then
-            qi(k) = qi(k) + cfr(k)*cfr(k)*this_iwp/Rho(k)/dz(k)
+            qi(k) = qi(k) + 0.1*cfr(k)*iwc
+         elseif (qi(k).lt.1.E-5.and.cfr(k).ge.0.99.and.T(k).ge.203.16) then
+            qi(k) = qi(k) + 0.01*iwc
          endif
       enddo
-
 
       END SUBROUTINE adjust_cloudIce
 
 !+---+-----------------------------------------------------------------+
 
-      SUBROUTINE adjust_cloudH2O(cfr, qc, qvs, T,Rho,dz, k1,k2,kts,kte)
+      SUBROUTINE adjust_cloudH2O(cfr, qc, qvs, T,Rho,dz, entr, k1,k2,kts,kte)
 !
       IMPLICIT NONE
 !
       INTEGER, INTENT(IN):: k1,k2, kts,kte
+      REAL, INTENT(IN):: entr
       REAL, DIMENSION(kts:kte):: cfr, qc, qvs, T, Rho, dz
-      REAL:: lwp, xlwp, max_lwp, tdz, this_lwp
-      INTEGER:: k
-      REAL, PARAMETER:: entr=0.35
-
-      max_lwp = ABS(qvs(k2-1)-qvs(k2))*Rho(k2-1)*dz(k2-1)
+      REAL:: lwc, max_lwc, tdz, this_lwc, this_dz, lwp_exists
+      INTEGER:: k, kmid
 
       tdz = 0.
-      lwp = 0.
       do k = k1, k2
          tdz = tdz + dz(k)
-         lwp = lwp + MAX(0., (qvs(k-1)-qvs(k))*Rho(k)*dz(k))
       enddo
-      max_lwp = MAX(max_lwp*(1.-entr), MIN(1.0, lwp*(1.0-entr)))
+      kmid = NINT(0.5*(k1+k2))
+      max_lwc = ABS(qvs(k2-1)-qvs(k1))
+!     print*, ' max_lwc = ', max_lwc, ' over DZ=',tdz
 
+      lwp_exists = 0.
       do k = k1, k2
-         this_lwp = max_lwp*dz(k)/tdz
-         if (cfr(k).gt.0.95.and.qc(k).lt.1.E-7.and.T(k).lt.273.16) then
-            qc(k) = qc(k) + 0.05*this_lwp/Rho(k)/dz(k)
-         elseif (cfr(k).gt.0.01.and.cfr(k).lt.0.99.and.T(k).le.298.16) then
-            qc(k) = qc(k) + cfr(k)*cfr(k)*this_lwp/Rho(k)/dz(k)
+         lwp_exists = lwp_exists + qc(k)*Rho(k)*dz(k)
+      enddo
+      if (lwp_exists .gt. 1.0) RETURN
+
+      this_dz = 0.0
+      do k = k1, k2
+         if (k.eq.k1) then
+            this_dz = this_dz + 0.5*dz(k)
+         else
+            this_dz = this_dz + dz(k)
+         endif
+         this_lwc = max_lwc*this_dz/tdz
+         lwc = MAX(1.E-6, this_lwc*(1.-entr))
+         if (cfr(k).gt.0.01.and.cfr(k).lt.0.99.and.T(k).lt.298.16.and.T(k).ge.253.16) then
+            qc(k) = qc(k) + cfr(k)*cfr(k)*lwc
+         elseif (cfr(k).ge.0.99.and.qc(k).lt.1.E-5.and.T(k).lt.298.16.and.T(k).ge.253.16) then
+            qc(k) = qc(k) + 0.1*lwc
          endif
       enddo
-
 
       END SUBROUTINE adjust_cloudH2O
 

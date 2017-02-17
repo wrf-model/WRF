@@ -58,10 +58,7 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    ! for opt=1
    real              :: h_sfc, p_sfc, t_sfc, q_sfc, ev_sfc, td_sfc
    ! for opt=2
-   real              :: ZLCLG(ids:ide,jds:jde)
-   real              :: ZLCL(ims:ime,jms:jme)
-   real              :: ZLCLA                  ! domain grid mean LCL
-   integer           :: ij
+   real              :: zlcl(ims:ime,jms:jme)
 
    logical           :: echo_non_precip, echo_rf_good
 
@@ -209,25 +206,6 @@ END IF
             zlcl(i,j) = 125.0*(grid%xb%t(i,j,1)-grid%xb%td(i,j,1))
          end do
       end do
-      ij = (ide-ids+1)*(jde-jds+1)
-#ifdef DM_PARALLEL
-      call da_patch_to_global (grid, zlcl, zlclg)
-      call wrf_dm_bcast_real( zlclg, ij )
-#else
-      do j = jds, jde
-         do i = ids, ide
-            zlclg(i,j) = zlcl(i,j)
-         end do
-      end do
-#endif
-      ! Calculate the domain grid mean LCL
-      zlcla = 0.0
-      do j = jds, jde
-         do i = ids, ide
-            zlcla = zlcla + zlclg(i,j)
-         end do
-      end do
-      zlcla = zlcla/float(ij)
    end if ! lcl for use_radar_rqv
 
    do n=iv%info(radar)%n1,iv%info(radar)%n2
@@ -276,7 +254,8 @@ END IF
          case ( 2 )  !NCAR scheme
             model_lcl(n) = dxm *(dym * zlcl(i,j)   + dy * zlcl(i+1, j))  + &
                            dx  *(dym * zlcl(i,j+1) + dy * zlcl(i+1,j+1))
-            model_lcl(n) = max(model_lcl(n), zlcla)
+            ! zlcl_mean is model grid mean zlcl calculated in da_transform_wrftoxb.inc
+            model_lcl(n) = max(model_lcl(n), zlcl_mean)
 
             ! add radar elevation to the calculated model_lcl
             ! iv%radar(n)%height(k) (rather than zr) is later used for checking

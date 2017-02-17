@@ -313,9 +313,9 @@ state    real   mub_save        ij     dyn_em      1         -      -           
 state    real   mu0             ij     dyn_em      1         -      i1          "mu0" "initial dry mass in column" "Pa"
 state    real   mudf            ij     dyn_em      1         -      -           "mudf" "" ""
 state    real   muu             ij     dyn_em      1          X     -           "muu"
-i1       real   muus            ij     dyn_em      1          -     
+state    real   muus            ij     dyn_em      1          X     -           "muus"
 state    real   muv             ij     dyn_em      1          Y     -           "muv"
-i1       real   muvs            ij     dyn_em      1          -     
+state    real   muvs            ij     dyn_em      1          Y     -           "muvs"
 state    real   mut             ij     dyn_em      1          -     -           "mut"
 state    real   muts            ij     dyn_em      1          -     -           "muts"
 i1       real   muave           ij     dyn_em      1          -     
@@ -3002,6 +3002,7 @@ period    PERIOD_EM_COUPLE_B dyn_em 3:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2,
 
 #cyl for trajectory 
 halo      HALO_EM_F dyn_em  24:muu,muv,mut
+halo      HALO_EM_F_1 dyn_em  24:muus,muvs
 
 ## For moving nests
 #halo      em_shift_halo_y  dyn_em 48:imask_nostag,imask_xstag,imask_ystag,imask_xystag,u_2,v_2,t_2
@@ -3047,6 +3048,8 @@ period    PERIOD_BDY_EM_C dyn_em 2:u_2,u_save,v_2,v_save,t_2,t_save,muv,msfvx,ms
 period    PERIOD_BDY_EM_D dyn_em 3:u_2,v_2,w_2,t_2,ph_2,mu_2,tke_2
 period    PERIOD_BDY_EM_D3 dyn_em 3:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,mu_1,mu_2
 period    PERIOD_EM_DA dyn_em 2:ru_m,rv_m,ww_m,mut,muts
+period    PERIOD_EM_F dyn_em 2:muus,muvs
+period    PERIOD_EM_G dyn_em 2:msftx,msfux,msfvy
 period    PERIOD_EM_THETAM dyn_em 3:t_1,t_2,h_diabatic
 
 #

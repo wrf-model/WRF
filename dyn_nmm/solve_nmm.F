@@ -1811,6 +1811,7 @@
      &   CONFIG_FLAGS%CU_PHYSICS.eq.GFSCHEME .or.                        & !gf
      &   CONFIG_FLAGS%CU_PHYSICS.eq.OSASSCHEME .or.                       &
      &   CONFIG_FLAGS%CU_PHYSICS.eq.NSASSCHEME .or.                       &
+     &   CONFIG_FLAGS%CU_PHYSICS.eq.SCALESASSCHEME .or.                   &
      &   CONFIG_FLAGS%CU_PHYSICS.eq.MESO_SAS .or.                         &   !Kwon
      &   CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN                       ! 
 !
@@ -1930,6 +1931,7 @@
         IF(MOD(grid%ntsd, GRID%NCNVC).eq.0.and.                 &
      &    (CONFIG_FLAGS%CU_PHYSICS.eq.OSASSCHEME.or.            &
      &     CONFIG_FLAGS%CU_PHYSICS.eq.NSASSCHEME.or.            &
+     &     CONFIG_FLAGS%CU_PHYSICS.eq.SCALESASSCHEME.or.        &
      &     CONFIG_FLAGS%CU_PHYSICS.eq.MESO_SAS.or.              & !Kwon
      &     CONFIG_FLAGS%CU_PHYSICS.eq.GFSCHEME.or.              & !gf
      &     CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN 
@@ -3537,8 +3539,8 @@
         POINTS=I_BY_J
         DO K=KTE,KTS,-1
           F_MEAN=SUMF_0(K)/POINTS
-          ST_DEV=SQRT((POINTS*SUMF2_0(K)-SUMF_0(K)*SUMF_0(K))/         &
-     &                (POINTS*(POINTS-1)))
+          ST_DEV=SQRT((AMAX1(0.0,POINTS*SUMF2_0(K)-SUMF_0(K)*SUMF_0(K))/ &
+     &                (POINTS*(POINTS-1))))
           RMS=SQRT(SUMF2_0(K)/POINTS)
           KFLIP=KTE-K+1
           WRITE(message,101)KFLIP,FMAX_0(K),FMIN_0(K)

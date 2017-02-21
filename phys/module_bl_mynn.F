@@ -671,7 +671,7 @@ CONTAINS
 
     INTEGER :: i,j,k
     REAL :: afk,abk,zwk,zwk1,dzk,qdz,vflx,bv,tau_cloud,elb,elb_cloud,els,els1,elf, &
-            & el_stab,el_unstab,el_mf,el_stab_mf,elb_mf,PBLH_PLUS_ENT
+            & el_stab,el_unstab,el_mf,el_stab_mf,elb_mf
 
     INTEGER, INTENT(IN)   :: spp_pbl
     REAL, DIMENSION(kts:kte), INTENT(in)   :: rstoch_col
@@ -732,14 +732,9 @@ CONTAINS
 !   Only integrate to top of PBL (+ transition/entrainment layer),
 !   since TKE aloft is not relevant. 
 !
-    IF ( bl_mynn_mixlength .EQ. 2 ) THEN
-       PBLH_PLUS_ENT = zi+h1
-    ELSE
-       PBLH_PLUS_ENT = zi2+h1
-    ENDIF
     k = kts+1
     zwk = zw(k)
-    DO WHILE (zwk .LE. PBLH_PLUS_ENT)
+    DO WHILE (zwk .LE. zi2+h1)
        dzk = 0.5*( dz(k)+dz(k-1) )
        qdz = MAX( qkw(k)-qmin, 0.03 )*dzk
              elt = elt +qdz*zwk
@@ -4658,7 +4653,7 @@ ENDIF
              ! Exponential Entrainment:
              !chemn(ic) = chem(k,ic)*(1-EntExp)+UPCHEM(K-1,I,ic)*EntExp
              ! Linear entrainment:
-             chemn(ic)=UPCHEM(k-1,I,ic)*(1.-EntExp) + chem(k-1,ic))*EntExp
+             chemn(ic)=UPCHEM(k-1,I,ic)*(1.-EntExp) + chem(k-1,ic)*EntExp
          enddo
 #endif
 

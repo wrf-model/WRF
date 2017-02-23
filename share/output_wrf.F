@@ -196,7 +196,7 @@
 
 #if ( HYBRID_COORD==1 )
     CALL nl_get_hybrid_opt ( 1       , hybrid_opt )
-    CALL nl_get_eta        ( 1       , etac )
+    CALL nl_get_etac       ( 1       , etac )
 #endif
 
     IF ( grid_fdda == 1 ) THEN
@@ -943,7 +943,7 @@ endif
 # if ! ( HYBRID_COORD==1 )
     CALL wrf_put_dom_ti_integer ( fid , 'HYBRID_OPT',           0  , 1 , ierr )
     CALL wrf_put_dom_ti_real    ( fid , 'ETAC'      ,           0. , 1 , ierr )
-# elif
+# else
     CALL wrf_put_dom_ti_integer ( fid , 'HYBRID_OPT',  hybrid_opt  , 1 , ierr )
     CALL wrf_put_dom_ti_real    ( fid , 'ETAC'      ,  etac        , 1 , ierr )
 # endif

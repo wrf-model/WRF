@@ -387,6 +387,7 @@ CONTAINS
         SLIMSK(i)=ABS(XLAND(i,j)-2.)
 
         garea(I)=DX2D(i,j)*DY*2.0         !wang,  grid box area in m^2
+        KCNV(I)=0                         !wang
       ENDDO
 
 #if (NMM_CORE == 1)
@@ -3275,7 +3276,7 @@ CONTAINS
             ucko(i,k) = 0.
             vcko(i,k) = 0.
             dbyo(i,k) = 0.
-!           pwo(i,k)  = 0.
+            pwo(i,k)  = 0.
             dellal(i,k) = 0.
             to(i,k)   = t1(i,k)
             qo(i,k)   = q1(i,k)
@@ -4288,7 +4289,7 @@ CONTAINS
         deltbar(i) = 0.
         delubar(i) = 0.
         delvbar(i) = 0.
-!       qcond(i) = 0.
+        qcond(i) = 0.
       enddo
       do k = 1, km
         do i = 1, im
@@ -7056,7 +7057,7 @@ CONTAINS
             ucko(i,k) = 0.
             vcko(i,k) = 0.
             dbyo(i,k) = 0.
-!           pwo(i,k)  = 0.
+            pwo(i,k)  = 0.
             dellal(i,k) = 0.
             to(i,k)   = t1(i,k)
             qo(i,k)   = q1(i,k)
@@ -7999,7 +8000,7 @@ CONTAINS
         deltbar(i) = 0.
         delubar(i) = 0.
         delvbar(i) = 0.
-!       qcond(i) = 0.
+        qcond(i) = 0.
       enddo
       do k = 1, km
         do i = 1, im

@@ -3119,6 +3119,7 @@ CONTAINS
 
    END SUBROUTINE cal_cldfra1
 
+
 !+---+-----------------------------------------------------------------+
 !..Cloud fraction scheme by G. Thompson (NCAR-RAL), not intended for
 !.. combining with any cumulus or shallow cumulus parameterization
@@ -3215,9 +3216,6 @@ CONTAINS
                RHUM = MIN(0.999, RHUM)
                CLDFRA(I,K,J) = MAX(0.0, 1.0-SQRT((1.0-RHUM)/(1.-RH_00)))
             elseif (tc.lt.-12..and.tc.gt.-70. .and. RHUM.gt.RH_00L) then
-!-GT           RHUM = MAX(0.01, MIN(qv(i,k,j)/qvsat(i,k,j), qvsw/qvsi - 1.E-6))
-!-GT           RHI_max = MAX(RHUM+1.E-6, qvsw/qvsi)
-!-GT           CLDFRA(I,K,J) = MAX(0., 1.0-SQRT((RHI_max-RHUM)/(RHI_max-RH_00L)))
                RHUM = MAX(0.01, MIN(qv(i,k,j)/qvsat(i,k,j), 1.0 - 1.E-6))
                CLDFRA(I,K,J) = MAX(0., 1.0-SQRT((1.0-RHUM)/(1.0-RH_00L)))
             endif
@@ -3492,7 +3490,6 @@ CONTAINS
       do k = k1, k2
          iwp_exists = iwp_exists + (qi(k)+qs(k))*Rho(k)*dz(k)
       enddo
-!-GT  if (iwp_exists .gt. 1.0) RETURN
 
       this_dz = 0.0
       do k = k1, k2
@@ -3536,7 +3533,6 @@ CONTAINS
       do k = k1, k2
          lwp_exists = lwp_exists + qc(k)*Rho(k)*dz(k)
       enddo
-!-GT  if (lwp_exists .gt. 1.0) RETURN
 
       this_dz = 0.0
       do k = k1, k2

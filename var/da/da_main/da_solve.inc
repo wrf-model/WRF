@@ -340,7 +340,11 @@
    c2h = grid%c2h
    c3h = grid%c3h
    c4h = grid%c4h
-   if ( config_flags%hybrid_opt == 0 ) then
+   ! For WRFDA, namelist hybrid_opt setting is ignored.
+   ! grid%hybrid_opt is set in da_med_initialdata_input.inc based on
+   ! HYBRID_OPT global attribute contained in the input file.
+   ! For input file prior to V3.9, grid%hybrid_opt is set to 0.
+   if ( grid%hybrid_opt <= 0 ) then
       c3f = grid%znw
       c3h = grid%znu
       c4f = 0.0

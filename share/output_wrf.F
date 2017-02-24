@@ -941,7 +941,7 @@ endif
 
 #if (EM_CORE == 1)
 # if ! ( HYBRID_COORD==1 )
-    CALL wrf_put_dom_ti_integer ( fid , 'HYBRID_OPT',           0  , 1 , ierr )
+    CALL wrf_put_dom_ti_integer ( fid , 'HYBRID_OPT',          -1  , 1 , ierr )
     CALL wrf_put_dom_ti_real    ( fid , 'ETAC'      ,           0. , 1 , ierr )
 # else
     CALL wrf_put_dom_ti_integer ( fid , 'HYBRID_OPT',  hybrid_opt  , 1 , ierr )

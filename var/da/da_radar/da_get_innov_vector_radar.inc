@@ -196,7 +196,11 @@ END IF
    model_tc = model_tc - 273.15 ! degree K to degree C
 
    if ( use_radar_rqv ) then
-      model_qs_ice = model_qs*exp((2.837e6 - 2.501e6)/461.5*(1./273.15 - 1./(model_tc+273.15)))
+      do n=iv%info(radar)%n1,iv%info(radar)%n2
+         do k=1,iv%info(radar)%levels(n)
+            model_qs_ice(k,n) = model_qs(k,n)*exp((2.837E6 - 2.501E6)/461.5*(1./273.15 - 1./(model_tc(k,n)+273.15)))
+         end do
+      end do
    end if
 
    ! calculate background/model LCL to be used by use_radar_rqv

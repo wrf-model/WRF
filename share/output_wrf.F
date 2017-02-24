@@ -197,6 +197,9 @@
 #if ( HYBRID_COORD==1 )
     CALL nl_get_hybrid_opt ( 1       , hybrid_opt )
     CALL nl_get_etac       ( 1       , etac )
+    IF ( hybrid_opt .EQ. 0 ) THEN
+       etac = 0.
+    END IF
 #endif
 
     IF ( grid_fdda == 1 ) THEN

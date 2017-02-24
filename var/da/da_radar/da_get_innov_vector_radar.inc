@@ -198,11 +198,7 @@ END IF
    if ( use_radar_rqv ) then
       do n=iv%info(radar)%n1,iv%info(radar)%n2
          do k=1,iv%info(radar)%levels(n)
-            if(model_tc(k,n).gt.-273.15) then
-               model_qs_ice(k,n) = model_qs(k,n)*exp((2.837E6 - 2.501E6)/461.5*(1./273.15 - 1./(model_tc(k,n)+273.15)))
-            else
-               model_qs_ice(k,n) = model_qs(k,n)
-            end if
+            model_qs_ice(k,n) = model_qs(k,n)*exp((2.837E6 - 2.501E6)/461.5*(1./273.15 - 1./(model_tc(k,n)+273.15)))
          end do
       end do
    end if

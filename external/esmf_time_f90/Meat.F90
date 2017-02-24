@@ -9,6 +9,11 @@ SUBROUTINE normalize_basetime( basetime )
   USE esmf_basetimemod
   IMPLICIT NONE
   TYPE(ESMF_BaseTime), INTENT(INOUT) :: basetime
+  !BPR BEGIN
+  INTEGER(ESMF_KIND_I8) :: Sn_simplified, Sd_simplified
+  INTEGER :: primes_to_check
+  !BPR END
+
 !PRINT *,'DEBUG:  BEGIN normalize_basetime()'
   ! Consistency check...  
   IF ( basetime%Sd < 0 ) THEN
@@ -41,6 +46,30 @@ SUBROUTINE normalize_basetime( basetime )
 !PRINT *,'DEBUG:  normalize_basetime() C2:  S,Sn,Sd = ',basetime%S,basetime%Sn,basetime%Sd
     ENDIF
   ENDIF
+
+  !BPR BEGIN
+  !Simplify the fraction -- otherwise the fraction can get needlessly complicated and
+  !cause WRF to crash
+  IF ( ( basetime%Sd > 0 ) .AND. (basetime%Sn > 0 ) ) THEN
+    CALL simplify( basetime%Sn, basetime%Sd, Sn_simplified, Sd_simplified )
+    basetime%Sn = Sn_simplified
+    basetime%Sd = Sd_simplified
+    !If the numerator and denominator are both larger than 10000, after simplification
+    !using the first 9 primes, the chances increase that there is a common prime factor other
+    !than the 9 searched for in the standard simplify
+    !By only searching for more than 9 primes when the numerator and denominator are
+    !large, we avoid the additional computational expense of checking additional primes
+    !for a large number of cases
+    IF ( ( basetime%Sd > 10000 ) .AND. (basetime%Sn > 10000 ) ) THEN
+      primes_to_check = 62
+      CALL simplify_numprimes( basetime%Sn, basetime%Sd, Sn_simplified, Sd_simplified, &
+                               primes_to_check )
+      basetime%Sn = Sn_simplified
+      basetime%Sd = Sd_simplified
+    ENDIF
+  ENDIF
+  !BPR END
+
 !PRINT *,'DEBUG:  END normalize_basetime()'
 END SUBROUTINE normalize_basetime
 
@@ -753,6 +782,59 @@ SUBROUTINE simplify( ni, di, no, do )
     no = n
     RETURN
 END SUBROUTINE simplify
+
+!BPR BEGIN
+! Same as simplify above, but allows user to choose the number of primes to check
+SUBROUTINE simplify_numprimes( ni, di, no, do, num_primes_to_check )
+  USE esmf_basemod
+    IMPLICIT NONE
+    INTEGER(ESMF_KIND_I8), INTENT(IN)  :: ni, di
+    INTEGER(ESMF_KIND_I8), INTENT(OUT) :: no, do
+    INTEGER, INTENT(IN) :: num_primes_to_check !Number of primes to check
+    INTEGER, PARAMETER ::  nprimes = 62
+    INTEGER(ESMF_KIND_I8), DIMENSION(nprimes), PARAMETER :: primes = (/2,3,5,7,11,13,17,&
+     19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97,101,103,107,109,113,127,131,&
+     137,139,149,151,157,163,167,173,179,181,191,193,197,199,211,223,227,229,233,239,241,&
+     251,257,263,269,271,277,281,283,293/)
+    INTEGER(ESMF_KIND_I8) :: pr, d, n
+    INTEGER :: np
+    LOGICAL keepgoing
+    INTEGER :: num_primes_to_check_final !Number of primes to check after being limited to max
+                                         !available number of primes
+
+    ! If the user chooses to check more primes than are currently specified in the subroutine
+    ! then use the maximum number of primes currently specified
+    num_primes_to_check_final = min(num_primes_to_check, nprimes)
+
+    IF ( ni .EQ. 0 ) THEN
+      do = 1
+      no = 0
+      RETURN
+    ENDIF
+    IF ( mod( di , ni ) .EQ. 0 ) THEN
+      do = di / ni
+      no = 1
+      RETURN
+    ENDIF
+    d = di
+    n = ni
+    DO np = 1, num_primes_to_check_final
+      pr = primes(np)
+      keepgoing = .TRUE.
+      DO WHILE ( keepgoing )
+        keepgoing = .FALSE.
+        IF ( d/pr .NE. 0 .AND. n/pr .NE. 0 .AND. MOD(d,pr) .EQ. 0 .AND. MOD(n,pr) .EQ. 0 ) THEN
+          d = d / pr
+          n = n / pr
+          keepgoing = .TRUE.
+        ENDIF
+      ENDDO
+    ENDDO
+    do = d
+    no = n
+    RETURN
+END SUBROUTINE simplify_numprimes
+!BPR END
 
 
 !$$$ this should be named "c_esmc_timesum" or something less misleading

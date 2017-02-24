@@ -992,6 +992,23 @@ BENCH_START(pbl_driver_tim)
      &        ,QNORM=grid%QNORM, fasdas=config_flags%fasdas              & !fasdas
      &        )
 
+#if (WRF_CHEM == 1)
+#ifdef DM_PARALLEL
+     IF ( num_chem >= PARAM_FIRST_SCALAR .AND. (config_flags%bl_pbl_physics == &
+     & mynnpblscheme2 .OR. config_flags%bl_pbl_physics == mynnpblscheme3)  ) then
+         CALL wrf_debug ( 200 , ' call HALO CHEM AFTER PBL' )
+         IF      ( config_flags%h_sca_adv_order <= 4 ) THEN
+#      include "HALO_EM_CHEM_E_3.inc"
+         ELSE IF ( config_flags%h_sca_adv_order <= 6 ) THEN
+#      include "HALO_EM_CHEM_E_5.inc"
+         ELSE
+              WRITE(message,*)'solve_em: invalid h_mom_adv_order = ',&
+              & config_flags%h_mom_adv_order
+        ENDIF
+     ENDIF
+#endif
+#endif
+
 BENCH_END(pbl_driver_tim)
 
 !*****

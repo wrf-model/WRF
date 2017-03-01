@@ -413,6 +413,14 @@ real      ,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,1:grid%num_soil_cat
      num_metgrid_levels = grid%num_metgrid_levels
 
 !---------------------------------------------------------------------
+! bug fix for albedo and emissivity
+      DO j = jts, MIN(jte,jde-1)
+         DO i = its, MIN(ite,ide-1)
+           grid%landmask(I,J) = 0.
+         END DO
+       END DO
+! end bug fix for albedo and emissivity
+
 !
 ! gopal's doing for ideal cases
 !
@@ -439,7 +447,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
      &,          landusef_out,soilctop_out,soilcbot_out        &
      &,          num_veg_gc,num_soil_top_gc,num_soil_bot_gc    &
      &,          config_flags%dx,internal_time_loop            &
-     &,          1,grid%num_metgrid_levels                          &
+     &,          1,grid%num_metgrid_levels,config_flags%sf_surface_physics  &
      &,          ids,ide,jds,jde,kds,kde                       &
      &,          ims,ime,jms,jme,kms,kme                       &
      &,          its,ite,jts,jte,kts,kte                       )
@@ -4648,7 +4656,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
      &,              landusef_out,soilctop_out,soilcbot_out        &
      &,              num_veg_cat,num_soil_top_cat,num_soil_bot_cat &
      &,              dx,internal_time_loop                         &
-     &,              start_z,end_z                                 &
+     &,              start_z,end_z,sf_surface_physics              &
      &,              ids,ide,jds,jde,kds,kde                       &
      &,              ims,ime,jms,jme,kms,kme                       &
      &,              its,ite,jts,jte,kts,kte                       )
@@ -4662,7 +4670,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
 INTEGER, INTENT(IN):: ids,ide,jds,jde,kds,kde, &
                        ims,ime,jms,jme,kms,kme, &
                        its,ite,jts,jte,kts,kte, &
-                       internal_time_loop
+                       internal_time_loop,sf_surface_physics
 
  INTEGER, INTENT(IN):: num_veg_cat,num_soil_top_cat,num_soil_bot_cat,start_z, end_z
 
@@ -4744,6 +4752,10 @@ INTEGER, INTENT(IN):: ids,ide,jds,jde,kds,kde, &
     open (7,FILE='land.nml')
     read (UNIT=7, NML=init_land)
     close (UNIT=7)
+
+    if (mvland .and. sf_surface_physics .ne. GFDLSLAB) then
+       CALL wrf_error_fatal('LSM must be GFDLSLAB when mvland is true')
+    endif
 
     do l = 1,num_veg_cat
      do j = jts, MIN(jte,jde-1)

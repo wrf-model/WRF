@@ -68,7 +68,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
    !rizvi   xbx%big_header%bhi(8,5) = grid%start_hour
 
    !---------------------------------------------------------------------------
-   ! WRF-specific fitelds:
+   ! WRF-specific fields:
    !---------------------------------------------------------------------------
 
    ptop = grid%p_top
@@ -366,7 +366,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
           do j=grid%j_start(ij), grid%j_end(ij)
             do i=its,ite
                ! The base specific volume (from real.init.code)
-               ppb  = grid%znu(k) * grid%mub(i,j) + ptop
+               ppb  = c3h(k) * grid%mub(i,j) + c4h(k) + ptop
                grid%pb(i,j,k) = ppb
                temp = MAX ( iso_temp, base_temp + base_lapse*log(ppb/base_pres) )
                if ( grid%pb(i,j,k) < base_pres_strat ) then
@@ -378,8 +378,8 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
                albn = (gas_constant/base_pres) * ttb * (ppb/base_pres)**cvpm
 
                qvf1 = 1.0 + grid%moist(i,j,k,P_QV) / rd_over_rv
-               aln  = -1.0 / (grid%mub(i,j)+grid%mu_2(i,j)) * &
-                      (albn*grid%mu_2(i,j) + grid%rdnw(k) * &
+               aln  = -1.0 / (c1h(k)*(grid%mub(i,j)+grid%mu_2(i,j))+c2h(k)) * &
+                      (albn*(c1h(k)*grid%mu_2(i,j)) + grid%rdnw(k) * &
                       (grid%ph_2(i,j,k+1) - grid%ph_2(i,j,k)))
                ! total pressure:
                grid%xb%p(i,j,k) = base_pres * &
@@ -387,7 +387,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
                                  (base_pres*(aln+albn)))**cpovcv
                ! total density
                grid%xb%rho(i,j,k)= 1.0 / (albn+aln)
-               ! pressure purtubation:
+               ! pressure perturbation:
                grid%p(i,j,k) = grid%xb%p(i,j,k) - ppb
             end do
            end do
@@ -397,7 +397,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
           do i=its,ite
             p_surf = base_pres * EXP ( -base_temp/base_lapse + ( (base_temp/base_lapse)**2 - 2.*gravity*grid%ht(i,j)/base_lapse/gas_constant ) **0.5 )
             do k = kts, kte
-               grid%pb(i,j,k) = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
+               grid%pb(i,j,k) = c3h(k)*(p_surf - grid%p_top) + c4h(k) + grid%p_top
                temp = MAX ( iso_temp, base_temp + base_lapse*log(grid%pb(i,j,k)/base_pres) )
                if ( grid%pb(i,j,k) < base_pres_strat ) then
                   temp = iso_temp + base_lapse_strat*log(grid%pb(i,j,k)/base_pres_strat)
@@ -409,13 +409,13 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
             grid%phb(i,j,1) = grid%ht(i,j) * gravity
             if (grid%hypsometric_opt == 1) then
                do k = kts,kte
-                  grid%phb(i,j,k+1) = grid%phb(i,j,k) - grid%dnw(k)*grid%mub(i,j)*grid%alb(i,j,k)
+                  grid%phb(i,j,k+1) = grid%phb(i,j,k) - grid%dnw(k)*(c1h(k)*grid%mub(i,j)+c2h(k))*grid%alb(i,j,k)
                end do
             else if (grid%hypsometric_opt == 2) then
                do k = kts,kte
-                  pfu = grid%mub(i,j)*grid%znw(k+1) + grid%p_top
-                  pfd = grid%mub(i,j)*grid%znw(k  ) + grid%p_top
-                  phm = grid%mub(i,j)*grid%znu(k  ) + grid%p_top
+                  pfu = grid%mub(i,j)*c3f(k+1) + c4f(k+1) + grid%p_top
+                  pfd = grid%mub(i,j)*c3f(k  ) + c4f(k  ) + grid%p_top
+                  phm = grid%mub(i,j)*c3h(k  ) + c4h(k  ) + grid%p_top
                   grid%phb(i,j,k+1) = grid%phb(i,j,k) + grid%alb(i,j,k)*phm*LOG(pfd/pfu)
                end do
             end if
@@ -426,7 +426,8 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
            do k=kts,kte
              do j=grid%j_start(ij), grid%j_end(ij)
                do i=its,ite
-                grid%al(i,j,k)=-1./(grid%mub(i,j)+grid%mu_2(i,j))*(grid%alb(i,j,k)*grid%mu_2(i,j)  &
+                grid%al(i,j,k)=-1./(c1h(k)*(grid%mub(i,j)+grid%mu_2(i,j))+c2h(k))* &
+                     (grid%alb(i,j,k)*(c1h(k)*grid%mu_2(i,j))  &
                      +grid%rdnw(k)*(grid%ph_2(i,j,k+1)-grid%ph_2(i,j,k)))
                 ! total density
                 grid%xb%rho(i,j,k)= 1.0 / (grid%alb(i,j,k)+grid%al(i,j,k))
@@ -437,9 +438,9 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
            do k=kts,kte
              do j=grid%j_start(ij), grid%j_end(ij)
               do i=its,ite
-               pfu = (grid%mub(i,j)+grid%mu_2(i,j))*grid%znw(k+1)+grid%p_top
-               pfd = (grid%mub(i,j)+grid%mu_2(i,j))*grid%znw(k)  +grid%p_top
-               phm = (grid%mub(i,j)+grid%mu_2(i,j))*grid%znu(k)  +grid%p_top
+               pfu = (grid%mub(i,j)+grid%mu_2(i,j))*c3f(k+1)+c4f(k+1)+grid%p_top
+               pfd = (grid%mub(i,j)+grid%mu_2(i,j))*c3f(k)  +c4f(k)  +grid%p_top
+               phm = (grid%mub(i,j)+grid%mu_2(i,j))*c3h(k)  +c4h(k)  +grid%p_top
                grid%al(i,j,k) = (grid%ph_2(i,j,k+1)-grid%ph_2(i,j,k)+grid%phb(i,j,k+1)-grid%phb(i,j,k)) &
                                  /phm/LOG(pfd/pfu)-grid%alb(i,j,k)
                ! total density
@@ -475,8 +476,8 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
         ! The full and half level dry hydrostatic pressure is easily computed (YRG, 12/20/2011):
         do i=its,ite
            do k=kts, kte+1
-              pf(i,k) = (grid%mub(i,j)+grid%mu_2(i,j)) * grid%znw(k) + ptop
-              pp(i,k) = (grid%mub(i,j)+grid%mu_2(i,j)) * grid%znu(k) + ptop
+              pf(i,k) = (grid%mub(i,j)+grid%mu_2(i,j)) * c3f(k) + c4f(k) + ptop
+              pp(i,k) = (grid%mub(i,j)+grid%mu_2(i,j)) * c3h(k) + c4h(k) + ptop
            enddo
         enddo
       endif
@@ -510,7 +511,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
             ! Convert to specific humidity from mixing ratio of water vapor:
             grid%xb%q(i,j,k)=grid%xb%q(i,j,k)/(1.0+grid%xb%q(i,j,k))
    
-            ! Background qrn needed for radar radial velocity assmiilation:
+            ! Background qrn needed for radar radial velocity assimilation:
 
             if (size(grid%moist,dim=4) >= 4) then
                grid%xb%qcw(i,j,k) = max(grid%moist(i,j,k,p_qc), 0.0)
@@ -647,6 +648,12 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
    has_regime = sum(grid%regime*grid%regime) > 0.0
    has_znt    = sum(grid%znt*grid%znt)       > 0.0
+   if ( has_regime .neqv. has_znt ) then
+      ! make sure they are consistent
+      ! either both from model, or both calculated here
+      has_regime = .false.
+      has_znt    = .false.
+   end if
    if ( has_znt ) then
       grid%xb%rough = grid%znt
    else

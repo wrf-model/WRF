@@ -175,8 +175,6 @@
 ! For calculating 10-m wind from lowest model level wind
       INTEGER :: ITER
       REAL :: windlmtmp,wind10tmp,wind10new,znotmtmp,znotttmp
-#endif
-#ifdef HWRF
 !zhang's doing 
       REAL :: TSTART
 !zhang's doing ends
@@ -1547,7 +1545,7 @@
 #endif
           grid%th10(I,J)=FAC2*grid%ths(I,J)+FAC1*THLM
           grid%q10(I,J)=FAC2*grid%qsh(I,J)+FAC1*QLM
-#ifdef HWRF
+#if (HWRF == 1)
           IF(grid%sm(I,J).LT.0.5)THEN
               grid%u10(I,J)=ULM*(log(10./grid%z0(I,J))/log(DZLM/grid%z0(I,J)))
               grid%v10(I,J)=VLM*(log(10./grid%z0(I,J))/log(DZLM/grid%z0(I,J)))
@@ -2186,6 +2184,7 @@
      &                WTXY=grid%WTXY, LFMASSXY=grid%LFMASSXY, RTMASSXY=grid%RTMASSXY,    & ! Optional Noah-MP
      &                STMASSXY=grid%STMASSXY, WOODXY=grid%WOODXY,                        & ! Optional Noah-MP
      &                GRAINXY=grid%GRAINXY, GDDXY=grid%GDDXY,                            & ! Optional Noah-MP
+     &                CROPTYPE=grid%CROPTYPE, CROPCAT=grid%CROPCAT,                      & ! Optional Noah-MP
      &                STBLCPXY=grid%STBLCPXY, FASTCPXY=grid%FASTCPXY,                    & ! Optional Noah-MP
      &                XSAIXY=grid%XSAIXY,LAI=grid%LAI,                                   & ! Optional Noah-MP
      &                T2MVXY=grid%T2MVXY, T2MBXY=grid%T2MBXY, CHSTARXY=grid%CHSTARXY,    & ! Optional Noah-MP

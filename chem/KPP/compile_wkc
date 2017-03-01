@@ -14,6 +14,7 @@ setenv WKC_HOME ${WRFC_ROOT}/chem/${WKC_DIRNAME}
 # KPP_HOME: environment variable needed by KPP
 # note: this is not plain KPP
 setenv KPP_HOME ${WKC_HOME}/kpp/kpp-2.1
+mkdir -p ${KPP_HOME}/bin
 setenv WKC_KPP ${KPP_HOME}/bin/kpp
 
 
@@ -51,6 +52,10 @@ echo "-----------------------------------------"
 echo compile the coupler
 cd $WKC_HOME/util/wkc; make -i -r 
 
+#compile the tuv_kpp
+echo compile the tuv_kpp
+make -f Makefile.tuv
+
 echo "-----------------------------------------"
 
 # if Registry was edited touch run_wkc  
@@ -67,6 +72,14 @@ echo "Run kpp for mechanisms in chem/KPP/mechanisms"
 cd $WKC_HOME
 set kpp_files = ( mechanisms/*/*.kpp )
 
+# Remove tuv inc files
+set found = 0
+if ( -e ${WRFC_ROOT}/inc/tuv2wrf_jvals.inc ) then
+  rm -f ${WRFC_ROOT}/inc/tuv2wrf_jvals.inc;
+endif
+if ( -e ${WRFC_ROOT}/inc/tuvdef_jvals.inc ) then
+  rm -f ${WRFC_ROOT}/inc/tuvdef_jvals.inc;
+endif
 
 foreach file ( $kpp_files )
 
@@ -102,6 +115,15 @@ echo $kdir
   echo model $model
   make MODEL=$model KPP=$WKC_KPP WRFC_ROOT=$WRFC_ROOT  
 
+# generate tuv photolysis inc files
+  if( -e $model.tuv.jmap ) then
+    if( $found == 0 ) then
+      $WKC_HOME/util/wkc/tuv_kpp FIRST
+      set found = 1
+    endif
+    $WKC_HOME/util/wkc/tuv_kpp $model
+  endif
+
    if (  `echo $WRFC_ROOT | awk '{print ( length ( $1 ) > 40 ) }' `) then
    echo WARNING: If kpp fails here the path to WRF-Chem might be too long for yacc ...
    endif
@@ -114,6 +136,11 @@ echo $kdir
  ( cd ${WKC_HOME}/util/write_decomp; ./write_decom.csh ${model} ../../.. )
 
 end
+
+# finish tuv photolysis inc files
+if( $found == 1 ) then
+  $WKC_HOME/util/wkc/tuv_kpp LAST
+endif
 
 echo "========================================================="
 

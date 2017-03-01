@@ -19,7 +19,13 @@ subroutine da_transform_vtod_wpec(cv_size, be, ep, cv, vp, vv, xbx, grid)
    if (trace_use) call da_trace_entry("da_transform_vtod_wpec")
 
       call da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
-      call da_transform_xtoxa_all(grid)
+
+      if ( be%ne > 0 .and. alphacv_method == alphacv_method_xa ) then
+         call da_transform_vpatox(grid, be, ep, vp)
+         call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
+      end if
+
+      call da_transform_xtoxa(grid, .true.)
 
       call da_wpec_constraint_lin(grid, xbx)
 

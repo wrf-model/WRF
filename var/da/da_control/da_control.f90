@@ -17,6 +17,12 @@ module da_control
    logical :: use_rad
 
    !---------------------------------------------------------------------------
+   ! [0.0] WRF hybrid coordinate variables
+   !---------------------------------------------------------------------------
+   real, allocatable :: c1f(:), c2f(:), c3f(:), c4f(:)
+   real, allocatable :: c1h(:), c2h(:), c3h(:), c4h(:)
+
+   !---------------------------------------------------------------------------
    ! [1.0] Physical parameter constants (all NIST standard values):
    !---------------------------------------------------------------------------
 
@@ -100,7 +106,7 @@ module da_control
    integer, parameter ::  missing       = -888888
    real   , parameter ::  missing_r     = -888888.0
    real   , parameter ::  xmiss         = -88.0
-   real   , parameter ::  Max_StHeight_Diff = 100.0
+!   real   , parameter ::  Max_StHeight_Diff = 100.0 !became a namelist variable
 
    integer, parameter :: cv_options_hum_specific_humidity = 1
    integer, parameter :: cv_options_hum_relative_humidity = 2
@@ -525,6 +531,11 @@ module da_control
       "tamdar_sfc    ", &
       "rain          " &
    /)
+
+   logical :: pseudo_tpw
+   logical :: pseudo_ztd
+   logical :: pseudo_ref
+   logical :: pseudo_uvtpq
 
    integer, parameter :: max_no_fm = 290
 

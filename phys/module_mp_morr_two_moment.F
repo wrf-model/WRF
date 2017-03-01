@@ -72,11 +72,15 @@
 !    from the calculation of PSMLT and PGMLT
 ! 2) redundant initialization of PSMLT (non answer-changing)
 
+! CHANGES FOR WRFV3.8.1
+! 1) changes and cleanup of code comments
+! 2) correction to universal gas constant (very small change)
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! THIS SCHEME IS A BULK DOUBLE-MOMENT SCHEME THAT PREDICTS MIXING
 ! RATIOS AND NUMBER CONCENTRATIONS OF FIVE HYDROMETEOR SPECIES:
-! CLOUD DROPLETS, CLOUD (SMALL) ICE, RAIN, SNOW, AND GRAUPEL.
+! CLOUD DROPLETS, CLOUD (SMALL) ICE, RAIN, SNOW, AND GRAUPEL/HAIL.
 
 MODULE MODULE_MP_MORR_TWO_MOMENT
    USE     module_wrf_error
@@ -92,13 +96,13 @@ MODULE MODULE_MP_MORR_TWO_MOMENT
    IMPLICIT NONE
 
    REAL, PARAMETER :: PI = 3.1415926535897932384626434
-   REAL, PARAMETER :: SQRTPI = 0.9189385332046727417803297
+   REAL, PARAMETER :: xxx = 0.9189385332046727417803297
 
    PUBLIC  ::  MP_MORR_TWO_MOMENT
    PUBLIC  ::  POLYSVP
 
    PRIVATE :: GAMMA, DERF1
-   PRIVATE :: PI, SQRTPI
+   PRIVATE :: PI, xxx
    PRIVATE :: MORR_TWO_MOMENT_MICRO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -143,13 +147,15 @@ MODULE MODULE_MP_MORR_TWO_MOMENT
 !             LOCAL SUB-GRID AND/OR GRID-SCALE VERTICAL VELOCITY 
 !             AT THE GRID POINT
 
-! NOTE: ONLY USED FOR PREDICTED DROPLET CONCENTRATION (INUM = 0)
+! NOTE: ONLY USED FOR PREDICTED DROPLET CONCENTRATION (INUM = 0) IN NON-WRF-CHEM VERSION OF CODE
 
      INTEGER, PRIVATE ::  IBASE
 
 ! INCLUDE SUB-GRID VERTICAL VELOCITY IN DROPLET ACTIVATION
 ! ISUB = 0, INCLUDE SUB-GRID W (RECOMMENDED FOR LOWER RESOLUTION)
 ! ISUB = 1, EXCLUDE SUB-GRID W, ONLY USE GRID-SCALE W
+
+! NOTE: ONLY USED FOR PREDICTED DROPLET CONCENTRATION (INUM = 0) IN NON-WRF-CHEM VERSION OF CODE
 
      INTEGER, PRIVATE ::  ISUB      
 
@@ -422,6 +428,10 @@ SUBROUTINE MORR_TWO_MOMENT_INIT(hail_opt) ! RAS
          LAMMAXG = 1./20.E-6
          LAMMING = 1./2000.E-6
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! note: these parameters only used by the non-wrf-chem version of the 
+!       scheme with predicted droplet number
+
 ! CCN SPECTRA FOR IACT = 1
 
 ! MARITIME
@@ -446,7 +456,9 @@ SUBROUTINE MORR_TWO_MOMENT_INIT(hail_opt) ! RAS
          RHOA = 1777.
          MAP = 0.132
          MA = 0.0284
-         RR = 8.3187
+! hm fix 6/23/16
+!         RR = 8.3187
+         RR = 8.3145
          BACT = VI*OSM*EPSM*MW*RHOA/(MAP*RHOW)
 
 ! AEROSOL SIZE DISTRIBUTION PARAMETERS CURRENTLY SET FOR MPACE 
@@ -466,6 +478,7 @@ SUBROUTINE MORR_TWO_MOMENT_INIT(hail_opt) ! RAS
          NANEW2 = 1.8E6
          F12 = 0.5*EXP(2.5*(LOG(SIG2))**2)
          F22 = 1.+0.25*LOG(SIG2)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! CONSTANTS FOR EFFICIENCY
 
@@ -553,7 +566,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
                 RAINNC, RAINNCV, SR,                    &
 		SNOWNC,SNOWNCV,GRAUPELNC,GRAUPELNCV,    & ! hm added 7/13/13
                 refl_10cm, diagflag, do_radar_ref,      & ! GT added for reflectivity calcs
-                qrcuten, qscuten, qicuten, mu           & ! hm added
+                qrcuten, qscuten, qicuten               & ! hm added
                ,F_QNDROP, qndrop                        & ! hm added, wrf-chem 
                ,IDS,IDE, JDS,JDE, KDS,KDE               & ! domain dims
                ,IMS,IME, JMS,JME, KMS,KME               & ! memory dims
@@ -686,8 +699,6 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN):: &
       qrcuten, qscuten, qicuten
-   REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN):: &
-      mu
 
   LOGICAL, INTENT(IN), OPTIONAL ::                F_QNDROP  ! wrf-chem
   LOGICAL :: flag_qndrop  ! wrf-chem
@@ -775,10 +786,10 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
           DZ1D(k)       = DZ(i,k,j)
           W1D(k)        = W(i,k,j)
           WVAR1D(k)     = WVAR(i,k,j)
-! add cumulus tendencies, decouple from mu
-          qrcu1d(k)     = qrcuten(i,k,j)/mu(i,j)
-          qscu1d(k)     = qscuten(i,k,j)/mu(i,j)
-          qicu1d(k)     = qicuten(i,k,j)/mu(i,j)
+! add cumulus tendencies, already decoupled
+          qrcu1d(k)     = qrcuten(i,k,j)
+          qscu1d(k)     = qscuten(i,k,j)
+          qicu1d(k)     = qicuten(i,k,j)
       end do  !jdf added this
 ! below for wrf-chem
    IF (flag_qndrop .AND. PRESENT( qndrop )) THEN
@@ -921,12 +932,11 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 ! THIS PROGRAM IS THE MAIN TWO-MOMENT MICROPHYSICS SUBROUTINE DESCRIBED BY
-! MORRISON ET AL. 2005 JAS; MORRISON AND PINTO 2005 JAS.
-! ADDITIONAL CHANGES ARE DESCRIBED IN DETAIL BY MORRISON, THOMPSON, TATARSKII (MWR, SUBMITTED)
+! MORRISON ET AL. 2005 JAS AND MORRISON ET AL. 2009 MWR
 
 ! THIS SCHEME IS A BULK DOUBLE-MOMENT SCHEME THAT PREDICTS MIXING
 ! RATIOS AND NUMBER CONCENTRATIONS OF FIVE HYDROMETEOR SPECIES:
-! CLOUD DROPLETS, CLOUD (SMALL) ICE, RAIN, SNOW, AND GRAUPEL.
+! CLOUD DROPLETS, CLOUD (SMALL) ICE, RAIN, SNOW, AND GRAUPEL/HAIL.
 
 ! CODE STRUCTURE: MAIN SUBROUTINE IS 'MORR_TWO_MOMENT'. ALSO INCLUDED IN THIS FILE IS
 ! 'FUNCTION POLYSVP', 'FUNCTION DERF1', AND
@@ -4316,7 +4326,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
           DO I=1,6
             SUM=SUM/YSQ+C(I)
           END DO
-          SUM=SUM/Y-Y+SQRTPI
+          SUM=SUM/Y-Y+xxx
           SUM=SUM+(Y-HALF)*LOG(Y)
           RES=EXP(SUM)
         ELSE

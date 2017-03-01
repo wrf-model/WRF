@@ -131,7 +131,7 @@ subroutine da_get_innov_vector_ships( it,num_qcstat_conv, grid, ob, iv)
    else if (sfc_assi_options == sfc_assi_options_2) then
       ! Surface data assimilation approach 2
 
-      ! 1.2.1 Surface assmiilation approach 2(10-m u, v, 2-m t, q, and 
+      ! 1.2.1 Surface assimilation approach 2(10-m u, v, 2-m t, q, and 
       ! sfc_p)
 
       call da_interp_lin_2d (grid%xb%u10,  iv%info(ships), 1, model_u)

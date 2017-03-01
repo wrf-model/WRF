@@ -1,4 +1,4 @@
-subroutine da_couple_uv (u,  v,  mu, mub,  msfu, msfv, ids, ide, jds, jde, kds, kde)
+subroutine da_couple_uv (u,  v,  mu, mub,  msfu, msfv, c1, c2, ids, ide, jds, jde, kds, kde)
 
    implicit none
 
@@ -9,6 +9,8 @@ subroutine da_couple_uv (u,  v,  mu, mub,  msfu, msfv, ids, ide, jds, jde, kds, 
    real,    intent(in)    :: msfv(ids:ide,jds:jde+1)
    real,    intent(in)    :: mu(ids:ide,jds:jde)
    real,    intent(in)    :: mub(ids:ide,jds:jde)
+   real,    intent(in)    :: c1(kds:kde)
+   real,    intent(in)    :: c2(kds:kde)
 
    real, allocatable :: muu(:,:), muv(:,:)
 
@@ -22,9 +24,9 @@ subroutine da_couple_uv (u,  v,  mu, mub,  msfu, msfv, ids, ide, jds, jde, kds, 
 
    call da_calc_mu_uv (mu, mub, muu, muv, ids, ide, jds, jde)
 
-   call da_couple (muu, u, msfu, ids, ide+1, jds, jde, kds, kde)
+   call da_couple (muu, u, msfu, c1, c2, ids, ide+1, jds, jde, kds, kde)
 
-   call da_couple (muv, v, msfv, ids, ide, jds, jde+1, kds, kde)
+   call da_couple (muv, v, msfv, c1, c2, ids, ide, jds, jde+1, kds, kde)
 
    deallocate(muu)
    deallocate(muv)

@@ -1905,12 +1905,8 @@ gwOption:   if(gwBaseSwCRT == 3) then
        , nudge &
 #endif
 
-#ifndef HYDRO_REALTIME
        ,  accLndRunOff, accQLateral, accStrmvolrt, accBucket   &
-#endif
-#ifdef HYDRO_REALTIME
        , QLateral, velocity &
-#endif
        ,nsize , OVRTSWCRT, SUBRTSWCRT      )
 
        use module_UDMAP, only: LNUMRSL, LUDRSL
@@ -1950,6 +1946,8 @@ gwOption:   if(gwBaseSwCRT == 3) then
 #ifdef WRF_HYDRO_NUDGING
         real, intent(out),    dimension(:)    :: nudge
 #endif
+        REAL, DIMENSION(:), intent(out)       :: QLateral, velocity !--lateral flow
+        real, dimension(:), intent(out)       :: accLndRunOff, accQLateral, accStrmvolrt, accBucket 
 
         REAL ,  DIMENSION(NLINKSL,2) :: tmpQLINK
         REAL, INTENT(IN)                          :: DT    !-- model timestep
@@ -1986,11 +1984,6 @@ gwOption:   if(gwBaseSwCRT == 3) then
         INTEGER, INTENT(IN), DIMENSION(:)   :: LAKEIDA  !--  (don't need) NHDPLUS lakeid for all lakes in domain
         INTEGER, INTENT(IN), DIMENSION(:)   :: LAKEIDX  !--  the sequential index of the lakes id by com id
 
-#ifdef HYDRO_REALTIME
-        REAL, DIMENSION(:)                        :: QLateral, velocity !--lateral flow
-#else
-        REAL, DIMENSION(nsize)                        :: QLateral, velocity !--lateral flow
-#endif
         REAL, DIMENSION(NLINKS)                   :: QSUM     !--mass bal of node
         REAL, DIMENSION(NLAKES)                   :: QLLAKE   !-- lateral inflow to lake in diffusion scheme
         integer :: nsize
@@ -2008,10 +2001,8 @@ gwOption:   if(gwBaseSwCRT == 3) then
 
 #ifdef MPP_LAND
         real*8,  dimension(LNLINKSL) :: LQLateral
-#ifndef HYDRO_REALTIME
         real*8,  dimension(LNLINKSL) :: tmpLQLateral
         real,  dimension(NLINKSL)    :: tmpQLateral
-#endif
         integer nlinks_index(:)
         integer  iyw, yw_mpp_nlinks, mpp_nlinks
         real     ywtmp(ixrt,jxrt)
@@ -2021,11 +2012,9 @@ gwOption:   if(gwBaseSwCRT == 3) then
         integer  :: nToNodeInd
         real, dimension(nToNodeInd,2) :: gQLINK
 #else
-#ifndef HYDRO_REALTIME
         real*8,  dimension(NLINKS) :: tmpLQLateral
         real,  dimension(NLINKSL) :: tmpQLateral
         real,  dimension(NLINKSL) :: LQLateral
-#endif
 #endif
         integer flag
 
@@ -2034,10 +2023,7 @@ gwOption:   if(gwBaseSwCRT == 3) then
         real, allocatable,dimension(:) :: tmpQLAKEO, tmpQLAKEI, tmpRESHT
   
 
-#ifndef HYDRO_REALTIME
-        real, dimension(:) ::  accLndRunOff, accQLateral, accStrmvolrt, accBucket
         real, dimension(NLINKS) ::  lcLndRunOff, lcQLateral, lcStrmvolrt, lcBucket  ! local variables
-#endif
 
 
 
@@ -2070,10 +2056,8 @@ gwOption:   if(gwBaseSwCRT == 3) then
          LQLateral = 0          !-- initial lateral flow to 0 for this reach
 
 
-#ifndef HYDRO_REALTIME
         tmpLQLateral = 0
         tmpQLateral = 0
-#endif
 
         ! NHDPLUS maping
     if(OVRTSWCRT .eq. 0)      then
@@ -2084,13 +2068,10 @@ gwOption:   if(gwBaseSwCRT == 3) then
                 jj =  LUDRSL(k)%cell_j(m)
                 LQLateral(k) = LQLateral(k)+landRunOff(ii,jj)*LUDRSL(k)%cellweight(m)/1000 & 
                               *LUDRSL(k)%cellArea(m)/DT
-#ifndef HYDRO_REALTIME
                 tmpLQLateral(k) = tmpLQLateral(k)+landRunOff(ii,jj)*LUDRSL(k)%cellweight(m)/1000 & 
                               *LUDRSL(k)%cellArea(m)/DT
-#endif
              end do
         end do
-#ifndef HYDRO_REALTIME
 #ifdef MPP_LAND
         call updateLinkV(tmpLQLateral, tmpQLateral)
 #endif
@@ -2099,8 +2080,8 @@ gwOption:   if(gwBaseSwCRT == 3) then
         endif
         tmpLQLateral = 0
         tmpQLateral = 0
-#endif
      endif
+
      if(OVRTSWCRT .ne. 0 .or. SUBRTSWCRT .ne. 0 ) then
         do k = 1, LNUMRSL
               ! get from channel grid
@@ -2109,20 +2090,16 @@ gwOption:   if(gwBaseSwCRT == 3) then
                   jj =  LUDRSL(k)%grid_j(m)
                   LQLateral(k) = LQLateral(k) + QSTRMVOLRT(ii,jj)*LUDRSL(k)%weight(m)/1000 & 
                           *LUDRSL(k)%nodeArea(m)/DT
-#ifndef HYDRO_REALTIME
                   tmpLQLateral(k) = tmpLQLateral(k) + QSTRMVOLRT(ii,jj)*LUDRSL(k)%weight(m)/1000 & 
                           *LUDRSL(k)%nodeArea(m)/DT
-#endif
               end do
         end do
-#ifndef HYDRO_REALTIME
 #ifdef MPP_LAND
         call updateLinkV(tmpLQLateral, tmpQLateral)
 #endif
         if(NLINKSL .gt. 0) then
             accStrmvolrt(1:NLINKSL) = accStrmvolrt(1:NLINKSL) + tmpQLateral(1:NLINKSL) * DT
         endif
-#endif
      endif
 
 
@@ -2137,13 +2114,11 @@ gwOption:   if(gwBaseSwCRT == 3) then
         QLateral(1:NLINKSL) = QLateral(1:NLINKSL) + qout_gwsubbas(1:NLINKSL)
      endif
 
-#ifndef HYDRO_REALTIME
      ! accQLateral  = accLndRunOff + QLateral * DT 
      if(NLINKSL .gt. 0) then
         accQLateral(1:NLINKSL)  = accQLateral(1:NLINKSL) + QLateral(1:NLINKSL) * DT 
         accBucket(1:NLINKSL) = accBucket(1:NLINKSL) + qout_gwsubbas(1:NLINKSL) * DT
      endif
-#endif
 
 !       QLateral = QLateral / nsteps
 

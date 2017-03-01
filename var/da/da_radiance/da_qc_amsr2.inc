@@ -25,6 +25,7 @@ subroutine da_qc_amsr2 (it, i, nchan, ob, iv)
                 nrej_land, nrej_glint
 
    character(len=30)  :: filename
+   real      :: c37_mean
 
    if (trace_use) call da_trace_entry("da_qc_amsr2")
 
@@ -43,6 +44,13 @@ subroutine da_qc_amsr2 (it, i, nchan, ob, iv)
    do n= iv%instid(i)%info%n1,iv%instid(i)%info%n2
       if (iv%instid(i)%info%proc_domain(1,n)) &
             num_proc_domain = num_proc_domain + 1
+
+      if ( crtm_cloud ) then
+         ! calculate c37_mean
+         c37_mean = 1.0-(ob%instid(i)%tb(11,n)-ob%instid(i)%tb(12,n)+  &
+                    iv%instid(i)%tb_xb(11,n)-iv%instid(i)%tb_xb(12,n))/ &
+                    (2.0*(iv%instid(i)%tb_xb_clr(11,n)-iv%instid(i)%tb_xb_clr(12,n)))
+      end if
 
       !  0.0  initialise QC by flags assuming good obs
       !-----------------------------------------------------------------
@@ -96,38 +104,61 @@ subroutine da_qc_amsr2 (it, i, nchan, ob, iv)
          end do
       end if
 
+      ! assigning obs errors
+      if (.not. crtm_cloud ) then
+         do k = 1, nchan
+            if (use_error_factor_rad) then
+               iv%instid(i)%tb_error(k,n) = &
+                   satinfo(i)%error_std(k)*satinfo(i)%error_factor(k)
+            else
+               iv%instid(i)%tb_error(k,n) = satinfo(i)%error_std(k)
+            end if
+         end do ! nchan
+
+      else !crtm_cloud
+         ! symmetric error model, Geer and Bauer (2011)
+         do k = 1, nchan
+            if (c37_mean.lt.0.05) then
+               iv%instid(i)%tb_error(k,n)= satinfo(i)%error_std(k)
+            else if (c37_mean.ge.0.05.and.c37_mean.lt.0.5) then
+               iv%instid(i)%tb_error(k,n)= satinfo(i)%error_std(k)+ &
+                  (c37_mean-0.05)*(satinfo(i)%error_cld(k)-satinfo(i)%error_std(k))/(0.5-0.05)
+            else
+               iv%instid(i)%tb_error(k,n)= satinfo(i)%error_cld(k)
+            end if
+         end do ! nchan
+
+      end if
+
       !  5.0 check innovation
       !-----------------------------------------------------------------
-      do k = 1, nchan
-
+      if (.not. crtm_cloud ) then
          ! absolute departure check
-         if ( k <= 7 .or. k == 11 .or. k == 12) then
-            if (abs(iv%instid(i)%tb_inv(k,n)) > 6.0) then
-               iv%instid(i)%tb_qc(k,n)  = qc_bad
-               if (iv%instid(i)%info%proc_domain(1,n)) &
-                     nrej_omb_abs(k) = nrej_omb_abs(k) + 1
+         do k = 1, nchan
+            if ( k <= 7 .or. k == 11 .or. k == 12) then
+               if (abs(iv%instid(i)%tb_inv(k,n)) > 6.0) then
+                  iv%instid(i)%tb_qc(k,n)  = qc_bad
+                  if (iv%instid(i)%info%proc_domain(1,n)) &
+                        nrej_omb_abs(k) = nrej_omb_abs(k) + 1
+               end if
+            else if ( k == 8 .or. k == 9 ) then
+               if (abs(iv%instid(i)%tb_inv(k,n)) > 8.0) then
+                  iv%instid(i)%tb_qc(k,n)  = qc_bad
+                  if (iv%instid(i)%info%proc_domain(1,n)) &
+                        nrej_omb_abs(k) = nrej_omb_abs(k) + 1
+               end if
+            else
+               if (abs(iv%instid(i)%tb_inv(k,n)) > 10.0) then
+                  iv%instid(i)%tb_qc(k,n)  = qc_bad
+                  if (iv%instid(i)%info%proc_domain(1,n)) &
+                        nrej_omb_abs(k) = nrej_omb_abs(k) + 1
+               end if
             end if
-         else if ( k == 8 .or. k == 9 ) then
-            if (abs(iv%instid(i)%tb_inv(k,n)) > 8.0) then
-               iv%instid(i)%tb_qc(k,n)  = qc_bad
-               if (iv%instid(i)%info%proc_domain(1,n)) &
-                     nrej_omb_abs(k) = nrej_omb_abs(k) + 1
-            end if
-         else
-            if (abs(iv%instid(i)%tb_inv(k,n)) > 10.0) then
-               iv%instid(i)%tb_qc(k,n)  = qc_bad
-               if (iv%instid(i)%info%proc_domain(1,n)) &
-                     nrej_omb_abs(k) = nrej_omb_abs(k) + 1
-            end if
-         end if
+         end do ! nchan
+      end if
 
+      do k = 1, nchan
          ! relative departure check
-         if (use_error_factor_rad) then
-            iv%instid(i)%tb_error(k,n) = &
-                satinfo(i)%error_std(k)*satinfo(i)%error_factor(k)
-         else
-            iv%instid(i)%tb_error(k,n) = satinfo(i)%error_std(k)
-         end if
          if (abs(iv%instid(i)%tb_inv(k,n)) > 3.0*iv%instid(i)%tb_error(k,n)) then
             iv%instid(i)%tb_qc(k,n)  = qc_bad
             if (iv%instid(i)%info%proc_domain(1,n)) &

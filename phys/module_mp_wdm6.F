@@ -1504,7 +1504,7 @@ CONTAINS
 !
 !----------------------------------------------------------------
 !     check mass conservation of generation terms and feedback to the
-!     large scale
+!     large scale
 !
       do k = kts, kte
         do i = its, ite

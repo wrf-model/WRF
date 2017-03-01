@@ -157,6 +157,14 @@ CONTAINS
 !      (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.933, 0.067 /) ! as of apr-2005
 !      (/ 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.16,  0.84  /) !  "old"
 
+!++ SAN      Fractionation for PREP-Chem Fire emissions            ++!
+! New fractions for biomass burning emissions. Based on Janhall et. al. (2010)
+! Based on average fresh smoke emissions from 20 data points
+! mean_Dp = .117um, geometric_std = 1.7
+real, save :: fr8b_bburn_mosaic(8) = &
+      (/ 0.0092, 0.1385, 0.4548, 0.3388, 0.0567, 0.002, 0.0, 0.0/) 
+!--SAN
+
 
 ! fraction of TNO black carbon <1um emissions that go into each of 
 ! the mosaic 8 "standard" sections     - Doug (4/3/2011)
@@ -207,22 +215,28 @@ CONTAINS
    real :: fr_tno_oc_tra(8)
    real :: fr_tno_mosaic_f(8)
    real :: fr_tno_mosaic_c(8)
+!++ SAN
+   real :: fr_aem_gc2mosaic_f(8) ! extra arrays for GOCART->MOSAIC mapping
+   real :: fr_aem_gc2mosaic_c(8)
+   real :: bburn_mosaic_f(8)       ! Arrays to hold biomass-burning size 
+   real :: bburn_mosaic_c(8)       ! Arrays to hold biomass-burning size 
+!-- SAN
    double precision :: chem_sum(num_chem)
 
-   character*80 msg
+   character(len=80) :: msg
 
 
 !   *** currently only works with ntype_aer = 1
-	itype = 1
-	iphase = ai_phase
+   itype = 1
+   iphase = ai_phase
 
 
-  if (num_ebu.le.0 ) then
-     print*,'no biomass burning species',num_ebu
-     stop
-  endif
+! if (num_ebu.le.0 ) then
+!   call wrf_error_fatal( 'mosaic_addemiss: no biomass burning species' )
+!    print*,'no biomass burning species',num_ebu
+!    stop
+! endif
 
-!
 ! compute factors used for apportioning either 
 !    the MADE-SORGAM emissions (i=aitken, j=accum, c=coarse modes) OR
 !    the MOSAIC emission  (f=fine (< 2.5 um), c=coarse (> 2.5 um))
@@ -240,25 +254,26 @@ CONTAINS
 !
 ! note:  if fr_aem_sorgam_y > 0, then fr_aem_mosaic_y = 0, and vice-versa
 !
-	if ((nsize_aer(itype) .ne. 4) .and. (nsize_aer(itype) .ne. 8)) then
-	    write(msg,'(a,i5)')   &
-		'subr mosaic_addemiss - nsize_aer(itype) must be ' //   &
-		'4 or 8 but = ',   &
-		 nsize_aer(itype)
-	    call wrf_error_fatal( msg )
-	end if
+        if ((nsize_aer(itype) .ne. 4) .and. (nsize_aer(itype) .ne. 8)) then
+          write(msg,'(a,i5)')   &
+           'subr mosaic_addemiss - nsize_aer(itype) must be ' //   &
+           '4 or 8 but = ',  nsize_aer(itype)
+          call wrf_error_fatal( msg )
+        end if
 
-	fr_aem_sorgam_i(:) = 0.0
-	fr_aem_sorgam_j(:) = 0.0
-	fr_aem_sorgam_c(:) = 0.0
-	fr_aem_mosaic_f(:) = 0.0
-	fr_aem_mosaic_c(:) = 0.0
-	fr_tno_bc1(:) = 0.0
-	fr_tno_ec25(:) = 0.0
-	fr_tno_oc_dom(:) = 0.0
-	fr_tno_oc_tra(:) = 0.0
-	fr_tno_mosaic_f(:) = 0.0
-	fr_tno_mosaic_c(:) = 0.0
+        fr_aem_sorgam_i(:) = 0.0
+        fr_aem_sorgam_j(:) = 0.0
+        fr_aem_sorgam_c(:) = 0.0
+        fr_aem_mosaic_f(:) = 0.0
+        fr_aem_mosaic_c(:) = 0.0
+        fr_tno_bc1(:) = 0.0
+        fr_tno_ec25(:) = 0.0
+        fr_tno_oc_dom(:) = 0.0
+        fr_tno_oc_tra(:) = 0.0
+        fr_tno_mosaic_f(:) = 0.0
+        fr_tno_mosaic_c(:) = 0.0
+        fr_aem_gc2mosaic_f(:) = 0.0
+        fr_aem_gc2mosaic_c(:) = 0.0
 
 	emiss_inpt_select_1: SELECT CASE( config_flags%emiss_inpt_opt )
 
@@ -278,7 +293,34 @@ CONTAINS
 		end do
 	    end if
 
-	  CASE( emiss_inpt_pnnl_cm )
+!++ SAN, 2015-04-09 
+! Added mapping routine from GOCART aerosol emission variables to MOSAIC 
+! This will be the case if emissions were prepared using PREP-Chem in RAMD2-GOCART mode.
+! (Use with emiss_opt = 5/6, ECPTEC/GOCART_ECPTEC, emiss_inpt_opt == emiss_inpt_default)
+!!! Maybe more consistant to add a new emiss_inpt_opt, but this requires more extensive changes 
+!!! and testing in other parts of WRF-Chem, may cause confusion... Thoughts?
+
+            if( config_flags%emiss_opt == 5 .or. config_flags%emiss_opt == 6 ) then
+              CALL wrf_debug(15,'mosaic_addemiss: emiss_opt = eptec')
+              CALL wrf_debug(15,'mosaic_addemiss: gocart speciation being mapped to mosaic')
+  
+              fr_aem_sorgam_i(:) = 0.0
+              fr_aem_sorgam_j(:) = 0.0
+              fr_aem_sorgam_c(:) = 0.0
+
+! Use FM MOSAIC mapping for SO4, OC, BC and PM2.5, CM mosaic for PM10
+              if (nsize_aer(itype) .eq. 8) then
+                fr_aem_gc2mosaic_f(:) = fr8b_aem_mosaic_f(:)
+                fr_aem_gc2mosaic_c(:) = fr8b_aem_mosaic_c(:)
+              elseif (nsize_aer(itype) .eq. 4) then
+                do n = 1, nsize_aer(itype)
+                  fr_aem_gc2mosaic_f(n) = fr8b_aem_mosaic_f(2*n-1) + fr8b_aem_mosaic_f(2*n)
+                  fr_aem_gc2mosaic_c(n) = fr8b_aem_mosaic_c(2*n-1) + fr8b_aem_mosaic_c(2*n)
+                end do
+              endif
+            endif
+!-- SAN
+          CASE( emiss_inpt_pnnl_cm )
 	    if (nsize_aer(itype) .eq. 8) then
 		fr_aem_mosaic_f(:) = fr8b_aem_mosaic_f(:)
 		fr_aem_mosaic_c(:) = fr8b_aem_mosaic_c(:)
@@ -321,9 +363,28 @@ CONTAINS
 
 	END SELECT emiss_inpt_select_1
 
+!++ SAN 2015-04-09: Mapping fire emissions to MOSAIC 
+! get arrays for apportioning mass into MOSAIC bins for fire emissions
+        fire_inpt_select: SELECT CASE (config_flags%biomass_burn_opt)
+          CASE (BIOMASSB,BIOMASSB_MOZC)
+            if (nsize_aer(itype) .eq. 8) then
+              bburn_mosaic_f(:) = fr8b_bburn_mosaic(:)
+!++SAN
+              bburn_mosaic_c(:) = fr8b_aem_mosaic_c(:)
+!--SAN
+            else if (nsize_aer(itype) .eq. 4) then
+              do n = 1, nsize_aer(itype)
+                bburn_mosaic_f(n) = fr8b_bburn_mosaic(2*n-1) + fr8b_bburn_mosaic(2*n)
+!++SAN
+                bburn_mosaic_c(n) = fr8b_aem_mosaic_c(2*n-1) + fr8b_aem_mosaic_c(2*n)
+!--SAN
+              end do
+          end if
+        END SELECT fire_inpt_select
+
 ! when mosaic_addemiss_active <= 0, set fr's to zero,
 ! which causes the changes to chem(...) to be zero
-	if (mosaic_addemiss_active <= 0.and.biom_active.le.0) then
+        if (mosaic_addemiss_active <= 0 .and. biom_active <= 0) then
 	    fr_aem_sorgam_i(:) = 0.0
 	    fr_aem_sorgam_j(:) = 0.0
 	    fr_aem_sorgam_c(:) = 0.0
@@ -370,26 +431,28 @@ CONTAINS
 	do 1820 k =   1, min(config_flags%kemit,kte)
 	do 1810 i = its, ite
 
-! compute mass emissions [(ug/m3)*m/s] for each species
+! compute anthropogenic mass emissions [(ug/m3)*m/s] for each species
 ! using the apportioning fractions
-! czhao add biomass burning emissions here for MOSAIC aerosols
-	aem_so4 = fr_aem_mosaic_f(n)*(emis_ant(i,k,j,p_e_so4j)+ebu(i,k,j,p_ebu_sulf))   &
-	        + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_so4c)   &
-	        + fr_aem_sorgam_i(n)*(emis_ant(i,k,j,p_e_so4i)+0.25*ebu(i,k,j,p_ebu_sulf))   &
-	        + fr_aem_sorgam_j(n)*(emis_ant(i,k,j,p_e_so4j)+0.75*ebu(i,k,j,p_ebu_sulf))  
+	aem_so4 = fr_aem_mosaic_f(n)*emis_ant(i,k,j,p_e_so4j)  &
+	        + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_so4c)  &
+	        + fr_aem_sorgam_i(n)*emis_ant(i,k,j,p_e_so4i)  &
+	        + fr_aem_sorgam_j(n)*emis_ant(i,k,j,p_e_so4j)  
 
 	aem_no3 = fr_aem_mosaic_f(n)*emis_ant(i,k,j,p_e_no3j)   &
 	        + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_no3c)   &
 	        + fr_aem_sorgam_i(n)*emis_ant(i,k,j,p_e_no3i)   &
 	        + fr_aem_sorgam_j(n)*emis_ant(i,k,j,p_e_no3j)  
 
-	aem_oc  = fr_aem_mosaic_f(n)*(emis_ant(i,k,j,p_e_orgj)+ebu(i,k,j,p_ebu_oc))   &
+	aem_oc  = fr_aem_mosaic_f(n)*emis_ant(i,k,j,p_e_orgj)   &
 	        + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_orgc)   &
-	        + fr_aem_sorgam_i(n)*(emis_ant(i,k,j,p_e_orgi)+0.25*ebu(i,k,j,p_ebu_oc))   &
-	        + fr_aem_sorgam_j(n)*(emis_ant(i,k,j,p_e_orgj)+0.75*ebu(i,k,j,p_ebu_oc))   &
+	        + fr_aem_sorgam_i(n)*emis_ant(i,k,j,p_e_orgi)   &
+	        + fr_aem_sorgam_j(n)*emis_ant(i,k,j,p_e_orgj)   &
 	        + fr_tno_oc_dom(n)*emis_ant(i,k,j,p_e_oc_dom)   &
 	        + fr_tno_oc_tra(n)*emis_ant(i,k,j,p_e_oc_tra)   &
-	        + fr_tno_mosaic_c(n)*emis_ant(i,k,j,p_e_oc_25_10)  
+	        + fr_tno_mosaic_c(n)*emis_ant(i,k,j,p_e_oc_25_10) &  
+!++SAN
+	        + fr_aem_gc2mosaic_f(n)*emis_ant(i,k,j,p_e_oc) 
+!--SAN
 
          chem_select_1 : SELECT CASE( config_flags%chem_opt )
          CASE(SAPRC99_MOSAIC_4BIN_VBS2_KPP, SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP, &
@@ -397,20 +460,30 @@ CONTAINS
              aem_oc = 0.0
          END SELECT  chem_select_1 
 
-	aem_bc  = fr_aem_mosaic_f(n)*(emis_ant(i,k,j,p_e_ecj)+ebu(i,k,j,p_ebu_bc))   &
-	        + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_ecc)   &
-	        + fr_aem_sorgam_i(n)*(emis_ant(i,k,j,p_e_eci)+0.25*ebu(i,k,j,p_ebu_bc))   &
-	        + fr_aem_sorgam_j(n)*(emis_ant(i,k,j,p_e_ecj)+0.75*ebu(i,k,j,p_ebu_bc))    &
-	        + fr_tno_bc1(n)*emis_ant(i,k,j,p_e_bc_1)        &
-	        + fr_tno_ec25(n)*emis_ant(i,k,j,p_e_ec_1_25)      &
-	        + fr_tno_mosaic_c(n)*emis_ant(i,k,j,p_e_ec_25_10)  
+	aem_bc  = fr_aem_mosaic_f(n)*emis_ant(i,k,j,p_e_ecj)  &
+	        + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_ecc)  &
+	        + fr_aem_sorgam_i(n)*emis_ant(i,k,j,p_e_eci)  &
+	        + fr_aem_sorgam_j(n)*emis_ant(i,k,j,p_e_ecj)  &
+	        + fr_tno_bc1(n)*emis_ant(i,k,j,p_e_bc_1)      &
+	        + fr_tno_ec25(n)*emis_ant(i,k,j,p_e_ec_1_25)  &
+	        + fr_tno_mosaic_c(n)*emis_ant(i,k,j,p_e_ec_25_10) &
+!++SAN
+	        + fr_aem_gc2mosaic_f(n)*emis_ant(i,k,j,p_e_bc) 
+!--SAN
 
-	aem_oin = fr_aem_mosaic_f(n)*(emis_ant(i,k,j,p_e_pm25j)+ebu(i,k,j,p_ebu_pm25))   &
+	aem_oin = fr_aem_mosaic_f(n)*emis_ant(i,k,j,p_e_pm25j)   &
 	        + fr_aem_mosaic_c(n)*emis_ant(i,k,j,p_e_pm_10)   &
-	        + fr_aem_sorgam_i(n)*(emis_ant(i,k,j,p_e_pm25i)+0.25*ebu(i,k,j,p_ebu_pm25))   &
-	        + fr_aem_sorgam_j(n)*(emis_ant(i,k,j,p_e_pm25j)+0.75*ebu(i,k,j,p_ebu_pm25))  &
-	        + fr_tno_mosaic_f(n)*emis_ant(i,k,j,p_e_oin_25) &
-            + fr_tno_mosaic_c(n)*emis_ant(i,k,j,p_e_oin_10) 
+	        + fr_aem_sorgam_i(n)*emis_ant(i,k,j,p_e_pm25i)   &
+	        + fr_aem_sorgam_j(n)*emis_ant(i,k,j,p_e_pm25j)   &
+!++SAN
+	        + fr_aem_sorgam_c(n)*emis_ant(i,k,j,p_e_pm_10)   &
+!--SAN
+	        + fr_tno_mosaic_f(n)*emis_ant(i,k,j,p_e_oin_25)  &
+                + fr_tno_mosaic_c(n)*emis_ant(i,k,j,p_e_oin_10)  &
+!++SAN
+	        + fr_aem_gc2mosaic_f(n)*emis_ant(i,k,j,p_e_pm25) &
+	        + fr_aem_gc2mosaic_f(n)*emis_ant(i,k,j,p_e_pm10) 
+!--SAN
   
 
 ! emissions for these species are currently zero
@@ -499,6 +572,117 @@ CONTAINS
 1830	continue
 
 1900	continue
+
+  if (num_ebu <= 0 ) then
+    return
+  endif
+
+!++ SAN, 2015-04-09.
+! ----------------------    ADD BIOMASS BURNING EMISSIONS   ----------------------------!
+! - new case select for adding biomass burning emissions.
+! First reset all emissions to make sure we don't double count anthropogenic emissions
+  aem_so4 = 0.
+  aem_no3 = 0.
+  aem_oc  = 0.
+  aem_bc  = 0.
+  aem_oin = 0.
+  aem_num = 0.
+
+ fire_select:  SELECT CASE(config_flags%biomass_burn_opt)
+   CASE (BIOMASSB,BIOMASSB_MOZC) 
+      CALL wrf_debug(15,'mosaic_addemiss: adding fire emissions to MOSAIC')
+!      CALL wrf_debug(15,'e_oin_fm = PM2.5 - OC - BC')
+!      CALL wrf_debug(15,'e_oin_cm = PM10 - PM2.5')
+
+size_loop: &
+        do n = 1, nsize_aer(itype)
+          do j = jts, jte
+            do k = kts, kte ! Loop up to kte for fire emissions (with plumerise)
+              do i = its, ite
+! compute mass biomass burning emissions [(ug/m3)*m/s] for each species
+! using the apportioning fractions
+                aem_so4 = bburn_mosaic_f(n)*ebu(i,k,j,p_ebu_sulf)      
+                aem_oc  = bburn_mosaic_f(n)*ebu(i,k,j,p_ebu_oc)    
+                aem_bc  = bburn_mosaic_f(n)*ebu(i,k,j,p_ebu_bc) 
+! Option to calculate OIN fraction of total PM for fire emissions 
+! Assume all OC and BC is in FM.
+                aem_oin = bburn_mosaic_f(n)*ebu(i,k,j,p_ebu_pm25)  &
+                        + bburn_mosaic_c(n)*ebu(i,k,j,p_ebu_pm10) 
+
+         chem_select_3 : SELECT CASE( config_flags%chem_opt )
+            CASE(SAPRC99_MOSAIC_4BIN_VBS2_KPP) ! Set the oc to zero for VBS
+              aem_oc = 0.0
+            END SELECT  chem_select_3 
+ 
+! emissions for these species are currently zero
+          aem_nh4 = 0.0
+          aem_na  = 0.0
+          aem_cl  = 0.0
+          aem_ca  = 0.0
+          aem_co3 = 0.0
+          aem_msa = 0.0
+
+	! compute number emissions
+	! first sum the mass-emissions/density
+		aem_num =   &
+		(aem_so4/dens_so4_aer) + (aem_no3/dens_no3_aer) +   &
+		(aem_cl /dens_cl_aer ) + (aem_msa/dens_msa_aer) +   &
+		(aem_co3/dens_co3_aer) + (aem_nh4/dens_nh4_aer) +   &
+		(aem_na /dens_na_aer ) + (aem_ca /dens_ca_aer ) +   &
+		(aem_oin/dens_oin_aer) + (aem_oc /dens_oc_aer ) +   &
+		(aem_bc /dens_bc_aer )
+
+	! then multiply by 1.0e-6 to convert ug to g
+	! and divide by particle volume at center of section (cm3)
+		aem_num = aem_num*1.0e-6/volumcen_sect(n,itype)
+
+	! apply the emissions and convert from flux to mixing ratio
+	!	fact = (dtstep/dz8w(i,k,j))*(28.966/1000.)
+		fact = (dtstep/dz8w(i,k,j))*alt(i,k,j)
+
+	! rce 22-nov-2004 - change to using the "..._aer" species pointers
+		l = lptr_so4_aer(n,itype,iphase)
+		if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_so4*fact
+
+		l = lptr_no3_aer(n,itype,iphase)
+		if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_no3*fact
+
+		l = lptr_cl_aer(n,itype,iphase)
+		if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_cl*fact
+
+		l = lptr_msa_aer(n,itype,iphase)
+		if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_msa*fact
+
+		l = lptr_co3_aer(n,itype,iphase)
+		if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_co3*fact
+
+		l = lptr_nh4_aer(n,itype,iphase)
+		if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_nh4*fact
+
+		l = lptr_na_aer(n,itype,iphase)
+		if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_na*fact
+
+		l = lptr_ca_aer(n,itype,iphase)
+		if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_ca*fact
+
+		l = lptr_oin_aer(n,itype,iphase)
+		if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_oin*fact
+
+		l = lptr_oc_aer(n,itype,iphase)
+		if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_oc*fact
+
+		l = lptr_bc_aer(n,itype,iphase)
+		if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_bc*fact
+
+		l = numptr_aer(n,itype,iphase)
+		if (l >= p1st) chem(i,k,j,l) = chem(i,k,j,l) + aem_num*fact
+
+	      end do
+	    end do
+	  end do
+	end do size_loop
+   END SELECT fire_select
+!-- SAN - end adding fire emissions.
 
 
 ! do mass check final calc

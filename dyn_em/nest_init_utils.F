@@ -1,3 +1,6 @@
+! careful adding any HYBRID_COORD stuff in here, adjust_tempqv has
+! c3 and c4 to compute pressure with two reference pressures
+
 SUBROUTINE init_domain_constants_em ( parent , nest )
    USE module_dm
    USE module_domain, ONLY : domain
@@ -222,23 +225,33 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
 
 ! 1D constants (Z)
 
-     CALL BYTE_BCAST( grid%fnm,SIZE(grid%fnm)*RWORDSIZE,comzilla) !   nest%fnm    = parent%fnm
-     CALL BYTE_BCAST( grid%fnp,SIZE(grid%fnp)*RWORDSIZE,comzilla) !   nest%fnp    = parent%fnp
-     CALL BYTE_BCAST( grid%rdnw,SIZE(grid%rdnw)*RWORDSIZE,comzilla) !   nest%rdnw   = parent%rdnw
-     CALL BYTE_BCAST( grid%rdn,SIZE(grid%rdn)*RWORDSIZE,comzilla) !   nest%rdn    = parent%rdn
-     CALL BYTE_BCAST( grid%dnw,SIZE(grid%dnw)*RWORDSIZE,comzilla) !   nest%dnw    = parent%dnw
-     CALL BYTE_BCAST( grid%dn,SIZE(grid%dn)*RWORDSIZE,comzilla) !   nest%dn     = parent%dn
-     CALL BYTE_BCAST( grid%znu,SIZE(grid%znu)*RWORDSIZE,comzilla) !   nest%znu    = parent%znu
-write(0,*)'ZNW: ',grid%id,grid%znw
-     CALL BYTE_BCAST( grid%znw,SIZE(grid%znw)*RWORDSIZE,comzilla) !   nest%znw    = parent%znw
-     CALL BYTE_BCAST( grid%t_base,SIZE(grid%t_base)*RWORDSIZE,comzilla) !   nest%t_base = parent%t_base
-     CALL BYTE_BCAST( grid%u_base,SIZE(grid%u_base)*RWORDSIZE,comzilla) !   nest%u_base    = parent%u_base
-     CALL BYTE_BCAST( grid%v_base,SIZE(grid%v_base)*RWORDSIZE,comzilla) !   nest%v_base    = parent%v_base
-     CALL BYTE_BCAST( grid%qv_base,SIZE(grid%qv_base)*RWORDSIZE,comzilla) !   nest%qv_base   = parent%qv_base
-     CALL BYTE_BCAST( grid%z_base,SIZE(grid%z_base)*RWORDSIZE,comzilla) !   nest%z_base    = parent%z_base
-     CALL BYTE_BCAST( grid%dzs,SIZE(grid%dzs)*RWORDSIZE,comzilla) !   nest%dzs       = parent%dzs
-     CALL BYTE_BCAST( grid%zs,SIZE(grid%zs)*RWORDSIZE,comzilla) !   nest%zs        = parent%zs
-   ENDIF
+!DAVE - maybe test if vert_nest instead
+!  IF  ( parent%e_vert .EQ. nest%e_vert ) THEN
+      nest%fnm(1:parent%e_vert)       = parent%fnm(1:parent%e_vert)
+      nest%fnp(1:parent%e_vert)       = parent%fnp(1:parent%e_vert)
+      nest%rdnw(1:parent%e_vert)      = parent%rdnw(1:parent%e_vert)
+      nest%rdn(1:parent%e_vert)       = parent%rdn(1:parent%e_vert)
+      nest%dnw(1:parent%e_vert)       = parent%dnw(1:parent%e_vert)
+      nest%dn(1:parent%e_vert)        = parent%dn(1:parent%e_vert)
+      nest%znu(1:parent%e_vert)       = parent%znu(1:parent%e_vert)
+      nest%znw(1:parent%e_vert)       = parent%znw(1:parent%e_vert)
+      nest%t_base(1:parent%e_vert)    = parent%t_base(1:parent%e_vert)
+      nest%u_base(1:parent%e_vert)    = parent%u_base(1:parent%e_vert)
+      nest%v_base(1:parent%e_vert)    = parent%v_base(1:parent%e_vert)
+      nest%qv_base(1:parent%e_vert)   = parent%qv_base(1:parent%e_vert)
+      nest%z_base(1:parent%e_vert)    = parent%z_base(1:parent%e_vert)
+      nest%c1h(1:parent%e_vert)       = parent%c1h(1:parent%e_vert)
+      nest%c2h(1:parent%e_vert)       = parent%c2h(1:parent%e_vert)
+      nest%c3h(1:parent%e_vert)       = parent%c3h(1:parent%e_vert)
+      nest%c4h(1:parent%e_vert)       = parent%c4h(1:parent%e_vert)
+      nest%c1f(1:parent%e_vert)       = parent%c1f(1:parent%e_vert)
+      nest%c2f(1:parent%e_vert)       = parent%c2f(1:parent%e_vert)
+      nest%c3f(1:parent%e_vert)       = parent%c3f(1:parent%e_vert)
+      nest%c4f(1:parent%e_vert)       = parent%c4f(1:parent%e_vert)
+!  END IF
+
+   nest%dzs       = parent%dzs
+   nest%zs        = parent%zs
 
 END SUBROUTINE init_domain_constants_em
 
@@ -881,7 +894,7 @@ SUBROUTINE copy_3d_field ( ter_interpolated , ter_input , &
 
 END SUBROUTINE copy_3d_field
 
-SUBROUTINE adjust_tempqv ( mub, save_mub, znw, p_top, &
+SUBROUTINE adjust_tempqv ( mub, save_mub, c3, c4, znw, p_top, &
                            th, pp, qv,  &
                            ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &
@@ -903,6 +916,7 @@ SUBROUTINE adjust_tempqv ( mub, save_mub, znw, p_top, &
                                                  ips , ipe , jps , jpe , kps , kpe
    REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN)    :: mub, save_mub
    REAL , DIMENSION(kms:kme) , INTENT(IN)    :: znw
+   REAL , DIMENSION(kms:kme) , INTENT(IN)    :: c3, c4
    REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(INOUT) :: th, pp, qv
 
    REAL , DIMENSION(ims:ime,kms:kme,jms:jme) :: p_old, p_new, rh
@@ -917,7 +931,11 @@ SUBROUTINE adjust_tempqv ( mub, save_mub, znw, p_top, &
    DO j = jps , MIN(jpe, jde-1)
       DO k = kps , kpe-1
          DO i = ips , MIN(ipe, ide-1)
+#if  !( HYBRID_COORD==1 )
             p_old(i,k,j) = 0.5*(znw(k+1)+znw(k))*save_mub(i,j) + p_top + pp(i,k,j)
+#elif ( HYBRID_COORD==1 )
+            p_old(i,k,j) = c4(k) +         c3(k)*save_mub(i,j) + p_top + pp(i,k,j)
+#endif
             tc = (th(i,k,j)+300.)*(p_old(i,k,j)/1.e5)**(2./7.) - 273.15
             es = 610.78*exp(17.0809*tc/(234.175+tc))
             e = qv(i,k,j)*p_old(i,k,j)/(0.622+qv(i,k,j))
@@ -930,7 +948,11 @@ SUBROUTINE adjust_tempqv ( mub, save_mub, znw, p_top, &
    DO j = jps , MIN(jpe, jde-1)
       DO k = kps , kpe-1
          DO i = ips , MIN(ipe, ide-1)
+#if  !( HYBRID_COORD==1 )
             p_new(i,k,j) = 0.5*(znw(k+1)+znw(k))*mub(i,j) + p_top + pp(i,k,j)
+#elif ( HYBRID_COORD==1 )
+            p_new(i,k,j) = c4(k) +         c3(k)*mub(i,j) + p_top + pp(i,k,j)
+#endif
 ! 2*(g/cp-6.5e-3)*R_dry/g = -191.86e-3
             dth1 = -191.86e-3*(th(i,k,j)+300.)/(p_new(i,k,j)+p_old(i,k,j))*(p_new(i,k,j)-p_old(i,k,j))
             dth = -191.86e-3*(th(i,k,j)+0.5*dth1+300.)/(p_new(i,k,j)+p_old(i,k,j))*(p_new(i,k,j)-p_old(i,k,j))

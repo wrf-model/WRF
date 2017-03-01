@@ -120,8 +120,8 @@ subroutine da_transfer_xatowrf(grid, config_flags)
          qvf1   = qvf1*qvf2_b + qvf1_b*qvf2
          qvf1_b = qvf1_b*qvf2_b
          grid%xa%p(i,j,k) = (-0.5/grid%rdnw(k)) * &
-                    ((mu_cgrid(i,j)+qvf1*grid%mub(i,j)) / qvf2_b &
-                     -(grid%mu_2(i,j)+qvf1_b*grid%mub(i,j))*qvf2/(qvf2_b*qvf2_b))
+                    ((c1f(k)*mu_cgrid(i,j)+qvf1*c1f(k)*grid%mub(i,j)) / qvf2_b &
+                     -(c1f(k)*grid%mu_2(i,j)+qvf1_b*c1f(k)*grid%mub(i,j))*qvf2/(qvf2_b*qvf2_b))
 
          do k = kte-1,1,-1
             qvf1   = 0.5*(q_cgrid(i,j,k)+q_cgrid(i,j,k+1))
@@ -132,8 +132,8 @@ subroutine da_transfer_xatowrf(grid, config_flags)
             qvf1_b = qvf1_b*qvf2_b
             grid%xa%p(i,j,k) = grid%xa%p(i,j,k+1)  &
                        - (1.0/grid%rdn(k+1)) * &
-                       ((mu_cgrid(i,j)+qvf1*grid%mub(i,j)) / qvf2_b &
-                        -(grid%mu_2(i,j)+qvf1_b*grid%mub(i,j))*qvf2/(qvf2_b*qvf2_b))
+                       ((c1f(k)*mu_cgrid(i,j)+qvf1*c1f(k)*grid%mub(i,j)) / qvf2_b &
+                        -(c1f(k)*grid%mu_2(i,j)+qvf1_b*c1f(k)*grid%mub(i,j))*qvf2/(qvf2_b*qvf2_b))
          end do
 
       end do
@@ -244,13 +244,16 @@ subroutine da_transfer_xatowrf(grid, config_flags)
             ! To compute the theta increment with the full fields:
             grid%t_2(i,j,k) = t_full*(base_pres/p_full)**kappa - t0
 
-            ! The full fiteld of analysis ph:
+            ! The full field of analysis ph:
             ph_full  = ph_full  &
-                       - grid%xb%dnw(k) * (grid%xb%psac(i,j)+mu_cgrid(i,j)) / rho_dry
+                       - grid%xb%dnw(k) * &
+                       ((c1h(k)*grid%xb%psac(i,j)+c2h(k))+c1h(k)*mu_cgrid(i,j)) &
+                       / rho_dry
 
             ! background hydrostatic phi:
             ph_xb_hd  = ph_xb_hd  &
-                       - grid%xb%dnw(k) * grid%xb%psac(i,j) / grid%xb%rho(i,j,k)
+                       - grid%xb%dnw(k) * &
+                       (c1h(k)*grid%xb%psac(i,j)+c2h(k)) / grid%xb%rho(i,j,k)
 
             ! The analysis perturbation = Hydro_ph - base_ph + nonhydro_xb_ph:
             grid%ph_2(i,j,k+1) = ph_full - grid%phb(i,j,k+1) &
@@ -268,12 +271,10 @@ subroutine da_transfer_xatowrf(grid, config_flags)
    DO j=jts,jte
    DO i=its,ite
 
-      ! dry air density
       mu_full = grid%mub(i,j)+grid%mu_2(i,j)+mu_cgrid(i,j)
-      ph      = 0.0
 
       ! Compute geopotential (using dry inverse density and dry pressure)
-
+      ph      = 0.0
       ph(kts) = grid%ht(i,j) * gravity
       DO k = kts, kte
          p_full = grid%xb%p(i,j,k) + grid%xa%p(i,j,k)
@@ -290,9 +291,9 @@ subroutine da_transfer_xatowrf(grid, config_flags)
 
       ! Dry mass is purely hydrostatic: Native approach in WRF
 
-          pfu = mu_full*grid%znw(k+1) + grid%p_top
-          pfd = mu_full*grid%znw(k)   + grid%p_top
-          phm = mu_full*grid%znu(k)   + grid%p_top
+          pfu = mu_full*c3f(k+1) + c4f(k+1) + grid%p_top
+          pfd = mu_full*c3f(k)   + c4f(k)   + grid%p_top
+          phm = mu_full*c3h(k)   + c4h(k)   + grid%p_top
           ph(k+1) = ph(k) + ald(k)*phm*LOG(pfd/pfu) 
           grid%ph_2(i,j,k+1) = ph(k+1) - grid%phb(i,j,k+1)
        END DO

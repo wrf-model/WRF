@@ -25,7 +25,7 @@ CONTAINS
 #else
      &          ,psim,p_phy,q10,q2,qfx,qsfc,qshltr,qz0                &
 #endif
-     &          ,raincv,rho,sfcevp,sfcexc,sfcrunoff                   &
+     &          ,raincv,rho,sfcevp,sfcexc,sfcrunoff ,acrunoff         &
      &          ,smois,smstav,smstot,snoalb,snow,snowc,snowh,stepbl   &
      &          ,smcrel                                               &
      &          ,th10,th2,thz0,th_phy,tmn,tshltr,tsk,tslb             &
@@ -60,7 +60,8 @@ CONTAINS
      &          ,qsnowxy  ,wslakexy  ,zwtxy     ,waxy      ,wtxy      ,tsnoxy       &
      &          ,zsnsoxy  ,snicexy   ,snliqxy   ,lfmassxy  ,rtmassxy  ,stmassxy     &
      &          ,woodxy   ,stblcpxy  ,fastcpxy  ,xsaixy    ,taussxy                 &
-     &          ,grainxy  ,gddxy                                                    &
+     &          ,grainxy  ,gddxy     ,cropcat   ,pgsxy                              &
+     &          ,planting ,harvest   ,season_gdd                                    &
      &          ,t2mvxy   ,t2mbxy    ,q2mvxy    ,q2mbxy                             &
      &          ,tradxy   ,neexy     ,gppxy     ,nppxy     ,fvegxy    ,runsfxy      &
      &          ,runsbxy  ,ecanxy    ,edirxy    ,etranxy   ,fsaxy     ,firaxy       &
@@ -271,6 +272,8 @@ CONTAINS
      &          ,TS_RUL2D_mosaic                                      &  !danli mosaic     
      &          ,ZOL                                                  &  !ckay
      &          ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas  &  !fasdas
+     &          ,spp_lsm,pattern_spp_lsm,field_sf                     &  !SPP
+     &          ,spp_pbl,pattern_spp_pbl                              &  !SPP
      &                                                             )
 
 #if ( ! NMM_CORE == 1 )
@@ -321,7 +324,7 @@ CONTAINS
    USE module_sf_gfs
    USE module_sf_noahdrv                           ! danli mosaic, the " ,only : lsm " needs to be deleted 
    USE module_sf_noahlsm, only : LOW_DENSITY_RESIDENTIAL, HIGH_DENSITY_RESIDENTIAL, HIGH_INTENSITY_INDUSTRIAL
-   USE module_sf_noahmpdrv, only : noahmplsm
+   USE module_sf_noahmpdrv, only : noahmplsm, noahmp_urban
    USE module_sf_noahmp_groundwater
    USE module_sf_noah_seaice_drv
 #ifdef WRF_USE_CLM
@@ -662,6 +665,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   QSFC
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   QZ0
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   SFCRUNOFF
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   ACRUNOFF
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   SMSTAV
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   SMSTOT
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   SNOW
@@ -808,6 +812,11 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN )::   Z
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) ::   TKE_PBL
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),INTENT(INOUT),OPTIONAL ::   pattern_spp_lsm,field_sf
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),INTENT(INOUT),OPTIONAL ::   pattern_spp_pbl
+   INTEGER, INTENT(IN), OPTIONAL                 ::     spp_lsm,spp_pbl
+
    REAL, DIMENSION(1:num_soil_layers), INTENT(IN)::   DZS
    REAL, DIMENSION(1:num_soil_layers), INTENT(IN)::   ZS
    REAL, INTENT(IN )::   DT
@@ -833,7 +842,7 @@ CONTAINS
                                     iopt_inf, iopt_rad, iopt_alb, iopt_snf, iopt_tbot, iopt_stc, &
 				    iopt_gla, iopt_rsf
 
-   INTEGER, OPTIONAL, DIMENSION(ims:ime , jms:jme),                    INTENT(INOUT) :: ISNOWXY
+   INTEGER, OPTIONAL, DIMENSION(ims:ime , jms:jme),                    INTENT(INOUT) :: ISNOWXY,   PGSXY
    REAL,    OPTIONAL, DIMENSION(ims:ime ,-2:num_soil_layers, jms:jme), INTENT(INOUT) :: ZSNSOXY
    REAL,    OPTIONAL, DIMENSION(ims:ime ,-2:0,               jms:jme), INTENT(INOUT) :: TSNOXY, SNICEXY, SNLIQXY
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme),                    INTENT(INOUT) ::                    &
@@ -845,6 +854,10 @@ CONTAINS
 	  SAVXY,   SAGXY, RSSUNXY, RSSHAXY,  BGAPXY,  WGAPXY,   TGVXY,   TGBXY,   CHVXY,   CHBXY,   SHGXY, &
 	  SHCXY,   SHBXY,   EVGXY,   EVBXY,   GHVXY,   GHBXY,   IRGXY,   IRCXY,   IRBXY,    TRXY,   EVCXY, &
        CHLEAFXY,  CHUCXY,  CHV2XY,  CHB2XY,CHSTARXY                         
+   INTEGER,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: CROPCAT
+   REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: PLANTING
+   REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: HARVEST
+   REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: SEASON_GDD
 
 !  NoahMP specific fields - runoff option 5
 
@@ -1321,6 +1334,8 @@ CONTAINS
 ! local vars
    REAL, DIMENSION( ims:ime, jms:jme )                 ::   HFXOLD, QFXOLD
    REAL                                                ::   HFX_KAY, QFX_KAY
+! local var for SPP_LSM
+   INTEGER                                             ::   spp_lsm_loc
 !
 !------------------------------------------------------------------
 ! Initialize local variables
@@ -1375,6 +1390,13 @@ CONTAINS
         &              max_edom, cplmask, VOCE )
      
   END IF
+
+#if (EM_CORE==1)
+     spp_lsm_loc = spp_lsm
+#else
+     spp_lsm_loc = 0
+#endif
+
   
 !$OMP PARALLEL DO &
 !$OMP PRIVATE (ij, i, j, k)
@@ -1698,6 +1720,7 @@ CONTAINS
             (sf_sfclay_physics .EQ. QNSESFCSCHEME) )
   isisfc = ( FRACTIONAL_SEAICE .EQ. 1  .AND. (          &
             (sf_sfclay_physics .EQ. SFCLAYSCHEME ) .OR. &
+            (sf_sfclay_physics .EQ. SFCLAYREVSCHEME ) .OR. &
             (sf_sfclay_physics .EQ. PXSFCSCHEME  ) .OR. &
             (sf_sfclay_physics .EQ. MYJSFCSCHEME ) .OR. &
             (sf_sfclay_physics .EQ. QNSESFCSCHEME ) .OR. &  !emt
@@ -2168,6 +2191,7 @@ CONTAINS
                &itimestep,ch,th_phy,pi_phy,qc_curr,rho,            &
                &tsq,qsq,cov,Sh3d,el_pbl,qcg,                       &
                &icloud_bl,qc_bl,cldfra_bl,                         &
+               &spp_pbl,pattern_spp_pbl,                           &
                XICE,SST,TSK_SEA,                                   &
                CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,&
                HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,    &
@@ -2187,6 +2211,7 @@ CONTAINS
                &itimestep,ch,th_phy,pi_phy,qc_curr,rho,            &
                &tsq,qsq,cov,Sh3D,el_pbl,qcg,                       &
                &icloud_bl,qc_bl,cldfra_bl,                         &
+               &spp_pbl,pattern_spp_pbl,                           &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij),j_start(ij),j_end(ij),kts,kte,&
@@ -2894,13 +2919,14 @@ CONTAINS
          if(HYDRO_dt .ge. 0) HYDRO_dt = dtbl
 #endif
          CALL wrf_debug(100,'in NOAHMP DRV')
-         CALL noahmplsm(ITIMESTEP,       YR, JULIAN_IN,   COSZEN, XLAT_URB2D, &
+         CALL noahmplsm(ITIMESTEP,       YR, JULIAN_IN,   COSZEN, XLAT,XLONG, &
 	           DZ8W,     DTBL,      DZS,     NUM_SOIL_LAYERS,         DX, &
 		 IVGTYP,   ISLTYP,   VEGFRA,   SHDMAX,       TMN,             &
-		  XLAND,     XICE,     XICE_THRESHOLD,                        &
+		  XLAND,     XICE,     XICE_THRESHOLD,   CROPCAT,             &
+               PLANTING,  HARVEST,SEASON_GDD,                               &
                   IDVEG, IOPT_CRS, IOPT_BTR, IOPT_RUN,  IOPT_SFC,   IOPT_FRZ, &
 	       IOPT_INF, IOPT_RAD, IOPT_ALB, IOPT_SNF, IOPT_TBOT,   IOPT_STC, &
-	       IOPT_GLA, IOPT_RSF,  IZ0TLND,                                            &
+	       IOPT_GLA, IOPT_RSF,  IZ0TLND, SF_URBAN_PHYSICS,                &
 		  T_PHY,  QV_CURR,    U_PHY,    V_PHY,    SWDOWN,        GLW, &
 		    P8W,   RAINBL,       SR,                                  &
 		    TSK,      HFX,      QFX,       LH,    GRDFLX,     SMSTAV, &
@@ -2913,7 +2939,7 @@ CONTAINS
 		QSNOWXY, WSLAKEXY,    ZWTXY,     WAXY,      WTXY,     TSNOXY, &
 		ZSNSOXY,  SNICEXY,  SNLIQXY, LFMASSXY,  RTMASSXY,   STMASSXY, &
 		 WOODXY, STBLCPXY, FASTCPXY,      LAI,    XSAIXY,    TAUSSXY, &
-	        SMOISEQ, SMCWTDXY,DEEPRECHXY,  RECHXY,   GRAINXY,      GDDXY, & ! IN/OUT Noah MP only
+	        SMOISEQ, SMCWTDXY,DEEPRECHXY,  RECHXY,   GRAINXY,      GDDXY,PGSXY, & ! IN/OUT Noah MP only
 	         T2MVXY,   T2MBXY,   Q2MVXY,   Q2MBXY,                        &
                  TRADXY,    NEEXY,    GPPXY,    NPPXY,    FVEGXY,    RUNSFXY, &
 	        RUNSBXY,   ECANXY,   EDIRXY,  ETRANXY,     FSAXY,     FIRAXY, &
@@ -2931,6 +2957,57 @@ CONTAINS
 ! variables below are optional
                 MP_RAINC =  RAINCV, MP_RAINNC =    RAINNCV, MP_SHCV = RAINSHV,&
 		MP_SNOW  = SNOWNCV, MP_GRAUP  = GRAUPELNCV, MP_HAIL = HAILNCV )
+
+         IF(SF_URBAN_PHYSICS > 0 ) THEN  !urban
+         
+	   call noahmp_urban (sf_urban_physics,     NUM_SOIL_LAYERS,     IVGTYP,ITIMESTEP,  & ! IN : Model configuration 
+                                 DT,         COSZEN,     XLAT_URB2D,                        & ! IN : Time/Space-related
+                              T_PHY,        QV_CURR,          U_PHY,      V_PHY,   SWDOWN,  & ! IN : Forcing
+		                GLW,            P8W,         RAINBL,       DZ8W,      ZNT,  & ! IN : Forcing
+                                TSK,            HFX,            QFX,         LH,   GRDFLX,  & ! IN/OUT : LSM 
+		             ALBEDO,          EMISS,           QSFC,                        & ! IN/OUT : LSM 
+                            ids,ide,        jds,jde,        kds,kde,                        &
+                            ims,ime,        jms,jme,        kms,kme,                        &
+              i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,                        &
+                         cmr_sfcdif,     chr_sfcdif,     cmc_sfcdif,                        &
+	                 chc_sfcdif,    cmgr_sfcdif,    chgr_sfcdif,                        &
+                           tr_urb2d,       tb_urb2d,       tg_urb2d,                        & !H urban
+	                   tc_urb2d,       qc_urb2d,       uc_urb2d,                        & !H urban
+                         xxxr_urb2d,     xxxb_urb2d,     xxxg_urb2d, xxxc_urb2d,            & !H urban
+                          trl_urb3d,      tbl_urb3d,      tgl_urb3d,                        & !H urban
+                           sh_urb2d,       lh_urb2d,        g_urb2d,   rn_urb2d,  ts_urb2d, & !H urban
+                         psim_urb2d,     psih_urb2d,      u10_urb2d,  v10_urb2d,            & !O urban
+                       GZ1OZ0_urb2d,     AKMS_URB2D,                                        & !O urban
+                          th2_urb2d,       q2_urb2d,      ust_urb2d,                        & !O urban
+                             declin,          hrang,                                        & !I urban
+                    num_roof_layers,num_wall_layers,num_road_layers,                        & !I urban
+                                dzr,            dzb,            dzg,                        & !I urban
+                         cmcr_urb2d,      tgr_urb2d,     tgrl_urb3d,  smr_urb3d,            & !H urban
+                        drelr_urb2d,    drelb_urb2d,    drelg_urb2d,                        & !H urban
+                      flxhumr_urb2d,  flxhumb_urb2d,  flxhumg_urb2d,                        & !H urban
+                             julian,          julyr,                                        & !H urban
+                          frc_urb2d,    utype_urb2d,                                        & !I urban
+                                chs,           chs2,           cqs2,                        & !H
+                   num_urban_layers,                                                        & !I multi-layer urban
+                       num_urban_hi,                                                        & !I multi-layer urban
+                          trb_urb4d,      tw1_urb4d,      tw2_urb4d,  tgb_urb4d,            & !H multi-layer urban
+                         tlev_urb3d,     qlev_urb3d,                                        & !H multi-layer urban
+                       tw1lev_urb3d,   tw2lev_urb3d,                                        & !H multi-layer urban
+                        tglev_urb3d,    tflev_urb3d,                                        & !H multi-layer urban
+                        sf_ac_urb3d,    lf_ac_urb3d,    cm_ac_urb3d,                        & !H multi-layer urban
+                       sfvent_urb3d,   lfvent_urb3d,                                        & !H multi-layer urban
+                       sfwin1_urb3d,   sfwin2_urb3d,                                        & !H multi-layer urban
+                         sfw1_urb3d,     sfw2_urb3d,      sfr_urb3d,  sfg_urb3d,            & !H multi-layer urban
+                           lp_urb2d,       hi_urb2d,       lb_urb2d,  hgt_urb2d,            & !H multi-layer urban
+                           mh_urb2d,     stdh_urb2d,       lf_urb2d,                        & !SLUCM
+                             th_phy,            rho,          p_phy,        ust,            & !I multi-layer urban
+                                gmt,         julday,          xlong,       xlat,            & !I multi-layer urban
+                            a_u_bep,        a_v_bep,        a_t_bep,    a_q_bep,            & !O multi-layer urban
+                            a_e_bep,        b_u_bep,        b_v_bep,                        & !O multi-layer urban
+                            b_t_bep,        b_q_bep,        b_e_bep,    dlg_bep,            & !O multi-layer urban
+                           dl_u_bep,         sf_bep,         vl_bep)                          !O multi-layer urban
+	 
+	 ENDIF 
 
   if(iopt_run.eq.5.and.mod(itimestep,STEPWTD).eq.0)then
            CALL wrf_debug( 100, 'calling WTABLE' )
@@ -3045,7 +3122,11 @@ CONTAINS
                  ENDIF
                    TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**ROVCP
 !             ELSEIF (IVGTYP(I,J) == ISURBAN .OR. IVGTYP(I,J) == ISICE .OR. FVEGXY(I,J) == 0.0 ) THEN
-              ELSEIF (IVGTYP(I,J) == ISURBAN  .OR. (IVGTYP(I,J) == ISICE .AND. XICE(I,J) .LT. XICE_THRESHOLD)) THEN
+              ELSEIF (IVGTYP(I,J) == ISURBAN                   .or. &
+	              IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL   .or. & !urban
+                      IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL  .or. & !urban
+	              IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL .or. & !urban
+	              (IVGTYP(I,J) == ISICE .AND. XICE(I,J) .LT. XICE_THRESHOLD)) THEN
                    Q2(I,J)  = Q2MBXY(I,J)
                    T2(I,J)  = T2MBXY(I,J)
                    TH2(I,J) = T2(i,j)*(1.E5/PSFC(i,j))**RCP
@@ -3065,6 +3146,43 @@ CONTAINS
 
 !jref: sfc diagnostics end
 
+         IF(SF_URBAN_PHYSICS.eq.1) THEN
+           DO j=j_start(ij),j_end(ij)                             !urban
+             DO i=i_start(ij),i_end(ij)                           !urban
+              IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &  !urban
+                  IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL ) THEN !urban
+                 Q2(I,J)  = (FVEGXY(I,J)*Q2MVXY(I,J) + (1.-FVEGXY(I,J))*Q2MBXY(I,J))*(1.-FRC_URB2D(I,J)) +   &
+                             Q2_URB2D(I,J)*FRC_URB2D(I,J)
+                 T2(I,J)  = (FVEGXY(I,J)*T2MVXY(I,J) + (1.-FVEGXY(I,J))*T2MBXY(I,J))*(1.-FRC_URB2D(I,J)) +   &
+                             (TH2_URB2D(i,j)/((1.E5/PSFC(i,j))**RCP))*FRC_URB2D(I,J)
+                 TH2(I,J) = T2(i,j)*(1.E5/PSFC(i,j))**RCP
+                 U10(I,J)  = U10_URB2D(I,J)                       !urban
+                 V10(I,J)  = V10_URB2D(I,J)                       !urban
+                 PSIM(I,J) = PSIM_URB2D(I,J)                      !urban
+                 PSIH(I,J) = PSIH_URB2D(I,J)                      !urban
+                 GZ1OZ0(I,J) = GZ1OZ0_URB2D(I,J)                  !urban
+                 AKHS(I,J) = CHS(I,J)                             !urban
+                 AKMS(I,J) = AKMS_URB2D(I,J)                      !urban
+               END IF                                             !urban
+             ENDDO                                                !urban
+           ENDDO                                                  !urban
+         ENDIF
+
+         IF((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.eq.3)) THEN
+           DO j=j_start(ij),j_end(ij)                             !urban
+             DO i=i_start(ij),i_end(ij)                           !urban
+              IF( IVGTYP(I,J) == ISURBAN .or. IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL .or. &  !urban
+                  IVGTYP(I,J) == HIGH_DENSITY_RESIDENTIAL .or. IVGTYP(I,J) == HIGH_INTENSITY_INDUSTRIAL ) THEN !urban
+                T2(I,J)   = TH_PHY(i,1,j)/((1.E5/PSFC(I,J))**RCP) !urban
+                TH2(I,J) = TH_PHY(i,1,j) !urban
+                Q2(I,J)   = qv_curr(i,1,j)  !urban
+                U10(I,J)  = U_phy(I,1,J)                       !urban
+                V10(I,J)  = V_phy(I,1,J)                       !urban
+               END IF                                             !urban
+             ENDDO                                                !urban
+           ENDDO                                                  !urban
+         ENDIF
+
 !------------------------------------------------------------------
 
        ELSE
@@ -3078,7 +3196,7 @@ CONTAINS
            PRESENT(qcg)        .AND.  PRESENT(soilt1)  .AND.    &
            PRESENT(tsnav)      .AND.  PRESENT(smfr3d)  .AND.    &
            PRESENT(keepfr3dflag) .AND. PRESENT(rainbl) .AND.    &
-           PRESENT(dew)                                .AND.    &
+           PRESENT(dew)                                 .AND.   &
                                                       .TRUE. ) THEN
 
            IF( PRESENT(sr) ) THEN
@@ -3133,7 +3251,11 @@ CONTAINS
               ENDIF
            ENDIF
 
-           CALL LSMRUC(dtbl,itimestep,num_soil_layers,          &
+           CALL LSMRUC( spp_lsm_loc,                            &
+#if (EM_CORE==1)
+                pattern_spp_lsm,field_sf,                       &
+#endif
+                dtbl,itimestep,num_soil_layers,                 &
 #if (EM_CORE==1)
                 lakemodel,lakemask,                             &
                 graupelncv,snowncv,rainncv,                     &
@@ -3149,9 +3271,9 @@ CONTAINS
                 qsfc,qsg,qvg,qcg,dew,soilt1,tsnav,              &
                 tmn,ivgtyp,isltyp,xland,                        &
                 iswater,isice,xice,xice_threshold,              &
-                cp,rovcp,g,xlv,stbolt,                          &
+                cp ,rcp,g,xlv,stbolt,                           &
                 smois,sh2o,smstav,smstot,tslb,tsk,hfx,qfx,lh,   &
-                sfcrunoff,udrunoff,sfcexc,                      &
+                sfcrunoff,udrunoff,acrunoff,sfcexc,             &
                 sfcevp,grdflx,snowfallac,acsnow,acsnom,         &
                 smfr3d,keepfr3dflag,                            &
                 myj,shdmin,shdmax,rdlai2d,                      &
@@ -3217,7 +3339,7 @@ CONTAINS
             ENDDO
 
           CALL SFCDIAGS_RUCLSM(HFX,QFX,TSK,QSFC,CQS,CQS2,CHS,CHS2,T2,TH2,Q2,  &
-                     T_PHY,QV_CURR,RHO,P_PHY,PSFC,                            &
+                     T_PHY,QV_CURR,RHO,P_PHY,PSFC,SNOW,                       &
                      CP,R_d,RCP,                                              &
                      ids,ide, jds,jde, kds,kde,                               &
                      ims,ime, jms,jme, kms,kme,                               &
@@ -4624,6 +4746,7 @@ CONTAINS
                &itimestep,ch,th3d,pi3d,qc3d,rho,                   &
                &tsq,qsq,cov,Sh3d,el_pbl,qcg,                       &
                &icloud_bl,qc_bl,cldfra_bl,                         &
+               &spp_pbl,pattern_spp_pbl,                           &
 XICE,SST,TSK_SEA,                                                  &
 CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
 HFX_SEA,LH_SEA,QFX_SEA,QGH_SEA,QSFC_SEA,ZNT_SEA,                   &
@@ -4643,6 +4766,10 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
      INTEGER,  INTENT(IN )   ::        ISFFLX,bl_mynn_cloudpdf,icloud_bl
      REAL,     INTENT(IN )   ::        SVP1,SVP2,SVP3,SVPT0
      REAL,     INTENT(IN )   ::        EP1,EP2,KARMAN
+
+     INTEGER,  INTENT(IN)      ::     spp_pbl
+     REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )             &
+                             ::   pattern_spp_pbl
 
      REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
                INTENT(IN   )   ::                           dz8w
@@ -4880,6 +5007,7 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                &itimestep,ch,th3d,pi3d,qc3d,rho,                   &
                &tsq,qsq,cov,sh3d,el_pbl,qcg,                       &
                &icloud_bl,qc_bl,cldfra_bl,                         &
+               &spp_pbl,pattern_spp_pbl,                           &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                its,ite, jts,jte, kts,kte,                          &
@@ -4967,6 +5095,7 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                &itimestep,CH_SEA,th3d,pi3d,qc3d,rho,               &
                &tsq,qsq,cov,sh3d,el_pbl,qcg,                       &
                &icloud_bl,qc_bl,cldfra_bl,                         &
+               &spp_pbl,pattern_spp_pbl,                           &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
                its,ite, jts,jte, kts,kte,                          &

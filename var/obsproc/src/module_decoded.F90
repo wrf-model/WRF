@@ -412,11 +412,6 @@ time_window_min, time_window_max, map_projection , missing_flag)
           obs(obs_num)%ground%pw%error = missing_r
       ELSE
          !------------------------------------------------------------ 
-         ! modified by Claudia based on Guo's code (07/24/2003)
-         !
-         ! To be read in by 3dvar_preproc code, their
-         ! little_r format has to be: 
-         !  GPSZTD is in  m and its QC-error in 1.0 mm
          !  GPSPW  is in cm and its QC-error in 0.1 mm
          !
          ! Note: the variable: pw used for either GPSPW or GPSZTD.

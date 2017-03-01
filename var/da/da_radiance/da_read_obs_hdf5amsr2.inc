@@ -218,6 +218,11 @@ subroutine da_read_obs_hdf5amsr2 (iv, infile_tb,infile_clw)
       return
    end if
 
+   ! Check to see if leap second file exists for graceful failure
+      inquire( file='leapsec.dat', exist=fexist )
+      if (.not. fexist) call da_error(__FILE__,__LINE__, &
+           (/'Can not find leapsec.dat for AMSR2 data: copy or link from WRFDA/var/run'/))
+
    infile_loop:  do ifile = 1, nfile
       num_amsr2_file_local    = 0
       num_amsr2_local_local   = 0
@@ -371,8 +376,11 @@ subroutine da_read_obs_hdf5amsr2 (iv, infile_tb,infile_clw)
             tb_low(:,j,:)=0
          enddo
       ! sample display
-         write(unit=stdout,fmt=*)&
-            'tb_low(pixel=1,scan=1,chan=',k,'): ',tb_low(1,1,k) 
+         if (print_detail_rad) then
+            write(unit=message(1),fmt='(A,I6,A,F10.4)')&
+               'tb_low(pixel=1,scan=1,chan=',k,'): ',tb_low(1,1,k)
+            call da_message(message(1:1))
+         endif
       enddo
 
    ! read array: tb for 89ah
@@ -402,8 +410,11 @@ subroutine da_read_obs_hdf5amsr2 (iv, infile_tb,infile_clw)
          tb89ah(:,j)=0
       enddo
    ! sample display
-      write(unit=stdout,fmt=*)&
-         'tb89ah(pixel=1,scan=1): ',tb89ah(1,1)
+         if (print_detail_rad) then
+            write(unit=message(1),fmt='(A,F10.4)')&
+               'tb89ah(pixel=1,scan=1): ',tb89ah(1,1)
+            call da_message(message(1:1))
+         endif
 
    ! read array: tb for 89av
    ! read
@@ -432,8 +443,11 @@ subroutine da_read_obs_hdf5amsr2 (iv, infile_tb,infile_clw)
          tb89av(:,j)=0
       enddo
    ! sample display
-      write(unit=stdout,fmt=*)&
-         'tb89av(pixel=1,scan=1): ',tb89av(1,1)
+         if (print_detail_rad) then
+            write(unit=message(1),fmt='(A,F10.4)')&
+               'tb89av(pixel=1,scan=1): ',tb89av(1,1)
+            call da_message(message(1:1))
+         endif
 
   ! read array: land ocean flag for low
   ! read

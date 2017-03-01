@@ -49,7 +49,7 @@
         ELSE
            F_RIMEF=max(min_f_rimef,min(max_f_rimef,QRIMEF/QI))
         ENDIF
-        
+
         ! Decide new QI and new QRIMEF based on QC and RQIBLTEN:
         QI=QI+QITEND
         IF(QI<EPSQ) THEN
@@ -765,14 +765,14 @@
      &                ,SFCEXC,ACSNOW,ACSNOM,SNOPCX,SICE,TG,SOILTB       &
      &                ,ALBSI,ICEDEPTH,SNOWSI                            &
      &                ,ALBASE,MXSNAL,ALBEDO,SH2O,SI,EPSR,EMBCK          &
-     &                ,U10,V10,UOCE,VOCE,TH10,Q10,TSHLTR,QSHLTR,PSHLTR            &
+     &                ,U10,V10,UOCE,VOCE,TH10,Q10,TSHLTR,QSHLTR,PSHLTR  &
      &                ,T2,QSG,QVG,QCG,SOILT1,TSNAV,SMFR3D,KEEPFR3DFLAG  &
      &                ,TWBS,QWBS,TAUX,TAUY,SFCSHX,SFCLHX,SFCEVP,RTHRATEN&
      &                ,POTEVP,POTFLX,SUBSHX                             &
      &                ,APHTIM,ARDSW,ARDLW,ASRFC                         &
      &                ,RSWOUT,RSWTOA,RLWTOA                             &
      &                ,ASWIN,ASWOUT,ASWTOA,ALWIN,ALWOUT,ALWTOA          &
-     &                ,UZ0H,VZ0H,DUDT,DVDT,UGWDsfc,VGWDsfc,SFENTH              & ! GWD
+     &                ,UZ0H,VZ0H,DUDT,DVDT,UGWDsfc,VGWDsfc,SFENTH       & ! GWD
      &                ,RTHBLTEN,RQVBLTEN                                &
      &                ,PCPFLG,DDATA                                     & ! PRECIP ASSIM
      &                ,HSTDV,HCNVX,HASYW,HASYS,HASYSW,HASYNW,HLENW      & ! GWD
@@ -1088,6 +1088,7 @@
       IFNDALBSI = 0
       IFNDSNOWSI = 0
       IFNDICEDEPTH = 0
+      BR=10
 
       ! BR is replaced by SF_GFDL inside SURFACE_DRIVER.  This variable
       ! was uninitialized.  The variable RIBN or RCHNO in the Registry
@@ -1500,7 +1501,7 @@
      &          ,QSG=QSG,QVG=QVG,QCG=QCG,SOILT1=SOILT1                  &
      &          ,TSNAV=TSNAV,SMFR3D=SMFR3D,KEEPFR3DFLAG=KEEPFR3DFLAG    &
      &          ,POTEVP=POTEVP,SNOPCX=SNOPCX,SOILTB=SOILTB,SR=SR        &
-     &          ,DEW=DEW                                                &
+     &          ,DEW=DEW,ACRUNOFF=grid%ACRUNOFF                         &
      &          ,MOSAIC_LU=CONFIG_FLAGS%MOSAIC_LU                       &
      &          ,MOSAIC_SOIL=CONFIG_FLAGS%MOSAIC_SOIL                   &
      &          ,LANDUSEF=grid%landusef                                 &
@@ -1544,7 +1545,9 @@
      &        , zsnsoxy=grid%zsnsoxy  , snicexy=grid%snicexy , snliqxy=grid%snliqxy  &
      &        ,lfmassxy=grid%lfmassxy ,rtmassxy=grid%rtmassxy,stmassxy=grid%stmassxy &
      &        ,  woodxy=grid%woodxy   ,stblcpxy=grid%stblcpxy,fastcpxy=grid%fastcpxy &
-     &        , grainxy=grid%grainxy  ,   gddxy=grid%gddxy                           &
+     &        , grainxy=grid%grainxy  ,   gddxy=grid%gddxy   ,   pgsxy=grid%pgsxy    &
+     &        , cropcat=grid%cropcat                                                 &
+     &        ,planting=grid%planting , harvest=grid%harvest ,season_gdd=grid%season_gdd  &
      &        ,  xsaixy=grid%xsaixy   , taussxy=grid%taussxy                         &
      &        ,  t2mvxy=grid%t2mvxy   ,  t2mbxy=grid%t2mbxy                          &
      &        ,  q2mvxy=grid%q2mvxy   ,  q2mbxy=grid%q2mbxy                          & 
@@ -1643,7 +1646,9 @@
 !BSF &               ,RQGBLTEN=RQGBLTEN                               & !BSF
      &               ,TSK=TSFC,XLAND=XLAND,ZNT=Z0                     &
 #if ( HWRF == 1 )
-     &               ,MSANG=MSANG,SCURX=SCURX,SCURY=SCURY,IWAVECPL=CONFIG_FLAGS%IWAVECPL,LCURR_SF=CONFIG_FLAGS%LCURR_SF &
+     &               ,MSANG=MSANG,SCURX=SCURX,SCURY=SCURY             &
+     &               ,IWAVECPL=CONFIG_FLAGS%IWAVECPL                  &
+     &               ,LCURR_SF=CONFIG_FLAGS%LCURR_SF                  &
      &               ,MZNT=MZ0                                        &
 #endif
      &               ,HT=SFCZ                                         &   !KWON
@@ -1707,7 +1712,7 @@
      &               ,fasdas=fasdas                                   &
      &               ,sf_urban_physics=CONFIG_FLAGS%SF_URBAN_PHYSICS)
 !
-!wang, output PBL tendency
+!output PBL tendency
 !
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
@@ -2035,7 +2040,7 @@
           MOIST(I,J,K,P_QV)=MAX(EPSQ,(MOIST(I,J,K,P_QV)+RQVBLTEN(I,K,J)*DTPHS) )
           CWM(I,J,K)=0.
 !
-          pbl_check1: IF(config_flags%mp_physics==fer_mp_hires_advect) then
+          pbl_check1:  IF(config_flags%mp_physics==fer_mp_hires_advect) then
              ! Update QI and QRIMEF:
              call QITEND_FER_HIRES_ADVECT( &
                   MOIST(I,J,K,P_QI), &
@@ -2043,19 +2048,13 @@
                   RQIBLTEN(I,K,J)*DTPHS)
 
              ! Update QC:
-             MOIST(I,J,K,P_QC)=MAX(EPSQ,(MOIST(I,J,K,P_QC)+RQCBLTEN(I,K,J)*DTPHS) )
+             MOIST(I,J,K,P_QC)=MAX(EPSQ,(MOIST(I,J,K,P_QC)+RQCBLTEN(I,K,J)*DTPHS))
           ELSEIF (.NOT.ETAMP_PHYSICS) THEN
             DO I_M=1,N_MOIST
               IF(I_M==P_QC) THEN
                 MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQCBLTEN(I,K,J)*DTPHS) )
               ELSE IF(I_M==P_QI) THEN
                 MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQIBLTEN(I,K,J)*DTPHS) )
-!BSF              ELSE IF(I_M==P_QS) THEN
-!BSF                MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQSBLTEN(I,K,J)*DTPHS) )
-!BSF              ELSE IF(I_M==P_QR) THEN
-!BSF                MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQRBLTEN(I,K,J)*DTPHS) )
-!BSF              ELSE IF(I_M==P_QG) THEN
-!BSF                MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQGBLTEN(I,K,J)*DTPHS) )
               ENDIF
               IF(I_M/=P_QV) CWM(I,J,K)=CWM(I,J,K)+MOIST(I,J,K,I_M)
             ENDDO
@@ -2281,12 +2280,13 @@
      &                 ,RTHBLTEN,RQVBLTEN,RTHRATEN                      &
 #if (NMM_CORE==1)    
      &                 ,TWBS,QWBS                                       &
-     &                 ,DUCUDT, DVCUDT, MOMMIX, store_rand               &                  
-     &                 ,DTHCUDT,DQVCUDT,DQRCUDT,DQCCUDT,DQICUDT         &!wang added output CU tendency
-     &                 ,DQSCUDT                                         &!wang added output CU tendency
+     &                 ,DUCUDT, DVCUDT, MOMMIX, store_rand              &                  
+     &                 ,DTHCUDT,DQVCUDT,DQRCUDT,DQCCUDT,DQICUDT         &! added output CU tendency
+     &                 ,DQSCUDT                                         &! added output CU tendency
+
 #endif
      &                 ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon S&P
-     &                 ,DX2D,DYNMM                                      &     !WANG scale-aware sas
+     &                 ,DX2D,DYNMM                                      & ! Scale-aware sas
      &                 ,SCALEFUN, SCALEFUN1                             & !scale functions
      &                 ,SIGMU, SIGMU1                                   & !updraft fraction
      &                 ,AVCNVC,ACUTIM,IHE,IHW                           &
@@ -2331,13 +2331,11 @@
       INTEGER, DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: LPBL
-
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: DX2D ! Wang scale-sware sas
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: DX2D ! scale-sware sas
       REAL,INTENT(IN) :: DYNMM                           ! Delt_Y 
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SCALEFUN,SCALEFUN1 ! Wang scale-sware sas
-                                                                     ! scale
-                                                                     ! functions
-       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SIGMU,SIGMU1 ! Wang, updraft fractional area
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SCALEFUN,SCALEFUN1 !  scale-sware sas
+                                                                     ! scale functions
+       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: SIGMU,SIGMU1 ! updraft fractional area
 
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: HPBL2D,EVAP2D,HEAT2D     !Kwon S&P
@@ -2390,12 +2388,12 @@
 #if (NMM_CORE==1)
       REAL, INTENT(INOUT)::MOMMIX
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT):: DUCUDT, DVCUDT 
-!Wang 2015-12-14 added output tendency from CU
+! 2015-12-14 added output tendency from CU
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT):: DTHCUDT   &
-     &                                                      , DQVCUDT   & 
-     &                                                      , DQRCUDT   & 
-     &                                                      , DQCCUDT   & 
-     &                                                      , DQICUDT   & 
+     &                                                      , DQVCUDT   &
+     &                                                      , DQRCUDT   &
+     &                                                      , DQCCUDT   &
+     &                                                      , DQICUDT   &
      &                                                      , DQSCUDT
 !
       REAL,DIMENSION(IDS:IDE,JDS:JDE)               :: DATA1 
@@ -2418,9 +2416,10 @@
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,N_MOIST)                   &
      &                                           ,INTENT(INOUT) :: MOIST
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,N_SCALAR)                   &
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME,N_SCALAR)                  &
      &                                           ,INTENT(INOUT) :: SCALAR
 !
+
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: GD_CLOUD &
      &                                                        ,GD_CLOUD2
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: KTOP_DEEP
@@ -2529,9 +2528,9 @@
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
-     &   CONFIG_FLAGS%CU_PHYSICS==MESO_SAS)RETURN             !Kwon
+     &   CONFIG_FLAGS%CU_PHYSICS==MESO_SAS)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
-     &   CONFIG_FLAGS%CU_PHYSICS==SCALESASSCHEME)RETURN        ! Wang
+     &   CONFIG_FLAGS%CU_PHYSICS==SCALESASSCHEME)RETURN 
       
 !-----------------------------------------------------------------------
       NSTEP_CNV=NCNVC
@@ -2839,10 +2838,11 @@
 #endif
 #endif
      &                 ,SHALL=grid%shall                                &
-     &                 ,HPBL2D=HPBL2D,EVAP2D=EVAP2D,HEAT2D=HEAT2D       &     !Kwon S&P
-     &                 ,DX2D=DX2D,DYNMM=DYNMM                          &     !Wang scale-sware SAS 
-     &                 ,SCALEFUN=SCALEFUN, SCALEFUN1=SCALEFUN1          &    ! scale function
-     &                 ,SIGMU=SIGMU, SIGMU1=SIGMU1                      &    ! updraft fraction
+     &                 ,HPBL2D=HPBL2D,EVAP2D=EVAP2D,HEAT2D=HEAT2D       & 
+     &                 ,DX2D=DX2D,DYNMM=DYNMM                           & ! scale-sware SAS 
+     &                 ,SCALEFUN=SCALEFUN, SCALEFUN1=SCALEFUN1          & !  scale function
+     &                 ,SIGMU=SIGMU, SIGMU1=SIGMU1                      & !  updraft fraction
+
      &                 ,pgcon=config_flags%sas_pgcon                    &
      &                 ,sas_mass_flux=config_flags%sas_mass_flux        &
      &                 ,shalconv=config_flags%sas_shal_conv             &

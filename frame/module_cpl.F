@@ -77,7 +77,7 @@ CONTAINS
             rcvname(jwrf,jext,3) = clprefix//'VOCE'                 ! receive ocean meridional surface current 
             
             ! Variables that can be sent by WRF
-            sndname(jwrf,jext,1) = clprefix//'EVAP-PRECIP'          ! send net fresh water budget: evaporation - total précipitation
+            sndname(jwrf,jext,1) = clprefix//'EVAP-PRECIP'          ! send net fresh water budget: evaporation - total precipitation
             sndname(jwrf,jext,2) = clprefix//'SURF_NET_SOLAR'       ! send net short wave flux at ground surface
             sndname(jwrf,jext,3) = clprefix//'SURF_NET_NON-SOLAR'   ! send net non-solar heat flux at ground surface
             sndname(jwrf,jext,4) = clprefix//'TAUX'                 ! send zonal wind tress at atmosphere-ocean interface
@@ -428,9 +428,16 @@ CONTAINS
       INTEGER :: jext                                ! external domain index
       INTEGER :: ifldid                              ! field index
       REAL, DIMENSION( ips:ipe, jps:jpe ) :: zdata   ! data received from the coupler
+      LOGICAL :: lltorcv
       !!--------------------------------------------------------------------
 
       ifldid = cpl_get_fldid( cdsuffix )
+
+      lltorcv = .false.
+      DO jext = 1, max_edom
+         lltorcv = lltorcv .OR. cpl_toreceive( kdomwrf, jext, ifldid )
+      END DO
+      IF( .not.lltorcv ) return
          
       IF( PRESENT(pdataobs) ) THEN
          pdatacpl(ips:ipe,jps:jpe) = pdataobs(ips:ipe,jps:jpe) * ( 1.0 - SUM( pcplmask(ips:ipe,1:max_edom,jps:jpe), dim = 2 ) )

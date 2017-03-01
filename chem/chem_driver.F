@@ -26,6 +26,7 @@
   USE module_dep_simple
   USE module_bioemi_simple
   USE module_phot_mad
+  USE module_phot_tuv,    only : tuv_timestep_init
   USE module_ftuv_driver, only : ftuv_timestep_init
   USE module_aerosols_sorgam
   USE module_chem_utilities
@@ -53,6 +54,7 @@
        pcnst =>pcnst_runtime, numgas_mam, cam_mam_aerosols
   USE module_cu_camzm_driver, only: zm_conv_tend_2
   USE module_cam_mam_gas_wetdep_driver, only: cam_mam_gas_wetdep_driver
+  USE module_trajectory, only: trajectory_dchm_tstep_init, trajectory_dchm_tstep_set
 
   IMPLICIT NONE
 
@@ -892,9 +894,10 @@
          call wrf_debug(15,'calling photolysis driver')
          call photolysis_driver (grid%id,curr_secs,ktau,grid%dt,                      &
               config_flags,haveaer,                                                   &
+              grid%dt_cld,grid%af_dir,grid%af_dn,grid%af_up,grid%ph_par,grid%ph_erythema,   &
               grid%gmt,ijulian,t_phy,moist,grid%aerwrf,p8w,t8w,p_phy,             &
               chem,rho,dz8w,grid%xlat,grid%xlong,                                     &
-              z_at_w,                                                                 &
+              zmid,z_at_w,                                                            &
               grid%qc_cu,grid%qi_cu,                                                  &
               grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,grid%ph_no3o2,       &
               grid%ph_no3o,grid%ph_hno2,grid%ph_hno3,grid%ph_hno4,grid%ph_h2o2,       &
@@ -1133,7 +1136,9 @@
 ! Calculate rate of n2o5 hydrolysis 
      call wrf_debug(15,'calling calc_het_n2o5')
 
-
+     write(msg,'(''chem_driver('',i2.2,''): Calling dchm_tstep_init'')') grid%id
+     call wrf_debug( 200,trim(msg) )
+     call trajectory_dchm_tstep_init( grid, do_chemstep )
 
 !
 ! For the chemistry tracer mode, only emissions and vertical mixing are done.
@@ -1223,6 +1228,10 @@ CALL kpp_mechanism_driver (chem,                                                
        chem(its:ite,kts:kte,jts:jte,p_so2)=vcso2_old(its:ite,kts:kte,jts:jte)
 !      chem(its:ite,kts:kte,jts:jte,p_h2o2)=vch2o2_old(its:ite,kts:kte,jts:jte)
    endif
+
+   write(msg,'(''chem_driver('',i2.2,''): Calling dchm_tstep_set'')') grid%id
+   call wrf_debug( 200,trim(msg) )
+   call trajectory_dchm_tstep_set( grid )
 
    IF(config_flags%conv_tr_aqchem == 0 ) THEN
       so2so4_selecta: SELECT CASE(config_flags%chem_opt)

@@ -63,82 +63,6 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
 
    n_rej = 0
 !
-   ! GPS REF Pseudo OBS test:
-
-   if ( (pseudo_var(1:3) == 'ref' .and. num_pseudo > 0) .and. &
-        it == 1 ) then
-
-      ! Deallocate:
-      if (iv%info(gpsref)%nlocal > 0) then
-         do n = 1, iv%info(gpsref)%nlocal
-            deallocate(iv % gpsref(n) % ref)
-            deallocate(iv % gpsref(n) %  h)
-            deallocate(iv % gpsref(n) %  p)
-            deallocate(iv % gpsref(n) %  t)
-            deallocate(iv % gpsref(n) %  q)
-            deallocate(ob % gpsref(n) % ref)
-         end do
-         deallocate(iv % gpsref)
-         deallocate(ob % gpsref)
-      end if
-
-      use_gpsrefobs = .true.
-
-      iv%info(gpsref)%nlocal = num_pseudo
-      iv%info(gpsref)%plocal(1) = num_pseudo
-      iv%info(gpsref)%ntotal   = num_pseudo
-      iv%info(gpsref)%max_lev = 1
-      iv%info(pseudo)%nlocal = 0
-
-      call da_allocate_observations (iv)
-      iv%info(gpsref)%n1 = 1
-      iv%info(gpsref)%n2 = 1
-
-      allocate(iv%gpsref(num_pseudo)%ref(1:1))
-      allocate(iv%gpsref(num_pseudo)%  h(1:1))
-      allocate(iv%gpsref(num_pseudo)%  p(1:1))
-      allocate(iv%gpsref(num_pseudo)%  t(1:1))
-      allocate(iv%gpsref(num_pseudo)%  q(1:1))
-      allocate(ob%gpsref(1:num_pseudo))
-      allocate(ob%gpsref(num_pseudo)%ref(1:1))
-
-      write(stdout,'(a,i2)') '==> GPS REF pseudo OBS test: num_pseudo=',num_pseudo
-
-      iv%info(gpsref)%levels(1) = 1
-
-      iv%info(gpsref)%x(:,1) = pseudo_x
-      iv%info(gpsref)%y(:,1) = pseudo_y
-
-      iv%info(gpsref)%i(:,1) = int(pseudo_x)
-      iv%info(gpsref)%j(:,1) = int(pseudo_y)
-      iv % gpsref(1) %  h(1) = pseudo_z
-
-      iv%info(gpsref)%dx(:,1) = pseudo_x-real(iv%info(gpsref)%i(1,1))
-      iv%info(gpsref)%dy(:,1) = pseudo_y-real(iv%info(gpsref)%j(1,1))
-      iv%info(gpsref)%dxm(:,1)=1.0-iv%info(gpsref)%dx(1,1)
-      iv%info(gpsref)%dym(:,1)=1.0-iv%info(gpsref)%dy(1,1)
-
-      iv % gpsref(1) %ref(1) % inv = pseudo_val
-      iv % gpsref(1) %ref(1) % error = pseudo_err
-      iv % gpsref(1) %ref(1) % qc = 0
-
-      ! Set halo:
-      if ((iv%info(gpsref)%i(1,1) < its-1) .or.(iv%info(gpsref)%i(1,1) > ite) .or. &
-          (iv%info(gpsref)%j(1,1) < jts-1) .or.(iv%info(gpsref)%j(1,1) > jte)) then
-         iv%info(gpsref)%proc_domain(:,1) = .false.
-      else
-         iv%info(gpsref)%proc_domain(:,1) = .false. 
-
-         if (iv%info(gpsref)%i(1,1) >= its .and. iv%info(gpsref)%i(1,1) <= ite .and. & 
-             iv%info(gpsref)%j(1,1) >= jts .and. iv%info(gpsref)%j(1,1) <= jte) then 
-            iv%info(gpsref)%proc_domain(:,1) = .true. 
-         end if 
-      end if
-
-      write(stdout,'(a4,2f15.5)') pseudo_var, pseudo_val, pseudo_err
-      write(stdout,'(3f15.5)')    pseudo_x, pseudo_y, pseudo_z
-   end if
-
    if (iv%info(gpsref)%nlocal < 1) then
       if (trace_use_dull) call da_trace_exit("da_get_innov_vector_gpsref")
       return
@@ -154,9 +78,6 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
    allocate (model_t(iv%info(gpsref)%max_lev,iv%info(gpsref)%n1:iv%info(gpsref)%n2))
    model_t(:,:) = 0.0
 
-
-   allocate (used_lev(kms:kme,iv%info(gpsref)%n1:iv%info(gpsref)%n2))
-   used_lev(:,:) = missing_data 
 
    do n=iv%info(gpsref)%n1,iv%info(gpsref)%n2
 
@@ -182,7 +103,7 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
       dxm = iv%info(gpsref)%dxm(1,n)
       dym = iv%info(gpsref)%dym(1,n)
 
-      if (.not.(pseudo_var(1:3) == 'ref' .and. num_pseudo > 0)) then
+      if ( .not. pseudo_ref ) then
 
          ! Get the zk from gpsref%h:
 
@@ -242,8 +163,7 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
    end do
 ! t_iwabuchi END
 
-      if ( (.not.(pseudo_var(1:3) == 'ref' .and. num_pseudo > 0)) .or. &
-           it > 1 ) then
+      if ( ( .not. pseudo_ref ) .or. it > 1 ) then
          do k = 1, iv%info(gpsref)%levels(n)
             iv%gpsref(n)%ref(k)%inv = 0.0
 
@@ -257,9 +177,16 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
       end if
    end do
 
+   if ( pseudo_ref ) then
+      ! Done for pseudo_ref after getting iv%gpsref(n)%ref(k)%inv
+      deallocate (model_ref)
+      deallocate (model_t)
+      if (trace_use_dull) call da_trace_exit("da_get_innov_vector_gpsref")
+      return
+   end if
 
    ! Quality check 1: Gross error(departure from the background) check 
-    if (.not.(pseudo_var(1:3) == 'ref' .and. num_pseudo > 0) .and. check_max_iv ) &
+    if ( check_max_iv ) &
        call da_check_max_iv_gpsref(iv, it, num_qcstat_conv, 1)
 
 ! refer to Poli et al. (2009) ------------------------------------------------
@@ -280,7 +207,6 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
       ! QC_STEP1
 
         if (.not. anal_type_verify) then
-          if (.not.(pseudo_var(1:3) == 'ref' .and. num_pseudo > 0)) then
 
           ! check for bottom boundary (Forward Difference)
                dndz_obs(1)=(ob%gpsref(n)%ref(2)-ob%gpsref(n)%ref(1))/  &
@@ -339,7 +265,6 @@ subroutine da_get_innov_vector_gpsref(it, num_qcstat_conv, grid, ob, iv)
                end if
 
             end do
-          end if ! end of if pseudo check
 
         end if  ! end of if verify check
    deallocate(dndz_obs,dndz_mod)
@@ -474,7 +399,6 @@ end if
       ! Quality check 2: Error percentage check.
 
       if (.not. anal_type_verify) then
-         if (.not.(pseudo_var(1:3) == 'ref' .and. num_pseudo > 0)) then
             do k=1, iv%info(gpsref)%levels(n)
 
                ! incremetal refractivity or the relative error:
@@ -497,14 +421,12 @@ end if
                   end if
                end if
             end do
-         end if
       end if  ! end of if verify check
    end do
 
    ! Quality check 3: Low levels quality control
 
    if (.not. anal_type_verify) then
-      if (.not.(pseudo_var(1:3) == 'ref' .and. num_pseudo > 0)) then
          ! Search for the GPS RO's name with the 'qc_below':
 
        if ( maxval(iv%info(gpsref)%levels(:)) > 1 ) then ! gpsref in profiles
@@ -574,20 +496,21 @@ end if
              end if
           end do
        end if  ! end of if gpsref profiles
-      end if
    end if  ! end of if verify check
 12221 continue
 
 ! print out the amounts of obs. rejection   
 
-    if (.not.(pseudo_var(1:3) == 'ref' .and. num_pseudo > 0) .and. check_max_iv ) &
+    if ( check_max_iv ) &
        call da_check_max_iv_gpsref(iv, it, num_qcstat_conv, 2)
 
 ! ------------------------------------------------------------------------------
 !   GPSRO thinning  (Shu-Ya Chen 20090701)
    if (.not. anal_type_verify) then
-   if (.not.(pseudo_var(1:3) == 'ref' .and. num_pseudo > 0)) then
     IF ( gpsref_thinning ) THEN
+      allocate (used_lev(kms:kme,iv%info(gpsref)%n1:iv%info(gpsref)%n2))
+      used_lev(:,:) = missing_data
+
        DO n=iv%info(gpsref)%n1,iv%info(gpsref)%n2
        allocate(min_dis(kms:kme))
        allocate(qc(iv%info(gpsref)%levels(n)))
@@ -598,7 +521,6 @@ end if
        dxm = iv%info(gpsref)%dxm(1,n)
        dym = iv%info(gpsref)%dym(1,n)
 
-       if (.not.(pseudo_var(1:3) == 'ref' .and. num_pseudo > 0)) then
        ! Get the zk from gpsref%h:
           do k=kts,kte
              v_h(k) = dym*(dxm*grid%xb%h(i,j  ,k) + dx*grid%xb%h(i+1,j  ,k)) &
@@ -637,10 +559,10 @@ end if
           iv%gpsref(n)%ref(l)%qc = -99
           end if
           end do
-       end if
        deallocate(min_dis)
        deallocate(qc)
        END DO
+       deallocate (used_lev)
     END IF
 
     goto 12345
@@ -680,10 +602,8 @@ end if
      END DO
 12345 continue
    ! .........................................................................
-   end if  ! end of pseudo test
    end if  ! end of verify check
 
-   deallocate (used_lev)
    deallocate (model_ref)
 
    if (trace_use_dull) call da_trace_exit("da_get_innov_vector_gpsref")

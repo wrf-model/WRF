@@ -210,9 +210,9 @@ CONTAINS
 !
 ! NCEP SAS 
 !
-     call nsas2d(delt=dt,delx=dx,del=del(its,kts),                             &
+     call nsas2d(delt=delt,delx=dx,del=del(its,kts),                           &
               prsl=prsll(its,kts),prsi=prsii(its,kts),prslk=pi3d(ims,kms,j),   &
-              zl=zll(its,kts),zi=zii(its,kts),                                 &
+              zl=zll(its,kts),                                                 &
               ncloud=ncloud,qc2=qc2(its,kts),qi2=qi2(its,kts),                 &
               q1=q1(its,kts),t1=t1(its,kts),rain=rain(its),                    &
               kbot=kbot(its),ktop=ktop(its),                                   &
@@ -235,9 +235,9 @@ CONTAINS
 !
 ! NCEP SCV
 !
-     call nscv2d(delt=dt,del=del(its,kts),prsl=prsll(its,kts),                 &
+     call nscv2d(delt=delt,del=del(its,kts),prsl=prsll(its,kts),               &
               prsi=prsii(its,kts),prslk=pi3d(ims,kms,j),zl=zll(its,kts),       &
-              zi=zii(its,kts),ncloud=ncloud,qc2=qc2(its,kts),qi2=qi2(its,kts), &
+              ncloud=ncloud,qc2=qc2(its,kts),qi2=qi2(its,kts),                 &
               q1=q1(its,kts),t1=t1(its,kts),rain=rain(its),                    &
               kbot=kbot(its),ktop=ktop(its),                                   &
               icps=icps(its),                                                  &
@@ -310,7 +310,7 @@ CONTAINS
 !-------------------------------------------------------------------------------
 ! NCEP SAS (Deep Convection Scheme)
 !-------------------------------------------------------------------------------
-   subroutine nsas2d(delt,delx,del,prsl,prsi,prslk,zl,zi,                      &
+   subroutine nsas2d(delt,delx,del,prsl,prsi,prslk,zl,                         &
             ncloud,                                                            & 
             qc2,qi2,                                                           & 
             q1,t1,rain,kbot,ktop,                                              &
@@ -352,7 +352,7 @@ CONTAINS
 !   14-01-09  song-you hong    dx dependent trigger, closure, and mass flux
 !
 !
-! usage:    call phys_cps_sas(delt,delx,del,prsl,prsi,prslk,prsik,zl,zi,       &
+! usage:    call phys_cps_sas(delt,delx,del,prsl,prsi,prslk,prsik,zl,          &
 !                             q2,q1,t1,u1,v1,rcs,slimsk,dot,cldwrk,rain,       &
 !                             jcap,ncloud,lat,kbot,ktop,icps,                  &
 !                             ids,ide, jds,jde, kds,kde,                       &
@@ -440,7 +440,7 @@ CONTAINS
    real            ::  del(its:ite,kts:kte),                                   &
                        prsl(its:ite,kts:kte),prslk(ims:ime,kms:kme),           &
                        prsi(its:ite,kts:kte+1),                                &
-                       zl(its:ite,kts:kte),zi(its:ite,kts:kte+1),              &
+                       zl(its:ite,kts:kte),                                    &
                        q1(its:ite,kts:kte),t1(its:ite,kts:kte),                &
                        u1(its:ite,kts:kte),v1(its:ite,kts:kte),                &
                        dot(its:ite,kts:kte)
@@ -456,6 +456,7 @@ CONTAINS
 !
    integer         ::  i,k,kmax,kbmax,kbm,jmn,indx,indp,kts1,kte1,kmax1,kk
    real            ::  p(its:ite,kts:kte),pdot(its:ite),acrtfct(its:ite)
+   real            ::  zi(its:ite,kts:kte+1)
    real            ::  uo(its:ite,kts:kte),vo(its:ite,kts:kte)
    real            ::  to(its:ite,kts:kte),qo(its:ite,kts:kte)
    real            ::  hcko(its:ite,kts:kte)
@@ -816,6 +817,12 @@ CONTAINS
      totflg = totflg .and. (.not. cnvflg(i))
    enddo
    if(totflg) return
+!
+   do k = kts1,kte
+     do i = its,ite
+       zi(i,k) = 0.5*(zl(i,k-1)+zl(i,k))
+     enddo
+   enddo
 !
    do k = kts,kte1
      do i = its,ite
@@ -2182,7 +2189,7 @@ CONTAINS
 !-------------------------------------------------------------------------------
 ! NCEP SCV (Shallow Convection Scheme)
 !-------------------------------------------------------------------------------
-   subroutine nscv2d(delt,del,prsl,prsi,prslk,zl,zi,                           &
+   subroutine nscv2d(delt,del,prsl,prsi,prslk,zl,                              &
                  ncloud,qc2,qi2,q1,t1,rain,kbot,ktop,                          &
                  icps,                                                         &
                  slimsk,dot,u1,v1,                                             &
@@ -2432,6 +2439,12 @@ CONTAINS
 !  hydrostatic height assume zero terr and compute
 !  updraft entrainment rate as an inverse function of height
 !
+   do k = kts+1,kte
+     do i = its,ite
+       zi(i,k) = 0.5*(zl(i,k-1)+zl(i,k))
+     enddo
+   enddo
+!
    do k = kts,km1
      do i = its,ite
        xlamue(i,k) = clam / zi(i,k+1)
@@ -2674,7 +2687,7 @@ CONTAINS
      do i = its,ite
        if (cnvflg(i)) then
          if(k.lt.kbcon(i).and.k.ge.kb(i)) then
-           dz       = zi(i,k+1) - zi(i,k)
+           dz       = zi(i,k+2) - zi(i,k+1)
            ptem     = 0.5*(xlamue(i,k)+xlamue(i,k+1))-xlamud(i)
            eta(i,k) = eta(i,k+1) / (1. + ptem * dz)
          endif
@@ -2688,7 +2701,7 @@ CONTAINS
      do i = its,ite
        if(cnvflg(i))then
          if(k.gt.kbcon(i).and.k.lt.kmax(i)) then
-           dz       = zi(i,k) - zi(i,k-1)
+           dz       = zi(i,k+1) - zi(i,k)
            ptem     = 0.5*(xlamue(i,k)+xlamue(i,k-1))-xlamud(i)
            eta(i,k) = eta(i,k-1) * (1 + ptem * dz)
          endif
@@ -2711,7 +2724,7 @@ CONTAINS
      do i = its,ite
        if (cnvflg(i)) then
          if(k.gt.kb(i).and.k.lt.kmax(i)) then
-           dz   = zi(i,k) - zi(i,k-1)
+           dz   = zi(i,k+1) - zi(i,k)
            tem  = 0.5 * (xlamue(i,k)+xlamue(i,k-1)) * dz
            tem1 = 0.5 * xlamud(i) * dz
            factor = 1. + tem - tem1
@@ -2811,7 +2824,7 @@ CONTAINS
      do i = its,ite
        if (cnvflg(i)) then
          if(k.gt.kb(i).and.k.lt.ktcon(i)) then
-           dz    = zi(i,k) - zi(i,k-1)
+           dz    = zi(i,k+1) - zi(i,k)
            gamma = el2orc * qeso(i,k) / (to(i,k)**2)
            qrch = qeso(i,k) + gamma * dbyo(i,k) / (hvap_ * (1. + gamma))
            tem  = 0.5 * (xlamue(i,k)+xlamue(i,k-1)) * dz
@@ -2913,7 +2926,7 @@ CONTAINS
      do i = its,ite
        if (cnvflg(i)) then
          if(k.ge.ktcon(i).and.k.lt.ktcon1(i)) then
-           dz    = zi(i,k) - zi(i,k-1)
+           dz    = zi(i,k+1) - zi(i,k)
            gamma = el2orc * qeso(i,k) / (to(i,k)**2)
            qrch = qeso(i,k)                                                    &
                 + gamma * dbyo(i,k) / (hvap_ * (1. + gamma))
@@ -2999,7 +3012,7 @@ CONTAINS
 !
    do i = its,ite
      if(cnvflg(i)) then
-       vshear(i) = 1.e3 * vshear(i) / (zi(i,ktcon(i))-zi(i,kb(i)))
+       vshear(i) = 1.e3 * vshear(i) / (zi(i,ktcon(i)+1)-zi(i,kb(i)+1))
        e1=1.591-.639*vshear(i)                                                 &
              +.0953*(vshear(i)**2)-.00496*(vshear(i)**3)
        edt(i)=1.-e1
@@ -3031,7 +3044,7 @@ CONTAINS
        if (cnvflg(i)) then
          if(k.gt.kb(i).and.k.lt.ktcon(i)) then
            dp = 1000. * del(i,k)
-           dz = zi(i,k) - zi(i,k-1)
+           dz = zi(i,k+1) - zi(i,k)
 !
            dv1h = heo(i,k)
            dv2h = .5 * (heo(i,k) + heo(i,k-1))

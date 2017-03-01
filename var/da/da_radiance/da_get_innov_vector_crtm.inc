@@ -83,7 +83,9 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
 !! for crtm cloud
    real :: qcw(1),qrn(1), qci(1),qsn(1),qgr(1)
-   
+   logical :: calc_tb_clr
+   type (CRTM_RTSolution_type), allocatable :: RTSolution_clr(:,:)
+
    ! Initializations for AIRS (MMR) Cloud Detection
    integer           :: ilev, jlev, nclouds
    real, allocatable :: hessian(:,:)
@@ -222,7 +224,28 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          call da_error(__FILE__,__LINE__, &
             (/"Error in allocating CRTM RTSolution Stucture"/))
       end if
-            
+
+      calc_tb_clr = .false.
+      if ( crtm_cloud .and. &
+           trim( crtm_sensor_name(rtminit_sensor(inst))) == 'amsr2' ) then
+         !Tb_clear_sky is only needed for symmetric obs error model
+         !symmetric obs error model only implemented for amsr2 for now
+         calc_tb_clr = .true.
+      end if
+
+      if ( calc_tb_clr ) then
+         allocate (RTSolution_clr(ChannelInfo(inst)%n_Channels,1), STAT = Allocate_Status )
+         if ( Allocate_Status /= 0 ) then
+            call da_error(__FILE__,__LINE__, (/"Error in allocating RTSolution_clr"/))
+         end if
+         call CRTM_RTSolution_Create( RTSolution_clr , &              !Output
+                                      Atmosphere(1)%n_layers )        !Input
+         if ( .NOT.(ANY(crtm_rtsolution_associated(RTSolution_clr))) ) then
+            call da_error(__FILE__,__LINE__, &
+               (/"Error in allocating CRTM RTSolution_clr Stucture"/))
+         end if
+      end if !calc_tb_clr
+
       if (use_crtm_kmatrix) then
          allocate (RTSolution_K(ChannelInfo(inst)%n_Channels,1), &
                    Atmosphere_K(ChannelInfo(inst)%n_Channels,1), &
@@ -284,7 +307,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
       ! Gamma correction from VarBC
       !----------------------------
-#ifdef CRTM_MODIF
+!#ifdef CRTM_MODIF
       if ( use_varbc .or. freeze_varbc ) then
          gammapred = iv%instid(inst)%varbc_info%gammapred 
          do k = 1, nchanl
@@ -299,16 +322,6 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          end do
       end if
       RTSolution_K(:,1)%Gamma = 0.0
-#endif
-
-!      ! Allocate Overcast Radiances for  Cloud Detection (MMR)
-      !----------------------------------------------------------------
-!#ifdef CRTM_MODIF
-!      if (use_clddet_mmr .or. use_clddet_ecmwf ) then
-!         do i = 1, nchanl
-!            allocate(RTSolution(i,1)%Overcast(Atmosphere(1)%n_Layers))
-!         end do		         
-!      end if   
 !#endif
 
       if ( use_mspps_emis(inst) ) allocate(em_mspps(nchanl))
@@ -432,6 +445,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                   ' where the pressure is not monotonic'
                call da_warning(__FILE__,__LINE__,message(1:1))
                iv%instid(inst)%tb_inv(:,n) = missing_r
+               iv%instid(inst)%info%proc_domain(:,n) = .false.
                cycle pixel_loop
             end if
          end do
@@ -604,14 +618,13 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
          ! Compute Overcast Radiances for AIRS Cloud Detection (MMR)
          !----------------------------------------------------------------
-#ifdef CRTM_MODIF
-     if (use_clddet_mmr .or. use_clddet_ecmwf ) then
-	    do i = 1, nchanl
-               iv%instid(inst)%rad_ovc(i,kts:kte,n)=RTSolution(i,1)%Overcast(:)
-	    end do		         
-	 end if   
-#endif
-	
+         if (use_clddet_mmr .or. use_clddet_ecmwf ) then
+            do i = 1, nchanl
+               !crtm_2.2.3 contains Upwelling_Overcast_Radiance
+               iv%instid(inst)%rad_ovc(i,kts:kte,n)=RTSolution(i,1)%Upwelling_Overcast_Radiance(:)
+            end do
+         end if
+
    !---------------------------------------------------------------------------
    ! Precondition satellite control variable (Cloud Cover(s)):
    !---------------------------------------------------------------------------
@@ -674,9 +687,9 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                iv%instid(inst)%ts_jacobian(k,n) = Surface_k(k,1)%water_temperature
                iv%instid(inst)%windspeed_jacobian(k,n) = Surface_k(k,1)%wind_speed
                iv%instid(inst)%emiss_jacobian(k,n) = RTSolution_k(k,1)%surface_emissivity
-#ifdef CRTM_MODIF
+!#ifdef CRTM_MODIF
                iv%instid(inst)%gamma_jacobian(k,n) = RTSolution_k(k,1)%Gamma
-#endif
+!#endif
 	    end if   
          end do
 
@@ -759,45 +772,45 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
                end do
             end do
          end if
-#ifdef CRTM_MODIF		 
-         if (use_clddet_ecmwf) then	 	  !begin ecmwf cloud detection
-		 !kmin_t,kmax_p corresponding tropopause and KBPL
-         ! find the k index of tropopause
-         t_tropp = 999.0  ! initialize
-         k_tropp = kte    ! initialize the k index of tropopause
+
+         if (use_clddet_ecmwf) then  !begin ecmwf cloud detection
+            !kmin_t,kmax_p corresponding tropopause and KBPL
+            ! find the k index of tropopause
+            t_tropp = 999.0  ! initialize
+            k_tropp = kte    ! initialize the k index of tropopause
             do k = kte, kts, -1
                do j = jts, jte
-                  do i = its, ite     
+                  do i = its, ite
                      if ( grid%xb%t(i,j,k) < t_tropp(i,j) .and.  &
-                      grid%xb%p(i,j,k) > 5000.0 ) then  ! tropopause should not be higher than 50 hPa
-                      t_tropp(i,j) = grid%xb%t(i,j,k)
-                      k_tropp(i,j) = k			   
-                      iv%instid(inst)%kmin_t(n)=Atmosphere(1)%n_layers-k_tropp(i,j)+1   
-		             end if
+                          grid%xb%p(i,j,k) > 5000.0 ) then  ! tropopause should not be higher than 50 hPa
+                         t_tropp(i,j) = grid%xb%t(i,j,k)
+                         k_tropp(i,j) = k
+                         iv%instid(inst)%kmin_t(n)=Atmosphere(1)%n_layers-k_tropp(i,j)+1
+                     end if
                   end do
                end do
             end do
-            iv%instid(inst)%kmax_p(n)=Atmosphere(1)%n_layers-grid%kpbl(i,j)+1	
-  !       write(unit=stdout,fmt='(A)') 'preparing ECMWF cloud detection input using cloud sensitivity to rank channels'			 		
-            do l=1,nchanl	
-	        temp1=0	 	 
-               do k=1,Atmosphere(1)%n_layers  !     rad_ovc(l,1,n) top
-	           iv%instid(inst)%sensitivity_ratio(l,k,n) = abs(iv%instid(inst)%rad_xb(l,n)-iv%instid(inst)%rad_ovc(l,k,n))
-               iv%instid(inst)%sensitivity_ratio(l,k,n) = iv%instid(inst)%sensitivity_ratio(l,k,n)/iv%instid(inst)%rad_xb(l,n)               
+            iv%instid(inst)%kmax_p(n)=Atmosphere(1)%n_layers-grid%kpbl(i,j)+1
+            !write(unit=stdout,fmt='(A)') &
+            !   'preparing ECMWF cloud detection input using cloud sensitivity to rank channels'
+            do l=1,nchanl
+               temp1=0
+               do k=1,Atmosphere(1)%n_layers  !rad_ovc(l,1,n) top
+                  iv%instid(inst)%sensitivity_ratio(l,k,n) = abs(iv%instid(inst)%rad_xb(l,n)-iv%instid(inst)%rad_ovc(l,k,n))
+                  iv%instid(inst)%sensitivity_ratio(l,k,n) = iv%instid(inst)%sensitivity_ratio(l,k,n)/iv%instid(inst)%rad_xb(l,n)
                end do
-            end do 
-	 
-            do l=1,nchanl	
-	        temp1=0	 	 
-               do k=Atmosphere(1)%n_layers,1,-1 !      sensitivity_ratio(l,1,n) top
+            end do
+            do l=1,nchanl
+               temp1=0
+               do k=Atmosphere(1)%n_layers,1,-1 ! sensitivity_ratio(l,1,n) top
                   if( iv%instid(inst)%sensitivity_ratio(l,k,n) > 0.01 ) then
-                  iv%instid(inst)%p_chan_level(l,n) = real(k)                            !  the peak level 
-                  exit		
-                  end if                 
+                     iv%instid(inst)%p_chan_level(l,n) = real(k) ! the peak level
+                     exit
+                  end if
                end do
-            end do 	 	 
+            end do
          end if     !end ecmwf cloud detection
-#endif		 
+
          !----------------------------------------------
          ! [4.0] store surface information to innovation structure
          !----------------------------------------------
@@ -820,6 +833,22 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          iv%instid(inst)%land_coverage(n)  = Surface(1)%land_coverage
          iv%instid(inst)%ice_coverage(n)   = Surface(1)%ice_coverage                              
          iv%instid(inst)%snow_coverage(n)  = Surface(1)%snow_coverage
+
+         if ( calc_tb_clr ) then
+            atmosphere(1)%n_clouds = 0
+            call da_crtm_direct(1, nchanl, 1, Atmosphere,   &
+               Surface,                                     &
+               GeometryInfo,                                &
+               ChannelInfo(inst:inst),                      &
+               RTSolution_clr,                              &
+               Options)
+            do k = 1, nchanl
+               iv%instid(inst)%tb_xb_clr(k,n) = RTSolution_clr(k,1)%Brightness_Temperature
+            end do
+            ! resetting n_clouds
+            atmosphere(1)%n_clouds = n_clouds
+         end if !calc_tb_clr
+
       end do pixel_loop      !  end loop for pixels
 
       if ( use_mspps_emis(inst) ) deallocate(em_mspps)
@@ -840,6 +869,14 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
       if (Allocate_Status /= 0) &
          call da_error(__FILE__,__LINE__, &
             (/"Error in deallocating RTSolution"/))
+
+      if ( calc_tb_clr ) then
+         call CRTM_RTSolution_Destroy(RTSolution_clr)
+         deallocate( RTSolution_clr, STAT = Allocate_Status )
+         if (Allocate_Status /= 0) &
+            call da_error(__FILE__,__LINE__, &
+               (/"Error in deallocating RTSolution_clr"/))
+      end if !calc_tb_clr
 
       if (use_crtm_kmatrix) then
          call CRTM_RTSolution_Destroy(RTSolution_K)

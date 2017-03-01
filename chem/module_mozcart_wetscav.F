@@ -424,9 +424,9 @@ species_loop : &
                  dhr  = wet_scav_tab(m1)%heff(6)
                  dk2s(kts:ktem1) = e298*exp( dhr*tfac(kts:ktem1) )
                  if( pndx == p_co2 ) then
-                   heff(kts:ktem1,m) = heff(kts:ktem1,m)*(1. + dk1s(:)*ph_inv)*(1. + dk2s(:)*ph_inv)
+                   heff(kts:ktem1,m) = heff(kts:ktem1,m)*(1. + dk1s(kts:ktem1)*ph_inv)*(1. + dk2s(kts:ktem1)*ph_inv)
                  elseif( pndx == p_nh3 ) then
-                   heff(kts:ktem1,m) = heff(kts:ktem1,m)*(1. + dk1s(:)*ph/dk2s(:))
+                   heff(kts:ktem1,m) = heff(kts:ktem1,m)*(1. + dk1s(kts:ktem1)*ph/dk2s(kts:ktem1))
                  endif
                endif
              endif
@@ -1913,10 +1913,10 @@ end function DEMPIRICAL
 
 function GAMMA( X )
 !-----------------------------------------------------------------------
-!       Purpose: Compute the gamma function â(x)
-!       Input :  x  --- Argument of â(x)
-!                       ( x is not equal to 0,-1,-2,úúú )
-!       Output:  GA --- â(x)
+!       Purpose: Compute the gamma function Ahat(x)
+!       Input :  x  --- Argument of Ahat(x)
+!                       ( x is not equal to 0,-1,-2, ... )
+!       Output:  GA --- Ahat(x)
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------

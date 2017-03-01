@@ -539,8 +539,8 @@ CONTAINS
                    (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,kk-1,j)+ &
                     grid%mu_1(i,j)*grid%alb(i,kk-1,j)  )
                                                    
-      grid%ph_2(i,k,j) = grid%ph_1(i,k,j) 
-      grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
+      grid%ph_2(i,kk,j) = grid%ph_1(i,kk,j) 
+      grid%ph0(i,kk,j) = grid%ph_1(i,kk,j) + grid%phb(i,kk,j)
     ENDDO
 
     if((i==2) .and. (j==2)) then

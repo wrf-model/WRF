@@ -533,10 +533,11 @@ CONTAINS
 
 
     grid%ph_1(i,1,j) = 0.
-    DO k  = 2,kte
-      grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
-                   (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,k-1,j)+ &
-                    grid%mu_1(i,j)*grid%alb(i,k-1,j)  )
+    DO kk  = 2,kte
+      k = kk-1
+      grid%ph_1(i,kk,j) = grid%ph_1(i,kk-1,j) - (grid%dnw(kk-1))*(       &
+                   (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,kk-1,j)+ &
+                    grid%mu_1(i,j)*grid%alb(i,kk-1,j)  )
                                                    
       grid%ph_2(i,k,j) = grid%ph_1(i,k,j) 
       grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
@@ -580,13 +581,14 @@ CONTAINS
                grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
             ENDDO
       
-            DO k  = 2,kte
-              grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
-                           (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,k-1,j)+ &
-                            grid%mu_1(i,j)*grid%alb(i,k-1,j)  )
+            DO kk  = 2,kte
+              k = kk - 1
+              grid%ph_1(i,kk,j) = grid%ph_1(i,kk-1,j) - (grid%dnw(kk-1))*(       &
+                           (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,kk-1,j)+ &
+                            grid%mu_1(i,j)*grid%alb(i,kk-1,j)  )
       
-              grid%ph_2(i,k,j) = grid%ph_1(i,k,j)
-              grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
+              grid%ph_2(i,kk,j) = grid%ph_1(i,kk,j)
+              grid%ph0(i,kk,j) = grid%ph_1(i,kk,j) + grid%phb(i,kk,j)
             ENDDO
         ENDDO
      ENDDO

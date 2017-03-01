@@ -43,7 +43,7 @@ program da_update_bc
 
    ! for WRF hybrid coordinate
    integer           :: nlevf, nlevh
-   integer           :: hybrid_opt
+   integer           :: hybrid_opt, hybrid_opt_file
    real, allocatable :: c1f(:), c2f(:), c1h(:), c2h(:)
 
    integer           :: ids, ide, jds, jde, kds, kde
@@ -89,7 +89,7 @@ program da_update_bc
                             wrf_input, domain_id, var4d_lbc, &
                             debug, update_lateral_bdy, update_low_bdy, update_lsm, &
                             keep_tsk_wrf, keep_snow_wrf, iswater, &
-                            wrfvar_output_file, cycling, low_bdy_only
+                            wrfvar_output_file, cycling, low_bdy_only, hybrid_opt
 
    da_file            = 'wrfvar_output'
    da_file_02         = 'ana02'
@@ -109,6 +109,8 @@ program da_update_bc
    wrfvar_output_file = 'OBSOLETE'
    cycling            = .false.
    low_bdy_only       = .false.
+
+   hybrid_opt = 0
 
    !---------------------------------------------------------------------
    ! Read namelist
@@ -275,19 +277,28 @@ program da_update_bc
    end if
 
    ! initialize as hybrid_opt = 0
-   hybrid_opt = 0
    c1f(:) = 1.0
    c2f(:) = 0.0
    c1h(:) = 1.0
    c2h(:) = 0.0
 
-   !hcl make sure the global attribute HYBRID_OPT is included in the WRF mods
-   call da_get_gl_att_int_cdf(da_file, 'HYBRID_OPT', hybrid_opt, debug, io_status)
-   if ( io_status == NF_NOERR ) then
+   call da_get_gl_att_int_cdf(da_file, 'HYBRID_OPT', hybrid_opt_file, debug, io_status)
+   if ( io_status /= NF_NOERR ) then
+      write(unit=stdout,fmt=*) 'Error reading HYBRID_OPT from da_file'
+   end if
+   if ( io_status == NF_NOERR .or. hybrid_opt == 2 ) then
       call da_get_var_1d_real_cdf( da_file, 'C1F', c1f, nlevf, 1, debug)
       call da_get_var_1d_real_cdf( da_file, 'C2F', c2f, nlevf, 1, debug)
       call da_get_var_1d_real_cdf( da_file, 'C1H', c1h, nlevh, 1, debug)
       call da_get_var_1d_real_cdf( da_file, 'C2H', c2h, nlevh, 1, debug)
+   end if
+
+   if ( debug ) then
+      write(stdout,*) 'hybrid_opt from da_file = ', hybrid_opt_file
+      write(stdout,*) 'c1f = ', c1f
+      write(stdout,*) 'c2f = ', c2f
+      write(stdout,*) 'c1h = ', c1h
+      write(stdout,*) 'c2h = ', c2f
    end if
 
    ! For 2D variables

@@ -3164,7 +3164,7 @@ CONTAINS
       REAL, DIMENSION(ims:ime,kms:kme,jms:jme):: qvsat
       INTEGER:: i,j,k
       REAL:: TK, TC, qvsi, qvsw, RHUM, xx, yy
-      REAL, DIMENSION(kms:kme):: qvs1d, cfr1d, T1d,                     &
+      REAL, DIMENSION(kts:kte):: qvs1d, cfr1d, T1d,                     &
      &                           P1d, R1d, qc1d, qi1d, qs1d
 
       character*512 dbg_msg
@@ -3178,8 +3178,8 @@ CONTAINS
 !.. to get near 100% RH as grid spacing moves toward 1.0km, but higher
 !.. RH over ocean required as compared to over land.
 
-      RH_00L = 0.781 + SQRT(1./(35.0+gridkm*gridkm*gridkm*0.5))
-      RH_00O = 0.831 + SQRT(1./(70.0+gridkm*gridkm*gridkm*0.5))
+      RH_00L = 0.7  + SQRT(1./(25.0+gridkm*gridkm*gridkm))
+      RH_00O = 0.81 + SQRT(1./(50.0+gridkm*gridkm*gridkm))
 
       DO j = jts,jte
       DO k = kts,kte
@@ -3215,10 +3215,9 @@ CONTAINS
             if (tc .ge. -12.0) then
                RHUM = MIN(0.999, RHUM)
                CLDFRA(I,K,J) = MAX(0.0, 1.0-SQRT((1.0-RHUM)/(1.-RH_00)))
-            elseif (tc.lt.-12..and.tc.gt.-70. .and. RHUM.gt.RH_00O) then
-               RHUM = MAX(0.01, MIN(qv(i,k,j)/qvsat(i,k,j), qvsw/qvsi - 1.E-6))
-               RHI_max = MAX(RHUM+1.E-6, qvsw/qvsi)
-               CLDFRA(I,K,J) = MAX(0., 1.0-SQRT((RHI_max-RHUM)/(RHI_max-RH_00O)))
+            elseif (tc.lt.-12..and.tc.gt.-70. .and. RHUM.gt.RH_00L) then
+               RHUM = MAX(0.01, MIN(qv(i,k,j)/qvsat(i,k,j), 1.0 - 1.E-6))
+               CLDFRA(I,K,J) = MAX(0., 1.0-SQRT((1.0-RHUM)/(1.0-RH_00L)))
             endif
             CLDFRA(I,K,J) = MIN(0.90, CLDFRA(I,K,J))
 
@@ -3302,8 +3301,8 @@ CONTAINS
       k_m40C = 0
       DO k = kte, kts, -1
          theta(k) = T1d(k)*((100000.0/P1d(k))**(287.05/1004.))
-         if (T1d(k)-273.16 .gt. -40.0) k_m40C = MAX(k_m40C, k)
-         if (T1d(k)-273.16 .gt. -12.0) k_m12C = MAX(k_m12C, k)
+         if (T1d(k)-273.16 .gt. -40.0 .and. P1d(k).gt.7000.0) k_m40C = MAX(k_m40C, k)
+         if (T1d(k)-273.16 .gt. -12.0 .and. P1d(k).gt.10000.0) k_m12C = MAX(k_m12C, k)
       ENDDO
       if (k_m40C .le. kts) k_m40C = kts
       if (k_m12C .le. kts) k_m12C = kts
@@ -3491,7 +3490,6 @@ CONTAINS
       do k = k1, k2
          iwp_exists = iwp_exists + (qi(k)+qs(k))*Rho(k)*dz(k)
       enddo
-      if (iwp_exists .gt. 1.0) RETURN
 
       this_dz = 0.0
       do k = k1, k2
@@ -3535,7 +3533,6 @@ CONTAINS
       do k = k1, k2
          lwp_exists = lwp_exists + qc(k)*Rho(k)*dz(k)
       enddo
-      if (lwp_exists .gt. 1.0) RETURN
 
       this_dz = 0.0
       do k = k1, k2
@@ -3571,20 +3568,15 @@ CONTAINS
       INTEGER:: k
 
       lwp = 0.
-      do k = kts, k_tropo
-         if (cfr(k).gt.0.01 .and. cfr(k).lt.0.99) then
-            lwp = lwp + qc(k)*Rho(k)*dz(k)
-         endif
-      enddo
-
       iwp = 0.
       do k = kts, k_tropo
-         if (cfr(k).gt.0.01 .and. cfr(k).lt.0.99) then
+         if (cfr(k).gt.0.0) then
+            lwp = lwp + qc(k)*Rho(k)*dz(k)
             iwp = iwp + qi(k)*Rho(k)*dz(k)
          endif
       enddo
 
-      if (lwp .gt. 1.0) then
+      if (lwp .gt. 1.5) then
          xfac = 1./lwp
          do k = kts, k_tropo
             if (cfr(k).gt.0.01 .and. cfr(k).lt.0.99) then
@@ -3593,7 +3585,7 @@ CONTAINS
          enddo
       endif
 
-      if (iwp .gt. 1.0) then
+      if (iwp .gt. 1.5) then
          xfac = 1./iwp
          do k = kts, k_tropo
             if (cfr(k).gt.0.01 .and. cfr(k).lt.0.99) then

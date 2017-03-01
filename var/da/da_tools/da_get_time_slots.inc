@@ -56,6 +56,8 @@ subroutine da_get_time_slots(nt,tmin,tana,tmax,time_slots,itime_ana)
    ! (time_slots(i)-time_slots(i-1))/2 corresponds to fg index i
    if ( nt == 1 .or.  abs(time_ana-time_slots(0)) < 0.1 ) then
       itime_ana = 1
+   else if ( abs(time_ana-time_slots(nt)) < 0.1 ) then
+      itime_ana = nt
    else
       do it = 2, nt-1
          time_tmp = time_slots(0) + (it-1) * dt

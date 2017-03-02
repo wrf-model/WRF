@@ -7460,7 +7460,7 @@ Tmpv001 =(rdz(i,k+1,j)+rdz(i,k,j))
    SUBROUTINE a_tke_rhs(tendency,a_tendency,BN2,a_BN2,config_flags,defor11, &
    a_defor11,defor22,a_defor22,defor33,a_defor33,defor12,a_defor12,defor13, &
    a_defor13,defor23,a_defor23,u,a_u,v,a_v,w,a_w,div,a_div,tke,a_tke,mu, &
-   a_mu,theta,a_theta,p,a_p,p8w,a_p8w,t8w,a_t8w,z,a_z,fnm,fnp,cf1,cf2,cf3, &
+   a_mu,c1,c2,theta,a_theta,p,a_p,p8w,a_p8w,t8w,a_t8w,z,a_z,fnm,fnp,cf1,cf2,cf3, &
    msftx,msfty,xkmh,a_xkmh,xkmv,a_xkmv,xkhv,a_xkhv,rdx,rdy,dx,dy,dt,zx,a_zx,zy, &
    a_zy,rdz,a_rdz,rdzw,a_rdzw,dn,dnw,isotropic,hfx,a_hfx,qfx,a_qfx,qv,a_qv, &
    ust,a_ust,rho,a_rho,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts, &
@@ -7484,6 +7484,7 @@ Tmpv001 =(rdz(i,k+1,j)+rdz(i,k,j))
    zy,a_zy,u,a_u,v,a_v,w,a_w,theta,a_theta,p,a_p,p8w,a_p8w,t8w,a_t8w,z, &
    a_z,rdz,a_rdz,rdzw,a_rdzw
    REAL,DIMENSION(ims:ime,jms:jme) :: mu,a_mu
+   real, dimension(kms:kme) :: c1, c2
    REAL,DIMENSION(ims:ime,jms:jme) :: hfx,a_hfx,ust,a_ust,qfx,a_qfx
    REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: qv,a_qv,rho,a_rho
    INTEGER :: i,j,k,ktf,i_start,i_end,j_start,j_end
@@ -7513,21 +7514,22 @@ Tmpv001 =(rdz(i,k+1,j)+rdz(i,k,j))
        CALL tke_shear(    tendency, config_flags,                  &
                           defor11, defor22, defor33,               &
                           defor12, defor13, defor23,               &
-                          u, v, w, tke, ust, mu, fnm, fnp,         &
+                          u, v, w, tke, ust, mu,                   &
+                          c1, c2, fnm, fnp,                        &
                           cf1, cf2, cf3, msftx, msfty,             &
                           xkmh, xkmv,                              &
                           rdx, rdy, zx, zy, rdz, rdzw, dnw, dn,    &
                           ids, ide, jds, jde, kds, kde,            &
                           ims, ime, jms, jme, kms, kme,            &
                           its, ite, jts, jte, kts, kte           )
-       CALL tke_buoyancy( tendency, config_flags, mu,              &
+       CALL tke_buoyancy( tendency, config_flags, mu, c1, c2,      &
                           tke, xkhv, BN2, theta, dt,               &
                           hfx, qfx, qv,  rho,                      &
                           ids, ide, jds, jde, kds, kde,            &
                           ims, ime, jms, jme, kms, kme,            &
-                          its, ite, jts, jte, kts, kte           ) 
-       CALL tke_dissip(   tendency, config_flags,                  &
-                          mu, tke, bn2, theta, p8w, t8w, z,        &
+                          its, ite, jts, jte, kts, kte           )
+       CALL tke_dissip(   tendency, config_flags, mu, c1, c2,      &
+                          tke, bn2, theta, p8w, t8w, z,            &
                           dx, dy,rdz, rdzw, isotropic,             &
                           msftx, msfty,                            &
                           ids, ide, jds, jde, kds, kde,            &
@@ -11038,7 +11040,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 !   END DO
 
    Keep_Lpb0_nba_mij = nba_mij  ! Added by Ning Pan, 2010-08-11
-   CALL horizontal_diffusion_u_2(ru_tendf,mu,config_flags,defor11,defor12,div,  &
+   CALL horizontal_diffusion_u_2(ru_tendf,config_flags,defor11,defor12,div,  &
    nba_mij,n_nba_mij,tke(ims,kms,jms),msfux,msfuy,xkmh,rdx,rdy,fnm,fnp,dnw,zx,zy,rdzw,rho,ids,  &
    ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
@@ -11062,7 +11064,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 !   END DO
 
    Keep_Lpb1_nba_mij = nba_mij  ! Added by Ning Pan, 2010-08-11
-   CALL horizontal_diffusion_v_2(rv_tendf,mu,config_flags,defor12,defor22,div,  &
+   CALL horizontal_diffusion_v_2(rv_tendf,config_flags,defor12,defor22,div,  &
    nba_mij,n_nba_mij,tke(ims,kms,jms),msfvx,msfvy,xkmh,rdx,rdy,fnm,fnp,dnw,zx,zy,rdzw,rho,ids,  &
    ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte)
 
@@ -11309,7 +11311,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
       js_ext=0
       je_ext=0
       CALL cal_titau_11_22_33( config_flags, titau1,              &
-                               mu, tke, xkmh, defor11,            &
+                               tke, xkmh, defor11,                &
                                nba_mij(ims,kms,jms,P_m11), rho,   &
                                is_ext, ie_ext, js_ext, je_ext,    &
                                ids, ide, jds, jde, kds, kde,      &
@@ -11320,7 +11322,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
       js_ext=0
       je_ext=1
       CALL cal_titau_12_21( config_flags, titau2,              &
-                            mu, xkmh, defor12,                 &
+                            xkmh, defor12,                     &
                             nba_mij(ims,kms,jms,P_m12), rho,   &
                             is_ext, ie_ext, js_ext, je_ext,    &
                             ids, ide, jds, jde, kds, kde,      &
@@ -11929,7 +11931,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
       js_ext=0
       je_ext=0
       CALL cal_titau_12_21( config_flags, titau1,            &
-                            mu, xkmh, defor12,               &
+                            xkmh, defor12,                   &
                             nba_mij(ims,kms,jms,P_m12), rho, &
                             is_ext,ie_ext,js_ext,je_ext,     &
                             ids, ide, jds, jde, kds, kde,    &
@@ -11940,7 +11942,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
       js_ext=1
       je_ext=0
       CALL cal_titau_11_22_33( config_flags, titau2,             &
-                               mu, tke, xkmh, defor22,           &
+                               tke, xkmh, defor22,               &
                                nba_mij(ims,kms,jms,P_m22), rho,  &
                                is_ext, ie_ext, js_ext, je_ext,   &
                                ids, ide, jds, jde, kds, kde,     &
@@ -12547,8 +12549,8 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
       js_ext=0
       je_ext=0
       CALL cal_titau_13_31( config_flags, titau1, defor13,     &
-                            nba_mij(ims,kms,jms,P_m13),         &
-                            mu, xkmh, fnm, fnp, rho,           &
+                            nba_mij(ims,kms,jms,P_m13),        &
+                            xkmh, fnm, fnp, rho,               &
                             is_ext, ie_ext, js_ext, je_ext,    &
                             ids, ide, jds, jde, kds, kde,      &
                             ims, ime, jms, jme, kms, kme,      &
@@ -12558,8 +12560,8 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
       js_ext=0
       je_ext=1
       CALL cal_titau_23_32( config_flags, titau2, defor23,     &
-                            nba_mij(ims,kms,jms,P_m23),         &
-                            mu, xkmh, fnm, fnp, rho,           &
+                            nba_mij(ims,kms,jms,P_m23),        &
+                            xkmh, fnm, fnp, rho,               &
                             is_ext, ie_ext, js_ext, je_ext,    &
                             ids, ide, jds, jde, kds, kde,      &
                             ims, ime, jms, jme, kms, kme,      &
@@ -15987,7 +15989,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 !   END DO
 
    Keep_Lpb0_nba_mij = nba_mij
-   CALL vertical_diffusion_u_2(ru_tendf,config_flags,mu,defor13,xkmv,nba_mij,  &
+   CALL vertical_diffusion_u_2(ru_tendf,config_flags,defor13,xkmv,nba_mij,  &
    n_nba_mij,dnw,rdzw,fnm,fnp,rho,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,  &
    jts,jte,kts,kte)
 
@@ -16010,7 +16012,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 !   END DO
 
    Keep_Lpb1_nba_mij = nba_mij
-   CALL vertical_diffusion_v_2(rv_tendf,config_flags,mu,defor23,xkmv,nba_mij,  &
+   CALL vertical_diffusion_v_2(rv_tendf,config_flags,defor23,xkmv,nba_mij,  &
    n_nba_mij,dnw,rdzw,fnm,fnp,rho,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,its,ite,  &
    jts,jte,kts,kte)
 
@@ -16032,7 +16034,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
 !   END DO
 !   END DO
 
-!   CALL vertical_diffusion_w_2(rw_tendf,config_flags,mu,defor33,tke(ims,kms,jms)  &
+!   CALL vertical_diffusion_w_2(rw_tendf,config_flags,defor33,tke(ims,kms,jms)  &
 !   ,nba_mij,n_nba_mij,div,xkmv,dn,rdz,ids,ide,jds,jde,kds,kde,ims,ime,jms,jme,kms,kme,  &
 !   its,ite,jts,jte,kts,kte)
 
@@ -16207,8 +16209,8 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
       js_ext=0
       je_ext=0
       CALL cal_titau_13_31( config_flags, titau3, defor13,     &
-                            nba_mij(ims,kms,jms,P_m13),         &
-                            mu, xkmv, fnm, fnp, rho,           &
+                            nba_mij(ims,kms,jms,P_m13),        &
+                            xkmv, fnm, fnp, rho,               &
                             is_ext, ie_ext, js_ext, je_ext,    &
                             ids, ide, jds, jde, kds, kde,      &
                             ims, ime, jms, jme, kms, kme,      &
@@ -16564,8 +16566,8 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
       js_ext=0
       je_ext=0
       CALL cal_titau_23_32( config_flags, titau3, defor23,     &
-                            nba_mij(ims,kms,jms,P_m23),         &
-                            mu, xkmv, fnm, fnp, rho,           &
+                            nba_mij(ims,kms,jms,P_m23),        &
+                            xkmv, fnm, fnp, rho,               &
                             is_ext, ie_ext, js_ext, je_ext,    &
                             ids, ide, jds, jde, kds, kde,      &
                             ims, ime, jms, jme, kms, kme,      &
@@ -16914,7 +16916,7 @@ END SUBROUTINE A_COMPUTE_DIFF_METRICS
       js_ext=0
       je_ext=0
       CALL cal_titau_11_22_33( config_flags, titau3,              &
-                               mu, tke, xkmv, defor33,            &
+                               tke, xkmv, defor33,                &
                                nba_mij(ims,kms,jms,P_m33), rho,   &
                                is_ext, ie_ext, js_ext, je_ext,    &
                                ids, ide, jds, jde, kds, kde,      &

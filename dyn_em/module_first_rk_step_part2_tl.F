@@ -796,7 +796,7 @@ BENCH_END(tl_hor_diff_tim)
                    model_config_rec%nobs_err_flds,                      &
                    grid%fdob%nstat, grid%fdob%varobs, grid%fdob%errf,   &
                    grid%dx, grid%KPBL,grid%HT,                          &
-                   grid%mut, grid%muu, grid%muv,                        &
+                   grid%mut, grid%muu, grid%muv, grid%c1h, grid%c2h,    &
                    grid%msftx, grid%msfty, grid%msfux, grid%msfuy, grid%msfvx, grid%msfvy, &
                    p_phy, t_tendf, t0,                                  &
                    grid%u_2, grid%v_2, grid%t_2,                        &

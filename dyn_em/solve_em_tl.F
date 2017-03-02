@@ -1842,6 +1842,7 @@ BENCH_END(g_small_step_finish_tim)
              CALL rk_update_scalar_pd( im, im,                                  &
                                        chem_old(ims,kms,jms,im),                &
                                        chem_tend(ims,kms,jms,im),               &
+                                       grid%c1h, grid%c2h,                      &
                                        grid%mu_1, grid%mu_1, grid%mub, &
                                        rk_step, dt_rk, grid%spec_zone,          &
                                        config_flags,                            &
@@ -2386,6 +2387,7 @@ BENCH_START(g_chem_adv_tim)
 !!!!! REPLACE WITH g_relax_bdy_scalar WHEN chem IS NEEDED. Ning Pan
              CALL relax_bdy_scalar ( chem_tend(ims,kms,jms,ic),                                    &
                                      chem(ims,kms,jms,ic),  grid%mut,                              &
+                                     grid%c1h, grid%c2h,                                           &
                                      chem_bxs(jms,kms,1,ic),chem_bxe(jms,kms,1,ic),                &
                                      chem_bys(ims,kms,1,ic),chem_bye(ims,kms,1,ic),                &
                                      chem_btxs(jms,kms,1,ic),chem_btxe(jms,kms,1,ic),              &
@@ -2523,12 +2525,13 @@ BENCH_START(g_tracer_adv_tim)
              IF(ic.eq.1)CALL wrf_debug ( 10 , ' have_bcs_tracer' )
 
 !!!!! REPLACE WITH g_relax_bdy_scalar WHEN tracer IS NEEDED. Ning Pan
-             CALL relax_bdy_scalar ( tracer_tend(ims,kms,jms,ic),                                    &
-                                     tracer(ims,kms,jms,ic),  grid%mut,                              &
-                                     tracer_bxs(jms,kms,1,ic),tracer_bxe(jms,kms,1,ic),                &
-                                     tracer_bys(ims,kms,1,ic),tracer_bye(ims,kms,1,ic),                &
-                                     tracer_btxs(jms,kms,1,ic),tracer_btxe(jms,kms,1,ic),              &
-                                     tracer_btys(ims,kms,1,ic),tracer_btye(ims,kms,1,ic),              &
+             CALL relax_bdy_scalar ( tracer_tend(ims,kms,jms,ic),                                  &
+                                     tracer(ims,kms,jms,ic),  grid%mut,                            &
+                                     grid%c1h, grid%c2h,                                           &
+                                     tracer_bxs(jms,kms,1,ic),tracer_bxe(jms,kms,1,ic),            &
+                                     tracer_bys(ims,kms,1,ic),tracer_bye(ims,kms,1,ic),            &
+                                     tracer_btxs(jms,kms,1,ic),tracer_btxe(jms,kms,1,ic),          &
+                                     tracer_btys(ims,kms,1,ic),tracer_btye(ims,kms,1,ic),          &
                                      config_flags%spec_bdy_width, grid%spec_zone, grid%relax_zone, &
                                      grid%dtbc, grid%fcx, grid%gcx,                                &
                                      config_flags,                                                 &
@@ -2813,8 +2816,9 @@ BENCH_END(g_calc_p_rho_tim)
            CALL wrf_debug ( 200 , ' call filter moist ' )
            DO im = PARAM_FIRST_SCALAR, num_3d_m
              IF ( config_flags%coupled_filtering ) THEN
-             CALL couple_scalars_for_filter ( FIELD=moist(ims,kms,jms,im)              &
+             CALL couple_scalars_for_filter ( FIELD=moist(ims,kms,jms,im)        &
                     ,MU=grid%mu_2 , MUB=grid%mub                                 &
+                    ,C1=grid%c1h , C2=grid%c2h                                   &
                     ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                     ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                     ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe          )
@@ -2844,8 +2848,9 @@ BENCH_END(g_calc_p_rho_tim)
                     ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                     ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
              IF ( config_flags%coupled_filtering ) THEN
-             CALL uncouple_scalars_for_filter ( FIELD=moist(ims,kms,jms,im)            &
+             CALL uncouple_scalars_for_filter ( FIELD=moist(ims,kms,jms,im)      &
                     ,MU=grid%mu_2 , MUB=grid%mub                                 &
+                    ,C1=grid%c1h , C2=grid%c2h                                   &
                     ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                     ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                     ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe          )
@@ -2857,8 +2862,9 @@ BENCH_END(g_calc_p_rho_tim)
            CALL wrf_debug ( 200 , ' call filter chem ' )
            DO im = PARAM_FIRST_SCALAR, num_3d_c
              IF ( config_flags%coupled_filtering ) THEN
-             CALL couple_scalars_for_filter ( FIELD=chem(ims,kms,jms,im)               &
+             CALL couple_scalars_for_filter ( FIELD=chem(ims,kms,jms,im)         &
                     ,MU=grid%mu_2 , MUB=grid%mub                                 &
+                    ,C1=grid%c1h , C2=grid%c2h                                   &
                     ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                     ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                     ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe           )
@@ -2888,8 +2894,9 @@ BENCH_END(g_calc_p_rho_tim)
                     ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                     ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
              IF ( config_flags%coupled_filtering ) THEN
-             CALL uncouple_scalars_for_filter ( FIELD=chem(ims,kms,jms,im)             &
+             CALL uncouple_scalars_for_filter ( FIELD=chem(ims,kms,jms,im)       &
                     ,MU=grid%mu_2 , MUB=grid%mub                                 &
+                    ,C1=grid%c1h , C2=grid%c2h                                   &
                     ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                     ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                     ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe          )
@@ -2900,8 +2907,9 @@ BENCH_END(g_calc_p_rho_tim)
            CALL wrf_debug ( 200 , ' call filter tracer ' )
            DO im = PARAM_FIRST_SCALAR, num_tracer
              IF ( config_flags%coupled_filtering ) THEN
-             CALL couple_scalars_for_filter ( FIELD=tracer(ims,kms,jms,im)               &
+             CALL couple_scalars_for_filter ( FIELD=tracer(ims,kms,jms,im)       &
                     ,MU=grid%mu_2 , MUB=grid%mub                                 &
+                    ,C1=grid%c1h , C2=grid%c2h                                   &
                     ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                     ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                     ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe           )
@@ -2931,8 +2939,9 @@ BENCH_END(g_calc_p_rho_tim)
                     ,imsx=imsx,imex=imex,jmsx=jmsx,jmex=jmex,kmsx=kmsx,kmex=kmex &
                     ,ipsx=ipsx,ipex=ipex,jpsx=jmsx,jpex=jpex,kpsx=kpsx,kpex=kpex )
              IF ( config_flags%coupled_filtering ) THEN
-             CALL uncouple_scalars_for_filter ( FIELD=tracer(ims,kms,jms,im)             &
+             CALL uncouple_scalars_for_filter ( FIELD=tracer(ims,kms,jms,im)     &
                     ,MU=grid%mu_2 , MUB=grid%mub                                 &
+                    ,C1=grid%c1h , C2=grid%c2h                                   &
                     ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                     ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                     ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe          )
@@ -2944,8 +2953,9 @@ BENCH_END(g_calc_p_rho_tim)
            CALL wrf_debug ( 200 , ' call filter scalar ' )
            DO im = PARAM_FIRST_SCALAR, num_3d_s
              IF ( config_flags%coupled_filtering ) THEN
-             CALL couple_scalars_for_filter ( FIELD=scalar(ims,kms,jms,im)           &
+             CALL couple_scalars_for_filter ( FIELD=scalar(ims,kms,jms,im)     &
                   ,MU=grid%mu_2 , MUB=grid%mub                                 &
+                  ,C1=grid%c1h , C2=grid%c2h                                   &
                   ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                   ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                   ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe          )
@@ -2977,6 +2987,7 @@ BENCH_END(g_calc_p_rho_tim)
              IF ( config_flags%coupled_filtering ) THEN
              CALL uncouple_scalars_for_filter ( FIELD=scalar(ims,kms,jms,im)   &
                   ,MU=grid%mu_2 , MUB=grid%mub                                 &
+                  ,C1=grid%c1h , C2=grid%c2h                                   &
                   ,ids=ids,ide=ide,jds=jds,jde=jde,kds=kds,kde=kde             &
                   ,ims=ims,ime=ime,jms=jms,jme=jme,kms=kms,kme=kme             &
                   ,ips=ips,ipe=ipe,jps=jps,jpe=jpe,kps=kps,kpe=kpe          )

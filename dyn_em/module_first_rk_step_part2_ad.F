@@ -242,6 +242,7 @@ BENCH_START(adj_tke_rhs_tim)
                 grid%defor13,grid%a_defor13,grid%defor23,grid%a_defor23, &
                 grid%u_2,grid%a_u_2,grid%v_2,grid%a_v_2,grid%w_2,grid%a_w_2, &
                 grid%div,grid%a_div,grid%tke_2,grid%a_tke_2,grid%mut,grid%a_mut, &
+                grid%c1h, grid%c2h,                                  &
                 th_phy,a_th_phy,p_phy,a_p_phy,p8w,a_p8w,t8w,a_t8w,   &
                 grid%z,grid%a_z,grid%fnm,                    & 
                 grid%fnp,grid%cf1,grid%cf2,grid%cf3,         &     

@@ -753,7 +753,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
        !  adjust temp and qv
 
        CALL adjust_tempqv ( nest%mub , nest%mub_save , &
-                            nest%znw , nest%p_top , &
+                            nest%c3h , nest%c4h , nest%znw , nest%p_top , &
                             nest%t_2 , nest%p , nest%moist(ims,kms,jms,P_QV) , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &

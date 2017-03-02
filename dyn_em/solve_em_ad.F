@@ -974,7 +974,7 @@ BENCH_START(small_step_prep_tim)
        CALL small_step_prep( grid%u_1,grid%u_2,grid%v_1,grid%v_2,grid%w_1,grid%w_2,   &
                              grid%t_1,grid%t_2,grid%ph_1,grid%ph_2,                   &
                              grid%mub, grid%mu_1, grid%mu_2,                          &
-                             grid%muu, muus, grid%muv, muvs,                          &
+                             grid%muu, grid%muus, grid%muv, grid%muvs,                &
                              grid%mut, grid%muts, grid%mudf,                          &
                              grid%c1h, grid%c2h, grid%c1f, grid%c2f,                  &
                              grid%c3h, grid%c4h, grid%c3f, grid%c4f,                  &
@@ -1726,7 +1726,7 @@ BENCH_END(phys_bc_tim)
 BENCH_START(calc_mu_uv_tim)
 
        CALL calc_mu_uv_1 ( config_flags,                     &
-                           grid%muts, muus, muvs,            &
+                           grid%muts, grid%muus, grid%muvs,  &
                            ids, ide, jds, jde, kds, kde,     &
                            ims, ime, jms, jme, kms, kme,     &
                            grid%i_start(ij), grid%i_end(ij), &
@@ -1737,13 +1737,13 @@ BENCH_END(calc_mu_uv_tim)
 
 BENCH_START(small_step_finish_tim)
 
-       !CALL push4backup (grid%mut,grid%muts,grid%muu,muus,grid%muv,muvs, "mut,muts,muu,muus,muv,muvs") 
+       !CALL push4backup (grid%mut,grid%muts,grid%muu,grid%muus,grid%muv,grid%muvs, "mut,muts,muu,muus,muv,muvs") 
        CALL PUSHREAL8ARRAY ( grid%mut, (ime-ims+1)*(jme-jms+1) )
        CALL PUSHREAL8ARRAY ( grid%muts, (ime-ims+1)*(jme-jms+1) )
        CALL PUSHREAL8ARRAY ( grid%muu, (ime-ims+1)*(jme-jms+1) )
-       CALL PUSHREAL8ARRAY ( muus, (ime-ims+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%muus, (ime-ims+1)*(jme-jms+1) )
        CALL PUSHREAL8ARRAY ( grid%muv, (ime-ims+1)*(jme-jms+1) )
-       CALL PUSHREAL8ARRAY ( muvs, (ime-ims+1)*(jme-jms+1) )
+       CALL PUSHREAL8ARRAY ( grid%muvs, (ime-ims+1)*(jme-jms+1) )
        !CALL push4backup (grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%w_2,w_save,grid%t_2,grid%t_save, &
        !                  grid%h_diabatic, "u,u_save,v,v_save,w,w_save,t,t_save,h_diabatic") 
        CALL PUSHREAL8ARRAY ( grid%u_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
@@ -1759,7 +1759,7 @@ BENCH_START(small_step_finish_tim)
        CALL small_step_finish( grid%u_2, grid%u_1, grid%v_2, grid%v_1, grid%w_2, grid%w_1, &
                                grid%t_2, grid%t_1, grid%ph_2, grid%ph_1, grid%ww, ww1,     &
                                grid%mu_2, grid%mu_1,                       &
-                               grid%mut, grid%muts, grid%muu, muus, grid%muv, muvs,        &
+                               grid%mut, grid%muts, grid%muu, grid%muus, grid%muv, grid%muvs, &
                                grid%c1h, grid%c2h, grid%c1f, grid%c2f,     &
                                grid%c3h, grid%c4h, grid%c3f, grid%c4f,     &
                                grid%u_save, grid%v_save, w_save,           &
@@ -3612,7 +3612,7 @@ BENCH_END(advance_ppt_tim)
    DO ij = 1 , grid%num_tiles
         CALL wrf_debug ( 200 , ' call phy_prep_part2' )
         CALL phy_prep_part2 ( config_flags,                              &
-                        grid%muts, muus, muvs,                           &
+                        grid%muts, grid%muus, grid%muvs,                 &
                         grid%c1h, grid%c2h, grid%c1f, grid%c2f,          &
                         grid%rthraten,                                   &
                         grid%rthblten, grid%rublten, grid%rvblten,       &
@@ -4446,7 +4446,7 @@ BENCH_END(bc_2d_tim)
 
      CALL wrf_debug ( 200 , ' call spec_bdy_final' )
 
-     CALL spec_bdy_final   ( grid%u_2, muus, grid%c1h, grid%c2h, grid%msfuy,     &
+     CALL spec_bdy_final   ( grid%u_2, grid%muus, grid%c1h, grid%c2h, grid%msfuy,&
                                 grid%u_bxs, grid%u_bxe, grid%u_bys, grid%u_bye,  &
                                 grid%u_btxs,grid%u_btxe,grid%u_btys,grid%u_btye, &
                                 'u', config_flags,                               &
@@ -4459,7 +4459,7 @@ BENCH_END(bc_2d_tim)
                                 grid%j_start(ij), grid%j_end(ij),       &
                                 k_start    , k_end                     )
 
-     CALL spec_bdy_final   ( grid%v_2, muvs, grid%c1h, grid%c2h, grid%msfvx,     &
+     CALL spec_bdy_final   ( grid%v_2, grid%muvs, grid%c1h, grid%c2h, grid%msfvx,&
                                 grid%v_bxs, grid%v_bxe, grid%v_bys, grid%v_bye,  &
                                 grid%v_btxs,grid%v_btxe,grid%v_btys,grid%v_btye, &
                                 'v', config_flags,                               &
@@ -4730,8 +4730,8 @@ BENCH_END(bc_2d_tim)
   a_tracer_old = 0. 
   a_scalar_old = 0. 
 
-  a_muus = 0. 
-  a_muvs = 0. 
+  grid%a_muus = 0. 
+  grid%a_muvs = 0. 
   a_muave = 0. 
   a_c2a = 0. 
   a_pm1 = 0. 
@@ -5004,7 +5004,7 @@ BENCH_END(bc_2d_tim)
                                 k_start    , k_end                     )
      ENDIF
 
-     CALL a_spec_bdy_final   ( grid%v_2, grid%a_v_2, muvs, a_muvs, grid%msfvx,       &
+     CALL a_spec_bdy_final   ( grid%v_2, grid%a_v_2, grid%muvs, grid%a_muvs, grid%msfvx, &
                                 grid%v_bxs, grid%a_v_bxs, grid%v_bxe, grid%a_v_bxe,  &
                                 grid%v_bys, grid%a_v_bys, grid%v_bye, grid%a_v_bye,  &
                                 grid%v_btxs,grid%a_v_btxs,grid%v_btxe,grid%a_v_btxe, &
@@ -5019,7 +5019,7 @@ BENCH_END(bc_2d_tim)
                                 grid%j_start(ij), grid%j_end(ij),                    &
                                 k_start    , k_end                     )
 
-     CALL a_spec_bdy_final   ( grid%u_2, grid%a_u_2, muus, a_muus, grid%msfuy,       &
+     CALL a_spec_bdy_final   ( grid%u_2, grid%a_u_2, grid%muus, grid%a_muus, grid%msfuy, &
                                 grid%u_bxs, grid%a_u_bxs, grid%u_bxe, grid%a_u_bxe,  &
                                 grid%u_bys, grid%a_u_bys, grid%u_bye, grid%a_u_bye,  &
                                 grid%u_btxs,grid%a_u_btxs,grid%u_btxe,grid%a_u_btxe, &
@@ -6714,13 +6714,13 @@ BENCH_START(adj_small_step_finish_tim)
        CALL POPREAL8ARRAY ( grid%u_2, (ime-ims+1)*(kme-kms+1)*(jme-jms+1) )
        !CALL pop2restore (grid%u_2,grid%u_save,grid%v_2,grid%v_save,grid%w_2,w_save,grid%t_2,grid%t_save, &
        !                  grid%h_diabatic, "u,u_save,v,v_save,w,w_save,t,t_save,h_diabatic") 
-       CALL POPREAL8ARRAY ( muvs, (ime-ims+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%muvs, (ime-ims+1)*(jme-jms+1) )
        CALL POPREAL8ARRAY ( grid%muv, (ime-ims+1)*(jme-jms+1) )
-       CALL POPREAL8ARRAY ( muus, (ime-ims+1)*(jme-jms+1) )
+       CALL POPREAL8ARRAY ( grid%muus, (ime-ims+1)*(jme-jms+1) )
        CALL POPREAL8ARRAY ( grid%muu, (ime-ims+1)*(jme-jms+1) )
        CALL POPREAL8ARRAY ( grid%muts, (ime-ims+1)*(jme-jms+1) )
        CALL POPREAL8ARRAY ( grid%mut, (ime-ims+1)*(jme-jms+1) )
-       !CALL pop2restore (grid%mut,grid%muts,grid%muu,muus,grid%muv,muvs, "mut,muts,muu,muus,muv,muvs") 
+       !CALL pop2restore (grid%mut,grid%muts,grid%muu,grid%muus,grid%muv,grid%muvs, "mut,muts,muu,muus,muv,muvs")
        CALL a_small_step_finish( grid%u_2, grid%a_u_2, grid%u_1, &
                                  grid%v_2, grid%a_v_2, grid%v_1,  &
                                  grid%w_2, grid%a_w_2, grid%w_1,  &
@@ -6729,8 +6729,8 @@ BENCH_START(adj_small_step_finish_tim)
                                  grid%ww, grid%a_ww, ww1, a_ww1,    &
                                  grid%mu_2, grid%a_mu_2, grid%mu_1, &
                                  grid%mut, grid%a_mut, grid%muts, grid%a_muts, &
-                                 grid%muu, grid%a_muu, muus, a_muus, &
-                                 grid%muv, grid%a_muv, muvs, a_muvs, &
+                                 grid%muu, grid%a_muu, grid%muus, grid%a_muus, &
+                                 grid%muv, grid%a_muv, grid%muvs, grid%a_muvs, &
                                  grid%u_save, grid%a_u_save, grid%v_save, grid%a_v_save, w_save, a_w_save, &
                                  grid%t_save, grid%a_t_save, ph_save, a_ph_save, mu_save, a_mu_save,       &
                                  grid%msfux,grid%msfuy,grid%msfvx,grid%msfvy,grid%msftx,grid%msfty, &
@@ -6747,7 +6747,8 @@ BENCH_END(adj_small_step_finish_tim)
 BENCH_START(adj_calc_mu_uv_tim)
 
        CALL a_calc_mu_uv_1 ( config_flags,                     &
-                             grid%muts, grid%a_muts, muus, a_muus, muvs, a_muvs, &
+                             grid%muts, grid%a_muts, grid%muus,&
+                             grid%a_muus, grid%muvs, grid%a_muvs, &
                              ids, ide, jds, jde, kds, kde,     &
                              ims, ime, jms, jme, kms, kme,     &
                              grid%i_start(ij), grid%i_end(ij), &
@@ -7337,7 +7338,8 @@ BENCH_START(adj_small_step_prep_tim)
                                grid%t_1,grid%a_t_1,grid%t_2,grid%a_t_2, &
                                grid%ph_1,grid%a_ph_1,grid%ph_2,grid%a_ph_2, &
                                grid%mub, grid%mu_1,grid%a_mu_1, grid%mu_2,grid%a_mu_2,  &
-                               grid%muu,grid%a_muu, muus,a_muus, grid%muv,grid%a_muv, muvs,a_muvs, &
+                               grid%muu,grid%a_muu, grid%muus,grid%a_muus, &
+                               grid%muv,grid%a_muv, grid%muvs,grid%a_muvs, &
                                grid%mut,grid%a_mut, grid%muts,grid%a_muts, grid%mudf,grid%a_mudf,  &
                                grid%u_save,grid%a_u_save, grid%v_save,grid%a_v_save, w_save,a_w_save, &
                                grid%t_save,grid%a_t_save, ph_save,a_ph_save, mu_save,a_mu_save,       &

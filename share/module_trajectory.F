@@ -1021,7 +1021,6 @@ is_initial: &
 !-----------------------------------------------------------------------------
 trj_loop: &
        do trj = 1,n_traj
-         if( trjects(trj)%in_dom ) then
 pkg_loop:  do pkg = 1,pkg_max
              astat = 0
              select case( trim(pkg_tag(pkg)) )
@@ -1032,7 +1031,7 @@ pkg_loop:  do pkg = 1,pkg_max
                  if( m1 > 0 ) then
                    allocate( trj_pbf(trj)%chm_vals(vals_max,m1),stat=astat)
                    do m = 1,m1
-                     trj_msk(trj,trjects(trj)%chm_ndx(m)) = .true.
+                     trj_msk(trj,trjects(trj)%chm_ndx(m)) = trjects(trj)%in_dom
                    end do
                  endif
                case( 'dchm' )
@@ -1041,7 +1040,7 @@ pkg_loop:  do pkg = 1,pkg_max
                  if( m1 > 0 ) then
                    allocate( trj_pbf(trj)%dchm_vals(vals_max,m1),stat=astat)
                    do m = 1,m1
-                     trj_msk(trj,trjects(trj)%dchm_ndx(m)) = .true.
+                     trj_msk(trj,trjects(trj)%dchm_ndx(m)) = trjects(trj)%in_dom
                    end do
                  endif
 #endif
@@ -1051,7 +1050,7 @@ pkg_loop:  do pkg = 1,pkg_max
                  if( m1 > 0 ) then
                    allocate( trj_pbf(trj)%hyd_vals(vals_max,m1),stat=astat)
                    do m = 1,m1
-                     trj_msk(trj,trjects(trj)%hyd_ndx(m)) = .true.
+                     trj_msk(trj,trjects(trj)%hyd_ndx(m)) = trjects(trj)%in_dom
                    end do
                  endif
                case( 'trc' )
@@ -1060,7 +1059,7 @@ pkg_loop:  do pkg = 1,pkg_max
                  if( m1 > 0 ) then
                    allocate( trj_pbf(trj)%trc_vals(vals_max,m1),stat=astat)
                    do m = 1,m1
-                     trj_msk(trj,trjects(trj)%trc_ndx(m)) = .true.
+                     trj_msk(trj,trjects(trj)%trc_ndx(m)) = trjects(trj)%in_dom
                    end do
                  endif
                case( 'dyn' )
@@ -1069,7 +1068,7 @@ pkg_loop:  do pkg = 1,pkg_max
                  if( m1 > 0 ) then
                    allocate( trj_pbf(trj)%dyn_vals(vals_max,m1),stat=astat)
                    do m = 1,m1
-                     trj_msk(trj,trjects(trj)%dyn_ndx(m)) = .true.
+                     trj_msk(trj,trjects(trj)%dyn_ndx(m)) = trjects(trj)%in_dom
                    end do
                  endif
                case( 'msc' )
@@ -1078,7 +1077,7 @@ pkg_loop:  do pkg = 1,pkg_max
                  if( m1 > 0 ) then
                    allocate( trj_pbf(trj)%msc_vals(vals_max,m1),stat=astat)
                    do m = 1,m1
-                     trj_msk(trj,trjects(trj)%msc_ndx(m)) = .true.
+                     trj_msk(trj,trjects(trj)%msc_ndx(m)) = trjects(trj)%in_dom
                    end do
                  endif
              end select
@@ -1088,7 +1087,6 @@ pkg_loop:  do pkg = 1,pkg_max
                call wrf_error_fatal( trim( err_mes  ) )
              endif
            end do pkg_loop
-         endif
        end do trj_loop
 
        do pkg = 1,pkg_max

@@ -137,9 +137,9 @@ state    real   a_mu              ijb     dyn_em      2         -     \
      irhusdf=(bdy_interp:dt)   "a_mu"  "perturbation dry air mass in column" "Pa"
 state    real   a_mudf            ij     dyn_em      1         -      -           "a_mudf" "" ""
 state    real   a_muu             ij     dyn_em      1          -                 "a_muu"
-i1       real   a_muus            ij     dyn_em      1          -
+state    real   a_muus            ij     dyn_em      1          -                 "a_muus"
 state    real   a_muv             ij     dyn_em      1          -                 "a_muv"
-i1       real   a_muvs            ij     dyn_em      1          -
+state    real   a_muvs            ij     dyn_em      1          -                 "a_muvs"
 state    real   a_mut             ij     dyn_em      1          -                 "a_mut"
 state    real   a_muts            ij     dyn_em      1          -                 "a_muts"
 i1       real   a_muave           ij     dyn_em      1          -
@@ -151,9 +151,9 @@ state    real   g_mu              ijb     dyn_em      2         -     \
      i0rhusdf=(bdy_interp:dt)   "g_mu"  "perturbation dry air mass in column" "Pa"
 state    real   g_mudf            ij     dyn_em      1         -      -           "g_mudf" "" ""
 state    real   g_muu             ij     dyn_em      1          -                 "g_muu"
-i1       real   g_muus            ij     dyn_em      1          -
+state    real   g_muus            ij     dyn_em      1          -                 "g_muus"
 state    real   g_muv             ij     dyn_em      1          -                 "g_muv"
-i1       real   g_muvs            ij     dyn_em      1          -
+state    real   g_muvs            ij     dyn_em      1          -                 "g_muvs"
 state    real   g_mut             ij     dyn_em      1          -                 "g_mut"
 state    real   g_muts            ij     dyn_em      1          -                 "g_muts"
 i1       real   g_muave           ij     dyn_em      1          -

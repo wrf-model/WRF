@@ -3,6 +3,11 @@
 !                                                                                          !
 ! This code was originally written by H. Morrison,  MMM Division, NCAR (Dec 2012).         !
 ! Modification were made by J. Milbrandt, RPN, Environment Canada (July 2014).             !
+! There are two versions of the scheme available: 1) specified droplet number,             !
+! 2) predicted droplet number from a specified aerosol distribution. The                   !
+! predicted droplet number version does NOT include a subgrid-scale vertical velocity      !
+! for droplet activation, and hence should only be used for high-resolution                !
+! simulations that can resolve vertical motion driving activation.                         !
 !                                                                                          !
 ! For details see: Morrison and Milbrandt (2015) [J. Atmos. Sci., 72, 287-311]             !
 !                  Milbrandt and Morrison (2016) [J. Atmos. Sci., 73, 975-995]             !
@@ -12,8 +17,8 @@
 !    Jason Milbrandt (jason.milbrandt@canada.ca)                                           !
 !__________________________________________________________________________________________!
 !                                                                                          !
-! Version:       2.3.1                                                                       !
-! Last updated:  2016-12-14                                                                !
+! Version:       2.3.2                                                                     !
+! Last updated:  2017-02-02                                                                !
 !__________________________________________________________________________________________!
 
 MODULE MODULE_MP_P3   !WRF
@@ -228,7 +233,7 @@ MODULE MODULE_MP_P3   !WRF
 ! read in ice microphysics table
 
  print*
- print*, ' P3 microphysics, version: 2.3.1'
+ print*, ' P3 microphysics, version: 2.3.2'
  print*, '   P3_INIT (READING/CREATING LOOK-UP TABLES) ...'
 !print*, '   Reading lookup-table 1 ...'
 
@@ -427,6 +432,7 @@ END SUBROUTINE P3_INIT
 
 
  SUBROUTINE mp_p3_wrapper_wrf(th_3d,qv_3d,qc_3d,qr_3d,qnr_3d,                            &
+                              th_old_3d,qv_old_3d,                                       &
                               pii,p,dz,w,dt,itimestep,                                   &
                               rainnc,rainncv,sr,snownc,snowncv,n_iceCat,                 &
                               ids, ide, jds, jde, kds, kde ,                             &
@@ -435,7 +441,7 @@ END SUBROUTINE P3_INIT
                               diag_zdbz_3d,diag_effc_3d,diag_effi_3d,                    &
                               diag_vmi_3d,diag_di_3d,diag_rhopo_3d,                      &
                               qi1_3d,qni1_3d,qir1_3d,qib1_3d,                            &
-                              qi2_3d,qni2_3d,qir2_3d,qib2_3d,nc_3d,ssat_3d,log_predictNc)
+                              qi2_3d,qni2_3d,qir2_3d,qib2_3d,nc_3d)
 
   !------------------------------------------------------------------------------------------!
   ! This subroutine is the main WRF interface with the P3 microphysics scheme.  It takes     !
@@ -495,19 +501,19 @@ END SUBROUTINE P3_INIT
                                       its, ite, jts, jte, kts, kte
    real, dimension(ims:ime, kms:kme, jms:jme), intent(inout):: th_3d,qv_3d,qc_3d,qr_3d,   &
                    qnr_3d,diag_zdbz_3d,diag_effc_3d,diag_effi_3d,diag_vmi_3d,diag_di_3d,  &
-                   diag_rhopo_3d
+                   diag_rhopo_3d,th_old_3d,qv_old_3d
    real, dimension(ims:ime, kms:kme, jms:jme), intent(inout):: qi1_3d,qni1_3d,qir1_3d,    &
                                                                qib1_3d
    real, dimension(ims:ime, kms:kme, jms:jme), intent(inout), optional :: qi2_3d,qni2_3d, &
                                                                           qir2_3d,qib2_3d
-   real, dimension(ims:ime, kms:kme, jms:jme), intent(inout), optional :: nc_3d,ssat_3d
+   real, dimension(ims:ime, kms:kme, jms:jme), intent(inout), optional :: nc_3d
 
    real, dimension(ims:ime, kms:kme, jms:jme), intent(in) :: pii,p,dz,w
    real, dimension(ims:ime, jms:jme), intent(inout) :: RAINNC,RAINNCV,SR,SNOWNC,SNOWNCV
    real, intent(in)    :: dt
    integer, intent(in) :: itimestep
    integer, intent(in) :: n_iceCat
-   logical, intent(in) :: log_predictNc
+   logical :: log_predictNc
 
    !--- local variables/parameters:
 
@@ -532,22 +538,26 @@ END SUBROUTINE P3_INIT
 
    !------------------------------------------------------------------------------------------!
 
+   log_predictNc=.false.
+   if (present(nc_3d)) log_predictNc = .true.
+
    do j = jts,jte      ! j loop (north-south)
 
       if (log_predictNc) then
-         nc(:,:)=nc_3d(:,:,j)
-         ssat(:,:)=ssat_3d(:,:,j)
-     ! if Nc is specified then set nc and ssat 2D arrays to zero
+         nc(its:ite,kts:kte)=nc_3d(its:ite,kts:kte,j)
+     ! if Nc is specified then set nc array to zero
       else
          nc=0.
-         ssat=0.
       endif
 
+     ! note: code for prediction of ssat not currently avaiable, set 2D array to 0
+      ssat=0.
+
     !contruct full ice arrays from individual category arrays:
-      qitot(:,:,1) = qi1_3d(:,:,j)
-      qirim(:,:,1) = qir1_3d(:,:,j)
-      nitot(:,:,1) = qni1_3d(:,:,j)
-      birim(:,:,1) = qib1_3d(:,:,j)
+      qitot(its:ite,kts:kte,1) = qi1_3d(its:ite,kts:kte,j)
+      qirim(its:ite,kts:kte,1) = qir1_3d(its:ite,kts:kte,j)
+      nitot(its:ite,kts:kte,1) = qni1_3d(its:ite,kts:kte,j)
+      birim(its:ite,kts:kte,1) = qib1_3d(its:ite,kts:kte,j)
 
       if (n_iceCat .ge. 2) then
          qitot(:,:,2) = qi2_3d(:,:,j)
@@ -577,8 +587,8 @@ END SUBROUTINE P3_INIT
               DZ(its:ite,kts:kte,j),itimestep,pcprt_liq,pcprt_sol,its,ite,kts,kte,nk_bottom,n_iceCat,  &
               diag_zdbz_3d(its:ite,kts:kte,j),diag_effc_3d(its:ite,kts:kte,j),                         &
               diag_effi(its:ite,kts:kte,1:n_iceCat),diag_vmi(its:ite,kts:kte,1:n_iceCat),              &
-              diag_di(its:ite,kts:kte,1:n_iceCat),diag_rhopo(its:ite,kts:kte,1:n_iceCat),log_predictNc)
-
+              diag_di(its:ite,kts:kte,1:n_iceCat),diag_rhopo(its:ite,kts:kte,1:n_iceCat),              &
+              th_old_3d(its:ite,kts:kte,j),qv_old_3d(its:ite,kts:kte,j),log_predictNc)
 
      !surface precipitation output:
       dum1 = 1000.*dt
@@ -588,10 +598,9 @@ END SUBROUTINE P3_INIT
       SNOWNCV(its:ite,j) = pcprt_sol(:)*dum1                      ! conversion from m/s to mm/time step
       SR(its:ite,j)      = pcprt_sol(:)/(pcprt_liq(:)+1.E-12)     ! solid-to-liquid ratio
 
-    !convert ssat and nc arrays from 2D to 3D if Nc is predicted
+    !convert nc array from 2D to 3D if Nc is predicted
       if (log_predictNc) then
-         nc_3d(:,:,j)=nc(:,:)
-         ssat_3d(:,:,j)=ssat(:,:)
+         nc_3d(its:ite,kts:kte,j)=nc(its:ite,kts:kte)
       endif
 
     !decompose full ice arrays into individual category arrays:
@@ -606,6 +615,20 @@ END SUBROUTINE P3_INIT
          diag_rhopo_3d(its:ite,kts:kte,j) = diag_rhopo(its:ite,kts:kte,1)
          diag_effi_3d(its:ite,kts:kte,j)  = diag_effi(its:ite,kts:kte,1)
       endif
+
+
+    !decompose full ice arrays into individual category arrays:
+!      qi1_3d(:,:,j)  = qitot(:,:,1)
+!      qir1_3d(:,:,j) = qirim(:,:,1)
+!      qni1_3d(:,:,j) = nitot(:,:,1)
+!      qib1_3d(:,:,j) = birim(:,:,1)
+
+!      if (n_iceCat .eq. 1) then
+!         diag_vmi_3d(:,:,j)   = diag_vmi(:,:,1)
+!         diag_di_3d(:,:,j)    = diag_di(:,:,1)
+!         diag_rhopo_3d(:,:,j) = diag_rhopo(:,:,1)
+!         diag_effi_3d(:,:,j)  = diag_effi(:,:,1)
+!      endif
 
       if (n_iceCat .ge. 2) then
 
@@ -870,209 +893,12 @@ END SUBROUTINE P3_INIT
 ! ! !  
 ! ! !  END SUBROUTINE mp_p3_wrapper_gem
 
-
-!--- FUTURE version of mp_p3_wrapper_gem:
-!    (for radiation interface with multiple ice categories)
-
-! ! !  SUBROUTINE mp_p3_wrapper_gem(qvap,temp,dt,ww,psfc,sigma,kount,trnch,ni,nk,prt_liq,      &
-! ! !                               prt_sol,diag_Zet,diag_Zec,diag_effc,diag_vmi,              &
-! ! !                               diag_di,diag_rhopo,qc,qr,nr,n_iceCat,                      &
-! ! !                               qitot_1,qirim_1,nitot_1,birim_1,diag_effi1,                &
-! ! !                               qitot_2,qirim_2,nitot_2,birim_2,diag_effi2,                &
-! ! !                               qitot_3,qirim_3,nitot_3,birim_3,diag_effi3,                &
-! ! !                               qitot_4,qirim_4,nitot_4,birim_4,diag_effi4)
-! ! !
-! ! ! !------------------------------------------------------------------------------------------!
-! ! ! ! This wrapper subroutine is the main GEM interface with the P3 microphysics scheme.  It   !
-! ! ! ! prepares some necessary fields (converts temperature to potential temperature, etc.),    !
-! ! ! ! passes 2D slabs (i,k) to the main microphysics subroutine ('P3_MAIN') -- which updates   !
-! ! ! ! the prognostic variables (hydrometeor variables, temperature, and water vapor) and       !
-! ! ! ! computes various diagnostics fields (precipitation rates, reflectivity, etc.) -- and     !
-! ! ! ! finally converts the updated potential temperature to temperature.                       !
-! ! ! !------------------------------------------------------------------------------------------!
-! ! !
-! ! !  implicit none
-! ! !
-! ! ! !----- input/ouput arguments:  ----------------------------------------------------------!
-! ! !
-! ! !  integer, intent(in)                    :: ni                    ! number of columns in slab           -
-! ! !  integer, intent(in)                    :: nk                    ! number of vertical levels           -
-! ! !  integer, intent(in)                    :: n_iceCat              ! number of ice categories            -
-! ! !  integer, intent(in)                    :: kount                 ! time step counter                   -
-! ! !  integer, intent(in)                    :: trnch                 ! number of slice                     -
-! ! !  real, intent(in)                       :: dt                    ! model time step                     s
-! ! !  real, intent(inout), dimension(ni,nk)  :: qc                    ! cloud mixing ratio, mass            kg kg-1
-! ! !  real, intent(inout), dimension(ni,nk)  :: qr                    ! rain  mixing ratio, mass            kg kg-1
-! ! !  real, intent(inout), dimension(ni,nk)  :: nr                    ! rain  mixing ratio, number          #  kg-1
-! ! !  real, intent(inout), dimension(ni,nk)  :: qitot_1               ! ice   mixing ratio, mass (total)    kg kg-1
-! ! !  real, intent(inout), dimension(ni,nk)  :: qirim_1               ! ice   mixing ratio, mass (rime)     kg kg-1
-! ! !  real, intent(inout), dimension(ni,nk)  :: nitot_1               ! ice   mixing ratio, number          #  kg-1
-! ! !  real, intent(inout), dimension(ni,nk)  :: birim_1               ! ice   mixing ratio, volume          m3 kg-1
-! ! !
-! ! !  real, intent(inout), dimension(ni,nk), optional  :: qitot_2     ! ice   mixing ratio, mass (total)    kg kg-1
-! ! !  real, intent(inout), dimension(ni,nk), optional  :: qirim_2     ! ice   mixing ratio, mass (rime)     kg kg-1
-! ! !  real, intent(inout), dimension(ni,nk), optional  :: nitot_2     ! ice   mixing ratio, number          #  kg-1
-! ! !  real, intent(inout), dimension(ni,nk), optional  :: birim_2     ! ice   mixing ratio, volume          m3 kg-1
-! ! !
-! ! !  real, intent(inout), dimension(ni,nk), optional  :: qitot_3     ! ice   mixing ratio, mass (total)    kg kg-1
-! ! !  real, intent(inout), dimension(ni,nk), optional  :: qirim_3     ! ice   mixing ratio, mass (rime)     kg kg-1
-! ! !  real, intent(inout), dimension(ni,nk), optional  :: nitot_3     ! ice   mixing ratio, number          #  kg-1
-! ! !  real, intent(inout), dimension(ni,nk), optional  :: birim_3     ! ice   mixing ratio, volume          m3 kg-1
-! ! !
-! ! !  real, intent(inout), dimension(ni,nk), optional  :: qitot_4     ! ice   mixing ratio, mass (total)    kg kg-1
-! ! !  real, intent(inout), dimension(ni,nk), optional  :: qirim_4     ! ice   mixing ratio, mass (rime)     kg kg-1
-! ! !  real, intent(inout), dimension(ni,nk), optional  :: nitot_4     ! ice   mixing ratio, number          #  kg-1
-! ! !  real, intent(inout), dimension(ni,nk), optional  :: birim_4     ! ice   mixing ratio, volume          m3 kg-1
-! ! !
-! ! !  real, intent(inout), dimension(ni,nk)  :: qvap                  ! vapor  mixing ratio, mass           kg kg-1
-! ! !  real, intent(inout), dimension(ni,nk)  :: temp                  ! temperature                         K
-! ! !  real, intent(in),    dimension(ni)     :: psfc                  ! surface air pressure                Pa
-! ! !  real, intent(in),    dimension(ni,nk)  :: sigma                 ! sigma = p(k,:)/psfc(:)
-! ! !  real, intent(in),    dimension(ni,nk)  :: ww                    ! vertical motion                     m s-1
-! ! !  real, intent(out),   dimension(ni)     :: prt_liq               ! precipitation rate, liquid          m s-1
-! ! !  real, intent(out),   dimension(ni)     :: prt_sol               ! precipitation rate, solid           m s-1
-! ! !  real, intent(out),   dimension(ni,nk)  :: diag_Zet              ! equivalent reflectivity, 3D         dBZ
-! ! !  real, intent(out),   dimension(ni)     :: diag_Zec              ! equivalent reflectivity, col-max    dBZ
-! ! !  real, intent(out),   dimension(ni,nk)  :: diag_di               ! mean-mass diameter, ice             m
-! ! !  real, intent(out),   dimension(ni,nk)  :: diag_vmi              ! fall speed (mass-weighted), ice     m s-1
-! ! !  real, intent(out),   dimension(ni,nk)  :: diag_rhopo            ! bulk density, ice                   kg m-3
-! ! !  real, intent(out),   dimension(ni,nk)  :: diag_effc             ! effective radius, cloud             m
-! ! !  real, intent(out),   dimension(ni,nk)  :: diag_effi1            ! effective radius, ice category 1    m
-! ! !  real, intent(out),   dimension(ni,nk), optional  :: diag_effi2  ! effective radius, ice category 2    m
-! ! !  real, intent(out),   dimension(ni,nk), optional  :: diag_effi3  ! effective radius, ice category 3    m
-! ! !  real, intent(out),   dimension(ni,nk), optional  :: diag_effi4  ! effective radius, ice category 4    m
-! ! !
-! ! ! !----------------------------------------------------------------------------------------!
-! ! !
-! ! ! !----- local variables and parameters:
-! ! !  real, dimension(ni,nk,n_iceCat)  :: qitot      ! ice mixing ratio, mass (total)          kg kg-1
-! ! !  real, dimension(ni,nk,n_iceCat)  :: qirim      ! ice mixing ratio, mass (rime)           kg kg-1
-! ! !  real, dimension(ni,nk,n_iceCat)  :: nitot      ! ice mixing ratio, number                #  kg-1
-! ! !  real, dimension(ni,nk,n_iceCat)  :: birim      ! ice mixing ratio, volume                m3 kg-1
-! ! !  real, dimension(ni,nk,n_iceCat)  :: diag_effi  ! ice effective radius                    m
-! ! !
-! ! !  real, dimension(ni,nk)  :: theta               ! potential temperature                   K
-! ! !  real, dimension(ni,nk)  :: pres                ! pressure                                Pa
-! ! !  real, dimension(ni,nk)  :: rho_air             ! air density                             kg m-3
-! ! !  real, dimension(ni,nk)  :: DP                  ! difference in pressure between levels   Pa
-! ! !  real, dimension(ni,nk)  :: DZ                  ! difference in height between levels     m
-! ! !  logical, parameter      :: nk_BOTTOM = .true.  ! .true. for nk at bottom (GEM)
-! ! !  integer                 :: i,k,ktop,kbot,kdir,i_strt,k_strt
-! ! !
-! ! ! !----------------------------------------------------------------------------------------!
-! ! !
-! ! !    include "thermoconsts.inc"
-! ! !
-! ! !    i_strt = 1  ! beginning index of slab
-! ! !    k_strt = 1  ! beginning index of column
-! ! !
-! ! !   !for nk_bottom = .true. :
-! ! !    ktop  = 1   ! k index of top level
-! ! !    kbot  = nk  ! k index of bottom level
-! ! !    kdir  = -1  ! direction of vertical leveling for 1=bottom, nk=top
-! ! !
-! ! !   !air pressure:
-! ! !    do k = kbot,ktop,kdir
-! ! !       pres(:,k)= psfc(:)*sigma(:,k)
-! ! !    enddo
-! ! !
-! ! !   !air density:
-! ! !    rho_air  = pres/(RGASD*temp)
-! ! !
-! ! !   !pressure difference between levels:
-! ! !    DP(:,kbot) = psfc(:)-pres(:,kbot)
-! ! !    do k = kbot+kdir,ktop,kdir
-! ! !       DP(:,k) = pres(:,k-kdir)-pres(:,k)
-! ! !    enddo
-! ! !
-! ! !   !thickness of layers for sedimentation calculation: (in height coordiates)
-! ! !    DZ = DP/(rho_air*GRAV)
-! ! !
-! ! !   !convert to potential temperature:
-! ! !    theta = temp*(1.e+5/pres)**0.286
-! ! !
-! ! !   !contruct full ice arrays from individual category arrays:
-! ! !    qitot(:,:,1) = qitot_1(:,:)
-! ! !    qirim(:,:,1) = qirim_1(:,:)
-! ! !    nitot(:,:,1) = nitot_1(:,:)
-! ! !    birim(:,:,1) = birim_1(:,:)
-! ! !
-! ! !    if (n_iceCat >= 2) then
-! ! !       qitot(:,:,2) = qitot_2(:,:)
-! ! !       qirim(:,:,2) = qirim_2(:,:)
-! ! !       nitot(:,:,2) = nitot_2(:,:)
-! ! !       birim(:,:,2) = birim_2(:,:)
-! ! !
-! ! !       if (n_iceCat >= 3) then
-! ! !          qitot(:,:,3) = qitot_3(:,:)
-! ! !          qirim(:,:,3) = qirim_3(:,:)
-! ! !          nitot(:,:,3) = nitot_3(:,:)
-! ! !          birim(:,:,3) = birim_3(:,:)
-! ! !
-! ! !          if (n_iceCat == 4) then
-! ! !             qitot(:,:,4) = qitot_4(:,:)
-! ! !             qirim(:,:,4) = qirim_4(:,:)
-! ! !             nitot(:,:,4) = nitot_4(:,:)
-! ! !             birim(:,:,4) = birim_4(:,:)
-! ! !          endif
-! ! !       endif
-! ! !    endif
-! ! !
-! ! !    call p3_main(qc,qr,nr,theta,qvap,dt,qitot,qirim,nitot,birim,ww,pres,DZ,kount,         &
-! ! !                 prt_liq,prt_sol,i_strt,ni,k_strt,nk,nk_bottom,n_iceCat,diag_Zet,         &
-! ! !                 diag_effc,diag_effi,diag_vmi,diag_di,diag_rhopo)
-! ! !
-! ! !   !decompose full ice arrays back into individual category arrays:
-! ! !    qitot_1(:,:) = qitot(:,:,1)
-! ! !    qirim_1(:,:) = qirim(:,:,1)
-! ! !    nitot_1(:,:) = nitot(:,:,1)
-! ! !    birim_1(:,:) = birim(:,:,1)
-! ! !    diag_effi1(:,:) = diag_effi(:,:,1)
-! ! !
-! ! !    if (n_iceCat >= 2) then
-! ! !       qitot_2(:,:) = qitot(:,:,2)
-! ! !       qirim_2(:,:) = qirim(:,:,2)
-! ! !       nitot_2(:,:) = nitot(:,:,2)
-! ! !       birim_2(:,:) = birim(:,:,2)
-! ! !       diag_effi2(:,:) = diag_effi(:,:,2)
-! ! !
-! ! !       if (n_iceCat >= 3) then
-! ! !          qitot_3(:,:) = qitot(:,:,3)
-! ! !          qirim_3(:,:) = qirim(:,:,3)
-! ! !          nitot_3(:,:) = nitot(:,:,3)
-! ! !          birim_3(:,:) = birim(:,:,3)
-! ! !          diag_effi3(:,:) = diag_effi(:,:,3)
-! ! !
-! ! !          if (n_iceCat == 4) then
-! ! !             qitot_4(:,:) = qitot(:,:,4)
-! ! !             qirim_4(:,:) = qirim(:,:,4)
-! ! !             nitot_4(:,:) = nitot(:,:,4)
-! ! !             birim_4(:,:) = birim(:,:,4)
-! ! !             diag_effi4(:,:) = diag_effi(:,:,4)
-! ! !          endif
-! ! !       endif
-! ! !    endif
-! ! !
-! ! !   !convert back to temperature:
-! ! !    temp = theta*(pres*1.e-5)**0.286
-! ! !
-! ! !   !convert precip rates from volume flux (m s-1) to mass flux (kg m-3 s-1):
-! ! !   ! (since they are computed back to liq-eqv volume flux in s/r 'ccdiagnostics.F90')
-! ! !    prt_liq = prt_liq*1000.
-! ! !    prt_sol = prt_sol*1000.
-! ! !
-! ! !   !compute composite (column-maximum) reflectivity:
-! ! !    do i = 1,ni
-! ! !       diag_Zec(i) = maxval(diag_Zet(i,:))
-! ! !    enddo
-! ! !
-! ! !  END SUBROUTINE mp_p3_wrapper_gem
-
 !==========================================================================================!
 
  SUBROUTINE P3_MAIN(qc,nc,qr,nr,th,qv,dt,qitot,qirim,nitot,birim,ssat,uzpl,pres,dzq,it,    &
                     pcprt_liq,pcprt_sol,its,ite,kts,kte,nk_bottom,nCat, diag_ze,           &
-                    diag_effc,diag_effi,diag_vmi,diag_di,diag_rhopo,log_predictNc)
+                    diag_effc,diag_effi,diag_vmi,diag_di,diag_rhopo,                       &
+                    th_old,qv_old,log_predictNc)
 
 !----------------------------------------------------------------------------------------!
 !                                                                                        !
@@ -1105,6 +931,8 @@ END SUBROUTINE P3_INIT
 
  real, intent(inout), dimension(its:ite,kts:kte)      :: qv         ! water vapor mixing ratio         kg kg-1
  real, intent(inout), dimension(its:ite,kts:kte)      :: th         ! potential temperature            K
+ real, intent(inout), dimension(its:ite,kts:kte)      :: th_old     ! beginning of time step value of theta K
+ real, intent(inout), dimension(its:ite,kts:kte)      :: qv_old     ! beginning of time step value of qv    kg kg-1
  real, intent(in),    dimension(its:ite,kts:kte)      :: uzpl       ! vertical air velocity            m s-1
  real, intent(in),    dimension(its:ite,kts:kte)      :: pres       ! pressure                         Pa
  real, intent(in),    dimension(its:ite,kts:kte)      :: dzq        ! vertical grid spacing            m
@@ -1125,12 +953,13 @@ END SUBROUTINE P3_INIT
  integer, intent(in)                                  :: nCat       ! number of ice-phase categories
 
  logical, intent(in)                                  :: nk_bottom  ! .F. -> nk at top (WRF) / .T. -> nk at bottom (GEM)
- logical, intent(in)                                  :: log_predictNc ! logical for prediction or specification of Nc
+ logical, intent(in)                                  :: log_predictNc ! .T. (.F.) for prediction (specification) of Nc
 
 !----- Local variables and parameters:  -------------------------------------------------!
 
  real, dimension(its:ite,kts:kte) :: mu_r  ! shape parameter of rain
- real, dimension(its:ite,kts:kte) :: t     ! temperature [K]
+ real, dimension(its:ite,kts:kte) :: t     ! temperature at the beginning of the microhpysics step [K]
+ real, dimension(its:ite,kts:kte) :: t_old ! temperature at the beginning of the model time step [K]
 
 ! 2D size distribution and fallspeed parameters:
 
@@ -1301,12 +1130,8 @@ END SUBROUTINE P3_INIT
 ! deltaD_init = 250.e-6   !for testing
 ! deltaD_init = dummy_in   !temporary; passed in from cld1d
 
-! if Nc is predicted then also predict supersaturation
- if (log_predictNc) then
-    log_predictSsat = .true.   ! for prediction of supersaturation
- else
-    log_predictSsat = .false.
- endif
+! code for prediction of supersaturation is not currently available!!!!!!!
+ log_predictSsat = .false.
 
  log_hmossopOn    = (nCat.gt.1)      !default: off for nCat=1, off for nCat>1
 !log_hmossopOn    = .true.           !switch to have Hallet-Mossop ON
@@ -1344,7 +1169,9 @@ END SUBROUTINE P3_INIT
 
     k_loop_1: do k = kbot,ktop,kdir
 
-     !calculate temperature from theta
+     !calculate old temperature from old value of theta
+       t_old(i,k) = th_old(i,k)*(pres(i,k)*1.e-5)**(rd*inv_cp)
+     !calculate current temperature from current theta
        t(i,k) = th(i,k)*(pres(i,k)*1.e-5)**(rd*inv_cp)
 
      !calculate some time-varying atmospheric variables
@@ -1353,15 +1180,15 @@ END SUBROUTINE P3_INIT
        xxlv(i,k)    = 3.1484e6-2370.*t(i,k)
        xxls(i,k)    = xxlv(i,k)+0.3337e6
        xlf(i,k)     = xxls(i,k)-xxlv(i,k)
-       dum0         = polysvp1(t(i,k),0)
-       dum1         = polysvp1(t(i,k),1)
+       dum0         = polysvp1(t_old(i,k),0)
+       dum1         = polysvp1(t_old(i,k),1)
        qvs(i,k)     = ep_2*dum0/max(1.e-3,(pres(i,k)-dum0))
        qvi(i,k)     = ep_2*dum1/max(1.e-3,(pres(i,k)-dum1))
       ! if supersaturation is not predicted or during the first time step, then diagnose from qv and T (qvs) 
        if (.not.(log_predictSsat).or.it.eq.1) then
-          ssat(i,k)    = qv(i,k)-qvs(i,k)
-          sup(i,k)     = qv(i,k)/qvs(i,k)-1.
-          supi(i,k)    = qv(i,k)/qvi(i,k)-1.
+          ssat(i,k)    = qv_old(i,k)-qvs(i,k)
+          sup(i,k)     = qv_old(i,k)/qvs(i,k)-1.
+          supi(i,k)    = qv_old(i,k)/qvi(i,k)-1.
       ! if supersaturation is predicted then diagnose sup and supi from ssat
        else if ((log_predictSsat).and.it.gt.1) then
           sup(i,k)     = ssat(i,k)/qvs(i,k)
@@ -1395,7 +1222,7 @@ END SUBROUTINE P3_INIT
 
        if (qr(i,k).lt.qsmall .or. (qr(i,k).lt.1.e-8 .and. sup(i,k).lt.-0.1)) then
           qv(i,k) = qv(i,k) + qr(i,k)
-          th(i,k) = th(i,k) - th(i,k)/t(i,k)*qr(i,k)*xxls(i,k)*inv_cp
+          th(i,k) = th(i,k) - th(i,k)/t(i,k)*qr(i,k)*xxlv(i,k)*inv_cp
           qr(i,k) = 0.
           nr(i,k) = 0.
        else
@@ -1772,7 +1599,7 @@ END SUBROUTINE P3_INIT
 !............................................................
 ! melting
 
-    ! nned to add back accelerated melting due to collection of ice mass by rain (pracsw1)
+    ! need to add back accelerated melting due to collection of ice mass by rain (pracsw1)
     ! note 'f1pr' values are normalized, so we need to multiply by N
 
           if (qitot(i,k,iice).ge.qsmall .and. t(i,k).gt.273.15) then
@@ -2085,16 +1912,23 @@ END SUBROUTINE P3_INIT
 ! currently neglected --> assumed to be much smaller than cooling
 ! due to vertical motion which IS included
 
-       dum = qvs(i,k)*rho(i,k)*g*uzpl(i,k)/max(1.e-3,(pres(i,k)-polysvp1(t(i,k),0)))
+! set equivalent vertical velocity consistent with dT/dt
+! since -g/cp*dum = dT/dt therefore dum = -cp/g*dT/dt
+! note this formulation for dT/dt is not exact since pressure
+! may change and t and t_old were both diagnosed using the current pressure
+! errors from this assumption are small
+       dum=-cp/g*(t(i,k)-t_old(i,k))/dt
+
+!       dum = qvs(i,k)*rho(i,k)*g*uzpl(i,k)/max(1.e-3,(pres(i,k)-polysvp1(t(i,k),0)))
 
        if (t(i,k).lt.273.15) then
-          aaa = -dum - dqsdt*(-uzpl(i,k)*g*inv_cp)-(qvs(i,k)-dumqvi)*(1.+xxls(i,k)*      &
+          aaa = (qv(i,k)-qv_old(i,k))/dt - dqsdt*(-dum*g*inv_cp)-(qvs(i,k)-dumqvi)*(1.+xxls(i,k)*      &
                 inv_cp*dqsdt)*oabi*epsi_tot
        else
-          aaa = -dum - dqsdt*(-uzpl(i,k)*g*inv_cp)
+          aaa = (qv(i,k)-qv_old(i,k))/dt - dqsdt*(-dum*g*inv_cp)
        endif
 
-       xx  = max(1.e-8,xx)   ! set lower bound on xx to prevent division by zero
+       xx  = max(1.e-20,xx)   ! set lower bound on xx to prevent division by zero
        oxx = 1./xx
 
        if (qc(i,k).ge.qsmall) &
@@ -2117,10 +1951,10 @@ END SUBROUTINE P3_INIT
           qrcon = 0.
        endif
 
-       if (ssat(i,k).lt.0.) then
-          qccon = min(0.,qccon)
-          qrcon = min(0.,qrcon)
-       endif
+!       if (ssat(i,k).lt.0.) then
+!          qccon = min(0.,qccon)
+!          qrcon = min(0.,qrcon)
+!       endif
 
        if (qrevp.gt.0. .and. qr(i,k).ge.qsmall) then
            dum1  = -qrevp*dt/qr(i,k)
@@ -2137,7 +1971,7 @@ END SUBROUTINE P3_INIT
                            (1.-dexp(-dble(xx*dt))))*oabi+(qvs(i,k)-dumqvi)*epsi(iice)*oabi
           endif
 
-          if (qv(i,k)-qvi(i,k).lt.0.) qidep(iice) = min(0.,qidep(iice))
+!          if (qv(i,k)-qvi(i,k).lt.0.) qidep(iice) = min(0.,qidep(iice))
 
          !for very small water contents, evaporate instantly
           if (supi(i,k).lt.-0.001 .and. qitot(i,k,iice).lt.1.e-12) &
@@ -2200,47 +2034,50 @@ END SUBROUTINE P3_INIT
 ! droplet activation
 
 ! for specified Nc, make sure droplets are present if conditions are supersaturated
+! note that this is also applied at the first time step
 ! this is not applied at the first time step, since saturation adjustment is applied at the first step
 
           if (.not.(log_predictNc).and.sup(i,k).gt.1.e-6.and.it.gt.1) then
              dum   = nccnst*inv_rho(i,k)*cons7-qc(i,k)
              dum   = max(0.,dum)
-             dqsdt = xxlv(i,k)*qvs(i,k)/(rv*t(i,k)*t(i,k))
+             dumqvs = ep_2*polysvp1(t(i,k),0)/max(1.e-3,(pres(i,k)-polysvp1(t(i,k),0)))
+             dqsdt = xxlv(i,k)*dumqvs/(rv*t(i,k)*t(i,k))
              ab    = 1. + dqsdt*xxlv(i,k)*inv_cp
-             dum   = min(dum,(qv(i,k)-qvs(i,k))/ab)  ! prevent overdepletion of supersaturation
+             dum   = min(dum,(qv(i,k)-dumqvs)/ab)  ! limit overdepletion of supersaturation
              qcnuc = dum*odt
           endif
 
-       predict_supersaturation2: if (log_predictSsat) then
+          if (log_predictNc) then
 
-! for predicted Nc (and therefore predicted Ssat), calculate activation explicitly from supersaturation
-! note that this is also applied at the first time step.
+! for predicted Nc, calculate activation explicitly from supersaturation
+! note that this is also applied at the first time step
+! note that this is also applied at the first time step
 
-          if (sup(i,k).gt.1.e-6) then
-             dum1  = 1./bact**0.5
-             sigvl = 0.0761 - 1.55e-4*(t(i,k)-273.15)
-             aact  = 2.*mw/(rhow*rr*t(i,k))*sigvl
-             sm1   = 2.*dum1*(aact*thrd*inv_rm1)**1.5
-             sm2   = 2.*dum1*(aact*thrd*inv_rm2)**1.5
-             uu1   = 2.*log(sm1/sup(i,k))/(4.242*log(sig1))
-             uu2   = 2.*log(sm2/sup(i,k))/(4.242*log(sig2))
-             dum1  = nanew1*0.5*(1.-derf(uu1)) ! activated number in kg-1 mode 1
-             dum2  = nanew2*0.5*(1.-derf(uu2)) ! activated number in kg-1 mode 2
-           ! make sure this value is not greater than total number of aerosol
-             dum2  = min((nanew1+nanew2),dum1+dum2)
-             dum2  = (dum2-nc(i,k))*odt
-             dum2  = max(0.,dum2)
-             ncnuc = dum2
-           ! don't include mass increase from droplet activation during first time step
-           ! since this is already accounted for by saturation adjustment below
-             if (it.eq.1) then
-                qcnuc = 0.
-             else
-                qcnuc = ncnuc*cons7
+             if (sup(i,k).gt.1.e-6) then
+                dum1  = 1./bact**0.5
+                sigvl = 0.0761 - 1.55e-4*(t(i,k)-273.15)
+                aact  = 2.*mw/(rhow*rr*t(i,k))*sigvl
+                sm1   = 2.*dum1*(aact*thrd*inv_rm1)**1.5
+                sm2   = 2.*dum1*(aact*thrd*inv_rm2)**1.5
+                uu1   = 2.*log(sm1/sup(i,k))/(4.242*log(sig1))
+                uu2   = 2.*log(sm2/sup(i,k))/(4.242*log(sig2))
+                dum1  = nanew1*0.5*(1.-derf(uu1)) ! activated number in kg-1 mode 1
+                dum2  = nanew2*0.5*(1.-derf(uu2)) ! activated number in kg-1 mode 2
+              ! make sure this value is not greater than total number of aerosol
+                dum2  = min((nanew1+nanew2),dum1+dum2)
+                dum2  = (dum2-nc(i,k))*odt
+                dum2  = max(0.,dum2)
+                ncnuc = dum2
+              ! don't include mass increase from droplet activation during first time step
+              ! since this is already accounted for by saturation adjustment below
+                if (it.eq.1) then
+                   qcnuc = 0.
+                else
+                   qcnuc = ncnuc*cons7
+                endif
              endif
-          endif
 
-       endif predict_supersaturation2
+          endif
 
 !................................................................
 ! saturation adjustment to get initial cloud water
@@ -2567,7 +2404,7 @@ END SUBROUTINE P3_INIT
 
        if (qr(i,k).lt.qsmall) then
           qv(i,k) = qv(i,k) + qr(i,k)
-          th(i,k) = th(i,k) - th(i,k)/t(i,k)*qr(i,k)*xxls(i,k)*inv_cp
+          th(i,k) = th(i,k) - th(i,k)/t(i,k)*qr(i,k)*xxlv(i,k)*inv_cp
           qr(i,k) = 0.
           nr(i,k) = 0.
        else
@@ -3227,7 +3064,7 @@ END SUBROUTINE P3_INIT
           ze_rain(i,k) = max(ze_rain(i,k),1.e-22)
        else
           qv(i,k) = qv(i,k)+qr(i,k)
-          th(i,k) = th(i,k)-th(i,k)/t(i,k)*qr(i,k)*xxls(i,k)*inv_cp
+          th(i,k) = th(i,k)-th(i,k)/t(i,k)*qr(i,k)*xxlv(i,k)*inv_cp
           qr(i,k) = 0.
           nr(i,k) = 0.
           diag_effr(i,k) = 25.e-6
@@ -3278,7 +3115,8 @@ END SUBROUTINE P3_INIT
              diag_effi(i,k,iice)  = f1pr06 ! units are in m
              diag_di(i,k,iice)    = f1pr15
              diag_rhopo(i,k,iice) = f1pr16
-             ze_ice(i,k) = ze_ice(i,k) + 0.1892*f1pr13*nitot(i,k,iice)   ! sum contribution from each ice category (note: 0.1892 = 0.176/0.93)
+          ! note factor of air density below is to convert from m^6/kg to m^6/m^3
+             ze_ice(i,k) = ze_ice(i,k) + 0.1892*f1pr13*nitot(i,k,iice)*rho(i,k)   ! sum contribution from each ice category (note: 0.1892 = 0.176/0.93)
              ze_ice(i,k) = max(ze_ice(i,k),1.e-22)
 
           else
@@ -3348,6 +3186,12 @@ END SUBROUTINE P3_INIT
 
 333 continue
 
+   ! save end of microphysics values of theta and qv as old values for next time step
+    do k = kbot,ktop,kdir
+       th_old(i,k)    = th(i,k)
+       qv_old(i,k)    = qv(i,k)
+    enddo
+
     if (log_predictSsat) then
    ! recalculate supersaturation from T and qv
        do k = kbot,ktop,kdir
@@ -3357,6 +3201,23 @@ END SUBROUTINE P3_INIT
           ssat(i,k) = qv(i,k)-dum
        enddo
     endif
+
+!.....................................................
+! output only
+!      if (j.eq.2) then
+!       do k = kbot,ktop,kdir
+!     !calculate temperature from theta
+!       t(i,k) = th(i,k)*(pres(i,k)*1.e-5)**(rd*inv_cp)
+!     !calculate some time-varying atmospheric variables
+!       dum0         = polysvp1(t(i,k),0)
+!       dum1         = polysvp1(t(i,k),1)
+!       qvs(i,k)     = ep_2*dum0/max(1.e-3,(pres(i,k)-dum0))
+!       if (qc(i,k).gt.1.e-5) then
+!          write(6,'(a10,2i5,5e15.5)')'after',i,k,qc(i,k),qr(i,k),nc(i,k),qv(i,k)/qvs(i,k),uzpl(i,k)
+!       end if
+!       end do
+!       end if ! j
+!.....................................................
 
 !.....................................................
 

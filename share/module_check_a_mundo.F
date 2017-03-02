@@ -1377,8 +1377,31 @@
         IF ((model_config_rec%vert_refine_method(i) .EQ. 2) .AND. (model_config_rec%hybrid_opt .EQ. 2)) THEN
            WRITE(wrf_err_message,'(A)') '--- ERROR: The hybrid vertical coordinate does not work with vertical refinement.'
            CALL wrf_message( wrf_err_message )
+           fatal_error = .true.
+           count_fatal_error = count_fatal_error + 1
         ENDIF
      END DO 
+
+!-----------------------------------------------------------------------
+!  The hybrid vertical coordinate (HVC) namelist.input option (hybrid_opt=2) 
+!  requires the code to be built with the HVC code enabled.  This is a run-time
+!  test to make sure the correct compile-time capabilities are available.
+!-----------------------------------------------------------------------
+#if ( HYBRID_COORD==1 )
+#else
+     IF (model_config_rec%hybrid_opt .NE. 0) THEN
+        WRITE(wrf_err_message,'(A)') '--- ERROR: The code was not built with hybrid vertical coordinate enabled'
+        CALL wrf_message( wrf_err_message )
+        WRITE(wrf_err_message,'(A)') '---        Either set hybrid_opt=0 in the namelist.input file, or '
+        CALL wrf_message( wrf_err_message )
+        WRITE(wrf_err_message,'(A)') '---        re-compile with the hybrid vertical coordinate enabled'       
+        CALL wrf_message( wrf_err_message )
+        WRITE(wrf_err_message,'(A)') '---        For example: clean -a ; configure -hyb ; compile em_real '
+        CALL wrf_message( wrf_err_message )
+        fatal_error = .true.
+        count_fatal_error = count_fatal_error + 1
+     ENDIF
+#endif
 
 !-----------------------------------------------------------------------
 !  DJW Check that we're not using ndown and vertical nesting.
@@ -1565,6 +1588,202 @@
 
 !=======================================================================
 
+   SUBROUTINE setup_physics_suite
+
+!<DESCRIPTION>
+!
+! Based on the selection of physics suite provided in the namelist, sets the
+! values of other namelist options (mp_physics, cu_physics, ra_lw_physics,
+! ra_sw_physics, bl_pbl_physics, sf_sfclay_physics, and sf_surface_physics)
+! to reflect that suite.
+!
+!</DESCRIPTION>
+
+      USE module_domain, ONLY : change_to_lower_case
+
+      IMPLICIT NONE
+#if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
+
+      INTEGER :: i
+      INTEGER :: max_dom
+      LOGICAL :: have_mods
+      INTEGER, DIMENSION( max_domains ) :: orig_mp_physics, orig_cu_physics, orig_ra_lw_physics, orig_ra_sw_physics, &
+                                           orig_bl_pbl_physics, orig_sf_sfclay_physics, orig_sf_surface_physics
+      CHARACTER, DIMENSION( max_domains ) :: modified_mp_option, modified_cu_option, modified_ra_lw_option, modified_ra_sw_option, &
+                                             modified_bl_pbl_option, modified_sf_sfclay_option, modified_sf_surface_option
+      CHARACTER (LEN=256) :: physics_suite_lowercase
+      CHARACTER (LEN=32) :: formatstring
+
+      max_dom = model_config_rec % max_dom
+
+      !
+      ! Save physics selections as given by the user to later determine if the
+      ! user has overridden any options
+      !
+      modified_mp_option(1:max_dom) = ' '
+      orig_mp_physics(1:max_dom) = model_config_rec % mp_physics(1:max_dom)
+
+      modified_cu_option(1:max_dom) = ' '
+      orig_cu_physics(1:max_dom) = model_config_rec % cu_physics(1:max_dom)
+
+      modified_ra_lw_option(1:max_dom) = ' '
+      orig_ra_lw_physics(1:max_dom) = model_config_rec % ra_lw_physics(1:max_dom)
+
+      modified_ra_sw_option(1:max_dom) = ' '
+      orig_ra_sw_physics(1:max_dom) = model_config_rec % ra_sw_physics(1:max_dom)
+
+      modified_bl_pbl_option(1:max_dom) = ' '
+      orig_bl_pbl_physics(1:max_dom) = model_config_rec % bl_pbl_physics(1:max_dom)
+
+      modified_sf_sfclay_option(1:max_dom) = ' '
+      orig_sf_sfclay_physics(1:max_dom) = model_config_rec % sf_sfclay_physics(1:max_dom)
+
+      modified_sf_surface_option(1:max_dom) = ' '
+      orig_sf_surface_physics(1:max_dom) = model_config_rec % sf_surface_physics(1:max_dom)
+
+      CALL change_to_lower_case(trim(model_config_rec % physics_suite), physics_suite_lowercase)
+
+      !
+      ! If physics suite is 'none', we can return early
+      !
+      IF ( trim(physics_suite_lowercase) == 'none' ) THEN
+         CALL wrf_message ('*************************************')
+         CALL wrf_message ('No physics suite selected.')
+         CALL wrf_message ('Physics options will be used directly from the namelist.')
+         CALL wrf_message ('*************************************')
+         RETURN
+      END IF
+
+      CALL wrf_message ('*************************************')
+      CALL wrf_message ('Configuring physics suite '''//trim(physics_suite_lowercase)//'''')
+      CALL wrf_message ('')
+
+      !
+      ! Set options based on the suite selection
+      !
+      SELECT CASE ( trim(physics_suite_lowercase) )
+
+      !
+      ! CONUS suite
+      !
+      CASE ('conus')
+         DO i = 1, max_dom
+
+            IF ( model_config_rec % cu_physics(i) == -1 ) model_config_rec % cu_physics(i) = TIEDTKESCHEME               ! Tiedtke
+            IF ( model_config_rec % mp_physics(i) == -1 ) model_config_rec % mp_physics(i) = THOMPSON                    ! Thompson
+            IF ( model_config_rec % ra_lw_physics(i) == -1 ) model_config_rec % ra_lw_physics(i) = RRTMG_LWSCHEME        ! RRTMG LW
+            IF ( model_config_rec % ra_sw_physics(i) == -1 ) model_config_rec % ra_sw_physics(i) = RRTMG_SWSCHEME        ! RRTMG SW
+            IF ( model_config_rec % bl_pbl_physics(i) == -1 ) model_config_rec % bl_pbl_physics(i) = MYJPBLSCHEME        ! MYJ
+            IF ( model_config_rec % sf_sfclay_physics(i) == -1 ) model_config_rec % sf_sfclay_physics(i) = MYJSFCSCHEME  ! MYJ
+            IF ( model_config_rec % sf_surface_physics(i) == -1 ) model_config_rec % sf_surface_physics(i) = LSMSCHEME   ! Noah
+
+         END DO
+
+      !
+      ! Tropical suite
+      !
+      CASE ('tropical')
+         DO i = 1, max_dom
+
+            IF ( model_config_rec % cu_physics(i) == -1 ) model_config_rec % cu_physics(i) = NTIEDTKESCHEME              ! New Tiedtke
+            IF ( model_config_rec % mp_physics(i) == -1 ) model_config_rec % mp_physics(i) = WSM6SCHEME                  ! WSM6
+            IF ( model_config_rec % ra_lw_physics(i) == -1 ) model_config_rec % ra_lw_physics(i) = RRTMG_LWSCHEME        ! RRTMG LW
+            IF ( model_config_rec % ra_sw_physics(i) == -1 ) model_config_rec % ra_sw_physics(i) = RRTMG_SWSCHEME        ! RRTMG SW
+            IF ( model_config_rec % bl_pbl_physics(i) == -1 ) model_config_rec % bl_pbl_physics(i) = YSUSCHEME           ! YSU
+            IF ( model_config_rec % sf_sfclay_physics(i) == -1 ) model_config_rec % sf_sfclay_physics(i) = SFCLAYSCHEME  ! MM5
+            IF ( model_config_rec % sf_surface_physics(i) == -1 ) model_config_rec % sf_surface_physics(i) = LSMSCHEME   ! Noah
+
+         END DO
+
+      CASE DEFAULT
+         CALL wrf_error_fatal ( 'Unrecognized physics suite' )
+
+      END SELECT
+
+      WRITE (formatstring, '(A,I3,A)') '(A21,', max_dom, '(I6,A1))'
+
+      !
+      ! Print microphysics options
+      !
+      WHERE (model_config_rec % mp_physics(1:max_dom) == orig_mp_physics(1:max_dom)) modified_mp_option(1:max_dom) = '*'
+      WRITE (wrf_err_message, FMT=TRIM(formatstring)) 'mp_physics: ', &
+                                                    (model_config_rec % mp_physics(i), modified_mp_option(i), i=1,max_dom)
+      CALL wrf_message (wrf_err_message)
+
+      !
+      ! Print cumulus options
+      !
+      WHERE (model_config_rec % cu_physics(1:max_dom) == orig_cu_physics(1:max_dom)) modified_cu_option(1:max_dom) = '*'
+      WRITE (wrf_err_message, FMT=TRIM(formatstring)) 'cu_physics: ', &
+                                                    (model_config_rec % cu_physics(i), modified_cu_option(i), i=1,max_dom)
+      CALL wrf_message (wrf_err_message)
+
+      !
+      ! Print LW radiation options
+      !
+      WHERE (model_config_rec % ra_lw_physics(1:max_dom) == orig_ra_lw_physics(1:max_dom)) modified_ra_lw_option(1:max_dom) = '*'
+      WRITE (wrf_err_message, FMT=TRIM(formatstring)) 'ra_lw_physics: ', &
+                                                    (model_config_rec % ra_lw_physics(i), modified_ra_lw_option(i), i=1,max_dom)
+      CALL wrf_message (wrf_err_message)
+
+      !
+      ! Print SW radiation options
+      !
+      WHERE (model_config_rec % ra_sw_physics(1:max_dom) == orig_ra_sw_physics(1:max_dom)) modified_ra_sw_option(1:max_dom) = '*'
+      WRITE (wrf_err_message, FMT=TRIM(formatstring)) 'ra_sw_physics: ', &
+                                                    (model_config_rec % ra_sw_physics(i), modified_ra_sw_option(i), i=1,max_dom)
+      CALL wrf_message (wrf_err_message)
+
+      !
+      ! Print boundary layer options
+      !
+      WHERE (model_config_rec % bl_pbl_physics(1:max_dom) == orig_bl_pbl_physics(1:max_dom)) modified_bl_pbl_option(1:max_dom) = '*'
+      WRITE (wrf_err_message, FMT=TRIM(formatstring)) 'bl_pbl_physics: ', &
+                                                    (model_config_rec % bl_pbl_physics(i), modified_bl_pbl_option(i), i=1,max_dom)
+      CALL wrf_message (wrf_err_message)
+
+      !
+      ! Print surface layer options
+      !
+      WHERE (model_config_rec % sf_sfclay_physics(1:max_dom) == orig_sf_sfclay_physics(1:max_dom)) &
+            modified_sf_sfclay_option(1:max_dom) = '*'
+      WRITE (wrf_err_message, FMT=TRIM(formatstring)) &
+            'sf_sfclay_physics: ', (model_config_rec % sf_sfclay_physics(i), modified_sf_sfclay_option(i), i=1,max_dom)
+      CALL wrf_message (wrf_err_message)
+
+      !
+      ! Print surface options
+      !
+      WHERE (model_config_rec % sf_surface_physics(1:max_dom) == orig_sf_surface_physics(1:max_dom)) &
+            modified_sf_surface_option(1:max_dom) = '*'
+      WRITE (wrf_err_message, FMT=TRIM(formatstring)) &
+            'sf_surface_physics: ', (model_config_rec % sf_surface_physics(i), modified_sf_surface_option(i), i=1,max_dom)
+      CALL wrf_message (wrf_err_message)
+ 
+      !
+      ! Print footnote if any physics schemes were overridden by the user
+      !
+      have_mods = ANY (modified_mp_option(1:max_dom) == '*') &
+             .OR. ANY (modified_cu_option(1:max_dom) == '*') &
+             .OR. ANY (modified_ra_lw_option(1:max_dom) == '*') &
+             .OR. ANY (modified_ra_sw_option(1:max_dom) == '*') &
+             .OR. ANY (modified_bl_pbl_option(1:max_dom) == '*') &
+             .OR. ANY (modified_sf_sfclay_option(1:max_dom) == '*') &
+             .OR. ANY (modified_sf_surface_option(1:max_dom) == '*')
+
+      IF (have_mods) THEN
+         CALL wrf_message ('')
+         CALL wrf_message ('(* = option overrides suite setting)')
+      END IF
+
+      CALL wrf_message ('*************************************')
+
+#endif
+
+   END SUBROUTINE 
+
+!=======================================================================
+
    SUBROUTINE set_physics_rconfigs
 
 !<DESCRIPTION>
@@ -1609,6 +1828,15 @@
       IF ( ( model_config_rec % polar(1) ) .AND. &
            ( model_config_rec % fft_filter_lat .LT. 90. ) ) THEN
          model_config_rec % fft_used = 1
+      END IF
+
+!-----------------------------------------------------------------------
+! This WRF version does not support trajectories on a global domain
+!-----------------------------------------------------------------------
+      IF (  model_config_rec % polar(1) .AND. &
+            model_config_rec % fft_filter_lat .LT. 90. .AND. &
+            model_config_rec % traj_opt .NE. 0 ) THEN
+         CALL wrf_error_fatal ( '--- ERROR: Trajectories not supported on global domain' )
       END IF
 
 !-----------------------------------------------------------------------

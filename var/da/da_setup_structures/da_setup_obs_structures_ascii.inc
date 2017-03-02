@@ -103,10 +103,6 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
             call da_scan_obs_ssmi (iv, filename)
          end if
 
-         if (use_lsac) then
-            call da_scan_obs_lsac(iv)
-         endif
-
          iv%info(:)%plocal(n) = iv%info(:)%nlocal
          iv%info(:)%ptotal(n) = iv%info(:)%ntotal
       end do
@@ -119,10 +115,6 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
       if (use_ssmiretrievalobs .or. use_ssmitbobs) then
          call da_scan_obs_ssmi(iv, 'ob.ssmi')
       end if
-
-      if (use_lsac) then
-         call da_scan_obs_lsac(iv)
-      endif
 
       do i=1,num_ob_indexes
          if (i == radar) cycle
@@ -153,10 +145,6 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
             call da_read_obs_ssmi (iv, filename)
          end if
 
-         if (use_lsac) then
-            call da_read_obs_lsac(iv)
-         end if
-
          do i=1,num_ob_indexes
             if (i == radar) cycle
             iv%info(i)%thin_ptotal(n) = iv%info(i)%thin_ntotal
@@ -171,10 +159,6 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
       if (use_ssmiretrievalobs .or. use_ssmitbobs) then
          ! read ssmi observation file
          call da_read_obs_ssmi (iv, 'ob.ssmi')
-      end if
-
-      if (use_lsac) then
-         call da_read_obs_lsac(iv)
       end if
 
       do i=1,num_ob_indexes

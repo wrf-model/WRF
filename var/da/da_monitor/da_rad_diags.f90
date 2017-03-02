@@ -341,15 +341,10 @@ ntime_loop: do itime = 1, ntime
 
          npixel_loop: do ipixel = ips, ipe
 
-            read(unit=iunit(iproc),fmt='(7x,i7,2x,a19,i3,i3,f6.0,4f8.2,f8.3)',iostat=ios)  &
+            read(unit=iunit(iproc),fmt='(7x,i7,2x,a19,i6,i3,f6.0,4f8.2,f8.3)',iostat=ios)  &
                n, datestr2(ipixel), scanpos(ipixel), landsea_mask(ipixel), elv(ipixel), &
                lat(ipixel), lon(ipixel), satzen(ipixel), satazi(ipixel), ret_clw(ipixel)
-            if ( scanpos(ipixel) > 360 .or. scanpos(ipixel) == 0 ) then
-               backspace(iunit(iproc))
-               read(unit=iunit(iproc),fmt='(7x,i7,2x,a19,i6,i3,f6.0,4f8.2,f8.3)',iostat=ios) &
-               n, datestr2(ipixel), scanpos(ipixel), landsea_mask(ipixel), elv(ipixel), &
-               lat(ipixel), lon(ipixel), satzen(ipixel), satazi(ipixel), ret_clw(ipixel)
-            end if
+
             read(unit=iunit(iproc),fmt='(14x,9f10.2,3i3,3f10.2)',iostat=ios)  &
                t2m(ipixel), mr2m(ipixel), u10(ipixel), v10(ipixel), ps(ipixel), ts(ipixel), &
                smois(ipixel), tslb(ipixel), snowh(ipixel), isflg(ipixel), soiltyp(ipixel),  &

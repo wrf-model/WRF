@@ -631,23 +631,15 @@ module da_control
 
    character (len=filename_len) :: input_file_ens = 'fg_ens'
 
-
    TYPE dual_res_type
-         real :: x
-         real :: y
          integer :: i
          integer :: j
          real    :: dx
          real    :: dy
          real    :: dxm
          real    :: dym
-         integer :: xx
-         integer :: yy
    END TYPE dual_res_type
-
-   TYPE(dual_res_type), allocatable :: ob_locs(:)
-   integer :: total_here
-   
+   TYPE(dual_res_type), allocatable :: aens_locs(:,:)
 
    integer :: num_qcstat_conv(2,num_ob_indexes,num_ob_vars,npres_print+1)
    character*4, parameter :: ob_vars(num_ob_vars) = (/'U   ','V   ','T   ',&
@@ -660,6 +652,7 @@ module da_control
                       299.9,  249.9, 199.9, 149.9, 99.9, 49.9/)
 
    real*8, allocatable :: time_slots(:)
+   integer             :: ifgat_ana !index of First Guess at Appropriate Time of analysis
 
    logical :: global
 

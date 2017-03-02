@@ -78,7 +78,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_satemobs .OR. use_geoamvobs .OR. use_polaramvobs .OR. use_airepobs .OR. use_tamdarobs .OR. &
       use_gpspwobs .OR. use_gpsztdobs .OR. use_gpsrefobs .OR. use_ssmiretrievalobs .OR. &
       use_ssmitbobs .OR. use_ssmt1obs .OR. use_ssmt2obs .OR. use_qscatobs .OR. &
-      use_airsretobs .OR. use_lsac) then
+      use_airsretobs) then
  
       use_obsgts = .true.
    else
@@ -241,7 +241,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
 
    allocate ( time_slots(0:num_fgat_time) )
    call da_get_time_slots(num_fgat_time,time_window_min,analysis_date, &
-                          time_window_max, time_slots)
+                          time_window_max, time_slots, ifgat_ana)
 
    if (use_obsgts) then
       ! Conventional obs can be in BUFR or ascii format

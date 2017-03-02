@@ -57,7 +57,7 @@ module da_setup_structures
       num_pseudo,pseudo_x, pseudo_y, pseudo_z, pseudo_var,pseudo_val, pseudo_err,&
       fg_format, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
       fg_format_wrf_arw_global, fg_format_kma_global, deg_to_rad, rad_to_deg, &
-      sonde_sfc, missing_data, missing_r, qc_good, thin_mesh_conv, time_slots, &
+      sonde_sfc, missing_data, missing_r, qc_good, thin_mesh_conv, time_slots, ifgat_ana, &
       cv_options, cloud_cv_options, cv_size, as1, as2, as3, as4, as5, print_detail_be, &
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, &
       its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, root, comm, ierr, &
@@ -66,7 +66,7 @@ module da_setup_structures
       chi_u_t_factor, chi_u_ps_factor,chi_u_rh_factor, t_u_rh_factor, ps_u_rh_factor, &
       interpolate_stats, be_eta, thin_rainobs, fgat_rain_flags, use_iasiobs, &
       use_seviriobs, jds_int, jde_int, anal_type_hybrid_dual_res, use_amsr2obs, nrange, use_4denvar
-   use da_control, only: rden_bin, use_lsac
+   use da_control, only: rden_bin
    use da_control, only: use_cv_w
    use da_control, only: pseudo_tpw, pseudo_ztd, pseudo_ref, pseudo_uvtpq, pseudo_elv
 
@@ -74,8 +74,7 @@ module da_setup_structures
                       da_fill_obs_structures_rain, da_fill_obs_structures_radar, da_set_obs_missing,da_set_3d_obs_missing
    use da_obs_io, only : da_read_obs_bufr,da_read_obs_radar, &
       da_scan_obs_radar,da_scan_obs_ascii,da_read_obs_ascii, &
-      da_read_obs_bufrgpsro, da_scan_obs_rain, da_read_obs_rain, &
-      da_read_obs_lsac, da_scan_obs_lsac
+      da_read_obs_bufrgpsro, da_scan_obs_rain, da_read_obs_rain
    use da_par_util1, only : da_proc_sum_real, da_proc_sum_int, da_proc_sum_ints
    use da_par_util, only : da_patch_to_global
    use da_lapack, only : dsyev

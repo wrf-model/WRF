@@ -124,6 +124,15 @@ subroutine da_med_initialdata_input (grid, config_flags, filename, in_date)
       write(unit=message(1),fmt='(A,A)') trim(filename), ' appears to be from earlier than WRF V3.9'
       write(unit=message(2),fmt='(A)')   'Setting hybrid_opt = 0'
       call da_message(message(1:2))
+   else
+      ! when input file contains HYBRID_OPT, stop 4DVAR if not terrain-following.
+      if ( var4d ) then
+         if ( grid%hybrid_opt > 0 ) then
+            write(unit=message(1),fmt='(A,I2,A,A)') 'HYBRID_OPT = ', grid%hybrid_opt, ' in ', trim(filename)
+            write(unit=message(2),fmt='(A)') '4DVAR does not work with hybrid vertical coordinate'
+            call da_error(__FILE__,__LINE__,message(1:2))
+         end if
+      end if
    end if
 
    write(unit=message(1),fmt='(A,I2)') 'hybrid_opt = ', grid%hybrid_opt

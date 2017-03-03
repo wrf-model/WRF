@@ -313,9 +313,9 @@ state    real   mub_save        ij     dyn_em      1         -      -           
 state    real   mu0             ij     dyn_em      1         -      i1          "mu0" "initial dry mass in column" "Pa"
 state    real   mudf            ij     dyn_em      1         -      -           "mudf" "" ""
 state    real   muu             ij     dyn_em      1          X     -           "muu"
-i1       real   muus            ij     dyn_em      1          -     
+state    real   muus            ij     dyn_em      1          X     -           "muus"
 state    real   muv             ij     dyn_em      1          Y     -           "muv"
-i1       real   muvs            ij     dyn_em      1          -     
+state    real   muvs            ij     dyn_em      1          Y     -           "muvs"
 state    real   mut             ij     dyn_em      1          -     -           "mut"
 state    real   muts            ij     dyn_em      1          -     -           "muts"
 i1       real   muave           ij     dyn_em      1          -     
@@ -533,8 +533,6 @@ state   real    qir            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QIR"           "Rime ice mass-1 mixing ratio" "kg kg(-1)"
 state   real    qib            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QIB"           "Rime ice volume-1 mixing ratio" "m(3) kg(-1)"
-state   real    ssat           ikjftb  scalar      1         -     \
-   i0rhusdf=(bdy_interp:dt)    "SSAT"           "Absolute supersaturation" "kg kg(-1)"
 
 state   real    -              ikjftb  dfi_scalar      1         -     -   -
 state   real    dfi_qndrop     ikjftb  dfi_scalar      1         -     \
@@ -563,8 +561,6 @@ state   real    dfi_qir        ikjftb  dfi_scalar      1         -     \
    rhusdf=(bdy_interp:dt)    "DFI_QIR"    "DFI Rime ice mass-1 mixing ratio" "kg kg(-1)"
 state   real    dfi_qib        ikjftb  dfi_scalar      1         -     \
    rhusdf=(bdy_interp:dt)    "DFI_QIB"    "DFI Rime ice volume-1 mixing ratio" "m(3) kg(-1)"
-state   real    dfi_ssat       ikjftb  dfi_scalar      1         -     \
-   rhusdf=(bdy_interp:dt)    "DFI_SSAT"   "DFI Absolute supersaturation" "kg kg(-1)"
 state   real    dfi_qke_adv   ikjftb  dfi_scalar      1         -      \
    rusdf=(bdy_interp:dt) "dfi_qke_adv"   "DFI twice TKE from MYNN"      "m2 s-2"
 
@@ -1296,6 +1292,8 @@ state    real  SNOWNCV          ij      misc        1         -      r        "S
 state    real  GRAUPELNCV       ij      misc        1         -      r        "GRAUPELNCV"            "TIME-STEP NONCONVECTIVE GRAUPEL"                         "mm"
 state    real  HAILNCV          ij      misc        1         -      r        "HAILNCV"               "TIME-STEP NONCONVECTIVE HAIL"                            "mm"
 state    real    refl_10cm      ikj     dyn_em      1         -      hdu       "refl_10cm"             "Radar reflectivity (lamda = 10 cm)"  "dBZ"
+state    real    th_old          ikj      misc        1         -      rusd        "TH_OLD"              "Old Value of Th"   "K"
+state    real    qv_old          ikj      misc        1         -      rusd        "QV_OLD"              "Old Value of qv"   "kg kg-1"
 state    real    vmi3d          ikj     misc        1         -     hdu       "v_ice"                 "Mass-weighted ice fallspeed"  "m s-1"
 state    real    di3d           ikj     misc        1         -     hdu       "d_ice"                 "Mass-weighted mean ice size"  "m"
 state    real    rhopo3d        ikj     misc        1         -     hdu       "rho_ice"               "Mass-weighted mean ice density"  "kg m-3"
@@ -2117,9 +2115,10 @@ rconfig   real    vmax_ratio           namelist,tc      max_bogus      -999.   i
 rconfig   real    rankine_lid          namelist,tc      1              -999.   irh    "top pressure limit for the tc bogus scheme"
 
 # Physics
+rconfig   character  physics_suite        namelist,physics      1           "none" rh "Physics suite selection" "physics suite to use for all domains: CONUS, tropical, or none" "character string"
 rconfig   logical  force_read_thompson   namelist,physics      1           .false.
 rconfig   logical  write_thompson_tables   namelist,physics     1           .true.
-rconfig   integer     mp_physics          namelist,physics	max_domains    0       irh       "mp_physics"            ""      ""
+rconfig   integer     mp_physics          namelist,physics	max_domains    -1     irh       "mp_physics"            ""      ""
 #rconfig   integer     milbrandt_ccntype   namelist,physics      max_domains    0       rh       "milbrandt select maritime(1)/continental(2)"  ""      ""
 rconfig   real     nssl_cccn              namelist,physics      max_domains  0.5e9    rh       "Base CCN concentration for NSSL microphysics"  ""      ""
 rconfig   real     nssl_alphah            namelist,physics      max_domains   0       rh       "Graupel PSD shape paramter"  ""      ""
@@ -2151,13 +2150,13 @@ rconfig   real        aitken_mode         namelist,physics      1             30
 rconfig   real        coarse_mode         namelist,physics      1             0.2e6    rh       "coarse_mode"                 ""      ""
 rconfig   integer     do_radar_ref        namelist,physics      1              0       rh       "compute radar reflectivity for a number of schemes"                 ""      ""
 rconfig   integer     compute_radar_ref   derived               1              0       -        "compute_radar_ref" "0/1 flag: compute radar reflectivity, either do_radar_ref=1 .or. (milbrandt or NSSL schemes)"
-rconfig   integer     ra_lw_physics       namelist,physics	max_domains    0       rh       "ra_lw_physics"         ""      ""
-rconfig   integer     ra_sw_physics       namelist,physics	max_domains    0       rh       "ra_sw_physics"         ""      ""
+rconfig   integer     ra_lw_physics       namelist,physics	max_domains    -1      rh       "ra_lw_physics"         ""      ""
+rconfig   integer     ra_sw_physics       namelist,physics	max_domains    -1      rh       "ra_sw_physics"         ""      ""
 rconfig   real    radt                    namelist,physics	max_domains    0       h    "RADT"          ""      ""
 rconfig   real    naer                    namelist,physics      max_domains    1e9     rh   "NAER"          ""      ""
-rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    0       rh       "sf_sfclay_physics"             ""      ""
-rconfig   integer     sf_surface_physics  namelist,physics	max_domains    0       rh       "sf_surface_physics"            ""      ""
-rconfig   integer     bl_pbl_physics      namelist,physics	max_domains    0       rh       "bl_pbl_physics"                ""      ""
+rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    -1      rh       "sf_sfclay_physics"             ""      ""
+rconfig   integer     sf_surface_physics  namelist,physics	max_domains    -1      rh       "sf_surface_physics"            ""      ""
+rconfig   integer     bl_pbl_physics      namelist,physics	max_domains    -1      rh       "bl_pbl_physics"                ""      ""
 rconfig   integer     bl_mynn_tkebudget   namelist,physics      max_domains    0       rh       "bl_mynn_tkebudget"             ""      ""
 rconfig   integer     ysu_topdown_pblmix  namelist,physics      1              0       rh       "ysu_topdown_pblmix"            ""      ""
 rconfig   integer     shinhong_tke_diag   namelist,physics      max_domains    0       rh       "shinhong_tke_diag"             ""      ""
@@ -2174,7 +2173,7 @@ rconfig   integer     icloud_bl           namelist,physics      1              1
 rconfig   integer     mfshconv            namelist,physics      max_domains    1       rh       "mfshconv"         "To activate mass flux scheme with qnse, 1=true or 0=false"      ""
 rconfig   integer     sf_urban_physics    namelist,physics      max_domains    0       rh       "sf_urban_physics"     "activate urban model  0=no, 1=Noah_UCM 2=BEP_UCM"   ""
 rconfig   real    BLDT                    namelist,physics      max_domains    0       h    "BLDT"          ""      ""
-rconfig   integer cu_physics              namelist,physics      max_domains    0       rh   "cu_physics"    ""      ""
+rconfig   integer cu_physics              namelist,physics      max_domains    -1      rh   "cu_physics"    ""      ""
 rconfig   integer shcu_physics            namelist,physics      max_domains    0       rh   "shcu_physics"  ""      ""
 rconfig   integer cu_diag                 namelist,physics      max_domains    0       rh   "cu_diag"       "additional t-averaged stuff for cuphys"      ""
 rconfig   integer kf_edrates              namelist,physics      max_domains    0       rh   "kf_edrates"           "output entrainment/detrainment rates and convective timescale for KF schemes"      ""
@@ -2632,8 +2631,8 @@ package   nssl_1mom       mp_physics==19               -             moist:qv,qc
 package   nssl_1momlfo    mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
 package   nssl_2momg      mp_physics==22               -             moist:qv,qc,qr,qi,qs,qg;scalar:qndrop,qnr,qni,qns,qng,qvolg;state:re_cloud,re_ice,re_snow
 package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow,qnwfa2d,taod5503d,taod5502d
-package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi;scalar:qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm
-package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi;scalar:qnc,ssat,qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm
+package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi;scalar:qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
+package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi;scalar:qnc,qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 
 package   radar_refl      compute_radar_ref==1         -             state:refl_10cm,refd_max
@@ -2661,7 +2660,7 @@ package   nssl_1mom_dfi     mp_physics_dfi==19       -             dfi_moist:dfi
 package   nssl_1momlfo_dfi  mp_physics_dfi==21       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
 package   thompsonaero_dfi  mp_physics_dfi==28       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qnc,dfi_qnwfa,dfi_qnifa;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   p3_1category_dfi  mp_physics_dfi==50       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
-package   p3_1category_nc_dfi  mp_physics_dfi==51    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qnc,dfi_ssat,dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
+package   p3_1category_nc_dfi  mp_physics_dfi==51    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qnc,dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
 package   etampnew_dfi      mp_physics_dfi==95       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs;dfi_scalar:dfi_qt
 
 package   noprogn       progn==0                     -             -
@@ -3003,6 +3002,7 @@ period    PERIOD_EM_COUPLE_B dyn_em 3:ph_1,ph_2,w_1,w_2,t_1,t_2,u_1,u_2,v_1,v_2,
 
 #cyl for trajectory 
 halo      HALO_EM_F dyn_em  24:muu,muv,mut
+halo      HALO_EM_F_1 dyn_em  24:muus,muvs
 
 ## For moving nests
 #halo      em_shift_halo_y  dyn_em 48:imask_nostag,imask_xstag,imask_ystag,imask_xystag,u_2,v_2,t_2
@@ -3048,6 +3048,8 @@ period    PERIOD_BDY_EM_C dyn_em 2:u_2,u_save,v_2,v_save,t_2,t_save,muv,msfvx,ms
 period    PERIOD_BDY_EM_D dyn_em 3:u_2,v_2,w_2,t_2,ph_2,mu_2,tke_2
 period    PERIOD_BDY_EM_D3 dyn_em 3:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,mu_1,mu_2
 period    PERIOD_EM_DA dyn_em 2:ru_m,rv_m,ww_m,mut,muts
+period    PERIOD_EM_F dyn_em 2:muus,muvs
+period    PERIOD_EM_G dyn_em 2:msftx,msfux,msfvy
 period    PERIOD_EM_THETAM dyn_em 3:t_1,t_2,h_diabatic
 
 #

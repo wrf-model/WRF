@@ -39,9 +39,9 @@
     INTEGER km_opt, diff_opt, damp_opt,  &
             mp_physics, ra_lw_physics, ra_sw_physics, sf_sfclay_physics, &
             sf_surface_physics, bl_pbl_physics, cu_physics, hypsometric_opt, sf_lake_physics, &
-            use_theta_m, use_maxw_level, use_trop_level
+            use_theta_m, use_maxw_level, use_trop_level,hybrid_opt
     INTEGER swint_opt, aer_type,aer_aod550_opt,aer_angexp_opt,aer_ssa_opt,aer_asy_opt, aer_opt
-    REAL    aer_aod550_val,aer_angexp_val,aer_ssa_val,aer_asy_val
+    REAL    aer_aod550_val,aer_angexp_val,aer_ssa_val,aer_asy_val,etac
     REAL    khdif, kvdif, swrad_scat, dampcoef,radt,bldt,cudt
     REAL    dt, adapt_dt_start, adapt_dt_min, adapt_dt_max
     INTEGER sf_urban_physics, w_damping, smooth_option, feedback, surface_input_source, sst_update
@@ -193,6 +193,14 @@
     CALL nl_get_tracer_pblmix  ( grid%id , tracer_pblmix )
     CALL nl_get_ysu_topdown_pblmix  ( grid%id , ysu_topdown_pblmix )
     CALL nl_get_grav_settling  ( grid%id , grav_settling )
+
+#if ( HYBRID_COORD==1 )
+    CALL nl_get_hybrid_opt ( 1       , hybrid_opt )
+    CALL nl_get_etac       ( 1       , etac )
+    IF ( hybrid_opt .EQ. 0 ) THEN
+       etac = 0.
+    END IF
+#endif
 
     IF ( grid_fdda == 1 ) THEN
     CALL nl_get_fgdt       ( grid%id , fgdt )
@@ -931,6 +939,18 @@ endif
         CALL wrf_put_dom_td_char ( fid , 'THISBDYTIME' ,  current_date(1:19), current_date(1:19), ierr )
         CALL wrf_put_dom_td_char ( fid , 'NEXTBDYTIME' ,  current_date(1:19), next_datestr(1:19), ierr )
     ENDIF
+
+    !  Add the hybrid vertical coordinate metadata.
+
+#if (EM_CORE == 1)
+# if ! ( HYBRID_COORD==1 )
+    CALL wrf_put_dom_ti_integer ( fid , 'HYBRID_OPT',          -1  , 1 , ierr )
+    CALL wrf_put_dom_ti_real    ( fid , 'ETAC'      ,           0. , 1 , ierr )
+# else
+    CALL wrf_put_dom_ti_integer ( fid , 'HYBRID_OPT',  hybrid_opt  , 1 , ierr )
+    CALL wrf_put_dom_ti_real    ( fid , 'ETAC'      ,  etac        , 1 , ierr )
+# endif
+#endif
 
     ! added grib2-specific metadata:  Todd Hutchinson 8/21/2005
     IF ( use_package( io_form ) == IO_GRIB2 ) THEN

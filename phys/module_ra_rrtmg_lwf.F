@@ -15874,6 +15874,20 @@ integer,external :: omp_get_thread_num
                   resnow1D(icol,K) = 10.0
                ENDDO
             ENDIF
+
+! special case for P3 microphysics
+! put ice into snow category for optics, then set ice to zero
+            IF (has_reqs .eq. 0 .and. has_reqi .ne. 0 .and. has_reqc .ne. 0) THEN
+               inflglw  = 5
+               iceflglw = 5
+               DO K=kts,kte
+                  resnow1D(ncol,K) = MAX(10., re_ice(I,K,J)*1.E6)
+                  QS1D(K)=QI3D(I,K,J)
+                  QI1D(K)=0.
+                  reice1D(ncol,K)=10.
+               END DO
+            END IF
+
          ENDIF
 
 ! Layer indexing goes bottom to top here for all fields.

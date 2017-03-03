@@ -1063,6 +1063,28 @@ integer::oops1,oops2
                END DO
             END DO
 
+         ELSE IF ( flag_qv .EQ. 1 ) THEN
+            IF ( grid%p_gc(i_valid,num_metgrid_levels,j_valid) .LT. grid%p_gc(i_valid,2,j_valid) ) THEN
+               k = 2
+            ELSE
+               k = num_metgrid_levels
+            END IF
+
+            DO j = jts, MIN(jte,jde-1)
+               DO k = 1 , num_metgrid_levels
+                  DO i = its, MIN(ite,ide-1)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
+                     sat_vap_pres_mb = 0.6112*10.*EXP(17.67*(grid%t_gc(i,k,j)-273.15)/(grid%t_gc(i,k,j)-29.65))
+                     vap_pres_mb = grid%qv_gc(i,k,j) * grid%p_gc(i,k,j)/100. / (grid%qv_gc(i,k,j) + 0.622 )
+                     IF ( sat_vap_pres_mb .GT. 0 ) THEN
+                        grid%rh_gc(i,k,j) = ( vap_pres_mb / sat_vap_pres_mb ) * 100.
+                     ELSE
+                        grid%rh_gc(i,k,j) = 0.
+                     END IF
+                  END DO
+               END DO
+            END DO
+
          END IF
 
          !  Some data sets do not provide a 3d geopotential height field.  

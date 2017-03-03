@@ -732,7 +732,6 @@ SUBROUTINE calc_ww_cp ( u, v, mup, mub, c1h, c2h, ww,    &
       DO j=jts,jtf
       DO i=its,min(ite+1,ide)
         ! u is always coupled with my
-!       MUU(i,j) = 0.5*(MUP(i,j)+MUB(i,j)+MUP(i-1,j)+MUB(i-1,j))/msfuy(i,j)
         MUU(i,j) = 0.5*(MUP(i,j)+MUB(i,j)+MUP(i-1,j)+MUB(i-1,j))
       ENDDO
       ENDDO
@@ -740,7 +739,6 @@ SUBROUTINE calc_ww_cp ( u, v, mup, mub, c1h, c2h, ww,    &
       DO j=jts,min(jte+1,jde)
       DO i=its,itf
        ! v is always coupled with mx
-!       MUV(i,j) = 0.5*(MUP(i,j)+MUB(i,j)+MUP(i,j-1)+MUB(i,j-1))*msfvx_inv(i,j)
         MUV(i,j) = 0.5*(MUP(i,j)+MUB(i,j)+MUP(i,j-1)+MUB(i,j-1))
       ENDDO
       ENDDO

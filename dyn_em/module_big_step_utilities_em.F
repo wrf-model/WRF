@@ -732,14 +732,16 @@ SUBROUTINE calc_ww_cp ( u, v, mup, mub, c1h, c2h, ww,    &
       DO j=jts,jtf
       DO i=its,min(ite+1,ide)
         ! u is always coupled with my
-        MUU(i,j) = 0.5*(MUP(i,j)+MUB(i,j)+MUP(i-1,j)+MUB(i-1,j))/msfuy(i,j)
+!       MUU(i,j) = 0.5*(MUP(i,j)+MUB(i,j)+MUP(i-1,j)+MUB(i-1,j))/msfuy(i,j)
+        MUU(i,j) = 0.5*(MUP(i,j)+MUB(i,j)+MUP(i-1,j)+MUB(i-1,j))
       ENDDO
       ENDDO
 
       DO j=jts,min(jte+1,jde)
       DO i=its,itf
        ! v is always coupled with mx
-        MUV(i,j) = 0.5*(MUP(i,j)+MUB(i,j)+MUP(i,j-1)+MUB(i,j-1))*msfvx_inv(i,j)
+!       MUV(i,j) = 0.5*(MUP(i,j)+MUB(i,j)+MUP(i,j-1)+MUB(i,j-1))*msfvx_inv(i,j)
+        MUV(i,j) = 0.5*(MUP(i,j)+MUB(i,j)+MUP(i,j-1)+MUB(i,j-1))
       ENDDO
       ENDDO
 
@@ -780,8 +782,8 @@ SUBROUTINE calc_ww_cp ( u, v, mup, mub, c1h, c2h, ww,    &
         DO k=kts,ktf
         DO i=its,itf
 
-          divv(i,k) = msftx(i,j)*dnw(k)*( rdx*(muu(i+1,j)*u(i+1,k,j)-muu(i,j)*u(i,k,j))  &
-                                        +rdy*(muv(i,j+1)*v(i,k,j+1)-muv(i,j)*v(i,k,j))   )
+          divv(i,k) = msftx(i,j)*dnw(k)*( rdx*(muu(i+1,j)*u(i+1,k,j)/msfuy(i+1,j)-muu(i,j)*u(i,k,j)/msfuy(i,j))  &
+                                        +rdy*(muv(i,j+1)*v(i,k,j+1)*msfvx_inv(i,j+1)-muv(i,j)*v(i,k,j)*msfvx_inv(i,j))   )
 
 !          dmdt(i) = dmdt(i) + dnw(k)* ( rdx*(ru(i+1,k,j)-ru(i,k,j))  &
 !                                       +rdy*(rv(i,k,j+1)-rv(i,k,j))   )

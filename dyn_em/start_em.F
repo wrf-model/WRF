@@ -529,9 +529,9 @@
          grid%c3h(k) = grid%znu(k)
          grid%c4h(k) = 0.
 #elif ( HYBRID_COORD==1 )
-         IF ( c1f(1) .NE. 1. ) THEN
+         IF ( grid%c1f(1) .NE. 1. ) THEN
             CALL wrf_debug ( 0 , '---- WARNING : Maybe old non-HVC input, setting default 1d array values for TF' )
-            IF ( grid%hybrid_opt .NE 0 ) THEN
+            IF ( grid%hybrid_opt .NE. 0 ) THEN
                CALL wrf_error_fatal ( '---- Error : Cannot use old input and try to use hybrid vertical coordinate option' )
             END IF
             grid%c1f(k) = 1.

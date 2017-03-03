@@ -819,16 +819,15 @@ CONTAINS
            wt=.5*TANH((zwk - (zi2+h1))/h2) + .5
            tau_cloud = tau_cloud*(1.-wt) + 50.*wt
 
-           elb_cloud = MIN(tau_cloud*SQRT(MIN(qtke(k),20.)), zwk)
-           elb = elb_cloud
-           elf = elb_cloud
+           elb = MIN(tau_cloud*SQRT(MIN(qtke(k),20.)), zwk)
+           elf = elb
            elb_mf = elb
            IF (zwk > zi .AND. elf > 500.) THEN
              ! COMPUTE BouLac mixing length for dry conditions in free atmosphere
              CALL boulac_length0(k,kts,kte,zw,dz,qtke,thetaw,elBLmin0,elBLavg0)
-             elf = alp5*elBLavg0*(1.-cldfra_bl1D(k)) + elb_cloud*cldfra_bl1D(k)
+             elf = alp5*elBLavg0*(1.-cldfra_bl1D(k)) + elf*cldfra_bl1D(k)
            END IF
-           elf = elf*(1.-cldfra_bl1D(k)) + elb_cloud*cldfra_bl1D(k)
+           elf = elf*(1.-cldfra_bl1D(k)) + elb*cldfra_bl1D(k)
 
          END IF
        END IF

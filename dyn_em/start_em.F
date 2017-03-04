@@ -900,6 +900,23 @@
         ( ( grid%dfi_opt .EQ. DFI_NODFI ) .OR. ( grid%dfi_stage .EQ. DFI_FST ) ) ) THEN
 
 !  Calculate any variables that were not set
+!BPR BEGIN
+!     This subroutine is called more than once at the first time step for a
+!     given domain.  The following if statement is to prevent the code in
+!     the if statement from executing more than once per domain at the
+!     beginning of the model run (since last_step_update=-1 the first time
+!     this is reached and should be =0 after this).
+!     Without this if statement, when this code was executed for the second
+!     time it can result in grid%dt being set incorrectly.
+!     -This is because grid%dt will be set equal to grid%starting_time_step
+!      which ignores a possible denominator in the starting time step.
+!     -The first time this code is reached is also does this, but then the
+!      call to adapt_timestep correct this
+!     -Subsequent times this code is reached adapt_timestep will not correct
+!      this because it will recognize that it has already been executed for
+!      this timestep and exit out before doing the calculation.
+
+      if (grid%last_step_updated .NE. grid%itimestep) then
 
       if (grid%starting_time_step == -1) then
          grid%starting_time_step = NINT(4 * MIN(grid%dx,grid%dy) / 1000)
@@ -937,6 +954,8 @@
       CALL wrf_dm_maxval(grid%max_msftx, idex, jdex)
       CALL wrf_dm_maxval(grid%max_msfty, idex, jdex)
 #endif
+      end if
+!BPR END
 
 !     This first call just initializes variables.
 !     If a restart, get initialized variables from restart file

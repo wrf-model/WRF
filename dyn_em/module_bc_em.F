@@ -281,17 +281,12 @@ CONTAINS
            j_start = max(jts-1, jds)
            j_end = min(jte+1, jde-1)
 
-!          CALL mass_weight ( ph , mut , rfield , c1f, c2f, &
-!                             ids,ide, jds,jde, kds,kde,    &        ! domain dims
-!                             ims,ime, jms,jme, kms,kme,    &        ! memory dims
-!                             i_start,i_end, j_start,j_end, kts,kte)  ! tile dims
-do j = j_start,j_end
-do k = kts,kte
-do i = i_start,i_end
-rfield(i,k,j) = ph(i,k,j)*(c1f(k)*MUT(i,j)+c2f(k))
-end do
-end do
-end do
+           CALL mass_weight ( ph , mut , rfield , c1f, c2f, &
+                              ids,ide, jds,jde, kds,kde,    &        ! domain dims
+                              ims,ime, jms,jme, kms,kme,    &        ! memory dims
+                              its-1,ite+1 , jts-1,jte+1 ,   &        ! rfield dims
+                              kts,kte,                      &        ! rfield
+                              i_start,i_end, j_start,j_end, kts,kte)  ! tile dims
 
            CALL relax_bdytend_tile ( rfield, ph_tendf,             &
                                ph_bxs,ph_bxe,ph_bys,ph_bye, ph_btxs,ph_btxe,ph_btys,ph_btye,       &
@@ -304,17 +299,12 @@ end do
                                its,ite, jts,jte, kts,kte,  &
                                its-1, ite+1, jts-1,jte+1,kts,kte )  ! dims of first argument
 
-!          CALL mass_weight ( t,   mut , rfield , c1h, c2h, &
-!                             ids,ide, jds,jde, kds,kde,    &         ! domain dims
-!                             ims,ime, jms,jme, kms,kme,    &         ! memory dims
-!                             i_start,i_end, j_start,j_end, kts,kte-1) ! tile dims
-do j = j_start,j_end
-do k = kts,kte-1
-do i = i_start,i_end
-rfield(i,k,j) = t(i,k,j)*(c1h(k)*MUT(i,j)+c2h(k))
-end do
-end do
-end do
+           CALL mass_weight ( t,   mut , rfield , c1h, c2h, &
+                              ids,ide, jds,jde, kds,kde,    &         ! domain dims
+                              ims,ime, jms,jme, kms,kme,    &         ! memory dims
+                              its-1,ite+1 , jts-1,jte+1 ,   &        ! rfield dims
+                              kts,kte,                      &        ! rfield
+                              i_start,i_end, j_start,j_end, kts,kte-1) ! tile dims
 
            CALL relax_bdytend_tile ( rfield, t_tendf,              &
                                t_bxs,t_bxe,t_bys,t_bye, t_btxs,t_btxe,t_btys,t_btye,       &
@@ -344,17 +334,12 @@ end do
            j_start = max(jts-1, jds)
            j_end = min(jte+1, jde-1)
 
-!          CALL mass_weight ( w , mut , rfield , c1f, c2f, &
-!                             ids,ide, jds,jde, kds,kde,   &        ! domain dims
-!                             ims,ime, jms,jme, kms,kme,   &        ! memory dims
-!                             i_start,i_end, j_start,j_end, kts,kte) ! tile dims
-do j = j_start,j_end
-do k = kts,kte
-do i = i_start,i_end
-rfield(i,k,j) = w(i,k,j)*(c1f(k)*MUT(i,j)+c2f(k))
-end do
-end do
-end do
+           CALL mass_weight ( w , mut , rfield , c1f, c2f, &
+                              ids,ide, jds,jde, kds,kde,   &        ! domain dims
+                              ims,ime, jms,jme, kms,kme,   &        ! memory dims
+                              its-1,ite+1 , jts-1,jte+1 ,  &        ! rfield dims
+                              kts,kte,                     &        ! rfield
+                              i_start,i_end, j_start,j_end, kts,kte) ! tile dims
 
            CALL relax_bdytend_tile ( rfield, rw_tendf,             &
                                w_bxs,w_bxe,w_bys,w_bye, w_btxs,w_btxe,w_btys,w_btye,       &
@@ -418,6 +403,7 @@ end do
            CALL mass_weight ( scalar , mu , rscalar, c1h, c2h, &
                               ids,ide, jds,jde, kds,kde,   &          ! domain dims
                               ims,ime, jms,jme, kms,kme,   &          ! memory dims
+                              ims,ime, jms,jme, kms,kme,   &          ! rfield dims
                               i_start,i_end, j_start,j_end, kts,kte-1) ! tile dims
 
            CALL relax_bdytend (rscalar, scalar_tend,             &
@@ -1740,17 +1726,19 @@ end do
    SUBROUTINE mass_weight  ( field , mut, rfield , c1 , c2 , &
                              ids,ide, jds,jde, kds,kde,      &       ! domain dims
                              ims,ime, jms,jme, kms,kme,      &       ! memory dims
+                             irs,ire, jrs,jre, krs,kre,      &       ! rfield dims
                              its,ite, jts,jte, kts,kte )             ! tile dims
 
       IMPLICIT NONE
 
       INTEGER , INTENT(IN   ) :: ids,ide, jds,jde, kds,kde, &
                                  ims,ime, jms,jme, kms,kme, &
+                                 irs,ire, jrs,jre, krs,kre, &
                                  its,ite, jts,jte, kts,kte 
       REAL , DIMENSION(ims:ime, kms:kme, jms:jme) , INTENT(IN   ) :: field
       REAL , DIMENSION(ims:ime,          jms:jme) , INTENT(IN   ) :: mut
       REAL , DIMENSION(         kms:kme         ) , INTENT(IN   ) :: c1, c2
-      REAL , DIMENSION(ims:ime, kms:kme, jms:jme) , INTENT(  OUT) :: rfield
+      REAL , DIMENSION(irs:ire, krs:kre, jrs:jre) , INTENT(  OUT) :: rfield
 
       !  Local loop counters
 

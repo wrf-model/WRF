@@ -518,6 +518,34 @@
       !  the half eta levels and the base-profile surface pressure.  Compute 1/rho
       !  from equation of state.  The potential temperature is a perturbation from t0.
 
+      DO k = 1, kte
+#if  !( HYBRID_COORD==1 )
+         grid%c1f(k) = 1.
+         grid%c2f(k) = 0.
+         grid%c3f(k) = grid%znw(k)
+         grid%c4f(k) = 0.
+         grid%c1h(k) = 1.
+         grid%c2h(k) = 0.
+         grid%c3h(k) = grid%znu(k)
+         grid%c4h(k) = 0.
+#elif ( HYBRID_COORD==1 )
+         IF ( grid%c1f(1) .NE. 1. ) THEN
+            CALL wrf_debug ( 0 , '---- WARNING : Maybe old non-HVC input, setting default 1d array values for TF' )
+            IF ( grid%hybrid_opt .NE. 0 ) THEN
+               CALL wrf_error_fatal ( '---- Error : Cannot use old input and try to use hybrid vertical coordinate option' )
+            END IF
+            grid%c1f(k) = 1.
+            grid%c2f(k) = 0.
+            grid%c3f(k) = grid%znw(k)
+            grid%c4f(k) = 0.
+            grid%c1h(k) = 1.
+            grid%c2h(k) = 0.
+            grid%c3h(k) = grid%znu(k)
+            grid%c4h(k) = 0.
+         END IF
+#endif
+      END DO
+
       DO j = jts, MIN(jte,jde-1)
          DO i = its, MIN(ite,ide-1)
 

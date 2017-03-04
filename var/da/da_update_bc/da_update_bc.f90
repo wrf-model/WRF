@@ -281,13 +281,22 @@ program da_update_bc
    c1h(:) = 1.0
    c2h(:) = 0.0
 
-   !hcl make sure the global attribute HYBRID_OPT is included in the WRF mods
    call da_get_gl_att_int_cdf(da_file, 'HYBRID_OPT', hybrid_opt, debug, io_status)
-   if ( io_status == NF_NOERR ) then
+   if ( io_status == NF_NOERR .and. hybrid_opt > 0 ) then
+      ! when HYBRID_OPT is available from the file (V3.9 and later)
+      ! use C1F,C2F,C1H,C2H from the file
       call da_get_var_1d_real_cdf( da_file, 'C1F', c1f, nlevf, 1, debug)
       call da_get_var_1d_real_cdf( da_file, 'C2F', c2f, nlevf, 1, debug)
       call da_get_var_1d_real_cdf( da_file, 'C1H', c1h, nlevh, 1, debug)
       call da_get_var_1d_real_cdf( da_file, 'C2H', c2h, nlevh, 1, debug)
+   end if
+
+   write(stdout,*) 'hybrid_opt = ', hybrid_opt
+   if ( debug ) then
+      write(stdout,*) 'c1f = ', c1f
+      write(stdout,*) 'c2f = ', c2f
+      write(stdout,*) 'c1h = ', c1h
+      write(stdout,*) 'c2h = ', c2f
    end if
 
    ! For 2D variables

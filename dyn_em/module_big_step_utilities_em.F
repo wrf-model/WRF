@@ -2590,15 +2590,15 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
    max_horiz_cfl = 0.
    total = 0
 
-   IF(config_flags%map_proj == PROJ_CASSINI ) then
+   IF(config_flags%polar ) then
      msfxffl = 1.0/COS(config_flags%fft_filter_lat*degrad) 
    END IF
 
    IF ( config_flags%w_damping == 1 ) THEN
 #ifdef OPTIMIZE_CFL_TEST
 ! 20121025, L. Meadows vector optimization does not include special case for Cassini
-     IF(config_flags%map_proj == PROJ_CASSINI ) then
-       CALL wrf_error_fatal('module_big_step_utilities_em.F: -DOPTIMIZE_CFL_TEST option does not support PROJ_CASSINI')
+     IF(config_flags%polar ) then
+       CALL wrf_error_fatal('module_big_step_utilities_em.F: -DOPTIMIZE_CFL_TEST option does not support global domains')
      END IF
 #endif
 
@@ -2615,7 +2615,7 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
            max_vert_cfl = vert_cfl
         ENDIF
 #  else
-        IF(config_flags%map_proj == PROJ_CASSINI ) then
+        IF(config_flags%polar ) then
            msfuxt = MIN(msfux(i,j), msfxffl)
         ELSE
            msfuxt = msfux(i,j)
@@ -2673,7 +2673,7 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
         ENDIF
 #  else
 ! L. Meadows MIC optimization, 20121025
-        IF(config_flags%map_proj == PROJ_CASSINI ) then
+        IF(config_flags%polar ) then
            msfuxt = MIN(msfux(i,j), msfxffl)
         ELSE
            msfuxt = msfux(i,j)

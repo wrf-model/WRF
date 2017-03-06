@@ -768,11 +768,13 @@ CONTAINS
       new_grid%max_tiles   = 0
       new_grid%num_tiles_spec   = 0
       new_grid%nframes   = 0         ! initialize the number of frames per file (array assignment)
-#if (EM_CORE == 1)
-      new_grid%stepping_to_time = .FALSE.
-      new_grid%adaptation_domain = 1
-      new_grid%last_step_updated = -1
-#endif
+!BPR BEGIN
+!#if (EM_CORE == 1)
+!      new_grid%stepping_to_time = .FALSE.
+!      new_grid%adaptation_domain = 1
+!      new_grid%last_step_updated = -1
+!#endif
+!BPR BEGIN
 
 !      IF (active) THEN
         ! only allocate state if this set of tasks actually computes that domain, jm 20140822
@@ -790,6 +792,16 @@ CONTAINS
 !        WRITE (wrf_err_message,*)"Not allocating storage for domain ",domain_id," on this set of tasks"
 !        CALL wrf_message(TRIM(wrf_err_message))
 !      ENDIF
+
+!BPR BEGIN
+#if (EM_CORE == 1)
+!Set these here, after alloc_space_field, which initializes at least last_step_updated to zero
+      new_grid%stepping_to_time = .FALSE.
+      new_grid%adaptation_domain = 1
+      new_grid%last_step_updated = -1
+#endif
+!BPR END
+
 #if MOVE_NESTS
 !set these here, after alloc_space_field, which initializes vc_i, vc_j to zero
       new_grid%xi = -1.0

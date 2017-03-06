@@ -41,7 +41,7 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
                  ,period_bdy_em_d_sub,period_bdy_em_e_sub,period_bdy_em_moist2_sub         &
                  ,period_bdy_em_moist_old_sub,period_bdy_em_moist_sub                      &
                  ,period_bdy_em_scalar2_sub,period_bdy_em_scalar_old_sub                   &
-                 ,period_bdy_em_scalar_sub,period_bdy_em_tke_old_sub                       &
+                 ,period_bdy_em_scalar_sub,period_bdy_em_tke_old_sub,period_bdy_em_tke_sub &
                  ,period_bdy_em_tracer2_sub,period_bdy_em_tracer_old_sub                   &
                  ,period_bdy_em_tracer_sub,period_em_da_sub,period_em_hydro_uv_sub 
 #endif
@@ -4021,6 +4021,7 @@ BENCH_END(g_moist_phys_end_tim)
 #  include "PERIOD_BDY_EM_CHEM.inc"
 #  include "PERIOD_BDY_EM_TRACER.inc"
 #  include "PERIOD_BDY_EM_SCALAR.inc"
+#  include "PERIOD_BDY_EM_TKE.inc"
 #endif
 
 !  now set physical b.c on a patch

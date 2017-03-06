@@ -44,7 +44,7 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
                  ,period_bdy_em_d_sub,period_bdy_em_e_sub,period_bdy_em_moist2_sub         &
                  ,period_bdy_em_moist_old_sub,period_bdy_em_moist_sub                      &
                  ,period_bdy_em_scalar2_sub,period_bdy_em_scalar_old_sub                   &
-                 ,period_bdy_em_scalar_sub,period_bdy_em_tke_old_sub                       &
+                 ,period_bdy_em_scalar_sub,period_bdy_em_tke_old_sub,period_bdy_em_tke_sub &
                  ,period_bdy_em_tracer2_sub,period_bdy_em_tracer_old_sub                   &
                  ,period_bdy_em_tracer_sub,period_em_da_sub,period_em_hydro_uv_sub         &
                  ,halo_em_a_ad_sub,halo_em_d2_3_ad_sub,halo_em_d2_5_ad_sub                 &
@@ -3281,6 +3281,7 @@ BENCH_END(calc_p_rho_tim)
 #  include "PERIOD_BDY_EM_CHEM2.inc"
 #  include "PERIOD_BDY_EM_TRACER2.inc"
 #  include "PERIOD_BDY_EM_SCALAR2.inc"
+#  include "PERIOD_BDY_EM_TKE.inc"
 #endif
 
 BENCH_START(bc_end_tim)

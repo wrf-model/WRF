@@ -492,7 +492,7 @@
             ims,ime, jms,jme, kms,kme,                                 &
             its,ite, jts,jte, kts,kte                                  )
 
-   CASE (RACM_SOA_VBS_KPP)
+   CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
        CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_soa_vbs')
        CALL sum_pm_soa_vbs (                                           &
             alt, chem, h2oaj, h2oai,                                   &

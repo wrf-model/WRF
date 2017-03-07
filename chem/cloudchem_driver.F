@@ -249,7 +249,7 @@
 
 
    CASE ( RADM2SORG_AQCHEM, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, &
-          CB05_SORG_AQ_KPP )
+          CB05_SORG_AQ_KPP,RACM_SOA_VBS_AQCHEM_KPP )
 
        call wrf_debug(15, &
        'cloudchem_driver calling sorgam_aqchem_driver')

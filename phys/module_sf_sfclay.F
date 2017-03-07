@@ -824,6 +824,8 @@ CONTAINS
 !         ZNT(I)=CZO*UST(I)*UST(I)/G+OZO                                   
 ! Since V3.7 (ref: EC Physics document for Cy36r1)
           ZNT(I)=CZO*UST(I)*UST(I)/G+0.11*1.5E-5/UST(I)
+! V3.9: Add limit as in isftcflx = 1,2
+          ZNT(I)=MIN(ZNT(I),2.85e-3)
 ! COARE 3.5 (Edson et al. 2013)
 !         CZC = 0.0017*WSPD(I)-0.005
 !         CZC = min(CZC,0.028)

@@ -8,9 +8,14 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    !    08/08/2016 - Updated to include null-echo assimilation
    !                 (Yu-Shin Kim and Ki-Hong Min, School of Earth System
    !                  Sciences/Kyungpook National University, Daegu, S.Korea)
+   !    03/2017 - radar neighborhood no-rain scheme (radar_non_precip_opt=2)
+   !              requires all processors to call this subroutine
    !-----------------------------------------------------------------------
 
    implicit none
+#ifdef DM_PARALLEL
+   include 'mpif.h'
+#endif
 
    integer,          intent(in)    :: it       ! External iteration.
    type(domain),     intent(in)    :: grid     ! first guess state.
@@ -62,6 +67,20 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
 
    logical           :: echo_non_precip, echo_rf_good
 
+   ! variables for neighborhood no-rain scheme (radar_non_precip_opt=2)
+   integer              :: proc, i_start, i_end, itmp1, itmp2
+   integer              :: norain
+   integer              :: nk, ncount_local, ncount_sum, s
+   integer, allocatable :: ncount_all(:), rec(:)
+   integer, allocatable :: counts(:), displs(:)
+   integer, allocatable :: decrease(:), decrease_glob(:), decrease_local(:)
+   real                 :: range_x, range_y, range_z
+   real                 :: coefa, coefb, coefc
+   real,    allocatable :: rf_local(:), i_local(:), j_local(:), z_local(:)
+   real,    allocatable :: qrn_local(:), qs_local(:), qv_local(:)
+   real,    allocatable :: obs_global(:), x_global(:), y_global(:), z_global(:)
+   real,    allocatable :: qrn_global(:), qs_global(:), qv_global(:)
+
    alog_10 = alog(10.0)
 
    ! Ze=zv*(ro*v)**1.75
@@ -76,7 +95,6 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
 
    irv = 0; irvf = 0; irf = 0; irff = 0
 
-
    ! No point in going through and allocating all these variables if we're just going to quit anyway
 
    if ( use_radar_rf .and. use_radar_rhv ) then
@@ -85,7 +103,7 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
       call da_error(__FILE__,__LINE__,message(1:2))
    end if
 
-
+if ( iv%info(radar)%nlocal > 0 ) then
    allocate (model_p(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_u(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_v(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
@@ -203,6 +221,8 @@ END IF
       end do
    end if
 
+end if ! nlocal>0
+
    ! calculate background/model LCL to be used by use_radar_rqv
    if ( use_radar_rqv .and. cloudbase_calc_opt == 2 ) then
       do j = jts, jte
@@ -212,6 +232,7 @@ END IF
       end do
    end if ! lcl for use_radar_rqv
 
+if ( iv%info(radar)%nlocal > 0 ) then
    do n=iv%info(radar)%n1,iv%info(radar)%n2
 
       if ( use_radar_rf ) then
@@ -460,7 +481,7 @@ END IF
                   iv % radar(n) % rqv(k) % qc = -5
 
                   if ( echo_non_precip ) then ! ob is non-precip
-                     if ( radar_non_precip_opt > 0 ) then ! assimilate non_precip echo
+                     if ( radar_non_precip_opt == 1 ) then ! assimilate non_precip echo
 
                         if ( bg_rf >= 20.0 .and. iv%radar(n)%height(k) > model_lcl(n) ) then
                            iv % radar(n) % rqv(k) % qc = 0
@@ -529,11 +550,207 @@ END IF
          end if  ! not surface or model lid
       end do level_loop
    end do
+end if ! nlocal>0
+
+   if ( use_radar_rqv .and. radar_non_precip_opt == 2 ) then ! neighborhood no-rain scheme
+
+      ncount_local  = 0
+      if ( iv%info(radar)%nlocal > 0 ) then
+         do n = iv%info(radar)%n1,iv%info(radar)%n2
+            do k = 1,iv%info(radar)%levels(n)
+               ncount_local = ncount_local + 1
+            end do
+         end do
+      end if
+
+      allocate (ncount_all(0:num_procs-1))
+#ifdef DM_PARALLEL
+      call mpi_allgather( ncount_local, 1, mpi_integer, &
+                          ncount_all,   1, mpi_integer, comm, ierr )
+#else
+      ncount_all(:) = ncount_local
+#endif
+      ncount_sum = sum(ncount_all)
+
+      allocate ( rf_local(ncount_local))
+      allocate (  i_local(ncount_local))
+      allocate (  j_local(ncount_local))
+      allocate (  z_local(ncount_local))
+      allocate (qrn_local(ncount_local))
+      allocate ( qs_local(ncount_local))
+      allocate ( qv_local(ncount_local))
+
+      if ( iv%info(radar)%nlocal > 0 ) then
+         nk = 0
+         do n = iv%info(radar)%n1,iv%info(radar)%n2
+            do k = 1,iv%info(radar)%levels(n)
+               nk = nk + 1
+               rf_local(nk)  = ob%radar(n)%rf(k)
+               i_local(nk)   = iv%info(radar)%i(k,n)
+               j_local(nk)   = iv%info(radar)%j(k,n)
+               z_local(nk)   = iv%radar(n)%height(k) - iv%radar(n)%stn_loc%elv
+               qrn_local(nk) = model_qrn(k,n)
+               qs_local(nk)  = model_qs(k,n)
+               qv_local(nk)  = model_qv(k,n)
+            end do
+         end do
+      end if
+
+      allocate (obs_global(ncount_sum))
+      allocate (  x_global(ncount_sum))
+      allocate (  y_global(ncount_sum))
+      allocate (  z_global(ncount_sum))
+      allocate (qrn_global(ncount_sum))
+      allocate ( qs_global(ncount_sum))
+      allocate ( qv_global(ncount_sum))
+
+#ifdef DM_PARALLEL
+      allocate (counts(0:num_procs-1))
+      allocate (displs(0:num_procs-1))
+      counts(:) = ncount_all(:)
+      displs(0) = 0
+      do proc = 1, num_procs-1
+         displs(proc) = displs(proc-1) + counts(proc-1)
+      end do
+      call mpi_allgatherv( rf_local, ncount_local, true_mpi_real,     &
+                           obs_global, counts, displs, true_mpi_real, &
+                           comm, ierr )
+      call mpi_allgatherv( i_local, ncount_local, true_mpi_real,      &
+                           x_global, counts, displs, true_mpi_real,   &
+                           comm, ierr )
+      call mpi_allgatherv( j_local, ncount_local, true_mpi_real,      &
+                           y_global, counts, displs, true_mpi_real,   &
+                           comm, ierr )
+      call mpi_allgatherv( z_local, ncount_local, true_mpi_real,      &
+                           z_global, counts, displs, true_mpi_real,   &
+                           comm, ierr )
+      call mpi_allgatherv( qrn_local, ncount_local, true_mpi_real,    &
+                           qrn_global, counts, displs, true_mpi_real, &
+                           comm, ierr )
+      call mpi_allgatherv( qs_local, ncount_local, true_mpi_real,     &
+                           qs_global, counts, displs, true_mpi_real,  &
+                           comm, ierr )
+      call mpi_allgatherv( qv_local, ncount_local, true_mpi_real,     &
+                           qv_global, counts, displs, true_mpi_real,  &
+                           comm, ierr )
+#else
+      obs_global(:) =  rf_local(:)
+        x_global(:) =   i_local(:)
+        y_global(:) =   j_local(:)
+        z_global(:) =   z_local(:)
+      qrn_global(:) = qrn_local(:)
+       qs_global(:) =  qs_local(:)
+       qv_global(:) =  qv_local(:)
+#endif
+
+      deallocate ( rf_local)
+      deallocate (  i_local)
+      deallocate (  j_local)
+      deallocate (  z_local)
+      deallocate (qrn_local)
+      deallocate ( qs_local)
+      deallocate ( qv_local)
+      deallocate(ncount_all)
+
+      ! determine the loop indices (i_start, i_end) for each proc given ncount_sum
+      itmp1 = ncount_sum/num_procs
+      itmp2 = mod(ncount_sum, num_procs)
+      i_start = myproc * itmp1 + 1 + min(myproc, itmp2)
+      i_end   = i_start + itmp1 - 1
+      if (itmp2 > myproc) i_end = i_end + 1
+
+      !todo: range_x/y/z should be namelist variables
+      range_x = 30000.0 !meter
+      range_y = 30000.0 !meter
+      range_z =  3000.0 !meter
+      coefa = (grid%dx/range_x)**2
+      coefb = (grid%dx/range_y)**2
+      coefc = (1.0/range_z)**2
+
+      allocate ( rec(ncount_sum))
+      allocate ( decrease(ncount_sum))
+      decrease(:) = 0
+      do s = i_start, i_end
+         ! if non-precip obs (rf = radar_non_precip_rf)
+         echo_non_precip = abs(obs_global(s) - radar_non_precip_rf) < 0.1
+         if ( echo_non_precip .and. qrn_global(s)>0.0 .and. qv_global(s) > 0.85*qs_global(s))then
+            i=0
+            do n = 1, ncount_sum
+               if ( ((x_global(s)-x_global(n))**2*coefa + &
+                     (y_global(s)-y_global(n))**2*coefb + &
+                     (z_global(s)-z_global(n))**2*coefc) <= 1 ) then
+                  i = i+1
+                  rec(i) = n
+               end if
+            end do
+            if ( i > 0 ) then
+               norain = 0
+               do n = 1, i
+                  if ( abs(obs_global(rec(n)) - radar_non_precip_rf) < 0.1 ) then
+                     norain = norain + 1
+                  end if
+               end do
+               if ( float(norain)/float(i) >= 0.85 ) then
+                  decrease(s) = 1
+               end if
+            end if
+         end if
+      end do
+      deallocate (rec)
+      deallocate (obs_global)
+      deallocate (  x_global)
+      deallocate (  y_global)
+      deallocate (  z_global)
+      deallocate (qrn_global)
+      deallocate ( qs_global)
+      deallocate ( qv_global)
+
+      allocate (decrease_local(ncount_local))
+#ifdef DM_PARALLEL
+      allocate ( decrease_glob(ncount_sum))
+      call mpi_reduce(decrease, decrease_glob, ncount_sum, &
+                      mpi_integer, mpi_sum, root, comm, ierr)
+      call mpi_scatterv(decrease_glob, counts, displs, mpi_integer, &
+                        decrease_local, ncount_local, mpi_integer,  &
+                        root, comm, ierr)
+      deallocate (decrease_glob)
+#else
+      decrease_local = decrease
+#endif
+
+      if ( iv%info(radar)%nlocal > 0 ) then
+         nk = 0
+         do n = iv%info(radar)%n1, iv%info(radar)%n2
+            do k = 1, iv%info(radar)%levels(n)
+               nk = nk + 1 !index for decrease_local array
+               echo_non_precip = abs(ob%radar(n)%rf(k) - radar_non_precip_rf) < 0.1
+               if ( echo_non_precip .and. decrease_local(nk)==1 .and. &
+                    model_qrn(k,n)>0.0 .and. model_qv(k,n) > 0.85*model_qs(k,n) .and. &
+                    iv%radar(n)%height(k) > model_lcl(n) ) then
+                  iv % radar(n) % rqv(k) % qc = 0
+                  iv % radar(n) % rf(k) % qc = 0
+                  iv % radar(n) % rqvo(k) = 0.9*model_qv(k,n)
+                  iv % radar(n) % rqv(k) % inv = iv % radar(n) % rqvo(k) - model_qv(k,n)
+                  iv % radar(n) % rqv(k) % error = amax1(0.001,0.20*iv % radar(n) % rqvo(k))
+               end if
+            end do !k loop
+         end do !n1-n2 loop
+      end if !nlocal>0
+
+      deallocate (decrease)
+      deallocate (decrease_local)
+#ifdef DM_PARALLEL
+      deallocate(counts)
+      deallocate(displs)
+#endif
+
+   end if ! use_radar_rqv and radar_non_precip_opt=2
 
    !------------------------------------------------------------------------
    ! [4.0] Perform optional maximum error check:  
    !------------------------------------------------------------------------
 
+if ( iv%info(radar)%nlocal > 0 ) then
    if (check_max_iv)  then
       call da_check_max_iv_radar(iv, it, irv, irf, irvf, irff)
    end if
@@ -577,6 +794,8 @@ END IF
       deallocate (model_lcl)
       deallocate (model_qs_ice)
    end if
+
+end if ! nlocal>0
 
    if (trace_use) call da_trace_exit("da_get_innov_vector_radar")
 

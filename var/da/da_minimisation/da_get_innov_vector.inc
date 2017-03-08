@@ -2,9 +2,11 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 
 
    !-----------------------------------------------------------------------
-   ! Purpose: TBD
-   !    Updated for Analysis on Arakawa-C grid
-   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
+   ! Purpose: driver routine for getting innovation vectors
+   ! History:$
+   !    10/22/2008 - Updated for Analysis on Arakawa-C grid (Syed RH Rizvi, NCAR)
+   !    03/2017 - Radar neighborhood no-rain scheme (radar_non_precip_opt=2)
+   !              requires all processors to call da_get_innov_vector_radar
    !-----------------------------------------------------------------------
 
    implicit none
@@ -146,7 +148,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
          call da_get_innov_vector_ssmt2     (it, num_qcstat_conv,grid, ob, iv)
       if (iv%info(satem)%nlocal     > 0) &
          call da_get_innov_vector_satem     (it, num_qcstat_conv,grid, ob, iv)
-      if (iv%info(radar)%nlocal     > 0) &
+      if (iv%info(radar)%nlocal     >= 0 .and. use_radarobs) &
          call da_get_innov_vector_radar     (it, grid, ob, iv)
       if (iv%info(qscat)%nlocal     > 0) &
          call da_get_innov_vector_qscat     (it, num_qcstat_conv,grid, ob, iv)

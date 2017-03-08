@@ -30,6 +30,10 @@ module da_radar
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_reporting, only : da_error, da_warning, da_message, message
    use da_tools_serial, only : da_get_unit, da_free_unit
+#ifdef DM_PARALLEL
+   use da_control, only : root
+   use da_par_util1, only : true_mpi_real
+#endif
 
    ! The "stats_radar_type" is ONLY used locally in da_radar:
 

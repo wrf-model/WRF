@@ -266,7 +266,7 @@ integer::oops1,oops2
       !  Send out a quick message about the time steps based on the map scale factors.
 
       IF ( ( internal_time_loop .EQ. 1 ) .AND. ( grid%id .EQ. 1 ) .AND. &
-           ( .NOT. config_flags%map_proj .EQ. PROJ_CASSINI ) ) THEN
+           ( .NOT. config_flags%polar ) ) THEN
          max_mf = grid%msft(its,jts)
          DO j=jts,MIN(jde-1,jte)
             DO i=its,MIN(ide-1,ite)
@@ -329,7 +329,7 @@ integer::oops1,oops2
                  ( config_flags%grid_fdda .NE. 0 ) .OR. &
                  ( config_flags%sst_update .EQ. 1 ) .OR. &
                  ( config_flags%all_ic_times ) .OR. &
-                 ( config_flags%map_proj .EQ. PROJ_CASSINI )
+                 ( config_flags%polar )
 
       !  There are a few checks that we need to do when the input data comes in with the middle
       !  excluded by WPS.
@@ -352,7 +352,7 @@ integer::oops1,oops2
             CALL wrf_message ( a_message ) 
             WRITE ( a_message,* ) ' ( config_flags%smooth_cg_topo )             ', ( config_flags%smooth_cg_topo )
             CALL wrf_message ( a_message ) 
-            WRITE ( a_message,* ) ' ( config_flags%map_proj .EQ. PROJ_CASSINI ) ', ( config_flags%map_proj .EQ. PROJ_CASSINI )
+            WRITE ( a_message,* ) ' ( config_flags%polar )                      ', ( config_flags%polar )
             CALL wrf_message ( a_message ) 
 
             WRITE ( a_message,* ) 'Problems, we cannot have excluded middle data from WPS'
@@ -465,14 +465,14 @@ integer::oops1,oops2
                grid%msfvx_inv(i,jte) = 0.
             END DO
          END IF
-      ELSE IF ( ( config_flags%map_proj .EQ. PROJ_CASSINI ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN
+      ELSE IF ( ( config_flags%polar ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN
          DO j=jts,jte
             DO i=its,min(ide-1,ite)
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
             END DO
          END DO
-      ELSE IF ( ( .NOT. config_flags%map_proj .EQ. PROJ_CASSINI ) .AND. ( flag_mf_xy .NE. 1 ) ) THEN
+      ELSE IF ( ( .NOT. config_flags%polar ) .AND. ( flag_mf_xy .NE. 1 ) ) THEN
          DO j=jts,jte
             DO i=its,ite
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
@@ -490,7 +490,7 @@ integer::oops1,oops2
                grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
             END DO
          END DO
-      ELSE IF ( ( .NOT. config_flags%map_proj .EQ. PROJ_CASSINI ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN
+      ELSE IF ( ( .NOT. config_flags%polar ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN
          IF ( grid%msfvx(its,jts) .EQ. 0 ) THEN
             CALL wrf_error_fatal ( 'Maybe you do not have the new map factors, try re-running geogrid' )
          END IF
@@ -500,7 +500,7 @@ integer::oops1,oops2
                grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
             END DO
          END DO
-      ELSE IF ( ( config_flags%map_proj .EQ. PROJ_CASSINI ) .AND. ( flag_mf_xy .NE. 1 ) ) THEN
+      ELSE IF ( ( config_flags%polar ) .AND. ( flag_mf_xy .NE. 1 ) ) THEN
          CALL wrf_error_fatal ( 'Neither SI data nor older metgrid data can initialize a global domain' )
       ENDIF
 
@@ -654,7 +654,7 @@ integer::oops1,oops2
             
          END IF
 
-         !  Filter the input topography if this is a polar projection.
+         !  Filter the input topography if this is a global domain.
 
          IF ( ( config_flags%polar ) .AND. ( grid%fft_filter_lat .GT. 90 ) ) THEN
             CALL wrf_error_fatal ( 'If the polar boundary condition is used, then fft_filter_lat must be set in namelist.input' )

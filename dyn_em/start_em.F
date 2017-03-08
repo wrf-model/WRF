@@ -252,7 +252,7 @@
       ! Print out the maximum map scale factor on the coarse domain 
 
       IF ( ( first_trip_for_this_domain ) .AND. ( grid%id .EQ. 1 ) .AND. &
-           ( .NOT. config_flags%map_proj .EQ. PROJ_CASSINI ) ) THEN
+           ( .NOT. config_flags%polar ) ) THEN
          max_mf = grid%msft(its,jts)
          DO j=jts,MIN(jde-1,jte)
             DO i=its,MIN(ide-1,ite)

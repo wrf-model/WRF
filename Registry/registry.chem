@@ -67,8 +67,8 @@ state    real  e_ald          i+jf     emis_ant     1         Z      i5r    "E_A
 state    real  e_ket          i+jf     emis_ant     1         Z      i5r    "E_KET"               "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  e_ora2         i+jf     emis_ant     1         Z      i5r    "E_ORA2"              "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  e_nh3          i+jf     emis_ant     1         Z      i5r    "E_NH3"               "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_pm_25        i+jf     emis_ant     1         Z      i5r    "E_PM_25"             "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_pm_10        i+jf     emis_ant     1         Z      i5r    "E_PM_10"             "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_pm_25        i+jf     emis_ant     1         Z      i5r    "E_PM_25"             "EMISSIONS"          "ug/m3 m/s"
+state    real  e_pm_10        i+jf     emis_ant     1         Z      i5r    "E_PM_10"             "EMISSIONS"          "ug/m3 m/s"
 state    real  e_pm25i        i+jf     emis_ant     1         Z      i5r    "E_PM25I"             "EMISSION RATE OF UNIDEN. PM2.5 MASS"  "ug/m3 m/s"
 state    real  e_pm25j        i+jf     emis_ant     1         Z      i5r    "E_PM25J"             "EMISSION RATE OF J-MODE UNIDEN. PM2.5 MASS"   "ug/m3 m/s"
 state    real  e_eci          i+jf     emis_ant     1         Z      i5r    "E_ECI"               "EMISSION RATE OF I-MODE EC"          "ug/m3 m/s"
@@ -3660,17 +3660,8 @@ state   real    c4h9ooh  ikjftb   chem        1         -     i0{12}rhusdf=(bdy_
 state   real    meo2     ikjftb   chem        1         -     i0{12}rhusdf=(bdy_interp:dt)         "meo2"      ""         ""
 state   real    meoh     ikjftb   chem        1         -     i0{12}rhusdf=(bdy_interp:dt)         "meoh"  ""  ""
 state   real    meo2no2  ikjftb   chem        1         -     i0{12}rhusdf=(bdy_interp:dt)         "meo2no2"  ""  ""
-
 #End MATCH-MPI MAINZ global chemistry
 
-# time averaged stuff
-#state integer  STEPAVE_COUNT     -        misc        1         -      r      "STEPAVE_COUNT"        "time steps contained in averages for convective transport" ""
-#state    real  RAINCV_A           ij      misc        1         -      r      "RAINCV_A"             "taveragd TIME-STEP CUMULUS PRECIPITATION"                         "mm"
-#state    real  RAINCV_B           ij      misc        1         -      r      "RAINCV_B"             "taveragd TIME-STEP CUMULUS PRECIPITATION"                         "mm"
-#state    real  GD_CLOUD_A        ikj      misc        1         -      r      "GD_CLOUD_A"           "taveragd CLOUD WATER MIXING RAIO IN GD CLOUD"         "kg kg-1"
-#state    real  GD_CLOUD2_A       ikj      misc        1         -      r      "GD_CLOUD2_A"          "taveragd cloud ice mix ratio in GD"         "kg kg-1"
-#state    real  GD_CLOUD_B        ikj      misc        1         -      r      "GD_CLOUD_B"           "taveragd CLOUD WATER MIXING RAIO IN GD CLOUD"         "kg kg-1"
-#state    real  GD_CLOUD2_B       ikj      misc        1         -      r      "GD_CLOUD2_B"          "taveragd cloud ice mix ratio in GD"         "kg kg-1"
 state integer  STEPBIOE          -        misc        1         -      r      "STEPBIOE"             "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN BIOGENIC EMIS CALLS"             "NA"
 state integer  STEPPHOT          -        misc     1         -      r        "STEPPHOT"              "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN PHOTOLYSIS CALLS"             "NA"
 state integer  STEPCHEM          -        misc     1         -      r        "STEPCHEM"              "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN CHEM MECH CALLS"             "NA"
@@ -3985,7 +3976,7 @@ package   esaprcnov       emiss_opt==13                  -             emis_ant:
 # For CB05 mechanism based on CBMZ speciation, used with emiss_inpt_opt = 102 
 package   ecb05_opt1      emiss_opt==14                   -             emis_ant:e_no2,e_xyl,e_tol,e_terp,e_so2,e_ora2,e_olt,e_oli,e_ol2,e_no,e_nh3,e_iso,e_hcl,e_hcho,e_eth,e_csl,e_co,e_ch3oh,e_c2h5oh,e_ald,e_aldx,e_hc3,e_hc5,e_hc8,e_ket,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_so4c,e_no3c,e_orgc,e_ecc,e_pm10
 # For CB05 emissions inventory base on CB05 speciation, used with emiss_inpt_opt = 101
-package   ecb05_opt2      emiss_opt==15                   -             emis_ant:e_acet,e_par,e_alk1,e_alk2,e_alk3,e_alk4,e_alk5,e_tol,e_xyl,e_bald,e_ald2,e_ccooh,e_co,e_cres,e_eth,e_etha,e_gly,e_form,e_hcooh,e_iprod,e_isop,e_macr,e_mek,e_meoh,e_meo2,e_etoh,e_mgly,e_nh3,e_hcl,e_no,e_no2,e_iole,e_ole,e_phen,e_prod2,e_aldx,e_rcooh,e_so2,e_psulf,e_terp,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_so4c,e_no3c,e_orgc,e_ecc,e_pm10
+package   ecb05_opt2      emiss_opt==15                   -             emis_ant:e_acet,e_par,e_alk3,e_alk4,e_alk5,e_tol,e_xyl,e_bald,e_ald2,e_ccooh,e_co,e_cres,e_eth,e_etha,e_gly,e_form,e_hcooh,e_iprod,e_isop,e_macr,e_mek,e_meoh,e_meo2,e_etoh,e_mgly,e_nh3,e_hcl,e_no,e_no2,e_iole,e_ole,e_phen,e_prod2,e_aldx,e_rcooh,e_so2,e_psulf,e_terp,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_so4c,e_no3c,e_orgc,e_ecc,e_pm10
 
 # Anthropogenic CO2, CO and CH4 emissions:
 package   eco2            emiss_opt==16                  -             emis_ant:e_co2,e_co2tst,e_co

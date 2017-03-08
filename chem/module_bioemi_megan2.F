@@ -1137,7 +1137,7 @@ is_mozm_species : &
 
              END DO
 
-          CASE (RACM_SOA_VBS_AQCHEM_KPP,CB05_SORG_AQ_KPP)
+          CASE (CB05_SORG_AQ_KPP)
 
              DO icount = 1, n_megan2cb05
                 IF ( p_of_cb05 (icount) .NE. non_react ) THEN
@@ -1400,7 +1400,7 @@ is_mozm_species : &
              END DO
 
 
-          CASE (RACM_SOA_VBS_KPP)
+          CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
 
           DO icount = 1, n_megan2racmSOA
 

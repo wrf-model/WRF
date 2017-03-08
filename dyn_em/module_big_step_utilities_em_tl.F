@@ -2952,7 +2952,7 @@ END SUBROUTINE G_HORIZONTAL_PRESSURE_GRADIENT
 
  total =0
 
- IF(config_flags%map_proj == PROJ_CASSINI ) THEN
+ IF(config_flags%polar) THEN
 
 !PRINT*, 'DELETED FOR COMPILING BY WALLS' ! Remarked by Ning Pan, 2010-07-21
 !STOP  ! Remarked by Ning Pan, 2010-07-21
@@ -2970,7 +2970,7 @@ END SUBROUTINE G_HORIZONTAL_PRESSURE_GRADIENT
  DO i =its,itf
 #if 1
 
- IF(config_flags%map_proj == PROJ_CASSINI ) THEN
+ IF(config_flags%polar) THEN
 
 ! g_msfuxt =(0.0 +g_msfxffl -(0.0 -g_msfxffl)*sign(1.0, msfux(i,j) -(msfxffl)))*0.5  ! Remarked by Ning Pan, 2010-07-21
  msfuxt =min(msfux(i,j),msfxffl)
@@ -3062,7 +3062,7 @@ END SUBROUTINE G_HORIZONTAL_PRESSURE_GRADIENT
  DO i =its,itf
 #if 1
 
- IF(config_flags%map_proj == PROJ_CASSINI ) THEN
+ IF(config_flags%polar) THEN
 
 ! g_msfuxt =(0.0 +g_msfxffl -(0.0 -g_msfxffl)*sign(1.0, msfux(i,j) -(msfxffl)))*0.5 
  msfuxt =min(msfux(i,j),msfxffl)

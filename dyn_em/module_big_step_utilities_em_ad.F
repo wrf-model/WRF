@@ -6878,7 +6878,7 @@ END SUBROUTINE A_HORIZONTAL_PRESSURE_GRADIENT
       total = 0
 
 !LPB[1]
-   IF(config_flags%map_proj == PROJ_CASSINI ) then
+   IF(config_flags%polar) then
 
         msfxffl = 1.0/COS(config_flags%fft_filter_lat*degrad) 
 
@@ -6893,7 +6893,7 @@ END SUBROUTINE A_HORIZONTAL_PRESSURE_GRADIENT
 !        DO j = jts,jtf
 !        DO k = 2, kde-1
 !        DO i = its,itf
-!        IF(config_flags%map_proj == PROJ_CASSINI ) then
+!        IF(config_flags%polar) then
 
 !              msfuxt = MIN(msfux(i,j), msfxffl)
 !           ELSE
@@ -6936,7 +6936,7 @@ END SUBROUTINE A_HORIZONTAL_PRESSURE_GRADIENT
 !        DO j = jts,jtf
 !        DO k = 2, kde-1
 !        DO i = its,itf
-!        IF(config_flags%map_proj == PROJ_CASSINI ) then
+!        IF(config_flags%polar) then
 
 !              msfuxt = MIN(msfux(i,j), msfxffl)
 !           ELSE
@@ -7010,7 +7010,7 @@ END SUBROUTINE A_HORIZONTAL_PRESSURE_GRADIENT
      DO k =2, kde-1
      DO i =its, itf
 
-       IF(config_flags%map_proj == PROJ_CASSINI ) THEN
+       IF(config_flags%polar) THEN
          msfuxt =min(msfux(i,j), msfxffl)
        ELSE
          msfuxt =msfux(i,j)
@@ -7062,7 +7062,7 @@ END SUBROUTINE A_HORIZONTAL_PRESSURE_GRADIENT
      DO j =jts, jtf
      DO k =2, kde-1
      DO i =its, itf
-       IF(config_flags%map_proj == PROJ_CASSINI ) THEN
+       IF(config_flags%polar) THEN
          msfuxt =min(msfux(i,j), msfxffl)
        ELSE
          msfuxt =msfux(i,j)
@@ -7106,7 +7106,7 @@ END SUBROUTINE A_HORIZONTAL_PRESSURE_GRADIENT
 !   DO j =jts, jtf
 !   DO k =2, kde-1
 !   DO i =its, itf
-!   IF(config_flags%map_proj == PROJ_CASSINI ) THEN
+!   IF(config_flags%polar) THEN
 !   Tmpv400(i,k,j) =msfuxt
 !   msfuxt =min(msfux(i,j), msfxffl)
 !
@@ -7169,7 +7169,7 @@ END SUBROUTINE A_HORIZONTAL_PRESSURE_GRADIENT
 !   DO j =jts, jtf
 !   DO k =2, kde-1
 !   DO i =its, itf
-!   IF(config_flags%map_proj == PROJ_CASSINI ) THEN
+!   IF(config_flags%polar) THEN
 !   Tmpv407(i,k,j) =msfuxt
 !   msfuxt =min(msfux(i,j), msfxffl)
 
@@ -7234,12 +7234,12 @@ END SUBROUTINE A_HORIZONTAL_PRESSURE_GRADIENT
 
 !LPB[1]
 
-!  IF(config_flags%map_proj == PROJ_CASSINI ) THEN
+!  IF(config_flags%polar) THEN
 !  msfxffl =1.0/cos(config_flags%fft_filter_lat*degrad)
 
 !  END IF
 
-!   IF(config_flags%map_proj == PROJ_CASSINI ) THEN  ! Remarked by Ning Pan, 2010-07-21
+!   IF(config_flags%polar) THEN  ! Remarked by Ning Pan, 2010-07-21
 
 !STOP  ! Remarked by Ning Pan, 2010-07-21
 !DELETED BY WALLS

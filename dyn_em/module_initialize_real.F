@@ -5870,7 +5870,14 @@ print *,'i,j = ',i,j
 print *,'p array = ',all_x
 print *,'f array = ',all_y
 print *,'p target= ',target_x
-         CALL wrf_error_fatal ( 'troubles, the interpolating order is too large for this few input values' )
+         CALL wrf_message ( 0 , 'Troubles, the interpolating order is too large for this few input values' )
+         CALL wrf_message ( 0 , 'This is usually caused by bad pressures' ) 
+         CALL wrf_message ( 0 , 'At this (i,j), look at the input value of pressure from metgrid' )
+         CALL wrf_message ( 0 , 'The surface pressure and the sea-level pressure should be reviewed, also from metgrid' )
+         CALL wrf_message ( 0 , 'Finally, ridiculous values of moisture can mess up the vertical pressures, especially aloft' )
+         CALL wrf_message ( 0 , 'The variable type is ' // var_type // '. This is not a unique identifer, but a type of field' )
+         CALL wrf_message ( 0 , 'Check to see if all time periods with this data fail, or just this one' )
+         CALL wrf_error_fatal ( 'This vertical interpolation failure is more typically associated with untested data sources to ungrib' )
       END IF
 
       IF ( n .LT. 1 ) THEN

@@ -9,7 +9,7 @@ MODULE module_cu_gf_deep
 ! parameter to turn on or off evaporation of rainwater as done in SAS
      integer, parameter :: irainevap=1
 ! max allowed fractional coverage (frh_thresh)
-     real, parameter::frh_thresh = .7
+     real, parameter::frh_thresh = .9
 ! rh threshold. if fractional coverage ~ frh_thres, do not use cupa any further
      real, parameter::rh_thresh = .97
 ! tuning constant for J. Brown closure (Ichoice = 4,5,6)

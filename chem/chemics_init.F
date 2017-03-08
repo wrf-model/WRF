@@ -143,12 +143,12 @@
 #ifdef CHEM_DBG_I
     call print_chem_species_index( config_flags%chem_opt )
 #endif
-   program_name = "*             PROGRAM:WRF/CHEM " // TRIM(release_version) // " MODEL"
+   program_name = "*             PROGRAM:WRF-Chem " // TRIM(release_version) // " MODEL"
 
 call wrf_message("*********************************************************************")
 call wrf_message(program_name)
 call wrf_message("*                                                                   *")
-call wrf_message("*    PLEASE REPORT ANY BUGS TO WRF/CHEM HELP at                     *")
+call wrf_message("*    PLEASE REPORT ANY BUGS TO WRF-Chem HELP at                     *")
 call wrf_message("*                                                                   *")
 call wrf_message("*              wrfchemhelp.gsd@noaa.gov                             *")
 call wrf_message("*                                                                   *")
@@ -1746,7 +1746,7 @@ ENDIF ghg_block
         endif
         chem(its:ite,kts:min(kte,kde-1),jts:jte,:)=max(chem(its:ite,kts:min(kte,kde-1),jts:jte,:),epsilc)
 !
-    CASE (RACM_SOA_VBS_AQCHEM_KPP,CB05_SORG_VBS_AQ_KPP)
+    CASE (CB05_SORG_VBS_AQ_KPP)
        CALL wrf_debug(15,'call MADE/SOA_VBS aerosols initialization')
 
        call aerosols_sorgam_vbs_init(chem,convfac,z_at_w,                &
@@ -1773,7 +1773,7 @@ ENDIF ghg_block
         endif
         chem(its:ite,kts:min(kte,kde-1),jts:jte,:)=max(chem(its:ite,kts:min(kte,kde-1),jts:jte,:),epsilc)
 
-    CASE (RACM_SOA_VBS_KPP)
+    CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
        CALL wrf_debug(15,'call MADE/SOA_VBS aerosols initialization')
 
        call aerosols_soa_vbs_init(chem,convfac,z_at_w,                &
@@ -3342,7 +3342,7 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_ac0,"ac0"
      print*,p_corn,"corn"
 !!! TUCCELLA
-case (RACM_SOA_VBS_AQCHEM_KPP)
+ case (RACM_SOA_VBS_AQCHEM_KPP)
      print*,p_so4aj,"so4aj"
      print*,p_so4ai,"so4ai"
      print*,p_nh4aj,"nh4aj"

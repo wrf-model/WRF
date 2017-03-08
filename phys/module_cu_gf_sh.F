@@ -65,7 +65,7 @@ contains
 ! this module needs some subroutines from gf_deep
 !
   use module_cu_gf_deep,only:cup_env,cup_env_clev,get_cloud_bc,cup_minimi,  &
-                      get_inversion_layers,rates_up_pdf,get_cloud_bc,     &
+                      get_inversion_layers,rates_up_pdf,     &
                       cup_up_aa0,cup_kbcon,get_lateral_massflux
      implicit none
      integer                                                           &
@@ -203,8 +203,11 @@ contains
      real,    dimension (its:ite,kts:kte) :: dtempdz
      integer, dimension (its:ite,kts:kte) ::  k_inv_layers 
      integer, dimension (its:ite) ::  start_level
+
      start_level(:)=0
-     flux_tun=fluxtune
+     flux_tun(:)=fluxtune
+     rand_vmas(:)=0.
+
       do i=its,itf
         xland1(i)=int(xland(i)+.001) ! 1.
         ktopx(i)=0
@@ -216,6 +219,9 @@ contains
         cap_max_increment(i)=25.
         ierrc(i)=" "
         entr_rate(i) = 9.e-5 ! 1.75e-3 ! 1.2e-3 ! .2/50.
+        ktop(i)=0
+        k22(i)=0
+        kbcon(i)=0
       enddo
 !
 !--- initial entrainment rate (these may be changed later on in the
@@ -236,6 +242,22 @@ contains
         cd(i,k)=1.*entr_rate(i)
         dellaqc(i,k)=0.
         cupclw(i,k)=0.
+
+        he(i,k)=0.
+        hes(i,k)=0.
+        qes(i,k)=0.
+        heo(i,k)=0.
+        heso(i,k)=0.
+        qeso(i,k)=0.
+
+        xhe(i,k)=0.
+        xhes(i,k)=0.
+        xqes(i,k)=0.
+        xt(i,k)=0.
+        xq(i,k)=0.
+
+        zu (i,k)=0.
+        xzu (i,k)=0.
       enddo
       enddo
 !
@@ -252,6 +274,7 @@ contains
         kbmax(i)=1
         aa0(i)=0.
         aa1(i)=0.
+        xaa0(i)=0.
       enddo
       do i=its,itf
           cap_max(i)=cap_maxs
@@ -348,6 +371,8 @@ contains
 !--- DETERMINE THE LEVEL OF CONVECTIVE CLOUD BASE  - KBCON
 !
       do i=its,itf
+       hkb(i)=0.
+       hkbo(i)=0.
        if(ierr(I).eq.0)then
              x_add = xlv*zqexec(i)+cp*ztexec(i)
              call get_cloud_bc(kte,he_cup (i,1:kte),hkb (i),k22(i),x_add)

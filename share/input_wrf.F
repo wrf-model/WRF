@@ -133,7 +133,7 @@
 ! If this was not a training read (dry run) check for erroneous values.
     CALL wrf_inquire_filename ( fid , fname , filestate , ierr )
     IF ( ierr /= 0 ) THEN
-      WRITE(wrf_err_message,*)'module_io_wrf: input_wrf: wrf_inquire_filename Status = ',ierr
+      WRITE(wrf_err_message,*)'---- ERROR: module_io_wrf: input_wrf: wrf_inquire_filename Status = ',ierr
       CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
       fatal_error = .true.
       count_fatal_error = count_fatal_error + 1

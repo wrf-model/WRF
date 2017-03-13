@@ -1,16 +1,3 @@
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         fatal_error = .true.
-         count_fatal_error = count_fatal_error + 1
-
-
-
-      IF ( fatal_error ) THEN
-      WRITE (wrf_err_message, FMT='(A,I6, A)') 'NOTE:  ', count_fatal_error, &
-                                            ' namelist settings are wrong. Please check and reset these options'
-                                                         
-      CALL wrf_error_fatal ( wrf_err_message )
-      END IF
-
 !WRF:MEDIATION:IO
 !  ---principal wrf input routine (called from routines in module_io_domain )
 
@@ -1125,6 +1112,15 @@
 
     n_ref_m = 0
 #endif
+
+    !  This test should go after all of the metadata is input, and before the gridded input is ingested.
+     
+    IF ( fatal_error ) THEN
+       WRITE (wrf_err_message, FMT='(A,I6, A)') 'NOTE:  ', count_fatal_error, ' namelist vs input data inconsistencies found.'
+       CALL wrf_message ( wrf_err_message )
+       WRITE (wrf_err_message, FMT='(A,I6, A)') 'NOTE:  Please check and reset these options'
+       CALL wrf_error_fatal ( wrf_err_message )
+    END IF
 
     IF ( (first_input   .LE. switch .AND. switch .LE. last_input) .OR. &
          (first_history .LE. switch .AND. switch .LE. last_history) .OR. &

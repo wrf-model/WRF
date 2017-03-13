@@ -99,7 +99,6 @@
 
     !  Bundle up the fatal errors in one piece at the end of the file.
 
-    LOGICAL :: fatal_error
     INTEGER :: count_fatal_error
 
 
@@ -121,7 +120,6 @@
     !  Initializations for error checking
 
     ierr = 0
-    fatal_error = .false.
     count_fatal_error = 0
 
 
@@ -135,7 +133,6 @@
     IF ( ierr /= 0 ) THEN
       WRITE(wrf_err_message,*)'---- ERROR: module_io_wrf: input_wrf: wrf_inquire_filename Status = ',ierr
       CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-      fatal_error = .true.
       count_fatal_error = count_fatal_error + 1
     ENDIF
 
@@ -354,7 +351,6 @@
        ierr = max( ierr, ierr3 )
        IF ( ierr3 .NE. 0 ) THEN
           CALL wrf_debug ( 0, '---- ERROR: wrf_get_dom_ti_integer getting dimension information from dataset' )
-          fatal_error = .true.
           count_fatal_error = count_fatal_error + 1
        END IF
 
@@ -376,7 +372,6 @@
              WRITE(wrf_err_message,*)'dx and dy from namelist ',config_flags%dx,config_flags%dy
              CALL wrf_message(wrf_err_message)
              CALL wrf_debug ( 0, '---- ERROR: DX and DY do not match comparing namelist to the input file' )
-             fatal_error = .true.
              count_fatal_error = count_fatal_error + 1
           END IF
        END IF
@@ -421,7 +416,6 @@
        END IF
        IF ( ierr .NE. 0 ) THEN
           CALL wrf_debug ( 0, '---- ERROR: Nest start locations do not match: namelist.input vs gridded input file' )
-          fatal_error = .true.
           count_fatal_error = count_fatal_error + 1
        END IF
     END IF
@@ -586,7 +580,6 @@
         WRITE(wrf_err_message,'("input files : NUM_LAND_CAT = ",I10, " (from geogrid selections).")') num_land_cat_compare
         call wrf_message(wrf_err_message)
         CALL wrf_debug ( 0, '---- ERROR: Mismatch between namelist and wrf input files for dimension NUM_LAND_CAT')
-        fatal_error = .true.
         count_fatal_error = count_fatal_error + 1
       endif
     ENDIF
@@ -604,7 +597,6 @@
 #if (EM_CORE == 1)
           IF ( itmp .EQ. 1 ) THEN
              CALL wrf_debug ( 0, "---- ERROR: NUM_METGRID_SOIL_LEVELS must be greater than 1")
-             fatal_error = .true.
              count_fatal_error = count_fatal_error + 1
           END IF
 #endif
@@ -621,7 +613,6 @@
 #endif
              call wrf_message(wrf_err_message)
              CALL wrf_debug ( 0, "---- ERROR: Mismatch between namelist and global attribute NUM_METGRID_SOIL_LEVELS")
-             fatal_error = .true.
              count_fatal_error = count_fatal_error + 1
           END IF
        END IF
@@ -643,7 +634,6 @@
           WRITE(wrf_err_message,'("input files : EROSION_DIM = ",I10, " (from met_em files).")') itmp
           call wrf_message(wrf_err_message)
           CALL wrf_debug ( 0, "---- ERROR: Mismatch between namelist and global attribute EROSION_DIM")
-          fatal_error = .true.
           count_fatal_error = count_fatal_error + 1
        END IF
     END IF
@@ -670,7 +660,6 @@
                 WRITE(wrf_err_message,'("input files : SF_SURFACE_PHYSICS = ",I10, " (from wrfinput files).")') itmp
                 call wrf_message(wrf_err_message)
                 CALL wrf_debug ( 0, "---- ERROR: Mismatch between namelist and global attribute SF_SURFACE_PHYSICS")
-                fatal_error = .true.
                 count_fatal_error = count_fatal_error + 1
              END IF
           END IF
@@ -778,7 +767,6 @@
           WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  input file ide,jde,kde=',ide_compare , jde_compare , kde_compare
           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
           CALL wrf_debug ( 0, "---- ERROR: Mismatch between namelist and input file dimensions" )
-          fatal_error = .true.
           count_fatal_error = count_fatal_error + 1
        ENDIF
 
@@ -794,7 +782,6 @@
           WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  input file ide,jde,kde               =',ide_compare , jde_compare , kde_compare
           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
           CALL wrf_debug ( 0, "---- ERROR: Mismatch between namelist and input file dimensions" )
-          fatal_error = .true.
           count_fatal_error = count_fatal_error + 1
        ENDIF
     ENDIF
@@ -828,12 +815,10 @@
                 IF (ide-1 .eq. ide_compare .AND. jde-1 .EQ. jde_compare) THEN
                   CALL wrf_message(wrf_err_message)
                   CALL wrf_debug ( 0, "---- ERROR: appears that the vertical dimension is wrong - quitting" )
-                  fatal_error = .true.
                   count_fatal_error = count_fatal_error + 1
                 ELSE
                   CALL wrf_message(wrf_err_message)
                   CALL wrf_debug ( 0, "---- ERROR: appears that I or J dimensions are wrong - quitting" )
-                  fatal_error = .true.
                   count_fatal_error = count_fatal_error + 1
                 ENDIF
          ENDIF
@@ -857,7 +842,6 @@
              WRITE(wrf_err_message,'("input files : HYPSOMETRIC_OPT = ",I10, " (from wrfinput files).")') itmp
              call wrf_message(wrf_err_message)
              CALL wrf_debug ( 0, "---- ERROR: Mismatch between namelist and global attribute HYPSOMETRIC_OPT")
-             fatal_error = .true.
              count_fatal_error = count_fatal_error + 1
           END IF
        ELSE
@@ -952,13 +936,11 @@
       IF ( switch .EQ. boundary_only ) THEN
         WRITE(wrf_err_message,*) '---- ERROR: Ran out of valid boundary conditions in file ',TRIM(fname)
         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-        fatal_error = .true.
         count_fatal_error = count_fatal_error + 1
       ELSE
 #if ( NMM_CORE != 1 )
         WRITE(wrf_err_message,*) '---- ERROR: Could not find matching time in input file ',TRIM(fname)
         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-        fatal_error = .true.
         count_fatal_error = count_fatal_error + 1
 #endif
       ENDIF
@@ -1045,7 +1027,6 @@
                   CALL wrf_get_next_time(fid, current_date , ierr)
                   IF ( ierr .NE. 0 ) THEN
                      CALL wrf_debug ( 0, '---- ERROR: Cannot find a valid time to start the LBC during this restart, likely ran out of time periods to test' )
-                     fatal_error = .true.
                      count_fatal_error = count_fatal_error + 1
                   END IF
                   CALL wrf_get_dom_td_char ( fid , 'THISBDYTIME' ,  current_date(1:19), this_datestr , ierr )
@@ -1072,7 +1053,6 @@
                      CALL wrf_debug ( 0 , 'LBC is now correctly positioned for requested restart time' )
                   ELSE
                      CALL wrf_debug ( 0, '---- ERROR: Problems backing up in the LBC file to find starting location for restart' )
-                     fatal_error = .true.
                      count_fatal_error = count_fatal_error + 1
                   END IF
               END IF
@@ -1115,7 +1095,7 @@
 
     !  This test should go after all of the metadata is input, and before the gridded input is ingested.
      
-    IF ( fatal_error ) THEN
+    IF ( count_fatal_error .GT. 0 ) THEN
        WRITE (wrf_err_message, FMT='(A,I6, A)') 'NOTE:  ', count_fatal_error, ' namelist vs input data inconsistencies found.'
        CALL wrf_message ( wrf_err_message )
        WRITE (wrf_err_message, FMT='(A,I6, A)') 'NOTE:  Please check and reset these options'

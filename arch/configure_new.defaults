@@ -1696,7 +1696,7 @@ CC_TOOLS        =      cc
 ###########################################################
 #ARCH    Darwin (MACOS) gfortran with gcc openmpi #serial smpar dmpar dm+sm
 #
-DESCRIPTION     =       GNU ($SFC/$SCC)
+DESCRIPTION     =       GNU ($SFC/$SCC/openmpi)
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -fopenmp

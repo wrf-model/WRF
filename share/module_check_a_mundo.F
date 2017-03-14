@@ -96,7 +96,6 @@
            ( model_config_rec % damp_opt    .EQ. 2 ) ) THEN
          CALL wrf_message ( "The use_theta_m option may not be paired with damp_opt=2." )
          wrf_err_message = '--- ERROR: Either turn off use_theta_m, or select a different damp_opt option'
-       !  CALL wrf_error_fatal ( TRIM(wrf_err_message) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -106,7 +105,6 @@
            ( model_config_rec % rad_nudge   .EQ. 1 ) ) THEN
          CALL wrf_message ( "The use_theta_m option may not be paired with rad_nudge=1." )
          wrf_err_message = '--- ERROR: Either turn off use_theta_m, or turn off the rad_nudge option'
-      !   CALL wrf_error_fatal ( TRIM(wrf_err_message) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -152,7 +150,6 @@
       IF ( ( model_config_rec %   km_opt(1) .EQ. -1 ) .OR. &
            ( model_config_rec % diff_opt(1) .EQ. -1 ) ) THEN
             wrf_err_message = '--- ERROR: Both km_opt and diff_opt need to be set in the namelist.input file.'
-       !  CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -174,7 +171,6 @@
             wrf_err_message = '--- ERROR: Chosen microphysics scheme cannot run with WRF-NMM '
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- Fix mp_physics in namelist.input '
-         !   CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -192,7 +188,6 @@
             wrf_err_message = '--- ERROR: sf_surface_physics must be equal for all domains '
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- Fix sf_surface_physics in namelist.input '
-         !   CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -210,7 +205,6 @@
             wrf_err_message = '--- ERROR: sf_sfclay_physics must be equal for all domains '
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- Fix sf_sfclay_physics in namelist.input '
-         !   CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -247,7 +241,6 @@
             wrf_err_message = '--- ERROR: ra_lw_physics must be equal for all domains '
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- Fix ra_lw_physics in namelist.input '
-         !   CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -260,7 +253,6 @@
             wrf_err_message = '--- ERROR: ra_sw_physics must be equal for all domains '
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- Fix ra_sw_physics in namelist.input '
-         !   CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -276,7 +268,6 @@
               ( model_config_rec % time_step .EQ. -1 ) ) THEN
 
             wrf_err_message = '--- ERROR: Known problem.  time_step must be set to a positive integer'
-         !       CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -293,7 +284,6 @@
             wrf_err_message = '--- ERROR: bl_pbl_physics must be equal for all domains (or = zero)'
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- Fix bl_pbl_physics in namelist.input '
-         !   CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -312,7 +302,6 @@
             wrf_err_message = '--- ERROR: cu_physics must be equal for all domains (or = zero)'
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- Fix cu_physics in namelist.input '
-         !   CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -341,7 +330,6 @@
             wrf_err_message = '--- ERROR: If fine_input_stream /= 0, io_form_auxinput2 must be /= 0'
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- Set io_form_auxinput2 in the time_control namelist (probably to 2).'
-         !   CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -388,7 +376,6 @@
                CALL wrf_message ( TRIM ( wrf_err_message ) )
                write (wrf_err_message, '("              sf_surface_physics == ", I2, " (Noah) or ", I2, " (Noah-MP).")') &
                LSMSCHEME, NOAHMPSCHEME
-         !      call wrf_error_fatal ( TRIM ( wrf_err_message ) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -413,7 +400,6 @@
             WRITE(wrf_err_message, '("              does not work with NMM ")')
             CALL wrf_message ( TRIM ( wrf_err_message ) )
             WRITE(wrf_err_message, '("Select a different LSM scheme ")')
-         !   CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -547,7 +533,6 @@
 
 #if (WRF_CHEM != 1)
       wrf_err_message = '--- ERROR: This option is only for WRF_CHEM.'
-    !  CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -563,7 +548,6 @@
       IF ( .NOT. model_config_rec % have_bcs_chem(1) ) THEN
             wrf_err_message = '--- ERROR: This perturb_chem_bdy option needs '// &
                               'have_bcs_chem = .true. in chem.'
-         !   CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -589,7 +573,10 @@
 ! If NMM core and trajectories are on then halt.
 !----------------------------------------------------------------------------
    IF ( model_config_rec%traj_opt /= 0 ) THEN
-     call wrf_error_fatal( 'Trajectories not supported in NMM core' )
+         wrf_err_message = 'Trajectories not supported in NMM core '
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         fatal_error = .true.
+         count_fatal_error = count_fatal_error + 1
    END IF
 #endif
 
@@ -622,7 +609,6 @@
          wrf_err_message = '--- ERROR: bl_pbl_physics must be set to 1 for cu_physics = 11 '
          CALL wrf_message ( wrf_err_message )
          wrf_err_message = '--- Fix bl_pbl_physics in namelist.input OR use another cu_physics option '
-        ! CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -663,7 +649,6 @@
             wrf_err_message = '--- ERROR: If sst_update /= 0, io_form_auxinput4 must be /= 0'
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- Set io_form_auxinput4 in the time_control namelist (probably to 2).'
-         !   CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -698,7 +683,6 @@
             wrf_err_message = '--- ERROR: If grid_sfdda >= 1, then grid_fdda must also = 1 for that domain '
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- Change grid_fdda or grid_sfdda in namelist.input '
-         !   CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -808,7 +792,6 @@
 !------------------------------------------------------------------------
        IF ( model_config_rec%rinblw(1) .EQ. -1 ) THEN
             wrf_err_message = '--- ERROR: rinblw needs to be set in the namelist.input file.'
-         !   CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -973,7 +956,6 @@
             wrf_err_message = '--- ERROR: If grid_fdda /= 0, io_form_gfdda must be /= 0'
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- Set io_form_gfdda in the time_control namelist (probably to 2).'
-         !   CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -986,7 +968,6 @@
             wrf_err_message = '--- ERROR: If grid_sfdda /= 0, io_form_sgfdda must be /= 0'
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- Set io_form_sgfdda in the time_control namelist (probably to 2).'
-         !   CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -1010,7 +991,6 @@
                wrf_err_message = '--- ERROR: provide: auxhist23_interval (max_dom) and io_form_auxhist23'
                CALL wrf_message ( wrf_err_message )
                wrf_err_message = '--- Add supporting IO for stream 23 for pressure-level diags'
-         !      CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -1043,7 +1023,6 @@
                wrf_err_message = '--- ERROR: provide: auxhist22_interval (max_dom) and io_form_auxhist22'
                CALL wrf_message ( wrf_err_message )
                wrf_err_message = '--- Add supporting IO for stream 22 for height-level diags'
-         !      CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -1068,7 +1047,6 @@
          wrf_err_message = '--- ERROR:  nwp_diagnostics requires the use of "history_interval" namelist.'
          CALL wrf_message ( wrf_err_message )
          wrf_err_message = '---         Replace interval variable with "history_interval".'
-        ! CALL wrf_error_fatal ( wrf_err_message )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -1099,7 +1077,6 @@
          wrf_err_message = '--- ERROR:  The namelist.input variable "omlcall" has been renamed.'
          CALL wrf_message ( wrf_err_message )
          wrf_err_message = '---         Replace "omlcall" with the new name "sf_ocean_physics".'
-         !CALL wrf_error_fatal ( wrf_err_message )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -1141,7 +1118,6 @@
             model_config_rec%time_step_dfi = model_config_rec%time_step
             IF ( model_config_rec%time_step_dfi .EQ. -1 ) THEN
                wrf_err_message = '--- ERROR: DFI Timestep or standard WRF time step must be specified.'
-         !      CALL wrf_error_fatal ( wrf_err_message )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -1185,7 +1161,6 @@
                 wrf_err_message = '---          Grell (G3) CU scheme' 
                 CALL wrf_message ( wrf_err_message )
                 wrf_err_message = '---          Grell-Devenyi (GD) CU scheme' 
-         !       CALL wrf_error_fatal ( wrf_err_message )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -1210,7 +1185,6 @@
                 wrf_err_message = '---          Multi-scale Kain-Fritsch (cu_physics=11)' 
                 CALL wrf_message ( wrf_err_message )
                 wrf_err_message = '---          old Kain-Fritsch (cu_physics=99)' 
-         !       CALL wrf_error_fatal ( wrf_err_message )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -1258,14 +1232,12 @@
          IF ( ( model_config_rec%bl_pbl_physics(i) .EQ. TEMFPBLSCHEME ) .AND. &
               ( model_config_rec%sf_sfclay_physics(i) .NE. TEMFSFCSCHEME ) )  THEN
             wrf_err_message = '--- ERROR: Using bl_pbl_physics=10 requires sf_sfclay_physics=10 '
-         !   CALL wrf_error_fatal ( TRIM(wrf_err_message) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
          ELSEIF ( ( model_config_rec%bl_pbl_physics(i) .NE. TEMFPBLSCHEME ) .AND. &
                   ( model_config_rec%sf_sfclay_physics(i) .EQ. TEMFSFCSCHEME ) ) THEN
             wrf_err_message = '--- ERROR: Using sf_sfclay_physics=10 requires bl_pbl_physics=10 '
-         !   CALL wrf_error_fatal ( TRIM(wrf_err_message) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -1279,7 +1251,6 @@
       IF ( model_config_rec%tmn_update .EQ. 1 .AND. &
            model_config_rec%lagday .EQ. 1 ) THEN 
            wrf_err_message = '--- ERROR: Using tmn_update=1 requires lagday=150 '
-         !  CALL wrf_error_fatal ( TRIM(wrf_err_message) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -1293,7 +1264,6 @@
          IF ( ( model_config_rec%bl_pbl_physics(i) .EQ. TEMFPBLSCHEME ) .AND. &
               (model_config_rec%dfi_opt .NE. DFI_NODFI) )  THEN
             wrf_err_message = '--- ERROR: DFI not available for bl_pbl_physics=10 '
-         !   CALL wrf_error_fatal ( TRIM(wrf_err_message) )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -1326,7 +1296,6 @@
          wrf_err_message = '--- ERROR: However, the WRF CLM scheme was not compiled in WRF.'
          CALL wrf_debug ( 0, TRIM(wrf_err_message) )
          wrf_err_message = '--- ERROR: Please place the -DWRF_USE_CLM option in configure.wrf file, and recompile.'
-         ! CALL wrf_error_fatal ( wrf_err_message )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -1420,7 +1389,6 @@
          DO j=1,model_config_rec%max_dom
            IF ((model_config_rec%vert_refine_method(i) .NE. model_config_rec%vert_refine_method(j)) .AND. (model_config_rec%vert_refine_method(j) .NE. 0)) THEN
              write(wrf_err_message,'(A,I1,A,I2,A,I1,A,I2,A)') '--- ERROR: vert_refine_method differs on grid ids ',model_config_rec%grid_id(i),' and ',model_config_rec%grid_id(j),'. Only one type of vertical grid nesting can be used at a time.'
-         !    CALL wrf_error_fatal( wrf_err_message )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -1440,7 +1408,6 @@
               IF ((i .NE. j) .AND. (model_config_rec%parent_id(i) .EQ. model_config_rec%grid_id(j))) THEN
                 IF (model_config_rec%e_vert(i) .NE. model_config_rec%e_vert(j)) THEN
                   write(wrf_err_message,'(A,I2,A,I2,A)') '--- ERROR: e_vert differs on grid ids ',model_config_rec%grid_id(i),' and ',model_config_rec%grid_id(j),'. Set vert_refine_method or make e_vert consistent.'
-         !         CALL wrf_error_fatal( wrf_err_message )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -1460,7 +1427,6 @@
         IF ((model_config_rec%parent_id(i) .EQ. 0) .OR. (model_config_rec%parent_id(i) .EQ. model_config_rec%grid_id(i))) THEN
           IF (model_config_rec%vert_refine_method(i) .NE. 0) THEN
             write(wrf_err_message,'(A,I1,A,I2,A)') '--- ERROR: vert_refine_method=',model_config_rec%vert_refine_method(i),' for grid_id=',model_config_rec%grid_id(i),', must be 0 for a non-nested domain.'
-         !   CALL wrf_error_fatal( wrf_err_message )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -1476,7 +1442,6 @@
           j = model_config_rec%parent_id(i)
           IF (MOD(model_config_rec%e_vert(i)-1, model_config_rec%e_vert(j)-1) .NE. 0) THEN
             write(wrf_err_message,'(A,I2,A,I2,A)') "--- ERROR: grid_id=",i," and parent (grid_id=",j,") have incompatible e_vert's for vertical nesting with integer refinement."
-         !   CALL wrf_error_fatal ( wrf_err_message )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -1500,7 +1465,6 @@
              !  that are not easily comprehensible.
           ELSE
             wrf_err_message = '--- ERROR: vert_refine_method=2 only works with either RRTM or RRTMG'
-         !   CALL wrf_error_fatal ( wrf_err_message )
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
@@ -1570,7 +1534,7 @@
       WRITE (wrf_err_message, FMT='(A,I6, A)') 'NOTE:  ', count_fatal_error, &
                                             ' namelist settings are wrong. Please check and reset these options'
                                                          
-      CALL wrf_error_fatal ( wrf_err_message )
+         CALL wrf_error_fatal (  wrf_err_message  )
       END IF
 
    END SUBROUTINE 
@@ -1602,6 +1566,8 @@
                                              modified_bl_pbl_option, modified_sf_sfclay_option, modified_sf_surface_option
       CHARACTER (LEN=256) :: physics_suite_lowercase
       CHARACTER (LEN=32) :: formatstring
+      LOGICAL :: fatal_error
+      INTEGER :: count_fatal_error
 
       max_dom = model_config_rec % max_dom
 
@@ -1685,7 +1651,10 @@
          END DO
 
       CASE DEFAULT
-         CALL wrf_error_fatal ( 'Unrecognized physics suite' )
+          wrf_err_message = 'Unrecognized physics suite'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         fatal_error = .true.
+         count_fatal_error = count_fatal_error + 1
 
       END SELECT
 
@@ -1788,6 +1757,8 @@
 
       INTEGER :: numsoiltemp , nummosaictemp
       INTEGER :: i
+      LOGICAL :: fatal_error
+      INTEGER :: count_fatal_error
 
 
 !-----------------------------------------------------------------------
@@ -1825,7 +1796,10 @@
       IF (  model_config_rec % polar(1) .AND. &
             model_config_rec % fft_filter_lat .LT. 90. .AND. &
             model_config_rec % traj_opt .NE. 0 ) THEN
-         CALL wrf_error_fatal ( '--- ERROR: Trajectories not supported on global domain' )
+          wrf_err_message = '--- ERROR: Trajectories not supported on global domain'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         fatal_error = .true.
+         count_fatal_error = count_fatal_error + 1
       END IF
 
 !-----------------------------------------------------------------------

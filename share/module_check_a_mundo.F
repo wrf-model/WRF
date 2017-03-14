@@ -1566,8 +1566,6 @@
                                              modified_bl_pbl_option, modified_sf_sfclay_option, modified_sf_surface_option
       CHARACTER (LEN=256) :: physics_suite_lowercase
       CHARACTER (LEN=32) :: formatstring
-      LOGICAL :: fatal_error
-      INTEGER :: count_fatal_error
 
       max_dom = model_config_rec % max_dom
 
@@ -1651,10 +1649,7 @@
          END DO
 
       CASE DEFAULT
-          wrf_err_message = 'Unrecognized physics suite'
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         fatal_error = .true.
-         count_fatal_error = count_fatal_error + 1
+          CALL wrf_error_fatal ( 'Unrecognized physics suite' )
 
       END SELECT
 

@@ -1752,8 +1752,6 @@
 
       INTEGER :: numsoiltemp , nummosaictemp
       INTEGER :: i
-      LOGICAL :: fatal_error
-      INTEGER :: count_fatal_error
 
 
 !-----------------------------------------------------------------------
@@ -1791,10 +1789,7 @@
       IF (  model_config_rec % polar(1) .AND. &
             model_config_rec % fft_filter_lat .LT. 90. .AND. &
             model_config_rec % traj_opt .NE. 0 ) THEN
-          wrf_err_message = '--- ERROR: Trajectories not supported on global domain'
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         fatal_error = .true.
-         count_fatal_error = count_fatal_error + 1
+         CALL wrf_error_fatal ( '--- ERROR: Trajectories not supported on global domain')
       END IF
 
 !-----------------------------------------------------------------------

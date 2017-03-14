@@ -1534,7 +1534,7 @@
       WRITE (wrf_err_message, FMT='(A,I6, A)') 'NOTE:  ', count_fatal_error, &
                                             ' namelist settings are wrong. Please check and reset these options'
                                                          
-         CALL wrf_error_fatal (  wrf_err_message  )
+      CALL wrf_error_fatal (  wrf_err_message  )
       END IF
 
    END SUBROUTINE 
@@ -1649,7 +1649,7 @@
          END DO
 
       CASE DEFAULT
-          CALL wrf_error_fatal ( 'Unrecognized physics suite' )
+         CALL wrf_error_fatal ( 'Unrecognized physics suite' )
 
       END SELECT
 
@@ -1789,7 +1789,7 @@
       IF (  model_config_rec % polar(1) .AND. &
             model_config_rec % fft_filter_lat .LT. 90. .AND. &
             model_config_rec % traj_opt .NE. 0 ) THEN
-         CALL wrf_error_fatal ( '--- ERROR: Trajectories not supported on global domain')
+         CALL wrf_error_fatal ( '--- ERROR: Trajectories not supported on global domain' )
       END IF
 
 !-----------------------------------------------------------------------

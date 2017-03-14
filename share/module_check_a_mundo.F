@@ -685,12 +685,12 @@
             count_fatal_error = count_fatal_error + 1
          END IF
 
-         IF ( ( model_config_rec%auxinput4_interval   .EQ. 0 ) .AND. & 
-              ( model_config_rec%auxinput4_interval_y .EQ. 0 ) .AND. & 
-              ( model_config_rec%auxinput4_interval_d .EQ. 0 ) .AND. & 
-              ( model_config_rec%auxinput4_interval_h .EQ. 0 ) .AND. & 
-              ( model_config_rec%auxinput4_interval_m .EQ. 0 ) .AND. & 
-              ( model_config_rec%auxinput4_interval_s .EQ. 0 ) ) THEN
+         IF ( ( model_config_rec%auxinput4_interval(1)   .EQ. 0 ) .AND. & 
+              ( model_config_rec%auxinput4_interval_y(1) .EQ. 0 ) .AND. & 
+              ( model_config_rec%auxinput4_interval_d(1) .EQ. 0 ) .AND. & 
+              ( model_config_rec%auxinput4_interval_h(1) .EQ. 0 ) .AND. & 
+              ( model_config_rec%auxinput4_interval_m(1) .EQ. 0 ) .AND. & 
+              ( model_config_rec%auxinput4_interval_s(1) .EQ. 0 ) ) THEN
             wrf_err_message = '--- ERROR: If sst_update /= 0, one of the auxinput4_interval settings must be /= 0'
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- Set auxinput4_interval_s to the same value as interval_seconds (usually a pretty good guess).'

@@ -6,15 +6,23 @@
 !
 ! Contains subroutines that check the consistency of some namelist 
 ! settings. Some namelist settings depend on other values in the 
-! namelist. These subroutines reset the dependent values and write
-! a message to stdout instead of detecting a fatal error and abort-
-! ing on a parameter mis-match.  This works around depending on the
-! user to set these specific settings in the namelist.
+! namelist. The routine check_nml_consistency can detect quite a 
+! few fatal inconsistencies. These are all bundled up as a convenience.
+! The fatal errors are reported, and after the routine completes, then
+! a single call to wrf_error_fatal is issued. The setup_physics_suite routine
+! has only one fatal call, so that routine does not need this user-
+! friendly concept of bundling errors. The set_physics_rconfigs 
+! routine does not detect any problems that would result in a fatal
+! error, so the bundling of errors is also not required there.
 !
-!   SUBROUTINE check_nml_consistency  :
+!   SUBROUTINE check_nml_consistency :
 !      Check namelist settings for consistency
 !
-!   SUBROUTINE set_physics_rconfigs:
+!   SUBROUTINE setup_physics_suite : 
+!      Interpret user setting as referring to which supported schemes
+!      Currently: conus and tropical
+!
+!   SUBROUTINE set_physics_rconfigs :
 !      Check namelist settings that determine memory allocations.
 !
 !</DESCRIPTION>
@@ -31,7 +39,7 @@
 
 !=======================================================================
 
-   SUBROUTINE  check_nml_consistency
+   SUBROUTINE check_nml_consistency
  
 !<DESCRIPTION>
 !
@@ -813,7 +821,9 @@
 !     IF (model_config_rec%fasdas(i) .EQ. 1 ) THEN
 !       IF (model_config_rec%grid_sfdda(i) .EQ. 0) THEN
 !        wrf_err_message = '--- ERROR: sfdda needs to be set in the namelist.input file to run FASDAS.'
-!        CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+!        CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+!        fatal_error = .true.
+!        count_fatal_error = count_fatal_error + 1
 !       END IF
 !     END IF 
      END DO
@@ -1473,6 +1483,17 @@
       END DO
 
 !-----------------------------------------------------------------------
+! This WRF version does not support trajectories on a global domain
+!-----------------------------------------------------------------------
+      IF (  model_config_rec % polar(1) .AND. &
+            model_config_rec % fft_filter_lat .LT. 90. .AND. &
+            model_config_rec % traj_opt .NE. 0 ) THEN
+         CALL wrf_debug ( 0, '--- ERROR: Trajectories not supported on global domain' )
+         fatal_error = .true.
+         count_fatal_error = count_fatal_error + 1
+      END IF
+
+!-----------------------------------------------------------------------
 !  Remapping namelist variables for gridded and surface fdda to aux streams 9 and 10.
 !  Relocated here so that the remappings are after checking the namelist for inconsistencies.
 !-----------------------------------------------------------------------
@@ -1537,7 +1558,7 @@
       CALL wrf_error_fatal (  wrf_err_message  )
       END IF
 
-   END SUBROUTINE 
+   END SUBROUTINE check_nml_consistency
 
 !=======================================================================
 
@@ -1733,7 +1754,7 @@
 
 #endif
 
-   END SUBROUTINE 
+   END SUBROUTINE setup_physics_suite
 
 !=======================================================================
 
@@ -1781,15 +1802,6 @@
       IF ( ( model_config_rec % polar(1) ) .AND. &
            ( model_config_rec % fft_filter_lat .LT. 90. ) ) THEN
          model_config_rec % fft_used = 1
-      END IF
-
-!-----------------------------------------------------------------------
-! This WRF version does not support trajectories on a global domain
-!-----------------------------------------------------------------------
-      IF (  model_config_rec % polar(1) .AND. &
-            model_config_rec % fft_filter_lat .LT. 90. .AND. &
-            model_config_rec % traj_opt .NE. 0 ) THEN
-         CALL wrf_error_fatal ( '--- ERROR: Trajectories not supported on global domain' )
       END IF
 
 !-----------------------------------------------------------------------

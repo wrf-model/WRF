@@ -662,7 +662,7 @@
           CALL wrf_debug ( 300 , wrf_err_message )
           IF ( config_flags%gwd_opt /= itmp ) THEN
              call wrf_message("----------------- ERROR -------------------")
-             WRITE(wrf_err_message,'("namelist    : gwd_opt            = ",I10)') config_flags%sf_surface_physics
+             WRITE(wrf_err_message,'("namelist    : gwd_opt            = ",I10)') config_flags%gwd_opt
              call wrf_message(wrf_err_message)
              WRITE(wrf_err_message,'("input files : GWD_OPT            = ",I10, " (from wrfinput files).")') itmp
              call wrf_message(wrf_err_message)

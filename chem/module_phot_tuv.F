@@ -436,7 +436,7 @@ has_daylight : &
                                   moist(i,kts:kte,j,p_qc), moist(i,kts:kte,j,p_qi), &
                                   moist(i,kts:kte,j,p_qs), kts, kte )
            elseif( config_flags%pht_cldfrc_opt == 2 ) then
-             if( config_flags%cu_rad_feedback .and. config_flags%cu_diag == 1 ) then
+             if( config_flags%cu_diag == 1 ) then
                call cldfrac_fractional( cldfrac(kts:kte), &
                                         moist(i,kts:kte,j,p_qv), &
                                         moist(i,kts:kte,j,p_qc) + gd_cloud(i,kts:kte,j),  &
@@ -512,7 +512,7 @@ has_daylight : &
 
          qll(:)            = 0.
          qll(kts:kte)      = moist(i,kts:kte,j,p_qc) + moist(i,kts:kte,j,p_qi)
-         if( config_flags%cu_rad_feedback .and. config_flags%cu_diag == 1 ) then
+         if( config_flags%cu_diag == 1 ) then
            qll(kts:kte) = qll(kts:kte) + gd_cloud(i,kts:kte,j) + gd_cloud2(i,kts:kte,j)
          endif
          qll(kts:kte) = 1.e3*rhoa(kts:kte)*qll(kts:kte)

@@ -97,6 +97,11 @@
 
     CHARACTER (LEN=256) :: a_message
 
+    !  Bundle up the fatal errors in one piece at the end of the file.
+
+    INTEGER :: count_fatal_error
+
+
 
 !<DESCRIPTION>
 !
@@ -647,6 +652,27 @@
     END IF
 
 
+    ! Test here to check that config_flags%gwd_opt in namelist
+    ! is equal to what is in the global attributes of the wrfinput files
+
+    IF ( switch .EQ. input_only  ) THEN
+       CALL wrf_get_dom_ti_integer ( fid, 'GWD_OPT', itmp, 1, icnt, ierr )
+       IF ( ierr .EQ. 0 ) THEN
+          WRITE(wrf_err_message,*)'input_wrf: global attribute GWD_OPT returns ', itmp
+          CALL wrf_debug ( 300 , wrf_err_message )
+          IF ( config_flags%gwd_opt /= itmp ) THEN
+             call wrf_message("----------------- ERROR -------------------")
+             WRITE(wrf_err_message,'("namelist    : gwd_opt            = ",I10)') config_flags%sf_surface_physics
+             call wrf_message(wrf_err_message)
+             WRITE(wrf_err_message,'("input files : GWD_OPT            = ",I10, " (from wrfinput files).")') itmp
+             call wrf_message(wrf_err_message)
+             call wrf_debug ( 0, "---- ERROR: Mismatch between namelist and global attribute GWD_OPT")
+             count_fatal_error = count_fatal_error + 1
+          END IF
+       END IF
+    END IF
+
+
     CALL wrf_get_dom_ti_integer ( fid , 'ISWATER' ,  config_flags%iswater , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISWATER returns ',config_flags%iswater
     CALL wrf_debug ( 300 , wrf_err_message )
@@ -1060,6 +1086,15 @@
 
     n_ref_m = 0
 #endif
+
+    !  This test should go after all of the metadata is input, and before the gridded input is ingested.
+     
+    IF ( count_fatal_error .GT. 0 ) THEN
+       WRITE (wrf_err_message, FMT='(A,I6, A)') 'NOTE:  ', count_fatal_error, ' namelist vs input data inconsistencies found.'
+       CALL wrf_message ( wrf_err_message )
+       WRITE (wrf_err_message, FMT='(A,I6, A)') 'NOTE:  Please check and reset these options'
+       CALL wrf_error_fatal ( wrf_err_message )
+    END IF
 
     IF ( (first_input   .LE. switch .AND. switch .LE. last_input) .OR. &
          (first_history .LE. switch .AND. switch .LE. last_history) .OR. &

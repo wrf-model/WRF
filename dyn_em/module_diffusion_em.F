@@ -3675,7 +3675,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
     DO j = j_start, j_end
     DO i = i_start, i_end
        cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV))
-       hfx(i,j)=heat_flux*cp*rho(i,kts,j)         ! provided for output only
+       hfx(i,j)=heat_flux*cpm*rho(i,kts,j)         ! provided for output only
        rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
              -g*heat_flux*rho(i,kts,j)/dnw(kts)
     ENDDO

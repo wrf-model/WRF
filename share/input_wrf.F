@@ -696,9 +696,9 @@
     ! is equal to what is in the global attributes of the wrfinput files
 
     IF ( switch .EQ. input_only  ) THEN
-       CALL wrf_get_dom_ti_integer ( fid, 'SF_OCEAN_PHYSICS', itmp, 1, icnt, ierr )
+       CALL wrf_get_dom_ti_integer ( fid, 'SF_URBAN_PHYSICS', itmp, 1, icnt, ierr )
        IF ( ierr .EQ. 0 ) THEN
-          WRITE(wrf_err_message,*)'input_wrf: global attribute SF_OCEAN_PHYSICS returns ', itmp
+          WRITE(wrf_err_message,*)'input_wrf: global attribute SF_URBAN_PHYSICS returns ', itmp
           CALL wrf_debug ( 300 , wrf_err_message )
           IF ( config_flags%sf_urban_physics /= itmp ) THEN
              call wrf_message("----------------- ERROR -------------------")

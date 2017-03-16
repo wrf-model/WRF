@@ -672,6 +672,7 @@
        END IF
     END IF
 
+#if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
     ! Test here to check that config_flags%sf_ocean_physics in namelist
     ! is equal to what is in the global attributes of the wrfinput files
 
@@ -691,6 +692,7 @@
           END IF
        END IF
     END IF
+#endif
 
     ! Test here to check that config_flags%sf_urban_physics in namelist
     ! is equal to what is in the global attributes of the wrfinput files

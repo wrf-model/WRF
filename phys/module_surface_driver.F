@@ -1826,7 +1826,7 @@ CONTAINS
          IF (scm_force_flux .EQ. 1) THEN
 ! surface forcing by observed fluxes
          CALL scmflux(u_phytmp, v_phytmp, t_phy, qv_curr, p_phy, dz8w,   &
-                     cp, rovcp, xlv, psfc, cpm, xland,                   &
+                     cp, rcp, xlv, psfc, cpm, xland,                     &
                      psim, psih, hfx, qfx, lh, tsk, flhc, flqc,          &
                      znt, gz1oz0, wspd,                                  &
                      julian_in, karman, p1000mb,                         &
@@ -2057,7 +2057,7 @@ CONTAINS
          IF (scm_force_flux .EQ. 1) THEN
 ! surface forcing by observed fluxes
          CALL scmflux(u_phytmp, v_phytmp, t_phy, qv_curr, p_phy, dz8w,   &
-                     cp, rovcp, xlv, psfc, cpm, xland,                   &
+                     cp, rcp, xlv, psfc, cpm, xland,                     &
                      psim, psih, hfx, qfx, lh, tsk, flhc, flqc,          &
                      znt, gz1oz0, wspd,                                  &
                      julian_in, karman, p1000mb,                         &
@@ -2237,7 +2237,7 @@ CONTAINS
        ! ENDDO
          CALL TEMFSFCLAY(u3d=u_phytmp,v3d=v_phytmp,th3d=th_phy,    &
                qv3d=qv_curr,p3d=p_phy,pi3d=pi_phy,rho=rho,z=z,ht=ht, &
-               CP=cp,G=g,ROVCP=rovcp,R=r_d,XLV=xlv,psfc=psfc,chs=chs,&
+               CP=cp,G=g,ROVCP=rcp,R=r_d,XLV=xlv,psfc=psfc,chs=chs,&
                chs2=chs2,cqs2=cqs2,CPM=cpm,znt=znt,ust=ust,        &
                MAVAIL=mavail,XLAND=xland,HFX=hfx,QFX=qfx,LH=lh,   &
                TSK=tsk,FLHC=flhc,FLQC=flqc,QGH=qgh,qsfc=qsfc,      &
@@ -2258,7 +2258,7 @@ CONTAINS
          CALL wrf_debug( 100, 'in IDEALSCMSFCLAY' )
          CALL IDEALSCMSFCLAY(u3d=u_phytmp,v3d=v_phytmp,th3d=th_phy,    &
                qv3d=qv_curr,p3d=p_phy,pi3d=pi_phy,rho=rho,z=z,ht=ht, &
-               CP=cp,G=g,ROVCP=rovcp,R=r_d,XLV=xlv,psfc=psfc,chs=chs,&
+               CP=cp,G=g,ROVCP=rcp,R=r_d,XLV=xlv,psfc=psfc,chs=chs,  &
                chs2=chs2,cqs2=cqs2,CPM=cpm,znt=znt,ust=ust,        &
                MAVAIL=mavail,XLAND=xland,HFX=hfx,QFX=qfx,LH=lh,   &
                TSK=tsk,FLHC=flhc,FLQC=flqc,QGH=qgh,qsfc=qsfc,      &
@@ -3120,7 +3120,7 @@ CONTAINS
                  ELSE
                    T2(I,J) = TSK(I,J) - HFX(I,J)/(PSFC(I,J)/(R_d * TSK(I,J))*CP*CHS2(I,J))
                  ENDIF
-                   TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**ROVCP
+                   TH2(I,J) = T2(I,J)*(1.E5/PSFC(I,J))**RCP
 !             ELSEIF (IVGTYP(I,J) == ISURBAN .OR. IVGTYP(I,J) == ISICE .OR. FVEGXY(I,J) == 0.0 ) THEN
               ELSEIF (IVGTYP(I,J) == ISURBAN                   .or. &
 	              IVGTYP(I,J) == LOW_DENSITY_RESIDENTIAL   .or. & !urban

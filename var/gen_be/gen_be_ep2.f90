@@ -174,7 +174,7 @@ program gen_be_ep2
       qcloud_mnsq = 0.0
       qrain_mnsq = 0.0
       moist_string = trim(moist_string)//'qcloud, qrain '
-      if ( mp_physics == 2 .or. mp_physics == 4 .or. \
+      if ( mp_physics == 2 .or. mp_physics == 4 .or. &
            mp_physics >= 6 ) then
          has_ice   = .true.
          allocate( qice(1:dim1,1:dim2,1:dim3) )
@@ -194,7 +194,7 @@ program gen_be_ep2
          moist_string = trim(moist_string)//', qsnow '
       end if
       if ( mp_physics == 2 .or. mp_physics >= 6 ) then
-         if ( mp_physics /= 11 .and. mp_physics /= 13 .and. \
+         if ( mp_physics /= 11 .and. mp_physics /= 13 .and. &
               mp_physics /= 14 ) then
             has_graup = .true.
             allocate( qgraup(1:dim1,1:dim2,1:dim3) )

@@ -640,6 +640,35 @@
       END IF
 
 !-----------------------------------------------------------------------
+! If sst_update = 1, we need to make sure that two nml items are set:
+!   1. io_form_auxinput4 = 2 (only for one domain)
+!   2. auxinput4_interval = NON-ZERO (just check most coarse domain)
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec%sst_update .EQ. 1 ) THEN
+         IF ( model_config_rec%io_form_auxinput4 ) .EQ. 0 ) THEN
+            wrf_err_message = '--- ERROR: If sst_update /= 0, io_form_auxinput4 must be /= 0'
+            CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+            wrf_err_message = '--- Set io_form_auxinput4 in the time_control namelist (probably to 2).'
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
+         END IF
+
+         IF ( ( model_config_rec%auxinput4_interval(1)   .EQ. 0 ) .AND. & 
+              ( model_config_rec%auxinput4_interval_y(1) .EQ. 0 ) .AND. & 
+              ( model_config_rec%auxinput4_interval_d(1) .EQ. 0 ) .AND. & 
+              ( model_config_rec%auxinput4_interval_h(1) .EQ. 0 ) .AND. & 
+              ( model_config_rec%auxinput4_interval_m(1) .EQ. 0 ) .AND. & 
+              ( model_config_rec%auxinput4_interval_s(1) .EQ. 0 ) ) THEN
+            wrf_err_message = '--- ERROR: If sst_update /= 0, one of the auxinput4_interval settings must be /= 0'
+            CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+            wrf_err_message = '--- Set auxinput4_interval_s to the same value as interval_seconds (usually a pretty good guess).'
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
+         END IF
+      END IF
+
+!-----------------------------------------------------------------------
 ! The qndropsource relies on the flag PROGN (when not running chemistry)
 ! and is always allocated when running WRF Chem.
 !-----------------------------------------------------------------------

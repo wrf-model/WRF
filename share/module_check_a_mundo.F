@@ -646,7 +646,7 @@
 !-----------------------------------------------------------------------
 
       IF ( model_config_rec%sst_update .EQ. 1 ) THEN
-         IF ( model_config_rec%io_form_auxinput4 ) .EQ. 0 ) THEN
+         IF ( model_config_rec%io_form_auxinput4 .EQ. 0 ) THEN
             wrf_err_message = '--- ERROR: If sst_update /= 0, io_form_auxinput4 must be /= 0'
             CALL wrf_debug ( 0, TRIM(wrf_err_message) )
             wrf_err_message = '--- Set io_form_auxinput4 in the time_control namelist (probably to 2).'

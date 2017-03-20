@@ -5330,7 +5330,7 @@ END SUBROUTINE G_COMPUTE_DIFF_METRICS
  g_cpm =cp*(0.8*g_moist(i,kts,j,P_QV))
  cpm =cp*(1. +0.8*moist(i,kts,j,P_QV))
 
- g_hfx(i,j)= heat_flux*cp*g_rho(i,1,j)
+ g_hfx(i,j)= heat_flux*cpm*g_rho(i,1,j) + heat_flux*g_cpm*rho(i,1,j)
 
 ! Revised by Ning Pan, 2010-08-11
 ! g_Tmpv1 =mu(i,j)*g_heat_flux +g_mu(i,j)*heat_flux 

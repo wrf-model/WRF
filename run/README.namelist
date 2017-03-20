@@ -1490,3 +1490,57 @@ been tested.
 /
  num_gca_levels                      = 13    
  gca_input_opt                       = 1     
+
+Introduction of physics suite specification since v3.9:
+
+Starting with V3.9, there is a way to specify physics suite to use in the model. The physics suite
+specifies physics options 
+
+ mp_physics
+ cu_physics
+ ra_lw_physics
+ ra_sw_physics
+ bl_pbl_physics
+ sf_sfclay_physics
+ sf_surface_physics
+
+with a new namelist physics_suite = 'X'. Two suites are available in V3.9:
+
+ physics_suite = 'CONUS'
+
+ or 
+
+ physics_suite = 'tropical'
+
+where 'CONUS' is equivalent to
+
+ mp_physics         = 8,
+ cu_physics         = 6,
+ ra_lw_physics      = 4,
+ ra_sw_physics      = 4,
+ bl_pbl_physics     = 2,
+ sf_sfclay_physics  = 2,
+ sf_surface_physics = 2,
+
+and 'tropical' is equivalent to
+
+ mp_physics         = 6,
+ cu_physics         = 16,
+ ra_lw_physics      = 4,
+ ra_sw_physics      = 4,
+ bl_pbl_physics     = 1,
+ sf_sfclay_physics  = 91,
+ sf_surface_physics = 2,
+
+One can use physics_suite, and overwrite one or more options by explicitly including the physics 
+namelists.
+
+To overwrite an option for a nest, one can have
+
+ &physics
+ physics_suite                       = 'tropical'
+ cu_physics                          = -1,    -1,     0,
+ ...
+
+here '-1' means to use option specified by the suite, and '0' modifies the cumulus option from the 
+suite option 16 to 0 (turning cumulus off).

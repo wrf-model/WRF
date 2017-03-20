@@ -83,10 +83,19 @@ subroutine da_scan_obs_radar (iv, filename, grid)
       ! 3.2 read header
 
       read (unit=iunit, fmt = '(A)', iostat = iost) char_ned
+      if (iost /= 0) then
+         write(unit=message(1),fmt='(A,I3)')'Error reading header information for station number ',n
+         call da_error(__FILE__,__LINE__,message(1:1))
+      end if
 
       ! 3.3 read header information
 
       read (unit=char_ned (69:74), fmt='(I6)', iostat = iost) platform % stn % numobs
+
+      if(char_ned (1:5).ne."RADAR") then
+         write(unit=message(1),fmt='(A,I3)')'Error reading header information for station number ',n
+         call da_error(__FILE__,__LINE__,message(1:1))
+      end if
 
       ! 3.4 skip two lines
 
@@ -108,6 +117,13 @@ subroutine da_scan_obs_radar (iv, filename, grid)
                       platform % info % elv,       &
                       platform % info % levels
 
+         if (iost /= 0) then
+            write(unit=message(1),fmt='(A)')'Error reading next observation for '
+            write(unit=message(2),fmt='(A)')char_ned
+            write(unit=message(3),fmt='(A,I6,A,I6)')'Observation number ',j,' out of ',platform % stn % numobs
+            call da_error(__FILE__,__LINE__,message(1:3))
+         end if
+
          if (platform%info%lon == 180.0  ) platform%info%lon =-180.000
          ! Fix funny wind direction at Poles
          if (platform%info%lat < -89.9999 .or. platform%info%lat > 89.9999) then
@@ -124,7 +140,7 @@ subroutine da_scan_obs_radar (iv, filename, grid)
                field_type(missing_r, missing, missing_r, missing, missing_r), & ! rv
                field_type(missing_r, missing, missing_r, missing, missing_r))   ! rf
 
-            read (unit = iunit, fmt = '(3X, F12.1, 2(F12.3,I4,F12.3,2X))') &
+            read (unit = iunit, fmt = '(3X, F12.1, 2(F12.3,I4,F12.3,2X))', iostat = iost) &
                              platform % each (i) % height,           &
                              platform % each (i) % rv % inv,         &
                              platform % each (i) % rv % qc,          &
@@ -132,6 +148,13 @@ subroutine da_scan_obs_radar (iv, filename, grid)
                              platform % each (i) % rf % inv,         &
                              platform % each (i) % rf % qc,          &
                              platform % each (i) % rf % error
+
+         if (iost /= 0) then
+            write(unit=message(1),fmt='(A)')'Error reading next level for '
+            write(unit=message(2),fmt='(A)')char_ned
+            write(unit=message(3),fmt='(A,I6,A,I6)')'Observation number ',j,' out of ',platform % stn % numobs
+            call da_error(__FILE__,__LINE__,message(1:3))
+         end if
 
             if (platform % each (i) % rv % error == 0.0) then
                  platform % each (i) % rv % error  = 1.0
@@ -155,8 +178,15 @@ subroutine da_scan_obs_radar (iv, filename, grid)
 
          ! Check if outside of the time range:
 
-         read (platform%info%date_char,'(i4,4(1x,i2))') &
+         read (platform%info%date_char,'(i4,4(1x,i2))', iostat = iost) &
                iyear, imonth, iday, ihour, imin
+         if (iost /= 0) then
+            write(unit=message(1),fmt='(A,A,A)')'Bad date: ',platform % info % date_char,' found for'
+            write(unit=message(2),fmt='(A)')char_ned
+            write(unit=message(3),fmt='(A,I6,A,I6)')'Observation number ',j,' out of ',platform % stn % numobs
+            write(unit=message(4),fmt='(A)')'This is usually due to an incorrect number of vertical levels in the previous observation'
+            call da_error(__FILE__,__LINE__,message(1:4))
+         end if
          call da_get_julian_time (iyear,imonth,iday,ihour,imin,obs_time)
          if ( obs_time < time_slots(0) .or. &
               obs_time >= time_slots(num_fgat_time) ) then

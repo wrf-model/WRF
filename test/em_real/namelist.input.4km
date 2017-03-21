@@ -63,8 +63,6 @@
  ysu_topdown_pblmix                  = 1,
  cu_physics                          = 0,     0,     0,
  cudt                                = 0,     0,     0,
- isfflx                              = 1,
- ifsnow                              = 1,
  icloud                              = 1,
  num_soil_layers                     = 4,
  num_land_cat                        = 21,

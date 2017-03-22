@@ -15,7 +15,7 @@ save
 ! 20130716 acd_ck_vbsmoz start
 ! added OVOC washout
 !   integer, parameter :: wetscav_tab_cnt = 37
-   integer, parameter :: wetscav_tab_cnt = 37 + 10
+   integer, parameter :: wetscav_tab_cnt = 37 + 11
 ! 20130716 acd_ck_vbsmoz end
    real, parameter :: zero = 0.
    real, parameter :: one  = 1.
@@ -138,6 +138,7 @@ is_allocated : &
 ! 20140619 acd_mb_bugfix end
      wet_scav_tab(37) = wet_scav( 'sulf', p_sulf, (/1e+11, 0., 0., 0., 0., 0./), 98.078, .false., 0. ) ! order of magnitude approx. (Gmitro and Vermeulen, 1964)
 ! 20131125 acd_ck_bugfix end
+     wet_scav_tab(38) = wet_scav( 'hcooh',   p_hcooh,   (/8.9E+03,  6100., 1.8E-04, -20., 0., 0./), 46.02538, .true., 0.68 )
 
 ! 20130729 acd_ck_vbsmoz start
 ! 20130911 acd_ck_vbsdep mark
@@ -152,6 +153,7 @@ is_allocated : &
        wet_scav_tab(45) = wet_scav( 'cvbsoa2', p_cvbsoa2, (/7.00E+08, 6014., 0., 0., 0., 0./), 180.0, .false., 0. )
        wet_scav_tab(46) = wet_scav( 'cvbsoa3', p_cvbsoa3, (/9.33E+07, 6014., 0., 0., 0., 0./), 180.0, .false., 0. )
        wet_scav_tab(47) = wet_scav( 'cvbsoa4', p_cvbsoa4, (/1.24E+07, 6014., 0., 0., 0., 0./), 180.0, .false., 0. )
+       wet_scav_tab(48) = wet_scav( 'hcooh',   p_hcooh,   (/8.9E+03,  6100., 1.8E-04, -20., 0., 0./), 46.02538, .true., 0.68 )
      ENDIF
  ! 20130729 acd_ck_vbsmoz end
   

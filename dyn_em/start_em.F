@@ -269,7 +269,6 @@
 
     if(config_flags%cycling) then
 ! Clear the buckets for diagnostics at initial time
-    print *,'zero out buckets'
        DO j = jts,min(jte,jde-1)
        DO i = its, min(ite,ide-1)
             grid%prec_acc_nc(i,j) = 0.

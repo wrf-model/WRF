@@ -216,7 +216,7 @@ CONTAINS
           TMOML(I,J)=TSK(I,J)-5.
         ENDDO
         ENDDO
-     ELSE IF (oml_hml0 .eq. 0) THEN
+     ELSE IF (oml_hml0 .eq. 0.) THEN
 ! initializing with climatological mixed layer depth only
         DO J=jts,jtf
         DO I=its,itf

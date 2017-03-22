@@ -274,13 +274,11 @@
        DO i = its, min(ite,ide-1)
             grid%prec_acc_nc(i,j) = 0.
             grid%snow_acc_nc(i,j)  = 0.
-            grid%graup_acc_nc(i,j)  = 0.
             grid%sfcrunoff  (i,j) = 0.
             grid%udrunoff   (i,j) = 0.
 ! acsnow, acgraup and acrunoff are run-total
             grid%acrunoff   (i,j) = 0.
             grid%acsnow     (i,j) = 0.
-            grid%acgraup    (i,j) = 0.
        ENDDO
        ENDDO
     endif

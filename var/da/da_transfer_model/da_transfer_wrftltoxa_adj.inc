@@ -63,8 +63,7 @@ subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
    end do
    grid%xa%w(is:ie,js:je,ks:ke+1) = 0.0
 
-   if(var4d)then
-    if (size(grid%g_moist,dim=4) >= 4) then
+   if (size(grid%g_moist,dim=4) >= 4) then
       do k=ks,ke
          do j=js,je
             do i=is,ie
@@ -73,44 +72,28 @@ subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
             end do
          end do
       end do
-    end if
    end if
 
-#ifdef VAR4D_MICROPHYSICS
-   ! New code needed once we introduce the microphysics to 4dvar in 2008
-   if (size(grid%moist,dim=4) >= 4) then
+   if (size(grid%g_moist,dim=4) >= 6) then
       do k=ks,ke
          do j=js,je
             do i=is,ie
-               grid%g_moist(i,j,k,p_qcw) =  grid%xa%qcw(i,j,k)
-               grid%g_moist(i,j,k,p_qrn) =  grid%xa%qrn(i,j,k)
+               grid%g_moist(i,j,k,p_g_qi) =  grid%xa%qci(i,j,k)
+               grid%g_moist(i,j,k,p_g_qs) =  grid%xa%qsn(i,j,k)
             end do
          end do
       end do
    end if
 
-   if (size(grid%moist,dim=4) >= 6) then
+   if (size(grid%g_moist,dim=4) >= 7) then
       do k=ks,ke
          do j=js,je
             do i=is,ie
-               grid%g_moist(i,j,k,p_qci) =  grid%xa%qci(i,j,k)
-               grid%g_moist(i,j,k,p_qsn) =  grid%xa%qsn(i,j,k)
+               grid%g_moist(i,j,k,p_g_qg) =  grid%xa%qgr(i,j,k)
             end do
          end do
       end do
    end if
-
-   if (size(grid%moist,dim=4) >= 7) then
-      do k=ks,ke
-         do j=js,je
-            do i=is,ie
-               grid%g_moist(i,j,k,p_qgr) =  grid%xa%qgr(i,j,k)
-            end do
-         end do
-      end do
-   end if
-
-#endif
 
    !----------------------------------------------------------------------------
    ! [5.0] convert from c-grid to a-grid

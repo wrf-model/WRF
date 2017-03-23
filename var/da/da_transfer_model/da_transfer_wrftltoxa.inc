@@ -168,8 +168,7 @@ subroutine da_transfer_wrftltoxa(grid, config_flags, filnam, timestr)
       end do
    end do
 
-   if(var4d)then
-    if (size(grid%g_moist,dim=4) >= 4) then
+   if (size(grid%g_moist,dim=4) >= 4) then
       do k=ks,ke
          do j=js,je
             do i=is,ie
@@ -178,43 +177,28 @@ subroutine da_transfer_wrftltoxa(grid, config_flags, filnam, timestr)
             end do
          end do
       end do
-    end if
-   endif
+   end if
 
-#ifdef VAR4D_MICROPHYSICS
-   ! New code needed once we introduce the microphysics to 4dvar in 2008
-   if (size(grid%moist,dim=4) >= 4) then
+   if (size(grid%g_moist,dim=4) >= 6) then
       do k=ks,ke
          do j=js,je
             do i=is,ie
-               grid%xa%qcw(i,j,k)=grid%g_moist(i,j,k,p_qcw)
-               grid%xa%qrn(i,j,k)=grid%g_moist(i,j,k,p_qrn)
+               grid%xa%qci(i,j,k)=grid%g_moist(i,j,k,p_g_qi)
+               grid%xa%qsn(i,j,k)=grid%g_moist(i,j,k,p_g_qs)
             end do
          end do
       end do
    end if
 
-   if (size(grid%moist,dim=4) >= 6) then
+   if (size(grid%g_moist,dim=4) >= 7) then
       do k=ks,ke
          do j=js,je
             do i=is,ie
-               grid%xa%qci(i,j,k)=grid%g_moist(i,j,k,p_qci)
-               grid%xa%qsn(i,j,k)=grid%g_moist(i,j,k,p_qsn)
+               grid%xa%qgr(i,j,k)=grid%g_moist(i,j,k,p_g_qg)
             end do
          end do
       end do
    end if
-
-   if (size(grid%moist_2,dim=4) >= 7) then
-      do k=ks,ke
-         do j=js,je
-            do i=is,ie
-               grid%xa%qgr(i,j,k)=grid%g_moist(i,j,k,p_qgr) 
-            end do
-         end do
-      end do
-   end if
-#endif
 
 #ifdef DM_PARALLEL
 #include "HALO_XA.inc"

@@ -3107,7 +3107,7 @@ ENDIF
        b(1)=1.+dtz(k)*dfh(k+1)
        c(1)=-dtz(k)*dfh(k+1)
        ! d(1)=sqv(k) + dtz(k)*flqv + qcd(k)*delt
-       d(1)=chem1(k,ic) + dtz(k) * -vd1(ic)*chem1(1,ic)
+       d(1)=chem1(k,ic) + dtz(k) * (-1.0) * vd1(ic) * chem1(1,ic)
 
        DO k=kts+1,kte-1
           kk=k-kts+1

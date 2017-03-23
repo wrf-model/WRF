@@ -914,28 +914,6 @@
       ENDDO
 
 !-----------------------------------------------------------------------
-!  gwd_opt = 1 only works with YSU & MYNN PBL.
-!-----------------------------------------------------------------------
-
-!     oops = 0
-!     DO i = 1, model_config_rec % max_dom
-!        IF (model_config_rec%gwd_opt == 1 ) THEN
-!           IF ( (model_config_rec%bl_pbl_physics(i) .EQ. YSUSCHEME ) .OR. &
-!                (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2 ) .OR. &
-!                (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3) ) THEN
-!               !NO PROBLEM
-!           ELSE
-!              model_config_rec%gwd_opt = 0
-!              oops = oops + 1
-!           END IF
-!        END IF
-!     ENDDO      ! Loop over domains
-!     IF ( oops .GT. 0 ) THEN
-!        wrf_err_message = '--- NOTE: bl_pbl_physics /= 1,5,6 implies gwd_opt cannot be 1, resetting'
-!        CALL wrf_message ( wrf_err_message )
-!     END IF
-
-!-----------------------------------------------------------------------
 ! Make sure icloud_bl is only used when MYNN is chosen.
 !-----------------------------------------------------------------------
 

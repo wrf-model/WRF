@@ -3479,6 +3479,7 @@ contains
         MOZ    = 0.
         MOZSGN = 0
         MOZOLD = 0.
+        FH2    = 0.
         HG     = 0.
         H      = 0.
         QFX    = 0.
@@ -3931,6 +3932,7 @@ contains
         MOZ    = 0.
         MOZSGN = 0
         MOZOLD = 0.
+        FH2    = 0.
         H      = 0.
         QFX    = 0.
         FV     = 0.1

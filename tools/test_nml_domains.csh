@@ -95,6 +95,12 @@ foreach f ( $Reg_Dir/Registry.* $Reg_Dir/registry.* )
 	grep -i ^rconfig $f | grep -vi max_        | awk '{print $3}' >> list_of_all_one_dom_vars
 end
 
+#	Pick up the KNOWN namelist variable max_dom
+
+foreach f ( $Reg_Dir/Registry.* $Reg_Dir/registry.* )
+	grep -i ^rconfig $f | grep -iw max_dom     | awk '{print $3}' >> list_of_all_one_dom_vars
+end
+
 sort -u list_of_all_max_dom_vars > list_of_all_max_dom_vars_sorted
 sort -u list_of_all_one_dom_vars > list_of_all_one_dom_vars_sorted
 

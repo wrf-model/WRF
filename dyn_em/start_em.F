@@ -142,7 +142,7 @@
 !  CCN for MP=18 initializatio
    REAL :: ccn_max_val
 
-   REAL :: max_mf
+   REAL :: max_mf, max_sa
    CALL get_ijk_from_grid ( grid ,                              &
                            ids, ide, jds, jde, kds, kde,        &
                            ims, ime, jms, jme, kms, kme,        &

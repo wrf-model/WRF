@@ -1555,7 +1555,7 @@
       USE module_domain, ONLY : change_to_lower_case
 
       IMPLICIT NONE
-#if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
+#if ( EM_CORE == 1 )
 
       INTEGER :: i
       INTEGER :: max_dom

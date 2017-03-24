@@ -541,7 +541,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
                grid%xb%qgr(i,j,k) = max(grid%moist(i,j,k,p_qg), 0.0)
             end if
 
-            if ( config_flags%mp_physics == 3 ) then   ! WSM3-class scheme
+            if ( grid%mp_physics == 3 ) then   ! WSM3-class scheme
                if ( grid%xb%t(i,j,k) <= t_kelvin ) then
                   grid%xb%qci(i,j,k) = grid%xb%qcw(i,j,k)
                   grid%xb%qcw(i,j,k) = 0.0

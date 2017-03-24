@@ -551,3 +551,13 @@ which can be changed by the user for sensitivity testing purposes.
  input_outname                       = "wrfinput_out_d<domain>_<date>"
  inputout_begin_h                    = 3, 6, 6
  inputout_end_h                      = 9, 6, 6
+
+
+** The hybrid vertical coordinate (HVC) requires three pieces:
+1. The WRF and real codes must be built with HVC activated (./configure -hyb)
+2. The eta location (etac) at which the eta levels higher up in the atmosphere
+   become isobaric must be defined (suggested default in Registry).
+3. The run-time option to select the HVC (hybrid_opt, default is OFF): 
+&dynamics
+ hybrid_opt          = 2,
+ etac                = 0.2,

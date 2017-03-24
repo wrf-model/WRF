@@ -142,7 +142,7 @@
 !  CCN for MP=18 initializatio
    REAL :: ccn_max_val
 
-   REAL :: max_mf, max_sa
+   REAL :: max_mf, max_rot_angle
    CALL get_ijk_from_grid ( grid ,                              &
                            ids, ide, jds, jde, kds, kde,        &
                            ims, ime, jms, jme, kms, kme,        &
@@ -164,22 +164,28 @@
    !  If the rotation angle is too large, the GWD option does not do well with the assumed U and V
    !  being close to earth relative.
 
-   IF ( ( grid%id .EQ. 1 ) .AND.  ( .NOT. config_flags%polar ) .AND. ( config_flags%gwd_opt .EQ. 1 ) ) THEN
-      max_sa = ABS(grid%sina(its,jts))
+   IF ( ( grid%id .EQ. 1 ) .AND. ( config_flags%gwd_opt .EQ. 1 ) ) THEN
+      max_rot_angle = ASIN(ABS(grid%sina(its,jts)))/DEGRAD
       DO j=jts,MIN(jde-1,jte)
          DO i=its,MIN(ide-1,ite)
-            max_sa = MAX ( max_sa , ABS(grid%sina(i,j)) )
+            max_rot_angle = MAX ( max_rot_angle , ASIN(ABS(grid%sina(i,j)))/DEGRAD )
          END DO
       END DO
 #if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
       max_sa = wrf_dm_max_real ( max_sa )
 #endif
-      IF ( max_sa .GT. ABS(config_flags%max_sa_gwd) ) THEN
-         WRITE ( a_message , FMT='(A,F5.2)' ) 'Max ABS(sina) for domain 1 = ',max_sa
+      IF ( max_rot_angle .GT. ABS(config_flags%max_rot_angle_gwd) ) THEN
+         WRITE ( a_message , FMT='(A,F5.2)' ) 'Max projection rotation angle for domain 1 = ',max_rot_angle
          CALL wrf_message ( a_message ) 
          WRITE ( a_message , FMT='(A)'      ) 'This projection may not be appropriate for using the gravity wave drag option.'
          CALL wrf_message ( a_message ) 
-         WRITE ( a_message , FMT='(A,F5.2)' ) 'In namelist.input set either: 1) gwd_opt=0 or 2) max_sa_gwd>',max_sa
+         WRITE ( a_message , FMT='(A)'      ) 'In namelist.input make one of the two following changes:'
+         CALL wrf_message ( a_message ) 
+         WRITE ( a_message , FMT='(A)'      ) ' 1) gwd_opt = 0 '
+         CALL wrf_message ( a_message ) 
+         WRITE ( a_message , FMT='(A,F5.2)' ) ' 2) max_rot_angle_gwd > ',max_rot_angle
+         CALL wrf_message ( a_message ) 
+         WRITE ( a_message , FMT='(A)'      ) '--- ERROR: gwd_opt does not work with this domain'
          CALL wrf_error_fatal ( a_message ) 
       END IF
    END IF

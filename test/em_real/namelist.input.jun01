@@ -52,7 +52,7 @@
  /
 
  &physics
- mp_physics                          = 6,     6,     6,
+ mp_physics                          = 8,     8,     8,
  ra_lw_physics                       = 4,     4,     4,
  ra_sw_physics                       = 4,     4,     4,
  radt                                = 10,    10,    10,
@@ -62,10 +62,8 @@
  bldt                                = 0,     0,     0,
  cu_physics                          = 1,     0,     0,
  cudt                                = 5,     5,     5,
- isfflx                              = 1,
- ifsnow                              = 0,
  icloud                              = 1,
- surface_input_source                = 3,
+ cu_rad_feedback                     = .true.,.false.,.f.,
  num_soil_layers                     = 4,
  num_land_cat                        = 21,
  sf_urban_physics                    = 0,     0,     0,
@@ -81,7 +79,7 @@
  diff_6th_opt                        = 0,      0,      0,
  diff_6th_factor                     = 0.12,   0.12,   0.12,
  base_temp                           = 290.
- damp_opt                            = 0,
+ damp_opt                            = 3,
  zdamp                               = 5000.,  5000.,  5000.,
  dampcoef                            = 0.2,    0.2,    0.2
  khdif                               = 0,      0,      0,
@@ -89,6 +87,7 @@
  non_hydrostatic                     = .true., .true., .true.,
  moist_adv_opt                       = 1,      1,      1,     
  scalar_adv_opt                      = 1,      1,      1,     
+ gwd_opt                             = 1,
  /
 
  &bdy_control

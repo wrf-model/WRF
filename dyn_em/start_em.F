@@ -267,6 +267,21 @@
          CALL wrf_message ( a_message ) 
       END IF
 
+    if(config_flags%cycling) then
+! Clear the buckets for diagnostics at initial time
+       DO j = jts,min(jte,jde-1)
+       DO i = its, min(ite,ide-1)
+            grid%prec_acc_nc(i,j) = 0.
+            grid%snow_acc_nc(i,j)  = 0.
+            grid%sfcrunoff  (i,j) = 0.
+            grid%udrunoff   (i,j) = 0.
+! acsnow, and acrunoff are run-total
+            grid%acrunoff   (i,j) = 0.
+            grid%acsnow     (i,j) = 0.
+       ENDDO
+       ENDDO
+    endif
+
 !   --- SETUP AND INITIALIZE STOCHASTIC PERTURBATION SCHEMES ---
 
    IF ( grid%itimestep .EQ. 0 ) THEN
@@ -914,7 +929,6 @@
 ! MPDT is the call frequency for microphysics in minutes (0 means every step)
    MPDT = 0.
 
-!tgs
    IF(config_flags%cycling) THEN
        start_of_simulation = .true.
 !  print *,'cycling, start_of_simulation -->',config_flags%cycling, start_of_simulation
@@ -1021,10 +1035,9 @@ if(config_flags%sf_surface_physics.eq.NOAHMPSCHEME.and.config_flags%opt_run.eq.5
 endif
 #endif
 
-!tgs do not need physics initialization for backward DFI integration
     IF ( ( grid%dfi_opt .EQ. DFI_NODFI ) .or. &
           ( ( grid%dfi_stage .NE. DFI_BCK ) .and. &
-          ( grid%dfi_stage .NE. DFI_STARTBCK ) ) ) THEN    !tgs, mods by tah
+          ( grid%dfi_stage .NE. DFI_STARTBCK ) ) ) THEN
 
    DO ij = 1, grid%num_tiles
 
@@ -2103,6 +2116,7 @@ endif
       REAL :: p_surf ,  pd_surf, p_surf_int , pb_int , ht_hold
       REAL :: qvf , qvf1 , qvf2, qtot
       REAL :: pfu, pfd, phm
+      REAL :: z0, z1, z2, w1, w2
 
       !  Local domain indices and counters.
 
@@ -2337,6 +2351,14 @@ endif
 
             END IF ! hypsometric
        ENDIF ! nmoist
+
+! update surface pressure PSFC (needed for post-processing):
+               z0 = grid%ph0(i,1,j)/g
+               z1 = 0.5*(grid%ph0(i,1,j)+grid%ph0(i,2,j))/g
+               z2 = 0.5*(grid%ph0(i,2,j)+grid%ph0(i,3,j))/g
+               w1 = (z0 - z2)/(z1 - z2)
+               w2 = 1. - w1
+               grid%psfc(i,j) = w1*(grid%p(i,1,j)+grid%pb(i,1,j))+w2*(grid%p(i,2,j)+grid%pb(i,2,j))
 
          END DO !i
         ENDDO !j

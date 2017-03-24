@@ -1491,6 +1491,7 @@ been tested.
  num_gca_levels                      = 13    
  gca_input_opt                       = 1     
 
+
 Introduction of physics suite specification since v3.9:
 
 Starting with V3.9, there is a way to specify physics suite to use in the model. The physics suite
@@ -1544,3 +1545,31 @@ To overwrite an option for a nest, one can have
 
 here '-1' means to use option specified by the suite, and '0' modifies the cumulus option from the 
 suite option 16 to 0 (turning cumulus off).
+
+
+Hybrid Vertical Coordinate (HVC) vs Terrain Following (TF)
+
+The HVC option is available starting in WRFv3.9. There is both a compile-time activation and
+a run-time activation. This option may not be used in conjunction with the vertical nesting
+refinement.
+
+Compile-time requirement for HVC:
+The user must build the code with 
+./configure -hyb
+
+Run-time requirement for HVC:
+There are two namelist settings that control the HVC option. Conventionally, the suggested value
+for the level at which the eta levels become isobaric is the default value in the Registry file
+(as this valus is not intuitively easy to remember). The second switch, to turn on the HVC, is by default
+set to the TF value (hybrid_opt=0) in the Registry. To activate the hybrid coordinate capability,
+this value needs to be modified in the namelist (hybrid_opt=2).
+
+Assuming that the WRF and real codes have been built with the HVC compile-time option, then
+
+1. To turn ON the HVC
+&dynamics
+ hybrid_opt         = 2,
+
+2. To turn OFF the HVC
+&dynamics
+ hybrid_opt         = 0,

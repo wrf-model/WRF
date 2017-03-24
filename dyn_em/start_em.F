@@ -172,7 +172,7 @@
          END DO
       END DO
 #if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
-      max_sa = wrf_dm_max_real ( max_sa )
+      max_rot_angle = wrf_dm_max_real ( max_rot_angle )
 #endif
       IF ( max_rot_angle .GT. ABS(config_flags%max_rot_angle_gwd) ) THEN
          WRITE ( a_message , FMT='(A,F5.2)' ) 'Max projection rotation angle for domain 1 = ',max_rot_angle

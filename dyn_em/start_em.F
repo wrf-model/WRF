@@ -165,17 +165,17 @@
    !  being close to earth relative.
 
    IF ( ( grid%id .EQ. 1 ) .AND.  ( .NOT. config_flags%polar ) .AND. ( config_flags%gwd_opt .EQ. 1 ) ) THEN
-      max_sa = ABS(grid%sinalpha(its,jts))
+      max_sa = ABS(grid%sina(its,jts))
       DO j=jts,MIN(jde-1,jte)
          DO i=its,MIN(ide-1,ite)
-            max_sa = MAX ( max_sa , ABS(grid%sinalpha(i,j)) )
+            max_sa = MAX ( max_sa , ABS(grid%sina(i,j)) )
          END DO
       END DO
 #if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
       max_sa = wrf_dm_max_real ( max_sa )
 #endif
       IF ( max_sa .GT. ABS(config_flags%max_sa_gwd) ) THEN
-         WRITE ( a_message , FMT='(A,F5.2)' ) 'Max ABS(sinalpha) for domain 1 = ',max_sa
+         WRITE ( a_message , FMT='(A,F5.2)' ) 'Max ABS(sina) for domain 1 = ',max_sa
          CALL wrf_message ( a_message ) 
          WRITE ( a_message , FMT='(A)'      ) 'This projection may not be appropriate for using the gravity wave drag option.'
          CALL wrf_message ( a_message ) 

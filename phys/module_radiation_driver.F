@@ -1120,7 +1120,7 @@ CONTAINS
 
      IF ( ICLOUD == 1 ) THEN
 
-     IF ( F_QC .AND. F_QI ) THEN
+     IF ( F_QC .OR. F_QI ) THEN
 ! Call to cloud fraction routine based on Randall 1994 (Hong Pan 1998)
 
         CALL wrf_debug (1, 'CALL cldfra1')
@@ -1194,7 +1194,7 @@ CONTAINS
  
      ELSE IF ( ICLOUD == 2 ) THEN
 
-     IF ( F_QC .AND. F_QI ) THEN
+     IF ( F_QC .OR. F_QI ) THEN
        CALL wrf_debug (1, 'CALL cldfra2')
        CALL cal_cldfra2(CLDFRA,qc,qi,F_QC,F_QI,              &
                        ids,ide, jds,jde, kds,kde,            &

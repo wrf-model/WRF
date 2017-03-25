@@ -640,6 +640,7 @@
 #endif
 #endif
 
+#if ( DA_CORE != 1 )
     ! Test here to check that config_flags%sf_surface_physics in namelist
     ! is equal to what is in the global attributes of the wrfinput files
 
@@ -686,6 +687,7 @@
           END IF
        END IF
     END IF
+#endif
 
 #if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
     ! Test here to check that config_flags%sf_ocean_physics in namelist
@@ -709,6 +711,7 @@
     END IF
 #endif
 
+#if ( DA_CORE != 1 )
     ! Test here to check that config_flags%sf_urban_physics in namelist
     ! is equal to what is in the global attributes of the wrfinput files
 
@@ -728,7 +731,7 @@
           END IF
        END IF
     END IF
-
+#endif
 
     CALL wrf_get_dom_ti_integer ( fid , 'ISWATER' ,  config_flags%iswater , 1 , icnt , ierr )
     WRITE(wrf_err_message,*)'input_wrf: wrf_get_dom_ti_integer for ISWATER returns ',config_flags%iswater

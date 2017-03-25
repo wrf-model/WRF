@@ -56,10 +56,7 @@
  radt                                = 30,    30,    30,
  bldt                                = 0,     0,     0,
  cudt                                = 5,     5,     5,
- isfflx                              = 1,
- ifsnow                              = 1,
  icloud                              = 1,
- surface_input_source                = 3,
  num_soil_layers                     = 4,
  num_land_cat                        = 21,
  sf_urban_physics                    = 0,     0,     0,
@@ -83,6 +80,7 @@
  non_hydrostatic                     = .true., .true., .true.,
  moist_adv_opt                       = 1,      1,      1,     
  scalar_adv_opt                      = 1,      1,      1,     
+ gwd_opt                             = 1,
  /
 
  &bdy_control

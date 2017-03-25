@@ -50,7 +50,7 @@ subroutine da_transfer_xatowrf(grid, config_flags)
    if (trace_use) call da_trace_entry("da_transfer_xatowrf")
 
    has_lsm_info = .false.
-   if ( config_flags%sf_surface_physics == 2 ) then
+   if ( grid%sf_surface_physics == 2 ) then
        if ( sum(grid%hfx*grid%hfx)   > 0.0 .and. &
             sum(grid%qfx*grid%qfx)   > 0.0 ) then
           has_lsm_info = .true.

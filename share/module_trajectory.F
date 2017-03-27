@@ -1149,6 +1149,7 @@ pkg_loop:  do pkg = 1,pkg_max
    logical         :: valid
    type(statevar), allocatable :: St_Vars_wrk(:,:)
    logical, allocatable :: St_Vars_msk_wrk(:,:)
+   character(len=80) :: tstring
    character(len=9) :: Verbotten(nVerbotten) = (/ 'zx       ', 'zy       ', &
                                                   'RUNDGTEN ', 'RVNDGTEN ', &
                                                   'U_NDG_OLD', 'V_NDG_OLD', &
@@ -1160,26 +1161,38 @@ pkg_loop:  do pkg = 1,pkg_max
    dm = grid%id
    p => grid%head_statevars%next ; cnt = 0
    do while( associated(p) )
-!    valid = (p%Type == 'R' .or. p%Type == 'r') .and. (p%Ndim == 2 .or. p%Ndim == 3)
-     valid = (p%Type == 'R' .or. p%Type == 'r') .and. p%Ndim == 3
+     valid = (p%Type == 'R' .or. p%Type == 'r') .and. &
+             (p%Ndim == 3 .or. (p%Ndim == 4 .and. p%scalar_array))
      if( valid ) then
-!      valid = (p%Ndim == 2 .and. p%MemoryOrder(:2) == 'XY') .or. &
-!              (p%Ndim == 3 .and. p%MemoryOrder(:3) == 'XZY')
-       valid = p%MemoryOrder(:3) == 'XZY'
-       if( valid .and. p%Ndim == 3 ) then
-         valid = p%em2 == kme
-         if( valid ) then
+       valid = p%MemoryOrder(:3) == 'XZY' .and. (p%em2 == kde-1 .or. p%em2 == kde)
+       if( valid ) then
+         if( p%Ndim == 3 ) then
            do m = 1,nVerbotten
              if( trim(Verbotten(m)) == trim(p%Varname) ) then
                valid = .false.
                exit
              endif
            enddo
+           if( valid ) then
+             cnt = cnt + 1
+           endif
+         elseif( p%Ndim == 4 ) then
+           do n = param_first_scalar,p%num_table(dm)
+             valid = .true.
+             do m = 1,nVerbotten
+               tstring = trim(Verbotten(m))
+               call upcase( tstring )
+               if( trim(tstring) == trim(p%dname_table(dm,n)) ) then
+                 valid = .false.
+                 exit
+               endif
+             enddo
+             if( valid ) then
+               cnt = cnt + 1
+             endif
+           enddo
          endif
        endif
-     endif
-     if( valid ) then
-       cnt = cnt + 1
      endif
      p => p%next
    end do
@@ -1227,38 +1240,52 @@ pkg_loop:  do pkg = 1,pkg_max
 
      St_Vars_msk(:cnt) = .false.
      p => grid%head_statevars%next ; cnt = 0
+
      do while( associated(p) )
-!      valid = (p%Type == 'R' .or. p%Type == 'r') .and. (p%Ndim == 2 .or. p%Ndim == 3)
-       valid = (p%Type == 'R' .or. p%Type == 'r') .and. p%Ndim == 3
+       valid = (p%Type == 'R' .or. p%Type == 'r') .and. &
+               (p%Ndim == 3 .or. (p%Ndim == 4 .and. p%scalar_array))
        if( valid ) then
-         valid = p%MemoryOrder(:3) == 'XZY'
-!        valid = (p%Ndim == 2 .and. p%MemoryOrder(:2) == 'XY') .or. &
-!                (p%Ndim == 3 .and. p%MemoryOrder(:3) == 'XZY')
-         if( valid .and. p%Ndim == 3 ) then
-           valid = p%em2 == kme
-           if( valid ) then
+         valid = p%MemoryOrder(:3) == 'XZY' .and. (p%em2 == kde-1 .or. p%em2 == kde)
+         if( valid ) then
+           if( p%Ndim == 3 ) then
              do m = 1,nVerbotten
                if( trim(Verbotten(m)) == trim(p%Varname) ) then
                  valid = .false.
                  exit
                endif
              enddo
-           endif
-         endif
-         if( valid ) then
-           cnt = cnt + 1
-           St_Vars(cnt)%Varname = p%Varname 
-           St_Vars(cnt)%Description = p%Description 
-           St_Vars(cnt)%Units   = p%Units 
-           St_Vars(cnt)%MemOrd  = p%MemoryOrder 
-           St_Vars(cnt)%Stagger = p%Stagger
-           St_Vars(cnt)%Ndim = p%Ndim 
-           if( p%Ndim == 3 ) then
-             St_Vars(cnt)%rfield_3d => p%rfield_3d
-             nullify( St_Vars(cnt)%rfield_2d )
-           else
-             St_Vars(cnt)%rfield_2d => p%rfield_2d
-             nullify( St_Vars(cnt)%rfield_3d )
+             if( valid ) then
+               cnt = cnt + 1
+               St_Vars(cnt)%Varname = p%Varname 
+               St_Vars(cnt)%Description = p%Description 
+               St_Vars(cnt)%Units   = p%Units 
+               St_Vars(cnt)%MemOrd  = p%MemoryOrder 
+               St_Vars(cnt)%Stagger = p%Stagger
+               St_Vars(cnt)%Ndim = p%Ndim 
+               St_Vars(cnt)%rfield_3d => p%rfield_3d
+             endif
+           elseif( p%Ndim == 4 ) then
+             do n = param_first_scalar,p%num_table(dm)
+               valid = .true.
+               do m = 1,nVerbotten
+                 tstring = trim(Verbotten(m))
+                 call upcase( tstring )
+                 if( trim(tstring) == trim(p%dname_table(dm,n)) ) then
+                   valid = .false.
+                   exit
+                 endif
+               enddo
+               if( valid ) then
+                 cnt = cnt + 1
+                 St_Vars(cnt)%Varname = trim(p%dname_table(dm,n))
+                 St_Vars(cnt)%Description = p%Description 
+                 St_Vars(cnt)%Units   = p%Units 
+                 St_Vars(cnt)%MemOrd  = p%MemoryOrder 
+                 St_Vars(cnt)%Stagger = p%Stagger
+                 St_Vars(cnt)%Ndim = 3
+                 St_Vars(cnt)%rfield_3d => p%rfield_4d(:,:,:,p%index_table(n,dm))
+               endif
+             enddo
            endif
          endif
        endif
@@ -2996,6 +3023,30 @@ include 'netcdf.inc'
    end select
 
    end subroutine trajmapproj
+
+   subroutine UPCASE( lstring )
+!----------------------------------------------------------------------
+!       ... Convert character string lstring to upper case
+!----------------------------------------------------------------------
+   implicit none
+
+!-----------------------------------------------------------------------
+!	... Dummy args
+!-----------------------------------------------------------------------
+   character(len=*), intent(inout) ::  lstring
+
+!-----------------------------------------------------------------------
+!	... Local variables
+!-----------------------------------------------------------------------
+   integer :: i
+
+   do i = 1,LEN_TRIM( lstring )
+     if( ICHAR(lstring(i:i)) >= 97 .and.  ICHAR(lstring(i:i)) <= 122 ) then
+       lstring(i:i) = CHAR(ICHAR(lstring(i:i)) - 32)
+     end if
+   end do
+
+   end subroutine UPCASE
 
 #endif
 

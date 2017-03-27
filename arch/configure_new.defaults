@@ -1275,15 +1275,15 @@ CC_TOOLS        =      $(SCC)
 DESCRIPTION     =       CRAY CCE ($SFC/$SCC): Cray XE and XC
 # OpenMP is enabled by default for Cray CCE compiler
 # This turns it off
-OMP             =       -hnoomp
+NOOMP           =       -hnoomp
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -homp
 OMPCC           =       # -homp
-SFC             =       ftn
+SFC             =       ftn $(NOOMP)
 SCC             =       cc 
 CCOMP           =       gcc 
-DM_FC           =       ftn
+DM_FC           =       ftn $(NOOMP)
 DM_CC           =       cc
 FC              =       $(DM_FC)
 CC              =       $(DM_CC)
@@ -1295,7 +1295,7 @@ CFLAGS_LOCAL    =       -O3
 LDFLAGS_LOCAL   =       
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-FCOPTIM         =       
+FCOPTIM         =       # -Ofp3 
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O1 -Ofp1 -Oipa0 -Onomodinline
 FCDEBUG         =       # -g -O0 # -K trap=fp -R bc

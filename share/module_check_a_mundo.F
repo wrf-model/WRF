@@ -914,28 +914,6 @@
       ENDDO
 
 !-----------------------------------------------------------------------
-!  gwd_opt = 1 only works with YSU & MYNN PBL.
-!-----------------------------------------------------------------------
-
-      oops = 0
-      DO i = 1, model_config_rec % max_dom
-         IF (model_config_rec%gwd_opt == 1 ) THEN
-            IF ( (model_config_rec%bl_pbl_physics(i) .EQ. YSUSCHEME ) .OR. &
-                 (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2 ) .OR. &
-                 (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3) ) THEN
-                !NO PROBLEM
-            ELSE
-               model_config_rec%gwd_opt = 0
-               oops = oops + 1
-            END IF
-         END IF
-      ENDDO      ! Loop over domains
-      IF ( oops .GT. 0 ) THEN
-         wrf_err_message = '--- NOTE: bl_pbl_physics /= 1,5,6 implies gwd_opt cannot be 1, resetting'
-         CALL wrf_message ( wrf_err_message )
-      END IF
-
-!-----------------------------------------------------------------------
 ! Make sure icloud_bl is only used when MYNN is chosen.
 !-----------------------------------------------------------------------
 
@@ -954,6 +932,27 @@
       IF ( oops .GT. 0 ) THEN
          wrf_err_message = 'Need MYNN PBL for icloud_bl = 1, resetting to 0'
          CALL wrf_message ( wrf_err_message )
+      END IF
+
+!-----------------------------------------------------------------------
+! Make sure microphysics option without QICE array cannot be used with icloud=3
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%icloud .eq. 3) THEN
+           IF ( model_config_rec%mp_physics(i) .EQ. WSM3SCHEME .OR. &
+                model_config_rec%mp_physics(i) .EQ. KESSLERSCHEME ) THEN
+                oops = oops + 1
+           END IF
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: Need microphysics schemes with QICE array for icloud = 3'
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- Choose a microphysics scheme other than WSM3 and Kessler'
+         CALL wrf_message ( wrf_err_message )
+         count_fatal_error = count_fatal_error + 1
       END IF
 
 !-----------------------------------------------------------------------
@@ -1555,7 +1554,7 @@
       USE module_domain, ONLY : change_to_lower_case
 
       IMPLICIT NONE
-#if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
+#if ( EM_CORE == 1 )
 
       INTEGER :: i
       INTEGER :: max_dom

@@ -1471,10 +1471,7 @@ rconfig   logical rdlai2d                 namelist,physics      1            .fa
 rconfig   logical ua_phys                 namelist,physics      1            .false.   h     "ua_phys"     "activate UA Noah changes"   ""
 rconfig   integer opt_thcnd               namelist,physics      1            1         h     "opt_thcnd" "thermal conductivity option in Noah LSM"   ""
 
-ifdef HWRF=1
 rconfig   integer  gwd_opt                namelist,physics    max_domains    2       irh    "gwd_opt"      "activate gravity wave drag: 0=off, 1=ARW, 2=NMM"   ""
-endif
-rconfig   integer  gwd_opt                namelist,physics    max_domains    0       irh    "gwd_opt"      "activate gravity wave drag: 0=off, 1=ARW, 2=NMM"   ""
 
 rconfig   integer iz0tlnd                 namelist,physics      1            0         h     "iz0tlnd"    "switch to control land thermal roughness length"   ""
 rconfig   real    sas_pgcon               namelist,physics      max_domains  0.55      irh0123   "sas_pgcon"   "convectively forced pressure gradient factor (SAS scheme)" ""

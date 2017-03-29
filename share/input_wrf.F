@@ -144,7 +144,18 @@
     WRITE(wrf_err_message,*)'input_wrf: dryrun = ',dryrun,' switch ',switch
     CALL wrf_debug( 300 , wrf_err_message )
 
-    check_if_dryrun : IF ( .NOT. dryrun ) THEN
+
+    !  The following setting up of run-time variables only needs to be done
+    !  when getting the initial WRF input, restarting, LBC, ndown, or running REAL. For all
+    !  other use cases these variables have already been set (and should not be
+    !  overwritten).
+
+    check_if_dryrun : IF ( ( .NOT. dryrun ) .AND. &
+                           ( ( switch .EQ. input_only) .OR. &
+                             ( switch .EQ. restart_only ) .OR. &
+                             ( switch .EQ. boundary_only ) .OR. &
+                             ( switch .EQ. auxinput1_only) .OR. &
+                             ( switch .EQ. auxinput2_only ) ) ) THEN
 
 #if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
       IF ( switch .EQ. boundary_only ) THEN

@@ -11,7 +11,11 @@ if ( -e newbies ) then
 endif
 touch newbies
 
-foreach f ( Registry* registry* )
+pushd ../Registry >& /dev/null
+set Registry_files = `ls -1 Registry* registry*`
+popd >& /dev/null
+
+foreach f ( $Registry_files )
 	if ( ( $f == Registry.CONVERT ) || \
 	     ( $f == Registry.EM_COMMON.var ) || \
 	     ( $f == Registry.NMM ) || \

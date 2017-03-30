@@ -16,7 +16,7 @@ MODULE module_cu_gf_deep
      real, parameter::betajb=1.5
 ! tuning for shallow and mid convection. EC uses 1.5
      integer, parameter:: use_excess=1
-     real, parameter :: fluxtune=1.
+     real, parameter :: fluxtune=1.5
 ! flag to turn off or modify mom transport by downdrafts
      real, parameter :: pgcd = 1.
 !
@@ -306,7 +306,7 @@ contains
        up_massentr,up_massdetr,c1d                                        &
       ,up_massentro,up_massdetro,dd_massentro,dd_massdetro
      real,    dimension (its:ite,kts:kte) ::                              &
-       up_massentru,up_massdetru
+       up_massentru,up_massdetru,dd_massentru,dd_massdetru
      real buo_flux,pgcon,pgc,blqe
     
      real :: xff_mid(its:ite,2)
@@ -395,7 +395,7 @@ contains
         if(xland(i).gt.1.5 .or. xland(i).lt.0.5)then
             xland1(i)=0
 !            if(imid.eq.0)cap_max(i)=cap_maxs-25.
-            if(imid.eq.1)cap_max(i)=cap_maxs-50.
+!            if(imid.eq.1)cap_max(i)=cap_maxs-50.
             cap_max_increment(i)=20.
         else
             if(ztexec(i).gt.0.)cap_max(i)=cap_max(i)+25.
@@ -404,7 +404,7 @@ contains
         ierrc(i)=" "
 !       cap_max_increment(i)=1.
       enddo
-      if(imid == 0 .or. use_excess == 0 )then
+      if(use_excess == 0 )then
        ztexec(:)=0
        zqexec(:)=0
       endif
@@ -688,6 +688,7 @@ contains
                  do k=kbcon(i)+1,ktf
                   if((po_cup(i,k22(i))-po_cup(i,k)).gt.500.)then
                     ktop(i)=k
+                    ktopdby(i)=ktop(i)
                     exit
                   endif
                  enddo
@@ -935,6 +936,8 @@ contains
        cdd(i,k)=0.
        dd_massentro(i,k)=0.
        dd_massdetro(i,k)=0.
+       dd_massentru(i,k)=0.
+       dd_massdetru(i,k)=0.
        hcdo(i,k)=heso_cup(i,k)
        ucd(i,k)=u_cup(i,k)
        vcd(i,k)=v_cup(i,k)
@@ -1017,21 +1020,25 @@ contains
 
 
 ! downdraft moist static energy + moisture budget
+          do k=2,jmin(i)+1
+           dd_massentru(i,k-1)=dd_massentro(i,k-1)+lambau(i)*dd_massdetro(i,k-1)
+           dd_massdetru(i,k-1)=dd_massdetro(i,k-1)+lambau(i)*dd_massdetro(i,k-1)
+          enddo
             dbydo(i,jmin(i))=hcdo(i,jmin(i))-heso_cup(i,jmin(i))
             bud(i)=dbydo(i,jmin(i))*(zo_cup(i,jmin(i)+1)-zo_cup(i,jmin(i)))
             do ki=jmin(i)  ,1,-1
              dzo=zo_cup(i,ki+1)-zo_cup(i,ki)
              h_entr=.5*(heo(i,ki)+.5*(hco(i,ki)+hco(i,ki+1)))
              ucd(i,ki)=(ucd(i,ki+1)*zdo(i,ki+1)                                   &
-                         -.5*dd_massdetro(i,ki)*ucd(i,ki+1)+                      &
-                        dd_massentro(i,ki)*us(i,ki)                               &
+                         -.5*dd_massdetru(i,ki)*ucd(i,ki+1)+                      &
+                        dd_massentru(i,ki)*us(i,ki)                               &
                         -pgcon*zdo(i,ki+1)*(us(i,ki+1)-us(i,ki)))   /             &
-                        (zdo(i,ki+1)-.5*dd_massdetro(i,ki)+dd_massentro(i,ki))
+                        (zdo(i,ki+1)-.5*dd_massdetru(i,ki)+dd_massentru(i,ki))
              vcd(i,ki)=(vcd(i,ki+1)*zdo(i,ki+1)                                   &
-                         -.5*dd_massdetro(i,ki)*vcd(i,ki+1)+                      &
-                        dd_massentro(i,ki)*vs(i,ki)                               &
+                         -.5*dd_massdetru(i,ki)*vcd(i,ki+1)+                      &
+                        dd_massentru(i,ki)*vs(i,ki)                               &
                         -pgcon*zdo(i,ki+1)*(vs(i,ki+1)-vs(i,ki)))   /             &
-                        (zdo(i,ki+1)-.5*dd_massdetro(i,ki)+dd_massentro(i,ki))
+                        (zdo(i,ki+1)-.5*dd_massdetru(i,ki)+dd_massentru(i,ki))
              hcdo(i,ki)=(hcdo(i,ki+1)*zdo(i,ki+1)                                 &
                          -.5*dd_massdetro(i,ki)*hcdo(i,ki+1)+                     &
                         dd_massentro(i,ki)*h_entr)   /                            &
@@ -1159,7 +1166,7 @@ contains
             if(ierr(i).eq.0)then
 
                !- only for convection rooting in the PBL
-               if(zo_cup(i,kbcon(i))-z1(i) > zo(i,kpbl(i)-1)) then 
+               if(zo_cup(i,kbcon(i))-z1(i) > zo(i,kpbl(i)+1)) then 
                   aa1_bl(i) = 0.0
                else
                !- multiply aa1_bl the " time-scale" - tau_bl
@@ -1379,15 +1386,11 @@ contains
              dellu(i,k) =-(zuo(i,k+1)*(uc (i,k+1)-u_cup(i,k+1) ) -                               &
                             zuo(i,k  )*(uc (i,k  )-u_cup(i,k  ) ) )*g/dp                         &
                           +(zdo(i,k+1)*(ucd(i,k+1)-u_cup(i,k+1) ) -                              &
-                            zdo(i,k  )*(ucd(i,k  )-u_cup(i,k  ) ) )*g/dp*edto(i)*pgcd            &
-                     +(pgc*.5*(zuo(i,k)+zuo(i,k+1))*(u_cup(i,k+1)-u_cup(i,k))                    &
-                     + pgcd*pgc*.5*edto(i)*(zdo(i,k)+zdo(i,k+1))*(u_cup(i,k+1)-u_cup(i,k)))*g/dp
+                            zdo(i,k  )*(ucd(i,k  )-u_cup(i,k  ) ) )*g/dp*edto(i)*pgcd
              dellv(i,k) =-(zuo(i,k+1)*(vc (i,k+1)-v_cup(i,k+1) ) -                               &
                             zuo(i,k  )*(vc (i,k  )-v_cup(i,k  ) ) )*g/dp                         &
                          +(zdo(i,k+1)*(vcd(i,k+1)-v_cup(i,k+1) ) -                               &
-                            zdo(i,k  )*(vcd(i,k  )-v_cup(i,k  ) ) )*g/dp*edto(i)*pgcd            &
-                     +(pgc*.5*(zuo(i,k)+zuo(i,k+1))*(v_cup(i,k+1)-v_cup(i,k))                    &
-                     + pgcd*pgc*.5*edto(i)*(zdo(i,k)+zdo(i,k+1))*(v_cup(i,k+1)-v_cup(i,k)))*g/dp
+                            zdo(i,k  )*(vcd(i,k  )-v_cup(i,k  ) ) )*g/dp*edto(i)*pgcd
  
        enddo   ! k
 
@@ -1435,7 +1438,7 @@ contains
         
             !-- take out cloud liquid water for detrainment
             detup=up_massdetro(i,k)
-            dz=zo_cup(i,k+1)-zo_cup(i,k)
+            dz=zo_cup(i,k)-zo_cup(i,k-1)
             if(k.lt.ktop(i)) dellaqc(i,k) = zuo(i,k)*c1d(i,k)*qrco(i,k)*dz/dp*g 
 !             dellaqc(i,k)=  detup*0.5*(qrco(i,k+1)+qrco(i,k)) *g/dp
             if(k.eq.ktop(i))dellaqc(i,k)= detup*0.5*(qrco(i,k+1)+qrco(i,k)) *g/dp
@@ -1774,15 +1777,15 @@ contains
           if(ierr(i).eq.0) then
              dts=0.
              fpi=0.
-             do k=kts+1,ktop(i)
-                dp=-.5*(po(i,k+1)-po(i,k-1))*100.
+             do k=kts,ktop(i)
+                dp=(po_cup(i,k)-po_cup(i,k+1))*100.
 !total KE dissiptaion estimate
-                dts= dts +(outu(i,k)*us(i,k)+outv(i,k)*vs(i,k))*dp/g
+                dts= dts -(outu(i,k)*us(i,k)+outv(i,k)*vs(i,k))*dp/g
 ! fpi needed for calcualtion of conversion to pot. energyintegrated 
                 fpi = fpi  +sqrt(outu(i,k)*outu(i,k) + outv(i,k)*outv(i,k))*dp
              enddo
              if(fpi.gt.0.)then
-                do k=kts+1,ktop(i)
+                do k=kts,ktop(i)
                    fp= sqrt((outu(i,k)*outu(i,k)+outv(i,k)*outv(i,k)))/fpi
                    outt(i,k)=outt(i,k)+fp*dts*g/cp
                 enddo
@@ -3203,7 +3206,7 @@ contains
 !       closures over water) to properly normalize xmb
            clos_wei=16./max(1.,closure_n(i))
          xmb_ave(i)=min(xmb_ave(i),100.)
-         xmb(i)=sig(i)*xmb_ave(i)
+         xmb(i)=clos_wei*sig(i)*xmb_ave(i)
 
            if(xmb(i) < 1.e-16)then
               ierr(i)=19
@@ -3417,7 +3420,7 @@ contains
       enddo
 
        DO 100 i=its,itf
-        c0=.002
+        c0=.004
          IF(ierr(i).eq.0)then
 
 ! below LFC, but maybe above LCL
@@ -3444,7 +3447,7 @@ contains
 !now do the rest
 !
             DO k=kbcon(i)+1,ktop(i)
-               c0=.002
+               c0=.004
                if(t(i,k).lt.270.)c0=.002
                denom=zu(i,k-1)-.5*up_massdetr(i,k-1)+up_massentr(i,k-1)
                if(denom.lt.1.e-8)then
@@ -3772,9 +3775,9 @@ contains
  zuh=0.0
    kb_adj=max(kb,2)
  IF(draft == "UP") then
-   lev_start=min(.9,.7+csum*.013)
+   lev_start=min(.9,.4+csum*.013)
    kb_adj=max(kb,2)
-   tunning=p(kklev) !p(kt)+(p(kpbli)-p(kt))*lev_start
+   tunning=p(kt)+(p(kpbli)-p(kt))*lev_start
    tunning =min(0.9, (tunning-p(kb_adj))/(p(kt)-p(kb_adj))) !=.6
    tunning =max(0.2, tunning)
    beta    = 1.3 !2.5 ! max(2.5,2./tunning)

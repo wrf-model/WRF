@@ -16,6 +16,7 @@ foreach f ( Registry* registry* )
 	     ( $f == Registry.EM_COMMON.var ) || \
 	     ( $f == Registry.NMM ) || \
 	     ( $f == registry.chem ) || \
+	     ( $f == registry.tracker ) || \
 	     ( $f == registry.var ) || \
 	     ( $f == registry.var_chem ) || \
 	     ( $f == Registry ) ) then

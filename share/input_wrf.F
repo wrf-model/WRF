@@ -144,12 +144,6 @@
     WRITE(wrf_err_message,*)'input_wrf: dryrun = ',dryrun,' switch ',switch
     CALL wrf_debug( 300 , wrf_err_message )
 
-
-    !  The following setting up of run-time variables only needs to be done
-    !  when getting the initial WRF input, restarting, LBC, ndown, or running REAL. For all
-    !  other use cases these variables have already been set (and should not be
-    !  overwritten).
-
     check_if_dryrun : IF ( .NOT. dryrun ) THEN
 
 #if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
@@ -521,6 +515,10 @@
     CALL wrf_debug ( 300 , wrf_err_message )
     CALL nl_set_map_proj ( grid%id , config_flags%map_proj )
     grid%map_proj = config_flags%map_proj
+
+    !  The following setting up of run-time variable mminlu only needs to be done
+    !  when getting the initial WRF input, restarting, LBC, ndown, or running REAL. For all
+    !  other use cases this variable has already been set (and should not be overwritten).
 
     IF ( ( switch .EQ. input_only) .OR. &
          ( switch .EQ. restart_only ) .OR. &

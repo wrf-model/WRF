@@ -192,7 +192,7 @@ What WRF capabilities are OK with HVC
 
 With WRF v3.9, this is an initial release of the HVC capability. We would like 
 as many users as possible to try the HVC option and provide feedback. However, 
-this is an initial release of a new capability withi WRF ARW, so care should be 
+this is an initial release of a new capability within WRF ARW, so care should be 
 taken. The default behavior is still TF. Tests have been conducted with a 
 number of the WRF system's other signature features: FDDA, adaptive time 
 stepping, DFI, global domains, nesting, moving nests, and ndown. A couple of 

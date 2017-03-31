@@ -24,7 +24,6 @@
  io_form_input                       = 2
  io_form_boundary                    = 2
  debug_level                         = 0
- hybrid_opt                          = HYBRID_OPT
  /
 
  &domains
@@ -61,7 +60,6 @@
  /
 
  &dynamics
- etac                                = ETAC
  rk_ord                              = 3,
  diff_opt                            = 2,      2,      2,
  km_opt                              = 1,      1,      1,

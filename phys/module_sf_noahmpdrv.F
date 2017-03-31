@@ -2405,14 +2405,14 @@ ILOOP : DO I = its, ite
     XXXC_URB = XXXC_URB2D(I,J)
 
 ! Limits to avoid dividing by small number
-    IF (CHS(I,J) < 1.0E-04) THEN
-      CHS(I,J)  = 1.0E-04
+    IF (CHS(I,J) < 1.0E-02) THEN
+      CHS(I,J)  = 1.0E-02
     ENDIF
-    IF (CHS2(I,J) < 1.0E-04) THEN
-      CHS2(I,J)  = 1.0E-04
+    IF (CHS2(I,J) < 1.0E-02) THEN
+      CHS2(I,J)  = 1.0E-02
     ENDIF
-    IF (CQS2(I,J) < 1.0E-04) THEN
-      CQS2(I,J)  = 1.0E-04
+    IF (CQS2(I,J) < 1.0E-02) THEN
+      CQS2(I,J)  = 1.0E-02
     ENDIF
 
     CHS_URB  = CHS(I,J)

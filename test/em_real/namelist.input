@@ -67,6 +67,7 @@ damp_opt=3
 dampcoef=0.2,
 base_temp=290.0,
 gwd_opt=1,
+max_rot_angle_gwd=30.0
 iso_temp=0.,
 /
 &bdy_control

@@ -605,7 +605,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1, using Tegen (1997) data, 
                                      = 2, using J. A. Ruiz-Arias method (see other aer_* options) 
                                      = 3, using G. Thompson's water/ice friendly climatological aerosol 
- alevsiz                             = 12 for Tegan aerosol input levels, set automatically 
+ alevsiz                             = 12 for Tegen aerosol input levels, set automatically 
  no_src_types                        = 6 for Tegen aerosols: organic and black carbon, sea salt, sulfalte, dust,
                                        and stratospheric aerosol (volcanic ashes - currently 0), set automatically
 

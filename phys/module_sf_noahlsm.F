@@ -3254,7 +3254,8 @@ CONTAINS
 ! ABOVE FREEZING BLOCK
 ! ----------------------------------------------------------------------
       ELSE
-         T1 = TFREEZ * SNCOVR ** SNOEXP + T12 * (1.0- SNCOVR ** SNOEXP)
+!        T1 = TFREEZ * SNCOVR ** SNOEXP + T12 * (1.0- SNCOVR ** SNOEXP)
+         T1 = TFREEZ * max(0.01,SNCOVR ** SNOEXP) + T12 * (1.0- max(0.01,SNCOVR ** SNOEXP))
          BETA = 1.0
 
 ! ----------------------------------------------------------------------

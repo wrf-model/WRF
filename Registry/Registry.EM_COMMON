@@ -1259,8 +1259,8 @@ state    real  RQCSHTEN        ikj      misc        1         -      r        "R
 state    real  RQSSHTEN        ikj      misc        1         -      r        "RQSSHTEN"              "Q_S TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "kg kg-1 s-1"
 state    real  RQISHTEN        ikj      misc        1         -      r        "RQISHTEN"              "Q_I TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "kg kg-1 s-1"
 state    real  RQGSHTEN        ikj      misc        1         -      r        "RQGSHTEN"              "Q_G TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "kg kg-1 s-1"
-state    real  RQCNSHTEN       ikj      misc        1         -      r        "RQCNSHTEN"             "Q_CN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"     "a kg kg-1 s-1"
-state    real  RQINSHTEN       ikj      misc        1         -      r        "RQINSHTEN"             "Q_IN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"     "a kg kg-1 s-1"
+state    real  RQCNSHTEN       ikj      misc        1         -      r        "RQCNSHTEN"             "Q_CN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"     "kg kg-1 s-1"
+state    real  RQINSHTEN       ikj      misc        1         -      r        "RQINSHTEN"             "Q_IN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"     "kg kg-1 s-1"
 
 state    real  RUCUTEN         ikj      misc        1         -      r        "RUCUTEN"               "X WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "m s-2"
 state    real  RVCUTEN         ikj      misc        1         -      r        "RVCUTEN"               "Y WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "m s-2"

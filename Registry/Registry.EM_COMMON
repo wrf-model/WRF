@@ -1259,8 +1259,8 @@ state    real  RQCSHTEN        ikj      misc        1         -      r        "R
 state    real  RQSSHTEN        ikj      misc        1         -      r        "RQSSHTEN"              "Q_S TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "kg kg-1 s-1"
 state    real  RQISHTEN        ikj      misc        1         -      r        "RQISHTEN"              "Q_I TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "kg kg-1 s-1"
 state    real  RQGSHTEN        ikj      misc        1         -      r        "RQGSHTEN"              "Q_G TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "kg kg-1 s-1"
-state    real  RQCNSHTEN       ikj      misc        1         -      r        "RQCNSHTEN"             "Q_CN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"     "kg kg-1 s-1"
-state    real  RQINSHTEN       ikj      misc        1         -      r        "RQINSHTEN"             "Q_IN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"     "kg kg-1 s-1"
+state    real  RQCNSHTEN       ikj      misc        1         -      r        "RQCNSHTEN"             "Q_CN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"     "# kg-1 s-1"
+state    real  RQINSHTEN       ikj      misc        1         -      r        "RQINSHTEN"             "Q_IN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"     "# kg-1 s-1"
 
 state    real  RUCUTEN         ikj      misc        1         -      r        "RUCUTEN"               "X WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "m s-2"
 state    real  RVCUTEN         ikj      misc        1         -      r        "RVCUTEN"               "Y WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "m s-2"
@@ -1270,8 +1270,8 @@ state    real  RQRCUTEN        ikj      misc        1         -      r        "R
 state    real  RQCCUTEN        ikj      misc        1         -      r        "RQCCUTEN"              "Q_C TENDENCY DUE TO CUMULUS SCHEME"       "kg kg-1 s-1"
 state    real  RQSCUTEN        ikj      misc        1         -      r        "RQSCUTEN"              "Q_S TENDENCY DUE TO CUMULUS SCHEME"       "kg kg-1 s-1"
 state    real  RQICUTEN        ikj      misc        1         -      r        "RQICUTEN"              "Q_I TENDENCY DUE TO CUMULUS SCHEME"       "kg kg-1 s-1"
-state    real  RQCNCUTEN       ikj      misc        1         -      r        "RQCNCUTEN"             "Q_CN TENDENCY DUE TO CUMULUS SCHEME"      "kg kg-1 s-1"
-state    real  RQINCUTEN       ikj      misc        1         -      r        "RQINCUTEN"             "Q_IN TENDENCY DUE TO CUMULUS SCHEME"      "kg kg-1 s-1"
+state    real  RQCNCUTEN       ikj      misc        1         -      r        "RQCNCUTEN"             "Q_CN TENDENCY DUE TO CUMULUS SCHEME"      "# kg-1 s-1"
+state    real  RQINCUTEN       ikj      misc        1         -      r        "RQINCUTEN"             "Q_IN TENDENCY DUE TO CUMULUS SCHEME"      "# kg-1 s-1"
 state    real  W0AVG           ikj      misc        1         -      r        "W0AVG"                 "AVERAGE VERTICAL VELOCITY FOR KF CUMULUS SCHEME"         "m s-1"
 
 state    real  RAINC            ij      misc        1         -      rhdu     "RAINC"                 "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      

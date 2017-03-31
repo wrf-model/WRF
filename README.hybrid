@@ -200,7 +200,7 @@ physics schemes had to be modified, so now all physical parameterization
 schemes fully support the HVC option.
 
 The WRF developers have worked in conjunction with the developers of the other 
-major WRF system components. Both WRF DA and WRF Chem fully function with the 
+major WRF system components. Both WRF DA 3dVAR and WRF Chem fully function with the 
 hybrid coordinate. With the introduction of the HVC option, the standard WRF 
 post-processing tools are also fully supported: NCL, UPP, and RIP.
 

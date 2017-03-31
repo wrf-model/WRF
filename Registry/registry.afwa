@@ -98,7 +98,6 @@ package   afwa_vis       afwa_vis_opt==1             -             state:afwa_vi
 package   afwa_therm     afwa_therm_opt==1           -             state:afwa_heatidx,afwa_wchill,afwa_fits
 package   afwa_turb      afwa_turb_opt==1            -             state:afwa_turb,afwa_llturb,afwa_llturblgt,afwa_llturbmdt,afwa_llturbsvr,afwa_tlyrbot,afwa_tlyrtop
 package   afwa_buoy      afwa_buoy_opt==1            -             state:afwa_cape,afwa_zlfc,afwa_plfc,afwa_lidx,afwa_cape_mu,afwa_cin,afwa_cin_mu
-package   afwa_hailcast  afwa_hailcast_opt==1        -             state:afwa_hail_newmean,afwa_hail_newstd,afwa_hail_new1,afwa_hail_new2,afwa_hail_new3,afwa_hail_new4,afwa_hail_new5
 
 # For AFWA Diagnostics 
 halo      HALO_EM_PHYS_W   dyn_em 8:tornado_mask, tornado_dur

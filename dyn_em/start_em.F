@@ -1834,7 +1834,7 @@ endif
                 grid%dust_opt,ids,ide, jds,jde, kds,kde,                    &
                 ims,ime, jms,jme, kms,kme,                                  &
                 its,ite, jts,jte, kts,kte-1                                 )
-         case (RACM_SOA_VBS_KPP)
+         case (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
              call sum_pm_soa_vbs (                                           &
                  grid%alt, chem, grid%h2oaj, grid%h2oai,                                   &
                  grid%pm2_5_dry, grid%pm2_5_water, grid%pm2_5_dry_ec, grid%pm10,                &

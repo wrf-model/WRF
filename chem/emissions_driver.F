@@ -391,18 +391,18 @@ CONTAINS
              
 ! volcanic emissions
 !       
-        ashz_above_vent=emiss_ash_height + z_at_w(i,kts,j)
+        ashz_above_vent=emiss_ash_height - z_at_w(i,kts,j)                              ! MARCUS
       write(message,'("Found and adjusted active volcano at j,kts,kpe = ",3i8)') j,kts,kte 
       call wrf_message (message)
 !            write(0,*)emiss_ash_height,emiss_ash_mass,ashz_above_vent
         do k=kte-1,kts,-1
-           if(z_at_w(i,k,j) < ashz_above_vent)then
+           if(z_at_w(i,k,j) < emiss_ash_height)then                                     ! MARCUS
              k_final=k+1
              exit
            endif 
         enddo
         do k=kte-1,kts,-1
-          if(z_at_w(i,k,j) < (1.-base_umbrel)*ashz_above_vent)then
+          if(z_at_w(i,k,j) < ((1.-base_umbrel)*ashz_above_vent)+z_at_w(i,kts,j))then    ! MARCUS
              k_initial=k
              exit
            endif

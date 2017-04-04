@@ -1001,7 +1001,7 @@ Stochastic parameterization schemes:
  gridpt_stddev_rand_pert (max_dom)    = 0.03     ; Standard deviation of random perturbation field at each gridpoint.
                                                  ; Determines amplitude of random perturbations
  lengthscale_rand_pert (max_dom)      = 500000.0 ; Perturbation lengthscale (in m).
- timescale_rand_pert (max_dom)        = 21600.0  ; Temporal decorreleation of random field (in s).
+ timescale_rand_pert (max_dom)        = 21600.0  ; Temporal decorrelation of random field (in s).
  stddev_cutoff_rand_pert (max_dom)    = 3.0      ; Cutoff tails of perturbation pattern above this threshold standard deviation.
  rand_pert_vertstruc                  = 0        ; Vertical structure for random perturbation field: 0=constant; 1=random phase with tilt
  iseed_rand_pert                                 ; Seed for random number stream for rand_perturb. Will be
@@ -1014,7 +1014,7 @@ Stochastic parameterization schemes:
  gridpt_stddev_sppt (max_dom)         = 0.5      ; Standard deviation of random perturbation field at each gridpoint.
                                                  ; Determines amplitude of random perturbations
  lengthscale_sppt (max_dom)           = 150000.0 ; Perturbation lengthscale (in m).
- timescale_sppt (max_dom)             = 21600.0  ; Temporal decorreleation of random field (in s).
+ timescale_sppt (max_dom)             = 21600.0  ; Temporal decorrelation of random field (in s).
  stddev_cutoff_sppt (max_dom)         = 2.0      ; Cutoff tails of perturbation pattern above this threshold standard deviation.
  iseed_sppt                                      ; Seed for random number stream for sppt. Will be
                                                  ; combined with seed nens signifying ensemble member number and initial
@@ -1049,7 +1049,7 @@ Stochastically perturbed parameter scheme (SPP) (spp=1)
  gridpt_stddev_spp_conv (max_dom)    = 0.3      ; Standard deviation of random perturbation field at each gridpoint.
                                                 ; Determines amplitude of random perturbations
  lengthscale_spp_conv (max_dom)      = 150000.0 ; Perturbation lengthscale (in m).
- timescale_spp_conv (max_dom)        = 21600.0  ; Temporal decorreleation of random field (in s).
+ timescale_spp_conv (max_dom)        = 21600.0  ; Temporal decorrelation of random field (in s).
  stddev_cutoff_spp_conv (max_dom)    = 3.0      ; Cutoff tails of perturbation pattern above this threshold standard deviation.
  iseed_spp_conv                                 ; Seed for random number stream for spp_conv. Will be
                                                 ; combined with seed nens signifying ensemble member number and initial
@@ -1059,7 +1059,7 @@ Stochastically perturbed parameter scheme (SPP) (spp=1)
  gridpt_stddev_spp_pbl (max_dom)     = 0.15     ; Standard deviation of random perturbation field at each gridpoint.
                                                 ; Determines amplitude of random perturbations
  lengthscale_spp_pbl (max_dom)       = 70000.0  ; Perturbation lengthscale (in m).
- timescale_spp_pbl (max_dom)         = 21600.0  ; Temporal decorreleation of random field (in s).
+ timescale_spp_pbl (max_dom)         = 21600.0  ; Temporal decorrelation of random field (in s).
  stddev_cutoff_spp_pbl (max_dom)     = 2.0      ; Cutoff tails of perturbation pattern above this threshold standard deviation.
  iseed_spp_pbl                                  ; Seed for random number stream for spp_pbl . Will be
                                                 ; combined with seed nens signifying ensemble member number and initial
@@ -1069,7 +1069,7 @@ Stochastically perturbed parameter scheme (SPP) (spp=1)
  gridpt_stddev_spp_lsm (max_dom)     = 0.3      ; Standard deviation of random perturbation field at each gridpoint.
                                                 ; Determines amplitude of random perturbations
  lengthscale_spp_lsm (max_dom)       = 50000.0  ; Perturbation lengthscale (in m).
- timescale_spp_lsm (max_dom)         = 86400.0  ; Temporal decorreleation of random field (in s).
+ timescale_spp_lsm (max_dom)         = 86400.0  ; Temporal decorrelation of random field (in s).
  stddev_cutoff_spp_lsm (max_dom)     = 3.0      ; Cutoff tails of perturbation pattern above this threshold standard deviation.
  iseed_spp_lsm                                  ; Seed for random number stream for spp_lsm . Will be
                                                 ; combined with seed nens signifying ensemble member number and initial

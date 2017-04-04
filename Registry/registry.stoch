@@ -122,7 +122,7 @@ rconfig   real        stddev_cutoff_sppt      namelist,stoch      max_domains   
 rconfig   real        lengthscale_sppt        namelist,stoch      max_domains     150000.0  - "Correlation length scale in meters for SPPT"
 rconfig   real        timescale_sppt          namelist,stoch      max_domains      21600.0  - "Decorrelation time scale in s for SPPT"
 rconfig   integer     sppt_vertstruc          namelist,stoch      1                      0 -  "vertical structure for sppt: 0=constant, 1=random phase"
-rconfig   integer     ISEED_SPPT              namelist,stoch      1                     53  - "ISEED_SPPT"            "RANDOM SEED FOR SPPT "  ""
+rconfig   integer     iseed_sppt              namelist,stoch      1                     53  - "ISEED_SPPT"            "RANDOM SEED FOR SPPT "  ""
 
 # Namelist parameters for random perturbations
 
@@ -132,7 +132,7 @@ rconfig   real        stddev_cutoff_rand_pert namelist,stoch      max_domains   
 rconfig   real        lengthscale_rand_pert   namelist,stoch      max_domains    500000.0  - "Correlation length scale in meters"
 rconfig   real        timescale_rand_pert     namelist,stoch      max_domains     21600.0  - "Decorrelation time scale in s"
 rconfig   integer     rand_pert_vertstruc     namelist,stoch      1                      0 -  "vertical structure for random perturb: 0=constant, 1=random phase"
-rconfig   integer     ISEED_RAND_PERT         namelist,stoch      1                    17  - "ISEED_RAND_PERT"       "RANDOM SEED FOR RAND_PERT "  ""
+rconfig   integer     iseed_rand_pert         namelist,stoch      1                    17  - "ISEED_RAND_PERT"       "RANDOM SEED FOR RAND_PERT "  ""
 
 # Namelist parameters for stochastic perturbed parameters 
 

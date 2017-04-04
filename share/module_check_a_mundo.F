@@ -304,7 +304,7 @@
       ENDDO
 
 
-#if ( ! defined NO_GAMMA_SUPPORT )
+#if ( defined NO_GAMMA_SUPPORT )
 !-----------------------------------------------------------------------
 ! GF CU scheme requires an intrinsic gamma function. This is a 2008
 ! feature that not all compilers yet support.

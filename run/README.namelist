@@ -41,7 +41,7 @@ information on NMM specific settings (http://www.dtcenter.org/wrf-nmm/users)
                                                   takes precedence over the end times. 
                                                   Program real.exe uses start and end times only.
 
- interval_seconds                    = 43200,	; time interval between incoming real data, which will be the interval
+ interval_seconds                    = 10800,	; time interval between incoming real data, which will be the interval
                                                   between the lateral boundary condition file (in seconds)
  input_from_file (max_dom)           = T,       ; whether nested run will have input files for domains other than 1
  fine_input_stream (max_dom)         = 0,       ; field selection from nest input for its initialization
@@ -996,32 +996,36 @@ Options for wind turbine drag parameterization:
 Stochastic parameterization schemes:
 
 &stoch
- skebs (max_dom)                      = 1       ; stochastic kinetic-energy backscatter scheme, 1: on
- tot_backscat_psi                     = 1.0E-05 ; total backscattered dissipation for streamfunction; 
-                                                ; determines amplitude of streamfunction perturbations
- tot_backscat_t                       = 1.0E-06 ; total backscattered dissipation for potential temperature 
- ztau_psi                             = 10800.0 ; decorrelation time scale of noise for streamfunction perturbations
- rand_perturb (max_dom)               = 1       ; generate array with random perturbations for user determined use, 1: on
- gridpt_stddev_rand_pert (max_dom)    = 0.03    ; standard deviation of random perturbations at each gridpoint  
-                                                ; determines amplitude of random perturbations 
- stddev_cutoff_rand_pert (max_dom)    = 3.0     ; cutoff tails of pdf above this threshold standard deviation
- lengthscale_rand_pert (max_dom)      = 500000.0 ; correlation length scale in meters
- timescale_rand_pert (max_dom)        = 21600.0 ; decorrelation time scale in s
- nens                                 = 1       ; creates different seed for random number streams in either stochastic scheme
-                                                ; must be different for each member in ensemble forecasts 
+; Random perturbation field (rand_perturb=1)?| 
+ rand_perturb                         = 1        ; Generate array with random perturbations for user-determined use, 1: on
+ gridpt_stddev_rand_pert              = 0.03     ; Standard deviation of random perturbation field at each gridpoint.
+                                                 ; Determines amplitude of random perturbations
+ lengthscale_rand_pert                = 500000.0 ; Perturbation lengthscale (in m).
+ timescale_rand_pert                  = 21600.0  ; Temporal decorreleation of random field (in s).
+ stddev_cutoff_rand_pert              = 3.0      ; Cutoff tails of perturbation pattern above this threshold standard deviation.
+ rand_pert_vertstruc                  = 0        ; Vertical structure for random perturbation field: 0=constant; 1=random phase with tilt
+ iseed_rand_pert                                 ; Seed for random number stream for rand_perturb. Will be
+                                                 ; combined with seed nens signifying ensemble member number and initial
+                                                 ; start time to ensure different random number streams for forecasts
+                                                 ; starting from different initial times and for different ensemble members.
 
-Options for stochastic kinetic-energy backscatter scheme:
+; Stochastically perturbed physics tendencies (SPPT) (sppt=1)
+ sppt                                 = 0        ; Stochastically perturbed physics tendencies (SPPT), 0: off, 1: on
+ gridpt_stddev_sppt                   = 0.5      ; Standard deviation of random perturbation field at each gridpoint.
+                                                 ; Determines amplitude of random perturbations
+ lengthscale_sppt                     = 150000.0 ; Perturbation lengthscale (in m).
+ timescale_sppt                       = 21600.0  ; Temporal decorreleation of random field (in s).
+ stddev_cutoff_sppt                   = 2.0      ; Cutoff tails of perturbation pattern above this threshold standard deviation.
+ iseed_sppt                                      ; Seed for random number stream for sppt. Will be
+                                                 ; combined with seed nens signifying ensemble member number and initial
+                                                 ; start time to ensure different random number streams for forecasts
+                                                 ; starting from different initial times and for different ensemble members.
 
- stoch_force_opt (max_dom)          = 0,        : No stochastic parameterization
-                                      1,        : Stochastic kinetic-energy backscatter scheme (SKEB)
- stoch_vertstruc_opt (max_dom)      = 0,        : Constant vertical structure of random pattern generator
-                                      1,        : Random phase vertical structure random pattern generator
+; Stochastic kinetic-energy backscatter scheme (SKEBS)(skebs=1):
+
+ skebs                              = 0         ; stochastic kinetic-energy backscatter scheme, 0: off, 1: on
  tot_backscat_psi                   = 1.0E-05   ; Controls amplitude of rotational wind perturbations
  tot_backscat_t                     = 1.0E-06   ; Controls amplitude of potential temperature perturbations
- nens                               = 1         ; an integer that controls the random number stream which will then
-                                                  change the run. When running an ensemble, this can be
-                                                  ensemble member number, so that each ensemble member gets a
-                                                  different random number stream, hence a different perturbed run.
  ztau_psi                           = 10800.0   ; decorr. time of noise for psi perturb
  ztau_t                             = 10800.0   ; decorr. time of noise for theta perturb
  rexponent_psi                      = -1.83     ; spectral slope of forcing for psi
@@ -1036,11 +1040,58 @@ Options for stochastic kinetic-energy backscatter scheme:
  lmaxforc                           = 1000000   ; max. forcing wavenumber in lat. for psi perturb
  kmaxforct                          = 1000000   ; max. forcing wavenumber in lon. for theta perturb
  lmaxforct                          = 1000000   ; max. forcing wavenumber in lat. for theta perturb
- perturb_chem_bdy                               ; Options for perturbing lateral boundaries of chemical tracers:
-                                                  0 = off; 1 = on with RAND_PERTURB pattern
+ skebs_vertstruc                    = 0         ; Vertical structure for random perturbation field: 0=constant; 1=random phase with tilt
+
+Stochastically perturbed parameter scheme (SPP) (spp=1)
+ sppt                                = 0        ; Stochastically perturbed parameter (SPP) scheme for
+                                                ; GF convection schems, MYNN boundary layer scheme and RUC LSM. 0: off, 1: on
+ spp_conv                            = 0        ; Perturb parameters of GF convection scheme only
+ gridpt_stddev_spp_conv              = 0.3      ; Standard deviation of random perturbation field at each gridpoint.
+                                                ; Determines amplitude of random perturbations
+ lengthscale_spp_conv                = 150000.0 ; Perturbation lengthscale (in m).
+ timescale_spp_conv                  = 21600.0  ; Temporal decorreleation of random field (in s).
+ stddev_cutoff_spp_conv              = 3.0      ; Cutoff tails of perturbation pattern above this threshold standard deviation.
+ iseed_spp_conv                                 ; Seed for random number stream for spp_conv. Will be
+                                                ; combined with seed nens signifying ensemble member number and initial
+                                                ; start time to ensure different random number streams for forecasts
+                                                ; starting from different initial times and for different ensemble members.
+ spp_pbl                             = 0        ; Perturb parameters of MYNN PBL scheme only
+ gridpt_stddev_spp_pbl               = 0.15     ; Standard deviation of random perturbation field at each gridpoint.
+                                                ; Determines amplitude of random perturbations
+ lengthscale_spp_pbl                 = 70000.0  ; Perturbation lengthscale (in m).
+ timescale_spp_pbl                   = 21600.0  ; Temporal decorreleation of random field (in s).
+ stddev_cutoff_spp_pbl               = 2.0      ; Cutoff tails of perturbation pattern above this threshold standard deviation.
+ iseed_spp_pbl                                  ; Seed for random number stream for spp_pbl . Will be
+                                                ; combined with seed nens signifying ensemble member number and initial
+                                                ; start time to ensure different random number streams for forecasts
+                                                ; starting from different initial times and for different ensemble members.
+ spp_lsm                             = 0        ; Perturb parameters of RUC LSM
+ gridpt_stddev_spp_lsm               = 0.3      ; Standard deviation of random perturbation field at each gridpoint.
+                                                ; Determines amplitude of random perturbations
+ lengthscale_spp_lsm                 = 50000.0  ; Perturbation lengthscale (in m).
+ timescale_spp_lsm                   = 86400.0  ; Temporal decorreleation of random field (in s).
+ stddev_cutoff_spp_lsm               = 3.0      ; Cutoff tails of perturbation pattern above this threshold standard deviation.
+ iseed_spp_lsm                                  ; Seed for random number stream for spp_lsm . Will be
+                                                ; combined with seed nens signifying ensemble member number and initial
+                                                ; start time to ensure different random number streams for forecasts
+                                                ; starting from different initial times and for different ensemble members.
+
+; Stochastic Perturbations to the boundary conditions?| (perturb_bdy)
  perturb_bdy                        = 0         ; No boundary perturbations
                                       1         ; Use SKEBS pattern for boundary perturbations
                                       2         ; Use other user-provided pattern for boundary perturbations
+
+; Stochastic perturbations to the boundary tendencies in WRF-CHEM (perturb_chem_bdy)
+ perturb_chem_bdy                               ; Options for perturbing lateral boundaries of chemical tracers:
+                                                ;  0 = off; 1 = on with RAND_PERTURB pattern
+
+; Common to all stochastic schemes
+  nens                                =1        ; Seed for random number stream. For ensemble forecasts this parameter needs to be
+                                                ; different for each member. The seed is a function of initial start time
+                                                ; to ensure different random number streams for forecasts starting from
+                                                ; different initial times. Changing this seed changes the random number
+                                                ; streams for all activated stochastic parameterization schemes.
+
 
 Options for use with the Noah-MP Land Surface Model:
 
@@ -1470,7 +1521,6 @@ afwa_cloud_opt (max_dom)             = 0,       ; Cloud option, 1: on
 afwa_therm_opt (max_dom)             = 0,       ; Thermal indices option, 1: on
 afwa_turb_opt (max_dom)              = 0,       ; Turbulence option, 1: on
 afwa_buoy_opt (max_dom)              = 0,       ; Buoyancy option, 1: on
-afwa_hailcast_opt (max_dom)          = 0,       ; Hailcast option, 1: on
 afwa_ptype_ccn_tmp                   = 264.15,  ; CCN temperature for precipitation type calculation
 afwa_ptype_tot_melt                  = 50,      ; Total melting energy for precipitation type calculation
 

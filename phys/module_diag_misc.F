@@ -263,6 +263,8 @@ CONTAINS
       REAL:: mvd_r, xslw1, ygra1, zans1
       INTEGER:: ng, n
 
+      LOGICAL :: test_final
+
 !-----------------------------------------------------------------
 ! Handle accumulations with buckets to prevent round-off truncation in long runs
 ! This is done every 360 minutes assuming time step fits exactly into 360 minutes
@@ -1016,7 +1018,13 @@ CONTAINS
        prfreq=10                   ! in min
     endif
    
-    IF (MOD(nint(dt),prfreq) == 0) THEN
+    IF ( nint(dt) .LT. 1 ) THEN
+       test_final = .true.
+    ELSE
+       test_final = MOD(nint(dt),prfreq) == 0
+    END IF 
+
+    IF ( test_final ) THEN
 
 ! COMPUTE THE NUMBER OF MASS GRID POINTS
    no_points = float((ide-ids)*(jde-jds))

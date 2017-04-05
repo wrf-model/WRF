@@ -3218,9 +3218,10 @@ subroutine ext_ncd_get_previous_time(DataHandle, DateStr, Status)
     write(msg,*) 'Warning READ WRITE ONLY FILE in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_FOR_READ) then
-    if(DH%CurrentTime.GT.0) then
+    if(DH%CurrentTime.GT.1) then
       DH%CurrentTime     = DH%CurrentTime -1
     endif
+print *,'DH%Times(1) = ',DH%Times(1)
     DateStr            = DH%Times(DH%CurrentTime)
     DH%CurrentVariable = 0
     Status = WRF_NO_ERR

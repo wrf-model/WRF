@@ -223,6 +223,10 @@ real :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
    model_config_rec % e_vert(2) = k_dim_n
    ALLOCATE(znw_c(k_dim_c))
    ALLOCATE(znu_c(k_dim_c))
+   ALLOCATE(c3h(k_dim_c))
+   ALLOCATE(c4h(k_dim_c))
+   ALLOCATE(c3f(k_dim_c))
+   ALLOCATE(c4f(k_dim_c))
    WRITE ( message , FMT = '(A,3I5)' ) 'KDIM_C', k_dim_c , model_config_rec % e_vert(1) , model_config_rec % e_vert(2)
    CALL       wrf_debug (  99,message )
 !!!!!!!!!!!!!!! mousta

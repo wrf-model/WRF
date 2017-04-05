@@ -524,7 +524,7 @@
          ( switch .EQ. restart_only ) .OR. &
          ( switch .EQ. boundary_only ) .OR. &
          ( switch .EQ. auxinput1_only) .OR. &
-         ( switch .EQ. auxinput2_only ) ) ) THEN
+         ( switch .EQ. auxinput2_only ) ) THEN
     mminlu = " "
     CALL wrf_get_dom_ti_char ( fid , 'MMINLU', mminlu , ierr )
     IF ( ierr .NE. 0 ) mminlu = " "

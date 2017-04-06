@@ -383,6 +383,15 @@ call wrf_message("**************************************************************
       call wrf_error_fatal("ERROR: cu_physics == 10 requires kfcup_diag == 1")
    endif
 
+    if ( config_flags%chem_conv_tr == 0 .and. config_flags%kfcup_diag == 1) then
+      call wrf_error_fatal("ERROR: kfcup_diag == 1 requires chem_conv_tr == 1")
+   endif
+
+   if ( config_flags%cu_physics /= 10 .and. config_flags%kfcup_diag == 1) then
+      call wrf_error_fatal("ERROR: kfcup_diag == 1 requires cu_physics == 10")
+   endif
+
+
    if ( config_flags%bio_emiss_opt .EQ. 3 .AND. config_flags%ne_area .LT. num_chem ) then
       write(message_txt,'(''ERROR: MEGAN biogenics requires ne_area('',i6,'') >= num_chem('',i6,'')'')') config_flags%ne_area,num_chem
 !     call wrf_error_fatal("ERROR: MEGAN biogenics requires ne_area to be equal or greater than num_chem")

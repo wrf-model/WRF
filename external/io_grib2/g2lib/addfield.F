@@ -141,12 +141,12 @@
 !  
       ctemp=cgrib(lencurr-3)//cgrib(lencurr-2)//cgrib(lencurr-1)
      &      //cgrib(lencurr)
-      if ( ctemp.eq.c7777 ) then
-        print *,'addfield: GRIB message already complete.  Cannot',
-     &          ' add new section.'
-        ierr=2
-        return
-      endif
+!zz      if ( ctemp.eq.c7777 ) then
+!zz        print *,'addfield: GRIB message already complete.  Cannot',
+!zz     &          ' add new section.'
+!zz        ierr=2
+!zz        return
+!zz      endif
 !
 !  Loop through all current sections of the GRIB message to
 !  find the last section number.

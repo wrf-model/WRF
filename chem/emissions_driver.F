@@ -391,18 +391,18 @@ CONTAINS
              
 ! volcanic emissions
 !       
-        ashz_above_vent=emiss_ash_height - z_at_w(i,kts,j)                              ! MARCUS
+        ashz_above_vent=emiss_ash_height - z_at_w(i,kts,j)                              
       write(message,'("Found and adjusted active volcano at j,kts,kpe = ",3i8)') j,kts,kte 
       call wrf_message (message)
 !            write(0,*)emiss_ash_height,emiss_ash_mass,ashz_above_vent
         do k=kte-1,kts,-1
-           if(z_at_w(i,k,j) < emiss_ash_height)then                                     ! MARCUS
+           if(z_at_w(i,k,j) < emiss_ash_height)then                                    
              k_final=k+1
              exit
            endif 
         enddo
         do k=kte-1,kts,-1
-          if(z_at_w(i,k,j) < ((1.-base_umbrel)*ashz_above_vent)+z_at_w(i,kts,j))then    ! MARCUS
+          if(z_at_w(i,k,j) < ((1.-base_umbrel)*ashz_above_vent)+z_at_w(i,kts,j))then  
              k_initial=k
              exit
            endif
@@ -1491,7 +1491,6 @@ CONTAINS
             its,ite, jts,jte, kts,kte                                   )
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!! TUCCELLA
     CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
        call wrf_debug(15,'emissions_driver calling soa_vbs_addemiss')
        call soa_vbs_addemiss( id, dtstep, u10, v10, alt, dz8w, xland, chem,  &

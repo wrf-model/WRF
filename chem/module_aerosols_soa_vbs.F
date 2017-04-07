@@ -6751,17 +6751,10 @@ SUBROUTINE soa_vbs_addemiss( id, dtstep, u10, v10, alt, dz8w, xland, chem,      
           ims,ime, jms,jme, kms,kme,                             &
           its,ite, jts,jte, kts,kte                              )
   end if
-  if( seasalt_emiss_active == 2 ) then
-!     call Monahan_seasalt_emiss(                                 &
-!          dtstep, u10, v10, alt, dz8w, xland, chem,              &
-!          ids,ide, jds,jde, kds,kde,                             &
-!          ims,ime, jms,jme, kms,kme,                             &
-!          its,ite, jts,jte, kts,kte                              )
-  end if
+ ! if( seasalt_emiss_active == 2 ) then
+ ! end if
   if( dust_opt == 2 ) then
-    !czhao+++++++++++++++++++++++++++
     call wrf_message("WARNING: You are calling DUSTRAN dust emission scheme with MOSAIC, which is highly experimental and not recommended for use. Please use dust_opt==13")
-    !czhao---------------------------
       call soa_vbs_dust_emiss(                                     &
            slai, ust, smois, ivgtyp, isltyp,                      &
            id, dtstep, u10, v10, alt, dz8w,                       &
@@ -6770,7 +6763,6 @@ SUBROUTINE soa_vbs_addemiss( id, dtstep, u10, v10, alt, dz8w, xland, chem,      
            ims,ime, jms,jme, kms,kme,                             &
            its,ite, jts,jte, kts,kte                              )
   end if
-   !czhao ++++++++++++++++++++++++++
  !     dust_opt changed to 13 since it conflicts with gocart/afwa
   if( dust_opt == 13 ) then
    !czhao -------------------------- 

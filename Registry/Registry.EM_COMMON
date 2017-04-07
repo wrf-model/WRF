@@ -1609,12 +1609,12 @@ state    real   nonriverxy ij      -       1      -     i012rd=(interp_mask_fiel
 
 # Crop model only
 
-state    real   grainxy    ij      -       1      -     irhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "grain"        "mass of grain"                       "g/m2"
-state    real   gddxy      ij      -       1      -     irhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "gdd"          "growing degree days"                 ""
-state    real   croptype i{crop}j  -       1      Z     ird=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "croptype"     "crop type"                           "fraction"
-state    real   planting   ij      -       1      -     ird=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "planting"     "planting date"                       "julian day"
-state    real   harvest    ij      -       1      -     ird=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "harvest"      "harvest date"                        "julian day"
-state    real   season_gdd ij      -       1      -     ird=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "season_gdd"   "growing season GDD"                  "C"
+state    real   grainxy    ij      -       1      -     i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "grain"        "mass of grain"                       "g/m2"
+state    real   gddxy      ij      -       1      -     i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "gdd"          "growing degree days"                 ""
+state    real   croptype i{crop}j  -       1      Z     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "croptype"     "crop type"                           "fraction"
+state    real   planting   ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "planting"     "planting date"                       "julian day"
+state    real   harvest    ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "harvest"      "harvest date"                        "julian day"
+state    real   season_gdd ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "season_gdd"   "growing season GDD"                  "C"
 state integer   cropcat    ij      -       1      -     rh                                                        "cropcat"      "dominant crop category"              "category"
 state integer   pgsxy      ij      -       1      -     rh                                                        "pgs"          "pgs"                                 ""
 

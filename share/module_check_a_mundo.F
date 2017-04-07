@@ -305,6 +305,25 @@
          END IF
       ENDDO
 
+
+#if ( defined NO_GAMMA_SUPPORT )
+!-----------------------------------------------------------------------
+! GF CU scheme requires an intrinsic gamma function. This is a 2008
+! feature that not all compilers yet support.
+!-----------------------------------------------------------------------
+
+      GF_test : DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % cu_physics(i) .EQ. GFSCHEME ) THEN
+            wrf_err_message = '--- ERROR: cu_physics GF uses an intrinsic gamma function that is not available with this compiler'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            wrf_err_message = '--- Change compilers, or change cu_physics option in the namelist.input file.'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
+            EXIT GF_test
+         END IF
+      ENDDO GF_test
+#endif
+
 !-----------------------------------------------------------------------
 ! If fractional_seaice = 0, and tice2tsk_if2cold = .true, nothing will happen
 !-----------------------------------------------------------------------

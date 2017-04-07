@@ -678,7 +678,6 @@ CONTAINS
 
    REAL , OPTIONAL, INTENT(INOUT) ::    radtacttime ! Storing the time in s when radiation is called next
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
-         OPTIONAL,                                                &
          INTENT(INOUT)  ::                       o3rad
 
    ! vert nesting
@@ -1231,15 +1230,9 @@ CONTAINS
 
      END IF
 
-! ww: Interpolating climatological ozone and aerosol to model time and levels
+!     Interpolating climatological ozone and aerosol to model time and levels
 !     Adapted from camrad code
-     IF ( PRESENT( O3RAD ) ) THEN
-        call wrf_debug(1,'Have o3rad')
-#if (EM_CORE==1)
-     IF ( o3input .EQ. 2 .AND. id .EQ. 1 ) THEN
-#else
      IF ( o3input .EQ. 2 ) THEN
-#endif
 !       ! Find the current month (adapted from Cavallo)
 !       CALL cam_time_interp( ozmixm, pin, levsiz, date_str, &
 !                             ids , ide , jds , jde , kds , kde , &
@@ -1257,7 +1250,6 @@ CONTAINS
                               ids , ide , jds , jde , kds , kde ,     &
                               ims , ime , jms , jme , kms , kme ,     &
                               its , ite , jts , jte , kts , kte )
-     ENDIF
      ENDIF
 
      IF ( PRESENT( AEROD ) ) THEN

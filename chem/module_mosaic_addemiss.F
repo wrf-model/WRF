@@ -725,13 +725,18 @@ size_loop: &
 ! do dust emissions
 ! jdf: preliminary version that has not been made generic for situation
         if (dust_opt == 2) then 
+            !czhao+++++++++++++++++++++++++++
+            call wrf_message("WARNING: You are calling DUSTRAN dust emission scheme with MOSAIC, which is highly experimental and not recommended for use. Please use dust_opt==13")
+            !czhao---------------------------
             call mosaic_dust_emiss( slai, ust, smois, ivgtyp, isltyp,      &
                id, dtstep, u10, v10, alt, dz8w, xland, config_flags, chem, &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
         endif
-        if (dust_opt == 3) then 
+        !czhao+++++++++++++++++++++++++++
+        if (dust_opt == 13) then 
+        !czhao---------------------------
          call mosaic_dust_gocartemis (ktau,dtstep,config_flags%num_soil_layers,alt,u_phy,  &
          v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,                   &
          ivgtyp,isltyp,xland,dx,g,                                         &
@@ -2146,9 +2151,6 @@ END MODULE module_mosaic_addemiss
      airden=rho_phy(i,kts,j)
      dxy=dx*dx
 
-       if (i==40.and.j==50) then
-        print*,'check moisture ',gwet
-       endif
     call mosaic_source_du( nmx, dt, &
                      erodin, ilwi, dxy, w10m, gwet, airden, airmas, &
                      bems,start_month,g)

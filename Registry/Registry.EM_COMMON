@@ -1038,7 +1038,7 @@ state    real   acfrcv           ij     misc        1         -      -
 state integer   ncfrcv           ij     misc        1         -      -
 
 # new rad variables
-state    real   o3rad           ikj     misc        1         -      irdf=(p2c)      "o3rad"    "RADIATION 3D OZONE" "ppmv"
+state    real   o3rad           ikj     misc        1         -      irh       "o3rad"    "RADIATION 3D OZONE" "ppmv"
 
 # incoming optical depth derived from aerosol data
 state  real   aerodm    i{lsa}jm{ty}    misc        1    -   -     -
@@ -1250,28 +1250,28 @@ state    real  SSWUP           ij      misc        1         -      h         "S
                                                 
 # Other physics variables
 
-state    real  RUSHTEN         ikj      misc        1         -      r        "RUSHTEN"               "COUPLED X WIND TENDENCY DUE TO SHALLOW CUMULUS SCHEME"   "Pa m s-2"
-state    real  RVSHTEN         ikj      misc        1         -      r        "RVSHTEN"               "COUPLED Y WIND TENDENCY DUE TO SHALLOW CUMULUS SCHEME"   "Pa m s-2"
-state    real  RTHSHTEN        ikj      misc        1         -      r        "RTHSHTEN"              "COUPLED THETA TENDENCY DUE TO SHALLOW CUMULUS SCHEME"    "Pa K s-1"
-state    real  RQVSHTEN        ikj      misc        1         -      r        "RQVSHTEN"              "COUPLED Q_V TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
-state    real  RQRSHTEN        ikj      misc        1         -      r        "RQRSHTEN"              "COUPLED Q_R TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
-state    real  RQCSHTEN        ikj      misc        1         -      r        "RQCSHTEN"              "COUPLED Q_C TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
-state    real  RQSSHTEN        ikj      misc        1         -      r        "RQSSHTEN"              "COUPLED Q_S TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
-state    real  RQISHTEN        ikj      misc        1         -      r        "RQISHTEN"              "COUPLED Q_I TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
-state    real  RQGSHTEN        ikj      misc        1         -      r        "RQGSHTEN"              "COUPLED Q_G TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
-state    real  RQCNSHTEN       ikj      misc        1         -      r       "RQCNSHTEN"              "COUPLED Q_CN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
-state    real  RQINSHTEN       ikj      misc        1         -      r       "RQINSHTEN"              "COUPLED Q_IN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+state    real  RUSHTEN         ikj      misc        1         -      r        "RUSHTEN"               "X WIND TENDENCY DUE TO SHALLOW CUMULUS SCHEME"   "m s-2"
+state    real  RVSHTEN         ikj      misc        1         -      r        "RVSHTEN"               "Y WIND TENDENCY DUE TO SHALLOW CUMULUS SCHEME"   "m s-2"
+state    real  RTHSHTEN        ikj      misc        1         -      r        "RTHSHTEN"              "THETA TENDENCY DUE TO SHALLOW CUMULUS SCHEME"    "K s-1"
+state    real  RQVSHTEN        ikj      misc        1         -      r        "RQVSHTEN"              "Q_V TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "kg kg-1 s-1"
+state    real  RQRSHTEN        ikj      misc        1         -      r        "RQRSHTEN"              "Q_R TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "kg kg-1 s-1"
+state    real  RQCSHTEN        ikj      misc        1         -      r        "RQCSHTEN"              "Q_C TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "kg kg-1 s-1"
+state    real  RQSSHTEN        ikj      misc        1         -      r        "RQSSHTEN"              "Q_S TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "kg kg-1 s-1"
+state    real  RQISHTEN        ikj      misc        1         -      r        "RQISHTEN"              "Q_I TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "kg kg-1 s-1"
+state    real  RQGSHTEN        ikj      misc        1         -      r        "RQGSHTEN"              "Q_G TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "kg kg-1 s-1"
+state    real  RQCNSHTEN       ikj      misc        1         -      r        "RQCNSHTEN"             "Q_CN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"     "# kg-1 s-1"
+state    real  RQINSHTEN       ikj      misc        1         -      r        "RQINSHTEN"             "Q_IN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"     "# kg-1 s-1"
 
-state    real  RUCUTEN         ikj      misc        1         -      r        "RUCUTEN"               "COUPLED X WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "Pa m s-2"
-state    real  RVCUTEN         ikj      misc        1         -      r        "RVCUTEN"               "COUPLED Y WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "Pa m s-2"
-state    real  RTHCUTEN        ikj      misc        1         -      r        "RTHCUTEN"              "COUPLED THETA TENDENCY DUE TO CUMULUS SCHEME"     "Pa K s-1"
-state    real  RQVCUTEN        ikj      misc        1         -      r        "RQVCUTEN"              "COUPLED Q_V TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
-state    real  RQRCUTEN        ikj      misc        1         -      r        "RQRCUTEN"              "COUPLED Q_R TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
-state    real  RQCCUTEN        ikj      misc        1         -      r        "RQCCUTEN"              "COUPLED Q_C TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
-state    real  RQSCUTEN        ikj      misc        1         -      r        "RQSCUTEN"              "COUPLED Q_S TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
-state    real  RQICUTEN        ikj      misc        1         -      r        "RQICUTEN"              "COUPLED Q_I TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
-state    real  RQCNCUTEN       ikj      misc        1         -      r       "RQCNCUTEN"             "COUPLED Q_CN TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
-state    real  RQINCUTEN       ikj      misc        1         -      r       "RQINCUTEN"             "COUPLED Q_IN TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+state    real  RUCUTEN         ikj      misc        1         -      r        "RUCUTEN"               "X WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "m s-2"
+state    real  RVCUTEN         ikj      misc        1         -      r        "RVCUTEN"               "Y WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "m s-2"
+state    real  RTHCUTEN        ikj      misc        1         -      r        "RTHCUTEN"              "THETA TENDENCY DUE TO CUMULUS SCHEME"     "K s-1"
+state    real  RQVCUTEN        ikj      misc        1         -      r        "RQVCUTEN"              "Q_V TENDENCY DUE TO CUMULUS SCHEME"       "kg kg-1 s-1"
+state    real  RQRCUTEN        ikj      misc        1         -      r        "RQRCUTEN"              "Q_R TENDENCY DUE TO CUMULUS SCHEME"       "kg kg-1 s-1"
+state    real  RQCCUTEN        ikj      misc        1         -      r        "RQCCUTEN"              "Q_C TENDENCY DUE TO CUMULUS SCHEME"       "kg kg-1 s-1"
+state    real  RQSCUTEN        ikj      misc        1         -      r        "RQSCUTEN"              "Q_S TENDENCY DUE TO CUMULUS SCHEME"       "kg kg-1 s-1"
+state    real  RQICUTEN        ikj      misc        1         -      r        "RQICUTEN"              "Q_I TENDENCY DUE TO CUMULUS SCHEME"       "kg kg-1 s-1"
+state    real  RQCNCUTEN       ikj      misc        1         -      r        "RQCNCUTEN"             "Q_CN TENDENCY DUE TO CUMULUS SCHEME"      "# kg-1 s-1"
+state    real  RQINCUTEN       ikj      misc        1         -      r        "RQINCUTEN"             "Q_IN TENDENCY DUE TO CUMULUS SCHEME"      "# kg-1 s-1"
 state    real  W0AVG           ikj      misc        1         -      r        "W0AVG"                 "AVERAGE VERTICAL VELOCITY FOR KF CUMULUS SCHEME"         "m s-1"
 
 state    real  RAINC            ij      misc        1         -      rhdu     "RAINC"                 "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
@@ -1353,7 +1353,7 @@ state    real  RQVFTEN          ikj     misc        1         -      r        "R
 
 state integer  STEPCU          -        misc        1         -      r        "STEPCU"                "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN CONVECTION CALLS"  ""
                                                 
-state    real  RTHRATEN        ikj      misc        1         -      rd       "RTHRATEN"              "COUPLED THETA TENDENCY DUE TO RADIATION"              "Pa K s-1"
+state    real  RTHRATEN        ikj      misc        1         -      rd       "RTHRATEN"              "THETA TENDENCY DUE TO RADIATION"              "K s-1"
 state    real  RTHRATENLW      ikj      misc        1         -      r        "RTHRATLW"              "UNCOUPLED THETA TENDENCY DUE TO LONG WAVE RADIATION"    "K s-1"
 state    real  RTHRATENSW      ikj      misc        1         -      r        "RTHRATSW"              "UNCOUPLED THETA TENDENCY DUE TO SHORT WAVE RADIATION"   "K s-1"
 state    real  CLDFRA          ikj      misc        1         -      rh       "CLDFRA"                "CLOUD FRACTION"                                       ""
@@ -1497,13 +1497,13 @@ state    real  NOAHRES          ij      misc        1         -      h        "N
 state    real  CLDEFI           ij      misc        1         -      r        "CLDEFI"                "precipitation efficiency in BMJ SCHEME"    ""      
 state integer  STEPRA          -        misc        1         -      r        "STEPRA"                "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN RADIATION CALLS"        ""
                                                 
-state    real  RUBLTEN         ikj      misc        1         -      r        "RUBLTEN"               "COUPLED X WIND TENDENCY DUE TO PBL PARAMETERIZATION"  "Pa m s-2"
-state    real  RVBLTEN         ikj      misc        1         -      r        "RVBLTEN"               "COUPLED Y WIND TENDENCY DUE TO PBL PARAMETERIZATION"  "Pa m s-2"
-state    real  RTHBLTEN        ikj      misc        1         -      r        "RTHBLTEN"              "COUPLED THETA TENDENCY DUE TO PBL PARAMETERIZATION"   "Pa K s-1"
-state    real  RQVBLTEN        ikj      misc        1         -      r        "RQVBLTEN"              "COUPLED Q_V TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"
-state    real  RQCBLTEN        ikj      misc        1         -      r        "RQCBLTEN"              "COUPLED Q_C TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"
-state    real  RQIBLTEN        ikj      misc        1         -      r        "RQIBLTEN"              "COUPLED Q_I TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"      
-state    real  RQNIBLTEN       ikj      misc        1         -      r        "RQNIBLTEN"             "COUPLED Q_NI TENDENCY DUE TO PBL PARAMETERIZATION"    "Pa #  kg-1 s-1"
+state    real  RUBLTEN         ikj      misc        1         -      r        "RUBLTEN"               "X WIND TENDENCY DUE TO PBL PARAMETERIZATION"  "m s-2"
+state    real  RVBLTEN         ikj      misc        1         -      r        "RVBLTEN"               "Y WIND TENDENCY DUE TO PBL PARAMETERIZATION"  "m s-2"
+state    real  RTHBLTEN        ikj      misc        1         -      r        "RTHBLTEN"              "THETA TENDENCY DUE TO PBL PARAMETERIZATION"   "K s-1"
+state    real  RQVBLTEN        ikj      misc        1         -      r        "RQVBLTEN"              "Q_V TENDENCY DUE TO PBL PARAMETERIZATION"     "kg kg-1 s-1"
+state    real  RQCBLTEN        ikj      misc        1         -      r        "RQCBLTEN"              "Q_C TENDENCY DUE TO PBL PARAMETERIZATION"     "kg kg-1 s-1"
+state    real  RQIBLTEN        ikj      misc        1         -      r        "RQIBLTEN"              "Q_I TENDENCY DUE TO PBL PARAMETERIZATION"     "kg kg-1 s-1"
+state    real  RQNIBLTEN       ikj      misc        1         -      r        "RQNIBLTEN"             "Q_NI TENDENCY DUE TO PBL PARAMETERIZATION"    "#  kg-1 s-1"
 
 # For Noah UA changes
 state    real   flx4            ij         -        1         -      -        "FLX4"         "sensible heat from canopy"              "W m{-2}"
@@ -1609,12 +1609,12 @@ state    real   nonriverxy ij      -       1      -     i012rd=(interp_mask_fiel
 
 # Crop model only
 
-state    real   grainxy    ij      -       1      -     irhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "grain"        "mass of grain"                       "g/m2"
-state    real   gddxy      ij      -       1      -     irhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "gdd"          "growing degree days"                 ""
-state    real   croptype i{crop}j  -       1      Z     ird=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "croptype"     "crop type"                           "fraction"
-state    real   planting   ij      -       1      -     ird=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "planting"     "planting date"                       "julian day"
-state    real   harvest    ij      -       1      -     ird=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "harvest"      "harvest date"                        "julian day"
-state    real   season_gdd ij      -       1      -     ird=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "season_gdd"   "growing season GDD"                  "C"
+state    real   grainxy    ij      -       1      -     i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "grain"        "mass of grain"                       "g/m2"
+state    real   gddxy      ij      -       1      -     i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "gdd"          "growing degree days"                 ""
+state    real   croptype i{crop}j  -       1      Z     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "croptype"     "crop type"                           "fraction"
+state    real   planting   ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "planting"     "planting date"                       "julian day"
+state    real   harvest    ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "harvest"      "harvest date"                        "julian day"
+state    real   season_gdd ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "season_gdd"   "growing season GDD"                  "C"
 state integer   cropcat    ij      -       1      -     rh                                                        "cropcat"      "dominant crop category"              "category"
 state integer   pgsxy      ij      -       1      -     rh                                                        "pgs"          "pgs"                                 ""
 
@@ -1761,11 +1761,11 @@ state  integer save_topo_from_real -    dyn_em	    1         -     i02rh     "sa
 ## FDDA variables
 
 state integer  STEPFG            -        misc        1         -      r        "STEPFG"                "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN FDDA GRID CALLS" ""
-state    real  RUNDGDTEN         ikj      misc        1         X      r        "RUNDGDTEN"               "COUPLED X WIND TENDENCY DUE TO FDDA GRID NUDGING"  "Pa m s-2"
-state    real  RVNDGDTEN         ikj      misc        1         Y      r        "RVNDGDTEN"               "COUPLED Y WIND TENDENCY DUE TO FDDA GRID NUDGING"  "Pa m s-2"
-state    real  RTHNDGDTEN        ikj      misc        1         -      r        "RTHNDGDTEN"              "COUPLED THETA TENDENCY DUE TO FDDA GRID NUDGING"   "Pa K s-1"
-state    real  RPHNDGDTEN        ikj      misc        1         -      r        "RPHNDGDTEN"              "COUPLED GEOPOTENTIAL TENDENCY DUE TO FDDA GRID NUDGING"   "Pa m2 s-3"
-state    real  RQVNDGDTEN        ikj      misc        1         -      r        "RQVNDGDTEN"              "COUPLED Q_V TENDENCY DUE TO FDDA GRID NUDGING"     "Pa kg kg-1 s-1"
+state    real  RUNDGDTEN         ikj      misc        1         X      r        "RUNDGDTEN"               "X WIND TENDENCY DUE TO FDDA GRID NUDGING"  "m s-2"
+state    real  RVNDGDTEN         ikj      misc        1         Y      r        "RVNDGDTEN"               "Y WIND TENDENCY DUE TO FDDA GRID NUDGING"  "m s-2"
+state    real  RTHNDGDTEN        ikj      misc        1         -      r        "RTHNDGDTEN"              "THETA TENDENCY DUE TO FDDA GRID NUDGING"   "K s-1"
+state    real  RPHNDGDTEN        ikj      misc        1         -      r        "RPHNDGDTEN"              "GEOPOTENTIAL TENDENCY DUE TO FDDA GRID NUDGING"   "m2 s-3"
+state    real  RQVNDGDTEN        ikj      misc        1         -      r        "RQVNDGDTEN"              "Q_V TENDENCY DUE TO FDDA GRID NUDGING"     "kg kg-1 s-1"
 state    real  RMUNDGDTEN        ij       misc        1         -      r        "RMUNDGDTEN"              "MU TENDENCY DUE TO FDDA GRID NUDGING"     "Pa s-1"
 state    real    -               ikjf     fdda3d      1         -     -    -
 state    real  U_NDG_NEW         ikjf     fdda3d      1         X      i{10}r   "U_NDG_NEW"               "NEW X WIND FOR FDDA GRID NUDGING"  "m s-1"
@@ -1909,7 +1909,7 @@ rconfig   integer end_day                 namelist,time_control		max_domains    
 rconfig   integer end_hour                namelist,time_control		max_domains      12    irh   "end_hour"              "2 DIGIT HOUR OF THE DAY OF END OF MODEL, 0-23" "HOURS"
 rconfig   integer end_minute              namelist,time_control		max_domains      00    irh   "end_minute"            "2 DIGIT MINUTE OF THE HOUR OF END OF MODEL, 0-59" "MINUTES"
 rconfig   integer end_second              namelist,time_control		max_domains      00    irh   "end_second"            "2 DIGIT SECOND OF THE MINUTE OF END OF MODEL, 0-59" "SECONDS"
-rconfig   integer interval_seconds        namelist,time_control		1             43200    irh   "interval_seconds"      "SECONDS BETWEEN ANALYSIS AND BOUNDARY PERIODS" "SECONDS"
+rconfig   integer interval_seconds        namelist,time_control		1             10800    irh   "interval_seconds"      "SECONDS BETWEEN ANALYSIS AND BOUNDARY PERIODS" "SECONDS"
 rconfig   logical input_from_file         namelist,time_control		max_domains    .false. irh    "input_from_file"      "T/F INPUT FOR THIS DOMAIN FROM A SEPARATE INPUT FILE"  ""
 rconfig   integer fine_input_stream       namelist,time_control		max_domains    0       irh    "fine_input_stream"      "0 THROUGH 11, WHAT INPUT STREAM IS FINE GRID IC FROM"  ""
 rconfig   logical input_from_hires        namelist,time_control		max_domains    .false. irh    "input_from_hires"     "T/F INPUT FOR THIS DOMAIN FROM USGS HI RES TERRAIN"  ""
@@ -2232,8 +2232,8 @@ rconfig   integer paerlev                 namelist,physics      1             1 
 rconfig   integer cam_abs_dim1            namelist,physics      1             1       -      "cam_abs_dim1" "dimension for absnxt in CAM radiation"  ""
 rconfig   integer cam_abs_dim2            namelist,physics      1             1       -      "cam_abs_dim2" "dimension for abstot in CAM radiation"  ""
 rconfig   integer lagday                  namelist,physics      1             150     -      "lagday"         ""      ""
-rconfig   integer no_src_types            namelist,physics      1             1       -      "no_src_types" "Number of aerosoal types from EC (6)"  ""
-rconfig   integer alevsiz                 namelist,physics      1             1       -      "alevsiz" "Number of aerosoal optical depth data levels from EC (12)"  ""
+rconfig   integer no_src_types            namelist,physics      1             1       -      "no_src_types" "Number of aerosol types from EC. (6 - Tegan aerosols)"  ""
+rconfig   integer alevsiz                 namelist,physics      1             1       -      "alevsiz" "Number of aerosol optical depth data levels from EC (12)"  ""
 rconfig   integer o3input                 namelist,physics      1             2       -      "o3input"      "ozone input for RRTMG for CG domain: original = 0; CAM ozone = 2"      ""
 rconfig   integer aer_opt                 namelist,physics      1             0       -      "aer_opt"      "aerosol input option for radiation"      ""
 rconfig   integer swint_opt               namelist,physics      1             0       -      "swint_opt"    "interpolation option for sw radiation"      ""

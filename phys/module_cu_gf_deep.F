@@ -3782,7 +3782,11 @@ contains
    tunning =max(0.2, tunning)
    beta    = 1.3 !2.5 ! max(2.5,2./tunning)
    alpha= (tunning*(beta -2.)+1.)/(1.-tunning)
+#if ( ! defined NO_GAMMA_SUPPORT )
    fzu = gamma(alpha + beta)/(gamma(alpha)*gamma(beta))
+#else
+   call wrf_error_fatal ('compiler does not support 2008 gamma intrinsic')
+#endif
   do k=kb_adj,min(kte,kt)
       kratio= (p(k)-p(kb_adj))/(p(kt)-p(kb_adj)) !float(k)/float(kt+1)
       zu(k) = zubeg+FZU*kratio**(alpha-1.0) * (1.0-kratio)**(beta-1.0)
@@ -3806,7 +3810,9 @@ contains
    tunning =max(0.2, tunning)
    beta    = 2.5 !2.5 ! max(2.5,2./tunning)
    alpha= (tunning*(beta -2.)+1.)/(1.-tunning)
+#if ( ! defined NO_GAMMA_SUPPORT )
    fzu = gamma(alpha + beta)/(gamma(alpha)*gamma(beta))
+#endif
   do k=kb_adj,min(kte,kt)
       kratio= (p(k)-p(kb_adj))/(p(kt)-p(kb_adj)) !float(k)/float(kt+1)
       zu(k) = zubeg+FZU*kratio**(alpha-1.0) * (1.0-kratio)**(beta-1.0)
@@ -3840,7 +3846,9 @@ contains
    tunning =max(0.2, tunning)
    beta    = 1.3 !2.5 ! max(2.5,2./tunning)
    alpha= (tunning*(beta -2.)+1.)/(1.-tunning)
+#if ( ! defined NO_GAMMA_SUPPORT )
    fzu = gamma(alpha + beta)/(gamma(alpha)*gamma(beta))
+#endif
   do k=kb_adj,min(kte,kt)
       kratio= (p(k)-p(kb_adj))/(p(kt)-p(kb_adj)) !float(k)/float(kt+1)
       zu(k) = zubeg+FZU*kratio**(alpha-1.0) * (1.0-kratio)**(beta-1.0)
@@ -3872,7 +3880,9 @@ contains
    tunning =max(0.2, tunning)
    beta    = 4. !2.5 ! max(2.5,2./tunning)
    alpha= (tunning*(beta -2.)+1.)/(1.-tunning)
+#if ( ! defined NO_GAMMA_SUPPORT )
    fzu = gamma(alpha + beta)/(gamma(alpha)*gamma(beta))
+#endif
   zu(:)=0.
   do k=2,min(kt,ktf)
       kratio= (p(k)-p(1))/(p(kt)-p(1))

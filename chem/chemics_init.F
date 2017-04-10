@@ -218,12 +218,10 @@ call wrf_message("**************************************************************
        CALL wrf_debug(15,'calling RACM/MADE/SORGAM with AQCHEM chemistry from chem_driver')
        call wrf_message("WARNING: RACM_ESRLSORG_AQCHEM_KPP chemistry option is highly experimental and not recommended for use.")
 !      call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
-!!! TUCCELLA
      CASE (RACM_SOA_VBS_AQCHEM_KPP )
        numgas_mam = numgas
        CALL wrf_debug(15,'calling RACM/MADE/SOA-VBS with AQCHEM chemistry from chem_driver')
-       call wrf_message("WARNING: RACM_SOA_VBS_AQCHEM_KPP chemistry option is highly experimental and not recommended for use.")
-!      call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
+!       call wrf_message("WARNING: RACM_SOA_VBS_AQCHEM_KPP chemistry option is highly experimental and not recommended for use.")
      CASE (CO2_TRACER, GHG_TRACER )
        call wrf_message("WARNING: Users interested in the GHG options should check the comments/references in header of module_ghg_fluxes")
      CASE (CBMZ_CAM_MAM3_NOAQ)

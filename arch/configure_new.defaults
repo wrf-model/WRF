@@ -1699,7 +1699,7 @@ CC_TOOLS        =      cc
 ###########################################################
 #ARCH    Darwin (MACOS) intel compiler with icc #serial smpar dmpar dm+sm
 #
-DESCRIPTION     =       INTEL ($SFC/$SCC/openmpi)
+DESCRIPTION     =       INTEL ($SFC/$SCC): Open MPI
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -openmp -fpp -auto
@@ -1745,7 +1745,7 @@ CC_TOOLS        =      cc
 ###########################################################
 #ARCH    Darwin (MACOS) gfortran with gcc openmpi #serial smpar dmpar dm+sm
 #
-DESCRIPTION     =       GNU ($SFC/$SCC/openmpi)
+DESCRIPTION     =       GNU ($SFC/$SCC): Open MPI
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -fopenmp

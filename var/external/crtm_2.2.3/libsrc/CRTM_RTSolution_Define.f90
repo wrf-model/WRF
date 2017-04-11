@@ -641,7 +641,10 @@ CONTAINS
         rts_stats(l,1) = rts_stats(l,1) + rts(l,m)
       END DO
     END DO
-    rts_stats(:,1) = rts_stats(:,1)/factor
+    !rts_stats(:,1) = rts_stats(:,1)/factor
+    DO l = 1, n_channels
+      rts_stats(l,1) = rts_stats(l,1)/factor
+    END DO
 
 
     ! Compute the standard deviation
@@ -650,7 +653,10 @@ CONTAINS
         rts_stats(l,2) = rts_stats(l,2) + (rts(l,m) - rts_stats(l,1))**2
       END DO
     END DO
-    rts_stats(:,2) = SQRT(rts_stats(:,2)/factor)
+    !rts_stats(:,2) = SQRT(rts_stats(:,2)/factor)
+    DO l = 1, n_channels
+      rts_stats(l,2) = SQRT(rts_stats(l,2)/factor)
+    END DO
 
 
     ! Replace the algorithm identifier

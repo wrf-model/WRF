@@ -1289,10 +1289,13 @@ FC              =       $(DM_FC)
 CC              =       $(DM_CC)
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       -s integer32
+PROMOTION       =       -s integer32 -s real`expr 8 \* $(RWORDSIZE)`
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -O3 
 LDFLAGS_LOCAL   =       
+# uncomment this for wrfda build
+#LIB_LOCAL       =       -L$(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 -lfftpack \
+#                        -L$(WRF_SRC_ROOT_DIR)/external/RSL_LITE -lrsl_lite
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
 FCOPTIM         =       # -Ofp3 
@@ -1696,7 +1699,7 @@ CC_TOOLS        =      cc
 ###########################################################
 #ARCH    Darwin (MACOS) intel compiler with icc #serial smpar dmpar dm+sm
 #
-DESCRIPTION     =       INTEL ($SFC/$SCC/openmpi)
+DESCRIPTION     =       INTEL ($SFC/$SCC): Open MPI
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -openmp -fpp -auto
@@ -1742,7 +1745,7 @@ CC_TOOLS        =      cc
 ###########################################################
 #ARCH    Darwin (MACOS) gfortran with gcc openmpi #serial smpar dmpar dm+sm
 #
-DESCRIPTION     =       GNU ($SFC/$SCC/openmpi)
+DESCRIPTION     =       GNU ($SFC/$SCC): Open MPI
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -fopenmp

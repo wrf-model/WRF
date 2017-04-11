@@ -4627,12 +4627,12 @@ ENDIF
           !Entrainment from Negggers (2015, JAMES)
           !ENT(k,i) = 0.02*l**-0.35 - 0.0009
           !JOE - implement minimum background entrainment 
-          ENT(k,i) = max(ENT(k,i),0.0008)
+          ENT(k,i) = max(ENT(k,i),0.0006)
           ENT(k,i) = max(ENT(k,i),0.05/ZW(k))
-          ENT(k,i) = min(ENT(k,i),0.5/(ZW(k)-ZW(k-1))) 
           !JOE - increase entrainment for plumes extending very high.
           IF(ZW(k) >= pblh+1000.) ENT(k,i) =ENT(k,i) + (ZW(k)-(pblh+1000.)) * 5.0E-6
           IF(UPW(K-1,I) > 1.5) ENT(k,i) = ENT(k,i) + 0.004*(UPW(K-1,I) - 1.5)
+          ENT(k,i) = min(ENT(k,i),0.9/(ZW(k)-ZW(k-1)))
 
           ! Linear entrainment:
           EntExp= ENT(K,I)*(ZW(k)-ZW(k-1))
@@ -4666,6 +4666,7 @@ ENDIF
 
           EntW=exp(-2.*(Wb+Wc*ENT(K,I))*(ZW(k)-ZW(k-1)))
           Wn2=UPW(K-1,I)**2*EntW + (1.-EntW)*0.5*Wa*B/(Wb+Wc*ENT(K,I))
+          Wn2=MAX(Wn2,0.0)
 
           !Allow strongly forced plumes to overshoot if KE is sufficient
           IF (fltv > 0.05 .AND. Wn2 <= 0 .AND. overshoot == 0) THEN
@@ -5366,7 +5367,7 @@ real :: diff,exn,t,th,qs,qcold
 ! number of iterations
   niter=50
 ! minimum difference
-  diff=1.e-4
+  diff=2.e-5
 
   EXN=(P/p1000mb)**rcp
   !QC=0.  !better first guess QC is incoming from lower level, do not set to zero
@@ -5374,7 +5375,7 @@ real :: diff,exn,t,th,qs,qcold
      T=EXN*THL + xlv/cp*QC        
      QS=qsat_blend(T,P)
      QCOLD=QC
-     QC=max(0.5*QC + 0.5*(QT-QS),0.)
+     QC=0.5*QC + 0.5*MAX((QT-QS),0.)
      if (abs(QC-QCOLD)<Diff) exit
   enddo
 

@@ -45,9 +45,6 @@ Version 3.9 was released on April 17, 2017.
     - New run-time options for improving surface data assimilation (FM-12 SYNOP)
     - Improved implementation of cloud control variables (no longer requires conditional compilation)
     - New run-time options for calculating cloud base height for radar observations
-    - Many bug fixes and performance improvements
-      - For use_radar_rhv=true
-
     - WRFPLUS has been upgraded to V3.9 and is consistent with the released WRF version 3.9.
 
 See http://www2.mmm.ucar.edu/wrf/users/wrfda/updates-3.9.html for a full list of updates

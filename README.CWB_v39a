@@ -1,0 +1,22 @@
+This CWB_v39a code is branched off from the offical V3.9 release (commit hash eee16e3)
+with the following new features added.
+
+New features (only in the CWB branch):
+ 1. Divergence constaint capability.
+ 2. Large Scale Analysis Constraint capability.
+ 3. Radar neighborhood no-rain scheme (radar_non_precip_opt=2).
+
+General WRFDA improvements in V3.9 that are relevant to CWB's applications.
+ 1. Implementation of WRFDA cloud control variables is improved.
+  (1) Namelist cloud_cv_options default is changed from 1 to 0 (no cloud cv).
+  (2) Namelist variable use_3dvar_phy is removed.
+  (3) Setting environment variable CLOUD_CV is no longer needed.
+      -- Make the allocations of cloud variables in the be (background error)
+         structure depend on cloud_cv_options.
+  (4) Separate the w (z-wind) control variable from the handling of
+      cloud control variables and add a new namelist use_cv_w for it.
+ 2. Dual-resolution hybrid code is fixed and cleaned up.
+ 3. Pseudo ob implementation for ref/tpw/ztd is fixed and improved.
+
+Note that this version of code requires more memory due to the implementation
+of new 4D-Ensemble-Var capability.

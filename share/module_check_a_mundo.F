@@ -53,6 +53,8 @@
       LOGICAL , EXTERNAL :: wrf_dm_on_monitor
       INTEGER :: i, j, oops, d1_value
       LOGICAL :: km_opt_already_done , diff_opt_already_done
+      INTEGER :: count_opt
+
 !TWG2015
 !
 !FASDAS
@@ -302,6 +304,25 @@
          count_fatal_error = count_fatal_error + 1
          END IF
       ENDDO
+
+
+#if ( defined NO_GAMMA_SUPPORT )
+!-----------------------------------------------------------------------
+! GF CU scheme requires an intrinsic gamma function. This is a 2008
+! feature that not all compilers yet support.
+!-----------------------------------------------------------------------
+
+      GF_test : DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % cu_physics(i) .EQ. GFSCHEME ) THEN
+            wrf_err_message = '--- ERROR: cu_physics GF uses an intrinsic gamma function that is not available with this compiler'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            wrf_err_message = '--- Change compilers, or change cu_physics option in the namelist.input file.'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
+            EXIT GF_test
+         END IF
+      ENDDO GF_test
+#endif
 
 !-----------------------------------------------------------------------
 ! If fractional_seaice = 0, and tice2tsk_if2cold = .true, nothing will happen
@@ -1044,6 +1065,88 @@
          END DO
       END IF
 
+!-----------------------------------------------------------------------
+! For RASM Diagnostics
+! -verify that only one time interval is specified
+! -change the intervals to values used in RASM Diagnotics
+! -verify that a time interval has been set
+!-----------------------------------------------------------------------
+
+! 1. Only one time interval type specified
+
+      DO i = 1, model_config_rec % max_dom
+         count_opt = 0
+         IF ( model_config_rec%mean_diag_interval_s (i) .GT. 0 ) THEN
+            count_opt = count_opt + 1
+         END IF 
+         IF ( model_config_rec%mean_diag_interval_m (i) .GT. 0 ) THEN
+            count_opt = count_opt + 1
+         END IF 
+         IF ( model_config_rec%mean_diag_interval_h (i) .GT. 0 ) THEN
+            count_opt = count_opt + 1
+         END IF 
+         IF ( model_config_rec%mean_diag_interval_d (i) .GT. 0 ) THEN
+            count_opt = count_opt + 1
+         END IF 
+         IF ( model_config_rec%mean_diag_interval_mo(i) .GT. 0 ) THEN
+            count_opt = count_opt + 1
+         END IF 
+         IF ( model_config_rec%mean_diag_interval   (i) .GT. 0 ) THEN
+            count_opt = count_opt + 1
+         END IF 
+         IF ( count_opt .GT. 1 ) THEN
+            wrf_err_message = '--- ERROR:  Only use one of: mean_diag_interval, _s, _m, _h, _d, _mo '
+            CALL wrf_message ( wrf_err_message )
+            count_fatal_error = count_fatal_error + 1
+         END IF
+      END DO
+
+! 2. Put canonical intervals into RASM expected form
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%mean_diag_interval_s (i) .GT. 0 ) THEN
+            model_config_rec%mean_interval(i) = model_config_rec%mean_diag_interval_s (i)
+            model_config_rec%mean_freq = 1
+         END IF 
+         IF ( model_config_rec%mean_diag_interval_m (i) .GT. 0 ) THEN
+            model_config_rec%mean_interval(i) = model_config_rec%mean_diag_interval_m (i)
+            model_config_rec%mean_freq = 2
+         END IF 
+         IF ( model_config_rec%mean_diag_interval_h (i) .GT. 0 ) THEN
+            model_config_rec%mean_interval(i) = model_config_rec%mean_diag_interval_h (i)
+            model_config_rec%mean_freq = 3
+         END IF 
+         IF ( model_config_rec%mean_diag_interval_d (i) .GT. 0 ) THEN
+            model_config_rec%mean_interval(i) = model_config_rec%mean_diag_interval_d (i)
+            model_config_rec%mean_freq = 4
+         END IF 
+         IF ( model_config_rec%mean_diag_interval_mo(i) .GT. 0 ) THEN
+            model_config_rec%mean_interval(i) = model_config_rec%mean_diag_interval_mo(i)
+            model_config_rec%mean_freq = 5
+         END IF 
+         IF ( model_config_rec%mean_diag_interval   (i) .GT. 0 ) THEN
+            model_config_rec%mean_interval(i) = model_config_rec%mean_diag_interval   (i)
+            model_config_rec%mean_freq = 2
+         END IF 
+      END DO
+
+! 3. If requested, need an interval.
+
+      IF ( model_config_rec%mean_diag .EQ. 1 ) THEN
+         count_opt = 0
+         DO i = 1, model_config_rec % max_dom
+            IF ( model_config_rec%mean_interval   (i) .GT. 0 ) THEN
+               count_opt = count_opt + 1
+            END IF 
+         END DO
+         IF ( count_opt .LT. 1 ) THEN
+            wrf_err_message = '--- ERROR:  mean_diag = 1, but no computation interval given'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '            Use one of: mean_diag_interval, _s, _m, _h, _d, _mo '
+            CALL wrf_message ( wrf_err_message )
+            count_fatal_error = count_fatal_error + 1
+         END IF
+      END IF
 
 !-----------------------------------------------------------------------
 ! For nwp_diagnostics = 1, history_interval must be used.           

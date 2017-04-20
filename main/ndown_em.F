@@ -223,6 +223,10 @@ real :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
    model_config_rec % e_vert(2) = k_dim_n
    ALLOCATE(znw_c(k_dim_c))
    ALLOCATE(znu_c(k_dim_c))
+   ALLOCATE(c3h(k_dim_c))
+   ALLOCATE(c4h(k_dim_c))
+   ALLOCATE(c3f(k_dim_c))
+   ALLOCATE(c4f(k_dim_c))
    WRITE ( message , FMT = '(A,3I5)' ) 'KDIM_C', k_dim_c , model_config_rec % e_vert(1) , model_config_rec % e_vert(2)
    CALL       wrf_debug (  99,message )
 !!!!!!!!!!!!!!! mousta
@@ -1770,7 +1774,7 @@ END SUBROUTINE init_domain_constants_em_ptr
 #if  !( HYBRID_COORD==1 )
          pre_c = mu_m * znw_c(k) + p_top_m
 #elif ( HYBRID_COORD==1 )
-         pre_c = mu_m * c3f(1) + c4f(1) + p_top_m
+         pre_c = mu_m * c3f(k) + c4f(k) + p_top_m
 #endif
          alt_w_c(k) =  -hsca_m * alog(pre_c/p_surf_m)
          enddo
@@ -1778,7 +1782,7 @@ END SUBROUTINE init_domain_constants_em_ptr
 #if  !( HYBRID_COORD==1 )
          pre_c = mu_m * znu_c(k) + p_top_m
 #elif ( HYBRID_COORD==1 )
-         pre_c = mu_m * c3h(1) + c4h(1) + p_top_m
+         pre_c = mu_m * c3h(k) + c4h(k) + p_top_m
 #endif
          alt_u_c(k+1) =  -hsca_m * alog(pre_c/p_surf_m)
          enddo
@@ -1789,7 +1793,7 @@ END SUBROUTINE init_domain_constants_em_ptr
 #if  !( HYBRID_COORD==1 )
          pre_n = mu_m * parent_grid%znw(k) + p_top_m
 #elif ( HYBRID_COORD==1 )
-         pre_n = mu_m * parent_grid%c3f(1) + parent_grid%c4f(1) + p_top_m
+         pre_n = mu_m * parent_grid%c3f(k) + parent_grid%c4f(k) + p_top_m
 #endif
          alt_w_n(k) =  -hsca_m * alog(pre_n/p_surf_m)
          enddo
@@ -1797,7 +1801,7 @@ END SUBROUTINE init_domain_constants_em_ptr
 #if  !( HYBRID_COORD==1 )
          pre_n = mu_m * parent_grid%znu(k) + p_top_m
 #elif ( HYBRID_COORD==1 )
-         pre_n = mu_m * parent_grid%c3h(1) + parent_grid%c4h(1) + p_top_m
+         pre_n = mu_m * parent_grid%c3h(k) + parent_grid%c4h(k) + p_top_m
 #endif
          alt_u_n(k+1) =  -hsca_m * alog(pre_n/p_surf_m)
          enddo

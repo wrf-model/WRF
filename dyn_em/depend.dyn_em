@@ -45,6 +45,7 @@ module_diffusion_em.o:  module_big_step_utilities_em.o \
 module_em.o:    module_big_step_utilities_em.o module_advect_em.o \
 		module_damping_em.o \
 		../frame/module_state_description.o \
+		../frame/module_comm_dm.o \
 		../share/module_model_constants.o 
 
 module_polarfft.o: ../share/module_model_constants.o \

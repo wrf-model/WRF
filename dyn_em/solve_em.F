@@ -3488,6 +3488,7 @@ BENCH_END(bc_end_tim)
                             grid%msftx,grid%msfux,grid%msfvy,                      &
                             ids, ide, jds, jde, kds, kde,                          &
                             ims, ime, jms, jme, kms, kme,                          &
+                            ips, ipe, jps, jpe, kps, kpe,                          &
                             grid%i_start(ij), grid%i_end(ij),                      &
                             grid%j_start(ij), grid%j_end(ij),                      &
                             k_start  , k_end                                       )

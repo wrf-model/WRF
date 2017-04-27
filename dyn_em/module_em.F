@@ -2302,6 +2302,7 @@ subroutine trajectory (     grid,config_flags,               &
                             msft,msfu,msfv,                  &
                             ids, ide, jds, jde, kds, kde,    &
                             ims, ime, jms, jme, kms, kme,    &
+                            ips, ipe, jps, jpe, kps, kpe,    &
                             its, ite, jts, jte, kts, kte    )
 
 !---------------------------------------------------------------------------------------------------
@@ -2310,6 +2311,9 @@ subroutine trajectory (     grid,config_flags,               &
   use module_utility
   use module_domain, only  : domain_clock_get
   use module_trajectory, only  : traject, traj_cnt
+#ifdef DM_PARALLEL
+  use module_comm_dm, only : HALO_EM_F_sub
+#endif
 
   implicit none
 !---------------------------------------------------------------------------------------------------
@@ -2327,10 +2331,11 @@ subroutine trajectory (     grid,config_flags,               &
 !
 !--------------------------------------------------------------------------------------------------
   TYPE(proj_info) :: proj
-  TYPE(domain), INTENT(IN) :: grid
+  TYPE(domain), INTENT(INOUT) :: grid
   TYPE (grid_config_rec_type) , INTENT(IN)          :: config_flags
   INTEGER ,                INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                              ims, ime, jms, jme, kms, kme, &
+                                             ips, ipe, jps, jpe, kps, kpe, &
                                              its, ite, jts, jte, kts, kte
    INTEGER ,                                      INTENT(IN   ) :: itimestep
    REAL ,                                      INTENT(IN   ) :: rdx,     &
@@ -2354,6 +2359,11 @@ subroutine trajectory (     grid,config_flags,               &
   real, dimension(ims:ime,kms:kme,jms:jme)::u,v,w
   real, dimension(ims:ime,jms:jme),intent(in)::msft,msfu,msfv
   real, dimension(ims:ime,jms:jme),intent(in)::muu,muv,mut
+
+#ifdef DM_PARALLEL
+  real, dimension(ims:ime,jms:jme)            :: muuh,muvh,muth
+  real, dimension(ims:ime,jms:jme)            :: MUUWRK,MUVWRK,MUTWRK
+#endif
   integer :: j,k
   integer :: i_beg,i_end
   integer :: i_traj,j_traj,k_traj,tjk
@@ -2392,8 +2402,41 @@ subroutine trajectory (     grid,config_flags,               &
    write(dbg_mes,'(''trajectory('',i2.2,''): Entering trajectory'')') dm
    call wrf_debug(200,trim(dbg_mes) )
 
+#ifdef DM_PARALLEL
+   do j=jms,jme
+     muuh(ims:ime,j) = grid%muu(ims:ime,j)
+     muvh(ims:ime,j) = grid%muv(ims:ime,j)
+     muth(ims:ime,j) = grid%mut(ims:ime,j)
+     grid%muu(ims:ime,j) = muu(ims:ime,j)
+     grid%muv(ims:ime,j) = muv(ims:ime,j)
+     grid%mut(ims:ime,j) = mut(ims:ime,j)
+   enddo
+
+#    include "HALO_EM_F.inc"
+
+   do j=jms,jme
+     MUUWRK(ims:ime,j) = grid%muu(ims:ime,j)
+     MUVWRK(ims:ime,j) = grid%muv(ims:ime,j)
+     MUTWRK(ims:ime,j) = grid%mut(ims:ime,j)
+     grid%muu(ims:ime,j) = muuh(ims:ime,j)
+     grid%muv(ims:ime,j) = muvh(ims:ime,j)
+     grid%mut(ims:ime,j) = muth(ims:ime,j)
+   enddo
+#endif
+
    i_beg = max( 1,its-1 )
    i_end = min( ite+2,ide-1 )
+#ifdef DM_PARALLEL
+   do j=max(1,jts-1),min(jte+2,jde-1)
+     do k=kms,kme-1
+       u(its:i_end,k,j)=ru_m(its:i_end,k,j)/MUUWRK(its:i_end,j)*msfu(its:i_end,j)
+       v(its:i_end,k,j)=rv_m(its:i_end,k,j)/MUVWRK(its:i_end,j)*msfv(its:i_end,j)
+     enddo
+     do k=kms,kme
+       w(its:i_end,k,j)=ww_m(its:i_end,k,j)/MUTWRK(its:i_end,j)*msft(its:i_end,j)
+     enddo
+   enddo
+#else
    do j=max(1,jts-1),min(jte+2,jde-1)
      do k=kms,kme-1
        u(its:i_end,k,j)=ru_m(its:i_end,k,j)/MUU(its:i_end,j)*msfu(its:i_end,j)
@@ -2403,6 +2446,7 @@ subroutine trajectory (     grid,config_flags,               &
        w(its:i_end,k,j)=ww_m(its:i_end,k,j)/MUT(its:i_end,j)*msft(its:i_end,j)
      enddo
    enddo
+#endif
           has_proj_map  = &
            ( proj%code .EQ. PROJ_LC           ) .OR. &
            ( proj%code .EQ. PROJ_PS_WGS84     ) .OR. &
@@ -2435,7 +2479,8 @@ traj_lat(tjk),traj_long(tjk),traj_i(tjk),traj_j(tjk))
 traj_in_domain: &
       if ((i_traj .ge. its .and. i_traj .le. ite .and. i_traj .lt. ide) .and. &
           (j_traj .ge. jts .and. j_traj .le. jte .and. j_traj .lt. jde) .and. &
-          (k_traj .le. kte .and. k_traj .lt. kde)) then
+           k_traj < kte-1 ) then
+!         (k_traj .le. kte .and. k_traj .lt. kde)) then
 !-----------------------------------------------------------------------------
 !  is trajectory in time interval?
 !-----------------------------------------------------------------------------
@@ -2444,11 +2489,6 @@ current_timestr=current_timestr)
          call geth_newdate( next_timestr, current_timestr, int(grid%dt) )
          call wrf_atotime( next_timestr, next_time )
          wrk_timestr(1:19) = traject(tjk,dm)%start_time(1:19)
-!        write(*,*) ' '
-!        write(*,*) traject(tjk,dm)
-!        write(dbg_mes,'(''trajectory('',i2,2,''): tjk,start_time = '',i3,1x,a)') &
-!                     dm,tjk,wrk_timestr
-!        call wrf_debug( 200,trim(dbg_mes) )
          call wrf_atotime( wrk_timestr(1:19), start_time )
          wrk_timestr(1:19) = traject(tjk,dm)%stop_time(1:19)
          call wrf_atotime( wrk_timestr(1:19), stop_time )

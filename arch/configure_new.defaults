@@ -313,7 +313,7 @@ CFLAGS_LOCAL    =       -w -O3 -ip #-xHost -fp-model fast=2 -no-prec-div -no-pre
 LDFLAGS_LOCAL   =       -ip #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-FCOPTIM         =       -O3 -override-limits
+FCOPTIM         =       -O3 #-override-limits
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O0 -fno-inline -no-ip
 FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check noarg_temp_created,bounds,format,output_conversion,pointers,uninit -ftrapuv -unroll0 -u

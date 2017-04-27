@@ -1,10 +1,13 @@
-^^^ YOUR TITLE UP THERE SHOULD BE A SINGLE-LINE "PURPOSE" FOR THIS CHANGE. e.g. "Fixing a compile bug for Thompson microphysics"
+Use this template to give a detailed message describing the change you want to make to the code.
+If you are unclear on what should be written here, see  https://github.com/wrf-model/WRF/wiki/Making-a-good-pull-request-message for more guidance
 
-See https://github.com/wrf-model/WRF/wiki/Changes-to-the-WRF-code-from-start-to-finish for examples
+The title of this pull request should be a brief "purpose" for this change.
+
+--- Delete this line and those above before hitting "Create pull request" ---
 
 TYPE: choose one of [bug fix, enhancement, new feature, feature removed, no impact, text only]
 
-KEYWORDS: 5 to 10 words related to commit, separated by commas
+KEYWORDS: approximately 3 to 6 words (more is always better) related to your commit, separated by commas
 
 SOURCE: Either "developer's name (affiliation)" .XOR. "internal" for a WRF Dev committee member
 
@@ -13,34 +16,3 @@ DESCRIPTION OF CHANGES: One or more paragraphs describing problem, solution, and
 LIST OF MODIFIED FILES: list of changed files (use `git diff --name-status master` to get formatted list)
 
 TESTS CONDUCTED: Explicitly state if a WTF and or other tests were run, or are pending. For more complicated changes please be explicit!
-
-#....This line and those below can be deleted....
-#------------------------------------------------------------------
-#
-#For github pull requests, the beginning single-line "purpose" should be entered in the title line
-#See https://github.com/wrf-model/WRF/wiki/Changes-to-the-WRF-code-from-start-to-finish for examples
-#
-#Description of commit types:
-#- "bug fix" 
-#  Fixing a demonstrably incorrect portion of code
-#
-#- "enhancement" 
-#  Changing an existing portion of the code; though the old code was not unambiguously 
-#  wrong, this change presumably improves the code
-#
-#- "new feature" 
-#  Adding a new feature to the code
-#
-#- "feature removed" 
-#  Removing an existing feature of the code
-#
-#- "no impact" 
-#  For display changes such as changing the "version_decl", changing variable names, 
-#  improving error messages, changing quoted Registry elements, or otherwise changing what 
-#  appears in the log/out/error files but not impacting history/restart output results, timing 
-#  performance, or memory footprint 
-#
-#- "text only"
-#  For README and comments, changing quoted Registry elements, white space alignment, or other 
-#  changes which have no impact on program output or log files.  Additionally, any change which
-#  does not impact any of the compiled code.

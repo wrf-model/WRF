@@ -246,6 +246,8 @@ rconfig   logical   gpsref_thinning         namelist,wrfvar5  1  .false.  - "gps
 rconfig   logical   outer_loop_restart      namelist,wrfvar6  1  .false.  - "outer_loop_restart"       ""  ""
 rconfig   integer   max_ext_its             namelist,wrfvar6  1  1        - "max_ext_its"              ""  ""
 rconfig   integer   ntmax                   namelist,wrfvar6  max_outer_iterations  200      - "ntmax"                    ""  ""
+rconfig   logical   use_inverse_squarerootb namelist,wrfvar6  1  .false.  - "use_inverse_squarerootb"       ""  ""
+rconfig   logical   use_interpolate_cvt     namelist,wrfvar6  1  .false.  - "use_interpolate_cvt"       ""  ""
 rconfig   integer   nsave                   namelist,wrfvar6  1  4        - "nsave"                    ""  ""
 rconfig   integer   write_interval          namelist,wrfvar6  1  5        - "write_interval"           ""  ""
 rconfig   real      eps                     namelist,wrfvar6  max_outer_iterations 0.01     - "eps"                      ""  ""

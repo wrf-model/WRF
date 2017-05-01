@@ -5,7 +5,7 @@ module da_setup_structures
    !---------------------------------------------------------------------------
 
    use da_wavelet, only: lf,namw,nb,nij,ws
-   use module_domain, only : xb_type, ep_type, domain
+   use module_domain, only : xb_type, ep_type, domain, vp_type
 
    use da_define_structures, only : xbx_type,be_subtype, be_type, y_type, j_type, &
       iv_type,da_allocate_background_errors,da_allocate_observations, &
@@ -137,6 +137,7 @@ contains
 #include "da_lcl.inc"
 #include "da_cumulus.inc"
 #include "da_qfrmrh.inc"
+#include "da_write_vp.inc"
 #include "da_write_increments.inc"
 #include "da_write_increments_for_wrf_nmm_regional.inc"
 #include "da_write_kma_increments.inc"

@@ -64,6 +64,7 @@ module da_vtox_transforms
    use da_par_util, only : da_vv_to_cv, da_cv_to_vv
 
    use da_recursive_filter, only : da_transform_through_rf, &
+      da_transform_through_rf_inv, &
       da_transform_through_rf_adj, da_apply_rf, da_apply_rf_adj, &
       da_transform_through_rf_dual_res, da_transform_through_rf_adj_dual_res
    use da_reporting, only : da_error, message, da_warning, da_message
@@ -85,16 +86,19 @@ module da_vtox_transforms
 #include "da_check_eof_decomposition.inc"
 #include "da_transform_vtovv.inc"
 #include "da_transform_vtovv_adj.inc"
+#include "da_transform_vtovv_inv.inc"
 #include "da_transform_rescale.inc"
 #include "da_transform_vtox.inc"
+#include "da_transform_vtox_inv.inc"
 #include "da_transform_xtoxa.inc"
 #include "da_transform_vtox_adj.inc"
 #include "da_transform_xtoxa_adj.inc"
 #include "da_transform_vptox.inc"
 #include "da_transform_vptox_adj.inc"
+#include "da_transform_vptox_inv.inc"
 #include "da_transform_vvtovp.inc"
 #include "da_transform_vvtovp_adj.inc"
-#include "da_transform_vptovv.inc"
+#include "da_transform_vvtovp_inv.inc"
 #include "da_transform_vpatox.inc"
 #include "da_transform_vpatox_adj.inc"
 #include "da_vertical_transform.inc"

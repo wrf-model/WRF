@@ -79,7 +79,8 @@ subroutine da_transform_through_rf(grid,mz, rf_alpha, val,field, scaling)
    !-------------------------------------------------------------------------
 
    ! [2.1] Apply (i',j',k -> i,j',k') (grid%xp%v1z -> grid%xp%v1x)
-   ! convert from vertical column to x-stripe
+   ! convert from z-strip to x-stripe (i.e., no decomposition in x-dir)
+   ! Liuz NOTE: in order to do global recursive filter in x-direction
 
    call da_transpose_z2x (grid)
 
@@ -108,7 +109,7 @@ subroutine da_transform_through_rf(grid,mz, rf_alpha, val,field, scaling)
    !-------------------------------------------------------------------------
 
    ! [3.1] Apply (i, j' ,k' -> i', j ,k') (grid%xp%v1x -> grid%xp%v1y)
-   ! convert from vertical column to y-stripe
+   ! convert from x-strip to y-stripe
 
    call da_transpose_x2y (grid)
 
@@ -133,11 +134,11 @@ subroutine da_transform_through_rf(grid,mz, rf_alpha, val,field, scaling)
    !$OMP END PARALLEL DO
    
    !-------------------------------------------------------------------------
-   ! [4.0]: Perform 1D recursive filter in y-direction:
+   ! [4.0]: convert back from y-trip to normal z-strip:
    !-------------------------------------------------------------------------
 
    ! [4.1] Apply (i',j,k' -> i',j',k) (grid%xp%v1y -> grid%xp%v1z)
-   ! convert from y-stripe to vertical column.
+   ! convert from y-stripe to z-strip.
    
    call da_transpose_y2z (grid)
 

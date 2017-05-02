@@ -356,6 +356,7 @@ contains
  CHARACTER(LEN=filename_len)           :: filename      ! I/O filename.
  INTEGER                               :: kdum
  WRITE(ce,'(i3.3)')member
+ missing = .false.
 ! Assumes variable directory has been created by script:
  filename=TRIM(run_dir)//'/'//TRIM(variable)//'/'//date//'.'//TRIM(variable) &
                                     //'.e'//ce//'.'//ck

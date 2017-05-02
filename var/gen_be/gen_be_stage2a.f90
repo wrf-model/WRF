@@ -23,7 +23,7 @@ program gen_be_stage2a
    integer             :: num_bins2d           ! Number of bins (2D fields).
    integer             :: num_passes           ! Recursive filter passes.
    integer             :: cv_options           ! Control variable option
-   integer             :: ios                  ! I/O status for file open
+   integer             :: ios                  ! I/O status for file read
    real                :: lat_min, lat_max     ! Used if bin_type = 2 (degrees).
    real                :: binwidth_lat         ! Used if bin_type = 2 (degrees).
    real                :: hgt_min, hgt_max     ! Used if bin_type = 2 (m).
@@ -146,7 +146,8 @@ program gen_be_stage2a
          variable = 'psi'
          filename = trim(variable)//'/'//date(1:10)
          filename = trim(filename)//'.'//trim(variable)//'.e'//ce
-         open (iunit, file = trim(filename), form = 'unformatted', iostat = ios)
+         open (iunit, file = trim(filename), form = 'unformatted')
+         read(iunit, iostat=ios)ni, nj, nk
          if (ios /= 0) then
             if (allow_missing_dates) then
                write(6,'(a,a)')' WARNING: CAN NOT OPEN ',filename
@@ -156,7 +157,6 @@ program gen_be_stage2a
                call da_error(__FILE__,__LINE__,(/"Could not open "//trim(filename)/))
             endif
          endif
-         read(iunit)ni, nj, nk
          read(iunit)psi
          close(iunit)
 

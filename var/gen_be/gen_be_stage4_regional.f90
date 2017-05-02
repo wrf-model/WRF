@@ -360,14 +360,13 @@ contains
 ! Assumes variable directory has been created by script:
  filename=TRIM(run_dir)//'/'//TRIM(variable)//'/'//date//'.'//TRIM(variable) &
                                     //'.e'//ce//'.'//ck
- OPEN(iunit,FILE=filename,FORM="UNFORMATTED",IOSTAT=readstat)
+ OPEN(iunit,FILE=filename,FORM="UNFORMATTED")
+ READ(iunit,IOSTAT=readstat)ni,nj,kdum
  if (readstat /= 0) then
        ni = 0
        nj = 0
        missing = .true.
-       return
  endif
- READ(iunit)ni,nj,kdum
  ENDSUBROUTINE read_ni_nj
 
 subroutine get_grid_info( ni, nj, nn, stride, nr, jstart, jend )

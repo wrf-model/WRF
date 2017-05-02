@@ -22,7 +22,7 @@ program gen_be_stage3
    integer             :: bin_type                   ! Type of bin to average over.
    integer             :: num_bins                   ! Number of bins (3D fields).
    integer             :: num_bins2d                 ! Number of bins (2D fields).
-   integer             :: ios                        ! I/O status for file open
+   integer             :: ios                        ! I/O status for file read
    real                :: lat_min, lat_max           ! Used if bin_type = 2 (degrees).
    real                :: binwidth_lat               ! Used if bin_type = 2 (degrees).
    real                :: hgt_min, hgt_max           ! Used if bin_type = 2 (m).
@@ -121,7 +121,8 @@ program gen_be_stage3
 
             ! Read Full-fields:
             filename = 'fullflds'//'/'//date(1:10)//'.'//'fullflds'//'.e'//ce
-            open (iunit, file = trim(filename), form = 'unformatted', iostat = ios)
+            open (iunit, file = trim(filename), form = 'unformatted')
+            read(iunit, iostat=ios)ni, nj, nk
             if (ios /= 0) then
                if (allow_missing_dates) then
                   write(6,'(a,a)')' WARNING: CAN NOT OPEN ',filename
@@ -131,7 +132,6 @@ program gen_be_stage3
                   call da_error(__FILE__,__LINE__,(/"Could not open "//trim(filename)/))
                endif
             endif
-            read(iunit)ni, nj, nk
             if ( first_time ) then
                write(6,'(a,3i8)')'    i, j, k dimensions are ', ni, nj, nk
                allocate( latitude(1:ni,1:nj) )
@@ -294,7 +294,8 @@ program gen_be_stage3
             filename = trim(variable)//'/'//date(1:10)
             filename = trim(filename)//'.'//trim(variable)//'.e'//ce
 
-            open (iunit, file = trim(filename), form = 'unformatted', iostat = ios)
+            open (iunit, file = trim(filename), form = 'unformatted')
+            read(iunit, iostat = ios)ni, nj, nk
             if (ios /= 0) then
                if (allow_missing_dates) then
                   write(6,'(a,a)')' WARNING: CAN NOT OPEN ',filename
@@ -304,7 +305,6 @@ program gen_be_stage3
                   call da_error(__FILE__,__LINE__,(/"Could not open "//trim(filename)/))
                endif
             endif
-            read(iunit)ni, nj, nk
 
             if ( first_time ) then
                if ( data_on_levels) allocate( latitude(1:ni,1:nj) )   ! Not allocated earlier.

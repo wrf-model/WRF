@@ -34,7 +34,7 @@ program gen_be_stage1
    integer             :: num_bins                   ! Number of bins (3D fields).
    integer             :: num_bins2d                 ! Number of bins (2D fields).
    integer             :: cv_options                 ! Control variable option
-   integer             :: ios                        ! I/O status for file open
+   integer             :: ios                        ! I/O status for file read
    real                :: count_inv                  ! 1 / count.
    real                :: lat_min, lat_max           ! Used if bin_type = 2 (degrees).
    real                :: binwidth_lat               ! Used if bin_type = 2 (degrees).
@@ -132,18 +132,19 @@ program gen_be_stage1
             filename = trim(dat_dir)//'/pert.'//date(1:10)//'.e'//trim(ce)
          endif
 
-         open (iunit, file = trim(filename), form = 'unformatted', iostat = ios)
-         if (ios /= 0) then
+         open (iunit, file = trim(filename), form = 'unformatted')
+         read(iunit, iostat = ios)date, ni, nj, nk
+
+         if ( ios /= 0 ) then
             if (allow_missing_dates) then
-               write(6,'(a,a)')' WARNING: CAN NOT OPEN ',filename
-               write(6,'(a)')' Attempting to continue since allow_missing_dates = .true.'
+               write(stdout,'(a,a)')' WARNING: CAN NOT OPEN ',filename
+               write(stdout,'(a)')' Attempting to continue since allow_missing_dates = .true.'
                count = count - 1
                cycle
             else
                call da_error(__FILE__,__LINE__,(/"Could not open "//trim(filename)/))
             endif
          endif
-         read(iunit)date, ni, nj, nk
 
          if ( first_time ) then
             write(6,'(a,3i8)')'    i, j, k dimensions are ', ni, nj, nk
@@ -243,17 +244,17 @@ program gen_be_stage1
             filename = trim(dat_dir)//'/pert.'//date(1:10)//'.e'//trim(ce)
          endif
 
-         open (iunit, file = trim(filename), form = 'unformatted', iostat = ios)
+         open (iunit, file = trim(filename), form = 'unformatted')
+         read(iunit, iostat = ios)date, ni, nj, nk
          if (ios /= 0) then
             if (allow_missing_dates) then
-               write(6,'(a,a)')' WARNING: CAN NOT OPEN ',filename
-               write(6,'(a)')' Attempting to continue since allow_missing_dates = .true.'
+               write(stdout,'(a,a)')' WARNING: CAN NOT OPEN ',filename
+               write(stdout,'(a)')' Attempting to continue since allow_missing_dates = .true.'
                cycle
             else
                call da_error(__FILE__,__LINE__,(/"Could not open "//trim(filename)/))
             endif
          endif
-         read(iunit)date, ni, nj, nk
          if ( cv_options == 7 ) then
             read(iunit)u_prime
             read(iunit)v_prime

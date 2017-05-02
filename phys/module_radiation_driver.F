@@ -1278,11 +1278,12 @@ CONTAINS
                     !Find whether to overwrite cldfra or not (ONLY if ICLOUD == 1)
                     compute_cldfra_cup = .true. 
                     if (icloud == 1 ) then
-                       compute_cldfra_cup = .false.     
                        if(cldfra1_flag(i,k,j) == 1 .and. shall(i,j) .gt. 1) then
                           CLDFRA(i,k,j)=0.
+                          compute_cldfra_cup = .true.    ! No resolved clouds, check of shallow clouds.  -- LK Berg, 4/26/17
                        elseif(cldfra1_flag(i,k,j) == 2 .and. shall(i,j) .gt. 1) then
                           CLDFRA(i,k,j)=1.
+                          compute_cldfra_cup = .false.    ! Ovc, no need for shallow clouds  -- LK Berg, 4/26/17
                        elseif(cldfra1_flag(i,k,j) == 3) then
                           compute_cldfra_cup = .true.
                        endif
@@ -1296,7 +1297,7 @@ CONTAINS
                           cldfra_cup(i,k,j) = 0.0
                        end if
                     endif
-                    if( shall(i,j) == 1 .and. k >= cubot(i,j)  .and. k <= cutop(i,j)  ) then  ! 1=Shallow Cu
+                    if( shall(i,j) <= 1 .and. k >= cubot(i,j)  .and. k <= cutop(i,j)  ) then  ! 1=Shallow Cu  -- Changed to use for both deep and shallow  -- LK Berg 4/26/17
                        ! Begin: wig, 4-Feb-2008
                        !
                        ! Override the cloud condensate values if shallow convection triggered.
@@ -1304,8 +1305,8 @@ CONTAINS
                        ! observations from CHAPS (Oklahoma area) and Florida (Blyth et al. 2005)
                        ! or the predicted value if it is greater.
 
-                       cldfra_cup_mod = cldfra_cup(i,k,j)* 1.0e-3*(1+qv(i,k,j))!modified cloud fraction
-                       qc(i,k,j) = max( 1.0e-3*cldfra_cup_mod, qc(i,k,j) )!DE+LB 2012-Feb
+                       cldfra_cup_mod = cldfra_cup(i,k,j) * (1.0 * 1.0e-3)!modified cloud fraction, assume QCLOUD is 1 g/kg -- LK Berg 4/26/17                       
+                       qc(i,k,j) = max(cldfra_cup_mod, qc(i,k,j) )!DE+LB 2012-Feb         Removed conversion factor in this line (account for in line above) -- LK Berg 4/26/17
 
                        ! Override the cloud fraction values calculated above if shallow
                        ! convection triggered. For shallow convection, use a representative

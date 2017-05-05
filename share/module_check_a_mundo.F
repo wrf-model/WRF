@@ -1558,7 +1558,7 @@
              !  We are OK, I just hate writing backwards / negative / convoluted if tests 
              !  that are not easily comprehensible.
           ELSE
-            wrf_err_message = '--- ERROR: vert_refine_method=2 only works with either RRTM or RRTMG'
+            wrf_err_message = '--- ERROR: vert_refine_method=2 only works with ra_lw_physics=1 (RRTM) and ra_sw_physics=1 (Dudhia)'
             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
             count_fatal_error = count_fatal_error + 1
           END IF 

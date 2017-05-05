@@ -465,16 +465,14 @@ END IF
                         if ( bg_rf >= 20.0 .and. iv%radar(n)%height(k) > model_lcl(n) ) then
                            iv % radar(n) % rqv(k) % qc = 0
 
-                           radar_non_precip_rh_w = radar_non_precip_rh_w*0.01 ! percentage to ratio
-                           radar_non_precip_rh_i = radar_non_precip_rh_i*0.01 ! percentage to ratio
                            if ( model_tc(k,n) > 5.0 ) then
-                              iv%radar(n)%rqvo(k) =  radar_non_precip_rh_w*model_qs(k,n)
+                              iv%radar(n)%rqvo(k) =  0.01*radar_non_precip_rh_w*model_qs(k,n)
                            else if ( model_tc(k,n) < -5.0 ) then
-                              iv%radar(n)%rqvo(k) =  radar_non_precip_rh_i*model_qs_ice(k,n)
+                              iv%radar(n)%rqvo(k) =  0.01*radar_non_precip_rh_i*model_qs_ice(k,n)
                            else
                               cwr = (model_tc(k,n)+5.0)/10.0
                               cws = 1.0 - cwr
-                              iv%radar(n)%rqvo(k) =  cwr*radar_non_precip_rh_w*model_qs(k,n) + cws*radar_non_precip_rh_i*model_qs_ice(k,n)
+                              iv%radar(n)%rqvo(k) =  cwr*0.01*radar_non_precip_rh_w*model_qs(k,n) + cws*0.01*radar_non_precip_rh_i*model_qs_ice(k,n)
                            end if
 
                            iv % radar(n) % rqv(k) % inv = iv % radar(n) % rqvo(k) - model_qv(k,n)

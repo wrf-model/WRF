@@ -273,41 +273,26 @@ subroutine da_transfer_xatowrftl(grid, config_flags, filnam, timestr)
    ! [5.0] save inCREMENT 
    !---------------------------------------------------------------------------
 
-#ifdef VAR4D_MICROPHYSICS
-   ! New code needed once we introduce the microphysics to 4dvar in 2008
-   if (size(moist,dim=4) >= 4) then
+   if (size(grid%g_moist,dim=4) >= 6) then
       do k=ks,ke
          do j=js,je
             do i=is,ie
-               g_moist(i,j,k,p_qcw) =  grid%xa%qcw(i,j,k)
-               g_moist(i,j,k,p_qrn) =  grid%xa%qrn(i,j,k)
-            end do
-         end do
-      end do
-   end if
-
-   if (size(moist,dim=4) >= 6) then
-      do k=ks,ke
-         do j=js,je
-            do i=is,ie
-               g_moist(i,j,k,p_qci) =  grid%xa%qci(i,j,k)
-               g_moist(i,j,k,p_qsn) =  grid%xa%qsn(i,j,k)
+               grid%g_moist(i,j,k,P_G_QI) =  grid%xa%qci(i,j,k)
+               grid%g_moist(i,j,k,P_G_QS) =  grid%xa%qsn(i,j,k)
             end do
            end do
       end do
    end if
 
-   if (size(moist,dim=4) >= 7) then
+   if (size(grid%moist,dim=4) >= 7) then
       do k=ks,ke
          do j=js,je
             do i=is,ie
-               g_moist(i,j,k,p_qgr) =  grid%xa%qgr(i,j,k)
+               grid%g_moist(i,j,k,P_G_QG) =  grid%xa%qgr(i,j,k)
             end do
          end do
       end do
    end if
-
-#endif
 
    call da_transfer_wrftl_lbc_t0 ( grid )
 

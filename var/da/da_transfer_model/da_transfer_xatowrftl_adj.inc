@@ -110,41 +110,27 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
 
    grid%a_w_2 = 0.0
 
-#ifdef VAR4D_MICROPHYSICS
-   ! New code needed once we introduce the microphysics to 4dvar in 2008
-   if (size(grid%moist,dim=4) >= 4) then
+   if (size(grid%a_moist,dim=4) >= 6) then
       do k=kts,kte
          do j=jts,jte
             do i=its,ite
-               grid%xa%qcw(i,j,k)=grid%a_moist(i,j,k,p_qcw)
-               grid%xa%qrn(i,j,k)=grid%a_moist(i,j,k,p_qrn)
+               grid%xa%qci(i,j,k)=grid%xa%qci(i,j,k)+grid%a_moist(i,j,k,P_A_QI)
+               grid%xa%qsn(i,j,k)=grid%xa%qsn(i,j,k)+grid%a_moist(i,j,k,P_A_QS)
             end do
          end do
       end do
    end if
 
-   if (size(grid%moist,dim=4) >= 6) then
+   if (size(grid%a_moist,dim=4) >= 7) then
       do k=kts,kte
          do j=jts,jte
             do i=its,ite
-               grid%xa%qci(i,j,k)=grid%a_moist(i,j,k,p_qci)
-               grid%xa%qsn(i,j,k)=grid%a_moist(i,j,k,p_qsn)
+               grid%xa%qgr(i,j,k)=grid%xa%qgr(i,j,k)+grid%a_moist(i,j,k,P_A_QG)
             end do
          end do
       end do
    end if
 
-   if (size(grid%moist,dim=4) >= 7) then
-      do k=kts,kte
-         do j=jts,jte
-            do i=its,ite
-               grid%xa%qgr(i,j,k)=grid%a_moist(i,j,k,p_qgr) 
-            end do
-         end do
-      end do
-   end if
-
-#endif
 #ifndef A2C
    !---------------------------------------------------------------------------
    ! [5.0] Adjoint of CONVERT FROM A-GRID TO C-GRID

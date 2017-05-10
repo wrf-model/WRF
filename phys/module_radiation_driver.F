@@ -1278,12 +1278,14 @@ CONTAINS
                     !Find whether to overwrite cldfra or not (ONLY if ICLOUD == 1)
                     compute_cldfra_cup = .true. 
                     if (icloud == 1 ) then
+                       compute_cldfra_cup = .false.  !-- LK Berg, 4/26/17     
                        if(cldfra1_flag(i,k,j) == 1 .and. shall(i,j) .gt. 1) then
                           CLDFRA(i,k,j)=0.
-                          compute_cldfra_cup = .true.    ! No resolved clouds, check of shallow clouds.  -- LK Berg, 4/26/17
+                       elseif(cldfra1_flag(i,k,j) == 1 .and. shall(i,j) .le. 1) then
+                          CLDFRA(i,k,j)=0.
+                          compute_cldfra_cup = .true.    ! No resolved clouds, but check of shallow clouds.  -- LK Berg, 4/26/17
                        elseif(cldfra1_flag(i,k,j) == 2 .and. shall(i,j) .gt. 1) then
                           CLDFRA(i,k,j)=1.
-                          compute_cldfra_cup = .false.    ! Ovc, no need for shallow clouds  -- LK Berg, 4/26/17
                        elseif(cldfra1_flag(i,k,j) == 3) then
                           compute_cldfra_cup = .true.
                        endif

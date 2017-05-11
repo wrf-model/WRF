@@ -13,6 +13,7 @@ gen_be : 	gen_be_ensrf.exe	\
 		gen_be_stage0_wrf.exe	\
 		gen_be_ep1.exe	\
 		gen_be_ep2.exe	\
+		gen_be_ep2_serial.exe	\
 		gen_be_vertloc.exe	\
 		gen_be_addmean.exe	
 		gen_be_stage1.exe	\
@@ -59,10 +60,15 @@ gen_be_ep1.exe     : gen_be_ep1.f90 $(GEN_BE_OBJS) $(GEN_BE_LIBS)
 	$(SFC) -c $(FCFLAGS) -I../da $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) gen_be_ep1.f
 	$(SFC) -o gen_be_ep1.exe $(LDFLAGS) $(GEN_BE_OBJS)  gen_be_ep1.o $(GEN_BE_LIB)
 
-gen_be_ep2.exe     : gen_be_ep2.f90 $(GEN_BE_OBJS) $(GEN_BE_LIBS)
+gen_be_ep2_serial.exe : gen_be_ep2_serial.f90 $(GEN_BE_OBJS) $(GEN_BE_LIBS)
+	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc gen_be_ep2_serial.f90 > gen_be_ep2_serial.f
+	$(SFC) -c $(FCFLAGS) -I../da $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) gen_be_ep2_serial.f
+	$(SFC) -o gen_be_ep2_serial.exe $(LDFLAGS) $(GEN_BE_OBJS)  gen_be_ep2_serial.o $(GEN_BE_LIB)
+
+gen_be_ep2.exe : gen_be_ep2.f90 $(GEN_BE_OBJS) $(GEN_BE_LIBS)
 	$(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc gen_be_ep2.f90 > gen_be_ep2.f
-	$(SFC) -c $(FCFLAGS) -I../da $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) gen_be_ep2.f
-	$(SFC) -o gen_be_ep2.exe $(LDFLAGS) $(GEN_BE_OBJS)  gen_be_ep2.o $(GEN_BE_LIB)
+	$(FC) -c $(FCFLAGS) -I../da $(MODULE_DIRS) $(WRFVAR_INC) $(PROMOTION) gen_be_ep2.f
+	$(FC) -o gen_be_ep2.exe $(LDFLAGS) $(GEN_BE_OBJS) gen_be_ep2.o $(GEN_BE_LIB)
 
 gen_be_vertloc.exe     : gen_be_vertloc.f90 $(GEN_BE_OBJS) $(GEN_BE_LIBS)
         $(CPP) $(CPPFLAGS) -I$(WRF_SRC_ROOT_DIR)/inc gen_be_vertloc.f90 > gen_be_vertloc.f

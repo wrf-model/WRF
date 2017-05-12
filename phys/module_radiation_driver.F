@@ -1307,8 +1307,8 @@ CONTAINS
                        ! observations from CHAPS (Oklahoma area) and Florida (Blyth et al. 2005)
                        ! or the predicted value if it is greater.
 
-                       cldfra_cup_mod = cldfra_cup(i,k,j) * (1.0 * 1.0e-3)!modified cloud fraction, assume QCLOUD is 1 g/kg -- LK Berg 4/26/17                       
-                       qc(i,k,j) = max(cldfra_cup_mod, qc(i,k,j) )!DE+LB 2012-Feb         Removed conversion factor in this line (account for in line above) -- LK Berg 4/26/17
+                       cldfra_cup_mod = cldfra_cup(i,k,j) * 1.0e-3 !modified cloud fraction, assume QCLOUD is 1 g/kg -- LK Berg 4/26/17                       
+                       qc(i,k,j) = max(cldfra_cup_mod, qc(i,k,j) )!DE+LB 2012-Feb
 
                        ! Override the cloud fraction values calculated above if shallow
                        ! convection triggered. For shallow convection, use a representative

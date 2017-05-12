@@ -119,14 +119,14 @@ subroutine da_med_initialdata_input (grid, config_flags, filename, in_date)
 
    ! mp_physics is used in da_transfer_wrftoxb.inc
    ! get the setting from the input file
-   call ext_ncd_get_dom_ti_integer (fid, 'MP_PHYSICS', grid%mp_physics, 1, icnt, ierr)
+   call wrf_get_dom_ti_integer (fid, 'MP_PHYSICS', grid%mp_physics, 1, icnt, ierr)
 
    ! sf_surface_physics is used in da_transfer_xatowrf.inc
    ! get the setting from the input file
-   call ext_ncd_get_dom_ti_integer (fid, 'SF_SURFACE_PHYSICS', grid%sf_surface_physics, 1, icnt, ierr)
+   call wrf_get_dom_ti_integer (fid, 'SF_SURFACE_PHYSICS', grid%sf_surface_physics, 1, icnt, ierr)
 
    !global attribute HYBRID_OPT exists in WRF V3.9 and later
-   call ext_ncd_get_dom_ti_integer (fid, 'HYBRID_OPT', grid%hybrid_opt, 1, icnt, ierr)
+   call wrf_get_dom_ti_integer (fid, 'HYBRID_OPT', grid%hybrid_opt, 1, icnt, ierr)
    if ( ierr /= 0 ) then
       grid%hybrid_opt = 0
       write(unit=message(1),fmt='(A,A)') trim(filename), ' appears to be from earlier than WRF V3.9'

@@ -191,8 +191,6 @@ state integer NTIME0         -     dyn_nmm     1      -    r  "NTIME0" "COUNT FO
 # flag for nest movement
 state  logical moved       -     misc       1      -     r
 
-#state   real   ducudt       ijk     misc        1         -    rh  "UMMIX" "U TENDENCY  MOMENTUM MIXING IN SAS"
-#state   real   dvcudt       ijk     misc        1         -    rh  "VMMIX" "V TENDENCY  MOMENTUM MIXING IN SAS"
 state   real   ducudt       ijk     misc        1         -    rh  "UMMIX" "U TENDENCY  MOMENTUM MIXING IN Cu"
 state   real   dvcudt       ijk     misc        1         -    rh  "VMMIX" "V TENDENCY  MOMENTUM MIXING IN Cu"
 
@@ -500,6 +498,7 @@ state  real  xmb_shallow    ij   misc    1   -      rh      "XMB_SHALLOW"     "M
 state  integer  k22_shallow  ij   misc    1   -      rh     "K22_SHALLOW"     "K22 LEVEL FROM SHALLOW CONVECTION (G3, GF only)"       ""
 state  integer  kbcon_shallow  ij   misc    1   -    rh     "KBCON_SHALLOW"   "KBCON LEVEL FROM SHALLOW CONVECTION (G3, GF only)"     ""
 state  integer  ktop_shallow   ij   misc    1   -     rh     "KTOP_SHALLOW"   "KTOP LEVEL FROM SHALLOW CONVECTION (G3, GF only)"      ""
+state  integer  ierr_shallow   ij   misc    1   -     h     "IERR_SHALLOW"   "CODE FOR TURNING OFF SHALLOW CU AT A PT(GF only)"      ""
 
 # upward and downward clearsky and total diagnostic fluxes for radiation (RRTMG)
 state    real  ACSWUPT          ij      misc        1         -      rhdu     "ACSWUPT"               "ACCUMULATED UPWELLING SHORTWAVE FLUX AT TOP"          "J m-2"

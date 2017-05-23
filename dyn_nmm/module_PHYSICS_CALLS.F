@@ -2275,6 +2275,7 @@
      &                 ,GD_CLOUD,GD_CLOUD2,KTOP_DEEP                    &
      &                 ,xmb_shallow,k22_shallow                         & !GF
      &                 ,kbcon_shallow,ktop_shallow                      & !GF
+     &                 ,ierr_shallow                                    & !GF
      &                 ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TCUCN              &
      &                 ,OMGALF,U,V,W,Z,FIS,W0AVG                        &
      &                 ,PREC,ACPREC,CUPREC,CUPPT,CPRATE                 &
@@ -2302,8 +2303,8 @@
 !                .      .    .
 ! SUBPROGRAM:    CUCNVC      CONVECTIVE PRECIPITATION OUTER DRIVER
 !   PRGRMMR: BLACK           ORG: W/NP22     DATE: 02-03-21
-!
 ! ABSTRACT:
+!       DO I=ITS,ITE
 !     CUCVNC DRIVES THE WRF CONVECTION SCHEMES
 !
 ! PROGRAM HISTORY LOG:
@@ -2430,6 +2431,7 @@
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: K22_SHALLOW   &  !GF
      &                                                   ,KBCON_SHALLOW &  !GF
      &                                                   ,KTOP_SHALLOW     !GF
+      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: IERR_SHALLOW     !GF
 !
       LOGICAL,INTENT(IN) :: HYDRO,RESTRT
       LOGICAL :: IS_CAMMGMP_USED=.FALSE.
@@ -2465,8 +2467,6 @@
      &                                          ,RQVCUTEN,RR,RTHCUTEN   &
      &                                          ,T_PHY,TH_PHY           &
      &                                          ,U_PHY,V_PHY,WINT
-!
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: DUDT_PHY,DVDT_PHY  ! gf
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,ENSDIM) :: ZERO_GD
 !
@@ -2577,6 +2577,17 @@
       RDTCNVC=1./DTCNVC
       CAPA=R_D/CP
       G_INV=1./G
+!BLdebug
+!$omp parallel do                                                       &
+!$omp& private(i,j)
+      DO J=JTS,JTE
+        DO I=ITS,ITE
+          RAINCV(I,J)=0.
+          RAINC(I,J)=0.
+          NCA(I,J)=0.
+        ENDDO
+      ENDDO
+!BLdebug
 !
 !$omp parallel do                                                       &
 !$omp& private(I,J)
@@ -2584,12 +2595,9 @@
       DO I=MYIS1,MYIE1
 !
         PDSL(I,J)=PD(I,J)*RES(I,J)
-        RAINCV(I,J)=0.
-        RAINC(I,J)=0.
         P8W(I,KTS,J)=PD(I,J)+PDTOP+PT
         LOWLYR(I,J)=KTS        !<----  The lowest model layer counted from the bottom.
         XLAND(I,J)=SM(I,J)+1.
-        NCA(I,J)=0.
         SFCZ(I,J)=FIS(I,J)*G_INV
 !
 !Biswas's doing
@@ -2652,8 +2660,12 @@
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
         DO K=KTS,KTE
-        DO J=MYJS2,MYJE2
-        DO I=MYIS1,MYIE1
+!BLdebug
+        DO J=JTS,JTE
+        DO I=ITS,ITE
+!        DO J=MYJS2,MYJE2
+!        DO I=MYIS1,MYIE1
+!BLdebug
            DUCUDT(i,j,k)=0.0
            DVCUDT(i,j,k)=0.0
            DTHCUDT(i,j,k)=0.0
@@ -2771,8 +2783,6 @@
             V_PHY(I,K,J)=(V(I+IHE(J),J,K)+V(I+IHW(J),J,K)               &
      &                   +V(I,J+1,K)+V(I,J-1,K))                        &
      &                   *0.25
-            DUDT_PHY(i,k,j)=0.0             ! gf
-            DVDT_PHY(i,k,j)=0.0             ! gf
           ENDDO
           ENDDO
 !
@@ -2841,10 +2851,11 @@
      &                 ,clos_choice=config_flags%clos_choice            & !gf
      &                 ,GD_CLOUD=GD_CLOUD,GD_CLOUD2=GD_CLOUD2           &
      &                 ,KTOP_DEEP=KTOP_DEEP                             &
-     &                 ,xmb_shallow=xmb_shallow                         & !gf
      &                 ,k22_shallow=k22_shallow                         & !gf
      &                 ,kbcon_shallow=kbcon_shallow                     & !gf
      &                 ,ktop_shallow=ktop_shallow                       & !gf
+     &                 ,xmb_shallow=xmb_shallow                         & !gf
+     &                 ,ierr_shallow=ierr_shallow                       & !gf
      &                 ,ENSDIM=ENSDIM,MAXIENS=1,MAXENS=3                &
      &                 ,MAXENS2=3,MAXENS3=16                            &
      &                 ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
@@ -2852,7 +2863,6 @@
      &                 ,RQICUTEN=RQICUTEN,RQSCUTEN=RQSCUTEN             &
      &                 ,RTHBLTEN=RTHBLTEN,RQVBLTEN=RQVBLTEN             &
      &                 ,RTHRATEN=RTHRATEN                               &
-     &                 ,DUDT_PHY=DUDT_PHY,DVDT_PHY=DVDT_PHY             & !gf
 #if (NMM_CORE==1)
      &                 ,RUCUTEN=DUCUDT, RVCUTEN=DVCUDT, MOMMIX=MOMMIX   &
                        ,store_rand=store_rand                           &
@@ -2885,17 +2895,10 @@
 !
 #if (NMM_CORE==1)
 !$omp parallel do                                                       &
-!$omp& private(i,j,k,iendx)
-! gf - indices were changed to conform to those used above
-! otherwise output has boundary problem
-      DO K=KTS,KTE
-      DO J=MYJS2,MYJE2
-        IENDX=MYIE1
-        IF(MOD(J,2)==0.AND.ITE==IDE-1)IENDX=IENDX-1
-        DO I=MYIS1,IENDX
-!        DO K=KMS,KME
-!        DO J=JMS,JME
-!        DO I=IMS,IME
+!$omp& private(i,j,k)
+         DO K=KMS,KME
+         DO J=JMS,JME
+         DO I=IMS,IME
            DTHCUDT(i,j,k)=RTHCUTEN(i,k,j)
            DQVCUDT(i,j,k)=RQVCUTEN(i,k,j)
            DQRCUDT(i,j,k)=RQRCUTEN(i,k,j)
@@ -2909,21 +2912,19 @@
 ! gf - Transfer u,v tendencies from GF convection to ducudt,dvcudt
 ! (i,j,k) to use existing code to go from mass pts to u,v pts.
 
-      if (CONFIG_FLAGS%CU_PHYSICS==GFSCHEME) then
+!      if (CONFIG_FLAGS%CU_PHYSICS==GFSCHEME) then
 !$omp parallel do                                                       &
-!$omp& private(i,iendx,j,k)
-      DO K=KTS,KTE
-      DO J=MYJS2,MYJE2
-        IENDX=MYIE1
-        IF(MOD(J,2)==0.AND.ITE==IDE-1)IENDX=IENDX-1
-        DO I=MYIS1,IENDX
-          DUCUDT(i,j,k)=DUDT_PHY(i,k,j)
-          DVCUDT(i,j,k)=DVDT_PHY(i,k,j)
-        ENDDO
-        ENDDO
-        ENDDO
-
-      endif
+!$omp& private(i,j,k)
+!         DO K=KMS,KME
+!         DO J=JMS,JME
+!         DO I=IMS,IME
+!          DUCUDT(i,j,k)=0.
+!          DVCUDT(i,j,k)=0.
+!        ENDDO
+!        ENDDO
+!        ENDDO
+!
+!      endif
 
 #endif
 

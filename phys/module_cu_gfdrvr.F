@@ -39,6 +39,7 @@ CONTAINS
               ,HT,hfx,qfx,XLAND                                 &
               ,GDC,GDC2 ,kpbl,k22_shallow,kbcon_shallow         &
               ,ktop_shallow,xmb_shallow                         &
+              ,ierr_shallow                                     &
               ,ishallow_g3                                      &
               ,ichoice                                          &
               ,ids,ide, jds,jde, kds,kde                        &
@@ -49,7 +50,8 @@ CONTAINS
               ,RQICUTEN                                         &
               ,RQVFTEN,RTHFTEN,RTHCUTEN,RTHRATEN                &
               ,rqvblten,rthblten                                &
-              ,dudt_phy,dvdt_phy                                &
+              ,RUCUTEN,RVCUTEN                                  &
+!              ,dudt_phy,dvdt_phy                                &
               ,F_QV    ,F_QC    ,F_QR    ,F_QI    ,F_QS         &
 #if ( WRF_DFI_RADAR == 1 )
                  ! Optional CAP suppress option
@@ -66,11 +68,11 @@ CONTAINS
 !aeroevap, 1=old,2=?, 3=average
       integer, parameter :: ideep=1
       integer, parameter :: imid_gf=0
-! ichoice now in namelist, as in EM core - EG
-!      integer, parameter :: ichoice=5   ! 0 2 5 8 11 GG 
+! ichoice now in namelist, as in EM core (deep only) - EG
 !      integer, parameter :: ichoice=0   ! 0 2 5 8 11 GG
       integer, parameter :: ichoicem=0  ! 0 1 2 8 11 GG
-      integer, parameter :: ichoice_s=2 ! 0 1 2 3
+!      integer, parameter :: ichoice_s=2 ! 0 1 2 3     !Standard setting=2
+      integer, parameter :: ichoice_s=3 ! 0 1 2 3      ! For testing
       real, parameter :: aodccn=0.1
 !      real :: dts,fpi,fp
       integer, parameter :: dicycle=0 !2 !- diurnal cycle flag
@@ -111,8 +113,8 @@ CONTAINS
    INTEGER, DIMENSION( ims:ime , jms:jme ),INTENT(IN) :: KPBL
    INTEGER, DIMENSION( ims:ime , jms:jme ),                     &
             OPTIONAL                      ,                     &
-            INTENT(INOUT) :: k22_shallow,kbcon_shallow,ktop_shallow
-   REAL, DIMENSION( ims:ime, jms:jme ),INTENT(INOUT  ),         &
+            INTENT(OUT) :: k22_shallow,kbcon_shallow,ktop_shallow
+   REAL, DIMENSION( ims:ime, jms:jme ),INTENT(OUT  ),         &
             OPTIONAL  :: xmb_shallow
 !
    REAL, INTENT(IN   ) :: DT, DY
@@ -143,9 +145,18 @@ CONTAINS
                                                    RQCCUTEN,    &
                                                    RQICUTEN
 ! egrell - for avoiding ijk=ikj confusion in HWRF
-   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),              &
-         INTENT(INOUT) ::                          DUDT_PHY,    & 
-                                                   DVDT_PHY
+!   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),              &
+!         INTENT(INOUT) ::                          DUDT_PHY,    & 
+!                                                   DVDT_PHY
+!!!!!!!!!!!!!testing for HWRF!!!!!!!!!!! 
+!!!!!!add test for NMM_core vs EM_core????
+    REAL, DIMENSION(ims:ime, jms:jme, kms:kme), INTENT(INOUT) :: &
+                                                     RUCUTEN,    &
+                                                     RVCUTEN
+!    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: &
+!                                                     RUCUTEN,    &
+!                                                     RVCUTEN
+
 !
 ! Flags relating to the optional tendency arrays declared above
 ! Models that carry the optional tendencies will provdide the
@@ -160,6 +171,9 @@ CONTAINS
                                                   ,F_QI      &
                                                   ,F_QS
 
+   INTEGER, DIMENSION( ims:ime , jms:jme ),                     &
+            OPTIONAL                      ,                     &
+            INTENT(OUT) :: ierr_shallow
 
 #if ( WRF_DFI_RADAR == 1 )
 !
@@ -172,10 +186,10 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ),INTENT(IN   ),OPTIONAL  :: cap_suppress_loc
    REAL, DIMENSION( its:ite ) :: cap_suppress_j
 #endif
-! Optional output - these arrays were available, may not be appropriately named
+! Diagnostic output - these arrays were available, may not be appropriately named
 #if (NMM_CORE == 1 )
-   REAL, DIMENSION( ims:ime, jms:jme ),INTENT(INOUT),OPTIONAL  :: scalefun
-   REAL, DIMENSION( ims:ime, jms:jme ),INTENT(INOUT),OPTIONAL  :: sigmu
+   REAL, DIMENSION( ims:ime, jms:jme ),INTENT(OUT)  :: scalefun
+   REAL, DIMENSION( ims:ime, jms:jme ),INTENT(OUT)  :: sigmu
 #endif
 
 
@@ -223,15 +237,15 @@ CONTAINS
         omeg
      real, dimension (its:ite)            ::                    &
         ccn,Z1,PSUR,cuten,cutens,cutenm,                        &
-        umean,vmean,pmean,xmb,xmbs,                             &
-        xmbm,xmb_out,tau_ecmwf_out,xmb_dumm
+        xmb,xmbs,                                               &
+        xmbm,tau_ecmwf_out,xmb_dumm
      real, dimension (its:ite)     ::                    &
         edt,edtm,mconv
 
    INTEGER :: i,j,k,ICLDCK,ipr,jpr
    REAL    :: tcrit,dp,dq
    INTEGER :: itf,jtf,ktf,iss,jss,nbegin,nend
-   REAL    :: rkbcon,rktop        !-lxz
+!   REAL    :: rkbcon,rktop        !-lxz
    character*50 :: ierrc(its:ite)
    character*50 :: ierrcs(its:ite)
    character*50 :: ierrcm(its:ite)
@@ -251,55 +265,83 @@ CONTAINS
    ipr=0 !639
    jpr=0 !141
 
-   IF ( periodic_x ) THEN
-      ibegc=max(its,ids)
-      iendc=min(ite,ide-1)
-   ELSE
-      ibegc=max(its,ids+4)
-      iendc=min(ite,ide-5)
-   END IF
-   IF ( periodic_y ) THEN
-      jbegc=max(jts,jds)
-      jendc=min(jte,jde-1)
-   ELSE
-      jbegc=max(jts,jds+4)
-      jendc=min(jte,jde-5)
-   END IF
 
-   IF(PRESENT(k22_shallow)) THEN
-      do j=jts,jte
-      do i=its,ite
-        k22_shallow(i,j)=0
-        kbcon_shallow(i,j)=0
-        ktop_shallow(i,j)=0
-        xmb_shallow(i,j)=0.
-      enddo
-      enddo
-   endif
-
-   itf=MIN(ite,ide-1)
-   ktf=MIN(kte,kde-1)
-   jtf=MIN(jte,jde-1)
+!   IF ( periodic_x ) THEN
+!      ibegc=max(its,ids)
+!      iendc=min(ite,ide-1)
+!   ELSE
+!      ibegc=max(its,ids+4)
+!      iendc=min(ite,ide-5)
+!   END IF
+!   IF ( periodic_y ) THEN
+!      jbegc=max(jts,jds)
+!      jendc=min(jte,jde-1)
+!   ELSE
+!      jbegc=max(jts,jds+4)
+!      jendc=min(jte,jde-5)
+!   END IF
 
 !!!!!!!!!!!!!!! test
+!   itf=MIN(ite,ide-1)
+!   ktf=MIN(kte,kde-1)
+!   jtf=MIN(jte,jde-1)
+
+   itf = ite
+   ktf = kte
+   jtf = jte
+
    ibegc = its
-   iendc = itf
+   iendc = ite
    jbegc = jts
-   jendc = jtf
+   jendc = jte
 !!!!!!!!!!!!!!!!
+
+!!!!!!!!!testing
+!   IF(PRESENT(k22_shallow)) THEN
+!      do j=jts,jte
+!      do i=its,ite
+!        k22_shallow(i,j)=0
+!        kbcon_shallow(i,j)=0
+!        ktop_shallow(i,j)=0
+!        xmb_shallow(i,j)=0.
+!      enddo
+!      enddo
+!   endif
+
 !                                                                      
      DO J = jts,jte  
-     DO I= its,ite
      do k=kts,kte
+     DO I= its,ite
        rthcuten(i,k,j)=0.
        rqvcuten(i,k,j)=0.
-       IF(PRESENT(RQCCUTEN))rqccuten(i,k,j)=0.
-       IF(PRESENT(RQICUTEN))rqicuten(i,k,j)=0.
-       DUDT_PHY(I,K,J)=0.
-       DVDT_PHY(I,K,J)=0.
+!       rucuten(i,k,j)=0.
+!       rvcuten(i,k,j)=0.
+!       DUDT_PHY(I,K,J)=0.
+!       DVDT_PHY(I,K,J)=0.
      enddo
      enddo
      enddo
+
+! Check if present, since some microphysics may not have qc,qi
+     IF(PRESENT(RQCCUTEN))then
+       DO J = jts,jte  
+       do k=kts,kte
+       DO I= its,ite
+         rqccuten(i,k,j)=0.
+       enddo
+       enddo
+       enddo
+     ENDIF
+
+     IF(PRESENT(RQICUTEN))then
+       DO J = jts,jte  
+       do k=kts,kte
+       DO I= its,ite
+         rqicuten(i,k,j)=0.
+       enddo
+       enddo
+       enddo
+     ENDIF
 
 
 ! Begin big j loop
@@ -317,7 +359,7 @@ CONTAINS
         cutenm(i)=0.
         cutens(i)=1.
         if(ishallow_g3.eq.0)cutens(i)=0.
-
+!
         kbcon(i)=0
         kbcons(i)=0
         kbconm(i)=0
@@ -328,17 +370,17 @@ CONTAINS
         xmb(i)=0.
         xmbs(i)=0.
         xmbm(i)=0.
-        xmb_out(i)=0.
         xmb_dumm(i)=0.
 
         k22(i)=0
         k22s(i)=0
         k22m(i)=0
 
-        HBOT(I,J)  =REAL(KTE)
-        HTOP(I,J)  =REAL(KTS)
+        HBOT(I,J)=KTE
+        HTOP(I,J)=KTS
         raincv(i,j)=0.
         pratec (i,j)=0.
+
         xlandi(i)=xland(i,j)
         hfxi(i)=hfx(i,j)            ! positive upward
         qfxi(i)=qfx(i,j)            ! positive upward
@@ -359,20 +401,20 @@ CONTAINS
 
         ccn(i)=150.
 
-        sigmu(i,j)=0.
-        scalefun(i,j)=0.
+!#if (NMM_CORE == 1 )
+!        sigmu(i,j)=0.
+!        scalefun(i,j)=0.
+!#endif
      ENDDO
-     do k=kts,kte
-     DO I= its,ite
-         omeg(i,k)=0.
-     ENDDO
-     ENDDO
+
+!     do k=kts,kte
+!     DO I= its,ite
+!         omeg(i,k)=0.
+!     ENDDO
+!     ENDDO
      DO I=ITS,ITF
          PSUR(I)=p8w(I,1,J)*.01
          TER11(I)=max(0.,HT(i,j))
-         umean(i)=0.
-         vmean(i)=0.
-         pmean(i)=0.
          kpbli(i)=kpbl(i,j)
          zo(i,kts)=ter11(i)+.5*dz8w(i,1,j)
          DO K=kts+1,ktf
@@ -447,16 +489,6 @@ CONTAINS
          omeg(I,K)= -g*rho(i,k,j)*w(i,k,j)
      enddo
      enddo
-     do k=  kts+1,ktf-1
-     DO I = its,itf
-         if((p2d(i,1)-p2d(i,k)).gt.150.and.p2d(i,k).gt.300)then
-            dp=-.5*(p2d(i,k+1)-p2d(i,k-1))
-            umean(i)=umean(i)+us(i,k)*dp
-            vmean(i)=vmean(i)+vs(i,k)*dp
-            pmean(i)=pmean(i)+dp
-         endif
-     enddo
-     enddo
 
 ! Mconv is now being computed in cup_gf
 !      DO K=kts,ktf-1
@@ -481,9 +513,6 @@ CONTAINS
 !           ierrs(i)=1
 !       endif
 !      enddo
-!          do i=its,ite
-!           ierrs(i)=0
-!          enddo
 !
 ! call shallow
 !
@@ -683,8 +712,9 @@ CONTAINS
                  k22_shallow(i,j)=k22s(i)
                  kbcon_shallow(i,j)=kbcons(i)
                  ktop_shallow(i,j)=ktops(i)
-                 if (ktops(i)  > HTOP(i,j)) HTOP(i,j) = real(ktops(i))
-                 if (kbcons(i) < HBOT(i,j)) HBOT(i,j) = real(kbcons(i))
+                 if (ktops(i)  > HTOP(i,j)) HTOP(i,j) = ktops(i)
+                 if (kbcons(i) < HBOT(i,j)) HBOT(i,j) = kbcons(i)
+                 ierr_shallow(i,j) = ierrs(i)       ! egrell, for debugging
                ENDDO
            endif
          ENDIF
@@ -717,8 +747,12 @@ CONTAINS
                RQVCUTEN(I,K,J)= cuten(i)*outq(i,k)   + &
                                 cutens(i)*outqs(i,k)+  &
                                 cutenm(i)*outqm(i,k)
-               DUDT_PHY(I,K,J)=outum(i,k)*cutenm(i)+outu(i,k)*cuten(i)   
-               DVDT_PHY(I,K,J)=outvm(i,k)*cutenm(i)+outv(i,k)*cuten(i) 
+               RUCUTEN(I,J,K)=outum(i,k)*cutenm(i)+outu(i,k)*cuten(i)   
+               RVCUTEN(I,J,K)=outvm(i,k)*cutenm(i)+outv(i,k)*cuten(i) 
+!               RUCUTEN(I,K,J)=outum(i,k)*cutenm(i)+outu(i,k)*cuten(i)   
+!               RVCUTEN(I,K,J)=outvm(i,k)*cutenm(i)+outv(i,k)*cuten(i) 
+!               DUDT_PHY(I,K,J)=outum(i,k)*cutenm(i)+outu(i,k)*cuten(i)   
+!               DVDT_PHY(I,K,J)=outvm(i,k)*cutenm(i)+outv(i,k)*cuten(i) 
             ENDDO
             ENDDO
 
@@ -726,10 +760,10 @@ CONTAINS
               if(pret(i).gt.0.)then
                  raincv(i,j)=pret(i)*dt
                  pratec(i,j)=pret(i)
-                 rkbcon = kte+kts - kbcon(i)
-                 rktop  = kte+kts -  ktop(i)
-                 if (ktop(i)  > HTOP(i,j)) HTOP(i,j) = ktop(i)+.001
-                 if (kbcon(i) < HBOT(i,j)) HBOT(i,j) = kbcon(i)+.001
+!                 rkbcon = kte+kts - kbcon(i)
+!                 rktop  = kte+kts -  ktop(i)
+                 if (ktop(i)  > HTOP(i,j)) HTOP(i,j) = ktop(i)
+                 if (kbcon(i) < HBOT(i,j)) HBOT(i,j) = kbcon(i)
               endif
             ENDDO
 
@@ -764,17 +798,114 @@ CONTAINS
             ENDIF
 
 ! use these existing arrays to output some useful diagnostic arrays
-            IF(PRESENT(scalefun) .and. PRESENT(sigmu)) THEN
+#if (NMM_CORE == 1 )
               DO I=ibegc,iendc
                 scalefun(i,j) = edt(i)
                 sigmu(i,j) = xmb(i)
               ENDDO
-            ENDIF
+#endif
 
  100    continue
 
 
    END SUBROUTINE GFDRVR
+
+!==============================================================================
+!---------------------------------------------------------------------- 
+  SUBROUTINE gfinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,            &
+                        RUCUTEN,RVCUTEN,                            &
+                        restart,                                    &
+                        P_QC,P_QI,P_FIRST_SCALAR,                   &
+                        RTHFTEN, RQVFTEN,                           &
+                        allowed_to_read,                            &
+                        ids, ide, jds, jde, kds, kde,               &
+                        ims, ime, jms, jme, kms, kme,               &
+                        its, ite, jts, jte, kts, kte               )
+!--------------------------------------------------------------------   
+   IMPLICIT NONE
+!--------------------------------------------------------------------
+   LOGICAL , INTENT(IN)           ::  restart,allowed_to_read
+   INTEGER , INTENT(IN)           ::  ids, ide, jds, jde, kds, kde, &
+                                      ims, ime, jms, jme, kms, kme, &
+                                      its, ite, jts, jte, kts, kte
+   INTEGER , INTENT(IN)           ::  P_FIRST_SCALAR, P_QI, P_QC
+
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::       &
+                                                          RTHCUTEN, &
+                                                          RQVCUTEN, &
+                                                          RQCCUTEN, &
+                                                          RQICUTEN
+
+   REAL,     DIMENSION( ims:ime , jms:jme , kms:kme ) , INTENT(OUT) ::       &
+                                                          RUCUTEN,  &
+                                                          RVCUTEN
+!   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::       &
+!                                                          RUCUTEN,  &
+!                                                          RVCUTEN
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::       &
+                                                          RTHFTEN,  &
+                                                          RQVFTEN
+
+   INTEGER :: i, j, k
+!   INTEGER :: i, j, k, itf, jtf, ktf
+!   jtf=min0(jte,jde-1)
+!   ktf=min0(kte,kde-1)
+!   itf=min0(ite,ide-1)
+
+#ifdef HWRF
+!zhang's doing
+   IF(.not.restart .or. .not.allowed_to_read)THEN
+!end of zhang's doing
+#else
+   IF(.not.restart)THEN
+#endif
+
+     DO j=jts,jte
+     DO k=kts,kte
+     DO i=its,ite
+        RTHCUTEN(i,k,j)=0.
+        RQVCUTEN(i,k,j)=0.
+!        RUCUTEN(i,k,j)=0.
+!        RVCUTEN(i,k,j)=0.
+        RUCUTEN(i,j,k)=0.
+        RVCUTEN(i,j,k)=0.
+     ENDDO
+     ENDDO
+     ENDDO
+
+     DO j=jts,jte
+     DO k=kts,kte
+     DO i=its,ite
+        RTHFTEN(i,k,j)=0.
+        RQVFTEN(i,k,j)=0.
+     ENDDO
+     ENDDO
+     ENDDO
+
+     IF (P_QC .ge. P_FIRST_SCALAR) THEN
+        DO j=jts,jte
+        DO k=kts,kte
+        DO i=its,ite
+           RQCCUTEN(i,k,j)=0.
+        ENDDO
+        ENDDO
+        ENDDO
+     ENDIF
+
+     IF (P_QI .ge. P_FIRST_SCALAR) THEN
+        DO j=jts,jte
+        DO k=kts,kte
+        DO i=its,ite
+           RQICUTEN(i,k,j)=0.
+        ENDDO
+        ENDDO
+        ENDDO
+     ENDIF
+
+   ENDIF
+
+   END SUBROUTINE gfinit
+
 
 END MODULE module_cu_gfdrvr
 

@@ -50,7 +50,6 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    real, allocatable                 :: cc(:)
 
    real                              :: inc_div(ims:ime,jms:jme,kms:kme)
-   real                              :: bkg_div(ims:ime,jms:jme,kms:kme)
 
    if (trace_use) call da_trace_entry("da_calculate_j")
 
@@ -65,7 +64,6 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    jl_end =   cv_size_jb + cv_size_je + cv_size_jp + cv_size_jl
 
    inc_div = 0.0
-   bkg_div = 0.0
 
    call da_allocate_y(iv, jo_grad_y)
 

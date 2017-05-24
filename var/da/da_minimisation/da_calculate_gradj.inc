@@ -211,6 +211,7 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
       if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
          call da_transform_vpatox_adj(grid, be, grid%ep, grid%vp)
       end if
+      call da_zero_vp_type(grid%vp)
       call da_transform_vtox_adj(grid, cv_size, xbx, be, grid%ep, grid%vp, grid%vv, grad_jm)
    end if
 
@@ -224,7 +225,7 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    !-------------------------------------------------------------------------
    if (rootproc) then
       if (it == 1 .and. iter == 0) then
-         write(unit=grad_unit,fmt='(a)')'Outer    EPS     Inner      G           Gb       Go           Ge         Gd         Gp         Gs        Gl'
+         write(unit=grad_unit,fmt='(a)')'Outer    EPS     Inner      G           Gb       Go           Ge         Gd         Gp         Gs        Gl        Gm'
          write(unit=grad_unit,fmt='(a)')'Iter             Iter                            '
       end if
    end if

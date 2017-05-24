@@ -2,10 +2,15 @@ This CWB_v39a code is branched off from the offical V3.9 release (commit hash ee
 with the following new features added.
 
 New features (only in the CWB branch):
- 1. Divergence constaint capability.
+ 1. Divergence constraint capability.
  2. Large Scale Analysis Constraint capability.
  3. Radar neighborhood no-rain scheme (radar_non_precip_opt=2).
  4. Multi-Resolution-Incremental 4DVAR.
+
+Bug fixes since May 1, 2017 (only in the CWB branch)
+ 1. Bug fix for divergence constraint
+    grid%vp needs to be zeroed out before calling da_transform_vtox_adj
+    due to the introduction of the new 4DEnsVar capability.
 
 Bug fixes since V3.9 (April 17, 2017)
  1. Bug fix for radar_non_precip_opt == 1.

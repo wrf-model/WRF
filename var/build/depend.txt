@@ -205,7 +205,8 @@ gen_be_diags_read.o : gen_be_diags_read.f90 da_gen_be.o da_tools_serial.o da_con
 gen_be_ensmean.o : gen_be_ensmean.f90 da_reporting.o da_control.o 
 gen_be_ensrf.o : gen_be_ensrf.f90 da_gen_be.o da_control.o 
 gen_be_ep1.o : gen_be_ep1.f90 da_tools_serial.o da_gen_be.o da_control.o 
-gen_be_ep2.o : gen_be_ep2.f90 da_gen_be.o da_tools_serial.o da_control.o 
+gen_be_ep2.o : gen_be_ep2.f90
+gen_be_ep2_serial.o : gen_be_ep2_serial.f90 da_gen_be.o da_tools_serial.o da_control.o
 gen_be_etkf.o : gen_be_etkf.f90 da_reporting.o da_etkf.o da_control.o 
 gen_be_hist.o : gen_be_hist.f90 da_tools_serial.o da_control.o 
 gen_be_read_regcoeffs.o : gen_be_read_regcoeffs.f90 

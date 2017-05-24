@@ -6,6 +6,7 @@ New features (only in the CWB branch):
  2. Large Scale Analysis Constraint capability.
  3. Radar neighborhood no-rain scheme (radar_non_precip_opt=2).
  4. Multi-Resolution-Incremental 4DVAR.
+ 5. Improved gen_be_ep2.f90 utility.
 
 Bug fixes since May 1, 2017 (only in the CWB branch)
  1. Bug fix for divergence constraint

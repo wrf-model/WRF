@@ -3980,6 +3980,18 @@ CONTAINS
        !$OMP END PARALLEL DO
      ENDIF
 
+! Limit Q2 diagnostic using saturated value at lowest level QGH
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij, i, j, k )
+       DO ij = 1 , num_tiles
+         DO j=j_start(ij),j_end(ij)
+         DO i=i_start(ij),i_end(ij)
+            Q2(i,j) = MIN(Q2(i,j), QGH(i,j))
+         ENDDO
+         ENDDO
+       ENDDO
+       !$OMP END PARALLEL DO
+
      IF( PRESENT(slope_rad).AND. radiation )THEN
 ! topographic slope effects removed from SWDOWN and GSW here for output
        IF (slope_rad .EQ. 1) THEN

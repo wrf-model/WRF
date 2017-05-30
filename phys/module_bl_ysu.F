@@ -336,7 +336,7 @@ contains
 !              ==> pr0 = 1 + bke (=0.272) when newtral, kh is reduced
 !              minimum kzo = 0.01, lo = min (30m,delz), hong, mar 2012
 !              ==> weaker mixing when stable, and les resolution in vertical
-!              gz1oz0 is removed, and phim phih are ln(z1/z0)-phim,h, hong, mar 2012
+!              gz1oz0 is removed, and psim psih are ln(z1/z0)-psim,h, hong, mar 2012
 !              ==> consider thermal z0 when differs from mechanical z0
 !              a bug fix in wscale computation in stable bl, sukanta basu, jun 2012
 !              ==> wscale becomes small with height, and less mixing in stable bl

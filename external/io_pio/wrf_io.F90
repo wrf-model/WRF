@@ -1,5 +1,5 @@
 !------------------------------------------------------------------
-!$Id$
+!$Id: wrf_io.F90 7685 2014-10-10 01:58:54Z huangwei@ucar.edu $
 !------------------------------------------------------------------
 
 subroutine ext_pio_open_for_read(DatasetName, grid, SysDepInfo, DataHandle, Status)
@@ -107,11 +107,21 @@ subroutine ext_pio_open_for_read_begin( FileName, grid, SysDepInfo, DataHandle, 
 
   if(DH%first_operation) then
      call initialize_pio(grid, DH)
-     call define_pio_iodesc(grid, DH)
+     call init_pio_iodesc(grid, DH)
      DH%first_operation = .false.
   end if
 
-  stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_pnetcdf, FileName)
+!       PIO_iotype_pbinary = 1, &! use MPI-IO with data types to read/write C like binary files
+!       PIO_iotype_direct_pbinary = 2,  & !use MPI-IO with data types to read/write direct access binary files
+!       PIO_iotype_binary  = 4, &   ! serial read/write of binary files using 'base_node'
+!       PIO_iotype_pnetcdf = 5, &   ! parallel read/write of pNetCDF files
+!       PIO_iotype_netcdf  = 6, &   ! serial read/write of NetCDF file using 'base_node'
+!       PIO_iotype_netcdf4c = 7, &  ! netcdf4 (hdf5 format) file opened for compression (serial write access only)
+!       PIO_iotype_netcdf4p = 8, &  ! netcdf4 (hdf5 format) file opened in parallel (all netcdf4 files for read will be opened this way)
+!       PIO_iotype_vdc2 = 10
+! stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_pnetcdf, FileName)
+! stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_netcdf, FileName)
+  stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_netcdf4p, FileName)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
      write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
@@ -268,11 +278,21 @@ subroutine ext_pio_open_for_update( FileName, grid, SysDepInfo, DataHandle, Stat
 
   if(DH%first_operation) then
      call initialize_pio(grid, DH)
-     call define_pio_iodesc(grid, DH)
+     call init_pio_iodesc(grid, DH)
      DH%first_operation = .false.
   end if
 
-  stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_pnetcdf, FileName)
+!       PIO_iotype_pbinary = 1, &! use MPI-IO with data types to read/write C like binary files
+!       PIO_iotype_direct_pbinary = 2,  & !use MPI-IO with data types to read/write direct access binary files
+!       PIO_iotype_binary  = 4, &   ! serial read/write of binary files using 'base_node'
+!       PIO_iotype_pnetcdf = 5, &   ! parallel read/write of pNetCDF files
+!       PIO_iotype_netcdf  = 6, &   ! serial read/write of NetCDF file using 'base_node'
+!       PIO_iotype_netcdf4c = 7, &  ! netcdf4 (hdf5 format) file opened for compression (serial write access only)
+!       PIO_iotype_netcdf4p = 8, &  ! netcdf4 (hdf5 format) file opened in parallel (all netcdf4 files for read will be opened this way)
+!       PIO_iotype_vdc2 = 10
+! stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_pnetcdf, FileName)
+! stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_netcdf, FileName)
+  stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_netcdf4p, FileName)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
@@ -410,7 +430,7 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
 
   if(DH%first_operation) then
      call initialize_pio(grid, DH)
-     call define_pio_iodesc(grid, DH)
+     call init_pio_iodesc(grid, DH)
      DH%first_operation = .false.
   end if
 
@@ -564,6 +584,9 @@ subroutine ext_pio_ioclose(DataHandle, Status)
     call wrf_debug ( FATAL , TRIM(msg))
     return
   endif
+
+  call free_pio_iodesc(DH)
+  call finalize_pio(DH)
 
   call pio_closefile(DH%file_handle)
   CALL deallocHandle( DataHandle, Status )
@@ -4539,10 +4562,8 @@ subroutine ext_pio_put_var_ti_char_arr(DataHandle,Element,Var,Data,Status)
     enddo
 
    !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   !write(unit=0, fmt='(6a)') 'Var: ', trim(Var), ', Data: ', trim(Data), ', tmpdata: ', trim(tmpdata)
-   !write(unit=0, fmt='(3a,i6)') 'Element = ', trim(Element), ', NVar = ', NVar
-   !write(unit=0, fmt='(2(a,i6))') 'DH%descVar(NVar)%VarID = ', DH%descVar(NVar)%VarID, &
-   !     ', length = ', length
+   !write(unit=0, fmt='(6a)') 'Var: ', trim(Var), ', Element: ', trim(Element), ', tmpdata: ', trim(tmpdata)
+   !write(unit=0, fmt='(3(a,i6))') 'DH%descVar(', NVar, ')%VarID = ', DH%descVar(NVar)%VarID, ', length = ', length
 
     if(DH%Write) then
       DH%Write = .false.
@@ -7899,6 +7920,7 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     call wrf_debug ( WARN , TRIM(msg))
   elseif(DH%FileStatus == WRF_FILE_OPENED_NOT_COMMITTED) then
 
+    NotFound = .true.
     do NVar=1,MaxVars
       if(DH%VarNames(NVar) == VarName ) then
         Status = WRF_WARN_2DRYRUNS_1VARIABLE
@@ -7909,14 +7931,17 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
         DH%VarNames(NVar) = VarName
         DH%NumVars        = NVar
         DH%CurrentVariable= NVar
+        NotFound = .false.
         exit
-      elseif(NVar == MaxVars) then
-        Status = WRF_WARN_TOO_MANY_VARIABLES
-        write(msg,*) 'Warning TOO MANY VARIABLES in ',__FILE__,', line', __LINE__ 
-        call wrf_debug ( WARN , TRIM(msg))
-        return
       endif
     enddo
+
+    if(NotFound) then
+      Status = WRF_WARN_TOO_MANY_VARIABLES
+      write(msg,*) 'Warning TOO MANY VARIABLES in ',__FILE__,', line', __LINE__ 
+      call wrf_debug ( WARN , TRIM(msg))
+      return
+    endif
 
     if(DH%Write)then
       DH%Write = .false.
@@ -8026,6 +8051,8 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
    !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
    !write(unit=0, fmt='(a,i6)') 'DH%descVar(DH%NumVars)%VarID = ', DH%descVar(DH%NumVars)%VarID
 
+    DH%descVar(DH%NumVars)%name = VarName
+
     stat = pio_put_att(DH%file_handle,DH%descVar(DH%NumVars),'FieldType',FieldType)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -8123,7 +8150,14 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     if(WRF_INTEGER == FieldType) then
       if(1 == fldsize) then
          tmp0dint(1,1) = Field(1)
-         stat = pio_put_var(DH%file_handle,DH%descVar(DH%CurrentVariable),tmp0dint)
+         i = 1
+         j = 1
+         WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
+         WRITE(unit=0, fmt='(6x, a, 3i6)') 'VStart = ', VStart(1:3)
+         WRITE(unit=0, fmt='(6x, a, 3i6)') 'VCount = ', VCount(1:3)
+         stat = pio_put_var(DH%file_handle,DH%descVar(DH%CurrentVariable), &
+                            VStart(1:1), VStart(1:1), tmp0dint(1,1))
+!        stat = pio_put_var(DH%file_handle,DH%descVar(DH%CurrentVariable),tmp0dint)
          call netcdf_err(stat,Status)
       else if(2 == Ndim) then
          allocate(tmp2dint(Length(1),Length(2),1), stat=Status)
@@ -8500,7 +8534,7 @@ subroutine ext_pio_inquire_opened( DataHandle, FileName , FileStatus, Status )
   type(wrf_data_handle) ,pointer        :: DH
 
   call upgrade_filename(FileName)
- !call upgrade_filename(DH%FileName)
+  call upgrade_filename(DH%FileName)
 
   call GetDH(DataHandle,DH,Status)
   if(Status /= WRF_NO_ERR) then
@@ -8534,7 +8568,7 @@ subroutine ext_pio_inquire_filename( Datahandle, FileName,  FileStatus, Status )
     return
   endif
   FileName = trim(DH%FileName)
- !call upgrade_filename(FileName)
+  call upgrade_filename(FileName)
   FileStatus = DH%FileStatus
   Status = WRF_NO_ERR
   return

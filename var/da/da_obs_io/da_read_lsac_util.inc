@@ -50,7 +50,7 @@ if (onlyscan) then
    allocate(lat_lsac(dims_lat(1), dims_lat(2)))
    allocate(lon_lsac(dims_lon(1), dims_lon(2)))
 
-   nlevels = dims_t(3)/lsac_nvskip
+   nlevels = (dims_t(3)-lsac_nvstart+1)/lsac_nvskip
 
    !---------------------------------------------------------
    ! Reading data from WRF Input file
@@ -108,7 +108,7 @@ else
    ! It will be assimilated every "lsac_nhskip" data point in the horizontal and "lsac_nvskip"
    ! in the vertical
    nrecs   = ( 1 + ( dims_lat(1) - 1 )/lsac_nhskip ) * ( 1 + ( dims_lat(2) - 1 )/lsac_nhskip )
-   nlevels = dims_t(3)/lsac_nvskip
+   nlevels = (dims_t(3)-lsac_nvstart+1)/lsac_nvskip
 
    !---------------------------------------------------------
    ! Allocating memory
@@ -160,12 +160,33 @@ else
    do i=1, dims_lon(1), lsac_nhskip
       do j=1, dims_lat(2), lsac_nhskip
          ilevel = 0
-         do k=1, dims_t(3), lsac_nvskip
+         do k=lsac_nvstart, dims_t(3), lsac_nvskip
             ilevel = ilevel+1
             u_qc   = 0
             v_qc   = 0
             t_qc   = 0
             q_qc   = 0
+
+            if (lsac_use_u) then
+               u_qc   = 0
+            else
+               u_qc   = missing_data
+            endif
+            if (lsac_use_v) then
+               v_qc   = 0
+            else
+               v_qc   = missing_data
+            endif
+            if (lsac_use_t) then
+               t_qc   = 0
+            else
+               t_qc   = missing_data
+            endif
+            if (lsac_use_q) then
+               q_qc   = 0
+            else
+               q_qc   = missing_data
+            endif
 
             if(lsac_calcerr) then
                u_ferr=max( u_ferrmin , abs((u_lsac(i,j,k            )*u_err)/100.0) )

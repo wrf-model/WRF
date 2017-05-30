@@ -29,7 +29,8 @@ module da_obs_io
       pi, ob_format_gpsro, ob_format_ascii, analysis_date, kms,kme, v_interp_h,v_interp_p, &
       wind_sd,wind_sd_synop,wind_sd_tamdar,wind_sd_mtgirs,wind_sd_profiler,wind_sd_geoamv,wind_sd_polaramv, &
       wind_sd_airep,wind_sd_sound,wind_sd_metar,wind_sd_ships,wind_sd_qscat,wind_sd_buoy,wind_sd_pilot,wind_stats_sd,&
-      thin_conv, thin_conv_ascii, lsac_nhskip, lsac_nvskip, lsac_calcerr, lsac_print_details
+      thin_conv, thin_conv_ascii, lsac_nhskip, lsac_nvskip, lsac_nvstart, lsac_calcerr, lsac_print_details, &
+      lsac_use_u,lsac_use_v,lsac_use_t,lsac_use_q
 
    use da_define_structures, only : iv_type, multi_level_type, multi_level_type_BUFR, &
       radar_multi_level_type, y_type, field_type, each_level_type, &

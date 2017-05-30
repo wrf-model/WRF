@@ -1167,7 +1167,7 @@
             nwfa1 = nwfa2d(i,j)
          else
             do k = kts, kte
-               rho(k) = 0.622*p1d(k)/(R*t1d(k)*(qv1d(k)+0.622))
+               rho(k) = p1d(k)/(R*t1d(k)*(1.0+0.608*qv1d(k)))
                nc1d(k) = Nt_c/rho(k)
                nwfa1d(k) = 11.1E6/rho(k)
                nifa1d(k) = naIN1*0.01/rho(k)
@@ -1617,7 +1617,7 @@
          temp(k) = t1d(k)
          qv(k) = MAX(1.E-10, qv1d(k))
          pres(k) = p1d(k)
-         rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
+         rho(k) = pres(k)/(R*temp(k)*(1.0+0.608*qv(k)))
          nwfa(k) = MAX(11.1E6, MIN(9999.E6, nwfa1d(k)*rho(k)))
          nifa(k) = MAX(naIN1*0.01, MIN(9999.E6, nifa1d(k)*rho(k)))
 
@@ -2793,7 +2793,7 @@
          otemp = 1./temp(k)
          tempc = temp(k) - 273.15
          qv(k) = MAX(1.E-10, qv1d(k) + DT*qvten(k))
-         rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
+         rho(k) = pres(k)/(R*temp(k)*(1.0+0.608*qv(k)))
          rhof(k) = SQRT(RHO_NOT/rho(k))
          rhof2(k) = SQRT(rhof(k))
          qvs(k) = rslf(pres(k), temp(k))
@@ -3064,7 +3064,7 @@
           if (.NOT. is_aerosol_aware) nc(k) = Nt_c
           qv(k) = MAX(1.E-10, qv1d(k) + DT*qvten(k))
           temp(k) = t1d(k) + DT*tten(k)
-          rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
+          rho(k) = pres(k)/(R*temp(k)*(1.0+0.608*qv(k)))
           qvs(k) = rslf(pres(k), temp(k))
           ssatw(k) = qv(k)/qvs(k) - 1.
          endif
@@ -3146,7 +3146,7 @@
           qv(k) = MAX(1.E-10, qv1d(k) + DT*qvten(k))
           nr(k) = MAX(R2, (nr1d(k) + DT*nrten(k))*rho(k))
           temp(k) = t1d(k) + DT*tten(k)
-          rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
+          rho(k) = pres(k)/(R*temp(k)*(1.0+0.608*qv(k)))
          endif
       enddo
 #if ( WRF_CHEM == 1 )
@@ -5035,7 +5035,7 @@
       has_qs = .false.
 
       do k = kts, kte
-         rho(k) = 0.622*p1d(k)/(R*t1d(k)*(qv1d(k)+0.622))
+         rho(k) = p1d(k)/(R*t1d(k)*(1.0+0.608*qv1d(k)))
          rc(k) = MAX(R1, qc1d(k)*rho(k))
          nc(k) = MAX(R2, nc1d(k)*rho(k))
          if (.NOT. is_aerosol_aware) nc(k) = Nt_c
@@ -5170,7 +5170,7 @@
          temp(k) = t1d(k)
          qv(k) = MAX(1.E-10, qv1d(k))
          pres(k) = p1d(k)
-         rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
+         rho(k) = pres(k)/(R*temp(k)*(1.0+0.608*qv(k)))
          rhof(k) = SQRT(RHO_NOT/rho(k))
          rc(k) = MAX(R1, qc1d(k)*rho(k))
          if (qr1d(k) .gt. R1) then

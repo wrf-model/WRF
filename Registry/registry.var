@@ -254,6 +254,7 @@ rconfig   real      precondition_factor     namelist,wrfvar6  1  1.0      -  "pr
 rconfig   logical   use_lanczos             namelist,wrfvar6  1  .false.  - "use_lanczos"              ""  ""
 rconfig   logical   read_lanczos            namelist,wrfvar6  1  .false.  - "read_lanczos"             ""  ""
 rconfig   logical   write_lanczos           namelist,wrfvar6  1  .false.  - "write_lanczos"            ""  ""
+rconfig   character lanczos_ep_filename     namelist,wrfvar6  1  "../lanczos_eigenpairs"  - "lanczos_ep_filename" "File name for lanczos eigenpairs"  ""
 rconfig   logical   orthonorm_gradient      namelist,wrfvar6  1  .false.  - "orthonorm_gradient"       ""  ""
 rconfig   integer   cv_options              namelist,wrfvar7  1  5        - "cv_options"               ""  ""
 rconfig   integer   cloud_cv_options        namelist,wrfvar7  1  0        - "cloud_cv_options"         "0: off, 1: qt, 3: specified qc,qr,qi,qs,qg BE"  ""

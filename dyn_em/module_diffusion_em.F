@@ -3259,7 +3259,7 @@ SUBROUTINE horizontal_diffusion_s (tendency, config_flags, var,           &
 ! new
       tmpzx = 0.5*( zx(i,k,j)+ zx(i,k+1,j))
       rdzu = 2./(1./rdzw(i,k,j) + 1./rdzw(i-1,k,j))
-      H1(i,k,j)=-msfuy(i,j)*xkxavg(i,k,j)*(                      &
+      H1(i,k,j)=-msfux(i,j)*xkxavg(i,k,j)*(                      &
                  rdx*(var(i,k,j)-var(i-1,k,j)) - tmpzx*         &
                      (H1avg(i,k+1,j)-H1avg(i,k,j))*rdzu )
 

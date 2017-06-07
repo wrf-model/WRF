@@ -342,6 +342,7 @@ state    real  PBLH             ij      misc        1         -      irh      "P
 state    real  HFX              ij      misc        1         -      irh      "HFX"                   "UPWARD HEAT FLUX AT THE SURFACE"              "W m-2"
 state    real  QFX              ij      misc        1         -      irh      "QFX"                   "UPWARD MOISTURE FLUX AT THE SURFACE"          "kg m-2 s-1"
 state    real  REGIME           ij      misc        1         -      irh      "REGIME"  "FLAGS: 1=Night/Stable, 2=Mechanical Turbulent, 3=Forced Conv, 4=Free Conv" ""
+state integer  KPBL             ij      misc        1         -      irh      "KPBL"                  "LEVEL OF PBL TOP"                             ""
 
 #
 #---------------------------------------------------------------------------------------------------------------------------------------

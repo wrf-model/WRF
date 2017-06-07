@@ -10,7 +10,7 @@ contains
                   rublten,rvblten,                                             &
                   dtaux3d,dtauy3d,dusfcg,dvsfcg,                               &
                   var2d,oc12d,oa2d1,oa2d2,oa2d3,oa2d4,ol2d1,ol2d2,ol2d3,ol2d4, &
-                  znu,znw,mut,p_top,                                           &
+                  znu,znw,p_top,                                               &
                   cp,g,rd,rv,ep1,pi,                                           &
                   dt,dx,kpbl2d,itimestep,                                      &
                   ids,ide, jds,jde, kds,kde,                                   &
@@ -96,9 +96,6 @@ contains
                                                                         oc12d, &
                                                       oa2d1,oa2d2,oa2d3,oa2d4, &
                                                       ol2d1,ol2d2,ol2d3,ol2d4
-  real,     dimension( ims:ime, jms:jme )                                    , &
-            optional                                                         , &
-            intent(in  )   ::                                             mut
 !
   real,     dimension( kms:kme )                                             , &
             optional                                                         , &
@@ -121,22 +118,12 @@ contains
    enddo
 !
    do j = jts,jte
-      if(present(mut))then
-! For ARW we will replace p and p8w with dry hydrostatic pressure
-        do k = kts,kte+1
-          do i = its,ite
-             if(k.le.kte)pdh(i,k) = mut(i,j)*znu(k) + p_top
-             pdhi(i,k) = mut(i,j)*znw(k) + p_top
-          enddo
+      do k = kts,kte+1
+        do i = its,ite
+           if(k.le.kte)pdh(i,k) = p3d(i,k,j)
+           pdhi(i,k) = p3di(i,k,j)
         enddo
-      else
-        do k = kts,kte+1
-          do i = its,ite
-             if(k.le.kte)pdh(i,k) = p3d(i,k,j)
-             pdhi(i,k) = p3di(i,k,j)
-          enddo
-        enddo
-      endif
+      enddo
 !
       do k = kts,kte
         do i = its,ite

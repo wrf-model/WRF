@@ -36,7 +36,9 @@
  ISWATER                   = 16
  ISBARREN                  = 19
  ISICE                     = 24
+ ISCROP                    =  2
  EBLFOREST                 = 13
+ NATURAL                   =  5
  LOW_DENSITY_RESIDENTIAL   = 31
  HIGH_DENSITY_RESIDENTIAL  = 32
  HIGH_INTENSITY_INDUSTRIAL = 33
@@ -178,7 +180,9 @@
  ISWATER                   = 17
  ISBARREN                  = 16
  ISICE                     = 15
+ ISCROP                    = 12
  EBLFOREST                 =  2
+ NATURAL                   = 14
  LOW_DENSITY_RESIDENTIAL   = 31
  HIGH_DENSITY_RESIDENTIAL  = 32
  HIGH_INTENSITY_INDUSTRIAL = 33
@@ -338,6 +342,8 @@
  !  4: Rice
  !  5: Winter wheat
 
+DEFAULT_CROP = 0                                      ! The default crop type(1-5); if zero, use generic dynamic vegetation 
+
 !----------------------------------------------------------
 !                1       2       3       4       5
 !----------------------------------------------------------
@@ -355,7 +361,7 @@ GDDS3      = 1183.0,  933.0,  933.0,  933.0,  933.0,  ! GDD from seeding to post
 GDDS4      = 1253.0, 1103.0, 1103.0, 1103.0, 1103.0,  ! GDD from seeding to intial reproductive
 GDDS5      = 1605.0, 1555.0, 1555.0, 1555.0, 1555.0,  ! GDD from seeding to pysical maturity 
 
-C3C4       =    2.0,    1.0,    2.0,    2.0,    2.0,  ! photosynthetic pathway:  1. = c3 2. = c4
+C3C4       =      2,      1,      2,      2,      2,  ! photosynthetic pathway:  1. = c3 2. = c4
 Aref       =    7.0,    7.0,    7.0,    7.0,    7.0,  ! reference maximum CO2 assimulation rate 
 PSNRF      =   0.85,   0.85,   0.85,   0.85,   0.85,  ! CO2 assimulation reduction factor(0-1) (caused by non-modeling part,e.g.pest,weeds)
 I2PAR      =    0.5,    0.5,    0.5,    0.5,    0.5,  ! Fraction of incoming solar radiation to photosynthetically active radiation

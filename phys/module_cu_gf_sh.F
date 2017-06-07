@@ -203,7 +203,6 @@ contains
      real,    dimension (its:ite,kts:kte) :: dtempdz
      integer, dimension (its:ite,kts:kte) ::  k_inv_layers 
      integer, dimension (its:ite) ::  start_level
-
      start_level(:)=0
      flux_tun(:)=fluxtune
      rand_vmas(:)=0.

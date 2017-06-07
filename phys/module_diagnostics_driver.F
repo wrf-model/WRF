@@ -54,7 +54,7 @@ CONTAINS
       !  This gives us the type definition for grid (domain) and some clock information.
 
 !     USE module_domain, ONLY : domain, domain_clock_get, get_ijk_from_subgrid
-      USE module_domain, ONLY : domain ,domain_get_current_time
+      USE module_domain, ONLY : domain, domain_clock_get, domain_get_current_time
 
       !  All of the information from the namelist is in config_flags.  The
       !  type declaration for this puppy must be available.  While each domain
@@ -63,6 +63,8 @@ CONTAINS
       USE module_configure, ONLY : grid_config_rec_type, &
                                    model_config_rec
 
+      USE module_streams
+      USE module_utility, ONLY : WRFU_Time 
 
       !=============================================================
       !  USE Association for the Diagnostic Packages
@@ -74,7 +76,8 @@ CONTAINS
       USE module_diag_pld, ONLY : pld
       USE module_diag_zld, ONLY : zld
       USE module_diag_afwa, ONLY : afwa_diagnostics_driver
-
+      USE module_diag_rasm, ONLY : mean_output_calc, diurnalcycle_output_calc
+      USE module_diag_hailcast, ONLY : hailcast_diagnostic_driver
 
       IMPLICIT NONE
 
@@ -164,6 +167,9 @@ CONTAINS
 
       INTEGER :: k_start, k_end
 
+      ! Current time associated with current simulation step (RASM_DIAGS)
+
+      TYPE(WRFU_Time) :: currentTime
 
       !=============================================================
       !  Start of executable code
@@ -219,6 +225,33 @@ CONTAINS
       END IF LIGHTNING
 
 
+      !WRF-HAILCAST diagnostic - hail size prediction
+      HAILCAST: IF ( config_flags%hailcast_opt /= 0 ) THEN
+
+      IF ( ( config_flags%history_interval == 0 ) ) THEN
+            WRITE (diag_message , * ) &
+            "HAILCAST Error : No 'history_interval' defined in namelist"
+            CALL wrf_error_fatal ( diag_message )
+        END IF
+
+        !$OMP PARALLEL DO   &
+        !$OMP PRIVATE ( ij )
+        DO ij = 1 , grid%num_tiles
+
+           CALL wrf_debug ( 100 ,                                             &
+             '--> CALL DIAGNOSTICS PACKAGE: HAILCAST_DIAGNOSTIC_DRIVER' )
+
+           CALL hailcast_diagnostic_driver (    grid , config_flags           &
+                         ,moist, grid%rho                                     &
+                         ,ids, ide, jds, jde, kds, kde                        &
+                         ,ims, ime, jms, jme, kms, kme                        &
+                         ,ips, ipe, jps, jpe, kps, kpe                        &
+                         ,ITS=grid%i_start(ij),ITE=grid%i_end(ij)             &
+                         ,JTS=grid%j_start(ij),JTE=grid%j_end(ij)             &
+                         ,K_START=k_start,K_END=k_end                         )
+        END DO
+        !$OMP END PARALLEL DO
+      END IF HAILCAST
 
 
       !  Mostly surface values, precip, column integrated quantities.
@@ -959,6 +992,124 @@ CONTAINS
             !$OMP END PARALLEL DO
       ENDIF AFWA_DIAGS
 
+
+
+
+      !  RASM Climate Diagnostics - mean output
+
+      RASM_DIAGS_MEAN : IF ( config_flags%mean_diag == 1 ) THEN
+
+         !IF ( ( config_flags%auxhist3_interval == 0 ) ) THEN
+         !   WRITE (diag_message , * ) &
+         !   "CLWRF: ERROR -- error -- ERROR -- error : NO 'auxhist3_interval' has been defined in 'namelist.input'"
+         !   CALL wrf_error_fatal ( diag_message )
+         !END IF
+
+         CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: RASM DIAGNOSTICS - MEAN' )
+
+         CALL domain_clock_get ( grid, current_time=currentTime)
+
+         CALL mean_output_calc(                                               &
+                        is_restart=config_flags%restart                       &
+                       ,CURRENTTIME=currentTime                               &
+                       ,stats_interval=config_flags%mean_interval             &
+                       ,output_freq=config_flags%mean_freq                    &
+                       ,run_days=config_flags%run_days                        &
+                       ,DT=grid%dt, XTIME=grid%xtime                          &
+                       ,PSFC=grid%psfc, PSFC_MEAN=grid%psfc_mean              &
+                       ,TSK=grid%tsk, TSK_MEAN=grid%tsk_mean                  &
+                       ,PMSL_MEAN=grid%pmsl_mean                              &
+                       ,T2=grid%t2, T2_MEAN=grid%t2_mean                      &
+                       ,T=grid%t_2, P=grid%p, PB=grid%pb                      &
+                       ,MOIST=grid%moist(:,:,:,P_QV), HT=grid%ht              &
+                       ,TH2=grid%th2, TH2_MEAN=grid%th2_mean                  &
+                       ,Q2=grid%q2, Q2_MEAN=grid%q2_mean                      &
+                       ,U10=grid%u10, U10_MEAN=grid%u10_mean                  &
+                       ,V10=grid%v10, V10_MEAN=grid%v10_mean                  &           
+                       ,HFX=grid%hfx, HFX_MEAN=grid%hfx_mean                  &
+                       ,LH=grid%lh, LH_MEAN=grid%lh_mean                      &
+                       ,SWDNB=grid%swdnb, SWDNB_MEAN=grid%swdnb_mean          &
+                       ,GLW=grid%glw , GLW_MEAN=grid%glw_mean                 &
+                       ,LWUPB=grid%lwupb, LWUPB_MEAN=grid%lwupb_mean          &
+                       ,SWUPB=grid%swupb, SWUPB_MEAN=grid%swupb_mean          &
+                       ,SWUPT=grid%swupt, SWUPT_MEAN=grid%swupt_mean          &
+                       ,SWDNT=grid%swdnt, SWDNT_MEAN=grid%swdnt_mean          &
+                       ,LWUPT=grid%lwupt, LWUPT_MEAN=grid%lwupt_mean          &
+                       ,LWDNT=grid%lwdnt, LWDNT_MEAN=grid%lwdnt_mean          &
+                       ,AVGOUTALARM=grid%alarms(AUXHIST5_ALARM)               &
+                       ,AVGOUTDATESTR=grid%OUTDATE_MEAN                       &
+                       ,NSTEPS=grid%NSTEPS_MEAN                               &
+         ! Dimension arguments
+                       ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde     &
+                       ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme     &
+                       ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe     &
+                       ,I_START=grid%i_start,I_END=min(grid%i_end, ide-1)     &
+                       ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)     &
+                       ,NUM_TILES=grid%num_tiles                              &
+                                                                      )
+      END IF RASM_DIAGS_MEAN
+
+
+
+
+      !  RASM Climate Diagnostics - diurnal output
+
+      RASM_DIAGS_DIURNAL : IF ( config_flags%diurnal_diag == 1 ) THEN
+
+         !IF ( ( config_flags%auxhist3_interval == 0 ) ) THEN
+         !   WRITE (diag_message , * ) &
+         !   "CLWRF: ERROR -- error -- ERROR -- error : NO 'auxhist3_interval' has been defined in 'namelist.input'"
+         !   CALL wrf_error_fatal ( diag_message )
+         !END IF
+
+         CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: RASM DIAGNOSTICS - DIURNAL' )
+
+         CALL domain_clock_get ( grid, current_time=currentTime)
+
+         CALL diurnalcycle_output_calc(                                       &
+            is_restart=config_flags%restart                                   &
+           ,CURRENTTIME=currentTime                                           &
+           ,DT=grid%dt, XTIME=grid%xtime                                      &
+           ,PSFC=grid%psfc, PSFC_DTMP=grid%psfc_dtmp                          &
+           ,TSK=grid%tsk, TSK_DTMP=grid%tsk_dtmp                              &
+           ,T2=grid%t2, T2_DTMP=grid%t2_dtmp                                  &
+           ,T=grid%t_2, P=grid%p, PB=grid%pb, MOIST=grid%moist(:,:,:,P_QV)    &
+           ,TH2=grid%th2, TH2_DTMP=grid%th2_dtmp                              &
+           ,Q2=grid%q2, Q2_DTMP=grid%q2_dtmp                                  &
+           ,U10=grid%u10, U10_DTMP=grid%u10_dtmp                              &
+           ,V10=grid%v10, V10_DTMP=grid%v10_dtmp                              &
+           ,HFX=grid%hfx, HFX_DTMP=grid%hfx_dtmp                              &
+           ,LH=grid%lh, LH_DTMP=grid%lh_dtmp                                  &
+           ,SWDNB=grid%swdnb, SWDNB_DTMP=grid%swdnb_dtmp                      &
+           ,GLW=grid%glw, GLW_DTMP=grid%glw_dtmp                              &
+           ,LWUPB=grid%lwupb, LWUPB_DTMP=grid%lwupb_dtmp                      &
+           ,SWUPB=grid%swupb, SWUPB_DTMP=grid%swupb_dtmp                      &
+           ,SWUPT=grid%swupt, SWUPT_DTMP=grid%swupt_dtmp                      &
+           ,SWDNT=grid%swdnt, SWDNT_DTMP=grid%swdnt_dtmp                      &
+           ,LWUPT=grid%lwupt, LWUPT_DTMP=grid%lwupt_dtmp                      &
+           ,LWDNT=grid%lwdnt, LWDNT_DTMP=grid%lwdnt_dtmp                      &
+           ,AVGOUTALARM=grid%alarms(AUXHIST6_ALARM)                           &
+           ,DIURNOUTDATESTR=grid%OUTDATE_DIURN                                &
+           ,AVG_NSTEPS=grid%NSTEPSMEAN_DIURN                                  &
+           ,DIURNAL_NSTEPS=grid%NSTEPS_DIURN                                  &
+           ,PSFC_DIURN=grid%PSFC_DIURN                                        &
+           ,TSK_DIURN=grid%TSK_DIURN, T2_DIURN=grid%T2_DIURN                  &
+           ,TH2_DIURN=grid%TH2_DIURN, Q2_DIURN=grid%Q2_DIURN                  &
+           ,U10_DIURN=grid%U10_DIURN, V10_DIURN=grid%V10_DIURN                &
+           ,HFX_DIURN=grid%HFX_DIURN, LH_DIURN=grid%LH_DIURN                  &
+           ,SWDNB_DIURN=grid%SWDNB_DIURN, GLW_DIURN=grid%GLW_DIURN            &
+           ,LWUPB_DIURN=grid%LWUPB_DIURN, SWUPB_DIURN=grid%SWUPB_DIURN        &
+           ,SWUPT_DIURN=grid%SWUPT_DIURN, SWDNT_DIURN=grid%SWDNT_DIURN        &
+           ,LWUPT_DIURN=grid%LWUPT_DIURN, LWDNT_DIURN=grid%LWDNT_DIURN        &
+         ! Dimension arguments
+           ,IDS=ids, IDE=ide, JDS=jds, JDE=jde, KDS=kds, KDE=kde              &
+           ,IMS=ims, IME=ime, JMS=jms, JME=jme, KMS=kms, KME=kme              & 
+           ,IPS=ips, IPE=ipe, JPS=jps, JPE=jpe, KPS=kps, KPE=kpe              &         
+           ,I_START=grid%i_start, I_END=min(grid%i_end, ide-1)                &
+           ,J_START=grid%j_start, J_END=min(grid%j_end, jde-1)                &
+           ,NUM_TILES=grid%num_tiles                                          &
+                                                                   )
+      END IF RASM_DIAGS_DIURNAL
 
 
 

@@ -36,7 +36,7 @@ subroutine da_transform_xtopsfc(grid, iv, obs_index, synop, y_synop)
    allocate (t(1,iv%info(obs_index)%n1:iv%info(obs_index)%n2))
    allocate (q(1,iv%info(obs_index)%n1:iv%info(obs_index)%n2))
 
-   ! 2.0 Surface assmiilation approach 2 (2-m t and q, 10-m u and v)
+   ! 2.0 Surface assimilation approach 2 (2-m t and q, 10-m u and v)
 
    call da_interp_lin_2d(grid%xa%u10,  iv%info(obs_index), 1, u)
    call da_interp_lin_2d(grid%xa%v10,  iv%info(obs_index), 1, v)

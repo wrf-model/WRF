@@ -253,7 +253,6 @@ CONTAINS
 !
   !     write(0,*)' in scale-aware sas'
 
-
       if(present(shalconv)) then
          shalconv_use=shalconv
       else
@@ -387,7 +386,7 @@ CONTAINS
         SLIMSK(i)=ABS(XLAND(i,j)-2.)
 
         garea(I)=DX2D(i,j)*DY*2.0         !wang,  grid box area in m^2
-        KCNV(I)=0                         !wang
+        KCNV(I)=0                         !wang, initialize KCNV
       ENDDO
 
 #if (NMM_CORE == 1)

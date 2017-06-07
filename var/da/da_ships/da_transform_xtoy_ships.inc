@@ -67,7 +67,7 @@ subroutine da_transform_xtoy_ships (grid, iv, y)
       deallocate (ub)
       deallocate (vb)
    else if (sfc_assi_options == sfc_assi_options_2) then
-      ! [2.0] Surface assmiilation approach 2
+      ! [2.0] Surface assimilation approach 2
       call da_transform_xtopsfc(grid,iv,ships,iv%ships(:),y%ships(:))
    end if
 

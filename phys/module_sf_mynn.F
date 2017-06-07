@@ -5,7 +5,7 @@ MODULE module_sf_mynn
 
 !-------------------------------------------------------------------
 !Modifications implemented by Joseph Olson NOAA/GSD/AMB - CU/CIRES
-!for WRFv3.4, v3.4.1, v3.5.1, v3.6, and v3.7.1:
+!for WRFv3.4, v3.4.1, v3.5.1, v3.6, v3.7.1, and v3.9:
 !
 !   BOTH LAND AND WATER:
 !1) Calculation of stability parameter (z/L) taken from Li et al. (2010 BLM)
@@ -45,6 +45,9 @@ MODULE module_sf_mynn
 !   2) added a more elaborate diagnostic for u10 & V10 for high vertical resolution
 !      model configurations.
 !
+! New for v3.9:
+!   - option for stochastic parameter perturbations (SPP) 
+!
 !NOTE: This code was primarily tested in combination with the RUC LSM.
 !      Performance with the Noah (or other) LSM is relatively unknown.
 !-------------------------------------------------------------------
@@ -83,7 +86,8 @@ CONTAINS
   END SUBROUTINE mynn_sf_init_driver
 
 !-------------------------------------------------------------------
-   SUBROUTINE SFCLAY_mynn(U3D,V3D,T3D,QV3D,P3D,dz8w,               &
+   SUBROUTINE SFCLAY_mynn(                                         &
+                     U3D,V3D,T3D,QV3D,P3D,dz8w,                    &
                      CP,G,ROVCP,R,XLV,PSFCPA,CHS,CHS2,CQS2,CPM,    &
                      ZNT,UST,PBLH,MAVAIL,ZOL,MOL,REGIME,PSIM,PSIH, &
                      XLAND,HFX,QFX,LH,TSK,FLHC,FLQC,QGH,QSFC,RMOL, &
@@ -93,9 +97,7 @@ CONTAINS
                      KARMAN,itimestep,ch,th3d,pi3d,qc3d,rho3d,     &
                      tsq,qsq,cov,sh3d,el_pbl,qcg,                  &
                      icloud_bl,qc_bl,cldfra_bl,                    &
-!JOE-add output
-!                     z0zt_ratio,BulkRi,wstar,qstar,resist,logres,  &
-!JOE-end 
+                     spp_pbl,pattern_spp_pbl,                      &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
@@ -218,6 +220,8 @@ CONTAINS
       INTEGER,  OPTIONAL,  INTENT(IN)   ::     ISFTCFLX, IZ0TLND,&
                                                 bl_mynn_cloudpdf,&
                                                 icloud_bl
+      INTEGER,  INTENT(IN),OPTIONAL    ::    spp_pbl
+
 !===================================
 ! 3D VARIABLES
 !===================================
@@ -232,6 +236,7 @@ CONTAINS
 
       REAL,     DIMENSION( ims:ime, kms:kme, jms:jme ) ::   qc_bl, &
                                                         cldfra_bl
+      REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN),OPTIONAL ::pattern_spp_pbl
 !===================================
 ! 2D VARIABLES
 !===================================
@@ -289,11 +294,13 @@ CONTAINS
                                                            dz8w1d, & !level 1 height
                                                            dz2w1d    !level 2 height
 
+      REAL,     DIMENSION( its:ite ) ::                 rstoch1D
+
       ! VARIABLE FOR PASSING TO MYM_CONDENSATION
       REAL,     DIMENSION(kts:kts+1 ) :: dummy1,dummy2,dummy3,dummy4, &
                                          dummy5,dummy6,dummy7,dummy8, &
                                          dummy9,dummy10,dummy11,      &
-                                         dummy12,dummy13
+                                         dummy12,dummy13,dummy14
 
       REAL,     DIMENSION( its:ite ) ::  vt1,vq1
       REAL,     DIMENSION(kts:kts+1) ::  thl, qw, vt, vq
@@ -320,6 +327,11 @@ CONTAINS
            P1D(i) =P3D(i,kts,j)
            T1D(i) =T3D(i,kts,j)
            RHO1D(i)=RHO3D(i,kts,j)
+           if (spp_pbl==1) then
+               rstoch1D(i)=pattern_spp_pbl(i,kts,j)
+           else
+               rstoch1D(i)=0.0
+           endif
         ENDDO
 
         IF (itimestep==1) THEN
@@ -347,6 +359,7 @@ CONTAINS
                 dummy8(k)=cov(i,k,j)
                 dummy9(k)=Sh3d(i,k,j)
                 dummy10(k)=el_pbl(i,k,j)
+                dummy14(k)=th3d(i,k,j)
                 if(icloud_bl > 0) then
                   dummy11(k)=qc_bl(i,k,j)
                   dummy12(k)=cldfra_bl(i,k,j)
@@ -354,7 +367,7 @@ CONTAINS
                   dummy11(k)=0.0
                   dummy12(k)=0.0
                 endif
-                dummy13(k)=0.0
+                dummy13(k)=0.0     !sgm
               ENDDO
 
               ! NOTE: The last grid number is kts+1 instead of kte.
@@ -365,8 +378,8 @@ CONTAINS
                    &            dummy10,bl_mynn_cloudpdf,&
                    &            dummy11,dummy12,        &
                    &            PBLH(i,j),HFX(i,j),     &
-                   &            dummy13,                &
-                   &            vt(kts:kts+1), vq(kts:kts+1))
+                   &            vt(kts:kts+1), vq(kts:kts+1), &
+                   &            dummy14,dummy13)
 
 !              ! NOTE: The last grid number is kts+1 instead of kte.
 !              CALL mym_condensation (kts,kts+1, dx,     &
@@ -384,13 +397,15 @@ CONTAINS
 !                   &            qc_bl2D(i,kts:kts+1),   & !JOE-subgrid BL clouds
 !                   &           cldfra_bl2D(i,kts:kts+1),& !JOE-subgrid BL clouds
 !                   &            PBLH(i,j),HFX(i,j),     & !JOE-subgrid BL clouds
-!                   &            vt(kts:kts+1), vq(kts:kts+1))
+!                   &            vt(kts:kts+1), vq(kts:kts+1), &
+ !                  &            th,sgm)
               vt1(i) = vt(kts)
               vq1(i) = vq(kts)
            ENDDO
         ENDIF
 
-        CALL SFCLAY1D_mynn(J,U1D,V1D,T1D,QV1D,P1D,dz8w1d,rho1d,    &
+        CALL SFCLAY1D_mynn(                                        &
+                J,U1D,V1D,T1D,QV1D,P1D,dz8w1d,rho1d,               &
                 U1D2,V1D2,dz2w1d,                                  &
                 CP,G,ROVCP,R,XLV,PSFCPA(ims,j),CHS(ims,j),CHS2(ims,j),&
                 CQS2(ims,j),CPM(ims,j),PBLH(ims,j), RMOL(ims,j),   &
@@ -408,6 +423,7 @@ CONTAINS
                 z0zt_ratio(ims,j),wstar(ims,j),                    &
                 qstar(ims,j),resist(ims,j),logres(ims,j),          &
 !JOE-end
+                spp_pbl,rstoch1D,                                  &
                 ids,ide, jds,jde, kds,kde,                         &
                 ims,ime, jms,jme, kms,kme,                         &
                 its,ite, jts,jte, kts,kte                          &
@@ -421,7 +437,8 @@ CONTAINS
     END SUBROUTINE SFCLAY_MYNN
 
 !-------------------------------------------------------------------
-   SUBROUTINE SFCLAY1D_mynn(J,U1D,V1D,T1D,QV1D,P1D,dz8w1d,rho1d,   &
+   SUBROUTINE SFCLAY1D_mynn(                                       &
+                     J,U1D,V1D,T1D,QV1D,P1D,dz8w1d,rho1d,          &
                      U1D2,V1D2,dz2w1d,                             &
                      CP,G,ROVCP,R,XLV,PSFCPA,CHS,CHS2,CQS2,CPM,    &
                      PBLH,RMOL,ZNT,UST,MAVAIL,ZOL,MOL,REGIME,      &
@@ -434,6 +451,7 @@ CONTAINS
 !JOE-additional output
                      zratio,wstar,qstar,resist,logres,             &
 !JOE-end
+                     spp_pbl,rstoch1D,                             &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     &
@@ -461,6 +479,7 @@ CONTAINS
 !-----------------------------
       INTEGER,  INTENT(IN) :: ISFFLX
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX, IZ0TLND
+      INTEGER,    INTENT(IN)             ::     spp_pbl
 
 !-----------------------------
 ! 1D ARRAYS
@@ -496,6 +515,7 @@ CONTAINS
                                                              WSPD, &
                                                                BR, &
                                                         PSIM,PSIH
+      REAL,     DIMENSION( its:ite ), INTENT(IN)   ::     rstoch1D
 
       ! DIAGNOSTIC OUTPUT
       REAL,     DIMENSION( ims:ime ), INTENT(OUT)   ::    U10,V10, &
@@ -536,7 +556,7 @@ CONTAINS
             GZ10OZt, &    !LOG((10.+z_t(i))/z_t(i))
              GZ1OZt       !LOG((ZA(I)+z_t(i))/z_t(i))
 
-      INTEGER ::  N,I,K,L,NZOL,NK,NZOL2,NZOL10, ITER
+      INTEGER ::  N,I,K,L,NZOL,NK,NZOL2,NZOL10, ITER, yesno
       INTEGER, PARAMETER :: ITMAX=1
 
       REAL    ::  PL,THCON,TVCON,E1
@@ -776,7 +796,7 @@ CONTAINS
                 ENDIF
              ELSEIF ( ISFTCFLX .EQ. 4 ) THEN
                 CALL zilitinkevich_1995(ZNT(i),z_t(i),z_q(i),restar,&
-                                   UST(I),KARMAN,XLAND(I),IZ0TLND)
+                                   UST(I),KARMAN,XLAND(I),IZ0TLND,spp_pbl,rstoch1D(i))
              ENDIF
           ELSE
              !DEFAULT TO COARE 3.0/3.5
@@ -808,7 +828,7 @@ CONTAINS
                    !IF IZ0TLND==4, THEN PSIQ WILL BE RECALCULATED USING
                    !PAN ET AL (1994), but PSIT FROM ZILI WILL BE USED.
                    CALL zilitinkevich_1995(ZNT(i),z_t(i),z_q(i),restar,&
-                                  UST(I),KARMAN,XLAND(I),IZ0TLND)
+                                  UST(I),KARMAN,XLAND(I),IZ0TLND,spp_pbl,rstoch1D(i))
                 ELSEIF ( IZ0TLND .EQ. 2 ) THEN
                    CALL Yang_2008(ZNT(i),z_t(i),z_q(i),UST(i),MOL(I),&
                                   qstar(I),restar,visc,XLAND(I))
@@ -819,7 +839,7 @@ CONTAINS
              ELSE
                 !DEFAULT TO ZILITINKEVICH
                 CALL zilitinkevich_1995(ZNT(i),z_t(i),z_q(i),restar,&
-                                        UST(I),KARMAN,XLAND(I),0)
+                                        UST(I),KARMAN,XLAND(I),0,spp_pbl,rstoch1D(i))
              ENDIF
           ENDIF
 
@@ -1242,30 +1262,58 @@ CONTAINS
    ENDIF !end ISFFLX option
 
    IF ( wrf_at_debug_level(3000) ) THEN
-   IF (HFX(I) > 1200. .OR. HFX(I) < -500. .OR. &
-      &LH(I)  > 1200. .OR. LH(I)  < -500. .OR. &
-      &UST(I) < 0.0 .OR. UST(I) > 4.0 .OR. &
-      &WSTAR(I)<0.0 .OR. WSTAR(I) > 6.0 .OR. &
-      &RHO1D(I)<0.0 .OR. RHO1D(I) > 1.6 .OR. &
-      &QSFC(I)*1000. <0.0 .OR. QSFC(I)*1000. >38. .OR. &
-      &PBLH(I)>6000.) THEN
-      print*,"SUSPICIOUS VALUES IN MYNN SFCLAYER",&
-            ITER-ITMAX," ITERATIONS",I,J
-      write(*,1000)"HFX: ",HFX(I)," LH:",LH(I)," CH:",CH(I),&
-            " PBLH:",PBLH(I)
-      write(*,1001)"REGIME:",REGIME(I)," z/L:",ZOL(I)," U*:",UST(I),&
-            " Tstar:",MOL(I)
-      write(*,1002)"PSIM:",PSIM(I)," PSIH:",PSIH(I)," W*:",WSTAR(I),&
-            " DTHV:",THV1D(I)-THVGB(I)
-      write(*,1003)"CPM:",CPM(I)," RHO1D:",RHO1D(I)," L:",&
-            ZOL(I)/ZA(I)," DTH:",TH1D(I)-THGB(I)
-      write(*,1004)"Z0/Zt:",zratio(I)," Z0:",ZNT(I)," Zt:",z_t(I),&
-            " za:",za(I)
-      write(*,1005)"Re:",restar," MAVAIL:",MAVAIL(I)," QSFC(I):",&
-            QSFC(I)," QVSH(I):",QVSH(I)
-      print*,"PSIX=",PSIX," Z0:",ZNT(I)," T1D(i):",T1D(i)
-      write(*,*)"============================================="
-   ENDIF
+      yesno = 0
+      IF (HFX(I) > 1200. .OR. HFX(I) < -500.)THEN
+            print*,"SUSPICIOUS VALUES IN MYNN SFCLAYER",&
+            ITER-ITMAX," ITERATIONS",I,J, "HFX: ",HFX(I)
+            yesno = 1
+      ENDIF
+      IF (LH(I)  > 1200. .OR. LH(I)  < -500.)THEN
+            print*,"SUSPICIOUS VALUES IN MYNN SFCLAYER",&
+            ITER-ITMAX," ITERATIONS",I,J, "LH: ",LH(I)
+            yesno = 1
+      ENDIF
+      IF (UST(I) < 0.0 .OR. UST(I) > 4.0 )THEN
+            print*,"SUSPICIOUS VALUES IN MYNN SFCLAYER",&                                                                     
+            ITER-ITMAX," ITERATIONS",I,J, "UST: ",UST(I)
+            yesno = 1
+      ENDIF
+      IF (WSTAR(I)<0.0 .OR. WSTAR(I) > 6.0)THEN
+            print*,"SUSPICIOUS VALUES IN MYNN SFCLAYER",&
+            ITER-ITMAX," ITERATIONS",I,J, "WSTAR: ",WSTAR(I)
+            yesno = 1
+      ENDIF
+      IF (RHO1D(I)<0.0 .OR. RHO1D(I) > 1.6 )THEN
+            print*,"SUSPICIOUS VALUES IN MYNN SFCLAYER",&
+            ITER-ITMAX," ITERATIONS",I,J, "rho: ",RHO1D(I)
+            yesno = 1
+      ENDIF
+      IF (QSFC(I)*1000. <0.0 .OR. QSFC(I)*1000. >40.)THEN
+            print*,"SUSPICIOUS VALUES IN MYNN SFCLAYER",&
+            ITER-ITMAX," ITERATIONS",I,J, "QSFC: ",QSFC(I)
+            yesno = 1
+      ENDIF
+      IF (PBLH(I)<0. .OR. PBLH(I)>6000.)THEN
+            print*,"SUSPICIOUS VALUES IN MYNN SFCLAYER",&                                                              
+            ITER-ITMAX," ITERATIONS",I,J, "PBLH: ",PBLH(I)
+            yesno = 1
+      ENDIF
+
+      IF (yesno == 1) THEN
+        print*," OTHER INFO:"
+        write(*,1001)"REGIME:",REGIME(I)," z/L:",ZOL(I)," U*:",UST(I),&
+              " Tstar:",MOL(I)
+        write(*,1002)"PSIM:",PSIM(I)," PSIH:",PSIH(I)," W*:",WSTAR(I),&
+              " DTHV:",THV1D(I)-THVGB(I)
+        write(*,1003)"CPM:",CPM(I)," RHO1D:",RHO1D(I)," L:",&
+              ZOL(I)/ZA(I)," DTH:",TH1D(I)-THGB(I)
+        write(*,1004)"Z0/Zt:",zratio(I)," Z0:",ZNT(I)," Zt:",z_t(I),&
+              " za:",za(I)
+        write(*,1005)"Re:",restar," MAVAIL:",MAVAIL(I)," QSFC(I):",&
+              QSFC(I)," QVSH(I):",QVSH(I)
+        print*,"PSIX=",PSIX," Z0:",ZNT(I)," T1D(i):",T1D(i)
+        write(*,*)"============================================="
+      ENDIF
    ENDIF
 
  ENDDO !end i-loop
@@ -1273,7 +1321,7 @@ CONTAINS
 END SUBROUTINE SFCLAY1D_mynn
 !-------------------------------------------------------------------          
    SUBROUTINE zilitinkevich_1995(Z_0,Zt,Zq,restar,ustar,KARMAN,&
-       & landsea,IZ0TLND2)
+       & landsea,IZ0TLND2,spp_pbl,rstoch)
 
        ! This subroutine returns the thermal and moisture roughness lengths
        ! from Zilitinkevich (1995) and Zilitinkevich et al. (2001) over
@@ -1291,6 +1339,9 @@ END SUBROUTINE SFCLAY1D_mynn
        REAL :: CZIL  !=0.100 in Chen et al. (1997)
                      !=0.075 in Zilitinkevich (1995)
                      !=0.500 in Lemone et al. (2008)
+       INTEGER,  INTENT(IN)  ::    spp_pbl
+       REAL,     INTENT(IN)  ::    rstoch
+
 
        IF (landsea-1.5 .GT. 0) THEN    !WATER
 
@@ -1320,6 +1371,16 @@ END SUBROUTINE SFCLAY1D_mynn
           ELSE
              CZIL = 0.10
           END IF
+
+! perturb thermal and moisture roughness lenth by +/-50%
+! uses same perturbation pattern for perturbing cloud fraction 
+! and turbulent mixing length (module_sf_mynn.F), but 
+! twice the amplitude; 
+! multiplication with -1.0 anticorrelates patterns
+          if (spp_pbl==1) then
+             CZIL  = CZIL - 2.0 * rstoch * CZIL
+          endif
+
 
           Zt = Z_0*EXP(-KARMAN*CZIL*SQRT(restar))
           Zt = MIN( Zt, Z_0/2.)

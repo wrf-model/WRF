@@ -402,7 +402,7 @@ MODULE module_sf_bep_bem
 ! 261-304
 !
 ! F. Salamanca and A. Martilli, 2009: 'A new Building Energy Model coupled 
-! with an Urban Canopy Parameterization for urban climate simulations—part II. 
+! with an Urban Canopy Parameterization for urban climate simulations-part II. 
 ! Validation with one dimension off-line simulations'. Theor Appl Climatol
 ! DOI 10.1007/s00704-009-0143-8 
 !------------------------------------------------------------------------
@@ -1250,12 +1250,12 @@ MODULE module_sf_bep_bem
       real alaf(nf_u+1)     ! Floor thermal diffusivity at each wall layers [W/m K]     
       real alagb(ngb_u+1)   ! Ground thermal diffusivity below the building at each wall layer [W/m K] 
 
-      real sfrb(ndm,nbui_max)        ! Sensible heat flux from roofs [W/m²]
-      real gfrb(ndm,nbui_max)        ! Heat flux flowing inside the roofs [W/m²]
-      real sfwb1D(2*ndm,nz_um)    !Sensible heat flux from the walls [W/m²] 
-      real sfwin(2*ndm,nz_um,nbui_max)!Sensible heat flux from windows [W/m²]
-      real sfwinb1D(2*ndm,nz_um)  !Sensible heat flux from windows [W/m²]
-      real gfwb1D(2*ndm,nz_um)    !Heat flux flowing inside the walls [W/m²]
+      real sfrb(ndm,nbui_max)        ! Sensible heat flux from roofs [W/m2]
+      real gfrb(ndm,nbui_max)        ! Heat flux flowing inside the roofs [W/m2]
+      real sfwb1D(2*ndm,nz_um)    !Sensible heat flux from the walls [W/m2] 
+      real sfwin(2*ndm,nz_um,nbui_max)!Sensible heat flux from windows [W/m2]
+      real sfwinb1D(2*ndm,nz_um)  !Sensible heat flux from windows [W/m2]
+      real gfwb1D(2*ndm,nz_um)    !Heat flux flowing inside the walls [W/m2]
 
       real qlev(nz_um,nbui_max)      !specific humidity [kg/kg]
       real qlevb1D(nz_um)         !specific humidity [kg/kg] 
@@ -1359,7 +1359,7 @@ MODULE module_sf_bep_bem
        gfrb=0.     !Heat flux flowing inside the roof
        sfwb1D=0.   !Sensible heat flux from walls
        sfwinb1D=0. !Sensible heat flux from windows
-       gfwb1D=0.   !Heat flux flowing inside the walls[W/m²]
+       gfwb1D=0.   !Heat flux flowing inside the walls[W/m2]
 
 
        twb1D=0.    !Wall temperature
@@ -4198,11 +4198,11 @@ MODULE module_sf_bep_bem
       real rlw(2*ndm,nz_um)         ! Long wave radiation at the walls for a given canyon direction [W/m2]
       real rsg(ndm)                   ! Short wave radiation at the canyon for a given canyon direction [W/m2]
       real rlg(ndm)                   ! Long wave radiation at the ground for a given canyon direction [W/m2]
-      real rs                        ! Short wave radiation at the horizontal surface from the sun [W/m²]  
-      real sfw(2*ndm,nz_um)      ! Sensible heat flux from walls [W/m²]
-      real sfg(ndm)              ! Sensible heat flux from ground (road) [W/m²]
-      real sfr(ndm,nz_um)      ! Sensible heat flux from roofs [W/m²]                      
-      real rld                        ! Long wave radiation from the sky [W/m²]
+      real rs                        ! Short wave radiation at the horizontal surface from the sun [W/m2]  
+      real sfw(2*ndm,nz_um)      ! Sensible heat flux from walls [W/m2]
+      real sfg(ndm)              ! Sensible heat flux from ground (road) [W/m2]
+      real sfr(ndm,nz_um)      ! Sensible heat flux from roofs [W/m2]                      
+      real rld                        ! Long wave radiation from the sky [W/m2]
       real albg_u                    ! albedo of the ground/street
       real albw_u                    ! albedo of the walls
       real albr_u                    ! albedo of the roof 
@@ -4229,7 +4229,7 @@ MODULE module_sf_bep_bem
       real twlev(2*ndm,nz_um)   !Averaged Temperature of the windows 
       real pwin                 !Coverage area fraction of the windows
       real gflwin               !Heat stored for the windows
-      real sfwind(2*ndm,nz_um)  !Sensible heat flux from windows [W/m²]
+      real sfwind(2*ndm,nz_um)  !Sensible heat flux from windows [W/m2]
 
 !OUTPUT/INPUT
       real rs_abs  ! absrobed solar radiationfor this street direction

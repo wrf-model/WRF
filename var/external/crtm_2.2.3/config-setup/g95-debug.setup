@@ -1,0 +1,19 @@
+#!/bin/sh
+#-------------------------------------------------------------------------------#
+# DEBUG build settings for Linux g95 compiler
+#-------------------------------------------------------------------------------#
+
+export FC="g95"
+
+export FCFLAGS="\
+-fbounds-check \
+-ffree-form \
+-fno-second-underscore \
+-ftrace=frame \
+-malign-double \
+-Wall"
+
+export LDFLAGS=""
+
+export LIBS=""
+

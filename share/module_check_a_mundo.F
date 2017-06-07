@@ -376,28 +376,6 @@
          model_config_rec%sf_urban_physics(i) = d1_value
       END DO
 
-!-----------------------------------------------------------------------
-! Check for consistency in the Noah-MP options
-!-----------------------------------------------------------------------
-
-      DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec%sf_surface_physics(i) == NOAHMPSCHEME ) THEN
-
-            ! Noah-MP does not work with the urban schemes
-
-            IF ( model_config_rec%sf_urban_physics(i) /= 0 ) THEN
-               WRITE(wrf_err_message, '(" --- ERROR:   Noah-MP LSM scheme (sf_surface_physics==", I2, ")")') NOAHMPSCHEME
-               CALL wrf_message ( TRIM ( wrf_err_message ) )
-               WRITE(wrf_err_message, '("              does not work with urban physics schemes")')
-         !      CALL wrf_error_fatal ( TRIM ( wrf_err_message ) )
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         fatal_error = .true.
-         count_fatal_error = count_fatal_error + 1
-            ENDIF
-
-         END IF
-      END DO
-
 !------------------------------------------------------------------------
 ! Mills (2011) sea-ice albedo treatment only for Noah LSM and Noah-MP LSM
 !------------------------------------------------------------------------
@@ -460,10 +438,9 @@
                wrf_err_message = '             and should not be changed from their default value for SPPT' 
                CALL wrf_message ( wrf_err_message )
                wrf_err_message = '--- ERROR: If you really want to modify "kminforct" etc.,  edit module_check a_mundo.'
-         !      CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         fatal_error = .true.
-         count_fatal_error = count_fatal_error + 1
+               CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+               fatal_error = .true.
+               count_fatal_error = count_fatal_error + 1
            endif
          endif
    ENDDO
@@ -476,12 +453,33 @@
                CALL wrf_message ( wrf_err_message )
                wrf_err_message = '             and should not be changed from their default value for RAND_PERTURB' 
                CALL wrf_message ( wrf_err_message )
-               wrf_err_message = ' ABORT. If you really want to modify "kminforct" etc.,  edit module_check a_mundo.'
-         !      CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         fatal_error = .true.
-         count_fatal_error = count_fatal_error + 1
+               wrf_err_message = '--- ERROR: If you really want to modify "kminforct" etc.,  edit module_check a_mundo.'
+               CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+               fatal_error = .true.
+               count_fatal_error = count_fatal_error + 1
            endif
+         endif
+   ENDDO
+   DO i = 1, model_config_rec % max_dom
+         IF (( model_config_rec % spp_conv(i) .ne. 0).or.( model_config_rec % spp_pbl(i) .ne. 0).or. (model_config_rec % spp_lsm(i) .ne. 0)  & 
+           .or. ( model_config_rec % spp(i) .ne. 0))  then
+           model_config_rec % spp_on=1
+           IF (( model_config_rec%KMINFORCT .ne. 1) .or. (model_config_rec%KMAXFORCT .ne. 1000000) .or.   & 
+               ( model_config_rec%LMINFORCT .ne. 1) .or. (model_config_rec%LMAXFORCT .ne. 1000000)) then    
+               wrf_err_message = '--- Warning: the namelist parameter "kminforct" etc are for SKEBS only'
+               CALL wrf_message ( wrf_err_message )
+               wrf_err_message = '             and should not be changed from their default value for RAND_PERTURB' 
+               CALL wrf_message ( wrf_err_message )
+               wrf_err_message = '--- ERROR: If you really want to modify "kminforct" etc.,  edit module_check a_mundo.'
+               CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+               fatal_error = .true.
+               count_fatal_error = count_fatal_error + 1
+           endif
+         endif
+         IF ( model_config_rec % spp(i) .ne. 0)  then
+           model_config_rec % spp_conv=1
+           model_config_rec % spp_pbl=1
+           model_config_rec % spp_lsm=1
          endif
    ENDDO
    DO i = 1, model_config_rec % max_dom
@@ -586,6 +584,13 @@
          model_config_rec%num_traj = 0 
    END IF
 
+#elif( NMM_CORE == 1 )
+!----------------------------------------------------------------------------
+! If NMM core and trajectories are on then halt.
+!----------------------------------------------------------------------------
+   IF ( model_config_rec%traj_opt /= 0 ) THEN
+     call wrf_error_fatal( 'Trajectories not supported in NMM core' )
+   END IF
 #endif
 
 #if (EM_CORE == 1)
@@ -1070,6 +1075,20 @@
       END IF
 
 !-----------------------------------------------------------------------
+! If hailcast_opt = 1, horizontal grid spacing must be 4 km or finer.
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec%hailcast_opt(i) .NE. 0 ) .AND. &
+              ( model_config_rec%dx(i) .GT. 4000 ) ) THEN
+            wrf_err_message = '--- WARNING:  hailcast_opt requires a grid-spacing of 4 km or finer.'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '---          hailcast_opt is now 0.'
+            CALL wrf_message ( wrf_err_message )
+            model_config_rec%hailcast_opt(i) = 0
+         ENDIF
+      ENDDO
+
+!-----------------------------------------------------------------------
 ! Name change in the namelist.input file.  We used to only have the
 ! ocean mixed layer option (omlcall=1).  With the addition of a 3D ocean,
 ! now let's change the name of the option.  If the old name is present,
@@ -1094,7 +1113,7 @@
 
       IF ( model_config_rec%use_adaptive_time_step ) THEN
          IF ( ( model_config_rec%cu_physics(1) .EQ. BMJSCHEME     ) .OR. &
-              ( model_config_rec%cu_physics(1) .EQ. MESO_SAS     ) .OR. &
+              ( model_config_rec%cu_physics(1) .EQ. SCALESASSCHEME) .OR. &
               ( model_config_rec%cu_physics(1) .EQ. SASSCHEME     ) .OR. &
               ( model_config_rec%cu_physics(1) .EQ. SCALESASSCHEME     ) .OR. &
               ( model_config_rec%cu_physics(1) .EQ. OSASSCHEME    ) .OR. &
@@ -1350,6 +1369,16 @@
          wrf_err_message = 'resetting scalar_pblmix = 1'
          CALL wrf_message ( wrf_err_message )
       END IF
+
+!-----------------------------------------------------------------------
+!  The hybrid vertical coordinate does not work with vertical refinement.
+!-----------------------------------------------------------------------
+     DO i=1,model_config_rec%max_dom
+        IF ((model_config_rec%vert_refine_method(i) .EQ. 2) .AND. (model_config_rec%hybrid_opt .EQ. 2)) THEN
+           WRITE(wrf_err_message,'(A)') '--- ERROR: The hybrid vertical coordinate does not work with vertical refinement.'
+           CALL wrf_message( wrf_err_message )
+        ENDIF
+     END DO 
 
 !-----------------------------------------------------------------------
 !  DJW Check that we're not using ndown and vertical nesting.

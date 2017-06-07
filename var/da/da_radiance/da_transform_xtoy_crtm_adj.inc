@@ -252,7 +252,7 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
 
          ! Gamma correction from VarBC
          !----------------------------
-#ifdef CRTM_MODIF
+!#ifdef CRTM_MODIF
          if (use_varbc) then
            gammapred = iv%instid(inst)%varbc_info%gammapred 
            do k = 1, nchanl
@@ -267,7 +267,7 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
            end do
          end if
          RTSolution_AD(:,n)%Gamma    = 0.0
-#endif
+!#endif
       end do
 
       do n =  iv%instid(inst)%info%n1, iv%instid(inst)%info%n2 ! loop for pixel
@@ -521,7 +521,7 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
       end do       !  end loop for pixels
 	 
          ! [1.7] Gamma correction to VarBC
-#ifdef CRTM_MODIF
+!#ifdef CRTM_MODIF
          if (use_varbc) then
            do k = 1, nchanl
               npred = iv%instid(inst)%varbc(k)%npred
@@ -540,7 +540,7 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
        ! Gathering Gamma correction across processors
        !--------------------------------------------- 
 !!!        call wrf_dm_sum_reals(cv_local, cv)
-#endif
+!#endif
       
         if (crtm_cloud) then
            call da_interp_lin_2d_adj_partial(jo_grad_x%qcw(:,:,kts:kte),iv%instid(inst)%info, kts,kte, qcw_ad)

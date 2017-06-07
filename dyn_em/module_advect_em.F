@@ -1,6 +1,128 @@
+#if ( HYBRID_COORD==1 ) 
+#  define mub(...) (c1(k)*XXPCBXX(__VA_ARGS__)+c2(k))
+#  define XXPCBXX(...) mub(__VA_ARGS__)
+
+#  define mut(...) (c1(k)*XXPCTXX(__VA_ARGS__)+c2(k))
+#  define XXPCTXX(...) mut(__VA_ARGS__)
+
+#  define mu_old(...) (c1(k)*XXPCOLDXX(__VA_ARGS__))
+#  define XXPCOLDXX(...) mu_old(__VA_ARGS__)
+#endif
+
 !WRF:MODEL_LAYER:DYNAMICS
 !
-#if ( ! defined(ADVECT_KERNEL) )
+#if ( defined(ADVECT_KERNEL) )
+! cpp -traditional -C -P -DADVECT_KERNEL module_advect_em.F > advection_kernel.f90
+! gfortran -ffree-form -ffree-line-length-none advection_kernel.f90
+! ./a.out
+MODULE advection_kernel
+   TYPE grid_config_rec_type
+      INTEGER :: scalar_adv_opt = 0
+      INTEGER :: h_sca_adv_order = 5
+      INTEGER :: v_sca_adv_order = 3
+      LOGICAL :: periodic_x = .false.
+      LOGICAL :: periodic_y = .false.
+      LOGICAL :: symmetric_xs = .false.
+      LOGICAL :: symmetric_xe = .false.
+      LOGICAL :: symmetric_ys = .false.
+      LOGICAL :: symmetric_ye = .false.
+      LOGICAL :: open_xs = .false.
+      LOGICAL :: open_xe = .false.
+      LOGICAL :: open_ys = .false.
+      LOGICAL :: open_ye = .false.
+      LOGICAL :: specified = .true.
+      LOGICAL :: nested = .false.
+      LOGICAL :: polar = .false.
+   END TYPE grid_config_rec_type
+   CHARACTER (LEN=256) :: wrf_err_message
+CONTAINS
+!----------------------------------------------------------------
+SUBROUTINE wrf_error_fatal ( message )
+   IMPLICIT NONE
+   CHARACTER(LEN=*) , INTENT(IN) :: message
+   PRINT *,'advect_scalar_pd: FATAL MESSAGE = ',TRIM(message)
+   STOP 12345
+END SUBROUTINE wrf_error_fatal
+!----------------------------------------------------------------
+SUBROUTINE init ( config_flags )
+   IMPLICIT NONE
+   TYPE (grid_config_rec_type) :: config_flags
+   config_flags%h_sca_adv_order = 5
+   config_flags%v_sca_adv_order = 3
+   config_flags%periodic_x = .true.
+   config_flags%periodic_y = .true.
+   config_flags%symmetric_xs = .false.
+   config_flags%symmetric_xe = .false.
+   config_flags%symmetric_ys = .false.
+   config_flags%symmetric_ye = .false.
+   config_flags%open_xs = .false.
+   config_flags%open_xe = .false.
+   config_flags%open_ys = .false.
+   config_flags%open_ye = .false.
+   config_flags%specified = .false.
+   config_flags%nested = .false.
+END SUBROUTINE init
+!----------------------------------------------------------------
+SUBROUTINE tophat ( field, num_scalars , &
+                                ids, ide, jds, jde, kds, kde, &
+                                ims, ime, jms, jme, kms, kme, &
+                                its, ite, jts, jte, kts, kte )
+   IMPLICIT NONE
+   INTEGER , INTENT(IN ) :: num_scalars ,     ids, ide, jds, jde, kds, kde, &
+                                              ims, ime, jms, jme, kms, kme, &
+                                              its, ite, jts, jte, kts, kte
+   REAL , DIMENSION( ims:ime , kms:kme , jms:jme , num_scalars ) , INTENT(OUT) :: field
+   INTEGER :: i, j, k , n
+
+   field = 0
+
+   DO n = 1 , num_scalars
+   DO j = jts , jte
+   DO k = kts , kte
+   DO i = its , ite
+      IF ( i .gt. 35 .and. i.lt. 55 ) THEN
+         field (i,k,j,n) = 1.
+      END IF
+   END DO
+   END DO
+   END DO
+   END DO
+END SUBROUTINE tophat
+!----------------------------------------------------------------
+SUBROUTINE column (loop , data_list, its,ite)
+   IMPLICIT NONE
+   INTEGER , INTENT(IN) :: loop, its, ite
+   REAL , INTENT(IN) , DIMENSION(its:ite) :: data_list
+   INTEGER , DIMENSION(its:ite) :: data_int
+   INTEGER :: i
+   CHARACTER (len = 10 ) :: filename
+
+   IF ( loop.EQ.0 ) THEN
+      OPEN (unit=7,file = "x_locations.txt" , &
+      form = "formatted" , &
+      access = "sequential" )
+      
+      DO i = its,ite
+         write (7,*) i
+      END DO
+      close (7)
+   END IF
+
+   WRITE(filename,fmt='(i6.6,".txt")') loop
+   OPEN (unit=7,file = filename , &
+   form = "formatted" , &
+   access = "sequential" )
+   
+   data_int = NINT(data_list * 100 )
+   DO i = its,ite
+      write (7,*) data_int(i)
+   END DO
+   close (7)
+   
+END SUBROUTINE column
+!----------------------------------------------------------------
+#elif ( ! defined(ADVECT_KERNEL) )
+
 MODULE module_advect_em
 
   USE module_bc
@@ -13,6 +135,7 @@ CONTAINS
 
 SUBROUTINE advect_u   ( u, u_old, tendency,            &
                         ru, rv, rom,                   &
+                        c1, c2,                        &
                         mut, time_step, config_flags,  &
                         msfux, msfuy, msfvx, msfvy,    &
                         msftx, msfty,                  &
@@ -50,7 +173,9 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
-                                                                  rdzw
+                                                                  rdzw, &
+                                                                  c1,   &
+                                                                  c2
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy
@@ -1414,6 +1539,7 @@ END SUBROUTINE advect_u
 
 SUBROUTINE advect_v   ( v, v_old, tendency,            &
                         ru, rv, rom,                   &
+                        c1, c2,                        &
                         mut, time_step, config_flags,  &
                         msfux, msfuy, msfvx, msfvy,    &
                         msftx, msfty,                  &
@@ -1451,7 +1577,9 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
-                                                                  rdzw
+                                                                  rdzw, &
+                                                                  c1,   &
+                                                                  c2
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy
@@ -2907,8 +3035,10 @@ END SUBROUTINE advect_v
 
 !-------------------------------------------------------------------
 
+#endif
 SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
                              ru, rv, rom,                   &
+                             c1, c2,                        &
                              mut, time_step, config_flags,  &
                              msfux, msfuy, msfvx, msfvy,    &
                              msftx, msfty,                  &
@@ -2946,7 +3076,9 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
-                                                                  rdzw
+                                                                  rdzw, &
+                                                                  c1,   &
+                                                                  c2
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy
@@ -4235,11 +4367,13 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
    ENDIF vert_order_test
 
 END SUBROUTINE advect_scalar
+#if ( ! defined(ADVECT_KERNEL) )
 
 !---------------------------------------------------------------------------------
 
 SUBROUTINE advect_w    ( w, w_old, tendency,            &
                          ru, rv, rom,                   &
+                         c1, c2,                        &
                          mut, time_step, config_flags,  &
                          msfux, msfuy, msfvx, msfvy,    &
                          msftx, msfty,                  &
@@ -4277,7 +4411,9 @@ SUBROUTINE advect_w    ( w, w_old, tendency,            &
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
-                                                                  rdzu
+                                                                  rdzu, &
+                                                                  c1,   &
+                                                                  c2
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy
@@ -5938,75 +6074,12 @@ ELSE IF (horz_order == 2 ) THEN
 END SUBROUTINE advect_w
 
 !----------------------------------------------------------------
-#else
-!  cpp -traditional -C -P -DADVECT_KERNEL module_advect_em.F > advection_kernel.f90
-!  ifort, pgfortran, gfortran advection_kernel.f90
-!  a.out
 
-MODULE advection_kernel
-
-   TYPE grid_config_rec_type
-      INTEGER :: h_sca_adv_order = 5
-      INTEGER :: v_sca_adv_order = 3
-
-      LOGICAL :: periodic_x = .false.
-      LOGICAL :: periodic_y = .false.
-
-      LOGICAL :: symmetric_xs = .false.
-      LOGICAL :: symmetric_xe = .false.
-      LOGICAL :: symmetric_ys = .false.
-      LOGICAL :: symmetric_ye = .false.
-
-      LOGICAL :: open_xs = .false.
-      LOGICAL :: open_xe = .false.
-      LOGICAL :: open_ys = .false.
-      LOGICAL :: open_ye = .false.
-
-      LOGICAL :: specified = .true.
-      LOGICAL :: nested = .false.
-      LOGICAL :: polar = .false.
-   END TYPE grid_config_rec_type
-
-   CHARACTER (LEN=256) :: wrf_err_message
-
-CONTAINS
-
-!----------------------------------------------------------------
-
-SUBROUTINE wrf_error_fatal ( message )
-   IMPLICIT NONE
-   CHARACTER(LEN=*) , INTENT(IN) :: message
-   PRINT *,'advect_scalar_pd: FATAL MESSAGE = ',TRIM(message)
-   STOP 12345
-END SUBROUTINE wrf_error_fatal
-
-!----------------------------------------------------------------
-
-SUBROUTINE init ( config_flags )
-   IMPLICIT NONE
-   TYPE (grid_config_rec_type)  :: config_flags
-   config_flags%h_sca_adv_order = 5
-   config_flags%v_sca_adv_order = 3
-   config_flags%periodic_x = .false.
-   config_flags%periodic_y = .false.
-   config_flags%symmetric_xs = .false.
-   config_flags%symmetric_xe = .false.
-   config_flags%symmetric_ys = .false.
-   config_flags%symmetric_ye = .false.
-   config_flags%open_xs = .false.
-   config_flags%open_xe = .false.
-   config_flags%open_ys = .false.
-   config_flags%open_ye = .false.
-   config_flags%specified = .true.
-   config_flags%nested = .false.
-END SUBROUTINE init
-
-!----------------------------------------------------------------
 #endif
-
 SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
                                 h_tendency, z_tendency,        & 
                                 ru, rv, rom,                   &
+                                c1, c2,                        &
                                 mut, mub, mu_old,              &
                                 time_step, config_flags,       &
                                 tenddec,                       & 
@@ -6060,7 +6133,9 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
-                                                                  rdzw
+                                                                  rdzw, &
+                                                                  c1,   &
+                                                                  c2
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy,  &
@@ -6089,7 +6164,9 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
    INTEGER :: jp1, jp0, jtmp
 
-   REAL :: flux_out, ph_low, scale
+   REAL,DIMENSION( its-1:ite+2, kts:kte, jts-1:jte+2  ) :: flux_out, ph_low
+   REAL :: scale
+   !REAL :: flux_out, ph_low, scale
    REAL, PARAMETER :: eps=1.e-20
 
 
@@ -7645,13 +7722,22 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 #endif
    DO i=i_start, i_end
 
-     ph_low = (mub(i,j)+mu_old(i,j))*field_old(i,k,j)        &
+     ph_low(i,k,j) = (mub(i,j)+mu_old(i,j))*field_old(i,k,j) &
                 - dt*( msftx(i,j)*msfty(i,j)*(               &
                        rdx*(fqxl(i+1,k,j)-fqxl(i,k,j)) +     &
                        rdy*(fqyl(i,k,j+1)-fqyl(i,k,j))  )    &
                       +msfty(i,j)*rdzw(k)*(fqzl(i,k+1,j)-fqzl(i,k,j)) )
 
-     flux_out = dt*( (msftx(i,j)*msfty(i,j))*(                    &
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j=j_start, j_end
+   DO k=kts, ktf
+!DIR$ vector always
+   DO i=i_start, i_end
+
+     flux_out(i,k,j) = dt*( (msftx(i,j)*msfty(i,j))*( &
                                 rdx*(  max(0.,fqx (i+1,k,j))      &
                                       -min(0.,fqx (i  ,k,j)) )    &
                                +rdy*(  max(0.,fqy (i,k,j+1))      &
@@ -7659,9 +7745,16 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
                 +msfty(i,j)*rdzw(k)*(  min(0.,fqz (i,k+1,j))      &
                                       -max(0.,fqz (i,k  ,j)) )   )
 
-     IF( flux_out .gt. ph_low ) THEN
+   ENDDO
+   ENDDO
+   ENDDO
 
-       scale = max(0.,ph_low/(flux_out+eps))
+   DO j=j_start, j_end
+   DO k=kts, ktf
+!DIR$ vector always
+   DO i=i_start, i_end
+     IF( flux_out(i,k,j) .gt. ph_low(i,k,j) ) THEN
+       scale = max(0.,ph_low(i,k,j)/(flux_out(i,k,j)+eps))
        IF( fqx (i+1,k,j) .gt. 0.) fqx(i+1,k,j) = scale*fqx(i+1,k,j)
        IF( fqx (i  ,k,j) .lt. 0.) fqx(i  ,k,j) = scale*fqx(i  ,k,j)
        IF( fqy (i,k,j+1) .gt. 0.) fqy(i,k,j+1) = scale*fqy(i,k,j+1)
@@ -7782,200 +7875,696 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
   END IF
 
 END SUBROUTINE advect_scalar_pd
-#if ( defined(ADVECT_KERNEL) )
 
 !----------------------------------------------------------------
 
-END MODULE advection_kernel
-
-!================================================================
-!================================================================
-
-PROGRAM feeder
-
-   USE advection_kernel
-
+SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
+                             ru, rv, rom,                   &
+                             c1, c2,                        &
+                             mut, time_step, config_flags,  &
+                             msfux, msfuy, msfvx, msfvy,    &
+                             msftx, msfty,                  &
+                             fzm, fzp,                      &
+                             rdx, rdy, rdzw,                &
+                             ids, ide, jds, jde, kds, kde,  &
+                             ims, ime, jms, jme, kms, kme,  &
+                             its, ite, jts, jte, kts, kte  )
+!
+! 5th-order WENO (Weighted Essentially Non-Oscillatory) scheme adapted from COMMAS.  
+! See Jiang and Shu, 1996, J. Comp. Phys. v. 126, 202-223; 
+! Shu 2003, Int. J. Comp. Fluid Dyn. v. 17 107-118;  Also used by Bryan 2005, Mon. Wea. Rev.
+!
    IMPLICIT NONE
    
-   INTEGER , PARAMETER :: MAX_SCALARS = 15
-
-   TYPE(grid_config_rec_type) :: config_flags
-
-   LOGICAL :: tenddec = .TRUE.
-
-   INTEGER :: ids, ide, jds, jde, kds, kde, &
-              ims, ime, jms, jme, kms, kme, &
-              its, ite, jts, jte, kts, kte
-
-   REAL , DIMENSION( :,:,:,: ) , ALLOCATABLE  :: field,     &
-                                               field_old
-   REAL , DIMENSION( :,:,: ) , ALLOCATABLE  :: ru,    &
-                                               rv,    &
-                                               rom
-
-   REAL , DIMENSION( :,: ), ALLOCATABLE :: mut, mub, mu_old
-
-   REAL , DIMENSION( :,:,: ), ALLOCATABLE  :: tendency
-
-   REAL , DIMENSION( :,:,: ), ALLOCATABLE  :: h_tendency, z_tendency 
-
-   REAL , DIMENSION( :,: ), ALLOCATABLE :: msfux,  &
-                                            msfuy,  &
-                                            msfvx,  &
-                                            msfvy,  &
-                                            msftx,  &
-                                            msfty
-
-   REAL , DIMENSION( : ), ALLOCATABLE :: fzm,  &
-                                  fzp,  &
-                                  rdzw, znw
-
-   REAL :: rdx,  &
-           rdy,  &
-           dt
-
-   INTEGER :: time_step, im
-
-   INTEGER :: i, j, k, loop
-
-   PRINT *,'Init dimensions'
-
-   ids =  1; ide = 90; jds =  1; jde = 90; kds =  1; kde = 50
-   ims = -5; ime = 55; jms = -5; jme = 55; kms = -5; kme = 55
-   its =  1; ite = 50; jts =  1; jte = 50; kts =  1; kte = 50
-
-
-   PRINT *,'ALLOCATE two 4d fields'
-   PRINT *,(ime-ims+1)*(kme-kms+1)*(jme-jms+1)*MAX_SCALARS
-   ALLOCATE ( field(ims:ime , kms:kme , jms:jme, MAX_SCALARS ) )
-   ALLOCATE ( field_old(ims:ime , kms:kme , jms:jme, MAX_SCALARS ) )
-
-   PRINT *,'ALLOCATE three 3d fields U, V, W'
-   PRINT *,(ime-ims+1)*(kme-kms+1)*(jme-jms+1)
-   ALLOCATE ( ru(ims:ime , kms:kme , jms:jme ) )
-   ALLOCATE ( rv(ims:ime , kms:kme , jms:jme ) )
-   ALLOCATE ( rom(ims:ime , kms:kme , jms:jme ) )
-
-   PRINT *,'ALLOCATE three 2d MU fields'
-   PRINT *,(ime-ims+1)*(jme-jms+1)
-   ALLOCATE ( mut( ims:ime , jms:jme ) )
-   ALLOCATE ( mub( ims:ime , jms:jme ) )
-   ALLOCATE ( mu_old( ims:ime , jms:jme ) )
-
-   PRINT *,'ALLOCATE three 3d tendency'
-   PRINT *,(ime-ims+1)*(kme-kms+1)*(jme-jms+1)
-   ALLOCATE ( tendency( ims:ime , kms:kme , jms:jme ) )
-   ALLOCATE ( h_tendency( ims:ime , kms:kme , jms:jme ) )
-   ALLOCATE ( z_tendency( ims:ime , kms:kme , jms:jme ) )
-
-   PRINT *,'ALLOCATE six 2d map factors'
-   PRINT *,(ime-ims+1)*(jme-jms+1)
-   ALLOCATE ( msfux( ims:ime , jms:jme ) )
-   ALLOCATE ( msfuy( ims:ime , jms:jme ) )
-   ALLOCATE ( msfvx( ims:ime , jms:jme ) )
-   ALLOCATE ( msfvy( ims:ime , jms:jme ) )
-   ALLOCATE ( msftx( ims:ime , jms:jme ) )
-   ALLOCATE ( msfty( ims:ime , jms:jme ) )
-
-   PRINT *,'ALLOCATE 1d arrays'
-   ALLOCATE ( fzm( kms:kme ) )
-   ALLOCATE ( fzp( kms:kme ) )
-   ALLOCATE ( rdzw( kms:kme ) )
-   ALLOCATE ( znw( kms:kme ) )
-
-   PRINT *,'CALL init'
-   CALL init ( config_flags)
-
-   PRINT *,'RANDOM two 3d fields'
-   CALL RANDOM_NUMBER ( field )
-   CALL RANDOM_NUMBER ( field_old )
-   field = field - 0.5
-   field_old = field_old - 0.5
-
-   PRINT *,'RANDOM three 3d tendencies'
-   CALL RANDOM_NUMBER ( tendency )
-   CALL RANDOM_NUMBER ( h_tendency )
-   CALL RANDOM_NUMBER ( z_tendency )
-   tendency = tendency - 0.5
-   h_tendency = h_tendency - 0.5
-   z_tendency = z_tendency - 0.5
-
-   PRINT *,'RANDOM three 2d MU'
-   mub =  95000
-   mut = 100000
-   CALL RANDOM_NUMBER ( mu_old )
-   mu_old = 100000 - mu_old*100
-
-   PRINT *,'RANDOM three 3d couple momentum'
-   CALL RANDOM_NUMBER ( ru )
-   CALL RANDOM_NUMBER ( rv )
-   CALL RANDOM_NUMBER ( rom )
-   DO j = jts, jte
-      DO k = kts, kte
-         DO i = its, ite
-            ru(i,k,j) = ru(i,k,j) * mut(i,j)
-            rv(i,k,j) = rv(i,k,j) * mut(i,j)
-            rom(i,k,j) = rom(i,k,j) * mut(i,j)
-         END DO
-      END DO
-   END DO
-
-   time_step = -1
-
-   msfux = 1
-   msfuy = 1
-   msfvx = 1
-   msfvy = 1
-   msftx = 1
-   msfty = 1
-
-   rdx = 1/10000.
-   rdy = 1/10000.
-
-   DO k = kts, kte
-      znw(k) = 1 - (real(k)-kts)/(real(kte)-kts)
-   END DO
-
-   DO k = kts, kte-1
-      rdzw(k) = 1./(znw(k)-znw(k+1))
-   END DO
-
-   CALL RANDOM_NUMBER ( fzm )
-   fzp = 1. - fzm 
-
-   !  Loop over advection enough times to get some meaningful timings.
-
-   DO loop = 1 , 100 
-
-      !  A representative number of times to call the advection in a time period.
-
-      PRINT *,'LOOP over scalars'
-      DO im = 1 , MAX_SCALARS
-         PRINT *,'CALL advect for loop = ',im,', of ',MAX_SCALARS,' loops'
-         CALL advect_scalar_pd       ( field(ims,kms,jms,im),              &
-                                         field_old(ims,kms,jms,im),          &
-                                         tendency(ims,kms,jms),              &
-                                         h_tendency(ims,kms,jms),            & 
-                                         z_tendency(ims,kms,jms),            & 
-                                         ru, rv, rom, mut, mub, mu_old,       &
-                                         time_step, config_flags, tenddec,   & 
-                                         msfux, msfuy, msfvx, msfvy,         &
-                                         msftx, msfty, fzm, fzp,             &
-                                         rdx, rdy, rdzw,dt,                  &
-                                         ids, ide, jds, jde, kds, kde,       &
-                                         ims, ime, jms, jme, kms, kme,       &
-                                         its, ite, jts, jte, kts, kte     )
+   ! Input data
    
-      END DO
-   END DO
+   TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
 
-END PROGRAM feeder
-#else
+   INTEGER ,                 INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
+                                              ims, ime, jms, jme, kms, kme, &
+                                              its, ite, jts, jte, kts, kte
+   
+   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(IN   ) :: field,     &
+                                                                      field_old, &
+                                                                      ru,    &
+                                                                      rv,    &
+                                                                      rom
 
-!----------------------------------------------------------------
+   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: mut
+   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: tendency
+
+   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: msfux,  &
+                                                                    msfuy,  &
+                                                                    msfvx,  &
+                                                                    msfvy,  &
+                                                                    msftx,  &
+                                                                    msfty
+
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
+                                                                  fzp,  &
+                                                                  rdzw, &
+                                                                  c1,   &
+                                                                  c2
+
+   REAL ,                                        INTENT(IN   ) :: rdx,  &
+                                                                  rdy
+   INTEGER ,                                     INTENT(IN   ) :: time_step
+
+
+   ! Local data
+   
+   INTEGER :: i, j, k, itf, jtf, ktf
+   INTEGER :: i_start, i_end, j_start, j_end
+   INTEGER :: i_start_f, i_end_f, j_start_f, j_end_f
+   INTEGER :: jmin, jmax, jp, jm, imin, imax
+
+   INTEGER , PARAMETER :: is=0, js=0, ks=0
+
+   REAL    :: mrdx, mrdy, ub, vb, vw
+   REAL , DIMENSION(its:ite, kts:kte) :: vflux
+
+
+   REAL,  DIMENSION( its-is:ite+1, kts:kte  ) :: fqx
+!   REAL,  DIMENSION( its:ite+1, kts:kte  ) :: fqx
+   REAL,  DIMENSION( its:ite, kts:kte, 2 ) :: fqy
+
+   INTEGER :: horz_order, vert_order
+   
+   LOGICAL :: degrade_xs, degrade_ys
+   LOGICAL :: degrade_xe, degrade_ye
+
+   INTEGER :: jp1, jp0, jtmp
+
+    real            :: dir, vv
+    real            :: ue,uw,vs,vn,wb,wt
+    real, parameter :: f30 =  7./12., f31 = 1./12.
+    real, parameter :: f50 = 37./60., f51 = 2./15., f52 = 1./60.
+
+
+   integer kt,kb
+   
+    
+    real               :: qim2, qim1, qi, qip1, qip2
+    double precision               :: beta0, beta1, beta2, f0, f1, f2, wi0, wi1, wi2, sumwk
+    double precision, parameter    :: gi0 = 1.d0/10.d0, gi1 = 6.d0/10.d0, gi2 = 3.d0/10.d0, eps=1.0d-28
+    integer, parameter :: pw = 2
+
+
+! definition of flux operators, 3rd, 4th, 5th or 6th order
+
+   REAL    :: flux3, flux4, flux5, flux6
+   REAL    :: q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua, vel
+
+      flux4(q_im2, q_im1, q_i, q_ip1, ua) =                     &
+            (7./12.)*(q_i + q_im1) - (1./12.)*(q_ip1 + q_im2)
+
+      flux3(q_im2, q_im1, q_i, q_ip1, ua) =                     &
+           flux4(q_im2, q_im1, q_i, q_ip1, ua) +                &
+           sign(1.,ua)*(1./12.)*((q_ip1 - q_im2)-3.*(q_i-q_im1))
+
+      flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =       &
+            (37./60.)*(q_i+q_im1) - (2./15.)*(q_ip1+q_im2)      &
+            +(1./60.)*(q_ip2+q_im3)
+
+      flux5(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =       &
+           flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua)    &
+            -sign(1,time_step)*sign(1.,ua)*(1./60.)*(           &
+              (q_ip2-q_im3)-5.*(q_ip1-q_im2)+10.*(q_i-q_im1) )
+
+   LOGICAL :: specified
+
+   specified = .false.
+   if(config_flags%specified .or. config_flags%nested) specified = .true.
+
+! set order for the advection schemes
+
+  ktf=MIN(kte,kde-1)
+  horz_order = 5 ! config_flags%h_sca_adv_order
+  vert_order = 5 ! config_flags%v_sca_adv_order
+
+!  begin with horizontal flux divergence
+!  here is the choice of flux operators
+
+
+
+  IF( horz_order == 5 ) THEN
+
+!  determine boundary mods for flux operators
+!  We degrade the flux operators from 3rd/4th order
+!   to second order one gridpoint in from the boundaries for
+!   all boundary conditions except periodic and symmetry - these
+!   conditions have boundary zone data fill for correct application
+!   of the higher order flux stencils
+
+   degrade_xs = .true.
+   degrade_xe = .true.
+   degrade_ys = .true.
+   degrade_ye = .true.
+
+   IF( config_flags%periodic_x   .or. &
+       config_flags%symmetric_xs .or. &
+       (its > ids+3)                ) degrade_xs = .false.
+   IF( config_flags%periodic_x   .or. &
+       config_flags%symmetric_xe .or. &
+       (ite < ide-3)                ) degrade_xe = .false.
+   IF( config_flags%periodic_y   .or. &
+       config_flags%symmetric_ys .or. &
+       (jts > jds+3)                ) degrade_ys = .false.
+   IF( config_flags%periodic_y   .or. &
+       config_flags%symmetric_ye .or. &
+       (jte < jde-4)                ) degrade_ye = .false.
+
+!--------------- y - advection first
+
+      ktf=MIN(kte,kde-1)
+      i_start = its
+      i_end   = MIN(ite,ide-1)
+
+
+! check for U
+      IF ( is == 1 ) THEN
+        i_start = its
+        i_end   = ite
+        IF ( config_flags%open_xs .or. specified ) i_start = MAX(ids+1,its)
+        IF ( config_flags%open_xe .or. specified ) i_end   = MIN(ide-1,ite)
+        IF ( config_flags%periodic_x ) i_start = its
+        IF ( config_flags%periodic_x ) i_end = ite
+      ENDIF
+
+      j_start = jts
+      j_end   = MIN(jte,jde-1)
+
+!  higher order flux has a 5 or 7 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+
+      j_start_f = j_start
+      j_end_f   = j_end+1
+
+      IF(degrade_ys) then
+        j_start = MAX(jts,jds+1)
+        j_start_f = jds+3
+      ENDIF
+
+      IF(degrade_ye) then
+        j_end = MIN(jte,jde-2)
+        j_end_f = jde-3
+      ENDIF
+
+      IF(config_flags%polar) j_end = MIN(jte,jde-1)
+
+!  compute fluxes, 5th or 6th order
+
+     jp1 = 2
+     jp0 = 1
+
+     j_loop_y_flux_5 : DO j = j_start, j_end+1
+
+      IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN ! use full stencil
+
+        DO k=kts,ktf
+        DO i = i_start, i_end
+!          vel = rv(i,k,j)
+          vel = 0.5*( rv(i,k,j) + rv(i-is,k-ks,j-js) )
+
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
+            qip2 = field(i,k,j+1)
+            qip1 = field(i,k,j  )
+            qi   = field(i,k,j-1)
+            qim1 = field(i,k,j-2)
+            qim2 = field(i,k,j-3)
+          ELSE
+            qip2 = field(i,k,j-2)
+            qip1 = field(i,k,j-1)
+            qi   = field(i,k,j  )
+            qim1 = field(i,k,j+1)
+            qim2 = field(i,k,j+2)
+         ENDIF
+    
+         f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
+         f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
+         f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
+    
+         beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
+         beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
+         beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
+    
+         wi0 = gi0 / (eps + beta0)**pw
+         wi1 = gi1 / (eps + beta1)**pw
+         wi2 = gi2 / (eps + beta2)**pw
+    
+         sumwk = wi0 + wi1 + wi2
+    
+          fqy( i, k, jp1 ) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
+
+!          fqy( i, k, jp1 ) = vel*flux5(                                &
+!                  field(i,k,j-3), field(i,k,j-2), field(i,k,j-1),       &
+!                  field(i,k,j  ), field(i,k,j+1), field(i,k,j+2),  vel )
+        ENDDO
+        ENDDO
+
+
+      ELSE IF ( j == jds+1 ) THEN   ! 2nd order flux next to south boundary
+
+            DO k=kts,ktf
+            DO i = i_start, i_end
+              fqy(i,k, jp1) = 0.5*rv(i,k,j)*          &
+!              fqy(i,k, jp1) = 0.5*0.5*( rv(i,k,j) + rv(i-is,k-ks,j-js) )*          &
+                     (field(i,k,j)+field(i,k,j-1))
+
+            ENDDO
+            ENDDO
+
+     ELSE IF  ( j == jds+2 ) THEN  ! third of 4th order flux 2 in from south boundary
+
+            DO k=kts,ktf
+            DO i = i_start, i_end
+!              vel = 0.5*( rv(i,k,j) + rv(i-is,k-ks,j-js) )
+              vel = rv(i,k,j)
+              fqy( i, k, jp1 ) = vel*flux3(              &
+                   field(i,k,j-2),field(i,k,j-1),field(i,k,j),field(i,k,j+1),vel )
+            ENDDO
+            ENDDO
+
+     ELSE IF ( j == jde-1 ) THEN  ! 2nd order flux next to north boundary
+
+            DO k=kts,ktf
+            DO i = i_start, i_end
+!              fqy(i, k, jp1) = 0.5*0.5*( rv(i,k,j) + rv(i-is,k-ks,j-js) )*      &
+              fqy(i, k, jp1) = 0.5*rv(i,k,j)*      &
+                     (field(i,k,j)+field(i,k,j-1))
+            ENDDO
+            ENDDO
+
+     ELSE IF ( j == jde-2 ) THEN  ! 3rd or 4th order flux 2 in from north boundary
+
+            DO k=kts,ktf
+            DO i = i_start, i_end
+              vel = rv(i,k,j)
+!              vel = 0.5*( rv(i,k,j) + rv(i-is,k-ks,j-js) )
+              fqy( i, k, jp1) = vel*flux3(             &
+                   field(i,k,j-2),field(i,k,j-1),    &
+                   field(i,k,j),field(i,k,j+1),vel )
+            ENDDO
+            ENDDO
+
+     ENDIF
+
+!  y flux-divergence into tendency
+
+      IF ( is == 0 ) THEN
+        ! Comments on polar boundary conditions
+        ! Same process as for advect_u - tendencies run from jds to jde-1 
+        ! (latitudes are as for u grid, longitudes are displaced)
+        ! Therefore: flow is only from one side for points next to poles
+        IF ( config_flags%polar .AND. (j == jds+1) ) THEN
+          DO k=kts,ktf
+          DO i = i_start, i_end
+            mrdy=msftx(i,j-1)*rdy     ! see ADT eqn 48 [rho->rho*q] dividing by my, 2nd term RHS
+            tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
+          END DO
+          END DO
+        ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
+          DO k=kts,ktf
+          DO i = i_start, i_end
+            mrdy=msftx(i,j-1)*rdy     ! see ADT eqn 48 [rho->rho*q] dividing by my, 2nd term RHS
+            tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
+          END DO
+          END DO
+        ELSE  ! normal code
+
+        IF(j > j_start) THEN
+
+          DO k=kts,ktf
+          DO i = i_start, i_end
+            mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 48 [rho->rho*q] dividing by my, 2nd term RHS
+            tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*(fqy(i,k,jp1)-fqy(i,k,jp0))
+          ENDDO
+          ENDDO
+
+        ENDIF
+        ENDIF
+       ELSEIF ( is == 1 ) THEN
+
+        ! (j > j_start) will miss the u(,,jds) tendency
+        IF ( config_flags%polar .AND. (j == jds+1) ) THEN
+          DO k=kts,ktf
+          DO i = i_start, i_end
+            mrdy=msfux(i,j-1)*rdy   ! ADT eqn 44, 2nd term on RHS
+            tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
+          END DO
+          END DO
+        ! This would be seen by (j > j_start) but we need to zero out the NP tendency
+        ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
+          DO k=kts,ktf
+          DO i = i_start, i_end
+            mrdy=msfux(i,j-1)*rdy   ! ADT eqn 44, 2nd term on RHS
+            tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
+          END DO
+          END DO
+        ELSE  ! normal code
+
+        IF(j > j_start) THEN
+
+          DO k=kts,ktf
+          DO i = i_start, i_end
+            mrdy=msfux(i,j-1)*rdy   ! ADT eqn 44, 2nd term on RHS
+            tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*(fqy(i,k,jp1)-fqy(i,k,jp0))
+          ENDDO
+          ENDDO
+
+        ENDIF
+
+        END IF
+       
+       ENDIF
+
+        jtmp = jp1
+        jp1 = jp0
+        jp0 = jtmp
+
+      ENDDO j_loop_y_flux_5
+
+!  next, x - flux divergence
+
+      i_start = its
+      i_end   = MIN(ite,ide-1)
+
+      j_start = jts
+      j_end   = MIN(jte,jde-1)
+
+!  higher order flux has a 5 or 7 point stencil, so compute
+!  bounds so we can switch to second order flux close to the boundary
+
+      i_start_f = i_start
+      i_end_f   = i_end+1
+
+      IF(degrade_xs) then
+        i_start = MAX(ids+1,its)
+!        i_start_f = i_start+2
+        i_start_f = MIN(i_start+2,ids+3)
+      ENDIF
+
+      IF(degrade_xe) then
+        i_end = MIN(ide-2,ite)
+        i_end_f = ide-3
+      ENDIF
+
+!  compute fluxes
+
+      DO j = j_start, j_end
+
+!  5th or 6th order flux
+
+        DO k=kts,ktf
+        DO i = i_start_f, i_end_f
+!          vel = ru(i,k,j)
+          vel = 0.5*( ru(i,k,j) + ru(i-is,k-ks,j-js) )
+
+
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
+            qip2 = field(i+1,k,j)
+            qip1 = field(i,  k,j)
+            qi   = field(i-1,k,j)
+            qim1 = field(i-2,k,j)
+            qim2 = field(i-3,k,j)
+          ELSE
+            qip2 = field(i-2,k,j)
+            qip1 = field(i-1,k,j)
+            qi   = field(i,  k,j)
+            qim1 = field(i+1,k,j)
+            qim2 = field(i+2,k,j)
+         ENDIF
+    
+         f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
+         f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
+         f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
+    
+         beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
+         beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
+         beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
+    
+         wi0 = gi0 / (eps + beta0)**pw
+         wi1 = gi1 / (eps + beta1)**pw
+         wi2 = gi2 / (eps + beta2)**pw
+    
+         sumwk = wi0 + wi1 + wi2
+    
+         fqx(i,k) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
+
+!          fqx( i,k ) = vel*flux5( field(i-3,k,j), field(i-2,k,j),  &
+!                                         field(i-1,k,j), field(i  ,k,j),  &
+!                                         field(i+1,k,j), field(i+2,k,j),  &
+!                                         vel                             )
+        ENDDO
+        ENDDO
+
+!  lower order fluxes close to boundaries (if not periodic or symmetric)
+
+        IF( degrade_xs ) THEN
+
+          DO i=i_start,i_start_f-1
+
+            IF(i == ids+1) THEN ! second order
+              DO k=kts,ktf
+                fqx(i,k) = 0.5*(ru(i,k,j)) &
+                       *(field(i,k,j)+field(i-1,k,j))
+              ENDDO
+            ENDIF
+
+            IF(i == ids+2) THEN  ! third order
+              DO k=kts,ktf
+                vel = ru(i,k,j)
+                fqx( i,k ) = vel*flux3( field(i-2,k,j), field(i-1,k,j),  &
+                                              field(i  ,k,j), field(i+1,k,j),  &
+                                              vel                     )
+              ENDDO
+            END IF
+
+          ENDDO
+
+        ENDIF
+
+        IF( degrade_xe ) THEN
+
+          DO i = i_end_f+1, i_end+1
+
+            IF( i == ide-1 ) THEN ! second order flux next to the boundary
+              DO k=kts,ktf
+                fqx(i,k) = 0.5*(ru(i,k,j))      &
+                       *(field(i,k,j)+field(i-1,k,j))
+              ENDDO
+           ENDIF
+
+           IF( i == ide-2 ) THEN ! third order flux one in from the boundary
+             DO k=kts,ktf
+               vel = ru(i,k,j)
+               fqx( i,k ) = vel*flux3( field(i-2,k,j), field(i-1,k,j),  &
+                                       field(i  ,k,j), field(i+1,k,j),  &
+                                       vel                             )
+             ENDDO
+           ENDIF
+
+         ENDDO
+
+       ENDIF
+
+!  x flux-divergence into tendency
+
+       IF ( is == 0 ) THEN
+          DO k=kts,ktf
+          DO i = i_start, i_end
+            mrdx=msftx(i,j)*rdx      ! see ADT eqn 48 [rho->rho*q] dividing by my, 1st term RHS
+            tendency(i,k,j) = tendency(i,k,j) - mrdx*(fqx(i+1,k)-fqx(i,k))
+          ENDDO
+          ENDDO
+       ELSEIF ( is == 1 ) THEN
+        DO k=kts,ktf
+          DO i = i_start, i_end
+            mrdx=msfux(i,j)*rdx ! ADT eqn 44, 1st term on RHS
+            tendency(i,k,j) = tendency(i,k,j) - mrdx*(fqx(i+1,k)-fqx(i,k))
+          ENDDO
+        ENDDO
+       ENDIF
+
+      ENDDO
+
+
+   ENDIF
+   
+
+!  pick up the rest of the horizontal radiation boundary conditions.
+!  (these are the computations that don't require 'cb'.
+!  first, set to index ranges
+
+      i_start = its
+      i_end   = MIN(ite,ide-1)
+      j_start = jts
+      j_end   = MIN(jte,jde-1)
+
+!  compute x (u) conditions for v, w, or scalar
+
+   IF( (config_flags%open_xs) .and. (its == ids) ) THEN
+
+       DO j = j_start, j_end
+       DO k = kts, ktf
+         ub = MIN( 0.5*(ru(its,k,j)+ru(its+1,k,j)), 0. )
+         tendency(its,k,j) = tendency(its,k,j)                     &
+               - rdx*(                                             &
+                       ub*(   field_old(its+1,k,j)                 &
+                            - field_old(its  ,k,j)   ) +           &
+                       field(its,k,j)*(ru(its+1,k,j)-ru(its,k,j))  &
+                                                                )
+       ENDDO
+       ENDDO
+
+   ENDIF
+
+   IF( (config_flags%open_xe) .and. (ite == ide) ) THEN
+
+       DO j = j_start, j_end
+       DO k = kts, ktf
+         ub = MAX( 0.5*(ru(ite-1,k,j)+ru(ite,k,j)), 0. )
+         tendency(i_end,k,j) = tendency(i_end,k,j)                   &
+               - rdx*(                                               &
+                       ub*(  field_old(i_end  ,k,j)                  &
+                           - field_old(i_end-1,k,j) ) +              &
+                       field(i_end,k,j)*(ru(ite,k,j)-ru(ite-1,k,j))  &
+                                                                    )
+       ENDDO
+       ENDDO
+
+   ENDIF
+
+   IF( (config_flags%open_ys) .and. (jts == jds) ) THEN
+
+       DO i = i_start, i_end
+       DO k = kts, ktf
+         vb = MIN( 0.5*(rv(i,k,jts)+rv(i,k,jts+1)), 0. )
+         tendency(i,k,jts) = tendency(i,k,jts)                     &
+               - rdy*(                                             &
+                       vb*(  field_old(i,k,jts+1)                  &
+                           - field_old(i,k,jts  ) ) +              &
+                       field(i,k,jts)*(rv(i,k,jts+1)-rv(i,k,jts))  &
+                                                                )
+       ENDDO
+       ENDDO
+
+   ENDIF
+
+   IF( (config_flags%open_ye) .and. (jte == jde)) THEN
+
+       DO i = i_start, i_end
+       DO k = kts, ktf
+         vb = MAX( 0.5*(rv(i,k,jte-1)+rv(i,k,jte)), 0. )
+         tendency(i,k,j_end) = tendency(i,k,j_end)                   &
+               - rdy*(                                               &
+                       vb*(   field_old(i,k,j_end  )                 &
+                            - field_old(i,k,j_end-1) ) +             &
+                       field(i,k,j_end)*(rv(i,k,jte)-rv(i,k,jte-1))  &
+                                                                    )
+       ENDDO
+       ENDDO
+
+   ENDIF
+
+
+!-------------------- vertical advection
+!     Scalar equation has 3rd term on RHS = - partial d/dz (q rho w /my)
+!     Here we have: - partial d/dz (q*rom) = - partial d/dz (q rho w / my)
+!     So we don't need to make a correction for advect_scalar
+
+      i_start = its
+      i_end   = MIN(ite,ide-1)
+      j_start = jts
+      j_end   = MIN(jte,jde-1)
+
+      DO i = i_start, i_end
+         vflux(i,kts)=0.
+         vflux(i,kte)=0.
+      ENDDO
+
+
+
+      DO j = j_start, j_end
+
+         DO k=kts+3,ktf-2
+         DO i = i_start, i_end
+!           vel = rom(i,k,j)
+           vel = 0.5*( rom(i,k,j) + rom(i-is,k-ks,j-js) )
+
+         IF( -vel*sign(1,time_step) .ge. 0.0 ) THEN
+            qip2 = field(i,k+1,j)
+            qip1 = field(i,k  ,j)
+            qi   = field(i,k-1,j)
+            qim1 = field(i,k-2,j)
+            qim2 = field(i,k-3,j)
+          ELSE
+            qip2 = field(i,k-2,j)
+            qip1 = field(i,k-1,j)
+            qi   = field(i,k  ,j)
+            qim1 = field(i,k+1,j)
+            qim2 = field(i,k+2,j)
+         ENDIF
+    
+         f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
+         f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
+         f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
+    
+         beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
+         beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
+         beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
+    
+         wi0 = gi0 / (eps + beta0)**pw
+         wi1 = gi1 / (eps + beta1)**pw
+         wi2 = gi2 / (eps + beta2)**pw
+    
+         sumwk = wi0 + wi1 + wi2
+    
+          vflux(i,k) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
+
+!           vflux(i,k) = vel*flux5(                                 &
+!                   field(i,k-3,j), field(i,k-2,j), field(i,k-1,j),       &
+!                   field(i,k  ,j), field(i,k+1,j), field(i,k+2,j),  -vel )
+         ENDDO
+         ENDDO
+
+         DO i = i_start, i_end
+
+           k=kts+1
+           vflux(i,k)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
+                                   
+           k = kts+2
+           vel=rom(i,k,j) 
+           vflux(i,k) = vel*flux3(               &
+                   field(i,k-2,j), field(i,k-1,j),   &
+                   field(i,k  ,j), field(i,k+1,j), -vel )
+           k = ktf-1
+           vel=rom(i,k,j)
+           vflux(i,k) = vel*flux3(               &
+                   field(i,k-2,j), field(i,k-1,j),   &
+                   field(i,k  ,j), field(i,k+1,j), -vel )
+
+           k=ktf
+           vflux(i,k)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
+         ENDDO
+
+         DO k=kts,ktf
+         DO i = i_start, i_end
+            tendency(i,k,j)=tendency(i,k,j)-rdzw(k)*(vflux(i,k+1)-vflux(i,k))
+         ENDDO
+         ENDDO
+
+      ENDDO
+
+
+
+END SUBROUTINE advect_scalar_weno
+
+!---------------------------------------------------------------------------------
 
 SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
                                 ru, rv, rom,                   &
+                                c1, c2,                        &
                                 mut, mub, mu_old,              &
                                 time_step, config_flags,       &
                                 msfux, msfuy, msfvx, msfvy,    &
@@ -8032,7 +8621,9 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
-                                                                  rdzw
+                                                                  rdzw, &
+                                                                  c1,   &
+                                                                  c2
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy,  &
@@ -8059,8 +8650,9 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
    LOGICAL :: degrade_xe, degrade_ye
 
    INTEGER :: jp1, jp0, jtmp
-
-   REAL :: flux_out, ph_low, scale
+   
+   REAL,DIMENSION( its-1:ite+2, kts:kte, jts-1:jte+2  ) :: flux_out, ph_low
+   REAL :: scale
    REAL, PARAMETER :: eps=1.e-20
 
     real            :: dir, vv
@@ -8201,7 +8793,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
           cr = vel*dt/dy/mu
           fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
 
-         IF ( vel .ge. 0.0 ) THEN
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = field(i,k,j+1)
             qip1 = field(i,k,j  )
             qi   = field(i,k,j-1)
@@ -8363,7 +8955,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
           fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
 
 
-         IF ( vel .ge. 0.0 ) THEN
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = field(i+1,k,j)
             qip1 = field(i,  k,j)
             qi   = field(i-1,k,j)
@@ -8634,7 +9226,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
 
 
-         IF( -vel .ge. 0.0 ) THEN
+         IF( -vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = field(i,k+1,j)
             qip1 = field(i,k  ,j)
             qi   = field(i,k-1,j)
@@ -8771,15 +9363,29 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
 
    DO j=j_start, j_end
    DO k=kts, ktf
+#ifdef XEON_SIMD
+!DIR$ simd
+#else
+!DIR$ vector always
+#endif
    DO i=i_start, i_end
 
-     ph_low = (mub(i,j)+mu_old(i,j))*field_old(i,k,j)        &
+     ph_low(i,k,j) = (mub(i,j)+mu_old(i,j))*field_old(i,k,j)        &
                 - dt*( msftx(i,j)*msfty(i,j)*(               &
                        rdx*(fqxl(i+1,k,j)-fqxl(i,k,j)) +     &
                        rdy*(fqyl(i,k,j+1)-fqyl(i,k,j))  )    &
                       +msfty(i,j)*rdzw(k)*(fqzl(i,k+1,j)-fqzl(i,k,j)) )
 
-     flux_out = dt*( (msftx(i,j)*msfty(i,j))*(                    &
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j=j_start, j_end
+   DO k=kts, ktf
+!DIR$ vector always
+   DO i=i_start, i_end
+
+     flux_out(i,k,j) = dt*( (msftx(i,j)*msfty(i,j))*(                    &
                                 rdx*(  max(0.,fqx (i+1,k,j))      &
                                       -min(0.,fqx (i  ,k,j)) )    &
                                +rdy*(  max(0.,fqy (i,k,j+1))      &
@@ -8787,9 +9393,18 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
                 +msfty(i,j)*rdzw(k)*(  min(0.,fqz (i,k+1,j))      &
                                       -max(0.,fqz (i,k  ,j)) )   )
 
-     IF( flux_out .gt. ph_low ) THEN
+   ENDDO
+   ENDDO
+   ENDDO
 
-       scale = max(0.,ph_low/(flux_out+eps))
+   DO j=j_start, j_end
+   DO k=kts, ktf
+!DIR$ vector always
+   DO i=i_start, i_end
+
+     IF( flux_out(i,k,j) .gt. ph_low(i,k,j) ) THEN
+
+       scale = max(0.,ph_low(i,k,j)/(flux_out(i,k,j)+eps))
        IF( fqx (i+1,k,j) .gt. 0.) fqx(i+1,k,j) = scale*fqx(i+1,k,j)
        IF( fqx (i  ,k,j) .lt. 0.) fqx(i  ,k,j) = scale*fqx(i  ,k,j)
        IF( fqy (i,k,j+1) .gt. 0.) fqy(i,k,j+1) = scale*fqy(i,k,j+1)
@@ -8872,6 +9487,7 @@ END SUBROUTINE advect_scalar_wenopd
 SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
                                   h_tendency, z_tendency,        & 
                                   ru, rv, rom,                   &
+                                  c1, c2,                        &
                                   mut, mub, mu_old,              &
                                   config_flags,                  &
                                   tenddec,                       & 
@@ -8923,7 +9539,9 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
-                                                                  rdzw
+                                                                  rdzw, &
+                                                                  c1,   &
+                                                                  c2
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy,  &
@@ -9818,8 +10436,222 @@ END SUBROUTINE advect_scalar_mono
 
 !-----------------------------------------------------------
 
+#if ( defined(ADVECT_KERNEL) )
 
-SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
+END MODULE advection_kernel
+!================================================================
+!================================================================
+PROGRAM feeder
+   USE advection_kernel
+   IMPLICIT NONE
+   INTEGER , PARAMETER :: MAX_SCALARS = 1
+   TYPE(grid_config_rec_type) :: config_flags
+   LOGICAL :: tenddec = .false.
+   INTEGER :: ids, ide, jds, jde, kds, kde, &
+              ims, ime, jms, jme, kms, kme, &
+              its, ite, jts, jte, kts, kte
+   REAL , DIMENSION( :,:,:,: ) , ALLOCATABLE :: field, &
+                                               field_old
+   REAL , DIMENSION( :,:,: ) , ALLOCATABLE :: ru, &
+                                               rv, &
+                                               rom
+   REAL , DIMENSION( :,: ), ALLOCATABLE :: mut, mub, mu_old
+   REAL , DIMENSION( :,:,: ), ALLOCATABLE :: tendency
+   REAL , DIMENSION( :,:,: ), ALLOCATABLE :: h_tendency, z_tendency
+   REAL , DIMENSION( :,: ), ALLOCATABLE :: msfux, &
+                                            msfuy, &
+                                            msfvx, &
+                                            msfvy, &
+                                            msftx, &
+                                            msfty
+   REAL , DIMENSION( : ), ALLOCATABLE :: fzm, &
+                                  fzp, &
+                                  rdzw, znw,dnw, rdnw, dn, rdn
+   REAL :: rdx, &
+           rdy, &
+           dt
+   INTEGER :: time_step, im
+   INTEGER :: i, j, k, n, loop
+
+   config_flags%scalar_adv_opt = 2
+
+   PRINT *,'Init dimensions'
+   ids = 1; ide = 91; jds = 1; jde = 3; kds = 1; kde =10 
+   ims = -5; ime = 96; jms = -5; jme = 8; kms = 1; kme = 10
+   its = 1; ite = 91; jts = 1; jte = 3; kts = 1; kte = 10
+   PRINT *,'ALLOCATE two 4d fields'
+   PRINT *,(ime-ims+1)*(kme-kms+1)*(jme-jms+1)*MAX_SCALARS
+   ALLOCATE ( field(ims:ime , kms:kme , jms:jme, MAX_SCALARS ) )
+   ALLOCATE ( field_old(ims:ime , kms:kme , jms:jme, MAX_SCALARS ) )
+   PRINT *,'ALLOCATE three 3d fields U, V, W'
+   PRINT *,(ime-ims+1)*(kme-kms+1)*(jme-jms+1)
+   ALLOCATE ( ru(ims:ime , kms:kme , jms:jme ) )
+   ALLOCATE ( rv(ims:ime , kms:kme , jms:jme ) )
+   ALLOCATE ( rom(ims:ime , kms:kme , jms:jme ) )
+   PRINT *,'ALLOCATE three 2d MU fields'
+   PRINT *,(ime-ims+1)*(jme-jms+1)
+   ALLOCATE ( mut( ims:ime , jms:jme ) )
+   ALLOCATE ( mub( ims:ime , jms:jme ) )
+   ALLOCATE ( mu_old( ims:ime , jms:jme ) )
+   PRINT *,'ALLOCATE three 3d tendency'
+   PRINT *,(ime-ims+1)*(kme-kms+1)*(jme-jms+1)
+   ALLOCATE ( tendency( ims:ime , kms:kme , jms:jme ) )
+   ALLOCATE ( h_tendency( ims:ime , kms:kme , jms:jme ) )
+   ALLOCATE ( z_tendency( ims:ime , kms:kme , jms:jme ) )
+   PRINT *,'ALLOCATE six 2d map factors'
+   PRINT *,(ime-ims+1)*(jme-jms+1)
+   ALLOCATE ( msfux( ims:ime , jms:jme ) )
+   ALLOCATE ( msfuy( ims:ime , jms:jme ) )
+   ALLOCATE ( msfvx( ims:ime , jms:jme ) )
+   ALLOCATE ( msfvy( ims:ime , jms:jme ) )
+   ALLOCATE ( msftx( ims:ime , jms:jme ) )
+   ALLOCATE ( msfty( ims:ime , jms:jme ) )
+   PRINT *,'ALLOCATE 1d arrays'
+   ALLOCATE ( fzm( kms:kme ) )
+   ALLOCATE ( fzp( kms:kme ) )
+   ALLOCATE ( rdzw( kms:kme ) )
+   ALLOCATE ( znw( kms:kme ) )
+   ALLOCATE ( dnw( kms:kme ) )
+   ALLOCATE (rdnw( kms:kme ) )
+   ALLOCATE ( dn ( kms:kme ) )
+   ALLOCATE (rdn ( kms:kme ) )
+   PRINT *,'CALL init'
+   CALL init ( config_flags)
+   CALL tophat ( field , MAX_SCALARS ,&
+      ids, ide, jds, jde, kds, kde, &
+      ims, ime, jms, jme, kms, kme, &
+      its, ite, jts, jte, kts, kte )
+   CALL tophat ( field_old , MAX_SCALARS , &
+      ids, ide, jds, jde, kds, kde, &
+      ims, ime, jms, jme, kms, kme, &
+      its, ite, jts, jte, kts, kte )
+   h_tendency = 0
+   z_tendency = 0
+   mub = 1
+   mut = 1
+   mu_old = 0
+   ru = 90 
+   rv = 0
+   rom = 0
+   msfux = 1
+   msfuy = 1
+   msfvx = 1
+   msfvy = 1
+   msftx = 1
+   msfty = 1
+   rdx = 1/1000.
+   rdy = 1/1000.
+   DO k = kts, kte
+      znw(k) = 1 - (real(k)-kts)/(real(kte)-kts)
+   END DO
+   DO k = kts, kte-1
+      rdzw(k) = 1./(znw(k)-znw(k+1))
+   END DO
+   DO k=1, kde-1
+    dnw(k) = znw(k+1) - znw(k)
+    rdnw(k) = 1./dnw(k)
+   ENDDO
+   DO k=2, kde-1
+    dn(k) = 0.5*(dnw(k)+dnw(k-1))
+    rdn(k) = 1./dn(k)
+    fzp(k) = .5* dnw(k  )/dn(k)
+    fzm(k) = .5* dnw(k-1)/dn(k)
+   ENDDO
+
+   time_step = 5
+   dt = time_step
+
+   field = field_old
+
+   ! Loop over advection enough times to get some meaningful timings.
+   CALL column ( 0 , field(:,1,2,1) , its, ite )
+   DO loop = 1 , 2000
+      ! A representative number of times to call the advection in a time period.
+      IF ( loop .EQ. ((loop)/200)*200 )THEN
+      PRINT *,'LOOP over scalars',loop
+      END IF
+      DO im = 1 , MAX_SCALARS
+
+         tendency = 0
+         CALL advect_scalar    ( field(ims,kms,jms,im), &
+                                 field_old(ims,kms,jms,im), &
+                                 tendency(ims,kms,jms), &
+                                 ru, rv, rom,                   &
+                                 mut, time_step/3, config_flags,  &
+                                 msfux, msfuy, msfvx, msfvy,    &
+                                 msftx, msfty,                  &
+                                 fzm, fzp,                      &
+                                 rdx, rdy, rdzw,                &
+                                 ids, ide, jds, jde, kds, kde,  &
+                                 ims, ime, jms, jme, kms, kme,  &
+                                 its, ite, jts, jte, kts, kte  )
+         DO n = 1 , MAX_SCALARS
+            field(:,:,:,n) = field_old(:,:,:,n) + dt * tendency(:,:,:) / 3.
+         END DO
+
+         tendency = 0
+         CALL advect_scalar    ( field(ims,kms,jms,im), &
+                                 field_old(ims,kms,jms,im), &
+                                 tendency(ims,kms,jms), &
+                                 ru, rv, rom,                   &
+                                 mut, time_step/2, config_flags,  &
+                                 msfux, msfuy, msfvx, msfvy,    &
+                                 msftx, msfty,                  &
+                                 fzm, fzp,                      &
+                                 rdx, rdy, rdzw,                &
+                                 ids, ide, jds, jde, kds, kde,  &
+                                 ims, ime, jms, jme, kms, kme,  &
+                                 its, ite, jts, jte, kts, kte  )
+         DO n = 1 , MAX_SCALARS
+            field(:,:,:,n) = field_old(:,:,:,n) + dt * tendency(:,:,:) / 2.
+         END DO
+
+         tendency = 0
+         IF      (config_flags%scalar_adv_opt .EQ. 0 ) THEN
+            CALL advect_scalar    ( field(ims,kms,jms,im), &
+                                    field_old(ims,kms,jms,im), &
+                                    tendency(ims,kms,jms), &
+                                    ru, rv, rom,                   &
+                                    mut, time_step, config_flags,  &
+                                    msfux, msfuy, msfvx, msfvy,    &
+                                    msftx, msfty,                  &
+                                    fzm, fzp,                      &
+                                    rdx, rdy, rdzw,                &
+                                    ids, ide, jds, jde, kds, kde,  &
+                                    ims, ime, jms, jme, kms, kme,  &
+                                    its, ite, jts, jte, kts, kte  )
+         ELSE IF (config_flags%scalar_adv_opt .EQ. 1 ) THEN
+            CALL advect_scalar_pd ( field(ims,kms,jms,im), &
+                                    field_old(ims,kms,jms,im), &
+                                    tendency(ims,kms,jms), &
+                                    h_tendency(ims,kms,jms), &
+                                    z_tendency(ims,kms,jms), &
+                                    ru, rv, rom, mut, mub, mu_old, &
+                                    time_step, config_flags, tenddec, &
+                                    msfux, msfuy, msfvx, msfvy, &
+                                    msftx, msfty, fzm, fzp, &
+                                    rdx, rdy, rdzw,dt, &
+                                    ids, ide, jds, jde, kds, kde, &
+                                    ims, ime, jms, jme, kms, kme, &
+                                    its, ite, jts, jte, kts, kte )
+         ELSE IF (config_flags%scalar_adv_opt .EQ. 2 ) THEN
+            CALL advect_scalar_mono ( field(ims,kms,jms,im), &
+                                    field_old(ims,kms,jms,im), &
+                                    tendency(ims,kms,jms), &
+                                    h_tendency(ims,kms,jms), &
+                                    z_tendency(ims,kms,jms), &
+                                    ru, rv, rom, mut, mub, mu_old, &
+                                    config_flags, tenddec, &
+                                    msfux, msfuy, msfvx, msfvy, &
+                                    msftx, msfty, fzm, fzp, &
+                                    rdx, rdy, rdzw,dt, &
+                                    ids, ide, jds, jde, kds, kde, &
+                                    ims, ime, jms, jme, kms, kme, &
+                                    its, ite, jts, jte, kts, kte )
+         ELSE IF (config_flags%scalar_adv_opt .EQ. 3 ) THEN
+            CALL advect_scalar_weno ( field(ims,kms,jms,im), &
+                                   field_old(ims,kms,jms,im), &
+                                   tendency(ims,kms,jms), &
                              ru, rv, rom,                   &
                              mut, time_step, config_flags,  &
                              msfux, msfuy, msfvx, msfvy,    &
@@ -9829,679 +10661,81 @@ SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
                              ids, ide, jds, jde, kds, kde,  &
                              ims, ime, jms, jme, kms, kme,  &
                              its, ite, jts, jte, kts, kte  )
-!
-! 5th-order WENO (Weighted Essentially Non-Oscillatory) scheme adapted from COMMAS.  
-! See Jiang and Shu, 1996, J. Comp. Phys. v. 126, 202-223; 
-! Shu 2003, Int. J. Comp. Fluid Dyn. v. 17 107-118;  Also used by Bryan 2005, Mon. Wea. Rev.
-!
-   IMPLICIT NONE
-   
-   ! Input data
-   
-   TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
-
-   INTEGER ,                 INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
-                                              ims, ime, jms, jme, kms, kme, &
-                                              its, ite, jts, jte, kts, kte
-   
-   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(IN   ) :: field,     &
-                                                                      field_old, &
-                                                                      ru,    &
-                                                                      rv,    &
-                                                                      rom
-
-   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN   ) :: mut
-   REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: tendency
-
-   REAL , DIMENSION( ims:ime , jms:jme ) ,         INTENT(IN   ) :: msfux,  &
-                                                                    msfuy,  &
-                                                                    msfvx,  &
-                                                                    msfvy,  &
-                                                                    msftx,  &
-                                                                    msfty
-
-   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
-                                                                  fzp,  &
-                                                                  rdzw
-
-   REAL ,                                        INTENT(IN   ) :: rdx,  &
-                                                                  rdy
-   INTEGER ,                                     INTENT(IN   ) :: time_step
-
-
-   ! Local data
-   
-   INTEGER :: i, j, k, itf, jtf, ktf
-   INTEGER :: i_start, i_end, j_start, j_end
-   INTEGER :: i_start_f, i_end_f, j_start_f, j_end_f
-   INTEGER :: jmin, jmax, jp, jm, imin, imax
-
-   INTEGER , PARAMETER :: is=0, js=0, ks=0
-
-   REAL    :: mrdx, mrdy, ub, vb, vw
-   REAL , DIMENSION(its:ite, kts:kte) :: vflux
-
-
-   REAL,  DIMENSION( its-is:ite+1, kts:kte  ) :: fqx
-!   REAL,  DIMENSION( its:ite+1, kts:kte  ) :: fqx
-   REAL,  DIMENSION( its:ite, kts:kte, 2 ) :: fqy
-
-   INTEGER :: horz_order, vert_order
-   
-   LOGICAL :: degrade_xs, degrade_ys
-   LOGICAL :: degrade_xe, degrade_ye
-
-   INTEGER :: jp1, jp0, jtmp
-
-    real            :: dir, vv
-    real            :: ue,uw,vs,vn,wb,wt
-    real, parameter :: f30 =  7./12., f31 = 1./12.
-    real, parameter :: f50 = 37./60., f51 = 2./15., f52 = 1./60.
-
-
-   integer kt,kb
-   
-    
-    real               :: qim2, qim1, qi, qip1, qip2
-    double precision               :: beta0, beta1, beta2, f0, f1, f2, wi0, wi1, wi2, sumwk
-    double precision, parameter    :: gi0 = 1.d0/10.d0, gi1 = 6.d0/10.d0, gi2 = 3.d0/10.d0, eps=1.0d-28
-    integer, parameter :: pw = 2
-
-
-! definition of flux operators, 3rd, 4th, 5th or 6th order
-
-   REAL    :: flux3, flux4, flux5, flux6
-   REAL    :: q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua, vel
-
-      flux4(q_im2, q_im1, q_i, q_ip1, ua) =                     &
-            (7./12.)*(q_i + q_im1) - (1./12.)*(q_ip1 + q_im2)
-
-      flux3(q_im2, q_im1, q_i, q_ip1, ua) =                     &
-           flux4(q_im2, q_im1, q_i, q_ip1, ua) +                &
-           sign(1.,ua)*(1./12.)*((q_ip1 - q_im2)-3.*(q_i-q_im1))
-
-      flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =       &
-            (37./60.)*(q_i+q_im1) - (2./15.)*(q_ip1+q_im2)      &
-            +(1./60.)*(q_ip2+q_im3)
-
-      flux5(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua) =       &
-           flux6(q_im3, q_im2, q_im1, q_i, q_ip1, q_ip2, ua)    &
-            -sign(1,time_step)*sign(1.,ua)*(1./60.)*(           &
-              (q_ip2-q_im3)-5.*(q_ip1-q_im2)+10.*(q_i-q_im1) )
-
-   LOGICAL :: specified
-
-   specified = .false.
-   if(config_flags%specified .or. config_flags%nested) specified = .true.
-
-! set order for the advection schemes
-
-  ktf=MIN(kte,kde-1)
-  horz_order = 5 ! config_flags%h_sca_adv_order
-  vert_order = 5 ! config_flags%v_sca_adv_order
-
-!  begin with horizontal flux divergence
-!  here is the choice of flux operators
-
-
-
-  IF( horz_order == 5 ) THEN
-
-!  determine boundary mods for flux operators
-!  We degrade the flux operators from 3rd/4th order
-!   to second order one gridpoint in from the boundaries for
-!   all boundary conditions except periodic and symmetry - these
-!   conditions have boundary zone data fill for correct application
-!   of the higher order flux stencils
-
-   degrade_xs = .true.
-   degrade_xe = .true.
-   degrade_ys = .true.
-   degrade_ye = .true.
-
-   IF( config_flags%periodic_x   .or. &
-       config_flags%symmetric_xs .or. &
-       (its > ids+3)                ) degrade_xs = .false.
-   IF( config_flags%periodic_x   .or. &
-       config_flags%symmetric_xe .or. &
-       (ite < ide-3)                ) degrade_xe = .false.
-   IF( config_flags%periodic_y   .or. &
-       config_flags%symmetric_ys .or. &
-       (jts > jds+3)                ) degrade_ys = .false.
-   IF( config_flags%periodic_y   .or. &
-       config_flags%symmetric_ye .or. &
-       (jte < jde-4)                ) degrade_ye = .false.
-
-!--------------- y - advection first
-
-      ktf=MIN(kte,kde-1)
-      i_start = its
-      i_end   = MIN(ite,ide-1)
-
-
-! check for U
-      IF ( is == 1 ) THEN
-        i_start = its
-        i_end   = ite
-        IF ( config_flags%open_xs .or. specified ) i_start = MAX(ids+1,its)
-        IF ( config_flags%open_xe .or. specified ) i_end   = MIN(ide-1,ite)
-        IF ( config_flags%periodic_x ) i_start = its
-        IF ( config_flags%periodic_x ) i_end = ite
-      ENDIF
-
-      j_start = jts
-      j_end   = MIN(jte,jde-1)
-
-!  higher order flux has a 5 or 7 point stencil, so compute
-!  bounds so we can switch to second order flux close to the boundary
-
-      j_start_f = j_start
-      j_end_f   = j_end+1
-
-      IF(degrade_ys) then
-        j_start = MAX(jts,jds+1)
-        j_start_f = jds+3
-      ENDIF
-
-      IF(degrade_ye) then
-        j_end = MIN(jte,jde-2)
-        j_end_f = jde-3
-      ENDIF
-
-      IF(config_flags%polar) j_end = MIN(jte,jde-1)
-
-!  compute fluxes, 5th or 6th order
-
-     jp1 = 2
-     jp0 = 1
-
-     j_loop_y_flux_5 : DO j = j_start, j_end+1
-
-      IF( (j >= j_start_f ) .and. (j <= j_end_f) ) THEN ! use full stencil
-
-        DO k=kts,ktf
-        DO i = i_start, i_end
-!          vel = rv(i,k,j)
-          vel = 0.5*( rv(i,k,j) + rv(i-is,k-ks,j-js) )
-
-         IF ( vel .ge. 0.0 ) THEN
-            qip2 = field(i,k,j+1)
-            qip1 = field(i,k,j  )
-            qi   = field(i,k,j-1)
-            qim1 = field(i,k,j-2)
-            qim2 = field(i,k,j-3)
-          ELSE
-            qip2 = field(i,k,j-2)
-            qip1 = field(i,k,j-1)
-            qi   = field(i,k,j  )
-            qim1 = field(i,k,j+1)
-            qim2 = field(i,k,j+2)
-         ENDIF
-    
-         f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
-         f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
-         f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
-    
-         beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
-         beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
-         beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
-    
-         wi0 = gi0 / (eps + beta0)**pw
-         wi1 = gi1 / (eps + beta1)**pw
-         wi2 = gi2 / (eps + beta2)**pw
-    
-         sumwk = wi0 + wi1 + wi2
-    
-          fqy( i, k, jp1 ) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
-
-!          fqy( i, k, jp1 ) = vel*flux5(                                &
-!                  field(i,k,j-3), field(i,k,j-2), field(i,k,j-1),       &
-!                  field(i,k,j  ), field(i,k,j+1), field(i,k,j+2),  vel )
-        ENDDO
-        ENDDO
-
-
-      ELSE IF ( j == jds+1 ) THEN   ! 2nd order flux next to south boundary
-
-            DO k=kts,ktf
-            DO i = i_start, i_end
-              fqy(i,k, jp1) = 0.5*rv(i,k,j)*          &
-!              fqy(i,k, jp1) = 0.5*0.5*( rv(i,k,j) + rv(i-is,k-ks,j-js) )*          &
-                     (field(i,k,j)+field(i,k,j-1))
-
-            ENDDO
-            ENDDO
-
-     ELSE IF  ( j == jds+2 ) THEN  ! third of 4th order flux 2 in from south boundary
-
-            DO k=kts,ktf
-            DO i = i_start, i_end
-!              vel = 0.5*( rv(i,k,j) + rv(i-is,k-ks,j-js) )
-              vel = rv(i,k,j)
-              fqy( i, k, jp1 ) = vel*flux3(              &
-                   field(i,k,j-2),field(i,k,j-1),field(i,k,j),field(i,k,j+1),vel )
-            ENDDO
-            ENDDO
-
-     ELSE IF ( j == jde-1 ) THEN  ! 2nd order flux next to north boundary
-
-            DO k=kts,ktf
-            DO i = i_start, i_end
-!              fqy(i, k, jp1) = 0.5*0.5*( rv(i,k,j) + rv(i-is,k-ks,j-js) )*      &
-              fqy(i, k, jp1) = 0.5*rv(i,k,j)*      &
-                     (field(i,k,j)+field(i,k,j-1))
-            ENDDO
-            ENDDO
-
-     ELSE IF ( j == jde-2 ) THEN  ! 3rd or 4th order flux 2 in from north boundary
-
-            DO k=kts,ktf
-            DO i = i_start, i_end
-              vel = rv(i,k,j)
-!              vel = 0.5*( rv(i,k,j) + rv(i-is,k-ks,j-js) )
-              fqy( i, k, jp1) = vel*flux3(             &
-                   field(i,k,j-2),field(i,k,j-1),    &
-                   field(i,k,j),field(i,k,j+1),vel )
-            ENDDO
-            ENDDO
-
-     ENDIF
-
-!  y flux-divergence into tendency
-
-      IF ( is == 0 ) THEN
-        ! Comments on polar boundary conditions
-        ! Same process as for advect_u - tendencies run from jds to jde-1 
-        ! (latitudes are as for u grid, longitudes are displaced)
-        ! Therefore: flow is only from one side for points next to poles
-        IF ( config_flags%polar .AND. (j == jds+1) ) THEN
-          DO k=kts,ktf
-          DO i = i_start, i_end
-            mrdy=msftx(i,j-1)*rdy     ! see ADT eqn 48 [rho->rho*q] dividing by my, 2nd term RHS
-            tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
-          END DO
-          END DO
-        ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
-          DO k=kts,ktf
-          DO i = i_start, i_end
-            mrdy=msftx(i,j-1)*rdy     ! see ADT eqn 48 [rho->rho*q] dividing by my, 2nd term RHS
-            tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
-          END DO
-          END DO
-        ELSE  ! normal code
-
-        IF(j > j_start) THEN
-
-          DO k=kts,ktf
-          DO i = i_start, i_end
-            mrdy=msftx(i,j-1)*rdy    ! see ADT eqn 48 [rho->rho*q] dividing by my, 2nd term RHS
-            tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*(fqy(i,k,jp1)-fqy(i,k,jp0))
-          ENDDO
-          ENDDO
-
-        ENDIF
-        ENDIF
-       ELSEIF ( is == 1 ) THEN
-
-        ! (j > j_start) will miss the u(,,jds) tendency
-        IF ( config_flags%polar .AND. (j == jds+1) ) THEN
-          DO k=kts,ktf
-          DO i = i_start, i_end
-            mrdy=msfux(i,j-1)*rdy   ! ADT eqn 44, 2nd term on RHS
-            tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*fqy(i,k,jp1)
-          END DO
-          END DO
-        ! This would be seen by (j > j_start) but we need to zero out the NP tendency
-        ELSE IF( config_flags%polar .AND. (j == jde) ) THEN
-          DO k=kts,ktf
-          DO i = i_start, i_end
-            mrdy=msfux(i,j-1)*rdy   ! ADT eqn 44, 2nd term on RHS
-            tendency(i,k,j-1) = tendency(i,k,j-1) + mrdy*fqy(i,k,jp0)
-          END DO
-          END DO
-        ELSE  ! normal code
-
-        IF(j > j_start) THEN
-
-          DO k=kts,ktf
-          DO i = i_start, i_end
-            mrdy=msfux(i,j-1)*rdy   ! ADT eqn 44, 2nd term on RHS
-            tendency(i,k,j-1) = tendency(i,k,j-1) - mrdy*(fqy(i,k,jp1)-fqy(i,k,jp0))
-          ENDDO
-          ENDDO
-
-        ENDIF
-
-        END IF
-       
-       ENDIF
-
-        jtmp = jp1
-        jp1 = jp0
-        jp0 = jtmp
-
-      ENDDO j_loop_y_flux_5
-
-!  next, x - flux divergence
-
-      i_start = its
-      i_end   = MIN(ite,ide-1)
-
-      j_start = jts
-      j_end   = MIN(jte,jde-1)
-
-!  higher order flux has a 5 or 7 point stencil, so compute
-!  bounds so we can switch to second order flux close to the boundary
-
-      i_start_f = i_start
-      i_end_f   = i_end+1
-
-      IF(degrade_xs) then
-        i_start = MAX(ids+1,its)
-!        i_start_f = i_start+2
-        i_start_f = MIN(i_start+2,ids+3)
-      ENDIF
-
-      IF(degrade_xe) then
-        i_end = MIN(ide-2,ite)
-        i_end_f = ide-3
-      ENDIF
-
-!  compute fluxes
-
-      DO j = j_start, j_end
-
-!  5th or 6th order flux
-
-        DO k=kts,ktf
-        DO i = i_start_f, i_end_f
-!          vel = ru(i,k,j)
-          vel = 0.5*( ru(i,k,j) + ru(i-is,k-ks,j-js) )
-
-
-         IF ( vel .ge. 0.0 ) THEN
-            qip2 = field(i+1,k,j)
-            qip1 = field(i,  k,j)
-            qi   = field(i-1,k,j)
-            qim1 = field(i-2,k,j)
-            qim2 = field(i-3,k,j)
-          ELSE
-            qip2 = field(i-2,k,j)
-            qip1 = field(i-1,k,j)
-            qi   = field(i,  k,j)
-            qim1 = field(i+1,k,j)
-            qim2 = field(i+2,k,j)
-         ENDIF
-    
-         f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
-         f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
-         f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
-    
-         beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
-         beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
-         beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
-    
-         wi0 = gi0 / (eps + beta0)**pw
-         wi1 = gi1 / (eps + beta1)**pw
-         wi2 = gi2 / (eps + beta2)**pw
-    
-         sumwk = wi0 + wi1 + wi2
-    
-         fqx(i,k) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
-
-!          fqx( i,k ) = vel*flux5( field(i-3,k,j), field(i-2,k,j),  &
-!                                         field(i-1,k,j), field(i  ,k,j),  &
-!                                         field(i+1,k,j), field(i+2,k,j),  &
-!                                         vel                             )
-        ENDDO
-        ENDDO
-
-!  lower order fluxes close to boundaries (if not periodic or symmetric)
-
-        IF( degrade_xs ) THEN
-
-          DO i=i_start,i_start_f-1
-
-            IF(i == ids+1) THEN ! second order
-              DO k=kts,ktf
-                fqx(i,k) = 0.5*(ru(i,k,j)) &
-                       *(field(i,k,j)+field(i-1,k,j))
-              ENDDO
-            ENDIF
-
-            IF(i == ids+2) THEN  ! third order
-              DO k=kts,ktf
-                vel = ru(i,k,j)
-                fqx( i,k ) = vel*flux3( field(i-2,k,j), field(i-1,k,j),  &
-                                              field(i  ,k,j), field(i+1,k,j),  &
-                                              vel                     )
-              ENDDO
-            END IF
-
-          ENDDO
-
-        ENDIF
-
-        IF( degrade_xe ) THEN
-
-          DO i = i_end_f+1, i_end+1
-
-            IF( i == ide-1 ) THEN ! second order flux next to the boundary
-              DO k=kts,ktf
-                fqx(i,k) = 0.5*(ru(i,k,j))      &
-                       *(field(i,k,j)+field(i-1,k,j))
-              ENDDO
-           ENDIF
-
-           IF( i == ide-2 ) THEN ! third order flux one in from the boundary
-             DO k=kts,ktf
-               vel = ru(i,k,j)
-               fqx( i,k ) = vel*flux3( field(i-2,k,j), field(i-1,k,j),  &
-                                       field(i  ,k,j), field(i+1,k,j),  &
-                                       vel                             )
-             ENDDO
-           ENDIF
-
-         ENDDO
-
-       ENDIF
-
-!  x flux-divergence into tendency
-
-       IF ( is == 0 ) THEN
-          DO k=kts,ktf
-          DO i = i_start, i_end
-            mrdx=msftx(i,j)*rdx      ! see ADT eqn 48 [rho->rho*q] dividing by my, 1st term RHS
-            tendency(i,k,j) = tendency(i,k,j) - mrdx*(fqx(i+1,k)-fqx(i,k))
-          ENDDO
-          ENDDO
-       ELSEIF ( is == 1 ) THEN
-        DO k=kts,ktf
-          DO i = i_start, i_end
-            mrdx=msfux(i,j)*rdx ! ADT eqn 44, 1st term on RHS
-            tendency(i,k,j) = tendency(i,k,j) - mrdx*(fqx(i+1,k)-fqx(i,k))
-          ENDDO
-        ENDDO
-       ENDIF
-
-      ENDDO
-
-
-   ENDIF
-   
-
-!  pick up the rest of the horizontal radiation boundary conditions.
-!  (these are the computations that don't require 'cb'.
-!  first, set to index ranges
-
-      i_start = its
-      i_end   = MIN(ite,ide-1)
-      j_start = jts
-      j_end   = MIN(jte,jde-1)
-
-!  compute x (u) conditions for v, w, or scalar
-
-   IF( (config_flags%open_xs) .and. (its == ids) ) THEN
-
-       DO j = j_start, j_end
-       DO k = kts, ktf
-         ub = MIN( 0.5*(ru(its,k,j)+ru(its+1,k,j)), 0. )
-         tendency(its,k,j) = tendency(its,k,j)                     &
-               - rdx*(                                             &
-                       ub*(   field_old(its+1,k,j)                 &
-                            - field_old(its  ,k,j)   ) +           &
-                       field(its,k,j)*(ru(its+1,k,j)-ru(its,k,j))  &
-                                                                )
-       ENDDO
-       ENDDO
-
-   ENDIF
-
-   IF( (config_flags%open_xe) .and. (ite == ide) ) THEN
-
-       DO j = j_start, j_end
-       DO k = kts, ktf
-         ub = MAX( 0.5*(ru(ite-1,k,j)+ru(ite,k,j)), 0. )
-         tendency(i_end,k,j) = tendency(i_end,k,j)                   &
-               - rdx*(                                               &
-                       ub*(  field_old(i_end  ,k,j)                  &
-                           - field_old(i_end-1,k,j) ) +              &
-                       field(i_end,k,j)*(ru(ite,k,j)-ru(ite-1,k,j))  &
-                                                                    )
-       ENDDO
-       ENDDO
-
-   ENDIF
-
-   IF( (config_flags%open_ys) .and. (jts == jds) ) THEN
-
-       DO i = i_start, i_end
-       DO k = kts, ktf
-         vb = MIN( 0.5*(rv(i,k,jts)+rv(i,k,jts+1)), 0. )
-         tendency(i,k,jts) = tendency(i,k,jts)                     &
-               - rdy*(                                             &
-                       vb*(  field_old(i,k,jts+1)                  &
-                           - field_old(i,k,jts  ) ) +              &
-                       field(i,k,jts)*(rv(i,k,jts+1)-rv(i,k,jts))  &
-                                                                )
-       ENDDO
-       ENDDO
-
-   ENDIF
-
-   IF( (config_flags%open_ye) .and. (jte == jde)) THEN
-
-       DO i = i_start, i_end
-       DO k = kts, ktf
-         vb = MAX( 0.5*(rv(i,k,jte-1)+rv(i,k,jte)), 0. )
-         tendency(i,k,j_end) = tendency(i,k,j_end)                   &
-               - rdy*(                                               &
-                       vb*(   field_old(i,k,j_end  )                 &
-                            - field_old(i,k,j_end-1) ) +             &
-                       field(i,k,j_end)*(rv(i,k,jte)-rv(i,k,jte-1))  &
-                                                                    )
-       ENDDO
-       ENDDO
-
-   ENDIF
-
-
-!-------------------- vertical advection
-!     Scalar equation has 3rd term on RHS = - partial d/dz (q rho w /my)
-!     Here we have: - partial d/dz (q*rom) = - partial d/dz (q rho w / my)
-!     So we don't need to make a correction for advect_scalar
-
-      i_start = its
-      i_end   = MIN(ite,ide-1)
-      j_start = jts
-      j_end   = MIN(jte,jde-1)
-
-      DO i = i_start, i_end
-         vflux(i,kts)=0.
-         vflux(i,kte)=0.
-      ENDDO
-
-
-
-      DO j = j_start, j_end
-
-         DO k=kts+3,ktf-2
-         DO i = i_start, i_end
-!           vel = rom(i,k,j)
-           vel = 0.5*( rom(i,k,j) + rom(i-is,k-ks,j-js) )
-
-         IF( -vel .ge. 0.0 ) THEN
-            qip2 = field(i,k+1,j)
-            qip1 = field(i,k  ,j)
-            qi   = field(i,k-1,j)
-            qim1 = field(i,k-2,j)
-            qim2 = field(i,k-3,j)
-          ELSE
-            qip2 = field(i,k-2,j)
-            qip1 = field(i,k-1,j)
-            qi   = field(i,k  ,j)
-            qim1 = field(i,k+1,j)
-            qim2 = field(i,k+2,j)
-         ENDIF
-    
-         f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
-         f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
-         f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
-    
-         beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
-         beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
-         beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
-    
-         wi0 = gi0 / (eps + beta0)**pw
-         wi1 = gi1 / (eps + beta1)**pw
-         wi2 = gi2 / (eps + beta2)**pw
-    
-         sumwk = wi0 + wi1 + wi2
-    
-          vflux(i,k) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
-
-!           vflux(i,k) = vel*flux5(                                 &
-!                   field(i,k-3,j), field(i,k-2,j), field(i,k-1,j),       &
-!                   field(i,k  ,j), field(i,k+1,j), field(i,k+2,j),  -vel )
-         ENDDO
-         ENDDO
-
-         DO i = i_start, i_end
-
-           k=kts+1
-           vflux(i,k)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
-                                   
-           k = kts+2
-           vel=rom(i,k,j) 
-           vflux(i,k) = vel*flux3(               &
-                   field(i,k-2,j), field(i,k-1,j),   &
-                   field(i,k  ,j), field(i,k+1,j), -vel )
-           k = ktf-1
-           vel=rom(i,k,j)
-           vflux(i,k) = vel*flux3(               &
-                   field(i,k-2,j), field(i,k-1,j),   &
-                   field(i,k  ,j), field(i,k+1,j), -vel )
-
-           k=ktf
-           vflux(i,k)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
-         ENDDO
-
-         DO k=kts,ktf
-         DO i = i_start, i_end
-            tendency(i,k,j)=tendency(i,k,j)-rdzw(k)*(vflux(i,k+1)-vflux(i,k))
-         ENDDO
-         ENDDO
-
-      ENDDO
-
-
-
-END SUBROUTINE advect_scalar_weno
+         ELSE IF (config_flags%scalar_adv_opt .EQ. 4 ) THEN
+            CALL advect_scalar_wenopd ( field(ims,kms,jms,im), &
+                                        field_old(ims,kms,jms,im), &
+                                        tendency(ims,kms,jms), &
+                                ru, rv, rom,                   &
+                                mut, mub, mu_old,              &
+                                time_step, config_flags,       &
+                                msfux, msfuy, msfvx, msfvy,    &
+                                msftx, msfty,                  &
+                                fzm, fzp,                      &
+                                rdx, rdy, rdzw, dt,            &
+                                ids, ide, jds, jde, kds, kde,  &
+                                ims, ime, jms, jme, kms, kme,  &
+                                its, ite, jts, jte, kts, kte  )
+         END IF
+         DO n = 1 , MAX_SCALARS
+            field(:,:,:,n) = field_old(:,:,:,n) + dt * ( tendency(:,:,:) )
+         END DO
+
+         DO k = 1 , kde
+            field    (:,k,:,:) = field    (:,2,:,:)
+         END DO
+
+         field    (:,:,2,:) = field    (:,:,1,:)
+         field    (:,:,3,:) = field    (:,:,1,:)
+ 
+         field    (ite+0,:,:,:) = field(ids+0,:,:,:)
+         field    (ite+1,:,:,:) = field(ids+1,:,:,:)
+         field    (ite+2,:,:,:) = field(ids+2,:,:,:)
+         field    (ite+3,:,:,:) = field(ids+3,:,:,:)
+         field    (ite+4,:,:,:) = field(ids+4,:,:,:)
+         field    (ids-0,:,:,:) = field(ite-0,:,:,:)
+         field    (ids-1,:,:,:) = field(ite-1,:,:,:)
+         field    (ids-2,:,:,:) = field(ite-2,:,:,:)
+         field    (ids-3,:,:,:) = field(ite-3,:,:,:)
+         field    (ids-4,:,:,:) = field(ite-4,:,:,:)
+
+         field_old = field
+
+         IF ( loop .EQ. (loop/200)*200 ) THEN
+            CALL column ( loop , field(:,1,2,1) , its, ite )
+         END IF
+      END DO
+   END DO
+
+   print *,' '
+   print *,'=============================== '
+   print *,' '
+   print *,'Lines to input to gnuplot'
+   print *,' '
+   print *,"set term x11"
+   IF      (config_flags%scalar_adv_opt .EQ. 0 ) THEN
+      print *,'set title "Scalar Advection" font ",20"'
+   ELSE IF (config_flags%scalar_adv_opt .EQ. 1 ) THEN
+      print *,'set title "PD Advection" font ",20"'
+   ELSE IF (config_flags%scalar_adv_opt .EQ. 2 ) THEN
+      print *,'set title "Mono Advection" font ",20"'
+   ELSE IF (config_flags%scalar_adv_opt .EQ. 3 ) THEN
+      print *,'set title "WENO Advection" font ",20"'
+   ELSE IF (config_flags%scalar_adv_opt .EQ. 3 ) THEN
+      print *,'set title "WENO PD Advection" font ",20"'
+   END IF
+   print *,"set yrange[-20:120]"
+   print *,"plot [0:90] '000000.txt' with lines , '000200.txt' with lines , '000400.txt' with lines , '000600.txt' with lines , '000800.txt' with lines , '001000.txt' with lines "
+   print *,"plot [0:90] '000000.txt' with lines , '001200.txt' with lines , '001400.txt' with lines , '001600.txt' with lines , '001800.txt' with lines , '002000.txt' with lines "
+
+END PROGRAM feeder
+#endif
+#if ( !defined(ADVECT_KERNEL) )
 
 !---------------------------------------------------------------------------------
 
 SUBROUTINE advect_weno_u ( u, u_old, tendency,            &
                         ru, rv, rom,                   &
+                        c1, c2,                        &
                         mut, time_step, config_flags,  &
                         msfux, msfuy, msfvx, msfvy,    &
                         msftx, msfty,                  &
@@ -10545,7 +10779,9 @@ SUBROUTINE advect_weno_u ( u, u_old, tendency,            &
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
-                                                                  rdzw
+                                                                  rdzw, &
+                                                                  c1,   &
+                                                                  c2
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy
@@ -10699,7 +10935,7 @@ SUBROUTINE advect_weno_u ( u, u_old, tendency,            &
         DO i = i_start, i_end
           vel = 0.5*(rv(i,k,j)+rv(i-1,k,j))
 
-         IF ( vel .ge. 0.0 ) THEN
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = u(i,k,j+1)
             qip1 = u(i,k,j  )
             qi   = u(i,k,j-1)
@@ -10852,7 +11088,7 @@ SUBROUTINE advect_weno_u ( u, u_old, tendency,            &
         DO i = i_start_f, i_end_f
           vel = 0.5*(ru(i,k,j)+ru(i-1,k,j))
 
-         IF ( vel .ge. 0.0 ) THEN
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = u(i+1,k,j)
             qip1 = u(i,  k,j)
             qi   = u(i-1,k,j)
@@ -11076,7 +11312,7 @@ SUBROUTINE advect_weno_u ( u, u_old, tendency,            &
          DO i = i_start, i_end
            vel=0.5*(rom(i-1,k,j)+rom(i,k,j))
 
-         IF( -vel .ge. 0.0 ) THEN
+         IF( -vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = u(i,k+1,j)
             qip1 = u(i,k  ,j)
             qi   = u(i,k-1,j)
@@ -11146,6 +11382,7 @@ END SUBROUTINE advect_weno_u
 
 SUBROUTINE advect_weno_v   ( v, v_old, tendency,            &
                         ru, rv, rom,                   &
+                        c1, c2,                        &
                         mut, time_step, config_flags,  &
                         msfux, msfuy, msfvx, msfvy,    &
                         msftx, msfty,                  &
@@ -11189,7 +11426,9 @@ SUBROUTINE advect_weno_v   ( v, v_old, tendency,            &
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
-                                                                  rdzw
+                                                                  rdzw, &
+                                                                  c1,   &
+                                                                  c2
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy
@@ -11341,7 +11580,7 @@ SUBROUTINE advect_weno_v   ( v, v_old, tendency,            &
         DO i = i_start, i_end
           vel = 0.5*(rv(i,k,j)+rv(i,k,j-1))
 
-         IF ( vel .ge. 0.0 ) THEN
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = v(i,k,j+1)
             qip1 = v(i,k,j  )
             qi   = v(i,k,j-1)
@@ -11508,7 +11747,7 @@ SUBROUTINE advect_weno_v   ( v, v_old, tendency,            &
         DO i = i_start_f, i_end_f
           vel = 0.5*(ru(i,k,j)+ru(i,k,j-1))
 
-         IF ( vel .ge. 0.0 ) THEN
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = v(i+1,k,j)
             qip1 = v(i,  k,j)
             qi   = v(i-1,k,j)
@@ -11762,7 +12001,7 @@ SUBROUTINE advect_weno_v   ( v, v_old, tendency,            &
          DO i = i_start, i_end
            vel=0.5*(rom(i,k,j)+rom(i,k,j-1))
 
-         IF( -vel .ge. 0.0 ) THEN
+         IF( -vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = v(i,k+1,j)
             qip1 = v(i,k  ,j)
             qi   = v(i,k-1,j)
@@ -11838,6 +12077,7 @@ END SUBROUTINE advect_weno_v
 
 SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
                          ru, rv, rom,                   &
+                         c1, c2,                        &
                          mut, time_step, config_flags,  &
                          msfux, msfuy, msfvx, msfvy,    &
                          msftx, msfty,                  &
@@ -11881,7 +12121,9 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fzm,  &
                                                                   fzp,  &
-                                                                  rdzu
+                                                                  rdzu, &
+                                                                  c1,   &
+                                                                  c2
 
    REAL ,                                        INTENT(IN   ) :: rdx,  &
                                                                   rdy
@@ -12027,7 +12269,7 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
         DO i = i_start, i_end
           vel = fzm(k)*rv(i,k,j)+fzp(k)*rv(i,k-1,j)
 
-         IF ( vel .ge. 0.0 ) THEN
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = w(i,k,j+1)
             qip1 = w(i,k,j  )
             qi   = w(i,k,j-1)
@@ -12067,7 +12309,7 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
         DO i = i_start, i_end
           vel = (2.-fzm(k-1))*rv(i,k-1,j)-fzp(k-1)*rv(i,k-2,j)
 
-         IF ( vel .ge. 0.0 ) THEN
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = w(i,k,j+1)
             qip1 = w(i,k,j  )
             qi   = w(i,k,j-1)
@@ -12246,7 +12488,7 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
         DO i = i_start_f, i_end_f
           vel = fzm(k)*ru(i,k,j)+fzp(k)*ru(i,k-1,j)
 
-         IF ( vel .ge. 0.0 ) THEN
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = w(i+1,k,j)
             qip1 = w(i,  k,j)
             qi   = w(i-1,k,j)
@@ -12287,7 +12529,7 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
         DO i = i_start_f, i_end_f
           vel = (2.-fzm(k-1))*ru(i,k-1,j)-fzp(k-1)*ru(i,k-2,j)
 
-         IF ( vel .ge. 0.0 ) THEN
+         IF ( vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = w(i+1,k,j)
             qip1 = w(i,  k,j)
             qi   = w(i-1,k,j)
@@ -12584,7 +12826,7 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
          DO i = i_start, i_end
            vel=0.5*(rom(i,k,j)+rom(i,k-1,j))
 
-         IF( -vel .ge. 0.0 ) THEN
+         IF( -vel*sign(1,time_step) .ge. 0.0 ) THEN
             qip2 = w(i,k+1,j)
             qip1 = w(i,k  ,j)
             qi   = w(i,k-1,j)

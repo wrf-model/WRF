@@ -227,7 +227,7 @@ subroutine da_zero_y( iv, y, value )
       end do
    end if
    
-   if ( num_pseudo > 0 ) then
+   if ( pseudo_uvtpq ) then
         y % pseudo(1:num_pseudo) % u = value
         y % pseudo(1:num_pseudo) % v = value
         y % pseudo(1:num_pseudo) % t = value

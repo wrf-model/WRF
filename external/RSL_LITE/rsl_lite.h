@@ -154,12 +154,6 @@ typedef int * int_p ;
 # define RSL_TEST_ERR(T,M) {if(T){RSL_FATAL(5);}}
 #endif
 
-/* #ifndef MPI2_SUPPORT
-typedef int MPI_Fint;
-#  define MPI_Comm_c2f(comm) (MPI_Fint)(comm)
-#  define MPI_Comm_f2c(comm) (MPI_Comm)(comm)
-#endif */
-
 typedef struct rsl_list {
   struct rsl_list * next ;
   void * data ;                 /* pointer to some node */

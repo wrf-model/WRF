@@ -51,7 +51,6 @@ CONTAINS
               ,RQVFTEN,RTHFTEN,RTHCUTEN,RTHRATEN                &
               ,rqvblten,rthblten                                &
               ,RUCUTEN,RVCUTEN                                  &
-!              ,dudt_phy,dvdt_phy                                &
               ,F_QV    ,F_QC    ,F_QR    ,F_QI    ,F_QS         &
 #if ( WRF_DFI_RADAR == 1 )
                  ! Optional CAP suppress option
@@ -71,8 +70,10 @@ CONTAINS
 ! ichoice now in namelist, as in EM core (deep only) - EG
 !      integer, parameter :: ichoice=0   ! 0 2 5 8 11 GG
       integer, parameter :: ichoicem=0  ! 0 1 2 8 11 GG
+!Closure for shallow (1=stabilization,2=zws,3=dhdt,0=avg of 1,2,3)
+      integer, parameter :: ichoice_s=0 ! 0 1 2 3     !As in FIM
 !      integer, parameter :: ichoice_s=2 ! 0 1 2 3     !Standard setting=2
-      integer, parameter :: ichoice_s=3 ! 0 1 2 3      ! For testing
+!      integer, parameter :: ichoice_s=3 ! 0 1 2 3      ! For testing
       real, parameter :: aodccn=0.1
 !      real :: dts,fpi,fp
       integer, parameter :: dicycle=0 !2 !- diurnal cycle flag
@@ -144,19 +145,12 @@ CONTAINS
                                                    RTHRATEN,    &
                                                    RQCCUTEN,    &
                                                    RQICUTEN
-! egrell - for avoiding ijk=ikj confusion in HWRF
-!   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),              &
-!         INTENT(INOUT) ::                          DUDT_PHY,    & 
-!                                                   DVDT_PHY
 !!!!!!!!!!!!!testing for HWRF!!!!!!!!!!! 
 !!!!!!add test for NMM_core vs EM_core????
+! Note that rucuten, rvcuten are i,j,k (not i,k,j)
     REAL, DIMENSION(ims:ime, jms:jme, kms:kme), INTENT(INOUT) :: &
                                                      RUCUTEN,    &
                                                      RVCUTEN
-!    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: &
-!                                                     RUCUTEN,    &
-!                                                     RVCUTEN
-
 !
 ! Flags relating to the optional tendency arrays declared above
 ! Models that carry the optional tendencies will provdide the
@@ -245,7 +239,6 @@ CONTAINS
    INTEGER :: i,j,k,ICLDCK,ipr,jpr
    REAL    :: tcrit,dp,dq
    INTEGER :: itf,jtf,ktf,iss,jss,nbegin,nend
-!   REAL    :: rkbcon,rktop        !-lxz
    character*50 :: ierrc(its:ite)
    character*50 :: ierrcs(its:ite)
    character*50 :: ierrcm(its:ite)
@@ -316,8 +309,6 @@ CONTAINS
        rqvcuten(i,k,j)=0.
 !       rucuten(i,k,j)=0.
 !       rvcuten(i,k,j)=0.
-!       DUDT_PHY(I,K,J)=0.
-!       DVDT_PHY(I,K,J)=0.
      enddo
      enddo
      enddo
@@ -531,7 +522,7 @@ CONTAINS
            if(xmbs(i).le.0.)cutens(i)=0.
           enddo
           CALL neg_check('shallow',ipr,dt,q2d,outqs,outts,outus,outvs,   &
-                                 outqcs,prets,its,ite,kts,kte,itf,ktf)
+                                 outqcs,prets,its,ite,kts,kte,itf,ktf,ktops)
 
         endif
 
@@ -613,7 +604,7 @@ CONTAINS
             enddo
             enddo
       CALL neg_check('mid',ipr,dt,qcheck,outqm,outtm,outum,outvm,   &
-                     outqcm,pretm,its,ite,kts,kte,itf,ktf)
+                     outqcm,pretm,its,ite,kts,kte,itf,ktf,ktopm)
     endif
 
 #if ( WRF_DFI_RADAR == 1 )
@@ -699,7 +690,7 @@ CONTAINS
             enddo
             enddo
       CALL neg_check('deep',ipr,dt,qcheck,outq,outt,outu,outv,   &
-                                         outqc,pret,its,ite,kts,kte,itf,ktf)
+                                         outqc,pret,its,ite,kts,kte,itf,ktf,ktop)
 !
       endif
 
@@ -708,12 +699,14 @@ CONTAINS
         IF(PRESENT(k22_shallow)) THEN
            if(ishallow_g3.eq.1)then
                DO I=ibegc,iendc
-                 xmb_shallow(i,j)=xmbs(i)
-                 k22_shallow(i,j)=k22s(i)
-                 kbcon_shallow(i,j)=kbcons(i)
-                 ktop_shallow(i,j)=ktops(i)
-                 if (ktops(i)  > HTOP(i,j)) HTOP(i,j) = ktops(i)
-                 if (kbcons(i) < HBOT(i,j)) HBOT(i,j) = kbcons(i)
+                 if (ierrs(i).eq.0) then
+                   xmb_shallow(i,j)=xmbs(i)
+                   k22_shallow(i,j)=k22s(i)
+                   kbcon_shallow(i,j)=kbcons(i)
+                   ktop_shallow(i,j)=ktops(i)
+                   if (ktops(i)  > HTOP(i,j)) HTOP(i,j) = ktops(i)
+                   if (kbcons(i) < HBOT(i,j)) HBOT(i,j) = kbcons(i)
+                 endif
                  ierr_shallow(i,j) = ierrs(i)       ! egrell, for debugging
                ENDDO
            endif
@@ -749,10 +742,6 @@ CONTAINS
                                 cutenm(i)*outqm(i,k)
                RUCUTEN(I,J,K)=outum(i,k)*cutenm(i)+outu(i,k)*cuten(i)   
                RVCUTEN(I,J,K)=outvm(i,k)*cutenm(i)+outv(i,k)*cuten(i) 
-!               RUCUTEN(I,K,J)=outum(i,k)*cutenm(i)+outu(i,k)*cuten(i)   
-!               RVCUTEN(I,K,J)=outvm(i,k)*cutenm(i)+outv(i,k)*cuten(i) 
-!               DUDT_PHY(I,K,J)=outum(i,k)*cutenm(i)+outu(i,k)*cuten(i)   
-!               DVDT_PHY(I,K,J)=outvm(i,k)*cutenm(i)+outv(i,k)*cuten(i) 
             ENDDO
             ENDDO
 
@@ -760,8 +749,6 @@ CONTAINS
               if(pret(i).gt.0.)then
                  raincv(i,j)=pret(i)*dt
                  pratec(i,j)=pret(i)
-!                 rkbcon = kte+kts - kbcon(i)
-!                 rktop  = kte+kts -  ktop(i)
                  if (ktop(i)  > HTOP(i,j)) HTOP(i,j) = ktop(i)
                  if (kbcon(i) < HBOT(i,j)) HBOT(i,j) = kbcon(i)
               endif
@@ -865,8 +852,13 @@ CONTAINS
      DO i=its,ite
         RTHCUTEN(i,k,j)=0.
         RQVCUTEN(i,k,j)=0.
-!        RUCUTEN(i,k,j)=0.
-!        RVCUTEN(i,k,j)=0.
+     ENDDO
+     ENDDO
+     ENDDO
+
+     DO k=kts,kte
+     DO j=jts,jte
+     DO i=its,ite
         RUCUTEN(i,j,k)=0.
         RVCUTEN(i,j,k)=0.
      ENDDO

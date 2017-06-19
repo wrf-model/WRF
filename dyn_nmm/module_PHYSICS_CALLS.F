@@ -357,7 +357,8 @@
           TOTLWDN(I,J)=0.   ! Total longwave down at the surface
           CUPPTR(I,J)=CUPPT(I,J)   ! Temporary array set to zero in radiation
           HTOPR(I,J) =0.
-          HBOTR(I,J) =0.
+          HBOTR(I,J) = REAL(KTE+1)
+!          HBOTR(I,J) =0.
           SWCF(I,J) =0.
           LWCF(I,J) =0.
 !
@@ -2304,7 +2305,6 @@
 ! SUBPROGRAM:    CUCNVC      CONVECTIVE PRECIPITATION OUTER DRIVER
 !   PRGRMMR: BLACK           ORG: W/NP22     DATE: 02-03-21
 ! ABSTRACT:
-!       DO I=ITS,ITE
 !     CUCVNC DRIVES THE WRF CONVECTION SCHEMES
 !
 ! PROGRAM HISTORY LOG:
@@ -2515,12 +2515,16 @@
 !End
 
       IF(MOD(NTSD,NRADS)==0.OR.MOD(NTSD,NRADL)==0)THEN
+!$omp parallel do                                                       &
+!$omp& private(i,j)
        DO J=MYJS,MYJE
        DO I=MYIS,MYIE
-!         DO J=JMS,JME        !gf
-!         DO I=IMS,IME        !gf
            HTOP(I,J)=0.
+           HTOPD(I,J)=0.
+           HTOPS(I,J)=0.
            HBOT(I,J)=REAL(KTE+1)
+           HBOTD(I,J)=REAL(KTE+1)
+           HBOTS(I,J)=REAL(KTE+1)
            CUTOP(I,J)=0.
            CUBOT(I,J)=REAL(KTE+1)
            CUPPT(I,J)=0.
@@ -2595,9 +2599,12 @@
       DO I=MYIS1,MYIE1
 !
         PDSL(I,J)=PD(I,J)*RES(I,J)
+        RAINCV(I,J)=0.
+        RAINC(I,J)=0.
         P8W(I,KTS,J)=PD(I,J)+PDTOP+PT
         LOWLYR(I,J)=KTS        !<----  The lowest model layer counted from the bottom.
         XLAND(I,J)=SM(I,J)+1.
+        NCA(I,J)=0.
         SFCZ(I,J)=FIS(I,J)*G_INV
 !
 !Biswas's doing
@@ -2909,23 +2916,6 @@
         ENDDO
         ENDDO
 
-! gf - Transfer u,v tendencies from GF convection to ducudt,dvcudt
-! (i,j,k) to use existing code to go from mass pts to u,v pts.
-
-!      if (CONFIG_FLAGS%CU_PHYSICS==GFSCHEME) then
-!$omp parallel do                                                       &
-!$omp& private(i,j,k)
-!         DO K=KMS,KME
-!         DO J=JMS,JME
-!         DO I=IMS,IME
-!          DUCUDT(i,j,k)=0.
-!          DVCUDT(i,j,k)=0.
-!        ENDDO
-!        ENDDO
-!        ENDDO
-!
-!      endif
-
 #endif
 
 !-----------------------------------------------------------------------
@@ -2952,11 +2942,11 @@
         IENDX=MYIE1
         IF(MOD(J,2)==0.AND.ITE==IDE-1)IENDX=IENDX-1
         DO I=MYIS1,IENDX
-          CNVBOT(I,J)=REAL(KTE+1.)
+          CNVBOT(I,J)=REAL(KTE+1)
           CNVTOP(I,J)=0.
-          HBOTD(I,J)=REAL(KTE+1.)
+          HBOTD(I,J)=REAL(KTE+1)
           HTOPD(I,J)=0.
-          HBOTS(I,J)=REAL(KTE+1.)
+          HBOTS(I,J)=REAL(KTE+1)
           HTOPS(I,J)=0.
         ENDDO
         ENDDO

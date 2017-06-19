@@ -377,7 +377,8 @@ contains
          endif
          !- zws for shallow convection closure (Grant 2001)
          !- height of the pbl
-         zws(i) = max(0.,flux_tun(i)*0.41*buo_flux*zo(i,kpbl(i))*g/t(i,kpbl(i)))
+         zws(i) = max(0.,.001-flux_tun(i)*0.41*buo_flux*zo(i,kpbl(i))*g/t(i,kpbl(i)))
+!         zws(i) = max(0.,flux_tun(i)*0.41*buo_flux*zo(i,kpbl(i))*g/t(i,kpbl(i)))
          zws(i) = 1.2*zws(i)**.3333
          zws(i) = zws(i)*rho(i,kpbl(i)) !check if zrho is correct
       enddo
@@ -462,7 +463,7 @@ contains
         z(i,k)=zo(i,k)
         xz(i,k)=zo(i,k)
         cupclw(i,k)=0.
-        cd(i,k)=1.e-9 ! 1.*entr_rate
+        cd(i,k)=.1*entr_rate(i) !1.e-9 ! 1.*entr_rate
 !        if(imid.eq.1)cd(i,k)=entr_rate(i)
         cdd(i,k)=1.e-9
         hcdo(i,k)=0.
@@ -962,16 +963,14 @@ contains
       enddo
       enddo
       do i=its,itf
-        beta=max(.02,.05-float(csum(i))*.0015)  !.02
-!        beta=max(.05,.08-float(csum(i))*.0015)  !.02
+        if(ierr(i)/=0)cycle
+        beta=max(.02,.055-float(csum(i))*.0015)  !.02
         if(imid.eq.0 .and. xland1(i) == 0)then
-!             beta=.01
               edtmax(i)=max(0.1,.4-float(csum(i))*.015) !.3)
         endif
-        if(imid.eq.1)beta=.02
+        if(imid.eq.1)beta=.025
         bud(i)=0.
-        IF(ierr(I).eq.0)then
-        cdd(i,1:jmin(i))=1.e-9
+        cdd(i,1:jmin(i))=.1*entr_rate(i)
         cdd(i,jmin(i))=0.
         dd_massdetro(i,:)=0.
         dd_massentro(i,:)=0.
@@ -979,12 +978,14 @@ contains
         if(zdo(i,jmin(i)) .lt.1.e-8)then
           zdo(i,jmin(i))=0.
           jmin(i)=jmin(i)-1
+          cdd(i,jmin(i):ktf)=0.
+          zdo(i,jmin(i)+1:ktf)=0.
           if(zdo(i,jmin(i)) .lt.1.e-8)then
              ierr(i)=876
              cycle
           endif
         endif
-        
+
         do ki=jmin(i)  ,maxloc(zdo(i,:),1),-1
           !=> from jmin to maximum value zd -> change entrainment
           dzo=zo_cup(i,ki+1)-zo_cup(i,ki)
@@ -1036,12 +1037,15 @@ contains
 
 
 ! downdraft moist static energy + moisture budget
+          dbydo(i,jmin(i))=hcdo(i,jmin(i))-heso_cup(i,jmin(i))
+          bud(i)=dbydo(i,jmin(i))*(zo_cup(i,jmin(i)+1)-zo_cup(i,jmin(i)))
+          dd_massentru(i,:)=0.
+          dd_massdetru(i,:)=0.
           do k=2,jmin(i)+1
-           dd_massentru(i,k-1)=dd_massentro(i,k-1)+lambau(i)*dd_massdetro(i,k-1)
-           dd_massdetru(i,k-1)=dd_massdetro(i,k-1)+lambau(i)*dd_massdetro(i,k-1)
+           dd_massentru(i,k-1)=dd_massentro(i,k-1) +lambau(i)*dd_massentro(i,k-1)
+           dd_massdetru(i,k-1)=dd_massdetro(i,k-1) +lambau(i)*dd_massentro(i,k-1)
           enddo
-            dbydo(i,jmin(i))=hcdo(i,jmin(i))-heso_cup(i,jmin(i))
-            bud(i)=dbydo(i,jmin(i))*(zo_cup(i,jmin(i)+1)-zo_cup(i,jmin(i)))
+          ucd(i,jmin(i)+1)=.5*(uc(i,jmin(i)+1)+u_cup(i,jmin(i)+1))
             do ki=jmin(i)  ,1,-1
              dzo=zo_cup(i,ki+1)-zo_cup(i,ki)
              h_entr=.5*(heo(i,ki)+.5*(hco(i,ki)+hco(i,ki+1)))
@@ -1062,7 +1066,6 @@ contains
              dbydo(i,ki)=hcdo(i,ki)-heso_cup(i,ki)
              bud(i)=bud(i)+dbydo(i,ki)*dzo
             enddo
-          endif
 
         if(bud(i).gt.0)then
           ierr(i)=7
@@ -2437,7 +2440,8 @@ contains
        DO 100 i=its,itf
           kloc(i)=1
           IF(ierr(i).eq.0)then
-           kloc(i)=maxloc(zu(i,:),1)
+!           kloc(i)=maxloc(zu(i,:),1)
+           kloc(i)=kbcon(i)
            ens_adj(i)=1.
 !ss --- comment out adjustment over ocean
 !ss           if(ierr2(i).gt.0.and.ierr3(i).eq.0)ens_adj(i)=0.666 ! 2./3.
@@ -2985,9 +2989,10 @@ contains
 
 !====================================================================
    SUBROUTINE neg_check(name,j,dt,q,outq,outt,outu,outv,                      &
-                                    outqc,pret,its,ite,kts,kte,itf,ktf)
+                                    outqc,pret,its,ite,kts,kte,itf,ktf,ktop)
 
    INTEGER,      INTENT(IN   ) ::            j,its,ite,kts,kte,itf,ktf
+   INTEGER, dimension (its:ite  ),   INTENT(IN   ) ::  ktop
 
      real, dimension (its:ite,kts:kte  )                    ,                 &
       intent(inout   ) ::                                                     &
@@ -3012,16 +3017,17 @@ contains
 !      thresh=200.01        !ss
 !      thresh=250.01
       names=1.
-      if(name == 'shallow')then
+     if(name == 'shallow' .or. name == 'mid')then
         thresh=148.01
-        names=2.
+        names=1.
       endif
       scalef=86400.
       do i=its,itf
+      if(ktop(i) <= 2)cycle
       icheck=0
       qmemf=1.
       qmem=0.
-      do k=kts,ktf
+      do k=kts,ktop(i)
          qmem=(outt(i,k))*86400.
          if(qmem.gt.thresh)then
            qmem2=thresh/qmem
@@ -3039,7 +3045,7 @@ contains
 !
          endif
       enddo
-      do k=kts,ktf
+      do k=kts,ktop(i)
          outq(i,k)=outq(i,k)*qmemf
          outt(i,k)=outt(i,k)*qmemf
          outu(i,k)=outu(i,k)*qmemf
@@ -3048,7 +3054,7 @@ contains
       enddo
       pret(i)=pret(i)*qmemf 
       enddo
-      return
+!      return
 !
 ! check whether routine produces negative q's. This can happen, since 
 ! tendencies are calculated based on forced q's. This should have no
@@ -3059,8 +3065,9 @@ contains
 !      write(14,*)'return'
       thresh=1.e-16
       do i=its,itf
+      if(ktop(i) <= 2)cycle
       qmemf=1.
-      do k=kts,ktf-1
+      do k=kts,ktop(i)
          qmem=outq(i,k)
          if(abs(qmem).gt.0. .and. q(i,k).gt.1.e-6)then
          qtest=q(i,k)+(outq(i,k))*dt
@@ -4261,20 +4268,14 @@ contains
          enddo         
          if(present(up_massentru) .and. present(up_massdetru))then
           do k=2,ktf-1
-           up_massentru(i,k-1)=up_massentro(i,k-1)+lambau(i)*up_massdetro(i,k-1)
-           up_massdetru(i,k-1)=up_massdetro(i,k-1)+lambau(i)*up_massdetro(i,k-1)
+!           up_massentru(i,k-1)=up_massentro(i,k-1)+lambau(i)*up_massdetro(i,k-1)
+!           up_massdetru(i,k-1)=up_massdetro(i,k-1)+lambau(i)*up_massdetro(i,k-1)
+           up_massentru(i,k-1)=up_massentro(i,k-1)+lambau(i)*up_massentro(i,k-1)
+           up_massdetru(i,k-1)=up_massdetro(i,k-1)+lambau(i)*up_massentro(i,k-1)
+
           enddo
          endif
 
-!         trash=0.
-!         trash2=0.
-!         do k=k22(i)+1,ktop(i)
-!             trash2=trash2+entr_rate_2d(i,k)
-!         enddo
-!         do k=k22(i)+1,kbcon(i)
-!            trash=trash+entr_rate_2d(i,k)
-!         enddo
-  
        endif
     ENDDO
  END SUBROUTINE get_lateral_massflux

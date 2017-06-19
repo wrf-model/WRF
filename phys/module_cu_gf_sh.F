@@ -73,8 +73,8 @@ contains
         itf,ktf,        &
         its,ite, kts,kte,ipr
 !!!!!!!!!!testing
-!     logical :: MAKE_CALC_FOR_XK = .true.
-     logical :: MAKE_CALC_FOR_XK = .false.
+     logical :: MAKE_CALC_FOR_XK = .true.
+!     logical :: MAKE_CALC_FOR_XK = .false.
      integer, intent (in   )              ::                           &
         ichoice
   !
@@ -906,9 +906,9 @@ contains
 
        do i=its,itf
         if(ierr(i).ne.0)then
-!debug           k22  (i)=0
-!debug           kbcon(i)=0
-!debug           ktop (i)=0
+           k22  (i)=0
+           kbcon(i)=0
+           ktop (i)=0
            xmb  (i)=0.
            outt (i,:)=0.
            outq (i,:)=0.

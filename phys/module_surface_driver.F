@@ -3980,16 +3980,14 @@ CONTAINS
        !$OMP END PARALLEL DO
      ENDIF
 
-! Limit Q2 diagnostic using saturated value at lowest level QGH to detect bad values
+! Limit Q2 diagnostic to 5 per cent higher than lowest level value
 !     and set to lowest level value in that case
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij, i, j, k )
        DO ij = 1 , num_tiles
          DO j=j_start(ij),j_end(ij)
          DO i=i_start(ij),i_end(ij)
-            IF(Q2(i,j) .GT. QGH(i,j))THEN
-              Q2(i,j) = QV_CURR(i,1,j)
-            ENDIF
+            Q2(i,j) = MIN(Q2(i,j),1.05*QV_CURR(i,1,j))
          ENDDO
          ENDDO
        ENDDO

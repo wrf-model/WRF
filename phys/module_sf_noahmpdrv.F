@@ -52,7 +52,7 @@ CONTAINS
     USE MODULE_SF_NOAHMPLSM
 !    USE MODULE_SF_NOAHMPLSM, only: noahmp_options, NOAHMP_SFLX, noahmp_parameters
     USE module_sf_noahmp_glacier
-    USE NOAHMP_TABLES, ONLY: ISICE_TABLE, CO2_TABLE, O2_TABLE, DEFAULT_CROP_TABLE, ISURBAN_TABLE, NATURAL_TABLE, &
+    USE NOAHMP_TABLES, ONLY: ISICE_TABLE, CO2_TABLE, O2_TABLE, DEFAULT_CROP_TABLE, ISCROP_TABLE, ISURBAN_TABLE, NATURAL_TABLE, &
                              LOW_DENSITY_RESIDENTIAL_TABLE, HIGH_DENSITY_RESIDENTIAL_TABLE, HIGH_INTENSITY_INDUSTRIAL_TABLE
     USE module_sf_urban,    only: IRI_SCHEME
     USE module_ra_gfdleta,  only: cal_mon_day
@@ -520,10 +520,10 @@ CONTAINS
        PRCP   = PRECIP_IN (I,J) / DT                  ! timestep total precip rate (glacier) [mm/s]! MB: v3.7
 
        CROPTYPE = 0
-       IF (IDVEG == 10) CROPTYPE = DEFAULT_CROP_TABLE ! default croptype is generic dynamic vegetation crop
+       IF (IDVEG == 10 .AND. VEGTYP == ISCROP_TABLE) CROPTYPE = DEFAULT_CROP_TABLE ! default croptype is generic dynamic vegetation crop
        IF (IDVEG == 10 .AND. CROPCAT(I,J) > 0) THEN
          CROPTYPE = CROPCAT(I,J)                      ! crop type
-	 VEGTYP = 12
+	 VEGTYP = ISCROP_TABLE
          FVGMAX = 0.95
 	 FVEG   = 0.95
        END IF
@@ -1469,10 +1469,9 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
              fastcpxy   (I,J) = 1000.0                         !
              grainxy    (I,J) = 1E-10
              gddxy      (I,J) = 0    
+	     cropcat    (i,j) = default_crop_table
 
 	     if(croptype(i,5,j) >= 0.5) then
-               lai     (i,j) = 0.05
-               xsaixy  (i,j) = 0.05
                rtmassxy(i,j) = 0.0
                woodxy  (i,j) = 0.0                    
 
@@ -1481,28 +1480,24 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
 		      croptype(i,1,j) > croptype(i,4,j) ) then   ! choose corn
 
 		   cropcat (i,j) = 1
-                   lfmassxy(i,j) = 0.05/0.035
-                   stmassxy(i,j) = 0.05/0.003
+                   lfmassxy(i,j) =    lai(i,j)/0.035
+                   stmassxy(i,j) = xsaixy(i,j)/0.003
 
 	       elseif(croptype(i,2,j) > croptype(i,1,j) .and. &
 		      croptype(i,2,j) > croptype(i,3,j) .and. &
 		      croptype(i,2,j) > croptype(i,4,j) ) then   ! choose soybean
 
 		   cropcat (i,j) = 2
-                   lfmassxy(i,j) = 0.05/0.015
-                   stmassxy(i,j) = 0.05/0.003
+                   lfmassxy(i,j) =    lai(i,j)/0.015
+                   stmassxy(i,j) = xsaixy(i,j)/0.003
 
 	       else
 
 		   cropcat (i,j) = default_crop_table
-                   lfmassxy(i,j) = 0.05/0.035
-                   stmassxy(i,j) = 0.05/0.003
+                   lfmassxy(i,j) =    lai(i,j)/0.035
+                   stmassxy(i,j) = xsaixy(i,j)/0.003
 
 	       end if
-
-	     else   ! croptype(i,5,j) < 0.5
-
-	       cropcat (i,j) = default_crop_table
 
 	     end if
 

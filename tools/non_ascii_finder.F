@@ -1,3 +1,9 @@
+! To remove the DOS carriage returns from Windows machines:
+! perl -pi -e 's/\r\n|\n|\r/\n/g'   file-to-convert  # Convert to UNIX
+! This program is not required for that.
+! For completeness, from stackoverflow:
+! perl -pi -e 's/\r\n|\n|\r/\r\n/g' file-to-convert  # Convert to DOS
+!
 ! The purpose of this program is to scan through all of the 
 ! lines of a Fortran file to detect if there are any character
 ! codes (excluding the ubiquitously used tab character) outside

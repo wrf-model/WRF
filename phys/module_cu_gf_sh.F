@@ -40,7 +40,7 @@
 !    itf,ktf,its,ite, kts,kte are dimensions
 !    ztexec,zqexec    excess temperature and moisture for updraft
 MODULE module_cu_gf_sh
-    real, parameter:: c1_shal=0.002 ! .0005
+    real, parameter:: c1_shal=0.! .0005
     real, parameter:: g  =9.81
     real, parameter:: cp =1004.
     real, parameter:: xlv=2.5e6
@@ -164,7 +164,7 @@ contains
         xqes_cup,xq_cup,xhe_cup,xhes_cup,xz_cup,     &
         xt_cup,dby,hc,zu,   &
         dbyo,qco,pwo,hco,qrco,     &
-        xdby,xhc,xzu,            &
+        dbyt,xdby,xhc,xzu,            &
 
   ! cd  = detrainment function for updraft
   ! dellat = change of temperature per unit mass flux of cloud ensemble
@@ -188,7 +188,7 @@ contains
        kstabi,xland1,KBMAX,ktopx
 
      integer                              ::                           &
-       I,K
+       I,K,ki
      real                                 ::                           &
       dz,mbdt,zkbmax,      &
       cap_maxs,trash,trash2,frh
@@ -204,12 +204,14 @@ contains
      integer, dimension (its:ite,kts:kte) ::  k_inv_layers 
      integer, dimension (its:ite) ::  start_level
      start_level(:)=0
+     rand_vmas(:)=0.
      flux_tun=fluxtune
       do i=its,itf
         xland1(i)=int(xland(i)+.001) ! 1.
         ktopx(i)=0
         if(xland(i).gt.1.5 .or. xland(i).lt.0.5)then
             xland1(i)=0
+!            ierr(i)=100
         endif
         pre(i)=0.
         xmb_out(i)=0.
@@ -395,12 +397,14 @@ contains
 ! first estimate for shallow convection
 !
             ktop(i)=1
-            if(k_inv_layers(i,1).gt.0)then
-!               ktop(i)=min(k_inv_layers(i,1),k_inv_layers(i,2))
+!            if(k_inv_layers(i,1).gt.0)then
+!!               ktop(i)=min(k_inv_layers(i,1),k_inv_layers(i,2))
+            if(k_inv_layers(i,1).gt.0 .and.   &
+               (po_cup(i,kbcon(i))-po_cup(i,k_inv_layers(i,1))).lt.200.)then
                ktop(i)=k_inv_layers(i,1)
             else
                do k=kbcon(i)+1,ktf
-                  if((po_cup(i,kbcon(i))-po_cup(i,k)).gt.100.)then
+                  if((po_cup(i,kbcon(i))-po_cup(i,k)).gt.200.)then
                     ktop(i)=k
                     exit
                   endif
@@ -476,6 +480,7 @@ contains
 !
 !
       do 42 i=its,itf
+        dbyt(i,:)=0.
         IF(ierr(I) /= 0) cycle
          do k=start_level(i)+1,ktop(i)
           hc(i,k)=(hc(i,k-1)*zu(i,k-1)-.5*up_massdetr(i,k-1)*hc(i,k-1)+ &
@@ -485,8 +490,25 @@ contains
           hco(i,k)=(hco(i,k-1)*zuo(i,k-1)-.5*up_massdetro(i,k-1)*hco(i,k-1)+ &
                          up_massentro(i,k-1)*heo(i,k-1))   /            &
                          (zuo(i,k-1)-.5*up_massdetro(i,k-1)+up_massentro(i,k-1))
-          dbyo(i,k)=max(0.,hco(i,k)-heso_cup(i,k))
+          dbyo(i,k)=hco(i,k)-heso_cup(i,k)
+          DZ=Zo_cup(i,K+1)-Zo_cup(i,K)
+          dbyt(i,k)=dbyt(i,k-1)+dbyo(i,k)*dz
          enddo
+       ki=maxloc(dbyt(i,:),1)
+       if(ktop(i).gt.ki+1)then
+         ktop(i)=ki+1
+         zuo(i,ktop(i)+1:ktf)=0.
+         zu(i,ktop(i)+1:ktf)=0.
+         cd(i,ktop(i)+1:ktf)=0.
+         up_massdetro(i,ktop(i))=zuo(i,ktop(i))
+!         up_massentro(i,ktop(i))=0.
+         up_massentro(i,ktop(i):ktf)=0.
+         up_massdetro(i,ktop(i)+1:ktf)=0.
+         entr_rate_2d(i,ktop(i)+1:ktf)=0.
+
+!         ierr(i)=423
+       endif
+
          if(ktop(i).lt.kbcon(i)+1)then
             ierr(i)=5
             ierrc(i)='ktop is less than kbcon+1'
@@ -515,7 +537,7 @@ contains
                        up_massentr(i,k-1)*qo(i,k-1))   /            &
                        (zuo(i,k-1)-.5*up_massdetr(i,k-1)+up_massentr(i,k-1))
 
-          if(qco(i,k)>=trash .and. dbyo(i,k) > 0.) then
+          if(qco(i,k)>=trash ) then 
               DZ=Z_cup(i,K)-Z_cup(i,K-1)
               ! cloud liquid water
               qrco(i,k)= (qco(i,k)-trash)/(1.+(c0_shal+c1_shal)*dz)
@@ -535,6 +557,7 @@ contains
           dp=100.*(po_cup(i,k)-po_cup(i,k+1))
           cnvwt(i,k)=zuo(i,k)*cupclw(i,k)*g/dp
           trash2=trash2+entr_rate_2d(i,k)
+          qco(i,k)=qco(i,k)-qrco(i,k)
          enddo
          do k=k22(i)+1,max(kbcon(i),k22(i)+1)
           trash=trash+entr_rate_2d(i,k)
@@ -649,9 +672,9 @@ contains
 
             !-- condensation source term = detrained + flux divergence of 
             !-- cloud liquid water (qrco)
-!           C_up = dellaqc(i,k)+(zuo(i,k+1)* qrco(i,k+1) -       &
-!                                 zuo(i,k  )* qrco(i,k  )  )*g/dp
-            C_up = dellaqc(i,k)
+            C_up = dellaqc(i,k)+(zuo(i,k+1)* qrco(i,k+1) -       &
+                                  zuo(i,k  )* qrco(i,k  )  )*g/dp
+!            C_up = dellaqc(i,k)
             !-- water vapor budget (flux divergence of Q_up-Q_env - condensation
             !term)
             dellaq(i,k) =-(zuo(i,k+1)*(qco(i,k+1)-qo_cup(i,k+1) ) -      &

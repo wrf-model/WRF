@@ -670,8 +670,8 @@ CONTAINS
 
 
     INTEGER :: i,j,k
-    REAL :: afk,abk,zwk,zwk1,dzk,qdz,vflx,bv,tau_cloud,elb,elb_cloud,els,els1,elf, &
-            & el_stab,el_unstab,el_mf,el_stab_mf,elb_mf
+    REAL :: afk,abk,zwk,zwk1,dzk,qdz,vflx,bv,tau_cloud,elb,els,els1,elf, &
+            & el_stab,el_unstab,el_mf,el_stab_mf,elb_mf,PBLH_PLUS_ENT
 
     INTEGER, INTENT(IN)   :: spp_pbl
     REAL, DIMENSION(kts:kte), INTENT(in)   :: rstoch_col
@@ -691,7 +691,7 @@ CONTAINS
        alp4 = 20.
        alp5 = 0.4
     ELSEIF ( bl_mynn_mixlength .GE. 2 ) THEN
-       cns  = 3.1
+       cns  = 3.5
        alp1 = 0.23
        alp2 = 0.25
        alp3 = 3.0
@@ -732,9 +732,14 @@ CONTAINS
 !   Only integrate to top of PBL (+ transition/entrainment layer),
 !   since TKE aloft is not relevant. 
 !
+    IF ( bl_mynn_mixlength .EQ. 2 ) THEN
+       PBLH_PLUS_ENT = MAX(zi, 100.)
+    ELSE
+       PBLH_PLUS_ENT = zi2+h1
+    ENDIF
     k = kts+1
     zwk = zw(k)
-    DO WHILE (zwk .LE. zi2+h1)
+    DO WHILE (zwk .LE. PBLH_PLUS_ENT)
        dzk = 0.5*( dz(k)+dz(k-1) )
        qdz = MAX( qkw(k)-qmin, 0.03 )*dzk
              elt = elt +qdz*zwk
@@ -743,7 +748,7 @@ CONTAINS
        zwk = zw(k)
     END DO
 !
-    elt =  alp1*elt/vsc
+    elt =  MAX(alp1*elt/vsc, 10.)
     vflx = ( vt(kts)+1.0 )*flt +( vq(kts)+tv0 )*flq
     vsc = ( gtr*elt*MAX( vflx, 0.0 ) )**(1.0/3.0)
 !
@@ -814,16 +819,15 @@ CONTAINS
            wt=.5*TANH((zwk - (zi2+h1))/h2) + .5
            tau_cloud = tau_cloud*(1.-wt) + 50.*wt
 
-           elb_cloud = MIN(tau_cloud*SQRT(MIN(qtke(k),20.)), zwk)
-           elb = elb_cloud
-           elf = elb_cloud
+           elb = MIN(tau_cloud*SQRT(MIN(qtke(k),20.)), zwk)
+           elf = elb
            elb_mf = elb
            IF (zwk > zi .AND. elf > 500.) THEN
              ! COMPUTE BouLac mixing length for dry conditions in free atmosphere
              CALL boulac_length0(k,kts,kte,zw,dz,qtke,thetaw,elBLmin0,elBLavg0)
-             elf = alp5*elBLavg0*(1.-cldfra_bl1D(k)) + elb_cloud*cldfra_bl1D(k)
+             elf = alp5*elBLavg0*(1.-cldfra_bl1D(k)) + elf*cldfra_bl1D(k)
            END IF
-           elf = elf*(1.-cldfra_bl1D(k)) + elb_cloud*cldfra_bl1D(k)
+           elf = elf*(1.-cldfra_bl1D(k)) + elb*cldfra_bl1D(k)
 
          END IF
        END IF
@@ -857,20 +861,17 @@ CONTAINS
 
        !JAYMES- el_stab & el_unstab blending begin ( bl_mynn_mixlength opt)
        ELSE IF ( bl_mynn_mixlength .GE. 2 ) THEN
-          hs = MAX(MIN(0.2*zi,200.),50.) ! bounded:  50 m < hs < 200 m
-          wt2 = 1.-(MIN(zwk,hs)/hs)
-          ! "el_unstab" = blended els-elt
           el_unstab = els/(1. + (els1/elt))
 
-          el_stab    = el_unstab*wt2 + elb*(1.-wt2)
-          el_stab_mf = el_unstab*wt2 + elb_mf*(1.-wt2)
+          el_stab    = MIN(el_unstab, elb) 
+          el_stab_mf = MIN(el_unstab, elb_mf)
 
           IF (bl_mynn_edmf > 0 .AND. edmf_a1(kts)>0.0) THEN
              !Force version of buiyncay mixing length with the enhancement factor to be used 
              !when the mass-flux scheme is active.
-              el(k) = MIN(el_stab_mf,el_unstab)
+              el(k) = el_stab_mf
           ELSE
-              el(k) = MIN(el_stab,el_unstab)
+              el(k) = el_stab
           ENDIF
           el(k) = el(k)*(1.-wt) + elf*wt
        END IF
@@ -889,9 +890,9 @@ CONTAINS
 
        IF ( wrf_at_debug_level(MYNN_DBG_LVL) ) THEN
          IF (el(k) > 1000.) THEN
-           WRITE ( mynn_message , FMT='(A,F7.0,I5,5F7.0)' ) &
-           ' MYNN; mym_length; LARGE el,k,elb_cloud,elb,elt,elf,tau:'&
-                                , el(k),k,elb_cloud,elb,elt,elf,tau_cloud
+           WRITE ( mynn_message , FMT='(A,F7.0,I5,4F7.0)' ) &
+           ' MYNN; mym_length; LARGE el,k,elb,elt,elf,tau:'&
+                                , el(k),k,elb,elt,elf,tau_cloud
            CALL wrf_debug ( 0 , mynn_message )
          ENDIF
        ENDIF
@@ -2104,7 +2105,7 @@ CONTAINS
     DOUBLE PRECISION :: t3sq, r3sq, c3sq
 
     REAL :: p2a,qsl,esat,qsat,tlk,qsat_tl,dqsl,cld0,q1k,eq1,qll,&
-         &q2p,pt,rac,qt,t,xl,rsl,cpm,cdhdz,fng,qww,alpha,beta,bb,ls_min,ls,wt
+         &q2p,pt,rac,qt,t,xl,rsl,cpm,cdhdz,Fng,qww,alpha,beta,bb,ls_min,ls,wt
     INTEGER :: i,j,k
 
     REAL :: erf
@@ -2150,8 +2151,7 @@ CONTAINS
     zagl = 0.
 ! Note: kte needs to be larger than kts, i.e., kte >= kts+1.
     DO k = kts,kte-1
-       p2a = exner(k)
-       t  = th(k)*p2a
+       t  = th(k)*exner(k)
 
 !x      if ( ct .gt. 0.0 ) then
 !       a  =  17.27
@@ -2285,7 +2285,7 @@ CONTAINS
     PBLH2=MAX(10.,PBLH1)
 
     DO k = kts,kte-1
-
+         t    = th(k)*exner(k)
          q1k  = q1(k)
          zagl = zagl + dz(k)
          !q1=0.
@@ -2376,8 +2376,6 @@ CONTAINS
                    !available for cloud production
                     ql_limit = 0.005 * qsat_blend( th(k)*exner(k), p(k) )
                     ql(k) = MIN( ql(k), ql_limit )
-                    if (zagl .lt. PBLH2+1000.) cld(k) = MIN( 1., 1.8*cld(k) )
-                    !Increase the cloud fraction estimate below PBLH+1km
                  else
                    !Above tropopause:  eliminate subgrid clouds from CB scheme
                     cld(k) = 0.
@@ -2385,38 +2383,42 @@ CONTAINS
                  endif 
               endif
        
-              !buoyancy-flux-related calculations follow
-              IF (q1k < -2.) THEN
-                fng = 1.-q1k
-              ELSE IF (q1k > 0.) THEN
-                fng = 0.
-              ELSE
-                fng = -1.5*q1k
-              ENDIF
-       
+              !Buoyancy-flux-related calculations follow...
+              ! "Fng" represents the non-Gaussian transport factor
+              ! (non-dimensional) from from Bechtold et al. 1995 
+              ! (hereafter BCMT95), section 3(c).  Their suggested 
+              ! forms for Fng (from their Eq. 20) are:
+              !IF (q1k < -2.) THEN
+              !  Fng = 2.-q1k
+              !ELSE IF (q1k > 0.) THEN
+              !  Fng = 1.
+              !ELSE
+              !  Fng = 1.-1.5*q1k
+              !ENDIF
+              ! For purposes of the buoyancy flux in stratus, we will use Fng = 1
+              Fng = 1.
+
               xl    = xl_blend(t)
-              q2p  = xlvcp/exner(k)
-              pt = thl(k) +q2p*ql(k) ! potential temp
-              bb = b(k)*t/pt ! bb is "b" in BCMT95.  Their "b" differs from 
-                             ! "b" in CB02 (i.e., b(k) above) by a factor 
-                             ! of T/theta.  Strictly, b(k) above is formulated in
-                             ! terms of sat. mixing ratio, but bb in BCMT95 is
-                             ! cast in terms of sat. specific humidity.  The
-                             ! conversion is neglected here. 
+              bb = b(k)*t/th(k) ! bb is "b" in BCMT95.  Their "b" differs from
+                                ! "b" in CB02 (i.e., b(k) above) by a factor
+                                ! of T/theta.  Strictly, b(k) above is formulated in
+                                ! terms of sat. mixing ratio, but bb in BCMT95 is
+                                ! cast in terms of sat. specific humidity.  The
+                                ! conversion is neglected here.
               qww   = 1.+0.61*qw(k)
-              alpha = 0.61*pt
-              p2a   = exner(k)
-              t     = thl(k)*p2a
-              beta  = pt*xl/(t*cp) - 1.61*pt
-       
-              vt(k) = (1.-cld(k))*qww   + cld(k)*(qww   - beta*bb  *(1.+fng)) - 1.
-              vq(k) = (1.-cld(k))*alpha + cld(k)*(alpha + beta*a(k)*(1.+fng)) - tv0
-              ! These equations were derived by Jaymes, using BCMT95, Eq. B5, 
-              ! in order to recast the BC02/BCMT95 buoyancy flux in terms of
-              ! vt and vq (i.e., beta-theta and beta-q in NN09, Eq. B8).  
-              ! The "-1" and "-tv0" terms are included for consistency with 
+              alpha = 0.61*th(k)
+              beta  = (th(k)/t)*(xl/cp) - 1.61*th(k)
+
+              vt(k) = qww   - cld(k)*beta*bb*Fng   - 1.
+              vq(k) = alpha + cld(k)*beta*a(k)*Fng - tv0
+              ! vt and vq correspond to beta-theta and beta-q, respectively,
+              ! in NN09, Eq. B8.  They also correspond to the bracketed
+              ! expressions in BCMT95, Eq. 15, since (s*ql/sigma^2) = cldfra*Fng
+              ! The "-1" and "-tv0" terms are included for consistency with
               ! the legacy vt and vq formulations (above).
 
+              ! increase the cloud fraction estimate below PBLH+1km
+              if (zagl .lt. PBLH2+1000.) cld(k) = MIN( 1., 1.8*cld(k) )
               !return a cloud condensate and cloud fraction for icloud_bl option:
               cldfra_bl1D(k) = cld(k)
               qc_bl1D(k) = ql(k)
@@ -3105,7 +3107,7 @@ ENDIF
        b(1)=1.+dtz(k)*dfh(k+1)
        c(1)=-dtz(k)*dfh(k+1)
        ! d(1)=sqv(k) + dtz(k)*flqv + qcd(k)*delt
-       d(1)=chem1(k,ic) + dtz(k) * -vd1(ic)*chem1(1,ic)
+       d(1)=chem1(k,ic) + dtz(k) * (-1.0) * vd1(ic) * chem1(1,ic)
 
        DO k=kts+1,kte-1
           kk=k-kts+1
@@ -4346,7 +4348,7 @@ ENDIF
   ! VARIABLES FOR CHABOUREAU-BECHTOLD CLOUD FRACTION
    REAL,DIMENSION(KTS:KTE), INTENT(INOUT) :: vt, vq, sgm
    REAL :: sigq,xl,tlk,qsat_tl,rsl,cpm,a,qmq,mf_cf,diffqt,&
-           fng,qww,alpha,beta,bb,f,pt,t,q2p,b9
+           Fng,qww,alpha,beta,bb,f,pt,t,q2p,b9
 
    ! WA TEST 11/9/15 for consistent reduction of updraft params
    REAL :: csigma,acfac
@@ -4625,12 +4627,12 @@ ENDIF
           !Entrainment from Negggers (2015, JAMES)
           !ENT(k,i) = 0.02*l**-0.35 - 0.0009
           !JOE - implement minimum background entrainment 
-          ENT(k,i) = max(ENT(k,i),0.0008)
+          ENT(k,i) = max(ENT(k,i),0.0006)
           ENT(k,i) = max(ENT(k,i),0.05/ZW(k))
-          ENT(k,i) = min(ENT(k,i),0.5/(ZW(k)-ZW(k-1))) 
           !JOE - increase entrainment for plumes extending very high.
           IF(ZW(k) >= pblh+1000.) ENT(k,i) =ENT(k,i) + (ZW(k)-(pblh+1000.)) * 5.0E-6
           IF(UPW(K-1,I) > 1.5) ENT(k,i) = ENT(k,i) + 0.004*(UPW(K-1,I) - 1.5)
+          ENT(k,i) = min(ENT(k,i),0.9/(ZW(k)-ZW(k-1)))
 
           ! Linear entrainment:
           EntExp= ENT(K,I)*(ZW(k)-ZW(k-1))
@@ -4664,6 +4666,7 @@ ENDIF
 
           EntW=exp(-2.*(Wb+Wc*ENT(K,I))*(ZW(k)-ZW(k-1)))
           Wn2=UPW(K-1,I)**2*EntW + (1.-EntW)*0.5*Wa*B/(Wb+Wc*ENT(K,I))
+          Wn2=MAX(Wn2,0.0)
 
           !Allow strongly forced plumes to overshoot if KE is sufficient
           IF (fltv > 0.05 .AND. Wn2 <= 0 .AND. overshoot == 0) THEN
@@ -4786,7 +4789,6 @@ ENDIF
             rhgrid = max(.01,MIN( 1., qv(k) /satvp))
 
             !COMPUTE CLDFRA & QC_BL FROM MASS-FLUX SCHEME and recompute vt & vq
-            fng = 1.05     !-1.5*-0.7
 
             xl = xl_blend(tk(k))                ! obtain blended heat capacity 
             tlk = thl(k)*(p(k)/p1000mb)**rcp    ! recover liquid temp (tl) from thl
@@ -4808,7 +4810,7 @@ ENDIF
                            ! conversion is neglected here.
             qww   = 1.+0.61*qt(k)
             alpha = 0.61*pt
-            t     = thl(k)*exner(k)
+            t     = th(k)*exner(k)
             beta  = pt*xl/(t*cp) - 1.61*pt
             !Buoyancy flux terms have been moved to the end of this section...
 
@@ -4850,13 +4852,12 @@ ENDIF
                ENDIF
             ENDIF
             !Now recalculate the terms for the buoyancy flux for mass-flux clouds:
-            ! These equations were derived by Jaymes, using BCMT95, Eq. B5,
-            ! in order to recast the BC02/BCMT95 buoyancy flux in terms of
-            ! vt and vq (i.e., beta-theta and beta-q in NN09, Eq. B8).
-            ! The "-1" and "-tv0" terms are included for consistency with
-            ! the legacy vt and vq formulations (above).
-            vt(k) = (1.-cldfra_bl1D(k))*qww   + cldfra_bl1D(k)*(qww   - beta*bb*(1.+fng)) - 1.
-            vq(k) = (1.-cldfra_bl1D(k))*alpha + cldfra_bl1D(k)*(alpha + beta*a* (1.+fng)) - tv0
+            !See mym_condensation for details on these formulations.  The
+            !cloud-fraction bounding was added to improve cloud retention,
+            !following RAP and HRRR testing.
+              Fng = 2.05 ! the non-Gaussian transport factor (assumed constant)
+            vt(k) = qww   - MIN(0.3,cldfra_bl1D(k))*beta*bb*Fng - 1.
+            vq(k) = alpha + MIN(0.3,cldfra_bl1D(k))*beta*a*Fng  - tv0
           ENDIF
         ELSEIF(cldfra_opt == 1) THEN
           !Randall and Xu
@@ -5366,7 +5367,7 @@ real :: diff,exn,t,th,qs,qcold
 ! number of iterations
   niter=50
 ! minimum difference
-  diff=1.e-4
+  diff=2.e-5
 
   EXN=(P/p1000mb)**rcp
   !QC=0.  !better first guess QC is incoming from lower level, do not set to zero
@@ -5374,7 +5375,7 @@ real :: diff,exn,t,th,qs,qcold
      T=EXN*THL + xlv/cp*QC        
      QS=qsat_blend(T,P)
      QCOLD=QC
-     QC=max(0.5*QC + 0.5*(QT-QS),0.)
+     QC=0.5*QC + 0.5*MAX((QT-QS),0.)
      if (abs(QC-QCOLD)<Diff) exit
   enddo
 

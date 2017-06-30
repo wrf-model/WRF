@@ -686,9 +686,9 @@ CONTAINS
             ENDDO
 
             DO I=ibegc,iendc
-              if(pret(i).gt.0.)then
-                 raincv(i,j)=pret(i)*dt
-                 pratec(i,j)=pret(i)
+              if(pret(i).gt.0. .or. pretm(i).gt.0. .or. prets(i).gt.0.)then
+                 pratec(i,j)=cuten(i)*pret(i)+cutenm(i)*pretm(i)+cutens(i)*prets(i)
+                 raincv(i,j)=pratec(i,j)*dt
                  rkbcon = kte+kts - kbcon(i)
                  rktop  = kte+kts -  ktop(i)
                  if (ktop(i)  > HTOP(i,j)) HTOP(i,j) = ktop(i)+.001

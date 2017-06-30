@@ -142,7 +142,7 @@
 !  CCN for MP=18 initializatio
    REAL :: ccn_max_val
 
-   REAL :: max_mf
+   REAL :: max_mf, max_rot_angle
    CALL get_ijk_from_grid ( grid ,                              &
                            ids, ide, jds, jde, kds, kde,        &
                            ims, ime, jms, jme, kms, kme,        &
@@ -160,6 +160,36 @@
 #endif
    ALLOCATE(z_at_q(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; z_at_q = 0.
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+
+   !  If the rotation angle is too large, the GWD option does not do well with the assumed U and V
+   !  being close to earth relative.
+
+   IF ( ( grid%id .EQ. 1 ) .AND. ( config_flags%gwd_opt .EQ. 1 ) ) THEN
+      max_rot_angle = ASIN(ABS(grid%sina(its,jts)))/DEGRAD
+      DO j=jts,MIN(jde-1,jte)
+         DO i=its,MIN(ide-1,ite)
+            max_rot_angle = MAX ( max_rot_angle , ASIN(ABS(grid%sina(i,j)))/DEGRAD )
+         END DO
+      END DO
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
+      max_rot_angle = wrf_dm_max_real ( max_rot_angle )
+#endif
+      IF ( max_rot_angle .GT. ABS(config_flags%max_rot_angle_gwd) ) THEN
+         WRITE ( a_message , FMT='(A,F5.2)' ) 'Max projection rotation angle for domain 1 = ',max_rot_angle
+         CALL wrf_message ( a_message ) 
+         WRITE ( a_message , FMT='(A)'      ) 'This projection may not be appropriate for using the gravity wave drag option.'
+         CALL wrf_message ( a_message ) 
+         WRITE ( a_message , FMT='(A)'      ) 'In namelist.input make one of the two following changes:'
+         CALL wrf_message ( a_message ) 
+         WRITE ( a_message , FMT='(A)'      ) ' 1) gwd_opt = 0 '
+         CALL wrf_message ( a_message ) 
+         WRITE ( a_message , FMT='(A,F5.2)' ) ' 2) max_rot_angle_gwd > ',max_rot_angle
+         CALL wrf_message ( a_message ) 
+         WRITE ( a_message , FMT='(A)'      ) '--- ERROR: gwd_opt does not work with this domain'
+         CALL wrf_error_fatal ( a_message ) 
+      END IF
+   END IF
+
 
    IF ( ( MOD (ide-ids,config_flags%parent_grid_ratio) .NE. 0 ) .OR. &
         ( MOD (jde-jds,config_flags%parent_grid_ratio) .NE. 0 ) ) THEN
@@ -252,7 +282,7 @@
       ! Print out the maximum map scale factor on the coarse domain 
 
       IF ( ( first_trip_for_this_domain ) .AND. ( grid%id .EQ. 1 ) .AND. &
-           ( .NOT. config_flags%map_proj .EQ. PROJ_CASSINI ) ) THEN
+           ( .NOT. config_flags%polar ) ) THEN
          max_mf = grid%msft(its,jts)
          DO j=jts,MIN(jde-1,jte)
             DO i=its,MIN(ide-1,ite)
@@ -266,6 +296,21 @@
                                                 '. Scale the dt in the model accordingly.'
          CALL wrf_message ( a_message ) 
       END IF
+
+    if(config_flags%cycling) then
+! Clear the buckets for diagnostics at initial time
+       DO j = jts,min(jte,jde-1)
+       DO i = its, min(ite,ide-1)
+            grid%prec_acc_nc(i,j) = 0.
+            grid%snow_acc_nc(i,j)  = 0.
+            grid%sfcrunoff  (i,j) = 0.
+            grid%udrunoff   (i,j) = 0.
+! acsnow, and acrunoff are run-total
+            grid%acrunoff   (i,j) = 0.
+            grid%acsnow     (i,j) = 0.
+       ENDDO
+       ENDDO
+    endif
 
 !   --- SETUP AND INITIALIZE STOCHASTIC PERTURBATION SCHEMES ---
 
@@ -517,6 +562,34 @@
       !  Base state potential temperature and inverse density (alpha = 1/rho) from
       !  the half eta levels and the base-profile surface pressure.  Compute 1/rho
       !  from equation of state.  The potential temperature is a perturbation from t0.
+
+      DO k = 1, kte
+#if  !( HYBRID_COORD==1 )
+         grid%c1f(k) = 1.
+         grid%c2f(k) = 0.
+         grid%c3f(k) = grid%znw(k)
+         grid%c4f(k) = 0.
+         grid%c1h(k) = 1.
+         grid%c2h(k) = 0.
+         grid%c3h(k) = grid%znu(k)
+         grid%c4h(k) = 0.
+#elif ( HYBRID_COORD==1 )
+         IF ( grid%c1f(1) .NE. 1. ) THEN
+            CALL wrf_debug ( 0 , '---- WARNING : Maybe old non-HVC input, setting default 1d array values for TF' )
+            IF ( grid%hybrid_opt .NE. 0 ) THEN
+               CALL wrf_error_fatal ( '---- Error : Cannot use old input and try to use hybrid vertical coordinate option' )
+            END IF
+            grid%c1f(k) = 1.
+            grid%c2f(k) = 0.
+            grid%c3f(k) = grid%znw(k)
+            grid%c4f(k) = 0.
+            grid%c1h(k) = 1.
+            grid%c2h(k) = 0.
+            grid%c3h(k) = grid%znu(k)
+            grid%c4h(k) = 0.
+         END IF
+#endif
+      END DO
 
       DO j = jts, MIN(jte,jde-1)
          DO i = its, MIN(ite,ide-1)
@@ -884,7 +957,6 @@
 ! MPDT is the call frequency for microphysics in minutes (0 means every step)
    MPDT = 0.
 
-!tgs
    IF(config_flags%cycling) THEN
        start_of_simulation = .true.
 !  print *,'cycling, start_of_simulation -->',config_flags%cycling, start_of_simulation
@@ -900,6 +972,23 @@
         ( ( grid%dfi_opt .EQ. DFI_NODFI ) .OR. ( grid%dfi_stage .EQ. DFI_FST ) ) ) THEN
 
 !  Calculate any variables that were not set
+!BPR BEGIN
+!     This subroutine is called more than once at the first time step for a
+!     given domain.  The following if statement is to prevent the code in
+!     the if statement from executing more than once per domain at the
+!     beginning of the model run (since last_step_update=-1 the first time
+!     this is reached and should be =0 after this).
+!     Without this if statement, when this code was executed for the second
+!     time it can result in grid%dt being set incorrectly.
+!     -This is because grid%dt will be set equal to grid%starting_time_step
+!      which ignores a possible denominator in the starting time step.
+!     -The first time this code is reached is also does this, but then the
+!      call to adapt_timestep correct this
+!     -Subsequent times this code is reached adapt_timestep will not correct
+!      this because it will recognize that it has already been executed for
+!      this timestep and exit out before doing the calculation.
+
+      if (grid%last_step_updated .NE. grid%itimestep) then
 
       if (grid%starting_time_step == -1) then
          grid%starting_time_step = NINT(4 * MIN(grid%dx,grid%dy) / 1000)
@@ -937,6 +1026,8 @@
       CALL wrf_dm_maxval(grid%max_msftx, idex, jdex)
       CALL wrf_dm_maxval(grid%max_msfty, idex, jdex)
 #endif
+      end if
+!BPR END
 
 !     This first call just initializes variables.
 !     If a restart, get initialized variables from restart file
@@ -972,10 +1063,9 @@ if(config_flags%sf_surface_physics.eq.NOAHMPSCHEME.and.config_flags%opt_run.eq.5
 endif
 #endif
 
-!tgs do not need physics initialization for backward DFI integration
     IF ( ( grid%dfi_opt .EQ. DFI_NODFI ) .or. &
           ( ( grid%dfi_stage .NE. DFI_BCK ) .and. &
-          ( grid%dfi_stage .NE. DFI_STARTBCK ) ) ) THEN    !tgs, mods by tah
+          ( grid%dfi_stage .NE. DFI_STARTBCK ) ) ) THEN
 
    DO ij = 1, grid%num_tiles
 
@@ -1744,7 +1834,7 @@ endif
                 grid%dust_opt,ids,ide, jds,jde, kds,kde,                    &
                 ims,ime, jms,jme, kms,kme,                                  &
                 its,ite, jts,jte, kts,kte-1                                 )
-         case (RACM_SOA_VBS_KPP)
+         case (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
              call sum_pm_soa_vbs (                                           &
                  grid%alt, chem, grid%h2oaj, grid%h2oai,                                   &
                  grid%pm2_5_dry, grid%pm2_5_water, grid%pm2_5_dry_ec, grid%pm10,                &
@@ -2047,6 +2137,7 @@ endif
       REAL :: p_surf ,  pd_surf, p_surf_int , pb_int , ht_hold
       REAL :: qvf , qvf1 , qvf2, qtot
       REAL :: pfu, pfd, phm
+      REAL :: z0, z1, z2, w1, w2
 
       !  Local domain indices and counters.
 
@@ -2281,6 +2372,14 @@ endif
 
             END IF ! hypsometric
        ENDIF ! nmoist
+
+! update surface pressure PSFC (needed for post-processing):
+               z0 = grid%ph0(i,1,j)/g
+               z1 = 0.5*(grid%ph0(i,1,j)+grid%ph0(i,2,j))/g
+               z2 = 0.5*(grid%ph0(i,2,j)+grid%ph0(i,3,j))/g
+               w1 = (z0 - z2)/(z1 - z2)
+               w2 = 1. - w1
+               grid%psfc(i,j) = w1*(grid%p(i,1,j)+grid%pb(i,1,j))+w2*(grid%p(i,2,j)+grid%pb(i,2,j))
 
          END DO !i
         ENDDO !j

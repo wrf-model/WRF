@@ -102,7 +102,7 @@ package   vt_track_nest vortex_tracker==2            -             state:pdyn_pa
 package   vt_centroid   vortex_tracker==3            -             state:pdyn_parent,pdyn_smooth
 package   vt_rev_centr  vortex_tracker==4            -             state:weightout,mslp_noisy,pdyn_parent,pdyn_smooth,distsq
 package   vt_pdyn       vortex_tracker==5            -             state:pdyn_parent,pdyn_smooth,distsq
-package   vt_ncep_2013  vortex_tracker==6            -             state:pdyn_parent,pdyn_smooth,p850rv,p700rv,p850wind,p700wind,p850z,p700z,m10wind,m10rv,sp850rv,sp700rv,sp850wind,sp700wind,sp850z,sp700z,sm10wind,sm10rv,smslp,tracker_fixes,distsq,tracker_distsq,nest_imid,nest_jmid
+package   vt_ncep_2013  vortex_tracker==6            -             state:pdyn_parent,pdyn_smooth,p850rv,p700rv,p850wind,p700wind,p850z,p700z,m10wind,m10rv,sp850rv,sp700rv,sp850wind,sp700wind,sp850z,sp700z,sm10wind,sm10rv,smslp,tracker_fixes,distsq,tracker_distsq
 package   vt_ncep_2014  vortex_tracker==7            -             state:pdyn_parent,pdyn_smooth,p850rv,p700rv,p850wind,p700wind,p850z,p700z,m10wind,m10rv,sp850rv,sp700rv,sp850z,sp700z,sm10rv,smslp,tracker_fixes,distsq,p500u,p500v,p700u,p700v,p850u,p850v,tracker_distsq
 #---------------------------------------------------------------
 # Vortex Tracker Variables

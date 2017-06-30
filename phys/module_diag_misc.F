@@ -199,7 +199,6 @@ CONTAINS
 
    INTEGER :: i,j,k,its,ite,jts,jte,ij
    INTEGER :: idp,jdp,irc,jrc,irnc,jrnc,isnh,jsnh
-   INTEGER :: prfreq
 
    REAL              :: no_points
    REAL              :: dpsdt_sum, dmudt_sum, dardt_sum, drcdt_sum, drndt_sum
@@ -1009,15 +1008,6 @@ CONTAINS
 
    IF ( xtime .ne. 0. ) THEN
 
-    if(diag_print.eq.1) then
-       prfreq = dt
-!      prfreq = max(2,int(dt/60.))   ! in min
-    else
-       prfreq=10                   ! in min
-    endif
-   
-    IF (MOD(nint(dt),prfreq) == 0) THEN
-
 ! COMPUTE THE NUMBER OF MASS GRID POINTS
    no_points = float((ide-ids)*(jde-jds))
 
@@ -1165,7 +1155,6 @@ CONTAINS
    ENDIF
 #endif
 
-    ENDIF        ! print frequency
    ENDIF
 
 ! save values at this time step

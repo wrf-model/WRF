@@ -238,6 +238,7 @@ CONTAINS
         z10=10.0
             windmks=w10m
             if (windmks > 85.0) windmks=85.0
+            if (windmks < 1.0) windmks=1.0
             if ( icoef_sf .EQ. 1) then
               call  znot_m_v1(windmks,zm1)
               call  znot_t_v1(windmks,zt1)

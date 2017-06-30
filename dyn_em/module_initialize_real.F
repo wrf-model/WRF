@@ -266,7 +266,7 @@ integer::oops1,oops2
       !  Send out a quick message about the time steps based on the map scale factors.
 
       IF ( ( internal_time_loop .EQ. 1 ) .AND. ( grid%id .EQ. 1 ) .AND. &
-           ( .NOT. config_flags%map_proj .EQ. PROJ_CASSINI ) ) THEN
+           ( .NOT. config_flags%polar ) ) THEN
          max_mf = grid%msft(its,jts)
          DO j=jts,MIN(jde-1,jte)
             DO i=its,MIN(ide-1,ite)
@@ -329,7 +329,7 @@ integer::oops1,oops2
                  ( config_flags%grid_fdda .NE. 0 ) .OR. &
                  ( config_flags%sst_update .EQ. 1 ) .OR. &
                  ( config_flags%all_ic_times ) .OR. &
-                 ( config_flags%map_proj .EQ. PROJ_CASSINI )
+                 ( config_flags%polar )
 
       !  There are a few checks that we need to do when the input data comes in with the middle
       !  excluded by WPS.
@@ -352,7 +352,7 @@ integer::oops1,oops2
             CALL wrf_message ( a_message ) 
             WRITE ( a_message,* ) ' ( config_flags%smooth_cg_topo )             ', ( config_flags%smooth_cg_topo )
             CALL wrf_message ( a_message ) 
-            WRITE ( a_message,* ) ' ( config_flags%map_proj .EQ. PROJ_CASSINI ) ', ( config_flags%map_proj .EQ. PROJ_CASSINI )
+            WRITE ( a_message,* ) ' ( config_flags%polar )                      ', ( config_flags%polar )
             CALL wrf_message ( a_message ) 
 
             WRITE ( a_message,* ) 'Problems, we cannot have excluded middle data from WPS'
@@ -465,14 +465,14 @@ integer::oops1,oops2
                grid%msfvx_inv(i,jte) = 0.
             END DO
          END IF
-      ELSE IF ( ( config_flags%map_proj .EQ. PROJ_CASSINI ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN
+      ELSE IF ( ( config_flags%polar ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN
          DO j=jts,jte
             DO i=its,min(ide-1,ite)
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
             END DO
          END DO
-      ELSE IF ( ( .NOT. config_flags%map_proj .EQ. PROJ_CASSINI ) .AND. ( flag_mf_xy .NE. 1 ) ) THEN
+      ELSE IF ( ( .NOT. config_flags%polar ) .AND. ( flag_mf_xy .NE. 1 ) ) THEN
          DO j=jts,jte
             DO i=its,ite
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
@@ -490,7 +490,7 @@ integer::oops1,oops2
                grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
             END DO
          END DO
-      ELSE IF ( ( .NOT. config_flags%map_proj .EQ. PROJ_CASSINI ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN
+      ELSE IF ( ( .NOT. config_flags%polar ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN
          IF ( grid%msfvx(its,jts) .EQ. 0 ) THEN
             CALL wrf_error_fatal ( 'Maybe you do not have the new map factors, try re-running geogrid' )
          END IF
@@ -500,7 +500,7 @@ integer::oops1,oops2
                grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
             END DO
          END DO
-      ELSE IF ( ( config_flags%map_proj .EQ. PROJ_CASSINI ) .AND. ( flag_mf_xy .NE. 1 ) ) THEN
+      ELSE IF ( ( config_flags%polar ) .AND. ( flag_mf_xy .NE. 1 ) ) THEN
          CALL wrf_error_fatal ( 'Neither SI data nor older metgrid data can initialize a global domain' )
       ENDIF
 
@@ -654,7 +654,7 @@ integer::oops1,oops2
             
          END IF
 
-         !  Filter the input topography if this is a polar projection.
+         !  Filter the input topography if this is a global domain.
 
          IF ( ( config_flags%polar ) .AND. ( grid%fft_filter_lat .GT. 90 ) ) THEN
             CALL wrf_error_fatal ( 'If the polar boundary condition is used, then fft_filter_lat must be set in namelist.input' )
@@ -1052,6 +1052,28 @@ integer::oops1,oops2
                   DO i = its, MIN(ite,ide-1)
                      IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                      grid%qv_gc(i,k,j) = grid%sh_gc(i,k,j) /( 1. - grid%sh_gc(i,k,j) )
+                     sat_vap_pres_mb = 0.6112*10.*EXP(17.67*(grid%t_gc(i,k,j)-273.15)/(grid%t_gc(i,k,j)-29.65))
+                     vap_pres_mb = grid%qv_gc(i,k,j) * grid%p_gc(i,k,j)/100. / (grid%qv_gc(i,k,j) + 0.622 )
+                     IF ( sat_vap_pres_mb .GT. 0 ) THEN
+                        grid%rh_gc(i,k,j) = ( vap_pres_mb / sat_vap_pres_mb ) * 100.
+                     ELSE
+                        grid%rh_gc(i,k,j) = 0.
+                     END IF
+                  END DO
+               END DO
+            END DO
+
+         ELSE IF ( flag_qv .EQ. 1 ) THEN
+            IF ( grid%p_gc(i_valid,num_metgrid_levels,j_valid) .LT. grid%p_gc(i_valid,2,j_valid) ) THEN
+               k = 2
+            ELSE
+               k = num_metgrid_levels
+            END IF
+
+            DO j = jts, MIN(jte,jde-1)
+               DO k = 1 , num_metgrid_levels
+                  DO i = its, MIN(ite,ide-1)
+                     IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                      sat_vap_pres_mb = 0.6112*10.*EXP(17.67*(grid%t_gc(i,k,j)-273.15)/(grid%t_gc(i,k,j)-29.65))
                      vap_pres_mb = grid%qv_gc(i,k,j) * grid%p_gc(i,k,j)/100. / (grid%qv_gc(i,k,j) + 0.622 )
                      IF ( sat_vap_pres_mb .GT. 0 ) THEN
@@ -5848,7 +5870,14 @@ print *,'i,j = ',i,j
 print *,'p array = ',all_x
 print *,'f array = ',all_y
 print *,'p target= ',target_x
-         CALL wrf_error_fatal ( 'troubles, the interpolating order is too large for this few input values' )
+         CALL wrf_message ( 0 , 'Troubles, the interpolating order is too large for this few input values' )
+         CALL wrf_message ( 0 , 'This is usually caused by bad pressures' ) 
+         CALL wrf_message ( 0 , 'At this (i,j), look at the input value of pressure from metgrid' )
+         CALL wrf_message ( 0 , 'The surface pressure and the sea-level pressure should be reviewed, also from metgrid' )
+         CALL wrf_message ( 0 , 'Finally, ridiculous values of moisture can mess up the vertical pressures, especially aloft' )
+         CALL wrf_message ( 0 , 'The variable type is ' // var_type // '. This is not a unique identifer, but a type of field' )
+         CALL wrf_message ( 0 , 'Check to see if all time periods with this data fail, or just this one' )
+         CALL wrf_error_fatal ( 'This vertical interpolation failure is more typically associated with untested data sources to ungrib' )
       END IF
 
       IF ( n .LT. 1 ) THEN

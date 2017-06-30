@@ -304,7 +304,8 @@ CONTAINS
 
   CONTAINS
 
-    PURE SUBROUTINE AtmOptics_Allocate(self,alloc_stat)
+!cray/pkb add elemental
+    ELEMENTAL PURE SUBROUTINE AtmOptics_Allocate(self,alloc_stat)
       TYPE(CRTM_AtmOptics_type), INTENT(OUT) :: self
       INTEGER                  , INTENT(OUT) :: alloc_stat
       ! Allocate object

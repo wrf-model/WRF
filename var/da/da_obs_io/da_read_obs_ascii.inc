@@ -1156,17 +1156,6 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
                    nlocal(gpsref) = nlocal(gpsref) + 1
                    ilocal(gpsref) = ilocal(gpsref) + 1
                 end if
-!
-! discarded the GPSRO data above 30-km (refer to GSI, Lidia Cucurull, Nov. 2009).
-! YRG, 02/01/2010.
-            do i = 1, nlevels
-               if ( platform%each(i)%height> 30000.0 ) then
-                  nlevels = i-1
-                  exit
-               endif
-            enddo
-            levs = nlevels
-!
             if( nlocal(gpsref) == ilocal(gpsref)) then
                allocate (iv%gpsref(ilocal(gpsref))%h (1:iv%info(gpsref)%max_lev))
                allocate (iv%gpsref(ilocal(gpsref))%ref(1:iv%info(gpsref)%max_lev))

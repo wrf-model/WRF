@@ -3298,7 +3298,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 #if (WRF_CHEM == 1)
          evapprod(k) = - PRE(K) - EPRDS(K) - EPRDG(K) 
          rainprod(k) = PRA(K) + PRC(K) + PSACWS(K) + PSACWG(K) + PGSACW(K) & 
-                       + PRAI(K) + PRCI(K) + PRACI(K) + PRACIS(K) + &
+                       + PRAI(K) + PRCI(K) + PRACI(K) + PRACIS(K)  &
                        + PRDS(K) + PRDG(K)
 #endif
 

@@ -23,6 +23,34 @@ WRFDA, including infringement actions.
 This is the main directory for the WRFDA Version 3 source code release.
 ======================================
 
+V3.9 Release Notes :
+-------------------
+
+Version 3.9 was released on April 17, 2017.
+
+  For more information about WRFDA, visit the WRFDA Users home page
+  http://www2.mmm.ucar.edu/wrf/users/wrfda/index.html
+
+  New features:
+
+    - AMSR2 cloudy radiance assimilation
+    - 4DEnVar assimilation capability
+    - Radar "null-echo" assimilation
+
+  Updates:
+    - Many bug fixes and performance improvements, including:
+      - For use_radar_rhv=true, total reflectivity and retrieved hydrometeors were calculated incorrectly
+      - Several compile-time and run-time bugs for PGI compilers
+    - Updated CRTM to version 2.2.3 (from 2.1.3)
+    - New run-time options for improving surface data assimilation (FM-12 SYNOP)
+    - Improved implementation of cloud control variables (no longer requires conditional compilation)
+    - New run-time options for calculating cloud base height for use_radar_rqv=true
+    - WRFPLUS has been upgraded to V3.9 and is consistent with the released WRF version 3.9.
+
+See http://www2.mmm.ucar.edu/wrf/users/wrfda/updates-3.9.html for a full list of updates
+
+======================================
+
 V3.8.1 Release Notes :
 -------------------
 
@@ -402,23 +430,29 @@ WRFDA update history:
 - V3.4.1:   Aug 16, 2012
 - V3.5:     Apr 18, 2013
 - V3.5.1:   Sep 23, 2013
-- V3.6:     Apr 15, 2014
+- V3.6:     Apr 18, 2014
+- V3.6.1:   Aug 14, 2014
+- V3.7:     Apr 20, 2015
+- V3.7.1:   Aug 14, 2015
+- V3.8:     Apr  8, 2016
+- V3.8.1:   Aug 12, 2016
+- V3.9:     Apr 17, 2017
 ======================================
 
 How to compile and run?
 -----------------------
 
-- In WRFDA directory, type 'configure wrfda - this will create a configure.wrf
+- In WRFDA directory, type `configure wrfda` - this will create a configure.wrf
   file that has appropriate compile options for the supported computers.
 
-  Note: WRFDA only requires netCDF library starting with V3.1.1.
+  Note: WRFDA only requires netCDF library for compilation
         Install netCDF library with the same compiler that will be used to compile WRFDA.
         NCEP BUFR and CRTM libs are included in the WRFDA tar file. 
         Set environment variables properly according to your applications
         before you type 'configure wrfda'. For example, 
 
-        setenv NETCDF /usr/local/netcdf-pgi
-        setenv RTTOV /usr/local/rttov10 (optional, set to compile WRFDA with RTTOV capability)
+        setenv NETCDF /usr/local/netcdf
+        setenv RTTOV /usr/local/rttov11 (optional, set to compile WRFDA with RTTOV capability)
 
 - Type 'compile all_wrfvar' when you are ready:
 
@@ -429,4 +463,6 @@ How to compile and run?
 
      Some basic instruction/namelist.input are available in sub-directories
      of WRFDA/var/test.
+
+- See the Users Guide (http://www2.mmm.ucar.edu/wrf/users/wrfda/usersguide.html) for more detailed instructions.
 

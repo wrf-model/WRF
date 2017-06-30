@@ -1,4 +1,4 @@
-WRF Model Version 3.8.1 (August 12, 2016)
+WRF Model Version 3.9 (April 17, 2017)
 http://wrf-model.org/users/users.php
 
 ------------------------
@@ -26,6 +26,14 @@ infringement actions.
 ======================================
 This is the main directory for the WRF Version 3 source code release.
 ======================================
+
+V3.9 Release Notes (4/17/17):
+-------------------
+
+- For more information on WRF V3.9 release, visit WRF User's home pages
+  http://www2.mmm.ucar.edu/wrf/users/, and
+  http://www.dtcenter.org/wrf-nmm/users/, and read the online User's Guide.
+
 
 V3.8.1 Release Notes (8/12/16) (rev 9553):
 -------------------
@@ -240,6 +248,10 @@ WRF update history:
 - V3.5.1: Sept 23, 2013
 - V3.6: April 18, 2014
 - V3.6.1: Aug 14, 2014
+- V3.7: April 20, 2015
+- V3.7.1: Aug 14, 2015
+- V3.8: April 8, 2016
+- V3.8.1: Aug 12, 2016
 
 ======================================
 
@@ -278,6 +290,8 @@ How to compile and run?
       In c-shell environment, do
 
       setenv WRFIO_NCD_LARGE_FILE_SUPPORT 1
+
+      This becomes default since V3.9.
 
       2. Since V3.2, we support using multiple processors for compilation. The
       default number of processors used is 2. But if you have any problem with
@@ -340,6 +354,7 @@ What is in WRF V3?
   * global modeling capability on latitude-longitude grid
   * digital filter initialization
   * WENO advection options
+  * Hybrid sigma-pressure vertical coordinate (since V3.9)
 
 - Two-way nesting:
   * multiple domains and multiple nest levels
@@ -357,7 +372,7 @@ What is in WRF V3?
   * microphysics (Kessler/ WRF Single Moment 3, 5 and 6 classes / Lin et al./ Mibrandt 2-moment /
     Eta Ferrier / Thompson / Goddard / 2-moment Morrison / WRF Double Moment 5 and 6 classes /
     SBU-Lin 5-classes / NSSL 2-moment and 1-moment / CAM 5.1 ) / Thompson aerosol-aware /
-    HUJI full and fast SBM
+    HUJI full and fast SBM / P3
   * cumulus parameterization (Kain-Fritsch with shallow convection / 
     Betts-Miller-Janjic / Grell-Devenyi ensemble / Grell 3D (with shallow convection option) /
     Grell-Freitas ensemble /
@@ -393,6 +408,7 @@ What is in WRF V3?
   * three-dimensional, surface analysis nudging, and flux-adjusting surface data nudging
   * observation nudging 
   * spectral nudging
+  * flux-adjusting surface data nudging
 
 - Software
 

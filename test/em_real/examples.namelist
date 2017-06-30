@@ -552,6 +552,17 @@ which can be changed by the user for sensitivity testing purposes.
  inputout_begin_h                    = 3, 6, 6
  inputout_end_h                      = 9, 6, 6
 
+** To use climatological data in Thompson microphysics option 28: in addition to
+process additional data in metgrid, use these:
+
+&domains
+ wif_input_opt                       = 1
+ num_wif_levels                      = 30
+
+&physics
+ mp_physics                          = 28,    28,    28,
+ use_aero_icbc                       = .true.
+
 
 ** The hybrid vertical coordinate (HVC) requires three pieces:
 1. The WRF and real codes must be built with HVC activated (./configure -hyb)
@@ -561,3 +572,40 @@ which can be changed by the user for sensitivity testing purposes.
 &dynamics
  hybrid_opt          = 2,
  etac                = 0.2,
+
+** New mechanism to specify physics:
+
+&physics
+ physics_suite = 'CONUS'
+
+which is equivalent to
+
+ mp_physics         = 8,
+ cu_physics         = 6,
+ ra_lw_physics      = 4,
+ ra_sw_physics      = 4,
+ bl_pbl_physics     = 2,
+ sf_sfclay_physics  = 2,
+ sf_surface_physics = 2,
+
+&physics
+ physics_suite = 'TROPICAL'
+
+which is equivalent to
+
+ mp_physics         = 6,
+ cu_physics         = 16,
+ ra_lw_physics      = 4,
+ ra_sw_physics      = 4,
+ bl_pbl_physics     = 1,
+ sf_sfclay_physics  = 91,
+ sf_surface_physics = 2,
+
+
+To overwrite the cu_physics option for a second nest, set 
+
+ &physics
+ physics_suite                       = 'tropical'
+ cu_physics                          = -1,    -1,     0,
+ ...
+

@@ -1,0 +1,22 @@
+Change lower limit of exchange coefficient in urban areas to 1.e-2 from 1.e-4
+
+TYPE: bug-fix
+
+KEYWORDS: Noah and NoahMP, urban
+
+SOURCE: internal, Mike Barlage
+
+DESCRIPTION OF CHANGES: 
+For stability reasons, CHS needs a lower limit in urban areas. Previous releases had 
+reduced it to 1.e-4 in Noah urban since V3.7, but kept older value of 
+1.e-2 in Noah mosaic.  V3.9 will revert to older value of 1.e-2 and 
+also add this to new NoahMP urban capability. [This reverses a change
+made since the last release.]
+
+LIST OF MODIFIED FILES: 
+M       phys/module_sf_noahdrv.F
+M       phys/module_sf_noahmpdrv.F
+
+TESTS CONDUCTED: 
+WTF 3.06 passed all expected
+

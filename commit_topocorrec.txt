@@ -1,0 +1,26 @@
+TYPE: enhancement
+ 
+KEYWORDS: topo_wind=1, diurnal cycle improvement, YSU PBL only
+ 
+SOURCE: internal + Raquel Lorente (formerly RAL) and Pedro Jimenez (RAL)
+ 
+PURPOSE:  To improve diurnal behavior of surface wind when topo_wind=1 is 
+activated. This replaces the topo_wind=1 and is not a new option.
+ 
+DESCRIPTION OF CHANGES: 
+
+Follows paper Lorente-Plazas et al. (2016, MWR) by decreasing effects of 
+topo_wind=1 option when unstable boundary-layer conditions prevail. Uses 
+convective velocity and PBL height to determine instability. PBL height uses a 
+hybrid tke-theta method copied from the MYNN PBL, but for YSU tke is computed 
+diagnostically.
+Extra code is added to compute tke, hybrid PBL height and convective velocity
+within the YSU PBL, so this is the only module affected.
+
+LIST OF MODIFIED FILES :   
+
+M       phys/module_bl_ysu.F
+ 
+TESTS CONDUCTED:    
+
+WTF reg test (includes topo_wind=1 tests already)

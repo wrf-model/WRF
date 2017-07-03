@@ -3981,7 +3981,7 @@ CONTAINS
      ENDIF
 
 ! Limit Q2 diagnostic to 5 per cent higher than lowest level value
-!     and set to that value in that case
+!     and set to lowest level value in that case
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij, i, j, k )
        DO ij = 1 , num_tiles

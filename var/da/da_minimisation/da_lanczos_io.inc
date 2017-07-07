@@ -27,12 +27,12 @@ subroutine da_lanczos_io (io_config, cv_size, ntmaxit, neign, eignvec, eignval, 
    if (trace_use) call da_trace_entry("da_lanczos_io")
    
    write(cproc,fmt='(i4.4)') myproc
-   filename = '../lanczos_eigenpairs.'//trim(adjustl(cproc))
+   filename = trim(lanczos_ep_filename)//'.'//trim(adjustl(cproc))
 
    call da_get_unit (ep_unit)
 
    if (io_config == 'r') then
-      write(*,*) 'Reading Lanczos eigenpairs'
+      write(*,*) 'Reading Lanczos eigenpairs from file '//filename
       open (unit=ep_unit, file = filename, form = 'unformatted', status = 'old')
       read(unit=ep_unit) neign, cv_size
       do i = 1, neign
@@ -42,7 +42,7 @@ subroutine da_lanczos_io (io_config, cv_size, ntmaxit, neign, eignvec, eignval, 
       end do
       close(unit=ep_unit)
    else if (io_config == 'w') then
-      write(*,*) 'Writing Lanczos eigenpairs'
+      write(*,*) 'Writing Lanczos eigenpairs to file '//filename
       open (unit=ep_unit, file = filename, form = 'unformatted', status = 'replace')
       write(unit=ep_unit) neign, cv_size
       do i = 1, neign
@@ -52,7 +52,7 @@ subroutine da_lanczos_io (io_config, cv_size, ntmaxit, neign, eignvec, eignval, 
       end do
       close(unit=ep_unit)
    else
-      write(*,*) 'Unknow configuration for Lanczos I/O routine'
+      write(*,*) 'Unknown configuration for Lanczos I/O routine'
    end if
 
    call da_free_unit (ep_unit)

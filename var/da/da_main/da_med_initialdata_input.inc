@@ -117,6 +117,18 @@ subroutine da_med_initialdata_input (grid, config_flags, filename, in_date)
 
    call nl_get_mminlu (grid%id , grid%mminlu)
 
+   ! Check if this is a restart file; quit if it is.
+   ! Restart files can be successfully read and used but will result in garbage data, so we should quit now.
+   call wrf_get_dom_ti_integer (fid, 'FLAG_RESTART', status, 1, icnt, ierr)
+   if (ierr == 0) then
+      if (status == 1) then
+         write(unit=message(1),fmt='(A,A)') trim(filename), ' appears to be a WRF restart file'
+         write(unit=message(2),fmt='(A)')'WRFDA can only work with wrfinput or wrfout format files'
+         call da_error(__FILE__,__LINE__,message(1:2))
+      end if
+   end if
+
+
    ! mp_physics is used in da_transfer_wrftoxb.inc
    ! get the setting from the input file
    call wrf_get_dom_ti_integer (fid, 'MP_PHYSICS', grid%mp_physics, 1, icnt, ierr)

@@ -11,7 +11,7 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  lowest_lev_from_sfc                 = .false.
  use_levels_below_ground             = .true.
  use_surface                         = .true.
- lagrange_order                      = 1
+ lagrange_order                      = 2
  force_sfc_in_vinterp                = 1
  zap_close_levels                    = 500
  sfcp_to_sfcp                        = .false.
@@ -111,7 +111,7 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  /
 
  &domains
- time_step_dfi                       = 60.
+ time_step_dfi                       = 60
 
 ** Using gridded nudging option (note this is a separate namelist record) for
    upperair nudging
@@ -404,11 +404,11 @@ for z_levels means AGL, so -500 is 500 m AGL, and 10000 is 10 km).
  salinity is ocean_s (ppt).
 
  ocean_levels                        = 30,
- ocean_z                             =        5,        15,        25,        35,        45,        55,
-                                             65,        75,        85,        95,       105,       115,
-                                            125,       135,       145,       155,       165,       175,
-                                            185,       195,       210,       230,       250,       270,
-                                            290,       310,       330,       350,       370,       390
+ ocean_z                             =       5.,       15.,       25.,       35.,       45.,       55.,
+                                            65.,       75.,       85.,       95.,      105.,      115.,
+                                           125.,      135.,      145.,      155.,      165.,      175.,
+                                           185.,      195.,      210.,      230.,      250.,      270.,
+                                           290.,      310.,      330.,      350.,      370.,      390.
  ocean_t                             = 302.3493,  302.3493,  302.3493,  302.1055,  301.9763,  301.6818,
                                        301.2220,  300.7531,  300.1200,  299.4778,  298.7443,  297.9194,
                                        297.0883,  296.1443,  295.1941,  294.1979,  293.1558,  292.1136,

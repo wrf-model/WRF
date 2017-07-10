@@ -60,7 +60,7 @@ contains
   do j=jts,jte
   do i=its,ite
 !
-! donṫ do this over land
+! don't do this over land
 !
      if(xland(i,j).gt.1.5)then
      ilwi(1,1)=0
@@ -73,7 +73,7 @@ contains
      dxy(1)=dx*dx
      tskin(1,1)=tsk(i,j)
 !
-! we donṫ trust the u10,v10 values, is model layers are very thin near surface
+! we don't trust the u10,v10 values, is model layers are very thin near surface
 !
      if(dz8w(i,kts,j).lt.12.)w10m=sqrt(u_phy(i,kts,j)*u_phy(i,kts,j)+v_phy(i,kts,j)*v_phy(i,kts,j))
 

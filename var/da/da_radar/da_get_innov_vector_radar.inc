@@ -1,9 +1,13 @@
 subroutine da_get_innov_vector_radar (it, grid, ob, iv)
 
    !-----------------------------------------------------------------------
-   ! Purpose: TBD
-   !    Updated for Analysis on Arakawa-C grid
-   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
+   ! Purpose: Calculate innovation vectors for radar obs
+   ! History:
+   !    10/22/2008 - Updated for Analysis on Arakawa-C grid (Syed RH Rizvi, NCAR)
+   !    ......
+   !    08/08/2016 - Updated to include null-echo assimilation
+   !                 (Yu-Shin Kim and Ki-Hong Min, School of Earth System
+   !                  Sciences/Kyungpook National University, Daegu, S.Korea)
    !-----------------------------------------------------------------------
 
    implicit none
@@ -29,6 +33,7 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
 
    real, allocatable :: model_qv(:,:)
    real, allocatable :: model_qs(:,:)
+   real, allocatable :: model_qs_ice(:,:)
    real, allocatable :: model_tc(:,:)
 
    real, allocatable :: model_rho(:,:)
@@ -45,6 +50,21 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    integer :: irf, irff
 
    real    :: alog_10, czr,czs,czg, zrr,zds,zws,zg,rze
+   real    :: ob_radar_rf, bg_rze, bg_rf
+   real    :: cwr, cws ! weighting coefficient for mixing ratio
+
+   ! variables for calculating cloud base
+   real, allocatable :: model_lcl(:)           !model LCL at ob locations
+   ! for opt=1
+   real              :: h_sfc, p_sfc, t_sfc, q_sfc, ev_sfc, td_sfc
+   ! for opt=2
+   real              :: ZLCLG(ids:ide,jds:jde)
+   real              :: ZLCL(ims:ime,jms:jme)
+   real              :: ZLCLA                  ! domain grid mean LCL
+   integer           :: ij
+
+   logical           :: echo_non_precip, echo_rf_good
+
    alog_10 = alog(10.0)
 
    ! Ze=zv*(ro*v)**1.75
@@ -88,6 +108,12 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    allocate (model_qci(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_qsn(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_qgr(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
+
+   if ( use_radar_rqv ) then
+      allocate (model_lcl(iv%info(radar)%n1:iv%info(radar)%n2))
+      allocate (model_qs_ice(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
+      model_qs_ice(:,:) = 0. !initialize
+   end if
 
    model_p(:,:)    = 0.
    model_u(:,:)    = 0.
@@ -169,15 +195,50 @@ END IF
    call da_interp_lin_3d (grid%xb % q,  iv%info(radar), model_qv)
    call da_interp_lin_3d (grid%xb % qs, iv%info(radar), model_qs)
    call da_interp_lin_3d (grid%xb % t,  iv%info(radar), model_tc)
-   ! whl to TC
-   model_tc = model_tc - 273.15
 
-   ! Test 5.0E-5 as critical value. It can not be smaller.
-   do n=iv%info(radar)%n1,iv%info(radar)%n2
-      do k=1,iv%info(radar)%levels(n)
-         ! for Xiao's default scheme
-         if(use_radar_rf) model_qrn(k,n)=amax1(5.0E-5,model_qrn(k,n))
+   model_tc = model_tc - 273.15 ! degree K to degree C
+
+   if ( use_radar_rqv ) then
+      model_qs_ice = model_qs*exp((2.837e6 - 2.501e6)/461.5*(1./273.15 - 1./(model_tc+273.15)))
+   end if
+
+   ! calculate background/model LCL to be used by use_radar_rqv
+   if ( use_radar_rqv .and. cloudbase_calc_opt == 2 ) then
+      do j = jts, jte
+         do i = its, ite
+            zlcl(i,j) = 125.0*(grid%xb%t(i,j,1)-grid%xb%td(i,j,1))
+         end do
       end do
+      ij = (ide-ids+1)*(jde-jds+1)
+#ifdef DM_PARALLEL
+      call da_patch_to_global (grid, zlcl, zlclg)
+      call wrf_dm_bcast_real( zlclg, ij )
+#else
+      do j = jds, jde
+         do i = ids, ide
+            zlclg(i,j) = zlcl(i,j)
+         end do
+      end do
+#endif
+      ! Calculate the domain grid mean LCL
+      zlcla = 0.0
+      do j = jds, jde
+         do i = ids, ide
+            zlcla = zlcla + zlclg(i,j)
+         end do
+      end do
+      zlcla = zlcla/float(ij)
+   end if ! lcl for use_radar_rqv
+
+   do n=iv%info(radar)%n1,iv%info(radar)%n2
+
+      if ( use_radar_rf ) then
+         ! for Xiao's default scheme
+         ! Test 5.0E-8 (kg/kg) as critical value. It can not be smaller.
+         do k=1,iv%info(radar)%levels(n)
+            model_qrn(k,n)=amax1(5.0E-8,model_qrn(k,n))
+         end do
+      end if
 
       i   = iv%info(radar)%i(1,n)
       j   = iv%info(radar)%j(1,n)
@@ -190,6 +251,42 @@ END IF
       model_ps(n) = dxm *(dym * grid%xb % psac(i,  j) + dy * grid%xb%psac(i+1,  j)) + &
                  dx  *(dym * grid%xb % psac(i,j+1) + dy * grid%xb%psac(i+1,j+1)) + &
                  grid%xb % ptop
+
+      ! calculate model LCL at ob locations
+      if ( use_radar_rqv ) then
+         select case ( cloudbase_calc_opt )
+         case ( 1 )  !KNU scheme
+            ! get surface variable to calculate cloud base
+            h_sfc = dxm *(dym * grid%xb % terr(i,  j) + dy * grid%xb% terr(i+1,  j)) + &
+                    dx  *(dym * grid%xb % terr(i,j+1) + dy * grid%xb% terr(i+1,j+1))
+            p_sfc = dxm *(dym * grid%xb % psfc(i,  j) + dy * grid%xb% psfc(i+1,  j)) + &
+                    dx  *(dym * grid%xb % psfc(i,j+1) + dy * grid%xb% psfc(i+1,j+1))
+            t_sfc = dxm *(dym * grid%xb % t2(i,  j) + dy * grid%xb% t2(i+1,  j)) + &
+                    dx  *(dym * grid%xb % t2(i,j+1) + dy * grid%xb% t2(i+1,j+1))
+            q_sfc = dxm *(dym * grid%xb % q2(i,  j) + dy * grid%xb% q2(i+1,  j)) + &
+                    dx  *(dym * grid%xb % q2(i,j+1) + dy * grid%xb% q2(i+1,j+1))
+
+            ! calculate cloud base height based on model background variables
+            ev_sfc = q_sfc*p_sfc/0.622
+            td_sfc = 1./(1./273.15 - 461.51/2.501e6*log(ev_sfc/611.2))
+            model_lcl(n) = h_sfc + 125.*(t_sfc-td_sfc)
+            model_lcl(n) = amax1(h_sfc+500.,model_lcl(n))
+            model_lcl(n) = amin1(3000.     ,model_lcl(n))
+
+         case ( 2 )  !NCAR scheme
+            model_lcl(n) = dxm *(dym * zlcl(i,j)   + dy * zlcl(i+1, j))  + &
+                           dx  *(dym * zlcl(i,j+1) + dy * zlcl(i+1,j+1))
+            model_lcl(n) = max(model_lcl(n), zlcla)
+
+            ! add radar elevation to the calculated model_lcl
+            ! iv%radar(n)%height(k) (rather than zr) is later used for checking
+            model_lcl(n) = model_lcl(n) + iv%radar(n)%stn_loc%elv
+
+         case default
+            model_lcl(n) = 1500.0
+
+         end select
+      end if ! lcl for use_radar_rqv
 
       iv%radar(n)%model_p(1:iv%info(radar)%levels(n))   = model_p(1:iv%info(radar)%levels(n),n)
       iv%radar(n)%model_rho(1:iv%info(radar)%levels(n)) = model_rho(1:iv%info(radar)%levels(n),n)
@@ -217,19 +314,31 @@ END IF
       xr = grid%xb%ds *(iv%info(radar)%x(1,n) - iv%radar(n)%stn_loc%x)
       yr = grid%xb%ds *(iv%info(radar)%y(1,n) - iv%radar(n)%stn_loc%y)
 
-      do k=1, iv%info(radar)%levels(n)
+      level_loop: do k=1, iv%info(radar)%levels(n)
          iv % radar(n) % rv(k) % inv = 0.0
          iv % radar(n) % rf(k) % inv = 0.0
 
+         ! initialize
+         echo_non_precip = .false.
+         echo_rf_good    = .false.
+
          if (iv % radar(n) % height_qc(k) /= below_model_surface .and.  &
              iv % radar(n) % height_qc(k) /= above_model_lid) then
+
+            zr = iv%radar(n)%height(k) - iv%radar(n)%stn_loc%elv
+
+            ! identify if non-precip obs (rf = radar_non_precip_rf)
+            echo_non_precip = abs(ob%radar(n)%rf(k) - radar_non_precip_rf) < 0.1
+
+            ! identify if valid rf obs to process
+            ! this includes the echo_non_precip case
+            echo_rf_good = (abs(ob % radar(n) % rf(k) - missing_r) > 1.0) &
+                           .and. (iv % radar(n) % rf(k) % qc >= obs_qc_pointer)
 
             if (use_radar_rv) then
                if (abs(iv % radar(n) % rv(k) % qc - missing_data) > 1) then
                   if (abs(ob % radar(n) % rv(k) - missing_r) > 1.0 .AND. &
                        iv % radar(n) % rv(k) % qc >= obs_qc_pointer) then
-                  ! Rf can be used to control rv
-                     zr=iv%radar(n)%height(k) - iv%radar(n)%stn_loc%elv
 
                      call da_radial_velocity(model_rv(k,n), model_p(k,n),  &
                         model_u(k,n), model_v(k,n), model_w(k,n),          &
@@ -241,94 +350,116 @@ END IF
             end if
 
             if (use_radar_rf) then
-               if (abs(iv % radar(n) % rf(k) % qc - missing_data) > 1) then
-                  if (abs(ob % radar(n) % rf(k) - missing_r) > 1.0 .AND. &
-                     iv % radar(n) % rf(k) % qc >= obs_qc_pointer) then
-                     model_rf(k,n) = leh1 + leh2 * alog10(model_rho(k,n) * model_qrn(k,n) * 1.0e+3)
-                     iv % radar(n) % rf(k) % inv = ob % radar(n) % rf(k) - model_rf(k,n)
-                  end if
+               if ( echo_rf_good ) then
+                  model_rf(k,n) = leh1 + leh2 * alog10(model_rho(k,n) * model_qrn(k,n) * 1.0e+3)
+                  iv % radar(n) % rf(k) % inv = ob % radar(n) % rf(k) - model_rf(k,n)
+               end if
+            end if
+
+            ! calculate background/model reflectivity
+            if (use_radar_rhv .or. use_radar_rqv) then
+               if ( echo_rf_good ) then
+                  call da_radar_rf (model_qrn(k,n),model_qsn(k,n),model_qgr(k,n),model_tc(k,n),model_rho(k,n),bg_rze)
+                  bg_rf = 10.0*log(bg_rze)  ! Z to dBZ
                end if
             end if
 
             ! calculate retrieved hydrometeorological variables
             ! Jidong Gao JAS 2013
             if (use_radar_rhv) then
-               if (abs(iv % radar(n) % rf(k) % qc - missing_data) > 1) then
-                  if (abs(ob % radar(n) % rf(k) - missing_r) > 1.0 .AND. &
-                     iv % radar(n) % rf(k) % qc >= obs_qc_pointer) then
+               if ( echo_rf_good ) then
 
-                     ! compute retrieved hydrometeoro varibles rhv 
-                     if (it.eq.1) then
-                        if (model_tc(k,n).ge.5.0) then
-                           !JAMC 
-                           !iv % radar(n) % rrno(k) = 10.0** ( (ob % radar(n) % rf(k)-leh1)/leh2 ) /model_rho(k,n)*0.001
-                           !JAS
-                           rze = 10.0**(ob % radar(n) % rf(k)/10.0)
-                           iv % radar(n) % rrno(k) = exp ( log(rze/zrr)/1.75 )/model_rho(k,n)
-                           ! rrn and rrno were assighed to missing values in read_obs_radar_ascii.inc
-                           ! maximum value check, use the data under threshold 15g/kg
-                           call da_radar_rf (model_qrn(k,n),model_qsn(k,n),model_qgr(k,n),model_tc(k,n),model_rho(k,n),rze)
-                           if (iv % radar(n) % rrno(k) .ge. 0.015.or.ob % radar(n) % rf(k).ge.55) then
-                              iv % radar(n) % rrn(k) % qc = -5  ! old -5 
+                  ! compute retrieved hydrometeors rhv
+                  if (it.eq.1) then
+
+                     ob_radar_rf = ob % radar(n) % rf(k)
+
+                     if ( radar_non_precip_opt > 0 ) then ! assimilate non_precip echo
+                        if ( echo_non_precip ) then ! ob is non-precip
+                           if ( bg_rf > -15.0 ) then
+                              ! when background/model is precip
+                              ! retrieve hydrometeors from -15dBZ
+                              ob_radar_rf = -15.0
                            else
-                              iv % radar(n) % rrn(k) % qc = 0
+                              ! when background/model is also non-precip
+                              ! do not need to assimilate this ob
+                              iv % radar(n) % rf (k) % qc = -5
+                              iv % radar(n) % rrn(k) % qc = -5
+                              iv % radar(n) % rsn(k) % qc = -5
+                              iv % radar(n) % rgr(k) % qc = -5
+                              cycle level_loop
                            end if
-                        else if (model_tc(k,n).lt.5.0 .and. model_tc(k,n).ge.-5.0 ) then
-                             czr=(model_tc(k,n)+5)/10.0
-                             if (model_tc(k,n).le.0.0) then
-                             czs = (1.0-czr)*zds/(zds+zg)
-                             czg = (1.0-czr)*zg/(zds+zg)
-                             else
-                             czs = (1.0-czr)*zws/(zws+zg)
-                             czg = (1.0-czr)*zg/(zws+zg)
-                             end if
-                             !iv % radar(n) % rrno(k) = 10.0** ( (czr*ob % radar(n) % rf(k)-leh1)/leh2 ) /model_rho(k,n)*0.001
-                             rze = 10.0**(czr*ob % radar(n) % rf(k)/10.0)
-                             iv % radar(n) % rrno(k) = exp ( log(rze/zrr)/1.75 )/model_rho(k,n)
-                             rze = 10.0**(czs*ob % radar(n) % rf(k)/10.0)
-                             iv % radar(n) % rsno(k) = exp ( log(rze/zds)/1.75 )/model_rho(k,n)
-                             rze = 10.0**(czg*ob % radar(n) % rf(k)/10.0)
-                             iv % radar(n) % rgro(k) = exp ( log(rze/zg )/1.75 )/model_rho(k,n)
-                             iv % radar(n) % rrn(k) % qc = 0
-                             iv % radar(n) % rsn(k) % qc = 0
-                             iv % radar(n) % rgr(k) % qc = 0
-                        else if (model_tc(k,n).le.-5.0) then
-                             czs = zds/(zds+zg)
-                             czg = 1.0 - czs
-                             !   rra  = exp(log(rrze/zgr)/1.75)/ro1
-                             rze = 10.0**(czs*ob % radar(n) % rf(k)/10.0) 
-                             iv % radar(n) % rsno(k) = exp ( log(rze/zds)/1.75 )/model_rho(k,n)
-                             rze = 10.0**(czg*ob % radar(n) % rf(k)/10.0)
-                             iv % radar(n) % rgro(k) = exp ( log(rze/zg )/1.75 )/model_rho(k,n)
-                             iv % radar(n) % rsn(k) % qc = 0
-                             iv % radar(n) % rgr(k) % qc = 0
-                        end if  ! temp
-                     end if  ! it=1
+                        end if !if echo_non_precip
+                     end if
 
-                     if (iv % radar(n) % rrn(k) % qc >= obs_qc_pointer) then
-                        ! x=b**y; y=logb(x)
-                        iv % radar(n) % rrn(k) % inv = iv % radar(n) % rrno(k) - model_qrn(k,n)
-                        iv % radar(n) % rrn(k) % error = iv % radar(n) % rf(k) % error * iv % radar(n) % rrno(k) * alog_10/leh2
-                        ! rainwater error
-                        iv % radar(n) % rrn(k) % error = amax1(0.0005,iv % radar(n) % rrn(k) % error)
-                        iv % radar(n) % rrn(k) % error = amin1( 0.001,iv % radar(n) % rrn(k) % error)
-                     end if
-                     if (iv % radar(n) % rsn(k) % qc >= obs_qc_pointer) then
-                        iv % radar(n) % rsn(k) % inv = iv % radar(n) % rsno(k) - model_qsn(k,n)
-                        iv % radar(n) % rsn(k) % error = iv % radar(n) % rf(k) % error * iv % radar(n) % rsno(k) * alog_10/leh2
-                        ! rainwater error
-                        iv % radar(n) % rsn(k) % error = amax1(0.0005,iv % radar(n) % rrn(k) % error)
-                        iv % radar(n) % rsn(k) % error = amin1( 0.001,iv % radar(n) % rrn(k) % error)
-                     end if
-                     if (iv % radar(n) % rgr(k) % qc >= obs_qc_pointer) then
-                        iv % radar(n) % rgr(k) % inv = iv % radar(n) % rgro(k) - model_qgr(k,n)
-                        iv % radar(n) % rgr(k) % error = iv % radar(n) % rf(k) % error * iv % radar(n) % rgro(k) * alog_10/leh2
-                        ! rainwater error
-                        iv % radar(n) % rgr(k) % error = amax1(0.0005,iv % radar(n) % rgr(k) % error)
-                        iv % radar(n) % rgr(k) % error = amin1( 0.001,iv % radar(n) % rgr(k) % error)
-                     end if
-                  end if ! ob check
-               end if ! iv qc and missing value check
+                     ob_radar_rf = min(ob_radar_rf, 55.0) ! if dBZ>55.0, set to 55.0
+                     rze = 10.0**(ob_radar_rf*0.1) ! dBZ to Z
+
+                     if (model_tc(k,n).ge.5.0) then
+                        ! contribution from rain only
+                        ! Z_Qr = 3.63*1.0e9*(rho*Qr)**1.75
+                        iv % radar(n) % rrno(k) = exp ( log(rze/zrr)/1.75 )/model_rho(k,n)
+                        iv % radar(n) % rrn(k) % qc = 0
+
+                        ! rrn and rrno were assigned missing values in read_obs_radar_ascii.inc
+                        ! maximum value check, use the data under threshold 15g/kg
+                        iv % radar(n) % rrno(k) = min(iv%radar(n)%rrno(k), 0.015)
+
+                     else if (model_tc(k,n).lt.5.0 .and. model_tc(k,n).gt.-5.0 ) then
+                        ! contribution from rain, snow and graupel
+                        ! Ze = c * Z_Qr + (1-c) * (Z_Qs+Z_Qg)
+                        ! the factor c varies linearly between 0 at t=-5C and 1 at t=5C
+                        czr=(model_tc(k,n)+5)/10.0
+                        if (model_tc(k,n).le.0.0) then
+                           czs = (1.0-czr)*zds/(zds+zg) ! dry snow
+                           czg = (1.0-czr)*zg/(zds+zg)
+                        else
+                           czs = (1.0-czr)*zws/(zws+zg) ! wet snow
+                           czg = (1.0-czr)*zg/(zws+zg)
+                        end if
+                        iv % radar(n) % rrno(k) = exp ( log(czr*rze/zrr)/1.75 )/model_rho(k,n)
+                        iv % radar(n) % rsno(k) = exp ( log(czs*rze/zds)/1.75 )/model_rho(k,n)
+                        iv % radar(n) % rgro(k) = exp ( log(czg*rze/zg )/1.75 )/model_rho(k,n)
+                        iv % radar(n) % rrn(k) % qc = 0
+                        iv % radar(n) % rsn(k) % qc = 0
+                        iv % radar(n) % rgr(k) % qc = 0
+
+                     else if (model_tc(k,n).le.-5.0) then
+                        ! contribution from snow and graupel
+                        czs = zds/(zds+zg)
+                        czg = 1.0 - czs
+                        iv % radar(n) % rsno(k) = exp ( log(czs*rze/zds)/1.75 )/model_rho(k,n)
+                        iv % radar(n) % rgro(k) = exp ( log(czg*rze/zg )/1.75 )/model_rho(k,n)
+                        iv % radar(n) % rsn(k) % qc = 0
+                        iv % radar(n) % rgr(k) % qc = 0
+                     end if  ! temp
+
+                     ! rainwater error
+                     iv % radar(n) % rrn(k) % error = iv % radar(n) % rf(k) % error * iv % radar(n) % rrno(k) * alog_10/leh2
+                     iv % radar(n) % rrn(k) % error = amax1(0.0005,iv % radar(n) % rrn(k) % error)
+                     iv % radar(n) % rrn(k) % error = amin1( 0.001,iv % radar(n) % rrn(k) % error)
+                     ! snow error
+                     iv % radar(n) % rsn(k) % error = iv % radar(n) % rf(k) % error * iv % radar(n) % rsno(k) * alog_10/leh2
+                     iv % radar(n) % rsn(k) % error = amax1(0.0005,iv % radar(n) % rsn(k) % error)
+                     iv % radar(n) % rsn(k) % error = amin1( 0.001,iv % radar(n) % rsn(k) % error)
+                     ! graupel error
+                     iv % radar(n) % rgr(k) % error = iv % radar(n) % rf(k) % error * iv % radar(n) % rgro(k) * alog_10/leh2
+                     iv % radar(n) % rgr(k) % error = amax1(0.0005,iv % radar(n) % rgr(k) % error)
+                     iv % radar(n) % rgr(k) % error = amin1( 0.001,iv % radar(n) % rgr(k) % error)
+
+                  end if  ! it=1
+
+                  if (iv % radar(n) % rrn(k) % qc >= obs_qc_pointer) then
+                     iv % radar(n) % rrn(k) % inv = iv % radar(n) % rrno(k) - model_qrn(k,n)
+                  end if
+                  if (iv % radar(n) % rsn(k) % qc >= obs_qc_pointer) then
+                     iv % radar(n) % rsn(k) % inv = iv % radar(n) % rsno(k) - model_qsn(k,n)
+                  end if
+                  if (iv % radar(n) % rgr(k) % qc >= obs_qc_pointer) then
+                     iv % radar(n) % rgr(k) % inv = iv % radar(n) % rgro(k) - model_qgr(k,n)
+                  end if
+
+               end if ! echo_rf_good check
             end if ! rhv
 
             ! retrieved water vapor
@@ -340,33 +471,82 @@ END IF
                   iv % radar(n) % rqv(k) % error = amax1(0.0005,0.1*iv % radar(n) % rqvo(k))
                end if
 
-               !same condtions as use_radar_rf
-               if (abs(iv % radar(n) % rf(k) % qc - missing_data) > 1) then
-                  if (abs(ob % radar(n) % rf(k) - missing_r) > 1.0 .AND. &
-                       iv % radar(n) % rf(k) % qc >= obs_qc_pointer) then
-                     zr=iv%radar(n)%height(k) - iv%radar(n)%stn_loc%elv
-                     if ( ob % radar(n) % rf(k) .lt. 25.0  .or. zr.lt.1500)then 
-                        iv % radar(n) % rqv(k) % qc = -5
-                     else
-                        iv % radar(n) % rqv(k) % qc = 0
+               if ( echo_rf_good ) then
+
+                  ! initialize as not-assimilating rqv
+                  iv % radar(n) % rqv(k) % qc = -5
+
+                  if ( echo_non_precip ) then ! ob is non-precip
+                     if ( radar_non_precip_opt > 0 ) then ! assimilate non_precip echo
+
+                        if ( bg_rf >= 20.0 .and. iv%radar(n)%height(k) > model_lcl(n) ) then
+                           iv % radar(n) % rqv(k) % qc = 0
+
+                           radar_non_precip_rh_w = radar_non_precip_rh_w*0.01 ! percentage to ratio
+                           radar_non_precip_rh_i = radar_non_precip_rh_i*0.01 ! percentage to ratio
+                           if ( model_tc(k,n) > 5.0 ) then
+                              iv%radar(n)%rqvo(k) =  radar_non_precip_rh_w*model_qs(k,n)
+                           else if ( model_tc(k,n) < -5.0 ) then
+                              iv%radar(n)%rqvo(k) =  radar_non_precip_rh_i*model_qs_ice(k,n)
+                           else
+                              cwr = (model_tc(k,n)+5.0)/10.0
+                              cws = 1.0 - cwr
+                              iv%radar(n)%rqvo(k) =  cwr*radar_non_precip_rh_w*model_qs(k,n) + cws*radar_non_precip_rh_i*model_qs_ice(k,n)
+                           end if
+
+                           iv % radar(n) % rqv(k) % inv = iv % radar(n) % rqvo(k) - model_qv(k,n)
+                           ! iv % radar(n) % rqv(k) % inv must be <= 0.0
+                           iv % radar(n) % rqv(k) % inv = amin1(0.0,iv % radar(n) % rqv(k) % inv )
+                           iv % radar(n) % rqv(k) % error = amax1(0.0005,0.10*model_qs(k,n))
+                        end if
                      end if
-                     if (iv % radar(n) % rqv(k) % qc >= obs_qc_pointer) then                        
-                        if (ob % radar(n) % rf(k) >= 25.0 .and. ob % radar(n) % rf(k) < 40.0) then
-                           iv % radar(n) % rqvo(k)= 0.85*model_qs(k,n)
-                        else if (ob % radar(n) % rf(k) >= 40.0 .and. ob % radar(n) % rf(k) < 50.0) then
-                           iv % radar(n) % rqvo(k)= 0.95*model_qs(k,n)
+
+                  else  ! ob is precip
+                     if ( ob % radar(n) % rf(k) >= radar_saturated_rf  .and. iv%radar(n)%height(k) >= model_lcl(n) )then
+                        iv % radar(n) % rqv(k) % qc = 0
+
+                        if ( radar_rqv_h_lbound >= 0.0 .and. radar_rqv_h_ubound >= 0.0 ) then
+                           ! height ranges for applying retrieved rqv are set in the namelist
+                           if ( iv%radar(n)%height(k) < radar_rqv_h_lbound .or. &
+                                iv%radar(n)%height(k) > radar_rqv_h_ubound ) then
+                              ! do not assimilate rqv outside the specified height ranges
+                              iv % radar(n) % rqv(k) % qc = -5
+                           end if
+                        end if
+                     end if
+
+                     if (iv % radar(n) % rqv(k) % qc >= obs_qc_pointer) then
+                        ! reduce rqvo for certain rf ranges
+                        if ( radar_rqv_thresh1 >= 0.0 ) then
+                           if ( ob % radar(n) % rf(k) >= radar_saturated_rf .and. &
+                                ob % radar(n) % rf(k) < radar_rqv_thresh1 ) then
+                              if ( radar_rqv_rh1 >= 0.0 ) then ! RH in percentage
+                                 iv % radar(n) % rqvo(k)= 0.01*radar_rqv_rh1*model_qs(k,n)
+                              end if
+                           end if
+                        end if
+                        if ( radar_rqv_thresh1 >= 0.0 .and. radar_rqv_thresh2 >= 0.0 .and. &
+                             radar_rqv_thresh2 >= radar_rqv_thresh1 ) then
+                           if ( ob % radar(n) % rf(k) >= radar_rqv_thresh1 .and. &
+                                ob % radar(n) % rf(k) < radar_rqv_thresh2) then
+                              if ( radar_rqv_rh2 >= 0.0 ) then ! RH in percentage
+                                 iv % radar(n) % rqvo(k)= 0.01*radar_rqv_rh2*model_qs(k,n)
+                              end if
+                           end if
                         end if
                         iv % radar(n) % rqv(k) % inv = iv % radar(n) % rqvo(k) - model_qv(k,n)
                         ! iv % radar(n) % rqv(k) % inv must be >= 0.0
                         iv % radar(n) % rqv(k) % inv = amax1(0.0,iv % radar(n) % rqv(k) % inv )
                         iv % radar(n) % rqv(k) % error = amax1(0.001,0.20*iv % radar(n) % rqvo(k))
                      end if
-                  end if ! obs qc and mising
-               end if  ! iv qc and missing
-            end if  ! use rqv
+
+                  end if ! echo_non_precip check
+
+               end if  ! echo_rf_good check
+            end if  ! use_radar_rqv
 
          end if  ! not surface or model lid
-      end do
+      end do level_loop
    end do
 
    !------------------------------------------------------------------------
@@ -411,7 +591,12 @@ END IF
    deallocate (model_qci)
    deallocate (model_qsn)
    deallocate (model_qgr)
-  
+
+   if ( use_radar_rqv ) then
+      deallocate (model_lcl)
+      deallocate (model_qs_ice)
+   end if
+
    if (trace_use) call da_trace_exit("da_get_innov_vector_radar")
 
 end subroutine da_get_innov_vector_radar

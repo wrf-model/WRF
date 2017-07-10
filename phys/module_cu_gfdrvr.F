@@ -22,7 +22,7 @@ use module_gfs_physcons, g => con_g,                           &
                          cp => con_cp,                         &
                          xlv => con_hvap,                      &
                          r_v => con_rv
-use module_cu_gf_deep, only: cup_gf,neg_check,autoconv,aeroevap
+use module_cu_gf_deep, only: cup_gf,neg_check
 use module_cu_gf_sh, only: cup_gf_sh
 
 
@@ -63,8 +63,6 @@ CONTAINS
                                                                 )
 !-------------------------------------------------------------
    IMPLICIT NONE
-! autoconv, 1=old c0, 2=berry c0
-!aeroevap, 1=old,2=?, 3=average
       integer, parameter :: ideep=1
       integer, parameter :: imid_gf=0
 ! ichoice now in namelist, as in EM core (deep only) - EG
@@ -72,11 +70,9 @@ CONTAINS
       integer, parameter :: ichoicem=0  ! 0 1 2 8 11 GG
 !Closure for shallow (1=stabilization,2=zws,3=dhdt,0=avg of 1,2,3)
       integer, parameter :: ichoice_s=0 ! 0 1 2 3     !As in FIM
-!      integer, parameter :: ichoice_s=2 ! 0 1 2 3     !Standard setting=2
-!      integer, parameter :: ichoice_s=3 ! 0 1 2 3      ! For testing
       real, parameter :: aodccn=0.1
 !      real :: dts,fpi,fp
-      integer, parameter :: dicycle=0 !2 !- diurnal cycle flag
+      integer, parameter :: dicycle=0   !0,1,2 - diurnal cycle flag
       integer, parameter :: dicycle_m=0 !- diurnal cycle flag
 
 !-------------------------------------------------------------
@@ -717,7 +713,6 @@ CONTAINS
               ktop_deep(i,j) = ktop(i)
               if(pret(i).gt.0.)then
                  cuten(i)=1.
-!                raincv(i,j)=pret(i)*dt
               else
                  cuten(i)=0.
                  kbcon(i)=0

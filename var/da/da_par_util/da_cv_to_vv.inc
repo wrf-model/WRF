@@ -1,4 +1,4 @@
-subroutine da_cv_to_vv (cv_size, rcv, mzs, vv)
+subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv)
 
    !---------------------------------------------------------------------------
    ! Purpose: Fill (local) vv arrays from 1D (local) cv array.
@@ -8,7 +8,8 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, vv)
 
    integer,        intent(in)    :: cv_size     ! Length of CV array.
    real,           intent(in)    :: rcv(1:cv_size) ! Control variables v.
-   integer,        intent(in)    :: mzs(:) ! Background error structure levels.
+   integer,        intent(in)    :: nmzs        ! number of cv for mz
+   integer,        intent(in)    :: mzs(nmzs)   ! Background error structure levels.
    type (vp_type), intent(inout) :: vv          ! Grdipt/EOF cv_array.
 
    integer   :: is,ie       ! Local grid range in y coordinate.
@@ -82,66 +83,66 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, vv)
       cv_e = cv_s + ijm - 1
       vv % v5(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy,mz/))
    end if
-#ifdef CLOUD_CV
-   ! Fill v6
-   mz = mzs(6)
-   if (mz > 0) then
-      ijm = ix * jy * mz
-      cv_s = cv_e + 1
-      cv_e = cv_s + ijm - 1
-      vv % v6(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
-   end if
-   ! Fill v7
-   mz = mzs(7)
-   if (mz > 0) then
-      ijm = ix * jy * mz
-      cv_s = cv_e + 1
-      cv_e = cv_s + ijm - 1
-      vv % v7(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
-   end if
-   ! Fill v8
-   mz = mzs(8)
-   if (mz > 0) then
-      ijm = ix * jy * mz
-      cv_s = cv_e + 1
-      cv_e = cv_s + ijm - 1
-      vv % v8(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
-   end if
-   ! Fill v9
-   mz = mzs(9)
-   if (mz > 0) then
-      ijm = ix * jy * mz
-      cv_s = cv_e + 1
-      cv_e = cv_s + ijm - 1
-      vv % v9(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
-   end if
-   ! Fill v10
-   mz = mzs(10)
-   if (mz > 0) then
-      ijm = ix * jy * mz
-      cv_s = cv_e + 1
-      cv_e = cv_s + ijm - 1
-      vv % v10(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
-   end if
-   ! Fill v11
-   mz = mzs(11)
-   if (mz > 0) then
-      ijm = ix * jy * mz
-      cv_s = cv_e + 1
-      cv_e = cv_s + ijm - 1
-      vv % v11(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
-   end if
-#endif
+
+   if ( nmzs > 10 ) then
+      ! Fill v6
+      mz = mzs(6)
+      if (mz > 0) then
+         ijm = ix * jy * mz
+         cv_s = cv_e + 1
+         cv_e = cv_s + ijm - 1
+         vv % v6(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+      end if
+      ! Fill v7
+      mz = mzs(7)
+      if (mz > 0) then
+         ijm = ix * jy * mz
+         cv_s = cv_e + 1
+         cv_e = cv_s + ijm - 1
+         vv % v7(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+      end if
+      ! Fill v8
+      mz = mzs(8)
+      if (mz > 0) then
+         ijm = ix * jy * mz
+         cv_s = cv_e + 1
+         cv_e = cv_s + ijm - 1
+         vv % v8(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+      end if
+      ! Fill v9
+      mz = mzs(9)
+      if (mz > 0) then
+         ijm = ix * jy * mz
+         cv_s = cv_e + 1
+         cv_e = cv_s + ijm - 1
+         vv % v9(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+      end if
+      ! Fill v10
+      mz = mzs(10)
+      if (mz > 0) then
+         ijm = ix * jy * mz
+         cv_s = cv_e + 1
+         cv_e = cv_s + ijm - 1
+         vv % v10(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+      end if
+   end if ! cloud cv
+
+   if ( nmzs == 8 .or. nmzs == 13 ) then
+      ! Fill v11
+      mz = mzs(nmzs-2)
+      if (mz > 0) then
+         ijm = ix * jy * mz
+         cv_s = cv_e + 1
+         cv_e = cv_s + ijm - 1
+         vv % v11(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+      end if
+   end if ! w
+
    !--------------------------------------------------------------------------
    ! [2] Transfer components of Je control variable:
    !--------------------------------------------------------------------------
-#ifdef CLOUD_CV
-   mz = mzs(12)
-   ne = mzs(13)
-#else
-   mz = mzs(6)
-   ne = mzs(7)
-#endif
+   mz = mzs(nmzs-1)
+   ne = mzs(nmzs)
    if ( ne > 0 ) then
       ix = ite_int - its_int + 1
       jy = jte_int - jts_int + 1

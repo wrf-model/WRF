@@ -26,15 +26,20 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
    real    :: hd, psfcm
 
    real    :: ho, to, qo
-   real  :: speed, direction
+   real    :: speed, direction
+   real    :: rh_error, es, qs, rho
+   real    :: xcorr
+   real    :: err_inflate_fac
 
    real, allocatable :: model_u(:,:)
    real, allocatable :: model_v(:,:)
    real, allocatable :: model_t(:,:)
    real, allocatable :: model_q(:,:)
    real, allocatable :: model_p(:,:)
+   real, allocatable :: model_psfc(:,:)
    real, allocatable :: model_hsm(:,:)
-    
+   real, allocatable :: model_qs(:)
+
    if (trace_use_dull) call da_trace_entry("da_get_innov_vector_synop")
 
    allocate (model_u  (1,iv%info(synop)%n1:iv%info(synop)%n2))
@@ -42,6 +47,7 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
    allocate (model_t  (1,iv%info(synop)%n1:iv%info(synop)%n2))
    allocate (model_q  (1,iv%info(synop)%n1:iv%info(synop)%n2))
    allocate (model_p  (1,iv%info(synop)%n1:iv%info(synop)%n2))
+   allocate (model_psfc(1,iv%info(synop)%n1:iv%info(synop)%n2))
    allocate (model_hsm(1,iv%info(synop)%n1:iv%info(synop)%n2))
 
    if ( it > 1 ) then
@@ -57,6 +63,14 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
    if (sfc_assi_options == sfc_assi_options_1) then
 
       do n=iv%info(synop)%n1,iv%info(synop)%n2
+
+         if ( it == 1 .and. sfc_hori_intp_options == 2 ) then
+            ! choose the nearest model point with matching land/ocean type and
+            ! smallest height difference with the ob
+            ! dx, dy, dxm, dym are reset in da_sfc_hori_interp_weights
+            call da_sfc_hori_interp_weights(n, iv%info(synop), iv%synop(n), grid%xb, 1)
+         end if
+
          ! [1.1] Get horizontal interpolation weights:
          i   = iv%info(synop)%i(1,n)
          j   = iv%info(synop)%j(1,n)
@@ -73,6 +87,16 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
          iv%synop(n)%u%inv = ob%synop(n)%u
          iv%synop(n)%v%inv = ob%synop(n)%v
 
+         if ( it == 1 .and. sfc_hori_intp_options == 2 ) then
+            ! some obs might have been rejected in da_sfc_hori_interp_weights
+            ! due to mismatched land/ocean type
+            if ( iv%synop(n)%p%qc < 0 ) iv%synop(n)%p%inv = missing_r
+            if ( iv%synop(n)%t%qc < 0 ) iv%synop(n)%t%inv = missing_r
+            if ( iv%synop(n)%q%qc < 0 ) iv%synop(n)%q%inv = missing_r
+            if ( iv%synop(n)%u%qc < 0 ) iv%synop(n)%u%inv = missing_r
+            if ( iv%synop(n)%v%qc < 0 ) iv%synop(n)%v%inv = missing_r
+         end if
+
          if (iv % synop(n) % h > missing_r) then
             do k=kts,kte
                v_h(k) = dym*(dxm*grid%xb%h(i,j  ,k) + dx*grid%xb%h(i+1,j  ,k)) &
@@ -84,10 +108,40 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
                if (iv % synop(n) % h < v_h(kts)) then
                   iv%info(synop)%zk(:,n) = 1.0+1.0e-6
                   call da_obs_sfc_correction(iv%info(synop), iv%synop(n), n, grid%xb)
+
+                  if ( sfcht_adjust_q ) then
+                     ! calculate RH with original t, p, q
+                     if ( abs(ob%synop(n)%q-missing_r) > 1.0 ) then
+                        if ( abs(ob%synop(n)%p-missing_r) > 1.0 .and. &
+                             abs(ob%synop(n)%t-missing_r) > 1.0 ) then
+                           call da_tpq_to_rh(ob%synop(n)%t, ob%synop(n)%p, ob%synop(n)%q, es, qs, rho)
+                        end if
+                     end if
+                     ! calculate corrected q with corrected t, p and original RH
+                     if ( abs(ob%synop(n)%q-missing_r) > 1.0 ) then
+                        if ( abs(iv%synop(n)%p%inv-missing_r) > 1.0 .and. &
+                             abs(iv%synop(n)%t%inv-missing_r) > 1.0 ) then
+                           call da_tp_to_qs(iv%synop(n)%t%inv, iv%synop(n)%p%inv, es, qs)
+                           iv%synop(n)%q%inv = qs * rho * 0.01
+                           iv%synop(n)%q%qc  = surface_correction
+                        end if
+                    end if
+                  end if !sfcht_adjust_q
+
                else
                   call da_to_zk(iv % synop(n) % h, v_h, v_interp_h, iv%info(synop)%zk(1,n))
                end if
             end if
+
+            if ( it == 1 .and. obs_err_inflate ) then
+               err_inflate_fac = exp(abs(hd)/stn_ht_diff_scale)
+               !iv%synop(n)%u%error = iv%synop(n)%u%error * err_inflate_fac
+               !iv%synop(n)%v%error = iv%synop(n)%v%error * err_inflate_fac
+               iv%synop(n)%t%error = iv%synop(n)%t%error * err_inflate_fac
+               iv%synop(n)%p%error = iv%synop(n)%p%error * err_inflate_fac
+               iv%synop(n)%q%error = iv%synop(n)%q%error * err_inflate_fac
+            end if
+
          else if (ob % synop(n) % p > 1.0) then
             do k=kts,kte
               v_p(k) = dym*(dxm*grid%xb%p(i,j  ,k) + dx*grid%xb%p(i+1,j  ,k)) &
@@ -116,7 +170,7 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
             end if
          end do
       end if
-            
+
       ! [1.2] Interpolate horizontally:
 #ifdef A2C
       call da_interp_lin_3d (grid%xb%u, iv%info(synop), model_u,'u')
@@ -128,11 +182,24 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
       call da_interp_lin_3d (grid%xb%t, iv%info(synop), model_t)
       call da_interp_lin_3d (grid%xb%q, iv%info(synop), model_q)
       call da_interp_lin_3d (grid%xb%p, iv%info(synop), model_p)
+      call da_interp_lin_2d (grid%xb%psfc, iv%info(synop), 1, model_psfc(1,:))
+      call da_interp_lin_2d (grid%xb%terr, iv%info(synop), 1, model_hsm(1,:))
+
+      if ( it == 1 .and. q_error_options == 2 ) then
+         allocate (model_qs(iv%info(synop)%n1:iv%info(synop)%n2))
+         do n=iv%info(synop)%n1,iv%info(synop)%n2
+            call da_tp_to_qs(model_t(1,n), model_p(1,n), es, model_qs(n))
+            rh_error = iv%synop(n)%q%error !q error is rh at this stage
+            iv%synop(n)%q%error = model_qs(n)*rh_error*0.01
+         end do
+         deallocate (model_qs)
+      end if
+
    else if (sfc_assi_options == sfc_assi_options_2) then
       ! Surface data assimilation approach 2
       !------------------------------------
 
-      ! 1.2.1 Surface assmiilation approach 2(10-m u, v, 2-m t, q, and sfc_p)
+      ! 1.2.1 Surface assimilation approach 2(10-m u, v, 2-m t, q, and sfc_p)
 
       call da_interp_lin_2d (grid%xb%u10,  iv%info(synop), 1, model_u(1,:))
       call da_interp_lin_2d (grid%xb%v10,  iv%info(synop), 1, model_v(1,:))
@@ -220,7 +287,11 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
       end if
 
       if (ob % synop(n) % q > 0.0 .AND. iv % synop(n) % q % qc >= obs_qc_pointer) then
-         iv % synop(n) % q % inv = iv%synop(n)%q%inv - model_q(1,n)
+         if ( sfcht_adjust_q ) then
+            iv % synop(n) % q % inv = iv%synop(n)%q%inv - model_q(1,n)
+         else
+            iv % synop(n) % q % inv = ob%synop(n)%q - model_q(1,n)
+         end if
       else
          iv % synop(n) % q % inv = 0.0
       end if
@@ -240,8 +311,9 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
    deallocate (model_t)
    deallocate (model_q)
    deallocate (model_p)
+   deallocate (model_psfc)
    deallocate (model_hsm)
-   
+
    if (trace_use_dull) call da_trace_exit("da_get_innov_vector_synop")
 
 end subroutine da_get_innov_vector_synop

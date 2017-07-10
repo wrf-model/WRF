@@ -215,7 +215,7 @@ Namelist variables specifically for the WPS input for real:
  use_surface                         = .true.   ; use the input surface level data in the vertical interp and extrap
                                                 ; T = use the input surface data
                                                 ; F = do not use the input surface data
- lagrange_order                      = 1        ; vertical interpolation order
+ lagrange_order                      = 2        ; vertical interpolation order
                                                 ; 1 = linear
                                                 ; 2 = quadratic
                                                 ; 9 = cubic spline
@@ -256,10 +256,10 @@ Namelist variables specifically for the WPS input for real:
                                                   default is option 1, the old MM5 method; option 2 uses a WMO 
                                                   recommended method (WMO-No. 49, corrigendum, August 2000) - 
                                                   there is a difference between the two methods though small
- interp_theta                        = .true.   ; If set to .false., it will vertically interpolate temperature 
+ interp_theta                        = .false.  ; If set to .false., it will vertically interpolate temperature 
                                                   instead of potential temperature, which may reduce bias when 
                                                   compared with input data
- hypsometric_opt                     = 1,       ; = 1: default method
+ hypsometric_opt                     = 2,       ; = 1: default method
                                                   = 2: it uses an alternative way (less biased 
                                                   when compared agaist input data) to compute height in program 
                                                   real and pressure in model (ARW only). 
@@ -339,11 +339,11 @@ available to run the 3d ocean option.
 
  &domains
  ocean_levels                        = 30,
- ocean_z                             =        5,        15,        25,        35,        45,        55,
-                                             65,        75,        85,        95,       105,       115,
-                                            125,       135,       145,       155,       165,       175,
-                                            185,       195,       210,       230,       250,       270,
-                                            290,       310,       330,       350,       370,       390
+ ocean_z                             =       5.,       15.,       25.,       35.,       45.,       55.,
+                                            65.,       75.,       85.,       95.,      105.,      115.,
+                                           125.,      135.,      145.,      155.,      165.,      175.,
+                                           185.,      195.,      210.,      230.,      250.,      270.,
+                                           290.,      310.,      330.,      350.,      370.,      390.
  ocean_t                             = 302.3493,  302.3493,  302.3493,  302.1055,  301.9763,  301.6818,
                                        301.2220,  300.7531,  300.1200,  299.4778,  298.7443,  297.9194,
                                        297.0883,  296.1443,  295.1941,  294.1979,  293.1558,  292.1136,
@@ -498,6 +498,8 @@ Namelist variables for controlling the adaptive time step option:
                                      = 30, HUJI (Hebrew University of Jerusalem, Israel) spectral bin microphysics,
                                            fast version
                                      = 32, HUJI spectral bin microphysics, full version
+                                     = 50, P3 1-category
+                                     = 51, P3 1-category plus double-moment cloud water
                                      = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version
 
  For non-zero mp_physics options, to keep Qv .GE. 0, and to set the other moisture
@@ -659,7 +661,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 0, no boundary-layer 
                                      = 1, YSU scheme
                                      = 2, Mellor-Yamada-Janjic TKE scheme
-                                     = 3, NCEP Global Forecast System scheme (NMM only)
+                                     = 3, Hybrid EDMF GFS scheme (NMM only)
                                      = 4, Eddy-diffusivity Mass Flux, Quasi-Normal Scale Elimination PBL
                                      = 5, MYNN 2.5 level TKE scheme, works with
                                           sf_sfclay_physics=1 or 2 as well as 5
@@ -672,6 +674,7 @@ Namelist variables for controlling the adaptive time step option:
                                           sf_sfclay_physics=10
                                      = 11, Shin-Hong 'scale-aware' PBL scheme
                                      = 12, Grenier-Bretherton-McCaa scheme (ARW only)
+                                     = 93, 2015 GFS scheme (NMM only)
                                      = 99, MRF scheme
 
  bldt (max_dom)                      = 0,       ; minutes between boundary-layer physics calls
@@ -741,7 +744,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1, Kain-Fritsch (new Eta) scheme
                                      = 2, Betts-Miller-Janjic scheme
                                      = 3, Grell-Freitas ensemble scheme
-                                     = 4, Old GFS simplified Arakawa-Schubert scheme 
+                                     = 4, Scale-aware GFS Simplified Arakawa-Schubert (SAS) scheme 
                                      = 5, Grell 3D ensemble scheme
                                      = 6, Modifed Tiedtke scheme (ARW only)
                                      = 7, Zhang-McFarlane scheme from CAM5 (CESM 1_0_1)
@@ -749,7 +752,8 @@ Namelist variables for controlling the adaptive time step option:
                                      = 11, Multi-scale Kain-Fritsch scheme
                                      = 14, New GFS simplified Arakawa-Schubert scheme from YSU (ARW only)
                                      = 16, A newer Tiedtke scheme
-                                     = 84, New GFS simplified Arakawa-Schubert scheme (HWRF) 
+                                     = 94, 2015 GFS Simplified Arakawa-Schubert scheme (HWRF) 
+                                     = 95, Previous GFS Simplified Arakawa-Schubert scheme (HWRF) 
                                      = 93, Grell-Devenyi ensemble scheme
                                      = 99, previous Kain-Fritsch scheme
 
@@ -908,7 +912,7 @@ Namelist variables for controlling the adaptive time step option:
                                                 ;             =1: z0 from Davis et al (2008), zt & zq from COARE3.0
                                                 ;             =2: z0 from Davis et al (2008), zt & zq from Garratt (1992)
  fractional_seaice                   = 0        ; treat sea-ice as fractional field (1) or ice/no-ice flag (0)
-                                                  works for sf_sfclay_physics=1,2,5,or 7.
+                                                  works for sf_sfclay_physics=1,2,3,4,5,7,and 91 
                                                   If fractional_seaice = 1, also set seaice_threshold = 0.
  seaice_albedo_opt                   = 0        ; option to set albedo over sea ice
                                                 ; 0 = seaice albedo is a constant value from namelist option seaice_albedo_default
@@ -1296,8 +1300,8 @@ The following are for observation nudging:
                                                   approx to US Standard atmosphere -12 K
  use_baseparam_fr_nml                = .f.,     ; whether to use base state parameters from the namelist
  use_input_w                         = .f.,     ; whether to use vertical velocity from input file
- khdif (max_dom)                     = 0,	; horizontal diffusion constant (m^2/s)
- kvdif (max_dom)                     = 0,	; vertical diffusion constant (m^2/s)
+ khdif (max_dom)                     = 0,	; horizontal diffusion constant (m^2/s). A typical value should be 0.1*DX in meters.
+ kvdif (max_dom)                     = 0,	; vertical diffusion constant (m^2/s). A typical value should be 100.
  smdiv (max_dom)                     = 0.1,	; divergence damping (0.1 is typical)
  emdiv (max_dom)                     = 0.01,	; external-mode filter coef for mass coordinate model
                                                   (0.01 is typical for real-data cases)
@@ -1466,3 +1470,23 @@ afwa_buoy_opt (max_dom)              = 0,       ; Buoyancy option, 1: on
 afwa_hailcast_opt (max_dom)          = 0,       ; Hailcast option, 1: on
 afwa_ptype_ccn_tmp                   = 264.15,  ; CCN temperature for precipitation type calculation
 afwa_ptype_tot_melt                  = 50,      ; Total melting energy for precipitation type calculation
+
+
+
+
+Add an extra set of 3d arrays for vertical interpolation to the
+processing for the real program.  Typically, this extra data set
+is to include monthly aerosol data.  The vertical coordinate of the
+aerosol data is able to be separate from the input meteorological
+data.  To introduce new data sets, mods are required in the Registry
+and in module_initialize_real.F.  There is a space-holder/practice
+set-up for "GCA".  The actual data set for Thompson mp=28 (WIF) that 
+utilizes QNWFA and QNIFA (water and ice friendly aerosols) has 
+been tested.
+
+&domains
+ num_wif_levels                      = 30    
+ wif_input_opt                       = 1
+/
+ num_gca_levels                      = 13    
+ gca_input_opt                       = 1     

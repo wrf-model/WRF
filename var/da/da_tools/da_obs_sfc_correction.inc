@@ -149,10 +149,10 @@ subroutine da_obs_sfc_correction(info, sfc_obs, n, xb)
          !  with surface correction flag
 
          sfc_obs % u % inv = correc * sfc_obs % u % inv 
-         sfc_obs % u % qc  = surface_correction
+         if ( abs(correc-1.0)>0.0 ) sfc_obs % u % qc  = surface_correction
 
          sfc_obs % v % inv = correc * sfc_obs % v % inv
-         sfc_obs % v % qc  = surface_correction
+         if ( abs(correc-1.0)>0.0 ) sfc_obs % v % qc  = surface_correction
       end if
 
       ! 3.4 Correct pressure

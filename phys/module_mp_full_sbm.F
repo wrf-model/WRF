@@ -15,7 +15,6 @@ USE module_mp_radar
 !-----------------------------------------------------------------------
 ! BARRY
       INTEGER,PRIVATE,PARAMETER :: REMSAT = 0
-!     LOGICAL, PRIVATE,PARAMETER : : ICEPROCS=.FALSE.,BULKNUC=.TRUE.  
       INTEGER, PRIVATE,PARAMETER :: IBREAKUP=1
       LOGICAL, PRIVATE,PARAMETER :: CONSERV=.TRUE.
 ! SET ONE = TRUE
@@ -205,7 +204,7 @@ USE module_mp_radar
      &                      ims,ime, jms,jme, kms,kme,		        &
      &                      its,ite, jts,jte, kts,kte,                  &
      &                      refl_10cm, diagflag, do_radar_ref,      & ! MO added for reflectivity calcs
-     &                      RAINNC                             )
+     &                      RAINNC,RAINNCV,SNOWNC,SNOWNCV,GRAUPELNC,GRAUPELNCV,HAILNC,HAILNCV,SR )
 !-----------------------------------------------------------------------
       IMPLICIT NONE
 !-----------------------------------------------------------------------
@@ -289,7 +288,7 @@ USE module_mp_radar
       REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme)::      &
      &                      th_phy
       REAL, INTENT(INOUT),  DIMENSION(ims:ime,jms:jme), OPTIONAL ::     &
-     &                                                   RAINNC
+     &     RAINNC,RAINNCV,SNOWNC,SNOWNCV,GRAUPELNC,GRAUPELNCV,HAILNC,HAILNCV,SR
 !     REAL, INTENT(INOUT),  DIMENSION(ims:ime,jms:jme), OPTIONAL ::     &
 !     REAL,                 DIMENSION(ims:ime,jms:jme), OPTIONAL ::     &
 !    &              LIQUEXP,ICEEXP,SNOWEXP,GRAUEXP,HAILEXP
@@ -886,7 +885,7 @@ USE module_mp_radar
  !        IF (QQA.LE.0)print*,'tta = ',tta
  !        IF (QQA.LE.0)print*,'tt = ',tt
  !        IF (QQA.LE.0)print*,'qq = ',qq
- !        IF (QQA.LE.0)QQA=1.D-10
+          IF (QQA.LE.0)QQA=1.D-10
          ES1N=AA1_MY*DEXP(-BB1_MY/TT)
          ES2N=AA2_MY*DEXP(-BB2_MY/TT)
          EW1N=QQ*PP/(0.622+0.378*QQ)
@@ -919,7 +918,9 @@ USE module_mp_radar
           DIV2=DIV2+DELDIV2
           END IF
 !959       format (' ',i3,1x,f7.1,1x,f6.1,1x,f6.4,1x,f6.2,1x,f6.3)
-          IF (DIV1.GT.DIV2.AND.TT.LE.265)THEN
+!         IF (DIV1.GT.DIV2.AND.TT.LE.265)THEN
+! Jin-Fang Yin
+          IF ((DIV1 - DIV2) .GE. 1.0*10e-24 .AND.TT.LE.265)THEN
 !          print*,'div1 > div2',div1,div2
 !          print*,'delsup1, delsup2 = ',delsup1,delsup2
 !          print*,'del1in, del2in = ',del1in,del2in
@@ -1033,7 +1034,7 @@ USE module_mp_radar
 ! Avoid Diffusional Growth
 !         IF (T_OLD(I,K,J).GE.237)THEN     
 ! Same temperature range as above.
-!         IF (T_OLD(I,K,J).GT.233)THEN
+          IF (T_OLD(I,K,J).GT.233)THEN
           IF(ISYM1.EQ.1.AND.((TT-273.15).GT.-0.187.OR. &
      &     (ISYM2.EQ.0.AND. &
      &     ISYM3.EQ.0.AND.ISYM4.EQ.0.AND.ISYM5.EQ.0)))THEN
@@ -1078,7 +1079,7 @@ USE module_mp_radar
      &      ,ISYM1,ISYM2,ISYM3,ISYM4,ISYM5)
           END IF
           END IF
-!         END IF
+          END IF
              IF (IKL.EQ.NCOND)CALL COAL_BOTT_NEW(FF1R,FF2R,FF3R, &
      &       FF4R,FF5R,TT,QQ,PP,rhocgs(I,K,J),dt_coll,TCRIT,TTCOAL)
          END DO
@@ -1675,10 +1676,17 @@ USE module_mp_radar
       DO j = jts,jte
       DO i = its,ite
        krr=0
+       RAINNCV(I,J)=0.
+       SNOWNCV(I,J)=0.
+       GRAUPELNCV(I,J)=0.
+       HAILNCV(I,J)=0.
        DO KR=p_ff1i01,p_ff1i33
         krr=krr+1
         DELTAW=VR1(KRR)
         RAINNC(I,J)=RAINNC(I,J) &
+     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+     &           chem_new(I,1,J,KR)*XL(KRR)*XL(KRR)
+        RAINNCV(I,J)= RAINNCV(I,J) &
      &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
      &           chem_new(I,1,J,KR)*XL(KRR)*XL(KRR)
        END DO
@@ -1689,12 +1697,30 @@ USE module_mp_radar
         RAINNC(I,J)=RAINNC(I,J) &
      &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
      &           chem_new(I,1,J,KR)*XS(KRR)*XS(KRR)
+        RAINNCV(I,J)=RAINNCV(I,J) &
+     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+     &           chem_new(I,1,J,KR)*XS(KRR)*XS(KRR)
+        SNOWNC(I,J)=SNOWNC(I,J) &
+     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+     &           chem_new(I,1,J,KR)*XS(KRR)*XS(KRR)
+        SNOWNCV(I,J)= SNOWNCV(I,J) &
+     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+     &           chem_new(I,1,J,KR)*XS(KRR)*XS(KRR)
        END DO
        KRR=0
        DO KR=p_ff6i01,p_ff6i33
         KRR=KRR+1
         DELTAW=VR4(KRR)
         RAINNC(I,J)=RAINNC(I,J) &
+     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+     &           chem_new(I,1,J,KR)*XG(KRR)*XG(KRR)
+        RAINNCV(I,J)=RAINNCV(I,J) &
+     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+     &           chem_new(I,1,J,KR)*XG(KRR)*XG(KRR)
+        GRAUPELNC(I,J)=GRAUPELNC(I,J) &
+     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+     &           chem_new(I,1,J,KR)*XG(KRR)*XG(KRR)
+        GRAUPELNCV(I,J)=  GRAUPELNCV(I,J) &
      &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
      &           chem_new(I,1,J,KR)*XG(KRR)*XG(KRR)
        END DO
@@ -1705,12 +1731,30 @@ USE module_mp_radar
         RAINNC(I,J)=RAINNC(I,J) &
      &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
      &           chem_new(I,1,J,KR)*XI(KRR,1)*XI(KRR,1)
+        RAINNCV(I,J)=RAINNCV(I,J) &
+     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+     &           chem_new(I,1,J,KR)*XI(KRR,1)*XI(KRR,1)
+        SNOWNC(I,J)=SNOWNC(I,J) &
+     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+     &           chem_new(I,1,J,KR)*XI(KRR,1)*XI(KRR,1)
+        SNOWNCV(I,J)=SNOWNCV(I,J) &
+     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+     &           chem_new(I,1,J,KR)*XI(KRR,1)*XI(KRR,1)
        END DO
        KRR=0
        DO KR=p_ff3i01,p_ff3i33
         KRR=KRR+1
         DELTAW=VR2(KRR,2)
         RAINNC(I,J)=RAINNC(I,J) &
+     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+     &           chem_new(I,1,J,KR)*XI(KRR,2)*XI(KRR,2)
+        RAINNCV(I,J)=RAINNCV(I,J) &
+     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+     &           chem_new(I,1,J,KR)*XI(KRR,2)*XI(KRR,2)
+        SNOWNC(I,J)=SNOWNC(I,J) &
+     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+     &           chem_new(I,1,J,KR)*XI(KRR,2)*XI(KRR,2)
+        SNOWNCV(I,J)=SNOWNCV(I,J) &
      &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
      &           chem_new(I,1,J,KR)*XI(KRR,2)*XI(KRR,2)
        END DO
@@ -1721,12 +1765,30 @@ USE module_mp_radar
         RAINNC(I,J)=RAINNC(I,J) &
      &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
      &           chem_new(I,1,J,KR)*XI(KRR,3)*XI(KRR,3)
+        RAINNCV(I,J)=RAINNCV(I,J) &
+     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+     &           chem_new(I,1,J,KR)*XI(KRR,3)*XI(KRR,3)
+        SNOWNC(I,J)=SNOWNC(I,J) &
+     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+     &           chem_new(I,1,J,KR)*XI(KRR,3)*XI(KRR,3)
+        SNOWNCV(I,J)=SNOWNCV(I,J) &
+     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+     &           chem_new(I,1,J,KR)*XI(KRR,3)*XI(KRR,3)
        END DO
        KRR=0
        DO KR=p_ff7i01,p_ff7i33
         KRR=KRR+1
         DELTAW=VR5(KRR)
         RAINNC(I,J)=RAINNC(I,J) &
+     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+     &           chem_new(I,1,J,KR)*XH(KRR)*XH(KRR)
+        RAINNCV(I,J)=RAINNCV(I,J) &
+     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+     &           chem_new(I,1,J,KR)*XH(KRR)*XH(KRR)
+        HAILNC(I,J)=HAILNC(I,J) &
+     &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
+     &           chem_new(I,1,J,KR)*XH(KRR)*XH(KRR)
+        HAILNCV(I,J)= HAILNCV(I,J) &
      &  +10*(3./RO1BL(KRR))*COL*DT*DELTAW* &
      &           chem_new(I,1,J,KR)*XH(KRR)*XH(KRR)
        END DO
@@ -1758,6 +1820,7 @@ USE module_mp_radar
           enddo
          endif
          ENDIF
+         SR(I,J) = (SNOWNCV(I,J)+GRAUPELNCV(I,J)+HAILNCV(I,J))/(RAINNCV(I,J)+1.e-12)
 
       END DO
       END DO

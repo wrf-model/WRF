@@ -1,0 +1,27 @@
+# This is the top-level .gitignore file for the "test/em_real" directory     #
+#                                                                            #
+# Filenames and wildcards added below will not be tracked by git in this     #
+# directory. Note that these rules will be supplemented by rules in the      #
+# top-level .gitignore file                                                  #
+#                                                                            #
+# The ignored files in this directory should include the files that are      #
+# linked in by the Makefile from the "run" directory at compile time. Thus,  #
+# this file may require ongoing maintenance as new capabilities are added.   #
+#                                                                            #
+# USE CAUTION WHEN ADDING WILDCARDS THAT YOU DO NOT IMPACT VERSIONED FILES   #
+##############################################################################
+CAM*
+CCN_ACTIVATE.BIN
+CLM*
+ETAMPNEW_DATA*
+*.TBL
+*DATA
+aerosol*
+*s_0_03_0_9
+*.asc
+grib2map.tbl
+gribmap.txt
+ozone*formatted
+tr49t67
+tr49t85
+tr67t85

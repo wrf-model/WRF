@@ -44,6 +44,8 @@ subroutine da_adjoint_sensitivity(grid, config_flags, cv_size, xbx, be, iv, xhat
          call da_zero_x (grid%xa)
          call da_transfer_xatowrftl_adj(grid, config_flags, 'gr01')
          call da_transform_xtoxa_adj(grid)
+         !as of V3.9, da_zero_vp_type(vp) is commented out in the da_transform_vtox_adj
+         call da_zero_vp_type(grid%vp) !as of V3.9, zero out vp here
          call da_transform_vtox_adj (grid, cv_size, xbx, be, grid%ep, grid%vp, grid%vv, shat)
 
 !---------------------------
@@ -65,7 +67,8 @@ subroutine da_adjoint_sensitivity(grid, config_flags, cv_size, xbx, be, iv, xhat
     ! Jo for all observations
     !------------------------
       call da_allocate_y (iv, re)
-      call da_calculate_j(1,1,cv_size,0,0,0,0,xbx,be,iv,xhat,cv,re,y,j_cost,shat,grid,config_flags)
+      call da_calculate_j(1,1,cv_size,0,0,0,0,xbx,be,iv,xhat,cv,re,y,j_cost,grid,config_flags)
+      call da_calculate_gradj(1,1,cv_size,0,0,0,0,xbx,be,iv,xhat+cv,y,shat,grid,config_flags,re)
       call da_deallocate_y(re)
 			    
    case default;

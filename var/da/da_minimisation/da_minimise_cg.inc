@@ -39,11 +39,6 @@ subroutine da_minimise_cg(grid, config_flags,            &
 
    integer                           :: iter            
    integer                           :: jp_start, jp_end       ! Start/end indices of Jp.
-#ifdef CLOUD_CV
-   integer                           :: mz(13)
-#else
-   integer                           :: mz(7)
-#endif
    real                              :: fhat(1:cv_size)        ! cv copy.
    real                              :: ghat(1:cv_size)        ! cv copy.
    real                              :: ghat0(1:cv_size)       ! cv copy.
@@ -57,11 +52,7 @@ subroutine da_minimise_cg(grid, config_flags,            &
    real                              :: precon(1:cv_size)      ! cv copy.
    real                              :: g_total, g_partial, jo_partial                          
    integer                           :: i, ii, nv, nn, istart, iend
-#ifdef CLOUD_CV
-   integer                           ::  sz(11)
-#else
-   integer                           ::  sz(5)
-#endif
+   integer, allocatable              ::  sz(:)
 
    if (trace_use) call da_trace_entry("da_minimise_cg")
 
@@ -71,18 +62,31 @@ subroutine da_minimise_cg(grid, config_flags,            &
    !-------------------------------------------------------------------------
    ! [1.0] Initialization:
    !-------------------------------------------------------------------------
-#ifdef CLOUD_CV
-   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%v6%mz, be%v7%mz,be%v8%mz,be%v9%mz,be%v10%mz,be%v11%mz, be%alpha%mz, be % ne /)
-   sz = (/ be%cv%size1, be%cv%size2, be%cv%size3, be%cv%size4, be%cv%size5, be%cv%size6, be%cv%size7,be%cv%size8, be%cv%size9,be%cv%size10,be%cv%size11i /)
-#else
-   mz = (/ be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz, be%alpha%mz, be % ne /)
-   sz = (/ be%cv%size1, be%cv%size2, be%cv%size3, be%cv%size4, be%cv%size5 /)
-#endif   
+   allocate (sz(be%ncv_mz-2))
+   sz(1) = be%cv%size1
+   sz(2) = be%cv%size2
+   sz(3) = be%cv%size3
+   sz(4) = be%cv%size4
+   sz(5) = be%cv%size5
+   if ( be%ncv_mz > 10 ) then
+      sz(6)  = be%cv%size6
+      sz(7)  = be%cv%size7
+      sz(8)  = be%cv%size8
+      sz(9)  = be%cv%size9
+      sz(10) = be%cv%size10
+   end if
+   if ( be%ncv_mz == 8 .or. be%ncv_mz == 13 ) then
+      sz(be%ncv_mz-2) = be%cv%size11i
+   end if
+
    jp_start   = be % cv % size_jb + be % cv % size_je + 1
    jp_end     = be % cv % size_jb + be % cv % size_je + be % cv % size_jp
 
    call da_calculate_j(it, 0, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
-                       be%cv%size_jl, xbx, be, iv, xhat, cv, re, y, j_cost, ghat, grid, config_flags)
+                       be%cv%size_jl, xbx, be, iv, xhat, cv, re, y, j_cost, grid, config_flags)
+
+   call da_calculate_gradj(it,0,cv_size,be%cv%size_jb, be%cv%size_je,be%cv%size_jp, &
+                           be%cv%size_jl,xbx, be, iv, xhat+cv, y, ghat, grid, config_flags, re)
 
    j0_total = j_cost%total
    if (j0_total == 0.0) then
@@ -90,39 +94,32 @@ subroutine da_minimise_cg(grid, config_flags,            &
       return
    end if
    ghat0 = ghat
-   
+
    ! [1.1] Preconditioning:
    !-----------------------
    precon  = 1.0
-   
+
    if (precondition_cg) then
       g_total = da_dot(cv_size,ghat,ghat)
-      
+
       iend    = 0
-#ifdef CLOUD_CV
-      do nv = 1, 11 
-#else
-      do nv = 1, 5
-#endif
-         nn = sz(nv) / mz(nv)
-	 do ii = 1, mz(nv)
+      do nv = 1, (be%ncv_mz - 2)
+         nn = sz(nv) / be%cv_mz(nv)
+         do ii = 1, be%cv_mz(nv)
             istart     = iend + 1
             iend       = istart + nn - 1
-	    g_partial  = da_dot(nn, ghat(istart:iend), ghat(istart:iend))
-#ifdef CLOUD_CV
-            jo_partial = j0_total / SUM(mz(1:10))
-#else
-            jo_partial = j0_total / SUM(mz(1:5))
-#endif
-	    precon(istart:iend)=  1 / &
-	       (1 + precondition_factor*(g_partial/g_total)/(jo_partial/j0_total)) 
-	 end do
+            g_partial  = da_dot(nn, ghat(istart:iend), ghat(istart:iend))
+            jo_partial = j0_total / SUM(be%cv_mz(1:(be%ncv_mz-2)))
+            precon(istart:iend)=  1 / &
+               (1 + precondition_factor*(g_partial/g_total)/(jo_partial/j0_total))
+         end do
       end do
    end if
-   
+   deallocate(sz)
+
    phat  = - precon * ghat
 
-   rrmold = da_dot_cv(cv_size, -phat, ghat, grid, mz, jp_start, jp_end)
+   rrmold = da_dot_cv(cv_size, -phat, ghat, grid, be%cv_mz, be%ncv_mz, jp_start, jp_end)
    j_grad_norm_target = sqrt (rrmold)
 
    if (orthonorm_gradient) then
@@ -150,9 +147,9 @@ subroutine da_minimise_cg(grid, config_flags,            &
       if (rrmold == 0.0) exit
 
       call da_calculate_gradj(it,iter,cv_size,be%cv%size_jb,be%cv%size_je,be%cv%size_jp, &
-                              be%cv%size_jl,xbx,be,iv,phat,y,fhat,grid,config_flags)				 
+                              be%cv%size_jl,xbx,be,iv,phat,y,fhat,grid,config_flags)
       
-      apdotp = da_dot_cv(cv_size, fhat, phat, grid, mz, jp_start, jp_end)
+      apdotp = da_dot_cv(cv_size, fhat, phat, grid, be%cv_mz, be%ncv_mz, jp_start, jp_end)
 
       step = 0.0
       if (apdotp .gt. 0.0) step = rrmold/apdotp
@@ -163,12 +160,12 @@ subroutine da_minimise_cg(grid, config_flags,            &
     ! Orthonormalize new gradient (using modified Gramm-Schmidt algorithm)
       if (orthonorm_gradient) then
          do i = iter-1, 0, -1
-            gdot = da_dot_cv(cv_size, ghat, qhat(i)%values, grid, mz, jp_start, jp_end)
+            gdot = da_dot_cv(cv_size, ghat, qhat(i)%values, grid, be%cv_mz, be%ncv_mz, jp_start, jp_end)
             ghat = ghat - gdot * qhat(i)%values
          end do
       end if
       
-      rrmnew = da_dot_cv (cv_size, precon*ghat, ghat, grid, mz, jp_start, jp_end)
+      rrmnew = da_dot_cv (cv_size, precon*ghat, ghat, grid, be%cv_mz, be%ncv_mz, jp_start, jp_end)
       rrmnew_norm = sqrt(rrmnew)
 
       ratio = 0.0
@@ -188,13 +185,18 @@ subroutine da_minimise_cg(grid, config_flags,            &
 
       if (calculate_cg_cost_fn) then
          call da_calculate_j(it, iter, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
-	                     be%cv%size_jl, xbx, be, iv, xhat, cv, re, y, j_cost, fhat, grid, config_flags)
+                             be%cv%size_jl, xbx, be, iv, xhat, cv, re, y, j_cost, grid, config_flags)
          j_total = j_cost%total
       else
-         j_total = j0_total + 0.5 * da_dot_cv(cv_size,ghat0,xhat,grid,mz,jp_start,jp_end)
+         j_total = j0_total + 0.5 * da_dot_cv(cv_size,ghat0,xhat,grid,be%cv_mz,be%ncv_mz,jp_start,jp_end)
       endif
 
-      write(unit=stdout,fmt=12) " minimize_cg ", it, iter, j_total, rrmnew_norm, step         	 
+      if ( write_detail_grad_fn ) then
+         call da_calculate_gradj(it, iter, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
+                                 be%cv%size_jl, xbx, be, iv, xhat+cv, y, fhat, grid, config_flags, re)
+      end if
+
+      write(unit=stdout,fmt=12) " minimize_cg ", it, iter, j_total, rrmnew_norm, step
       if (rrmnew_norm  < eps(it) * j_grad_norm_target) exit
 
 12    format(a13,1x,i3,1x,i4,5x,1PD22.15,5x,1PD22.15,5x,1PD22.15)
@@ -223,9 +225,12 @@ subroutine da_minimise_cg(grid, config_flags,            &
    write(unit=stdout,fmt='(A)') " "
 
    call da_calculate_j(it, iter, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
-                       be%cv%size_jl, xbx, be, iv, xhat, cv, re, y, j_cost, ghat, grid, config_flags)
+                       be%cv%size_jl, xbx, be, iv, xhat, cv, re, y, j_cost, grid, config_flags)
 
-   rrmnew_norm = SQRT(da_dot_cv(cv_size,ghat,ghat,grid,mz,jp_start,jp_end))
+   call da_calculate_gradj(it,iter,cv_size,be%cv%size_jb, be%cv%size_je,be%cv%size_jp, &
+                           be%cv%size_jl,xbx, be, iv, xhat+cv, y, ghat, grid, config_flags, re)
+
+   rrmnew_norm = SQRT(da_dot_cv(cv_size,ghat,ghat,grid,be%cv_mz,be%ncv_mz,jp_start,jp_end))
 
     write(unit=stdout,fmt=15) iter, j_cost%total , rrmnew_norm
 15  format('Final: ',I3,' iter, J=',1PD22.15,', g=',1PD22.15)

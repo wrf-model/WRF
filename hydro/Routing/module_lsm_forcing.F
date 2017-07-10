@@ -2533,19 +2533,22 @@ Contains
 !Get specified precip....
 !!!VIP, dimensions of grid are currently hardwired in input subroutine!!!
 !!Create forcing data filename...
+        call geth_newdate(out_date,olddate,nint(dt))
         inflnm = trim(indir)//"/"//&
-                 olddate(1:4)//olddate(6:7)//olddate(9:10)//olddate(12:13)//&
-                 olddate(15:16)//".PRECIP_FORCING.nc"
+                 out_date(1:4)//out_date(6:7)//out_date(9:10)//out_date(12:13)//&
+                 out_date(15:16)//".PRECIP_FORCING.nc"
         inquire (file=trim(inflnm), exist=fexist)
 #ifdef MPP_LAND
         call mpp_land_bcast_logical(fexist)
 #endif
 #ifdef HYDRO_D
+    if(my_id .eq. io_id) then
         if(fexist) then 
             print*, "using specified pcp forcing: ",trim(inflnm)
         else
             print*, "no specified pcp forcing: ",trim(inflnm)
         endif
+    endif
 #endif
         if ( .not. fexist ) then
            prcp1 = PRCP_old ! for missing pcp data use analysis/model input 
@@ -2564,7 +2567,9 @@ Contains
                 PRCP1=PRCP2/DT     !convert from mm to mm/s
                END IF  ! Endif mmflag
 #ifdef HYDRO_D
+    if(my_id .eq. io_id) then
                print*, "replace pcp successfully! ",trim(inflnm)
+    endif
 #endif
            endif
         endif
@@ -2735,7 +2740,10 @@ Contains
     else
         allocate(buf2(1,1))
     endif
-    ierr = nf_open(trim(flnm), NF_NOWRITE, ncid)
+    if(my_id .eq. io_id) then
+        ierr = nf_open(trim(flnm), NF_NOWRITE, ncid)
+    endif
+    call mpp_land_bcast_int1(ierr)
     if (ierr /= 0) then
        write(*,'("READFORC Problem opening netcdf file: ''", A, "''")') trim(flnm)
        call hydro_stop("In READFORC_HRLDAS_mpp() - Problem opening netcdf file")

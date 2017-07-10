@@ -376,6 +376,9 @@ REAL,  DIMENSION( ims:ime , kms:kme , jms:jme , ntot_amode ),       &
        if( config_flags%mp_physics == THOMPSON ) then
          rainrate(:,:,:) = rainprod(:,:,:)
          evaprate(:,:,:) = evapprod(:,:,:)
+       elseif( config_flags%mp_physics == WSM6SCHEME ) then
+         rainrate(:,:,:) = rainprod(:,:,:)
+         evaprate(:,:,:) = evapprod(:,:,:)
        elseif( config_flags%mp_physics == CAMMGMPSCHEME ) then
          rainrate(:,:,:) = prain3d(:,:,:)
          evaprate(:,:,:) = nevapr3d(:,:,:)
@@ -405,6 +408,9 @@ REAL,  DIMENSION( ims:ime , kms:kme , jms:jme , ntot_amode ),       &
    CASE (MOZART_MOSAIC_4BIN_AQ_KPP)
        CALL wrf_debug(15,'wetscav_driver calling mosaic_wetscav_driver')
        if( config_flags%mp_physics == THOMPSON ) then
+         rainrate(:,:,:) = rainprod(:,:,:)
+         evaprate(:,:,:) = evapprod(:,:,:)
+       elseif( config_flags%mp_physics == WSM6SCHEME ) then
          rainrate(:,:,:) = rainprod(:,:,:)
          evaprate(:,:,:) = evapprod(:,:,:)
        elseif( config_flags%mp_physics == CAMMGMPSCHEME ) then

@@ -216,6 +216,12 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
       ! ---------------
 
       do i = 1, platform%info%levels
+         if (i > max_ob_levels) then
+            ! platform%each only has size "max_ob_levels", so if we exceed this limit
+            ! we should just read past these lines and not assign them to platform%each
+            read (unit = iunit, fmt = trim (fmt_each))
+            cycle
+         end if
          platform%each (i) = each_level_type(missing_r, missing, -1.0, & ! height
             field_type(missing_r, missing, missing_r, missing, missing_r), & ! u
             field_type(missing_r, missing, missing_r, missing, missing_r), & ! v
@@ -354,28 +360,6 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
       nlevels = platform%info%levels
       if (nlevels > max_ob_levels) then
          nlevels = max_ob_levels
-         write(unit=message(1), fmt='(/4(2a,2x),a,2f8.2,2x,2(a,f9.2,2x),2(a,i4,2x)/)') &
-            'Station: ', trim(platform%info%name), &
-            'ID: ', trim(platform%info%id), &
-            'Platform: ', trim(platform%info%platform), &
-            'Date: ', trim(platform%info%date_char), &
-            'At Loc(lat, lon): ', platform%info%lat, platform%info%lon, &
-            'At elv: ', platform%info%elv, &
-            'with pstar: ', platform%info%pstar, &
-            'Has level: ', platform%info%levels, &
-            'which is great than max_ob_levels: ', max_ob_levels
-
-         write (unit=message(2), fmt = '(A,1X,A,1X,A,1X,I4,2f9.3,f9.1,1X,A)') &
-            platform%info%name,        &
-            platform%info%platform,    &
-            platform%info%date_char,   &
-            platform%info%levels,      &
-            platform%info%lat,         &
-            platform%info%lon,         &
-            platform%info%elv,         &
-            platform%info%id
-         call da_warning(__FILE__,__LINE__,message(1:2))
-
          platform%info%levels = nlevels
       else if (nlevels < 1) then
          ! Not GPSPW and GPSZD data:

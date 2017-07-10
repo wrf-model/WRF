@@ -77,6 +77,8 @@
  h_sca_adv_order                     = 5,
  v_sca_adv_order                     = 3,
  non_hydrostatic                     = .true.,
+ hybrid_opt                          = 2
+ etac                                = 0.2
  /
 
  &bdy_control

@@ -12018,10 +12018,6 @@ CONTAINS
 !Mukul change the flags here with reference to the new effective cloud/ice/snow radius
          IF (ICLOUD .ne. 0) THEN
             IF ( has_reqc .ne. 0) THEN
-               IF ( wrf_dm_on_monitor() ) THEN
-                 WRITE(message,*)'RRTMG: pre-computed cloud droplet effective radius found, setting inflglw=3'
-                 call wrf_debug(150, message)
-               ENDIF
                inflglw = 3
                DO K=kts,kte
                   recloud1D(ncol,K) = MAX(2.5, re_cloud(I,K,J)*1.E6)
@@ -12040,10 +12036,6 @@ CONTAINS
             ENDIF
 
             IF ( has_reqi .ne. 0) THEN
-               IF ( wrf_dm_on_monitor() ) THEN
-                 WRITE(message,*)'RRTMG: pre-computed cloud ice effective radius found, setting inflglw=4 and iceflglw=4'
-                 call wrf_debug(150, message)
-               ENDIF
                inflglw  = 4
                iceflglw = 4
                DO K=kts,kte
@@ -12083,10 +12075,6 @@ CONTAINS
             ENDIF
 
             IF ( has_reqs .ne. 0) THEN
-               IF ( wrf_dm_on_monitor() ) THEN
-                 WRITE(message,*)'RRTMG: pre-computed snow effective radius found, setting inflglw=5 and iceflglw=5'
-                 call wrf_debug(150, message)
-               ENDIF
                inflglw  = 5
                iceflglw = 5
                DO K=kts,kte
@@ -12097,6 +12085,20 @@ CONTAINS
                   resnow1D(ncol,K) = 10.0
                ENDDO
             ENDIF
+
+! special case for P3 microphysics
+! put ice into snow category for optics, then set ice to zero
+            IF (has_reqs .eq. 0 .and. has_reqi .ne. 0 .and. has_reqc .ne. 0) THEN
+               inflglw  = 5
+               iceflglw = 5
+               DO K=kts,kte
+                  resnow1D(ncol,K) = MAX(10., re_ice(I,K,J)*1.E6)
+                  QS1D(K)=QI3D(I,K,J)
+                  QI1D(K)=0.
+                  reice1D(ncol,K)=10.
+               END DO
+            END IF
+
          ENDIF
 
 ! Layer indexing goes bottom to top here for all fields.
@@ -12603,10 +12605,11 @@ CONTAINS
 
          if (present(lwupt)) then 
 ! Output up and down toa fluxes for total and clear sky
-            lwupt(i,j)     = uflx(1,kte+2)
-            lwuptc(i,j)    = uflxc(1,kte+2)
-            lwdnt(i,j)     = dflx(1,kte+2)
-            lwdntc(i,j)    = dflxc(1,kte+2)
+! nlayers+1 represents value at 0 mb
+            lwupt(i,j)     = uflx(1,nlayers+1)
+            lwuptc(i,j)    = uflxc(1,nlayers+1)
+            lwdnt(i,j)     = dflx(1,nlayers+1)
+            lwdntc(i,j)    = dflxc(1,nlayers+1)
 ! Output up and down surface fluxes for total and clear sky
             lwupb(i,j)     = uflx(1,1)
             lwupbc(i,j)    = uflxc(1,1)

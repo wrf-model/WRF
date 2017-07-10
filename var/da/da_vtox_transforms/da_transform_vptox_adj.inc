@@ -1,4 +1,5 @@
 subroutine da_transform_vptox_adj(grid, vp, be, ep)
+!subroutine da_transform_vptox_adj(grid, vp, be, ep, nobwin)
 
    !--------------------------------------------------------------------------
    ! Purpose: Adjoint for Physical transform of variables 
@@ -17,37 +18,55 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
    type (vp_type), intent(inout)        :: vp  ! CV on grid structure.
    type (ep_type), intent(in)           :: ep  ! Ensemble perturbation.
    type (be_type), intent(in), optional :: be  ! Background errors.
+!   integer, intent(in), optional        :: nobwin
 
    integer :: i, k, j, ij, k1              ! Loop counters.
    real, allocatable                    :: chi_u(:,:,:)  ! Unbalanced chi
 
    if (trace_use) call da_trace_entry("da_transform_vptox_adj")
 
-   !---------------------------------------------------------------------------
-   !  [4] Add flow-dependent increments in model space (grid%xa):
-   !---------------------------------------------------------------------------
-      
-!  if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
-!     call da_add_flow_dependence_xa_adj(be % ne, ep, grid%xa, vp)
-!  end if
-   if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
-      if ( anal_type_hybrid_dual_res ) then
-         call da_add_flow_dependence_xa_adj_dual_res(be % ne, ep, grid, vp)
-      else
-         call da_add_flow_dependence_xa_adj(be % ne, ep, grid%xa, vp)
-      endif
-   endif
+!   !---------------------------------------------------------------------------
+!   !  [4] Add flow-dependent increments in model space (grid%xa):
+!   !---------------------------------------------------------------------------
+!
+!!  if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
+!!     call da_add_flow_dependence_xa_adj(be % ne, ep, grid%xa, vp)
+!!  end if
+!   if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
+!      if ( anal_type_hybrid_dual_res ) then
+!         if( present(nobwin) ) then
+!            call da_add_flow_dependence_xa_adj_dual_res(be % ne, ep, grid, vp, nobwin)
+!         else
+!            call da_add_flow_dependence_xa_adj_dual_res(be % ne, ep, grid, vp)
+!         end if
+!      else
+!         if( present(nobwin) ) then
+!            call da_add_flow_dependence_xa_adj(be % ne, ep, grid%xa, vp, nobwin)
+!         else
+!            call da_add_flow_dependence_xa_adj(be % ne, ep, grid%xa, vp)
+!         end if
+!      endif
+!   endif
 
    !--------------------------------------------------------------------------
    ! [3] Transform to model variable space:
    !--------------------------------------------------------------------------
 
-  if ( (use_radarobs .and. use_radar_rf) .or. (use_rad .and. crtm_cloud) .or. &
-       (use_radarobs .and. use_radar_rhv) .or. (use_radarobs .and. use_radar_rqv) .or. cloud_cv_options .ge. 2 .or. &
-       (grid%pseudo_var(1:1).eq.'q' .and. grid%pseudo_var(2:2).ne.' ') .or.  &
-       (grid%pseudo_var(1:1).eq.'Q' .and. grid%pseudo_var(2:2).ne.' ') ) then
-
-   if ( cloud_cv_options == 1 .and. use_3dvar_phy ) then
+   if ( cloud_cv_options /= 1 ) then
+      ! Pseudo RH --> Water vapor mixing ratio:
+      !$OMP PARALLEL DO &
+      !$OMP PRIVATE ( ij )
+      do ij = 1 , grid%num_tiles
+         do k = kts,kte
+            do j = grid%j_start(ij),grid%j_end(ij)
+               do i =  its, ite
+                  vp%v4(i,j,k)  = vp%v4(i,j,k) + grid%xa%q(i,j,k) * grid%xb%qs(i,j,k)
+               end do
+            end do
+         end do
+      end do
+      !$OMP END PARALLEL DO
+   else ! cloud_cv_options=1
       ! Pseudo RH --> Total water mixing ratio:
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij )
@@ -63,21 +82,7 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
       !$OMP END PARALLEL DO
    end if
 
-   if ( cloud_cv_options .ge. 2) then 
-      ! Pseudo RH --> Water vapor mixing ratio:
-      !$OMP PARALLEL DO &
-      !$OMP PRIVATE ( ij )
-      do ij = 1 , grid%num_tiles
-         do k = kts,kte
-            do j = grid%j_start(ij),grid%j_end(ij)
-               do i =  its, ite
-                  vp%v4(i,j,k)  = vp%v4(i,j,k) + grid%xa%q(i,j,k) * grid%xb%qs(i,j,k)   
-               end do
-            end do
-         end do
-      end do
-      !$OMP END PARALLEL DO
-#ifdef CLOUD_CV
+   if ( cloud_cv_options >= 2) then 
       !qcloud
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij )
@@ -144,7 +149,9 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
          enddo
       enddo
       !$OMP END PARALLEL DO
+   end if ! cloud_cv_options >=2
 
+   if ( use_cv_w ) then
       !vertical velocity
       !$OMP PARALLEL DO &
       !$OMP PRIVATE ( ij )
@@ -158,25 +165,8 @@ subroutine da_transform_vptox_adj(grid, vp, be, ep)
          enddo
       enddo
       !$OMP END PARALLEL DO
+   end if ! use_cv_w
 
-#endif
-   end if
-  else ! no rf or cloud radiance
-      ! Pseudo RH --> Water vapor mixing ratio:
-      !$OMP PARALLEL DO &
-      !$OMP PRIVATE ( ij )
-
-      do ij = 1 , grid%num_tiles
-         do k = kts,kte
-            do j = grid%j_start(ij),grid%j_end(ij)
-               do i =  its, ite
-                  vp%v4(i,j,k)  = vp%v4(i,j,k) + grid%xa%q(i,j,k) * grid%xb%qs(i,j,k)
-               end do
-            end do
-         end do
-      end do
-      !$OMP END PARALLEL DO
-  end if
 #ifdef A2C
   if ((fg_format==fg_format_wrf_arw_regional  .or. &
        fg_format==fg_format_wrf_arw_global  ) .and. ide == ipe ) then

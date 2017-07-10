@@ -93,9 +93,19 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
      IF ( .FALSE.) THEN
        rc = 1  ! dummy statement
      ELSE IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
-       IF ( grid%dfi_stage == DFI_FST .OR. grid%dfi_opt == DFI_NODFI ) THEN
-          CALL med_hist_out ( grid , ialarm, config_flags )
-       END IF
+!----------------------------------------------------------------------
+! RASM Climate Diagnostics - JR, AS, MS  - October 2016
+!----------------------------------------------------------------------
+       IF  ( (ialarm .EQ.  AUXHIST5_ALARM) .AND. (config_flags%restart) .AND. ( currTime .EQ. startTime ) ) THEN
+         !  no AVG history output on the first time of the restart
+       ELSE IF  ( (ialarm .EQ.  AUXHIST6_ALARM) .AND. (config_flags%restart) .AND. ( currTime .EQ. startTime ) ) THEN
+         !  no DIURNAL history output on the first time of the restart
+       ELSE IF ( grid%dfi_stage == DFI_FST .OR. grid%dfi_opt == DFI_NODFI ) THEN
+         CALL med_hist_out ( grid , ialarm, config_flags )
+       ENDIF
+!----------------------------------------------------------------------
+! end RASM Climate Diagnostics
+!----------------------------------------------------------------------
        CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
      ENDIF
    ENDDO
@@ -530,7 +540,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
        !  adjust temp and qv
 
        CALL adjust_tempqv ( nest%mub , nest%mub_save , &
-                            nest%znw , nest%p_top , &
+                            nest%c3h , nest%c4h , nest%znw , nest%p_top , &
                             nest%t_2 , nest%p , nest%moist(ims,kms,jms,P_QV) , &
                             ids , ide , jds , jde , kds , kde , &
                             ims , ime , jms , jme , kms , kme , &
@@ -1726,7 +1736,7 @@ write(0,*)__FILE__,__LINE__,' grid%id ',grid%id,' grid%oid ',grid%oid
 
    END SELECT
    IF ( wrf_dm_on_monitor() ) THEN
-     WRITE ( message , FMT = '("Writing ",A30," for domain ",I8)' )TRIM(fname),grid%id
+     WRITE ( message , FMT = '("Writing ",A," for domain ",I8)' )TRIM(fname),grid%id
      CALL end_timing ( TRIM(message) )
    END IF
 
@@ -2169,6 +2179,27 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
    IF ( adjust ) THEN 
      CALL adjust_io_timestr( grid%io_intervals( alarm_id ), CT, ST, timestr )
    ENDIF
+#if (DA_CORE != 1 && NMM_CORE != 1)
+!----------------------------------------------------------------------
+! RASM Climate Diagnostics - JR, AS, MS  - October 2016
+!----------------------------------------------------------------------
+   IF( alarm_id .EQ. AUXHIST5_ALARM .AND. config_flags%mean_diag .EQ. 1 ) THEN
+      WRITE(message, *) "RASM STATS: MEAN AUXHIST5 oid=", oid, " fname=", trim(fname), " alarmI_id=", alarm_id, " Time_outNow=", timestr
+      CALL wrf_debug(200,  message )
+      WRITE(message, *) "RASM STATS: MEAN AUXHIST5 Time_outbefore =...", trim(grid%OUTDATE_MEAN)
+      CALL wrf_debug(200,  message )
+      timestr = grid%OUTDATE_MEAN  
+   ELSE IF( alarm_id .EQ. AUXHIST6_ALARM .AND. config_flags%diurnal_diag .EQ. 1 ) THEN
+      WRITE(message, *) "RASM STATS: DIURNAL AUXHIST6 oid=", oid, " fname=", trim(fname), " alarmI_id=", alarm_id, " Time_outNow=", timestr
+      CALL wrf_debug(200,  message )
+      WRITE(message, *) "RASM STATS: DIURNAL AUXHIST6 Time_outbefore =...", trim(grid%OUTDATE_DIURN)
+      CALL wrf_debug(200,  message )
+      timestr = grid%OUTDATE_DIURN 
+   ENDIF
+!----------------------------------------------------------------------
+! end RASM Climate Diagnostics
+!----------------------------------------------------------------------
+#endif
    CALL construct_filename2a ( fname , hist_outname, &
                                grid%id , 2 , timestr )
    stream_l = stream-first_history+1

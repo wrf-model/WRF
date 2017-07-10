@@ -1,3 +1,57 @@
+#if ( HYBRID_COORD==1 ) 
+#  define mu(...) (c1h(k)*XXPCXX(__VA_ARGS__))
+#  define XXPCXX(...) mu(__VA_ARGS__)
+
+#  define mut(...) (c1f(k)*XXPCTFXX(__VA_ARGS__)+c2f(k))
+#  define XXPCTFXX(...) mut(__VA_ARGS__)
+
+#  define Mut(...) (c1h(k)*XXPCTHXX(__VA_ARGS__)+c2h(k))
+#  define XXPCTHXX(...) Mut(__VA_ARGS__)
+
+#  define muu(...) (c1h(k)*XXPCUXX(__VA_ARGS__)+c2h(k))
+#  define XXPCUXX(...) muu(__VA_ARGS__)
+
+#  define muv(...) (c1h(k)*XXPCVXX(__VA_ARGS__)+c2h(k))
+#  define XXPCVXX(...) muv(__VA_ARGS__)
+
+#  define muave(...) (c1f(k)*XXPCAVEFXX(__VA_ARGS__))
+#  define XXPCAVEFXX(...) muave(__VA_ARGS__)
+
+#  define Muave(...) (c1h(k)*XXPCAVEHXX(__VA_ARGS__))
+#  define XXPCAVEHXX(...) Muave(__VA_ARGS__)
+
+#  define muus(...) (c1h(k)*XXPCUSXX(__VA_ARGS__)+c2h(k))
+#  define XXPCUSXX(...) muus(__VA_ARGS__)
+
+#  define muvs(...) (c1h(k)*XXPCVSXX(__VA_ARGS__)+c2h(k))
+#  define XXPCVSXX(...) muvs(__VA_ARGS__)
+
+#  define mu_tend(...) (c1h(k)*XXPCTENDXX(__VA_ARGS__))
+#  define XXPCTENDXX(...) mu_tend(__VA_ARGS__)
+
+#  define dmdt(...) (c1h(k)*XXDMDTXX(__VA_ARGS__))
+#  define XXDMDTXX(...) dmdt(__VA_ARGS__)
+
+#  define muts(...) (c1f(k)*XXPCTFSXX(__VA_ARGS__)+c2f(k))
+#  define XXPCTFSXX(...) muts(__VA_ARGS__)
+
+#  define Muts(...) (c1h(k)*XXPCTHSXX(__VA_ARGS__)+c2h(k))
+#  define XXPCTHSXX(...) Muts(__VA_ARGS__)
+
+#  define mudf_xy(...) (c1h(k)*XXMUDFXYXX(__VA_ARGS__))
+#  define XXMUDFXYXX(...) mudf_xy(__VA_ARGS__)
+
+#  define MUTHK         (c1h(k)*MUT(i,j)+c2h(k))
+
+#  define MUTHKM1       (c1h(k-1)*MUT(i,j)+c2h(k-1))
+
+#  define MUTHMUTF_KK   ((c1h(k)*MUT(i,j)+c2h(k))*(c1f(k)*MUT(i,j)+c2f(k)))
+
+#  define MUTHMUTF_KM1K ((c1h(k-1)*MUT(i,j)+c2h(k-1))*(c1f(k)*MUT(i,j)+c2f(k)))
+
+#  define MUTHMUTF_KKP1 ((c1h(k)*MUT(i,j)+c2h(k))*(c1f(k+1)*MUT(i,j)+c2f(k+1)))
+#endif
+
 !WRF:MODEL_LAYER:DYNAMICS
 !
 
@@ -19,6 +73,8 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
                             mub, mu_1, mu_2,              &
                             muu, muus, muv, muvs,         &
                             mut, muts, mudf,              &
+                            c1h, c2h, c1f, c2f,           &
+                            c3h, c4h, c3f, c4f,           &
                             u_save, v_save, w_save,       &
                             t_save, ph_save, mu_save,     &
                             ww, ww_save,                  &
@@ -91,6 +147,9 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
 
   REAL, INTENT(IN) :: rdx,rdy
 
+  REAL, DIMENSION( kms:kme ),INTENT(IN   ) :: c1h, c2h, c1f, c2f, &
+                                              c3h, c4h, c3f, c4f
+
 ! local variables
 
   INTEGER :: i, j, k
@@ -125,10 +184,10 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
 
       DO j=j_start, j_end
       DO i=i_start, i_end
-        mu_1(i,j)=mu_2(i,j)
+        MU_1(i,j)=MU_2(i,j)
         ww_save(i,kde,j) = 0.
         ww_save(i,1,j) = 0.
-        mudf(i,j) = 0.  !  initialize external mode div damp to zero
+        MUDF(i,j) = 0.  !  initialize external mode div damp to zero
       ENDDO
       ENDDO
 
@@ -167,28 +226,23 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
 
     DO j=j_start, j_end
       DO i=i_start, i_end
-        muts(i,j)=mub(i,j)+mu_2(i,j)
+        MUTS(i,j)=MUB(i,j)+MU_2(i,j)
       ENDDO
       DO i=i_start, i_endu
-!  rk_step==1, WCS fix for tiling
-!        muus(i,j)=0.5*(mub(i,j)+mu_2(i,j)+mub(i-1,j)+mu_2(i-1,j))
-        muus(i,j) = muu(i,j)
+        MUUS(i,j) = MUU(i,j)
       ENDDO
     ENDDO
 
     DO j=j_start, j_endv
     DO i=i_start, i_end
-!  rk_step==1, WCS fix for tiling
-!      muvs(i,j)=0.5*(mub(i,j)+mu_2(i,j)+mub(i,j-1)+mu_2(i,j-1))
-        muvs(i,j) = muv(i,j)
+        MUVS(i,j) = MUV(i,j)
     ENDDO
     ENDDO
 
     DO j=j_start, j_end
       DO i=i_start, i_end
-        mu_save(i,j)=mu_2(i,j)
-        mu_2(i,j)=0.
-!       mu_2(i,j)=mu_2(i,j)-mu_2(i,j)
+        MU_SAVE(i,j)=MU_2(i,j)
+        MU_2(i,j)=0.
       ENDDO
     ENDDO
 
@@ -196,23 +250,23 @@ SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
 
     DO j=j_start, j_end
       DO i=i_start, i_end
-        muts(i,j)=mub(i,j)+mu_1(i,j)
+        MUTS(i,j)=MUB(i,j)+MU_1(i,j)
       ENDDO
       DO i=i_start, i_endu
-        muus(i,j)=0.5*(mub(i,j)+mu_1(i,j)+mub(i-1,j)+mu_1(i-1,j))
+        MUUS(i,j)=0.5*(MUB(i,j)+MU_1(i,j)+MUB(i-1,j)+MU_1(i-1,j))
       ENDDO
     ENDDO
 
     DO j=j_start, j_endv
     DO i=i_start, i_end
-      muvs(i,j)=0.5*(mub(i,j)+mu_1(i,j)+mub(i,j-1)+mu_1(i,j-1))
+      MUVS(i,j)=0.5*(MUB(i,j)+MU_1(i,j)+MUB(i,j-1)+MU_1(i,j-1))
     ENDDO
     ENDDO
 
     DO j=j_start, j_end
       DO i=i_start, i_end
-        mu_save(i,j)=mu_2(i,j)
-        mu_2(i,j)=mu_1(i,j)-mu_2(i,j)
+        MU_SAVE(i,j)=MU_2(i,j)
+        MU_2(i,j)=MU_1(i,j)-MU_2(i,j)
       ENDDO
     ENDDO
 
@@ -297,6 +351,8 @@ SUBROUTINE small_step_finish( u_2, u_1, v_2, v_1, w_2, w_1,    &
                               t_2, t_1, ph_2, ph_1, ww, ww1,   &
                               mu_2, mu_1,                      &
                               mut, muts, muu, muus, muv, muvs, &
+                              c1h, c2h, c1f, c2f,              &
+                              c3h, c4h, c3f, c4f,              &
                               u_save, v_save, w_save,          &
                               t_save, ph_save, mu_save,        &
                               msfux, msfuy, msfvx, msfvy,      &
@@ -348,6 +404,9 @@ SUBROUTINE small_step_finish( u_2, u_1, v_2, v_1, w_2, w_1,    &
   REAL,   DIMENSION(ims:ime, jms:jme), INTENT(IN   ) :: msfux, msfuy, &
                                                         msfvx, msfvy, &
                                                         msftx, msfty
+
+  REAL, DIMENSION( kms:kme ),INTENT(IN   ) :: c1h, c2h, c1f, c2f, &
+                                              c3h, c4h, c3f, c4f
 
 
 ! local stuff
@@ -443,7 +502,10 @@ END SUBROUTINE small_step_finish
 
 SUBROUTINE calc_p_rho( al, p, ph,                    &
                        alt, t_2, t_1, c2a, pm1,      &
-                       mu, muts, znu, t0,            &
+                       mu, mut,                      &
+                       c1h, c2h, c1f, c2f,           &
+                       c3h, c4h, c3f, c4f,           &
+                       znu, t0,                      &
                        rdnw, dnw, smdiv,             &
                        non_hydrostatic, step,        &
                        ids, ide, jds, jde, kds, kde, &
@@ -471,13 +533,16 @@ SUBROUTINE calc_p_rho( al, p, ph,                    &
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme),INTENT(INOUT) :: ph, pm1
 
   REAL, DIMENSION(ims:ime, jms:jme)         , INTENT(IN   ) :: mu,   &
-                                                               muts
+                                                               mut
 
   REAL, DIMENSION(kms:kme)         , INTENT(IN   ) :: dnw,  &
                                                       rdnw, &
                                                       znu
 
   REAL,                                       INTENT(IN   ) :: t0, smdiv
+
+  REAL, DIMENSION( kms:kme ),INTENT(IN   ) :: c1h, c2h, c1f, c2f, &
+                                              c3h, c4h, c3f, c4f
 
   LOGICAL, INTENT(IN   )  :: non_hydrostatic
 
@@ -519,13 +584,13 @@ SUBROUTINE calc_p_rho( al, p, ph,                    &
 
 !  al computation is all dry, so ok with moisture
 
-      al(i,k,j)=-1./muts(i,j)*(alt(i,k,j)*mu(i,j)  &
+      al(i,k,j)=-1./Mut(i,j)*(alt(i,k,j)*mu(i,j)  &
              +rdnw(k)*(ph(i,k+1,j)-ph(i,k,j)))
 
 !  this is temporally linearized p, no moisture correction needed
 
       p(i,k,j)=c2a(i,k,j)*(alt(i,k,j)*(t_2(i,k,j)-mu(i,j)*t_1(i,k,j))  &
-                       /(muts(i,j)*(t0+t_1(i,k,j)))-al (i,k,j))
+                       /(Mut(i,j)*(t0+t_1(i,k,j)))-al (i,k,j))
 
      ENDDO
      ENDDO
@@ -536,10 +601,14 @@ SUBROUTINE calc_p_rho( al, p, ph,                    &
        DO j=j_start, j_end
        DO k=k_start, k_end
        DO i=i_start, i_end
+#if ! ( HYBRID_COORD==1 ) 
          p(i,k,j)=mu(i,j)*znu(k)
-         al(i,k,j)=alt(i,k,j)*(t_2(i,k,j)-mu(i,j)*t_1(i,k,j))            &
-                      /(muts(i,j)*(t0+t_1(i,k,j)))-p(i,k,j)/c2a(i,k,j)
-         ph(i,k+1,j)=ph(i,k,j)-dnw(k)*(muts(i,j)*al (i,k,j)              &
+#else
+         p(i,k,j)=MU(i,j)*c3h(k)
+#endif
+         al(i,k,j)=alt(i,k,j)*(t_2(i,k,j)-mu(i,j)*t_1(i,k,j))           &
+                      /(Mut(i,j)*(t0+t_1(i,k,j)))-p(i,k,j)/c2a(i,k,j)
+         ph(i,k+1,j)=ph(i,k,j)-dnw(k)*(Mut(i,j)*al (i,k,j)              &
                           +mu(i,j)*alt(i,k,j))
        ENDDO
        ENDDO
@@ -574,7 +643,10 @@ END SUBROUTINE calc_p_rho
 !----------------------------------------------------------------------
 
 SUBROUTINE calc_coef_w( a,alpha,gamma,              &
-                        mut, cqw,                   &
+                        mut,                        &
+                        c1h, c2h, c1f, c2f,         &
+                        c3h, c4h, c3f, c4f,         &
+                        cqw,                        &
                         rdn, rdnw, c2a,             &
                         dts, g, epssm, top_lid,     &
                         ids,ide, jds,jde, kds,kde,  & ! domain dims
@@ -607,12 +679,16 @@ SUBROUTINE calc_coef_w( a,alpha,gamma,              &
                                                                dts,   &
                                                                g
 
+  REAL, DIMENSION( kms:kme ),INTENT(IN   ) :: c1h, c2h, c1f, c2f, &
+                                              c3h, c4h, c3f, c4f
+
 !  Local stack data.
 
   REAL, DIMENSION(ims:ime)                         :: cof
   REAL  :: b, c
+  REAL  :: muthmutf_kk, muthmutf_km1k, muthmutf_kkp1
 
-  INTEGER :: i, j, k, i_start, i_end, j_start, j_end, k_start, k_end
+  INTEGER :: i, j, k, kk, i_start, i_end, j_start, j_end, k_start, k_end
   INTEGER :: ij, ijp, ijm, lid_flag
 
 !<DESCRIPTION>
@@ -635,32 +711,49 @@ SUBROUTINE calc_coef_w( a,alpha,gamma,              &
 
      outer_j_loop:  DO j = j_start, j_end
 
+        k = kde-1
         DO i = i_start, i_end
-          cof(i)  = (.5*dts*g*(1.+epssm)/mut(i,j))**2
+          cof(i)  = (.5*dts*g*(1.+epssm))**2
           a(i, 2 ,j) = 0.
-          a(i,kde,j) =-2.*cof(i)*rdnw(kde-1)**2*c2a(i,kde-1,j)*lid_flag
+#if ! ( HYBRID_COORD )
+          MUTHMUTF_KK = mut(i,j)*mut(i,j)
+#endif
+          a(i,kde,j) =-2.*cof(i)*rdnw(kde-1)**2*c2a(i,kde-1,j)*lid_flag/MUTHMUTF_KK
           gamma(i,1 ,j) = 0.
         ENDDO
 
-        DO k=3,kde-1
+        DO kk=3,kde-1
+        k=kk-1
         DO i=i_start, i_end
-          a(i,k,j) =   -cqw(i,k,j)*cof(i)*rdn(k)* rdnw(k-1)*c2a(i,k-1,j)    
+#if ! ( HYBRID_COORD )
+          MUTHMUTF_KK = mut(i,j)*mut(i,j)
+#endif
+          a(i,kk,j) =   -cqw(i,kk,j)*cof(i)*rdn(kk)* rdnw(kk-1)*c2a(i,kk-1,j)/MUTHMUTF_KK
         ENDDO
         ENDDO
 
 
         DO k=2,kde-1
         DO i=i_start, i_end
-          b = 1.+cqw(i,k,j)*cof(i)*rdn(k)*(rdnw(k  )*c2a(i,k,j  )  &
-                                       +rdnw(k-1)*c2a(i,k-1,j))
-          c =   -cqw(i,k,j)*cof(i)*rdn(k)*rdnw(k  )*c2a(i,k,j  )
+#if ! ( HYBRID_COORD )
+          MUTHMUTF_KK = mut(i,j)*mut(i,j)
+          MUTHMUTF_KM1K = mut(i,j)*mut(i,j)
+          MUTHMUTF_KKP1 = mut(i,j)*mut(i,j)
+#endif
+          b = 1.+cqw(i,k,j)*cof(i)*rdn(k)*(rdnw(k  )*c2a(i,k,  j)/MUTHMUTF_KK  &
+                                          +rdnw(k-1)*c2a(i,k-1,j)/MUTHMUTF_KM1K )
+          c =   -cqw(i,k,j)*cof(i)*rdn(k)*rdnw(k  )*c2a(i,k,j  )/MUTHMUTF_KKP1
           alpha(i,k,j) = 1./(b-a(i,k,j)*gamma(i,k-1,j))
           gamma(i,k,j) = c*alpha(i,k,j)
         ENDDO
         ENDDO
 
+        k=kde
         DO i=i_start, i_end
-          b = 1.+2.*cof(i)*rdnw(kde-1)**2*c2a(i,kde-1,j)
+#if ! ( HYBRID_COORD )
+          MUTHMUTF_KM1K = mut(i,j)*mut(i,j)
+#endif
+          b = 1.+2.*cof(i)*rdnw(kde-1)**2*c2a(i,kde-1,j)/MUTHMUTF_KM1K
           c = 0.
           alpha(i,kde,j) = 1./(b-a(i,kde,j)*gamma(i,kde-1,j))
           gamma(i,kde,j) = c*alpha(i,kde,j)
@@ -676,6 +769,8 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
                         p, pb,                         &
                         ph, php, alt, al, mu,          &
                         muu, cqu, muv, cqv, mudf,      &
+                        c1h, c2h, c1f, c2f,            &
+                        c3h, c4h, c3f, c4f,            &
                         msfux, msfuy, msfvx,           &
                         msfvx_inv, msfvy,              &
                         rdx, rdy, dts,                 &
@@ -744,6 +839,9 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
                                                                 cf2,    &
                                                                 cf3,    &
                                                                 emdiv
+
+      REAL, DIMENSION( kms:kme ),INTENT(IN   ) :: c1h, c2h, c1f, c2f, &
+                                                  c3h, c4h, c3f, c4f
     
 
 !  Local 3d array from the stack (note tile size)
@@ -861,7 +959,7 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
    ENDDO
 
    DO i = i_start_up, i_end_up
-     mudf_xy(i)= -emdiv*dx*(mudf(i,j)-mudf(i-1,j))/msfuy(i,j)
+     MUDF_XY(i)= -emdiv*dx*(MUDF(i,j)-MUDF(i-1,j))/msfuy(i,j)
    ENDDO
 
    DO k = k_start, k_end
@@ -950,7 +1048,7 @@ SUBROUTINE advance_uv ( u, ru_tend, v, rv_tend,        &
    ENDDO
 
    DO i = i_start, i_end
-     mudf_xy(i)= -emdiv*dy*(mudf(i,j)-mudf(i,j-1))*msfvx_inv(i,j)
+     MUDF_XY(i)= -emdiv*dy*(MUDF(i,j)-MUDF(i,j-1))*msfvx_inv(i,j)
    ENDDO
 
      IF (     ( j >= j_start_vp)  &
@@ -1060,8 +1158,10 @@ END SUBROUTINE advance_uv
 !---------------------------------------------------------------------
 
 SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
-                         mu, mut, muave, muts, muu, muv,      &
-                         mudf, uam, vam, wwam, t, t_1,        &
+                         mu, mut, muave, muts, muu, muv, mudf,&
+                         c1h, c2h, c1f, c2f,                  &
+                         c3h, c4h, c3f, c4f,                  &
+                         uam, vam, wwam, t, t_1,              &
                          t_ave, ft, mu_tend,                  &
                          rdx, rdy, dts, epssm,                &
                          dnw, fnm, fnp, rdnw,                 &
@@ -1132,12 +1232,15 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
                                                             dts,    &
                                                             epssm
 
+  REAL, DIMENSION( kms:kme ),INTENT(IN   ) :: c1h, c2h, c1f, c2f, &
+                                              c3h, c4h, c3f, c4f
+
 !  Local arrays from the stack (note tile size)
 
   REAL, DIMENSION (its:ite, kts:kte) :: wdtn, dvdxi
   REAL, DIMENSION (its:ite) :: dmdt
 
-  INTEGER :: i,j,k, i_start, i_end, j_start, j_end, k_start, k_end
+  INTEGER :: i, j, k, kk, i_start, i_end, j_start, j_end, k_start, k_end
   INTEGER :: i_endu, j_endv
   REAL    :: acc
 
@@ -1176,7 +1279,7 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
    DO j = j_start, j_end
 
      DO i=i_start, i_end
-            dmdt(i) = 0.
+            DMDT(i) = 0.
      ENDDO
 !  NOTE:  mu is not coupled with the map scale factor.
 !         ww (omega) IS coupled with the map scale factor.
@@ -1208,20 +1311,21 @@ SUBROUTINE advance_mu_t( ww, ww_1, u, u_1, v, v_1,            &
                           -(v(i,k,j  )+muv(i,j  )*v_1(i,k,j  )*msfvx_inv(i,j  )) ) &
                     +rdx*( (u(i+1,k,j)+muu(i+1,j)*u_1(i+1,k,j)/msfuy(i+1,j))       &
                           -(u(i,k,j  )+muu(i  ,j)*u_1(i,k,j  )/msfuy(i  ,j)) ))
-        dmdt(i)    = dmdt(i) + dnw(k)*dvdxi(i,k)
+        DMDT(i)    = DMDT(i) + dnw(k)*dvdxi(i,k)
      ENDDO
      ENDDO
      DO i=i_start, i_end
-       muave(i,j) = mu(i,j)
-       mu(i,j) = mu(i,j)+dts*(dmdt(i)+mu_tend(i,j))
-       mudf(i,j) = (dmdt(i)+mu_tend(i,j)) ! save tendency for div damp filter
-       muts(i,j) = mut(i,j)+mu(i,j)
-       muave(i,j) =.5*((1.+epssm)*mu(i,j)+(1.-epssm)*muave(i,j))
+       MUAVE(i,j) = MU(i,j)
+       MU(i,j) = MU(i,j)+dts*(DMDT(i)+MU_TEND(i,j))
+       MUDF(i,j) = (DMDT(i)+MU_TEND(i,j)) ! save tendency for div damp filter
+       MUTS(i,j) = MUT(i,j)+MU(i,j)
+       MUAVE(i,j) =.5*((1.+epssm)*MU(i,j)+(1.-epssm)*MUAVE(i,j))
      ENDDO
 
-     DO k=2,k_end
+     DO kk=2,k_end
+     k=kk-1
      DO i=i_start, i_end
-       ww(i,k,j)=ww(i,k-1,j)-dnw(k-1)*(dmdt(i)+dvdxi(i,k-1)+mu_tend(i,j))/msfty(i,j)
+       ww(i,kk,j)=ww(i,kk-1,j)-dnw(kk-1)*(dmdt(i)+dvdxi(i,kk-1)+mu_tend(i,j))/msfty(i,j)
      ENDDO
      END DO
 
@@ -1306,6 +1410,8 @@ END SUBROUTINE advance_mu_t
 
 SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
                       mu1, mut, muave, muts,      &
+                      c1h, c2h, c1f, c2f,         &
+                      c3h, c4h, c3f, c4f,         &
                       t_2ave, t_2, t_1,           &
                       ph, ph_1, phb, ph_tend,     &
                       ht, c2a, cqw, alt, alb,     &
@@ -1386,6 +1492,9 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
                                 t0,      &
                                 epssm
 
+      REAL, DIMENSION( kms:kme ),INTENT(IN   ) :: c1h, c2h, c1f, c2f, &
+                                                  c3h, c4h, c3f, c4f
+
 !  Stack based 3d data, tile size.
 
       REAL, DIMENSION( its:ite ) :: mut_inv, msft_inv
@@ -1394,6 +1503,7 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
       REAL, DIMENSION (kts:kte) :: dampwt
       real :: htop,hbot,hdepth,hk
       real    :: pi,dampmag
+      REAL :: muthk, muthkm1
 
 !<DESCRIPTION>
 !
@@ -1453,7 +1563,6 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
 
   j_loop_w:  DO j = j_start, j_end
     DO i=i_start, i_end
-       mut_inv(i) = 1./mut(i,j)
        msft_inv(i) = 1./msfty(i,j)
     ENDDO
 
@@ -1461,8 +1570,8 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
     DO i=i_start, i_end
       t_2ave(i,k,j)=.5*((1.+epssm)*t_2(i,k,j)       &
                     +(1.-epssm)*t_2ave(i,k,j))
-      t_2ave(i,k,j)=(t_2ave(i,k,j) + muave(i,j)*t0) &
-                    /(muts(i,j)*(t0+t_1(i,k,j)))
+      t_2ave(i,k,j)=(t_2ave(i,k,j) + Muave(i,j)*t0) &
+                    /(Muts(i,j)*(t0+t_1(i,k,j)))
       wdwn(i,k+1)=.5*(ww(i,k+1,j)+ww(i,k,j))*rdnw(k)    &
            *(ph_1(i,k+1,j)-ph_1(i,k,j)+phb(i,k+1,j)-phb(i,k,j))
       rhs(i,k+1) = dts*(ph_tend(i,k+1,j) + .5*g*(1.-epssm)*w(i,k+1,j))
@@ -1492,7 +1601,7 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
 !                                                         partial d phi/dz]
     DO k=2,k_end+1
     DO i=i_start, i_end
-      rhs(i,k) = ph(i,k,j) + msfty(i,j)*rhs(i,k)*mut_inv(i)
+      rhs(i,k) = ph(i,k,j) + msfty(i,j)*rhs(i,k)/mut(i,j)
       if(top_lid .and. k.eq.k_end+1)rhs(i,k)=0.
     ENDDO
     ENDDO
@@ -1534,13 +1643,18 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
 !   above surface, begin by adding delta t * previous (coupled) w tendency
     DO k=2,k_end
       DO i=i_start, i_end
+#if ! ( HYBRID_COORD==1 ) 
+        MUTHK   = mut(i,j)
+        MUTHKM1 = mut(i,j)
+#endif
+        
         w(i,k,j)=w(i,k,j)+dts*rw_tend(i,k,j)                       &
                  + msft_inv(i)*cqw(i,k,j)*(                        &
-            +.5*dts*g*mut_inv(i)*rdn(k)*                           &
-             (c2a(i,k  ,j)*rdnw(k  )                               &
+            +.5*dts*g*rdn(k)*                                      &
+             (c2a(i,k  ,j)*rdnw(k  )/MUTHK                         &
         *((1.+epssm)*(rhs(i,k+1  )-rhs(i,k    ))                   &
          +(1.-epssm)*(ph(i,k+1,j)-ph(i,k  ,j)))                    &
-             -c2a(i,k-1,j)*rdnw(k-1)                               &
+             -c2a(i,k-1,j)*rdnw(k-1)/MUTHKM1                       &
         *((1.+epssm)*(rhs(i,k    )-rhs(i,k-1  ))                   &
          +(1.-epssm)*(ph(i,k  ,j)-ph(i,k-1,j)))))                  &
 
@@ -1554,9 +1668,12 @@ SUBROUTINE advance_w( w, rw_tend, ww, w_save, u, v,  &
     K=k_end+1
 
     DO i=i_start, i_end
+#if ! ( HYBRID_COORD==1 ) 
+       MUTHKM1 = mut(i,j)
+#endif
        w(i,k,j)=w(i,k,j)+dts*rw_tend(i,k,j)                         &
            +msft_inv(i)*(                                        &
-         -.5*dts*g*mut_inv(i)*rdnw(k-1)**2*2.*c2a(i,k-1,j)            &
+         -.5*dts*g/MUTHKM1*rdnw(k-1)**2*2.*c2a(i,k-1,j)            &
              *((1.+epssm)*(rhs(i,k  )-rhs(i,k-1  ))                 &
               +(1.-epssm)*(ph(i,k,j)-ph(i,k-1,j)))                  &
          -dts*g*(2.*rdnw(k-1)*                                      &
@@ -1608,6 +1725,8 @@ END SUBROUTINE advance_w
 SUBROUTINE sumflux ( ru, rv, ww,                             &
                      u_lin, v_lin, ww_lin,                   &
                      muu, muv,                               &
+                     c1h, c2h, c1f, c2f,                     &
+                     c3h, c4h, c3f, c4f,                     &
                      ru_m, rv_m, ww_m, epssm,                &
                      msfux, msfuy, msfvx, msfvx_inv, msfvy,  &
                      iteration , number_of_small_timesteps,  &
@@ -1640,6 +1759,9 @@ SUBROUTINE sumflux ( ru, rv, ww,                             &
   REAL, DIMENSION(ims:ime, jms:jme) , INTENT(IN   ) :: muu, muv,      &
                                                        msfux, msfuy,  &
                                                        msfvx, msfvy, msfvx_inv
+
+  REAL, DIMENSION( kms:kme ),INTENT(IN   ) :: c1h, c2h, c1f, c2f, &
+                                              c3h, c4h, c3f, c4f
 
   INTEGER :: mini, minj, mink
 

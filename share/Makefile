@@ -59,6 +59,7 @@ OBJS3   =                               \
         landread.o			\
         track_driver.o                  \
         track_input.o                   \
+        module_trajectory.o             \
         bobrand.o                       \
         wrf_timeseries.o                \
         track_driver.o                  \

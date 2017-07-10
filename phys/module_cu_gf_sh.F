@@ -74,7 +74,6 @@ contains
         its,ite, kts,kte,ipr
 !!!!!!!!!!testing
      logical :: MAKE_CALC_FOR_XK = .true.
-!     logical :: MAKE_CALC_FOR_XK = .false.
      integer, intent (in   )              ::                           &
         ichoice
   !
@@ -393,8 +392,8 @@ contains
            itf,ktf, &
            its,ite, kts,kte)
 !
-      call get_inversion_layers(ierr,p_cup,t_cup,z_cup,q_cup,qes_cup,k_inv_layers,&
-                           kbcon,kstabi,dtempdz,itf,ktf,its,ite, kts,kte)
+!      call get_inversion_layers(ierr,p_cup,t_cup,z_cup,q_cup,qes_cup,k_inv_layers,&
+!                           kbcon,kstabi,dtempdz,itf,ktf,its,ite, kts,kte)
 !
 !
       DO i=its,itf

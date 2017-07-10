@@ -1,0 +1,20 @@
+#!/bin/sh
+#-------------------------------------------------------------------------------#
+# PRODUCTION build settings for IBM AIX xlf2003 compiler
+#-------------------------------------------------------------------------------#
+
+export FC="xlf2003"
+
+export FCFLAGS="\
+-qdbg \
+-qarch=auto \
+-qhalt=W \
+-qlanglvl=2003pure \
+-qsuffix=f=f90:cpp=F90 \
+-qstrict \
+-NS32768 \
+-O3"
+
+export LDFLAGS="-O3"
+
+export LIBS="-lmass -lm"

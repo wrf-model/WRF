@@ -38,6 +38,7 @@ by both C++ and F90 compilers.
 ! Note that MAX_ALARMS must match MAX_WRF_ALARMS defined in 
 ! ../../frame/module_domain.F !!!  Eliminate this dependence with 
 ! grow-as-you-go AlarmList in ESMF_Clock...  
+#include "../../inc/streams.h"
 #define MAX_ALARMS (2*(MAX_HISTORY)+10)
 
 ! TBH:  TODO:  Hook this into the WRF build so WRF can use either "no-leap" or 

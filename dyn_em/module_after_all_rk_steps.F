@@ -52,7 +52,7 @@ CONTAINS
                  ,local_communicator_periodic, wrf_dm_maxval
 
       USE module_comm_dm, ONLY : &
-                  halo_em_phys_w_sub
+                  halo_em_phys_w_sub, halo_em_phys_hcw_sub
 #endif
 
       !=============================================================
@@ -138,6 +138,7 @@ CONTAINS
       !  Include patch communications
       !=============================================================
 #     include "HALO_EM_PHYS_W.inc"
+#     include "HALO_EM_PHYS_HCW.inc"
 #endif
 
       !=============================================================

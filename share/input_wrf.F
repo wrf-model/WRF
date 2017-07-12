@@ -397,6 +397,7 @@
           CALL wrf_message(wrf_err_message)
           WRITE(wrf_err_message,*)'i_parent_start from gridded input file  = ',itmp
           CALL wrf_message(wrf_err_message)
+          itmp  = config_flags%i_parent_start !!!tmp by wyb
        END IF
        IF      ( ( ( switch .EQ. input_only ) .AND. ( grid%id .GE. 2 ) ) .OR. ( switch .EQ. auxinput2_only ) ) THEN
           CALL wrf_get_dom_ti_integer ( fid , 'J_PARENT_START' ,    itmp , 1 , icnt , ierr3 )
@@ -413,10 +414,12 @@
           CALL wrf_message(wrf_err_message)
           WRITE(wrf_err_message,*)'j_parent_start from gridded input file  = ',itmp
           CALL wrf_message(wrf_err_message)
+          itmp  = config_flags%j_parent_start !!!tmp by wyb
        END IF
        IF ( ierr .NE. 0 ) THEN
           CALL wrf_debug ( 0, '---- ERROR: Nest start locations do not match: namelist.input vs gridded input file' )
           count_fatal_error = count_fatal_error + 1
+          !CALL wrf_error_fatal( 'Nest start locations do not match: namelist.input vs gridded input file' ) !!!tmp by wyb
        END IF
     END IF
 #endif

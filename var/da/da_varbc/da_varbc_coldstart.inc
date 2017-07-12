@@ -49,7 +49,6 @@
       num_rad_tot    = wrf_dm_sum_integer(num_rad_domain)
       
       if (npredmax <= 0) cycle                                         !! VarBC instr only
-      
       allocate( ipred(npredmax) )
     
     !---------------------------------------------------------------------------
@@ -104,7 +103,6 @@
 	          ' --> ',mode			       	
 	 end if
       end do                                                              !  end loop for channels
-
     !---------------------------------------------------------------------------
     !  [2]: Calculate statistics for cold-started predictors 
     !---------------------------------------------------------------------------
@@ -113,7 +111,6 @@
 	 if (iv%instid(inst)%varbc(k)%npred <= 0) cycle                   !! VarBC channels only      
 	 if (ANY(iv%instid(inst)%varbc(k)%pred_use > 0)) global_cs = .false.      
       end do	 
-    
       if (global_cs) then                                                 !! Instrument coldstart only
 
          allocate (mean(npredmax), rms(npredmax), mean_tot(npredmax), rms_tot(npredmax))
@@ -153,7 +150,6 @@
 
       end if
       deallocate(ipred)  	           	     	
-
     !---------------------------------------------------------------------------
     !  [3]: Normalize predictors
     !---------------------------------------------------------------------------

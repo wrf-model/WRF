@@ -142,6 +142,7 @@ if (.not. anal_type_verify) then
    call da_write_y(iv, y)
 
    call da_final_write_y(iv)
+  
    call da_print_qcstat(it, iv, num_qcstat_conv)
 end if
 

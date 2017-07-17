@@ -69,10 +69,10 @@ CONTAINS
 !      integer, parameter :: ichoice=0   ! 0 2 5 8 11 GG
       integer, parameter :: ichoicem=0  ! 0 1 2 8 11 GG
 !Closure for shallow (1=stabilization,2=zws,3=dhdt,0=avg of 1,2,3)
-      integer, parameter :: ichoice_s=0 ! 0 1 2 3     !As in FIM
+      integer, parameter :: ichoice_s=2 ! 0 1 2 3     !As in FIM
       real, parameter :: aodccn=0.1
 !      real :: dts,fpi,fp
-      integer, parameter :: dicycle=0   !0,1,2 - diurnal cycle flag
+      integer, parameter :: dicycle=1   !0,1,2 - diurnal cycle flag
       integer, parameter :: dicycle_m=0 !- diurnal cycle flag
 
 !-------------------------------------------------------------

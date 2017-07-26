@@ -72,7 +72,7 @@ contains
         ,intent (in   )                   ::                           &
         itf,ktf,        &
         its,ite, kts,kte,ipr
-!!!!!!!!!!testing
+
      logical :: MAKE_CALC_FOR_XK = .true.
      integer, intent (in   )              ::                           &
         ichoice
@@ -190,8 +190,7 @@ contains
        kstabi,xland1,KBMAX,ktopx
 
      integer                              ::                           &
-       I,K
-!       I,K,ki
+       I,K,ki
      real                                 ::                           &
       dz,mbdt,zkbmax,      &
       cap_maxs,trash,trash2,frh
@@ -206,8 +205,8 @@ contains
      real,    dimension (its:ite,kts:kte) :: dtempdz
      integer, dimension (its:ite,kts:kte) ::  k_inv_layers 
      integer, dimension (its:ite) ::  start_level
-     integer, dimension (its:ite) :: ktopkeep
-     integer, dimension (its:ite) :: kac, ktopnew, ki
+!     integer, dimension (its:ite) :: ktopkeep
+!     integer, dimension (its:ite) :: kac, ktopnew, ki
      real :: denom, denom1
 
      start_level(:)=0
@@ -350,9 +349,9 @@ contains
           IF(K22(I).GT.KBMAX(i))then
            ierr(i)=2
            ierrc(i)="could not find k22"
-!debug           ktop(i)=0
-!debug           k22(i)=0
-!debug           kbcon(i)=0
+           ktop(i)=0
+           k22(i)=0
+           kbcon(i)=0
           endif
          endif
  36   CONTINUE
@@ -368,11 +367,11 @@ contains
       enddo
 
 !JOE-Georg and Saulo's new idea:
-!      do i=its,itf
-!      do k=kts,ktf
-!          dbyo(i,k)= 0. !hkbo(i)-heso_cup(i,k)
-!      enddo
-!      enddo
+      do i=its,itf
+      do k=kts,ktf
+          dbyo(i,k)= 0. !hkbo(i)-heso_cup(i,k)
+      enddo
+      enddo
 
       call cup_kbcon(ierrc,cap_max_increment,5,k22,kbcon,heo_cup,heso_cup, &
            hkbo,ierr,kbmax,po_cup,cap_max, &
@@ -380,12 +379,6 @@ contains
            0,itf,ktf, &
            its,ite, kts,kte, &
            z_cup,entr_rate,heo,0)
-
-!!!!!!!!!!!egrell test
-!        do i=its,itf
-!          write(0,*) "after cup_kbcon, i,kbcon,k22=",i,kbcon(i),k22(i)
-!        enddo
-!!!!!!!!!!!egrell test end
 
 !--- get inversion layers for cloud tops
       call cup_minimi(HEso_cup,Kbcon,kbmax,kstabi,ierr,  &
@@ -397,25 +390,17 @@ contains
 !
 !
       DO i=its,itf
+         entr_rate_2d(i,:)=entr_rate(i)
 
-!!!!!!!!egrell moved this up
         if(kbcon(i).gt.ktf-4)then
             ierr(i)=231
         endif
 
         IF(ierr(I) == 0)THEN
-!!!!! end egrell move
 
-         do k=kts,ktf
-           entr_rate_2d(i,k)=entr_rate(i)
-         enddo
             start_level(i)=k22(i)
             x_add = xlv*zqexec(i)+cp*ztexec(i)
             call get_cloud_bc(kte,he_cup (i,1:kte),hkb(i),k22(i),x_add)
-!            if(kbcon(i).gt.ktf-4)then
-!                ierr(i)=231
-!                cycle                 !!!! egrell - move to top of loop
-!            endif
             do k=kts,ktf
                frh = 2.*min(qo_cup(i,k)/qeso_cup(i,k),1.)
                entr_rate_2d(i,k)=entr_rate(i)*(2.3-frh)
@@ -458,14 +443,12 @@ contains
               xzu(i,k)=0.
              enddo
            endif
-!!!!!!!!!!!!!!!!!!!!!!!!!!testing
-!           do k=maxloc(zuo(i,:),1),ktop(i)
-!             if(zuo(i,k).lt.1.e-6)then
-!               ktop(i)=k-1
-!               exit
-!             endif
-!           enddo
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+           do k=maxloc(zuo(i,:),1),ktop(i)
+             if(zuo(i,k).lt.1.e-6)then
+               ktop(i)=k-1
+               exit
+             endif
+           enddo
            do k=k22(i),ktop(i)
              xzu(i,k)= zuo(i,k)
               zu(i,k)= zuo(i,k)
@@ -475,9 +458,7 @@ contains
              zu (i,k)=0.
              xzu(i,k)=0.
            enddo
-!!!!!!!!!!!testing
-!           k22(i)=max(2,k22(i))
-!!!!!!!!!!!!!!!!!!!
+           k22(i)=max(2,k22(i))
         endif
       enddo
 !
@@ -530,14 +511,8 @@ contains
       ENDDO
 
       do 42 i=its,itf
-        ktopkeep(i)=0
         dbyt(i,:)=0.
-        ki(i)=0
-        kac(i)=0
-        ktopnew(i)=0
-
         IF(ierr(I) /= 0) cycle
-        ktopkeep(i)=ktop(i)
          do k=start_level(i)+1,ktop(i)
           hc(i,k)=(hc(i,k-1)*zu(i,k-1)-.5*up_massdetr(i,k-1)*hc(i,k-1)+ &
                          up_massentr(i,k-1)*he(i,k-1))   /            &
@@ -550,35 +525,20 @@ contains
           DZ=Zo_cup(i,K+1)-Zo_cup(i,K)
           dbyt(i,k)=dbyt(i,k-1)+dbyo(i,k)*dz
          enddo
-       ki(i)=maxloc(dbyt(i,:),1)
-       if(ktop(i).gt.(ki(i)+1))then
-!!!!!!!!!!!!!testing
-! adjust cloud top downward
-!         ktop(i)=ki(i)+1
-
-         ktopkeep(i)=ki(i)+1
-         ktopnew(i) = ki(i)+1
-         kac(i) = ki(i)+2   ! above cloud
-         zuo(i,kac(i):ktf)=0.
-         zu(i,kac(i):ktf)=0.
-         cd(i,kac(i):ktf)=0.
-         up_massdetro(i,ktopnew(i))=zuo(i,ktopnew(i))
-         up_massentro(i,ktopnew(i):ktf)=0.
-         up_massdetro(i,kac(i):ktf)=0.
-         entr_rate_2d(i,kac(i):ktf)=0.
-
-!         zuo(i,ktop(i)+1:ktf)=0.
-!         zu(i,ktop(i)+1:ktf)=0.
-!         cd(i,ktop(i)+1:ktf)=0.
-!         up_massdetro(i,ktop(i))=zuo(i,ktop(i))
-!         up_massentro(i,ktop(i):ktf)=0.
-!         up_massdetro(i,ktop(i)+1:ktf)=0.
-!         entr_rate_2d(i,ktop(i)+1:ktf)=0.
-!!!!!!!!!!test end
+       ki=maxloc(dbyt(i,:),1)
+       if(ktop(i).gt.ki+1)then
+         ktop(i)=ki+1
+         zuo(i,ktop(i)+1:ktf)=0.
+         zu(i,ktop(i)+1:ktf)=0.
+         cd(i,ktop(i)+1:ktf)=0.
+         up_massdetro(i,ktop(i))=zuo(i,ktop(i))
+!         up_massentro(i,ktop(i))=0.
+         up_massentro(i,ktop(i):ktf)=0.
+         up_massdetro(i,ktop(i)+1:ktf)=0.
+         entr_rate_2d(i,ktop(i)+1:ktf)=0.
 
 !         ierr(i)=423
        endif
-       ktop(i)=ktopkeep(i) 
 
          if(ktop(i).lt.kbcon(i)+1)then
             ierr(i)=5
@@ -627,12 +587,12 @@ contains
          do k=k22(i)+1,ktop(i)
           dp=100.*(po_cup(i,k)-po_cup(i,k+1))
           cnvwt(i,k)=zuo(i,k)*cupclw(i,k)*g/dp
-!          trash2=trash2+entr_rate_2d(i,k)
+          trash2=trash2+entr_rate_2d(i,k)
           qco(i,k)=qco(i,k)-qrco(i,k)
          enddo
-!         do k=k22(i)+1,max(kbcon(i),k22(i)+1)
-!          trash=trash+entr_rate_2d(i,k)
-!         enddo
+         do k=k22(i)+1,max(kbcon(i),k22(i)+1)
+          trash=trash+entr_rate_2d(i,k)
+         enddo
          do k=ktop(i)+1,ktf-1
            hc  (i,k)=hes_cup (i,k)
            hco (i,k)=heso_cup(i,k)

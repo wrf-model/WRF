@@ -756,11 +756,6 @@ CONTAINS
               PSIQ=ALOG((ZA(I)+z0q)/Z0q)-PSIH(I)
               PSIQ2=ALOG((2.+z0q)/Z0q)-PSIH2(I)
               PSIQ10=ALOG((10.+z0q)/Z0q)-PSIH10(I)
-!             PSIQ=max(ALOG((ZA(I)+Z0Q)/Z0Q)-PSIH(I), 2.)
-!             PSIT=max(ALOG((ZA(I)+Z0T)/Z0T)-PSIH(I), 2.)
-!             PSIQ2=max(ALOG((2.+Z0Q)/Z0Q)-PSIH2(I), 2.)
-!             PSIT2=max(ALOG((2.+Z0T)/Z0T)-PSIH2(I), 2.)
-!             PSIQ10=max(ALOG((10.+Z0Q)/Z0Q)-PSIH10(I), 2.)
         ENDIF
 
         IF ( PRESENT(ISFTCFLX) ) THEN

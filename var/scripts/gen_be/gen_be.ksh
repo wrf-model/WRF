@@ -104,7 +104,8 @@ if $RUN_GEN_BE_STAGE1; then
     hgt_min = ${HGT_MIN},
     hgt_max = ${HGT_MAX},
     binwidth_hgt = ${BINWIDTH_HGT},
-    dat_dir = '${STAGE0_DIR}' /
+    dat_dir = '${STAGE0_DIR}',
+    allow_missing_dates = ${ALLOW_MISSING_DATES}, /
 EOF
 
    ./gen_be_stage1.exe > gen_be_stage1.log 2>&1
@@ -146,7 +147,8 @@ if $RUN_GEN_BE_STAGE2; then
     end_date = '${END_DATE}', 
     interval = ${INTERVAL},
     ne = ${NE},
-    testing_eofs = ${TESTING_EOFS} /
+    testing_eofs = ${TESTING_EOFS},
+    allow_missing_dates = ${ALLOW_MISSING_DATES}, /
 EOF
 
    ./gen_be_stage2.exe > gen_be_stage2.log 2>&1
@@ -192,7 +194,8 @@ if $RUN_GEN_BE_STAGE2A; then
     interval = ${INTERVAL},
     ne = ${NE},
     num_passes = ${NUM_PASSES},
-    rf_scale = ${RF_SCALE} /
+    rf_scale = ${RF_SCALE},
+    allow_missing_dates = ${ALLOW_MISSING_DATES}, /
 EOF
 
    ./gen_be_stage2a.exe > gen_be_stage2a.log 2>&1
@@ -241,7 +244,8 @@ if $RUN_GEN_BE_STAGE3; then
     binwidth_hgt = ${BINWIDTH_HGT},
     testing_eofs = ${TESTING_EOFS},
     use_global_eofs = ${USE_GLOBAL_EOFS},
-    data_on_levels = ${DATA_ON_LEVELS} /
+    data_on_levels = ${DATA_ON_LEVELS},
+    allow_missing_dates = ${ALLOW_MISSING_DATES}, /
 EOF
 
       ./gen_be_stage3.exe > gen_be_stage3.${CV}.log 2>&1

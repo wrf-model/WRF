@@ -78,7 +78,8 @@ for VARIABLE in $CONTROL_VARIABLES; do
     lf = ${WAVELET_FILT_LEN},
     namw = '${WAVELET_NAME}',
     nb = ${WAVELET_NBAND},
-    use_rf = ${USE_RF} /
+    use_rf = ${USE_RF},
+    allow_missing_dates = ${ALLOW_MISSING_DATES}, /
 EOF
  
       if $LOCAL; then

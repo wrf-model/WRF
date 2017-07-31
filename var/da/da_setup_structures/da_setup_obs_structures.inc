@@ -208,6 +208,10 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
          pseudo_uvtpq = .false.
       end if
    end if
+   if ( num_pseudo > 0 ) then
+      !to avoid errors when writing out filtered_obs for undefined variables
+      anal_type_qcobs = .false.
+   end if
 
    !---------------------------------------------------------------------------      
    ! [1.0] Setup and read in fields from first guess:

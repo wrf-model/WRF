@@ -333,7 +333,7 @@ contains
 !              revised thermal, shin et al. mon. wea. rev. , songyou hong, aug 2011
 !              ==> reduce the thermal strength when z1 < 0.1 h
 !              revised prandtl number for free convection, dudhia, mar 2012
-!              ==> pr0 = 1 + bke (=0.272) when newtral, kh is reduced
+!              ==> pr0 = 1 + bke (=0.272) when neutral, kh is reduced
 !              minimum kzo = 0.01, lo = min (30m,delz), hong, mar 2012
 !              ==> weaker mixing when stable, and les resolution in vertical
 !              gz1oz0 is removed, and psim psih are ln(z1/z0)-psim,h, hong, mar 2012

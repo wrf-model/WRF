@@ -3,6 +3,7 @@ program gen_be_stage3
    use da_control, only : stderr, stdout, filename_len, vertical_ip
    use da_gen_be, only : da_eof_decomposition_test, da_eof_decomposition, &
       da_transform_vptovv, da_create_bins
+   use da_reporting, only : da_error
    use da_tools_serial, only : da_get_unit, da_advance_cymdh
 
    implicit none
@@ -21,6 +22,7 @@ program gen_be_stage3
    integer             :: bin_type                   ! Type of bin to average over.
    integer             :: num_bins                   ! Number of bins (3D fields).
    integer             :: num_bins2d                 ! Number of bins (2D fields).
+   integer             :: ios                        ! I/O status for file read
    real                :: lat_min, lat_max           ! Used if bin_type = 2 (degrees).
    real                :: binwidth_lat               ! Used if bin_type = 2 (degrees).
    real                :: hgt_min, hgt_max           ! Used if bin_type = 2 (m).
@@ -33,6 +35,7 @@ program gen_be_stage3
    logical             :: use_global_eofs            ! True if projected data uses global EOFs.
    logical             :: data_on_levels             ! True if output level data (diagnostic).
    logical             :: twod_field                 ! True if 2D field.
+   logical             :: allow_missing_dates        ! If data from stage 1 is not contiguous, attempt to continue
 
    integer, allocatable:: bin(:,:,:)                 ! Bin assigned to each 3D point.
    integer, allocatable:: bin2d(:,:)                 ! Bin assigned to each 2D point.
@@ -55,7 +58,8 @@ program gen_be_stage3
                                  ne, bin_type, &
                                  lat_min, lat_max, binwidth_lat, &
                                  hgt_min, hgt_max, binwidth_hgt, &
-                                 testing_eofs, use_global_eofs, data_on_levels
+                                 testing_eofs, use_global_eofs, data_on_levels, &
+                                 allow_missing_dates
 
    integer :: ounit,iunit,namelist_unit
 
@@ -87,6 +91,7 @@ program gen_be_stage3
    testing_eofs = .true.
    use_global_eofs = .true.
    data_on_levels = .false.
+   allow_missing_dates = .false.
 
    open(unit=namelist_unit, file='gen_be_stage3_nl.nl', &
         form='formatted', status='old', action='read')
@@ -116,9 +121,17 @@ program gen_be_stage3
 
             ! Read Full-fields:
             filename = 'fullflds'//'/'//date(1:10)//'.'//'fullflds'//'.e'//ce
-            open (iunit, file = filename, form='unformatted')
-
-            read(iunit)ni, nj, nk
+            open (iunit, file = trim(filename), form = 'unformatted')
+            read(iunit, iostat=ios)ni, nj, nk
+            if (ios /= 0) then
+               if (allow_missing_dates) then
+                  write(6,'(a,a)')' WARNING: CAN NOT OPEN ',filename
+                  write(6,'(a)')' Attempting to continue since allow_missing_dates = .true.'
+                  cycle
+               else
+                  call da_error(__FILE__,__LINE__,(/"Could not open "//trim(filename)/))
+               endif
+            endif
             if ( first_time ) then
                write(6,'(a,3i8)')'    i, j, k dimensions are ', ni, nj, nk
                allocate( latitude(1:ni,1:nj) )
@@ -281,8 +294,17 @@ program gen_be_stage3
             filename = trim(variable)//'/'//date(1:10)
             filename = trim(filename)//'.'//trim(variable)//'.e'//ce
 
-            open (iunit, file = filename, form='unformatted')
-            read(iunit)ni, nj, nk
+            open (iunit, file = trim(filename), form = 'unformatted')
+            read(iunit, iostat = ios)ni, nj, nk
+            if (ios /= 0) then
+               if (allow_missing_dates) then
+                  write(6,'(a,a)')' WARNING: CAN NOT OPEN ',filename
+                  write(6,'(a)')' Attempting to continue since allow_missing_dates = .true.'
+                  cycle
+               else
+                  call da_error(__FILE__,__LINE__,(/"Could not open "//trim(filename)/))
+               endif
+            endif
 
             if ( first_time ) then
                if ( data_on_levels) allocate( latitude(1:ni,1:nj) )   ! Not allocated earlier.

@@ -32,13 +32,15 @@ subroutine da_readwrite_be_stage1(outunit, nk)
    integer, allocatable:: bin(:,:,:)                 ! Bin assigned to each 3D point.
    integer, allocatable:: bin2d(:,:)                 ! Bin assigned to each 2D point.
 
+   logical             :: allow_missing_dates        ! If data from stage 0 is not contiguous, attempt to continue
 
    integer :: iunit, namelist_unit
 
    namelist / gen_be_stage1_nl / start_date, end_date, interval, &
                                  be_method, ne, bin_type, cv_options, &
                                  lat_min, lat_max, binwidth_lat, &
-                                 hgt_min, hgt_max, binwidth_hgt, dat_dir
+                                 hgt_min, hgt_max, binwidth_hgt, &
+                                 dat_dir, allow_missing_dates
 
    start_date = '2004030312'
    end_date = '2004033112'
@@ -54,6 +56,7 @@ subroutine da_readwrite_be_stage1(outunit, nk)
    hgt_max = 20000.0
    binwidth_hgt = 1000.0
    dat_dir = 'NO_DIRECTORY_SPECIFIED'
+   allow_missing_dates = .false.
 
    call da_get_unit(namelist_unit)
 

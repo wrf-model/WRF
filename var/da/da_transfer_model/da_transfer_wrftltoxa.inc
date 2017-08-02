@@ -61,7 +61,7 @@ subroutine da_transfer_wrftltoxa(grid, config_flags, filnam, timestr)
       grid%g_rainc = model_grid%g_rainc
       grid%g_raincv = model_grid%g_raincv
 
-      do i = PARAM_FIRST_SCALAR, num_moist
+      do i = PARAM_FIRST_SCALAR, num_g_moist
          call kj_swap_reverse (model_grid%g_moist(:,:,:,i), grid%g_moist(:,:,:,i), &
                        grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
       enddo
@@ -168,53 +168,23 @@ subroutine da_transfer_wrftltoxa(grid, config_flags, filnam, timestr)
       end do
    end do
 
-   if(var4d)then
-    if (size(grid%g_moist,dim=4) >= 4) then
-      do k=ks,ke
-         do j=js,je
-            do i=is,ie
-               grid%xa%qcw(i,j,k)=grid%g_moist(i,j,k,p_g_qc)
-               grid%xa%qrn(i,j,k)=grid%g_moist(i,j,k,p_g_qr)
-            end do
-         end do
-      end do
-    end if
-   endif
-
-#ifdef VAR4D_MICROPHYSICS
-   ! New code needed once we introduce the microphysics to 4dvar in 2008
-   if (size(grid%moist,dim=4) >= 4) then
-      do k=ks,ke
-         do j=js,je
-            do i=is,ie
-               grid%xa%qcw(i,j,k)=grid%g_moist(i,j,k,p_qcw)
-               grid%xa%qrn(i,j,k)=grid%g_moist(i,j,k,p_qrn)
-            end do
-         end do
-      end do
+   if ( var4d ) then
+      if ( f_g_qc ) then
+         grid%xa%qcw(is:ie,js:je,ks:ke)=grid%g_moist(is:ie,js:je,ks:ke,p_g_qc)
+      end if
+      if ( f_g_qr ) then
+         grid%xa%qrn(is:ie,js:je,ks:ke)=grid%g_moist(is:ie,js:je,ks:ke,p_g_qr)
+      end if
+      if ( f_g_qi ) then
+         grid%xa%qci(is:ie,js:je,ks:ke)=grid%g_moist(is:ie,js:je,ks:ke,p_g_qi)
+      end if
+      if ( f_g_qs ) then
+         grid%xa%qsn(is:ie,js:je,ks:ke)=grid%g_moist(is:ie,js:je,ks:ke,p_g_qs)
+      end if
+      if ( f_g_qg ) then
+         grid%xa%qgr(is:ie,js:je,ks:ke)=grid%g_moist(is:ie,js:je,ks:ke,p_g_qg)
+      end if
    end if
-
-   if (size(grid%moist,dim=4) >= 6) then
-      do k=ks,ke
-         do j=js,je
-            do i=is,ie
-               grid%xa%qci(i,j,k)=grid%g_moist(i,j,k,p_qci)
-               grid%xa%qsn(i,j,k)=grid%g_moist(i,j,k,p_qsn)
-            end do
-         end do
-      end do
-   end if
-
-   if (size(grid%moist_2,dim=4) >= 7) then
-      do k=ks,ke
-         do j=js,je
-            do i=is,ie
-               grid%xa%qgr(i,j,k)=grid%g_moist(i,j,k,p_qgr) 
-            end do
-         end do
-      end do
-   end if
-#endif
 
 #ifdef DM_PARALLEL
 #include "HALO_XA.inc"

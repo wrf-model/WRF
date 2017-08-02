@@ -10,9 +10,11 @@ module da_transfer_model
    use module_io_domain, only : open_r_dataset, close_dataset, input_auxinput17, &
       output_auxinput7, open_w_dataset
    use module_state_description, only : dyn_em_ad, dyn_em, dyn_em_tl, &
-      p_qv, p_qh, p_qr, p_qi, p_qs, p_qg, p_qc, param_first_scalar, num_moist, &
-      p_g_qv, p_g_qh, p_g_qr, p_g_qi, p_g_qs, p_g_qg, p_g_qc, &
-      p_a_qv, p_a_qh, p_a_qr, p_a_qi, p_a_qs, p_a_qg, p_a_qc
+      p_qv, p_qr, p_qi, p_qs, p_qg, p_qc, param_first_scalar, num_moist, &
+      p_g_qv, p_g_qr, p_g_qi, p_g_qs, p_g_qg, p_g_qc, &
+      p_a_qv, p_a_qr, p_a_qi, p_a_qs, p_a_qg, p_a_qc, num_g_moist, num_a_moist, &
+      f_qc, f_qr, f_qi, f_qs, f_qg, f_g_qc, f_g_qr, f_g_qi, f_g_qs, f_g_qg, &
+      f_a_qc, f_a_qr, f_a_qi, f_a_qs, f_a_qg
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_reals
 #ifdef DM_PARALLEL
    use module_dm, only : local_communicator, &

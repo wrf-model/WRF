@@ -37,7 +37,8 @@ module da_crtm
       use_antcorr, time_slots, use_satcv, use_simulated_rad, simulated_rad_io, &
       simulated_rad_ngrid, interp_option, use_mspps_emis, use_mspps_ts, calc_weightfunc, &
       use_clddet_ecmwf,its,ite,jts,jte, &
-      crtm_coef_path, crtm_irwater_coef, crtm_mwwater_coef, crtm_irland_coef, crtm_visland_coef
+      crtm_coef_path, crtm_irwater_coef, crtm_mwwater_coef, crtm_irland_coef, crtm_visland_coef, &
+      cloud_cv_options
    use da_interpolation, only : da_interp_lin_2d_partial,da_interp_lin_2d_adj_partial, &
       da_interp_2d_partial
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_reals

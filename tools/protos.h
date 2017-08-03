@@ -67,7 +67,7 @@ char * get_typename_i(int i) ;
 
 int gen_alloc ( char * dirname ) ;
 int gen_alloc1 ( char * dirname ) ;
-int gen_alloc2 ( FILE * fp , char * structname , node_t * node, int *j, int *iguy, int *fraction, int numguys, int frac, int sw );
+int gen_alloc2 ( FILE * fp , char * structname , char * structname2 , node_t * node, int *j, int *iguy, int *fraction, int numguys, int frac, int sw );
 
 int gen_module_state_description ( char * dirname ) ;
 int gen_module_state_description1 ( FILE * fp , node_t * node ) ;

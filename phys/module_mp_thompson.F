@@ -1,7 +1,7 @@
 !+---+-----------------------------------------------------------------+
 !.. This subroutine computes the moisture tendencies of water vapor,
 !.. cloud droplets, rain, cloud ice (pristine), snow, and graupel.
-!.. Prior to WRFv2.2 this code was based on Reisner et al (1998), but
+!.. Prior to WRFv19.2 this code was based on Reisner et al (1998), but
 !.. few of those pieces remain.  A complete description is now found in
 !.. Thompson, G., P. R. Field, R. M. Rasmussen, and W. D. Hall, 2008:
 !.. Explicit Forecasts of winter precipitation using an improved bulk

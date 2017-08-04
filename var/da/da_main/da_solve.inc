@@ -577,8 +577,10 @@
       call da_zero_vp_type (grid%vp)
   
       if ( var4d ) then
+#ifdef VAR4D
          call da_zero_vp_type (grid%vv6)
          call da_zero_vp_type (grid%vp6)
+#endif
       end if
 
    !---------------------------------------------------------------------------

@@ -76,6 +76,35 @@ subroutine da_wrfvar_init2
       call da_message(message(1:1))
    endif
 
+   !mp_physics_da can be 0/1, used for allocating moist variables
+   !allocate all moist variables (excluding qh) used in DA when mp_physics is on
+   do i = 1, model_config_rec%max_dom
+      if ( mp_physics(i) > 0 ) then
+         model_config_rec%mp_physics_da(i) = 1
+      else if ( mp_physics(i) == 0 ) then
+         model_config_rec%mp_physics_da(i) = 0
+      else if ( mp_physics(i) == -1 ) then
+         !for DA, if physics_suite is set and mp_physics is not set, mp_physics will be -1
+         !in this case, also allocate all moist variables
+         model_config_rec%mp_physics_da(i) = 1
+      end if
+   end do
+
+   if ( var4d ) then
+      model_config_rec%var4d_used = 1
+      !mp_physics_da_4dvar can be 0/1, used for allocating a_moist and g_moist variables
+      do i = 1, model_config_rec%max_dom
+         if ( mp_physics(i) > 0 ) then
+            model_config_rec%mp_physics_da_4dvar(i) = 1
+         else
+            model_config_rec%mp_physics_da_4dvar(i) = 0
+         end if
+      end do
+   end if
+
+   if ( adj_sens ) then
+      model_config_rec%adj_sens_used = 1
+   end if
 
    !<DESCRIPTION>
    ! Among the configuration variables read from the namelist is

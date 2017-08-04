@@ -61,8 +61,8 @@ state   real    a_qs           ijkft   a_moist     1         -     rh   "A_QSNOW
 state   real    g_qs           ijkft   g_moist     1         -     rh   "G_QSNOW"            "Snow mixing ratio"             "kg kg-1"
 state   real    a_qg           ijkft   a_moist     1         -     rh   "A_QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
 state   real    g_qg           ijkft   g_moist     1         -     rh   "G_QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
-state   real    a_qh           ijkft   a_moist     1         -     rh   "A_QHAIL"            "Hail mixing ratio"             "kg kg-1"
-state   real    g_qh           ijkft   g_moist     1         -     rh   "G_QHAIL"            "Hail mixing ratio"             "kg kg-1"
+#state   real    a_qh           ijkft   a_moist     1         -     rh   "A_QHAIL"            "Hail mixing ratio"             "kg kg-1"
+#state   real    g_qh           ijkft   g_moist     1         -     rh   "G_QHAIL"            "Hail mixing ratio"             "kg kg-1"
 # Other Misc State Variables                                            
 state   real    g_h_diabatic   ijk     misc         1         -      rdu      "g_h_diabatic"          "MICROPHYSICS LATENT HEATING"         "K s-1"      
 state   real    a_h_diabatic   ijk     misc         1         -      rdu      "a_h_diabatic"          "MICROPHYSICS LATENT HEATING"         "K s-1"      
@@ -475,6 +475,8 @@ rconfig   logical var4d_run                 namelist,perturbation  1  .true.  - 
 rconfig   integer  mp_physics_ad            namelist,physics   max_domains   98   -      "mp_physics_ad"            ""      ""
 # NAMELIST DERIVED
 rconfig   integer mp_physics_4dvar        derived                  max_domains   -1       -        "mp_physics_4dvar"     ""      "-1 = no 4dvar and so no need to allocate a_ and g_ moist and scalar variables, >0 = running 4dvar, so allocate a_ and g_ moist and scalar variables appropriate for selected microphysics package"
+rconfig   integer mp_physics_da           derived                  max_domains    1       -        "mp_physics_da"        ""      "1 when mp_physics>0 for allocating moist variables"
+rconfig   integer mp_physics_da_4dvar     derived                  max_domains   -1       -        "mp_physics_da_4dvar"  ""      "1 when mp_physics>0 for allocating g_/a_moist variables"
 #
 #---------------------------------------------------------------------------------------------------------------------------------------
 # Package Declarations
@@ -489,41 +491,17 @@ package   dyn_em_ad    dyn_opt==302                 -             -
 package   dyn_em_tst   dyn_opt==402                 -             -
 package   dyn_em_var   dyn_opt==502                 -             -
 
-package   not_set         mp_physics==-1               -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
-package   passiveqv       mp_physics==0                -             moist:qv;g_moist:g_qv;a_moist:a_qv
-package   kesslerscheme   mp_physics==1                -             moist:qv,qc,qr;g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
-package   linscheme       mp_physics==2                -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
-package   wsm3scheme      mp_physics==3                -             moist:qv,qc,qr;g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
-package   wsm5scheme      mp_physics==4                -             moist:qv,qc,qr,qi,qs;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
-package   fer_mp_hires    mp_physics==5                -             moist:qv,qc,qr,qi;g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi;scalar:qt
-package   fer_mp_hires_advect  mp_physics==15          -             moist:qv,qc,qr,qi;g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
-package   wsm6scheme      mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
-package   gsfcgcescheme   mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
-package   thompson        mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;scalar:qni,qnr
-package   milbrandt2mom   mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh;scalar:qnc,qnr,qni,qns,qng,qnh
-package   morr_two_moment mp_physics==10               -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;scalar:qni,qns,qnr,qng
-package   cammgmpscheme   mp_physics==11               -             moist:qv,qc,qi,qr,qs;g_moist:g_qv,g_qc,g_qi,g_qr,g_qs;a_moist:a_qv,a_qc,a_qi,a_qr,a_qs;scalar:qnc,qni,qnr,qns
-#package   milbrandt3mom   mp_physics==12               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qzr,qzi,qzs,qzg,qzh
-package   sbu_ylinscheme  mp_physics==13               -             moist:qv,qc,qr,qi,qs;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
-package   wdm5scheme      mp_physics==14               -             moist:qv,qc,qr,qi,qs;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs;scalar:qnn,qnc,qnr
-package   wdm6scheme      mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;scalar:qnn,qnc,qnr
-package   nssl_2mom       mp_physics==17               -             moist:qv,qc,qr,qi,qs,qg,qh;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh;scalar:qnc,qnr,qni,qns,qng,qnh,qvolg
-package   nssl_2momccn    mp_physics==18               -             moist:qv,qc,qr,qi,qs,qg,qh;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh;scalar:qnn,qnc,qnr,qni,qns,qng,qnh,qvolg
-package   nssl_1mom       mp_physics==19               -             moist:qv,qc,qr,qi,qs,qg,qh;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh;scalar:qvolg
-package   nssl_1momlfo    mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
-package   nssl_2momg      mp_physics==22               -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;scalar:qndrop,qnr,qni,qns,qng,qvolg
-package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;scalar:qni,qnr,qnc
-package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi;g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
-package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi;g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
-package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;g_moist:g_qv,g_qc,g_qr,g_qs;a_moist:a_qv,a_qc,a_qr,a_qs;scalar:qt
-package   lscondscheme    mp_physics==98               -             moist:qv;g_moist:g_qv;a_moist:a_qv
-package   mkesslerscheme   mp_physics==99              -             moist:qv,qc,qr;g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
+package   mp_phys_zero     mp_physics_da==0         -             moist:qv
+package   mp_phys_set      mp_physics_da==1         -             moist:qv,qc,qr,qi,qs,qg
+
+package   nomoist_4dvar    mp_physics_da_4dvar==-1  -             -
+package   passiveqv_4dvar  mp_physics_da_4dvar==0   -             g_moist:g_qv;a_moist:a_qv
+package   warmrain_4dvar   mp_physics_da_4dvar==1   -             g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
 
 package   lscondscheme    mp_physics==98               -             moist:qv;g_moist:g_qv;a_moist:a_qv
 package   mkesslerscheme  mp_physics==99               -             moist:qv,qc,qr;g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
 package   surfdragscheme  bl_pbl_physics==98           -             -
 package   ducuscheme      cu_physics==98               -             -
-
 
 # only need to specify these once; not for every io_form* variable
 # Placeholders for additional packages (we can go beyond zzz
@@ -846,13 +824,24 @@ state real dummy i dyn_em 1
 #
 #Set state
 state vp_type vv - -
-state vp_type vv6 - -
 state vp_type vp - -
-state vp_type vp6 - -
 state ep_type ep - -
 state xb_type xb - -
 state x_type xa - -
 state x_subtype xa_ens - -
 state x_type xa_static - -
-state x_type x6a - -
 state xpose_type xp - -
+
+ifdef VAR4D
+state vp_type vv6 - -
+state vp_type vp6 - -
+state x_type x6a - -
+endif
+
+rconfig   integer adj_sens_used           derived               1             0       -     "adj_sens_used"   "turn on if adj_sens=true"
+rconfig   integer var4d_used              derived               1             0       -     "var4d_used"      "turn on if var4d=true"
+
+package   no_adj_sens    adj_sens_used==0            -             -
+package   do_adj_sens    adj_sens_used==1            -             state:a_u,a_v,a_t,a_mu,a_ph,g_u,g_v,g_t,g_mu,g_ph;a_moist:a_qv;g_moist:g_qv
+package   no_var4d       var4d_used==0               -             -
+package   do_var4d       var4d_used==1               -             state:a_u,a_v,a_w,a_ph,a_t,a_mu,a_p,a_z,g_u,g_v,g_w,g_ph,g_t,g_mu,g_p,g_z,a_h_diabatic,g_h_diabatic,a_rainc,g_rainc,a_rainnc,g_rainnc,a_raincv,g_raincv,a_rainncv,g_rainncv

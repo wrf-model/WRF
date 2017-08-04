@@ -8,7 +8,7 @@ PROGRAM make_p3_lookuptable1
 !  Note:  compile with double-precision (pgf90 -r8 create_p3_lookupTable_1.f90)
 !
 ! P3 package version: v2.4.7
-! Last modified     : 2017-04-11
+! Last modified     : 2017-06-28
 !______________________________________________________________________________________
 
  implicit none
@@ -165,7 +165,7 @@ PROGRAM make_p3_lookuptable1
     stop
  endif
 
- open(unit=1,file='./p3_lookup_table_1-v2.4.5.dat',status='unknown')
+ open(unit=1,file='./p3_lookup_table_1-v2.4.7.dat',status='unknown')
 
 !.........................................................
 

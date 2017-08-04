@@ -1,5 +1,5 @@
-subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
-                              y, grid, config_flags)
+subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
+                              y, grid, config_flags, vp6, vv6)
 
    !----------------------------------------------------------------------
    ! Purpose:  Does transform of control variable (V) to Obs-space (Y)
@@ -13,13 +13,15 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
    real,                       intent(in)    :: cv(1:cv_size)     ! control variables.
    type(iv_type),              intent(inout) :: iv     ! innovation vector (o-b).
    type(vp_type),              intent(inout) :: vp     ! Grdipt/level CV.
-   type(vp_type),              intent(inout) :: vp6     ! Grdipt/level CV for 6h.
    type(vp_type),              intent(inout) :: vv     ! Grdipt/EOF CV.
-   type(vp_type),              intent(inout) :: vv6     ! Grdipt/EOF CV for 6h.
    type(xbx_type),             intent(inout) :: xbx    ! For header & non-grid arrays.
    type(y_type),               intent(inout) :: y      ! y = H(x_inc).
    type(domain),               intent(inout) :: grid
    type(grid_config_rec_type), intent(inout) :: config_flags
+
+   ! vp6 and vv6 are defined only when the code is configured and compiled for 4dvar
+   type(vp_type), optional,    intent(inout) :: vp6     ! Grdipt/level CV for 6h.
+   type(vp_type), optional,    intent(inout) :: vv6     ! Grdipt/EOF CV for 6h.
 
    type(x_type) :: shuffle
    integer :: nobwin, jl_start, jl_end, time_step_seconds

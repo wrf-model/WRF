@@ -2,6 +2,7 @@ program gen_be_stage2
 
    use da_control, only : stdout, stderr, filename_len
    use da_tools_serial, only : da_get_unit, da_advance_cymdh
+   use da_reporting, only : da_error
    use da_gen_be, only : da_eof_decomposition,da_eof_decomposition_test
 
    implicit none
@@ -23,6 +24,7 @@ program gen_be_stage2
    integer             :: bin_type                   ! Type of bin to average over.
    integer             :: num_bins                   ! Number of bins (3D fields).
    integer             :: num_bins2d                 ! Number of bins (2D fields).
+   integer             :: ios                        ! I/O status for file read
    real                :: lat_min, lat_max           ! Used if bin_type = 2 (degrees).
    real                :: binwidth_lat               ! Used if bin_type = 2 (degrees).
    real                :: hgt_min, hgt_max           ! Used if bin_type = 2 (m).
@@ -33,6 +35,7 @@ program gen_be_stage2
    real                :: summ                       ! Summation dummy.
    logical             :: first_time                 ! True if first file.
    logical             :: testing_eofs               ! True if testing EOF decomposition.
+   logical             :: allow_missing_dates        ! If data from stage 1 is not contiguous, attempt to continue
 
    real, allocatable   :: latitude(:,:)              ! Latitude (degrees, from south).
    real, allocatable   :: height(:,:,:)              ! Height field.
@@ -60,7 +63,7 @@ program gen_be_stage2
    real, allocatable   :: regcoeff3(:,:,:)           ! psi/T regression cooefficient.
 
    namelist / gen_be_stage2_nl / start_date, end_date, interval, &
-                                 ne, testing_eofs  
+                                 ne, testing_eofs, allow_missing_dates
 
    integer :: ounit,iunit,namelist_unit
 
@@ -82,6 +85,7 @@ program gen_be_stage2
    interval = 24
    ne = 1
    testing_eofs = .true.
+   allow_missing_dates = .false.
 
    open(unit=namelist_unit, file='gen_be_stage2_nl.nl', &
         form='formatted', status='old', action='read')
@@ -115,9 +119,17 @@ program gen_be_stage2
          variable = 'fullflds'
          filename = trim(variable)//'/'//date(1:10)
          filename = trim(filename)//'.'//trim(variable)//'.e'//ce
-         open (iunit, file = filename, form='unformatted')
-
-         read(iunit)ni, nj, nk
+         open (iunit, file = trim(filename), form = 'unformatted')
+         read(iunit, iostat=ios)ni, nj, nk
+         if (ios /= 0) then
+            if (allow_missing_dates) then
+               write(stdout,'(a,a)')' WARNING: CAN NOT OPEN ',filename
+               write(stdout,'(a)')' Attempting to continue since allow_missing_dates = .true.'
+               cycle
+            else
+               call da_error(__FILE__,__LINE__,(/"Could not open "//trim(filename)/))
+            endif
+         endif
          if ( first_time ) then
             write(6,'(a,3i8)')'    i, j, k dimensions are ', ni, nj, nk
             allocate( latitude(1:ni,1:nj) )

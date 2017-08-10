@@ -92,6 +92,7 @@ CONTAINS
                      ,dp3d, du3d, ed3d, eu3d, md3d, mu3d, dsubcld2d   &
                      ,ideep2d, jt2d, maxg2d, lengath2d                &
                      ,k22_shallow,kbcon_shallow,ktop_shallow,xmb_shallow &
+                     ,ierr_shallow                                    & !egrell for debugging
                      ,ktop_deep &
                  ! Optional arguments for SAS scheme
                      ,pgcon,sas_mass_flux                             &
@@ -113,7 +114,6 @@ CONTAINS
                      ,rucuten,rvcuten                                 &
                      ,rthcuten,rthraten,rthblten,rthften              &
                      ,mommix,store_rand                               &
-                     ,dudt_phy,dvdt_phy                               &   !gf
 ! Optional variables for tiedtke scheme - add by ZCX&YQW 
                      ,znu                                             &
                  ! Optional moisture tracer flags 
@@ -530,15 +530,17 @@ CONTAINS
 !
 ! optional arguments
 !
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &   !gf
-                   INTENT(INOUT) :: dudt_phy,dvdt_phy                !gf
-
    INTEGER, DIMENSION( ims:ime, jms:jme ),                       &
          OPTIONAL, INTENT(INOUT) ::                              &
      k22_shallow,kbcon_shallow,ktop_shallow,ideep2d,jt2d,maxg2d, &
      lengath2d 
    INTEGER, DIMENSION( ims:ime, jms:jme ),                       &
          OPTIONAL, INTENT(  OUT) :: ktop_deep
+! egrell - added ierr_shallow for debugging
+   INTEGER, DIMENSION( ims:ime, jms:jme ),                       &
+         OPTIONAL, INTENT(INOUT) ::                              &
+          ierr_shallow
+
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          OPTIONAL, INTENT(INOUT) ::                              &
                       ! optional moisture tracers
@@ -1239,6 +1241,7 @@ CONTAINS
                ,kbcon_shallow=kbcon_shallow                     &
                ,ktop_shallow=ktop_shallow                       &
                ,xmb_shallow=xmb_shallow                         &
+               ,ierr_shallow=ierr_shallow                       & !egrell debugging
                ,ishallow_g3=ishallow                            &
                ,ichoice=clos_choice                             &
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
@@ -1260,7 +1263,7 @@ CONTAINS
 #endif
                ,RTHRATEN=RTHRATEN                               &
                ,RQVBLTEN=RQVBLTEN,RTHBLTEN=RTHBLTEN             &
-               ,DUDT_PHY=DUDT_PHY, DVDT_PHY=DVDT_PHY            &
+               ,RUCUTEN=RUCUTEN,RVCUTEN=RVCUTEN                 &
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
 #if ( WRF_DFI_RADAR == 1 )

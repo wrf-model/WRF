@@ -434,15 +434,16 @@ CONTAINS
          endif
      enddo
      enddo
-      DO K=kts,ktf-1
-      DO I = its,itf
-        dq=(q2d(i,k+1)-q2d(i,k))
-        mconv(i)=mconv(i)+omeg(i,k)*dq/g
-      enddo
-      ENDDO
-      DO I = its,itf
-        if(mconv(i).lt.0.)mconv(i)=0.
-      ENDDO
+!mconv now computed in cup_gf
+!      DO K=kts,ktf-1
+!      DO I = its,itf
+!        dq=(q2d(i,k+1)-q2d(i,k))
+!        mconv(i)=mconv(i)+omeg(i,k)*dq/g
+!      enddo
+!      ENDDO
+!      DO I = its,itf
+!        if(mconv(i).lt.0.)mconv(i)=0.
+!      ENDDO
 !
 !---- CALL CUMULUS PARAMETERIZATION
 !
@@ -471,7 +472,7 @@ CONTAINS
            if(xmbs(i).le.0.)cutens(i)=0.
           enddo
           CALL neg_check('shallow',ipr,dt,q2d,outqs,outts,outus,outvs,   &
-                                 outqcs,prets,its,ite,kts,kte,itf,ktf)
+                                 outqcs,prets,its,ite,kts,kte,itf,ktf,ktops)
 
         endif
 ! Mid-level convection
@@ -552,7 +553,7 @@ CONTAINS
             enddo
             enddo
       CALL neg_check('mid',ipr,dt,qcheck,outqm,outtm,outum,outvm,   &
-                     outqcm,pretm,its,ite,kts,kte,itf,ktf)
+                     outqcm,pretm,its,ite,kts,kte,itf,ktf,ktopm)
     endif
 
 #if ( WRF_DFI_RADAR == 1 )
@@ -638,7 +639,7 @@ CONTAINS
             enddo
             enddo
       CALL neg_check('deep',ipr,dt,qcheck,outq,outt,outu,outv,   &
-                                         outqc,pret,its,ite,kts,kte,itf,ktf)
+                                         outqc,pret,its,ite,kts,kte,itf,ktf,ktop)
 !
       endif
             if(j.lt.jbegc.or.j.gt.jendc)go to 100

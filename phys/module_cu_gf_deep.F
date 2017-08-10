@@ -7,7 +7,7 @@ MODULE module_cu_gf_deep
 ! tuning constant for cloudwater/ice detrainment
      real, parameter:: c1=.001 ! .0005
 ! parameter to turn on or off evaporation of rainwater as done in SAS
-     integer, parameter :: irainevap=1
+     integer, parameter :: irainevap=0
 ! max allowed fractional coverage (frh_thresh)
      real, parameter::frh_thresh = .9
 ! rh threshold. if fractional coverage ~ frh_thres, do not use cupa any further
@@ -19,13 +19,15 @@ MODULE module_cu_gf_deep
      real, parameter :: fluxtune=1.5
 ! flag to turn off or modify mom transport by downdrafts
      real, parameter :: pgcd = 1.
+! initial downdraft detrainment factor
+     real, parameter :: cdd_init = .1
 !
-! aerosol awareness, do not user yet!
+! aerosol awareness, do not use yet!
 !
      integer, parameter :: autoconv=1
      integer, parameter :: aeroevap=1
      real, parameter :: ccnclean=250.
-! still 16 ensembles for clousres
+! still 16 ensemble members for closures
      integer, parameter:: maxens3=16
 
 
@@ -46,66 +48,66 @@ contains
               ,dhdt          &  ! boundary layer forcing (one closure for shallow)
               ,xland         &  ! land mask
 
-              ,zo            &   ! heights above surface
-              ,forcing       &   ! only diagnostic
-              ,T             &   ! T before forcing
-              ,Q             &   ! Q before forcing
-              ,Z1            &   ! terrain
-              ,Tn            &   ! T including forcing
-              ,QO            &   ! Q including forcing
-              ,PO            &   ! pressure (mb)
-              ,PSUR          &   ! surface pressure (mb)
-              ,US            &   ! u on mass points
-              ,VS            &   ! v on mass points
-              ,rho           &   ! density
-              ,hfx           &   ! W/M2, positive upward
-              ,qfx           &   ! W/M2, positive upward
-              ,dx            &   ! dx is grid point dependent here
-              ,mconv         &   ! integrated vertical advection of moisture
-              ,omeg          &   ! omega (Pa/s)
+              ,zo            &  ! heights above surface
+              ,forcing       &  ! only diagnostic
+              ,T             &  ! T before forcing
+              ,Q             &  ! Q before forcing
+              ,Z1            &  ! terrain
+              ,Tn            &  ! T including forcing
+              ,QO            &  ! Q including forcing
+              ,PO            &  ! pressure (mb)
+              ,PSUR          &  ! surface pressure (mb)
+              ,US            &  ! u on mass points
+              ,VS            &  ! v on mass points
+              ,rho           &  ! density
+              ,hfx           &  ! W/M2, positive upward
+              ,qfx           &  ! W/M2, positive upward
+              ,dx            &  ! dx is grid point dependent here
+              ,mconv         &  ! integrated vertical advection of moisture
+              ,omeg          &  ! omega (Pa/s)
 
-              ,csum          & ! used to implement memory, set to zero if not avail
-              ,cnvwt         & ! GFS needs this
-              ,zuo           & ! nomalized updraft mass flux
-              ,zdo           & ! nomalized downdraft mass flux
+              ,csum          &  ! used to implement memory, set to zero if not avail
+              ,cnvwt         &  ! GFS needs this
+              ,zuo           &  ! nomalized updraft mass flux
+              ,zdo           &  ! nomalized downdraft mass flux
               ,edto          &
-              ,xmb_out       & !the xmb's may be needed for dicycle
+              ,xmb_out       &  !the xmb's may be needed for dicycle
               ,xmbm_in       &
               ,xmbs_in       &
               ,pre           &
-              ,outu          & ! momentum tendencies at mass points
+              ,outu          &  ! momentum tendencies at mass points
               ,outv          &
-              ,outt          & ! temperature tendencies
-              ,outq          & ! q tendencies
-              ,outqc         & ! ql/qice tendencies
+              ,outt          &  ! temperature tendencies
+              ,outq          &  ! q tendencies
+              ,outqc         &  ! ql/qice tendencies
               ,kbcon         &
               ,ktop          &
-              ,cupclw        & ! used for direct coupling to radiation, but with tuning factors
-              ,ierr          & ! ierr flags are error flags, used for debugging
+              ,cupclw        &  ! used for direct coupling to radiation, but with tuning factors
+              ,ierr          &  ! ierr flags are error flags, used for debugging
               ,ierrc         &
 !    the following should be set to zero if not available
-              ,rand_mom      & ! for stochastics mom, if temporal and spatial patterns exist
-              ,rand_vmas     & ! for stochastics vertmass, if temporal and spatial patterns exist
-              ,rand_clos     & ! for stochastics closures, if temporal and spatial patterns exist
-              ,nranflag      & ! flag to what you want perturbed
-                               ! 1 = momentum transport 
-                               ! 2 = normalized vertical mass flux profile
-                               ! 3 = closures
-                               ! more is possible, talk to developer or
-                               ! implement yourself. pattern is expected to be
-                               ! betwee -1 and +1
+              ,rand_mom      &  ! for stochastics mom, if temporal and spatial patterns exist
+              ,rand_vmas     &  ! for stochastics vertmass, if temporal and spatial patterns exist
+              ,rand_clos     &  ! for stochastics closures, if temporal and spatial patterns exist
+              ,nranflag      &  ! flag to what you want perturbed
+                                ! 1 = momentum transport 
+                                ! 2 = normalized vertical mass flux profile
+                                ! 3 = closures
+                                ! more is possible, talk to developer or
+                                ! implement yourself. pattern is expected to be
+                                ! betwee -1 and +1
 #if ( WRF_DFI_RADAR == 1 )
-              ,do_capsuppress,cap_suppress_j &
+              ,do_capsuppress,cap_suppress_j    &             
 #endif
-              ,k22           &
+              ,k22                              &
               ,jmin)
 
    IMPLICIT NONE
 
-     integer                                                           &
-        ,intent (in   )                   ::                           &
+     integer                                                &
+        ,intent (in   )                   ::                &
         nranflag,itf,ktf,its,ite, kts,kte,ipr,imid
-     integer, intent (in   )              ::                           &
+     integer, intent (in   )              ::                &
         ichoice
      real,  dimension (its:ite,4)                           &
         ,intent (in  )                   ::  rand_clos
@@ -123,6 +125,7 @@ contains
    REAL, DIMENSION( its:ite ) :: cap_suppress_j
 #endif
   !
+  ! 
   !
       real,    dimension (its:ite,1:maxens3) :: xf_ens,pr_ens
   ! outtem = output temp tendency (per s)
@@ -130,19 +133,19 @@ contains
   ! outqc  = output qc tendency (per s)
   ! pre    = output precip
      real,    dimension (its:ite,kts:kte)                              &
-        ,intent (inout  )                   ::                           &
+        ,intent (inout  )                   ::                         &
         cnvwt,outu,outv,OUTT,OUTQ,OUTQC,cupclw
      real,    dimension (its:ite)                                      &
-        ,intent (inout  )                   ::                           &
+        ,intent (inout  )                   ::                         &
         pre,xmb_out
      real,    dimension (its:ite)                                      &
-        ,intent (in  )                   ::                           &
+        ,intent (in  )                   ::                            &
         hfx,qfx,xmbm_in,xmbs_in
      integer,    dimension (its:ite)                                   &
-        ,intent (inout  )                   ::                           &
+        ,intent (inout  )                ::                            &
         kbcon,ktop
      integer,    dimension (its:ite)                                   &
-        ,intent (in  )                   ::                           &
+        ,intent (in  )                   ::                            &
         kpbl
   !
   ! basic environmental input includes moisture convergence (mconv)
@@ -152,8 +155,8 @@ contains
      real,    dimension (its:ite,kts:kte)                              &
         ,intent (in   )                   ::                           &
         dhdt,rho,T,PO,US,VS,tn
-     real,    dimension (its:ite,kts:kte)                       &
-        ,intent (inout   )                   ::                           &
+     real,    dimension (its:ite,kts:kte)                              &
+        ,intent (inout   )                ::                           &
         omeg
      real,    dimension (its:ite,kts:kte)                              &
         ,intent (inout)                   ::                           &
@@ -162,9 +165,10 @@ contains
         ,intent (in   )                   ::                           &
         dx,ccn,Z1,PSUR,xland
      real, dimension (its:ite)                                         &
-        ,intent (inout   )                   ::                           &
+        ,intent (inout   )                ::                           &
         mconv
 
+       
        real                                                            &
         ,intent (in   )                   ::                           &
         dtime
@@ -173,11 +177,11 @@ contains
 !
 !  local ensemble dependent variables in this routine
 !
-     real,    dimension (its:ite,1)  ::                         &
+     real,    dimension (its:ite,1)  ::                                &
         xaa0_ens
-     real,    dimension (its:ite,1) ::                         &
+     real,    dimension (its:ite,1)  ::                                &
         edtc
-     real,    dimension (its:ite,kts:kte,1) ::                 &
+     real,    dimension (its:ite,kts:kte,1) ::                         &
         dellat_ens,dellaqc_ens,dellaq_ens,pwo_ens
 !
 !
@@ -245,15 +249,15 @@ contains
   ! hc = cloud moist static energy
   ! hkb = moist static energy at originating level
 
-     real,    dimension (its:ite,kts:kte) ::                           &
-        entr_rate_2d,mentrd_rate_2d,he,hes,qes,z, heo,heso,qeso,zo,    &
-        xhe,xhes,xqes,xz,xt,xq,qes_cup,q_cup,he_cup,hes_cup,z_cup,     &
-        p_cup,gamma_cup,t_cup, qeso_cup,qo_cup,heo_cup,heso_cup,       &
-        zo_cup,po_cup,gammao_cup,tn_cup,              &
-        xqes_cup,xq_cup,xhe_cup,xhes_cup,xz_cup,     &
-        xt_cup, dby,hc,zu,clw_all,   &
-        dbyo,qco,qrcdo,pwdo,pwo,hcdo,qcdo,dbydo,hco,qrco,      &
-        xdby,xhc,xzu,            &
+     real,    dimension (its:ite,kts:kte) ::                            &
+        entr_rate_2d,mentrd_rate_2d,he,hes,qes,z, heo,heso,qeso,zo,     &                    
+        xhe,xhes,xqes,xz,xt,xq,qes_cup,q_cup,he_cup,hes_cup,z_cup,      &
+        p_cup,gamma_cup,t_cup, qeso_cup,qo_cup,heo_cup,heso_cup,        &
+        zo_cup,po_cup,gammao_cup,tn_cup,                                &    
+        xqes_cup,xq_cup,xhe_cup,xhes_cup,xz_cup,                        &
+        xt_cup, dby,hc,zu,clw_all,                                      &
+        dbyo,qco,qrcdo,pwdo,pwo,hcdo,qcdo,dbydo,hco,qrco,               &
+        dbyt,xdby,xhc,xzu,                                                   &
 
   ! cd  = detrainment function for updraft
   ! cdd = detrainment function for downdraft
@@ -261,7 +265,7 @@ contains
   ! dellaq = change of q per unit mass flux of cloud ensemble
   ! dellaqc = change of qc per unit mass flux of cloud ensemble
 
-        cd,cdd,DELLAH,DELLAQ,DELLAT,DELLAQC,          &
+        cd,cdd,DELLAH,DELLAQ,DELLAT,DELLAQC,                            &
         u_cup,v_cup,uc,vc,ucd,vcd,dellu,dellv
 
   ! aa0 cloud work function for downdraft
@@ -271,53 +275,53 @@ contains
   ! xaa0    = cloud work function with cloud effects (ensemble dependent)
   ! edt     = epsilon
 
-     real,    dimension (its:ite) ::                                   &
-       edt,edto,AA1,AA0,XAA0,HKB,                          &
-       HKBO,XHKB,                                    &
-       XMB,PWAVO,                                &
-       PWEVO,BU,BUD,cap_max,                                   &
+     real,    dimension (its:ite) ::                                     &
+       edt,edto,AA1,AA0,XAA0,HKB,                                        &
+       HKBO,XHKB,                                                        &
+       XMB,PWAVO,                                                        &
+       PWEVO,BU,BUD,cap_max,                                             &
        cap_max_increment,closure_n,psum,psumh,sig,sigd
-     real,    dimension (its:ite) ::                                   &
+     real,    dimension (its:ite) ::                                     &
         axx,edtmax,edtmin,entr_rate
-     integer,    dimension (its:ite) ::                                &
-       kzdown,KDET,K22,JMIN,kstabi,kstabm,K22x,xland1,        &
+     integer,    dimension (its:ite) ::                                  &
+       kzdown,KDET,K22,JMIN,kstabi,kstabm,K22x,xland1,                   &  
        ktopdby,KBCONx,ierr2,ierr3,KBMAX
 
      integer,  dimension (its:ite), intent(inout) :: ierr
      integer,  dimension (its:ite), intent(in) :: csum
-     integer                              ::                           &
-       iloop,nens3,ki,I,K
-     real                                 ::                           &
-      dz,dzo,mbdt,radius, &
-      zcutdown,depth_min,zkbmax,z_detr,zktop,      &
+     integer                              ::                             &
+       iloop,nens3,ki,kk,I,K
+     real                                 ::                             &
+      dz,dzo,mbdt,radius,                                                &
+      zcutdown,depth_min,zkbmax,z_detr,zktop,                            &
       dh,cap_maxs,trash,trash2,frh,sig_thresh
-     real entdo,dp,subin,detdo,entup,                &
+     real entdo,dp,subin,detdo,entup,                                    &
       detup,subdown,entdoj,entupk,detupk,totmas
 
      real, dimension (its:ite) :: lambau,flux_tun,zws,ztexec,zqexec
 
      integer :: jprnt,jmini,start_k22
      logical :: keep_going,flg(its:ite)
-
+     
      character*50 :: ierrc(its:ite)
-     real,    dimension (its:ite,kts:kte) ::                           &
-       up_massentr,up_massdetr,c1d             &
+     real,    dimension (its:ite,kts:kte) ::                              &
+       up_massentr,up_massdetr,c1d                                        &
       ,up_massentro,up_massdetro,dd_massentro,dd_massdetro
-     real,    dimension (its:ite,kts:kte) ::                           &
-       up_massentru,up_massdetru
+     real,    dimension (its:ite,kts:kte) ::                              &
+       up_massentru,up_massdetru,dd_massentru,dd_massdetru
      real buo_flux,pgcon,pgc,blqe
-
+    
      real :: xff_mid(its:ite,2)
      integer :: iversion=1
      real :: denom,h_entr,umean,t_star,dq
      integer, intent(IN) :: DICYCLE
      real,    dimension (its:ite) :: aa1_bl,hkbo_bl,tau_bl,tau_ecmwf,wmean
-     real, dimension (its:ite,kts:kte) :: tn_bl, qo_bl, qeso_bl, heo_bl, heso_bl &
-     					 ,qeso_cup_bl,qo_cup_bl, heo_cup_bl,heso_cup_bl&
-     					 ,gammao_cup_bl,tn_cup_bl,hco_bl,DBYo_bl
+     real, dimension (its:ite,kts:kte) :: tn_bl, qo_bl, qeso_bl, heo_bl, heso_bl             &
+                                              ,qeso_cup_bl,qo_cup_bl, heo_cup_bl,heso_cup_bl &
+                                              ,gammao_cup_bl,tn_cup_bl,hco_bl,DBYo_bl
      real, dimension(its:ite) :: xf_dicycle
      real, intent(inout), dimension(its:ite,10) :: forcing
-     integer :: ktopkeep,pmin_lev(its:ite),start_level(its:ite)
+     integer :: pmin_lev(its:ite),start_level(its:ite),ktopkeep(its:ite)
      real,    dimension (its:ite,kts:kte) :: dtempdz
      integer, dimension (its:ite,kts:kte) ::  k_inv_layers 
  
@@ -325,7 +329,7 @@ contains
      real zuh2(40)
      real, dimension (its:ite) :: rntot,delqev,delq2,qevap,rn,qcond
      real :: rain,t1,q1,elocp,evef,el2orc,evfact,evfactl,g_rain,e_dn,c_up
-     real :: pgeoh,dts,fp,fpi,pmin,x_add,beta,beta_u
+     real :: pgeoh,dts,fp,fpi,pmin,x_add,beta
      real :: cbeg,cmid,cend,const_a,const_b,const_c
       flux_tun(:)=fluxtune
 !      if(imid.eq.1)flux_tun(:)=fluxtune+.5
@@ -364,12 +368,12 @@ contains
          if(zws(i) > TINY(pgeoh)) then
             !-convective-scale velocity w*
             zws(i) = 1.2*zws(i)**.3333
-            !- temperature excess
+            !- temperature excess 
             ztexec(i)     = MAX(flux_tun(i)*hfx(i)/(rho(i,1)*zws(i)*cp),0.0)
             !- moisture  excess
             zqexec(i)     = MAX(flux_tun(i)*qfx(i)/xlv/(rho(i,1)*zws(i)),0.)
          endif
-         !- zws for shallow convection closure (Grant 2001)
+         !- zws for Grant (2001) closure
          !- height of the pbl
          zws(i) = max(0.,flux_tun(i)*0.41*buo_flux*zo(i,kpbl(i))*g/t(i,kpbl(i)))
          zws(i) = 1.2*zws(i)**.3333
@@ -393,7 +397,7 @@ contains
         if(xland(i).gt.1.5 .or. xland(i).lt.0.5)then
             xland1(i)=0
 !            if(imid.eq.0)cap_max(i)=cap_maxs-25.
-            if(imid.eq.1)cap_max(i)=cap_maxs-50.
+!            if(imid.eq.1)cap_max(i)=cap_maxs-50.
             cap_max_increment(i)=20.
         else
             if(ztexec(i).gt.0.)cap_max(i)=cap_max(i)+25.
@@ -406,7 +410,6 @@ contains
        ztexec(:)=0
        zqexec(:)=0
       endif
-
 #if ( WRF_DFI_RADAR == 1 )
   if(do_capsuppress == 1) then
       do i=its,itf
@@ -432,7 +435,7 @@ contains
          if(imid.eq.1)entr_rate(i)=1.e-4
 !         if(imid.eq.1)c1d(i,:)=c1
          radius=.2/entr_rate(i)
-         frh=3.14*radius*radius/dx(i)/dx(i)
+         frh=min(1.,3.14*radius*radius/dx(i)/dx(i))
          if(frh > frh_thresh)then
             frh=frh_thresh
             radius=sqrt(frh*dx(i)*dx(i)/3.14)
@@ -442,6 +445,7 @@ contains
       enddo
       sig_thresh = (1.-frh_thresh)**2
 
+      
 !
 !--- entrainment of mass
 !
@@ -456,7 +460,7 @@ contains
         z(i,k)=zo(i,k)
         xz(i,k)=zo(i,k)
         cupclw(i,k)=0.
-        cd(i,k)=1.e-9 ! 1.*entr_rate
+        cd(i,k)=.1*entr_rate(i) !1.e-9 ! 1.*entr_rate
 !        if(imid.eq.1)cd(i,k)=entr_rate(i)
         cdd(i,k)=1.e-9
         hcdo(i,k)=0.
@@ -478,7 +482,7 @@ contains
       depth_min=1000.
       if(imid.eq.1)depth_min=500.
 !
-!--- maximum depth (mb) of capping
+!--- maximum depth (mb) of capping 
 !--- inversion (larger cap = no convection)
 !
       DO i=its,itf
@@ -508,7 +512,7 @@ contains
 !
 !--- height(m) above which no downdrafts are allowed to originate
 !
-      zcutdown=3000.
+      zcutdown=4000.
 !
 !--- depth(m) over which downdraft detrains all its mass
 !
@@ -529,27 +533,27 @@ contains
 !
 !--- calculate moist static energy, heights, qes
 !
-      call cup_env(z,qes,he,hes,t,q,po,z1, &
-           psur,ierr,tcrit,-1,   &
-           itf,ktf, &
+      call cup_env(z,qes,he,hes,t,q,po,z1,                         &
+           psur,ierr,tcrit,-1,                                     &
+           itf,ktf,                                                &
            its,ite, kts,kte)
-      call cup_env(zo,qeso,heo,heso,tn,qo,po,z1, &
-           psur,ierr,tcrit,-1,   &
-           itf,ktf, &
+      call cup_env(zo,qeso,heo,heso,tn,qo,po,z1,                   &
+           psur,ierr,tcrit,-1,                                     &
+           itf,ktf,                                                &
            its,ite, kts,kte)
 
 !
 !--- environmental values on cloud levels
 !
-      call cup_env_clev(t,qes,q,he,hes,z,po,qes_cup,q_cup,he_cup, &
-           hes_cup,z_cup,p_cup,gamma_cup,t_cup,psur, &
-           ierr,z1,          &
-           itf,ktf, &
+      call cup_env_clev(t,qes,q,he,hes,z,po,qes_cup,q_cup,he_cup,  &
+           hes_cup,z_cup,p_cup,gamma_cup,t_cup,psur,               &
+           ierr,z1,                                                &
+           itf,ktf,                                                &
            its,ite, kts,kte)
       call cup_env_clev(tn,qeso,qo,heo,heso,zo,po,qeso_cup,qo_cup, &
            heo_cup,heso_cup,zo_cup,po_cup,gammao_cup,tn_cup,psur,  &
-           ierr,z1,          &
-           itf,ktf, &
+           ierr,z1,                                                &
+           itf,ktf,                                                &
            its,ite, kts,kte)
       do i=its,itf
         if(ierr(i).eq.0)then
@@ -616,17 +620,17 @@ contains
       jprnt=0
       iloop=1
       if(imid.eq.1)iloop=5
-      call cup_kbcon(ierrc,cap_max_increment,iloop,k22,kbcon,heo_cup,heso_cup, &
-           hkbo,ierr,kbmax,po_cup,cap_max, &
-           ztexec,zqexec,       &
-           jprnt,itf,ktf, &
-           its,ite, kts,kte, &
+      call cup_kbcon(ierrc,cap_max_increment,iloop,k22,kbcon,heo_cup,heso_cup,  &
+           hkbo,ierr,kbmax,po_cup,cap_max,                                      &
+           ztexec,zqexec,                                                       &
+           jprnt,itf,ktf,                                                       &
+           its,ite, kts,kte,                                                    &
            z_cup,entr_rate,heo,imid)
 !
 !--- increase detrainment in stable layers
 !
-      CALL cup_minimi(HEso_cup,Kbcon,kstabm,kstabi,ierr,  &
-           itf,ktf, &
+      CALL cup_minimi(HEso_cup,Kbcon,kstabm,kstabi,ierr,                        &
+           itf,ktf,                                                             &
            its,ite, kts,kte)
       DO i=its,itf
          IF(ierr(I) == 0)THEN
@@ -658,7 +662,7 @@ contains
 !--- get inversion layers for mid level cloud tops
 !
       if(imid.eq.1)then
-      call get_inversion_layers(ierr,p_cup,t_cup,z_cup,q_cup,qes_cup,k_inv_layers,       &
+      call get_inversion_layers(ierr,p_cup,t_cup,z_cup,q_cup,qes_cup,k_inv_layers, &
                                kbcon,kstabi,dtempdz,itf,ktf,its,ite, kts,kte)
       endif
       DO i=its,itf
@@ -677,12 +681,19 @@ contains
                entr_rate_2d(i,k)=entr_rate(i) *(1.3-frh)
             enddo
             if(imid.eq.1)then
-               if(k_inv_layers(i,2) > 0 )then
-                 ktop(i)=k_inv_layers(i,2)
+                if(k_inv_layers(i,2).gt.0 .and.   &
+                  (po_cup(i,k22(i))-po_cup(i,k_inv_layers(i,2))).lt.500.)then
+
+                 ktop(i)=min(kstabi(i),k_inv_layers(i,2))
                  ktopdby(i)=ktop(i)
                else
-                  ktop(i)=kstabi(i)+1
-                  ktopdby(i)=kstabi(i)+1
+                 do k=kbcon(i)+1,ktf
+                  if((po_cup(i,k22(i))-po_cup(i,k)).gt.500.)then
+                    ktop(i)=k
+                    ktopdby(i)=ktop(i)
+                    exit
+                  endif
+                 enddo
                endif ! k_inv_lay
             endif
 
@@ -723,14 +734,14 @@ contains
            zu (i,k)=0.
            xzu(i,k)=0.
          enddo
-	endif
+        endif
       enddo
 !
 ! calculate mass entrainment and detrainment
 !
-      CALL get_lateral_massflux(itf,ktf, its,ite, kts,kte &
-                                ,ierr,ktop,zo_cup,zuo,cd,entr_rate_2d        &
-                                ,up_massentro, up_massdetro ,up_massentr, up_massdetr &
+      CALL get_lateral_massflux(itf,ktf, its,ite, kts,kte                                &
+                                ,ierr,ktop,zo_cup,zuo,cd,entr_rate_2d                    &
+                                ,up_massentro, up_massdetro ,up_massentr, up_massdetr    &
                                 ,'deep',kbcon,k22,up_massentru,up_massdetru,lambau)
 
 
@@ -761,46 +772,67 @@ contains
          k=start_level(i)
          hc (i,k)=hkb(i)
          hco(i,k)=hkbo(i)
-       ENDIF
+       ENDIF 
       enddo
 
+!
+! safety for denominator
+!
       DO i=its,itf
-
-       if(ierr(i) /= 0) cycle                 
-       ktopkeep=ktop(i)
-       DO k=start_level(i) +1,ktop(i)  !mass cons option
-	 
-	  denom=zuo(i,k-1)-.5*up_massdetro(i,k-1)+up_massentro(i,k-1)
-          if(denom.lt.1.e-8)then
+       if(ierr(i) /= 0) cycle
+       DO k=start_level(i) +1,ktop(i) 
+          denom=zuo(i,k-1)-.5*up_massdetro(i,k-1)+up_massentro(i,k-1)
+          if(denom.lt.1.e-16)then
            ierr(i)=51
            exit
           endif
+       ENDDO
+       DO k=start_level(i) +1,ktop(i)
+          denom=zu(i,k-1)-.5*up_massdetru(i,k-1)+up_massentru(i,k-1)
+          if(denom.lt.1.e-16)then
+           ierr(i)=52
+           exit
+          endif
+       ENDDO
+      ENDDO
 
-          hc(i,k)=(hc(i,k-1)*zu(i,k-1)-.5*up_massdetr(i,k-1)*hc(i,k-1)+ &
-                                          up_massentr(i,k-1)*he(i,k-1))   /            &
+      DO i=its,itf
+
+       ktopkeep(i)=0
+       dbyt(i,:)=0.
+       if(ierr(i) /= 0) cycle                 
+       ktopkeep(i)=ktop(i)
+       DO k=start_level(i) +1,ktop(i)  !mass cons option
+         
+          hc(i,k)=(hc(i,k-1)*zu(i,k-1)-.5*up_massdetr(i,k-1)*hc(i,k-1)+                 &
+                                          up_massentr(i,k-1)*he(i,k-1))   /             &
                             (zu(i,k-1)-.5*up_massdetr(i,k-1)+up_massentr(i,k-1))
-          uc(i,k)=(uc(i,k-1)*zu(i,k-1)-.5*up_massdetru(i,k-1)*uc(i,k-1)+ &
-                                          up_massentru(i,k-1)*us(i,k-1) &
-                            -pgcon*.5*(zu(i,k)+zu(i,k-1))*(u_cup(i,k)-u_cup(i,k-1))) /     &
+          uc(i,k)=(uc(i,k-1)*zu(i,k-1)-.5*up_massdetru(i,k-1)*uc(i,k-1)+                &
+                                          up_massentru(i,k-1)*us(i,k-1)                 &
+                            -pgcon*.5*(zu(i,k)+zu(i,k-1))*(u_cup(i,k)-u_cup(i,k-1))) /  &
                            (zu(i,k-1)-.5*up_massdetru(i,k-1)+up_massentru(i,k-1))
           vc(i,k)=(vc(i,k-1)*zu(i,k-1)-.5*up_massdetru(i,k-1)*vc(i,k-1)+                &
-                                          up_massentru(i,k-1)*vs(i,k-1)      &
-                         -pgcon*.5*(zu(i,k)+zu(i,k-1))*(v_cup(i,k)-v_cup(i,k-1))) /    &
+                                          up_massentru(i,k-1)*vs(i,k-1)                 &
+                         -pgcon*.5*(zu(i,k)+zu(i,k-1))*(v_cup(i,k)-v_cup(i,k-1))) /     &
                          (zu(i,k-1)-.5*up_massdetru(i,k-1)+up_massentru(i,k-1))
           dby(i,k)=hc(i,k)-hes_cup(i,k)
-          hco(i,k)=(hco(i,k-1)*zuo(i,k-1)-.5*up_massdetro(i,k-1)*hco(i,k-1)+ &
-                                             up_massentro(i,k-1)*heo(i,k-1))   /            &
+          hco(i,k)=(hco(i,k-1)*zuo(i,k-1)-.5*up_massdetro(i,k-1)*hco(i,k-1)+            &
+                                             up_massentro(i,k-1)*heo(i,k-1))   /        &
                          (zuo(i,k-1)-.5*up_massdetro(i,k-1)+up_massentro(i,k-1))
           dbyo(i,k)=hco(i,k)-heso_cup(i,k)
+          DZ=Zo_cup(i,K+1)-Zo_cup(i,K)
+          dbyt(i,k)=dbyt(i,k-1)+dbyo(i,k)*dz
        ENDDO
+
 ! for now no overshooting (only very little)
-       do k=ktop(i)-1,kbcon(i),-1
-          if(dbyo(i,k).gt.0.)then
-             ktopkeep=k+1
-             exit
-          endif
-       enddo
-       ktop(I)=ktopkeep
+
+        do k=ktop(i)-1,kbcon(i),-1
+           if(dbyo(i,k).gt.0.)then
+              ktopkeep(i)=k+1
+              exit
+           endif
+        enddo
+        ktop(I)=ktopkeep(i)
       ENDDO
 41    continue
       DO i=its,itf
@@ -884,7 +916,7 @@ contains
              endif
            enddo
          enddo
-         jmin(i) = jmini
+         jmin(i) = jmini 
          if ( jmini .le. 5 ) then
            ierr(i)=4
            ierrc(i) = "could not find jmini4"
@@ -915,6 +947,8 @@ contains
        cdd(i,k)=0.
        dd_massentro(i,k)=0.
        dd_massdetro(i,k)=0.
+       dd_massentru(i,k)=0.
+       dd_massdetru(i,k)=0.
        hcdo(i,k)=heso_cup(i,k)
        ucd(i,k)=u_cup(i,k)
        vcd(i,k)=v_cup(i,k)
@@ -923,23 +957,23 @@ contains
       enddo
       enddo
       do i=its,itf
+        if(ierr(i)/=0)cycle
         beta=max(.02,.05-float(csum(i))*.0015)  !.02
-!        beta=max(.05,.08-float(csum(i))*.0015)  !.02
         if(imid.eq.0 .and. xland1(i) == 0)then
-!             beta=.01
               edtmax(i)=max(0.1,.4-float(csum(i))*.015) !.3)
         endif
         if(imid.eq.1)beta=.02
         bud(i)=0.
-        IF(ierr(I).eq.0)then
-        cdd(i,1:jmin(i))=1.e-9
+        cdd(i,1:jmin(i))=cdd_init*entr_rate(i)
         cdd(i,jmin(i))=0.
         dd_massdetro(i,:)=0.
         dd_massentro(i,:)=0.
-           call get_zu_zd_pdf_fim(rand_vmas(i),0.,ipr,xland1(i),zuh2,"DOWN",ierr(i),kdet(i),jmin(i),zdo(i,:),kts,kte,ktf,beta,kpbl(i),csum(i),pmin_lev(i))
+        call get_zu_zd_pdf_fim(0,po_cup(i,:),rand_vmas(i),0.,ipr,xland1(i),zuh2,"DOWN",ierr(i),kdet(i),jmin(i),zdo(i,:),kts,kte,ktf,kpbl(i),csum(i),pmin_lev(i))
         if(zdo(i,jmin(i)) .lt.1.e-8)then
           zdo(i,jmin(i))=0.
           jmin(i)=jmin(i)-1
+          cdd(i,jmin(i):ktf)=0.
+          zdo(i,jmin(i)+1:ktf)=0.
           if(zdo(i,jmin(i)) .lt.1.e-8)then
              ierr(i)=876
              cycle
@@ -982,6 +1016,7 @@ contains
            c1d(i,k)=max(0.,c1d(i,k))
            c1d(i,k)=c1
          enddo
+         if(imid.eq.1)c1d(i,:)=0.
 !        do k=1,jmin(i)
 !         c1d(i,k)=0.
 !        enddo
@@ -996,29 +1031,39 @@ contains
 
 
 ! downdraft moist static energy + moisture budget
-            dbydo(i,jmin(i))=hcdo(i,jmin(i))-heso_cup(i,jmin(i))
-            bud(i)=dbydo(i,jmin(i))*(zo_cup(i,jmin(i)+1)-zo_cup(i,jmin(i)))
+          dbydo(i,jmin(i))=hcdo(i,jmin(i))-heso_cup(i,jmin(i))
+          bud(i)=dbydo(i,jmin(i))*(zo_cup(i,jmin(i)+1)-zo_cup(i,jmin(i)))
+          dd_massentru(i,:)=0.
+          dd_massdetru(i,:)=0.
+!
+! originally dd=dd+lambau*dd, and en=en+lambau*dd. Using en instead of dd leads
+! to stronger impact of simulated pressure gradient term
+!
+          do k=2,jmin(i)+1
+           dd_massentru(i,k-1)=dd_massentro(i,k-1) +lambau(i)*dd_massentro(i,k-1)
+           dd_massdetru(i,k-1)=dd_massdetro(i,k-1) +lambau(i)*dd_massentro(i,k-1)
+          enddo
+          ucd(i,jmin(i)+1)=.5*(uc(i,jmin(i)+1)+u_cup(i,jmin(i)+1))
             do ki=jmin(i)  ,1,-1
              dzo=zo_cup(i,ki+1)-zo_cup(i,ki)
              h_entr=.5*(heo(i,ki)+.5*(hco(i,ki)+hco(i,ki+1)))
-             ucd(i,ki)=(ucd(i,ki+1)*zdo(i,ki+1)                       &
-                         -.5*dd_massdetro(i,ki)*ucd(i,ki+1)+ &
-                        dd_massentro(i,ki)*us(i,ki)          &
-                        -pgcon*zdo(i,ki+1)*(us(i,ki+1)-us(i,ki)))   /     &
-                        (zdo(i,ki+1)-.5*dd_massdetro(i,ki)+dd_massentro(i,ki))
-             vcd(i,ki)=(vcd(i,ki+1)*zdo(i,ki+1)                       &
-                         -.5*dd_massdetro(i,ki)*vcd(i,ki+1)+ &
-                        dd_massentro(i,ki)*vs(i,ki)            &
-                        -pgcon*zdo(i,ki+1)*(vs(i,ki+1)-vs(i,ki)))   /  &
-                        (zdo(i,ki+1)-.5*dd_massdetro(i,ki)+dd_massentro(i,ki))
-             hcdo(i,ki)=(hcdo(i,ki+1)*zdo(i,ki+1)                       &
-                         -.5*dd_massdetro(i,ki)*hcdo(i,ki+1)+ &
-                        dd_massentro(i,ki)*h_entr)   /            &
+             ucd(i,ki)=(ucd(i,ki+1)*zdo(i,ki+1)                                   &
+                         -.5*dd_massdetru(i,ki)*ucd(i,ki+1)+                      &
+                        dd_massentru(i,ki)*us(i,ki)                               &
+                        -pgcon*zdo(i,ki+1)*(us(i,ki+1)-us(i,ki)))   /             &
+                        (zdo(i,ki+1)-.5*dd_massdetru(i,ki)+dd_massentru(i,ki))
+             vcd(i,ki)=(vcd(i,ki+1)*zdo(i,ki+1)                                   &
+                         -.5*dd_massdetru(i,ki)*vcd(i,ki+1)+                      &
+                        dd_massentru(i,ki)*vs(i,ki)                               &
+                        -pgcon*zdo(i,ki+1)*(vs(i,ki+1)-vs(i,ki)))   /             &
+                        (zdo(i,ki+1)-.5*dd_massdetru(i,ki)+dd_massentru(i,ki))
+             hcdo(i,ki)=(hcdo(i,ki+1)*zdo(i,ki+1)                                 &
+                         -.5*dd_massdetro(i,ki)*hcdo(i,ki+1)+                     &
+                        dd_massentro(i,ki)*h_entr)   /                            &
                         (zdo(i,ki+1)-.5*dd_massdetro(i,ki)+dd_massentro(i,ki))
              dbydo(i,ki)=hcdo(i,ki)-heso_cup(i,ki)
              bud(i)=bud(i)+dbydo(i,ki)*dzo
             enddo
-          endif
 
         if(bud(i).gt.0)then
           ierr(i)=7
@@ -1028,27 +1073,27 @@ contains
 !
 !--- calculate moisture properties of downdraft
 !
-      call cup_dd_moisture(ierrc,zdo,hcdo,heso_cup,qcdo,qeso_cup, &
-           pwdo,qo_cup,zo_cup,dd_massentro,dd_massdetro,jmin,ierr,gammao_cup, &
-           pwevo,bu,qrcdo,qo,heo,1, &
-           itf,ktf, &
+      call cup_dd_moisture(ierrc,zdo,hcdo,heso_cup,qcdo,qeso_cup,                &
+           pwdo,qo_cup,zo_cup,dd_massentro,dd_massdetro,jmin,ierr,gammao_cup,    &
+           pwevo,bu,qrcdo,qo,heo,1,                                              &
+           itf,ktf,                                                              &
            its,ite, kts,kte)
 !
 !--- calculate moisture properties of updraft
 !
       if(imid.eq.1)then
-        call cup_up_moisture('mid',ierr,zo_cup,qco,qrco,pwo,pwavo, &
-             p_cup,kbcon,ktop,dbyo,clw_all,xland1, &
-             qo,GAMMAo_cup,zuo,qeso_cup,k22,qo_cup,        &
+        call cup_up_moisture('mid',ierr,zo_cup,qco,qrco,pwo,pwavo,               &
+             p_cup,kbcon,ktop,dbyo,clw_all,xland1,                               &
+             qo,GAMMAo_cup,zuo,qeso_cup,k22,qo_cup,                              &
              ZQEXEC,ccn,rho,c1d,tn_cup,up_massentr,up_massdetr,psum,psumh,       &
-             1,itf,ktf, &
+             1,itf,ktf,                                                          &
              its,ite, kts,kte)
       else
-         call cup_up_moisture('deep',ierr,zo_cup,qco,qrco,pwo,pwavo, &
-             p_cup,kbcon,ktop,dbyo,clw_all,xland1, &
-             qo,GAMMAo_cup,zuo,qeso_cup,k22,qo_cup,        &
+         call cup_up_moisture('deep',ierr,zo_cup,qco,qrco,pwo,pwavo,             &
+             p_cup,kbcon,ktop,dbyo,clw_all,xland1,                               &
+             qo,GAMMAo_cup,zuo,qeso_cup,k22,qo_cup,                              &
              ZQEXEC,ccn,rho,c1d,tn_cup,up_massentr,up_massdetr,psum,psumh,       &
-             1,itf,ktf, &
+             1,itf,ktf,                                                          &
              its,ite, kts,kte)
       endif
       do i=its,itf
@@ -1063,13 +1108,13 @@ contains
 !
 !--- calculate workfunctions for updrafts
 !
-      call cup_up_aa0(aa0,z,zu,dby,GAMMA_CUP,t_cup, &
-           kbcon,ktop,ierr,           &
-           itf,ktf, &
+      call cup_up_aa0(aa0,z,zu,dby,GAMMA_CUP,t_cup,                              &
+           kbcon,ktop,ierr,                                                      &
+           itf,ktf,                                                              &
            its,ite, kts,kte)
-      call cup_up_aa0(aa1,zo,zuo,dbyo,GAMMAo_CUP,tn_cup, &
-           kbcon,ktop,ierr,           &
-           itf,ktf, &
+      call cup_up_aa0(aa1,zo,zuo,dbyo,GAMMAo_CUP,tn_cup,                         &
+           kbcon,ktop,ierr,                                                      &
+           itf,ktf,                                                              &
            its,ite, kts,kte)
       do i=its,itf
          if(ierr(i).eq.0)then
@@ -1080,7 +1125,7 @@ contains
          endif
       enddo
 !
-!--- diurnal cycle closure
+!--- diurnal cycle closure 
 !
       !--- AA1 from boundary layer (bl) processes only
       aa1_bl      (:) = 0.0
@@ -1101,7 +1146,7 @@ contains
                 wmean(i) = 7.0 ! m/s ! in the future change for Wmean == integral( W dz) / cloud_depth
                 if(imid.eq.1)wmean(i) = 3.0
                 !- time-scale cape removal from  Betchold et al. 2008
-                tau_ecmwf(i)=( zo_cup(i,ktopdby(i))- zo_cup(i,kbcon(i)) ) / wmean(i) 
+                tau_ecmwf(i)=( zo_cup(i,ktop(i))- zo_cup(i,kbcon(i)) ) / wmean(i) 
                 tau_ecmwf(i)= tau_ecmwf(i) * (1.0061 + 1.23E-2 * (dx(i)/1000.))! dx(i) must be in meters 
             endif
       enddo
@@ -1109,7 +1154,7 @@ contains
       !
       IF(dicycle == 1) then
         DO i=its,itf
-
+            
             if(ierr(i).eq.0)then
                 if(xland1(i) ==  0 ) then
                   !- over water
@@ -1117,20 +1162,20 @@ contains
                   tau_bl(i) = (zo_cup(i,kbcon(i))- z1(i)) /umean        
                 else
                   !- over land
-                  tau_bl(i) =( zo_cup(i,ktopdby(i))- zo_cup(i,kbcon(i)) ) / wmean(i)
+                  tau_bl(i) =( zo_cup(i,ktop(i))- zo_cup(i,kbcon(i)) ) / wmean(i)
                 endif
 
             endif
         ENDDO
 
-        if(iversion == 1) then
+        if(iversion == 1) then 
         !-- version ecmwf
         t_star=4.  !original =1
 
            !-- calculate pcape from BL forcing only
-            call cup_up_aa1bl(aa1_bl,t,tn,q,qo,dtime, &
-                              zo_cup,zuo,dbyo_bl,GAMMAo_CUP_bl,tn_cup_bl, &
-                              kbcon,ktop,ierr,               &
+            call cup_up_aa1bl(aa1_bl,t,tn,q,qo,dtime,                            &
+                              zo_cup,zuo,dbyo_bl,GAMMAo_CUP_bl,tn_cup_bl,        &
+                              kbcon,ktop,ierr,                                   &
                               itf,ktf,its,ite, kts,kte)
 
             DO i=its,itf
@@ -1138,19 +1183,19 @@ contains
             if(ierr(i).eq.0)then
 
                !- only for convection rooting in the PBL
-               if(zo_cup(i,kbcon(i))-z1(i) > zo(i,kpbl(i)-1)) then
+               if(zo_cup(i,kbcon(i))-z1(i) > zo(i,kpbl(i)+1)) then 
                   aa1_bl(i) = 0.0
                else
                !- multiply aa1_bl the " time-scale" - tau_bl
                   aa1_bl(i) = max(0.,aa1_bl(i)/t_star* tau_bl(i))
-               endif
+               endif 
             endif
             ENDDO
-
+            
         else
-
+        
           !- version for real cloud-work function
-
+          
           !-get the profiles modified only by bl tendencies
           DO i=its,itf
            tn_bl(i,:)=0.;qo_bl(i,:)=0.
@@ -1161,20 +1206,20 @@ contains
                  !above kbcon -> keep environment profiles
             tn_bl(i,kbcon(i)+1:ktf) = t(i,kbcon(i)+1:ktf)
             qo_bl(i,kbcon(i)+1:ktf) = q(i,kbcon(i)+1:ktf)
-           endif
+           endif 
           ENDDO
           !--- calculate moist static energy, heights, qes, ... only by bl tendencies
-          call cup_env(zo,qeso_bl,heo_bl,heso_bl,tn_bl,qo_bl,po,z1, &
-                     psur,ierr,tcrit,-1,   &
+          call cup_env(zo,qeso_bl,heo_bl,heso_bl,tn_bl,qo_bl,po,z1,                              &
+                     psur,ierr,tcrit,-1,                                                         &
                      itf,ktf, its,ite, kts,kte)
           !--- environmental values on cloud levels only by bl tendencies
-          call cup_env_clev(tn_bl,qeso_bl,qo_bl,heo_bl,heso_bl,zo,po,qeso_cup_bl,qo_cup_bl, &
-                              heo_cup_bl,heso_cup_bl,zo_cup,po_cup,gammao_cup_bl,tn_cup_bl,psur,  &
-                              ierr,z1,               &
+          call cup_env_clev(tn_bl,qeso_bl,qo_bl,heo_bl,heso_bl,zo,po,qeso_cup_bl,qo_cup_bl,      &
+                              heo_cup_bl,heso_cup_bl,zo_cup,po_cup,gammao_cup_bl,tn_cup_bl,psur, &
+                              ierr,z1,                                                           &
                               itf,ktf,its,ite, kts,kte)
           DO i=its,itf
             IF(ierr(I).eq.0)THEN
-               hkbo_bl(i)=heo_cup_bl(i,k22(i))
+               hkbo_bl(i)=heo_cup_bl(i,k22(i)) 
             endif ! ierr
           ENDDO
           DO k=kts,ktf
@@ -1193,14 +1238,13 @@ contains
              DBYo_bl(i,k)=Hkbo_bl(i) - HESo_cup_bl(i,k)
             ENDIF
           ENDDO
-          
-!
-!
+!          
+!          
           DO i=its,itf
             if(ierr(i).eq.0)then
                do k=kbcon(i)+1,ktop(i)
                     hco_bl(i,k)=(hco_bl(i,k-1)*zuo(i,k-1)-.5*up_massdetro(i,k-1)*hco_bl(i,k-1)+ &
-                               up_massentro(i,k-1)*heo_bl(i,k-1))   /               &
+                               up_massentro(i,k-1)*heo_bl(i,k-1))   /                           &
                                (zuo(i,k-1)-.5*up_massdetro(i,k-1)+up_massentro(i,k-1))
                     dbyo_bl(i,k)=hco_bl(i,k)-heso_cup_bl(i,k)
                enddo
@@ -1210,14 +1254,14 @@ contains
                enddo
             endif
           ENDDO
-
+        
           !--- calculate workfunctions for updrafts
-          call cup_up_aa0(aa1_bl,zo,zuo,dbyo_bl,GAMMAo_CUP_bl,tn_cup_bl, &
-                        kbcon,ktop,ierr,           &
+          call cup_up_aa0(aa1_bl,zo,zuo,dbyo_bl,GAMMAo_CUP_bl,tn_cup_bl,        &
+                        kbcon,ktop,ierr,                                        &
                         itf,ktf,its,ite, kts,kte)
 
           DO i=its,itf
-
+            
             if(ierr(i).eq.0)then
                 !- get the increment on AA0 due the BL processes
                 aa1_bl(i) = aa1_bl(i) - aa0(i)
@@ -1227,12 +1271,12 @@ contains
                 !else
                 !   !- multiply aa1_bl the "normalized time-scale" - tau_bl/ model_timestep
                    aa1_bl(i) = aa1_bl(i)* tau_bl(i)/ dtime
-                !endif
-                print*,'aa0,aa1bl=',aa0(i),aa1_bl(i),aa0(i)-aa1_bl(i),tau_bl(i)!,dtime,xland(i)
+                !endif 
+                print*,'aa0,aa1bl=',aa0(i),aa1_bl(i),aa0(i)-aa1_bl(i),tau_bl(i)!,dtime,xland(i)     
             endif
            ENDDO
-        ENDIF
-     ENDIF  ! version of implementation
+        ENDIF    ! version of implementation
+     ENDIF 
 
 
        axx(:)=aa1(:)
@@ -1240,9 +1284,9 @@ contains
 !
 !--- DETERMINE DOWNDRAFT STRENGTH IN TERMS OF WINDSHEAR
 !
-      call cup_dd_edt(ierr,us,vs,zo,ktop,kbcon,edt,po,pwavo, &
-           pwo,ccn,pwevo,edtmax,edtmin,edtc,psum,psumh, &
-           rho,aeroevap,itf,ktf, &
+      call cup_dd_edt(ierr,us,vs,zo,ktop,kbcon,edt,po,pwavo,  &
+           pwo,ccn,pwevo,edtmax,edtmin,edtc,psum,psumh,       &
+           rho,aeroevap,itf,ktf,                              &
            its,ite, kts,kte)
         do i=its,itf
          if(ierr(i).eq.0)then
@@ -1356,19 +1400,15 @@ contains
              pgc=pgcon
             if(k.ge.ktop(i))pgc=0.
 
-             dellu(i,k) =-(zuo(i,k+1)*(uc (i,k+1)-u_cup(i,k+1) ) - &
-                            zuo(i,k  )*(uc (i,k  )-u_cup(i,k  ) ) )*g/dp &
-                          +(zdo(i,k+1)*(ucd(i,k+1)-u_cup(i,k+1) ) - &
-                            zdo(i,k  )*(ucd(i,k  )-u_cup(i,k  ) ) )*g/dp*edto(i)*pgcd &
-                     +(pgc*.5*(zuo(i,k)+zuo(i,k+1))*(u_cup(i,k+1)-u_cup(i,k)) &
-                     + pgcd*pgc*.5*edto(i)*(zdo(i,k)+zdo(i,k+1))*(u_cup(i,k+1)-u_cup(i,k)))*g/dp
-             dellv(i,k) =-(zuo(i,k+1)*(vc (i,k+1)-v_cup(i,k+1) ) - &
-                            zuo(i,k  )*(vc (i,k  )-v_cup(i,k  ) ) )*g/dp &
-                         +(zdo(i,k+1)*(vcd(i,k+1)-v_cup(i,k+1) ) - &
-                            zdo(i,k  )*(vcd(i,k  )-v_cup(i,k  ) ) )*g/dp*edto(i)*pgcd &
-                     +(pgc*.5*(zuo(i,k)+zuo(i,k+1))*(v_cup(i,k+1)-v_cup(i,k)) &
-                     + pgcd*pgc*.5*edto(i)*(zdo(i,k)+zdo(i,k+1))*(v_cup(i,k+1)-v_cup(i,k)))*g/dp
-
+             dellu(i,k) =-(zuo(i,k+1)*(uc (i,k+1)-u_cup(i,k+1) ) -                               &
+                            zuo(i,k  )*(uc (i,k  )-u_cup(i,k  ) ) )*g/dp                         &
+                          +(zdo(i,k+1)*(ucd(i,k+1)-u_cup(i,k+1) ) -                              &
+                            zdo(i,k  )*(ucd(i,k  )-u_cup(i,k  ) ) )*g/dp*edto(i)*pgcd
+             dellv(i,k) =-(zuo(i,k+1)*(vc (i,k+1)-v_cup(i,k+1) ) -                               &
+                            zuo(i,k  )*(vc (i,k  )-v_cup(i,k  ) ) )*g/dp                         &
+                         +(zdo(i,k+1)*(vcd(i,k+1)-v_cup(i,k+1) ) -                               &
+                            zdo(i,k  )*(vcd(i,k  )-v_cup(i,k  ) ) )*g/dp*edto(i)*pgcd
+ 
        enddo   ! k
 
       endif
@@ -1382,10 +1422,10 @@ contains
 
          dp=100.*(po_cup(i,1)-po_cup(i,2))
 
-         dellah(i,1)=(edto(i)*zdo(i,2)*hcdo(i,2)   &
+         dellah(i,1)=(edto(i)*zdo(i,2)*hcdo(i,2)          &
                      -edto(i)*zdo(i,2)*heo_cup(i,2))*g/dp
 
-         dellaq (i,1)=(edto(i)*zdo(i,2)*qcdo(i,2)   &
+         dellaq (i,1)=(edto(i)*zdo(i,2)*qcdo(i,2)         &
                       -edto(i)*zdo(i,2)*qo_cup(i,2))*g/dp
         
          G_rain=  0.5*(pwo (i,1)+pwo (i,2))*g/dp
@@ -1398,6 +1438,7 @@ contains
          !- H  budget
          !trash2 = trash2+ (dellah(i,1))*dp/g
          
+
          do k=kts+1,ktop(i)
             dp=100.*(po_cup(i,k)-po_cup(i,k+1))
             ! these three are only used at or near mass detrainment and/or entrainment levels
@@ -1414,9 +1455,8 @@ contains
         
             !-- take out cloud liquid water for detrainment
             detup=up_massdetro(i,k)
-            dz=zo_cup(i,k+1)-zo_cup(i,k)
+            dz=zo_cup(i,k)-zo_cup(i,k-1)
             if(k.lt.ktop(i)) dellaqc(i,k) = zuo(i,k)*c1d(i,k)*qrco(i,k)*dz/dp*g 
-
 !             dellaqc(i,k)=  detup*0.5*(qrco(i,k+1)+qrco(i,k)) *g/dp
             if(k.eq.ktop(i))dellaqc(i,k)= detup*0.5*(qrco(i,k+1)+qrco(i,k)) *g/dp
             !---
@@ -1424,12 +1464,12 @@ contains
             E_dn  = -0.5*(pwdo(i,k)+pwdo(i,k+1))*g/dp*edto(i) ! pwdo < 0 and E_dn must > 0
             !-- condensation source term = detrained + flux divergence of
             !-- cloud liquid water (qrco) + converted to rain
-
-            C_up = dellaqc(i,k)+(zuo(i,k+1)* qrco(i,k+1) -       &
+        
+            C_up = dellaqc(i,k)+(zuo(i,k+1)* qrco(i,k+1) -                           &
                                 zuo(i,k  )* qrco(i,k  )  )*g/dp + G_rain
 !            C_up = dellaqc(i,k)+ G_rain
             !-- water vapor budget
-            !-- = flux divergence z*(Q_c - Q_env)_up_and_down &
+            !-- = flux divergence z*(Q_c - Q_env)_up_and_down                        &
             !--   - condensation term + evaporation
             dellaq(i,k) =-(zuo(i,k+1)*(qco (i,k+1)-qo_cup(i,k+1) ) -                 &
                            zuo(i,k  )*(qco (i,k  )-qo_cup(i,k  ) ) )*g/dp            &
@@ -1475,17 +1515,17 @@ contains
 !
 !--- calculate moist static energy, heights, qes
 !
-      call cup_env(xz,xqes,xhe,xhes,xt,xq,po,z1, &
-           psur,ierr,tcrit,-1,   &
-           itf,ktf, &
+      call cup_env(xz,xqes,xhe,xhes,xt,xq,po,z1,                   &
+           psur,ierr,tcrit,-1,                                     &
+           itf,ktf,                                                &
            its,ite, kts,kte)
 !
 !--- environmental values on cloud levels
 !
       call cup_env_clev(xt,xqes,xq,xhe,xhes,xz,po,xqes_cup,xq_cup, &
            xhe_cup,xhes_cup,xz_cup,po_cup,gamma_cup,xt_cup,psur,   &
-           ierr,z1,          &
-           itf,ktf, &
+           ierr,z1,                                                &
+           itf,ktf,                                                &
            its,ite, kts,kte)
 !
 !
@@ -1531,10 +1571,10 @@ contains
 !--- workfunctions for updraft
 !
       call cup_up_aa0(xaa0,xz,xzu,xdby,GAMMA_CUP,xt_cup, &
-           kbcon,ktop,ierr,           &
-           itf,ktf, &
+           kbcon,ktop,ierr,                              &
+           itf,ktf,                                      &
            its,ite, kts,kte)
-      do i=its,itf
+      do i=its,itf 
          if(ierr(i).eq.0)then
            xaa0_ens(i,1)=xaa0(i)
            do k=kts,ktop(i)
@@ -1542,7 +1582,7 @@ contains
                  if(nens3.eq.7)then
 !--- b=0
                  pr_ens(i,nens3)=pr_ens(i,nens3)  &
-                                    +pwo(i,k)+edto(i)*pwdo(i,k)
+                                    +pwo(i,k)+edto(i)*pwdo(i,k) 
 !--- b=beta
                  else if(nens3.eq.8)then
                  pr_ens(i,nens3)=pr_ens(i,nens3)+ &
@@ -1576,7 +1616,7 @@ contains
 !--- LARGE SCALE FORCING
 !
 !
-!------- CHECK wether aa0 should have been zero, assuming this
+!------- CHECK wether aa0 should have been zero, assuming this 
 !        ensemble is chosen
 !
 !
@@ -1585,22 +1625,22 @@ contains
          ierr3(i)=ierr(i)
          k22x(i)=k22(i)
       enddo
-        CALL cup_MAXIMI(HEO_CUP,2,KBMAX,K22x,ierr, &
-             itf,ktf, &
+        CALL cup_MAXIMI(HEO_CUP,2,KBMAX,K22x,ierr,                        &
+             itf,ktf,                                                     &
              its,ite, kts,kte)
         iloop=2
         call cup_kbcon(ierrc,cap_max_increment,iloop,k22x,kbconx,heo_cup, &
-             heso_cup,hkbo,ierr2,kbmax,po_cup,cap_max, &
-             ztexec,zqexec,       &
-             0,itf,ktf, &
-             its,ite, kts,kte, &
+             heso_cup,hkbo,ierr2,kbmax,po_cup,cap_max,                    &
+             ztexec,zqexec,                                               &
+             0,itf,ktf,                                                   &
+             its,ite, kts,kte,                                            &
              z_cup,entr_rate,heo,imid)
         iloop=3
         call cup_kbcon(ierrc,cap_max_increment,iloop,k22x,kbconx,heo_cup, &
-             heso_cup,hkbo,ierr3,kbmax,po_cup,cap_max, &
-             ztexec,zqexec,       &
-             0,itf,ktf, &
-             its,ite, kts,kte, &
+             heso_cup,hkbo,ierr3,kbmax,po_cup,cap_max,                    &
+             ztexec,zqexec,                                               &
+             0,itf,ktf,                                                   &
+             its,ite, kts,kte,                                            &
              z_cup,entr_rate,heo,imid)
 !
 !--- calculate cloud base mass flux
@@ -1614,14 +1654,13 @@ contains
           mconv(i)=mconv(i)+omeg(i,k)*dq/g
         ENDDO
       ENDDO
-
-      call cup_forcing_ens_3d(closure_n,xland1,aa0,aa1,xaa0_ens,mbdt,dtime,   &
-           ierr,ierr2,ierr3,xf_ens,axx,forcing,                 &
-           maxens3,mconv,rand_clos,            &
-           po_cup,ktop,omeg,zdo,k22,zuo,pr_ens,edto,kbcon,    &
-           ichoice,     &
-           imid,ipr,itf,ktf, &
-           its,ite, kts,kte, &
+      call cup_forcing_ens_3d(closure_n,xland1,aa0,aa1,xaa0_ens,mbdt,dtime, &
+           ierr,ierr2,ierr3,xf_ens,axx,forcing,                             &
+           maxens3,mconv,rand_clos,                                         &
+           po_cup,ktop,omeg,zdo,k22,zuo,pr_ens,edto,kbcon,                  &
+           ichoice,                                                         &
+           imid,ipr,itf,ktf,                                                &
+           its,ite, kts,kte,                                                &
            dicycle,tau_ecmwf,aa1_bl,xf_dicycle)
 !
       do k=kts,ktf
@@ -1630,8 +1669,8 @@ contains
            dellat_ens (i,k,1)=dellat(i,k)
            dellaq_ens (i,k,1)=dellaq(i,k)
            dellaqc_ens(i,k,1)=dellaqc(i,k)
-           pwo_ens    (i,k,1)=pwo(i,k)+edto(i)*pwdo(i,k)
-        else
+           pwo_ens    (i,k,1)=pwo(i,k) !+edto(i)*pwdo(i,k)
+        else 
            dellat_ens (i,k,1)=0.
            dellaq_ens (i,k,1)=0.
            dellaqc_ens(i,k,1)=0.
@@ -1645,7 +1684,7 @@ contains
 !
        if(imid.eq.1 .and. ichoice .le.2)then
          do i=its,itf
-          !-boundary layer QE
+          !-boundary layer QE 
           xff_mid(i,1)=0.
           xff_mid(i,2)=0.
           if(ierr(i).eq.0)then
@@ -1664,13 +1703,13 @@ contains
          enddo
        endif
        call cup_output_ens_3d(xff_mid,xf_ens,ierr,dellat_ens,dellaq_ens, &
-            dellaqc_ens,outt,     &
-            outq,outqc,zuo,pre,pwo_ens,xmb,ktop,      &
-            'deep',ierr2,ierr3,         &
-            pr_ens,maxens3,                    &
-            sig,closure_n,xland1,xmbm_in,xmbs_in,   &
-            ichoice,imid,ipr,itf,ktf,                        &
-            its,ite, kts,kte, &
+            dellaqc_ens,outt,                                            &
+            outq,outqc,zuo,pre,pwo_ens,xmb,ktop,                         &
+            edto,pwdo,'deep',ierr2,ierr3,                                          &
+            po_cup,pr_ens,maxens3,                                              &
+            sig,closure_n,xland1,xmbm_in,xmbs_in,                        &
+            ichoice,imid,ipr,itf,ktf,                                    &
+            its,ite, kts,kte,                                            &
             dicycle,xf_dicycle )
       k=1
       do i=its,itf
@@ -1755,15 +1794,15 @@ contains
           if(ierr(i).eq.0) then
              dts=0.
              fpi=0.
-             do k=kts+1,ktop(i)
-                dp=-.5*(po(i,k+1)-po(i,k-1))*100.
+             do k=kts,ktop(i)
+                dp=(po_cup(i,k)-po_cup(i,k+1))*100.
 !total KE dissiptaion estimate
-                dts= dts +(outu(i,k)*us(i,k)+outv(i,k)*vs(i,k))*dp/g
-! fpi needed for calcualtion of conversion to pot. energyintegrated
+                dts= dts -(outu(i,k)*us(i,k)+outv(i,k)*vs(i,k))*dp/g
+! fpi needed for calcualtion of conversion to pot. energyintegrated 
                 fpi = fpi  +sqrt(outu(i,k)*outu(i,k) + outv(i,k)*outv(i,k))*dp
              enddo
              if(fpi.gt.0.)then
-                do k=kts+1,ktop(i)
+                do k=kts,ktop(i)
                    fp= sqrt((outu(i,k)*outu(i,k)+outv(i,k)*outv(i,k)))/fpi
                    outt(i,k)=outt(i,k)+fp*dts*g/cp
                 enddo
@@ -1780,36 +1819,36 @@ contains
 
 
    SUBROUTINE cup_dd_edt(ierr,us,vs,z,ktop,kbcon,edt,p,pwav, &
-              pw,ccn,pwev,edtmax,edtmin,edtc,psum2,psumh, &
-              rho,aeroevap,itf,ktf,          &
+              pw,ccn,pwev,edtmax,edtmin,edtc,psum2,psumh,    &
+              rho,aeroevap,itf,ktf,                          &
               its,ite, kts,kte                     )
 
    IMPLICIT NONE
 
-     integer                                                           &
-        ,intent (in   )                   ::                           &
-        aeroevap,itf,ktf,           &
+     integer                                                 &
+        ,intent (in   )                   ::                 &
+        aeroevap,itf,ktf,                                    &
         its,ite, kts,kte
   !
   ! ierr error value, maybe modified in this routine
   !
-     real,    dimension (its:ite,kts:kte)                              &
-        ,intent (in   )                   ::                           &
+     real,    dimension (its:ite,kts:kte)                    &
+        ,intent (in   )                   ::                 &
         rho,us,vs,z,p,pw
-     real,    dimension (its:ite,1)                            &
-        ,intent (out  )                   ::                           &
+     real,    dimension (its:ite,1)                          &
+        ,intent (out  )                   ::                 &
         edtc
-     real,    dimension (its:ite)                                      &
-        ,intent (out  )                   ::                           &
+     real,    dimension (its:ite)                            &
+        ,intent (out  )                   ::                 &
         edt
-     real,    dimension (its:ite)                                      &
-        ,intent (in   )                   ::                           &
+     real,    dimension (its:ite)                            &
+        ,intent (in   )                   ::                 &
         pwav,pwev,ccn,psum2,psumh,edtmax,edtmin
-     integer, dimension (its:ite)                                      &
-        ,intent (in   )                   ::                           &
+     integer, dimension (its:ite)                            &
+        ,intent (in   )                   ::                 &
         ktop,kbcon
-     integer, dimension (its:ite)                                      &
-        ,intent (inout)                   ::                           &
+     integer, dimension (its:ite)                            &
+        ,intent (inout)                   ::                 &
         ierr
 !
 !  local variables in this routine
@@ -1817,7 +1856,7 @@ contains
 
      integer i,k,kk
      real    einc,pef,pefb,prezk,zkbc
-     real,    dimension (its:ite)         ::                           &
+     real,    dimension (its:ite)         ::                 &
       vshear,sdp,vws
      real :: prop_c,pefc,aeroadd,alpha3,beta3
      prop_c=8. !10.386
@@ -1843,9 +1882,9 @@ contains
          do 62 i=its,itf
           IF(ierr(i).ne.0)GO TO 62
           if (kk .le. min0(ktop(i),ktf) .and. kk .ge. kbcon(i)) then
-             vws(i) = vws(i)+ &
-              (abs((us(i,kk+1)-us(i,kk))/(z(i,kk+1)-z(i,kk))) &
-          +   abs((vs(i,kk+1)-vs(i,kk))/(z(i,kk+1)-z(i,kk)))) * &
+             vws(i) = vws(i)+                                        &
+              (abs((us(i,kk+1)-us(i,kk))/(z(i,kk+1)-z(i,kk)))        &
+          +   abs((vs(i,kk+1)-vs(i,kk))/(z(i,kk+1)-z(i,kk)))) *      &
               (p(i,kk) - p(i,kk+1))
             sdp(i) = sdp(i) + p(i,kk) - p(i,kk+1)
           endif
@@ -1854,7 +1893,7 @@ contains
        end do
       do i=its,itf
          IF(ierr(i).eq.0)then
-            pef=(1.591-.639*VSHEAR(I)+.0953*(VSHEAR(I)**2) &
+            pef=(1.591-.639*VSHEAR(I)+.0953*(VSHEAR(I)**2)            &
                -.00496*(VSHEAR(I)**3))
             if(pef.gt.0.9)pef=0.9
             if(pef.lt.0.1)pef=0.1
@@ -1904,20 +1943,20 @@ contains
    END SUBROUTINE cup_dd_edt
 
 
-   SUBROUTINE cup_dd_moisture(ierrc,zd,hcd,hes_cup,qcd,qes_cup,    &
-              pwd,q_cup,z_cup,dd_massentr,dd_massdetr,jmin,ierr,            &
-              gamma_cup,pwev,bu,qrcd,                        &
-              q,he,iloop,           &
-              itf,ktf,                     &
+   SUBROUTINE cup_dd_moisture(ierrc,zd,hcd,hes_cup,qcd,qes_cup,  &
+              pwd,q_cup,z_cup,dd_massentr,dd_massdetr,jmin,ierr, &
+              gamma_cup,pwev,bu,qrcd,                            &
+              q,he,iloop,                                        &
+              itf,ktf,                                           &
               its,ite, kts,kte                     )
 
    IMPLICIT NONE
 
-     integer                                                           &
-        ,intent (in   )                   ::                           &
-                                  itf,ktf,           &
+     integer                                                     &
+        ,intent (in   )                   ::                     &
+                                  itf,ktf,                       &
                                   its,ite, kts,kte
-  ! cdd= detrainment function
+  ! cdd= detrainment function 
   ! q = environmental q on model levels
   ! q_cup = environmental q on model cloud levels
   ! qes_cup = saturation q on model cloud levels
@@ -1931,35 +1970,35 @@ contains
   ! qrch = saturation q in cloud
   ! pwd = evaporate at that level
   ! pwev = total normalized integrated evaoprate (I2)
-  ! entr= entrainment rate
+  ! entr= entrainment rate 
   !
-     real,    dimension (its:ite,kts:kte)                              &
-        ,intent (in   )                   ::                           &
-        zd,hes_cup,hcd,qes_cup,q_cup,z_cup,                      &
-        dd_massentr,dd_massdetr,gamma_cup,q,he
-     integer                                                           &
-        ,intent (in   )                   ::                           &
+     real,    dimension (its:ite,kts:kte)               &
+        ,intent (in   )                   ::            &
+        zd,hes_cup,hcd,qes_cup,q_cup,z_cup,             &
+        dd_massentr,dd_massdetr,gamma_cup,q,he 
+     integer                                            &
+        ,intent (in   )                   ::            &
         iloop
-     integer, dimension (its:ite)                                      &
-        ,intent (in   )                   ::                           &
+     integer, dimension (its:ite)                       &
+        ,intent (in   )                   ::            &
         jmin
-     integer, dimension (its:ite)                                      &
-        ,intent (inout)                   ::                           &
+     integer, dimension (its:ite)                       &
+        ,intent (inout)                   ::            &
         ierr
-     real,    dimension (its:ite,kts:kte)                              &
-        ,intent (out  )                   ::                           &
+     real,    dimension (its:ite,kts:kte)&
+        ,intent (out  )                   ::            &
         qcd,qrcd,pwd
-     real,    dimension (its:ite)                                      &
-        ,intent (out  )                   ::                           &
+     real,    dimension (its:ite)&
+        ,intent (out  )                   ::            &
         pwev,bu
      character*50 :: ierrc(its:ite)
 !
 !  local variables in this routine
 !
 
-     integer                              ::                           &
+     integer                              ::            &
         i,k,ki
-     real                                 ::                           &
+     real                                 ::            &
         denom,dh,dz,dqeva
 
       do i=its,itf
@@ -2007,9 +2046,9 @@ contains
             ierr(i)=51
             exit
          endif
-         qcd(i,ki)=(qcd(i,ki+1)*zd(i,ki+1)                          &
-                  -.5*dd_massdetr(i,ki)*qcd(i,ki+1)+ &
-                  dd_massentr(i,ki)*q(i,ki))   /            &
+         qcd(i,ki)=(qcd(i,ki+1)*zd(i,ki+1)                    &
+                  -.5*dd_massdetr(i,ki)*qcd(i,ki+1)+          &
+                  dd_massentr(i,ki)*q(i,ki))   /              &
                   (zd(i,ki+1)-.5*dd_massdetr(i,ki)+dd_massentr(i,ki))
 !
 !--- to be negatively buoyant, hcd should be smaller than hes!
@@ -2018,7 +2057,7 @@ contains
 !
          DH=HCD(I,ki)-HES_cup(I,Ki)
          bu(i)=bu(i)+dz*dh
-         QRCD(I,Ki)=qes_cup(i,ki)+(1./XLV)*(GAMMA_cup(i,ki) &
+         QRCD(I,Ki)=qes_cup(i,ki)+(1./XLV)*(GAMMA_cup(i,ki)   &
                   /(1.+GAMMA_cup(i,ki)))*DH
          dqeva=qcd(i,ki)-qrcd(i,ki)
          if(dqeva.gt.0.)then
@@ -2049,16 +2088,16 @@ contains
 
    END SUBROUTINE cup_dd_moisture
 
-   SUBROUTINE cup_env(z,qes,he,hes,t,q,p,z1,                 &
-              psur,ierr,tcrit,itest,                   &
-              itf,ktf,                     &
+   SUBROUTINE cup_env(z,qes,he,hes,t,q,p,z1,                &
+              psur,ierr,tcrit,itest,                        &
+              itf,ktf,                                      &
               its,ite, kts,kte                     )
 
    IMPLICIT NONE
 
-     integer                                                           &
-        ,intent (in   )                   ::                           &
-        itf,ktf,           &
+     integer                                                &
+        ,intent (in   )                   ::                &
+        itf,ktf,                                            &
         its,ite, kts,kte
   !
   ! ierr error value, maybe modified in this routine
@@ -2072,31 +2111,31 @@ contains
   ! hes         = environmental saturation moist static energy
   ! psur        = surface pressure
   ! z1          = terrain elevation
+  ! 
   !
-  !
-     real,    dimension (its:ite,kts:kte)                              &
-        ,intent (in   )                   ::                           &
+     real,    dimension (its:ite,kts:kte)                &
+        ,intent (in   )                   ::             &
         p,t,q
-     real,    dimension (its:ite,kts:kte)                              &
-        ,intent (out  )                   ::                           &
+     real,    dimension (its:ite,kts:kte)                &
+        ,intent (out  )                   ::             &
         he,hes,qes
-     real,    dimension (its:ite,kts:kte)                              &
-        ,intent (inout)                   ::                           &
+     real,    dimension (its:ite,kts:kte)                &
+        ,intent (inout)                   ::             &
         z
-     real,    dimension (its:ite)                                      &
-        ,intent (in   )                   ::                           &
+     real,    dimension (its:ite)                        &
+        ,intent (in   )                   ::             &
         psur,z1
-     integer, dimension (its:ite)                                      &
-        ,intent (inout)                   ::                           &
+     integer, dimension (its:ite)                        &
+        ,intent (inout)                   ::             &
         ierr
-     integer                                                           &
-        ,intent (in   )                   ::                           &
+     integer                                             &
+        ,intent (in   )                   ::             &
         itest
 !
 !  local variables in this routine
 !
 
-     integer                              ::                           &
+     integer                              ::             &
        i,k
 !     real, dimension (1:2) :: AE,BE,HT
       real, dimension (its:ite,kts:kte) :: tv
@@ -2180,17 +2219,17 @@ contains
    END SUBROUTINE cup_env
 
 
-   SUBROUTINE cup_env_clev(t,qes,q,he,hes,z,p,qes_cup,q_cup,   &
-              he_cup,hes_cup,z_cup,p_cup,gamma_cup,t_cup,psur, &
-              ierr,z1,                                &
-              itf,ktf,                       &
+   SUBROUTINE cup_env_clev(t,qes,q,he,hes,z,p,qes_cup,q_cup,        &
+              he_cup,hes_cup,z_cup,p_cup,gamma_cup,t_cup,psur,      &
+              ierr,z1,                                              &
+              itf,ktf,                                              &
               its,ite, kts,kte                       )
 
    IMPLICIT NONE
 
-     integer                                                           &
-        ,intent (in   )                   ::                           &
-        itf,ktf,           &
+     integer                                                        &
+        ,intent (in   )                   ::                        &
+        itf,ktf,                                                    &
         its,ite, kts,kte
   !
   ! ierr error value, maybe modified in this routine
@@ -2211,25 +2250,25 @@ contains
   ! gamma_cup   = gamma on cloud levels
   ! psur        = surface pressure
   ! z1          = terrain elevation
+  ! 
   !
-  !
-     real,    dimension (its:ite,kts:kte)                              &
-        ,intent (in   )                   ::                           &
+     real,    dimension (its:ite,kts:kte)                        &
+        ,intent (in   )                   ::                     &
         qes,q,he,hes,z,p,t
-     real,    dimension (its:ite,kts:kte)                              &
-        ,intent (out  )                   ::                           &
+     real,    dimension (its:ite,kts:kte)                        &
+        ,intent (out  )                   ::                     &
         qes_cup,q_cup,he_cup,hes_cup,z_cup,p_cup,gamma_cup,t_cup
-     real,    dimension (its:ite)                                      &
-        ,intent (in   )                   ::                           &
+     real,    dimension (its:ite)                                &
+        ,intent (in   )                   ::                     &
         psur,z1
-     integer, dimension (its:ite)                                      &
-        ,intent (inout)                   ::                           &
+     integer, dimension (its:ite)                                &
+        ,intent (inout)                   ::                     &
         ierr
 !
 !  local variables in this routine
 !
 
-     integer                              ::                           &
+     integer                              ::                     &
        i,k
 
 
@@ -2282,20 +2321,20 @@ contains
    END SUBROUTINE cup_env_clev
 
    SUBROUTINE cup_forcing_ens_3d(closure_n,xland,aa0,aa1,xaa0,mbdt,dtime,ierr,ierr2,ierr3,&
-              xf_ens,axx,forcing,maxens3,mconv,rand_clos,    &
-              p_cup,ktop,omeg,zd,k22,zu,pr_ens,edt,kbcon,      &
-              ichoice,            &
-              imid,ipr,itf,ktf,               &
-              its,ite, kts,kte, &
+              xf_ens,axx,forcing,maxens3,mconv,rand_clos,             &
+              p_cup,ktop,omeg,zd,k22,zu,pr_ens,edt,kbcon,             &
+              ichoice,                                                &
+              imid,ipr,itf,ktf,                                       &
+              its,ite, kts,kte,                                       &
               dicycle,tau_ecmwf,aa1_bl,xf_dicycle  )
 
    IMPLICIT NONE
 
-     integer                                                           &
-        ,intent (in   )                   ::                           &
-        imid,ipr,itf,ktf,           &
+     integer                                                          &
+        ,intent (in   )                   ::                          &
+        imid,ipr,itf,ktf,                                             &
         its,ite, kts,kte
-     integer, intent (in   )              ::                           &
+     integer, intent (in   )              ::                          &
         maxens3
   !
   ! ierr error value, maybe modified in this routine
@@ -2322,7 +2361,7 @@ contains
         ,intent (inout)                   ::                           &
         pr_ens
      real,    dimension (its:ite,1:maxens3)                            &
-        ,intent (inout  )                   ::                         &
+        ,intent (inout  )                 ::                           &
         xf_ens
      real,    dimension (its:ite,kts:kte)                              &
         ,intent (in   )                   ::                           &
@@ -2335,7 +2374,7 @@ contains
         xaa0
      real,    dimension (its:ite,4)                                    &
         ,intent (in   )                   ::                           &
-       rand_clos
+       rand_clos 
      real,    dimension (its:ite)                                      &
         ,intent (in   )                   ::                           &
         aa1,edt
@@ -2345,17 +2384,17 @@ contains
      real,    dimension (its:ite)                                      &
         ,intent (inout)                   ::                           &
         aa0,closure_n
-     real                                         &
+     real                                                              &
         ,intent (in   )                   ::                           &
         mbdt
      real                                                              &
         ,intent (in   )                   ::                           &
         dtime
      integer, dimension (its:ite)                                      &
-        ,intent (inout   )                   ::                           &
+        ,intent (inout   )                ::                           &
         k22,kbcon,ktop
      integer, dimension (its:ite)                                      &
-        ,intent (in      )                   ::                           &
+        ,intent (in      )                ::                           &
         xland
      integer, dimension (its:ite)                                      &
         ,intent (inout)                   ::                           &
@@ -2375,12 +2414,12 @@ contains
 
      real,    dimension (1:maxens3)       ::                           &
        xff_ens3
-     real,    dimension (1)        ::                           &
+     real,    dimension (1)               ::                           &
        xk
      integer                              ::                           &
        kk,i,k,n,ne
 !     integer, parameter :: mkxcrt=15
-!     real,    dimension(1:mkxcrt)         ::                           &
+!     real,    dimension(1:mkxcrt)        ::                           &
 !       pcrit,acrit,acritt
      integer, dimension (its:ite)         :: kloc
      real                                 ::                           &
@@ -2400,6 +2439,7 @@ contains
           kloc(i)=1
           IF(ierr(i).eq.0)then
            kloc(i)=maxloc(zu(i,:),1)
+!           kloc(i)=kbcon(i)
            ens_adj(i)=1.
 !ss --- comment out adjustment over ocean
 !ss           if(ierr2(i).gt.0.and.ierr3(i).eq.0)ens_adj(i)=0.666 ! 2./3.
@@ -2417,10 +2457,10 @@ contains
              xff_ens3(3)=max(0.,(AA1(I)-AA0(I))/dtime)
              xff_ens3(16)=max(0.,(AA1(I)-AA0(I))/dtime)
              forcing(i,1)=xff_ens3(2)
-!
+!   
 !--- omeg is in bar/s, mconv done with omeg in Pa/s
 !     more like Brown (1979), or Frank-Cohen (199?)
-!
+!  
 ! average aaround kbcon
 !
              xomg=0.
@@ -2430,12 +2470,12 @@ contains
              xff_ens3(6)=0.
              do k=kbcon(i)-1,kbcon(i)+1
                      if(zu(i,k).gt.0.)then
-                       xomg=xomg-omeg(i,k)/9.81/max(0.5,(1.-edt(i)*zd(i,k)))
+                       xomg=xomg-omeg(i,k)/9.81/max(0.5,(1.-edt(i)*zd(i,k)/zu(i,k)))
                        kk=kk+1
                      endif
              enddo
              if(kk.gt.0)xff_ens3(4)=xomg/float(kk)
-
+            
 !
 ! max below kbcon
 !             xff_ens3(6)=-omeg(i,k22(i))/9.81
@@ -2451,7 +2491,7 @@ contains
              if(xff_ens3(4).lt.0.)xff_ens3(4)=0.
              if(xff_ens3(5).lt.0.)xff_ens3(5)=0.
              if(xff_ens3(6).lt.0.)xff_ens3(6)=0.
-             xff_ens3(14)=betajb*xff_ens3(4)
+             xff_ens3(14)=xff_ens3(4)
              forcing(i,2)=xff_ens3(4)
 !
 !--- more like Krishnamurti et al.; pick max and average values
@@ -2482,11 +2522,9 @@ contains
                      xff_ens3(12)=0.
                      xff_ens3(13)= 0.
                      xff_ens3(16)= 0.
+                     closure_n(i)=12.
 !                     xff_dicycle = 0.
                 endif  !xff0
-                  if(xff0.lt.0 .and. xland(i).lt.0.1)then
-                     xff_ens3(:)=0.
-                  endif
              endif ! ichoice
 
              XK(1)=(XAA0(I,1)-AA1(I))/MBDT
@@ -2496,7 +2534,7 @@ contains
              forcing(i,7)=xk(1)
              if(xk(1).le.0.and.xk(1).gt.-.01*mbdt) &
                            xk(1)=-.01*mbdt
-             if(xk(1).gt.0.and.xk(1).lt.1.e-2) &
+             if(xk(1).gt.0.and.xk(1).lt.1.e-2)     &
                            xk(1)=1.e-2
              !   enddo
 !
@@ -2604,7 +2642,7 @@ contains
               endif
 !srf-end
               if(ichoice.ge.1)then
-                 closure_n(i)=0.
+!                 closure_n(i)=0.
                  xf_ens(i,1)=xf_ens(i,ichoice)
                  xf_ens(i,2)=xf_ens(i,ichoice)
                  xf_ens(i,3)=xf_ens(i,ichoice)
@@ -2633,10 +2671,10 @@ contains
    END SUBROUTINE cup_forcing_ens_3d
 
    SUBROUTINE cup_kbcon(ierrc,cap_inc,iloop_in,k22,kbcon,he_cup,hes_cup, &
-              hkb,ierr,kbmax,p_cup,cap_max,                         &
-              ztexec,zqexec,       &
-              jprnt,itf,ktf,                        &
-              its,ite, kts,kte, &
+              hkb,ierr,kbmax,p_cup,cap_max,                              &
+              ztexec,zqexec,                                             &
+              jprnt,itf,ktf,                                             &
+              its,ite, kts,kte,                                          &
               z_cup,entr_rate,heo,imid                        )
 
    IMPLICIT NONE
@@ -2646,11 +2684,11 @@ contains
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-        jprnt,itf,ktf,imid,           &
+        jprnt,itf,ktf,imid,                                            &
         its,ite, kts,kte
-  !
-  !
-  !
+  ! 
+  ! 
+  ! 
   ! ierr error value, maybe modified in this routine
   !
      real,    dimension (its:ite,kts:kte)                              &
@@ -2660,7 +2698,7 @@ contains
         ,intent (in   )                   ::                           &
         entr_rate,ztexec,zqexec,cap_inc,cap_max
      real,    dimension (its:ite)                                      &
-        ,intent (inout   )                   ::                           &
+        ,intent (inout   )                   ::                        &
         hkb !,cap_max
      integer, dimension (its:ite)                                      &
         ,intent (in   )                   ::                           &
@@ -2772,7 +2810,7 @@ contains
 
 
    SUBROUTINE cup_MAXIMI(ARRAY,KS,KE,MAXX,ierr,              &
-              itf,ktf,                     &
+              itf,ktf,                                       &
               its,ite, kts,kte                     )
 
    IMPLICIT NONE
@@ -2784,7 +2822,7 @@ contains
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-         itf,ktf,                                    &
+         itf,ktf,                                                      &
          its,ite, kts,kte
   ! array input array
   ! x output array with return values
@@ -2828,7 +2866,7 @@ contains
 
 
    SUBROUTINE cup_minimi(ARRAY,KS,KEND,KT,ierr,              &
-              itf,ktf,                     &
+              itf,ktf,                                       &
               its,ite, kts,kte                     )
 
    IMPLICIT NONE
@@ -2838,26 +2876,26 @@ contains
 
    ! only local wrf dimensions are need as of now in this routine
 
-     integer                                                           &
-        ,intent (in   )                   ::                           &
-         itf,ktf,                                    &
+     integer                                                 &
+        ,intent (in   )                   ::                 &
+         itf,ktf,                                            &
          its,ite, kts,kte
   ! array input array
   ! x output array with return values
   ! kt output array of levels
   ! ks,kend  check-range
-     real,    dimension (its:ite,kts:kte)                              &
-        ,intent (in   )                   ::                           &
+     real,    dimension (its:ite,kts:kte)                    &
+        ,intent (in   )                   ::                 &
          array
-     integer, dimension (its:ite)                                      &
-        ,intent (in   )                   ::                           &
+     integer, dimension (its:ite)                            &
+        ,intent (in   )                   ::                 &
          ierr,ks,kend
-     integer, dimension (its:ite)                                      &
-        ,intent (out  )                   ::                           &
+     integer, dimension (its:ite)                            &
+        ,intent (out  )                   ::                 &
          kt
-     real,    dimension (its:ite)         ::                           &
+     real,    dimension (its:ite)         ::                 &
          x
-     integer                              ::                           &
+     integer                              ::                 &
          i,k,kstop
 
        DO 200 i=its,itf
@@ -2880,7 +2918,7 @@ contains
 
    SUBROUTINE cup_up_aa0(aa0,z,zu,dby,GAMMA_CUP,t_cup,       &
               kbcon,ktop,ierr,                               &
-              itf,ktf,                     &
+              itf,ktf,                                       &
               its,ite, kts,kte                     )
 
    IMPLICIT NONE
@@ -2890,42 +2928,42 @@ contains
 
    ! only local wrf dimensions are need as of now in this routine
 
-     integer                                                           &
-        ,intent (in   )                   ::                           &
-        itf,ktf,                                     &
+     integer                                                 &
+        ,intent (in   )                   ::                 &
+        itf,ktf,                                             &
         its,ite, kts,kte
   ! aa0 cloud work function
   ! gamma_cup = gamma on model cloud levels
   ! t_cup = temperature (Kelvin) on model cloud levels
   ! dby = buoancy term
   ! zu= normalized updraft mass flux
-  ! z = heights of model levels
+  ! z = heights of model levels 
   ! ierr error value, maybe modified in this routine
   !
-     real,    dimension (its:ite,kts:kte)                              &
-        ,intent (in   )                   ::                           &
+     real,    dimension (its:ite,kts:kte)                     &
+        ,intent (in   )                   ::                  &
         z,zu,gamma_cup,t_cup,dby
-     integer, dimension (its:ite)                                      &
-        ,intent (in   )                   ::                           &
+     integer, dimension (its:ite)                             &
+        ,intent (in   )                   ::                  &
         kbcon,ktop
 !
 ! input and output
 !
 
 
-     integer, dimension (its:ite)                                      &
-        ,intent (inout)                   ::                           &
+     integer, dimension (its:ite)                             &
+        ,intent (inout)                   ::                  &
         ierr
-     real,    dimension (its:ite)                                      &
-        ,intent (out  )                   ::                           &
+     real,    dimension (its:ite)                             &
+        ,intent (out  )                   ::                  &
         aa0
 !
 !  local variables in this routine
 !
 
-     integer                              ::                           &
+     integer                              ::                  &
         i,k
-     real                                 ::                           &
+     real                                 ::                  &
         dz,da
 !
         do i=its,itf
@@ -2948,10 +2986,11 @@ contains
    END SUBROUTINE cup_up_aa0
 
 !====================================================================
-   SUBROUTINE neg_check(name,j,dt,q,outq,outt,outu,outv,   &
-                                    outqc,pret,its,ite,kts,kte,itf,ktf)
+   SUBROUTINE neg_check(name,j,dt,q,outq,outt,outu,outv,                      &
+                                    outqc,pret,its,ite,kts,kte,itf,ktf,ktop)
 
    INTEGER,      INTENT(IN   ) ::            j,its,ite,kts,kte,itf,ktf
+   INTEGER, dimension (its:ite  ),   INTENT(IN   ) ::  ktop
 
      real, dimension (its:ite,kts:kte  )                    ,                 &
       intent(inout   ) ::                                                     &
@@ -2962,7 +3001,7 @@ contains
      real, dimension (its:ite  )                            ,                 &
       intent(inout   ) ::                                                     &
        pret
-      character *(*), intent (in)         ::                           &
+      character *(*), intent (in)         ::                                  &
        name
      real                                                                     &
         ,intent (in  )                   ::                                   &
@@ -2976,21 +3015,22 @@ contains
 !      thresh=200.01        !ss
 !      thresh=250.01
       names=1.
-      if(name == 'shallow')then
+     if(name == 'shallow' .or. name == 'mid')then
         thresh=148.01
-        names=2.
+        names=1.
       endif
       scalef=86400.
       do i=its,itf
+      if(ktop(i) <= 2)cycle
       icheck=0
       qmemf=1.
       qmem=0.
-      do k=kts,ktf
+      do k=kts,ktop(i)
          qmem=(outt(i,k))*86400.
          if(qmem.gt.thresh)then
            qmem2=thresh/qmem
            qmemf=min(qmemf,qmem2)
-           icheck=1
+      icheck=1
 !
 !
 !          print *,'1',' adjusted massflux by factor ',i,j,k,qmem,qmem2,qmemf,dt
@@ -3003,28 +3043,26 @@ contains
 !
          endif
       enddo
-      do k=kts,ktf
+      do k=kts,ktop(i)
          outq(i,k)=outq(i,k)*qmemf
          outt(i,k)=outt(i,k)*qmemf
          outu(i,k)=outu(i,k)*qmemf
          outv(i,k)=outv(i,k)*qmemf
          outqc(i,k)=outqc(i,k)*qmemf
       enddo
-      pret(i)=pret(i)*qmemf
+      pret(i)=pret(i)*qmemf 
       enddo
-     return
 !
-! check whether routine produces negative q's. This can happen, since
+! check whether routine produces negative q's. This can happen, since 
 ! tendencies are calculated based on forced q's. This should have no
 ! influence on conservation properties, it scales linear through all
 ! tendencies
 !
-!      return
-!      write(14,*)'return'
       thresh=1.e-16
       do i=its,itf
+      if(ktop(i) <= 2)cycle
       qmemf=1.
-      do k=kts,ktf-1
+      do k=kts,ktop(i)
          qmem=outq(i,k)
          if(abs(qmem).gt.0. .and. q(i,k).gt.1.e-6)then
          qtest=q(i,k)+(outq(i,k))*dt
@@ -3046,20 +3084,20 @@ contains
          outv(i,k)=outv(i,k)*qmemf
          outqc(i,k)=outqc(i,k)*qmemf
       enddo
-      pret(i)=pret(i)*qmemf
+      pret(i)=pret(i)*qmemf 
       enddo
 
    END SUBROUTINE neg_check
 
 
    SUBROUTINE cup_output_ens_3d(xff_mid,xf_ens,ierr,dellat,dellaq,dellaqc,  &
-              outtem,outq,outqc,     &
-              zu,pre,pw,xmb,ktop,                 &
-              name,ierr2,ierr3,pr_ens,             &
-              maxens3,                            &
-              sig,closure_n,xland1,xmbm_in,xmbs_in,    &
-              ichoice,imid,ipr,itf,ktf, &
-              its,ite, kts,kte, &
+              outtem,outq,outqc,                                            &
+              zu,pre,pw,xmb,ktop,                                           &
+              edt,pwd,name,ierr2,ierr3,p_cup,pr_ens,                        &
+              maxens3,                                                      &
+              sig,closure_n,xland1,xmbm_in,xmbs_in,                         &
+              ichoice,imid,ipr,itf,ktf,                                     &
+              its,ite, kts,kte,                                             &
               dicycle,xf_dicycle )
 
    IMPLICIT NONE
@@ -3070,7 +3108,7 @@ contains
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-        ichoice,imid,ipr,itf,ktf,     &
+        ichoice,imid,ipr,itf,ktf,                                      &
         its,ite, kts,kte
      integer, intent (in   )              ::                           &
         maxens3
@@ -3088,28 +3126,28 @@ contains
   ! pw = pw -epsilon*pd (ensemble dependent)
   ! ierr error value, maybe modified in this routine
   !
-     real,    dimension (its:ite,1:maxens3)                     &
+     real,    dimension (its:ite,1:maxens3)                            &
         ,intent (inout)                   ::                           &
        xf_ens,pr_ens
      real,    dimension (its:ite,kts:kte)                              &
-        ,intent (inout  )                   ::                           &
+        ,intent (inout  )                 ::                           &
         outtem,outq,outqc
      real,    dimension (its:ite,kts:kte)                              &
-        ,intent (in  )                   ::                           &
-        zu
-     real,   dimension (its:ite)                                      &
+        ,intent (in  )                    ::                           &
+        zu,pwd,p_cup
+     real,   dimension (its:ite)                                       &
          ,intent (in  )                   ::                           &
-        sig,xmbm_in,xmbs_in
-     real,   dimension (its:ite,2)                                      &
+        sig,xmbm_in,xmbs_in,edt
+     real,   dimension (its:ite,2)                                     &
          ,intent (in  )                   ::                           &
         xff_mid
      real,    dimension (its:ite)                                      &
-        ,intent (inout  )                   ::                           &
+        ,intent (inout  )                 ::                           &
         pre,xmb
      real,    dimension (its:ite)                                      &
-        ,intent (inout  )                   ::                           &
+        ,intent (inout  )                 ::                           &
         closure_n
-     real,    dimension (its:ite,kts:kte,1)                     &
+     real,    dimension (its:ite,kts:kte,1)                            &
         ,intent (in   )                   ::                           &
        dellat,dellaqc,dellaq,pw
      integer, dimension (its:ite)                                      &
@@ -3127,11 +3165,11 @@ contains
      integer                              ::                           &
         i,k,n
      real                                 ::                           &
-        dtt,dtq,dtqc,dtpw
-     real,    dimension (its:ite)::                           &
-       xmb_ave
+        clos_wei,dtt,dp,dtq,dtqc,dtpw,dtpwd
+     real,    dimension (its:ite)         ::                           &
+       xmb_ave,pwtot
 !
-      character *(*), intent (in)        ::                           &
+      character *(*), intent (in)         ::                           &
        name
 
 !
@@ -3158,7 +3196,7 @@ contains
 !
 !--- calculate ensemble average mass fluxes
 !
-
+       
 !
 !-- now do feedback
 !
@@ -3181,12 +3219,12 @@ contains
             xmb_ave(i)=min(xmb_ave(i),xmb_ave(i) - xf_dicycle(i))
             xmb_ave(i)=max(0.,xmb_ave(i))
          endif
-         xmb_ave(i)=min(xmb_ave(i),100.)
-         xmb(i)=sig(i)*xmb_ave(i)
 ! --- Now use proper count of how many closures were actually
 !       used in cup_forcing_ens (including screening of some
 !       closures over water) to properly normalize xmb
-!           clos_wei=16./max(1.,closure_n(i))
+           clos_wei=16./max(1.,closure_n(i))
+         xmb_ave(i)=min(xmb_ave(i),100.)
+         xmb(i)=clos_wei*sig(i)*xmb_ave(i)
 
            if(xmb(i) < 1.e-16)then
               ierr(i)=19
@@ -3229,18 +3267,36 @@ contains
       endif        ! imid=1
 
       do i=its,itf
+        pwtot(i)=0.
         IF(ierr(i).eq.0)then
             DO k=kts,ktop(i)
+              pwtot(i)=pwtot(i)+pw(i,k,1)
+            enddo
+            DO k=kts,ktop(i)
+            dp=100.*(p_cup(i,k)-p_cup(i,k+1))/g
             dtt =dellat  (i,k,1)
             dtq =dellaq  (i,k,1)
-            dtqc=dellaqc (i,k,1)
-            dtpw=pw      (i,k,1)
+! necessary to drive downdraft
+            dtpwd=-pwd(i,k)*edt(i)
+! take from dellaqc first
+            dtqc=dellaqc (i,k,1)*dp - dtpwd
+! if this is negative, it needs to come from rain
+           if(dtqc < 0.)then
+             dtpwd=dtpwd-dellaqc(i,k,1)*dp
+             dtqc=0.
+! if this is positive, can come from clw detrainment
+           else
+             dtpwd=0.
+             dtqc=dtqc/dp
+           endif
            OUTTEM(I,K)= XMB(I)* dtt
            OUTQ  (I,K)= XMB(I)* dtq
            OUTQC (I,K)= XMB(I)* dtqc
-           PRE(I)=PRE(I)+XMB(I)*dtpw
            xf_ens(i,:)=sig(i)*xf_ens(i,:)
+! what is evaporated
+           PRE(I)=PRE(I)-XMB(I)*dtpwd
           enddo
+          PRE(I)=-PRE(I)+XMB(I)*pwtot(i)
         endif
       enddo
 
@@ -3248,11 +3304,11 @@ contains
    END SUBROUTINE cup_output_ens_3d
 !-------------------------------------------------------
    SUBROUTINE cup_up_moisture(name,ierr,z_cup,qc,qrc,pw,pwav,     &
-              p_cup,kbcon,ktop,dby,clw_all,xland1,&
-              q,GAMMA_cup,zu,qes_cup,k22,qe_cup,         &
-              ZQEXEC,ccn,rho,c1d,t, &
+              p_cup,kbcon,ktop,dby,clw_all,xland1,                &
+              q,GAMMA_cup,zu,qes_cup,k22,qe_cup,                  &
+              ZQEXEC,ccn,rho,c1d,t,                               &
               up_massentr,up_massdetr,psum,psumh,                 &
-              itest,itf,ktf,                &
+              itest,itf,ktf,                                      &
               its,ite, kts,kte                     )
 
    IMPLICIT NONE
@@ -3264,29 +3320,29 @@ contains
 
    ! only local wrf dimensions are need as of now in this routine
 
-     integer                                                           &
-        ,intent (in   )                   ::                           &
-                                  itest,itf,ktf,           &
+     integer                                                      &
+        ,intent (in   )                   ::                      &
+                                  itest,itf,ktf,                  &
                                   its,ite, kts,kte
-  ! cd= detrainment function
+  ! cd= detrainment function 
   ! q = environmental q on model levels
   ! qe_cup = environmental q on model cloud levels
   ! qes_cup = saturation q on model cloud levels
   ! dby = buoancy term
-  ! cd= detrainment function
+  ! cd= detrainment function 
   ! zu = normalized updraft mass flux
   ! gamma_cup = gamma on model cloud levels
   !
-     real,    dimension (its:ite,kts:kte)                              &
-        ,intent (in   )                   ::                           &
-        p_cup,rho,q,zu,gamma_cup,qe_cup,                         &
+     real,    dimension (its:ite,kts:kte)                         &
+        ,intent (in   )                   ::                      &
+        p_cup,rho,q,zu,gamma_cup,qe_cup,                          &
         up_massentr,up_massdetr,dby,qes_cup,z_cup
-     real,    dimension (its:ite)                              &
-        ,intent (in   )                   ::                           &
+     real,    dimension (its:ite)                                 &
+        ,intent (in   )                   ::                      &
         zqexec
-  ! entr= entrainment rate
-     integer, dimension (its:ite)                                      &
-        ,intent (in   )                   ::                           &
+  ! entr= entrainment rate 
+     integer, dimension (its:ite)                                 &
+        ,intent (in   )                   ::                      &
         kbcon,ktop,k22,xland1
 !
 ! input and output
@@ -3294,10 +3350,10 @@ contains
 
    ! ierr error value, maybe modified in this routine
 
-     integer, dimension (its:ite)                                      &
-        ,intent (inout)                   ::                           &
+     integer, dimension (its:ite)                                  &
+        ,intent (inout)                   ::                       &
         ierr
-      character *(*), intent (in)        ::                           &
+      character *(*), intent (in)         ::                       &
        name
    ! qc = cloud q (including liquid water) after entrainment
    ! qrch = saturation q in cloud
@@ -3306,37 +3362,37 @@ contains
    ! pwav = totan normalized integrated condensate (I1)
    ! c0 = conversion rate (cloud to rain)
 
-     real,    dimension (its:ite,kts:kte)                              &
-        ,intent (out  )                   ::                           &
+     real,    dimension (its:ite,kts:kte)                          &
+        ,intent (out  )                   ::                       &
         qc,qrc,pw,clw_all
-     real,    dimension (its:ite,kts:kte) ::                           &
+     real,    dimension (its:ite,kts:kte) ::                       &
         qch,qrcb,pwh,clw_allh,c1d,t
-     real,    dimension (its:ite)         ::                           &
+     real,    dimension (its:ite)         ::                       &
         pwavh
-     real,    dimension (its:ite)                                      &
-        ,intent (out  )                   ::                           &
+     real,    dimension (its:ite)                                  &
+        ,intent (out  )                   ::                       &
         pwav,psum,psumh
-     real,    dimension (its:ite)                                      &
-        ,intent (in  )                   ::                           &
+     real,    dimension (its:ite)                                  &
+        ,intent (in  )                    ::                       &
         ccn
 !
 !  local variables in this routine
 !
 
-     integer                              ::                           &
+     integer                              ::                       &
         iprop,iall,i,k
      integer :: start_level(its:ite)
-     real                                 ::                           &
-        prop_ave,qrcb_h,bdsp,dp,rhoc,qrch,qaver, &
+     real                                 ::                       &
+        prop_ave,qrcb_h,bdsp,dp,rhoc,qrch,qaver,                   &
         c0,dz,berryc0,q1,berryc
-     real                                 ::                           &
+     real                                 ::                       &
         denom
-     real,    dimension (kts:kte)         ::                           &
+     real,    dimension (kts:kte)         ::                       &
         prop_b
 !
         prop_b(kts:kte)=0
         iall=0
-        c0=.004
+        c0=.002
         bdsp=BDISPM
 !
 !--- no precip for small clouds
@@ -3367,9 +3423,9 @@ contains
       if(ierr(i).eq.0)then
          start_level=k22(i)
          call get_cloud_bc(kte,qe_cup (i,1:kte),qaver,k22(i))
-         qaver = qaver
+         qaver = qaver 
          k=start_level(i)
-         qc (i,k)= qaver
+         qc (i,k)= qaver 
          qch (i,k)= qaver
          do k=1,start_level(i)-1
            qc (i,k)= qe_cup(i,k)
@@ -3390,10 +3446,10 @@ contains
 !            if(name == "deep" )then
             DO k=k22(i)+1,kbcon(i)
               qc(i,k)=   (qc(i,k-1)*zu(i,k-1)-.5*up_massdetr(i,k-1)* qc(i,k-1)+ &
-                         up_massentr(i,k-1)*q(i,k-1))   /            &
+                         up_massentr(i,k-1)*q(i,k-1))   /                       &
                          (zu(i,k-1)-.5*up_massdetr(i,k-1)+up_massentr(i,k-1))
 !              QRCH=QES_cup(I,K)
-               QRCH=QES_cup(I,K)+(1./XLV)*(GAMMA_cup(i,k) &
+               QRCH=QES_cup(I,K)+(1./XLV)*(GAMMA_cup(i,k)                       &
                  /(1.+GAMMA_cup(i,k)))*DBY(I,K)
               if(k.lt.kbcon(i))qrch=qc(i,k)
               if(qc(i,k).gt.qrch)then
@@ -3417,14 +3473,14 @@ contains
                 exit
                endif
 
-
+   
                rhoc=.5*(rho(i,k)+rho(i,k-1))
                DZ=Z_cup(i,K)-Z_cup(i,K-1)
                DP=p_cup(i,K)-p_cup(i,K-1)
 !
 !--- saturation  in cloud, this is what is allowed to be in it
 !
-               QRCH=QES_cup(I,K)+(1./XLV)*(GAMMA_cup(i,k) &
+               QRCH=QES_cup(I,K)+(1./XLV)*(GAMMA_cup(i,k)                       &
                  /(1.+GAMMA_cup(i,k)))*DBY(I,K)
 !
 !------    1. steady state plume equation, for what could
@@ -3432,10 +3488,10 @@ contains
 !
 !
                qc(i,k)=   (qc(i,k-1)*zu(i,k-1)-.5*up_massdetr(i,k-1)* qc(i,k-1)+ &
-                         up_massentr(i,k-1)*q(i,k-1))   /            &
+                         up_massentr(i,k-1)*q(i,k-1))   /                        &
                          (zu(i,k-1)-.5*up_massdetr(i,k-1)+up_massentr(i,k-1))
                qch(i,k)= (qch(i,k-1)*zu(i,k-1)-.5*up_massdetr(i,k-1)*qch(i,k-1)+ &
-                         up_massentr(i,k-1)*q(i,k-1))   /            &
+                         up_massentr(i,k-1)*q(i,k-1))   /                        &
                          (zu(i,k-1)-.5*up_massdetr(i,k-1)+up_massentr(i,k-1))
 
                if(qc(i,k).le.qrch)then
@@ -3454,7 +3510,7 @@ contains
                IF(autoconv.eq.2) then
 
 
-!
+! 
 ! normalized berry
 !
 ! first calculate for average conditions, used in cup_dd_edt!
@@ -3462,7 +3518,7 @@ contains
 ! would give the same results as c0 under these conditions
 !
                  q1=1.e3*rhoc*qrcb(i,k)  ! g/m^3 ! g[h2o]/cm^3
-                 berryc0=q1*q1/(60.0*(5.0 + 0.0366*CCNclean/ &
+                 berryc0=q1*q1/(60.0*(5.0 + 0.0366*CCNclean/                           &
                     ( q1 * BDSP)  ) ) !/(
                  qrcb_h=((QCH(I,K)-QRCH)*zu(i,k)-qrcb(i,k-1)*(.5*up_massdetr(i,k-1)))/ &
                    (zu(i,k)+.5*up_massdetr(i,k-1)+c0*dz*zu(i,k))
@@ -3483,7 +3539,7 @@ contains
 ! then the real berry
 !
                  q1=1.e3*rhoc*qrc(i,k)  ! g/m^3 ! g[h2o]/cm^3
-                 berryc0=q1*q1/(60.0*(5.0 + 0.0366*CCN(i)/ &
+                 berryc0=q1*q1/(60.0*(5.0 + 0.0366*CCN(i)/                                             &
                     ( q1 * BDSP)  ) ) !/(
                  berryc0=1.e-3*berryc0*dz*prop_b(k) ! 2.
                  berryc=qrc(i,k)
@@ -3539,7 +3595,7 @@ contains
 
  REAL FUNCTION satvap(temp2)
       implicit none
-      real :: temp2, temp, toot, toto, eilog, tsot,  &
+      real :: temp2, temp, toot, toto, eilog, tsot,            &
      &        ewlog, ewlog2, ewlog3, ewlog4
       temp = temp2-273.155
       if (temp.lt.-20.) then   !!!! ice saturation
@@ -3550,11 +3606,11 @@ contains
         satvap = 10 ** eilog
       else
         tsot = 373.16 / temp2
-        ewlog = -7.90298 * (tsot - 1) + 5.02808 * &
+        ewlog = -7.90298 * (tsot - 1) + 5.02808 *              &
      &             (log(tsot) / log(10.))
-        ewlog2 = ewlog - 1.3816e-07 * &
+        ewlog2 = ewlog - 1.3816e-07 *                          &
      &             (10 ** (11.344 * (1 - (1 / tsot))) - 1)
-        ewlog3 = ewlog2 + .0081328 * &
+        ewlog3 = ewlog2 + .0081328 *                           &
      &             (10 ** (-3.49149 * (tsot - 1)) - 1)
         ewlog4 = ewlog3 + (log(1013.246) / log(10.))
         satvap = 10 ** ewlog4
@@ -3564,7 +3620,8 @@ contains
  SUBROUTINE get_cloud_bc(mzp,array,x_aver,k22,add)
     implicit none
     integer, intent(in)     :: mzp,k22
-    real   , intent(in)     :: array(mzp)
+    real   , intent(in)     :: array(:)
+!    real   , intent(in)     :: array(mzp)
     real   , optional , intent(in)  :: add
     real   , intent(out)    :: x_aver
     integer :: i,local_order_aver,order_aver
@@ -3600,11 +3657,11 @@ contains
      integer, dimension (its:ite),intent (inout) :: kbcon,ierr,ktop,ktopdby
      !-local vars
      real, dimension (its:ite,kts:kte) :: hcot
-     real :: beta_u,dz,dbythresh,dzh2,zustart,zubeg,massent,massdetr
-     real :: dby(kts:kte),zux(kts:kte)
+     real :: dz,dbythresh,dzh2,zustart,zubeg,massent,massdetr
+     real :: dby(kts:kte),dbm(kts:kte),zux(kts:kte)
      real zuh2(40),zh2(40)
-     integer :: i,kk,kbegin,k,kfinalzu
-     integer, dimension (its:ite) :: start_level
+     integer :: kklev,i,kk,kbegin,k,kfinalzu
+     integer, dimension (its:ite) :: start_level 
      !
      zustart=.1
      dbythresh= 1. !.0.95 ! 0.85, 0.6
@@ -3613,11 +3670,11 @@ contains
 
      DO i=its,itf
       zux(:)=0.
-      beta_u=max(.1,.2-float(csum(i))*.01)
       zuo(i,:)=0.
       dby(:)=0.
+      dbm(:)=0.
+      if(ierr(i).eq.0)then 
       kbcon(i)=max(kbcon(i),2)
-      if(ierr(i).eq.0)then
        start_level(i)=k22(i)
        zuo(i,start_level(i))=zustart
         zux(start_level(i))=zustart
@@ -3628,7 +3685,7 @@ contains
           zuo(i,k)=zuo(i,k-1)+massent-massdetr
           zux(k)=zuo(i,k)
         enddo
-       zubeg=zuo(i,kbcon(i))
+       zubeg=zustart !zuo(i,kbcon(i))
        if(name .eq. 'deep')then
         ktop(i)=0
         hcot(i,start_level(i))=hkbo(i)
@@ -3637,11 +3694,13 @@ contains
            dz=z_cup(i,k)-z_cup(i,k-1)
 
            hcot(i,k)=( (1.-0.5*entr_rate_2d(i,k-1)*dz)*hcot(i,k-1) &
-                      + entr_rate_2d(i,k-1)*dz*heo(i,k-1))/ &
+                      + entr_rate_2d(i,k-1)*dz*heo(i,k-1))/        &
                       (1.+0.5*entr_rate_2d(i,k-1)*dz)
            if(k >= kbcon(i)) dby(k)=dby(k-1)+(hcot(i,k)-heso_cup(i,k))*dz
+           if(k >= kbcon(i)) dbm(k)=hcot(i,k)-heso_cup(i,k)
         enddo
         ktopdby(i)=maxloc(dby(:),1)
+        kklev=maxloc(dbm(:),1)
         do k=maxloc(dby(:),1)+1,ktf-2
           if(dby(k).lt.dbythresh*maxval(dby))then
               kfinalzu=k  - 1
@@ -3661,9 +3720,13 @@ contains
               ierr(i)=41
               ktop(i)= 0
         else
-!           call get_zu_zd_pdf_fim(ipr,xland(i),zuh2,"UP",ierr(i),start_level(i), &
-           call get_zu_zd_pdf_fim(rand_vmas(i),zubeg,ipr,xland(i),zuh2,"UP",ierr(i),kbcon(i), &
-            kfinalzu,zuo(i,kts:kte),kts,kte,ktf,beta_u,kpbl(i),csum(i),pmin_lev(i))
+!           call get_zu_zd_pdf_fim(ipr,xland(i),zuh2,"UP",ierr(i),start_level(i),             &
+!           call get_zu_zd_pdf_fim(rand_vmas(i),zubeg,ipr,xland(i),zuh2,"UP",ierr(i),kbcon(i), &
+!            kfinalzu,zuo(i,kts:kte),kts,kte,ktf,kpbl(i),csum(i),pmin_lev(i))
+!           call get_zu_zd_pdf_fim(kbcon(i),p_cup(i,:),rand_vmas(i),zubeg,ipr,xland(i),zuh2,"UP",ierr(i),k22(i), &
+
+           call get_zu_zd_pdf_fim(kklev,p_cup(i,:),rand_vmas(i),zubeg,ipr,xland(i),zuh2,"UP",ierr(i),k22(i), &
+            kfinalzu,zuo(i,kts:kte),kts,kte,ktf,kstabi(i),csum(i),pmin_lev(i))
         endif
       endif ! end deep
       if ( name == 'mid' ) then
@@ -3673,7 +3736,8 @@ contains
        else
            kfinalzu=ktop(i)
            ktopdby(i)=ktop(i)+1
-          call get_zu_zd_pdf_fim(rand_vmas(i),zubeg,ipr,xland(i),zuh2,"MID",ierr(i),kbcon(i),kfinalzu,zuo(i,kts:kte),kts,kte,ktf,beta_u,kbcon(i),csum(i),pmin_lev(i))
+!          call get_zu_zd_pdf_fim(kklev,p_cup(i,:),rand_vmas(i),zubeg,ipr,xland(i),zuh2,"MID",ierr(i),k22(i),kfinalzu,zuo(i,kts:kte),kts,kte,ktf,kbcon(i),csum(i),pmin_lev(i))
+          call get_zu_zd_pdf_fim(kbcon(i),p_cup(i,:),rand_vmas(i),zubeg,ipr,xland(i),zuh2,"MID",ierr(i),k22(i),kfinalzu,zuo(i,kts:kte),kts,kte,ktf,kbcon(i),csum(i),pmin_lev(i))
 !           kbegin=0
 !           dzh2=(z_cup(i,ktop(i))-z_cup(i,k22(i)))/40.
 !           zh2(1)=z_cup(i,k22(i))
@@ -3701,47 +3765,31 @@ contains
        else
            kfinalzu=ktop(i)
            ktopdby(i)=ktop(i)
-           call get_zu_zd_pdf_fim(rand_vmas(i),zubeg,ipr,xland(i),zuh2,"SH3",ierr(i),kbcon(i),kfinalzu,zuo(i,kts:kte),kts,kte,ktf,beta_u,kbcon(i),csum(i),pmin_lev(i))
-           kbegin=0
-           dzh2=(z_cup(i,kfinalzu)-z_cup(i,k22(i)))/40.
-           zh2(1)=z_cup(i,k22(i))
-           if(zuh2(1).gt.0.1 .and. kbegin.eq.0)kbegin=1
-           do k=2,40
-             zh2(k)=zh2(k-1)+dzh2
-             if(zuh2(k).gt.0.1 .and. kbegin.eq.0)kbegin=k
-           enddo
-           zuo(i,k22(i))=zuh2(kbegin)
-           do k=k22(i)+1,kfinalzu
-              do kk=kbegin,39
-              if(z_cup(i,k).gt.zh2(kk) .and.  z_cup(i,k).le.zh2(kk+1)) then
-                  zuo(i,k)=zuh2(kk)
-                  exit
-               endif
-              enddo
-           enddo
+!           call get_zu_zd_pdf_fim(kklev,p_cup(i,:),rand_vmas(i),zubeg,ipr,xland(i),zuh2,"SH2",ierr(i),k22(i), &
+           call get_zu_zd_pdf_fim(kbcon(i),p_cup(i,:),rand_vmas(i),zubeg,ipr,xland(i),zuh2,"SH2",ierr(i),k22(i), &
+             kfinalzu,zuo(i,kts:kte),kts,kte,ktf,kpbl(i),csum(i),pmin_lev(i))
+
          endif
          endif ! shal
-         do k=k22(i),kbcon(i)
-           zuo(i,k)=zux(k)
-         enddo
       ENDIF ! ierr
      ENDDO
 
   END SUBROUTINE rates_up_pdf
 !-------------------------------------------------------------------------
- SUBROUTINE get_zu_zd_pdf_fim(rand_vmas,zubeg,ipr,xland,zuh2,draft,ierr,kb,kt,zu,kts,kte,ktf,max_mass,kpbli,csum,pmin_lev)
+ SUBROUTINE get_zu_zd_pdf_fim(kklev,p,rand_vmas,zubeg,ipr,xland,zuh2,draft,ierr,kb,kt,zu,kts,kte,ktf,kpbli,csum,pmin_lev)
 
  implicit none
- integer, intent(in) ::ipr,xland,kb,kt,kts,kte,ktf,kpbli,csum,pmin_lev
- real, intent(in) ::max_mass,zubeg
+ integer, intent(in) ::ipr,xland,kb,kklev,kt,kts,kte,ktf,kpbli,csum,pmin_lev
+ real, intent(in) ::zubeg
  real, intent(inout) :: zu(kts:kte)
+ real, intent(in) :: p(kts:kte)
  real  :: zuh(kts:kte),zuh2(1:40)
  integer, intent(inout) :: ierr
  character*(*), intent(in) ::draft
 
  !- local var
  integer :: kk,k,kb_adj,kpbli_adj
- real    :: krmax,beta, alpha,kratio,tunning,FZU,rand_vmas
+ real    :: krmax,beta, alpha,kratio,tunning,FZU,rand_vmas,lev_start
  !- kb cannot be at 1st level
 
  !-- fill zu with zeros
@@ -3749,37 +3797,21 @@ contains
  zuh=0.0
    kb_adj=max(kb,2)
  IF(draft == "UP") then
+   lev_start=min(.9,.4+csum*.013)
    kb_adj=max(kb,2)
-  !beta=4.  !=> must larger than 1
-            !=> higher makes the profile sharper
-            !=> around the maximum zu
-  !- 2nd approach for beta and alpha parameters
-  !- the tunning parameter must be between 0.5 (low  level max zu)
-  !-                                   and 1.5 (high level max zu)
-     tunning = 1.6-min(0.8,float(csum)*.03)
-     if(rand_vmas /= 0. ) tunning=1.2+.4*rand_vmas
-     beta    = max(1.5,2./tunning)
-!
-! make profile sharper when higher up or lower (compared to middle)
-!
-  alpha   = tunning*beta+abs(1.2-tunning)*5.
-  fzu=1.
-  do k=kb_adj,min(kte,kt+1)
-      kratio= float(k)/float(kt+1)
+   tunning=p(kt)+(p(kpbli)-p(kt))*lev_start
+   tunning =min(0.9, (tunning-p(kb_adj))/(p(kt)-p(kb_adj))) !=.6
+   tunning =max(0.2, tunning)
+   beta    = 1.3 !2.5 ! max(2.5,2./tunning)
+   alpha= (tunning*(beta -2.)+1.)/(1.-tunning)
+#if ( ! defined NO_GAMMA_SUPPORT )
+   fzu = gamma(alpha + beta)/(gamma(alpha)*gamma(beta))
+#else
+   call wrf_error_fatal ('compiler does not support 2008 gamma intrinsic')
+#endif
+  do k=kb_adj,min(kte,kt)
+      kratio= (p(k)-p(kb_adj))/(p(kt)-p(kb_adj)) !float(k)/float(kt+1)
       zu(k) = zubeg+FZU*kratio**(alpha-1.0) * (1.0-kratio)**(beta-1.0)
-   enddo
-! too low
-   do while (maxloc(zu(:),1) < pmin_lev)
-       tunning=tunning+.1
-       beta    = max(1.5,2./tunning)
-!       alpha   = tunning*beta
-       alpha   = tunning*beta+abs(1.2-tunning)*5.
-       if(tunning > 1.6) ierr=123
-       if(tunning > 1.6) exit
-       do k=kb_adj,min(kte,kt+1)
-           kratio= float(k)/float(kt+1)
-           zu(k) = zubeg+FZU*kratio**(alpha-1.0) * (1.0-kratio)**(beta-1.0)
-        enddo
    enddo
 
    if(maxval(zu(kts:min(ktf,kt+1))).gt.0.)  &
@@ -3790,19 +3822,41 @@ contains
          exit
        endif
      enddo
-!    if(zu(kt).gt.max_mass)fzu=max_mass/zu(kt) ! max(0.,zu(2)-max_mass)
-!     do k=2,kt+1
-!       zu(k)=fzu*zu(k)
-!     enddo
      kb_adj=max(2,kb_adj)
      do k=kts,kb_adj-1
        zu(k)=0.
+     enddo
+
+ ELSEIF(draft == "SH2") then
+   k=kklev
+   if(kpbli.gt.5)k=kpbli
+   tunning =min(0.95, (p(k)-p(kb_adj))/(p(kt)-p(kb_adj))) !=.6
+!   tunning =min(0.8, (p(kpbli)-p(kb_adj))/(p(kt)-p(kb_adj))) !=.6
+   tunning =max(0.2, tunning)
+   beta    = 2.5 !2.5 ! max(2.5,2./tunning)
+   alpha= (tunning*(beta -2.)+1.)/(1.-tunning)
+#if ( ! defined NO_GAMMA_SUPPORT )
+   fzu = gamma(alpha + beta)/(gamma(alpha)*gamma(beta))
+#endif
+  do k=kb_adj,min(kte,kt)
+      kratio= (p(k)-p(kb_adj))/(p(kt)-p(kb_adj)) !float(k)/float(kt+1)
+      zu(k) = zubeg+FZU*kratio**(alpha-1.0) * (1.0-kratio)**(beta-1.0)
+   enddo
+   if(maxval(zu(kts:min(ktf,kt+1))).gt.0.)  &
+      zu(kts:min(ktf,kt+1))= zu(kts:min(ktf,kt+1))/maxval(zu(kts:min(ktf,kt+1)))
+     do k=maxloc(zu(:),1),1,-1
+       if(zu(k).lt.1.e-6)then
+         kb_adj=k+1
+         exit
+       endif
      enddo
 
  ELSEIF(draft == "SH3") then
   tunning = 0.6
   beta    =2.2/tunning
   alpha   = tunning*beta
+   beta    = 3.5 ! max(2.5,2./tunning)
+   alpha   = beta -2. ! +1 !max(1.1,tunning*beta-abs(1.5-tunning)*5.)
   fzu=1.
   do k=1,40
       kratio= float(k)/float(40)
@@ -3812,27 +3866,18 @@ contains
       zuh2(:)= zuh2(:)/ maxval(zuh2(1:40))
  ELSEIF(draft == "MID") then
    kb_adj=max(kb,2)
-     tunning = 1.2
-     beta    = 2.5 ! 2.0/tunning
-  alpha   = tunning*beta
-  fzu=1.
-  do k=kb_adj,min(kte,kt+1)
-      kratio= float(k)/float(kt+1)
+   tunning=p(kt)+(p(kb_adj)-p(kt))*.9 !*.33
+   tunning =min(0.9, (tunning-p(kb_adj))/(p(kt)-p(kb_adj))) !=.6
+   tunning =max(0.2, tunning)
+   beta    = 1.3 !2.5 ! max(2.5,2./tunning)
+   alpha= (tunning*(beta -2.)+1.)/(1.-tunning)
+#if ( ! defined NO_GAMMA_SUPPORT )
+   fzu = gamma(alpha + beta)/(gamma(alpha)*gamma(beta))
+#endif
+  do k=kb_adj,min(kte,kt)
+      kratio= (p(k)-p(kb_adj))/(p(kt)-p(kb_adj)) !float(k)/float(kt+1)
       zu(k) = zubeg+FZU*kratio**(alpha-1.0) * (1.0-kratio)**(beta-1.0)
    enddo
-! too low
-   do while (maxloc(zu(:),1) < pmin_lev)
-       tunning=tunning+.05
-       if(tunning > 1.) ierr=123
-       if(tunning > 1.) exit
-       beta    = max(2.5,2./tunning)
-       alpha   = tunning*beta
-       do k=kb_adj,min(kte,kt+1)
-           kratio= float(k)/float(kt+1)
-           zu(k) = zubeg+FZU*kratio**(alpha-1.0) * (1.0-kratio)**(beta-1.0)
-        enddo
-   enddo
-
    if(maxval(zu(kts:min(ktf,kt+1))).gt.0.)  &
       zu(kts:min(ktf,kt+1))= zu(kts:min(ktf,kt+1))/maxval(zu(kts:min(ktf,kt+1)))
      do k=maxloc(zu(:),1),1,-1
@@ -3850,37 +3895,39 @@ contains
 
   ! tunning = 0.8
   ! beta    = 3.0/tunning
-  tunning = 0.8
-  beta    =2.0/tunning
-  alpha   = tunning*beta
-  fzu=1.
-  zuh(:)=0.
+!  tunning = 0.8
+!  beta    =2.0/tunning
+!  alpha   = tunning*beta
+!  fzu=1.
+!  zuh(:)=0.
+   tunning=p(kb)
+   tunning =min(0.9, (tunning-p(1))/(p(kt)-p(1))) !=.6
+   tunning =max(0.2, tunning)
+   beta    = 4. !2.5 ! max(2.5,2./tunning)
+   alpha= (tunning*(beta -2.)+1.)/(1.-tunning)
+   fzu = gamma(alpha + beta)/(gamma(alpha)*gamma(beta))
   zu(:)=0.
-  do k=kts,min(kt+1,ktf)
-      kratio= float(k)/float(kt+1)
-      zuh(k) = FZU*kratio**(alpha-1.0) * (1.0-kratio)**(beta-1.0)
+  do k=2,min(kt,ktf)
+      kratio= (p(k)-p(1))/(p(kt)-p(1))
+      zu(k) = FZU*kratio**(alpha-1.0) * (1.0-kratio)**(beta-1.0)
    enddo
-   if(maxloc(zuh(:),1).ge.kpbli)then
-      do k=maxloc(zuh(:),1),1,-1
-         kk=kpbli+k-maxloc(zuh(:),1)
-         if(kk.gt.1)zu(kk)=zuh(k)
-      enddo
-      do k=maxloc(zuh(:),1)+1,kt
-         kk=kpbli+k-maxloc(zuh(:),1)
-         if(kk.le.kt)zu(kk)=zuh(k)
-      enddo
-   else
-      do k=2,kt ! maxloc(zuh(:),1)
-        zu(k)=zuh(k-1)
-      enddo
-   endif
-   fzu=maxval(zu(kts:min(ktf,kt+1)))
+!   if(maxloc(zuh(:),1).ge.kpbli)then
+!      do k=maxloc(zuh(:),1),1,-1
+!         kk=kpbli+k-maxloc(zuh(:),1)
+!         if(kk.gt.1)zu(kk)=zuh(k)
+!      enddo
+!      do k=maxloc(zuh(:),1)+1,kt
+!         kk=kpbli+k-maxloc(zuh(:),1)
+!         if(kk.le.kt)zu(kk)=zuh(k)
+!      enddo
+!   else
+!      do k=2,kt ! maxloc(zuh(:),1)
+!        zu(k)=zuh(k-1)
+!      enddo
+!   endif
+    fzu=maxval(zu(kts:min(ktf,kt+1)))
    if(fzu.gt.0.)  &
       zu(kts:min(ktf,kt+1))= zu(kts:min(ktf,kt+1))/fzu
-    if(zu(2).gt.max_mass)fzu=max_mass/zu(2) ! max(0.,zu(2)-max_mass)
-     do k=2,kt+1
-       zu(k)=fzu*zu(k)
-     enddo
      zu(1)=0.
 
 
@@ -3894,7 +3941,7 @@ contains
   SUBROUTINE cup_up_aa1bl(aa0,t,tn,q,qo,dtime,  &
               z,zu,dby,gamma_cup,t_cup,         &
               kbcon,ktop,ierr,                  &
-              itf,ktf,                      &
+              itf,ktf,                          &
               its,ite, kts,kte         )
 
    IMPLICIT NONE
@@ -3906,14 +3953,14 @@ contains
 
      integer                                                           &
         ,intent (in   )                   ::                           &
-        itf,ktf,                                     &
+        itf,ktf,                                                       &
         its,ite, kts,kte
   ! aa0 cloud work function
   ! gamma_cup = gamma on model cloud levels
   ! t_cup = temperature (Kelvin) on model cloud levels
   ! dby = buoancy term
   ! zu= normalized updraft mass flux
-  ! z = heights of model levels
+  ! z = heights of model levels 
   ! ierr error value, maybe modified in this routine
   !
      real,    dimension (its:ite,kts:kte)                              &
@@ -3952,7 +3999,7 @@ contains
          IF(k.gt.KBCON(i))GO TO 100
 
          DZ=Z(I,K)-Z(I,K-1)
-         !print*,"dz=",i,k,z(i,k),Z(I,K-1),dz
+         !print*,"dz=",i,k,z(i,k),Z(I,K-1),dz         
          !da=zu(i,k)*DZ*(9.81/(1004.*( &
          !        (T_cup(I,K)))))*DBY(I,K-1)/ &
          !     (1.+GAMMA_CUP(I,K))
@@ -3963,24 +4010,24 @@ contains
 100     CONTINUE
 
  END SUBROUTINE cup_up_aa1bl
-!----------------------------------------------------------------------
- SUBROUTINE get_inversion_layers(ierr,p_cup,t_cup,z_cup,qo_cup,qeso_cup,k_inv_layers,&
+!---------------------------------------------------------------------- 
+ SUBROUTINE get_inversion_layers(ierr,p_cup,t_cup,z_cup,qo_cup,qeso_cup,k_inv_layers,&           
                      kstart,kend,dtempdz,itf,ktf,its,ite, kts,kte)
-
+                                    
         IMPLICIT NONE
         integer                      ,intent (in ) :: itf,ktf,its,ite,kts,kte
         integer, dimension (its:ite) ,intent (in ) :: ierr,kstart,kend
         integer, dimension (its:ite) :: kend_p3
-
-        real,    dimension (its:ite,kts:kte), intent (in ) :: p_cup,t_cup,z_cup,qo_cup,qeso_cup
-        real,    dimension (its:ite,kts:kte), intent (out) :: dtempdz
+                    
+        real,    dimension (its:ite,kts:kte), intent (in ) :: p_cup,t_cup,z_cup,qo_cup,qeso_cup                            
+        real,    dimension (its:ite,kts:kte), intent (out) :: dtempdz                    
         integer, dimension (its:ite,kts:kte), intent (out) :: k_inv_layers
         !-local vars
         real   :: dp,l_mid,l_shal,first_deriv(kts:kte),sec_deriv(kts:kte)
         integer:: ken,kadd,kj,i,k,ilev,kk,ix,k800,k550,mid,shal
         !
         !-initialize k_inv_layers as undef
-        l_mid=400.
+        l_mid=300.
         l_shal=100.
         k_inv_layers(:,:) = 1
          do i = its,itf
@@ -3988,32 +4035,32 @@ contains
            kend_p3(i)=kend(i)+3
            DO k = kts+1,kend_p3(i)+4
             !-  get the 1st der
-            first_deriv(k)= (t_cup(i,k+1)-t_cup(i,k-1))/(z_cup(i,k+1)-z_cup(i,k-1))
+            first_deriv(k)= (t_cup(i,k+1)-t_cup(i,k-1))/(z_cup(i,k+1)-z_cup(i,k-1))        
             dtempdz(i,k)=first_deriv(k)
                enddo
            DO k = kts+2,kend_p3(i)+3
             !  get the 2nd der
-            sec_deriv(k)= (first_deriv(k+1)-first_deriv(k-1))/(z_cup(i,k+1)-z_cup(i,k-1))
-            sec_deriv(k)= abs(sec_deriv(k))
+            sec_deriv(k)= (first_deriv(k+1)-first_deriv(k-1))/(z_cup(i,k+1)-z_cup(i,k-1))        
+            sec_deriv(k)= abs(sec_deriv(k))        
            enddo
-
+        
          ilev=max(kts+2,kstart(i)+1)
          ix=1
          k=ilev
          DO WHILE (ilev < kend_p3(i)) !(z_cup(i,ilev)<15000.)
            do kk=k,kend_p3(i)+2 !k,ktf-2
-
+             
              if(sec_deriv(kk) <        sec_deriv(kk+1) .and.  &
                 sec_deriv(kk) < sec_deriv(kk-1)        ) then
               k_inv_layers(i,ix)=kk
               ix=min(5,ix+1)
               ilev=kk+1
-              exit
+              exit   
              endif
               ilev=kk+1
                enddo
            k=ilev
-         ENDDO
+         ENDDO         
         !- 2nd criteria
          kadd=0
          ken=maxloc(k_inv_layers(i,:),1)
@@ -4032,13 +4079,13 @@ contains
          ENDDO
         endif
         ENDDO
-100 format(1x,16i3)
+100 format(1x,16i3)        
         !- find the locations of inversions around 800 and 550 hPa
         sec_deriv(:)=1.e9
         do i = its,itf
          if(ierr(i) /= 0) cycle
 
-         !- now find the closest layers of 800 and 550 hPa.
+         !- now find the closest layers of 800 and 550 hPa.         
          do k=1,maxloc(k_inv_layers(i,:),1) !kts,kte !kstart(i),kend(i) !kts,kte
            dp=p_cup(i,k_inv_layers(i,k))-p_cup(i,kstart(i))
            sec_deriv(k)=abs(dp)-l_shal
@@ -4059,13 +4106,13 @@ contains
          k_inv_layers(i,mid+1:kte)=-1
         ENDDO
 
-
+        
  END SUBROUTINE get_inversion_layers
 !-----------------------------------------------------------------------------------
  FUNCTION DERIV3(xx, xi, yi, ni, m)
     !============================================================================*/
-    ! Evaluate first- or second-order derivatives
-    ! using three-point Lagrange interpolation
+    ! Evaluate first- or second-order derivatives 
+    ! using three-point Lagrange interpolation 
     ! written by: Alex Godunov (October 2009)
     ! input ...
     ! xx    - the abscissa at which the interpolation is to be evaluated
@@ -4076,7 +4123,7 @@ contains
     ! output ...
     ! deriv3  - interpolated value
     !============================================================================*/
-
+    
     implicit none
     integer, parameter :: n=3
     integer ni, m,i, j, k, ix
@@ -4140,26 +4187,26 @@ contains
     end if
  END FUNCTION DERIV3
 !=============================================================================================
-  SUBROUTINE get_lateral_massflux(itf,ktf, its,ite, kts,kte       &
-                                  ,ierr,ktop,zo_cup,zuo,cd,entr_rate_2d        &
+  SUBROUTINE get_lateral_massflux(itf,ktf, its,ite, kts,kte                             &
+                                  ,ierr,ktop,zo_cup,zuo,cd,entr_rate_2d                 &
                                   ,up_massentro, up_massdetro ,up_massentr, up_massdetr &
                                   ,draft,kbcon,k22,up_massentru,up_massdetru,lambau)
 
      Implicit none
      character *(*), intent (in) :: draft
      integer, intent(in):: itf,ktf, its,ite, kts,kte
-     integer, intent(in)   , dimension(its:ite) 	:: ierr,ktop,kbcon,k22
+     integer, intent(in)   , dimension(its:ite)         :: ierr,ktop,kbcon,k22
      real,    intent(in),  OPTIONAL , dimension(its:ite):: lambau
      real,    intent(in)   , dimension(its:ite,kts:kte) :: zo_cup,zuo
-     real,    intent(inout), dimension(its:ite,kts:kte) :: cd,entr_rate_2d
-     real,    intent(  out), dimension(its:ite,kts:kte) :: up_massentro, up_massdetro&
+     real,    intent(inout), dimension(its:ite,kts:kte) :: cd,entr_rate_2d   
+     real,    intent(  out), dimension(its:ite,kts:kte) :: up_massentro, up_massdetro  &
                                                           ,up_massentr,  up_massdetr
-     real,    intent(  out), dimension(its:ite,kts:kte),  OPTIONAL :: &
+     real,    intent(  out), dimension(its:ite,kts:kte),  OPTIONAL ::                  &
                                                           up_massentru,up_massdetru
      !-- local vars
      Integer :: i,k, incr1,incr2
      REAL :: dz,trash,trash2
-
+     
      do k=kts,kte
       do i=its,ite
          up_massentro(i,k)=0.
@@ -4178,11 +4225,11 @@ contains
      endif
      DO i=its,itf
        if(ierr(i).eq.0)then
-
+         
           do k=max(2,k22(i)+1),maxloc(zuo(i,:),1)
            !=> below maximum value zu -> change entrainment
            dz=zo_cup(i,k)-zo_cup(i,k-1)
-
+        
            up_massdetro(i,k-1)=cd(i,k-1)*dz*zuo(i,k-1)
            up_massentro(i,k-1)=zuo(i,k)-zuo(i,k-1)+up_massdetro(i,k-1)
            if(up_massentro(i,k-1).lt.0.)then
@@ -4202,131 +4249,34 @@ contains
               up_massentro(i,k-1)=zuo(i,k)-zuo(i,k-1)
               if(zuo(i,k-1).gt.0.)entr_rate_2d(i,k-1)=(up_massentro(i,k-1))/(dz*zuo(i,k-1))
            endif
-
+        
            if(zuo(i,k-1).gt.0.)cd(i,k-1)=up_massdetro(i,k-1)/(dz*zuo(i,k-1))
          enddo
          up_massdetro(i,ktop(i))=zuo(i,ktop(i))
          up_massentro(i,ktop(i))=0.
-	 do k=ktop(i)+1,ktf
-	   cd(i,k)=0.
-	   entr_rate_2d(i,k)=0.
-	   up_massentro(i,k)=0.
-	   up_massdetro(i,k)=0.
+         do k=ktop(i)+1,ktf
+           cd(i,k)=0.
+           entr_rate_2d(i,k)=0.
+           up_massentro(i,k)=0.
+           up_massdetro(i,k)=0.
          enddo
          do k=2,ktf-1
            up_massentr (i,k-1)=up_massentro(i,k-1)
            up_massdetr (i,k-1)=up_massdetro(i,k-1)
-         enddo
+         enddo         
          if(present(up_massentru) .and. present(up_massdetru))then
           do k=2,ktf-1
-           up_massentru(i,k-1)=up_massentro(i,k-1)+lambau(i)*up_massdetro(i,k-1)
-           up_massdetru(i,k-1)=up_massdetro(i,k-1)+lambau(i)*up_massdetro(i,k-1)
+!           up_massentru(i,k-1)=up_massentro(i,k-1)+lambau(i)*up_massdetro(i,k-1)
+!           up_massdetru(i,k-1)=up_massdetro(i,k-1)+lambau(i)*up_massdetro(i,k-1)
+           up_massentru(i,k-1)=up_massentro(i,k-1)+lambau(i)*up_massentro(i,k-1)
+           up_massdetru(i,k-1)=up_massdetro(i,k-1)+lambau(i)*up_massentro(i,k-1)
+
           enddo
          endif
-
-         trash=0.
-         trash2=0.
-         do k=k22(i)+1,ktop(i)
-             trash2=trash2+entr_rate_2d(i,k)
-         enddo
-         do k=k22(i)+1,kbcon(i)
-            trash=trash+entr_rate_2d(i,k)
-         enddo
 
        endif
     ENDDO
  END SUBROUTINE get_lateral_massflux
 !==============================================================================
-!----------------------------------------------------------------------
-  SUBROUTINE gfinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,            &
-                        RUCUTEN,RVCUTEN,                            &
-                        restart,                                    &
-                        P_QC,P_QI,P_FIRST_SCALAR,                   &
-                        RTHFTEN, RQVFTEN,                           &
-                        allowed_to_read,                            &
-                        ids, ide, jds, jde, kds, kde,               &
-                        ims, ime, jms, jme, kms, kme,               &
-                        its, ite, jts, jte, kts, kte               )
-!--------------------------------------------------------------------
-   IMPLICIT NONE
-!--------------------------------------------------------------------
-   LOGICAL , INTENT(IN)           ::  restart,allowed_to_read
-   INTEGER , INTENT(IN)           ::  ids, ide, jds, jde, kds, kde, &
-                                      ims, ime, jms, jme, kms, kme, &
-                                      its, ite, jts, jte, kts, kte
-   INTEGER , INTENT(IN)           ::  P_FIRST_SCALAR, P_QI, P_QC
-
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::       &
-                                                          RTHCUTEN, &
-                                                          RQVCUTEN, &
-                                                          RQCCUTEN, &
-                                                          RQICUTEN
-
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::       &
-                                                          RUCUTEN,  &
-                                                          RVCUTEN
-
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::       &
-                                                          RTHFTEN,  &
-                                                          RQVFTEN
-
-   INTEGER :: i, j, k, itf, jtf, ktf
-   jtf=min0(jte,jde-1)
-   ktf=min0(kte,kde-1)
-   itf=min0(ite,ide-1)
-
-#ifdef HWRF
-!zhang's doing
-   IF(.not.restart .or. .not.allowed_to_read)THEN
-!end of zhang's doing
-#else
-   IF(.not.restart)THEN
-#endif
-
-     DO j=jts,jte
-     DO k=kts,kte
-     DO i=its,ite
-        RTHCUTEN(i,k,j)=0.
-        RQVCUTEN(i,k,j)=0.
-        RUCUTEN(i,k,j)=0.
-        RVCUTEN(i,k,j)=0.
-     ENDDO
-     ENDDO
-     ENDDO
-
-
-     DO j=jts,jte
-     DO k=kts,kte
-     DO i=its,ite
-        RTHFTEN(i,k,j)=0.
-        RQVFTEN(i,k,j)=0.
-     ENDDO
-     ENDDO
-     ENDDO
-
-     IF (P_QC .ge. P_FIRST_SCALAR) THEN
-        DO j=jts,jte
-        DO k=kts,kte
-        DO i=its,ite
-           RQCCUTEN(i,k,j)=0.
-        ENDDO
-        ENDDO
-        ENDDO
-     ENDIF
-
-     IF (P_QI .ge. P_FIRST_SCALAR) THEN
-        DO j=jts,jte
-        DO k=kts,kte
-        DO i=its,ite
-           RQICUTEN(i,k,j)=0.
-        ENDDO
-        ENDDO
-        ENDDO
-     ENDIF
-
-   ENDIF
-
-   END SUBROUTINE gfinit
-
-!==============================================================================
+!---------------------------------------------------------------------- 
 END MODULE module_cu_gf_deep

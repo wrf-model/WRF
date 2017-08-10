@@ -196,8 +196,6 @@ state integer NTIME0         -     dyn_nmm     1      -    r  "NTIME0" "COUNT FO
 # flag for nest movement
 state  logical moved       -     misc       1      -     r
 
-#state   real   ducudt       ijk     misc        1         -    rh  "UMMIX" "U TENDENCY  MOMENTUM MIXING IN SAS"
-#state   real   dvcudt       ijk     misc        1         -    rh  "VMMIX" "V TENDENCY  MOMENTUM MIXING IN SAS"
 state   real   ducudt       ijk     misc        1         -    rh  "UMMIX" "U TENDENCY  MOMENTUM MIXING IN Cu"
 state   real   dvcudt       ijk     misc        1         -    rh  "VMMIX" "V TENDENCY  MOMENTUM MIXING IN Cu"
 
@@ -417,10 +415,10 @@ state  real   SIGMU     ij    dyn_nmm   1    -     rh       "SIGMU"  "CNV deep u
 state  real   SIGMU1    ij    dyn_nmm   1    -     rh       "SIGMU1"  "CNV shallow updraft fra     ction(0-1)"  
 state  real   DTHCUDT  ijk    dyn_nmm   1    -     rh       "DTHCUDT"     "TH tendency due to CU" "K/s"
 state  real   DQVCUDT  ijk    dyn_nmm   1    -     rh       "DQVCUDT"     "QV tendency due to CU" "kg/kg/s"
-state  real   DQRCUDT  ijk    dyn_nmm   1    -     rh       "DQRCUDT"     "QR tendency due to CU" "kg/kg/s"
+state  real   DQRCUDT  ijk    dyn_nmm   1    -     r       "DQRCUDT"     "QR tendency due to CU" "kg/kg/s"
 state  real   DQCCUDT  ijk    dyn_nmm   1    -     rh       "DQCCUDT"     "QC tendency due to CU" "Kg/kg/s"
 state  real   DQICUDT  ijk    dyn_nmm   1    -     rh       "DQICUDT"     "QI tendency due to CU" "Kg/kg/s"
-state  real   DQSCUDT  ijk    dyn_nmm   1    -     rh       "DQSCUDT"     "QS tendency due to CU" "Kg/kg/s"
+state  real   DQSCUDT  ijk    dyn_nmm   1    -     r       "DQSCUDT"     "QS tendency due to CU" "Kg/kg/s"
 state  real   DTHBLDT  ijk    dyn_nmm   1    -     rh       "DTHBLDT"     "TH tendency due to PBL" "K/s"
 state  real   DQVBLDT  ijk    dyn_nmm   1    -     rh       "DQVBLDT"     "QV tendency due to PBL" "Kg/kg/s"
 state  real   DUBLDT   ijk    dyn_nmm   1    -     rh       "DUBLDT"     "U tendency due to PBL" "m/s/s"
@@ -504,6 +502,7 @@ state  real  xmb_shallow    ij   misc    1   -      rh      "XMB_SHALLOW"     "M
 state  integer  k22_shallow  ij   misc    1   -      rh     "K22_SHALLOW"     "K22 LEVEL FROM SHALLOW CONVECTION (G3, GF only)"       ""
 state  integer  kbcon_shallow  ij   misc    1   -    rh     "KBCON_SHALLOW"   "KBCON LEVEL FROM SHALLOW CONVECTION (G3, GF only)"     ""
 state  integer  ktop_shallow   ij   misc    1   -     rh     "KTOP_SHALLOW"   "KTOP LEVEL FROM SHALLOW CONVECTION (G3, GF only)"      ""
+state  integer  ierr_shallow   ij   misc    1   -     h     "IERR_SHALLOW"   "CODE FOR TURNING OFF SHALLOW CU AT A PT(GF only)"      ""
 
 # upward and downward clearsky and total diagnostic fluxes for radiation (RRTMG)
 state    real  ACSWUPT          ij      misc        1         -      rhdu     "ACSWUPT"               "ACCUMULATED UPWELLING SHORTWAVE FLUX AT TOP"          "J m-2"

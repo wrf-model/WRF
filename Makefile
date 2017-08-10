@@ -968,6 +968,10 @@ fortran_2003_flush_test:
 fortran_2003_fflush_test:
 	@cd tools ; /bin/rm -f fortran_2003_fflush_test.{exe,o} ; $(SFC) -o fortran_2003_fflush_test.exe fortran_2003_fflush_test.F ; cd ..
 
+# rule used by configure to test if Fortran 2008 gamma intrinsic function is available
+fortran_2008_gamma_test:
+	@cd tools ; /bin/rm -f fortran_2008_gamma_test.{exe,o} ; $(SFC) -o fortran_2008_gamma_test.exe fortran_2008_gamma_test.F ; cd ..
+
 ### 3.b.  sub-rule to build the experimental core
 
 # uncomment the two lines after exp_core for EXP

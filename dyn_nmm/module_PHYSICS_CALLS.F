@@ -357,7 +357,8 @@
           TOTLWDN(I,J)=0.   ! Total longwave down at the surface
           CUPPTR(I,J)=CUPPT(I,J)   ! Temporary array set to zero in radiation
           HTOPR(I,J) =0.
-          HBOTR(I,J) =0.
+          HBOTR(I,J) = REAL(KTE+1)
+!          HBOTR(I,J) =0.
           SWCF(I,J) =0.
           LWCF(I,J) =0.
 !
@@ -2274,6 +2275,7 @@
      &                 ,GD_CLOUD,GD_CLOUD2,KTOP_DEEP                    &
      &                 ,xmb_shallow,k22_shallow                         & !GF
      &                 ,kbcon_shallow,ktop_shallow                      & !GF
+     &                 ,ierr_shallow                                    & !GF
      &                 ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TCUCN              &
      &                 ,OMGALF,U,V,W,Z,FIS,W0AVG                        &
      &                 ,PREC,ACPREC,CUPREC,CUPPT,CPRATE                 &
@@ -2302,7 +2304,6 @@
 !                .      .    .
 ! SUBPROGRAM:    CUCNVC      CONVECTIVE PRECIPITATION OUTER DRIVER
 !   PRGRMMR: BLACK           ORG: W/NP22     DATE: 02-03-21
-!
 ! ABSTRACT:
 !     CUCVNC DRIVES THE WRF CONVECTION SCHEMES
 !
@@ -2429,6 +2430,7 @@
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: K22_SHALLOW   &  !GF
      &                                                   ,KBCON_SHALLOW &  !GF
      &                                                   ,KTOP_SHALLOW     !GF
+      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: IERR_SHALLOW     !GF
 !
       LOGICAL,INTENT(IN) :: HYDRO,RESTRT
       LOGICAL :: IS_CAMMGMP_USED=.FALSE.
@@ -2464,8 +2466,6 @@
      &                                          ,RQVCUTEN,RR,RTHCUTEN   &
      &                                          ,T_PHY,TH_PHY           &
      &                                          ,U_PHY,V_PHY,WINT
-!
-      REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: DUDT_PHY,DVDT_PHY  ! gf
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,ENSDIM) :: ZERO_GD
 !
@@ -2514,12 +2514,16 @@
 !End
 
       IF(MOD(NTSD,NRADS)==0.OR.MOD(NTSD,NRADL)==0)THEN
+!$omp parallel do                                                       &
+!$omp& private(i,j)
        DO J=MYJS,MYJE
        DO I=MYIS,MYIE
-!         DO J=JMS,JME        !gf
-!         DO I=IMS,IME        !gf
            HTOP(I,J)=0.
+           HTOPD(I,J)=0.
+           HTOPS(I,J)=0.
            HBOT(I,J)=REAL(KTE+1)
+           HBOTD(I,J)=REAL(KTE+1)
+           HBOTS(I,J)=REAL(KTE+1)
            CUTOP(I,J)=0.
            CUBOT(I,J)=REAL(KTE+1)
            CUPPT(I,J)=0.
@@ -2576,6 +2580,17 @@
       RDTCNVC=1./DTCNVC
       CAPA=R_D/CP
       G_INV=1./G
+!BLdebug
+!$omp parallel do                                                       &
+!$omp& private(i,j)
+      DO J=JTS,JTE
+        DO I=ITS,ITE
+          RAINCV(I,J)=0.
+          RAINC(I,J)=0.
+          NCA(I,J)=0.
+        ENDDO
+      ENDDO
+!BLdebug
 !
 !$omp parallel do                                                       &
 !$omp& private(I,J)
@@ -2651,8 +2666,12 @@
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
         DO K=KTS,KTE
-        DO J=MYJS2,MYJE2
-        DO I=MYIS1,MYIE1
+!BLdebug
+        DO J=JTS,JTE
+        DO I=ITS,ITE
+!        DO J=MYJS2,MYJE2
+!        DO I=MYIS1,MYIE1
+!BLdebug
            DUCUDT(i,j,k)=0.0
            DVCUDT(i,j,k)=0.0
            DTHCUDT(i,j,k)=0.0
@@ -2770,8 +2789,6 @@
             V_PHY(I,K,J)=(V(I+IHE(J),J,K)+V(I+IHW(J),J,K)               &
      &                   +V(I,J+1,K)+V(I,J-1,K))                        &
      &                   *0.25
-            DUDT_PHY(i,k,j)=0.0             ! gf
-            DVDT_PHY(i,k,j)=0.0             ! gf
           ENDDO
           ENDDO
 !
@@ -2840,10 +2857,11 @@
      &                 ,clos_choice=config_flags%clos_choice            & !gf
      &                 ,GD_CLOUD=GD_CLOUD,GD_CLOUD2=GD_CLOUD2           &
      &                 ,KTOP_DEEP=KTOP_DEEP                             &
-     &                 ,xmb_shallow=xmb_shallow                         & !gf
      &                 ,k22_shallow=k22_shallow                         & !gf
      &                 ,kbcon_shallow=kbcon_shallow                     & !gf
      &                 ,ktop_shallow=ktop_shallow                       & !gf
+     &                 ,xmb_shallow=xmb_shallow                         & !gf
+     &                 ,ierr_shallow=ierr_shallow                       & !gf
      &                 ,ENSDIM=ENSDIM,MAXIENS=1,MAXENS=3                &
      &                 ,MAXENS2=3,MAXENS3=16                            &
      &                 ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
@@ -2851,7 +2869,6 @@
      &                 ,RQICUTEN=RQICUTEN,RQSCUTEN=RQSCUTEN             &
      &                 ,RTHBLTEN=RTHBLTEN,RQVBLTEN=RQVBLTEN             &
      &                 ,RTHRATEN=RTHRATEN                               &
-     &                 ,DUDT_PHY=DUDT_PHY,DVDT_PHY=DVDT_PHY             & !gf
 #if (NMM_CORE==1)
      &                 ,RUCUTEN=DUCUDT, RVCUTEN=DVCUDT, MOMMIX=MOMMIX   &
                        ,store_rand=store_rand                           &
@@ -2885,17 +2902,10 @@
 !
 #if (NMM_CORE==1)
 !$omp parallel do                                                       &
-!$omp& private(i,j,k,iendx)
-! gf - indices were changed to conform to those used above
-! otherwise output has boundary problem
-      DO K=KTS,KTE
-      DO J=MYJS2,MYJE2
-        IENDX=MYIE1
-        IF(MOD(J,2)==0.AND.ITE==IDE-1)IENDX=IENDX-1
-        DO I=MYIS1,IENDX
-!        DO K=KMS,KME
-!        DO J=JMS,JME
-!        DO I=IMS,IME
+!$omp& private(i,j,k)
+         DO K=KMS,KME
+         DO J=JMS,JME
+         DO I=IMS,IME
            DTHCUDT(i,j,k)=RTHCUTEN(i,k,j)
            DQVCUDT(i,j,k)=RQVCUTEN(i,k,j)
            DQRCUDT(i,j,k)=RQRCUTEN(i,k,j)
@@ -2905,25 +2915,6 @@
         ENDDO
         ENDDO
         ENDDO
-
-! gf - Transfer u,v tendencies from GF convection to ducudt,dvcudt
-! (i,j,k) to use existing code to go from mass pts to u,v pts.
-
-      if (CONFIG_FLAGS%CU_PHYSICS==GFSCHEME) then
-!$omp parallel do                                                       &
-!$omp& private(i,iendx,j,k)
-      DO K=KTS,KTE
-      DO J=MYJS2,MYJE2
-        IENDX=MYIE1
-        IF(MOD(J,2)==0.AND.ITE==IDE-1)IENDX=IENDX-1
-        DO I=MYIS1,IENDX
-          DUCUDT(i,j,k)=DUDT_PHY(i,k,j)
-          DVCUDT(i,j,k)=DVDT_PHY(i,k,j)
-        ENDDO
-        ENDDO
-        ENDDO
-
-      endif
 
 #endif
 
@@ -2951,11 +2942,11 @@
         IENDX=MYIE1
         IF(MOD(J,2)==0.AND.ITE==IDE-1)IENDX=IENDX-1
         DO I=MYIS1,IENDX
-          CNVBOT(I,J)=REAL(KTE+1.)
+          CNVBOT(I,J)=REAL(KTE+1)
           CNVTOP(I,J)=0.
-          HBOTD(I,J)=REAL(KTE+1.)
+          HBOTD(I,J)=REAL(KTE+1)
           HTOPD(I,J)=0.
-          HBOTS(I,J)=REAL(KTE+1.)
+          HBOTS(I,J)=REAL(KTE+1)
           HTOPS(I,J)=0.
         ENDDO
         ENDDO

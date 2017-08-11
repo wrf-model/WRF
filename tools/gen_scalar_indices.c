@@ -12,6 +12,7 @@
 #include "registry.h"
 #include "data.h"
 
+#define NULLCHARPTR   (char *) 0
 
 int
 gen_scalar_indices ( char * dirname )
@@ -116,6 +117,7 @@ gen_scalar_indices1 ( FILE * fp, FILE ** fp2 )
   node_t * p, * memb , * pkg, * rconfig, * fourd, *x ; 
   char * c , *pos1, *pos2 ;
   char assoc_namelist_var[NAMELEN], assoc_namelist_choice[NAMELEN], assoc_4d[NAMELEN_LONG], fname[NAMELEN_LONG] ;
+  char fname2[NAMELEN], tmp1[NAMELEN], tmp2[NAMELEN] ;
   char scalars_str[NAMELEN_LONG] ;
   char * scalars ;
   int i ;
@@ -151,7 +153,7 @@ gen_scalar_indices1 ( FILE * fp, FILE ** fp2 )
           if ( (fourd=get_4d_entry( assoc_4d )) != NULL || !strcmp( assoc_4d, "state" ) ) {
             for ( c = strtok_rentr(NULL,",",&pos2) ; c != NULL ; c = strtok_rentr(NULL,",",&pos2) )
             {
-              if ( fourd != NULL && ( ( x = get_entry( c , fourd->members )) != NULL ) ) {
+              if ( fourd != NULL && ( ( x = get_entry_r( c , NULL, fourd->members )) != NULL ) ) {
                 fprintf(fp,"   IF ( %s_index_table( PARAM_%s , idomain ) .lt. 1 ) THEN\n",assoc_4d,c) ;
                 fprintf(fp,"     %s_num_table(idomain) = %s_num_table(idomain) + 1\n",assoc_4d,assoc_4d) ;
                 fprintf(fp,"     P_%s = %s_num_table(idomain)\n",c,assoc_4d) ;
@@ -165,7 +167,7 @@ gen_scalar_indices1 ( FILE * fp, FILE ** fp2 )
                   /* set io_mask accordingly for gen_wrf_io to know that it should generate i/o for _b and _bt */
                   /* arrays */
                   sprintf(fourd_bnd,"%s_b",assoc_4d) ;
-                  if ( get_entry( fourd_bnd  ,Domain.fields) != NULL ) {
+                  if ( get_entry_r( fourd_bnd, NULL, Domain.fields) != NULL ) {
                      x->boundary = 1 ;
                   }
                 }
@@ -181,7 +183,7 @@ gen_scalar_indices1 ( FILE * fp, FILE ** fp2 )
                 }
 
                 fprintf(fp,"   F_%s = .TRUE.\n",c) ;
-              } else if ((p = get_entry( c , Domain.fields )) != NULL ) {
+              } else if ((p = get_entry_r( c , NULL, Domain.fields )) != NULL ) {
                 int tag, fo  ;
                 for ( tag = 1 ; tag <= p->ntl ; tag++ )
                   {
@@ -190,11 +192,25 @@ gen_scalar_indices1 ( FILE * fp, FILE ** fp2 )
                   } else {
                     strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
                   }
-                  make_lower_case(fname)  ;
+                  if ( strchr (c, '%') != NULLCHARPTR ) {
+                    strcpy(fname2,c) ;
+                  } else {
+                    sprintf(tmp1,"%s_tend",p->name) ;
+                    sprintf(tmp2,"%s_old",p->name) ;
+                    if ( !strcmp(c, tmp1) ) {
+                      strcpy(fname2,tmp1) ;
+                    } else if ( !strcmp(c, tmp2) ) {
+                      strcpy(fname2,tmp2) ;
+                    } else {
+                      strcpy(fname2,fname) ;
+                    }
+                  }
 
-                  fo = fname[0]-'a' ;
+                  make_lower_case(fname2)  ;
 
-                  fprintf(fp2[fo],"IF(TRIM(vname).EQ.'%s')THEN\n",fname) ;
+                  fo = fname2[0]-'a' ;
+
+                  fprintf(fp2[fo],"IF(TRIM(vname).EQ.'%s')THEN\n",fname2) ;
                   fprintf(fp2[fo],"  IF(uses.EQ.0)THEN\n");
                   fprintf(fp2[fo],"    in_use = model_config_rec%%%s%s.EQ.%s\n",assoc_namelist_var,(atoi(rconfig->nentries)!=1)?"(id)":"",assoc_namelist_choice) ;
                   fprintf(fp2[fo],"    uses = 1\n") ;

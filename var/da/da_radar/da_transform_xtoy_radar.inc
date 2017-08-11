@@ -69,10 +69,17 @@ subroutine da_transform_xtoy_radar (grid, iv, y)
    call da_interp_lin_3d (grid%xa%u,   iv%info(radar), model_u)
    call da_interp_lin_3d (grid%xa%v,   iv%info(radar), model_v)
 #endif
-   call da_interp_lin_3d (grid%xa%qrn, iv%info(radar), model_qrn)
    call da_interp_lin_3d (grid%xa%wh,  iv%info(radar), model_w)
-   call da_interp_lin_3d (grid%xa%qsn, iv%info(radar), model_qsn)
-   call da_interp_lin_3d (grid%xa%qgr, iv%info(radar), model_qgr)
+   model_qsn = 0.0
+   model_qgr = 0.0
+   model_qrn = 0.0
+   if ( cloud_cv_options >= 1 ) then
+      call da_interp_lin_3d (grid%xa%qrn, iv%info(radar), model_qrn)
+      if ( cloud_cv_options >= 2 ) then
+         call da_interp_lin_3d (grid%xa%qsn, iv%info(radar), model_qsn)
+         call da_interp_lin_3d (grid%xa%qgr, iv%info(radar), model_qgr)
+      end if
+   end if
    call da_interp_lin_3d (grid%xa%q,   iv%info(radar), model_qv)
    call da_interp_lin_3d (grid%xa%t,   iv%info(radar), model_t)
    !basic states

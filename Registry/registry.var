@@ -845,3 +845,34 @@ package   no_adj_sens    adj_sens_used==0            -             -
 package   do_adj_sens    adj_sens_used==1            -             state:a_u,a_v,a_t,a_mu,a_ph,g_u,g_v,g_t,g_mu,g_ph;a_moist:a_qv;g_moist:g_qv
 package   no_var4d       var4d_used==0               -             -
 package   do_var4d       var4d_used==1               -             state:a_u,a_v,a_w,a_ph,a_t,a_mu,a_p,a_z,g_u,g_v,g_w,g_ph,g_t,g_mu,g_p,g_z,a_h_diabatic,g_h_diabatic,a_rainc,g_rainc,a_rainnc,g_rainnc,a_raincv,g_raincv,a_rainncv,g_rainncv
+
+rconfig   integer cv_w_used               derived               1             0       -     "cv_w_used"       "turn on if use_cv_w=true"
+rconfig   integer ens_used                derived               1             0       -     "ens_used"        "turn on if ensdim_alpha>0"
+rconfig   integer cloud_ens_used          derived               1             0       -     "cloud_ens_used"  "turn on if alpha_hydrometeors=true"
+rconfig   integer var4d_cloudcv           derived               1            -1       -     "var4d_cloudcv"   "turn on if var4d=true and cloud_cv_options>0"
+rconfig   integer var4d_w_cv              derived               1             0       -     "var4d_w_cv"      "turn on if var4d=true and use_cv_w=true"
+rconfig   integer wpec_used               derived               1             0       -     "wpec_used"       "turn on if use_wpec=true"
+rconfig   integer alloc_xa_static         derived               1             0       -     "alloc_xa_static" "turn on if use_4denvar=true and num_fgat_time>1"
+
+#package derived types
+package   no_cloud_cv     cloud_cv_options==0         -             -
+package   cloud_cv_1      cloud_cv_options==1         -             state:xa%qt,xa%qrn,xa%qcw
+package   cloud_cv_2      cloud_cv_options==2         -             state:xa%qrn,xa%qcw,xa%qci,xa%qsn,xa%qgr,vp%v6,vp%v7,vp%v8,vp%v9,vp%v10,vv%v6,vv%v7,vv%v8,vv%v9,vv%v10
+package   cloud_cv_3      cloud_cv_options==3         -             state:xa%qrn,xa%qcw,xa%qci,xa%qsn,xa%qgr,vp%v6,vp%v7,vp%v8,vp%v9,vp%v10,vv%v6,vv%v7,vv%v8,vv%v9,vv%v10
+package   not_var4d       var4d_cloudcv==-1           -             -
+package   no_var4d_ccv    var4d_cloudcv==0            -             state:vp6%v1,vp6%v2,vp6%v3,vp6%v4,vp6%v5,vv6%v1,vv6%v2,vv6%v3,vv6%v4,vv6%v5,xa%qrn,xa%qcw
+package   var4d_ccv_1     var4d_cloudcv==1            -             state:vp6%v1,vp6%v2,vp6%v3,vp6%v4,vp6%v5,vv6%v1,vv6%v2,vv6%v3,vv6%v4,vv6%v5,x6a%qt,x6a%qrn,x6a%qcw
+package   var4d_ccv_2     var4d_cloudcv==2            -             state:vp6%v1,vp6%v2,vp6%v3,vp6%v4,vp6%v5,vv6%v1,vv6%v2,vv6%v3,vv6%v4,vv6%v5,vp6%v6,vp6%v7,vp6%v8,vp6%v9,vp6%v10,vv6%v6,vv6%v7,vv6%v8,vv6%v9,vv6%v10,x6a%qrn,x6a%qcw,x6a%qci,x6a%qsn,x6a%qgr
+package   var4d_ccv_3     var4d_cloudcv==3            -             state:vp6%v1,vp6%v2,vp6%v3,vp6%v4,vp6%v5,vv6%v1,vv6%v2,vv6%v3,vv6%v4,vv6%v5,vp6%v6,vp6%v7,vp6%v8,vp6%v9,vp6%v10,vv6%v6,vv6%v7,vv6%v8,vv6%v9,vv6%v10,x6a%qrn,x6a%qcw,x6a%qci,x6a%qsn,x6a%qgr
+package   no_cv_w         cv_w_used==0                -             -
+package   has_cv_w        cv_w_used==1                -             state:vp%v11,vv%v11
+package   no_var4d_cv_w   var4d_w_cv==0               -             -
+package   has_var4d_cv_w  var4d_w_cv==1               -             state:vp6%v11,vv6%v11
+package   no_ens          ens_used==0                 -             -
+package   has_ens         ens_used==1                 -             state:xa_ens%u,xa_ens%v,xa_ens%t,xa_ens%q,xa_ens%psfc,ep%v1,ep%v2,ep%v3,ep%v4,ep%v5,vp%alpha,vv%alpha
+package   no_ens_cloud    cloud_ens_used==0           -             -
+package   has_ens_cloud   cloud_ens_used==1           -             state:xa_ens%qrn,xa_ens%qcw,xa_ens%qci,xa_ens%qsn,xa_ens%qgr,ep%cw,ep%rn,ep%ci,ep%sn,ep%gr
+package   no_wpec         wpec_used==0                -             -
+package   has_wpec        wpec_used==1                -             state:xa%grad_p_x,xa%grad_p_y,xa%geoh,xa%mu,xb%xb_p_x,xb%xb_p_y
+package   no_xa_static    alloc_xa_static==0          -             -
+package   has_xa_static   alloc_xa_static==1          -             state:xa_static%psfc,xa_static%mu,xa_static%u,xa_static%v,xa_static%t,xa_static%q,xa_static%w,xa_static%p,xa_static%geoh,xa_static%rh,xa_static%rho,xa_static%wh,xa_static%ref,xa_static%tgrn,xa_static%u10,xa_static%v10,xa_static%t2,xa_static%q2,xa_static%ztd,xa_static%tpw,xa_static%speed,xa_static%tb19v,xa_static%tb19h,xa_static%tb22v,xa_static%tb37v,xa_static%tb37h,xa_static%tb85v,xa_static%tb85h,xa_static%qt,xa_static%qrn,xa_static%qcw,xa_static%qci,xa_static%qsn,xa_static%qgr

@@ -106,6 +106,26 @@ subroutine da_wrfvar_init2
       model_config_rec%adj_sens_used = 1
    end if
 
+   if ( var4d ) then
+      model_config_rec%var4d_cloudcv = cloud_cv_options
+      if ( use_cv_w ) model_config_rec%var4d_w_cv = 1
+   end if
+   if ( use_cv_w ) then
+      model_config_rec%cv_w_used = 1
+   end if
+   if ( ensdim_alpha > 0 ) then
+      model_config_rec%ens_used = 1
+   end if
+   if ( alpha_hydrometeors ) then
+      model_config_rec%cloud_ens_used = 1
+   end if
+   if ( use_wpec ) then
+      model_config_rec%wpec_used = 1
+   end if
+   if ( use_4denvar .and. num_fgat_time > 1 ) then
+      model_config_rec%alloc_xa_static = 1
+   end if
+
    !<DESCRIPTION>
    ! Among the configuration variables read from the namelist is
    ! debug_level. This is retrieved using nl_get_debug_level (Registry

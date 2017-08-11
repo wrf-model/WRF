@@ -142,9 +142,13 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
    ! [1.6] Interpolate horizontally from crs points:
 
    call da_interp_lin_3d_adj (jo_grad_x % wh,  iv%info(radar), model_w)
-   call da_interp_lin_3d_adj (jo_grad_x % qrn, iv%info(radar), model_qrn)
-   call da_interp_lin_3d_adj (jo_grad_x % qsn, iv%info(radar), model_qsn)
-   call da_interp_lin_3d_adj (jo_grad_x % qgr, iv%info(radar), model_qgr)
+   if ( cloud_cv_options >= 1 ) then
+      call da_interp_lin_3d_adj (jo_grad_x % qrn, iv%info(radar), model_qrn)
+      if ( cloud_cv_options >= 2 ) then
+         call da_interp_lin_3d_adj (jo_grad_x % qsn, iv%info(radar), model_qsn)
+         call da_interp_lin_3d_adj (jo_grad_x % qgr, iv%info(radar), model_qgr)
+      end if
+   end if
    call da_interp_lin_3d_adj (jo_grad_x % q,   iv%info(radar), model_qv)
    call da_interp_lin_3d_adj (jo_grad_x % t,   iv%info(radar), model_t)
 #ifdef A2C

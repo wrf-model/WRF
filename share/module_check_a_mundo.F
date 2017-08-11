@@ -1633,6 +1633,11 @@
          CALL wrf_message ( wrf_err_message )
       END IF
 
+
+!-----------------------------------------------------------------------
+!  MUST BE AFTER ALL OF THE PHYSICS CHECKS.
+!-----------------------------------------------------------------------
+
       IF ( count_fatal_error .GT. 0 ) THEN
          WRITE (wrf_err_message, FMT='(A,I6, A)') 'NOTE:  ', count_fatal_error, &
                                             ' namelist settings are wrong. Please check and reset these options'
@@ -1987,6 +1992,23 @@
       WRITE (wrf_err_message, FMT='(A,I6)') '--- NOTE: num_soil_layers has been set to ', &
                                              model_config_rec % num_soil_layers
       CALL wrf_message ( wrf_err_message )
+
+!-----------------------------------------------------------------------
+!  The Morrison 2-moment MP scheme is not to be used with any of the 
+!  RRTMG radiation schemes.
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( ( model_config_rec % ra_lw_physics(i) .EQ. RRTMG_LWSCHEME      )   .OR.  &
+                ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME      )   .OR.  &
+                ( model_config_rec % ra_lw_physics(i) .EQ. RRTMG_LWSCHEME_FAST )   .OR.  &
+                ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME_FAST ) ) .AND. &
+              (   model_config_rec % mp_physics   (i) .EQ. MORR_TWO_MOMENT       ) ) THEN
+            wrf_err_message = '--- ERROR: Morrison (mp_physics=10) not compatible with RRTMG schemes'
+            CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+            EXIT
+         END IF
+      END DO
 
    END SUBROUTINE set_physics_rconfigs
 

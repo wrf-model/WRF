@@ -3122,7 +3122,8 @@ CONTAINS
        pcrit,acrit,acritt
 
      integer :: nall2,ixxx,irandom
-     integer,  dimension (12) :: seed
+     integer, allocatable :: seed(:)
+     integer              :: seed_size
 
 
       DATA PCRIT/850.,800.,750.,700.,650.,600.,550.,500.,450.,400.,    &
@@ -3133,6 +3134,9 @@ CONTAINS
       DATA ACRITT/.203,.515,.521,.566,.625,.665,.659,.688,             &
                   .743,.813,.886,.947,1.138,1.377,1.896/
 !
+       call random_seed(size=seed_size)      ! Get size of seed array.
+       allocate(seed(1:seed_size))           ! Allocate according to returned size
+
        seed=0
        seed(2)=j
        seed(3)=ktau

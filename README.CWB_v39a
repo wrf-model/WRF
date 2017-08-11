@@ -8,6 +8,20 @@ New features (only in the CWB branch):
  4. Multi-Resolution-Incremental 4DVAR.
  5. Improved gen_be_ep2.f90 utility.
 
+Bug fixes and enhancement since May 30, 2017. These changes are applied
+to both the main repository for V3.9.1 release and CWB_v39a branch.
+(git cherry-pick -n db7841c 49ec556 3e3c4ce ee3fd4a c4eeff5 81ca2ff d21f0db c7405bb)
+ 1. Bug fix and clean-up for WRFDA pseudo ob capability
+ 2. Bug fix for ZTD with 4DVAR when there are ZTD obs in non-first time slots
+ 3. Fix incorrect calculation of an unused variable cv_size_domain_jb
+ 4. WRFDA registry.var fixes for packaging moist variables and for non-4DVAR.
+    This reduces non-4DVAR memory usage by ~35%.
+ 5. Add packaging in registry.var for WRFDA derived type variables
+    This reduces 3DVAR memory usage by another ~15-20%.
+
+Enhancement since May 24, 2017
+ 1. Add a few more LSAC namelist variables.
+
 Bug fixes since May 1, 2017 (only in the CWB branch)
  1. Bug fix for divergence constraint
     grid%vp needs to be zeroed out before calling da_transform_vtox_adj
@@ -31,5 +45,4 @@ General WRFDA improvements in V3.9 that are relevant to CWB's applications.
  2. Dual-resolution hybrid code is fixed and cleaned up.
  3. Pseudo ob implementation for ref/tpw/ztd is fixed and improved.
 
-Note that this version of code requires more memory due to the implementation
-of new 4D-Ensemble-Var capability.
+

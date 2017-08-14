@@ -11,8 +11,9 @@ program gen_be_stage1
 !----------------------------------------------------------------------
 !
    use da_control, only : stderr, stdout, filename_len
-   use da_tools_serial, only : da_get_unit,da_advance_cymdh
    use da_gen_be, only : da_create_bins
+   use da_reporting, only : da_error
+   use da_tools_serial, only : da_get_unit,da_advance_cymdh
 
    implicit none
 
@@ -33,11 +34,14 @@ program gen_be_stage1
    integer             :: num_bins                   ! Number of bins (3D fields).
    integer             :: num_bins2d                 ! Number of bins (2D fields).
    integer             :: cv_options                 ! Control variable option
+   integer             :: ios                        ! I/O status for file read
    real                :: count_inv                  ! 1 / count.
    real                :: lat_min, lat_max           ! Used if bin_type = 2 (degrees).
    real                :: binwidth_lat               ! Used if bin_type = 2 (degrees).
    real                :: hgt_min, hgt_max           ! Used if bin_type = 2 (m).
    real                :: binwidth_hgt               ! Used if bin_type = 2 (m).
+   logical             :: allow_missing_dates        ! If data from stage 0 is not contiguous, attempt to continue
+   logical             :: first_time                 ! True if first file.
 
    real, allocatable   :: ps_prime(:,:)              ! Surface pressure perturbation.
    real, allocatable   :: t_prime(:,:,:)             ! Temperature perturbation.
@@ -61,7 +65,8 @@ program gen_be_stage1
    namelist / gen_be_stage1_nl / start_date, end_date, interval, &
                                  be_method, ne, bin_type, cv_options, &
                                  lat_min, lat_max, binwidth_lat, &
-                                 hgt_min, hgt_max, binwidth_hgt, dat_dir
+                                 hgt_min, hgt_max, binwidth_hgt, &
+                                 dat_dir, allow_missing_dates
 
    integer :: ounit,iunit,namelist_unit
 
@@ -89,6 +94,7 @@ program gen_be_stage1
    hgt_max = 20000.0
    binwidth_hgt = 1000.0
    dat_dir = '/data2/hcshin/youn/DIFF63'
+   allow_missing_dates = .false.
 
    open(unit=namelist_unit, file='gen_be_stage1_nl.nl', &
         form='formatted', status='old', action='read')
@@ -111,6 +117,7 @@ program gen_be_stage1
    write(6,'(a)')' [2] Read fields from standard files, and calculate mean fields'
 !---------------------------------------------------------------------------------------------
 
+   first_time = .true.
    do while ( cdate <= edate )
       do member = 1, ne
          count = count + 1
@@ -125,10 +132,21 @@ program gen_be_stage1
             filename = trim(dat_dir)//'/pert.'//date(1:10)//'.e'//trim(ce)
          endif
 
-         open (iunit, file = trim(filename), form='unformatted')
-         read(iunit)date, ni, nj, nk
+         open (iunit, file = trim(filename), form = 'unformatted')
+         read(iunit, iostat = ios)date, ni, nj, nk
 
-         if ( count == 1 ) then
+         if ( ios /= 0 ) then
+            if (allow_missing_dates) then
+               write(stdout,'(a,a)')' WARNING: CAN NOT OPEN ',filename
+               write(stdout,'(a)')' Attempting to continue since allow_missing_dates = .true.'
+               count = count - 1
+               cycle
+            else
+               call da_error(__FILE__,__LINE__,(/"Could not open "//trim(filename)/))
+            endif
+         endif
+
+         if ( first_time ) then
             write(6,'(a,3i8)')'    i, j, k dimensions are ', ni, nj, nk
             allocate( ps_prime(1:ni,1:nj) )
             allocate( t_prime(1:ni,1:nj,1:nk) )
@@ -176,7 +194,7 @@ program gen_be_stage1
          close(iunit)
 
 
-         if ( count == 1 ) then
+         if ( first_time ) then
             call da_create_bins( ni, nj, nk, bin_type, num_bins, num_bins2d, bin, bin2d, &
                                  lat_min, lat_max, binwidth_lat, &
                                  hgt_min, hgt_max, binwidth_hgt, latitude, height )
@@ -196,6 +214,8 @@ program gen_be_stage1
          t_mean = ( real( count-1 ) * t_mean + t_prime ) * count_inv
          rh_mean = ( real( count-1 ) * rh_mean + rh_prime ) * count_inv
          ps_mean = ( real( count-1 ) * ps_mean + ps_prime ) * count_inv
+
+         first_time = .false.
 
       end do  ! End loop over ensemble members.
 
@@ -224,8 +244,17 @@ program gen_be_stage1
             filename = trim(dat_dir)//'/pert.'//date(1:10)//'.e'//trim(ce)
          endif
 
-         open (iunit, file = trim(filename), form='unformatted')
-         read(iunit)date, ni, nj, nk
+         open (iunit, file = trim(filename), form = 'unformatted')
+         read(iunit, iostat = ios)date, ni, nj, nk
+         if (ios /= 0) then
+            if (allow_missing_dates) then
+               write(stdout,'(a,a)')' WARNING: CAN NOT OPEN ',filename
+               write(stdout,'(a)')' Attempting to continue since allow_missing_dates = .true.'
+               cycle
+            else
+               call da_error(__FILE__,__LINE__,(/"Could not open "//trim(filename)/))
+            endif
+         endif
          if ( cv_options == 7 ) then
             read(iunit)u_prime
             read(iunit)v_prime

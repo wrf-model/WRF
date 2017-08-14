@@ -8715,13 +8715,15 @@
         dens_dry_a(ibin) = mass_dry_a(ibin)/vol_dry_a(ibin) ! g/cc(aerosol)
         dens_wet_a(ibin) = mass_wet_a(ibin)/vol_wet_a(ibin) ! g/cc(aerosol)
 
-! calculate mean dry and wet particle surface areas
-        area_dry_a(ibin)= 0.785398*num_a(ibin)*Dp_dry_a(ibin)**2	! cm^2/cc(air)
-        area_wet_a(ibin)= 0.785398*num_a(ibin)*Dp_wet_a(ibin)**2	! cm^2/cc(air)
-
 ! calculate mean dry and wet particle diameters
         dp_dry_a(ibin)=(1.90985*vol_dry_a(ibin)/num_a(ibin))**0.3333333	! cm
         dp_wet_a(ibin)=(1.90985*vol_wet_a(ibin)/num_a(ibin))**0.3333333 ! cm
+
+! calculate mean dry and wet particle surface areas
+        area_dry_a(ibin)= 3.14159*num_a(ibin)*dp_dry_a(ibin)**2	! cm^2/cc(air)
+        area_wet_a(ibin)= 3.14159*num_a(ibin)*dp_wet_a(ibin)**2	! cm^2/cc(air)
+
+
 
 ! calculate volume average refractive index
 !   load comp_a array

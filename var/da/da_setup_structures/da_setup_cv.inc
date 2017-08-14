@@ -120,8 +120,7 @@ subroutine da_setup_cv(be)
          ij = size(be%wsd,1)*size(be%wsd,2)
       endif
       cv_size_domain_jb = ij * (be % v1 % mz + be % v2 % mz + be % v3 % mz + &
-             be % v4 % mz + be % v5 % mz + be % v6 % mz + be % v7 % mz + &
-             be % v8 % mz + be % v9 % mz + be % v10 % mz + be % v11 % mz )
+             be % v4 % mz + be % v5 % mz )
       if ( cloud_cv_options >= 2 ) then
          cv_size_domain_jb = cv_size_domain_jb + ij * (be % v6 % mz + &
              be % v7 % mz + be % v8 % mz + be % v9 % mz + be % v10 % mz )

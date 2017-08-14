@@ -33,7 +33,7 @@ subroutine da_transform_xtoy_gpsztd ( grid, iv, y )
 !--
    if (trace_use_dull) call da_trace_entry("da_transform_xtoy_gpsztd")
 
-      y % gpspw(:)% tpw = 0.0
+      !bugfix-for-4dvar y % gpspw(:)% tpw = 0.0
 
       do n=iv%info(gpspw)%n1,iv%info(gpspw)%n2
 

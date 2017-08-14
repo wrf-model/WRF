@@ -41,7 +41,7 @@ subroutine da_check_vtoy_adjoint(cv_size,grid, config_flags, vp, vv, xbx, be, ep
    call da_zero_vp_type(vp)
    call da_zero_vp_type(vv)
 
-   call da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp, vv, xbx, y, grid, config_flags)
+   call da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, y, grid, config_flags, vp, vv)
 
    !-------------------------------------------------------------------------
    ! [3.0] Calculate LHS of adjoint test equation and
@@ -57,8 +57,8 @@ subroutine da_check_vtoy_adjoint(cv_size,grid, config_flags, vp, vv, xbx, be, ep
    ! call da_zero_vp_type(vv)
    ! call da_zero_x(grid%xa)      
 
-   call da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp, vv, xbx, y, grid, &
-      config_flags, .true.)
+   call da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, grid, &
+      config_flags, .true., vp, vv)
 
    adj_rhs = sum(cv(1:cv_size) * cv_2(1:cv_size))
 

@@ -712,11 +712,17 @@ CONTAINS
                    if(t2d(i,k).lt.258.)then
                       RQICUTEN(I,K,J)=outqcm(i,k)+outqcs(i,k)+outqc(I,K)*cuten(i)
                       RQCCUTEN(I,K,J)=0.
-                      IF ( PRESENT( GDC2 ) ) GDC2(I,K,J)=cupclwm(i,k)+cupclws(i,k)+CUPCLW(I,K)*cuten(i)
+                      IF ( PRESENT( GDC2 ) ) THEN
+                        GDC2(I,K,J)=cupclwm(i,k)+cupclws(i,k)+CUPCLW(I,K)*cuten(i)
+                        GDC(I,K,J) = 0.
+                      ENDIF
                    else
                       RQICUTEN(I,K,J)=0.
                       RQCCUTEN(I,K,J)=outqcm(i,k)+outqcs(i,k)+outqc(I,K)*cuten(i)
-                      IF ( PRESENT( GDC ) ) GDC(I,K,J)=cupclwm(i,k)+cupclws(i,k)+CUPCLW(I,K)*cuten(i)
+                      IF ( PRESENT( GDC ) ) THEN
+                        GDC(I,K,J)=cupclwm(i,k)+cupclws(i,k)+CUPCLW(I,K)*cuten(i)
+                        GDC2(I,K,J) = 0.
+                      ENDIF
                    endif
                 ENDDO
                 ENDDO

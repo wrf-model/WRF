@@ -952,7 +952,8 @@ wrf_ext_read_field.o : ../frame/module_io.o ../frame/module_wrf_error.o \
 module_soil_pre.o: module_date_time.o ../frame/module_state_description.o
 
 module_check_a_mundo.o: ../frame/module_configure.o ../frame/module_wrf_error.o \
-		../frame/module_state_description.o
+		../frame/module_state_description.o \
+		../share/module_model_constants.o
 
 dfi.o : 	../frame/module_wrf_error.o ../frame/module_configure.o \
 		../frame/module_state_description.o \

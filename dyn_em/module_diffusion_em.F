@@ -3286,7 +3286,7 @@ SUBROUTINE horizontal_diffusion_s (tendency, config_flags, var,           &
 ! new
       tmpzx = 0.5*( zx(i,k,j)+ zx(i,k+1,j))
       rdzu = 2./(1./rdzw(i,k,j) + 1./rdzw(i-1,k,j))
-      H1(i,k,j)=-msfuy(i,j)*xkxavg(i,k,j)*(                      &
+      H1(i,k,j)=-msfux(i,j)*xkxavg(i,k,j)*(                      &
                  rdx*(var(i,k,j)-var(i-1,k,j)) - tmpzx*         &
                      (H1avg(i,k+1,j)-H1avg(i,k,j))*rdzu )
 
@@ -3392,7 +3392,7 @@ SUBROUTINE horizontal_diffusion_s (tendency, config_flags, var,           &
       tendency(i,k,j)=tendency(i,k,j) +   g/(dnw(k)*rdzw(i,k,j)) * &
            (mrdx*(H1(i+1,k,j)-H1(i  ,k,j)) +                       &
             mrdy*(H2(i,k,j+1)-H2(i,k,j  )) -                       &
-            msfty(i,j)*zx_at_m(i, k, j)*(H1avg(i,k+1,j)-H1avg(i,k,j))*rdzw(i,k,j) - &
+            msftx(i,j)*zx_at_m(i, k, j)*(H1avg(i,k+1,j)-H1avg(i,k,j))*rdzw(i,k,j) - &
             msfty(i,j)*zy_at_m(i, k, j)*(H2avg(i,k+1,j)-H2avg(i,k,j))*rdzw(i,k,j)   &
            )
    ENDDO

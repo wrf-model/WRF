@@ -34,11 +34,7 @@ Version 3.9.1 was released on August 17, 2017.
   Updated features:
 
     - Reduced memory usage for non-4DVAR runs
-    - A number of issues have been fixed for this release, including:
-        - A fix for 4DVAR compilation with PGI 15.1 (and potentially other versions)
-        - A fix for ZTD observations with 4DVAR in the first observation time slot
-        - A fix to allow moisture variables (qcw/qrn/qci/qsn/qgr) as pseudo-observations
-    - WRFPLUS has been upgraded to V3.9.1 and is consistent with the released WRF version 3.9.1.
+    - Some bugs have been fixed
 
 See http://www2.mmm.ucar.edu/wrf/users/wrfda/updates-3.9.1.html for a full list of updates
 

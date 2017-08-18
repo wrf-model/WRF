@@ -90,6 +90,7 @@ export NUM_PROCS=${NUM_PROCS:-1}
 export PROCESS_AERO=${PROCESS_AERO:-false}
 export AEROS_TO_PROCESS=${AEROS_TO_PROCESS:-" "}
 export NOCOLONS=${NOCOLONS:-false}                 # Set to true if using WRF "nocolons" option
+export ALLOW_MISSING_DATES=${ALLOW_MISSING_DATES:-false}  # Set to true if you want GEN_BE to attempt to continue with gaps in data (missing dates)
 
 # Directories:
 export REL_DIR=${REL_DIR:-$HOME/trunk}            # Directory containing codes.

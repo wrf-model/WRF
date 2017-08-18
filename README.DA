@@ -23,6 +23,23 @@ WRFDA, including infringement actions.
 This is the main directory for the WRFDA Version 3 source code release.
 ======================================
 
+V3.9.1 Release Notes :
+-------------------
+
+Version 3.9.1 was released on August 17, 2017.
+
+  For more information about WRFDA, visit the WRFDA Users home page
+  http://www2.mmm.ucar.edu/wrf/users/wrfda/index.html
+
+  Updated features:
+
+    - Reduced memory usage for non-4DVAR runs
+    - Some bugs have been fixed
+
+See http://www2.mmm.ucar.edu/wrf/users/wrfda/updates-3.9.1.html for a full list of updates
+
+======================================
+
 V3.9 Release Notes :
 -------------------
 

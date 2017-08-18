@@ -68,6 +68,7 @@ subroutine da_update_firstguess(grid, out_filename)
   character(len=4) ::  fgname
   integer :: julyr, julday
   real    :: gmt
+  real*4  :: gmt4
 
   wrf_real=104
   end_index1=0
@@ -130,7 +131,8 @@ subroutine da_update_firstguess(grid, out_filename)
         CALL ext_ncd_put_dom_ti_char (dh1, 'START_DATE', trim(DateStr1), ierr)
         CALL ext_ncd_put_dom_ti_char (dh1, 'SIMULATION_START_DATE', trim(DateStr1), ierr)
      endif
-     CALL ext_ncd_put_dom_ti_real    (dh1, 'GMT',    gmt,    1, ierr)
+     gmt4 = real(gmt)
+     CALL ext_ncd_put_dom_ti_real    (dh1, 'GMT',    gmt4,   1, ierr)
      CALL ext_ncd_put_dom_ti_integer (dh1, 'JULYR',  julyr,  1, ierr)
      CALL ext_ncd_put_dom_ti_integer (dh1, 'JULDAY', julday, 1, ierr)
 

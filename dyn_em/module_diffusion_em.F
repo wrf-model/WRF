@@ -2904,7 +2904,7 @@ SUBROUTINE horizontal_diffusion_v_2( tendency, config_flags,              &
       zx_at_v(i, kts, j) = 0.125 * (zx(i, kts, j) + zx(i + 1, kts, j) +     &
           zx(i, kts, j - 1) + zx(i + 1, kts, j - 1) + zx(i, kts + 1, j) + &
           zx(i + 1, kts + 1, j) + zx(i, kts + 1, j - 1) + zx(i + 1, kts + 1, j - 1))
-      zy_at_v(i, kts, j) = 0.5 * (zy(i, k, j) + zy(i, k + 1 , j))
+      zy_at_v(i, kts, j) = 0.5 * (zy(i, kts, j) + zy(i, kts + 1 , j))
    ENDDO
    ENDDO
 !

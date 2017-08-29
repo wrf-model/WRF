@@ -16,6 +16,7 @@ subroutine da_med_initialdata_input (grid, config_flags, filename, in_date)
 
    integer :: julyr, julday
    real    :: gmt
+   integer :: icnt
 
    if (trace_use) call da_trace_entry("da_med_initialdata_input")
    if (trace_use) call da_trace("da_med_initialdata_input", &
@@ -115,6 +116,35 @@ subroutine da_med_initialdata_input (grid, config_flags, filename, in_date)
    call input_input (fid ,   grid , config_flags , ierr)
 
    call nl_get_mminlu (grid%id , grid%mminlu)
+
+   ! mp_physics is used in da_transfer_wrftoxb.inc
+   ! get the setting from the input file
+   call wrf_get_dom_ti_integer (fid, 'MP_PHYSICS', grid%mp_physics, 1, icnt, ierr)
+
+   ! sf_surface_physics is used in da_transfer_xatowrf.inc
+   ! get the setting from the input file
+   call wrf_get_dom_ti_integer (fid, 'SF_SURFACE_PHYSICS', grid%sf_surface_physics, 1, icnt, ierr)
+
+   !global attribute HYBRID_OPT exists in WRF V3.9 and later
+   call wrf_get_dom_ti_integer (fid, 'HYBRID_OPT', grid%hybrid_opt, 1, icnt, ierr)
+   if ( ierr /= 0 ) then
+      grid%hybrid_opt = 0
+      write(unit=message(1),fmt='(A,A)') trim(filename), ' appears to be from earlier than WRF V3.9'
+      write(unit=message(2),fmt='(A)')   'Setting hybrid_opt = 0'
+      call da_message(message(1:2))
+   else
+      ! when input file contains HYBRID_OPT, stop 4DVAR if not terrain-following.
+      if ( var4d ) then
+         if ( grid%hybrid_opt > 0 ) then
+            write(unit=message(1),fmt='(A,I2,A,A)') 'HYBRID_OPT = ', grid%hybrid_opt, ' in ', trim(filename)
+            write(unit=message(2),fmt='(A)') '4DVAR does not work with hybrid vertical coordinate'
+            call da_error(__FILE__,__LINE__,message(1:2))
+         end if
+      end if
+   end if
+
+   write(unit=message(1),fmt='(A,I2)') 'hybrid_opt = ', grid%hybrid_opt
+   call da_message(message(1:1))
 
    call close_dataset (fid , config_flags , "DATASET=INPUT")
 

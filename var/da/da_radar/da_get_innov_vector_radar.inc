@@ -58,10 +58,7 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    ! for opt=1
    real              :: h_sfc, p_sfc, t_sfc, q_sfc, ev_sfc, td_sfc
    ! for opt=2
-   real              :: ZLCLG(ids:ide,jds:jde)
-   real              :: ZLCL(ims:ime,jms:jme)
-   real              :: ZLCLA                  ! domain grid mean LCL
-   integer           :: ij
+   real              :: zlcl(ims:ime,jms:jme)
 
    logical           :: echo_non_precip, echo_rf_good
 
@@ -199,7 +196,11 @@ END IF
    model_tc = model_tc - 273.15 ! degree K to degree C
 
    if ( use_radar_rqv ) then
-      model_qs_ice = model_qs*exp((2.837e6 - 2.501e6)/461.5*(1./273.15 - 1./(model_tc+273.15)))
+      do n=iv%info(radar)%n1,iv%info(radar)%n2
+         do k=1,iv%info(radar)%levels(n)
+            model_qs_ice(k,n) = model_qs(k,n)*exp((2.837E6 - 2.501E6)/461.5*(1./273.15 - 1./(model_tc(k,n)+273.15)))
+         end do
+      end do
    end if
 
    ! calculate background/model LCL to be used by use_radar_rqv
@@ -209,25 +210,6 @@ END IF
             zlcl(i,j) = 125.0*(grid%xb%t(i,j,1)-grid%xb%td(i,j,1))
          end do
       end do
-      ij = (ide-ids+1)*(jde-jds+1)
-#ifdef DM_PARALLEL
-      call da_patch_to_global (grid, zlcl, zlclg)
-      call wrf_dm_bcast_real( zlclg, ij )
-#else
-      do j = jds, jde
-         do i = ids, ide
-            zlclg(i,j) = zlcl(i,j)
-         end do
-      end do
-#endif
-      ! Calculate the domain grid mean LCL
-      zlcla = 0.0
-      do j = jds, jde
-         do i = ids, ide
-            zlcla = zlcla + zlclg(i,j)
-         end do
-      end do
-      zlcla = zlcla/float(ij)
    end if ! lcl for use_radar_rqv
 
    do n=iv%info(radar)%n1,iv%info(radar)%n2
@@ -276,7 +258,8 @@ END IF
          case ( 2 )  !NCAR scheme
             model_lcl(n) = dxm *(dym * zlcl(i,j)   + dy * zlcl(i+1, j))  + &
                            dx  *(dym * zlcl(i,j+1) + dy * zlcl(i+1,j+1))
-            model_lcl(n) = max(model_lcl(n), zlcla)
+            ! zlcl_mean is model grid mean zlcl calculated in da_transform_wrftoxb.inc
+            model_lcl(n) = max(model_lcl(n), zlcl_mean)
 
             ! add radar elevation to the calculated model_lcl
             ! iv%radar(n)%height(k) (rather than zr) is later used for checking
@@ -482,16 +465,14 @@ END IF
                         if ( bg_rf >= 20.0 .and. iv%radar(n)%height(k) > model_lcl(n) ) then
                            iv % radar(n) % rqv(k) % qc = 0
 
-                           radar_non_precip_rh_w = radar_non_precip_rh_w*0.01 ! percentage to ratio
-                           radar_non_precip_rh_i = radar_non_precip_rh_i*0.01 ! percentage to ratio
                            if ( model_tc(k,n) > 5.0 ) then
-                              iv%radar(n)%rqvo(k) =  radar_non_precip_rh_w*model_qs(k,n)
+                              iv%radar(n)%rqvo(k) =  0.01*radar_non_precip_rh_w*model_qs(k,n)
                            else if ( model_tc(k,n) < -5.0 ) then
-                              iv%radar(n)%rqvo(k) =  radar_non_precip_rh_i*model_qs_ice(k,n)
+                              iv%radar(n)%rqvo(k) =  0.01*radar_non_precip_rh_i*model_qs_ice(k,n)
                            else
                               cwr = (model_tc(k,n)+5.0)/10.0
                               cws = 1.0 - cwr
-                              iv%radar(n)%rqvo(k) =  cwr*radar_non_precip_rh_w*model_qs(k,n) + cws*radar_non_precip_rh_i*model_qs_ice(k,n)
+                              iv%radar(n)%rqvo(k) =  cwr*0.01*radar_non_precip_rh_w*model_qs(k,n) + cws*0.01*radar_non_precip_rh_i*model_qs_ice(k,n)
                            end if
 
                            iv % radar(n) % rqv(k) % inv = iv % radar(n) % rqvo(k) - model_qv(k,n)

@@ -116,7 +116,6 @@
          INTENT(INOUT ) ::                                         &
                pm2_5_dry,pm2_5_water
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                   &
-         OPTIONAL,                                                 &
          INTENT(INOUT ) ::                                         &
                gd_cloud,gd_cloud2
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),              &
@@ -251,6 +250,7 @@
    real, allocatable :: dir_fld(:,:), dwn_fld(:,:), up_fld(:,:)
    real, allocatable :: e_dir(:,:), e_dn(:,:), e_up(:,:)
 
+   REAL               :: zexo_grd(2*kte)
    CHARACTER(len=256) :: msg
 
 #ifdef SW_DEBUG
@@ -403,10 +403,10 @@ has_daylight : &
          do wn = 1,nwave
            e_fld(:,wn) = 0.
          end do
-         k = int( z_top(i,j) )
-         n_exo_z = 25 - k + 1
-         n_tuv_z = kte + n_exo_z + 5
-         nlev = n_tuv_z + 1
+         wrk(1) = m2km*(z(i,kte,j) - z_at_w(i,kts,j))
+         call setzgrid( wrk(1), n_exo_z, zexo_grd )
+         n_tuv_z = kte + n_exo_z
+         nlev = n_tuv_z - ktsm1 + 1
          nlyr = nlev - 1
          do_alloc = n_tuv_z /= last_n_tuv_z
          last_n_tuv_z = n_tuv_z
@@ -423,8 +423,9 @@ has_daylight : &
 !---------------------------------------------------------------------
          tuv_z(ktsm1)   = 0.
          tuv_z(kts:kte) = (z(i,kts:kte,j) - z_at_w(i,kts,j))*m2km
-         tuv_z(kte+1:kte+n_exo_z) = real( (/ (n,n=k,k+n_exo_z-1) /) )
-         tuv_z(kte+n_exo_z+1:n_tuv_z) = real( (/ (25+5*n,n=1,5) /) )
+         tuv_z(kte+1:kte+n_exo_z) = zexo_grd(1:n_exo_z)
+!        tuv_z(kte+1:kte+n_exo_z) = real( (/ (n,n=k,k+n_exo_z-1) /) )
+!        tuv_z(kte+n_exo_z+1:n_tuv_z) = real( (/ (25+5*n,n=1,5) /) )
 !---------------------------------------------------------------------
 ! cloud fraction
 !---------------------------------------------------------------------
@@ -435,8 +436,7 @@ has_daylight : &
                                   moist(i,kts:kte,j,p_qc), moist(i,kts:kte,j,p_qi), &
                                   moist(i,kts:kte,j,p_qs), kts, kte )
            elseif( config_flags%pht_cldfrc_opt == 2 ) then
-             if( config_flags%cu_rad_feedback .and. &
-                 present(gd_cloud) .and. present(gd_cloud2) ) then
+             if( config_flags%cu_diag == 1 ) then
                call cldfrac_fractional( cldfrac(kts:kte), &
                                         moist(i,kts:kte,j,p_qv), &
                                         moist(i,kts:kte,j,p_qc) + gd_cloud(i,kts:kte,j),  &
@@ -512,8 +512,7 @@ has_daylight : &
 
          qll(:)            = 0.
          qll(kts:kte)      = moist(i,kts:kte,j,p_qc) + moist(i,kts:kte,j,p_qi)
-         if( config_flags%cu_rad_feedback .and. &
-             present(gd_cloud) .and. present(gd_cloud2) ) then
+         if( config_flags%cu_diag == 1 ) then
            qll(kts:kte) = qll(kts:kte) + gd_cloud(i,kts:kte,j) + gd_cloud2(i,kts:kte,j)
          endif
          qll(kts:kte) = 1.e3*rhoa(kts:kte)*qll(kts:kte)
@@ -738,8 +737,9 @@ rate_loop: &
          endif
 #endif
        endif has_daylight
-
+#if ( WRF_KPP == 1 )
 #include "tuv2wrf_jvals.inc"
+#endif
 
      end do long_loop
    end do lat_loop
@@ -797,6 +797,49 @@ rate_loop: &
    endif
 
    CONTAINS
+
+   subroutine setzgrid( ztop, nexo, zexo_grd )
+!---------------------------------------------------------------------
+!  set the vertical grid above model top up to 50 km for photorate
+!  calculation
+!---------------------------------------------------------------------
+
+   integer, intent(out) :: nexo
+   real, intent(in)     :: ztop
+   real, intent(out)    :: zexo_grd(:)
+
+   real, parameter :: ztrop  = 25.
+   real, parameter :: dztrop = 1.
+   real, parameter :: zlid   = 50.
+   real, parameter :: dzlid  = 5.
+
+   real    :: z
+   real    :: zBase
+
+   nexo = 0
+   if( ztop >= zlid ) then
+     return
+   elseif( ztop <= ztrop ) then
+     zBase = ztrop
+   else
+     zBase = dzlid*real( int(ztop/dzlid) )
+   endif
+
+   z = int( ztop )
+   do while( z < ztrop )
+     z = z + dztrop
+     nexo = nexo + 1
+     zexo_grd(nexo) = z
+   enddo
+     
+   z = zBase
+   do while( z < zlid )
+     z = z + dzlid
+     nexo = nexo + 1
+     zexo_grd(nexo) = z
+   end do 
+
+   end subroutine setzgrid
 
    subroutine tuv_allocate
 !---------------------------------------------------------------------
@@ -1014,7 +1057,9 @@ is_initialized: &
       if( .not. tuv_is_initialized ) then
         has_exo_coldens = config_flags%has_o3_exo_coldens .or. config_flags%scale_o3_to_grnd_exo_coldens
         is_full_tuv = config_flags%is_full_tuv
-#include <tuvdef_jvals.inc>
+#if ( WRF_KPP == 1 )
+#include "tuvdef_jvals.inc"
+#endif
         call get_xsqy_tab
         if( .not. is_full_tuv ) then
           allocate( xsqy_is_zdep(nj),stat=astat )

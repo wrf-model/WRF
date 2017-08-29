@@ -1025,6 +1025,8 @@
 
       REAL,DIMENSION(IMS:IME,JMS:JME), INTENT(OUT) :: ULOWL, VLOWL
 !
+      REAL,DIMENSION(IMS:IME,JMS:JME), INTENT(OUT) :: ULOWL, VLOWL
+!
       REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: MOIST_TRANS
 !
       REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME) :: ZERO_SOIL
@@ -1444,6 +1446,9 @@
      &          ,ICOEF_SF=CONFIG_FLAGS%ICOEF_SF                         &
      &          ,IWAVECPL=CONFIG_FLAGS%IWAVECPL                         &
      &          ,LCURR_SF=CONFIG_FLAGS%LCURR_SF                         &!for gfdl-sf drag
+     &          ,ZKMAX=ZKMAX,RIBN=RIBN                                  &
+     &          ,CHARN=CHARN,MSANG=MSANG,SCURX=SCURX,SCURY=SCURY        &
+     &          ,IWAVECPL=CONFIG_FLAGS%IWAVECPL                         &
 #if (HWRF==1)
      &          ,pert_Cd=config_flags%pert_Cd                           &
      &          ,ens_random_seed=config_flags%ens_random_seed           &
@@ -2819,6 +2824,25 @@
 
       CALL SET_TILES(GRID,IDS+1,IDE-1,JDS+2,JDE-2,ITS,ITE,JTS,JTE)
 
+!!!LPC --- is this causing diffs???
+#if (NMM_CORE==1)
+!$omp parallel do                                                       &
+!$omp& private(i,j,k)
+        DO K=KMS,KME
+        DO J=JMS,JME
+        DO I=IMS,IME
+           DUCUDT(i,j,k)=0.0
+           DVCUDT(i,j,k)=0.0
+           DTHCUDT(i,j,k)=0.0
+           DQVCUDT(i,j,k)=0.0
+           DQRCUDT(i,j,k)=0.0
+           DQCCUDT(i,j,k)=0.0
+           DQICUDT(i,j,k)=0.0
+           DQSCUDT(i,j,k)=0.0
+        ENDDO
+        ENDDO
+        ENDDO
+#endif
       CALL CUMULUS_DRIVER(GRID                                          &
      &                 ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &
      &                 ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME &
@@ -2903,9 +2927,9 @@
 #if (NMM_CORE==1)
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
-         DO K=KMS,KME
-         DO J=JMS,JME
-         DO I=IMS,IME
+        DO K=KMS,KME
+        DO J=JMS,JME
+        DO I=IMS,IME
            DTHCUDT(i,j,k)=RTHCUTEN(i,k,j)
            DQVCUDT(i,j,k)=RQVCUTEN(i,k,j)
            DQRCUDT(i,j,k)=RQRCUTEN(i,k,j)
@@ -2915,7 +2939,6 @@
         ENDDO
         ENDDO
         ENDDO
-
 #endif
 
 !-----------------------------------------------------------------------

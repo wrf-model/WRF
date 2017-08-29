@@ -474,22 +474,13 @@ CONTAINS
         RBW    = 4.503/UST(I)                                       
         CHS(I) = 1./(RA(I) + RBH)
         CQS    = 1./(RA(I) + RBW)
-        MOL(I) = DTG * CHS(I) / UST(I)                       ! This is really TST
-!        TSTV     = (THETAV1(I) - TH0(I)) * CHS(I) / UST(I) 
-           TMPVTCON  = 1.0 + EP1 * QV1D(i)                             ! COnversion factor for virtual temperature
-!           TST    = -hfx(i)/(rhox(i)*cp*ust(i))   
-           TST = DTG * CHS(I)/UST(i)
-           QST    = -QFX(i) / (UST(i)*rhox(i))
-           IF (itimestep.eq.1) THEN
-             TSTV  = (THETAV1(I) - TH0(I)) * CHS(I) / UST(I) 
-           ELSE
-             TSTV  = TST*TMPVTCON + THETAV1(i)*EP1*QST
-           ENDIF
-
+        MOL(I) = DTG * CHS(I) / UST(I)
+        TMPVTCON  = 1.0 + EP1 * QV1D(i)
+        TST = DTG * CHS(I)/UST(i)
+        TSTV  = (THETAV1(I) - TH0(I)) * CHS(I) / UST(I) 
         IF (ABS(TSTV) .LT. 1.E-5)  TSTV = 1.E-5 
-        MOLENGTH(I) = THETAV1(I) * UST(I) * UST(I) / (KARMAN *             &
-                        G * TSTV)
-!
+        MOLENGTH(I) = THETAV1(I) * UST(I) * UST(I) / (KARMAN * G * TSTV)
+
 !       ---Compute 2m surface exchange coefficients for heat and moisture
         XMOL = MOLENGTH(I)
         IF(MOLENGTH(I).GT.0.0) XMOL = AMAX1(MOLENGTH(I),2.0)       

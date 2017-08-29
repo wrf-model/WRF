@@ -492,7 +492,7 @@
             ims,ime, jms,jme, kms,kme,                                 &
             its,ite, jts,jte, kts,kte                                  )
 
-   CASE (RACM_SOA_VBS_KPP)
+   CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
        CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_soa_vbs')
        CALL sum_pm_soa_vbs (                                           &
             alt, chem, h2oaj, h2oai,                                   &
@@ -523,7 +523,7 @@
             its,ite, jts,jte, kts,kte                                  )
 
        CALL wrf_debug(15,'sum_pm_driver: calling sum_vbs2')
-       call sum_vbs2 (                                                 &
+       call sum_vbs2 ( config_flags%aero_diag_opt,                     &
              alt, chem,                                                &
              hoa_a01,hoa_a02,hoa_a03,hoa_a04,                          &
              hoa_a05,hoa_a06,hoa_a07,hoa_a08,                          &
@@ -559,7 +559,7 @@
             its,ite, jts,jte, kts,kte                                  )
 
        CALL wrf_debug(15,'sum_pm_driver: calling sum_vbs0')
-       call sum_vbs0 (                                                 &
+       call sum_vbs0 ( config_flags%aero_diag_opt,                     &
              alt, chem,                                                &
              hoa_a01,hoa_a02,hoa_a03,hoa_a04,                          &
              bboa_a01,bboa_a02,bboa_a03,bboa_a04,                      &
@@ -587,7 +587,7 @@
             its,ite, jts,jte, kts,kte                                  )
 
        CALL wrf_debug(15,'sum_pm_driver: calling sum_vbs4')
-       call sum_vbs4 (                                                 &
+       call sum_vbs4 ( config_flags%aero_diag_opt,                     &
              alt, chem,                                                &
              hoa_a01,hoa_a02,hoa_a03,hoa_a04,                          &
              soa_a01,soa_a02,soa_a03,soa_a04,                          &
@@ -610,7 +610,7 @@
             its,ite, jts,jte, kts,kte                                  )
 
        CALL wrf_debug(15,'sum_pm_driver: calling sum_vbs2')
-       call sum_vbs2 (                                                 &
+       call sum_vbs2 ( config_flags%aero_diag_opt,                     &
              alt, chem,                                                &
              hoa_a01,hoa_a02,hoa_a03,hoa_a04,                          &
              hoa_a05,hoa_a06,hoa_a07,hoa_a08,                          &
@@ -637,6 +637,7 @@
 
 
 
+       IF( config_flags%aero_cw_diag_opt == diag_cw_aero ) THEN
        CALL wrf_debug(15,'sum_pm_driver: calling sum_aq_vbs2')
        call sum_aq_vbs2 (                                                  &
              alt, chem,                                                    &
@@ -654,6 +655,7 @@
              ids,ide, jds,jde, kds,kde,                                &
              ims,ime, jms,jme, kms,kme,                                &
              its,ite, jts,jte, kts,kte                                  )
+       ENDIF
        !BSINGH -ENDS
 
    CASE DEFAULT 

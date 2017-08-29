@@ -301,6 +301,23 @@ CONTAINS
     grid%rdnw(k) = 1./grid%dnw(k)
     grid%znu(k) = 0.5*(grid%znw(k+1)+grid%znw(k))
    ENDDO
+
+   IF ( config_flags%hybrid_opt .NE. 0 ) THEN
+      call wrf_error_fatal ( '--- ERROR: Hybrid Vertical Coordinate option not supported with this idealized case' )
+   END IF
+   grid%hybrid_opt = 0
+
+   DO k=1, kde
+    grid%c3f(k) = grid%znw(k)
+    grid%c4f(k) = 0.
+    grid%c3h(k) = grid%znu(k)
+    grid%c4h(k) = 0.
+    grid%c1f(k) = 1.
+    grid%c2f(k) = 0.
+    grid%c1h(k) = 1.
+    grid%c2h(k) = 0.
+   ENDDO 
+
    DO k=2, kde-1
     grid%dn(k) = 0.5*(grid%dnw(k)+grid%dnw(k-1))
     grid%rdn(k) = 1./grid%dn(k)

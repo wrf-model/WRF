@@ -37,6 +37,7 @@ export START_DATE=2007091500 # the first perturbation valid date
 export END_DATE=2007091700   # the last perturbation valid date
 export NUM_LEVELS=27         # = bottom_top = e_vert - 1
 #export DATA_ON_LEVELS=.true. # "False if fields projected onto modes."
+#export ALLOW_MISSING_DATES=.false.  # Set to true if you want GEN_BE to attempt to continue with gaps in data (missing dates)
 
 export BE_METHOD=NMC
 export FCST_RANGE=12

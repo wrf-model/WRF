@@ -22,8 +22,6 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
    real, allocatable, dimension(:,:,:)  :: ens_contrib_qcw, ens_contrib_qrn, ens_contrib_qci, ens_contrib_qsn, ens_contrib_qgr
    real, allocatable, dimension(:,:,:)  :: output_qcw, output_qrn, output_qci, output_qsn, output_qgr
 
-   integer  :: thisdomain_max_halo_width, ierr
-
    integer  :: cids, cide, ckds, ckde, cjds, cjde, &
                cims, cime, ckms, ckme, cjms, cjme, &
                cips, cipe, ckps, ckpe, cjps, cjpe, &
@@ -31,8 +29,8 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
                nims, nime, nkms, nkme, njms, njme, &
                nips, nipe, nkps, nkpe, njps, njpe
 
-   integer :: nj, cj, nk, ck, ni, ci ! for testing
    integer :: nvar
+   integer :: stenwidth
 
 #ifdef DM_PARALLEL
    ! HALO STUFF
@@ -59,38 +57,35 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
                              nids, nide, njds, njde, nkds, nkde,    &
                              nims, nime, njms, njme, nkms, nkme,    &
                              nips, nipe, njps, njpe, nkps, nkpe )
-#ifdef DM_PARALLEL
-   CALL get_dm_max_halo_width ( grid%id , thisdomain_max_halo_width ) ! Can omit?
-#endif
 
-   ! Input: Ensemble contribution to increment -- low-res domain (x,z,y) order
-   allocate( ens_contrib_u(cims:cime,ckms:ckme,cjms:cjme) )
-   allocate( ens_contrib_v(cims:cime,ckms:ckme,cjms:cjme) )
-   allocate( ens_contrib_t(cims:cime,ckms:ckme,cjms:cjme) )
-   allocate( ens_contrib_q(cims:cime,ckms:ckme,cjms:cjme) )
-   allocate( ens_contrib_p(cims:cime,1:1,cjms:cjme) )
+   ! Input: Ensemble contribution to increment -- low-res domain
+   allocate( ens_contrib_u(cims:cime,cjms:cjme,ckms:ckme) )
+   allocate( ens_contrib_v(cims:cime,cjms:cjme,ckms:ckme) )
+   allocate( ens_contrib_t(cims:cime,cjms:cjme,ckms:ckme) )
+   allocate( ens_contrib_q(cims:cime,cjms:cjme,ckms:ckme) )
+   allocate( ens_contrib_p(cims:cime,cjms:cjme,1:1) )
 
    if ( alpha_hydrometeors ) then
-      allocate( ens_contrib_qcw(cims:cime,ckms:ckme,cjms:cjme) )
-      allocate( ens_contrib_qrn(cims:cime,ckms:ckme,cjms:cjme) )
-      allocate( ens_contrib_qci(cims:cime,ckms:ckme,cjms:cjme) )
-      allocate( ens_contrib_qsn(cims:cime,ckms:ckme,cjms:cjme) )
-      allocate( ens_contrib_qgr(cims:cime,ckms:ckme,cjms:cjme) )
+      allocate( ens_contrib_qcw(cims:cime,cjms:cjme,ckms:ckme) )
+      allocate( ens_contrib_qrn(cims:cime,cjms:cjme,ckms:ckme) )
+      allocate( ens_contrib_qci(cims:cime,cjms:cjme,ckms:ckme) )
+      allocate( ens_contrib_qsn(cims:cime,cjms:cjme,ckms:ckme) )
+      allocate( ens_contrib_qgr(cims:cime,cjms:cjme,ckms:ckme) )
    end if
 
-   ! Output: Ensemble contribution to increment interpolated to hi-res domain, (x,z,y) order
-   allocate( output_u(nims:nime,nkms:nkme,njms:njme) )
-   allocate( output_v(nims:nime,nkms:nkme,njms:njme) )
-   allocate( output_t(nims:nime,nkms:nkme,njms:njme) )
-   allocate( output_q(nims:nime,nkms:nkme,njms:njme) )
-   allocate( output_p(nims:nime,1:1,njms:njme) )
+   ! Output: Ensemble contribution to increment interpolated to hi-res domain
+   allocate( output_u(nims:nime,njms:njme,nkms:nkme) )
+   allocate( output_v(nims:nime,njms:njme,nkms:nkme) )
+   allocate( output_t(nims:nime,njms:njme,nkms:nkme) )
+   allocate( output_q(nims:nime,njms:njme,nkms:nkme) )
+   allocate( output_p(nims:nime,njms:njme,1:1) )
 
    if ( alpha_hydrometeors ) then
-      allocate( output_qcw(nims:nime,nkms:nkme,njms:njme) )
-      allocate( output_qrn(nims:nime,nkms:nkme,njms:njme) )
-      allocate( output_qci(nims:nime,nkms:nkme,njms:njme) )
-      allocate( output_qsn(nims:nime,nkms:nkme,njms:njme) )
-      allocate( output_qgr(nims:nime,nkms:nkme,njms:njme) )
+      allocate( output_qcw(nims:nime,njms:njme,nkms:nkme) )
+      allocate( output_qrn(nims:nime,njms:njme,nkms:nkme) )
+      allocate( output_qci(nims:nime,njms:njme,nkms:nkme) )
+      allocate( output_qsn(nims:nime,njms:njme,nkms:nkme) )
+      allocate( output_qgr(nims:nime,njms:njme,nkms:nkme) )
    end if
 
    ens_contrib_u = 0.
@@ -122,41 +117,41 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
    end if
 
    !
-   ! Determine the ensemble contribution to the increment (low-res) and put in (x,z,y) order for interpolation
+   ! Determine the ensemble contribution to the increment (low-res) for interpolation
    !
    do n = 1, ne
       ii = (iobwin-1)*ensdim_alpha + n
-      do j = jts_int, jte_int
-         do k = kts_int, kte_int
+      do k = kts_int, kte_int
+         do j = jts_int, jte_int
             do i = its_int, ite_int
 
                alpha = vp % alpha(i,j,k,n)
 
-               ens_contrib_u(i,k,j) = ens_contrib_u(i,k,j) + alpha * ep % v1(i,j,k,ii) ! v1 = u
-               ens_contrib_v(i,k,j) = ens_contrib_v(i,k,j) + alpha * ep % v2(i,j,k,ii) ! v2 = v
-               ens_contrib_t(i,k,j) = ens_contrib_t(i,k,j) + alpha * ep % v3(i,j,k,ii) ! v3 = t
-               ens_contrib_q(i,k,j) = ens_contrib_q(i,k,j) + alpha * ep % v4(i,j,k,ii) ! v4 = q
+               ens_contrib_u(i,j,k) = ens_contrib_u(i,j,k) + alpha * ep % v1(i,j,k,ii) ! v1 = u
+               ens_contrib_v(i,j,k) = ens_contrib_v(i,j,k) + alpha * ep % v2(i,j,k,ii) ! v2 = v
+               ens_contrib_t(i,j,k) = ens_contrib_t(i,j,k) + alpha * ep % v3(i,j,k,ii) ! v3 = t
+               ens_contrib_q(i,j,k) = ens_contrib_q(i,j,k) + alpha * ep % v4(i,j,k,ii) ! v4 = q
 
             end do !i loop
-          end do !k loop
-      end do !j loop
+         end do !j loop
+      end do !k loop
 
-      ens_contrib_p(its_int:ite_int,1,jts_int:jte_int) = ens_contrib_p(its_int:ite_int,1,jts_int:jte_int) + &
+      ens_contrib_p(its_int:ite_int,jts_int:jte_int,1) = ens_contrib_p(its_int:ite_int,jts_int:jte_int,1) + &
                                                   vp % alpha(its_int:ite_int,jts_int:jte_int,1,n)  *        &
                                                   ep % v5   (its_int:ite_int,jts_int:jte_int,1,ii)  ! v5 = ps
       if ( alpha_hydrometeors ) then
-         do j = jts_int, jte_int
-            do k = kts_int, kte_int
+         do k = kts_int, kte_int
+            do j = jts_int, jte_int
                do i = its_int, ite_int
                   alpha = vp % alpha(i,j,k,n)
-                  ens_contrib_qcw(i,k,j) = ens_contrib_qcw(i,k,j) + alpha * ep%cw(i,j,k,ii)
-                  ens_contrib_qrn(i,k,j) = ens_contrib_qrn(i,k,j) + alpha * ep%rn(i,j,k,ii)
-                  ens_contrib_qci(i,k,j) = ens_contrib_qci(i,k,j) + alpha * ep%ci(i,j,k,ii)
-                  ens_contrib_qsn(i,k,j) = ens_contrib_qsn(i,k,j) + alpha * ep%sn(i,j,k,ii)
-                  ens_contrib_qgr(i,k,j) = ens_contrib_qgr(i,k,j) + alpha * ep%gr(i,j,k,ii)
+                  ens_contrib_qcw(i,j,k) = ens_contrib_qcw(i,j,k) + alpha * ep%cw(i,j,k,ii)
+                  ens_contrib_qrn(i,j,k) = ens_contrib_qrn(i,j,k) + alpha * ep%rn(i,j,k,ii)
+                  ens_contrib_qci(i,j,k) = ens_contrib_qci(i,j,k) + alpha * ep%ci(i,j,k,ii)
+                  ens_contrib_qsn(i,j,k) = ens_contrib_qsn(i,j,k) + alpha * ep%sn(i,j,k,ii)
+                  ens_contrib_qgr(i,j,k) = ens_contrib_qgr(i,j,k) + alpha * ep%gr(i,j,k,ii)
                end do !i loop
-             end do !k loop
-         end do !j loop
+            end do !j loop
+         end do !k loop
       end if ! alpha_hydrometeors
 
    end do !n loop
@@ -171,13 +166,15 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
       nvar = 9
    end if
 
-   CALL rsl_comm_iter_init(4,cjps,cjpe)
-   DO WHILE ( rsl_comm_iter( grid%intermediate_grid%id , grid%intermediate_grid%is_intermediate, 4 ,            &
+   stenwidth = 4
+
+   CALL rsl_comm_iter_init(stenwidth,cjps,cjpe)
+   DO WHILE ( rsl_comm_iter( grid%intermediate_grid%id , grid%intermediate_grid%is_intermediate, stenwidth ,    &
                              0 , cjds,cjde,cjps,cjpe, grid%intermediate_grid%njds, grid%intermediate_grid%njde, &
                              rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,                            &
                              rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p    ))
 
-      CALL RSL_LITE_INIT_EXCH ( local_communicator, 4, 0,            &
+      CALL RSL_LITE_INIT_EXCH ( local_communicator, stenwidth, 0,    &
            rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   &
            rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p,   &
            nvar, 1, RWORDSIZE, &
@@ -185,47 +182,47 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
            0, 0, DWORDSIZE, &
            0, 0, LWORDSIZE, &
            myproc, ntasks, ntasks_x, ntasks_y,   &
-           cips, cipe, cjps, cjpe, ckps, MAX(1,1,ckpe) )
+           cips, cipe, cjps, cjpe, ckps, ckpe )
 
-      IF ( SIZE(ens_contrib_u,1)*SIZE(ens_contrib_u,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_u,1)*SIZE(ens_contrib_u,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_u, 4,                                       &
+         ens_contrib_u, stenwidth,                               &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 0, 0, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_v,1)*SIZE(ens_contrib_v,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_v,1)*SIZE(ens_contrib_v,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_v, 4,                                       &
+         ens_contrib_v, stenwidth,                               &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 0, 0, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_t,1)*SIZE(ens_contrib_t,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_t,1)*SIZE(ens_contrib_t,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_t, 4,                                       &
+         ens_contrib_t, stenwidth,                               &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 0, 0, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_q,1)*SIZE(ens_contrib_q,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_q,1)*SIZE(ens_contrib_q,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_q, 4,                                       &
+         ens_contrib_q, stenwidth,                               &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 0, 0, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
@@ -233,7 +230,7 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
       ENDIF
       IF ( SIZE(ens_contrib_p,1)*SIZE(ens_contrib_p,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_p(:,1,:), 4,                                &
+         ens_contrib_p(:,:,1), stenwidth,                        &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
          RWORDSIZE, 0, 0, DATA_ORDER_XY, 0,                      &
@@ -243,56 +240,56 @@ subroutine da_calc_flow_dependence_xa_dual_res (grid, xa_ens, ne,  ep, vp, nobwi
          cips, cipe, cjps, cjpe, 1, 1    )
       ENDIF
 if ( alpha_hydrometeors ) then
-      IF ( SIZE(ens_contrib_qcw,1)*SIZE(ens_contrib_qcw,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_qcw,1)*SIZE(ens_contrib_qcw,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_qcw, 4,                                     &
+         ens_contrib_qcw, stenwidth,                             &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 0, 0, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_qrn,1)*SIZE(ens_contrib_qrn,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_qrn,1)*SIZE(ens_contrib_qrn,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_qrn, 4,                                     &
+         ens_contrib_qrn, stenwidth,                             &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 0, 0, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_qci,1)*SIZE(ens_contrib_qci,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_qci,1)*SIZE(ens_contrib_qci,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_qci, 4,                                     &
+         ens_contrib_qci, stenwidth,                             &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 0, 0, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_qsn,1)*SIZE(ens_contrib_qsn,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_qsn,1)*SIZE(ens_contrib_qsn,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_qsn, 4,                                     &
+         ens_contrib_qsn, stenwidth,                             &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 0, 0, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_qgr,1)*SIZE(ens_contrib_qgr,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_qgr,1)*SIZE(ens_contrib_qgr,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_qgr, 4,                                     &
+         ens_contrib_qgr, stenwidth,                             &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 0, 0, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 0, 0, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
@@ -303,45 +300,45 @@ end if ! alpha_hydrometeors
      CALL RSL_LITE_EXCH_Y ( local_communicator , myproc, ntasks, ntasks_x, ntasks_y, &
                           rsl_sendw_m,  rsl_sendw_p, rsl_recvw_m,  rsl_recvw_p    )
 
-      IF ( SIZE(ens_contrib_u,1)*SIZE(ens_contrib_u,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_u,1)*SIZE(ens_contrib_u,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_u, 4,                                       &
+         ens_contrib_u, stenwidth,                               &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 0, 1, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_v,1)*SIZE(ens_contrib_v,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_v,1)*SIZE(ens_contrib_v,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_v, 4,                                       &
+         ens_contrib_v, stenwidth,                               &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 0, 1, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_t,1)*SIZE(ens_contrib_t,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_t,1)*SIZE(ens_contrib_t,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_t, 4,                                       &
+         ens_contrib_t, stenwidth,                               &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 0, 1, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_q,1)*SIZE(ens_contrib_q,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_q,1)*SIZE(ens_contrib_q,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_q, 4,                                       &
+         ens_contrib_q, stenwidth,                               &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 0, 1, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
@@ -349,7 +346,7 @@ end if ! alpha_hydrometeors
       ENDIF
       IF ( SIZE(ens_contrib_p,1)*SIZE(ens_contrib_p,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_p(:,1,:), 4,                                &
+         ens_contrib_p(:,:,1), stenwidth,                        &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
          RWORDSIZE, 0, 1, DATA_ORDER_XY, 0,                      &
@@ -359,56 +356,56 @@ end if ! alpha_hydrometeors
          cips, cipe, cjps, cjpe, 1, 1    )
       ENDIF
 if ( alpha_hydrometeors ) then
-      IF ( SIZE(ens_contrib_qcw,1)*SIZE(ens_contrib_qcw,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_qcw,1)*SIZE(ens_contrib_qcw,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_qcw, 4,                                     &
+         ens_contrib_qcw, stenwidth,                             &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 0, 1, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_qrn,1)*SIZE(ens_contrib_qrn,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_qrn,1)*SIZE(ens_contrib_qrn,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_qrn, 4,                                     &
+         ens_contrib_qrn, stenwidth,                             &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 0, 1, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_qci,1)*SIZE(ens_contrib_qci,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_qci,1)*SIZE(ens_contrib_qci,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_qci, 4,                                     &
+         ens_contrib_qci, stenwidth,                             &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 0, 1, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_qsn,1)*SIZE(ens_contrib_qsn,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_qsn,1)*SIZE(ens_contrib_qsn,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_qsn, 4,                                     &
+         ens_contrib_qsn, stenwidth,                             &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 0, 1, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_qgr,1)*SIZE(ens_contrib_qgr,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_qgr,1)*SIZE(ens_contrib_qgr,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_qgr, 4,                                     &
+         ens_contrib_qgr, stenwidth,                             &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 0, 1, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 0, 1, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
@@ -417,14 +414,13 @@ if ( alpha_hydrometeors ) then
 end if ! alpha_hydrometeors
    END DO
 
-
-   CALL rsl_comm_iter_init(4,cips,cipe)
-   DO WHILE ( rsl_comm_iter( grid%intermediate_grid%id , grid%intermediate_grid%is_intermediate, 4 ,           &
+   CALL rsl_comm_iter_init(stenwidth,cips,cipe)
+   DO WHILE ( rsl_comm_iter( grid%intermediate_grid%id , grid%intermediate_grid%is_intermediate, stenwidth ,   &
                             1 , cids,cide,cips,cipe, grid%intermediate_grid%nids, grid%intermediate_grid%nide, &
                             rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   &
                             rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p    ))
 
-      CALL RSL_LITE_INIT_EXCH ( local_communicator, 4, 1,            &
+      CALL RSL_LITE_INIT_EXCH ( local_communicator, stenwidth, 1,    &
            rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   &
            rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p,   &
            nvar, 1, RWORDSIZE, &
@@ -432,47 +428,47 @@ end if ! alpha_hydrometeors
            0, 0, DWORDSIZE, &
            0, 0, LWORDSIZE, &
            myproc, ntasks, ntasks_x, ntasks_y,   &
-           cips, cipe, cjps, cjpe, ckps, MAX(1,1,ckpe) )
+           cips, cipe, cjps, cjpe, ckps, ckpe )
 
-      IF ( SIZE(ens_contrib_u,1)*SIZE(ens_contrib_u,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_u,1)*SIZE(ens_contrib_u,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_u, 4,                                       &
+         ens_contrib_u, stenwidth,                               &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 1, 0, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_v,1)*SIZE(ens_contrib_v,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_v,1)*SIZE(ens_contrib_v,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_v, 4,                                       &
+         ens_contrib_v, stenwidth,                               &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 1, 0, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_t,1)*SIZE(ens_contrib_t,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_t,1)*SIZE(ens_contrib_t,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_t, 4,                                       &
+         ens_contrib_t, stenwidth,                               &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 1, 0, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_q,1)*SIZE(ens_contrib_q,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_q,1)*SIZE(ens_contrib_q,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_q, 4,                                       &
+         ens_contrib_q, stenwidth,                               &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 1, 0, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
@@ -480,7 +476,7 @@ end if ! alpha_hydrometeors
       ENDIF
       IF ( SIZE(ens_contrib_p,1)*SIZE(ens_contrib_p,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_p(:,1,:), 4,                                &
+         ens_contrib_p(:,:,1), stenwidth,                        &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
          RWORDSIZE, 1, 0, DATA_ORDER_XY, 0,                      &
@@ -490,56 +486,56 @@ end if ! alpha_hydrometeors
          cips, cipe, cjps, cjpe, 1, 1    )
       ENDIF
 if ( alpha_hydrometeors ) then
-      IF ( SIZE(ens_contrib_qcw,1)*SIZE(ens_contrib_qcw,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_qcw,1)*SIZE(ens_contrib_qcw,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_qcw, 4,                                     &
+         ens_contrib_qcw, stenwidth,                             &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 1, 0, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_qrn,1)*SIZE(ens_contrib_qrn,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_qrn,1)*SIZE(ens_contrib_qrn,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_qrn, 4,                                     &
+         ens_contrib_qrn, stenwidth,                             &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 1, 0, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_qci,1)*SIZE(ens_contrib_qci,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_qci,1)*SIZE(ens_contrib_qci,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_qci, 4,                                     &
+         ens_contrib_qci, stenwidth,                             &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 1, 0, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_qsn,1)*SIZE(ens_contrib_qsn,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_qsn,1)*SIZE(ens_contrib_qsn,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_qsn, 4,                                     &
+         ens_contrib_qsn, stenwidth,                             &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 1, 0, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_qgr,1)*SIZE(ens_contrib_qgr,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_qgr,1)*SIZE(ens_contrib_qgr,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_qgr, 4,                                     &
+         ens_contrib_qgr, stenwidth,                             &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 1, 0, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 1, 0, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
@@ -550,45 +546,45 @@ end if ! alpha_hydrometeors
      CALL RSL_LITE_EXCH_X ( local_communicator , myproc, ntasks, ntasks_x, ntasks_y, &
                           rsl_sendw_m,  rsl_sendw_p, rsl_recvw_m,  rsl_recvw_p    )
 
-      IF ( SIZE(ens_contrib_u,1)*SIZE(ens_contrib_u,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_u,1)*SIZE(ens_contrib_u,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_u, 4,                                       &
+         ens_contrib_u, stenwidth,                               &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 1, 1, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_v,1)*SIZE(ens_contrib_v,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_v,1)*SIZE(ens_contrib_v,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_v, 4,                                       &
+         ens_contrib_v, stenwidth,                               &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 1, 1, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_t,1)*SIZE(ens_contrib_t,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_t,1)*SIZE(ens_contrib_t,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_t, 4,                                       &
+         ens_contrib_t, stenwidth,                               &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 1, 1, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_q,1)*SIZE(ens_contrib_q,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_q,1)*SIZE(ens_contrib_q,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_q, 4,                                       &
+         ens_contrib_q, stenwidth,                               &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 1, 1, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
@@ -596,7 +592,7 @@ end if ! alpha_hydrometeors
       ENDIF
       IF ( SIZE(ens_contrib_p,1)*SIZE(ens_contrib_p,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_p(:,1,:), 4,                                &
+         ens_contrib_p(:,:,1), stenwidth,                        &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
          RWORDSIZE, 1, 1, DATA_ORDER_XY, 0,                      &
@@ -605,64 +601,64 @@ end if ! alpha_hydrometeors
          cims, cime, cjms, cjme, 1, 1,                           &
          cips, cipe, cjps, cjpe, 1, 1    )
       ENDIF
-   ENDDO
 if ( alpha_hydrometeors ) then
-      IF ( SIZE(ens_contrib_qcw,1)*SIZE(ens_contrib_qcw,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_qcw,1)*SIZE(ens_contrib_qcw,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_qcw, 4,                                     &
+         ens_contrib_qcw, stenwidth,                             &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 1, 1, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_qrn,1)*SIZE(ens_contrib_qrn,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_qrn,1)*SIZE(ens_contrib_qrn,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_qrn, 4,                                     &
+         ens_contrib_qrn, stenwidth,                             &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 1, 1, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_qci,1)*SIZE(ens_contrib_qci,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_qci,1)*SIZE(ens_contrib_qci,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_qci, 4,                                     &
+         ens_contrib_qci, stenwidth,                             &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 1, 1, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_qsn,1)*SIZE(ens_contrib_qsn,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_qsn,1)*SIZE(ens_contrib_qsn,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_qsn, 4,                                     &
+         ens_contrib_qsn, stenwidth,                             &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 1, 1, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
-      IF ( SIZE(ens_contrib_qgr,1)*SIZE(ens_contrib_qgr,3) .GT. 1 ) THEN
+      IF ( SIZE(ens_contrib_qgr,1)*SIZE(ens_contrib_qgr,2) .GT. 1 ) THEN
          CALL RSL_LITE_PACK ( local_communicator,                &
-         ens_contrib_qgr, 4,                                     &
+         ens_contrib_qgr, stenwidth,                             &
          rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p, &
          rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p, &
-         RWORDSIZE, 1, 1, DATA_ORDER_XZY, 0,                     &
+         RWORDSIZE, 1, 1, DATA_ORDER_XYZ, 0,                     &
          myproc, ntasks, ntasks_x, ntasks_y,                     &
          cids, cide, cjds, cjde, ckds, ckde,                     &
          cims, cime, cjms, cjme, ckms, ckme,                     &
          cips, cipe, cjps, cjpe, ckps, ckpe    )
       ENDIF
 end if ! alpha_hydrometeors
+   END DO
 
    !!!!!! END HALO STUFF !!!!!!!!!!!!!
 #endif
@@ -671,84 +667,86 @@ end if ! alpha_hydrometeors
    ! Now, interpolate the ensemble contributions increment to the high-res grid
    !------------------------------------------------------------------------------
 
-   ! Input is the low-res ensemble contribution to increment in (x,z,y) order
-   ! Output is the ensemble contribution to the increment on the hi-res grid in (x,z,y) order
+   ! Input is the low-res ensemble contribution to increment
+   ! Output is the ensemble contribution to the increment on the hi-res grid
 
    !call da_message((/"Using adjoint-based interpolation"/))
 
-   !$OMP PARALLEL DO &
-   !$OMP PRIVATE (n)
-   do n=1,total_here
-      do k = kts, kte
+   do k = kts, kte
+      do j = jts, jte
+         do i = its, ite
 
-         output_u(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                                &
-                     ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_u(ob_locs(n)%i,k,ob_locs(n)%j)    &
-                   + ob_locs(n)%dx*ens_contrib_u(ob_locs(n)%i+1,k,ob_locs(n)%j))                  &
-                   + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_u(ob_locs(n)%i,k,ob_locs(n)%j+1)  &
-                   + ob_locs(n)%dx*ens_contrib_u(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
+            output_u(i,j,k) =                                                                                    &
+                     aens_locs(i,j)%dym*(aens_locs(i,j)%dxm*ens_contrib_u(aens_locs(i,j)%i,aens_locs(i,j)%j,k)   &
+                   + aens_locs(i,j)%dx*ens_contrib_u(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k))                     &
+                   + aens_locs(i,j)%dy *(aens_locs(i,j)%dxm*ens_contrib_u(aens_locs(i,j)%i,aens_locs(i,j)%j+1,k) &
+                   + aens_locs(i,j)%dx*ens_contrib_u(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k))
 
-         output_v(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                                &
-                     ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_v(ob_locs(n)%i,k,ob_locs(n)%j)    &
-                   + ob_locs(n)%dx*ens_contrib_v(ob_locs(n)%i+1,k,ob_locs(n)%j))                  &
-                   + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_v(ob_locs(n)%i,k,ob_locs(n)%j+1)  &
-                   + ob_locs(n)%dx*ens_contrib_v(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
+            output_v(i,j,k) =                                                                                    &
+                     aens_locs(i,j)%dym*(aens_locs(i,j)%dxm*ens_contrib_v(aens_locs(i,j)%i,aens_locs(i,j)%j,k)   &
+                   + aens_locs(i,j)%dx*ens_contrib_v(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k))                     &
+                   + aens_locs(i,j)%dy *(aens_locs(i,j)%dxm*ens_contrib_v(aens_locs(i,j)%i,aens_locs(i,j)%j+1,k) &
+                   + aens_locs(i,j)%dx*ens_contrib_v(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k))
 
-         output_t(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                                &
-                     ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_t(ob_locs(n)%i,k,ob_locs(n)%j)    &
-                   + ob_locs(n)%dx*ens_contrib_t(ob_locs(n)%i+1,k,ob_locs(n)%j))                  &
-                   + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_t(ob_locs(n)%i,k,ob_locs(n)%j+1)  &
-                   + ob_locs(n)%dx*ens_contrib_t(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
+            output_t(i,j,k) =                                                                                    &
+                     aens_locs(i,j)%dym*(aens_locs(i,j)%dxm*ens_contrib_t(aens_locs(i,j)%i,aens_locs(i,j)%j,k)   &
+                   + aens_locs(i,j)%dx*ens_contrib_t(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k))                     &
+                   + aens_locs(i,j)%dy *(aens_locs(i,j)%dxm*ens_contrib_t(aens_locs(i,j)%i,aens_locs(i,j)%j+1,k) &
+                   + aens_locs(i,j)%dx*ens_contrib_t(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k))
 
-         output_q(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                                &
-                     ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_q(ob_locs(n)%i,k,ob_locs(n)%j)    &
-                   + ob_locs(n)%dx*ens_contrib_q(ob_locs(n)%i+1,k,ob_locs(n)%j))                  &
-                   + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_q(ob_locs(n)%i,k,ob_locs(n)%j+1)  &
-                   + ob_locs(n)%dx*ens_contrib_q(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
+            output_q(i,j,k) =                                                                                    &
+                     aens_locs(i,j)%dym*(aens_locs(i,j)%dxm*ens_contrib_q(aens_locs(i,j)%i,aens_locs(i,j)%j,k)   &
+                   + aens_locs(i,j)%dx*ens_contrib_q(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k))                     &
+                   + aens_locs(i,j)%dy *(aens_locs(i,j)%dxm*ens_contrib_q(aens_locs(i,j)%i,aens_locs(i,j)%j+1,k) &
+                   + aens_locs(i,j)%dx*ens_contrib_q(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k))
 
-      end do
-
-      output_p(ob_locs(n)%xx,1,ob_locs(n)%yy) = &
-                  ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_p(ob_locs(n)%i,1,ob_locs(n)%j)    &
-                + ob_locs(n)%dx*ens_contrib_p(ob_locs(n)%i+1,1,ob_locs(n)%j))                  &
-                + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_p(ob_locs(n)%i,1,ob_locs(n)%j+1)  &
-                + ob_locs(n)%dx*ens_contrib_p(ob_locs(n)%i+1,1,ob_locs(n)%j+1))
-
-   end do
-   !$OMP END PARALLEL DO
-
-   if ( alpha_hydrometeors ) then
-      !$OMP PARALLEL DO &
-      !$OMP PRIVATE (n)
-      do n=1,total_here
-         do k = kts, kte
-            output_qcw(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                            &
-                     ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_qcw(ob_locs(n)%i,k,ob_locs(n)%j)   &
-                   + ob_locs(n)%dx*ens_contrib_qcw(ob_locs(n)%i+1,k,ob_locs(n)%j))                 &
-                   + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_qcw(ob_locs(n)%i,k,ob_locs(n)%j+1) &
-                   + ob_locs(n)%dx*ens_contrib_qcw(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
-            output_qrn(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                            &
-                     ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_qrn(ob_locs(n)%i,k,ob_locs(n)%j)   &
-                   + ob_locs(n)%dx*ens_contrib_qrn(ob_locs(n)%i+1,k,ob_locs(n)%j))                 &
-                   + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_qrn(ob_locs(n)%i,k,ob_locs(n)%j+1) &
-                   + ob_locs(n)%dx*ens_contrib_qrn(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
-            output_qci(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                            &
-                     ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_qci(ob_locs(n)%i,k,ob_locs(n)%j)   &
-                   + ob_locs(n)%dx*ens_contrib_qci(ob_locs(n)%i+1,k,ob_locs(n)%j))                 &
-                   + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_qci(ob_locs(n)%i,k,ob_locs(n)%j+1) &
-                   + ob_locs(n)%dx*ens_contrib_qci(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
-            output_qsn(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                            &
-                     ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_qsn(ob_locs(n)%i,k,ob_locs(n)%j)   &
-                   + ob_locs(n)%dx*ens_contrib_qsn(ob_locs(n)%i+1,k,ob_locs(n)%j))                 &
-                   + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_qsn(ob_locs(n)%i,k,ob_locs(n)%j+1) &
-                   + ob_locs(n)%dx*ens_contrib_qsn(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
-            output_qgr(ob_locs(n)%xx,k,ob_locs(n)%yy) =                                            &
-                     ob_locs(n)%dym*(ob_locs(n)%dxm*ens_contrib_qgr(ob_locs(n)%i,k,ob_locs(n)%j)   &
-                   + ob_locs(n)%dx*ens_contrib_qgr(ob_locs(n)%i+1,k,ob_locs(n)%j))                 &
-                   + ob_locs(n)%dy *(ob_locs(n)%dxm*ens_contrib_qgr(ob_locs(n)%i,k,ob_locs(n)%j+1) &
-                   + ob_locs(n)%dx*ens_contrib_qgr(ob_locs(n)%i+1,k,ob_locs(n)%j+1))
          end do
       end do
-      !$OMP END PARALLEL DO
+   end do
+
+   do j = jts, jte
+      do i = its, ite
+         output_p(i,j,1) =                                                                                     &
+                  aens_locs(i,j)%dym*(aens_locs(i,j)%dxm*ens_contrib_p(aens_locs(i,j)%i,aens_locs(i,j)%j,1)    &
+                + aens_locs(i,j)%dx*ens_contrib_p(aens_locs(i,j)%i+1,aens_locs(i,j)%j,1))                      &
+                + aens_locs(i,j)%dy *(aens_locs(i,j)%dxm*ens_contrib_p(aens_locs(i,j)%i,aens_locs(i,j)%j+1,1)  &
+                + aens_locs(i,j)%dx*ens_contrib_p(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,1))
+
+      end do
+   end do
+
+   if ( alpha_hydrometeors ) then
+      do k = kts, kte
+         do j = jts, jte
+            do i = its, ite
+               output_qcw(i,j,k) =                                                                                 &
+                     aens_locs(i,j)%dym*(aens_locs(i,j)%dxm*ens_contrib_qcw(aens_locs(i,j)%i,aens_locs(i,j)%j,k)   &
+                   + aens_locs(i,j)%dx*ens_contrib_qcw(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k))                     &
+                   + aens_locs(i,j)%dy *(aens_locs(i,j)%dxm*ens_contrib_qcw(aens_locs(i,j)%i,aens_locs(i,j)%j+1,k) &
+                   + aens_locs(i,j)%dx*ens_contrib_qcw(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k))
+               output_qrn(i,j,k) =                                                                                 &
+                     aens_locs(i,j)%dym*(aens_locs(i,j)%dxm*ens_contrib_qrn(aens_locs(i,j)%i,aens_locs(i,j)%j,k)   &
+                   + aens_locs(i,j)%dx*ens_contrib_qrn(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k))                     &
+                   + aens_locs(i,j)%dy *(aens_locs(i,j)%dxm*ens_contrib_qrn(aens_locs(i,j)%i,aens_locs(i,j)%j+1,k) &
+                   + aens_locs(i,j)%dx*ens_contrib_qrn(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k))
+               output_qci(i,j,k) =                                                                                 &
+                     aens_locs(i,j)%dym*(aens_locs(i,j)%dxm*ens_contrib_qci(aens_locs(i,j)%i,aens_locs(i,j)%j,k)   &
+                   + aens_locs(i,j)%dx*ens_contrib_qci(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k))                     &
+                   + aens_locs(i,j)%dy *(aens_locs(i,j)%dxm*ens_contrib_qci(aens_locs(i,j)%i,aens_locs(i,j)%j+1,k) &
+                   + aens_locs(i,j)%dx*ens_contrib_qci(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k))
+               output_qsn(i,j,k) =                                                                                 &
+                     aens_locs(i,j)%dym*(aens_locs(i,j)%dxm*ens_contrib_qsn(aens_locs(i,j)%i,aens_locs(i,j)%j,k)   &
+                   + aens_locs(i,j)%dx*ens_contrib_qsn(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k))                     &
+                   + aens_locs(i,j)%dy *(aens_locs(i,j)%dxm*ens_contrib_qsn(aens_locs(i,j)%i,aens_locs(i,j)%j+1,k) &
+                   + aens_locs(i,j)%dx*ens_contrib_qsn(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k))
+               output_qgr(i,j,k) =                                                                                 &
+                     aens_locs(i,j)%dym*(aens_locs(i,j)%dxm*ens_contrib_qgr(aens_locs(i,j)%i,aens_locs(i,j)%j,k)   &
+                   + aens_locs(i,j)%dx*ens_contrib_qgr(aens_locs(i,j)%i+1,aens_locs(i,j)%j,k))                     &
+                   + aens_locs(i,j)%dy *(aens_locs(i,j)%dxm*ens_contrib_qgr(aens_locs(i,j)%i,aens_locs(i,j)%j+1,k) &
+                   + aens_locs(i,j)%dx*ens_contrib_qgr(aens_locs(i,j)%i+1,aens_locs(i,j)%j+1,k))
+            end do
+         end do
+      end do
    end if ! alpha_hydrometeors
 
    !
@@ -761,16 +759,16 @@ end if ! alpha_hydrometeors
          do i = its, ite
 
             ! u:
-            xa_ens % u(i,j,k) = xa_ens % u(i,j,k) + output_u(i,k,j) ! u
+            xa_ens % u(i,j,k) = xa_ens % u(i,j,k) + output_u(i,j,k) ! u
 
             ! v:
-            xa_ens % v(i,j,k) = xa_ens % v(i,j,k) + output_v(i,k,j) ! v
+            xa_ens % v(i,j,k) = xa_ens % v(i,j,k) + output_v(i,j,k) ! v
 
             ! t:
-            xa_ens % t(i,j,k) = xa_ens % t(i,j,k) + output_t(i,k,j) ! t
+            xa_ens % t(i,j,k) = xa_ens % t(i,j,k) + output_t(i,j,k) ! t
 
             ! q:
-            xa_ens % q(i,j,k) = xa_ens % q(i,j,k) + output_q(i,k,j) ! q
+            xa_ens % q(i,j,k) = xa_ens % q(i,j,k) + output_q(i,j,k) ! q
 
          end do
       end do
@@ -778,17 +776,17 @@ end if ! alpha_hydrometeors
 
    ! ps:
    xa_ens % psfc(its:ite,jts:jte) = xa_ens % psfc(its:ite,jts:jte) + &
-                                    output_p(its:ite,1,jts:jte) ! ps
+                                    output_p(its:ite,jts:jte,1) ! ps
 
    if ( alpha_hydrometeors ) then
       do k = kts, kte
          do j = jts, jte
             do i = its, ite
-               xa_ens%qcw(i,j,k) = xa_ens%qcw(i,j,k) + output_qcw(i,k,j)
-               xa_ens%qrn(i,j,k) = xa_ens%qrn(i,j,k) + output_qrn(i,k,j)
-               xa_ens%qci(i,j,k) = xa_ens%qci(i,j,k) + output_qci(i,k,j)
-               xa_ens%qsn(i,j,k) = xa_ens%qsn(i,j,k) + output_qsn(i,k,j)
-               xa_ens%qgr(i,j,k) = xa_ens%qgr(i,j,k) + output_qgr(i,k,j)
+               xa_ens%qcw(i,j,k) = xa_ens%qcw(i,j,k) + output_qcw(i,j,k)
+               xa_ens%qrn(i,j,k) = xa_ens%qrn(i,j,k) + output_qrn(i,j,k)
+               xa_ens%qci(i,j,k) = xa_ens%qci(i,j,k) + output_qci(i,j,k)
+               xa_ens%qsn(i,j,k) = xa_ens%qsn(i,j,k) + output_qsn(i,j,k)
+               xa_ens%qgr(i,j,k) = xa_ens%qgr(i,j,k) + output_qgr(i,j,k)
             end do
          end do
       end do

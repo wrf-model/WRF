@@ -1340,14 +1340,16 @@
           tt(k+1) = t_phy(i,k,j)
           rhoa(k+1) = rho_phy(i,k,j)
           o33(k+1) = max(1.e-3,chem(i,k,j,p_o3))
-         if(present(gd_cloud) .and. present(gd_cloud2))then
+         
+       IF (config_flags%cu_diag==1) THEN
           qll(k+1) = 1.e3*(moist(i,k,j,p_qc)+moist(i,k,j,p_qi)+      &
                            gd_cloud(i,k,j)+gd_cloud2(i,k,j))         &
                      *rho_phy(i,k,j)
          else
           qll(k+1) = 1.e3*(moist(i,k,j,p_qc)+moist(i,k,j,p_qi))      &
                      *rho_phy(i,k,j)
-         endif
+       ENDIF
+
           if(qll(k+1).lt.1.e-5)qll(k+1) = 0.
           phizz(k+1) = z_at_w(i,k+1,j)*.001-z_at_w(i,1,j)*.001
 !         if((i.eq.1.and.j.eq.17))then

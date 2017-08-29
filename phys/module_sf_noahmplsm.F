@@ -1703,7 +1703,7 @@ contains
 
   REAL, PARAMETER                   :: MPE    = 1.E-6
   REAL, PARAMETER                   :: PSIWLT = -150.  !metric potential for wilting point (m)
-  REAL, PARAMETER                   :: Z0     = 0.01   ! Bare-soil roughness length (m) (i.e., under the canopy)
+  REAL, PARAMETER                   :: Z0     = 0.002  ! Bare-soil roughness length (m) (i.e., under the canopy)
 
 ! ---------------------------------------------------------------------------------------------------
 ! initialize fluxes from veg. fraction
@@ -3479,6 +3479,7 @@ contains
         MOZ    = 0.
         MOZSGN = 0
         MOZOLD = 0.
+        FH2    = 0.
         HG     = 0.
         H      = 0.
         QFX    = 0.
@@ -3931,6 +3932,7 @@ contains
         MOZ    = 0.
         MOZSGN = 0
         MOZOLD = 0.
+        FH2    = 0.
         H      = 0.
         QFX    = 0.
         FV     = 0.1
@@ -6798,6 +6800,7 @@ contains
   REAL                                    :: XS     !
   REAL                                    :: WATMIN !
   REAL                                    :: QDRAIN_SAVE !
+  REAL                                    :: RUNSRF_SAVE !
   REAL                                    :: EPORE  !effective porosity [m3/m3]
   REAL, DIMENSION(1:NSOIL)                :: FCR    !impermeable fraction due to frozen soil
   INTEGER                                 :: NITER  !iteration times soil moisture (-)
@@ -6904,19 +6907,26 @@ contains
 
     NITER = 1
 
-    IF(OPT_INF == 1) THEN    !OPT_INF =2 may cause water imbalance
+!    IF(OPT_INF == 1) THEN    !OPT_INF =2 may cause water imbalance
        NITER = 3
        IF (PDDUM*DT>DZSNSO(1)*parameters%SMCMAX(1) ) THEN
           NITER = NITER*2
        END IF
-    END IF                 
+!    END IF                 
 
     DTFINE  = DT / NITER
 
 ! solve soil moisture
 
     QDRAIN_SAVE = 0.0
+    RUNSRF_SAVE = 0.0
     DO ITER = 1, NITER
+       IF(QINSUR > 0. .and. OPT_RUN == 3) THEN
+          CALL INFIL (parameters,NSOIL  ,DTFINE     ,ZSOIL  ,SH2O   ,SICE   , & !in
+                      SICEMAX,QINSUR ,                         & !in
+                      PDDUM  ,RUNSRF )                           !out
+       END IF
+
        CALL SRT   (parameters,NSOIL  ,ZSOIL  ,DTFINE ,PDDUM  ,ETRANI , & !in
                    QSEVA  ,SH2O   ,SMC    ,ZWT    ,FCR    , & !in
                    SICEMAX,FCRMAX ,ILOC   ,JLOC   ,SMCWTD ,         & !in
@@ -6930,9 +6940,11 @@ contains
                    WPLUS)                                     !out
        RSAT =  RSAT + WPLUS
        QDRAIN_SAVE = QDRAIN_SAVE + QDRAIN
+       RUNSRF_SAVE = RUNSRF_SAVE + RUNSRF
     END DO
 
     QDRAIN = QDRAIN_SAVE/NITER
+    RUNSRF = RUNSRF_SAVE/NITER
 
     RUNSRF = RUNSRF * 1000. + RSAT * 1000./DT  ! m/s -> mm/s
     QDRAIN = QDRAIN * 1000.
@@ -7388,6 +7400,22 @@ contains
     WPLUS        = MAX((SH2O(1)-EPORE), 0.0) * DZSNSO(1) 
     SH2O(1)      = MIN(EPORE,SH2O(1))
 
+   IF(WPLUS > 0.0) THEN
+    SH2O(2)      = SH2O(2) + WPLUS/DZSNSO(2)
+    DO K = 2,NSOIL-1
+      EPORE        = MAX ( 1.E-4 , ( parameters%SMCMAX(K) - SICE(K) ) )
+      WPLUS        = MAX((SH2O(K)-EPORE), 0.0) * DZSNSO(K)
+      SH2O(K)      = MIN(EPORE,SH2O(K))
+      SH2O(K+1)    = SH2O(K+1) + WPLUS/DZSNSO(K+1)
+    END DO
+
+    EPORE        = MAX ( 1.E-4 , ( parameters%SMCMAX(NSOIL) - SICE(NSOIL) ) )
+    WPLUS        = MAX((SH2O(NSOIL)-EPORE), 0.0) * DZSNSO(NSOIL) 
+    SH2O(NSOIL)  = MIN(EPORE,SH2O(NSOIL))
+   END IF
+   
+    SMC = SH2O + SICE
+
   END SUBROUTINE SSTEP
 
 !== begin wdfcnd1 ==================================================================================
@@ -7449,25 +7477,27 @@ contains
 
 ! local
     REAL :: EXPON
-    REAL :: FACTR
+    REAL :: FACTR1,FACTR2
     REAL :: VKWGT
 ! ----------------------------------------------------------------------
 
 ! soil water diffusivity
 
-    FACTR = MAX(0.01, SMC/parameters%SMCMAX(ISOIL))
+    FACTR1 = 0.05/parameters%SMCMAX(ISOIL)
+    FACTR2 = MAX(0.01, SMC/parameters%SMCMAX(ISOIL))
+    FACTR1 = MIN(FACTR1,FACTR2)
     EXPON = parameters%BEXP(ISOIL) + 2.0
-    WDF   = parameters%DWSAT(ISOIL) * FACTR ** EXPON
+    WDF   = parameters%DWSAT(ISOIL) * FACTR2 ** EXPON
 
     IF (SICE > 0.0) THEN
     VKWGT = 1./ (1. + (500.* SICE)**3.)
-    WDF   = VKWGT * WDF + (1.-VKWGT)*parameters%DWSAT(ISOIL)*(0.2/parameters%SMCMAX(ISOIL))**EXPON
+    WDF   = VKWGT * WDF + (1.-VKWGT)*parameters%DWSAT(ISOIL)*(FACTR1)**EXPON
     END IF
 
 ! hydraulic conductivity
 
     EXPON = 2.0*parameters%BEXP(ISOIL) + 3.0
-    WCND  = parameters%DKSAT(ISOIL) * FACTR ** EXPON
+    WCND  = parameters%DKSAT(ISOIL) * FACTR2 ** EXPON
 
   END SUBROUTINE WDFCND2
 

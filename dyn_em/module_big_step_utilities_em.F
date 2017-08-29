@@ -731,15 +731,13 @@ SUBROUTINE calc_ww_cp ( u, v, mup, mub, c1h, c2h, ww,    &
 
       DO j=jts,jtf
       DO i=its,min(ite+1,ide)
-        ! u is always coupled with my
-        MUU(i,j) = 0.5*(MUP(i,j)+MUB(i,j)+MUP(i-1,j)+MUB(i-1,j))/msfuy(i,j)
+        MUU(i,j) = 0.5*(MUP(i,j)+MUB(i,j)+MUP(i-1,j)+MUB(i-1,j))
       ENDDO
       ENDDO
 
       DO j=jts,min(jte+1,jde)
       DO i=its,itf
-       ! v is always coupled with mx
-        MUV(i,j) = 0.5*(MUP(i,j)+MUB(i,j)+MUP(i,j-1)+MUB(i,j-1))*msfvx_inv(i,j)
+        MUV(i,j) = 0.5*(MUP(i,j)+MUB(i,j)+MUP(i,j-1)+MUB(i,j-1))
       ENDDO
       ENDDO
 
@@ -780,8 +778,8 @@ SUBROUTINE calc_ww_cp ( u, v, mup, mub, c1h, c2h, ww,    &
         DO k=kts,ktf
         DO i=its,itf
 
-          divv(i,k) = msftx(i,j)*dnw(k)*( rdx*(muu(i+1,j)*u(i+1,k,j)-muu(i,j)*u(i,k,j))  &
-                                        +rdy*(muv(i,j+1)*v(i,k,j+1)-muv(i,j)*v(i,k,j))   )
+          divv(i,k) = msftx(i,j)*dnw(k)*( rdx*(muu(i+1,j)*u(i+1,k,j)/msfuy(i+1,j)-muu(i,j)*u(i,k,j)/msfuy(i,j))  &
+                                        +rdy*(muv(i,j+1)*v(i,k,j+1)*msfvx_inv(i,j+1)-muv(i,j)*v(i,k,j)*msfvx_inv(i,j))   )
 
 !          dmdt(i) = dmdt(i) + dnw(k)* ( rdx*(ru(i+1,k,j)-ru(i,k,j))  &
 !                                       +rdy*(rv(i,k,j+1)-rv(i,k,j))   )
@@ -2590,15 +2588,15 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
    max_horiz_cfl = 0.
    total = 0
 
-   IF(config_flags%map_proj == PROJ_CASSINI ) then
+   IF(config_flags%polar ) then
      msfxffl = 1.0/COS(config_flags%fft_filter_lat*degrad) 
    END IF
 
    IF ( config_flags%w_damping == 1 ) THEN
 #ifdef OPTIMIZE_CFL_TEST
 ! 20121025, L. Meadows vector optimization does not include special case for Cassini
-     IF(config_flags%map_proj == PROJ_CASSINI ) then
-       CALL wrf_error_fatal('module_big_step_utilities_em.F: -DOPTIMIZE_CFL_TEST option does not support PROJ_CASSINI')
+     IF(config_flags%polar ) then
+       CALL wrf_error_fatal('module_big_step_utilities_em.F: -DOPTIMIZE_CFL_TEST option does not support global domains')
      END IF
 #endif
 
@@ -2615,7 +2613,7 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
            max_vert_cfl = vert_cfl
         ENDIF
 #  else
-        IF(config_flags%map_proj == PROJ_CASSINI ) then
+        IF(config_flags%polar ) then
            msfuxt = MIN(msfux(i,j), msfxffl)
         ELSE
            msfuxt = msfux(i,j)
@@ -2673,7 +2671,7 @@ SUBROUTINE w_damp( rw_tend, max_vert_cfl,max_horiz_cfl, &
         ENDIF
 #  else
 ! L. Meadows MIC optimization, 20121025
-        IF(config_flags%map_proj == PROJ_CASSINI ) then
+        IF(config_flags%polar ) then
            msfuxt = MIN(msfux(i,j), msfxffl)
         ELSE
            msfuxt = msfux(i,j)

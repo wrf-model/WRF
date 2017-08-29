@@ -77,7 +77,7 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
                                    iv%instid(i)%satazi(n),         &
                                    iv%instid(i)%clw(n)
             else !no clw info
-               write(unit=oma_rad_unit,fmt='(a,i7,2x,a,2i3,f6.0,4f8.2)') 'INFO : ', ndomain, &
+               write(unit=oma_rad_unit,fmt='(a,i7,2x,a,i6,i3,f6.0,4f8.2)') 'INFO : ', ndomain, &
                                    iv%instid(i)%info%date_char(n), &
                                    iv%instid(i)%scanpos(n),        &
                                    iv%instid(i)%landsea_mask(n),   &

@@ -3255,8 +3255,9 @@ CONTAINS
 ! ----------------------------------------------------------------------
       ELSE
 !     From V3.9 original code (commented) replaced to allow complete melting of small snow amounts
-!        T1 = TFREEZ * SNCOVR ** SNOEXP + T12 * (1.0- SNCOVR ** SNOEXP)
-         T1 = TFREEZ * max(0.01,SNCOVR ** SNOEXP) + T12 * (1.0- max(0.01,SNCOVR ** SNOEXP))
+        T1 = TFREEZ * SNCOVR ** SNOEXP + T12 * (1.0- SNCOVR ** SNOEXP)
+! HWRF - 2017 operational uses original v3.9 code
+!         T1 = TFREEZ * max(0.01,SNCOVR ** SNOEXP) + T12 * (1.0- max(0.01,SNCOVR ** SNOEXP))
          BETA = 1.0
 
 ! ----------------------------------------------------------------------

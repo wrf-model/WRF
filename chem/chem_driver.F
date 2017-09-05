@@ -45,7 +45,8 @@
 #if (defined(CHEM_DBG_I) && defined(CHEM_DBG_J) && defined(CHEM_DBG_K))
                                      chem_dbg,      &
 #endif
-                                     get_last_gas,mozcart_lbc_set
+                                     get_last_gas,mozcart_lbc_set, &
+                                     bdy_chem_value_top_pv,PVS
   USE module_upper_bc_driver, only: upper_bc_driver
   USE module_tropopause,      only: tropopause_driver
   USE modal_aero_data, only: ntot_amode_cam_mam => ntot_amode
@@ -267,6 +268,8 @@
 ! ..
 ! .. Intrinsic Functions ..
       INTRINSIC max, min
+
+      REAL, ALLOCATABLE, DIMENSION(:,:,:) :: si_zsigf, si_zsig
 !<DESCRIPTION>
 !<pre>
 ! chem_driver is the main driver for handling chemistry related tasks
@@ -815,6 +818,7 @@
               ids,ide, jds,jde, kds,kde,                                                   &
               ims,ime, jms,jme, kms,kme,                                                   &
               its,ite,jts,jte,kts,kte)
+
               if( config_flags%chem_opt == MOZART_KPP .or. &
                   config_flags%chem_opt == MOZCART_KPP .or. &
                   config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
@@ -1673,6 +1677,18 @@ end if !Chemistry time step check
                                its,ite, jts,jte, kts,kte            )
     endif
 
+
+!   call wrf_debug(15,'set upper boundary condition according to PV')
+!
+!   call PVS(ims,ime,jms,jme,kms,kme,grid%u_2,grid%v_2,grid%t_2,grid%znu,grid%msft, &
+!              grid%msfu,grid%msfv,grid%f,grid%mub,grid%dx,grid%pv,ids,ide,jds,jde, &
+!              kds,kde,its,ite,jts,jte,kts,kte) 
+!
+!   call bdy_chem_value_top_pv( chem, grid%xlat,         &
+!                               ims,ime, jms,jme, kms,kme,    &
+!                               its,ite, jts,jte, kts,kte,         &
+!                               grid%pb,grid%p, &
+!                               grid%pv)
 
    END DO chem_tile_loop_1
 

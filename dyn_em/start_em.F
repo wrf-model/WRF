@@ -1724,7 +1724,8 @@ endif
                          grid%chem_in_opt,grid%kemit,grid%num_vert_mix,                       &
                          ids , ide , jds , jde , kds , kde ,                &
                          ims , ime , jms , jme , kms , kme ,                &
-                         its , ite , jts , jte , kts , kte                  )
+                         its , ite , jts , jte , kts , kte ,                &
+                         grid%u_2,grid%v_2                 )
 
 !
 ! calculate initial pm

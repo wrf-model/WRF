@@ -44,7 +44,8 @@ SUBROUTINE solve_em ( grid , config_flags  &
                  ,period_bdy_em_scalar_sub,period_bdy_em_tke_old_sub                       &
                  ,period_bdy_em_tracer2_sub,period_bdy_em_tracer_old_sub                   &
                  ,period_bdy_em_tracer_sub,period_em_da_sub,period_em_hydro_uv_sub         &
-                 ,halo_em_f_sub,halo_em_init_4_sub,halo_em_thetam_sub,period_em_thetam_sub
+                 ,halo_em_f_sub,halo_em_init_4_sub,halo_em_thetam_sub,period_em_thetam_sub &
+                 ,halo_em_d_pv_sub
 #endif
    USE module_utility
 ! Mediation layer modules
@@ -2514,6 +2515,12 @@ BENCH_START(chem_adv_tim)
          ENDDO chem_tile_loop_1
          !$OMP END PARALLEL DO
 
+if ( config_flags%do_pvozone ) then
+#ifdef DM_PARALLEL
+#  include "HALO_EM_D_PV.inc"
+#endif
+end if
+
          !$OMP PARALLEL DO   &
          !$OMP PRIVATE ( ij, tenddec )
 
@@ -2577,8 +2584,17 @@ BENCH_START(chem_adv_tim)
                                      ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                                      grid%i_start(ij), grid%i_end(ij),   &
                                      grid%j_start(ij), grid%j_end(ij),   &
-                                     k_start, k_end                      )
-           ENDIF
+                                     k_start, k_end,                     &
+                                     grid%u_2,grid%v_2,grid%t_2,grid%znu,grid%msft, &
+                                     grid%msfu,grid%msfv,grid%f,grid%mub,grid%dx,grid%xlat,grid%pv)
+
+           !  CALL bdy_chem_value_top_pv (chem(ims,kms,jms,ic),grid%xlat,         &
+           !                        ims,ime, jms,jme, kms,kme,    &
+           !                        ips,ipe, jps,jpe, kps,kpe,    &
+           !                        grid%pb,grid%p, &
+           !                        grid%pv)
+
+              ENDIF
          ENDDO chem_tile_loop_2
          !$OMP END PARALLEL DO
 

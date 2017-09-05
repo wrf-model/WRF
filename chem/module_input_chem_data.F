@@ -51,6 +51,8 @@ MODULE module_input_chem_data
    USE module_domain
    USE module_data_sorgam, ONLY : conmin, rgasuniv, epsilc, grav
    USE module_get_file_names, ONLY : eligible_file_name, number_of_eligible_files, unix_ls
+   USE module_model_constants
+!   USE module_data_pv2o3
 
    IMPLICIT NONE
 
@@ -163,10 +165,15 @@ MODULE module_input_chem_data
 !     e.g. p_o3=6, iref(6-1)=1, so xl(1,:) is the ozone profile.
 !     See gasprofile_init_pnnl for an explination of what height
 !     each index represents.
-      DATA (xl(1,k_loop),k_loop=1,kx) &
-      / 1.68E-07, 1.68E-07, 5.79E-08, 5.24E-08, 5.26E-08, &
-       5.16E-08, 4.83E-08, 4.50E-08, 4.16E-08, 3.80E-08, 3.56E-08, &
-       3.35E-08, 3.15E-08, 3.08E-08, 3.06E-08, 3.00E-08/  
+!      DATA (xl(1,k_loop),k_loop=1,kx) &
+!      / 1.68E-07, 1.68E-07, 5.79E-08, 5.24E-08, 5.26E-08, &
+!       5.16E-08, 4.83E-08, 4.50E-08, 4.16E-08, 3.80E-08, 3.56E-08, &
+!       3.35E-08, 3.15E-08, 3.08E-08, 3.06E-08, 3.00E-08/
+
+       DATA (xl(1,k_loop),k_loop=1,kx) &
+      / 1.68E-07, 1.68E-07, 7.18E-08, 6.40E-08, 6.02E-08, &
+        5.94E-08, 5.61E-08, 5.14E-08, 4.89E-08, 4.53E-08, 4.20E-08, &
+        3.76E-08, 3.48E-08, 3.27E-08, 3.11E-08, 3.00E-08/
 
       DATA (xl(2,k_loop),k_loop=1,kx) &
       / 4.06E-10, 4.06E-10, 2.16E-10, 1.37E-10, 9.47E-11, &
@@ -307,6 +314,15 @@ MODULE module_input_chem_data
 
       type(lbc_concentration), allocatable :: fixed_lbc(:)
 
+      !PV to O3 conversion parameterization lookup values
+      INTEGER, PARAMETER :: levs_pv2o3=4
+      REAL, DIMENSION(1:levs_pv2o3) :: pref_pv2o3 = (/5856.,7640.,9562.,50000./)
+      REAL, DIMENSION(6) :: pv2o3_lv1 = (/203.53,-13.622,0.54157,-9.4264E-3,7.299E-5,-2.0214E-7/)
+      REAL, DIMENSION(6) :: pv2o3_lv2 = (/151.22,-15.762,0.816918,-.0180488,1.8418E-4,-7.1408E-7/)
+      REAL, DIMENSION(6) :: pv2o3_lv3 = (/62.217,-1.4435,0.030439,0.00058,-1.541E-5,8.2912E-8/)
+      REAL, DIMENSION(6) :: pv2o3_lv4 = (/62.217,-1.4435,0.030439,0.00058,-1.541E-5,8.2912E-8/)
+      ! Upper limit on interpolation
+
 CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -378,13 +394,24 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
 
  case (CO2_TRACER,GHG_TRACER)
      call wrf_debug("setup_profile_maps: nothing done for the GHG options")
-
+!      call setup_gasprofile_map_ghg
   case default
      call wrf_error_fatal("setup_profile_maps: could not decipher chem_opt value")
 
   end select
 
 END SUBROUTINE setup_gasprofile_maps
+
+!!!SUBROUTINE setup_gasprofile_map_ghg
+!!!  iref(:)    = 1 !default value
+!!!  iref(1:3) = (/1,1,1/)
+
+!!!  fracref(:)    = 1. !default value
+!!!  fracref(1:3) = (/1., 1., 1./)
+
+!!!  ggnam(:) = 'JUNK' !default value
+!!!  ggnam(1:2) = (/ 'CO ','CO2'/)
+!!!END SUBROUTINE setup_gasprofile_map_ghg
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Maps for indices and fractional apportionment of the default
@@ -672,6 +699,9 @@ SUBROUTINE input_chem_profile (si_grid)
    INTEGER :: fid, ierr, numgas
    INTEGER :: debug_level
 
+   REAL,DIMENSION(si_grid%sm31:si_grid%em31,si_grid%sm32:si_grid%em32,    &
+                  si_grid%sm33:si_grid%em33) :: u_phy,v_phy,t_phy,p_phy
+
    REAL, ALLOCATABLE, DIMENSION(:,:,:) :: si_zsigf, si_zsig
 
 
@@ -697,6 +727,13 @@ SUBROUTINE input_chem_profile (si_grid)
 
      write(message,'(A)') 'WRF_EM_CORE  '
      si_zsigf = (si_grid%ph_1 + si_grid%phb) / grav
+     !p_phy = si_grid%p + si_grid%pb
+     !t_phy = (si_grid%t_2+t0)*(p_phy/p1000mb)**rcp
+
+     t_phy=si_grid%t_2+t0
+     u_phy=si_grid%u_2
+     v_phy=si_grid%v_2
+
 
 !  si_zsigf = (si_grid%ph_1 + si_grid%phb) / grav
 
@@ -748,7 +785,12 @@ SUBROUTINE input_chem_profile (si_grid)
        ! Do nothing, since for GHGs initialization is done in chemics_init.F
    ELSE
       CALL make_chem_profile (ims, ime, jms, jme, kms, kme, num_chem, numgas, &
-                              si_grid%chem_opt, si_zsig, si_grid%chem)
+                              si_grid%chem_opt, si_zsig, si_grid%chem,        &
+                              u_phy, v_phy, t_phy, si_grid%p, si_grid%pb,     &
+                              si_grid%znu, si_grid%msft, si_grid%msfu, si_grid%msfv, &
+                              si_grid%f, si_grid%mub,si_grid%dx,si_grid%xlat, &
+                              ids,ide,jds,jde,kds,kde, &
+                              ips,ipe,jps,jpe,kps,kpe)
    END IF
 
    CALL wrf_debug       ( 100,' input_chem_profile: exit subroutine ')
@@ -758,13 +800,23 @@ SUBROUTINE input_chem_profile (si_grid)
 
   END SUBROUTINE input_chem_profile
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
   SUBROUTINE make_chem_profile ( nx1, nx2, ny1, ny2, nz1, nz2, nch, numgas, &
-                                 chem_opt, zgrid, chem )
+                                 chem_opt, zgrid, chem, UB, VB, TB, P, PB,  &
+                                 SIGMA, XMSF, UMSF, VMSF, CORL,PSB,DX,XLAT, &
+                                 ids,ide,jds,jde,kds,kde, &
+                                 ips,ipe,jps,jpe,kps,kpe)
+
+    USE module_configure, only: model_config_rec
+
     IMPLICIT NONE
 
     INTEGER, INTENT(IN) :: nx1, ny1, nz1
     INTEGER, INTENT(IN) :: nx2, ny2, nz2
+    INTEGER, INTENT(IN) :: ips,ipe,jps,jpe,kps,kpe
+    INTEGER, INTENT(IN) :: ids,ide,jds,jde,kds,kde
     INTEGER, INTENT(IN) :: nch, numgas, chem_opt
+
     !REAL, INTENT(IN), DIMENSION(nx1:nx2,nz1:nz2,ny1:ny2) :: zgrid
     REAL, DIMENSION(nx1:nx2,nz1:nz2,ny1:ny2) :: zgrid
 
@@ -779,6 +831,17 @@ SUBROUTINE input_chem_profile (si_grid)
 
     REAL :: hc358 !wig, 2-May-2007
     REAL :: olit
+
+    REAL, DIMENSION(nx1:nx2,nz1:nz2,ny1:ny2), INTENT(IN) :: &
+                                             TB, UB, VB, P, PB
+    REAL, DIMENSION(nz1:nz2), INTENT(IN)                 :: SIGMA
+    REAL, DIMENSION(nx1:nx2,ny1:ny2), INTENT(IN)         :: &
+                             XMSF, UMSF, VMSF, CORL, PSB , XLAT
+    REAL, INTENT(IN)                                     :: DX
+
+    REAL, DIMENSION(nx1:nx2,nz1:nz2,ny1:ny2) :: PV
+    REAL                                     :: preshPa, pv2o3_con
+    LOGICAL                                  :: PVBOOL
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
@@ -823,17 +886,41 @@ SUBROUTINE input_chem_profile (si_grid)
       !chem(:,:,:,1) = stor(:,:,:,1) * 0.
       chem(nx1:nx2,nz1:nz2,ny1:ny2,1) = -999.
 
-!      DO l=2,nch
-      DO l=2,numgas
-        is=iref(l-1)
-        DO j=ny1,ny2
-        DO k=nz1,nz2
-        DO i=nx1,nx2 
-          chem(i,k,j,l)=fracref(l-1)*stor(i,k,j,is)*1.E6
-        ENDDO
-        ENDDO
-        ENDDO
+      if (model_config_rec%do_pvozone) &
+         call PVS(nx1,nx2,ny1,ny2,nz1,nz2, &
+                  UB,VB,TB,SIGMA,XMSF, UMSF, &
+                  VMSF,CORL,PSB,DX,PV, &
+                  ids,ide,jds,jde,kds,kde, &
+                  ips,ipe,jps,jpe,kps,kpe)
+
+     
+      DO  l=2,numgas
+         is=iref(l-1)
+         DO j=ny1,ny2
+         DO k=nz1,nz2
+         DO i=nx1,nx2
+            PVBOOL = .false.
+            if(model_config_rec%do_pvozone .and. l.eq.p_o3) then
+               ! PV2O3 extrapolation from 100 to 500mb. SAM 8/5/16, Yuyan Cui
+               preshPa=p(i,k,j)+pb(i,k,j)
+               if(preshPa.le.50000.) then
+                  CALL PV2O3_CONST(XLAT(i,j),preshPa,pv2o3_con)
+! chem is in (ppmv), stor is in mixing ratio by volume, pv2o3_con is in (ppbv/PVunit)
+                  if (stor(i,k,j,is).lt.pv2o3_con*PV(i,k,j)*1.E-9) then
+                      PVBOOL = .true.
+                  end if
+               end if
+            end if
+            if (PVBOOL) then
+               chem(i,k,j,l)=fracref(l-1)*pv2o3_con*PV(i,k,j)*1.E-9 * 1.E6
+            else
+               chem(i,k,j,l)=fracref(l-1)*stor(i,k,j,is) * 1.E6
+            endif
+         ENDDO
+         ENDDO
+         ENDDO
       ENDDO
+
 !
 ! For CBMZ, we need to construct PAR based on a combination of other
 ! species. This cannot be done with the looping construct above so
@@ -922,6 +1009,7 @@ SUBROUTINE input_chem_profile (si_grid)
       RETURN
   END SUBROUTINE make_chem_profile
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
 !
 ! this is a kludge routine as of now....
 !
@@ -1268,11 +1356,120 @@ SUBROUTINE input_chem_profile (si_grid)
 
       RETURN
   END SUBROUTINE bdy_chem_value_racm
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   
+!!!SUBROUTINE bdy_chem_value_racm_pv ( chem, z, pv, nch, numgas,p_co2,xlat,preshPa )
+!!!
+!!!    IMPLICIT NONE
+!!!
+!!!    REAL,    intent(OUT)  :: chem
+!!!    REAL,    intent(IN)   :: z,pv          ! 3D height array
+!!!    REAL,    intent(IN)   :: xlat,preshPa   ! for determination of O3/PV proportionality constant
+!!!    INTEGER, intent(IN)   :: nch,p_co2  ! index number of chemical species
+!!!    INTEGER, intent(IN)   :: numgas     ! index number of last gas species
+!!!
+!!!    INTEGER :: i, k, irefcur
+!!!
+!!!    REAL, DIMENSION(kx):: cprof         ! chemical profile, diff. index order
+!!!
+!!!    REAL, DIMENSION(1:kx):: zprof
+!!!    REAL                 :: stor
+!!!    REAL                 :: wgt0
+!!!    REAL                 :: pv2o3_con   ! for determination of O3/PV proportionality constant
+!!!
+!!!    CHARACTER (LEN=80) :: message
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!
+!!!! Check the number of species
+!!!!     if((nch-1).gt.logg)return
+!!!     if (nch.eq.p_co2)then
+!!!       chem=370.
+!!!!       chem=395.
+!!!       return
+!!!     endif
+!!!     if (nch.eq.p_co2+1)then
+!!!       chem=1.7
+!!!!       chem=1.85
+!!!     return
+!!!     endif
+!!!     if (nch.ge.p_co2+2)return
+!!!
+!!!
+!!!!    if( nch .GT. logg+1) then
+!!!     if( nch .GT. numgas) then
+!!!       message = ' Input_chem_profile: wrong number of chemical species'
+!!!       return
+!!!!       CALL WRF_ERROR_FATAL ( message )
+!!!     endif
+!!!     if (nch.ge.p_co2+2)return
+!!!
+!!!
+!!!!    if( nch .GT. logg+1) then
+!!!     if( nch .GT. numgas) then
+!!!       message = ' Input_chem_profile: wrong number of chemical species'
+!!!       return
+!!!!       CALL WRF_ERROR_FATAL ( message )
+!!!     endif
+!!!
+!!!      ! Vertically flip the chemistry data as it is given top down
+!!!      !     and heights in zfa are bottom up
+!!!      ! Fill 1D chemical profile array cprof
+!!!      ! Convert species 28-34 (lo-6:lo) from (molecules/cm3) to (mol/mol)
+!!!      irefcur = iref(nch-1)
+!!!      DO k = 1,kx
+!!!        zprof(k) = 0.5*(zfa_bdy(k)+zfa_bdy(k+1))
+!!!      if (irefcur .lt. lo-6) then
+!!!
+!!!          cprof(k) = xl(irefcur,kx+1-k)
+!!!
+!!!        else
+!!!          cprof(k) = xl(irefcur,kx+1-k)/dens(kx+1-k)
+!!!          end if
+!!!      ENDDO
+!!! ! Interpolate temp 3D chemical profile array to WRF field
+!!!      IF (z .LT. zprof(1)) THEN
+!!!        stor = cprof(1)
+!!!      ELSE IF (z .GT. zprof(kx)) THEN
+!!!        stor = cprof(kx)
+!!!      ELSE
+!!!        ! We can trap between two levels and linearly interpolate
+!!!        input_loop:  DO k = 1, kx-1
+!!!          IF (z .EQ. zprof(k) )THEN
+!!!            stor = cprof(k)
+!!!            EXIT input_loop
+!!!          ELSE IF ( (z .GT. zprof(k)) .AND. &
+!!!                    (z .LT. zprof(k+1)) ) THEN
+!!!            wgt0 = (z   - zprof(k+1)) / &
+!!!                   (zprof(k) - zprof(k+1))
+!!!            stor = MAX( wgt0 *cprof(k  ) + &
+!!!                     (1.-wgt0)*cprof(k+1), 0.)
+!!!            EXIT input_loop
+!!!        ENDIF
+!!!        ENDDO input_loop
+!!!      ENDIF
+!!!
+!!!     
+!!!      ! Here is where the chemistry value is constructed
+!!!       CALL PV2O3_CONST(xlat,preshPa,pv2o3_con)
+!!!! chem is in ppmv, stor is in mixing ratio by volume, pv2o3_con is in ppbv/PVunit
+!!!       IF (stor.lt.pv2o3_con*pv*1.E-9) then
+!!!          chem = fracref(nch-1)*pv*pv2o3_con*1.E-3
+!!!       ELSE
+!!!          chem = fracref(nch-1)*stor*1.E6
+!!!       ENDIF
+!!! ! special code for sulfate/h2so4
+!!!
+!!!      if(nch.eq.p_sulf.and.p_nu0.gt.1)then
+!!!        chem=chem*(1.-so4vaptoaer)
+!!!      endif
+!!! RETURN
+!!!  END SUBROUTINE bdy_chem_value_racm_pv
+!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   SUBROUTINE bdy_chem_value ( chem, z, nch, numgas )
-                                  
+
     IMPLICIT NONE
 
     REAL,    intent(OUT)  :: chem
@@ -1387,6 +1584,160 @@ end if
 END SUBROUTINE bdy_chem_value_ghg
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+
+
+
+!!!!Yuyan Cui Code
+!!!SUBROUTINE bdy_chem_value_ghg ( chem, z, nch, numgas,p_co2 )
+!!!
+!!!    IMPLICIT NONE
+!!!
+!!!    REAL,    intent(OUT)  :: chem
+!!!    REAL,    intent(IN)   :: z          ! 3D height array
+!!!    INTEGER, intent(IN)   :: nch,p_co2  ! index number of chemical species
+!!!    INTEGER, intent(IN)   :: numgas     ! index number of last gas species
+!!!
+!!!    INTEGER :: i, k, irefcur
+!!!
+!!!    REAL, DIMENSION(kx):: cprof         ! chemical profile, diff. index order
+!!!
+!!!    REAL, DIMENSION(1:kx):: zprof
+!!!    REAL                 :: stor
+!!!    REAL                 :: wgt0
+!!!
+!!!    CHARACTER (LEN=80) :: message
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!
+!!!!    if( nch .GT. logg+1) then
+!!!     if( nch .GT. numgas) then
+!!!       message = ' Input_chem_profile: wrong number of chemical species'
+!!!       return
+!!!!       CALL WRF_ERROR_FATAL ( message )
+!!!     endif
+!!!
+!!!      ! Vertically flip the chemistry data as it is given top down
+!!!      !     and heights in zfa are bottom up
+!!!      ! Fill 1D chemical profile array cprof
+!!!      ! Convert species 28-34 (lo-6:lo) from (molecules/cm3) to (mol/mol)
+!!!      irefcur = iref(nch-1)
+!!!      DO k = 1,kx
+!!!        zprof(k) = 0.5*(zfa_bdy(k)+zfa_bdy(k+1))
+!!!        if (irefcur .lt. lo-6) then
+!!!          cprof(k) = xl(irefcur,kx+1-k)
+!!!        else
+!!!          cprof(k) = xl(irefcur,kx+1-k)/dens(kx+1-k)
+!!!        end if
+!!!      ENDDO
+!!!
+!!!      ! Interpolate temp 3D chemical profile array to WRF field
+!!!      IF (z .LT. zprof(1)) THEN
+!!!        stor = cprof(1)
+!!!      ELSE IF (z .GT. zprof(kx)) THEN
+!!!        stor = cprof(kx)
+!!!      ELSE
+!!!        ! We can trap between two levels and linearly interpolate
+!!!        input_loop:  DO k = 1, kx-1
+!!!          IF (z .EQ. zprof(k) )THEN
+!!!            stor = cprof(k)
+!!!            EXIT input_loop
+!!!         ELSE IF (z .EQ. zprof(k+1) )THEN
+!!!            stor = cprof(k+1)
+!!!            EXIT input_loop
+!!!          ELSE IF ( (z .GT. zprof(k)) .AND. &
+!!!                    (z .LT. zprof(k+1)) ) THEN
+!!!            wgt0 = (z   - zprof(k+1)) / &
+!!!                   (zprof(k) - zprof(k+1))
+!!!            stor = MAX( wgt0 *cprof(k  ) + &
+!!!                     (1.-wgt0)*cprof(k+1), 0.)
+!!!            EXIT input_loop
+!!!          ENDIF
+!!!        ENDDO input_loop
+!!!      ENDIF
+!!! ! Here is where the chemistry value is constructed
+!!!      chem = fracref(nch-1)*stor*1.E6
+!!!      RETURN
+!!!  END SUBROUTINE bdy_chem_value_ghg
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
+!!!SUBROUTINE bdy_chem_value_ghg_pv ( chem, z, pv, nch, numgas,p_co2,xlat,preshPa )
+!!!
+!!!    IMPLICIT NONE
+!!!
+!!!    REAL,    intent(OUT)  :: chem
+!!!    REAL,    intent(IN)   :: z,pv       ! 3D height array
+!!!    REAL,    intent(IN)   :: xlat,preshPa   ! for determination of O3/PV proportionality constant
+!!!    INTEGER, intent(IN)   :: nch,p_co2  ! index number of chemical species
+!!!    INTEGER, intent(IN)   :: numgas     ! index number of last gas species
+!!!
+!!!    INTEGER :: i, k, irefcur
+!!!
+!!!    REAL, DIMENSION(kx):: cprof         ! chemical profile, diff. index order
+!!!
+!!!    REAL, DIMENSION(1:kx):: zprof
+!!!    REAL                 :: stor
+!!!    REAL                 :: wgt0
+!!!    REAL                 :: pv2o3_con   ! for determination of O3/PV proportionality constant
+!!!
+!!!    CHARACTER (LEN=80) :: message
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
+!!!
+!!!     if( nch .GT. numgas) then
+!!!       message = ' Input_chem_profile: wrong number of chemical species'
+!!!       return
+!!!!       CALL WRF_ERROR_FATAL ( message )
+!!!     endif
+!!!
+!!!
+!!!! Vertically flip the chemistry data as it is given top down
+!!!      !     and heights in zfa are bottom up
+!!!      ! Fill 1D chemical profile array cprof
+!!!      ! Convert species 28-34 (lo-6:lo) from (molecules/cm3) to (mol/mol)
+!!!!      irefcur = iref(nch-1)
+!!!      irefcur = iref(nch) 
+!!!      DO k = 1,kx
+!!!        zprof(k) = 0.5*(zfa_bdy(k)+zfa_bdy(k+1))
+!!!        if (irefcur .lt. lo-6) then
+!!!          cprof(k) = xl(irefcur,kx+1-k)
+!!!        else
+!!!          cprof(k) = xl(irefcur,kx+1-k)/dens(kx+1-k)
+!!!        end if
+!!!      ENDDO
+!!!
+!!!      ! Interpolate temp 3D chemical profile array to WRF field
+!!!      IF (z .LT. zprof(1)) THEN
+!!!        stor = cprof(1)
+!!!      ELSE IF (z .GT. zprof(kx)) THEN
+!!!        stor = cprof(kx)
+!!!      ELSE
+!!!! We can trap between two levels and linearly interpolate
+!!!        input_loop:  DO k = 1, kx-1
+!!!          IF (z .EQ. zprof(k) )THEN
+!!!            stor = cprof(k)
+!!!            EXIT input_loop
+!!!          ELSE IF (z .EQ. zprof(k+1) )THEN
+!!!            stor = cprof(k+1)
+!!!            EXIT input_loop
+!!!          ELSE IF ( (z .GT. zprof(k)) .AND. &
+!!!                    (z .LT. zprof(k+1)) ) THEN
+!!!            wgt0 = (z   - zprof(k+1)) / &
+!!!                   (zprof(k) - zprof(k+1))
+!!!            stor = MAX( wgt0 *cprof(k  ) + &
+!!!                     (1.-wgt0)*cprof(k+1), 0.)
+!!!            EXIT input_loop
+!!!          ENDIF
+!!!        ENDDO input_loop
+!!!      ENDIF
+!!!         CALL PV2O3_CONST(xlat,preshPa,pv2o3_con)
+!!!! chem is in ppmv, stor is in mixing ratio by volume, pv2o3_con is in ppbv/PVunit
+!!!         IF (stor.lt.pv2o3_con*pv*1.E-9) then
+!!!            chem = fracref(nch-1)*pv*pv2o3_con*1.E-3
+!!!         else
+!!!            chem = fracref(nch-1)*stor*1.E6
+!!!         endif
+!!!
+!!!      RETURN
+!!!  END SUBROUTINE bdy_chem_value_ghg_pv
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
    SUBROUTINE flow_dep_bdy_chem  (  chem,                                       &
                                chem_bxs,chem_btxs,                                  &
                                chem_bxe,chem_btxe,                                  &
@@ -1401,7 +1752,8 @@ END SUBROUTINE bdy_chem_value_ghg
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                               its,ite, jts,jte, kts,kte )
+                               its,ite, jts,jte, kts,kte,  &
+                               u_pv,v_pv,t_pv,sigma,XMSF, UMSF, VMSF,CORL,PSB,DX,XLAT,pv )
 
 !  This subroutine sets zero gradient conditions for outflow and a set profile value
 !  for inflow in the boundary specified region. Note that field must be unstaggered.
@@ -1410,6 +1762,7 @@ END SUBROUTINE bdy_chem_value_ghg
 !  (JD August 2000)
 
       USE module_cam_mam_initmixrats, only:  bdy_chem_value_cam_mam
+
       IMPLICIT NONE
 
       INTEGER,      INTENT(IN   )    :: ids,ide, jds,jde, kds,kde
@@ -1427,20 +1780,28 @@ END SUBROUTINE bdy_chem_value_ghg
       REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: alt
       REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: u
       REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: v
-   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,         &
-          INTENT(IN   ) ::                                           &
-                               ph,phb,t,pb,p
-   real, INTENT (IN) :: g,rcp,t0,p1000mb
-      TYPE( grid_config_rec_type ) config_flags
+      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: ph,phb,t,pb,p
+      REAL, INTENT (IN) :: g,rcp,t0,p1000mb
+      TYPE( grid_config_rec_type ), intent(IN) :: config_flags
+
+      REAL,  DIMENSION( ims:ime , jms:jme ), INTENT(IN   ) :: XMSF, CORL, PSB, XLAT
+      REAL,  DIMENSION( ims:ime , jms:jme ), INTENT(INOUT   ) :: UMSF, VMSF
+      REAL,  DIMENSION( kms:kme ), INTENT(IN   ) :: sigma
+      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(IN   ) :: u_pv, v_pv, t_pv
+      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT   ) :: pv
+      REAL, INTENT(IN)  :: DX
+
 
       INTEGER    :: i, j, k, numgas
       INTEGER    :: ibs, ibe, jbs, jbe, itf, jtf, ktf
       INTEGER    :: i_inner, j_inner
       INTEGER    :: b_dist
       integer    :: itestbc, i_bdy_method
-      real tempfac,convfac
+      real       :: tempfac,convfac,preshPa
       real       :: chem_bv_def
       logical    :: have_bcs_chem
+
+      REAL       :: pv2o3_con   ! for determination of O3/PV proportionality constant
 
       chem_bv_def = conmin
       numgas = get_last_gas(config_flags%chem_opt)
@@ -1453,6 +1814,19 @@ END SUBROUTINE bdy_chem_value_ghg
       jbe = jde-1
       jtf = min(jte,jde-1)
       ktf = kde-1
+
+      if (config_flags%do_pvozone) &
+         call PVS(ims,ime,jms,jme,kms,kme, &
+                  u_pv, v_pv,t_pv+t0, sigma, XMSF, UMSF, &
+                  VMSF,CORL,PSB,DX,pv, &
+                  ids,ide,jds,jde,kds,kde, &
+                  its,ite,jts,jte,kts,kte)
+
+   !call wrf_debug(15,'set upper boundary condition according to PV')  
+   !call bdy_chem_value_top_pv( chem, XLAT,                   &
+   !                            its,ite, jts,jte, kts,kte,         &
+   !                            pb,p, &
+   !                            pv)  
 
 ! i_bdy_method determines which "bdy_chem_value" routine to use
 !   1=radm2 or racm gas for  p_so2     <= ic <= p_ho2
@@ -1469,7 +1843,7 @@ END SUBROUTINE bdy_chem_value_ghg
       i_bdy_method = 0
       if ((ic .ge. p_so2) .and. (ic .le. p_ho2)) then
           i_bdy_method = 1
-!!! TUCCELLA
+
         if (config_flags%chem_opt == RACM_KPP .or.          &
             config_flags%chem_opt == GOCARTRACM_KPP .or.      &
             config_flags%chem_opt == RACMSORG_KPP .or.      &
@@ -1572,6 +1946,8 @@ END SUBROUTINE bdy_chem_value_ghg
           b_dist = j - jbs
           DO k = kts, ktf
             DO i = max(its,b_dist+ibs), min(itf,ibe-b_dist)
+           ! print*,'jts,jtf,jbs,its,b_dist,ibs,itf,ibe,spec_zone'
+           ! print*, jts,jtf,jbs,its,b_dist,ibs,itf,ibe,spec_zone
               i_inner = max(i,ibs+spec_zone)
               i_inner = min(i_inner,ibe-spec_zone)
               IF(v(i,k,j) .lt. 0.)THEN
@@ -1583,6 +1959,19 @@ END SUBROUTINE bdy_chem_value_ghg
                 else if (i_bdy_method .eq. 9) then
                    CALL bdy_chem_value_racm(   &
                         chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+!                   if(ic.eq.p_o3)then
+!!                       if(k.ge.ktf-19) then
+!!                        if(config_flags%do_pvozone .and. preshPa.le.50000.) then   ! PV2O3 extrapolation from 100 to 500mb. SAM 8/5/16
+!!                        CALL bdy_chem_value_racm_pv(   &
+!!                        chem(i,k,j), z(i,k,j), pv(i,k,j), ic, numgas,p_co2,xlat(i,j),preshPa )
+!!                        else
+!                        CALL bdy_chem_value_racm(   &   !using new SB profile
+!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+!!                       endif
+!                   else
+!                        CALL bdy_chem_value_racm(   &
+!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+!                   endif
                 else if (i_bdy_method .eq. 2) then
                    tempfac=(t(i,k,j)+t0)*((p(i,k,j) + pb(i,k,j))/p1000mb)**rcp
                    convfac=(p(i,k,j)+pb(i,k,j))/rgasuniv/tempfac
@@ -1605,6 +1994,24 @@ END SUBROUTINE bdy_chem_value_ghg
                    CALL bdy_chem_value_gcm ( chem(i,k,j),chem_bys(i,k,1),chem_btys(i,k,1),dt,ic)
                 else if (i_bdy_method .eq. 16) then
                    CALL bdy_chem_value_ghg ( chem(i,k,j), ic ) 
+!                     if(ic.eq.p_co_ant)then
+!!!                       if(k.ge.ktf-19) then
+!!                        if(config_flags%do_pvozone .and. preshPa.le.50000.) then   ! PV2O3 extrapolation from 100 to 500mb. SAM 8/5/16
+!!                        CALL bdy_chem_value_ghg_pv(   &
+!!                        chem(i,k,j), z(i,k,j), pv(i,k,j), ic, numgas,p_co2,xlat(i,j),preshPa )
+!!           !              print*, 'z(i,k,j),pv(i,k,j),chem(i,k,j),ic,numgas,p_co2'  
+!!           !              print*, z(i,k,j),pv(i,k,j),chem(i,k,j),ic,numgas,p_co2
+!!                        else
+!                        CALL bdy_chem_value_ghg(   &
+!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+!!                       endif
+!                     else
+!                        CALL bdy_chem_value_ghg(   &
+!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+!                   ! print*,'i,k,j,chem(i,k,j),z(i,k,j),ic,numgas,p_co2'
+!                   ! print*,i,k,j,chem(i,k,j),z(i,k,j),ic,numgas,p_co2 
+!                    endif
+
                 else if (i_bdy_method .eq. 15) then
                    CALL bdy_chem_value_cb05 (   &
                         1, chem(i,k,j), k, ic, config_flags, numgas )
@@ -1619,6 +2026,17 @@ END SUBROUTINE bdy_chem_value_ghg
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
+
+                preshPa=p(i,k,j)+pb(i,k,j)
+                IF (config_flags%do_pvozone &
+                    .and. p_o3.gt.1 &
+                    .and. ic.eq.p_o3 &
+                    .and. preshPa.le.50000.) then
+                   CALL PV2O3_CONST(xlat(i,j),preshPa,pv2o3_con)
+                   IF (chem(i,k,j)*1.E-6/fracref(ic-1).lt.pv2o3_con*pv(i,k,j)*1.E-9) then
+                      chem(i,k,j) = fracref(ic-1)*pv(i,k,j)*pv2o3_con*1.E-9 * 1.E6
+                   ENDIF
+                ENDIF
               ENDIF
             ENDDO
           ENDDO
@@ -1641,6 +2059,20 @@ END SUBROUTINE bdy_chem_value_ghg
                 else if (i_bdy_method .eq. 9) then
                    CALL bdy_chem_value_racm (   &
                         chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+!                   if(ic.eq.p_o3)then
+!!                       if(k.ge.ktf-19) then
+!                        if(config_flags%do_pvozone .and. preshPa.le.50000.) then   ! PV2O3 extrapolation from 100 to 500mb. SAM 8/5/16
+!                        CALL bdy_chem_value_racm_pv(   &
+!                        chem(i,k,j), z(i,k,j), pv(i,k,j), ic, numgas,p_co2,xlat(i,j),preshPa )
+!                        else
+!                        CALL bdy_chem_value_racm(   &
+!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+!                       endif
+!                   else
+!                        CALL bdy_chem_value_racm(   &
+!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+!                   endif
+
                 else if (i_bdy_method .eq. 2) then
                    tempfac=(t(i,k,j)+t0)*((p(i,k,j) + pb(i,k,j))/p1000mb)**rcp
                    convfac=(p(i,k,j)+pb(i,k,j))/rgasuniv/tempfac
@@ -1663,6 +2095,19 @@ END SUBROUTINE bdy_chem_value_ghg
                    chem(i,k,j) = 0.
                 else if (i_bdy_method .eq. 16) then
                    CALL bdy_chem_value_ghg ( chem(i,k,j), ic )  ! For GHGs
+!                     if(ic.eq.p_co_ant)then
+!!                      if(k.ge.ktf-19) then
+!                       if(config_flags%do_pvozone .and. preshPa.le.50000.) then   ! PV2O3 extrapolation from 100 to 500mb. SAM 8/5/16
+!                        CALL bdy_chem_value_ghg_pv(   &
+!                        chem(i,k,j), z(i,k,j), pv(i,k,j), ic, numgas,p_co2,xlat(i,j),preshPa )
+!                        else
+!                        CALL bdy_chem_value_ghg(   &
+!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+!                       endif
+!                     else
+!                        CALL bdy_chem_value_ghg(   &
+!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+!                     endif
                 else if (i_bdy_method .eq. 15) then
                    CALL bdy_chem_value_cb05 (   &
                         2, chem(i,k,j), k, ic, config_flags, numgas )
@@ -1677,6 +2122,16 @@ END SUBROUTINE bdy_chem_value_ghg
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
+                preshPa=p(i,k,j)+pb(i,k,j)
+                IF (config_flags%do_pvozone &
+                    .and. p_o3.gt.1 &
+                    .and. ic.eq.p_o3 &
+                    .and. preshPa.le.50000.) then
+                   CALL PV2O3_CONST(xlat(i,j),preshPa,pv2o3_con)
+                   IF (chem(i,k,j)*1.E-6/fracref(ic-1).lt.pv2o3_con*pv(i,k,j)*1.E-9) then
+                      chem(i,k,j) = fracref(ic-1)*pv(i,k,j)*pv2o3_con*1.E-9 * 1.E6
+                   ENDIF
+                ENDIF
               ENDIF
             ENDDO
           ENDDO
@@ -1700,6 +2155,20 @@ END SUBROUTINE bdy_chem_value_ghg
                 else if (i_bdy_method .eq. 9) then
                    CALL bdy_chem_value_racm (   &
                         chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+!                   if(ic.eq.p_o3)then
+!!                       if(k.ge.ktf-19) then
+!                        if(config_flags%do_pvozone .and. preshPa.le.50000.) then   ! PV2O3 extrapolation from 100 to 500mb. SAM 8/5/16
+!                        CALL bdy_chem_value_racm_pv(   &
+!                        chem(i,k,j), z(i,k,j), pv(i,k,j), ic, numgas,p_co2,xlat(i,j),preshPa )
+!                        else
+!                        CALL bdy_chem_value_racm(   &
+!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+!                       endif
+!                   else
+!                        CALL bdy_chem_value_racm(   &
+!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+!                   endif
+
                 else if (i_bdy_method .eq. 2) then
                    tempfac=(t(i,k,j)+t0)*((p(i,k,j) + pb(i,k,j))/p1000mb)**rcp
                    convfac=(p(i,k,j)+pb(i,k,j))/rgasuniv/tempfac
@@ -1722,6 +2191,19 @@ END SUBROUTINE bdy_chem_value_ghg
                    chem(i,k,j) = 0.
                 else if (i_bdy_method .eq. 16) then
                    CALL bdy_chem_value_ghg ( chem(i,k,j), ic )  ! For GHGs
+!                   if(ic.eq.p_co_ant)then
+!!!                    if(k.ge.ktf-19) then
+!!                     if(config_flags%do_pvozone .and. preshPa.le.50000.) then   ! PV2O3 extrapolation from 100 to 500mb. SAM 8/5/16
+!!                        CALL bdy_chem_value_ghg_pv(   &
+!!                        chem(i,k,j), z(i,k,j), pv(i,k,j), ic, numgas,p_co2,xlat(i,j),preshPa )
+!!                     else
+!!                        CALL bdy_chem_value_ghg(   &
+!!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+!!                     endif
+!                   else
+!                        CALL bdy_chem_value_ghg(   &
+!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+!                   endif
                 else if (i_bdy_method .eq. 15) then
                    CALL bdy_chem_value_cb05 (   &
                         3, chem(i,k,j), k, ic, config_flags, numgas )
@@ -1736,6 +2218,16 @@ END SUBROUTINE bdy_chem_value_ghg
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
+                preshPa=p(i,k,j)+pb(i,k,j)
+                IF (config_flags%do_pvozone &
+                    .and. p_o3.gt.1 &
+                    .and. ic.eq.p_o3 &
+                    .and. preshPa.le.50000.) then
+                   CALL PV2O3_CONST(xlat(i,j),preshPa,pv2o3_con)
+                   IF (chem(i,k,j)*1.E-6/fracref(ic-1).lt.pv2o3_con*pv(i,k,j)*1.E-9) then
+                      chem(i,k,j) = fracref(ic-1)*pv(i,k,j)*pv2o3_con*1.E-9 * 1.E6
+                   ENDIF
+                ENDIF
               ENDIF
             ENDDO
           ENDDO
@@ -1759,6 +2251,19 @@ END SUBROUTINE bdy_chem_value_ghg
                 else if (i_bdy_method .eq. 9) then
                    CALL bdy_chem_value_racm (   &
                         chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+!                   if(ic.eq.p_o3)then
+!!                       if(k.ge.ktf-19) then
+!                        if(config_flags%do_pvozone .and. preshPa.le.50000.) then   ! PV2O3 extrapolation from 100 to 500mb. SAM 8/5/16
+!                        CALL bdy_chem_value_racm_pv(   &
+!                        chem(i,k,j), z(i,k,j), pv(i,k,j), ic, numgas,p_co2,xlat(i,j),preshPa )
+!                        else
+!                        CALL bdy_chem_value_racm(   &
+!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+!                       endif
+!                   else
+!                        CALL bdy_chem_value_racm(   &
+!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+!                   endif
                 else if (i_bdy_method .eq. 2) then
                    tempfac=(t(i,k,j)+t0)*((p(i,k,j) + pb(i,k,j))/p1000mb)**rcp
                    convfac=(p(i,k,j)+pb(i,k,j))/rgasuniv/tempfac
@@ -1781,6 +2286,19 @@ END SUBROUTINE bdy_chem_value_ghg
                    chem(i,k,j) = 0.
                 else if (i_bdy_method .eq. 16) then
                    CALL bdy_chem_value_ghg ( chem(i,k,j), ic ) ! For GHGs
+!                  if(ic.eq.p_co_ant)then
+!!!                    if(k.ge.ktf-19) then
+!!                     if(config_flags%do_pvozone .and. preshPa.le.50000.) then   ! PV2O3 extrapolation from 100 to 500mb. SAM 8/5/16
+!!                        CALL bdy_chem_value_ghg_pv(   &
+!!                        chem(i,k,j), z(i,k,j), pv(i,k,j), ic, numgas,p_co2,xlat(i,j),preshPa )
+!!                     else
+!                        CALL bdy_chem_value_ghg(   &
+!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+!!                     endif
+!                  else
+!                       CALL bdy_chem_value_ghg(   &
+!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
+!                  endif
                 else if (i_bdy_method .eq. 15) then
                    CALL bdy_chem_value_cb05 (   &
                         4, chem(i,k,j), k, ic, config_flags, numgas )
@@ -1795,11 +2313,22 @@ END SUBROUTINE bdy_chem_value_ghg
                 else
                    chem(i,k,j) = chem_bv_def
                 endif
+                preshPa=p(i,k,j)+pb(i,k,j)
+                IF (config_flags%do_pvozone &
+                    .and. p_o3.gt.1 &
+                    .and. ic.eq.p_o3 &
+                    .and. preshPa.le.50000.) then
+                   CALL PV2O3_CONST(xlat(i,j),preshPa,pv2o3_con)
+                   IF (chem(i,k,j)*1.E-6/fracref(ic-1).lt.pv2o3_con*pv(i,k,j)*1.E-9) then
+                      chem(i,k,j) = fracref(ic-1)*pv(i,k,j)*pv2o3_con*1.E-9 * 1.E6
+                   ENDIF
+                ENDIF
               ENDIF
             ENDDO
           ENDDO
         ENDDO
       ENDIF 
+
 
    END SUBROUTINE flow_dep_bdy_chem
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2102,7 +2631,7 @@ END SUBROUTINE bdy_chem_value_ghg
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   SUBROUTINE bdy_chem_value_gcm ( chem, chem_b, chem_bt, dt,ic)
-                                  
+
     IMPLICIT NONE
 
     REAL,    intent(OUT)  :: chem
@@ -2123,7 +2652,7 @@ END SUBROUTINE bdy_chem_value_ghg
 
 
       !print*,'before',chem,chem_bt ,dt, ic
-     
+
       chem=max(epsilc,chem_b + chem_bt * dt)
       !print*,'after',chem
       RETURN
@@ -3219,7 +3748,7 @@ subroutine chem_dbg(i,j,k,dtstep,itimestep,                           &
      ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,ph_n2o5, &
      ph_o2                                                            )
 
-  IMPLICIT NONE      
+  IMPLICIT NONE
   INTEGER,      INTENT(IN   ) :: i,j,k,                        &
                                  ids,ide, jds,jde, kds,kde,    &
                                  ims,ime, jms,jme, kms,kme,    &
@@ -3246,7 +3775,6 @@ subroutine chem_dbg(i,j,k,dtstep,itimestep,                           &
   real :: conva,convg
 
   print*,"itimestep =",itimestep
-
   print*,"MET DATA AT (i,k,j):",i,k,j
   print*,"t_phy,p_phy,rho_phy=",t_phy(i,k,j),p_phy(i,k,j),rho_phy(i,k,j)
 
@@ -3407,6 +3935,305 @@ real, intent(inout) :: chem(ims:ime,kms:kme,jms:jme,num_chem)
    end if
 
 END SUBROUTINE mozcart_lbc_set
+SUBROUTINE PVS(ims,ime,jms,jme,nz1,nz2, &
+               UB, VB,TB, SIGMA, XMSF, UMSF, &
+               VMSF,COR,PSB,DX,PV, &
+               ids,ide,jds,jde,kds,kde, &
+               ips,ipe,jps,jpe,kps,kpe)
+
+   IMPLICIT NONE
+
+   INTEGER, INTENT(IN)                :: ims, ime
+   INTEGER, INTENT(IN)                :: jms, jme
+   INTEGER, INTENT(IN)                :: nz1, nz2
+   INTEGER, INTENT(IN)                :: ips,ipe,jps,jpe,kps,kpe
+   INTEGER, INTENT(IN)                :: ids,ide,jds,jde,kds,kde
+ 
+   REAL, INTENT(IN)                   :: TB(ims:ime,nz1:nz2,jms:jme)
+   REAL, INTENT(IN)                   :: UB(ims:ime,nz1:nz2,jms:jme)
+   REAL, INTENT(IN)                   :: VB(ims:ime,nz1:nz2,jms:jme)
+   REAL, INTENT(OUT)                  :: PV(ims:ime,nz1:nz2,jms:jme)
+  ! REAL, INTENT(INOUT)                   :: MSFT(ims:ime,jms:jme)
+  ! REAL, INTENT(INOUT)                   :: MSFU(ims:ime,jms:jme)
+  ! REAL, INTENT(INOUT)                   :: MSFV(ims:ime,jms:jme)
+   REAL, INTENT(IN)                   :: XMSF(ims:ime,jms:jme)
+   REAL, INTENT(IN)                :: UMSF(ims:ime,jms:jme)
+   REAL, INTENT(IN)                :: VMSF(ims:ime,jms:jme)
+   REAL, INTENT(IN)                   :: COR(ims:ime,jms:jme)
+   REAL, INTENT(IN)                   :: PSB(ims:ime,jms:jme)
+   REAL, INTENT(IN)                   :: SIGMA(nz1:nz2)
+
+   real :: DSX, DSY,F0,F1,F2,T00,T1,T2,T3
+   integer :: k, K0, K1, K2, i, j, iend, jend, kend
+   real :: DX, SCALE, GRAV, XE
+   real,dimension(ims:ime,jms:jme) :: UD,VD,DUDS,DVDS,DTDX,DTDY,DTDS,THEH,VOR 
+   SCALE=-1.E6
+   GRAV= 9.8104
+   XE=0.286
+
+   kend=min(kpe,kde-1)
+   jend=min(jpe,jde-1)
+   iend=min(ipe,ide-1)
+
+!    OPEN (6,FILE='pv_stu.out')
+
+   PV = 0.D0
+   DO k=kps,kend !level loop
+      IF(k.EQ.kps) THEN
+         K0=K
+         K1=K+1
+         K2=K+2
+         F0=-1.*(1./(SIGMA(K1)-SIGMA(K0))+1./(SIGMA(K2)-SIGMA(K0)))
+         F1=1./(SIGMA(K1)-SIGMA(K0))+1./(SIGMA(K2)-SIGMA(K1))
+         F2=-1.*((SIGMA(K1)-SIGMA(K0))/((SIGMA(K2)-SIGMA(K0))*(SIGMA(K2)-SIGMA(K1))))
+      ELSE IF(k.EQ.kend) THEN
+         K0=K-2
+         K1=K-1
+         K2=K
+         F0=(SIGMA(K2)-SIGMA(K1))/((SIGMA(K2)-SIGMA(K0))*(SIGMA(K1)-SIGMA(K0)))
+         F1=-1./(SIGMA(K1)-SIGMA(K0))-1./(SIGMA(K2)-SIGMA(K1))
+         F2=1./(SIGMA(K2)-SIGMA(K0))+1./(SIGMA(K2)-SIGMA(K1))
+      ELSE
+         K0=K-1
+         K1=K
+         K2=K+1
+         F0=-1.*(SIGMA(K2)-SIGMA(K1))/((SIGMA(K1)-SIGMA(K0))*(SIGMA(K2)-SIGMA(K0)))
+         F1=1./(SIGMA(K1)-SIGMA(K0))-1./(SIGMA(K2)-SIGMA(K1))
+         F2=(SIGMA(K1)-SIGMA(K0))/((SIGMA(K2)-SIGMA(K1))*(SIGMA(K2)-SIGMA(K0)))
+      ENDIF
+
+      DO j=jps,jend
+      DO i=ips,iend
+
+!        ... COMPUTE VERTICAL DERIVATIVES: dU/ds, dV/ds, dTHETA/ds
+
+
+         DUDS(i,j)=.5*(F0*(UB(i+1,K0,j)+UB(i,K0,j))+F1*(UB(i+1,K1,j) &
+                    +UB(i,K1,j))+F2*(UB(i+1,K2,j)+UB(i,K2,j)))
+         DVDS(i,j)=.5*(F0*(VB(i,K0,j+1)+VB(i,K0,j))+F1*(VB(i,K1,j+1) &
+                    +VB(i,K1,j))+F2*(VB(i,K2,j+1)+VB(i,K2,j)))
+         T00=TB(i,K0,j)
+         T1=TB(i,K1,j)
+         T2=TB(i,K2,j)
+
+         THEH(i,j)=TB(i,k,j)
+         DTDS(i,j)=F0*T00+F1*T1+F2*T2
+      END DO
+      END DO
+
+      DSX=2.*DX
+      DSY=2.*DX
+
+      !!COMPUTE zonal HORIZONTAL DERIVATIVES: dTHETA/dx
+      DTDX = 0.D0
+      DO j=jps,jend
+         DO i=ips,iend
+            if (i.eq.ips .and. i.le.ids) then
+               T1=THEH(i,j)/XMSF(i,j)
+               T2=THEH(i+1,j)/XMSF(i+1,j)
+               T3=THEH(i+2,j)/XMSF(i+2,j)
+               DTDX(i,j)=(XMSF(i,j)**2)*(-1.5*T1+2.*T2-.5*T3)/DX
+            elseif (i.eq.iend .and. i.ge.ide-1) then
+               T00=THEH(i-2,j)/XMSF(i-2,j)
+               T1=THEH(i-1,j)/XMSF(i-1,j)
+               T2=THEH(i,j)/XMSF(i,j)
+               DTDX(i,j)=(XMSF(i,j)**2)*(.5*T00-2.*T1+1.5*T2)/DX
+            else
+               T1=THEH(i-1,j)/XMSF(I-1,j)
+               T2=THEH(i+1,j)/XMSF(I+1,j)
+               DTDX(i,j)=(XMSF(i,j)**2)*(T2-T1)/DSX
+            end if
+!    write(6,'(3I5, 5E10.3)'),i,k,j, THEH(i-1,j),THEH(i+1,j),xmsf(i-1,j),xmsf(i+1,j),DTDX(i,j)
+
+         END DO
+      END DO
+
+      VD = 0.D0
+      DO j=jms,jme
+         DO i=ims,ime
+            if (i.le.ids) then
+!            if (i.eq.ips .and. i.le.ids) then
+               VD(i,j)=VB(ids,k,j)/VMSF(ids,j)
+            elseif (i.ge.ide) then
+!            elseif (i.eq.iend+1 .and. i.ge.ide) then
+               VD(i,j)=VB(iend,k,j)/VMSF(iend,j)
+            else
+               VD(i,j)=.5*(VB(i,k,j)/VMSF(i,j)+VB(i-1,k,j)/VMSF(i-1,j))
+            end if
+         END DO
+      END DO
+
+
+      !!COMPUTE meridional HORIZONTAL DERIVATIVES: dTHETA/dy
+      DTDY = 0.D0
+      DO i=ips,iend
+         DO j=jps,jend
+            if (j.eq.jps .and. j.le.jds) then
+               T1=THEH(i,j)/XMSF(i,j)
+               T2=THEH(i,j+1)/XMSF(i,j+1)
+               T3=THEH(i,j+2)/XMSF(i,j+2)
+               DTDY(i,j)=(XMSF(i,j)**2)*(-1.5*T1+2.*T2-.5*T3)/DX
+            elseif (j.eq.jend .and. j.ge.jde-1) then
+               T00=THEH(i,j-2)/XMSF(i,j-2)
+               T1=THEH(i,j-1)/XMSF(i,j-1)
+               T2=THEH(i,j)/XMSF(i,j)
+               DTDY(i,j)=(XMSF(i,j)**2)*(.5*T00-2.*T1+1.5*T2)/DX
+            else
+               T1=THEH(i,j-1)/XMSF(i,j-1)
+               T2=THEH(i,j+1)/XMSF(i,j+1)
+               DTDY(i,j)=(XMSF(i,j)**2)*(T2-T1)/DSY
+            end if
+! write(6,'(3I5, 5E10.3)'),i,k,j, THEH(i,j-1),THEH(i,j+1),xmsf(i,j-1),xmsf(i,j+1),DTDY(i,j)
+         END DO
+
+      END DO
+
+
+      UD = 0.D0
+      DO i=ims,ime
+         DO j=jms,jme
+            if (j.le.jds) then
+!            if (j.eq.jps .and. j.le.jds) then
+               UD(i,j)=UB(i,k,jds)/UMSF(i,jds)
+            elseif (j.ge.jde) then
+!            elseif (j.eq.jend+1 .and. j.ge.jde) then
+               UD(i,j)=UB(i,k,jend)/UMSF(i,jend)
+            else
+               UD(i,j)=.5*(UB(i,k,j)/UMSF(i,j)+UB(i,k,j-1)/UMSF(i,j-1))
+            end if
+         END DO
+      END DO
+
+
+      !!COMPUTE SLAB ABSOLUTE VORTICITY
+      !!Store Potential Vorticity in PV
+      DO j=jps,jend
+      DO i=ips,iend
+         VOR(i,j) = (XMSF(i,j)**2)*                                  &
+                     ((VD(i+1,j)+VD(i+1,j+1)-VD(i,j)-VD(i,j+1))/DSX  &
+                     -(UD(i,j+1)+UD(i+1,j+1)-UD(i,j)-UD(i+1,j))/DSY) &
+                     +COR(i,j)
+
+         PV(i,k,j) = (GRAV*SCALE/PSB(i,j))*(VOR(i,j)*DTDS(i,j)       &
+                      -DVDS(i,j)*DTDX(i,j)+DUDS(i,j)*DTDY(i,j))
+ !     if(k.eq.37) then
+ !     write(*,'(3I5, 1P, 24E10.3)'),i,k,j,tb(i,k,j),uc(i,k,j),vb(i,k,j), &
+ !                                     xmsf(i,j),umsf(i,j),vmsf(i,j), &
+ !                                     cor(i,j), psb(i,j), sigma(k),   &
+ !                                     vd(i+1,j), vd(i+1,j+1), vd(i,j), vd(i,j+1), &                  !
+ !                                     ud(i,j+1), ud(i+1, j+1), ud(i,j), ud(i+1,j), &                 !
+ !                                     vor(i,j), dtds(i,j), dvds(i,j), &                              !
+ !                                     dtdx(i,j), duds(i,j), dtdy(i,j), pv(i,k,j)
+ !     endif
+
+ !     write(6,'(3I5, 16E10.3)'),i,k,j,vd(i+1,j), vd(i+1,j+1), vd(i,j), vd(i,j+1), &
+ !                                     ud(i,j+1), ud(i+1, j+1), ud(i,j), ud(i+1,j), &
+ !                                     psb(i,j), vor(i,j), dtds(i,j), dvds(i,j), &
+ !                                     dtdx(i,j), duds(i,j), dtdy(i,j), pv(i,k,j) 
+      END DO
+      END DO
+
+   END DO
+
+
+
+!      RETURN
+END SUBROUTINE PVS
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    SUBROUTINE PV2O3_CONST(xlat,preshPa,pv2o3_con)
+!    USE module_data_pv2o3  
+ 
+    REAL, INTENT(IN)                   :: xlat,preshPa
+    REAL, INTENT(OUT)                  :: pv2o3_con ! O3/PV constant in ppbv/PVunit
+    REAL                               :: con_reflv(4) ! O3/PV constants at refrnc levs in ppbv/PVunit
+    REAL                               :: wgt,pres,xlt
+    INTEGER                            :: k
+! Xing et al. (2016) ACP, Representing the effects of STE on 3D O3 distributions
+! in chemistry transport models using a PV based parameterization.
+! O3/PV factor versus latitude given by 5th order polynomial, for 3 pressure levels,
+! with seasonal corrections. Here, seasonal correction neglected (July=0.9).
+! 8/5/16 SAM: Constants in 5th order polynomial given at 58.56, 76.4 and 95.62 mb,
+! extrapolate those constants to 500mb for intialization and boundary conditions
+! below 95.62mb.
+    xlt=abs(xlat) ! xlat must be in degrees
+
+    con_reflv(1)=pv2o3_lv1(1)+pv2o3_lv1(2)*xlt+pv2o3_lv1(3)*xlt**2+ &
+                pv2o3_lv1(4)*xlt**3+pv2o3_lv1(5)*xlt**4+pv2o3_lv1(6)*xlt**5
+    con_reflv(2)=pv2o3_lv2(1)+pv2o3_lv2(2)*xlt+pv2o3_lv2(3)*xlt**2+ &
+                pv2o3_lv2(4)*xlt**3+pv2o3_lv2(5)*xlt**4+pv2o3_lv2(6)*xlt**5
+    con_reflv(3)=pv2o3_lv3(1)+pv2o3_lv3(2)*xlt+pv2o3_lv3(3)*xlt**2+ &
+                pv2o3_lv3(4)*xlt**3+pv2o3_lv3(5)*xlt**4+pv2o3_lv3(6)*xlt**5
+    con_reflv(4)=pv2o3_lv4(1)+pv2o3_lv4(2)*xlt+pv2o3_lv4(3)*xlt**2+ &
+                pv2o3_lv4(4)*xlt**3+pv2o3_lv4(5)*xlt**4+pv2o3_lv4(6)*xlt**5 
+
+    pres=preshPa
+    if(pres.lt.pref_pv2o3(1))then
+       pres=pref_pv2o3(1) ! Limit lower pressure to lowest ref pressure of Xing et al. (58.56 mb)
+       pv2o3_con=-99.0
+    endif
+! Interpolate according to log(pressure)
+!    do k=1,levs_pv2o3-1
+!    if(pres.le.pref_pv2o3(k+1))then
+!    wgt=(alog(pref_pv2o3(k+1))-alog(pres))/(alog(pref_pv2o3(k+1))-alog(pref_pv2o3(k)))
+!    pv2o3_con=wgt*con_reflv(k+1)+(1.-wgt)*con_reflv(k)
+!    exit
+!    endif
+!    enddo
+
+    input_loop: do k=1,levs_pv2o3-1 
+       IF (pres .EQ. pref_pv2o3(k) )THEN
+          pv2o3_con=con_reflv(k)
+          EXIT input_loop
+       ELSE IF ( (pres .GT. pref_pv2o3(k)) .AND. &
+                  (pres .LT. pref_pv2o3(k+1)) ) THEN
+          wgt=(alog(pref_pv2o3(k+1))-alog(pres))/ &
+              (alog(pref_pv2o3(k+1))-alog(pref_pv2o3(k)))
+          pv2o3_con = MAX( wgt *con_reflv(k+1) + &
+                     (1.-wgt)*con_reflv(k), 0.)
+          EXIT input_loop
+       ENDIF
+    ENDDO input_loop
+
+!   RETURN
+END SUBROUTINE PV2O3_CONST
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SUBROUTINE bdy_chem_value_top_pv ( chem,xlat,         &
+                                   ims,ime, jms,jme, kms,kme,    &
+                                   its,ite, jts,jte, kts,kte,    &
+                                   pb,p, &
+                                   pv)
+
+    IMPLICIT NONE
+
+    REAL, DIMENSION(ims:ime,kms:kme,jms:jme,num_chem ),  &
+               intent(INOUT) :: chem
+    REAL, DIMENSION( ims:ime , jms:jme ),   intent(IN)   :: xlat     ! for determination of O3/PV p\
+roportionality constant
+    REAL                  :: pv2o3_con   ! for determination of O3/PV proportionality constant
+    REAL, DIMENSION(ims:ime , kms:kme , jms:jme), intent(IN) :: pv,pb,p
+    REAL   :: preshPa
+
+    INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
+    INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
+    INTEGER :: i,j
+
+!    OPEN (6,FILE='pv_stu.out')
+       DO i=its,ite
+           DO j=jts,jte
+!       write(6,'(3I5, 3E10.3)'),i,kte,j, pv(i,kte,j),preshPa,xlat(i,j)
+             preshPa=pb(i,kte,j)+p(i,kte,j)
+             CALL PV2O3_CONST(xlat(i,j),preshPa,pv2o3_con)
+               chem(i,kte,j,p_co_ant)= max(0.168,pv(i,kte,j)*pv2o3_con*1.E-3)
+               chem(i,kte,j,p_co2_ant)=chem(i,kte,j,p_co2_ant)
+
+           ENDDO
+         ENDDO
+
+
+!    RETURN
+END SUBROUTINE bdy_chem_value_top_pv
+
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 END MODULE module_input_chem_data

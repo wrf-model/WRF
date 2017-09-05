@@ -50,7 +50,9 @@
                                           gasprofile_init_pnnl,      &
                                           mozcart_lbc_init,          &
                                           last_chem_time,            &
-                                          setup_gasprofile_maps
+                                          setup_gasprofile_maps,     &
+                                          make_chem_profile
+
    USE module_mixactivate_wrappers, only: mosaic_mixactivate_init
    USE module_upper_bc_driver, only: upper_bc_init
    USE module_tropopause,      only: tropopause_init
@@ -62,6 +64,9 @@
 
 !!! TUCCELLA (BUG)
    USE module_prep_wetscav_sorgam, only: aerosols_sorgam_init_aercld_ptrs, aerosols_soa_vbs_init_aercld_ptrs 
+
+!!CYY
+   USE module_model_constants, only:t0
 
    IMPLICIT NONE
 
@@ -129,6 +134,9 @@
    integer, intent(out) :: stepbioe,stepphot,stepchem,stepfirepl
    TYPE (grid_config_rec_type) , INTENT (in) ::     config_flags
    TYPE(domain) ,             INTENT (inout) ::     grid
+   
+   REAL,DIMENSION(ims:ime,kms:kme,jms:jme) :: si_zsigf, si_zsig
+
 !
 ! local stuff
 !
@@ -519,7 +527,6 @@ ENDIF
        end do
        end do
     end if
-
 ! Read VPRM parameters and put them into wrfinput file
 !     for diagnostics purposes only!
 !write(6,*)'config_flags%chem_opt, CO2_TRACER', config_flags%chem_opt, CO2_TRACER
@@ -1507,6 +1514,20 @@ end if
    END SELECT kpp_select
    endif
 
+   IF( config_flags%do_pvozone .and. (.not. config_flags%restart) .AND. config_flags%chem_in_opt==0 ) THEN
+      si_zsigf = (grid%ph_1 + grid%phb)/grav
+      do k=1,kde-1
+         si_zsig(:,k,:) = 0.5 * ( si_zsigf(:,k,:) + si_zsigf(:,k+1,:) )
+      enddo
+      si_zsig(:,kde,:) = 0.5 * ( 3. * si_zsigf(:,kde,:) - si_zsigf(:,kde-1,:) )
+      CALL make_chem_profile (ims, ime, jms, jme, kms, kme, num_chem, numgas, &
+                              grid%chem_opt, si_zsig, chem,                   &
+                              grid%u_2, grid%v_2, grid%t_2+t0, p, grid%pb,    &
+                              grid%znu, grid%msft, grid%msfu, grid%msfv,      &
+                              grid%f, grid%mub,grid%dx,xlat,                  &
+                              ids,ide,jds,jde,kds,kde,its,ite,jts,jte,kts,kte)
+
+   ENDIF
 
 !! Initialize some greenhouse gas species for 16th and 17th chemistry options:
 !! CO2 mixing ratios for the background GHG tracers are set as a constant value.

@@ -80,6 +80,8 @@ dimspec    lake_ssl  2   constant=15                       z     snow_and_soil_l
 dimspec    lake_intl 2   constant=16                       z     interface_levels
 dimspec    lake_sll  2   constant=10                       z     soil_levels_or_lake_levels
 dimspec    crop    2     constant=5                        z     crop_types
+dimspec    clmvoc  3     constant=2                        z     clmvoc_lev
+dimspec    npft    2     namelist=num_pft_clm              z     pft_fraction
 dimspec    soilc   2     constant=8                        z     soil_composition_layers
 dimspec    gecros  2     constant=60                       z     gecros
 
@@ -95,6 +97,7 @@ dimspec    nm      2     namelist=nmegan                   z     megan_species
 dimspec    ndv     3     namelist=ndepvel                  z     deposition_velocity_species
 dimspec    kdv     2     namelist=kdepvel                  z     deposition_velocity_vert_levels
 dimspec    dust    2     namelist=kfuture                  z     klevs_for_dust
+dimspec    sizebin 3     constant=4                        z     size_for_aerdep
 dimspec    ]       2     namelist=kfire                    z     klevs_for_fire
 dimspec    %       2     namelist=kdvel                    z     klevs_for_dvel
 dimspec    airc    2     namelist=kemit_aircraft           z     ac_emissions_zdim

@@ -1400,7 +1400,7 @@
 !  to be run if the code is not available.
 !-----------------------------------------------------------------------
 
-#if !defined ( WRF_USE_CLM )
+#if (WRF_USE_CLM != 1)
       oops = 0
       DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec%sf_surface_physics(i) .EQ. CLMSCHEME ) THEN
@@ -1414,6 +1414,53 @@
          CALL wrf_debug ( 0, TRIM(wrf_err_message) )
          wrf_err_message = '--- ERROR: Please place the -DWRF_USE_CLM option in configure.wrf file, and recompile.'
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%bio_emiss_opt(i) == MEGAN2_CLM ) THEN
+            oops = oops + 1 
+         END IF
+      ENDDO
+      IF ( oops > 0 ) THEN
+         wrf_err_message = '--- ERROR: The CLM Megan2.1 bio emission scheme was requested in the namelist.input file.'
+         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+         wrf_err_message = '--- ERROR: However, the WRF CLM scheme was not compiled in WRF.'
+         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+         wrf_err_message = '--- ERROR: Please place the -DWRF_USE_CLM option in configure.wrf file, and recompile.'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+#else
+!-----------------------------------------------------------------------
+!  The CLM scheme has been compiled.
+!  Check for possible logic errors with namelist settings.
+!-----------------------------------------------------------------------
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+        IF ( model_config_rec%bio_emiss_opt(i) == MEGAN2_CLM .and. &
+             model_config_rec%sf_surface_physics(i) /= CLMSCHEME ) THEN
+            oops = oops + 1 
+        END IF
+      ENDDO
+      IF ( oops > 0 ) THEN
+        wrf_err_message = '--- ERROR: The CLM Megan2.1 bio emission scheme was requested in the namelist.input file.'
+        CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+        wrf_err_message = '--- ERROR: However, the CLM surface physics scheme was not requested in the namelist.input file.'
+        CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+        wrf_err_message = '--- ERROR: Please set the physics namelist variable sf_surface_physics to 5 in the namelist.input file.'
+        CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+        IF ( model_config_rec%SF_SURFACE_PHYSICS(i) == CLMSCHEME .and. &
+             model_config_rec%SF_URBAN_PHYSICS(i) >= 1 .and. &
+             model_config_rec%SF_URBAN_PHYSICS(i) <= 3 ) THEN
+        ENDIF
+      ENDDO
+      IF ( oops > 0 ) THEN
+        wrf_err_message = '--- ERROR: CLM does not work with any URBAN PHYSICS SCHEME'
+        CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          count_fatal_error = count_fatal_error + 1
       END IF
 #endif

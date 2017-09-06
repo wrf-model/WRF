@@ -2361,6 +2361,21 @@ state   real   soilcw      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_
 state   real   nu0cw       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nu0cw"          "Aitken mode number in cloud"         "#/kg-dryair"
 state   real   ac0cw       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ac0cw"          "Accumulation mode number in cloud"         "#/kg-dryair"
 state   real   corncw      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "corncw"         "Coarse mode number in cloud"        "#/kg-dryair"
+#
+#deposition fluxes (kg/m2) to snow  -czhao
+state  real  -          ij{sizebin}f    drydep_flux    1    -   -    -
+state    real  drydep_dust     ij{sizebin}f     drydep_flux    1         -      rh03    "drydep_dust"    "DUST from dry deposition for 4-bin in snow"      "kg/m2/s"
+state    real  drydep_bcphi     ij{sizebin}f     drydep_flux    1         -      rh03    "drydep_bcphi"    "BCphi from dry deposition for 4-bin in snow"      "kg/m2/s"
+state    real  drydep_bcpho     ij{sizebin}f     drydep_flux    1         -      rh03    "drydep_bcpho"    "BCpho from dry deposition for 4-bin in snow"      "kg/m2/s"
+state    real  drydep_ocphi     ij{sizebin}f     drydep_flux    1         -      rh03    "drydep_ocphi"    "OCphi from dry deposition for 4-bin in snow"      "kg/m2/s"
+state    real  drydep_ocpho     ij{sizebin}f     drydep_flux    1         -      rh03    "drydep_ocpho"    "OCpho from dry deposition for 4-bin in snow"      "kg/m2/s"
+#
+state  real  -          ij{sizebin}f    wetdep_flux    1    -   -    -
+state    real  wetdep_dust     ij{sizebin}f     wetdep_flux    1         -      rh03    "wetdep_dust"   "DUST from wet deposition for 4-bin in snow"      "kg/m2/s"
+state    real  wetdep_bcphi     ij{sizebin}f     wetdep_flux    1         -      rh03    "wetdep_bcphi"   "BCphi from wet deposition for 4-bin in snow"      "kg/m2/s"
+state    real  wetdep_bcpho     ij{sizebin}f     wetdep_flux    1         -      rh03    "wetdep_bcpho"   "BCpho from wet deposition for 4-bin in snow"      "kg/m2/s"
+state    real  wetdep_ocphi     ij{sizebin}f     wetdep_flux    1         -      rh03    "wetdep_ocphi"   "OCphi from wet deposition for 4-bin in snow"      "kg/m2/s"
+state    real  wetdep_ocpho     ij{sizebin}f     wetdep_flux    1         -      rh03    "wetdep_ocpho"   "OCpho from wet deposition for 4-bin in snow"      "kg/m2/s"
 
 # new cloud phase species for MADE/SORG-VBS
 state   real   asoa1cwj    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "asoa1cwj"       "SOA Anth. org. conc. with  C* value=1    ug/m^3 Acc. mode in cloud"    "ug/kg-dryair"
@@ -3767,6 +3782,11 @@ rconfig   integer     flashrate_method    namelist,chem        max_domains      
 rconfig   integer     iccg_method         namelist,chem        max_domains        1       rh      "iccg_method"        ""    ""
 rconfig   integer     cellcount_method    namelist,chem        max_domains        1       rh      "cellcount_method"   ""    ""            
 
+# CLM inputs
+rconfig   character  megan_specifier      namelist,physics     max_mgnspc      " "        -     "map from Megan2.1 to WRF species" "" ""
+rconfig   character  megan_factors_file   namelist,physics              1      " "        -     "Megan2.1 emission factors" "" ""
+rconfig   logical    megan_mapped_emisfctrs   namelist,physics          1      .false.    -     "use mapped emission factors" "" ""
+
 # GHG chemistry namelist options:
 rconfig   character   vprm_opt            namelist,chem        max_domains   "VPRM_param_US"  -       "the file contains VPRM parameters"  ""      ""
 
@@ -3844,6 +3864,7 @@ rconfig   character   exo_coldens_inname  namelist,chem          max_domains    
 rconfig   character   wes_seasonal_inname namelist,chem          max_domains    "wrf_season_wes_usgs_<domain>.nc"      h    "name of wesely seasonal infile"  ""      ""
 
 rconfig   integer        chemdiag        namelist,chem        max_domains        0      -     "Chemical tendency diagnostics"   ""    ""
+rconfig   integer        aerosoldep      namelist,chem        max_domains        1      rh     "aerosol deposition fluxes to snow"   ""    ""
 rconfig   integer        aero_srf_area_diag        namelist,chem        max_domains        0      -     "Aerosol srf area diagnostics"   ""    ""
 
 # Options for AFWA GOCART Dust model (dust_opt=3)
@@ -4060,6 +4081,7 @@ package   cu_kfcup_select   kfcup_diag==1             -            state: chem_c
 package   gunther1      bio_emiss_opt==1             -             -
 package   beis314       bio_emiss_opt==2             -             -
 package   megan2        bio_emiss_opt==3             -             state:mebio_isop,mebio_apin,mebio_bcar,mebio_acet,mebio_mbo,mebio_no,msebio_isop,mlai,pftp_bt,pftp_nt,pftp_sb,pftp_hb,mtsa,mswdown,EFmegan
+package   megan2_clm    bio_emiss_opt==4   
 
 # Biospheric CO2 and CH4 emissions
 package   ebioco2       bio_emiss_opt==16            -             state:rad_vprm,lambda_vprm,alpha_vprm,resp_vprm;vprm_in:vegfra_vprm,evi,evi_min,evi_max,lswi,lswi_max,lswi_min;eghg_bio:ebio_gee,ebio_res,ebio_co2oce
@@ -4138,6 +4160,8 @@ package   aircraft1      aircraft_emiss_opt==1             -       emis_aircraft
 
 package   nochemdiag     chemdiag==0         -                -
 package   usechemdiag    chemdiag==1         -                conv_ct:conv_co,conv_o3,conv_no,conv_no2,conv_hno3,conv_iso,conv_ho,conv_ho2;chem_ct:chem_co,chem_o3,chem_no,chem_no2,chem_hno3,chem_iso,chem_ho,chem_ho2;vmix_ct:vmix_co,vmix_o3,vmix_no,vmix_no2,vmix_hno3,vmix_iso,vmix_ho,vmix_ho2;advh_ct:advh_co,advh_o3,advh_no,advh_no2,advh_hno3,advh_iso,advh_ho,advh_ho2;advz_ct:advz_co,advz_o3,advz_no,advz_no2,advz_hno3,advz_iso,advz_ho,advz_ho2
+
+package   useaerosoldep    aerosoldep==1         -            drydep_flux:drydep_dust,drydep_bcphi,drydep_bcpho,drydep_ocphi,drydep_ocpho;wetdep_flux:wetdep_dust,wetdep_bcphi,wetdep_bcpho,wetdep_ocphi,wetdep_ocpho
 
 # package for aerosol srf area diagnostic
 package   has_aero_srf_area_diag    aero_srf_area_diag==1         -                aero_srf_area:sulf_srf_area,oc_srf_area,bc_srf_area

@@ -22,7 +22,7 @@
                last_chem_time_year, last_chem_time_month,            &
                last_chem_time_day, last_chem_time_hour,              &
                last_chem_time_minute, last_chem_time_second,         &
-               chem_in_opt, kemit, num_vert_mix,                     &
+               chem_in_opt, kemit, num_vert_mix, numgas_out,         &
                ids,ide, jds,jde, kds,kde,                            &
                ims,ime, jms,jme, kms,kme,                            &
                its,ite, jts,jte, kts,kte                             )
@@ -77,6 +77,7 @@
    INTEGER,      INTENT(IN   ) :: plumerisefire_frq
    INTEGER,      INTENT(IN   ) :: chem_in_opt
    INTEGER,      INTENT(INOUT) :: num_vert_mix
+   INTEGER,      INTENT(INOUT) :: numgas_out
    INTEGER,      INTENT(IN   ) :: id,julday,kemit,                   &
                                   last_chem_time_year,               &
                                   last_chem_time_month,              &

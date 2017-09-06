@@ -132,10 +132,6 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
     CALL nl_set_cen_lat ( nest%id , nest%cen_lat)  ! for output purpose
     CALL nl_set_cen_lon ( nest%id , nest%cen_lon)  ! for output purpose
 
-    write(message,*)" - nest%cen_lat   = ",nest%cen_lat
-    CALL wrf_message(trim(message))
-    write(message,*)" - nest%cen_lon   = ",nest%cen_lon
-    CALL wrf_message(trim(message))
 
 
 !   soil configuration

@@ -21,6 +21,7 @@ CONTAINS
   ! a latitude or longitude:
 
   character(1) function get_lat_ns(lat)
+    ! This could be written simply as merge('N','S',lat>=0) if WRF allowed F95
     implicit none ; real lat
     if(lat>=0) then
        get_lat_ns='N'
@@ -29,6 +30,7 @@ CONTAINS
     endif
   end function get_lat_ns
   character(1) function get_lon_ew(lon)
+    ! This could be written simply as merge('E','W',lon>=0) if WRF allowed F95
     implicit none ; real lon
     if(lon>=0) then
        get_lon_ew='E'

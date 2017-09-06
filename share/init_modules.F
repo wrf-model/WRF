@@ -82,6 +82,7 @@ IF ( phase == 1 ) THEN
  CALL init_module_wrf_quilt    !! this *must* be called before init_module_dm
  ! We must never reach this line or phase 2 in an I/O server.
  CALL split_communicator
+ CALL init_module_dm
 # else
  CALL split_communicator
  CALL init_module_wrf_quilt    !! this *must* be called before init_module_dm

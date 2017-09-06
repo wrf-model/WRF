@@ -571,6 +571,12 @@ if [ -n "$WRF_NMM_CORE" ]; then
         compileflags="${compileflags}!-DIBM_REDUCE_BUG_WORKAROUND"
       fi
     fi
+    if [ -n "$CALL_SYNC_IN_IO_SERVERS" ]; then
+      if [ $CALL_SYNC_IN_IO_SERVERS = 1 ]; then
+        echo adding CALL_SYNC_IN_IO_SERVERS flag for some IBM systems
+        compileflags="${compileflags}!-DCALL_SYNC_IN_IO_SERVERS"
+      fi
+    fi
   fi
 fi
 if [ -n "$WRF_DFI_RADAR" ] ; then

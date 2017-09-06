@@ -920,6 +920,7 @@ CONTAINS
                                c_sm1y, c_em1y, c_sm2y, c_em2y, c_sm3y, c_em3y, &
                                c_sm1x, c_em1x, c_sm2x, c_em2x, c_sm3x, c_em3x, &   ! x-xpose
                                c_sm1y, c_em1y, c_sm2y, c_em2y, c_sm3y, c_em3y  )   ! y-xpose
+!         ENDIF
 #endif
          intermediate_grid%sd31                            =   c_sd1
          intermediate_grid%ed31                            =   c_ed1
@@ -2997,6 +2998,8 @@ END
             IF ( is_intermediate ) THEN
               kn =  ( k - parent_start ) * parent_grid_ratio + 1 + 1 ;
               CALL task_for_point (1,kn,1,dum,nds,nde,ntx,nty,Px,Py,minx,miny,ierr) ! modified to treat x and y separately
+
+
               IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (h)')
             ELSE
               CALL task_for_point (1,k,1,dum,ds,de,ntx,nty,Px,Py,minx,miny,ierr) ! modified to treat x and y separately
@@ -3072,6 +3075,8 @@ END
             IF ( is_intermediate ) THEN
               kn =  ( k - parent_start ) * parent_grid_ratio + 1 + 1 ;
               CALL task_for_point (1,kn,1,dum,nds,nde,ntx,nty,Px,Py,minx,miny,ierr) ! modified to treat x and y separately
+
+
               IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (l)')
             ELSE
               CALL task_for_point (1,k,1,dum,ds,de,ntx,nty,Px,Py,minx,miny,ierr) ! modified to treat x and y separately
@@ -4117,7 +4122,8 @@ END
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k,kk
       TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
+      REAL xv(2000000)
+      integer ixv
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe
@@ -4135,25 +4141,27 @@ END
       REAL, DIMENSION(pgrid%s_vert:pgrid%e_vert) :: alt_w_c
       REAL, DIMENSION(pgrid%s_vert:pgrid%e_vert+1) :: alt_u_c
       REAL, DIMENSION(ngrid%s_vert:ngrid%e_vert) :: alt_w_n
-      REAL, DIMENSION(ngrid%s_vert:ngrid%e_vert+1) :: alt_u_n      
+      REAL, DIMENSION(ngrid%s_vert:ngrid%e_vert+1) :: alt_u_n
       
       REAL, DIMENSION(:,:,:), ALLOCATABLE :: p, al
       REAL :: pfu, pfd, phm, temp, qvf, qvf1, qvf2    
 
       !KAL change this for vertical nesting
-      ! force_domain_em_part1 packs up the interpolation onto the coarse (vertical) grid
+      ! force_domain_em_part1 packs up the interpolation onto the coarse
+      ! (vertical) grid
       ! therefore the message size is based on the coarse grid number of levels
       ! here it is unpacked onto the intermediate grid
       CALL get_ijk_from_grid (  pgrid ,                   &
                                 cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe    )
-                                
+
       !KAL this is the original WRF code                                
       !CALL get_ijk_from_grid (  grid ,                   &
       !                          cids, cide, cjds, cjde, ckds, ckde,    &
       !                          cims, cime, cjms, cjme, ckms, ckme,    &
       !                          cips, cipe, cjps, cjpe, ckps, ckpe    )
+
       CALL get_ijk_from_grid (  ngrid ,              &
                                 nids, nide, njds, njde, nkds, nkde,    &
                                 nims, nime, njms, njme, nkms, nkme,    &
@@ -4231,7 +4239,7 @@ endif
       !  Vertical refinement is turned on.
 
       IF (ngrid%vert_refine_method .NE. 0) THEN
-      
+
 #include "nest_forcedown_interp_vert.inc"
 
          IF ( ngrid%this_is_an_ideal_run ) THEN 
@@ -4422,9 +4430,10 @@ endif
 
 
       END IF
-                               
+
 
 #include "HALO_FORCE_DOWN.inc"
+
 
       ! code here to interpolate the data into the nested domain
 #  include "nest_forcedown_interp.inc"
@@ -4457,7 +4466,8 @@ endif
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       INTEGER iparstrt,jparstrt,sw
       TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
+      REAL xv(2000000)
+      integer ixv
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe
@@ -4472,12 +4482,13 @@ endif
 
       INTEGER icoord, jcoord, idim_cd, jdim_cd, pgr 
       INTEGER thisdomain_max_halo_width
-      INTEGER local_comm, myproc, nproc
+      INTEGER local_comm, ioffset, myproc, nproc,ierr
       INTEGER ioffset, ierr
 
-      CALL wrf_get_dm_communicator ( local_comm )
+!      CALL wrf_get_dm_communicator ( local_comm )
       CALL wrf_get_myproc( myproc )
       CALL wrf_get_nproc( nproc )
+
 
       CALL get_ijk_from_grid (  grid ,                   &
                                 cids, cide, cjds, cjde, ckds, ckde,    &
@@ -4555,7 +4566,8 @@ endif
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
+      REAL xv(2000000)
+      integer ixv
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe
@@ -4581,7 +4593,8 @@ endif
 
 
       !KAL change this for vertical nesting
-      ! interp_domain_em_part1 packs up the interpolation onto the coarse (vertical) grid
+      ! interp_domain_em_part1 packs up the interpolation onto the coarse
+      ! (vertical) grid
       ! therefore the message size is based on the coarse grid number of levels
       ! here it is unpacked onto the intermediate grid
        CALL get_ijk_from_grid ( pgrid ,                   &
@@ -4598,12 +4611,11 @@ endif
                                 nims, nime, njms, njme, nkms, nkme,    &
                                 nips, nipe, njps, njpe, nkps, nkpe    )
 
-      nlev  = ckde - ckds + 1 
+      nlev  = ckde - ckds + 1
 
       CALL get_dm_max_halo_width ( ngrid%id , thisdomain_max_halo_width )
 
 #include "nest_interpdown_unpack.inc"
-
 
 if (ngrid%vert_refine_method .NE. 0) then
 
@@ -4659,8 +4671,8 @@ if (ngrid%vert_refine_method .NE. 0) then
 endif   
 
 
-
-      !KAL added this call for vertical nesting (return coarse grid dimensions to intended values)
+      !KAL added this call for vertical nesting (return coarse grid dimensions
+      !to intended values)
       CALL get_ijk_from_grid (  grid ,                   &
                                 cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
@@ -4671,9 +4683,8 @@ endif
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe    )
 
-
 if (ngrid%vert_refine_method .NE. 0) then
-      
+
 !KAL added this code (the include file) for the vertical nesting
 #include "nest_interpdown_interp_vert.inc"
 
@@ -4759,7 +4770,8 @@ endif
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       INTEGER iparstrt,jparstrt,sw
       TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
+      REAL xv(2000000)
+      integer ixv
       INTEGER       ::           ids,  ide,  jds,  jde,  kds,  kde,    &
                                  ims,  ime,  jms,  jme,  kms,  kme,    &
                                  ips,  ipe,  jps,  jpe,  kps,  kpe
@@ -4950,7 +4962,8 @@ endif
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
+      REAL xv(2000000)
+      integer ixv
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe
@@ -5138,6 +5151,8 @@ endif
 
 !------------------------------------------------------------------
 
+!                                 nested_grid%intermediate_grid%id
+!                                         |
    SUBROUTINE feedback_domain_em_part1 ( grid, ngrid, config_flags    &
 !
 #include "dummy_new_args.inc"
@@ -5159,7 +5174,8 @@ endif
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE(domain), POINTER :: xgrid
       TYPE (grid_config_rec_type)            :: config_flags, nconfig_flags
-      REAL xv(2000)
+      REAL xv(2000000)
+      integer ixv
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe
@@ -5214,6 +5230,7 @@ endif
       jps_save = ngrid%j_parent_start
       ipe_save = ngrid%i_parent_start + (nide-nids+1) / ngrid%parent_grid_ratio - 1
       jpe_save = ngrid%j_parent_start + (njde-njds+1) / ngrid%parent_grid_ratio - 1
+
 
 ! feedback_nest_prep invokes a halo exchange on the ngrid. It is done this way
 ! in a separate routine because the HALOs need the data to be dereference from the
@@ -5276,7 +5293,8 @@ endif
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
+      REAL xv(2000000)
+      integer ixv
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe
@@ -5386,10 +5404,6 @@ IF ( ngrid%active_this_task ) THEN
     CALL pop_communicators_for_domain
 
 END IF
-
-!      CALL wrf_get_dm_communicator ( local_comm )
-!      CALL wrf_get_myproc( myproc )
-!      CALL wrf_get_nproc( nproc )
 
       ! determine which communicator and offset to use
       IF ( intercomm_active( grid%id ) ) THEN        ! I am parent
@@ -5529,7 +5543,8 @@ END IF
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       INTEGER iparstrt,jparstrt,sw
       TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
+      REAL xv(2000000)
+      integer ixv
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe
@@ -5630,7 +5645,8 @@ END IF
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
+      REAL xv(2000000)
+      integer ixv
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe
@@ -5734,7 +5750,8 @@ END IF
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       INTEGER iparstrt,jparstrt,sw
       TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
+      REAL xv(2000000)
+      integer ixv
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe
@@ -5840,7 +5857,8 @@ END IF
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
+      REAL xv(2000000)
+      integer ixv
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe
@@ -6036,7 +6054,8 @@ END IF
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
+      REAL xv(2000000)
+      integer ixv
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe
@@ -6111,7 +6130,8 @@ integer myproc
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE(domain), POINTER :: xgrid
       TYPE (grid_config_rec_type)            :: config_flags, nconfig_flags
-      REAL xv(2000)
+      REAL xv(2000000)
+      integer ixv
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe
@@ -6197,6 +6217,7 @@ integer myproc
       ! Generate interpolation information and interpolate Q, T and
       ! possibly PD while we're at it:
  
+!jm we might need this: IF ( grid%active_this_task ) THEN
       call store_interp_info(ngrid,grid)
       call ext_n2c_fulldom(&
            ngrid%deta1,ngrid%deta2,ngrid%eta1,             &
@@ -6212,7 +6233,7 @@ integer myproc
            nids, nide, njds, njde, nkds, nkde,             &
            nims, nime, njms, njme, nkms, nkme,             &
            nips, nipe, njps, njpe, nkps, nkpe)
-
+!jm ENDIF
 
       ! "interp" ngrid onto intermediate grid
 #include "nest_feedbackup_interp.inc"
@@ -6252,7 +6273,8 @@ integer myproc
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
+      REAL xv(2000000)
+      integer ixv
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe
@@ -6374,7 +6396,6 @@ IF ( grid%active_this_task ) THEN
 
 #include "nest_feedbackup_unpack.inc"
 
-
       ! smooth coarse grid
 
       CALL get_ijk_from_grid (  ngrid,                                 &
@@ -6385,6 +6406,7 @@ IF ( grid%active_this_task ) THEN
                                 ids, ide, jds, jde, kds, kde,    &
                                 ims, ime, jms, jme, kms, kme,    &
                                 ips, ipe, jps, jpe, kps, kpe    )
+
 
      before_smooth_halo: if(config_flags%smooth_option/=0) then
 #include "HALO_INTERP_UP.inc"

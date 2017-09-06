@@ -487,7 +487,7 @@ end if
                         iv%info(gpsref)%name(nb) == iv%info(gpsref)%name(na) .and. &
 ! hmn 20111206
 !                        iv%gpsref(nb)%ref(1)%qc >= obs_qc_pointer .and.        &
-                        iv%gpsref(nb)%ref(1)%qc /= missing_data .and.            &
+                        iv%gpsref(n)%ref(1)%qc /= missing_data .and.            &
 
                         iv%gpsref(nb)%h(1) <= iv%gpsref(na)%h(1)   ) then
                       iv%gpsref(nb)%ref(1)%qc = qc_below

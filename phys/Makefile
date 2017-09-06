@@ -61,12 +61,14 @@ MODULES = \
 	module_cu_tiedtke.o\
 	module_cu_ntiedtke.o\
 	module_cu_gd.o \
+	module_cu_gfdrvr.o \
 	module_cu_gf_wrfdrv.o \
 	module_cu_gf_deep.o \
 	module_cu_gf_sh.o \
 	module_cu_nsas.o \
 	module_cu_sas.o \
 	module_cu_scalesas.o \
+	module_cu_mesosas.o \
 	module_cu_osas.o \
 	module_cu_kfcup.o \
 	module_mp_radar.o \
@@ -77,7 +79,7 @@ MODULES = \
 	module_mp_wsm5.o \
 	module_mp_wsm6.o \
 	module_mp_etanew.o \
-	module_mp_fer_hires.o \
+        module_mp_fer_hires.o \
 	module_mp_HWRF.o \
 	module_mp_thompson.o \
 	module_mp_full_sbm.o \
@@ -110,7 +112,7 @@ MODULES = \
 	module_sf_sfclay.o \
 	module_sf_sfclayrev.o \
 	module_sf_gfs.o \
-	module_sf_exchcoef.o \
+        module_sf_exchcoef.o \
 	module_sf_gfdl.o \
 	module_sf_slab.o  \
 	module_sf_noahdrv.o  \

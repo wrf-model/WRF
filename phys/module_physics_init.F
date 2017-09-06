@@ -1017,7 +1017,7 @@ integer myproc
    IF(mminlu_loc .ne. '    ')THEN
 !-- initialize surface properties
 
-     CALL landuse_init(lu_index, snowc, albedo, albbck, snoalb, mavail, emiss, embck, &
+     CALL landuse_init(id,lu_index, snowc, albedo, albbck, snoalb, mavail, emiss, embck, &
                 znt, Z0, thc, xland, xice, xicem, julday, cen_lat, iswater, &
                 TRIM ( mminlu_loc ) ,                               &
                 landuse_ISICE, landuse_LUCATS,                      &
@@ -1103,7 +1103,7 @@ integer myproc
                 its=its, ite=ite, jts=jts, jte=jte, kts=kts, kte=kte                    )
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to bl_init' )
-   CALL bl_init(STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,        &
+   CALL bl_init(id,STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,        &
                 RQVBLTEN,RQCBLTEN,RQIBLTEN,TSK,TMN,             &
                 config_flags,restart,UST,LOWLYR,TSLB,ZS,DZS,    &
                 num_soil_layers,TKE_PBL,mfshconv,               &
@@ -1138,7 +1138,7 @@ integer myproc
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
                 WTDDT, STEPWTD, QRFSXY ,QSPRINGSXY ,QSLATXY,   &
                 FDEPTHXY, RIVERBEDXY, EQZWT, RIVERCONDXY, PEXPXY, & 
-                rechclim  ,                                     &
+                rechclim  ,                                       &
                 ISICE,                                 &
                 T2MVXY,T2MBXY,CHSTARXY ,                        &
                 allowed_to_read , iopt_run ,                    &
@@ -1378,7 +1378,7 @@ integer myproc
    END SUBROUTINE phy_init
 
 !=====================================================================
-   SUBROUTINE landuse_init(lu_index, snowc, albedo, albbck, snoalb, mavail, emiss, embck, &
+   SUBROUTINE landuse_init(id,lu_index, snowc, albedo, albbck, snoalb, mavail, emiss, embck, &
                 znt,Z0,thc,xland, xice, xicem, julday, cen_lat, iswater, mminlu,  &
                 ISICE, LUCATS, LUSEAS, ISN,                         &
                 fractional_seaice,                                  &
@@ -1389,9 +1389,11 @@ integer myproc
                 its, ite, jts, jte, kts, kte                       )
 
    USE module_wrf_error
+USE module_dm, ONLY : local_communicator
    IMPLICIT NONE
 
 !---------------------------------------------------------------------
+   INTEGER , INTENT(IN)           :: id
    INTEGER , INTENT(IN)           :: ids, ide, jds, jde, kds, kde,   &
                                      ims, ime, jms, jme, kms, kme,   &
                                      its, ite, jts, jte, kts, kte
@@ -1643,6 +1645,7 @@ integer myproc
         lu_state(curs) = THERIN(cats,seas)        ; curs = curs + 1
       ENDDO
     ENDDO
+   CALL wrf_debug( 100 , 'end of landuse_init' )
 !
 !-- fds (07/2010)
 !-- SSIB's 12-category vegetation parameters are defined in module_ssib_veg
@@ -1805,7 +1808,7 @@ integer myproc
 !   note that CAM option will still do the same. 
 !   n_ozmixm: no of months; levsiz: = 59, vertical dim
 !   Read in CAM ozone data, and interpolate data to model grid
-!   Interpolation is done on domain 1 only
+!   Interpolation of aerosols is done on domain 1 only
 
 #if (EM_CORE==1) 
    IF ( config_flags%o3input .EQ. 2 .AND. id .EQ. 1 ) THEN
@@ -2019,7 +2022,7 @@ integer myproc
 
    END SUBROUTINE ra_init
 
-   SUBROUTINE bl_init(STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,  &
+   SUBROUTINE bl_init(id,STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,  &
                 RQVBLTEN,RQCBLTEN,RQIBLTEN,TSK,TMN,             &
                 config_flags,restart,UST,LOWLYR,TSLB,ZS,DZS,    &
                 num_soil_layers,TKE_PBL,mfshconv,               &
@@ -2051,7 +2054,7 @@ integer myproc
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
                 WTDDT, STEPWTD,QRFSXY ,QSPRINGSXY ,QSLATXY,     &
                 FDEPTHXY, RIVERBEDXY, EQZWT, RIVERCONDXY, PEXPXY, & 
-                rechclim  ,                                     &
+                rechclim  ,                                       &
                 ISICE,                                 &
                 T2MVXY, T2MBXY ,CHSTARXY,                       &
                 allowed_to_read, iopt_run ,                     &
@@ -2204,6 +2207,7 @@ integer myproc
 !--------------------------------------------------------------------
    IMPLICIT NONE
 !--------------------------------------------------------------------
+integer,intent(in) :: id
    TYPE (grid_config_rec_type) ::     config_flags
    LOGICAL , INTENT(IN)        :: restart
    LOGICAL, INTENT(IN)         ::   FNDSOILW, FNDSNOWH
@@ -2843,7 +2847,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      ,smoiseq  ,smcwtdxy ,rechxy   ,deeprechxy, areaxy ,dx, dy, msftx, msfty,&
                      wtddt    ,stepwtd  ,dt  ,qrfsxy ,qspringsxy  ,qslatxy,                  &
                      fdepthxy ,ht       ,riverbedxy ,eqzwt ,rivercondxy ,pexpxy,              &
-                     rechclim                  &
+                     rechclim  ,                                      &
 #endif
                      )
 
@@ -3119,7 +3123,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                         ids, ide, jds, jde, kds, kde,         &
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
-
 #endif
       CASE (MYJPBLSCHEME)
            if(isfc .ne. 2)CALL wrf_error_fatal &
@@ -3287,9 +3290,11 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE MODULE_CU_BMJ
    USE module_cu_gd,  ONLY : GDINIT
    USE module_cu_g3,  ONLY : G3INIT
+   USE module_cu_gfdrvr,  ONLY : GFINIT
    USE module_cu_sas
    USE module_cu_scalesas
    USE module_cu_osas
+   USE module_cu_mesosas
    USE module_cu_camzm_driver, ONLY : zm_conv_init
    USE module_cu_nsas
    USE module_cu_tiedtke
@@ -3453,6 +3458,17 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
 #endif
+     CASE (GFSCHEME)
+          CALL gfinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,        &
+                      RUCUTEN,RVCUTEN,                            &
+                      restart,                                    &
+                      P_QC,P_QI,PARAM_FIRST_SCALAR,               &
+                      RTHFTEN, RQVFTEN,                           &
+                      allowed_to_read ,                           &
+                      ids, ide, jds, jde, kds, kde,               &
+                      ims, ime, jms, jme, kms, kme,               &
+                      its, ite, jts, jte, kts, kte                )
+
      CASE (SASSCHEME)
           CALL sasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,       &
                       RUCUTEN,RVCUTEN,                            &   ! gopal's doing for SAS
@@ -3488,6 +3504,15 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
     !BSINGH - ENDS
 #endif
+
+     CASE (MESO_SAS)   !Kwon
+          CALL msasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,       &
+                      RUCUTEN,RVCUTEN,                            &   ! gopal's doing for SAS
+                      restart,P_QC,P_QI,PARAM_FIRST_SCALAR,       &
+                      allowed_to_read ,                           &
+                      ids, ide, jds, jde, kds, kde,               &
+                      ims, ime, jms, jme, kms, kme,               &
+                      its, ite, jts, jte, kts, kte                )
 
      CASE (OSASSCHEME)
           CALL osasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,      &

@@ -77,7 +77,8 @@ CONTAINS
                      ,apr_gr,apr_w,apr_mc,apr_st,apr_as,apr_capma     &
                      ,apr_capme,apr_capmi,edt_out,clos_choice         &
                      ,mass_flux,xf_ens,pr_ens,cugd_avedx,imomentum    &
-                     ,ishallow,cugd_tten,cugd_qvten,cugd_qcten        &
+                     ,ishallow                                        &
+                     ,cugd_tten,cugd_qvten,cugd_qcten                 &
                      ,cugd_ttens,cugd_qvtens                          &
                      ,gd_cloud,gd_cloud2                              &
                  ! Optional output arguments for CAMZM scheme
@@ -91,6 +92,7 @@ CONTAINS
                      ,dp3d, du3d, ed3d, eu3d, md3d, mu3d, dsubcld2d   &
                      ,ideep2d, jt2d, maxg2d, lengath2d                &
                      ,k22_shallow,kbcon_shallow,ktop_shallow,xmb_shallow &
+                     ,ierr_shallow                                    & !egrell for debugging
                      ,ktop_deep &
                  ! Optional arguments for SAS scheme
                      ,pgcon,sas_mass_flux                             &
@@ -133,7 +135,7 @@ CONTAINS
                                           ,G3SCHEME,GFSCHEME          &
                                           ,P_QC,P_QI,Param_FIRST_SCALAR &
                                           ,CAMZMSCHEME, SASSCHEME     &
-                                          ,OSASSCHEME                 &  
+                                          ,OSASSCHEME,MESO_SAS        &  
                                           ,SCALESASSCHEME             &  ! scale-sware sas
 
                                           ,NSASSCHEME                 &
@@ -163,6 +165,7 @@ CONTAINS
    USE module_cu_mskf   , ONLY : mskf_cps
 #endif
    USE module_cu_gd     , ONLY : grelldrv
+   USE module_cu_gfdrvr , ONLY : gfdrvr         !gf
    USE module_cu_gf_wrfdrv     , ONLY : gfdrv
    USE module_cu_g3     , ONLY : g3drv,conv_grell_spread3d
    USE module_cu_sas    , ONLY : cu_sas
@@ -172,6 +175,7 @@ CONTAINS
    USE module_cu_kfcup  , ONLY : KF_CUP_CPS !wig, 3-Aug-2006 !BSINGH - For WRFCuP scheme 
 #endif
    USE module_cu_osas   , ONLY : cu_osas
+   USE module_cu_mesosas, ONLY : cu_meso_sas
    USE module_cu_camzm_driver, ONLY : camzm_driver
    USE module_cu_tiedtke, ONLY : cu_tiedtke
    USE module_cu_ntiedtke,ONLY : cu_ntiedtke
@@ -182,13 +186,14 @@ CONTAINS
    !
    !  1. Kain & Fritsch (1993)
    !  2. Betts-Miller-Janjic (Janjic, 1994)
-   !  3. Grell-Devenyi (Grell and Devenyi, 2002)
+   !  3. Grell-Freitas (Grell and Freitas, 2013)
    !  4. Simplified Arakawa-Schubert scheme (NCEP)
    !     (adapted by Zhang and Wang to work with ARW in V3.3)
    !  5. Grell 3D ensemble scheme
    !  6. Modified Tiedtke scheme (Zhang and Wang 2010)
    ! 14. New simplified Arakawa-Schubert scheme (NCEP, YSU)
    ! 16. New Tiedtke scheme (Bechtold et al. 2004, 2008, 2014)
+   ! 93. Grell-Devenyi (Grell and Devenyi, 2002)
    !
 !----------------------------------------------------------------------
    IMPLICIT NONE
@@ -531,6 +536,11 @@ CONTAINS
      lengath2d 
    INTEGER, DIMENSION( ims:ime, jms:jme ),                       &
          OPTIONAL, INTENT(  OUT) :: ktop_deep
+! egrell - added ierr_shallow for debugging
+   INTEGER, DIMENSION( ims:ime, jms:jme ),                       &
+         OPTIONAL, INTENT(INOUT) ::                              &
+          ierr_shallow
+
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          OPTIONAL, INTENT(INOUT) ::                              &
                       ! optional moisture tracers
@@ -1084,6 +1094,34 @@ CONTAINS
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                                                                 )
+     CASE (MESO_SAS)                  !Kwon
+
+          IF ( adapt_step_flag_pass ) THEN
+            WRITE( wrf_err_message , * ) 'The MESO SAS cumulus option will not work properly with an adaptive time step'
+            CALL wrf_error_fatal ( wrf_err_message )
+          END IF
+          CALL wrf_debug(100,'in cu_mesosas')
+          CALL CU_MESO_SAS(                                     &
+                DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU         &
+               ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
+               ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
+               ,RUCUTEN=RUCUTEN, RVCUTEN=RVCUTEN                &
+               ,RAINCV=RAINCV,PRATEC=tmpPRATEC,HTOP=HTOP,HBOT=HBOT &
+               ,U3D=u,V3D=v,W=w,T3D=t                           &
+               ,QV3D=QV_CURR,QC3D=QC_CURR,QI3D=QI_CURR          &
+               ,PI3D=pi,RHO3D=rho                               &
+               ,DZ8W=dz8w,PCPS=p,P8W=p8w,XLAND=XLAND            &
+               ,CU_ACT_FLAG=CU_ACT_FLAG                         &
+               ,P_QC=p_qc                                       &
+               ,MOMMIX=MOMMIX  &
+               ,pgcon=pgcon,sas_mass_flux=sas_mass_flux         &
+               ,shalconv=shalconv,shal_pgcon=shal_pgcon         &
+               ,hpbl2d=hpbl2d,evap2d=evap2d,heat2d=heat2d       &
+               ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
+               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
+               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+                                                                )
      CASE (OSASSCHEME)
                                                                                                                                            
           IF ( adapt_step_flag_pass ) THEN
@@ -1172,10 +1210,10 @@ CONTAINS
 #endif                                 
                                                                 )
      CASE (GFSCHEME)
-          CALL wrf_debug(100,'in grelldrv')
+          CALL wrf_debug(100,'in GFdrvr')
 #if ( WRF_DFI_RADAR == 1 )
           if (do_capsuppress == 1) then
-            WRITE( wrf_err_message , * ) 'G3 do CAP suppress',its,jts,min( jte,jde-1 ),min( ite,ide-1 ),kte
+            WRITE( wrf_err_message , * ) 'GF do CAP suppress',its,jts,min( jte,jde-1 ),min( ite,ide-1 ),kte
             CALL wrf_debug(200, wrf_err_message)
             DO j = jts, min( jte,jde-1 )
             DO i = its, min( ite,ide-1 )
@@ -1185,7 +1223,63 @@ CONTAINS
          endif
 #endif
 
-         CALL GFDRV(spp_conv,pattern_spp_conv,field_conv,       &
+#if (NMM_CORE == 1 )
+
+           CALL GFDRVR(                                         &
+                DT=dt                                           &
+               ,DX2D=dx2d,DY=dynmm                              &
+               ,RHO=rho,RAINCV=raincv,PRATEC=tmppratec          &
+               ,U=u,V=v,T=t,W=w                                 &
+               ,Q=qv_curr,P=p,PI=pi                             &
+               ,DZ8W=dz8w ,P8W=p8w                              &
+               ,htop=htop,hbot=hbot                             &
+               ,ktop_deep=ktop_deep                             &
+               ,HT=ht,hfx=hfx,qfx=qfx                           &
+               ,xland=xland                                     &
+               ,GDC=gd_cloud,GDC2=gd_cloud2,kpbl=kpbl           &
+               ,k22_shallow=k22_shallow                         &
+               ,kbcon_shallow=kbcon_shallow                     &
+               ,ktop_shallow=ktop_shallow                       &
+               ,xmb_shallow=xmb_shallow                         &
+               ,ierr_shallow=ierr_shallow                       & !egrell debugging
+               ,ishallow_g3=ishallow                            &
+               ,ichoice=clos_choice                             &
+               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
+               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+               ,PERIODIC_X=periodic_x,PERIODIC_Y=periodic_y     &
+               ,RQVCUTEN=RQVCUTEN,RQCCUTEN=RQCCUTEN             &
+              ! optionals
+#if (NMM_CORE == 1 )
+               ,RQICUTEN=RQICUTEN               &
+               ,RQVFTEN=forceq                  &
+               ,RTHFTEN=forcet                  &
+               ,RTHCUTEN=RTHCUTEN               &
+#else
+               ,RTHCUTEN=RTHCUTEN            &
+               ,RTHFTEN=RTHFTEN              &
+               ,RQICUTEN=RQICUTEN            &
+               ,RQVFTEN=RQVFTEN              &
+#endif
+               ,RTHRATEN=RTHRATEN                               &
+               ,RQVBLTEN=RQVBLTEN,RTHBLTEN=RTHBLTEN             &
+               ,RUCUTEN=RUCUTEN,RVCUTEN=RVCUTEN                 &
+               ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
+               ,F_QI=f_qi,F_QS=f_qs                             &
+#if ( WRF_DFI_RADAR == 1 )
+                 ! Optional CAP suppress option
+              ,do_capsuppress=do_capsuppress                    &
+              ,cap_suppress_loc=cap_suppress_loc                &
+#endif
+#if (NMM_CORE == 1 )
+               ,SCALEFUN=SCALEFUN                  & ! CNV scale functions
+               ,SIGMU=SIGMU                        & ! CNV updraft fractions
+#endif
+                                                                )
+
+#else
+
+          CALL GFDRV(spp_conv,pattern_spp_conv,field_conv,       &
                 DT=dt,DX=dx                                     &
                ,RHO=rho,RAINCV=raincv,PRATEC=tmppratec          &
                ,U=u,V=v,T=t,W=w,Q=qv_curr,P=p,PI=pi             &
@@ -1221,7 +1315,9 @@ CONTAINS
                ,do_capsuppress=do_capsuppress                   &
                ,cap_suppress_loc=cap_suppress_loc               &
 #endif 
-                                                                )
+
+#endif
+
      CASE (CAMZMSCHEME)
           IF (PRESENT(z_at_w) .AND. PRESENT(mavail)                 &
                  .AND. PRESENT(pblh) .AND. PRESENT(psfc).AND.PRESENT(RQCNCUTEN))THEN

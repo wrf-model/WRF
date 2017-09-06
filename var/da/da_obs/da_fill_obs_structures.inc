@@ -487,17 +487,19 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
             ob % bogus(n) % q(k) = iv % bogus(n) % q(k) % inv
 
             ! Calculate q error from rh error:
+            ! the conversion is not needed for LSAC
+            if (iv%info(bogus)%name(n)(1:4) /= "LSAC") then
+               rh_error = iv%bogus(n)%q(k)%error ! q error is rh at this stage!
+               call da_get_q_error(iv % bogus(n) % p(k), &
+                                   ob % bogus(n) % t(k), &
+                                   ob % bogus(n) % q(k), &
+                                   iv % bogus(n) % t(k) % error, &
+                                   rh_error, q_error)
 
-            rh_error = iv%bogus(n)%q(k)%error ! q error is rh at this stage!
-            call da_get_q_error(iv % bogus(n) % p(k), &
-                                 ob % bogus(n) % t(k), &
-                                 ob % bogus(n) % q(k), &
-                                 iv % bogus(n) % t(k) % error, &
-                                 rh_error, q_error)
-
-            iv % bogus(n) % q(k) % error = q_error
-            if (iv%bogus(n)% q(k) % error == missing_r) &
-               iv%bogus(n)% q(k) % qc = missing_data
+               iv % bogus(n) % q(k) % error = q_error
+               if (iv%bogus(n)% q(k) % error == missing_r) &
+                  iv%bogus(n)% q(k) % qc = missing_data
+            end if !LSAC
          end do
          ob % bogus(n) % slp = iv % bogus(n) % slp % inv
       end do

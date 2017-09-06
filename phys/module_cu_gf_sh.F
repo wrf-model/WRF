@@ -65,13 +65,14 @@ contains
 ! this module needs some subroutines from gf_deep
 !
   use module_cu_gf_deep,only:cup_env,cup_env_clev,get_cloud_bc,cup_minimi,  &
-                      get_inversion_layers,rates_up_pdf,get_cloud_bc,     &
+                      get_inversion_layers,rates_up_pdf,                    &
                       cup_up_aa0,cup_kbcon,get_lateral_massflux
      implicit none
      integer                                                           &
         ,intent (in   )                   ::                           &
         itf,ktf,        &
         its,ite, kts,kte,ipr
+
      logical :: MAKE_CALC_FOR_XK = .true.
      integer, intent (in   )              ::                           &
         ichoice
@@ -83,11 +84,11 @@ contains
   ! outqc  = output qc tendency (per s)
   ! pre    = output precip
      real,    dimension (its:ite,kts:kte)                              &
-        ,intent (inout  )                   ::                           &
+        ,intent (out  )                   ::                           &
         cnvwt,OUTT,OUTQ,OUTQC,cupclw,zuo
      real,    dimension (its:ite)                                      &
         ,intent (out  )                   ::                           &
-        xmb_out
+        xmb_out,pre
      integer,    dimension (its:ite)                                   &
         ,intent (inout  )                   ::                           &
         ierr
@@ -179,7 +180,8 @@ contains
   ! xaa0    = cloud work function with cloud effects (ensemble dependent)
 
      real,    dimension (its:ite) ::                                   &
-       zws,ztexec,zqexec,pre,AA1,AA0,XAA0,HKB,                          &
+       zws,ztexec,zqexec,AA1,AA0,XAA0,HKB,                          &
+!       zws,ztexec,zqexec,pre,AA1,AA0,XAA0,HKB,                          &
        flux_tun,HKBO,XHKB,                                    &
        rand_vmas,xmbmax,XMB,                         &
        cap_max,entr_rate,                                    &
@@ -203,9 +205,13 @@ contains
      real,    dimension (its:ite,kts:kte) :: dtempdz
      integer, dimension (its:ite,kts:kte) ::  k_inv_layers 
      integer, dimension (its:ite) ::  start_level
+!     integer, dimension (its:ite) :: ktopkeep
+!     integer, dimension (its:ite) :: kac, ktopnew, ki
+     real :: denom, denom1
+
      start_level(:)=0
      rand_vmas(:)=0.
-     flux_tun=fluxtune
+     flux_tun(:)=fluxtune
       do i=its,itf
         xland1(i)=int(xland(i)+.001) ! 1.
         ktopx(i)=0
@@ -218,6 +224,9 @@ contains
         cap_max_increment(i)=25.
         ierrc(i)=" "
         entr_rate(i) = 9.e-5 ! 1.75e-3 ! 1.2e-3 ! .2/50.
+        ktop(i)=0
+        k22(i)=0
+        kbcon(i)=0
       enddo
 !
 !--- initial entrainment rate (these may be changed later on in the
@@ -229,6 +238,8 @@ contains
 !
       do k=kts,ktf
       do i=its,itf
+        cnvwt(i,k)=0.
+        zuo(i,k)=0.
         up_massentro(i,k)=0.
         up_massdetro(i,k)=0.
         z(i,k)=zo(i,k)
@@ -236,15 +247,13 @@ contains
         qrco(i,k)=0.
         pwo(i,k)=0.
         cd(i,k)=1.*entr_rate(i)
-        dellaqc(i,k)=0.
         cupclw(i,k)=0.
+        outt(i,k)=0.
+        outq(i,k)=0.
+        outqc(i,k)=0.
       enddo
+
       enddo
-!
-!--- max/min allowed value for epsilon (ratio downdraft base mass flux/updraft
-!
-!--- minimum depth (m), clouds must have
-!
 !
 !--- maximum depth (mb) of capping 
 !--- inversion (larger cap = no convection)
@@ -333,8 +342,8 @@ contains
 !------- DETERMINE LEVEL WITH HIGHEST MOIST STATIC ENERGY CONTENT - K22
 !
        DO 36 i=its,itf
+        IF(ierr(I) == 0)THEN
          if(kpbl(i).gt.3)cap_max(i)=po_cup(i,kpbl(i))
-         IF(ierr(I) == 0)THEN
           k22(i)=maxloc(HEO_CUP(i,2:kbmax(i)),1)
           k22(i)=max(2,k22(i))
           IF(K22(I).GT.KBMAX(i))then
@@ -343,7 +352,7 @@ contains
            ktop(i)=0
            k22(i)=0
            kbcon(i)=0
-         endif
+          endif
          endif
  36   CONTINUE
 !
@@ -370,24 +379,28 @@ contains
            0,itf,ktf, &
            its,ite, kts,kte, &
            z_cup,entr_rate,heo,0)
+
 !--- get inversion layers for cloud tops
       call cup_minimi(HEso_cup,Kbcon,kbmax,kstabi,ierr,  &
            itf,ktf, &
            its,ite, kts,kte)
 !
-      call get_inversion_layers(ierr,p_cup,t_cup,z_cup,q_cup,qes_cup,k_inv_layers,&
-                           kbcon,kstabi,dtempdz,itf,ktf,its,ite, kts,kte)
+!      call get_inversion_layers(ierr,p_cup,t_cup,z_cup,q_cup,qes_cup,k_inv_layers,&
+!                           kbcon,kstabi,dtempdz,itf,ktf,its,ite, kts,kte)
 !
 !
       DO i=its,itf
          entr_rate_2d(i,:)=entr_rate(i)
-         IF(ierr(I) == 0)THEN
+
+        if(kbcon(i).gt.ktf-4)then
+            ierr(i)=231
+        endif
+
+        IF(ierr(I) == 0)THEN
+
             start_level(i)=k22(i)
             x_add = xlv*zqexec(i)+cp*ztexec(i)
-            call get_cloud_bc(kte,he_cup (i,1:kte),hkb (i),k22(i),x_add)
-            if(kbcon(i).gt.ktf-4)then
-                ierr(i)=231
-            endif
+            call get_cloud_bc(kte,he_cup (i,1:kte),hkb(i),k22(i),x_add)
             do k=kts,ktf
                frh = 2.*min(qo_cup(i,k)/qeso_cup(i,k),1.)
                entr_rate_2d(i,k)=entr_rate(i)*(2.3-frh)
@@ -397,21 +410,20 @@ contains
 ! first estimate for shallow convection
 !
             ktop(i)=1
-!            if(k_inv_layers(i,1).gt.0)then
-!!               ktop(i)=min(k_inv_layers(i,1),k_inv_layers(i,2))
-            if(k_inv_layers(i,1).gt.0 .and.   &
-               (po_cup(i,kbcon(i))-po_cup(i,k_inv_layers(i,1))).lt.200.)then
-               ktop(i)=k_inv_layers(i,1)
-            else
+!            if(k_inv_layers(i,1).gt.0 .and.   &
+!               (po_cup(i,kbcon(i))-po_cup(i,k_inv_layers(i,1))).lt.200.)then
+!               ktop(i)=k_inv_layers(i,1)
+!            else
                do k=kbcon(i)+1,ktf
                   if((po_cup(i,kbcon(i))-po_cup(i,k)).gt.200.)then
                     ktop(i)=k
                     exit
                   endif
                enddo
-            endif
+!            endif
          endif
       enddo
+
 ! get normalized mass flux profile
       call rates_up_pdf(rand_vmas,ipr,'shallow',ktop,ierr,po_cup,entr_rate_2d,hkbo,heo,heso_cup,zo_cup, &
            xland1,kstabi,k22,kbcon,its,ite,itf,kts,kte,ktf,zuo,kpbl,ktopx,ktopx,kbcon)
@@ -479,6 +491,25 @@ contains
       enddo
 !
 !
+!
+! safety for denominator
+!
+      DO i=its,itf
+       if(ierr(i) /= 0) cycle
+       DO k=start_level(i) +1,ktop(i)
+          denom = zu(i,k-1)-.5*up_massdetr(i,k-1)+up_massentr(i,k-1)
+          denom1 = zuo(i,k-1)-.5*up_massdetro(i,k-1)+up_massentro(i,k-1)
+          if(denom.lt.1.e-16)then
+           ierr(i)=51
+           exit
+          endif
+          if(denom1.lt.1.e-16)then
+           ierr(i)=52
+           exit
+          endif
+       ENDDO
+      ENDDO
+
       do 42 i=its,itf
         dbyt(i,:)=0.
         IF(ierr(I) /= 0) cycle
@@ -515,7 +546,7 @@ contains
              go to 42
          endif
          if(ktop(i).gt.ktf-2)then
-             ierr(i)=5
+             ierr(i)=15
              ierrc(i)="ktop is larger than ktf-2"
              go to 42
          endif
@@ -604,7 +635,9 @@ contains
       do k=kts,kte
        do i=its,itf
         dellah(i,k)=0.
+        dellat(i,k)=0.
         dellaq(i,k)=0.
+        dellaqc(i,k)=0.
        enddo
       enddo
 !
@@ -815,15 +848,7 @@ contains
              ierrc(i)="21"
           endif
         endif
-        if(ierr(i).ne.0)then
-           k22  (i)=0
-           kbcon(i)=0
-           ktop (i)=0
-           xmb  (i)=0.
-           outt (i,:)=0.
-           outq (i,:)=0.
-           outqc(i,:)=0.
-        else if(ierr(i).eq.0)then
+        if(ierr(i).eq.0)then
           xmb_out(i)=xmb(i)
 ! 
 ! final tendencies
@@ -835,6 +860,18 @@ contains
            outqc(i,k)= dellaqc(i,k)*xmb(i)
            pre  (i)  = pre(i)+pwo(i,k)*xmb(i)
           enddo
+        endif
+       enddo
+
+       do i=its,itf
+        if(ierr(i).ne.0)then
+           k22  (i)=0
+           kbcon(i)=0
+           ktop (i)=0
+           xmb  (i)=0.
+           outt (i,:)=0.
+           outq (i,:)=0.
+           outqc(i,:)=0.
         endif
        enddo
 !      

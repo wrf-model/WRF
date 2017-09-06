@@ -247,7 +247,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
 # environment variables JASPERLIB and JASPERINC to paths to library and 
 # include files to enable this feature prior to running configure.  
 
- $I_really_want_to_output_grib2_from_WRF = "FALSE" ;
+ $I_really_want_to_output_grib2_from_WRF = "TRUE" ;
 
  if ( $ENV{JASPERLIB} && $ENV{JASPERINC} && $I_really_want_to_output_grib2_from_WRF eq "TRUE" )
    {
@@ -515,14 +515,17 @@ while ( <CONFIGURE_DEFAULTS> )
 	$_ =~ s:CONFIGURE_PNETCDF_LIB_PATH::g ;
 	 }
 
-    if ( $sw_hdf5_path ) 
-      { $_ =~ s:CONFIGURE_HDF5_LIB_PATH:-L$sw_hdf5_path/lib -lhdf5_fortran -lhdf5 -lm -lz: ;
-        $_ =~ s:CONFIGURE_HDF5_FLAG:-DHDF5: ;
-         }
-    else
-      { $_ =~ s:CONFIGURE_HDF5_LIB_PATH::g ;
+    if($sw_hdf5_path) {
+      if(defined($ENV{HDF5_LDFLAGS})) {
+	s:CONFIGURE_HDF5_LIB_PATH:$ENV{HDF5_LDFLAGS}:g;
+      } else {
+	s:CONFIGURE_HDF5_LIB_PATH:-L$sw_hdf5_path/lib -lhdf5_fortran -lhdf5 -lm -lz: ;
+      }
+      s:CONFIGURE_HDF5_FLAG:-DHDF5: ;
+    } else {
+        $_ =~ s:CONFIGURE_HDF5_LIB_PATH::g ;
         $_ =~ s:CONFIGURE_HDF5_FLAG::g ;
-         }
+    }
 
     if ( $sw_phdf5_path ) 
 

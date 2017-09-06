@@ -19,13 +19,15 @@ MODULE module_cu_gf_deep
      real, parameter :: fluxtune=1.5
 ! flag to turn off or modify mom transport by downdrafts
      real, parameter :: pgcd = 1.
+! initial downdraft detrainment factor
+     real, parameter :: cdd_init = .1
 !
-! aerosol awareness, do not user yet!
+! aerosol awareness, do not use yet!
 !
      integer, parameter :: autoconv=1
      integer, parameter :: aeroevap=1
      real, parameter :: ccnclean=250.
-! still 16 ensembles for clousres
+! still 16 ensemble members for closures
      integer, parameter:: maxens3=16
 
 
@@ -327,7 +329,7 @@ contains
      real zuh2(40)
      real, dimension (its:ite) :: rntot,delqev,delq2,qevap,rn,qcond
      real :: rain,t1,q1,elocp,evef,el2orc,evfact,evfactl,g_rain,e_dn,c_up
-     real :: pgeoh,dts,fp,fpi,pmin,x_add,beta,beta_u
+     real :: pgeoh,dts,fp,fpi,pmin,x_add,beta
      real :: cbeg,cmid,cend,const_a,const_b,const_c
       flux_tun(:)=fluxtune
 !      if(imid.eq.1)flux_tun(:)=fluxtune+.5
@@ -371,7 +373,7 @@ contains
             !- moisture  excess
             zqexec(i)     = MAX(flux_tun(i)*qfx(i)/xlv/(rho(i,1)*zws(i)),0.)
          endif
-         !- zws for shallow convection closure (Grant 2001)
+         !- zws for Grant (2001) closure
          !- height of the pbl
          zws(i) = max(0.,flux_tun(i)*0.41*buo_flux*zo(i,kpbl(i))*g/t(i,kpbl(i)))
          zws(i) = 1.2*zws(i)**.3333
@@ -458,7 +460,7 @@ contains
         z(i,k)=zo(i,k)
         xz(i,k)=zo(i,k)
         cupclw(i,k)=0.
-        cd(i,k)=1.e-9 ! 1.*entr_rate
+        cd(i,k)=.1*entr_rate(i) !1.e-9 ! 1.*entr_rate
 !        if(imid.eq.1)cd(i,k)=entr_rate(i)
         cdd(i,k)=1.e-9
         hcdo(i,k)=0.
@@ -773,6 +775,27 @@ contains
        ENDIF 
       enddo
 
+!
+! safety for denominator
+!
+      DO i=its,itf
+       if(ierr(i) /= 0) cycle
+       DO k=start_level(i) +1,ktop(i) 
+          denom=zuo(i,k-1)-.5*up_massdetro(i,k-1)+up_massentro(i,k-1)
+          if(denom.lt.1.e-16)then
+           ierr(i)=51
+           exit
+          endif
+       ENDDO
+       DO k=start_level(i) +1,ktop(i)
+          denom=zu(i,k-1)-.5*up_massdetru(i,k-1)+up_massentru(i,k-1)
+          if(denom.lt.1.e-16)then
+           ierr(i)=52
+           exit
+          endif
+       ENDDO
+      ENDDO
+
       DO i=its,itf
 
        ktopkeep(i)=0
@@ -781,12 +804,6 @@ contains
        ktopkeep(i)=ktop(i)
        DO k=start_level(i) +1,ktop(i)  !mass cons option
          
-          denom=zuo(i,k-1)-.5*up_massdetro(i,k-1)+up_massentro(i,k-1)
-          if(denom.lt.1.e-8)then
-           ierr(i)=51
-           exit
-          endif
-
           hc(i,k)=(hc(i,k-1)*zu(i,k-1)-.5*up_massdetr(i,k-1)*hc(i,k-1)+                 &
                                           up_massentr(i,k-1)*he(i,k-1))   /             &
                             (zu(i,k-1)-.5*up_massdetr(i,k-1)+up_massentr(i,k-1))
@@ -806,14 +823,9 @@ contains
           DZ=Zo_cup(i,K+1)-Zo_cup(i,K)
           dbyt(i,k)=dbyt(i,k-1)+dbyo(i,k)*dz
        ENDDO
+
 ! for now no overshooting (only very little)
-       kk=maxloc(dbyt(i,:),1)
-       ki=maxloc(zuo(i,:),1)
-!       if(ipr .eq.1)write(16,*)'cupgf2',kk,ki
-!       if(kk.lt.ki+3)then
-!         ierr(i)=423
-!       endif
-!
+
         do k=ktop(i)-1,kbcon(i),-1
            if(dbyo(i,k).gt.0.)then
               ktopkeep(i)=k+1
@@ -821,7 +833,6 @@ contains
            endif
         enddo
         ktop(I)=ktopkeep(i)
-        if(ierr(i).eq.0)ktop(I)=ktopkeep(i)
       ENDDO
 41    continue
       DO i=its,itf
@@ -946,29 +957,29 @@ contains
       enddo
       enddo
       do i=its,itf
+        if(ierr(i)/=0)cycle
         beta=max(.02,.05-float(csum(i))*.0015)  !.02
-!        beta=max(.05,.08-float(csum(i))*.0015)  !.02
         if(imid.eq.0 .and. xland1(i) == 0)then
-!             beta=.01
               edtmax(i)=max(0.1,.4-float(csum(i))*.015) !.3)
         endif
         if(imid.eq.1)beta=.02
         bud(i)=0.
-        IF(ierr(I).eq.0)then
-        cdd(i,1:jmin(i))=1.e-9
+        cdd(i,1:jmin(i))=cdd_init*entr_rate(i)
         cdd(i,jmin(i))=0.
         dd_massdetro(i,:)=0.
         dd_massentro(i,:)=0.
-        call get_zu_zd_pdf_fim(0,po_cup(i,:),rand_vmas(i),0.,ipr,xland1(i),zuh2,"DOWN",ierr(i),kdet(i),jmin(i),zdo(i,:),kts,kte,ktf,beta,kpbl(i),csum(i),pmin_lev(i))
+        call get_zu_zd_pdf_fim(0,po_cup(i,:),rand_vmas(i),0.,ipr,xland1(i),zuh2,"DOWN",ierr(i),kdet(i),jmin(i),zdo(i,:),kts,kte,ktf,kpbl(i),csum(i),pmin_lev(i))
         if(zdo(i,jmin(i)) .lt.1.e-8)then
           zdo(i,jmin(i))=0.
           jmin(i)=jmin(i)-1
+          cdd(i,jmin(i):ktf)=0.
+          zdo(i,jmin(i)+1:ktf)=0.
           if(zdo(i,jmin(i)) .lt.1.e-8)then
              ierr(i)=876
              cycle
           endif
         endif
-        
+
         do ki=jmin(i)  ,maxloc(zdo(i,:),1),-1
           !=> from jmin to maximum value zd -> change entrainment
           dzo=zo_cup(i,ki+1)-zo_cup(i,ki)
@@ -1020,12 +1031,19 @@ contains
 
 
 ! downdraft moist static energy + moisture budget
+          dbydo(i,jmin(i))=hcdo(i,jmin(i))-heso_cup(i,jmin(i))
+          bud(i)=dbydo(i,jmin(i))*(zo_cup(i,jmin(i)+1)-zo_cup(i,jmin(i)))
+          dd_massentru(i,:)=0.
+          dd_massdetru(i,:)=0.
+!
+! originally dd=dd+lambau*dd, and en=en+lambau*dd. Using en instead of dd leads
+! to stronger impact of simulated pressure gradient term
+!
           do k=2,jmin(i)+1
-           dd_massentru(i,k-1)=dd_massentro(i,k-1)+lambau(i)*dd_massdetro(i,k-1)
-           dd_massdetru(i,k-1)=dd_massdetro(i,k-1)+lambau(i)*dd_massdetro(i,k-1)
+           dd_massentru(i,k-1)=dd_massentro(i,k-1) +lambau(i)*dd_massentro(i,k-1)
+           dd_massdetru(i,k-1)=dd_massdetro(i,k-1) +lambau(i)*dd_massentro(i,k-1)
           enddo
-            dbydo(i,jmin(i))=hcdo(i,jmin(i))-heso_cup(i,jmin(i))
-            bud(i)=dbydo(i,jmin(i))*(zo_cup(i,jmin(i)+1)-zo_cup(i,jmin(i)))
+          ucd(i,jmin(i)+1)=.5*(uc(i,jmin(i)+1)+u_cup(i,jmin(i)+1))
             do ki=jmin(i)  ,1,-1
              dzo=zo_cup(i,ki+1)-zo_cup(i,ki)
              h_entr=.5*(heo(i,ki)+.5*(hco(i,ki)+hco(i,ki+1)))
@@ -1046,7 +1064,6 @@ contains
              dbydo(i,ki)=hcdo(i,ki)-heso_cup(i,ki)
              bud(i)=bud(i)+dbydo(i,ki)*dzo
             enddo
-          endif
 
         if(bud(i).gt.0)then
           ierr(i)=7
@@ -1129,7 +1146,7 @@ contains
                 wmean(i) = 7.0 ! m/s ! in the future change for Wmean == integral( W dz) / cloud_depth
                 if(imid.eq.1)wmean(i) = 3.0
                 !- time-scale cape removal from  Betchold et al. 2008
-                tau_ecmwf(i)=( zo_cup(i,ktopdby(i))- zo_cup(i,kbcon(i)) ) / wmean(i) 
+                tau_ecmwf(i)=( zo_cup(i,ktop(i))- zo_cup(i,kbcon(i)) ) / wmean(i) 
                 tau_ecmwf(i)= tau_ecmwf(i) * (1.0061 + 1.23E-2 * (dx(i)/1000.))! dx(i) must be in meters 
             endif
       enddo
@@ -1145,7 +1162,7 @@ contains
                   tau_bl(i) = (zo_cup(i,kbcon(i))- z1(i)) /umean        
                 else
                   !- over land
-                  tau_bl(i) =( zo_cup(i,ktopdby(i))- zo_cup(i,kbcon(i)) ) / wmean(i)
+                  tau_bl(i) =( zo_cup(i,ktop(i))- zo_cup(i,kbcon(i)) ) / wmean(i)
                 endif
 
             endif
@@ -1258,8 +1275,8 @@ contains
                 print*,'aa0,aa1bl=',aa0(i),aa1_bl(i),aa0(i)-aa1_bl(i),tau_bl(i)!,dtime,xland(i)     
             endif
            ENDDO
-        ENDIF
-     ENDIF  ! version of implementation
+        ENDIF    ! version of implementation
+     ENDIF 
 
 
        axx(:)=aa1(:)
@@ -2422,6 +2439,7 @@ contains
           kloc(i)=1
           IF(ierr(i).eq.0)then
            kloc(i)=maxloc(zu(i,:),1)
+!           kloc(i)=kbcon(i)
            ens_adj(i)=1.
 !ss --- comment out adjustment over ocean
 !ss           if(ierr2(i).gt.0.and.ierr3(i).eq.0)ens_adj(i)=0.666 ! 2./3.
@@ -2473,7 +2491,7 @@ contains
              if(xff_ens3(4).lt.0.)xff_ens3(4)=0.
              if(xff_ens3(5).lt.0.)xff_ens3(5)=0.
              if(xff_ens3(6).lt.0.)xff_ens3(6)=0.
-             xff_ens3(14)=betajb*xff_ens3(4)
+             xff_ens3(14)=xff_ens3(4)
              forcing(i,2)=xff_ens3(4)
 !
 !--- more like Krishnamurti et al.; pick max and average values
@@ -2969,9 +2987,10 @@ contains
 
 !====================================================================
    SUBROUTINE neg_check(name,j,dt,q,outq,outt,outu,outv,                      &
-                                    outqc,pret,its,ite,kts,kte,itf,ktf)
+                                    outqc,pret,its,ite,kts,kte,itf,ktf,ktop)
 
    INTEGER,      INTENT(IN   ) ::            j,its,ite,kts,kte,itf,ktf
+   INTEGER, dimension (its:ite  ),   INTENT(IN   ) ::  ktop
 
      real, dimension (its:ite,kts:kte  )                    ,                 &
       intent(inout   ) ::                                                     &
@@ -2996,16 +3015,17 @@ contains
 !      thresh=200.01        !ss
 !      thresh=250.01
       names=1.
-      if(name == 'shallow')then
+     if(name == 'shallow' .or. name == 'mid')then
         thresh=148.01
-        names=2.
+        names=1.
       endif
       scalef=86400.
       do i=its,itf
+      if(ktop(i) <= 2)cycle
       icheck=0
       qmemf=1.
       qmem=0.
-      do k=kts,ktf
+      do k=kts,ktop(i)
          qmem=(outt(i,k))*86400.
          if(qmem.gt.thresh)then
            qmem2=thresh/qmem
@@ -3023,7 +3043,7 @@ contains
 !
          endif
       enddo
-      do k=kts,ktf
+      do k=kts,ktop(i)
          outq(i,k)=outq(i,k)*qmemf
          outt(i,k)=outt(i,k)*qmemf
          outu(i,k)=outu(i,k)*qmemf
@@ -3032,19 +3052,17 @@ contains
       enddo
       pret(i)=pret(i)*qmemf 
       enddo
-      return
 !
 ! check whether routine produces negative q's. This can happen, since 
 ! tendencies are calculated based on forced q's. This should have no
 ! influence on conservation properties, it scales linear through all
 ! tendencies
 !
-!      return
-!      write(14,*)'return'
       thresh=1.e-16
       do i=its,itf
+      if(ktop(i) <= 2)cycle
       qmemf=1.
-      do k=kts,ktf-1
+      do k=kts,ktop(i)
          qmem=outq(i,k)
          if(abs(qmem).gt.0. .and. q(i,k).gt.1.e-6)then
          qtest=q(i,k)+(outq(i,k))*dt
@@ -3602,7 +3620,8 @@ contains
  SUBROUTINE get_cloud_bc(mzp,array,x_aver,k22,add)
     implicit none
     integer, intent(in)     :: mzp,k22
-    real   , intent(in)     :: array(mzp)
+    real   , intent(in)     :: array(:)
+!    real   , intent(in)     :: array(mzp)
     real   , optional , intent(in)  :: add
     real   , intent(out)    :: x_aver
     integer :: i,local_order_aver,order_aver
@@ -3638,7 +3657,7 @@ contains
      integer, dimension (its:ite),intent (inout) :: kbcon,ierr,ktop,ktopdby
      !-local vars
      real, dimension (its:ite,kts:kte) :: hcot
-     real :: beta_u,dz,dbythresh,dzh2,zustart,zubeg,massent,massdetr
+     real :: dz,dbythresh,dzh2,zustart,zubeg,massent,massdetr
      real :: dby(kts:kte),dbm(kts:kte),zux(kts:kte)
      real zuh2(40),zh2(40)
      integer :: kklev,i,kk,kbegin,k,kfinalzu
@@ -3651,12 +3670,11 @@ contains
 
      DO i=its,itf
       zux(:)=0.
-      beta_u=max(.1,.2-float(csum(i))*.01)
       zuo(i,:)=0.
       dby(:)=0.
       dbm(:)=0.
+      if(ierr(i).eq.0)then 
       kbcon(i)=max(kbcon(i),2)
-      if(ierr(i).eq.0)then
        start_level(i)=k22(i)
        zuo(i,start_level(i))=zustart
         zux(start_level(i))=zustart
@@ -3704,9 +3722,11 @@ contains
         else
 !           call get_zu_zd_pdf_fim(ipr,xland(i),zuh2,"UP",ierr(i),start_level(i),             &
 !           call get_zu_zd_pdf_fim(rand_vmas(i),zubeg,ipr,xland(i),zuh2,"UP",ierr(i),kbcon(i), &
-!            kfinalzu,zuo(i,kts:kte),kts,kte,ktf,beta_u,kpbl(i),csum(i),pmin_lev(i))
+!            kfinalzu,zuo(i,kts:kte),kts,kte,ktf,kpbl(i),csum(i),pmin_lev(i))
+!           call get_zu_zd_pdf_fim(kbcon(i),p_cup(i,:),rand_vmas(i),zubeg,ipr,xland(i),zuh2,"UP",ierr(i),k22(i), &
+
            call get_zu_zd_pdf_fim(kklev,p_cup(i,:),rand_vmas(i),zubeg,ipr,xland(i),zuh2,"UP",ierr(i),k22(i), &
-            kfinalzu,zuo(i,kts:kte),kts,kte,ktf,beta_u,kstabi(i),csum(i),pmin_lev(i))
+            kfinalzu,zuo(i,kts:kte),kts,kte,ktf,kstabi(i),csum(i),pmin_lev(i))
         endif
       endif ! end deep
       if ( name == 'mid' ) then
@@ -3716,7 +3736,8 @@ contains
        else
            kfinalzu=ktop(i)
            ktopdby(i)=ktop(i)+1
-          call get_zu_zd_pdf_fim(kklev,p_cup(i,:),rand_vmas(i),zubeg,ipr,xland(i),zuh2,"MID",ierr(i),k22(i),kfinalzu,zuo(i,kts:kte),kts,kte,ktf,beta_u,kbcon(i),csum(i),pmin_lev(i))
+!          call get_zu_zd_pdf_fim(kklev,p_cup(i,:),rand_vmas(i),zubeg,ipr,xland(i),zuh2,"MID",ierr(i),k22(i),kfinalzu,zuo(i,kts:kte),kts,kte,ktf,kbcon(i),csum(i),pmin_lev(i))
+          call get_zu_zd_pdf_fim(kbcon(i),p_cup(i,:),rand_vmas(i),zubeg,ipr,xland(i),zuh2,"MID",ierr(i),k22(i),kfinalzu,zuo(i,kts:kte),kts,kte,ktf,kbcon(i),csum(i),pmin_lev(i))
 !           kbegin=0
 !           dzh2=(z_cup(i,ktop(i))-z_cup(i,k22(i)))/40.
 !           zh2(1)=z_cup(i,k22(i))
@@ -3744,8 +3765,9 @@ contains
        else
            kfinalzu=ktop(i)
            ktopdby(i)=ktop(i)
-           call get_zu_zd_pdf_fim(kklev,p_cup(i,:),rand_vmas(i),zubeg,ipr,xland(i),zuh2,"SH2",ierr(i),k22(i), &
-             kfinalzu,zuo(i,kts:kte),kts,kte,ktf,beta_u,kpbl(i),csum(i),pmin_lev(i))
+!           call get_zu_zd_pdf_fim(kklev,p_cup(i,:),rand_vmas(i),zubeg,ipr,xland(i),zuh2,"SH2",ierr(i),k22(i), &
+           call get_zu_zd_pdf_fim(kbcon(i),p_cup(i,:),rand_vmas(i),zubeg,ipr,xland(i),zuh2,"SH2",ierr(i),k22(i), &
+             kfinalzu,zuo(i,kts:kte),kts,kte,ktf,kpbl(i),csum(i),pmin_lev(i))
 
          endif
          endif ! shal
@@ -3754,11 +3776,11 @@ contains
 
   END SUBROUTINE rates_up_pdf
 !-------------------------------------------------------------------------
- SUBROUTINE get_zu_zd_pdf_fim(kklev,p,rand_vmas,zubeg,ipr,xland,zuh2,draft,ierr,kb,kt,zu,kts,kte,ktf,max_mass,kpbli,csum,pmin_lev)
+ SUBROUTINE get_zu_zd_pdf_fim(kklev,p,rand_vmas,zubeg,ipr,xland,zuh2,draft,ierr,kb,kt,zu,kts,kte,ktf,kpbli,csum,pmin_lev)
 
  implicit none
  integer, intent(in) ::ipr,xland,kb,kklev,kt,kts,kte,ktf,kpbli,csum,pmin_lev
- real, intent(in) ::max_mass,zubeg
+ real, intent(in) ::zubeg
  real, intent(inout) :: zu(kts:kte)
  real, intent(in) :: p(kts:kte)
  real  :: zuh(kts:kte),zuh2(1:40)
@@ -3806,7 +3828,10 @@ contains
      enddo
 
  ELSEIF(draft == "SH2") then
-   tunning =min(0.8, (p(kpbli)-p(kb_adj))/(p(kt)-p(kb_adj))) !=.6
+   k=kklev
+   if(kpbli.gt.5)k=kpbli
+   tunning =min(0.95, (p(k)-p(kb_adj))/(p(kt)-p(kb_adj))) !=.6
+!   tunning =min(0.8, (p(kpbli)-p(kb_adj))/(p(kt)-p(kb_adj))) !=.6
    tunning =max(0.2, tunning)
    beta    = 2.5 !2.5 ! max(2.5,2./tunning)
    alpha= (tunning*(beta -2.)+1.)/(1.-tunning)
@@ -3880,9 +3905,7 @@ contains
    tunning =max(0.2, tunning)
    beta    = 4. !2.5 ! max(2.5,2./tunning)
    alpha= (tunning*(beta -2.)+1.)/(1.-tunning)
-#if ( ! defined NO_GAMMA_SUPPORT )
    fzu = gamma(alpha + beta)/(gamma(alpha)*gamma(beta))
-#endif
   zu(:)=0.
   do k=2,min(kt,ktf)
       kratio= (p(k)-p(1))/(p(kt)-p(1))
@@ -3905,10 +3928,6 @@ contains
     fzu=maxval(zu(kts:min(ktf,kt+1)))
    if(fzu.gt.0.)  &
       zu(kts:min(ktf,kt+1))= zu(kts:min(ktf,kt+1))/fzu
-!    if(zu(2).gt.max_mass)fzu=max_mass/zu(2) ! max(0.,zu(2)-max_mass)
-!     do k=2,kt+1
-!       zu(k)=fzu*zu(k)
-!     enddo
      zu(1)=0.
 
 
@@ -4247,105 +4266,17 @@ contains
          enddo         
          if(present(up_massentru) .and. present(up_massdetru))then
           do k=2,ktf-1
-           up_massentru(i,k-1)=up_massentro(i,k-1)+lambau(i)*up_massdetro(i,k-1)
-           up_massdetru(i,k-1)=up_massdetro(i,k-1)+lambau(i)*up_massdetro(i,k-1)
+!           up_massentru(i,k-1)=up_massentro(i,k-1)+lambau(i)*up_massdetro(i,k-1)
+!           up_massdetru(i,k-1)=up_massdetro(i,k-1)+lambau(i)*up_massdetro(i,k-1)
+           up_massentru(i,k-1)=up_massentro(i,k-1)+lambau(i)*up_massentro(i,k-1)
+           up_massdetru(i,k-1)=up_massdetro(i,k-1)+lambau(i)*up_massentro(i,k-1)
+
           enddo
          endif
 
-         trash=0.
-         trash2=0.
-         do k=k22(i)+1,ktop(i)
-             trash2=trash2+entr_rate_2d(i,k)
-         enddo
-         do k=k22(i)+1,kbcon(i)
-            trash=trash+entr_rate_2d(i,k)
-         enddo
-  
        endif
     ENDDO
  END SUBROUTINE get_lateral_massflux
 !==============================================================================
 !---------------------------------------------------------------------- 
-  SUBROUTINE gfinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,            &
-                        RUCUTEN,RVCUTEN,                            &
-                        restart,                                    &
-                        P_QC,P_QI,P_FIRST_SCALAR,                   &
-                        RTHFTEN, RQVFTEN,                           &
-                        allowed_to_read,                            &
-                        ids, ide, jds, jde, kds, kde,               &
-                        ims, ime, jms, jme, kms, kme,               &
-                        its, ite, jts, jte, kts, kte               )
-!--------------------------------------------------------------------   
-   IMPLICIT NONE
-!--------------------------------------------------------------------
-   LOGICAL , INTENT(IN)           ::  restart,allowed_to_read
-   INTEGER , INTENT(IN)           ::  ids, ide, jds, jde, kds, kde, &
-                                      ims, ime, jms, jme, kms, kme, &
-                                      its, ite, jts, jte, kts, kte
-   INTEGER , INTENT(IN)           ::  P_FIRST_SCALAR, P_QI, P_QC
-
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::       &
-                                                          RTHCUTEN,          &
-                                                          RQVCUTEN,          &
-                                                          RQCCUTEN,          &
-                                                          RQICUTEN
-
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::       &
-                                                          RUCUTEN,           &
-                                                          RVCUTEN
-
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::       &
-                                                          RTHFTEN,           &
-                                                          RQVFTEN
-
-   INTEGER :: i, j, k, itf, jtf, ktf
-   jtf=min0(jte,jde-1)
-   ktf=min0(kte,kde-1)
-   itf=min0(ite,ide-1)
-
-   IF(.not.restart)THEN
-     DO j=jts,jte
-     DO k=kts,kte
-     DO i=its,ite
-        RTHCUTEN(i,k,j)=0.
-        RQVCUTEN(i,k,j)=0.
-        RUCUTEN(i,k,j)=0.
-        RVCUTEN(i,k,j)=0.
-     ENDDO
-     ENDDO
-     ENDDO
-
-
-     DO j=jts,jtf
-     DO k=kts,ktf
-     DO i=its,itf
-        RTHFTEN(i,k,j)=0.
-        RQVFTEN(i,k,j)=0.
-     ENDDO
-     ENDDO
-     ENDDO
-
-     IF (P_QC .ge. P_FIRST_SCALAR) THEN
-        DO j=jts,jtf
-        DO k=kts,ktf
-        DO i=its,itf
-           RQCCUTEN(i,k,j)=0.
-        ENDDO
-        ENDDO
-        ENDDO
-     ENDIF
-
-     IF (P_QI .ge. P_FIRST_SCALAR) THEN
-        DO j=jts,jtf
-        DO k=kts,ktf
-        DO i=its,itf
-           RQICUTEN(i,k,j)=0.
-        ENDDO
-        ENDDO
-        ENDDO
-     ENDIF
-
-   ENDIF
-
-   END SUBROUTINE gfinit
 END MODULE module_cu_gf_deep

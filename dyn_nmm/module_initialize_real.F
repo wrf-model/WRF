@@ -2194,6 +2194,7 @@ CONTAINS
      noncount=0
      bigcount=0
      count=0
+     call wrf_debug(1,'Master enters big loop.')
      do nj=1,njde
         do ni=1,nide
            ci=HNEAR_I(ni,nj)

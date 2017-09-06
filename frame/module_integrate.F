@@ -292,11 +292,11 @@ RECURSIVE SUBROUTINE integrate ( grid )
       IF ( config_flags%grid_allowed ) THEN
          CALL domain_clockprint ( 150, grid, 'DEBUG:  top of integrate(),' )
          DO WHILE ( .NOT. domain_clockisstopsubtime(grid) )
-            IF ( wrf_dm_on_monitor() ) THEN
+!            IF ( wrf_dm_on_monitor() ) THEN
 IF ( grid%active_this_task ) THEN
                CALL start_timing
-END IF
-            END IF
+ENDIF
+!            END IF
             CALL med_setup_step ( grid , config_flags )
             a_nest_was_opened = .false.
             ! for each nest whose time has come...
@@ -335,9 +335,7 @@ ENDIF ! active_this_task
 
             grid_ptr => grid
             DO WHILE ( ASSOCIATED( grid_ptr ) )
-#if ( NMM_CORE == 1 )
                   grid_ptr%mvnest = .FALSE.
-#endif
 IF ( grid_ptr%active_this_task ) THEN
                   CALL set_current_grid_ptr( grid_ptr )
                   CALL wrf_debug( 100 , 'module_integrate: calling solve interface ' )
@@ -352,6 +350,8 @@ ENDIF
                CALL domain_time_test( grid_ptr, 'domain_clockadvance' )
                grid_ptr => grid_ptr%sibling
             END DO
+
+
             CALL set_current_grid_ptr( grid )
             CALL med_calc_model_time ( grid , config_flags )
 IF ( grid%active_this_task ) THEN
@@ -360,6 +360,7 @@ ENDIF
 
             grid_ptr => grid
             DO WHILE ( ASSOCIATED( grid_ptr ) )
+
                DO kid = 1, max_nests
                  IF ( ASSOCIATED( grid_ptr%nests(kid)%ptr ) ) THEN
                    CALL set_current_grid_ptr( grid_ptr%nests(kid)%ptr )
@@ -414,7 +415,6 @@ ENDIF
             END DO
             CALL set_current_grid_ptr( grid )
             !  Report on the timing for a single time step.
-            IF ( wrf_dm_on_monitor() ) THEN
 IF ( grid%active_this_task ) THEN
                CALL domain_clock_get ( grid, current_timestr=message2 )
 #if (EM_CORE == 1)
@@ -423,12 +423,14 @@ IF ( grid%active_this_task ) THEN
                else
                   WRITE ( message , FMT = '("main: time ",A," on domain ",I3)' ) TRIM(message2), grid%id
                endif
-#else
-                  WRITE ( message , FMT = '("main: time ",A," on domain ",I3)' ) TRIM(message2), grid%id
-#endif
                CALL end_timing ( TRIM(message) )
+#else
+               ! NMM uses a more compact syntax and adds more information:
+3011           format("main: ",A," dom ",I0," <dP/dt>=",F0.3," hPa/3hr timing ")
+               write(message,3011) trim(message2),grid%id,grid%avgPchg
+               CALL end_timing_fmt ( TRIM(message), FMT='(A," ",F0.5," s")' )
+#endif
 ENDIF ! active_this_task
-            ENDIF
             CALL med_endup_step ( grid , config_flags )
          END DO
 

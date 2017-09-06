@@ -1,4 +1,4 @@
-!-----------------------------------------------------------------------
+        !gf!-----------------------------------------------------------------------
 !
 !NCEP_MESO:MODEL_LAYER: PHYSICS
 !
@@ -357,7 +357,8 @@
           TOTLWDN(I,J)=0.   ! Total longwave down at the surface
           CUPPTR(I,J)=CUPPT(I,J)   ! Temporary array set to zero in radiation
           HTOPR(I,J) =0.
-          HBOTR(I,J) =0.
+          HBOTR(I,J) = REAL(KTE+1)
+!          HBOTR(I,J) =0.
           SWCF(I,J) =0.
           LWCF(I,J) =0.
 !
@@ -396,7 +397,7 @@
 !-----------------------------------------------------------------------
 !
       CALL SET_TILES(GRID,IDS+1,IDE-1,JDS+2,JDE-2,ITS,ITE,JTS,JTE)
-!
+
       CALL RADIATION_DRIVER(                                            &
      &                  IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &
      &                 ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME &
@@ -929,11 +930,11 @@
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: cd_out,ch_out
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: &
                                                        DTHBLDT         &
-                                                      ,DQVBLDT         &
-                                                      ,DUBLDT          &
-                                                      ,DVBLDT
+                                                      ,DQVBLDT         &  
+                                                      ,DUBLDT          &  
+                                                      ,DVBLDT         
 
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: taux, tauy
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: taux, tauy
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: zkmax, ribn
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: charn, msang
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: PINT
@@ -1021,7 +1022,7 @@
      &                                          ,T_PHY,TH_PHY,TKE       &
      &                                          ,DUDT_GWD,DVDT_GWD      & ! GWD
      &                                          ,U_PHY,V_PHY,Z
-!
+
       REAL,DIMENSION(IMS:IME,JMS:JME), INTENT(OUT) :: ULOWL, VLOWL
 !
       REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: MOIST_TRANS
@@ -1088,6 +1089,12 @@
       IFNDALBSI = 0
       IFNDSNOWSI = 0
       IFNDICEDEPTH = 0
+      BR=10
+
+      ! BR is replaced by SF_GFDL inside SURFACE_DRIVER.  This variable
+      ! was uninitialized.  The variable RIBN or RCHNO in the Registry
+      ! are retained accross timesteps.  This is a bug fix to avoid junk
+      ! data in RCHNO at the I=IDE and J=JDE locations.
       BR=10
 
       SEAICE_ALBEDO_DEFAULT = CONFIG_FLAGS%SEAICE_ALBEDO_DEFAULT
@@ -1562,7 +1569,6 @@
      &        ,  smoiseq=grid%smoiseq, smcwtdxy=grid%smcwtdxy, rechxy=grid%rechxy    &                       
      &        ,  deeprechxy=grid%deeprechxy                                          &                       
      &        ,coszen=grid%czen,xlat_urb2d=grid%hlat                                 &
-
 ! mosaic tiling for Noah
      &        ,sf_surface_mosaic=config_flags%sf_surface_mosaic,  mosaic_cat=config_flags%mosaic_cat      &
 ! lake module
@@ -1644,7 +1650,6 @@
      &               ,MSANG=MSANG,SCURX=SCURX,SCURY=SCURY             &
      &               ,IWAVECPL=CONFIG_FLAGS%IWAVECPL                  &
      &               ,LCURR_SF=CONFIG_FLAGS%LCURR_SF                  &
-
      &               ,MZNT=MZ0                                        &
 #endif
      &               ,HT=SFCZ                                         &   !KWON
@@ -2046,7 +2051,6 @@
              ! Update QC:
              MOIST(I,J,K,P_QC)=MAX(EPSQ,(MOIST(I,J,K,P_QC)+RQCBLTEN(I,K,J)*DTPHS))
           ELSEIF (.NOT.ETAMP_PHYSICS) THEN
-
             DO I_M=1,N_MOIST
               IF(I_M==P_QC) THEN
                 MOIST(I,J,K,I_M)=MAX(EPSQ,(MOIST(I,J,K,I_M)+RQCBLTEN(I,K,J)*DTPHS) )
@@ -2055,7 +2059,7 @@
               ENDIF
               IF(I_M/=P_QV) CWM(I,J,K)=CWM(I,J,K)+MOIST(I,J,K,I_M)
             ENDDO
-          ELSE pbl_check1
+          ELSE 
 !
 !-- Allow vertical mixing to modify cloud ice + snow for ETAMPNEW
 !
@@ -2269,6 +2273,9 @@
      &                 ,MASS_FLUX         ,XF_ENS                       &
      &                 ,PR_ENS,GSW                                      &
      &                 ,GD_CLOUD,GD_CLOUD2,KTOP_DEEP                    &
+     &                 ,xmb_shallow,k22_shallow                         & !GF
+     &                 ,kbcon_shallow,ktop_shallow                      & !GF
+     &                 ,ierr_shallow                                    & !GF
      &                 ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TCUCN              &
      &                 ,OMGALF,U,V,W,Z,FIS,W0AVG                        &
      &                 ,PREC,ACPREC,CUPREC,CUPPT,CPRATE                 &
@@ -2297,7 +2304,6 @@
 !                .      .    .
 ! SUBPROGRAM:    CUCNVC      CONVECTIVE PRECIPITATION OUTER DRIVER
 !   PRGRMMR: BLACK           ORG: W/NP22     DATE: 02-03-21
-!
 ! ABSTRACT:
 !     CUCVNC DRIVES THE WRF CONVECTION SCHEMES
 !
@@ -2419,7 +2425,12 @@
 
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: GD_CLOUD &
      &                                                        ,GD_CLOUD2
-      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: KTOP_DEEP
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) ::    XMB_SHALLOW      !GF
+      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: KTOP_DEEP        !GF
+      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: K22_SHALLOW   &  !GF
+     &                                                   ,KBCON_SHALLOW &  !GF
+     &                                                   ,KTOP_SHALLOW     !GF
+      INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: IERR_SHALLOW     !GF
 !
       LOGICAL,INTENT(IN) :: HYDRO,RESTRT
       LOGICAL :: IS_CAMMGMP_USED=.FALSE.
@@ -2503,10 +2514,16 @@
 !End
 
       IF(MOD(NTSD,NRADS)==0.OR.MOD(NTSD,NRADL)==0)THEN
-         DO J=JMS,JME
-         DO I=IMS,IME
+!$omp parallel do                                                       &
+!$omp& private(i,j)
+       DO J=MYJS,MYJE
+       DO I=MYIS,MYIE
            HTOP(I,J)=0.
+           HTOPD(I,J)=0.
+           HTOPS(I,J)=0.
            HBOT(I,J)=REAL(KTE+1)
+           HBOTD(I,J)=REAL(KTE+1)
+           HBOTS(I,J)=REAL(KTE+1)
            CUTOP(I,J)=0.
            CUBOT(I,J)=REAL(KTE+1)
            CUPPT(I,J)=0.
@@ -2525,8 +2542,12 @@
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==SASSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
-     &   CONFIG_FLAGS%CU_PHYSICS==SCALESASSCHEME)RETURN 
-      
+     &   CONFIG_FLAGS%CU_PHYSICS==MESO_SAS)RETURN
+      IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
+     &   CONFIG_FLAGS%CU_PHYSICS==SCALESASSCHEME)RETURN        ! Wang
+      IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
+     &   CONFIG_FLAGS%CU_PHYSICS==GFSCHEME)RETURN             ! gf
+ 
 !-----------------------------------------------------------------------
       NSTEP_CNV=NCNVC
 !
@@ -2559,6 +2580,17 @@
       RDTCNVC=1./DTCNVC
       CAPA=R_D/CP
       G_INV=1./G
+!BLdebug
+!$omp parallel do                                                       &
+!$omp& private(i,j)
+      DO J=JTS,JTE
+        DO I=ITS,ITE
+          RAINCV(I,J)=0.
+          RAINC(I,J)=0.
+          NCA(I,J)=0.
+        ENDDO
+      ENDDO
+!BLdebug
 !
 !$omp parallel do                                                       &
 !$omp& private(I,J)
@@ -2611,12 +2643,10 @@
           P8W(I,K+1,J)=ETA1(K+1)*PDTOP+ETA2(K+1)*PDSL(I,J)+PT
           P_PHY(I,K,J)=PLYR
           PI_PHY(I,K,J)=(PLYR*1.E-5)**CAPA
-!
         ENDDO
+        ENDDO
+      ENDDO
 !
-      ENDDO
-      ENDDO
-
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
       DO J=JTS,JTE
@@ -2629,8 +2659,32 @@
           RQICUTEN(I,K,J)=0.
           RQSCUTEN(I,K,J)=0.
         ENDDO
+        ENDDO
       ENDDO
-      ENDDO
+
+#if (NMM_CORE==1)
+!$omp parallel do                                                       &
+!$omp& private(i,j,k)
+        DO K=KTS,KTE
+!BLdebug
+        DO J=JTS,JTE
+        DO I=ITS,ITE
+!        DO J=MYJS2,MYJE2
+!        DO I=MYIS1,MYIE1
+!BLdebug
+           DUCUDT(i,j,k)=0.0
+           DVCUDT(i,j,k)=0.0
+           DTHCUDT(i,j,k)=0.0
+           DQVCUDT(i,j,k)=0.0
+           DQRCUDT(i,j,k)=0.0
+           DQCCUDT(i,j,k)=0.0
+           DQICUDT(i,j,k)=0.0
+           DQSCUDT(i,j,k)=0.0
+        ENDDO
+        ENDDO
+        ENDDO
+#endif
+
 !
 !-----------------------------------------------------------------------
 !
@@ -2764,6 +2818,8 @@
 
 
       CALL SET_TILES(GRID,IDS+1,IDE-1,JDS+2,JDE-2,ITS,ITE,JTS,JTE)
+
+!!!LPC --- is this causing diffs???
 #if (NMM_CORE==1)
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
@@ -2816,8 +2872,15 @@
      &                 ,APR_CAPME=APR_CAPME,APR_CAPMI=APR_CAPMI         &
      &                 ,MASS_FLUX=MASS_FLUX,XF_ENS=XF_ENS               &
      &                 ,PR_ENS=PR_ENS                                   &
+     &                 ,ishallow=config_flags%ishallow                  & !gf
+     &                 ,clos_choice=config_flags%clos_choice            & !gf
      &                 ,GD_CLOUD=GD_CLOUD,GD_CLOUD2=GD_CLOUD2           &
      &                 ,KTOP_DEEP=KTOP_DEEP                             &
+     &                 ,k22_shallow=k22_shallow                         & !gf
+     &                 ,kbcon_shallow=kbcon_shallow                     & !gf
+     &                 ,ktop_shallow=ktop_shallow                       & !gf
+     &                 ,xmb_shallow=xmb_shallow                         & !gf
+     &                 ,ierr_shallow=ierr_shallow                       & !gf
      &                 ,ENSDIM=ENSDIM,MAXIENS=1,MAXENS=3                &
      &                 ,MAXENS2=3,MAXENS3=16                            &
      &                 ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
@@ -2897,11 +2960,11 @@
         IENDX=MYIE1
         IF(MOD(J,2)==0.AND.ITE==IDE-1)IENDX=IENDX-1
         DO I=MYIS1,IENDX
-          CNVBOT(I,J)=REAL(KTE+1.)
+          CNVBOT(I,J)=REAL(KTE+1)
           CNVTOP(I,J)=0.
-          HBOTD(I,J)=REAL(KTE+1.)
+          HBOTD(I,J)=REAL(KTE+1)
           HTOPD(I,J)=0.
-          HBOTS(I,J)=REAL(KTE+1.)
+          HBOTS(I,J)=REAL(KTE+1)
           HTOPS(I,J)=0.
         ENDDO
         ENDDO
@@ -2918,10 +2981,15 @@
 #endif
 !$omp parallel do                                                       &
 !$omp& private(i,iendx,j,ncubot,ncutop,pcpcol)
-      pcp_cloud: DO J=MYJS2,MYJE2
-        IENDX=MYIE1
+!      pcp_cloud: DO J=MYJS2,MYJE2
+!        IENDX=MYIE1
+!        IF(MOD(J,2)==0.AND.ITE==IDE-1)IENDX=IENDX-1
+!        DO I=MYIS1,IENDX
+!test - gf
+      pcp_cloud: DO J=MYJS,MYJE
+        IENDX=MYIE
         IF(MOD(J,2)==0.AND.ITE==IDE-1)IENDX=IENDX-1
-        DO I=MYIS1,IENDX
+        DO I=MYIS,IENDX
 !
 !***  UPDATE PRECIPITATION
 !
@@ -3013,7 +3081,7 @@
 !
           cps_select: SELECT CASE(config_flags%cu_physics)
 !
-          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,SCALESASSCHEME,OSASSCHEME,NSASSCHEME,TIEDTKESCHEME)
+          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,GFSCHEME,SASSCHEME,SCALESASSCHEME,MESO_SAS,OSASSCHEME,NSASSCHEME,TIEDTKESCHEME)
            IF(config_flags%mp_physics==fer_mp_hires_advect) THEN
              ! Update QI and QRIMEF:
              call QITEND_FER_HIRES_ADVECT( &

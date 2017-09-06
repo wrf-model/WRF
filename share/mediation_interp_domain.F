@@ -5,6 +5,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
    USE module_domain
    USE module_configure
    USE module_timing
+   USE module_dm, ONLY : intercomm_active
 
    IMPLICIT NONE
    TYPE(domain), POINTER :: parent_grid , nested_grid
@@ -134,6 +135,7 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
                            grid%sm31x, grid%em31x, grid%sm32x, grid%em32x, grid%sm33x, grid%em33x, &   ! x-xpose
                            grid%sm31y, grid%em31y, grid%sm32y, grid%em32y, grid%sm33y, grid%em33y  &   ! y-xpose
     )
+!  ENDIF
 # endif
 
   grid => parent_grid

@@ -2104,8 +2104,13 @@ SUBROUTINE open_aux_u ( grid , config_flags, stream, alarm_id, &
      ENDIF
      CALL construct_filename2a ( fname , auxinput_inname, &
                                  grid%id , 2 , timestr )
+!! CHECK THIS ONE?! LPC
+!!     stream_l = stream-first_input
+!!     IF ( stream_l .GE. 10 ) THEN
+!!=======
      stream_l = stream-auxinput1_only+1
      IF ( stream_l .GE. 10 ) THEN
+!!>>>>>>> .merge-right.r8978
        WRITE(n2,'("DATASET=AUXINPUT",I2)')stream_l
      ELSE
        WRITE(n2,'("DATASET=AUXINPUT",I1)')stream_l
@@ -2197,13 +2202,13 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
 #endif
    CALL construct_filename2a ( fname , hist_outname, &
                                grid%id , 2 , timestr )
-   stream_l = stream-auxhist1_only+1
-   IF ( stream .EQ. history_only ) THEN
+   stream_l = stream-first_history+1
+   IF ( stream_l .EQ. history_only ) THEN
      WRITE(n2,'("DATASET=HISTORY")')
-   ELSE IF ( stream_l .GE. 10 ) THEN
-     WRITE(n2,'("DATASET=AUXHIST",I2)')stream_l
+   ELSE IF ( stream_l-1 .GE. 10 ) THEN
+     WRITE(n2,'("DATASET=AUXHIST",I2)')stream_l-1
    ELSE
-     WRITE(n2,'("DATASET=AUXHIST",I1)')stream_l
+     WRITE(n2,'("DATASET=AUXHIST",I1)')stream_l-1
    ENDIF
    IF ( oid .eq. 0 ) THEN
      WRITE ( message , '("open_hist_w : opening ",A," for writing. ")') TRIM ( fname )

@@ -323,7 +323,11 @@ CONTAINS
    CALL       wrf_message ( program_name )
    CALL       wrf_debug ( 100 , 'wrf: calling alloc_and_configure_domain ' )
    CALL alloc_and_configure_domain ( domain_id  = 1 ,                  &
+#ifdef DM_PARALLEL
                                active_this_task = domain_active_this_task(1), &
+#else
+                               active_this_task = .TRUE.               &
+#endif
                                      grid       = head_grid ,          &
                                      parent     = null_domain ,        &
                                      kid        = -1                   )

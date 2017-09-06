@@ -173,6 +173,7 @@ contains
 !                   ,cosz_urb2d,omg_urb2d                          & !optional urban
                    ,ERBE_out                                      &  !optional sdsu
                    ,tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw           & ! jararias 2013/11
+                   ,use_aer3d                                     & ! bug fix,SGT 2015/03
                    ,swddir,swddni,swddif                          & ! jararias 2013/08
                    ,coszen,julian                                 & ! jararias 2013/08
                    ,aer_opt                                       &
@@ -275,6 +276,7 @@ contains
 !        asyaer3d_sw    ! 3D asymmetry factor for SW bands
    real, dimension(:,:,:,:), pointer :: tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw
    integer, intent(in) :: aer_opt
+   logical, intent(in) :: use_aer3d
 
 !------- Local variables ----------------------------------------------
 
@@ -919,6 +921,25 @@ contains
          end do
       end do
    end do
+
+   ! jararias 2013/11
+   if ( use_aer3d ) then
+      if ( aer_opt .eq. 2 ) then
+         do ib=1,ib_sw
+            do i=its,ite
+               taual_sw(i,kts-1,ib)=0.
+               ssaal_sw(i,kts-1,ib)=0.
+               asyal_sw(i,kts-1,ib)=0.
+               do k=kts,kte
+                  nk=kte+kts-k
+                  taual_sw(i,nk,ib)=tauaer3d_sw(i,k,j,ib)
+                  ssaal_sw(i,nk,ib)=ssaaer3d_sw(i,k,j,ib)
+                  asyal_sw(i,nk,ib)=asyaer3d_sw(i,k,j,ib)
+               end do
+            end do
+         end do
+      end if
+   end if
 
    if ( associated (tauaer3d_sw) ) then
    ! jararias 2013/11

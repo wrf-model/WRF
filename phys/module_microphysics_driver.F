@@ -47,7 +47,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,qnwfa_curr,qnifa_curr                             & ! for water/ice-friendly aerosols
                       ,f_qnwfa,f_qnifa                                   & ! for water/ice-friendly aerosols
                       ,qvolg_curr,qvolh_curr                             &
-                      ,qir_curr,qib_curr,ssat_curr                       & ! for P3
+                      ,qir_curr,qib_curr                                 & ! for P3
                       ,effr_curr,ice_effr_curr,tot_effr_curr             &
                        ,qic_effr_curr,qip_effr_curr,qid_effr_curr        &             
                       ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop,f_qni      &
@@ -56,7 +56,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,f_qvolg,f_qvolh                                   &
                       ,f_qic,f_qip,f_qid &
                       ,f_qnic,f_qnip,f_qnid &
-                      ,f_qir,f_qib,f_ssat                                & ! for P3
+                      ,f_qir,f_qib                                       & ! for P3
                       ,f_effr,f_ice_effr,f_tot_effr                      &
                       ,f_qic_effr,f_qip_effr,f_qid_effr                  &                 
                       ,cu_used                                           &
@@ -468,7 +468,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,qic_curr,qip_curr,qid_curr &
                  ,qnic_curr,qnip_curr,qnid_curr &
                  ,qzr_curr,qzi_curr,qzs_curr,qzg_curr,qzh_curr    &
-                 ,qir_curr,qib_curr,ssat_curr                     & ! for P3
+                 ,qir_curr,qib_curr                               & ! for P3
                  ,effr_curr,ice_effr_curr,tot_effr_curr           &
                  ,qic_effr_curr,qip_effr_curr,qid_effr_curr           &
                   ,kext_ql,kext_qs,kext_qg          &
@@ -532,7 +532,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                       ,f_qnic,f_qnip,f_qnid                                  &
                        ,f_qzi,f_qzs,f_qzg,f_qzh,f_qvolg,f_qvolh              &
                        ,f_qrimef                                             &
-                       ,f_qir,f_qib,f_ssat                                   & ! for P3
+                       ,f_qir,f_qib                                          & ! for P3
                        ,f_qnwfa, f_qnifa                         ! Added by G. Thompson
 
 
@@ -1030,7 +1030,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      QIR1_3d=qir_curr,                    &
                      QNI1_3d=qni_curr,                   &
                      QIB1_3d=qib_curr,                 &
-                     log_predictNc=.false.,            &
+                     th_old_3d=th_old,                 &
+                     qv_old_3d=qv_old,                 &
                      PII=pi_phy,                         &
                      P=p,                                &
                      DT=dt,                           &
@@ -1079,9 +1080,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      QIR1_3d=qir_curr,                    &
                      QNI1_3d=qni_curr,                   &
                      QIB1_3d=qib_curr,                 &
+                     th_old_3d=th_old,                 &
+                     qv_old_3d=qv_old,                 &
                      nc_3d=qnc_curr,                   &
-                     ssat_3d=ssat_curr,                &
-                     log_predictNc=.true.,             &
                      PII=pi_phy,                         &
                      P=p,                                &
                      DT=dt,                           &

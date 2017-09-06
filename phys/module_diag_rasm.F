@@ -1006,11 +1006,11 @@ CONTAINS
           nextTime = currentTime + off
           call WRFU_TimeGet( nextTime, yy=yr, mm=mon, dd=day, h=hr, m=min, s=sec)   
 
-          WRITE(str_yr, '(I4.4)'), yr
-          WRITE(str_mon, '(I2.2)'), mon
-          WRITE(str_day, '(I2.2)'), day
+          WRITE(str_yr, '(I4.4)')  yr
+          WRITE(str_mon, '(I2.2)')  mon
+          WRITE(str_day, '(I2.2)')  day
           totalsec = (hr * 60 * 60) + (min * 60) + sec 
-          WRITE(str_sec, '(I5.5)'), totalsec
+          WRITE(str_sec, '(I5.5)')  totalsec
           filedate = trim(str_yr)//"-"//trim(str_mon)//"-"//trim(str_day)//"-"//trim(str_sec) 
           OutDateStr = filedate
 
@@ -1028,8 +1028,8 @@ CONTAINS
           ELSE
              mon = mon - 1
           ENDIF
-          WRITE(str_yr, '(I4.4)'), yr
-          WRITE(str_mon, '(I2.2)'), mon
+          WRITE(str_yr, '(I4.4)')  yr
+          WRITE(str_mon, '(I2.2)')  mon
           filedate = trim(str_yr)//"-"//trim(str_mon)
           OutDateStr = filedate
    
@@ -1041,9 +1041,9 @@ CONTAINS
           call WRFU_TimeIntervalSet( off, s=mean_interval-dtime)
           prevTime = currentTime - off
           call WRFU_TimeGet( prevTime, yy=yr, mm=mon, dd=day)   
-          WRITE(str_yr, '(I4.4)'), yr
-          WRITE(str_mon, '(I2.2)'), mon
-          WRITE(str_day, '(I2.2)'), day
+          WRITE(str_yr, '(I4.4)')  yr
+          WRITE(str_mon, '(I2.2)')  mon
+          WRITE(str_day, '(I2.2)')  day
           filedate = trim(str_yr)//"-"//trim(str_mon)//"-"//trim(str_day)
           OutDateStr = filedate
           
@@ -1143,8 +1143,8 @@ CONTAINS
           ELSE
              mon = mon - 1
           ENDIF
-          WRITE(str_yr, '(I4.4)'), yr
-          WRITE(str_mon, '(I2.2)'), mon
+          WRITE(str_yr, '(I4.4)')  yr
+          WRITE(str_mon, '(I2.2)')  mon
           filedate = trim(str_yr)//"-"//trim(str_mon)
           OutDateStr = filedate
    
@@ -1155,9 +1155,9 @@ CONTAINS
           call WRFU_TimeIntervalSet( off, s=diurn_interval-dtime)
           prevTime = currentTime - off
           call WRFU_TimeGet( prevTime, yy=yr, mm=mon, dd=day)   
-          WRITE(str_yr, '(I4.4)'), yr
-          WRITE(str_mon, '(I2.2)'), mon
-          WRITE(str_day, '(I2.2)'), day
+          WRITE(str_yr, '(I4.4)')  yr
+          WRITE(str_mon, '(I2.2)')  mon
+          WRITE(str_day, '(I2.2)')  day
           filedate = trim(str_yr)//"-"//trim(str_mon)//"-"//trim(str_day)
           OutDateStr = filedate
           

@@ -1,5 +1,5 @@
-subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, y, &
-   grid, config_flags, jcdf_flag)
+subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
+   grid, config_flags, jcdf_flag, vp6, vv6)
 
    !-------------------------------------------------------------------------
    ! Purpose:  Does Adjoint of control variable (V) transform to Obs-space(Y)
@@ -13,14 +13,16 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
    real,                       intent(out)   :: cv(1:cv_size) ! control variables.
    type(iv_type),              intent(inout) :: iv     ! innovation vector (o-b).
    type(vp_type),              intent(inout) :: vp     ! Grdipt/level CV.
-   type(vp_type),              intent(inout) :: vp6    ! Grdipt/level CV for 6h.
    type(vp_type),              intent(inout) :: vv     ! Grdipt/EOF CV.
-   type(vp_type),              intent(inout) :: vv6    ! Grdipt/EOF CV for 6h.
    type(xbx_type),             intent(inout) :: xbx    ! For header & non-grid arrays.
    type(y_type),               intent(inout) :: y      ! y = H(x_inc).
    type(domain),               intent(inout) :: grid
    type(grid_config_rec_type), intent(inout) :: config_flags
    logical,                    intent(in)    :: jcdf_flag       ! additional flag to switch off JcDF, used to switch off JcDF in calculation of J.
+
+   ! vp6 and vv6 are defined only when the code is configured and compiled for 4dvar
+   type(vp_type), optional,    intent(inout) :: vp6    ! Grdipt/level CV for 6h.
+   type(vp_type), optional,    intent(inout) :: vv6    ! Grdipt/EOF CV for 6h.
 
    type(x_type)  :: shuffle
    real          :: cv_local(1:cv_size) ! control variables
@@ -170,7 +172,11 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
 
       call da_zero_x(grid%x6a)
       if (var4d_lbc) then
-         call da_get_2nd_firstguess ( grid )
+         call domain_clock_get (grid, stop_timestr=timestr)
+         call domain_clock_set( grid, current_timestr=timestr )
+         grid%u_2 = u6_2 ; grid%v_2 = v6_2; grid%t_2 = t6_2;
+         grid%w_2 = w6_2 ; grid%mu_2 = mu6_2 ; grid%ph_2 =ph6_2
+         grid%moist = moist6; grid%p = p6; grid%psfc = psfc6
          call da_transfer_wrftoxb(xbx, grid, config_flags)
 
          call da_transfer_xatowrftl_adj_lbc(grid, config_flags, 'gr01')
@@ -194,7 +200,7 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
       call da_zero_vp_type (vp) !as of V3.9, zero out vp here
       call da_transform_vpatox_adj(grid, be, ep, vp)
       call da_transform_vtox_adj(grid, be%cv%size_jb, xbx, be, ep, vp, vv, cv(1:be%cv%size_jb))
-
+  
       if (num_fgat_time > 1 .and. use_rainobs) then
          deallocate (a_hr_rainc )
          deallocate (a_hr_rainnc)

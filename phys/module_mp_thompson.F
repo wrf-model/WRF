@@ -36,7 +36,7 @@
 !.. Remaining values should probably be left alone.
 !..
 !..Author: Greg Thompson, NCAR-RAL, gthompsn@ucar.edu, 303-497-2805
-!..Last modified: 01 Aug 2016   Aerosol additions to v3.5.1 code 9/2013
+!..Last modified: 04 Aug 2017   Aerosol additions to v3.5.1 code 9/2013
 !..                 Cloud fraction additions 11/2014 part of pre-v3.7
 !+---+-----------------------------------------------------------------+
 !wrft:model_layer:physics
@@ -2527,7 +2527,7 @@
 !.. supersat again.
          sump = pri_inu(k) + pri_ide(k) + prs_ide(k) &
               + prs_sde(k) + prg_gde(k) + pri_iha(k)
-         rate_max = (qv(k)-qvsi(k))*odts*0.999
+         rate_max = (qv(k)-qvsi(k))*rho(k)*odts*0.999
          if ( (sump.gt. eps .and. sump.gt. rate_max) .or. &
               (sump.lt. -eps .and. sump.lt. rate_max) ) then
           ratio = rate_max/sump
@@ -2877,6 +2877,12 @@
 !.. intercepts/slopes of graupel and rain.
 !+---+-----------------------------------------------------------------+
       if (.not. iiwarm) then
+      do k = kts, kte
+         smo2(k) = 0.
+         smob(k) = 0.
+         smoc(k) = 0.
+         smod(k) = 0.
+      enddo
       do k = kts, kte
          if (.not. L_qs(k)) CYCLE
          tc0 = MIN(-0.1, temp(k)-273.15)
@@ -4152,7 +4158,7 @@
                do n2 = nbr, 1, -1
                   N_r(n2) = N0_r*Dr(n2)**mu_r*DEXP(-lamr*Dr(n2))*dtr(n2)
                   vol = massr(n2)*orho_w
-                  prob = 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp)
+                  prob = MAX(0.0D0, 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp))
                   if (massr(n2) .lt. xm0g) then
                      sumn1 = sumn1 + prob*N_r(n2)
                      sum1 = sum1 + prob*N_r(n2)*massr(n2)
@@ -4178,7 +4184,7 @@
                sumn2 = 0.0d0
                do n = nbc, 1, -1
                   vol = massc(n)*orho_w
-                  prob = 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp)
+                  prob = MAX(0.0D0, 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp))
                   N_c(n) = N0_c*Dc(n)**nu_c*EXP(-lamc*Dc(n))*dtc(n)
                   sumn2 = MIN(t_Nc(j), sumn2 + prob*N_c(n))
                   sum1 = sum1 + prob*N_c(n)*massc(n)

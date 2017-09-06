@@ -51,7 +51,13 @@
 !                WRF_CHEM = 1, thanks to Wayne Angevine.
 !            Added scale-aware mixing length, following Junshi Ito's work
 !                Ito et al. (2015, BLM).
-!
+! 8. v3.9.0  Improvement to the mass-flux scheme (dynamic number of plumes,
+!                better plume/cloud depth, significant speed up, better cloud
+!                fraction). 
+!            Added Stochastic Parameter Perturbation (SPP) implementation.
+!            Many miscellaneous tweaks to the mixing lengths and stratus
+!                component of the subgrid clouds.
+! 
 ! For changes 1, 3, and 6, see "JOE's mods" below:
 !-------------------------------------------------------------------
 
@@ -664,8 +670,8 @@ CONTAINS
 
 
     INTEGER :: i,j,k
-    REAL :: afk,abk,zwk,zwk1,dzk,qdz,vflx,bv,tau_cloud,elb,elb_cloud,els,els1,elf, &
-            & el_stab,el_unstab,el_mf,el_stab_mf,elb_mf
+    REAL :: afk,abk,zwk,zwk1,dzk,qdz,vflx,bv,tau_cloud,elb,els,els1,elf, &
+            & el_stab,el_unstab,el_mf,el_stab_mf,elb_mf,PBLH_PLUS_ENT
 
     INTEGER, INTENT(IN)   :: spp_pbl
     REAL, DIMENSION(kts:kte), INTENT(in)   :: rstoch_col
@@ -685,19 +691,19 @@ CONTAINS
        alp4 = 20.
        alp5 = 0.4
     ELSEIF ( bl_mynn_mixlength .GE. 2 ) THEN
-       cns  = 2.7
+       cns  = 3.5
        alp1 = 0.23
-       alp2 = 0.4
+       alp2 = 0.25
        alp3 = 3.0
        alp4 = 10.
-       alp5 = 0.2
+       alp5 = 0.3
     ENDIF
 
 !    tv0 = 0.61*tref
 !    gtr = 9.81/tref
 !
-!JOE-added to impose limits on the height integration for elt as well 
-!    as the transition layer depth
+!   Impose limits on the height integration for elt as well 
+!   as the transition layer depth
     IF ( bl_mynn_mixlength .EQ. 0 ) THEN
        zi2=10000.  !originally integrated to model top, not just 10 km.
     ELSE
@@ -709,7 +715,6 @@ CONTAINS
 
     qtke(kts)=MAX(qke(kts)/2.,0.01) !tke at full sigma levels
     thetaw(kts)=theta(kts)          !theta at full-sigma levels
-!JOE-end
     qkw(kts) = SQRT(MAX(qke(kts),1.0e-10))
 
     DO k = kts+1,kte
@@ -724,13 +729,17 @@ CONTAINS
     vsc = 1.0e-5
 !
 !   **  Strictly, zwk*h(i,j) -> ( zwk*h(i,j)+z0 )  **
-!JOE-Lt mod: only integrate to top of PBL (+ transition/entrainment
-!   layer), since TKE aloft is not relevant. Make WHILE loop, so it
-!   exits after looping through the boundary layer.
+!   Only integrate to top of PBL (+ transition/entrainment layer),
+!   since TKE aloft is not relevant. 
 !
-     k = kts+1
-     zwk = zw(k)
-     DO WHILE (zwk .LE. (zi2+h1))
+    IF ( bl_mynn_mixlength .EQ. 2 ) THEN
+       PBLH_PLUS_ENT = MAX(zi, 100.)
+    ELSE
+       PBLH_PLUS_ENT = zi2+h1
+    ENDIF
+    k = kts+1
+    zwk = zw(k)
+    DO WHILE (zwk .LE. PBLH_PLUS_ENT)
        dzk = 0.5*( dz(k)+dz(k-1) )
        qdz = MAX( qkw(k)-qmin, 0.03 )*dzk
              elt = elt +qdz*zwk
@@ -739,7 +748,7 @@ CONTAINS
        zwk = zw(k)
     END DO
 !
-    elt =  alp1*elt/vsc
+    elt =  MAX(alp1*elt/vsc, 10.)
     vflx = ( vt(kts)+1.0 )*flt +( vq(kts)+tv0 )*flq
     vsc = ( gtr*elt*MAX( vflx, 0.0 ) )**(1.0/3.0)
 !
@@ -777,11 +786,6 @@ CONTAINS
            elb_mf = alp2*qkw(k) / bv &
                 &       *( 1.0 + alp3/alp2*&
                 &SQRT( vsc/( bv*elt ) ) )
-           tau_cloud = MIN(MAX(0.5*zi/((gtr*zi*MAX(flt,1.0e-4))**(1.0/3.0)), 10.),100.)
-           !minimize influence of surface heat flux on tau far away from the PBLH.
-           wt=.5*TANH((zwk - (zi2+h1))/h2) + .5
-           tau_cloud = tau_cloud*(1.-wt) + 50.*wt        
-           elb_cloud = MIN(tau_cloud*SQRT(MIN(qtke(k),16.)), zwk)
            elb = MIN(alp2*qkw(k)/bv, zwk)
            elf = elb
            IF (zwk > zi .AND. elf > 500.) THEN
@@ -789,8 +793,6 @@ CONTAINS
              CALL boulac_length0(k,kts,kte,zw,dz,qtke,thetaw,elBLmin0,elBLavg0)
              elf = alp5*elBLavg0
            ENDIF
-           elb = elb*(1.-cldfra_bl1D(k)) + elb_cloud*cldfra_bl1D(k)
-           elf = elf*(1.-cldfra_bl1D(k)) + elb_cloud*cldfra_bl1D(k)
 
          END IF 
 
@@ -817,16 +819,15 @@ CONTAINS
            wt=.5*TANH((zwk - (zi2+h1))/h2) + .5
            tau_cloud = tau_cloud*(1.-wt) + 50.*wt
 
-           elb_cloud = MIN(tau_cloud*SQRT(MIN(qtke(k),20.)), zwk)
-           elb = elb_cloud
-           elf = elb_cloud
+           elb = MIN(tau_cloud*SQRT(MIN(qtke(k),20.)), zwk)
+           elf = elb
            elb_mf = elb
            IF (zwk > zi .AND. elf > 500.) THEN
              ! COMPUTE BouLac mixing length for dry conditions in free atmosphere
              CALL boulac_length0(k,kts,kte,zw,dz,qtke,thetaw,elBLmin0,elBLavg0)
-             elf = alp5*elBLavg0*(1.-cldfra_bl1D(k)) + elb_cloud*cldfra_bl1D(k)
+             elf = alp5*elBLavg0*(1.-cldfra_bl1D(k)) + elf*cldfra_bl1D(k)
            END IF
-           elf = elf*(1.-cldfra_bl1D(k)) + elb_cloud*cldfra_bl1D(k)
+           elf = elf*(1.-cldfra_bl1D(k)) + elb*cldfra_bl1D(k)
 
          END IF
        END IF
@@ -860,24 +861,17 @@ CONTAINS
 
        !JAYMES- el_stab & el_unstab blending begin ( bl_mynn_mixlength opt)
        ELSE IF ( bl_mynn_mixlength .GE. 2 ) THEN
-          hs = MAX(MIN(0.2*zi,200.),50.) ! bounded:  50 m < hs < 200 m
-          !z_m = MAX(0.,zwk - zwk1)
-          wt2 = 1.-(MIN(z_m,hs)/hs)
-
-          el_stab = els*wt2 + elb*(1.-wt2)
-          el_stab_mf = els*wt2 + elb_mf*(1.-wt2)
-
           el_unstab = els/(1. + (els1/elt))
 
+          el_stab    = MIN(el_unstab, elb) 
+          el_stab_mf = MIN(el_unstab, elb_mf)
+
           IF (bl_mynn_edmf > 0 .AND. edmf_a1(kts)>0.0) THEN
-             !Force unstable mixing length to be used in the lower PBL and
-             !blended unstable-mf length scale in the upper PBL when the mass-flux
-             !scheme is active.
-              !wt2=.5*TANH((zwk - (0.5*zi))/(0.25*zi)) + .5
-              !el(k) = el_unstab*wt2 + MIN(el_stab_mf,el_unstab)*(1.-wt2)
-              el(k) = MIN(el_stab_mf,el_unstab)
+             !Force version of buiyncay mixing length with the enhancement factor to be used 
+             !when the mass-flux scheme is active.
+              el(k) = el_stab_mf
           ELSE
-              el(k) = MIN(el_stab,el_unstab)
+              el(k) = el_stab
           ENDIF
           el(k) = el(k)*(1.-wt) + elf*wt
        END IF
@@ -889,16 +883,16 @@ CONTAINS
 !      Stochastic perturbations of turbulent mixing length
        if (spp_pbl==1) then
           if (k.lt.25) then
-             el(k)= el(k) + el(k)* rstoch_col(k) * MAX(exp(-MAX(zwk-3000.,0.0)/2000.),0.01)
+             el(k)= el(k) + el(k)* rstoch_col(k) * 1.5 * MAX(exp(-MAX(zwk-3000.,0.0)/2000.),0.01)
           endif
        endif
 
 
        IF ( wrf_at_debug_level(MYNN_DBG_LVL) ) THEN
          IF (el(k) > 1000.) THEN
-           WRITE ( mynn_message , FMT='(A,F7.0,I5,5F7.0)' ) &
-           ' MYNN; mym_length; LARGE el,k,elb_cloud,elb,elt,elf,tau:'&
-                                , el(k),k,elb_cloud,elb,elt,elf,tau_cloud
+           WRITE ( mynn_message , FMT='(A,F7.0,I5,4F7.0)' ) &
+           ' MYNN; mym_length; LARGE el,k,elb,elt,elf,tau:'&
+                                , el(k),k,elb,elt,elf,tau_cloud
            CALL wrf_debug ( 0 , mynn_message )
          ENDIF
        ENDIF
@@ -1320,6 +1314,7 @@ CONTAINS
 !   Stochastic
     INTEGER,  INTENT(IN)                          ::    spp_pbl
     REAL, DIMENSION(KTS:KTE)                      ::    rstoch_col
+    REAL :: prlimit
 
 
 !
@@ -1638,6 +1633,14 @@ CONTAINS
           gamq = 0.0
           gamv = 0.0
        END IF
+!
+!      Add stochastic perturbation of prandtl number limit
+       if (spp_pbl==1) then
+          prlimit = MIN(MAX(1.,2.5 + 5.0*rstoch_col(k)), 10.)
+          IF(sm(k) > sh(k)*Prlimit) THEN
+             sm(k) = sh(k)*Prlimit
+          ENDIF
+       ENDIF
 !
        elq = el(k)*qkw(k)
        elh = elq*qdiv
@@ -2102,7 +2105,7 @@ CONTAINS
     DOUBLE PRECISION :: t3sq, r3sq, c3sq
 
     REAL :: p2a,qsl,esat,qsat,tlk,qsat_tl,dqsl,cld0,q1k,eq1,qll,&
-         &q2p,pt,rac,qt,t,xl,rsl,cpm,cdhdz,fng,qww,alpha,beta,bb,ls_min,ls,wt
+         &q2p,pt,rac,qt,t,xl,rsl,cpm,cdhdz,Fng,qww,alpha,beta,bb,ls_min,ls,wt
     INTEGER :: i,j,k
 
     REAL :: erf
@@ -2148,8 +2151,7 @@ CONTAINS
     zagl = 0.
 ! Note: kte needs to be larger than kts, i.e., kte >= kts+1.
     DO k = kts,kte-1
-       p2a = exner(k)
-       t  = th(k)*p2a
+       t  = th(k)*exner(k)
 
 !x      if ( ct .gt. 0.0 ) then
 !       a  =  17.27
@@ -2174,6 +2176,8 @@ CONTAINS
        bet(k) = dqsl*p2a
 
        IF (bl_mynn_cloudpdf == 0) THEN
+          !NOTE: negative bl_mynn_cloudpdf will zero-out the stratus subgrid clouds
+          !      at the end of this subroutine. 
           !Sommeria and Deardorff (1977) scheme, as implemented
           !in Nakanishi and Niino (2009), Appendix B
           t3sq = MAX( tsq(k), 0.0 )
@@ -2191,7 +2195,7 @@ CONTAINS
           !CLOUD FRACTION. rr2 = 1/SQRT(2) = 0.707
           cld(k) = 0.5*( 1.0+erf( q1(k)*rr2 ) )
 
-       ELSE IF (bl_mynn_cloudpdf == 1) THEN
+       ELSE IF (bl_mynn_cloudpdf == 1 .OR. bl_mynn_cloudpdf == -1) THEN
           !ALTERNATIVE FORM (Nakanishi & Niino 2004 BLM, eq. B6, and 
           !Kuwano-Yoshida et al. 2010 QJRMS, eq. 7):
           if (k .eq. kts) then 
@@ -2208,7 +2212,7 @@ CONTAINS
           q1(k)   = qmq(k) / sgm(k)
           cld(k) = 0.5*( 1.0+erf( q1(k)*rr2 ) )
 
-       ELSE IF (bl_mynn_cloudpdf >= 2) THEN
+       ELSE IF (bl_mynn_cloudpdf == 2 .OR. bl_mynn_cloudpdf == -2) THEN
           !Diagnostic statistical scheme of Chaboureau and Bechtold (2002), JAS
           !JAYMES- this added 27 Apr 2015
           xl = xl_blend(t)                    ! obtain latent heat
@@ -2251,6 +2255,7 @@ CONTAINS
                                        !   lfac(750 m) = 4.4
                                        !   lfac(3 km)  = 5.0
                                        !   lfac(13 km) = 6.0
+
           ls = MAX(MIN(lfac*el(k),900.),ls_min)  ! Bounded:  ls_min < ls < 900 m
                   ! Note: CB02 use 900 m as a constant free-atmosphere length scale. 
 
@@ -2280,24 +2285,21 @@ CONTAINS
     PBLH2=MAX(10.,PBLH1)
 
     DO k = kts,kte-1
-
+         t    = th(k)*exner(k)
          q1k  = q1(k)
          zagl = zagl + dz(k)
-         !COMPUTE MEAN RH IN PBL (NOT PRESSURE WEIGHTED).
-         IF (zagl < PBLH2 .AND. PBLH2 > 400.) THEN
-            RHsum=RHsum+RH(k)
-            RHnum=RHnum+1.0
-            RHmean=RHsum/RHnum
-         ENDIF
-!         IF (cld(k) < 0. .OR. cld(k) > 1.) THEN
-!            PRINT*,"MYM_CONDENSATION, k=",k," cld=",cld(k)
-!            PRINT*," r3sq=",r3sq," t3sq=",t3sq," c3sq=",c3sq
-!         ENDIF
-!         q1=0.
-!         cld(k)=0.
+         !q1=0.
+         !cld(k)=0.
 
-         IF ( bl_mynn_cloudpdf <= 1 ) THEN
-       
+         IF ( bl_mynn_cloudpdf <= 1 .AND. bl_mynn_cloudpdf >= -1) THEN
+
+              !COMPUTE MEAN RH IN PBL (NOT PRESSURE WEIGHTED).
+              IF (zagl < PBLH2 .AND. PBLH2 > 400.) THEN
+                 RHsum=RHsum+RH(k)
+                 RHnum=RHnum+1.0
+                 RHmean=RHsum/RHnum
+              ENDIF
+
               RHcrit = 1. - 0.35*(1.0 - (MAX(250.- MAX(HFX1,HFXmin),0.0)/200.)**2)
               if(HFX1 > HFXmin)then
                  cld9=MIN(MAX(0., (rh(k)-RHcrit)/(1.1-RHcrit)), 1.)**2
@@ -2316,8 +2318,8 @@ CONTAINS
               elseif (zagl >= PBLH2+Hshcu)then
                  damp=MIN(1.0,exp(-ABS((zagl-(PBLH2+Hshcu))/500.)))
               endif
-       !       cldfra_bl1D(k)=cld9*damp
-             cldfra_bl1D(k)=cld(k) ! JAYMES: use this form to retain the Sommeria-Deardorff value
+              cldfra_bl1D(k)=cld9*damp
+              !cldfra_bl1D(k)=cld(k) ! JAYMES: use this form to retain the Sommeria-Deardorff value
        
               !use alternate cloud fraction to estimate qc for use in BL clouds-radiation
               eq1  = rrp*EXP( -0.5*q1k*q1k )
@@ -2325,8 +2327,8 @@ CONTAINS
               !ESTIMATED LIQUID WATER CONTENT (UNNORMALIZED)
               ql (k) = alp(k)*sgm(k)*qll
               if(cldfra_bl1D(k)>0.01 .and. ql(k)<1.E-6)ql(k)=1.E-6
-       !         qc_bl1D(k)=ql(k)*damp
-             qc_bl1D(k)=ql(k) ! JAYMES: use this form to retain the Sommeria-Deardorff value
+              qc_bl1D(k)=ql(k)*damp
+              !qc_bl1D(k)=ql(k) ! JAYMES: use this form to retain the Sommeria-Deardorff value
        
               !now recompute estimated lwc for PBL scheme's use
               !qll IS THE NORMALIZED LIQUID WATER CONTENT (Sommeria and
@@ -2349,7 +2351,7 @@ CONTAINS
               vt(k) =      qt-1.0 -rac*bet(k)
               vq(k) = p608*pt-tv0 +rac
        
-         ELSE IF ( bl_mynn_cloudpdf == 2 ) THEN
+         ELSE IF ( bl_mynn_cloudpdf == 2 .OR.  bl_mynn_cloudpdf == -2) THEN
          ! JAYMES- this option added 8 May 2015
          ! The cloud water formulations are taken from CB02, Eq. 8.
          ! "fng" represents the non-Gaussian contribution to the liquid
@@ -2374,60 +2376,67 @@ CONTAINS
                    !available for cloud production
                     ql_limit = 0.005 * qsat_blend( th(k)*exner(k), p(k) )
                     ql(k) = MIN( ql(k), ql_limit )
-                    if (zagl .lt. PBLH2+1000.) cld(k) = MIN( 1., 1.8*cld(k) )
-                    !Increase the cloud fraction estimate below PBLH+1km
                  else
                    !Above tropopause:  eliminate subgrid clouds from CB scheme
-                   cld(k) = 0.
+                    cld(k) = 0.
                     ql(k) = 0.
                  endif 
               endif
        
-              !buoyancy-flux-related calculations follow
-              IF (q1k < -2.) THEN
-                fng = 1.-q1k
-              ELSE IF (q1k > 0.) THEN
-                fng = 0.
-              ELSE
-                fng = -1.5*q1k
-              ENDIF
-       
+              !Buoyancy-flux-related calculations follow...
+              ! "Fng" represents the non-Gaussian transport factor
+              ! (non-dimensional) from from Bechtold et al. 1995 
+              ! (hereafter BCMT95), section 3(c).  Their suggested 
+              ! forms for Fng (from their Eq. 20) are:
+              !IF (q1k < -2.) THEN
+              !  Fng = 2.-q1k
+              !ELSE IF (q1k > 0.) THEN
+              !  Fng = 1.
+              !ELSE
+              !  Fng = 1.-1.5*q1k
+              !ENDIF
+              ! For purposes of the buoyancy flux in stratus, we will use Fng = 1
+              Fng = 1.
+
               xl    = xl_blend(t)
-              q2p  = xlvcp/exner(k)
-              pt = thl(k) +q2p*ql(k) ! potential temp
-              bb = b(k)*t/pt ! bb is "b" in BCMT95.  Their "b" differs from 
-                             ! "b" in CB02 (i.e., b(k) above) by a factor 
-                             ! of T/theta.  Strictly, b(k) above is formulated in
-                             ! terms of sat. mixing ratio, but bb in BCMT95 is
-                             ! cast in terms of sat. specific humidity.  The
-                             ! conversion is neglected here. 
+              bb = b(k)*t/th(k) ! bb is "b" in BCMT95.  Their "b" differs from
+                                ! "b" in CB02 (i.e., b(k) above) by a factor
+                                ! of T/theta.  Strictly, b(k) above is formulated in
+                                ! terms of sat. mixing ratio, but bb in BCMT95 is
+                                ! cast in terms of sat. specific humidity.  The
+                                ! conversion is neglected here.
               qww   = 1.+0.61*qw(k)
-              alpha = 0.61*pt
-              p2a   = exner(k)
-              t     = thl(k)*p2a
-              beta  = pt*xl/(t*cp) - 1.61*pt
-       
-              vt(k) = (1.-cld(k))*qww   + cld(k)*(qww   - beta*bb  *(1.+fng)) - 1.
-              vq(k) = (1.-cld(k))*alpha + cld(k)*(alpha + beta*a(k)*(1.+fng)) - tv0
-              ! These equations were derived by Jaymes, using BCMT95, Eq. B5, 
-              ! in order to recast the BC02/BCMT95 buoyancy flux in terms of
-              ! vt and vq (i.e., beta-theta and beta-q in NN09, Eq. B8).  
-              ! The "-1" and "-tv0" terms are included for consistency with 
+              alpha = 0.61*th(k)
+              beta  = (th(k)/t)*(xl/cp) - 1.61*th(k)
+
+              vt(k) = qww   - cld(k)*beta*bb*Fng   - 1.
+              vq(k) = alpha + cld(k)*beta*a(k)*Fng - tv0
+              ! vt and vq correspond to beta-theta and beta-q, respectively,
+              ! in NN09, Eq. B8.  They also correspond to the bracketed
+              ! expressions in BCMT95, Eq. 15, since (s*ql/sigma^2) = cldfra*Fng
+              ! The "-1" and "-tv0" terms are included for consistency with
               ! the legacy vt and vq formulations (above).
 
+              ! increase the cloud fraction estimate below PBLH+1km
+              if (zagl .lt. PBLH2+1000.) cld(k) = MIN( 1., 1.8*cld(k) )
               !return a cloud condensate and cloud fraction for icloud_bl option:
               cldfra_bl1D(k) = cld(k)
               qc_bl1D(k) = ql(k)
        
          ENDIF !end cloudPDF option
 
-       !To avoid FPE in radiation driver, when these two quantities are multiplied by eachother,
-       ! add limit to qc_bl and cldfra_bl:
-       IF (QC_BL1D(k) < 1E-6 .AND. ABS(CLDFRA_BL1D(k)) > 0.01) QC_BL1D(k)= 1E-6
-       IF (CLDFRA_BL1D(k) < 1E-2)THEN
-          CLDFRA_BL1D(k)=0.
-          QC_BL1D(k)=0.
-       ENDIF
+         !FOR TESTING PURPOSES ONLY, ISOLATE ON THE MASS-CLOUDS.
+         IF (bl_mynn_cloudpdf .LT. 0) THEN
+              cldfra_bl1D(k) = 0.0
+              qc_bl1D(k) = 0.0
+         ENDIF
+         !To avoid FPE in radiation driver, when these two quantities are multiplied by eachother,
+         ! add limit to qc_bl and cldfra_bl:
+         IF (QC_BL1D(k) < 1E-6 .AND. ABS(CLDFRA_BL1D(k)) > 0.01) QC_BL1D(k)= 1E-6
+         IF (CLDFRA_BL1D(k) < 1E-2)THEN
+            CLDFRA_BL1D(k)=0.
+            QC_BL1D(k)=0.
+         ENDIF
 
     END DO
 !
@@ -3098,7 +3107,7 @@ ENDIF
        b(1)=1.+dtz(k)*dfh(k+1)
        c(1)=-dtz(k)*dfh(k+1)
        ! d(1)=sqv(k) + dtz(k)*flqv + qcd(k)*delt
-       d(1)=chem1(k,ic) + dtz(k) * -vd1(ic)*chem1(1,ic)
+       d(1)=chem1(k,ic) + dtz(k) * (-1.0) * vd1(ic) * chem1(1,ic)
 
        DO k=kts+1,kte-1
           kk=k-kts+1
@@ -3295,7 +3304,7 @@ ENDIF
 
     INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: & 
          &KPBL
-    
+
     REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(inout) :: &
          &el_pbl
 
@@ -3343,7 +3352,7 @@ ENDIF
 
     REAL, DIMENSION(KTS:KTE+1) :: zw
     REAL :: cpm,sqcg,flt,flq,flqv,flqc,pmz,phh,exnerg,zet,& 
-              &afk,abk,ts_decay
+              &afk,abk,ts_decay,th_sfc
 
 !JOE-add GRIMS parameters & variables
    real,parameter    ::  d1 = 0.02, d2 = 0.05, d3 = 0.001
@@ -3377,7 +3386,7 @@ ENDIF
 
     IF (bl_mynn_edmf > 0) THEN
       ! setup random seed
-      call init_random_seed
+      !call init_random_seed
 
       edmf_a(its:ite,kts:kte,jts:jte)=0.
       edmf_w(its:ite,kts:kte,jts:jte)=0.
@@ -3679,6 +3688,7 @@ ENDIF
             & -vdfg(i,j)*(sqc(kts) - sqcg )
           flqv = qfx(i,j)/rho(i,kts,j)
           flqc = -vdfg(i,j)*(sqc(kts) - sqcg )
+          th_sfc = ts(i,j)/ex1(kts)
 
           zet = 0.5*dz(i,kts,j)*rmol(i,j)
           if ( zet >= 0.0 ) then
@@ -3720,7 +3730,8 @@ ENDIF
                &sqw,sqv,sqc,qke1,                 &
                &ex1,Vt,Vq,sgm,                    &
                &ust(i,j),flt,flq,flqv,flqc,       &
-               &PBLH(i,j),DX,xland(i,j),          &
+               &PBLH(i,j),KPBL(i,j),DX,           &
+               &xland(i,j),th_sfc,                &
             ! now outputs - tendencies
             ! &,dth1mf,dqv1mf,dqc1mf,du1mf,dv1mf &
             ! outputs - updraft properties
@@ -3968,7 +3979,7 @@ ENDIF
                IF ( ABS(vq(k)) > 6000.)print*,"**SUSPICIOUS VALUES AT: i,j,k=",i,j,k," vq=",vq(k) 
                IF ( exch_m(i,k,j) < 0. .OR. exch_m(i,k,j)> 2000.)print*,"**SUSPICIOUS VALUES AT: i,j,k=",i,j,k," exxch_m=",exch_m(i,k,j)
                IF ( vdfg(i,j) < 0. .OR. vdfg(i,j)>5. )print*,"**SUSPICIOUS VALUES AT: i,j,k=",i,j,k," vdfg=",vdfg(i,j)
-               IF ( ABS(QFX(i,j))>.001)print*, "**SUSPICIOUS VALUES AT: i,j=",i,j," QFX=",QFX(i,j) 
+               IF ( ABS(QFX(i,j))>.001)print*, "**SUSPICIOUS VALUES AT: i,j=",i,j," QFX=",QFX(i,j)
                IF ( ABS(HFX(i,j))>1000.)print*, "**SUSPICIOUS VALUES AT: i,j=",i,j," HFX=",HFX(i,j)
                IF (icloud_bl > 0) then
                   IF( cldfra_bl(i,k,j) < 0.0 .OR. cldfra_bl(i,k,j)> 1.)THEN
@@ -4221,7 +4232,7 @@ ENDIF
                  & qt,qv,qc,qke,            &
                  & exner,vt,vq,sgm,         &
                  & ust,flt,flq,flqv,flqc,   &
-                 & pblh,DX,landsea,         &
+                 & pblh,kpbl,DX,landsea,ts, &
             ! outputs - tendencies
             !  &dth,dqv,dqc,du,dv,&
             ! outputs - updraft properties   
@@ -4247,19 +4258,22 @@ ENDIF
      INTEGER,  INTENT(IN)          :: spp_pbl
      REAL, DIMENSION(KTS:KTE)      :: rstoch_col
   ! inputs:
-     INTEGER, INTENT(IN) :: KTS,KTE,momentum_opt,tke_opt
+     INTEGER, INTENT(IN) :: KTS,KTE,momentum_opt,tke_opt,kpbl
      REAL,DIMENSION(KTS:KTE), INTENT(IN) :: U,V,W,TH,THL,TK,QT,QV,QC,&
                                             THV,P,qke,exner,dz
      REAL,DIMENSION(KTS:KTE+1), INTENT(IN) :: ZW  !height at full-sigma
-     REAL, INTENT(IN) :: DT,UST,FLT,FLQ,FLQV,FLQC,PBLH,DX,Psig_shcu,landsea
+     REAL, INTENT(IN) :: DT,UST,FLT,FLQ,FLQV,FLQC,PBLH,&
+                         DX,Psig_shcu,landsea,ts
      LOGICAL, OPTIONAL :: F_QC,F_QI
 
   ! outputs - tendencies
   !   REAL,DIMENSION(KTS:KTE), INTENT(OUT) :: DTH,DQV,DQC,DU,DV
   ! outputs - updraft properties
      REAL,DIMENSION(KTS:KTE), INTENT(OUT) :: edmf_a,edmf_w,        &
-                 & edmf_qt,edmf_thl, edmf_ent,edmf_qc
-
+                      & edmf_qt,edmf_thl, edmf_ent,edmf_qc
+  ! output
+     INTEGER :: nup2,ktop
+     REAL    :: maxmf
   ! outputs - variables needed for solver
      REAL,DIMENSION(KTS:KTE+1) :: s_aw,      & !sum ai*wis_awphi
                                s_awthl,      & !sum ai*wi*phii
@@ -4283,7 +4297,7 @@ ENDIF
   ! internal variables
      INTEGER :: K,I,k50
      REAL :: fltv,wstar,qstar,thstar,sigmaW,sigmaQT,sigmaTH,z0,    &
-             pwmin,pwmax,wmin,wmax,wlv,wtv,Psig_w,maxw
+             pwmin,pwmax,wmin,wmax,wlv,wtv,Psig_w,maxw,maxqc,wpbl
      REAL :: B,QTn,THLn,THVn,QCn,Un,Vn,QKEn,Wn2,EntEXP,EntW
 
   ! w parameters
@@ -4299,15 +4313,14 @@ ENDIF
          & ENT0=0.1
 
   ! Implement ideas from Neggers (2016, JAMES):
-     REAL, PARAMETER :: Atot = 0.125! Maximum total fractional area of all updrafts
+     REAL, PARAMETER :: Atot = 0.1  !0125! Maximum total fractional area of all updrafts
      REAL, PARAMETER :: lmax = 1000.! diameter of largest plume
      REAL, PARAMETER :: dl   = 100. ! diff size of each plume - the differential multiplied by the integrand
-     REAL, PARAMETER :: dcut = 0.75 ! max diameter of plume to parameterize relative to dx
+     REAL, PARAMETER :: dcut = 1.0  ! max diameter of plume to parameterize relative to dx (km)
      REAL ::  d            != -2.3 to -1.7  ;=-1.9 in Neggers paper; power law exponent for number density (N=Cl^d).
           ! Note that changing d to -2.0 makes each size plume equally contribute to the total coverage of all plumes.
           ! Note that changing d to -1.7 doubles the area coverage of the largest plumes relative to the smallest plumes.
-     INTEGER :: NUP2                ! number up updrafts, determined by dx; nup2 <= nup
-     REAL :: cn,c,l,n,an2
+     REAL :: cn,c,l,n,an2,hux,maxwidth,wspd_pbl,cloud_base,width_flx
 
 #if (WRF_CHEM == 1)
      INTEGER, INTENT(IN) :: nchem
@@ -4335,7 +4348,7 @@ ENDIF
   ! VARIABLES FOR CHABOUREAU-BECHTOLD CLOUD FRACTION
    REAL,DIMENSION(KTS:KTE), INTENT(INOUT) :: vt, vq, sgm
    REAL :: sigq,xl,tlk,qsat_tl,rsl,cpm,a,qmq,mf_cf,diffqt,&
-           fng,qww,alpha,beta,bb,f,pt,t,q2p,b9
+           Fng,qww,alpha,beta,bb,f,pt,t,q2p,b9
 
    ! WA TEST 11/9/15 for consistent reduction of updraft params
    REAL :: csigma,acfac
@@ -4356,6 +4369,7 @@ ENDIF
 !     print *,'flq',flq
 !     print *,'pblh',pblh
 
+! Initialize individual updraft properties
   UPW=0.
   UPTHL=0.
   UPTHV=0.
@@ -4366,17 +4380,53 @@ ENDIF
   UPQC=0.
   UPQV=0.
   UPQKE=0.
-  ENT=0.
+#if (WRF_CHEM == 1)
+  UPCHEM(KTS:KTE+1,1:NUP,1:nchem)=0.0
+#endif
+  ENT=0.001
+! Initialize mean updraft properties
+  edmf_a  =0.
+  edmf_w  =0.
+  edmf_qt =0.
+  edmf_thl=0.
+  edmf_ent=0.
+  edmf_qc =0.
+#if (WRF_CHEM == 1)
+  edmf_chem(kts:kte+1,1:nchem) = 0.0
+#endif
+! Initialize the variables needed for implicit solver
+  s_aw=0.
+  s_awthl=0.
+  s_awqt=0.
+  s_awqv=0.
+  s_awqc=0.
+  s_awu=0.
+  s_awv=0.
+  s_awqke=0.
+#if (WRF_CHEM == 1)
+  s_awchem(kts:kte+1,1:nchem) = 0.0
+#endif
+
 
   !taper off MF scheme when significant resolved-scale motions are present
   !This function needs to be asymetric...
   k      = 1
   maxw   = 0.0
+  cloud_base  = 9000.0
   DO WHILE (ZW(k) < pblh + 500.)
-     maxw = MAX(maxw,ABS(W(k)))
-     !JOE-find highest k-level below 50m AGL                                                                                    
+     wpbl = w(k)
+     IF(w(k) < 0.)wpbl = 2.*w(k)
+     maxw = MAX(maxw,ABS(wpbl))
+
+     !Find highest k-level below 50m AGL
      IF(ZW(k)<=50.)k50=k
-     k = k+1
+
+     !Search for cloud base
+     IF(qc(k)>1E-5 .AND. cloud_base == 9000.0)THEN
+       cloud_base = 0.5*(ZW(k)+ZW(k+1))
+     ENDIF
+
+     k = k + 1
   ENDDO
   !print*," maxw before manipulation=", maxw
   maxw = MAX(0.,maxw - 0.5)         ! do nothing for small w, but
@@ -4390,32 +4440,64 @@ ENDIF
   !Completely shut off MF scheme for strong resolved-scale vertical velocities.
   IF(Psig_w == 0.0 .and. fltv > 0.0) fltv = -1.*fltv
 
-! if surface buoyancy is positive we do integration otherwise not, and make sure that 
+! if surface buoyancy is positive we do integration, otherwise not, and make sure that 
 ! PBLH > twice the height of the surface layer (set at z0 = 50m)
 ! Also, ensure that it is at least slightly superadiabatic up through 50 m
   superadiabatic = .false.
+  IF((landsea-1.5).GE.0)THEN
+     hux = -0.002   ! WATER  ! dT/dz must be < - 0.2 K per 100 m.
+  ELSE
+     hux = -0.005  ! LAND    ! dT/dz must be < - 0.5 K per 100 m.
+  ENDIF
   DO k=1,MAX(1,k50-1)
-    IF (th(k+1)-th(k) < 0.) THEN
-       superadiabatic = .true.
+    IF (k == 1) then
+      IF ((th(k)-ts)/(0.5*dz(k)) < hux) THEN
+        superadiabatic = .true.
+      ELSE
+        superadiabatic = .false.
+        exit
+      ENDIF
     ELSE
-       superadiabatic = .false.
-       exit
+      IF ((th(k)-th(k-1))/(0.5*(dz(k)+dz(k-1))) < hux) THEN
+        superadiabatic = .true.
+      ELSE
+        superadiabatic = .false.
+        exit
+      ENDIF
     ENDIF
   ENDDO
 
-  ! Determine the numer of updrafts needed for given dx (diameter up to dcut*dx) and PBLH:
+  ! Determine the numer of updrafts/plumes in the grid column:
+  ! Some of these criteria may be a little redundant but useful for bullet-proofing.
+  !   (1) largest plume = 0.75 * dx.
+  !   (2) Apply a scale-break, assuming no plumes with diameter larger than PBLH can exist.
+  !   (3) max plume size beneath clouds deck approx = 0.5 * cloud_base.
+  !   (4) add shear-dependent limit, when plume model breaks down.
+  !   (5) land-only limit to reduce plume sizes in weakly forced conditions
+  ! Criteria (1)
   NUP2 = max(1,min(NUP,INT(dx*dcut/dl)))
-  ! Apply a scale-break, assuming:
-  !   (1) no plumes with diameter larger than PBLH can exist.
-  !   (2) max plume size approx equals the max cloud size.
-  ! Also, do not let the scale break become smaller than ~400 m, otherwise the
-  ! mass-flux scheme may shut off.
-  NUP2 = MIN(MAX(INT((PBLH - MOD(PBLH,100.))/100), 4), NUP2)
-  !TEST: In weakly forced conditions, do not let plume sizes becomme greater than X m.
-  !IF (fltv < 0.05)NUP2 = MIN(NUP2,3)
-  !IF (fltv < 0.07)NUP2 = MIN(NUP2,5)
+  ! Criteria (2) and (4)
+  wspd_pbl=SQRT(MAX(u(kpbl)**2 + v(kpbl)**2, 0.01))
+  maxwidth = 0.9*PBLH - MIN(15.*MAX(wspd_pbl - 7.5, 0.), 0.3*PBLH)
+  ! Criteria (3)
+  maxwidth = MIN(maxwidth,0.5*cloud_base)
+  ! Criteria (5)
+  IF((landsea-1.5).LT.0)THEN
+    IF (cloud_base .LT. 2000.) THEN
+      width_flx = MAX(MIN(1000.*(0.6*tanh((flt - 0.120)/0.03) + .5),1000.), 0.)
+    ELSE
+      width_flx = MAX(MIN(1000.*(0.6*tanh((flt - 0.085)/0.04) + .5),1000.), 0.)
+    ENDIF
+    maxwidth = MIN(maxwidth,width_flx)
+  ENDIF
+  ! Convert maxwidth to number of plumes
+  NUP2 = MIN(MAX(INT((maxwidth - MOD(maxwidth,100.))/100), 0), NUP2)
 
-  IF ( fltv > 0.002 .AND. PBLH > 100. .AND. superadiabatic) then
+  !Initialize values:
+  ktop = 0
+  maxmf= 0.0
+
+  IF ( fltv > 0.002 .AND. NUP2 .GE. 1 .AND. superadiabatic) then
     !PRINT*," Conditions met to run mass-flux scheme",fltv,pblh
 
     ! Find coef C for number size density N
@@ -4444,39 +4526,24 @@ ENDIF
 
     ! get entrainment coefficient
     ! get dz/L0
-    ENTf(kts:kte,1:Nup)=0.1
-    ENTi(kts:kte,1:Nup)=0.1
-    do i=1,Nup2
-      do k=kts+1,kte
-        ENTf(k,i)=(ZW(k)-ZW(k-1))/L0    ! input into Poisson
-        ENTf(k,i)=MIN(ENTf(k,i),9.9) !JOE: test avoiding FPE
-        ENTf(k,i)=MAX(ENTf(k,i),0.05) !JOE: test avoiding FPE
-      enddo
-    enddo
+    !ENTf(kts:kte,1:Nup)=0.1
+    !ENTi(kts:kte,1:Nup)=0.1
+    !ENT(kts:kte,1:Nup)=0.001
+    !do i=1,Nup2
+    !  do k=kts+1,kte
+    !    ENTf(k,i)=(ZW(k)-ZW(k-1))/L0    ! input into Poisson
+    !    ENTf(k,i)=MIN(ENTf(k,i),9.9) !JOE: test avoiding FPE
+    !    ENTf(k,i)=MAX(ENTf(k,i),0.05) !JOE: test avoiding FPE
+    !  enddo
+    !enddo
     ! get Poisson P(dz/L0)
-    call Poisson(1,Nup2,kts+1,kte,ENTf,ENTi)
+    !call Poisson(1,Nup2,kts+1,kte,ENTf,ENTi)
     ! entrainent: Ent=Ent0/dz*P(dz/L0)             
-    do i=1,Nup2
-      do k=kts+1,kte
-        !ENT(k,i)=real(ENTi(k,i))*Ent0/(ZW(k)-ZW(k-1))  !eq (13) in Suselj et al. (2013, jas)
-        ! JOE - replace stoch ent with form from Neggers (2016):
-        l  = dl*I                            ! diameter of plume
-        !ENT(k,i) = 0.02*l**-0.35 - 0.0008    ! medium variation (Neggers 2015, JAMES)
-        ENT(k,i) = 0.02*l**-0.35 - 0.0009
-        !ENT(k,i) = l**-1.0                  ! largest variation (Neggers 2015, JAMES)
-        ! WA TEST 11/12/15 Add some small deterministic background entrainment
-        ENT(k,i) = max(ENT(k,i),0.0002)
-        ! JOE - increase updraft entrainment near surface
-        ENT(k,i) = max(ENT(k,i),0.1/ZW(k))
-      enddo
-    enddo
 
-!    print *,'Entrainment:',ENT   
-       
     ! set initial conditions for updrafts
     z0=50.
     pwmin=0.1       ! was 0.5
-    pwmax=0.5  !1.0 !1.5  ! was 3.0
+    pwmax=0.5       ! was 3.0
 
     wstar=max(1.E-2,(g/thv(1)*fltv*pblh)**(1./3.))
     qstar=max(flq,1.0E-5)/wstar
@@ -4509,14 +4576,7 @@ ENDIF
 
        !SURFACE UPDRAFT AREA
        !UPA(1,I)=0.5*ERF(wtv/(sqrt(2.)*sigmaW)) - 0.5*ERF(wlv/(sqrt(2.)*sigmaW))
-       !UPA(1,I)=0.4*ERF(wtv/(sqrt(2.)*sigmaW)) - 0.4*ERF(wlv/(sqrt(2.)*sigmaW))  !19.6
-       !UPA(1,I)=0.3*ERF(wtv/(sqrt(2.)*sigmaW)) - 0.3*ERF(wlv/(sqrt(2.)*sigmaW))  !14.6
        !UPA(1,I)=0.25*ERF(wtv/(sqrt(2.)*sigmaW)) - 0.25*ERF(wlv/(sqrt(2.)*sigmaW))  !12.0
-!       UPA(1,I)=0.2*ERF(wtv/(sqrt(2.)*sigmaW)) - 0.2*ERF(wlv/(sqrt(2.)*sigmaW))   !9.6
-!       !Make updraft area a function of the buoyancy flux
-!       acfac = .5*tanh((fltv - 0.05)/0.2) + .5
-!       UPA(1,I)=UPA(1,I)*acfac
-! Now set above according to power law.
 
        UPU(1,I)=U(1)
        UPV(1,I)=V(1)
@@ -4525,15 +4585,18 @@ ENDIF
        !UPTHV(1,I)=THV(1)+0.58*UPW(1,I)*sigmaTH/sigmaW
        !Alternatively, initialize parcel over lowest 50m
        UPQT(1,I) = 0.
+       UPTHV(1,I)= 0.
        UPTHL(1,I)= 0.
        k50=1 !for now, keep at lowest model layer...
        DO k=1,k50
          UPQT(1,I) = UPQT(1,I) +QT(k) +0.58*UPW(1,I)*sigmaQT/sigmaW *acfac
          UPTHV(1,I)= UPTHV(1,I)+THV(k)+0.58*UPW(1,I)*sigmaTH/sigmaW *acfac
+         UPTHL(1,I)= UPTHL(1,I)+THL(k)+0.58*UPW(1,I)*sigmaTH/sigmaW *acfac
        ENDDO
        UPQT(1,I) = UPQT(1,I)/REAL(k50)
        UPTHV(1,I)= UPTHV(1,I)/REAL(k50)
-       UPTHL(1,I)= UPTHV(1,I)/(1.+svp1*UPQT(1,I))
+!was       UPTHL(1,I)= UPTHV(1,I)/(1.+svp1*UPQT(1,I))  !assume no saturated parcel at surface
+       UPTHL(1,I)= UPTHL(1,I)/REAL(k50)             ! now, if the lowest layer is saturated, it will be counted for.
        UPQKE(1,I)= QKE(1)
 #if (WRF_CHEM == 1)
        do ic = 1,nchem
@@ -4548,6 +4611,7 @@ ENDIF
 !          PRINT*," wstar=",wstar," qstar=",qstar
 !          PRINT*," thstar=",thstar," sigmaW=",sigmaW
 !       ENDIF
+
     ENDDO
 
   !QCn = 0.
@@ -4555,28 +4619,43 @@ ENDIF
     DO I=1,NUP2
        QCn = 0.
        overshoot = 0
-       l  = dl*I                            ! diameter of plume  
+       l  = dl*I                            ! diameter of plume
        DO k=KTS+1,KTE
 
-          !JOE - add some w-dependency for entrainment a la Tian and Kuang (2016)
-          ENT(k,i) = 0.75/(MIN(MAX(UPW(K-1,I),0.5),2.0)*l)
+          !w-dependency for entrainment a la Tian and Kuang (2016)
+          ENT(k,i) = 0.75/(MIN(MAX(UPW(K-1,I),0.75),1.25)*l)
+          !Entrainment from Negggers (2015, JAMES)
+          !ENT(k,i) = 0.02*l**-0.35 - 0.0009
           !JOE - implement minimum background entrainment 
-          ENT(k,i) = max(ENT(k,i),0.0003)
-          ENT(k,i) = max(ENT(k,i),0.1/ZW(k)) 
+          ENT(k,i) = max(ENT(k,i),0.0006)
+          ENT(k,i) = max(ENT(k,i),0.05/ZW(k))
           !JOE - increase entrainment for plumes extending very high.
-          IF(ZW(k) >= pblh+1500.) ENT(k,i) =ENT(k,i) + (ZW(k)-(pblh+1500.)) * 2.0E-6
+          IF(ZW(k) >= pblh+1000.) ENT(k,i) =ENT(k,i) + (ZW(k)-(pblh+1000.)) * 5.0E-6
+          IF(UPW(K-1,I) > 1.5) ENT(k,i) = ENT(k,i) + 0.004*(UPW(K-1,I) - 1.5)
+          ENT(k,i) = min(ENT(k,i),0.9/(ZW(k)-ZW(k-1)))
 
-          EntExp=exp(-ENT(K,I)*(ZW(k)-ZW(k-1)))
+          ! Linear entrainment:
+          EntExp= ENT(K,I)*(ZW(k)-ZW(k-1))
+          QTn =UPQT(k-1,I) *(1.-EntExp) + QT(k-1)*EntExp
+          THLn=UPTHL(k-1,I)*(1.-EntExp) + THL(k-1)*EntExp
+          Un  =UPU(k-1,I)  *(1.-EntExp) + U(k-1)*EntExp
+          Vn  =UPV(k-1,I)  *(1.-EntExp) + V(k-1)*EntExp
+          QKEn=UPQKE(k-1,I)*(1.-EntExp) + QKE(k-1)*EntExp
 
-          QTn =QT(K) *(1-EntExp)+UPQT(K-1,I)*EntExp
-          THLn=THL(K)*(1-EntExp)+UPTHL(K-1,I)*EntExp
-          Un  =U(K)  *(1-EntExp)+UPU(K-1,I)*EntExp
-          Vn  =V(K)  *(1-EntExp)+UPV(K-1,I)*EntExp
-          QKEn=QKE(k)*(1-EntExp)+UPQKE(K-1,I)*EntExp
+          ! Exponential Entrainment:
+          !EntExp= exp(-ENT(K,I)*(ZW(k)-ZW(k-1)))
+          !QTn =QT(K) *(1-EntExp)+UPQT(K-1,I)*EntExp
+          !THLn=THL(K)*(1-EntExp)+UPTHL(K-1,I)*EntExp
+          !Un  =U(K)  *(1-EntExp)+UPU(K-1,I)*EntExp
+          !Vn  =V(K)  *(1-EntExp)+UPV(K-1,I)*EntExp
+          !QKEn=QKE(k)*(1-EntExp)+UPQKE(K-1,I)*EntExp
 
 #if (WRF_CHEM == 1)
           do ic = 1,nchem
-             chemn(ic) = chem(k,ic)*(1-EntExp)+UPCHEM(K-1,I,ic)*EntExp
+             ! Exponential Entrainment:
+             !chemn(ic) = chem(k,ic)*(1-EntExp)+UPCHEM(K-1,I,ic)*EntExp
+             ! Linear entrainment:
+             chemn(ic)=UPCHEM(k-1,I,ic)*(1.-EntExp) + chem(k-1,ic)*EntExp
          enddo
 #endif
 
@@ -4584,10 +4663,10 @@ ENDIF
           call condensation_edmf(QTn,THLn,(P(K)+P(K-1))/2.,ZW(k),THVn,QCn)
 
           B=g*(0.5*(THVn+UPTHV(k-1,I))/THV(k-1) - 1.0)
-          !B=g*(0.5*(THVn+UPTHV(k-1,I))/(0.5*(THV(k-1)+THV(k))) - 1.0)
 
           EntW=exp(-2.*(Wb+Wc*ENT(K,I))*(ZW(k)-ZW(k-1)))
           Wn2=UPW(K-1,I)**2*EntW + (1.-EntW)*0.5*Wa*B/(Wb+Wc*ENT(K,I))
+          Wn2=MAX(Wn2,0.0)
 
           !Allow strongly forced plumes to overshoot if KE is sufficient
           IF (fltv > 0.05 .AND. Wn2 <= 0 .AND. overshoot == 0) THEN
@@ -4596,7 +4675,7 @@ ENDIF
                 bvf = SQRT( gtr*(THV(k)-THV(k-1))/(0.5*(dz(k)+dz(k-1))) )
                 !vertical Froude number
                 Frz = UPW(K-1,I)/(bvf*0.5*(dz(k)+dz(k-1)))
-                IF ( Frz >= 0.2 ) Wn2 =  MIN(Frz,1.0)*(UPW(K-1,I)**2) 
+                IF ( Frz >= 0.5 ) Wn2 =  MIN(Frz,1.0)*(UPW(K-1,I)**2) 
              ENDIF
           ELSEIF (fltv > 0.05 .AND. overshoot == 1) THEN
              !Do not let overshooting parcel go more than 1 layer up
@@ -4604,17 +4683,16 @@ ENDIF
           ENDIF
 
           !Limit very tall plumes
-          Wn2=Wn2*EXP(-MAX(ZW(k)-(pblh+2000.),0.0)/1000.)
-          IF(ZW(k) >= pblh+4000.)Wn2=0.
+          Wn2=Wn2*EXP(-MAX(ZW(k)-(pblh+1500.),0.0)/1000.)
+          IF(ZW(k) >= pblh+3000.)Wn2=0.
  
           !JOE- minimize the plume penetratration in stratocu-topped PBL
-           IF (fltv < 0.06) THEN
-              IF(ZW(k) >= pblh-200. .AND. qc(k) > 1e-5 .AND. I > 2) Wn2=0.
-           ENDIF
+          IF (fltv < 0.06) THEN
+             IF(ZW(k) >= pblh-200. .AND. qc(k) > 1e-5 .AND. I > 2) Wn2=0.
+          ENDIF
 
           IF (Wn2 > 0.) THEN
              UPW(K,I)=sqrt(Wn2)
-             !IF (UPW(K,I) > 0.5*(ZW(K)-ZW(K-1))/dt) UPW(K,I) = 0.5*(ZW(K)-ZW(K-1))/dt
              UPTHV(K,I)=THVn
              UPTHL(K,I)=THLn
              UPQT(K,I)=QTn
@@ -4628,109 +4706,89 @@ ENDIF
                 UPCHEM(k,I,ic) = chemn(ic)
              enddo
 #endif
+             ktop = MAX(ktop,k)
           ELSE
              exit
           END IF
        ENDDO
-    ENDDO  
+    ENDDO
+  ELSE
+    !At least one of the conditions was not met for activating the MF scheme.
+    NUP2=0. 
+  END IF !end criteria for mass-flux scheme
 
-  END IF 
+  ktop=MIN(ktop,KTE-1)  !  Just to be safe...
 !        
 !  get updraft properties, for saving
 !
-  edmf_a  =0.
-  edmf_w  =0.
-  edmf_qt =0.
-  edmf_thl=0.
-  edmf_ent=0.
-  edmf_qc =0.
-#if (WRF_CHEM == 1)
-  edmf_chem(kts:kte+1,1:nchem) = 0.0
-#endif
+  IF(nup2 > 0) THEN
 
-  ! writing updraft properties in their variable
-  ! all variables, except Areas are now multipled by the area  
-  ! to confirm with WRF grid setup we do not save the first and the last row   
-
-  DO k=KTS,KTE-1
-    DO I=1,NUP2
-       edmf_a(K)=edmf_a(K)+UPA(K+1,I)
-       edmf_w(K)=edmf_w(K)+UPA(K+1,I)*UPW(K+1,I)
-       edmf_qt(K)=edmf_qt(K)+UPA(K+1,I)*UPQT(K+1,I)
-       edmf_thl(K)=edmf_thl(K)+UPA(K+1,I)*UPTHL(K+1,I)
-       edmf_ent(K)=edmf_ent(K)+UPA(K+1,I)*ENT(K+1,I)
-       edmf_qc(K)=edmf_qc(K)+UPA(K+1,I)*UPQC(K+1,I)
+    DO k=KTS,ktop !KTE-1
+      DO I=1,NUP2
+        edmf_a(K)=edmf_a(K)+UPA(K+1,I)
+        edmf_w(K)=edmf_w(K)+UPA(K+1,I)*UPW(K+1,I)
+        edmf_qt(K)=edmf_qt(K)+UPA(K+1,I)*UPQT(K+1,I)
+        edmf_thl(K)=edmf_thl(K)+UPA(K+1,I)*UPTHL(K+1,I)
+        edmf_ent(K)=edmf_ent(K)+UPA(K+1,I)*ENT(K+1,I)
+        edmf_qc(K)=edmf_qc(K)+UPA(K+1,I)*UPQC(K+1,I)
 #if (WRF_CHEM == 1)
-       do ic = 1,nchem
+        do ic = 1,nchem
           edmf_chem(k,ic) = edmf_chem(k,ic) + UPA(K+1,I)*UPCHEM(k,I,ic)
-       enddo
+        enddo
 #endif
-    ENDDO 
+      ENDDO 
 
-    IF (edmf_a(k)>0.) THEN
-       edmf_w(k)=edmf_w(k)/edmf_a(k)
-       edmf_qt(k)=edmf_qt(k)/edmf_a(k)
-       edmf_thl(k)=edmf_thl(k)/edmf_a(k)
-       edmf_ent(k)=edmf_ent(k)/edmf_a(k)
-       edmf_qc(k)=edmf_qc(k)/edmf_a(k)
+      IF (edmf_a(k)>0.) THEN
+        edmf_w(k)=edmf_w(k)/edmf_a(k)
+        edmf_qt(k)=edmf_qt(k)/edmf_a(k)
+        edmf_thl(k)=edmf_thl(k)/edmf_a(k)
+        edmf_ent(k)=edmf_ent(k)/edmf_a(k)
+        edmf_qc(k)=edmf_qc(k)/edmf_a(k)
 #if (WRF_CHEM == 1)
-       do ic = 1,nchem
+        do ic = 1,nchem
           edmf_chem(k,ic) = edmf_chem(k,ic)/edmf_a(k)
-       enddo
+        enddo
 #endif
-       edmf_a(k)=edmf_a(k)*Psig_w
-    ENDIF
-  ENDDO
+        edmf_a(k)=edmf_a(k)*Psig_w
 
-  !
-  ! computing variables needed for implicit solver
-  !
-  s_aw=0.
-  s_awthl=0.
-  s_awqt=0.
-  s_awqv=0.
-  s_awqc=0.
-  s_awu=0.
-  s_awv=0.
-  s_awqke=0.
-#if (WRF_CHEM == 1)
-  s_awchem(kts:kte+1,1:nchem) = 0.0
-#endif
+        !FIND MAXIMUM MASS-FLUX IN THE COLUMN:
+        IF(edmf_a(k)*edmf_w(k) > maxmf) maxmf = edmf_a(k)*edmf_w(k)
+      ENDIF
+    ENDDO
 
-  DO k=KTS,KTE
-     DO I=1,NUP2
-       s_aw(k)   = s_aw(K)    + UPA(K,I)*UPW(K,I)*Psig_w * (1.0+rstoch_col(k))
-       s_awthl(k)= s_awthl(K) + UPA(K,i)*UPW(K,I)*UPTHL(K,I)*Psig_w * (1.0+rstoch_col(k))
-       s_awqt(k) = s_awqt(K)  + UPA(K,i)*UPW(K,I)*UPQT(K,I)*Psig_w * (1.0+rstoch_col(k))
-       s_awqc(k) = s_awqc(K)  + UPA(K,i)*UPW(K,I)*UPQC(K,I)*Psig_w * (1.0+rstoch_col(k))
-       IF (momentum_opt > 0) THEN
-         s_awu(k)  = s_awu(K)   + UPA(K,i)*UPW(K,I)*UPU(K,I)*Psig_w * (1.0+rstoch_col(k))
-         s_awv(k)  = s_awv(K)   + UPA(K,i)*UPW(K,I)*UPV(K,I)*Psig_w * (1.0+rstoch_col(k))
-       ENDIF
-       IF (tke_opt > 0) THEN
-         s_awqke(k)= s_awqke(K) + UPA(K,i)*UPW(K,I)*UPQKE(K,I)*Psig_w * (1.0+rstoch_col(k))
-       ENDIF
+    DO k=KTS,ktop !KTE
+      DO I=1,NUP2
+        s_aw(k)   = s_aw(K)    + UPA(K,I)*UPW(K,I)*Psig_w * (1.0+rstoch_col(k))
+        s_awthl(k)= s_awthl(K) + UPA(K,i)*UPW(K,I)*UPTHL(K,I)*Psig_w * (1.0+rstoch_col(k))
+        s_awqt(k) = s_awqt(K)  + UPA(K,i)*UPW(K,I)*UPQT(K,I)*Psig_w * (1.0+rstoch_col(k))
+        s_awqc(k) = s_awqc(K)  + UPA(K,i)*UPW(K,I)*UPQC(K,I)*Psig_w * (1.0+rstoch_col(k))
+        IF (momentum_opt > 0) THEN
+          s_awu(k)  = s_awu(K)   + UPA(K,i)*UPW(K,I)*UPU(K,I)*Psig_w * (1.0+rstoch_col(k))
+          s_awv(k)  = s_awv(K)   + UPA(K,i)*UPW(K,I)*UPV(K,I)*Psig_w * (1.0+rstoch_col(k))
+        ENDIF
+        IF (tke_opt > 0) THEN
+          s_awqke(k)= s_awqke(K) + UPA(K,i)*UPW(K,I)*UPQKE(K,I)*Psig_w * (1.0+rstoch_col(k))
+        ENDIF
 #if (WRF_CHEM == 1)
-       do ic = 1,nchem
+        do ic = 1,nchem
           s_awchem(k,ic) = s_awchem(k,ic) + UPA(K,i)*UPW(K,I)*UPCHEM(K,I,ic)*Psig_w * (1.0+rstoch_col(k))
-       enddo
+        enddo
 #endif
-     ENDDO
-     s_awqv(k) = s_awqt(k)  - s_awqc(k)
-  ENDDO
+      ENDDO
+      s_awqv(k) = s_awqt(k)  - s_awqc(k)
+    ENDDO
 
 !JOE: ADD CLDFRA_bl1d, qc_bl1d. Note that they have already been defined in
 !     mym_condensation. Here, a shallow-cu component is added.  
-   DO K=KTS,KTE
+     DO K=KTS,ktop !KTE
 
-      IF (cldfra_opt == 0) THEN
+       IF (cldfra_opt == 0) THEN
          IF(edmf_qc(k)>0.0)THEN
             satvp = 3.80*exp(17.27*(th(k)-273.)/ &
                    (th(k)-36.))/(.01*p(k))
             rhgrid = max(.01,MIN( 1., qv(k) /satvp))
 
             !COMPUTE CLDFRA & QC_BL FROM MASS-FLUX SCHEME and recompute vt & vq
-            fng = 1.05     !-1.5*-0.7
 
             xl = xl_blend(tk(k))                ! obtain blended heat capacity 
             tlk = thl(k)*(p(k)/p1000mb)**rcp    ! recover liquid temp (tl) from thl
@@ -4752,7 +4810,7 @@ ENDIF
                            ! conversion is neglected here.
             qww   = 1.+0.61*qt(k)
             alpha = 0.61*pt
-            t     = thl(k)*exner(k)
+            t     = th(k)*exner(k)
             beta  = pt*xl/(t*cp) - 1.61*pt
             !Buoyancy flux terms have been moved to the end of this section...
 
@@ -4794,39 +4852,45 @@ ENDIF
                ENDIF
             ENDIF
             !Now recalculate the terms for the buoyancy flux for mass-flux clouds:
-            ! These equations were derived by Jaymes, using BCMT95, Eq. B5,
-            ! in order to recast the BC02/BCMT95 buoyancy flux in terms of
-            ! vt and vq (i.e., beta-theta and beta-q in NN09, Eq. B8).
-            ! The "-1" and "-tv0" terms are included for consistency with
-            ! the legacy vt and vq formulations (above).
-            vt(k) = (1.-cldfra_bl1D(k))*qww   + cldfra_bl1D(k)*(qww   - beta*bb*(1.+fng)) - 1.
-            vq(k) = (1.-cldfra_bl1D(k))*alpha + cldfra_bl1D(k)*(alpha + beta*a* (1.+fng)) - tv0
-         ENDIF
-      ELSEIF(cldfra_opt == 1) THEN
-         !Randall and Xu
-         qc_bl1d(k) = MAX(qc_bl1d(k), edmf_qc(k))
-         if(F_qc .and. .not. F_qi)then
-           satvp = 3.80*exp(17.27*(th(k)-273.)/ &
+            !See mym_condensation for details on these formulations.  The
+            !cloud-fraction bounding was added to improve cloud retention,
+            !following RAP and HRRR testing.
+              Fng = 2.05 ! the non-Gaussian transport factor (assumed constant)
+            vt(k) = qww   - MIN(0.3,cldfra_bl1D(k))*beta*bb*Fng - 1.
+            vq(k) = alpha + MIN(0.3,cldfra_bl1D(k))*beta*a*Fng  - tv0
+          ENDIF
+        ELSEIF(cldfra_opt == 1) THEN
+          !Randall and Xu
+          qc_bl1d(k) = MAX(qc_bl1d(k), edmf_qc(k))
+          if(F_qc .and. .not. F_qi)then
+            satvp = 3.80*exp(17.27*(th(k)-273.)/ &
                    (th(k)-36.))/(.01*p(k))
-           rhgrid = max(.1,MIN( .95, qv(k) /satvp))
-           h2oliq=1000.*qc_bl1d(k)
-           satvp=1000.*satvp
-           cldfra_bl1d(k)=(1.-exp(-coef_alph*h2oliq/&
+            rhgrid = max(.1,MIN( .95, qv(k) /satvp))
+            h2oliq=1000.*qc_bl1d(k)
+            satvp=1000.*satvp
+            cldfra_bl1d(k)=(1.-exp(-coef_alph*h2oliq/&
                    ((1.-rhgrid)*satvp)**coef_gamm))*(rhgrid**coef_p)
-           cldfra_bl1d(k)=max(0.0,MIN(1.,cldfra_bl1d(k)))
-         elseif(F_qc .and. F_qi)then
-           satvp = 3.80*exp(17.27*(th(k)-273.)/ &
+            cldfra_bl1d(k)=max(0.0,MIN(1.,cldfra_bl1d(k)))
+          elseif(F_qc .and. F_qi)then
+            satvp = 3.80*exp(17.27*(th(k)-273.)/ &
                    (th(k)-36.))/(.01*p(k))
-           rhgrid = max(.1,MIN( .95, qv(k) /satvp))
-           h2oliq=1000.*qc_bl1d(k)
-           satvp=1000.*satvp
-           cldfra_bl1d(k)=(1.-exp(-coef_alph*h2oliq/&
+            rhgrid = max(.1,MIN( .95, qv(k) /satvp))
+            h2oliq=1000.*qc_bl1d(k)
+            satvp=1000.*satvp
+            cldfra_bl1d(k)=(1.-exp(-coef_alph*h2oliq/&
                     ((1.-rhgrid)*satvp)**coef_gamm))*(rhgrid**coef_p)
-           cldfra_bl1d(k)=max(0.0,MIN(1.,cldfra_bl1d(k)))
-         endif
-      ENDIF
-   ENDDO
+            cldfra_bl1d(k)=max(0.0,MIN(1.,cldfra_bl1d(k)))
+          endif
+        ENDIF
+      ENDDO
 
+    ENDIF  !end nup2 > 0
+
+    !modify output (negative: dry plume, positive: moist plume)
+    IF (ktop > 0) THEN
+      maxqc = maxval(edmf_qc(1:ktop)) 
+      IF ( maxqc < 1.E-8) maxmf = -1.0*maxmf
+    ENDIF
        
 !       
 ! debugging   
@@ -5285,11 +5349,12 @@ subroutine condensation_edmf(QT,THL,P,zagl,THV,QC)
 !
 ! zero or one condensation for edmf: calculates THV and QC
 !
-real,intent(in) :: QT,THL,P,zagl
-real,intent(out):: THV,QC
+real,intent(in)   :: QT,THL,P,zagl
+real,intent(out)  :: THV
+real,intent(inout):: QC
 
 integer :: niter,i
-real :: diff,exn,t,qs,qcold
+real :: diff,exn,t,th,qs,qcold
 
 ! constants used from module_model_constants.F
 ! p1000mb
@@ -5302,20 +5367,19 @@ real :: diff,exn,t,qs,qcold
 ! number of iterations
   niter=50
 ! minimum difference
-  diff=1.e-4
+  diff=2.e-5
 
   EXN=(P/p1000mb)**rcp
-  QC=0.
-
+  !QC=0.  !better first guess QC is incoming from lower level, do not set to zero
   do i=1,NITER
-     T=EXN*THL+xlv/cp*QC
+     T=EXN*THL + xlv/cp*QC        
      QS=qsat_blend(T,P)
      QCOLD=QC
-     QC=max(0.5*QC + 0.5*(QT-QS),0.)
+     QC=0.5*QC + 0.5*MAX((QT-QS),0.)
      if (abs(QC-QCOLD)<Diff) exit
   enddo
 
-  T=exn*THL+xlv/cp*QC
+  T=EXN*THL + xlv/cp*QC
   QS=qsat_blend(T,P)
   QC=max(QT-QS,0.)
 
@@ -5324,9 +5388,12 @@ real :: diff,exn,t,qs,qcold
 
   !THV=(THL+xlv/cp*QC).*(1+(1-rvovrd)*(QT-QC)-QC);
   THV=(THL+xlv/cp*QC)*(1.+QT*(rvovrd-1.)-rvovrd*QC)
+  !THIS BASICALLY GIVE THE SAME RESULT AS THE PREVIOUS LINE
+  !TH = THL + xlv/cp/EXN*QC
+  !THV= TH*(1. + 0.608*QT)
 
-!print *,'t,p,qt,qs,qc'
-!print *,t,p,qt,qs,qc 
+  !print *,'t,p,qt,qs,qc'
+  !print *,t,p,qt,qs,qc 
 
 
 end subroutine condensation_edmf

@@ -48,9 +48,10 @@
    character (len=10)    :: variable_name
 
    integer :: iwin, num_subtwindow
-   integer :: xx, yy, ii, jj,  xy, kk, jjj
-   real    :: lat, lon, x_pos, y_pos, dx, dy, dxm, dym
-   logical :: outside
+   integer :: ni, nj, ii, jj
+   real    :: dx, dy, dxm, dym, cxp0, cxp1, cyp0, cyp1
+   real,    external :: nest_loc_of_cg  ! from share/interp_fcn.F
+   integer, external :: compute_CGLL    ! from share/interp_fcn.F
 
    integer   :: cvt_unit, iost
    character(len=8) :: cvtfile
@@ -339,7 +340,11 @@
    c2h = grid%c2h
    c3h = grid%c3h
    c4h = grid%c4h
-   if ( config_flags%hybrid_opt == 0 ) then
+   ! For WRFDA, namelist hybrid_opt setting is ignored.
+   ! grid%hybrid_opt is set in da_med_initialdata_input.inc based on
+   ! HYBRID_OPT global attribute contained in the input file.
+   ! For input file prior to V3.9, grid%hybrid_opt is set to 0.
+   if ( grid%hybrid_opt <= 0 ) then
       c3f = grid%znw
       c3h = grid%znu
       c4f = 0.0
@@ -366,64 +371,34 @@
       deallocate(mapfac,grid_box_area)
 
       !
-      ! Make a list of "observations" from the the fine grid lat/lon
+      ! get fine grid locs relative to coarse grid for bilinear interplation
+      ! between coarse (ensemble) and fine (analysis) grids.
+      ! use functions compute_CGLL and nest_loc_of_cg taken from
+      ! share/interp_fcn.F
       !
+      allocate(aens_locs(its:ite, jts:jte)) ! From da_control
+      do nj = jts, jte
+         jj = compute_CGLL (nj, grid%j_parent_start, grid%parent_grid_ratio, 1)
+         cyp0 = nest_loc_of_cg (jj  , grid%j_parent_start, grid%parent_grid_ratio, 0)
+         cyp1 = nest_loc_of_cg (jj+1, grid%j_parent_start, grid%parent_grid_ratio, 0)
+         dym = ( cyp1 - real(nj) ) / ( cyp1 - cyp0 )
+         dy = 1.0 - dym
+         do ni = its, ite
+            ii = compute_CGLL (ni, grid%i_parent_start, grid%parent_grid_ratio, 1)
+            cxp0 = nest_loc_of_cg (ii  , grid%i_parent_start, grid%parent_grid_ratio, 0)
+            cxp1 = nest_loc_of_cg (ii+1, grid%i_parent_start, grid%parent_grid_ratio, 0)
+            dxm = ( cxp1 - real(ni) ) / ( cxp1 - cxp0 )
+            dx = 1.0 - dxm
+            aens_locs(ni,nj)%i   = ii
+            aens_locs(ni,nj)%j   = jj
+            aens_locs(ni,nj)%dx  = dx
+            aens_locs(ni,nj)%dy  = dy
+            aens_locs(ni,nj)%dxm = dxm
+            aens_locs(ni,nj)%dym = dym
+         end do
+      end do
 
-      xy = ( ime - ims + 1 ) * ( jme - jms + 1 )
-
-      allocate(ob_locs(1:xy)) ! From da_control
-
-      kk = 0 ; jjj = 0
-      do xx = ims, ime !ids, ide 
-         do yy = jms, jme !jds, jde 
-
-          outside = .false.
-
-          lat = grid%xb%lat(xx,yy)
-          lon = grid%xb%lon(xx,yy)
-
-          x_pos = -1.0 ; y_pos = -1.0
-          call da_llxy_wrf(map_info_ens,lat,lon,x_pos,y_pos)
-          call da_togrid(x_pos,its_int-2, ite_int+2, ii, dx, dxm )
-          call da_togrid(y_pos,jts_int-2, jte_int+2, jj, dy, dym )
-
-          if ((int(x_pos) < ids_int) .or. (int(x_pos) >= ide_int) .or. &
-             (int(y_pos) < jds_int) .or. (int(y_pos) >= jde_int)) then
-             outside = .true.
-          endif
-
-	  if ((ii < ids_int) .or. (ii >= ide_int) .or. &
-	     (jj < jds_int) .or. (jj >= jde_int)) then
-	     outside     = .true.
-	  endif
-
-         if ((ii < its_int-1) .or. (ii > ite_int) .or. &
-            (jj < jts_int-1) .or. (jj > jte_int)) then
-            outside = .true.
-         endif
-
-         if ( .not. outside ) then
-              kk = kk + 1
-              ob_locs(kk)%x = x_pos
-              ob_locs(kk)%y = y_pos
-              ob_locs(kk)%i = ii
-              ob_locs(kk)%j = jj
-              ob_locs(kk)%dx = dx
-              ob_locs(kk)%dy = dy
-              ob_locs(kk)%dxm = dxm
-              ob_locs(kk)%dym = dym
-              ob_locs(kk)%xx = xx
-              ob_locs(kk)%yy = yy
-          else
-             jjj = jjj + 1
-          endif
-
-        enddo
-     enddo
-
-      total_here = kk ! from da_control
-
-   endif 
+   end if !anal_type_hybrid_dual_res
 
    !---------------------------------------------------------------------------
    ! [4.0] Set up observations (ob):
@@ -602,8 +577,10 @@
       call da_zero_vp_type (grid%vp)
   
       if ( var4d ) then
+#ifdef VAR4D
          call da_zero_vp_type (grid%vv6)
          call da_zero_vp_type (grid%vp6)
+#endif
       end if
 
    !---------------------------------------------------------------------------
@@ -831,15 +808,13 @@
 
          ! adding the ensemble contribution
          if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
-            if ( use_4denvar ) then
-               num_subtwindow = num_fgat_time
-            else
-               num_subtwindow = 1
-            end if
-            do iwin = num_subtwindow, 1 , -1
-               call da_transform_vpatox (grid,be,grid%ep,grid%vp,iwin)
-               call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
-            end do
+            ! add it to the analysis time ifgat_ana
+            ! ifgat_ana is declared in da_control.f90 and defined in da_get_time_slots.inc
+            write(unit=message(1),fmt='(a)')    ''
+            write(unit=message(2),fmt='(a,i3)') 'Applying ensemble contribution to FGAT time: ', ifgat_ana
+            call da_message(message(1:2))
+            call da_transform_vpatox (grid,be,grid%ep,grid%vp,ifgat_ana)
+            call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
          end if !ne>0
       else
          call da_transform_vtox (grid,be%cv%size_jb,xbx,be,grid%ep,xhat(1:be%cv%size_jb),grid%vv,grid%vp)
@@ -1013,7 +988,7 @@
       end if
    end if
 
-   if ( anal_type_hybrid_dual_res ) deallocate(ob_locs)
+   if ( anal_type_hybrid_dual_res ) deallocate(aens_locs)
 
    deallocate ( c1f )
    deallocate ( c2f )

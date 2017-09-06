@@ -132,8 +132,12 @@ subroutine da_radiance_init(iv,ob)
       nchanl(n)  = 14
       nscan(n)   = 486
    else
-      call da_error(__FILE__,__LINE__, &
-        (/"Unrecognized instrument"/))
+      write(unit=message(1),fmt='(A)') "Unrecognized instrument: "
+      write(unit=message(2),fmt='(A,I4)') "rtminit_platform = ",rtminit_platform(n)
+      write(unit=message(3),fmt='(A,I4)') "rtminit_satid    = ",rtminit_satid(n)
+      write(unit=message(4),fmt='(A,I4)') "rtminit_sensor   = ",rtminit_sensor(n)
+      write(unit=message(5),fmt='(A)') "Check your namelist settings"
+      call da_error(__FILE__,__LINE__,message(1:5))
    end if
 
    iv%instid(n)%nchan  = nchanl(n)

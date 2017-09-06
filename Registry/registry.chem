@@ -67,8 +67,8 @@ state    real  e_ald          i+jf     emis_ant     1         Z      i5r    "E_A
 state    real  e_ket          i+jf     emis_ant     1         Z      i5r    "E_KET"               "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  e_ora2         i+jf     emis_ant     1         Z      i5r    "E_ORA2"              "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  e_nh3          i+jf     emis_ant     1         Z      i5r    "E_NH3"               "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_pm_25        i+jf     emis_ant     1         Z      i5r    "E_PM_25"             "EMISSIONS"          "mol km^-2 hr^-1"
-state    real  e_pm_10        i+jf     emis_ant     1         Z      i5r    "E_PM_10"             "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  e_pm_25        i+jf     emis_ant     1         Z      i5r    "E_PM_25"             "EMISSIONS"          "ug/m3 m/s"
+state    real  e_pm_10        i+jf     emis_ant     1         Z      i5r    "E_PM_10"             "EMISSIONS"          "ug/m3 m/s"
 state    real  e_pm25i        i+jf     emis_ant     1         Z      i5r    "E_PM25I"             "EMISSION RATE OF UNIDEN. PM2.5 MASS"  "ug/m3 m/s"
 state    real  e_pm25j        i+jf     emis_ant     1         Z      i5r    "E_PM25J"             "EMISSION RATE OF J-MODE UNIDEN. PM2.5 MASS"   "ug/m3 m/s"
 state    real  e_eci          i+jf     emis_ant     1         Z      i5r    "E_ECI"               "EMISSION RATE OF I-MODE EC"          "ug/m3 m/s"
@@ -1041,7 +1041,6 @@ state   integer num_vert_mix     -     misc           -         -      r      "n
 #
 # Wet deposition
 #
-
 state    real  wd_so4_sc     ij        misc           1         -      rdu      "wd_so4_sc"     "SO4 surface wet deposition, accumulated (Sc)"            "mmol/m2"
 state    real  wd_no3_sc     ij        misc           1         -      rdu      "wd_no3_sc"     "NO3 surface wet deposition, accumulated (Sc)"            "mmol/m2"
 # added wet deposition totals for NH4 and OA for MOZART coupled version
@@ -1092,179 +1091,179 @@ state    real  asoa           ikj     misc        1         -      r        "ASO
 state    real  dms_0          ij      misc        1         -      i08rh    "DMS_0 "               "dms oceanic concentrations"           "nM/L"
 
 #Diagnostic Aerosol species
-state    real  hoa_a01      ikj     misc          1         -      r         "hoa_a01"             "hoa_a01"                              "ug m^-3"
-state    real  hoa_a02      ikj     misc          1         -      r         "hoa_a02"             "hoa_a02"                              "ug m^-3"
-state    real  hoa_a03      ikj     misc          1         -      r         "hoa_a03"             "hoa_a03"                              "ug m^-3"
-state    real  hoa_a04      ikj     misc          1         -      r         "hoa_a04"             "hoa_a04"                              "ug m^-3"
-state    real  hoa_a05      ikj     misc          1         -      r         "hoa_a05"             "hoa_a05"                              "ug m^-3"
-state    real  hoa_a06      ikj     misc          1         -      r         "hoa_a06"             "hoa_a06"                              "ug m^-3"
-state    real  hoa_a07      ikj     misc          1         -      r         "hoa_a07"             "hoa_a07"                              "ug m^-3"
-state    real  hoa_a08      ikj     misc          1         -      r         "hoa_a08"             "hoa_a08"                              "ug m^-3"
+state    real  hoa_a01      ikj     misc          1         -      -         "hoa_a01"             "hoa_a01"                              "ug m^-3"
+state    real  hoa_a02      ikj     misc          1         -      -         "hoa_a02"             "hoa_a02"                              "ug m^-3"
+state    real  hoa_a03      ikj     misc          1         -      -         "hoa_a03"             "hoa_a03"                              "ug m^-3"
+state    real  hoa_a04      ikj     misc          1         -      -         "hoa_a04"             "hoa_a04"                              "ug m^-3"
+state    real  hoa_a05      ikj     misc          1         -      -         "hoa_a05"             "hoa_a05"                              "ug m^-3"
+state    real  hoa_a06      ikj     misc          1         -      -         "hoa_a06"             "hoa_a06"                              "ug m^-3"
+state    real  hoa_a07      ikj     misc          1         -      -         "hoa_a07"             "hoa_a07"                              "ug m^-3"
+state    real  hoa_a08      ikj     misc          1         -      -         "hoa_a08"             "hoa_a08"                              "ug m^-3"
 
-state    real  soa_a01      ikj     misc          1         -      r         "soa_a01"             "soa_a01"                              "ug m^-3"
-state    real  soa_a02      ikj     misc          1         -      r         "soa_a02"             "soa_a02"                              "ug m^-3"
-state    real  soa_a03      ikj     misc          1         -      r         "soa_a03"             "soa_a03"                              "ug m^-3"
-state    real  soa_a04      ikj     misc          1         -      r         "soa_a04"             "soa_a04"                              "ug m^-3"
-state    real  soa_a05      ikj     misc          1         -      r         "soa_a05"             "soa_a05"                              "ug m^-3"
-state    real  soa_a06      ikj     misc          1         -      r         "soa_a06"             "soa_a06"                              "ug m^-3"
-state    real  soa_a07      ikj     misc          1         -      r         "soa_a07"             "soa_a07"                              "ug m^-3"
-state    real  soa_a08      ikj     misc          1         -      r         "soa_a08"             "soa_a08"                              "ug m^-3"
+state    real  soa_a01      ikj     misc          1         -      -         "soa_a01"             "soa_a01"                              "ug m^-3"
+state    real  soa_a02      ikj     misc          1         -      -         "soa_a02"             "soa_a02"                              "ug m^-3"
+state    real  soa_a03      ikj     misc          1         -      -         "soa_a03"             "soa_a03"                              "ug m^-3"
+state    real  soa_a04      ikj     misc          1         -      -         "soa_a04"             "soa_a04"                              "ug m^-3"
+state    real  soa_a05      ikj     misc          1         -      -         "soa_a05"             "soa_a05"                              "ug m^-3"
+state    real  soa_a06      ikj     misc          1         -      -         "soa_a06"             "soa_a06"                              "ug m^-3"
+state    real  soa_a07      ikj     misc          1         -      -         "soa_a07"             "soa_a07"                              "ug m^-3"
+state    real  soa_a08      ikj     misc          1         -      -         "soa_a08"             "soa_a08"                              "ug m^-3"
 
-state    real  bboa_a01      ikj     misc          1         -      r         "bboa_a01"             "bboa_a01"                              "ug m^-3"
-state    real  bboa_a02      ikj     misc          1         -      r         "bboa_a02"             "bboa_a02"                              "ug m^-3"
-state    real  bboa_a03      ikj     misc          1         -      r         "bboa_a03"             "bboa_a03"                              "ug m^-3"
-state    real  bboa_a04      ikj     misc          1         -      r         "bboa_a04"             "bboa_a04"                              "ug m^-3"
-state    real  bboa_a05      ikj     misc          1         -      r         "bboa_a05"             "bboa_a05"                              "ug m^-3"
-state    real  bboa_a06      ikj     misc          1         -      r         "bboa_a06"             "bboa_a06"                              "ug m^-3"
-state    real  bboa_a07      ikj     misc          1         -      r         "bboa_a07"             "bboa_a07"                              "ug m^-3"
-state    real  bboa_a08      ikj     misc          1         -      r         "bboa_a08"             "bboa_a08"                              "ug m^-3"
+state    real  bboa_a01     ikj     misc          1         -      -         "bboa_a01"             "bboa_a01"                              "ug m^-3"
+state    real  bboa_a02     ikj     misc          1         -      -         "bboa_a02"             "bboa_a02"                              "ug m^-3"
+state    real  bboa_a03     ikj     misc          1         -      -         "bboa_a03"             "bboa_a03"                              "ug m^-3"
+state    real  bboa_a04     ikj     misc          1         -      -         "bboa_a04"             "bboa_a04"                              "ug m^-3"
+state    real  bboa_a05     ikj     misc          1         -      -         "bboa_a05"             "bboa_a05"                              "ug m^-3"
+state    real  bboa_a06     ikj     misc          1         -      -         "bboa_a06"             "bboa_a06"                              "ug m^-3"
+state    real  bboa_a07     ikj     misc          1         -      -         "bboa_a07"             "bboa_a07"                              "ug m^-3"
+state    real  bboa_a08     ikj     misc          1         -      -         "bboa_a08"             "bboa_a08"                              "ug m^-3"
 
-state    real  bbsoa_a01      ikj     misc          1         -      r         "bbsoa_a01"             "bbsoa_a01"                              "ug m^-3"
-state    real  bbsoa_a02      ikj     misc          1         -      r         "bbsoa_a02"             "bbsoa_a02"                              "ug m^-3"
-state    real  bbsoa_a03      ikj     misc          1         -      r         "bbsoa_a03"             "bbsoa_a03"                              "ug m^-3"
-state    real  bbsoa_a04      ikj     misc          1         -      r         "bbsoa_a04"             "bbsoa_a04"                              "ug m^-3"
-state    real  bbsoa_a05      ikj     misc          1         -      r         "bbsoa_a05"             "bbsoa_a05"                              "ug m^-3"
-state    real  bbsoa_a06      ikj     misc          1         -      r         "bbsoa_a06"             "bbsoa_a06"                              "ug m^-3"
-state    real  bbsoa_a07      ikj     misc          1         -      r         "bbsoa_a07"             "bbsoa_a07"                              "ug m^-3"
-state    real  bbsoa_a08      ikj     misc          1         -      r         "bbsoa_a08"             "bbsoa_a08"                              "ug m^-3"
+state    real  bbsoa_a01    ikj     misc          1         -      -         "bbsoa_a01"             "bbsoa_a01"                              "ug m^-3"
+state    real  bbsoa_a02    ikj     misc          1         -      -         "bbsoa_a02"             "bbsoa_a02"                              "ug m^-3"
+state    real  bbsoa_a03    ikj     misc          1         -      -         "bbsoa_a03"             "bbsoa_a03"                              "ug m^-3"
+state    real  bbsoa_a04    ikj     misc          1         -      -         "bbsoa_a04"             "bbsoa_a04"                              "ug m^-3"
+state    real  bbsoa_a05    ikj     misc          1         -      -         "bbsoa_a05"             "bbsoa_a05"                              "ug m^-3"
+state    real  bbsoa_a06    ikj     misc          1         -      -         "bbsoa_a06"             "bbsoa_a06"                              "ug m^-3"
+state    real  bbsoa_a07    ikj     misc          1         -      -         "bbsoa_a07"             "bbsoa_a07"                              "ug m^-3"
+state    real  bbsoa_a08    ikj     misc          1         -      -         "bbsoa_a08"             "bbsoa_a08"                              "ug m^-3"
 
-state    real  hsoa_a01      ikj     misc          1         -      r         "hsoa_a01"             "hsoa_a01"                              "ug m^-3"
-state    real  hsoa_a02      ikj     misc          1         -      r         "hsoa_a02"             "hsoa_a02"                              "ug m^-3"
-state    real  hsoa_a03      ikj     misc          1         -      r         "hsoa_a03"             "hsoa_a03"                              "ug m^-3"
-state    real  hsoa_a04      ikj     misc          1         -      r         "hsoa_a04"             "hsoa_a04"                              "ug m^-3"
-state    real  hsoa_a05      ikj     misc          1         -      r         "hsoa_a05"             "hsoa_a05"                              "ug m^-3"
-state    real  hsoa_a06      ikj     misc          1         -      r         "hsoa_a06"             "hsoa_a06"                              "ug m^-3"
-state    real  hsoa_a07      ikj     misc          1         -      r         "hsoa_a07"             "hsoa_a07"                              "ug m^-3"
-state    real  hsoa_a08      ikj     misc          1         -      r         "hsoa_a08"             "hsoa_a08"                              "ug m^-3"
+state    real  hsoa_a01     ikj     misc          1         -      -         "hsoa_a01"             "hsoa_a01"                              "ug m^-3"
+state    real  hsoa_a02     ikj     misc          1         -      -         "hsoa_a02"             "hsoa_a02"                              "ug m^-3"
+state    real  hsoa_a03     ikj     misc          1         -      -         "hsoa_a03"             "hsoa_a03"                              "ug m^-3"
+state    real  hsoa_a04     ikj     misc          1         -      -         "hsoa_a04"             "hsoa_a04"                              "ug m^-3"
+state    real  hsoa_a05     ikj     misc          1         -      -         "hsoa_a05"             "hsoa_a05"                              "ug m^-3"
+state    real  hsoa_a06     ikj     misc          1         -      -         "hsoa_a06"             "hsoa_a06"                              "ug m^-3"
+state    real  hsoa_a07     ikj     misc          1         -      -         "hsoa_a07"             "hsoa_a07"                              "ug m^-3"
+state    real  hsoa_a08     ikj     misc          1         -      -         "hsoa_a08"             "hsoa_a08"                              "ug m^-3"
 
-state    real  biog_a01      ikj     misc          1         -      r         "biog_a01"             "biog_a01"                              "ug m^-3"
-state    real  biog_a02      ikj     misc          1         -      r         "biog_a02"             "biog_a02"                              "ug m^-3"
-state    real  biog_a03      ikj     misc          1         -      r         "biog_a03"             "biog_a03"                              "ug m^-3"
-state    real  biog_a04      ikj     misc          1         -      r         "biog_a04"             "biog_a04"                              "ug m^-3"
-state    real  biog_a05      ikj     misc          1         -      r         "biog_a05"             "biog_a05"                              "ug m^-3"
-state    real  biog_a06      ikj     misc          1         -      r         "biog_a06"             "biog_a06"                              "ug m^-3"
-state    real  biog_a07      ikj     misc          1         -      r         "biog_a07"             "biog_a07"                              "ug m^-3"
-state    real  biog_a08      ikj     misc          1         -      r         "biog_a08"             "biog_a08"                              "ug m^-3"
+state    real  biog_a01     ikj     misc          1         -      -         "biog_a01"             "biog_a01"                              "ug m^-3"
+state    real  biog_a02     ikj     misc          1         -      -         "biog_a02"             "biog_a02"                              "ug m^-3"
+state    real  biog_a03     ikj     misc          1         -      -         "biog_a03"             "biog_a03"                              "ug m^-3"
+state    real  biog_a04     ikj     misc          1         -      -         "biog_a04"             "biog_a04"                              "ug m^-3"
+state    real  biog_a05     ikj     misc          1         -      -         "biog_a05"             "biog_a05"                              "ug m^-3"
+state    real  biog_a06     ikj     misc          1         -      -         "biog_a06"             "biog_a06"                              "ug m^-3"
+state    real  biog_a07     ikj     misc          1         -      -         "biog_a07"             "biog_a07"                              "ug m^-3"
+state    real  biog_a08     ikj     misc          1         -      -         "biog_a08"             "biog_a08"                              "ug m^-3"
 
-state    real  arosoa_a01      ikj     misc          1         -      r         "arosoa_a01"             "arosoa_a01"                              "ug m^-3"
-state    real  arosoa_a02      ikj     misc          1         -      r         "arosoa_a02"             "arosoa_a02"                              "ug m^-3"
-state    real  arosoa_a03      ikj     misc          1         -      r         "arosoa_a03"             "arosoa_a03"                              "ug m^-3"
-state    real  arosoa_a04      ikj     misc          1         -      r         "arosoa_a04"             "arosoa_a04"                              "ug m^-3"
-state    real  arosoa_a05      ikj     misc          1         -      r         "arosoa_a05"             "arosoa_a05"                              "ug m^-3"
-state    real  arosoa_a06      ikj     misc          1         -      r         "arosoa_a06"             "arosoa_a06"                              "ug m^-3"
-state    real  arosoa_a07      ikj     misc          1         -      r         "arosoa_a07"             "arosoa_a07"                              "ug m^-3"
-state    real  arosoa_a08      ikj     misc          1         -      r         "arosoa_a08"             "arosoa_a08"                              "ug m^-3"
+state    real  arosoa_a01   ikj     misc          1         -      -         "arosoa_a01"             "arosoa_a01"                              "ug m^-3"
+state    real  arosoa_a02   ikj     misc          1         -      -         "arosoa_a02"             "arosoa_a02"                              "ug m^-3"
+state    real  arosoa_a03   ikj     misc          1         -      -         "arosoa_a03"             "arosoa_a03"                              "ug m^-3"
+state    real  arosoa_a04   ikj     misc          1         -      -         "arosoa_a04"             "arosoa_a04"                              "ug m^-3"
+state    real  arosoa_a05   ikj     misc          1         -      -         "arosoa_a05"             "arosoa_a05"                              "ug m^-3"
+state    real  arosoa_a06   ikj     misc          1         -      -         "arosoa_a06"             "arosoa_a06"                              "ug m^-3"
+state    real  arosoa_a07   ikj     misc          1         -      -         "arosoa_a07"             "arosoa_a07"                              "ug m^-3"
+state    real  arosoa_a08   ikj     misc          1         -      -         "arosoa_a08"             "arosoa_a08"                              "ug m^-3"
 
-state    real  totoa_a01      ikj     misc          1         -      r         "totoa_a01"             "totoa_a01"                              "ug m^-3"
-state    real  totoa_a02      ikj     misc          1         -      r         "totoa_a02"             "totoa_a02"                              "ug m^-3"
-state    real  totoa_a03      ikj     misc          1         -      r         "totoa_a03"             "totoa_a03"                              "ug m^-3"
-state    real  totoa_a04      ikj     misc          1         -      r         "totoa_a04"             "totoa_a04"                              "ug m^-3"
-state    real  totoa_a05      ikj     misc          1         -      r         "totoa_a05"             "totoa_a05"                              "ug m^-3"
-state    real  totoa_a06      ikj     misc          1         -      r         "totoa_a06"             "totoa_a06"                              "ug m^-3"
-state    real  totoa_a07      ikj     misc          1         -      r         "totoa_a07"             "totoa_a07"                              "ug m^-3"
-state    real  totoa_a08      ikj     misc          1         -      r         "totoa_a08"             "totoa_a08"                              "ug m^-3"
+state    real  totoa_a01    ikj     misc          1         -      r         "totoa_a01"             "totoa_a01"                              "ug m^-3"
+state    real  totoa_a02    ikj     misc          1         -      r         "totoa_a02"             "totoa_a02"                              "ug m^-3"
+state    real  totoa_a03    ikj     misc          1         -      r         "totoa_a03"             "totoa_a03"                              "ug m^-3"
+state    real  totoa_a04    ikj     misc          1         -      r         "totoa_a04"             "totoa_a04"                              "ug m^-3"
+state    real  totoa_a05    ikj     misc          1         -      r         "totoa_a05"             "totoa_a05"                              "ug m^-3"
+state    real  totoa_a06    ikj     misc          1         -      r         "totoa_a06"             "totoa_a06"                              "ug m^-3"
+state    real  totoa_a07    ikj     misc          1         -      r         "totoa_a07"             "totoa_a07"                              "ug m^-3"
+state    real  totoa_a08    ikj     misc          1         -      r         "totoa_a08"             "totoa_a08"                              "ug m^-3"
 
-state    real  hsoa_c          ikj     misc          1         -      r         "hsoa_c"                  "hsoa_c"                                "ug m^-3"
-state    real  hsoa_o          ikj     misc          1         -      r         "hsoa_o"                  "hsoa_o"                                "ug m^-3"
-state    real  bbsoa_c          ikj     misc          1         -      r         "bbsoa_c"                  "bbsoa_c"                                "ug m^-3"
-state    real  bbsoa_o          ikj     misc          1         -      r         "bbsoa_o"                  "bbsoa_o"                                "ug m^-3"
-state    real  biog_v1          ikj     misc          1         -      r         "biog_v1"                  "biog_v1"                                "ug m^-3"
-state    real  biog_v2          ikj     misc          1         -      r         "biog_v2"                  "biog_v2"                                "ug m^-3"
-state    real  biog_v3          ikj     misc          1         -      r         "biog_v3"                  "biog_v3"                                "ug m^-3"
-state    real  biog_v4          ikj     misc          1         -      r         "biog_v4"                  "biog_v4"                                "ug m^-3"
-state    real  ant_v1          ikj     misc          1         -      r         "ant_v1"                  "ant_v1"                                "ug m^-3"
-state    real  ant_v2          ikj     misc          1         -      r         "ant_v2"                  "ant_v2"                                "ug m^-3"
-state    real  ant_v3          ikj     misc          1         -      r         "ant_v3"                  "ant_v3"                                "ug m^-3"
-state    real  ant_v4          ikj     misc          1         -      r         "ant_v4"                  "ant_v4"                                "ug m^-3"
+state    real  hsoa_c       ikj     misc          1         -      -         "hsoa_c"                  "hsoa_c"                                "ug m^-3"
+state    real  hsoa_o       ikj     misc          1         -      -         "hsoa_o"                  "hsoa_o"                                "ug m^-3"
+state    real  bbsoa_c      ikj     misc          1         -      -         "bbsoa_c"                  "bbsoa_c"                                "ug m^-3"
+state    real  bbsoa_o      ikj     misc          1         -      -         "bbsoa_o"                  "bbsoa_o"                                "ug m^-3"
+state    real  biog_v1      ikj     misc          1         -      -         "biog_v1"                  "biog_v1"                                "ug m^-3"
+state    real  biog_v2      ikj     misc          1         -      -         "biog_v2"                  "biog_v2"                                "ug m^-3"
+state    real  biog_v3      ikj     misc          1         -      -         "biog_v3"                  "biog_v3"                                "ug m^-3"
+state    real  biog_v4      ikj     misc          1         -      -         "biog_v4"                  "biog_v4"                                "ug m^-3"
+state    real  ant_v1       ikj     misc          1         -      -         "ant_v1"                  "ant_v1"                                "ug m^-3"
+state    real  ant_v2       ikj     misc          1         -      -         "ant_v2"                  "ant_v2"                                "ug m^-3"
+state    real  ant_v3       ikj     misc          1         -      -         "ant_v3"                  "ant_v3"                                "ug m^-3"
+state    real  ant_v4       ikj     misc          1         -      -         "ant_v4"                  "ant_v4"                                "ug m^-3"
+
 state    integer  vbs_nbin      v         misc          1         -      r        "vbs_nbin"                  "vbs_nbin"                                ""
 
 #Diagnostic Aerosol species for cloud borne species
-state    real  hoa_cw01      ikj     misc          1         -      r         "hoa_cw01"             "hoa_cw01"                              "ug m^-3"
-state    real  hoa_cw02      ikj     misc          1         -      r         "hoa_cw02"             "hoa_cw02"                              "ug m^-3"
-state    real  hoa_cw03      ikj     misc          1         -      r         "hoa_cw03"             "hoa_cw03"                              "ug m^-3"
-state    real  hoa_cw04      ikj     misc          1         -      r         "hoa_cw04"             "hoa_cw04"                              "ug m^-3"
-state    real  hoa_cw05      ikj     misc          1         -      r         "hoa_cw05"             "hoa_cw05"                              "ug m^-3"
-state    real  hoa_cw06      ikj     misc          1         -      r         "hoa_cw06"             "hoa_cw06"                              "ug m^-3"
-state    real  hoa_cw07      ikj     misc          1         -      r         "hoa_cw07"             "hoa_cw07"                              "ug m^-3"
-state    real  hoa_cw08      ikj     misc          1         -      r         "hoa_cw08"             "hoa_cw08"                              "ug m^-3"
+state    real  hoa_cw01      ikj     misc          1         -      -         "hoa_cw01"             "hoa_cw01"                              "ug m^-3"
+state    real  hoa_cw02      ikj     misc          1         -      -         "hoa_cw02"             "hoa_cw02"                              "ug m^-3"
+state    real  hoa_cw03      ikj     misc          1         -      -         "hoa_cw03"             "hoa_cw03"                              "ug m^-3"
+state    real  hoa_cw04      ikj     misc          1         -      -         "hoa_cw04"             "hoa_cw04"                              "ug m^-3"
+state    real  hoa_cw05      ikj     misc          1         -      -         "hoa_cw05"             "hoa_cw05"                              "ug m^-3"
+state    real  hoa_cw06      ikj     misc          1         -      -         "hoa_cw06"             "hoa_cw06"                              "ug m^-3"
+state    real  hoa_cw07      ikj     misc          1         -      -         "hoa_cw07"             "hoa_cw07"                              "ug m^-3"
+state    real  hoa_cw08      ikj     misc          1         -      -         "hoa_cw08"             "hoa_cw08"                              "ug m^-3"
 
-state    real  soa_cw01      ikj     misc          1         -      r         "soa_cw01"             "soa_cw01"                              "ug m^-3"
-state    real  soa_cw02      ikj     misc          1         -      r         "soa_cw02"             "soa_cw02"                              "ug m^-3"
-state    real  soa_cw03      ikj     misc          1         -      r         "soa_cw03"             "soa_cw03"                              "ug m^-3"
-state    real  soa_cw04      ikj     misc          1         -      r         "soa_cw04"             "soa_cw04"                              "ug m^-3"
-state    real  soa_cw05      ikj     misc          1         -      r         "soa_cw05"             "soa_cw05"                              "ug m^-3"
-state    real  soa_cw06      ikj     misc          1         -      r         "soa_cw06"             "soa_cw06"                              "ug m^-3"
-state    real  soa_cw07      ikj     misc          1         -      r         "soa_cw07"             "soa_cw07"                              "ug m^-3"
-state    real  soa_cw08      ikj     misc          1         -      r         "soa_cw08"             "soa_cw08"                              "ug m^-3"
+state    real  soa_cw01      ikj     misc          1         -      -         "soa_cw01"             "soa_cw01"                              "ug m^-3"
+state    real  soa_cw02      ikj     misc          1         -      -         "soa_cw02"             "soa_cw02"                              "ug m^-3"
+state    real  soa_cw03      ikj     misc          1         -      -         "soa_cw03"             "soa_cw03"                              "ug m^-3"
+state    real  soa_cw04      ikj     misc          1         -      -         "soa_cw04"             "soa_cw04"                              "ug m^-3"
+state    real  soa_cw05      ikj     misc          1         -      -         "soa_cw05"             "soa_cw05"                              "ug m^-3"
+state    real  soa_cw06      ikj     misc          1         -      -         "soa_cw06"             "soa_cw06"                              "ug m^-3"
+state    real  soa_cw07      ikj     misc          1         -      -         "soa_cw07"             "soa_cw07"                              "ug m^-3"
+state    real  soa_cw08      ikj     misc          1         -      -         "soa_cw08"             "soa_cw08"                              "ug m^-3"
 
-state    real  bboa_cw01      ikj     misc          1         -      r         "bboa_cw01"             "bboa_cw01"                              "ug m^-3"
-state    real  bboa_cw02      ikj     misc          1         -      r         "bboa_cw02"             "bboa_cw02"                              "ug m^-3"
-state    real  bboa_cw03      ikj     misc          1         -      r         "bboa_cw03"             "bboa_cw03"                              "ug m^-3"
-state    real  bboa_cw04      ikj     misc          1         -      r         "bboa_cw04"             "bboa_cw04"                              "ug m^-3"
-state    real  bboa_cw05      ikj     misc          1         -      r         "bboa_cw05"             "bboa_cw05"                              "ug m^-3"
-state    real  bboa_cw06      ikj     misc          1         -      r         "bboa_cw06"             "bboa_cw06"                              "ug m^-3"
-state    real  bboa_cw07      ikj     misc          1         -      r         "bboa_cw07"             "bboa_cw07"                              "ug m^-3"
-state    real  bboa_cw08      ikj     misc          1         -      r         "bboa_cw08"             "bboa_cw08"                              "ug m^-3"
+state    real  bboa_cw01      ikj     misc          1         -      -         "bboa_cw01"             "bboa_cw01"                              "ug m^-3"
+state    real  bboa_cw02      ikj     misc          1         -      -         "bboa_cw02"             "bboa_cw02"                              "ug m^-3"
+state    real  bboa_cw03      ikj     misc          1         -      -         "bboa_cw03"             "bboa_cw03"                              "ug m^-3"
+state    real  bboa_cw04      ikj     misc          1         -      -         "bboa_cw04"             "bboa_cw04"                              "ug m^-3"
+state    real  bboa_cw05      ikj     misc          1         -      -         "bboa_cw05"             "bboa_cw05"                              "ug m^-3"
+state    real  bboa_cw06      ikj     misc          1         -      -         "bboa_cw06"             "bboa_cw06"                              "ug m^-3"
+state    real  bboa_cw07      ikj     misc          1         -      -         "bboa_cw07"             "bboa_cw07"                              "ug m^-3"
+state    real  bboa_cw08      ikj     misc          1         -      -         "bboa_cw08"             "bboa_cw08"                              "ug m^-3"
 
-state    real  bbsoa_cw01      ikj     misc          1         -      r         "bbsoa_cw01"             "bbsoa_cw01"                              "ug m^-3"
-state    real  bbsoa_cw02      ikj     misc          1         -      r         "bbsoa_cw02"             "bbsoa_cw02"                              "ug m^-3"
-state    real  bbsoa_cw03      ikj     misc          1         -      r         "bbsoa_cw03"             "bbsoa_cw03"                              "ug m^-3"
-state    real  bbsoa_cw04      ikj     misc          1         -      r         "bbsoa_cw04"             "bbsoa_cw04"                              "ug m^-3"
-state    real  bbsoa_cw05      ikj     misc          1         -      r         "bbsoa_cw05"             "bbsoa_cw05"                              "ug m^-3"
-state    real  bbsoa_cw06      ikj     misc          1         -      r         "bbsoa_cw06"             "bbsoa_cw06"                              "ug m^-3"
-state    real  bbsoa_cw07      ikj     misc          1         -      r         "bbsoa_cw07"             "bbsoa_cw07"                              "ug m^-3"
-state    real  bbsoa_cw08      ikj     misc          1         -      r         "bbsoa_cw08"             "bbsoa_cw08"                              "ug m^-3"
+state    real  bbsoa_cw01      ikj     misc          1         -      -         "bbsoa_cw01"             "bbsoa_cw01"                              "ug m^-3"
+state    real  bbsoa_cw02      ikj     misc          1         -      -         "bbsoa_cw02"             "bbsoa_cw02"                              "ug m^-3"
+state    real  bbsoa_cw03      ikj     misc          1         -      -         "bbsoa_cw03"             "bbsoa_cw03"                              "ug m^-3"
+state    real  bbsoa_cw04      ikj     misc          1         -      -         "bbsoa_cw04"             "bbsoa_cw04"                              "ug m^-3"
+state    real  bbsoa_cw05      ikj     misc          1         -      -         "bbsoa_cw05"             "bbsoa_cw05"                              "ug m^-3"
+state    real  bbsoa_cw06      ikj     misc          1         -      -         "bbsoa_cw06"             "bbsoa_cw06"                              "ug m^-3"
+state    real  bbsoa_cw07      ikj     misc          1         -      -         "bbsoa_cw07"             "bbsoa_cw07"                              "ug m^-3"
+state    real  bbsoa_cw08      ikj     misc          1         -      -         "bbsoa_cw08"             "bbsoa_cw08"                              "ug m^-3"
 
-state    real  hsoa_cw01      ikj     misc          1         -      r         "hsoa_cw01"             "hsoa_cw01"                              "ug m^-3"
-state    real  hsoa_cw02      ikj     misc          1         -      r         "hsoa_cw02"             "hsoa_cw02"                              "ug m^-3"
-state    real  hsoa_cw03      ikj     misc          1         -      r         "hsoa_cw03"             "hsoa_cw03"                              "ug m^-3"
-state    real  hsoa_cw04      ikj     misc          1         -      r         "hsoa_cw04"             "hsoa_cw04"                              "ug m^-3"
-state    real  hsoa_cw05      ikj     misc          1         -      r         "hsoa_cw05"             "hsoa_cw05"                              "ug m^-3"
-state    real  hsoa_cw06      ikj     misc          1         -      r         "hsoa_cw06"             "hsoa_cw06"                              "ug m^-3"
-state    real  hsoa_cw07      ikj     misc          1         -      r         "hsoa_cw07"             "hsoa_cw07"                              "ug m^-3"
-state    real  hsoa_cw08      ikj     misc          1         -      r         "hsoa_cw08"             "hsoa_cw08"                              "ug m^-3"
+state    real  hsoa_cw01      ikj     misc          1         -      -         "hsoa_cw01"             "hsoa_cw01"                              "ug m^-3"
+state    real  hsoa_cw02      ikj     misc          1         -      -         "hsoa_cw02"             "hsoa_cw02"                              "ug m^-3"
+state    real  hsoa_cw03      ikj     misc          1         -      -         "hsoa_cw03"             "hsoa_cw03"                              "ug m^-3"
+state    real  hsoa_cw04      ikj     misc          1         -      -         "hsoa_cw04"             "hsoa_cw04"                              "ug m^-3"
+state    real  hsoa_cw05      ikj     misc          1         -      -         "hsoa_cw05"             "hsoa_cw05"                              "ug m^-3"
+state    real  hsoa_cw06      ikj     misc          1         -      -         "hsoa_cw06"             "hsoa_cw06"                              "ug m^-3"
+state    real  hsoa_cw07      ikj     misc          1         -      -         "hsoa_cw07"             "hsoa_cw07"                              "ug m^-3"
+state    real  hsoa_cw08      ikj     misc          1         -      -         "hsoa_cw08"             "hsoa_cw08"                              "ug m^-3"
 
-state    real  biog_cw01      ikj     misc          1         -      r         "biog_cw01"             "biog_cw01"                              "ug m^-3"
-state    real  biog_cw02      ikj     misc          1         -      r         "biog_cw02"             "biog_cw02"                              "ug m^-3"
-state    real  biog_cw03      ikj     misc          1         -      r         "biog_cw03"             "biog_cw03"                              "ug m^-3"
-state    real  biog_cw04      ikj     misc          1         -      r         "biog_cw04"             "biog_cw04"                              "ug m^-3"
-state    real  biog_cw05      ikj     misc          1         -      r         "biog_cw05"             "biog_cw05"                              "ug m^-3"
-state    real  biog_cw06      ikj     misc          1         -      r         "biog_cw06"             "biog_cw06"                              "ug m^-3"
-state    real  biog_cw07      ikj     misc          1         -      r         "biog_cw07"             "biog_cw07"                              "ug m^-3"
-state    real  biog_cw08      ikj     misc          1         -      r         "biog_cw08"             "biog_cw08"                              "ug m^-3"
+state    real  biog_cw01      ikj     misc          1         -      -         "biog_cw01"             "biog_cw01"                              "ug m^-3"
+state    real  biog_cw02      ikj     misc          1         -      -         "biog_cw02"             "biog_cw02"                              "ug m^-3"
+state    real  biog_cw03      ikj     misc          1         -      -         "biog_cw03"             "biog_cw03"                              "ug m^-3"
+state    real  biog_cw04      ikj     misc          1         -      -         "biog_cw04"             "biog_cw04"                              "ug m^-3"
+state    real  biog_cw05      ikj     misc          1         -      -         "biog_cw05"             "biog_cw05"                              "ug m^-3"
+state    real  biog_cw06      ikj     misc          1         -      -         "biog_cw06"             "biog_cw06"                              "ug m^-3"
+state    real  biog_cw07      ikj     misc          1         -      -         "biog_cw07"             "biog_cw07"                              "ug m^-3"
+state    real  biog_cw08      ikj     misc          1         -      -         "biog_cw08"             "biog_cw08"                              "ug m^-3"
 
-state    real  arosoa_cw01      ikj     misc          1         -    r         "arosoa_cw01"             "arosoa_cw01"                              "ug m^-3"
-state    real  arosoa_cw02      ikj     misc          1         -    r         "arosoa_cw02"             "arosoa_cw02"                              "ug m^-3"
-state    real  arosoa_cw03      ikj     misc          1         -    r         "arosoa_cw03"             "arosoa_cw03"                              "ug m^-3"
-state    real  arosoa_cw04      ikj     misc          1         -     r         "arosoa_cw04"             "arosoa_cw04"                              "ug m^-3"
-state    real  arosoa_cw05      ikj     misc          1         -      r         "arosoa_cw05"             "arosoa_cw05"                              "ug m^-3"
-state    real  arosoa_cw06      ikj     misc          1         -      r         "arosoa_cw06"             "arosoa_cw06"                              "ug m^-3"
-state    real  arosoa_cw07      ikj     misc          1         -      r         "arosoa_cw07"             "arosoa_cw07"                              "ug m^-3"
-state    real  arosoa_cw08      ikj     misc          1         -      r         "arosoa_cw08"             "arosoa_cw08"                              "ug m^-3"
+state    real  arosoa_cw01      ikj     misc          1         -    -         "arosoa_cw01"             "arosoa_cw01"                              "ug m^-3"
+state    real  arosoa_cw02      ikj     misc          1         -    -         "arosoa_cw02"             "arosoa_cw02"                              "ug m^-3"
+state    real  arosoa_cw03      ikj     misc          1         -    -         "arosoa_cw03"             "arosoa_cw03"                              "ug m^-3"
+state    real  arosoa_cw04      ikj     misc          1         -    -         "arosoa_cw04"             "arosoa_cw04"                              "ug m^-3"
+state    real  arosoa_cw05      ikj     misc          1         -    -         "arosoa_cw05"             "arosoa_cw05"                              "ug m^-3"
+state    real  arosoa_cw06      ikj     misc          1         -    -         "arosoa_cw06"             "arosoa_cw06"                              "ug m^-3"
+state    real  arosoa_cw07      ikj     misc          1         -    -         "arosoa_cw07"             "arosoa_cw07"                              "ug m^-3"
+state    real  arosoa_cw08      ikj     misc          1         -    -         "arosoa_cw08"             "arosoa_cw08"                              "ug m^-3"
 
-state    real  totoa_cw01      ikj     misc          1         -      r         "totoa_cw01"             "totoa_cw01"                              "ug m^-3"
-state    real  totoa_cw02      ikj     misc          1         -      r         "totoa_cw02"             "totoa_cw02"                              "ug m^-3"
-state    real  totoa_cw03      ikj     misc          1         -      r         "totoa_cw03"             "totoa_cw03"                              "ug m^-3"
-state    real  totoa_cw04      ikj     misc          1         -      r         "totoa_cw04"             "totoa_cw04"                              "ug m^-3"
-state    real  totoa_cw05      ikj     misc          1         -      r         "totoa_cw05"             "totoa_cw05"                              "ug m^-3"
-state    real  totoa_cw06      ikj     misc          1         -      r         "totoa_cw06"             "totoa_cw06"                              "ug m^-3"
-state    real  totoa_cw07      ikj     misc          1         -      r         "totoa_cw07"             "totoa_cw07"                              "ug m^-3"
-state    real  totoa_cw08      ikj     misc          1         -      r         "totoa_cw08"             "totoa_cw08"                              "ug m^-3"
+state    real  totoa_cw01      ikj     misc          1         -      -         "totoa_cw01"             "totoa_cw01"                              "ug m^-3"
+state    real  totoa_cw02      ikj     misc          1         -      -         "totoa_cw02"             "totoa_cw02"                              "ug m^-3"
+state    real  totoa_cw03      ikj     misc          1         -      -         "totoa_cw03"             "totoa_cw03"                              "ug m^-3"
+state    real  totoa_cw04      ikj     misc          1         -      -         "totoa_cw04"             "totoa_cw04"                              "ug m^-3"
+state    real  totoa_cw05      ikj     misc          1         -      -         "totoa_cw05"             "totoa_cw05"                              "ug m^-3"
+state    real  totoa_cw06      ikj     misc          1         -      -         "totoa_cw06"             "totoa_cw06"                              "ug m^-3"
+state    real  totoa_cw07      ikj     misc          1         -      -         "totoa_cw07"             "totoa_cw07"                              "ug m^-3"
+state    real  totoa_cw08      ikj     misc          1         -      -         "totoa_cw08"             "totoa_cw08"                              "ug m^-3"
 
-state    real  hsoa_cw_c          ikj     misc          1         -      r         "hsoa_cw_c"                  "hsoa_cw_c"                                "ug m^-3"
-state    real  hsoa_cw_o          ikj     misc          1         -      r         "hsoa_cw_o"                  "hsoa_cw_o"                                "ug m^-3"
-state    real  bbsoa_cw_c          ikj     misc          1         -      r         "bbsoa_cw_c"                  "bbsoa_cw_c"                                "ug m^-3"
-state    real  bbsoa_cw_o          ikj     misc          1         -      r         "bbsoa_cw_o"                  "bbsoa_cw_o"                                "ug m^-3"
-state    real  ant_cw_v1          ikj     misc          1         -      r         "ant_cw_v1"                  "ant_cw_v1"                                "ug m^-3"
-state    real  biog_cw_v1          ikj     misc          1         -      r         "biog_cw_v1"                  "biog_cw_v1"                                "ug m^-3"
+state    real  hsoa_cw_c          ikj     misc          1      -      -         "hsoa_cw_c"                  "hsoa_cw_c"                                "ug m^-3"
+state    real  hsoa_cw_o          ikj     misc          1      -      -         "hsoa_cw_o"                  "hsoa_cw_o"                                "ug m^-3"
+state    real  bbsoa_cw_c          ikj     misc         1      -      -         "bbsoa_cw_c"                  "bbsoa_cw_c"                                "ug m^-3"
+state    real  bbsoa_cw_o          ikj     misc         1      -      -         "bbsoa_cw_o"                  "bbsoa_cw_o"                                "ug m^-3"
+state    real  ant_cw_v1          ikj     misc          1      -      -         "ant_cw_v1"                  "ant_cw_v1"                                "ug m^-3"
+state    real  biog_cw_v1          ikj     misc         1      -      -         "biog_cw_v1"                  "biog_cw_v1"                                "ug m^-3"
 
-state    real  smpa_v1          ikj     misc          1         -      r         "smpa_v1"                  "smpa_v1"                                "ug m^-3"
-state    real  smpbb_v1          ikj     misc          1         -      r         "smpbb_v1"                  "smpbb_v1"                                "ug m^-3"
-state    real  asmpsoa_a01      ikj     misc          1         -      r         "asmpsoa_a01"             "asmpsoa_a01"                              "ug m^-3"
-state    real  asmpsoa_a02      ikj     misc          1         -      r         "asmpsoa_a02"             "asmpsoa_a02"                              "ug m^-3"
-state    real  asmpsoa_a03      ikj     misc          1         -      r         "asmpsoa_a03"             "asmpsoa_a03"                              "ug m^-3"
-state    real  asmpsoa_a04      ikj     misc          1         -      r         "asmpsoa_a04"             "asmpsoa_a04"                              "ug m^-3"
-
+state    real  smpa_v1          ikj     misc          1         -      -         "smpa_v1"                  "smpa_v1"                                "ug m^-3"
+state    real  smpbb_v1         ikj     misc          1         -      -         "smpbb_v1"                  "smpbb_v1"                                "ug m^-3"
+state    real  asmpsoa_a01      ikj     misc          1         -      -         "asmpsoa_a01"             "asmpsoa_a01"                              "ug m^-3"
+state    real  asmpsoa_a02      ikj     misc          1         -      -         "asmpsoa_a02"             "asmpsoa_a02"                              "ug m^-3"
+state    real  asmpsoa_a03      ikj     misc          1         -      -         "asmpsoa_a03"             "asmpsoa_a03"                              "ug m^-3"
+state    real  asmpsoa_a04      ikj     misc          1         -      -         "asmpsoa_a04"             "asmpsoa_a04"                              "ug m^-3"
 
 # photolysis rates
 state    real  ph_o31d         ikj     misc        1         -      r        "PHOTR2"                "O31D Photolysis Rate" "min{-1}"
@@ -1389,6 +1388,7 @@ state    real  l4aer          ikj=     misc        1         -      r        "L4
 state    real  l5aer          ikj=     misc        1         -      r        "L5AER"                 "legendre polynomial 5" "?"
 state    real  l6aer          ikj=     misc        1         -      r        "L6AER"                 "legendre polynomial 6" "?"
 state    real  l7aer          ikj=     misc        1         -      r        "L7AER"                 "legendre polynomial 7" "?"
+
 # chem variables for "cup" convective cloud parameterization
 state    integer  chem_cupflag   ikj   misc        1         -      -        "CHEM_CUPFLAG"          "flag for cup chemistry - positive when there is cup conv. cloud chemistry at ikj"
 
@@ -1428,7 +1428,6 @@ state    real  cl_a_5to6_ic_cup  ikj   misc        1         -      -        "Cl
 state    real  cl_cw_5to6_ic_cup ikj   misc        1         -      -        "Cl_CW_5to6_IC_CUP"     "cloud-borne  sulfate (Ddry>625 nm and Ddry<2500) within convective cloud" "ug/kg-dryair"
 state    real  water_1to4_ic_cup  ikj   misc        1         -      -        "WATER_1to4_IC_CUP"      "interstitial sulfate (Ddry<625 nm) within convective cloud" "ug/kg-dryair"
 state    real  water_5to6_ic_cup  ikj   misc        1         -      -        "WATER_5to6_IC_CUP"      "interstitial sulfate (Ddry>625 nm and Ddry<2500) within convective cloud" "ug/kg-dryair"
-
 
 
 # non-transported aerosol variables
@@ -1490,25 +1489,25 @@ state   real   tbu_o       ikj     misc    1       -       r       "tbu_o" "Radi
 # Additional variables for CO2 and GHG options
 # The following variables are to run the VPRM model; The vegfra_vprm is for VPRM only and it's different than VEGFRA in wrfinput
 state   real     -               i{ghgv}jf    vprm_in     -        -     -          -              "VPRM input fields"                  ""
-state   real   vegfra_vprm       i{ghgv}jf    vprm_in     1        -     i{15}rh  "VEGFRA_VPRM"    " " " "
-state   real   evi               i{ghgv}jf    vprm_in     1        -     i{15}rh  "EVI"            " " " "
-state   real   evi_min           i{ghgv}jf    vprm_in     1        -     i{15}rh  "EVI_MIN"         " " " "
-state   real   evi_max           i{ghgv}jf    vprm_in     1        -     i{15}rh  "EVI_MAX"         " " " "
-state   real   lswi              i{ghgv}jf    vprm_in     1        -     i{15}rh  "LSWI"           " " " "
-state   real   lswi_max          i{ghgv}jf    vprm_in     1        -     i{15}rh  "LSWI_MAX"        " " " "
-state   real   lswi_min          i{ghgv}jf    vprm_in     1        -     i{15}rh  "LSWI_MIN"        " " " "
+state   real   vegfra_vprm       i{ghgv}jf    vprm_in     1        -     i{15}r  "VEGFRA_VPRM"    " " " "
+state   real   evi               i{ghgv}jf    vprm_in     1        -     i{15}r  "EVI"            " " " "
+state   real   evi_min           i{ghgv}jf    vprm_in     1        -     i{15}r  "EVI_MIN"         " " " "
+state   real   evi_max           i{ghgv}jf    vprm_in     1        -     i{15}r  "EVI_MAX"         " " " "
+state   real   lswi              i{ghgv}jf    vprm_in     1        -     i{15}r  "LSWI"           " " " "
+state   real   lswi_max          i{ghgv}jf    vprm_in     1        -     i{15}r  "LSWI_MAX"        " " " "
+state   real   lswi_min          i{ghgv}jf    vprm_in     1        -     i{15}r  "LSWI_MIN"        " " " "
 
 # VPRM parameters to constrain GEE and RESP fluxes
-state   real   rad_vprm          {ghgv}       misc        1        -     h  "RAD_VPRM"      " " " "
-state   real   lambda_vprm       {ghgv}       misc        1        -     h  "LAMBDA_VPRM"   " " " "
-state   real   alpha_vprm        {ghgv}       misc        1        -     h  "ALPHA_VPRM"    " " " "
-state   real   resp_vprm         {ghgv}       misc        1        -     h  "RESP_VPRM"     " " " "
+state   real   rad_vprm          {ghgv}       misc        1        -     -  "RAD_VPRM"      " " " "
+state   real   lambda_vprm       {ghgv}       misc        1        -     -  "LAMBDA_VPRM"   " " " "
+state   real   alpha_vprm        {ghgv}       misc        1        -     -  "ALPHA_VPRM"    " " " "
+state   real   resp_vprm         {ghgv}       misc        1        -     -  "RESP_VPRM"     " " " "
 
 # Parameters and fields to run the Kaplan model
 state   real     -               ivjf          wet_in      -        -     -          -          "Wetland input fields"           ""
-state   real   cpool             ivjf          wet_in      1        -     i{15}rh    "CPOOL"    "LPJ Carbon pool"                "gC/m^2"
-state   real   wetmap            ivjf          wet_in      1        -     i{15}rh    "WETMAP"   "Kaplan potential wetland map"   ""
-state   real   t_ann             ivjf          wet_in      1        -     i{15}rh    "T_ANN"    "mean annual temperature"        "K"
+state   real   cpool             ivjf          wet_in      1        -     i{15}r    "CPOOL"    "LPJ Carbon pool"                "gC/m^2"
+state   real   wetmap            ivjf          wet_in      1        -     i{15}r    "WETMAP"   "Kaplan potential wetland map"   ""
+state   real   t_ann             ivjf          wet_in      1        -     i{15}r    "T_ANN"    "mean annual temperature"        "K"
 
 # Parameters to for calculating the termite emissions online
 state   real   biomt_par         {ghgt}       misc        1        -     -    "BIOMT_PAR"    "biomass termite per vegetation type"  "g/m^2"
@@ -1659,11 +1658,7 @@ state   real   biog4_o       ikjftb   chem        1         -   i0{12}rhusdf=(bd
 state   real   smpa       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "smpa"         "smpa mixing ratio"        "ppmv"
 state   real   smpbb       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "smpbb"         "smpbb mixing ratio"        "ppmv"
 
-
-
-
 #RACM has a few more variables to those of RADM2 (ETE is equivilant to OL2 from RADM2)
-
 state   real   ete         ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)   "ete"           "ETE mixing ratio"         "ppmv"
 state   real   co2         ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)   "co2"           "CO2 mixing ratio"         "ppmv"
 state   real   ch4         ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)   "ch4"           "CH4 mixing ratio"         "ppmv"
@@ -2041,7 +2036,6 @@ state   real   tracer_ens    ikjftb   chem        1         -   i0{12}rhusdf=(bd
 
 state   real    -          ikjftb  tracer        1         -     -    -                                       
 state   real    smoke      ikjftb  tracer        1         -     irhusdf=(bdy_interp:dt)    "smoke"         "tracing smoke"          -
-#state   real    tr17_0     ikjftb  tracer        1         -     i8rhusdf=(bdy_interp:dt)    "tr17_0"         "tr17_0"          -
 state   real    tr17_1     ikjftb  tracer        1         -     i8rhusdf=(bdy_interp:dt)    "tr17_1"         "tr17_1"          -
 state   real    tr17_2     ikjftb  tracer        1         -     i8rhusdf=(bdy_interp:dt)    "tr17_2"         "tr17_2"          -
 state   real    tr17_3     ikjftb  tracer        1         -     i8rhusdf=(bdy_interp:dt)    "tr17_3"         "tr17_3"          -
@@ -2050,7 +2044,6 @@ state   real    tr17_5     ikjftb  tracer        1         -     i8rhusdf=(bdy_i
 state   real    tr17_6     ikjftb  tracer        1         -     i8rhusdf=(bdy_interp:dt)    "tr17_6"         "tr17_6"          -
 state   real    tr17_7     ikjftb  tracer        1         -     i8rhusdf=(bdy_interp:dt)    "tr17_7"         "tr17_7"          -
 state   real    tr17_8     ikjftb  tracer        1         -     i8rhusdf=(bdy_interp:dt)    "tr17_8"         "tr17_8"          -
-#state   real    tr17_9     ikjftb  tracer        1         -     i8rhusdf=(bdy_interp:dt)    "tr17_9"         "tr17_9"          -
 state   real    tr18_0     ikjftb  tracer        1         -     i8rhusdf=(bdy_interp:dt)    "tr18_0"         "tr18_0"          -
 state   real    tr18_1     ikjftb  tracer        1         -     i8rhusdf=(bdy_interp:dt)    "tr18_1"         "tr18_1"          -
 state   real    tr18_2     ikjftb  tracer        1         -     i8rhusdf=(bdy_interp:dt)    "tr18_2"         "tr18_2"          -
@@ -2327,9 +2320,8 @@ state   real   ison        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_
 state   real   mahp        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)        "mahp"              "MAHP concentration"      "ppm"
 state   real   mpan        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)        "mpan"              "MPAN concentration"      "ppm"
 state   real   nald        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)        "nald"              "NALD concentration"      "ppm"
-#cms-- note: ison is probably quite soluble 
-#Additional MOSAIC aerosol variables inside the chem array...
 
+#Additional MOSAIC aerosol variables inside the chem array...
 state   real   so4_a01     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "so4_a01"       "Sulfate, aerosol bin 01"     "ug/kg-dryair"
 state   real   no3_a01     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "no3_a01"       "Nitrate, aerosol bin 01"     "ug/kg-dryair"
 state   real   aro1_a01    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "aro1_a01"       "ARO1, aerosol bin 01"     "ug/kg-dryair"
@@ -3507,9 +3499,8 @@ state   real   opcg1_f_c_cw08  ikjftb   chem      1         -    irusdf=(bdy_int
 state   real   opcg1_f_o_cw08  ikjftb   chem      1         -    irusdf=(bdy_interp:dt)  "opcg1_f_o_cw08"    "opcg1_f_o_cw08, aerosol bin 01"  "ug/kg-dryair"
 state   real   ant1_c_cw08  ikjftb   chem      1         -    irusdf=(bdy_interp:dt)  "ant1_c_cw08"    "ant1_c_cw08, aerosol bin 01"  "ug/kg-dryair"
 state   real   biog1_c_cw08  ikjftb   chem      1         -    irusdf=(bdy_interp:dt)  "biog1_c_cw08"    "biog1_c_cw08, aerosol bin 01"  "ug/kg-dryair"
-
-
 #BSINGH -ENDS
+
 # GOCART Aerosols
 state   real   bc1          ikjftb   chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "BC1"       "Hydrophobic Black Carbon"     "ug/kg-dryair"
 state   real   bc2          ikjftb   chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "BC2"       "Hydrophilic Black Carbon"     "ug/kg-dryair"
@@ -3528,7 +3519,6 @@ state   real   seas_3       ikjftb   chem       1         -   i0{12}rhusdf=(bdy_
 state   real   seas_4       ikjftb   chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "SEAS_4"    "sea-salt size bin 4: 7.5um effective radius"     "ug/kg-dryair"
 
 #Additional CAM modal aerosol variables inside the chem array...
-
 state   real   soag        ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "soag"      "Gas-phase SOA"                      "ppmv"
 
 state   real   so4_a1      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "so4_a1"    "Sulfate aerosol, mode 1"            "ug/kg-dryair"
@@ -3618,6 +3608,7 @@ state   real   so4_c7      ikjftb   chem        1         -   irhusdf=(bdy_inter
 state   real   nh4_c7      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "nh4_c7"    "Ammonium aerosol, mode 7"           "ug/kg-dryair"
 state   real   dst_c7      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "dst_c7"    "Dust aerosol, mode 7"               "ug/kg-dryair"
 state   real   num_c7      ikjftb   chem        1         -   irhusdf=(bdy_interp:dt)  "num_c7"    "Aerosol number, mode 7"             "#/kg-dryair"
+
 # KPP Mechanism from MATCH-MPI MAINZ global chemistry
 state   real    pa       ikjftb   chem        1         -     i0{12}rhusdf=(bdy_interp:dt)         "pa"          ""         "" 
 state   real    aca      ikjftb   chem        1         -     i0{12}rhusdf=(bdy_interp:dt)         "aca"        ""         "" 
@@ -3663,14 +3654,6 @@ state   real    meo2no2  ikjftb   chem        1         -     i0{12}rhusdf=(bdy_
 
 #End MATCH-MPI MAINZ global chemistry
 
-# time averaged stuff
-#state integer  STEPAVE_COUNT     -        misc        1         -      r      "STEPAVE_COUNT"        "time steps contained in averages for convective transport" ""
-#state    real  RAINCV_A           ij      misc        1         -      r      "RAINCV_A"             "taveragd TIME-STEP CUMULUS PRECIPITATION"                         "mm"
-#state    real  RAINCV_B           ij      misc        1         -      r      "RAINCV_B"             "taveragd TIME-STEP CUMULUS PRECIPITATION"                         "mm"
-#state    real  GD_CLOUD_A        ikj      misc        1         -      r      "GD_CLOUD_A"           "taveragd CLOUD WATER MIXING RAIO IN GD CLOUD"         "kg kg-1"
-#state    real  GD_CLOUD2_A       ikj      misc        1         -      r      "GD_CLOUD2_A"          "taveragd cloud ice mix ratio in GD"         "kg kg-1"
-#state    real  GD_CLOUD_B        ikj      misc        1         -      r      "GD_CLOUD_B"           "taveragd CLOUD WATER MIXING RAIO IN GD CLOUD"         "kg kg-1"
-#state    real  GD_CLOUD2_B       ikj      misc        1         -      r      "GD_CLOUD2_B"          "taveragd cloud ice mix ratio in GD"         "kg kg-1"
 state integer  STEPBIOE          -        misc        1         -      r      "STEPBIOE"             "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN BIOGENIC EMIS CALLS"             "NA"
 state integer  STEPPHOT          -        misc     1         -      r        "STEPPHOT"              "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN PHOTOLYSIS CALLS"             "NA"
 state integer  STEPCHEM          -        misc     1         -      r        "STEPCHEM"              "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN CHEM MECH CALLS"             "NA"
@@ -3752,8 +3735,11 @@ rconfig   integer     phot_opt            namelist,chem          max_domains    
 rconfig   integer     gas_drydep_opt      namelist,chem          max_domains    1       rh    "gas_drydep_opt"      ""      ""
 rconfig   integer     aer_drydep_opt      namelist,chem          max_domains    1       rh    "aer_drydep_opt"      ""      ""
 rconfig   integer     diagnostic_chem     namelist,chem          max_domains    1       rh    "diagnostic_chem"     ""      ""
+rconfig   integer     aero_diag_opt       namelist,chem          max_domains    0       rh    "diagnostic_aerosol"  ""      ""
+rconfig   integer     aero_cw_diag_opt    namelist,chem          max_domains    0       rh    "diagnostic_cw_aerosol"     ""      ""
+rconfig   integer     kfcup_diag          namelist,chem          max_domains    0       rh    "kfcup_daig"          ""      ""
 rconfig   integer     aer_aerodynres_opt  namelist,chem          max_domains    1       rh    "aer_aerodynres_opt"  ""      ""
-rconfig   integer     emiss_opt           namelist,chem          max_domains    4       rh    "emiss_opt"           ""      ""
+rconfig   integer     emiss_opt           namelist,chem          max_domains    0       rh    "emiss_opt"           ""      ""
 rconfig   integer     emiss_opt_vol       namelist,chem          max_domains    0       rh    "emiss_opt_vol"       ""      ""
 rconfig   integer     dust_opt            namelist,chem          1              0       rh    "dust_opt"            ""      ""
 rconfig   integer     dust_schme          namelist,chem          1              2       rh    "dust_schme"       ""      ""
@@ -3834,9 +3820,6 @@ package   radm2sorg     chem_opt==2                  -             chem:so2,sulf
 package   cbmz          chem_opt==5                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,dms,msa,dmso,dmso2,ch3so2h,ch3sch2oo,ch3so2,ch3so3,ch3so2oo,ch3so2ch2oo,mtf
 package   cbmz_bb       chem_opt==6                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2
 package   cbmz_mosaic_4bin chem_opt==7               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04
-#Normal cbmz_mosaic_8bin package
-#package   cbmz_mosaic_8bin chem_opt==8               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04,so4_a05,no3_a05,cl_a05,nh4_a05,na_a05,oin_a05,oc_a05,bc_a05,hysw_a05,water_a05,num_a05,so4_a06,no3_a06,cl_a06,nh4_a06,na_a06,oin_a06,oc_a06,bc_a06,hysw_a06,water_a06,num_a06,so4_a07,no3_a07,cl_a07,nh4_a07,na_a07,oin_a07,oc_a07,bc_a07,hysw_a07,water_a07,num_a07,so4_a08,no3_a08,cl_a08,nh4_a08,na_a08,oin_a08,oc_a08,bc_a08,hysw_a08,water_a08,num_a08
-#Alternative cbmz_mosaic_8bin with dust chemistry (ca & co aerosol)
 package   cbmz_mosaic_8bin chem_opt==8               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04,so4_a05,no3_a05,cl_a05,nh4_a05,na_a05,oin_a05,oc_a05,bc_a05,hysw_a05,water_a05,num_a05,so4_a06,no3_a06,cl_a06,nh4_a06,na_a06,oin_a06,oc_a06,bc_a06,hysw_a06,water_a06,num_a06,so4_a07,no3_a07,cl_a07,nh4_a07,na_a07,oin_a07,oc_a07,bc_a07,hysw_a07,water_a07,num_a07,so4_a08,no3_a08,cl_a08,nh4_a08,na_a08,oin_a08,oc_a08,bc_a08,hysw_a08,water_a08,num_a08,ca_a01,ca_a02,ca_a03,ca_a04,ca_a05,ca_a06,ca_a07,ca_a08,co3_a01,co3_a02,co3_a03,co3_a04,co3_a05,co3_a06,co3_a07,co3_a08
 package   cbmz_mosaic_4bin_aq  chem_opt==9           -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04,so4_cw01,no3_cw01,cl_cw01,nh4_cw01,na_cw01,oin_cw01,oc_cw01,bc_cw01,num_cw01,so4_cw02,no3_cw02,cl_cw02,nh4_cw02,na_cw02,oin_cw02,oc_cw02,bc_cw02,num_cw02,so4_cw03,no3_cw03,cl_cw03,nh4_cw03,na_cw03,oin_cw03,oc_cw03,bc_cw03,num_cw03,so4_cw04,no3_cw04,cl_cw04,nh4_cw04,na_cw04,oin_cw04,oc_cw04,bc_cw04,num_cw04
 package   cbmz_mosaic_8bin_aq  chem_opt==10          -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04,so4_a05,no3_a05,cl_a05,nh4_a05,na_a05,oin_a05,oc_a05,bc_a05,hysw_a05,water_a05,num_a05,so4_a06,no3_a06,cl_a06,nh4_a06,na_a06,oin_a06,oc_a06,bc_a06,hysw_a06,water_a06,num_a06,so4_a07,no3_a07,cl_a07,nh4_a07,na_a07,oin_a07,oc_a07,bc_a07,hysw_a07,water_a07,num_a07,so4_a08,no3_a08,cl_a08,nh4_a08,na_a08,oin_a08,oc_a08,bc_a08,hysw_a08,water_a08,num_a08,so4_cw01,no3_cw01,cl_cw01,nh4_cw01,na_cw01,oin_cw01,oc_cw01,bc_cw01,num_cw01,so4_cw02,no3_cw02,cl_cw02,nh4_cw02,na_cw02,oin_cw02,oc_cw02,bc_cw02,num_cw02,so4_cw03,no3_cw03,cl_cw03,nh4_cw03,na_cw03,oin_cw03,oc_cw03,bc_cw03,num_cw03,so4_cw04,no3_cw04,cl_cw04,nh4_cw04,na_cw04,oin_cw04,oc_cw04,bc_cw04,num_cw04,so4_cw05,no3_cw05,cl_cw05,nh4_cw05,na_cw05,oin_cw05,oc_cw05,bc_cw05,num_cw05,so4_cw06,no3_cw06,cl_cw06,nh4_cw06,na_cw06,oin_cw06,oc_cw06,bc_cw06,num_cw06,so4_cw07,no3_cw07,cl_cw07,nh4_cw07,na_cw07,oin_cw07,oc_cw07,bc_cw07,num_cw07,so4_cw08,no3_cw08,cl_cw08,nh4_cw08,na_cw08,oin_cw08,oc_cw08,bc_cw08,num_cw08
@@ -3903,15 +3886,11 @@ package   cb05_sorg_vbs_aq_kpp          chem_opt==132                 -         
 package   cbmz_mosaic_kpp chem_opt==170               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,ch4,aro1,aro2,alk1,ole1,api1,api2,lim1,lim2,api,lim,isopo2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,aro1_a01,aro2_a01,alk1_a01,ole1_a01,api1_a01,api2_a01,lim1_a01,lim2_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,aro1_a02,aro2_a02,alk1_a02,ole1_a02,api1_a02,api2_a02,lim1_a02,lim2_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,aro1_a03,aro2_a03,alk1_a03,ole1_a03,api1_a03,api2_a03,lim1_a03,lim2_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,aro1_a04,aro2_a04,alk1_a04,ole1_a04,api1_a04,api2_a04,lim1_a04,lim2_a04,num_a04,so4_a05,no3_a05,cl_a05,nh4_a05,na_a05,oin_a05,oc_a05,bc_a05,hysw_a05,water_a05,aro1_a05,aro2_a05,alk1_a05,ole1_a05,api1_a05,api2_a05,lim1_a05,lim2_a05,num_a05,so4_a06,no3_a06,cl_a06,nh4_a06,na_a06,oin_a06,oc_a06,bc_a06,hysw_a06,water_a06,aro1_a06,aro2_a06,alk1_a06,ole1_a06,api1_a06,api2_a06,lim1_a06,lim2_a06,num_a06,so4_a07,no3_a07,cl_a07,nh4_a07,na_a07,oin_a07,oc_a07,bc_a07,hysw_a07,water_a07,aro1_a07,aro2_a07,alk1_a07,ole1_a07,api1_a07,api2_a07,lim1_a07,lim2_a07,num_a07,so4_a08,no3_a08,cl_a08,nh4_a08,na_a08,oin_a08,oc_a08,bc_a08,hysw_a08,water_a08,aro1_a08,aro2_a08,alk1_a08,ole1_a08,api1_a08,api2_a08,lim1_a08,lim2_a08,num_a08,ca_a01,ca_a02,ca_a03,ca_a04,ca_a05,ca_a06,ca_a07,ca_a08,co3_a01,co3_a02,co3_a03,co3_a04,co3_a05,co3_a06,co3_a07,co3_a08
 
 
-
 #SAPRCNOV new package, automatically created using diff_mechanisSpc_wrfRegistry.m script (pablo-saide@uiowa.edu)
 package saprc99_kpp    chem_opt==195   -       chem:o3,h2o2,no,no2,no3,n2o5,hono,hno3,hno4,so2,h2so4,co,hcho,ccho,rcho,acet,mek,hcooh,meoh,etoh,cco_oh,rco_oh,gly,mgly,bacl,cres,bald,isoprod,methacro,mvk,prod2,dcb1,dcb2,dcb3,ethene,isoprene,c2h6,c3h8,c2h2,c3h6,alk3,alk4,alk5,aro1,aro2,ole1,ole2,terp,rno3,nphe,phen,pan,pan2,pbzn,ma_pan,co2,cco_ooh,rco_o2,rco_ooh,xn,xc,ho,ho2,c_o2,cooh,rooh,ro2_r,r2o2,ro2_n,cco_o2,bzco_o2,ma_rco3,nh3,hcl,ch4
 
 package saprc99_mosaic_4bin_vbs2_kpp    chem_opt==198   -       chem:o3,h2o2,no,no2,no3,n2o5,hono,hno3,hno4,so2,h2so4,co,hcho,ccho,rcho,acet,mek,hcooh,meoh,etoh,cco_oh,rco_oh,gly,mgly,bacl,cres,bald,isoprod,methacro,mvk,prod2,dcb1,dcb2,dcb3,ethene,isoprene,c2h6,c3h8,c2h2,c3h6,alk3,alk4,alk5,aro1,aro2,ole1,ole2,terp,rno3,nphe,phen,pan,pan2,pbzn,ma_pan,co2,cco_ooh,rco_o2,rco_ooh,xn,xc,ho,ho2,c_o2,cooh,rooh,ro2_r,r2o2,ro2_n,cco_o2,bzco_o2,ma_rco3,sesq,pcg1_b_c,pcg2_b_c,pcg1_b_o,pcg2_b_o,opcg1_b_c,opcg1_b_o,pcg1_f_c,pcg2_f_c,pcg1_f_o,pcg2_f_o,opcg1_f_c,opcg1_f_o,psd1,psd2,nh3,hcl,nume,den,ant1_c,ant1_o,biog1_c,biog1_o,ch4,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,pcg1_b_c_a01,pcg2_b_c_a01,pcg1_b_o_a01,pcg2_b_o_a01,opcg1_b_c_a01,opcg1_b_o_a01,pcg1_f_c_a01,pcg2_f_c_a01,pcg1_f_o_a01,pcg2_f_o_a01,opcg1_f_c_a01,opcg1_f_o_a01,ant1_c_a01,ant1_o_a01,biog1_c_a01,biog1_o_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,pcg1_b_c_a02,pcg2_b_c_a02,pcg1_b_o_a02,pcg2_b_o_a02,opcg1_b_c_a02,opcg1_b_o_a02,pcg1_f_c_a02,pcg2_f_c_a02,pcg1_f_o_a02,pcg2_f_o_a02,opcg1_f_c_a02,opcg1_f_o_a02,ant1_c_a02,ant1_o_a02,biog1_c_a02,biog1_o_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,pcg1_b_c_a03,pcg2_b_c_a03,pcg1_b_o_a03,pcg2_b_o_a03,opcg1_b_c_a03,opcg1_b_o_a03,pcg1_f_c_a03,pcg2_f_c_a03,pcg1_f_o_a03,pcg2_f_o_a03,opcg1_f_c_a03,opcg1_f_o_a03,ant1_c_a03,ant1_o_a03,biog1_c_a03,biog1_o_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,pcg1_b_c_a04,pcg2_b_c_a04,pcg1_b_o_a04,pcg2_b_o_a04,opcg1_b_c_a04,opcg1_b_o_a04,pcg1_f_c_a04,pcg2_f_c_a04,pcg1_f_o_a04,pcg2_f_o_a04,opcg1_f_c_a04,opcg1_f_o_a04,ant1_c_a04,ant1_o_a04,biog1_c_a04,biog1_o_a04,num_a04,ca_a01,ca_a02,ca_a03,ca_a04,co3_a01,co3_a02,co3_a03,co3_a04
 
-
-# using an empirical soa scheme for anthropogenic and biomass burning sources
-#package mozart_mosaic_4bin_vbs0_kpp    chem_opt==201   -       chem:o3,o1d_cb4,o,no,no2,no3,n2o5,hno3,hno4,so2,ho,ho2,h2o2,sulf,co,hcho,ch3ooh,ch3o2,ch4,h2,eo2,ch3cooh,c2h4,n2o,ch3oh,aco3,acet,mgly,paa,gly,c3h6ooh,pan,mpan,macr,mvk,c3h6,etooh,prooh,acetp,xooh,onitr,isooh,acetol,glyald,mek,eto2,open,alkooh,mekooh,tolooh,terpooh,ald,mco3,c2h5oh,eo,c2h6,c3h8,pro2,po2,aceto2,bigene,bigalk,eneo2,alko2,isopr,iso2,mvko2,mvkooh,hydrald,xo2,c10h16,terpo2,tol,cres,to2,xoh,onit,isopn,dms,nh3,nume,den,voca,vocbb,smpa,smpbb,biog1_c,biog1_o,meko2,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,smpa_a01,smpbb_a01,biog1_c_a01,biog1_o_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,smpa_a02,smpbb_a02,biog1_c_a02,biog1_o_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,smpa_a03,smpbb_a03,biog1_c_a03,biog1_o_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,smpa_a04,smpbb_a04,biog1_c_a04,biog1_o_a04,num_a04,ca_a01,ca_a02,ca_a03,ca_a04,co3_a01,co3_a02,co3_a03,co3_a04
 package mozart_mosaic_4bin_kpp    chem_opt==201   -                        chem:o3,o1d_cb4,o,no,no2,no3,n2o5,hno3,hno4,so2,ho,ho2,h2o2,sulf,co,hcho,hcooh,c2h2,hoch2oo,ch3ooh,ch3o2,ch4,h2,eo2,ch3cooh,c2h4,n2o,ch3oh,aco3,acet,mgly,paa,gly,c3h6ooh,pan,mpan,macr,mvk,c3h6,etooh,prooh,acetp,xooh,onitr,isooh,acetol,glyald,mek,eto2,open,alkooh,mekooh,tolooh,terpooh,ald,mco3,c2h5oh,eo,c2h6,c3h8,pro2,po2,aceto2,bigene,bigalk,eneo2,alko2,isopr,iso2,mvko2,mvkooh,hydrald,xo2,apin,bpin,limon,myrc,bcary,terprod1,terprod2,terp2o2,terp2ooh,nterpo2,terpo2,tol,cres,to2,onit,isopn,dms,mbo,mboo2,hmprop,hmpropo2,mboooh,mbono3o2,nh3,nume,den,voca,vocbb,smpa,smpbb,biog1_c,biog1_o,benzene,phen,bepomuc,benzo2,pheno2,pheno,phenooh,c6h5o2,c6h5ooh,benzooh,bigald1,bigald2,bigald3,bigald4,malo2,tepomuc,bzoo,bzooh,bald,acbzo2,dicarbo2,mdialo2,xyl,xylol,xylolo2,xylolooh,xyleno2,xylenooh,pbznit,hono,meko2,so4_a01,no3_a01,smpa_a01,smpbb_a01,glysoa_sfc_a01,biog1_c_a01,biog1_o_a01,cl_a01,co3_a01,nh4_a01,na_a01,ca_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,smpa_a02,smpbb_a02,glysoa_sfc_a02,biog1_c_a02,biog1_o_a02,cl_a02,co3_a02,nh4_a02,na_a02,ca_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,smpa_a03,smpbb_a03,glysoa_sfc_a03,biog1_c_a03,biog1_o_a03,cl_a03,co3_a03,nh4_a03,na_a03,ca_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,smpa_a04,smpbb_a04,glysoa_sfc_a04,biog1_c_a04,biog1_o_a04,cl_a04,co3_a04,nh4_a04,na_a04,ca_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04
 # complete aq-phase chem. and wet scavenging version with MOZART, HONO, VOC reactivity + VBS SOA
 package   mozart_mosaic_4bin_aq_kpp  chem_opt==202           -             chem:o3,o1d_cb4,o,no,no2,no3,n2o5,hno3,hno4,so2,ho,ho2,h2o2,sulf,co,hcho,hcooh,c2h2,hoch2oo,ch3ooh,ch3o2,ch4,h2,eo2,ch3cooh,c2h4,n2o,ch3oh,aco3,acet,mgly,paa,gly,c3h6ooh,pan,mpan,macr,mvk,c3h6,etooh,prooh,acetp,xooh,onitr,isooh,acetol,glyald,mek,eto2,open,alkooh,mekooh,tolooh,terpooh,ald,mco3,c2h5oh,eo,c2h6,c3h8,pro2,po2,aceto2,bigene,bigalk,eneo2,alko2,isopr,iso2,mvko2,mvkooh,hydrald,xo2,apin,bpin,limon,myrc,bcary,terprod1,terprod2,terp2o2,terp2ooh,nterpo2,terpo2,tol,cres,to2,onit,isopn,dms,mbo,mboo2,hmprop,hmpropo2,mboooh,mbono3o2,nh3,nume,den,cvasoaX,cvasoa1,cvasoa2,cvasoa3,cvasoa4,cvbsoaX,cvbsoa1,cvbsoa2,cvbsoa3,cvbsoa4,benzene,phen,bepomuc,benzo2,pheno2,pheno,phenooh,c6h5o2,c6h5ooh,benzooh,bigald1,bigald2,bigald3,bigald4,malo2,tepomuc,bzoo,bzooh,bald,acbzo2,dicarbo2,mdialo2,xyl,xylol,xylolo2,xylolooh,xyleno2,xylenooh,pbznit,hono,meko2,so4_a01,no3_a01,asoaX_a01,asoa1_a01,asoa2_a01,asoa3_a01,asoa4_a01,bsoaX_a01,bsoa1_a01,bsoa2_a01,bsoa3_a01,bsoa4_a01,glysoa_r1_a01,glysoa_r2_a01,glysoa_sfc_a01,glysoa_nh4_a01,glysoa_oh_a01,cl_a01,co3_a01,nh4_a01,na_a01,ca_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,num_a01,so4_a02,no3_a02,asoaX_a02,asoa1_a02,asoa2_a02,asoa3_a02,asoa4_a02,bsoaX_a02,bsoa1_a02,bsoa2_a02,bsoa3_a02,bsoa4_a02,glysoa_r1_a02,glysoa_r2_a02,glysoa_sfc_a02,glysoa_nh4_a02,glysoa_oh_a02,cl_a02,co3_a02,nh4_a02,na_a02,ca_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,num_a02,so4_a03,no3_a03,asoaX_a03,asoa1_a03,asoa2_a03,asoa3_a03,asoa4_a03,bsoaX_a03,bsoa1_a03,bsoa2_a03,bsoa3_a03,bsoa4_a03,glysoa_r1_a03,glysoa_r2_a03,glysoa_sfc_a03,glysoa_nh4_a03,glysoa_oh_a03,cl_a03,co3_a03,nh4_a03,na_a03,ca_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,num_a03,so4_a04,no3_a04,asoaX_a04,asoa1_a04,asoa2_a04,asoa3_a04,asoa4_a04,bsoaX_a04,bsoa1_a04,bsoa2_a04,bsoa3_a04,bsoa4_a04,glysoa_r1_a04,glysoa_r2_a04,glysoa_sfc_a04,glysoa_nh4_a04,glysoa_oh_a04,cl_a04,co3_a04,nh4_a04,na_a04,ca_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,num_a04,so4_cw01,no3_cw01,asoaX_cw01,asoa1_cw01,asoa2_cw01,asoa3_cw01,asoa4_cw01,bsoaX_cw01,bsoa1_cw01,bsoa2_cw01,bsoa3_cw01,bsoa4_cw01,glysoa_r1_cw01,glysoa_r2_cw01,glysoa_sfc_cw01,glysoa_nh4_cw01,glysoa_oh_cw01,cl_cw01,co3_cw01,nh4_cw01,na_cw01,ca_cw01,oin_cw01,oc_cw01,bc_cw01,num_cw01,so4_cw02,no3_cw02,asoaX_cw02,asoa1_cw02,asoa2_cw02,asoa3_cw02,asoa4_cw02,bsoaX_cw02,bsoa1_cw02,bsoa2_cw02,bsoa3_cw02,bsoa4_cw02,glysoa_r1_cw02,glysoa_r2_cw02,glysoa_sfc_cw02,glysoa_nh4_cw02,glysoa_oh_cw02,cl_cw02,co3_cw02,nh4_cw02,na_cw02,ca_cw02,oin_cw02,oc_cw02,bc_cw02,num_cw02,so4_cw03,no3_cw03,asoaX_cw03,asoa1_cw03,asoa2_cw03,asoa3_cw03,asoa4_cw03,bsoaX_cw03,bsoa1_cw03,bsoa2_cw03,bsoa3_cw03,bsoa4_cw03,glysoa_r1_cw03,glysoa_r2_cw03,glysoa_sfc_cw03,glysoa_nh4_cw03,glysoa_oh_cw03,cl_cw03,co3_cw03,nh4_cw03,na_cw03,ca_cw03,oin_cw03,oc_cw03,bc_cw03,num_cw03,so4_cw04,no3_cw04,asoaX_cw04,asoa1_cw04,asoa2_cw04,asoa3_cw04,asoa4_cw04,bsoaX_cw04,bsoa1_cw04,bsoa2_cw04,bsoa3_cw04,bsoa4_cw04,glysoa_r1_cw04,glysoa_r2_cw04,glysoa_sfc_cw04,glysoa_nh4_cw04,glysoa_oh_cw04,cl_cw04,co3_cw04,nh4_cw04,na_cw04,ca_cw04,oin_cw04,oc_cw04,bc_cw04,num_cw04
@@ -3920,13 +3899,6 @@ package   mozart_mosaic_4bin_aq_kpp  chem_opt==202           -             chem:
 package saprc99_mosaic_8bin_vbs2_aq_kpp    chem_opt==203   -       chem:o3,h2o2,no,no2,no3,n2o5,hono,hno3,hno4,so2,h2so4,co,hcho,ccho,rcho,acet,mek,hcooh,meoh,etoh,cco_oh,rco_oh,gly,mgly,bacl,cres,bald,isoprod,methacro,mvk,prod2,dcb1,dcb2,dcb3,ethene,isoprene,c2h6,c3h8,c2h2,c3h6,alk3,alk4,alk5,aro1,aro2,ole1,ole2,terp,rno3,nphe,phen,pan,pan2,pbzn,ma_pan,co2,cco_ooh,rco_o2,rco_ooh,xn,xc,ho,ho2,c_o2,cooh,rooh,ro2_r,r2o2,ro2_n,cco_o2,bzco_o2,ma_rco3,sesq,pcg1_b_c,pcg2_b_c,pcg1_b_o,pcg2_b_o,opcg1_b_c,opcg1_b_o,pcg1_f_c,pcg2_f_c,pcg1_f_o,pcg2_f_o,opcg1_f_c,opcg1_f_o,psd1,psd2,nh3,hcl,nume,den,ant1_c,biog1_c,ch4,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,pcg1_b_c_a01,pcg1_b_o_a01,opcg1_b_c_a01,opcg1_b_o_a01,pcg1_f_c_a01,pcg1_f_o_a01,opcg1_f_c_a01,opcg1_f_o_a01,ant1_c_a01,biog1_c_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,pcg1_b_c_a02,pcg1_b_o_a02,opcg1_b_c_a02,opcg1_b_o_a02,pcg1_f_c_a02,pcg1_f_o_a02,opcg1_f_c_a02,opcg1_f_o_a02,ant1_c_a02,biog1_c_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,pcg1_b_c_a03,pcg1_b_o_a03,opcg1_b_c_a03,opcg1_b_o_a03,pcg1_f_c_a03,pcg1_f_o_a03,opcg1_f_c_a03,opcg1_f_o_a03,ant1_c_a03,biog1_c_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,pcg1_b_c_a04,pcg1_b_o_a04,opcg1_b_c_a04,opcg1_b_o_a04,pcg1_f_c_a04,pcg1_f_o_a04,opcg1_f_c_a04,opcg1_f_o_a04,ant1_c_a04,biog1_c_a04,num_a04,so4_a05,no3_a05,cl_a05,nh4_a05,na_a05,oin_a05,oc_a05,bc_a05,hysw_a05,water_a05,pcg1_b_c_a05,pcg1_b_o_a05,opcg1_b_c_a05,opcg1_b_o_a05,pcg1_f_c_a05,pcg1_f_o_a05,opcg1_f_c_a05,opcg1_f_o_a05,ant1_c_a05,biog1_c_a05,num_a05,so4_a06,no3_a06,cl_a06,nh4_a06,na_a06,oin_a06,oc_a06,bc_a06,hysw_a06,water_a06,pcg1_b_c_a06,pcg1_b_o_a06,opcg1_b_c_a06,opcg1_b_o_a06,pcg1_f_c_a06,pcg1_f_o_a06,opcg1_f_c_a06,opcg1_f_o_a06,ant1_c_a06,biog1_c_a06,num_a06,so4_a07,no3_a07,cl_a07,nh4_a07,na_a07,oin_a07,oc_a07,bc_a07,hysw_a07,water_a07,pcg1_b_c_a07,pcg1_b_o_a07,opcg1_b_c_a07,opcg1_b_o_a07,pcg1_f_c_a07,pcg1_f_o_a07,opcg1_f_c_a07,opcg1_f_o_a07,ant1_c_a07,biog1_c_a07,num_a07,so4_a08,no3_a08,cl_a08,nh4_a08,na_a08,oin_a08,oc_a08,bc_a08,hysw_a08,water_a08,pcg1_b_c_a08,pcg1_b_o_a08,opcg1_b_c_a08,opcg1_b_o_a08,pcg1_f_c_a08,pcg1_f_o_a08,opcg1_f_c_a08,opcg1_f_o_a08,ant1_c_a08,biog1_c_a08,num_a08,so4_cw01,no3_cw01,cl_cw01,nh4_cw01,na_cw01,oin_cw01,oc_cw01,bc_cw01,pcg1_b_c_cw01,pcg1_b_o_cw01,opcg1_b_c_cw01,opcg1_b_o_cw01,pcg1_f_c_cw01,pcg1_f_o_cw01,opcg1_f_c_cw01,opcg1_f_o_cw01,ant1_c_cw01,biog1_c_cw01,num_cw01,so4_cw02,no3_cw02,cl_cw02,nh4_cw02,na_cw02,oin_cw02,oc_cw02,bc_cw02,pcg1_b_c_cw02,pcg1_b_o_cw02,opcg1_b_c_cw02,opcg1_b_o_cw02,pcg1_f_c_cw02,pcg1_f_o_cw02,opcg1_f_c_cw02,opcg1_f_o_cw02,ant1_c_cw02,biog1_c_cw02,num_cw02,so4_cw03,no3_cw03,cl_cw03,nh4_cw03,na_cw03,oin_cw03,oc_cw03,bc_cw03,pcg1_b_c_cw03,pcg1_b_o_cw03,opcg1_b_c_cw03,opcg1_b_o_cw03,pcg1_f_c_cw03,pcg1_f_o_cw03,opcg1_f_c_cw03,opcg1_f_o_cw03,ant1_c_cw03,biog1_c_cw03,num_cw03,so4_cw04,no3_cw04,cl_cw04,nh4_cw04,na_cw04,oin_cw04,oc_cw04,bc_cw04,pcg1_b_c_cw04,pcg1_b_o_cw04,opcg1_b_c_cw04,opcg1_b_o_cw04,pcg1_f_c_cw04,pcg1_f_o_cw04,opcg1_f_c_cw04,opcg1_f_o_cw04,ant1_c_cw04,biog1_c_cw04,num_cw04,so4_cw05,no3_cw05,cl_cw05,nh4_cw05,na_cw05,oin_cw05,oc_cw05,bc_cw05,pcg1_b_c_cw05,pcg1_b_o_cw05,opcg1_b_c_cw05,opcg1_b_o_cw05,pcg1_f_c_cw05,pcg1_f_o_cw05,opcg1_f_c_cw05,opcg1_f_o_cw05,ant1_c_cw05,biog1_c_cw05,num_cw05,so4_cw06,no3_cw06,cl_cw06,nh4_cw06,na_cw06,oin_cw06,oc_cw06,bc_cw06,pcg1_b_c_cw06,pcg1_b_o_cw06,opcg1_b_c_cw06,opcg1_b_o_cw06,pcg1_f_c_cw06,pcg1_f_o_cw06,opcg1_f_c_cw06,opcg1_f_o_cw06,ant1_c_cw06,biog1_c_cw06,num_cw06,so4_cw07,no3_cw07,cl_cw07,nh4_cw07,na_cw07,oin_cw07,oc_cw07,bc_cw07,pcg1_b_c_cw07,pcg1_b_o_cw07,opcg1_b_c_cw07,opcg1_b_o_cw07,pcg1_f_c_cw07,pcg1_f_o_cw07,opcg1_f_c_cw07,opcg1_f_o_cw07,ant1_c_cw07,biog1_c_cw07,num_cw07,so4_cw08,no3_cw08,cl_cw08,nh4_cw08,na_cw08,oin_cw08,oc_cw08,bc_cw08,pcg1_b_c_cw08,pcg1_b_o_cw08,opcg1_b_c_cw08,opcg1_b_o_cw08,pcg1_f_c_cw08,pcg1_f_o_cw08,opcg1_f_c_cw08,opcg1_f_o_cw08,ant1_c_cw08,biog1_c_cw08,num_cw08
 
 package saprc99_mosaic_8bin_vbs2_kpp    chem_opt==204   -       chem:o3,h2o2,no,no2,no3,n2o5,hono,hno3,hno4,so2,h2so4,co,hcho,ccho,rcho,acet,mek,hcooh,meoh,etoh,cco_oh,rco_oh,gly,mgly,bacl,cres,bald,isoprod,methacro,mvk,prod2,dcb1,dcb2,dcb3,ethene,isoprene,c2h6,c3h8,c2h2,c3h6,alk3,alk4,alk5,aro1,aro2,ole1,ole2,terp,rno3,nphe,phen,pan,pan2,pbzn,ma_pan,co2,cco_ooh,rco_o2,rco_ooh,xn,xc,ho,ho2,c_o2,cooh,rooh,ro2_r,r2o2,ro2_n,cco_o2,bzco_o2,ma_rco3,sesq,pcg1_b_c,pcg2_b_c,pcg1_b_o,pcg2_b_o,opcg1_b_c,opcg1_b_o,pcg1_f_c,pcg2_f_c,pcg1_f_o,pcg2_f_o,opcg1_f_c,opcg1_f_o,psd1,psd2,nh3,hcl,nume,den,ant1_c,biog1_c,ant2_c,biog2_c,biog3_c,biog1_o,biog2_o,ant3_c,ant4_c,bgas,agas,ch4,so4_a01,no3_a01,cl_a01,nh4_a01,na_a01,oin_a01,oc_a01,bc_a01,hysw_a01,water_a01,pcg1_b_c_a01,pcg1_b_o_a01,opcg1_b_c_a01,opcg1_b_o_a01,pcg1_f_c_a01,pcg1_f_o_a01,opcg1_f_c_a01,opcg1_f_o_a01,ant1_c_a01,biog1_c_a01,ant2_c_a01,biog2_c_a01,biog3_c_a01,biog1_o_a01,biog2_o_a01,ant3_c_a01,ant4_c_a01,num_a01,so4_a02,no3_a02,cl_a02,nh4_a02,na_a02,oin_a02,oc_a02,bc_a02,hysw_a02,water_a02,pcg1_b_c_a02,pcg1_b_o_a02,opcg1_b_c_a02,opcg1_b_o_a02,pcg1_f_c_a02,pcg1_f_o_a02,opcg1_f_c_a02,opcg1_f_o_a02,ant1_c_a02,biog1_c_a02,ant2_c_a02,biog2_c_a02,biog3_c_a02,biog1_o_a02,biog2_o_a02,ant3_c_a02,ant4_c_a02,num_a02,so4_a03,no3_a03,cl_a03,nh4_a03,na_a03,oin_a03,oc_a03,bc_a03,hysw_a03,water_a03,pcg1_b_c_a03,pcg1_b_o_a03,opcg1_b_c_a03,opcg1_b_o_a03,pcg1_f_c_a03,pcg1_f_o_a03,opcg1_f_c_a03,opcg1_f_o_a03,ant1_c_a03,biog1_c_a03,ant2_c_a03,biog2_c_a03,biog3_c_a03,biog1_o_a03,biog2_o_a03,ant3_c_a03,ant4_c_a03,num_a03,so4_a04,no3_a04,cl_a04,nh4_a04,na_a04,oin_a04,oc_a04,bc_a04,hysw_a04,water_a04,pcg1_b_c_a04,pcg1_b_o_a04,opcg1_b_c_a04,opcg1_b_o_a04,pcg1_f_c_a04,pcg1_f_o_a04,opcg1_f_c_a04,opcg1_f_o_a04,ant1_c_a04,biog1_c_a04,ant2_c_a04,biog2_c_a04,biog3_c_a04,biog1_o_a04,biog2_o_a04,ant3_c_a04,ant4_c_a04,num_a04,so4_a05,no3_a05,cl_a05,nh4_a05,na_a05,oin_a05,oc_a05,bc_a05,hysw_a05,water_a05,pcg1_b_c_a05,pcg1_b_o_a05,opcg1_b_c_a05,opcg1_b_o_a05,pcg1_f_c_a05,pcg1_f_o_a05,opcg1_f_c_a05,opcg1_f_o_a05,ant1_c_a05,biog1_c_a05,ant2_c_a05,biog2_c_a05,biog3_c_a05,biog1_o_a05,biog2_o_a05,ant3_c_a05,ant4_c_a05,num_a05,so4_a06,no3_a06,cl_a06,nh4_a06,na_a06,oin_a06,oc_a06,bc_a06,hysw_a06,water_a06,pcg1_b_c_a06,pcg1_b_o_a06,opcg1_b_c_a06,opcg1_b_o_a06,pcg1_f_c_a06,pcg1_f_o_a06,opcg1_f_c_a06,opcg1_f_o_a06,ant1_c_a06,biog1_c_a06,ant2_c_a06,biog2_c_a06,biog3_c_a06,biog1_o_a06,biog2_o_a06,ant3_c_a06,ant4_c_a06,num_a06,so4_a07,no3_a07,cl_a07,nh4_a07,na_a07,oin_a07,oc_a07,bc_a07,hysw_a07,water_a07,pcg1_b_c_a07,pcg1_b_o_a07,opcg1_b_c_a07,opcg1_b_o_a07,pcg1_f_c_a07,pcg1_f_o_a07,opcg1_f_c_a07,opcg1_f_o_a07,ant1_c_a07,biog1_c_a07,ant2_c_a07,biog2_c_a07,biog3_c_a07,biog1_o_a07,biog2_o_a07,ant3_c_a07,ant4_c_a07,num_a07,so4_a08,no3_a08,cl_a08,nh4_a08,na_a08,oin_a08,oc_a08,bc_a08,hysw_a08,water_a08,pcg1_b_c_a08,pcg1_b_o_a08,opcg1_b_c_a08,opcg1_b_o_a08,pcg1_f_c_a08,pcg1_f_o_a08,opcg1_f_c_a08,opcg1_f_o_a08,ant1_c_a08,biog1_c_a08,ant2_c_a08,biog2_c_a08,biog3_c_a08,biog1_o_a08,biog2_o_a08,ant3_c_a08,ant4_c_a08,num_a08
-
-
-
-
-
-
-
 
 
 # KPP mechanism from MATCH-MPI Mainz used for global chemistry
@@ -3956,12 +3928,6 @@ package   cbmz_cam_mam3_aq chem_opt==503               -             chem:so2,su
 
 package   cbmz_cam_mam7_aq chem_opt==504               -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2,soag,so4_a1,nh4_a1,pom_a1,soa_a1,bc_a1,ncl_a1,wtr_a1,num_a1,so4_a2,nh4_a2,soa_a2,ncl_a2,wtr_a2,num_a2,pom_a3,bc_a3,wtr_a3,num_a3,ncl_a4,so4_a4,nh4_a4,wtr_a4,num_a4,dst_a5,so4_a5,nh4_a5,wtr_a5,num_a5,ncl_a6,so4_a6,nh4_a6,wtr_a6,num_a6,dst_a7,so4_a7,nh4_a7,wtr_a7,num_a7,so4_c1,nh4_c1,pom_c1,soa_c1,bc_c1,ncl_c1,num_c1,so4_c2,nh4_c2,soa_c2,ncl_c2,num_c2,pom_c3,bc_c3,num_c3,ncl_c4,so4_c4,nh4_c4,num_c4,dst_c5,so4_c5,nh4_c5,num_c5,ncl_c6,so4_c6,nh4_c6,num_c6,dst_c7,so4_c7,nh4_c7,num_c7
 
-#package   radm2_cam_mam3     chem_opt==411                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,hcl,ho,ho2,soag,so4_a1,pom_a1,soa_a1,bc_a1,dst_a1,ncl_a1,wtr_a1,num_a1,so4_a2,soa_a2,ncl_a2,wtr_a2,num_a2,dst_a3,ncl_a3,so4_a3,wtr_a3,num_a3
-
-#package   radm2_cam_mam7     chem_opt==412                  -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ol2,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,hcl,ho,ho2,soag,so4_a1,nh4_a1,pom_a1,soa_a1,bc_a1,ncl_a1,wtr_a1,num_a1,so4_a2,nh4_a2,soa_a2,ncl_a2,wtr_a2,num_a2,pom_a3,bc_a3,wtr_a3,num_a3,ncl_a4,so4_a4,nh4_a4,wtr_a4,num_a4,dst_a5,so4_a5,nh4_a5,wtr_a5,num_a5,ncl_a6,so4_a6,nh4_a6,wtr_a6,num_a6,dst_a7,so4_a7,nh4_a7,wtr_a7,num_a7
-#
-#
-
 # CRIMECH gas phase
 package   crimech_kpp     chem_opt==600                  -             chem:dms,dmso,dmso2,ch3sch2oo,ch3s,ch3so,ch3so2,ch3so3,msa,msia,nh3,hcl,so2,hso3,no2,o3,hno3,h2o2,ch3cho,hcho,ch3ooh,c2h5ooh,paa,hcooh,n2o5,no3,pan,c3h8,nc4h10,c2h6,co,c2h4,toluene,oxyl,aco3,hono,hno4,ket,c5h8,ho,ho2,so3,no,benzene,npropol,c2h2,c3h6,tbut2ene,c2h5cho,ch3co2h,mek,ch3oh,c2h5oh,ipropol,ch3no3,c2h5no3,hoc2h4no3,prooh,hoc2h4ooh,carb14,carb17,rn10no3,rn13no3,rn19no3,rn9no3,rn12no3,rn15no3,rn18no3,rn16no3,rn10ooh,rn13ooh,rn16ooh,rn19ooh,rn8ooh,rn11ooh,rn14ooh,rn17ooh,rn9ooh,rn12ooh,rn15ooh,rn18ooh,nrn6ooh,nrn9ooh,nrn12ooh,apinene,bpinene,carb7,carb10,carb13,carb16,carb3,carb6,carb9,carb12,carb15,c2h5co3h,c2h5co3,ppn,hoch2cho,hoch2co3,hoch2co3h,phan,ccarb12,ch3cl,ch2cl2,chcl3,ch3ccl3,cdicleth,tdicleth,tricleth,tce,ucarb12,ucarb10,ru14no3,ru14ooh,ru12ooh,ru10ooh,mpan,ru12pan,nucarb12,nru14ooh,nru12ooh,noa,ra13no3,ra13ooh,udcarb8,aroh14,raroh14,arnoh14,ra16no3,ra16ooh,udcarb11,aroh17,raroh17,arnoh17,udcarb14,ra19co2,ra19no3,ra19ooh,rtn28no3,rtn28ooh,tncarb26,rtn26ooh,nrtn28ooh,rtn26pan,rtn25ooh,rtn24ooh,rtn23ooh,rtn14ooh,rtn10ooh,tncarb10,rtn25no3,tncarb15,rcooh25,rtx28no3,rtx28ooh,txcarb24,rtx24no3,rtx24ooh,txcarb22,rtx22no3,rtx22ooh,nrtx28ooh,carb11a,anhy,ch3o2no2,ch4,sulf,rtn23no3,tncarb12,tncarb11,tm123b,tm124b,tm135b,oethtol,methtol,pethtol,ra22no3,ra22ooh,dime35eb,ra25no3,udcarb17,ra25ooh,ch3oo,c2h5o2,hoch2ch2o2,ic3h7o2,rn10o2,rn13o2,rn16o2,rn19o2,rn9o2,rn12o2,rn15o2,rn18o2,nrn6o2,nrn9o2,nrn12o2,rn11o2,rn14o2,rn8o2,rn17o2,rn13ao2,rn16ao2,rn15ao2,rn18ao2,ru10o2,nru14o2,nru12o2,ra13o2,nrtx28o2,rtx24o2,rtx28o2,rtn25o2,rtn24o2,rtn23o2,rtn14o2,rtn10o2,nrtn28o2,rtn26o2,rtn28o2,ra19ao2,ru14o2,ru12o2,ra16o2,rtx22o2,ra22ao2,ra22bo2,ra25o2,ic3h7no3
 # CRIMECH gas phase and original aqueous MOSAIC
@@ -3985,7 +3951,7 @@ package   esaprcnov       emiss_opt==13                  -             emis_ant:
 # For CB05 mechanism based on CBMZ speciation, used with emiss_inpt_opt = 102 
 package   ecb05_opt1      emiss_opt==14                   -             emis_ant:e_no2,e_xyl,e_tol,e_terp,e_so2,e_ora2,e_olt,e_oli,e_ol2,e_no,e_nh3,e_iso,e_hcl,e_hcho,e_eth,e_csl,e_co,e_ch3oh,e_c2h5oh,e_ald,e_aldx,e_hc3,e_hc5,e_hc8,e_ket,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_so4c,e_no3c,e_orgc,e_ecc,e_pm10
 # For CB05 emissions inventory base on CB05 speciation, used with emiss_inpt_opt = 101
-package   ecb05_opt2      emiss_opt==15                   -             emis_ant:e_acet,e_par,e_alk1,e_alk2,e_alk3,e_alk4,e_alk5,e_tol,e_xyl,e_bald,e_ald2,e_ccooh,e_co,e_cres,e_eth,e_etha,e_gly,e_form,e_hcooh,e_iprod,e_isop,e_macr,e_mek,e_meoh,e_meo2,e_etoh,e_mgly,e_nh3,e_hcl,e_no,e_no2,e_iole,e_ole,e_phen,e_prod2,e_aldx,e_rcooh,e_so2,e_psulf,e_terp,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_so4c,e_no3c,e_orgc,e_ecc,e_pm10
+package   ecb05_opt2      emiss_opt==15                   -             emis_ant:e_acet,e_par,e_alk3,e_alk4,e_alk5,e_tol,e_xyl,e_bald,e_ald2,e_ccooh,e_co,e_cres,e_eth,e_etha,e_gly,e_form,e_hcooh,e_iprod,e_isop,e_macr,e_mek,e_meoh,e_meo2,e_etoh,e_mgly,e_nh3,e_hcl,e_no,e_no2,e_iole,e_ole,e_phen,e_prod2,e_aldx,e_so2,e_psulf,e_terp,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_so4c,e_no3c,e_orgc,e_ecc,e_pm10
 
 # Anthropogenic CO2, CO and CH4 emissions:
 package   eco2            emiss_opt==16                  -             emis_ant:e_co2,e_co2tst,e_co
@@ -3997,28 +3963,31 @@ package   vash    emiss_opt_vol==1                   -             emis_vol:e_va
 package   vashso2 emiss_opt_vol==2                   -             emis_vol:e_vash1,e_vash2,e_vash3,e_vash4,e_vash5,e_vash6,e_vash7,e_vash8,e_vash9,e_vash10,e_vso2
 
 #
-#package   seasalt_pnnl    emiss_ssalt_opt==1                   -             -
-#package   monahan         emiss_ssalt_opt==2                   -             -
 
-#cms--
+package   photmad       phot_opt==1                  -             state:uvrad,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,ph_macr,ph_n2o5,ph_o2,ph_pan,ph_acet,ph_mglo,ph_hno4_2,ph_n2o,ph_pooh,ph_mpan,ph_mvk,ph_etooh,ph_prooh,ph_onitr,ph_acetol,ph_glyald,ph_hyac,ph_mek,ph_open,ph_gly,ph_acetp,ph_xooh,ph_isooh,ph_alkooh,ph_mekooh,ph_tolooh,ph_terpooh,ph_cl2,ph_hocl,ph_fmcl
+package   photfastj     phot_opt==2                  -             state:ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,ph_macr,ph_n2o5,ph_o2,ph_pan,ph_acet,ph_mglo,ph_hno4_2,ph_n2o,ph_pooh,ph_mpan,ph_mvk,ph_etooh,ph_prooh,ph_onitr,ph_acetol,ph_glyald,ph_hyac,ph_mek,ph_open,ph_gly,ph_acetp,ph_xooh,ph_isooh,ph_alkooh,ph_mekooh,ph_tolooh,ph_terpooh,ph_cl2,ph_hocl,ph_fmcl
+package   ftuv          phot_opt==3                  -             state:radfld,adjcoe,phrate,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,ph_macr,ph_n2o5,ph_o2,ph_pan,ph_acet,ph_mglo,ph_hno4_2,ph_n2o,ph_pooh,ph_mpan,ph_mvk,ph_etooh,ph_prooh,ph_onitr,ph_acetol,ph_glyald,ph_hyac,ph_mek,ph_open,ph_gly,ph_acetp,ph_xooh,ph_isooh,ph_alkooh,ph_mekooh,ph_tolooh,ph_terpooh,ph_cl2,ph_hocl,ph_fmcl
+package   tuv           phot_opt==4                  -             state:uvrad,dt_cld,af_dir,af_dn,af_up,ph_par,ph_erythema,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,ph_macr,ph_n2o5,ph_o2,ph_pan,ph_acet,ph_mglo,ph_hno4_2,ph_n2o,ph_pooh,ph_mpan,ph_mvk,ph_etooh,ph_prooh,ph_onitr,ph_acetol,ph_glyald,ph_hyac,ph_mek,ph_open,ph_gly,ph_acetp,ph_xooh,ph_isooh,ph_alkooh,ph_mekooh,ph_tolooh,ph_terpooh,ph_cl2,ph_hocl,ph_fmcl
 
-package   photmad       phot_opt==1                  -             -
-package   photfastj     phot_opt==2                  -             -
-package   ftuv          phot_opt==3                  -             -
-package   tuv           phot_opt==4                  -             -
 package   wesely        gas_drydep_opt==1            -             -
 #
 # diagnostic packages, first for deposition velocities (original package for Mozart)
 #
 package   depvel1  diagnostic_chem==1                -             dvel:dvel_o3,dvel_no,dvel_no2,dvel_nh3,dvel_hno3,dvel_hno4,dvel_h2o2,dvel_co,dvel_ch3ooh,dvel_hcho,dvel_ch3oh,dvel_eo2,dvel_ald,dvel_ch3cooh,dvel_acet,dvel_mgly,dvel_gly,dvel_paa,dvel_pooh,dvel_pan,dvel_mpan,dvel_mco3,dvel_mvkooh,dvel_c2h5oh,dvel_etooh,dvel_prooh,dvel_acetp,dvel_onit,dvel_onitr,dvel_isooh,dvel_acetol,dvel_glyald,dvel_hydrald,dvel_alkooh,dvel_mekooh,dvel_tolooh,dvel_xooh,dvel_so2,dvel_so4,dvel_terpooh,dvel_cvasoaX,dvel_cvasoa1,dvel_cvasoa2,dvel_cvasoa3,dvel_cvasoa4,dvel_cvbsoaX,dvel_cvbsoa1,dvel_cvbsoa2,dvel_cvbsoa3,dvel_cvbsoa4,ddmass_o3,ddmass_no,ddmass_no2,ddmass_nh3,ddmass_hno3,ddmass_hno4,ddmass_h2o2,ddmass_co,ddmass_ch3ooh,ddmass_hcho,ddmass_ch3oh,ddmass_eo2,ddmass_ald,ddmass_ch3cooh,ddmass_acet,ddmass_mgly,ddmass_gly,ddmass_paa,ddmass_pooh,ddmass_pan,ddmass_mpan,ddmass_mco3,ddmass_mvkooh,ddmass_c2h5oh,ddmass_etooh,ddmass_prooh,ddmass_acetp,ddmass_onit,ddmass_onitr,ddmass_isooh,ddmass_acetol,ddmass_glyald,ddmass_hydrald,ddmass_alkooh,ddmass_mekooh,ddmass_tolooh,ddmass_xooh,ddmass_so2,ddmass_so4,ddmass_terpooh,ddmass_cvasoaX,ddmass_cvasoa1,ddmass_cvasoa2,ddmass_cvasoa3,ddmass_cvasoa4,ddmass_cvbsoaX,ddmass_cvbsoa1,ddmass_cvbsoa2,ddmass_cvbsoa3,ddmass_cvbsoa4,ddmass_so4_a01,ddmass_no3_a01,ddmass_cl_a01,ddmass_nh4_a01,ddmass_na_a01,ddmass_oin_a01,ddmass_oc_a01,ddmass_bc_a01,ddmass_smpa_a01,ddmass_smpbb_a01,ddmass_glysoa_a01,ddmass_biog1_c_a01,ddmass_biog1_o_a01,ddmass_asoaX_a01,ddmass_asoa1_a01,ddmass_asoa2_a01,ddmass_asoa3_a01,ddmass_asoa4_a01,ddmass_bsoaX_a01,ddmass_bsoa1_a01,ddmass_bsoa2_a01,ddmass_bsoa3_a01,ddmass_bsoa4_a01,ddmass_so4_a02,ddmass_no3_a02,ddmass_cl_a02,ddmass_nh4_a02,ddmass_na_a02,ddmass_oin_a02,ddmass_oc_a02,ddmass_bc_a02,ddmass_smpa_a02,ddmass_smpbb_a02,ddmass_glysoa_a02,ddmass_biog1_c_a02,ddmass_biog1_o_a02,ddmass_asoaX_a02,ddmass_asoa1_a02,ddmass_asoa2_a02,ddmass_asoa3_a02,ddmass_asoa4_a02,ddmass_bsoaX_a02,ddmass_bsoa1_a02,ddmass_bsoa2_a02,ddmass_bsoa3_a02,ddmass_bsoa4_a02,ddmass_so4_a03,ddmass_no3_a03,ddmass_cl_a03,ddmass_nh4_a03,ddmass_na_a03,ddmass_oin_a03,ddmass_oc_a03,ddmass_bc_a03,ddmass_smpa_a03,ddmass_smpbb_a03,ddmass_glysoa_a03,ddmass_biog1_c_a03,ddmass_biog1_o_a03,ddmass_asoaX_a03,ddmass_asoa1_a03,ddmass_asoa2_a03,ddmass_asoa3_a03,ddmass_asoa4_a03,ddmass_bsoaX_a03,ddmass_bsoa1_a03,ddmass_bsoa2_a03,ddmass_bsoa3_a03,ddmass_bsoa4_a03,ddmass_so4_a04,ddmass_no3_a04,ddmass_cl_a04,ddmass_nh4_a04,ddmass_na_a04,ddmass_oin_a04,ddmass_oc_a04,ddmass_bc_a04,ddmass_smpa_a04,ddmass_smpbb_a04,ddmass_glysoa_a04,ddmass_biog1_c_a04,ddmass_biog1_o_a04,ddmass_asoaX_a04,ddmass_asoa1_a04,ddmass_asoa2_a04,ddmass_asoa3_a04,ddmass_asoa4_a04,ddmass_bsoaX_a04,ddmass_bsoa1_a04,ddmass_bsoa2_a04,ddmass_bsoa3_a04,ddmass_bsoa4_a04,ddmass_ca_a01,ddmass_ca_a02,ddmass_ca_a03,ddmass_ca_a04,ddmass_co3_a01,ddmass_co3_a02,ddmass_co3_a03,ddmass_co3_a04,ddmass_so4_cw01,ddmass_no3_cw01,ddmass_cl_cw01,ddmass_nh4_cw01,ddmass_na_cw01,ddmass_oin_cw01,ddmass_oc_cw01,ddmass_bc_cw01,ddmass_smpa_cw01,ddmass_smpbb_cw01,ddmass_glysoa_cw01,ddmass_biog1_c_cw01,ddmass_biog1_o_cw01,ddmass_asoaX_cw01,ddmass_asoa1_cw01,ddmass_asoa2_cw01,ddmass_asoa3_cw01,ddmass_asoa4_cw01,ddmass_bsoaX_cw01,ddmass_bsoa1_cw01,ddmass_bsoa2_cw01,ddmass_bsoa3_cw01,ddmass_bsoa4_cw01,ddmass_so4_cw02,ddmass_no3_cw02,ddmass_cl_cw02,ddmass_nh4_cw02,ddmass_na_cw02,ddmass_oin_cw02,ddmass_oc_cw02,ddmass_bc_cw02,ddmass_smpa_cw02,ddmass_smpbb_cw02,ddmass_glysoa_cw02,ddmass_biog1_c_cw02,ddmass_biog1_o_cw02,ddmass_asoaX_cw02,ddmass_asoa1_cw02,ddmass_asoa2_cw02,ddmass_asoa3_cw02,ddmass_asoa4_cw02,ddmass_bsoaX_cw02,ddmass_bsoa1_cw02,ddmass_bsoa2_cw02,ddmass_bsoa3_cw02,ddmass_bsoa4_cw02,ddmass_so4_cw03,ddmass_no3_cw03,ddmass_cl_cw03,ddmass_nh4_cw03,ddmass_na_cw03,ddmass_oin_cw03,ddmass_oc_cw03,ddmass_bc_cw03,ddmass_smpa_cw03,ddmass_smpbb_cw03,ddmass_glysoa_cw03,ddmass_biog1_c_cw03,ddmass_biog1_o_cw03,ddmass_asoaX_cw03,ddmass_asoa1_cw03,ddmass_asoa2_cw03,ddmass_asoa3_cw03,ddmass_asoa4_cw03,ddmass_bsoaX_cw03,ddmass_bsoa1_cw03,ddmass_bsoa2_cw03,ddmass_bsoa3_cw03,ddmass_bsoa4_cw03,ddmass_so4_cw04,ddmass_no3_cw04,ddmass_cl_cw04,ddmass_nh4_cw04,ddmass_na_cw04,ddmass_oin_cw04,ddmass_oc_cw04,ddmass_bc_cw04,ddmass_smpa_cw04,ddmass_smpbb_cw04,ddmass_glysoa_cw04,ddmass_biog1_c_cw04,ddmass_biog1_o_cw04,ddmass_asoaX_cw04,ddmass_asoa1_cw04,ddmass_asoa2_cw04,ddmass_asoa3_cw04,ddmass_asoa4_cw04,ddmass_bsoaX_cw04,ddmass_bsoa1_cw04,ddmass_bsoa2_cw04,ddmass_bsoa3_cw04,ddmass_bsoa4_cw04,ddmass_ca_cw01,ddmass_ca_cw02,ddmass_ca_cw03,ddmass_ca_cw04,ddmass_co3_cw01,ddmass_co3_cw02,ddmass_co3_cw03,ddmass_co3_cw04
+
+package   opti_aero     aero_diag_opt==0             -             state:totoa_a01,totoa_a02,totoa_a03,totoa_a04,totoa_a05,totoa_a06,totoa_a07,totoa_a08
+package   diag_aero     aero_diag_opt==1             -             state:hoa_a01,hoa_a02,hoa_a03,hoa_a04,hoa_a05,hoa_a06,hoa_a07,hoa_a08,soa_a01,soa_a02,soa_a03,soa_a04,soa_a05,soa_a06,soa_a07,soa_a08,bboa_a01,bboa_a02,bboa_a03,bboa_a04,bboa_a05,bboa_a06,bboa_a07,bboa_a08,bbsoa_a01,bbsoa_a02,bbsoa_a03,bbsoa_a04,bbsoa_a05,bbsoa_a06,bbsoa_a07,bbsoa_a08,hsoa_a01,hsoa_a02,hsoa_a03,hsoa_a04,hsoa_a05,hsoa_a06,hsoa_a07,hsoa_a08,biog_a01,biog_a02,biog_a03,biog_a04,biog_a05,biog_a06,biog_a07,biog_a08,arosoa_a01,arosoa_a02,arosoa_a03,arosoa_a04,arosoa_a05,arosoa_a06,arosoa_a07,arosoa_a08,totoa_a01,totoa_a02,totoa_a03,totoa_a04,totoa_a05,totoa_a06,totoa_a07,totoa_a08,hsoa_c,hsoa_o,bbsoa_c,bbsoa_o,biog_v1,biog_v2,biog_v3,biog_v4,ant_v1,ant_v2,ant_v3,ant_v4,smpa_v1,smpbb_v1,asmpsoa_a01,asmpsoa_a02,asmpsoa_a03,asmpsoa_a04
+#
+package   diag_cw_aero  aero_cw_diag_opt==1          -             state:hoa_cw01,hoa_cw02,hoa_cw03,hoa_cw04,hoa_cw05,hoa_cw06,hoa_cw07,hoa_cw08,soa_cw01,soa_cw02,soa_cw03,soa_cw04,soa_cw05,soa_cw06,soa_cw07,soa_cw08,bboa_cw01,bboa_cw02,bboa_cw03,bboa_cw04,bboa_cw05,bboa_cw06,bboa_cw07,bboa_cw08,bbsoa_cw01,bbsoa_cw02,bbsoa_cw03,bbsoa_cw04,bbsoa_cw05,bbsoa_cw06,bbsoa_cw07,bbsoa_cw08,hsoa_cw01,hsoa_cw02,hsoa_cw03,hsoa_cw04,hsoa_cw05,hsoa_cw06,hsoa_cw07,hsoa_cw08,biog_cw01,biog_cw02,biog_cw03,biog_cw04,biog_cw05,biog_cw06,biog_cw07,biog_cw08,arosoa_cw01,arosoa_cw02,arosoa_cw03,arosoa_cw04,arosoa_cw05,arosoa_cw06,arosoa_cw07,arosoa_cw08,totoa_cw01,totoa_cw02,totoa_cw03,totoa_cw04,totoa_cw05,totoa_cw06,totoa_cw07,totoa_cw08,hsoa_cw_c,hsoa_cw_o,bbsoa_cw_c,bbsoa_cw_o,biog_cw_v1,ant_cw_v1
+package   cu_kfcup_select   kfcup_diag==1             -            state: chem_cupflag, co_a_ic_cup, hno3_a_ic_cup, so4_a_1to4_ic_cup, so4_cw_1to4_ic_cup, nh4_a_1to4_ic_cup, nh4_cw_1to4_ic_cup, no3_a_1to4_ic_cup, no3_cw_1to4_ic_cup, oa_a_1to4_ic_cup, oa_cw_1to4_ic_cup, oin_a_1to4_ic_cup, oin_cw_1to4_ic_cup, bc_a_1to4_ic_cup, bc_cw_1to4_ic_cup, na_a_1to4_ic_cup, na_cw_1to4_ic_cup, cl_a_1to4_ic_cup, cl_cw_1to4_ic_cup, so4_a_5to6_ic_cup, so4_cw_5to6_ic_cup, nh4_a_5to6_ic_cup, nh4_cw_5to6_ic_cup, no3_a_5to6_ic_cup, no3_cw_5to6_ic_cup, oa_a_5to6_ic_cup, oa_cw_5to6_ic_cup, oin_a_5to6_ic_cup, oin_cw_5to6_ic_cup, bc_a_5to6_ic_cup, bc_cw_5to6_ic_cup, na_a_5to6_ic_cup, na_cw_5to6_ic_cup, cl_a_5to6_ic_cup, cl_cw_5to6_ic_cup, water_1to4_ic_cup, water_5to6_ic_cup
 #
 package   gunther1      bio_emiss_opt==1             -             -
 package   beis314       bio_emiss_opt==2             -             -
 package   megan2        bio_emiss_opt==3             -             state:mebio_isop,mebio_apin,mebio_bcar,mebio_acet,mebio_mbo,mebio_no,msebio_isop,mlai,pftp_bt,pftp_nt,pftp_sb,pftp_hb,mtsa,mswdown,EFmegan
 
 # Biospheric CO2 and CH4 emissions
-package   ebioco2       bio_emiss_opt==16            -             vprm_in:vegfra_vprm,evi,evi_min,evi_max,lswi,lswi_max,lswi_min;eghg_bio:ebio_gee,ebio_res,ebio_co2oce
-package   ebioghg       bio_emiss_opt==17            -             vprm_in:vegfra_vprm,evi,evi_min,evi_max,lswi,lswi_max,lswi_min;wet_in:cpool,wetmap,t_ann;eghg_bio:ebio_gee,ebio_res,ebio_co2oce,ebio_ch4wet,ebio_ch4soil,ebio_ch4term
+package   ebioco2       bio_emiss_opt==16            -             state:rad_vprm,lambda_vprm,alpha_vprm,resp_vprm;vprm_in:vegfra_vprm,evi,evi_min,evi_max,lswi,lswi_max,lswi_min;eghg_bio:ebio_gee,ebio_res,ebio_co2oce
+package   ebioghg       bio_emiss_opt==17            -             state:rad_vprm,lambda_vprm,alpha_vprm,resp_vprm;vprm_in:vegfra_vprm,evi,evi_min,evi_max,lswi,lswi_max,lswi_min;wet_in:cpool,wetmap,t_ann;eghg_bio:ebio_gee,ebio_res,ebio_co2oce,ebio_ch4wet,ebio_ch4soil,ebio_ch4term
 
 # the following arrays only needed for burn options
 package   biomassb      biomass_burn_opt==1             -          state:mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr;ebu:ebu_no,ebu_no2,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,ebu_api,ebu_lim,ebu_tol,ebu_csl,ebu_hcho,ebu_ald,ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,ebu_so2,ebu_nh3,ebu_oc,ebu_bc,ebu_sulf,ebu_dms;ebu_in:ebu_in_no,ebu_in_no2,ebu_in_co,ebu_in_co2,ebu_in_eth,ebu_in_hc3,ebu_in_hc5,ebu_in_hc8,ebu_in_ete,ebu_in_olt,ebu_in_oli,ebu_in_pm25,ebu_in_pm10,ebu_in_dien,ebu_in_iso,ebu_in_api,ebu_in_lim,ebu_in_tol,ebu_in_csl,ebu_in_hcho,ebu_in_ald,ebu_in_xyl,ebu_in_ket,ebu_in_macr,ebu_in_ora1,ebu_in_ora2,ebu_in_so2,ebu_in_nh3,ebu_in_oc,ebu_in_bc,ebu_in_sulf,ebu_in_dms,ebu_in_ash

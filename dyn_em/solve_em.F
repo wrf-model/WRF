@@ -41,10 +41,11 @@ SUBROUTINE solve_em ( grid , config_flags  &
                  ,period_bdy_em_d_sub,period_bdy_em_e_sub,period_bdy_em_moist2_sub         &
                  ,period_bdy_em_moist_old_sub,period_bdy_em_moist_sub                      &
                  ,period_bdy_em_scalar2_sub,period_bdy_em_scalar_old_sub                   &
-                 ,period_bdy_em_scalar_sub,period_bdy_em_tke_old_sub                       &
+                 ,period_bdy_em_scalar_sub,period_bdy_em_tke_old_sub, period_bdy_em_tke_sub  &
                  ,period_bdy_em_tracer2_sub,period_bdy_em_tracer_old_sub                   &
                  ,period_bdy_em_tracer_sub,period_em_da_sub,period_em_hydro_uv_sub         &
-                 ,halo_em_f_sub,halo_em_init_4_sub,halo_em_thetam_sub,period_em_thetam_sub
+                 ,period_em_f_sub,period_em_g_sub                                          &
+                 ,halo_em_f_1_sub,halo_em_init_4_sub,halo_em_thetam_sub,period_em_thetam_sub
 #endif
    USE module_utility
 ! Mediation layer modules
@@ -1109,7 +1110,7 @@ BENCH_START(small_step_prep_tim)
        CALL small_step_prep( grid%u_1,grid%u_2,grid%v_1,grid%v_2,grid%w_1,grid%w_2,   &
                              grid%t_1,grid%t_2,grid%ph_1,grid%ph_2,                   &
                              grid%mub, grid%mu_1, grid%mu_2,                          &
-                             grid%muu, muus, grid%muv, muvs,                          &
+                             grid%muu, grid%muus, grid%muv, grid%muvs,                &
                              grid%mut, grid%muts, grid%mudf,                          &
                              grid%c1h, grid%c2h, grid%c1f, grid%c2f,                  &
                              grid%c3h, grid%c4h, grid%c3f, grid%c4f,                  &
@@ -1750,7 +1751,7 @@ BENCH_END(phys_bc_tim)
 
 BENCH_START(calc_mu_uv_tim)
        CALL calc_mu_uv_1 ( config_flags,                     &
-                           grid%muts, muus, muvs,                 &
+                           grid%muts, grid%muus, grid%muvs,  &
                            ids, ide, jds, jde, kds, kde,     &
                            ims, ime, jms, jme, kms, kme,     &
                            grid%i_start(ij), grid%i_end(ij), &
@@ -1761,7 +1762,7 @@ BENCH_START(small_step_finish_tim)
        CALL small_step_finish( grid%u_2, grid%u_1, grid%v_2, grid%v_1, grid%w_2, grid%w_1,     &
                                grid%t_2, grid%t_1, grid%ph_2, grid%ph_1, grid%ww, ww1,    &
                                grid%mu_2, grid%mu_1,                       &
-                               grid%mut, grid%muts, grid%muu, muus, grid%muv, muvs,  & 
+                               grid%mut, grid%muts, grid%muu, grid%muus, grid%muv, grid%muvs,  & 
                                grid%c1h, grid%c2h, grid%c1f, grid%c2f, &
                                grid%c3h, grid%c4h, grid%c3f, grid%c4f, &
                                grid%u_save, grid%v_save, w_save,           &
@@ -3235,6 +3236,7 @@ BENCH_END(calc_p_rho_tim)
 #  include "PERIOD_BDY_EM_CHEM2.inc"
 #  include "PERIOD_BDY_EM_TRACER2.inc"
 #  include "PERIOD_BDY_EM_SCALAR2.inc"
+#  include "PERIOD_BDY_EM_TKE.inc"
 #endif
 
 BENCH_START(bc_end_tim)
@@ -3462,9 +3464,14 @@ BENCH_END(bc_end_tim)
 
    IF      ( config_flags%traj_opt .EQ. UM_TRAJECTORY ) THEN
 #ifdef DM_PARALLEL
-#    include "HALO_EM_F.inc"
+#    include "HALO_EM_F_1.inc"
 #    include "HALO_EM_D.inc"
 #    include "HALO_EM_INIT_4.inc"
+     IF( config_flags%periodic_x ) THEN
+#    include "PERIOD_EM_DA.inc"
+#    include "PERIOD_EM_F.inc"
+#    include "PERIOD_EM_G.inc"
+     ENDIF
 #endif
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
@@ -3472,7 +3479,7 @@ BENCH_END(bc_end_tim)
 
            call trajectory (grid,config_flags,                                     &
                             grid%dt,grid%itimestep,grid%ru_m, grid%rv_m, grid%ww_m,&
-                            grid%muts,muus,muvs,                                   &
+                            grid%muts,grid%muus,grid%muvs,                         &
                             grid%c1h, grid%c2h, grid%c1f, grid%c2f,                &
                             grid%rdx, grid%rdy, grid%rdn, grid%rdnw,grid%rdzw,     &
                             grid%traj_i,grid%traj_j,grid%traj_k,                   &
@@ -3575,7 +3582,7 @@ BENCH_END(advance_ppt_tim)
    DO ij = 1 , grid%num_tiles
         CALL wrf_debug ( 200 , ' call phy_prep_part2' )
         CALL phy_prep_part2 ( config_flags,                              &
-                        grid%muts, muus, muvs,                           &
+                        grid%muts, grid%muus, grid%muvs,                 &
                         grid%c1h, grid%c2h, grid%c1f, grid%c2f,          &
                         grid%rthraten,                                   &
                         grid%rthblten, grid%rublten, grid%rvblten,       &
@@ -3786,7 +3793,6 @@ BENCH_START(micro_driver_tim)
       &        , QNID_CURR=scalar(ims,kms,jms,P_QNID), F_QNID=F_QNID          &
       &        , QIR_CURR=scalar(ims,kms,jms,P_QIR), F_QIR=F_QIR          & ! for P3
       &        , QIB_CURR=scalar(ims,kms,jms,P_QIB), F_QIB=F_QIB          & ! for P3
-      &        , SSAT_CURR=scalar(ims,kms,jms,P_SSAT), F_SSAT=F_SSAT      & ! for P3
 !       &        , QZR_CURR=scalar(ims,kms,jms,P_QZR), F_QZR=F_QZR          & ! for milbrandt3mom
 !       &        , QZI_CURR=scalar(ims,kms,jms,P_QZI), F_QZI=F_QZI          & ! "
 !       &        , QZS_CURR=scalar(ims,kms,jms,P_QZS), F_QZS=F_QZS          & ! "
@@ -4372,7 +4378,7 @@ BENCH_END(bc_2d_tim)
 
      CALL wrf_debug ( 200 , ' call spec_bdy_final' )
 
-     CALL spec_bdy_final   ( grid%u_2, muus, grid%c1h, grid%c2h, grid%msfuy,     &
+     CALL spec_bdy_final   ( grid%u_2, grid%muus, grid%c1h, grid%c2h, grid%msfuy,     &
                                 grid%u_bxs, grid%u_bxe, grid%u_bys, grid%u_bye,  &
                                 grid%u_btxs,grid%u_btxe,grid%u_btys,grid%u_btye, &
                                 'u', config_flags,                               &
@@ -4385,7 +4391,7 @@ BENCH_END(bc_2d_tim)
                                 grid%j_start(ij), grid%j_end(ij),       &
                                 k_start    , k_end                     )
 
-     CALL spec_bdy_final   ( grid%v_2, muvs, grid%c1h, grid%c2h, grid%msfvx,     &
+     CALL spec_bdy_final   ( grid%v_2, grid%muvs, grid%c1h, grid%c2h, grid%msfvx,     &
                                 grid%v_bxs, grid%v_bxe, grid%v_bys, grid%v_bye,  &
                                 grid%v_btxs,grid%v_btxe,grid%v_btys,grid%v_btye, &
                                 'v', config_flags,                               &

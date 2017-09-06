@@ -11881,6 +11881,21 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                   resnow1D(icol,K) = 10.
                ENDDO
             ENDIF
+
+! special case for P3 microphysics
+! put ice into snow category for optics, then set ice to zero
+            IF ( has_reqs .eq. 0 .and. has_reqi .ne. 0 .and. has_reqc .ne. 0) THEN
+               inflgsw  = 5
+               iceflgsw = 5
+               DO K=kts,kte
+                  resnow1D(ncol,K) = MAX(10., re_ice(I,K,J)*1.E6)
+                  QS1D(K)=QI3D(I,K,J)
+                  QI1D(K)=0.
+                  reice1D(ncol,K)=10.
+               END DO
+
+            END IF
+
          ENDIF
 
 ! Set cosine of solar zenith angle
@@ -12304,16 +12319,16 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
          end do
          if( slope < 0. ) then
             write(msg,'("ERROR: Negative total optical depth of ",f8.2,&
-             " at point i,j,nb=",3i5)') slope,i,j,nb
+           & " at point i,j,nb=",3i5)') slope,i,j,nb
             call wrf_error_fatal(msg)
          else if( slope > 6. ) then
             call wrf_message("-------------------------")
             write(msg,'("WARNING: Large total sw optical depth of ",f8.2,&
-             " at point i,j,nb=",3i5)') slope,i,j,nb
+           & " at point i,j,nb=",3i5)') slope,i,j,nb
             call wrf_message(msg)
 
             call wrf_message("Diagnostics 1: k, tauaer300, tauaer400,&
-               tauaer600, tauaer999, tauaer")
+             & tauaer600, tauaer999, tauaer")
             do k=kts,kte
                write(msg,'(i4,5f8.2)') k, tauaer300(i,k,j), tauaer400(i,k,j), &
                     tauaer600(i,k,j), tauaer999(i,k,j),tauaer(icol,k,nb)
@@ -12324,7 +12339,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
             end do
 
             call wrf_message("Diagnostics 2: k, gaer300, gaer400, gaer600,&
-               gaer999")
+             & gaer999")
             do k=kts,kte
                write(msg,'(i4,4f8.2)') k, gaer300(i,k,j), gaer400(i,k,j), &
                     gaer600(i,k,j), gaer999(i,k,j)
@@ -12332,7 +12347,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
             end do
 
             call wrf_message("Diagnostics 3: k, waer300, waer400, waer600,&
-               waer999")
+             & waer999")
             do k=kts,kte
                write(msg,'(i4,4f8.2)') k, waer300(i,k,j), waer400(i,k,j), &
                     waer600(i,k,j), waer999(i,k,j)

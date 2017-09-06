@@ -174,9 +174,6 @@ module_bl_gfs.o: module_gfs_machine.o \
 module_bl_gfsedmf.o: module_gfs_machine.o \
 		 module_gfs_physcons.o
 
-module_bl_gfsedmf.o: module_gfs_machine.o \
-		 module_gfs_physcons.o
-
 module_bl_mynn.o: ../share/module_model_constants.o
 
 module_cam_upper_bc.o: module_cam_shr_kind_mod.o \
@@ -769,8 +766,6 @@ module_diag_pld.o: \
 module_diag_zld.o: \
 		../share/module_model_constants.o
 
-module_diag_afwa_hail.o:
-
 module_diag_afwa.o: \
 		../frame/module_domain.o 		\
 		../frame/module_dm.o 			\
@@ -778,8 +773,19 @@ module_diag_afwa.o: \
 		../frame/module_configure.o 		\
 		../frame/module_streams.o		\
 		../external/esmf_time_f90/module_utility.o \
-		../share/module_model_constants.o	\
-		module_diag_afwa_hail.o
+		../share/module_model_constants.o
+
+module_diag_hailcast.o: \
+		../frame/module_configure.o 		\
+		../frame/module_domain.o 		\
+		../frame/module_dm.o 			\
+		../frame/module_state_description.o 	\
+		../frame/module_streams.o           	\
+		../external/esmf_time_f90/module_utility.o \
+		../share/module_model_constants.o
+
+module_diag_rasm.o: \
+                module_cam_shr_const_mod.o
 
 module_diag_hailcast.o: \
 		../frame/module_configure.o 		\

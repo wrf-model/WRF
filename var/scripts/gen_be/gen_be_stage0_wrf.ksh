@@ -19,8 +19,6 @@ export SCRIPTS_DIR=${SCRIPTS_DIR:-$WRFVAR_DIR/var/scripts}
 
 . ${SCRIPTS_DIR}/gen_be/gen_be_set_defaults.ksh
 
-export FCST_RANGE2=${FCST_RANGE2:-$INTERVAL}
-
 if [[ ! -d $RUN_DIR ]]; then mkdir $RUN_DIR; fi
 if [[ ! -d $STAGE0_DIR ]]; then mkdir $STAGE0_DIR; fi
 
@@ -44,6 +42,7 @@ while [[ $DATE -le $END_DATE_STAGE0 ]]; do
    mkdir ${TMP_DIR}  2>/dev/null
    cd ${TMP_DIR}
 
+   #Find the difference between forecast lead times
    export DIFF_FCST=$(($FCST_RANGE1 - $FCST_RANGE2))
 
    if [[ $DIFF_FCST -le 0  ]]; then

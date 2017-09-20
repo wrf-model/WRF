@@ -894,28 +894,28 @@ CONTAINS
 !...conversion factor from ppm m min-1 to mol km-2 hr-1
 !...(e_bio is in units of ppm m min-1)
        convert2(its:ite,jts:jte) = rho_phy(its:ite,kts,jts:jte)*60./.02897
-       print*,'jdf shr_megan_mechcomps_n',shr_megan_mechcomps_n
-       print*,'jdf index iso     ',p_isoprene
-       print*,'jdf index no      ',p_no
-       print*,'jdf index no2     ',p_no2
-       print*,'jdf index co      ',p_co
-       print*,'jdf index hcho    ',p_hcho
-       print*,'jdf index ald     ',p_ald
-       print*,'jdf index acet    ',p_acet
-       print*,'jdf index tol     ',p_tol
-       print*,'jdf index c10h16  ',p_c10h16
-       print*,'jdf index so2     ',p_so2
-       print*,'jdf index dms     ',p_dms
-       print*,'jdf index bigalk  ',p_bigalk
-       print*,'jdf index bigene  ',p_bigene
-       print*,'jdf index nh3     ',p_nh3
-       print*,'jdf index c3hoh   ',p_ch3oh
-       print*,'jdf index c2h5oh  ',p_c2h5oh
-       print*,'jdf index ch3co2h ',p_ch3co2h
-       print*,'jdf index mek     ',p_mek
-       print*,'jdf index c2h4    ',p_c2h4
-       print*,'jdf index ceh6    ',p_c3h6
-       print*,'jdf index c3h8    ',p_c3h8
+       !print*,'jdf shr_megan_mechcomps_n',shr_megan_mechcomps_n
+       !print*,'jdf index iso     ',p_isoprene
+       !print*,'jdf index no      ',p_no
+       !print*,'jdf index no2     ',p_no2
+       !print*,'jdf index co      ',p_co
+       !print*,'jdf index hcho    ',p_hcho
+       !print*,'jdf index ald     ',p_ald
+       !print*,'jdf index acet    ',p_acet
+       !print*,'jdf index tol     ',p_tol
+       !print*,'jdf index c10h16  ',p_c10h16
+       !print*,'jdf index so2     ',p_so2
+       !print*,'jdf index dms     ',p_dms
+       !print*,'jdf index bigalk  ',p_bigalk
+       !print*,'jdf index bigene  ',p_bigene
+       !print*,'jdf index nh3     ',p_nh3
+       !print*,'jdf index c3hoh   ',p_ch3oh
+       !print*,'jdf index c2h5oh  ',p_c2h5oh
+       !print*,'jdf index ch3co2h ',p_ch3co2h
+       !print*,'jdf index mek     ',p_mek
+       !print*,'jdf index c2h4    ',p_c2h4
+       !print*,'jdf index ceh6    ',p_c3h6
+       !print*,'jdf index c3h8    ',p_c3h8
        do m = 1,shr_megan_mechcomps_n
          p_in_chem = shr_megan_mechcomps(m)%index
          print*,'jdf index',m,p_in_chem

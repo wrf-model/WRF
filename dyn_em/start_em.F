@@ -1714,8 +1714,8 @@ endif
 !   check that the megan emission species are in chem option
 !-------------------------------------------------------------------
          if (config_flags%chem_opt > 0) then
-           write(message,'('' start_domain_em: numgas = '',i4)') numgas
-           CALL wrf_message( trim(message) )
+           write(message,'('' start_domain_em: numgas = '',i5)') numgas
+           CALL wrf_message( trim(adjustl(message)) )
            CALL wrf_spc_chk( numgas )
          endif
 #endif

@@ -52,6 +52,10 @@ CONTAINS
                          CLDEFI,LOWLYR,                          &
                          MASS_FLUX,                              &
                          RTHFTEN, RQVFTEN,                       &
+#if (WRF_USE_CLM == 1)
+                         megan_specifier, megan_factors_file,    &
+                         megan_mapped_emisfctrs,                 &
+#endif
                          CLDFRA,CLDFRA_OLD,GLW,GSW,EMISS,EMBCK,  & !EMBCK new
                          LU_INDEX,                               &
                          landuse_ISICE, landuse_LUCATS,          &
@@ -701,6 +705,11 @@ CONTAINS
                 ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
                 Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
                 SWUPsubgrid,lhsoi,lhtran,lhveg
+#if (WRF_USE_CLM == 1)
+   LOGICAL, INTENT(IN)          :: megan_mapped_emisfctrs
+   CHARACTER(LEN=*), INTENT(IN) :: megan_factors_file
+   CHARACTER(LEN=*), INTENT(IN) :: megan_specifier(:)
+#endif
 
 !obs fdda
    INTEGER, OPTIONAL, INTENT(IN) :: itimestep
@@ -1176,7 +1185,9 @@ integer myproc
                 massflux_EDKF, entr_EDKF, detr_EDKF, & 
                 thl_up, thv_up, rt_up,       &
                 rv_up, rc_up, u_up, v_up,    &
-                frac_up, &
+!sw++
+                frac_up, itimestep,id,                          &
+!sw--
                 EXCH_H,VEGFRA,                                  &
                 SNOW,SNOWC, CANWAT,SMSTAV,                      &
                 SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,ACSNOM,       &
@@ -1290,6 +1301,10 @@ integer myproc
                 ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
                 Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
                 SWUPsubgrid,lhsoi,lhveg,lhtran                      &
+#if (WRF_USE_CLM == 1)
+                ,megan_specifier, megan_factors_file                &
+                ,megan_mapped_emisfctrs                             &
+#endif
 ! end of CLM vraiables 
                 ,landusef,landusef2,NLCAT                       & ! danli mosaic
                 ,sf_surface_mosaic, mosaic_cat                  & ! danli mosaic
@@ -2121,7 +2136,9 @@ integer myproc
                 massflux_EDKF, entr_EDKF, detr_EDKF, & 
                 thl_up, thv_up, rt_up,       &
                 rv_up, rc_up, u_up, v_up,    &
-                frac_up, &
+!sw++
+                frac_up, itimestep, id,                         &
+!sw--
                 EXCH_H,VEGFRA,                                  &
                 SNOW,SNOWC, CANWAT,SMSTAV,                      &
                 SMSTOT, SFCRUNOFF,UDRUNOFF,ACSNOW,ACSNOM,       &
@@ -2233,6 +2250,10 @@ integer myproc
                 ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
                 Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
                 SWUPsubgrid,lhsoi,lhveg,lhtran                      &
+#if (WRF_USE_CLM == 1)
+                ,megan_specifier, megan_factors_file     &
+                ,megan_mapped_emisfctrs                  &
+#endif
 ! end of CLM vraiables 
                 ,landusef,landusef2,NLCAT                       & ! danli mosaic
                 ,sf_surface_mosaic, mosaic_cat                  & ! danli mosaic
@@ -2311,12 +2332,14 @@ integer myproc
    LOGICAL, INTENT(IN)         ::   RDMAXALB
    LOGICAL, INTENT(IN)         :: is_CAMMGMP_used !BSINGH:02/01/2013: For CAMUWPBL scheme
 
+   INTEGER , INTENT(IN)        ::     id
    INTEGER , INTENT(IN)        ::     ids, ide, jds, jde, kds, kde, &
                                       ims, ime, jms, jme, kms, kme, &
                                       its, ite, jts, jte, kts, kte
    INTEGER , INTENT(IN)        ::     num_soil_layers
    INTEGER , INTENT(IN)        ::     SF_URBAN_PHYSICS 
    INTEGER , INTENT(IN)        ::     IOPT_RUN
+   INTEGER , INTENT(IN)        ::     itimestep
 
 !   INTEGER , INTENT(IN)        ::     LakeModel
    INTEGER         ::     LakeModel
@@ -2587,7 +2610,9 @@ integer myproc
    REAL,  DIMENSION( ims:ime , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &
                                         TSK_SAVE
    LOGICAL,  INTENT(IN) :: start_of_simulation
-   INTEGER :: i,j
+!sw++
+   INTEGER :: i,j,patch
+!sw--
 
 ! CLM varaibles
    INTEGER , INTENT(IN)        ::     maxpatch
@@ -2622,6 +2647,11 @@ integer myproc
                 ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
                 Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
                 SWUPsubgrid,lhsoi,lhtran,lhveg
+#if (WRF_USE_CLM == 1)
+   LOGICAL, INTENT(IN)          :: megan_mapped_emisfctrs
+   CHARACTER(LEN=*), INTENT(IN) :: megan_factors_file
+   CHARACTER(LEN=*), INTENT(IN) :: megan_specifier(:)
+#endif
 
 !-------------------------------------------------
 ! Noah-mosaic related variables are added to declaration  (danli)
@@ -3063,11 +3093,18 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS,  &
                      FNDSOILW, FNDSNOWH,                           &
                      num_soil_layers, restart,                     &
-                     allowed_to_read ,                             &
+!sw++
+                     allowed_to_read, id, config_flags%bio_emiss_opt, &
+!sw--
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
-                     its,ite, jts,jte, kts,kte                     &
-                    ,maxpatch                                            &
+                     its,ite, jts,jte, kts,kte,                    &
+                     megan_specifier,                              &
+                     megan_mapped_emisfctrs,                       &
+                     megan_factors_file                            &
+!sw++
+                    ,dt,maxpatch                                         &
+!sw--
                     ,numc,nump,snl,                                      &
                      snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
                      h2ocan,h2ocan_col,t2m_max,t2m_min,t_ref2m,          &
@@ -3096,11 +3133,23 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      ht,XLAND,XICE                                       &
                     ,ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
                      Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
-                     SWUPsubgrid,lhsoi,lhveg,lhtran                      &
+                     SWUPsubgrid,lhsoi,lhveg,lhtran,config_flags%chem_opt  &
                     )
         ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling CLM' )
         ENDIF
+!--------------------------------------------------------------
+!   check that t_veg /= 0
+!--------------------------------------------------------------
+        if( itimestep == 0 ) then
+          do patch = 1,maxpatch
+            do j = jts,jte
+              where( t_veg(its:ite,patch,j) == 0.)
+                t_veg(its:ite,patch,j) = tslb(its:ite,1,j)
+              endwhere
+            end do
+          end do
+        endif
 #else
         CALL wrf_error_fatal ( "SF CLM CURRENTLY ifdef'ed out, set -DWRF_USE_CLM in configure.wrf in ARCH_LOCAL" )
 #endif

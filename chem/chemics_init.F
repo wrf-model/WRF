@@ -167,6 +167,7 @@ call wrf_message("*                                                             
 call wrf_message("*********************************************************************")
 
     numgas = get_last_gas(config_flags%chem_opt)
+    numgas_out = numgas
  
    chem_select: SELECT CASE(config_flags%chem_opt)
      CASE (GOCART_SIMPLE)

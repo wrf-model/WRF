@@ -4949,7 +4949,7 @@ include 'netcdf.inc'
 
     CALL wrf_message( "megan_factors_init: megan comp names" )
     do i = 1,n_comps
-      CALL wrf_message( trim(comp_names(i)) )
+      CALL wrf_message( trim(adjustl(comp_names(i))) )
     end do
  
 !-----------------------------------------------------------------------
@@ -5447,6 +5447,7 @@ mech_loop : &
   logical :: found
   character(len=132) :: msg
 
+  found = .false.
   do n = 1,shr_megan_mechcomps_n
     do m = param_first_scalar,numgas
       found = trim(shr_megan_mechcomps(n)%name) == trim(chem_dname_table(1,m))
@@ -6436,11 +6437,11 @@ fp_loop_2 : &
 !-----------------------------------------------------------------------
 ! sum up the pfts for each wrf species with megan bio emissions
 !-----------------------------------------------------------------------
-    print*,'jdf 3',shr_megan_mechcomps_n
+    !print*,'jdf 3',shr_megan_mechcomps_n
     do imech = 1,shr_megan_mechcomps_n
       ii = shr_megan_mechcomps(imech)%index
       mbio_emis(ii) = real( sum( vocflx(:,imech) ),kind=r4 )
-      print*,'jdf 3',imech,ii,mbio_emis(ii)
+      !print*,'jdf 3',imech,ii,mbio_emis(ii)
     end do
 
 
@@ -26610,7 +26611,7 @@ contains
     call init_accum_field (name='T10', units='K', &
          desc='10-day running mean of 2-m temperature', &
          accum_type='runmean', accum_period=-10, &
-         subgrid_type='pft', numlev=1,init_value=SHR_CONST_TKFRZ+20._r8, & !BALLI- THIS SEEMS WRONG!!!
+         subgrid_type='pft', numlev=1,init_value=SHR_CONST_TKFRZ+20._r8)
 
     call init_accum_field (name='PREC365', units='MM H2O/S', &
          desc='365-day running mean of total precipitation', &
@@ -60334,14 +60335,14 @@ patch_loop_1 : &
     endif
 #endif
 
-          print*,'jdf 1', do_bioe
+          !print*,'jdf 1', do_bioe
           if( do_bioe ) then
             mbio_emis(:) = 0._r8
             rho_in = real( rho(i,kts,j),kind=r8 )
           endif
 
           call wrf_debug( 300,'clmdrv: B4 call to clm' )
-          print*,'jdf before call to clm'
+          !print*,'jdf before call to clm'
           call clm(forc_txy_buf        ,forc_uxy_buf           ,forc_vxy_buf    &
                   ,forc_qxy_buf        ,zgcmxy_buf             ,prec_buf        &
                   ,flwdsxy_buf         ,forc_sols_buf          ,forc_soll_buf   &
@@ -60423,9 +60424,9 @@ patch_loop_1 : &
 
           call wrf_debug( 300,'clmdrv: Af call to clm' )
                  
-                 print*,'jdf 2', do_bioe
+                 !print*,'jdf 2', do_bioe
                  if( do_bioe ) then
-                   print*,'jdf mbio_emis to e_bio'
+                   !print*,'jdf mbio_emis to e_bio'
                    e_bio(i,j,:) = mbio_emis(:)
                  endif
 
@@ -61302,7 +61303,7 @@ master_init: &
 
      CASE (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
            SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_KPP)
-      print*,'jdf megan_specifier'
+      !print*,'jdf megan_specifier'
       megan_specifier(1)='isoprene=isoprene+MBO_2m3e2ol+MBO_3m2e1ol+MBO_3m3e1ol'
       term1='myrcene+sabinene+limonene+carene_3+ocimene_t_b+pinene_b+pinene_a+phellandrene_a+thujene_a+terpinene_a+terpinene_g+terpinolene+phellandrene_b+camphene'
       term2='bornene+fenchene_a+ocimene_al+ocimene_c_b+estragole+camphor+piperitone+linalool+terpineol_4+terpineol_a+linalool_OXD_c+linalool_OXD_t+ionone_b+acoradiene'

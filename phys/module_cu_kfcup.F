@@ -710,7 +710,7 @@ PERTLOOPS:     do jpert = 1,numBins
                   if (idiagee>0) then  ! rce 11-may-2012
                      write(*,'(a,2i5,1p,2e11.3)') 'kfcup calling kf_cup_para'
                      write(98,'(///a,i5,2i5,5x,a,2i5,1pe11.3)') 'kfcup calling kf_cup_para, ktau, i, j', ktau, i, j, &
-                        'ijpert, jdf', ipert, jpert, jfd(ipert,jpert)
+                        'ijpert, jfd', ipert, jpert, jfd(ipert,jpert)
                   end if
  
                   CALL KF_cup_PARA( GRID_ID, KTAU,          & ! rce 11-may-2012

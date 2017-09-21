@@ -14,6 +14,7 @@ setenv WKC_HOME ${WRFC_ROOT}/chem/${WKC_DIRNAME}
 # KPP_HOME: environment variable needed by KPP
 # note: this is not plain KPP
 setenv KPP_HOME ${WKC_HOME}/kpp/kpp-2.1
+mkdir -p ${KPP_HOME}/bin
 setenv WKC_KPP ${KPP_HOME}/bin/kpp
 
 

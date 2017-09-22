@@ -3964,7 +3964,7 @@ SUBROUTINE PVS(ims,ime,jms,jme,nz1,nz2, &
    REAL, INTENT(IN)                   :: SIGMA(nz1:nz2)
 
    real :: DSX, DSY,F0,F1,F2,T00,T1,T2,T3
-   integer :: k, K0, K1, K2, i, j, iend, jend, kend
+   integer :: k, K0, K1, K2, i, j, iend, jend, kend, ii, jj
    real :: DX, SCALE, GRAV, XE
    real,dimension(ims:ime,jms:jme) :: UD,VD,DUDS,DVDS,DTDX,DTDY,DTDS,THEH,VOR 
    SCALE=-1.E6
@@ -4016,9 +4016,26 @@ SUBROUTINE PVS(ims,ime,jms,jme,nz1,nz2, &
          T1=TB(i,K1,j)
          T2=TB(i,K2,j)
 
-         THEH(i,j)=TB(i,k,j)
+!         THEH(i,j)=TB(i,k,j)
          DTDS(i,j)=F0*T00+F1*T1+F2*T2
       END DO
+      END DO
+
+      THEH = 0.D0
+      DO j=jms,jme
+         DO i=ims,ime
+            ii = i
+            jj = j
+            if (i.le.ids) &
+               ii = ids
+            if (i.ge.ide) &
+               ii = iend
+            if (j.le.jds) &
+               jj = jds
+            if (j.ge.jde) &
+               jj = jend
+            THEH(i,j)=TB(ii,k,jj)
+         END DO
       END DO
 
       DSX=2.*DX

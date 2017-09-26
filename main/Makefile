@@ -24,10 +24,9 @@ $(SOLVER)_ideal : module_initialize ideal_$(SOLVER).o
 	$(RANLIB) $(RLFLAGS) $(LIBWRFLIB)
 	$(LD) -o ideal.exe $(LDFLAGS) ideal_$(SOLVER).o ../dyn_$(SOLVER)/module_initialize_$(IDEAL_CASE).o $(LIBWRFLIB) $(LIB)
 
-$(SOLVER)_real : module_initialize ndown_$(SOLVER).o nup_$(SOLVER).o tc_$(SOLVER).o real_$(SOLVER).o
+$(SOLVER)_real : module_initialize ndown_$(SOLVER).o tc_$(SOLVER).o real_$(SOLVER).o
 	$(RANLIB) $(RLFLAGS) $(LIBWRFLIB)
 	$(LD) -o ndown.exe $(LDFLAGS) ndown_$(SOLVER).o  ../dyn_$(SOLVER)/module_initialize_$(IDEAL_CASE).o $(LIBWRFLIB) $(LIB)
-	#TEMPORARILY REMOVED $(LD) -o nup.exe $(LDFLAGS) nup_$(SOLVER).o  ../dyn_$(SOLVER)/module_initialize_$(IDEAL_CASE).o $(LIBWRFLIB) $(LIB)
 	$(LD) -o tc.exe $(LDFLAGS) tc_$(SOLVER).o  ../dyn_$(SOLVER)/module_initialize_$(IDEAL_CASE).o $(LIBWRFLIB) $(LIB)
 	$(LD) -o real.exe $(LDFLAGS) real_$(SOLVER).o ../dyn_$(SOLVER)/module_initialize_$(IDEAL_CASE).o $(LIBWRFLIB) $(LIB)
 

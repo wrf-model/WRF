@@ -349,7 +349,10 @@ For a tropical channel configuration, set the following:
       overall storm size), and choose the best.  
    5) Remember to also consider starting the TC program at a later or
       earlier time during your parameter space exploration.
-   6) After the metgrid file is finalized, and the real program is run,
+   6) The bogus storm will organize better if the initialization of the
+      tropical storm is entirely over water, and if the storm is able to 
+      develop over water for several days.
+   7) After the metgrid file is finalized, and the real program is run,
       use DFI in WRF. Removing and then introducing an entire bogus typhoon
       is the definition of unbalanced. Running DFI for 2-3 hours back and forth
       will be a benefit. For a successful implementation of a TC bogus storm in 

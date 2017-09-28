@@ -343,7 +343,7 @@ For a tropical channel configuration, set the following:
       process multiple runs, and vary the TC initialization. It would be 
       reasonable to select the maximum wind speed (vmax_meters_per_second) 
       from 30 to 60 by 5, select the radius of maximum winds ((m), rmax) = 
-      100000 to 500000 by 100000, and select a tuning parameter for the 
+      50000 to 200000 by 50000, and select a tuning parameter for the 
       vortex (vmax_ratio) = 0.5 to 0.9 by 0.1. Look at the resulting 
       bogus storms (sea level pressure, surface wind speeds, and 
       overall storm size), and choose the best.  

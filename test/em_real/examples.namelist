@@ -366,7 +366,7 @@ For a tropical channel configuration, set the following:
  latc_loc                            = 15.,
  lonc_loc                            = -90.,
  vmax_meters_per_second              = 30,
- rmax                                = 500000,
+ rmax                                = 100000,
  vmax_ratio                          = 0.5,
  /
 

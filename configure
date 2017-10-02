@@ -660,17 +660,12 @@ if test -n "$PERL" ; then
        /bin/mv configure.wrf.edit configure.wrf
      fi
    else
-     WRF_OS=$os ; export WRF_OS
-     WRF_MACH=$mach ; export WRF_MACH
-     echo '*** Configuration not found in configure_new.defaults; checking configure_old.defaults ***'
-
-     # see if we still have an old setting laying around from v2
-     if [ "$opt_level" = "-d" ] ; then
-       arch/config_old $opt_level 
-     else
-       arch/config_old
-     fi
-
+     echo '*********************************************************'
+     echo '***              ERROR ERROR ERROR ERROR              ***'
+     echo '***                                                   ***'
+     echo '*** Configuration not found in configure_new.defaults ***'
+     echo '*********************************************************'
+     exit 2
    fi
 fi
 

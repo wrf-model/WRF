@@ -669,35 +669,7 @@ if test -n "$PERL" ; then
    fi
 fi
 
-# new feb 2005.  test whether MPI-2
 if test -f configure.wrf ; then
-  grep 'DMPARALLEL *= *1' configure.wrf > /dev/null
-  if [ $? = 0 ] ; then
-    echo testing for MPI_Comm_f2c and MPI_Comm_c2f 
-    /bin/rm -f tools/mpi2_test
-    ( make mpi2_test 2> /dev/null ) 1> /dev/null
-    if test -e tools/mpi2_test.o ; then
-      echo "  " MPI_Comm_f2c and MPI_Comm_c2f are supported
-      sed '/^DM_CC.*=/s/$/ -DMPI2_SUPPORT/' configure.wrf > xx$$ ; /bin/mv xx$$ configure.wrf
-      if [ `hostname | cut -c 1-2` = "be" ] ; then
-         sed '/^ARCH_LOCAL.*=/s/$/ -DUSE_MPI_IN_PLACE/' configure.wrf > xx$$ ; /bin/mv xx$$ configure.wrf
-      fi
-    else
-      echo "  " MPI_Comm_f2c and MPI_Comm_c2f are not supported
-    fi
-    grep 'OMPCPP *= *-D_OPENMP' configure.wrf > /dev/null
-    if [ $? = 0 ] ; then
-      echo testing for MPI_Init_thread
-      /bin/rm -f tools/mpi2_thread_test
-      ( make mpi2_thread_test 2> /dev/null ) 1> /dev/null
-      if test -e tools/mpi2_thread_test.o ; then
-        echo "  " MPI_Init_thread is supported
-        sed '/^DM_CC.*=/s/$/ -DMPI2_THREAD_SUPPORT/' configure.wrf > xx$$ ; /bin/mv xx$$ configure.wrf
-      else 
-        echo "  " MPI_Init_thread is not supported
-      fi
-    fi
-  fi
 # new dec 2005.  test what fseek is supported (needed for share/landread.c to work correctly)
   echo testing for fseeko and fseeko64
   /bin/rm -f tools/fseeko_test tools/fseeko64_test

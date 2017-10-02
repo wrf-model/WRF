@@ -92,7 +92,7 @@ OMP             =       # -mp -Minfo=mp
 SFC             =       pgf90
 SCC             =       gcc
 DM_FC           =       mpif90 -f90=$(SFC)
-DM_CC           =       mpicc -cc=$(SCC) -DMPI2_SUPPORT
+DM_CC           =       mpicc -cc=$(SCC)
 FC              =        $(DM_FC)
 CC              =       $(DM_CC) -DFSEEKO64_OK 
 LD              =       $(FC)

@@ -61,7 +61,7 @@ CONTAINS
   do j=jts,jte
   do i=its,ite
 !
-! donṫ do dust over water!!!
+! don't do dust over water!!!
 !
      if(xland(i,j).gt.1.5)then
      ilwi(1,1)=0
@@ -72,7 +72,7 @@ CONTAINS
      w10m(1,1)=sqrt(u10(i,j)*u10(i,j)+v10(i,j)*v10(i,j))
      airmas(1,1)=-(p8w(i,kts+1,j)-p8w(i,kts,j))*dx*dx/g
 !
-! we donṫ trust the u10,v10 values, is model layers are very thin near surface
+! we don't trust the u10,v10 values, is model layers are very thin near surface
 !
      if(dz8w(i,kts,j).lt.12.)w10m=sqrt(u_phy(i,kts,j)*u_phy(i,kts,j)+v_phy(i,kts,j)*v_phy(i,kts,j))
 !

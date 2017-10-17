@@ -1,5 +1,5 @@
-subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
-                              y, grid, config_flags)
+subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, xbx, &
+                              y, grid, config_flags, vp6, vv6)
 
    !----------------------------------------------------------------------
    ! Purpose:  Does transform of control variable (V) to Obs-space (Y)
@@ -13,16 +13,19 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
    real,                       intent(in)    :: cv(1:cv_size)     ! control variables.
    type(iv_type),              intent(inout) :: iv     ! innovation vector (o-b).
    type(vp_type),              intent(inout) :: vp     ! Grdipt/level CV.
-   type(vp_type),              intent(inout) :: vp6     ! Grdipt/level CV for 6h.
    type(vp_type),              intent(inout) :: vv     ! Grdipt/EOF CV.
-   type(vp_type),              intent(inout) :: vv6     ! Grdipt/EOF CV for 6h.
    type(xbx_type),             intent(inout) :: xbx    ! For header & non-grid arrays.
    type(y_type),               intent(inout) :: y      ! y = H(x_inc).
    type(domain),               intent(inout) :: grid
    type(grid_config_rec_type), intent(inout) :: config_flags
 
+   ! vp6 and vv6 are defined only when the code is configured and compiled for 4dvar
+   type(vp_type), optional,    intent(inout) :: vp6     ! Grdipt/level CV for 6h.
+   type(vp_type), optional,    intent(inout) :: vv6     ! Grdipt/EOF CV for 6h.
+
    type(x_type) :: shuffle
    integer :: nobwin, jl_start, jl_end, time_step_seconds
+   integer :: num_subtwindow
 
    character(len=4) :: filnam
    character(len=256) :: timestr, timestr1
@@ -34,6 +37,10 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
    if (var4d) then
 #ifdef VAR4D
       call da_transform_vtox(grid, be%cv%size_jb, xbx, be, ep, cv(1:be%cv%size_jb), vv, vp)
+      if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
+         call da_transform_vpatox(grid, be, ep, vp)
+         call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
+      end if
       call domain_clock_get( grid, start_timestr=timestr )
       call da_transfer_xatowrftl(grid, config_flags, 'tl01', timestr)
 
@@ -150,15 +157,51 @@ subroutine da_transform_vtoy(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, &
 
 #endif
    else  ! not var4d
+
+      ! as of V3.9, vp%alpha is not included in the vptox (called by vtox) calculation
+      ! here grid%xa contains only the static increment
       call da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp)
-      iv%info(:)%n1 = 1
-      iv%info(:)%n2 = iv%info(:)%nlocal
-      if ( use_rad ) then
-         iv%instid(:)%info%n1 = 1
-         iv%instid(:)%info%n2 = iv%instid(:)%num_rad
+
+      if ( use_4denvar ) then
+         num_subtwindow = num_fgat_time
+      else
+         num_subtwindow = 1
       end if
-      call da_transform_xtoxa(grid)
-      call da_transform_xtoy(cv_size, cv, grid, iv, y)
+
+      if ( num_subtwindow > 1 ) then
+         !grid%xa_static = grid%xa !save the static increment
+         call da_copy_xa(grid%xa_static, grid%xa)
+      end if
+
+      do nobwin = num_subtwindow, 1 , -1
+         if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
+            call da_transform_vpatox(grid, be, ep, vp, nobwin)
+            if ( num_subtwindow > 1 ) then
+               !reset grid%xa = grid%xa_static
+               call da_copy_xa(grid%xa, grid%xa_static)
+            end if
+            call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
+         end if
+         call da_transform_xtoxa(grid)
+         iv%time = nobwin
+         if ( use_4denvar ) then
+            iv%info(:)%n1 = iv%info(:)%plocal(iv%time-1) + 1
+            iv%info(:)%n2 = iv%info(:)%plocal(iv%time)
+            if ( use_rad ) then
+               iv%instid(:)%info%n1 = iv%instid(:)%info%plocal(iv%time-1) + 1
+               iv%instid(:)%info%n2 = iv%instid(:)%info%plocal(iv%time)
+            end if
+         else
+            iv%info(:)%n1 = 1
+            iv%info(:)%n2 = iv%info(:)%nlocal
+            if ( use_rad ) then
+               iv%instid(:)%info%n1 = 1
+               iv%instid(:)%info%n2 = iv%instid(:)%num_rad
+            end if
+         end if !4denvar
+         call da_transform_xtoy(cv_size, cv, grid, iv, y)
+      end do
+
    end if ! var4d
 
    !--------------------------------------------------------------

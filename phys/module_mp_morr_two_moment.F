@@ -566,7 +566,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
                 RAINNC, RAINNCV, SR,                    &
 		SNOWNC,SNOWNCV,GRAUPELNC,GRAUPELNCV,    & ! hm added 7/13/13
                 refl_10cm, diagflag, do_radar_ref,      & ! GT added for reflectivity calcs
-                qrcuten, qscuten, qicuten, mu           & ! hm added
+                qrcuten, qscuten, qicuten               & ! hm added
                ,F_QNDROP, qndrop                        & ! hm added, wrf-chem 
                ,IDS,IDE, JDS,JDE, KDS,KDE               & ! domain dims
                ,IMS,IME, JMS,JME, KMS,KME               & ! memory dims
@@ -699,8 +699,6 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN):: &
       qrcuten, qscuten, qicuten
-   REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN):: &
-      mu
 
   LOGICAL, INTENT(IN), OPTIONAL ::                F_QNDROP  ! wrf-chem
   LOGICAL :: flag_qndrop  ! wrf-chem
@@ -788,10 +786,10 @@ SUBROUTINE MP_MORR_TWO_MOMENT(ITIMESTEP,                       &
           DZ1D(k)       = DZ(i,k,j)
           W1D(k)        = W(i,k,j)
           WVAR1D(k)     = WVAR(i,k,j)
-! add cumulus tendencies, decouple from mu
-          qrcu1d(k)     = qrcuten(i,k,j)/mu(i,j)
-          qscu1d(k)     = qscuten(i,k,j)/mu(i,j)
-          qicu1d(k)     = qicuten(i,k,j)/mu(i,j)
+! add cumulus tendencies, already decoupled
+          qrcu1d(k)     = qrcuten(i,k,j)
+          qscu1d(k)     = qscuten(i,k,j)
+          qicu1d(k)     = qicuten(i,k,j)
       end do  !jdf added this
 ! below for wrf-chem
    IF (flag_qndrop .AND. PRESENT( qndrop )) THEN
@@ -3300,7 +3298,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT
 #if (WRF_CHEM == 1)
          evapprod(k) = - PRE(K) - EPRDS(K) - EPRDG(K) 
          rainprod(k) = PRA(K) + PRC(K) + PSACWS(K) + PSACWG(K) + PGSACW(K) & 
-                       + PRAI(K) + PRCI(K) + PRACI(K) + PRACIS(K) + &
+                       + PRAI(K) + PRCI(K) + PRACI(K) + PRACIS(K)  &
                        + PRDS(K) + PRDG(K)
 #endif
 

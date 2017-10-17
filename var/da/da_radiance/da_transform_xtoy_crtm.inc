@@ -243,18 +243,20 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
          call da_interp_2d_partial (grid%xa%q(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
             absorber(kte-k+1,:))
 
-         if (crtm_cloud) then
+         if ( crtm_cloud .and. cloud_cv_options > 0 ) then
 
-         call da_interp_2d_partial (grid%xa%qcw(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
-            qcw(kte-k+1,:))
-         call da_interp_2d_partial (grid%xa%qci(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
-            qci(kte-k+1,:))
-         call da_interp_2d_partial (grid%xa%qrn(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
-            qrn(kte-k+1,:))
-         call da_interp_2d_partial (grid%xa%qsn(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
-            qsn(kte-k+1,:))
-         call da_interp_2d_partial (grid%xa%qgr(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
-            qgr(kte-k+1,:))
+            call da_interp_2d_partial (grid%xa%qcw(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
+               qcw(kte-k+1,:))
+            call da_interp_2d_partial (grid%xa%qrn(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
+               qrn(kte-k+1,:))
+            if ( cloud_cv_options > 1 ) then
+               call da_interp_2d_partial (grid%xa%qci(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
+                  qci(kte-k+1,:))
+               call da_interp_2d_partial (grid%xa%qsn(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
+                  qsn(kte-k+1,:))
+               call da_interp_2d_partial (grid%xa%qgr(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
+                  qgr(kte-k+1,:))
+            end if
 
          end if
 
@@ -264,7 +266,7 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
 
       ! Gamma correction from VarBC
       !----------------------------
-#ifdef CRTM_MODIF
+!#ifdef CRTM_MODIF
       if (use_varbc) then
         gammapred = iv%instid(inst)%varbc_info%gammapred 
         do k = 1, nchanl
@@ -280,7 +282,7 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
            end do	  
         end do
       end if
-#endif
+!#endif
 
       do n = iv%instid(inst)%info%n1, iv%instid(inst)%info%n2 ! loop for pixel
             

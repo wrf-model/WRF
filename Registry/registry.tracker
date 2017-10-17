@@ -5,9 +5,16 @@
 
 # Note that the {otrak} dimension is declared in registry.dimspec
 
-state  integer interesting     ij dyn_nmm    1     -    rh  "interesting" "Bitmask for area of interest flags (0=not in area of interest)" ""
+state  integer interesting     ij dyn_nmm    1     -    rh01  "interesting" "Bitmask for area of interest flags (0=not in area of interest)" ""
+state  integer nest_imid       {maxkid} dyn_nmm 1  -    r   "nest_imid"   "Last X-dir. middle point for each child domains"
+state  integer nest_jmid       {maxkid} dyn_nmm 1  -    r   "nest_jmid"   "Last Y-dir. middle point for each child domains"
+state  real    cuprecip_swath  ij dyn_nmm    1     -    rh01u=(UpMax)d=(DownCopy)  "cuprecip_swath" "Accumulated convective precip in area of interest" "m"
 state  real    precip_swath    ij dyn_nmm    1     -    rh01u=(UpMax)d=(DownCopy)  "precip_swath" "Accumulated total precip in area of interest" "m"
 state  real    windsq_swath    ij dyn_nmm    1     -    rh01u=(UpMax)d=(DownCopy)  "windsq_swath" "Accumulated maximum square of wind magnitude in area of interest" "m2 s-2"
+state  real    suswind_time    -  dyn_nmm    1     -    r                          "suswind_time"  "Time over which suswind has been accumulated so far." "s"
+state  real    suswind         ij dyn_nmm    1     -    rh01u=(UpMax)d=(DownCopy)  "suswind" "Sustained wind over sustainment interval" "m s-1"
+state  real    wind10_ratio    ij dyn_nmm    1     -    rd=(DownCopy)              "wind10_ratio" "Ratio of lowest model level wind to 10m wind" ""
+state  real    suswind_swath   ij dyn_nmm    1     -    rh01u=(UpMax)d=(DownCopy)  "suswind_swath" "Maximum sustained wind over accumulation interval" "m s-1"
 state  logical update_interest  - dyn_nmm .false.  -    r     "update_interest" ".true. = need to update area of interest" ""
 
 rconfig real   interest_rad_storm  namelist,physics max_domains 500 irh01 "interest_rad_storm"    "Storm radius of interest for swaths." "km"
@@ -19,9 +26,10 @@ rconfig integer interest_self      namelist,physics max_domains   0 irh01 "inter
 rconfig integer interest_storms    namelist,physics max_domains   1 irh01 "interest_kids" "Flag for enabling area of interest around storm center." ""
 
 # Swath mode.  Note there is only one of these: it is NOT per domain:
-rconfig integer swath_mode         namelist,physics -   1 irh01 "swath_mode"    "1=enable swaths, 0=disable" ""
+rconfig integer swath_mode         namelist,physics -   2 irh01 "swath_mode"    "2=2016 HWRF, 1=2015 HWRF, 0=disable" ""
 
 package   vt_swath swath_mode==1  -  state:interesting,precip_swath,windsq_swath
+package   vt_swath_2016 swath_mode==2  -  state:interesting,precip_swath,windsq_swath,suswind_swath,suswind,wind10_ratio,cuprecip_swath
 
 halo HALO_NMM_SWATH dyn_nmm 24:precip_swath,windsq_swath
 

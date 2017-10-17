@@ -3,6 +3,18 @@
 !
 MODULE module_sf_ruclsm
 
+! Notes for perturbations of soil properties (Judith Berner)
+! Perturbations are applied in subroutine soilprob to array hydro;
+! soilprop is called from subroutine SFCTMP which is called from subroutine LSMRUC;
+! subroutine LSMRUC had two new 3D fields: pattern_spp_lsm (in) and field_sf(inout);
+!    their vertical dimension is number of atmospheric levels (kms:kme) - (suboptimal, but easiest hack)
+!    field_sf is used to pass perturbed fields of hydrop up to model (and output) driver;
+! in argument list to SFCTMP the arrays are passed as pattern_spp_lsm(i,1:nzs,j), and exist henceforth as
+! column arrays;
+! in the subroutines below SFCTMP (SNOW and SNOWSOIL) the fields are called rstochcol,fieldcol_sf
+! to reflect their dimension rstochcol (1:nzs)
+
+
   USE module_model_constants
   USE module_wrf_error
 
@@ -14,7 +26,6 @@ MODULE module_sf_ruclsm
         real, dimension(1:NLUS) ::  SNUPTBL, RSTBL, RGLTBL, HSTBL, LAITBL,         &
                                     ALBTBL, Z0TBL, LEMITBL, PCTBL, SHDTBL, MAXALB
         REAL ::   TOPT_DATA,CMCMAX_DATA,CFACTR_DATA,RSMAX_DATA
-
 ! SOIL PARAMETERS
         INTEGER :: SLCATS
         INTEGER, PARAMETER :: NSLTYPE=30
@@ -36,7 +47,10 @@ MODULE module_sf_ruclsm
 CONTAINS
 
 !-----------------------------------------------------------------
-    SUBROUTINE LSMRUC(                                           &
+    SUBROUTINE LSMRUC(spp_lsm,                                   &
+#if (EM_CORE==1)
+                   pattern_spp_lsm,field_sf,                     &
+#endif
                    DT,KTAU,NSL,                                  &
 #if (EM_CORE==1)
                    lakemodel,lakemask,                           &
@@ -56,8 +70,7 @@ CONTAINS
                    CP,ROVCP,G0,LV,STBOLT,                        &
                    SOILMOIS,SH2O,SMAVAIL,SMMAX,                  &
                    TSO,SOILT,HFX,QFX,LH,                         &
-                   SFCRUNOFF,UDRUNOFF,SFCEXC,                    &
-!                   SFCRUNOFF,UDRUNOFF,ACRUNOFF,SFCEXC,           &
+                   SFCRUNOFF,UDRUNOFF,ACRUNOFF,SFCEXC,           &
                    SFCEVP,GRDFLX,SNOWFALLAC,ACSNOW,SNOM,         &
                    SMFR3D,KEEPFR3DFLAG,                          &
                    myj,shdmin,shdmax,rdlai2d,                    &
@@ -148,11 +161,18 @@ CONTAINS
 
    REAL,       INTENT(IN   )    ::     DT
    LOGICAL,    INTENT(IN   )    ::     myj,frpcpn
+   INTEGER,    INTENT(IN   )    ::     spp_lsm
    INTEGER,    INTENT(IN   )    ::     NLCAT, NSCAT, mosaic_lu, mosaic_soil
    INTEGER,    INTENT(IN   )    ::     ktau, nsl, isice, iswater, &
                                        ims,ime, jms,jme, kms,kme, &
                                        ids,ide, jds,jde, kds,kde, &
                                        its,ite, jts,jte, kts,kte
+
+#if (EM_CORE==1)
+   REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ),OPTIONAL::    pattern_spp_lsm
+   REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ),OPTIONAL::    field_sf
+#endif
+   REAL,    DIMENSION( ims:ime, 1  :nsl, jms:jme )         ::    field_sf_loc
 
    REAL,    DIMENSION( ims:ime, kms:kme, jms:jme )            , &
             INTENT(IN   )    ::                           QV3D, &
@@ -231,6 +251,7 @@ CONTAINS
                                                          SFCEVP, &
                                                       SFCRUNOFF, &
                                                        UDRUNOFF, &
+                                                       ACRUNOFF, &
                                                          GRDFLX, &
                                                          ACSNOW, &
                                                            SNOM, &
@@ -251,7 +272,6 @@ CONTAINS
                                                              PC, &
                                                         RUNOFF1, &
                                                         RUNOFF2, &
-                                                       ACRUNOFF, &
                                                          EMISSL, &
                                                            ZNTL, &
                                                         LMAVAIL, &
@@ -371,11 +391,27 @@ CONTAINS
    INTEGER   ::  k1,l,k2,kp,km
    CHARACTER (LEN=132) :: message
 
+   REAL,DIMENSION(ims:ime,1:nsl,jms:jme) :: rstoch 
 
 !-----------------------------------------------------------------
          NZS=NSL
          NDDZS=2*(nzs-2)
 
+         rstoch=0.0
+         field_sf_loc=0.0
+!beka added
+#if (EM_CORE==1)
+       if (spp_lsm==1) then
+         do J=jts,jte
+           do i=its,ite
+             do k=1,nsl
+               rstoch(i,k,j) = pattern_spp_lsm(i,k,j)
+               field_sf_loc(i,k,j)=field_sf(i,k,j)
+             enddo
+           enddo
+         enddo 
+       endif  
+#endif
 !---- table TBQ is for resolution of balance equation in VILKA
         CQ=173.15-.05
         R273=1./273.15
@@ -443,7 +479,6 @@ CONTAINS
            qsfc(i,j) = qvg(i,j)/(1.+qvg(i,j))
            SMELT(i,j) = 0.
            SNOM (i,j) = 0.
-           ACSNOW(i,j) = 0.
            SNOWFALLAC(i,j) = 0.
            PRECIPFR(i,j) = 0.
            RHOSNF(i,j) = -1.e3 ! non-zero flag
@@ -768,7 +803,6 @@ CONTAINS
              SNOWC(I,J)=0.0
            LMAVAIL(I,J)=1.0
 ! accumulated water equivalent of frozen precipitation over water [mm]
-           acsnow(i,j)=acsnow(i,j)+precipfr(i,j)
 
            ILAND=iswater
 !           ILAND=16
@@ -849,7 +883,6 @@ CONTAINS
            enddo
 
               LMAVAIL(I,J)=max(0.00001,min(1.,soilm1d(1)/(REF-QMIN)))
-!              LMAVAIL(I,J)=max(0.00001,min(1.,soilmois(i,1,j)/dqm))
 !              LMAVAIL(I,J)=max(0.00001,min(1.,soilm1d(1)/dqm))
 
 #if ( NMM_CORE == 1 )
@@ -879,8 +912,12 @@ CONTAINS
                     (zsmain(nzs)-zshalf(nzs))
 
         canwatold(i,j) = canwatr
+    IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
+      print *,'before SFCTMP, spp_lsm, rstoch, field_sf_loc',      &
+      i,j,spp_lsm,(rstoch(i,k,j),k=1,nzs),(field_sf_loc(i,k,j),k=1,nzs)
+    ENDIF
 !-----------------------------------------------------------------
-         CALL SFCTMP ( & 
+         CALL SFCTMP (spp_lsm,rstoch(i,:,j),field_sf_loc(i,:,j), & 
                 dt,ktau,conflx,i,j,                              &
 !--- input variables
                 nzs,nddzs,nroot,meltfactor,                      &   !added meltfactor
@@ -956,6 +993,15 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
           endif
         enddo
     ENDIF
+
+! Fill in field_sf to pass perturbed field of hydraulic cond. up to model driver and output
+#if (EM_CORE==1)
+       if (spp_lsm==1) then
+         do k=1,nsl
+           field_sf(i,k,j)=field_sf_loc(i,k,j)
+         enddo
+       endif
+#endif
 
 !***  DIAGNOSTICS
 !--- available and maximum soil moisture content in the soil
@@ -1133,7 +1179,7 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
 
 
 
-   SUBROUTINE SFCTMP (             &
+   SUBROUTINE SFCTMP (spp_lsm,rstochcol,fieldcol_sf,             &
                 delt,ktau,conflx,i,j,                            &
 !--- input variables
                 nzs,nddzs,nroot,meltfactor,                      &
@@ -1229,6 +1275,8 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
                                                          ZSHALF, &
                                                          DTDZS2 
 
+   REAL,     DIMENSION(1:NZS), INTENT(IN)  ::          rstochcol
+   REAL,     DIMENSION(1:NZS), INTENT(INOUT) ::     fieldcol_sf
 
 
    REAL,     DIMENSION(1:NDDZS), INTENT(IN)  ::           DTDZS
@@ -1250,6 +1298,7 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
           
 
    INTEGER, INTENT(INOUT)    ::                     ILAND,ISOIL
+   INTEGER                   ::                     ILANDs
 
 !-------- 2-d variables
    REAL                                                        , &
@@ -1332,6 +1381,7 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
    REAL,  INTENT(INOUT)                     ::              RSM, &  
                                                       SNWEPRINT, &
                                                      SNHEIPRINT
+   INTEGER,   INTENT(IN)                    ::     spp_lsm     
 !--- Local variables
 
    INTEGER ::  K,ILNB
@@ -1345,9 +1395,9 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
    REAL    ::  rhonewgr,rhonewice
 
    REAL    ::  RNET,GSWNEW,GSWIN,EMISSN,ZNTSN,EMISS_snowfree
-   REAL    ::  VEGFRAC, snow_mosaic, snfr
-   real    ::  cice, albice, albsn, drip, dripsn, dripnosn
-   real    ::  interw, intersn, infwater
+   REAL    ::  VEGFRAC, snow_mosaic, snfr, vgfr
+   real    ::  cice, albice, albsn, drip, dripsn, dripliq
+   real    ::  interw, intersn, infwater, intwratio
 
 !-----------------------------------------------------------------
         integer,   parameter      ::      ilsnow=99 
@@ -1368,10 +1418,17 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
         RSM=0.
         DD1=0.
         INFILTR=0.
+! Jul 2016 -  Avissar and Pielke (1989)
+! This formulation depending on LAI defines relative contribution of the vegetation to
+! the total heat fluxes between surface and atmosphere.
+! With VEGFRA=100% and LAI=3, VEGFRAC=0.86 meaning that vegetation contributes
+! only 86% of the total surface fluxes.
+!        VGFR=0.01*VEGFRA ! % --> fraction
+!        VEGFRAC=2.*lai*vgfr/(1.+2.*lai*vgfr)
         VEGFRAC=0.01*VEGFRA
         drip = 0.
         dripsn = 0.
-        dripnosn = 0.
+        dripliq = 0.
         smf = 0.
         interw=0.
         intersn=0.
@@ -1438,7 +1495,6 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
 
            newsn=newsnms*delt
 !---- ACSNOW - run-total snowfall water [mm]
-           acsnow=acsnow+newsn*1.e3
 
        IF(NEWSN.GT.0.) THEN
 !       IF(NEWSN.GE.1.E-8) THEN
@@ -1446,6 +1502,8 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
       print *, 'THERE IS NEW SNOW, newsn', newsn
     ENDIF
+
+        newsnowratio = min(1.,newsn/(snwe+newsn))
 
 !*** Calculate fresh snow density (t > -15C, else MIN value)
 !*** Eq. 10 from Koren et al. (1999)
@@ -1502,6 +1560,7 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
        ENDIF
 
         drip = 0.
+        intwratio=0.
      if(vegfrac > 0.01) then
 ! compute intercepted precipitation - Eq. 1 Lawrence et al.,
 ! J. of Hydrometeorology, 2006, CLM.
@@ -1511,6 +1570,10 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
 !         interw=DELT*PRCPMS*vegfrac
 !         intersn=NEWSN*vegfrac
          infwater=PRCPMS - interw/delt
+    if((interw+intersn) > 0.) then
+       intwratio=interw/(interw+intersn)
+    endif
+
 ! Update water/snow intercepted by the canopy
          dd1=CST + interw + intersn
          CST=DD1
@@ -1519,18 +1582,46 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
           CST=SAT
           DRIP=DD1-SAT
         ENDIF
-      else
-          CST=0.
-          DRIP=0.
-          interw=0.
-          intersn=0.
-          infwater=PRCPMS
-      endif ! vegfrac > 0.01
+     else
+         CST=0.
+         DRIP=0.
+         interw=0.
+         intersn=0.
+         infwater=PRCPMS
+     endif ! vegfrac > 0.01
+
+! SNHEI_CRIT is a threshold for fractional snow
+         SNHEI_CRIT=0.01601*1.e3/rhosn
+         SNHEI_CRIT_newsn=0.0005*1.e3/rhosn
+! snowfrac from the previous time step
+         SNOWFRAC=MIN(1.,SNHEI/(2.*SNHEI_CRIT))
+        if(snowfrac < 0.75) snow_mosaic = 1.
 
        IF(NEWSN.GT.0.) THEN
 !Update snow on the ground
-         snwe=snwe+newsn-intersn
-         newsnowratio = min(1.,newsn/snwe)
+         snwe=max(0.,snwe+newsn-intersn)
+!      if(drip > 0.) then
+!       if (snow_mosaic==1.) then
+!         dripsn = drip*snowfrac
+!         dripnosn=drip*(1.-snowfrac)
+!         snwe=snwe+dripsn
+!       else
+!         snwe=snwe+drip
+!       endif
+!      endif
+! Add drip to snow on the ground
+      if(drip > 0.) then
+       if (snow_mosaic==1.) then
+         dripliq=drip*intwratio
+         dripsn = drip - dripliq
+         snwe=snwe+dripsn
+         infwater=infwater+dripliq
+         dripliq=0.
+         dripsn = 0.
+       else
+         snwe=snwe+drip
+       endif
+      endif
          snhei=snwe*rhowater/rhosn
          NEWSN=NEWSN*rhowater/rhonewsn
        ENDIF
@@ -1541,23 +1632,18 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
          ILAND=ISICE
 !24nov15 - based on field exp on Pleasant View soccer fields
 !    if(meltfactor > 1.5) then ! all veg. types, except forests
-! SNHEI_CRIT is a threshold for fractional snow
-!         SNHEI_CRIT=0.01*1.e3/rhosn
-         SNHEI_CRIT=0.01601*1.e3/rhosn
+!         SNHEI_CRIT=0.01601*1.e3/rhosn
 ! Petzold - 1 cm of fresh snow overwrites effects from old snow.
 ! Need to test SNHEI_CRIT_newsn=0.01
 !         SNHEI_CRIT_newsn=0.01
-         SNHEI_CRIT_newsn=0.0005*1.e3/rhosn
 !    else  ! forests
-!24nov15
 !         SNHEI_CRIT=0.02*1.e3/rhosn
 !         SNHEI_CRIT_newsn=0.001*1.e3/rhosn
 !    endif
 
-!         SNOWFRAC=MIN(1.,SNHEI/SNHEI_CRIT)
          SNOWFRAC=MIN(1.,SNHEI/(2.*SNHEI_CRIT))
-!24nov15 - SNOWFRAC for urban category < 0.5 
-      if(ivgtyp == urban) snowfrac=min(0.7,snowfrac)
+!24nov15 - SNOWFRAC for urban category < 0.75 
+      if(ivgtyp == urban) snowfrac=min(0.75,snowfrac)
 !      if(meltfactor > 1.5) then
 !         if(isltyp > 9 .and. isltyp < 13) then
 !24nov15 clay soil types - SNOFRAC < 0.9
@@ -1569,10 +1655,9 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
 !      endif
 
 !         SNOWFRAC=MIN(1.,SNHEI/(2.*SNHEI_CRIT))
-       if(snowfrac < 0.3 .and. tabs > 275.) then
-! turn on snow "mosaic" when snowfrac < 0.3
-         snow_mosaic = 1. 
-       endif
+!       elseif(snowfrac < 0.3 .and. tabs > 275.) then
+
+       if(snowfrac < 0.75) snow_mosaic = 1.
 
        if(newsn > 0. ) SNOWFRACnewsn=MIN(1.,SNHEI/SNHEI_CRIT_newsn)
 
@@ -1592,11 +1677,13 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
 !-- land-use types with higher roughness (forests, urban).
 !5mar12      IF(znt.lt.0.2 .and. snowfrac.gt.0.99) znt=z0tbl(iland)
 !      IF(newsn==0. .and. znt.lt.0.2 .and. snowfrac.gt.0.99) znt=z0tbl(iland)
-      IF(newsn.eq.0. .and. znt.lt.0.2 .and. IVGTYP.ne.isice) then
-         if( snhei .gt. 2.*SNHEI_CRIT .and. snhei .le. 4.*SNHEI_CRIT)then
+      IF(newsn.eq.0. .and. znt.le.0.2 .and. IVGTYP.ne.isice) then
+         if( snhei .le. 2.*ZNT)then
            znt=0.55*znt+0.45*z0tbl(iland)
-         elseif(snhei > 4.*SNHEI_CRIT) then
+         elseif( snhei .gt. 2.*ZNT .and. snhei .le. 4.*ZNT)then
            znt=0.2*znt+0.8*z0tbl(iland)
+         elseif(snhei > 4.*ZNT) then
+           znt=z0tbl(iland)
          endif
        ENDIF
 
@@ -1714,13 +1801,14 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
           smelt=0.
           runoff1s=0.
           runoff2s=0.
+       
+          ilands = ivgtyp
 
-           dripnosn=drip*(1.-snowfrac)
-         CALL SOIL(          &
+         CALL SOIL(spp_lsm,rstochcol,fieldcol_sf,               &
 !--- input variables
-            i,j,iland,isoil,delt,ktau,conflx,nzs,nddzs,nroot,   &
-            PRCPMS,RAINF,PATM,QVATM,QCATM,GLW,GSWnew,           &
-            EMISS_snowfree,RNET,QKMS,TKMS,PC,csts,dripnosn,     &
+            i,j,ilands,isoil,delt,ktau,conflx,nzs,nddzs,nroot,   &
+            PRCPMS,RAINF,PATM,QVATM,QCATM,GLW,GSWnew,gswin,     &
+            EMISS_snowfree,RNET,QKMS,TKMS,PC,csts,dripliq,      &
             infwater,rho,vegfrac,lai,myj,                       &
 !--- soil fixed fields 
             QWRTZ,rhocs,dqm,qmin,ref,wilt,                      &
@@ -1826,18 +1914,16 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
       if (SEAICE .LT. 0.5) then
 ! LAND
            if(snow_mosaic==1.)then
-              dripsn = drip*snowfrac
               snfr=1.
            else
-              dripsn = drip
               snfr=snowfrac
            endif
-         CALL SNOWSOIL (     & !--- input variables
+         CALL SNOWSOIL (spp_lsm,rstochcol,fieldcol_sf,     & !--- input variables
             i,j,isoil,delt,ktau,conflx,nzs,nddzs,nroot,         &
             meltfactor,rhonewsn,SNHEI_CRIT,                     &  ! new
             ILAND,PRCPMS,RAINF,NEWSN,snhei,SNWE,snfr,           &
             RHOSN,PATM,QVATM,QCATM,                             &
-            GLW,GSWnew,EMISS,RNET,IVGTYP,                       &
+            GLW,GSWnew,GSWin,EMISS,RNET,IVGTYP,                 &
             QKMS,TKMS,PC,CST,dripsn,infwater,                   &
             RHO,VEGFRAC,ALB,ZNT,lai,                            &
             MYJ,                                                &
@@ -2041,10 +2127,10 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
 
        if(SEAICE .LT. 0.5) then
 !  LAND
-         CALL SOIL(          &
+         CALL SOIL(spp_lsm,rstochcol,fieldcol_sf,               &
 !--- input variables
             i,j,iland,isoil,delt,ktau,conflx,nzs,nddzs,nroot,   &
-            PRCPMS,RAINF,PATM,QVATM,QCATM,GLW,GSWnew,           &
+            PRCPMS,RAINF,PATM,QVATM,QCATM,GLW,GSWnew,GSWin,     &
             EMISS,RNET,QKMS,TKMS,PC,cst,drip,infwater,          &
             rho,vegfrac,lai,myj,                                &
 !--- soil fixed fields 
@@ -2135,11 +2221,11 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
 !------------------------------------------------------------------------
 
 
-        SUBROUTINE SOIL (&
+        SUBROUTINE SOIL (spp_lsm,rstochcol, fieldcol_sf,     &
 !--- input variables
             i,j,iland,isoil,delt,ktau,conflx,nzs,nddzs,nroot,&
             PRCPMS,RAINF,PATM,QVATM,QCATM,                   &
-            GLW,GSW,EMISS,RNET,                              &
+            GLW,GSW,GSWin,EMISS,RNET,                        &
             QKMS,TKMS,PC,cst,drip,infwater,rho,vegfrac,lai,  &
             myj,                                             &
 !--- soil fixed fields
@@ -2152,7 +2238,7 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
             soilmois,tso,smfrkeep,keepfr,                    &
             dew,soilt,qvg,qsg,qcg,                           &
             edir1,ec1,ett1,eeta,qfx,hfx,s,evapl,             &
-            prcpl,fltot,runoff1,runoff2,mavail,soilice,            &
+            prcpl,fltot,runoff1,runoff2,mavail,soilice,      &
             soiliqw,infiltrp,smf)
 
 !*************************************************************
@@ -2231,6 +2317,7 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
    REAL,                                                         &
             INTENT(IN   )    ::                             GLW, &
                                                             GSW, &
+                                                          GSWin, &
                                                           EMISS, &
                                                             RHO, &
                                                              PC, &
@@ -2277,6 +2364,9 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
                                                        SOILMOIS, &
                                                        SMFRKEEP
 
+   REAL,     DIMENSION(1:NZS), INTENT(IN)  ::          rstochcol
+   REAL,     DIMENSION(1:NZS), INTENT(INOUT) ::     fieldcol_sf
+
 
    REAL,     DIMENSION( 1:nzs )                                , &
              INTENT(INOUT)   ::                          KEEPFR
@@ -2306,6 +2396,7 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
                                                           SOILT
 
 !-------- 1-d variables
+   INTEGER                   , INTENT(IN)  ::      spp_lsm   
    REAL,     DIMENSION(1:NZS), INTENT(OUT)  ::          SOILICE, &
                                                         SOILIQW
 
@@ -2326,6 +2417,7 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
                                    fwsat,lwsat,told,smold
 
    REAL                        ::  soiltold,smf
+   REAL    :: soilres, alfa, fex, fex_fc, fc, psit
 
    INTEGER ::  nzs1,nzs2,k
 
@@ -2445,7 +2537,7 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
 ! SOILPROP computes thermal diffusivity, and diffusional and
 !          hydraulic condeuctivities
 !******************************************************************
-          CALL SOILPROP(       &
+          CALL SOILPROP(spp_lsm,rstochcol,fieldcol_sf,       &
 !--- input variables
                nzs,fwsat,lwsat,tav,keepfr,                        &
                soilmois,soiliqw,soilice,                          &
@@ -2507,11 +2599,11 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
 !**************************************************************
 !  TRANSF computes transpiration function
 !**************************************************************
-           CALL TRANSF(                                       &
+           CALL TRANSF(i,j,                                   &
 !--- input variables
-              nzs,nroot,soiliqw,tabs,                         &
+              nzs,nroot,soiliqw,tabs,lai,gswin,               &
 !--- soil fixed fields
-              dqm,qmin,ref,wilt,zshalf,                       &
+              dqm,qmin,ref,wilt,zshalf,pc,iland,              &
 !--- output variables
               tranf,transum)
 
@@ -2521,6 +2613,33 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
            told(k)=tso(k)
            smold(k)=soilmois(k)
           enddo
+
+! Sakaguchi and Zeng (2009) - dry soil resistance to evaporation
+!      if (vgtype==11) then   ! MODIS wetland
+        alfa=1.
+!      else
+        fex=min(1.,soilmois(1)/dqm)
+        fex=max(fex,0.01)
+        psit=psis*fex ** (-bclh)
+        psit = max(-1.e5, psit)
+        alfa=min(1.,exp(g*psit/r_v/SOILT))
+!      endif
+        alfa=1.
+! field capacity
+        fc=max(qmin,ref*0.5)
+        fex_fc=1.
+      if((soilmois(1)+qmin) > fc .or. (qvatm-qvg) > 0.) then
+        soilres = 1.
+      else
+        fex_fc=min(1.,(soilmois(1)+qmin)/fc)
+        fex_fc=max(fex_fc,0.01)
+        soilres=0.25*(1.-cos(piconst*fex_fc))**2.
+      endif
+    IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
+!    if (i==421.and.j==280) then
+     print *,'fex,psit,psis,bclh,g,r_v,soilt,alfa,mavail,soilmois(1),fc,ref,soilres,fex_fc', &
+              fex,psit,psis,bclh,g,r_v,soilt,alfa,mavail,soilmois(1),fc,ref,soilres,fex_fc
+    endif
 
 !**************************************************************
 !  SOILTEMP soilves heat budget and diffusion eqn. in soil
@@ -2532,9 +2651,9 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
              delt,ktau,conflx,nzs,nddzs,nroot,                &
              PRCPMS,RAINF,                                    &
              PATM,TABS,QVATM,QCATM,EMISS,RNET,                &
-             QKMS,TKMS,PC,rho,vegfrac,                        &
+             QKMS,TKMS,PC,rho,vegfrac, lai,                   &
              thdif,cap,drycan,wetcan,                         & 
-             transum,dew,mavail,                              &
+             transum,dew,mavail,soilres,alfa,                 &
 !--- soil fixed fields
              dqm,qmin,bclh,zsmain,zshalf,DTDZS,tbq,           &
 !--- constants
@@ -2550,14 +2669,16 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
 
         IF(QVATM.GE.QSG)THEN
           DEW=QKMS*(QVATM-QSG)
+          ETT1=0.
           DO K=1,NZS
             TRANSP(K)=0.
           ENDDO
         ELSE
+
           DO K=1,NROOT
             TRANSP(K)=VEGFRAC*RAS*QKMS*                       &
                     (QVATM-QSG)*                              &
-                     PC*TRANF(K)*DRYCAN/ZSHALF(NROOT+1)
+                    TRANF(K)*DRYCAN/ZSHALF(NROOT+1)
                IF(TRANSP(K).GT.0.) TRANSP(K)=0.
             ETT1=ETT1-TRANSP(K)
           ENDDO
@@ -2599,7 +2720,7 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
                zsmain,zshalf,diffu,hydro,                      &
                QSG,QVG,QCG,QCATM,QVATM,-infwater,              &
                QKMS,TRANSP,DRIP,DEW,0.,SOILICE,VEGFRAC,        &
-               0.,                                             &
+               0.,soilres,                                     &
 !-- soil properties
                DQM,QMIN,REF,KSAT,RAS,INFMAX,                   &
 !-- output
@@ -2663,16 +2784,16 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
           QFX= XLV*EETA
         ELSE
 ! ---  evaporation
-          EDIR1 =-(1.-vegfrac)*QKMS*RAS*                      &
+          EDIR1 =-soilres*(1.-vegfrac)*QKMS*RAS*                      &
                   (QVATM-QVG)
           CMC2MS=CST/DELT*RAS
           EC1 = Q1 * WETCAN * vegfrac
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
-     IF(i.eq.440.and.j.eq.180.or. QFX.gt.1000..or.i.eq.417.and.j.eq.540) then
+!     IF(i.eq.440.and.j.eq.180.or. QFX.gt.1000..or.i.eq.417.and.j.eq.540) then
        print *,'CST before update=',cst
        print *,'EC1=',EC1,'CMC2MS=',CMC2MS
      ENDIF
-    ENDIF
+!    ENDIF
 
           CST=max(0.,CST-EC1 * DELT)
 
@@ -2683,7 +2804,7 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
 
      if (myj) then
 !-- moisture flux for coupling with MYJ PBL
-          EETA=-QKMS*RAS*(QVATM/(1.+QVATM) - QVG/(1.+QVG))*1.E3
+          EETA=-soilres*QKMS*RAS*(QVATM/(1.+QVATM) - QVG/(1.+QVG))*1.E3
      else ! myj
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
 !    IF(i.eq.440.and.j.eq.180.or. QFX.gt.1000..or.i.eq.417.and.j.eq.540) then
@@ -3007,14 +3128,14 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
 
 
 
-        SUBROUTINE SNOWSOIL (&
+        SUBROUTINE SNOWSOIL (spp_lsm,rstochcol,fieldcol_sf,&
 !--- input variables
              i,j,isoil,delt,ktau,conflx,nzs,nddzs,nroot,       &
              meltfactor,rhonewsn,SNHEI_CRIT,                   & ! new
              ILAND,PRCPMS,RAINF,NEWSNOW,snhei,SNWE,SNOWFRAC,   &
              RHOSN,                                            &
              PATM,QVATM,QCATM,                                 &
-             GLW,GSW,EMISS,RNET,IVGTYP,                        &
+             GLW,GSW,GSWin,EMISS,RNET,IVGTYP,                  &
              QKMS,TKMS,PC,cst,drip,infwater,                   &
              rho,vegfrac,alb,znt,lai,                          & 
              MYJ,                                              &
@@ -3124,6 +3245,7 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
    REAL                                                        , &
             INTENT(IN   )    ::                             GLW, &
                                                             GSW, &
+                                                          GSWin, &
                                                             RHO, &
                                                              PC, &
                                                         VEGFRAC, &
@@ -3162,6 +3284,9 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
    REAL,     DIMENSION(1:NDDZS), INTENT(IN)  ::           DTDZS
 
    REAL,     DIMENSION(1:5001), INTENT(IN)  ::              TBQ
+
+   REAL,     DIMENSION(1:NZS), INTENT(IN)  ::          rstochcol
+   REAL,     DIMENSION(1:NZS), INTENT(INOUT) ::     fieldcol_sf
 
 !--- input/output variables
 !-------- 3-d soil moisture and temperature
@@ -3221,6 +3346,7 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
    REAL,     INTENT(OUT)                    ::              RSM, &
                                                       SNWEPRINT, &
                                                      SNHEIPRINT
+   INTEGER,  INTENT(IN)                    ::       spp_lsm 
 !--- Local variables
 
 
@@ -3403,7 +3529,7 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
 ! SOILPROP computes thermal diffusivity, and diffusional and
 !          hydraulic condeuctivities
 !******************************************************************
-          CALL SOILPROP(      &
+          CALL SOILPROP(spp_lsm,rstochcol,fieldcol_sf,      &
 !--- input variables
                nzs,fwsat,lwsat,tav,keepfr,                       &
                soilmois,soiliqw,soilice,                         &
@@ -3499,11 +3625,11 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
 !**************************************************************
 !  TRANSF computes transpiration function
 !**************************************************************
-           CALL TRANSF(                                       &
+           CALL TRANSF(i,j,                                   &
 !--- input variables
-              nzs,nroot,soiliqw,tabs,                         &
+              nzs,nroot,soiliqw,tabs,lai,gswin,               &
 !--- soil fixed fields
-              dqm,qmin,ref,wilt,zshalf,                       & 
+              dqm,qmin,ref,wilt,zshalf,pc,iland,              & 
 !--- output variables
               tranf,transum)
 
@@ -3552,7 +3678,7 @@ print *, 'TSO before calling SNOWTEMP: ', tso
 ! Evaporation
           DO K=1,NROOT
             TRANSP(K)=vegfrac*RAS*FQ*(QVATM-QSG)              &
-                     *PC*tranf(K)*DRYCAN/zshalf(NROOT+1)
+                     *tranf(K)*DRYCAN/zshalf(NROOT+1)
 !           IF(TRANSP(K).GT.0.) TRANSP(K)=0.
             ETT1=ETT1-TRANSP(K)
           ENDDO
@@ -3602,7 +3728,7 @@ print *, 'TSO before calling SNOWTEMP: ', tso
                QSG,QVG,QCG,QCATM,QVATM,-INFWATER,                  &
                QKMS,TRANSP,0.,                                     &
                0.,SMELT,soilice,vegfrac,                           &
-               snowfrac,                                           &
+               snowfrac,1.,                                        &
 !-- soil properties
                DQM,QMIN,REF,KSAT,RAS,INFMAX,                       &
 !-- output
@@ -4492,9 +4618,9 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
            delt,ktau,conflx,nzs,nddzs,nroot,                &
            PRCPMS,RAINF,PATM,TABS,QVATM,QCATM,              &
            EMISS,RNET,                                      &
-           QKMS,TKMS,PC,RHO,VEGFRAC,                        &
+           QKMS,TKMS,PC,RHO,VEGFRAC,lai,                    &
            THDIF,CAP,DRYCAN,WETCAN,                         &
-           TRANSUM,DEW,MAVAIL,                              &
+           TRANSUM,DEW,MAVAIL,soilres,alfa,                 &
 !--- soil fixed fields
            DQM,QMIN,BCLH,                                   &
            ZSMAIN,ZSHALF,DTDZS,TBQ,                         &
@@ -4574,6 +4700,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
                                                            RNET, &  
                                                              PC, &
                                                         VEGFRAC, &
+                                                            LAI, &
                                                             DEW, & 
                                                            QKMS, &
                                                            TKMS
@@ -4584,6 +4711,10 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
                                                            BCLH, &
                                                             DQM, &
                                                            QMIN
+   REAL                                                        , &
+            INTENT(IN   )    ::                                  &
+                                                   soilres,alfa
+
 
    REAL,     INTENT(IN   )   ::                              CP, &
                                                             CVW, &
@@ -4633,6 +4764,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
 
    INTEGER ::  nzs1,nzs2,k,k1,kn,kk, iter
 
+
 !-----------------------------------------------------------------
 
         iter=0
@@ -4673,18 +4805,12 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
 !--- THE HEAT BALANCE EQUATION (Smirnova et al., 1996, EQ. 21,26)
 
         RHCS=CAP(1)
-! fex > 1. - reduces direct evaporation, and makes surface forecast drier
-!       and warmer
-!        fex=1.5
-        fex=1.
-        H=MAVAIL**fex
-!        IF(DEW.NE.0.)THEN
-!          DRYCAN=0.
-!          WETCAN=1.
-!        ENDIf
-        TRANS=PC*TRANSUM*DRYCAN/ZSHALF(NROOT+1)
+
+        H=MAVAIL
+
+        TRANS=TRANSUM*DRYCAN/ZSHALF(NROOT+1)
         CAN=WETCAN+TRANS
-        UMVEG=1.-VEGFRAC
+        UMVEG=(1.-VEGFRAC) * soilres
  2111   continue
         FKT=TKMS
         D1=cotso(NZS1)
@@ -4711,15 +4837,19 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
         +RAINF*CVW*PRCPMS*max(273.15,TABS)                            &
          )/TDENOM
         AA1=AA+CC
+!        AA1=AA*alfa+CC
         PP=PATM*1.E3
         AA1=AA1/PP
         CALL VILKA(TN,AA1,BB,PP,QS1,TS1,TBQ,KTAU,i,j,iland,isoil)
         TQ2=QVATM
         TX2=TQ2*(1.-H)
         Q1=TX2+H*QS1
+!        Q1=alfa*QS1
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
+!    if (i==421.and.j==280) then
         print *,'VILKA1 - TS1,QS1,TQ2,H,TX2,Q1',TS1,QS1,TQ2,H,TX2,Q1
     ENDIF
+!with alfa        go to 100
         IF(Q1.LT.QS1) GOTO 100
 !--- if no saturation - goto 100
 !--- if saturation - goto 90
@@ -4728,24 +4858,34 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
         TSO(1)=TS1
         QCG=max(0.,Q1-QS1)
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
+!    if (i==421.and.j==280) then
         print *,'90 QVG,QSG,QCG,TSO(1)',QVG,QSG,QCG,TSO(1)
     ENDIF
-
         GOTO 200
   100   BB=BB-AA*TX2
         AA=(AA*H+CC)/PP
-
         CALL VILKA(TN,AA,BB,PP,QS1,TS1,TBQ,KTAU,i,j,iland,isoil)
         Q1=TX2+H*QS1
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
 !     if(i.eq.279.and.j.eq.263) then
+!    if (i==421.and.j==280) then
         print *,'VILKA2 - TS1,QS1,TQ2,H,TX2,Q1',TS1,QS1,TQ2,H,TX2,Q1
     ENDIF
-        IF(Q1.GT.QS1) GOTO 90
+        IF(Q1.GE.QS1) GOTO 90
+!with alfa  100  continue
         QSG=QS1
         QVG=Q1
+!   if( QS1>QVATM .and. QVATM > QVG) then
+! very dry soil 
+!     print *,'very dry soils mavail,qvg,qs1,qvatm,ts1',i,j,mavail,qvg,qs1,qvatm,ts1
+!        QVG = QVATM
+!   endif
         TSO(1)=TS1
         QCG=0.
+    IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
+!    if (i==421.and.j==280) then
+       print *,'q1,qsg,qvg,qvatm,alfa,h',q1,qsg,qvg,qvatm,alfa,h
+    endif
   200   CONTINUE
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
         print *,'200 QVG,QSG,QCG,TSO(1)',QVG,QSG,QCG,TSO(1)
@@ -4779,7 +4919,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
 
          X= (cp*rho*r211+rhcs*zsmain(2)*0.5/delt)*(SOILT-TN) + &
             XLV*rho*r211*(QVG-QGOLD) 
-
+!
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
         print*,'SOILTEMP storage, i,j,x,soilt,tn,qvg,qvgold', &
                                   i,j,x,soilt,tn,qvg,qgold
@@ -5148,7 +5288,7 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
         EPOT=-QKMS*(QVATM-QGOLD)
         RHCS=CAP(1)
         H=1.
-        TRANS=PC*TRANSUM*DRYCAN/ZSHALF(NROOT+1)
+        TRANS=TRANSUM*DRYCAN/ZSHALF(NROOT+1)
         CAN=WETCAN+TRANS
         UMVEG=1.-VEGFRAC
         FKT=TKMS
@@ -5380,7 +5520,7 @@ print *, 'SNOWTEMP: SNHEI,SNTH,SOILT1: ',SNHEI,SNTH,SOILT1,soilt
 ! ---  evaporation
           DO K=1,NROOT
             TRANSP(K)=-VEGFRAC*q1                                     &
-                      *PC*TRANF(K)*DRYCAN/zshalf(NROOT+1)
+                      *TRANF(K)*DRYCAN/zshalf(NROOT+1)
 !           IF(TRANSP(K).GT.0.) TRANSP(K)=0.
             ETT1=ETT1-TRANSP(K)
           ENDDO
@@ -5633,7 +5773,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
               ZSMAIN,ZSHALF,DIFFU,HYDRO,                        &
               QSG,QVG,QCG,QCATM,QVATM,PRCP,                     &
               QKMS,TRANSP,DRIP,                                 &
-              DEW,SMELT,SOILICE,VEGFRAC,SNOWFRAC,               &
+              DEW,SMELT,SOILICE,VEGFRAC,SNOWFRAC,soilres,       &
 !--soil properties
               DQM,QMIN,REF,KSAT,RAS,INFMAX,                     &
 !--output
@@ -5700,7 +5840,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
    REAL,     INTENT(IN   )   ::    QSG,QVG,QCG,QCATM,QVATM     , &
                                    QKMS,VEGFRAC,DRIP,PRCP      , &
                                    DEW,SMELT,SNOWFRAC          , &
-                                   DQM,QMIN,REF,KSAT,RAS,RIW
+                                   DQM,QMIN,REF,KSAT,RAS,RIW,SOILRES
                          
 ! output
 
@@ -5804,7 +5944,7 @@ print *, 'D9SN,SOILT,TSOB : ', D9SN,SOILT,TSOB
 ! --- MOISTURE BALANCE BEGINS HERE
 
           TRANS=TRANSP(1)
-          UMVEG=1.-VEGFRAC
+          UMVEG=(1.-VEGFRAC)*soilres
 
           RUNOFF=0.
           RUNOFF2=0.
@@ -5952,7 +6092,7 @@ print *,'INFMAX,INFMAX1,HYDRO(1)*SOILIQW(1),-TOTLIQ', &
     IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
    print *,'FLXSAT,FLX,DELT',FLXSAT,FLX,DELT,RUNOFF2
     ENDIF
-            RUNOFF2=(FLXSAT-FLX)
+!            RUNOFF2=(FLXSAT-FLX)
             RUNOFF=RUNOFF+(FLXSAT-FLX)
           ELSE
             SOILMOIS(1)=min(dqm,max(1.e-8,QQ))
@@ -6008,7 +6148,7 @@ print *,'INFMAX,INFMAX1,HYDRO(1)*SOILIQW(1),-TOTLIQ', &
 !-------------------------------------------------------------------
 
 
-          SUBROUTINE SOILPROP( &
+          SUBROUTINE SOILPROP(spp_lsm,rstochcol,fieldcol_sf, &
 !--- input variables
          nzs,fwsat,lwsat,tav,keepfr,                              &
          soilmois,soiliqw,soilice,                                &
@@ -6067,6 +6207,10 @@ print *,'INFMAX,INFMAX1,HYDRO(1)*SOILIQW(1),-TOTLIQ', &
                                                             kwt, &
                                                          XLMELT, &
                                                             G0_P
+
+   REAL,     DIMENSION(1:NZS), INTENT(IN)  ::          rstochcol
+   REAL,     DIMENSION(1:NZS), INTENT(INOUT) ::      fieldcol_sf
+   INTEGER,  INTENT(IN   )   ::                     spp_lsm      
 
 
 !--- output variables
@@ -6211,6 +6355,14 @@ print *,'INFMAX,INFMAX1,HYDRO(1)*SOILIQW(1),-TOTLIQ', &
 
        ENDDO
 
+!        perturb hydrolic conductivity by 10-30%, not more than 50%
+         if (spp_lsm==1) then 
+         DO K=1,NZS !lala
+            fieldcol_sf(k)=hydro(k)*rstochcol(k)
+            hydro(k)=hydro(k)*(1+rstochcol(k))
+         ENDDO
+         ENDIF
+
 !       RETURN
 !       END
 
@@ -6219,11 +6371,11 @@ print *,'INFMAX,INFMAX1,HYDRO(1)*SOILIQW(1),-TOTLIQ', &
 !-----------------------------------------------------------------------
 
 
-           SUBROUTINE TRANSF(                                    &
+           SUBROUTINE TRANSF(i,j,                                &
 !--- input variables
-              nzs,nroot,soiliqw,tabs,                            &
+              nzs,nroot,soiliqw,tabs,lai,gswin,                  &
 !--- soil fixed fields
-              dqm,qmin,ref,wilt,zshalf,                          &
+              dqm,qmin,ref,wilt,zshalf,pc,iland,                 &
 !--- output variables
               tranf,transum)
 
@@ -6241,15 +6393,16 @@ print *,'INFMAX,INFMAX1,HYDRO(1)*SOILIQW(1),-TOTLIQ', &
 
 !--- input variables
 
-   INTEGER,  INTENT(IN   )   ::  nroot,nzs
+   INTEGER,  INTENT(IN   )   ::  i,j,nroot,nzs, iland
 
    REAL                                                        , &
-            INTENT(IN   )    ::                            TABS
+            INTENT(IN   )    ::                GSWin, TABS, lai
 !--- soil properties
    REAL                                                        , &
             INTENT(IN   )    ::                             DQM, &
                                                            QMIN, &
                                                             REF, &
+                                                             PC, &
                                                            WILT
 
    REAL,     DIMENSION(1:NZS), INTENT(IN)  ::          soiliqw,  &
@@ -6265,12 +6418,13 @@ print *,'INFMAX,INFMAX1,HYDRO(1)*SOILIQW(1),-TOTLIQ', &
 
 !-- for non-linear root distribution
    REAL    ::  gx,sm1,sm2,sm3,sm4,ap0,ap1,ap2,ap3,ap4
-   REAL    ::  FTEM
+   REAL    ::  FTEM, PCtot, fsol, f1, cmin, cmax, totcnd
    REAL,     DIMENSION(1:NZS)   ::           PART
 !--------------------------------------------------------------------
 
         do k=1,nzs
            part(k)=0.
+           tranf(k)=0.
         enddo
 
         transum=0.
@@ -6291,14 +6445,6 @@ print *,'INFMAX,INFMAX1,HYDRO(1)*SOILIQW(1),-TOTLIQ', &
           if(gx.lt.0.) gx=0.
         DID=zshalf(2)
           part(1)=DID*gx
-!--- air temperature function
-!     Avissar (1985) and AX 7/95
-        IF (TABS .LE. 302.15) THEN
-          FTEM = 1.0 / (1.0 + EXP(-0.41 * (TABS - 282.05)))
-        ELSE
-          FTEM = 1.0 / (1.0 + EXP(0.5 * (TABS - 314.0)))
-        ENDIF
-!---
         IF(TOTLIQ.GT.REF) THEN
           TRANF(1)=DID
         ELSE IF(TOTLIQ.LE.WILT) THEN
@@ -6307,10 +6453,7 @@ print *,'INFMAX,INFMAX1,HYDRO(1)*SOILIQW(1),-TOTLIQ', &
           TRANF(1)=(TOTLIQ-WILT)/(REF-WILT)*DID
         ENDIF 
 !-- uncomment next line for non-linear root distribution
-! change made in Nov.2014
-!           TRANF(1)=part(1)
-! linear root distribution
-          TRANF(1)=TRANF(1)*FTEM
+!          TRANF(1)=part(1)
 
         DO K=2,NROOT
         totliq=soiliqw(k)+qmin
@@ -6335,14 +6478,79 @@ print *,'INFMAX,INFMAX1,HYDRO(1)*SOILIQW(1),-TOTLIQ', &
         ENDIF
 !-- uncomment next line for non-linear root distribution
 !          TRANF(k)=part(k)
-          TRANF(k)=TRANF(k)*FTEM
         END DO
+
+! For LAI> 3 =>  transpiration at potential rate (F.Tardieu, 2013)
+      if(lai > 4.) then
+        pctot=0.8
+      else
+        pctot=pc
+!- 26aug16-  next 2 lines could lead to LH increase and higher 2-m Q during the day
+!        pctot=min(0.8,pc*lai)
+!        pctot=min(0.8,max(pc,pc*lai))
+      endif
+    IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
+!    if (i==421.and.j==280) then
+     print *,'i,j,pctot,lai,pc',i,j,pctot,lai,pc
+    ENDIF
+!---
+!--- air temperature function
+!     Avissar (1985) and AX 7/95
+        IF (TABS .LE. 302.15) THEN
+          FTEM = 1.0 / (1.0 + EXP(-0.41 * (TABS - 282.05)))
+        ELSE
+          FTEM = 1.0 / (1.0 + EXP(0.5 * (TABS - 314.0)))
+        ENDIF
+    IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
+!    if (i==421.and.j==280) then
+     print *,'i,j,tabs,ftem',i,j,tabs,ftem
+    ENDIF
+!--- incoming solar function
+     cmin = 1./rsmax_data
+     cmax = 1./rstbl(iland)
+    if(lai > 1.) then
+     cmax = lai/rstbl(iland) ! max conductance
+    endif
+! Noihlan & Planton (1988)
+       f1=0.
+!    if(lai > 0.01) then
+!       f1 = 1.1/lai*gswin/rgltbl(iland)! f1=0. when GSWin=0.
+!       fsol = (f1+cmin/cmax)/(1.+f1)
+!       fsol=min(1.,fsol)
+!    else
+!       fsol=cmin/cmax
+!    endif
+!     totcnd = max(lai/rstbl(iland), pctot * ftem * f1) 
+! Mahrer & Avissar (1982), Avissar et al. (1985)
+     if (GSWin < rgltbl(iland)) then
+      fsol = 1. / (1. + exp(-0.034 * (GSWin - 3.5)))
+     else
+      fsol = 1.
+     endif
+    IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
+!    if (i==421.and.j==280) then
+     print *,'i,j,GSWin,lai,f1,fsol',i,j,gswin,lai,f1,fsol
+    ENDIF
+!--- total conductance
+     totcnd =(cmin + (cmax - cmin)*pctot*ftem*fsol)/cmax
+
+    IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
+!    if (i==421.and.j==280) then
+     print *,'i,j,iland,RGLTBL(iland),RSTBL(iland),RSMAX_DATA,totcnd'  &
+             ,i,j,iland,RGLTBL(iland),RSTBL(iland),RSMAX_DATA,totcnd
+    ENDIF
 
 !-- TRANSUM - total for the rooting zone
           transum=0.
         DO K=1,NROOT
-          transum=transum+tranf(k)
+! linear root distribution
+         TRANF(k)=max(cmin,TRANF(k)*totcnd)
+         transum=transum+tranf(k)
         END DO
+    IF ( wrf_at_debug_level(LSMRUC_DBG_LVL) ) THEN
+!    if (i==421.and.j==280) then
+      print *,'i,j,transum,TRANF',i,j,transum,tranf
+    endif
 
 !-----------------------------------------------------------------
    END SUBROUTINE TRANSF

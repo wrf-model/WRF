@@ -1,3 +1,17 @@
+! sed -e "s/grid%mu/gridmu/g" -e "s/grid%Mu/gridMu/g" module_initialize_hill2d_x.F | cpp -DHYBRID_COORD | sed -e "s/gridmu/grid%mu/g" -e "s/gridMu/grid%Mu/g" >> module_initialize_hill2d_x.next
+#if ( HYBRID_COORD==1 )
+#  define gridmu_1(...) (grid%c1h(k)*XXPC1HXX(__VA_ARGS__))
+#  define XXPC1HXX(...) grid%mu_1(__VA_ARGS__)
+
+#  define gridMu_1(...) (grid%c1f(k)*XXPC1FXX(__VA_ARGS__))
+#  define XXPC1FXX(...) grid%Mu_1(__VA_ARGS__)
+
+#  define gridmub(...) (grid%c1h(k)*XXPCBHXX(__VA_ARGS__)+grid%c2h(k))
+#  define XXPCBHXX(...) grid%mub(__VA_ARGS__)
+
+#  define gridMub(...) (grid%c1f(k)*XXPCBFXX(__VA_ARGS__)+grid%c2f(k))
+#  define XXPCBFXX(...) grid%Mub(__VA_ARGS__)
+#endif
 !IDEAL:MODEL_LAYER:INITIALIZATION
 !
 
@@ -80,7 +94,7 @@ CONTAINS
                                   ids, ide, jds, jde, kds, kde, &
                                   ims, ime, jms, jme, kms, kme, &
                                   its, ite, jts, jte, kts, kte, &
-                                  i, j, k
+                                  i, j, k, kk
 
    ! Local data
 
@@ -115,6 +129,9 @@ CONTAINS
 !DJW added for specifying different eta levels for each domain
   INTEGER :: ks, ke, id
   LOGICAL :: vnest !DJW T if using vertical nesting, otherwise F
+
+! for the hybrid coordinate
+   REAL    :: B1, B2, B3, B4, B5, sin_arg
 
 #ifdef DM_PARALLEL
 #    include "data_calls.inc"
@@ -354,6 +371,108 @@ CONTAINS
 
   grid%p_top = interp_0( p_in, zk, config_flags%ztop, nl_in )
 
+!  Fill in the hybrid coordinate coefficients
+
+   DO k=1, kde
+      IF      ( config_flags%hybrid_opt .EQ. 0 ) THEN
+         grid%c3f(k) = grid%znw(k)
+      ELSE IF ( config_flags%hybrid_opt .EQ. 1 ) THEN
+         grid%c3f(k) = grid%znw(k)
+      ELSE IF ( config_flags%hybrid_opt .EQ. 2 ) THEN
+         B1 = 2. * grid%etac**2 * ( 1. - grid%etac )
+         B2 = -grid%etac * ( 4. - 3. * grid%etac - grid%etac**3 )
+         B3 = 2. * ( 1. - grid%etac**3 )
+         B4 = - ( 1. - grid%etac**2 )
+         B5 = (1.-grid%etac)**4
+         grid%c3f(k) = ( B1 + B2*grid%znw(k) + B3*grid%znw(k)**2 + B4*grid%znw(k)**3 ) / B5
+         IF ( grid%znw(k) .LT. grid%etac ) THEN
+            grid%c3f(k) = 0.
+         END IF
+         IF ( k .EQ. kds ) THEN
+            grid%c3f(k) = 1.
+         ELSE IF ( k .EQ. kde ) THEN
+            grid%c3f(k) = 0.
+         END IF
+      ELSE IF ( config_flags%hybrid_opt .EQ. 3 ) THEN
+         IF ( grid%znw(k) .GE. grid%etac ) THEN
+            sin_arg = (1./(1.-grid%etac))*(grid%znw(k)-1.)+1
+            grid%c3f(k) = (sin(sin_arg*3.14159265358/2.))**2
+         ELSE
+            grid%c3f(k) = 0.
+         END IF
+         IF ( k .EQ. kds ) THEN
+            grid%c3f(k) = 1.
+         ELSE IF ( k .EQ. kds ) THEN
+            grid%c3f(kde) = 0.
+         END IF
+      ELSE
+         CALL wrf_error_fatal ( 'ERROR: --- hybrid_opt=0 ===> Standard WRF Coordinate; hybrid_opt>=1 ===> Hybrid Vertical Coordinate' )
+      END IF
+   END DO
+
+   DO k=1, kde
+      grid%c4f(k) = ( grid%znw(k) - grid%c3f(k) ) * ( p1000mb - grid%p_top )
+   ENDDO
+
+   !  Now on half levels, just add up and divide by 2 (for c3h).  Use (eta-c3)*(p00-pt) for c4 on half levels.
+
+   DO k=1, kde-1
+      grid%c3h(k) = ( grid%c3f(k+1) + grid%c3f(k) ) * 0.5
+      grid%c4h(k) = ( grid%znu(k) - grid%c3h(k) ) * ( p1000mb - grid%p_top )
+   ENDDO
+
+   !  c1 = d(B)/d(eta).  We define c1f as c1 on FULL levels.  For a vertical difference,
+   !  we need to use B and eta on half levels.  The k-loop ends up referring to the 
+   !  full levels, neglecting the top and bottom.
+
+   DO k=kds+1, kde-1
+      grid%c1f(k) = ( grid%c3h(k) - grid%c3h(k-1) ) / ( grid%znu(k) - grid%znu(k-1) )
+   ENDDO
+
+   !  The boundary conditions to get the coefficients:
+   !  1) At k=kts: define d(B)/d(eta) = 1.  This gives us the same value of B and d(B)/d(eta)
+   !     when doing the sigma-only B=eta.
+   !  2) At k=kte: with the new vertical coordinate, define d(B)/d(eta) = 0.  The curve B SMOOTHLY 
+   !     goes to zero, and at the very top, B continues to SMOOTHLY go to zero.  Note that for 
+   !     almost all cases of non B=eta, B is ALREADY=ZERO at the top, so this is a reasonable BC to 
+   !     assume.
+   !  3) At k=kte: when trying to mimic the original vertical coordinate, since B = eta, then
+   !     d(B)/d(eta) = 1.
+
+   grid%c1f(kds) = 1.
+   IF      ( ( config_flags%hybrid_opt .EQ. 0 ) .OR. ( config_flags%hybrid_opt .EQ. 1 ) ) THEN
+      grid%c1f(kde) = 1.
+   ELSE
+      grid%c1f(kde) = 0.
+   END IF
+
+   !  c2 = ( 1. - c1(k) ) * (p00 - pt).  There is no vertical differencing, so we can do the
+   !  full kds to kde looping.
+
+   DO k=kds, kde
+      grid%c2f(k) = ( 1. - grid%c1f(k) ) * ( p1000mb - grid%p_top )
+   END DO
+
+   !  Now on half levels for c1 and c2.  The c1h will result from the full level c3 and full
+   !  level eta differences.  The c2 value use the half level c1(k).
+
+   DO k=1, kde-1
+      grid%c1h(k) = ( grid%c3f(k+1) - grid%c3f(k) ) / ( grid%znw(k+1) - grid%znw(k) )
+      grid%c2h(k) = ( 1. - grid%c1h(k) ) * ( p1000mb - grid%p_top )
+   END DO
+
+#if 0
+   DO k=1, kde
+      grid%c3f(k) = grid%znw(k)
+      grid%c4f(k) = 0.
+      grid%c3h(k) = grid%znu(k)
+      grid%c4h(k) = 0.
+      grid%c1f(k) = 1.
+      grid%c2f(k) = 0.
+      grid%c1h(k) = 1.
+      grid%c2h(k) = 0.
+   END DO
+#endif
   DO j=jts,jte
   DO i=its,ite
     grid%ht(i,j) = 0.
@@ -402,13 +521,17 @@ CONTAINS
   DO I = its, ite
 
     p_surf = interp_0( p_in, zk, grid%phb(i,1,j)/g, nl_in )
-    grid%mub(i,j) = p_surf-grid%p_top
+    grid%MUB(i,j) = p_surf-grid%p_top
 
 !  this is dry hydrostatic sounding (base state), so given grid%p (coordinate),
 !  interp theta (from interp) and compute 1/rho from eqn. of state
 
     DO K = 1, kte-1
+#if  !( HYBRID_COORD==1 )
       p_level = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
+#elif ( HYBRID_COORD==1 )
+      p_level = grid%c3h(k)*(p_surf - grid%p_top) + grid%c4h(k) + grid%p_top
+#endif
       grid%pb(i,k,j) = p_level
       grid%t_init(i,k,j) = interp_0( theta, p_in, p_level, nl_in ) - t0
       grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
@@ -418,8 +541,9 @@ CONTAINS
 !  sounding, but this assures that the base state is in exact hydrostatic balance with
 !  respect to the model eqns.
 
-    DO k  = 2,kte
-      grid%phb(i,k,j) = grid%phb(i,k-1,j) - grid%dnw(k-1)*grid%mub(i,j)*grid%alb(i,k-1,j)
+    DO kk  = 2,kte
+      k=kk - 1
+      grid%phb(i,kk,j) = grid%phb(i,kk-1,j) - grid%dnw(kk-1)*grid%mub(i,j)*grid%alb(i,kk-1,j)
     ENDDO
 
   ENDDO
@@ -427,7 +551,11 @@ CONTAINS
 
   IF ( wrf_dm_on_monitor() ) THEN
     write(6,*) ' ptop is ',grid%p_top
+#if  !( HYBRID_COORD==1 )
     write(6,*) ' base state grid%mub(1,1), p_surf is ',grid%mub(1,1),grid%mub(1,1)+grid%p_top
+#elif ( HYBRID_COORD==1 )
+  write(6,*) ' base state grid%MUB(1,1), p_surf is ',grid%MUB(1,1),grid%c3f(kts)*grid%MUB(1,1)+grid%c4f(kts)+grid%p_top
+#endif
   ENDIF
 
 !  calculate full state for each column - this includes moisture.
@@ -446,16 +574,20 @@ CONTAINS
 
 !  compute the perturbation mass and the full mass
 
-    grid%mu_1(i,j) = pd_surf-grid%p_top - grid%mub(i,j)
-    grid%mu_2(i,j) = grid%mu_1(i,j)
-    grid%mu0(i,j) = grid%mu_1(i,j) + grid%mub(i,j)
+    grid%MU_1(i,j) = pd_surf-grid%p_top - grid%MUB(i,j)
+    grid%MU_2(i,j) = grid%MU_1(i,j)
+    grid%MU0(i,j) = grid%MU_1(i,j) + grid%MUB(i,j)
 
 ! given the dry pressure and coordinate system, interp the potential
 ! temperature and qv
 
     do k=1,kde-1
 
+#if  !( HYBRID_COORD==1 )
       p_level = grid%znu(k)*(pd_surf - grid%p_top) + grid%p_top
+#elif ( HYBRID_COORD==1 )
+      p_level = grid%c3h(k)*(pd_surf - grid%p_top) + grid%c4h(k) + grid%p_top
+#endif
 
       moist(i,k,j,P_QV) = interp_0( qv, pd_in, p_level, nl_in )
       grid%t_1(i,k,j)          = interp_0( theta, pd_in, p_level, nl_in ) - t0
@@ -468,30 +600,31 @@ CONTAINS
 !  vertical momentum equation) down from the top to get grid%p.
 !  first from the top of the model to the top pressure
 
-    k = kte-1  ! top level
+    kk = kte-1  ! top level
+    k=kk+1
 
-    qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k,j,P_QV))
+    qvf1 = 0.5*(moist(i,kk,j,P_QV)+moist(i,kk,j,P_QV))
     qvf2 = 1./(1.+qvf1)
     qvf1 = qvf1*qvf2
 
-!    grid%p(i,k,j) = - 0.5*grid%mu_1(i,j)/grid%rdnw(k)
-    grid%p(i,k,j) = - 0.5*(grid%mu_1(i,j)+qvf1*grid%mub(i,j))/grid%rdnw(k)/qvf2
-    qvf = 1. + rvovrd*moist(i,k,j,P_QV)
-    grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
-                (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
-    grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
+    grid%p(i,kk,j) = - 0.5*(grid%Mu_1(i,j)+qvf1*grid%Mub(i,j))/grid%rdnw(kk)/qvf2
+    qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
+    grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_1(i,kk,j)+t0)*qvf* &
+                (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
+    grid%al(i,kk,j) = grid%alt(i,kk,j) - grid%alb(i,kk,j)
 
 !  down the column
 
-    do k=kte-2,1,-1
-      qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k+1,j,P_QV))
+    do kk=kte-2,1,-1
+      k = kk + 1
+      qvf1 = 0.5*(moist(i,kk,j,P_QV)+moist(i,kk+1,j,P_QV))
       qvf2 = 1./(1.+qvf1)
       qvf1 = qvf1*qvf2
-      grid%p(i,k,j) = grid%p(i,k+1,j) - (grid%mu_1(i,j) + qvf1*grid%mub(i,j))/qvf2/grid%rdn(k+1)
-      qvf = 1. + rvovrd*moist(i,k,j,P_QV)
-      grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
-                  (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
-      grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
+      grid%p(i,kk,j) = grid%p(i,kk+1,j) - (grid%Mu_1(i,j) + qvf1*grid%Mub(i,j))/qvf2/grid%rdn(kk+1)
+      qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
+      grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_1(i,kk,j)+t0)*qvf* &
+                  (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
+      grid%al(i,kk,j) = grid%alt(i,kk,j) - grid%alb(i,kk,j)
     enddo
 
 !  this is the hydrostatic equation used in the model after the
@@ -502,8 +635,8 @@ CONTAINS
     grid%ph_1(i,1,j) = 0.
     DO k  = 2,kte
       grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - &
-                    grid%dnw(k-1)*((grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,k-1,j)+ &
-                    grid%mu_1(i,j)*grid%alb(i,k-1,j)  )
+                    grid%dnw(k-1)*((grid%Mub(i,j)+grid%Mu_1(i,j))*grid%al(i,k-1,j)+ &
+                    grid%Mu_1(i,j)*grid%alb(i,k-1,j)  )
                                                    
       grid%ph_2(i,k,j) = grid%ph_1(i,k,j) 
       grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
@@ -565,13 +698,14 @@ CONTAINS
 
 !  rebalance hydrostatically
 
-      DO k  = 2,kte
-        grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
-                     (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,k-1,j)+ &
-                      grid%mu_1(i,j)*grid%alb(i,k-1,j)  )
+      DO kk  = 2,kte
+        k = kk - 1
+        grid%ph_1(i,kk,j) = grid%ph_1(i,kk-1,j) - (grid%dnw(kk-1))*(       &
+                     (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,kk-1,j)+ &
+                      grid%mu_1(i,j)*grid%alb(i,kk-1,j)  )
                                                    
-        grid%ph_2(i,k,j) = grid%ph_1(i,k,j) 
-        grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
+        grid%ph_2(i,kk,j) = grid%ph_1(i,kk,j) 
+        grid%ph0(i,kk,j) = grid%ph_1(i,kk,j) + grid%phb(i,kk,j)
       ENDDO
 
     ENDDO
@@ -611,7 +745,11 @@ CONTAINS
     p_surf = interp_0( p_in, zk, z_at_v, nl_in )
 
     DO K = 1, kte-1
+#if  !( HYBRID_COORD==1 )
       p_level = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
+#elif ( HYBRID_COORD==1 )
+      p_level = grid%c3h(k)*(p_surf - grid%p_top) + grid%c4h(k) + grid%p_top
+#endif
       grid%v_1(i,k,j) = interp_0( v, p_in, p_level, nl_in )
       grid%v_2(i,k,j) = grid%v_1(i,k,j)
     ENDDO
@@ -635,7 +773,11 @@ CONTAINS
     p_surf = interp_0( p_in, zk, z_at_u, nl_in )
 
     DO K = 1, kte-1
+#if  !( HYBRID_COORD==1 )
       p_level = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
+#elif ( HYBRID_COORD==1 )
+      p_level = grid%c3h(k)*(p_surf - grid%p_top) + grid%c4h(k) + grid%p_top
+#endif
       grid%u_1(i,k,j) = interp_0( u, p_in, p_level, nl_in )
       grid%u_2(i,k,j) = grid%u_1(i,k,j)
     ENDDO

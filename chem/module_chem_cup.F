@@ -12,6 +12,14 @@
 ! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
 !
 ! MOSAIC module: see module_mosaic_driver.F for references and terms of use
+
+! *** NOTE ***
+! This module should in theory work with any chem_opt package that uses MOSAIC 
+!and has cloud-borne aerosols. However, it was only tested with chem_opt=203 
+!(saprc99_mosaic_8bin_vbs2_aq_kpp) during implementation into WRF-Chem in 
+!April 2017 at PNNL.
+
+
 !**********************************************************************************  
 
 !  file module_chem_cup.F

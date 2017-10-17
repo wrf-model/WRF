@@ -47,9 +47,11 @@
    real, allocatable :: grid_box_area(:,:), mapfac(:,:)
    character (len=10)    :: variable_name
 
-   integer :: xx, yy, ii, jj,  xy, kk, jjj
-   real    :: lat, lon, x_pos, y_pos, dx, dy, dxm, dym
-   logical :: outside
+   integer :: iwin, num_subtwindow
+   integer :: ni, nj, ii, jj
+   real    :: dx, dy, dxm, dym, cxp0, cxp1, cyp0, cyp1
+   real,    external :: nest_loc_of_cg  ! from share/interp_fcn.F
+   integer, external :: compute_CGLL    ! from share/interp_fcn.F
 
    integer   :: cvt_unit, iost
    character(len=8) :: cvtfile
@@ -194,13 +196,38 @@
          ' Resetting ntmax = 0 for analysis_type = randomcv' 
    end if
 
-#ifdef CLOUD_CV
-   if ( cv_options == 3 ) then
-      write(unit=message(1),fmt='(A,I3)') &
-         'cloud_cv does NOT work with cv_options = ', cv_options
-      call da_error(__FILE__,__LINE__,message(1:1))
+   if ( cv_options == 3 .and. cloud_cv_options > 0 ) then
+      write(unit=message(1),fmt='(A)') &
+         'Cloud control variables are not implemented for cv_options = 3'
+      write(unit=message(2),fmt='(A)') &
+         'Resetting cloud_cv_options = 0 for cv_options = 3'
+      cloud_cv_options = 0
+      call da_warning(__FILE__,__LINE__,message(1:1))
    end if
-#endif
+
+   if ( use_radarobs ) then
+      if ( use_radar_rf .and. use_radar_rhv ) then
+         write(unit=message(1),fmt='(A)') "Both 'use_radar_rf' and 'use_radar_rhv' are set to true"
+         write(unit=message(2),fmt='(A)') "You must only choose one of these options"
+         call da_error(__FILE__,__LINE__,message(1:2))
+      end if
+      if ( use_radar_rf .and. cloud_cv_options /= 1 ) then
+         write(unit=message(1),fmt='(A)') "Please set cloud_cv_options=1 for use_radar_rf"
+         call da_error(__FILE__,__LINE__,message(1:1))
+      end if
+      if ( use_radar_rhv .and. cloud_cv_options == 1 ) then
+         write(unit=message(1),fmt='(A)') "Please set cloud_cv_options=3 or 2 (2 requires cloudy be.dat) for use_radar_rhv"
+         call da_error(__FILE__,__LINE__,message(1:1))
+      end if
+   end if
+
+   if ( ensdim_alpha > 0 .and. alpha_hydrometeors ) then
+      if ( cloud_cv_options == 1 ) then
+         write(unit=message(1),fmt='(A)') "alpha_hydrometeors is not implemented for cloud_cv_options=1"
+         write(unit=message(2),fmt='(A)') "Please choose cloud_cv_options=3"
+         call da_error(__FILE__,__LINE__,message(1:2))
+      end if
+   end if
 
    !---------------------------------------------------------------------------
    ! [2.0] Initialise wrfvar parameters:
@@ -296,6 +323,38 @@
    ! [3.0] Set up first guess field (grid%xb):
    !---------------------------------------------------------------------------
 
+   ! for WRF hybrid coordinate
+   allocate ( c1f(kms:kme) )
+   allocate ( c2f(kms:kme) )
+   allocate ( c3f(kms:kme) )
+   allocate ( c4f(kms:kme) )
+   allocate ( c1h(kms:kme) )
+   allocate ( c2h(kms:kme) )
+   allocate ( c3h(kms:kme) )
+   allocate ( c4h(kms:kme) )
+   c1f = grid%c1f
+   c2f = grid%c2f
+   c3f = grid%c3f
+   c4f = grid%c4f
+   c1h = grid%c1h
+   c2h = grid%c2h
+   c3h = grid%c3h
+   c4h = grid%c4h
+   ! For WRFDA, namelist hybrid_opt setting is ignored.
+   ! grid%hybrid_opt is set in da_med_initialdata_input.inc based on
+   ! HYBRID_OPT global attribute contained in the input file.
+   ! For input file prior to V3.9, grid%hybrid_opt is set to 0.
+   if ( grid%hybrid_opt <= 0 ) then
+      c3f = grid%znw
+      c3h = grid%znu
+      c4f = 0.0
+      c4h = 0.0
+      c1f = 1.0
+      c1h = 1.0
+      c2f = 0.0
+      c2h = 0.0
+   end if
+
    call da_setup_firstguess(xbx, grid, config_flags, .false.)
 
    if ( anal_type_hybrid_dual_res ) then
@@ -312,64 +371,34 @@
       deallocate(mapfac,grid_box_area)
 
       !
-      ! Make a list of "observations" from the the fine grid lat/lon
+      ! get fine grid locs relative to coarse grid for bilinear interplation
+      ! between coarse (ensemble) and fine (analysis) grids.
+      ! use functions compute_CGLL and nest_loc_of_cg taken from
+      ! share/interp_fcn.F
       !
+      allocate(aens_locs(its:ite, jts:jte)) ! From da_control
+      do nj = jts, jte
+         jj = compute_CGLL (nj, grid%j_parent_start, grid%parent_grid_ratio, 1)
+         cyp0 = nest_loc_of_cg (jj  , grid%j_parent_start, grid%parent_grid_ratio, 0)
+         cyp1 = nest_loc_of_cg (jj+1, grid%j_parent_start, grid%parent_grid_ratio, 0)
+         dym = ( cyp1 - real(nj) ) / ( cyp1 - cyp0 )
+         dy = 1.0 - dym
+         do ni = its, ite
+            ii = compute_CGLL (ni, grid%i_parent_start, grid%parent_grid_ratio, 1)
+            cxp0 = nest_loc_of_cg (ii  , grid%i_parent_start, grid%parent_grid_ratio, 0)
+            cxp1 = nest_loc_of_cg (ii+1, grid%i_parent_start, grid%parent_grid_ratio, 0)
+            dxm = ( cxp1 - real(ni) ) / ( cxp1 - cxp0 )
+            dx = 1.0 - dxm
+            aens_locs(ni,nj)%i   = ii
+            aens_locs(ni,nj)%j   = jj
+            aens_locs(ni,nj)%dx  = dx
+            aens_locs(ni,nj)%dy  = dy
+            aens_locs(ni,nj)%dxm = dxm
+            aens_locs(ni,nj)%dym = dym
+         end do
+      end do
 
-      xy = ( ime - ims + 1 ) * ( jme - jms + 1 )
-
-      allocate(ob_locs(1:xy)) ! From da_control
-
-      kk = 0 ; jjj = 0
-      do xx = ims, ime !ids, ide 
-         do yy = jms, jme !jds, jde 
-
-          outside = .false.
-
-          lat = grid%xb%lat(xx,yy)
-          lon = grid%xb%lon(xx,yy)
-
-          x_pos = -1.0 ; y_pos = -1.0
-          call da_llxy_wrf(map_info_ens,lat,lon,x_pos,y_pos)
-          call da_togrid(x_pos,its_int-2, ite_int+2, ii, dx, dxm )
-          call da_togrid(y_pos,jts_int-2, jte_int+2, jj, dy, dym )
-
-          if ((int(x_pos) < ids_int) .or. (int(x_pos) >= ide_int) .or. &
-             (int(y_pos) < jds_int) .or. (int(y_pos) >= jde_int)) then
-             outside = .true.
-          endif
-
-	  if ((ii < ids_int) .or. (ii >= ide_int) .or. &
-	     (jj < jds_int) .or. (jj >= jde_int)) then
-	     outside     = .true.
-	  endif
-
-         if ((ii < its_int-1) .or. (ii > ite_int) .or. &
-            (jj < jts_int-1) .or. (jj > jte_int)) then
-            outside = .true.
-         endif
-
-         if ( .not. outside ) then
-              kk = kk + 1
-              ob_locs(kk)%x = x_pos
-              ob_locs(kk)%y = y_pos
-              ob_locs(kk)%i = ii
-              ob_locs(kk)%j = jj
-              ob_locs(kk)%dx = dx
-              ob_locs(kk)%dy = dy
-              ob_locs(kk)%dxm = dxm
-              ob_locs(kk)%dym = dym
-              ob_locs(kk)%xx = xx
-              ob_locs(kk)%yy = yy
-          else
-             jjj = jjj + 1
-          endif
-
-        enddo
-     enddo
-
-      total_here = kk ! from da_control
-
-   endif 
+   end if !anal_type_hybrid_dual_res
 
    !---------------------------------------------------------------------------
    ! [4.0] Set up observations (ob):
@@ -449,14 +478,12 @@
       be % v3 % mz = 0
       be % v4 % mz = 0
       be % v5 % mz = 0
-#ifdef CLOUD_CV
       be % v6  % mz = 0
       be % v7  % mz = 0
       be % v8  % mz = 0
       be % v9  % mz = 0
       be % v10 % mz = 0
       be % v11 % mz = 0
-#endif
    end if
 
     ! overwrite variables defined in da_setup_cv.inc set in the call to da_setup_background_errors
@@ -494,8 +521,15 @@
       if (use_background_errors .and. be % ne > 0) then
 !        call da_setup_flow_predictors ( ide, jde, kde, be % ne, grid%ep, &
 !                                        its, ite, jts, jte, kts, kte )
-         call da_setup_flow_predictors ( ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
-                                         its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
+         select case ( ep_para_read )
+            case ( 0 ) ! serial read (default)
+               call da_setup_flow_predictors ( ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
+                                               its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
+            case ( 1 ) ! para_read_opt1, breaks total number of ep into reading bins
+               call da_setup_flow_predictors_para_read_opt1 ( &
+                                            ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
+                                            its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
+         end select
       end if
 
    !---------------------------------------------------------------------------
@@ -531,7 +565,7 @@
            read(cvt_unit) cvt
            close(cvt_unit)
          else
-           write(unit=message(1),fmt='(a)') "cvt file '"//trim(cvtfile)//"' does not exists, initiallizing cvt."
+           write(unit=message(1),fmt='(a)') "cvt file '"//trim(cvtfile)//"' does not exists, initializing cvt."
            call da_message(message(1:1))
            call da_initialize_cv (cv_size, cvt)
          end if
@@ -543,8 +577,10 @@
       call da_zero_vp_type (grid%vp)
   
       if ( var4d ) then
+#ifdef VAR4D
          call da_zero_vp_type (grid%vv6)
          call da_zero_vp_type (grid%vp6)
+#endif
       end if
 
    !---------------------------------------------------------------------------
@@ -720,7 +756,7 @@
                              be,iv,xhat,qhat,cvt,re,y,j,eignvec,eignval,neign)
           ! Output Cost Function
             call da_calculate_j(it, 1, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
-                             be%cv%size_jl, xbx, be, iv, xhat, cvt, re, y, j, xhat, grid, config_flags )
+                             be%cv%size_jl, xbx, be, iv, xhat, cvt, re, y, j, grid, config_flags )
 
          else
             call da_minimise_lz(grid, config_flags, it, cv_size, xbx,& 
@@ -764,11 +800,25 @@
       end if
 
       ! [8.5] Update latest analysis solution:
-  
+
       if (.not. var4d) then
+         ! as of V3.9, vp%alpha is not included in the vptox (called by vtox) calculation,
+         ! here grid%xa contains only the static increment
          call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp)
+
+         ! adding the ensemble contribution
+         if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
+            ! add it to the analysis time ifgat_ana
+            ! ifgat_ana is declared in da_control.f90 and defined in da_get_time_slots.inc
+            write(unit=message(1),fmt='(a)')    ''
+            write(unit=message(2),fmt='(a,i3)') 'Applying ensemble contribution to FGAT time: ', ifgat_ana
+            call da_message(message(1:2))
+            call da_transform_vpatox (grid,be,grid%ep,grid%vp,ifgat_ana)
+            call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
+         end if !ne>0
       else
          call da_transform_vtox (grid,be%cv%size_jb,xbx,be,grid%ep,xhat(1:be%cv%size_jb),grid%vv,grid%vp)
+         call da_transform_vpatox (grid,be,grid%ep,grid%vp)
       endif
       call da_transform_xtoxa (grid)
 
@@ -938,9 +988,16 @@
       end if
    end if
 
-   if ( anal_type_hybrid_dual_res ) deallocate(ob_locs)
+   if ( anal_type_hybrid_dual_res ) deallocate(aens_locs)
 
-
+   deallocate ( c1f )
+   deallocate ( c2f )
+   deallocate ( c3f )
+   deallocate ( c4f )
+   deallocate ( c1h )
+   deallocate ( c2h )
+   deallocate ( c3h )
+   deallocate ( c4h )
 
 #ifdef DM_PARALLEL
    call mpi_barrier (comm,ierr)

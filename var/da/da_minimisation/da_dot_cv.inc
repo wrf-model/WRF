@@ -1,4 +1,4 @@
-real function da_dot_cv(cv_size, x, y, grid, mzs, jp_start, jp_end)
+real function da_dot_cv(cv_size, x, y, grid, mzs, nmzs, jp_start, jp_end)
 
    !-----------------------------------------------------------------------
    ! Purpose: Forms the dot product of two vectors that are organized in the 
@@ -15,13 +15,9 @@ real function da_dot_cv(cv_size, x, y, grid, mzs, jp_start, jp_end)
    real,             intent(in) :: x(cv_size)        ! 1st vector.
    real,             intent(in) :: y(cv_size)        ! 1st vector.
    type(domain),     intent(in) :: grid              ! decomposed dimensions
-#ifdef CLOUD_CV
-   integer,          intent(in) :: mzs(13)            ! mz for each variable
+   integer,          intent(in) :: nmzs              ! number of mz
+   integer,          intent(in) :: mzs(nmzs)         ! mz for each variable
                                                      ! (to identify 2D arrays)
-#else
-   integer,          intent(in) :: mzs(7)            ! mz for each variable
-                                                     ! (to identify 2D arrays)
-#endif
    integer, optional,intent(in) :: jp_start, jp_end
 
    logical       :: lvarbc
@@ -63,8 +59,8 @@ real function da_dot_cv(cv_size, x, y, grid, mzs, jp_start, jp_end)
          allocate(yg(1:cv_size_domain))
       end if
 
-      call da_cv_to_global(cv_size, cv_size_domain, xx, grid, mzs, xg)
-      call da_cv_to_global(cv_size, cv_size_domain, yy, grid, mzs, yg)
+      call da_cv_to_global(cv_size, cv_size_domain, xx, grid, mzs, nmzs, xg)
+      call da_cv_to_global(cv_size, cv_size_domain, yy, grid, mzs, nmzs, yg)
 
       if (rootproc) then
          dtemp1(1) = da_dot(cv_size_domain, xg, yg)

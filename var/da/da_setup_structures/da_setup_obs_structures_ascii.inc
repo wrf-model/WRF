@@ -80,42 +80,6 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
       end do
    end if
 
-
-   !-------------------------------
-
-
-   ! Find out if pseudo ob is local
-   !-------------------------------
-   if (num_pseudo > 0) then
-      iv%time = 1
-      outside = .false.
-      i = int(pseudo_x)
-      j = int(pseudo_y)
-      if (fg_format == fg_format_kma_global) then
-         if ((j < jts-1) .or. (j > jte)) outside = .true.
-      else
-         if ((i < ids)   .or. (i >= ide) .or. (j < jds)   .or. (j >= jde)) outside = .true.
-         if ((i < its-1) .or. (i >  ite) .or. (j < jts-1) .or. (j >  jte)) outside = .true.
-      end if
-   else
-      iv%time = 1
-      outside = .true.
-   end if
-
-   if (num_pseudo > 0) then
-   if (outside) then
-      iv%info(pseudo)%nlocal          = 0
-      ob%nlocal(pseudo)               = 0
-      iv%info(pseudo)%ntotal          = 0
-      iv%info(pseudo)%plocal(iv%time) = 0
-   else
-      iv%info(pseudo)%nlocal          = num_pseudo
-      ob%nlocal(pseudo)               = num_pseudo
-      iv%info(pseudo)%ntotal          = num_pseudo
-      iv%info(pseudo)%max_lev         = 1            
-   end if
-   end if
-
    !--------------------------------------------------------------------------
    ! [1.0] Scan GTS observation header and get idea of number of obs:
    !--------------------------------------------------------------------------

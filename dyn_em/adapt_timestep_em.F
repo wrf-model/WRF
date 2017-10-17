@@ -123,7 +123,12 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   !
   ! Else, calculate the time step based on cfl.
   !
-  if ( ( domain_get_advanceCount ( grid ) .EQ. 1 ) .AND. ( .NOT. config_flags%restart ) ) then
+  !BPR BEGIN
+  !At the initial time advanceCount == 0, but the following line instead looked
+  !for advanceCount == 1
+  !if ( ( domain_get_advanceCount ( grid ) .EQ. 1 ) .AND. ( .NOT. config_flags%restart ) ) then
+  if ( ( domain_get_advanceCount ( grid ) .EQ. 0 ) .AND. ( .NOT. config_flags%restart ) ) then
+  !BPR END
      if ( grid%starting_time_step_den .EQ. 0 ) then
         CALL WRFU_TimeIntervalSet(dtInterval, Sn=grid%starting_time_step, Sd=1)
      else
@@ -471,6 +476,15 @@ SUBROUTINE calc_dt(dtInterval, max_cfl, max_increase_factor, precision, &
         !
         
         factor = ( target_cfl - 0.5 * (max_cfl - target_cfl) ) / max_cfl
+
+        ! BPR BEGIN
+        ! Factor can be negative in some cases so prevent factor from being
+        ! lower than 0.1
+        ! Otherwise model crashes can occur in normalize_basetime noting that
+        ! denominator of seconds cannot be negative
+        factor = MAX(0.1,factor)
+        ! BPR END
+
         num = INT(factor * precision + 0.5)
         den = precision
 

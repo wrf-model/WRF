@@ -63,8 +63,8 @@ OBJS  = \
 	debug.o
 
 kpp:    $(OBJS)
-	@echo "  "$(SCC) $(CC_FLAGS) $(CLFLAGS) $(CFLAGS) $(OBJS) -L$(FLEX_LIB_DIR) -lfl -ll -o kpp
-	@$(SCC) $(CC_FLAGS) $(CFLAGS) $(CLFLAGS) $(OBJS) -L$(FLEX_LIB_DIR) -lfl -ll -o kpp
+	@echo "  "$(SCC) $(CC_FLAGS) $(CFLAGS) $(OBJS) $(CLFLAGS) -L$(FLEX_LIB_DIR) -lfl -o kpp
+	@$(SCC) $(CC_FLAGS) $(CFLAGS) $(OBJS) $(CLFLAGS) -L$(FLEX_LIB_DIR) -lfl -o kpp
 	@mv kpp ../bin
 
 clean:  

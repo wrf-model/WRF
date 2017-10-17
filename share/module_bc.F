@@ -1,3 +1,14 @@
+#if ( HYBRID_COORD==1 )
+#define mu_2(...) (c1(k)*XXPC2XX(__VA_ARGS__))
+#define XXPC2XX(...) mu_2(__VA_ARGS__)
+
+#define mub(...) (c1(k)*XXPCBXX(__VA_ARGS__)+c2(k))
+#define XXPCBXX(...) mub(__VA_ARGS__)
+
+#define mu(...) (c1(k)*XXPCXX(__VA_ARGS__)+c2(k))
+#define XXPCXX(...) mu(__VA_ARGS__)
+#endif
+
 !WRF:MODEL_LAYER:BOUNDARY
 !
 
@@ -1591,7 +1602,8 @@ CONTAINS
 !------------------------------------------------------------------------
    SUBROUTINE spec_bdytend_perturb   ( field_tend,                   &
                                        field_tend_perturb,           &
-                                       mu_2, mub, variable_in,       &
+                                       mu_2, mub, c1, c2,            &
+                                       variable_in,                  &
                                        msf, config_flags,            & 
                                        spec_bdy_width, spec_zone,    &
                                        kme_stoch,                    & ! stoch  dims
@@ -1620,6 +1632,7 @@ CONTAINS
       REAL,  DIMENSION( ims:ime ,                 jms:jme ), INTENT(IN   )   :: mu_2	
       REAL,  DIMENSION( ims:ime ,                 jms:jme ), INTENT(IN   )   :: mub
       REAL,  DIMENSION( ims:ime ,                 jms:jme ), INTENT(IN   )   :: msf
+      REAL,  DIMENSION(           kms:kme                 ), INTENT(IN   )   :: c1, c2
 	  
       TYPE( grid_config_rec_type ) config_flags
 
@@ -1648,7 +1661,6 @@ CONTAINS
       IF (variable == 'u') itf = min(ite,ide)
       IF (variable == 'v') jbe = jde
       IF (variable == 'v') jtf = min(jte,jde)
-      IF (variable == 't') ktf = kte
       IF (variable == 'h') ktf = kte
 
       IF (jts - jbs .lt. spec_zone) THEN
@@ -2094,7 +2106,7 @@ CONTAINS
 
    END SUBROUTINE spec_bdyupdate
 !------------------------------------------------------------------------
-   SUBROUTINE spec_bdy_final   ( field, mu, msf,                       &
+   SUBROUTINE spec_bdy_final   ( field, mu, c1, c2, msf,               &
                                 field_bdy_xs, field_bdy_xe,            &
                                 field_bdy_ys, field_bdy_ye,            &
                                 field_bdy_tend_xs, field_bdy_tend_xe,  &
@@ -2129,6 +2141,7 @@ CONTAINS
 
       REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: field
       REAL,  DIMENSION( ims:ime , jms:jme), INTENT(IN   ) :: mu, msf
+      REAL,  DIMENSION( kms:kme ), INTENT(IN   ) :: c1, c2
       REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(IN   ) :: field_bdy_xs, field_bdy_xe
       REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(IN   ) :: field_bdy_ys, field_bdy_ye
       REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(IN   ) :: field_bdy_tend_xs, field_bdy_tend_xe
@@ -2162,8 +2175,7 @@ CONTAINS
       IF (variable == 'u') itf = min(ite,ide)
       IF (variable == 'v') jbe = jde
       IF (variable == 'v') jtf = min(jte,jde)
-      IF (variable == 't') ktf = kte
-      IF (variable == 'm') ktf = kte
+      IF (variable == 'm') ktf = kde
       IF (variable == 'h') ktf = kde
       IF (variable == 'w') ktf = kde
 

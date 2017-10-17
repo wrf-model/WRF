@@ -678,7 +678,6 @@ CONTAINS
 
    REAL , OPTIONAL, INTENT(INOUT) ::    radtacttime ! Storing the time in s when radiation is called next
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
-         OPTIONAL,                                                &
          INTENT(INOUT)  ::                       o3rad
 
    ! vert nesting
@@ -1120,7 +1119,7 @@ CONTAINS
 
      IF ( ICLOUD == 1 ) THEN
 
-     IF ( F_QC .AND. F_QI ) THEN
+     IF ( F_QC .OR. F_QI ) THEN
 ! Call to cloud fraction routine based on Randall 1994 (Hong Pan 1998)
 
         CALL wrf_debug (1, 'CALL cldfra1')
@@ -1194,7 +1193,7 @@ CONTAINS
  
      ELSE IF ( ICLOUD == 2 ) THEN
 
-     IF ( F_QC .AND. F_QI ) THEN
+     IF ( F_QC .OR. F_QI ) THEN
        CALL wrf_debug (1, 'CALL cldfra2')
        CALL cal_cldfra2(CLDFRA,qc,qi,F_QC,F_QI,              &
                        ids,ide, jds,jde, kds,kde,            &
@@ -1231,15 +1230,9 @@ CONTAINS
 
      END IF
 
-! ww: Interpolating climatological ozone and aerosol to model time and levels
+!     Interpolating climatological ozone and aerosol to model time and levels
 !     Adapted from camrad code
-     IF ( PRESENT( O3RAD ) ) THEN
-        call wrf_debug(1,'Have o3rad')
-#if (EM_CORE==1)
-     IF ( o3input .EQ. 2 .AND. id .EQ. 1 ) THEN
-#else
      IF ( o3input .EQ. 2 ) THEN
-#endif
 !       ! Find the current month (adapted from Cavallo)
 !       CALL cam_time_interp( ozmixm, pin, levsiz, date_str, &
 !                             ids , ide , jds , jde , kds , kde , &
@@ -1257,7 +1250,6 @@ CONTAINS
                               ids , ide , jds , jde , kds , kde ,     &
                               ims , ime , jms , jme , kms , kme ,     &
                               its , ite , jts , jte , kts , kte )
-     ENDIF
      ENDIF
 
      IF ( PRESENT( AEROD ) ) THEN
@@ -1286,9 +1278,12 @@ CONTAINS
                     !Find whether to overwrite cldfra or not (ONLY if ICLOUD == 1)
                     compute_cldfra_cup = .true. 
                     if (icloud == 1 ) then
-                       compute_cldfra_cup = .false.     
+                       compute_cldfra_cup = .false.  !-- LK Berg, 4/26/17     
                        if(cldfra1_flag(i,k,j) == 1 .and. shall(i,j) .gt. 1) then
                           CLDFRA(i,k,j)=0.
+                       elseif(cldfra1_flag(i,k,j) == 1 .and. shall(i,j) .le. 1) then
+                          CLDFRA(i,k,j)=0.
+                          compute_cldfra_cup = .true.    ! No resolved clouds, but check of shallow clouds.  -- LK Berg, 4/26/17
                        elseif(cldfra1_flag(i,k,j) == 2 .and. shall(i,j) .gt. 1) then
                           CLDFRA(i,k,j)=1.
                        elseif(cldfra1_flag(i,k,j) == 3) then
@@ -1304,7 +1299,7 @@ CONTAINS
                           cldfra_cup(i,k,j) = 0.0
                        end if
                     endif
-                    if( shall(i,j) == 1 .and. k >= cubot(i,j)  .and. k <= cutop(i,j)  ) then  ! 1=Shallow Cu
+                    if( shall(i,j) <= 1 .and. k >= cubot(i,j)  .and. k <= cutop(i,j)  ) then  ! 1=Shallow Cu  -- Changed to use for both deep and shallow  -- LK Berg 4/26/17
                        ! Begin: wig, 4-Feb-2008
                        !
                        ! Override the cloud condensate values if shallow convection triggered.
@@ -1312,8 +1307,8 @@ CONTAINS
                        ! observations from CHAPS (Oklahoma area) and Florida (Blyth et al. 2005)
                        ! or the predicted value if it is greater.
 
-                       cldfra_cup_mod = cldfra_cup(i,k,j)* 1.0e-3*(1+qv(i,k,j))!modified cloud fraction
-                       qc(i,k,j) = max( 1.0e-3*cldfra_cup_mod, qc(i,k,j) )!DE+LB 2012-Feb
+                       cldfra_cup_mod = cldfra_cup(i,k,j) * 1.0e-3 !modified cloud fraction, assume QCLOUD is 1 g/kg -- LK Berg 4/26/17                       
+                       qc(i,k,j) = max(cldfra_cup_mod, qc(i,k,j) )!DE+LB 2012-Feb
 
                        ! Override the cloud fraction values calculated above if shallow
                        ! convection triggered. For shallow convection, use a representative
@@ -1402,9 +1397,9 @@ CONTAINS
              CALL wrf_debug (100, 'CALL gfdllw')
 
              IF ( PRESENT(F_QV) .AND. PRESENT(F_QC) .AND.                     &
-                  PRESENT(F_QS) .AND. PRESENT(qs)   .AND.                     &
+                  PRESENT(F_QI) .AND. (PRESENT(qi) .OR. PRESENT(qs))  .AND.                     &
                   PRESENT(qv)   .AND. PRESENT(qc)   ) THEN
-               IF ( F_QV .AND. F_QC .AND. F_QS) THEN
+               IF ( F_QV .AND. F_QC .AND. (F_QI .OR. F_QS)) THEN
                  gfdl_lw  = .true.
                  CALL ETARA(                                        &
                   DT=dt,XLAND=xland                                 &
@@ -2080,9 +2075,9 @@ CONTAINS
              CALL wrf_debug (100, 'CALL gfdlsw')
 
              IF ( PRESENT(F_QV) .AND. PRESENT(F_QC) .AND.                     &
-                  PRESENT(F_QS) .AND. PRESENT(qs)   .AND.                     &
-                  PRESENT(qv)   .AND. PRESENT(qc) ) THEN
-               IF ( F_QV .AND. F_QC .AND. F_QS ) THEN
+                  PRESENT(F_QI) .AND. (PRESENT(qi) .OR. PRESENT(qs))  .AND.                     &
+                  PRESENT(qv)   .AND. PRESENT(qc)   ) THEN
+               IF ( F_QV .AND. F_QC .AND. (F_QI .OR. F_QS)) THEN
                  gfdl_sw = .true.
                  CALL ETARA(                                        &
                   DT=dt,XLAND=xland                                 &
@@ -2768,12 +2763,12 @@ CONTAINS
          do i=its,ite
             ! sza interpolation of surface fluxes
             if ((coszen_ref(i,j).gt.coszen_min) .and. (coszen_loc(i,j).gt.coszen_min)) then
-               if ((bb(i,j).eq.-0.5).or.(bb(i,j).eq.2.5)) then
+               if ((bb(i,j).eq.-0.5).or.(bb(i,j).eq.2.5).or.(bb(i,j).eq.0.0)) then
                   swddir(i,j) =(coszen_loc(i,j)/coszen_ref(i,j))*swddir_ref(i,j)
                else
                   swddir(i,j) =Bx(i,j)*(coszen_loc(i,j)**bb(i,j))
                end if
-               if ((gg(i,j).eq.-0.5).or.(gg(i,j).eq.2.5)) then
+               if ((gg(i,j).eq.-0.5).or.(gg(i,j).eq.2.5).or.(gg(i,j).eq.0.0)) then
                   swdown(i,j) =(coszen_loc(i,j)/coszen_ref(i,j))*swdown_ref(i,j)
                else
                   swdown(i,j) =Gx(i,j)*(coszen_loc(i,j)**gg(i,j))
@@ -3003,6 +2998,16 @@ CONTAINS
             ENDIF
          ENDIF
 
+! for P3, mp option 50 or 51
+         IF ( F_QI .and. F_QC .and. .not. F_QS) THEN
+            QCLD = QI(i,k,j)+QC(i,k,j)
+            IF (QCLD .LT. QCLDMIN) THEN
+               weight = 0.
+            ELSE
+               weight = (QI(i,k,j)) / QCLD
+            ENDIF
+         ENDIF
+
 ! mji - For MP options 1 and 3, (qc only)
 !  For MP=1, qc = liquid, for MP=3, qc = liquid or ice depending on temperature
          IF ( F_QC .and. .not. F_QI .and. .not. F_QS ) THEN
@@ -3154,7 +3159,7 @@ CONTAINS
       REAL, DIMENSION(ims:ime,kms:kme,jms:jme):: qvsat
       INTEGER:: i,j,k
       REAL:: TK, TC, qvsi, qvsw, RHUM, xx, yy
-      REAL, DIMENSION(kms:kme):: qvs1d, cfr1d, T1d,                     &
+      REAL, DIMENSION(kts:kte):: qvs1d, cfr1d, T1d,                     &
      &                           P1d, R1d, qc1d, qi1d, qs1d
 
       character*512 dbg_msg
@@ -3168,8 +3173,8 @@ CONTAINS
 !.. to get near 100% RH as grid spacing moves toward 1.0km, but higher
 !.. RH over ocean required as compared to over land.
 
-      RH_00L = 0.781 + SQRT(1./(35.0+gridkm*gridkm*gridkm*0.5))
-      RH_00O = 0.831 + SQRT(1./(70.0+gridkm*gridkm*gridkm*0.5))
+      RH_00L = 0.7  + SQRT(1./(25.0+gridkm*gridkm*gridkm))
+      RH_00O = 0.81 + SQRT(1./(50.0+gridkm*gridkm*gridkm))
 
       DO j = jts,jte
       DO k = kts,kte
@@ -3205,10 +3210,9 @@ CONTAINS
             if (tc .ge. -12.0) then
                RHUM = MIN(0.999, RHUM)
                CLDFRA(I,K,J) = MAX(0.0, 1.0-SQRT((1.0-RHUM)/(1.-RH_00)))
-            elseif (tc.lt.-12..and.tc.gt.-70. .and. RHUM.gt.RH_00O) then
-               RHUM = MAX(0.01, MIN(qv(i,k,j)/qvsat(i,k,j), qvsw/qvsi - 1.E-6))
-               RHI_max = MAX(RHUM+1.E-6, qvsw/qvsi)
-               CLDFRA(I,K,J) = MAX(0., 1.0-SQRT((RHI_max-RHUM)/(RHI_max-RH_00O)))
+            elseif (tc.lt.-12..and.tc.gt.-70. .and. RHUM.gt.RH_00L) then
+               RHUM = MAX(0.01, MIN(qv(i,k,j)/qvsat(i,k,j), 1.0 - 1.E-6))
+               CLDFRA(I,K,J) = MAX(0., 1.0-SQRT((1.0-RHUM)/(1.0-RH_00L)))
             endif
             CLDFRA(I,K,J) = MIN(0.90, CLDFRA(I,K,J))
 
@@ -3292,8 +3296,8 @@ CONTAINS
       k_m40C = 0
       DO k = kte, kts, -1
          theta(k) = T1d(k)*((100000.0/P1d(k))**(287.05/1004.))
-         if (T1d(k)-273.16 .gt. -40.0) k_m40C = MAX(k_m40C, k)
-         if (T1d(k)-273.16 .gt. -12.0) k_m12C = MAX(k_m12C, k)
+         if (T1d(k)-273.16 .gt. -40.0 .and. P1d(k).gt.7000.0) k_m40C = MAX(k_m40C, k)
+         if (T1d(k)-273.16 .gt. -12.0 .and. P1d(k).gt.10000.0) k_m12C = MAX(k_m12C, k)
       ENDDO
       if (k_m40C .le. kts) k_m40C = kts
       if (k_m12C .le. kts) k_m12C = kts
@@ -3481,7 +3485,6 @@ CONTAINS
       do k = k1, k2
          iwp_exists = iwp_exists + (qi(k)+qs(k))*Rho(k)*dz(k)
       enddo
-      if (iwp_exists .gt. 1.0) RETURN
 
       this_dz = 0.0
       do k = k1, k2
@@ -3525,7 +3528,6 @@ CONTAINS
       do k = k1, k2
          lwp_exists = lwp_exists + qc(k)*Rho(k)*dz(k)
       enddo
-      if (lwp_exists .gt. 1.0) RETURN
 
       this_dz = 0.0
       do k = k1, k2
@@ -3561,20 +3563,15 @@ CONTAINS
       INTEGER:: k
 
       lwp = 0.
-      do k = kts, k_tropo
-         if (cfr(k).gt.0.01 .and. cfr(k).lt.0.99) then
-            lwp = lwp + qc(k)*Rho(k)*dz(k)
-         endif
-      enddo
-
       iwp = 0.
       do k = kts, k_tropo
-         if (cfr(k).gt.0.01 .and. cfr(k).lt.0.99) then
+         if (cfr(k).gt.0.0) then
+            lwp = lwp + qc(k)*Rho(k)*dz(k)
             iwp = iwp + qi(k)*Rho(k)*dz(k)
          endif
       enddo
 
-      if (lwp .gt. 1.0) then
+      if (lwp .gt. 1.5) then
          xfac = 1./lwp
          do k = kts, k_tropo
             if (cfr(k).gt.0.01 .and. cfr(k).lt.0.99) then
@@ -3583,7 +3580,7 @@ CONTAINS
          enddo
       endif
 
-      if (iwp .gt. 1.0) then
+      if (iwp .gt. 1.5) then
          xfac = 1./iwp
          do k = kts, k_tropo
             if (cfr(k).gt.0.01 .and. cfr(k).lt.0.99) then

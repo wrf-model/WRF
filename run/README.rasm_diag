@@ -1,0 +1,51 @@
+The RASM Climate Diagnostics provides time-step averaging output for surface 
+meteorology (PSFC, TSK, PMSL, T2, TH2, Q2, U10, V10), fluxes at the surface 
+(HFX, LH, SWDNB, GLW, LWUPB, SWUPB), and fluxes at the TOA (SWUPT, SWDNT, LWUPT, 
+LWDNT). The averaging can be set by the user with some interval of seconds, 
+minutes, hours, days, or month. The average output file is set to use auxhist5. 
+
+Additionally, diurnal averaging is provided which creates monthly averages for 
+three hour periods of time during the day (00-03, 03-06, etc.). The diurnal 
+average output is set to use auxhist6. This diurnal averaging output is only 
+created in monthly files (the simulation has to be longer than a month to see
+the output).
+
+The intended application for the RASM Diagnostics is for regional climate
+simulations and the elimination of the need to produce the high-volume and I/O
+intenstive instantaneous WRF history files for long duration simulations.
+
+namelist.input settings for RASM Climate Diagnostics in &time_control
+-settings for RASM diagnostic mean output:
+ -flag to turn on the mean diagnostic output (1 = on, 0 = off)
+   mean_diag                           = 1,
+ -set the time interval for the frequency of mean calculations
+   mean_diag_interval                  = 1440, (minutes)
+   mean_diag_interval_s                = 3600, (seconds)
+   mean_diag_interval_m                = 1440, (minutes)
+   mean_diag_interval_h                = 6, (hours)
+   mean_diag_interval_d                = 1, (days)
+   mean_diag_interval_mo               = 1, (month)
+ -use the standard WRF namelist settings for auxhist5:
+   auxhist5_outname                    = "wrf_mean_d<domain>_<date>.nc",
+   io_form_auxhist5                    = 2,
+   frames_per_auxhist5                 = 1,
+Notes:
+ -a time interval must be set
+ -only one of the time intervals can be set (cominbations do not work)
+
+-settings for RASM diagnostic dirunal output:
+ -flag to turn on the diurnal diagnostic output (1 = on, 0 = off)
+   diurnal_diag                        = 1,
+ -use the standard WRF namelist settings for auxhist5 and auxhist6:
+   auxhist6_outname                    = "wrf_diurnal_d<domain>_<date>.nc",
+   io_form_auxhist6                    = 2,
+   frames_per_auxhist6                 = 1,
+Note: The dirunal output is hard coded for three-hourly intervals
+(8 values in a day) and output in monthly files.
+
+Acknoledgement:
+The RASM Climate Diagnostics for WRF was developed and implemented as a part
+of the Regional Arctic System Model (RASM) project funded by the United States 
+Department of Energy - Regional and Global Climate Modeling Program.
+
+04 April 2017

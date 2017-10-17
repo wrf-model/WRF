@@ -49,27 +49,23 @@
  parent_grid_ratio                   = 1,     5,     5,
  parent_time_step_ratio              = 1,     5,     5,
  feedback                            = 1,
- smooth_option                       = 00
+ smooth_option                       = 0,
  /
 
  &physics
  mp_physics                          = 3,     3,     3,
- ra_lw_physics                       = 1,     1,     1,
- ra_sw_physics                       = 1,     1,     1,
+ ra_lw_physics                       = 4,     4,     4,
+ ra_sw_physics                       = 4,     4,     4,
  radt                                = 30,    30,    30,
  sf_sfclay_physics                   = 1,     1,     1,
- sf_surface_physics                  = 1,     1,     1,
+ sf_surface_physics                  = 2,     2,     2,
  bl_pbl_physics                      = 1,     1,     1,
  bldt                                = 0,     0,     0,
- cu_physics                          = 1,     1,     0,
- cudt                                = 5,     5,     5,
- isfflx                              = 1,
- ifsnow                              = 0,
+ cu_physics                          = 16,   16,     0,
+ cudt                                = 0,     0,     0,
  icloud                              = 1,
- surface_input_source                = 3,
- num_soil_layers                     = 5,
+ num_soil_layers                     = 4,
  num_land_cat                        = 21,
- mp_zero_out                         = 0,
  /
 
  &fdda
@@ -91,6 +87,7 @@
  tke_adv_opt                         = 0,      0,      0,     
  fft_filter_lat                      = 45.,
  w_damping                           = 1,
+ gwd_opt                             = 1,
  /
 
  &bdy_control

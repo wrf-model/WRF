@@ -53,7 +53,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
 #endif
                max_obs, nobs_ndg_vars,                           &
                nobs_err_flds, nstat, varobs, errf, dx,           &
-               KPBL, HT, mut, muu, muv,                          &
+               KPBL, HT, mut, muu, muv, c1h, c2h,                &
                msftx, msfty, msfux, msfuy, msfvx, msfvy, p_phy, t_tendf, t0,             &
                ub, vb, tb, qvb, pbase, ptop, pp, phb, ph,        &
                uratx, vratx, tratx, ru_tendf, rv_tendf,          &
@@ -143,6 +143,9 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
   REAL, INTENT(IN) :: msfuy( ims:ime , jms:jme )  ! Map scale on u-grid
   REAL, INTENT(IN) :: msfvx( ims:ime , jms:jme )  ! Map scale on v-grid
   REAL, INTENT(IN) :: msfvy( ims:ime , jms:jme )  ! Map scale on v-grid
+
+  REAL, INTENT(IN) :: c1h( kms:kme )   ! Hybrid coordinate, weighting function
+  REAL, INTENT(IN) :: c2h( kms:kme )   ! Hybrid coordinate, weighting function
 
   REAL, INTENT(IN) :: p_phy( ims:ime, kms:kme, jms:jme )
   REAL, INTENT(INOUT) :: t_tendf( ims:ime, kms:kme, jms:jme )
@@ -350,7 +353,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
 !         write(6,*) 'calling nudob: IVAR=3, J = ',j
           CALL nudob(J, 3, t_tendf(ims,kms,j),                       &
                   inest, restart, ktau, fdob%ktaur, xtime,           &
-                  mut(ims,j), msftx(ims,j), msfty(ims,j),            &
+                  mut(ims,j), c1h, c2h, msftx(ims,j), msfty(ims,j),  &
                   nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,     &
                   npfi, ionf, rinxy, fdob%window,                    &
                   fdob%nudge_t_pbl,                                  &
@@ -383,7 +386,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
 !         write(6,*) 'calling nudob: IVAR=4, J = ',j
           CALL nudob(J, 4, moist_tend(ims,kms,j),                    &
                   inest, restart, ktau, fdob%ktaur, xtime,           &
-                  mut(ims,j), msftx(ims,j), msfty(ims,j),            &
+                  mut(ims,j), c1h, c2h, msftx(ims,j), msfty(ims,j),  &
                   nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,     &
                   npfi, ionf, rinxy, fdob%window,                    &
                   fdob%nudge_q_pbl,                                  &
@@ -417,7 +420,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
 !         write(6,*) 'calling nudob: IVAR=1, J = ',j
         CALL nudob(J, 1, ru_tendf(ims,kms,j),                        &
                 inest, restart, ktau, fdob%ktaur, xtime,             &
-                muu(ims,j), msfux(ims,j), msfuy(ims,j),              &
+                muu(ims,j), c1h, c2h, msfux(ims,j), msfuy(ims,j),    &
                 nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,       &
                 npfi, ionf, rinxy, fdob%window,                      &
                 fdob%nudge_uv_pbl,                                   &
@@ -447,7 +450,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
 !       write(6,*) 'calling nudob: IVAR=2, J = ',j
         CALL nudob(J, 2, rv_tendf(ims,kms,j),                        &
                 inest, restart, ktau, fdob%ktaur, xtime,             &
-                muv(ims,j), msfvx(ims,j), msfvy(ims,j),              &
+                muv(ims,j), c1h, c2h, msfvx(ims,j), msfvy(ims,j),    &
                 nobs_ndg_vars, nobs_err_flds, max_obs, maxdom,       &
                 npfi, ionf, rinxy, fdob%window,                      &
                 fdob%nudge_uv_pbl,                                   &

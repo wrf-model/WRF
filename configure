@@ -7,10 +7,14 @@ thiscmd=$0
 FORTRAN_COMPILER_TIMER=""
 opt_level="-f"
 rword="-r4"
+vnest="NOVN"
+hyb="NOHYB"
 print_usage=""
 chemistry=""
 wrf_core=""
+config_line="$0 "
 while [ $# -ge 1 ]; do
+    config_line="$config_line $1"
     case $1 in
       -d) opt_level="-d" ;;
       -D) opt_level="-D" ;;
@@ -18,10 +22,12 @@ while [ $# -ge 1 ]; do
       -f) opt_level="-f" ;;
       -h) print_usage="yes" ;;
       -help) print_usage="yes" ;;
+      -hyb) hyb="HYB" ;;
       -os) shift ; WRF_OS=$1 ;;
       -mach) shift ; WRF_MACH=$1 ;;
       -r8) rword="-r8" ;;
       -time) shift ; FORTRAN_COMPILER_TIMER=$1 ;;
+      -vn)  vnest="VN" ;;
       chem) WRF_CHEM=1  ;;
       kpp) WRF_KPP=1  ;;
       radardfi) WRF_DFI_RADAR=1  ;;
@@ -44,6 +50,7 @@ if [ -n "$print_usage" ] ; then
   echo '-d    build with debugging information and no optimization'
   echo '-D    build with -d AND floating traps, traceback, uninitialized variables'
   echo '-r8   build with 8 byte reals'
+  echo '-hyb  build with hybrid vertical coordinate (HVC) for ARW only'
   echo '-help print this message'
   echo '*****************************************************************************'
   echo ' '
@@ -409,6 +416,27 @@ if [ "$wrf_core" = "DA_CORE" -o "$wrf_core" = "4D_DA_CORE" ] ; then
   fi
 fi
 
+# For the hybrid build, stay away from NMM and DA; Vertical nesting is 
+# a problem for ARW
+
+if [ -n "$WRF_NMM_CORE" -a "$WRF_NMM_CORE" = "1" ] ; then
+  TFL="-traditional-cpp"
+  CFL="-P -nostdinc"
+elif [ "$wrf_core" = "DA_CORE" -o "$wrf_core" = "4D_DA_CORE" ] ; then
+  TFL="-traditional-cpp"
+  CFL="-P -nostdinc"
+elif [ "$vnest" = "VN" ] ; then
+  TFL="-traditional-cpp"
+  CFL="-P -nostdinc"
+elif [ "$hyb" = "NOHYB" ] ; then
+  TFL="-traditional-cpp"
+  CFL="-P -nostdinc"
+else
+  TFL=" "
+  CFL="-P -C -nostdinc"
+  compileflags="${compileflags}!-DHYBRID_COORD=1"
+fi
+
 if [ "$wrf_core" = "4D_DA_CORE" ]; then
    if [ -n "$WRFPLUS_DIR" ] ; then
       echo "Will use WRFPLUS in dir: $WRFPLUS_DIR"
@@ -605,7 +633,7 @@ if test -n "$PERL" ; then
      $PERL arch/Config_new.pl -dmparallel=$COMMLIB -ompparallel=$OMP -perl=$PERL \
           -netcdf=$NETCDF -pnetcdf=$PNETCDF -hdf5=$HDF5 -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
           -compileflags=$compileflags -opt_level=$opt_level -USENETCDFF=$USENETCDFF -USENETCDF=$USENETCDF \
-          -time=$FORTRAN_COMPILER_TIMER \
+          -time=$FORTRAN_COMPILER_TIMER -tfl="$TFL" -cfl="$CFL" -config_line="$config_line" \
           -wrf_core=$wrf_core -gpfs=$GPFS_PATH -curl=$CURL_PATH -dep_lib_path="$DEP_LIB_PATH"
      if test ! -f configure.wrf ; then
        echo "configure.wrf not created! Exiting configure script..."
@@ -730,10 +758,10 @@ if test -n "$NETCDF" ; then
   fi
   grep nf_format_64bit $NETCDF/include/netcdf.inc > /dev/null
   configure_aaaa=$? ; export configure_aaaa
-  if [ $configure_aaaa -a -z "$WRFIO_NCD_LARGE_FILE_SUPPORT" ] ; then
+  if [ $configure_aaaa -a -z "$WRFIO_NCD_NO_LARGE_FILE_SUPPORT" ] ; then
     echo "NetCDF users note:"
-    echo " This installation of NetCDF supports large file support.  To enable large file" 
-    echo " support in NetCDF, set the environment variable WRFIO_NCD_LARGE_FILE_SUPPORT"
+    echo " This installation of NetCDF supports large file support.  To DISABLE large file" 
+    echo " support in NetCDF, set the environment variable WRFIO_NCD_NO_LARGE_FILE_SUPPORT"
     echo " to 1 and run configure again. Set to any other value to avoid this message."
   fi
 fi
@@ -1042,6 +1070,27 @@ if [ $retval -ne 0 ] ; then
     echo " "
     echo "*****************************************************************************"
   fi
+fi
+
+# testing for Fortran 2008 intrinsic gamma function
+make fortran_2008_gamma_test > tools/fortran_2008_gamma.log 2>&1
+rm -f tools/fortran_2008_gamma.log
+retval=-1
+if [ -f tools/fortran_2008_gamma_test.exe ] ; then
+  retval=0
+fi
+if [ $retval -ne 0 ] ; then
+  sed -e '/^ARCH_LOCAL/s/$/ -DNO_GAMMA_SUPPORT/' configure.wrf > configure.wrf.edit
+  mv configure.wrf.edit configure.wrf
+  echo " "
+  echo " "
+  echo "************************** W A R N I N G ************************************"
+  echo " "
+  echo "There are some Fortran 2008 features in WRF that your compiler does not recognize"
+  echo "The intrinsic gamma function is not available, required by some schemes."
+  echo "That code is stubbbed out, and those schemes are unavailable at run-time."
+  echo " "
+  echo "*****************************************************************************"
 fi
 
 # testing for netcdf4 IO features

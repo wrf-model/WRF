@@ -5,28 +5,45 @@ subroutine init_4dvar
 
    integer :: idum1, idum2, run_seconds ,rc
    TYPE(WRFU_TimeInterval) :: run_length
+   integer :: itmp
+   real    :: rtmp
 
    if (trace_use_dull) call da_trace_entry("init_4dvar")
 
    run_length = head_grid%stop_subtime - head_grid%start_subtime
    CALL WRFU_TimeIntervalGet( run_length, S=run_seconds, rc=rc )
 
-   if ( run_seconds .gt. config_flags%interval_seconds ) &
-      CALL wrf_error_fatal('In 4D-Var assimilation window, lateral boundary update is not allowed.')   
+   if ( run_seconds .gt. config_flags%interval_seconds ) then
+      write(unit=message(1),fmt='(A)') 'In 4D-Var assimilation window, lateral boundary update is not allowed.'
+      write(unit=message(2),fmt='(A)') '"run_seconds" must be less than or equal to "interval_seconds"'
+      write(unit=message(3),fmt='(A,I0)')'run_seconds      = ',run_seconds
+      write(unit=message(4),fmt='(A,I0)')'interval_seconds = ',config_flags%interval_seconds
+      call da_error(__FILE__,__LINE__,message(1:4))
+   end if
 
    ! Save the some physics options, as they will be changed in TL and AD model.
-   call nl_get_mp_physics (head_grid%id, original_mp_physics) 
-   call nl_get_mp_physics_ad (head_grid%id, original_mp_physics_ad)
-   call nl_get_ra_lw_physics (head_grid%id, original_ra_lw_physics)
-   call nl_get_ra_sw_physics (head_grid%id, original_ra_sw_physics)
-   call nl_get_sf_sfclay_physics (head_grid%id, original_sf_sfclay_physics)
-   call nl_get_bl_pbl_physics (head_grid%id, original_bl_pbl_physics)
-   call nl_get_cu_physics (head_grid%id, original_cu_physics)
-   call nl_get_cudt (head_grid%id, original_cudt)
+   call nl_get_mp_physics (head_grid%id, itmp) 
+   original_mp_physics = itmp
+   call nl_get_mp_physics_ad (head_grid%id, itmp)
+   original_mp_physics_ad = itmp
+   call nl_get_ra_lw_physics (head_grid%id, itmp)
+   original_ra_lw_physics = itmp
+   call nl_get_ra_sw_physics (head_grid%id, itmp)
+   original_ra_sw_physics = itmp
+   call nl_get_sf_sfclay_physics (head_grid%id, itmp)
+   original_sf_sfclay_physics = itmp
+   call nl_get_bl_pbl_physics (head_grid%id, itmp)
+   original_bl_pbl_physics = itmp
+   call nl_get_cu_physics (head_grid%id, itmp)
+   original_cu_physics = itmp
+   call nl_get_cudt (head_grid%id, rtmp)
+   original_cudt = rtmp
    !call nl_get_mp_zero_out (head_grid%id, original_mp_zero_out)
    !call nl_get_sf_surface_physics (head_grid%id, original_sf_surface_physics)
-   call nl_get_ifsnow (head_grid%id, original_ifsnow)
-   call nl_get_icloud (head_grid%id, original_icloud)
+   call nl_get_ifsnow (head_grid%id, itmp)
+   original_ifsnow = itmp
+   call nl_get_icloud (head_grid%id, itmp)
+   original_icloud = itmp
    !call nl_get_isfflx (head_grid%id, original_isfflx)
 
    ! Initialize linked list for trajectory

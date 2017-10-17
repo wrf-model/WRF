@@ -824,12 +824,12 @@ deallocate(hh)
 
 #ifdef MPP_LAND
 
-call mpi_reduce(delcur, mpiDelcur, 1, MPI_REAL, MPI_SUM, 0, MPI_COMM_WORLD, ierr)
-call MPI_COMM_SIZE( MPI_COMM_WORLD, mpiSize, ierr ) 
+call mpi_reduce(delcur, mpiDelcur, 1, MPI_REAL, MPI_SUM, 0, HYDRO_COMM_WORLD, ierr)
+call MPI_COMM_SIZE( HYDRO_COMM_WORLD, mpiSize, ierr )
 
 if(my_id .eq. IO_id) delcur = mpiDelcur/mpiSize
 
-call mpi_bcast(delcur, 1, mpi_real, 0, MPI_COMM_WORLD, ierr)
+call mpi_bcast(delcur, 1, mpi_real, 0, HYDRO_COMM_WORLD, ierr)
 
 #endif
 
@@ -909,10 +909,10 @@ if(my_id .eq. IO_id)  write(6,*) "Iteration", iter, "of", itermax, "error:", del
 #ifdef HYDRO_D
 #ifdef MPP_LAND
 
-      call MPI_REDUCE(dtot,gdtot,1, MPI_REAL, MPI_SUM, IO_id, MPI_COMM_WORLD, ierr)
-      call MPI_REDUCE(dtoa,gdtoa,1, MPI_REAL, MPI_SUM, IO_id, MPI_COMM_WORLD, ierr)
-      call MPI_REDUCE(eocn,geocn,1, MPI_REAL, MPI_SUM, IO_id, MPI_COMM_WORLD, ierr)
-      call MPI_REDUCE(ebot,gebot,1, MPI_REAL, MPI_SUM, IO_id, MPI_COMM_WORLD, ierr)
+      call MPI_REDUCE(dtot,gdtot,1, MPI_REAL, MPI_SUM, IO_id, HYDRO_COMM_WORLD, ierr)
+      call MPI_REDUCE(dtoa,gdtoa,1, MPI_REAL, MPI_SUM, IO_id, HYDRO_COMM_WORLD, ierr)
+      call MPI_REDUCE(eocn,geocn,1, MPI_REAL, MPI_SUM, IO_id, HYDRO_COMM_WORLD, ierr)
+      call MPI_REDUCE(ebot,gebot,1, MPI_REAL, MPI_SUM, IO_id, HYDRO_COMM_WORLD, ierr)
       
       if(my_id .eq. IO_id) then
         write (*,900)                         &

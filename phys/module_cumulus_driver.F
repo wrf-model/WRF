@@ -98,6 +98,10 @@ CONTAINS
                      ,ens_sasamp                                      &
                      ,shalconv,shal_pgcon                             &
                      ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon for SAS2010 shallow convection
+                     ,DX2D, DYNMM                                     & ! For scale-aware SAS
+                     ,SCALEFUN,SCALEFUN1                              & !    scale functions 
+                     ,SIGMU,SIGMU1                                    & !    updraft fraction
+
                  ! Optional arguments for NSAS scheme
                      ,mp_physics                                      &
                  ! Optional moisture and other tendencies
@@ -129,7 +133,9 @@ CONTAINS
                                           ,G3SCHEME,GFSCHEME          &
                                           ,P_QC,P_QI,Param_FIRST_SCALAR &
                                           ,CAMZMSCHEME, SASSCHEME     &
-                                          ,OSASSCHEME,MESO_SAS        &  !Kwon
+                                          ,OSASSCHEME                 &  
+                                          ,SCALESASSCHEME             &  ! scale-sware sas
+
                                           ,NSASSCHEME                 &
 #if (EM_CORE == 1)
                                           ,MSKFSCHEME                 &
@@ -157,14 +163,15 @@ CONTAINS
    USE module_cu_mskf   , ONLY : mskf_cps
 #endif
    USE module_cu_gd     , ONLY : grelldrv
-   USE module_cu_gf     , ONLY : gfdrv
+   USE module_cu_gf_wrfdrv     , ONLY : gfdrv
    USE module_cu_g3     , ONLY : g3drv,conv_grell_spread3d
    USE module_cu_sas    , ONLY : cu_sas
+   USE module_cu_scalesas    , ONLY : cu_scalesas
+
 #if (EM_CORE == 1)
    USE module_cu_kfcup  , ONLY : KF_CUP_CPS !wig, 3-Aug-2006 !BSINGH - For WRFCuP scheme 
 #endif
    USE module_cu_osas   , ONLY : cu_osas
-   USE module_cu_mesosas, ONLY : cu_meso_sas
    USE module_cu_camzm_driver, ONLY : camzm_driver
    USE module_cu_tiedtke, ONLY : cu_tiedtke
    USE module_cu_ntiedtke,ONLY : cu_ntiedtke
@@ -276,8 +283,8 @@ CONTAINS
 !-- RTHRATEN      radiative temp forcing for Grell-Devenyi scheme
 !-- RTHBLTEN      PBL temp forcing for Grell-Devenyi scheme
 !-- RQVBLTEN      PBL moisture forcing for Grell-Devenyi scheme
-!-- RTHFTEN
-!-- RQVFTEN
+!-- RTHFTEN       Advective tendency for theta
+!-- RQVFTEN       Advective tendency for vapor
 !-- MASS_FLUX
 !-- XF_ENS
 !-- PR_ENS
@@ -502,6 +509,14 @@ CONTAINS
 !
    REAL, OPTIONAL,  INTENT(INOUT) :: mommix
 
+
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,               &    
+                    INTENT(IN) ::  DX2D                           ! For scale-aware SAS
+   REAL, OPTIONAL,  INTENT(IN) ::  DYNMM                          ! For scale-aware SAS  
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,INTENT(INOUT) :: &
+                                   SCALEFUN,SCALEFUN1,SIGMU,SIGMU1    
+
+
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,               &    !Kwon for sas2010 shallow convection
                     INTENT(INOUT) ::  HPBL2D, EVAP2D, HEAT2D
 !
@@ -636,6 +651,15 @@ CONTAINS
                                                      ,f_qg
    LOGICAL, INTENT(IN), OPTIONAL ::                   f_flux
 
+!beka - random pattern  arrays, if not existing, set to zero
+!
+!     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),INTENT(INOUT),OPTIONAL :: &
+!           pattern_spp_conv,field_conv
+!     INTEGER, OPTIONAL :: spp_conv
+     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: &
+           pattern_spp_conv,field_conv
+     INTEGER  :: spp_conv
+
 #if ( WRF_DFI_RADAR == 1 )
 !
 !  option of cap suppress: 
@@ -655,6 +679,10 @@ CONTAINS
 
 
 !-----------------------------------------------------------------
+    pattern_spp_conv=0.
+    field_conv=0.
+    spp_conv=0
+
 
    l_flux=.FALSE.
    if (present(f_flux)) l_flux=f_flux
@@ -766,7 +794,7 @@ CONTAINS
    END IF
 
 #if  ( EM_CORE == 1 )
-      if(cu_physics .eq. 5 .or. cu_physics .eq. 16) then
+      if(cu_physics == G3SCHEME .or. cu_physics == NTIEDTKESCHEME) then
       !$OMP PARALLEL DO   &
       !$OMP PRIVATE ( ij,i,j,k,its,ite,jts,jte )
 
@@ -1025,14 +1053,14 @@ CONTAINS
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                                                                 )
-     CASE (MESO_SAS)                  !Kwon
+     CASE (SCALESASSCHEME)   ! 2015-12-11 added to call scale-aware SAS
 
           IF ( adapt_step_flag_pass ) THEN
-            WRITE( wrf_err_message , * ) 'The meso SAS cumulus option will not work properly with an adaptive time step'
+            WRITE( wrf_err_message , * ) 'The SCALE-AWARE SAS cumulus option will not work properly with an adaptive time step'
             CALL wrf_error_fatal ( wrf_err_message )
           END IF
-          CALL wrf_debug(100,'in cu_mesosas')
-          CALL CU_MESO_SAS(                                          &
+          CALL wrf_debug(100,'in cu_scalesas')
+          CALL CU_SCALESAS(                                     &
                 DT=dt,ITIMESTEP=itimestep,STEPCU=STEPCU         &
                ,RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN             &
                ,RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN             &
@@ -1049,6 +1077,9 @@ CONTAINS
                ,shalconv=shalconv,shal_pgcon=shal_pgcon         &
                ,hpbl2d=hpbl2d,evap2d=evap2d,heat2d=heat2d       &
                ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
+               ,DX2D=dx2d,DY=dynmm                              & ! 2 new 
+               ,SCALEFUN=SCALEFUN,SCALEFUN1=SCALEFUN1           & ! CNV scale functions
+               ,SIGMU=SIGMU,SIGMU1=SIGMU1                       & ! CNV updraft fractions
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
@@ -1153,37 +1184,27 @@ CONTAINS
             ENDDO
          endif
 #endif
-          CALL GFDRV(                                           &
-                DT=dt, ITIMESTEP=itimestep, DX=dx               &
-               ,U=u,V=v,T=t,W=w ,RHO=rho                        &
-               ,P=p,PI=pi,Q=qv_curr,RAINCV=raincv               &
-               ,DZ8W=dz8w ,P8W=p8w,XLV=xlv,CP=cp,G=g,R_V=r_v    &
-               ,APR_GR=apr_gr,APR_W=apr_w,APR_MC=apr_mc         &
-               ,APR_ST=apr_st,APR_AS=apr_as,PRATEC=tmppratec    &
-               ,APR_CAPMA=apr_capma,APR_CAPME=apr_capme         &
-               ,APR_CAPMI=apr_capmi,MASS_FLUX=mass_flux         &
-               ,HT=ht,qfx=qfx,hfx=hfx                           &
-               ,xland=xland,gsw=gsw,edt_out=edt_out             &
+
+         CALL GFDRV(spp_conv,pattern_spp_conv,field_conv,       &
+                DT=dt,DX=dx                                     &
+               ,RHO=rho,RAINCV=raincv,PRATEC=tmppratec          &
+               ,U=u,V=v,T=t,W=w,Q=qv_curr,P=p,PI=pi             &
+               ,DZ8W=dz8w ,P8W=p8w                              &
+               ,htop=htop,hbot=hbot,ktop_deep=ktop_deep         &
+               ,HT=ht,hfx=hfx,qfx=qfx,xland=xland               &
                ,GDC=gd_cloud,GDC2=gd_cloud2,kpbl=kpbl           &
                ,k22_shallow=k22_shallow                         &
                ,kbcon_shallow=kbcon_shallow                     &
                ,ktop_shallow=ktop_shallow                       &
-               ,ktop_deep=ktop_deep                             &
                ,xmb_shallow=xmb_shallow                         &
-               ,cugd_tten=cugd_tten,cugd_qvten=cugd_qvten       &
-               ,cugd_ttens=cugd_ttens,cugd_qvtens=cugd_qvtens   &
-               ,cugd_qcten=cugd_qcten,cugd_avedx=cugd_avedx     &
-               ,imomentum=imomentum,ishallow_g3=ishallow        &
-               ,ichoice=clos_choice                             &
-               ,htop=htop,hbot=hbot                             &
-               ,CU_ACT_FLAG=CU_ACT_FLAG,warm_rain=warm_rain     &
+               ,ichoice=clos_choice,ishallow_g3=ishallow        &
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
 !              ,IPS=ips,IPE=ipe,JPS=jps,JPE=jpe,KPS=kps,KPE=kpe &
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                ,PERIODIC_X=periodic_x,PERIODIC_Y=periodic_y     &
               ! optionals
-#if (NMM_CORE == 1 )
+#if (NMM_CORE == 1 ) 
                ,RTHCUTEN=RTHCUTEN ,RTHFTEN=forcet               &
                ,RTHRATEN=RTHRATEN                               &
                ,RQICUTEN=RQICUTEN ,RQVFTEN=forceq               &
@@ -1194,13 +1215,12 @@ CONTAINS
                ,rqvblten=rqvblten,rthblten=rthblten             &
 #endif
                ,RQVCUTEN=RQVCUTEN,RQCCUTEN=RQCCUTEN             &
-               ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
-               ,F_QI=f_qi,F_QS=f_qs                             &
+               ,dudt_phy=rucuten, dvdt_phy=rvcuten              &
 #if ( WRF_DFI_RADAR == 1 )
                  ! Optional CAP suppress option
-              ,do_capsuppress=do_capsuppress                    &
-              ,cap_suppress_loc=cap_suppress_loc                &
-#endif                                 
+               ,do_capsuppress=do_capsuppress                   &
+               ,cap_suppress_loc=cap_suppress_loc               &
+#endif 
                                                                 )
      CASE (CAMZMSCHEME)
           IF (PRESENT(z_at_w) .AND. PRESENT(mavail)                 &

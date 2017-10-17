@@ -413,6 +413,14 @@ real      ,DIMENSION(grid%sm31:grid%em31,grid%sm32:grid%em32,1:grid%num_soil_cat
      num_metgrid_levels = grid%num_metgrid_levels
 
 !---------------------------------------------------------------------
+! bug fix for albedo and emissivity
+      DO j = jts, MIN(jte,jde-1)
+         DO i = its, MIN(ite,ide-1)
+           grid%landmask(I,J) = 0.
+         END DO
+       END DO
+! end bug fix for albedo and emissivity
+
 !
 ! gopal's doing for ideal cases
 !
@@ -439,7 +447,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
      &,          landusef_out,soilctop_out,soilcbot_out        &
      &,          num_veg_gc,num_soil_top_gc,num_soil_bot_gc    &
      &,          config_flags%dx,internal_time_loop            &
-     &,          1,grid%num_metgrid_levels                          &
+     &,          1,grid%num_metgrid_levels,config_flags%sf_surface_physics  &
      &,          ids,ide,jds,jde,kds,kde                       &
      &,          ims,ime,jms,jme,kms,kme                       &
      &,          its,ite,jts,jte,kts,kte                       )
@@ -4648,7 +4656,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
      &,              landusef_out,soilctop_out,soilcbot_out        &
      &,              num_veg_cat,num_soil_top_cat,num_soil_bot_cat &
      &,              dx,internal_time_loop                         &
-     &,              start_z,end_z                                 &
+     &,              start_z,end_z,sf_surface_physics              &
      &,              ids,ide,jds,jde,kds,kde                       &
      &,              ims,ime,jms,jme,kms,kme                       &
      &,              its,ite,jts,jte,kts,kte                       )
@@ -4662,7 +4670,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
 INTEGER, INTENT(IN):: ids,ide,jds,jde,kds,kde, &
                        ims,ime,jms,jme,kms,kme, &
                        its,ite,jts,jte,kts,kte, &
-                       internal_time_loop
+                       internal_time_loop,sf_surface_physics
 
  INTEGER, INTENT(IN):: num_veg_cat,num_soil_top_cat,num_soil_bot_cat,start_z, end_z
 
@@ -4691,7 +4699,12 @@ INTEGER, INTENT(IN):: ids,ide,jds,jde,kds,kde, &
  character*255 :: message
  REAL, ALLOCATABLE,DIMENSION(:,:)   :: psc
  REAL, ALLOCATABLE,DIMENSION(:,:,:) :: u_temp,v_temp,t_temp,ght_temp,rh_temp
-
+!!BEGIN: LSM changes for LANDFALL: Subashini 7/27/2016
+ INTEGER                                         :: imin,jmin,imax,jmax,proceed,VEG_ID,SOIL_ID
+ LOGICAL                                         :: mvland, logic_temp
+ REAL                                            :: s_temp
+ NAMELIST / init_land /imin,jmin,imax,jmax,proceed,VEG_ID,SOIL_ID,mvland,logic_temp,s_temp
+!! END: LSM changes for LANDFALL : Subashini 7/27/2016
 !----------------------------------------------------------------------------
 !  PURPOSE:
 !         - HURRICANE VORTEX FILTERING
@@ -4734,15 +4747,34 @@ INTEGER, INTENT(IN):: ids,ide,jds,jde,kds,kde, &
 !
 !   SET UP IDEAL CONDITIONS
 !
+!!BEGIN: LSM changes for LANDFALL: Subashini 7/27/2016
+
+    open (7,FILE='land.nml')
+    read (UNIT=7, NML=init_land)
+    close (UNIT=7)
+
+    if (mvland .and. sf_surface_physics .ne. GFDLSLAB) then
+       CALL wrf_error_fatal('LSM must be GFDLSLAB when mvland is true')
+    endif
 
     do l = 1,num_veg_cat
      do j = jts, MIN(jte,jde-1)
       do i = its, MIN(ite,ide-1)
-        if(l==16)THEN
-           landusef_out(i,j,l)=1                    ! create ocean everywhere
-        else
-            landusef_out(i,j,l)=0
-        endif
+!        create land patch that will move from W2E
+         if(mvland .and. (i .ge. imin .and. i .le. imax .and. j .ge. jmin .and. j.le. jmax))then
+            if(l==VEG_ID)THEN
+                landusef_out(i,j,l)=1                    ! barren land
+            else
+                landusef_out(i,j,l)=0
+            endif
+         else                             ! original ocean world
+            if(l==16)THEN
+               landusef_out(i,j,l)=1      ! create ocean elsewhere
+            else
+               landusef_out(i,j,l)=0
+            endif
+         endif
+!
       enddo
      enddo
     enddo
@@ -4750,40 +4782,71 @@ INTEGER, INTENT(IN):: ids,ide,jds,jde,kds,kde, &
     do l = 1,num_soil_top_cat
      do j = jts, MIN(jte,jde-1)
       do i = its, MIN(ite,ide-1)
-        if(l==14)THEN
-           soilctop_out(i,j,l)=1                    ! create ocean everywhere
-        else
-           soilctop_out(i,j,l)=0
-        endif
-      enddo
-     enddo
-    enddo
-   do l = 1,num_soil_bot_cat
-     do j = jts, MIN(jte,jde-1)
-      do i = its, MIN(ite,ide-1)
-        if(l==14)THEN
-           soilcbot_out(i,j,l)=1                    ! create ocean everywhere
-        else
-           soilcbot_out(i,j,l)=0
-        endif
+!        create land patch that will move from W2E
+         if(mvland .and. (i .ge. imin .and. i .le. imax .and. j .ge. jmin .and. j.le. jmax))then
+            if(l==SOIL_ID)THEN
+              soilctop_out(i,j,l)=1       ! sandy soil
+            else
+              soilctop_out(i,j,l)=0
+            endif
+         else                             ! original ocean world
+            if(l==14)THEN
+               soilctop_out(i,j,l)=1      ! create ocean everywhere
+            else
+               soilctop_out(i,j,l)=0
+            endif
+         endif
+!
       enddo
      enddo
     enddo
 
+   do l = 1,num_soil_bot_cat
+     do j = jts, MIN(jte,jde-1)
+      do i = its, MIN(ite,ide-1)
+!        create land patch that will move from W2E
+         if(mvland .and. (i .ge. imin .and. i .le. imax .and. j .ge. jmin .and. j.le. jmax))then
+            if(l==SOIL_ID)THEN
+               soilcbot_out(i,j,l)=1       ! sandy soil
+            else
+               soilcbot_out(i,j,l)=0
+            endif
+         else                              ! original ocean world
+            if(l==14)THEN
+               soilcbot_out(i,j,l)=1       ! create ocean everywhere
+            else
+               soilcbot_out(i,j,l)=0
+            endif
+         endif
+!
+      enddo
+     enddo
+    enddo
 
     landusef_gc=landusef_out       !=landusef_gc
     soilcbot_gc=soilcbot_out       !=soilcbot_gc
     soilctop_gc=soilctop_out       !=soilctop_gc
-
 
     do j = jts, MIN(jte,jde-1)
      do i = its, MIN(ite,ide-1)
       xice_gc(i,j)=0.
       ht_gc(i,j)=0.                                 ! uniform terrain
       ght_gc(i,j,1)=0.                              ! uniform gpm at level 1
-      tsk_gc(i,j)=302.0                             ! uniform SSTs
+!     create land patch that will move from W2E
+      if(mvland .and. (i .ge. imin .and. i .le. imax .and. j .ge. jmin .and.j.le. jmax))then
+       if(logic_temp .eq. .true.) then
+       tsk_gc(i,j)=s_temp                            ! uniform land temperature or t_gc(i,j,1) for applying first level temperature
+       else
+       tsk_gc(i,j)= t_gc(i,j,1)
+       endif
+      else
+       tsk_gc(i,j)=302.0                             ! uniform SSTs
+      endif
      enddo
     enddo
+
+
+!! END: LSM changes for LANDFALL : Subashini 7/27/2016
 
 !
 ! Make sure the GFDL analysis does not have temperature problems especially

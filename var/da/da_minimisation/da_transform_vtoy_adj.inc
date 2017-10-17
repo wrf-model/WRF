@@ -1,5 +1,5 @@
-subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx, y, &
-   grid, config_flags, jcdf_flag)
+subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
+   grid, config_flags, jcdf_flag, vp6, vv6)
 
    !-------------------------------------------------------------------------
    ! Purpose:  Does Adjoint of control variable (V) transform to Obs-space(Y)
@@ -13,17 +13,21 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
    real,                       intent(out)   :: cv(1:cv_size) ! control variables.
    type(iv_type),              intent(inout) :: iv     ! innovation vector (o-b).
    type(vp_type),              intent(inout) :: vp     ! Grdipt/level CV.
-   type(vp_type),              intent(inout) :: vp6    ! Grdipt/level CV for 6h.
    type(vp_type),              intent(inout) :: vv     ! Grdipt/EOF CV.
-   type(vp_type),              intent(inout) :: vv6    ! Grdipt/EOF CV for 6h.
    type(xbx_type),             intent(inout) :: xbx    ! For header & non-grid arrays.
    type(y_type),               intent(inout) :: y      ! y = H(x_inc).
    type(domain),               intent(inout) :: grid
    type(grid_config_rec_type), intent(inout) :: config_flags
    logical,                    intent(in)    :: jcdf_flag       ! additional flag to switch off JcDF, used to switch off JcDF in calculation of J.
 
-   type(x_type) :: shuffle
-   integer :: nobwin,ndynopt, jl_start, jl_end, time_step_seconds
+   ! vp6 and vv6 are defined only when the code is configured and compiled for 4dvar
+   type(vp_type), optional,    intent(inout) :: vp6    ! Grdipt/level CV for 6h.
+   type(vp_type), optional,    intent(inout) :: vv6    ! Grdipt/EOF CV for 6h.
+
+   type(x_type)  :: shuffle
+   real          :: cv_local(1:cv_size) ! control variables
+   integer       :: nobwin, jl_start, jl_end, time_step_seconds
+   integer       :: num_subtwindow
    character*256 :: timestr, timestr1
    integer       :: i, j, k
    real          :: subarea, whole_area
@@ -180,6 +184,8 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
          jl_start    = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + 1
          jl_end      = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + be%cv%size_jl
          grid%xa = grid%x6a
+         !as of V3.9, da_zero_vp_type(vp) is commented out in the da_transform_vtox_adj,
+         call da_zero_vp_type (vp6) !as of V3.9, zero out vp here
          call da_transform_vtox_adj(grid, be%cv%size_jl, xbx, be, ep, vp6, vv6, cv(jl_start:jl_end))
          grid%xa = shuffle
 
@@ -190,6 +196,9 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
 
       call da_zero_x(grid%xa)
       call da_transfer_xatowrftl_adj(grid, config_flags, 'gr01')
+      !as of V3.9, da_zero_vp_type(vp) is commented out in the da_transform_vtox_adj,
+      call da_zero_vp_type (vp) !as of V3.9, zero out vp here
+      call da_transform_vpatox_adj(grid, be, ep, vp)
       call da_transform_vtox_adj(grid, be%cv%size_jb, xbx, be, ep, vp, vv, cv(1:be%cv%size_jb))
   
       if (num_fgat_time > 1 .and. use_rainobs) then
@@ -201,17 +210,43 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, vp6, vv6, xbx,
 
 #endif
    else  ! not var4d
-      iv%info(:)%n1 = 1
-      iv%info(:)%n2 = iv%info(:)%nlocal
-      if ( use_rad ) then
-         iv%instid(:)%info%n1 = 1
-         iv%instid(:)%info%n2 = iv%instid(:)%num_rad
-      end if
-      call da_zero_x(grid%xa)
 
-      call da_transform_xtoy_adj(cv_size, cv, grid, iv, y,grid%xa)
-      call da_transform_xtoxa_adj(grid)
-      call da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv)
+      if ( use_4denvar ) then
+         num_subtwindow = num_fgat_time
+      else
+         num_subtwindow = 1
+      end if
+
+      do nobwin= num_subtwindow, 1 , -1
+         cv_local = 0.0
+         iv%time = nobwin
+         if ( use_4denvar ) then
+            iv%info(:)%n1 = iv%info(:)%plocal(iv%time-1) + 1
+            iv%info(:)%n2 = iv%info(:)%plocal(iv%time)
+            if ( use_rad ) then
+               iv%instid(:)%info%n1 = iv%instid(:)%info%plocal(iv%time-1) + 1
+               iv%instid(:)%info%n2 = iv%instid(:)%info%plocal(iv%time)
+            end if
+         else
+            iv%info(:)%n1 = 1
+            iv%info(:)%n2 = iv%info(:)%nlocal
+            if ( use_rad ) then
+               iv%instid(:)%info%n1 = 1
+               iv%instid(:)%info%n2 = iv%instid(:)%num_rad
+            end if
+         end if !4denvar
+         call da_zero_x(grid%xa)
+         call da_transform_xtoy_adj(cv_size, cv_local, grid, iv, y, grid%xa)
+         call da_transform_xtoxa_adj(grid)
+         call da_zero_vp_type (vp)
+         call da_transform_vpatox_adj(grid, be, ep, vp, nobwin)
+         !as of V3.9, the calculation of vp%alpha is taken out of vptox_adj.
+         !da_zero_vp_type(vp) is commented out in the da_transform_vtox_adj,
+         !in order to pass in vp%alpha
+         call da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv_local)
+         cv = cv + cv_local
+      end do
+
    end if ! var4d
 
    !--------------------------------------------------------------

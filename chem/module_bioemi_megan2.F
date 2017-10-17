@@ -268,10 +268,6 @@ CONTAINS
     !...Some light-dependent factor (dimensionless)
     REAL :: ldf
 
-    !...conversion factor to convert emissions rates in 
-    !...mol km-2 hr-1 to concentrations in ppm
-    REAL :: emis2ppm
-
     !...conversion factor from mol km-2 hr-1 to ppm m min-1
     REAL :: convert2
 
@@ -769,14 +765,6 @@ CONTAINS
           ! the gas-phase mechanism species
 
 
-          !...conversion factor to convert emissions rates in 
-          !...mol km-2 hr-1 to concentrations in ppm
-          !         0.02897 kg/mol is molecular of air
-          !         rho_phy is air density in kg air/m3
-          !         dz8w is layer height in meters
-          !         dtstep is time step in seconds
-          emis2ppm = 0.02897*dtstep/(rho_phy(i,kts,j)*dz8w(i,kts,j)*3600.)
-
           !...conversion factor from mol km-2 hr-1 to ppm m min-1
           !...(e_bio is in units of ppm m min-1)
           convert2 = 0.02897/(rho_phy(i,kts,j)*60.)
@@ -1137,7 +1125,7 @@ is_mozm_species : &
 
              END DO
 
-          CASE (RACM_SOA_VBS_AQCHEM_KPP,CB05_SORG_AQ_KPP)
+          CASE (CB05_SORG_AQ_KPP)
 
              DO icount = 1, n_megan2cb05
                 IF ( p_of_cb05 (icount) .NE. non_react ) THEN
@@ -1153,29 +1141,6 @@ is_mozm_species : &
 
                       ! Emission rate for mechanism species in mol km-2 hr-1
                       gas_emis = cb05_per_megan(icount) * E_megan2(p_of_megan2cb05(icount))
-
-                      ! Increase gas-phase concentrations (in ppmv) due to
-                      ! biogenic emissions
-                      chem(i,kts,j,p_in_chem) = chem(i,kts,j,p_in_chem) + gas_emis*emis2ppm
-
-                      IF ( p_in_chem .EQ. p_apin ) THEN
-                         chem(i,kts,j,p_terp) = chem(i,kts,j,p_terp) + gas_emis*emis2ppm
-                      END IF
-                      IF ( p_in_chem .EQ. p_bpin ) THEN
-                         chem(i,kts,j,p_terp) = chem(i,kts,j,p_terp) + gas_emis*emis2ppm
-                      END IF
-                      IF ( p_in_chem .EQ. p_hum ) THEN
-                         chem(i,kts,j,p_terp) = chem(i,kts,j,p_terp) + gas_emis*emis2ppm
-                      END IF
-                      IF ( p_in_chem .EQ. p_lim ) THEN
-                         chem(i,kts,j,p_terp) = chem(i,kts,j,p_terp) + gas_emis*emis2ppm
-                      END IF
-                      IF ( p_in_chem .EQ. p_oci ) THEN
-                         chem(i,kts,j,p_terp) = chem(i,kts,j,p_terp) + gas_emis*emis2ppm
-                      END IF
-                      IF ( p_in_chem .EQ. p_ter ) THEN
-                         chem(i,kts,j,p_terp) = chem(i,kts,j,p_terp) + gas_emis*emis2ppm
-                      END IF
 
                       ! Add emissions to diagnostic output variables.
                       ! ebio_xxx (mol km-2 hr-1) were originally used by the
@@ -1198,10 +1163,10 @@ is_mozm_species : &
                       END IF
                       IF ( p_in_chem .EQ. p_apin ) THEN
                          ebio_api(i,j)        = ebio_api(i,j)       + gas_emis
-                         e_bio(i,j,p_apin-1)  = e_bio(i,j,p_apin-1)  + gas_emis*convert2
+                         e_bio(i,j,p_terp-1)  = e_bio(i,j,p_terp-1)  + gas_emis*convert2
                       END IF
                       IF ( p_in_chem .EQ. p_bpin ) THEN
-                         e_bio(i,j,p_bpin-1)  = e_bio(i,j,p_bpin-1)  + gas_emis*convert2
+                         e_bio(i,j,p_terp-1)  = e_bio(i,j,p_terp-1)  + gas_emis*convert2
                       END IF
                       IF ( p_in_chem .EQ. p_ch4 ) THEN
                          e_bio(i,j,p_ch4-1)   = e_bio(i,j,p_ch4-1)  + gas_emis*convert2
@@ -1227,14 +1192,14 @@ is_mozm_species : &
                          e_bio(i,j,p_form-1)  = e_bio(i,j,p_form-1)  + gas_emis*convert2
                       END IF
                       IF ( p_in_chem .EQ. p_hum ) THEN
-                         e_bio(i,j,p_hum-1)   = e_bio(i,j,p_hum-1)  + gas_emis*convert2
+                         e_bio(i,j,p_terp-1)  = e_bio(i,j,p_terp-1)  + gas_emis*convert2
                       END IF
                       IF ( p_in_chem .EQ. p_iole ) THEN
                          e_bio(i,j,p_iole-1)  = e_bio(i,j,p_iole-1)  + gas_emis*convert2
                       END IF
                       IF ( p_in_chem .EQ. p_lim ) THEN
                          ebio_lim(i,j)        = ebio_lim(i,j)       + gas_emis
-                         e_bio(i,j,p_lim-1)   = e_bio(i,j,p_lim-1)  + gas_emis*convert2
+                         e_bio(i,j,p_terp-1)  = e_bio(i,j,p_terp-1)  + gas_emis*convert2
                       END IF
                       IF ( p_in_chem .EQ. p_meoh ) THEN
                          e_bio(i,j,p_meoh-1)  = e_bio(i,j,p_meoh-1)  + gas_emis*convert2
@@ -1247,7 +1212,7 @@ is_mozm_species : &
                          e_bio(i,j,p_no-1)    = e_bio(i,j,p_no-1)  + gas_emis*convert2
                       END IF
                       IF ( p_in_chem .EQ. p_oci ) THEN
-                         e_bio(i,j,p_oci-1)   = e_bio(i,j,p_oci-1)  + gas_emis*convert2
+                         e_bio(i,j,p_terp-1)  = e_bio(i,j,p_terp-1) + gas_emis*convert2
                       END IF
                       IF ( p_in_chem .EQ. p_ole ) THEN
                          e_bio(i,j,p_ole-1)   = e_bio(i,j,p_ole-1)  + gas_emis*convert2
@@ -1256,6 +1221,10 @@ is_mozm_species : &
                          e_bio(i,j,p_par-1)   = e_bio(i,j,p_par-1)  + gas_emis*convert2
                       END IF
                       IF ( p_in_chem .EQ. p_terp ) THEN
+                         ebio_terp(i,j)        = ebio_terp(i,j)       + gas_emis
+                         e_bio(i,j,p_terp-1)   = e_bio(i,j,p_terp-1)  + gas_emis*convert2
+                      END IF
+                      IF ( p_in_chem .EQ. p_ter ) THEN
                          ebio_terp(i,j)        = ebio_terp(i,j)       + gas_emis
                          e_bio(i,j,p_terp-1)   = e_bio(i,j,p_terp-1)  + gas_emis*convert2
                       END IF
@@ -1285,29 +1254,6 @@ is_mozm_species : &
                       ! Emission rate for mechanism species in mol km-2 hr-1
                       gas_emis = cb05vbs_per_megan(icount) * E_megan2(p_of_megan2cb05vbs(icount))
 
-                      ! Increase gas-phase concentrations (in ppmv) due to
-                      ! biogenic emissions
-                      chem(i,kts,j,p_in_chem) = chem(i,kts,j,p_in_chem) + gas_emis*emis2ppm
-
-                      IF ( p_in_chem .EQ. p_apin ) THEN
-                         chem(i,kts,j,p_terp) = chem(i,kts,j,p_terp) + gas_emis*emis2ppm
-                      END IF
-                      IF ( p_in_chem .EQ. p_bpin ) THEN
-                         chem(i,kts,j,p_terp) = chem(i,kts,j,p_terp) + gas_emis*emis2ppm
-                      END IF
-                      IF ( p_in_chem .EQ. p_hum ) THEN
-                         chem(i,kts,j,p_terp) = chem(i,kts,j,p_terp) + gas_emis*emis2ppm
-                      END IF
-                      IF ( p_in_chem .EQ. p_lim ) THEN
-                         chem(i,kts,j,p_terp) = chem(i,kts,j,p_terp) + gas_emis*emis2ppm
-                      END IF
-                      IF ( p_in_chem .EQ. p_oci ) THEN
-                         chem(i,kts,j,p_terp) = chem(i,kts,j,p_terp) + gas_emis*emis2ppm
-                      END IF
-                      IF ( p_in_chem .EQ. p_ter ) THEN
-                         chem(i,kts,j,p_terp) = chem(i,kts,j,p_terp) + gas_emis*emis2ppm
-                      END IF
-
                       ! Add emissions to diagnostic output variables.
                       ! ebio_xxx (mol km-2 hr-1) were originally used by the
                       ! BEIS3.11 biogenic emissions module.
@@ -1329,10 +1275,10 @@ is_mozm_species : &
                       END IF
                       IF ( p_in_chem .EQ. p_apin ) THEN
                          ebio_api(i,j)        = ebio_api(i,j)       + gas_emis
-                         e_bio(i,j,p_apin-1)  = e_bio(i,j,p_apin-1)  + gas_emis*convert2
+                         e_bio(i,j,p_terp-1)   = e_bio(i,j,p_terp-1)  + gas_emis*convert2
                       END IF
                       IF ( p_in_chem .EQ. p_bpin ) THEN
-                         e_bio(i,j,p_bpin-1)  = e_bio(i,j,p_bpin-1)  + gas_emis*convert2
+                         e_bio(i,j,p_terp-1)   = e_bio(i,j,p_terp-1)  + gas_emis*convert2
                       END IF
                       IF ( p_in_chem .EQ. p_ch4 ) THEN
                          e_bio(i,j,p_ch4-1)   = e_bio(i,j,p_ch4-1)  + gas_emis*convert2
@@ -1358,14 +1304,14 @@ is_mozm_species : &
                          e_bio(i,j,p_form-1)  = e_bio(i,j,p_form-1)  + gas_emis*convert2
                       END IF
                       IF ( p_in_chem .EQ. p_hum ) THEN
-                         e_bio(i,j,p_hum-1)   = e_bio(i,j,p_hum-1)  + gas_emis*convert2
+                          e_bio(i,j,p_terp-1)   = e_bio(i,j,p_terp-1)  + gas_emis*convert2
                       END IF
                       IF ( p_in_chem .EQ. p_iole ) THEN
                          e_bio(i,j,p_iole-1)  = e_bio(i,j,p_iole-1)  + gas_emis*convert2
                       END IF
                       IF ( p_in_chem .EQ. p_lim ) THEN
                          ebio_lim(i,j)        = ebio_lim(i,j)       + gas_emis
-                         e_bio(i,j,p_lim-1)   = e_bio(i,j,p_lim-1)  + gas_emis*convert2
+                         e_bio(i,j,p_terp-1)   = e_bio(i,j,p_terp-1)  + gas_emis*convert2
                       END IF
                       IF ( p_in_chem .EQ. p_meoh ) THEN
                          e_bio(i,j,p_meoh-1)  = e_bio(i,j,p_meoh-1)  + gas_emis*convert2
@@ -1378,7 +1324,7 @@ is_mozm_species : &
                          e_bio(i,j,p_no-1)    = e_bio(i,j,p_no-1)  + gas_emis*convert2
                       END IF
                       IF ( p_in_chem .EQ. p_oci ) THEN
-                         e_bio(i,j,p_oci-1)   = e_bio(i,j,p_oci-1)  + gas_emis*convert2
+                         e_bio(i,j,p_terp-1)   = e_bio(i,j,p_terp-1)  + gas_emis*convert2
                       END IF
                       IF ( p_in_chem .EQ. p_ole ) THEN
                          e_bio(i,j,p_ole-1)   = e_bio(i,j,p_ole-1)  + gas_emis*convert2
@@ -1387,6 +1333,10 @@ is_mozm_species : &
                          e_bio(i,j,p_par-1)   = e_bio(i,j,p_par-1)  + gas_emis*convert2
                       END IF
                       IF ( p_in_chem .EQ. p_terp ) THEN
+                         ebio_terp(i,j)        = ebio_terp(i,j)       + gas_emis
+                         e_bio(i,j,p_terp-1)   = e_bio(i,j,p_terp-1)  + gas_emis*convert2
+                      END IF
+                      IF ( p_in_chem .EQ. p_ter ) THEN
                          ebio_terp(i,j)        = ebio_terp(i,j)       + gas_emis
                          e_bio(i,j,p_terp-1)   = e_bio(i,j,p_terp-1)  + gas_emis*convert2
                       END IF
@@ -1400,7 +1350,7 @@ is_mozm_species : &
              END DO
 
 
-          CASE (RACM_SOA_VBS_KPP)
+          CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
 
           DO icount = 1, n_megan2racmSOA
 

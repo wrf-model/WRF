@@ -33,6 +33,7 @@
    USE module_phot_mad
 
    USE module_ftuv_driver, only : ftuv_init
+   USE module_phot_tuv,    only : tuv_init
    USE module_mozcart_wetscav, only : wetscav_mozcart_init
    USE module_aerosols_sorgam
    USE module_aerosols_soa_vbs, only: aerosols_soa_vbs_init
@@ -150,12 +151,12 @@
 #ifdef CHEM_DBG_I
     call print_chem_species_index( config_flags%chem_opt )
 #endif
-   program_name = "*             PROGRAM:WRF/CHEM " // TRIM(release_version) // " MODEL"
+   program_name = "*             PROGRAM:WRF-Chem " // TRIM(release_version) // " MODEL"
 
 call wrf_message("*********************************************************************")
 call wrf_message(program_name)
 call wrf_message("*                                                                   *")
-call wrf_message("*    PLEASE REPORT ANY BUGS TO WRF/CHEM HELP at                     *")
+call wrf_message("*    PLEASE REPORT ANY BUGS TO WRF-Chem HELP at                     *")
 call wrf_message("*                                                                   *")
 call wrf_message("*              wrfchemhelp.gsd@noaa.gov                             *")
 call wrf_message("*                                                                   *")
@@ -225,12 +226,10 @@ call wrf_message("**************************************************************
        CALL wrf_debug(15,'calling RACM/MADE/SORGAM with AQCHEM chemistry from chem_driver')
        call wrf_message("WARNING: RACM_ESRLSORG_AQCHEM_KPP chemistry option is highly experimental and not recommended for use.")
 !      call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
-!!! TUCCELLA
      CASE (RACM_SOA_VBS_AQCHEM_KPP )
        numgas_mam = numgas
        CALL wrf_debug(15,'calling RACM/MADE/SOA-VBS with AQCHEM chemistry from chem_driver')
-       call wrf_message("WARNING: RACM_SOA_VBS_AQCHEM_KPP chemistry option is highly experimental and not recommended for use.")
-!      call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
+!       call wrf_message("WARNING: RACM_SOA_VBS_AQCHEM_KPP chemistry option is highly experimental and not recommended for use.")
      CASE (CO2_TRACER, GHG_TRACER )
        call wrf_message("WARNING: Users interested in the GHG options should check the comments/references in header of module_ghg_fluxes")
      CASE (CBMZ_CAM_MAM3_NOAQ)
@@ -288,6 +287,18 @@ call wrf_message("**************************************************************
                               ims, ime, jms, jme, kms, kme,    &
                               its, ite, jts, jte, kts )
    endif
+!-----------------------------------------------------------------------
+!  Check TUV photolysis for chem_opt compatability
+!-----------------------------------------------------------------------
+   if (config_flags%phot_opt == TUV ) then
+     if (config_flags%chem_opt /= mozart_mosaic_4bin_kpp .and. &
+              config_flags%chem_opt /= mozart_mosaic_4bin_aq_kpp .and. &
+              config_flags%chem_opt /= mozcart_kpp ) THEN
+       write(message_txt,'(''--- ERROR: chem_opt '',a,'' not setup for TUV photolysis at this time'')') &
+              config_flags%chem_opt
+       CALL wrf_error_fatal( trim(message_txt) )
+     endif
+   endif
 
 !!! TUCCELLA
    if ( config_flags%wetscav_onoff == 1 ) then
@@ -313,9 +324,9 @@ call wrf_message("**************************************************************
          call wrf_error_fatal("ERROR: wet scavenging option requires mp_phys = 2 (Lin et al.) or 10 (Morrison) or 11 (CAMMGMP) or 17/18/22 NSSL_2mom to function.")
        endif
      elseif( id == 1 ) then
-       if ( config_flags%mp_physics /= 8 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 17  &
+       if ( config_flags%mp_physics /= 6 .and. config_flags%mp_physics /= 8 .and. config_flags%mp_physics /= 10 .and. config_flags%mp_physics /= 17  &
             .and. config_flags%mp_physics /= 18 .and. config_flags%mp_physics /= 22) then
-         call wrf_error_fatal("ERROR: wet scavenging option for MOZART,MOZCART requires mp_phys = 8 (Thompson) or 10 (Morrison) .or 17/18/22 (NSSL 2-moment) to function.")
+         call wrf_error_fatal("ERROR: wet scavenging option for MOZART,MOZCART requires mp_phys = 6 (WSM6) or 8 (Thompson) or 10 (Morrison) .or 17/18/22 (NSSL 2-moment) to function.")
        else
          write(message_txt,*) 'chem_init: calling wetscav_mozcart_init for domain ',id
          call wrf_message( trim(message_txt) )
@@ -344,6 +355,21 @@ call wrf_message("**************************************************************
        endif
    endif
 
+   !BSINGH - kfcup schme only works with Mosaic aqueoue packages:
+   ! *** NOTE ***
+   ! KFCUP should in theory work with any chem_opt package that uses MOSAIC and has cloud-borne aerosols (*_aq*).
+   ! However, it was only tested with chem_opt=203 (saprc99_mosaic_8bin_vbs2_aq_kpp) 
+   ! during implementation into WRF-Chem in April 2017 at PNNL.   
+   if ( config_flags%cu_physics == 10)  then
+      if(  config_flags%chem_opt /= 9   .and.  config_flags%chem_opt /= 10  .and. &
+           config_flags%chem_opt /= 32  .and.  config_flags%chem_opt /= 34  .and.  &
+           config_flags%chem_opt /= 202 .and.  config_flags%chem_opt /= 203 .and.  &
+           config_flags%chem_opt /= 601 .and.  config_flags%chem_opt /= 611 ) then
+         call wrf_error_fatal("ERROR: kfcupscheme requires chem_opt = 9, 10, 32, 34, 202, 203, 601 or 611  to function.")
+      endif
+   endif
+
+
    if ( config_flags%cu_physics == 5 .OR. config_flags%cu_physics == 3) then
    if ( config_flags%cu_diag == 0) then
          call wrf_message(" No time averaged variables. Time averaged chem variables requires cu_diag = 1")
@@ -361,8 +387,23 @@ call wrf_message("**************************************************************
          call wrf_error_fatal("ERROR: chem_conv_tr=1 requires cu_diag=1")
    endif
 
+   if ( config_flags%cu_physics == 10 .and. config_flags%kfcup_diag == 0) then
+      call wrf_error_fatal("ERROR: cu_physics == 10 requires kfcup_diag == 1")
+   endif
+
+    if ( config_flags%chem_conv_tr == 0 .and. config_flags%kfcup_diag == 1) then
+      call wrf_error_fatal("ERROR: kfcup_diag == 1 requires chem_conv_tr == 1")
+   endif
+
+   if ( config_flags%cu_physics /= 10 .and. config_flags%kfcup_diag == 1) then
+      call wrf_error_fatal("ERROR: kfcup_diag == 1 requires cu_physics == 10")
+   endif
+
+
    if ( config_flags%bio_emiss_opt .EQ. 3 .AND. config_flags%ne_area .LT. num_chem ) then
-      call wrf_error_fatal("ERROR: MEGAN biogenics requires ne_area to be equal or greater than num_chem")
+      write(message_txt,'(''ERROR: MEGAN biogenics requires ne_area('',i6,'') >= num_chem('',i6,'')'')') config_flags%ne_area,num_chem
+!     call wrf_error_fatal("ERROR: MEGAN biogenics requires ne_area to be equal or greater than num_chem")
+      call wrf_error_fatal( trim(message_txt) )
    endif
 
     IF ( config_flags%chem_opt == 0 .AND. config_flags%aer_ra_feedback .NE. 0 ) THEN
@@ -601,6 +642,20 @@ end if
 
         call ftuv_init( id, its, ite, jts, jte, kte, &
                   ide, jde, config_flags,config_flags%num_land_cat,mminlu_loc )
+     CASE (TUV)
+       if( config_flags%cld_od_opt > 3 .or. config_flags%cld_od_opt < 1 ) then
+         call wrf_error_fatal("cld_od_opt must be {1,2,3}")
+       endif
+       if( config_flags%pht_cldfrc_opt > 2 .or. config_flags%pht_cldfrc_opt < 1 ) then
+         call wrf_error_fatal("pht_cldfrc_opt must be {1,2}")
+       endif
+       write(message_txt,'(''chemics_init('',i2.2,''): call tuv phot initialization'')') id
+       CALL wrf_debug( 0,trim(message_txt) )
+       call tuv_init( id, config_flags, z_at_w, aerwrf, g, &
+                      grid%af_lambda_start, grid%af_lambda_end,grid%lambda_cutoff,&
+                      ids,ide, jds,jde, kds,kde, &
+                      ims,ime, jms,jme, kms,kme, &
+                      its,ite, jts,jte, kts,kte  )
 !---
 
   END SELECT phot_select
@@ -1738,7 +1793,7 @@ ENDIF ghg_block
         endif
         chem(its:ite,kts:min(kte,kde-1),jts:jte,:)=max(chem(its:ite,kts:min(kte,kde-1),jts:jte,:),epsilc)
 !
-    CASE (RACM_SOA_VBS_AQCHEM_KPP,CB05_SORG_VBS_AQ_KPP)
+    CASE (CB05_SORG_VBS_AQ_KPP)
        CALL wrf_debug(15,'call MADE/SOA_VBS aerosols initialization')
 
        call aerosols_sorgam_vbs_init(chem,convfac,z_at_w,                &
@@ -1765,7 +1820,7 @@ ENDIF ghg_block
         endif
         chem(its:ite,kts:min(kte,kde-1),jts:jte,:)=max(chem(its:ite,kts:min(kte,kde-1),jts:jte,:),epsilc)
 
-    CASE (RACM_SOA_VBS_KPP)
+    CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
        CALL wrf_debug(15,'call MADE/SOA_VBS aerosols initialization')
 
        call aerosols_soa_vbs_init(chem,convfac,z_at_w,                &
@@ -3334,7 +3389,7 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_ac0,"ac0"
      print*,p_corn,"corn"
 !!! TUCCELLA
-case (RACM_SOA_VBS_AQCHEM_KPP)
+ case (RACM_SOA_VBS_AQCHEM_KPP)
      print*,p_so4aj,"so4aj"
      print*,p_so4ai,"so4ai"
      print*,p_nh4aj,"nh4aj"

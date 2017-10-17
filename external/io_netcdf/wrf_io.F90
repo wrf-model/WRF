@@ -1351,10 +1351,10 @@ SUBROUTINE ext_ncd_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   if ( DH%use_netcdf_classic ) then
   write(msg,*) 'output will be in classic NetCDF format'
   call wrf_debug ( WARN , TRIM(msg))
-#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
-  stat = NF_CREATE(FileName, IOR(NF_CLOBBER,NF_64BIT_OFFSET), DH%NCID)
-#else
+#ifdef WRFIO_NCD_NO_LARGE_FILE_SUPPORT
   stat = NF_CREATE(FileName, NF_CLOBBER, DH%NCID)
+#else
+  stat = NF_CREATE(FileName, IOR(NF_CLOBBER,NF_64BIT_OFFSET), DH%NCID)
 #endif
   else
   create_mode = nf_netcdf4
@@ -1362,10 +1362,10 @@ SUBROUTINE ext_ncd_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   stat = NF_SET_CHUNK_CACHE(cache_size, cache_nelem, cache_preemption)
   endif
 #else
-#ifdef WRFIO_NCD_LARGE_FILE_SUPPORT
-  stat = NF_CREATE(FileName, IOR(NF_CLOBBER,NF_64BIT_OFFSET), DH%NCID)
-#else
+#ifdef WRFIO_NCD_NO_LARGE_FILE_SUPPORT
   stat = NF_CREATE(FileName, NF_CLOBBER, DH%NCID)
+#else
+  stat = NF_CREATE(FileName, IOR(NF_CLOBBER,NF_64BIT_OFFSET), DH%NCID)
 #endif
 #endif
   call netcdf_err(stat,Status)

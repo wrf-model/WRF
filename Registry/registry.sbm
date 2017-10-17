@@ -290,9 +290,6 @@ state   real    qip_effr        ikjftb  scalar      1         -     \
 state   real    qid_effr        ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QID_EFF_RADIUS"       "QID Effective Radius" "Microns"
 
-state    real    th_old          ikj      misc        1         -      rusd        "TH_OLD"              "Old Value of Th"   "K"
-state    real    qv_old          ikj      misc        1         -      rusd        "QV_OLD"              "Old Value of qv"   "kg kg-1"
-
 state    real    kext_ql         ikj      misc        1         -      rh05        "KEXT_QL"             " Extinction Coefficient for water "                "m-1"
 state    real    kext_qic        ikj      misc        1         -      rh05        "KEXT_QIC"            " Extinction Coefficient for ice columns "          "m-1"
 state    real    kext_qip        ikj      misc        1         -      rh05        "KEXT_QIP"            " Extinction Coefficient for ice plates "           "m-1"

@@ -8,9 +8,11 @@ module da_wrfvar_io
       input_input, open_w_dataset,output_input, &
       input_boundary, output_boundary, output_auxhist4, &
       input_auxhist6, input_auxhist4
+   use module_io, only: wrf_get_dom_ti_integer
    use module_state_description, only : p_qv
 
    use da_control, only : trace_use, ierr, var4d, var4d_lbc, num_fgat_time, rootproc
+   use da_control, only : cloud_cv_options
    use da_reporting, only : da_error, message, da_message
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace
 

@@ -33,8 +33,8 @@ BYTESWAPIO      =       #-FIX_BYTE_SWAP_IF_NECESSARY_FOR_BIG_ENDIAN
 FCBASEOPTS_NO_G =       -w -Wf'-M noflunf -M nozdiv' $(FORMAT_FREE) $(BYTESWAPIO)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =      -I/SX/usr/include/module/dwdadW64/
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
 AR              =      sxar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
@@ -77,8 +77,8 @@ BYTESWAPIO      =       -fconvert=big-endian -frecord-marker=4
 FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
@@ -120,8 +120,8 @@ BYTESWAPIO      =       -fendian=big
 FCBASEOPTS_NO_G =       -Wno=101,139,155,158 $(FORMAT_FREE) $(BYTESWAPIO)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     -fmod=$(WRF_SRC_ROOT_DIR)/main
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
@@ -163,8 +163,8 @@ BYTESWAPIO      =       -byteswapio
 FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
@@ -206,8 +206,8 @@ BYTESWAPIO      =       -byteswapio
 FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
@@ -248,8 +248,8 @@ FCSUFFIX        =
 BYTESWAPIO      =       -byteswapio
 FCBASEOPTS      =       -w $(FCDEBUG) $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
 MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
@@ -321,11 +321,12 @@ FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
 BYTESWAPIO      =       -convert big_endian
+RECORDLENGTH    =       -assume byterecl
 FCBASEOPTS_NO_G =       -ip -fp-model precise -w -ftz -align all -fno-alias $(FORMAT_FREE) $(BYTESWAPIO) #-xHost -fp-model fast=2 -no-heap-arrays -no-prec-div -no-prec-sqrt -fno-common
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
@@ -367,11 +368,12 @@ FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
 BYTESWAPIO      =       -convert big_endian
+RECORDLENGTH    =       -assume byterecl
 FCBASEOPTS_NO_G =       -w -openmp -auto -ftz -fno-alias -fp-model fast=1 -no-prec-div -no-prec-sqrt $(FORMAT_FREE) $(BYTESWAPIO) -auto -align array64byte #-vec-report6
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
@@ -413,11 +415,12 @@ FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
 BYTESWAPIO      =       -convert big_endian
+RECORDLENGTH    =       -assume byterecl
 FCBASEOPTS_NO_G =       -w $(OMP) -auto -ftz -fno-alias -fp-model fast=1 -no-prec-div -no-prec-sqrt $(FORMAT_FREE) $(BYTESWAPIO) -auto -align array64byte #-vec-report6
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
@@ -483,11 +486,12 @@ FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
 BYTESWAPIO      =       -convert big_endian
+RECORDLENGTH    =       -assume byterecl
 FCBASEOPTS_NO_G =       -ip -fp-model precise -w -ftz -align all -fno-alias $(FORMAT_FREE) $(BYTESWAPIO) #-xHost -fp-model fast=2 -no-heap-arrays -no-prec-div -no-prec-sqrt -fno-common
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
@@ -531,11 +535,12 @@ FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
 BYTESWAPIO      =       -convert big_endian
+RECORDLENGTH    =       -assume byterecl
 FCBASEOPTS_NO_G =       -ip -fp-model precise -w -ftz -align all -fno-alias $(FORMAT_FREE) $(BYTESWAPIO) #-xHost -fp-model fast=2 -no-heap-arrays -no-prec-div -no-prec-sqrt -fno-common
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
@@ -609,13 +614,14 @@ FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
 BYTESWAPIO      =       -convert big_endian
+RECORDLENGTH    =       -assume byterecl
 FCBASEOPTS_NO_G =       -ip -fp-model precise -w -ftz -align all -fno-alias $(FORMAT_FREE) $(BYTESWAPIO) #-xHost -fp-model fast=2 -no-heap-arrays -no-prec-div -no-prec-sqrt -fno-common
 #FCBASEOPTS_NO_G =       -w -ftz -align all -fno-alias -IPF-fp-relaxed $(FORMAT_FREE) $(BYTESWAPIO)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 LIB_LOCAL       =       -L/usr/lib -lmpi 
 MODULE_SRCH_FLAG =     
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
@@ -691,13 +697,14 @@ FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
 BYTESWAPIO      =       -convert big_endian
+RECORDLENGTH    =       -assume byterecl
 FCBASEOPTS_NO_G =       -ip -fp-model precise -w -ftz -align all -fno-alias $(FORMAT_FREE) $(BYTESWAPIO) #-xHost -fp-model fast=2 -no-heap-arrays -no-prec-div -no-prec-sqrt -fno-common
 #FCBASEOPTS_NO_G =       -w -ftz -align all -fno-alias -IPF-fp-relaxed $(FORMAT_FREE) $(BYTESWAPIO)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 LIB_LOCAL       =       -L/usr/lib -lmpi 
 MODULE_SRCH_FLAG =     
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
@@ -739,8 +746,8 @@ BYTESWAPIO      =       -byteswapio
 FCBASEOPTS_NO_G =       -w -fno-second-underscore $(FORMAT_FREE) $(BYTESWAPIO)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
@@ -782,8 +789,8 @@ BYTESWAPIO      =       -fconvert=big-endian -frecord-marker=4
 FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -G
@@ -825,8 +832,8 @@ BYTESWAPIO      =       -byteswapio
 FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG) -Mnomod
 MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
-TRADFLAG        =      -traditional
-CPP             =      cpp -P -xassembler-with-cpp
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      cpp CONFIGURE_CPPFLAGS -xassembler-with-cpp
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
@@ -866,12 +873,13 @@ FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
 BYTESWAPIO      =       -convert big_endian
+RECORDLENGTH    =       -assume byterecl
 # added -fno-common at suggestion of R. Dubtsov as workaround for failing to link program_name
 FCBASEOPTS_NO_G =       -ip -fp-model precise -w -ftz -align all -fno-alias $(FORMAT_FREE) $(BYTESWAPIO) #-xHost -fp-model fast=2 -no-heap-arrays -no-prec-div -no-prec-sqrt -fno-common
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =
-TRADFLAG        =      -traditional
-CPP             =      cpp -P -xassembler-with-cpp
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      cpp CONFIGURE_CPPFLAGS -xassembler-with-cpp
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
@@ -911,11 +919,12 @@ FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
 BYTESWAPIO      =       -convert big_endian
+RECORDLENGTH    =       -assume byterecl
 FCBASEOPTS_NO_G =       -fp-model precise -w -ftz -align all -fno-alias -fno-common $(FORMAT_FREE) $(BYTESWAPIO) #-xHost -fp-model fast=2 -no-heap-arrays -no-prec-div -no-prec-sqrt
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =
-TRADFLAG        =      -traditional
-CPP             =      cpp -P -xassembler-with-cpp
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      cpp CONFIGURE_CPPFLAGS -xassembler-with-cpp
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
@@ -958,8 +967,8 @@ FCBASEOPTS_NO_G =       -Wno=101,139,155,158 $(FORMAT_FREE) $(BYTESWAPIO)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 LIB_LOCAL       =    -L/usr/lib -lSystemStubs
 MODULE_SRCH_FLAG =     -fmod=$(WRF_SRC_ROOT_DIR)/main
-TRADFLAG        =      -traditional
-CPP             =      cpp -P -xassembler-with-cpp
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      cpp CONFIGURE_CPPFLAGS -xassembler-with-cpp
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
@@ -1001,8 +1010,8 @@ BYTESWAPIO      =       -fconvert=big-endian -frecord-marker=4
 FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =
-TRADFLAG        =      -traditional
-CPP             =      cpp -P -xassembler-with-cpp
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      cpp CONFIGURE_CPPFLAGS -xassembler-with-cpp
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
@@ -1044,8 +1053,8 @@ BYTESWAPIO      =       -fconvert=big-endian -frecord-marker=4
 FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =
-TRADFLAG        =      -traditional
-CPP             =      cpp -P -xassembler-with-cpp
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      cpp CONFIGURE_CPPFLAGS -xassembler-with-cpp
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
@@ -1089,8 +1098,8 @@ BYTESWAPIO      =
 FCBASEOPTS_NO_G =       -qsave -qmaxmem=32767 -qspillsize=32767 -w
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     -fmod=$(WRF_SRC_ROOT_DIR)/main
-TRADFLAG        =      -traditional
-CPP             =      cpp -P 
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      cpp CONFIGURE_CPPFLAGS 
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
@@ -1137,8 +1146,8 @@ BYTESWAPIO      =
 FCBASEOPTS_NO_G =       -w -qspill=81920 -qmaxmem=-1 $(FORMAT_FREE) $(BYTESWAPIO)  #-qflttrap=zerodivide:invalid:enable -qsigtrap -C # -qinitauto=7FF7FFFF
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
-TRADFLAG        =       #-traditional  # causing troubles with xl cpp on AIX, -traditional removed fom default settings
-CPP             =       /lib/cpp -P
+TRADFLAG        =       #CONFIGURE_TRADFLAG  # causing troubles with xl cpp on AIX, -traditional removed fom default settings
+CPP             =       /lib/cpp CONFIGURE_CPPFLAGS
 AR              =       ar
 ARFLAGS         =       ru
 M4              =       m4 -B 20000
@@ -1189,7 +1198,7 @@ MODULE_SRCH_FLAG =
 TRADFLAG        =       
 # instead of the GNU CPP, the CPP shipped with XLF should be used, 
 # which does not work with the -traditional flag
-CPP             =       $(XLF_BASE)/exe/cpp -P
+CPP             =       $(XLF_BASE)/exe/cpp CONFIGURE_CPPFLAGS
 AR              =       ar
 ARFLAGS         =       ru
 M4              =       m4 -B 14000
@@ -1250,8 +1259,8 @@ BYTESWAPIO      =       -byteswapio
 FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO) $(OPTERON_TYPE) $(OMP)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =    
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P $(TRADFLAG)
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS $(TRADFLAG)
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
@@ -1266,27 +1275,30 @@ CC_TOOLS        =      $(SCC)
 DESCRIPTION     =       CRAY CCE ($SFC/$SCC): Cray XE and XC
 # OpenMP is enabled by default for Cray CCE compiler
 # This turns it off
-OMP             =       -hnoomp
+NOOMP           =       -hnoomp
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -homp
 OMPCC           =       # -homp
-SFC             =       ftn
+SFC             =       ftn $(NOOMP)
 SCC             =       cc 
 CCOMP           =       gcc 
-DM_FC           =       ftn
+DM_FC           =       ftn $(NOOMP)
 DM_CC           =       cc
 FC              =       $(DM_FC)
 CC              =       $(DM_CC)
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       -s integer32
+PROMOTION       =       -s integer32 -s real`expr 8 \* $(RWORDSIZE)`
 ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -O3 
 LDFLAGS_LOCAL   =       
+# uncomment this for wrfda build
+#LIB_LOCAL       =       -L$(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 -lfftpack \
+#                        -L$(WRF_SRC_ROOT_DIR)/external/RSL_LITE -lrsl_lite
 CPLUSPLUSLIB    =       
 ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-FCOPTIM         =       
+FCOPTIM         =       # -Ofp3 
 FCREDUCEDOPT	=       $(FCOPTIM)
 FCNOOPT		=       -O1 -Ofp1 -Oipa0 -Onomodinline
 FCDEBUG         =       # -g -O0 # -K trap=fp -R bc
@@ -1297,8 +1309,8 @@ BYTESWAPIO      =       -h byteswapio
 FCBASEOPTS_NO_G =       -N1023 $(FORMAT_FREE) $(BYTESWAPIO) #-ra
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
@@ -1341,11 +1353,13 @@ FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
 BYTESWAPIO      =       -convert big_endian
-FCBASEOPTS_NO_G =       -w -ftz -fno-alias -align all $(FORMAT_FREE) $(BYTESWAPIO) #-vec-report6
+RECORDLENGTH    =       -assume byterecl
+#add -fp-model precise in FCBASEOPTS_NO_G to improve the accuracy of WRFPLUS check_AD test, suggested by Thomas Schwitalla.
+FCBASEOPTS_NO_G =       -w -ftz -fno-alias -align all $(FORMAT_FREE) $(BYTESWAPIO) #-fp-model precise #-vec-report6
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
@@ -1353,48 +1367,6 @@ RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      gcc
 
-###########################################################
-#ARCH    Fujitsu FX10/FX100 Linux SPARC64IXfx/SPARC64Xlfx, mpifrtpx and mpifccpx compilers #serial smpar dmpar dm+sm
-#
-DESCRIPTION     =       FUJITSU ($SFC/$SCC): FX10/FX100 SPARC64 IXfx/Xlfx
-DMPARALLEL      =       # 1
-OMPCPP          =       # -D_OPENMP
-OMP             =       # -Kopenmp
-OMPCC           =       # -Kopenmp
-SFC             =       frtpx
-SCC             =       fccpx
-CCOMP           =       fccpx
-DM_FC           =       mpifrtpx
-DM_CC           =       mpifccpx -DMPI2_SUPPORT -DMPI2_THREAD_SUPPORT
-FC              =       CONFIGURE_FC
-CC              =       CONFIGURE_CC
-LD              =       $(FC)
-RWORDSIZE       =       CONFIGURE_RWORDSIZE
-PROMOTION       =       -CcdRR$(RWORDSIZE)
-ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
-CFLAGS_LOCAL    =       -Kfast -Xg -DSUN
-LDFLAGS_LOCAL   =
-CPLUSPLUSLIB    =       
-ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
-FCOPTIM         =       -Kfast
-FCREDUCEDOPT	=       $(FCOPTIM)
-FCNOOPT         =       -O0
-FCDEBUG         =       # -g $(FCNOOPT)
-FORMAT_FIXED    =       -Fixed
-FORMAT_FREE     =       -Free
-FCSUFFIX        =       
-BYTESWAPIO      =       
-FCBASEOPTS_NO_G =       -Kautoobjstack,ocl -fw $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
-FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
-MODULE_SRCH_FLAG =
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
-AR              =      ar
-ARFLAGS         =      ru
-M4              =      m4
-RANLIB          =      ranlib
-RLFLAGS		=	
-CC_TOOLS        =      /usr/bin/gcc -Wall
 
 ###########################################################
 #ARCH    Linux ppc64 BG /L blxlf compiler with blxlc # dmpar
@@ -1434,12 +1406,12 @@ BYTESWAPIO      =
 FCBASEOPTS_NO_G =       -w -qspill=20000 -qmaxmem=64000 $(FORMAT_FREE) $(BYTESWAPIO) $(MPI_INC) #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
-TRADFLAG        =       -traditional
+TRADFLAG        =       CONFIGURE_TRADFLAG
 # this might be different on different systems but we want the xlf version of cpp, not Linux's
 # NYBlue
-CPP             =       /opt/ibmcmp/xlf/bg/10.1/exe/cpp -P
+CPP             =       /opt/ibmcmp/xlf/bg/10.1/exe/cpp CONFIGURE_CPPFLAGS
 # frost.ucar.edu
-CPP             =       /opt/ibmcmp/xlf/9.1/exe/cpp -P
+CPP             =       /opt/ibmcmp/xlf/9.1/exe/cpp CONFIGURE_CPPFLAGS
 AR              =       ar
 ARFLAGS         =       ru
 M4              =       m4 -B 14000
@@ -1483,10 +1455,10 @@ BYTESWAPIO      =
 FCBASEOPTS_NO_G =       -w -qspill=20000 -qmaxmem=64000 $(FORMAT_FREE) $(BYTESWAPIO) #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
-TRADFLAG        =       -traditional
+TRADFLAG        =       CONFIGURE_TRADFLAG
 # this might be different on different systems but we want the xlf version of cpp, not Linux's
 # surveyor.alcf.anl.gov
-CPP             =       /opt/ibmcmp/xlf/bg/11.1/exe/cpp -P
+CPP             =       /opt/ibmcmp/xlf/bg/11.1/exe/cpp CONFIGURE_CPPFLAGS
 AR              =       ar
 ARFLAGS         =       ru
 M4              =       m4 -B 14000
@@ -1528,9 +1500,9 @@ BYTESWAPIO      =
 FCBASEOPTS_NO_G =       -w -qspill=20000 -qmaxmem=32767 $(FORMAT_FREE) $(BYTESWAPIO) #-qflttrap=zerodivide:invalid:enable -qsigtrap
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
-TRADFLAG        =       -traditional
+TRADFLAG        =       CONFIGURE_TRADFLAG
 # this might be different on different systems but we want the xlf version of cpp, not Linux
-CPP             =       /opt/ibmcmp/xlf/11.1/exe/cpp -P
+CPP             =       /opt/ibmcmp/xlf/11.1/exe/cpp CONFIGURE_CPPFLAGS
 AR              =       ar
 ARFLAGS         =       ru
 M4              =       m4 -B 14000
@@ -1572,8 +1544,8 @@ BYTESWAPIO      =       -byteswapio
 FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
@@ -1672,8 +1644,8 @@ BYTESWAPIO      =       -byteswapio
 FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
@@ -1715,14 +1687,103 @@ BYTESWAPIO      =       -byteswapio
 FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG) -Mnomod
 MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
-TRADFLAG        =      -traditional
-CPP             =      cpp -P -xassembler-with-cpp
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      cpp CONFIGURE_CPPFLAGS -xassembler-with-cpp
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
 RANLIB          =      ranlib
 RLFLAGS		=	-c
 CC_TOOLS        =      cc
+
+###########################################################
+#ARCH    Darwin (MACOS) intel compiler with icc #serial smpar dmpar dm+sm
+#
+DESCRIPTION     =       INTEL ($SFC/$SCC): Open MPI
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -openmp -fpp -auto
+OMPCC           =       # -openmp -fpp -auto
+SFC             =       ifort
+SCC             =       icc
+CCOMP           =       icc
+DM_FC           =       mpif90
+DM_CC           =       mpicc
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -real-size `expr 8 \* $(RWORDSIZE)` -i4
+ARCH_LOCAL      =       -DMACOS -DNONSTANDARD_SYSTEM_FUNC  -DWRF_USE_CLM
+CFLAGS_LOCAL    =       -w -O3 -ip -DMACOS #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars -DMACOS
+# increase stack size; also note that for OpenMP, set environment OMP_STACKSIZE 4G or greater
+LDFLAGS_LOCAL   =       -ip -Wl,-stack_addr,0xF10000000 -Wl,-stack_size,0x64000000 #-xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common
+CPLUSPLUSLIB    =       
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM         =       -O3
+FCREDUCEDOPT	=       $(FCOPTIM)
+FCNOOPT         =       -O0 -fno-inline -no-ip
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check noarg_temp_created,bounds,format,output_conversion,pointers,uninit -ftrapuv -unroll0 -u
+FORMAT_FIXED    =       -FI
+FORMAT_FREE     =       -FR
+FCSUFFIX        =
+BYTESWAPIO      =       -convert big_endian
+RECORDLENGTH    =       -assume byterecl
+# added -fno-common at suggestion of R. Dubtsov as workaround for failing to link program_name
+FCBASEOPTS_NO_G =       -ip -fp-model precise -w -ftz -align all -fno-alias $(FORMAT_FREE) $(BYTESWAPIO) #-xHost -fp-model fast=2 -no-heap-arrays -no-prec-div -no-prec-sqrt -fno-common
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG =
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      cpp CONFIGURE_CPPFLAGS -xassembler-with-cpp
+AR              =      ar
+ARFLAGS         =      ru
+M4              =      m4 -B 14000
+RANLIB          =      ranlib
+RLFLAGS		=	-c
+CC_TOOLS        =      cc
+
+###########################################################
+#ARCH    Darwin (MACOS) gfortran with gcc openmpi #serial smpar dmpar dm+sm
+#
+DESCRIPTION     =       GNU ($SFC/$SCC): Open MPI
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -fopenmp
+OMPCC           =       # -fopenmp
+SFC             =       gfortran
+SCC             =       gcc
+CCOMP           =       gcc
+DM_FC           =       mpif90
+DM_CC           =       mpicc
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       #-fdefault-real-8
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR -DMACOS  -DWRF_USE_CLM
+CFLAGS_LOCAL    =       -w -O3 -c  -DMACOS
+LDFLAGS_LOCAL   =
+CPLUSPLUSLIB    =       
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM         =       -O2 -ftree-vectorize -funroll-loops
+FCREDUCEDOPT	=       $(FCOPTIM)
+FCNOOPT         =       -O0
+FCDEBUG         =       # -g $(FCNOOPT) # -fbacktrace -ggdb -fcheck=bounds,do,mem,pointer -ffpe-trap=invalid,zero,overflow
+FORMAT_FIXED    =       -ffixed-form
+FORMAT_FREE     =       -ffree-form -ffree-line-length-none
+FCSUFFIX        =       
+BYTESWAPIO      =       -fconvert=big-endian -frecord-marker=4
+FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG =
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      cpp CONFIGURE_CPPFLAGS -xassembler-with-cpp
+AR              =      ar
+ARFLAGS         =      ru
+M4              =      m4 -B 14000
+RANLIB          =      ranlib
+RLFLAGS		=	-c
+CC_TOOLS        =      $(SCC) 
 
 ###########################################################
 #ARCH    Linux x86_64 ppc64le i486 i586 i686, PGI compiler with pgcc -f90= # serial smpar dmpar dm+sm
@@ -1758,8 +1819,8 @@ BYTESWAPIO      =       -byteswapio
 FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     -module $(WRF_SRC_ROOT_DIR)/main
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4 -B 14000
@@ -1798,11 +1859,12 @@ FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
 BYTESWAPIO      =       -convert big_endian
+RECORDLENGTH    =       -assume byterecl
 FCBASEOPTS_NO_G =       -ip -fp-model precise -w -ftz -align all -fno-alias $(FORMAT_FREE) $(BYTESWAPIO) -xHost -fp-model fast=2 -no-heap-arrays -no-prec-div -no-prec-sqrt -fno-common -xCORE-AVX2
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
@@ -1811,7 +1873,7 @@ RLFLAGS		=
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
-#ARCH    Linux x86_64 ppc64le i486 i586 i686 #serial smpar dmpar dm+sm
+#ARCH    Linux KNL x86_64 ppc64le i486 i586 i686 #serial smpar dmpar dm+sm
 #
 DESCRIPTION     =       INTEL ($SFC/$SCC): KNL MIC
 DMPARALLEL      =       # 1
@@ -1841,11 +1903,12 @@ FORMAT_FIXED    =       -FI
 FORMAT_FREE     =       -FR
 FCSUFFIX        =
 BYTESWAPIO      =       -convert big_endian
+RECORDLENGTH    =       -assume byterecl
 FCBASEOPTS_NO_G =       -ip -fp-model precise -w -ftz -align all -fno-alias $(FORMAT_FREE) $(BYTESWAPIO) -xHost -fp-model fast=2 -no-heap-arrays -no-prec-div -no-prec-sqrt -fno-common -xMIC-AVX512
 FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
 MODULE_SRCH_FLAG =     
-TRADFLAG        =      -traditional
-CPP             =      /lib/cpp -P
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
 AR              =      ar
 ARFLAGS         =      ru
 M4              =      m4
@@ -1853,7 +1916,52 @@ RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      $(SCC) 
 
+#insert new stanza here
 
+###########################################################
+#ARCH    Fujitsu FX10/FX100 Linux x86_64 SPARC64IXfx/SPARC64Xlfx, mpifrtpx and mpifccpx compilers #serial smpar dmpar dm+sm
+#
+DESCRIPTION     =       FUJITSU ($SFC/$SCC): FX10/FX100 SPARC64 IXfx/Xlfx
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -Kopenmp
+OMPCC           =       # -Kopenmp
+SFC             =       frtpx
+SCC             =       fccpx
+CCOMP           =       fccpx
+DM_FC           =       mpifrtpx
+DM_CC           =       mpifccpx -DMPI2_SUPPORT -DMPI2_THREAD_SUPPORT
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -CcdRR$(RWORDSIZE)
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
+CFLAGS_LOCAL    =       -Kfast -Xg -DSUN
+LDFLAGS_LOCAL   =
+CPLUSPLUSLIB    =
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM         =       -Kfast
+FCREDUCEDOPT    =       $(FCOPTIM)
+FCNOOPT         =       -O0
+FCDEBUG         =       # -g $(FCNOOPT)
+FORMAT_FIXED    =       -Fixed
+FORMAT_FREE     =       -Free
+FCSUFFIX        =
+BYTESWAPIO      =
+FCBASEOPTS_NO_G =       -Kautoobjstack,ocl -fw $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG =
+TRADFLAG        =      -traditional
+CPP             =      /lib/cpp -P
+AR              =      ar
+ARFLAGS         =      ru
+M4              =      m4
+RANLIB          =      ranlib
+RLFLAGS         =
+CC_TOOLS        =      /usr/bin/gcc -Wall
+
+#insert new stanza before the Fujitsu block, keep Fujitsu at the end of the list
 ###########################################################
 #ARCH  NULL
 

@@ -162,6 +162,11 @@ ifdef HWRF=1
 include registry.tracker
 endif
 
+# For compilation only; any setting other than zero will cause the simulation to halt
+rconfig   integer traj_opt                namelist,physics      1            0         h     "traj_opt"    "activate trajectory calculation  0=no, 1=on"   ""
+rconfig   logical dm_has_traj             namelist,physics      max_domains  .false.   rh    "has_traj"    "activate trajectory calculation per domain"   ""
+rconfig   integer num_traj                namelist,domains      1            1000     irh    "num_traj" "#of trajectory" ""
+
 # Nest motion safeguard: don't let nest get close to parent boundary.
 # Default values are lowest possible - anything lower would read
 # outside of memory in intermediate domain.
@@ -175,7 +180,7 @@ rconfig integer corral_y     namelist,domains     max_domains    5   h "corral_y
 state  real   pdyn       ij     dyn_nmm     1      -    rh  "PDYN"  "Dynamic pressure at mean sea level" 
 state  real   mslp       ij     dyn_nmm     1      -    rh  "MSLP"  "Shuell Mean Sea Level Pressure" "Pa"
 ifdef HWRF=1
-state  real   best_mslp  ij     dyn_nmm     1      -    rh0123  "BEST_MSLP"  "Best Mean Sea Level Pressure (Shuell or Membrane)" "Pa"
+state  real   best_mslp  ij     dyn_nmm     1      -    rh0123d=(DownCopy)  "BEST_MSLP"  "Best Mean Sea Level Pressure (Shuell or Membrane)" "Pa"
 endif
 state  real   sqws       ij     dyn_nmm     1      -    r  "SQWS"  "SQUARE OF WIND SPEED AT LEVEL 10"
 state integer xloc         -    dyn_nmm     2      -    r  "XLOC"  "I-LOCATION OF MINIMUM DYNAMIC PRESSURE"
@@ -266,7 +271,7 @@ state  real   hbm2      ij     dyn_nmm     1      -      irh0123     "HBM2"    "
 state  real   hbm3      ij     dyn_nmm     1      -      irh     "HBM3"    "Height boundary mask; =0 outer 3 rows on H points"       ""
 state  real   vbm2      ij     dyn_nmm     1      -      irh     "VBM2"    "Velocity boundary mask; =0 outer 2 rows on V points"     ""
 state  real   vbm3      ij     dyn_nmm     1      -      irh     "VBM3"    "Velocity boundary mask; =0 outer 3 rows on V points"     ""
-state  real   sm        ij     dyn_nmm     1      f      i01rh0123d=(DownNear)  "SM"      "Sea mask; =1 for sea, =0 for land"      ""
+state  real   sm        ijb     dyn_nmm     1      -      i01rh0123d=(DownNear)f=(BdyNear)  "SM"      "Sea mask; =1 for sea, =0 for land"      ""
 state  real   sice      ij     dyn_nmm     1      f      irh023d=(DownNear)     "SICE"    "Sea ice mask; =1 for sea ice, =0 for no sea ice"         ""
 #
 # module_VRBLS
@@ -391,9 +396,32 @@ state  real   mixht     ij    dyn_nmm   1    -     rh        "MIXHT"            
 state  real   ustar     ij    dyn_nmm   1    -     irh023d=(DownNear) "USTAR"    "Friction velocity"                    "m s-1"
 state  real   z0        ij    dyn_nmm   1    -     i01rh023d=(DownNear) "Z0"   "Thermal Roughness length"                    "m"
 state  real   mz0       ij    dyn_nmm   1    -       h        "MZ0"       "momentum Roughness length"                     "m"
+state  real   scurx     ij    dyn_nmm   1    -     irh023d=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "SCURX"       "Surface Currents(X)"                    "m s-1"
+state  real   scury     ij    dyn_nmm   1    -     irh023d=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "SCURY"       "Surface Currents(Y)"                     "m s-1"
+state  real   charn     ij    dyn_nmm   1    -     irh023d=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "CHARN"       "Charnock Coeff"                    " "
+state  real   msang     ij    dyn_nmm   1    -     irh023d=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "MSANG"       "Wind/Stress Angle"                    "Radian"
+state  real   rchno     ij    dyn_nmm   1    -     irh023      "RCHNO"       "Richardson number"                    " "
+state  real   zsig1     ij    dyn_nmm   1    -     irh023      "ZSIG1"       "Height of lowest model level"                "m"
+state  real   ulowl     ij    dyn_nmm   1    -     irh023      "ULOWL"       "U at Lowest Level"         "m s-1"
+state  real   vlowl     ij    dyn_nmm   1    -     irh023      "VLOWL"       "V at Lowest Level"         "m s-1"
 state  real     rc2d    ij    dyn_nmm   1    -       h        "RC2D"     "critical Richardson number" "m"
-state  real   dku3d    ijk    dyn_nmm   1    -       h        "DKU3D"     "Momentum Diffusivity" "m*m/s"
-state  real   dkt3d    ijk    dyn_nmm   1    -       h        "DKT3D"     "Thermal Diffusivity" "m*m/s"
+state  real   dku3d    ijk    dyn_nmm   1    -      rh      "DKU3D"     "Momentum Diffusivity" "m*m/s"
+state  real   dkt3d    ijk    dyn_nmm   1    -      rh      "DKT3D"     "Thermal Diffusivity" "m*m/s"
+
+state  real   SCALEFUN  ij    dyn_nmm   1    -     rh023       "SCALEFUN"  "CNV Mass Scale function(0-1)"        " "
+state  real   SCALEFUN1 ij    dyn_nmm   1    -     rh023       "SCALEFUN1"  "CNV Mass Scale function 1(0-1)"        " "
+state  real   SIGMU     ij    dyn_nmm   1    -     rh023       "SIGMU"  "CNV deep updraft fractio     n(0-1)"        " "
+state  real   SIGMU1    ij    dyn_nmm   1    -     rh023       "SIGMU1"  "CNV shallow updraft fra     ction(0-1)"  
+state  real   DTHCUDT  ijk    dyn_nmm   1    -      rh      "DTHCUDT"     "TH tendency due to CU" "K/s"
+state  real   DQVCUDT  ijk    dyn_nmm   1    -      rh      "DQVCUDT"     "QV tendency due to CU" "kg/kg/s"
+state  real   DQRCUDT  ijk    dyn_nmm   1    -      rh      "DQRCUDT"     "QR tendency due to CU" "kg/kg/s"
+state  real   DQCCUDT  ijk    dyn_nmm   1    -      rh      "DQCCUDT"     "QC tendency due to CU" "Kg/kg/s"
+state  real   DQICUDT  ijk    dyn_nmm   1    -      rh      "DQICUDT"     "QI tendency due to CU" "Kg/kg/s"
+state  real   DQSCUDT  ijk    dyn_nmm   1    -      rh      "DQSCUDT"     "QS tendency due to CU" "Kg/kg/s"
+state  real   DTHBLDT  ijk    dyn_nmm   1    -      rh      "DTHBLDT"     "TH tendency due to PBL" "K/s"
+state  real   DQVBLDT  ijk    dyn_nmm   1    -      rh      "DQVBLDT"     "QV tendency due to PBL" "Kg/kg/s"
+state  real   DUBLDT   ijk    dyn_nmm   1    -      rh      "DUBLDT"     "U tendency due to PBL" "m/s/s"
+state  real   DVBLDT   ijk    dyn_nmm   1    -      rh      "DVBLDT"     "V tendency due to PBL" "m/s/s"
 state  real   hpbl2d    ij    dyn_nmm   1    -     irh        "HPBL2D"     "HEIGHT OF PBL from new GFS pbl" "m"
 state  real   heat2d    ij    dyn_nmm   1    -     irh        "HEAT2D"     "" ""
 state  real   evap2d    ij    dyn_nmm   1    -     irh        "EVAP2D"     "" ""
@@ -403,12 +431,12 @@ state  real   mavail    ij    dyn_nmm   1    -     i
 state  real   qsh       ij    dyn_nmm   1    -     irh023d=(DownCopy) "QS"       "Surface specific humidity"            "kg kg-1"
 state  real   twbs      ij    dyn_nmm   1    -     irh0123      "TWBS"     "Instantaneous sensible heat flux"     "W m-2"
 state  real   qwbs      ij    dyn_nmm   1    -     irh0123      "QWBS"     "Instantaneous latent heat flux"       "W m-2"
-state  real   taux      ij    dyn_nmm   1    -     irh0123      "TAUX"     "Instantaneous stress along X direction in KG/M/S^2" 
-state  real   tauy      ij    dyn_nmm   1    -     irh0123      "TAUY"     "Instantaneous stress along Y direction in KG/M/S^2" 
+state  real   taux      ij    dyn_nmm   1    -     irh0123d=(DownCopy)      "TAUX"     "Instantaneous stress along X direction in KG/M/S^2" 
+state  real   tauy      ij    dyn_nmm   1    -     irh0123d=(DownCopy)      "TAUY"     "Instantaneous stress along Y direction in KG/M/S^2" 
 state  real   prec      ij    dyn_nmm   1    -     rh023       "PREC"     "Precipitation in physics timestep"    "m"
 state  real   aprec     ij    dyn_nmm   1    -     rh
 state  real   acprec    ij    dyn_nmm   1    -     rh0123d=(DownCopy) "ACPREC"   "Accumulatedtotal precipitation"      "m"
-state  real   cuprec    ij    dyn_nmm   1    -     rh023       "CUPREC"   "Accumulated convective precipitation" "m"
+state  real   cuprec    ij    dyn_nmm   1    -     rh0123d=(DownCopy)       "CUPREC"   "Accumulated convective precipitation" "m"
 state  real   lspa      ij    dyn_nmm   1    -     h023        "LSPA"     "Land Surface Precipitation Accumulation"   "kg m-2"
 state  real   ddata     ij    dyn_nmm   1    -     -        "DDATA"    "Observed precip to each physics timestep"  "kg m-2"
 state  real   accliq    ij    dyn_nmm   1    -     r
@@ -432,8 +460,8 @@ state  real   AKMS_OUT  ij    dyn_nmm   1    -     rh023       "AKMS_OUT"  "Outp
 #
 # module_PHYS
 #
-state  real   cd_out    ij    dyn_nmm   1    -     rh023       "CD_OUT"  "sfc exch coeff for momentum"        "m2 s-1"
-state  real   ch_out    ij    dyn_nmm   1    -     rh023       "CH_OUT"  "sfc exch coeff for heat"            "m2 s-1"
+state  real   cd_out    ij    dyn_nmm   1    -     rh0123d=(DownCopy)       "CD_OUT"  "sfc exch coeff for momentum"        "m2 s-1"
+state  real   ch_out    ij    dyn_nmm   1    -     rh0123d=(DownCopy)       "CH_OUT"  "sfc exch coeff for heat"            "m2 s-1"
 
 state  real   albase    ij    dyn_nmm   1    -     i01rh023d=(DownCopy) "ALBASE"    "Base albedo"            ""
 state  real   albedo    ij    dyn_nmm   1    -     irh023      "ALBEDO"    "Dynamic albedo"         ""
@@ -544,6 +572,11 @@ rconfig   real    aer_aod550_val          namelist,physics      max_domains   0.
 rconfig   real    aer_angexp_val          namelist,physics      max_domains   1.3     irh    "aer_angexp_val" "fixed value for aerosol Angstrom exponent. Valid when aer_angexp_opt=1" ""
 rconfig   real    aer_ssa_val             namelist,physics      max_domains   0.85    irh    "aer_ssa_val"    "fixed value for aerosol single-scattering albedo. Valid when aer_ssa_opt=1" ""
 rconfig   real    aer_asy_val             namelist,physics      max_domains   0.90    irh    "aer_asy_val"    "fixed value for aerosol asymmetry parameter. Valid when aer_asy_opt=1" ""
+
+#
+# module_IGWAVE_ADJUST.F
+
+state  real   avgPchg   -     dyn_nmm   1    -     r     "avgPchg" "Average global change (hPa/3h)" "hPa/3h"
 
 # module_CLDWTR.F
 #
@@ -960,6 +993,7 @@ state    real   GRDFLX           ij     misc        1         -     irh     "GRD
 state    real   ALBBCK           ij     misc        1         -     i0124r   "ALBBCK"          "BACKGROUND ALBEDO"        "NA"
 state    real   SFCEXC           ij     misc        1         -     irh023     "SFCEXC "              "SURFACE EXCHANGE COEFFICIENT"         ""
 state    real   SNOTIME          ij     misc        1         -     r        "SNOTIME"              "SNOTIME"                             ""
+state    real   ACRUNOFF         ij     misc        1         -     rh       "ACRUNOFF"             "ACCUMULATED SURFACE RUNOFF" ""
 state    real   ACSNOW           ij     misc        1         -     irh023       "ACSNOW"               "ACCUMULATED SNOW"       "kg m-2"
 state    real   ACSNOM           ij     misc        1         -     irh023       "ACSNOM"               "ACCUMULATED MELTED SNOW"         "kg m-2"
 state    real   RMOL             ij     misc        1         -     ir       "RMOL"               ""         ""
@@ -1095,8 +1129,6 @@ state    real   lfmassxy   ij      -       1      -     i02rhd=(interp_mask_land
 state    real   rtmassxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "rtmass"     "mass of fine roots"  "g/m2"
 state    real   stmassxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "stmass"     "stem mass" "g/m2"
 state    real   woodxy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "wood"       "mass of wood" "g/m2"
-state    real   grainxy    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "grain"      "mass of grain" "g/m2"
-state    real   gddxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "gdd"        "growing degree days" ""
 state    real   stblcpxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "stblcp"     "stable carbon pool"  "g/m2"
 state    real   fastcpxy   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "fastcp"     "short-lived carbon" "g/m2"
 state    real   xsaixy     ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "xsai"       "stem area index" "-"
@@ -1151,6 +1183,18 @@ state    real   SMOISEQ            ilj     -          1         Z     r   "SMOIS
 state    real   smcwtdxy   ij      -       1      -     rh    "smcwtd"    "deep soil moisture "       "m3 m-3"
 state    real   rechxy     ij      -       1      -     h    "rech"    "water table recharge"       "mm"
 state    real   deeprechxy ij      -       1      -     r    "deeprech" "deep water table recharge"       "mm"
+
+# Crop model only
+
+state    real   grainxy    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "grain"        "mass of grain"                       "g/m2"
+state    real   gddxy      ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "gdd"          "growing degree days"                 ""
+state    real   croptype i{crop}j  -       1      Z     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "croptype"     "crop type"                           "fraction"
+state    real   planting   ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "planting"     "planting date"                       "julian day"
+state    real   harvest    ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "harvest"      "harvest date"                        "julian day"
+state    real   season_gdd ij      -       1      -     i02rhd=(interp_mask_land_field:lu_index)u=(UpNear)    "season_gdd"   "growing season GDD"                  "C"
+state integer   cropcat    ij      -       1      -     rh                                                    "cropcat"      "dominant crop category"              "category"
+state integer   pgsxy      ij      -       1      -     rh                                                    "pgs"          "pgs"                                 ""
+
  
 # added state for etampnew microphysics (needed for restarts)
 state    real  mp_restart_state   p      misc        1         -      r       "MP_RESTART_STATE"       "STATE VECTOR FOR MICROPHYSICS RESTARTS"
@@ -1427,10 +1471,7 @@ rconfig   logical rdlai2d                 namelist,physics      1            .fa
 rconfig   logical ua_phys                 namelist,physics      1            .false.   h     "ua_phys"     "activate UA Noah changes"   ""
 rconfig   integer opt_thcnd               namelist,physics      1            1         h     "opt_thcnd" "thermal conductivity option in Noah LSM"   ""
 
-ifdef HWRF=1
 rconfig   integer  gwd_opt                namelist,physics    max_domains    2       irh    "gwd_opt"      "activate gravity wave drag: 0=off, 1=ARW, 2=NMM"   ""
-endif
-rconfig   integer  gwd_opt                namelist,physics    max_domains    0       irh    "gwd_opt"      "activate gravity wave drag: 0=off, 1=ARW, 2=NMM"   ""
 
 rconfig   integer iz0tlnd                 namelist,physics      1            0         h     "iz0tlnd"    "switch to control land thermal roughness length"   ""
 rconfig   real    sas_pgcon               namelist,physics      max_domains  0.55      irh0123   "sas_pgcon"   "convectively forced pressure gradient factor (SAS scheme)" ""
@@ -1447,6 +1488,7 @@ endif
 rconfig   integer random_seed             namelist,physics     max_domains    0       irh    "random_seed"  "random number generator seed"
 
 rconfig   integer icoef_sf                namelist,physics     max_domains    0       irh012     3  "icoef_sf"   "Option for exchange coefficients in the surface flux scheme" ""
+rconfig   integer iwavecpl                namelist,physics     max_domains    0       irh012     3  "iwavecpl"   "Option for activate coupling to sea surface wave model" ""
 rconfig   logical lcurr_sf                namelist,physics     max_domains    .false. irh012     3  "lcurr_sf"   "Option to include ocean currents in the surface flux calculations" ""
 
 ifdef HWRF=1
@@ -1551,7 +1593,7 @@ rconfig   real    c_k                     namelist,dynamics     max_domains    0
 rconfig   real    smdiv                   namelist,dynamics	max_domains    0.      h    "smdiv"         ""      ""
 rconfig   real    emdiv                   namelist,dynamics	max_domains    0.      h    "emdiv"         ""      ""
 rconfig   real    epssm                   namelist,dynamics	max_domains    .1      h    "epssm"         ""      ""
-rconfig   logical keepnh                  namelist,dynamics     max_domains  .true.   rh   "KEEPNH"         "When .false., non-hydrostatic state is discarded at nest move."        ""
+rconfig   integer nhmove                  namelist,dynamics     max_domains    -1   rh   "NHMOVE"         "Action when nest move: 0=discard non-hydro state -1=keep nh state everywhere 1=keep except near nest edge" ""
 rconfig   logical non_hydrostatic         namelist,dynamics	max_domains  .true.   irh  "non_hydrostatic"    ""   ""
 rconfig   integer time_step_sound         namelist,dynamics	max_domains    10      h     "time_step_sound"               ""      ""
 rconfig   integer     h_mom_adv_order     namelist,dynamics	max_domains    3       rh       "h_mom_adv_order"               ""      ""
@@ -1580,6 +1622,8 @@ rconfig   real    codamp                  namelist,dynamics     max_domains   6.
 rconfig   real    coac                    namelist,dynamics     max_domains   1.6     irh  "coac"  "horizontal diffusion weighting factor (larger = more diffusion) " ""
 rconfig   real    slophc                  namelist,dynamics     max_domains   6.363961e-3     irh  "slophc"  "Maximum model level slope (dZ/dy) for which hor diffusion is applied" ""
 rconfig   real    wp                      namelist,dynamics     max_domains   0.    irh  "wp"  "Off-centering weight in the updating of nonhyrostatic eps"
+rconfig   real    dwdt_damping_lev        namelist,dynamics     max_domains   0.    irh  "dwdt_damping_lev"  "specify the non-hydro dw/dt damping level in stratosphere (in Pa), 0: no damping "
+
 
 rconfig   integer terrain_smoothing       namelist,dynamics     1             1     irh  "parallel_smooth" "nest_terrain smoothing method 0=none, 1=old, 2=new"
 
@@ -1683,6 +1727,8 @@ package   nssl_2momccn  mp_physics==18                -            moist:qv,qc,q
 package   nssl_1mom     mp_physics==19               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qvolg
 package   nssl_1momlfo  mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
 package   nssl_2momg    mp_physics==22                -            moist:qv,qc,qr,qi,qs,qg;scalar:qndrop,qnr,qni,qns,qng,qvolg;state:re_cloud,re_ice,re_snow
+package   p3_1category    mp_physics==50               -             moist:qv
+package   p3_1category_nc mp_physics==51               -             moist:qv
 package   etamp_hwrf    mp_physics==85               -             moist:qv,qc,qr,qi,qs;state:f_ice,f_rain,f_rimef
 package   etampnew      mp_physics==95               -             moist:qv,qc,qr,qs;state:f_ice,f_rain,f_rimef
 package   radar_refl    compute_radar_ref==1         -             state:refl_10cm,refd_max
@@ -1741,9 +1787,9 @@ package   gbmpblscheme  sf_sfclay_physics==12       -             -
 
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn
-package   ruclsmscheme   sf_surface_physics==3       -             -
+package   ruclsmscheme   sf_surface_physics==3       -             state:ACRUNOFF
 
-package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,lake_depth
+package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy
 
 package   clmscheme      sf_surface_physics==5       -             -
 package   gfdlslab       sf_surface_physics==88      -             -
@@ -1751,8 +1797,8 @@ package   pxlsmscheme    sf_surface_physics==7       -             -
 package   ssibscheme     sf_surface_physics==8       -             -
 package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             -
-package   gfsscheme      bl_pbl_physics==3           -             state:hpbl2d,heat2d,evap2d,rc2d
-package   gfs2011scheme  bl_pbl_physics==83          -             state:hpbl2d,heat2d,evap2d
+package   gfsscheme      bl_pbl_physics==93          -             state:hpbl2d,heat2d,evap2d,rc2d
+package   gfsedmfscheme  bl_pbl_physics==3           -             state:hpbl2d,heat2d,evap2d
 package   qnsepblscheme  bl_pbl_physics==4           -             -
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   boulacscheme   bl_pbl_physics==8           -             - 
@@ -1765,9 +1811,9 @@ package   fitchscheme    windfarm_opt==1             -             -
 package   kfetascheme    cu_physics==1               -             -
 package   bmjscheme      cu_physics==2               -             -
 package   gdscheme       cu_physics==93              -             -
-package   sasscheme      cu_physics==84              -             state:hpbl2d,heat2d,evap2d
-package   meso_sas       cu_physics==85              -             state:hpbl2d,heat2d,evap2d
-package   osasscheme     cu_physics==4               -             state:randstate1,randstate2,randstate3,randstate4,random
+package   sasscheme      cu_physics==94              -             state:hpbl2d,heat2d,evap2d
+package   scalesasscheme cu_physics==4               -             state:hpbl2d,heat2d,evap2d
+package   osasscheme     cu_physics==95              -             state:randstate1,randstate2,randstate3,randstate4,random
 package   g3scheme       cu_physics==5               -             -
 package   gfscheme       cu_physics==3               -             -
 package   camzmscheme    cu_physics==7               -             -
@@ -1848,7 +1894,7 @@ halo HALO_NMM_INIT_5	dyn_nmm 120:CPGFU,CURV,FCP
 halo HALO_NMM_INIT_6	dyn_nmm 120:FDIV,FAD,F
 halo HALO_NMM_INIT_7	dyn_nmm 120:DDMPU,DDMPV,GLAT
 halo HALO_NMM_INIT_8	dyn_nmm 120:GLON,EPSR,TG
-halo HALO_NMM_INIT_9	dyn_nmm 120:GFFC,SST,ALBASE
+halo HALO_NMM_INIT_9    dyn_nmm 120:GFFC,SST,ALBASE,SCURX,SCURY,CHARN,MSANG
 #halo HALO_NMM_INIT_10	dyn_nmm 120:HDAC,HDACV,IVGTYP
 halo HALO_NMM_INIT_10	dyn_nmm 120:HDAC,HDACV
 #halo HALO_NMM_INIT_11	dyn_nmm 120:ISLTYP,ISLOPE,VEGFRC
@@ -1912,7 +1958,7 @@ halo      HALO_NMM_TURBL_B  dyn_nmm 8:dudt,dvdt
 # following halos added for nesting purpose  (gopal's doing):
 
 halo HALO_NMM_TRACK dyn_nmm 120:sm,pdyn,mslp,sqws
-halo HALO_NMM_FORCE_DOWN_SST dyn_nmm 120:sst
+halo HALO_NMM_FORCE_DOWN_SST dyn_nmm 120:sst,scurx,scury,charn,msang
 halo HALO_NMM_WEIGHTS dyn_nmm 48:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,IIV,JJV,VBWGT1,VBWGT2,VBWGT3,VBWGT4,HNEAR_I,HNEAR_J
 
 #halo HALO_NMM_FORCE_DOWN1 dyn_nmm 24:t,u,v,q,q2,cwm,pint,pd,hres_fis,fis,pdyn_parent,pdyn_smooth

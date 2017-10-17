@@ -391,18 +391,18 @@ CONTAINS
              
 ! volcanic emissions
 !       
-        ashz_above_vent=emiss_ash_height + z_at_w(i,kts,j)
+        ashz_above_vent=emiss_ash_height - z_at_w(i,kts,j)                              
       write(message,'("Found and adjusted active volcano at j,kts,kpe = ",3i8)') j,kts,kte 
       call wrf_message (message)
 !            write(0,*)emiss_ash_height,emiss_ash_mass,ashz_above_vent
         do k=kte-1,kts,-1
-           if(z_at_w(i,k,j) < ashz_above_vent)then
+           if(z_at_w(i,k,j) < emiss_ash_height)then                                    
              k_final=k+1
              exit
            endif 
         enddo
         do k=kte-1,kts,-1
-          if(z_at_w(i,k,j) < (1.-base_umbrel)*ashz_above_vent)then
+          if(z_at_w(i,k,j) < ((1.-base_umbrel)*ashz_above_vent)+z_at_w(i,kts,j))then  
              k_initial=k
              exit
            endif
@@ -814,7 +814,6 @@ CONTAINS
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
        endif
-!!! TUCCELLA
      CASE (BEIS314)
        if( do_bioemiss ) then
          beis314_check_mechanism_ok: SELECT CASE(config_flags%chem_opt) 
@@ -889,7 +888,6 @@ CONTAINS
 
 !!! **************** END BIOGENICS, ADD EMISSIONS FOR VARIOUS PACKAGES
 !
-!!! TUCCELLA
     gas_addemiss_select: SELECT CASE(config_flags%chem_opt)
     CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
           RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, RACMSORG_KPP, &
@@ -973,9 +971,21 @@ CONTAINS
             ims,ime, jms,jme, kms,kme,                                   &
             its,ite, jts,jte, kts,kte                                    )
        call wrf_debug(15,'emissions_driver calling cb05_addemiss_bio')
-       ! Do NOT call add_biogenics if using MEGAN v2.04 biogenic emissions
-       ! module
-       if ( config_flags%bio_emiss_opt .ne. megan2 ) then
+       ! fixed a bug related to CB05 MEGAN mapping by KW 03/20/2017
+       if (config_flags%bio_emiss_opt .ne. 0 .and.                      &
+           config_flags%bio_emiss_opt .ne. GUNTHER1) then
+         call add_biogenics(id,dtstep,dz8w,config_flags, rho_phy,chem,    &
+            e_bio,ne_area,                                              &
+            ebio_iso,ebio_oli,ebio_api,ebio_lim,ebio_xyl,               &
+            ebio_hc3,ebio_ete,ebio_olt,ebio_ket,ebio_ald,               &
+            ebio_hcho,ebio_eth,ebio_ora2,ebio_co,ebio_nr,ebio_no,       &
+            ebio_sesq,ebio_mbo,                                         &
+            ids,ide, jds,jde, kds,kde,                                  &
+            ims,ime, jms,jme, kms,kme,                                  &
+            its,ite, jts,jte, kts,kte                                   )
+       endif
+
+       if ( config_flags%bio_emiss_opt .eq. GUNTHER1 ) then
          call cb05_addemiss_bio( id, dtstep, dz8w, config_flags,         &
               rho_phy, chem, e_bio, ne_area, emis_ant(ims,kms,jms,p_e_iso),&
               ids,ide, jds,jde, kds,kde,                                 &
@@ -1481,7 +1491,6 @@ CONTAINS
             its,ite, jts,jte, kts,kte                                   )
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!! TUCCELLA
     CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
        call wrf_debug(15,'emissions_driver calling soa_vbs_addemiss')
        call soa_vbs_addemiss( id, dtstep, u10, v10, alt, dz8w, xland, chem,  &

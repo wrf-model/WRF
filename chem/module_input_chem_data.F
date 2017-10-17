@@ -788,7 +788,7 @@ SUBROUTINE input_chem_profile (si_grid)
                               si_grid%chem_opt, si_zsig, si_grid%chem,        &
                               u_phy, v_phy, t_phy, si_grid%p, si_grid%pb,     &
                               si_grid%znu, si_grid%msft, si_grid%msfu, si_grid%msfv, &
-                              si_grid%f, si_grid%mub,si_grid%dx,si_grid%xlat, &
+                              si_grid%f, si_grid%mub,si_grid%dx,si_grid%xlat,si_grid%julday, &
                               ids,ide,jds,jde,kds,kde, &
                               ips,ipe,jps,jpe,kps,kpe)
    END IF
@@ -803,7 +803,7 @@ SUBROUTINE input_chem_profile (si_grid)
 
   SUBROUTINE make_chem_profile ( nx1, nx2, ny1, ny2, nz1, nz2, nch, numgas, &
                                  chem_opt, zgrid, chem, UB, VB, TB, P, PB,  &
-                                 SIGMA, XMSF, UMSF, VMSF, CORL,PSB,DX,XLAT, &
+                                 SIGMA, XMSF, UMSF, VMSF, CORL,PSB,DX,XLAT,JULDAY, &
                                  ids,ide,jds,jde,kds,kde, &
                                  ips,ipe,jps,jpe,kps,kpe)
 
@@ -838,9 +838,11 @@ SUBROUTINE input_chem_profile (si_grid)
     REAL, DIMENSION(nx1:nx2,ny1:ny2), INTENT(IN)         :: &
                              XMSF, UMSF, VMSF, CORL, PSB , XLAT
     REAL, INTENT(IN)                                     :: DX
+    INTEGER, INTENT(IN)                                  :: julday
 
     REAL, DIMENSION(nx1:nx2,nz1:nz2,ny1:ny2) :: PV
     REAL                                     :: preshPa, pv2o3_con
+    REAL      :: day_fac  ! SAM 10/3/17 temporal fac .from Xing etal.(2016) PV-O3 relat. - depnds only on julday
     LOGICAL                                  :: PVBOOL
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -886,13 +888,14 @@ SUBROUTINE input_chem_profile (si_grid)
       !chem(:,:,:,1) = stor(:,:,:,1) * 0.
       chem(nx1:nx2,nz1:nz2,ny1:ny2,1) = -999.
 
-      if (model_config_rec%do_pvozone) &
+      if (model_config_rec%do_pvozone) THEN
+        day_fac=1.+0.22*sin(0.174533*12.*(30.*(julday/365.)+2.))
          call PVS(nx1,nx2,ny1,ny2,nz1,nz2, &
                   UB,VB,TB,SIGMA,XMSF, UMSF, &
                   VMSF,CORL,PSB,DX,PV, &
                   ids,ide,jds,jde,kds,kde, &
                   ips,ipe,jps,jpe,kps,kpe)
-
+      endif
      
       DO  l=2,numgas
          is=iref(l-1)
@@ -905,6 +908,7 @@ SUBROUTINE input_chem_profile (si_grid)
                preshPa=p(i,k,j)+pb(i,k,j)
                if(preshPa.le.50000.) then
                   CALL PV2O3_CONST(XLAT(i,j),preshPa,pv2o3_con)
+                  pv2o3_con=pv2o3_con*day_fac  ! 10/3/17 Add in temporal factor for O3-PV ratio
 ! chem is in (ppmv), stor is in mixing ratio by volume, pv2o3_con is in (ppbv/PVunit)
                   if (stor(i,k,j,is).lt.pv2o3_con*PV(i,k,j)*1.E-9) then
                       PVBOOL = .true.
@@ -1748,7 +1752,7 @@ END SUBROUTINE bdy_chem_value_ghg
                                have_bcs_chem,                        & 
                                u, v, config_flags, alt, & 
                                t,pb,p,t0,p1000mb,rcp,ph,phb,g, &
-                               spec_zone, ic,           &
+                               spec_zone, ic,julday,    &
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
@@ -1769,7 +1773,7 @@ END SUBROUTINE bdy_chem_value_ghg
       INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
       INTEGER,      INTENT(IN   )    :: ips,ipe, jps,jpe, kps,kpe
       INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
-      INTEGER,      INTENT(IN   )    :: spec_zone,spec_bdy_width,ic
+      INTEGER,      INTENT(IN   )    :: spec_zone,spec_bdy_width,ic,julday
       REAL,         INTENT(IN   )    :: dt
 
 
@@ -1802,6 +1806,7 @@ END SUBROUTINE bdy_chem_value_ghg
       logical    :: have_bcs_chem
 
       REAL       :: pv2o3_con   ! for determination of O3/PV proportionality constant
+      REAL      :: day_fac  ! SAM 10/3/17 temporal fac .from Xing etal.(2016) PV-O3 relat. - depnds only on julday
 
       chem_bv_def = conmin
       numgas = get_last_gas(config_flags%chem_opt)
@@ -1815,12 +1820,14 @@ END SUBROUTINE bdy_chem_value_ghg
       jtf = min(jte,jde-1)
       ktf = kde-1
 
-      if (config_flags%do_pvozone) &
+      if (config_flags%do_pvozone) THEN
+        day_fac=1.+0.22*sin(0.174533*12.*(30.*(julday/365.)+2.))
          call PVS(ims,ime,jms,jme,kms,kme, &
                   u_pv, v_pv,t_pv+t0, sigma, XMSF, UMSF, &
                   VMSF,CORL,PSB,DX,pv, &
                   ids,ide,jds,jde,kds,kde, &
                   its,ite,jts,jte,kts,kte)
+      endif
 
    !call wrf_debug(15,'set upper boundary condition according to PV')  
    !call bdy_chem_value_top_pv( chem, XLAT,                   &
@@ -2033,6 +2040,7 @@ END SUBROUTINE bdy_chem_value_ghg
                     .and. ic.eq.p_o3 &
                     .and. preshPa.le.50000.) then
                    CALL PV2O3_CONST(xlat(i,j),preshPa,pv2o3_con)
+                  pv2o3_con=pv2o3_con*day_fac  ! 10/3/17 Add in temporal factor for O3-PV ratio
                    IF (chem(i,k,j)*1.E-6/fracref(ic-1).lt.pv2o3_con*pv(i,k,j)*1.E-9) then
                       chem(i,k,j) = fracref(ic-1)*pv(i,k,j)*pv2o3_con*1.E-9 * 1.E6
                    ENDIF
@@ -2128,6 +2136,7 @@ END SUBROUTINE bdy_chem_value_ghg
                     .and. ic.eq.p_o3 &
                     .and. preshPa.le.50000.) then
                    CALL PV2O3_CONST(xlat(i,j),preshPa,pv2o3_con)
+                  pv2o3_con=pv2o3_con*day_fac  ! 10/3/17 Add in temporal factor for O3-PV ratio
                    IF (chem(i,k,j)*1.E-6/fracref(ic-1).lt.pv2o3_con*pv(i,k,j)*1.E-9) then
                       chem(i,k,j) = fracref(ic-1)*pv(i,k,j)*pv2o3_con*1.E-9 * 1.E6
                    ENDIF
@@ -2224,6 +2233,7 @@ END SUBROUTINE bdy_chem_value_ghg
                     .and. ic.eq.p_o3 &
                     .and. preshPa.le.50000.) then
                    CALL PV2O3_CONST(xlat(i,j),preshPa,pv2o3_con)
+                  pv2o3_con=pv2o3_con*day_fac  ! 10/3/17 Add in temporal factor for O3-PV ratio
                    IF (chem(i,k,j)*1.E-6/fracref(ic-1).lt.pv2o3_con*pv(i,k,j)*1.E-9) then
                       chem(i,k,j) = fracref(ic-1)*pv(i,k,j)*pv2o3_con*1.E-9 * 1.E6
                    ENDIF
@@ -2319,6 +2329,7 @@ END SUBROUTINE bdy_chem_value_ghg
                     .and. ic.eq.p_o3 &
                     .and. preshPa.le.50000.) then
                    CALL PV2O3_CONST(xlat(i,j),preshPa,pv2o3_con)
+                  pv2o3_con=pv2o3_con*day_fac  ! 10/3/17 Add in temporal factor for O3-PV ratio
                    IF (chem(i,k,j)*1.E-6/fracref(ic-1).lt.pv2o3_con*pv(i,k,j)*1.E-9) then
                       chem(i,k,j) = fracref(ic-1)*pv(i,k,j)*pv2o3_con*1.E-9 * 1.E6
                    ENDIF
@@ -2326,6 +2337,23 @@ END SUBROUTINE bdy_chem_value_ghg
               ENDIF
             ENDDO
           ENDDO
+        ENDDO
+      ENDIF 
+
+! SAM 10/4/17 Force top boundary according to PV if do_pvozone is on
+     IF (config_flags%do_pvozone &
+        .and. p_o3.gt.1 &
+        .and. ic.eq.p_o3 ) THEN
+          k = kte
+        DO i = its, ite
+            DO j = jts, jte
+                preshPa=p(i,k,j)+pb(i,k,j)
+                   CALL PV2O3_CONST(xlat(i,j),preshPa,pv2o3_con)
+                  pv2o3_con=pv2o3_con*day_fac  ! 10/3/17 Add in temporal factor for O3-PV ratio
+                   IF (chem(i,k,j)*1.E-6/fracref(ic-1).lt.pv2o3_con*pv(i,k,j)*1.E-9) then
+                      chem(i,k,j) = fracref(ic-1)*pv(i,k,j)*pv2o3_con*1.E-9 * 1.E6
+                   ENDIF
+            ENDDO
         ENDDO
       ENDIF 
 

@@ -1524,7 +1524,7 @@ end if
                               grid%chem_opt, si_zsig, chem,                   &
                               grid%u_2, grid%v_2, grid%t_2+t0, p, grid%pb,    &
                               grid%znu, grid%msft, grid%msfu, grid%msfv,      &
-                              grid%f, grid%mub,grid%dx,xlat,                  &
+                              grid%f, grid%mub,grid%dx,xlat,grid%julday,      &
                               ids,ide,jds,jde,kds,kde,its,ite,jts,jte,kts,kte)
 
    ENDIF

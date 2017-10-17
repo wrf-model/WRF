@@ -2578,7 +2578,7 @@ end if
                                      grid%have_bcs_chem,      &
                                      grid%ru_m, grid%rv_m, config_flags,grid%alt,       &
                                      grid%t_1,grid%pb,grid%p,t0,p1000mb,rcp,grid%ph_2,grid%phb,g, &
-                                     grid%spec_zone,ic,                  &
+                                     grid%spec_zone,ic,grid%julday,      &
                                      ids,ide, jds,jde, kds,kde,  & ! domain dims
                                      ims,ime, jms,jme, kms,kme,  & ! memory dims
                                      ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims

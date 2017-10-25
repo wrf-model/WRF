@@ -52,7 +52,7 @@
                                           mozcart_lbc_init,          &
                                           last_chem_time,            &
                                           setup_gasprofile_maps,     &
-                                          make_chem_profile
+                                          initial_pvo3
 
    USE module_mixactivate_wrappers, only: mosaic_mixactivate_init
    USE module_upper_bc_driver, only: upper_bc_init
@@ -1569,14 +1569,14 @@ end if
    END SELECT kpp_select
    endif
 
-   IF( config_flags%do_pvozone .and. (.not. config_flags%restart) .AND. config_flags%chem_in_opt==0 ) THEN
+   IF( config_flags%do_pvozone .and. p_o3.gt.1 .and. (.not. config_flags%restart) .AND. config_flags%chem_in_opt==0 ) THEN
       si_zsigf = (grid%ph_1 + grid%phb)/grav
       do k=1,kde-1
          si_zsig(:,k,:) = 0.5 * ( si_zsigf(:,k,:) + si_zsigf(:,k+1,:) )
       enddo
       si_zsig(:,kde,:) = 0.5 * ( 3. * si_zsigf(:,kde,:) - si_zsigf(:,kde-1,:) )
-      CALL make_chem_profile (ims, ime, jms, jme, kms, kme, num_chem, numgas, &
-                              grid%chem_opt, si_zsig, chem,                   &
+      CALL initial_pvo3 (ims, ime, jms, jme, kms, kme, num_chem, numgas, &
+                              grid%chem_opt, si_zsig, chem(:,:,:,p_o3),       &
                               grid%u_2, grid%v_2, grid%t_2+t0, p, grid%pb,    &
                               grid%znu, grid%msft, grid%msfu, grid%msfv,      &
                               grid%f, grid%mub,grid%dx,xlat,grid%julday,      &

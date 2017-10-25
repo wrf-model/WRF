@@ -785,12 +785,7 @@ SUBROUTINE input_chem_profile (si_grid)
        ! Do nothing, since for GHGs initialization is done in chemics_init.F
    ELSE
       CALL make_chem_profile (ims, ime, jms, jme, kms, kme, num_chem, numgas, &
-                              si_grid%chem_opt, si_zsig, si_grid%chem,        &
-                              u_phy, v_phy, t_phy, si_grid%p, si_grid%pb,     &
-                              si_grid%znu, si_grid%msft, si_grid%msfu, si_grid%msfv, &
-                              si_grid%f, si_grid%mub,si_grid%dx,si_grid%xlat,si_grid%julday, &
-                              ids,ide,jds,jde,kds,kde, &
-                              ips,ipe,jps,jpe,kps,kpe)
+                              si_grid%chem_opt, si_zsig, si_grid%chem)
    END IF
 
    CALL wrf_debug       ( 100,' input_chem_profile: exit subroutine ')
@@ -802,23 +797,14 @@ SUBROUTINE input_chem_profile (si_grid)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   SUBROUTINE make_chem_profile ( nx1, nx2, ny1, ny2, nz1, nz2, nch, numgas, &
-                                 chem_opt, zgrid, chem, UB, VB, TB, P, PB,  &
-                                 SIGMA, XMSF, UMSF, VMSF, CORL,PSB,DX,XLAT,JULDAY, &
-                                 ids,ide,jds,jde,kds,kde, &
-                                 ips,ipe,jps,jpe,kps,kpe)
-
-    USE module_configure, only: model_config_rec
-
+                                 chem_opt, zgrid, chem )
     IMPLICIT NONE
 
     INTEGER, INTENT(IN) :: nx1, ny1, nz1
     INTEGER, INTENT(IN) :: nx2, ny2, nz2
-    INTEGER, INTENT(IN) :: ips,ipe,jps,jpe,kps,kpe
-    INTEGER, INTENT(IN) :: ids,ide,jds,jde,kds,kde
     INTEGER, INTENT(IN) :: nch, numgas, chem_opt
 
-    !REAL, INTENT(IN), DIMENSION(nx1:nx2,nz1:nz2,ny1:ny2) :: zgrid
-    REAL, DIMENSION(nx1:nx2,nz1:nz2,ny1:ny2) :: zgrid
+    REAL, INTENT(IN), DIMENSION(nx1:nx2,nz1:nz2,ny1:ny2) :: zgrid
 
     CHARACTER (LEN=80) :: message
     INTEGER :: i, j, k, l, is
@@ -831,19 +817,6 @@ SUBROUTINE input_chem_profile (si_grid)
 
     REAL :: hc358 !wig, 2-May-2007
     REAL :: olit
-
-    REAL, DIMENSION(nx1:nx2,nz1:nz2,ny1:ny2), INTENT(IN) :: &
-                                             TB, UB, VB, P, PB
-    REAL, DIMENSION(nz1:nz2), INTENT(IN)                 :: SIGMA
-    REAL, DIMENSION(nx1:nx2,ny1:ny2), INTENT(IN)         :: &
-                             XMSF, UMSF, VMSF, CORL, PSB , XLAT
-    REAL, INTENT(IN)                                     :: DX
-    INTEGER, INTENT(IN)                                  :: julday
-
-    REAL, DIMENSION(nx1:nx2,nz1:nz2,ny1:ny2) :: PV
-    REAL                                     :: preshPa, pv2o3_con
-    REAL      :: day_fac  ! SAM 10/3/17 temporal fac .from Xing etal.(2016) PV-O3 relat. - depnds only on julday
-    LOGICAL                                  :: PVBOOL
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
@@ -888,38 +861,12 @@ SUBROUTINE input_chem_profile (si_grid)
       !chem(:,:,:,1) = stor(:,:,:,1) * 0.
       chem(nx1:nx2,nz1:nz2,ny1:ny2,1) = -999.
 
-      if (model_config_rec%do_pvozone) THEN
-        day_fac=1.+0.22*sin(0.174533*12.*(30.*(julday/365.)+2.))
-         call PVS(nx1,nx2,ny1,ny2,nz1,nz2, &
-                  UB,VB,TB,SIGMA,XMSF, UMSF, &
-                  VMSF,CORL,PSB,DX,PV, &
-                  ids,ide,jds,jde,kds,kde, &
-                  ips,ipe,jps,jpe,kps,kpe)
-      endif
-     
-      DO  l=2,numgas
+      DO  l=2, numgas
          is=iref(l-1)
          DO j=ny1,ny2
          DO k=nz1,nz2
          DO i=nx1,nx2
-            PVBOOL = .false.
-            if(model_config_rec%do_pvozone .and. l.eq.p_o3) then
-               ! PV2O3 extrapolation from 100 to 500mb. SAM 8/5/16, Yuyan Cui
-               preshPa=p(i,k,j)+pb(i,k,j)
-               if(preshPa.le.50000.) then
-                  CALL PV2O3_CONST(XLAT(i,j),preshPa,pv2o3_con)
-                  pv2o3_con=pv2o3_con*day_fac  ! 10/3/17 Add in temporal factor for O3-PV ratio
-! chem is in (ppmv), stor is in mixing ratio by volume, pv2o3_con is in (ppbv/PVunit)
-                  if (stor(i,k,j,is).lt.pv2o3_con*PV(i,k,j)*1.E-9) then
-                      PVBOOL = .true.
-                  end if
-               end if
-            end if
-            if (PVBOOL) then
-               chem(i,k,j,l)=fracref(l-1)*pv2o3_con*PV(i,k,j)*1.E-9 * 1.E6
-            else
-               chem(i,k,j,l)=fracref(l-1)*stor(i,k,j,is) * 1.E6
-            endif
+            chem(i,k,j,l)=fracref(l-1)*stor(i,k,j,is) * 1.E6
          ENDDO
          ENDDO
          ENDDO
@@ -1013,6 +960,134 @@ SUBROUTINE input_chem_profile (si_grid)
       RETURN
   END SUBROUTINE make_chem_profile
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  SUBROUTINE initial_pvo3 ( nx1, nx2, ny1, ny2, nz1, nz2, nch, numgas, &
+                                 chem_opt, zgrid, o3, &
+                                 UB, VB, TB, P, PB,  &
+                                 SIGMA, XMSF, UMSF, VMSF, CORL,PSB,DX,XLAT,JULDAY, &
+                                 ids,ide,jds,jde,kds,kde, &
+                                 ips,ipe,jps,jpe,kps,kpe)
+
+    USE module_configure, only: model_config_rec
+
+    IMPLICIT NONE
+
+    INTEGER, INTENT(IN) :: nx1, ny1, nz1
+    INTEGER, INTENT(IN) :: nx2, ny2, nz2
+    INTEGER, INTENT(IN) :: ips,ipe,jps,jpe,kps,kpe
+    INTEGER, INTENT(IN) :: ids,ide,jds,jde,kds,kde
+    INTEGER, INTENT(IN) :: nch, numgas, chem_opt
+
+    REAL, INTENT(IN), DIMENSION(nx1:nx2,nz1:nz2,ny1:ny2) :: zgrid
+
+    REAL, INTENT(INOUT), DIMENSION(nx1:nx2,nz1:nz2,ny1:ny2) :: o3
+
+    REAL, DIMENSION(nx1:nx2,nz1:nz2,ny1:ny2), INTENT(IN) :: &
+                                             TB, UB, VB, P, PB
+    REAL, DIMENSION(nz1:nz2), INTENT(IN)                 :: SIGMA
+    REAL, DIMENSION(nx1:nx2,ny1:ny2), INTENT(IN)         :: &
+                             XMSF, UMSF, VMSF, CORL, PSB , XLAT
+    REAL, INTENT(IN)                                     :: DX
+    INTEGER, INTENT(IN)                                  :: julday
+
+
+    CHARACTER (LEN=80) :: message
+    INTEGER :: i, j, k, l, is
+
+    REAL, DIMENSION(nx1:nx2,nz1:kx ,ny1:ny2,lo+1):: chprof
+    REAL, DIMENSION(nx1:nx2,nz1:kx ,ny1:ny2)     :: zprof
+
+    REAL, DIMENSION(nx1:nx2,nz1:nz2,ny1:ny2,lo ) :: stor
+
+    REAL, DIMENSION(nx1:nx2,nz1:nz2,ny1:ny2,nch) :: chem_local
+
+    REAL, DIMENSION(nx1:nx2,nz1:nz2,ny1:ny2) :: PV
+    REAL                                     :: preshPa, pv2o3_con
+    REAL      :: day_fac  ! SAM 10/3/17 temporal fac .from Xing etal.(2016) PV-O3 relat. - depnds only on julday
+    LOGICAL   :: PVBOOL
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! Check the number of species
+
+     if( nch .NE. num_chem) then
+       message = ' Input_chem_profile: wrong number of chemical species'
+!       CALL WRF_ERROR_FATAL ( message )
+     endif
+       
+      ! Vertically flip the chemistry data as it is given top down and
+      ! heights are bottom up. Fill temp 3D chemical and profile array,
+      ! keep chem slot 1 open as vinterp_chem assumes there is no data.
+      DO j=ny1,ny2
+      DO k=  1,kx 
+      DO i=nx1,nx2 
+         chprof(i,k,j,2:lo+1) = xl(1:lo,kx-k+1)
+         zprof(i,k,j) = 0.5*(zfa(k)+zfa(k+1))
+      ENDDO
+      ENDDO
+      ENDDO
+!
+! return xl to previous value for next time... 
+!   34 chemicals (lo), 16 vertical levels (kx)
+!     DO i=lo-6,lo               
+!       xl(i,1:kx)=xl(i,1:kx)*dens(1:kx)
+!     ENDDO
+
+! Change number concentrations to mixing ratios for short-lived NALROM species
+      do k=1,kx
+         chprof(:,k,:,lo-5:lo+1) = chprof(:,k,:,lo-5:lo+1)/dens(k)
+      end do
+
+      ! Interpolate temp 3D chemical and profile array to WRF grid
+      call vinterp_chem(nx1, nx2, ny1, ny2, nz1, kx, nz2, lo, zprof, zgrid, &
+                          chprof, chem_local, .false.)
+
+      ! place interpolated data into temp storage array
+      stor(nx1:nx2,nz1:nz2,ny1:ny2,1:lo) = chem_local(nx1:nx2,nz1:nz2,ny1:ny2,2:lo+1)
+
+      ! Here is where the o3 profile is constructed
+      if (model_config_rec%do_pvozone .and. p_o3 .gt. 1) THEN
+        day_fac=1.+0.22*sin(0.174533*12.*(30.*(julday/365.)+2.))
+         call PVS(nx1,nx2,ny1,ny2,nz1,nz2, &
+                  UB,VB,TB,SIGMA,XMSF, UMSF, &
+                  VMSF,CORL,PSB,DX,PV, &
+                  ids,ide,jds,jde,kds,kde, &
+                  ips,ipe,jps,jpe,kps,kpe)
+
+      else
+         return
+      end if 
+
+      l = p_o3
+      is=iref(l-1)
+      DO j=ny1,ny2
+      DO k=nz1,nz2
+      DO i=nx1,nx2
+         PVBOOL = .false.
+         ! PV2O3 extrapolation from 100 to 500mb. SAM 8/5/16, Yuyan Cui
+         preshPa=p(i,k,j)+pb(i,k,j)
+         if(preshPa.le.50000.) then
+            CALL PV2O3_CONST(XLAT(i,j),preshPa,pv2o3_con)
+            pv2o3_con=pv2o3_con*day_fac  ! 10/3/17 Add in temporal factor for O3-PV ratio
+! chem_local is in (ppmv), stor is in mixing ratio by volume, pv2o3_con is in (ppbv/PVunit)
+            if (stor(i,k,j,is).lt.pv2o3_con*PV(i,k,j)*1.E-9) then
+               PVBOOL = .true.
+            end if
+         end if
+         if (PVBOOL) then
+            o3(i,k,j)=fracref(l-1)*pv2o3_con*PV(i,k,j)*1.E-9 * 1.E6
+         else
+            o3(i,k,j)=fracref(l-1)*stor(i,k,j,is) * 1.E6
+         end if
+      ENDDO
+      ENDDO
+      ENDDO
+
+      RETURN
+  END SUBROUTINE initial_pvo3
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 !
 !
 ! this is a kludge routine as of now....
@@ -1587,160 +1662,6 @@ end if
 
 END SUBROUTINE bdy_chem_value_ghg
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-
-
-!!!!Yuyan Cui Code
-!!!SUBROUTINE bdy_chem_value_ghg ( chem, z, nch, numgas,p_co2 )
-!!!
-!!!    IMPLICIT NONE
-!!!
-!!!    REAL,    intent(OUT)  :: chem
-!!!    REAL,    intent(IN)   :: z          ! 3D height array
-!!!    INTEGER, intent(IN)   :: nch,p_co2  ! index number of chemical species
-!!!    INTEGER, intent(IN)   :: numgas     ! index number of last gas species
-!!!
-!!!    INTEGER :: i, k, irefcur
-!!!
-!!!    REAL, DIMENSION(kx):: cprof         ! chemical profile, diff. index order
-!!!
-!!!    REAL, DIMENSION(1:kx):: zprof
-!!!    REAL                 :: stor
-!!!    REAL                 :: wgt0
-!!!
-!!!    CHARACTER (LEN=80) :: message
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!
-!!!!    if( nch .GT. logg+1) then
-!!!     if( nch .GT. numgas) then
-!!!       message = ' Input_chem_profile: wrong number of chemical species'
-!!!       return
-!!!!       CALL WRF_ERROR_FATAL ( message )
-!!!     endif
-!!!
-!!!      ! Vertically flip the chemistry data as it is given top down
-!!!      !     and heights in zfa are bottom up
-!!!      ! Fill 1D chemical profile array cprof
-!!!      ! Convert species 28-34 (lo-6:lo) from (molecules/cm3) to (mol/mol)
-!!!      irefcur = iref(nch-1)
-!!!      DO k = 1,kx
-!!!        zprof(k) = 0.5*(zfa_bdy(k)+zfa_bdy(k+1))
-!!!        if (irefcur .lt. lo-6) then
-!!!          cprof(k) = xl(irefcur,kx+1-k)
-!!!        else
-!!!          cprof(k) = xl(irefcur,kx+1-k)/dens(kx+1-k)
-!!!        end if
-!!!      ENDDO
-!!!
-!!!      ! Interpolate temp 3D chemical profile array to WRF field
-!!!      IF (z .LT. zprof(1)) THEN
-!!!        stor = cprof(1)
-!!!      ELSE IF (z .GT. zprof(kx)) THEN
-!!!        stor = cprof(kx)
-!!!      ELSE
-!!!        ! We can trap between two levels and linearly interpolate
-!!!        input_loop:  DO k = 1, kx-1
-!!!          IF (z .EQ. zprof(k) )THEN
-!!!            stor = cprof(k)
-!!!            EXIT input_loop
-!!!         ELSE IF (z .EQ. zprof(k+1) )THEN
-!!!            stor = cprof(k+1)
-!!!            EXIT input_loop
-!!!          ELSE IF ( (z .GT. zprof(k)) .AND. &
-!!!                    (z .LT. zprof(k+1)) ) THEN
-!!!            wgt0 = (z   - zprof(k+1)) / &
-!!!                   (zprof(k) - zprof(k+1))
-!!!            stor = MAX( wgt0 *cprof(k  ) + &
-!!!                     (1.-wgt0)*cprof(k+1), 0.)
-!!!            EXIT input_loop
-!!!          ENDIF
-!!!        ENDDO input_loop
-!!!      ENDIF
-!!! ! Here is where the chemistry value is constructed
-!!!      chem = fracref(nch-1)*stor*1.E6
-!!!      RETURN
-!!!  END SUBROUTINE bdy_chem_value_ghg
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
-!!!SUBROUTINE bdy_chem_value_ghg_pv ( chem, z, pv, nch, numgas,p_co2,xlat,preshPa )
-!!!
-!!!    IMPLICIT NONE
-!!!
-!!!    REAL,    intent(OUT)  :: chem
-!!!    REAL,    intent(IN)   :: z,pv       ! 3D height array
-!!!    REAL,    intent(IN)   :: xlat,preshPa   ! for determination of O3/PV proportionality constant
-!!!    INTEGER, intent(IN)   :: nch,p_co2  ! index number of chemical species
-!!!    INTEGER, intent(IN)   :: numgas     ! index number of last gas species
-!!!
-!!!    INTEGER :: i, k, irefcur
-!!!
-!!!    REAL, DIMENSION(kx):: cprof         ! chemical profile, diff. index order
-!!!
-!!!    REAL, DIMENSION(1:kx):: zprof
-!!!    REAL                 :: stor
-!!!    REAL                 :: wgt0
-!!!    REAL                 :: pv2o3_con   ! for determination of O3/PV proportionality constant
-!!!
-!!!    CHARACTER (LEN=80) :: message
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
-!!!
-!!!     if( nch .GT. numgas) then
-!!!       message = ' Input_chem_profile: wrong number of chemical species'
-!!!       return
-!!!!       CALL WRF_ERROR_FATAL ( message )
-!!!     endif
-!!!
-!!!
-!!!! Vertically flip the chemistry data as it is given top down
-!!!      !     and heights in zfa are bottom up
-!!!      ! Fill 1D chemical profile array cprof
-!!!      ! Convert species 28-34 (lo-6:lo) from (molecules/cm3) to (mol/mol)
-!!!!      irefcur = iref(nch-1)
-!!!      irefcur = iref(nch) 
-!!!      DO k = 1,kx
-!!!        zprof(k) = 0.5*(zfa_bdy(k)+zfa_bdy(k+1))
-!!!        if (irefcur .lt. lo-6) then
-!!!          cprof(k) = xl(irefcur,kx+1-k)
-!!!        else
-!!!          cprof(k) = xl(irefcur,kx+1-k)/dens(kx+1-k)
-!!!        end if
-!!!      ENDDO
-!!!
-!!!      ! Interpolate temp 3D chemical profile array to WRF field
-!!!      IF (z .LT. zprof(1)) THEN
-!!!        stor = cprof(1)
-!!!      ELSE IF (z .GT. zprof(kx)) THEN
-!!!        stor = cprof(kx)
-!!!      ELSE
-!!!! We can trap between two levels and linearly interpolate
-!!!        input_loop:  DO k = 1, kx-1
-!!!          IF (z .EQ. zprof(k) )THEN
-!!!            stor = cprof(k)
-!!!            EXIT input_loop
-!!!          ELSE IF (z .EQ. zprof(k+1) )THEN
-!!!            stor = cprof(k+1)
-!!!            EXIT input_loop
-!!!          ELSE IF ( (z .GT. zprof(k)) .AND. &
-!!!                    (z .LT. zprof(k+1)) ) THEN
-!!!            wgt0 = (z   - zprof(k+1)) / &
-!!!                   (zprof(k) - zprof(k+1))
-!!!            stor = MAX( wgt0 *cprof(k  ) + &
-!!!                     (1.-wgt0)*cprof(k+1), 0.)
-!!!            EXIT input_loop
-!!!          ENDIF
-!!!        ENDDO input_loop
-!!!      ENDIF
-!!!         CALL PV2O3_CONST(xlat,preshPa,pv2o3_con)
-!!!! chem is in ppmv, stor is in mixing ratio by volume, pv2o3_con is in ppbv/PVunit
-!!!         IF (stor.lt.pv2o3_con*pv*1.E-9) then
-!!!            chem = fracref(nch-1)*pv*pv2o3_con*1.E-3
-!!!         else
-!!!            chem = fracref(nch-1)*stor*1.E6
-!!!         endif
-!!!
-!!!      RETURN
-!!!  END SUBROUTINE bdy_chem_value_ghg_pv
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    SUBROUTINE flow_dep_bdy_chem  (  chem,                                       &
                                chem_bxs,chem_btxs,                                  &

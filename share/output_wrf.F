@@ -366,6 +366,8 @@
     END IF
 
     IF ( switch .EQ. restart_only ) THEN
+       ! Add a flag for "this is a restart file"
+       CALL wrf_put_dom_ti_integer ( fid , 'FLAG_RESTART' ,  1 , 1 , ierr )
        ! add some delicious alarm metadata to the restart files
        ibuf(1) = MAX_WRF_ALARMS
        CALL wrf_put_dom_ti_integer( fid, 'MAX_WRF_ALARMS', ibuf, 1, ierr )

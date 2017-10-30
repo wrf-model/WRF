@@ -10460,14 +10460,14 @@ CONTAINS
                inflgsw  = 4
                iceflgsw = 4
                DO K=kts,kte
-                  reice1D(ncol,K) = MAX(10., re_ice(I,K,J)*1.E6)
-                  if (reice1D(ncol,K).LE.10..AND.cldfra3d(i,k,j).gt.0.) then
+                  reice1D(ncol,K) = MAX(5., re_ice(I,K,J)*1.E6)
+                  if (reice1D(ncol,K).LE.5..AND.cldfra3d(i,k,j).gt.0.) then
                      idx_rei = int(t3d(i,k,j)-179.)
                      idx_rei = min(max(idx_rei,1),75)
                      corr = t3d(i,k,j) - int(t3d(i,k,j))
                      reice1D(ncol,K) = retab(idx_rei)*(1.-corr) +      &
      &                                 retab(idx_rei+1)*corr
-                     reice1D(ncol,K) = MAX(reice1D(ncol,K), 10.0)
+                     reice1D(ncol,K) = MAX(reice1D(ncol,K), 5.0)
                   endif
                ENDDO
             ELSE
@@ -10590,7 +10590,6 @@ CONTAINS
             ENDIF
          enddo
         else
-         call wrf_error_fatal('did not pass O33D - abort') ! FIXME: remove this line
          do k = kts, kte+1
             o3vmr(ncol,k) = o3mmr(k) * amdo
          enddo
@@ -11102,6 +11101,7 @@ CONTAINS
             swddir(i,j)    = 0.  ! jararias 2013/08/10
             swddni(i,j)    = 0.  ! jararias 2013/08/10
             swddif(i,j)    = 0.  ! jararias 2013/08/10
+            swcf(i,j)      = 0.
 
       endif
 !

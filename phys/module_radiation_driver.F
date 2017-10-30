@@ -2855,12 +2855,12 @@ CONTAINS
          do i=its,ite
             ! sza interpolation of surface fluxes
             if ((coszen_ref(i,j).gt.coszen_min) .and. (coszen_loc(i,j).gt.coszen_min)) then
-               if ((bb(i,j).eq.-0.5).or.(bb(i,j).eq.2.5)) then
+               if ((bb(i,j).eq.-0.5).or.(bb(i,j).eq.2.5).or.(bb(i,j).eq.0.0)) then
                   swddir(i,j) =(coszen_loc(i,j)/coszen_ref(i,j))*swddir_ref(i,j)
                else
                   swddir(i,j) =Bx(i,j)*(coszen_loc(i,j)**bb(i,j))
                end if
-               if ((gg(i,j).eq.-0.5).or.(gg(i,j).eq.2.5)) then
+               if ((gg(i,j).eq.-0.5).or.(gg(i,j).eq.2.5).or.(gg(i,j).eq.0.0)) then
                   swdown(i,j) =(coszen_loc(i,j)/coszen_ref(i,j))*swdown_ref(i,j)
                else
                   swdown(i,j) =Gx(i,j)*(coszen_loc(i,j)**gg(i,j))
@@ -3268,8 +3268,6 @@ CONTAINS
 !.. to get near 100% RH as grid spacing moves toward 1.0km, but higher
 !.. RH over ocean required as compared to over land.
 
-!      RH_00L = 0.781 + SQRT(1./(35.0+gridkm*gridkm*gridkm*0.5))
-!      RH_00O = 0.831 + SQRT(1./(70.0+gridkm*gridkm*gridkm*0.5))
       RH_00L = 0.7  + SQRT(1./(25.0+gridkm*gridkm*gridkm))
       RH_00O = 0.81 + SQRT(1./(50.0+gridkm*gridkm*gridkm))
 
@@ -3309,9 +3307,8 @@ CONTAINS
                RHUM = MIN(0.999, RHUM)
                CLDFRA(I,K,J) = MAX(0.0, 1.0-SQRT((1.0-RHUM)/(1.-RH_00)))
             elseif (tc.lt.-12..and.tc.gt.-70. .and. RHUM.gt.RH_00L) then
-               RHUM = MAX(0.01, MIN(qv(i,k,j)/qvsat(i,k,j), qvsw/qvsi - 1.E-6))
-               RHI_max = MAX(RHUM+1.E-6, qvsw/qvsi)
-               CLDFRA(I,K,J) = MAX(0., 1.0-SQRT((RHI_max-RHUM)/(RHI_max-RH_00L)))
+               RHUM = MAX(0.01, MIN(qv(i,k,j)/qvsat(i,k,j), 1.0 - 1.E-6))
+               CLDFRA(I,K,J) = MAX(0., 1.0-SQRT((1.0-RHUM)/(1.0-RH_00L)))
             endif
             CLDFRA(I,K,J) = MIN(0.90, CLDFRA(I,K,J))
 
@@ -3668,7 +3665,7 @@ CONTAINS
 
       lwp = 0.
       do k = kts, k_tropo
-         if (cfr(k).gt.0.01 .and. cfr(k).lt.0.99) then
+         if (cfr(k).gt.0.0) then
             lwp = lwp + qc(k)*Rho(k)*dz(k)
          endif
       enddo
@@ -3680,7 +3677,7 @@ CONTAINS
          endif
       enddo
 
-      if (lwp .gt. 1.0) then
+      if (lwp .gt. 1.5) then
          xfac = 1./lwp
          do k = kts, k_tropo
             if (cfr(k).gt.0.01 .and. cfr(k).lt.0.99) then
@@ -3689,7 +3686,7 @@ CONTAINS
          enddo
       endif
 
-      if (iwp .gt. 1.0) then
+      if (iwp .gt. 1.5) then
          xfac = 1./iwp
          do k = kts, k_tropo
             if (cfr(k).gt.0.01 .and. cfr(k).lt.0.99) then

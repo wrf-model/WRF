@@ -22,8 +22,8 @@
 !    Jason Milbrandt (jason.milbrandt@canada.ca)                                           !
 !__________________________________________________________________________________________!
 !                                                                                          !
-! Version:       2.8.2                                                                     !
-! Last updated:  2017-09-25                                                                !
+! Version:       2.8.2.2                                                                   !
+! Last updated:  2017-11-03                                                                !
 !__________________________________________________________________________________________!
 
  MODULE MODULE_MP_P3
@@ -111,12 +111,6 @@
 
  lookup_file_1 = trim(lookup_file_dir)//'/'//'p3_lookup_table_1.dat-v'//trim(version_p3)
  lookup_file_2 = trim(lookup_file_dir)//'/'//'p3_lookup_table_2.dat-v'//trim(version_p3)
-
-!-- override for local path/filenames:
-! lookup_file_1 = '/data/ords/armn/armngr8/storage_model/p3_lookup_tables/p3_lookup_table_1.dat-v2.5.1'
-! lookup_file_2 = '/data/ords/armn/armngr8/storage_model/p3_lookup_tables/p3_lookup_table_2.dat-v2.5.1'
-!  lookup_file_1 = './p3_lookup_table_1.dat-v2.5.1'
-!  lookup_file_2 = './p3_lookup_table_2.dat-v2.5.1'
 
  !------------------------------------------------------------------------------------------!
 
@@ -2755,6 +2749,11 @@ END SUBROUTINE P3_INIT
 
     enddo k_loop_main
 
+    !NOTE: At this point, it is possible to have negative (but small) nc, nr, nitot.  This is not
+    !      a problem; those values get clipped to zero in the sedimentation section (if necessary).
+    !      (This is not done above simply for efficiency purposes.)
+
+
     if (debug_ON) then
        tmparr1(i,:) = th(i,:)*(pres(i,:)*1.e-5)**(rd*inv_cp)
        call check_values(qv,tmparr1,qc,qr,nr,qitot,qirim,nitot,birim,i,it,.true.,debug_ABORT,300)
@@ -2802,6 +2801,8 @@ END SUBROUTINE P3_INIT
           substep_sedi_c2: do while (dt_left.gt.1.e-4)
 
              Co_max = 0.
+             V_qc = 0.
+             V_nc = 0.
 
              kloop_sedi_c2: do k = k_qxtop,k_qxbot,-kdir
 
@@ -2812,9 +2813,6 @@ END SUBROUTINE P3_INIT
                    dum = 1./lamc(i,k)**bcn
                    V_qc(k) = acn(i,k)*gamma(4.+bcn+mu_c(i,k))*dum/(gamma(mu_c(i,k)+4.))
                    V_nc(k) = acn(i,k)*gamma(1.+bcn+mu_c(i,k))*dum/(gamma(mu_c(i,k)+1.))
-                else
-                   V_qc(k) = 0.
-                   V_nc(k) = 0.
                 endif qc_notsmall_c2
 
                 Co_max = max(Co_max, V_qc(k)*dt_left*inv_dzq(i,k))
@@ -2864,7 +2862,8 @@ END SUBROUTINE P3_INIT
 
           substep_sedi_c1: do while (dt_left.gt.1.e-4)
 
-             Co_max = 0.
+             Co_max  = 0.
+             V_qc = 0.
 
              kloop_sedi_c1: do k = k_qxtop,k_qxbot,-kdir
 
@@ -2873,8 +2872,6 @@ END SUBROUTINE P3_INIT
                                    lamc(i,k),lammin,lammax,tmp1,tmp2)
                    dum = 1./lamc(i,k)**bcn
                    V_qc(k) = acn(i,k)*gamma(4.+bcn+mu_c(i,k))*dum/(gamma(mu_c(i,k)+4.))
-                else
-                   V_qc(k) = 0.
                 endif qc_notsmall_c1
 
                 Co_max = max(Co_max, V_qc(k)*dt_left*inv_dzq(i,k))
@@ -2950,6 +2947,8 @@ END SUBROUTINE P3_INIT
        substep_sedi_r: do while (dt_left.gt.1.e-4)
 
           Co_max = 0.
+          V_qr = 0.
+          V_nr = 0.
 
           kloop_sedi_r1: do k = k_qxtop,k_qxbot,-kdir
 
@@ -2978,9 +2977,6 @@ END SUBROUTINE P3_INIT
                 V_nr(k) = dum1+(rdumjj-real(dumjj))*(dum2-dum1)            !interpolated
                 V_nr(k) = V_nr(k)*rhofacr(i,k)                !corrected for air density
 
-             else
-                V_qr(k) = 0.
-                V_nr(k) = 0.
              endif qr_notsmall_r1
 
              Co_max = max(Co_max, V_qr(k)*dt_left*inv_dzq(i,k))
@@ -3070,6 +3066,9 @@ END SUBROUTINE P3_INIT
           substep_sedi_i: do while (dt_left.gt.1.e-4)
 
              Co_max = 0.
+             V_qit = 0.
+             V_nit = 0.
+            !V_zit = 0.
 
              kloop_sedi_i1: do k = k_qxtop,k_qxbot,-kdir
 
@@ -3106,10 +3105,6 @@ END SUBROUTINE P3_INIT
                   !V_zit(k) = f1pr19*rhofaci(i,k)     !moment6-weighted fall speed (with density factor)
                  !==
 
-                else
-                   V_qit(k) = 0.
-                   V_nit(k) = 0.
-                  !V_zit(k) = 0.
                 endif qi_notsmall_i1
 
                 Co_max = max(Co_max, V_qit(k)*dt_left*inv_dzq(i,k))

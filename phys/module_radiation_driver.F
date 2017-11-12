@@ -26,6 +26,7 @@ CONTAINS
               ,RHO    ,RLWTOA           &
               ,RSWTOA ,RTHRATEN         &
               ,RTHRATENLW      ,RTHRATENSW    &
+              ,HRSWPD, HRLWPD           & ! J. Henderson AER
               ,SNOW   ,STEPRA ,SWDOWN  &
               ,SWDOWNC ,SW_PHYSICS     &
               ,T8W     ,T ,TAUCLDC &
@@ -493,6 +494,10 @@ CONTAINS
 !                                                           LWDN, &
 !                                                      LWUPCLEAR, &
 !                                                      LWDNCLEAR
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  & ! J. Henderson AER
+         INTENT(OUT)  ::                                  HRLWPD, &
+                                                          HRSWPD
 
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT) ::&
                       ACSWUPT,ACSWUPTC,ACSWDNT,ACSWDNTC,          &
@@ -1019,6 +1024,8 @@ CONTAINS
         RTHRATEN(I,K,J)=0.
         RTHRATENLW(I,K,J)=0.
         RTHRATENSW(I,K,J)=0.
+        HRLWPD(I,K,J)=0. ! J. Henderson AER
+        HRSWPD(I,K,J)=0. ! J. Henderson AER
 !        SWUP(I,K,J) = 0.0
 !        SWDN(I,K,J) = 0.0
 !        SWUPCLEAR(I,K,J) = 0.0
@@ -1561,6 +1568,7 @@ CONTAINS
              CALL wrf_debug (100, 'CALL rrtmg_lw')
              CALL RRTMG_LWRAD(                                      &
                   RTHRATENLW=RTHRATEN,                              &
+                  HRLWPD=HRLWPD,                                    & ! J. Henderson AER
                   LWUPT=LWUPT,LWUPTC=LWUPTC,                        &
                   LWDNT=LWDNT,LWDNTC=LWDNTC,                        &
                   LWUPB=LWUPB,LWUPBC=LWUPBC,                        &
@@ -1976,6 +1984,7 @@ CONTAINS
              CALL wrf_debug(100, 'CALL rrtmg_sw')
              CALL RRTMG_SWRAD(                                         &
                      RTHRATENSW=RTHRATENSW,                            &
+                     HRSWPD=HRSWPD,                                    & ! J. Henderson AER
                      SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
                      SWDNT=SWDNT,SWDNTC=SWDNTC,                        &
                      SWUPB=SWUPB,SWUPBC=SWUPBC,                        &

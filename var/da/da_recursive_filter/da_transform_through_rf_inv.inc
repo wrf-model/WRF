@@ -33,9 +33,9 @@ subroutine da_transform_through_rf_inv(grid, mz,rf_alpha, val, field, scaling)
    if (trace_use_dull) call da_trace_entry("da_transform_through_rf_inv")
 
    write (*,*) 'mz= ', mz
-   write (*,*) 'rf_alpha= ', rf_alpha
-   write (*,*) 'eigval= ', val
-   write (*,*) 'vert_corr=', vert_corr, ' vert_corr_1=', vert_corr_1
+   !write (*,*) 'rf_alpha= ', rf_alpha
+   !write (*,*) 'eigval= ', val
+   !write (*,*) 'vert_corr=', vert_corr, ' vert_corr_1=', vert_corr_1
    
 
    rf_passes_over_two = rf_passes / 2

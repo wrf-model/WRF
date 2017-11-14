@@ -1,0 +1,86 @@
+1. How to build the 'tools'
+
+Set 'NETCDF' to your netcdf path and 'SFC' to the same Fortran 90 compiler
+which used to build the NETCDF lib
+
+   For csh, tcsh
+       setenv NETCDF /your/netcdf/path
+       setenv SFC pgf90
+   For bash, ksh
+       export NETCDF=/your/netcdf/path
+       export SFC=pgf90
+
+then run 'make' to build the tools
+
+notes: It depends on how NETCDF was build, '-lcurl' may need to be removed
+or the path of libcurl need to be specified.
+
+2. Domain size requirment
+
+Only WRF input files at high resolution are required to run multi-inc 4DVAR. 
+WRF input files at low reselution are thinned from those at high resolution.
+This requires that grid number at high/low reselutions to satify:
+    ( n - 1 ) mod m = 0
+where n is the grid number of high resolution in x or y direction, m is the
+grid number of low resolution in x or y direction. 
+
+The ratio of the high/low resolution must be odd, the default ration is 1:3.
+
+3. First guess files
+
+Multi-incremental 4DVAR run needs 2 time-level first guess files (fg & fg02), 
+
+fg   is at the analysis time
+
+fg02 is at the end of the analysis time window, or the 2nd time level of boundary
+if boundary interval is less then analysis time window 
+
+4. BE
+Multi-incremental 4DVAR run only needs the low resolution BE
+
+5. How the wrapper script works
+
+What does this wrapper script CAN NOT DO?
+
+   This wrapper script DOES NOT DO these
+
+     link/copy any run-time files which needed by 4DVAR run
+     generate/prepare namelist.input for 4DVAR run
+     update boundary condition
+
+What does this wrapper CAN DO?
+
+   This wrapper script DOES these
+
+     generate low resolution fg & bdy by using the high resolution fg & fg02
+     switch da_wrfvar.exe between stage1 & stage2
+     amend namelist.input for appropriate stage
+     interpolate low resolution incremental to high resolution 
+
+This wrapper script supposes these are done
+ 
+1) EVERYTHING IS OK FOR A STANDARD 4DVAR RUN under the run direcotry, 
+such as be.dat, namelist.input, *.tbl, fg, fg02, wrfbdy_d01, da_wrfvar.exe, 
+da_update_bc, ob*, etc. 
+
+2) Environment variables 'MULTI_INC_TOOLS' points to the location of these
+tools
+
+da_bdy.exe
+da_bilin.exe
+da_thin.exe
+
+3) Environment variables 'RUN_CMD' is already set to specific job submit command 
+instead of the default "mpirun -np 16 " 
+
+4) namelist.input is already for a standard 4DVAR RUN (in high resolution)
+
+If everything is ready to go, just link/copy the wrapper script to the run 
+directory, call this wrapper script instead of da_wrfvar.exe for the 
+Multi-incremental 4DVAR run. 
+
+6. Platform
+
+All the commands involved by this script are GNU/Linux commands on CentOS box. 
+If involved this script other than CentOS, commands may not run as your expect, 
+double check it before using.

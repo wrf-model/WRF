@@ -50,14 +50,14 @@ subroutine da_transform_vtox_inv(grid, cv_size, xbx, be, ep, cv, vv, vp)
       vv % v3(its:ite,jts:jte,kts:kte) = vp % v3(its:ite,jts:jte,kts:kte)
       vv % v4(its:ite,jts:jte,kts:kte) = vp % v4(its:ite,jts:jte,kts:kte)
       vv % v5(its:ite,jts:jte,kts:kte) = vp % v5(its:ite,jts:jte,kts:kte)
-#ifdef CLOUD_CV
-      vv % v6(its:ite,jts:jte,kts:kte) = vp % v6(its:ite,jts:jte,kts:kte)
-      vv % v7(its:ite,jts:jte,kts:kte) = vp % v7(its:ite,jts:jte,kts:kte)
-      vv % v8(its:ite,jts:jte,kts:kte) = vp % v8(its:ite,jts:jte,kts:kte)
-      vv % v9(its:ite,jts:jte,kts:kte) = vp % v9(its:ite,jts:jte,kts:kte)
-      vv % v10(its:ite,jts:jte,kts:kte) = vp % v10(its:ite,jts:jte,kts:kte)
-      vv % v11(its:ite,jts:jte,kts:kte) = vp % v11(its:ite,jts:jte,kts:kte)
-#endif
+      if ( cloud_cv_options >= 2 ) then 
+        vv % v6(its:ite,jts:jte,kts:kte) = vp % v6(its:ite,jts:jte,kts:kte)
+        vv % v7(its:ite,jts:jte,kts:kte) = vp % v7(its:ite,jts:jte,kts:kte)
+        vv % v8(its:ite,jts:jte,kts:kte) = vp % v8(its:ite,jts:jte,kts:kte)
+        vv % v9(its:ite,jts:jte,kts:kte) = vp % v9(its:ite,jts:jte,kts:kte)
+        vv % v10(its:ite,jts:jte,kts:kte) = vp % v10(its:ite,jts:jte,kts:kte)
+      end if
+      if ( use_cv_w ) vv % v11(its:ite,jts:jte,kts:kte) = vp % v11(its:ite,jts:jte,kts:kte)
       if (be % ne > 0) then
 !        vv % alpha(its:ite,jts:jte,kts:kte,1:be%ne) = vp%alpha(its:ite,jts:jte,kts:kte,1:be%ne)
          vv % alpha(its_int:ite_int,jts_int:jte_int,kts_int:kte_int,1:be%ne) =  &

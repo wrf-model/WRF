@@ -46,6 +46,7 @@
 
    real, allocatable :: grid_box_area(:,:), mapfac(:,:)
    real, allocatable :: v1(:,:,:),v2(:,:,:),v3(:,:,:),v4(:,:,:),v5(:,:,:)
+   real, allocatable :: v6(:,:,:),v7(:,:,:),v8(:,:,:),v9(:,:,:),v10(:,:,:),v11(:,:,:)
    character (len=10)    :: variable_name
 
    integer :: iwin, num_subtwindow
@@ -608,8 +609,18 @@
            allocate( v3(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
            allocate( v4(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
            allocate( v5(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+           if ( cloud_cv_options >= 2 ) then
+             allocate( v6(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+             allocate( v7(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+             allocate( v8(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+             allocate( v9(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+             allocate( v10(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+           end if
+           if ( use_cv_w ) allocate( v11(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
 
            read(vp_unit) v1, v2, v3, v4, v5
+           if ( cloud_cv_options >= 2 ) read(vp_unit) v6, v7, v8, v9, v10
+           if ( use_cv_w ) read(vp_unit) v11
 
            if ( use_interpolate_cvt ) then
              grid%vv%v1(ips:ipe,jps:jpe,kps:kpe) = v1(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
@@ -617,6 +628,16 @@
              grid%vv%v3(ips:ipe,jps:jpe,kps:kpe) = v3(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
              grid%vv%v4(ips:ipe,jps:jpe,kps:kpe) = v4(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
              grid%vv%v5(ips:ipe,jps:jpe,kps:kpe) = v5(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             if ( cloud_cv_options >= 2 ) then
+               grid%vv%v6(ips:ipe,jps:jpe,kps:kpe) = v6(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vv%v7(ips:ipe,jps:jpe,kps:kpe) = v7(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vv%v8(ips:ipe,jps:jpe,kps:kpe) = v8(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vv%v9(ips:ipe,jps:jpe,kps:kpe) = v9(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vv%v10(ips:ipe,jps:jpe,kps:kpe) = v10(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             end if
+             if ( use_cv_w ) then
+               grid%vv%v11(ips:ipe,jps:jpe,kps:kpe) = v11(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             end if
              call da_vv_to_cv( grid%vv, grid%xp, be%cv_mz, be%ncv_mz, cv_size, cvt ) 
            elseif ( use_inverse_squarerootb ) then
              grid%vp%v1(ips:ipe,jps:jpe,kps:kpe) = v1(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
@@ -624,6 +645,16 @@
              grid%vp%v3(ips:ipe,jps:jpe,kps:kpe) = v3(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
              grid%vp%v4(ips:ipe,jps:jpe,kps:kpe) = v4(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
              grid%vp%v5(ips:ipe,jps:jpe,kps:kpe) = v5(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             if ( cloud_cv_options >= 2 ) then
+               grid%vp%v6(ips:ipe,jps:jpe,kps:kpe) = v6(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vp%v7(ips:ipe,jps:jpe,kps:kpe) = v7(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vp%v8(ips:ipe,jps:jpe,kps:kpe) = v8(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vp%v9(ips:ipe,jps:jpe,kps:kpe) = v9(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vp%v10(ips:ipe,jps:jpe,kps:kpe) = v10(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             end if
+             if ( use_cv_w ) then ! vertical stagging +1?
+               grid%vp%v11(ips:ipe,jps:jpe,kps:kpe) = v11(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             end if
              !call da_write_vp(grid,grid%vp,'vp_input.global ') ! to verify correctness
              print '(/10X,"===> Use inverse transform of square-root B for outer-loop=",i2)', it
              if ( cv_options == 3 ) then
@@ -639,6 +670,14 @@
            deallocate( v3 )
            deallocate( v4 )
            deallocate( v5 )
+           if ( cloud_cv_options >= 2 ) then
+             deallocate( v6 )
+             deallocate( v7 )
+             deallocate( v8 )
+             deallocate( v9 )
+             deallocate( v10 )
+           end if
+           if ( use_cv_w ) deallocate( v11 )
 
            close(vp_unit)
            call da_free_unit(vp_unit)

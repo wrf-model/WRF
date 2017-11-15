@@ -2170,11 +2170,8 @@ contains
 !      real(kind=rb) :: ql(ncol, nlay)                ! liq water (specific humidity)
 
 
-! Return if clear sky; or stop if icld out of range
+! Return if clear sky
       if (icld.eq.0) return
-      if (icld.lt.0.or.icld.gt.5) then 
-         stop 'MCICA_SUBCOL: INVALID ICLD'
-      endif 
 
 ! NOTE: For GCM mode, permuteseed must be offset between LW and SW by at least the number of subcolumns
 
@@ -2374,6 +2371,7 @@ contains
 
 ! Pass input cloud overlap setting to local variable
       overlap = icld
+      print*, "In module_ra_rrtmg_lw.F, activating RRTMG cloud overlap option: ",icld
 
 ! Ensure that cloud fractions are in bounds 
       do ilev = 1, nlay
@@ -10715,6 +10713,8 @@ contains
                                                       !    1: Random
                                                       !    2: Maximum/random
                                                       !    3: Maximum
+                                                      !    4: Exponential
+                                                      !    5: Exponential/random
       real(kind=rb), intent(in) :: play(:,:)          ! Layer pressures (hPa, mb)
                                                       !    Dimensions: (ncol,nlay)
       real(kind=rb), intent(in) :: plev(:,:)          ! Interface pressures (hPa, mb)
@@ -11458,6 +11458,7 @@ CONTAINS
                        p8w, p3d, pi3d,                            &
                        dz8w, tsk, t3d, t8w, rho3d, r, g,          &
                        icloud, warm_rain, cldfra3d,               &
+                       cldovrlp,                                  & ! J. Henderson AER: cldovrlp namelist value
                        lradius,iradius,                           & 
                        is_cammgmp_used,                           & 
                        f_ice_phy, f_rain_phy,                     &
@@ -11633,6 +11634,7 @@ CONTAINS
     integer ::                                              ncol, &
                                                             nlay, &
                                                             icld, &
+                                                        cldovrlp, & ! J. Henderson AER
                                                          inflglw, &
                                                         iceflglw, &
                                                         liqflglw
@@ -12044,13 +12046,14 @@ CONTAINS
 !         nlay = (kte - kts + 1) + 1
 ! Edited for top of model adjustment (nlayers = kte + 1).  
 ! Steven Cavallo, December 2010
-          nlay = nlayers ! Keep these indices the same
+         nlay = nlayers ! Keep these indices the same
 
 ! Select cloud overlap assumption (1 = random, 2 = maximum-random, 3 = maximum, 4 = exponential, 5 = exponential-random
+         icld=cldovrlp ! J. Henderson AER assign namelist variable cldovrlp to existing icld
 ! mji - Maximum-random cloud overlap
 !         icld = 2
 ! mji - Exponential cloud overlap
-         icld = 4
+!         icld = 4
 ! mji - Exponential-random cloud overlap
 !         icld = 5
 ! Select cloud liquid and ice optics parameterization options

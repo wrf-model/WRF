@@ -1635,6 +1635,17 @@
 
 
 !-----------------------------------------------------------------------
+!  Ensure that RRTMG cldovrlp namelist value lies between 1 and 5 
+!  J. Henderson AER
+!-----------------------------------------------------------------------
+
+     IF ( model_config_rec%cldovrlp .lt. 1 .OR. model_config_rec%cldovrlp .gt. 5) THEN
+         wrf_err_message = '--- ERROR: cldovrlp value must be between 1 and 5; resetting cldovrlp to 2: Maximum-Random overlap'
+         CALL wrf_message( wrf_err_message )
+         model_config_rec%cldovrlp=2
+     END IF
+
+!-----------------------------------------------------------------------
 !  MUST BE AFTER ALL OF THE PHYSICS CHECKS.
 !-----------------------------------------------------------------------
 

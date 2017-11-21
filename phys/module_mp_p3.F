@@ -22,8 +22,8 @@
 !    Jason Milbrandt (jason.milbrandt@canada.ca)                                           !
 !__________________________________________________________________________________________!
 !                                                                                          !
-! Version:       2.8.2.2                                                                   !
-! Last updated:  2017-11-03                                                                !
+! Version:       2.8.2.3                                                                   !
+! Last updated:  2017-11-15                                                                !
 !__________________________________________________________________________________________!
 
  MODULE MODULE_MP_P3
@@ -2221,15 +2221,15 @@ END SUBROUTINE P3_INIT
      ! note this formulation for dT/dt is not exact since pressure
      ! may change and t and t_old were both diagnosed using the current pressure
      ! errors from this assumption are small
-       dum = -cp/g*(t(i,k)-t_old(i,k))/dt
+       dum = -cp/g*(t(i,k)-t_old(i,k))*odt
 
 !       dum = qvs(i,k)*rho(i,k)*g*uzpl(i,k)/max(1.e-3,(pres(i,k)-polysvp1(t(i,k),0)))
 
        if (t(i,k).lt.273.15) then
-          aaa = (qv(i,k)-qv_old(i,k))/dt - dqsdt*(-dum*g*inv_cp)-(qvs(i,k)-dumqvi)*     &
+          aaa = (qv(i,k)-qv_old(i,k))*odt - dqsdt*(-dum*g*inv_cp)-(qvs(i,k)-dumqvi)*     &
                 (1.+xxls(i,k)*inv_cp*dqsdt)*oabi*epsi_tot
        else
-          aaa = (qv(i,k)-qv_old(i,k))/dt - dqsdt*(-dum*g*inv_cp)
+          aaa = (qv(i,k)-qv_old(i,k))*odt - dqsdt*(-dum*g*inv_cp)
        endif
 
        xx  = max(1.e-20,xx)   ! set lower bound on xx to prevent division by zero
@@ -3752,13 +3752,13 @@ SUBROUTINE access_lookup_table_coll(dumjj,dumii,dumj,dumi,index,dum1,dum3,      
 
 !------------------------------------------------------------------------------------------!
 
- SUBROUTINE access_lookup_table_colli(dumjjc,dumiic,dumic,dumjj,dumii,dumj,dumi,     &
+ SUBROUTINE access_lookup_table_colli(dumjjc,dumiic,dumic,dumjj,dumii,dumj,dumi,      &
                                      index,dum1c,dum4c,dum5c,dum1,dum4,dum5,proc)
 
  implicit none
 
- real    :: dum1,dum3,dum4,dum5,dum1c,dum4c,dum5c,proc,dproc1,dproc2,iproc1,iproc2,  &
-            gproc1,gproc2,rproc1,rproc2,tmp1,tmp2,dproc11,dproc12
+ real    :: dum1,dum4,dum5,dum1c,dum4c,dum5c,proc,dproc1,dproc2,iproc1,iproc2,gproc1, &
+            gproc2,rproc1,rproc2,tmp1,tmp2,dproc11,dproc12
  integer :: dumjj,dumii,dumj,dumi,index,dumjjc,dumiic,dumic
 
 
@@ -3782,7 +3782,6 @@ SUBROUTINE access_lookup_table_coll(dumjj,dumii,dumj,dumi,index,dum1,dum3,      
              (itabcolli1(dumic+1,dumiic,dumjjc,dumi+1,dumii,dumjj)-                   &
              itabcolli1(dumic,dumiic,dumjjc,dumi+1,dumii,dumjj))
 
-!   dproc1  = dproc11+(dum1-real(dumi))*(dproc12-dproc11)
    iproc1  = dproc11+(dum1-real(dumi))*(dproc12-dproc11)
 
 
@@ -3796,7 +3795,7 @@ SUBROUTINE access_lookup_table_coll(dumjj,dumii,dumj,dumi,index,dum1,dum3,      
              (itabcolli1(dumic+1,dumiic,dumjjc,dumi+1,dumii+1,dumjj)-                 &
              itabcolli1(dumic,dumiic,dumjjc,dumi+1,dumii+1,dumjj))
 
-   iproc1  = dproc11+(dum1-real(dumi))*(dproc12-dproc11)
+   iproc2  = dproc11+(dum1-real(dumi))*(dproc12-dproc11)
 
    tmp1    = iproc1+(dum4-real(dumii))*(iproc2-iproc1)
 

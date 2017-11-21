@@ -9195,7 +9195,6 @@
 ! icld = 3, with clouds using maximum cloud overlap (McICA only)
 ! icld = 4, with clouds using exponential cloud overlap (McICA only)
 ! icld = 5, with clouds using exponential/random cloud overlap (McICA only)
-      if (icld.lt.0.or.icld.gt.5) icld = 2
 
 ! Set iaer to select aerosol option
 ! iaer = 0, no aerosols
@@ -10463,7 +10462,6 @@ CONTAINS
 
 ! Select cloud overlap assumption (1 = random, 2 = maximum-random, 3 = maximum, 4 = exponential, 5 = exponential-random
          icld=cldovrlp ! J. Henderson AER assign namelist variable cldovrlp to existing icld
-         print*, "In module_ra_rrtmg_sw.F, activating RRTMG cloud overlap option: ",icld
 
 ! Select cloud liquid and ice optics parameterization options
 ! For passing in cloud optical properties directly:

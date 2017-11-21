@@ -1640,9 +1640,9 @@
 !-----------------------------------------------------------------------
 
      IF ( model_config_rec%cldovrlp .lt. 1 .OR. model_config_rec%cldovrlp .gt. 5) THEN
-         wrf_err_message = '--- ERROR: cldovrlp value must be between 1 and 5; resetting cldovrlp to 2: Maximum-Random overlap'
+         wrf_err_message = '--- ERROR: cldovrlp value must be between 1 and 5'
          CALL wrf_message( wrf_err_message )
-         model_config_rec%cldovrlp=2
+         count_fatal_error = count_fatal_error + 1
      END IF
 
 !-----------------------------------------------------------------------

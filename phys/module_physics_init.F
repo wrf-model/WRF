@@ -107,7 +107,7 @@ CONTAINS
                          SMOISEQ  ,SMCWTDXY ,RECHXY, DEEPRECHXY, AREAXY,  & ! Optional Noah-MP 
                          WTDDT , STEPWTD ,QRFSXY ,QSPRINGSXY ,QSLATXY,    & ! Optional Noah-MP
                          FDEPTHXY, RIVERBEDXY, EQZWT, RIVERCONDXY, PEXPXY, & ! Optional Noah-MP
-                         rechclim  ,rivermask ,nonriverxy,                 & ! Optional Noah-MP
+                         rechclim  ,                                       & ! Optional Noah-MP
                          msftx, msfty,                           &           ! Optional Noah-MP
 !                        num_roof_layers,num_wall_layers,        & !Optional urban
 !                        num_road_layers,                        & !Optional urban
@@ -482,8 +482,6 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: RIVERCONDXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: PEXPXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: rechclim
-   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: rivermask
-   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: nonriverxy
    INTEGER, OPTIONAL, DIMENSION(ims:ime,  jms:jme), INTENT(OUT) :: CROPCAT
    REAL,    OPTIONAL, DIMENSION(ims:ime,5,jms:jme), INTENT(IN ) :: CROPTYPE
 
@@ -1140,7 +1138,7 @@ integer myproc
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
                 WTDDT, STEPWTD, QRFSXY ,QSPRINGSXY ,QSLATXY,   &
                 FDEPTHXY, RIVERBEDXY, EQZWT, RIVERCONDXY, PEXPXY, & 
-                rechclim  ,rivermask ,nonriverxy,                 &
+                rechclim  ,                                     &
                 ISICE,                                 &
                 T2MVXY,T2MBXY,CHSTARXY ,                        &
                 allowed_to_read , iopt_run ,                    &
@@ -2053,7 +2051,7 @@ integer myproc
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
                 WTDDT, STEPWTD,QRFSXY ,QSPRINGSXY ,QSLATXY,     &
                 FDEPTHXY, RIVERBEDXY, EQZWT, RIVERCONDXY, PEXPXY, & 
-                rechclim  ,rivermask ,nonriverxy,                 &
+                rechclim  ,                                     &
                 ISICE,                                 &
                 T2MVXY, T2MBXY ,CHSTARXY,                       &
                 allowed_to_read, iopt_run ,                     &
@@ -2350,8 +2348,6 @@ integer myproc
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: RIVERCONDXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: PEXPXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: rechclim
-   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: rivermask
-   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: nonriverxy
    INTEGER, OPTIONAL, DIMENSION(ims:ime,  jms:jme), INTENT(OUT) :: CROPCAT
    REAL,    OPTIONAL, DIMENSION(ims:ime,5,jms:jme), INTENT(IN ) :: CROPTYPE
    INTEGER, OPTIONAL, INTENT(IN)  ::  ISICE
@@ -2847,7 +2843,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      ,smoiseq  ,smcwtdxy ,rechxy   ,deeprechxy, areaxy ,dx, dy, msftx, msfty,&
                      wtddt    ,stepwtd  ,dt  ,qrfsxy ,qspringsxy  ,qslatxy,                  &
                      fdepthxy ,ht       ,riverbedxy ,eqzwt ,rivercondxy ,pexpxy,              &
-                     rechclim  ,rivermask ,nonriverxy                 &
+                     rechclim                  &
 #endif
                      )
 

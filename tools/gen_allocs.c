@@ -44,7 +44,7 @@ gen_alloc1 ( char * dirname )
   get_count_for_alloc( &Domain, &numguys , stats) ;  /* howmany deez guys? */
   fprintf(stderr,"Registry INFO variable counts: 0d %d 1d %d 2d %d 3d %d\n",stats[0],stats[1],stats[2],stats[3]) ; 
   fprintf(fp,"#if 1\n") ;
-  gen_alloc2( fp , "grid%", &Domain, &startpiece , &iguy, &fraction, numguys, FRAC, 1 ) ;
+  gen_alloc2( fp , "grid%", NULL, &Domain, &startpiece , &iguy, &fraction, numguys, FRAC, 1 ) ;
   fprintf(fp,"#endif\n") ;
   close_the_file( fp ) ;
   return(0) ;
@@ -77,13 +77,14 @@ int
 nolistthese( char * ) ;
 
 int
-gen_alloc2 ( FILE * fp , char * structname , node_t * node, int *j, int *iguy, int *fraction, int numguys, int frac, int sw ) /* 1 = allocate, 2 = just count */
+gen_alloc2 ( FILE * fp , char * structname , char * structname2 , node_t * node, int *j, int *iguy, int *fraction, int numguys, int frac, int sw ) /* 1 = allocate, 2 = just count */
 {
   node_t * p ;
   int tag ;
   char post[NAMELEN], post_for_count[NAMELEN] ;
   char fname[NAMELEN], dname[NAMELEN], dname_tmp[NAMELEN] ;
   char x[NAMELEN] ;
+  char x2[NAMELEN], fname2[NAMELEN] ;
   char dimname[3][NAMELEN] ;
   char tchar ;
   unsigned int *io_mask ;
@@ -217,10 +218,15 @@ if ( tag == 1 )
         } else {
           strcpy(fname,field_name(t4,p,(p->ntl>1)?tag:0)) ;
         }
+        if ( structname2 != NULL ) {
+          sprintf(fname2,"%s%s",structname2,fname) ;
+        } else {
+          strcpy(fname2,fname) ;
+        }
 
 /* check for errors in memory allocation */
 
-       if ( ! p->boundary_array ) { fprintf(fp,"IF(okay_to_alloc.AND.in_use_for_config(id,'%s')",fname) ; } 
+       if ( ! p->boundary_array ) { fprintf(fp,"IF(okay_to_alloc.AND.in_use_for_config(id,'%s')",fname2) ; }
        else                       { fprintf(fp,"IF(.TRUE.") ; }
 
        if ( ! ( p->node_kind & FOURD ) && sw == 1 &&
@@ -475,7 +481,8 @@ if ( tag == 1 )
       if ( p->type->type_type == DERIVED )
       {
         sprintf(x,"%s%s%%",structname,p->name ) ;
-        gen_alloc2(fp,x, p->type, j, iguy, fraction, numguys, 1, sw) ;
+        sprintf(x2,"%s%%",p->name ) ;
+        gen_alloc2(fp,x, x2, p->type, j, iguy, fraction, numguys, 1, sw) ;
       }
     }
   } /* fraction loop */
@@ -502,7 +509,7 @@ gen_alloc_count1 ( char * dirname )
   else                       { sprintf(fname,"%s",fn) ; }
   if ((fp = fopen( fname , "w" )) == NULL ) return(1) ;
   print_warning(fp,fname) ;
-  gen_alloc2( fp , "grid%", &Domain, 0 ) ;
+  gen_alloc2( fp , "grid%", NULL, &Domain, 0 ) ;
   close_the_file( fp ) ;
   return(0) ;
 }

@@ -205,6 +205,7 @@ real :: cf1_c,cf2_c,cf3_c,cfn_c,cfn1_c
 #endif
 
    CALL check_nml_consistency
+   CALL setup_physics_suite
    CALL set_physics_rconfigs
 
    !  If we are running ndown, and that is WHERE we are now, make sure that we account

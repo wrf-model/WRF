@@ -1397,9 +1397,9 @@ CONTAINS
              CALL wrf_debug (100, 'CALL gfdllw')
 
              IF ( PRESENT(F_QV) .AND. PRESENT(F_QC) .AND.                     &
-                  PRESENT(F_QS) .AND. PRESENT(qs)   .AND.                     &
+                  PRESENT(F_QI) .AND. (PRESENT(qi) .OR. PRESENT(qs))  .AND.                     &
                   PRESENT(qv)   .AND. PRESENT(qc)   ) THEN
-               IF ( F_QV .AND. F_QC .AND. F_QS) THEN
+               IF ( F_QV .AND. F_QC .AND. (F_QI .OR. F_QS)) THEN
                  gfdl_lw  = .true.
                  CALL ETARA(                                        &
                   DT=dt,XLAND=xland                                 &
@@ -2075,9 +2075,9 @@ CONTAINS
              CALL wrf_debug (100, 'CALL gfdlsw')
 
              IF ( PRESENT(F_QV) .AND. PRESENT(F_QC) .AND.                     &
-                  PRESENT(F_QS) .AND. PRESENT(qs)   .AND.                     &
-                  PRESENT(qv)   .AND. PRESENT(qc) ) THEN
-               IF ( F_QV .AND. F_QC .AND. F_QS ) THEN
+                  PRESENT(F_QI) .AND. (PRESENT(qi) .OR. PRESENT(qs))  .AND.                     &
+                  PRESENT(qv)   .AND. PRESENT(qc)   ) THEN
+               IF ( F_QV .AND. F_QC .AND. (F_QI .OR. F_QS)) THEN
                  gfdl_sw = .true.
                  CALL ETARA(                                        &
                   DT=dt,XLAND=xland                                 &
@@ -2763,12 +2763,12 @@ CONTAINS
          do i=its,ite
             ! sza interpolation of surface fluxes
             if ((coszen_ref(i,j).gt.coszen_min) .and. (coszen_loc(i,j).gt.coszen_min)) then
-               if ((bb(i,j).eq.-0.5).or.(bb(i,j).eq.2.5)) then
+               if ((bb(i,j).eq.-0.5).or.(bb(i,j).eq.2.5).or.(bb(i,j).eq.0.0)) then
                   swddir(i,j) =(coszen_loc(i,j)/coszen_ref(i,j))*swddir_ref(i,j)
                else
                   swddir(i,j) =Bx(i,j)*(coszen_loc(i,j)**bb(i,j))
                end if
-               if ((gg(i,j).eq.-0.5).or.(gg(i,j).eq.2.5)) then
+               if ((gg(i,j).eq.-0.5).or.(gg(i,j).eq.2.5).or.(gg(i,j).eq.0.0)) then
                   swdown(i,j) =(coszen_loc(i,j)/coszen_ref(i,j))*swdown_ref(i,j)
                else
                   swdown(i,j) =Gx(i,j)*(coszen_loc(i,j)**gg(i,j))

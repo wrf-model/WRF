@@ -714,7 +714,7 @@ CONTAINS
          TAH    = undefined_value
          FWET   = undefined_value 
          WSLAKE = undefined_value 
-         ZWT    = undefined_value 
+!         ZWT    = undefined_value 
          WA     = undefined_value 
          WT     = undefined_value 
          LFMASS = undefined_value 
@@ -1164,7 +1164,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
        smoiseq  ,smcwtdxy ,rechxy   ,deeprechxy, areaxy, dx, dy, msftx, msfty,&     ! Optional groundwater
        wtddt    ,stepwtd  ,dt       ,qrfsxy     ,qspringsxy  , qslatxy    ,  &      ! Optional groundwater
        fdepthxy ,ht     ,riverbedxy ,eqzwt     ,rivercondxy ,pexpxy       ,  &      ! Optional groundwater
-       rechclim  ,rivermask ,nonriverxy                                        )    ! Optional groundwater
+       rechclim                                                             )    ! Optional groundwater
 
   USE NOAHMP_TABLES
 
@@ -1258,8 +1258,6 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT), OPTIONAL :: RIVERCONDXY !river conductance
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT), OPTIONAL :: PEXPXY      !factor for river conductance
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) , OPTIONAL :: rechclim
-    REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) , OPTIONAL :: rivermask
-    REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) , OPTIONAL :: nonriverxy
 
     INTEGER,  INTENT(OUT) , OPTIONAL :: STEPWTD
     REAL, INTENT(IN) , OPTIONAL :: DT, WTDDT
@@ -1373,7 +1371,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
 	      
               BEXP   =   BEXP_TABLE(ISLTYP(I,J))
               SMCMAX = SMCMAX_TABLE(ISLTYP(I,J))
-              PSISAT = PSISAT_TABLE(ISLTYP(I,J))
+              PSISAT = -1.0*PSISAT_TABLE(ISLTYP(I,J))
 
               DO NS=1, NSOIL
 	        IF ( SMOIS(I,NS,J) > SMCMAX )  SMOIS(I,NS,J) = SMCMAX
@@ -1543,9 +1541,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
             PRESENT(eqzwt)       .AND. &
             PRESENT(rivercondxy) .AND. &
             PRESENT(pexpxy)      .AND. &
-            PRESENT(rechclim)    .AND. &
-            PRESENT(rivermask)   .AND. &
-            PRESENT(nonriverxy)    ) THEN
+            PRESENT(rechclim)    ) THEN
 
              STEPWTD = nint(WTDDT*60./DT)
              STEPWTD = max(STEPWTD,1)
@@ -1554,7 +1550,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
       &       nsoil, zsoil , dzs  ,isltyp, ivgtyp,wtddt , &
       &       fdepthxy, ht, riverbedxy, eqzwt, rivercondxy, pexpxy , areaxy, zwtxy,   &
       &       smois,sh2o, smoiseq, smcwtdxy, deeprechxy, rechxy, qslatxy, qrfsxy, qspringsxy, &
-      &       rechclim  ,rivermask ,nonriverxy,             &
+      &       rechclim  ,                                   &
       &       ids,ide, jds,jde, kds,kde,                    &
       &       ims,ime, jms,jme, kms,kme,                    &
       &       its,ite, jts,jte, kts,kte                     )
@@ -1678,7 +1674,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
             &            FDEPTH, TOPO, RIVERBED, EQWTD, RIVERCOND, PEXP , AREA ,WTD ,  &
             &            SMOIS,SH2O, SMOISEQ, SMCWTDXY, DEEPRECHXY, RECHXY ,  &
             &            QSLATXY, QRFSXY, QSPRINGSXY,                  &
-            &            rechclim  ,rivermask ,nonriverxy,             &
+            &            rechclim  ,                                   &
             &            ids,ide, jds,jde, kds,kde,                    &
             &            ims,ime, jms,jme, kms,kme,                    &
             &            its,ite, jts,jte, kts,kte                     )
@@ -1700,7 +1696,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
     REAL,    INTENT(IN), DIMENSION(1:NSOIL)          :: ZSOIL,DZS
     INTEGER, INTENT(IN), DIMENSION(ims:ime, jms:jme) :: ISLTYP, IVGTYP
     REAL,    INTENT(IN), DIMENSION(ims:ime, jms:jme) :: FDEPTH, TOPO , AREA
-    REAL,    INTENT(IN), DIMENSION(ims:ime, jms:jme) :: rechclim  ,rivermask ,nonriverxy
+    REAL,    INTENT(IN), DIMENSION(ims:ime, jms:jme) :: rechclim 
     REAL,    INTENT(OUT), DIMENSION(ims:ime, jms:jme) :: RIVERCOND
     REAL,    INTENT(INOUT), DIMENSION(ims:ime, jms:jme) :: WTD, RIVERBED, EQWTD, PEXP
     REAL,     DIMENSION( ims:ime , 1:nsoil, jms:jme ), &

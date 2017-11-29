@@ -105,7 +105,9 @@ CONTAINS
      &          ,XTIME,OM_TINI,OM_SINI,id,omdt                        &
 ! CLM variables
 !sw++
-     &          ,bio_emiss_opt,e_bio, ne_area &
+#if(WRF_CHEM == 1 )
+     &          ,bio_emiss_opt,e_bio, ne_area                         &
+#endif
 !sw--
      &          ,numc,nump,sabv,sabg,lwup,snl,history_interval &
      &          ,snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
@@ -325,8 +327,10 @@ CONTAINS
                                        ,OMLSCHEME                 &
                                        ,PWP3DSCHEME               &
 !sw++
+#if( WRF_CHEM == 1)
                                        ,num_drydep_flux           &
                                        ,num_wetdep_flux           &
+#endif
                                        ,num_mss_bcphi
 !sw--
 #else
@@ -1081,8 +1085,11 @@ CONTAINS
 
    INTEGER, INTENT(IN) :: MAXPATCH, inest
 !sw++
+#if (WRF_CHEM == 1 )
    INTEGER, INTENT(IN) :: bio_emiss_opt
    INTEGER, INTENT(IN) :: ne_area
+#endif
+
 !sw--
 
   integer, optional,  dimension(ims:ime,jms:jme ),intent(inout) :: numc,nump
@@ -1129,8 +1136,10 @@ CONTAINS
                 Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,SWUPsubgrid ,&
                 LHsoi,LHveg,LHtran
 !sw++
+#if (WRF_CHEM == 1)
   real,    optional,  dimension(ims:ime,jms:jme,1:ne_area ),intent(inout) ::  &
                 e_bio
+#endif
 !sw--
 #ifdef CN
 !ylu 05/31/2011
@@ -1175,9 +1184,10 @@ CONTAINS
                 snow_frac2d,snowlayer2d,snowrds2d1,snowrds2d2,snowrds2d3,snowrds2d4,snowrds2d5
   real,optional,dimension(ims:ime,jms:jme),intent(inout) :: &
                 sfc_frc_aer,sfc_frc_aer_snow,sfc_frc_bc,sfc_frc_bc_snow,sfc_frc_dst,sfc_frc_dst_snow
-
+#if( WRF_CHEM == 1)
   REAL,DIMENSION(ims:ime,jms:jme,4,num_drydep_flux), OPTIONAL ,       &
          INTENT(IN ) ::  drydep_flux,wetdep_flux   !czhao 
+#endif
 
 ! Variables for TEMF surface layer
    REAL,OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(INOUT) :: te_temf
@@ -3620,7 +3630,10 @@ CONTAINS
                 u_phy,v_phy,rho,                                &
                 shdmin,shdmax,                                  &
                 acsnom,acsnow,                                  &
-                dx,xlat,xlong,ht,bio_emiss_opt,ne_area,e_bio,   &
+                dx,xlat,xlong,ht,                               &
+#if (WRF_CHEM == 1)
+                bio_emiss_opt,ne_area,e_bio,                    &
+#endif
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte, &

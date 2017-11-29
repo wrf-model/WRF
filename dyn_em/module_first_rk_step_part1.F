@@ -448,11 +448,13 @@ BENCH_START(surf_driver_tim)
 !sw++
 #if( WRF_USE_CLM == 1)
       if(config_flags%chem_opt > 0) then !czhao +++++
+#if (WRF_CHEM == 1)
         if( config_flags%bio_emiss_opt == MEGAN2_CLM ) then
           do_bioe = grid%itimestep == 1 .or. mod( grid%itimestep,grid%stepbioe ) == 0
         else
           do_bioe = .false.
         endif
+#endif
       endif !czhao-----
 #else
       do_bioe = .false.
@@ -487,7 +489,9 @@ BENCH_START(surf_driver_tim)
      &        ,TICE2TSK_IF2COLD=config_flags%tice2tsk_if2cold             &
      &        ,IFNDALBSI=grid%ifndalbsi, IFNDICEDEPTH=grid%ifndicedepth   &
 !sw++
+#if (WRF_CHEM == 1)
               ,BIO_EMISS_OPT=grid%bio_emiss_opt,NE_AREA=grid%ne_area,E_BIO=grid%e_bio &
+#endif
               ,IFNDSNOWSI=grid%ifndsnowsi, DO_BIOE=do_bioe                &
 !sw--
      &        ,ISLTYP=grid%isltyp      ,ITIMESTEP=grid%itimestep, JULIAN_IN=grid%julian                  &

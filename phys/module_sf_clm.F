@@ -5985,7 +5985,11 @@ contains
 ! !IROUTINE: VOCEmission
 !
 ! !INTERFACE:
-  subroutine VOCEmission (lbp, ubp, ilx, jlx, rho, mbio_emis, num_soilp, filter_soilp )
+  subroutine VOCEmission (lbp, ubp, ilx, jlx, rho, &
+#if( WRF_CHEM == 1)
+       mbio_emis,                                  &
+#endif
+       num_soilp, filter_soilp )
 !
 ! ! NEW DESCRIPTION-updated by Chun Zhao from CLM4.0 in CESM
 ! Volatile organic compound emission
@@ -6038,7 +6042,9 @@ contains
     integer, intent(in) :: num_soilp                   ! number of columns in soil pft filter
     integer, intent(in) :: filter_soilp(num_soilp)     ! pft filter for soil
     real(r8), intent(in)    :: rho
+#if( WRF_CHEM == 1)
     real(r8), intent(inout) :: mbio_emis(:)
+#endif
 !
 ! !CALLED FROM:
 !
@@ -6438,11 +6444,13 @@ fp_loop_2 : &
 ! sum up the pfts for each wrf species with megan bio emissions
 !-----------------------------------------------------------------------
     !print*,'jdf 3',shr_megan_mechcomps_n
+#if( WRF_CHEM == 1)
     do imech = 1,shr_megan_mechcomps_n
       ii = shr_megan_mechcomps(imech)%index
       mbio_emis(ii) = real( sum( vocflx(:,imech) ),kind=r4 )
       !print*,'jdf 3',imech,ii,mbio_emis(ii)
     end do
+#endif
 
 
   end subroutine VOCEmission
@@ -57492,14 +57500,19 @@ end module initializeMod
                   ,mss_cnc_bcphi_buf,mss_cnc_bcpho_buf,mss_cnc_ocphi_buf,mss_cnc_ocpho_buf,mss_cnc_dst1_buf,mss_cnc_dst2_buf,mss_cnc_dst3_buf,mss_cnc_dst4_buf    &
                   ,albxy_1d,albxy_aer_1d,albxy_bc_1d,albxy_dst_1d  &
                   ,snowlayer_1d,snowrds_1d &
+#if( WRF_CHEM == 1)
                   ,drydep_buf,wetdep_buf   &
+#endif
                   ,ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid     &
                   ,Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid       &
                   ,SWUPsubgrid ,LHsoi,LHveg,LHtran,organicxy,efisopxy,gtixy &
                   ,alswnirdir  ,alswnirdif, alswvisdir,alswvisdif     &
                   ,t_veg24, t_veg240, fsun24, fsun240                 &
                   ,fsd24, fsd240, fsi24, fsi240, laip                 &
-                  ,mbio_emis   ,do_bioe, id                           &
+#if( WRF_CHEM == 1)
+                  ,mbio_emis                                          &
+#endif
+                  ,do_bioe, id                                        &
 #ifdef CN
 !CROP and CN restart and outputs
                 ,forc_ndepxy,tlaixy,tsaixy,htopxy,hbotxy  &  
@@ -57551,7 +57564,9 @@ end module initializeMod
   use shr_const_mod, only : SHR_CONST_PI
   use filterMod, only : filters_dealloc
   use clm_varsur      , only :varsur_dealloc
-  USE module_state_description, ONLY : num_drydep_flux,num_wetdep_flux
+#if( WRF_CHEM == 1)
+  USE module_state_description, ONLY : num_drydep_flux
+#endif
 
 
 !
@@ -57759,7 +57774,9 @@ end module initializeMod
    integer :: num_pft_input
    real(r8) :: pct_pft1d(num_pft_input)   !pft -czhao 
    real(r8) :: lai1d   !LAI -czhao 
+#if( WRF_CHEM == 1)
    real(r8), dimension(4,num_drydep_flux) :: drydep_buf,wetdep_buf  !czhao
+#endif
 !czhao
    real(r8) :: watsat1d      !soil porosity for dust emission
    real(r8) :: snowdust_col1d,snowdust_top1d,snowbc_col1d,snowbc_top1d,snow_top1d,snow_frac1d      !aerosol mass in snow (kg/m2)
@@ -57781,7 +57798,9 @@ end module initializeMod
   real(r8)  :: sabg
   real(r8)  :: znt0
   real(r8),intent(out)  :: rhoxy
+#if( WRF_CHEM == 1)
   real(r8),intent(inout)  :: mbio_emis(:)
+#endif
   logical, intent(in)   :: do_bioe
 
   integer   :: nstp
@@ -58096,8 +58115,15 @@ grid_cell_loop : &
 
      call wrf_debug( 300,'clm: Calling Driver' )
      call driver (doalb,ilx,jlx,caldayp1, declinp1, declin, &
-                  rho, mbio_emis, do_bioe, id,  &
-                  drydep_buf,wetdep_buf)
+                  rho,                                      &
+#if( WRF_CHEM == 1)
+                  mbio_emis,                                &
+#endif
+                  do_bioe, id  &
+#if( WRF_CHEM == 1)
+                  ,drydep_buf,wetdep_buf &
+#endif
+                  )
      call wrf_debug( 300,'clm: Driver done' )
 
 !-------------------------------------------------------------------------
@@ -58384,8 +58410,15 @@ grid_cell_loop : &
 !
 ! !INTERFACE:
 subroutine driver (doalb,ilx,jlx,nextsw_cday, declinp1, declin, &
-                   rho, mbio_emis, do_bioe, id, &
-                   drydep_buf,wetdep_buf)
+                   rho,                                         &
+#if( WRF_CHEM == 1)
+                   mbio_emis,                                   &
+#endif
+                   do_bioe, id                                  &
+#if( WRF_CHEM == 1)
+                   ,drydep_buf,wetdep_buf &
+#endif
+                   )
 !
 ! !DESCRIPTION:
 ! This subroutine provides the main CLM driver calling sequence.  Most
@@ -58528,8 +58561,10 @@ subroutine driver (doalb,ilx,jlx,nextsw_cday, declinp1, declin, &
 !  use UrbanMod            , only : UrbanAlbedo, UrbanRadiation, UrbanFluxes
   use SNICARMod           , only : SnowAge_grain
   use aerdepMod           , only : interpMonthlyAerdep
-  USE module_state_description, ONLY : num_drydep_flux,num_wetdep_flux, &
+#if( WRF_CHEM == 1)
+  USE module_state_description, ONLY : num_drydep_flux, &
                                 p_drydep_dust,p_wetdep_dust,p_drydep_bcphi,p_drydep_bcpho,p_wetdep_bcphi,p_drydep_ocphi,p_drydep_ocpho,p_wetdep_ocphi
+#endif
 
 !
 ! !ARGUMENTS:
@@ -58538,8 +58573,11 @@ subroutine driver (doalb,ilx,jlx,nextsw_cday, declinp1, declin, &
   logical , intent(in) :: doalb    !true if time for surface albedo calculation
   logical , intent(in) :: do_bioe  !true if time for megan bio emission calc
   real(r8), intent(in)    :: rho
+
+#if( WRF_CHEM == 1)
   real(r8), intent(inout) :: mbio_emis(:)
   real(r8), dimension(4,num_drydep_flux),intent(in):: drydep_buf,wetdep_buf  !czhao
+#endif
 
 !
 ! !REVISION HISTORY:
@@ -58944,8 +58982,11 @@ subroutine driver (doalb,ilx,jlx,nextsw_cday, declinp1, declin, &
      ! ============================================================================
    if( do_bioe ) then
      call CLMDebug('Begin VOCEmission')
-     call VOCEmission(begp, endp, ilx, jlx, rho, mbio_emis, &  
-                      filter%num_soilp, filter%soilp)   !CLM4  !checked and modified according to CLM4
+     call VOCEmission(begp, endp, ilx, jlx, rho,    &
+#if( WRF_CHEM == 1)
+          mbio_emis,                                &  
+#endif
+          filter%num_soilp, filter%soilp)   !CLM4  !checked and modified according to CLM4
    endif
 !#endif
 
@@ -59233,7 +59274,10 @@ CONTAINS
                    ,sh2o       ,snowh      ,forc_uxy    ,forc_vxy    ,rho       &
                    ,shdmin    &
                    ,shdmax     ,acsnom     ,acsnow      ,dx          ,xlat      &
-                   ,xlong,ht,bio_emiss_opt,ne_area,e_bio                        &   
+                   ,xlong,ht                                                    &
+#if(WRF_CHEM == 1)
+                   ,bio_emiss_opt, ne_area, e_bio                               &   
+#endif
                    ,ids,ide, jds,jde, kds,kde                    &
                    ,ims,ime, jms,jme, kms,kme                    &
                    ,its,ite, jts,jte, kts,kte                    &
@@ -59349,13 +59393,16 @@ CONTAINS
   USE module_sf_noahlsm, only: low_density_residential, high_density_residential, high_intensity_industrial
   USE module_ra_gfdleta,  only: cal_mon_day
   USE module_configure
-  USE module_state_description, ONLY : CAMSWSCHEME,num_drydep_flux,num_wetdep_flux,num_mss_bcphi,  &
+  USE module_state_description, ONLY : CAMSWSCHEME,num_mss_bcphi,  &
                      p_mss_bcphi_s1,p_mss_bcphi_s2,p_mss_bcphi_s3,p_mss_bcphi_s4,p_mss_bcphi_s5,  &
                      p_mss_bcpho_s1,p_mss_bcpho_s2,p_mss_bcpho_s3,p_mss_bcpho_s4,p_mss_bcpho_s5,  &
                      p_mss_dst1_s1,p_mss_dst1_s2,p_mss_dst1_s3,p_mss_dst1_s4,p_mss_dst1_s5,   &
                      p_mss_dst2_s1,p_mss_dst2_s2,p_mss_dst2_s3,p_mss_dst2_s4,p_mss_dst2_s5,   &
                      p_mss_dst3_s1,p_mss_dst3_s2,p_mss_dst3_s3,p_mss_dst3_s4,p_mss_dst3_s5,   &
                      p_mss_dst4_s1,p_mss_dst4_s2,p_mss_dst4_s3,p_mss_dst4_s4,p_mss_dst4_s5
+#if( WRF_CHEM == 1)
+  USE module_state_description, ONLY : num_drydep_flux
+#endif
 
   implicit none
 
@@ -59366,8 +59413,10 @@ CONTAINS
 
   integer,intent(in)  :: num_soil_layers,maxpatch,sf_urban_physics,&
                          ra_sw_physics,history_interval
+#if (WRF_CHEM == 1)
   integer,intent(in)  :: bio_emiss_opt
   integer,intent(in)  :: ne_area
+#endif
   logical,intent(in)  :: do_bioe
   real,dimension(ims:ime,1:num_soil_layers,jms:jme ),intent(inout) ::&
                                                          smois, & ! total soil moisture
@@ -59390,8 +59439,10 @@ CONTAINS
   real,dimension(ims:ime,jms:jme ),intent(in) ::&
                    qgh,chs,chs2
 
+#if (WRF_CHEM == 1)
   real,dimension(ims:ime,jms:jme,1:ne_area),intent(inout) ::&
                    e_bio
+#endif
 
   real(r8) :: efisop_buf(6)
   logical :: found = .false.
@@ -59507,14 +59558,13 @@ CONTAINS
 
   real(r8), dimension(nlcat)  :: landusef_buf
   real(r8), dimension(num_pft_input)  :: pct_pft_input_buf
-
+#if( WRF_CHEM == 1)
   REAL,DIMENSION(ims:ime,jms:jme,4,num_drydep_flux), OPTIONAL ,       &
          INTENT(IN ) ::  drydep_flux,wetdep_flux   !czhao 
+  real(r8),dimension(4,num_drydep_flux) :: drydep_buf,wetdep_buf      !deposition fluxes [kg/m2/s] -czhao
+#endif
 
   real(r8) :: lai_buf      !LAI -czhao
-  real(r8),dimension(4,num_drydep_flux) :: drydep_buf,wetdep_buf      !deposition fluxes [kg/m2/s] -czhao
-
-
   integer  :: nstep   !fchen
   integer  :: i,j,m,inest,k
   real, dimension(ims:ime, kms:kme,jms:jme),intent(in) :: &
@@ -59596,7 +59646,9 @@ CONTAINS
   real(r8) :: prec_buf
   real(r8) :: flwdsxy_buf
   real(r8) :: forc_psrfxy_buf
+#if (WRF_CHEM == 1)
   real(r8) :: mbio_emis(ne_area)
+#endif
 
 !ADD_NEW_VAR
   real(r8) :: forc_ndepxy_buf
@@ -59902,10 +59954,11 @@ CONTAINS
 
 
 !write(6,*) 'at nstep=',nstep,'snowage_drdt0(1,31,8)=',snowage_drdt0(1,31,8)
-
+#if (WRF_CHEM == 1)
   if( do_bioe ) then
     e_bio(:,:,:) = 0.
   endif
+#endif
 
 j_loop : &
   do j=jts,jte
@@ -60319,8 +60372,6 @@ patch_loop_1 : &
 
     end do patch_loop_1
        
-      drydep_buf(:,:) = 0.0
-      wetdep_buf(:,:) = 0.0
 #if( WRF_CHEM == 1)
       drydep_buf(:,:) = drydep_flux(i,j,:,:)
       wetdep_buf(:,:) = wetdep_flux(i,j,:,:)
@@ -60337,7 +60388,9 @@ patch_loop_1 : &
 
           !print*,'jdf 1', do_bioe
           if( do_bioe ) then
+#if( WRF_CHEM == 1)
             mbio_emis(:) = 0._r8
+#endif
             rho_in = real( rho(i,kts,j),kind=r8 )
           endif
 
@@ -60386,7 +60439,10 @@ patch_loop_1 : &
                   ,fsun24(i,:,j), fsun240(i,:,j)                                &
                   ,fsd24(i,:,j), fsd240(i,:,j), fsi24(i,:,j), fsi240(i,:,j)     &
                   ,laip(i,:,j)                                                  &
-                  ,mbio_emis, do_bioe, id                                       &
+#if( WRF_CHEM == 1)
+                  ,mbio_emis                                                    &
+#endif
+                  , do_bioe, id                                                 &
 #ifdef CN
 !CROP and CN restart and outputs
                 ,forc_ndepxy_buf    ,organic_buf  ,tlai_buf ,tsai_buf,htop_buf,hbot_buf    &  !ADD_NEW_VAR
@@ -60425,10 +60481,12 @@ patch_loop_1 : &
           call wrf_debug( 300,'clmdrv: Af call to clm' )
                  
                  !print*,'jdf 2', do_bioe
+#if (WRF_CHEM == 1)
                  if( do_bioe ) then
                    !print*,'jdf mbio_emis to e_bio'
                    e_bio(i,j,:) = mbio_emis(:)
                  endif
+#endif
 
                  if(albxy_buf ==  1) albxy_buf = 0.991_r8
                  if(albxyg_buf ==  1) albxyg_buf = 0.991_r8
@@ -61047,12 +61105,17 @@ end subroutine clmdrv
                      ACSNOM,IVGTYP,ISLTYP,TSLB,SMOIS,SH2O,ZS,DZS,  &
                      FNDSOILW, FNDSNOWH,                           &
                      num_soil_layers, restart,                     &
-                     allowed_to_read, id, bio_emiss_opt,           &
+                     allowed_to_read, id,                          &
+#if(WRF_CHEM == 1)                     
+                     bio_emiss_opt,                                &
+#endif
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
+#if (WRF_CHEM == 1)
                      megan_specifier0, megan_mapped_emisfctrs,      &
                      megan_factors_file,                           &
+#endif
                      dt,maxpatch                                   &
                     ,numc,nump,snl,                                      &
                      snowdp,wtc,wtp,h2osno,t_grnd,t_veg,                 &
@@ -61089,6 +61152,7 @@ end subroutine clmdrv
                                                                          )
 
   USE module_wrf_error
+#if( WRF_CHEM == 1)
   USE module_state_description, only : MEGAN2_CLM, &
            CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_KPP, CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_4BIN_AQ, &
            CBMZ_MOSAIC_8BIN_AQ,CBMZ_MOSAIC_DMS_4BIN, &
@@ -61097,6 +61161,7 @@ end subroutine clmdrv
            SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_KPP, &
            RADM2SORG,RADM2SORG_KPP,RADM2SORG_AQ,RADM2SORG_AQCHEM, &
            MOZCART_KPP,MOZART_MOSAIC_4BIN_KPP,MOZART_MOSAIC_4BIN_AQ_KPP
+#endif
 
   USE shr_megan_mod, only   : shr_megan_init
   USE MEGANFactorsMod, only : megan_factors_init
@@ -61150,7 +61215,9 @@ end subroutine clmdrv
 
   INTEGER,  INTENT(IN   )   ::     chem_opt 
   INTEGER,  INTENT(IN   )   ::     id
+#if(WRF_CHEM == 1 )
   INTEGER,  INTENT(IN   )   ::     bio_emiss_opt
+#endif
   INTEGER,  INTENT(IN   )   ::     ids,ide, jds,jde, kds,kde,  &
                                    ims,ime, jms,jme, kms,kme,  &
                                    its,ite, jts,jte, kts,kte
@@ -61228,15 +61295,19 @@ end subroutine clmdrv
 #ifdef CN
      real,  dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) :: dyntlai,dyntsai,dyntop,dynbot    !ADD_NEW_VAR                                       
 #endif
+#if(WRF_CHEM == 1)
      character(len=*), intent(in) :: megan_specifier0(:)
+#endif
      !czhao add megan_specifier to replace namelist input
      character(len=2000) :: megan_specifier(100)
 !sw++
 !    character(len=256) :: term1,term2,term3,term4,term5,term6,term7,term8 
      character(len=300) :: term1,term2,term3,term4,term5,term6,term7,term8 
 !sw--
+#if(WRF_CHEM == 1)
      character(len=*), intent(in) :: megan_factors_file
      logical, intent(in)          :: megan_mapped_emisfctrs
+#endif
 
 
    INTEGER                   :: L
@@ -61268,6 +61339,7 @@ end subroutine clmdrv
 !sw--
 
    !************************megan speciation by Chun Zhao****************************!
+#if( WRF_CHEM == 1)
 master_init: &
    if (chem_opt > 0 .and. id == 1) then 
      megan_specifier(:)=' '
@@ -61597,6 +61669,7 @@ END IF
   CALL wrf_dm_bcast_real(xx_bcenh, numrad_snw*idx_bc_nclrds_max*idx_bcint_icerds_max)
 
   endif master_init
+#endif
 
  IF(restart) then
    return
@@ -62079,13 +62152,14 @@ END IF
        end do
       end do
       end do
-
+#if( WRF_CHEM == 1)
       if( bio_emiss_opt == MEGAN2_CLM ) then
         dtime = dt
 #if defined(USE_CLM_ACCUM)
         call initAccFlds( id, its, ite, jts, jte )
 #endif
       endif
+#endif
 
    call CLMDebug('clminit done')
 

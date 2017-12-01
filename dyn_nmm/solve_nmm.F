@@ -1789,6 +1789,10 @@
      &             ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
         cltend_tim=cltend_tim+now_time()-btimx
+     ELSE
+        btimx=now_time()
+        call sustained_wind(grid,config_flags,ips,ipe,jps,jpe,.false.)
+        diag_tim=diag_tim+now_time()-btimx
      ENDIF turbl_time
 !
 !----------------------------------------------------------------------

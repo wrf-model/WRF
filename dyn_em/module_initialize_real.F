@@ -7118,7 +7118,7 @@ end program foo
       !  Compute eta levels assuming a constant delta z above the PBL.
 
       ELSE
-#if 0
+
          !  Compute top of the atmosphere with some silly levels.  We just want to
          !  integrate to get a reasonable value for ztop.  We use the planned PBL-esque
          !  levels, and then just coarse resolution above that.  We know p_top, and we
@@ -7333,26 +7333,6 @@ print *,'namelist p_top (Pa) = ',p_top
          END DO
          phb(kte) = phb(kte-1) - (znw(kte)-znw(kte-1)) * mub*alb(kte-1)
 
-#endif
-         CALL levels(kte-1, p_top, znw)
-         p_surf = p00
-         tiso_r8    = tiso
-         t00_r8     = t00
-         a_r8       = a
-         p00_r8     = p00
-         mub = p_surf - p_top
-         phb(1) = 0.
-         DO k = 1, kte-1
-            pb = (znw(k)+znw(k+1))*0.5 * (p_surf - p_top) + p_top
-            temp = MAX ( tiso_r8, t00_r8 + A_r8*LOG(pb/p00_r8) )
-            IF ( pb .LT. p_strat ) THEN
-               temp = tiso + A_strat * LOG ( pb/p_strat )
-            END IF
-            t_init = temp*(p00/pb)**(r_d/cp) - t0
-            alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
-            phb(k) = phb(k-1) - (znw(k)-znw(k-1)) * mub*alb(k-1)
-         END DO
-         phb(kte) = phb(kte-1) - (znw(kte)-znw(kte-1)) * mub*alb(kte-1)
 k=1
 WRITE (*,FMT='("Full level index = ",I4,"     Height = ",F7.1," m")') k,phb(1)/g
 do k = 2 ,kte
@@ -7362,50 +7342,6 @@ end do
       END IF
 
    END SUBROUTINE compute_eta
-
-!---------------------------------------------------------------------
-   SUBROUTINE levels ( nlev, ptop, eta )
-real,dimension(nlev) :: zup, pup
-real,dimension(0:nlev) :: eta
-
-dzbot=50.
-a=1.2
-dztop=1000.
-!ptop=1000.
-ztop=287.*250/9.81*alog(1.e5/ptop)
-!print *,ptop,ztop
-dz=dzbot
-zup(1)=dz
-pup(1)=1.e5*exp(-9.81*zup(1)/287./250.)
-  eta(0)=1.0
-  eta(1)=(pup(1)-ptop)/(1.e5-ptop)
-  print *,1,dz,zup(1),eta(1)
-isave=1
-do i=1,nlev-1
-  dz=a*dz
-!  if(dz.gt.1000)exit
-  dztest=(ztop-zup(isave))/(nlev-isave)
-  if(dztest.lt.dz)exit
-  isave=i+1
-  zup(i+1)=zup(i)+dz
-  pup(i+1)=1.e5*exp(-9.81*zup(i+1)/287./250.)
-  eta(i+1)=(pup(i+1)-ptop)/(1.e5-ptop)
-  print *,i+1,dz,zup(i+1),eta(i+1)
-enddo
-print *,ztop,zup(isave),nlev,isave
-dz=(ztop-zup(isave))/(nlev-isave)
-do i=isave,nlev-1
-  zup(i+1)=zup(i)+dz
-  pup(i+1)=1.e5*exp(-9.81*zup(i+1)/287./250.)
-  eta(i+1)=(pup(i+1)-ptop)/(1.e5-ptop)
-  print *,i+1,dz,zup(i+1),eta(i+1)
-enddo
-  eta(nlev) = 0.
- print 1000, eta
- 1000 format(10f10.4)
-!1000 format(10g10.3)
-return
-END SUBROUTINE levels
 
 !---------------------------------------------------------------------
 

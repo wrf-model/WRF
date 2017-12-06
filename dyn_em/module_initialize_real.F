@@ -7334,7 +7334,7 @@ print *,'namelist p_top (Pa) = ',p_top
          phb(kte) = phb(kte-1) - (znw(kte)-znw(kte-1)) * mub*alb(kte-1)
 
 #else
-         CALL levels(kte-1, p_top, znw)
+         CALL levels(kte-1, p_top, znw, r_d, g )
          p_surf = p00
          tiso_r8    = tiso
          t00_r8     = t00
@@ -7365,17 +7365,25 @@ end do
    END SUBROUTINE compute_eta
 
 !---------------------------------------------------------------------
-    SUBROUTINE levels ( nlev, ptop, eta )
-    real,dimension(nlev) :: zup, pup
-    real,dimension(0:nlev) :: eta
+    SUBROUTINE levels ( nlev, ptop, eta, r_d, g )
+    implicit none
+    integer, intent(in) :: nlev
+    real, intent(in) :: ptop, r_d, g
+    real, dimension(0:nlev), intent(out) :: eta
+
+    real, dimension(nlev) :: zup, pup
+    real :: dzbot, a
+    real :: tt
+    real :: ztop, dz, dztest
+    integer :: isave, i
 
     dzbot=50.
-    a=1.2
+    a=1.5
     tt=290.
-    ztop=287.*tt/9.81*alog(1.e5/ptop)
+    ztop=r_d*tt/g*alog(1.e5/ptop)
     dz=dzbot
     zup(1)=dz
-    pup(1)=1.e5*exp(-9.81*zup(1)/287./tt)
+    pup(1)=1.e5*exp(-g*zup(1)/r_d/tt)
     eta(0)=1.0
     eta(1)=(pup(1)-ptop)/(1.e5-ptop)
     print *,1,dz,zup(1),eta(1)
@@ -7386,7 +7394,7 @@ end do
         if(dztest.lt.dz)exit
         isave=i+1
         zup(i+1)=zup(i)+dz
-        pup(i+1)=1.e5*exp(-9.81*zup(i+1)/287./tt)
+        pup(i+1)=1.e5*exp(-g*zup(i+1)/r_d/tt)
         eta(i+1)=(pup(i+1)-ptop)/(1.e5-ptop)
         print *,i+1,dz,zup(i+1),eta(i+1)
     enddo
@@ -7394,7 +7402,7 @@ end do
     dz=(ztop-zup(isave))/(nlev-isave)
     do i=isave,nlev-1
         zup(i+1)=zup(i)+dz
-        pup(i+1)=1.e5*exp(-9.81*zup(i+1)/287./tt)
+        pup(i+1)=1.e5*exp(-g*zup(i+1)/r_d/tt)
         eta(i+1)=(pup(i+1)-ptop)/(1.e5-ptop)
         print *,i+1,dz,zup(i+1),eta(i+1)
     enddo

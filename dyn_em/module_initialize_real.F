@@ -7371,12 +7371,11 @@ end do
 
     dzbot=50.
     a=1.2
-    dztop=1000.
-    !ptop=1000.
-    ztop=287.*250/9.81*alog(1.e5/ptop)
+    tt=290.
+    ztop=287.*tt/9.81*alog(1.e5/ptop)
     dz=dzbot
     zup(1)=dz
-    pup(1)=1.e5*exp(-9.81*zup(1)/287./250.)
+    pup(1)=1.e5*exp(-9.81*zup(1)/287./tt)
     eta(0)=1.0
     eta(1)=(pup(1)-ptop)/(1.e5-ptop)
     print *,1,dz,zup(1),eta(1)
@@ -7387,7 +7386,7 @@ end do
         if(dztest.lt.dz)exit
         isave=i+1
         zup(i+1)=zup(i)+dz
-        pup(i+1)=1.e5*exp(-9.81*zup(i+1)/287./250.)
+        pup(i+1)=1.e5*exp(-9.81*zup(i+1)/287./tt)
         eta(i+1)=(pup(i+1)-ptop)/(1.e5-ptop)
         print *,i+1,dz,zup(i+1),eta(i+1)
     enddo
@@ -7395,7 +7394,7 @@ end do
     dz=(ztop-zup(isave))/(nlev-isave)
     do i=isave,nlev-1
         zup(i+1)=zup(i)+dz
-        pup(i+1)=1.e5*exp(-9.81*zup(i+1)/287./250.)
+        pup(i+1)=1.e5*exp(-9.81*zup(i+1)/287./tt)
         eta(i+1)=(pup(i+1)-ptop)/(1.e5-ptop)
         print *,i+1,dz,zup(i+1),eta(i+1)
     enddo

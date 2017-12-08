@@ -78,7 +78,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_satemobs .OR. use_geoamvobs .OR. use_polaramvobs .OR. use_airepobs .OR. use_tamdarobs .OR. &
       use_gpspwobs .OR. use_gpsztdobs .OR. use_gpsrefobs .OR. use_ssmiretrievalobs .OR. &
       use_ssmitbobs .OR. use_ssmt1obs .OR. use_ssmt2obs .OR. use_qscatobs .OR. &
-      use_airsretobs) then
+      use_airsretobs .OR. use_lsac) then
  
       use_obsgts = .true.
    else

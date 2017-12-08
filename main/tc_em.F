@@ -2183,7 +2183,7 @@ END SUBROUTINE mass2_Vstag
   end do
 
 !Fill in U's along the left and right side.
- do j = 1,ns
+ do j = 1,ns-1
     utcp(1,:,j)  = utcp(2,:,j)
     utcp(ew,:,j) = utcp(ew-1,:,j)
  end do
@@ -2199,7 +2199,7 @@ END SUBROUTINE mass2_Vstag
   end do
 
 !Fill in V's along the bottom and bottom.   
-  do i = 1,ew
+  do i = 1,ew-1
      vtcp(i,:,1)  = vtcp(i,:,2)
      vtcp(i,:,ns) = vtcp(i,:,ns-1)
   end do

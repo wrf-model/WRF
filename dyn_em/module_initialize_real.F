@@ -7378,7 +7378,7 @@ end do
     integer :: isave, i
 
     dzbot=50.
-    a=1.5
+    a=1.1
     tt=290.
     ztop=r_d*tt/g*alog(1.e5/ptop)
     dz=dzbot
@@ -7397,6 +7397,16 @@ end do
         pup(i+1)=1.e5*exp(-g*zup(i+1)/r_d/tt)
         eta(i+1)=(pup(i+1)-ptop)/(1.e5-ptop)
         print *,i+1,dz,zup(i+1),eta(i+1)
+         IF ( i .EQ. nlev-1 ) THEN
+            print *,'not enough model levels to reach p_top'
+            CALL wrf_debug ( 0, 'You need one of four things:' )
+            CALL wrf_debug ( 0, '1) More eta levels: e_vert' )
+            CALL wrf_debug ( 0, '2) A lower p_top: p_top_requested')
+            CALL wrf_debug ( 0, '3) Increase the lowest eta thickness: dzbot')
+            CALL wrf_debug ( 0, '4) Increase the stretching factor: a')
+            CALL wrf_debug ( 0, 'All are namelist options')
+            CALL wrf_error_fatal ( 'not enough eta levels to reach p_top')
+         END IF
     enddo
     print *,ztop,zup(isave),nlev,isave
     dz=(ztop-zup(isave))/(nlev-isave)

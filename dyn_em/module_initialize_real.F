@@ -7410,6 +7410,9 @@ end do
     enddo
     print *,ztop,zup(isave),nlev,isave
     dz=(ztop-zup(isave))/(nlev-isave)
+         IF ( dz .GT. 1500. ) THEN
+            CALL wrf_debug ( 0, 'Warning: levels may be > 1 km thick' )
+         END IF
     do i=isave,nlev-1
         zup(i+1)=zup(i)+dz
         pup(i+1)=1.e5*exp(-g*zup(i+1)/r_d/tt)

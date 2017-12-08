@@ -49,7 +49,8 @@ module da_test
    use da_define_structures, only : da_zero_x,da_zero_vp_type,da_allocate_y, &
       da_deallocate_y,be_type, xbx_type, iv_type, y_type, j_type, da_initialize_cv
    use da_dynamics, only : da_uv_to_divergence,da_uv_to_vorticity, &
-      da_psichi_to_uv, da_psichi_to_uv_adj
+      da_psichi_to_uv, da_psichi_to_uv_adj, da_uv_to_divergence_adj, &
+      da_divergence_constraint, da_divergence_constraint_adj
    use da_ffts, only : da_solve_poissoneqn_fct
    use da_minimisation, only : da_transform_vtoy_adj,da_transform_vtoy, da_swap_xtraj, &
        da_read_basicstates, da_calculate_j, da_calculate_gradj
@@ -146,5 +147,6 @@ contains
 #include "da_check_vtoy_adjoint.inc"
 #include "da_get_y_lhs_value.inc"
 #include "da_check_gradient.inc"
+#include "da_check_dynamics_adjoint.inc"
 
 end module da_test

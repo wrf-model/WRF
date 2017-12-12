@@ -7372,12 +7372,13 @@ end do
     real, dimension(0:nlev), intent(out) :: eta
 
     real, dimension(nlev) :: zup, pup
-    real :: dzbot, a
+    real :: dzbot, a, dzmax
     real :: tt
     real :: ztop, dz, dztest
     integer :: isave, i
 
     dzbot=50.
+    dzmax=1000.
     a=1.1
     tt=290.
     ztop=r_d*tt/g*alog(1.e5/ptop)
@@ -7398,7 +7399,6 @@ end do
         eta(i+1)=(pup(i+1)-ptop)/(1.e5-ptop)
         print *,i+1,dz,zup(i+1),eta(i+1)
          IF ( i .EQ. nlev-1 ) THEN
-            print *,'not enough model levels to reach p_top'
             CALL wrf_debug ( 0, 'You need one of four things:' )
             CALL wrf_debug ( 0, '1) More eta levels: e_vert' )
             CALL wrf_debug ( 0, '2) A lower p_top: p_top_requested')
@@ -7410,8 +7410,16 @@ end do
     enddo
     print *,ztop,zup(isave),nlev,isave
     dz=(ztop-zup(isave))/(nlev-isave)
-         IF ( dz .GT. 1500. ) THEN
-            CALL wrf_debug ( 0, 'Warning: levels may be > 1 km thick' )
+         IF ( dz .GT. 1.5*dzmax ) THEN
+            CALL wrf_debug ( 0, 'Warning: Upper levels may be too thick' )
+            CALL wrf_debug ( 0, 'You need one of five things:' )
+            CALL wrf_debug ( 0, '1) More eta levels: e_vert' )
+            CALL wrf_debug ( 0, '2) A lower p_top: p_top_requested')
+            CALL wrf_debug ( 0, '3) Increase the lowest eta thickness: dzbot')
+            CALL wrf_debug ( 0, '4) Increase the stretching factor: a')
+            CALL wrf_debug ( 0, '5) Increase the maximum allowed thickness: dzmax')
+            CALL wrf_debug ( 0, 'All are namelist options')
+            CALL wrf_error_fatal ( 'Upper levels may be too thick')
          END IF
     do i=isave,nlev-1
         zup(i+1)=zup(i)+dz

@@ -1653,7 +1653,7 @@
       integer(kind=im) :: overlap                     ! 1 = random overlap, 2 = maximum-random,
                                                       ! 3 = maximum overlap, 4 = exponential,
                                                       ! 5 = exponential-random
-      real(kind=rb), parameter  :: Zo = 2000._rb      ! length scale (m) 
+      real(kind=rb), parameter  :: Zo = 2500._rb      ! length scale (m) 
       real(kind=rb), dimension(ncol,nlay) :: alpha    ! overlap parameter
 
 ! Constants (min value for cloud fraction and cloud water and ice)

@@ -2240,7 +2240,7 @@ contains
   !  The default option is maximum-random (option 2)
   !  The options are: 1=random overlap, 2=max/random, 3=maximum overlap, 4=exponential overlap, 5=exp/random
   !  This is set with the variable "overlap" 
-  !  The exponential overlap uses also a length scale, Zo. (real,    parameter  :: Zo = 2000. ) 
+  !  The exponential overlap uses also a length scale, Zo. (real,    parameter  :: Zo = 2500. ) 
   ! 
   ! Seed:
   !  If the stochastic cloud generator is called several times during the same timestep, 
@@ -2344,7 +2344,7 @@ contains
       integer(kind=im) :: overlap                     ! 1 = random overlap, 2 = maximum-random,
                                                       ! 3 = maximum overlap, 4 = exponential,
                                                       ! 5 = exponential-random
-      real(kind=rb), parameter  :: Zo = 2000._rb      ! length scale (m) 
+      real(kind=rb), parameter  :: Zo = 2500._rb      ! length scale (m) 
       real(kind=rb), dimension(ncol,nlay) :: alpha    ! overlap parameter
 
 ! Constants (min value for cloud fraction and cloud water and ice)

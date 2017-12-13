@@ -135,7 +135,7 @@ CONTAINS
       REAL :: p_top_requested , temp
       INTEGER :: num_metgrid_levels
       REAL , DIMENSION(max_eta) :: eta_levels
-      REAL :: max_dz
+      REAL :: max_dz, dzbot, dzstretch
 
       REAL :: dclat
 
@@ -1535,9 +1535,11 @@ integer::oops1,oops2
            ENDIF
 
             max_dz            = model_config_rec%max_dz
+            dzbot             = model_config_rec%dzbot
+            dzstretch         = model_config_rec%dzstretch
 
             CALL compute_eta ( grid%znw , &
-                               eta_levels , max_eta , max_dz , &
+                               eta_levels , max_eta , max_dz , dzbot , dzstretch , &
                                grid%p_top , g , p00 , cvpm , a , r_d , cp , &
                                t00 , p1000mb , t0 , tiso , p_strat , a_strat , &
                                ids , ide , jds , jde , kds , kde , &
@@ -7030,7 +7032,7 @@ kte=70
 
 
 call compute_eta ( znw , &
-                   eta_levels , max_eta , max_dz , &
+                   eta_levels , max_eta , max_dz , dzbot , dzstretch , &
                    p_top , g , p00 , cvpm , a , r_d , cp , &
                    t00 , p1000mb , t0 , tiso , p_strat , a_strat , &
                    ids , ide , jds , jde , kds , kde , &
@@ -7041,7 +7043,7 @@ end program foo
 #endif
 
    SUBROUTINE compute_eta ( znw , &
-                           eta_levels , max_eta , max_dz , &
+                           eta_levels , max_eta , max_dz , dzbot , dzstretch , &
                            p_top , g , p00 , cvpm , a , r_d , cp , &
                            t00 , p1000mb , t0 , tiso , p_strat , a_strat , &
                            ids , ide , jds , jde , kds , kde , &
@@ -7057,7 +7059,7 @@ end program foo
       INTEGER , INTENT(IN)        :: ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte
-      REAL , INTENT(IN)           :: max_dz
+      REAL , INTENT(IN)           :: max_dz, dzbot, dzstretch
       REAL , INTENT(IN)           :: p_top , g , p00 , cvpm , a , r_d , cp , t00 , p1000mb , t0 , tiso
       REAL , INTENT(IN)           :: p_strat , a_strat
       INTEGER , INTENT(IN)        :: max_eta
@@ -7334,7 +7336,7 @@ print *,'namelist p_top (Pa) = ',p_top
          phb(kte) = phb(kte-1) - (znw(kte)-znw(kte-1)) * mub*alb(kte-1)
 
 #else
-         CALL levels(kte-1, p_top, znw, r_d, g )
+         CALL levels(kte-1, p_top, znw, max_dz, dzbot, dzstretch, r_d, g )
          p_surf = p00
          tiso_r8    = tiso
          t00_r8     = t00
@@ -7365,21 +7367,17 @@ end do
    END SUBROUTINE compute_eta
 
 !---------------------------------------------------------------------
-    SUBROUTINE levels ( nlev, ptop, eta, r_d, g )
+    SUBROUTINE levels ( nlev, ptop, eta, dzmax, dzbot, dzstretch, r_d, g )
     implicit none
     integer, intent(in) :: nlev
-    real, intent(in) :: ptop, r_d, g
+    real, intent(in) :: ptop, dzmax, dzbot, dzstretch, r_d, g
     real, dimension(0:nlev), intent(out) :: eta
 
     real, dimension(nlev) :: zup, pup
-    real :: dzbot, a, dzmax
     real :: tt
     real :: ztop, dz, dztest
     integer :: isave, i
 
-    dzbot=50.
-    dzmax=1000.
-    a=1.1
     tt=290.
     ztop=r_d*tt/g*alog(1.e5/ptop)
     dz=dzbot
@@ -7390,7 +7388,7 @@ end do
     print *,1,dz,zup(1),eta(1)
     isave=1
     do i=1,nlev-1
-        dz=a*dz
+        dz=dzstretch*dz
         dztest=(ztop-zup(isave))/(nlev-isave)
         if(dztest.lt.dz)exit
         isave=i+1
@@ -7403,7 +7401,7 @@ end do
             CALL wrf_debug ( 0, '1) More eta levels: e_vert' )
             CALL wrf_debug ( 0, '2) A lower p_top: p_top_requested')
             CALL wrf_debug ( 0, '3) Increase the lowest eta thickness: dzbot')
-            CALL wrf_debug ( 0, '4) Increase the stretching factor: a')
+            CALL wrf_debug ( 0, '4) Increase the stretching factor: dzstretch')
             CALL wrf_debug ( 0, 'All are namelist options')
             CALL wrf_error_fatal ( 'not enough eta levels to reach p_top')
          END IF
@@ -7416,7 +7414,7 @@ end do
             CALL wrf_debug ( 0, '1) More eta levels: e_vert' )
             CALL wrf_debug ( 0, '2) A lower p_top: p_top_requested')
             CALL wrf_debug ( 0, '3) Increase the lowest eta thickness: dzbot')
-            CALL wrf_debug ( 0, '4) Increase the stretching factor: a')
+            CALL wrf_debug ( 0, '4) Increase the stretching factor: dzstretch')
             CALL wrf_debug ( 0, '5) Increase the maximum allowed thickness: dzmax')
             CALL wrf_debug ( 0, 'All are namelist options')
             CALL wrf_error_fatal ( 'Upper levels may be too thick')

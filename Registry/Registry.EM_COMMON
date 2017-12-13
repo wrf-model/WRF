@@ -2086,6 +2086,8 @@ rconfig   logical   reorder_mesh    namelist,domains    1              .false. r
 rconfig   logical   perturb_input   namelist,domains    1              .false. h     "" "" ""
 rconfig   real      eta_levels      namelist,domains    max_eta        -1.
 rconfig   real      max_dz          namelist,domains    1               1000.
+rconfig   real      dzbot           namelist,domains    1               50.
+rconfig   real      dzstretch       namelist,domains    1               1.1
 rconfig   integer   ocean_levels    namelist,domains    1               30     irh   "ocean level"        ""      ""
 rconfig   real      ocean_z         namelist,domains    max_ocean      -1      -     "vertical profile of layer depths for ocean" "m"
 rconfig   real      ocean_t         namelist,domains    max_ocean      -1      -     "vertical profile of ocean temps" "K"

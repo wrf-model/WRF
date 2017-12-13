@@ -7378,7 +7378,7 @@ end do
     real :: ztop, dz, dztest
     integer :: isave, i
 
-    tt=290.
+    tt=290. ! isothermal temperature used for z/log p relation - tt=290 fits dzbot
     ztop=r_d*tt/g*alog(1.e5/ptop)
     dz=dzbot
     zup(1)=dz
@@ -7408,14 +7408,14 @@ end do
     enddo
     print *,ztop,zup(isave),nlev,isave
     dz=(ztop-zup(isave))/(nlev-isave)
-         IF ( dz .GT. 1.5*dzmax ) THEN
+         IF ( dz .GT. 1.5*dzmax ) THEN       ! 1.5 is to allow for warm isothermal state - tt=290
             CALL wrf_debug ( 0, 'Warning: Upper levels may be too thick' )
             CALL wrf_debug ( 0, 'You need one of five things:' )
             CALL wrf_debug ( 0, '1) More eta levels: e_vert' )
             CALL wrf_debug ( 0, '2) A lower p_top: p_top_requested')
             CALL wrf_debug ( 0, '3) Increase the lowest eta thickness: dzbot')
             CALL wrf_debug ( 0, '4) Increase the stretching factor: dzstretch')
-            CALL wrf_debug ( 0, '5) Increase the maximum allowed thickness: dzmax')
+            CALL wrf_debug ( 0, '5) Increase the maximum allowed thickness: max_dz')
             CALL wrf_debug ( 0, 'All are namelist options')
             CALL wrf_error_fatal ( 'Upper levels may be too thick')
          END IF

@@ -110,7 +110,7 @@ SUBROUTINE microphysics_driver(                                          &
                     ,WSM6SCHEME, ETAMPNEW, FER_MP_HIRES, etamp_HWRF,THOMPSON, THOMPSONAERO, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN, NSSL_2MOMG  &
                     ,NSSL_1MOM,NSSL_1MOMLFO, FER_MP_HIRES_ADVECT &
-                    ,MILBRANDT2MOM, P3_1CATEGORY, P3_1CATEGORY_NC, P3_2CATEGORY !,MILBRANDT3MOM 
+                    ,MILBRANDT2MOM, P3_1CATEGORY, P3_1CATEGORY_NC  !, P3_2CATEGORY ,MILBRANDT3MOM 
 #else
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &

@@ -328,9 +328,8 @@ For a tropical channel configuration, set the following:
 
 ** for tc bogusing:
    Helpful hints
-   1) The TC bogus *MUST* be run from a serial build (do not build for 
-      either shared memory or distributed memory parallelism.) Choose the
-      "no nesting" in the configure step.
+   1) The TC bogus *MUST* only be run with a single processor: serial 
+      (with or without a nest build option), or as a DM build with np=1.
    2) Run the TC program for only the initial model time. Remember to copy 
       your metgrid file to a safe location and then let the TC scheme 
       generate the auxiliary files.
@@ -361,7 +360,7 @@ For a tropical channel configuration, set the following:
 
  &tc
  insert_bogus_storm                  = .true.,
- remove_storm                        = .true.,
+ remove_storm                        = .false.,
  num_storm                           = 1,
  latc_loc                            = 15.,
  lonc_loc                            = -90.,

@@ -1052,6 +1052,11 @@
 
       CHARACTER(len=255) :: message
 #if HWRF==1
+      logical :: pert_pbl           !zhang
+      logical :: pert_Cd            !zhang
+      real    :: ens_Cdamp         !zhang
+      real    :: ens_pblamp         !zhang
+      integer :: ens_random_seed         !zhang
 !dbg integer :: kpblmin,kpblmax,lpblmin,lpblmax    !dbg
 #endif
 !
@@ -1410,6 +1415,9 @@
 !
       CALL SET_TILES(GRID,IDS,IDE-1,JDS+1,JDE-1,ITS,ITE,JTS,JTE)
 
+      CALL nl_get_pert_Cd(1,pert_Cd)
+      CALL nl_get_ens_random_seed(1,ens_random_seed)
+      CALL nl_get_ens_Cdamp(1,ens_Cdamp)
 !
       CALL SURFACE_DRIVER(                                              &
      &           HYDRO_dt=-1.0,  SFCHEADRT=SFCHEADRT,                   &
@@ -1634,6 +1642,8 @@
       CALL nl_get_var_ric(1, var_ric)
       CALL nl_get_coef_ric_s(1, coef_ric_s)
       CALL nl_get_coef_ric_l(1, coef_ric_l)
+      CALL nl_get_pert_pbl(1,pert_pbl)
+      CALL nl_get_ens_pblamp(1,ens_pblamp)
 !      write(0,*) 'var_ric & coef_ric_s l from namelist Kwon  ',var_ric,coef_ric_s,coef_ric_l
 #endif
 !
@@ -1697,9 +1707,9 @@
      &               ,DKU3D=DKU3D,DKT3D=DKT3D 
 #if HWRF==1
      &               ,coef_ric_l=coef_ric_l,coef_ric_s=coef_ric_s     &    !Kwon for Ric
-     &          ,pert_pbl=config_flags%pert_pbl                       &
-     &          ,ens_random_seed=config_flags%ens_random_seed         &
-     &          ,ens_pblamp=config_flags%ens_pblamp                   &
+     &          ,pert_pbl=pert_pbl                                    &
+     &          ,ens_random_seed=ens_random_seed                      &
+     &          ,ens_pblamp=ens_pblamp                                &
 #endif
      &               ,QV_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV &
      &               ,QC_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC &
@@ -2491,6 +2501,11 @@
       INTEGER                    :: IDT                
       REAL,   DIMENSION(2)       :: RND1 
 #endif
+#if HWRF==1
+      logical :: pert_sas            !zhang
+      integer :: ens_random_seed         !zhang
+      real    :: ens_sasamp         !zhang
+#endif
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
@@ -2819,6 +2834,10 @@
 
       CALL SET_TILES(GRID,IDS+1,IDE-1,JDS+2,JDE-2,ITS,ITE,JTS,JTE)
 
+      CALL nl_get_pert_sas(1,pert_sas)
+      CALL nl_get_ens_random_seed(1,ens_random_seed)
+      CALL nl_get_ens_sasamp(1,ens_sasamp)
+
 !!!LPC --- is this causing diffs???
 #if (NMM_CORE==1)
 !$omp parallel do                                                       &
@@ -2892,9 +2911,9 @@
      &                 ,RUCUTEN=DUCUDT, RVCUTEN=DVCUDT, MOMMIX=MOMMIX   &
                        ,store_rand=store_rand                           &
 #if (HWRF==1)
-     &                 ,pert_sas=config_flags%pert_sas                  &
-     &                 ,ens_random_seed=config_flags%ens_random_seed    &
-     &                 ,ens_sasamp=config_flags%ens_sasamp              &
+     &                 ,pert_sas=pert_sas                               &
+     &                 ,ens_random_seed=ens_random_seed                 &
+     &                 ,ens_sasamp=ens_sasamp                           &
 #endif
 #endif
      &                 ,SHALL=grid%shall                                &

@@ -2523,7 +2523,7 @@ SUBROUTINE WEIGTS_CHECK(HBWGT1,HBWGT2,HBWGT3,HBWGT4,       &
 ! USAGE OF NUMBER OF PROCESSORS BEFORE ANY FURTHER COMPUTATIONS. WE INTRODUCE THIS
 ! CHECK FIRST
 
-  IF((ITE-ITS) .LE. 5 .OR. (JTE-JTS) .LE. 5)THEN
+  IF((ITE-ITS) .LE. 4 .OR. (JTE-JTS) .LE. 4)THEN
    WRITE(message,*)'ITE-ITS=',ITE-ITS,'JTE-JTS=',JTE-JTS
    CALL wrf_message(trim(message))
    CALL wrf_error_fatal ('NESTED DOMAIN:PLEASE OPTIMIZE THE NUMBER OF PROCESSES; TRY SQUARES OF NUMBERS') 
@@ -3328,7 +3328,7 @@ SUBROUTINE med_initialize_nest_nmm( grid &
  REAL, PARAMETER:: SNUP=0.040
  REAL, PARAMETER:: W_NMM=0.08
 ! REAL, PARAMETER:: COAC=0.75
- REAL, PARAMETER:: CODAMP=6.4
+! REAL, PARAMETER:: CODAMP=6.4
  REAL, PARAMETER:: TWOM=.00014584
  REAL, PARAMETER:: CP=1004.6
  REAL, PARAMETER:: DFC=1.0    
@@ -3350,6 +3350,7 @@ SUBROUTINE med_initialize_nest_nmm( grid &
  REAL, PARAMETER:: DTR=0.01745329
 
  REAL :: COAC
+ REAL :: CODAMP
 
  CHARACTER(LEN=255) :: message
 
@@ -3373,6 +3374,7 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 !
 
    call nl_get_coac(grid%id,coac)
+   call nl_get_codamp(grid%id,codamp)
 
     DT=grid%dt         !float(TIME_STEP)/parent_time_step_ratio
     NNXP=min(ITE,IDE-1)

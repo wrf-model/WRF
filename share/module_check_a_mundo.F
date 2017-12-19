@@ -28,6 +28,7 @@
 !</DESCRIPTION>
 
       USE module_state_description
+      USE module_model_constants
       USE module_wrf_error
       USE module_configure
 
@@ -54,6 +55,7 @@
       INTEGER :: i, j, oops, d1_value
       LOGICAL :: km_opt_already_done , diff_opt_already_done
       INTEGER :: count_opt
+      LOGICAL :: lon_extent_is_global , lat_extent_is_global
 
 !TWG2015
 !
@@ -1572,6 +1574,28 @@
             model_config_rec % fft_filter_lat .LT. 90. .AND. &
             model_config_rec % traj_opt .NE. 0 ) THEN
          CALL wrf_debug ( 0, '--- ERROR: Trajectories not supported on global domain' )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+
+!-----------------------------------------------------------------------
+! If the user did not specify a global setting in the lateral BC
+! portion of the namelist file (polar), but the distance around the
+! equator is approximately equal to the entire globe, then it is likely
+! that the user probably forgot to flip that polar switch on.
+!-----------------------------------------------------------------------
+      lon_extent_is_global = .FALSE.
+      IF ( ABS ( model_config_rec % e_we(1) * model_config_rec % dx(1) - 2. * piconst / reradius ) .LT. model_config_rec % dx(1) ) THEN
+         lon_extent_is_global = .TRUE.
+      END IF
+
+      lat_extent_is_global = .FALSE.
+      IF ( ABS ( model_config_rec % e_sn(1) * model_config_rec % dy(1) -      piconst / reradius ) .LT. model_config_rec % dy(1) ) THEN
+         lat_extent_is_global = .TRUE.
+      END IF
+
+      IF ( ( .NOT. model_config_rec % polar(1) ) .AND. &
+           ( lon_extent_is_global .AND. lat_extent_is_global ) ) THEN
+         CALL wrf_debug ( 0, '--- ERROR: Domain size is global, set &bdy_control polar=.TRUE.' )
          count_fatal_error = count_fatal_error + 1
       END IF
 

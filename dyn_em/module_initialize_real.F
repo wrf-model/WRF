@@ -465,34 +465,9 @@ integer::oops1,oops2
                grid%msfvx_inv(i,jte) = 0.
             END DO
          END IF
-      ELSE IF ( ( config_flags%map_proj .EQ. PROJ_CASSINI ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN 
-         DO j=jts,jte
-            DO i=its,min(ide-1,ite)
-               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-               grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
-            END DO
-         END DO
-      ELSE IF ( ( .NOT. config_flags%polar ) .AND. ( flag_mf_xy .NE. 1 ) ) THEN
-         DO j=jts,jte
-            DO i=its,ite
-               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-               grid%msfvx(i,j) = grid%msfv(i,j)
-               grid%msfvy(i,j) = grid%msfv(i,j)
-               grid%msfux(i,j) = grid%msfu(i,j)
-               grid%msfuy(i,j) = grid%msfu(i,j)
-               grid%msftx(i,j) = grid%msft(i,j)
-               grid%msfty(i,j) = grid%msft(i,j)
-            ENDDO
-         ENDDO
-         DO j=jts,min(jde,jte)
-            DO i=its,min(ide-1,ite)
-               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-               grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
-            END DO
-         END DO
       ELSE IF ( ( .NOT. config_flags%polar ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN
          IF ( grid%msfvx(its,jts) .EQ. 0 ) THEN
-            CALL wrf_error_fatal ( 'Maybe you do not have the new map factors, try re-running geogrid' )
+            CALL wrf_error_fatal ( 'Maybe this is a global domain, but the polar flag was not set in the bdy_control namelist.' )
          END IF
          DO j=jts,min(jde,jte)
             DO i=its,min(ide-1,ite)
@@ -501,7 +476,7 @@ integer::oops1,oops2
             END DO
          END DO
       ELSE IF ( ( config_flags%polar ) .AND. ( flag_mf_xy .NE. 1 ) ) THEN
-         CALL wrf_error_fatal ( 'Neither SI data nor older metgrid data can initialize a global domain' )
+         CALL wrf_error_fatal ( 'Older metgrid data cannot initialize a global domain' )
       ENDIF
 
       !  Check to see what available surface temperatures we have.

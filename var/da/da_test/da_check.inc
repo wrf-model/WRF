@@ -87,6 +87,14 @@ subroutine da_check(grid, config_flags, cv_size, xbx, be, ep, iv, vv, vp, y)
    call da_deallocate_y(y)
 
    !----------------------------------------------------------------------------
+   ! [3] Perform dynamical constraint test:
+   !----------------------------------------------------------------------------
+   call da_message((/"Performing dynamical constraint adjoint tests"/))
+   call da_zero_x(grid%xa)
+   call da_setup_testfield(grid)
+   call da_check_dynamics_adjoint(cv_size, cvtest, xbx, be, grid, config_flags)
+
+   !----------------------------------------------------------------------------
    ! [4] Perform spectral test:
    !----------------------------------------------------------------------------
 

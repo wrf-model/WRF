@@ -19,7 +19,7 @@ module da_physics
       trace_use, missing_r, maximum_rh, minimum_rh,cv_options_hum,coeff,l_over_rv, &
       es_gammakelvin, es_gammabeta, rd_over_rv1,t_kelvin, es_alpha, es_gamma, &
       es_beta, rd_over_rv, trace_use_frequent,gamma, print_detail_xa, stdout, &
-      cv_options_hum_specific_humidity, trace_use_dull, pi
+      cv_options_hum_specific_humidity, trace_use_dull, pi, consider_xap4ztd
    use da_par_util, only : da_transpose_z2y, da_transpose_y2x, &
       da_transpose_x2z, da_transpose_z2x, da_transpose_x2y, da_transpose_y2z
    use da_tracing, only : da_trace_entry, da_trace_exit

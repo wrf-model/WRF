@@ -1162,12 +1162,13 @@
       END IF
 
 !-----------------------------------------------------------------------
-! If hailcast_opt = 1, horizontal grid spacing must be 4 km or finer.
+! If hailcast_opt = 1, convective parameterization must be off. 
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
          IF ( ( model_config_rec%hailcast_opt(i) .NE. 0 ) .AND. &
-              ( model_config_rec%dx(i) .GT. 4000 ) ) THEN
-            wrf_err_message = '--- WARNING:  hailcast_opt requires a grid-spacing of 4 km or finer.'
+              ( model_config_rec%cu_physics(i) .NE. 0)) THEN
+             !( model_config_rec%dx(i) .GT. 4000 ) ) THEN
+            wrf_err_message = '--- WARNING: cannot use both hailcast_opt and a convective parameterization.' 
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '---          hailcast_opt is now 0.'
             CALL wrf_message ( wrf_err_message )

@@ -1887,19 +1887,6 @@ END SUBROUTINE bdy_chem_value_ghg
                 else if (i_bdy_method .eq. 9) then
                    CALL bdy_chem_value_racm(   &
                         chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
-!                   if(ic.eq.p_o3)then
-!!                       if(k.ge.ktf-19) then
-!!                        if(config_flags%do_pvozone .and. preshPa.le.50000.) then   ! PV2O3 extrapolation from 100 to 500mb. SAM 8/5/16
-!!                        CALL bdy_chem_value_racm_pv(   &
-!!                        chem(i,k,j), z(i,k,j), pv(i,k,j), ic, numgas,p_co2,xlat(i,j),preshPa )
-!!                        else
-!                        CALL bdy_chem_value_racm(   &   !using new SB profile
-!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
-!!                       endif
-!                   else
-!                        CALL bdy_chem_value_racm(   &
-!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
-!                   endif
                 else if (i_bdy_method .eq. 2) then
                    tempfac=(t(i,k,j)+t0)*((p(i,k,j) + pb(i,k,j))/p1000mb)**rcp
                    convfac=(p(i,k,j)+pb(i,k,j))/rgasuniv/tempfac
@@ -1922,24 +1909,6 @@ END SUBROUTINE bdy_chem_value_ghg
                    CALL bdy_chem_value_gcm ( chem(i,k,j),chem_bys(i,k,1),chem_btys(i,k,1),dt,ic)
                 else if (i_bdy_method .eq. 16) then
                    CALL bdy_chem_value_ghg ( chem(i,k,j), ic ) 
-!                     if(ic.eq.p_co_ant)then
-!!!                       if(k.ge.ktf-19) then
-!!                        if(config_flags%do_pvozone .and. preshPa.le.50000.) then   ! PV2O3 extrapolation from 100 to 500mb. SAM 8/5/16
-!!                        CALL bdy_chem_value_ghg_pv(   &
-!!                        chem(i,k,j), z(i,k,j), pv(i,k,j), ic, numgas,p_co2,xlat(i,j),preshPa )
-!!           !              print*, 'z(i,k,j),pv(i,k,j),chem(i,k,j),ic,numgas,p_co2'  
-!!           !              print*, z(i,k,j),pv(i,k,j),chem(i,k,j),ic,numgas,p_co2
-!!                        else
-!                        CALL bdy_chem_value_ghg(   &
-!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
-!!                       endif
-!                     else
-!                        CALL bdy_chem_value_ghg(   &
-!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
-!                   ! print*,'i,k,j,chem(i,k,j),z(i,k,j),ic,numgas,p_co2'
-!                   ! print*,i,k,j,chem(i,k,j),z(i,k,j),ic,numgas,p_co2 
-!                    endif
-
                 else if (i_bdy_method .eq. 15) then
                    CALL bdy_chem_value_cb05 (   &
                         1, chem(i,k,j), k, ic, config_flags, numgas )
@@ -1988,20 +1957,6 @@ END SUBROUTINE bdy_chem_value_ghg
                 else if (i_bdy_method .eq. 9) then
                    CALL bdy_chem_value_racm (   &
                         chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
-!                   if(ic.eq.p_o3)then
-!!                       if(k.ge.ktf-19) then
-!                        if(config_flags%do_pvozone .and. preshPa.le.50000.) then   ! PV2O3 extrapolation from 100 to 500mb. SAM 8/5/16
-!                        CALL bdy_chem_value_racm_pv(   &
-!                        chem(i,k,j), z(i,k,j), pv(i,k,j), ic, numgas,p_co2,xlat(i,j),preshPa )
-!                        else
-!                        CALL bdy_chem_value_racm(   &
-!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
-!                       endif
-!                   else
-!                        CALL bdy_chem_value_racm(   &
-!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
-!                   endif
-
                 else if (i_bdy_method .eq. 2) then
                    tempfac=(t(i,k,j)+t0)*((p(i,k,j) + pb(i,k,j))/p1000mb)**rcp
                    convfac=(p(i,k,j)+pb(i,k,j))/rgasuniv/tempfac
@@ -2024,19 +1979,6 @@ END SUBROUTINE bdy_chem_value_ghg
                    chem(i,k,j) = 0.
                 else if (i_bdy_method .eq. 16) then
                    CALL bdy_chem_value_ghg ( chem(i,k,j), ic )  ! For GHGs
-!                     if(ic.eq.p_co_ant)then
-!!                      if(k.ge.ktf-19) then
-!                       if(config_flags%do_pvozone .and. preshPa.le.50000.) then   ! PV2O3 extrapolation from 100 to 500mb. SAM 8/5/16
-!                        CALL bdy_chem_value_ghg_pv(   &
-!                        chem(i,k,j), z(i,k,j), pv(i,k,j), ic, numgas,p_co2,xlat(i,j),preshPa )
-!                        else
-!                        CALL bdy_chem_value_ghg(   &
-!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
-!                       endif
-!                     else
-!                        CALL bdy_chem_value_ghg(   &
-!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
-!                     endif
                 else if (i_bdy_method .eq. 15) then
                    CALL bdy_chem_value_cb05 (   &
                         2, chem(i,k,j), k, ic, config_flags, numgas )
@@ -2085,20 +2027,6 @@ END SUBROUTINE bdy_chem_value_ghg
                 else if (i_bdy_method .eq. 9) then
                    CALL bdy_chem_value_racm (   &
                         chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
-!                   if(ic.eq.p_o3)then
-!!                       if(k.ge.ktf-19) then
-!                        if(config_flags%do_pvozone .and. preshPa.le.50000.) then   ! PV2O3 extrapolation from 100 to 500mb. SAM 8/5/16
-!                        CALL bdy_chem_value_racm_pv(   &
-!                        chem(i,k,j), z(i,k,j), pv(i,k,j), ic, numgas,p_co2,xlat(i,j),preshPa )
-!                        else
-!                        CALL bdy_chem_value_racm(   &
-!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
-!                       endif
-!                   else
-!                        CALL bdy_chem_value_racm(   &
-!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
-!                   endif
-
                 else if (i_bdy_method .eq. 2) then
                    tempfac=(t(i,k,j)+t0)*((p(i,k,j) + pb(i,k,j))/p1000mb)**rcp
                    convfac=(p(i,k,j)+pb(i,k,j))/rgasuniv/tempfac
@@ -2121,19 +2049,6 @@ END SUBROUTINE bdy_chem_value_ghg
                    chem(i,k,j) = 0.
                 else if (i_bdy_method .eq. 16) then
                    CALL bdy_chem_value_ghg ( chem(i,k,j), ic )  ! For GHGs
-!                   if(ic.eq.p_co_ant)then
-!!!                    if(k.ge.ktf-19) then
-!!                     if(config_flags%do_pvozone .and. preshPa.le.50000.) then   ! PV2O3 extrapolation from 100 to 500mb. SAM 8/5/16
-!!                        CALL bdy_chem_value_ghg_pv(   &
-!!                        chem(i,k,j), z(i,k,j), pv(i,k,j), ic, numgas,p_co2,xlat(i,j),preshPa )
-!!                     else
-!!                        CALL bdy_chem_value_ghg(   &
-!!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
-!!                     endif
-!                   else
-!                        CALL bdy_chem_value_ghg(   &
-!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
-!                   endif
                 else if (i_bdy_method .eq. 15) then
                    CALL bdy_chem_value_cb05 (   &
                         3, chem(i,k,j), k, ic, config_flags, numgas )
@@ -2182,19 +2097,6 @@ END SUBROUTINE bdy_chem_value_ghg
                 else if (i_bdy_method .eq. 9) then
                    CALL bdy_chem_value_racm (   &
                         chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
-!                   if(ic.eq.p_o3)then
-!!                       if(k.ge.ktf-19) then
-!                        if(config_flags%do_pvozone .and. preshPa.le.50000.) then   ! PV2O3 extrapolation from 100 to 500mb. SAM 8/5/16
-!                        CALL bdy_chem_value_racm_pv(   &
-!                        chem(i,k,j), z(i,k,j), pv(i,k,j), ic, numgas,p_co2,xlat(i,j),preshPa )
-!                        else
-!                        CALL bdy_chem_value_racm(   &
-!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
-!                       endif
-!                   else
-!                        CALL bdy_chem_value_racm(   &
-!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
-!                   endif
                 else if (i_bdy_method .eq. 2) then
                    tempfac=(t(i,k,j)+t0)*((p(i,k,j) + pb(i,k,j))/p1000mb)**rcp
                    convfac=(p(i,k,j)+pb(i,k,j))/rgasuniv/tempfac
@@ -2217,19 +2119,6 @@ END SUBROUTINE bdy_chem_value_ghg
                    chem(i,k,j) = 0.
                 else if (i_bdy_method .eq. 16) then
                    CALL bdy_chem_value_ghg ( chem(i,k,j), ic ) ! For GHGs
-!                  if(ic.eq.p_co_ant)then
-!!!                    if(k.ge.ktf-19) then
-!!                     if(config_flags%do_pvozone .and. preshPa.le.50000.) then   ! PV2O3 extrapolation from 100 to 500mb. SAM 8/5/16
-!!                        CALL bdy_chem_value_ghg_pv(   &
-!!                        chem(i,k,j), z(i,k,j), pv(i,k,j), ic, numgas,p_co2,xlat(i,j),preshPa )
-!!                     else
-!                        CALL bdy_chem_value_ghg(   &
-!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
-!!                     endif
-!                  else
-!                       CALL bdy_chem_value_ghg(   &
-!                        chem(i,k,j), z(i,k,j), ic, numgas,p_co2 )
-!                  endif
                 else if (i_bdy_method .eq. 15) then
                    CALL bdy_chem_value_cb05 (   &
                         4, chem(i,k,j), k, ic, config_flags, numgas )

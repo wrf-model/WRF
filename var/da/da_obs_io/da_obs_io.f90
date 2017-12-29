@@ -30,11 +30,13 @@ module da_obs_io
       wind_sd,wind_sd_synop,wind_sd_tamdar,wind_sd_mtgirs,wind_sd_profiler,wind_sd_geoamv,wind_sd_polaramv, &
       wind_sd_airep,wind_sd_sound,wind_sd_metar,wind_sd_ships,wind_sd_qscat,wind_sd_buoy,wind_sd_pilot,wind_stats_sd,&
       thin_conv, thin_conv_ascii, lsac_nh_step, lsac_nv_step, lsac_nv_start, lsac_print_details, &
-      lsac_use_u, lsac_use_v, lsac_use_t, lsac_use_q, lsac_u_error, lsac_v_error, lsac_t_error, lsac_q_error
+      lsac_use_u, lsac_use_v, lsac_use_t, lsac_use_q, lsac_u_error, lsac_v_error, lsac_t_error, lsac_q_error, &
+      gpsro_drift, max_gpseph_input, use_gpsephobs, gpseph, gpseph_loadbalance, kds, kde, kts, kte
 
    use da_define_structures, only : iv_type, multi_level_type, multi_level_type_BUFR, &
       radar_multi_level_type, y_type, field_type, each_level_type, &
-      radar_each_level_type, info_type, model_loc_type,gpsref_type, rain_single_level_type, rain_each_type
+      radar_each_level_type, info_type, model_loc_type,gpsref_type, rain_single_level_type, rain_each_type, &
+      gpseph_type
    use da_grid_definitions, only : da_ffdduv,da_ffdduv_model,da_ffdduv_diagnose
    use da_obs, only : da_count_filtered_obs,da_check_missing,da_obs_proc_station, da_set_obs_missing, da_set_3d_obs_missing
    use da_par_util1, only : da_proc_sum_int
@@ -59,6 +61,7 @@ module da_obs_io
    use da_interpolation, only : da_to_zk
    use da_netcdf_interface, only : da_get_var_3d_real_cdf, da_get_dims_cdf, &
       da_get_var_2d_real_cdf
+   use da_gpseph, only: da_gpseph_create_ob, ob_in_mean_h, global_h_mean
 
    implicit none
 
@@ -86,6 +89,7 @@ contains
 #include "da_write_y.inc"
 #include "da_read_obs_bufr.inc"
 #include "da_read_obs_bufrgpsro.inc"
+#include "da_read_obs_bufrgpsro_eph.inc"
 #include "da_final_write_obs.inc"
 #include "da_final_write_y.inc"
 #include "da_read_y_unit.inc"

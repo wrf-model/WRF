@@ -682,6 +682,33 @@ subroutine da_write_obs(it,ob, iv, re)
    end if
 
    num_obs = 0
+   do n = 1, iv%info(gpseph)%nlocal
+      if (iv%info(gpseph)%proc_domain(1,n)) num_obs = num_obs + 1
+   end do
+   if (num_obs > 0) then
+      write(ounit,'(a20,i8)')'gpseph', num_obs
+      num_obs = 0
+      do n = 1, iv%info(gpseph)%nlocal
+         if (iv%info(gpseph)%proc_domain(1,n)) then
+            num_obs = num_obs + 1
+            !write(ounit,'(i8)')iv%info(gpseph)%levels(n)
+            write(ounit,'(i8)') iv%gpseph(n)%level2 - iv%gpseph(n)%level1 + 1
+            !do k = 1, iv%info(gpseph)%levels(n)
+            do k = iv%gpseph(n)%level1, iv%gpseph(n)%level2
+               write(ounit,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))')&
+                  num_obs, k, iv%info(gpseph)%id(n), &  ! Station
+                  iv%gpseph(n)%lat(k),      &           ! Latitude
+                  iv%gpseph(n)%lon(k),      &           ! Longitude
+                  iv%gpseph(n)%h(k),        &           ! Obs Height
+                  ob%gpseph(n)%eph(k),      &
+                  iv%gpseph(n)%eph(k)%inv, iv%gpseph(n)%eph(k)%qc, iv%gpseph(n)%eph(k)%error, &
+                  re%gpseph(n)%eph(k)
+            end do
+         end if
+      end do
+   end if
+
+   num_obs = 0
    do n = 1, iv%info(tamdar)%nlocal
       if (iv%info(tamdar)%proc_domain(1,n)) num_obs = num_obs + 1
    end do

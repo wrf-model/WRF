@@ -33,6 +33,9 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
    !
    !      03/07/2014 - Feng Gao
    !      Updated wind_sd option for wind obs. types
+   !
+   !      12-2017 - Jamie Bresch
+   !      Add a call to da_gpseph_create_ob for gpseph
    !---------------------------------------------------------------------------
 
    implicit none
@@ -71,6 +74,9 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
    real                         :: dx,dy,dxm,dym,zk
    real                         :: v_p(kms:kme),v_h(kms:kme)
 
+   ! for gpseph
+   type(ob_in_mean_h) :: pseudo_ob
+   integer            :: lowest_level
 
    if (trace_use) call da_trace_entry("da_read_obs_ascii")
  ! Initialize counts
@@ -101,6 +107,13 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
       call da_free_unit(iunit)
       if (trace_use) call da_trace_exit("da_read_obs_ascii")
       return
+   end if
+
+   if ( use_gpsephobs ) then
+      allocate (pseudo_ob%ref(kds:kde))
+      allocate (pseudo_ob%lat(kds:kde))
+      allocate (pseudo_ob%lon(kds:kde))
+      allocate (pseudo_ob%azim(kds:kde))
    end if
 
    ! read header
@@ -278,6 +291,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
          !      the model wind components: u, v
 
          if (.not. uvq_direct) then
+         if (fm /= 116 .and. fm /= 118 ) then !not for gpsref, gpseph
          if (platform%each (i)%speed%qc /= missing_data .and. &
              platform%each (i)%v%qc /= missing_data) then
 
@@ -296,6 +310,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
             platform%each (i)%u%qc    = missing_data
             platform%each (i)%v%qc    = missing_data
          end if
+         end if !not for gpsref, gpseph
          end if
       end do
 
@@ -370,7 +385,7 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
 
       levs = nlevels
 
-      if (fm /= 86) call da_obs_proc_station(platform,fm,uvq_direct)
+      if (fm /= 86 .and. fm /= 118) call da_obs_proc_station(platform,fm,uvq_direct)
 
       ! Loop over duplicating obs for global
       ndup = 1
@@ -1182,6 +1197,69 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
                iv%gpsref(ilocal(gpsref))%q(i)   = platform%each(i)%q
             end do
 
+         CASE (118) ;
+
+            if ( .not.use_GpsephObs .or. ntotal(gpseph) == max_gpseph_input ) cycle reports
+            if ( ob_format_gpsro /= ob_format_ascii ) cycle reports
+            if (n==1) ntotal(gpseph) = ntotal(gpseph) + 1
+            if ( gpseph_loadbalance ) then
+               if ( myproc /= mod( (ntotal(gpseph)-1), num_procs ) ) cycle reports
+            else
+               if (outside) cycle reports
+            endif
+
+            if (gpsro_drift ==  0) then
+               ! lat stored in speed, lon stored in v
+               ! replacing all levels with one lat/lon for gpsro_drift=0
+               platform%each(1:nlevels)%speed%inv = platform%info%lat
+               platform%each(1:nlevels)%v%inv = platform%info%lon
+            end if
+
+            !create pseudo_ob on grid mean altitude for gpseph
+            call da_gpseph_create_ob(              &
+               nlevels,                            &
+               platform%each(1:nlevels)%height,    &
+               platform%each(1:nlevels)%td%inv,    & ! ref stored in td
+               platform%each(1:nlevels)%speed%inv, & ! lat stored in speed
+               platform%each(1:nlevels)%v%inv,     & ! lon stored in v
+               platform%each(1:nlevels)%rh%inv,    & ! azim stored in rh
+               pseudo_ob, lowest_level)
+
+            ! cycle when no valid levels
+            if ( lowest_level < 1 ) cycle reports
+
+            nlocal(gpseph) = nlocal(gpseph) + 1
+            ilocal(gpseph) = ilocal(gpseph) + 1
+
+            iv%gpseph(ilocal(gpseph))%level1 = lowest_level+1
+            iv%gpseph(ilocal(gpseph))%level2 = kde-1
+            iv%gpseph(ilocal(gpseph))%rfict  = platform%loc%pw%inv
+
+            levs = kde - kds + 1
+            allocate (iv%gpseph(ilocal(gpseph))%h  (kds:kde))
+            allocate (iv%gpseph(ilocal(gpseph))%ref(kds:kde))
+            allocate (iv%gpseph(ilocal(gpseph))%eph(kds:kde))
+            ! iv%gpseph includes additional azim/lat/lon info of each level
+            allocate (iv%gpseph(ilocal(gpseph))%lat(kds:kde))
+            allocate (iv%gpseph(ilocal(gpseph))%lon(kds:kde))
+            allocate (iv%gpseph(ilocal(gpseph))%azim(kds:kde))
+
+            ! initialize eph
+            ! eph will be calculated in da_get_innov_vector_gpseph
+            iv%gpseph(ilocal(gpseph))%eph(:)%inv   = missing_r
+            iv%gpseph(ilocal(gpseph))%eph(:)%qc    = missing_data
+            iv%gpseph(ilocal(gpseph))%eph(:)%error = xmiss
+
+            do k = kts, kte
+               iv%gpseph(ilocal(gpseph))%h(k)         = global_h_mean(k)*1000.0 !km to m
+               iv%gpseph(ilocal(gpseph))%lat(k)       = pseudo_ob%lat(k)
+               iv%gpseph(ilocal(gpseph))%lon(k)       = pseudo_ob%lon(k)
+               iv%gpseph(ilocal(gpseph))%azim(k)      = pseudo_ob%azim(k)
+               iv%gpseph(ilocal(gpseph))%ref(k)%inv   = pseudo_ob%ref(k)
+               iv%gpseph(ilocal(gpseph))%ref(k)%qc    = missing_data
+               iv%gpseph(ilocal(gpseph))%ref(k)%error = xmiss
+            end do
+
          case (121) ;
             if(.not.use_ssmt1obs  .or. ntotal(ssmt1) == max_ssmt1_input ) cycle reports
             if (n==1) ntotal(ssmt1) = ntotal(ssmt1) + 1
@@ -1499,6 +1577,15 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
             end if
          end if  ! for thin_conv_ascii skipping obs_index for which thin_3d is true like airep and tamdir
 
+         if (obs_index == gpseph) then
+            iv%info(gpseph)%levels(ilocal(gpseph))   = kde - kds + 1
+            iv%info(gpseph)%lat(:,ilocal(gpseph))    = iv%gpseph(ilocal(gpseph))%lat(:)
+            iv%info(gpseph)%lon(:,ilocal(gpseph))    = iv%gpseph(ilocal(gpseph))%lon(:)
+            if (gpsro_drift ==  0) then
+               iv%info(gpseph)%lat(:,ilocal(gpseph)) = platform%info%lat
+               iv%info(gpseph)%lon(:,ilocal(gpseph)) = platform%info%lon
+            end if
+         end if
 
          if (global .and. n < 2) then
             if (test_transforms) exit dup_loop
@@ -1512,6 +1599,13 @@ subroutine da_read_obs_ascii (iv, filename, uvq_direct, grid)
          end if
       end do dup_loop
    end do reports
+
+   if ( use_gpsephobs ) then
+      deallocate (pseudo_ob%ref)
+      deallocate (pseudo_ob%lat)
+      deallocate (pseudo_ob%lon)
+      deallocate (pseudo_ob%azim)
+   end if
 
    close(iunit)
 

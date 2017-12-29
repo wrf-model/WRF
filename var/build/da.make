@@ -29,6 +29,7 @@ WRFVAR_OBJS = \
    da_rain.o \
    da_gpspw.o \
    da_gpsref.o \
+   da_gpseph.o \
    da_ssmi.o \
    module_ssmi.o \
    da_satem.o \

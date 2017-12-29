@@ -188,6 +188,10 @@ subroutine da_setup_obs_structures_ascii( ob, iv, grid )
       call da_read_obs_bufrgpsro(iv)
    end if
 
+   if ( use_gpsephobs .and. (ob_format_gpsro == ob_format_bufr) ) then
+      call da_read_obs_bufrgpsro_eph(iv)
+   end if
+
    !--------------------------------------------------------------------------
    ! [2.5] Set all thinned obs missing  
    !--------------------------------------------------------------------------

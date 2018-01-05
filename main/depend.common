@@ -624,6 +624,7 @@ module_cumulus_driver.o: \
 		module_cu_camzm_driver.o \
 		module_cu_tiedtke.o \
 		module_cu_ntiedtke.o \
+		module_cu_mskf.o \
 		module_cu_kfcup.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \

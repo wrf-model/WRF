@@ -632,6 +632,28 @@
          END IF
       ENDDO
 
+!-----------------------------------------------------------------------
+! aercu_opt = 1 (CESM-aerosal) only works with MSKF, special Morrison and YSU PBL.
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%aercu_opt .GT. 0 .AND.       &
+              model_config_rec%cu_physics(i) .NE. MSKFSCHEME .OR. &
+              model_config_rec%mp_physics(i) .NE. MORR_TM_AERO .OR. &
+              model_config_rec%bl_pbl_physics(i) .NE. YSUSCHEME ) THEN
+              oops = oops + 1
+         END IF
+      ENDDO
+
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: aercu_opt requires cu_physics = 11, bl_pbl_physics = 1 and mp_physics = 40 '
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- Fix these options in namelist.input if you would like to use aercu_opt'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         fatal_error = .true.
+         count_fatal_error = count_fatal_error + 1
+      END IF
 #endif
 
 !-----------------------------------------------------------------------

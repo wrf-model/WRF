@@ -749,6 +749,7 @@ BENCH_END(set_phys_bc_tim)
                              , ipsy, ipey, jpsy, jpey, kpsy, kpey    &
                              , k_start , k_end                  &
                              , f_flux                           &
+                             , aerocu                           & !PSH/TWG 06/10/16
                             )
 
 #ifdef DM_PARALLEL
@@ -3849,8 +3850,14 @@ BENCH_START(micro_driver_tim)
       &        ,height=grid%height                                         &
       &        ,tempc=grid%tempc                                         &
       &        ,ccn_conc=grid%ccn_conc                                   & ! RAS
-
-                                                                          )
+      &        ,aerocu=aerocu                                            & ! TWG 
+      &        ,aercu_opt=config_flags%aercu_opt                         & ! TWG
+      &        ,no_src_types_cu=grid%no_src_types_cu                     & ! TWG
+      &        ,PBL=grid%bl_pbl_physics,EFCG=grid%EFCG,EFIG=grid%EFIG,EFSG=grid%EFSG & !TWG
+      &        ,WACT=grid%WACT,CCN1_GS=grid%CCN1_GS,CCN2_GS=grid%CCN2_GS,CCN3_GS=grid%CCN3_GS  & !TWG
+      &        ,CCN4_GS=grid%CCN4_GS,CCN5_GS=grid%CCN5_GS,CCN6_GS=grid%CCN6_GS &  !TWG
+      &        ,CCN7_GS=grid%CCN7_GS) !TWG/amy                  
+                                                                          
 BENCH_END(micro_driver_tim)
 
 #if 0

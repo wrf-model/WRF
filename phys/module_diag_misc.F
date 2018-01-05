@@ -65,7 +65,8 @@ CONTAINS
       WSM6SCHEME, ETAMPNEW, THOMPSON, THOMPSONAERO,                     &
       MORR_TWO_MOMENT, GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME,           &
       NSSL_2MOM, NSSL_2MOMG, NSSL_2MOMCCN, NSSL_1MOM, NSSL_1MOMLFO,                 &
-      MILBRANDT2MOM , CAMMGMPSCHEME, FAST_KHAIN_LYNN, FULL_KHAIN_LYNN    !,MILBRANDT3MOM, NSSL_3MOM
+      MILBRANDT2MOM , CAMMGMPSCHEME, FAST_KHAIN_LYNN, FULL_KHAIN_LYNN,  &
+      MORR_TM_AERO  !TWG 2017  !,MILBRANDT3MOM, NSSL_3MOM
 
    IMPLICIT NONE
 !======================================================================
@@ -866,7 +867,7 @@ CONTAINS
 !      scheme_has_graupel = .true.
 !      either Hugh or Jason need to implement.
 
-     CASE (MORR_TWO_MOMENT)
+     CASE (MORR_TWO_MOMENT, MORR_TM_AERO)
        scheme_has_graupel = .true.
        xrho_g = 400.
        if (mpuse_hail .eq. 1) xrho_g = 900.

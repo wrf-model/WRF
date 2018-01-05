@@ -112,8 +112,9 @@ CONTAINS
     LOGICAL, EXTERNAL                                :: wrf_dm_on_monitor
     INTEGER, EXTERNAL                                :: get_unused_unit
       
-    INTEGER                                          :: istatus, iunit, idata        
-    INTEGER, SAVE                             :: VARCAM_in_years
+    INTEGER                                          :: istatus, iunit, idata
+!ccc VARCAM_in_years is a module variable, needs something else here!        
+    INTEGER, SAVE                             :: max_years 
     integer                                          :: nyrm, nyrp, njulm, njulp
     LOGICAL                                          :: exists
     LOGICAL, SAVE                                    :: READtrFILE=.FALSE.
@@ -167,11 +168,11 @@ CONTAINS
                 PRINT *,"   Not normal ending of 'CAMtr_volume_mixing_ratio' file"
                 PRINT *,"   Lecture ends with 'IOSTAT'=",istatus
              END IF
-             VARCAM_in_years = idata - 1
+             max_years = idata - 1
              CLOSE(iunit)
 
              ! Calculate the julian day for each month.
-             DO idata=1,VARCAM_in_years
+             DO idata=1,max_years
                 mondayi = monday
                 MY1=MOD(yrdata(idata),4)
                 MY2=MOD(yrdata(idata),100)
@@ -181,28 +182,16 @@ CONTAINS
              ENDDO
           ENDIF
        ELSE
-          PRINT *,"CLWRF -- clwrf -- CLWRF ALERT!"
-          PRINT *,"   'CAMtr_volume_mixing_ratio' does not exists"
-          PRINT *,'   Recovering original concentrations'
-          
-          !ccc Fake yrdata. Won't be use but a value > yr is needed so that
-          ! everything work.
-          ! With negative mixing ratios in co2r, n2or and ch4r, no interpolation
-          ! is done and we use the constant mixing ratios that were used before
-          ! CLWRF modifications.
-          yrdata = yr + 1
-          juldata = 1
-          co2r   = -9999.999
-          n2or   = -9999.999
-          ch4r   = -9999.999
-          cfc11r = -9999.999
-          cfc12r = -9999.999
-
+          max_years = VARCAM_in_years ! Set max number of years to the table size
+                                      ! used for CAM.
           ! For CAM model, recovers original data sets.
           IF (model .eq. "CAM") THEN
-             yrdata(1:VARCAM_in_years) = yr_CAM
-             co2r(1:VARCAM_in_years)   = co2r_CAM
+             yrdata(1:max_years) = yr_CAM
+             co2r(1:max_years)   = co2r_CAM
+          ELSE
+             CALL wrf_error_fatal("CLWRF: 'CAMtr_volume_mixing_ratio' does not exist")
           ENDIF
+
        ENDIF ! CAMtr_volume_mixing_ratio exists
        
     ENDIF ! File already opened and read 
@@ -224,8 +213,8 @@ CONTAINS
     
     ! Prevent yr > last year in data
 !    IF (yearIN .ge. VARCAM_in_years) yearIN=VARCAM_in_years-1
-    IF (iyear .ge. VARCAM_in_years) then
-       yearIN=VARCAM_in_years-1
+    IF (iyear .ge. max_years) then
+       yearIN=max_years-1
        found_yearIN = 1
     ENDIF
     
@@ -241,9 +230,9 @@ CONTAINS
        co2vmr=-9999.999
        if (found_yearIN /= 0) then
           ! Interpolate data only if we have at least 2 valid concentrations.
-          tot_valid = count(co2r(1:VARCAM_in_years) > 0)
+          tot_valid = count(co2r(1:max_years) > 0)
           IF (tot_valid >= 2 ) THEN
-             CALL valid_years(yearIN, co2r, VARCAM_in_years,yr1, yr2)
+             CALL valid_years(yearIN, co2r, max_years,yr1, yr2)
 
              ! Set nyrm, njulm, nyrp, njulp
              nyrm = yrdata(yr1)
@@ -269,9 +258,9 @@ CONTAINS
     IF (PRESENT(n2ovmr)) THEN
        n2ovmr=-9999.999
        if (found_yearIN /= 0) then
-          tot_valid = count(n2or(1:VARCAM_in_years) > 0)
+          tot_valid = count(n2or(1:max_years) > 0)
           IF (tot_valid >= 2 ) THEN
-             CALL valid_years(yearIN, n2or, VARCAM_in_years,yr1, yr2)
+             CALL valid_years(yearIN, n2or, max_years,yr1, yr2)
 
              ! Set nyrm, njulm, nyrp, njulp
              nyrm = yrdata(yr1)
@@ -296,9 +285,9 @@ CONTAINS
     IF (PRESENT(ch4vmr)) THEN
        ch4vmr=-9999.999
        if (found_yearIN /= 0) then
-          tot_valid = count(ch4r(1:VARCAM_in_years) > 0)
+          tot_valid = count(ch4r(1:max_years) > 0)
           IF (tot_valid >= 2 ) THEN
-             CALL valid_years(yearIN, ch4r, VARCAM_in_years,yr1, yr2)
+             CALL valid_years(yearIN, ch4r, max_years,yr1, yr2)
 
              ! Set nyrm, njulm, nyrp, njulp
              nyrm = yrdata(yr1)
@@ -322,9 +311,9 @@ CONTAINS
     IF (PRESENT(cfc11vmr)) THEN
        cfc11vmr = -9999.999
        if (found_yearIN /= 0) then
-          tot_valid = count(cfc11r(1:VARCAM_in_years) > 0)
+          tot_valid = count(cfc11r(1:max_years) > 0)
           IF (tot_valid >= 2 ) THEN
-             CALL valid_years(yearIN, cfc11r, VARCAM_in_years,yr1, yr2)
+             CALL valid_years(yearIN, cfc11r, max_years,yr1, yr2)
 
              ! Set nyrm, njulm, nyrp, njulp
              nyrm = yrdata(yr1)
@@ -346,9 +335,9 @@ CONTAINS
     IF (PRESENT(cfc12vmr)) THEN
        cfc12vmr = -9999.999
        if (found_yearIN /= 0) then
-          tot_valid = count(cfc12r(1:VARCAM_in_years) > 0)
+          tot_valid = count(cfc12r(1:max_years) > 0)
           IF (tot_valid >= 2 ) THEN
-             CALL valid_years(yearIN, cfc12r, VARCAM_in_years,yr1, yr2)
+             CALL valid_years(yearIN, cfc12r, max_years,yr1, yr2)
 
              ! Set nyrm, njulm, nyrp, njulp
              nyrm = yrdata(yr1)
@@ -560,21 +549,8 @@ CONTAINS
           ENDIF
        ENDIF
 
-    ELSE IF (model .eq. "RRTM") THEN
-       IF (tracer .eq. "CO2") THEN
-          out = 3.300e-4
-
-       ELSE IF ((tracer .eq. "N2O") .or. &
-                (tracer .eq. "CH4")) THEN
-          out = 0.
-       ELSE
-          IF ( wrf_dm_on_monitor() ) THEN
-             WRITE(message,*) 'CLWRF : Trace gas ',tracer,' not valid for scheme ',model
-             CALL wrf_error_fatal(message)
-          ENDIF
-       ENDIF
-
-    ELSE IF (model .eq. "RRTMG") THEN
+    ELSE IF ((model .eq. "RRTM") .or. &
+             (model .eq. "RRTMG")) THEN
        IF (tracer .eq. "CO2") THEN
           out = 379.e-6
 

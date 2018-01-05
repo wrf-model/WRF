@@ -189,7 +189,7 @@ CONTAINS
              yrdata(1:max_years) = yr_CAM
              co2r(1:max_years)   = co2r_CAM
           ELSE
-          CALL wrf_error_fatal("CLWRF: 'CAMtr_volume_mixing_ratio' does not exist")
+             CALL wrf_error_fatal("CLWRF: 'CAMtr_volume_mixing_ratio' does not exist")
           ENDIF
           
           !ccc Fake yrdata. Won't be use but a value > yr is needed so that

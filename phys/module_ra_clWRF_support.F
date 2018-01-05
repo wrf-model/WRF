@@ -191,19 +191,6 @@ CONTAINS
           ELSE
              CALL wrf_error_fatal("CLWRF: 'CAMtr_volume_mixing_ratio' does not exist")
           ENDIF
-          
-          !ccc Fake yrdata. Won't be use but a value > yr is needed so that
-          ! everything work.
-          ! With negative mixing ratios in co2r, n2or and ch4r, no interpolation
-          ! is done and we use the constant mixing ratios that were used before
-          ! CLWRF modifications.
-          !yrdata = yr + 1
-          !juldata = 1
-          !co2r   = -9999.999
-          !n2or   = -9999.999
-          !ch4r   = -9999.999
-          !cfc11r = -9999.999
-          !cfc12r = -9999.999
 
        ENDIF ! CAMtr_volume_mixing_ratio exists
        

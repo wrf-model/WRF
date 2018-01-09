@@ -1109,6 +1109,7 @@ CONTAINS
           ENDDO
           ENDDO
      ENDIF
+#if (EM_CORE == 1)
 ! temporarily modify hydrometeors (for P3, if 2 cat then add ice from both categories)
 !
      IF ( F_QI2) THEN
@@ -1120,6 +1121,7 @@ CONTAINS
           ENDDO
           ENDDO
      ENDIF
+#endif
 
 ! Choose how to compute cloud fraction (since 3.6)
 ! Initialize to zero 

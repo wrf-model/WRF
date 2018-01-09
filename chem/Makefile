@@ -55,6 +55,7 @@ MODULES =                                 \
         module_gocart_drydep.o            \
         module_gocart_settling.o          \
         module_gocart_so2so4.o            \
+        module_HLaw.o                     \
         module_input_tracer_data.o        \
         module_interpolate.o              \
         module_mosaic_csuesat.o           \

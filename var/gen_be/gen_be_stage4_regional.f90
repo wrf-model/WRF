@@ -27,6 +27,8 @@ program gen_be_stage4_regional
    integer             :: jstart, jend               ! Starting and ending j indices
    integer             :: i                          ! Dummy index
    logical             :: print_wavelets
+   logical             :: allow_missing_dates        ! If data from stage 1 is not contiguous, attempt to continue
+   logical             :: missing                    ! Flag if subroutine found missing date
    real                :: rcount                     ! Counter for times/members ("count" is intrinsic).
    real                :: fnorm                      ! field norm
    integer, allocatable:: nr(:)                      ! Number of points in each bin.
@@ -39,7 +41,8 @@ program gen_be_stage4_regional
 
    namelist / gen_be_stage4_regional_nl / start_date, end_date, interval, variable, &
                                           ne, k, nbins, ibin, stride, run_dir, &
-                                          do_normalize, print_wavelets, lf, namw, nb, use_rf
+                                          do_normalize, print_wavelets, lf, namw, nb, &
+                                          use_rf, allow_missing_dates
 
    integer :: ounit,iunit,namelist_unit
 
@@ -66,6 +69,7 @@ program gen_be_stage4_regional
       stride = 1
    endif
    run_dir = '/mmmtmp/dmbarker'
+   allow_missing_dates = .false.
    open(unit=namelist_unit, file='gen_be_stage4_regional_nl.nl', &
         form='formatted', status='old', action='read')
    read(namelist_unit, gen_be_stage4_regional_nl)
@@ -118,7 +122,16 @@ program gen_be_stage4_regional
    if( do_normalize )then
       do while( cdate<=edate )			! Do part of later cdate loop now:
          do member = 1, ne			! Loop over members:
-            call read_ni_nj(iunit,member,run_dir,variable,date(1:10),ck,ni,nj)
+            call read_ni_nj(iunit,member,run_dir,variable,date(1:10),ck,ni,nj,missing)
+            if (missing) then
+               write(6,'(a,i10)')' WARNING: MISSING DATA FOR DATE ',cdate
+               if (allow_missing_dates) then
+                  write(6,'(a)')' Attempting to continue since allow_missing_dates = .true.'
+                  cycle
+               else
+                  call da_error(__FILE__,__LINE__,(/"ERROR: MISSING DATA"/))
+               endif
+            endif
             if( rcount==1.0 )call allocate_field_moments(field,wav,sd,ni,nj)
             read(iunit)field
             close(iunit)
@@ -141,7 +154,16 @@ program gen_be_stage4_regional
 
          write(UNIT=6,FMT='(5a,i4)')'    Date = ', date, ', variable ', trim(variable), &
                            ' and member ', member
-         call read_ni_nj(iunit,member,run_dir,variable,date(1:10),ck,ni,nj)
+         call read_ni_nj(iunit,member,run_dir,variable,date(1:10),ck,ni,nj,missing)
+         if (missing) then
+            write(6,'(a,i10)')' WARNING: MISSING DATA FOR DATE ',cdate
+            if (allow_missing_dates) then
+               write(6,'(a)')' Attempting to continue since allow_missing_dates = .true.'
+               cycle
+            else
+               call da_error(__FILE__,__LINE__,(/"ERROR: MISSING DATA"/))
+            endif
+         endif
          if( use_rf )then
             jstart = floor(real(ibin-1)*real(nj)/real(nbins))+1
             jend   = floor(real(ibin)  *real(nj)/real(nbins))
@@ -321,22 +343,30 @@ contains
  ENDIF
  ENDSUBROUTINE update_moments
 
- SUBROUTINE read_ni_nj(iunit,member,run_dir,variable,date,ck,ni,nj)
+ SUBROUTINE read_ni_nj(iunit,member,run_dir,variable,date,ck,ni,nj,missing)
  IMPLICIT NONE 
- CHARACTER(LEN=filename_len),INTENT(IN):: run_dir	! Run directory.
- CHARACTER*2,                INTENT(IN):: ck		! Level index -> character.
- CHARACTER*10,               INTENT(IN):: date,variable! Date, variable name
+ CHARACTER(LEN=filename_len),INTENT(IN):: run_dir       ! Run directory.
+ CHARACTER*2,                INTENT(IN):: ck            ! Level index -> character.
+ CHARACTER*10,               INTENT(IN):: date,variable ! Date, variable name
  INTEGER,                    INTENT(IN):: iunit,member
  INTEGER,                   INTENT(OUT):: ni,nj
- CHARACTER*3                           :: ce		! Member index -> character.
- CHARACTER(LEN=filename_len)           :: filename	! I/O filename.
+ LOGICAL,                   INTENT(OUT):: missing       ! missing date flag, set true if file open fails
+ INTEGER                               :: readstat
+ CHARACTER*3                           :: ce            ! Member index -> character.
+ CHARACTER(LEN=filename_len)           :: filename      ! I/O filename.
  INTEGER                               :: kdum
  WRITE(ce,'(i3.3)')member
+ missing = .false.
 ! Assumes variable directory has been created by script:
  filename=TRIM(run_dir)//'/'//TRIM(variable)//'/'//date//'.'//TRIM(variable) &
                                     //'.e'//ce//'.'//ck
  OPEN(iunit,FILE=filename,FORM="UNFORMATTED")
- READ(iunit)ni,nj,kdum
+ READ(iunit,IOSTAT=readstat)ni,nj,kdum
+ if (readstat /= 0) then
+       ni = 0
+       nj = 0
+       missing = .true.
+ endif
  ENDSUBROUTINE read_ni_nj
 
 subroutine get_grid_info( ni, nj, nn, stride, nr, jstart, jend )

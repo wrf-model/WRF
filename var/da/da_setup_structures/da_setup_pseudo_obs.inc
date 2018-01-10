@@ -66,6 +66,7 @@ subroutine da_setup_pseudo_obs(grid, iv, ob)
          allocate(iv%gpsref(1:iv%info(gpsref)%nlocal))
          call da_allocate_obs_info(iv, gpsref)
          iv%info(gpsref)%proc_domain(:,:) = .true.
+         iv%info(gpsref)%obs_global_index(iv%info(gpsref)%nlocal) = 1
          allocate(iv%gpsref(num_pseudo)%ref(1:1))
          allocate(iv%gpsref(num_pseudo)%  h(1:1))
          allocate(iv%gpsref(num_pseudo)%  p(1:1))
@@ -85,6 +86,10 @@ subroutine da_setup_pseudo_obs(grid, iv, ob)
          iv%info(gpsref)%dy(:,1)  = pseudo_y-real(iv%info(gpsref)%j(1,1))
          iv%info(gpsref)%dxm(:,1) = 1.0-iv%info(gpsref)%dx(1,1)
          iv%info(gpsref)%dym(:,1) = 1.0-iv%info(gpsref)%dy(1,1)
+         i = iv%info(gpsref)%i(1,1)
+         j = iv%info(gpsref)%j(1,1)
+         iv%info(gpsref)%lat(:,1) = grid%xb%lat(i,j)
+         iv%info(gpsref)%lon(:,1) = grid%xb%lon(i,j)
          iv % gpsref(1) %ref(1) % inv   = pseudo_val
          iv % gpsref(1) %ref(1) % error = pseudo_err
          iv % gpsref(1) %ref(1) % qc    = 0
@@ -108,6 +113,7 @@ subroutine da_setup_pseudo_obs(grid, iv, ob)
          allocate(iv%gpspw(1:iv%info(gpspw)%nlocal))
          call da_allocate_obs_info(iv, gpspw)
          iv%info(gpspw)%proc_domain(:,:) = .true.
+         iv%info(gpspw)%obs_global_index(iv%info(gpspw)%nlocal) = 1
          allocate (ob % gpspw (1:num_pseudo))
          ob % gpspw(1) % tpw   = 0.0
          iv%info(gpspw)%x(:,1)   = pseudo_x
@@ -123,13 +129,15 @@ subroutine da_setup_pseudo_obs(grid, iv, ob)
          iv % gpspw(1) % tpw % inv   = pseudo_val
          iv % gpspw(1) % tpw % error = pseudo_err
          iv % gpspw(1) % tpw % qc    = 0
+         i = iv%info(gpspw)%i(1,1)
+         j = iv%info(gpspw)%j(1,1)
+         iv%info(gpspw)%lat(:,1) = grid%xb%lat(i,j)
+         iv%info(gpspw)%lon(:,1) = grid%xb%lon(i,j)
          if ( pseudo_elv > -999.0 ) then
             ! pseudo_elv is set in the namelist
             iv%info(gpspw)%elv      = pseudo_elv
          else
             ! assign model terrain to ob elv
-            i   = iv%info(gpspw)%i(1,1)
-            j   = iv%info(gpspw)%j(1,1)
             dx  = iv%info(gpspw)%dx(1,1)
             dy  = iv%info(gpspw)%dy(1,1)
             dxm = iv%info(gpspw)%dxm(1,1)
@@ -211,7 +219,8 @@ subroutine da_setup_pseudo_obs(grid, iv, ob)
             iv%pseudo(:) % p % inv = pseudo_val
             iv%pseudo(:) % p % error = pseudo_err
             iv%pseudo(:) % p % qc = 0
-         else if ( trim(adjustl(pseudo_var)) == 'q' ) then
+         !else if ( trim(adjustl(pseudo_var)) == 'q' ) then
+         else if ( pseudo_var(1:1) == 'q' ) then
             iv%pseudo(:) % q % inv = pseudo_val
             iv%pseudo(:) % q % error = pseudo_err
             iv%pseudo(:) % q % qc = 0

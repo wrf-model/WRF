@@ -28,6 +28,7 @@
 !</DESCRIPTION>
 
       USE module_state_description
+      USE module_model_constants
       USE module_wrf_error
       USE module_configure
 
@@ -53,6 +54,9 @@
       LOGICAL , EXTERNAL :: wrf_dm_on_monitor
       INTEGER :: i, j, oops, d1_value
       LOGICAL :: km_opt_already_done , diff_opt_already_done
+      INTEGER :: count_opt
+      LOGICAL :: lon_extent_is_global , lat_extent_is_global
+
 !TWG2015
 !
 !FASDAS
@@ -302,6 +306,25 @@
          count_fatal_error = count_fatal_error + 1
          END IF
       ENDDO
+
+
+#if ( defined NO_GAMMA_SUPPORT )
+!-----------------------------------------------------------------------
+! GF CU scheme requires an intrinsic gamma function. This is a 2008
+! feature that not all compilers yet support.
+!-----------------------------------------------------------------------
+
+      GF_test : DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % cu_physics(i) .EQ. GFSCHEME ) THEN
+            wrf_err_message = '--- ERROR: cu_physics GF uses an intrinsic gamma function that is not available with this compiler'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            wrf_err_message = '--- Change compilers, or change cu_physics option in the namelist.input file.'
+            CALL wrf_message ( TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
+            EXIT GF_test
+         END IF
+      ENDDO GF_test
+#endif
 
 !-----------------------------------------------------------------------
 ! If fractional_seaice = 0, and tice2tsk_if2cold = .true, nothing will happen
@@ -1044,6 +1067,88 @@
          END DO
       END IF
 
+!-----------------------------------------------------------------------
+! For RASM Diagnostics
+! -verify that only one time interval is specified
+! -change the intervals to values used in RASM Diagnotics
+! -verify that a time interval has been set
+!-----------------------------------------------------------------------
+
+! 1. Only one time interval type specified
+
+      DO i = 1, model_config_rec % max_dom
+         count_opt = 0
+         IF ( model_config_rec%mean_diag_interval_s (i) .GT. 0 ) THEN
+            count_opt = count_opt + 1
+         END IF 
+         IF ( model_config_rec%mean_diag_interval_m (i) .GT. 0 ) THEN
+            count_opt = count_opt + 1
+         END IF 
+         IF ( model_config_rec%mean_diag_interval_h (i) .GT. 0 ) THEN
+            count_opt = count_opt + 1
+         END IF 
+         IF ( model_config_rec%mean_diag_interval_d (i) .GT. 0 ) THEN
+            count_opt = count_opt + 1
+         END IF 
+         IF ( model_config_rec%mean_diag_interval_mo(i) .GT. 0 ) THEN
+            count_opt = count_opt + 1
+         END IF 
+         IF ( model_config_rec%mean_diag_interval   (i) .GT. 0 ) THEN
+            count_opt = count_opt + 1
+         END IF 
+         IF ( count_opt .GT. 1 ) THEN
+            wrf_err_message = '--- ERROR:  Only use one of: mean_diag_interval, _s, _m, _h, _d, _mo '
+            CALL wrf_message ( wrf_err_message )
+            count_fatal_error = count_fatal_error + 1
+         END IF
+      END DO
+
+! 2. Put canonical intervals into RASM expected form
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%mean_diag_interval_s (i) .GT. 0 ) THEN
+            model_config_rec%mean_interval(i) = model_config_rec%mean_diag_interval_s (i)
+            model_config_rec%mean_freq = 1
+         END IF 
+         IF ( model_config_rec%mean_diag_interval_m (i) .GT. 0 ) THEN
+            model_config_rec%mean_interval(i) = model_config_rec%mean_diag_interval_m (i)
+            model_config_rec%mean_freq = 2
+         END IF 
+         IF ( model_config_rec%mean_diag_interval_h (i) .GT. 0 ) THEN
+            model_config_rec%mean_interval(i) = model_config_rec%mean_diag_interval_h (i)
+            model_config_rec%mean_freq = 3
+         END IF 
+         IF ( model_config_rec%mean_diag_interval_d (i) .GT. 0 ) THEN
+            model_config_rec%mean_interval(i) = model_config_rec%mean_diag_interval_d (i)
+            model_config_rec%mean_freq = 4
+         END IF 
+         IF ( model_config_rec%mean_diag_interval_mo(i) .GT. 0 ) THEN
+            model_config_rec%mean_interval(i) = model_config_rec%mean_diag_interval_mo(i)
+            model_config_rec%mean_freq = 5
+         END IF 
+         IF ( model_config_rec%mean_diag_interval   (i) .GT. 0 ) THEN
+            model_config_rec%mean_interval(i) = model_config_rec%mean_diag_interval   (i)
+            model_config_rec%mean_freq = 2
+         END IF 
+      END DO
+
+! 3. If requested, need an interval.
+
+      IF ( model_config_rec%mean_diag .EQ. 1 ) THEN
+         count_opt = 0
+         DO i = 1, model_config_rec % max_dom
+            IF ( model_config_rec%mean_interval   (i) .GT. 0 ) THEN
+               count_opt = count_opt + 1
+            END IF 
+         END DO
+         IF ( count_opt .LT. 1 ) THEN
+            wrf_err_message = '--- ERROR:  mean_diag = 1, but no computation interval given'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '            Use one of: mean_diag_interval, _s, _m, _h, _d, _mo '
+            CALL wrf_message ( wrf_err_message )
+            count_fatal_error = count_fatal_error + 1
+         END IF
+      END IF
 
 !-----------------------------------------------------------------------
 ! For nwp_diagnostics = 1, history_interval must be used.           
@@ -1455,7 +1560,7 @@
              !  We are OK, I just hate writing backwards / negative / convoluted if tests 
              !  that are not easily comprehensible.
           ELSE
-            wrf_err_message = '--- ERROR: vert_refine_method=2 only works with either RRTM or RRTMG'
+            wrf_err_message = '--- ERROR: vert_refine_method=2 only works with ra_lw_physics=1 (RRTM) and ra_sw_physics=1 (Dudhia)'
             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
             count_fatal_error = count_fatal_error + 1
           END IF 
@@ -1469,6 +1574,28 @@
             model_config_rec % fft_filter_lat .LT. 90. .AND. &
             model_config_rec % traj_opt .NE. 0 ) THEN
          CALL wrf_debug ( 0, '--- ERROR: Trajectories not supported on global domain' )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+
+!-----------------------------------------------------------------------
+! If the user did not specify a global setting in the lateral BC
+! portion of the namelist file (polar), but the distance around the
+! equator is approximately equal to the entire globe, then it is likely
+! that the user probably forgot to flip that polar switch on.
+!-----------------------------------------------------------------------
+      lon_extent_is_global = .FALSE.
+      IF ( ABS ( model_config_rec % e_we(1) * model_config_rec % dx(1) - 2. * piconst / reradius ) .LT. model_config_rec % dx(1) ) THEN
+         lon_extent_is_global = .TRUE.
+      END IF
+
+      lat_extent_is_global = .FALSE.
+      IF ( ABS ( model_config_rec % e_sn(1) * model_config_rec % dy(1) -      piconst / reradius ) .LT. model_config_rec % dy(1) ) THEN
+         lat_extent_is_global = .TRUE.
+      END IF
+
+      IF ( ( .NOT. model_config_rec % polar(1) ) .AND. &
+           ( lon_extent_is_global .AND. lat_extent_is_global ) ) THEN
+         CALL wrf_debug ( 0, '--- ERROR: Domain size is global, set &bdy_control polar=.TRUE.' )
          count_fatal_error = count_fatal_error + 1
       END IF
 
@@ -1529,6 +1656,11 @@
                            'o3input=0 to avoid data pre-processing'
          CALL wrf_message ( wrf_err_message )
       END IF
+
+
+!-----------------------------------------------------------------------
+!  MUST BE AFTER ALL OF THE PHYSICS CHECKS.
+!-----------------------------------------------------------------------
 
       IF ( count_fatal_error .GT. 0 ) THEN
          WRITE (wrf_err_message, FMT='(A,I6, A)') 'NOTE:  ', count_fatal_error, &
@@ -1884,6 +2016,26 @@
       WRITE (wrf_err_message, FMT='(A,I6)') '--- NOTE: num_soil_layers has been set to ', &
                                              model_config_rec % num_soil_layers
       CALL wrf_message ( wrf_err_message )
+
+!-----------------------------------------------------------------------
+!  The P3 MP schemes must be used with the RRTMG radiation schemes.
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec % mp_physics(i) .EQ. P3_1CATEGORY    )   .OR.  &
+              ( model_config_rec % mp_physics(i) .EQ. P3_1CATEGORY_NC ) ) THEN
+
+            IF ( ( ( model_config_rec % ra_lw_physics(i) .EQ. RRTMG_LWSCHEME      )   .OR.   &
+                   ( model_config_rec % ra_lw_physics(i) .EQ. RRTMG_LWSCHEME_FAST ) ) .AND.  &
+                 ( ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME      )   .OR.   &
+                   ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME_FAST ) ) ) THEN
+               !  No op, everything is fine. This is just easier logic to understand
+            ELSE
+               wrf_err_message = '--- ERROR: P3 MP (mp_physics=50 or 51) requires using RRTMG LW and SW schemes.'
+               CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+            END IF
+         END IF
+      END DO
 
    END SUBROUTINE set_physics_rconfigs
 

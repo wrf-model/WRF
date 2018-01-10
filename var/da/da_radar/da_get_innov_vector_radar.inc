@@ -8,6 +8,7 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    !    08/08/2016 - Updated to include null-echo assimilation
    !                 (Yu-Shin Kim and Ki-Hong Min, School of Earth System
    !                  Sciences/Kyungpook National University, Daegu, S.Korea)
+   !    08/2017 - bug fix for Vr operator (Siou-Ying Jiang, CWB, Taiwan)
    !-----------------------------------------------------------------------
 
    implicit none
@@ -323,9 +324,11 @@ END IF
                   if (abs(ob % radar(n) % rv(k) - missing_r) > 1.0 .AND. &
                        iv % radar(n) % rv(k) % qc >= obs_qc_pointer) then
 
+                     !reference: Sun and Crook (1997)
                      call da_radial_velocity(model_rv(k,n), model_p(k,n),  &
                         model_u(k,n), model_v(k,n), model_w(k,n),          &
-                        model_qrn(k,n), model_ps(n), xr, yr, zr)
+                        model_qrn(k,n), model_ps(n), xr, yr, zr,           &
+                        model_rho(k,n))
 
                      iv % radar(n) % rv(k) % inv = ob % radar(n) % rv(k) - model_rv(k,n)
                   end if
@@ -343,7 +346,7 @@ END IF
             if (use_radar_rhv .or. use_radar_rqv) then
                if ( echo_rf_good ) then
                   call da_radar_rf (model_qrn(k,n),model_qsn(k,n),model_qgr(k,n),model_tc(k,n),model_rho(k,n),bg_rze)
-                  bg_rf = 10.0*log(bg_rze)  ! Z to dBZ
+                  bg_rf = 10.0*log10(bg_rze)  ! Z to dBZ
                end if
             end if
 
@@ -465,16 +468,14 @@ END IF
                         if ( bg_rf >= 20.0 .and. iv%radar(n)%height(k) > model_lcl(n) ) then
                            iv % radar(n) % rqv(k) % qc = 0
 
-                           radar_non_precip_rh_w = radar_non_precip_rh_w*0.01 ! percentage to ratio
-                           radar_non_precip_rh_i = radar_non_precip_rh_i*0.01 ! percentage to ratio
                            if ( model_tc(k,n) > 5.0 ) then
-                              iv%radar(n)%rqvo(k) =  radar_non_precip_rh_w*model_qs(k,n)
+                              iv%radar(n)%rqvo(k) =  0.01*radar_non_precip_rh_w*model_qs(k,n)
                            else if ( model_tc(k,n) < -5.0 ) then
-                              iv%radar(n)%rqvo(k) =  radar_non_precip_rh_i*model_qs_ice(k,n)
+                              iv%radar(n)%rqvo(k) =  0.01*radar_non_precip_rh_i*model_qs_ice(k,n)
                            else
                               cwr = (model_tc(k,n)+5.0)/10.0
                               cws = 1.0 - cwr
-                              iv%radar(n)%rqvo(k) =  cwr*radar_non_precip_rh_w*model_qs(k,n) + cws*radar_non_precip_rh_i*model_qs_ice(k,n)
+                              iv%radar(n)%rqvo(k) =  cwr*0.01*radar_non_precip_rh_w*model_qs(k,n) + cws*0.01*radar_non_precip_rh_i*model_qs_ice(k,n)
                            end if
 
                            iv % radar(n) % rqv(k) % inv = iv % radar(n) % rqvo(k) - model_qv(k,n)

@@ -218,7 +218,7 @@ CONTAINS
              IF  ( wrf_dm_on_monitor() ) &
                PRINT *,'nsteps=',nsteps,' xtime:', xtime,' clwrfH:',clwrfH
                t2clmean=t2clmean/nsteps
-               t2clstd=SQRT(t2clstd/nsteps-t2clmean**2.)
+               t2clstd=SQRT(MAX(t2clstd/nsteps-t2clmean**2.,0.))
                t2clmean=t2clmean+t273
                t2clmin=t2clmin+t273
                t2clmax=t2clmax+t273
@@ -229,14 +229,14 @@ CONTAINS
                u10clmean=u10clmean/nsteps
                v10clmean=v10clmean/nsteps
                spduv10clmean=spduv10clmean/nsteps
-               u10clstd=SQRT(u10clstd/nsteps-u10clmean**2.)
-               v10clstd=SQRT(v10clstd/nsteps-v10clmean**2.)
-               spduv10clstd=SQRT(spduv10clstd/nsteps-                        &
-                 spduv10clmean**2)
+               u10clstd=SQRT(MAX(u10clstd/nsteps-u10clmean**2., 0.))
+               v10clstd=SQRT(MAX(v10clstd/nsteps-v10clmean**2., 0.))
+               spduv10clstd=SQRT(MAX(spduv10clstd/nsteps-                        &
+                 spduv10clmean**2, 0.))
                raincclmean=raincclmean/nsteps
                rainncclmean=rainncclmean/nsteps
-               raincclstd=SQRT(raincclstd/nsteps-raincclmean**2.)
-               rainncclstd=SQRT(rainncclstd/nsteps-rainncclmean**2.)
+               raincclstd=SQRT(MAX(raincclstd/nsteps-raincclmean**2., 0.))
+               rainncclstd=SQRT(MAX(rainncclstd/nsteps-rainncclmean**2., 0.))
                skintempclmean=skintempclmean/nsteps
                skintempclstd=skintempclstd/nsteps-skintempclmean*skintempclmean
                skintempclstd=MAX(skintempclstd,0.)

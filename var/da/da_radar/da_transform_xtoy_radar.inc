@@ -4,8 +4,10 @@ subroutine da_transform_xtoy_radar (grid, iv, y)
    ! Purpose: calculate the Doppler radial velocity and 
    ! reflectivity at the observation location from the first guess.
    ! It is linearized. 
+   ! History:
    !    Updated for Analysis on Arakawa-C grid
    !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
+   !    08/2017 - bug fix for Vr operator (Siou-Ying Jiang, CWB, Taiwan)
    !---------------------------------------------------------------------
  
    implicit none
@@ -17,6 +19,7 @@ subroutine da_transform_xtoy_radar (grid, iv, y)
    integer :: n, k
 
    real, allocatable :: model_p(:,:)
+   real, allocatable :: model_rho(:,:)
    real, allocatable :: model_u(:,:)
    real, allocatable :: model_v(:,:)
    real, allocatable :: model_w(:,:)
@@ -39,6 +42,7 @@ subroutine da_transform_xtoy_radar (grid, iv, y)
    alog_10 = alog(10.0)
 
    allocate (model_p(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
+   allocate (model_rho(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_u(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_v(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_w(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
@@ -56,6 +60,7 @@ subroutine da_transform_xtoy_radar (grid, iv, y)
       do k = 1, iv%info(radar)%levels(n)
          model_qrnb(k,n) = iv%radar(n)%model_qrn(k)
          model_p(k,n)    = iv%radar(n)%model_p(k)
+         model_rho(k,n)  = iv%radar(n)%model_rho(k)
       end do
 
       model_ps(n) = iv%radar(n)%model_ps
@@ -69,10 +74,17 @@ subroutine da_transform_xtoy_radar (grid, iv, y)
    call da_interp_lin_3d (grid%xa%u,   iv%info(radar), model_u)
    call da_interp_lin_3d (grid%xa%v,   iv%info(radar), model_v)
 #endif
-   call da_interp_lin_3d (grid%xa%qrn, iv%info(radar), model_qrn)
    call da_interp_lin_3d (grid%xa%wh,  iv%info(radar), model_w)
-   call da_interp_lin_3d (grid%xa%qsn, iv%info(radar), model_qsn)
-   call da_interp_lin_3d (grid%xa%qgr, iv%info(radar), model_qgr)
+   model_qsn = 0.0
+   model_qgr = 0.0
+   model_qrn = 0.0
+   if ( cloud_cv_options >= 1 ) then
+      call da_interp_lin_3d (grid%xa%qrn, iv%info(radar), model_qrn)
+      if ( cloud_cv_options >= 2 ) then
+         call da_interp_lin_3d (grid%xa%qsn, iv%info(radar), model_qsn)
+         call da_interp_lin_3d (grid%xa%qgr, iv%info(radar), model_qgr)
+      end if
+   end if
    call da_interp_lin_3d (grid%xa%q,   iv%info(radar), model_qv)
    call da_interp_lin_3d (grid%xa%t,   iv%info(radar), model_t)
    !basic states
@@ -96,7 +108,7 @@ subroutine da_transform_xtoy_radar (grid, iv, y)
                   call da_radial_velocity_lin(y%radar(n)%rv(k), &
                      model_p(k,n), &
                      model_u(k,n), model_v(k,n), model_w(k,n), model_qrn(k,n),    &
-                     model_ps(n), xr, yr, zr, model_qrnb(k,n))
+                     model_ps(n), xr, yr, zr, model_qrnb(k,n), model_rho(k,n))
                end if
             end if
 
@@ -148,6 +160,7 @@ subroutine da_transform_xtoy_radar (grid, iv, y)
    deallocate (model_qvb)
    deallocate (model_t)
    deallocate (model_tb)
+   deallocate (model_rho)
 
    if (trace_use) call da_trace_exit("da_transform_xtoy_radar")
 

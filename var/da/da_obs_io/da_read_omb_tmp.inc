@@ -29,8 +29,10 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
                    q_obs, q_inv, q_error, q_inc, &
                    spd_obs, spd_inv, spd_err, spd_inc,   &
                    ref_obs, ref_inv, ref_error, ref_inc, &
-		   rain_obs, rain_inv, rain_error, rain_inc, zk
+                   eph_obs, eph_inv, eph_error, eph_inc, &
+                   rain_obs, rain_inv, rain_error, rain_inc, zk
    integer     :: u_qc, v_qc, t_qc, p_qc, q_qc, tpw_qc, spd_qc, ref_qc, rain_qc
+   integer     :: eph_qc
 
    if (trace_use_dull) call da_trace_entry("da_read_omb_tmp")
 
@@ -376,6 +378,28 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
                         num,k,stn_id, &          ! Station
                         lat, lon, height, &       ! Lat/lon, height   
                         ref_obs, ref_inv, ref_qc, ref_error, ref_inc 
+               end do
+            end do
+         end if
+         if (if_write) exit reports
+         cycle reports
+
+      case ('gpseph' )
+         if (num_obs > 0) then
+            do n = 1, num_obs
+               read(unit_in,'(i8)') levels
+               if (if_write) write(omb_unit,'(i8)')levels
+               num = num + 1
+               do k = 1, levels
+                  read(unit_in,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
+                     kk, l, stn_id, &          ! Station
+                     lat, lon, height, &       ! Lat/lon, height
+                     eph_obs, eph_inv, eph_qc, eph_error, eph_inc
+                  if (if_write) &
+                     write(omb_unit,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
+                        num, l, stn_id, &      ! Station
+                        lat, lon, height, &    ! Lat/lon, height
+                        eph_obs, eph_inv, eph_qc, eph_error, eph_inc
                end do
             end do
          end if

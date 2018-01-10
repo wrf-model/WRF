@@ -44,6 +44,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_gpspwobs         = .false.
       use_gpsztdobs        = .false.
       use_gpsrefobs        = .false.
+      use_gpsephobs        = .false.
       use_ssmiretrievalobs = .false.
       use_ssmitbobs        = .false.
       use_ssmt1obs         = .false.
@@ -78,7 +79,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_satemobs .OR. use_geoamvobs .OR. use_polaramvobs .OR. use_airepobs .OR. use_tamdarobs .OR. &
       use_gpspwobs .OR. use_gpsztdobs .OR. use_gpsrefobs .OR. use_ssmiretrievalobs .OR. &
       use_ssmitbobs .OR. use_ssmt1obs .OR. use_ssmt2obs .OR. use_qscatobs .OR. &
-      use_airsretobs) then
+      use_airsretobs .OR. use_lsac .OR. use_gpsephobs) then
  
       use_obsgts = .true.
    else
@@ -122,6 +123,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_gpspwobs         = .false.
       use_gpsztdobs        = .false.
       use_gpsrefobs        = .false.
+      use_gpsephobs        = .false.
       use_ssmiretrievalobs = .false.
       use_ssmitbobs        = .false.
       use_ssmt1obs         = .false.
@@ -207,6 +209,10 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       if ( pseudo_tpw .or. pseudo_ztd .or. pseudo_ref ) then
          pseudo_uvtpq = .false.
       end if
+   end if
+   if ( num_pseudo > 0 ) then
+      !to avoid errors when writing out filtered_obs for undefined variables
+      anal_type_qcobs = .false.
    end if
 
    !---------------------------------------------------------------------------      

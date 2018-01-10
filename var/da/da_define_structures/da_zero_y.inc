@@ -94,6 +94,17 @@ subroutine da_zero_y( iv, y, value )
       end do
    end if
 
+   ! Initialize GPS EXCESS PHASE:
+
+   if ( y % nlocal(gpseph) > 0 ) then
+      do n = 1, y % nlocal(gpseph)
+         nlevels = iv % info(gpseph) % levels(n)
+         if ( nlevels > 0 ) then
+            y % gpseph(n) % eph(1:nlevels) = value
+         end if
+      end do
+   end if
+
    ! Initialize sondes:
 
    if ( y % nlocal(sound) > 0 ) then

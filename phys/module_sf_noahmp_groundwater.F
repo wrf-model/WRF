@@ -137,7 +137,7 @@ CALL LATERALFLOW(ISLTYP,WTD,QLAT,FDEPTH,TOPO,LANDMASK,DELTAT,AREA       &
 
             BEXP   = BEXP_TABLE   (ISLTYP(I,J))
             DKSAT  = DKSAT_TABLE  (ISLTYP(I,J))
-            PSISAT = PSISAT_TABLE (ISLTYP(I,J))
+            PSISAT = -1.0*PSISAT_TABLE (ISLTYP(I,J))
             SMCMAX = SMCMAX_TABLE (ISLTYP(I,J))
             SMCWLT = SMCWLT_TABLE (ISLTYP(I,J))
 
@@ -230,8 +230,7 @@ END  SUBROUTINE WTABLE_mmf_noahmp
   DATA KLATFACTOR /2.,3.,4.,10.,10.,12.,14.,20.,24.,28.,40.,48.,2.,0.,10.,0.,20.,2.,2./
 
   REAL,    PARAMETER :: PI = 3.14159265 
-! REAL,    PARAMETER :: FANGLE = SQRT(TAN(PI/8.))/(2.*SQRT(2.))
-  REAL,    PARAMETER :: FANGLE = 0.45508986056   ! f95 does not permit real intrinsics in init expressions
+  REAL,    PARAMETER :: FANGLE = 0.22754493   ! = 0.5*sqrt(0.5*tan(pi/8))
 
 itsh=max(its-1,ids)
 iteh=min(ite+1,ide-1)

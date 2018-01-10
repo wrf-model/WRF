@@ -678,7 +678,6 @@ CONTAINS
 
    REAL , OPTIONAL, INTENT(INOUT) ::    radtacttime ! Storing the time in s when radiation is called next
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
-         OPTIONAL,                                                &
          INTENT(INOUT)  ::                       o3rad
 
    ! vert nesting
@@ -1231,15 +1230,9 @@ CONTAINS
 
      END IF
 
-! ww: Interpolating climatological ozone and aerosol to model time and levels
+!     Interpolating climatological ozone and aerosol to model time and levels
 !     Adapted from camrad code
-     IF ( PRESENT( O3RAD ) ) THEN
-        call wrf_debug(1,'Have o3rad')
-#if (EM_CORE==1)
-     IF ( o3input .EQ. 2 .AND. id .EQ. 1 ) THEN
-#else
      IF ( o3input .EQ. 2 ) THEN
-#endif
 !       ! Find the current month (adapted from Cavallo)
 !       CALL cam_time_interp( ozmixm, pin, levsiz, date_str, &
 !                             ids , ide , jds , jde , kds , kde , &
@@ -1257,7 +1250,6 @@ CONTAINS
                               ids , ide , jds , jde , kds , kde ,     &
                               ims , ime , jms , jme , kms , kme ,     &
                               its , ite , jts , jte , kts , kte )
-     ENDIF
      ENDIF
 
      IF ( PRESENT( AEROD ) ) THEN
@@ -1286,9 +1278,12 @@ CONTAINS
                     !Find whether to overwrite cldfra or not (ONLY if ICLOUD == 1)
                     compute_cldfra_cup = .true. 
                     if (icloud == 1 ) then
-                       compute_cldfra_cup = .false.     
+                       compute_cldfra_cup = .false.  !-- LK Berg, 4/26/17     
                        if(cldfra1_flag(i,k,j) == 1 .and. shall(i,j) .gt. 1) then
                           CLDFRA(i,k,j)=0.
+                       elseif(cldfra1_flag(i,k,j) == 1 .and. shall(i,j) .le. 1) then
+                          CLDFRA(i,k,j)=0.
+                          compute_cldfra_cup = .true.    ! No resolved clouds, but check of shallow clouds.  -- LK Berg, 4/26/17
                        elseif(cldfra1_flag(i,k,j) == 2 .and. shall(i,j) .gt. 1) then
                           CLDFRA(i,k,j)=1.
                        elseif(cldfra1_flag(i,k,j) == 3) then
@@ -1304,7 +1299,7 @@ CONTAINS
                           cldfra_cup(i,k,j) = 0.0
                        end if
                     endif
-                    if( shall(i,j) == 1 .and. k >= cubot(i,j)  .and. k <= cutop(i,j)  ) then  ! 1=Shallow Cu
+                    if( shall(i,j) <= 1 .and. k >= cubot(i,j)  .and. k <= cutop(i,j)  ) then  ! 1=Shallow Cu  -- Changed to use for both deep and shallow  -- LK Berg 4/26/17
                        ! Begin: wig, 4-Feb-2008
                        !
                        ! Override the cloud condensate values if shallow convection triggered.
@@ -1312,8 +1307,8 @@ CONTAINS
                        ! observations from CHAPS (Oklahoma area) and Florida (Blyth et al. 2005)
                        ! or the predicted value if it is greater.
 
-                       cldfra_cup_mod = cldfra_cup(i,k,j)* 1.0e-3*(1+qv(i,k,j))!modified cloud fraction
-                       qc(i,k,j) = max( 1.0e-3*cldfra_cup_mod, qc(i,k,j) )!DE+LB 2012-Feb
+                       cldfra_cup_mod = cldfra_cup(i,k,j) * 1.0e-3 !modified cloud fraction, assume QCLOUD is 1 g/kg -- LK Berg 4/26/17                       
+                       qc(i,k,j) = max(cldfra_cup_mod, qc(i,k,j) )!DE+LB 2012-Feb
 
                        ! Override the cloud fraction values calculated above if shallow
                        ! convection triggered. For shallow convection, use a representative
@@ -1402,9 +1397,9 @@ CONTAINS
              CALL wrf_debug (100, 'CALL gfdllw')
 
              IF ( PRESENT(F_QV) .AND. PRESENT(F_QC) .AND.                     &
-                  PRESENT(F_QS) .AND. PRESENT(qs)   .AND.                     &
+                  PRESENT(F_QI) .AND. (PRESENT(qi) .OR. PRESENT(qs))  .AND.                     &
                   PRESENT(qv)   .AND. PRESENT(qc)   ) THEN
-               IF ( F_QV .AND. F_QC .AND. F_QS) THEN
+               IF ( F_QV .AND. F_QC .AND. (F_QI .OR. F_QS)) THEN
                  gfdl_lw  = .true.
                  CALL ETARA(                                        &
                   DT=dt,XLAND=xland                                 &
@@ -2080,9 +2075,9 @@ CONTAINS
              CALL wrf_debug (100, 'CALL gfdlsw')
 
              IF ( PRESENT(F_QV) .AND. PRESENT(F_QC) .AND.                     &
-                  PRESENT(F_QS) .AND. PRESENT(qs)   .AND.                     &
-                  PRESENT(qv)   .AND. PRESENT(qc) ) THEN
-               IF ( F_QV .AND. F_QC .AND. F_QS ) THEN
+                  PRESENT(F_QI) .AND. (PRESENT(qi) .OR. PRESENT(qs))  .AND.                     &
+                  PRESENT(qv)   .AND. PRESENT(qc)   ) THEN
+               IF ( F_QV .AND. F_QC .AND. (F_QI .OR. F_QS)) THEN
                  gfdl_sw = .true.
                  CALL ETARA(                                        &
                   DT=dt,XLAND=xland                                 &
@@ -2768,12 +2763,12 @@ CONTAINS
          do i=its,ite
             ! sza interpolation of surface fluxes
             if ((coszen_ref(i,j).gt.coszen_min) .and. (coszen_loc(i,j).gt.coszen_min)) then
-               if ((bb(i,j).eq.-0.5).or.(bb(i,j).eq.2.5)) then
+               if ((bb(i,j).eq.-0.5).or.(bb(i,j).eq.2.5).or.(bb(i,j).eq.0.0)) then
                   swddir(i,j) =(coszen_loc(i,j)/coszen_ref(i,j))*swddir_ref(i,j)
                else
                   swddir(i,j) =Bx(i,j)*(coszen_loc(i,j)**bb(i,j))
                end if
-               if ((gg(i,j).eq.-0.5).or.(gg(i,j).eq.2.5)) then
+               if ((gg(i,j).eq.-0.5).or.(gg(i,j).eq.2.5).or.(gg(i,j).eq.0.0)) then
                   swdown(i,j) =(coszen_loc(i,j)/coszen_ref(i,j))*swdown_ref(i,j)
                else
                   swdown(i,j) =Gx(i,j)*(coszen_loc(i,j)**gg(i,j))

@@ -427,8 +427,8 @@ CONTAINS
      LOGICAL ::          write_qgr, write_filtered_obs
      NAMELIST /wrfvar2/  write_qgr, write_filtered_obs
 
-     LOGICAL ::         use_eos_radobs
-     NAMELIST /wrfvar4/ use_eos_radobs
+     LOGICAL ::         use_eos_radobs, use_3dvar_phy
+     NAMELIST /wrfvar4/ use_eos_radobs, use_3dvar_phy
 
      LOGICAL             :: use_crtm_kmatrix_fast
      NAMELIST /wrfvar14/    use_crtm_kmatrix_fast
@@ -508,9 +508,9 @@ CONTAINS
         READ   ( UNIT = nml_read_unit , NML = wrfvar4 , iostat=nml_error )
 
         IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
-           CALL wrf_debug(0, "-- Is use_eos_radobs still in your "// &
+           CALL wrf_debug(0, "-- Is use_3dvar_phy or use_eos_radobs still in your "// &
                               TRIM(nml_name)//" namelist?")
-           CALL wrf_debug(0, "-- Remove use_eos_radobs as it is obsolete.")
+           CALL wrf_debug(0, "-- Remove use_3dvar_phy, use_eos_radobs as they are obsolete.")
         ENDIF
 
 !---------------------------------- wrfvar14 -----------------------------

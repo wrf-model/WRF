@@ -1,0 +1,4 @@
+These CRTM coefficient files are binary and cannot be tracked by git and will be put in WRFDA website for download 
+from the release 4.0. A copy will also be made available under ~wrfhelp on the NCAR cheyenne supercomputer 
+(for internal use). The full set of CRTM coefficient files can also be downloaded from the official CRTM ftp site 
+http://ftp.emc.ncep.noaa.gov/jcsda/CRTM/.

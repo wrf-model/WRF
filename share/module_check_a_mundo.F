@@ -651,7 +651,6 @@
          CALL wrf_message ( wrf_err_message )
          wrf_err_message = '--- Fix these options in namelist.input if you would like to use aercu_opt'
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
       END IF
 #endif

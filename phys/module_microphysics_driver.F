@@ -1241,9 +1241,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 # if (EM_CORE == 1)
     CASE (MORR_TM_AERO)
          CALL wrf_debug(100, 'microphysics_driver: calling morrison two moment')
-         IF ( PRESENT (MU) .AND. PRESENT (QSCUTEN).AND. &
-              PRESENT (RAINNC ) .AND. PRESENT (RAINNCV) .AND. &
-              PRESENT ( W      )  ) THEN
          CALL mp_morr_two_moment_aero(                            &
                      ITIMESTEP=itimestep,                &  !*
                      TH=th,                              &  !*
@@ -1280,7 +1277,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                     ,qrcuten=qrcuten                     &  ! hm
                     ,qscuten=qscuten                     &  ! hm
                     ,qicuten=qicuten                     &  ! hm
-                    ,mu=mu                               &  ! hm
                     ,F_QNDROP=f_qndrop                   &  ! hm for wrf-chem
                  ,QNDROP=qndrop_curr                     &  ! hm for wrf-chem
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
@@ -1307,9 +1303,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 #endif
                  ,PRECR=precr,PRECI=preci,PRECS=precs,PRECG=precg   & ! jdf for wrf-chem
                                                                     )
-        ELSE
-           Call wrf_error_fatal( 'arguments not present for calling morrison two moment aerosol')
-        ENDIF
 #endif
 
     CASE (MILBRANDT2MOM)

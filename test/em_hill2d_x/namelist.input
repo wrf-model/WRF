@@ -18,7 +18,7 @@
  history_interval                    = 60,
  frames_per_outfile                  = 1000,
  restart                             = .false.,
- restart_interval                    = 120,
+ restart_interval                    = 1000,
  io_form_history                     = 2
  io_form_restart                     = 2
  io_form_input                       = 2
@@ -98,4 +98,8 @@
  &namelist_quilt
  nio_tasks_per_group = 0,
  nio_groups = 1,
+ /
+
+ &ideal
+ ideal_case = 1
  /

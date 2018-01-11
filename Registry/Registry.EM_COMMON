@@ -2598,6 +2598,8 @@ state integer nodyn_dummy - dyn_nodyn -  -  -  "" "" ""
 rconfig   integer     windfarm_opt        namelist,physics      max_domains    0       rh       "windfarm_opt"                ""      ""
 rconfig   integer     windfarm_ij         namelist,physics      1              0       rh       "windfarm_ij"                ""      ""
 #
+# Ideal case selection
+rconfig   integer     ideal_case          namelist,ideal        1              0       rh       "ideal_case"                 ""      ""
 #---------------------------------------------------------------------------------------------------------------------------------------
 # Package Declarations
 #                                               
@@ -2909,6 +2911,11 @@ package   wrfhydro       wrf_hydro==1                -            state:SOLDRAIN
 #WRF Windfarm
 package   no_windfarm    windfarm_opt==0             -            -
 package   fitchscheme    windfarm_opt==1             -            state:power
+
+#Ideal Cases
+package   realcase       ideal_case==0               -            -
+package   hill2d_x       ideal_case==1               -            -
+package   quarter_ss     ideal_case==2               -            -
 
 #---------------------------------------------------------------------------------------------------------------------------------------
 ## communications                                               

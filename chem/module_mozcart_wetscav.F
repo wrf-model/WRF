@@ -372,7 +372,6 @@ species_loop : &
              wrk_mass(m)    = sum( trc_mass(kts:ktem1,m) )
              e298 = wet_scav_tab(m1)%heff(1)
              dhr  = wet_scav_tab(m1)%heff(2)
-!            heff(kts:ktem1,m) = e298 * exp( dhr*tfac(kts:ktem1) )
              kh(kts:ktem1) = e298 * exp( dhr*tfac(kts:ktem1) )
              e298 = wet_scav_tab(m1)%heff(3)
              dhr  = wet_scav_tab(m1)%heff(4)
@@ -396,35 +395,6 @@ species_loop : &
 !----------------------------------------------------------------------
                heff(kts:ktem1,m) = kh(kts:ktem1)*(1. + dk1s(kts:ktem1)*hion/dk2s(kts:ktem1))
              endif
-!            if( wet_scav_tab(m1)%heff(3) /= 0. .and. &
-!                wet_scav_tab(m1)%heff(5) == 0. ) then
-!              e298 = wet_scav_tab(m1)%heff(3)
-!              dhr  = wet_scav_tab(m1)%heff(4)
-!              dk1s(kts:ktem1) = e298*exp( dhr*tfac(kts:ktem1) )
-!              where( heff(kts:ktem1,m) /= 0. )
-!                heff(kts:ktem1,m) = heff(kts:ktem1,m)*(1. + dk1s(kts:ktem1)*hp_inv)
-!              elsewhere
-!                heff(kts:ktem1,m) = dk1s(kts:ktem1)*hp_inv
-!              endwhere
-!            endif
-!----------------------------------------------------------------------
-!  special handling for nh3 and co2
-!----------------------------------------------------------------------
-!            if( pndx == p_nh3 .or. pndx == p_co2 ) then
-!              if( wet_scav_tab(m1)%heff(5) /= 0. ) then
-!                e298 = wet_scav_tab(m1)%heff(3)
-!                dhr  = wet_scav_tab(m1)%heff(4)
-!                dk1s(kts:ktem1) = e298*exp( dhr*tfac(kts:ktem1) )
-!                e298 = wet_scav_tab(m1)%heff(5)
-!                dhr  = wet_scav_tab(m1)%heff(6)
-!                dk2s(kts:ktem1) = e298*exp( dhr*tfac(kts:ktem1) )
-!                if( pndx == p_co2 ) then
-!                  heff(kts:ktem1,m) = heff(kts:ktem1,m)*(1. + dk1s(kts:ktem1)*hp_inv)*(1. + dk2s(kts:ktem1)*hp_inv)
-!                elseif( pndx == p_nh3 ) then
-!                  heff(kts:ktem1,m) = heff(kts:ktem1,m)*(1. + dk1s(kts:ktem1)*ph/dk2s(kts:ktem1))
-!                endif
-!              endif
-!            endif
              tckaqb(m) = any( heff(kts:ktem1,m) > henry_thres )
 !++mmb
              reteff(m) = wet_scav_tab(m1)%reteff

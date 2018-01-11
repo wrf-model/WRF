@@ -103,7 +103,6 @@ SUBROUTINE wesely_driver( id, ktau, dtstep, config_flags, current_month,  &
 !--------------------------------------------------
 ! advected chemical species
 !--------------------------------------------------
-!  REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ), INTENT(INOUT ) :: &
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem ), INTENT(IN )    :: &
                                                       chem
 !--------------------------------------------------
@@ -127,16 +126,6 @@ SUBROUTINE wesely_driver( id, ktau, dtstep, config_flags, current_month,  &
                                                      ivgtyp
    REAL,  DIMENSION( ims:ime , jms:jme ), INTENT(INOUT   ) ::             &
                                                      rmol
-!                                                    tsk,                 &
-!                                                    gsw,                 &
-!                                                    vegfra,              &
-!                                                    pbl,                 &
-!                                                    rmol,                &
-!                                                    ust,                 &
-!                                                    xlat,                &
-!                                                    xlong,               &
-!                                                    raincv,              &
-!                                                    znt
    REAL,  DIMENSION( ims:ime , jms:jme ), INTENT(IN )      ::             &
                                                      tsk,                 &
                                                      gsw,                 &
@@ -180,10 +169,6 @@ SUBROUTINE wesely_driver( id, ktau, dtstep, config_flags, current_month,  &
 
       CALL wrf_debug(15,'in dry_dep_wesely')
 
-!     if( config_flags%chem_opt /= MOZART_KPP .and. &
-!         config_flags%chem_opt /= MOZCART_KPP .and. &
-!         config_flags%chem_opt /= MOZART_MOSAIC_4BIN_KPP .and. &
-!         config_flags%chem_opt /= MOZART_MOSAIC_4BIN_AQ_KPP) then
       if( .not. chm_is_moz ) then
          if( julday < 90 .or. julday > 270 ) then
             iseason = 2
@@ -251,10 +236,6 @@ tile_lon_loop : &
             CALL rc( rcx, ta, rad, rhchem, iland, &
                      iseason, numgas, wetflag, rainflag, highnh3, &
                      iprt, moist(i,kts,j,p_qv), p8w(i,kts,j), config_flags%chem_opt )
-!           if( config_flags%chem_opt /= MOZART_KPP .and. &
-!               config_flags%chem_opt /= MOZCART_KPP .and. &
-!               config_flags%chem_opt /= MOZART_MOSAIC_4BIN_KPP .and. &
-!               config_flags%chem_opt /= MOZART_MOSAIC_4BIN_AQ_KPP)  then
             if( .not. chm_is_moz ) then
                srfres(1:numgas-2) = rcx(1:numgas-2)
                srfres(numgas-1:numgas) = 0.
@@ -440,10 +421,6 @@ tile_lon_loop : &
 !-----------------------------------------------------------
 ! For mozart
 !-----------------------------------------------------------
-!     if( config_flags%chem_opt == MOZART_KPP .or. &
-!         config_flags%chem_opt == MOZCART_KPP .or. &
-!         config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
-!         config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP )   then
       if( chm_is_moz ) then
          do j=jts,jte
             do i=its,ite
@@ -920,10 +897,6 @@ END SUBROUTINE wesely_driver
 !----------------------------------------------------------------------
 !     SPECIAL TREATMENT FOR HNO3, HNO4, H2O2, PAA
 !----------------------------------------------------------------------
-!is_mozart :  if( chem_opt == MOZART_KPP .or. &
-!                chem_opt == MOZCART_KPP .or. &
-!                chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
-!                chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
 is_mozart :  if( chm_is_moz ) then
                  if( n == p_hno3 ) then
                     hstary(n) = 2.6e6*exp( 8700.*wrk )*1.e5
@@ -937,10 +910,6 @@ is_mozart :  if( chm_is_moz ) then
              endif is_mozart
              rmx = 1./(hstary(n)/3000. + 100.*f0(n))
              rsmx = rs*dratio(n) + rmx
-!            if( (chem_opt == MOZART_KPP .or. &
-!                 chem_opt == MOZCART_KPP .or. &
-!                 chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
-!                 chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) .and. &
              if( iseason /= 4 .and. p_pan >= param_first_scalar .and. chm_is_moz ) then
                 if( iland /= iswater_temp .and. n == p_pan ) then
 !-------------------------------------------------------------------------------------
@@ -1948,48 +1917,11 @@ is_cbm4_kpp : &
                  hstar(l) = HLC(m)%hcnst(1)
                endif
              end do
-!             hstar(p_o3)      = 1.15E-2
-!             hstar(p_co)      = 1.e-3
-!             hstar(p_h2o2)    = 8.33E+4
-!             hstar(p_hcho)    = 6.3e3
-!             hstar(p_ch3ooh)  = 311.
-!             hstar(p_ch3oh)   = 220.
-!             hstar(p_ch3cooh) = 6.3e3
-!             hstar(p_acet)    = 27.
-!             hstar(p_paa)     = 837.
-!             hstar(p_c3h6ooh) = 220.
-!             hstar(p_pan)     = 5.
-!             hstar(p_mpan)    = 1.15e-2
-!             hstar(p_c2h5oh)  = 200.
-!             hstar(p_etooh)   = 336.
-!             hstar(p_prooh)   = 336.
-!             hstar(p_acetp)   = 336.
-!             hstar(p_onit)    = 1.e3
-!             hstar(p_onitr)   = 7.51e3
-!             hstar(p_acetol)  = 6.3e3
-!             hstar(p_glyald)  = 4.14e4
-!             hstar(p_hydrald) = 70.
-!             hstar(p_alkooh)  = 311.
-!             hstar(p_mekooh)  = 311.
-!             hstar(p_tolooh)  = 311.
-!             hstar(p_terpooh) = 311.
 
               if( config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
                   config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
                 hstar(p_sulf) = 2.600E+06
               end if
-!             if ( config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
-!              hstar(p_cvasoaX) = 0.0
-!              hstar(p_cvasoa1) = 1.06E+08
-!              hstar(p_cvasoa2) = 1.84E+07
-!              hstar(p_cvasoa3) = 3.18E+06
-!              hstar(p_cvasoa4) = 5.50E+05
-!              hstar(p_cvbsoaX) = 0.0
-!              hstar(p_cvbsoa1) = 5.25E+09
-!              hstar(p_cvbsoa2) = 7.00E+08
-!              hstar(p_cvbsoa3) = 9.33E+07
-!              hstar(p_cvbsoa4) = 1.24E+07
-!             endif
               
      else if( config_flags%chem_opt == crimech_kpp .or. &
           config_flags%chem_opt == cri_mosaic_8bin_aq_kpp .or. &
@@ -2214,30 +2146,6 @@ is_cbm4_kpp : &
                dhr(l) = HLC(m)%hcnst(2)
              endif
            end do
-!          dhr(p_o3)      = 2560.
-!          dhr(p_h2o2)    = 7379.
-!          dhr(p_hcho)    = 6425.
-!          dhr(p_ch3ooh)  = 5241.
-!          dhr(p_ch3oh)   = 4934.
-!          dhr(p_ch3cooh) = 6425.
-!          dhr(p_acet)    = 5300.
-!          dhr(p_paa)     = 5308.
-!          dhr(p_c3h6ooh) = 5653.
-!          dhr(p_pan)     = 0.
-!          dhr(p_mpan)    = 2560.
-!          dhr(p_c2h5oh)  = 6500.
-!          dhr(p_etooh)   = 5995.
-!          dhr(p_prooh)   = 5995.
-!          dhr(p_acetp)   = 5995.
-!          dhr(p_onit)    = 6000.
-!          dhr(p_onitr)   = 6485.
-!          dhr(p_acetol)  = 6425.
-!          dhr(p_glyald)  = 4630.
-!          dhr(p_hydrald) = 6000.
-!          dhr(p_alkooh)  = 5241.
-!          dhr(p_mekooh)  = 5241.
-!          dhr(p_tolooh)  = 5241.
-!          dhr(p_terpooh) = 5241.
 
            if( config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
              config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
@@ -4006,10 +3914,6 @@ is_cbm4_kpp : &
 !	... open wesely pft netcdf file
 !---------------------------------------------------------------------
 is_mozart : &
-!     if( config_flags%chem_opt == MOZART_KPP .or. &
-!         config_flags%chem_opt == MOZCART_KPP .or. &
-!         config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
-!         config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
       if( chm_is_moz ) then
 !---------------------------------------------------------------------
 !	... allocate column_density type

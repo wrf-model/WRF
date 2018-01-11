@@ -1614,7 +1614,7 @@ END subroutine cup_env_clev_tr
 
      real, parameter :: hion = 1.e-5
      real, parameter :: hion_inv = 1./hion
-     real, parameter :: t0 = 298.
+     real, parameter :: HL_t0 = 298.
      
      itf=MIN(ite,ide-1)
      ktf=MIN(kte,kde-1)
@@ -1959,7 +1959,7 @@ END subroutine cup_env_clev_tr
       if (conv_tr_wetscav == 1) then
         
         
-          tfac = (t0 - t(i,k))/(t(i,k)*t0)
+          tfac = (HL_t0 - t(i,k))/(t(i,k)*HL_t0)
           do nv=2,num_chem
             
             aq_gas_ratio = 0.0
@@ -2029,19 +2029,6 @@ is_moz_chm: if( chemopt == MOZCART_KPP .or. chemopt == MOZART_MOSAIC_4BIN_KPP .o
             if (nv .eq. p_ch3cooh) aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 4.1e3, 6300.)
             if (nv .eq. p_so2)     aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 1.2, 3100.)
             if (nv .eq. p_sulf)    aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 1e+11, 0.) ! order of magnitude approx. (Gmitro and Vermeulen, 1964)
-
-!           IF (chemopt .EQ. mozart_mosaic_4bin_aq_kpp) THEN
-!             if (nv .eq. p_cvasoaX) aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 0.0e+00, 0.)
-!             if (nv .eq. p_cvasoa1) aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 1.06E+08, 6014.)
-!             if (nv .eq. p_cvasoa2) aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 1.84E+07, 6014.)
-!             if (nv .eq. p_cvasoa3) aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 3.18E+06, 6014.)
-!             if (nv .eq. p_cvasoa4) aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 5.50E+05, 6014.)
-!             if (nv .eq. p_cvbsoaX) aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 0.0e+00, 0.)
-!             if (nv .eq. p_cvbsoa1) aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 5.25E+09, 6014.)
-!             if (nv .eq. p_cvbsoa2) aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 7.00E+08, 6014.)
-!             if (nv .eq. p_cvbsoa3) aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 9.33E+07, 6014.)
-!             if (nv .eq. p_cvbsoa4) aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 1.24E+07, 6014.)
-!           ENDIF
             ENDIF is_moz_chm
             
 !            if (nv.eq.p_so2)  aq_gas_ratio = 1.0

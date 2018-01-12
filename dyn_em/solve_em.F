@@ -3701,6 +3701,9 @@ BENCH_START(micro_driver_tim)
       &        ,vmi3d=grid%vmi3d                                          & ! for P3
       &        ,di3d=grid%di3d                                            & ! for P3
       &        ,rhopo3d=grid%rhopo3d                                      & ! for P3
+      &        ,vmi3d_2=grid%vmi3d_2                                      & ! for P3
+      &        ,di3d_2=grid%di3d_2                                        & ! for P3
+      &        ,rhopo3d_2=grid%rhopo3d_2                                  & ! for P3
       &        ,WARM_RAIN=grid%warm_rain                                  &
       &        ,T8W=t8w                                                   &
       &        ,CLDFRA=grid%cldfra, EXCH_H=grid%exch_h &
@@ -3793,6 +3796,10 @@ BENCH_START(micro_driver_tim)
       &        , QNID_CURR=scalar(ims,kms,jms,P_QNID), F_QNID=F_QNID          &
       &        , QIR_CURR=scalar(ims,kms,jms,P_QIR), F_QIR=F_QIR          & ! for P3
       &        , QIB_CURR=scalar(ims,kms,jms,P_QIB), F_QIB=F_QIB          & ! for P3
+      &        , QI2_CURR=moist(ims,kms,jms,P_QI2), F_QI2=F_QI2           & ! for P3
+      &        , QNI2_CURR=scalar(ims,kms,jms,P_QNI2), F_QNI2=F_QNI2      & ! for P3
+      &        , QIR2_CURR=scalar(ims,kms,jms,P_QIR2), F_QIR2=F_QIR2      & ! for P3
+      &        , QIB2_CURR=scalar(ims,kms,jms,P_QIB2), F_QIB2=F_QIB2      & ! for P3
 !       &        , QZR_CURR=scalar(ims,kms,jms,P_QZR), F_QZR=F_QZR          & ! for milbrandt3mom
 !       &        , QZI_CURR=scalar(ims,kms,jms,P_QZI), F_QZI=F_QZI          & ! "
 !       &        , QZS_CURR=scalar(ims,kms,jms,P_QZS), F_QZS=F_QZS          & ! "

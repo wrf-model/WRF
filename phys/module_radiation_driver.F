@@ -74,6 +74,7 @@ CONTAINS
               , QC, F_QC                     &
               , QR, F_QR                     &
               , QI, F_QI                     &
+              , QI2, F_QI2                   & ! for P3
               , QS, F_QS                     &
               , QG, F_QG                     &
               , QNDROP, F_QNDROP    &
@@ -657,10 +658,12 @@ CONTAINS
          INTENT(INOUT ) ::                                        &
                                                                pb &
                                         ,qv,qc,qr,qi,qs,qg,qndrop,      &
-                                                      qnifa,qnwfa        ! Trude
+                                                      qnifa,qnwfa,      & ! Trude
+                                                      qi2        ! for P3
 
    LOGICAL, OPTIONAL ::     f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop,     &
-                                                f_qnifa,f_qnwfa          ! trude
+                                                f_qnifa,f_qnwfa,        &  ! trude
+                                                f_qi2            ! for P3
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
@@ -1106,6 +1109,19 @@ CONTAINS
           ENDDO
           ENDDO
      ENDIF
+#if (EM_CORE == 1)
+! temporarily modify hydrometeors (for P3, if 2 cat then add ice from both categories)
+!
+     IF ( F_QI2) THEN
+          DO j=jts,jte
+          DO k=kts,kte
+          DO i=its,ite
+             qi(i,k,j) = qi(i,k,j) + qi2(i,k,j)
+          ENDDO
+          ENDDO
+          ENDDO
+     ENDIF
+#endif
 
 ! Choose how to compute cloud fraction (since 3.6)
 ! Initialize to zero 

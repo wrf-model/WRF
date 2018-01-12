@@ -179,4 +179,29 @@ CONTAINS
     enddo
     enddo
 END SUBROUTINE chem_prep
+
+   subroutine UPCASE( lstring )
+!----------------------------------------------------------------------
+!       ... Convert character string lstring to upper case
+!----------------------------------------------------------------------
+   implicit none
+
+!-----------------------------------------------------------------------
+!	... Dummy args
+!-----------------------------------------------------------------------
+   character(len=*), intent(inout) ::  lstring
+
+!-----------------------------------------------------------------------
+!	... Local variables
+!-----------------------------------------------------------------------
+   integer :: i
+
+   do i = 1,LEN_TRIM( lstring )
+     if( ICHAR(lstring(i:i)) >= 97 .and.  ICHAR(lstring(i:i)) <= 122 ) then
+       lstring(i:i) = CHAR(ICHAR(lstring(i:i)) - 32)
+     end if
+   end do
+
+   end subroutine UPCASE
+
 END MODULE module_chem_utilities

@@ -38,6 +38,7 @@ MODULE module_initialize_ideal
    USE module_timing
    USE module_configure
    USE module_init_utilities
+   USE module_soil_pre
 #ifdef DM_PARALLEL
    USE module_dm
 #endif
@@ -108,21 +109,22 @@ CONTAINS
    INTEGER :: nl_in, icount
 
 
-   INTEGER :: icm,jcm, ii, im1, jj, jm1, loop, error, fid, nxc, nyc
+   INTEGER :: icm,jcm, ii, im1, jj, jm1, loop, error, fid, nxc, nyc, lm
    REAL    :: u_mean,v_mean, f0, p_surf, p_level, qvf, z_at_v, z_at_u
    REAL    :: z_scale, xrad, yrad, zrad, rad, delt, cof1, cof2
 !   REAL, EXTERNAL :: interp_0
    REAL    :: hm, xa
-   REAL    :: pi
+   REAL    :: pi, rnd
 
 !  stuff from original initialization that has been dropped from the Registry 
    REAL    :: vnu, xnu, xnus, dinit0, cbh, p0_temp, t0_temp, zd, zt
-   REAL    :: qvf1, qvf2, pd_surf
+   REAL    :: qvf1, qvf2, pd_surf, theta_surf
    INTEGER :: it
    real :: thtmp, ptmp, temp(3)
 
    LOGICAL :: moisture_init
    LOGICAL :: stretch_grid, dry_sounding
+   character (len=256) :: mminlu2
 
    REAL    :: xa1, xal1,pii,hm1  !  data for intercomparison setup from dale
 
@@ -187,11 +189,41 @@ CONTAINS
    hm1  = 250.
 !   hm1  = 1000.
 
+
+   stretch_grid = .true.
    delt = 0.
+!   z_scale = .50
+   z_scale = .40
+   pi = 2.*asin(1.0)
+   write(6,*) ' pi is ',pi
+   nxc = (ide-ids)/2
+   nyc = (jde-jds)/2
 
   CASE ( quarter_ss )
-   delt = 3.
 
+   stretch_grid = .true.
+   delt = 3.
+!   z_scale = .50
+   z_scale = .40
+   pi = 2.*asin(1.0)
+   write(6,*) ' pi is ',pi
+   nxc = (ide-ids)/2
+   nyc = (jde-jds)/2
+
+  CASE (convrad)
+   stretch_grid = .true.
+   delt = 1.
+!   z_scale = .50
+   z_scale = .32
+   pi = 2.*asin(1.0)
+   write(6,*) ' pi is ',pi
+   nxc = (ide-ids)/2
+   nyc = jde/2
+   icm = ide/2
+! lm is the half width of the land in terms of grid points
+   lm = 25
+   write(6,*) 'lm,icm-lm,icm+lm = ', lm,icm-lm,icm+lm
+ 
   CASE DEFAULT
 
       WRITE( wrf_err_message , * ) 'Need to choose valid non-zero ideal_case:  ideal_case = ', model_config_rec%ideal_case
@@ -200,13 +232,6 @@ CONTAINS
   END SELECT ideal_constants
 
 
-   stretch_grid = .true.
-!   z_scale = .50
-   z_scale = .40
-   pi = 2.*asin(1.0)
-   write(6,*) ' pi is ',pi
-   nxc = (ide-ids)/2
-   nyc = (jde-jds)/2
 
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
@@ -222,6 +247,10 @@ CONTAINS
    CALL wrf_dm_bcast_bytes( icm , IWORDSIZE )
    CALL wrf_dm_bcast_bytes( jcm , IWORDSIZE )
 #endif
+
+  ideal_landmap: SELECT CASE ( model_config_rec%ideal_case )
+ 
+   CASE(hill2d_x, quarter_ss)
 
     CALL nl_set_mminlu(1,'    ')
     CALL nl_set_iswater(1,0)
@@ -256,6 +285,100 @@ CONTAINS
       END DO
    END DO
 
+   CASE(convrad)
+    mminlu2 = ' '
+    mminlu2(1:4) = 'USGS'
+    CALL nl_set_mminlu(1, mminlu2)
+!   CALL nl_set_mminlu(1, 'USGS')
+    CALL nl_set_iswater(1,16)
+    CALL nl_set_isice(1,3)
+    CALL nl_set_cen_lat(1,20.)
+    CALL nl_set_cen_lon(1,-105.)
+    CALL nl_set_truelat1(1,0.)
+    CALL nl_set_truelat2(1,0.)
+    CALL nl_set_moad_cen_lat (1,0.)
+    CALL nl_set_stand_lon (1,0.)
+    CALL nl_set_pole_lon (1,0.)
+    CALL nl_set_pole_lat (1,90.)
+    CALL nl_set_map_proj(1,0)
+!   CALL model_to_grid_config_rec(1,model_config_rec,config_flags)
+    CALL nl_get_iswater(1,grid%iswater)
+
+!  here we initialize data that currently is not initialized
+!  in the input data
+
+    DO j = jts, jte
+      DO i = its, ite
+         grid%msft(i,j)     = 1.
+         grid%msfu(i,j)     = 1.
+         grid%msfv(i,j)     = 1.
+         grid%msftx(i,j)    = 1.
+         grid%msfty(i,j)    = 1.
+         grid%msfux(i,j)    = 1.
+         grid%msfuy(i,j)    = 1.
+         grid%msfvx(i,j)    = 1.
+         grid%msfvy(i,j)    = 1.
+         grid%msfvx_inv(i,j)= 1.
+         grid%sina(i,j)     = 0.
+         grid%cosa(i,j)     = 1.
+         grid%e(i,j)        = 0.
+         grid%xlat(i,j)     = 10.
+         grid%f(i,j)        = 2.5e-5
+         grid%xlong(i,j)     = 0.
+! Hard-wire the ocean-land configuration
+! all ocean
+!       if (i .ge. (icm-lm) .and. i .lt. (icm+lm)) then
+!        grid%xland(i,j)     = 1.
+!        grid%lu_index(i,j)  = 18
+!else
+         grid%xland(i,j)     = 2.
+         grid%lu_index(i,j)  = 16
+!end if
+      END DO
+   END DO
+
+! for Noah LSM, additional variables need to be initialized
+
+   other_masked_fields : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
+
+      CASE (SLABSCHEME)
+
+      CASE (LSMSCHEME)
+
+        DO j = jts , MIN(jde-1,jte)
+           DO i = its , MIN(ide-1,ite)
+              IF (grid%xland(i,j) .lt. 1.5) THEN
+                 grid%vegfra(i,j) = 0.5
+                 grid%canwat(i,j) = 0.
+                 grid%ivgtyp(i,j) = 18
+                 grid%isltyp(i,j) = 8
+                 grid%xice(i,j) = 0.
+                 grid%snow(i,j) = 0.
+              ELSE
+                 grid%vegfra(i,j) = 0.
+                 grid%canwat(i,j) = 0.
+                 grid%ivgtyp(i,j) = 16
+                 grid%isltyp(i,j) = 14
+                 grid%xice(i,j) = 0.
+                 grid%snow(i,j) = 0.
+              ENDIF
+           END DO
+        END DO
+
+      CASE (RUCLSMSCHEME)
+
+   END SELECT other_masked_fields
+! Process the soil; note that there are some things hard-wired into share/module_soil_pre.F
+      CALL process_soil_ideal(grid%xland,grid%xice,grid%vegfra,grid%snow,grid%canwat, &
+                     grid%ivgtyp,grid%isltyp,grid%tslb,grid%smois, &
+                     grid%tsk,grid%tmn,grid%zs,grid%dzs,model_config_rec%num_soil_layers, &
+                     model_config_rec%sf_surface_physics(grid%id), &
+                                   ids,ide, jds,jde, kds,kde,&
+                                   ims,ime, jms,jme, kms,kme,&
+                                   its,ite, jts,jte, kts,kte )
+
+   END SELECT ideal_landmap
+
     DO j = jts, jte
     DO k = kts, kte
       DO i = its, ite
@@ -269,10 +392,17 @@ CONTAINS
 ! set up the grid
 
    IF (stretch_grid) THEN ! exponential stretch for eta (nearly constant dz)
+   ideal_levels: SELECT CASE ( model_config_rec%ideal_case )
+   CASE(hill2d_x, quarter_ss)
      DO k=1, kde
       grid%znw(k) = (exp(-(k-1)/float(kde-1)/z_scale) - exp(-1./z_scale))/ &
                                 (1.-exp(-1./z_scale))
      ENDDO
+   CASE(convrad)
+     DO k=1, kde
+      grid%znw(k) = model_config_rec%eta_levels(k)
+     ENDDO
+   END SELECT ideal_levels
    ELSE
      DO k=1, kde
       grid%znw(k) = 1. - float(k-1)/float(kde-1)
@@ -309,7 +439,7 @@ CONTAINS
   write(6,*) ' getting dry sounding for base state '
   dry_sounding = .true.
   CALL get_sounding( zk, p_in, pd_in, theta, rho, u, v, qv, dry_sounding, &
-                     nl_max, nl_in)
+                     nl_max, nl_in, theta_surf)
   ENDIF
   CALL wrf_dm_bcast_real( zk , nl_max )
   CALL wrf_dm_bcast_real( p_in , nl_max )
@@ -445,7 +575,7 @@ CONTAINS
   ENDDO
   ENDDO
 
-  CASE (quarter_ss)
+  CASE (quarter_ss, convrad)
   DO j=jts,jte
   DO i=its,ite  
     grid%ht(i,j) = 0.
@@ -503,7 +633,7 @@ CONTAINS
   write(6,*) ' getting moist sounding for full state '
   dry_sounding = .false.
   CALL get_sounding( zk, p_in, pd_in, theta, rho, u, v, qv, dry_sounding, &
-                     nl_max, nl_in )
+                     nl_max, nl_in, theta_surf )
 
   DO J = jts, min(jde-1,jte)
   DO I = its, min(ide-1,ite)
@@ -601,7 +731,7 @@ CONTAINS
   ENDDO
 
 !===============
-  ideal_bubble: SELECT CASE ( model_config_rec%ideal_case )
+  ideal_pert: SELECT CASE ( model_config_rec%ideal_case )
   CASE (quarter_ss)
 !  QSS thermal perturbation to kick off convection
 
@@ -647,7 +777,40 @@ CONTAINS
 
     ENDDO
   ENDDO
-  END SELECT ideal_bubble
+  CASE (convrad)
+!  random low-level thermal perturbation to kick off convection
+        call random_seed
+  write(6,*) ' nxc, nyc for perturbation ',nxc,nyc
+  write(6,*) ' delt for perturbation ',delt
+
+  DO J = jts, min(jde-1,jte)
+    DO I = its, min(ide-1,ite)
+      DO K = 1, 10
+
+        call RANDOM_NUMBER(rnd)
+          grid%t_1(i,k,j)=grid%t_1(i,k,j)+delt*(rnd-0.5)
+         !  grid%t_1(i,k,j)=grid%t_1(i,k,j)+delt*COS(.5*PI*RAD)**2
+           grid%t_2(i,k,j)=grid%t_1(i,k,j)
+           qvf = 1. + rvovrd*moist(i,k,j,P_QV)
+           grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
+                        (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
+           grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
+      ENDDO
+
+!  rebalance hydrostatically
+
+      DO k  = 2,kte
+        grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
+                     (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,k-1,j)+ &
+                      grid%mu_1(i,j)*grid%alb(i,k-1,j)  )
+        grid%ph_2(i,k,j) = grid%ph_1(i,k,j)
+        grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
+      ENDDO
+
+    ENDDO
+  ENDDO
+
+  END SELECT ideal_pert
 
 #if 0
 !===============
@@ -795,6 +958,8 @@ CONTAINS
   CALL wrf_dm_bcast_real( grid%v_base , kte )
   CALL wrf_dm_bcast_real( grid%z_base , kte )
 
+  ideal_surfacet: SELECT CASE ( model_config_rec%ideal_case )
+  CASE(hill2d_x, quarter_ss)
   DO J = jts, min(jde-1,jte)
   DO I = its, min(ide-1,ite)
      thtmp   = grid%t_2(i,1,j)+t0
@@ -811,6 +976,16 @@ CONTAINS
      grid%tmn(I,J)=grid%tsk(I,J)-0.5
   ENDDO
   ENDDO
+ 
+  CASE(convrad)
+  DO J = jts, min(jde-1,jte)
+  DO I = its, min(ide-1,ite)
+         grid%tsk(i,j) = theta_surf * (p_surf/p1000mb)**rcp
+         grid%tmn(i,j) = grid%tsk(i,j)
+  ENDDO
+  ENDDO
+
+  END SELECT ideal_surfacet
 
 
   trajectories: SELECT CASE ( model_config_rec%ideal_case )
@@ -886,7 +1061,7 @@ CONTAINS
 !---------------------------------------------------------------------------
 
       subroutine get_sounding( zk, p, p_dry, theta, rho, &
-                               u, v, qv, dry, nl_max, nl_in )
+                               u, v, qv, dry, nl_max, nl_in, th_surf )
       implicit none
 
       integer nl_max, nl_in
@@ -897,7 +1072,7 @@ CONTAINS
       integer n, iz
       parameter(n=1000)
       logical debug
-      parameter( debug = .false.)
+      parameter( debug = .true.)
       character*256 message
 
 ! input sounding data
@@ -996,7 +1171,7 @@ CONTAINS
             qvf1 = 0.5*(2.+(qv_input(k-1)+qv_input(k)))
             qvf = 1. + rvovrd*qv_input(k)   ! qv is in g/kg here
  
-            do it=1,20
+            do it=1,10
               pm_input(k) = pm_input(k-1) &
                       - 0.5*dz*(rho_input(k)+rho_input(k-1))*g*qvf1
               IF(pm_input(k) .LE. 0. )THEN

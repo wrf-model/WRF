@@ -6,6 +6,7 @@ RM      =       rm -f
 
 
 MODULES = \
+	CsiDiagnostic_mod.o \
 	module_cam_shr_kind_mod.o \
 	module_cam_support.o \
 	module_cam_shr_const_mod.o \
@@ -44,6 +45,7 @@ MODULES = \
 	module_bl_gwdo.o \
 	module_bl_myjurb.o \
 	module_bl_boulac.o \
+	module_checkerror.o \
 	module_bl_camuwpbl_driver.o \
 	module_bl_mfshconvpbl.o \
 	module_shcu_camuwshcu_driver.o \
@@ -66,6 +68,8 @@ MODULES = \
 	module_cu_gf_sh.o \
 	module_cu_nsas.o \
 	module_cu_sas.o \
+	module_gocart_coupling.o \
+	module_cu_mesosas.o \
 	module_cu_scalesas.o \
 	module_cu_osas.o \
 	module_cu_kfcup.o \
@@ -84,6 +88,8 @@ MODULES = \
 	module_mp_fast_sbm.o \
 	module_ltng_lpi.o \
 	module_mp_gsfcgce.o \
+	module_mp_gsfcgce_3ice_nuwrf.o \
+	module_mp_gsfcgce_4ice_nuwrf.o \
 	module_mp_morr_two_moment.o \
         module_mp_p3.o \
 	module_mp_milbrandt2mom.o \
@@ -95,6 +101,9 @@ MODULES = \
 	module_ra_clWRF_support.o  \
 	module_ra_gsfcsw.o \
 	module_ra_goddard.o \
+	module_ra_goddard_2011.o \
+        module_ra_goddard_2014.o \
+        module_ra_goddard_2017.o \
 	module_ra_rrtm.o  \
 	module_ra_rrtmg_lw.o  \
 	module_ra_rrtmg_sw.o  \
@@ -175,6 +184,7 @@ MODULES = \
         module_sf_lake.o \
 	module_diagnostics_driver.o
 
+
 FIRE_MODULES = \
         module_fr_fire_driver.o \
         module_fr_fire_driver_wrf.o \
@@ -183,8 +193,10 @@ FIRE_MODULES = \
         module_fr_fire_core.o \
         module_fr_fire_phys.o \
         module_fr_fire_util.o
-  
+
+#NUWRF...Added DSCALE_mod.o
 DIAGNOSTIC_MODULES_EM = \
+	DSCALE_mod.o \
 	module_diag_afwa.o \
 	module_diag_cl.o \
         module_diag_hailcast.o \
@@ -226,6 +238,7 @@ clean:
 	@ echo 'use the clean script'
 
 # DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
+
 # DO NOT DELETE
 
 include ../main/depend.common

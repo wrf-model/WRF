@@ -835,6 +835,12 @@ Namelist variables for controlling the adaptive time step option:
                                                       on threshold
                                                   3 = with cloud effect, and use cloud fraction option 3, based on
                                                       Sundqvist et al. (1989) (since 3.7)
+ cldovrlp                            = 2,       ; RRTMG cloud overlap technique
+                                                  1 = random
+                                                  2 = maximum-random (default)
+                                                  3 = maximum
+                                                  4 = exponential
+                                                  5 = exponential-random
  swrad_scat                          = 1.       ; scattering tuning parameter (default 1. is 1.e-5 m2/kg)
                                                   (works for ra_sw_physics = 1 option only)
  surface_input_source                = 3,	; where landuse and soil category data come from:

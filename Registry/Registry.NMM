@@ -231,8 +231,8 @@ state  real   VBWGT4       ij     dyn_nmm     1      -      r
 #end of HWRF: 
 
 #
-state  real   HLON        ij     dyn_nmm     1      -      h0123d=(NoInterp)
-state  real   HLAT        ij     dyn_nmm     1      -      h0123d=(NoInterp)
+state  real   HLON        ij     dyn_nmm     1      -      h01234d=(NoInterp)
+state  real   HLAT        ij     dyn_nmm     1      -      h01234d=(NoInterp)
 state  real   VLON        ij     dyn_nmm     1      -      irh023
 state  real   VLAT        ij     dyn_nmm     1      -      irh023
 
@@ -554,6 +554,10 @@ state  integer  has_reqc   -      misc        1    -     r       "has_reqc"     
 state  integer  has_reqi   -      misc        1    -     r       "has_reqi"       "Flag for has effective radius of cloud ice"      ""
 state  integer  has_reqs   -      misc        1    -     r       "has_reqs"       "Flag for has effective radius of snow"           ""
 
+# heating rate per day: J. Henderson AER 20171107 output only in auxiliary file
+state  real  hrswpd        ikj    dyn_nmm     1    -     h4      "hrswpd"         "Short wave heating rate per day"      "K d-1"
+state  real  hrlwpd        ikj    dyn_nmm     1    -     h4      "hrlwpd"         "Long wave heating rate per day"       "K d-1"
+
 #
 # added WRF-Solar
 state   real    swddir       ij     misc         1         -     rhd    "SWDDIR"     "Shortwave surface downward direct irradiance" "W/m^2" ""
@@ -661,17 +665,17 @@ state  real   acfrcv    ij    dyn_nmm     1    -    rh023    "ACFRCV"    "Accum 
 state  real   acfrst    ij    dyn_nmm     1    -    rh023    "ACFRST"    "Accum stratiform cloud fraction"   ""
 state  real   ssroff    ij    dyn_nmm     1    -    rh023    "SSROFF"    "Surface runoff"                    "mm"
 state  real   bgroff    ij    dyn_nmm     1    -    rh    "BGROFF"    "Subsurface runoff"                 "mm"
-state  real   rlwin     ij    dyn_nmm     1    -    rh0123d=(DownCopy)    "RLWIN"     "Downward longwave at surface"      "W m-2"
+state  real   rlwin     ij    dyn_nmm     1    -    rh01234d=(DownCopy)   "RLWIN"     "Downward longwave at surface"      "W m-2"
 state  real   rlwout    ij    dyn_nmm     1    -    -
-state  real   rlwtoa    ij    dyn_nmm     1    -    rh023    "RLWTOA"    "Outgoing LW flux at top of atmos"  "W m-2"
+state  real   rlwtoa    ij    dyn_nmm     1    -    rh0234   "RLWTOA"    "Outgoing LW flux at top of atmos"  "W m-2"
 state  real   alwin     ij    dyn_nmm     1    -    rh023    "ALWIN"     "Accum LW down at surface"          "W m-2"
 state  real   alwout    ij    dyn_nmm     1    -    rh023    "ALWOUT"    "Accum RADOT (see above)"           "W m-2"
 state  real   alwtoa    ij    dyn_nmm     1    -    rh023    "ALWTOA"    "Accum RLWTOA"                      "W m-2"
-state  real   rswin     ij    dyn_nmm     1    -    rh0123d=(DownCopy)    "RSWIN"     "Downward shortwave at surface"     "W m-2"
+state  real   rswin     ij    dyn_nmm     1    -    rh01234d=(DownCopy)   "RSWIN"     "Downward shortwave at surface"     "W m-2"
 state  real   rswinc    ij    dyn_nmm     1    -    rh023    "RSWINC"    "Clear-sky equivalent of RSWIN"     "W m-2"
 state  real   rswout    ij    dyn_nmm     1    -    rh0123    "RSWOUT"    "Upward shortwave at surface"       "W m-2"
 #for HWRF: add to restart
-state  real   rswtoa    ij    dyn_nmm     1    -    rh023     "RSWTOA"    "Outgoing SW flux at top of atmos"  "W m-2"
+state  real   rswtoa    ij    dyn_nmm     1    -    rh0234    "RSWTOA"    "Outgoing SW flux at top of atmos"  "W m-2"
 #end HWRF
 state  real   aswin     ij    dyn_nmm     1    -    rh023    "ASWIN"     "Accum SW down at surface"          "W m-2"
 state  real   aswout    ij    dyn_nmm     1    -    rh023    "ASWOUT"    "Accum RSWOUT"                      "W m-2"
@@ -1439,6 +1443,10 @@ rconfig   integer ISFFLX                  namelist,physics 	1             1     
 rconfig   integer ideal_xland             namelist,physics      1             1        rh    "IDEAL_XLAND"  "land=1(def), water=2, for ideal cases with no land-use"      ""
 rconfig   integer IFSNOW                  namelist,physics	1             1       irh    "IFSNOW"                        ""      ""
 rconfig   integer ICLOUD                  namelist,physics	1             1       irh    "ICLOUD"                        ""      ""
+
+# cldovrlp for rrtmg: J. Henderson AER 20171112
+rconfig   integer cldovrlp                namelist,physics      1             2       irh    "cldovrlp"                      ""      ""
+
 rconfig   real    swrad_scat              namelist,physics      1             1       irh    "SWRAD_SCAT" "SCATTERING FACTOR IN SWRAD"      ""
 rconfig   integer surface_input_source    namelist,physics	1             1       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=hybrid (not yet implemented)"      ""
 rconfig   integer num_soil_layers         namelist,physics	1             5       irh    "num_soil_layers"               ""      ""

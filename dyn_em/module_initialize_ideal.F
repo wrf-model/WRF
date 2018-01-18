@@ -199,7 +199,7 @@ CONTAINS
    nxc = (ide-ids)/2
    nyc = (jde-jds)/2
 
-  CASE ( quarter_ss, squall2d_x )
+  CASE ( quarter_ss, squall2d_x, squall2d_y )
 
    stretch_grid = .true.
    delt = 3.
@@ -250,7 +250,7 @@ CONTAINS
 
   ideal_landmap: SELECT CASE ( model_config_rec%ideal_case )
  
-   CASE(hill2d_x, quarter_ss, squall2d_x)
+   CASE(hill2d_x, quarter_ss, squall2d_x, squall2d_y)
 
     CALL nl_set_mminlu(1,'    ')
     CALL nl_set_iswater(1,0)
@@ -393,7 +393,7 @@ CONTAINS
 
    IF (stretch_grid) THEN ! exponential stretch for eta (nearly constant dz)
    ideal_levels: SELECT CASE ( model_config_rec%ideal_case )
-   CASE(hill2d_x, quarter_ss, squall2d_x)
+   CASE(hill2d_x, quarter_ss, squall2d_x, squall2d_y)
      DO k=1, kde
       grid%znw(k) = (exp(-(k-1)/float(kde-1)/z_scale) - exp(-1./z_scale))/ &
                                 (1.-exp(-1./z_scale))
@@ -575,7 +575,7 @@ CONTAINS
   ENDDO
   ENDDO
 
-  CASE (quarter_ss, convrad, squall2d_x)
+  CASE (quarter_ss, convrad, squall2d_x, squall2d_y)
   DO j=jts,jte
   DO i=its,ite  
     grid%ht(i,j) = 0.
@@ -822,6 +822,51 @@ CONTAINS
 
     ENDDO
   ENDDO
+  CASE (squall2d_y)
+!  QSS thermal perturbation to kick off convection
+
+  write(6,*) ' nxc, nyc for perturbation ',nxc,nyc
+  write(6,*) ' delt for perturbation ',delt
+
+  DO J = jts, min(jde-1,jte)
+    yrad = config_flags%dy*float(j-nyc)/4000.
+!   yrad = 0.
+    DO I = its, min(ide-1,ite)
+!     xrad = config_flags%dx*float(i-nxc)/4000.
+      xrad = 0.
+      DO K = 1, kte-1
+
+!  put in preturbation theta (bubble) and recalc density.  note,
+!  the mass in the column is not changing, so when theta changes,
+!  we recompute density and geopotential
+
+        zrad = 0.5*(grid%ph_1(i,k,j)+grid%ph_1(i,k+1,j)  &
+                   +grid%phb(i,k,j)+grid%phb(i,k+1,j))/g
+        zrad = (zrad-1500.)/1500.
+        RAD=SQRT(xrad*xrad+yrad*yrad+zrad*zrad)
+        IF(RAD <= 1.) THEN
+           grid%t_1(i,k,j)=grid%t_1(i,k,j)+delt*COS(.5*PI*RAD)**2
+           grid%t_2(i,k,j)=grid%t_1(i,k,j)
+           qvf = 1. + rvovrd*moist(i,k,j,P_QV)
+           grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
+                        (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
+           grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
+        ENDIF
+      ENDDO
+
+!  rebalance hydrostatically
+
+      DO k  = 2,kte
+        grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
+                     (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,k-1,j)+ &
+                      grid%mu_1(i,j)*grid%alb(i,k-1,j)  )
+
+        grid%ph_2(i,k,j) = grid%ph_1(i,k,j)
+        grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
+      ENDDO
+
+    ENDDO
+  ENDDO
   CASE (convrad)
 !  random low-level thermal perturbation to kick off convection
         call random_seed
@@ -1004,7 +1049,7 @@ CONTAINS
   CALL wrf_dm_bcast_real( grid%z_base , kte )
 
   ideal_surfacet: SELECT CASE ( model_config_rec%ideal_case )
-  CASE(hill2d_x, quarter_ss, squall2d_x)
+  CASE(hill2d_x, quarter_ss, squall2d_x, squall2d_y)
   DO J = jts, min(jde-1,jte)
   DO I = its, min(ide-1,ite)
      thtmp   = grid%t_2(i,1,j)+t0

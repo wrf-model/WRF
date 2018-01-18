@@ -2917,6 +2917,7 @@ package   realcase       ideal_case==0               -            -
 package   hill2d_x       ideal_case==1               -            -
 package   quarter_ss     ideal_case==2               -            -
 package   convrad        ideal_case==3               -            -
+package   squall2d_x     ideal_case==4               -            -
 
 #---------------------------------------------------------------------------------------------------------------------------------------
 ## communications                                               

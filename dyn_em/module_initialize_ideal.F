@@ -121,6 +121,7 @@ CONTAINS
    REAL    :: qvf1, qvf2, pd_surf, theta_surf
    INTEGER :: it
    real :: thtmp, ptmp, temp(3)
+   real :: t_min, t_max, xpos, xposml, xpospl ! used by grav2d_x
 
    LOGICAL :: moisture_init
    LOGICAL :: stretch_grid, dry_sounding
@@ -210,6 +211,16 @@ CONTAINS
    nxc = (ide-ids)/2
    nyc = (jde-jds)/2
 
+  CASE (grav2d_x)
+
+   stretch_grid = .true.
+!   z_scale = .50
+   z_scale = 1.675
+   pi = 2.*asin(1.0)
+   write(6,*) ' pi is ',pi
+   nxc = (ide-ids)/2
+   nyc = (jde-jds)/2
+
   CASE (convrad)
    stretch_grid = .true.
    delt = 1.
@@ -250,7 +261,7 @@ CONTAINS
 
   ideal_landmap: SELECT CASE ( model_config_rec%ideal_case )
  
-   CASE(hill2d_x, quarter_ss, squall2d_x, squall2d_y)
+   CASE(hill2d_x, quarter_ss, squall2d_x, squall2d_y, grav2d_x)
 
     CALL nl_set_mminlu(1,'    ')
     CALL nl_set_iswater(1,0)
@@ -393,7 +404,7 @@ CONTAINS
 
    IF (stretch_grid) THEN ! exponential stretch for eta (nearly constant dz)
    ideal_levels: SELECT CASE ( model_config_rec%ideal_case )
-   CASE(hill2d_x, quarter_ss, squall2d_x, squall2d_y)
+   CASE(hill2d_x, quarter_ss, squall2d_x, squall2d_y, grav2d_x)
      DO k=1, kde
       grid%znw(k) = (exp(-(k-1)/float(kde-1)/z_scale) - exp(-1./z_scale))/ &
                                 (1.-exp(-1./z_scale))
@@ -575,7 +586,7 @@ CONTAINS
   ENDDO
   ENDDO
 
-  CASE (quarter_ss, convrad, squall2d_x, squall2d_y)
+  CASE (quarter_ss, convrad, squall2d_x, squall2d_y, grav2d_x)
   DO j=jts,jte
   DO i=its,ite  
     grid%ht(i,j) = 0.
@@ -899,6 +910,76 @@ CONTAINS
 
     ENDDO
   ENDDO
+  CASE (grav2d_x)
+!  cold bubble input  (from straka et al, IJNMF, vol 17, 1993 pp 1-22)
+
+  t_min = grid%t_1(its,kts,jts)
+  t_max = t_min
+  u_mean = 00.
+
+  xpos = config_flags%dx*nxc - u_mean*900.
+  xposml = xpos - config_flags%dx*(ide-1)
+  xpospl = xpos + config_flags%dx*(ide-1)
+
+  DO J = jts, min(jde-1,jte)
+    DO I = its, min(ide-1,ite)
+!      xrad = config_flags%dx*float(i-nxc)/4000.  !  4000 meter horizontal radius
+!                                    !  centered in the domain
+
+       xrad = min( abs(config_flags%dx*float(i)-xpos),   &
+                   abs(config_flags%dx*float(i)-xposml), &
+                   abs(config_flags%dx*float(i)-xpospl))/4000.
+
+      DO K = 1, kte-1
+
+!  put in preturbation theta (bubble) and recalc density.  note,
+!  the mass in the column is not changing, so when theta changes,
+!  we recompute density and geopotential
+
+        zrad = 0.5*(grid%ph_1(i,k,j)+grid%ph_1(i,k+1,j)  &
+                   +grid%phb(i,k,j)+grid%phb(i,k+1,j))/g
+        zrad = (zrad-3000.)/2000. !  2000 meter vertical radius,
+                                  !  centered at z=3000,
+        RAD=SQRT(xrad*xrad+zrad*zrad)
+        IF(RAD <= 1.) THEN
+
+           !  perturbation temperature is 15 C, convert to potential temperature
+
+           delt = -15.0 / ((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**rcp
+
+           grid%T_1(i,k,j)=grid%T_1(i,k,j)+delt*(COS(PI*RAD)+1.0)/2.
+           grid%T_2(i,k,j)=grid%T_1(i,k,j)
+           qvf = 1. + rvovrd*moist(i,k,j,P_QV)
+           grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
+                        (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
+           grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
+        ENDIF
+
+        t_min = min(t_min, grid%t_1(i,k,j))
+        t_max = max(t_max, grid%t_1(i,k,j))
+      ENDDO
+
+!  rebalance hydrostatically
+
+      DO k  = 2,kte
+        grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
+                     (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,k-1,j)+ &
+                      grid%mu_1(i,j)*grid%alb(i,k-1,j)  )
+
+        grid%ph_2(i,k,j) = grid%ph_1(i,k,j)
+        grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
+      ENDDO
+
+    ENDDO
+  ENDDO
+
+  write(6,*) ' min and max theta perturbation ',t_min,t_max
+
+
+
+
+! -- end bubble insert
+
 
   END SELECT ideal_pert
 
@@ -1049,7 +1130,7 @@ CONTAINS
   CALL wrf_dm_bcast_real( grid%z_base , kte )
 
   ideal_surfacet: SELECT CASE ( model_config_rec%ideal_case )
-  CASE(hill2d_x, quarter_ss, squall2d_x, squall2d_y)
+  CASE(hill2d_x, quarter_ss, squall2d_x, squall2d_y, grav2d_x)
   DO J = jts, min(jde-1,jte)
   DO I = its, min(ide-1,ite)
      thtmp   = grid%t_2(i,1,j)+t0

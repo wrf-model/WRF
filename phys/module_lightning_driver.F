@@ -119,8 +119,8 @@
 
     ! Convective parameterized
     CASE (ltng_cpm_PR92z)
-        IF ( cu_physics .ne. GDSCHEME .and. cu_physics .ne. G3SCHEME  ) THEN
-          CALL wrf_error_fatal( ' lightning_init: Selected lightning option requires GD or G3 convective parameterization' )
+        IF ( cu_physics .ne. GDSCHEME .and. cu_physics .ne. G3SCHEME  .and. cu_physics .ne. GFSCHEME  ) THEN
+          CALL wrf_error_fatal( ' lightning_init: Selected lightning option requires GD, G3, or GF convective parameterization' )
         ENDIF
 
         WRITE(message, * ) ' lightning_init: CPM lightning option selected: ', lightning_option
@@ -295,6 +295,7 @@
 
 
 ! Local variables
+ LOGICAL :: do_ltng
  REAL, DIMENSION( ims:ime, jms:jme ) :: total_flashrate
  CHARACTER (LEN=80) :: message
 
@@ -303,11 +304,15 @@
 
 !-----------------------------------------------------------------
 
- IF ( lightning_option .eq. 0 ) RETURN
+ do_ltng = lightning_option /= 0
+ IF( do_ltng ) THEN
+   do_ltng = (itimestep * dt >= lightning_start_seconds) &
+             .AND. MOD( itimestep * INT(dt),INT(lightning_dt) ) == 0
+ ENDIF
 
- IF ( itimestep * dt .lt. lightning_start_seconds ) RETURN
-
- IF ( MOD((itimestep * dt - lightning_start_seconds), lightning_dt ) .ne. 0 ) RETURN
+ IF( .not. do_ltng ) THEN
+   RETURN
+ ENDIF
 
 !-----------------------------------------------------------------
 ! This driver performs several steps in order to produce lightning

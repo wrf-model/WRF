@@ -128,6 +128,16 @@ CONTAINS
    character (len=256) :: mminlu2
 
    REAL    :: xa1, xal1,pii,hm1  !  data for intercomparison setup from dale
+!  space for initial jet in b_wave
+
+   INTEGER, parameter :: nz_jet=64, ny_jet=80
+   REAL, DIMENSION(nz_jet, ny_jet) :: u_jet, rho_jet, th_jet, z_jet
+
+!  perturbation parameters for b_wave
+
+   REAL, PARAMETER :: htbub=8000., radbub=2000000., radz=8000., tpbub=1.0
+   REAL :: piov2, tp
+   INTEGER :: icen, jcen
 
    REAL    :: B1, B2, B3, B4, B5, sin_arg
 
@@ -234,6 +244,23 @@ CONTAINS
 ! lm is the half width of the land in terms of grid points
    lm = 25
    write(6,*) 'lm,icm-lm,icm+lm = ', lm,icm-lm,icm+lm
+
+  CASE (b_wave)
+ 
+! Note: htbub, radbub, radz, tpbub set above as parameters
+
+   piov2 = 2.*atan(1.0)
+   icen = ide/4
+   jcen = jde/2
+
+   stretch_grid = .true.
+   delt = 0.
+   z_scale = .50
+   pi = 2.*asin(1.0)
+   write(6,*) ' pi is ',pi
+   nxc = (ide-ids)/4
+   nyc = (jde-jds)/2
+
  
   CASE DEFAULT
 
@@ -292,6 +319,41 @@ CONTAINS
          grid%cosa(i,j)     = 1.
          grid%e(i,j)        = 0.
          grid%f(i,j)        = 0.
+
+      END DO
+   END DO
+
+   CASE(b_wave)
+
+    CALL nl_set_mminlu(1,'    ')
+    CALL nl_set_iswater(1,0)
+    CALL nl_set_cen_lat(1,40.)
+    CALL nl_set_cen_lon(1,-105.)
+    CALL nl_set_truelat1(1,0.)
+    CALL nl_set_truelat2(1,0.)
+    CALL nl_set_moad_cen_lat (1,0.)
+    CALL nl_set_stand_lon (1,0.)
+    CALL nl_set_pole_lon (1,0.)
+    CALL nl_set_pole_lat (1,90.)
+    CALL nl_set_map_proj(1,0)
+
+
+!  here we initialize data we currently is not initialized 
+!  in the input data
+
+    DO j = jts, jte
+      DO i = its, ite
+         grid%msftx(i,j)    = 1.
+         grid%msfty(i,j)    = 1.
+         grid%msfux(i,j)    = 1.
+         grid%msfuy(i,j)    = 1.
+         grid%msfvx(i,j)    = 1.
+         grid%msfvx_inv(i,j)= 1.
+         grid%msfvy(i,j)    = 1.
+         grid%sina(i,j)     = 0.
+         grid%cosa(i,j)     = 1.
+         grid%e(i,j)        = 0.
+         grid%f(i,j)        = 1.e-04
 
       END DO
    END DO
@@ -404,7 +466,7 @@ CONTAINS
 
    IF (stretch_grid) THEN ! exponential stretch for eta (nearly constant dz)
    ideal_levels: SELECT CASE ( model_config_rec%ideal_case )
-   CASE(hill2d_x, quarter_ss, squall2d_x, squall2d_y, grav2d_x)
+   CASE(hill2d_x, quarter_ss, squall2d_x, squall2d_y, grav2d_x, b_wave)
      DO k=1, kde
       grid%znw(k) = (exp(-(k-1)/float(kde-1)/z_scale) - exp(-1./z_scale))/ &
                                 (1.-exp(-1./z_scale))
@@ -445,6 +507,33 @@ CONTAINS
 
 !  get the sounding from the ascii sounding file, first get dry sounding and 
 !  calculate base state
+   ideal_sounding: SELECT CASE ( model_config_rec%ideal_case )
+ 
+   CASE (b_wave)
+
+  write(6,*) ' reading input jet sounding '
+  call read_input_jet( u_jet, rho_jet, th_jet, z_jet, nz_jet, ny_jet )
+
+  write(6,*) ' getting dry sounding for base state '
+  write(6,*) ' using middle column in jet sounding, j = ',ny_jet/2
+
+  dry_sounding   = .true.
+!  debug = .true.  !  this will produce print of the sounding (last argument)
+  CALL get_sounding_b_wave( zk, p_in, pd_in, theta, rho, u, v, qv, dry_sounding, &
+                      nl_max, nl_in, u_jet, rho_jet, th_jet, z_jet,      &
+                      nz_jet, ny_jet, ny_jet/2, .true.                   )
+
+  write(6,*) ' returned from reading sounding, nl_in is ',nl_in
+
+!  find ptop for the desired ztop (ztop is input from the namelist),
+!  and find surface pressure
+
+!  For the jet, using the middle column for the base state means that
+!  we will be extrapolating above the highest height data to the south
+!  of the centerline.
+
+
+   CASE DEFAULT
 
   IF ( wrf_dm_on_monitor() ) THEN
   write(6,*) ' getting dry sounding for base state '
@@ -467,6 +556,7 @@ CONTAINS
 
 !  find ptop for the desired ztop (ztop is input from the namelist),
 !  and find surface pressure
+   END SELECT ideal_sounding
 
   grid%p_top = interp_0( p_in, zk, config_flags%ztop, nl_in )
 
@@ -586,7 +676,7 @@ CONTAINS
   ENDDO
   ENDDO
 
-  CASE (quarter_ss, convrad, squall2d_x, squall2d_y, grav2d_x)
+  CASE (quarter_ss, convrad, squall2d_x, squall2d_y, grav2d_x, b_wave)
   DO j=jts,jte
   DO i=its,ite  
     grid%ht(i,j) = 0.
@@ -642,11 +732,27 @@ CONTAINS
 !  calculate full state for each column - this includes moisture.
 
   write(6,*) ' getting moist sounding for full state '
-  dry_sounding = .false.
-  CALL get_sounding( zk, p_in, pd_in, theta, rho, u, v, qv, dry_sounding, &
+  IF ( model_config_rec%ideal_case .EQ. b_wave )THEN
+    dry_sounding = .true.
+    IF (config_flags%mp_physics /= 0)  dry_sounding = .false.
+  ELSE
+    dry_sounding = .false.
+    CALL get_sounding( zk, p_in, pd_in, theta, rho, u, v, qv, dry_sounding, &
                      nl_max, nl_in, theta_surf )
+  ENDIF
 
   DO J = jts, min(jde-1,jte)
+  
+  IF ( model_config_rec%ideal_case .EQ. b_wave )THEN
+!  get sounding for this point
+
+!   debug = .false.  !  this will turn off print of the sounding
+    CALL get_sounding_b_wave( zk, p_in, pd_in, theta, rho, u, v, qv, dry_sounding, &
+                      nl_max, nl_in, u_jet, rho_jet, th_jet, z_jet,      &
+                      nz_jet, ny_jet, j, .false.                          )
+
+  ENDIF
+
   DO I = its, min(ide-1,ite)
 
 !  At this point grid%p_top is already set. find the DRY mass in the column 
@@ -737,6 +843,18 @@ CONTAINS
                               grid%alb(2,k,2)
     endif
     ENDIF
+
+  IF ( model_config_rec%ideal_case .EQ. b_wave )THEN
+    DO K = 1, kte
+#if  !( HYBRID_COORD==1 )
+      p_level = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
+#elif ( HYBRID_COORD==1 )
+      p_level = grid%c3h(k)*(p_surf - grid%p_top) + grid%c4h(k) + grid%p_top
+#endif
+      grid%u_1(i,k,j) = interp_0( u, p_in, p_level, nl_in )
+      grid%u_2(i,k,j) = grid%u_1(i,k,j)
+    ENDDO
+  ENDIF
 
   ENDDO
   ENDDO
@@ -975,10 +1093,53 @@ CONTAINS
 
   write(6,*) ' min and max theta perturbation ',t_min,t_max
 
-
-
-
 ! -- end bubble insert
+  CASE (b_wave)
+!  thermal perturbation to kick off convection
+
+  write(6,*) ' nxc, nyc for perturbation ',nxc,nyc
+  write(6,*) ' delt for perturbation ',tpbub
+
+  DO J = jts, min(jde-1,jte)
+    yrad = config_flags%dy*float(j-jde/2-1)/radbub
+    DO I = its, min(ide-1,ite)
+      xrad = float(i-1)/float(ide-ids)
+
+      DO K = 1, kte-1
+
+!  put in preturbation theta (bubble) and recalc density.  note,
+!  the mass in the column is not changing, so when theta changes,
+!  we recompute density and geopotential
+
+        zrad = 0.5*(grid%ph_1(i,k,j)+grid%ph_1(i,k+1,j)  &
+                   +grid%phb(i,k,j)+grid%phb(i,k+1,j))/g
+        zrad = (zrad-htbub)/radz
+        RAD=SQRT(yrad*yrad+zrad*zrad)
+        IF(RAD <= 1.) THEN
+           tp = tpbub*cos(rad*piov2)*cos(rad*piov2)*cos(xrad*2*pi+pi)
+           grid%t_1(i,k,j)=grid%t_1(i,k,j)+tp
+           grid%t_2(i,k,j)=grid%t_1(i,k,j)
+           qvf = 1. + rvovrd*grid%moist(i,k,j,P_QV)
+           grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
+                        (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
+           grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
+        ENDIF
+      ENDDO
+
+!  rebalance hydrostatically
+
+      DO k  = 2,kte
+        grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
+                     (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,k-1,j)+ &
+                      grid%mu_1(i,j)*grid%alb(i,k-1,j)  )
+
+        grid%ph_2(i,k,j) = grid%ph_1(i,k,j)
+        grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
+      ENDDO
+
+    ENDDO
+  ENDDO
+
 
 
   END SELECT ideal_pert
@@ -1041,8 +1202,36 @@ CONTAINS
    enddo
    ENDIF
 
-! interp v
 
+  IF ( model_config_rec%ideal_case .EQ. b_wave )THEN
+! set v (u already interpolated)
+
+  DO J = jts, jte
+  DO I = its, min(ide-1,ite)
+
+    DO K = 1, kte
+      grid%v_1(i,k,j) = 0.
+      grid%v_2(i,k,j) = grid%v_1(i,k,j)
+    ENDDO
+
+  ENDDO
+  ENDDO
+ 
+!  fill out last i row for u
+
+  DO J = jts, min(jde-1,jte)
+  DO I = ite, ite
+
+    DO K = 1, kte
+      grid%u_1(i,k,j) = grid%u_1(its,k,j)
+      grid%u_2(i,k,j) = grid%u_2(its,k,j)
+    ENDDO
+
+  ENDDO
+  ENDDO
+
+  ELSE
+! interp v
   DO J = jts, jte
   DO I = its, min(ide-1,ite)
 
@@ -1061,6 +1250,7 @@ CONTAINS
       grid%v_1(i,k,j) = interp_0( v, p_in, p_level, nl_in )
       grid%v_2(i,k,j) = grid%v_1(i,k,j)
     ENDDO
+
 
   ENDDO
   ENDDO
@@ -1092,6 +1282,7 @@ CONTAINS
 
   ENDDO
   ENDDO
+  ENDIF
 
 !  set w
 
@@ -1130,7 +1321,7 @@ CONTAINS
   CALL wrf_dm_bcast_real( grid%z_base , kte )
 
   ideal_surfacet: SELECT CASE ( model_config_rec%ideal_case )
-  CASE(hill2d_x, quarter_ss, squall2d_x, squall2d_y, grav2d_x)
+  CASE(hill2d_x, quarter_ss, squall2d_x, squall2d_y, grav2d_x, b_wave)
   DO J = jts, min(jde-1,jte)
   DO I = its, min(ide-1,ite)
      thtmp   = grid%t_2(i,1,j)+t0
@@ -1430,5 +1621,290 @@ CONTAINS
       close(unit=10,status = 'keep')
 
       end subroutine read_sounding
+
+!------------------------------------------------------------------
+
+    subroutine get_sounding_b_wave( zk, p, p_dry, theta, rho,       &
+                             u, v, qv, dry, nl_max, nl_in,  &
+                             u_jet, rho_jet, th_jet, z_jet, &
+                             nz_jet, ny_jet, j_point, debug )
+    implicit none
+
+    integer nl_max, nl_in
+    real zk(nl_max), p(nl_max), theta(nl_max), rho(nl_max), &
+         u(nl_max), v(nl_max), qv(nl_max), p_dry(nl_max)
+    logical dry
+
+    integer nz_jet, ny_jet, j_point
+    real, dimension(nz_jet, ny_jet) :: u_jet, rho_jet, th_jet, z_jet
+
+    integer n
+    parameter(n=1000)
+    logical debug
+
+! input sounding data
+
+    real p_surf, th_surf, qv_surf
+    real pi_surf, pi(n)
+    real h_input(n), th_input(n), qv_input(n), u_input(n), v_input(n)
+
+! diagnostics
+
+    real rho_surf, p_input(n), rho_input(n)
+    real pm_input(n)  !  this are for full moist sounding
+
+! local data
+
+    real r
+    parameter (r = r_d)
+    integer k, it, nl
+    real qvf, qvf1, dz
+
+!  first, read the sounding
+
+!    call read_sounding( p_surf, th_surf, qv_surf, &
+!                          h_input, th_input, qv_input, u_input, v_input,n, nl, debug )
+
+   call calc_jet_sounding( p_surf, th_surf, qv_surf,                             &
+                           h_input, th_input, qv_input, u_input, v_input,        &
+                           n, nl, debug, u_jet, rho_jet, th_jet, z_jet, j_point, &
+                           nz_jet, ny_jet, dry                                  )
+
+   nl = nz_jet
+
+    if(dry) then
+     do k=1,nl
+       qv_input(k) = 0.
+     enddo
+    endif
+
+    if(debug) write(6,*) ' number of input levels = ',nl
+
+      nl_in = nl
+      if(nl_in .gt. nl_max ) then
+        write(6,*) ' too many levels for input arrays ',nl_in,nl_max
+        call wrf_error_fatal ( ' too many levels for input arrays ' )
+      end if
+
+!  compute diagnostics,
+!  first, convert qv(g/kg) to qv(g/g)
+!
+!      do k=1,nl
+!        qv_input(k) = 0.001*qv_input(k)
+!      enddo
+!      p_surf = 100.*p_surf  ! convert to pascals
+
+    qvf = 1. + rvovrd*qv_input(1)
+    rho_surf = 1./((r/p1000mb)*th_surf*qvf*((p_surf/p1000mb)**cvpm))
+    pi_surf = (p_surf/p1000mb)**(r/cp)
+
+    if(debug) then
+      write(6,*) ' surface density is ',rho_surf
+      write(6,*) ' surface pi is    ',pi_surf
+    end if
+
+
+!  integrate moist sounding hydrostatically, starting from the
+!  specified surface pressure
+!  -> first, integrate from surface to lowest level
+
+        qvf = 1. + rvovrd*qv_input(1)
+        qvf1 = 1. + qv_input(1)
+        rho_input(1) = rho_surf
+        dz = h_input(1)
+        do it=1,10
+          pm_input(1) = p_surf &
+                  - 0.5*dz*(rho_surf+rho_input(1))*g*qvf1
+          rho_input(1) = 1./((r/p1000mb)*th_input(1)*qvf*((pm_input(1)/p1000mb)**cvpm))
+        enddo
+
+! integrate up the column
+
+        do k=2,nl
+          rho_input(k) = rho_input(k-1)
+          dz = h_input(k)-h_input(k-1)
+          qvf1 = 0.5*(2.+(qv_input(k-1)+qv_input(k)))
+          qvf = 1. + rvovrd*qv_input(k)   ! qv is in g/kg here
+
+          do it=1,10
+            pm_input(k) = pm_input(k-1) &
+                    - 0.5*dz*(rho_input(k)+rho_input(k-1))*g*qvf1
+            rho_input(k) = 1./((r/p1000mb)*th_input(k)*qvf*((pm_input(k)/p1000mb)**cvpm))
+          enddo
+        enddo
+
+!  we have the moist sounding
+
+!  next, compute the dry sounding using p at the highest level from the
+!  moist sounding and integrating down.
+
+        p_input(nl) = pm_input(nl)
+
+          do k=nl-1,1,-1
+            dz = h_input(k+1)-h_input(k)
+            p_input(k) = p_input(k+1) + 0.5*dz*(rho_input(k)+rho_input(k+1))*g
+          enddo
+
+
+        do k=1,nl
+
+          zk(k) = h_input(k)
+          p(k) = pm_input(k)
+          p_dry(k) = p_input(k)
+          theta(k) = th_input(k)
+          rho(k) = rho_input(k)
+          u(k) = u_input(k)
+          v(k) = v_input(k)
+          qv(k) = qv_input(k)
+
+        enddo
+
+     if(debug) then
+      write(6,*) ' sounding '
+      write(6,*) '  k  height(m)  press (Pa)   pd(Pa)   theta (K)  den(kg/m^3)  u(m/s)     v(m/s)    qv(g/g) '
+      do k=1,nl
+        write(6,'(1x,i3,8(1x,1pe10.3))') k, zk(k), p(k), p_dry(k), theta(k), rho(k), u(k), v(k), qv(k)
+      enddo
+
+     end if
+
+     end subroutine get_sounding_b_wave
+
+!------------------------------------------------------------------
+
+  subroutine calc_jet_sounding( p_surf, th_surf, qv_surf,      &
+                                h, th, qv, u, v, n, nl, debug, &
+                                u_jet, rho_jet, th_jet, z_jet, &
+                                jp, nz_jet, ny_jet, dry       )
+  implicit none
+  integer :: n, nl, jp, nz_jet, ny_jet
+
+  real, dimension(nz_jet, ny_jet) :: u_jet, rho_jet, th_jet, z_jet
+  real, dimension(n) :: h,th,qv,u,v
+  real :: p_surf, th_surf, qv_surf
+  logical :: debug, dry
+
+  real, dimension(1:nz_jet) :: rho, rel_hum, p
+  integer :: k
+
+!  some local stuff
+
+  real :: tmppi, es, qvs, temperature
+
+!  get sounding from column jp
+
+   do k=1,nz_jet
+     h(k)  = z_jet(k,jp)
+     th(k) = th_jet(k,jp)
+     qv(k) = 0.
+     rho(k) = rho_jet(k,jp)
+     u(k) = u_jet(k,jp)
+     v(k) = 0.
+   enddo
+
+   if (.not.dry) then
+     DO k=1,nz_jet
+       if(h(k) .gt. 8000.) then
+         rel_hum(k)=0.1
+       else
+         rel_hum(k)=(1.-0.90*(h(k)/8000.)**1.25)
+       end if
+       rel_hum(k) = min(0.7,rel_hum(k))
+     ENDDO
+   else
+     do k=1,nz_jet
+       rel_hum(k) = 0.
+     enddo
+   endif
+
+!  next, compute pressure
+
+   do k=1,nz_jet
+     p(k) = p1000mb*(R_d*rho(k)*th(k)/p1000mb)**cpovcv
+   enddo
+
+!  here we adjust for fixed moisture profile
+
+     IF (.not.dry)  THEN
+
+!  here we assume the input theta is th_v, so we reset theta accordingly
+
+       DO k=1,nz_jet
+         tmppi=(p(k)/p1000mb)**rcp
+         temperature = tmppi*th(k)
+         if (temperature .gt. svpt0) then
+            es  = 1000.*svp1*exp(svp2*(temperature-svpt0)/(temperature-svp3))
+            qvs = ep_2*es/(p(k)-es)
+         else
+            es  = 1000.*svp1*exp( 21.8745584*(temperature-273.16)/(temperature-7.66) )
+            qvs = ep_2*es/(p(k)-es)
+         endif
+         qv(k) = rel_hum(k)*qvs
+         th(k) = th(k)/(1.+.61*qv(k))
+       ENDDO
+
+     ENDIF
+
+!  finally, set the surface data. We'll just do a simple extrapolation
+
+   p_surf = 1.5*p(1) - 0.5*p(2)
+   th_surf = 1.5*th(1) - 0.5*th(2)
+   qv_surf = 1.5*qv(1) - 0.5*qv(2)
+
+   end subroutine calc_jet_sounding
+
+!---------------------------------------------------------------------
+
+ SUBROUTINE read_input_jet( u, r, t, zk, nz, ny )
+ implicit none
+
+ integer, intent(in) :: nz,ny
+ real, dimension(nz,ny), intent(out) :: u,r,t,zk
+ integer :: ny_in, nz_in, j,k
+ real, dimension(ny,nz) :: field_in
+ character*256 message
+
+! this code assumes it is called on processor 0 only
+
+   OPEN(unit=10, file='input_jet', form='unformatted', status='old' )
+   REWIND(10)
+   read(10) ny_in,nz_in
+   if((ny_in /= ny ) .or. (nz_in /= nz)) then
+     write(message,*) ' error in input jet dimensions '
+     CALL wrf_message (message)
+     write(message,*) ' ny, ny_input, nz, nz_input ', ny, ny_in, nz,nz_in
+     CALL wrf_message (message)
+     write(message,*) ' error exit '
+     CALL wrf_message (message)
+     call wrf_error_fatal ( ' error in input jet dimensions ' )
+   end if
+   read(10) field_in
+   do j=1,ny
+   do k=1,nz
+     u(k,j) = field_in(j,k)
+   enddo
+   enddo
+   read(10) field_in
+   do j=1,ny
+   do k=1,nz
+     t(k,j) = field_in(j,k)
+   enddo
+   enddo
+
+   read(10) field_in
+   do j=1,ny
+   do k=1,nz
+     r(k,j) = field_in(j,k)
+   enddo
+   enddo
+
+   do j=1,ny
+   do k=1,nz
+     zk(k,j) = 125. + 250.*float(k-1)
+   enddo
+   enddo
+
+ end subroutine read_input_jet
+
 
 END MODULE module_initialize_ideal

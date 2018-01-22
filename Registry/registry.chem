@@ -3807,6 +3807,8 @@ rconfig   integer    track_tuv_lev        namelist,chem       1               51
 
 # control for N2O5 heterogenenous chemistry option in MOSAIC
 rconfig   integer    n2o5_hetchem         namelist,chem          1              0       rh    "n2o5_hetchem"      ""     ""           
+# control for MOSAIC aerosol chemistry and microphysics versions
+rconfig   integer   mosaic_aerchem_optaa  namelist,chem          1              1       rh    "mosaic_aerchem_optaa"      ""     ""
 #
 # control for AF wavelength
 rconfig   real        af_lambda_start     namelist,chem          max_domains    200.    rh    "start wavelength for AF output" "nm"      ""

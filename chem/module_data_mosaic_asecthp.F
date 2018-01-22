@@ -1,16 +1,14 @@
-!**********************************************************************************  
-! This computer software was prepared by Battelle Memorial Institute, hereinafter
-! the Contractor, under Contract No. DE-AC05-76RL0 1830 with the Department of 
-! Energy (DOE). NEITHER THE GOVERNMENT NOR THE CONTRACTOR MAKES ANY WARRANTY,
-! EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.
+      module module_data_mosaic_asecthp
+!-----------------------------------------------------------------------
 !
-! MOSAIC module: see module_mosaic_driver.F for references and terms of use
-!**********************************************************************************  
-	module module_data_mosaic_asect
+! 2015-06-09 r.c.easter - changes to the MOSAIC box model version for use in WRF-Chem  
+!
+!-----------------------------------------------------------------------
 
+      use module_data_mosaic_kind, only:  r8
+      use module_data_mosaic_aero, only:  naer, nbin_a_max, ngas_aerchtot
 
-	implicit none
-
+      implicit none
 
 !-----------------------------------------------------------------------
 !
@@ -163,38 +161,13 @@
 !                     == (pi/6) * (dcen_sect**3) ]
 !
 !-----------------------------------------------------------------------
-!
-!   msectional - if positive, each aerosol size bin is a section.
-!   if equals 10, use jacobson moving center
-!   if equals 20, use tzivion mass-number advection 
-!	if zero/negative, each size bin is a mode (aitken, accumulation, ...)
-!
-!   maerosolincw - if positive, both unactivated/interstitial and activated
-!       aerosol species are simulated.  if zero/negative, only the
-!       unactivated are simulated.  [maerosolincw>0 only when cw_phase>0]
-!
-!   maerocoag - if positive, aerosol coagulation is done.
-!	If zero/negative, it is skipped.
-!	(This is not yet implemented in WRF-Chem.)
-!
-!   maerchem - if positive, aerosol gas-particle condensation/evaporation
-!	of inorganic species is done.  If zero/negative, it is skipped.
-!	(This is not yet implemented in WRF-Chem.)
-!
-!   maerchem_boxtest_output - if positive, "boxtest" output is done from
-!	the aerchemistry routine.  If zero/negative, it is skipped.
-!	(This is not yet implemented in WRF-Chem.)
-!
-!   maeroptical - if positive, aerosol optical properties are calculated. 
-!	If zero/negative, it is skipped.
-!	(This is not yet implemented in WRF-Chem.)
-!
-!-----------------------------------------------------------------------
 
 	integer, parameter :: maxd_atype = 1
+        integer, parameter :: maxd_atype_md1 = 1
+        integer, parameter :: maxd_atype_md2 = 1
+
 	integer, parameter :: maxd_asize = 8
-!	integer, parameter :: maxd_acomp = 120 ! for additional SOA species changed by Manish Shrivastava on 01/25/10
-	integer, parameter :: maxd_acomp = 400 ! for additional SOA species changed by Manish Shrivastava on 01/25/10
+	integer, parameter :: maxd_acomp = 120 ! for additional SOA species changed by Manish Shrivastava on 01/25/10
 	integer, parameter :: maxd_aphase = 2
 
 	integer, save :: ai_phase = -999888777
@@ -208,123 +181,105 @@
 	integer, save :: ntot_mastercomp_aer = 0 ! number of master components
 	integer, save :: nphase_aer = 0 ! number of phases
 
+                                                          ! currently these must all be positive, but that could change
+        integer, parameter :: identical_comps_optaa  = 1  ! when positive, all aerosol types must have same chemical components
+        integer, parameter :: identical_phases_optaa = 1  ! when positive, all aerosol types must have same phases
+        integer, parameter :: identical_sizes_optaa  = 1  ! when positive, all aerosol types must have same sizes
+
+
 	integer, save ::   &
       	  nsize_aer( maxd_atype ),   & ! number of size bins
       	  ncomp_aer( maxd_atype ),   & ! number of chemical components
       	  ncomp_plustracer_aer( maxd_atype ),   &
-          mastercompptr_aer(maxd_acomp, maxd_atype), &   !  mastercomp index
+          mastercompptr_aer(maxd_acomp, maxd_atype), &         !  mastercomp index
       	  massptr_aer( maxd_acomp, maxd_asize, maxd_atype, maxd_aphase ), & 
 		! index for mixing ratio
-      	  waterptr_aer( maxd_asize, maxd_atype ), & ! index for aerosol water
+      	  waterptr_aer( maxd_asize, maxd_atype ), &            ! index for aerosol water
       	  hyswptr_aer( maxd_asize, maxd_atype ), &
-      	  numptr_aer( maxd_asize, maxd_atype, maxd_aphase ), & 
-		! index for the number mixing ratio
+      	  numptr_aer( maxd_asize, maxd_atype, maxd_aphase ), & ! index for the number mixing ratio
           mprognum_aer(maxd_asize,maxd_atype,maxd_aphase)
 
+      integer, save :: ntype_md1_aer = 0 ! number of md1 types
+      integer, save :: ntype_md2_aer = 0 ! number of md2 types
 
-	real, save ::   &
-          dens_aer( maxd_acomp, maxd_atype ),  &
-          dens_mastercomp_aer( maxd_acomp ),   &
-      	  mw_mastercomp_aer( maxd_acomp ),     &
-      	  mw_aer( maxd_acomp, maxd_atype ),    &
-      	  hygro_mastercomp_aer( maxd_acomp ),  &
-      	  hygro_aer( maxd_acomp, maxd_atype )
+      integer, save ::   &
+         ibin_of_isize_itype(maxd_asize,maxd_atype), &
+         isize_of_ibin(nbin_a_max), &
+         itype_of_ibin(nbin_a_max), &
+         itype_of_itype_md1md2(maxd_atype_md1,maxd_atype_md2), &
+         itype_md1_of_itype(maxd_atype), &
+         itype_md2_of_itype(maxd_atype)
 
-	real, save ::   &
-          volumcen_sect( maxd_asize, maxd_atype ),  &
-          volumlo_sect( maxd_asize, maxd_atype ),   &
-          volumhi_sect( maxd_asize, maxd_atype ),   &
-          dcen_sect( maxd_asize, maxd_atype ),      &
-          dlo_sect( maxd_asize, maxd_atype ),       &
-          dhi_sect( maxd_asize, maxd_atype ),       &
-          sigmag_aer(maxd_asize, maxd_atype)
+      integer, save :: lunerr=-1, lunout=-1
+
+      integer, save ::   &
+         rbox_aer_ptr(-3:naer,nbin_a_max),  &   ! maps aerosol species between rbox and aer, num_a, water_a arrays
+         rbox_gas_ptr(ngas_aerchtot)            ! maps gas     species between rbox and gas arrays
+
+
+      logical, save ::   &
+          is_tracer_mastercomp_aer(  maxd_acomp )
+
+
+      real(r8), save ::   &
+         dens_aer( maxd_acomp, maxd_atype ),  &
+         dens_mastercomp_aer( maxd_acomp ),   &
+         mw_mastercomp_aer( maxd_acomp ),     &
+         mw_aer( maxd_acomp, maxd_atype ),    &
+         hygro_mastercomp_aer( maxd_acomp ),  &
+         hygro_aer( maxd_acomp, maxd_atype )
+
+      real(r8), save ::   &
+         volumcen_sect( maxd_asize, maxd_atype ),  &
+         volumlo_sect( maxd_asize, maxd_atype ),   &
+         volumhi_sect( maxd_asize, maxd_atype ),   &
+         dcen_sect( maxd_asize, maxd_atype ),      &
+         dlo_sect( maxd_asize, maxd_atype ),       &
+         dhi_sect( maxd_asize, maxd_atype ),       &
+         sigmag_aer(maxd_asize, maxd_atype)
+
+      real(r8), save ::   &
+         volumcut_sect( 0:maxd_asize, maxd_atype ),  &
+         dcut_sect( 0:maxd_asize, maxd_atype )
+
+! these are the cut values that separate the "md1" and "md2" types
+! for example, the bc mass fraction (itype_md1) is between
+!    xcut_atype_md1(0) and xcut_atype_md1(1) for itype_md1=1
+!    xcut_atype_md1(1) and xcut_atype_md1(2) for itype_md1=2
+      real(r8), save ::    &
+         xcut_atype_md1(0:maxd_atype_md1),   &
+         xcut_atype_md2(0:maxd_atype_md2)
+
 
 	character*20, save ::   &
-      	  name_mastercomp_aer( maxd_acomp ),  &
-      	  name_aer( maxd_acomp, maxd_atype )
+      	  name_mastercomp_aer( maxd_acomp ),   &
+      	  sname_mastercomp_aer( maxd_acomp ),  &
+      	  name_aer( maxd_acomp, maxd_atype ),  &
+      	  sname_aer( maxd_acomp, maxd_atype )
 
-
-
-
-! rce 11-sep-2004 - eliminated all of the "..._wrfch" pointers
-!    so now there is only one set of pointers ("..._amode")
-! sg/rce nov-2004 - totally new pointer system  - "..._aer"
-
-
-	
-	integer, save ::   &
-      	  msectional, maerosolincw,   &
-      	  maerocoag, maerchem, maeroptical, maerchem_boxtest_output
+        character*20, save ::   &
+          phase_chars_aer( maxd_acomp ),  &
+          type_chars_aer( maxd_acomp )
 
 
 !-----------------------------------------------------------------------
-!   the following arrays are used during "column calculations" within
-!	mosaic modules
+!   following are used in movesect, newnuc, and coag routines
+!   to identify bins with essentially negligible mass
 !
-!   aqvoldry_sub(n,k,m) = dry-volume (cm^3-aerosol/mole-air) for mode n,
-!			layer k, subarea m
-!   aqmassdry_sub(n,k,m) = dry-mass (g-aerosol/mole-air) for mode n, ...
-!   adrydens_sub(n,k,m) = dry-density (g-aerosol/cm^3-aerosol) for mode n, ...
-!			== amassdry_sub/avoldry_sub
-!   awetdens_sub(n,k,m) = wet-density (g-aerosol/cm^3-aerosol) for mode n, ...
+!   if bin mass mixrat < smallmassaa (1.0e-22 g/g-air), 
+!   then assume no growth AND no water AND conform number so that size is within bin limits
+!       real(r8), parameter :: smallmassaa = 1.0e-22_r8
+        real,     parameter :: smallmassaa = 1.0e-22
+!   if bin mass mixrat < smallmassab (1.0e-32 g/g-air),
+!   then assume default density to avoid divide by zero
+!       real(r8), parameter :: smallmassbb = 1.0e-32_r8
+        real,     parameter :: smallmassbb = 1.0e-32
 !
-!   admeandry_sub(n,k,m) = current mean dry-diameter (cm) 
-!	for unactivated aerosol in mode n, layer k, subarea m.  
-!	(Used in sectional code)
-!   admeanwet_sub(n,k,m) = current mean wet-diameter (cm) 
-!	for unactivated aerosol in mode n, layer k, subarea m.  
-!	(Used in sectional code)
-!
-!   awetdens_sfc(n,i,j) = wet-density for mode n and k=1.  This value is 
-!	saved after the second pass thru subr. aerosol_wetsize 
-!	for use in subr. bounds
-!   admeanwet_sfc(n,i,j) = mean wet-diameter for mode n and k=1.  
-!	This value is saved after the second pass thru 
-!	subr. aerosol_wetsize for use in subr. bounds
-!
-!
-!   following are used in aerosol growth routine and are locally
-!   defined for the current layer (k) and subarea (m)
-!	drymass_pregrow(n) = dry-mass (g/mole-air) for section n
-!			before the aerosol growth
-!	drymass_aftgrow(n) = dry-mass (g/mole-air) for section n
-!			after the growth but before inter-section transfer
-!	drydens_pregrow(n) = dry-density (g/cm3) for section n
-!			before the aerosol growth
-!	drydens_aftgrow(n) = dry-density (g/cm3) for section n
-!			after the growth but before inter-section transfer
-!
+!   with single-particle diameter = 1 nm and mass ~1e-21 g, 
+!       and number = 1e-4 #/cm3 ~= 1e-1 #/g-air, the mass mixing ratio ~= 1e-22 g/g-air
+!   for simulations focusing on nucleation and ultrafine particles, 
+!      one might want to use reduce smallmassaa 
 !-----------------------------------------------------------------------
-
-!	integer, parameter :: imaxd_asize = 78
-!	integer, parameter :: jmaxd_asize = 28
-	integer, parameter :: kmaxd_asize = 100
-	integer, parameter :: nsubareamaxd_asize = 5
-
-! rce 22-jul-2006 - added maxd_atype dimension to following 6 arrays
-!    and changed avoldry_sub,amassdry_sub to aqvoldry_sub,aqmassdry_sub
-	real, save :: aqvoldry_sub( maxd_asize,maxd_atype,kmaxd_asize,nsubareamaxd_asize)
-	real, save :: aqmassdry_sub(maxd_asize,maxd_atype,kmaxd_asize,nsubareamaxd_asize)
-	real, save :: adrydens_sub( maxd_asize,maxd_atype,kmaxd_asize,nsubareamaxd_asize)
-	real, save :: awetdens_sub( maxd_asize,maxd_atype,kmaxd_asize,nsubareamaxd_asize)
-	real, save :: admeandry_sub(maxd_asize,maxd_atype,kmaxd_asize,nsubareamaxd_asize)
-	real, save :: admeanwet_sub(maxd_asize,maxd_atype,kmaxd_asize,nsubareamaxd_asize)
-
-!	real, save :: awetdens_sfc(maxd_asize,imaxd_asize,jmaxd_asize)
-!	real, save :: admeanwet_sfc(maxd_asize,imaxd_asize,jmaxd_asize)
-
-	real, save :: drymass_pregrow(maxd_asize,maxd_atype)
-	real, save :: drydens_pregrow(maxd_asize,maxd_atype)
-	real, save :: drymass_aftgrow(maxd_asize,maxd_atype)
-	real, save :: drydens_aftgrow(maxd_asize,maxd_atype)
-
-! table lookup of aerosol impaction/interception
-! scavenging rates
-	real dlndg_nimptblgrow
-	integer nimptblgrow_mind, nimptblgrow_maxd
-	parameter (nimptblgrow_mind=-7, nimptblgrow_maxd=12)
-     	real scavimptblnum(4, nimptblgrow_mind:nimptblgrow_maxd, maxd_asize, maxd_atype), &
-     	     scavimptblvol(4, nimptblgrow_mind:nimptblgrow_maxd, maxd_asize, maxd_atype)
 
 
 
@@ -332,18 +287,28 @@
 !	real, parameter :: dens_water_asize  = 1.0
 	real, parameter :: dens_water_aer  = 1.0
 
-!   dry densities (g/cm3)
-	real, parameter :: dens_so4_aer = 1.80
-	real, parameter :: dens_no3_aer = 1.80
-	real, parameter :: dens_cl_aer  = 2.20
-	real, parameter :: dens_msa_aer = 1.80
-	real, parameter :: dens_co3_aer = 2.60
-	real, parameter :: dens_nh4_aer = 1.80
-	real, parameter :: dens_na_aer  = 2.20
-	real, parameter :: dens_ca_aer  = 2.60
-	real, parameter :: dens_oin_aer = 2.60
-	real, parameter :: dens_oc_aer  = 1.00
-	real, parameter :: dens_bc_aer  = 1.70
+!   aerosol component dry densities (g/cm3)
+        real, parameter :: dens_so4_aer = 1.80
+        real, parameter :: dens_no3_aer = 1.80
+        real, parameter :: dens_cl_aer  = 2.20
+        real, parameter :: dens_msa_aer = 1.80
+        real, parameter :: dens_co3_aer = 2.60
+        real, parameter :: dens_nh4_aer = 1.80
+        real, parameter :: dens_na_aer  = 2.20
+        real, parameter :: dens_ca_aer  = 2.60
+        real, parameter :: dens_oin_aer = 2.60
+!       real, parameter :: dens_dust_aer = 2.60
+!       real, parameter :: dens_tr1r1_aer = 2.60
+!       real, parameter :: dens_tr1r2_aer = 2.60
+!       real, parameter :: dens_tr1r3_aer = 2.60
+!       real, parameter :: dens_tr1r4_aer = 2.60
+        real, parameter :: dens_oc_aer  = 1.00
+        real, parameter :: dens_bc_aer  = 1.70
+!       real, parameter :: dens_tanv_aer  = 1.00
+!       real, parameter :: dens_sopnv_aer  = 1.00
+!       real, parameter :: dens_ternv_aer  = 1.00
+!       real, parameter :: dens_seqnv_aer  = 1.00
+!       real, parameter :: dens_sianv_aer  = 1.00
         real, parameter :: dens_pcg1_b_c_aer = 1.0
         real, parameter :: dens_pcg2_b_c_aer = 1.0
         real, parameter :: dens_pcg3_b_c_aer = 1.0
@@ -414,13 +379,10 @@
         real, parameter :: dens_opcg8_f_o_aer = 1.0
         real, parameter :: dens_smpa_aer = 1.0
         real, parameter :: dens_smpbb_aer = 1.0
-
-        real, parameter :: dens_glysoa_r1_aer   = 1.0
-        real, parameter :: dens_glysoa_r2_aer   = 1.0
-        real, parameter :: dens_glysoa_oh_aer   = 1.0
-        real, parameter :: dens_glysoa_nh4_aer   = 1.0
-        real, parameter :: dens_glysoa_sfc_aer   = 1.0
-
+!       real, parameter :: dens_iepox_aer = 1.0
+!       real, parameter :: dens_iepoxos_aer = 1.0
+!       real, parameter :: dens_tetrol_aer = 1.0
+!       real, parameter :: dens_gly_aer = 1.0
         real, parameter :: dens_ant1_c_aer = 1.0
         real, parameter :: dens_ant2_c_aer = 1.0
         real, parameter :: dens_ant3_c_aer = 1.0
@@ -438,6 +400,11 @@
         real, parameter :: dens_biog3_o_aer = 1.0
         real, parameter :: dens_biog4_o_aer = 1.0
 
+        real, parameter :: dens_glysoa_r1_aer   = 1.0
+        real, parameter :: dens_glysoa_r2_aer   = 1.0
+        real, parameter :: dens_glysoa_oh_aer   = 1.0
+        real, parameter :: dens_glysoa_nh4_aer   = 1.0
+        real, parameter :: dens_glysoa_sfc_aer   = 1.0
 ! dens based on Murphy and Pandis, ES&T, 2009
         real, parameter :: dens_asoaX_aer = 1.5
         real, parameter :: dens_asoa1_aer = 1.5
@@ -450,21 +417,32 @@
         real, parameter :: dens_bsoa3_aer = 1.5
         real, parameter :: dens_bsoa4_aer = 1.5
 
+!   aerosol component molecular weights (g/mol)
+!       real, parameter :: mw_oc_aer  =   1.0   ! use   1 for standard mosaic
+        real, parameter :: mw_oc_aer  = 250.0   ! use 250 for m. shrivastava soa treatments
 
+        real, parameter :: mw_so4_aer = 96.066
+        real, parameter :: mw_no3_aer = 62.007
+        real, parameter :: mw_cl_aer  = 35.450
+        real, parameter :: mw_msa_aer = 96.109
+        real, parameter :: mw_co3_aer = 60.007
+        real, parameter :: mw_nh4_aer = 18.042
+        real, parameter :: mw_na_aer  = 22.990
+        real, parameter :: mw_ca_aer  = 40.080
+        real, parameter :: mw_oin_aer = 1.0
+!       real, parameter :: mw_dust_aer = 1.0
+        real, parameter :: mw_bc_aer  = 1.0
+        real, parameter :: mw_water_aer  = 18.016
 
-!   molecular weights (g/mol)
-	real, parameter :: mw_so4_aer = 96.066
-	real, parameter :: mw_no3_aer = 62.007
-	real, parameter :: mw_cl_aer  = 35.450
-	real, parameter :: mw_msa_aer = 96.109
-	real, parameter :: mw_co3_aer = 60.007
-	real, parameter :: mw_nh4_aer = 18.042
-	real, parameter :: mw_na_aer  = 22.990
-	real, parameter :: mw_ca_aer  = 40.080
-	real, parameter :: mw_oin_aer = 1.0
-	real, parameter :: mw_oc_aer  = 250.0
-	real, parameter :: mw_bc_aer  = 1.0
-	real, parameter :: mw_water_aer  = 18.016
+!       real, parameter :: mw_tr1r1_aer = 1.0
+!       real, parameter :: mw_tr1r2_aer = 1.0
+!       real, parameter :: mw_tr1r3_aer = 1.0
+!       real, parameter :: mw_tr1r4_aer = 1.0
+!       real, parameter :: mw_tanv_aer  = 250.0
+!       real, parameter :: mw_sopnv_aer  = 250.0
+!       real, parameter :: mw_ternv_aer  = 250.0
+!       real, parameter :: mw_seqnv_aer  = 250.0
+!       real, parameter :: mw_sianv_aer  = 250.0
         real, parameter :: mw_pcg1_b_c_aer = 250.0
         real, parameter :: mw_pcg2_b_c_aer = 250.0
         real, parameter :: mw_pcg3_b_c_aer = 250.0
@@ -535,13 +513,10 @@
         real, parameter :: mw_opcg8_f_o_aer = 250.0
         real, parameter :: mw_smpa_aer = 250.0
         real, parameter :: mw_smpbb_aer = 250.0
-
-        real, parameter :: mw_glysoa_r1_aer   = 250.0
-        real, parameter :: mw_glysoa_r2_aer   = 250.0
-        real, parameter :: mw_glysoa_oh_aer   = 250.0
-        real, parameter :: mw_glysoa_nh4_aer   = 250.0
-        real, parameter :: mw_glysoa_sfc_aer   = 250.0
-
+!       real, parameter :: mw_iepox_aer = 118.0
+!       real, parameter :: mw_iepoxos_aer = 216.0
+!       real, parameter :: mw_tetrol_aer = 136.0
+!       real, parameter :: mw_gly_aer = 58.0
         real, parameter :: mw_ant1_c_aer = 250.0
         real, parameter :: mw_ant2_c_aer = 250.0
         real, parameter :: mw_ant3_c_aer = 250.0
@@ -559,6 +534,11 @@
         real, parameter :: mw_biog3_o_aer = 250.0
         real, parameter :: mw_biog4_o_aer = 250.0
 
+        real, parameter :: mw_glysoa_r1_aer   = 250.0
+        real, parameter :: mw_glysoa_r2_aer   = 250.0
+        real, parameter :: mw_glysoa_oh_aer   = 250.0
+        real, parameter :: mw_glysoa_nh4_aer   = 250.0
+        real, parameter :: mw_glysoa_sfc_aer   = 250.0
         real, parameter :: mw_asoaX_aer = 250.0
         real, parameter :: mw_asoa1_aer = 250.0
         real, parameter :: mw_asoa2_aer = 250.0
@@ -570,20 +550,35 @@
         real, parameter :: mw_bsoa3_aer = 250.0
         real, parameter :: mw_bsoa4_aer = 250.0
 
-
-
-!   hygroscopicities (dimensionless)
-	real, parameter :: hygro_so4_aer = 0.5
-	real, parameter :: hygro_no3_aer = 0.5
-	real, parameter :: hygro_ca_aer  = 0.1
-	real, parameter :: hygro_co3_aer = 0.1
-	real, parameter :: hygro_nh4_aer = 0.5
-	real, parameter :: hygro_msa_aer = 0.58
-	real, parameter :: hygro_cl_aer  = 1.16
-	real, parameter :: hygro_na_aer  = 1.16
-	real, parameter :: hygro_oin_aer = 0.068  ! = cam5/mam value, previously 0.14
-	real, parameter :: hygro_oc_aer  = 1.0e-4 ! previously 0.20
-	real, parameter :: hygro_bc_aer  = 1.e-6
+!   aerosol component hygroscopicities (dimensionless)
+        real, parameter :: hygro_so4_aer = 0.5
+        real, parameter :: hygro_no3_aer = 0.5
+        real, parameter :: hygro_ca_aer  = 0.1
+        real, parameter :: hygro_co3_aer = 0.1
+        real, parameter :: hygro_nh4_aer = 0.5
+        real, parameter :: hygro_msa_aer = 0.58
+        real, parameter :: hygro_cl_aer  = 1.16
+        real, parameter :: hygro_na_aer  = 1.16
+        real, parameter :: hygro_oin_aer = 0.068 ! = cam5/mam value, previously 0.14
+!      !real, parameter :: hygro_dust_aer = 0.14
+!       real, parameter :: hygro_dust_aer = 0.10
+!       real, parameter :: hygro_tr1r1_aer = 0.10
+!       real, parameter :: hygro_tr1r2_aer = 0.10
+!       real, parameter :: hygro_tr1r3_aer = 0.10
+!       real, parameter :: hygro_tr1r4_aer = 0.10
+        real, parameter :: hygro_oc_aer  = 1.0e-4 ! previously 0.20
+        real, parameter :: hygro_bc_aer  = 1.0e-6
+        real, parameter :: hygro_smpa_aer  = 0.10
+        real, parameter :: hygro_smpbb_aer  = 0.140
+!       real, parameter :: hygro_iepox_aer  = 0.10
+!       real, parameter :: hygro_iepoxos_aer  = 0.10
+!       real, parameter :: hygro_tetrol_aer  = 0.10
+!       real, parameter :: hygro_gly_aer  = 0.10
+!       real, parameter :: hygro_tanv_aer  = 0.10
+!       real, parameter :: hygro_sopnv_aer  = 0.10
+!       real, parameter :: hygro_ternv_aer  = 0.10
+!       real, parameter :: hygro_seqnv_aer  = 0.10
+!       real, parameter :: hygro_sianv_aer  = 0.10
         real, parameter :: hygro_pcg1_b_c_aer = 0.04
         real, parameter :: hygro_pcg2_b_c_aer = 0.04
         real, parameter :: hygro_pcg3_b_c_aer = 0.04
@@ -652,15 +647,6 @@
         real, parameter :: hygro_opcg6_f_o_aer = 0.10
         real, parameter :: hygro_opcg7_f_o_aer = 0.10
         real, parameter :: hygro_opcg8_f_o_aer = 0.10
-        real, parameter :: hygro_smpa_aer = 0.10
-        real, parameter :: hygro_smpbb_aer = 0.140
-
-        real, parameter :: hygro_glysoa_r1_aer   = 0.14
-        real, parameter :: hygro_glysoa_r2_aer   = 0.14
-        real, parameter :: hygro_glysoa_oh_aer   = 0.14
-        real, parameter :: hygro_glysoa_nh4_aer   = 0.14
-        real, parameter :: hygro_glysoa_sfc_aer   = 0.14
-
         real, parameter :: hygro_ant1_c_aer = 0.10
         real, parameter :: hygro_ant2_c_aer = 0.10
         real, parameter :: hygro_ant3_c_aer = 0.10
@@ -678,6 +664,11 @@
         real, parameter :: hygro_biog3_o_aer = 0.10
         real, parameter :: hygro_biog4_o_aer = 0.10
 
+        real, parameter :: hygro_glysoa_r1_aer   = 0.14
+        real, parameter :: hygro_glysoa_r2_aer   = 0.14
+        real, parameter :: hygro_glysoa_oh_aer   = 0.14
+        real, parameter :: hygro_glysoa_nh4_aer   = 0.14
+        real, parameter :: hygro_glysoa_sfc_aer   = 0.14
         real, parameter :: hygro_asoaX_aer = 0.14
         real, parameter :: hygro_asoa1_aer = 0.14
         real, parameter :: hygro_asoa2_aer = 0.14
@@ -689,21 +680,29 @@
         real, parameter :: hygro_bsoa3_aer = 0.14
         real, parameter :: hygro_bsoa4_aer = 0.14
 
-
-
 !   these indices give the location in the "mastercomp list" of
 !   the different aerosol chemical (or tracer) components
-	integer, save :: mastercompindx_so4_aer = -999888777
-	integer, save :: mastercompindx_no3_aer = -999888777
-	integer, save :: mastercompindx_cl_aer  = -999888777
-	integer, save :: mastercompindx_msa_aer = -999888777
-	integer, save :: mastercompindx_co3_aer = -999888777
-	integer, save :: mastercompindx_nh4_aer = -999888777
-	integer, save :: mastercompindx_na_aer  = -999888777
-	integer, save :: mastercompindx_ca_aer  = -999888777
-	integer, save :: mastercompindx_oin_aer = -999888777
-	integer, save :: mastercompindx_oc_aer  = -999888777
-	integer, save :: mastercompindx_bc_aer  = -999888777
+        integer, save :: mastercompindx_so4_aer = -999888777
+        integer, save :: mastercompindx_no3_aer = -999888777
+        integer, save :: mastercompindx_cl_aer  = -999888777
+        integer, save :: mastercompindx_msa_aer = -999888777
+        integer, save :: mastercompindx_co3_aer = -999888777
+        integer, save :: mastercompindx_nh4_aer = -999888777
+        integer, save :: mastercompindx_na_aer  = -999888777
+        integer, save :: mastercompindx_ca_aer  = -999888777
+        integer, save :: mastercompindx_oin_aer = -999888777
+!       integer, save :: mastercompindx_dust_aer = -999888777
+!       integer, save :: mastercompindx_tr1r1_aer = -999888777
+!       integer, save :: mastercompindx_tr1r2_aer = -999888777
+!       integer, save :: mastercompindx_tr1r3_aer = -999888777
+!       integer, save :: mastercompindx_tr1r4_aer = -999888777
+        integer, save :: mastercompindx_oc_aer  = -999888777
+        integer, save :: mastercompindx_bc_aer  = -999888777
+!       integer, save :: mastercompindx_tanv_aer  = -999888777
+!       integer, save :: mastercompindx_sopnv_aer  = -999888777
+!       integer, save :: mastercompindx_ternv_aer  = -999888777
+!       integer, save :: mastercompindx_seqnv_aer  = -999888777
+!       integer, save :: mastercompindx_sianv_aer  = -999888777
         integer, save :: mastercompindx_pcg1_b_c_aer = -999888777
         integer, save :: mastercompindx_pcg2_b_c_aer = -999888777
         integer, save :: mastercompindx_pcg3_b_c_aer = -999888777
@@ -774,13 +773,10 @@
         integer, save :: mastercompindx_opcg8_f_o_aer = -999888777
         integer, save :: mastercompindx_smpa_aer = -999888777
         integer, save :: mastercompindx_smpbb_aer = -999888777
-
-        integer, save :: mastercompindx_glysoa_r1_aer = -999888777
-        integer, save :: mastercompindx_glysoa_r2_aer = -999888777
-        integer, save :: mastercompindx_glysoa_oh_aer = -999888777
-        integer, save :: mastercompindx_glysoa_nh4_aer = -999888777
-        integer, save :: mastercompindx_glysoa_sfc_aer = -999888777
-
+!       integer, save :: mastercompindx_iepox_aer = -999888777
+!       integer, save :: mastercompindx_iepoxos_aer = -999888777
+!       integer, save :: mastercompindx_tetrol_aer = -999888777
+!       integer, save :: mastercompindx_gly_aer = -999888777
         integer, save :: mastercompindx_ant1_c_aer = -999888777
         integer, save :: mastercompindx_ant2_c_aer = -999888777
         integer, save :: mastercompindx_ant3_c_aer = -999888777
@@ -798,6 +794,11 @@
         integer, save :: mastercompindx_biog3_o_aer = -999888777
         integer, save :: mastercompindx_biog4_o_aer = -999888777
 
+        integer, save :: mastercompindx_glysoa_r1_aer = -999888777
+        integer, save :: mastercompindx_glysoa_r2_aer = -999888777
+        integer, save :: mastercompindx_glysoa_oh_aer = -999888777
+        integer, save :: mastercompindx_glysoa_nh4_aer = -999888777
+        integer, save :: mastercompindx_glysoa_sfc_aer = -999888777
         integer, save :: mastercompindx_asoaX_aer = -999888777
         integer, save :: mastercompindx_asoa1_aer = -999888777
         integer, save :: mastercompindx_asoa2_aer = -999888777
@@ -809,20 +810,38 @@
         integer, save :: mastercompindx_bsoa3_aer = -999888777
         integer, save :: mastercompindx_bsoa4_aer = -999888777
 
-
-
-	integer, save ::                     &
-      	  lptr_so4_aer(maxd_asize, maxd_atype, maxd_aphase),      &
-      	  lptr_msa_aer(maxd_asize, maxd_atype, maxd_aphase),      &
-      	  lptr_no3_aer(maxd_asize, maxd_atype, maxd_aphase),      &
-      	  lptr_cl_aer(maxd_asize, maxd_atype, maxd_aphase),       &
+! the lptr values are the locations in the chem array of 
+! the various aerosol components
+        integer, save ::                     &
+          lptr_so4_aer(maxd_asize, maxd_atype, maxd_aphase),      &
+          lptr_msa_aer(maxd_asize, maxd_atype, maxd_aphase),      &
+          lptr_no3_aer(maxd_asize, maxd_atype, maxd_aphase),      &
+          lptr_cl_aer(maxd_asize, maxd_atype, maxd_aphase),       &
           lptr_co3_aer(maxd_asize, maxd_atype, maxd_aphase),      &
-      	  lptr_nh4_aer(maxd_asize, maxd_atype, maxd_aphase),      &
-      	  lptr_na_aer(maxd_asize, maxd_atype, maxd_aphase),       &
-      	  lptr_ca_aer(maxd_asize, maxd_atype, maxd_aphase),       &
-      	  lptr_oin_aer(maxd_asize, maxd_atype, maxd_aphase),      &
-      	  lptr_oc_aer(maxd_asize, maxd_atype, maxd_aphase),       &
-      	  lptr_bc_aer(maxd_asize, maxd_atype, maxd_aphase),       &
+          lptr_nh4_aer(maxd_asize, maxd_atype, maxd_aphase),      &
+          lptr_na_aer(maxd_asize, maxd_atype, maxd_aphase),       &
+          lptr_ca_aer(maxd_asize, maxd_atype, maxd_aphase),       &
+          lptr_oin_aer(maxd_asize, maxd_atype, maxd_aphase),      &
+          lptr_aro1_aer(maxd_asize, maxd_atype, maxd_aphase),     &
+          lptr_aro2_aer(maxd_asize, maxd_atype, maxd_aphase),     &
+          lptr_alk1_aer(maxd_asize, maxd_atype, maxd_aphase),     &
+          lptr_ole1_aer(maxd_asize, maxd_atype, maxd_aphase),     &
+          lptr_api1_aer(maxd_asize, maxd_atype, maxd_aphase),     &
+          lptr_api2_aer(maxd_asize, maxd_atype, maxd_aphase),     &
+          lptr_lim1_aer(maxd_asize, maxd_atype, maxd_aphase),     &
+          lptr_lim2_aer(maxd_asize, maxd_atype, maxd_aphase),     &
+!         lptr_dust_aer(maxd_asize, maxd_atype, maxd_aphase),     &
+!         lptr_tr1r1_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+!         lptr_tr1r2_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+!         lptr_tr1r3_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+!         lptr_tr1r4_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+          lptr_oc_aer(maxd_asize, maxd_atype, maxd_aphase),       &
+          lptr_bc_aer(maxd_asize, maxd_atype, maxd_aphase),       &
+!         lptr_tanv_aer(maxd_asize, maxd_atype, maxd_aphase),     &
+!         lptr_sopnv_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+!         lptr_ternv_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+!         lptr_seqnv_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+!         lptr_sianv_aer(maxd_asize, maxd_atype, maxd_aphase),    &
           lptr_pcg1_b_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
           lptr_pcg2_b_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
           lptr_pcg3_b_c_aer(maxd_asize, maxd_atype, maxd_aphase), &
@@ -891,15 +910,12 @@
           lptr_opcg6_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
           lptr_opcg7_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
           lptr_opcg8_f_o_aer(maxd_asize, maxd_atype, maxd_aphase), &
-          lptr_smpa_aer(maxd_asize, maxd_atype, maxd_aphase),    &
-          lptr_smpbb_aer(maxd_asize, maxd_atype, maxd_aphase),    &
-
-          lptr_glysoa_r1_aer(maxd_asize, maxd_atype, maxd_aphase),   &
-          lptr_glysoa_r2_aer(maxd_asize, maxd_atype, maxd_aphase),   &
-          lptr_glysoa_oh_aer(maxd_asize, maxd_atype, maxd_aphase),   &
-          lptr_glysoa_nh4_aer(maxd_asize, maxd_atype, maxd_aphase),   &
-          lptr_glysoa_sfc_aer(maxd_asize, maxd_atype, maxd_aphase),   &
-
+          lptr_smpa_aer(maxd_asize, maxd_atype, maxd_aphase),      &
+          lptr_smpbb_aer(maxd_asize, maxd_atype, maxd_aphase),     &
+!         lptr_iepox_aer(maxd_asize, maxd_atype, maxd_aphase),     &
+!         lptr_iepoxos_aer(maxd_asize, maxd_atype, maxd_aphase),   &
+!         lptr_tetrol_aer(maxd_asize, maxd_atype, maxd_aphase),    &
+!         lptr_gly_aer(maxd_asize, maxd_atype, maxd_aphase),       &
           lptr_ant1_c_aer(maxd_asize, maxd_atype, maxd_aphase),    &
           lptr_ant2_c_aer(maxd_asize, maxd_atype, maxd_aphase),    &
           lptr_ant3_c_aer(maxd_asize, maxd_atype, maxd_aphase),    &
@@ -908,15 +924,19 @@
           lptr_ant2_o_aer(maxd_asize, maxd_atype, maxd_aphase),    &
           lptr_ant3_o_aer(maxd_asize, maxd_atype, maxd_aphase),    &
           lptr_ant4_o_aer(maxd_asize, maxd_atype, maxd_aphase),    &
-          lptr_biog1_c_aer(maxd_asize, maxd_atype, maxd_aphase),    &
-          lptr_biog2_c_aer(maxd_asize, maxd_atype, maxd_aphase),    &
-          lptr_biog3_c_aer(maxd_asize, maxd_atype, maxd_aphase),    &
-          lptr_biog4_c_aer(maxd_asize, maxd_atype, maxd_aphase),    &
-          lptr_biog1_o_aer(maxd_asize, maxd_atype, maxd_aphase),    &
-          lptr_biog2_o_aer(maxd_asize, maxd_atype, maxd_aphase),    &
-          lptr_biog3_o_aer(maxd_asize, maxd_atype, maxd_aphase),    &
-          lptr_biog4_o_aer(maxd_asize, maxd_atype, maxd_aphase),    &
-
+          lptr_biog1_c_aer(maxd_asize, maxd_atype, maxd_aphase),   &
+          lptr_biog2_c_aer(maxd_asize, maxd_atype, maxd_aphase),   &
+          lptr_biog3_c_aer(maxd_asize, maxd_atype, maxd_aphase),   &
+          lptr_biog4_c_aer(maxd_asize, maxd_atype, maxd_aphase),   &
+          lptr_biog1_o_aer(maxd_asize, maxd_atype, maxd_aphase),   &
+          lptr_biog2_o_aer(maxd_asize, maxd_atype, maxd_aphase),   &
+          lptr_biog3_o_aer(maxd_asize, maxd_atype, maxd_aphase),   &
+          lptr_biog4_o_aer(maxd_asize, maxd_atype, maxd_aphase),   &
+          lptr_glysoa_r1_aer(maxd_asize, maxd_atype, maxd_aphase),   &
+          lptr_glysoa_r2_aer(maxd_asize, maxd_atype, maxd_aphase),   &
+          lptr_glysoa_oh_aer(maxd_asize, maxd_atype, maxd_aphase),   &
+          lptr_glysoa_nh4_aer(maxd_asize, maxd_atype, maxd_aphase),  &
+          lptr_glysoa_sfc_aer(maxd_asize, maxd_atype, maxd_aphase),  &
           lptr_asoaX_aer(maxd_asize, maxd_atype, maxd_aphase),    &
           lptr_asoa1_aer(maxd_asize, maxd_atype, maxd_aphase),    &
           lptr_asoa2_aer(maxd_asize, maxd_atype, maxd_aphase),    &
@@ -929,5 +949,5 @@
           lptr_bsoa4_aer(maxd_asize, maxd_atype, maxd_aphase)
 
 
+      end module module_data_mosaic_asecthp
 
-	end module module_data_mosaic_asect

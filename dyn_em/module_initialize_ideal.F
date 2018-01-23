@@ -261,6 +261,20 @@ CONTAINS
    nxc = (ide-ids)/4
    nyc = (jde-jds)/2
 
+  CASE (seabreeze2d_x)
+
+   stretch_grid = .true.
+   delt = 6.
+!   z_scale = .50
+   z_scale = .40
+   pi = 2.*asin(1.0)
+   write(6,*) ' pi is ',pi
+   nxc = (ide-ids)/2
+   nyc = jde/2
+   icm = ide/2
+! lm is the half width of the land in terms of grid points
+   lm = 25
+   write(6,*) 'lm,icm-lm,icm+lm = ', lm,icm-lm,icm+lm
  
   CASE DEFAULT
 
@@ -412,7 +426,7 @@ CONTAINS
 
 ! for Noah LSM, additional variables need to be initialized
 
-   other_masked_fields : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
+   convrad_masked_fields : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
 
       CASE (SLABSCHEME)
 
@@ -440,7 +454,103 @@ CONTAINS
 
       CASE (RUCLSMSCHEME)
 
-   END SELECT other_masked_fields
+   END SELECT convrad_masked_fields
+! Process the soil; note that there are some things hard-wired into share/module_soil_pre.F
+      CALL process_soil_ideal(grid%xland,grid%xice,grid%vegfra,grid%snow,grid%canwat, &
+                     grid%ivgtyp,grid%isltyp,grid%tslb,grid%smois, &
+                     grid%tsk,grid%tmn,grid%zs,grid%dzs,model_config_rec%num_soil_layers, &
+                     model_config_rec%sf_surface_physics(grid%id), &
+                                   ids,ide, jds,jde, kds,kde,&
+                                   ims,ime, jms,jme, kms,kme,&
+                                   its,ite, jts,jte, kts,kte )
+   CASE(seabreeze2d_x)
+
+    mminlu2 = ' '
+    mminlu2(1:4) = 'USGS'
+    CALL nl_set_mminlu(1, mminlu2)
+!   CALL nl_set_mminlu(1, 'USGS')
+    CALL nl_set_iswater(1,16)
+    CALL nl_set_isice(1,3)
+    CALL nl_set_cen_lat(1,20.)
+    CALL nl_set_cen_lon(1,-105.)
+    CALL nl_set_truelat1(1,0.)
+    CALL nl_set_truelat2(1,0.)
+    CALL nl_set_moad_cen_lat (1,0.)
+    CALL nl_set_stand_lon (1,0.)
+    CALL nl_set_pole_lon (1,0.)
+    CALL nl_set_pole_lat (1,90.)
+    CALL nl_set_map_proj(1,0)
+!   CALL model_to_grid_config_rec(1,model_config_rec,config_flags)
+    CALL nl_get_iswater(1,grid%iswater)
+
+!  here we initialize data that currently is not initialized
+!  in the input data
+
+    DO j = jts, jte
+      DO i = its, ite
+         grid%msft(i,j)     = 1.
+         grid%msfu(i,j)     = 1.
+         grid%msfv(i,j)     = 1.
+         grid%msftx(i,j)    = 1.
+         grid%msfty(i,j)    = 1.
+         grid%msfux(i,j)    = 1.
+         grid%msfuy(i,j)    = 1.
+         grid%msfvx(i,j)    = 1.
+         grid%msfvy(i,j)    = 1.
+         grid%msfvx_inv(i,j)= 1.
+         grid%sina(i,j)     = 0.
+         grid%cosa(i,j)     = 1.
+         grid%e(i,j)        = 0.
+         grid%f(i,j)        = 0.
+         grid%xlat(i,j)     = 30.
+         grid%xlong(i,j)     = 0.
+! Hard-wire the ocean-land configuration
+        if (i .ge. (icm-lm) .and. i .lt. (icm+lm)) then
+         grid%xland(i,j)     = 1.
+         grid%lu_index(i,j)  = 18
+         grid%tsk(i,j) = 280.0
+         grid%tmn(i,j) = 280.0
+        else
+         grid%xland(i,j)     = 2.
+         grid%lu_index(i,j)  = 16
+         grid%tsk(i,j) = 287.0
+         grid%tmn(i,j) = 280.0
+        end if
+      END DO
+   END DO
+
+! for Noah LSM, additional variables need to be initialized
+
+   seabreeze_masked_fields : SELECT CASE ( model_config_rec%sf_surface_physics(grid%id) )
+
+      CASE (SLABSCHEME)
+
+      CASE (LSMSCHEME)
+
+        DO j = jts , MIN(jde-1,jte)
+           DO i = its , MIN(ide-1,ite)
+              IF (grid%xland(i,j) .lt. 1.5) THEN
+                 grid%vegfra(i,j) = 0.5
+                 grid%canwat(i,j) = 0.
+                 grid%ivgtyp(i,j) = 18
+                 grid%isltyp(i,j) = 8
+                 grid%xice(i,j) = 0.
+                 grid%snow(i,j) = 0.
+              ELSE
+                 grid%vegfra(i,j) = 0.
+                 grid%canwat(i,j) = 0.
+                 grid%ivgtyp(i,j) = 16
+                 grid%isltyp(i,j) = 14
+                 grid%xice(i,j) = 0.
+                 grid%snow(i,j) = 0.
+              ENDIF
+           END DO
+        END DO
+
+      CASE (RUCLSMSCHEME)
+
+   END SELECT seabreeze_masked_fields
+
 ! Process the soil; note that there are some things hard-wired into share/module_soil_pre.F
       CALL process_soil_ideal(grid%xland,grid%xice,grid%vegfra,grid%snow,grid%canwat, &
                      grid%ivgtyp,grid%isltyp,grid%tslb,grid%smois, &
@@ -471,7 +581,7 @@ CONTAINS
       grid%znw(k) = (exp(-(k-1)/float(kde-1)/z_scale) - exp(-1./z_scale))/ &
                                 (1.-exp(-1./z_scale))
      ENDDO
-   CASE(convrad)
+   CASE(convrad, seabreeze2d_x)
      DO k=1, kde
       grid%znw(k) = model_config_rec%eta_levels(k)
      ENDDO
@@ -676,7 +786,7 @@ CONTAINS
   ENDDO
   ENDDO
 
-  CASE (quarter_ss, convrad, squall2d_x, squall2d_y, grav2d_x, b_wave)
+  CASE (quarter_ss, convrad, squall2d_x, squall2d_y, grav2d_x, b_wave, seabreeze2d_x)
   DO j=jts,jte
   DO i=its,ite  
     grid%ht(i,j) = 0.
@@ -1140,8 +1250,6 @@ CONTAINS
     ENDDO
   ENDDO
 
-
-
   END SELECT ideal_pert
 
 #if 0
@@ -1339,6 +1447,24 @@ CONTAINS
   ENDDO
   ENDDO
  
+  CASE(seabreeze2d_x)
+  DO J = jts, min(jde-1,jte)
+  DO I = its, min(ide-1,ite)
+     thtmp   = grid%t_2(i,1,j)+t0
+     ptmp    = grid%p(i,1,j)+grid%pb(i,1,j)
+     temp(1) = thtmp * (ptmp/p1000mb)**rcp
+     thtmp   = grid%t_2(i,2,j)+t0
+     ptmp    = grid%p(i,2,j)+grid%pb(i,2,j)
+     temp(2) = thtmp * (ptmp/p1000mb)**rcp
+     thtmp   = grid%t_2(i,3,j)+t0
+     ptmp    = grid%p(i,3,j)+grid%pb(i,3,j)
+     temp(3) = thtmp * (ptmp/p1000mb)**rcp
+
+!    grid%tsk(I,J)=grid%cf1*temp(1)+grid%cf2*temp(2)+grid%cf3*temp(3)
+     grid%tmn(I,J)=grid%tsk(I,J)-0.5
+  ENDDO
+  ENDDO
+
   CASE(convrad)
   DO J = jts, min(jde-1,jte)
   DO I = its, min(ide-1,ite)
@@ -1390,6 +1516,27 @@ CONTAINS
      END DO
   END IF
   END SELECT trajectories
+
+  tracers: SELECT CASE ( config_flags%tracer_opt )
+  CASE (tracer_test1)
+
+  DO J = jts, min(jde-1,jte)
+  DO K = kts, kte-1
+  DO I = its, min(ide-1,ite)
+    grid%h_diabatic(i,k,j) = 0.
+    if(k.eq.kts)tracer(i,k,j,p_tr17_1)=1.
+    if(k.eq.kts.and.grid%xland(i,j).lt.1.5)tracer(i,k,j,p_tr17_2)=1.
+    if(k.eq.kts.and.grid%xland(i,j).gt.1.5)tracer(i,k,j,p_tr17_3)=1.
+    if(k.le.5)tracer(i,k,j,p_tr17_4)=1.
+    if(k.le.5.and.grid%xland(i,j).lt.1.5)tracer(i,k,j,p_tr17_5)=1.
+    if(k.le.5.and.grid%xland(i,j).gt.1.5)tracer(i,k,j,p_tr17_6)=1.
+    if(k.le.10)tracer(i,k,j,p_tr17_7)=1.
+    if(k.le.10.and.k.gt.5)tracer(i,k,j,p_tr17_8)=1.
+  ENDDO
+  ENDDO
+  ENDDO
+
+  END SELECT tracers
 
   RETURN
 

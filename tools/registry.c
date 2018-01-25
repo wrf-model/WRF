@@ -138,7 +138,7 @@ main( int argc, char *argv[], char *env[] )
   init_type_table() ;
   init_dim_table() ;
 //
-//  possible IRR diagnostcis?
+//  possible IRR diagnostics?
 //
   do_irr_diag = 0;
   env_val = getenv( "WRF_CHEM" );

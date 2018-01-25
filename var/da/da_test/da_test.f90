@@ -45,6 +45,7 @@ module da_test
       its_int, ite_int, jts_int, jte_int, kts_int, kte_int, &
       ims_int, ime_int, jms_int, jme_int, kms_int, kme_int
    use da_control, only : use_cv_w
+   use da_control, only : typical_eph_rms, gpseph, use_gpsephobs, missing_r
 
    use da_define_structures, only : da_zero_x,da_zero_vp_type,da_allocate_y, &
       da_deallocate_y,be_type, xbx_type, iv_type, y_type, j_type, da_initialize_cv
@@ -112,6 +113,7 @@ contains
 #include "da_check_xtoy_adjoint_airep.inc"
 #include "da_check_xtoy_adjoint_gpspw.inc"
 #include "da_check_xtoy_adjoint_gpsref.inc"
+#include "da_check_xtoy_adjoint_gpseph.inc"
 #include "da_check_xtoy_adjoint_metar.inc"
 #include "da_check_xtoy_adjoint_pilot.inc"
 #include "da_check_xtoy_adjoint_ssmi_rv.inc"

@@ -43,7 +43,7 @@ module da_minimisation
       var_scaling4,var_scaling5,var_scaling3, jo_unit, test_gradient, &
       print_detail_grad,omb_set_rand,grad_unit,cost_unit, num_pseudo, cv_options, &
       cv_size_domain_je,cv_size_domain_jb, cv_size_domain_jp, cv_size_domain_js, cv_size_domain_jl, &
-      sound, mtgirs, sonde_sfc, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
+      sound, mtgirs, sonde_sfc, synop, profiler, gpsref, gpseph, gpspw, polaramv, geoamv, ships, metar, &
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep,tamdar, tamdar_sfc, rain, &
       bogus, buoy, qscat,pseudo, radiance, monitor_on, max_ext_its, use_rttov_kmatrix,&
       use_crtm_kmatrix,precondition_cg, precondition_factor, use_varbc, varbc_factor, &
@@ -71,6 +71,9 @@ module da_minimisation
    use da_gpsref, only : da_calculate_grady_gpsref, da_ao_stats_gpsref, &
       da_oi_stats_gpsref, da_get_innov_vector_gpsref, da_residual_gpsref, &
       da_jo_and_grady_gpsref
+   use da_gpseph, only : da_calculate_grady_gpseph, da_ao_stats_gpseph, &
+      da_oi_stats_gpseph, da_get_innov_vector_gpseph, da_residual_gpseph, &
+      da_jo_and_grady_gpseph
    use da_obs_io, only : da_final_write_y, da_write_y, da_final_write_obs, &
       da_write_obs,da_write_obs_etkf,da_write_noise_to_ob, da_use_obs_errfac, &
       da_write_iv_for_multi_inc, da_read_iv_for_multi_inc

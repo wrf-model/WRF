@@ -92,7 +92,8 @@
     CALL nl_set_lightning_dt( id, dt )
  ENDIF
 
-!-- restarting?
+!-- restarting?  Code after this point is only executed on the very
+!                first time step of the simulation
  IF (itimestep .gt. 0 ) THEN
    return
  ENDIF

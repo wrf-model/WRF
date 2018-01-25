@@ -80,7 +80,7 @@ MODULE module_driver_constants
 
    !  The maximum number of obs indexes (for conventional DA obs) 
 
-   INTEGER , PARAMETER :: num_ob_indexes  =   28
+   INTEGER , PARAMETER :: num_ob_indexes  =   29
 
 
    !  The maximum number of bogus storms

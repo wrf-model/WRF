@@ -1,14 +1,14 @@
 subroutine da_transform_xtogpsref_lin(grid)
 
    !---------------------------------------------------------------------
-   ! Purpose: TBD                            
+   ! Purpose: calculate gpsref increment from t, p, q increments
    !---------------------------------------------------------------------
 
    implicit none
 
    type (domain), intent(inout) :: grid
    
-   integer :: i, j, k
+   integer :: i, j, k, ijk
    real    :: partone, parttwo, dividnd
    real    :: partone9,parttwo9,dividnd9
 
@@ -49,8 +49,25 @@ subroutine da_transform_xtogpsref_lin(grid)
       end do
    end do
 
+   if ( use_gpsephobs ) then
+#ifdef DM_PARALLEL
+      ijk = (ide-ids+1)*(jde-jds+1)*(kde-kds+1)
+   !  Collect xb component of ref into global buffer.
+      call da_patch_to_global( grid, grid%xa%ref, global_xa_ref )
+      call wrf_dm_bcast_real( global_xa_ref, ijk )
+#else
+      do k = kds, kde
+         do j = jds, jde
+            do i = ids, ide
+               global_xa_ref(i,j,k) = grid%xa%ref(i,j,k)
+            enddo
+         enddo
+      enddo
+#endif
+   endif
+
    if (trace_use_dull) call da_trace_exit("da_transform_xtogpsref_lin")
-   
+
 end subroutine da_transform_xtogpsref_lin
 
 

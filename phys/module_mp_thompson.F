@@ -4060,8 +4060,10 @@
 
 !..Local variables
       INTEGER:: i, j, k, m, n, n2
-      DOUBLE PRECISION, DIMENSION(nbr):: N_r, massr
-      DOUBLE PRECISION, DIMENSION(nbc):: N_c, massc
+      INTEGER:: km, km_s, km_e
+      DOUBLE PRECISION:: N_r, N_c
+      DOUBLE PRECISION, DIMENSION(nbr):: massr
+      DOUBLE PRECISION, DIMENSION(nbc):: massc
       DOUBLE PRECISION:: sum1, sum2, sumn1, sumn2, &
                          prob, vol, Texp, orho_w, &
                          lam_exp, lamr, N0_r, lamc, N0_c, y
@@ -4140,12 +4142,26 @@
          massc(n) = am_r*Dc(n)**bm_r
         enddo
 
+! Need to split loops between MPI processes to speedup
+! (2017Jul26, Jason Do)
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+        CALL wrf_dm_decomp1d ( ntb_IN*45, km_s, km_e )
+#else
+        km_s = 0
+        km_e = ntb_IN*45 - 1
+#endif
+
 !..Freeze water (smallest drops become cloud ice, otherwise graupel).
-        do m = 1, ntb_IN
-        T_adjust = MAX(-3.0, MIN(3.0 - ALOG10(Nt_IN(m)), 3.0))
-        do k = 1, 45
+        do km = km_s, km_e
+         m = km / 45 + 1
+         k = mod( km , 45 ) + 1
+         T_adjust = MAX(-3.0, MIN(3.0 - ALOG10(Nt_IN(m)), 3.0))
 !         print*, ' Freezing water for temp = ', -k
          Texp = DEXP( DFLOAT(k) - T_adjust*1.0D0 ) - 1.0D0
+#ifdef THOMPSON_OMP
+!$OMP PARALLEL DO SCHEDULE(dynamic) &
+!$OMP PRIVATE(j,i,lam_exp,lamr,N0_r,sum1,sum2,sumn1,sumn2,n2,N_r,vol,prob)
+#endif
          do j = 1, ntb_r1
             do i = 1, ntb_r
                lam_exp = (N0r_exp(j)*am_r*crg(1)/r_r(i))**ore1
@@ -4156,15 +4172,15 @@
                sumn1 = 0.0d0
                sumn2 = 0.0d0
                do n2 = nbr, 1, -1
-                  N_r(n2) = N0_r*Dr(n2)**mu_r*DEXP(-lamr*Dr(n2))*dtr(n2)
+                  N_r = N0_r*Dr(n2)**mu_r*DEXP(-lamr*Dr(n2))*dtr(n2)
                   vol = massr(n2)*orho_w
                   prob = MAX(0.0D0, 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp))
                   if (massr(n2) .lt. xm0g) then
-                     sumn1 = sumn1 + prob*N_r(n2)
-                     sum1 = sum1 + prob*N_r(n2)*massr(n2)
+                     sumn1 = sumn1 + prob*N_r
+                     sum1 = sum1 + prob*N_r*massr(n2)
                   else
-                     sumn2 = sumn2 + prob*N_r(n2)
-                     sum2 = sum2 + prob*N_r(n2)*massr(n2)
+                     sumn2 = sumn2 + prob*N_r
+                     sum2 = sum2 + prob*N_r*massr(n2)
                   endif
                   if ((sum1+sum2).ge.r_r(i)) EXIT
                enddo
@@ -4174,7 +4190,12 @@
                tnr_qrfz(i,j,k,m) = sumn2
             enddo
          enddo
+#ifdef THOMPSON_OMP
+!$OMP END PARALLEL DO
 
+!$OMP PARALLEL DO SCHEDULE(dynamic) &
+!$OMP PRIVATE(j,i,nu_c,lamc,N0_c,sum1,sumn2,vol,prob,N_c)
+#endif
          do j = 1, nbc
             nu_c = MIN(15, NINT(1000.E6/t_Nc(j)) + 2)
             do i = 1, ntb_c
@@ -4185,17 +4206,28 @@
                do n = nbc, 1, -1
                   vol = massc(n)*orho_w
                   prob = MAX(0.0D0, 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp))
-                  N_c(n) = N0_c*Dc(n)**nu_c*EXP(-lamc*Dc(n))*dtc(n)
-                  sumn2 = MIN(t_Nc(j), sumn2 + prob*N_c(n))
-                  sum1 = sum1 + prob*N_c(n)*massc(n)
+                  N_c = N0_c*Dc(n)**nu_c*EXP(-lamc*Dc(n))*dtc(n)
+                  sumn2 = MIN(t_Nc(j), sumn2 + prob*N_c)
+                  sum1 = sum1 + prob*N_c*massc(n)
                   if (sum1 .ge. r_c(i)) EXIT
                enddo
                tpi_qcfz(i,j,k,m) = sum1
                tni_qcfz(i,j,k,m) = sumn2
             enddo
          enddo
+#ifdef THOMPSON_OMP
+!$OMP END PARALLEL DO
+#endif
         enddo
-        enddo
+
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+        CALL wrf_dm_gatherv(tpi_qrfz, ntb_r*ntb_r1, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tni_qrfz, ntb_r*ntb_r1, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tpg_qrfz, ntb_r*ntb_r1, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tnr_qrfz, ntb_r*ntb_r1, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tpi_qcfz, ntb_c*nbc, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tni_qcfz, ntb_c*nbc, km_s, km_e, R8SIZE)
+#endif
 
         IF ( write_thompson_tables .AND. wrf_dm_on_monitor() ) THEN
           CALL wrf_message("Writing freezeH2O.dat in Thompson MP init")

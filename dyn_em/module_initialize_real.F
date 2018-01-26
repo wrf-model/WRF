@@ -1270,6 +1270,10 @@ integer::oops1,oops2
             DO j = jts, MIN(jte,jde-1)
                DO i = its, MIN(ite,ide-1)
                   grid%QNWFA_now(i,k,j) = grid%qntemp2(i,j)
+     if(i.eq.its .and. j.eq.jts .and. k.eq.1) then
+      write(a_message,*) '  DEBUG, ensuring QNWFA_now corner (its,1,jts) value: ', i,j,grid%QNWFA_now(i,k,j)
+      CALL wrf_debug (0, a_message)
+     endif
                ENDDO
             ENDDO
          ENDDO
@@ -2096,9 +2100,9 @@ integer::oops1,oops2
          IF ( flag_qnwfa .EQ. 1 .and. (config_flags%use_aero_icbc.or.config_flags%use_rap_aero_icbc)) THEN
             DO im = PARAM_FIRST_SCALAR, num_3d_s
                IF ( im .EQ. P_QNWFA ) THEN
-                  CALL wrf_debug ( 0 , 'Using Thompson_aerosol_aware so vertically-interpolating QNWFA monthly climo arrays to fill scalar')
                 if(config_flags%use_rap_aero_icbc) then
 !HRRR - aerosol input from WPS
+                  CALL wrf_debug ( 0 , 'Using Thompson_aerosol_aware so vertically-interpolating QNWFA from WPS data to fill scalar')
                   CALL vert_interp ( grid%qnwfa_gc , grid%pd_gc , scalar(:,:,:,P_QNWFA) , grid%pb , &
                                      grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
                                      grid%pmaxwnn , grid%ptropnn , &
@@ -2114,6 +2118,7 @@ integer::oops1,oops2
                                      its , ite , jts , jte , kts , kte )
 
                 else
+                  CALL wrf_debug ( 0 , 'Using Thompson_aerosol_aware so vertically-interpolating QNWFA monthly climo arrays to fill scalar')
                   CALL vert_interp ( grid%QNWFA_now , grid%pd_gc , scalar(:,:,:,P_QNWFA) , grid%pb , &
                                      grid%hgtmaxw , grid%hgttrop , grid%pmaxw , grid%ptrop , &
                                      grid%pmaxwnn , grid%ptropnn , &

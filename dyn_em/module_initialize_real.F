@@ -2480,7 +2480,7 @@ integer::oops1,oops2
                END IF
             END DO
 
-            !..Capture the monthly climo value for the lowest level because we use later to compute surface flux value.
+            !..Capture the monthly climatology value for the lowest level because we use later to compute surface flux value.
 
             DO j = jts, MIN(jte,jde-1)
                DO i = its, MIN(ite,ide-1)

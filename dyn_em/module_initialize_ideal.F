@@ -144,6 +144,10 @@ CONTAINS
    REAL    :: Nsq, z, z1, z2
    INTEGER :: iter_loop
    INTEGER :: xs , xe , ys , ye
+   REAL :: mtn_ht
+   REAL :: randx       ! for LES
+   INTEGER :: ks, ke, id
+
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 
    SELECT CASE ( model_data_order )
@@ -275,6 +279,18 @@ CONTAINS
 ! lm is the half width of the land in terms of grid points
    lm = 25
    write(6,*) 'lm,icm-lm,icm+lm = ', lm,icm-lm,icm+lm
+
+  CASE (les)
+  !  FOR LES, set stretch to false
+   stretch_grid = .false.
+   delt = 3.
+!   z_scale = .50
+   z_scale = .40
+   pi = 2.*asin(1.0)
+   write(6,*) ' pi is ',pi
+   nxc = (ide-ids)/2
+   nyc = (jde-jds)/2
+
  
   CASE DEFAULT
 
@@ -317,7 +333,7 @@ CONTAINS
     CALL nl_set_map_proj(1,0)
 
 
-!  here we initialize data we currently is not initialized 
+!  here we initialize data that currently is not initialized 
 !  in the input data
 
     DO j = jts, jte
@@ -352,7 +368,7 @@ CONTAINS
     CALL nl_set_map_proj(1,0)
 
 
-!  here we initialize data we currently is not initialized 
+!  here we initialize data that currently is not initialized 
 !  in the input data
 
     DO j = jts, jte
@@ -560,6 +576,42 @@ CONTAINS
                                    ims,ime, jms,jme, kms,kme,&
                                    its,ite, jts,jte, kts,kte )
 
+   CASE (les)
+
+    CALL nl_set_mminlu(1, '    ')
+    CALL nl_set_iswater(1,0)
+    CALL nl_set_cen_lat(1,40.)
+    CALL nl_set_cen_lon(1,-105.)
+    CALL nl_set_truelat1(1,0.)
+    CALL nl_set_truelat2(1,0.)
+    CALL nl_set_moad_cen_lat (1,0.)
+    CALL nl_set_stand_lon (1,0.)
+    CALL nl_set_pole_lon (1,0.)
+    CALL nl_set_pole_lat (1,90.)
+    CALL nl_set_map_proj(1,0)
+
+
+!  here we initialize data that currently is not initialized
+!  in the input data
+
+    DO j = jts, jte
+      DO i = its, ite
+         grid%msftx(i,j)    = 1.
+         grid%msfty(i,j)    = 1.
+         grid%msfux(i,j)    = 1.
+         grid%msfuy(i,j)    = 1.
+         grid%msfvx(i,j)    = 1.
+         grid%msfvx_inv(i,j)= 1.
+         grid%msfvy(i,j)    = 1.
+         grid%sina(i,j)     = 0.
+         grid%cosa(i,j)     = 1.
+         grid%e(i,j)        = 0.
+!  for LES, include Coriolis force
+         grid%f(i,j)        = 1.e-4
+
+      END DO
+   END DO
+
    END SELECT ideal_landmap
 
     DO j = jts, jte
@@ -574,23 +626,84 @@ CONTAINS
 
 ! set up the grid
 
-   IF (stretch_grid) THEN ! exponential stretch for eta (nearly constant dz)
    ideal_levels: SELECT CASE ( model_config_rec%ideal_case )
    CASE(hill2d_x, quarter_ss, squall2d_x, squall2d_y, grav2d_x, b_wave)
+   IF (stretch_grid) THEN ! exponential stretch for eta (nearly constant dz)
      DO k=1, kde
       grid%znw(k) = (exp(-(k-1)/float(kde-1)/z_scale) - exp(-1./z_scale))/ &
                                 (1.-exp(-1./z_scale))
      ENDDO
-   CASE(convrad, seabreeze2d_x)
-     DO k=1, kde
-      grid%znw(k) = model_config_rec%eta_levels(k)
-     ENDDO
-   END SELECT ideal_levels
    ELSE
      DO k=1, kde
       grid%znw(k) = 1. - float(k-1)/float(kde-1)
      ENDDO
    ENDIF
+   CASE(convrad, seabreeze2d_x)
+   IF (stretch_grid) THEN ! read eta_levels
+     DO k=1, kde
+      grid%znw(k) = model_config_rec%eta_levels(k)
+     ENDDO
+   ELSE
+     DO k=1, kde
+      grid%znw(k) = 1. - float(k-1)/float(kde-1)
+     ENDDO
+   ENDIF
+   CASE(les)
+       IF (model_config_rec%eta_levels(1) .EQ. -1) THEN !we do not have eta_levels from namelist
+   IF (stretch_grid) THEN ! exponential stretch for eta (nearly constant dz)
+     DO k=1, kde
+      grid%znw(k) = (exp(-(k-1)/float(kde-1)/z_scale) - exp(-1./z_scale))/ &
+                                (1.-exp(-1./z_scale))
+     ENDDO
+   ELSE
+     DO k=1, kde
+      grid%znw(k) = 1. - float(k-1)/float(kde-1)
+     ENDDO
+   ENDIF
+      ELSE
+          CALL wrf_debug(0,"module_initialize_les: vertical nesting is enabled, using eta_levels specified in namelist.input")
+          ks = 0
+          DO id=1,grid%id
+             ks = ks+model_config_rec%e_vert(id)
+          ENDDO
+          IF (ks .GT. max_eta) THEN
+             CALL wrf_error_fatal("too many vertical levels, increase max_eta in frame/module_driver_constants.F")
+          ENDIF
+          !Now set the eta_levels to what we specified in the namelist. We've
+          !packed all the domains' eta_levels into a 'vector' and now we need
+          !to pull only the section of the vector associated with our domain
+          !of interest, which is between indicies ks and ke.
+          IF (grid%id .EQ. 1) THEN
+            ks = 1
+            ke = model_config_rec%e_vert(1)
+          ELSE
+            id = 1
+            ks = 1
+            ke = 0
+            DO WHILE (grid%id .GT. id)
+              id = id+1
+              ks = ks+model_config_rec%e_vert(id-1)
+              ke = ks+model_config_rec%e_vert(id)
+            ENDDO
+          ENDIF
+          DO k=1,kde
+            grid%znw(k) = model_config_rec%eta_levels(ks+k-1)
+          ENDDO
+          !Check the value of the first and last eta level for our domain,
+          !then check that the vector of eta levels is only decreasing
+          IF (grid%znw(1) .NE. 1.0) THEN
+            CALL wrf_error_fatal("error with specified eta_levels, first level is not 1.0")
+          ENDIF
+          IF (grid%znw(kde) .NE. 0.0) THEN
+            CALL wrf_error_fatal("error with specified eta_levels, last level is not 0.0")
+          ENDIF
+          DO k=2,kde
+            IF (grid%znw(k) .GT. grid%znw(k-1)) THEN
+              CALL wrf_error_fatal("eta_levels are not uniformly decreasing from 1.0 to 0.0")
+            ENDIF
+          ENDDO
+      ENDIF
+   END SELECT ideal_levels
 
    DO k=1, kde-1
     grid%dnw(k) = grid%znw(k+1) - grid%znw(k)
@@ -793,6 +906,51 @@ CONTAINS
     grid%phb(i,1,j) = g*grid%ht(i,j)
     grid%php(i,1,j) = 0.
     grid%ph0(i,1,j) = grid%phb(i,1,j)
+  ENDDO
+  ENDDO
+
+  CASE (les)
+  DO j=jts,jte
+  DO i=its,ite
+    grid%ht(i,j) = 0.
+  ENDDO
+  ENDDO
+
+  xs=ide/2 -3
+  xs=ids   -3
+  xe=xs + 6
+  ys=jde/2 -3
+  ye=ys + 6
+  mtn_ht = 500
+#ifdef MTN
+  DO j=max(ys,jds),min(ye,jde-1)
+  DO i=max(xs,ids),min(xe,ide-1)
+     grid%ht(i,j) = mtn_ht * 0.25 * &
+               ( 1. + COS ( 2*pi/(xe-xs) * ( i-xs ) + pi ) ) * &
+               ( 1. + COS ( 2*pi/(ye-ys) * ( j-ys ) + pi ) )
+  ENDDO
+  ENDDO
+#endif
+#ifdef EW_RIDGE
+  DO j=max(ys,jds),min(ye,jde-1)
+  DO i=ids,ide
+     grid%ht(i,j) = mtn_ht * 0.50 * &
+               ( 1. + COS ( 2*pi/(ye-ys) * ( j-ys ) + pi ) )
+  ENDDO
+  ENDDO
+#endif
+#ifdef NS_RIDGE
+  DO j=jds,jde
+  DO i=max(xs,ids),min(xe,ide-1)
+     grid%ht(i,j) = mtn_ht * 0.50 * &
+               ( 1. + COS ( 2*pi/(xe-xs) * ( i-xs ) + pi ) )
+  ENDDO
+  ENDDO
+#endif
+  DO j=jts,jte
+  DO i=its,ite
+    grid%phb(i,1,j) = g * grid%ht(i,j)
+    grid%ph0(i,1,j) = g * grid%ht(i,j)
   ENDDO
   ENDDO
 
@@ -1249,6 +1407,64 @@ CONTAINS
 
     ENDDO
   ENDDO
+ 
+  CASE (les)
+!  thermal perturbation to kick off convection
+
+  write(6,*) ' nxc, nyc for perturbation ',nxc,nyc
+  write(6,*) ' delt for perturbation ',delt
+
+! For LES, change the initial random perturbations
+! For 2D test, call randx outside I-loop
+! For 3D runs, call randx inside both I-J loops
+
+  DO J = jts, min(jde-1,jte)
+!   yrad = config_flags%dy*float(j-nyc)/10000.
+    yrad = 0.
+    DO I = its, min(ide-1,ite)
+!     xrad = config_flags%dx*float(i-nxc)/10000.
+      xrad = 0.
+      call random_number (randx)
+      randx = randx - 0.5
+!     DO K = 1, kte-1
+      DO K = 1, 4
+
+!  No bubbles for LES!
+!  put in preturbation theta (bubble) and recalc density.  note,
+!  the mass in the column is not changing, so when theta changes,
+!  we recompute density and geopotential
+
+!       zrad = 0.5*(grid%ph_1(i,k,j)+grid%ph_1(i,k+1,j)  &
+!                  +grid%phb(i,k,j)+grid%phb(i,k+1,j))/g
+!       zrad = (zrad-1500.)/1500.
+        zrad = 0.
+        RAD=SQRT(xrad*xrad+yrad*yrad+zrad*zrad)
+        IF(RAD <= 1.) THEN
+!          grid%t_1(i,k,j)=grid%t_1(i,k,j)+delt*COS(.5*PI*RAD)**2
+           grid%t_1(i,k,j)=grid%t_1(i,k,j)+ 0.1 *randx
+           grid%t_2(i,k,j)=grid%t_1(i,k,j)
+           qvf = 1. + rvovrd*moist(i,k,j,P_QV)
+           grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
+                        (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
+           grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
+        ENDIF
+      ENDDO
+
+!  rebalance hydrostatically
+
+
+      DO  kk  = 2,kte
+        k = kk - 1
+        grid%ph_1(i,kk,j) = grid%ph_1(i,kk-1,j) - (grid%dnw(kk-1))*(       &
+                     (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,kk-1,j)+ &
+                      grid%mu_1(i,j)*grid%alb(i,kk-1,j)  )
+
+        grid%ph_2(i,kk,j) = grid%ph_1(i,kk,j)
+        grid%ph0(i,kk,j) = grid%ph_1(i,kk,j) + grid%phb(i,kk,j)
+      ENDDO
+
+    ENDDO
+  ENDDO
 
   END SELECT ideal_pert
 
@@ -1354,7 +1570,11 @@ CONTAINS
     p_surf = interp_0( p_in, zk, z_at_v, nl_in )
 
     DO K = 1, kte
+#if  !( HYBRID_COORD==1 )
       p_level = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
+#elif ( HYBRID_COORD==1 )
+      p_level = grid%c3h(k)*(p_surf - grid%p_top) + grid%c4h(k) + grid%p_top
+#endif
       grid%v_1(i,k,j) = interp_0( v, p_in, p_level, nl_in )
       grid%v_2(i,k,j) = grid%v_1(i,k,j)
     ENDDO
@@ -1470,6 +1690,14 @@ CONTAINS
   DO I = its, min(ide-1,ite)
          grid%tsk(i,j) = theta_surf * (p_surf/p1000mb)**rcp
          grid%tmn(i,j) = grid%tsk(i,j)
+  ENDDO
+  ENDDO
+
+  CASE(les)
+  DO J = jts, min(jde-1,jte)
+  DO I = its, min(ide-1,ite)
+         grid%tsk(i,j) = theta_surf * (p_surf/p1000mb)**rcp
+         grid%tmn(i,j) = grid%tsk(i,j)-0.5
   ENDDO
   ENDDO
 

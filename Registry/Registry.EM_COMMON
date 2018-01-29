@@ -2922,6 +2922,7 @@ package   squall2d_y     ideal_case==5               -            -
 package   grav2d_x       ideal_case==6               -            -
 package   b_wave         ideal_case==7               -            -
 package   seabreeze2d_x  ideal_case==8               -            -
+package   les            ideal_case==9               -            -
 
 #---------------------------------------------------------------------------------------------------------------------------------------
 ## communications                                               

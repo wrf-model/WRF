@@ -421,6 +421,7 @@ state   integer number_at_same_level    -         -         -     -          -  
 state   real    radtacttime    -        -         -         -     r         "radtacttime"              "RADTACTTIME"         "LW SW ACTIVATION TIME in s"
 state   real    bldtacttime    -        -         -         -     r         "bldtacttime"              "BLDTACTTIME"         "PBL   ACTIVATION TIME in s"
 state   real    cudtacttime    -        -         -         -     r         "cudtacttime"              "CUDTACTTIME"         "CPS   ACTIVATION TIME in s"
+state   real    ltngacttime    -        -         -         -     r         "ltngacttime"              "LTNGACTTIME"         "LTNG  ACTIVATION TIME in s"
 state   real    power          ij       misc      1         -     irh       "Power"                   "Power production"         "W"
 
 

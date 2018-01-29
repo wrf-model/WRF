@@ -17,7 +17,7 @@
 
  SUBROUTINE lightning_nox_driver ( &
                           ! Frequently used prognostics
-                            itimestep, dt, dx, dy,                &
+                            curr_secs, dt, dx, dy,                &
                             xlat, xlon, xland, ht,                &
                             t_phy, p_phy, rho, u, v, w,           &
                             z, moist,                             &
@@ -56,7 +56,7 @@
 !-----------------------------------------------------------------
 
 ! Frequently used prognostics
- INTEGER, INTENT(IN   )    ::       itimestep
+ REAL(8), INTENT(IN   )    ::       curr_secs
  REAL,    INTENT(IN   )    ::       dt, dx, dy
 
  REAL,    DIMENSION( ims:ime,          jms:jme ),           INTENT(IN   ) :: xlat, xlon, xland, ht
@@ -97,11 +97,9 @@
 
 !-----------------------------------------------------------------
 
- IF ( lightning_option .eq. 0 .or. lnox_opt .eq. 0) RETURN
+ IF (lightning_option .eq. 0 .or. lnox_opt .eq. 0) RETURN
 
- IF ( itimestep * dt .lt. lightning_start_seconds ) RETURN
-
-! IF ( MOD((itimestep * dt - lightning_start_seconds), lightning_dt ) .ne. 0 ) RETURN
+ IF ((curr_secs+REAL(dt,8)) .lt. REAL(lightning_start_seconds,8)) RETURN
 
  IF ( N_IC .eq. 0. .and. N_CG .eq. 0. ) RETURN
 !-----------------------------------------------------------------

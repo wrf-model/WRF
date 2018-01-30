@@ -332,13 +332,6 @@ CONTAINS
   REAL, DIMENSION(CHUNK, kms:kme):: icn_diag2d, nc_diag2d
 #endif
 
-!NUWRF BEGIN
-#if ( WRF_CHEM == 1)
-! EMK 2011/08/25
-  logical,save :: first_makelut = .true. ! Initial value, changed later.
-#endif
-!NUWRF END
-
 !-----------------------------------------------------------------------
 !WRF radar reflectivity initialization only need to run once
 
@@ -369,25 +362,6 @@ CONTAINS
 !c ibud = 0 no calculation of dth, dqv, dqrest and dqall
 !c ibud = 1 yes
     ibud = 0
-
-!NUWRF BEGIN
-#if (WRF_CHEM == 1)
-! JJS 20110525 vvvvv
-! Create CCN and IN candidate look-up table. Only need to run once at the first timestep of each run
-!    if (itimestep .eq. 1) call makelut_ccn_icn
-! EMK 2011/08/25
-      if (first_makelut) then
-         ! EMK...Only execute when GOCART and coupling turned on.
-         if ( (chem_opt == 300 .or. chem_opt == 301 .or. &
-               chem_opt == 302 .or. chem_opt == 303) .and. &
-               (gsfcgce_gocart_coupling == 1)) then
-            if ( wrf_dm_on_monitor() ) print *,'Goddard MP coupled with Gocart Aerosol'
-            call makelut_ccn_icn
-            first_makelut = .false. ! This value is saved for subsequent calls.
-         end if
-      end if
-! JJS 20110525 ^^^^^
-#endif
 
 !c  set up constants used internally in GCE
 

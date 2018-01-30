@@ -283,13 +283,6 @@ CONTAINS
  
   LOGICAL :: flag_qg
 
-!NUWRF BEGIN
-#if ( WRF_CHEM == 1)
-! EMK 2011/08/25
-  logical,save :: first_makelut = .true. ! Initial value, changed later.
-#endif
-!NUWRF END
-
 !+---+-----------------------------------------------------------------+
 
       INTEGER :: NCALL=0
@@ -367,27 +360,6 @@ CONTAINS
 !   IF (P_QI .lt. P_FIRST_SCALAR .or. P_QS .lt. P_FIRST_SCALAR) THEN
 !      CALL wrf_error_fatal3 ( "module_mp_lin.b" , 130 ,  'module_mp_lin: Improper use of Lin et al scheme; no ice phase. Please chose another one.')
 !   ENDIF
-
-!NUWRF BEGIN
-#if ( WRF_CHEM == 1)
-! JJS 20110525 vvvvv
-! Create CCN and IN candidate look-up table. Only need to run once at the first timestep of each run
-!    if (itimestep .eq. 1) call makelut_ccn_icn
-! EMK 2011/08/25
-      if (mod(itimestep,i24h).eq.1)   &
-         print *, 'in mp_gsfcgce_3ice_nuwrf, chem_opt, gsfcgce_gocart_coupling  = ', chem_opt, gsfcgce_gocart_coupling
-      if (first_makelut) then
-         ! EMK...Only execute when GOCART and coupling turned on.
-         if ( (chem_opt == 300 .or. chem_opt == 301 .or. &
-               chem_opt == 302 .or. chem_opt == 303) .and. &
-               (gsfcgce_gocart_coupling == 1)) then
-            if ( wrf_dm_on_monitor() ) print *,'Goddard MP coupled with Gocart Aerosol'
-            call makelut_ccn_icn
-            first_makelut = .false. ! This value is saved for subsequent calls.
-         end if
-      end if
-! JJS 20110525 ^^^^^
-#endif
 
 !c  set up constants used internally in GCE
 

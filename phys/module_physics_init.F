@@ -1376,6 +1376,16 @@ integer myproc
                   its, ite, jts, jte, kts, kte                  )
 
 #endif
+#if ( WRF_CHEM == 1)
+   if ((config_flags%chem_opt == 300 .or. &
+        config_flags%chem_opt == 301 .or. &
+        config_flags%chem_opt == 302 .or. &
+        config_flags%chem_opt == 303) .and. &
+        config_flags%gsfcgce_gocart_coupling == 1) then
+      CALL wrf_debug(200 , 'phy_init: Before call to makelut_ccn_icn')
+      call makelut_ccn_icn
+   end if
+#endif
 
    END SUBROUTINE phy_init
 

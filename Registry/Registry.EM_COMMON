@@ -389,7 +389,7 @@ state    integer last_dt_yr             - misc    -         -      r     "last_d
 state    integer last_dt_mm             - misc    -         -      r     "last_dt_mm"               "Relative month"                   "months"
 
 # hydrostatic pressure vars
-state    real   p_hyd           ikj     dyn_em      1         -      ir        "p_hyd"       "hydrostatic pressure"         "Pa"
+state    real   p_hyd           ikj     dyn_em      1         -      irh       "p_hyd"       "hydrostatic pressure"         "Pa"
 state    real   p_hyd_w         ikj     dyn_em      1         Z       r        "p_hyd_w"     "hydrostatic pressure at full levels"         "Pa"
 
 # 2m and 10m output diagnostics

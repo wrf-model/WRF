@@ -50,7 +50,8 @@ module da_control
    ! Earth constants:
    real, parameter    :: gravity = 9.81        ! m/s - value used in WRF.
    ! real, parameter    :: earth_radius = 6378.15
-   real, parameter    :: earth_radius = 6370.0          ! Be consistant with WRF
+   real, parameter    :: earth_radius      = 6370.0          ! Be consistant with WRF
+   real, parameter    :: satellite_height  = 35800.0         ! used by da_get_satzen
    ! real, parameter    :: earth_omega  = 2.0*pi/86400.0  ! Omega
    real, parameter    :: earth_omega  = 0.000072921     ! Omega 7.2921*10**-5
 

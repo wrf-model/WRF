@@ -847,7 +847,7 @@ CONTAINS
             SOILTYP=7
           ENDIF
           SNOALB1 = SNOALB(I,J)
-          CMC=CANWAT(I,J)
+          CMC=CANWAT(I,J)/1000.  !Bugfix for CMC unit correction (JOB/PCC 2017):  CMC is in meters in SFLX, but CANWAT is in millimeters 
 
 !-------------------------------------------
 !*** convert snow depth from mm to meter
@@ -1111,7 +1111,7 @@ CONTAINS
 #endif
 
 !***  UPDATE STATE VARIABLES
-          CANWAT(I,J)=CMC
+          CANWAT(I,J)=CMC*1000.  !Bugfix for CMC unit correction (JOB/PCC 2017):  CMC is in meters in SFLX, but CANWAT is in millimeters
           SNOW(I,J)=SNEQV*1000.
 !          SNOWH(I,J)=SNOWHK*1000.
           SNOWH(I,J)=SNOWHK                   ! SNOWHK in meters
@@ -3127,7 +3127,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   SOILTYP=7
                 ENDIF
                 SNOALB1 = SNOALB(I,J)
-                CMC=CANWAT(I,J)
+                CMC=CANWAT(I,J)/1000.   !Bugfix for CMC unit correction (JOB/PCC 2017):  CMC is in meters in SFLX, but CANWAT is in millimeters
       
       !-------------------------------------------
       !*** convert snow depth from mm to meter
@@ -3396,7 +3396,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
 #endif
       
       !***  UPDATE STATE VARIABLES
-                CANWAT(I,J)=CMC
+                CANWAT(I,J)=CMC*1000.   !Bugfix for CMC unit correction (JOB/PCC 2017):  CMC is in meters in SFLX, but CANWAT is in millimeters
                 SNOW(I,J)=SNEQV*1000.
       !          SNOWH(I,J)=SNOWHK*1000.
                 SNOWH(I,J)=SNOWHK                   ! SNOWHK in meters
@@ -4039,7 +4039,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   SOILTYP=7
                 ENDIF
                 SNOALB1 = SNOALB(I,J)
-                CMC=CANWAT(I,J)
+                CMC=CANWAT(I,J)/1000.   !Bugfix for CMC unit correction (JOB/PCC 2017):  CMC is in meters in SFLX, but CANWAT is in millimeters
       
       !-------------------------------------------
       !*** convert snow depth from mm to meter
@@ -4272,7 +4272,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
 #endif
       
       !***  UPDATE STATE VARIABLES
-                CANWAT(I,J)=CMC
+                CANWAT(I,J)=CMC*1000.   !Bugfix for CMC unit correction (JOB/PCC 2017):  CMC is in meters in SFLX, but CANWAT is in millimeters
                 SNOW(I,J)=SNEQV*1000.
       !          SNOWH(I,J)=SNOWHK*1000.
                 SNOWH(I,J)=SNOWHK                   ! SNOWHK in meters

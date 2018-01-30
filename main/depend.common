@@ -226,6 +226,11 @@ module_sf_fogdes.o: ../share/module_model_constants.o \
 module_bl_fogdes.o: ../share/module_model_constants.o \
                 module_bl_mynn.o
 
+module_cu_mesosas.o: 
+		module_gfs_machine.o \
+		module_gfs_funcphys.o \
+		module_gfs_physcons.o
+
 module_sf_gfdl.o : \
 		module_gfs_machine.o \
 		module_sf_exchcoef.o \

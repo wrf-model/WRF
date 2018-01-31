@@ -1228,10 +1228,13 @@ CONTAINS
 ! use re_cloud, re_ice and re_snow to store combined effective radii from MSKF and Morrison microphysics
                 re_cloud(i,k,j) = EFCS(I,K,J)*qc_cu_weight(I,K,J) &
                                 + EFCG(I,K,J)*(1-qc_cu_weight(I,K,J))
+                re_cloud(i,k,j) = re_cloud(i,k,j) * 1.E-6
                 re_ice(i,k,j)   = EFIS(I,K,J)*qi_cu_weight(I,K,J) &
                                 + EFIG(I,K,J)*(1-qi_cu_weight(I,K,J))
+                re_ice(i,k,j)   = re_ice(i,k,j) * 1.E-6
                 re_snow(i,k,j)  = EFSS(I,K,J)*qs_cu_weight(I,K,J) &
                                 + EFSG(I,K,J)*(1-qs_cu_weight(I,K,J))
+                re_snow(i,k,j)  = re_snow(i,k,j) * 1.E-6
                 has_reqc = 1
                 has_reqi = 1
                 has_reqs = 1

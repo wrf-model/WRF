@@ -639,9 +639,9 @@
       oops = 0
       DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec%aercu_opt .GT. 0 .AND.       &
-              model_config_rec%cu_physics(i) .NE. MSKFSCHEME .OR. &
+              ( model_config_rec%cu_physics(i) .NE. MSKFSCHEME .OR. &
               model_config_rec%mp_physics(i) .NE. MORR_TM_AERO .OR. &
-              model_config_rec%bl_pbl_physics(i) .NE. YSUSCHEME ) THEN
+              model_config_rec%bl_pbl_physics(i) .NE. YSUSCHEME ) ) THEN
               oops = oops + 1
          END IF
       ENDDO

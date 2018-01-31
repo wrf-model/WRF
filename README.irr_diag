@@ -59,7 +59,7 @@ irr_opt = 1, 0,
 /      
 
 Additionally, if you wanted output for the reaction listed above you would need
-to create a file wrfchem_irr_diag_d01 that at least the contained the following line
+to create a file wrfchem_irr_diag_d01 that at the least contained the following line
 
 OH+O3
 

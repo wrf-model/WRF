@@ -218,6 +218,15 @@ SUBROUTINE solve_em ( grid , config_flags  &
 ! Initialize timers if compiled with -DBENCH
 #include "bench_solve_em_init.h"
 
+! EMK NUWRF...Initialize arrays for halo exchange
+   moist_old = 0
+   scalar_old = 0
+   p_phy = 0
+   pi_phy = 0
+   dz8w = 0
+   th_phy = 0
+   chem_old = 0
+
 !  set runge-kutta solver (2nd or 3rd order)
 
    dynamics_option = config_flags%rk_ord
@@ -3462,6 +3471,41 @@ BENCH_END(bc_end_tim)
    END DO Runge_Kutta_loop
 !  grid%dmudt=grid%mu_2 - grid%mu_1
 
+! NUWRF
+#ifdef DM_PARALLEL
+!-----------------------------------------------------------------------
+!  Stencils for patch communications  (WCS, 29 June 2001)
+!  Note:  the small size of this halo exchange reflects the
+!         fact that we are carrying the uncoupled variables
+!         as state variables in the mass coordinate model, as
+!         opposed to the coupled variables as in the height
+!         coordinate model.
+!
+!                           * * * * *
+!         *        * * *    * * * * *
+!       * + *      * + *    * * + * *
+!         *        * * *    * * * * *
+!                           * * * * *
+!
+!  3D variables - note staggering!  ru(X), rv(Y), ww(Z), php(Z)
+!
+!  ru     x
+!  rv     x
+!  ww     x
+!  php    x
+!  alt    x
+!  ph_2   x
+!  phb    x
+!
+!  the following are 2D (xy) variables
+!
+!  muu    x
+!  muv    x
+!  mut    x
+!--------------------------------------------------------------
+
+#endif
+
    IF      ( config_flags%traj_opt .EQ. UM_TRAJECTORY ) THEN
 #ifdef DM_PARALLEL
 #    include "HALO_EM_F_1.inc"
@@ -3691,7 +3735,8 @@ BENCH_START(micro_driver_tim)
 
 
      CALL microphysics_driver(                                            &
-      &         DT=dtm             ,DX=grid%dx              ,DY=grid%dy   &
+      &         grid=grid                                                 &
+      &        ,DT=dtm             ,DX=grid%dx              ,DY=grid%dy   &
       &        ,DZ8W=dz8w          ,F_ICE_PHY=grid%f_ice_phy              &
       &        ,ITIMESTEP=grid%itimestep                    ,LOWLYR=grid%lowlyr  &
       &        ,P8W=p8w            ,P=p_phy            ,PI_PHY=pi_phy     &
@@ -3805,11 +3850,42 @@ BENCH_START(micro_driver_tim)
       &        , qicuten=grid%rqicuten, qccuten=grid%rqccuten             &
       &        , HAIL=config_flags%gsfcgce_hail                           & ! for gsfcgce
       &        , ICE2=config_flags%gsfcgce_2ice                           & ! for gsfcgce
+      &        , PHYS_TOT=grid%phys_tot                                   & ! for gsfcgce
+      &        , PHYSC=grid%physc                                         & ! for gsfcgce
+      &        , PHYSE=grid%physe                                         & ! for gsfcgce
+      &        , PHYSD=grid%physd                                         & ! for gsfcgce
+      &        , PHYSS=grid%physs                                         & ! for gsfcgce
+      &        , PHYSM=grid%physm                                         & ! for gsfcgce
+      &        , PHYSF=grid%physf                                         & ! for gsfcgce
+
+      &        , ACPHYS_TOT=grid%acphys_tot                               & ! for gsfcgce
+      &        , ACPHYSC=grid%acphysc                                     & ! for gsfcgce
+      &        , ACPHYSE=grid%acphyse                                     & ! for gsfcgce
+      &        , ACPHYSD=grid%acphysd                                     & ! for gsfcgce
+      &        , ACPHYSS=grid%acphyss                                     & ! for gsfcgce
+      &        , ACPHYSM=grid%acphysm                                     & ! for gsfcgce
+      &        , ACPHYSF=grid%acphysf                                     & ! for gsfcgce
+
+      &        , COMDBZ=grid%comdbz                                       & ! for gsfcgce
+      &        , CSI=grid%csi                                             & ! for gsfcgce
+      &        , RAINNCV_SEPA=grid%rainncv_sepa                           & ! for gsfcgce
+      &        , RAINNC_SEPA=grid%rainnc_sepa                             &
+      &        , RI_SEPA=grid%ri_sepa                                     & ! MPI-safe CSI
+      &        , IT_SEPA=grid%it_sepa                                     & ! MPI-safe CSI
+      &        , re_cloud=grid%re_cloud, re_ice=grid%re_ice, re_snow=grid%re_snow & ! G. Thompson
+      &        , re_rain=grid%re_rain, re_graupel=grid%re_graupel, re_hail=grid%re_hail & ! and gsfcgce
+      &        , PRECR3D=grid%precr3d, PRECI3D=grid%preci3d, PRECS3D=grid%precs3d  &
+      &        , PRECG3D=grid%precg3d, PRECH3D=grid%prech3d               &
+#if ( WRF_CHEM == 1)
+      &        , GSFCGCE_GOCART_COUPLING=config_flags%gsfcgce_gocart_coupling &
+      &        , ICN_DIAG=grid%icn_diag                                   & ! inline gocart
+      &        , NC_DIAG=grid%nc_diag                                     & ! inline gocart
+#endif
+!NUWRF JJS 20110525 ^^^^^
 !     &        , ccntype=config_flags%milbrandt_ccntype                   & ! for milbrandt (2mom)
 ! YLIN
 ! RI_CURR INPUT
       &        , RI_CURR=grid%rimi                                          &
-      &        , re_cloud=grid%re_cloud, re_ice=grid%re_ice, re_snow=grid%re_snow & ! G. Thompson
       &        , has_reqc=grid%has_reqc, has_reqi=grid%has_reqi, has_reqs=grid%has_reqs & ! G. Thompson
       &        , qnwfa2d=grid%qnwfa2d                                                   & ! G. Thompson
       &        , diagflag=diag_flag, do_radar_ref=config_flags%do_radar_ref &

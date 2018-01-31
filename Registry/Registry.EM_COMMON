@@ -871,6 +871,9 @@ state    real   Q2OBS            ij     misc        1         -      r        "Q
 state    real   IMPERV           ij     misc        1         -      i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)      "IMPERV"       "Impervious surface fraction NLCD"  "percent"
 state    real   CANFRA           ij     misc        1         -      i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)      "CANFRA"       "Satellite canopy fraction"         "percent"
 
+# NU-WRF:  Porosity from LIS
+state   real    lisPorosity      ij     misc        1         -      rh    "lisPorosity"     "2-D Porosity from LIS"                  ""
+
 # sfclay PBL variables
 i1      real   PSIM           ij     misc        1         -     -         "PSIM"                "SIMILARITY FUNCTION FOR MOMENTUM"     ""
 i1      real   PSIH           ij     misc        1         -     -         "PSIH"                "SIMILARITY FUNCTION FOR HEAT"         ""
@@ -1172,7 +1175,8 @@ state   integer min_ptchsz     -       misc         1         -     r
 
 state   real    TSK            ij      misc         1         -     i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "TSK"                   "SURFACE SKIN TEMPERATURE"                  "K"
 state   real    dfi_TSK        ij      misc         1         -     r                       "TSK_dfi"               "saved SURFACE SKIN TEMPERATURE"
-state   real    TSK_SAVE       ij      misc         1         -     r         "TSK_SAVE" "SURFACE SKIN TEMPERATURE, EXTRA COPY FOR SEA ICE TESTS in REAL"       "K"
+# WWANG, 12/29/2014: save TSK_SAVE to the restart file
+state   real    TSK_SAVE       ij      misc         1         -     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)         "TSK_SAVE" "SURFACE SKIN TEMPERATURE, EXTRA COPY FOR SEA ICE TESTS in REAL"       "K"
 state   real    u_base         k       misc         1         -     ir        "u_base"                "BASE STATE X WIND IN IDEALIZED CASES"         ""      
 state   real    v_base         k       misc         1         -     ir        "v_base"                "BASE STATE Y WIND IN IDEALIZED CASES"         ""      
 state   real    qv_base        k       misc         1         -     ir        "qv_base"               "BASE STATE QV IN IDEALIZED CASES"         ""      
@@ -1238,6 +1242,57 @@ state   real    p_strat        -       misc         -         -     i02rh     "p
 state   real    max_msftx      -       misc         -         -      rh       "max_mstfx"             "Max map factor in domain"  ""
 state   real    max_msfty      -       misc         -         -      rh       "max_mstfy"             "Max map factor in domain"  ""
 
+# NUWRF:  State variables for Goddard microphysics
+state   real    phys_tot       ikj      misc        1         -     h         "PHYS_TOT"              "TOTAL LATENT HEATING RATE"                       "K s-1"
+state   real    physc          ikj      misc        1         -     -         "PHYSC"                 "LATENT HEATING RATE DUE TO CONDENSATION"         "K s-1"
+state   real    physe          ikj      misc        1         -     -         "PHYSE"                 "LATENT HEATING RATE DUE TO EVAPORATION"          "K s-1"
+state   real    physd          ikj      misc        1         -     -         "PHYSD"                 "LATENT HEATING RATE DUE TO DEPOSITION"           "K s-1"
+state   real    physs          ikj      misc        1         -     -         "PHYSS"                 "LATENT HEATING RATE DUE TO SUBLIMATION"          "K s-1"
+state   real    physm          ikj      misc        1         -     -         "PHYSM"                 "LATENT HEATING RATE DUE TO MELTING"              "K s-1"
+state   real    physf          ikj      misc        1         -     -         "PHYSF"                 "LATENT HEATING RATE DUE TO FREEZING"             "K s-1"
+# NUWRF EMK
+state   real    acphys_tot       ikj      misc        1         -     r       "ACPHYS_TOT"            "ACCUMULATED TOTAL LATENT HEATING"                "K"
+state   real    acphysc          ikj      misc        1         -     r       "ACPHYSC"               "ACCUMULATED LATENT HEATING DUE TO CONDENSATION"  "K"
+state   real    acphyse          ikj      misc        1         -     r       "ACPHYSE"               "ACCUMULATED LATENT HEATING DUE TO EVAPORATION"   "K"
+state   real    acphysd          ikj      misc        1         -     r       "ACPHYSD"               "ACCUMULATED LATENT HEATING DUE TO DEPOSITION"    "K"
+state   real    acphyss          ikj      misc        1         -     r       "ACPHYSS"               "ACCUMULATED LATENT HEATING DUE TO SUBLIMATION"   "K"
+state   real    acphysm          ikj      misc        1         -     r       "ACPHYSM"               "ACCUMULATED LATENT HEATING DUE TO MELTING"       "K"
+state   real    acphysf          ikj      misc        1         -     r       "ACPHYSF"               "ACCUMULATED LATENT HEATING DUE TO FREEZING"      "K"
+
+#state   real    dbz            ikj      misc        1         -     -         "DBZ"                   "RADAR REFLECTIVITIES"             "dbz"
+state   real    comdbz         ij       misc        1         -     h         "COMDBZ"                "COMPOSITE RADAR REFLECTIVITIES"             "dBZ"
+#NUWRF...Add thread-safe CSI diagnostic
+state   real    ri_sepa        ij       misc        1         -     rh        "RI_SEPA"               "TIME-STEP EXPLICIT PRECIPITATION RATE"  "mm/hr"
+state   integer it_sepa        ij       misc        1         -     rh        "IT_SEPA"               "INTERMEDIATE CONVECTIVE STRATIFORM CLASSIFICATION"  ""
+state   real    csi            ij       misc        1         -     rh        "CSI"                   "CONVECTIVE STRATIFORM REGION INDEX"  " "
+state   real    rainncv_sepa   ilj      misc        1         -     rh        "RAINNCV_SEPA"          "TIME-STEP PARTITIONED ACCUMULATED TOTAL GRID SCALE PRECIPITATION"    "mm"
+state   real    rainnc_sepa    ilj      misc        1         -     rh        "RAINNC_SEPA"           "PARTITIONED ACCUMULATED TOTAL GRID SCALE PRECIPITATION"    "mm"
+# NUWRF...Microphysics
+state   real    re_rain        ikj      misc        1         -     rh        "RE_RAIN"               "Rain Water effective radius"        "micron"
+state   real    re_graupel     ikj      misc        1         -     rh        "RE_GRAUPEL"            "Graupel Water effective radius"     "micron"
+state   real    re_hail        ikj      misc        1         -     rh        "RE_HAIL"               "Hail Water effective radius"        "micron"
+# NUWRF...4ICE output
+state   real    preci3d       ikj      misc        1         -     -       "PRECI3D"                   "Sedimentation Fluxes for cloud ice"             "KG/M^2/S"
+state   real    precs3d       ikj      misc        1         -     -       "PRECS3D"                   "Sedimentation Fluxes for snow"                  "KG/M^2/S"
+state   real    precg3d       ikj      misc        1         -     -       "PRECG3D"                   "Sedimentation Fluxes for graupel"               "KG/M^2/S"
+state   real    prech3d       ikj      misc        1         -     -       "PRECH3D"                   "Sedimentation Fluxes for hail"               "KG/M^2/S"
+state   real    precr3d       ikj      misc        1         -     -       "PRECR3D"                   "Sedimentation Fluxes for rain"                  "KG/M^2/S"
+# EMK NUWRF
+state   real    tpw            ij       misc        1         -     h         "TPW"                   "TOTAL PRECIPITABLE WATER"            "kg m-2"
+state   real    lwp            ij       misc        1         -     h         "LWP"                   "LIQUID WATER PATH (LWP)"             "kg m-2"
+state   real    iwp            ij       misc        1         -     h         "IWP"                   "ICE WATER PATH (IWP)"                "kg m-2"
+state   real    clwp           ij       misc        1         -     h         "CLWP"                  "CLOUD LIQUID WATER PATH (CLWP)"      "kg m-2"
+state   real    rwp            ij       misc        1         -     h         "RWP"                   "RAIN WATER PATH (RWP)"               "kg m-2"
+state   real    ciwp           ij       misc        1         -     h         "CIWP"                  "CLOUD ICE WATER PATH (CIWP)"         "kg m-2"
+state   real    fpwp           ij       misc        1         -     h         "FPWP"                  "FROZEN PRECIP WATER PATH (FPWP)"     "kg m-2"
+state   real    mean_ivt_u     ij       misc        1         -     rh        "MEAN_IVT_U"            "MEAN INTEGRATED VAPOR TRANSPORT (X-DIRECTION)" "kg m-1 s-1"
+state   real    mean_ivt_v     ij       misc        1         -     rh        "MEAN_IVT_V"            "MEAN INTEGRATED VAPOR TRANSPORT (Y-DIRECTION)" "kg m-1 s-1"
+state   real    sum_ivt_u      ij       misc        1         -     r         "SUM_IVT_U"             "INTERMEDIATE SUM OF INTEGRATED VAPOR TRANSPORT (X-DIRECTION)" "kg m-1 s-1"
+state   real    sum_ivt_v      ij       misc        1         -     r         "SUM_IVT_V"             "INTERMEDIATE SUM OF INTEGRATED VAPOR TRANSPORT (Y-DIRECTION)" "kg m-1 s-1"
+state   integer ivt_count      -        misc        1         -     r         "IVT_COUNT"             "INTERMEDIATE TIME LEVEL SUM FOR INTEGRATED VAPOR TRANSPORT (Y-DIRECTION)" ""
+state   real    freezing_level  ij       misc        1         -     h         "FRZLVL"                "FREEZING LEVEL" "m"
+
+
 # State variables for Goddard LW and SW radiation
 state    real  TLWDN           ij      misc        1         -      h         "TLWDN"                 "TOA LW downwelling flux"           "W m-2"
 state    real  TLWUP           ij      misc        1         -      h         "TLWUP"                 "TOA LW upwelling flux"             "W m-2"
@@ -1247,7 +1302,12 @@ state    real  TSWDN           ij      misc        1         -      h         "T
 state    real  TSWUP           ij      misc        1         -      h         "TSWUP"                 "TOA SW upwelling flux"             "W m-2"
 state    real  SSWDN           ij      misc        1         -      h         "SSWDN"                 "Surface SW downwelling flux"       "W m-2"
 state    real  SSWUP           ij      misc        1         -      h         "SSWUP"                 "Surface SW upwelling flux"         "W m-2"
-                                                
+
+#goddardrad_2014
+state    real  COD2D_OUT       ij      misc        1         -      h         "COD2D_OUT"           "Column Cloud Optical Depth"   " "
+state    real  CTOP2D_OUT      ij      misc        1         -      h         "CTOP2D_OUT"          "Cloud-Top Pressure"          "mb"
+                
+                                
 # Other physics variables
 
 state    real  RUSHTEN         ikj      misc        1         -      r        "RUSHTEN"               "X WIND TENDENCY DUE TO SHALLOW CUMULUS SCHEME"   "m s-2"
@@ -1603,8 +1663,8 @@ state    real   rivercondxy ij     -       1      -     r     "rivercond"  "rive
 state    real   fdepthxy   ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "FDEPTH"     "e-folding depth for transmissivity "       "m"
 state    real   eqzwt      ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "EQZWT"      "equilibrium water table depth "       "m"
 state    real   rechclim   ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "RECHCLIM"   "equilibrium recharge rate "       "mm"
-state    real   rivermask  ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "RIVERMASK"  "fraction of grid that is river"       "fraction"
 state    real   riverbedxy ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "RIVERBED"   "river bed depth"       "m"
+state    real   rivermask  ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "RIVERMASK"  "fraction of grid that is river"       "fraction"
 state    real   nonriverxy ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "NONRIVER"   "non-river elevation"       "m"
 
 # Crop model only
@@ -1841,6 +1901,13 @@ state    real    NUMCOLPTS        ij     misc        1         -     -          
 state    real    GRPL_COLINT      ij     misc        1         -     -           "GRPL_COLINT"    "COL INT GRAUPEL"         "kg m-2"
 state    real    HAIL_MAXK1       ij     misc        1         -      rh02       "HAIL_MAXK1"     "MAX HAIL DIAMETER K=1"   "m"
 state    real    HAIL_MAX2D       ij     misc        1         -      rh02       "HAIL_MAX2D"     "MAX HAIL DIAMETER ENTIRE COLUMN"   "m"
+# NU-WRF:  These next variables are added for NSSL real-time WRF diagnostics  
+# SRD    
+state    real    LTG1_MAX         ij     misc        1         -     irh         "LTG1_MAX"       "MAX LTG THREAT 1"        "flashes km-2 5min-1"
+state    real    LTG2_MAX         ij     misc        1         -     irh         "LTG2_MAX"       "MAX LTG THREAT 2"        "flashes km-2 5min-1"
+i1       real    TOTICE_COLINT    ij     misc        1         -     -           "TOTICE_COLINT"  "COL INT TOTAL ICE"       "kg m-2"
+i1       integer LTG1_CALC        ij     misc        1         -     -           "LTG1_CALC"      "LTG1 CALCULATED T OR F"  "dimensionless"
+# SRD
 
 state   real    max_cfl         -       misc        1         -     -       "max_cfl"           "maximum CFL value in grid at a time" "-"
 
@@ -1937,9 +2004,9 @@ rconfig   logical nocolons                namelist,time_control         1       
 rconfig   logical cycling                 namelist,time_control         1             .false. -    "true for cycling (using wrfout file as input data)"
 rconfig   integer output_diagnostics      namelist,time_control         1              0
 rconfig   integer nwp_diagnostics         namelist,time_control         1              0
+# EMK NUWRF...Time period for mean integrated vapor transport
+rconfig   integer ivt_interval            namelist,time_control         1              60      rh    "ivt_interval"  "Time interval for mean integrated vapor transport (min)"
 rconfig   logical output_ready_flag       namelist,time_control         1             .false. -    "drop a flag called wrfoutReady_d<domain>_<date> after history write" "" ""
-
-pioprocs, piostart, piostride, pioshift
 # PIO namelist
 rconfig   logical usepio                 namelist,pio_control   1     .false. rh   "pioprocs"                  ""      "" 
 rconfig   integer pioprocs               namelist,pio_control   1       0     rh   "pioprocs"                  ""      "" 
@@ -2148,8 +2215,10 @@ rconfig   integer     progn               namelist,physics      max_domains    0
 rconfig   real        accum_mode          namelist,physics      1             1000.0e6 rh       "accum_mode"                 ""      ""
 rconfig   real        aitken_mode         namelist,physics      1             300.0e6  rh       "aitken_mode"                 ""      ""
 rconfig   real        coarse_mode         namelist,physics      1             0.2e6    rh       "coarse_mode"                 ""      ""
-rconfig   integer     do_radar_ref        namelist,physics      1              0       rh       "compute radar reflectivity for a number of schemes"                 ""      ""
+#NUWRF EMK...By default, output radar reflectivity
+rconfig   integer     do_radar_ref        namelist,physics      1              1       rh       "compute radar reflectivity for a number of schemes"                 ""      ""
 rconfig   integer     compute_radar_ref   derived               1              0       -        "compute_radar_ref" "0/1 flag: compute radar reflectivity, either do_radar_ref=1 .or. (milbrandt or NSSL schemes)"
+rconfig   integer    goddardrad_2014_skip namelist,physics      1              0       rh       "goddard radiation skip(1) or not(0)"   ""   ""
 rconfig   integer     ra_lw_physics       namelist,physics	max_domains    -1      rh       "ra_lw_physics"         ""      ""
 rconfig   integer     ra_sw_physics       namelist,physics	max_domains    -1      rh       "ra_sw_physics"         ""      ""
 rconfig   real    radt                    namelist,physics	max_domains    0       h    "RADT"          ""      ""
@@ -2205,6 +2274,7 @@ rconfig   integer maxens2                 namelist,physics	1             3      
 rconfig   integer maxens3                 namelist,physics	1            16       irh    "maxens3"                    ""      ""
 rconfig   integer ensdim                  namelist,physics      1            144      irh    "ensdim"                    ""      ""
 rconfig   integer cugd_avedx              namelist,physics      1            1      irh    "cugd_avedx"                    ""      ""
+# NU-WRF:  Removed in WRF-Chem 3.3.1 patch, put back in WRF-Chem 3.4
 rconfig   integer clos_choice             namelist,physics      1             0       rh    "clos_choice"                    ""      ""
 rconfig   integer imomentum               namelist,physics      1             0       rh    "imomentum"                    "momentum transport in G3 scheme"      ""
 rconfig   integer ishallow                namelist,physics      1             0       rh    "ishallow"  "shallow convection in G3 scheme"      ""
@@ -2552,6 +2622,10 @@ rconfig   integer forecast_proc_id        namelist,grib2 	        1     255    r
 rconfig   integer production_status       namelist,grib2 	        1     255    rh    "production_status"     "Background processing id for grib2"  ""
 rconfig   integer compression             namelist,grib2 	        1      40    rh    "compression"           "grib2 compression, 40 for JPEG2000 or 41 for PNG"  ""
 
+# NUWRF...LIS history file names for REAL (for WRF/LIS coupling)
+rconfig   integer lis_landcover_type     namelist,lis      1            1                      -    "Landcover classification (1=USGS,2=MODIS,3=UMD)" "" 
+rconfig   character lis_filename         namelist,lis    max_domains  "lisfile.d<domain>.nc" -      "Names of input LIS history dump" "" 
+
 # NAMELIST DERIVED
 rconfig   integer nobs_ndg_vars           derived                       1         6       -        "num_ndg_vars"         "Number of nudging variables"          ""
 rconfig   integer nobs_err_flds           derived                       1         10      -        "num_err_flds"         "Number of error fields"               ""
@@ -2631,7 +2705,9 @@ package   nssl_2momccn    mp_physics==18               -             moist:qv,qc
 package   nssl_1mom       mp_physics==19               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qvolg
 package   nssl_1momlfo    mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
 package   nssl_2momg      mp_physics==22               -             moist:qv,qc,qr,qi,qs,qg;scalar:qndrop,qnr,qni,qns,qng,qvolg;state:re_cloud,re_ice,re_snow
-package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow,qnwfa2d,taod5503d,taod5502d
+package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow,qnwfa2d
+package   nuwrf3icescheme mp_physics==55             -               moist:qv,qc,qr,qi,qs,qg
+package   nuwrf4icescheme mp_physics==56             -               moist:qv,qc,qr,qi,qs,qg,qh
 package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi;scalar:qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi;scalar:qnc,qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
@@ -2677,6 +2753,9 @@ package   rrtmg_lwscheme_fast  ra_lw_physics==24     -             ozmixm:mth01,
 package   goddardlwscheme  ra_lw_physics==5          -             state:tlwdn,tlwup,slwdn,slwup,taucldc,taucldi
 package   flglwscheme      ra_lw_physics==7          -             -
 package   heldsuarez       ra_lw_physics==31         -             -
+package   goddardlwscheme_2011 ra_lw_physics==55     -             state:tlwdn,tlwup,slwdn,slwup,taucldc,taucldi 
+package   goddardlwscheme_2014 ra_lw_physics==56     -             state:tlwdn,tlwup,slwdn,slwup
+package   goddardlwscheme_2017 ra_lw_physics==57     -             state:tlwdn,tlwup,slwdn,slwup
 package   gfdllwscheme     ra_lw_physics==99         -             -
 
 package   swradscheme     ra_sw_physics==1           -             -
@@ -2686,6 +2765,9 @@ package   rrtmg_swscheme  ra_sw_physics==4           -             ozmixm:mth01,
 package   rrtmg_swscheme_fast  ra_sw_physics==24     -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,o3rad;aerod:ocarbon,seasalt,dust,bcarbon,sulfate,upperaer
 package   goddardswscheme ra_sw_physics==5           -             state:tswdn,tswup,sswdn,sswup,taucldc,taucldi
 package   flgswscheme     ra_sw_physics==7           -             -
+package   goddardswscheme_2011  ra_sw_physics==55    -             state:tswdn,tswup,sswdn,sswup,taucldc,taucldi 
+package   goddardswscheme_2014  ra_sw_physics==56    -             state:tswdn,tswup,sswdn,sswup
+package   goddardswscheme_2017  ra_sw_physics==57    -             state:tswdn,tswup,sswdn,sswup
 package   gfdlswscheme    ra_sw_physics==99          -             -
 
 package   sfclayrevscheme    sf_sfclay_physics==1        -             -
@@ -2705,10 +2787,12 @@ package   bep_bemscheme  sf_urban_physics==3         -             state:a_u_bep
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn,smcrel
 package   ruclsmscheme   sf_surface_physics==3       -             state:smfr3d,keepfr3dflag,soilt1,rhosnf,snowfallac,precipfr,acrunoff
-package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,rechclim,rivermask,nonriverxy,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy
+package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,rechclim,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy
 package   clmscheme      sf_surface_physics==5       -             state:numc,nump,sabv,sabg,lwup,lhsoi,lhveg,lhtran,snl,snowdp,wtc,wtp,h2osno,t_grnd,t_veg,h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm,t_ref2m,h2osoi_liq_s1,h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,h2osoi_ice_s1,h2osoi_ice_s2,h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,t_soisno4,t_soisno5,t_soisno6,t_soisno7,t_soisno8,t_soisno9,t_soisno10,dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,h2osoi_vol7,h2osoi_vol8,h2osoi_vol9,h2osoi_vol10,albedosubgrid,lhsubgrid,hfxsubgrid,lwupsubgrid,q2subgrid,sabvsubgrid,sabgsubgrid,nrasubgrid,swupsubgrid
 package   pxlsmscheme    sf_surface_physics==7       -             state:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old,vegf_px,imperv,canfra
 package   ssibscheme     sf_surface_physics==8       -             state:ssib_fm,ssib_fh,ssib_cm,ssibxdd,ssib_br,ssib_lhf,ssib_shf,ssib_ghf,ssib_egs,ssib_eci,ssib_ect,ssib_egi,ssib_egt,ssib_sdn,ssib_sup,ssib_ldn,ssib_lup,ssib_wat,ssib_shc,ssib_shg,ssib_lai,ssib_vcf,ssib_z00,ssib_veg,isnow,swe,snowden,snowdepth,tkair,dzo1,wo1,tssn1,tssno1,bwo1,bto1,cto1,fio1,flo1,bio1,blo1,ho1,dzo2,wo2,tssn2,tssno2,bwo2,bto2,cto2,fio2,flo2,bio2,blo2,ho2,dzo3,wo3,tssn3,tssno3,bwo3,bto3,cto3,fio3,flo3,bio3,blo3,ho3,dzo4,wo4,tssn4,tssno4,bwo4,bto4,cto4,fio4,flo4,bio4,blo4,ho4
+# EMK NU-WRF Add LIS as a LSM option
+package   nuwrflisscheme  sf_surface_physics==55       -             -
 
 package   noahmosaicscheme  sf_surface_mosaic==1         -        state:TSK_mosaic,QSFC_mosaic,TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic,CANWAT_mosaic,SNOW_mosaic,SNOWH_mosaic,SNOWC_mosaic,ALBEDO_mosaic,ALBBCK_mosaic,EMISS_mosaic,EMBCK_mosaic,ZNT_mosaic,Z0_mosaic,HFX_mosaic,QFX_mosaic,LH_mosaic,GRDFLX_mosaic,SNOTIME_mosaic,TR_URB2D_mosaic,TB_URB2D_mosaic,TG_URB2D_mosaic,TC_URB2D_mosaic,TS_URB2D_mosaic,TS_RUL2D_mosaic,QC_URB2D_mosaic,UC_URB2D_mosaic,TRL_URB3D_mosaic,TBL_URB3D_mosaic,TGL_URB3D_mosaic,SH_URB2D_mosaic,LH_URB2D_mosaic,G_URB2D_mosaic,RN_URB2D_mosaic,mosaic_cat_index,landusef2,smcrel
 
@@ -2922,12 +3006,20 @@ halo      HALO_EM_INIT_1 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,ph_1,ph_2
 halo      HALO_EM_INIT_2 dyn_em 48:t_1,t_2,mu_1,mu_2,tke_1,tke_2,ww,phb
 halo      HALO_EM_INIT_3 dyn_em 48:ph0,php,t_init,mub,mu0,p,al,alt,alb
 halo      HALO_EM_INIT_4 dyn_em 48:pb,h_diabatic,qv_diabatic,qc_diabatic,msftx,msfty,msfux,msfuy,msfvx,msfvy,msfvx_inv,f,e,sina,cosa,ht,potevp,snopcx,soiltb,xlat,xlong,xlat_u,xlat_v,xlong_u,xlong_v,clat
-halo      HALO_EM_INIT_5 dyn_em 48:moist,chem,scalar,tracer
+#halo      HALO_EM_INIT_5 dyn_em 48:moist,chem,scalar,tracer
+halo      HALO_EM_INIT_5 dyn_em 48:moist,chem,scalar,tracer,tpw,lwp,iwp,clwp,rwp,ciwp,fpwp,freezing_level
 halo      HALO_EM_INIT_6 dyn_em 48:om_tmp,om_s,om_u,om_v,om_depth,om_tini,om_sini,om_lat,om_lon,om_ml
 halo      HALO_EM_VINTERP_UV_1 dyn_em 48:pd_gc,pb,pmaxw,ptrop,pmaxwnn,ptropnn
 halo      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
 halo      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2
 halo      HALO_EM_PHYS_PBL dyn_em        4:rublten,rvblten
+# NUWRF EMK: For MPI-safe CSI
+halo      HALO_EM_PHYS_MP_0 dyn_em        24:RAINNCV
+halo      HALO_EM_PHYS_MP_1 dyn_em        24:RI_SEPA,IT_SEPA
+halo      HALO_EM_PHYS_MP_2 dyn_em        24:IT_SEPA
+halo      HALO_EM_PHYS_MP_3 dyn_em        24:IT_SEPA,CSI
+halo      HALO_EM_PHYS_MP_4 dyn_em        24:RAINNCV_SEPA,RAINNC_SEPA
+
 halo      HALO_EM_PHYS_CU dyn_em         4:rucuten,rvcuten
 halo      HALO_EM_PHYS_SHCU dyn_em       4:rushten,rvshten
 halo      HALO_EM_FDDA dyn_em            4:rundgdten,rvndgdten
@@ -2938,6 +3030,10 @@ halo      HALO_EM_TKE_ADVECT_3 dyn_em 24:tke_2
 halo      HALO_EM_TKE_ADVECT_5 dyn_em 48:tke_2
 halo      HALO_EM_TKE_A dyn_em 4:ph_2,phb
 halo      HALO_EM_TKE_B dyn_em 4:z,rdz,rdzw,zx,zy
+# NU-WRF:  Added Helicity halo
+# SRD
+halo      HALO_EM_HELICITY dyn_em 8:u_2,v_2,w_2,ph_2,phb,z,zx,zy,rdz,rdzw,uh,up_heli_max
+# SRD
 halo      HALO_EM_TKE_C dyn_em 8:u_2,v_2,z,zx,zy,rdz,rdzw,ustm,ust
 halo      HALO_EM_TKE_D dyn_em 8:defor11,defor22,defor33,defor12,defor13,defor23,div
 halo      HALO_EM_TKE_E dyn_em 8:xkmv,xkmh,xkhv,xkhh,BN2,moist,rho
@@ -2946,7 +3042,8 @@ halo      HALO_EM_TKE_5 dyn_em   48:tke_1,tke_2
 halo      HALO_EM_TKE_7 dyn_em   80:tke_1,tke_2
 halo      HALO_EM_TKE_OLD_E_5 dyn_em   48:tke_1
 halo      HALO_EM_TKE_OLD_E_7 dyn_em   80:tke_1
-halo      HALO_EM_HELICITY dyn_em 48:u_2,v_2,w_2,ph_2,zx,zy,rdz,rdzw
+#NUWRF...Comment out WRF 3.5.1 version.
+#halo      HALO_EM_HELICITY dyn_em 48:u_2,v_2,w_2,ph_2,zx,zy,rdz,rdzw
 halo      HALO_EM_B dyn_em 4:ph_2,al,p,t_1,t_save,u_save,v_save,mu_1,mu_2,mudf,php,alt,pb
 halo      HALO_EM_B2 dyn_em 4:ru_tend,rv_tend
 halo      HALO_EM_C dyn_em    4:u_2,v_2
@@ -2958,9 +3055,9 @@ halo      HALO_EM_D3_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1
 halo      HALO_EM_D3_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist,chem,tracer,scalar;4:mu_1,mu_2
 halo      HALO_EM_E_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,;4:mu_1,mu_2
 halo      HALO_EM_E_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,;4:mu_1,mu_2
-halo      HALO_EM_MOIST_E_3 dyn_em 24:moist
-halo      HALO_EM_MOIST_E_5 dyn_em 48:moist
-halo      HALO_EM_MOIST_E_7 dyn_em 80:moist
+halo      HALO_EM_MOIST_E_3 dyn_em 24:moist,tpw,lwp,iwp,clwp,rwp,ciwp,fpwp,freezing_level,mean_ivt_u,mean_ivt_v,sum_ivt_u,sum_ivt_v
+halo      HALO_EM_MOIST_E_5 dyn_em 48:moist,tpw,lwp,iwp,clwp,rwp,ciwp,fpwp,freezing_level,mean_ivt_u,mean_ivt_v,sum_ivt_u,sum_ivt_v
+halo      HALO_EM_MOIST_E_7 dyn_em 80:moist,tpw,lwp,iwp,clwp,rwp,ciwp,fpwp,freezing_level,mean_ivt_u,mean_ivt_v,sum_ivt_u,sum_ivt_v
 halo      HALO_CUP_G3_IN dyn_em 24:RTHFTEN,RQVFTEN,w_2,t_phy
 halo      HALO_CUP_G3_OUT dyn_em 48:cugd_tten,cugd_qvten,cugd_ttens,cugd_qvtens,raincv
 halo      HALO_EM_CHEM_E_3 dyn_em 24:chem

@@ -408,7 +408,7 @@ MODULE qf03
         qwhite_out = 0.d0
       ELSE
         b = ust/ustar 
-        qwhite_out = c*a*ustar**3.*(1.-b)*(1.+b*b)
+        qwhite_out = c*a*ustar**3.*(1.-b)*(1.+b)**2.
       ENDIF
 
       END subroutine qwhite

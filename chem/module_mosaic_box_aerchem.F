@@ -296,6 +296,7 @@ contains
         
 
     !Local variables
+    character(len=256) :: errmsg
     integer :: ibin, isize, itype, iv
     integer :: irepeat_mosaic
     integer, dimension(nbin_a_max) :: jphase
@@ -505,8 +506,8 @@ contains
              water_a_hyst(ibin) = water_a_up(ibin)
              !BSINGH - 05/28/2013(RCE updates ENDS)
           else
-             write(*,*) '*** MOSAIC_aerosol_water - bad mhyst_method =', mhyst_method!BSINGH - 05/28/2013(RCE updates)
-             stop
+             write(errmsg,*) '*** MOSAIC_aerosol_water - bad mhyst_method =', mhyst_method!BSINGH - 05/28/2013(RCE updates)
+             call wrf_error_fatal(trim(adjustl(errmsg)))
           endif
           
        endif
@@ -645,6 +646,7 @@ contains
     real(r8), intent(out), dimension(nbin_a_max) :: mass_dry_a_bgn,dens_dry_a_bgn
         
     !Local variables
+    character(len=256) :: errmsg
     integer ibin, isize, itype, iv
 
     real(r8) :: XT
@@ -845,8 +847,8 @@ contains
              water_a_hyst(ibin) = water_a_up(ibin)
              !BSINGH - 05/28/2013(RCE updates ENDS)
           else
-             write(*,*) '*** MOSAIC_dynamic_solver - bad mhyst_method =', mhyst_method!BSINGH - 05/28/2013(RCE updates)
-             stop
+             write(errmsg,*) '*** MOSAIC_dynamic_solver - bad mhyst_method =', mhyst_method!BSINGH - 05/28/2013(RCE updates)
+             call wrf_error_fatal(trim(adjustl(errmsg)))
           endif
           
           ! compute final mass and density

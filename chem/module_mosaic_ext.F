@@ -192,6 +192,7 @@ contains
     type (mosaic_vars_aa_type), intent(inout) :: mosaic_vars_aa
 
     ! local variables
+    character(len=256) :: errmsg
     integer, parameter :: aer_pha_sta_diagaa = -1 !BALLI- changed from 100 to -1
     integer, parameter :: iter_kelvin_method =  3 
     ! iter_kelvin_method = 1 - use rahuls original iteration method
@@ -525,8 +526,8 @@ contains
        goto 10
     end if
 
-    write(*,'(a,4i5)') 'iter_kelv fatal err 1', ibin, iter_kelvin, iter_kelvin_state
-    stop
+    write(errmsg,'(a,4i5)') 'iter_kelv fatal err 1', ibin, iter_kelvin, iter_kelvin_state
+    call wrf_error_fatal(trim(adjustl(errmsg)))
 
 
     ! kelvin iterations completed
@@ -734,8 +735,7 @@ contains
        jdum = 1
        !BSINGH - 05/28/2013(RCE updates ENDS)
     else
-       write(*,*) '*** MESA - bad mhyst_method'
-       stop
+       call wrf_error_fatal('*** MESA - bad mhyst_method')
     endif
     if (jdum == 1) then ! the aerosol is fully deliquesced in metastable or subsaturated state
        call do_full_deliquescence(ibin,aer,electrolyte)
@@ -2481,6 +2481,7 @@ contains
     real(r8), intent(inout), dimension(naer,3,nbin_a_max) :: aer
     real(r8), intent(inout), dimension(nelectrolyte,3,nbin_a_max) :: electrolyte
     ! local variables
+    character(len=256) :: errmsg
     integer iaer, je, jc, ja, icase
     real(r8) :: store(naer), sum_dum, sum_naza, sum_nczc, sum_na_nh4,   &
          f_nh4, f_na, xh, xb, xl, xs, cat_net, rem_nh4, rem_na
@@ -2490,10 +2491,11 @@ contains
 
 
     if(jp .ne. jliquid)then
-       write(6,*)' jp must be jliquid'
-       write(6,*)' in ions_to_electrolytes sub'
-       write(6,*)' wrong jp = ', jp
-       stop
+       call wrf_message(' jp must be jliquid')
+       call wrf_message(' in ions_to_electrolytes sub')
+       write(errmsg,*)' wrong jp = ', jp
+       call wrf_error_fatal(trim(adjustl(errmsg)))
+       
     endif
 
     ! remove negative concentrations, if any
@@ -3656,9 +3658,8 @@ contains
 11     continue
             
     else
-       write(6,*)'Error in the choice of mSIZE_FRAMEWORK'
-       write(6,*)'Stopping in subr. aerosolmtc'
-       stop
+       call wrf_message('Error in the choice of mSIZE_FRAMEWORK')
+       call wrf_error_fatal('Stopping in subr. aerosolmtc')       
     endif
 
 

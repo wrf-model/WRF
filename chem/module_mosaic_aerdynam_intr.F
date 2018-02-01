@@ -307,12 +307,12 @@
 !   integer :: l, ll, noffset
 !   real(r8) :: conv_diam, conv_drym, conv_gas, conv_numb, conv_watr
 !   real(r8) :: tmpa, tmph, tmpj, tmpr
-
+    character(len=256) :: errmsg
 
     if ((imap < 0) .or. (imap > 1)) then
-       write(*,*) &
+       write(errmsg,*) &
        '*** aerchem_map_mosaic_cnn_rbox fatal error - bad imap =', imap
-       stop
+       call wrf_fatal_error(trim(adjustl(errmsg)))
     end if
 
 

@@ -705,6 +705,7 @@ isize_loop_yy: &
 !
 !   local variables
 !
+      character(len=256) :: errmsg
       integer :: i, isubstep, itype, itype1, itype2, iwrite193
       integer :: j, jtype, jtype1, jtype2
       integer :: k, ktype, ktype1, ktype2, ktmp1, ktmp2
@@ -736,19 +737,19 @@ isize_loop_yy: &
       method_ktype = 0
       if ((ntype > 1) .and. (msectional_flag2 > 0)) then
          if (ncomp /= ncomp_aer(1) + 3) then
-            write(*,'(/2a,2(1x,i5)/)') '*** movingcenter_coag_3d - ', &
+            write(errmsg,'(/2a,2(1x,i5)/)') '*** movingcenter_coag_3d - ', &
                'mismatch of ncomp & ncomp_aer(1)', ncomp, ncomp_aer(1)
-            stop
+            call wrf_error_fatal(trim(adjustl(errmsg)))
          end if
          if ((method_bcfrac /= 1) .and. (method_bcfrac /= 11)) then
-            write(*,'(/2a,2(1x,i5)/)') '*** movingcenter_coag_3d - ', &
+            write(errmsg,'(/2a,2(1x,i5)/)') '*** movingcenter_coag_3d - ', &
                'method_bcfrac must be 1 or 11 but is', method_bcfrac
-            stop
+            call wrf_error_fatal(trim(adjustl(errmsg)))
          end if
          if ((method_kappa /= 11) .and. (method_kappa /= 12)) then
-            write(*,'(/2a,2(1x,i5)/)') '*** movingcenter_coag_3d - ', &
+            write(errmsg,'(/2a,2(1x,i5)/)') '*** movingcenter_coag_3d - ', &
                'method_kappa must be 11 or 12 but is', method_kappa
-            stop
+            call wrf_error_fatal(trim(adjustl(errmsg)))
          end if
          method_ktype = 1
       end if
@@ -765,8 +766,7 @@ isize_loop_yy: &
       end do
       end do
       if (tmp_densbc < -1.0) then
-         write(*,'(/a/)') '*** movingcenter_coag_3d - cannot find bc'
-         stop
+         call wrf_error_fatal('*** movingcenter_coag_3d - cannot find bc')        
       end if
 
 !

@@ -194,19 +194,13 @@ module module_mosaic_sect_intr
 
     ! only iunits_flagaa = 4 has been tested, so do not allow other values
     if (iunits_flagaa /= 4) then
-       write(*,*)   &
-            '*** sectional_interface_1 error -- iunits_flagaa /= 4'
-       stop
+       call wrf_error_fatal('*** sectional_interface_1 error -- iunits_flagaa /= 4')       
     end if
     if (iunits_flagbb /= 1) then
-       write(*,*)   &
-            '*** sectional_interface_1 error -- iunits_flagbb /= 1'
-       stop
+       call wrf_error_fatal('*** sectional_interface_1 error -- iunits_flagbb /= 1')       
     end if
     if (iunits_diagout_flagaa /= 1) then
-       write(*,*)   &
-            '*** sectional_interface_1 error -- iunits_diagout_flagaa /= 1'
-       stop
+       call wrf_error_fatal('*** sectional_interface_1 error -- iunits_diagout_flagaa /= 1')
     end if
 
 

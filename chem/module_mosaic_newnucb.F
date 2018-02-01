@@ -168,7 +168,7 @@
               kh2so4, knh3, kso2
            call peg_message( lunerr, msg )
            call peg_error_fatal( lunerr, msg )
-           stop
+           call wrf_error_fatal(trim(adjustl(msg)))
         end if
 
 !   check mnewnuc_flag1

@@ -191,8 +191,7 @@
 
   allocate( mosaic_vars_aa%iter_mesa(nbin_a_max), stat=ierr )
   if (ierr /= 0) then
-     print *, '*** subr aerchemistry - allocate error for mosaic_vars_aa%iter_mesa'
-     stop
+     call wrf_error_fatal('*** subr aerchemistry - allocate error for mosaic_vars_aa%iter_mesa')
   end if
   mosaic_vars_aa%it_host = it_host
   mosaic_vars_aa%it_mosaic = it_mosaic
@@ -321,8 +320,8 @@
   if ( (istop_mosaic_error_grp1 > 0 .and. ierror_grp1 > 0) .or. &
        (istop_mosaic_error_grp2 > 0 .and. ierror_grp1 > 0) ) then
      ! stop if error encountered and the istop... is > 0
-     print '(a)', 'Fortran Stop in subr aerchemistry'
-     stop
+     call wrf_error_fatal('Fortran Stop in subr aerchemistry')
+     
   end if
 
   deallocate( mosaic_vars_aa%iter_mesa, stat=ierr )
@@ -330,8 +329,8 @@
      print '(2a/8i12)', '*** subr aerchemistry - ', &
         'deallocate error for mosaic_vars_aa%iter_mesa', &
         it_host, it_mosaic, hostgridinfo(1:6)
-     print '(a)', 'Fortran Stop in subr aerchemistry'
-     stop
+     call wrf_error_fatal('Fortran Stop in subr aerchemistry')
+     
   end if
 
 
@@ -565,6 +564,7 @@
     real(r8), intent(inout), dimension(naer,3,nbin_a_max) :: aer
 
     ! local variables
+    character(len=256) :: errmsg
     integer :: ibin, iaer, igas, l, noffset
     real(r8) :: conv_aer, conv_aerinv
     real(r8) :: conv_gas, conv_gasinv
@@ -574,9 +574,8 @@
 
 
     if ((imap < 0) .or. (imap > 1)) then
-       write(*,*) &
-       '*** map_mosaic_species_BOX fatal error - bad imap =', imap
-       stop
+       write(errmsg,*)'*** map_mosaic_species_BOX fatal error - bad imap =', imap
+       call wrf_error_fatal(trim(adjustl(errmsg)))
     end if
 
 

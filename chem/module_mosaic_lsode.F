@@ -17,9 +17,7 @@ contains
     ! subr arguments
     real(r8), intent(in) :: dtchem
 
-    write(*,'(//a//)') &
-         '*** error - mosaic_lsode has been deactivated ***'
-    stop
+    call wrf_error_fatal('*** error - mosaic_lsode has been deactivated ***')    
 
     return
   end subroutine MOSAIC_LSODE

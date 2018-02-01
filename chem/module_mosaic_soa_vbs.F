@@ -298,8 +298,7 @@
 
 !       Check for total number of species
         if (ntrack.ne.N) then
-        write(*,*) 'Error in mapping fresh and primary species arrays'
-        stop
+           call wrf_error_fatal('Error in mapping fresh and primary species arrays')
         endif
 
 ! From here on distribute the organic aerosol in size bins following Koo et al. 2003 " Integrated approaches to modeling
@@ -632,9 +631,9 @@
           if(abs(fmid).le.xtol*xmid.or.dx.le.xtol*xmid) goto 100 ! converged
            if (fmid.lt.0.0) xend=xmid
          enddo
-        write(*,*) "Error in SOAP"
-        write(*,*) "Error: max number of iterations reached"
-50      stop
+50         call wrf_message("Error in SOAP")
+         call wrf_error_fatal("Error: max number of iterations reached")
+      
 
 99     xmid=xend
 100    continue

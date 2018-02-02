@@ -312,7 +312,7 @@
     if ((imap < 0) .or. (imap > 1)) then
        write(errmsg,*) &
        '*** aerchem_map_mosaic_cnn_rbox fatal error - bad imap =', imap
-       call wrf_fatal_error(trim(adjustl(errmsg)))
+       call wrf_error_fatal(trim(adjustl(errmsg)))
     end if
 
 

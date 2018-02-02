@@ -148,18 +148,6 @@ CONTAINS
              intent(inout)   ::                         exch_h
 
     INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(OUT  ) ::  KPBL2D
-!--------------------------------------
-
-!   real,     dimension( ims:ime, jms:jme )                                   , &
-!             optional                                                        , &
-!             intent(in   )   ::                                           mut
-!
-! REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ) :: RR3DA
-
-
-!---------------------------------------------
-
-
  
 #if (WRF_CHEM == 1)
 !... Chem

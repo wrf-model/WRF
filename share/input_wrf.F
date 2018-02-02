@@ -1709,5 +1709,9 @@
     WRITE(wrf_err_message,*)'input_wrf: end, fid = ',fid
     CALL wrf_debug( 300 , wrf_err_message )
 
+     IF ( (switch .EQ. input_only) .and. (grid%id .EQ. 1) ) THEN
+         grid%dtbc = 0.0
+      ENDIF
+
     RETURN
   END SUBROUTINE input_wrf

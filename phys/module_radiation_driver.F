@@ -74,7 +74,6 @@ CONTAINS
               , QC, F_QC                     &
               , QR, F_QR                     &
               , QI, F_QI                     &
-              , QI2, F_QI2                   & ! for P3
               , QS, F_QS                     &
               , QG, F_QG                     &
               , QNDROP, F_QNDROP    &
@@ -88,14 +87,14 @@ CONTAINS
               ,ACLWDNT   ,ACLWDNTC            &
               ,ACLWUPB   ,ACLWUPBC            &
               ,ACLWDNB   ,ACLWDNBC            &
-              ,SWUPT ,SWUPTC                  &
-              ,SWDNT ,SWDNTC                  &
-              ,SWUPB ,SWUPBC                  &
-              ,SWDNB ,SWDNBC                  &
-              ,LWUPT ,LWUPTC                  &
-              ,LWDNT ,LWDNTC                  &
-              ,LWUPB ,LWUPBC                  &
-              ,LWDNB ,LWDNBC                  &
+              ,SWUPT ,SWUPTC, SWUPTCLN        &
+              ,SWDNT ,SWDNTC, SWDNTCLN        &
+              ,SWUPB ,SWUPBC, SWUPBCLN        &
+              ,SWDNB ,SWDNBC, SWDNBCLN        &
+              ,LWUPT ,LWUPTC, LWUPTCLN        &
+              ,LWDNT ,LWDNTC, LWDNTCLN        &
+              ,LWUPB ,LWUPBC, LWUPBCLN        &
+              ,LWDNB ,LWDNBC, LWDNBCLN        &
               ,LWCF                           &
               ,SWCF                           &
               ,OLR                            &
@@ -105,6 +104,7 @@ CONTAINS
               ,AEROSOLC_2, M_HYBI0            &
               ,ABSTOT, ABSNXT, EMSTOT         &
               ,ICLOUD_CU                      &
+              ,CLEAN_ATM_DIAG                 &
               ,AER_RA_FEEDBACK                &
               ,QC_CU , QI_CU                  &
               ,icloud_bl,qc_bl,cldfra_bl     & !JOE-subgrid bl clouds
@@ -466,6 +466,7 @@ CONTAINS
 
    INTEGER, INTENT(IN   ), OPTIONAL  ::   icloud_bl
    INTEGER, INTENT(IN   ), OPTIONAL  ::   aer_ra_feedback
+   INTEGER, INTENT(IN   ), OPTIONAL  ::   clean_atm_diag
 
 !jdfcz   INTEGER, OPTIONAL, INTENT(IN   )    :: progn,prescribe
    INTEGER, OPTIONAL, INTENT(IN   )    :: progn
@@ -498,18 +499,23 @@ CONTAINS
                       ACLWUPT,ACLWUPTC,ACLWDNT,ACLWDNTC,          &
                       ACLWUPB,ACLWUPBC,ACLWDNB,ACLWDNBC
 
-! TOA and surface, upward and downward, total and clear fluxes
+! TOA and surface, upward and downward, total, clear (no cloud), and clean (no aerosol) fluxes
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT) ::&
-                        SWUPT,  SWUPTC,  SWDNT,  SWDNTC,          &
-                        SWUPB,  SWUPBC,  SWDNB,  SWDNBC,          &
-                        LWUPT,  LWUPTC,  LWDNT,  LWDNTC,          &
-                        LWUPB,  LWUPBC,  LWDNB,  LWDNBC
+              SWUPT,  SWUPTC, SWUPTCLN,  SWDNT,  SWDNTC, SWDNTCLN,&
+              SWUPB,  SWUPBC, SWUPBCLN,  SWDNB,  SWDNBC, SWDNBCLN,&
+              LWUPT,  LWUPTC, LWUPTCLN,  LWDNT,  LWDNTC, LWDNTCLN,&
+              LWUPB,  LWUPBC, LWUPBCLN,  LWDNB,  LWDNBC, LWDNBCLN
+
 
 ! Upward and downward, total and clear sky layer fluxes (W m-2)
    REAL, DIMENSION( ims:ime, kms:kme+2, jms:jme ),                &
          OPTIONAL, INTENT(INOUT) ::                               &
                                SWUPFLX,SWUPFLXC,SWDNFLX,SWDNFLXC, &
                                LWUPFLX,LWUPFLXC,LWDNFLX,LWDNFLXC
+! Up/down clean sky fluxes (W m-2), not currently passed out from this subroutine
+   REAL, DIMENSION( ims:ime, kms:kme+2, jms:jme ) ::              &
+          SWUPFLXCLN,SWDNFLXCLN,                                  &
+          LWUPFLXCLN,LWDNFLXCLN
 
    REAL, DIMENSION( ims:ime, jms:jme ),          OPTIONAL ,       &
          INTENT(INOUT)  ::                                  SWCF, &
@@ -658,12 +664,10 @@ CONTAINS
          INTENT(INOUT ) ::                                        &
                                                                pb &
                                         ,qv,qc,qr,qi,qs,qg,qndrop,      &
-                                                      qnifa,qnwfa,      & ! Trude
-                                                      qi2        ! for P3
+                                                      qnifa,qnwfa        ! Trude
 
    LOGICAL, OPTIONAL ::     f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop,     &
-                                                f_qnifa,f_qnwfa,        &  ! trude
-                                                f_qi2            ! for P3
+                                                f_qnifa,f_qnwfa          ! trude
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
@@ -1109,19 +1113,6 @@ CONTAINS
           ENDDO
           ENDDO
      ENDIF
-#if (EM_CORE == 1)
-! temporarily modify hydrometeors (for P3, if 2 cat then add ice from both categories)
-!
-     IF ( F_QI2) THEN
-          DO j=jts,jte
-          DO k=kts,kte
-          DO i=its,ite
-             qi(i,k,j) = qi(i,k,j) + qi2(i,k,j)
-          ENDDO
-          ENDDO
-          ENDDO
-     ENDIF
-#endif
 
 ! Choose how to compute cloud fraction (since 3.6)
 ! Initialize to zero 
@@ -1536,10 +1527,10 @@ CONTAINS
              CALL wrf_debug (100, 'CALL rrtmg_lw')
              CALL RRTMG_LWRAD(                                      &
                   RTHRATENLW=RTHRATEN,                              &
-                  LWUPT=LWUPT,LWUPTC=LWUPTC,                        &
-                  LWDNT=LWDNT,LWDNTC=LWDNTC,                        &
-                  LWUPB=LWUPB,LWUPBC=LWUPBC,                        &
-                  LWDNB=LWDNB,LWDNBC=LWDNBC,                        &
+                  LWUPT=LWUPT,LWUPTC=LWUPTC,LWUPTCLN=LWUPTCLN,      &
+                  LWDNT=LWDNT,LWDNTC=LWDNTC,LWDNTCLN=LWDNTCLN,      &
+                  LWUPB=LWUPB,LWUPBC=LWUPBC,LWUPBCLN=LWUPBCLN,      &
+                  LWDNB=LWDNB,LWDNBC=LWDNBC,LWDNBCLN=LWDNBCLN,      &
                   GLW=GLW,OLR=RLWTOA,LWCF=LWCF,                     &
                   EMISS=EMISS,                                      &
                   P8W=p8w,P3D=p,PI3D=pi,DZ8W=dz8w,TSK=tsk,T3D=t,    &
@@ -1572,7 +1563,7 @@ CONTAINS
                   TAUAERLW15=tauaerlw15,TAUAERLW16=tauaerlw16,      & ! jcb
                   aer_ra_feedback=aer_ra_feedback,                  &
 !jdfcz            progn=progn,prescribe=prescribe,                   &
-                  progn=progn,                                      &
+                  progn=progn,clean_atm_diag=clean_atm_diag,        &
 #endif
                   QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
 !ccc Added for time-varying trace gases.
@@ -1581,8 +1572,8 @@ CONTAINS
                   IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
-                  LWUPFLX=LWUPFLX,LWUPFLXC=LWUPFLXC,                &
-                  LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC,                &
+                  LWUPFLX=LWUPFLX,LWUPFLXC=LWUPFLXC,LWUPFLXCLN=LWUPFLXCLN, &
+                  LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC,LWDNFLXCLN=LWDNFLXCLN,  &
                   mp_physics=mp_physics                             )
 
         CASE (RRTMG_LWSCHEME_FAST)
@@ -1952,10 +1943,10 @@ CONTAINS
              CALL wrf_debug(100, 'CALL rrtmg_sw')
              CALL RRTMG_SWRAD(                                         &
                      RTHRATENSW=RTHRATENSW,                            &
-                     SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
-                     SWDNT=SWDNT,SWDNTC=SWDNTC,                        &
-                     SWUPB=SWUPB,SWUPBC=SWUPBC,                        &
-                     SWDNB=SWDNB,SWDNBC=SWDNBC,                        &
+                     SWUPT=SWUPT,SWUPTC=SWUPTC,SWUPTCLN=SWUPTCLN,      &
+                     SWDNT=SWDNT,SWDNTC=SWDNTC,SWDNTCLN=SWDNTCLN,      &
+                     SWUPB=SWUPB,SWUPBC=SWUPBC,SWUPBCLN=SWUPBCLN,      &
+                     SWDNB=SWDNB,SWDNBC=SWDNBC,SWDNBCLN=SWDNBCLN,      &
                      SWCF=SWCF,GSW=GSW,                                &
                      XTIME=XTIME,GMT=GMT,XLAT=XLAT,XLONG=XLONG,        &
                      RADT=RADT,DEGRAD=DEGRAD,DECLIN=DECLIN,            &
@@ -1995,14 +1986,14 @@ CONTAINS
                      WAER600=waer600,WAER999=waer999,                  & ! jcb
                      aer_ra_feedback=aer_ra_feedback,                  &
 !jdfcz               progn=progn,prescribe=prescribe,                  &
-                     progn=progn,                                      &
+                     progn=progn,clean_atm_diag=clean_atm_diag,        &
 #endif
                      QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
                      IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
                      IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
                      ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
-                     SWUPFLX=SWUPFLX,SWUPFLXC=SWUPFLXC,                &
-                     SWDNFLX=SWDNFLX,SWDNFLXC=SWDNFLXC,                &
+                     SWUPFLX=SWUPFLX,SWUPFLXC=SWUPFLXC,SWUPFLXCLN=SWUPFLXCLN, &
+                     SWDNFLX=SWDNFLX,SWDNFLXC=SWDNFLXC,SWDNFLXCLN=SWDNFLXCLN, &
                      tauaer3d_sw=tauaer_sw,                             & ! jararias 2013/11
                      ssaaer3d_sw=ssaaer_sw,                             & ! jararias 2013/11
                      asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11

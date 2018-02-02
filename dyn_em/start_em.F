@@ -1309,13 +1309,14 @@ endif
 #endif
 
    call wrf_debug(100,'start_em: calling lightning_init')
-   CALL lightning_init ( itimestep=grid%itimestep, restart=grid%restart, dt=grid%dt, dx=grid%dx   &
+   CALL lightning_init ( id=grid%id, itimestep=grid%itimestep, restart=grid%restart, dt=grid%dt, dx=grid%dx   &
                     ! Namelist control options
                         ,cu_physics=config_flags%cu_physics,mp_physics=config_flags%mp_physics    &
                         ,do_radar_ref=config_flags%do_radar_ref                                   &
                         ,lightning_option=config_flags%lightning_option                           &
                         ,lightning_dt=config_flags%lightning_dt                                   &
                         ,lightning_start_seconds=config_flags%lightning_start_seconds             &
+                        ,ltngacttime=grid%ltngacttime                                             &
                         ,iccg_prescribed_num=config_flags%iccg_prescribed_num                     &
                         ,iccg_prescribed_den=config_flags%iccg_prescribed_den                     &
                         ,cellcount_method=config_flags%cellcount_method                           &

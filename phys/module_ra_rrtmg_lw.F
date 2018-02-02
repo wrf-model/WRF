@@ -10587,7 +10587,8 @@ contains
              inflglw ,iceflglw,liqflglw,cldfmcl , &
              taucmcl ,ciwpmcl ,clwpmcl , cswpmcl ,reicmcl ,relqmcl , resnmcl , &
              tauaer  , &
-             uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc)
+             uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc, &
+             uflxcln ,dflxcln, clean_atm_diag_local )
 
 ! -------- Description --------
 
@@ -10768,6 +10769,7 @@ contains
                                                       !    Dimensions: (ncol,nlay,nbndlw)
                                                       !   for future expansion 
                                                       !   (lw aerosols/scattering not yet available)
+      integer, intent(in) :: clean_atm_diag_local     ! Control for clean air diagnositic calls for WRF-Chem
 
 ! ----- Output -----
 
@@ -10783,6 +10785,10 @@ contains
                                                       !    Dimensions: (ncol,nlay+1)
       real(kind=rb), intent(out) :: hrc(:,:)          ! Clear sky longwave radiative heating rate (K/d)
                                                       !    Dimensions: (ncol,nlay)
+      real(kind=rb), intent(out) :: uflxcln(:,:)      ! Clean sky longwave upward flux (W/m2)
+                                                      !    Dimensions: (ncol,nlay+1)
+      real(kind=rb), intent(out) :: dflxcln(:,:)      ! Clean sky longwave downward flux (W/m2)
+                                                      !    Dimensions: (ncol,nlay+1)
 
 ! ----- Local -----
 
@@ -10894,6 +10900,10 @@ contains
       real(kind=rb) :: totdclfl(0:nlay+1)     ! clear sky downward longwave flux (w/m2)
       real(kind=rb) :: fnetc(0:nlay+1)        ! clear sky net longwave flux (w/m2)
       real(kind=rb) :: htrc(0:nlay+1)         ! clear sky longwave heating rate (k/day)
+      real(kind=rb) :: totuclnlfl(0:nlay+1)   ! clean sky upward longwave flux (w/m2)
+      real(kind=rb) :: totdclnlfl(0:nlay+1)   ! clean sky downward longwave flux (w/m2)
+      real(kind=rb) :: fnetcln(0:nlay+1)      ! clean sky net longwave flux (w/m2)
+      real(kind=rb) :: htrcln(0:nlay+1)       ! clean sky longwave heating rate (k/day)
 
 !
 ! Initializations
@@ -11008,6 +11018,29 @@ contains
 ! to be used.  Clear sky calculation is done simultaneously.
 ! For McICA, RTRNMC is called for clear and cloudy calculations.
 
+#if (WRF_CHEM == 1)
+        ! Call the radiative transfer routine for "clean" sky first,
+        ! passing taug rather than taut so we have no aerosol influence.
+        ! We will keep totuclnlfl, totdclnlfl, fnetcln, and htrcln, 
+        ! and then overwrite the rest with the second call to rtrnmc.
+         if(clean_atm_diag_local .gt. 0)then
+             call rtrnmc(nlayers, istart, iend, iout, pz, semiss, ncbands, &
+                     cldfmc, taucmc, planklay, planklev, plankbnd, &
+                     pwvcm, fracs, taug, &
+                     totuclnlfl, totdclnlfl, fnetcln, htrcln, &
+                     totuclfl, totdclfl, fnetc, htrc )
+         else
+            do k = 0, nlayers
+                totuclnlfl(k) = 0.0
+                totdclnlfl(k) = 0.0
+            end do
+         end if
+#else
+         do k = 0, nlayers
+            totuclnlfl(k) = 0.0
+            totdclnlfl(k) = 0.0
+         end do
+#endif
          call rtrnmc(nlayers, istart, iend, iout, pz, semiss, ncbands, &
                      cldfmc, taucmc, planklay, planklev, plankbnd, &
                      pwvcm, fracs, taut, &
@@ -11022,6 +11055,8 @@ contains
             dflx(iplon,k+1) = totdflux(k)
             uflxc(iplon,k+1) = totuclfl(k)
             dflxc(iplon,k+1) = totdclfl(k)
+            uflxcln(iplon,k+1) = totuclnlfl(k)
+            dflxcln(iplon,k+1) = totdclnlfl(k)
          enddo
          do k = 0, nlayers-1
             hr(iplon,k+1) = htr(k)
@@ -11419,8 +11454,8 @@ CONTAINS
 !------------------------------------------------------------------
    SUBROUTINE RRTMG_LWRAD(                                        &
                        rthratenlw,                                &
-                       lwupt, lwuptc, lwdnt, lwdntc,              &
-                       lwupb, lwupbc, lwdnb, lwdnbc,              &
+                       lwupt, lwuptc, lwuptcln, lwdnt, lwdntc, lwdntcln, &
+                       lwupb, lwupbc, lwupbcln, lwdnb, lwdnbc, lwdnbcln, &
 !                      lwupflx, lwupflxc, lwdnflx, lwdnflxc,      &
                        glw, olr, lwcf, emiss,                     &
                        p8w, p3d, pi3d,                            &
@@ -11442,7 +11477,7 @@ CONTAINS
                        tauaerlw13,tauaerlw14,tauaerlw15,tauaerlw16,   & ! czhao 
                        aer_ra_feedback,                           & !czhao
 !jdfcz                 progn,prescribe,                           & !czhao
-                       progn,                                     & !czhao
+                       progn,clean_atm_diag,                      & !czhao
                        qndrop3d,f_qndrop,                         & !czhao
 !ccc added for time varying gases.
                        yr,julian,                                 &
@@ -11451,7 +11486,7 @@ CONTAINS
                        ids,ide, jds,jde, kds,kde,                 & 
                        ims,ime, jms,jme, kms,kme,                 &
                        its,ite, jts,jte, kts,kte,                 &
-                       lwupflx, lwupflxc, lwdnflx, lwdnflxc       &
+                       lwupflx, lwupflxc, lwupflxcln, lwdnflx, lwdnflxc, lwdnflxcln &
                                                                   )
 !------------------------------------------------------------------
 !ccc To use clWRF time varying trace gases
@@ -11546,6 +11581,8 @@ CONTAINS
    INTEGER,    INTENT(IN  ), OPTIONAL   ::       aer_ra_feedback
 !jdfcz   INTEGER,    INTENT(IN  ), OPTIONAL   ::       progn,prescribe
    INTEGER,    INTENT(IN  ), OPTIONAL   ::       progn
+   INTEGER,    INTENT(IN  ), OPTIONAL   ::       clean_atm_diag
+   integer :: clean_atm_diag_local
 !  Ozone
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          OPTIONAL                                               , &
@@ -11560,14 +11597,15 @@ CONTAINS
 ! Top of atmosphere and surface longwave fluxes (W m-2)
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          OPTIONAL, INTENT(INOUT) ::                               &
-                                       LWUPT,LWUPTC,LWDNT,LWDNTC, &
-                                       LWUPB,LWUPBC,LWDNB,LWDNBC
+                      LWUPT,LWUPTC,LWUPTCLN,LWDNT,LWDNTC,LWDNTCLN,&
+                      LWUPB,LWUPBC,LWUPBCLN,LWDNB,LWDNBC,LWDNBCLN 
 
 ! Layer longwave fluxes (including extra layer above model top)
 ! Vertical ordering is from bottom to top (W m-2)
    REAL, DIMENSION( ims:ime, kms:kme+2, jms:jme ),                &
          OPTIONAL, INTENT(OUT) ::                                 &
-                               LWUPFLX,LWUPFLXC,LWDNFLX,LWDNFLXC
+                               LWUPFLX,LWUPFLXC,LWDNFLX,LWDNFLXC, &
+                               LWUPFLXCLN, LWDNFLXCLN
 
 !  LOCAL VARS
  
@@ -11648,7 +11686,10 @@ CONTAINS
     real, dimension( 1, kts:nlayers+1 )  ::                 uflx, &
                                                             dflx, &
                                                            uflxc, &
-                                                           dflxc
+                                                           dflxc, &
+                                                         uflxcln, &
+                                                         dflxcln
+                                                           
     real, dimension( 1, kts:nlayers )  ::                    hr, &
                                                              hrc
 
@@ -11807,6 +11848,12 @@ CONTAINS
       ENDIF
       ENDIF
 #endif
+
+	if(present(clean_atm_diag))then
+		clean_atm_diag_local = clean_atm_diag
+	else
+		clean_atm_diag_local = 0
+	end if
 
 
 !-----CALCULATE LONG WAVE RADIATION
@@ -12595,7 +12642,8 @@ CONTAINS
              inflglw ,iceflglw,liqflglw,cldfmcl , &
              taucmcl ,ciwpmcl ,clwpmcl ,cswpmcl, reicmcl ,relqmcl ,resnmcl , &
              tauaer  , &
-             uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc)
+             uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc, &
+             uflxcln ,dflxcln, clean_atm_diag_local )
 
 ! Output downard surface flux, and outgoing longwave flux and cloud forcing 
 ! at the top of atmosphere (W/m2)
@@ -12619,6 +12667,12 @@ CONTAINS
             lwupbc(i,j)    = uflxc(1,1)
             lwdnb(i,j)     = dflx(1,1)
             lwdnbc(i,j)    = dflxc(1,1)
+! Output up and down toa fluxes for clean sky
+            lwuptcln(i,j)  = uflxcln(1,nlayers+1)
+            lwdntcln(i,j)  = dflxcln(1,nlayers+1)
+! Output up and down surface fluxes for clean sky
+            lwupbcln(i,j)  = uflxcln(1,1)
+            lwdnbcln(i,j)  = dflxcln(1,1)
          endif
 
 ! Output up and down layer fluxes for total and clear sky.
@@ -12629,6 +12683,8 @@ CONTAINS
             lwupflxc(i,k,j) = uflxc(1,k)
             lwdnflx(i,k,j)  = dflx(1,k)
             lwdnflxc(i,k,j) = dflxc(1,k)
+            lwupflxcln(i,k,j) = uflxcln(1,k)
+            lwdnflxcln(i,k,j) = dflxcln(1,k)
          enddo
          endif
 

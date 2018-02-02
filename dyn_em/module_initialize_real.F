@@ -135,6 +135,7 @@ CONTAINS
       REAL :: p_top_requested , temp
       INTEGER :: num_metgrid_levels
       REAL , DIMENSION(max_eta) :: eta_levels
+      INTEGER :: auto_levels_opt
       REAL :: max_dz, dzbot, dzstretch_s, dzstretch_u
 
       REAL :: dclat
@@ -1538,8 +1539,9 @@ integer::oops1,oops2
             dzbot             = model_config_rec%dzbot
             dzstretch_s       = model_config_rec%dzstretch_s
             dzstretch_u       = model_config_rec%dzstretch_u
+            auto_levels_opt  = model_config_rec%auto_levels_opt
 
-            CALL compute_eta ( grid%znw , &
+            CALL compute_eta ( grid%znw , auto_levels_opt, &
                                eta_levels , max_eta , max_dz , dzbot , dzstretch_s , dzstretch_u , &
                                grid%p_top , g , p00 , cvpm , a , r_d , cp , &
                                t00 , p1000mb , t0 , tiso , p_strat , a_strat , &
@@ -7032,7 +7034,7 @@ kme=70
 kte=70
 
 
-call compute_eta ( znw , &
+call compute_eta ( znw , auto_levels_opt, &
                    eta_levels , max_eta , max_dz , dzbot , dzstretch_s , dzstretch_u , &
                    p_top , g , p00 , cvpm , a , r_d , cp , &
                    t00 , p1000mb , t0 , tiso , p_strat , a_strat , &
@@ -7043,7 +7045,7 @@ call compute_eta ( znw , &
 end program foo
 #endif
 
-   SUBROUTINE compute_eta ( znw , &
+   SUBROUTINE compute_eta ( znw , auto_levels_opt , &
                            eta_levels , max_eta , max_dz , dzbot , dzstretch_s , dzstretch_u , &
                            p_top , g , p00 , cvpm , a , r_d , cp , &
                            t00 , p1000mb , t0 , tiso , p_strat , a_strat , &
@@ -7063,7 +7065,7 @@ end program foo
       REAL , INTENT(IN)           :: max_dz, dzbot, dzstretch_s, dzstretch_u
       REAL , INTENT(IN)           :: p_top , g , p00 , cvpm , a , r_d , cp , t00 , p1000mb , t0 , tiso
       REAL , INTENT(IN)           :: p_strat , a_strat
-      INTEGER , INTENT(IN)        :: max_eta
+      INTEGER , INTENT(IN)        :: max_eta, auto_levels_opt
       REAL , DIMENSION (max_eta)  :: eta_levels
 
       REAL , DIMENSION (kts:kte) , INTENT(OUT) :: znw
@@ -7121,7 +7123,8 @@ end program foo
       !  Compute eta levels assuming a constant delta z above the PBL.
 
       ELSE
-#if 0
+       IF( auto_levels_opt == 0 ) THEN
+         print *,'using old automatic levels program'
          !  Compute top of the atmosphere with some silly levels.  We just want to
          !  integrate to get a reasonable value for ztop.  We use the planned PBL-esque
          !  levels, and then just coarse resolution above that.  We know p_top, and we
@@ -7336,7 +7339,8 @@ print *,'namelist p_top (Pa) = ',p_top
          END DO
          phb(kte) = phb(kte-1) - (znw(kte)-znw(kte-1)) * mub*alb(kte-1)
 
-#else
+       ELSE IF (auto_levels_opt == 1) THEN
+         print *,'using new automatic levels program'
          CALL levels(kte-1, p_top, znw, max_dz, dzbot, dzstretch_s, dzstretch_u, r_d, g )
          p_surf = p00
          tiso_r8    = tiso
@@ -7356,7 +7360,7 @@ print *,'namelist p_top (Pa) = ',p_top
             phb(k) = phb(k-1) - (znw(k)-znw(k-1)) * mub*alb(k-1)
          END DO
          phb(kte) = phb(kte-1) - (znw(kte)-znw(kte-1)) * mub*alb(kte-1)
-#endif
+       ENDIF
 k=1
 WRITE (*,FMT='("Full level index = ",I4,"     Height = ",F7.1," m")') k,phb(1)/g
 do k = 2 ,kte

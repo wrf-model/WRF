@@ -28,7 +28,8 @@ decl_misc (  FILE * ofile )
  fprintf(ofile,"     !temperature (K)\n");
  fprintf(ofile,"    REAL(KIND=dp)   :: TEMP \n\n");
 
- fprintf(ofile,"    REAL(KIND=dp), DIMENSION(NSPEC) :: ATOL, RTOL\n\n");
+ fprintf(ofile,"    REAL(KIND=dp), DIMENSION(NSPEC)  :: ATOL, RTOL\n");
+ fprintf(ofile,"    REAL(KIND=dp), DIMENSION(NREACT) :: IRR_WRK\n\n");
 
 
 

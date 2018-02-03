@@ -18,7 +18,7 @@ int gen_kpp_warning( FILE * ofile, char * gen_by_name, char*cchar )
 
 
 int 
-gen_kpp_pass_down ( FILE * ofile )
+gen_kpp_pass_down ( FILE * ofile, int is_driver )
 {
 
     fprintf(ofile,"!\n");
@@ -34,16 +34,16 @@ gen_kpp_pass_down ( FILE * ofile )
 
 
     /* pass down dimensions */
-    gen_kpp_argd ( ofile );
+    gen_kpp_argd ( ofile, is_driver );
 
 }
 
 
 int 
-gen_kpp_decl ( FILE * ofile )
+gen_kpp_decl ( FILE * ofile, int is_driver )
 {
      /* declare dimensions */
-     gen_kpp_decld ( ofile );
+     gen_kpp_decld ( ofile, is_driver );
 
 
      fprintf(ofile,"#include <fixed_decl_kpp_interf.inc>\n\n\n"); 
@@ -127,20 +127,28 @@ int gen_kpp_argl_new( FILE * ofile, knode_t * nl  )
 
 
 
-int  gen_kpp_argd ( FILE * ofile )
+int  gen_kpp_argd ( FILE * ofile, int is_driver )
 {
     fprintf(ofile, "              ids,ide, jds,jde, kds,kde,         &\n");
     fprintf(ofile, "              ims,ime, jms,jme, kms,kme,         &\n");
-    fprintf(ofile, "              its,ite, jts,jte, kts,kte         )\n\n\n");
+    if( is_driver )
+      fprintf(ofile, "              its,ite, jts,jte, kts,kte)\n\n\n");
+    else
+      fprintf(ofile, "              its,ite, jts,jte, kts,kte, dm,num_irr_diag,irr_rates)\n\n\n");
 }
 
 
-int gen_kpp_decld ( FILE * ofile )
+int gen_kpp_decld ( FILE * ofile, int is_driver )
 {
      fprintf(ofile, "\n\n\n    INTEGER,      INTENT(IN   ) ::    &\n");
      fprintf(ofile, "                      ids,ide, jds,jde, kds,kde,      & \n");
      fprintf(ofile, "                      ims,ime, jms,jme, kms,kme,      & \n");
      fprintf(ofile, "                      its,ite, jts,jte, kts,kte \n\n\n\n");
+     if( !is_driver ) {
+       fprintf(ofile, "          INTEGER,      INTENT(IN   ) ::    dm\n");
+       fprintf(ofile, "          INTEGER,      INTENT(IN   ) ::    num_irr_diag\n");
+       fprintf(ofile, "\n\n\n    REAL,         INTENT(INOUT) :: irr_rates(ims:ime,kms:kme,jms:jme,num_irr_diag)\n\n");
+     }
 }
 
 int gen_kpp_decl3d( FILE * ofile, knode_t * nl  )

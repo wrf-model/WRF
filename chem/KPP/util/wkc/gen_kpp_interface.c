@@ -13,6 +13,7 @@ gen_kpp_interface ( )
 knode_t * p1, * p2, * pm1;
 char kpp_interf_fname[NAMELEN];
 FILE  * kpp_if;
+int  is_driver;
 
  
 
@@ -45,6 +46,9 @@ FILE  * kpp_if;
     fprintf(kpp_if,"  USE %s_Integrator\n\n",p2->name );
 
     fprintf(kpp_if,"  USE module_wkppc_constants\n\n" );
+    if( !strcmp( p2->name,"mozcart" ) || !strcmp( p2->name,"t1_mozcart" ) 
+        || !strcmp( p2->name,"mozart_mosaic_4bin" ) || !strcmp( p2->name,"mozart_mosaic_4bin_aq" ) ) 
+      fprintf(kpp_if,"  USE module_irr_diag\n" );
 
  
     fprintf(kpp_if,"\n#include <kpp_mechd_u_%s.inc> \n\n\n",p2->name );
@@ -60,13 +64,18 @@ FILE  * kpp_if;
     fprintf(kpp_if,"SUBROUTINE  %s_interface( &\n",p2->name );
     /* pass down variables (see gen_kpp_utils) */ 
 
- 
-    gen_kpp_pass_down( kpp_if );
+    if( !strcmp( p2->name,"mozcart" ) || !strcmp( p2->name,"t1_mozcart")
+        || !strcmp( p2->name,"mozart_mosaic_4bin" ) || !strcmp( p2->name,"mozart_mosaic_4bin_aq") )
+      is_driver = 0;
+    else 
+      is_driver = 1;
+
+    gen_kpp_pass_down( kpp_if, is_driver );
 
     fprintf(kpp_if,"    IMPLICIT NONE");
 
      /* declare variables */
-     gen_kpp_decl ( kpp_if );
+     gen_kpp_decl ( kpp_if, is_driver );
 
 
     fprintf(kpp_if,"!local variables \n\n");
@@ -126,7 +135,7 @@ FILE  * kpp_if;
         fprintf(kpp_if,"\n#include <kpp_mechd_ib_%s.inc> \n\n",p2->name );
 
             fprintf(kpp_if, "\n\n\n\n  CALL %s_INTEGRATE(TIME_START, TIME_END, &  \n", p2->name );
-            fprintf(kpp_if, "          FIX, VAR,  RCONST, ATOL, RTOL, & \n");
+            fprintf(kpp_if, "          FIX, VAR,  RCONST, ATOL, RTOL, IRR_WRK, & \n");
             fprintf(kpp_if, "          ICNTRL_U=icntrl, RCNTRL_U=rcntrl  )\n\n\n\n\n");
 
 

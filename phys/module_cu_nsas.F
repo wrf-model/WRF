@@ -160,7 +160,7 @@ CONTAINS
        cu_act_flag(i,j)=.TRUE.
      enddo
    enddo
-   delt=dt
+   delt=dt*stepcu
    rdelt=1./delt
 !
 ! outer most J_loop

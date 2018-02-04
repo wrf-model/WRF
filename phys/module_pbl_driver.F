@@ -271,7 +271,7 @@ CONTAINS
 !-- QFX           upward moisture flux at the surface (kg/m^2/s)
 !-- REGIME        flag indicating PBL regime (stable, unstable, etc.)
 !-- exch_m        exchange coefficient for momentum, m^2/s
-!-- exch_h        exchange coefficient for heat, m^2/s 
+!-- exch_h        exchange coefficient for heat, K m/s 
 !-- exch_tke      exchange coeff. for TKE [enhanced], m^2/s (gbmpbl scheme)
 !-- rthraten      tendency from radiation, used in GBM PBL scheme
 !-- akhs          sfc exchange coefficient of heat/moisture from MYJ
@@ -1587,8 +1587,8 @@ CONTAINS
              CALL wrf_debug(100,'in ACM PBL')
 
              CALL ACMPBL(                                                        &
-               XTIME=itimestep, DTPBL=dtbl, ZNW=znw, SIGMAH=znu               &
-              ,U3D=u_phytmp, V3D=v_phytmp, PP3D=p_phy, DZ8W=dz8w, TH3D=th_phy, T3D=t_phy            &
+               XTIME=itimestep, DTPBL=dtbl,U3D=u_phytmp, V3D=v_phytmp          &
+              ,PP3D=p_phy, DZ8W=dz8w, TH3D=th_phy, T3D=t_phy                   &
               ,QV3D=qv_curr, QC3D=qc_curr, QI3D=qi_curr, RR3D=rho                &
 #if (WRF_CHEM == 1)
               ,CHEM3D=CHEM,   VD3D=VD,  NCHEM=nchem, KDVEL=kdvel              &

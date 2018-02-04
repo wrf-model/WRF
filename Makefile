@@ -512,7 +512,8 @@ em_real : wrf
                ln -sf ../../run/aerosol_lon.formatted . ;              \
                ln -sf ../../run/aerosol_plev.formatted . ;             \
                ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
-               ln -sf ../../run/p3_lookup_table_1.dat . ;              \
+               ln -sf ../../run/p3_lookup_table_1.dat-v2.8.2 . ;              \
+               ln -sf ../../run/p3_lookup_table_2.dat-v2.8.2 . ;              \
                if [ $(RWORDSIZE) -eq 8 ] ; then                        \
                   ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;   \
                   ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
@@ -535,7 +536,6 @@ em_real : wrf
 	( cd test/em_real ; /bin/rm -f real.exe ; ln -s ../../main/real.exe . )
 	( cd test/em_real ; /bin/rm -f tc.exe ; ln -s ../../main/tc.exe . )
 	( cd test/em_real ; /bin/rm -f ndown.exe ; ln -s ../../main/ndown.exe . )
-	#TEMPORARILY REMOVED ( cd test/em_real ; /bin/rm -f nup.exe ; ln -s ../../main/nup.exe . )
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_real ; /bin/rm -f ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ;    \
              ln -sf ../../run/ETAMPNEW_DATA . ;                     \
@@ -577,7 +577,8 @@ em_real : wrf
              ln -sf ../../run/bulkdens.asc_s_0_03_0_9 . ;            \
              ln -sf ../../run/bulkradii.asc_s_0_03_0_9 . ;            \
              ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
-             ln -sf ../../run/p3_lookup_table_1.dat . ;                   \
+             ln -sf ../../run/p3_lookup_table_1.dat-v2.8.2 . ;                   \
+             ln -sf ../../run/p3_lookup_table_2.dat-v2.8.2 . ;                   \
              if [ $(RWORDSIZE) -eq 8 ] ; then                       \
                 ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
                 ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
@@ -599,7 +600,6 @@ em_real : wrf
 	( cd run ; /bin/rm -f real.exe ; ln -s ../main/real.exe . )
 	( cd run ; /bin/rm -f tc.exe ; ln -s ../main/tc.exe . )
 	( cd run ; /bin/rm -f ndown.exe ; ln -s ../main/ndown.exe . )
-	#TEMPORARILY REMOVED ( cd run ; /bin/rm -f nup.exe ; ln -s ../main/nup.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; fi ; \
 		/bin/rm -f namelist.input ; cp ../test/em_real/namelist.input . )
@@ -991,7 +991,6 @@ nmm_core :
 toolsdir :
 	@ echo '--------------------------------------'
 	( cd tools ; $(MAKE) CC_TOOLS_CFLAGS="$(CC_TOOLS_CFLAGS)" CC_TOOLS="$(CC_TOOLS) -DIWORDSIZE=$(IWORDSIZE) -DMAX_HISTORY=$(MAX_HISTORY) -DWRFPLUS" )
-
 
 #	( cd tools ; $(MAKE) CC_TOOLS="$(CC_TOOLS) -DIO_MASK_SIZE=$(IO_MASK_SIZE)" )
 

@@ -60,6 +60,8 @@
 
    USE module_cam_mam_wetscav, only:wetscav_cam_mam_driver_init
    USE module_cam_support, only: numgas_mam, gas_pcnst_modal_aero,gas_pcnst_modal_aero_pos !BSINGH - Fix for non-MAM simulations
+   USE module_HLawConst, only: init_HLawConst
+   USE module_ctrans_grell, only: conv_tr_wetscav_init
 
 !!! TUCCELLA (BUG)
    USE module_prep_wetscav_sorgam, only: aerosols_sorgam_init_aercld_ptrs, aerosols_soa_vbs_init_aercld_ptrs 
@@ -139,6 +141,7 @@
    integer :: i,j,k,l,numgas,ixhour,n,ndystep,kk,nv
    real, DIMENSION (1,1) :: sza,cosszax
    real :: xtime,xhour,xmin,gmtp,xlonn,rlat
+   logical :: is_moz_chm
 #include "version_decl"
 #ifdef CHEM_DBG_I
     call print_chem_species_index( config_flags%chem_opt )
@@ -269,10 +272,12 @@ call wrf_message("**************************************************************
        CALL wrf_debug(15,'calling biomass burning for GHGs')
    endif
 
-   if( config_flags%chem_opt == MOZCART_KPP .or. &
-       config_flags%chem_opt == MOZART_KPP .or. &
-       config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
-       config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
+   is_moz_chm = config_flags%chem_opt == MOZCART_KPP .or. &
+                config_flags%chem_opt == MOZART_KPP .or. &
+                config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+                config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP
+
+   if( is_moz_chm ) then
        write(message_txt,*) 'chem_init: calling mozcart_lbc_init for domain ',id
        call wrf_message( trim(message_txt) )
        call mozcart_lbc_init( chem, num_chem, id, &
@@ -292,13 +297,20 @@ call wrf_message("**************************************************************
      endif
    endif
 
+   if( is_moz_chm .and. id == 1 ) then
+     write(message_txt,*) 'chem_init: calling init_HLawConst for domain ',id
+     call wrf_message( trim(message_txt) )
+!  Initialize Henrys Law constants
+     call init_HLawConst( id )
+     if( config_flags%conv_tr_wetscav == 1 ) then
+!  Initialize Henrys Law constants
+       call conv_tr_wetscav_init( numgas, num_chem )
+     endif
+   endif
+
 !!! TUCCELLA
    if ( config_flags%wetscav_onoff == 1 ) then
-
-     if( config_flags%chem_opt /= MOZART_KPP .and. &
-         config_flags%chem_opt /= MOZCART_KPP .and. &
-         config_flags%chem_opt /= MOZART_MOSAIC_4BIN_KPP .and. &
-         config_flags%chem_opt /= MOZART_MOSAIC_4BIN_AQ_KPP  ) then
+     if( .not. is_moz_chm ) then
        if(  ( config_flags%chem_opt >= 8 .AND. config_flags%chem_opt <= 13) .OR.  &
             ( config_flags%chem_opt >= 31 .AND. config_flags%chem_opt <= 36) .OR. &
             ( config_flags%chem_opt >= 41 .AND. config_flags%chem_opt <= 43) .OR. &
@@ -1561,7 +1573,6 @@ end if
 
    END SELECT kpp_select
    endif
-
 
 !! Initialize some greenhouse gas species for 16th and 17th chemistry options:
 !! CO2 mixing ratios for the background GHG tracers are set as a constant value.

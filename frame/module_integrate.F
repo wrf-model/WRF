@@ -15,7 +15,9 @@ RECURSIVE SUBROUTINE integrate ( grid )
    USE module_configure
    USE module_timing
    USE module_utility
+#if ( WRFPLUS == 1 )
    USE module_linked_list2, only : linkedlist_initialize
+#endif
    USE module_cpl, ONLY : coupler_on, cpl_snd, cpl_defdomain
 #ifdef DM_PARALLEL
 ! better if this did not need to be used here. Problem is that the definition of 
@@ -166,9 +168,10 @@ RECURSIVE SUBROUTINE integrate ( grid )
    INTEGER                                :: idum1 , idum2 , ierr , open_status
    LOGICAL                                :: should_do_last_io
    LOGICAL                                :: may_have_moved
+#if ( WRFPLUS == 1 )
    INTEGER                                :: rc
    LOGICAL                                :: should_add_forcing
-
+#endif
 
    ! interface
    INTERFACE

@@ -28,6 +28,7 @@
 !</DESCRIPTION>
 
       USE module_state_description
+      USE module_model_constants
       USE module_wrf_error
       USE module_configure
 
@@ -54,6 +55,7 @@
       INTEGER :: i, j, oops, d1_value
       LOGICAL :: km_opt_already_done , diff_opt_already_done
       INTEGER :: count_opt
+      LOGICAL :: lon_extent_is_global , lat_extent_is_global
 
 !TWG2015
 !
@@ -1576,6 +1578,28 @@
       END IF
 
 !-----------------------------------------------------------------------
+! If the user did not specify a global setting in the lateral BC
+! portion of the namelist file (polar), but the distance around the
+! equator is approximately equal to the entire globe, then it is likely
+! that the user probably forgot to flip that polar switch on.
+!-----------------------------------------------------------------------
+      lon_extent_is_global = .FALSE.
+      IF ( ABS ( model_config_rec % e_we(1) * model_config_rec % dx(1) - 2. * piconst / reradius ) .LT. model_config_rec % dx(1) ) THEN
+         lon_extent_is_global = .TRUE.
+      END IF
+
+      lat_extent_is_global = .FALSE.
+      IF ( ABS ( model_config_rec % e_sn(1) * model_config_rec % dy(1) -      piconst / reradius ) .LT. model_config_rec % dy(1) ) THEN
+         lat_extent_is_global = .TRUE.
+      END IF
+
+      IF ( ( .NOT. model_config_rec % polar(1) ) .AND. &
+           ( lon_extent_is_global .AND. lat_extent_is_global ) ) THEN
+         CALL wrf_debug ( 0, '--- ERROR: Domain size is global, set &bdy_control polar=.TRUE.' )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+
+!-----------------------------------------------------------------------
 !  Remapping namelist variables for gridded and surface fdda to aux streams 9 and 10.
 !  Relocated here so that the remappings are after checking the namelist for inconsistencies.
 !-----------------------------------------------------------------------
@@ -1614,10 +1638,10 @@
       END IF
 #endif
 
-#if (EM_CORE == 1)
+#if (EM_CORE == 1 && WRFPLUS == 1 )
       IF ( ( model_config_rec%jcdfi_use ).AND. &
            ( model_config_rec%jcdfi_diag .NE. 1 ) ) THEN
-         wrf_err_message = '--- ERROR: If gcdfi_use = 1, then jcdfi_io must also = 1 for that domain '
+         wrf_err_message = '--- ERROR: If jcdfi_use = 1, then jcdfi_io must also = 1 for that domain '
          CALL wrf_message ( wrf_err_message )
          wrf_err_message = '--- Change jcdfi_io in namelist.input '
          CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
@@ -1642,6 +1666,10 @@
                            'o3input=0 to avoid data pre-processing'
          CALL wrf_message ( wrf_err_message )
       END IF
+
+!-----------------------------------------------------------------------
+!  MUST BE AFTER ALL OF THE PHYSICS CHECKS.
+!-----------------------------------------------------------------------
 
       IF ( count_fatal_error .GT. 0 ) THEN
          WRITE (wrf_err_message, FMT='(A,I6, A)') 'NOTE:  ', count_fatal_error, &
@@ -1997,6 +2025,26 @@
       WRITE (wrf_err_message, FMT='(A,I6)') '--- NOTE: num_soil_layers has been set to ', &
                                              model_config_rec % num_soil_layers
       CALL wrf_message ( wrf_err_message )
+
+!-----------------------------------------------------------------------
+!  The P3 MP schemes must be used with the RRTMG radiation schemes.
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec % mp_physics(i) .EQ. P3_1CATEGORY    )   .OR.  &
+              ( model_config_rec % mp_physics(i) .EQ. P3_1CATEGORY_NC ) ) THEN
+
+            IF ( ( ( model_config_rec % ra_lw_physics(i) .EQ. RRTMG_LWSCHEME      )   .OR.   &
+                   ( model_config_rec % ra_lw_physics(i) .EQ. RRTMG_LWSCHEME_FAST ) ) .AND.  &
+                 ( ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME      )   .OR.   &
+                   ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME_FAST ) ) ) THEN
+               !  No op, everything is fine. This is just easier logic to understand
+            ELSE
+               wrf_err_message = '--- ERROR: P3 MP (mp_physics=50 or 51) requires using RRTMG LW and SW schemes.'
+               CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+            END IF
+         END IF
+      END DO
 
    END SUBROUTINE set_physics_rconfigs
 

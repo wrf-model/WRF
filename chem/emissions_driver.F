@@ -1546,7 +1546,7 @@ CONTAINS
 ! Lightning NO emission
     CALL lightning_nox_driver ( &
           ! Frequently used prognostics
-            itimestep=ktau, dt=dtstep, dx=dx, dy=dx,                &
+            curr_secs=curr_secs, dt=dtstep, dx=dx, dy=dx,             &
             xlat=xlat, xlon=xlong, xland=xland, ht=ht,                &
             t_phy=t_phy, p_phy=p_phy, rho=rho_phy, u=u_phy, v=v_phy, w=vvel,        &
             z=z, moist=moist,                         &

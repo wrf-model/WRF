@@ -55,7 +55,7 @@ SUBROUTINE solve_interface ( grid )
    ELSE
       CALL solve_em  ( grid , config_flags  &
 !
-# include <actual_new_args.inc>
+# include "actual_new_args.inc"
 !
                )
    END IF

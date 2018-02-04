@@ -50,7 +50,7 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
    ELSE IF ( model_config_rec%dyn_opt .EQ. dyn_em_ad ) THEN
       CALL a_start_domain_em( grid, allowed_to_read  &
 !
-# include <actual_new_args.inc>
+# include "actual_new_args.inc"
 !
                          )
    ELSE

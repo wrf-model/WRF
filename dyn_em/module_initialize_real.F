@@ -492,7 +492,7 @@ integer::oops1,oops2
          END DO
       ELSE IF ( ( .NOT. config_flags%polar ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN
          IF ( grid%msfvx(its,jts) .EQ. 0 ) THEN
-            CALL wrf_error_fatal ( 'Maybe you do not have the new map factors, try re-running geogrid' )
+            CALL wrf_error_fatal ( 'Maybe this is a global domain, but the polar flag was not set in the bdy_control namelist.' )
          END IF
          DO j=jts,min(jde,jte)
             DO i=its,min(ide-1,ite)
@@ -501,7 +501,7 @@ integer::oops1,oops2
             END DO
          END DO
       ELSE IF ( ( config_flags%polar ) .AND. ( flag_mf_xy .NE. 1 ) ) THEN
-         CALL wrf_error_fatal ( 'Neither SI data nor older metgrid data can initialize a global domain' )
+         CALL wrf_error_fatal ( 'Older metgrid data cannot initialize a global domain' )
       ENDIF
 
       !  Check to see what available surface temperatures we have.

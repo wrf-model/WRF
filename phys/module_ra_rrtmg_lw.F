@@ -5984,10 +5984,12 @@ contains
 
 ! ------- Modules -------
 
-      use parrrtm, only : ng6, ngs5
+      use parrrtm, only : ngs5
+!     use parrrtm, only : ng6, ngs5
       use rrlw_ref, only : chi_mls
-      use rrlw_kg06, only : fracrefa, absa, ka, ka_mco2, &
-                            selfref, forref, cfc11adj, cfc12
+      use rrlw_kg06
+!     use rrlw_kg06, only : fracrefa, absa, ka, ka_mco2, &
+!                           selfref, forref, cfc11adj, cfc12
 
 ! ------- Declarations -------
 
@@ -8762,11 +8764,13 @@ contains
 ! old band 6:  820-980 cm-1 (low - h2o; high - nothing)
 !***************************************************************************
 
-      use parrrtm, only : mg, nbndlw, ngptlw, ng6
-      use rrlw_kg06, only: fracrefao, kao, kao_mco2, cfc11adjo, cfc12o, &
-                           selfrefo, forrefo, &
-                           fracrefa, absa, ka, ka_mco2, cfc11adj, cfc12, &
-                           selfref, forref
+      use parrrtm, only : mg, nbndlw, ngptlw
+!     use parrrtm, only : mg, nbndlw, ngptlw, ng6
+      use rrlw_kg06
+!     use rrlw_kg06, only: fracrefao, kao, kao_mco2, cfc11adjo, cfc12o, &
+!                          selfrefo, forrefo, &
+!                          fracrefa, absa, ka, ka_mco2, cfc11adj, cfc12, &
+!                          selfref, forref
 
 ! ------- Local -------
       integer(kind=im) :: jt, jp, igc, ipr, iprsm 
@@ -13373,8 +13377,9 @@ IMPLICIT NONE
       subroutine lw_kgb06(rrtmg_unit)
 ! **************************************************************************
 
-      use rrlw_kg06, only : fracrefao, kao, kao_mco2, selfrefo, forrefo, &
-                            cfc11adjo, cfc12o
+      use rrlw_kg06
+!     use rrlw_kg06, only : fracrefao, kao, kao_mco2, selfrefo, forrefo, &
+!                           cfc11adjo, cfc12o
 
       implicit none
       save

@@ -1879,6 +1879,295 @@ CONTAINS
 
    END SUBROUTINE spec_bdytend_perturb_chem
 
+>>>>>>> master
+!------------------------------------------------------------------------
+! KRS 9/13/2012: New subroutine spec_bdytend_perturb. 
+! Reads in field_tend_perturb from dyn_em/module_bc_em.F  
+! field_tend_perturb=r*_tendf_stoch if perturb_bdy=1
+! field_tend_perturb=User provided pattern if perturb_bdy=2
+! User can fill array in this subroutine.   
+! Adds perturbations to boundaries. Outputs field_tend (e.g. ru_tend). 
+! mu_2, mub, and msf* passed into subrountine couple variables.
+!------------------------------------------------------------------------
+   SUBROUTINE spec_bdytend_perturb   ( field_tend,                   &
+                                       field_tend_perturb,           &
+                                       mu_2, mub, c1, c2,            &
+                                       variable_in,                  &
+                                       msf, config_flags,            & 
+                                       spec_bdy_width, spec_zone,    &
+                                       kme_stoch,                    & ! stoch  dims
+                                       ids,ide, jds,jde, kds,kde,    & ! domain dims
+                                       ims,ime, jms,jme, kms,kme,    & ! memory dims
+                                       ips,ipe, jps,jpe, kps,kpe,    & ! patch  dims
+                                       its,ite, jts,jte, kts,kte )
+
+!  This subroutine sets the tendencies in the boundary specified region.
+!  spec_bdy_width is only used to dimension the boundary arrays.
+!  spec_zone is the width of the outer specified b.c.s that are set here.
+!  (JD July 2000)
+
+      IMPLICIT NONE
+
+      INTEGER,      INTENT(IN   )    :: ids,ide, jds,jde, kds,kde
+      INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme, kme_stoch
+      INTEGER,      INTENT(IN   )    :: ips,ipe, jps,jpe, kps,kpe
+      INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
+      INTEGER,      INTENT(IN   )    :: spec_bdy_width, spec_zone
+      CHARACTER,    INTENT(IN   )    :: variable_in
+
+
+      REAL,  DIMENSION( ims:ime , kms:kme       , jms:jme ), INTENT(INOUT  ) :: field_tend
+      REAL,  DIMENSION( ims:ime , kms:kme_stoch , jms:kme ), INTENT(IN   )   :: field_tend_perturb
+      REAL,  DIMENSION( ims:ime ,                 jms:jme ), INTENT(IN   )   :: mu_2	
+      REAL,  DIMENSION( ims:ime ,                 jms:jme ), INTENT(IN   )   :: mub
+      REAL,  DIMENSION( ims:ime ,                 jms:jme ), INTENT(IN   )   :: msf
+      REAL,  DIMENSION(           kms:kme                 ), INTENT(IN   )   :: c1, c2
+	  
+      TYPE( grid_config_rec_type ) config_flags
+
+      CHARACTER  :: variable
+      INTEGER    :: i, j, k, ibs, ibe, jbs, jbe, itf, jtf, ktf
+      INTEGER    :: b_dist, b_limit
+      LOGICAL    :: periodic_x
+
+      periodic_x = config_flags%periodic_x
+
+      variable = variable_in
+
+      IF (variable == 'U') variable = 'u'
+      IF (variable == 'V') variable = 'v'
+      IF (variable == 'T') variable = 't'
+      IF (variable == 'H') variable = 'h'
+
+      ibs = ids
+      ibe = ide-1
+      itf = min(ite,ide-1)
+      jbs = jds
+      jbe = jde-1
+      jtf = min(jte,jde-1)
+      ktf = kde-1
+      IF (variable == 'u') ibe = ide
+      IF (variable == 'u') itf = min(ite,ide)
+      IF (variable == 'v') jbe = jde
+      IF (variable == 'v') jtf = min(jte,jde)
+      IF (variable == 'h') ktf = kte
+
+      IF (jts - jbs .lt. spec_zone) THEN
+
+! Y-start boundary
+        DO j = jts, min(jtf,jbs+spec_zone-1)
+          b_dist = j - jbs
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
+          DO k = kts, ktf
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
+            IF (variable == 't') THEN
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,min(k,kme_stoch),j) * & 
+                                  (mu_2(i,j)+mub(i,j)) 
+            ENDIF
+            IF (variable == 'u') THEN
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,min(k,kme_stoch),j) * & 
+                                  0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
+            ENDIF
+            IF (variable == 'v') THEN
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,min(k,kme_stoch),j) * & 
+                                  0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
+            ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF 
+      IF (jbe - jtf .lt. spec_zone) THEN 
+
+
+! Y-end boundary 
+        DO j = max(jts,jbe-spec_zone+1), jtf 
+          b_dist = jbe - j 
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
+          DO k = kts, ktf 
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
+            IF (variable == 't') THEN
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,min(k,kme_stoch),j) * (mu_2(i,j)+mub(i,j))
+            ENDIF
+            IF (variable == 'u') THEN
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,min(k,kme_stoch),j) * 0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
+            ENDIF
+            IF (variable == 'v') THEN
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,min(k,kme_stoch),j) * 0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
+            ENDIF
+	    ENDDO
+          ENDDO
+        ENDDO
+      ENDIF 
+
+    IF(.NOT.periodic_x)THEN
+      IF (its - ibs .lt. spec_zone) THEN
+! X-start boundary
+        DO i = its, min(itf,ibs+spec_zone-1)
+          b_dist = i - ibs
+          DO k = kts, ktf
+            DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
+            IF (variable == 't') THEN
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,min(k,kme_stoch),j) * (mu_2(i,j)+mub(i,j))
+            ENDIF
+            IF (variable == 'u') THEN
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,min(k,kme_stoch),j) * 0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
+            ENDIF
+            IF (variable == 'v') THEN
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,min(k,kme_stoch),j) * 0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
+            ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF 
+
+      IF (ibe - itf .lt. spec_zone) THEN
+! X-end boundary
+        DO i = max(its,ibe-spec_zone+1), itf
+          b_dist = ibe - i
+          DO k = kts, ktf
+            DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
+            IF (variable == 't') THEN
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,min(k,kme_stoch),j) * (mu_2(i,j)+mub(i,j))
+            ENDIF
+            IF (variable == 'u') THEN
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,min(k,kme_stoch),j) * 0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
+            ENDIF
+            IF (variable == 'v') THEN
+              field_tend(i,k,j) = field_tend(i,k,j) + &
+                                  field_tend_perturb(i,min(k,kme_stoch),j) * 0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
+            ENDIF
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF 
+    ENDIF
+
+   END SUBROUTINE spec_bdytend_perturb
+
+
+!------------------------------------------------------------------------
+
+   SUBROUTINE spec_bdytend_perturb_chem   ( field_bdy_tend_xs, field_bdy_tend_xe, &
+                                            field_bdy_tend_ys, field_bdy_tend_ye, &
+                                            field_scalar_perturb,         &
+                                            variable_in,                &
+                                            periodic_x,                 &
+                                            spec_bdy_width, spec_zone,  &
+                                            kme_stoch,                  & 
+                                            ids,ide, jds,jde, kds,kde,  &
+                                            ims,ime, jms,jme, kms,kme,  &
+                                            ips,ipe, jps,jpe, kps,kpe,  &
+                                            its,ite, jts,jte, kts,kte )
+
+      IMPLICIT NONE
+
+      INTEGER,      INTENT(IN   )    :: ids,ide, jds,jde, kds,kde
+      INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme, kme_stoch
+      INTEGER,      INTENT(IN   )    :: ips,ipe, jps,jpe, kps,kpe
+      INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
+      INTEGER,      INTENT(IN   )    :: spec_bdy_width, spec_zone
+      CHARACTER,    INTENT(IN   )    :: variable_in
+      LOGICAL,      INTENT(IN   )    :: periodic_x
+
+      REAL,  DIMENSION( ims:ime , kms:kme_stoch , jms:kme ) , INTENT(IN   ) :: field_scalar_perturb
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(INOUT) :: field_bdy_tend_xs, field_bdy_tend_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(INOUT) :: field_bdy_tend_ys, field_bdy_tend_ye
+
+      CHARACTER  :: variable
+      INTEGER    :: i, j, k, ibs, ibe, jbs, jbe, itf, jtf, ktf
+      INTEGER    :: b_dist, b_limit
+
+      variable = variable_in
+      IF (variable == 'C') variable = 'c'
+
+      IF (variable /= 'c') THEN
+          write( wrf_err_message ,*) ' *** Error in spec_bdytend_perturb_chem'
+          CALL wrf_message ( wrf_err_message )
+      ENDIF
+
+      ibs = ids
+      ibe = ide-1
+      itf = min(ite,ide-1)
+      jbs = jds
+      jbe = jde-1
+      jtf = min(jte,jde-1)
+      ktf = kde-1
+      !ktf = kte
+
+      IF (jts - jbs .lt. spec_zone) THEN
+! Y-start boundary
+        DO j = jts, min(jtf,jbs+spec_zone-1)
+           b_dist = j - jbs
+           b_limit = b_dist
+           IF(periodic_x)b_limit = 0
+           DO k = kts, ktf
+              DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
+                 field_bdy_tend_ys(i,k,b_dist+1) = field_bdy_tend_ys(i,k,b_dist+1) * & 
+                                                   (1.0 + field_scalar_perturb(i,min(k,kme_stoch),j))
+              ENDDO
+           ENDDO
+        ENDDO
+      ENDIF
+
+      IF (jbe - jtf .lt. spec_zone) THEN
+! Y-end boundary
+        DO j = max(jts,jbe-spec_zone+1), jtf
+           b_dist = jbe - j
+           b_limit = b_dist
+           IF(periodic_x)b_limit = 0
+           DO k = kts, ktf
+              DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
+                 field_bdy_tend_ye(i,k,b_dist+1) = field_bdy_tend_ye(i,k,b_dist+1) * & 
+                                                   (1.0 + field_scalar_perturb(i,min(k,kme_stoch),j))
+              ENDDO
+           ENDDO
+        ENDDO
+      ENDIF
+
+    IF(.NOT.periodic_x)THEN
+
+      IF (its - ibs .lt. spec_zone) THEN
+! X-start boundary
+        DO i = its, min(itf,ibs+spec_zone-1)
+           b_dist = i - ibs
+           DO k = kts, ktf
+              DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
+                 field_bdy_tend_xs(j,k,b_dist+1) = field_bdy_tend_xs(j,k,b_dist+1) * & 
+                                                   (1.0 + field_scalar_perturb(i,min(k,kme_stoch),j))
+              ENDDO
+           ENDDO
+        ENDDO
+      ENDIF
+
+      IF (ibe - itf .lt. spec_zone) THEN
+! X-end boundary
+        DO i = max(its,ibe-spec_zone+1), itf
+           b_dist = ibe - i
+           DO k = kts, ktf
+             DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
+                 field_bdy_tend_xe(j,k,b_dist+1) = field_bdy_tend_xe(j,k,b_dist+1) * (1.0 + field_scalar_perturb(i,k,j))
+              ENDDO
+           ENDDO
+        ENDDO
+      ENDIF
+
+    ENDIF  !  IF(.NOT.periodic_x)THEN
+
+   END SUBROUTINE spec_bdytend_perturb_chem
+
 !------------------------------------------------------------------------
 
    SUBROUTINE spec_bdyfield   ( field,                     &
@@ -1994,6 +2283,158 @@ ENDIF
 
    END SUBROUTINE spec_bdyfield
 
+!------------------------------------------------------------------------
+   SUBROUTINE spec_bdy_final   ( field, mu, c1, c2, msf,               &
+                                field_bdy_xs, field_bdy_xe,            &
+                                field_bdy_ys, field_bdy_ye,            &
+                                field_bdy_tend_xs, field_bdy_tend_xe,  &
+                                field_bdy_tend_ys, field_bdy_tend_ye,  &
+                                variable_in, config_flags,             &
+                                spec_bdy_width, spec_zone,             &
+                                dtbc,                       &
+                                ids,ide, jds,jde, kds,kde,  & ! domain dims
+                                ims,ime, jms,jme, kms,kme,  & ! memory dims
+                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                                its,ite, jts,jte, kts,kte   )
+
+!  This subroutine forces the boundary to match the boundary file value for specified
+!  boundary conditions. Added to avoid drift due to round-off error using just tendencies. 
+!  Boundary-file coupling is u,v,w:mu/msf  other fields:mu
+!  Correctly  staggered mu and msf are passed in (as seen in small_step_finish)
+!  spec_bdy_width is only used to dimension the boundary arrays.
+!  relax_zone is the inner edge of the boundary relaxation zone treated here.
+!  spec_zone is the width of the outer specified b.c.s that are not changed here.
+!  (JD Jan 2015)
+
+      IMPLICIT NONE
+
+      INTEGER,      INTENT(IN   )    :: ids,ide, jds,jde, kds,kde
+      INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
+      INTEGER,      INTENT(IN   )    :: ips,ipe, jps,jpe, kps,kpe
+      INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
+      INTEGER,      INTENT(IN   )    :: spec_bdy_width, spec_zone
+      REAL,         INTENT(IN   )    :: dtbc
+      CHARACTER,    INTENT(IN   )    :: variable_in
+
+
+      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: field
+      REAL,  DIMENSION( ims:ime , jms:jme), INTENT(IN   ) :: mu, msf
+      REAL,  DIMENSION( kms:kme ), INTENT(IN   ) :: c1, c2
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(IN   ) :: field_bdy_xs, field_bdy_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(IN   ) :: field_bdy_ys, field_bdy_ye
+      REAL,  DIMENSION( jms:jme , kds:kde , spec_bdy_width ), INTENT(IN   ) :: field_bdy_tend_xs, field_bdy_tend_xe
+      REAL,  DIMENSION( ims:ime , kds:kde , spec_bdy_width ), INTENT(IN   ) :: field_bdy_tend_ys, field_bdy_tend_ye
+      TYPE( grid_config_rec_type ) config_flags
+
+      CHARACTER  :: variable
+      INTEGER    :: i, j, k, ibs, ibe, jbs, jbe, itf, jtf, ktf, im1, ip1
+      INTEGER    :: b_dist, b_limit
+      REAL       :: bfield, xmsf, xmu
+      LOGICAL    :: periodic_x, msfcouple, mucouple
+
+      periodic_x = config_flags%periodic_x
+      variable = variable_in
+
+      IF (variable == 'U') variable = 'u'
+      IF (variable == 'V') variable = 'v'
+      IF (variable == 'W') variable = 'w'
+      IF (variable == 'M') variable = 'm'
+      IF (variable == 'T') variable = 't'
+      IF (variable == 'H') variable = 'h'
+
+      ibs = ids
+      ibe = ide-1
+      itf = min(ite,ide-1)
+      jbs = jds
+      jbe = jde-1
+      jtf = min(jte,jde-1)
+      ktf = kde-1
+      IF (variable == 'u') ibe = ide
+      IF (variable == 'u') itf = min(ite,ide)
+      IF (variable == 'v') jbe = jde
+      IF (variable == 'v') jtf = min(jte,jde)
+      IF (variable == 'm') ktf = kde
+      IF (variable == 'h') ktf = kde
+      IF (variable == 'w') ktf = kde
+
+      msfcouple = .false.
+      mucouple = .true.
+      IF (variable == 'u' .OR. variable == 'v' .OR. variable == 'w')msfcouple = .true.
+      IF (variable == 'm' )mucouple = .false.
+      xmsf = 1.
+      xmu = 1.
+
+      IF (jts - jbs .lt. spec_zone) THEN
+! Y-start boundary
+        DO j = jts, min(jtf,jbs+spec_zone-1)
+          b_dist = j - jbs
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
+          DO k = kts, ktf
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
+              bfield = field_bdy_ys(i, k, b_dist+1) &
+                   + dtbc * field_bdy_tend_ys(i, k, b_dist+1) 
+              if(msfcouple)xmsf = msf(i,j)
+              if(mucouple)xmu = mu(i,j)
+              field(i,k,j) = xmsf*bfield/xmu
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+
+      IF (jbe - jtf .lt. spec_zone) THEN
+! Y-end boundary
+        DO j = max(jts,jbe-spec_zone+1), jtf
+          b_dist = jbe - j
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
+          DO k = kts, ktf
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
+              bfield = field_bdy_ye(i, k, b_dist+1) &
+                   + dtbc * field_bdy_tend_ye(i, k, b_dist+1) 
+              if(msfcouple)xmsf = msf(i,j)
+              if(mucouple)xmu = mu(i,j)
+              field(i,k,j) = xmsf*bfield/xmu
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+
+    IF(.NOT.periodic_x)THEN
+      IF (its - ibs .lt. spec_zone) THEN
+! X-start boundary
+        DO i = its, min(itf,ibs+spec_zone-1)
+          b_dist = i - ibs
+          DO k = kts, ktf
+            DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
+              bfield = field_bdy_xs(j, k, b_dist+1) &
+                   + dtbc * field_bdy_tend_xs(j, k, b_dist+1) 
+              if(msfcouple)xmsf = msf(i,j)
+              if(mucouple)xmu = mu(i,j)
+              field(i,k,j) = xmsf*bfield/xmu
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+
+     IF (ibe - itf .lt. spec_zone) THEN
+! X-end boundary
+        DO i = max(its,ibe-spec_zone+1), itf
+          b_dist = ibe - i
+          DO k = kts, ktf
+            DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
+              bfield = field_bdy_xe(j, k, b_dist+1) &
+                   + dtbc * field_bdy_tend_xe(j, k, b_dist+1) 
+              if(msfcouple)xmsf = msf(i,j)
+              if(mucouple)xmu = mu(i,j)
+              field(i,k,j) = xmsf*bfield/xmu
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF
+    ENDIF
+
+   END SUBROUTINE spec_bdy_final
 !------------------------------------------------------------------------
 
    SUBROUTINE couple_bdy ( field,      &
@@ -2888,16 +3329,16 @@ ENDIF
                              char_stagger , &
                              spec_bdy_width , &
                              ids, ide, jds, jde, kds, kde , &
-                             ims, ime, jms, jme, kms, kme , & 
+                             ims, ime, jms, jme, kms, kme , &
                              its, ite, jts, jte, kts, kte )
- 
+
  !  This routine puts the data in the 3d arrays into the proper locations
  !  for the lateral boundary arrays.
- 
+
     USE module_state_description
-    
+
     IMPLICIT NONE
- 
+
     INTEGER , INTENT(IN) :: ids, ide, jds, jde, kds, kde
     INTEGER , INTENT(IN) :: ims, ime, jms, jme, kms, kme
     INTEGER , INTENT(IN) :: its, ite, jts, jte, kts, kte
@@ -2906,13 +3347,13 @@ ENDIF
     REAL , DIMENSION(jms:jme,kds:kde,spec_bdy_width) , INTENT(OUT) :: space_bdy_xs, space_bdy_xe
     REAL , DIMENSION(ims:ime,kds:kde,spec_bdy_width) , INTENT(OUT) :: space_bdy_ys, space_bdy_ye
     CHARACTER (LEN=1) , INTENT(IN) :: char_stagger
- 
+
     INTEGER :: i , ii , j , jj , k
- 
+
     !  There are four lateral boundary locations that are stored.
- 
+
     !  X start boundary
- 
+
     IF ( char_stagger .EQ. 'W' ) THEN
        DO j = MAX(jds,jts) , MIN(jde-1,jte)
        DO k = kds , kde
@@ -2946,9 +3387,9 @@ ENDIF
        END DO
        END DO
     END IF
- 
+
     !  X end boundary
- 
+
     IF      ( char_stagger .EQ. 'U' ) THEN
        DO j = MAX(jds,jts) , MIN(jde-1,jte)
        DO k = kds , kde - 1
@@ -2995,9 +3436,9 @@ ENDIF
        END DO
        END DO
     END IF
- 
+
     !  Y start boundary
- 
+
     IF ( char_stagger .EQ. 'W' ) THEN
        DO j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
        DO k = kds , kde
@@ -3031,9 +3472,9 @@ ENDIF
        END DO
        END DO
     END IF
- 
+
     !  Y end boundary
- 
+
     IF      ( char_stagger .EQ. 'V' ) THEN
        DO j = MIN(jde,jte) , MAX(jde - spec_bdy_width + 1,jts) , -1
        DO k = kds , kde - 1
@@ -3080,7 +3521,7 @@ ENDIF
        END DO
        END DO
     END IF
-    
+
  END SUBROUTINE stuff_bdy_new
  
  SUBROUTINE stuff_bdytend_new ( data3dnew , data3dold , time_diff , &
@@ -3300,16 +3741,16 @@ ENDIF
  SUBROUTINE stuff_bdy_old ( data3d , space_bdy , char_stagger , &
                              ijds , ijde , spec_bdy_width , &
                              ids, ide, jds, jde, kds, kde , &
-                             ims, ime, jms, jme, kms, kme , & 
+                             ims, ime, jms, jme, kms, kme , &
                              its, ite, jts, jte, kts, kte )
- 
+
  !  This routine puts the data in the 3d arrays into the proper locations
  !  for the lateral boundary arrays.
- 
+
     USE module_state_description
-    
+
     IMPLICIT NONE
- 
+
     INTEGER , INTENT(IN) :: ids, ide, jds, jde, kds, kde
     INTEGER , INTENT(IN) :: ims, ime, jms, jme, kms, kme
     INTEGER , INTENT(IN) :: its, ite, jts, jte, kts, kte
@@ -3317,13 +3758,13 @@ ENDIF
     REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(IN) :: data3d
     REAL , DIMENSION(ijds:ijde,kds:kde,spec_bdy_width,4) , INTENT(OUT) :: space_bdy
     CHARACTER (LEN=1) , INTENT(IN) :: char_stagger
- 
+
     INTEGER :: i , ii , j , jj , k
- 
+
     !  There are four lateral boundary locations that are stored.
- 
+
     !  X start boundary
- 
+
     IF ( char_stagger .EQ. 'W' ) THEN
        DO j = MAX(jds,jts) , MIN(jde-1,jte)
        DO k = kds , kde
@@ -3357,9 +3798,9 @@ ENDIF
        END DO
        END DO
     END IF
- 
+
     !  X end boundary
- 
+
     IF      ( char_stagger .EQ. 'U' ) THEN
        DO j = MAX(jds,jts) , MIN(jde-1,jte)
        DO k = kds , kde - 1
@@ -3406,9 +3847,9 @@ ENDIF
        END DO
        END DO
     END IF
- 
+
     !  Y start boundary
- 
+
     IF ( char_stagger .EQ. 'W' ) THEN
        DO j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
        DO k = kds , kde
@@ -3442,9 +3883,9 @@ ENDIF
        END DO
        END DO
     END IF
- 
+
     !  Y end boundary
- 
+
     IF      ( char_stagger .EQ. 'V' ) THEN
        DO j = MIN(jde,jte) , MAX(jde - spec_bdy_width + 1,jts) , -1
        DO k = kds , kde - 1
@@ -3491,9 +3932,9 @@ ENDIF
        END DO
        END DO
     END IF
-    
+
  END SUBROUTINE stuff_bdy_old
- 
+
  SUBROUTINE stuff_bdytend_old ( data3dnew , data3dold , time_diff , space_bdy , char_stagger , &
                              ijds , ijde , spec_bdy_width , &
                              ids, ide, jds, jde, kds, kde , &
@@ -3518,7 +3959,17 @@ ENDIF
     REAL , INTENT(IN) :: time_diff ! seconds
  
     INTEGER :: i , ii , j , jj , k
- 
+
+#if 0
+    !  Here is the easy way to zero out the boundary tendencies for
+    !  time-dependent boundaries.
+
+    space_bdy_xs = 0.
+    space_bdy_xe = 0.
+    space_bdy_ys = 0.
+    space_bdy_ye = 0.
+    return
+#else
     !  There are four lateral boundary locations that are stored.
  
     !  X start boundary
@@ -3708,6 +4159,7 @@ ENDIF
        END DO
        END DO
     END IF
+#endif
     
  END SUBROUTINE stuff_bdytend_old
 

@@ -1550,6 +1550,7 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
 #else
   real dummy_field(1)
 #endif
+!  real(r_single) dummy_field(1)
 !  integer dummy_field
 !  real dummy_field
   integer itypesize

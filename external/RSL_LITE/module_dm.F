@@ -1026,7 +1026,7 @@ CONTAINS
 ! This appears redundant with the conditionals above, but we get cases with only
 ! one of the directions being set to "missing" when turning off extra processors.
 ! This may break the handling of setting only one of nproc_x or nproc_y via the namelist.
-    IF ( jpe .EQ. -1) THEN
+    IF (ipe .EQ. -1 .or. jpe .EQ. -1) THEN
        ipe = -1
        ips = 0
        jpe = -1
@@ -1316,7 +1316,7 @@ CONTAINS
       INCLUDE 'mpif.h'
       INTEGER, intent(in) :: inval
       INTEGER :: ierr, retval
-      CALL mpi_allreduce ( inval, retval , 1, MPI_INT, MPI_MAX, local_communicator, ierr )
+      CALL mpi_allreduce ( inval, retval , 1, MPI_INTEGER, MPI_MAX, local_communicator, ierr )
       wrf_dm_max_int = retval
 #else
       INTEGER, intent(in) :: inval
@@ -5688,7 +5688,6 @@ END IF
                                   nids, nide, njds, njde, nkds, nkde,    &
                                   nims, nime, njms, njme, nkms, nkme,    &
                                   nips, nipe, njps, njpe, nkps, nkpe    )
-
 
         nlev  = ckde - ckds + 1 
 

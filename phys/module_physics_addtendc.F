@@ -1307,6 +1307,24 @@ SUBROUTINE phy_cu_ten(config_flags,rk_step,n_moist,n_scalar,     &
                 ims, ime, jms, jme, kms, kme,                    &
                 its, ite, jts, jte, kts, kte                     )
 
+       IF(.not. adv_moist_cond)THEN
+
+        if (P_QT .ge. PARAM_FIRST_SCALAR)                        &
+           CALL add_a2a(scalar_tendf(ims,kms,jms,P_QT),RQCCUTEN, &
+                config_flags,                                    &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+        if (P_QT .ge. PARAM_FIRST_SCALAR)                        &
+           CALL add_a2a(scalar_tendf(ims,kms,jms,P_QT),RQICUTEN, &
+                config_flags,                                    &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+       ENDIF
+
    CASE (DUCUSCHEME)
         CALL add_a2a(rt_tendf,RTHCUTEN,config_flags,             &
                 ids,ide, jds, jde, kds, kde,                     &
@@ -1792,7 +1810,7 @@ SUBROUTINE phy_fr_ten(config_flags,rk_step,n_moist,            &
 
 END SUBROUTINE phy_fr_ten
 
-!--------------------------------------------------- -------------------
+!----------------------------------------------------------------------
 SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
                      CLDFRA_CUP,                                      &     ! add LD 01/11/2012 !BSINGH -  Added for CuP
                      RQICUTEN,RQSCUTEN,                               &

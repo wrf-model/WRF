@@ -18,6 +18,7 @@ MODULE module_wrf_top
 
    USE module_timing
    USE module_wrf_error
+#if ( WRFPLUS == 1 )
    USE module_adtl_grid_utilities, ONLY : allocate_grid, deallocate_grid, copy_grid_to_s, copy_grid_to_b, &
                                           restore_grid, inner_dot_g, add_grid, inner_dot, init_domain_size, &
                                           copy_s_to_g_adjtest, copy_g_to_b_adjtest, inner_dot_g_adjtest, &
@@ -26,11 +27,13 @@ MODULE module_wrf_top
                                           spot_force_ad, spot_force_tl, spot_force_nl, &
                                           extract_ad_der, extract_tl_der, extract_nl_den, extract_nl_num
    USE mediation_pertmod_io, ONLY : xtraj_pointer, xtraj_head, xtraj_tail, xtraj_io_initialize, adtl_initialize
-   USE module_nesting
+#endif
    USE module_io_domain, ONLY: close_dataset, wrf_inquire_opened
 #if (EM_CORE==1)
    USE module_state_description, ONLY : SURFDRAGSCHEME, PARAM_FIRST_SCALAR, num_moist, num_tracer
 #endif
+
+   USE module_nesting
 
 #ifdef DM_PARALLEL
    USE module_dm, ONLY : wrf_dm_initialize,wrf_get_hostid,domain_active_this_task,mpi_comm_allcompute,wrf_dm_sum_real
@@ -40,6 +43,7 @@ MODULE module_wrf_top
 
    USE module_date_time, ONLY : current_date, start_date
    USE module_io_domain, ONLY : open_w_dataset, output_boundary
+
    USE module_cpl, ONLY : coupler_on, cpl_finalize, cpl_defdomain
 
    IMPLICIT NONE

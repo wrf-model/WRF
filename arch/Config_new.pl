@@ -174,6 +174,14 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
       $sw_exp_core = "-DEXP_CORE=0" ;
       $sw_coamps_core = "-DCOAMPS_CORE=0" ;
     }
+    if ( index ( $sw_wrf_core , "4D_DA_CORE" ) > -1 ) 
+    {
+      $sw_em_core = "-DEM_CORE=1" ;
+      $sw_da_core = "-DDA_CORE=1" ;
+      $sw_nmm_core = "-DNMM_CORE=0" ;
+      $sw_exp_core = "-DEXP_CORE=0" ;
+      $sw_coamps_core = "-DCOAMPS_CORE=0" ;
+    }
     if ( index ( $sw_wrf_core , "NMM_CORE" ) > -1 ) 
     {
       $sw_em_core = "-DEM_CORE=0" ;

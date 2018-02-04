@@ -797,7 +797,8 @@ integer myproc
          config_flags%mp_physics  .eq. WDM5SCHEME .or.      & ! syb+
          config_flags%mp_physics  .eq. WDM6SCHEME .or.      &
          config_flags%mp_physics  .eq. P3_1CATEGORY .or.    &
-         config_flags%mp_physics  .eq. P3_1CATEGORY_NC    ) ) then    ! P3
+         config_flags%mp_physics  .eq. P3_1CATEGORY_NC .or. &
+         config_flags%mp_physics  .eq. P3_2CATEGORY    ) ) then    ! P3
       has_reqc = 1
       has_reqi = 1
       has_reqs = 1
@@ -805,7 +806,8 @@ integer myproc
 
 ! for P3, to ensure correct coupling with predicted effective radii
    if (config_flags%mp_physics .eq. P3_1CATEGORY .or.       &
-       config_flags%mp_physics .eq. P3_1CATEGORY_NC       ) then
+       config_flags%mp_physics .eq. P3_1CATEGORY_NC .or.    &
+       config_flags%mp_physics .eq. P3_2CATEGORY      ) then
       has_reqs = 0
    end if
 
@@ -1885,7 +1887,6 @@ integer myproc
                            its, ite, jts, jte, kts, kte     )
 
              aclwalloc = .true.
-
 
         CASE (GFDLLWSCHEME)
              CALL nl_get_start_month(id,month)
@@ -3539,7 +3540,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
 
-     CASE (DUCUSCHEME)
+      CASE (DUCUSCHEME)
           CALL ducuinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,      &
                       RQICUTEN,RQSCUTEN,NCA,W0AVG,P_QC,P_QR,      &
                       SVP1,SVP2,SVP3,SVPT0,                       &
@@ -3549,7 +3550,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
 
-     CASE DEFAULT
+      CASE DEFAULT
 
    END SELECT cps_select
 
@@ -3834,9 +3835,11 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      CASE (MORR_TWO_MOMENT)
          CALL morr_two_moment_init( config_flags%hail_opt )
      CASE (P3_1CATEGORY)
-         CALL p3_init('./p3_lookup_table_1.dat','./p3_lookup_table_2.dat',1)
+         CALL p3_init('.',1)
      CASE (P3_1CATEGORY_NC)
-         CALL p3_init('./p3_lookup_table_1.dat','./p3_lookup_table_2.dat',1)
+         CALL p3_init('.',1)
+     CASE (P3_2CATEGORY)
+         CALL p3_init('.',2)
      CASE (MILBRANDT2MOM)
          CALL milbrandt2mom_init
 !      CASE (MILBRANDT3MOM)

@@ -368,7 +368,6 @@
 !
 !mptest      CALL nl_get_time_step( grid%id, grid%time_step )
 
-
 !!! here need to key off something else being the "wrong" sign
       if (grid%cpgfv .gt. 0) then
 
@@ -1161,7 +1160,7 @@ call wrf_message(mess)
 
       IF ( NFILT .EQ. 0 ) CALL UNIFORM  (NSTEPS,HH)
 #if ( WRFPLUS == 1 )
-      IF ( NFILT .EQ. 1 ) CALL LANCZOS_  (NSTEPS,HH)
+      IF ( NFILT .EQ. 1 ) CALL LANCZOS_ (NSTEPS,HH)
 #else
       IF ( NFILT .EQ. 1 ) CALL LANCZOS  (NSTEPS,HH)
 #endif

@@ -76,7 +76,6 @@ state   real    a_plume    ikjftb  a_tracer      1         -     irhusdf=(bdy_in
 state   real    a_trbc1        ikjftb  a_tracer    1         -     irhusdf=(bdy_interp:dt)    "a_TRBC1"            "a_TRBC1"           "ug/kg-dryair"
 state   real    a_trbc2        ikjftb  a_tracer    1         -     irhusdf=(bdy_interp:dt)    "a_TRBC2"            "a_TRBC2"           "ug/kg-dryair"
 
-
 package   tracer_test1  tracer_opt==2       -             tracer:tr17_1,tr17_2,tr17_3,tr17_4,tr17_5,tr17_6,tr17_7,tr17_8
 package   tracer_test3  tracer_opt==3       -             tracer:plume;g_tracer:g_plume;a_tracer:a_plume
 package   tracer_chem   tracer_opt==4       -             tracer:trbc1,trbc2;g_tracer:g_trbc1,g_trbc2;a_tracer:a_trbc1,a_trbc2

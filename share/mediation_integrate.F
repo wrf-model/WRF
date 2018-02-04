@@ -29,13 +29,15 @@ END SUBROUTINE med_calc_model_time
 SUBROUTINE med_before_solve_io ( grid , config_flags )
   ! Driver layer
    USE module_state_description
-   USE module_domain    , ONLY : domain, domain_clock_get, domain_clock_set, &
-                                 get_ijk_from_grid
-   USE module_configure , ONLY : grid_config_rec_type, model_config_rec
+   USE module_domain    , ONLY : domain, domain_clock_get
+   USE module_configure , ONLY : grid_config_rec_type
    USE module_streams
-   USE mediation_pertmod_io , ONLY : save_tl_pert, read_ad_forcing, save_xtraj, read_xtraj, read_xtraj_reverse
   ! Model layer
    USE module_utility
+#if (WRFPLUS == 1)
+   USE module_domain    , ONLY : domain_clock_set, get_ijk_from_grid
+   USE module_configure , ONLY : model_config_rec
+   USE mediation_pertmod_io , ONLY : save_tl_pert, read_ad_forcing, save_xtraj, read_xtraj, read_xtraj_reverse
    USE module_bc_em, ONLY : rk_phys_bc_dry_2
    USE module_bc, ONLY : set_physical_bc3d
    USE esmf_timemod, ONLY : ESMF_TimeInc
@@ -45,7 +47,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
         local_communicator, mytask, ntasks
    USE module_comm_dm, ONLY : halo_em_init_1_sub, halo_em_init_2_sub, halo_em_init_5_sub
 #endif
-
+#endif
    IMPLICIT NONE
 
   ! Arguments
@@ -66,7 +68,9 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
                              ips , ipe , jps , jpe , kps , kpe, ij, im
    CHARACTER*80           :: timestr
 
+#if (WRFPLUS == 1)
    REAL, POINTER :: moist(:,:,:,:), scalar(:,:,:,:), chem(:,:,:,:), tracer(:,:,:,:)
+#endif
 
 #if (WRFPLUS == 1)
 ! In WRFPLUS NL run, boundary should be read before save xtraj.
@@ -99,7 +103,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 
 ! #if (EM_CORE == 1)
 
-   CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currTime, StartTime=startTime )
+ CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currTime, StartTime=startTime )
 
  IF( (WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc ) .AND. &
      (grid%dfi_write_dfi_history .OR. grid%dfi_stage == DFI_FST .OR. grid%dfi_opt == DFI_NODFI) )) THEN
@@ -240,6 +244,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
        ENDIF
 #endif
      ELSE IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
+#if ( WRFPLUS == 1 )
        IF ( .NOT. grid%trajectory_io ) THEN
           ! For adjoint integration with disk IO, the basic state is one step before the domain time.
           IF ( config_flags%dyn_opt .EQ. dyn_em_ad .AND. ialarm .EQ. auxinput6_only  ) THEN
@@ -336,6 +341,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
                              grid%domain_clock%clockint%TimeStep )
           CALL domain_clock_set( grid, time_step_seconds=-1*model_config_rec%time_step )
        ENDIF
+#endif
        CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
      ENDIF
    ENDDO
@@ -1482,7 +1488,9 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
    USE module_configure , ONLY : grid_config_rec_type
    USE module_utility
    USE module_streams
+#if ( WRFPLUS == 1 )
    USE mediation_pertmod_io , ONLY : save_xtraj, save_tl_pert
+#endif
   ! Model layer
 
    IMPLICIT NONE
@@ -2184,6 +2192,7 @@ integer myproc,i,j,k
 ! #endif
 
        CALL domain_clock_get( grid, current_time=currentTime )
+#if ( WRFPLUS == 1 )
        IF ( config_flags%dyn_opt .NE. dyn_em_ad ) THEN
           DO WHILE (currentTime .GE. grid%next_bdy_time )         ! next_bdy_time is set by input_boundary from bdy file
              CALL wrf_debug( 100 , 'med_latbound_in: calling input_boundary ' )
@@ -2195,10 +2204,17 @@ integer myproc,i,j,k
              CALL input_boundary ( grid%lbc_fid, grid , config_flags , ierr )
           ENDDO
        ENDIF
+#else
+       DO WHILE (currentTime .GE. grid%next_bdy_time )         ! next_bdy_time is set by input_boundary from bdy file
+         CALL wrf_debug( 100 , 'med_latbound_in: calling input_boundary ' )
+         CALL input_boundary ( grid%lbc_fid, grid , config_flags , ierr )
+       ENDDO
+#endif
 #ifdef _MULTI_BDY_FILES_
        ! Close the bdy file so that next time around, we'll open it again.
        CALL close_dataset ( grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
 #endif
+#if ( WRFPLUS == 1 )
        IF ( config_flags%dyn_opt .NE. dyn_em_ad ) THEN
           CALL WRFU_AlarmSet( grid%alarms( BOUNDARY_ALARM ), RingTime=grid%next_bdy_time, rc=rc )
        ELSE
@@ -2209,6 +2225,9 @@ integer myproc,i,j,k
              CALL close_dataset ( grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
           ENDIF
        ENDIF
+#else
+       CALL WRFU_AlarmSet( grid%alarms( BOUNDARY_ALARM ), RingTime=grid%next_bdy_time, rc=rc )
+#endif
 
        IF ( ierr .NE. 0 .and. ierr .NE. WRF_WARN_NETCDF ) THEN
          WRITE( message, * ) 'med_latbound_in: error reading ',TRIM(bdyname), ' IERR = ',ierr

@@ -15,7 +15,11 @@
 static int parent_type;
 
 /* print actual and dummy arguments and declarations for 4D and i1 arrays */
+#ifdef WRFPLUS
 int print_4d_i1_decls ( FILE *fp , node_t *p, int ad /* 0=argument,1=declaration */, int du /* 0=dummy,1=actual */, int nta /* 0=NLM,1=TLM,2=ADM */)   
+#else
+int print_4d_i1_decls ( FILE *fp , node_t *p, int ad /* 0=argument,1=declaration */, int du /* 0=dummy,1=actual */)
+#endif
 {
   node_t * q ;
   node_t * dimd ;
@@ -188,7 +192,11 @@ fprintf(fp,"  %s, INTENT(INOUT) :: %s %s\n", q->type->name , varref , dimspec ) 
 }
 
 int print_call_or_def( FILE * fp , node_t *p, char * callorsub, 
+#ifdef WRFPLUS
                        char * commname, int nta /* 0=NLM,1=TLM,2=ADM */, char * communicator, 
+#else
+                       char * commname, char * communicator,
+#endif
                        int need_config_flags )
   {
 #ifdef WRFPLUS
@@ -200,7 +208,11 @@ int print_call_or_def( FILE * fp , node_t *p, char * callorsub,
 #endif
   if (need_config_flags == 1)
     fprintf(fp,"  config_flags, &\n") ;
+#ifdef WRFPLUS
   print_4d_i1_decls( fp, p, 0, (!strcmp("CALL",callorsub))?0:1, nta );
+#else
+  print_4d_i1_decls( fp, p, 0, (!strcmp("CALL",callorsub))?0:1 );
+#endif
   fprintf(fp,"  %s, &\n",communicator) ;
   fprintf(fp,"  mytask, ntasks, ntasks_x, ntasks_y, &\n") ;
   fprintf(fp,"  ids, ide, jds, jde, kds, kde,       &\n") ;
@@ -210,7 +222,11 @@ int print_call_or_def( FILE * fp , node_t *p, char * callorsub,
   }
 
 int print_decl( FILE * fp , node_t *p, char * communicator, 
+#ifdef WRFPLUS
                 int need_config_flags, int nta /* 0=NLM,1=TLM,2=ADM */ )
+#else
+                int need_config_flags )
+#endif
   {
   fprintf(fp,"  USE module_domain, ONLY:domain\n") ;
   fprintf(fp,"  USE module_configure, ONLY:grid_config_rec_type,in_use_for_config\n") ;
@@ -219,7 +235,11 @@ int print_decl( FILE * fp , node_t *p, char * communicator,
   fprintf(fp,"  TYPE(domain) ,               INTENT(IN) :: grid\n") ;
   if (need_config_flags == 1) 
     fprintf(fp,"  TYPE(grid_config_rec_type) , INTENT(IN) :: config_flags\n") ;
+#ifdef WRFPLUS
   print_4d_i1_decls( fp, p, 1, 0, nta );
+#else
+  print_4d_i1_decls( fp, p, 1, 0 );
+#endif
   fprintf(fp,"  INTEGER ,                    INTENT(IN) :: %s\n",communicator) ;
   fprintf(fp,"  INTEGER ,                    INTENT(IN) :: mytask, ntasks, ntasks_x, ntasks_y\n") ;
   fprintf(fp,"  INTEGER ,                    INTENT(IN) :: ids, ide, jds, jde, kds, kde\n") ;
@@ -233,7 +253,11 @@ int print_decl( FILE * fp , node_t *p, char * communicator,
   return 0; /* SamT: bug fix: return a value */
   }
 
+#ifdef WRFPLUS
 int print_body( FILE * fp, char * commname, int nta /* 0=NLM,1=TLM,2=ADM */ )
+#else
+int print_body( FILE * fp, char * commname )
+#endif
   {
   fprintf(fp,"  \n") ;
   fprintf(fp,"CALL push_communicators_for_domain( grid%%id )\n") ;
@@ -291,7 +315,7 @@ gen_halos ( char * dirname , char * incname , node_t * halos, int split )
   char name_4d[MAX_4DARRAYS][NAMELEN] ;
 #define FRAC 4
   int num_halos, fraction, ihalo, j ;
-  int always_interp_mp = 1 ;
+  int always_interp_mp = 1;
 
   if ( dirname == NULL ) return(1) ;
 
@@ -573,12 +597,20 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %s for Y %s')\n",maxste
     }
 
 /* generate packs prior to stencil exchange in Y */
+#ifdef WRFPLUS
     gen_packs_halo( fp, p, maxstenwidth, 0, 0, 0, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+#else
+    gen_packs_halo( fp, p, maxstenwidth, 0, 0, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+#endif
 /* generate stencil exchange in Y */
     fprintf(fp,"   CALL RSL_LITE_EXCH_Y ( local_communicator , mytask, ntasks, ntasks_x, ntasks_y, &\n") ;
     fprintf(fp,"                          rsl_sendw_m,  rsl_sendw_p, rsl_recvw_m,  rsl_recvw_p    )\n" ) ;
 /* generate unpacks after stencil exchange in Y */
+#ifdef WRFPLUS
     gen_packs_halo( fp, p, maxstenwidth, 0, 1 , 0, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+#else
+    gen_packs_halo( fp, p, maxstenwidth, 0, 1 , "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+#endif
     fprintf(fp,"ENDDO\n") ; 
 
 /* generate the stencil init statement for X transfer */
@@ -613,12 +645,20 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %s for Y %s')\n",maxste
       fprintf(fp,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%sr_y,kps,kpe)\n") ;
     }
 /* generate packs prior to stencil exchange in X */
+#ifdef WRFPLUS
     gen_packs_halo( fp, p, maxstenwidth, 1, 0, 0, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+#else
+    gen_packs_halo( fp, p, maxstenwidth, 1, 0, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+#endif
 /* generate stencil exchange in X */
     fprintf(fp,"   CALL RSL_LITE_EXCH_X ( local_communicator , mytask, ntasks, ntasks_x, ntasks_y, &\n") ;
     fprintf(fp,"                          rsl_sendw_m,  rsl_sendw_p, rsl_recvw_m,  rsl_recvw_p    )\n" ) ;
 /* generate unpacks after stencil exchange in X */
+#ifdef WRFPLUS
     gen_packs_halo( fp, p, maxstenwidth, 1, 1, 0, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+#else
+    gen_packs_halo( fp, p, maxstenwidth, 1, 1, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+#endif
     fprintf(fp,"    ENDDO\n") ; 
     if ( subgrid != 0 ) {
       fprintf(fp,"ENDIF\n") ;
@@ -626,7 +666,11 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %s for Y %s')\n",maxste
     close_the_file(fp) ;
     if ( incname == NULL ) {
       /* Finish call to custom routine that encapsulates inlined comm calls */
+#ifdef WRFPLUS
       print_call_or_def(fpcall, p, "CALL", commname, 0, "local_communicator", need_config_flags );
+#else
+      print_call_or_def(fpcall, p, "CALL", commname, "local_communicator", need_config_flags );
+#endif
       close_the_file(fpcall) ;
       /* Generate definition of custom routine that encapsulates inlined comm calls */
       print_call_or_def(fpsub, p, "SUBROUTINE", commname, 0, "local_communicator", need_config_flags );
@@ -1158,7 +1202,11 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %s for Y %s')\n",maxste
 }
 #endif
 
+#ifdef WRFPLUS
 gen_packs_halo ( FILE *fp , node_t *p, char *shw, int xy /* 0=y,1=x */ , int pu /* 0=pack,1=unpack */, int nta /* 0=NLM,1=TLM,2=ADM*/, char * packname, char * commname, int always_interp_mp )   
+#else
+gen_packs_halo ( FILE *fp , node_t *p, char *shw, int xy /* 0=y,1=x */ , int pu /* 0=pack,1=unpack */, char * packname, char * commname, int always_interp_mp )   
+#endif
 {
   node_t * q ;
   node_t * dimd ;
@@ -1605,7 +1653,11 @@ gen_periods ( char * dirname , node_t * periods )
       continue ; 
     }
     print_warning(fpcall,fnamecall) ;
+#ifdef WRFPLUS
     print_call_or_def(fpcall, p, "CALL", commname, 0, "local_communicator_periodic", 1 );
+#else
+    print_call_or_def(fpcall, p, "CALL", commname, "local_communicator_periodic", 1 );
+#endif
     close_the_file(fpcall) ;
 
     /* Generate definition of custom routine that encapsulates inlined comm calls */
@@ -1616,9 +1668,15 @@ gen_periods ( char * dirname , node_t * periods )
       fprintf(stderr,"WARNING: gen_periods in registry cannot open %s for writing\n",fnamesub ) ;
       continue ; 
     }
+#ifdef WRFPLUS
     print_call_or_def(fpsub, p, "SUBROUTINE", commname, 0, "local_communicator_periodic", 1 );
     print_decl(fpsub, p, "local_communicator_periodic", 1, 0 );
     print_body(fpsub, commname, 0);
+#else
+    print_call_or_def(fpsub, p, "SUBROUTINE", commname, "local_communicator_periodic", 1 );
+    print_decl(fpsub, p, "local_communicator_periodic", 1 );
+    print_body(fpsub, commname);
+#endif
     close_the_file(fpsub) ;
 
     /* Generate inlined comm calls */

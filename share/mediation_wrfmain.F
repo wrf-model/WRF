@@ -49,7 +49,9 @@ use module_io
    CHARACTER (LEN=80)     :: message
    LOGICAL                :: restart
    LOGICAL, EXTERNAL      :: wrf_dm_on_monitor
+#if (WRFPLUS == 1)
    INTEGER                :: save_dyn_opt
+#endif
 
    CALL nl_get_restart( 1, restart )
    IF ( .NOT. restart ) THEN

@@ -1690,7 +1690,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   real :: wtsig(kms:kme),wt(ims:ime,kms:kme),wt2err(ims:ime,kms:kme)
   real :: rscale(ims:ime)           ! For converting to rho-coupled units.
   real :: wtij(ims:ime)             ! For holding weights in i-loop
-  real :: reserf(100)
+  real :: reserf(kms:kme)
   character*40 name
   character*3 chr_hr
   character(len=200) :: msg            ! Argument to wrf_message

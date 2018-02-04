@@ -263,7 +263,7 @@ module module_gw_gw2d
       integer            :: its, ite, jts, jte, ifs, ife, jfs, jfe, &
                             xdim, ydim, fxdim, fydim
                           
-! They need to be sorted, checked, and cleaned up
+! die müssen noch sortiert, geprüft und aufgeräumt werden
       integer ::                &
         iter,                   &
         j,                      &

@@ -117,7 +117,7 @@ SUBROUTINE microphysics_driver(                                          &
                     ,WSM6SCHEME, ETAMPNEW, FER_MP_HIRES, THOMPSON, THOMPSONAERO, FAST_KHAIN_LYNN, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN, NSSL_2MOMG  &
                     ,NSSL_1MOM,NSSL_1MOMLFO, FER_MP_HIRES_ADVECT & ! ,NSSL_3MOM       &
-                    ,LSCONDSCHEME, MKESSLERSCHEME, &
+                    ,LSCONDSCHEME, MKESSLERSCHEME &
                     ,MILBRANDT2MOM , CAMMGMPSCHEME,FULL_KHAIN_LYNN, P3_1CATEGORY, P3_1CATEGORY_NC, P3_2CATEGORY !,MILBRANDT3MOM
 #endif
 
@@ -754,70 +754,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                 CALL wrf_error_fatal ( 'arguments not present for calling mkessler' )
              ENDIF
 
-!
-        CASE (THOMPSONAERO)
-             CALL wrf_debug ( 100 , 'microphysics_driver: calling thompson' )
-             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR )   .AND.  &
-                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR )   .AND.  &
-                  PRESENT( QS_CURR ) .AND. PRESENT ( QG_CURR )   .AND.  &
-                  PRESENT( QNR_CURR) .AND. PRESENT ( QNI_CURR)   .AND.  &
-                  PRESENT( QNC_CURR) .AND. PRESENT ( QNWFA_CURR) .AND.  &
-                  PRESENT( QNIFA_CURR).AND.PRESENT ( QNWFA2D)    .AND.  &
-                  PRESENT( SNOWNC)   .AND. PRESENT ( SNOWNCV)    .AND.  &
-                  PRESENT( GRAUPELNC).AND. PRESENT ( GRAUPELNCV) .AND.  &
-                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) ) THEN
-#if ( WRF_CHEM == 1 )
-                 qv_b4mp(its:ite,kts:kte,jts:jte) = qv_curr(its:ite,kts:kte,jts:jte)
-                 qc_b4mp(its:ite,kts:kte,jts:jte) = qc_curr(its:ite,kts:kte,jts:jte)
-                 qi_b4mp(its:ite,kts:kte,jts:jte) = qi_curr(its:ite,kts:kte,jts:jte)
-                 qs_b4mp(its:ite,kts:kte,jts:jte) = qs_curr(its:ite,kts:kte,jts:jte)
-#endif
-             CALL mp_gt_driver(                          &
-                     QV=qv_curr,                         &
-                     QC=qc_curr,                         &
-                     QR=qr_curr,                         &
-                     QI=qi_curr,                         &
-                     QS=qs_curr,                         &
-                     QG=qg_curr,                         &
-                     NI=qni_curr,                        &
-                     NR=qnr_curr,                        &
-                     NC=qnc_curr,                        &
-                     NWFA=qnwfa_curr,                    &
-                     NIFA=qnifa_curr,                    &
-                     NWFA2D=qnwfa2d,                     &
-                     TH=th,                              &
-                     PII=pi_phy,                         &
-                     P=p,                                &
-                     W=w,                                &
-                     DZ=dz8w,                            &
-                     DT_IN=dt,                           &
-                     ITIMESTEP=itimestep,                &
-                     RAINNC=RAINNC,                      &
-                     RAINNCV=RAINNCV,                    &
-                     SNOWNC=SNOWNC,                      &
-                     SNOWNCV=SNOWNCV,                    &
-                     GRAUPELNC=GRAUPELNC,                &
-                     GRAUPELNCV=GRAUPELNCV,              &
-                     SR=SR,                              &
-#if ( WRF_CHEM == 1 )
-                     RAINPROD=rainprod,                  &
-                     EVAPPROD=evapprod,                  &
-#endif
-                     REFL_10CM=refl_10cm,                &
-                     diagflag=diagflag,                  &
-                     do_radar_ref=do_radar_ref,          &
-                     re_cloud=re_cloud,                  &
-                     re_ice=re_ice,                      &
-                     re_snow=re_snow,                    &
-                     has_reqc=has_reqc,                  & ! G. Thompson
-                     has_reqi=has_reqi,                  & ! G. Thompson
-                     has_reqs=has_reqs,                  & ! G. Thompson
-                 IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde, &
-                 IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
-                 ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
-             ELSE
-                CALL wrf_error_fatal ( 'arguments not present for calling thompson_et_al' )
-             ENDIF
 !
         CASE (THOMPSONAERO)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling thompson' )
@@ -2239,7 +2175,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling CAMMGMP SCHEME' )
              ENDIF
-#endif
 
 !    Added by Zhuxiao,  lscond (simplified Large-scale condensation scheme by Jimy )
 

@@ -128,8 +128,8 @@ use module_io
      ! if calling start_domain here, we always want it be called as NLM
      save_dyn_opt = model_config_rec%dyn_opt
      model_config_rec%dyn_opt = dyn_em
-#endif
      IF ( model_config_rec%dyn_opt .NE. dyn_em_check ) &
+#endif
      CALL start_domain ( grid , .TRUE. )
 #if (WRFPLUS == 1)
      model_config_rec%dyn_opt = save_dyn_opt

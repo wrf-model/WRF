@@ -669,29 +669,27 @@ END SUBROUTINE MORR_TWO_MOMENT_INIT_AERO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                       &
+SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
                 TH, QV, QC, QR, QI, QS, QG, NI, NS, NR, NG, NC,  & !TWG/amy add
-                TKE, KZH,                               & ! TWG/amy add
-                RHO, PII, P, DT_IN, DZ, HT, W,          &
+                RHO, PII, P, DT_IN, DZ, HT, W, KZH,     &
                 RAINNC, RAINNCV, SR,                    &
-		SNOWNC,SNOWNCV,GRAUPELNC,GRAUPELNCV,    & ! hm added 7/13/13
+                SNOWNC,SNOWNCV,GRAUPELNC,GRAUPELNCV,    & ! hm added 7/13/13
                 refl_10cm, diagflag, do_radar_ref,      & ! GT added for reflectivity calcs
                 qrcuten, qscuten, qicuten               & ! hm added
                ,F_QNDROP, qndrop                        & ! hm added, wrf-chem 
                ,IDS,IDE, JDS,JDE, KDS,KDE               & ! domain dims
                ,IMS,IME, JMS,JME, KMS,KME               & ! memory dims
                ,ITS,ITE, JTS,JTE, KTS,KTE               & ! tile   dimsi            )
-               ,PBL                               & ! TWG/amy add
-               ,aerocu                             & ! TWG add
-               ,aercu_opt                          & ! TWG add
-               ,no_src_types_cu                    & ! TWG add
-               ,EFCG, EFIG, EFSG, WACT             & !TWG add
-               ,CCN1_GS, CCN2_GS, CCN3_GS, CCN4_GS & !TWG add
-               ,CCN5_GS, CCN6_GS, CCN7_GS          & ! TWG add
-
-!jdf		   ,C2PREC3D,CSED3D,ISED3D,SSED3D,GSED3D,RSED3D & ! HM ADD, WRF-CHEM
+               ,PBL                                     & ! TWG/amy add
+               ,aerocu                                  & ! TWG add
+               ,aercu_opt                               & ! TWG add
+               ,no_src_types_cu                         & ! TWG add
+               ,EFCG, EFIG, EFSG, WACT                  & !TWG add
+               ,CCN1_GS, CCN2_GS, CCN3_GS, CCN4_GS      & !TWG add
+               ,CCN5_GS, CCN6_GS, CCN7_GS               & ! TWG add
+!jdf	       ,C2PREC3D,CSED3D,ISED3D,SSED3D,GSED3D,RSED3D & ! HM ADD, WRF-CHEM
                ,rainprod, evapprod                      &
-		   ,QLSINK,PRECR,PRECI,PRECS,PRECG &        ! HM ADD, WRF-CHEM
+               ,QLSINK,PRECR,PRECI,PRECS,PRECG &        ! HM ADD, WRF-CHEM
                                             )
  
 ! QV - water vapor mixing ratio (kg/kg)
@@ -724,7 +722,6 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                       &
 ! qicuten, cloud ice tendency from parameterized cumulus convection
 
 ! variables below currently not in use, not coupled to PBL or radiation codes
-! TKE - turbulence kinetic energy (m^2 s-2), NEEDED FOR DROPLET ACTIVATION (SEE CODE BELOW)
 ! NCTEND - droplet concentration tendency from pbl (kg-1 s-1)
 ! NCTEND - CLOUD ICE concentration tendency from pbl (kg-1 s-1)
 ! KZH - heat eddy diffusion coefficient from YSU scheme (M^2 S-1), NEEDED FOR DROPLET ACTIVATION (SEE CODE BELOW)
@@ -777,7 +774,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                       &
 !, effcs, effis
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN):: &
-                          pii, p, dz, rho, w, tke, kzh !, TWG/amy add
+                          pii, p, dz, rho, w, kzh !, TWG/amy add
    REAL, INTENT(IN):: dt_in
    INTEGER, INTENT(IN):: ITIMESTEP
 
@@ -809,9 +806,8 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                       &
                             QC1D, QI1D, QR1D,NI1D, NS1D, NR1D, QS1D,                          &
                             T_TEND1D,QV_TEND1D, T1D, QV1D, P1D, W1D, WVAR1D,         &
                             EFFC1D, EFFI1D, EFFS1D, EFFR1D,DZ1D,   &
-   ! HM ADD GRAUPEL
+! HM ADD GRAUPEL
                             QG_TEND1D, NG_TEND1D, QG1D, NG1D, EFFG1D, &
-
 ! ADD SEDIMENTATION TENDENCIES (UNITS OF KG/KG/S)
                             QGSTEN,QRSTEN, QISTEN, QNISTEN, QCSTEN, &
 ! ADD CUMULUS TENDENCIES
@@ -869,25 +865,14 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                       &
 ! currently assign wvar to 0.5 m/s (not coupled with PBL scheme)
 ! Begin TWG/amy add
 ! wvar is the ST. DEV. OF sub-grid vertical velocity, used for calculating
-! droplet 
-! activation rates.
-! WVAR CAN BE DERIVED EITHER FROM PREDICTED TKE (AS IN MYJ PBL SCHEME),
-! OR FROM EDDY DIFFUSION COEFFICIENT KZH (AS IN YSU PBL SCHEME),
+! droplet activation rates.
+! WVAR CAN BE FROM EDDY DIFFUSION COEFFICIENT KZH (AS IN YSU PBL SCHEME),
 ! DEPENDING ON THE PARTICULAR pbl SCHEME DRIVER MODEL IS COUPLED WITH
 ! NOTE: IF MODEL HAS HIGH ENOUGH RESOLUTION TO RESOLVE UPDRAFTS, WVAR MAY 
 ! NOT BE NEEDED 
 
-
-!       WVAR(I,K,J)     = 10.0
 ! for YSU pbl scheme:
-! coupling as in WRF2
-      if (PBL.ne.1) then
-! for MYJ pbl scheme or 3D TKE:
-         WVAR(I,K,J)     = (0.667*tke(i,k,j))**0.5
-      else
-! for YSU pbl scheme:
-         WVAR(I,K,J) = KZH(I,K+1,J)/20.
-      endif
+       WVAR(I,K,J) = KZH(I,K+1,J)/20.
 
        WVAR(I,K,J) = MAX(0.5,WVAR(I,K,J))
        WVAR(I,K,J) = MIN(50.,WVAR(I,K,J))
@@ -1030,23 +1015,22 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                       &
 
 !jdf  end do
 
-      call MORR_TWO_MOMENT_MICRO(QC_TEND1D, QI_TEND1D, QNI_TEND1D, QR_TEND1D,            &
-       NI_TEND1D, NS_TEND1D, NR_TEND1D,                                                  &
-       QC1D, QI1D, QS1D, QR1D,NI1D, NS1D, NR1D,                                          &
-       T_TEND1D,QV_TEND1D, T1D, QV1D, P1D, DZ1D, W1D, WVAR1D,                   &
-       PRECPRT1D,SNOWRT1D,                                                               &
-       SNOWPRT1D,GRPLPRT1D,                 & ! hm added 7/13/13
-       EFFC1D,EFFI1D,EFFS1D,EFFR1D,DT,                                                   &
-                                            IMS,IME, JMS,JME, KMS,KME,                   &
-                                            ITS,ITE, JTS,JTE, KTS,KTE,                   & ! HM ADD GRAUPEL
-                                    QG_TEND1D,NG_TEND1D,QG1D,NG1D,EFFG1D, &
-                                    qrcu1d, qscu1d, qicu1d, &
-! ADD SEDIMENTATION TENDENCIES
-                                  QGSTEN,QRSTEN,QISTEN,QNISTEN,QCSTEN, &
-                                  nc1d, nc_tend1d, iinum, C2PREC,CSED,ISED,SSED,GSED,RSED & !wrf-chem
-                                  ,no_src_types_cu,maerosol,naer               & !TWG add prescribed aerosol
+      call MORR_TWO_MOMENT_MICRO(QC_TEND1D, QI_TEND1D, QNI_TEND1D, QR_TEND1D, &
+                                 NI_TEND1D, NS_TEND1D, NR_TEND1D,             &
+                                 QC1D, QI1D, QS1D, QR1D,NI1D, NS1D, NR1D,     &
+                                 T_TEND1D,QV_TEND1D, T1D, QV1D, P1D, DZ1D, W1D, WVAR1D,    &
+                                 PRECPRT1D,SNOWRT1D,                          &
+                                 SNOWPRT1D,GRPLPRT1D,                         & ! hm added 7/13/13
+                                 EFFC1D,EFFI1D,EFFS1D,EFFR1D,DT,              &
+                                 IMS,IME, JMS,JME, KMS,KME,                   &
+                                 ITS,ITE, JTS,JTE, KTS,KTE,                   & ! HM ADD GRAUPEL
+                                 QG_TEND1D,NG_TEND1D,QG1D,NG1D,EFFG1D,        &
+                                 qrcu1d, qscu1d, qicu1d,                      & ! ADD SEDIMENTATION TENDENCIES
+                                 QGSTEN,QRSTEN,QISTEN,QNISTEN,QCSTEN,         &
+                                 nc1d, nc_tend1d, iinum, C2PREC,CSED,ISED,SSED,GSED,RSED & !wrf-chem
+                                 ,no_src_types_cu,maerosol,naer               & !TWG add prescribed aerosol
 #if (WRF_CHEM == 1)
-                                  ,rainprod1d, evapprod1d & !wrf-chem
+                                 ,rainprod1d, evapprod1d & !wrf-chem
 #endif
                        )
 
@@ -1066,7 +1050,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                       &
           NI(i,k,j)        = NI1D(k)
           NS(i,k,j)        = NS1D(k)          
           NR(i,k,j)        = NR1D(k)
-	  QG(I,K,j)        = QG1D(K)
+          QG(I,K,j)        = QG1D(K)
           NG(I,K,j)        = NG1D(K)
 
           T(i,k,j)         = T1D(k)

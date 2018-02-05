@@ -1255,7 +1255,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      NR=qnr_curr,                        &  !* ! VVT
                      NG=qng_curr,                        &  !* ! VVT
                      NC=qnc_curr,                        &  ! TWG/amy added nc
-                     TKE=tke_pbl,                        &  ! TWG/amy add
                      KZH=exch_h,                         &  ! TWG/amy add
                      RHO=rho,                            &  !*
                      PII=pi_phy,                         &  !*

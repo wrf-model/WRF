@@ -1488,9 +1488,9 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
    USE module_configure , ONLY : grid_config_rec_type
    USE module_utility
    USE module_streams
-#if ( WRFPLUS == 1 )
+!!#if ( WRFPLUS == 1 )
    USE mediation_pertmod_io , ONLY : save_xtraj, save_tl_pert
-#endif
+!!#endif
   ! Model layer
 
    IMPLICIT NONE

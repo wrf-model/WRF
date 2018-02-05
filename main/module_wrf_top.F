@@ -434,6 +434,8 @@ CONTAINS
 
    END SUBROUTINE wrf_init
 
+#if ( WRFPLUS == 1 )
+!--------------AD/TL code begin---------------------------------------
    SUBROUTINE wrf_adtl_check( )
 
    IF ( config_flags%scenario_type .EQ. 0 ) THEN
@@ -1989,6 +1991,8 @@ ENDIF
    call xtraj_io_initialize
 
    END SUBROUTINE wrf_run_ad_standalone
+!------------------AD/TL code end--------------------
+#endif
 
    SUBROUTINE wrf_run( )
 !<DESCRIPTION>

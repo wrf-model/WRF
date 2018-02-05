@@ -1545,7 +1545,7 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
   integer memorystart(3),memoryend(3)
   integer patchstart(3),patchend(3)
   character(132) datestr,varname
-#if (WRFPLUS != 1)
+#if (WRFPLUS == 1)
   real(r_double) dummy_field(1)
 #else
   real dummy_field(1)

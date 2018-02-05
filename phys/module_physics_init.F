@@ -4801,7 +4801,10 @@ subroutine aerosol_in_cu(aeromcu,alevsiz,no_months,no_src_types,XLAT,XLONG,aerop
    CHARACTER (len=2) :: mons !PSH
    integer :: v, mi !PSH
    REAL, dimension(:), ALLOCATABLE :: lon_aer, lat_aer !, lev_aer !PSH
-
+   LOGICAL           :: exists
+   INTEGER, EXTERNAL :: get_unused_unit
+   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+   INTEGER :: istatus, iunit
    jtf=min0(jte,jde-1)
    ktf=min0(kte,kde-1)
    itf=min0(ite,ide-1)
@@ -4811,68 +4814,32 @@ subroutine aerosol_in_cu(aeromcu,alevsiz,no_months,no_src_types,XLAT,XLONG,aerop
                "SULFATE ","BCPHO   ","BCPHI   ","OCPHO   ","OCPHI   "/)
    frmt = '(I0.2)'
 
-!------ OPEN AEROSOL NETCDF FILE ------
-    ncfcode = nf90_open("./CESM_RCP4.5_Current_Aerosol_Data_01.nc",nf90_nowrite,ncid )
-    if(ncfcode /= nf90_NoErr) call handle_err(ncfcode)
+      INQUIRE(FILE='./CESM_RCP4.5_Current_Aerosol_Data.dat', EXIST=exists)
 
-!------- GET DIMENSIONS OF VARS -------
-!    AEROSOL DATA IS (LON, LAT, LEVEL)
-   ncfcode = nf90_inq_varid(ncid, TRIM(species(1)), varID)
-   if(ncfcode /= nf90_NoErr) call handle_err(ncfcode)
-   ncfcode = nf90_inquire_variable(ncid, varID, dimids = dimIDs)
-   if(ncfcode /= nf90_NoErr) call handle_err(ncfcode)
-   ncfcode = nf90_inquire_dimension(ncid, dimIDs(1), len = numLons)
-   if(ncfcode /= nf90_NoErr) call handle_err(ncfcode)
-   ncfcode = nf90_inquire_dimension(ncid, dimIDs(2), len = numLats)
-   if(ncfcode /= nf90_NoErr) call handle_err(ncfcode)
-   ncfcode = nf90_inquire_dimension(ncid, dimIDs(3), len = numLevs)
-   if(ncfcode /= nf90_NoErr) call handle_err(ncfcode)
+      IF (exists) THEN
+          iunit = get_unused_unit()
+          IF ( iunit <= 0 ) THEN
+             IF ( wrf_dm_on_monitor() ) THEN
+                CALL wrf_error_fatal('Error in aerosol_in_cu: could not find a free Fortran unit.')
+             END IF
+          END IF
 
-!---------- ALLOCATE VARIABLES --------
-   allocate(aeroin(numLons, numLats, numLevs, no_months, no_src_types))
-   allocate(aeropin(numLons, numLats, numLevs, no_months))
-   allocate(lon_aer(numLons))
-   allocate(lat_aer(numLats))
-
-!--------- GET LAT, LON, LEV ----------
-   ncfcode = nf90_inq_varid(ncid, "lon", varID)
-   if(ncfcode /= nf90_NoErr) call handle_err(12)
-   ncfcode = nf90_get_var (ncid, varID, lon_aer )
-   if(ncfcode /= nf90_NoErr) call handle_err(13)
-!Need lon to be from -180 to 180:
-   if(maxval(lon_aer) > 180.0) then
-     do i = 1,numLons
-       if(lon_aer(i) > 180) then
-         lon_aer(i) = lon_aer(i) - 360.0
-       end if
-     end do
-   end if
-   ncfcode = nf90_inq_varid(ncid, "lat", varID)
-   if(ncfcode /= nf90_NoErr) call handle_err(14)
-   ncfcode = nf90_get_var (ncid, varID, lat_aer )
-   if(ncfcode /= nf90_NoErr) call handle_err(15)
-
-!------- LOOP TO GET ALL MONTHS -------
-   do mi = 1, no_months
-!------ OPEN AEROSOL NETCDF FILE ------
-     WRITE (mons,frmt) mi
-     fname = './CESM_RCP4.5_Current_Aerosol_Data_'//TRIM(mons)//'.nc'
-     ncfcode = nf90_open (TRIM(fname), nf90_nowrite, ncid )
-     if(ncfcode /= nf90_NoErr) call handle_err(1)
-!--- LOOP TO GET ALL PRES FOR MONTH ---
-     ncfcode = nf90_inq_varid(ncid, "Pressure", varID)
-     if(ncfcode /= nf90_NoErr) call handle_err(14)
-     ncfcode = nf90_get_var (ncid, varID, aeropin(:,:,:,mi))
-     if(ncfcode /= nf90_NoErr) call handle_err(15)
-!--- LOOP TO GET ALL VARS FOR MONTH ---
-     do v = 1,no_src_types
-        ncfcode = nf90_inq_varid(ncid, TRIM(species(v)), varID)
-        if(ncfcode /= nf90_NoErr) call handle_err(2)
-        ncfcode = nf90_get_var (ncid, varID, aeroin(:,:,:,mi,v))
-        if(ncfcode /= nf90_NoErr) call handle_err(3)
-     end do ! End var loop
-   end do ! End month loop
-
+          ! Read aerosol information 
+          OPEN(UNIT=iunit, FILE='CESM_RCP4.5_Current_Aerosol_Data.dat', FORM='unformatted', &
+               STATUS='old', IOSTAT=istatus)
+            IF (istatus == 0) THEN
+               READ(UNIT=iunit)  numLons, numLats,numLevs
+               allocate(aeroin(numLons, numLats, numLevs, no_months, no_src_types))
+               allocate(aeropin(numLons, numLats, numLevs, no_months))
+               allocate(lon_aer(numLons))
+               allocate(lat_aer(numLats))
+               READ(UNIT=iunit)  lat_aer
+               READ(UNIT=iunit)  lon_aer
+               READ(UNIT=iunit)  aeropin
+               READ(UNIT=iunit)  aeroin
+            END IF
+          CLOSE(iunit)
+      END IF
 !---------------------------------------------------------------------------
 !-- latitudinally interpolate ozone data (and extend longitudinally)
 !-- using function lin_interpol2(x, f, y) result(g)
@@ -4914,13 +4881,6 @@ subroutine aerosol_in_cu(aeromcu,alevsiz,no_months,no_src_types,XLAT,XLONG,aerop
       end do
 
 END SUBROUTINE aerosol_in_cu
-
-subroutine handle_err(errid)
-   INTEGER errid
-   print*,'Error in Aerosol read at ',errid
-   RETURN
-
-END SUBROUTINE handle_err
 
 subroutine interp_vec_cu(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
 ! This subroutine was taken and modified from the radiation driver. -PSH

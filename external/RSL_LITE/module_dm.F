@@ -1820,20 +1820,12 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
 !!!!        CALL atm_cmp_start( mpi_comm_here )   ! atmospheric side of HWRF coupler will split MPI_COMM_WORLD and return communicator as argument
 #endif
         CALL wrf_set_dm_communicator( mpi_comm_here )
+        CALL wrf_termio_dup( mpi_comm_here )
 #if (WRFPLUS == 1)
       ELSE
         CALL wrf_set_dm_communicator( local_communicator )
 #endif
       END IF
-#if (WRFPLUS == 1)
-      IF ( .NOT. mpi_inited ) THEN
-         CALL wrf_termio_dup( mpi_comm_here )
-      ENDIF
-#else
-      CALL wrf_termio_dup( mpi_comm_here )
-#endif
-
-!hcl-check
 ! this should have been reset by init_module_wrf_quilt to be just the compute tasks
       CALL wrf_get_dm_communicator( mpi_comm_here )
 
@@ -2194,13 +2186,6 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
         CALL wrf_set_dm_communicator ( mpi_comm_here )
       END IF
       CALL wrf_get_dm_communicator( mpi_comm_local )
-#if (WRFPLUS == 1)
-      IF ( .NOT. mpi_inited ) THEN
-         CALL wrf_termio_dup( mpi_comm_here )
-      ENDIF
-#else 
-      CALL wrf_termio_dup( mpi_comm_here )
-#endif
 #endif
    END SUBROUTINE init_module_dm
 
@@ -3399,12 +3384,7 @@ END
        INTEGER  Patch(3,2), Gpatch(3,2,ntasks)
     ! allocated further down, after the D indices are potentially recalculated for staggering
        REAL, ALLOCATABLE :: tmpbuf( : )
-!Jan 2016 commented out the if WRFPLUS condition in accordance with rev9050 changes
-!#if (WRFPLUS == 1)
-!       REAL locbuf( (PE1a-PS1a+1)*(PE2a-PS2a+1)*(PE3a-PS3a+1)/typesize*typesize+32 )
-!#else
        REAL locbuf( (PE1a-PS1a+1)*(PE2a-PS2a+1)*(PE3a-PS3a+1)/RWORDSIZE*typesize+32 )
-!#endif
 
        DS1 = DS1a ; DE1 = DE1a ; DS2=DS2a ; DE2 = DE2a ; DS3 = DS3a ; DE3 = DE3a
        MS1 = MS1a ; ME1 = ME1a ; MS2=MS2a ; ME2 = ME2a ; MS3 = MS3a ; ME3 = ME3a
@@ -5688,6 +5668,7 @@ END IF
                                   nids, nide, njds, njde, nkds, nkde,    &
                                   nims, nime, njms, njme, nkms, nkme,    &
                                   nips, nipe, njps, njpe, nkps, nkpe    )
+
 
         nlev  = ckde - ckds + 1 
 

@@ -488,13 +488,13 @@ main_it_loop: &
 
 
 !-----------------------------------------------------------------------
-	subroutine init_data_mosaic2_asect( id, config_flags, is_aerosol, vbs_nbin, num_chem )
+	subroutine init_data_mosaic2_asect( id, config_flags, is_aerosol, vbs_nbin)
 !
 !   major refactoring in jun-2015 to clean up this very old code
 !   before implementing external mixing
 !
 	use module_configure, only:   grid_config_rec_type
-	use module_state_description, only:  num_chem, p1st => param_first_scalar
+	use module_state_description, only:  num_chem
 	use module_peg_util, only:  peg_error_fatal, peg_message
 
 	use module_data_mosaic_aero, only: &
@@ -508,7 +508,7 @@ main_it_loop: &
 
 	implicit none
 
-	integer, intent(in) :: id, num_chem
+	integer, intent(in) :: id
 	integer, intent(in) :: vbs_nbin(*)
 	type(grid_config_rec_type), intent(in) :: config_flags
 	logical, intent(out) :: is_aerosol(num_chem)

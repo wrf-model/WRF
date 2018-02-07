@@ -3318,7 +3318,7 @@ n2o5_flag = config_flags%n2o5_hetchem
 
         idum = mod( max( config_flags%mosaic_aerchem_optaa, 0 ), 10 )   ! use mosaic2 when 1s digit = 2
         if ( idum == 2 ) then
-            call init_data_mosaic2_asect( id, config_flags, is_aerosol, vbs_nbin, num_chem )
+            call init_data_mosaic2_asect( id, config_flags, is_aerosol, vbs_nbin )
         end if
 
 

@@ -645,7 +645,6 @@ SUBROUTINE MORR_TWO_MOMENT_INIT_AERO(hail_opt) ! RAS
              else
                   ccnfact_pamdm(sat_pamdm,m)=0.0
              endif
-             print*,'m',m,' sat ',sat_pamdm,' ccnfact',ccnfact_pamdm(sat_pamdm,m)
            end do
 
        end do

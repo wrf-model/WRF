@@ -2891,7 +2891,8 @@ end subroutine zm_mphy
 !++ag replace sg erf with hm derf pre 1.68
 !               nact=nact+0.5*(1.-derf(x))*na(m)
 !++ag 1.68 new error function
-                nact=nact+0.5*(1.-derf(x))*na(m)  ! danger erf
+!               nact=nact+0.5_r8*(1._r8-derf(x))*na(m)  ! danger erf
+                nact=nact+0.5_r8*(1._r8-erf(x))*na(m)  ! danger erf
 !       write(*,*)'nact',nact,derf(x),na(m),m
 !       write(*,*) 'lnsmloc(m)',lnsmloc(m),lnsmax,alogsig(m)
 !                write(*,*) 'wbar=',wbar
@@ -3415,7 +3416,7 @@ CONTAINS
           INTENT(IN   ) ::                                   &
                                                           U, &
                                                           V, &
-!ckay                                                     W, &
+                                                          W, &
                                                          TH, &
                                                           T, &
                                                          QV, &
@@ -3426,11 +3427,9 @@ CONTAINS
   INTEGER,      INTENT(IN   ) :: no_src_types_cu !PSH/TWG
   INTEGER,      INTENT(IN   ) :: aercu_opt !PSH/TWG
   REAL,         INTENT(IN   ) :: aercu_fct       !PSH/TWG
-  REAL,  DIMENSION( ims:ime, kms:kme, jms:jme, no_src_types_cu), OPTIONAL, &
-          INTENT(INOUT) ::                                   aerocu !PSH/TWG
+  REAL,  DIMENSION( ims:ime, kms:kme, jms:jme, no_src_types_cu),  &
+          INTENT(INOUT) ::                            aerocu !PSH/TWG
 
-
-!
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         , &
           INTENT(INOUT) ::                                   &
                                                       W0AVG   
@@ -3454,13 +3453,10 @@ CONTAINS
 
    LOGICAL, DIMENSION( ims:ime , jms:jme ),                  &
           INTENT(INOUT) :: CU_ACT_FLAG
-
 !
 ! Optional arguments
 !
-
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),           &
-         OPTIONAL,                                           &
          INTENT(INOUT) ::                                    &
                                                    RTHCUTEN, &
                                                    RQVCUTEN, &
@@ -3489,7 +3485,10 @@ CONTAINS
                                                cldfra_dp_KF, &
                                                cldfra_sh_KF, &
                                                       qc_KF, &
-                                                      qi_KF, &
+                                                      qi_KF
+
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         , &
+          INTENT(INOUT) ::                                   &
                                                       qr_KF, & ! TWG
                                                       qs_KF, & ! TWG
                                                       nc_KF, & ! TWG
@@ -3499,8 +3498,7 @@ CONTAINS
                                                      ccn_KF, & ! TWG
                                                        EFCS, & ! TWG
                                                        EFIS, & ! TWG
-                                                       EFSS, & ! TWG
-                                                          W
+                                                       EFSS
 
    REAL, DIMENSION( ims:ime , jms:jme ),                     & !TWG
           INTENT(INOUT) ::                           ainc_frac
@@ -3528,7 +3526,6 @@ CONTAINS
 !ckaywup
    REAL, DIMENSION( ims:ime,  kms:kme , jms:jme )          , &
            INTENT(INOUT) ::                             w_up
-
 
 ! LOCAL VARS
 
@@ -3621,7 +3618,6 @@ CONTAINS
          ENDDO
       ENDDO
    ENDDO
-
 
    lastdt = dt
 
@@ -3781,7 +3777,6 @@ CONTAINS
      DO J = jts,jte
        DO I=its,ite
           
-
          IF ( NCA(I,J) .ge. 0.5*DT ) then
             CU_ACT_FLAG(i,j) = .false.
          ELSE
@@ -3793,12 +3788,11 @@ CONTAINS
                DQRDT(k)=0.
                DQSDT(k)=0.
                DTDT(k)=0.
-!ckay
                cldfra_dp_KF(I,k,J)=0.
                cldfra_sh_KF(I,k,J)=0.
                qc_KF(I,k,J)=0.
                qi_KF(I,k,J)=0.
-! TWG 06/14/16
+             IF (aercu_opt.gt.0) THEN
                qr_KF(I,k,J)=0.
                qs_KF(I,k,J)=0.
                nc_KF(I,k,J)=0.
@@ -3806,11 +3800,12 @@ CONTAINS
                nr_KF(I,k,J)=0.
                ns_KF(I,k,J)=0.
                ccn_KF(I,k,J)=0.
-               
-! END TWG
+             END IF
                w_up(I,k,J)=0.
             ENDDO
-               ainc_frac(I,J) = 0. ! TWG
+             IF (aercu_opt.gt.0) THEN
+               ainc_frac(I,J) = 0.
+             END IF
             IF (KF_EDRATES == 1) THEN
                DO k=kts,kte
                   UDR_KF(I,k,J)=0.
@@ -3847,9 +3842,9 @@ CONTAINS
             ENDDO
 
 !dkay
-   IF (aercu_opt.gt.0) THEN
-            call zm_mphyi ()
-   END IF
+            IF (aercu_opt.gt.0) THEN
+                call zm_mphyi ()
+            END IF
 
             CALL KF_eta_PARA(I, J,                  &
                  U1D,V1D,T1D,QV1D,P1D,DZ1D,W0AVG1D, &
@@ -3878,14 +3873,11 @@ CONTAINS
                  aerocu,no_src_types_cu,aercu_fct,  &
                  aercu_opt,EFCS,EFIS,EFSS) !PSH/TWG
 
-            IF(PRESENT(rthcuten).AND.PRESENT(rqvcuten)) THEN
               DO K=kts,kte
                  RTHCUTEN(I,K,J)=DTDT(K)/pi(I,K,J)
                  RQVCUTEN(I,K,J)=DQDT(K)
               ENDDO
-            ENDIF
 
-            IF(PRESENT(rqrcuten).AND.PRESENT(rqccuten)) THEN
               IF( F_QR )THEN
                 DO K=kts,kte
                    RQRCUTEN(I,K,J)=DQRDT(K)
@@ -3898,26 +3890,21 @@ CONTAINS
                    RQCCUTEN(I,K,J)=DQRDT(K)+DQCDT(K)
                 ENDDO
               ENDIF
-            ENDIF
 
 !......     QSTEN STORES GRAUPEL TENDENCY IF IT EXISTS, OTHERISE SNOW (V2)
 
 
-            IF(PRESENT( rqicuten )) THEN
               IF ( F_QI ) THEN
                 DO K=kts,kte
                    RQICUTEN(I,K,J)=DQIDT(K)
                 ENDDO
               ENDIF
-            ENDIF
 
-            IF(PRESENT( rqscuten )) THEN
               IF ( F_QS ) THEN
                 DO K=kts,kte
                    RQSCUTEN(I,K,J)=DQSDT(K)
                 ENDDO
               ENDIF
-            ENDIF
 !
          ENDIF 
        ENDDO     ! i-loop
@@ -3992,7 +3979,6 @@ CONTAINS
       INTEGER, INTENT(IN   ) :: aercu_opt        !PSH/TWG
       REAL,  DIMENSION( ims:ime, kms:kme, jms:jme, no_src_types_cu), OPTIONAL, &
       INTENT(INOUT) ::                                   aerocu !PSH/TWG
-
 
 !ckay
       REAL, DIMENSION( ims:ime, jms:jme ),                 &
@@ -4582,6 +4568,7 @@ usl:   DO
             QLIQ(K)=0.
             QICE(K)=0.
 !TWG 06/14/16
+         IF (aercu_opt .GT. 0) THEN
             QRAIN(K)=0.
             QSNOW(K)=0.
             NLIQ(K)=0.
@@ -4592,6 +4579,7 @@ usl:   DO
             EFFCH(K) = 2.5
             EFFIH(K) = 4.99
             EFFSH(K) = 9.99
+         END IF
 !END TWG
             QLQOUT(K)=0.
             QICOUT(K)=0.
@@ -4622,7 +4610,7 @@ usl:   DO
             DILBE = 0.
 
 !dkay
-IF (aercu_opt.gt.0) THEN
+     IF (aercu_opt.gt.0) THEN
                 zf_wrf(0) = 0.0  ! ground
                 DO KQ=KTS,KTE
                  zf_wrf(KQ) = zf_wrf(KQ-1)+DZQ(KQ)
@@ -4642,12 +4630,9 @@ IF (aercu_opt.gt.0) THEN
                    cmei(1,JK) =0.0
                oldTU(kq) = t0(kq)
                oldQU(kq) = Q0(kq)
-
                 End do
-
               Miter = 0
-END IF
-
+     END IF
 
 updraft:    DO NK=K,KL-1
               NK1=NK+1
@@ -4890,7 +4875,6 @@ updraft:    DO NK=K,KL-1
                 IF(NK1.LE.KPBL)UER(NK1)=UER(NK1)+VMFLCL*DP(NK1)/DPTHMX
               ENDIF
 
-
 !dkay
               IF (aercu_opt.gt.0) THEN
                   eps1u = 0.622
@@ -4909,8 +4893,6 @@ updraft:    DO NK=K,KL-1
                    qi_kf_act(JK)=AQNEWIC(KQ)
               END IF
 !end dkay
-
-
 !
             END DO updraft
 
@@ -5095,14 +5077,10 @@ updraft:    DO NK=K,KL-1
 !                   end if
 
               END DO
-
               end if  ! dccmp
 !dkay
-     
 2999         CONTINUE
      END IF
-
-
 !
 !...CHECK CLOUD DEPTH...IF CLOUD IS TALL ENOUGH, ESTIMATE THE EQUILIBRIUM
 !   TEMPERATURE LEVEL (LET) AND ADJUST MASS FLUX PROFILE AT CLOUD TOP SO
@@ -5132,6 +5110,7 @@ updraft:    DO NK=K,KL-1
               qc_KF(I,NK,J)=QLIQ(NK)
               qi_KF(I,NK,J)=QICE(NK)
 ! TWG 06/14/16
+             IF (aercu_opt .GT. 0) THEN
               qr_KF(I,NK,J)=QRAIN(NK)
               qs_KF(I,NK,J)=QSNOW(NK)
               nc_KF(I,NK,J)=NLIQ(NK)
@@ -5142,6 +5121,7 @@ updraft:    DO NK=K,KL-1
               EFCS(I,NK,J)=MAX(2.49, MIN(EFFCH(NK), 50.))
               EFIS(I,NK,J)=MAX(4.99, MIN(EFFIH(NK), 120.))
               EFSS(I,NK,J)=MAX(9.99, MIN(EFFSH(NK), 999.))
+             END IF
 ! END TWG
             END DO
 !ckay: if mean env RH with respect to water/ice is over 100% then dont allow KF
@@ -5205,6 +5185,7 @@ updraft:    DO NK=K,KL-1
                 qc_KF(I,NK,J)=0.
                 qi_KF(I,NK,J)=0.
 !TWG 06/14/16
+              IF (aercu_opt .GT. 0) THEN
                 qr_KF(I,NK,J)=0.
                 qs_KF(I,NK,J)=0.
                 nc_KF(I,NK,J)=0.
@@ -5212,6 +5193,7 @@ updraft:    DO NK=K,KL-1
                 nr_KF(I,NK,J)=0.
                 ns_KF(I,NK,J)=0.
                 ccn_KF(I,NK,J)=0.
+              END IF
 ! END TWG
                 w_up(I,NK,J)=0.
               ENDDO
@@ -5250,13 +5232,15 @@ updraft:    DO NK=K,KL-1
                   qc_KF(I,NK,J)=0.
                   qi_KF(I,NK,J)=0.
 !TWG 06/14/16
-                qr_KF(I,NK,J)=0.
-                qs_KF(I,NK,J)=0.
-                nc_KF(I,NK,J)=0.
-                ni_KF(I,NK,J)=0.
-                nr_KF(I,NK,J)=0.
-                ns_KF(I,NK,J)=0.
-                ccn_KF(I,NK,J)=0.
+                IF (aercu_opt .GT. 0) THEN
+                  qr_KF(I,NK,J)=0.
+                  qs_KF(I,NK,J)=0.
+                  nc_KF(I,NK,J)=0.
+                  ni_KF(I,NK,J)=0.
+                  nr_KF(I,NK,J)=0.
+                  ns_KF(I,NK,J)=0.
+                  ccn_KF(I,NK,J)=0.
+                END IF
 ! END TWG
                   w_up(I,NK,J)=0.
                 ENDDO
@@ -5352,6 +5336,7 @@ updraft:    DO NK=K,KL-1
         qc_KF(I,NK,J)=0.
         qi_KF(I,NK,J)=0.
 !TWG 06/14/16
+       IF (aercu_opt .GT. 0) THEN
         qr_KF(I,NK,J)=0.
         qs_KF(I,NK,J)=0.
         nc_KF(I,NK,J)=0.
@@ -5359,6 +5344,7 @@ updraft:    DO NK=K,KL-1
         nr_KF(I,NK,J)=0.
         ns_KF(I,NK,J)=0.
         ccn_KF(I,NK,J)=0.
+       END IF
 ! END TWG
         w_up (I,NK,J)=0.
       ENDIF
@@ -5405,6 +5391,7 @@ updraft:    DO NK=K,KL-1
           qc_KF(I,NK,J)=0.
           qi_KF(I,NK,J)=0.
 !TWG 06/14/16
+         IF (aercu_opt .GT. 0) THEN
           qr_KF(I,NK,J)=0.
           qs_KF(I,NK,J)=0.
           nc_KF(I,NK,J)=0.
@@ -5412,6 +5399,7 @@ updraft:    DO NK=K,KL-1
           nr_KF(I,NK,J)=0.
           ns_KF(I,NK,J)=0.
           ccn_KF(I,NK,J)=0.
+         END IF
 ! END TWG
           w_up(I,NK,J)=0.
         ENDIF
@@ -6167,7 +6155,9 @@ iter:     DO NCOUNT=1,10
 ! get the cloud fraction for layer NK+1=NK1
             updil = (100.-AINC)
             updil = updil/100.
+           IF (aercu_opt .GT. 0) THEN
             ainc_frac(I,J) = 1.0-updil !TWG
+           END IF
             updil = updil*dxsq  
             Drag = 0.5   
 
@@ -6326,7 +6316,7 @@ iter:     DO NCOUNT=1,10
        IF(IPRNT)then 
 !    if(I.eq.16 .and. J.eq.41)then
 !      IF(ISTOP.EQ.1)THEN
-!         write(98,*)
+!        write(98,*)
 !        write(98,*)'At t(h), I, J =',float(NTSD)*72./3600.,I,J
          write(message,*)'P(LC), DTP, WKL, WKLCL =',p0(LC)/100.,       &
                      TLCL+DTLCL+dtrh-TENV,WKL,WKLCL
@@ -6408,8 +6398,8 @@ iter:     DO NCOUNT=1,10
 ! 4422       format(i6) 
             DO 310 NK = 1,KL
               k = kl - nk + 1
- !             write(98,4455) p0(k)/100.,t0(k)-273.16,q0(k)*1000.,       &
- !                      u0(k),v0(k),W0AVG1D(K),dp(k),tke(k)
+!             write(98,4455) p0(k)/100.,t0(k)-273.16,q0(k)*1000.,       &
+!                      u0(k),v0(k),W0AVG1D(K),dp(k),tke(k)
 !             write(98) p0,t0,q0,u0,v0,w0,dp,tke
 !           WRITE(98,1115)Z0(K),P0(K)/100.,T0(K)-273.16,Q0(K)*1000.,
 !    *               U0(K),V0(K),DP(K)/100.,W0AVG(I,J,K)
@@ -7095,7 +7085,6 @@ iter:     DO NCOUNT=1,10
    endif
  
    CALL KF_LUTAB(SVP1,SVP2,SVP3,SVPT0)
-
 
    END SUBROUTINE mskf_init
 

@@ -1195,8 +1195,16 @@ CONTAINS
                 CLDFRA(i,k,j)=(1.-cldfra_cu(i,k,j))*CLDFRA(i,k,j)  ! Update resolved cloud fraction for Cu punch-through
                 CLDFRA(i,k,j)=CLDFRA(i,k,j)+cldfra_cu(i,k,j)       ! New total cloud fraction
                 CLDFRA(i,k,j)=AMIN1(1.0,CLDFRA(i,k,j))
+                qc(i,k,j) = qc(i,k,j)+qc_cu(i,k,j)*cldfra_cu(i,k,j)
+                qi(i,k,j) = qi(i,k,j)+qi_cu(i,k,j)*cldfra_cu(i,k,j)
+             ENDDO
+             ENDDO
+             ENDDO
  !TWG Begin
-                IF (aercu_opt.gt.0.0) THEN
+             IF (aercu_opt.gt.0.0) THEN
+             DO j = jts,jte
+             DO k = kts,kte
+             DO i = its,ite
                 IF (qc(i,k,j).eq.0.0.and.qc_cu(i,k,j).gt.0.0) THEN
                     qc_cu_weight(i,k,j) = 1.0
                 ELSE IF (qc(i,k,j).gt.0.0.and.qc_cu(i,k,j).eq.0.0) THEN
@@ -1238,14 +1246,12 @@ CONTAINS
                 has_reqc = 1
                 has_reqi = 1
                 has_reqs = 1
-                END IF
-!TWG END
-                qc(i,k,j) = qc(i,k,j)+qc_cu(i,k,j)*cldfra_cu(i,k,j)
-                qi(i,k,j) = qi(i,k,j)+qi_cu(i,k,j)*cldfra_cu(i,k,j)
                 qs(i,k,j) = qs(i,k,j)+qs_cu(i,k,j)*cldfra_cu(i,k,j)
+!TWG END
              ENDDO
              ENDDO
              ENDDO
+             END IF
           ENDIF
         ENDIF
 

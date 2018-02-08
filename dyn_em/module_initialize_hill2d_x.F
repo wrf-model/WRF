@@ -187,8 +187,7 @@ CONTAINS
 
    stretch_grid = .true.
 !   z_scale = .50
-!   z_scale = .40
-   z_scale = 7000./ztop
+   z_scale = .40
    pi = 2.*asin(1.0)
    write(6,*) ' pi is ',pi
    nxc = (ide-ids)/4

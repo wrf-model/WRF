@@ -22,8 +22,8 @@
 !    Jason Milbrandt (jason.milbrandt@canada.ca)                                           !
 !__________________________________________________________________________________________!
 !                                                                                          !
-! Version:       2.8.2.3                                                                   !
-! Last updated:  2017-11-15                                                                !
+! Version:       2.8.2.4                                                                   !
+! Last updated:  2018-02-06                                                                !
 !__________________________________________________________________________________________!
 
  MODULE MODULE_MP_P3
@@ -3320,6 +3320,7 @@ END SUBROUTINE P3_INIT
                                               qirim(i,k,iice),999.,rhop)
                                              !qirim(i,k,iice),zitot(i,k,iice),rhop)
 
+             call access_lookup_table(dumjj,dumii,dumi, 2,dum1,dum4,dum5,f1pr02)
              call access_lookup_table(dumjj,dumii,dumi, 6,dum1,dum4,dum5,f1pr06)
              call access_lookup_table(dumjj,dumii,dumi, 7,dum1,dum4,dum5,f1pr09)
              call access_lookup_table(dumjj,dumii,dumi, 8,dum1,dum4,dum5,f1pr10)
@@ -3340,6 +3341,7 @@ END SUBROUTINE P3_INIT
   !==
 
   ! note that reflectivity from lookup table is normalized, so we need to multiply by N
+             diag_vmi(i,k,iice)   = f1pr02*rhofaci(i,k)
              diag_effi(i,k,iice)  = f1pr06 ! units are in m
              diag_di(i,k,iice)    = f1pr15
              diag_rhoi(i,k,iice)  = f1pr16

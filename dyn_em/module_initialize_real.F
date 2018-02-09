@@ -7123,7 +7123,7 @@ end program foo
       !  Compute eta levels assuming a constant delta z above the PBL.
 
       ELSE
-       IF( auto_levels_opt == 0 ) THEN
+       IF( auto_levels_opt == 1 ) THEN
          print *,'using old automatic levels program'
          !  Compute top of the atmosphere with some silly levels.  We just want to
          !  integrate to get a reasonable value for ztop.  We use the planned PBL-esque
@@ -7339,7 +7339,7 @@ print *,'namelist p_top (Pa) = ',p_top
          END DO
          phb(kte) = phb(kte-1) - (znw(kte)-znw(kte-1)) * mub*alb(kte-1)
 
-       ELSE IF (auto_levels_opt == 1) THEN
+       ELSE IF (auto_levels_opt == 2) THEN
          print *,'using new automatic levels program'
          CALL levels(kte-1, p_top, znw, max_dz, dzbot, dzstretch_s, dzstretch_u, r_d, g )
          p_surf = p00
@@ -7360,6 +7360,9 @@ print *,'namelist p_top (Pa) = ',p_top
             phb(k) = phb(k-1) - (znw(k)-znw(k-1)) * mub*alb(k-1)
          END DO
          phb(kte) = phb(kte-1) - (znw(kte)-znw(kte-1)) * mub*alb(kte-1)
+       ELSE
+         print *,'auto_levels_opt=',auto_levels_opt
+         CALL wrf_error_fatal ( 'auto_levels_opt needs to be 1 or 2')
        ENDIF
 k=1
 WRITE (*,FMT='("Full level index = ",I4,"     Height = ",F7.1," m")') k,phb(1)/g

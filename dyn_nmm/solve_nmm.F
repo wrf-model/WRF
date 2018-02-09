@@ -1992,7 +1992,7 @@
         CALL GSMDRIVE(grid%ntsd,GRID%DT,GRID%NPHS,N_MOIST                   &
      &               ,grid%dx_nmm(ITS,JC),GRID%DY,grid%sm,grid%hbm2,grid%fis               &
      &               ,grid%deta1,grid%deta2,grid%aeta1,grid%aeta2,grid%eta1,grid%eta2                &
-     &               ,grid%pdtop,grid%pt,grid%pd,grid%res,grid%pint,grid%t,grid%q,grid%cwm,grid%train               &
+     &               ,grid%pdtop,grid%pt,grid%pd,grid%res,grid%pint,grid%t,grid%q,grid%cwm,grid%train,grid%train_ins               & ! RGF mod
      &               ,MOIST,SCALAR,NUM_SCALAR                          &
      &               ,grid%f_ice,grid%f_rain,grid%f_rimef,grid%sr                          &
      &               ,grid%prec,grid%acprec,grid%avrain                               &

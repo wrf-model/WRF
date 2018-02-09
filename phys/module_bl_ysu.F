@@ -19,14 +19,18 @@ contains
                   dz8w,psfc,                                                   &
                   znu,znw,p_top,                                               &
                   znt,ust,hpbl,psim,psih,                                      &
-                  xland,hfx,qfx,wspd,br,                                       &
+                  xland,                                                       & 
+                  gz1oz0, sfclay,                                              & ! RGF
+                  hfx,qfx,wspd,br,                                             &
                   dt,kpbl2d,                                                   &
-                  exch_h,                                                      &
+                  exch_h, exch_m,                                              & ! RGF
                   wstar,delta,                                                 &
                   u10,v10,                                                     &
                   uoce,voce,                                                   &
-                  rthraten,ysu_topdown_pblmix,                                 &
+                  rthraten,ysu_topdown_pblmix, ysu_firstorder, ysu_brcr_ub,    & ! RGF mod
+                  ysu_cgrad_scalar, ysu_cgrad_mom,                             & ! RGF mod
                   ctopo,ctopo2,                                                &
+                  DKU3D,DKT3D,    &    ! RGF
                   ids,ide, jds,jde, kds,kde,                                   &
                   ims,ime, jms,jme, kms,kme,                                   &
                   its,ite, jts,jte, kts,kte,                                   &
@@ -114,7 +118,8 @@ contains
                                      ims,ime, jms,jme, kms,kme,                &
                                      its,ite, jts,jte, kts,kte
 
-   integer,  intent(in)      ::      ysu_topdown_pblmix
+   integer,  intent(in)      ::      ysu_topdown_pblmix, ysu_firstorder, ysu_cgrad_scalar, ysu_cgrad_mom, sfclay  ! RGF
+   real,     intent(in   )   ::      ysu_brcr_ub ! RGF
 !
    real,     intent(in   )   ::      dt,cp,g,rovcp,rovg,rd,xlv,rv
 !
@@ -141,7 +146,7 @@ contains
                                                                      rqcblten
 !
    real,     dimension( ims:ime, kms:kme, jms:jme )                          , &
-             intent(inout)   ::                                        exch_h
+             intent(inout)   ::                                exch_h, exch_m  ! RGF
    real,     dimension( ims:ime, jms:jme )                                   , &
              intent(inout)   ::                                         wstar
    real,     dimension( ims:ime, jms:jme )                                   , &
@@ -149,6 +154,8 @@ contains
    real,     dimension( ims:ime, jms:jme )                                   , &
              intent(inout)   ::                                           u10, &
                                                                           v10
+      REAL,  DIMENSION(ims:ime, jms:jme, kms:kme), INTENT(OUT) :: DKU3D,DKT3D ! RGF
+
    real,     dimension( ims:ime, jms:jme )                                   , &
              intent(in   )   ::                                          uoce, &
                                                                          voce
@@ -158,7 +165,8 @@ contains
                                                                           hfx, &
                                                                           qfx, &
                                                                            br, &
-                                                                         psfc
+                                                                         psfc, & ! RGF mod
+                                                                        gz1oz0   ! RGF add
    real,     dimension( ims:ime, jms:jme )                                   , &
              intent(in   )   ::                                                &
                                                                          psim, &
@@ -210,6 +218,8 @@ contains
                                                                         dvsfc, &
                                                                         dtsfc, &
                                                                         dqsfc
+    real,     dimension( its:ite, kts:kte )  ::                      dku,dkt       ! RGF
+
 !
    qv2d(its:ite,:) = 0.0
 !
@@ -247,13 +257,19 @@ contains
               ,wspd=wspd(ims,j),br=br(ims,j)                                   &
               ,dusfc=dusfc,dvsfc=dvsfc,dtsfc=dtsfc,dqsfc=dqsfc                 &
               ,dt=dt,rcl=1.0,kpbl1d=kpbl2d(ims,j)                              &
-              ,exch_hx=exch_h(ims,kms,j)                                       &
+              ,exch_hx=exch_h(ims,kms,j),exch_mx=exch_m(ims,kms,j)             & ! RGF
               ,wstar=wstar(ims,j)                                              &
               ,delta=delta(ims,j)                                              &
               ,u10=u10(ims,j),v10=v10(ims,j)                                   &
+              ,xDKU=dku(its,kts),xDKT=dkt(its,kts)  & ! RGF
               ,uox=uoce(ims,j),vox=voce(ims,j)                                 &
               ,rthraten=rthraten(ims,kms,j),p2diORG=p3di(ims,kms,j)            &
               ,ysu_topdown_pblmix=ysu_topdown_pblmix                           &
+              ,ysu_firstorder=ysu_firstorder                                   & ! RGF
+              ,ysu_brcr_ub=ysu_brcr_ub                                         & ! RGF
+              ,ysu_cgrad_scalar=ysu_cgrad_scalar                               & ! RGF
+              ,ysu_cgrad_mom=ysu_cgrad_mom                                     & ! RGF
+              ,gz1oz0=gz1oz0(ims,j),sfclay=sfclay                              & ! RGF
               ,ctopo=ctopo(ims,j),ctopo2=ctopo2(ims,j)                         &
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde               &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme               &
@@ -268,6 +284,21 @@ contains
        enddo
      enddo
 !
+! RGF
+     DO i=its,ite
+     DO k=kts,kte
+      DKU3D(I,J,K) = 0.
+      DKT3D(I,J,K) = 0.
+     ENDDO
+     ENDDO
+
+     DO i=its,ite
+     DO k=kts,kte-1
+      DKU3D(I,J,K) = DKU(I,K)
+      DKT3D(I,J,K) = DKT(I,K)
+     ENDDO
+     ENDDO
+
    enddo
 !
    end subroutine ysu
@@ -282,13 +313,16 @@ contains
                   xland,hfx,qfx,wspd,br,                                       &
                   dusfc,dvsfc,dtsfc,dqsfc,                                     &
                   dt,rcl,kpbl1d,                                               &
-                  exch_hx,                                                     &
+                  exch_hx, exch_mx,                                            & ! RGF
                   wstar,delta,                                                 &
                   u10,v10,                                                     &
                   uox,vox,                                                     &
                   rthraten,p2diORG,                                            &
-                  ysu_topdown_pblmix,                                          &
+                  ysu_topdown_pblmix,   ysu_firstorder, ysu_brcr_ub,           & ! RGF mod
+                  ysu_cgrad_scalar, ysu_cgrad_mom,                             & ! RGF mod
+                  gz1oz0, sfclay,                                              & ! RGF
                   ctopo,ctopo2,                                                &
+                  xDKU,xDKT,                                                   & ! RGF
                   ids,ide, jds,jde, kds,kde,                                   &
                   ims,ime, jms,jme, kms,kme,                                   &
                   its,ite, jts,jte, kts,kte,                                   &
@@ -336,7 +370,7 @@ contains
 !              ==> pr0 = 1 + bke (=0.272) when neutral, kh is reduced
 !              minimum kzo = 0.01, lo = min (30m,delz), hong, mar 2012
 !              ==> weaker mixing when stable, and les resolution in vertical
-!              gz1oz0 is removed, and psim psih are ln(z1/z0)-psim,h, hong, mar 2012
+!              gz1oz0 is removed, and psim psih are ln(z1/z0)-phim,h, hong, mar 2012
 !              ==> consider thermal z0 when differs from mechanical z0
 !              a bug fix in wscale computation in stable bl, sukanta basu, jun 2012
 !              ==> wscale becomes small with height, and less mixing in stable bl
@@ -374,7 +408,8 @@ contains
                                     its,ite, jts,jte, kts,kte,                 &
                                     j,ndiff
 
-   integer,  intent(in)      ::     ysu_topdown_pblmix 
+   integer,  intent(in)      ::     ysu_topdown_pblmix , ysu_firstorder, ysu_cgrad_scalar, ysu_cgrad_mom, sfclay  ! RGF
+   real,     intent(in   )   ::     ysu_brcr_ub ! RGF
 !
    real,     intent(in   )   ::     dt,rcl,cp,g,rovcp,rovg,rd,xlv,rv
 !
@@ -402,6 +437,10 @@ contains
 !
    real,     dimension( its:ite, kts:kte )                                   , &
              intent(in   )   ::                                           p2d
+
+   real,     dimension( its:ite, kts:kte )                                   , &
+             intent(inout)   ::                                     xdku,xdkt ! RGF
+
 !
    real,     dimension( ims:ime )                                            , &
              intent(inout)   ::                                           ust, &
@@ -417,6 +456,9 @@ contains
 !
    real,     dimension( ims:ime ), intent(in   )   ::                    psim, &
                                                                          psih
+
+   real,     dimension( ims:ime ), intent(in   )   ::                  gz1oz0 ! RGF 
+
 !
    real,     dimension( ims:ime ), intent(in   )   ::                  psfcpa
    integer,  dimension( ims:ime ), intent(out  )   ::                  kpbl1d
@@ -474,7 +516,7 @@ contains
 !jdf added exch_hx
 !
    real,    dimension( ims:ime, kms:kme )                                    , &
-            intent(inout)   ::                                        exch_hx
+            intent(inout)   ::                                exch_hx,exch_mx ! RGF
 !
    real,    dimension( ims:ime )                                             , &
             intent(inout)    ::                                           u10, &
@@ -528,6 +570,7 @@ contains
                dsdzu,dsdzv,wm3,dthx,dqx,wspd10,ross,tem1,dsig,tvcon,conpr,     &
                prfac,prfac2,phim8z,radsum,tmp1,templ,rvls,temps,ent_eff,    &
                rcldb,bruptmp,radflux,vconvlim,vconvnew,fluxc,vconvc,vconv
+   real fmtmp ! RGF
 !topo-corr
    real,    dimension( ims:ime, kms:kme )    ::                          fric, &
                                                                        tke_ysu,&
@@ -546,6 +589,13 @@ contains
    conw=1./g
    conwrc = conw*sqrt(rcl)
    conpr = bfac*karman*sfcfrac
+
+! RGF added
+   xdku = 0.
+   xdkt = 0.
+   exch_hx = 0.
+   exch_mx = 0.
+
 !
 !  k-start index for tracer diffusion
 !
@@ -686,6 +736,7 @@ contains
      stable(i) = .false.
      brup(i) = br(i)
      brcr(i) = brcr_ub
+     if(ysu_brcr_ub.ne.0.) brcr(i) = ysu_brcr_ub ! RGF
    enddo
 !
    do k = 2,klpbl
@@ -715,8 +766,15 @@ contains
    enddo
 !
    do i = its,ite
-     fm = psim(i)
+    !fm = psim(i)
+    !fh = psih(i)
+    if(sfclay.ne.88)then ! RGF
+     fm = psim(i)   ! original code
      fh = psih(i)
+    else ! for gfdl sfc layer
+     fm = gz1oz0(i) - psim(i)   
+     fh = gz1oz0(i) - psih(i)
+    endif ! end RGF
      zol1(i) = max(br(i)*fm*fm/fh,rimin)
      if(sfcflg(i))then
        zol1(i) = min(zol1(i),-zfmin)
@@ -738,6 +796,10 @@ contains
        wstar(i)  = 0.
        wstar3(i) = 0.
      endif
+! redo ust like gfs
+     if(sfclay.eq.88)then ! RGF
+      ust(i) = abs( karman*amax1(wspd1(i),0.01)/fm) ! like sfclayrev keeps ust from being too small
+     endif ! sfclay=88
      ust3(i)   = ust(i)**3.
      wscale(i) = (ust3(i)+phifac*karman*wstar3(i)*0.5)**h1
      wscale(i) = min(wscale(i),ust(i)*aphi16)
@@ -779,6 +841,7 @@ contains
        stable(i) = .false.
        brup(i) = br(i)
        brcr(i) = brcr_ub
+       if(ysu_brcr_ub.ne.0.) brcr(i) = ysu_brcr_ub ! RGF
      endif
    enddo
 !
@@ -1005,6 +1068,13 @@ contains
 !
    do k = kts,klpbl
      do i = its,ite
+! first-order forced if ysu_firstorder=1 RGF
+       if(ysu_firstorder.gt.0)then ! if ysu_firstorder ON
+        kpbl(i) = 0.
+        pblflg(i) = .false.
+      ! print *,' i k ',i,k,' FIRSTORDER '
+       endif
+! end first-order
        if(k.lt.kpbl(i)) then
          zfac(i,k) = min(max((1.-(zq(i,k+1)-zl1(i))/(hpbl(i)-zl1(i))),zfmin),1.)
          zfacent(i,k) = (1.-zfac(i,k))**3.
@@ -1068,6 +1138,11 @@ contains
          endif
          zk = karman*zq(i,k+1)
          rlamdz = min(max(0.1*dza(i,k+1),rlam),300.)
+! RGF if ysu_firstorder > 0, then its value is also rlam
+         if(ysu_firstorder.gt.1)then  ! ysu_firstorder=1 uses rlam, ysu_firstorder > 1 uses rla, = ysu_firstorder
+          rlamdz = min(max(0.1*dza(i,k+1),real(ysu_firstorder)),300.) 
+         endif
+! end RGF
          rlamdz = min(dza(i,k+1),rlamdz)
          rl2 = (zk*rlamdz/(rlamdz+zk))**2
          dk = rl2*sqrt(ss)
@@ -1120,6 +1195,7 @@ contains
        tem1   = dsig*xkzh(i,k)*rdz
        if(pblflg(i).and.k.lt.kpbl(i)) then
          dsdzt = tem1*(-hgamt(i)/hpbl(i)-hfxpbl(i)*zfacent(i,k)/xkzh(i,k))
+         if(ysu_cgrad_scalar.eq.0) dsdzt = tem1*(-hfxpbl(i)*zfacent(i,k)/xkzh(i,k)) ! RGF
          f1(i,k)   = f1(i,k)+dtodsd*dsdzt
          f1(i,k+1) = thx(i,k+1)-300.-dtodsu*dsdzt
        elseif(pblflg(i).and.k.ge.kpbl(i).and.entfac(i,k).lt.4.6) then
@@ -1138,6 +1214,7 @@ contains
        ad(i,k)   = ad(i,k)-au(i,k)
        ad(i,k+1) = 1.-al(i,k)
        exch_hx(i,k+1) = xkzh(i,k)
+       xdkt(i,k  ) = xkzh(i,k) ! RGF altered k+1 back to k
      enddo
    enddo
 !
@@ -1386,6 +1463,8 @@ contains
        al(i,k)   = -dtodsu*dsdz2
        ad(i,k)   = ad(i,k)-au(i,k)
        ad(i,k+1) = 1.-al(i,k)
+       xdku(i,k  ) = xkzm(i,k) ! RGF altered k+1 back to k
+       exch_mx(i,k+1) = xkzm(i,k) ! RGF
      enddo
    enddo
 !

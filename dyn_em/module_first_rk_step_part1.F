@@ -870,6 +870,10 @@ BENCH_START(pbl_driver_tim)
      &        ,XICE=grid%xice          ,XLAND=grid%xland        ,Z=grid%z                &
      &        ,ZNT=grid%znt                                                    &
      &        ,ysu_topdown_pblmix=config_flags%ysu_topdown_pblmix              &
+     &        ,ysu_firstorder=config_flags%ysu_firstorder                      & ! RGF
+     &        ,ysu_brcr_ub=config_flags%ysu_brcr_ub                      & ! RGF
+     &        ,ysu_cgrad_scalar=config_flags%ysu_cgrad_scalar                 & ! RGF
+     &        ,ysu_cgrad_mom=config_flags%ysu_cgrad_mom                       & ! RGF
      &        ,shinhong_tke_diag=config_flags%shinhong_tke_diag               &
 ! paj: topo_wind
      &        ,CTOPO=grid%ctopo,CTOPO2=grid%ctopo2                                   &
@@ -912,6 +916,7 @@ BENCH_START(pbl_driver_tim)
               ,hct_temf=grid%hct_temf                               &
               ,flhc=grid%flhc,flqc=grid%flqc                        &
               ,exch_temf=exch_temf                      &
+                     ,DKU3D=grid%DKU3D,DKT3D=grid%DKT3D   & ! RGF
           ! optional
      &        ,QV_CURR=moist(ims,kms,jms,P_QV), F_QV=F_QV                 &
      &        ,QC_CURR=moist(ims,kms,jms,P_QC), F_QC=F_QC                 &

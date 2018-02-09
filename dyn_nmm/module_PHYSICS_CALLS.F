@@ -1494,6 +1494,7 @@
      &          ,RA_SW_PHYSICS=CONFIG_FLAGS%RA_SW_PHYSICS               &
      &          ,LAI=GRID%LAI,IZ0TLND=CONFIG_FLAGS%IZ0TLND              &
      &          ,SF_URBAN_PHYSICS=SF_URBAN_PHYSICS                      &
+     &          ,ISFTCFLX=config_flags%isftcflx                          & ! RGF
 !     &          ,GMT=GMT,XLAT=XLAT,XLONG=XLONG,JULDAY=JULDAY            &
      &          ,NUM_URBAN_LAYERS=NUM_URBAN_LAYERS                      &
      &          ,NUM_URBAN_HI=config_flags%num_urban_hi                 & !multi-layer urban
@@ -1677,6 +1678,10 @@
      &               ,EXCH_H=EXCH_H,EXCH_M=EXCH_M,AKHS=AKHS,AKMS=AKMS &
      &               ,FM=FM,FHH=FH                                    &
      &               ,YSU_TOPDOWN_PBLMIX=CONFIG_FLAGS%YSU_TOPDOWN_PBLMIX &
+     &        ,ysu_firstorder=config_flags%ysu_firstorder                      & ! RGF
+     &        ,ysu_brcr_ub=config_flags%ysu_brcr_ub                      & ! RGF
+     &        ,ysu_cgrad_scalar=config_flags%ysu_cgrad_scalar                 & ! RGF
+     &        ,ysu_cgrad_mom=config_flags%ysu_cgrad_mom                       & ! RGF
      &               ,SHINHONG_TKE_DIAG=CONFIG_FLAGS%SHINHONG_TKE_DIAG &
      &               ,THZ0=THZ0,QZ0=QZ0,UZ0=UZ0H,VZ0=VZ0H             &
      &               ,QSFC=QS,LOWLYR=LOWLYR                           &
@@ -3162,7 +3167,7 @@
       SUBROUTINE GSMDRIVE(NTSD,DT,NPHS,N_MOIST                          &
      &                   ,DX,DY,SM,HBM2,FIS                             &
      &                   ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2             &
-     &                   ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TRAIN            &
+     &                   ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TRAIN,TRAIN_INS  & ! RGF
      &                   ,MOIST,SCALAR,N_SCALAR                         &
      &                   ,F_ICE,F_RAIN,F_RIMEF,SR                       &
      &                   ,PREC,ACPREC,AVRAIN                            &
@@ -3221,7 +3226,7 @@
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: ACPREC,PREC
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: CWM,Q    &
-     &                                                        ,T,TRAIN
+     &                                                        ,T,TRAIN,TRAIN_INS ! RGF
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: F_ICE    &   !<--- Used only with physics (IKJ)
      &                                                        ,F_RAIN   &
@@ -3481,6 +3486,7 @@
           DO I=MYIS1,IENDX
             TNEW=TH_PHY(I,K,J)*PI_PHY(I,K,J)
             TRAIN(I,J,K)=TRAIN(I,J,K)+(TNEW-T(I,J,K))*RDTPHS
+            TRAIN_INS(I,J,K)=(TNEW-T(I,J,K))*RDTPHS ! RGF
             T(I,J,K)=TNEW
             Q(I,J,K)=MOIST_TRANS(I,K,J,P_QV)/(1.+MOIST_TRANS(I,K,J,P_QV))
             CWM(I,J,K)=CWM_PHY(I,K,J)

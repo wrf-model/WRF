@@ -63,7 +63,8 @@
     REAL    guv_sfc, gt_sfc, gq_sfc, rinblw
     INTEGER moist_adv_opt, scalar_adv_opt, tke_adv_opt
     INTEGER save_topo_orig
-    INTEGER scalar_pblmix, tracer_pblmix, grav_settling, ysu_topdown_pblmix
+    INTEGER scalar_pblmix, tracer_pblmix, grav_settling, ysu_topdown_pblmix,ysu_firstorder,ysu_cgrad_mom,ysu_cgrad_scalar ! RGF mod
+    REAL   ysu_brcr_ub ! RGF
 #endif
     CHARACTER (len=19) simulation_start_date
     CHARACTER (len=len_current_date) current_date_save
@@ -193,6 +194,10 @@
     CALL nl_get_scalar_pblmix  ( grid%id , scalar_pblmix )
     CALL nl_get_tracer_pblmix  ( grid%id , tracer_pblmix )
     CALL nl_get_ysu_topdown_pblmix  ( grid%id , ysu_topdown_pblmix )
+    CALL nl_get_ysu_firstorder  ( grid%id , ysu_firstorder )  ! RGF
+    CALL nl_get_ysu_brcr_ub  ( grid%id , ysu_brcr_ub )  ! RGF
+    CALL nl_get_ysu_cgrad_scalar  ( grid%id , ysu_cgrad_scalar)  ! RGF
+    CALL nl_get_ysu_cgrad_mom  ( grid%id , ysu_cgrad_mom)  ! RGF
     CALL nl_get_grav_settling  ( grid%id , grav_settling )
 
 #if ( HYBRID_COORD==1 )
@@ -758,6 +763,8 @@ endif
       CALL wrf_put_dom_ti_integer   ( fid, 'TRACER_PBLMIX', tracer_pblmix , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'SCALAR_PBLMIX', scalar_pblmix , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'YSU_TOPDOWN_PBLMIX', ysu_topdown_pblmix , 1 , ierr )
+      CALL wrf_put_dom_ti_real ( fid , 'YSU_BRCR_UB' ,  ysu_brcr_ub , 1 , ierr ) ! RGF
+      CALL wrf_put_dom_ti_integer   ( fid, 'YSU_FIRSTORDER', ysu_firstorder , 1 , ierr ) ! RGF
       CALL wrf_put_dom_ti_integer   ( fid, 'GRAV_SETTLING', grav_settling , 1 , ierr )
 
 #endif

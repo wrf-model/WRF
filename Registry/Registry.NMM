@@ -698,6 +698,7 @@ state  real   rswtt     ijk   dyn_nmm     1    -    rh023d=(DownNear)  "RSWTT"  
 #for HWRF: add to restart
 state  real   tcucn     ijk   dyn_nmm     1    -    rh023     "TCUCN"     "Accum convec temperature tendency" "K s-1"
 state  real   train     ijk   dyn_nmm     1    -    rh023     "TRAIN"     "Accum stratiform temp tendency"    "K s-1"
+state  real   train_ins ijk   dyn_nmm     1    -    rh023  "TRAIN_INS" "Instantaneous stratiform temp tendency"    "K s-1"
 #end HWRF
 state integer ncfrcv    ij    dyn_nmm     1    -    irh023   "NCFRCV"    "# times convec cloud >0 between rad calls"  ""
 state integer ncfrst    ij    dyn_nmm     1    -    irh023   "NCFRST"    "# times stratiform cloud >0 between rad calls"  ""
@@ -1424,6 +1425,10 @@ rconfig   integer     sf_surface_physics  namelist,physics	max_domains    0     
 rconfig   integer     bl_pbl_physics      namelist,physics	max_domains    0       rh0123       "bl_pbl_physics"                ""      ""
 rconfig   integer     ysu_topdown_pblmix  namelist,physics      max_domains    0       rh       "ysu_topdown_pblmix"            ""      ""
 rconfig   integer     shinhong_tke_diag   namelist,physics      max_domains    0       rh       "shinhong_tke_diag"             ""      ""
+rconfig   integer     ysu_firstorder      namelist,physics      1              0       rh       "ysu_firstorder"                ""      ""
+rconfig   real        ysu_brcr_ub         namelist,physics      1              0       rh       "ysu_brcr_ub"                   ""      ""
+rconfig   integer     ysu_cgrad_scalar    namelist,physics      1              1       rh       "ysu_cgrad_scalar"              ""      ""
+rconfig   integer     ysu_cgrad_mom       namelist,physics      1              1       rh       "ysu_cgrad_mom"                 ""      ""
 rconfig   integer     windfarm_opt        namelist,physics      max_domains    0       rh       "windfarm_opt"                ""      ""
 rconfig   integer     windfarm_ij         namelist,physics      1              0       rh       "windfarm_ij"                ""      ""
 rconfig   integer     mfshconv            namelist,physics      max_domains    1        rh       "mfshconv"         "To activate mass flux scheme with qnse, 1=true; 0=false"      ""
@@ -1490,6 +1495,7 @@ rconfig   integer opt_thcnd               namelist,physics      1            1  
 
 rconfig   integer  gwd_opt                namelist,physics    max_domains    2       irh    "gwd_opt"      "activate gravity wave drag: 0=off, 1=ARW, 2=NMM"   ""
 
+rconfig   integer isftcflx                namelist,physics      1            0         h     "isftcflx"    "switch to control sfc fluxes"   ""
 rconfig   integer iz0tlnd                 namelist,physics      1            0         h     "iz0tlnd"    "switch to control land thermal roughness length"   ""
 rconfig   real    sas_pgcon               namelist,physics      max_domains  0.55      irh0123   "sas_pgcon"   "convectively forced pressure gradient factor (SAS scheme)" ""
 rconfig   real    sas_shal_pgcon          namelist,physics      max_domains  -1        irh0123   "sas_shal_pgcon"   "convectively forced pressure gradient factor, -1 means use sas_pgcon (SAS shallow conv)" ""

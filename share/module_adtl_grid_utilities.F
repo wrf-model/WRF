@@ -2716,6 +2716,7 @@ CONTAINS
    ENDDO
    ENDDO
    ENDDO
+   !$OMP END MASTER
 
    !$OMP MASTER
    DO j=1,spec_bdy_width
@@ -2728,6 +2729,7 @@ CONTAINS
    ENDDO
    ENDDO
    ENDDO
+   !$OMP END MASTER
 
    !$OMP MASTER
    DO j=1,spec_bdy_width

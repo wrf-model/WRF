@@ -1291,7 +1291,7 @@ endif
                       ,grid%QR_CU, grid%QS_CU                                                        & ! TWG
                       ,grid%NC_CU, grid%NI_CU, grid%NR_CU, grid%NS_CU,grid%CCN_CU                    & ! TWG
                       ,grid%alevsiz_cu,grid%num_months,grid%no_src_types_cu,grid%aeromcu             & ! PSH/TWG 06/10/16
-                      ,grid%aeropcu,grid%EFCG,grid%EFCS,grid%EFIG,grid%EFIS,grid%EFSG                & ! TWG
+                      ,grid%aeropcu,grid%EFCG,grid%EFCS,grid%EFIG,grid%EFIS,grid%EFSG,grid%EFSS      & ! TWG
                       )
        ENDDO ! loop of tiles for phy_init
     ENDIF   ! no phy_init for the backwards part of the DFI

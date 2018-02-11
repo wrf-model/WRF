@@ -228,7 +228,7 @@ CONTAINS
 #if ( EM_CORE == 1 )
                          ,QR_CU,QS_CU,NC_CU,NI_CU,NR_CU,NS_CU,CCN_CU              & ! TWG
                          ,alevsiz_cu,num_months,no_src_types_cu,aeromcu,aeropcu   & ! PSH/TWG 06/10/16                         
-                         ,EFCG,EFCS,EFIG,EFIS,EFSG                                & ! TWG
+                         ,EFCG,EFCS,EFIG,EFIS,EFSG,EFSS                           & ! TWG
 #endif
                           )
 
@@ -290,7 +290,7 @@ CONTAINS
                                QR_CU, QS_CU,                         & !TWG
                                NC_CU, NI_CU, NR_CU, NS_CU,           & !TWG
                                CCN_CU, EFCG, EFCS, EFIG,             & !TWG
-                               EFIS, EFSG
+                               EFIS, EFSG, EFSS
   !PSH/TWG END
 #endif
 
@@ -924,6 +924,7 @@ integer myproc
             EFIS(i,k,j) = 5.01
             EFIG(i,k,j) = 5.01
             EFSG(i,k,j) = 10.01
+            EFSS(i,k,j) = 10.01
           end do
        end do
      end do
@@ -1325,12 +1326,7 @@ integer myproc
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte,                   &
-                RQCNCUTEN,RQINCUTEN                             &
-#if ( EM_CORE == 1 )
-                ,aeromcu,alevsiz_cu,no_src_types_cu,num_months  &!PSH/TWG 06/10/16
-                ,aercu_opt,aercu_fct,id,XLAT,XLONG,aeropcu      &!PSH/TWG 06/10/16   
-#endif
-                                                                )
+                RQCNCUTEN,RQINCUTEN)
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to shcu_init' )
 
@@ -3356,12 +3352,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
                       its, ite, jts, jte, kts, kte,                &
-                      RQCNCUTEN,RQINCUTEN                          &
-#if ( EM_CORE == 1 )
-                      ,aeromcu,alevsiz_cu,no_src_types_cu,num_months &!PSH/TWG 06/10/16
-                      ,aercu_opt,aercu_fct,id,XLAT,XLONG,aeropcu     &!PSH/TWG 06/10/16
-#endif
-                                                                   )
+                      RQCNCUTEN,RQINCUTEN)
 !------------------------------------------------------------------
    USE module_cu_kf
    USE module_cu_kfeta
@@ -3405,19 +3396,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &    
         cldfra_cup,cldfratend_cup                               !CuP, wig 18-Sep-2006
    !BSINGH -ENDS
-#endif
-
-#if ( EM_CORE == 1 )
-!PSH/TWG 06/10/16
-   INTEGER,  INTENT(IN)        ::   id
-   INTEGER,  INTENT(IN)        ::   alevsiz_cu, no_src_types_cu, num_months
-   INTEGER,  INTENT(IN)        ::   aercu_opt
-   REAL,     INTENT(IN)        ::   aercu_fct
-   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::  XLAT, XLONG
-   REAL,     DIMENSION( ims:ime, alevsiz_cu, jms:jme, num_months,no_src_types_cu), OPTIONAL,      &
-                        INTENT(INOUT) :: aeromcu                       
-   REAL,     DIMENSION( ims:ime, alevsiz_cu, jms:jme, num_months), OPTIONAL,INTENT(INOUT)  ::   aeropcu
-!PSU/TWG END
 #endif
 
    REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &    

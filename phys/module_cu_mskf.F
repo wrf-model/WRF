@@ -2,20 +2,22 @@
 
  module module_cu_mp
 
-!module  zm_microphysics
+!module  mskf_microphysics
 ! Adapted to WRF3.8 by Kiran Alapaty
-!ckay = !dkay = Kiran Alapaty, EPA
+!  !ckay = !dkay = Kiran Alapaty, EPA
 ! PSH : Sep 2015: copuled with CESM global climatological aerosol data
 ! TWG : Jun 2016: porting to WRFV3.8 
+! TWG & cKAY: Feb 2017: replaced sheet cloud microphysics with that of cumulus clouds
 
 ! Purpose:
 !!!!#define WRF_PORT
 !   CAM Interface for cumulus microphysics
 !
-! Authors: Xiaoliang Song and Guang Jun Zhang, June 2010
+! Initial Authors: Xiaoliang Song and Guang Jun Zhang, June 2010
+! MSKF adaptation authors: Kiran Alapaty, Tim Glotfelty, and Patrick Hawbecker
 !
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-! Adapted to KF scheme: Kiran Alapaty at EPA March 2013 (WRF version)
+! Adapted to MSKF scheme: Kiran Alapaty at EPA March 2013 (WRF version)
 !
 !---------------------------------------------------------------------------------
   use shr_kind_mod,  only: r8=>shr_kind_r8
@@ -31,11 +33,11 @@
   private
   save
 
-  public :: zm_mphyi, zm_mphy, kf_GAMMA, kf_polysvp
+  public :: mskf_mphyi, mskf_mphy, mskf_GAMMA, mskf_polysvp
 
 ! Private module data
 
-  integer, parameter :: naer_cu = 10        !xsong 2013-08-22    !ckay changed from 10 to 11
+  integer, parameter :: naer_cu = 10        
   integer, parameter :: pcols = 1
 
 !constants remaped
@@ -73,6 +75,7 @@
   real(r8), private:: Ecc      !collection efficiency
   real(r8), private:: Ecr      !collection efficiency cloud droplets/rain
   real(r8), private:: DCS      !autoconversion size threshold
+  real(r8), private:: F14      !Ferrier (1994) Time scale parameter
   real(r8), private:: qsmall   !min mixing ratio 
   real(r8), private:: bimm,aimm !immersion freezing
   real(r8), private:: rhosu     !typical 850mn air density
@@ -151,7 +154,7 @@ contains
 
 !===============================================================================
 
-subroutine zm_mphyi
+subroutine mskf_mphyi
 
 !----------------------------------------------------------------------- 
 ! 
@@ -252,8 +255,12 @@ subroutine zm_mphyi
 
 ! autoconversion size threshold for cloud ice to snow (m)
 
-!        Dcs = 100.e-6_r8
+!          Dcs = 100.e-6_r8
         Dcs = 200.e-6_r8
+
+! Ferrier [1994] time period parameter ! TWG Feb17
+         F14 = 100.0 !180.0 Original
+         
 
 ! smallest mixing ratio considered in microphysics
 
@@ -331,20 +338,22 @@ subroutine zm_mphyi
       end do
 
    return
- end subroutine zm_mphyi
+ end subroutine mskf_mphyi
 
 !===============================================================================
 
-subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0,    &
+subroutine mskf_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0,    &
                    jb,    jt,   jlcl, msg,  il2g, grav, cp,  rd,  qc,   qi, qr, qni, & ! TWG
                     rprd,  wu,    eu,   nc,   ni, nr, ns, dum2l, sprd, frz, aer_mmr, deltat, & !TWG
-                   Pver,PverP,gamhat,qsatzm,wu_kf_act,qc_kf_act,qi_kf_act,effc,effi,effs)
+                   Pver,PverP,gamhat,qsatzm,wu_mskf_act,qc_mskf_act,qi_mskf_act,effc,effi,effs)
 
 ! Purpose:
 ! microphysic parameterization for Zhang-McFarlane convection scheme
 ! called from cldprp() in zm_conv.F90
 !
 ! Author: Xiaoliang Song, June 2010
+!
+! Adaptation: Kiran Alapaty at EPA 2013 for MSKF convection scheme in WRF
 
 !wrf  use time_manager,    only: get_nstep, get_step_size
 
@@ -356,7 +365,7 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
 !ckay
   real :: zmVMFLCL,zmTRPPT,a1kay, a2kay
 
-  integer, parameter :: naer_cu = 10   ! danger
+  integer, parameter :: naer_cu = 10   
   integer, parameter :: pcols = 1
 
   integer :: pver                  ! number of vertical levels(mid-layer)
@@ -378,9 +387,9 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
 !  real(r8) :: gamhat(pcols,pver)    ! kf_GAMMA=L/cp(dq*/dT) at interface
 !ckay
   real(r8) :: qsatzm(pcols,pver)        ! spec hum of updraft
-  real(r8) :: wu_kf_act(pver)        ! KF incloud updraft velocity
-  real(r8) :: qc_kf_act(pver)        ! KF incloud updraft velocity
-  real(r8) :: qi_kf_act(pver)        ! KF incloud updraft velocity
+  real(r8) :: wu_mskf_act(pver)        ! KF incloud updraft velocity
+  real(r8) :: qc_mskf_act(pver)        ! KF incloud updraft velocity
+  real(r8) :: qi_mskf_act(pver)        ! KF incloud updraft velocity
 
   integer :: jb(pcols)              ! updraft base level
   integer :: jt(pcols)              ! updraft plume top
@@ -432,6 +441,14 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
   real(r8) :: accsim(pcols,pver)    !mass tendency due to accretion of cloud ice by snow
   real(r8) :: difm  (pcols,pver)    !mass tendency due to detrainment of cloud ice 
   real(r8) :: nuclin(pcols,pver)    !num tendency due to ice nucleation
+  real(r8) :: nuclim(pcols,pver)    !mass tendency due to ice nucleation
+  real(r8) :: collrm(pcols,pver)    !mass tendency due to rain-ice collection
+  real(r8) :: collrn(pcols,pver)    !number tendency due to rain-ce collection
+  real(r8) :: fhtcrm(pcols,pver)    !mass tendency due to rain freezing to snow
+  real(r8) :: fhtcrn(pcols,pver)    !num tendency due to rain freezing to snow
+  real(r8) :: autorn(pcols,pver)    !num tendency for autoconversion of clouds to rain (rain term)
+  real(r8) :: aggrn(pcols,pver)     !num tendency for self collection of rain
+  real(r8) :: aggsn(pcols,pver)     !num tendency for self collection of snow
   real(r8) :: autoin(pcols,pver)    !num tendency due to autoconversion of cloud ice to snow
   real(r8) :: accsin(pcols,pver)    !num tendency due to accretion of cloud ice by snow
   real(r8) :: hmpin (pcols,pver)    !num tendency due to HM process
@@ -693,6 +710,13 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
             hmpim (i,k) = 0._r8
             accslm(i,k) = 0._r8
             dlfm  (i,k) = 0._r8
+            collrm(i,k) = 0._r8
+            collrn(i,k) = 0._r8
+            fhtcrm(i,k) = 0._r8
+            fhtcrn(i,k) = 0._r8
+            autorn(i,k) = 0._r8
+             aggrn(i,k) = 0._r8
+             aggsn(i,k) = 0._r8
 
             autoln(i,k) = 0._r8
 
@@ -711,6 +735,7 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
             accsim(i,k) = 0._r8
             difm  (i,k) = 0._r8
             nuclin(i,k) = 0._r8
+            nuclim(i,k) = 0._r8
             autoin(i,k) = 0._r8
             accsin(i,k) = 0._r8
             hmpin (i,k) = 0._r8
@@ -911,6 +936,7 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
             difm  (i,k) = 0._r8
 
             nuclin(i,k) = 0._r8
+            nuclim(i,k) = 0._r8
             autoin(i,k) = 0._r8
             accsin(i,k) = 0._r8
             hmpin (i,k) = 0._r8
@@ -1053,7 +1079,7 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
            if (qiic(i,k).ge.qsmall) then
 ! add upper limit to in-cloud number concentration to prevent numerical error
               niic(i,k)=min(niic(i,k),qiic(i,k)*1.e20_r8)
-              lami(k) = (kf_GAMMA(1._r8+di)*ci* &
+              lami(k) = (mskf_GAMMA(1._r8+di)*ci* &
                   niic(i,k)/qiic(i,k))**(1._r8/di)
               n0i(k) = niic(i,k)*lami(k)
 ! check for slope
@@ -1062,11 +1088,11 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
 ! adjust vars
               if (lami(k).lt.lammin) then
                 lami(k) = lammin
-                n0i(k) = lami(k)**(di+1._r8)*qiic(i,k)/(ci*kf_GAMMA(1._r8+di))
+                n0i(k) = lami(k)**(di+1._r8)*qiic(i,k)/(ci*mskf_GAMMA(1._r8+di))
                 niic(i,k) = n0i(k)/lami(k)
               else if (lami(k).gt.lammax) then
                 lami(k) = lammax
-                n0i(k) = lami(k)**(di+1._r8)*qiic(i,k)/(ci*kf_GAMMA(1._r8+di))
+                n0i(k) = lami(k)**(di+1._r8)*qiic(i,k)/(ci*mskf_GAMMA(1._r8+di))
                 niic(i,k) = n0i(k)/lami(k)
               end if
            else
@@ -1082,14 +1108,14 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
 
 ! get pgam from fit to observations of martin et al. 1994
 
-              pgam(k)=0.0005714_r8*(ncic(i,k)/1.e6_r8/rho(i,k))+0.2714_r8
+              pgam(k)=0.0005714_r8*(ncic(i,k)/1.e6_r8*rho(i,k))+0.2714_r8  ! TWG 2017 change / to * for consistenct with Morrison
               pgam(k)=1._r8/(pgam(k)**2)-1._r8
               pgam(k)=max(pgam(k),2._r8)
               pgam(k)=min(pgam(k),15._r8)
 
 ! calculate lamc
-              lamc(k) = (pi/6._r8*rhow*ncic(i,k)*kf_GAMMA(pgam(k)+4._r8)/ &
-                 (qcic(i,k)*kf_GAMMA(pgam(k)+1._r8)))**(1._r8/3._r8)
+              lamc(k) = (pi/6._r8*rhow*ncic(i,k)*mskf_GAMMA(pgam(k)+4._r8)/ &
+                 (qcic(i,k)*mskf_GAMMA(pgam(k)+1._r8)))**(1._r8/3._r8)
 
 ! lammin, 50 micron diameter max mean size
               lammin = (pgam(k)+1._r8)/50.e-6_r8
@@ -1098,18 +1124,18 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
               if (lamc(k).lt.lammin) then
                  lamc(k) = lammin
                  ncic(i,k) = 6._r8*lamc(k)**3*qcic(i,k)* &
-                      kf_GAMMA(pgam(k)+1._r8)/ &
-                      (pi*rhow*kf_GAMMA(pgam(k)+4._r8))
+                      mskf_GAMMA(pgam(k)+1._r8)/ &
+                      (pi*rhow*mskf_GAMMA(pgam(k)+4._r8))
               else if (lamc(k).gt.lammax) then
                  lamc(k) = lammax
                  ncic(i,k) = 6._r8*lamc(k)**3*qcic(i,k)* &
-                       kf_GAMMA(pgam(k)+1._r8)/ &
-                      (pi*rhow*kf_GAMMA(pgam(k)+4._r8))
+                       mskf_GAMMA(pgam(k)+1._r8)/ &
+                      (pi*rhow*mskf_GAMMA(pgam(k)+4._r8))
               end if
 
 ! parameter to calculate droplet freezing
 
-              cdist1(k) = ncic(i,k)/kf_GAMMA(pgam(k)+1._r8)
+              cdist1(k) = ncic(i,k)/mskf_GAMMA(pgam(k)+1._r8)
            else
               lamc(k) = 0._r8
               cdist1(k) = 0._r8
@@ -1139,8 +1165,14 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
 ! nprc is increase in rain number conc due to autoconversion
 ! nprc1 is decrease in cloud droplet conc due to autoconversion
 
-              prc(k) = 1350._r8*qcic(i,k)**2.47_r8*    &
-                    (ncic(i,k)/1.e6_r8*rho(i,k))**(-1.79_r8)
+!TWG Feb 2017 Update from Khrouditnov and Kogan (2000) to Kogan (2013) for
+!convection
+
+!              prc(k) = 1350._r8*qcic(i,k)**2.47_r8*    &
+!                    (ncic(i,k)/1.e6_r8*rho(i,k))**(-1.79_r8)
+              prc(k) = 7.98E10_r8*qcic(i,k)**4.22_r8*    &
+                    (ncic(i,k)/1.e6_r8*rho(i,k))**(-3.01_r8)
+
               nprc(k) = prc(k)/(4._r8/3._r8*pi*rhow*(25.e-6_r8)**3)
               nprc1(k) = prc(k)/(qcic(i,k)/ncic(i,k))
            else
@@ -1166,14 +1198,17 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
 !          print *, 'qr=',qr
 
 !.......................................................................
-! Autoconversion of cloud ice to snow
+
 ! similar to Ferrier (1994)
 
            if (t(i,k).le.273.15_r8.and.qiic(i,k).ge.qsmall) then
 
-! note: assumes autoconversion timescale of 180 sec
-              nprci(k) = n0i(k)/(lami(k)*180._r8)*exp(-lami(k)*dcs)
-              prci(k) = pi*rhoi*n0i(k)/(6._r8*180._r8)* &
+! note: assumes autoconversion timescale of 180 sec  !TWG Feb17 adjust
+! autoconversion time scale
+              ! nprci(k) = n0i(k)/(lami(k)*180._r8)*exp(-lami(k)*dcs)
+              nprci(k) = n0i(k)/(lami(k)*F14)*exp(-lami(k)*dcs)
+             ! prci(k) = pi*rhoi*n0i(k)/(6._r8*180._r8)* &
+               prci(k) = pi*rhoi*n0i(k)/(6._r8*F14)* &  
                   (dcs**3/lami(k)+3._r8*dcs**2/lami(k)**2+ &
                   6._r8*dcs/lami(k)**3+6._r8/lami(k)**4)*exp(-lami(k)*dcs)
            else
@@ -1229,8 +1264,8 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
 
 ! provisional rain number and mass weighted mean fallspeed (m/s)
 ! Eq.18 of Morrison and Gettelman, 2008, J. Climate
-             unr(k) = min(arn(i,k)*kf_GAMMA(1._r8+br)/lamr(k)**br,10._r8)
-             umr(k) = min(arn(i,k)*kf_GAMMA(4._r8+br)/(6._r8*lamr(k)**br),10._r8)
+             unr(k) = min(arn(i,k)*mskf_GAMMA(1._r8+br)/lamr(k)**br,10._r8)
+             umr(k) = min(arn(i,k)*mskf_GAMMA(4._r8+br)/(6._r8*lamr(k)**br),10._r8)
            else
              lamr(k) = 0._r8
              n0r(k) = 0._r8
@@ -1240,7 +1275,7 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
 !......................................................................
 ! snow
            if (qniic(i,k).ge.qsmall) then
-             lams(k) = (kf_GAMMA(1._r8+ds)*cs*nsic(i,k)/ &
+             lams(k) = (mskf_GAMMA(1._r8+ds)*cs*nsic(i,k)/ &
                        qniic(i,k))**(1._r8/ds)
              n0s(k) = nsic(i,k)*lams(k)
 
@@ -1250,17 +1285,17 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
 ! adjust vars
              if (lams(k).lt.lammin) then
                lams(k) = lammin
-               n0s(k) = lams(k)**(ds+1._r8)*qniic(i,k)/(cs*kf_GAMMA(1._r8+ds))
+               n0s(k) = lams(k)**(ds+1._r8)*qniic(i,k)/(cs*mskf_GAMMA(1._r8+ds))
                nsic(i,k) = n0s(k)/lams(k)
              else if (lams(k).gt.lammax) then
                lams(k) = lammax
-               n0s(k) = lams(k)**(ds+1._r8)*qniic(i,k)/(cs*kf_GAMMA(1._r8+ds))
+               n0s(k) = lams(k)**(ds+1._r8)*qniic(i,k)/(cs*mskf_GAMMA(1._r8+ds))
                nsic(i,k) = n0s(k)/lams(k)
              end if
 
 ! provisional snow number and mass weighted mean fallspeed (m/s)
-             ums(k) = min(asn(i,k)*kf_GAMMA(4._r8+bs)/(6._r8*lams(k)**bs),3.6_r8)
-             uns(k) = min(asn(i,k)*kf_GAMMA(1._r8+bs)/lams(k)**bs,3.6_r8)
+             ums(k) = min(asn(i,k)*mskf_GAMMA(4._r8+bs)/(6._r8*lams(k)**bs),3.6_r8)
+             uns(k) = min(asn(i,k)*mskf_GAMMA(1._r8+bs)/lams(k)**bs,3.6_r8)
            else
              lams(k) = 0._r8
              n0s(k) = 0._r8
@@ -1307,10 +1342,10 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
               eci = min(eci,1._r8)
 
               psacws(k) = pi/4._r8*asn(i,k)*qcic(i,k)*rho(i,k)* &
-                  n0s(k)*Eci*kf_GAMMA(bs+3._r8)/ &
+                  n0s(k)*Eci*mskf_GAMMA(bs+3._r8)/ &
                   lams(k)**(bs+3._r8)   
               npsacws(k) = pi/4._r8*asn(i,k)*ncic(i,k)*rho(i,k)* &
-                  n0s(k)*Eci*kf_GAMMA(bs+3._r8)/ &
+                  n0s(k)*Eci*mskf_GAMMA(bs+3._r8)/ &
                   lams(k)**(bs+3._r8)
            else
               psacws(k)=0._r8
@@ -1406,10 +1441,10 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
            if (qniic(i,k).ge.qsmall.and.qiic(i,k).ge.qsmall &
               .and.t(i,k).le.273.15_r8) then
               prai(k) = pi/4._r8*asn(i,k)*qiic(i,k)*rho(i,k)* &
-                   n0s(k)*Eii*kf_GAMMA(bs+3._r8)/ &
+                   n0s(k)*Eii*mskf_GAMMA(bs+3._r8)/ &
                    lams(k)**(bs+3._r8)  
               nprai(k) = pi/4._r8*asn(i,k)*niic(i,k)* &
-                   rho(i,k)*n0s(k)*Eii*kf_GAMMA(bs+3._r8)/ &
+                   rho(i,k)*n0s(k)*Eii*mskf_GAMMA(bs+3._r8)/ &
                    lams(k)**(bs+3._r8)
            else
               prai(k)=0._r8
@@ -1482,7 +1517,7 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
 !dkay
 ! added qsatzm
 !         print *, 'before activate'
-         call kf_activate(wu(i,k),t(i,k),rho(i,k), &
+         call mskf_activate(wu(i,k),t(i,k),rho(i,k), &
                  naer2h(i,k,:), naer_cu,naer_cu, maerosol,  &
                  dispersion_aer,hygro_aer, density_aer, dum2,qsatzm(i,k))
 !             print *,'ccn, massmixing ratio of aerosols='
@@ -1513,8 +1548,8 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
 !..............................................................................
 !ice nucleation
 
-       esi(i,k)= kf_polysvp(t(i,k),1)      ! over ice          
-       es(i,k) = kf_polysvp(t(i,k),0)
+       esi(i,k)= mskf_polysvp(t(i,k),1)      ! over ice          
+       es(i,k) = mskf_polysvp(t(i,k),0)
        qs(i,k) = 0.622_r8*es(i,k)/(ph(i,k) - (1.0_r8-0.622_r8)*es(i,k))
        qs(i,k) = min(1.0_r8,qs(i,k))
        if (qs(i,k) < 0.0_r8)  qs(i,k) = 1.0_r8
@@ -1527,10 +1562,7 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
 ! Liu et al.,J. climate, 2007
 !         print *, 'before ice nuke'
 
-            call kf_nucleati(wu(i,k),t(i,k),relhum(i,k),qcic(i,k),rho(i,k),  &
-!           call kf_nucleati(wu(i,k),t(i,k),relhum(i,k),qcic(i,k),rho(i,k),  &
-!            tot_qc_qi = qc_kf_act(k) + qi_kf_act(k)  ! danger
-!           call kf_nucleati(wu(i,k),t(i,k),relhum(i,k),tot_qc_qi,rho(i,k),  &
+            call mskf_nucleati(wu(i,k),t(i,k),p(i,k),q(i,k),qcic(i,k),rho(i,k),  & ! TWG add p and replace relhum with q
                          naer2h(i,k,:),naer_cu,dum2i(i,k) &
                         , nihf(i,k),     &
                         niimm(i,k),nidep(i,k),nimey(i,k))
@@ -1609,11 +1641,11 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
 
 ! immersion freezing (Bigg, 1953)
               mnuccc(k) = pi*pi/36._r8*rhow* &
-                    cdist1(k)*kf_GAMMA(7._r8+pgam(k))* &
+                    cdist1(k)*mskf_GAMMA(7._r8+pgam(k))* &
                     bimm*exp(aimm*(273.15_r8-t(i,k)))/ &
                     lamc(k)**3/lamc(k)**3
 
-              nnuccc(k) = pi/6._r8*cdist1(k)*kf_GAMMA(pgam(k)+4._r8) &
+              nnuccc(k) = pi/6._r8*cdist1(k)*mskf_GAMMA(pgam(k)+4._r8) &
                     *bimm*exp(aimm*(273.15_r8-t(i,k)))/lamc(k)**3
            end if
 
@@ -1654,10 +1686,10 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
            endif
 
            mnucct(k) = (dfaer1*nacon1+dfaer2*nacon2+dfaer3*nacon3+dfaer4*nacon4)*pi*pi/3._r8*rhow* &
-                       cdist1(k)*kf_GAMMA(pgam(k)+5._r8)/lamc(k)**4
+                       cdist1(k)*mskf_GAMMA(pgam(k)+5._r8)/lamc(k)**4
 
            nnucct(k) = (dfaer1*nacon1+dfaer2*nacon2+dfaer3*nacon3+dfaer4*nacon4)*2._r8*pi*  &
-                       cdist1(k)*kf_GAMMA(pgam(k)+2._r8)/lamc(k)
+                       cdist1(k)*mskf_GAMMA(pgam(k)+2._r8)/lamc(k)
 
 !              if (nnuccc(k).gt.nnuccd(k)) then
 !                 dum=nnuccd(k)/nnuccc(k)
@@ -1686,6 +1718,9 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
 
        mtime=deltat/900._r8
        mtimec=deltat/900._r8
+
+       mtime = AMAX1(1.0,mtime)   !TWG remove time scale limitation from CAM5
+       mtimec = AMAX1(1.0,mtimec)    
 
 ! conservation of qc
 
@@ -1871,9 +1906,16 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
         fhtctm(i,k) = -mnucct(k)*arcf(i,k)
         hmpim (i,k) = -msacwi(k)*arcf(i,k)
         accslm(i,k) = -psacws(k)*arcf(i,k)
+        collrm(i,k) = -pracs(k)*arcf(i,k)
+        collrn(i,k) = -npracs(k)*arcf(i,k)
+        fhtcrm(i,k) = -mnuccr(k)*arcf(i,k)
+        fhtcrn(i,k) = -nnuccr(k)*arcf(i,k)
         dlfm  (i,k) = -du(i,k)*qc(i,k)
 
         autoln(i,k) = -nprc1(k)*arcf(i,k)*rho(i,k)
+        autorn(i,k) = -nprc(k)*arcf(i,k)*rho(i,k)
+        aggrn(i,k) =  nragg(k)*arcf(i,k)*rho(i,k)
+        aggsn(i,k) =  nsagg(k)*arcf(i,k)*rho(i,k)
         accrln(i,k) = -npra(k)*arcf(i,k)*rho(i,k)
         bergnn(i,k) = -nprb(k)*arcf(i,k)*rho(i,k)
         fhtimn(i,k) = -nnuccc(k)*arcf(i,k)*rho(i,k)
@@ -1884,9 +1926,10 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
 !cloud ice------------------------        
         autoim(i,k) = -prci(k)*arcf(i,k)
         accsim(i,k) = -prai(k)*arcf(i,k)
-        difm  (i,k) = -du(i,k+1)*qi(i,k)
+        difm  (i,k) = -du(i,k)*qi(i,k)             !TWG 2017 change -du(i,k+1)*qi(i,k)
 
         nuclin(i,k) = nnuccd(k)*mtime*arcf(i,k)*rho(i,k)
+        nuclim(i,k) = mnuccd(k)*mtime*arcf(i,k)*rho(i,k)
         autoin(i,k) = -nprci(k)*arcf(i,k)*rho(i,k)
         accsin(i,k) = -nprai(k)*arcf(i,k)*rho(i,k)
         hmpin (i,k)  = nsacwi(k)*arcf(i,k)*rho(i,k)
@@ -2103,7 +2146,7 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
 
 ! get pgam from fit to observations of martin et al. 1994
 
-              pgam(k-1)=0.0005714_r8*(nc(i,k-1)/1.e6_r8/rho(i,k-1))+0.2714_r8
+              pgam(k-1)=0.0005714_r8*(nc(i,k-1)/1.e6_r8*rho(i,k-1))+0.2714_r8 !TWG 2017 change / to * in front of rho 
               pgam(k-1)=1._r8/(pgam(k-1)**2)-1._r8
               pgam(k-1)=max(pgam(k-1),2._r8)
               pgam(k-1)=min(pgam(k-1),15._r8)
@@ -2211,7 +2254,6 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
 !dkay : since KF treats rain and snow separately, no need to add snow to the
 !rprd (kg/kg/m)
 !dkay        rprd(i,k-1)= (qnitend(i,k) + qrtend(i,k))*arcf(i,k)    ! original
-!line  danger
         rprd(i,k-1)=  qrtend(i,k)  *arcf(i,k)
         sprd(i,k-1)=  qnitend(i,k) *arcf(i,k)
 
@@ -2251,7 +2293,7 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
          nc(i,k-1)=max(nc(i,k-1),0._r8)
 !!......................................................................
 !dkay
-        frz(i,k) = amin1(1.E-07, frz(i,k))  ! constrain frz 
+  !      frz(i,k) = amin1(1.E-07, frz(i,k))  ! constrain frz 
        end do ! k loop
 !dkay          print *,'jb, jt=',jb(i), jt(i)
        end do ! it loop, iteration
@@ -2284,14 +2326,14 @@ subroutine zm_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, eps0
          end if
 
 return
-end subroutine zm_mphy
+end subroutine mskf_mphy
 
 !##############################################################################
 
 
 !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-      FUNCTION kf_GAMMA(X)
+      FUNCTION mskf_GAMMA(X)
 
 !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
@@ -2388,7 +2430,7 @@ end subroutine zm_mphy
       INTEGER I,N
       LOGICAL PARITY
 
-      real(r8) kf_GAMMA
+      real(r8) mskf_GAMMA
       REAL(r8) &
 !D    DOUBLE PRECISION
          C,CONV,EPS,FACT,HALF,ONE,P,PI,Q,RES,SQRTPI,SUM,TWELVE, &
@@ -2542,11 +2584,11 @@ end subroutine zm_mphy
 !----------------------------------------------------------------------
       IF(PARITY)RES=-RES
       IF(FACT.NE.ONE)RES=FACT/RES
-  900 kf_GAMMA=RES
+  900 mskf_GAMMA=RES
 !D900 DGAMMA = RES
       RETURN
-! ---------- LAST LINE OF kf_GAMMA ----------
-      END function kf_GAMMA
+! ---------- LAST LINE OF mskf_GAMMA ----------
+      END function mskf_GAMMA
 
 !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ! error function in single precision
@@ -2712,7 +2754,7 @@ end subroutine zm_mphy
     erf_alt = 1. - erfc_num_recipes(x)
 
     end function erf_alt
-      subroutine kf_activate(wbar, tair, rhoair,  &
+      subroutine mskf_activate(wbar, tair, rhoair,  &
                  na, pmode, nmode, ma, sigman, hygro, rhodry, nact,qs)
 !      calculates number, surface, and mass fraction of aerosols activated as
 !      CCN
@@ -2848,7 +2890,6 @@ end subroutine zm_mphy
             amcubeloc(m)=(3.*volc(m)/(4.*pi*exp45logsig(m)*na(m)))  ! only if variable size dist
             smc(m)=smcrit(m) ! only for prescribed size dist
 
-!danger ??
 !May30,2014
                  if(hygro(m).gt.1.e-10)then   ! loop only if variable size dist
                     smc(m)=2.*aten*sqrt(aten/(27.*hygro(m)*amcubeloc(m)))
@@ -2877,7 +2918,7 @@ end subroutine zm_mphy
             enddo
 
 !             print *,' kf_maxsat '
-            call kf_maxsat(zeta,eta,nmode,smc,smax)
+            call mskf_maxsat(zeta,eta,nmode,smc,smax)
 
             lnsmax=log(smax)
 !           print *,'smc,smax=',smc,smax
@@ -2891,8 +2932,8 @@ end subroutine zm_mphy
 !++ag replace sg erf with hm derf pre 1.68
 !               nact=nact+0.5*(1.-derf(x))*na(m)
 !++ag 1.68 new error function
-!               nact=nact+0.5_r8*(1._r8-derf(x))*na(m)  ! danger erf
-                nact=nact+0.5_r8*(1._r8-erf(x))*na(m)  ! danger erf
+                nact=nact+0.5*(1.-erf(x))*na(m)  
+!               nact=nact+0.5*(1.-derf(x))*na(m)  
 !       write(*,*)'nact',nact,derf(x),na(m),m
 !       write(*,*) 'lnsmloc(m)',lnsmloc(m),lnsmax,alogsig(m)
 !                write(*,*) 'wbar=',wbar
@@ -2910,9 +2951,9 @@ end subroutine zm_mphy
 !         lnsmloc     )
 
       return
-      end subroutine kf_activate
+      end subroutine mskf_activate
 
-      subroutine kf_maxsat(zeta,eta,nmode,smc,smax)
+      subroutine mskf_maxsat(zeta,eta,nmode,smc,smax)
 
 !      calculates maximum supersaturation for multiple
 !      competing aerosol modes.
@@ -2963,9 +3004,9 @@ end subroutine zm_mphy
 
       return
 
-      end subroutine kf_maxsat
+      end subroutine mskf_maxsat
 
-subroutine kf_nucleati(wbar, tair, relhum,  qc,  rhoair, &
+subroutine mskf_nucleati(wbar, tair, pair, qv,  qc,  rhoair, & ! TWG add pair and replace relhum with qv
        na,  naer_all, nuci  &
        , onihf, oniimm, onidep, onimey)
 
@@ -2986,7 +3027,8 @@ subroutine kf_nucleati(wbar, tair, relhum,  qc,  rhoair, &
   integer  naer_all
   real(r8) :: wbar                ! grid cell mean vertical velocity (m/s)
   real(r8) :: tair                ! temperature (K)
-  real(r8) :: relhum              ! relative humidity with respective to liquid
+  real(r8) :: qv                  ! water vapor mixing ratio (kg/kg)
+  real(r8) :: pair                ! pressure (Pa)
 
   real(r8) :: qc                  ! liquid water mixing ratio (kg/kg)
   real(r8) :: rhoair              ! air density (kg/m3)
@@ -3013,7 +3055,7 @@ subroutine kf_nucleati(wbar, tair, relhum,  qc,  rhoair, &
   real(r8)  nimey                                        ! nucleated number from deposition nucleation (meyers)
   real(r8)  n1,ni                                        ! nucleated number
   real(r8)  tc,A,B,C,regm                                ! work variable
-  real(r8)  esl,esi,deles                                ! work variable
+  real(r8)  esl,esi,deles,qsi,qsl,relhum                 ! work variable
   real(r8)  dst_scale
   real(r8)  subgrid
   real(r8)  dmc,ssmc         ! variables for modal scheme.
@@ -3063,6 +3105,14 @@ subroutine kf_nucleati(wbar, tair, relhum,  qc,  rhoair, &
     ni=0._r8
     tc=tair-273.15_r8
 
+!TWG calculate Ice saturation ratio
+    esi = 611.2*exp(21.87*(tair-273.16)/(tair-7.66))
+    esl = 611.2*exp(17.67*(tair-273.16)/(243.5+tair-273.16))
+    qsi = 0.622*esi/(pair-esi)
+    qsl = 0.622*esl/(pair-esl)
+    deles = qv/qsi
+    relhum = qv/qsl
+
     ! initialize
     niimm=0._r8
     nidep=0._r8
@@ -3073,7 +3123,7 @@ subroutine kf_nucleati(wbar, tair, relhum,  qc,  rhoair, &
       subgrid = 1.0_r8
 
 !          print *,'nucleiate wbar=', wbar
-     if((wbar.lt.4.0_r8) .and. (tc.le.-35.0_r8) .and.((relhum*kf_polysvp(tair,0)/kf_polysvp(tair,1)*subgrid).ge.1.2_r8)) then 
+     if((wbar.lt.4.0_r8) .and. (tc.le.-35.0_r8) .and.((deles*subgrid).ge.1.0_r8)) then !TWG Make RHi consistent
 !< regm => T in Eq.10 of Liu et al., J. Climate, 2007>
        print*,'Aerosol Ice Nucleation is Doing Something'
        A = -1.4938_r8 * log(soot_num+dst_num) + 12.884_r8
@@ -3083,29 +3133,29 @@ subroutine kf_nucleati(wbar, tair, relhum,  qc,  rhoair, &
 !         print *,'before bunch of hetero'
        if(tc.gt.regm) then    ! heterogeneous nucleation only
          if(tc.lt.-40._r8 .and. wbar.gt.1._r8) then ! exclude T<-40 & W>1m/s from hetero. nucleation
-           call kf_hf(tc,wbar,relhum,subgrid,so4_num,nihf)
+           call mskf_hf(tc,wbar,relhum,subgrid,so4_num,nihf)
            niimm=0._r8
            nidep=0._r8
            n1=nihf
          else
-           call kf_hetero(tc,wbar,soot_num+dst_num,niimm,nidep)
+           call mskf_hetero(tc,wbar,soot_num+dst_num,niimm,nidep)
            nihf=0._r8
            n1=niimm+nidep
          endif
        elseif (tc.lt.regm-5._r8) then ! homogeneous nucleation only
-         call kf_hf(tc,wbar,relhum,subgrid,so4_num,nihf)
+         call mskf_hf(tc,wbar,relhum,subgrid,so4_num,nihf)
          niimm=0._r8
          nidep=0._r8
          n1=nihf
        else        ! transition between homogeneous and heterogeneous: interpolate in-between
          if(tc.lt.-40._r8 .and. wbar.gt.1._r8) then ! exclude T<-40 & W>1m/s from hetero. nucleation
-           call kf_hf(tc,wbar,relhum,subgrid,so4_num,nihf)
+           call mskf_hf(tc,wbar,relhum,subgrid,so4_num,nihf)
            niimm=0._r8
            nidep=0._r8
            n1=nihf
          else
-           call kf_hf(regm-5._r8,wbar,relhum,subgrid,so4_num,nihf)
-           call kf_hetero(regm,wbar,soot_num+dst_num,niimm,nidep)
+           call mskf_hf(regm-5._r8,wbar,relhum,subgrid,so4_num,nihf)
+           call mskf_hetero(regm,wbar,soot_num+dst_num,niimm,nidep)
            if(nihf.le.(niimm+nidep)) then
              n1=nihf
            else
@@ -3126,11 +3176,15 @@ subroutine kf_nucleati(wbar, tair, relhum,  qc,  rhoair, &
 ! Question:  RHi=RHw*esl/esi
 
     if(tc.lt.0._r8 .and. tc.gt.-37._r8 .and. qc.gt.1.e-12_r8) then
-      esl = kf_polysvp(tair,0)     ! over water in mixed clouds
-      esi = kf_polysvp(tair,1)     ! over ice
+!     if(tc.lt.0._r8 .and. tc.gt.-37._r8) then  ! TWG  remove cloud water constraint
+!      esl = kf_polysvp(tair,0)     ! over water in mixed clouds
+!      esi = kf_polysvp(tair,1)     ! over ice
 !songxl      deles = (esl - esi)
-      deles = (relhum*esl - esi)
-      nimey=1.e-3_r8*exp(12.96_r8*deles/esi - 0.639_r8)
+!      deles = (relhum*esl - esi)
+       if (deles.gt.1.5) THEN
+             deles = 1.5
+        end if
+      nimey=1.e-3_r8*exp(12.96_r8*(deles-1.0_r8) - 0.639_r8) ! TWG fix Meyers formulation
     else
       nimey=0._r8
     endif
@@ -3153,9 +3207,9 @@ subroutine kf_nucleati(wbar, tair, relhum,  qc,  rhoair, &
 !      na,  naer_all, nuci,onimey,onidep,oniimm,onihf 
 !     print *,'na,tari,nuci.. =', na,tair,nuci,onimey,onidep,oniimm,onihf
   return
-  end subroutine kf_nucleati
+  end subroutine mskf_nucleati
 
-  subroutine kf_hetero(T,ww,Ns,Nis,Nid)
+  subroutine mskf_hetero(T,ww,Ns,Nis,Nid)
 
     real(r8) :: T, ww, Ns
     real(r8) :: Nis, Nid
@@ -3187,9 +3241,9 @@ subroutine kf_nucleati(wbar, tair, relhum,  qc,  rhoair, &
       Nid = 0.0_r8    ! don't include deposition nucleation for cirrus clouds when T<-37C
 
       return
-  end subroutine kf_hetero
+  end subroutine mskf_hetero
 
- subroutine kf_hf(T,ww,RH,subgrid,Na,Ni)
+ subroutine mskf_hf(T,ww,RH,subgrid,Na,Ni)
 
       real(r8) :: T, ww, RH, subgrid, Na
       real(r8), intent(out) :: Ni
@@ -3267,9 +3321,9 @@ subroutine kf_nucleati(wbar, tair, relhum,  qc,  rhoair, &
       end if
 
       return
-  end subroutine kf_hf
+  end subroutine mskf_hf
 
-      function kf_polysvp (T,type)
+      function mskf_polysvp (T,type)
 !  Compute saturation vapor pressure by using
 ! function from Goff and Gatch (1946)
 
@@ -3279,7 +3333,7 @@ subroutine kf_nucleati(wbar, tair, relhum,  qc,  rhoair, &
 
       real(r8) dum
 
-      real(r8) T,kf_polysvp
+      real(r8) T,mskf_polysvp
 
       integer type
 
@@ -3289,7 +3343,7 @@ subroutine kf_nucleati(wbar, tair, relhum,  qc,  rhoair, &
 
 ! Goff Gatch equation (good down to -100 C)
 
-         kf_polysvp = 10._r8**(-9.09718_r8*(273.16_r8/t-1._r8)-3.56654_r8* &
+         mskf_polysvp = 10._r8**(-9.09718_r8*(273.16_r8/t-1._r8)-3.56654_r8* &
           log10(273.16_r8/t)+0.876793_r8*(1._r8-t/273.16_r8)+ &
           log10(6.1071_r8))*100._r8
 
@@ -3299,7 +3353,7 @@ subroutine kf_nucleati(wbar, tair, relhum,  qc,  rhoair, &
 ! Goff Gatch equation, uncertain below -70 C
 
       if (type.eq.0) then
-         kf_polysvp = 10._r8**(-7.90298_r8*(373.16_r8/t-1._r8)+ &
+         mskf_polysvp = 10._r8**(-7.90298_r8*(373.16_r8/t-1._r8)+ &
              5.02808_r8*log10(373.16_r8/t)- &
              1.3816e-7_r8*(10._r8**(11.344_r8*(1._r8-t/373.16_r8))-1._r8)+ &
              8.1328e-3_r8*(10._r8**(-3.49149_r8*(373.16_r8/t-1._r8))-1._r8)+ &
@@ -3307,10 +3361,11 @@ subroutine kf_nucleati(wbar, tair, relhum,  qc,  rhoair, &
          end if
 
 
-      end function kf_polysvp
+      end function mskf_polysvp
 
  end module module_cu_mp
 !end module zm_microphysics
+
 !----------------------------------------------------------------------------------------------
 !dkay begin MSKF
 !.........................................
@@ -3321,7 +3376,6 @@ MODULE module_cu_mskf
  
    !dkay
    USE module_cu_mp
-!  use netcdf !PSH
 !
 !ckay=Kiran Alapaty, EPA
 !CGM = Chris Marciano, NCSU
@@ -3391,11 +3445,11 @@ CONTAINS
              ,TIMEC_KF,KF_EDRATES                            & 
              ,ZOL,WSTAR,UST,PBLH                             &   !ckay
              ,aerocu,no_src_types_cu,aercu_fct,aercu_opt     & !PSH/TWG
-             ,EFCS,EFIS,EFSS                                 & !TWG
-                                                             )
+             ,EFCS,EFIS,EFSS)
 !
 !-------------------------------------------------------------
    IMPLICIT NONE
+   SAVE !TWG 2017 Add to avoid memory issues
 !-------------------------------------------------------------
    INTEGER,      INTENT(IN   ) ::                            &
                                   ids,ide, jds,jde, kds,kde, &
@@ -3425,11 +3479,11 @@ CONTAINS
                                                         rho, &
                                                          pi
   INTEGER,      INTENT(IN   ) :: no_src_types_cu !PSH/TWG
-  INTEGER,      INTENT(IN   ) :: aercu_opt !PSH/TWG
+  INTEGER,      INTENT(IN   ) :: aercu_opt       !PSH/TWG
   REAL,         INTENT(IN   ) :: aercu_fct       !PSH/TWG
-  REAL,  DIMENSION( ims:ime, kms:kme, jms:jme, no_src_types_cu),  &
-          INTENT(INOUT) ::                            aerocu !PSH/TWG
-
+  REAL,  DIMENSION( ims:ime, kms:kme, jms:jme, no_src_types_cu), OPTIONAL, &
+          INTENT(INOUT) ::                                   aerocu !PSH/TWG
+!
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         , &
           INTENT(INOUT) ::                                   &
                                                       W0AVG   
@@ -3551,7 +3605,6 @@ CONTAINS
                                                       DQSDT, &
                                                        DTDT
 
-
   REAL, DIMENSION (its-1:ite+1,kts:kte,jts-1:jte+1) ::  aveh_t, aveh_q
   REAL, DIMENSION (its:ite,kts:kte,jts:jte) :: aveh_qmax, aveh_qmin
   REAL, DIMENSION (its:ite,kts:kte,jts:jte) ::  avev_t, avev_q 
@@ -3618,6 +3671,7 @@ CONTAINS
          ENDDO
       ENDDO
    ENDDO
+
 
    lastdt = dt
 
@@ -3777,6 +3831,7 @@ CONTAINS
      DO J = jts,jte
        DO I=its,ite
           
+
          IF ( NCA(I,J) .ge. 0.5*DT ) then
             CU_ACT_FLAG(i,j) = .false.
          ELSE
@@ -3788,6 +3843,7 @@ CONTAINS
                DQRDT(k)=0.
                DQSDT(k)=0.
                DTDT(k)=0.
+!ckay
                cldfra_dp_KF(I,k,J)=0.
                cldfra_sh_KF(I,k,J)=0.
                qc_KF(I,k,J)=0.
@@ -3800,11 +3856,14 @@ CONTAINS
                nr_KF(I,k,J)=0.
                ns_KF(I,k,J)=0.
                ccn_KF(I,k,J)=0.
-             END IF
+               EFSS(I,k,J)=10.01
+               EFCS(I,k,J)=2.51
+               EFIS(I,k,J)=5.01
+              END IF
                w_up(I,k,J)=0.
             ENDDO
              IF (aercu_opt.gt.0) THEN
-               ainc_frac(I,J) = 0.
+               ainc_frac(I,J) = 0. ! TWG
              END IF
             IF (KF_EDRATES == 1) THEN
                DO k=kts,kte
@@ -3840,13 +3899,12 @@ CONTAINS
                   tpart_v1D(K) = 0.
                ENDIF
             ENDDO
-
 !dkay
             IF (aercu_opt.gt.0) THEN
-                call zm_mphyi ()
+                call mskf_mphyi ()
             END IF
 
-            CALL KF_eta_PARA(I, J,                  &
+            CALL MSKF_eta_PARA(I, J,                  &
                  U1D,V1D,T1D,QV1D,P1D,DZ1D,W0AVG1D, &
                  tpart_h1D,tpart_v1D,               &
                  trigger,                           &
@@ -3893,7 +3951,6 @@ CONTAINS
 
 !......     QSTEN STORES GRAUPEL TENDENCY IF IT EXISTS, OTHERISE SNOW (V2)
 
-
               IF ( F_QI ) THEN
                 DO K=kts,kte
                    RQICUTEN(I,K,J)=DQIDT(K)
@@ -3913,7 +3970,7 @@ CONTAINS
    END SUBROUTINE MSKF_CPS
 ! ****************************************************************************
 !-----------------------------------------------------------
-   SUBROUTINE KF_eta_PARA (I, J,                           &
+   SUBROUTINE MSKF_eta_PARA (I, J,                           &
                       U0,V0,T0,QV0,P0,DZQ,W0AVG1D,         &
                       TPART_H0,TPART_V0,                   &
                       trigger,                             &
@@ -3938,12 +3995,14 @@ CONTAINS
                       TIMEC_KF,KF_EDRATES,                 &
                       ZOL,WSTAR,UST,PBLH,                  &
                       aerocu,no_src_types_cu,aercu_fct,    &
-                      aercu_opt,EFCS,EFIS,EFSS             ) !PSH/TWG
+                      aercu_opt,EFCS,EFIS,EFSS) !PSH/TWG
+
 !-----------------------------------------------------------
 !***** The KF scheme that is currently used in experimental runs of EMCs 
 !***** Eta model....jsk 8/00
 !
       IMPLICIT NONE
+      SAVE  !TWG 2017 Add to avoid memory issues
 !-----------------------------------------------------------
       INTEGER, INTENT(IN   ) :: ids,ide, jds,jde, kds,kde, &
                                 ims,ime, jms,jme, kms,kme, &
@@ -3980,6 +4039,7 @@ CONTAINS
       REAL,  DIMENSION( ims:ime, kms:kme, jms:jme, no_src_types_cu), OPTIONAL, &
       INTENT(INOUT) ::                                   aerocu !PSH/TWG
 
+
 !ckay
       REAL, DIMENSION( ims:ime, jms:jme ),                 &
             INTENT(   IN) ::                          ZOL, &
@@ -4006,8 +4066,10 @@ CONTAINS
             INTENT(INOUT) ::                 cldfra_dp_KF, &
                                              cldfra_sh_KF, &
                                                     qc_KF, &
-                                                    qi_KF, &
-                                                    qr_KF, & !TWG
+                                                    qi_KF
+
+      REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),      &
+            INTENT(INOUT) ::                        qr_KF, & !TWG
                                                     qs_KF, & !TWG
                                                     nc_KF, & !TWG
                                                     ni_KF, & !TWG
@@ -4017,6 +4079,7 @@ CONTAINS
                                                      EFCS, & !TWG
                                                      EFIS, & !TWG
                                                      EFSS
+
 !kf_edrates
       REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),      &
             INTENT(INOUT) ::       UDR_KF,       &
@@ -4054,7 +4117,8 @@ CONTAINS
             THTAU,THETEU,THTAD,THETED,QLIQ,QICE,           &
 !TWG 06/14/16
             QRAIN,QSNOW,NLIQ,NICE,NRAIN,NSNOW,CCN,         &
-            EFFCH,EFFIH,EFFSH,                             &
+            EFFCH,EFFIH,EFFSH, &
+
 !EBD TWG
             QLQOUT,QICOUT,PPTLIQ,PPTICE,DETLQ,DETIC,       &
             DETLQ2,DETIC2,RATIO,RATIO2
@@ -4117,9 +4181,17 @@ CONTAINS
 !ckaywup
    REAL    :: envEsat, envQsat, envRH, envRHavg, denSplume
    REAL    :: updil, Drag
-
+!TWG Mar 2017
+   REAL, PARAMETER :: P1_HU10 = 7.6725
+   REAL, PARAMETER :: P2_HU10 = 1.0118
+   REAL, PARAMETER :: P3_HU10 = 0.1422
+   REAL, PARAMETER :: P4_HU10 = 0.0106
+   REAL, PARAMETER :: P5_HU10 = 3.39E-4
+   REAL, PARAMETER :: P6_HU10 = 3.95E-6
+   REAL    :: SF_HU10, TC_HU10
+!END TWG
 !dkay for dccmp
-   real :: zmVMFLCL, ajunk1,ajunk2, a4kay
+   real :: zmVMFLCL, ajunk1,ajunk2, a4kay, a1kay
    LOGICAL :: DCCMP
    REAL :: eps1u, alatent, Qsu
    LOGICAL :: onetime
@@ -4144,9 +4216,9 @@ CONTAINS
    REAL(r8) aer_mmr(pcols, KTS:KTE,naer_cu)
    REAL(r8) Aqnewic(KTS:KTE)
    REAL(r8) Aqnewlq(KTS:KTE)
-   REAL(r8) wu_kf_act(KTS:KTE)
-   REAL(r8) qc_kf_act(KTS:KTE)
-   REAL(r8) qi_kf_act(KTS:KTE)
+   REAL(r8) wu_mskf_act(KTS:KTE)
+   REAL(r8) qc_mskf_act(KTS:KTE)
+   REAL(r8) qi_mskf_act(KTS:KTE)
    REAL(r8) effc(pcols, KTS:KTE)
    REAL(r8) effi(pcols, KTS:KTE)
    REAL(r8) effs(pcols, KTS:KTE)
@@ -4567,7 +4639,6 @@ usl:   DO
             EQFRC(K)=1.
             QLIQ(K)=0.
             QICE(K)=0.
-!TWG 06/14/16
          IF (aercu_opt .GT. 0) THEN
             QRAIN(K)=0.
             QSNOW(K)=0.
@@ -4580,7 +4651,6 @@ usl:   DO
             EFFIH(K) = 4.99
             EFFSH(K) = 9.99
          END IF
-!END TWG
             QLQOUT(K)=0.
             QICOUT(K)=0.
             DETLQ(K)=0.
@@ -4610,7 +4680,7 @@ usl:   DO
             DILBE = 0.
 
 !dkay
-     IF (aercu_opt.gt.0) THEN
+      IF (aercu_opt.gt.0) THEN
                 zf_wrf(0) = 0.0  ! ground
                 DO KQ=KTS,KTE
                  zf_wrf(KQ) = zf_wrf(KQ-1)+DZQ(KQ)
@@ -4622,17 +4692,17 @@ usl:   DO
                  nimp(1,kq) =0.0
                  sprd(1,kq) =0.0
                  frz(1,kq) =0.0
-                   jk = kq
-                   muu(1,JK) = 0.0
-                   duu(1,JK) =0.0
-                   EUU(1,JK) =0.0
-                   cmel(1,JK) =0.0
-                   cmei(1,JK) =0.0
-               oldTU(kq) = t0(kq)
-               oldQU(kq) = Q0(kq)
+                 jk = kq
+                 muu(1,JK) = 0.0
+                 duu(1,JK) =0.0
+                 EUU(1,JK) =0.0
+                 cmel(1,JK) =0.0
+                 cmei(1,JK) =0.0
+                 oldTU(kq) = t0(kq)
+                 oldQU(kq) = Q0(kq)
                 End do
               Miter = 0
-     END IF
+      END IF
 
 updraft:    DO NK=K,KL-1
               NK1=NK+1
@@ -4656,27 +4726,27 @@ updraft:    DO NK=K,KL-1
 
 !dkay
 ! saturation value of Q of updraft for use with gamma hat in DCCMP routine
-   IF (aercu_opt.gt.0) THEN
-        QSATu(NK) = QSu/(1.+QSu)   ! saturated specific hum
-         Aqnewlq(NK) = qnewlq
-         Aqnewic(NK) = qnewic
+!   IF (aercu_opt.gt.0) THEN
+!        QSATu(NK) = QSu/(1.+QSu)   ! saturated specific hum
+!         Aqnewlq(NK) = qnewlq
+!         Aqnewic(NK) = qnewic
 
-         Aqnewlq(NK) = qnewlq + Qliq(nk )
-         Aqnewic(NK) = qnewic + Qice(nk )
+!        Aqnewlq(NK) = qnewlq + Qliq(nk )   This is to be removed
+!        Aqnewic(NK) = qnewic + Qice(nk )
 
 !dkaydec26
-         if(TU(NK).le.273.) then
-          Aqnewlq(NK) = 0.0
-          Aqnewic(NK) = qnewlq + qnewic
-         else
-          Aqnewlq(NK) = qnewlq + qnewic
-          Aqnewic(NK) = 0.0
-         end if
-   END IF
+     !    if(TU(NK).le.273.) then
+     !     Aqnewlq(NK) = 0.0
+     !     Aqnewic(NK) = qnewlq + qnewic
+      !   else
+       !   Aqnewlq(NK) = qnewlq + qnewic
+        !  Aqnewic(NK) = 0.0
+        ! end if
+!   END IF
 !
 !
 !...CHECK TO SEE IF UPDRAFT TEMP IS ABOVE THE TEMPERATURE AT WHICH
-!...GLACIATION IS ASSUMED TO INITIATE; IF IT IS, CALCULATE THE
+!/dec26...GLACIATION IS ASSUMED TO INITIATE; IF IT IS, CALCULATE THE
 !...FRACTION OF REMAINING LIQUID WATER TO FREEZE...TTFRZ IS THE
 !...TEMP AT WHICH FREEZING BEGINS, TBFRZ THE TEMP BELOW WHICH ALL
 !...LIQUID WATER IS FROZEN AT EACH LEVEL...
@@ -4690,6 +4760,18 @@ updraft:    DO NK=K,KL-1
                   IFLAG=1
                 ENDIF
                 TTEMP=TU(NK1)
+                !print*,'OLD FRC1',FRC1
+
+!TWG Mar 2017
+!Refine FRC1 to match super cooled water path estimate from Hu et al. [2010]
+           IF (aercu_opt.gt.0) THEN
+             TC_HU10 = TU(NK1)-273.15
+             SF_HU10 = -1.0*(P1_HU10+(P2_HU10*TC_HU10)+(P3_HU10*(TC_HU10**2))+ &
+             (P4_HU10*(TC_HU10**3))+(P5_HU10*(TC_HU10**4))+(P6_HU10*(TC_HU10**5)))
+             FRC1 = 1.0 - (1.0/(1.0 + EXP(SF_HU10)))
+             !print*,'NEW FRC1',FRC1
+           END IF
+!END TWG 
 !
 !  DETERMINE THE EFFECTS OF LIQUID WATER FREEZING WHEN TEMPERATURE
 !...IS BELOW TTFRZ...
@@ -4703,6 +4785,13 @@ updraft:    DO NK=K,KL-1
                           QICE(NK1),ALIQ,BLIQ,CLIQ,DLIQ)
               ENDIF
               TVU(NK1)=TU(NK1)*(1.+0.608*QU(NK1))
+
+   IF (aercu_opt.gt.0) THEN
+        QSATu(NK) = QSu/(1.+QSu)   ! saturated specific hum
+         Aqnewlq(NK) = qnewlq
+         Aqnewic(NK) = qnewic
+   END IF
+
 !
 !  CALCULATE UPDRAFT VERTICAL VELOCITY AND PRECIPITATION FALLOUT...
 !
@@ -4875,6 +4964,7 @@ updraft:    DO NK=K,KL-1
                 IF(NK1.LE.KPBL)UER(NK1)=UER(NK1)+VMFLCL*DP(NK1)/DPTHMX
               ENDIF
 
+
 !dkay
               IF (aercu_opt.gt.0) THEN
                   eps1u = 0.622
@@ -4888,11 +4978,13 @@ updraft:    DO NK=K,KL-1
                    cmei(1,JK) = muu(1,JK)*AQNEWIC(KQ)/DZQ(KQ)
                   gamhat(1,JK) = QSATu(KQ)*(1.+QSATu(KQ)/eps1u)   &
                  *eps1u*alatent/(R*oldTU(KQ)**2)*alatent/CP
-                   wu_kf_act(JK) = WU(KQ)  ! kf updraft velocity incloud
-                   qc_kf_act(JK) = AQNEWLQ(KQ)
-                   qi_kf_act(JK)=AQNEWIC(KQ)
+                   wu_mskf_act(JK) = WU(KQ)  ! kf updraft velocity incloud
+                   qc_mskf_act(JK) = AQNEWLQ(KQ)
+                   qi_mskf_act(JK)=AQNEWIC(KQ)
               END IF
 !end dkay
+
+
 !
             END DO updraft
 
@@ -4907,10 +4999,9 @@ updraft:    DO NK=K,KL-1
             DO KQ=KTS,KTE
               JK = KTE-KQ+1
                    zfu(1,JK) = zf_wrf(KQ)
-                   su(1,JK) = oldTU(KQ) + (G*zf_wrf(KQ))/CP
+                   su(1,JK) = oldTU(KQ)*(1.0+0.622*QSATu(KQ)) + (G*zf_wrf(KQ))/CP !TWG updraft temperature calulation
                    quu(1,JK) = oldQU(KQ)/(1.+oldQU(KQ)) ! specific humidity of updraft
                    pru(1,JK) = P0(KQ)/100.0    ! in millibars
-                   TEE(1,JK) = oldTU(KQ)  ! danger T0(KQ)
                    TEE(1,JK) = T0(KQ)    ! ccc
                    QEE(1,JK) = Q0(KQ)/(1.+Q0(KQ))           ! specific humidity of environment
 
@@ -4922,16 +5013,16 @@ updraft:    DO NK=K,KL-1
                     denSplume = P0(KQ)/(R*oldTU(KQ))
                     psh_fac = 1.0E-09/denSplume        ! convert ug/m3 to kg/kg
 
-                    aer_mmr(1,JK, 1) = aerocu(I,KQ,J, 6)*psh_fac
-                    aer_mmr(1,JK, 2) = aerocu(I,KQ,J, 5)*psh_fac
-                    aer_mmr(1,JK, 3) = 1.44*aerocu(I,KQ,J, 1)*psh_fac
-                    aer_mmr(1,JK, 4) = 1.44*aerocu(I,KQ,J, 2)*psh_fac
-                    aer_mmr(1,JK, 5) = 1.44*aerocu(I,KQ,J, 3)*psh_fac
-                    aer_mmr(1,JK, 6) = 1.44*aerocu(I,KQ,J, 4)*psh_fac
-                    aer_mmr(1,JK, 7) = 1.54*aerocu(I,KQ,J, 9)*psh_fac
-                    aer_mmr(1,JK, 8) = 1.37*aerocu(I,KQ,J, 7)*psh_fac
-                    aer_mmr(1,JK, 9) = 1.25*aerocu(I,KQ,J,10)*psh_fac
-                    aer_mmr(1,JK,10) = 1.37*aerocu(I,KQ,J, 8)*psh_fac
+                    aer_mmr(1,JK, 1) = aercu_fct*aerocu(I,KQ,J, 6)*psh_fac
+                    aer_mmr(1,JK, 2) = aercu_fct*aerocu(I,KQ,J, 5)*psh_fac
+                    aer_mmr(1,JK, 3) = aercu_fct*1.44*aerocu(I,KQ,J, 1)*psh_fac
+                    aer_mmr(1,JK, 4) = aercu_fct*1.44*aerocu(I,KQ,J, 2)*psh_fac
+                    aer_mmr(1,JK, 5) = aercu_fct*1.44*aerocu(I,KQ,J, 3)*psh_fac
+                    aer_mmr(1,JK, 6) = aercu_fct*1.44*aerocu(I,KQ,J, 4)*psh_fac
+                    aer_mmr(1,JK, 7) = aercu_fct*1.54*aerocu(I,KQ,J, 9)*psh_fac
+                    aer_mmr(1,JK, 8) = aercu_fct*1.37*aerocu(I,KQ,J, 7)*psh_fac
+                    aer_mmr(1,JK, 9) = aercu_fct*1.25*aerocu(I,KQ,J,10)*psh_fac
+                    aer_mmr(1,JK,10) = aercu_fct*1.37*aerocu(I,KQ,J, 8)*psh_fac
 
 !psh
                   gamhat(1,JK) = QSATu(KQ)*(1.+QSATu(KQ)/eps1u)   &
@@ -4971,11 +5062,10 @@ updraft:    DO NK=K,KL-1
 !             print *,'wrf dz=',dzq(kq),(KTE-KQ+1)
 !           end do
 
-          call zm_mphy(su,quu,muu,duu,cmel,cmei,zfu, pru,tee,qee,epsi0, &
+          call mskf_mphy(su,quu,muu,duu,cmel,cmei,zfu, pru,tee,qee,epsi0, &
                jbb,jtt,jlcl, msg1,il2g, grav, cpin, rdry,zmqliq,zmqice,zmqrain,zmqsnow,&
                rprd,wump, euu, ncmp,nimp,nrmp,nsmp,zmccn,sprd, frz, aer_mmr, dtzmp, &
-               NLEVZM,NLEVZMP1,gamhat,qsatzm,wu_kf_act,qc_kf_act,qi_kf_act,effc,effi, &
-               effs)
+               NLEVZM,NLEVZMP1,gamhat,qsatzm,wu_mskf_act,qc_mskf_act,qi_mskf_act,effc,effi,effs)
               end if
 
                 ajunk1=0.0
@@ -5013,7 +5103,7 @@ updraft:    DO NK=K,KL-1
               do kq=KTS,KTE
                QLIQ(KQ) = 0.0
                QICE(KQ) = 0.0
-!TWG 06/14/16
+              IF (aercu_opt .GT. 0) THEN
                QRAIN(KQ) = 0.0
                QSNOW(KQ) = 0.0
                NLIQ(KQ) = 0.0
@@ -5024,7 +5114,7 @@ updraft:    DO NK=K,KL-1
                EFFCH(KQ) = 2.51
                EFFIH(KQ) = 4.99
                EFFSH(KQ) = 9.99
-!END TWG 
+              END IF
                PPTLIQ(KQ)=0.0  ! nov23
                PPTICE(KQ)=0.0  ! nov23
                QLQOUT(KQ)=0.0  ! nov23
@@ -5077,10 +5167,14 @@ updraft:    DO NK=K,KL-1
 !                   end if
 
               END DO
+
               end if  ! dccmp
 !dkay
+     
 2999         CONTINUE
      END IF
+
+
 !
 !...CHECK CLOUD DEPTH...IF CLOUD IS TALL ENOUGH, ESTIMATE THE EQUILIBRIUM
 !   TEMPERATURE LEVEL (LET) AND ADJUST MASS FLUX PROFILE AT CLOUD TOP SO
@@ -5116,7 +5210,7 @@ updraft:    DO NK=K,KL-1
               nc_KF(I,NK,J)=NLIQ(NK)
               ni_KF(I,NK,J)=NICE(NK)
               nr_KF(I,NK,J)=NRAIN(NK)
-              ns_KF(I,NK,J)=QSNOW(NK)
+              ns_KF(I,NK,J)=NSNOW(NK)
               ccn_KF(I,NK,J)=CCN(NK)
               EFCS(I,NK,J)=MAX(2.49, MIN(EFFCH(NK), 50.))
               EFIS(I,NK,J)=MAX(4.99, MIN(EFFIH(NK), 120.))
@@ -5124,7 +5218,7 @@ updraft:    DO NK=K,KL-1
              END IF
 ! END TWG
             END DO
-!ckay: if mean env RH with respect to water/ice is over 100% then dont allow KF
+!ckay: if mean env RH with respect to water/ice is over 99% then dont allow KF
 !ckay: added saturation w.r.to ice june 10, 2015
 ! to avoid double counting
           envRHavg = 0.0
@@ -5193,6 +5287,9 @@ updraft:    DO NK=K,KL-1
                 nr_KF(I,NK,J)=0.
                 ns_KF(I,NK,J)=0.
                 ccn_KF(I,NK,J)=0.
+                EFCS(I,NK,J)=2.51
+                EFIS(I,NK,J)=5.01
+                EFSS(I,NK,J)=10.01
               END IF
 ! END TWG
                 w_up(I,NK,J)=0.
@@ -5240,6 +5337,9 @@ updraft:    DO NK=K,KL-1
                   nr_KF(I,NK,J)=0.
                   ns_KF(I,NK,J)=0.
                   ccn_KF(I,NK,J)=0.
+                  EFCS(I,NK,J)=2.51
+                  EFIS(I,NK,J)=5.01
+                  EFSS(I,NK,J)=10.01
                 END IF
 ! END TWG
                   w_up(I,NK,J)=0.
@@ -5344,6 +5444,9 @@ updraft:    DO NK=K,KL-1
         nr_KF(I,NK,J)=0.
         ns_KF(I,NK,J)=0.
         ccn_KF(I,NK,J)=0.
+        EFCS(I,NK,J)=2.51
+        EFIS(I,NK,J)=5.01
+        EFSS(I,NK,J)=10.01
        END IF
 ! END TWG
         w_up (I,NK,J)=0.
@@ -5399,6 +5502,9 @@ updraft:    DO NK=K,KL-1
           nr_KF(I,NK,J)=0.
           ns_KF(I,NK,J)=0.
           ccn_KF(I,NK,J)=0.
+          EFSS(I,NK,J)=10.01
+          EFCS(I,NK,J)=2.51
+          EFIS(I,NK,J)=5.01
          END IF
 ! END TWG
           w_up(I,NK,J)=0.
@@ -6036,6 +6142,18 @@ iter:     DO NCOUNT=1,10
           ABEG=0.
           DO NK=K,LTOPM1
             NK1=NK+1
+
+        
+!new ckay adding FRZ effect 01-30-2015
+         IF (aercu_opt.GT.0.0) THEN
+            JK = KX-NK+1
+            a1kay =  FRZ(1,JK)*DZA(NK)*3.337E5/CP
+            a1kay = a1kay * ((1.E5/P0(NK))**ROCP)
+            THETEU(NK)  =  a1kay + THETEU(NK)
+         END IF
+!ckay freezing effect included in ThetaU for cape calculation
+
+
             THETEU(NK1) = THETEU(NK)
 !
             call tpmix2dd(p0(nk1),theteu(nk1),tgu(nk1),qgu(nk1),i,j)
@@ -6599,7 +6717,7 @@ iter:     DO NCOUNT=1,10
       CUBOT(I,J)=REAL(LCL)
 !
 !-----------------------------------------------------------------------
-   END SUBROUTINE  KF_eta_PARA
+   END SUBROUTINE  MSKF_eta_PARA
 !********************************************************************
 ! ***********************************************************************
 !dkay
@@ -6616,6 +6734,7 @@ iter:     DO NCOUNT=1,10
 ! End of Lookup table variables:
 !-----------------------------------------------------------------------
    IMPLICIT NONE
+   SAVE !TWG 2017 add to avoid memory issues
 !-----------------------------------------------------------------------
    REAL,         INTENT(IN   )   :: P,THES,XLV1,XLV0
    REAL,         INTENT(OUT  )   :: QNEWLQ,QNEWIC,QSu
@@ -6735,6 +6854,7 @@ iter:     DO NCOUNT=1,10
       SUBROUTINE DTFRZNEW(TU,P,THTEU,QU,QFRZ,QICE,ALIQ,BLIQ,CLIQ,DLIQ)
 !-----------------------------------------------------------------------
    IMPLICIT NONE
+   SAVE !TWG 2017 Add to avoid memory issues
 !-----------------------------------------------------------------------
    REAL,         INTENT(IN   )   :: P,QFRZ,ALIQ,BLIQ,CLIQ,DLIQ
    REAL,         INTENT(INOUT)   :: TU,THTEU,QU,QICE
@@ -6783,6 +6903,7 @@ iter:     DO NCOUNT=1,10
 
 !-----------------------------------------------------------------------
    IMPLICIT NONE
+   SAVE !TWG 2017 add to avoid memory issues
 !-----------------------------------------------------------------------
 !  9/18/88...THIS PRECIPITATION FALLOUT SCHEME IS BASED ON THE SCHEME US
 !  BY OGURA AND CHO (1973).  LIQUID WATER FALLOUT FROM A PARCEL IS CAL-
@@ -6862,6 +6983,7 @@ iter:     DO NCOUNT=1,10
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 !-----------------------------------------------------------------------
    IMPLICIT NONE
+   SAVE !TWG 2017 add to avoid memory issues
 !-----------------------------------------------------------------------
    REAL,         INTENT(IN   )   :: EQ
    REAL,         INTENT(INOUT)   :: EE,UD
@@ -6903,6 +7025,7 @@ iter:     DO NCOUNT=1,10
 ! End of Lookup table variables:
 !-----------------------------------------------------------------------
    IMPLICIT NONE
+   SAVE !TWG 2017 add to avoid memory issues
 !-----------------------------------------------------------------------
    REAL,         INTENT(IN   )   :: P,THES
    REAL,         INTENT(INOUT)   :: TS,QS
@@ -6963,6 +7086,7 @@ iter:     DO NCOUNT=1,10
 !
 !-----------------------------------------------------------------------
    IMPLICIT NONE
+   SAVE !TWG 2017 add to avoid memory issues
 !-----------------------------------------------------------------------
    REAL,         INTENT(IN   )   :: P1,T1,Q1,ALIQ,BLIQ,CLIQ,DLIQ
    REAL,         INTENT(INOUT)   :: THT1
@@ -7008,6 +7132,7 @@ iter:     DO NCOUNT=1,10
                      its, ite, jts, jte, kts, kte                   )
 !--------------------------------------------------------------------
    IMPLICIT NONE
+   SAVE !TWG 2017 add to avoid memeory issues
 !--------------------------------------------------------------------
    LOGICAL , INTENT(IN)           ::  restart,allowed_to_read
    INTEGER , INTENT(IN)           ::  ids, ide, jds, jde, kds, kde, &
@@ -7084,13 +7209,14 @@ iter:     DO NCOUNT=1,10
 
    endif
  
-   CALL KF_LUTAB(SVP1,SVP2,SVP3,SVPT0)
+   CALL MSKF_LUTAB(SVP1,SVP2,SVP3,SVPT0)
+
 
    END SUBROUTINE mskf_init
 
 !-------------------------------------------------------
 
-      subroutine kf_lutab(SVP1,SVP2,SVP3,SVPT0)
+      subroutine mskf_lutab(SVP1,SVP2,SVP3,SVPT0)
 !
 !  This subroutine is a lookup table.
 !  Given a series of series of saturation equivalent potential 
@@ -7098,6 +7224,7 @@ iter:     DO NCOUNT=1,10
 !
 !--------------------------------------------------------------------
    IMPLICIT NONE
+   SAVE !TWG 2017 add to avoid memory issues
 !--------------------------------------------------------------------
 ! Lookup table variables
 !     INTEGER, SAVE, PARAMETER :: KFNT=250,KFNP=220
@@ -7217,6 +7344,6 @@ iter:     DO NCOUNT=1,10
          alu(i)=alog(a1)
        enddo   
 !
-   END SUBROUTINE KF_LUTAB
+   END SUBROUTINE MSKF_LUTAB
 
 END MODULE module_cu_mskf

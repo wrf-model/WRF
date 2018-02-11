@@ -104,9 +104,10 @@ SUBROUTINE microphysics_driver(                                          &
                       ,qrimef_curr,f_qrimef                              &
                       ,aercu_opt                                         & !TWG
 # if( EM_CORE==1 )
-                      ,aerocu,no_src_types_cu                            & !TWG
+                      ,aerocu,aercu_fct,no_src_types_cu                  & !TWG
                       ,PBL,EFCG,EFIG,EFSG,WACT,CCN1_GS,CCN2_GS           & !TWG
                       ,CCN3_GS,CCN4_GS,CCN5_GS,CCN6_GS,CCN7_GS           & !TWG
+                      ,NR_CU,QR_CU,NS_CU,QS_CU,CU_UAF,mskf_refl_10cm     & !TWG
 # endif
                                                                          )
 
@@ -572,9 +573,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 ! TWG 06/17/16 Variables for prescribed CESM aerosol
   INTEGER,           INTENT(IN   )    :: aercu_opt
 # if (EM_CORE == 1)
-
   INTEGER, OPTIONAL, INTENT(IN   )    :: PBL
   INTEGER,           INTENT(IN   )    :: no_src_types_cu
+  REAL,              INTENT(IN   )    :: aercu_fct
   REAL,    OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme, no_src_types_cu), INTENT(INOUT) & 
                                       :: aerocu
   REAL,    OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT) &
@@ -588,7 +589,14 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                                          CCN4_GS,        &
                                          CCN5_GS,        &
                                          CCN6_GS,        &
-                                         CCN7_GS
+                                         CCN7_GS,        &
+                                         NR_CU,          &
+                                         QR_CU,          &
+                                         NS_CU,          &
+                                         QS_CU
+   REAL,   OPTIONAL, DIMENSION( ims:ime, jms:jme), INTENT(INOUT) &
+                                      :: CU_UAF
+   REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(OUT) :: mskf_refl_10cm
 # endif
 ! END TWG
 
@@ -1271,6 +1279,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                     ,GRAUPELNCV=GRAUPELNCV               &  !*
                     ,SR=SR                               &  !* !hm
                     ,REFL_10CM=refl_10cm                 &  ! added for radar reflectivity
+                    ,MSKF_REFL_10CM=MSKF_REFL_10CM       &  ! addef for radar reflectivity TWG 2017
                     ,diagflag=diagflag                   &  ! added for radar reflectivity
                     ,do_radar_ref=do_radar_ref           &  ! added for radar reflectivity
                     ,qrcuten=qrcuten                     &  ! hm
@@ -1284,6 +1293,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,PBL=PBL                                & ! TWG/amy add
                  ,aerocu=aerocu                          & ! TWG add
                  ,aercu_opt=aercu_opt                    & ! TWG add
+                 ,aercu_fct=aercu_fct                    & ! TWG add
                  ,no_src_types_cu=no_src_types_cu        & ! TWG add
                  ,EFCG=EFCG                              & ! TWG add
                  ,EFIG=EFIG                              & ! TWG add
@@ -1296,6 +1306,11 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,CCN5_GS=CCN5_GS                        & ! TWG add
                  ,CCN6_GS=CCN6_GS                        & ! TWG add
                  ,CCN7_GS=CCN7_GS                        & ! TWG add
+                 ,NR_CU=NR_CU                            & ! TWG add
+                 ,QR_CU=QR_CU                            & ! TWG add
+                 ,NS_CU=NS_CU                            & ! TWG add
+                 ,QS_CU=QS_CU                            & ! TWG add
+                 ,CU_UAF=CU_UAF                          & ! TWG add
                  ,QLSINK=qlsink                                     & ! jdf for wrf-chem
 #if ( WRF_CHEM == 1 )
                  ,EVAPPROD=evapprod,RAINPROD=rainprod               &

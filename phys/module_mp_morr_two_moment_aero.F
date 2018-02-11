@@ -76,6 +76,31 @@
 ! 1) changes and cleanup of code comments
 ! 2) correction to universal gas constant (very small change)
 
+! TWG 2017
+! TWG = Timothy Glotfelty, EPA
+! Adapted from WRFV3.8.1 Morrison Double Moment Scheme
+! Author's of Adapted Version: Timothy Glotfelty and Kiran Alapaty, EPA
+! CHANGES FOR AEROSOL Version
+
+! 1) Add Original Aerosol Activation Changes of Hugh Morrison, NCAR and Amy Solomon (NOAA) from WRFV3.1
+
+! 2) Add the Aerosol Activation Scheme of Abdul-Razzak and Ghan (2000) from the
+! Morrison-Gettelman Scheme and Song and Zhang (2011) microphysics treatment as an
+! aerosol activation option
+
+! 3) Add the Ice Nucleation scheme of Liu and Penner (2005) / Liu et al. (2007)
+! from the Morrison-Gettelman Scheme  and Song and Zhang (2011) microphysics as an ice
+! nucleation option
+
+! 4) Introduce prescribed aerosol concentrations from CESM into the above
+! mentioned schemes to predict cloud droplet number concentrations and ice
+! number concentrations
+
+! 5) Output the cloud liquid, ice, and snow effective radii to be coupled to the
+! RRTMG radiation scheme.
+
+! 6) Tune the DCS parameter by increasing it the 350 um in order to get better
+! radaition performance after coupling. 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! THIS SCHEME IS A BULK DOUBLE-MOMENT SCHEME THAT PREDICTS MIXING
@@ -305,6 +330,7 @@ SUBROUTINE MORR_TWO_MOMENT_INIT_AERO(hail_opt) ! RAS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       IMPLICIT NONE
+      SAVE !TWG 2017 add to avoid memory issues
 
       INTEGER, INTENT(IN):: hail_opt ! RAS
 
@@ -436,7 +462,7 @@ SUBROUTINE MORR_TWO_MOMENT_INIT_AERO(hail_opt) ! RAS
          AIMM = 0.66
          BIMM = 100.
          ECR = 1.
-         DCS = 350.E-6
+         DCS = 350.E-6  !TWG Increase from 150.E-6
          MI0 = 4./3.*PI*RHOI*(10.E-6)**3
 	 MG0 = 1.6E-10
          F1S = 0.86
@@ -469,15 +495,18 @@ SUBROUTINE MORR_TWO_MOMENT_INIT_AERO(hail_opt) ! RAS
          MMULT = 4./3.*PI*RHOI*(5.E-6)**3
 
 ! SIZE LIMITS FOR LAMBDA
-
+! TWG Feb 2017 Effective radii Test
          LAMMAXI = 1./1.E-6
          LAMMINI = 1./(2.*DCS+100.E-6)
+!         LAMMAXI = 1./2.E-6
+!         LAMMINI = 1./120.E-6
          LAMMAXR = 1./20.E-6
 !         LAMMINR = 1./500.E-6
          LAMMINR = 1./2800.E-6
 
          LAMMAXS = 1./10.E-6
          LAMMINS = 1./2000.E-6
+!         LAMMINS = 1./1000.E-6
          LAMMAXG = 1./20.E-6
          LAMMING = 1./2000.E-6
 
@@ -645,6 +674,7 @@ SUBROUTINE MORR_TWO_MOMENT_INIT_AERO(hail_opt) ! RAS
              else
                   ccnfact_pamdm(sat_pamdm,m)=0.0
              endif
+!            print*,'m',m,' sat ',sat_pamdm,' ccnfact',ccnfact_pamdm(sat_pamdm,m)
            end do
 
        end do
@@ -672,8 +702,8 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
                 TH, QV, QC, QR, QI, QS, QG, NI, NS, NR, NG, NC,  & !TWG/amy add
                 RHO, PII, P, DT_IN, DZ, HT, W, KZH,     &
                 RAINNC, RAINNCV, SR,                    &
-                SNOWNC,SNOWNCV,GRAUPELNC,GRAUPELNCV,    & ! hm added 7/13/13
-                refl_10cm, diagflag, do_radar_ref,      & ! GT added for reflectivity calcs
+		SNOWNC,SNOWNCV,GRAUPELNC,GRAUPELNCV,    & ! hm added 7/13/13
+                refl_10cm,mskf_refl_10cm,diagflag, do_radar_ref,      & ! GT added for reflectivity calcs
                 qrcuten, qscuten, qicuten               & ! hm added
                ,F_QNDROP, qndrop                        & ! hm added, wrf-chem 
                ,IDS,IDE, JDS,JDE, KDS,KDE               & ! domain dims
@@ -682,14 +712,16 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
                ,PBL                                     & ! TWG/amy add
                ,aerocu                                  & ! TWG add
                ,aercu_opt                               & ! TWG add
+               ,aercu_fct                               & ! TWG add
                ,no_src_types_cu                         & ! TWG add
                ,EFCG, EFIG, EFSG, WACT                  & !TWG add
                ,CCN1_GS, CCN2_GS, CCN3_GS, CCN4_GS      & !TWG add
-               ,CCN5_GS, CCN6_GS, CCN7_GS               & ! TWG add
-!jdf	       ,C2PREC3D,CSED3D,ISED3D,SSED3D,GSED3D,RSED3D & ! HM ADD, WRF-CHEM
+               ,CCN5_GS, CCN6_GS, CCN7_GS, NR_CU        & ! TWG add
+               ,QR_CU, NS_CU, QS_CU, CU_UAF             & ! TWG add
+!jdf           ,C2PREC3D,CSED3D,ISED3D,SSED3D,GSED3D,RSED3D & ! HM ADD, WRF-CHEM
                ,rainprod, evapprod                      &
-               ,QLSINK,PRECR,PRECI,PRECS,PRECG &        ! HM ADD, WRF-CHEM
-                                            )
+               ,QLSINK,PRECR,PRECI,PRECS,PRECG          & ! HM ADD, WRF-CHEM
+                                           )
  
 ! QV - water vapor mixing ratio (kg/kg)
 ! QC - cloud water mixing ratio (kg/kg)
@@ -721,8 +753,6 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
 ! qicuten, cloud ice tendency from parameterized cumulus convection
 
 ! variables below currently not in use, not coupled to PBL or radiation codes
-! NCTEND - droplet concentration tendency from pbl (kg-1 s-1)
-! NCTEND - CLOUD ICE concentration tendency from pbl (kg-1 s-1)
 ! KZH - heat eddy diffusion coefficient from YSU scheme (M^2 S-1), NEEDED FOR DROPLET ACTIVATION (SEE CODE BELOW)
 ! EFFCS - CLOUD DROPLET EFFECTIVE RADIUS OUTPUT TO RADIATION CODE (micron)
 ! EFFIS - CLOUD DROPLET EFFECTIVE RADIUS OUTPUT TO RADIATION CODE (micron)
@@ -756,10 +786,12 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
 ! WVAR - STANDARD DEVIATION OF SUB-GRID VERTICAL VELOCITY (M/S)
 
    IMPLICIT NONE
+   SAVE !TWG  2017 add to avoid memeory issues
 
    INTEGER,      INTENT(IN   )    ::   ids, ide, jds, jde, kds, kde , &
                                        ims, ime, jms, jme, kms, kme , &
-                                       its, ite, jts, jte, kts, kte, PBL ! TWG/amy add
+                                       its, ite, jts, jte, kts, kte
+   INTEGER,      INTENT(IN   )    ::   PBL
 ! Temporary changed from INOUT to IN
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
@@ -773,7 +805,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
 !, effcs, effis
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN):: &
-                          pii, p, dz, rho, w, kzh !, TWG/amy add
+                          pii, p, dz, rho, w, kzh ! TWG/amy add
    REAL, INTENT(IN):: dt_in
    INTEGER, INTENT(IN):: ITIMESTEP
 
@@ -784,12 +816,19 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
 
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::       &  ! GT
                           refl_10cm
+!TWG 2017
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::       &  ! GT
+                          mskf_refl_10cm
 
-   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::       ht
+   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::       ht, CU_UAF !TWG add
+ 
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN):: &
+                   NR_CU,QR_CU,NS_CU,QS_CU
 
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
                           EFCG, EFIG, EFSG, WACT, CCN1_GS,  &
         CCN2_GS, CCN3_GS, CCN4_GS, CCN5_GS, CCN6_GS, CCN7_GS
+
 
    ! LOCAL VARIABLES
 
@@ -807,10 +846,15 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
                             EFFC1D, EFFI1D, EFFS1D, EFFR1D,DZ1D,   &
 ! HM ADD GRAUPEL
                             QG_TEND1D, NG_TEND1D, QG1D, NG1D, EFFG1D, &
+
 ! ADD SEDIMENTATION TENDENCIES (UNITS OF KG/KG/S)
                             QGSTEN,QRSTEN, QISTEN, QNISTEN, QCSTEN, &
 ! ADD CUMULUS TENDENCIES
-                            QRCU1D, QSCU1D, QICU1D
+                            QRCU1D, QSCU1D, QICU1D, &
+! ADD CUMULUS ARRAYS 
+                            NRMSCU1D, NSMSCU1D, QRMSCU1D, QSMSCU1D, & ! TWG add
+! ADD RADAR ARRAYS         
+                            NRRAD, QRRAD, NSRAD, QSRAD
 
 ! add cumulus tendencies
 
@@ -825,7 +869,7 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
    REAL, DIMENSION(kts:kte) :: nc1d, nc_tend1d,C2PREC,CSED,ISED,SSED,GSED,RSED    
    REAL, DIMENSION(kts:kte) :: rainprod1d, evapprod1d
 ! HM add reflectivity      
-   REAL, DIMENSION(kts:kte) :: dBZ
+   REAL, DIMENSION(kts:kte) :: dBZ,dBZ2 !TWG 2017 add
                           
    REAL PRECPRT1D, SNOWRT1D, SNOWPRT1D, GRPLPRT1D ! hm added 7/13/13
 
@@ -839,12 +883,12 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
 ! TWG begin declare prescribed aerosol parameters
   INTEGER,      INTENT(IN   ) :: no_src_types_cu !PSH/TWG
   INTEGER,      INTENT(IN   ) :: aercu_opt
+  REAL,         INTENT(IN   ) :: aercu_fct
   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme, no_src_types_cu), OPTIONAL, &
           INTENT(INOUT) ::                                   aerocu !PSH/TWG
 
   REAL, DIMENSION(kts:kte, no_src_types_cu) :: maerosol, naer
 ! TWG END
-
 
 ! below for wrf-chem
    flag_qndrop = .false.
@@ -864,16 +908,16 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
 ! currently assign wvar to 0.5 m/s (not coupled with PBL scheme)
 ! Begin TWG/amy add
 ! wvar is the ST. DEV. OF sub-grid vertical velocity, used for calculating
-! droplet activation rates.
-! WVAR CAN BE FROM EDDY DIFFUSION COEFFICIENT KZH (AS IN YSU PBL SCHEME),
-! DEPENDING ON THE PARTICULAR pbl SCHEME DRIVER MODEL IS COUPLED WITH
+! droplet 
+! activation rates.
+! WVAR COMES FROM EDDY DIFFUSION COEFFICIENT KZH (AS IN YSU PBL SCHEME)
 ! NOTE: IF MODEL HAS HIGH ENOUGH RESOLUTION TO RESOLVE UPDRAFTS, WVAR MAY 
 ! NOT BE NEEDED 
 
 ! for YSU pbl scheme:
        WVAR(I,K,J) = KZH(I,K+1,J)/20.
 
-       WVAR(I,K,J) = MAX(0.5,WVAR(I,K,J))
+       WVAR(I,K,J) = MAX(0.10,WVAR(I,K,J))
        WVAR(I,K,J) = MIN(50.,WVAR(I,K,J))
 
 ! currently mixing of number concentrations also is neglected (not coupled with PBL schemes)
@@ -911,6 +955,15 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
           CCN5_GS(i,k,j) = 0.0
           CCN6_GS(i,k,j) = 0.0
           CCN7_GS(i,k,j) = 0.0
+          NRMSCU1D(k) = NR_CU(i,k,j)
+          NSMSCU1D(k) = NS_CU(i,k,j)
+          QRMSCU1D(k) = QR_CU(i,k,j)
+          QSMSCU1D(k) = QS_CU(i,k,j)
+          NRRAD(k) = 0.0
+          QRRAD(k) = 0.0
+          NSRAD(k) = 0.0
+          QSRAD(k) = 0.0
+
 
           QC1D(k)       = QC(i,k,j)
           QI1D(k)       = QI(i,k,j)
@@ -963,34 +1016,34 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
          iact = 4
         ! print*,'Doing TWG added activation'
          INUC = 2
-         maerosol(k,1) = aerocu(i,k,j,6)*1E-9
-         naer(k,1) = 2.0*maerosol(k,1)*num_to_mass_aer(1)
+         maerosol(k,1) = aercu_fct*aerocu(i,k,j,6)*1E-9
+         naer(k,1) = 5.64259e13 * maerosol(k,1)**0.58
 
-         maerosol(k,2) = aerocu(i,k,j,5)*1E-9
+         maerosol(k,2) = aercu_fct*aerocu(i,k,j,5)*1E-9
          naer(k,2) = maerosol(k,2)*num_to_mass_aer(2)
 
-         maerosol(k,3) = 1.44*aerocu(i,k,j,1)*1E-9
+         maerosol(k,3) = aercu_fct*1.44*aerocu(i,k,j,1)*1E-9
          naer(k,3) = maerosol(k,3)*num_to_mass_aer(3)
 
-         maerosol(k,4) = 1.44*aerocu(i,k,j,2)*1E-9
+         maerosol(k,4) = aercu_fct*1.44*aerocu(i,k,j,2)*1E-9
          naer(k,4) = maerosol(k,4)*num_to_mass_aer(4)
 
-         maerosol(k,5) = 1.44*aerocu(i,k,j,3)*1E-9
+         maerosol(k,5) = aercu_fct*1.44*aerocu(i,k,j,3)*1E-9
          naer(k,5) = maerosol(k,5)*num_to_mass_aer(5)
 
-         maerosol(k,6) = 1.44*aerocu(i,k,j,4)*1E-9
+         maerosol(k,6) = aercu_fct*1.44*aerocu(i,k,j,4)*1E-9
          naer(k,6) = maerosol(k,6)*num_to_mass_aer(6)
 
-         maerosol(k,7) = 1.54*aerocu(i,k,j,9)*1E-9
+         maerosol(k,7) = aercu_fct*1.54*aerocu(i,k,j,9)*1E-9
          naer(k,7) = maerosol(k,7)*num_to_mass_aer(7)
 
-         maerosol(k,8) = 1.37*aerocu(i,k,j,7)*1E-9
+         maerosol(k,8) = aercu_fct*1.37*aerocu(i,k,j,7)*1E-9
          naer(k,8) = maerosol(k,8)*num_to_mass_aer(8)
 
-         maerosol(k,9) = 1.25*aerocu(i,k,j,10)*1E-9
+         maerosol(k,9) = aercu_fct*1.25*aerocu(i,k,j,10)*1E-9
          naer(k,9) = maerosol(k,9)*num_to_mass_aer(9)
 
-         maerosol(k,10) = 1.37*aerocu(i,k,j,8)*1E-9
+         maerosol(k,10) = aercu_fct*1.37*aerocu(i,k,j,8)*1E-9
          naer(k,10) = maerosol(k,10)*num_to_mass_aer(10)
  
          DO L=1,no_src_types_cu
@@ -1014,25 +1067,25 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
 
 !jdf  end do
 
-      call MORR_TWO_MOMENT_MICRO(QC_TEND1D, QI_TEND1D, QNI_TEND1D, QR_TEND1D, &
-                                 NI_TEND1D, NS_TEND1D, NR_TEND1D,             &
-                                 QC1D, QI1D, QS1D, QR1D,NI1D, NS1D, NR1D,     &
-                                 T_TEND1D,QV_TEND1D, T1D, QV1D, P1D, DZ1D, W1D, WVAR1D,    &
-                                 PRECPRT1D,SNOWRT1D,                          &
-                                 SNOWPRT1D,GRPLPRT1D,                         & ! hm added 7/13/13
-                                 EFFC1D,EFFI1D,EFFS1D,EFFR1D,DT,              &
-                                 IMS,IME, JMS,JME, KMS,KME,                   &
-                                 ITS,ITE, JTS,JTE, KTS,KTE,                   & ! HM ADD GRAUPEL
-                                 QG_TEND1D,NG_TEND1D,QG1D,NG1D,EFFG1D,        &
-                                 qrcu1d, qscu1d, qicu1d,                      & ! ADD SEDIMENTATION TENDENCIES
-                                 QGSTEN,QRSTEN,QISTEN,QNISTEN,QCSTEN,         &
+      call MORR_TWO_MOMENT_MICRO(QC_TEND1D, QI_TEND1D, QNI_TEND1D, QR_TEND1D,            &
+                                 NI_TEND1D, NS_TEND1D, NR_TEND1D,                        &
+                                 QC1D, QI1D, QS1D, QR1D,NI1D, NS1D, NR1D,                &
+                                 T_TEND1D,QV_TEND1D, T1D, QV1D, P1D, DZ1D, W1D, WVAR1D,  &
+                                 PRECPRT1D,SNOWRT1D,                                     &
+                                 SNOWPRT1D,GRPLPRT1D,                                    & ! hm added 7/13/13
+                                 EFFC1D,EFFI1D,EFFS1D,EFFR1D,DT,                         &
+                                 IMS,IME, JMS,JME, KMS,KME,                              &
+                                 ITS,ITE, JTS,JTE, KTS,KTE,                              & ! HM ADD GRAUPEL
+                                 QG_TEND1D,NG_TEND1D,QG1D,NG1D,EFFG1D,                   &
+                                 qrcu1d, qscu1d, qicu1d,                                 &
+! ADD SEDIMENTATION TENDENCIES
+                                 QGSTEN,QRSTEN,QISTEN,QNISTEN,QCSTEN,                    &
                                  nc1d, nc_tend1d, iinum, C2PREC,CSED,ISED,SSED,GSED,RSED & !wrf-chem
-                                 ,no_src_types_cu,maerosol,naer               & !TWG add prescribed aerosol
+                                 ,no_src_types_cu,maerosol,naer                          & !TWG add prescribed aerosol
 #if (WRF_CHEM == 1)
-                                 ,rainprod1d, evapprod1d & !wrf-chem
+                                 ,rainprod1d, evapprod1d                                 & !wrf-chem
 #endif
                        )
-
    !
    ! Transfer 1D arrays back into 3D arrays
    !
@@ -1067,9 +1120,8 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
           EFCG(i,k,j) = MAX(2.49, MIN(EFFC1D(k), 50.))
           EFIG(i,k,j)   = MAX(4.99, MIN(EFFI1D(k), 120.))
           EFSG(i,k,j)  = MAX(9.99, MIN(EFFS1D(k), 999.))
-          WACT(i,k,j)  = MAX(WVAR(i,k,j)+W(i,k,j),0.5)
+          WACT(i,k,j)  = WVAR(i,k,j)+W(i,k,j)
         END IF
-
 
 ! wrf-chem
           IF (flag_qndrop .AND. PRESENT( qndrop )) THEN
@@ -1123,6 +1175,16 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
           do k = kts, kte
              refl_10cm(i,k,j) = MAX(-35., dBZ(k))
           enddo
+          
+          NRRAD = nr1d + (NRMSCU1D*CU_UAF(i,j)) ! TWG add
+          QRRAD = qr1d + (QRMSCU1D*CU_UAF(i,j)) ! TWG add
+          NSRAD = ns1d + (NSMSCU1D*CU_UAF(i,j)) ! TWG add 
+          QSRAD = qs1d + (QSMSCU1D*CU_UAF(i,j)) ! TWG add
+          call refl10cm_hm (qv1d, QRRAD, NRRAD, QSRAD, NSRAD, qg1d, ng1d,   & ! Modified TWG for cumulus hydrometeors
+                      t1d, p1d, dBZ2, kts, kte, i, j)
+          do k = kts, kte
+             mskf_refl_10cm(i,k,j) = MAX(-35., dBZ2(k))
+          enddo
          endif
          ENDIF
 !+---+-----------------------------------------------------------------+
@@ -1146,6 +1208,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
                         nc3d,nc3dten,iinum, & ! wrf-chem
 				c2prec,CSED,ISED,SSED,GSED,RSED  &  ! hm added, wrf-chem
                         ,no_src_types_cu,maerosol,naer & ! TWG add
+
 #if (WRF_CHEM == 1)
         ,rainprod, evapprod &
 #endif
@@ -1170,6 +1233,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
 ! DECLARATIONS
 
       IMPLICIT NONE
+      SAVE !TWG 2017 add to avoid memeory issues
 
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 ! THESE VARIABLES BELOW MUST BE LINKED WITH THE MAIN MODEL.
@@ -1491,7 +1555,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
          DO K = KTS,KTE
 
 ! NC3DTEN LOCAL ARRAY INITIALIZED
-!               NC3DTEN(K) = 0.
+               NC3DTEN(K) = 0.
 ! TWG/amy comment out this initialization
 ! INITIALIZE VARIABLES FOR WRF-CHEM OUTPUT TO ZERO
 
@@ -2398,7 +2462,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
 
 ! TWG 2016 BEGIN
            ELSE IF (IACT.EQ.4) THEN
-            DUM = MAX((W3D(K)+WVAR(K)),0.5)
+            DUM = W3D(K)+WVAR(K)
            call mdm_prescribed_activate(DUM,T3D(K),RHO(K), &
            naero, naer_cu,naer_cu, maero,  &
            dispersion_aer,hygro_aer, density_aer, DUM2, XXLV(K))
@@ -2518,7 +2582,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
             NC3DTEN(K) = NC3DTEN(K)+DUM2
 ! TWG 2016 BEGIN
            ELSE IF (IACT.EQ.4) THEN
-           DUM = MAX((W3D(K)+WVAR(K)),0.5)
+           DUM = W3D(K)+WVAR(K)
            call mdm_prescribed_activate(DUM,T3D(K),RHO(K), &
            naero, naer_cu,naer_cu, maero,  &
            dispersion_aer,hygro_aer, density_aer, DUM2, XXLV(K))
@@ -2586,7 +2650,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
 
 !TWG 2016 BEGIN
            ELSE IF (IACT.EQ.4) THEN
-           DUM = MAX((W3D(K)+WVAR(K)),0.5)
+           DUM = W3D(K)+WVAR(K)
            call mdm_prescribed_activate(DUM,T3D(K),RHO(K), &
            naero, naer_cu,naer_cu, maero,  &
            dispersion_aer,hygro_aer, density_aer, DUM2, XXLV(K))
@@ -3452,7 +3516,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
               QVQVSI(K).ge.1.08) then
 
             DUM = W3D(K)+WVAR(K)
-            call mdm_prescribed_nucleati(DUM,T3D(K),QVQVS(K),QC3D(K),RHO(K),  &
+            call mdm_prescribed_nucleati(DUM,T3D(K),QVQVS(K),QVQVSI(K),QC3D(K),RHO(K),  &  !TWG Fix Ice Nucleation add QVQVSI
                         naero,naer_cu,KC2 &
                         , KC2H,     &
                         KC2IM,KC2D,KC2DM)
@@ -3914,7 +3978,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
             NC3DTEN(K) = NC3DTEN(K)+DUM2
 !TWG 2016 BEGIN
          ELSE IF (IACT.EQ.4) THEN
-           DUM = MAX((W3D(K)+WVAR(K)),0.5)
+           DUM = W3D(K)+WVAR(K)
            call mdm_prescribed_activate(DUM,T3D(K),RHO(K), &
            naero, naer_cu,naer_cu, maero,  &
            dispersion_aer,hygro_aer, density_aer, DUM2, XXLV(K))
@@ -4051,7 +4115,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
             NC3DTEN(K) = NC3DTEN(K)+DUM2
 !TWG 2016 BEGIN
            ELSE IF (IACT.EQ.4) THEN
-           DUM = MAX((W3D(K)+WVAR(K)),0.5)
+           DUM = W3D(K)+WVAR(K)
            call mdm_prescribed_activate(DUM,T3D(K),RHO(K), &
            naero, naer_cu,naer_cu, maero,  &
            dispersion_aer,hygro_aer, density_aer, DUM2, XXLV(K))
@@ -4118,7 +4182,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
             NC3DTEN(K) = NC3DTEN(K)+DUM2
 ! TWG 2016 BEGIN
            ELSE IF (IACT.EQ.4) THEN
-          DUM = MAX((W3D(K)+WVAR(K)),0.5)
+          DUM = W3D(K)+WVAR(K)
           call mdm_prescribed_activate(DUM,T3D(K),RHO(K), &
            naero, naer_cu,naer_cu, maero,  &
            dispersion_aer,hygro_aer, density_aer, DUM2, XXLV(K))
@@ -4939,6 +5003,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
 ! REPLACE GOFF-GRATCH WITH FASTER FORMULATION FROM FLATAU ET AL. 1992, TABLE 4 (RIGHT-HAND COLUMN)
 
       IMPLICIT NONE
+      SAVE !TWG 2017 add to avoid memory issues
 
       REAL DUM
       REAL T
@@ -5349,6 +5414,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
                       t1d, p1d, dBZ, kts, kte, ii, jj)
 
       IMPLICIT NONE
+      SAVE !TWG 2017 add to avoid memeory issues
 
 !..Sub arguments
       INTEGER, INTENT(IN):: kts, kte, ii, jj
@@ -5543,7 +5609,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
 
       implicit none
 
-!       save  ! sep6
+       save  ! sep6
 
 !      input
 
@@ -5697,7 +5763,7 @@ subroutine mdm_prescribed_maxsat(zeta,eta,nmode,smc,smax)
 !      2. Multiple aerosol types. J. Geophys. Res., 105, 6837-6844.
 
       implicit none
-!       save ! sep6
+       save ! sep6
       integer nmode ! number of modes
       real :: smc(:) ! critical supersaturation for number mode radius
       real zeta
@@ -5741,7 +5807,7 @@ subroutine mdm_prescribed_maxsat(zeta,eta,nmode,smc,smax)
 
       end subroutine mdm_prescribed_maxsat
 
-subroutine mdm_prescribed_nucleati(wbar, tair, relhum,  qc,  rhoair, &
+subroutine mdm_prescribed_nucleati(wbar, tair, relhum, relhumi,  qc,  rhoair, &
        naero,  naer_all, nuci  &
        , onihf, oniimm, onidep, onimey)
 
@@ -5758,11 +5824,12 @@ subroutine mdm_prescribed_nucleati(wbar, tair, relhum,  qc,  rhoair, &
 !----------------------------------------------------------------
 ! Input Arguments
 !
-!     save   ! sep6
+     save   ! sep6
   integer  naer_all
   real :: wbar                ! grid cell mean vertical velocity (m/s)
   real :: tair                ! temperature (K)
-  real :: relhum              ! relative humidity with respective to liquid
+  real :: relhum              ! relative humidity with respoect to water
+  real :: relhumi             ! relative humidity with respective to ice
 
   real :: qc                  ! liquid water mixing ratio (kg/kg)
   real :: rhoair              ! air density (kg/m3)
@@ -5835,8 +5902,7 @@ subroutine mdm_prescribed_nucleati(wbar, tair, relhum,  qc,  rhoair, &
 
       subgrid = 1.2
 
-  if((tc.le.-35.0).and.((relhum*mdm_prescribed_polysvp(tair,0)/mdm_prescribed_polysvp(tair,1) &
-   *subgrid).ge.1.2))then
+  if((tc.le.-35.0).and.((relhumi*subgrid).ge.1.2))then   !Make saturation consistent with Morrison Scheme
 !< regm => T in Eq.10 of Liu et al., J. Climate, 2007>
        A = -1.4938 * log(soot_num+dst_num) + 12.884
        B = -10.41  * log(soot_num+dst_num) - 67.69
@@ -5887,11 +5953,18 @@ subroutine mdm_prescribed_nucleati(wbar, tair, relhum,  qc,  rhoair, &
 ! Question:  RHi=RHw*esl/esi
 
     if(tc.lt.0. .and. tc.gt.-37. .and. qc.gt.1.e-12) then
-      esl = mdm_prescribed_polysvp(tair,0)     ! over water in mixed clouds
-      esi = mdm_prescribed_polysvp(tair,1)     ! over ice
-      deles = (esl - esi)
+!    if(tc.lt.0. .and. tc.gt.-37) then
+!      esl = mdm_prescribed_polysvp(tair,0)     ! over water in mixed clouds
+!      esi = mdm_prescribed_polysvp(tair,1)     ! over ice
+!      deles = (esl - esi)
 !      deles = (relhum*esl - esi) TWG use original formulation
-      nimey=1.e-3*exp(12.96*deles/esi - 0.639)
+    if(relhumi.gt.1.5) then ! TWG add 50% ice superaturation constraint to avoid numerical issues. 
+        deles = 1.5         ! This constraint is double the environmental applicability of Meyers 1992 (25%)
+    else  
+        deles = relhumi
+    end if 
+
+      nimey=1.e-3*exp(12.96*(deles-1.0) - 0.639)   ! TWG Fix meyers formulation
     else
       nimey=0.
     endif
@@ -5899,7 +5972,7 @@ subroutine mdm_prescribed_nucleati(wbar, tair, relhum,  qc,  rhoair, &
     nuci=ni+nimey
     if(nuci.gt.9999..or.nuci.lt.0.) then
        write(*, *) 'incorrect ice nucleation number'
-       write(*, *) ni, tair, relhum, wbar, nihf,niimm,nidep,deles,esi,dst2_num,dst3_num,dst4_num
+       write(*, *) ni, tair, relhum, relhumi, wbar, nihf,niimm,nidep,nimey,dst2_num,dst3_num,dst4_num
        nuci=0.
          stop 'nuclei prbolem?'
     endif
@@ -5921,7 +5994,7 @@ subroutine mdm_prescribed_hetero(T,ww,Ns,Nis,Nid)
     real A11,A12,A21,A22,B11,B12,B21,B22
     real A,B,C
 
-!     save    ! spe6
+     save    ! spe6
 !---------------------------------------------------------------------
 ! parameters
 
@@ -5947,6 +6020,7 @@ subroutine mdm_prescribed_hetero(T,ww,Ns,Nis,Nid)
 
  subroutine mdm_prescribed_hf(T,ww,RH,subgrid,Na,Ni)
 
+      save
       real :: T, ww, RH, subgrid, Na
       real, intent(out) :: Ni
 
@@ -6032,7 +6106,8 @@ subroutine mdm_prescribed_hetero(T,ww,Ns,Nis,Nid)
 !  Polysvp returned in units of pa.
 !  T is input in units of K.
 !  type refers to saturation with respect to liquid (0) or ice (1)
-
+      save
+ 
       real dum
 
       real T,mdm_prescribed_polysvp

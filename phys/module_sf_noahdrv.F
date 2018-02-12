@@ -847,7 +847,8 @@ CONTAINS
             SOILTYP=7
           ENDIF
           SNOALB1 = SNOALB(I,J)
-          CMC=CANWAT(I,J)
+! converts canwat in mm to CMC in meters
+          CMC=CANWAT(I,J)/1000.
 
 !-------------------------------------------
 !*** convert snow depth from mm to meter
@@ -1111,7 +1112,7 @@ CONTAINS
 #endif
 
 !***  UPDATE STATE VARIABLES
-          CANWAT(I,J)=CMC
+          CANWAT(I,J)=CMC*1000.
           SNOW(I,J)=SNEQV*1000.
 !          SNOWH(I,J)=SNOWHK*1000.
           SNOWH(I,J)=SNOWHK                   ! SNOWHK in meters
@@ -3127,7 +3128,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   SOILTYP=7
                 ENDIF
                 SNOALB1 = SNOALB(I,J)
-                CMC=CANWAT(I,J)
+! converts canwat in mm to CMC in meters
+                CMC=CANWAT(I,J)/1000.
       
       !-------------------------------------------
       !*** convert snow depth from mm to meter
@@ -3396,7 +3398,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
 #endif
       
       !***  UPDATE STATE VARIABLES
-                CANWAT(I,J)=CMC
+                CANWAT(I,J)=CMC*1000.
                 SNOW(I,J)=SNEQV*1000.
       !          SNOWH(I,J)=SNOWHK*1000.
                 SNOWH(I,J)=SNOWHK                   ! SNOWHK in meters
@@ -4039,7 +4041,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   SOILTYP=7
                 ENDIF
                 SNOALB1 = SNOALB(I,J)
-                CMC=CANWAT(I,J)
+                CMC=CANWAT(I,J)/1000.
       
       !-------------------------------------------
       !*** convert snow depth from mm to meter
@@ -4272,7 +4274,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
 #endif
       
       !***  UPDATE STATE VARIABLES
-                CANWAT(I,J)=CMC
+                CANWAT(I,J)=CMC*1000.
                 SNOW(I,J)=SNEQV*1000.
       !          SNOWH(I,J)=SNOWHK*1000.
                 SNOWH(I,J)=SNOWHK                   ! SNOWHK in meters

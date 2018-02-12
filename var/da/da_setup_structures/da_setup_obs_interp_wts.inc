@@ -22,6 +22,12 @@ subroutine da_setup_obs_interp_wts (iv)
       end if
    end do
 
+   if ( use_gpsephobs .and. gpseph_loadbalance ) then
+      do i=1,iv%info(gpseph)%nlocal
+         iv%info(gpseph)%proc_domain(:,i) = .true.
+      end do
+   endif
+
    do i = 1, iv % num_inst
       if (iv % instid(i) % num_rad < 1) cycle
       call da_store_obs_grid_info_rad (iv%instid(i)%info)

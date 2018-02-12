@@ -1316,7 +1316,7 @@ CONTAINS
       INCLUDE 'mpif.h'
       INTEGER, intent(in) :: inval
       INTEGER :: ierr, retval
-      CALL mpi_allreduce ( inval, retval , 1, MPI_INT, MPI_MAX, local_communicator, ierr )
+      CALL mpi_allreduce ( inval, retval , 1, MPI_INTEGER, MPI_MAX, local_communicator, ierr )
       wrf_dm_max_int = retval
 #else
       INTEGER, intent(in) :: inval

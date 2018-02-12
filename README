@@ -1,4 +1,4 @@
-WRF Model Version 3.9.1 (August 17, 2017)
+WRF Model Version 3.9.1.1 (August 28, 2017)
 http://wrf-model.org/users/users.php
 
 ------------------------
@@ -26,6 +26,15 @@ infringement actions.
 ======================================
 This is the main directory for the WRF Version 3 source code release.
 ======================================
+
+V3.9.1.1 Release Notes (8/28/17):
+-------------------
+
+- Version 3.9.1.1 has only limited bug fixes compared to version 3.9.1.
+  For more information on WRF V3.9.1.1 release, visit WRF User's home pages
+  http://www2.mmm.ucar.edu/wrf/users/, and
+  http://www.dtcenter.org/wrf-nmm/users/, and read the online User's Guide.
+
 
 V3.9.1 Release Notes (8/17/17):
 -------------------
@@ -260,6 +269,9 @@ WRF update history:
 - V3.7.1: Aug 14, 2015
 - V3.8: April 8, 2016
 - V3.8.1: Aug 12, 2016
+- V3.9: Apr 17, 2017
+- V3.9.1: Aug 17, 2017
+- V3.9.1.1: Aug 28, 2017
 
 ======================================
 

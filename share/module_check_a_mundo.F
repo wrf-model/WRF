@@ -28,6 +28,7 @@
 !</DESCRIPTION>
 
       USE module_state_description
+      USE module_model_constants
       USE module_wrf_error
       USE module_configure
 
@@ -54,6 +55,7 @@
       INTEGER :: i, j, oops, d1_value
       LOGICAL :: km_opt_already_done , diff_opt_already_done
       INTEGER :: count_opt
+      LOGICAL :: lon_extent_is_global , lat_extent_is_global
 
 !TWG2015
 !
@@ -1576,6 +1578,28 @@
       END IF
 
 !-----------------------------------------------------------------------
+! If the user did not specify a global setting in the lateral BC
+! portion of the namelist file (polar), but the distance around the
+! equator is approximately equal to the entire globe, then it is likely
+! that the user probably forgot to flip that polar switch on.
+!-----------------------------------------------------------------------
+      lon_extent_is_global = .FALSE.
+      IF ( ABS ( model_config_rec % e_we(1) * model_config_rec % dx(1) - 2. * piconst / reradius ) .LT. model_config_rec % dx(1) ) THEN
+         lon_extent_is_global = .TRUE.
+      END IF
+
+      lat_extent_is_global = .FALSE.
+      IF ( ABS ( model_config_rec % e_sn(1) * model_config_rec % dy(1) -      piconst / reradius ) .LT. model_config_rec % dy(1) ) THEN
+         lat_extent_is_global = .TRUE.
+      END IF
+
+      IF ( ( .NOT. model_config_rec % polar(1) ) .AND. &
+           ( lon_extent_is_global .AND. lat_extent_is_global ) ) THEN
+         CALL wrf_debug ( 0, '--- ERROR: Domain size is global, set &bdy_control polar=.TRUE.' )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+
+!-----------------------------------------------------------------------
 !  Remapping namelist variables for gridded and surface fdda to aux streams 9 and 10.
 !  Relocated here so that the remappings are after checking the namelist for inconsistencies.
 !-----------------------------------------------------------------------
@@ -1632,6 +1656,27 @@
                            'o3input=0 to avoid data pre-processing'
          CALL wrf_message ( wrf_err_message )
       END IF
+
+#if (WRF_CHEM == 1 && WRF_KPP == 1 )
+!-----------------------------------------------------------------------
+! Check for consistent chem_opt and irr_opt
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%irr_opt(i) > 0 .and. &
+              (model_config_rec%chem_opt(i) /= mozcart_kpp .and. &
+               model_config_rec%chem_opt(i) /= mozart_mosaic_4bin_kpp .and. &
+               model_config_rec%chem_opt(i) /= mozart_mosaic_4bin_aq_kpp ) ) THEN
+           wrf_err_message = '--- ERROR: IRR diagnostics can only be used with the following chem_opt settings:' 
+           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+           wrf_err_message = '    MOZCART_KPP, MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP'
+           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+           write(wrf_err_message,'(''    chem_opt = '',i3,'', '',i3,'', or '',i3)') &
+                 MOZCART_KPP, MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP 
+           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+           count_fatal_error = count_fatal_error + 1
+         END IF
+      ENDDO
+#endif
 
 
 !-----------------------------------------------------------------------
@@ -1910,6 +1955,7 @@
 #endif
 
 #endif
+
       
 !-----------------------------------------------------------------------
 ! Set the namelist parameters for the CAM radiation scheme if either 

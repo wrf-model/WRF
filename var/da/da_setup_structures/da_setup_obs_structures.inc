@@ -44,6 +44,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_gpspwobs         = .false.
       use_gpsztdobs        = .false.
       use_gpsrefobs        = .false.
+      use_gpsephobs        = .false.
       use_ssmiretrievalobs = .false.
       use_ssmitbobs        = .false.
       use_ssmt1obs         = .false.
@@ -78,7 +79,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_satemobs .OR. use_geoamvobs .OR. use_polaramvobs .OR. use_airepobs .OR. use_tamdarobs .OR. &
       use_gpspwobs .OR. use_gpsztdobs .OR. use_gpsrefobs .OR. use_ssmiretrievalobs .OR. &
       use_ssmitbobs .OR. use_ssmt1obs .OR. use_ssmt2obs .OR. use_qscatobs .OR. &
-      use_airsretobs) then
+      use_airsretobs .OR. use_lsac .OR. use_gpsephobs) then
  
       use_obsgts = .true.
    else
@@ -90,7 +91,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_hsbobs .OR. use_kma1dvar .OR. use_filtered_rad .OR. &
       use_ssmisobs .OR. use_hirs4obs .OR. use_mhsobs .OR. use_pseudo_rad .OR. &
       use_mwtsobs  .OR. use_mwhsobs .OR. use_atmsobs .OR. use_simulated_rad .OR. &
-      use_iasiobs .OR. use_seviriobs .OR. use_amsr2obs) then
+      use_iasiobs .OR. use_seviriobs .OR. use_amsr2obs .OR. use_goesimgobs) then
       use_rad = .true.
    else
       use_rad = .false.
@@ -122,6 +123,7 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_gpspwobs         = .false.
       use_gpsztdobs        = .false.
       use_gpsrefobs        = .false.
+      use_gpsephobs        = .false.
       use_ssmiretrievalobs = .false.
       use_ssmitbobs        = .false.
       use_ssmt1obs         = .false.

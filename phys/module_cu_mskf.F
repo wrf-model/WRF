@@ -5103,7 +5103,6 @@ updraft:    DO NK=K,KL-1
               do kq=KTS,KTE
                QLIQ(KQ) = 0.0
                QICE(KQ) = 0.0
-              IF (aercu_opt .GT. 0) THEN
                QRAIN(KQ) = 0.0
                QSNOW(KQ) = 0.0
                NLIQ(KQ) = 0.0
@@ -5114,7 +5113,6 @@ updraft:    DO NK=K,KL-1
                EFFCH(KQ) = 2.51
                EFFIH(KQ) = 4.99
                EFFSH(KQ) = 9.99
-              END IF
                PPTLIQ(KQ)=0.0  ! nov23
                PPTICE(KQ)=0.0  ! nov23
                QLQOUT(KQ)=0.0  ! nov23

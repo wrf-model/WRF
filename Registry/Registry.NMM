@@ -196,8 +196,8 @@ state integer NTIME0         -     dyn_nmm     1      -    r  "NTIME0" "COUNT FO
 # flag for nest movement
 state  logical moved       -     misc       1      -     r
 
-state   real   ducudt       ijk     misc        1         -    rh  "UMMIX" "U TENDENCY  MOMENTUM MIXING IN Cu"
-state   real   dvcudt       ijk     misc        1         -    rh  "VMMIX" "V TENDENCY  MOMENTUM MIXING IN Cu"
+state   real   ducudt       ijk     misc        1         -    r   "UMMIX" "U TENDENCY  MOMENTUM MIXING IN Cu"
+state   real   dvcudt       ijk     misc        1         -    r   "VMMIX" "V TENDENCY  MOMENTUM MIXING IN Cu"
 
 
 state integer randstate1     ij     dyn_nmm     1      -    r  "randstate1" "random number generator state word 1"
@@ -413,16 +413,16 @@ state  real   SCALEFUN  ij    dyn_nmm   1    -     rh       "SCALEFUN"  "CNV Mas
 state  real   SCALEFUN1 ij    dyn_nmm   1    -     rh       "SCALEFUN1"  "CNV Mass Scale function 1(0-1)"        " "
 state  real   SIGMU     ij    dyn_nmm   1    -     rh       "SIGMU"  "CNV deep updraft fractio     n(0-1)"        " "
 state  real   SIGMU1    ij    dyn_nmm   1    -     rh       "SIGMU1"  "CNV shallow updraft fra     ction(0-1)"  
-state  real   DTHCUDT  ijk    dyn_nmm   1    -     rh       "DTHCUDT"     "TH tendency due to CU" "K/s"
-state  real   DQVCUDT  ijk    dyn_nmm   1    -     rh       "DQVCUDT"     "QV tendency due to CU" "kg/kg/s"
-state  real   DQRCUDT  ijk    dyn_nmm   1    -     r       "DQRCUDT"     "QR tendency due to CU" "kg/kg/s"
-state  real   DQCCUDT  ijk    dyn_nmm   1    -     rh       "DQCCUDT"     "QC tendency due to CU" "Kg/kg/s"
-state  real   DQICUDT  ijk    dyn_nmm   1    -     rh       "DQICUDT"     "QI tendency due to CU" "Kg/kg/s"
-state  real   DQSCUDT  ijk    dyn_nmm   1    -     r       "DQSCUDT"     "QS tendency due to CU" "Kg/kg/s"
-state  real   DTHBLDT  ijk    dyn_nmm   1    -     rh       "DTHBLDT"     "TH tendency due to PBL" "K/s"
-state  real   DQVBLDT  ijk    dyn_nmm   1    -     rh       "DQVBLDT"     "QV tendency due to PBL" "Kg/kg/s"
-state  real   DUBLDT   ijk    dyn_nmm   1    -     rh       "DUBLDT"     "U tendency due to PBL" "m/s/s"
-state  real   DVBLDT   ijk    dyn_nmm   1    -     rh       "DVBLDT"     "V tendency due to PBL" "m/s/s"
+state  real   DTHCUDT  ijk    dyn_nmm   1    -     r        "DTHCUDT"     "TH tendency due to CU" "K/s"
+state  real   DQVCUDT  ijk    dyn_nmm   1    -     r        "DQVCUDT"     "QV tendency due to CU" "kg/kg/s"
+state  real   DQRCUDT  ijk    dyn_nmm   1    -     r        "DQRCUDT"     "QR tendency due to CU" "kg/kg/s"
+state  real   DQCCUDT  ijk    dyn_nmm   1    -     r        "DQCCUDT"     "QC tendency due to CU" "Kg/kg/s"
+state  real   DQICUDT  ijk    dyn_nmm   1    -     r        "DQICUDT"     "QI tendency due to CU" "Kg/kg/s"
+state  real   DQSCUDT  ijk    dyn_nmm   1    -     r        "DQSCUDT"     "QS tendency due to CU" "Kg/kg/s"
+state  real   DTHBLDT  ijk    dyn_nmm   1    -     r        "DTHBLDT"     "TH tendency due to PBL" "K/s"
+state  real   DQVBLDT  ijk    dyn_nmm   1    -     r        "DQVBLDT"     "QV tendency due to PBL" "Kg/kg/s"
+state  real   DUBLDT   ijk    dyn_nmm   1    -     r        "DUBLDT"     "U tendency due to PBL" "m/s/s"
+state  real   DVBLDT   ijk    dyn_nmm   1    -     r        "DVBLDT"     "V tendency due to PBL" "m/s/s"
 state  real   hpbl2d    ij    dyn_nmm   1    -     irh        "HPBL2D"     "HEIGHT OF PBL from new GFS pbl" "m"
 state  real   heat2d    ij    dyn_nmm   1    -     irh        "HEAT2D"     "" ""
 state  real   evap2d    ij    dyn_nmm   1    -     irh        "EVAP2D"     "" ""

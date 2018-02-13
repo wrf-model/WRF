@@ -1085,7 +1085,7 @@ CONTAINS
             val2      =           1.e-10
             qo(i,k)   = max(qo(i,k), val2 )
 !           qo(i,k)   = min(qo(i,k),qeso(i,k))
-            frh(i,k)  = 1. - min(qo(i,k)/qeso(i,k), 1.)
+            frh(i,k)  = 1. - min(qo(i,k)/qeso(i,k), 1._kind_phys)
             heo(i,k)  = .5 * g * (zo(i,k) + zo(i,k+1)) +          &
      &                  cp * to(i,k) + hvap * qo(i,k)
             heso(i,k) = .5 * g * (zo(i,k) + zo(i,k+1)) +          &
@@ -1751,7 +1751,7 @@ CONTAINS
               ptem = (1. - tem) * wu2(i,k-1)
               ptem1 = 1. + tem
               wu2(i,k) = (ptem + tem1) / ptem1
-              wu2(i,k) = max(wu2(i,k), 0.)
+              wu2(i,k) = max(wu2(i,k), 0._kind_phys)
             endif
           endif
         enddo
@@ -2536,7 +2536,7 @@ CONTAINS
       do i= 1, im
         if(cnvflg(i)) then
            umean(i) = umean(i) / sumx(i)
-           umean(i) = max(umean(i), 1.)
+           umean(i) = max(umean(i), 1._kind_phys)
            tauadv(i) = gdx(i) / umean(i)
         endif
       enddo
@@ -2551,7 +2551,7 @@ CONTAINS
           k = kbcon(i)
           rho = po(i,k)*100. / (rd*to(i,k))
           tfac = tauadv(i) / dtconv(i)
-          tfac = min(tfac, 1.)
+          tfac = min(tfac, 1._kind_phys)
           xmb(i) = tfac*betaw*rho*wc(i)
         endif
       enddo
@@ -2581,7 +2581,7 @@ CONTAINS
 !c
         if(asqecflg(i)) then
           tfac = tauadv(i) / dtconv(i)
-          tfac = min(tfac, 1.)
+          tfac = min(tfac, 1._kind_phys)
           xmb(i) = -tfac * fld(i) / xk(i)
 !         xmb(i) = min(xmb(i),xmbmax(i))
         endif
@@ -2599,12 +2599,12 @@ CONTAINS
 !
       do i = 1, im
         if(cnvflg(i)) then
-          tem = min(max(xlamx(i), 7.e-5), 3.e-4)
+          tem = min(max(xlamx(i), 7.e-5_kind_phys), 3.e-4_kind_phys)
           tem = 0.2 / tem
           tem1 = 3.14 * tem * tem
           sigmagfm(i) = tem1 / garea(i)
-          sigmagfm(i) = max(sigmagfm(i), 0.001)
-          sigmagfm(i) = min(sigmagfm(i), 0.999)
+          sigmagfm(i) = max(sigmagfm(i), 0.001_kind_phys)
+          sigmagfm(i) = min(sigmagfm(i), 0.999_kind_phys)
         endif
       enddo
 !
@@ -2614,7 +2614,7 @@ CONTAINS
         if(cnvflg(i)) then
           if (gdx(i) < dxcrtuf) then
             scaldfunc(i) = (1.-sigmagfm(i)) * (1.-sigmagfm(i))
-            scaldfunc(i) = max(min(scaldfunc(i), 1.0), 0.)
+            scaldfunc(i) = max(min(scaldfunc(i), 1.0_kind_phys), 0._kind_phys)
             sigmuout(i)=sigmagfm(i) 
           else
             scaldfunc(i) = 1.0
@@ -2808,8 +2808,8 @@ CONTAINS
           if (cnvflg(i) .and. rn(i) > 0.) then
             if (k >= kbcon(i) .and. k < ktcon(i)) then
               cnvc(i,k) = 0.04 * log(1. + 675. * eta(i,k) * xmb(i)) 
-              cnvc(i,k) = min(cnvc(i,k), 0.6)
-              cnvc(i,k) = max(cnvc(i,k), 0.0)
+              cnvc(i,k) = min(cnvc(i,k), 0.6_kind_phys)
+              cnvc(i,k) = max(cnvc(i,k), 0.0_kind_phys)
             endif
           endif
         enddo
@@ -2826,7 +2826,7 @@ CONTAINS
 !           if (k > kb(i) .and. k <= ktcon(i)) then
             if (k >= kbcon(i) .and. k <= ktcon(i)) then
               tem  = dellal(i,k) * xmb(i) * dt2
-              tem1 = max(0.0, min(1.0, (tcr-t1(i,k))*tcrf))
+              tem1 = max(0.0_kind_phys, min(1.0_kind_phys, (tcr-t1(i,k))*tcrf))
               if (ql(i,k,2) > -999.0) then
                 ql(i,k,1) = ql(i,k,1) + tem * tem1            ! ice
                 ql(i,k,2) = ql(i,k,2) + tem *(1.0-tem1)       ! water
@@ -3844,7 +3844,7 @@ CONTAINS
               ptem = (1. - tem) * wu2(i,k-1)
               ptem1 = 1. + tem
               wu2(i,k) = (ptem + tem1) / ptem1
-              wu2(i,k) = max(wu2(i,k), 0.)
+              wu2(i,k) = max(wu2(i,k), 0._kind_phys)
             endif
           endif
         enddo
@@ -4063,7 +4063,7 @@ CONTAINS
       do i= 1, im
         if(cnvflg(i)) then
            umean(i) = umean(i) / sumx(i)
-           umean(i) = max(umean(i), 1.)
+           umean(i) = max(umean(i), 1._kind_phys)
            tauadv(i) = gdx(i) / umean(i)
         endif
       enddo
@@ -4076,7 +4076,7 @@ CONTAINS
           k = kbcon(i)
           rho = po(i,k)*100. / (rd*to(i,k))
           tfac = tauadv(i) / dtconv(i)
-          tfac = min(tfac, 1.)
+          tfac = min(tfac, 1._kind_phys)
           xmb(i) = tfac*betaw*rho*wc(i)
         endif
       enddo
@@ -4086,12 +4086,12 @@ CONTAINS
 !
       do i = 1, im
         if(cnvflg(i)) then
-          tem = min(max(xlamue(i,kbcon(i)), 2.e-4), 6.e-4)
+          tem = min(max(xlamue(i,kbcon(i)), 2.e-4_kind_phys), 6.e-4_kind_phys)
           tem = 0.2 / tem
           tem1 = 3.14 * tem * tem
           sigmagfm(i) = tem1 / garea(i)
-          sigmagfm(i) = max(sigmagfm(i), 0.001)
-          sigmagfm(i) = min(sigmagfm(i), 0.999)
+          sigmagfm(i) = max(sigmagfm(i), 0.001_kind_phys)
+          sigmagfm(i) = min(sigmagfm(i), 0.999_kind_phys)
         endif
       enddo
 !
@@ -4102,7 +4102,7 @@ CONTAINS
         if(cnvflg(i)) then
           if (gdx(i) < dxcrt) then
             scaldfunc(i) = (1.-sigmagfm(i)) * (1.-sigmagfm(i))
-            scaldfunc(i) = max(min(scaldfunc(i), 1.0), 0.)
+            scaldfunc(i) = max(min(scaldfunc(i), 1.0), 0._kind_phys)
           else
             scaldfunc(i) = 1.0
           endif
@@ -4278,8 +4278,8 @@ CONTAINS
           if (cnvflg(i)) then
             if (k >= kbcon(i) .and. k < ktcon(i)) then
               cnvc(i,k) = 0.04 * log(1. + 675. * eta(i,k) * xmb(i))
-              cnvc(i,k) = min(cnvc(i,k), 0.2)
-              cnvc(i,k) = max(cnvc(i,k), 0.0)
+              cnvc(i,k) = min(cnvc(i,k), 0.2_kind_phys)
+              cnvc(i,k) = max(cnvc(i,k), 0.0_kind_phys)
             endif
           endif
         enddo
@@ -4296,7 +4296,7 @@ CONTAINS
 !           if (k > kb(i) .and. k <= ktcon(i)) then
             if (k >= kbcon(i) .and. k <= ktcon(i)) then
               tem  = dellal(i,k) * xmb(i) * dt2
-              tem1 = max(0.0, min(1.0, (tcr-t1(i,k))*tcrf))
+              tem1 = max(0.0_kind_phys, min(1.0_kind_phys, (tcr-t1(i,k))*tcrf))
               if (ql(i,k,2) > -999.0) then
                 ql(i,k,1) = ql(i,k,1) + tem * tem1            ! ice
                 ql(i,k,2) = ql(i,k,2) + tem *(1.0-tem1)       ! water

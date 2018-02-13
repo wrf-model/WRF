@@ -72,8 +72,6 @@ OBJS    =       \
                 libmassv.o                 \
                 collect_on_comm.o          \
                 hires_timer.o              \
-		adStack.o                  \
-		adBuffer.o                 \
 		clog.o
 
 #compile as a .o but do not link into the main library
@@ -170,18 +168,6 @@ nl_get_7_routines.o : nl_access_routines.F module_configure.o
 
 wrf_num_bytes_between.o :
 	$(CC) -c $(CFLAGS) wrf_num_bytes_between.c
-
-adStack.o : adStack.c
-	$(CC) -c $(CFLAGS) adStack.c
-
-adBuffer.o : adBuffer.F
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b
-	$(CPP) $(CPPFLAGS) -I../inc $*.b  > $*.for
-	$(RM) $*.b
-	$(RM) $@
-	$(SFC) -c $(FORMAT_FIXED) $(PROMOTION) $(FCNOOPT) $*.for
-	$(RM) adBuffer.for
 
 pack_utils.o :
 	$(CC) -c $(CFLAGS) -DIWORDSIZE=$(IWORDSIZE) pack_utils.c

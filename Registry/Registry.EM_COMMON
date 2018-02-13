@@ -2137,7 +2137,6 @@ rconfig   character  physics_suite        namelist,physics      1           "non
 rconfig   logical  force_read_thompson   namelist,physics      1           .false.
 rconfig   logical  write_thompson_tables   namelist,physics     1           .true.
 rconfig   integer     mp_physics          namelist,physics	max_domains    -1     irh       "mp_physics"            ""      ""
-rconfig   integer  mp_physics_ad          namelist,physics	max_domains   98       rh       "mp_physics_ad"            ""      ""
 #rconfig   integer     milbrandt_ccntype   namelist,physics      max_domains    0       rh       "milbrandt select maritime(1)/continental(2)"  ""      ""
 rconfig   real     nssl_cccn              namelist,physics      max_domains  0.5e9    rh       "Base CCN concentration for NSSL microphysics"  ""      ""
 rconfig   real     nssl_alphah            namelist,physics      max_domains   0       rh       "Graupel PSD shape paramter"  ""      ""
@@ -2628,33 +2627,33 @@ rconfig   integer     windfarm_ij         namelist,physics      1              0
 
 #package   passivec1      chem_opt==0                  -             
 ifdef DA_CORE=0
-package   passiveqv       mp_physics==0                -             moist:qv;g_moist:g_qv;a_moist:a_qv
-package   kesslerscheme   mp_physics==1                -             moist:qv,qc,qr;g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
-package   linscheme       mp_physics==2                -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
-package   wsm3scheme      mp_physics==3                -             moist:qv,qc,qr;state:re_cloud,re_ice,re_snow;g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
-package   wsm5scheme      mp_physics==4                -             moist:qv,qc,qr,qi,qs;state:re_cloud,re_ice,re_snow;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
-package   fer_mp_hires    mp_physics==5                -             moist:qv,qc,qr,qi;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy;g_moist:g_qv,g_qc,g_qr,g_qi;g_scalar:g_qt;a_moist:a_qv,a_qc,a_qr,a_qi;a_scalar:a_qt
-package   fer_mp_hires_advect  mp_physics==15          -             moist:qv,qc,qr,qi;scalar:qrimef;g_moist:g_qv,g_qc,g_qr,g_qi;g_scalar:g_qrimef;a_moist:a_qv,a_qc,a_qr,a_qi;a_scalar:a_qrimef
-package   wsm6scheme      mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg;state:re_cloud,re_ice,re_snow;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
-package   gsfcgcescheme   mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
-package   thompson        mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;g_scalar:g_qni,g_qnr;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;a_scalar:a_qni,a_qnr
-package   milbrandt2mom   mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh;a_scalar:a_qnc,a_qnr,a_qni,a_qns,a_qng,a_qnh;g_scalar:g_qnc,g_qnr,g_qni,g_qns,g_qng,g_qnh
-package   morr_two_moment mp_physics==10               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;a_scalar:a_qni,a_qns,a_qnr,a_qng;g_scalar:g_qni,g_qns,g_qnr,g_qng;state:rqrcuten,rqscuten,rqicuten
-package   cammgmpscheme   mp_physics==11               -             moist:qv,qc,qi,qr,qs;scalar:qnc,qni,qnr,qns;state:rh_old_mp,lcd_old_mp,cldfra_old_mp,cldfra_mp,cldfra_mp_all,cldfra_conv,cldfrai,cldfral,turbtype3d,smaw3d,wsedl3d,icwmrdp3d,dp3d,shfrc3d,dlf,dlf2,tke_pbl,lradius,iradius;g_moist:g_qv,g_qc,g_qi,g_qr,g_qs;a_moist:a_qv,a_qc,a_qi,a_qr,a_qs;g_scalar:g_qnc,g_qni,g_qnr,g_qns;a_scalar:a_qnc,a_qni,a_qnr,a_qns
-#package   milbrandt3mom  mp_physics==12               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qzr,qzi,qzs,qzg,qzh;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh;g_scalar:g_qnc,g_qnr,g_qni,g_qns,g_qng,g_qnh,g_qzr,g_qzi,g_qzs,g_qzg,g_qzh;a_scalar:a_qnc,a_qnr,a_qni,a_qns,a_qng,a_qnh,a_qzr,a_qzi,a_qzs,a_qzg,a_qzh
-package   sbu_ylinscheme  mp_physics==13               -             moist:qv,qc,qr,qi,qs;state:rimi;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
-package   wdm5scheme      mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr;state:re_cloud,re_ice,re_snow;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs;a_scalar:a_qnn,a_qnc,a_qnr;g_scalar:g_qnn,g_qnc,g_qnr
-package   wdm6scheme      mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnn,qnc,qnr;state:re_cloud,re_ice,re_snow;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_scalar:a_qnn,a_qnc,a_qnr;g_scalar:g_qnn,g_qnc,g_qnr
-package   nssl_2mom       mp_physics==17               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qndrop,qnr,qni,qns,qng,qnh,qvolg,qvolh;state:re_cloud,re_ice,re_snow;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_scalar:a_qndrop,a_qnr,a_qni,a_qns,a_qng,a_qnh,a_qvolg,a_qvolh;g_scalar:g_qndrop,g_qnr,g_qni,g_qns,g_qng,g_qnh,g_qvolg,g_qvolh
-package   nssl_2momccn    mp_physics==18               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qndrop,qnr,qni,qns,qng,qnh,qvolg,qvolh;state:re_cloud,re_ice,re_snow;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_scalar:a_qnn,a_qndrop,a_qnr,a_qni,a_qns,a_qng,a_qnh,a_qvolg,a_qvolh;g_scalar:g_qnn,g_qnc,g_qnr,g_qni,g_qns,g_qng,g_qnh,g_qvolg,g_qvolh
-package   nssl_1mom       mp_physics==19               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qvolg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh;g_scalar:g_qvolg;a_scalar:a_qvolg
-package   nssl_1momlfo    mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
-package   nssl_2momg      mp_physics==22               -             moist:qv,qc,qr,qi,qs,qg;scalar:qndrop,qnr,qni,qns,qng,qvolg;state:re_cloud,re_ice,re_snow;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_scalar:a_qndrop,a_qnr,a_qni,a_qns,a_qng,a_qvolg;g_scalar:g_qndrop,g_qnr,g_qni,g_qns,g_qng,g_qvolg
-package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow,qnwfa2d,taod5503d,taod5502d;g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg;g_scalar:g_qni,g_qnr,g_qnc,g_qnwfa,g_qnifa;a_scalar:a_qni,a_qnr,a_qnc,a_qnwfa,a_qnifa
-package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi;scalar:qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm;g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi;g_scalar:g_qni,g_qnr;a_scalar:a_qni,a_qnr,th_old,qv_old
-package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi;scalar:qnc,qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm;g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi;g_scalar:g_qnc,g_qni,g_qnr;a_scalar:a_qnc,a_qni,a_qnr,th_old,qv_old
-package   p3_2category    mp_physics==52               -             moist:qv,qc,qr,qi,qi2;scalar:qnc,qni,qnr,qir,qib,qni2,qir2,qib2;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,vmi3d_2,rhopo3d_2,di3d_2,refl_10cm,th_old,qv_old;g_moist:g_qv,g_qc,g_qr,g_qi,g_qi2;a_moist:a_qv,a_qc,a_qr,a_qi,a_qi2;g_scalar:g_qnc,g_qni,g_qnr;a_scalar:a_qnc,a_qni,a_qnr,th_old,qv_old
-package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy;g_moist:g_qv,g_qc,g_qr,g_qs;a_moist:a_qv,a_qc,a_qr,a_qs;g_scalar:g_qt;a_scalar:a_qt
+package   passiveqv       mp_physics==0                -             moist:qv
+package   kesslerscheme   mp_physics==1                -             moist:qv,qc,qr
+package   linscheme       mp_physics==2                -             moist:qv,qc,qr,qi,qs,qg
+package   wsm3scheme      mp_physics==3                -             moist:qv,qc,qr;state:re_cloud,re_ice,re_snow
+package   wsm5scheme      mp_physics==4                -             moist:qv,qc,qr,qi,qs;state:re_cloud,re_ice,re_snow
+package   fer_mp_hires    mp_physics==5                -             moist:qv,qc,qr,qi;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
+package   fer_mp_hires_advect  mp_physics==15          -             moist:qv,qc,qr,qi;scalar:qrimef
+package   wsm6scheme      mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg;state:re_cloud,re_ice,re_snow
+package   gsfcgcescheme   mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
+package   thompson        mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow
+package   milbrandt2mom   mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
+package   morr_two_moment mp_physics==10               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng;state:rqrcuten,rqscuten,rqicuten
+package   cammgmpscheme   mp_physics==11               -             moist:qv,qc,qi,qr,qs;scalar:qnc,qni,qnr,qns;state:rh_old_mp,lcd_old_mp,cldfra_old_mp,cldfra_mp,cldfra_mp_all,cldfra_conv,cldfrai,cldfral,turbtype3d,smaw3d,wsedl3d,icwmrdp3d,dp3d,shfrc3d,dlf,dlf2,tke_pbl,lradius,iradius
+#package   milbrandt3mom  mp_physics==12               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh,qzr,qzi,qzs,qzg,qzh
+package   sbu_ylinscheme  mp_physics==13               -             moist:qv,qc,qr,qi,qs;state:rimi
+package   wdm5scheme      mp_physics==14               -             moist:qv,qc,qr,qi,qs;scalar:qnn,qnc,qnr;state:re_cloud,re_ice,re_snow
+package   wdm6scheme      mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnn,qnc,qnr;state:re_cloud,re_ice,re_snow
+package   nssl_2mom       mp_physics==17               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qndrop,qnr,qni,qns,qng,qnh,qvolg,qvolh;state:re_cloud,re_ice,re_snow
+package   nssl_2momccn    mp_physics==18               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qndrop,qnr,qni,qns,qng,qnh,qvolg,qvolh;state:re_cloud,re_ice,re_snow
+package   nssl_1mom       mp_physics==19               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qvolg
+package   nssl_1momlfo    mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
+package   nssl_2momg      mp_physics==22               -             moist:qv,qc,qr,qi,qs,qg;scalar:qndrop,qnr,qni,qns,qng,qvolg;state:re_cloud,re_ice,re_snow
+package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow,qnwfa2d,taod5503d,taod5502d
+package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi;scalar:qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
+package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi;scalar:qnc,qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
+package   p3_2category    mp_physics==52               -             moist:qv,qc,qr,qi,qi2;scalar:qnc,qni,qnr,qir,qib,qni2,qir2,qib2;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,vmi3d_2,rhopo3d_2,di3d_2,refl_10cm,th_old,qv_old
+package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 
 package   radar_refl      compute_radar_ref==1         -             state:refl_10cm,refd_max
 endif
@@ -2737,8 +2736,8 @@ package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             state:tke_pbl,el_pbl
 package   gfsscheme      bl_pbl_physics==3           -             -
 package   qnsepblscheme  bl_pbl_physics==4           -             state:tke_pbl,el_pbl,massflux_EDKF,entr_EDKF,detr_EDKF,thl_up,thv_up,rv_up,rt_up,rc_up,u_up,v_up,frac_up,rc_mf
-package   mynnpblscheme2 bl_pbl_physics==5           -             scalar:qke_adv;state:qke,tke_pbl,sh3d,tsq,qsq,cov,el_pbl;g_scalar:g_qke_adv;a_scalar:a_qke_adv
-package   mynnpblscheme3 bl_pbl_physics==6           -             scalar:qke_adv;state:qke,tke_pbl,sh3d,tsq,qsq,cov,el_pbl;g_scalar:g_qke_adv;a_scalar:a_qke_adv
+package   mynnpblscheme2 bl_pbl_physics==5           -             scalar:qke_adv;state:qke,tke_pbl,sh3d,tsq,qsq,cov,el_pbl
+package   mynnpblscheme3 bl_pbl_physics==6           -             scalar:qke_adv;state:qke,tke_pbl,sh3d,tsq,qsq,cov,el_pbl
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   boulacscheme   bl_pbl_physics==8           -             state:el_pbl,tke_pbl,wu_tur,wv_tur,wt_tur,wq_tur
 package   camuwpblscheme bl_pbl_physics==9           -             state:tauresx2d,tauresy2d,tpert2d,qpert2d,wpert2d,tke_pbl,smaw3d,wsedl3d,turbtype3d
@@ -2778,7 +2777,7 @@ package   g3tave         cu_diag==1                  -             state:GD_CLOU
 package   kfedrates      kf_edrates==1               -             state:udr_kf,ddr_kf,uer_kf,der_kf,timec_kf
 
 package   no_cu_used     cu_used==0                  -             -
-package   any_cu_used    cu_used==1                  -             state:rucuten,rvcuten,rthcuten,rqvcuten,rqrcuten,rqccuten,rqscuten,rqicuten,rqcncuten,rqincuten,g_rucuten,g_rvcuten,g_rthcuten,g_rqvcuten,g_rqrcuten,g_rqccuten,g_rqscuten,g_rqicuten,g_rqcncuten,g_rqincuten,a_rucuten,a_rvcuten,a_rthcuten,a_rqvcuten,a_rqrcuten,a_rqccuten,a_rqscuten,a_rqicuten,a_rqcncuten,a_rqincuten
+package   any_cu_used    cu_used==1                  -             state:rucuten,rvcuten,rthcuten,rqvcuten,rqrcuten,rqccuten,rqscuten,rqicuten,rqcncuten,rqincuten
 
 package   no_cam_used    cam_used==0                 -             -
 package   any_cam_used   cam_used==1                 -             state:cldfra_old
@@ -2789,7 +2788,7 @@ package   camuwshcuscheme shcu_physics==2            -             state:shfrc3d
 package   grimsshcuscheme shcu_physics==3            -             -
 
 package   no_shcu_used    shcu_used==0               -             -
-package   any_shcu_used   shcu_used==1               -             state:rushten,rvshten,rthshten,rqvshten,rqrshten,rqcshten,rqsshten,rqishten,rqgshten,rqcnshten,rqinshten,g_rushten,g_rvshten,g_rthshten,g_rqvshten,g_rqrshten,g_rqcshten,g_rqsshten,g_rqishten,g_rqgshten,g_rqcnshten,g_rqinshten,a_rushten,a_rvshten,a_rthshten,a_rqvshten,a_rqrshten,a_rqcshten,a_rqsshten,a_rqishten,a_rqgshten,a_rqcnshten,a_rqinshten
+package   any_shcu_used   shcu_used==1               -             state:rushten,rvshten,rthshten,rqvshten,rqrshten,rqcshten,rqsshten,rqishten,rqgshten,rqcnshten,rqinshten
 
 package   fogsettling0   grav_settling==0            -             state:vdfg
 package   fogsettling1   grav_settling==1            -             state:vdfg,fgdp,dfgdp

@@ -42,13 +42,9 @@ MODULES = \
 	module_bl_mynn.o \
 	module_bl_fogdes.o \
 	module_bl_gwdo.o \
-	module_bl_gwdo_tl.o \
-	module_bl_gwdo_ad.o \
 	module_bl_myjurb.o \
 	module_bl_boulac.o \
 	module_bl_surface_drag.o \
-	module_bl_surface_drag_tl.o \
-	module_bl_surface_drag_ad.o \
 	module_bl_camuwpbl_driver.o \
 	module_bl_mfshconvpbl.o \
 	module_shcu_camuwshcu_driver.o \
@@ -75,13 +71,9 @@ MODULES = \
 	module_cu_osas.o \
 	module_cu_kfcup.o \
 	module_cu_du.o \
-	module_cu_du_tl.o \
-	module_cu_du_ad.o \
 	module_mp_radar.o \
 	module_mp_kessler.o \
 	module_mp_mkessler.o \
-	module_mp_mkessler_tl.o \
-	module_mp_mkessler_ad.o \
 	module_mp_lin.o  \
 	module_mp_sbu_ylin.o  \
 	module_mp_wsm3.o \
@@ -90,8 +82,6 @@ MODULES = \
 	module_mp_etanew.o \
 	module_mp_fer_hires.o \
 	module_mp_nconvp.o \
-	module_mp_nconvp_tl.o \
-	module_mp_nconvp_ad.o \
 	module_mp_HWRF.o \
 	module_mp_thompson.o \
 	module_mp_full_sbm.o \
@@ -162,29 +152,17 @@ MODULES = \
 	module_sf_scmflux.o \
 	module_sf_scmskintemp.o \
 	module_physics_addtendc.o \
-	module_physics_addtendc_tl.o \
-	module_physics_addtendc_ad.o \
 	module_physics_init.o \
-	module_physics_init_tl.o \
-	module_physics_init_ad.o \
 	module_gfs_machine.o \
 	module_gfs_funcphys.o \
 	module_gfs_physcons.o \
 	module_progtm.o \
 	module_pbl_driver.o \
-	module_pbl_driver_tl.o \
-	module_pbl_driver_ad.o \
 	module_data_gocart_dust.o \
 	module_cumulus_driver.o \
-	module_cumulus_driver_tl.o \
-	module_cumulus_driver_ad.o \
 	module_shallowcu_driver.o \
 	module_microphysics_driver.o \
-	module_microphysics_driver_tl.o \
-	module_microphysics_driver_ad.o \
 	module_microphysics_zero_out.o \
-	module_microphysics_zero_out_tl.o \
-	module_microphysics_zero_out_ad.o \
 	module_mixactivate.o \
 	module_radiation_driver.o \
 	module_surface_driver.o \

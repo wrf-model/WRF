@@ -1493,10 +1493,12 @@ endif
            ( ABS(w_min) .LT. 1.E-6 ) ) THEN
          w_needs_to_be_set = .TRUE.
          ! Force use_input_w to false, if there is no input w
+#if ( WRFPLUS == 1 )
          IF ( config_flags%use_input_w ) THEN
             config_flags%use_input_w = .FALSE.
             CALL nl_set_use_input_w (grid%id, .FALSE.)
          ENDIF
+#endif
       ELSE
          IF ( config_flags%use_input_w ) THEN
             w_needs_to_be_set = .FALSE.

@@ -101,8 +101,6 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    CALL med_latbound_in ( grid , config_flags )
 #endif
 
-! #if (EM_CORE == 1)
-
  CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currTime, StartTime=startTime )
 
  IF( (WRFU_AlarmIsRinging( grid%alarms( HISTORY_ALARM ), rc=rc ) .AND. &
@@ -341,6 +339,11 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
                              grid%domain_clock%clockint%TimeStep )
           CALL domain_clock_set( grid, time_step_seconds=-1*model_config_rec%time_step )
        ENDIF
+#else
+       CALL med_auxinput_in ( grid, ialarm, config_flags )
+       WRITE ( message , FMT='(A,i3,A,i3)' )  'Input data processed for aux input ' , &
+          ialarm - first_auxinput + 1, ' for domain ',grid%id
+       CALL wrf_debug ( 0 , message )
 #endif
        CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
      ENDIF
@@ -1488,9 +1491,9 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
    USE module_configure , ONLY : grid_config_rec_type
    USE module_utility
    USE module_streams
-!!#if ( WRFPLUS == 1 )
+#if ( WRFPLUS == 1 )
    USE mediation_pertmod_io , ONLY : save_xtraj, save_tl_pert
-!!#endif
+#endif
   ! Model layer
 
    IMPLICIT NONE

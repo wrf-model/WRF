@@ -41,6 +41,8 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
    CALL set_scalar_indices_from_config ( head_grid%id , idum1, idum2 )
 
 #if ((EM_CORE == 1) && (DA_CORE != 1))
+
+#if ( WRFPLUS == 1 )
    IF ( model_config_rec%dyn_opt .EQ. dyn_em_tl ) THEN
       CALL g_start_domain_em( grid, allowed_to_read  &
 !
@@ -54,12 +56,18 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
 !
                          )
    ELSE
+#endif
+
       CALL start_domain_em( grid, allowed_to_read  &
 !
 # include <actual_new_args.inc>
 !
                          )
+
+#if ( WRFPLUS == 1 )
    ENDIF
+#endif
+
 #endif
 #if (NMM_CORE == 1) 
    CALL start_domain_nmm( grid, allowed_to_read   &

@@ -10,9 +10,6 @@ MODULES1=                               \
         module_get_file_names.o         \
         module_compute_geop.o           \
         module_check_a_mundo.o          \
-	module_adtl_grid_utilities.o	\
-	mediation_pertmod_io.o	\
-	module_linked_lisk2.o	\
         module_random.o                 \
         module_llxy.o                   \
         module_interp_nmm.o             \
@@ -22,8 +19,6 @@ MODULES1=                               \
 MODULES2=                               \
         module_date_time.o              \
         module_bc.o                     \
-	module_bc_tl.o	        \
-	module_bc_ad.o	        \
         module_io_wrf.o                 \
         module_soil_pre.o 
 
@@ -62,7 +57,6 @@ OBJS2  	=                               \
 OBJS3   =                               \
         wrf_tsin.o                      \
         landread.o			\
-	jcdfi.o                         \
         track_driver.o                  \
         track_input.o                   \
         module_trajectory.o             \

@@ -7,43 +7,23 @@ RM      =       rm -f
 
 MODULES =                 		\
         module_advect_em.o   		\
-        module_advect_em_tl.o   	\
-        module_advect_em_ad.o   	\
 	module_diffusion_em.o  		\
-	module_diffusion_em_tl.o  	\
-	module_diffusion_em_ad.o  	\
 	module_small_step_em.o 		\
-	module_small_step_em_tl.o 	\
-	module_small_step_em_ad.o 	\
         module_big_step_utilities_em.o  \
-        module_big_step_utilities_em_tl.o  \
-        module_big_step_utilities_em_ad.o  \
         module_em.o         		\
-        module_em_tl.o         		\
-        module_em_ad.o         		\
         module_solvedebug_em.o    	\
         module_bc_em.o                  \
-        module_bc_em_tl.o               \
-        module_bc_em_ad.o               \
         module_init_utilities.o         \
         module_wps_io_arw.o             \
 	module_damping_em.o		\
 	module_polarfft.o		\
         module_force_scm.o              \
         module_first_rk_step_part1.o    \
-        module_first_rk_step_part1_tl.o    \
-        module_first_rk_step_part1_ad.o    \
         module_first_rk_step_part2.o    \
-        module_first_rk_step_part2_tl.o    \
-        module_first_rk_step_part2_ad.o    \
         module_avgflx_em.o              \
 	module_sfs_nba.o		\
-	module_sfs_nba_tl.o		\
-	module_sfs_nba_ad.o		\
         module_convtrans_prep.o         \
 	module_sfs_driver.o		\
-	module_sfs_driver_tl.o		\
-	module_sfs_driver_ad.o		\
 	module_stoch.o			\
 	module_after_all_rk_steps.o	\
 	$(CASE_MODULE)
@@ -63,11 +43,7 @@ MODULES =                 		\
 OBJS    = 		        \
 	init_modules_em.o       \
 	solve_em.o              \
-	solve_em_tl.o           \
-	solve_em_ad.o           \
         start_em.o              \
-        start_em_tl.o           \
-        start_em_ad.o           \
         shift_domain_em.o       \
         couple_or_uncouple_em.o \
         nest_init_utils.o	\

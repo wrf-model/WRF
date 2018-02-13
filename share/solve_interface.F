@@ -40,6 +40,7 @@ SUBROUTINE solve_interface ( grid )
 
 #if (EM_CORE == 1 && DA_CORE != 1)
    
+#if ( WRFPLUS == 1 )
    IF      ( config_flags%dyn_opt == dyn_em_tl ) THEN
       CALL solve_em_tl  ( grid , config_flags  &
 !
@@ -53,12 +54,15 @@ SUBROUTINE solve_interface ( grid )
 !
                )
    ELSE
+#endif
       CALL solve_em  ( grid , config_flags  &
 !
 # include "actual_new_args.inc"
 !
                )
+#if ( WRFPLUS == 1 )
    END IF
+#endif
 
 # if ( WRF_CHEM == 1 )
    IF ( config_flags%chem_opt > 0 .or. config_flags%tracer_opt > 0 ) THEN

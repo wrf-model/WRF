@@ -4381,7 +4381,6 @@ BENCH_END(bc_2d_tim)
 !  this code forces boundary values to specified values to avoid drift
 
    IF( config_flags%specified .or. config_flags%nested ) THEN 
-!if ( .false. ) then !hcl
    !$OMP PARALLEL DO   &
    !$OMP PRIVATE ( ij )
    tile_bc_loop_3: DO ij = 1 , grid%num_tiles
@@ -4565,7 +4564,6 @@ BENCH_END(bc_2d_tim)
 
    END DO tile_bc_loop_3
    !$OMP END PARALLEL DO
-!end if !hcl
 
    ENDIF
 

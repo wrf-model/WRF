@@ -12,10 +12,12 @@ include registry.les
 include registry.cam
 include registry.clm
 include registry.ssib
-package   lscondscheme  mp_physics==98               -             moist:qv;g_moist:g_qv;a_moist:a_qv
-package   mkesslerscheme mp_physics==99              -             moist:qv,qc,qr;g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
+#ifdef WRFPLUS=1
+package   lscondscheme  mp_physics==98               -             moist:qv
+package   mkesslerscheme mp_physics==99              -             moist:qv,qc,qr
 package   surfdragscheme bl_pbl_physics==98          -             -
 package   ducuscheme     cu_physics==98              -             -
+#endif
 halo      HALO_EM_PHYS_A_BL_SURF  dyn_em 4:xland
 #ifdef WRFPLUS=1
 include registry.wrfplus
@@ -60,25 +62,8 @@ state   real    tr17_5     ikjftb  tracer        1         -     irhusdf=(bdy_in
 state   real    tr17_6     ikjftb  tracer        1         -     irhusdf=(bdy_interp:dt)    "tr17_6"         "tr17_6"     "Dimensionless"
 state   real    tr17_7     ikjftb  tracer        1         -     irhusdf=(bdy_interp:dt)    "tr17_7"         "tr17_7"     "Dimensionless"
 state   real    tr17_8     ikjftb  tracer        1         -     irhusdf=(bdy_interp:dt)    "tr17_8"         "tr17_8"     "Dimensionless"
-state   real    plume      ikjftb  tracer        1         -     irhusdf=(bdy_interp:dt)    "PLUME"          "Fukushima Tracer"          -
-state   real    trbc1        ikjftb  tracer        1         -     irhusdf=(bdy_interp:dt)    "TRBC1"            "TRBC1"           "ug/kg-dryair"
-state   real    trbc2        ikjftb  tracer        1         -     irhusdf=(bdy_interp:dt)    "TRBC2"            "TRBC2"           "ug/kg-dryair"
-
-
-state   real    -          ikjftb  g_tracer      1         -     -    -                                       
-state   real    g_plume    ikjftb  g_tracer      1         -     irhusdf=(bdy_interp:dt)    "G_PLUME"        "Fukushima Tracer"          -
-state   real    g_trbc1        ikjftb  g_tracer    1         -     irhusdf=(bdy_interp:dt)    "g_TRBC1"            "g_TRBC1"           "ug/kg-dryair"
-state   real    g_trbc2        ikjftb  g_tracer    1         -     irhusdf=(bdy_interp:dt)    "g_TRBC2"            "g_TRBC2"           "ug/kg-dryair"
-
-
-state   real    -          ikjftb  a_tracer      1         -     -    -                                       
-state   real    a_plume    ikjftb  a_tracer      1         -     irhusdf=(bdy_interp:dt)    "A_PLUME"        "Fukushima Tracer"          -
-state   real    a_trbc1        ikjftb  a_tracer    1         -     irhusdf=(bdy_interp:dt)    "a_TRBC1"            "a_TRBC1"           "ug/kg-dryair"
-state   real    a_trbc2        ikjftb  a_tracer    1         -     irhusdf=(bdy_interp:dt)    "a_TRBC2"            "a_TRBC2"           "ug/kg-dryair"
 
 package   tracer_test1  tracer_opt==2       -             tracer:tr17_1,tr17_2,tr17_3,tr17_4,tr17_5,tr17_6,tr17_7,tr17_8
-package   tracer_test3  tracer_opt==3       -             tracer:plume;g_tracer:g_plume;a_tracer:a_plume
-package   tracer_chem   tracer_opt==4       -             tracer:trbc1,trbc2;g_tracer:g_trbc1,g_trbc2;a_tracer:a_trbc1,a_trbc2
 
 package   restofwrf      use_wps_input==0            -             -
  

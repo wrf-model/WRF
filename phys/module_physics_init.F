@@ -3540,6 +3540,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
 
+#if ( WRFPLUS == 1 )
       CASE (DUCUSCHEME)
           CALL ducuinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,      &
                       RQICUTEN,RQSCUTEN,NCA,W0AVG,P_QC,P_QR,      &
@@ -3549,6 +3550,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
+#endif
 
       CASE DEFAULT
 
@@ -3778,8 +3780,10 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
      CASE (KESSLERSCHEME)
           warm_rain = .true.
+#if ( WRFPLUS == 1 )
      CASE (MKESSLERSCHEME)
           warm_rain = .true.
+#endif
      CASE (WSM3SCHEME)
           CALL wsm3init(rhoair0,rhowater,rhosnow,cliq,cpv, allowed_to_read )
      CASE (WSM5SCHEME)

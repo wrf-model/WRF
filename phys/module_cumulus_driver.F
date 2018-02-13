@@ -135,9 +135,7 @@ CONTAINS
                                           ,CAMZMSCHEME, SASSCHEME     &
                                           ,OSASSCHEME                 &  
                                           ,SCALESASSCHEME             &  ! scale-sware sas
-
                                           ,NSASSCHEME                 &
-                                          ,DUCUSCHEME                 &
 #if (EM_CORE == 1)
                                           ,MSKFSCHEME                 &
                                           ,CAMMGMPSCHEME              &
@@ -146,6 +144,10 @@ CONTAINS
 #endif
                                           ,TIEDTKESCHEME              &
                                           ,NTIEDTKESCHEME             
+
+#if ( WRFPLUS == 1 )
+   USE module_state_description, ONLY:    DUCUSCHEME
+#endif
 
 
 ! *** add new modules of schemes here
@@ -166,7 +168,9 @@ CONTAINS
    USE module_cu_gd     , ONLY : grelldrv
    USE module_cu_gf_wrfdrv     , ONLY : gfdrv
    USE module_cu_g3     , ONLY : g3drv,conv_grell_spread3d
+#if ( WRFPLUS == 1 )
    USE module_cu_du     , ONLY : DUCU   
+#endif
    USE module_cu_sas    , ONLY : cu_sas
    USE module_cu_scalesas    , ONLY : cu_scalesas
 
@@ -1276,11 +1280,11 @@ CONTAINS
                ,EU3D=eu3d, MD3D=md3d, MU3D=mu3d,DSUBCLD2D=dsubcld2d &
                ,IDEEP2D=ideep2d, JT2D=jt2d, MAXG2D=maxg2d           &
                ,LENGATH2D=lengath2d                                 )
-        ELSE
+          ELSE
              WRITE( wrf_err_message , * ) 'Insufficient arguments to call CAMZM cu scheme'
              CALL wrf_error_fatal ( wrf_err_message )
           ENDIF
-
+#if ( WRFPLUS == 1 )
      CASE (DUCUSCHEME)
           CALL wrf_debug(100,'in ducu')
 
@@ -1307,7 +1311,7 @@ CONTAINS
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &    !
               ! optionals
                ,RTHCUTEN=rthcuten ,RQVCUTEN=rqvcuten            )    !
-
+#endif
 ! TIEDTKE SCHEME - ZCX&YQW (U of Hawaii)
      CASE (TIEDTKESCHEME)
 

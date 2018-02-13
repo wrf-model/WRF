@@ -117,8 +117,10 @@ SUBROUTINE microphysics_driver(                                          &
                     ,WSM6SCHEME, ETAMPNEW, FER_MP_HIRES, THOMPSON, THOMPSONAERO, FAST_KHAIN_LYNN, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN, NSSL_2MOMG  &
                     ,NSSL_1MOM,NSSL_1MOMLFO, FER_MP_HIRES_ADVECT & ! ,NSSL_3MOM       &
-                    ,LSCONDSCHEME, MKESSLERSCHEME &
                     ,MILBRANDT2MOM , CAMMGMPSCHEME,FULL_KHAIN_LYNN, P3_1CATEGORY, P3_1CATEGORY_NC, P3_2CATEGORY !,MILBRANDT3MOM
+#if ( WRFPLUS == 1 )
+   USE module_state_description, ONLY : LSCONDSCHEME, MKESSLERSCHEME
+#endif
 #endif
 
 #ifdef DM_PARALLEL
@@ -139,7 +141,10 @@ SUBROUTINE microphysics_driver(                                          &
 ! *** add new modules of schemes here
 
    USE module_mp_kessler
+#if ( WRFPLUS == 1 )
    USE module_mp_mkessler
+   USE module_mp_nconvp    !  added by Zhuxiao
+#endif
    USE module_mp_lin
    USE module_mp_sbu_ylin
    USE module_mp_wsm3
@@ -164,8 +169,6 @@ SUBROUTINE microphysics_driver(                                          &
 
    USE module_mp_HWRF
    USE module_mixactivate, only: prescribe_aerosol_mixactivate
-
-   USE module_mp_nconvp    !  added by Zhuxiao
 
 ! For checking model timestep is history time (for radar reflectivity)
    USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
@@ -726,7 +729,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling kessler' )
              ENDIF
-
+#if ( WRFPLUS == 1 )
         CASE (MKESSLERSCHEME)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling mkessler' )
              IF ( PRESENT( QV_CURR ) .AND. PRESENT( QC_CURR ) .AND.  &
@@ -753,7 +756,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling mkessler' )
              ENDIF
-
+#endif
 !
         CASE (THOMPSONAERO)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling thompson' )
@@ -2177,7 +2180,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              ENDIF
 
 !    Added by Zhuxiao,  lscond (simplified Large-scale condensation scheme by Jimy )
-
+#if ( WRFPLUS == 1 )
         CASE (LSCONDSCHEME)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling lscond' )
              IF ( PRESENT( QV_CURR ) .AND.                          &
@@ -2200,6 +2203,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling lscond' )
              ENDIF
+#endif
 #endif
 
       CASE DEFAULT

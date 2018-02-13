@@ -66,6 +66,7 @@ MODULE module_small_step_em
 
 CONTAINS
 
+#if ( WRFPLUS == 1 )
 !----------------------------------------------------------------------
 SUBROUTINE advance_all (u, ru_tend,  v, rv_tend,       &
                         w, rw_tend,  t,  t_tend,       &
@@ -383,8 +384,8 @@ SUBROUTINE restore_ph_mu ( ph_2, ph_save, &
   ENDDO
 
 END SUBROUTINE restore_ph_mu
-
 !----------------------------------------------------------------------
+#endif
 
 SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
                             t_1, t_2, ph_1, ph_2,         &

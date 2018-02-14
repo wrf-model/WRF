@@ -859,6 +859,8 @@
         curs = (ie-is+1)*(je-js+1)*(ke-ks+1)
         RETURN
       END SUBROUTINE f_unpack_lint_kji
+
+#if ( WRFPLUS == 1 )
 !--------------------------------------------------------------------------------
       SUBROUTINE f_pack_int_ad ( inbuf, outbuf, memorder, js, je, ks, ke,            &
      &                    is, ie, jms, jme, kms, kme, ims, ime, curs )
@@ -1505,3 +1507,4 @@
         curs = p - 1
         RETURN
       END SUBROUTINE f_unpack_lreal_ad_kji
+#endif

@@ -803,6 +803,7 @@ SUBROUTINE phy_bl_ten(config_flags,rk_step,n_moist,n_scalar,     &
                 its, ite, jts, jte, kts, kte                     )
        ENDIF
 
+#if ( WRFPLUS == 1 )
       CASE (SURFDRAGSCHEME)
 
            CALL add_a2c_u(ru_tendf,RUBLTEN,config_flags,         &
@@ -814,6 +815,7 @@ SUBROUTINE phy_bl_ten(config_flags,rk_step,n_moist,n_scalar,     &
                 ids,ide, jds, jde, kds, kde,                     &
                 ims, ime, jms, jme, kms, kme,                    &
                 its, ite, jts, jte, kts, kte                     )
+#endif
 
        CASE (CAMUWPBLSCHEME)
            CALL add_a2a(rt_tendf,RTHBLTEN,config_flags,          &
@@ -1325,6 +1327,7 @@ SUBROUTINE phy_cu_ten(config_flags,rk_step,n_moist,n_scalar,     &
 
        ENDIF
 
+#if ( WRFPLUS == 1 )
    CASE (DUCUSCHEME)
         CALL add_a2a(rt_tendf,RTHCUTEN,config_flags,             &
                 ids,ide, jds, jde, kds, kde,                     &
@@ -1355,7 +1358,7 @@ SUBROUTINE phy_cu_ten(config_flags,rk_step,n_moist,n_scalar,     &
                 its, ite, jts, jte, kts, kte                     )
 
        ENDIF
-
+#endif
    CASE (CAMZMSCHEME)
         CALL add_a2c_u(ru_tendf,RUCUTEN,config_flags,            &
                 ids,ide, jds, jde, kds, kde,                     &
@@ -1824,7 +1827,9 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
    USE module_state_description
    USE module_cu_kf
    USE module_cu_kfeta
+#if ( WRFPLUS == 1 )
    USE module_cu_du              !  Added by Zhuxiao
+#endif
 !----------------------------------------------------------------------
    IMPLICIT NONE
 !----------------------------------------------------------------------
@@ -1927,7 +1932,7 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
 !
         ENDDO
         ENDDO
-
+#if ( WRFPLUS == 1 )
    CASE (DUCUSCHEME)
 
         DO J = j_start,j_end
@@ -1952,7 +1957,7 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
 !
         ENDDO
         ENDDO
-
+#endif
    CASE (BMJSCHEME, CAMZMSCHEME)
  
         DO J = j_start,j_end

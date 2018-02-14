@@ -878,12 +878,19 @@
     DO j=jts,min(jte,jde-1)
     DO k=kts,kte-1
     DO i=its,min(ite,ide-1)
+#if ( WRFPLUS == 1 )
        IF ( .NOT. config_flags%var4d_run ) THEN
           qvf = 1.+rvovrd*moist(i,k,j,P_QV)
           grid%p(i,k,j)=p1000mb*( (r_d*(t0+grid%t_1(i,k,j))*qvf)/                     &
                      (p1000mb*(grid%al(i,k,j)+grid%alb(i,k,j))) )**cpovcv  &
                      -grid%pb(i,k,j)
        END IF
+#else
+       qvf = 1.+rvovrd*moist(i,k,j,P_QV)
+       grid%p(i,k,j)=p1000mb*( (r_d*(t0+grid%t_1(i,k,j))*qvf)/                     &
+                  (p1000mb*(grid%al(i,k,j)+grid%alb(i,k,j))) )**cpovcv  &
+                  -grid%pb(i,k,j)
+#endif
        grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
        grid%alt(i,k,j) = grid%al(i,k,j) + grid%alb(i,k,j)
     ENDDO

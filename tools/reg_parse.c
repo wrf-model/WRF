@@ -834,7 +834,7 @@ reg_parse( FILE * infile )
 #endif
       add_node_to_end( comm_struct , &Halos ) ;
     }
-#ifdef WRFPLUS
+#if ( WRFPLUS == 1 )
     else if ( !strcmp( tokens[ TABLE ] , "halo_nta" ) )
     {
       node_t * comm_struct ;

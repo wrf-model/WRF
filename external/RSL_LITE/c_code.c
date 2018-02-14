@@ -66,7 +66,7 @@ void RSL_LITE_ERROR_DUP1 ( int *me )
         perror("error_dup: dup2 fails to change output descriptor") ;
         fprintf(stderr,"...sending output to standard output and continuing.\n") ;
         close(newfd) ;
-        return 0 ;
+        return ;
     }
 
 /* redirect standard error */
@@ -640,6 +640,7 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 ,
 
 }
 
+#if ( WRFPLUS == 1 )
 RSL_LITE_PACK_AD ( int * Fcomm0, char * buf , int * shw0 , 
            int * sendbegm0 , int * sendwm0 , int * sendbegp0 , int * sendwp0 ,
            int * recvbegm0 , int * recvwm0 , int * recvbegp0 , int * recvwp0 ,
@@ -933,7 +934,7 @@ RSL_LITE_PACK_AD ( int * Fcomm0, char * buf , int * shw0 ,
 #endif
 
 }
-
+#endif
 #ifndef STUBMPI
 static MPI_Request yp_recv, ym_recv, yp_send, ym_send ;
 static MPI_Request xp_recv, xm_recv, xp_send, xm_send ;

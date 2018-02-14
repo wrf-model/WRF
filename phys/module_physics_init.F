@@ -2195,7 +2195,9 @@ integer myproc
 #if ( EM_CORE == 1 )
    USE module_bl_mynn
    USE module_bl_temf
+#if ( WRFPLUS == 1 )
    USE module_bl_surface_drag
+#endif
    USE module_sf_temfsfclay
    USE module_sf_mynn
 #endif
@@ -3188,12 +3190,14 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
 #if ( EM_CORE == 1 )
 
+#if ( WRFPLUS == 1 )
         CASE (SURFDRAGSCHEME)
            CALL surface_drag_init(RUBLTEN,RVBLTEN,RTHBLTEN,   &
                         RQVBLTEN,restart,                     &
                         ids, ide, jds, jde, kds, kde,         &
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
+#endif
 !mynn 
            
         CASE (MYNNPBLSCHEME2, MYNNPBLSCHEME3)
@@ -3305,7 +3309,9 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 #if ( EM_CORE == 1 )
    USE module_cu_kfcup !BSINGH - For WRFCuP Scheme
 #endif
+#if ( WRFPLUS == 1 )
    USE module_cu_du, ONLY : ducuinit
+#endif
 !------------------------------------------------------------------
    IMPLICIT NONE 
 !------------------------------------------------------------------

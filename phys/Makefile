@@ -44,7 +44,6 @@ MODULES = \
 	module_bl_gwdo.o \
 	module_bl_myjurb.o \
 	module_bl_boulac.o \
-	module_bl_surface_drag.o \
 	module_bl_camuwpbl_driver.o \
 	module_bl_mfshconvpbl.o \
 	module_shcu_camuwshcu_driver.o \
@@ -70,10 +69,8 @@ MODULES = \
 	module_cu_scalesas.o \
 	module_cu_osas.o \
 	module_cu_kfcup.o \
-	module_cu_du.o \
 	module_mp_radar.o \
 	module_mp_kessler.o \
-	module_mp_mkessler.o \
 	module_mp_lin.o  \
 	module_mp_sbu_ylin.o  \
 	module_mp_wsm3.o \
@@ -81,7 +78,6 @@ MODULES = \
 	module_mp_wsm6.o \
 	module_mp_etanew.o \
 	module_mp_fer_hires.o \
-	module_mp_nconvp.o \
 	module_mp_HWRF.o \
 	module_mp_thompson.o \
 	module_mp_full_sbm.o \

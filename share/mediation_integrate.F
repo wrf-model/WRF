@@ -63,16 +63,13 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 #endif
 
    CHARACTER*256          :: message
+#if (WRFPLUS == 1)
    INTEGER                :: ids , ide , jds , jde , kds , kde , &
                              ims , ime , jms , jme , kms , kme , &
                              ips , ipe , jps , jpe , kps , kpe, ij, im
    CHARACTER*80           :: timestr
-
-#if (WRFPLUS == 1)
    REAL, POINTER :: moist(:,:,:,:), scalar(:,:,:,:), chem(:,:,:,:), tracer(:,:,:,:)
-#endif
 
-#if (WRFPLUS == 1)
 ! In WRFPLUS NL run, boundary should be read before save xtraj.
 ! - RESTART OUTPUT
    CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currTime, StartTime=startTime )

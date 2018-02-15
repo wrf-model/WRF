@@ -8743,7 +8743,7 @@
              sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
 ! ----------------------  End,  Zhenxin 2011-06-20    --------------------------------!
              swdkdir,swdkdif                                & ! jararias, 2013/08/10
-             ,clean_atm_diag_local                          &
+             ,calc_clean_atm_diag                          &
                                                                 )
 
 
@@ -8941,7 +8941,7 @@
       real(kind=rb), intent(in) :: ecaer(:,:,:)       ! Aerosol optical depth at 0.55 micron (iaer=6 only)
                                                       !    Dimensions: (ncol,nlay,naerec)
                                                       ! (non-delta scaled)      
-      integer, intent(in)       :: clean_atm_diag_local! Control for clean air diagnositic calls for WRF-Chem
+      integer, intent(in)       :: calc_clean_atm_diag! Control for clean air diagnositic calls for WRF-Chem
 
 ! ----- Output -----
 
@@ -9426,7 +9426,7 @@
 #if (WRF_CHEM == 1)
          !  Repeat call to 2-stream radiation model using "clean sky" 
          !  variables and aerosol tau set to 0
-         if(clean_atm_diag_local .gt. 0)then
+         if(calc_clean_atm_diag .gt. 0)then
             do i=1,nlayers+1
                 zbbcu(i) = 0._rb
                 zbbcd(i) = 0._rb
@@ -9921,7 +9921,7 @@ CONTAINS
                        waer300,waer400,waer600,waer999,           & ! czhao 
                        aer_ra_feedback,                           &
 !jdfcz                 progn,prescribe,                           &
-                       progn,clean_atm_diag,                      &
+                       progn,calc_clean_atm_diag,                 &
                        qndrop3d,f_qndrop,                         & !czhao
                        mp_physics,                                & !wang 2014/12
                        ids,ide, jds,jde, kds,kde,                 & 
@@ -10052,8 +10052,8 @@ CONTAINS
    INTEGER,    INTENT(IN  ), OPTIONAL   ::       aer_ra_feedback
 !jdfcz   INTEGER,    INTENT(IN  ), OPTIONAL   ::       progn,prescribe
    INTEGER,    INTENT(IN  ), OPTIONAL   ::       progn
-   INTEGER,    INTENT(IN  ), OPTIONAL   ::       clean_atm_diag
-   integer :: clean_atm_diag_local
+   INTEGER,    INTENT(IN  )             ::       calc_clean_atm_diag
+
 !  Ozone
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          OPTIONAL                                               , &
@@ -10294,12 +10294,6 @@ CONTAINS
       ENDIF
       ENDIF
 #endif
-
-	if(present(clean_atm_diag))then
-		clean_atm_diag_local = clean_atm_diag
-	else
-		clean_atm_diag_local = 0
-	end if
 
 !-----CALCULATE SHORT WAVE RADIATION
 !                                                              
@@ -11106,7 +11100,7 @@ CONTAINS
              sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
 ! --------------------   End of addiation by Zhenxin 2011-06-20 ------!
              swdkdir, swdkdif                      &  ! jararias, 2012/08/10
-             ,clean_atm_diag_local                 &
+             ,calc_clean_atm_diag                 &
                                                    )
 
 
@@ -11119,14 +11113,14 @@ CONTAINS
 ! Output up and down toa fluxes for total and clear sky
             swupt(i,j)     = swuflx(1,kte+2)
             swuptc(i,j)    = swuflxc(1,kte+2)
-            swuptcln(i,j)  = swuflxcln(1,kte+2)
+            if(present(swuptcln)) swuptcln(i,j)  = swuflxcln(1,kte+2)
             swdnt(i,j)     = swdflx(1,kte+2)
             swdntc(i,j)    = swdflxc(1,kte+2)
-            swdntcln(i,j)  = swdflxcln(1,kte+2)
+            if(present(swdntcln)) swdntcln(i,j)  = swdflxcln(1,kte+2)
 ! Output up and down surface fluxes for total and clear sky
             swupb(i,j)     = swuflx(1,1)
             swupbc(i,j)    = swuflxc(1,1)
-            swupbcln(i,j)  = swuflxcln(1,1)
+            if(present(swupbcln)) swupbcln(i,j)  = swuflxcln(1,1)
             swdnb(i,j)     = swdflx(1,1)
 ! Added by Zhenxin for 4 compenants of swdown radiation
             swvisdir(i,j)  = sibvisdir(1,1)
@@ -11135,7 +11129,7 @@ CONTAINS
             swnirdif(i,j)  = sibnirdif(1,1)
 !  Ended, Zhenxin (2011/06/20)
             swdnbc(i,j)    = swdflxc(1,1)
-            swdnbcln(i,j)  = swdflxcln(1,1)
+            if(present(swdnbcln)) swdnbcln(i,j)  = swdflxcln(1,1)
          endif
             swddir(i,j)    = swdkdir(1,1)          ! jararias 2013/08/10
             swddni(i,j)    = swddir(i,j) / coszrs  ! jararias 2013/08/10
@@ -11147,10 +11141,10 @@ CONTAINS
          do k=kts,kte+2
             swupflx(i,k,j)  = swuflx(1,k)
             swupflxc(i,k,j) = swuflxc(1,k)
-            swupflxcln(i,k,j) = swuflxcln(1,k) 
+            if(present(swupflxcln)) swupflxcln(i,k,j) = swuflxcln(1,k) 
             swdnflx(i,k,j)  = swdflx(1,k)
             swdnflxc(i,k,j) = swdflxc(1,k)
-            swdnflxcln(i,k,j) = swdflxcln(1,k)
+            if(present(swdnflxcln)) swdnflxcln(i,k,j) = swdflxcln(1,k)
          enddo
          endif
 
@@ -11165,17 +11159,17 @@ CONTAINS
 ! Output up and down toa fluxes for total and clear sky
             swupt(i,j)     = 0.
             swuptc(i,j)    = 0.
-            swuptcln(i,j)  = 0.
+            if(present(swuptcln)) swuptcln(i,j)  = 0.
             swdnt(i,j)     = 0.
             swdntc(i,j)    = 0.
-            swdntcln(i,j)  = 0.
+            if(present(swdntcln)) swdntcln(i,j)  = 0.
 ! Output up and down surface fluxes for total and clear sky
             swupb(i,j)     = 0.
             swupbc(i,j)    = 0.
-            swupbcln(i,j)  = 0.
+            if(present(swupbcln)) swupbcln(i,j)  = 0.
             swdnb(i,j)     = 0.
             swdnbc(i,j)    = 0.
-            swdnbcln(i,j)  = 0.
+            if(present(swdnbcln)) swdnbcln(i,j)  = 0.
             swvisdir(i,j)  = 0.  ! Add by Zhenxin (2011/06/20)
             swvisdif(i,j)  = 0.
             swnirdir(i,j)  = 0.

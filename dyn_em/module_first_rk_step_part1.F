@@ -367,8 +367,8 @@ BENCH_START(rad_driver_tim)
      &        ,RADTACTTIME=grid%radtacttime                                         &  
      &        ,ICLOUD_CU=config_flags%ICLOUD_CU                            &
      &        ,QC_CU=grid%QC_CU , QI_CU=grid%QI_CU                         &
+     &        ,CALC_CLEAN_ATM_DIAG=config_flags%calc_clean_atm_diag                  &
 #if (WRF_CHEM == 1)
-     &        ,CLEAN_ATM_DIAG=config_flags%clean_atm_diag                  &
      &        ,AER_RA_FEEDBACK=config_flags%aer_ra_feedback                &
      &        ,PM2_5_DRY=grid%pm2_5_dry, PM2_5_WATER=grid%pm2_5_water               &
      &        ,PM2_5_DRY_EC=grid%pm2_5_dry_ec                                  &

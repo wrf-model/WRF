@@ -105,7 +105,7 @@ CONTAINS
               ,AEROSOLC_2, M_HYBI0            &
               ,ABSTOT, ABSNXT, EMSTOT         &
               ,ICLOUD_CU                      &
-              ,CLEAN_ATM_DIAG                 &
+              ,CALC_CLEAN_ATM_DIAG            &
               ,AER_RA_FEEDBACK                &
               ,QC_CU , QI_CU                  &
               ,icloud_bl,qc_bl,cldfra_bl     & !JOE-subgrid bl clouds
@@ -467,7 +467,7 @@ CONTAINS
 
    INTEGER, INTENT(IN   ), OPTIONAL  ::   icloud_bl
    INTEGER, INTENT(IN   ), OPTIONAL  ::   aer_ra_feedback
-   INTEGER, INTENT(IN   ), OPTIONAL  ::   clean_atm_diag
+   INTEGER, INTENT(IN   )  ::   calc_clean_atm_diag
 
 !jdfcz   INTEGER, OPTIONAL, INTENT(IN   )    :: progn,prescribe
    INTEGER, OPTIONAL, INTENT(IN   )    :: progn
@@ -1579,8 +1579,9 @@ CONTAINS
                   TAUAERLW15=tauaerlw15,TAUAERLW16=tauaerlw16,      & ! jcb
                   aer_ra_feedback=aer_ra_feedback,                  &
 !jdfcz            progn=progn,prescribe=prescribe,                   &
-                  progn=progn,clean_atm_diag=clean_atm_diag,        &
+                  progn=progn,                                      &
 #endif
+                  calc_clean_atm_diag=calc_clean_atm_diag,          &
                   QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
 !ccc Added for time-varying trace gases.
                   YR=YR,JULIAN=JULIAN,                              &
@@ -2002,8 +2003,9 @@ CONTAINS
                      WAER600=waer600,WAER999=waer999,                  & ! jcb
                      aer_ra_feedback=aer_ra_feedback,                  &
 !jdfcz               progn=progn,prescribe=prescribe,                  &
-                     progn=progn,clean_atm_diag=clean_atm_diag,        &
+                     progn=progn,                                      &
 #endif
+                     calc_clean_atm_diag=calc_clean_atm_diag,          &
                      QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
                      IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
                      IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&

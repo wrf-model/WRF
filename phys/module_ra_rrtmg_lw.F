@@ -10588,7 +10588,7 @@ contains
              taucmcl ,ciwpmcl ,clwpmcl , cswpmcl ,reicmcl ,relqmcl , resnmcl , &
              tauaer  , &
              uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc, &
-             uflxcln ,dflxcln, clean_atm_diag_local )
+             uflxcln ,dflxcln, calc_clean_atm_diag )
 
 ! -------- Description --------
 
@@ -10769,7 +10769,7 @@ contains
                                                       !    Dimensions: (ncol,nlay,nbndlw)
                                                       !   for future expansion 
                                                       !   (lw aerosols/scattering not yet available)
-      integer, intent(in) :: clean_atm_diag_local     ! Control for clean air diagnositic calls for WRF-Chem
+      integer, intent(in) :: calc_clean_atm_diag      ! Control for clean air diagnositic calls for WRF-Chem
 
 ! ----- Output -----
 
@@ -11023,7 +11023,7 @@ contains
         ! passing taug rather than taut so we have no aerosol influence.
         ! We will keep totuclnlfl, totdclnlfl, fnetcln, and htrcln, 
         ! and then overwrite the rest with the second call to rtrnmc.
-         if(clean_atm_diag_local .gt. 0)then
+         if(calc_clean_atm_diag .gt. 0)then
              call rtrnmc(nlayers, istart, iend, iout, pz, semiss, ncbands, &
                      cldfmc, taucmc, planklay, planklev, plankbnd, &
                      pwvcm, fracs, taug, &
@@ -11477,7 +11477,7 @@ CONTAINS
                        tauaerlw13,tauaerlw14,tauaerlw15,tauaerlw16,   & ! czhao 
                        aer_ra_feedback,                           & !czhao
 !jdfcz                 progn,prescribe,                           & !czhao
-                       progn,clean_atm_diag,                      & !czhao
+                       progn,calc_clean_atm_diag,                 & !czhao
                        qndrop3d,f_qndrop,                         & !czhao
 !ccc added for time varying gases.
                        yr,julian,                                 &
@@ -11581,8 +11581,8 @@ CONTAINS
    INTEGER,    INTENT(IN  ), OPTIONAL   ::       aer_ra_feedback
 !jdfcz   INTEGER,    INTENT(IN  ), OPTIONAL   ::       progn,prescribe
    INTEGER,    INTENT(IN  ), OPTIONAL   ::       progn
-   INTEGER,    INTENT(IN  ), OPTIONAL   ::       clean_atm_diag
-   integer :: clean_atm_diag_local
+   INTEGER,    INTENT(IN  )             ::       calc_clean_atm_diag
+
 !  Ozone
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          OPTIONAL                                               , &
@@ -11848,12 +11848,6 @@ CONTAINS
       ENDIF
       ENDIF
 #endif
-
-	if(present(clean_atm_diag))then
-		clean_atm_diag_local = clean_atm_diag
-	else
-		clean_atm_diag_local = 0
-	end if
 
 
 !-----CALCULATE LONG WAVE RADIATION
@@ -12643,7 +12637,7 @@ CONTAINS
              taucmcl ,ciwpmcl ,clwpmcl ,cswpmcl, reicmcl ,relqmcl ,resnmcl , &
              tauaer  , &
              uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc, &
-             uflxcln ,dflxcln, clean_atm_diag_local )
+             uflxcln ,dflxcln, calc_clean_atm_diag )
 
 ! Output downard surface flux, and outgoing longwave flux and cloud forcing 
 ! at the top of atmosphere (W/m2)
@@ -12668,11 +12662,11 @@ CONTAINS
             lwdnb(i,j)     = dflx(1,1)
             lwdnbc(i,j)    = dflxc(1,1)
 ! Output up and down toa fluxes for clean sky
-            lwuptcln(i,j)  = uflxcln(1,nlayers+1)
-            lwdntcln(i,j)  = dflxcln(1,nlayers+1)
+            if(present(lwuptcln)) lwuptcln(i,j)  = uflxcln(1,nlayers+1)
+            if(present(lwdntcln)) lwdntcln(i,j)  = dflxcln(1,nlayers+1)
 ! Output up and down surface fluxes for clean sky
-            lwupbcln(i,j)  = uflxcln(1,1)
-            lwdnbcln(i,j)  = dflxcln(1,1)
+            if(present(lwupbcln)) lwupbcln(i,j)  = uflxcln(1,1)
+            if(present(lwdnbcln)) lwdnbcln(i,j)  = dflxcln(1,1)
          endif
 
 ! Output up and down layer fluxes for total and clear sky.
@@ -12683,8 +12677,8 @@ CONTAINS
             lwupflxc(i,k,j) = uflxc(1,k)
             lwdnflx(i,k,j)  = dflx(1,k)
             lwdnflxc(i,k,j) = dflxc(1,k)
-            lwupflxcln(i,k,j) = uflxcln(1,k)
-            lwdnflxcln(i,k,j) = dflxcln(1,k)
+            if(present(lwupflxcln)) lwupflxcln(i,k,j) = uflxcln(1,k)
+            if(present(lwdnflxcln)) lwdnflxcln(i,k,j) = dflxcln(1,k)
          enddo
          endif
 

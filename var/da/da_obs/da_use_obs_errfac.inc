@@ -122,6 +122,22 @@ subroutine da_use_obs_errfac(iv)
       end do
    end if
 
+! [2.5.2] Transfer gpseph obs:
+
+   call da_read_errfac('gpsep', iv % gpseph_ef_eph, d1, d2, d3, d4)
+
+   if (iv%info(gpseph)%nlocal > 0) then
+      do n = 1, iv%info(gpseph)%nlocal
+         do k = 1, iv%info(gpseph)%levels(n)
+            if ( iv % gpseph(n) % eph(k) % error > 0.0 ) then
+               !only apply the error factor when the error is not missing
+               iv % gpseph(n) % eph(k) % error = iv % gpseph(n) % eph(k) % error * &
+                                                 iv % gpseph_ef_eph
+            end if
+         enddo
+      end do
+   end if
+
    ! [2.6] Transfer sonde obs:
 
 

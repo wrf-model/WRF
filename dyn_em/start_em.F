@@ -142,7 +142,7 @@
 !  CCN for MP=18 initializatio
    REAL :: ccn_max_val
 
-   REAL :: max_mf
+   REAL :: max_mf, max_rot_angle
    CALL get_ijk_from_grid ( grid ,                              &
                            ids, ide, jds, jde, kds, kde,        &
                            ims, ime, jms, jme, kms, kme,        &
@@ -160,6 +160,36 @@
 #endif
    ALLOCATE(z_at_q(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; z_at_q = 0.
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+
+   !  If the rotation angle is too large, the GWD option does not do well with the assumed U and V
+   !  being close to earth relative.
+
+   IF ( ( grid%id .EQ. 1 ) .AND. ( config_flags%gwd_opt .EQ. 1 ) ) THEN
+      max_rot_angle = ASIN(ABS(grid%sina(its,jts)))/DEGRAD
+      DO j=jts,MIN(jde-1,jte)
+         DO i=its,MIN(ide-1,ite)
+            max_rot_angle = MAX ( max_rot_angle , ASIN(ABS(grid%sina(i,j)))/DEGRAD )
+         END DO
+      END DO
+#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
+      max_rot_angle = wrf_dm_max_real ( max_rot_angle )
+#endif
+      IF ( max_rot_angle .GT. ABS(config_flags%max_rot_angle_gwd) ) THEN
+         WRITE ( a_message , FMT='(A,F5.2)' ) 'Max projection rotation angle for domain 1 = ',max_rot_angle
+         CALL wrf_message ( a_message ) 
+         WRITE ( a_message , FMT='(A)'      ) 'This projection may not be appropriate for using the gravity wave drag option.'
+         CALL wrf_message ( a_message ) 
+         WRITE ( a_message , FMT='(A)'      ) 'In namelist.input make one of the two following changes:'
+         CALL wrf_message ( a_message ) 
+         WRITE ( a_message , FMT='(A)'      ) ' 1) gwd_opt = 0 '
+         CALL wrf_message ( a_message ) 
+         WRITE ( a_message , FMT='(A,F5.2)' ) ' 2) max_rot_angle_gwd > ',max_rot_angle
+         CALL wrf_message ( a_message ) 
+         WRITE ( a_message , FMT='(A)'      ) '--- ERROR: gwd_opt does not work with this domain'
+         CALL wrf_error_fatal ( a_message ) 
+      END IF
+   END IF
+
 
    IF ( ( MOD (ide-ids,config_flags%parent_grid_ratio) .NE. 0 ) .OR. &
         ( MOD (jde-jds,config_flags%parent_grid_ratio) .NE. 0 ) ) THEN
@@ -1126,7 +1156,7 @@ endif
                       grid%SMOISEQ  ,grid%SMCWTDXY ,grid%RECHXY, grid%DEEPRECHXY, grid%AREAXY,  & ! Optional Noah-MP
                       config_flags%wtddt ,grid%stepwtd ,grid%QRFSXY ,grid%QSPRINGSXY ,grid%QSLATXY, & ! Optional Noah-MP
                       grid%FDEPTHXY, grid%RIVERBEDXY, grid%EQZWT, grid%RIVERCONDXY, grid%PEXPXY, & ! Optional Noah-MP
-                      grid%rechclim  ,grid%rivermask ,grid%nonriverxy,                           & ! Optional Noah-MP
+                      grid%rechclim  ,                                                           & ! Optional Noah-MP
                       grid%msftx, grid%msfty,                              &
                       grid%DZR, grid%DZB, grid%DZG,                          & !Optional urban
                       grid%TR_URB2D,grid%TB_URB2D,grid%TG_URB2D,grid%TC_URB2D,    & !Optional urban
@@ -1279,13 +1309,14 @@ endif
 #endif
 
    call wrf_debug(100,'start_em: calling lightning_init')
-   CALL lightning_init ( itimestep=grid%itimestep, restart=grid%restart, dt=grid%dt, dx=grid%dx   &
+   CALL lightning_init ( id=grid%id, itimestep=grid%itimestep, restart=grid%restart, dt=grid%dt, dx=grid%dx   &
                     ! Namelist control options
                         ,cu_physics=config_flags%cu_physics,mp_physics=config_flags%mp_physics    &
                         ,do_radar_ref=config_flags%do_radar_ref                                   &
                         ,lightning_option=config_flags%lightning_option                           &
                         ,lightning_dt=config_flags%lightning_dt                                   &
                         ,lightning_start_seconds=config_flags%lightning_start_seconds             &
+                        ,ltngacttime=grid%ltngacttime                                             &
                         ,iccg_prescribed_num=config_flags%iccg_prescribed_num                     &
                         ,iccg_prescribed_den=config_flags%iccg_prescribed_den                     &
                         ,cellcount_method=config_flags%cellcount_method                           &
@@ -1804,7 +1835,7 @@ endif
                 grid%dust_opt,ids,ide, jds,jde, kds,kde,                    &
                 ims,ime, jms,jme, kms,kme,                                  &
                 its,ite, jts,jte, kts,kte-1                                 )
-         case (RACM_SOA_VBS_KPP)
+         case (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
              call sum_pm_soa_vbs (                                           &
                  grid%alt, chem, grid%h2oaj, grid%h2oai,                                   &
                  grid%pm2_5_dry, grid%pm2_5_water, grid%pm2_5_dry_ec, grid%pm10,                &

@@ -512,7 +512,8 @@ em_real : wrf
                ln -sf ../../run/aerosol_lon.formatted . ;              \
                ln -sf ../../run/aerosol_plev.formatted . ;             \
                ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
-               ln -sf ../../run/p3_lookup_table_1.dat . ;              \
+               ln -sf ../../run/p3_lookup_table_1.dat-v2.8.2 . ;              \
+               ln -sf ../../run/p3_lookup_table_2.dat-v2.8.2 . ;              \
                if [ $(RWORDSIZE) -eq 8 ] ; then                        \
                   ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;   \
                   ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
@@ -535,7 +536,6 @@ em_real : wrf
 	( cd test/em_real ; /bin/rm -f real.exe ; ln -s ../../main/real.exe . )
 	( cd test/em_real ; /bin/rm -f tc.exe ; ln -s ../../main/tc.exe . )
 	( cd test/em_real ; /bin/rm -f ndown.exe ; ln -s ../../main/ndown.exe . )
-	#TEMPORARILY REMOVED ( cd test/em_real ; /bin/rm -f nup.exe ; ln -s ../../main/nup.exe . )
 	( cd test/em_real ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
 	( cd test/em_real ; /bin/rm -f ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ;    \
              ln -sf ../../run/ETAMPNEW_DATA . ;                     \
@@ -577,7 +577,8 @@ em_real : wrf
              ln -sf ../../run/bulkdens.asc_s_0_03_0_9 . ;            \
              ln -sf ../../run/bulkradii.asc_s_0_03_0_9 . ;            \
              ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
-             ln -sf ../../run/p3_lookup_table_1.dat . ;                   \
+             ln -sf ../../run/p3_lookup_table_1.dat-v2.8.2 . ;                   \
+             ln -sf ../../run/p3_lookup_table_2.dat-v2.8.2 . ;                   \
              if [ $(RWORDSIZE) -eq 8 ] ; then                       \
                 ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
                 ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
@@ -599,7 +600,6 @@ em_real : wrf
 	( cd run ; /bin/rm -f real.exe ; ln -s ../main/real.exe . )
 	( cd run ; /bin/rm -f tc.exe ; ln -s ../main/tc.exe . )
 	( cd run ; /bin/rm -f ndown.exe ; ln -s ../main/ndown.exe . )
-	#TEMPORARILY REMOVED ( cd run ; /bin/rm -f nup.exe ; ln -s ../main/nup.exe . )
 	( cd run ; if test -f namelist.input ; then \
 		/bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; fi ; \
 		/bin/rm -f namelist.input ; cp ../test/em_real/namelist.input . )
@@ -967,6 +967,10 @@ fortran_2003_flush_test:
 # rule used by configure to test if Fortran 2003 FLUSH intrinsic subroutine is replaced by FFLUSH (thanks xlf)
 fortran_2003_fflush_test:
 	@cd tools ; /bin/rm -f fortran_2003_fflush_test.{exe,o} ; $(SFC) -o fortran_2003_fflush_test.exe fortran_2003_fflush_test.F ; cd ..
+
+# rule used by configure to test if Fortran 2008 gamma intrinsic function is available
+fortran_2008_gamma_test:
+	@cd tools ; /bin/rm -f fortran_2008_gamma_test.{exe,o} ; $(SFC) -o fortran_2008_gamma_test.exe fortran_2008_gamma_test.F ; cd ..
 
 ### 3.b.  sub-rule to build the experimental core
 

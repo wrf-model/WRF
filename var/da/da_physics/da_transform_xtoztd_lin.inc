@@ -24,9 +24,15 @@ SUBROUTINE DA_Transform_XToZTD_Lin( grid )
         const  = (grid%xb%hf(i,j,k+1)-grid%xb%hf(i,j,k)) / a_ew
         part   = grid%xb%p(i,j,k)*grid%xb%q(i,j,k) / grid%xb%t(i,j,k)
 
-        parta  = (grid%xb%q(i,j,k)*grid%xa%p(i,j,k) + grid%xb%p(i,j,k)*grid%xa%q(i,j,k) &
-                  - grid%xb%p(i,j,k)*grid%xb%q(i,j,k)*grid%xa%t(i,j,k) / grid%xb%t(i,j,k)) &
-                 / grid%xb%t(i,j,k)  
+        if ( consider_xap4ztd ) then
+           parta  = (grid%xb%q(i,j,k)*grid%xa%p(i,j,k) + grid%xb%p(i,j,k)*grid%xa%q(i,j,k) &
+                      - grid%xb%p(i,j,k)*grid%xb%q(i,j,k)*grid%xa%t(i,j,k) / grid%xb%t(i,j,k)) &
+                     / grid%xb%t(i,j,k)
+        else
+           parta  = ( grid%xb%p(i,j,k)*grid%xa%q(i,j,k) &
+                      - grid%xb%p(i,j,k)*grid%xb%q(i,j,k)*grid%xa%t(i,j,k) / grid%xb%t(i,j,k)) &
+                     / grid%xb%t(i,j,k)
+        end if
         term1 = parta * const * wdk1
         term2 = (parta * const * wdk2                                &
                  - part * const * wdk2 * grid%xa%t(i,j,k) / grid%xb%t(i,j,k))  &

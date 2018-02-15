@@ -833,9 +833,12 @@ CONTAINS
           ! Land-ice or land points use the usual deep-soil temperature.
           TBOT=TMN(I,J)
 
+          IF(ISURBAN.EQ.1) THEN
+! assumes these only need to be set for USGS land data
           IF(VEGTYP.EQ.25) SHDFAC=0.0000
           IF(VEGTYP.EQ.26) SHDFAC=0.0000
           IF(VEGTYP.EQ.27) SHDFAC=0.0000
+          ENDIF
           IF(SOILTYP.EQ.14.AND.XICE(I,J).EQ.0.)THEN
 #if 0
          IF(IPRINT)PRINT*,' SOIL TYPE FOUND TO BE WATER AT A LAND-POINT'
@@ -844,7 +847,8 @@ CONTAINS
             SOILTYP=7
           ENDIF
           SNOALB1 = SNOALB(I,J)
-          CMC=CANWAT(I,J)
+! converts canwat in mm to CMC in meters
+          CMC=CANWAT(I,J)/1000.
 
 !-------------------------------------------
 !*** convert snow depth from mm to meter
@@ -1108,7 +1112,7 @@ CONTAINS
 #endif
 
 !***  UPDATE STATE VARIABLES
-          CANWAT(I,J)=CMC
+          CANWAT(I,J)=CMC*1000.
           SNOW(I,J)=SNEQV*1000.
 !          SNOWH(I,J)=SNOWHK*1000.
           SNOWH(I,J)=SNOWHK                   ! SNOWHK in meters
@@ -1271,14 +1275,14 @@ CONTAINS
 !
 !
 !      Limits to avoid dividing by small number
-            if (CHS(I,J) < 1.0E-04) then
-               CHS(I,J)  = 1.0E-04
+            if (CHS(I,J) < 1.0E-02) then
+               CHS(I,J)  = 1.0E-02
             endif
-            if (CHS2(I,J) < 1.0E-04) then
-               CHS2(I,J)  = 1.0E-04
+            if (CHS2(I,J) < 1.0E-02) then
+               CHS2(I,J)  = 1.0E-02
             endif
-            if (CQS2(I,J) < 1.0E-04) then
-               CQS2(I,J)  = 1.0E-04
+            if (CQS2(I,J) < 1.0E-02) then
+               CQS2(I,J)  = 1.0E-02
             endif
 !
             CHS_URB  = CHS(I,J)
@@ -3124,7 +3128,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   SOILTYP=7
                 ENDIF
                 SNOALB1 = SNOALB(I,J)
-                CMC=CANWAT(I,J)
+! converts canwat in mm to CMC in meters
+                CMC=CANWAT(I,J)/1000.
       
       !-------------------------------------------
       !*** convert snow depth from mm to meter
@@ -3393,7 +3398,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
 #endif
       
       !***  UPDATE STATE VARIABLES
-                CANWAT(I,J)=CMC
+                CANWAT(I,J)=CMC*1000.
                 SNOW(I,J)=SNEQV*1000.
       !          SNOWH(I,J)=SNOWHK*1000.
                 SNOWH(I,J)=SNOWHK                   ! SNOWHK in meters
@@ -3566,14 +3571,14 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   XXXC_URB = XXXC_URB2D(I,J)
       !
       !      Limits to avoid dividing by small number
-                  if (CHS(I,J) < 1.0E-04) then
-                     CHS(I,J)  = 1.0E-04
+                  if (CHS(I,J) < 1.0E-02) then
+                     CHS(I,J)  = 1.0E-02
                   endif
-                  if (CHS2(I,J) < 1.0E-04) then
-                     CHS2(I,J)  = 1.0E-04
+                  if (CHS2(I,J) < 1.0E-02) then
+                     CHS2(I,J)  = 1.0E-02
                   endif
-                  if (CQS2(I,J) < 1.0E-04) then
-                     CQS2(I,J)  = 1.0E-04
+                  if (CQS2(I,J) < 1.0E-02) then
+                     CQS2(I,J)  = 1.0E-02
                   endif
       !
                   CHS_URB  = CHS(I,J)
@@ -4036,7 +4041,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   SOILTYP=7
                 ENDIF
                 SNOALB1 = SNOALB(I,J)
-                CMC=CANWAT(I,J)
+                CMC=CANWAT(I,J)/1000.
       
       !-------------------------------------------
       !*** convert snow depth from mm to meter
@@ -4269,7 +4274,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
 #endif
       
       !***  UPDATE STATE VARIABLES
-                CANWAT(I,J)=CMC
+                CANWAT(I,J)=CMC*1000.
                 SNOW(I,J)=SNEQV*1000.
       !          SNOWH(I,J)=SNOWHK*1000.
                 SNOWH(I,J)=SNOWHK                   ! SNOWHK in meters
@@ -4409,14 +4414,14 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   XXXC_URB = XXXC_URB2D(I,J)
       !
       !      Limits to avoid dividing by small number
-                  if (CHS(I,J) < 1.0E-04) then
-                     CHS(I,J)  = 1.0E-04
+                  if (CHS(I,J) < 1.0E-02) then
+                     CHS(I,J)  = 1.0E-02
                   endif
-                  if (CHS2(I,J) < 1.0E-04) then
-                     CHS2(I,J)  = 1.0E-04
+                  if (CHS2(I,J) < 1.0E-02) then
+                     CHS2(I,J)  = 1.0E-02
                   endif
-                  if (CQS2(I,J) < 1.0E-04) then
-                     CQS2(I,J)  = 1.0E-04
+                  if (CQS2(I,J) < 1.0E-02) then
+                     CQS2(I,J)  = 1.0E-02
                   endif
       !
                   CHS_URB  = CHS(I,J)

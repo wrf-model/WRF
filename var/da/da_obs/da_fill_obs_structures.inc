@@ -54,6 +54,8 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
    iv % gpsref_ef_t = 1.0
    iv % gpsref_ef_q = 1.0
 
+   iv % gpseph_ef_eph = 1.0
+
    iv % sound_ef_u = 1.0
    iv % sound_ef_v = 1.0
    iv % sound_ef_t = 1.0
@@ -273,6 +275,16 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
       end do
    end if
 
+   ! [2.6.1] Transfer GPS EPH obs:
+
+   if (iv%info(gpseph)%nlocal > 0) then
+      do n = 1, iv%info(gpseph)%nlocal
+         do k = 1, iv%info(gpseph)%levels(n)
+            ob % gpseph(n) % eph(k) = iv % gpseph(n) % eph(k) % inv
+         end do
+      end do
+   end if
+
    ! [2.7] Transfer sonde obs:
 
    if (iv%info(sound)%nlocal > 0) then
@@ -487,17 +499,19 @@ subroutine da_fill_obs_structures(iv, ob, uvq_direct)
             ob % bogus(n) % q(k) = iv % bogus(n) % q(k) % inv
 
             ! Calculate q error from rh error:
+            ! the conversion is not needed for LSAC
+            if (iv%info(bogus)%name(n)(1:4) /= "LSAC") then
+               rh_error = iv%bogus(n)%q(k)%error ! q error is rh at this stage!
+               call da_get_q_error(iv % bogus(n) % p(k), &
+                                   ob % bogus(n) % t(k), &
+                                   ob % bogus(n) % q(k), &
+                                   iv % bogus(n) % t(k) % error, &
+                                   rh_error, q_error)
 
-            rh_error = iv%bogus(n)%q(k)%error ! q error is rh at this stage!
-            call da_get_q_error(iv % bogus(n) % p(k), &
-                                 ob % bogus(n) % t(k), &
-                                 ob % bogus(n) % q(k), &
-                                 iv % bogus(n) % t(k) % error, &
-                                 rh_error, q_error)
-
-            iv % bogus(n) % q(k) % error = q_error
-            if (iv%bogus(n)% q(k) % error == missing_r) &
-               iv%bogus(n)% q(k) % qc = missing_data
+               iv % bogus(n) % q(k) % error = q_error
+               if (iv%bogus(n)% q(k) % error == missing_r) &
+                  iv%bogus(n)% q(k) % qc = missing_data
+            end if !LSAC
          end do
          ob % bogus(n) % slp = iv % bogus(n) % slp % inv
       end do

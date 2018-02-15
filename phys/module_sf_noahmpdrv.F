@@ -52,7 +52,7 @@ CONTAINS
     USE MODULE_SF_NOAHMPLSM
 !    USE MODULE_SF_NOAHMPLSM, only: noahmp_options, NOAHMP_SFLX, noahmp_parameters
     USE module_sf_noahmp_glacier
-    USE NOAHMP_TABLES, ONLY: ISICE_TABLE, CO2_TABLE, O2_TABLE, DEFAULT_CROP_TABLE, ISURBAN_TABLE, NATURAL_TABLE, &
+    USE NOAHMP_TABLES, ONLY: ISICE_TABLE, CO2_TABLE, O2_TABLE, DEFAULT_CROP_TABLE, ISCROP_TABLE, ISURBAN_TABLE, NATURAL_TABLE, &
                              LOW_DENSITY_RESIDENTIAL_TABLE, HIGH_DENSITY_RESIDENTIAL_TABLE, HIGH_INTENSITY_INDUSTRIAL_TABLE
     USE module_sf_urban,    only: IRI_SCHEME
     USE module_ra_gfdleta,  only: cal_mon_day
@@ -520,10 +520,10 @@ CONTAINS
        PRCP   = PRECIP_IN (I,J) / DT                  ! timestep total precip rate (glacier) [mm/s]! MB: v3.7
 
        CROPTYPE = 0
-       IF (IDVEG == 10) CROPTYPE = DEFAULT_CROP_TABLE ! default croptype is generic dynamic vegetation crop
+       IF (IDVEG == 10 .AND. VEGTYP == ISCROP_TABLE) CROPTYPE = DEFAULT_CROP_TABLE ! default croptype is generic dynamic vegetation crop
        IF (IDVEG == 10 .AND. CROPCAT(I,J) > 0) THEN
          CROPTYPE = CROPCAT(I,J)                      ! crop type
-	 VEGTYP = 12
+	 VEGTYP = ISCROP_TABLE
          FVGMAX = 0.95
 	 FVEG   = 0.95
        END IF
@@ -714,7 +714,7 @@ CONTAINS
          TAH    = undefined_value
          FWET   = undefined_value 
          WSLAKE = undefined_value 
-         ZWT    = undefined_value 
+!         ZWT    = undefined_value 
          WA     = undefined_value 
          WT     = undefined_value 
          LFMASS = undefined_value 
@@ -1164,7 +1164,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
        smoiseq  ,smcwtdxy ,rechxy   ,deeprechxy, areaxy, dx, dy, msftx, msfty,&     ! Optional groundwater
        wtddt    ,stepwtd  ,dt       ,qrfsxy     ,qspringsxy  , qslatxy    ,  &      ! Optional groundwater
        fdepthxy ,ht     ,riverbedxy ,eqzwt     ,rivercondxy ,pexpxy       ,  &      ! Optional groundwater
-       rechclim  ,rivermask ,nonriverxy                                        )    ! Optional groundwater
+       rechclim                                                             )    ! Optional groundwater
 
   USE NOAHMP_TABLES
 
@@ -1258,8 +1258,6 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT), OPTIONAL :: RIVERCONDXY !river conductance
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT), OPTIONAL :: PEXPXY      !factor for river conductance
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) , OPTIONAL :: rechclim
-    REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) , OPTIONAL :: rivermask
-    REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) , OPTIONAL :: nonriverxy
 
     INTEGER,  INTENT(OUT) , OPTIONAL :: STEPWTD
     REAL, INTENT(IN) , OPTIONAL :: DT, WTDDT
@@ -1373,7 +1371,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
 	      
               BEXP   =   BEXP_TABLE(ISLTYP(I,J))
               SMCMAX = SMCMAX_TABLE(ISLTYP(I,J))
-              PSISAT = PSISAT_TABLE(ISLTYP(I,J))
+              PSISAT = -1.0*PSISAT_TABLE(ISLTYP(I,J))
 
               DO NS=1, NSOIL
 	        IF ( SMOIS(I,NS,J) > SMCMAX )  SMOIS(I,NS,J) = SMCMAX
@@ -1469,10 +1467,9 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
              fastcpxy   (I,J) = 1000.0                         !
              grainxy    (I,J) = 1E-10
              gddxy      (I,J) = 0    
+	     cropcat    (i,j) = default_crop_table
 
 	     if(croptype(i,5,j) >= 0.5) then
-               lai     (i,j) = 0.05
-               xsaixy  (i,j) = 0.05
                rtmassxy(i,j) = 0.0
                woodxy  (i,j) = 0.0                    
 
@@ -1481,28 +1478,24 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
 		      croptype(i,1,j) > croptype(i,4,j) ) then   ! choose corn
 
 		   cropcat (i,j) = 1
-                   lfmassxy(i,j) = 0.05/0.035
-                   stmassxy(i,j) = 0.05/0.003
+                   lfmassxy(i,j) =    lai(i,j)/0.035
+                   stmassxy(i,j) = xsaixy(i,j)/0.003
 
 	       elseif(croptype(i,2,j) > croptype(i,1,j) .and. &
 		      croptype(i,2,j) > croptype(i,3,j) .and. &
 		      croptype(i,2,j) > croptype(i,4,j) ) then   ! choose soybean
 
 		   cropcat (i,j) = 2
-                   lfmassxy(i,j) = 0.05/0.015
-                   stmassxy(i,j) = 0.05/0.003
+                   lfmassxy(i,j) =    lai(i,j)/0.015
+                   stmassxy(i,j) = xsaixy(i,j)/0.003
 
 	       else
 
 		   cropcat (i,j) = default_crop_table
-                   lfmassxy(i,j) = 0.05/0.035
-                   stmassxy(i,j) = 0.05/0.003
+                   lfmassxy(i,j) =    lai(i,j)/0.035
+                   stmassxy(i,j) = xsaixy(i,j)/0.003
 
 	       end if
-
-	     else   ! croptype(i,5,j) < 0.5
-
-	       cropcat (i,j) = default_crop_table
 
 	     end if
 
@@ -1548,9 +1541,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
             PRESENT(eqzwt)       .AND. &
             PRESENT(rivercondxy) .AND. &
             PRESENT(pexpxy)      .AND. &
-            PRESENT(rechclim)    .AND. &
-            PRESENT(rivermask)   .AND. &
-            PRESENT(nonriverxy)    ) THEN
+            PRESENT(rechclim)    ) THEN
 
              STEPWTD = nint(WTDDT*60./DT)
              STEPWTD = max(STEPWTD,1)
@@ -1559,7 +1550,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
       &       nsoil, zsoil , dzs  ,isltyp, ivgtyp,wtddt , &
       &       fdepthxy, ht, riverbedxy, eqzwt, rivercondxy, pexpxy , areaxy, zwtxy,   &
       &       smois,sh2o, smoiseq, smcwtdxy, deeprechxy, rechxy, qslatxy, qrfsxy, qspringsxy, &
-      &       rechclim  ,rivermask ,nonriverxy,             &
+      &       rechclim  ,                                   &
       &       ids,ide, jds,jde, kds,kde,                    &
       &       ims,ime, jms,jme, kms,kme,                    &
       &       its,ite, jts,jte, kts,kte                     )
@@ -1683,7 +1674,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
             &            FDEPTH, TOPO, RIVERBED, EQWTD, RIVERCOND, PEXP , AREA ,WTD ,  &
             &            SMOIS,SH2O, SMOISEQ, SMCWTDXY, DEEPRECHXY, RECHXY ,  &
             &            QSLATXY, QRFSXY, QSPRINGSXY,                  &
-            &            rechclim  ,rivermask ,nonriverxy,             &
+            &            rechclim  ,                                   &
             &            ids,ide, jds,jde, kds,kde,                    &
             &            ims,ime, jms,jme, kms,kme,                    &
             &            its,ite, jts,jte, kts,kte                     )
@@ -1705,7 +1696,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
     REAL,    INTENT(IN), DIMENSION(1:NSOIL)          :: ZSOIL,DZS
     INTEGER, INTENT(IN), DIMENSION(ims:ime, jms:jme) :: ISLTYP, IVGTYP
     REAL,    INTENT(IN), DIMENSION(ims:ime, jms:jme) :: FDEPTH, TOPO , AREA
-    REAL,    INTENT(IN), DIMENSION(ims:ime, jms:jme) :: rechclim  ,rivermask ,nonriverxy
+    REAL,    INTENT(IN), DIMENSION(ims:ime, jms:jme) :: rechclim 
     REAL,    INTENT(OUT), DIMENSION(ims:ime, jms:jme) :: RIVERCOND
     REAL,    INTENT(INOUT), DIMENSION(ims:ime, jms:jme) :: WTD, RIVERBED, EQWTD, PEXP
     REAL,     DIMENSION( ims:ime , 1:nsoil, jms:jme ), &
@@ -2405,14 +2396,14 @@ ILOOP : DO I = its, ite
     XXXC_URB = XXXC_URB2D(I,J)
 
 ! Limits to avoid dividing by small number
-    IF (CHS(I,J) < 1.0E-04) THEN
-      CHS(I,J)  = 1.0E-04
+    IF (CHS(I,J) < 1.0E-02) THEN
+      CHS(I,J)  = 1.0E-02
     ENDIF
-    IF (CHS2(I,J) < 1.0E-04) THEN
-      CHS2(I,J)  = 1.0E-04
+    IF (CHS2(I,J) < 1.0E-02) THEN
+      CHS2(I,J)  = 1.0E-02
     ENDIF
-    IF (CQS2(I,J) < 1.0E-04) THEN
-      CQS2(I,J)  = 1.0E-04
+    IF (CQS2(I,J) < 1.0E-02) THEN
+      CQS2(I,J)  = 1.0E-02
     ENDIF
 
     CHS_URB  = CHS(I,J)

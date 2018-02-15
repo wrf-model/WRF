@@ -107,7 +107,7 @@ CONTAINS
                          SMOISEQ  ,SMCWTDXY ,RECHXY, DEEPRECHXY, AREAXY,  & ! Optional Noah-MP 
                          WTDDT , STEPWTD ,QRFSXY ,QSPRINGSXY ,QSLATXY,    & ! Optional Noah-MP
                          FDEPTHXY, RIVERBEDXY, EQZWT, RIVERCONDXY, PEXPXY, & ! Optional Noah-MP
-                         rechclim  ,rivermask ,nonriverxy,                 & ! Optional Noah-MP
+                         rechclim  ,                                       & ! Optional Noah-MP
                          msftx, msfty,                           &           ! Optional Noah-MP
 !                        num_roof_layers,num_wall_layers,        & !Optional urban
 !                        num_road_layers,                        & !Optional urban
@@ -482,8 +482,6 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: RIVERCONDXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: PEXPXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: rechclim
-   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: rivermask
-   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: nonriverxy
    INTEGER, OPTIONAL, DIMENSION(ims:ime,  jms:jme), INTENT(OUT) :: CROPCAT
    REAL,    OPTIONAL, DIMENSION(ims:ime,5,jms:jme), INTENT(IN ) :: CROPTYPE
 
@@ -799,7 +797,8 @@ integer myproc
          config_flags%mp_physics  .eq. WDM5SCHEME .or.      & ! syb+
          config_flags%mp_physics  .eq. WDM6SCHEME .or.      &
          config_flags%mp_physics  .eq. P3_1CATEGORY .or.    &
-         config_flags%mp_physics  .eq. P3_1CATEGORY_NC    ) ) then    ! P3
+         config_flags%mp_physics  .eq. P3_1CATEGORY_NC .or. &
+         config_flags%mp_physics  .eq. P3_2CATEGORY    ) ) then    ! P3
       has_reqc = 1
       has_reqi = 1
       has_reqs = 1
@@ -807,7 +806,8 @@ integer myproc
 
 ! for P3, to ensure correct coupling with predicted effective radii
    if (config_flags%mp_physics .eq. P3_1CATEGORY .or.       &
-       config_flags%mp_physics .eq. P3_1CATEGORY_NC       ) then
+       config_flags%mp_physics .eq. P3_1CATEGORY_NC .or.    &
+       config_flags%mp_physics .eq. P3_2CATEGORY      ) then
       has_reqs = 0
    end if
 
@@ -1140,7 +1140,7 @@ integer myproc
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
                 WTDDT, STEPWTD, QRFSXY ,QSPRINGSXY ,QSLATXY,   &
                 FDEPTHXY, RIVERBEDXY, EQZWT, RIVERCONDXY, PEXPXY, & 
-                rechclim  ,rivermask ,nonriverxy,                 &
+                rechclim  ,                                     &
                 ISICE,                                 &
                 T2MVXY,T2MBXY,CHSTARXY ,                        &
                 allowed_to_read , iopt_run ,                    &
@@ -2053,7 +2053,7 @@ integer myproc
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
                 WTDDT, STEPWTD,QRFSXY ,QSPRINGSXY ,QSLATXY,     &
                 FDEPTHXY, RIVERBEDXY, EQZWT, RIVERCONDXY, PEXPXY, & 
-                rechclim  ,rivermask ,nonriverxy,                 &
+                rechclim  ,                                     &
                 ISICE,                                 &
                 T2MVXY, T2MBXY ,CHSTARXY,                       &
                 allowed_to_read, iopt_run ,                     &
@@ -2350,8 +2350,6 @@ integer myproc
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: RIVERCONDXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: PEXPXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: rechclim
-   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: rivermask
-   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: nonriverxy
    INTEGER, OPTIONAL, DIMENSION(ims:ime,  jms:jme), INTENT(OUT) :: CROPCAT
    REAL,    OPTIONAL, DIMENSION(ims:ime,5,jms:jme), INTENT(IN ) :: CROPTYPE
    INTEGER, OPTIONAL, INTENT(IN)  ::  ISICE
@@ -2847,7 +2845,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      ,smoiseq  ,smcwtdxy ,rechxy   ,deeprechxy, areaxy ,dx, dy, msftx, msfty,&
                      wtddt    ,stepwtd  ,dt  ,qrfsxy ,qspringsxy  ,qslatxy,                  &
                      fdepthxy ,ht       ,riverbedxy ,eqzwt ,rivercondxy ,pexpxy,              &
-                     rechclim  ,rivermask ,nonriverxy                 &
+                     rechclim                  &
 #endif
                      )
 
@@ -3818,9 +3816,11 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      CASE (MORR_TWO_MOMENT)
          CALL morr_two_moment_init( config_flags%hail_opt )
      CASE (P3_1CATEGORY)
-         CALL p3_init('./p3_lookup_table_1.dat','./p3_lookup_table_2.dat',1)
+         CALL p3_init('.',1)
      CASE (P3_1CATEGORY_NC)
-         CALL p3_init('./p3_lookup_table_1.dat','./p3_lookup_table_2.dat',1)
+         CALL p3_init('.',1)
+     CASE (P3_2CATEGORY)
+         CALL p3_init('.',2)
      CASE (MILBRANDT2MOM)
          CALL milbrandt2mom_init
 !      CASE (MILBRANDT3MOM)

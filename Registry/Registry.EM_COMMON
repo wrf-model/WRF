@@ -421,6 +421,7 @@ state   integer number_at_same_level    -         -         -     -          -  
 state   real    radtacttime    -        -         -         -     r         "radtacttime"              "RADTACTTIME"         "LW SW ACTIVATION TIME in s"
 state   real    bldtacttime    -        -         -         -     r         "bldtacttime"              "BLDTACTTIME"         "PBL   ACTIVATION TIME in s"
 state   real    cudtacttime    -        -         -         -     r         "cudtacttime"              "CUDTACTTIME"         "CPS   ACTIVATION TIME in s"
+state   real    ltngacttime    -        -         -         -     r         "ltngacttime"              "LTNGACTTIME"         "LTNG  ACTIVATION TIME in s"
 state   real    power          ij       misc      1         -     irh       "Power"                   "Power production"         "W"
 
 
@@ -469,6 +470,8 @@ state   real    qr             ikjftb   moist       1         -     \
    i0rhusdf=(bdy_interp:dt)  "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
 state   real    qi             ikjftb   moist       1         -     \
    i0rhusdf=(bdy_interp:dt)  "QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    qi2             ikjftb   moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "QICE2"             "Ice mixing ratio cat 2"              "kg kg-1"
 state   real    qs             ikjftb   moist       1         -     \
    i0rhusdf=(bdy_interp:dt)  "QSNOW"            "Snow mixing ratio"             "kg kg-1"
 state   real    qg             ikjftb   moist       1         -     \
@@ -484,6 +487,8 @@ state   real    dfi_qr         ikjftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QRAIN"        "Rain water mixing ratio"       "kg kg-1"
 state   real    dfi_qi         ikjftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QICE"         "Ice mixing ratio"              "kg kg-1"
+state   real    dfi_qi2         ikjftb   dfi_moist       1         -     \
+   rusdf=(bdy_interp:dt)  "DFI_QICE2"         "Ice mixing ratio cat 2"              "kg kg-1"
 state   real    dfi_qs         ikjftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QSNOW"        "Snow mixing ratio"             "kg kg-1"
 state   real    dfi_qg         ikjftb   dfi_moist       1         -     \
@@ -509,6 +514,8 @@ state   real    qndrop         ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QNDROP"        "Droplet number mixing ratio"        "# kg-1"
 state   real    qni            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QNICE"         "Ice Number concentration" "# kg-1"
+state   real    qni2            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QNICE2"         "Ice Number concentration cat 2" "# kg-1"
 state   real    qt             ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "CWM"           "Total condensate mixing ratio"      "kg kg-1"
 state   real    qns            ikjftb  scalar      1         -     \
@@ -533,12 +540,18 @@ state   real    qir            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QIR"           "Rime ice mass-1 mixing ratio" "kg kg(-1)"
 state   real    qib            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QIB"           "Rime ice volume-1 mixing ratio" "m(3) kg(-1)"
+state   real    qir2            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QIR2"           "Rime ice mass-2 mixing ratio" "kg kg(-1)"
+state   real    qib2            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QIB2"           "Rime ice volume-2 mixing ratio" "m(3) kg(-1)"
 
 state   real    -              ikjftb  dfi_scalar      1         -     -   -
 state   real    dfi_qndrop     ikjftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNDROP"    "DFI Droplet number mixing ratio"        "# kg-1"
 state   real    dfi_qni        ikjftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNICE"     "DFI Ice Number concentration" "# kg-1"
+state   real    dfi_qni2        ikjftb  dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)    "DFI_QNICE2"     "DFI Ice Number concentration cat 2" "# kg-1"
 state   real    dfi_qt         ikjftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_CWM"       "DFI Total condensate mixing ratio"      "kg kg-1"
 state   real    dfi_qns        ikjftb  dfi_scalar      1         -     \
@@ -561,6 +574,10 @@ state   real    dfi_qir        ikjftb  dfi_scalar      1         -     \
    rhusdf=(bdy_interp:dt)    "DFI_QIR"    "DFI Rime ice mass-1 mixing ratio" "kg kg(-1)"
 state   real    dfi_qib        ikjftb  dfi_scalar      1         -     \
    rhusdf=(bdy_interp:dt)    "DFI_QIB"    "DFI Rime ice volume-1 mixing ratio" "m(3) kg(-1)"
+state   real    dfi_qir2        ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)    "DFI_QIR2"    "DFI Rime ice mass-2 mixing ratio" "kg kg(-1)"
+state   real    dfi_qib2        ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)    "DFI_QIB2"    "DFI Rime ice volume-2 mixing ratio" "m(3) kg(-1)"
 state   real    dfi_qke_adv   ikjftb  dfi_scalar      1         -      \
    rusdf=(bdy_interp:dt) "dfi_qke_adv"   "DFI twice TKE from MYNN"      "m2 s-2"
 
@@ -570,7 +587,7 @@ state   real    dfi_qke_adv   ikjftb  dfi_scalar      1         -      \
 
 state    real   fcx            w         misc     -         -      ir       "fcx"                  "RELAXATION TERM FOR BOUNDARY ZONE"         ""
 state    real   gcx            w         misc     -         -      ir       "gcx"                  "2ND RELAXATION TERM FOR BOUNDARY ZONE"         ""
-state    real   dtbc            -        misc     -         -      ir       "dtbc"                 "TIME SINCE BOUNDARY READ"         ""
+state    real   dtbc            -        misc     -         -       r       "dtbc"                 "TIME SINCE BOUNDARY READ"         ""
 
 #-------------------------------------------------------------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------------------------------------------------------------
@@ -1038,7 +1055,7 @@ state    real   acfrcv           ij     misc        1         -      -
 state integer   ncfrcv           ij     misc        1         -      -
 
 # new rad variables
-state    real   o3rad           ikj     misc        1         -      irdf=(p2c)      "o3rad"    "RADIATION 3D OZONE" "ppmv"
+state    real   o3rad           ikj     misc        1         -      irh       "o3rad"    "RADIATION 3D OZONE" "ppmv"
 
 # incoming optical depth derived from aerosol data
 state  real   aerodm    i{lsa}jm{ty}    misc        1    -   -     -
@@ -1250,28 +1267,28 @@ state    real  SSWUP           ij      misc        1         -      h         "S
                                                 
 # Other physics variables
 
-state    real  RUSHTEN         ikj      misc        1         -      r        "RUSHTEN"               "COUPLED X WIND TENDENCY DUE TO SHALLOW CUMULUS SCHEME"   "Pa m s-2"
-state    real  RVSHTEN         ikj      misc        1         -      r        "RVSHTEN"               "COUPLED Y WIND TENDENCY DUE TO SHALLOW CUMULUS SCHEME"   "Pa m s-2"
-state    real  RTHSHTEN        ikj      misc        1         -      r        "RTHSHTEN"              "COUPLED THETA TENDENCY DUE TO SHALLOW CUMULUS SCHEME"    "Pa K s-1"
-state    real  RQVSHTEN        ikj      misc        1         -      r        "RQVSHTEN"              "COUPLED Q_V TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
-state    real  RQRSHTEN        ikj      misc        1         -      r        "RQRSHTEN"              "COUPLED Q_R TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
-state    real  RQCSHTEN        ikj      misc        1         -      r        "RQCSHTEN"              "COUPLED Q_C TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
-state    real  RQSSHTEN        ikj      misc        1         -      r        "RQSSHTEN"              "COUPLED Q_S TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
-state    real  RQISHTEN        ikj      misc        1         -      r        "RQISHTEN"              "COUPLED Q_I TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
-state    real  RQGSHTEN        ikj      misc        1         -      r        "RQGSHTEN"              "COUPLED Q_G TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
-state    real  RQCNSHTEN       ikj      misc        1         -      r       "RQCNSHTEN"              "COUPLED Q_CN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
-state    real  RQINSHTEN       ikj      misc        1         -      r       "RQINSHTEN"              "COUPLED Q_IN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+state    real  RUSHTEN         ikj      misc        1         -      r        "RUSHTEN"               "X WIND TENDENCY DUE TO SHALLOW CUMULUS SCHEME"   "m s-2"
+state    real  RVSHTEN         ikj      misc        1         -      r        "RVSHTEN"               "Y WIND TENDENCY DUE TO SHALLOW CUMULUS SCHEME"   "m s-2"
+state    real  RTHSHTEN        ikj      misc        1         -      r        "RTHSHTEN"              "THETA TENDENCY DUE TO SHALLOW CUMULUS SCHEME"    "K s-1"
+state    real  RQVSHTEN        ikj      misc        1         -      r        "RQVSHTEN"              "Q_V TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "kg kg-1 s-1"
+state    real  RQRSHTEN        ikj      misc        1         -      r        "RQRSHTEN"              "Q_R TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "kg kg-1 s-1"
+state    real  RQCSHTEN        ikj      misc        1         -      r        "RQCSHTEN"              "Q_C TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "kg kg-1 s-1"
+state    real  RQSSHTEN        ikj      misc        1         -      r        "RQSSHTEN"              "Q_S TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "kg kg-1 s-1"
+state    real  RQISHTEN        ikj      misc        1         -      r        "RQISHTEN"              "Q_I TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "kg kg-1 s-1"
+state    real  RQGSHTEN        ikj      misc        1         -      r        "RQGSHTEN"              "Q_G TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "kg kg-1 s-1"
+state    real  RQCNSHTEN       ikj      misc        1         -      r        "RQCNSHTEN"             "Q_CN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"     "# kg-1 s-1"
+state    real  RQINSHTEN       ikj      misc        1         -      r        "RQINSHTEN"             "Q_IN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"     "# kg-1 s-1"
 
-state    real  RUCUTEN         ikj      misc        1         -      r        "RUCUTEN"               "COUPLED X WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "Pa m s-2"
-state    real  RVCUTEN         ikj      misc        1         -      r        "RVCUTEN"               "COUPLED Y WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "Pa m s-2"
-state    real  RTHCUTEN        ikj      misc        1         -      r        "RTHCUTEN"              "COUPLED THETA TENDENCY DUE TO CUMULUS SCHEME"     "Pa K s-1"
-state    real  RQVCUTEN        ikj      misc        1         -      r        "RQVCUTEN"              "COUPLED Q_V TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
-state    real  RQRCUTEN        ikj      misc        1         -      r        "RQRCUTEN"              "COUPLED Q_R TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
-state    real  RQCCUTEN        ikj      misc        1         -      r        "RQCCUTEN"              "COUPLED Q_C TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
-state    real  RQSCUTEN        ikj      misc        1         -      r        "RQSCUTEN"              "COUPLED Q_S TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
-state    real  RQICUTEN        ikj      misc        1         -      r        "RQICUTEN"              "COUPLED Q_I TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
-state    real  RQCNCUTEN       ikj      misc        1         -      r       "RQCNCUTEN"             "COUPLED Q_CN TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
-state    real  RQINCUTEN       ikj      misc        1         -      r       "RQINCUTEN"             "COUPLED Q_IN TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+state    real  RUCUTEN         ikj      misc        1         -      r        "RUCUTEN"               "X WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "m s-2"
+state    real  RVCUTEN         ikj      misc        1         -      r        "RVCUTEN"               "Y WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "m s-2"
+state    real  RTHCUTEN        ikj      misc        1         -      r        "RTHCUTEN"              "THETA TENDENCY DUE TO CUMULUS SCHEME"     "K s-1"
+state    real  RQVCUTEN        ikj      misc        1         -      r        "RQVCUTEN"              "Q_V TENDENCY DUE TO CUMULUS SCHEME"       "kg kg-1 s-1"
+state    real  RQRCUTEN        ikj      misc        1         -      r        "RQRCUTEN"              "Q_R TENDENCY DUE TO CUMULUS SCHEME"       "kg kg-1 s-1"
+state    real  RQCCUTEN        ikj      misc        1         -      r        "RQCCUTEN"              "Q_C TENDENCY DUE TO CUMULUS SCHEME"       "kg kg-1 s-1"
+state    real  RQSCUTEN        ikj      misc        1         -      r        "RQSCUTEN"              "Q_S TENDENCY DUE TO CUMULUS SCHEME"       "kg kg-1 s-1"
+state    real  RQICUTEN        ikj      misc        1         -      r        "RQICUTEN"              "Q_I TENDENCY DUE TO CUMULUS SCHEME"       "kg kg-1 s-1"
+state    real  RQCNCUTEN       ikj      misc        1         -      r        "RQCNCUTEN"             "Q_CN TENDENCY DUE TO CUMULUS SCHEME"      "# kg-1 s-1"
+state    real  RQINCUTEN       ikj      misc        1         -      r        "RQINCUTEN"             "Q_IN TENDENCY DUE TO CUMULUS SCHEME"      "# kg-1 s-1"
 state    real  W0AVG           ikj      misc        1         -      r        "W0AVG"                 "AVERAGE VERTICAL VELOCITY FOR KF CUMULUS SCHEME"         "m s-1"
 
 state    real  RAINC            ij      misc        1         -      rhdu     "RAINC"                 "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
@@ -1294,9 +1311,12 @@ state    real  HAILNCV          ij      misc        1         -      r        "H
 state    real    refl_10cm      ikj     dyn_em      1         -      hdu       "refl_10cm"             "Radar reflectivity (lamda = 10 cm)"  "dBZ"
 state    real    th_old          ikj      misc        1         -      rusd        "TH_OLD"              "Old Value of Th"   "K"
 state    real    qv_old          ikj      misc        1         -      rusd        "QV_OLD"              "Old Value of qv"   "kg kg-1"
-state    real    vmi3d          ikj     misc        1         -     hdu       "v_ice"                 "Mass-weighted ice fallspeed"  "m s-1"
-state    real    di3d           ikj     misc        1         -     hdu       "d_ice"                 "Mass-weighted mean ice size"  "m"
-state    real    rhopo3d        ikj     misc        1         -     hdu       "rho_ice"               "Mass-weighted mean ice density"  "kg m-3"
+state    real    vmi3d          ikj     misc        1         -     hdu       "v_ice"                 "Mass-weighted ice fallspeed cat 1"  "m s-1"
+state    real    di3d           ikj     misc        1         -     hdu       "d_ice"                 "Mass-weighted mean ice size cat 1"  "m"
+state    real    rhopo3d        ikj     misc        1         -     hdu       "rho_ice"               "Mass-weighted mean ice density cat 1"  "kg m-3"
+state    real    vmi3d_2          ikj     misc        1         -     hdu     "v_ice2"                 "Mass-weighted ice fallspeed cat 2"  "m s-1"
+state    real    di3d_2           ikj     misc        1         -     hdu     "d_ice2"                 "Mass-weighted mean ice size cat 2"  "m"
+state    real    rhopo3d_2        ikj     misc        1         -     hdu     "rho_ice2"               "Mass-weighted mean ice density cat 2"  "kg m-3"
 # LIGHTNING NUDGING
 #state    real    ltg_dat        ij      misc        1         -      r         "ltg_dat"               "gridded lightning data"  "Flash per xkm x xkm per LAD_INT sec"
 # END LIGHTNING NUDGING
@@ -1353,7 +1373,7 @@ state    real  RQVFTEN          ikj     misc        1         -      r        "R
 
 state integer  STEPCU          -        misc        1         -      r        "STEPCU"                "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN CONVECTION CALLS"  ""
                                                 
-state    real  RTHRATEN        ikj      misc        1         -      rd       "RTHRATEN"              "COUPLED THETA TENDENCY DUE TO RADIATION"              "Pa K s-1"
+state    real  RTHRATEN        ikj      misc        1         -      rd       "RTHRATEN"              "THETA TENDENCY DUE TO RADIATION"              "K s-1"
 state    real  RTHRATENLW      ikj      misc        1         -      r        "RTHRATLW"              "UNCOUPLED THETA TENDENCY DUE TO LONG WAVE RADIATION"    "K s-1"
 state    real  RTHRATENSW      ikj      misc        1         -      r        "RTHRATSW"              "UNCOUPLED THETA TENDENCY DUE TO SHORT WAVE RADIATION"   "K s-1"
 state    real  CLDFRA          ikj      misc        1         -      rh       "CLDFRA"                "CLOUD FRACTION"                                       ""
@@ -1497,13 +1517,13 @@ state    real  NOAHRES          ij      misc        1         -      h        "N
 state    real  CLDEFI           ij      misc        1         -      r        "CLDEFI"                "precipitation efficiency in BMJ SCHEME"    ""      
 state integer  STEPRA          -        misc        1         -      r        "STEPRA"                "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN RADIATION CALLS"        ""
                                                 
-state    real  RUBLTEN         ikj      misc        1         -      r        "RUBLTEN"               "COUPLED X WIND TENDENCY DUE TO PBL PARAMETERIZATION"  "Pa m s-2"
-state    real  RVBLTEN         ikj      misc        1         -      r        "RVBLTEN"               "COUPLED Y WIND TENDENCY DUE TO PBL PARAMETERIZATION"  "Pa m s-2"
-state    real  RTHBLTEN        ikj      misc        1         -      r        "RTHBLTEN"              "COUPLED THETA TENDENCY DUE TO PBL PARAMETERIZATION"   "Pa K s-1"
-state    real  RQVBLTEN        ikj      misc        1         -      r        "RQVBLTEN"              "COUPLED Q_V TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"
-state    real  RQCBLTEN        ikj      misc        1         -      r        "RQCBLTEN"              "COUPLED Q_C TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"
-state    real  RQIBLTEN        ikj      misc        1         -      r        "RQIBLTEN"              "COUPLED Q_I TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"      
-state    real  RQNIBLTEN       ikj      misc        1         -      r        "RQNIBLTEN"             "COUPLED Q_NI TENDENCY DUE TO PBL PARAMETERIZATION"    "Pa #  kg-1 s-1"
+state    real  RUBLTEN         ikj      misc        1         -      r        "RUBLTEN"               "X WIND TENDENCY DUE TO PBL PARAMETERIZATION"  "m s-2"
+state    real  RVBLTEN         ikj      misc        1         -      r        "RVBLTEN"               "Y WIND TENDENCY DUE TO PBL PARAMETERIZATION"  "m s-2"
+state    real  RTHBLTEN        ikj      misc        1         -      r        "RTHBLTEN"              "THETA TENDENCY DUE TO PBL PARAMETERIZATION"   "K s-1"
+state    real  RQVBLTEN        ikj      misc        1         -      r        "RQVBLTEN"              "Q_V TENDENCY DUE TO PBL PARAMETERIZATION"     "kg kg-1 s-1"
+state    real  RQCBLTEN        ikj      misc        1         -      r        "RQCBLTEN"              "Q_C TENDENCY DUE TO PBL PARAMETERIZATION"     "kg kg-1 s-1"
+state    real  RQIBLTEN        ikj      misc        1         -      r        "RQIBLTEN"              "Q_I TENDENCY DUE TO PBL PARAMETERIZATION"     "kg kg-1 s-1"
+state    real  RQNIBLTEN       ikj      misc        1         -      r        "RQNIBLTEN"             "Q_NI TENDENCY DUE TO PBL PARAMETERIZATION"    "#  kg-1 s-1"
 
 # For Noah UA changes
 state    real   flx4            ij         -        1         -      -        "FLX4"         "sensible heat from canopy"              "W m{-2}"
@@ -1603,18 +1623,16 @@ state    real   rivercondxy ij     -       1      -     r     "rivercond"  "rive
 state    real   fdepthxy   ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "FDEPTH"     "e-folding depth for transmissivity "       "m"
 state    real   eqzwt      ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "EQZWT"      "equilibrium water table depth "       "m"
 state    real   rechclim   ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "RECHCLIM"   "equilibrium recharge rate "       "mm"
-state    real   rivermask  ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "RIVERMASK"  "fraction of grid that is river"       "fraction"
 state    real   riverbedxy ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "RIVERBED"   "river bed depth"       "m"
-state    real   nonriverxy ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "NONRIVER"   "non-river elevation"       "m"
 
 # Crop model only
 
-state    real   grainxy    ij      -       1      -     irhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "grain"        "mass of grain"                       "g/m2"
-state    real   gddxy      ij      -       1      -     irhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "gdd"          "growing degree days"                 ""
-state    real   croptype i{crop}j  -       1      Z     ird=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "croptype"     "crop type"                           "fraction"
-state    real   planting   ij      -       1      -     ird=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "planting"     "planting date"                       "julian day"
-state    real   harvest    ij      -       1      -     ird=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "harvest"      "harvest date"                        "julian day"
-state    real   season_gdd ij      -       1      -     ird=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "season_gdd"   "growing season GDD"                  "C"
+state    real   grainxy    ij      -       1      -     i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "grain"        "mass of grain"                       "g/m2"
+state    real   gddxy      ij      -       1      -     i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "gdd"          "growing degree days"                 ""
+state    real   croptype i{crop}j  -       1      Z     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "croptype"     "crop type"                           "fraction"
+state    real   planting   ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "planting"     "planting date"                       "julian day"
+state    real   harvest    ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "harvest"      "harvest date"                        "julian day"
+state    real   season_gdd ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "season_gdd"   "growing season GDD"                  "C"
 state integer   cropcat    ij      -       1      -     rh                                                        "cropcat"      "dominant crop category"              "category"
 state integer   pgsxy      ij      -       1      -     rh                                                        "pgs"          "pgs"                                 ""
 
@@ -1761,11 +1779,11 @@ state  integer save_topo_from_real -    dyn_em	    1         -     i02rh     "sa
 ## FDDA variables
 
 state integer  STEPFG            -        misc        1         -      r        "STEPFG"                "NUMBER OF FUNDAMENTAL TIMESTEPS BETWEEN FDDA GRID CALLS" ""
-state    real  RUNDGDTEN         ikj      misc        1         X      r        "RUNDGDTEN"               "COUPLED X WIND TENDENCY DUE TO FDDA GRID NUDGING"  "Pa m s-2"
-state    real  RVNDGDTEN         ikj      misc        1         Y      r        "RVNDGDTEN"               "COUPLED Y WIND TENDENCY DUE TO FDDA GRID NUDGING"  "Pa m s-2"
-state    real  RTHNDGDTEN        ikj      misc        1         -      r        "RTHNDGDTEN"              "COUPLED THETA TENDENCY DUE TO FDDA GRID NUDGING"   "Pa K s-1"
-state    real  RPHNDGDTEN        ikj      misc        1         -      r        "RPHNDGDTEN"              "COUPLED GEOPOTENTIAL TENDENCY DUE TO FDDA GRID NUDGING"   "Pa m2 s-3"
-state    real  RQVNDGDTEN        ikj      misc        1         -      r        "RQVNDGDTEN"              "COUPLED Q_V TENDENCY DUE TO FDDA GRID NUDGING"     "Pa kg kg-1 s-1"
+state    real  RUNDGDTEN         ikj      misc        1         X      r        "RUNDGDTEN"               "X WIND TENDENCY DUE TO FDDA GRID NUDGING"  "m s-2"
+state    real  RVNDGDTEN         ikj      misc        1         Y      r        "RVNDGDTEN"               "Y WIND TENDENCY DUE TO FDDA GRID NUDGING"  "m s-2"
+state    real  RTHNDGDTEN        ikj      misc        1         -      r        "RTHNDGDTEN"              "THETA TENDENCY DUE TO FDDA GRID NUDGING"   "K s-1"
+state    real  RPHNDGDTEN        ikj      misc        1         -      r        "RPHNDGDTEN"              "GEOPOTENTIAL TENDENCY DUE TO FDDA GRID NUDGING"   "m2 s-3"
+state    real  RQVNDGDTEN        ikj      misc        1         -      r        "RQVNDGDTEN"              "Q_V TENDENCY DUE TO FDDA GRID NUDGING"     "kg kg-1 s-1"
 state    real  RMUNDGDTEN        ij       misc        1         -      r        "RMUNDGDTEN"              "MU TENDENCY DUE TO FDDA GRID NUDGING"     "Pa s-1"
 state    real    -               ikjf     fdda3d      1         -     -    -
 state    real  U_NDG_NEW         ikjf     fdda3d      1         X      i{10}r   "U_NDG_NEW"               "NEW X WIND FOR FDDA GRID NUDGING"  "m s-1"
@@ -1909,7 +1927,7 @@ rconfig   integer end_day                 namelist,time_control		max_domains    
 rconfig   integer end_hour                namelist,time_control		max_domains      12    irh   "end_hour"              "2 DIGIT HOUR OF THE DAY OF END OF MODEL, 0-23" "HOURS"
 rconfig   integer end_minute              namelist,time_control		max_domains      00    irh   "end_minute"            "2 DIGIT MINUTE OF THE HOUR OF END OF MODEL, 0-59" "MINUTES"
 rconfig   integer end_second              namelist,time_control		max_domains      00    irh   "end_second"            "2 DIGIT SECOND OF THE MINUTE OF END OF MODEL, 0-59" "SECONDS"
-rconfig   integer interval_seconds        namelist,time_control		1             43200    irh   "interval_seconds"      "SECONDS BETWEEN ANALYSIS AND BOUNDARY PERIODS" "SECONDS"
+rconfig   integer interval_seconds        namelist,time_control		1             10800    irh   "interval_seconds"      "SECONDS BETWEEN ANALYSIS AND BOUNDARY PERIODS" "SECONDS"
 rconfig   logical input_from_file         namelist,time_control		max_domains    .false. irh    "input_from_file"      "T/F INPUT FOR THIS DOMAIN FROM A SEPARATE INPUT FILE"  ""
 rconfig   integer fine_input_stream       namelist,time_control		max_domains    0       irh    "fine_input_stream"      "0 THROUGH 11, WHAT INPUT STREAM IS FINE GRID IC FROM"  ""
 rconfig   logical input_from_hires        namelist,time_control		max_domains    .false. irh    "input_from_hires"     "T/F INPUT FOR THIS DOMAIN FROM USGS HI RES TERRAIN"  ""
@@ -2087,7 +2105,11 @@ rconfig   logical   cycle_y         namelist,domains    max_domains    .false. r
 rconfig   logical   reorder_mesh    namelist,domains    1              .false. rh    "reorder_mesh"       ""      ""
 rconfig   logical   perturb_input   namelist,domains    1              .false. h     "" "" ""
 rconfig   real      eta_levels      namelist,domains    max_eta        -1.
-rconfig   real      max_dz          namelist,domains    1               1000.
+rconfig   integer   auto_levels_opt namelist,domains    1               2
+rconfig   real      max_dz          namelist,domains    1               1000.  -     "max_dz"   "maximum thickness limit for eta calc" "m"
+rconfig   real      dzbot           namelist,domains    1               50.    -     "dzbot"    "surface dz thickness for eta calc" "m"
+rconfig   real      dzstretch_s     namelist,domains    1               1.1    -     "dzstretch_s"  "surface dz stretching factor for eta calc"    ""
+rconfig   real      dzstretch_u     namelist,domains    1               1.1    -     "dzstretch_u"  "upper dz stretching factor for eta calc"    ""
 rconfig   integer   ocean_levels    namelist,domains    1               30     irh   "ocean level"        ""      ""
 rconfig   real      ocean_z         namelist,domains    max_ocean      -1      -     "vertical profile of layer depths for ocean" "m"
 rconfig   real      ocean_t         namelist,domains    max_ocean      -1      -     "vertical profile of ocean temps" "K"
@@ -2231,8 +2253,8 @@ rconfig   integer paerlev                 namelist,physics      1             1 
 rconfig   integer cam_abs_dim1            namelist,physics      1             1       -      "cam_abs_dim1" "dimension for absnxt in CAM radiation"  ""
 rconfig   integer cam_abs_dim2            namelist,physics      1             1       -      "cam_abs_dim2" "dimension for abstot in CAM radiation"  ""
 rconfig   integer lagday                  namelist,physics      1             150     -      "lagday"         ""      ""
-rconfig   integer no_src_types            namelist,physics      1             1       -      "no_src_types" "Number of aerosoal types from EC (6)"  ""
-rconfig   integer alevsiz                 namelist,physics      1             1       -      "alevsiz" "Number of aerosoal optical depth data levels from EC (12)"  ""
+rconfig   integer no_src_types            namelist,physics      1             1       -      "no_src_types" "Number of aerosol types from EC. (6 - Tegan aerosols)"  ""
+rconfig   integer alevsiz                 namelist,physics      1             1       -      "alevsiz" "Number of aerosol optical depth data levels from EC (12)"  ""
 rconfig   integer o3input                 namelist,physics      1             2       -      "o3input"      "ozone input for RRTMG for CG domain: original = 0; CAM ozone = 2"      ""
 rconfig   integer aer_opt                 namelist,physics      1             0       -      "aer_opt"      "aerosol input option for radiation"      ""
 rconfig   integer swint_opt               namelist,physics      1             0       -      "swint_opt"    "interpolation option for sw radiation"      ""
@@ -2465,6 +2487,7 @@ rconfig   integer km_opt_dfi              namelist,dynamics	max_domains   1     
 rconfig   integer damp_opt                namelist,dynamics	1             0       irh    "damp_opt"              ""      ""
 rconfig   integer rad_nudge               namelist,dynamics	1             0       irh    "rad_nudge"             ""      ""
 rconfig   integer gwd_opt                 namelist,dynamics     1             0       irh    "gwd_opt"              ""      ""
+rconfig   real    max_rot_angle_gwd       namelist,dynamics     1             22.5    irh    "max_rot_angle_gwd"    "max projection rotation angle permitted for gwd_opt=1"      ""
 rconfig   real    zdamp                   namelist,dynamics	max_domains    5000.   h    "zdamp"         ""      ""
 rconfig   real    dampcoef                namelist,dynamics     max_domains    0.      h    "dampcoef"              ""      ""
 rconfig   real    khdif                   namelist,dynamics	max_domains    0       h    "khdif"         ""      ""
@@ -2633,6 +2656,7 @@ package   nssl_2momg      mp_physics==22               -             moist:qv,qc
 package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow,qnwfa2d,taod5503d,taod5502d
 package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi;scalar:qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi;scalar:qnc,qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
+package   p3_2category    mp_physics==52               -             moist:qv,qc,qr,qi,qi2;scalar:qnc,qni,qnr,qir,qib,qni2,qir2,qib2;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,vmi3d_2,rhopo3d_2,di3d_2,refl_10cm,th_old,qv_old
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 
 package   radar_refl      compute_radar_ref==1         -             state:refl_10cm,refd_max
@@ -2661,6 +2685,7 @@ package   nssl_1momlfo_dfi  mp_physics_dfi==21       -             dfi_moist:dfi
 package   thompsonaero_dfi  mp_physics_dfi==28       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qnc,dfi_qnwfa,dfi_qnifa;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   p3_1category_dfi  mp_physics_dfi==50       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
 package   p3_1category_nc_dfi  mp_physics_dfi==51    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qnc,dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
+package   p3_2category_dfi  mp_physics_dfi==52    -                dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qi2;dfi_scalar:dfi_qnc,dfi_qni,dfi_qnr,dfi_qir,dfi_qib,dfi_qni2,dfi_qir2,dfi_qib2;state:dfi_re_cloud,dfi_re_ice
 package   etampnew_dfi      mp_physics_dfi==95       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs;dfi_scalar:dfi_qt
 
 package   noprogn       progn==0                     -             -
@@ -2704,7 +2729,7 @@ package   bep_bemscheme  sf_urban_physics==3         -             state:a_u_bep
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn,smcrel
 package   ruclsmscheme   sf_surface_physics==3       -             state:smfr3d,keepfr3dflag,soilt1,rhosnf,snowfallac,precipfr,acrunoff
-package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,rechclim,rivermask,nonriverxy,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy
+package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,rechclim,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy
 package   clmscheme      sf_surface_physics==5       -             state:numc,nump,sabv,sabg,lwup,lhsoi,lhveg,lhtran,snl,snowdp,wtc,wtp,h2osno,t_grnd,t_veg,h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm,t_ref2m,h2osoi_liq_s1,h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,h2osoi_ice_s1,h2osoi_ice_s2,h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,t_soisno4,t_soisno5,t_soisno6,t_soisno7,t_soisno8,t_soisno9,t_soisno10,dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,h2osoi_vol7,h2osoi_vol8,h2osoi_vol9,h2osoi_vol10,albedosubgrid,lhsubgrid,hfxsubgrid,lwupsubgrid,q2subgrid,sabvsubgrid,sabgsubgrid,nrasubgrid,swupsubgrid
 package   pxlsmscheme    sf_surface_physics==7       -             state:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old,vegf_px,imperv,canfra
 package   ssibscheme     sf_surface_physics==8       -             state:ssib_fm,ssib_fh,ssib_cm,ssibxdd,ssib_br,ssib_lhf,ssib_shf,ssib_ghf,ssib_egs,ssib_eci,ssib_ect,ssib_egi,ssib_egt,ssib_sdn,ssib_sup,ssib_ldn,ssib_lup,ssib_wat,ssib_shc,ssib_shg,ssib_lai,ssib_vcf,ssib_z00,ssib_veg,isnow,swe,snowden,snowdepth,tkair,dzo1,wo1,tssn1,tssno1,bwo1,bto1,cto1,fio1,flo1,bio1,blo1,ho1,dzo2,wo2,tssn2,tssno2,bwo2,bto2,cto2,fio2,flo2,bio2,blo2,ho2,dzo3,wo3,tssn3,tssno3,bwo3,bto3,cto3,fio3,flo3,bio3,blo3,ho3,dzo4,wo4,tssn4,tssno4,bwo4,bto4,cto4,fio4,flo4,bio4,blo4,ho4

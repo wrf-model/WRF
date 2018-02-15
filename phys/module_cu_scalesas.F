@@ -1100,7 +1100,7 @@ CONTAINS
             val2      =           1.e-10
             qo(i,k)   = max(qo(i,k), val2 )
 !           qo(i,k)   = min(qo(i,k),qeso(i,k))
-            frh(i,k)  = 1. - min(qo(i,k)/qeso(i,k), 1.)        
+            frh(i,k)  = 1. - min(qo(i,k)/qeso(i,k), 1._kind_phys)        
             heo(i,k)  = .5 * g * (zo(i,k) + zo(i,k+1)) +    &
      &                  cp * to(i,k) + hvap * qo(i,k)
             heso(i,k) = .5 * g * (zo(i,k) + zo(i,k+1)) +    &
@@ -1772,7 +1772,7 @@ CONTAINS
               ptem = (1. - tem) * wu2(i,k-1)
               ptem1 = 1. + tem
               wu2(i,k) = (ptem + tem1) / ptem1
-              wu2(i,k) = max(wu2(i,k), 0.)
+              wu2(i,k) = max(wu2(i,k), 0._kind_phys)
             endif
           endif
         enddo
@@ -2607,7 +2607,7 @@ CONTAINS
               tem = 1. - ptem
               fs0 = awlam(i) * (tem**3.) - ptem
               fp1 = -3. * awlam(i) * (tem**2.) - 1.
-              fp1 = min(fp1, -1.e-3)
+              fp1 = min(fp1, -1.e-3_kind_phys)
               sigmaw(i) = ptem - fs0 / fp1
               tem1 = abs(sigmaw(i) - ptem)
               if(tem1 < .01) then
@@ -2615,8 +2615,8 @@ CONTAINS
               endif
             endif
           enddo
-          sigmaw(i) = max(sigmaw(i), 0.001)
-          sigmaw(i) = min(sigmaw(i), 0.999)
+          sigmaw(i) = max(sigmaw(i), 0.001_kind_phys)
+          sigmaw(i) = min(sigmaw(i), 0.999_kind_phys)
         endif
       enddo
 !
@@ -2625,8 +2625,8 @@ CONTAINS
       do i = 1, im
         if(cnvflg(i)) then
           sigmagf(i) = gfudarea / garea(i)
-          sigmagf(i) = max(sigmagf(i), 0.001)
-          sigmagf(i) = min(sigmagf(i), 0.7)
+          sigmagf(i) = max(sigmagf(i), 0.001_kind_phys)
+          sigmagf(i) = min(sigmagf(i), 0.7_kind_phys)
         endif
       enddo
 
@@ -2637,13 +2637,13 @@ CONTAINS
         if(cnvflg(i)) then
 !          k = kbcon(i)
 !          tem = 0.2 / max(xlamue(i,k), 3.e-5)
-          tem = min(max(xlamx(i), 7.e-5), 3.e-4)
+          tem = min(max(xlamx(i), 7.e-5_kind_phys), 3.e-4_kind_phys)
              tmpout9(i)=tem
           tem = 0.2 / tem
           tem1 = 3.14 * tem * tem
           sigmagfm(i) = tem1 / garea(i)
-          sigmagfm(i) = max(sigmagfm(i), 0.001)
-          sigmagfm(i) = min(sigmagfm(i), 0.999)
+          sigmagfm(i) = max(sigmagfm(i), 0.001_kind_phys)
+          sigmagfm(i) = min(sigmagfm(i), 0.999_kind_phys)
 
         endif
       enddo
@@ -2663,7 +2663,7 @@ CONTAINS
             scaldfunc(i) = (1.-sigmagfm(i)) * (1.-sigmagfm(i)) ! modified Grell & Freitas(2014)
        
 !            scaldfunc(i) = (1.-sigmaw(i)) * (1.-sigmagf(i))  ! AW & GF
-            scaldfunc(i) = max(min(scaldfunc(i), 1.0), 0.)
+            scaldfunc(i) = max(min(scaldfunc(i), 1.0_kind_phys), 0._kind_phys)
              sigmuout(i)=sigmagfm(i)
           else
             scaldfunc(i) = 1.0
@@ -2857,8 +2857,8 @@ CONTAINS
           if (cnvflg(i) .and. rn(i).gt.0.) then
             if (k.ge.kbcon(i).and.k.lt.ktcon(i)) then
               cnvc(i,k) = 0.04 * log(1. + 675. * eta(i,k) * xmb(i)) 
-              cnvc(i,k) = min(cnvc(i,k), 0.6)
-              cnvc(i,k) = max(cnvc(i,k), 0.0)
+              cnvc(i,k) = min(cnvc(i,k), 0.6_kind_phys)
+              cnvc(i,k) = max(cnvc(i,k), 0.0_kind_phys)
             endif
           endif
         enddo
@@ -2875,7 +2875,7 @@ CONTAINS
 !            if (k.gt.kb(i).and.k.le.ktcon(i)) then
              if (k.ge.kbcon(i).and.k.le.ktcon(i)) then
               tem  = dellal(i,k) * xmb(i) * dt2
-              tem1 = max(0.0, min(1.0, (tcr-t1(i,k))*tcrf))
+              tem1 = max(0.0_kind_phys, min(1.0_kind_phys, (tcr-t1(i,k))*tcrf))
               if (ql(i,k,2) .gt. -999.0) then
                 ql(i,k,1) = ql(i,k,1) + tem * tem1            ! ice
                 ql(i,k,2) = ql(i,k,2) + tem *(1.0-tem1)       ! water
@@ -4186,7 +4186,7 @@ CONTAINS
               tem = 1. - ptem
               fs0 = awlam(i) * (tem**3.) - ptem
               fp1 = -3. * awlam(i) * (tem**2.) - 1.
-              fp1 = min(fp1, -1.e-3)
+              fp1 = min(fp1, -1.e-3_kind_phys)
               sigmaw(i) = ptem - fs0 / fp1
               tem1 = abs(sigmaw(i) - ptem)
               if(tem1 < .01) then
@@ -4194,8 +4194,8 @@ CONTAINS
               endif
             endif
           enddo
-          sigmaw(i) = max(sigmaw(i), 0.001)
-          sigmaw(i) = min(sigmaw(i), 0.999)
+          sigmaw(i) = max(sigmaw(i), 0.001_kind_phys)
+          sigmaw(i) = min(sigmaw(i), 0.999_kind_phys)
         endif
       enddo
 !
@@ -4204,8 +4204,8 @@ CONTAINS
       do i = 1, im
         if(cnvflg(i)) then
           sigmagf(i) = gfudarea / garea(i)
-          sigmagf(i) = max(sigmagf(i), 0.001)
-          sigmagf(i) = min(sigmagf(i), 0.7)
+          sigmagf(i) = max(sigmagf(i), 0.001_kind_phys)
+          sigmagf(i) = min(sigmagf(i), 0.7_kind_phys)
         endif
       enddo
 
@@ -4216,13 +4216,13 @@ CONTAINS
         if(cnvflg(i)) then
 !          k = kbcon(i)
 !          tem = 0.2 / max(xlamue(i,k), 3.e-5)
-           tem = min(max(xlamue(i,kbcon(i)), 2.e-4), 6.e-4)
+           tem = min(max(xlamue(i,kbcon(i)), 2.e-4_kind_phys), 6.e-4_kind_phys)
            tem = 0.2 / tem
 
           tem1 = 3.14 * tem * tem
           sigmagfm(i) = tem1 / garea(i)
-          sigmagfm(i) = max(sigmagfm(i), 0.001)
-          sigmagfm(i) = min(sigmagfm(i), 0.999)
+          sigmagfm(i) = max(sigmagfm(i), 0.001_kind_phys)
+          sigmagfm(i) = min(sigmagfm(i), 0.999_kind_phys)
         endif
       enddo
 
@@ -4241,7 +4241,7 @@ CONTAINS
 !           scaldfunc(i) = (1.-sigmagf(i)) * (1.-sigmagf(i)) ! Grell & Freitas (2014)
             scaldfunc(i) = (1.-sigmagfm(i)) * (1.-sigmagfm(i)) ! modified Grell & Freitas(2014)
 !            scaldfunc(i) = (1.-sigmaw(i)) * (1.-sigmagf(i))  ! AW & GF
-            scaldfunc(i) = max(min(scaldfunc(i), 1.0), 0.)
+            scaldfunc(i) = max(min(scaldfunc(i), 1.0_kind_phys), 0._kind_phys)
              sigmuout(i) = sigmagfm(i)
           else
             scaldfunc(i) = 1.0
@@ -4418,8 +4418,8 @@ CONTAINS
           if (cnvflg(i)) then
             if (k.ge.kbcon(i).and.k.lt.ktcon(i)) then
               cnvc(i,k) = 0.04 * log(1. + 675. * eta(i,k) * xmb(i))
-              cnvc(i,k) = min(cnvc(i,k), 0.2)
-              cnvc(i,k) = max(cnvc(i,k), 0.0)
+              cnvc(i,k) = min(cnvc(i,k), 0.2_kind_phys)
+              cnvc(i,k) = max(cnvc(i,k), 0.0_kind_phys)
             endif
           endif
         enddo
@@ -4436,7 +4436,7 @@ CONTAINS
 !            if (k.gt.kb(i).and.k.le.ktcon(i)) then
             if (k.ge.kbcon(i).and.k.le.ktcon(i)) then
               tem  = dellal(i,k) * xmb(i) * dt2
-              tem1 = max(0.0, min(1.0, (tcr-t1(i,k))*tcrf))
+              tem1 = max(0.0_kind_phys, min(1.0_kind_phys, (tcr-t1(i,k))*tcrf))
               if (ql(i,k,2) .gt. -999.0) then
                 ql(i,k,1) = ql(i,k,1) + tem * tem1            ! ice
                 ql(i,k,2) = ql(i,k,2) + tem *(1.0-tem1)       ! water

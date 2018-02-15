@@ -192,4 +192,5 @@ store_communicators_for_domain
 wrf_get_dm_quilt_comm
 wrf_dm_nestexchange_init
 set_tiles
+wrf_get_dom_ti_integer
 ###########################################################################################

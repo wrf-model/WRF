@@ -8042,6 +8042,10 @@ SUBROUTINE sorgam_addemiss(                                             &
 !          its,ite, jts,jte, kts,kte                              )
   end if
   if( dust_opt == 2 ) then
+   !czhao+++++++++++++++++++++++++++
+   call wrf_message("WARNING: You are calling DUSTRAN dust emission scheme with MOSAIC, which is highly experimental and not recommended for use. Please use dust_opt==13")
+   !czhao---------------------------
+
       call sorgam_dust_emiss(                                     &
            slai, ust, smois, ivgtyp, isltyp,                      &
            id, dtstep, u10, v10, alt, dz8w,                       &
@@ -8050,8 +8054,10 @@ SUBROUTINE sorgam_addemiss(                                             &
            ims,ime, jms,jme, kms,kme,                             &
            its,ite, jts,jte, kts,kte                              )
   end if
-!     dust_opt changed to 5 since it conflicts with gocart/afwa
-  if( dust_opt == 5 ) then
+  !czhao ++++++++++++++++++++++++++
+!     dust_opt changed to 13 since it conflicts with gocart/afwa
+  if( dust_opt == 13 ) then
+  !czhao -------------------------- 
       call sorgam_dust_gocartemis(                                &
            ktau,dtstep,num_soil_layers,alt,u_phy,                 &
            v_phy,chem,rho_phy,dz8w,smois,u10,v10,p8w,erod,        &

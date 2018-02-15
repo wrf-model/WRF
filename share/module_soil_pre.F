@@ -1154,6 +1154,7 @@ cycle
       INTEGER, INTENT(IN) :: num_soil_layers
 
       REAL, DIMENSION(1:num_soil_layers), INTENT(OUT)  ::  zs,dzs
+      REAL, DIMENSION(1:num_soil_layers)               ::  zs2
 
       INTEGER                   ::      l
 
@@ -1169,9 +1170,18 @@ cycle
       zs  = (/ 0.00 , 0.05 , 0.20 , 0.40 , 1.60 , 3.00 /)
      ELSEIF ( num_soil_layers .EQ. 9) THEN
       zs  = (/ 0.00 , 0.01 , 0.04 , 0.10 , 0.30, 0.60, 1.00 , 1.60, 3.00 /)
-!test3 in ppt      zs  = (/ 0.00 , 0.005 , 0.02 , 0.10 , 0.30, 0.60, 1.00 , 1.60, 3.00 /)
-!      zs  = (/ 0.00 , 0.05 , 0.20 , 0.40 , 0.60, 1.00, 1.60 , 2.20, 3.00 /)
+!     zs  = (/ 0.00 , 0.005 , 0.02 , 0.10 , 0.30, 0.60, 1.00 , 1.60, 3.00 /)
      ENDIF
+
+      zs2(1) = 0.
+      zs2(2) = (zs(2) + zs(1))*0.5
+      dzs(1) = zs2(2) - zs2(1)
+     do l = 2, num_soil_layers - 1
+      zs2(l) = (zs(l+1) + zs(l)) * 0.5
+      dzs(l) = zs2(l) - zs2(l-1)
+     enddo
+      zs2(num_soil_layers) = zs(num_soil_layers)
+      dzs(num_soil_layers) = zs2(num_soil_layers) - zs2(num_soil_layers-1)
 
       IF ( num_soil_layers .EQ. 4 .OR. num_soil_layers .EQ. 5 ) THEN
          write (message, FMT='(A)') 'The RUC LSM uses 6, 9 or more levels.  Change this in the namelist.'
@@ -1830,7 +1840,8 @@ cycle
 
       REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: tmn
       REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: tsk
-      REAL , DIMENSION(num_soil_layers) :: zs , dzs
+      REAL , DIMENSION(ims:ime,jms:jme) :: smtotn, smtotr, smtotn_1m, smtotr_1m
+      REAL , DIMENSION(num_soil_layers) :: zs , dzs, factorsm
 
       REAL , DIMENSION(ims:ime,num_soil_layers,jms:jme) , INTENT(OUT) :: tslb , smois
 
@@ -1909,6 +1920,18 @@ cycle
             END IF
          END DO innerm
       END DO outerm
+
+      if( flag_soil_levels .ne. 1) then
+           write(message, FMT='(A)') ' from Noah to RUC - compute Noah bucket'
+           CALL wrf_message ( message )
+! Compute Noah sil moisture bucket
+               DO j = jts , MIN(jde-1,jte)
+                  DO i = its , MIN(ide-1,ite)
+                  smtotn(i,j)=sm_input(i,2,j)*0.1 + sm_input(i,3,j)*0.2 + sm_input(i,4,j)*0.7 + sm_input(i,5,j)*1.
+                  smtotn_1m(i,j)=sm_input(i,2,j)*0.1 + sm_input(i,3,j)*0.2 + sm_input(i,4,j)*0.7
+                  END DO
+               END DO
+      endif
 
       IF ( flag_soil_layers == 1 ) THEN
       DO j = jts , MIN(jde-1,jte)
@@ -2031,6 +2054,65 @@ cycle
       END DO z_wantm_2
 
       END IF
+
+      if( flag_soil_levels .ne. 1) then
+           write(message, FMT='(A)') ' from Noah to RUC - compute RUC bucket'
+           CALL wrf_message ( message )
+      DO j = jts , MIN(jde-1,jte)
+         DO i = its , MIN(ide-1,ite)
+               smtotr(i,j)=0.
+               smtotr_1m(i,j)=0.
+               do k=1,num_soil_layers-1 
+                  smtotr(i,j)=smtotr(i,j) + smois(i,k,j) *dzs(k)
+               enddo
+               do k=1,num_soil_layers-2
+                  smtotr_1m(i,j)=smtotr_1m(i,j) + smois(i,k,j) *dzs(k)
+               enddo
+
+        IF ( landmask(i,j) > 0.5) then
+! land
+! initialize factor
+       do k=1,num_soil_layers
+          factorsm(k)=1.
+       enddo
+! Correct RUC soil moisture to match Noah bucket
+!   print *,'1-m Buckets: RUC and Noah',i,j,smtotr_1m(i,j),0.77*smtotr_1m(i,j),smtotn_1m(i,j)
+!   print *,'Buckets: RUC and Noah',i,j,smtotr(i,j),smtotn(i,j)
+!        print *,'before smois=',i,j,smois(i,:,j)
+          do k=1,num_soil_layers-1 
+            smois(i,k,j) = max(0.02,smois(i,k,j)*smtotn(i,j)/(0.9*smtotr(i,j)))
+          enddo
+!        print *,'after smois=',i,j,smois(i,:,j)
+! Compute RUC bucket after correction
+            smtotr(i,j) = 0.
+          do k=1,num_soil_layers-1
+            smtotr(i,j)=smtotr(i,j) + smois(i,k,j) *dzs(k)
+          enddo
+!     print *,'Buckets after correction: RUC and Noah at',i,j,smtotr(i,j),smtotn(i,j)
+   if( smois(i,2,j) > smois(i,1,j) .and. smois(i,3,j) > smois(i,2,j)) then
+! typical for daytime, no recent precip
+          factorsm(1) = 0.75
+          factorsm(2) = 0.8 
+          factorsm(3) = 0.85
+          factorsm(4) = 0.9
+          factorsm(5) = 0.95
+    endif
+   do k=1,num_soil_layers-1
+      smois(i,k,j) = factorsm(k) * smois(i,k,j)
+   enddo
+
+!        print *,'1 - after smois=',i,j,smois(i,:,j)
+            smtotr(i,j) = 0.
+          do k=1,num_soil_layers-1
+            smtotr(i,j)=smtotr(i,j) + smois(i,k,j) *dzs(k)
+          enddo
+!     print *,'1 - Buckets after correction: RUC and Noah at',i,j,smtotr(i,j),smtotn(i,j)
+        ENDIF ! land
+         END DO
+      END DO
+
+      endif ! flag_soil_levels
+
       !  Over water, put in reasonable values for soil temperature and moisture.  These won't be
       !  used, but they will make a more continuous plot.
 

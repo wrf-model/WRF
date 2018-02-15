@@ -24,6 +24,9 @@ contains
 #include "da_interp_lin_3d_adj.inc"
 #include "da_interp_quad_2d_partial.inc"
 #include "da_interp_msk_avg_2d_partial.inc"
+#include "da_splinx.inc"
+#include "da_splinx_lin.inc"
+#include "da_splinx_adj.inc"
 
 end module da_interpolation
 

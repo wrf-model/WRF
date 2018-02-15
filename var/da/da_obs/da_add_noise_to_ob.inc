@@ -671,6 +671,33 @@ subroutine da_add_noise_to_ob( iv, ob )
       end do
    end if
 
+!  Transfer gpseph obs:
+
+   if ( iv%info(gpseph)%nlocal > 0 ) then
+      num_obs = 0
+      do n = 1, iv%info(gpseph)%nlocal
+         if(iv%info(gpseph)%proc_domain(1,n)) num_obs = num_obs + 1
+      end do
+      write(ounit,'(a20,i8)')'gpseph', num_obs
+      num_obs = 0
+      do n = 1, iv%info(gpseph)%nlocal
+         if (iv%info(gpseph)%proc_domain(1,n)) then
+            num_obs = num_obs + 1
+            !write(ounit,'(i8)')iv%info(gpseph)%levels(n)
+            write(ounit,'(i8)') iv%gpseph(n)%level1, iv%gpseph(n)%level2
+            !do k = 1, iv%info(gpseph)%levels(n)
+            do k = iv%gpseph(n)%level1, iv%gpseph(n)%level2
+!              Add random perturbation:
+               call da_add_noise( iv % gpseph(n) % eph(k), ob % gpseph(n) % eph(k), z1)
+!              Write out data:
+               write(ounit,'(2i8,10e15.7)')num_obs, k, &
+                               iv % gpseph(n) % eph(k) % error, z1, &
+                               dum, dum, dum, dum, dum, dum, dum, dum
+            end do
+         end if
+      end do
+   end if
+
 !  Transfer mtgirs obs:
 
    if ( iv%info(mtgirs)%nlocal > 0 ) then

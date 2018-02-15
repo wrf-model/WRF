@@ -7,8 +7,8 @@ PROGRAM make_p3_lookuptable1
 !
 !  Note:  compile with double-precision (pgf90 -r8 create_p3_lookupTable_1.f90)
 !
-! P3 package version: v2.3.2
-! Last modified     : 2017-01-23
+! P3 package version: v2.4.7
+! Last modified     : 2017-06-28
 !______________________________________________________________________________________
 
  implicit none
@@ -165,7 +165,7 @@ PROGRAM make_p3_lookuptable1
     stop
  endif
 
- open(unit=1,file='./p3_lookup_table_1-b08.dat',status='unknown')
+ open(unit=1,file='./p3_lookup_table_1-v2.4.7.dat',status='unknown')
 
 !.........................................................
 
@@ -1369,6 +1369,26 @@ PROGRAM make_p3_lookuptable1
     do i_Fr=1,n_Fr
 
        do i_Qnorm = 1,n_Qnorm
+
+! set values less than 1.e-99 set to 0, otherwise the 'E' is left off in write statements for floting point
+! numbers using some compilers
+          if (qsave(i_Qnorm,i_Fr).lt.1.e-99) qsave(i_Qnorm,i_Fr)=0.
+          if (nsave(i_Qnorm,i_Fr).lt.1.e-99) nsave(i_Qnorm,i_Fr)=0.
+          if (uns(i_Qnorm,i_Fr).lt.1.e-99) uns(i_Qnorm,i_Fr)=0.
+          if (ums(i_Qnorm,i_Fr).lt.1.e-99) ums(i_Qnorm,i_Fr)=0.
+          if (nagg(i_Qnorm,i_Fr).lt.1.e-99) nagg(i_Qnorm,i_Fr)=0.
+          if (nrwat(i_Qnorm,i_Fr).lt.1.e-99) nrwat(i_Qnorm,i_Fr)=0.
+          if (vdep(i_Qnorm,i_Fr).lt.1.e-99) vdep(i_Qnorm,i_Fr)=0.
+          if (eff(i_Qnorm,i_Fr).lt.1.e-99) eff(i_Qnorm,i_Fr)=0.
+          if (nlarge(i_Qnorm,i_Fr).lt.1.e-99) nlarge(i_Qnorm,i_Fr)=0.
+          if (nsmall(i_Qnorm,i_Fr).lt.1.e-99) nsmall(i_Qnorm,i_Fr)=0.
+          if (lsave(i_Qnorm,i_Fr).lt.1.e-99) lsave(i_Qnorm,i_Fr)=0.
+          if (refl(i_Qnorm,i_Fr).lt.1.e-99) refl(i_Qnorm,i_Fr)=0.
+          if (vdep1(i_Qnorm,i_Fr).lt.1.e-99) vdep1(i_Qnorm,i_Fr)=0.
+          if (dmm(i_Qnorm,i_Fr).lt.1.e-99) dmm(i_Qnorm,i_Fr)=0.
+          if (rhomm(i_Qnorm,i_Fr).lt.1.e-99) rhomm(i_Qnorm,i_Fr)=0.
+
+
              write(1,222)i_rhor,i_Fr,qsave(i_Qnorm,i_Fr),nsave(i_Qnorm,i_Fr),uns(i_Qnorm,i_Fr),            &
                          ums(i_Qnorm,i_Fr),nagg(i_Qnorm,i_Fr),nrwat(i_Qnorm,i_Fr),vdep(i_Qnorm,i_Fr),      &
                          eff(i_Qnorm,i_Fr),nlarge(i_Qnorm,i_Fr),nsmall(i_Qnorm,i_Fr),lsave(i_Qnorm,i_Fr),  &
@@ -1378,6 +1398,16 @@ PROGRAM make_p3_lookuptable1
    !-- ice-rain collection table:
        do i_Qnorm = 1,n_Qnorm
           do i_Drscale=1,n_Drscale
+
+! set values less than 1.e-99 set to 0, otherwise the 'E' is left off in write statements for floting point
+! numbers using some compilers
+          if (qsave(i_Qnorm,i_Fr).lt.1.e-99) qsave(i_Qnorm,i_Fr)=0.
+          if (nsave(i_Qnorm,i_Fr).lt.1.e-99) nsave(i_Qnorm,i_Fr)=0.             
+          if (lamrs(i_Drscale).lt.1.e-99) lamrs(i_Drscale)=0.
+          if (nrrain(i_Qnorm,i_Drscale,i_Fr).lt.1.e-99) nrrain(i_Qnorm,i_Drscale,i_Fr)=0.
+          if (qrrain(i_Qnorm,i_Drscale,i_Fr).lt.1.e-99) qrrain(i_Qnorm,i_Drscale,i_Fr)=0.
+          if (qsrain(i_Qnorm,i_Drscale,i_Fr).lt.1.e-99) qsrain(i_Qnorm,i_Drscale,i_Fr)=0.
+
              write(1,223) i_rhor,i_Fr,qsave(i_Qnorm,i_Fr),nsave(i_Qnorm,i_Fr),lamrs(i_Drscale),            &
                           nrrain(i_Qnorm,i_Drscale,i_Fr),qrrain(i_Qnorm,i_Drscale,i_Fr),                   &
                           qsrain(i_Qnorm,i_Drscale,i_Fr)

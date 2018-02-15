@@ -67,7 +67,7 @@ char * get_typename_i(int i) ;
 
 int gen_alloc ( char * dirname ) ;
 int gen_alloc1 ( char * dirname ) ;
-int gen_alloc2 ( FILE * fp , char * structname , node_t * node, int *j, int *iguy, int *fraction, int numguys, int frac, int sw );
+int gen_alloc2 ( FILE * fp , char * structname , char * structname2 , node_t * node, int *j, int *iguy, int *fraction, int numguys, int frac, int sw );
 
 int gen_module_state_description ( char * dirname ) ;
 int gen_module_state_description1 ( FILE * fp , node_t * node ) ;
@@ -125,6 +125,8 @@ int gen_dealloc ( char * );
 int gen_dealloc1 ( char * );
 int gen_dealloc2 ( FILE *, char *, node_t *);
 int gen_scalar_tables ( FILE *);
+int AppendReg ( char *,int);
+int irr_diag_scalar_indices ( char * );
 int gen_scalar_tables_init ( FILE *);
 int gen_scalar_indices_init ( FILE *);
 int hash(char *);

@@ -60,6 +60,8 @@
 
    USE module_cam_mam_wetscav, only:wetscav_cam_mam_driver_init
    USE module_cam_support, only: numgas_mam, gas_pcnst_modal_aero,gas_pcnst_modal_aero_pos !BSINGH - Fix for non-MAM simulations
+   USE module_HLawConst, only: init_HLawConst
+   USE module_ctrans_grell, only: conv_tr_wetscav_init
 
 !!! TUCCELLA (BUG)
    USE module_prep_wetscav_sorgam, only: aerosols_sorgam_init_aercld_ptrs, aerosols_soa_vbs_init_aercld_ptrs 
@@ -139,6 +141,7 @@
    integer :: i,j,k,l,numgas,ixhour,n,ndystep,kk,nv
    real, DIMENSION (1,1) :: sza,cosszax
    real :: xtime,xhour,xmin,gmtp,xlonn,rlat
+   logical :: is_moz_chm
 #include "version_decl"
 #ifdef CHEM_DBG_I
     call print_chem_species_index( config_flags%chem_opt )
@@ -218,12 +221,10 @@ call wrf_message("**************************************************************
        CALL wrf_debug(15,'calling RACM/MADE/SORGAM with AQCHEM chemistry from chem_driver')
        call wrf_message("WARNING: RACM_ESRLSORG_AQCHEM_KPP chemistry option is highly experimental and not recommended for use.")
 !      call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
-!!! TUCCELLA
      CASE (RACM_SOA_VBS_AQCHEM_KPP )
        numgas_mam = numgas
        CALL wrf_debug(15,'calling RACM/MADE/SOA-VBS with AQCHEM chemistry from chem_driver')
-       call wrf_message("WARNING: RACM_SOA_VBS_AQCHEM_KPP chemistry option is highly experimental and not recommended for use.")
-!      call wrf_error_fatal("ERROR: experimental option selected, please contact wrfchemhelp for assistance")
+!       call wrf_message("WARNING: RACM_SOA_VBS_AQCHEM_KPP chemistry option is highly experimental and not recommended for use.")
      CASE (CO2_TRACER, GHG_TRACER )
        call wrf_message("WARNING: Users interested in the GHG options should check the comments/references in header of module_ghg_fluxes")
      CASE (CBMZ_CAM_MAM3_NOAQ)
@@ -271,10 +272,12 @@ call wrf_message("**************************************************************
        CALL wrf_debug(15,'calling biomass burning for GHGs')
    endif
 
-   if( config_flags%chem_opt == MOZCART_KPP .or. &
-       config_flags%chem_opt == MOZART_KPP .or. &
-       config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
-       config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
+   is_moz_chm = config_flags%chem_opt == MOZCART_KPP .or. &
+                config_flags%chem_opt == MOZART_KPP .or. &
+                config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+                config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP
+
+   if( is_moz_chm ) then
        write(message_txt,*) 'chem_init: calling mozcart_lbc_init for domain ',id
        call wrf_message( trim(message_txt) )
        call mozcart_lbc_init( chem, num_chem, id, &
@@ -294,13 +297,20 @@ call wrf_message("**************************************************************
      endif
    endif
 
+   if( is_moz_chm .and. id == 1 ) then
+     write(message_txt,*) 'chem_init: calling init_HLawConst for domain ',id
+     call wrf_message( trim(message_txt) )
+!  Initialize Henrys Law constants
+     call init_HLawConst( id )
+     if( config_flags%conv_tr_wetscav == 1 ) then
+!  Initialize Henrys Law constants
+       call conv_tr_wetscav_init( numgas, num_chem )
+     endif
+   endif
+
 !!! TUCCELLA
    if ( config_flags%wetscav_onoff == 1 ) then
-
-     if( config_flags%chem_opt /= MOZART_KPP .and. &
-         config_flags%chem_opt /= MOZCART_KPP .and. &
-         config_flags%chem_opt /= MOZART_MOSAIC_4BIN_KPP .and. &
-         config_flags%chem_opt /= MOZART_MOSAIC_4BIN_AQ_KPP  ) then
+     if( .not. is_moz_chm ) then
        if(  ( config_flags%chem_opt >= 8 .AND. config_flags%chem_opt <= 13) .OR.  &
             ( config_flags%chem_opt >= 31 .AND. config_flags%chem_opt <= 36) .OR. &
             ( config_flags%chem_opt >= 41 .AND. config_flags%chem_opt <= 43) .OR. &
@@ -349,6 +359,21 @@ call wrf_message("**************************************************************
        endif
    endif
 
+   !BSINGH - kfcup schme only works with Mosaic aqueoue packages:
+   ! *** NOTE ***
+   ! KFCUP should in theory work with any chem_opt package that uses MOSAIC and has cloud-borne aerosols (*_aq*).
+   ! However, it was only tested with chem_opt=203 (saprc99_mosaic_8bin_vbs2_aq_kpp) 
+   ! during implementation into WRF-Chem in April 2017 at PNNL.   
+   if ( config_flags%cu_physics == 10)  then
+      if(  config_flags%chem_opt /= 9   .and.  config_flags%chem_opt /= 10  .and. &
+           config_flags%chem_opt /= 32  .and.  config_flags%chem_opt /= 34  .and.  &
+           config_flags%chem_opt /= 202 .and.  config_flags%chem_opt /= 203 .and.  &
+           config_flags%chem_opt /= 601 .and.  config_flags%chem_opt /= 611 ) then
+         call wrf_error_fatal("ERROR: kfcupscheme requires chem_opt = 9, 10, 32, 34, 202, 203, 601 or 611  to function.")
+      endif
+   endif
+
+
    if ( config_flags%cu_physics == 5 .OR. config_flags%cu_physics == 3) then
    if ( config_flags%cu_diag == 0) then
          call wrf_message(" No time averaged variables. Time averaged chem variables requires cu_diag = 1")
@@ -365,6 +390,19 @@ call wrf_message("**************************************************************
       ( config_flags%chem_conv_tr == 1 .and. config_flags%cu_diag == 0) ) then
          call wrf_error_fatal("ERROR: chem_conv_tr=1 requires cu_diag=1")
    endif
+
+   if ( config_flags%cu_physics == 10 .and. config_flags%kfcup_diag == 0) then
+      call wrf_error_fatal("ERROR: cu_physics == 10 requires kfcup_diag == 1")
+   endif
+
+    if ( config_flags%chem_conv_tr == 0 .and. config_flags%kfcup_diag == 1) then
+      call wrf_error_fatal("ERROR: kfcup_diag == 1 requires chem_conv_tr == 1")
+   endif
+
+   if ( config_flags%cu_physics /= 10 .and. config_flags%kfcup_diag == 1) then
+      call wrf_error_fatal("ERROR: kfcup_diag == 1 requires cu_physics == 10")
+   endif
+
 
    if ( config_flags%bio_emiss_opt .EQ. 3 .AND. config_flags%ne_area .LT. num_chem ) then
       write(message_txt,'(''ERROR: MEGAN biogenics requires ne_area('',i6,'') >= num_chem('',i6,'')'')') config_flags%ne_area,num_chem
@@ -1535,7 +1573,6 @@ end if
 
    END SELECT kpp_select
    endif
-
 
 !! Initialize some greenhouse gas species for 16th and 17th chemistry options:
 !! CO2 mixing ratios for the background GHG tracers are set as a constant value.

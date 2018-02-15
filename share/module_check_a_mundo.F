@@ -1690,7 +1690,7 @@
             WRITE ( wrf_err_message , * ) 'For domain ',i,', the domain size is too small for this many processors, ', & 
                                           'or the decomposition aspect ratio is poor.'
             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-            WRITE ( wrf_err_message , * ) 'Minimum decomposed computational patch size, either x-dir or y-dir, is 10 grid cells.'
+            WRITE ( wrf_err_message , * ) 'Minimum decomposed computational patch size, either x-dir or y-dir, is < 10 grid cells.'
             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
             WRITE ( wrf_err_message , fmt='(a,i5,a,i4,a,i4)' ) &
                                           'e_we = ', model_config_rec % e_we(i),', nproc_x = ',model_config_rec % nproc_x, &

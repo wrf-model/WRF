@@ -131,6 +131,8 @@ CONTAINS
       INTEGER, PARAMETER :: nml_write_unit= 9
       INTEGER, PARAMETER :: nml_read_unit = 10
 
+      CHARACTER (LEN=1024) :: entire_line
+
 
 ! define as temporaries
 #include "namelist_defines.inc"

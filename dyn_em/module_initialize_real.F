@@ -2897,6 +2897,11 @@ integer::oops1,oops2
       IF ( ( config_flags%sf_urban_physics == 1 ) .OR. ( config_flags%sf_urban_physics == 2 ) .OR. ( config_flags%sf_urban_physics == 3 ) ) THEN
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
+              IF ( MMINLU == 'NLCD40') THEN
+                   IF (grid%ivgtyp(i,j) == 24 .or. grid%ivgtyp(i,j) == 25 .or. grid%ivgtyp(i,j) == 26) &
+                   grid%FRC_URB2D(i,j) = (grid%FRC_URB3D(i,24,j)*0.5+grid%FRC_URB3D(i,25,j)*0.9+grid%FRC_URB3D(i,26,j)*0.95)/100.
+                   IF (grid%ivgtyp(i,j) == 13 ) grid%FRC_URB2D(i,j) = 0.9
+              ENDIF
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%LP_URB2D(i,j)  = grid%URB_PARAM(i,91,j)
                grid%LB_URB2D(i,j)  = grid%URB_PARAM(i,95,j)

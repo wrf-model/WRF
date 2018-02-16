@@ -7332,9 +7332,8 @@ print *,'namelist p_top (Pa) = ',p_top
             END IF
             t_init = temp*(p00/pb)**(r_d/cp) - t0
             alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
-            phb(k) = phb(k-1) - (znw(k)-znw(k-1)) * mub*alb(k-1)
+            phb(k+1) = phb(k) - (znw(k+1)-znw(k)) * mub*alb(k)
          END DO
-         phb(kte) = phb(kte-1) - (znw(kte)-znw(kte-1)) * mub*alb(kte-1)
        ELSE
          print *,'auto_levels_opt=',auto_levels_opt
          CALL wrf_error_fatal ( 'auto_levels_opt needs to be 1 or 2')

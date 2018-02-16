@@ -12661,12 +12661,14 @@ CONTAINS
             lwupbc(i,j)    = uflxc(1,1)
             lwdnb(i,j)     = dflx(1,1)
             lwdnbc(i,j)    = dflxc(1,1)
+			if(calc_clean_atm_diag .gt. 0)then
 ! Output up and down toa fluxes for clean sky
-            if(present(lwuptcln)) lwuptcln(i,j)  = uflxcln(1,nlayers+1)
-            if(present(lwdntcln)) lwdntcln(i,j)  = dflxcln(1,nlayers+1)
+            	lwuptcln(i,j)  = uflxcln(1,nlayers+1)
+            	lwdntcln(i,j)  = dflxcln(1,nlayers+1)
 ! Output up and down surface fluxes for clean sky
-            if(present(lwupbcln)) lwupbcln(i,j)  = uflxcln(1,1)
-            if(present(lwdnbcln)) lwdnbcln(i,j)  = dflxcln(1,1)
+            	lwupbcln(i,j)  = uflxcln(1,1)
+            	lwdnbcln(i,j)  = dflxcln(1,1)
+			end if
          endif
 
 ! Output up and down layer fluxes for total and clear sky.
@@ -12677,9 +12679,13 @@ CONTAINS
             lwupflxc(i,k,j) = uflxc(1,k)
             lwdnflx(i,k,j)  = dflx(1,k)
             lwdnflxc(i,k,j) = dflxc(1,k)
-            if(present(lwupflxcln)) lwupflxcln(i,k,j) = uflxcln(1,k)
-            if(present(lwdnflxcln)) lwdnflxcln(i,k,j) = dflxcln(1,k)
          enddo
+		 	if(calc_clean_atm_diag .gt. 0)then
+		 	do k=kts,kte+2
+            	lwupflxcln(i,k,j) = uflxcln(1,k)
+            	lwdnflxcln(i,k,j) = dflxcln(1,k)
+            end do
+            end if
          endif
 
 ! Output heating rate tendency; convert heating rate from K/d to K/s

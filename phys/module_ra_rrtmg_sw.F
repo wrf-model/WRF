@@ -11113,14 +11113,11 @@ CONTAINS
 ! Output up and down toa fluxes for total and clear sky
             swupt(i,j)     = swuflx(1,kte+2)
             swuptc(i,j)    = swuflxc(1,kte+2)
-            if(present(swuptcln)) swuptcln(i,j)  = swuflxcln(1,kte+2)
             swdnt(i,j)     = swdflx(1,kte+2)
             swdntc(i,j)    = swdflxc(1,kte+2)
-            if(present(swdntcln)) swdntcln(i,j)  = swdflxcln(1,kte+2)
 ! Output up and down surface fluxes for total and clear sky
             swupb(i,j)     = swuflx(1,1)
             swupbc(i,j)    = swuflxc(1,1)
-            if(present(swupbcln)) swupbcln(i,j)  = swuflxcln(1,1)
             swdnb(i,j)     = swdflx(1,1)
 ! Added by Zhenxin for 4 compenants of swdown radiation
             swvisdir(i,j)  = sibvisdir(1,1)
@@ -11129,7 +11126,12 @@ CONTAINS
             swnirdif(i,j)  = sibnirdif(1,1)
 !  Ended, Zhenxin (2011/06/20)
             swdnbc(i,j)    = swdflxc(1,1)
-            if(present(swdnbcln)) swdnbcln(i,j)  = swdflxcln(1,1)
+            if(calc_clean_atm_diag .gt. 0)then
+            	swuptcln(i,j)  = swuflxcln(1,kte+2)
+            	swdntcln(i,j)  = swdflxcln(1,kte+2)
+            	swupbcln(i,j)  = swuflxcln(1,1)
+            	swdnbcln(i,j)  = swdflxcln(1,1)
+            end if
          endif
             swddir(i,j)    = swdkdir(1,1)          ! jararias 2013/08/10
             swddni(i,j)    = swddir(i,j) / coszrs  ! jararias 2013/08/10
@@ -11141,10 +11143,12 @@ CONTAINS
          do k=kts,kte+2
             swupflx(i,k,j)  = swuflx(1,k)
             swupflxc(i,k,j) = swuflxc(1,k)
-            if(present(swupflxcln)) swupflxcln(i,k,j) = swuflxcln(1,k) 
             swdnflx(i,k,j)  = swdflx(1,k)
             swdnflxc(i,k,j) = swdflxc(1,k)
-            if(present(swdnflxcln)) swdnflxcln(i,k,j) = swdflxcln(1,k)
+            if(calc_clean_atm_diag .gt. 0)then
+            	swdnflxcln(i,k,j) = swdflxcln(1,k)
+            	swupflxcln(i,k,j) = swuflxcln(1,k) 
+            end if
          enddo
          endif
 
@@ -11159,21 +11163,23 @@ CONTAINS
 ! Output up and down toa fluxes for total and clear sky
             swupt(i,j)     = 0.
             swuptc(i,j)    = 0.
-            if(present(swuptcln)) swuptcln(i,j)  = 0.
             swdnt(i,j)     = 0.
             swdntc(i,j)    = 0.
-            if(present(swdntcln)) swdntcln(i,j)  = 0.
 ! Output up and down surface fluxes for total and clear sky
             swupb(i,j)     = 0.
             swupbc(i,j)    = 0.
-            if(present(swupbcln)) swupbcln(i,j)  = 0.
             swdnb(i,j)     = 0.
             swdnbc(i,j)    = 0.
-            if(present(swdnbcln)) swdnbcln(i,j)  = 0.
             swvisdir(i,j)  = 0.  ! Add by Zhenxin (2011/06/20)
             swvisdif(i,j)  = 0.
             swnirdir(i,j)  = 0.
             swnirdif(i,j)  = 0.  ! Add by Zhenxin (2011/06/20)
+            if(calc_clean_atm_diag .gt. 0)then
+				swuptcln(i,j)  = 0.
+				swdntcln(i,j)  = 0.
+				swupbcln(i,j)  = 0.
+				swdnbcln(i,j)  = 0.
+            end if
          endif
             swddir(i,j)    = 0.  ! jararias 2013/08/10
             swddni(i,j)    = 0.  ! jararias 2013/08/10

@@ -1,6 +1,9 @@
 !!
 !! LOG
 !!  2015-12-10  Weiguo Wang  added gfs scale-aware SAS scheme to HWRF
+!!    A description of this updated Scale-aware SAS can be found in the HWRF Scientific Documentation:  
+!!    https://dtcenter.org/HurrWRF/users/docs/scientific_documents/HWRFv3.9a_ScientificDoc.pdf
+
 
 MODULE module_cu_scalesas 
 

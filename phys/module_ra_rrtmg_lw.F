@@ -11486,7 +11486,7 @@ CONTAINS
                        ids,ide, jds,jde, kds,kde,                 & 
                        ims,ime, jms,jme, kms,kme,                 &
                        its,ite, jts,jte, kts,kte,                 &
-                       lwupflx, lwupflxc, lwupflxcln, lwdnflx, lwdnflxc, lwdnflxcln &
+                       lwupflx, lwupflxc, lwdnflx, lwdnflxc       &
                                                                   )
 !------------------------------------------------------------------
 !ccc To use clWRF time varying trace gases
@@ -11604,8 +11604,7 @@ CONTAINS
 ! Vertical ordering is from bottom to top (W m-2)
    REAL, DIMENSION( ims:ime, kms:kme+2, jms:jme ),                &
          OPTIONAL, INTENT(OUT) ::                                 &
-                               LWUPFLX,LWUPFLXC,LWDNFLX,LWDNFLXC, &
-                               LWUPFLXCLN, LWDNFLXCLN
+                               LWUPFLX,LWUPFLXC,LWDNFLX,LWDNFLXC
 
 !  LOCAL VARS
  
@@ -12680,12 +12679,6 @@ CONTAINS
             lwdnflx(i,k,j)  = dflx(1,k)
             lwdnflxc(i,k,j) = dflxc(1,k)
          enddo
-		 	if(calc_clean_atm_diag .gt. 0)then
-		 	do k=kts,kte+2
-            	lwupflxcln(i,k,j) = uflxcln(1,k)
-            	lwdnflxcln(i,k,j) = dflxcln(1,k)
-            end do
-            end if
          endif
 
 ! Output heating rate tendency; convert heating rate from K/d to K/s

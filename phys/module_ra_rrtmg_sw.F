@@ -9927,8 +9927,8 @@ CONTAINS
                        ids,ide, jds,jde, kds,kde,                 & 
                        ims,ime, jms,jme, kms,kme,                 &
                        its,ite, jts,jte, kts,kte,                 &
-                       swupflx, swupflxc, swupflxcln,             &
-                       swdnflx, swdnflxc, swdnflxcln,             &
+                       swupflx, swupflxc,                         &
+                       swdnflx, swdnflxc,                         &
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
                        swddir, swddni, swddif,                    & ! jararias 2013/08
                        xcoszen,julian                             & ! jararias 2013/08
@@ -10088,8 +10088,8 @@ CONTAINS
 ! Vertical ordering is from bottom to top (W m-2)
    REAL, DIMENSION( ims:ime, kms:kme+2, jms:jme ),                &
          OPTIONAL, INTENT(OUT) ::                                 &
-                               SWUPFLX,SWUPFLXC,SWUPFLXCLN,       &
-                               SWDNFLX,SWDNFLXC,SWDNFLXCLN
+                               SWUPFLX,SWUPFLXC,                  &
+                               SWDNFLX,SWDNFLXC
 
 !  LOCAL VARS
  
@@ -11145,10 +11145,6 @@ CONTAINS
             swupflxc(i,k,j) = swuflxc(1,k)
             swdnflx(i,k,j)  = swdflx(1,k)
             swdnflxc(i,k,j) = swdflxc(1,k)
-            if(calc_clean_atm_diag .gt. 0)then
-            	swdnflxcln(i,k,j) = swdflxcln(1,k)
-            	swupflxcln(i,k,j) = swuflxcln(1,k) 
-            end if
          enddo
          endif
 

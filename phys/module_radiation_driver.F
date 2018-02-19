@@ -513,10 +513,6 @@ CONTAINS
          OPTIONAL, INTENT(INOUT) ::                               &
                                SWUPFLX,SWUPFLXC,SWDNFLX,SWDNFLXC, &
                                LWUPFLX,LWUPFLXC,LWDNFLX,LWDNFLXC
-! Up/down clean sky fluxes (W m-2), not currently passed out from this subroutine
-   REAL, DIMENSION( ims:ime, kms:kme+2, jms:jme ) ::              &
-          SWUPFLXCLN,SWDNFLXCLN,                                  &
-          LWUPFLXCLN,LWDNFLXCLN
 
    REAL, DIMENSION( ims:ime, jms:jme ),          OPTIONAL ,       &
          INTENT(INOUT)  ::                                  SWCF, &
@@ -1589,8 +1585,8 @@ CONTAINS
                   IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
-                  LWUPFLX=LWUPFLX,LWUPFLXC=LWUPFLXC,LWUPFLXCLN=LWUPFLXCLN, &
-                  LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC,LWDNFLXCLN=LWDNFLXCLN,  &
+                  LWUPFLX=LWUPFLX,LWUPFLXC=LWUPFLXC,                &
+                  LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC,                &
                   mp_physics=mp_physics                             )
 
         CASE (RRTMG_LWSCHEME_FAST)
@@ -2010,8 +2006,8 @@ CONTAINS
                      IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
                      IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
                      ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
-                     SWUPFLX=SWUPFLX,SWUPFLXC=SWUPFLXC,SWUPFLXCLN=SWUPFLXCLN, &
-                     SWDNFLX=SWDNFLX,SWDNFLXC=SWDNFLXC,SWDNFLXCLN=SWDNFLXCLN, &
+                     SWUPFLX=SWUPFLX,SWUPFLXC=SWUPFLXC,                &
+                     SWDNFLX=SWDNFLX,SWDNFLXC=SWDNFLXC,                &
                      tauaer3d_sw=tauaer_sw,                             & ! jararias 2013/11
                      ssaaer3d_sw=ssaaer_sw,                             & ! jararias 2013/11
                      asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11

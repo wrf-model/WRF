@@ -2,6 +2,10 @@
 !
 ! Code contributed by Gonzalo Miguez-Macho, Univ. de Santiago de Compostela, Galicia, Spain
 !
+! Added capability to spectrally nudge water vapor mixing ratio, and added
+! user-definable lid for nudging potential temperature and water vapor mixing
+! ratio. (Tanya Spero, U.S. Environmental Protection Agency -- October 2017)
+
 MODULE module_fdda_spnudging
 
 #ifdef DM_PARALLEL
@@ -14,15 +18,16 @@ CONTAINS
 !-------------------------------------------------------------------
 !
    SUBROUTINE spectral_nudging(grid,itimestep,dt,xtime,id,analysis_interval, end_fdda_hour, &
-               if_no_pbl_nudging_uv, if_no_pbl_nudging_t, if_no_pbl_nudging_ph,&
+               if_no_pbl_nudging_uv, if_no_pbl_nudging_t, if_no_pbl_nudging_ph,if_no_pbl_nudging_q,&
                if_zfac_uv, k_zfac_uv, dk_zfac_uv, & 
                if_zfac_t, k_zfac_t, dk_zfac_t, &
                if_zfac_ph, k_zfac_ph, dk_zfac_ph, &
-               guv, gt, gph, if_ramping, dtramp_min, xwavenum, ywavenum, &
-               u3d,v3d,th3d,ph3d,                 &
-               u_ndg_old,v_ndg_old,t_ndg_old,ph_ndg_old,       &
-               u_ndg_new,v_ndg_new,t_ndg_new,ph_ndg_new,       &
-               RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RPHNDGDTEN,&
+               if_zfac_q, k_zfac_q, dk_zfac_q, ktrop, &
+               guv, gt, gph, gq, if_ramping, dtramp_min, xwavenum, ywavenum, &
+               u3d,v3d,th3d,ph3d,qv3d,                 &
+               u_ndg_old,v_ndg_old,t_ndg_old,ph_ndg_old,q_ndg_old,       &
+               u_ndg_new,v_ndg_new,t_ndg_new,ph_ndg_new,q_ndg_new,       &
+               RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RPHNDGDTEN,RQVNDGDTEN,&
                pblh, ht, z, z_at_w,                             &
                ids,ide, jds,jde, kds,kde,                           &
                ims,ime, jms,jme, kms,kme,                           &
@@ -44,7 +49,8 @@ CONTAINS
 !-- u3d         3d u-velocity staggered on u points
 !-- v3d         3d v-velocity staggered on v points
 !-- th3d        3d potential temperature (k)
-!---ph3d        3d perturbation geopotential
+!-- ph3d        3d perturbation geopotential
+!-- qv3d        3d water vapor mixing ratio
 !-- rundgdten   staggered u tendency due to
 !               spectral nudging (m/s/s)
 !-- rvndgdten   staggered v tendency due to
@@ -53,6 +59,8 @@ CONTAINS
 !               spectral nudging (K/s)
 !-- phndgdten  ph tendency due to
 !               spectral nudging (m2/s2/s)
+!-- qvndgdten   qv tendency due to
+!               spectral nudging (kg/kg/s)
 !-- ids         start index for i in domain
 !-- ide         end index for i in domain
 !-- jds         start index for j in domain
@@ -78,10 +86,11 @@ CONTAINS
    INTEGER,  INTENT(IN)   ::      itimestep, analysis_interval, end_fdda_hour
 
    INTEGER,  INTENT(IN)   ::      if_no_pbl_nudging_uv, if_no_pbl_nudging_t, &
-                                  if_no_pbl_nudging_ph
-   INTEGER,  INTENT(IN)   ::      if_zfac_uv, if_zfac_t, if_zfac_ph
-   INTEGER,  INTENT(IN)   ::      k_zfac_uv,  k_zfac_t, k_zfac_ph
-   INTEGER,  INTENT(IN)   ::      dk_zfac_uv,  dk_zfac_t, dk_zfac_ph
+                                  if_no_pbl_nudging_ph, if_no_pbl_nudging_q
+   INTEGER,  INTENT(IN)   ::      if_zfac_uv, if_zfac_t, if_zfac_ph, if_zfac_q
+   INTEGER,  INTENT(IN)   ::      k_zfac_uv,  k_zfac_t, k_zfac_ph, k_zfac_q
+   INTEGER,  INTENT(IN)   ::      dk_zfac_uv,  dk_zfac_t, dk_zfac_ph, dk_zfac_q
+   INTEGER,  INTENT(IN)   ::      ktrop
    INTEGER,  INTENT(IN)   ::      if_ramping
    INTEGER,  INTENT(IN)   ::      xwavenum,ywavenum
 
@@ -102,6 +111,7 @@ CONTAINS
  
    REAL,     DIMENSION( ims:ime, kms:kme, jms:jme ), &
              INTENT(IN)   ::                  ph3d, &
+                                              qv3d, &
                                               th3d, &
                                                  z, &
                                             z_at_w
@@ -110,7 +120,8 @@ CONTAINS
              INTENT(INOUT)   ::           rundgdten, &
                                           rvndgdten, &
                                          rthndgdten, &
-                                         rphndgdten
+                                         rphndgdten, &
+                                         rqvndgdten
 
 
    REAL,     DIMENSION( ims:ime, kms:kme, jms:jme ), &
@@ -118,10 +129,12 @@ CONTAINS
                                           v_ndg_old, &
                                           t_ndg_old, &
                                           ph_ndg_old, &
+                                          q_ndg_old, &
                                           u_ndg_new, &
                                           v_ndg_new, &
                                           t_ndg_new, &
-                                          ph_ndg_new
+                                          ph_ndg_new, &
+                                          q_ndg_new
 
    REAL,     DIMENSION( ims:ime, kms:kme, jms:jme ), &
              INTENT(IN)   ::                    u3d, &
@@ -130,7 +143,7 @@ CONTAINS
    REAL,  DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: pblh, &
                                                          ht
 
-   REAL, INTENT(IN)    :: guv, gt ,gph
+   REAL, INTENT(IN)    :: guv, gt ,gph, gq
 
    INTEGER             :: its,ite, jts,jte,ij
    INTEGER             :: i, j, k, itsu, jtsv, itf, jtf, ktf, i0, k0, j0
@@ -138,8 +151,8 @@ CONTAINS
    INTEGER             :: kpbl, dbg_level
 
    REAL                :: zpbl, zagl, zagl_bot, zagl_top, tfac, actual_end_fdda_min
-   REAL, DIMENSION( ips:ipe, kps:kpe, jps:jpe, 4 ) :: wpbl  ! 1: u, 2: v, 3: t, 4: ph
-   REAL, DIMENSION( kps:kpe, 4 )                   :: wzfac ! 1: u, 2: v, 3: t, 4: ph
+   REAL, DIMENSION( ips:ipe, kps:kpe, jps:jpe, 5 ) :: wpbl  ! 1: u, 2: v, 3: t, 4: ph, 5: q
+   REAL, DIMENSION( kps:kpe, 5 )                   :: wzfac ! 1: u, 2: v, 3: t, 4: ph, 5: q
 
    LOGICAL , EXTERNAL  :: wrf_dm_on_monitor
 
@@ -167,6 +180,7 @@ CONTAINS
        RVNDGDTEN(i,k,j) = 0.0
        RTHNDGDTEN(i,k,j) = 0.0
        RPHNDGDTEN(i,k,j) = 0.0
+       RQVNDGDTEN(i,k,j) = 0.0
      ENDDO
      ENDDO
      ENDDO
@@ -249,6 +263,15 @@ CONTAINS
            ENDDO
          ENDIF
 
+         IF( gq > 0.0 ) THEN
+           DO k = kts, kte
+             WRITE(wrf_err_message,'(a,i1,a,3i4,a,f10.4,a,f10.4)') &
+               '    D0',id,' sample analysis values at i,k,j=', i0, k, j0, &
+               ' q_ndg_old=', q_ndg_old(i0,k,j0), ' q_ndg_new=', q_ndg_new(i0,k,j0)
+             CALL wrf_message( TRIM(wrf_err_message) )
+           ENDDO
+         ENDIF
+
        ENDIF
      ENDIF
    ENDIF
@@ -273,6 +296,18 @@ CONTAINS
 ! (dk_zfac_uv, dk_zfac_t and kd_zfac_ph are also set in the namelist, default value is 1).
 !If all switches are set to zero, wzfac = 1 (default value).
 !
+! TLS: The above conditions also apply to Qv. (October 2017)
+! TLS: Allow user-definable lid (KTROP, via the namelist) that can be used to
+!      restrict nudging of potential temperature and water vapor mixing ratio
+!      above a layer.  Nudging of both theta and Qv will be at 0.5 strength
+!      at the user-defined layer and will be 0.0 above that layer.  Setting
+!      KTROP=0 will allow nudging to the top of the model.  U, V, andd PHI are
+!      not affected by KTROP.  KTROP is separate from the PBL and ZFAC options.
+!      Using KTROP with the PBL restriction can effectively limit nudging of
+!      theta and Qv to the free troposphere.  Ideally KTROP will be refined or
+!      supplemented with the space and time varying tropopause.  The lower limit
+!      for KTROP is arbitrarily set to the index of the middle layer of the
+!      number of layers in a given simulation.  (October 2017)
 
    IF( if_no_pbl_nudging_uv == 1 ) THEN
 
@@ -371,6 +406,28 @@ CONTAINS
    ENDIF
 
 
+!~~~Restricting nudging of temperature above a level KTROP to consider
+!~~~deficiencies and gradients in temperature above tropopause.
+     IF ( ktrop > 0 ) THEN
+
+       DO j=jts,jtf
+       DO i=its,itf
+           wpbl(i, ktrop, j, 3) = wpbl(i, ktrop, j, 3) * 0.5
+       ENDDO
+       ENDDO
+
+       DO j=jts,jtf
+       DO k=ktrop+1,ktf
+       DO i=its,itf
+            wpbl(i, k, j, 3) = 0.0
+       ENDDO
+       ENDDO
+       ENDDO
+
+     ENDIF
+!~~~End KTROP mods for potential temperature
+
+
    IF( if_no_pbl_nudging_ph == 1 ) THEN
    
      DO j=jts,jtf
@@ -405,6 +462,65 @@ CONTAINS
      ENDDO
 
    ENDIF
+
+
+   IF( if_no_pbl_nudging_q == 1 ) THEN
+
+     DO j=jts,jtf
+     DO i=its,itf
+
+       kpbl = 1
+       zpbl = pblh(i,j)
+
+       loop_kq: DO k=kts,ktf
+         zagl_bot = z_at_w(i,k,  j)-ht(i,j)
+         zagl_top = z_at_w(i,k+1,j)-ht(i,j)
+         IF( zpbl >= zagl_bot .AND. zpbl < zagl_top ) THEN
+           kpbl = k
+           EXIT loop_kq
+         ENDIF
+       ENDDO loop_kq
+
+       DO k=kts,ktf
+          wpbl(i, k, j, 5) = max ( min ( float(k-kpbl) / float(dk_zfac_q) , 1. ) , 0.)
+       ENDDO
+
+     ENDDO
+     ENDDO
+
+   ELSEIF( if_zfac_q == 1 ) THEN
+
+     DO j=jts,jtf
+     DO k=kts,ktf
+     DO i=its,itf
+          wpbl(i, k, j, 5) = max ( min ( float(k-k_zfac_q) / float(dk_zfac_q) , 1. ) , 0.)
+     ENDDO
+     ENDDO
+     ENDDO
+
+   ENDIF
+
+!~~~Restricting nudging of moisture above a level KTROP to consider
+!~~~deficiencies in moisture above tropopause.
+     IF ( ktrop > 0 ) THEN
+
+       DO j=jts,jtf
+       DO i=its,itf
+           wpbl(i, ktrop, j, 5) = wpbl(i, ktrop, j, 5) * 0.5
+       ENDDO
+       ENDDO
+
+       DO j=jts,jtf
+       DO k=ktrop+1,ktf
+       DO i=its,itf
+            wpbl(i, k, j, 5) = 0.0
+       ENDDO
+       ENDDO
+       ENDDO
+
+     ENDIF
+!~~~End KTROP mods for water vapor mixing ratio
+
 
 
 ! If if_ramping and dtramp_min are defined by user, comput a time weighting function, tfac, 
@@ -735,6 +851,80 @@ IF(gph > 0. ) then
 
 ENDIF
 
+
+IF(gq > 0. ) then
+
+ !$OMP PARALLEL DO   &
+ !$OMP PRIVATE ( ij, i,j,k )
+ DO ij = 1 , num_tiles
+
+   DO j=jts,jte
+   DO k=kts,kte
+   DO i=its,ite
+     val_analysis = q_ndg_old(i,k,j) *( 1.0 - coef ) + q_ndg_new(i,k,j) * coef
+
+     grid%dif_analysis(i,k,j) = val_analysis - qv3d(i,k,j)
+
+   ENDDO
+   ENDDO
+   ENDDO
+
+ ENDDO
+ !$OMP END PARALLEL DO
+
+!Filter
+
+#ifdef DM_PARALLEL
+# include "XPOSE_SPECTRAL_NUDGING_z2x.inc"
+
+     CALL spectral_nudging_filter_3dx( grid%dif_xxx, xwavenum,    &
+                                ids, ide, jds, jde, kds, kde,         &
+                                imsx, imex, jmsx, jmex, kmsx, kmex,     &
+                                ipsx, ipex, jpsx, jpex, kpsx, kpex  )
+
+# include "XPOSE_SPECTRAL_NUDGING_x2y.inc"
+
+     CALL spectral_nudging_filter_3dy( grid%dif_yyy, ywavenum,    &
+                                ids, ide, jds, jde, kds, kde,         &
+                                imsy, imey, jmsy, jmey, kmsy, kmey,     &
+                                ipsy, ipey, jpsy, jpey, kpsy, kpey  )
+
+# include "XPOSE_SPECTRAL_NUDGING_y2z.inc"
+
+
+#else
+     CALL spectral_nudging_filter_3dx( grid%dif_analysis, xwavenum,     &
+                                ids, ide, jds, jde, kds, kde,       &
+                                ims, ime, jms, jme, kms, kme,       &
+                                ips, ipe, jps, jpe, kps, kpe )
+
+     CALL spectral_nudging_filter_3dy( grid%dif_analysis, ywavenum,      &
+                                ids, ide, jds, jde, kds, kde,       &
+                                ims, ime, jms, jme, kms, kme,       &
+                                ips, ipe, jps, jpe, kps, kpe  )
+#endif
+
+! Calculate tendency
+
+ !$OMP PARALLEL DO   &
+ !$OMP PRIVATE ( ij, i,j,k )
+ DO ij = 1 , num_tiles
+
+   DO j=jts,jte
+   DO k=kts,kte
+   DO i=its,ite
+     RQVNDGDTEN(i,k,j) = gq * wpbl(i,k,j,5) * wzfac(k,5) * tfac * &
+                        grid%dif_analysis(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+ ENDDO
+ !$OMP END PARALLEL DO
+
+ENDIF
+
+
 #endif
 
    END SUBROUTINE spectral_nudging
@@ -925,13 +1115,15 @@ END SUBROUTINE spectralnudgingfilterfft2dncar
 
 !-------------------------------------------------------------------
 
-   SUBROUTINE fddaspnudginginit(id,rundgdten,rvndgdten,rthndgdten,rphndgdten, &
+   SUBROUTINE fddaspnudginginit(id,rundgdten,rvndgdten,rthndgdten,rphndgdten,rqvndgdten, &
                run_hours,  &
                if_no_pbl_nudging_uv, if_no_pbl_nudging_t, if_no_pbl_nudging_ph, &
+               if_no_pbl_nudging_q, &
                if_zfac_uv, k_zfac_uv, dk_zfac_uv, &
                if_zfac_t, k_zfac_t, dk_zfac_t, &
                if_zfac_ph, k_zfac_ph, dk_zfac_ph, &               
-               guv, gt, gph, if_ramping, dtramp_min, end_fdda_hour, &
+               if_zfac_q, k_zfac_q, dk_zfac_q, ktrop, &
+               guv, gt, gph, gq, if_ramping, dtramp_min, end_fdda_hour, &
                xwavenum,ywavenum,                          &
                       restart, allowed_to_read,                    &
                       ids, ide, jds, jde, kds, kde,                &
@@ -950,17 +1142,19 @@ END SUBROUTINE spectralnudgingfilterfft2dncar
                                                        rundgdten, &
                                                        rvndgdten, &
                                                       rthndgdten, &
-                                                      rphndgdten
+                                                      rphndgdten, &
+                                                      rqvndgdten
    INTEGER,  INTENT(IN)   ::      run_hours
    INTEGER,  INTENT(IN)   ::      if_no_pbl_nudging_uv, if_no_pbl_nudging_t, &
-                                  if_no_pbl_nudging_ph, end_fdda_hour
-   INTEGER,  INTENT(IN)   ::      if_zfac_uv, if_zfac_t, if_zfac_ph
-   INTEGER,  INTENT(IN)   ::      k_zfac_uv,  k_zfac_t,  k_zfac_ph
-   INTEGER,  INTENT(IN)   ::      dk_zfac_uv,  dk_zfac_t,  dk_zfac_ph
+                                  if_no_pbl_nudging_ph, if_no_pbl_nudging_q,  end_fdda_hour
+   INTEGER,  INTENT(IN)   ::      if_zfac_uv, if_zfac_t, if_zfac_ph, if_zfac_q
+   INTEGER,  INTENT(IN)   ::      k_zfac_uv,  k_zfac_t,  k_zfac_ph, k_zfac_q
+   INTEGER,  INTENT(IN)   ::      dk_zfac_uv,  dk_zfac_t,  dk_zfac_ph, dk_zfac_q
+   INTEGER,  INTENT(IN)   ::      ktrop
    INTEGER,  INTENT(IN)   ::      if_ramping
    INTEGER,  INTENT(IN)   ::      xwavenum,ywavenum
    REAL,     INTENT(IN)   ::      dtramp_min
-   REAL, INTENT(IN)       ::      guv, gt, gph
+   REAL, INTENT(IN)       ::      guv, gt, gph, gq
    REAL                   ::      actual_end_fdda_min
 
    INTEGER :: i, j, k
@@ -1007,6 +1201,18 @@ END SUBROUTINE spectralnudgingfilterfft2dncar
        CALL wrf_message(TRIM(wrf_err_message))
      ENDIF
 
+     IF( gq > 0.0) THEN
+       WRITE(wrf_err_message,'(a,i1,a,e12.4,a,i4,a,i4)') &
+         'D0',id,' Spectral nudging for water vapor mixing ratio is turned on and Gq= ', gq,' xwave= ',xwavenum,' ywavenum= ',ywavenum
+       CALL wrf_message(TRIM(wrf_err_message))
+     ELSE IF( gq < 0.0 ) THEN
+       CALL wrf_error_fatal('In grid FDDA, Gq must be positive.')
+     ELSE
+       WRITE(wrf_err_message,'(a,i1,a,e12.4)') &
+         'D0',id,' Spectral nudging for water vapor mixing ratio is turned off and Gq= ', gq
+       CALL wrf_message(TRIM(wrf_err_message))
+     ENDIF
+
      IF( guv > 0.0 .AND. if_no_pbl_nudging_uv == 1 ) THEN
         WRITE(wrf_err_message,'(a,i1,a)') &
            'D0',id,' Spectral nudging for wind is turned off within the PBL.'
@@ -1046,6 +1252,31 @@ END SUBROUTINE spectralnudgingfilterfft2dncar
             IF( dk_zfac_ph < 1 ) CALL wrf_error_fatal('In spectral nudging, dk_zfac_ph must be greater or equal than 1.')
      ENDIF
 
+     IF( gq > 0.0 .AND. if_no_pbl_nudging_q == 1 ) THEN
+        WRITE(wrf_err_message,'(a,i1,a)') &
+           'D0',id,' Spectral nudging for water vapor mixing ratio is turned off within the PBL.'
+        CALL wrf_message(TRIM(wrf_err_message))
+             IF( dk_zfac_t < 1 ) CALL wrf_error_fatal('In spectral nudging, dk_zfac_t must be greater or equal than 1.')
+     ELSEIF( gq > 0.0 .AND. if_zfac_q == 1 ) THEN
+        WRITE(wrf_err_message,'(a,i1,a,i3)') &
+           'D0',id,' Spectral nudging for water vapor mixing ratio is turned off below layer', k_zfac_q
+        CALL wrf_message(TRIM(wrf_err_message))
+            IF( dk_zfac_q < 1 ) CALL wrf_error_fatal('In spectral nudging, dk_zfac_q must be greater or equal than 1.')
+     ENDIF
+
+
+     IF( ktrop > 0 .AND. ktrop < NINT(FLOAT(kde) * 0.5) ) THEN
+        WRITE(wrf_err_message,'(a,i3)') &
+          'Tropopause layer for nudging restriction seems too low. KTROP set to:', ktrop
+        CALL wrf_message(TRIM(wrf_err_message))
+     ENDIF
+
+
+     IF ( ktrop > FLOAT(kde) ) THEN
+       CALL wrf_error_fatal('KTROP is set above the model top.')
+     ENDIF
+
+
      IF( if_ramping == 1 .AND. ABS(dtramp_min) > 0.0 ) THEN
        IF( dtramp_min <= 0.0 ) THEN
          actual_end_fdda_min = end_fdda_hour*60.0
@@ -1075,6 +1306,7 @@ END SUBROUTINE spectralnudgingfilterfft2dncar
         rvndgdten(i,k,j) = 0.
         rthndgdten(i,k,j) = 0.
         rphndgdten(i,k,j) = 0.
+        rqvndgdten(i,k,j) = 0.
      ENDDO
      ENDDO
      ENDDO

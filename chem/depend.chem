@@ -121,7 +121,7 @@ module_phot_tuv.o: params_mod.o module_subs_tuv.o la_srb.o rxn.o rdxs.o
 
 module_phot_mad.o: module_data_radm2.o
 
-module_phot_fastj.o: module_mosaic_driver.o module_peg_util.o module_data_cbmz.o
+module_phot_fastj.o: module_mosaic_driver.o module_peg_util.o module_data_cbmz.o module_data_mosaic_therm.o
 
 module_ftuv_driver.o: module_wave_data.o module_ftuv_subs.o module_data_sorgam.o module_data_soa_vbs.o
 
@@ -243,6 +243,8 @@ module_mosaic_initmixrats.o: module_peg_util.o module_data_mosaic_asect.o module
 
 module_mosaic_movesect.o: module_peg_util.o module_data_mosaic_asect.o module_data_mosaic_other.o
 
+module_mosaic_gly.o: module_data_mosaic_therm.o
+
 module_mosaic_therm.o: module_peg_util.o module_data_mosaic_asect.o module_data_mosaic_other.o module_data_mosaic_therm.o module_mosaic_movesect.o module_mosaic_gly.o
 
 module_mosaic_newnuc.o: module_peg_util.o module_data_mosaic_asect.o module_data_mosaic_other.o module_mosaic_movesect.o
@@ -344,7 +346,7 @@ photolysis_driver.o: module_phot_mad.o module_phot_fastj.o module_ftuv_driver.o 
 
 mechanism_driver.o: module_data_radm2.o module_radm.o module_aerosols_sorgam.o module_aerosols_soa_vbs.o module_data_cbmz.o module_cbmz.o
 
-optical_driver.o: module_optical_averaging.o module_peg_util.o
+optical_driver.o: module_optical_averaging.o module_peg_util.o module_data_mosaic_therm.o
 
 emissions_driver.o: module_add_emiss_burn.o module_data_radm2.o module_radm.o module_bioemi_simple.o module_bioemi_beis314.o module_bioemi_megan2.o module_emissions_anthropogenics.o module_cbmz_addemiss.o module_cb05_addemiss.o module_mosaic_addemiss.o module_aerosols_sorgam.o module_aerosols_soa_vbs.o module_aerosols_sorgam_vbs.o module_plumerise1.o module_gocart_dust.o module_gocart_dust_afwa.o module_uoc_dust.o module_gocart_seasalt.o module_ghg_fluxes.o module_lightning_nox_driver.o module_cam_mam_addemiss.o
 

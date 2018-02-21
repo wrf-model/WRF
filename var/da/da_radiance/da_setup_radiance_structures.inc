@@ -199,6 +199,26 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
          call da_error(__FILE__,__LINE__,message(1:1))
 #endif
       end if
+      if (use_goesimgobs) then
+         write(unit=stdout,fmt='(a)') 'Reading netcdf goes imager GVAR data'
+         !if (imager_format==1)then
+         !   write(unit=stdout,fmt='(a)') 'Reading goesimg data from HDF4 files'
+         !   filename = 'HDF4IMAGER-13'
+         !   call da_read_obs_hdf4imager(iv, filename)
+         !   filename = 'HDF4IMAGER-15'
+         !   call da_read_obs_hdf4imager(iv, filename)
+         !end if
+         !if (imager_format==2)then
+         !   write(unit=stdout,fmt='(a)') 'Reading goesimg data from NETCDF files'
+            filename = 'goes-13-imager'
+            call da_read_obs_ncgoesimg(iv, filename)
+            filename = 'goes-14-imager'
+            call da_read_obs_ncgoesimg(iv, filename)
+            filename = 'goes-15-imager'
+            call da_read_obs_ncgoesimg(iv, filename)
+         !end if
+         !write(unit=stdout,fmt='(a)') 'Finish reading goesimg data'
+      end if
    end if
 
    if ( use_filtered_rad ) then

@@ -1657,6 +1657,63 @@
          CALL wrf_message ( wrf_err_message )
       END IF
 
+#if (WRF_CHEM == 1 && WRF_KPP == 1 )
+!-----------------------------------------------------------------------
+! Check for consistent chem_opt and irr_opt
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%irr_opt(i) > 0 .and. &
+              (model_config_rec%chem_opt(i) /= mozcart_kpp .and. &
+               model_config_rec%chem_opt(i) /= mozart_mosaic_4bin_kpp .and. &
+               model_config_rec%chem_opt(i) /= mozart_mosaic_4bin_aq_kpp ) ) THEN
+           wrf_err_message = '--- ERROR: IRR diagnostics can only be used with the following chem_opt settings:' 
+           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+           wrf_err_message = '    MOZCART_KPP, MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP'
+           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+           write(wrf_err_message,'(''    chem_opt = '',i3,'', '',i3,'', or '',i3)') &
+                 MOZCART_KPP, MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP 
+           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+           count_fatal_error = count_fatal_error + 1
+         END IF
+      ENDDO
+#endif
+
+#if ( ( EM_CORE == 1) && ( defined(DM_PARALLEL) )&& ( ! defined(STUBMPI) ) )
+!-----------------------------------------------------------------------
+! Did the user ask for too many MPI tasks, or are those tasks poorly distributed.
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec % e_we(i) /  model_config_rec % nproc_x .LT. 10 ) .OR. &
+              ( model_config_rec % e_sn(i) /  model_config_rec % nproc_y .LT. 10 ) ) THEN
+            WRITE ( wrf_err_message , * ) 'For domain ',i,', the domain size is too small for this many processors, ', & 
+                                          'or the decomposition aspect ratio is poor.'
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            WRITE ( wrf_err_message , * ) 'Minimum decomposed computational patch size, either x-dir or y-dir, is 10 grid cells.'
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            WRITE ( wrf_err_message , fmt='(a,i5,a,i4,a,i4)' ) &
+                                          'e_we = ', model_config_rec % e_we(i),', nproc_x = ',model_config_rec % nproc_x, &
+                                          ', with cell width in x-direction = ', &
+                                          model_config_rec % e_we(i) /  model_config_rec % nproc_x
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            WRITE ( wrf_err_message , fmt='(a,i5,a,i4,a,i4)' ) &
+                                          'e_sn = ', model_config_rec % e_sn(i),', nproc_y = ',model_config_rec % nproc_y, &
+                                          ', with cell width in y-direction = ', &
+                                          model_config_rec % e_sn(i) /  model_config_rec % nproc_y
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            wrf_err_message = '--- ERROR: Reduce the MPI rank count, or redistribute the tasks.'
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            oops = oops + 1
+         END IF
+      ENDDO
+      IF ( oops .GT. 0 ) THEN
+         count_fatal_error = count_fatal_error + 1
+      END IF
+#endif
+
+
+
 
 !-----------------------------------------------------------------------
 !  MUST BE AFTER ALL OF THE PHYSICS CHECKS.
@@ -1934,6 +1991,7 @@
 #endif
 
 #endif
+
       
 !-----------------------------------------------------------------------
 ! Set the namelist parameters for the CAM radiation scheme if either 

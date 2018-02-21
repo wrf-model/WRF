@@ -23,9 +23,12 @@ int
 main( int argc, char *argv[], char *env[] )
 {
   char fname_in[NAMELEN], dir[NAMELEN], fname_tmp[NAMELEN], command[NAMELEN] ;
+  char fname_wrk[NAMELEN] ;
   FILE * fp_in, *fp_tmp ;
   char * thisprog  ;
+  char *env_val ;
   int mypid ;
+  int do_irr_diag ;
 #ifndef _WIN32
   struct rlimit rlim ;
 #endif
@@ -134,6 +137,63 @@ main( int argc, char *argv[], char *env[] )
   init_parser() ;
   init_type_table() ;
   init_dim_table() ;
+//
+//  possible IRR diagnostcis?
+//
+  do_irr_diag = 0;
+  env_val = getenv( "WRF_CHEM" );
+  if( env_val != NULL && !strncmp( env_val, "1", 1 ) ) {
+    env_val = getenv( "WRF_KPP" );
+    if( env_val != NULL && !strncmp( env_val, "1", 1 ) ) do_irr_diag = 1; 
+  }
+  if( do_irr_diag ) {
+    if( access( fname_in,F_OK ) ) {
+      fprintf(stderr,"Registry program %s does not exist. Ending.\n", fname_in ) ;
+      exit(2) ;
+    }
+    { char *e ;
+      strcpy( dir , fname_in ) ;
+      if ( ( e = rindex ( dir , '/' ) ) != NULL ) { *e = '\0' ; } else { strcpy( dir, "." ) ; } 
+      sprintf( fname_wrk,"%s/Registry_irr_diag",dir ) ;
+    }
+//  fprintf(stderr,"Registry tmp file = %s\n",fname_wrk);
+    sprintf(command,"/bin/cp %s %s\n",fname_in,fname_wrk);
+//  fprintf(stderr,"Command = %s\n",command);
+    if( system( command ) ) {
+      fprintf(stderr,"Could not copy %s to %s\n",fname_in,fname_wrk);
+      exit(2) ;
+    }
+    if (( fp_tmp = fopen( fname_wrk , "a" )) == NULL )
+    {
+      fprintf(stderr,"Registry program cannot open %s for appending. Ending.\n", fname_tmp ) ;
+      exit(2) ;
+    }
+    if( !access( "Registry/registry.irr_diag",F_OK ) ) {
+      sprintf(command,"/bin/rm -f Registry/registry.irr_diag\n");
+      if( system( command ) ) {
+        fprintf(stderr,"Could not remove Registry/registry.irr_diag\n");
+        exit(2) ;
+      }
+    }
+    {
+      int ndx = 0;
+      int retcod;
+      retcod = AppendReg( "mozcart",ndx );
+      if( !retcod ) ndx++;
+      retcod = AppendReg( "t1_mozcart",ndx );
+      if( !retcod ) ndx++;
+      retcod = AppendReg( "mozart_mosaic_4bin",ndx );
+      if( !retcod ) ndx++;
+      retcod = AppendReg( "mozart_mosaic_4bin_aq",ndx );
+    }
+
+    fprintf(fp_tmp,"\n");
+    fprintf(fp_tmp,"include registry.irr_diag\n");
+    fclose(fp_tmp);
+    strcpy( fname_in,fname_wrk );
+    irr_diag_scalar_indices( "inc" );
+//  fprintf(stderr,"fname_in = %s\n",fname_in);
+  }
 
   if ( !strcmp(fname_in,"") ) fp_in = stdin ;
   else
@@ -212,8 +272,16 @@ main( int argc, char *argv[], char *env[] )
 
 cleanup:
 #ifdef _WIN32
+   if( do_irr_diag ) {
+     sprintf(command,"del /F /Q %s\n",fname_wrk );
+     system( command ) ;
+   }
    sprintf(command,"del /F /Q %s\n",fname_tmp );
 #else
+   if( do_irr_diag ) {
+     sprintf(command,"/bin/rm -f %s\n",fname_wrk );
+     system( command ) ;
+   }
    sprintf(command,"/bin/rm -f %s\n",fname_tmp );
 #endif
    return system( command ) ;

@@ -391,7 +391,8 @@
 
       CONTAINS
 
-      SUBROUTINE thompson_init(hgt, orho, nwfa2d, nwfa, nifa, dx, dy,   &
+      SUBROUTINE thompson_init(hgt, orho, recip_flag, nwfa2d,           &
+                          nwfa, nifa, dx, dy,                           &
                           is_start,                                     &
                           ids, ide, jds, jde, kds, kde,                 &
                           ims, ime, jms, jme, kms, kme,                 &
@@ -409,13 +410,14 @@
       REAL, DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL, INTENT(INOUT) :: nwfa, nifa
       REAL, DIMENSION(ims:ime,jms:jme), OPTIONAL, INTENT(INOUT) :: nwfa2d
       REAL, DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL, INTENT(IN) :: orho
+      LOGICAL, OPTIONAL, INTENT(IN) :: recip_flag
       REAL, OPTIONAL, INTENT(IN) :: DX, DY
       LOGICAL, OPTIONAL, INTENT(IN) :: is_start
       CHARACTER*256:: mp_debug
 
 
       INTEGER:: i, j, k, l, m, n
-      REAL:: h_01, airmass, niIN3, niCCN3, max_test
+      REAL:: h_01, airmass, niIN3, niCCN3, max_test, dry_density
       LOGICAL:: micro_init, has_CCN, has_IN
 
       is_aerosol_aware = .FALSE.
@@ -450,6 +452,11 @@
          CALL wrf_debug(100, mp_debug)
          do j = jts, min(jde-1,jte)
          do i = its, min(ide-1,ite)
+            if ( recip_flag ) then
+               dry_density = orho(i,1,j)
+            else
+               dry_density = 1./orho(i,1,j)
+            endif
             if (hgt(i,1,j).le.1000.0) then
                h_01 = 0.8
             elseif (hgt(i,1,j).ge.2500.0) then
@@ -459,7 +466,7 @@
             endif
             niCCN3 = -1.0*ALOG(naCCN1/naCCN0)/h_01
             nwfa(i,1,j) = naCCN1+naCCN0*exp(-((hgt(i,2,j)-hgt(i,1,j))/1000.)*niCCN3)
-            airmass = 1./orho(i,1,j) * (hgt(i,2,j)-hgt(i,1,j))*dx*dy     ! kg
+            airmass = dry_density * (hgt(i,2,j)-hgt(i,1,j))*dx*dy     ! kg
             nwfa2d(i,j) = nwfa(i,1,j) * 0.000196 * (airmass*2.E-10)
             do k = 2, kte
                nwfa(i,k,j) = naCCN1+naCCN0*exp(-((hgt(i,k,j)-hgt(i,1,j))/1000.)*niCCN3)

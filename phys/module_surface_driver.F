@@ -1131,7 +1131,8 @@ CONTAINS
                                                              CQS, &
                                                              CPM, &
                                                             CHS2, &
-                                                            CQS2
+                                                            CQS2, &
+                                                            TLOW ! evan
 
 ! SSIB local variables
    REAL ZDIFF
@@ -2793,6 +2794,18 @@ CONTAINS
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
              i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
+
+!evan's doing
+           DO j=j_start(ij),j_end(ij)
+           DO i=i_start(ij),i_end(ij)
+              TSHLTR(I,J)=TH2(I,J)
+              QSHLTR(I,J)=Q2(I,J)
+              TLOW(I,J) = T_PHY(I,LOWLYR(I,J),J)
+              PSHLTR(I,J)=PSFC(I,J)*EXP(-0.068283/TLOW(I,J))
+           ENDDO
+           ENDDO
+!end evan's doing
+
 !urban
      IF(SF_URBAN_PHYSICS.eq.1) THEN
        DO j=j_start(ij),j_end(ij)                             !urban

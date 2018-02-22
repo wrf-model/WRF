@@ -1644,7 +1644,8 @@
          wrf_err_message = '--- ERROR: If jcdfi_use = 1, then jcdfi_io must also = 1 for that domain '
          CALL wrf_message ( wrf_err_message )
          wrf_err_message = '--- Change jcdfi_io in namelist.input '
-         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
       END IF
 #endif
 

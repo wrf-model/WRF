@@ -1,11 +1,5 @@
 !WRF:MODEL_LAYER:PHYSICS
 
-! prepocessed on "Nov 18 2016" at "14:51:08"
-
-
-
-
-
 
 
 !---------------------------------------------------------------------
@@ -61,6 +55,13 @@
 !     multicell thunderstorm. J. Geophys. Res., 110, D12101, doi:10.1029/2004JD005287
 !
 ! Note: Some parameters below apply to unreleased features.
+!
+!
+! WRF 3.9.11 bug fix update:
+!
+!  Added a check on overdepletion of ice by sublimation, which could sometimes result in water supersaturation
+!  Bug fix: setting of t7 used 'dn' instead of 'dn1' that could cause out of bounds access (Thanks to Chunxi Zhang)
+!  Minor bug in shedding term for T > 0
 !
 ! WRF 3.9 updates:
 !
@@ -1895,7 +1896,7 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
       ssifac = ssifac**cnin1a
       end if
       end if
-      t7(ix,1,kz) = dn(ix,1,kz)/rho00*cnin10*ssifac*exp(-(t0(ix,1,kz)-tfr)*bta1)
+      t7(ix,1,kz) = dn1(ix,1,kz)/rho00*cnin10*ssifac*exp(-(t0(ix,1,kz)-tfr)*bta1)
       end if
       ENDIF
 
@@ -2340,7 +2341,7 @@ END SUBROUTINE nssl_2mom_driver
 !       Input :  a   --- Parameter ( a < 170 )
 !                x   --- Argument 
 !       Output:  GIM --- Gamma(a,x) t=x,Infinity
-!       Routine called: GAMMA for computing Ahat(x)
+!       Routine called: GAMMA for computing gamma_dp(x)
 !       ===================================================
 
 !        IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -9294,7 +9295,7 @@ END SUBROUTINE nssl_2mom_driver
 !  misc
 !
       real ni,nis,nr,d0
-      real dqvcnd(ngs),dqwv(ngs),dqcw(ngs),dqci(ngs)
+      real dqvcnd(ngs),dqwv(ngs),dqcw(ngs),dqci(ngs),dqcitmp(ngs),dqwvtmp(ngs)
       real tempc(ngs)
       real temg(ngs),temcg(ngs),theta(ngs),qvap(ngs) 
       real temgkm1(ngs), temgkm2(ngs)
@@ -9377,6 +9378,13 @@ END SUBROUTINE nssl_2mom_driver
       real ::  alpha(ngs,lc:lhab)
       real ::  dab0lh(ngs,lc:lhab,lr:lhab)
       real ::  dab1lh(ngs,lc:lhab,lr:lhab)
+      
+      real :: qsimxdep(ngs) ! max sublimation of qi+qs+qis
+      real :: qsimxsub(ngs) ! max depositionof qi+qs+qis
+      real :: qrtmp(ngs),qvtmp(ngs),qctmp(ngs)
+      real :: felvcptmp,felscptmp,qsstmp
+      real :: thetatmp, thetaptmp, temcgtmp,qvaptmp
+      real :: qvstmp, qisstmp, qvptmp, qitmp1, qctmp1
       
       real :: galphrout
       
@@ -10308,6 +10316,7 @@ END SUBROUTINE nssl_2mom_driver
       ltemq = Min( nqsat, Max(1,ltemq) )
       qvs(mgs) = pqs(mgs)*tabqvs(ltemq)
       qis(mgs) = pqs(mgs)*tabqis(ltemq)
+      qss(mgs) = qvs(mgs)
 !      es(mgs)  = 6.1078e2*tabqvs(ltemq)
 !      eis(mgs) = 6.1078e2*tabqis(ltemq)
       cnostmp(mgs) = cno(ls)
@@ -10629,7 +10638,8 @@ END SUBROUTINE nssl_2mom_driver
 !  fwvdf = water vapor diffusivity
       fwvdf(mgs) = (2.11e-05)*((temg(mgs)/tfr)**1.94)*(101325.0/(pres(mgs)))
 !
-! fadvisc = kinematic viscosity
+! fadvisc = 'd' for dynamic viscosity
+! fakvisc = 'k' for kinematic viscosity
       fadvisc(mgs) = advisc0*(416.16/(temg(mgs)+120.0))*(temg(mgs)/296.0)**(1.5) ! dynamic visc.
 !
       fakvisc(mgs) = fadvisc(mgs)*rhoinv(mgs) ! divide by rho_air to get kinematic visc. (note the 'k' vs. 'd')
@@ -10657,7 +10667,7 @@ END SUBROUTINE nssl_2mom_driver
       fthdf(mgs) = ftka(mgs)*cpi*rhoinv(mgs)
 !
       fschm(mgs) = (fakvisc(mgs)/fwvdf(mgs))  ! Schmidt number
-      fpndl(mgs) = (fakvisc(mgs)/fthdf(mgs))  ! Prandl number (not used)
+      fpndl(mgs) = (fakvisc(mgs)/fthdf(mgs))  ! Prandl number (only used for bin melting)
 !
       fai(mgs) = (fels(mgs)**2)/(ftka(mgs)*rw*temg(mgs)**2)
       fbi(mgs) = (1.0/(rho0(mgs)*fwvdf(mgs)*qis(mgs)))
@@ -10728,24 +10738,6 @@ END SUBROUTINE nssl_2mom_driver
 
         ENDIF
 
-! adjust density for wet snow and graupel (Ferrier 94)
-! (aps): for the time being, do not adjust density until we keep track of fully melted snow/graupel
-!
-!        IF (mixedphase) THEN
-          IF (qsdenmod) THEN
-           IF(fsw(mgs) .gt. 0.01) THEN
-            xdn(mgs,ls) = (1.-fsw(mgs))*rho_qs + fsw(mgs)*rho_qr        !Ferrier: 100./(1.-fsw(mgs))
-            IF(fsw(mgs) .eq. 1.) xdn(mgs,ls) = rho_qr   ! fsw = 1 means it's liquid water, yo!
-           ENDIF
-          ENDIF
-
-          IF (qhdenmod) THEN
-!          IF(fhw(mgs) .gt. 0.01) THEN
-!           IF(fhw(mgs) .lt. 1.) xdn(mgs,lh) = rho_qh / (1. - fhw(mgs))       !Ferrier: 400./(1.-fsw(mgs))
-!           IF(fhw(mgs) .eq. 1.) xdn(mgs,lh) = rho_qr   ! fhw = 1 means it's liquid water, yo!
-!          ENDIF
-          ENDIF
-!        ENDIF
 
       end do
 
@@ -13333,7 +13325,7 @@ END SUBROUTINE nssl_2mom_driver
             ratio = (1. + cnu)*volt/xv(mgs,lc)
             cwfrz(mgs) = cx(mgs,lc)*Gamxinf(1.+cnu, ratio)/(dtp*gcnup1)
           
-            qwfrz(mgs) = cx(mgs,lc)*xdn0(lc)*rhoinv(mgs)*Gamxinf(2.+cnu, ratio)/(dtp*gcnup2)
+            qwfrz(mgs) = cx(mgs,lc)*xdn0(lc)*xv(mgs,lc)*rhoinv(mgs)*Gamxinf(2.+cnu, ratio)/(dtp*gcnup2)
           
           ENDIF
 
@@ -14223,6 +14215,266 @@ END SUBROUTINE nssl_2mom_driver
 !
       end do
 !
+
+
+! #include "nssl.qlimit.F"
+
+!
+!  Use a test saturation adjustment to set limits on ice deposition/sublimation
+!  and rain evaporation
+!
+!
+      do mgs = 1,ngscnt
+
+        qitmp(mgs) = qx(mgs,li) + qx(mgs,ls) + qx(mgs,lh)
+        IF ( lis > 1 ) qitmp(mgs) = qitmp(mgs) + qx(mgs,lis)
+        IF ( lhl > 1 ) qitmp(mgs) = qitmp(mgs) + qx(mgs,lhl)
+        qrtmp(mgs) = qx(mgs,lr)
+        qctmp(mgs) = qx(mgs,lc)
+        qsimxdep(mgs) = 0.0
+        qsimxsub(mgs) = 0.0
+        dqcitmp(mgs) = 0.0
+        
+
+      IF ( ( qitmp(mgs) > qxmin(li) .or. qrtmp(mgs) > qxmin(lr) ) ) THEN
+      
+        qitmp1    = qitmp(mgs)
+        qctmp1    = qctmp(mgs)
+        felvcptmp = felvcp(mgs)
+        felscptmp = felscp(mgs)
+        qvtmp(mgs) = qx(mgs,lv)
+        qss(mgs) = qvs(mgs)
+        qsstmp = qvs(mgs)
+        qvstmp = qvs(mgs)
+        qisstmp = qis(mgs)
+        thetatmp  = theta(mgs)
+        thetaptmp = thetap(mgs)
+        temgtmp   = temg(mgs)
+        temcgtmp  = temcg(mgs)
+        qvaptmp   = qx(mgs,lv) ! qwvp(mgs) + qv0(mgs)
+        qvptmp    = 0.0 ! qwvp(mgs)  ! qv pertubation
+      if ( temg(mgs) .lt. tfr ) then
+      if( qctmp(mgs) .ge. 0.0 .and. qitmp(mgs) .le. qxmin(li) )   &
+     &  qsstmp = qvstmp
+      if( qctmp(mgs) .le. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))   &
+     &  qsstmp = qisstmp
+      if( qctmp(mgs) .gt. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))   &
+     &   qsstmp = (qctmp(mgs)*qvstmp + qitmp(mgs)*qisstmp) /   &
+     &   (qctmp(mgs) + qitmp(mgs))
+      end if
+      
+       dqwvtmp(mgs) = ( qvtmp(mgs) - qsstmp )
+
+      do itertd = 1,2
+      
+!
+!  calculate super-saturation
+!
+      IF ( itertd == 1 ) THEN
+      
+      ELSE
+        dqcitmp(mgs) = dqci(mgs)
+   !     dqwvtmp(mgs) = dqwv(mgs)
+      ENDIF
+
+      dqcw(mgs) = 0.0
+      dqci(mgs) = 0.0
+      dqwv(mgs) = ( qvtmp(mgs) - qsstmp )
+!
+!  evaporation and sublimation adjustment
+!
+      if( dqwv(mgs) .lt. 0. ) then           ! { subsaturated
+        if( qctmp(mgs) .gt. -dqwv(mgs) ) then  ! check if qc can make up all of the deficit
+          dqcw(mgs) = dqwv(mgs)
+!          dqwv(mgs) = 0.
+        else                                 !  otherwise make all qc available for evap
+          dqcw(mgs) = -qctmp(mgs)
+          dqwv(mgs) = dqwv(mgs) + qctmp(mgs)
+        end if
+!
+        if( qitmp(mgs) .gt. -dqwv(mgs) ) then  ! check if qi can make up all the deficit
+          dqci(mgs) = dqwv(mgs)
+          dqwv(mgs) = 0.
+        else                                  ! otherwise make all ice available for sublimation
+          dqci(mgs) = -qitmp(mgs)
+          dqwv(mgs) = dqwv(mgs) + qitmp(mgs)
+        end if
+!
+       qvptmp = qvptmp - ( dqcw(mgs) + dqci(mgs) )  ! add to perturbation vapor
+
+       IF ( itertd == 2 .and. eqtset > 1 ) THEN
+       ! if eqtset == 2, then need to update the latent heats for change in hydrometeor content
+          tmp = qitmp(mgs) !+ qx(mgs,lh)
+!          IF ( lhl > 1 ) tmp = tmp + qx(mgs,lhl)
+          cvm = cv+cvv*qvtmp(mgs)+cpl*(qx(mgs,lc)+qrtmp(mgs))   &
+                                  +cpigb*(tmp)
+
+          felvcptmp = (felv(mgs)-rw*temg(mgs))/cvm
+          felscptmp = (fels(mgs)-rw*temg(mgs))/cvm
+       ENDIF
+
+
+!      qitmp(mgs) = qx(mgs,li)
+      qctmp(mgs) = qctmp(mgs) + dqcw(mgs)
+      qitmp(mgs) = qitmp(mgs) + dqci(mgs)
+      thetaptmp = thetaptmp +   &
+     &  1./pi0(mgs)*   &
+     &  (felvcp(mgs)*dqcw(mgs) +felscp(mgs)*dqci(mgs))
+
+
+      end if  ! } dqwv(mgs) .lt. 0. (end of evap/sublim)
+!
+! condensation/deposition
+!
+      IF ( dqwv(mgs) .ge. 0. ) THEN ! {
+      
+!      write(iunit,*) 'satadj: mgs,iter = ',mgs,itertd,dqwv(mgs),qss(mgs),qx(mgs,lv),qx(mgs,lc)
+!
+!        qitmp(mgs) = qx(mgs,li)
+        fracl(mgs) = 1.0
+        fraci(mgs) = 0.0
+        if ( temg(mgs) .lt. tfr .and. temg(mgs) .gt. thnuc ) then
+          fracl(mgs) = max(min(1.,(temg(mgs)-233.15)/(20.)),0.0)
+          fraci(mgs) = 1.0-fracl(mgs)
+        end if
+        if ( temg(mgs) .le. thnuc ) then
+           fraci(mgs) = 1.0
+           fracl(mgs) = 0.0
+         end if
+        fraci(mgs) = 1.0-fracl(mgs)
+!
+       gamss = (felvcp(mgs)*fracl(mgs) + felscp(mgs)*fraci(mgs))   &
+     &      / (pi0(mgs))
+!
+      IF ( temg(mgs) .lt. tfr ) then
+        IF (qctmp(mgs) .ge. 0.0 .and. qitmp(mgs) .le. qxmin(li) ) then
+         dqvcnd(mgs) = dqwv(mgs)/(1. + fcqv1(mgs)*qsstmp/   &
+     &  ((temg(mgs)-cbw)**2))
+        END IF
+        IF ( qctmp(mgs) .eq. 0.0 .and. qitmp(mgs) .gt. qxmin(li) ) then
+          dqvcnd(mgs) = dqwv(mgs)/(1. + fcqv2(mgs)*qsstmp/   &
+     &  ((temg(mgs)-cbi)**2))
+        END IF
+        IF ( qctmp(mgs) .gt. 0.0 .and. qitmp(mgs) .gt. qxmin(li) ) then
+         cdw = caw*pi0(mgs)*tfrcbw/((temg(mgs)-cbw)**2)
+         cdi = cai*pi0(mgs)*tfrcbi/((temg(mgs)-cbi)**2)
+         denom1 = qctmp(mgs) + qitmp(mgs)
+         denom2 = 1.0 + gamss*   &
+     &    (qctmp(mgs)*qvs(mgs)*cdw + qitmp(mgs)*qis(mgs)*cdi) / denom1
+         dqvcnd(mgs) =  dqwv(mgs) / denom2
+        END IF 
+
+      ENDIF  !  temg(mgs) .lt. tfr
+!
+      if ( temg(mgs) .ge. tfr ) then
+      dqvcnd(mgs) = dqwv(mgs)/(1. + fcqv1(mgs)*qsstmp/   &
+     &  ((temg(mgs)-cbw)**2))
+      end if
+!
+      delqci1=qx(mgs,li)
+!
+!
+      dqcw(mgs) = dqvcnd(mgs)*fracl(mgs)
+      dqci(mgs) = dqvcnd(mgs)*fraci(mgs)
+!
+      thetaptmp = thetaptmp +   &
+     &   (felvcp(mgs)*dqcw(mgs) + felscp(mgs)*dqci(mgs))   &
+     & / (pi0(mgs))
+
+      qvptmp = qvptmp - ( dqvcnd(mgs) )
+      qctmp(mgs) = qctmp(mgs) + dqcw(mgs)
+      qitmp(mgs) = qitmp(mgs) + dqci(mgs)
+
+       IF ( itertd == 2 .and. eqtset > 1 ) THEN
+       ! if eqtset == 2, then need to update the latent heats for change in hydrometeor content
+          tmp = qitmp(mgs) ! + qx(mgs,lh)
+!          IF ( lhl > 1 ) tmp = tmp + qx(mgs,lhl)
+          cvm = cv+cvv*qvtmp(mgs)+cpl*(qctmp(mgs) +qrtmp(mgs))   &
+                                  +cpigb*(tmp)
+
+          felvcptmp = (felv(mgs)-rw*temg(mgs))/cvm
+          felscptmp = (fels(mgs)-rw*temg(mgs))/cvm
+       ENDIF
+
+      IF ( eqtset > 2 ) THEN
+        pipert(mgs) = pipert(mgs) + (0   &
+     &  +felspi(mgs)*dqci(mgs)    &
+     &  +felvpi(mgs)*dqcw(mgs))*dtp
+      ENDIF
+
+!
+!
+      END IF ! } dqwv(mgs) .ge. 0.
+
+
+!
+      IF ( itertd == 1 ) THEN
+      ! update temporary saturation values
+
+      thetatmp = thetaptmp + theta0(mgs)
+      temgtmp = thetatmp*pk(mgs) ! ( pres(mgs) / poo ) ** cap
+      qvaptmp = Max((qvptmp + qv0(mgs)), 0.0)
+      temcgtmp = temgtmp - tfr
+      tqvcon = temgtmp-cbw
+      ltemq = (temgtmp-163.15)/fqsat+1.5
+      ltemq = Min( nqsat, Max(1,ltemq) )
+      qvstmp = pqs(mgs)*tabqvs(ltemq)
+      qisstmp = pqs(mgs)*tabqis(ltemq)
+      qctmp(mgs) = max( 0.0, qctmp(mgs) )
+      qitmp(mgs) = max( 0.0, qitmp(mgs) )
+      qvtmp(mgs) = max( 0.0, qvaptmp )
+!      if ( temg(mgs) .lt. tfr ) then
+!      if( qctmp(mgs) .ge. 0.0 .and. qitmp(mgs) .le. qxmin(li) )
+!     >  qss(mgs) = qvs(mgs)
+!c      if( qctmp(mgs) .le. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))
+!      if( qctmp(mgs) .eq. 0.0 .and. qitmp(mgs) .gt. qxmin(li))
+!     >  qss(mgs) = qis(mgs)
+!c      if( qctmp(mgs) .gt. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))
+!      if( qctmp(mgs) .gt. 0.0 .and. qitmp(mgs) .gt. qxmin(li))
+!     >  qss(mgs) = (qctmp(mgs)*qvs(mgs) + qitmp(mgs)*qis(mgs)) /
+!     > (qctmp(mgs) + qitmp(mgs))
+!      else
+!      qss(mgs) = qvs(mgs)
+!      end if
+
+      
+      qsstmp = qvstmp
+      if ( temg(mgs) .lt. tfr ) then
+      if( qctmp(mgs) .ge. 0.0 .and. qitmp(mgs) .le. qxmin(li) )   &
+     &  qsstmp = qvstmp
+      if( qctmp(mgs) .le. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))   &
+     &  qsstmp = qisstmp
+      if( qctmp(mgs) .gt. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))   &
+     &   qsstmp = (qctmp(mgs)*qvstmp + qitmp(mgs)*qisstmp) /   &
+     &   (qctmp(mgs) + qitmp(mgs))
+      end if
+      
+      ELSE
+       ! set max depletion
+        qctmp(mgs) = max( 0.0, qctmp(mgs) )
+        qitmp(mgs) = max( 0.0, qitmp(mgs) )
+       
+        IF ( qitmp(mgs) < qitmp1 ) THEN
+          qsimxsub(mgs) = (qitmp1 - qitmp(mgs))*dtpinv
+        ELSEIF ( qitmp(mgs) > qitmp1 ) THEN
+          qsimxdep(mgs) = (qitmp(mgs) - qitmp1)*dtpinv
+        ENDIF
+       
+      
+      ENDIF
+!      pceds(mgs) = (thetap(mgs) - thsave(mgs))*dtpinv
+!      write(iunit,*) 'satadj2: mgs,iter = ',mgs,itertd,dqwv(mgs),qss(mgs),qxtmp,qctmp(mgs)
+!
+!  end the saturation adjustment iteration loop
+!
+      end do ! itertd
+      
+      ENDIF
+      
+      end do ! mgs
+
+
+
       do mgs = 1,ngscnt
       qisbv(mgs) = 0.0
       qssbv(mgs) = 0.0
@@ -14233,8 +14485,8 @@ END SUBROUTINE nssl_2mom_driver
 !        qisbv(mgs) = max( min(qidsv(mgs), 0.0), -qimxd(mgs) )
 !        qssbv(mgs) = max( min(qsdsv(mgs), 0.0), -qsmxd(mgs) )
 ! erm 5/10/2007:
-        qisbv(mgs) = max( min(qidsv(mgs), 0.0),  Min( -qimxd(mgs), -0.7*qx(mgs,li)/dtp ) )
-        qssbv(mgs) = max( min(qsdsv(mgs), 0.0),  Min( -qsmxd(mgs), -0.7*qx(mgs,ls)/dtp ) )
+        qisbv(mgs) = max( min(qidsv(mgs), 0.0),  Min( -qimxd(mgs), -0.5*qx(mgs,li)*dtpinv ) )
+        qssbv(mgs) = max( min(qsdsv(mgs), 0.0),  Min( -qsmxd(mgs), -0.5*qx(mgs,ls)*dtpinv ) )
         qidpv(mgs) = Max(qidsv(mgs), 0.0)
         qsdpv(mgs) = Max(qsdsv(mgs), 0.0)
       ELSE
@@ -14258,9 +14510,12 @@ END SUBROUTINE nssl_2mom_driver
       
       temp1 = qidpv(mgs) + qsdpv(mgs) + qhdpv(mgs) + qhldpv(mgs)
 
-      IF ( temp1 .gt. qvimxd(mgs) ) THEN
+!      IF ( temp1 .gt. qvimxd(mgs) ) THEN
 
-      frac = qvimxd(mgs)/temp1
+!      frac = qvimxd(mgs)/temp1
+
+      IF ( temp1 .gt. qsimxdep(mgs) ) THEN
+      frac = qsimxdep(mgs)/temp1
 
       qidpv(mgs) = frac*qidpv(mgs)
       qsdpv(mgs) = frac*qsdpv(mgs)
@@ -14273,6 +14528,25 @@ END SUBROUTINE nssl_2mom_driver
 !        ENDIF
 
       ENDIF
+
+      temp1 = qisbv(mgs) + qssbv(mgs) + qhsbv(mgs) + qhlsbv(mgs)
+
+
+      IF ( temp1 <  -qsimxsub(mgs) ) THEN
+      frac = -qsimxsub(mgs)/temp1
+
+      qisbv(mgs) = frac*qisbv(mgs)
+      qssbv(mgs) = frac*qssbv(mgs)
+      qhsbv(mgs) = frac*qhsbv(mgs)
+      qhlsbv(mgs) = frac*qhlsbv(mgs)
+
+!        IF ( ny .eq. 2 .and. igs(mgs) .eq. 302 .and. temg(mgs) .le. tfrh+10 .and. qx(mgs,lv) .gt. qis(mgs)
+!     :       .and. qx(mgs,li) .gt. qxmin(li) ) THEN
+!         write(0,*) 'qidpv,frac = ',kgs(mgs),qidpv(mgs),frac
+!        ENDIF
+
+      ENDIF
+
 
       end do
 !
@@ -14481,12 +14755,21 @@ END SUBROUTINE nssl_2mom_driver
 !
       if ( temg(mgs) .gt. tfr ) then
 
+       IF ( .false. ) THEN ! old and incorrect
        qsshr(mgs)   = -qsdry(mgs)
+       qhshr(mgs)  = -qhdry(mgs)
        qhlshr(mgs)  = -qhldry(mgs)
 
-       qhshr(mgs)  = -qhdry(mgs)
+       ELSE ! new and correct
+       
+       qsshr(mgs)   = - qsacr(mgs) - qsacw(mgs) ! -qsdry(mgs)
+       qhlshr(mgs)  = - qhlacw(mgs) - qhlacr(mgs) ! -qhldry(mgs)
+       qhshr(mgs)  = - qhacw(mgs) - qhacr(mgs) ! -qhdry(mgs)
+
+       ENDIF
+
        vhshdr(mgs)  = -vhacw(mgs) - vhacr(mgs)
-       vhlshdr(mgs)  = -vhlacw(mgs)
+       vhlshdr(mgs)  = -vhlacw(mgs) - vhlacr(mgs)
        qhwet(mgs)  = 0.0
        qhlwet(mgs) = 0.0
       end if
@@ -15246,7 +15529,7 @@ END SUBROUTINE nssl_2mom_driver
 !
 !  Ziegler et al. 1986 Hallett-Mossop process.  VSTAR = 7.23e-15 (vol of 12micron radius)
 !
-         IF ( .true. .and. cnu == 0.0 ) THEN
+         IF ( cnu == 0.0 ) THEN
            ex1 = (1./250.)*Exp(-7.23e-15/xv(mgs,lc))
          ELSE
             ratio = (1. + cnu)*(7.23e-15)/xv(mgs,lc)
@@ -15515,8 +15798,8 @@ END SUBROUTINE nssl_2mom_driver
       IF ( icenucopt /= -10 ) THEN
       
         IF ( lcin > 1 ) THEN
-          ciint(mgs) = Min(ciint(mgs), ccin(mgs))
-          ccin(mgs) = ccin(mgs) - ciint(mgs)
+          ciint(mgs) = Min(ciint(mgs), ccin(mgs)/dtp) ! because ciint is a *rate*
+          ccin(mgs) = ccin(mgs) - ciint(mgs)*dtp
           qiint(mgs) = ciint(mgs)*cmassin/rho0(mgs)
         ELSEIF ( lcina > 1 ) THEN
           ciint(mgs) = Max(0.0, Min( ciint(mgs), Min( cnina(mgs), ciintmx ) - cina(mgs) ))
@@ -15878,6 +16161,7 @@ END SUBROUTINE nssl_2mom_driver
         crfrzf(mgs) = frac*crfrzf(mgs)
         crfrzs(mgs) = frac*crfrzs(mgs)
         chacr(mgs) = frac*chacr(mgs)
+        chlacr(mgs) = frac*chlacr(mgs)
         crcev(mgs) = frac*crcev(mgs)
         cracr(mgs) = frac*cracr(mgs)
 

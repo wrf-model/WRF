@@ -2879,7 +2879,13 @@ integer::oops1,oops2
       IF ( ( config_flags%sf_urban_physics == 1 ) .OR. ( config_flags%sf_urban_physics == 2 ) .OR. ( config_flags%sf_urban_physics == 3 ) ) THEN
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
-               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
+
+              IF ( MMINLU == 'NLCD40') THEN
+                   IF (grid%ivgtyp(i,j) == 24 .or. grid%ivgtyp(i,j) == 25 .or. grid%ivgtyp(i,j) == 26) &
+                   grid%FRC_URB2D(i,j) = (grid%FRC_URB3D(i,24,j)*0.5+grid%FRC_URB3D(i,25,j)*0.9+grid%FRC_URB3D(i,26,j)*0.95)/100.
+                   IF (grid%ivgtyp(i,j) == 13 ) grid%FRC_URB2D(i,j) = 0.9
+              ENDIF
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%LP_URB2D(i,j)  = grid%URB_PARAM(i,91,j)
                grid%LB_URB2D(i,j)  = grid%URB_PARAM(i,95,j)
                grid%HGT_URB2D(i,j)  = grid%URB_PARAM(i,94,j)
@@ -7224,9 +7230,8 @@ print *,'namelist p_top (Pa) = ',p_top
             END IF
             t_init = temp*(p00/pb)**(r_d/cp) - t0
             alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
-            phb(k) = phb(k-1) - (znw(k)-znw(k-1)) * mub*alb(k-1)
+            phb(k+1) = phb(k) - (znw(k+1)-znw(k)) * mub*alb(k)
          END DO
-         phb(kte) = phb(kte-1) - (znw(kte)-znw(kte-1)) * mub*alb(kte-1)
        ELSE
          print *,'auto_levels_opt=',auto_levels_opt
          CALL wrf_error_fatal ( 'auto_levels_opt needs to be 1 or 2')

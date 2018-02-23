@@ -1,5 +1,3 @@
-! sed -e "s/grid%mu/grid%mu/g" -e "s/grid%Mu/grid%Mu/g" module_initialize_real.F | cpp -DHYBRID_COORD | sed -e "s/grid%mu/grid%mu/g" -e "s/grid%Mu/grid%Mu/g" >> module_initialize_real.next
-
 !REAL:MODEL_LAYER:INITIALIZATION
 
 #ifndef VERT_UNIT

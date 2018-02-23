@@ -1,5 +1,3 @@
-! sed -e "s/grid%mu/grid%mu/g" -e "s/grid%Mu/grid%Mu/g" module_dm.F | cpp -DDM_PARALLEL=1 -DHYBRID_COORD=1 -DEM_CORE=1 | sed -e "s/grid%mu/grid%mu/g" -e "s/grid%Mu/grid%Mu/g" > module_dm.next
-
 #if NMM_CORE==1
 #define copy_fcnm UpNear
 #define copy_fcn UpCopy

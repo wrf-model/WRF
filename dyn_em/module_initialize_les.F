@@ -1,4 +1,3 @@
-! sed -e "s/grid%mu/grid%mu/g" -e "s/grid%Mu/grid%Mu/g" module_initialize_hill2d_x.F | cpp -DHYBRID_COORD | sed -e "s/grid%mu/grid%mu/g" -e "s/grid%Mu/grid%Mu/g" >> module_initialize_hill2d_x.next
 !IDEAL:MODEL_LAYER:INITIALIZATION
 !
 

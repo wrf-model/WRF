@@ -1,5 +1,3 @@
-! sed -e "s/grid%mu/grid%mu/g" -e "s/grid%Mu/grid%Mu/g" couple_or_uncouple_em.F | cpp -DHYBRID_COORD | sed -e "s/grid%mu/grid%mu/g" -e "s/grid%Mu/grid%Mu/g" >> couple_or_uncouple_em.next
-
 !WRF:MEDIATION_LAYER:couple_uncouple_utility
 
 SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &

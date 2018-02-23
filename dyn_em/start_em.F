@@ -1,5 +1,3 @@
-! sed -e "s/grid%mu/grid%mu/g" -e "s/grid%Mu/grid%Mu/g" start_em.F | cpp -DHYBRID_COORD | sed -e "s/grid%mu/grid%mu/g" -e "s/grid%Mu/grid%Mu/g" >> start_em.next
-
 !-------------------------------------------------------------------
 
    SUBROUTINE start_domain_em ( grid, allowed_to_read &

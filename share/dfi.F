@@ -1,5 +1,3 @@
-! sed -e "s/grid%mu/grid%mu/g" -e "s/grid%Mu/grid%Mu/g" dfi.F | cpp -DHYBRID_COORD | sed -e "s/grid%mu/grid%mu/g" -e "s/grid%Mu/grid%Mu/g" >> dfi.next
-
    SUBROUTINE dfi_accumulate( grid )
 
       USE module_domain, ONLY : domain

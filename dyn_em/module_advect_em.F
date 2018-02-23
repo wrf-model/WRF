@@ -10480,9 +10480,9 @@ PROGRAM feeder
    ALLOCATE ( rom(ims:ime , kms:kme , jms:jme ) )
    PRINT *,'ALLOCATE three 2d MU fields'
    PRINT *,(ime-ims+1)*(jme-jms+1)
-   ALLOCATE ( (c1(k)*mut(ims:ime , jms:jme)+c2(k)) )
-   ALLOCATE ( (c1(k)*mub(ims:ime , jms:jme)+c2(k)) )
-   ALLOCATE ( (c1(k)*mu_old(ims:ime , jms:jme)) )
+   ALLOCATE ( mut(ims:ime , jms:jme) )
+   ALLOCATE ( mub(ims:ime , jms:jme) )
+   ALLOCATE ( mu_old(ims:ime , jms:jme) )
    PRINT *,'ALLOCATE three 3d tendency'
    PRINT *,(ime-ims+1)*(kme-kms+1)*(jme-jms+1)
    ALLOCATE ( tendency( ims:ime , kms:kme , jms:jme ) )

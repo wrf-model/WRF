@@ -2254,6 +2254,22 @@ int i;
     case MATLAB_LANG: FatalError(-99,"USE F90 with WRF_conform option"); 
                  break;
   }
+
+  if( !strcmp( rootFileName,"t1_mozcart" ) ) {
+    NewLines(1);
+    bprintf( "   real(dp) :: aer_srf_area(3)\n");
+    bprintf( "   real(dp) :: aer_diam(3)\n");
+    NewLines(1);
+    bprintf( "   call aero_surfarea( aer_srf_area, aer_diam, rh, temp, &\n");
+    bprintf( "                       aer_so4, aer_oc2, aer_bc2 )\n" );
+    NewLines(1);
+    bprintf( "   if( aero_srf_area_diag > 0 ) then\n");
+    bprintf( "     sulf_srf_area = aer_srf_area(1)\n");
+    bprintf( "     oc_srf_area   = aer_srf_area(2)\n");
+    bprintf( "     bc_srf_area   = aer_srf_area(3)\n");
+    bprintf( "   endif\n");
+  }
+
   FlushBuf();
 
   NewLines(1);

@@ -1272,7 +1272,7 @@ integer::oops1,oops2
                   grid%QNWFA_now(i,k,j) = grid%qntemp2(i,j)
      if(i.eq.its .and. j.eq.jts .and. k.eq.1) then
       write(a_message,*) '  DEBUG, ensuring QNWFA_now corner (its,1,jts) value: ', i,j,grid%QNWFA_now(i,k,j)
-      CALL wrf_debug (0, a_message)
+      CALL wrf_debug (1, a_message)
      endif
                ENDDO
             ENDDO
@@ -4404,7 +4404,7 @@ endif
             grid%qnwfa2d(i,j) = grid%QNWFA_now(i,1,j) * 0.000196 * (airmass*2.E-10)
      if(i.eq.its .and. j.eq.jts) then
       write(a_message,*) 'aero_sfc_flux: ', i,j,z1,1./grid%alt(i,1,j),airmass,grid%QNWFA_now(i,1,j),grid%qnwfa2d(i,j)
-      CALL wrf_debug (0, a_message)
+      CALL wrf_debug (1, a_message)
      endif
          enddo
          enddo

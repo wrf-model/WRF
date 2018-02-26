@@ -1024,7 +1024,7 @@ end if
        !BSINGH(04/03/2014): Added 8 bin vbs non-aq pakage
     CASE (SAPRC99_MOSAIC_8BIN_VBS2_KPP)
        if(config_flags%chem_in_opt == 0 )then
-          grid%vbs_nbin=3
+          grid%vbs_nbin=2
           do j=jts,jte
              do k=kts,kte
                 do i=its,ite
@@ -1878,7 +1878,7 @@ ENDIF ghg_block
            CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP, &  !BSINGH(12/03/2013): Added SAPRC 8 bin
            SAPRC99_MOSAIC_8BIN_VBS2_KPP) !BSINGH(04/03/2014): Added SAPRC 8 bin non-aq
        call wrf_debug(15,'call MOSAIC aerosols initialization')
-       call init_data_mosaic_asect(id,config_flags%n2o5_hetchem,is_aerosol)
+       call init_data_mosaic_asect( id, config_flags, grid%vbs_nbin, is_aerosol )
        if(config_flags%chem_in_opt == 0 )then
        if( .NOT. config_flags%restart ) &
             call mosaic_init_wrf_mixrats(                            &

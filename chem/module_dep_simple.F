@@ -165,6 +165,11 @@ SUBROUTINE wesely_driver( id, ktau, dtstep, config_flags, current_month,  &
 !-----------------------------------------------------------
       INTRINSIC max, min                             
 
+      chm_is_moz = config_flags%chem_opt == MOZART_KPP .or. &
+                   config_flags%chem_opt == MOZCART_KPP .or. &
+                   config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+                   config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP
+
       dep_vap= config_flags%depo_fact
 
       CALL wrf_debug(15,'in dry_dep_wesely')
@@ -188,10 +193,6 @@ tile_lon_loop : &
             iland = luse2usgs( ivgtyp(i,j) )
 !--
 
-!           if( config_flags%chem_opt == MOZART_KPP .or. &
-!               config_flags%chem_opt == MOZCART_KPP .or. &
-!               config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
-!               config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
             if( chm_is_moz ) then
                if( snowh(i,j) < .01 ) then 
                   iseason = seasonal_pft(id)%seasonal_wes(i,j,iland,current_month)
@@ -1551,7 +1552,6 @@ is_nh3: if( p_nh3 >= param_first_scalar ) then
   USE module_model_constants
   USE module_configure
   USE module_state_description                       
-  USE module_HLawConst, only : HLCnst_type, HLC
 
    TYPE (grid_config_rec_type) , INTENT (in) ::     config_flags
         character(len=*), intent(in) :: mminlu_loc
@@ -1897,30 +1897,57 @@ include 'netcdf.inc'
                config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
                config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP
 
-        if( chm_is_moz .and. id == 1 ) then
-          call HL_init( numgas )
-        endif
-
 !--------------------------------------------------
 !     HENRY''S LAW COEFFICIENTS
 !     Effective Henry''s law coefficient at pH 7
 !     [KH298]=mole/(l atm)
 !--------------------------------------------------
 is_cbm4_kpp : &
-        if( config_flags%chem_opt /= CBM4_KPP .or. &
-            config_flags%chem_opt /= CB05_SORG_AQ_KPP .or. &
-            config_flags%chem_opt /= CB05_SORG_VBS_AQ_KPP) then
+        if( .not. (config_flags%chem_opt == CBM4_KPP .or. &
+                   config_flags%chem_opt == CB05_SORG_AQ_KPP .or. &
+                   config_flags%chem_opt == CB05_SORG_VBS_AQ_KPP) ) then
            if( chm_is_moz ) then
-             do l = param_first_scalar,numgas
-               m = HL_ndx(l)
-               if( m > 0 ) then
-                 hstar(l) = HLC(m)%hcnst(1)
-               endif
-             end do
+              hstar(p_o3)      = 1.15E-2
+              hstar(p_co)      = 1.e-3
+              hstar(p_h2o2)    = 8.33E+4
+              hstar(p_hcho)    = 6.3e3
+              hstar(p_ch3ooh)  = 311.
+              hstar(p_ch3oh)   = 220.
+              hstar(p_ch3cooh) = 6.3e3
+              hstar(p_acet)    = 27.
+              hstar(p_paa)     = 837.
+              hstar(p_c3h6ooh) = 220.
+              hstar(p_pan)     = 5.
+              hstar(p_mpan)    = 1.15e-2
+              hstar(p_c2h5oh)  = 200.
+              hstar(p_etooh)   = 336.
+              hstar(p_prooh)   = 336.
+              hstar(p_acetp)   = 336.
+              hstar(p_onit)    = 1.e3
+              hstar(p_onitr)   = 7.51e3
+              hstar(p_acetol)  = 6.3e3
+              hstar(p_glyald)  = 4.14e4
+              hstar(p_hydrald) = 70.
+              hstar(p_alkooh)  = 311.
+              hstar(p_mekooh)  = 311.
+              hstar(p_tolooh)  = 311.
+              hstar(p_terpooh) = 311.
 
               if( config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
                   config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
                 hstar(p_sulf) = 2.600E+06
+                if ( config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
+                  hstar(p_cvasoaX) = 0.0
+                  hstar(p_cvasoa1) = 1.06E+08
+                  hstar(p_cvasoa2) = 1.84E+07
+                  hstar(p_cvasoa3) = 3.18E+06
+                  hstar(p_cvasoa4) = 5.50E+05
+                  hstar(p_cvbsoaX) = 0.0
+                  hstar(p_cvbsoa1) = 5.25E+09
+                  hstar(p_cvbsoa2) = 7.00E+08
+                  hstar(p_cvbsoa3) = 9.33E+07
+                  hstar(p_cvbsoa4) = 1.24E+07
+                endif
               end if
               
      else if( config_flags%chem_opt == crimech_kpp .or. &
@@ -2140,12 +2167,30 @@ is_cbm4_kpp : &
 !     [-DH/R]=K
 !--------------------------------------------------
         if( chm_is_moz ) then
-           do l = param_first_scalar,numgas
-             m = HL_ndx(l)
-             if( m > 0 ) then
-               dhr(l) = HLC(m)%hcnst(2)
-             endif
-           end do
+           dhr(p_o3)      = 2560.
+           dhr(p_h2o2)    = 7379.
+           dhr(p_hcho)    = 6425.
+           dhr(p_ch3ooh)  = 5241.
+           dhr(p_ch3oh)   = 4934.
+           dhr(p_ch3cooh) = 6425.
+           dhr(p_acet)    = 5300.
+           dhr(p_paa)     = 5308.
+           dhr(p_c3h6ooh) = 5653.
+           dhr(p_pan)     = 0.
+           dhr(p_mpan)    = 2560.
+           dhr(p_c2h5oh)  = 6500.
+           dhr(p_etooh)   = 5995.
+           dhr(p_prooh)   = 5995.
+           dhr(p_acetp)   = 5995.
+           dhr(p_onit)    = 6000.
+           dhr(p_onitr)   = 6485.
+           dhr(p_acetol)  = 6425.
+           dhr(p_glyald)  = 4630.
+           dhr(p_hydrald) = 6000.
+           dhr(p_alkooh)  = 5241.
+           dhr(p_mekooh)  = 5241.
+           dhr(p_tolooh)  = 5241.
+           dhr(p_terpooh) = 5241.
 
            if( config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
              config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then

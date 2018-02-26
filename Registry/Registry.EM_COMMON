@@ -425,6 +425,7 @@ state   integer number_at_same_level    -         -         -     -          -  
 state   real    radtacttime    -        -         -         -     r         "radtacttime"              "RADTACTTIME"         "LW SW ACTIVATION TIME in s"
 state   real    bldtacttime    -        -         -         -     r         "bldtacttime"              "BLDTACTTIME"         "PBL   ACTIVATION TIME in s"
 state   real    cudtacttime    -        -         -         -     r         "cudtacttime"              "CUDTACTTIME"         "CPS   ACTIVATION TIME in s"
+state   real    ltngacttime    -        -         -         -     r         "ltngacttime"              "LTNGACTTIME"         "LTNG  ACTIVATION TIME in s"
 state   real    power          ij       misc      1         -     irh       "Power"                   "Power production"         "W"
 
 
@@ -591,7 +592,7 @@ state   real    dfi_qke_adv   ikjftb  dfi_scalar      1         -      \
 
 state    real   fcx            w         misc     -         -      ir       "fcx"                  "RELAXATION TERM FOR BOUNDARY ZONE"         ""
 state    real   gcx            w         misc     -         -      ir       "gcx"                  "2ND RELAXATION TERM FOR BOUNDARY ZONE"         ""
-state    real   dtbc            -        misc     -         -      ir       "dtbc"                 "TIME SINCE BOUNDARY READ"         ""
+state    real   dtbc            -        misc     -         -       r       "dtbc"                 "TIME SINCE BOUNDARY READ"         ""
 
 #-------------------------------------------------------------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------------------------------------------------------------
@@ -828,7 +829,8 @@ state    real   LH_URB2D        ij    misc        1         -       rd=(interp_f
 state    real   G_URB2D         ij    misc        1         -       rd=(interp_fcnm)u=(copy_fcnm)        "G_URB"  "GROUND HEAT FLUX INTO URBAN"        "W m{-2}"
 state    real   RN_URB2D        ij    misc        1         -       rd=(interp_fcnm)u=(copy_fcnm)       "RN_URB"  "NET RADIATION ON URBAN SFC"         "W m{-2}"
 state    real   TS_URB2D        ij    misc        1         -       rd=(interp_fcnm)u=(copy_fcnm)       "TS_URB"  "SKIN TEMPERATURE"          "K"
-state    real   FRC_URB2D       ij    misc        1         -     i10rd=(interp_fcnm)u=(copy_fcnm)       "FRC_URB2D"  "URBAN FRACTION"         "dimensionless"
+state    real   FRC_URB3D       iuj   misc        1         -     i1          "FRC_URB3D"  "LANDUSE FRACTION BY NLCD CATEGORY"         "dimensionless"
+state    real   FRC_URB2D       ij    misc        1         -     irhd=(interp_fcnm)u=(copy_fcnm)       "FRC_URB2D"  "URBAN FRACTION"         "dimensionless"
 state    integer   UTYPE_URB2D  ij    misc        1         -     rd=(interp_fcnm)u=(copy_fcnm)       "UTYPE_URB"  "URBAN TYPE"         "dimensionless"
 state    real   TRB_URB4D       i{ulay}j    misc       1         Z     r      "TRB_URB4D" "ROOF LAYER TEMPERATURE"          "K"
 state    real   TW1_URB4D       i{ulay}j    misc       1         Z     r      "TW1_URB4D" "WALL LAYER TEMPERATURE"          "K"
@@ -1486,21 +1488,28 @@ state integer  I_ACLWDNB        ij      misc        1         -      rhd=(interp
 state integer  I_ACLWDNBC       ij      misc        1         -      rhd=(interp_fcni)u=(copy_fcni)     "I_ACLWDNBC"    "BUCKET FOR DOWNWELLING CLEAR SKY LONGWAVE FLUX AT BOTTOM" "J m-2"
 state    real  SWUPT            ij      misc        1         -      rhdu     "SWUPT"                 "INSTANTANEOUS UPWELLING SHORTWAVE FLUX AT TOP"          "W m-2"
 state    real  SWUPTC           ij      misc        1         -      rhdu     "SWUPTC"                "INSTANTANEOUS UPWELLING CLEAR SKY SHORTWAVE FLUX AT TOP" "W m-2"
+state    real  SWUPTCLN         ij      misc        1         -      rhdu     "SWUPTCLN"              "INSTANTANEOUS UPWELLING CLEAN SKY SHORTWAVE FLUX AT TOP" "W m-2"
 state    real  SWDNT            ij      misc        1         -      rhdu     "SWDNT"                 "INSTANTANEOUS DOWNWELLING SHORTWAVE FLUX AT TOP"          "W m-2"
 state    real  SWDNTC           ij      misc        1         -      rhdu     "SWDNTC"                "INSTANTANEOUS DOWNWELLING CLEAR SKY SHORTWAVE FLUX AT TOP" "W m-2"
+state    real  SWDNTCLN         ij      misc        1         -      rhdu     "SWDNTCLN"              "INSTANTANEOUS DOWNWELLING CLEAN SKY SHORTWAVE FLUX AT TOP" "W m-2"
 state    real  SWUPB            ij      misc        1         -      rhdu     "SWUPB"                 "INSTANTANEOUS UPWELLING SHORTWAVE FLUX AT BOTTOM"          "W m-2"
 state    real  SWUPBC           ij      misc        1         -      rhdu     "SWUPBC"                "INSTANTANEOUS UPWELLING CLEAR SKY SHORTWAVE FLUX AT BOTTOM" "W m-2"
+state    real  SWUPBCLN         ij      misc        1         -      rhdu     "SWUPBCLN"              "INSTANTANEOUS UPWELLING CLEAN SKY SHORTWAVE FLUX AT BOTTOM" "W m-2"
 state    real  SWDNB            ij      misc        1         -      rhdu     "SWDNB"                 "INSTANTANEOUS DOWNWELLING SHORTWAVE FLUX AT BOTTOM"          "W m-2"
 state    real  SWDNBC           ij      misc        1         -      rhdu     "SWDNBC"                "INSTANTANEOUS DOWNWELLING CLEAR SKY SHORTWAVE FLUX AT BOTTOM" "W m-2"
+state    real  SWDNBCLN         ij      misc        1         -      rhdu     "SWDNBCLN"              "INSTANTANEOUS DOWNWELLING CLEAN SKY SHORTWAVE FLUX AT BOTTOM" "W m-2"
 state    real  LWUPT            ij      misc        1         -      rhdu     "LWUPT"                 "INSTANTANEOUS UPWELLING LONGWAVE FLUX AT TOP"          "W m-2"
 state    real  LWUPTC           ij      misc        1         -      rhdu     "LWUPTC"                "INSTANTANEOUS UPWELLING CLEAR SKY LONGWAVE FLUX AT TOP" "W m-2"
+state    real  LWUPTCLN         ij      misc        1         -      rhdu     "LWUPTCLN"              "INSTANTANEOUS UPWELLING CLEAN SKY LONGWAVE FLUX AT TOP" "W m-2"
 state    real  LWDNT            ij      misc        1         -      rhdu     "LWDNT"                 "INSTANTANEOUS DOWNWELLING LONGWAVE FLUX AT TOP"          "W m-2"
 state    real  LWDNTC           ij      misc        1         -      rhdu     "LWDNTC"                "INSTANTANEOUS DOWNWELLING CLEAR SKY LONGWAVE FLUX AT TOP" "W m-2"
+state    real  LWDNTCLN         ij      misc        1         -      rhdu     "LWDNTCLN"              "INSTANTANEOUS DOWNWELLING CLEAN SKY LONGWAVE FLUX AT TOP" "W m-2"
 state    real  LWUPB            ij      misc        1         -      rhdu     "LWUPB"                 "INSTANTANEOUS UPWELLING LONGWAVE FLUX AT BOTTOM"          "W m-2"
 state    real  LWUPBC           ij      misc        1         -      rhdu     "LWUPBC"                "INSTANTANEOUS UPWELLING CLEAR SKY LONGWAVE FLUX AT BOTTOM" "W m-2"
+state    real  LWUPBCLN         ij      misc        1         -      rhdu     "LWUPBCLN"              "INSTANTANEOUS UPWELLING CLEAN SKY LONGWAVE FLUX AT BOTTOM" "W m-2"
 state    real  LWDNB            ij      misc        1         -      rhdu     "LWDNB"                 "INSTANTANEOUS DOWNWELLING LONGWAVE FLUX AT BOTTOM"          "W m-2"
 state    real  LWDNBC           ij      misc        1         -      rhdu     "LWDNBC"                "INSTANTANEOUS DOWNWELLING CLEAR SKY LONGWAVE FLUX AT BOTTOM" "W m-2"
-
+state    real  LWDNBCLN         ij      misc        1         -      rhdu     "LWDNBCLN"              "INSTANTANEOUS DOWNWELLING CLEAN SKY LONGWAVE FLUX AT BOTTOM" "W m-2"
 state    real  SWCF             ij      misc        1         -      r        "SWCF"                  "SHORT WAVE CLOUD FORCING AT TOA"                     "W m-2"
 state    real  LWCF             ij      misc        1         -      r        "LWCF"                  "LONG WAVE CLOUD FORCING AT TOA"                      "W m-2"
 state    real  OLR              ij      misc        1         -      rh        "OLR"                   "TOA OUTGOING LONG WAVE"                              "W m-2"
@@ -2109,7 +2118,11 @@ rconfig   logical   cycle_y         namelist,domains    max_domains    .false. r
 rconfig   logical   reorder_mesh    namelist,domains    1              .false. rh    "reorder_mesh"       ""      ""
 rconfig   logical   perturb_input   namelist,domains    1              .false. h     "" "" ""
 rconfig   real      eta_levels      namelist,domains    max_eta        -1.
-rconfig   real      max_dz          namelist,domains    1               1000.
+rconfig   integer   auto_levels_opt namelist,domains    1               2      -     "auto_levels_opt" "automatic levels, 1=old, 2=new"
+rconfig   real      max_dz          namelist,domains    1               1000.  -     "max_dz"   "maximum thickness limit for eta calc" "m"
+rconfig   real      dzbot           namelist,domains    1               50.    -     "dzbot"    "surface dz thickness for eta calc" "m"
+rconfig   real      dzstretch_s     namelist,domains    1               1.1    -     "dzstretch_s"  "surface dz stretching factor for eta calc"    ""
+rconfig   real      dzstretch_u     namelist,domains    1               1.1    -     "dzstretch_u"  "upper dz stretching factor for eta calc"    ""
 rconfig   integer   ocean_levels    namelist,domains    1               30     irh   "ocean level"        ""      ""
 rconfig   real      ocean_z         namelist,domains    max_ocean      -1      -     "vertical profile of layer depths for ocean" "m"
 rconfig   real      ocean_t         namelist,domains    max_ocean      -1      -     "vertical profile of ocean temps" "K"
@@ -2327,6 +2340,10 @@ rconfig   integer use_mp_re               namelist,physics     	1              1
 # The following two options are hooked into various microphysics schemes to allow for ensemble perturbations of CCN and hail/graupel PSDs - GAC (AFWA)
 rconfig   real    ccn_conc                namelist,physics      1           1.0E8      h     "ccn_conc"                 "CCN concentration"                                                             "# m-3"
 rconfig   integer hail_opt                namelist,physics      1              0       rh    "hail_opt"                 "Hail/Graupel switch, 1:hail, 0:graupel"                                        ""
+
+rconfig   integer clean_atm_diag          namelist,physics      1              0       rh    "clean_atm_diag"     "option to switch on clean sky diagnostics (for chem)"   "flag"
+rconfig   integer calc_clean_atm_diag     derived               1              0       -     "calc_clean_atm_diag" "carries decision on using clean sky diagnostics"       "flag"
+
 
 # For Noah-MP
 rconfig   integer dveg        namelist,noah_mp      1           4         h    "dveg"     "dynamic vegetation (1 -> off ; 2 -> on)"   ""
@@ -2935,6 +2952,10 @@ package   wrfhydro       wrf_hydro==1                -            state:SOLDRAIN
 #WRF Windfarm
 package   no_windfarm    windfarm_opt==0             -            -
 package   fitchscheme    windfarm_opt==1             -            state:power
+
+# WRF-Chem specific diagnostics
+package   clnatmdiag     calc_clean_atm_diag==1      -            state:SWUPTCLN,SWDNTCLN,SWUPBCLN,SWDNBCLN,LWUPTCLN,LWDNTCLN,LWUPBCLN,LWDNBCLN 
+
 
 #---------------------------------------------------------------------------------------------------------------------------------------
 ## communications                                               

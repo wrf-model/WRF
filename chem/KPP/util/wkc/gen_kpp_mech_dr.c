@@ -16,6 +16,7 @@ knode_t * p1, * p2, * p3, * p4, * pm1, * pm3, * pm4;
  char kpp_mdr_fname[NAMELEN];
  FILE  * kpp_mdr;
  int countit;
+ int is_driver;
  int max_per_line=6;
 
 
@@ -36,7 +37,8 @@ knode_t * p1, * p2, * p3, * p4, * pm1, * pm3, * pm4;
     fprintf(kpp_mdr, " SUBROUTINE kpp_mechanism_driver(   &\n" );
 
     /* pass down variables (see gen_kpp_utils) */ 
-    gen_kpp_pass_down( kpp_mdr );
+    is_driver = 0;
+    gen_kpp_pass_down( kpp_mdr, is_driver );
 
 
     fprintf(kpp_mdr, "     USE module_configure\n");
@@ -54,7 +56,7 @@ knode_t * p1, * p2, * p3, * p4, * pm1, * pm3, * pm4;
       fprintf(kpp_mdr, "\n       IMPLICIT NONE\n\n");
 
      /* declare variables */
-     gen_kpp_decl ( kpp_mdr );
+     gen_kpp_decl ( kpp_mdr, is_driver );
 
 
     fprintf(kpp_mdr, "\n\n!--------\n\n\n");
@@ -81,7 +83,12 @@ knode_t * p1, * p2, * p3, * p4, * pm1, * pm3, * pm4;
        fprintf(kpp_mdr, "        CALL wrf_debug(15,'kpp_mechanism_driver: calling %s_interface') \n\n", p2->name ); 
        fprintf(kpp_mdr, "        CALL %s_interface(     &\n", p2->name ); 
        /* pass down variables */
-       gen_kpp_pass_down ( kpp_mdr );
+       if( !strcmp( p2->name,"mozcart" ) || !strcmp( p2->name,"t1_mozcart")
+           || !strcmp( p2->name,"mozart_mosaic_4bin" ) || !strcmp( p2->name,"mozart_mosaic_4bin_aq") )
+         is_driver = 0;
+       else
+         is_driver = 1;
+       gen_kpp_pass_down ( kpp_mdr, is_driver );
 
 
 

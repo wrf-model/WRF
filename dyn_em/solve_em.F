@@ -4601,7 +4601,7 @@ BENCH_END(bc_2d_tim)
                             moist, chem, tracer, scalar,         &
                             th_phy, pi_phy, p_phy, rho_phy,      &   
                             p8w, t8w, dz8w,                      &
-                            curr_secs2,                          &
+                            REAL(curr_secs,8), curr_secs2,       &
                             diag_flag,                           &
                             ids,  ide,  jds,  jde,  kds,  kde,   &
                             ims,  ime,  jms,  jme,  kms,  kme,   &

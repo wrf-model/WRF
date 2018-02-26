@@ -1584,8 +1584,8 @@ CONTAINS
              CALL wrf_debug(100,'in ACM PBL')
 
              CALL ACMPBL(                                                        &
-               XTIME=itimestep, DTPBL=dtbl, ZNW=znw, SIGMAH=znu               &
-              ,U3D=u_phytmp, V3D=v_phytmp, PP3D=p_phy, DZ8W=dz8w, TH3D=th_phy, T3D=t_phy            &
+               XTIME=itimestep, DTPBL=dtbl,U3D=u_phytmp, V3D=v_phytmp          &
+              ,PP3D=p_phy, DZ8W=dz8w, TH3D=th_phy, T3D=t_phy                   &
               ,QV3D=qv_curr, QC3D=qc_curr, QI3D=qi_curr, RR3D=rho                &
 #if (WRF_CHEM == 1)
               ,CHEM3D=CHEM,   VD3D=VD,  NCHEM=nchem, KDVEL=kdvel              &

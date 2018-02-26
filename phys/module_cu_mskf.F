@@ -362,8 +362,6 @@ subroutine mskf_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, ep
   implicit none
 
 ! input variables
-!ckay
-  real :: zmVMFLCL,zmTRPPT,a1kay, a2kay
 
   integer, parameter :: naer_cu = 10   
   integer, parameter :: pcols = 1
@@ -2313,18 +2311,6 @@ subroutine mskf_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, ep
 !         naer2h,    &
 !         maerosol)
 
-!dkay get the TRPPT here
-      do k=jt(1),jb(1)
-      a1kay = rprd(1,k)*zf(1,k)*zmVMFLCL
-       a2kay = sprd(1,k)*zf(1,k)*zmVMFLCL
-       zmTRPPT = zmTRPPT + a1kay + a2kay
-!            print *,'a1kay,a2kay,zmTrppt=',a1kay,a2kay,zmTRPPT
-!            print *,'rprd,zf,zmVMFLCL=',rprd(1,k),zf(1,k),zmVMFLCL
-      end do
-        if (zmTRPPT.ge.1.0) then
-!            print *,'jt, jb,zmTrppt=',jt(1),jb(1),zmTRPPT
-         end if
-
 return
 end subroutine mskf_mphy
 
@@ -4191,7 +4177,7 @@ CONTAINS
    REAL    :: SF_HU10, TC_HU10
 !END TWG
 !dkay for dccmp
-   real :: zmVMFLCL, ajunk1,ajunk2, a4kay, a1kay
+   real :: a1kay
    LOGICAL :: DCCMP
    REAL :: eps1u, alatent, Qsu
    LOGICAL :: onetime
@@ -4765,11 +4751,15 @@ updraft:    DO NK=K,KL-1
 !TWG Mar 2017
 !Refine FRC1 to match super cooled water path estimate from Hu et al. [2010]
            IF (aercu_opt.gt.0) THEN
+            IF(TU(NK1).GT.TBFRZ)THEN
              TC_HU10 = TU(NK1)-273.15
              SF_HU10 = -1.0*(P1_HU10+(P2_HU10*TC_HU10)+(P3_HU10*(TC_HU10**2))+ &
              (P4_HU10*(TC_HU10**3))+(P5_HU10*(TC_HU10**4))+(P6_HU10*(TC_HU10**5)))
              FRC1 = 1.0 - (1.0/(1.0 + EXP(SF_HU10)))
-             !print*,'NEW FRC1',FRC1
+            ELSE
+             FRC1=1.
+             IFLAG=1
+            ENDIF
            END IF
 !END TWG 
 !
@@ -5067,18 +5057,6 @@ updraft:    DO NK=K,KL-1
                rprd,wump, euu, ncmp,nimp,nrmp,nsmp,zmccn,sprd, frz, aer_mmr, dtzmp, &
                NLEVZM,NLEVZMP1,gamhat,qsatzm,wu_mskf_act,qc_mskf_act,qi_mskf_act,effc,effi,effs)
               end if
-
-                ajunk1=0.0
-                ajunk2=0.0
-               do kq=K,NK
-                JK = KTE-KQ+1
-!        ajunk1 = ajunk1 + aqnewlq(kq)+aqnewic(kq)
-!        ajunk2 = ajunk2 + zmqliq(1,jk)+ &
-!          zmqice(1,jk)+rprd(1,jk)*dzq(kq)+sprd(1,jk)*dzq(kq)
-!         ajunk2 = ajunk2 + dLfmzmp(1,jk)*dzq(kq)
-!         ajunk2 = ajunk2 + dzq(kq)*dIfmzmp(1,jk)
-                end do
-!               print *,'condensates in & out',ajunk1,ajunk2
 
                Itest = 0
                 if(Itest.eq.1) then
@@ -6141,7 +6119,6 @@ iter:     DO NCOUNT=1,10
           DO NK=K,LTOPM1
             NK1=NK+1
 
-        
 !new ckay adding FRZ effect 01-30-2015
          IF (aercu_opt.GT.0.0) THEN
             JK = KX-NK+1
@@ -6150,7 +6127,6 @@ iter:     DO NCOUNT=1,10
             THETEU(NK)  =  a1kay + THETEU(NK)
          END IF
 !ckay freezing effect included in ThetaU for cape calculation
-
 
             THETEU(NK1) = THETEU(NK)
 !

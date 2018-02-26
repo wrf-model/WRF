@@ -415,6 +415,10 @@ call wrf_message("**************************************************************
         call wrf_error_fatal(" ERROR: CHEM_INIT: FOR CHEM_OPT = 0, AER_RA_FEEDBACK MUST = 0 ")
     ENDIF
 
+    IF ( config_flags%calc_clean_atm_diag .gt. 0 .AND. config_flags%aer_ra_feedback .EQ. 0 ) THEN
+    	call wrf_error_fatal("ERROR: clean_atm_diag > 0 requires aer_ra_feedback > 0")
+    ENDIF
+
     IF ( config_flags%aer_ra_feedback .EQ. 1   .AND.   &
         ( config_flags%chem_opt == RADM2 .or. &
           config_flags%chem_opt == CBMZ .or. &

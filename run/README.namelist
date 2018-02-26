@@ -1216,8 +1216,8 @@ The following are for spectral nudging:
  dk_zfac_ph (max_dom)                = 1,
  dk_zfac_q  (max_dom)                = 1,
  gph (max_dom)                       = 0.0003,
- ktrop                               = 28,      ; layer nominally representing tropopause for 
-                                                ; limiting nudging to q and t
+ ktrop                               = 0,       ; layer nominally representing tropopause for limiting nudging to q and t
+                                     		; setting ktrop = 0 allows nudging to extend to the top of the atmosphere
  xwavenum (max_dom)                  = 3,       ; top wave number to nudge in x direction
  ywavenum (max_dom)                  = 3,       ; top wave number to nudge in y direction
 

@@ -3907,6 +3907,10 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
      CASE (MORR_TWO_MOMENT)
          CALL morr_two_moment_init( config_flags%hail_opt )
+#if (EM_CORE==1)
+     CASE (MORR_TM_AERO)
+         CALL morr_two_moment_init_aero( config_flags%hail_opt )
+#endif
      CASE (P3_1CATEGORY)
          CALL p3_init('.',1)
      CASE (P3_1CATEGORY_NC)
@@ -3914,10 +3918,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      CASE (P3_2CATEGORY)
          CALL p3_init('.',2)
          CALL p3_init('./p3_lookup_table_1.dat','./p3_lookup_table_2.dat',1)
-#if (EM_CORE==1)
-     CASE (MORR_TM_AERO)
-         CALL morr_two_moment_init_aero( config_flags%hail_opt )
-#endif
      CASE (MILBRANDT2MOM)
          CALL milbrandt2mom_init
 !      CASE (MILBRANDT3MOM)

@@ -1625,20 +1625,6 @@ CONTAINS
 
 #if (EM_CORE==1)
 
-#if ( WRFPLUS == 1 )
-        CASE (SURFDRAGSCHEME)
- 
-           CALL wrf_debug(100,'in SURFDRAG scheme')
-
-           CALL surface_drag(                                     &
-             RUBLTEN=rublten,RVBLTEN=rvblten                      &  !
-            ,U_PHY=u_phy, V_PHY=v_phy, Z=z                                &  !
-            ,XLAND=xland, HT=ht, KPBL2D=kpbl                      &  !
-            ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
-            ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
-            ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
-                                                                  )
-#endif
         CASE (MYNNPBLSCHEME2, MYNNPBLSCHEME3)
 
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
@@ -1869,6 +1855,23 @@ CONTAINS
               ELSE
                CALL wrf_error_fatal('Lack arguments to call GBM pbl')
               ENDIF
+
+#if ( WRFPLUS == 1 )
+! this scheme is for WRFPlus only
+!-----------------------------------
+        CASE (SURFDRAGSCHEME)
+
+           CALL wrf_debug(100,'in SURFDRAG scheme')
+
+           CALL surface_drag(                                     &
+             RUBLTEN=rublten,RVBLTEN=rvblten                      &  !
+            ,U_PHY=u_phy, V_PHY=v_phy, Z=z                                &  !
+            ,XLAND=xland, HT=ht, KPBL2D=kpbl                      &  !
+            ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+            ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+            ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
+                                                                  )
+#endif
 
      CASE DEFAULT
 

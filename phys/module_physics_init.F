@@ -3190,14 +3190,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
 #if ( EM_CORE == 1 )
 
-#if ( WRFPLUS == 1 )
-        CASE (SURFDRAGSCHEME)
-           CALL surface_drag_init(RUBLTEN,RVBLTEN,RTHBLTEN,   &
-                        RQVBLTEN,restart,                     &
-                        ids, ide, jds, jde, kds, kde,         &
-                        ims, ime, jms, jme, kms, kme,         &
-                        its, ite, jts, jte, kts, kte          )
-#endif
 !mynn 
            
         CASE (MYNNPBLSCHEME2, MYNNPBLSCHEME3)
@@ -3261,6 +3253,15 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                         ids, ide, jds, jde, kds, kde,         &
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
+
+#if ( WRFPLUS == 1 )
+      CASE (SURFDRAGSCHEME)
+         CALL surface_drag_init(RUBLTEN,RVBLTEN,RTHBLTEN,   &
+                        RQVBLTEN,restart,                     &
+                        ids, ide, jds, jde, kds, kde,         &
+                        ims, ime, jms, jme, kms, kme,         &
+                        its, ite, jts, jte, kts, kte          )
+#endif
 
 
       CASE DEFAULT
@@ -3547,6 +3548,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       its, ite, jts, jte, kts, kte                )
 
 #if ( WRFPLUS == 1 )
+! this is for WRFPlus only
       CASE (DUCUSCHEME)
           CALL ducuinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,      &
                       RQICUTEN,RQSCUTEN,NCA,W0AVG,P_QC,P_QR,      &

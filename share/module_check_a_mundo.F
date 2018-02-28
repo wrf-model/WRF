@@ -1715,6 +1715,23 @@
 
 
 
+!---------------------------------------------------------------------
+!  The "clean" atmosphere radiative flux diagnostics can only be used 
+!     with WRF-Chem.
+!---------------------------------------------------------------------
+
+      IF ( model_config_rec%clean_atm_diag > 0 ) THEN
+
+#if (WRF_CHEM != 1)
+           wrf_err_message = '--- ERROR: "Clean" atmosphere diagnostics can only be used in WRF-Chem' 
+           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+           model_config_rec%calc_clean_atm_diag = 0
+#else
+           model_config_rec%calc_clean_atm_diag = 1
+#endif
+
+      ENDIF
+
 !-----------------------------------------------------------------------
 !  MUST BE AFTER ALL OF THE PHYSICS CHECKS.
 !-----------------------------------------------------------------------

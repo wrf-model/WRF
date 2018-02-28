@@ -818,38 +818,16 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
              asym_array        ( mxpts_re_visir, id_hmax, mxband, mxisl ), &
              stat=ierr )
    if (ierr /= 0) call wrf_error_fatal('MSG read_lut_nc: LUT parameter allocation error -> Terminate program. ')
-
-  !
-  ! open netcdf file
-  !
-  sdsu_io_file = trim(dir_lut)//'BROADBAND_CLOUD_GODDARD.nc'
-  print*, 'MSG read_lut_nc: reading broadband LUT:',trim(sdsu_io_file)
-  call check( nf90_open(trim(sdsu_io_file), nf90_nowrite, ncid) )
-
-
-  !
-  ! extinction cross section per unit mass [km-1 / (g/m3) ]
-  !
-  call check( nf90_inq_varid(ncid, 'kext_q_unit' , varid ) )
-  call check( nf90_get_var(ncid, varid, kext_q_unit_array ))
-
-  !
-  ! signle scattering albedo [-] 
-  !
-  call check( nf90_inq_varid(ncid, 'omega' , varid ) )
-  call check( nf90_get_var(ncid, varid, omega_array ))
-
-  !
-  ! asymetry parameter (forward scattering fraction) [-] 
-  !
-  call check( nf90_inq_varid(ncid, 'asym' , varid ) )
-  call check( nf90_get_var(ncid, varid, asym_array ))
-
-  !
-  ! close netCDF file
-  !
-  call check( nf90_close(ncid) )
-
+   open(11, file='BROADBAND_CLOUD_GODDARD.bin', form='unformatted', &
+      status='old', access='direct', &
+      recl=mxpts_re_visir*id_hmax*mxband*mxisl)
+   ! extinction cross section per unit mass [km-1 / (g/m3) ]
+   read(11, rec=1) kext_q_unit_array
+   ! signle scattering albedo [-] 
+   read(11, rec=2) omega_array
+   ! asymetry parameter (forward scattering fraction) [-]
+   read(11, rec=3) asym_array
+   close(11)
 
  endif
 

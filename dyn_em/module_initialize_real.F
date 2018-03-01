@@ -135,7 +135,8 @@ CONTAINS
       REAL :: p_top_requested , temp
       INTEGER :: num_metgrid_levels
       REAL , DIMENSION(max_eta) :: eta_levels
-      REAL :: max_dz
+      INTEGER :: auto_levels_opt
+      REAL :: max_dz, dzbot, dzstretch_s, dzstretch_u
 
       REAL :: dclat
 
@@ -465,34 +466,9 @@ integer::oops1,oops2
                grid%msfvx_inv(i,jte) = 0.
             END DO
          END IF
-      ELSE IF ( ( config_flags%map_proj .EQ. PROJ_CASSINI ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN 
-         DO j=jts,jte
-            DO i=its,min(ide-1,ite)
-               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-               grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
-            END DO
-         END DO
-      ELSE IF ( ( .NOT. config_flags%polar ) .AND. ( flag_mf_xy .NE. 1 ) ) THEN
-         DO j=jts,jte
-            DO i=its,ite
-               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-               grid%msfvx(i,j) = grid%msfv(i,j)
-               grid%msfvy(i,j) = grid%msfv(i,j)
-               grid%msfux(i,j) = grid%msfu(i,j)
-               grid%msfuy(i,j) = grid%msfu(i,j)
-               grid%msftx(i,j) = grid%msft(i,j)
-               grid%msfty(i,j) = grid%msft(i,j)
-            ENDDO
-         ENDDO
-         DO j=jts,min(jde,jte)
-            DO i=its,min(ide-1,ite)
-               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
-               grid%msfvx_inv(i,j) = 1./grid%msfvx(i,j)
-            END DO
-         END DO
       ELSE IF ( ( .NOT. config_flags%polar ) .AND. ( flag_mf_xy .EQ. 1 ) ) THEN
          IF ( grid%msfvx(its,jts) .EQ. 0 ) THEN
-            CALL wrf_error_fatal ( 'Maybe you do not have the new map factors, try re-running geogrid' )
+            CALL wrf_error_fatal ( 'Maybe this is a global domain, but the polar flag was not set in the bdy_control namelist.' )
          END IF
          DO j=jts,min(jde,jte)
             DO i=its,min(ide-1,ite)
@@ -501,7 +477,7 @@ integer::oops1,oops2
             END DO
          END DO
       ELSE IF ( ( config_flags%polar ) .AND. ( flag_mf_xy .NE. 1 ) ) THEN
-         CALL wrf_error_fatal ( 'Neither SI data nor older metgrid data can initialize a global domain' )
+         CALL wrf_error_fatal ( 'Older metgrid data cannot initialize a global domain' )
       ENDIF
 
       !  Check to see what available surface temperatures we have.
@@ -1535,9 +1511,13 @@ integer::oops1,oops2
            ENDIF
 
             max_dz            = model_config_rec%max_dz
+            dzbot             = model_config_rec%dzbot
+            dzstretch_s       = model_config_rec%dzstretch_s
+            dzstretch_u       = model_config_rec%dzstretch_u
+            auto_levels_opt  = model_config_rec%auto_levels_opt
 
-            CALL compute_eta ( grid%znw , &
-                               eta_levels , max_eta , max_dz , &
+            CALL compute_eta ( grid%znw , auto_levels_opt, &
+                               eta_levels , max_eta , max_dz , dzbot , dzstretch_s , dzstretch_u , &
                                grid%p_top , g , p00 , cvpm , a , r_d , cp , &
                                t00 , p1000mb , t0 , tiso , p_strat , a_strat , &
                                ids , ide , jds , jde , kds , kde , &
@@ -2917,6 +2897,11 @@ integer::oops1,oops2
       IF ( ( config_flags%sf_urban_physics == 1 ) .OR. ( config_flags%sf_urban_physics == 2 ) .OR. ( config_flags%sf_urban_physics == 3 ) ) THEN
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
+              IF ( MMINLU == 'NLCD40') THEN
+                   IF (grid%ivgtyp(i,j) == 24 .or. grid%ivgtyp(i,j) == 25 .or. grid%ivgtyp(i,j) == 26) &
+                   grid%FRC_URB2D(i,j) = (grid%FRC_URB3D(i,24,j)*0.5+grid%FRC_URB3D(i,25,j)*0.9+grid%FRC_URB3D(i,26,j)*0.95)/100.
+                   IF (grid%ivgtyp(i,j) == 13 ) grid%FRC_URB2D(i,j) = 0.9
+              ENDIF
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%LP_URB2D(i,j)  = grid%URB_PARAM(i,91,j)
                grid%LB_URB2D(i,j)  = grid%URB_PARAM(i,95,j)
@@ -7029,8 +7014,8 @@ kme=70
 kte=70
 
 
-call compute_eta ( znw , &
-                   eta_levels , max_eta , max_dz , &
+call compute_eta ( znw , auto_levels_opt, &
+                   eta_levels , max_eta , max_dz , dzbot , dzstretch_s , dzstretch_u , &
                    p_top , g , p00 , cvpm , a , r_d , cp , &
                    t00 , p1000mb , t0 , tiso , p_strat , a_strat , &
                    ids , ide , jds , jde , kds , kde , &
@@ -7040,8 +7025,8 @@ call compute_eta ( znw , &
 end program foo
 #endif
 
-   SUBROUTINE compute_eta ( znw , &
-                           eta_levels , max_eta , max_dz , &
+   SUBROUTINE compute_eta ( znw , auto_levels_opt , &
+                           eta_levels , max_eta , max_dz , dzbot , dzstretch_s , dzstretch_u , &
                            p_top , g , p00 , cvpm , a , r_d , cp , &
                            t00 , p1000mb , t0 , tiso , p_strat , a_strat , &
                            ids , ide , jds , jde , kds , kde , &
@@ -7057,10 +7042,10 @@ end program foo
       INTEGER , INTENT(IN)        :: ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
                                      its , ite , jts , jte , kts , kte
-      REAL , INTENT(IN)           :: max_dz
+      REAL , INTENT(IN)           :: max_dz, dzbot, dzstretch_s, dzstretch_u
       REAL , INTENT(IN)           :: p_top , g , p00 , cvpm , a , r_d , cp , t00 , p1000mb , t0 , tiso
       REAL , INTENT(IN)           :: p_strat , a_strat
-      INTEGER , INTENT(IN)        :: max_eta
+      INTEGER , INTENT(IN)        :: max_eta, auto_levels_opt
       REAL , DIMENSION (max_eta)  :: eta_levels
 
       REAL , DIMENSION (kts:kte) , INTENT(OUT) :: znw
@@ -7118,7 +7103,8 @@ end program foo
       !  Compute eta levels assuming a constant delta z above the PBL.
 
       ELSE
-
+       IF( auto_levels_opt == 1 ) THEN
+         print *,'using old automatic levels program'
          !  Compute top of the atmosphere with some silly levels.  We just want to
          !  integrate to get a reasonable value for ztop.  We use the planned PBL-esque
          !  levels, and then just coarse resolution above that.  We know p_top, and we
@@ -7333,6 +7319,30 @@ print *,'namelist p_top (Pa) = ',p_top
          END DO
          phb(kte) = phb(kte-1) - (znw(kte)-znw(kte-1)) * mub*alb(kte-1)
 
+       ELSE IF (auto_levels_opt == 2) THEN
+         print *,'using new automatic levels program'
+         CALL levels(kte-1, p_top, znw, max_dz, dzbot, dzstretch_s, dzstretch_u, r_d, g )
+         p_surf = p00
+         tiso_r8    = tiso
+         t00_r8     = t00
+         a_r8       = a
+         p00_r8     = p00
+         mub = p_surf - p_top
+         phb(1) = 0.
+         DO k = 1, kte-1
+            pb = (znw(k)+znw(k+1))*0.5 * (p_surf - p_top) + p_top
+            temp = MAX ( tiso_r8, t00_r8 + A_r8*LOG(pb/p00_r8) )
+            IF ( pb .LT. p_strat ) THEN
+               temp = tiso + A_strat * LOG ( pb/p_strat )
+            END IF
+            t_init = temp*(p00/pb)**(r_d/cp) - t0
+            alb(k) = (r_d/p1000mb)*(t_init+t0)*(pb/p1000mb)**cvpm
+            phb(k+1) = phb(k) - (znw(k+1)-znw(k)) * mub*alb(k)
+         END DO
+       ELSE
+         print *,'auto_levels_opt=',auto_levels_opt
+         CALL wrf_error_fatal ( 'auto_levels_opt needs to be 1 or 2')
+       ENDIF
 k=1
 WRITE (*,FMT='("Full level index = ",I4,"     Height = ",F7.1," m")') k,phb(1)/g
 do k = 2 ,kte
@@ -7342,6 +7352,74 @@ end do
       END IF
 
    END SUBROUTINE compute_eta
+
+!---------------------------------------------------------------------
+    SUBROUTINE levels ( nlev, ptop, eta, dzmax, dzbot, dzstretch_s, dzstretch_u, r_d, g )
+    implicit none
+    integer, intent(in) :: nlev
+    real, intent(in) :: ptop, dzmax, dzbot, dzstretch_s, dzstretch_u, r_d, g
+    real, dimension(0:nlev), intent(out) :: eta
+
+    real, dimension(nlev) :: zup, pup
+    real :: tt, a
+    real :: ztop, dz, dztest, zscale
+    integer :: isave, i
+
+    tt=290. ! isothermal temperature used for z/log p relation - tt=290 fits dzbot
+    ztop=r_d*tt/g*alog(1.e5/ptop)
+    zscale=r_d*tt/g
+    dz=dzbot
+    zup(1)=dz
+    pup(1)=1.e5*exp(-g*zup(1)/r_d/tt)
+    eta(0)=1.0
+    eta(1)=(pup(1)-ptop)/(1.e5-ptop)
+    print *,1,dz,zup(1),eta(1)
+    isave=1
+    do i=1,nlev-1
+        a=dzstretch_u+(dzstretch_s-dzstretch_u)*max((zscale-zup(i))/zscale, 0.)
+        dz=a*dz
+        dztest=(ztop-zup(isave))/(nlev-isave)
+        if(dztest.lt.dz)exit
+        isave=i+1
+        zup(i+1)=zup(i)+dz
+        pup(i+1)=1.e5*exp(-g*zup(i+1)/r_d/tt)
+        eta(i+1)=(pup(i+1)-ptop)/(1.e5-ptop)
+        print *,i+1,dz,zup(i+1),eta(i+1),a
+         IF ( i .EQ. nlev-1 ) THEN
+            CALL wrf_debug ( 0, 'You need one of four things:' )
+            CALL wrf_debug ( 0, '1) More eta levels: e_vert' )
+            CALL wrf_debug ( 0, '2) A lower p_top: p_top_requested')
+            CALL wrf_debug ( 0, '3) Increase the lowest eta thickness: dzbot')
+            CALL wrf_debug ( 0, '4) Increase the stretching factor: dzstretch_s or dzstretch_u')
+            CALL wrf_debug ( 0, 'All are namelist options')
+            CALL wrf_error_fatal ( 'not enough eta levels to reach p_top')
+         END IF
+    enddo
+    print *,ztop,zup(isave),nlev,isave
+    dz=(ztop-zup(isave))/(nlev-isave)
+         IF ( dz .GT. 1.5*dzmax ) THEN       ! isothermal temp 1.5 times stratosphere temp
+            CALL wrf_debug ( 0, 'Warning: Upper levels may be too thick' )
+            CALL wrf_debug ( 0, 'You need one of five things:' )
+            CALL wrf_debug ( 0, '1) More eta levels: e_vert' )
+            CALL wrf_debug ( 0, '2) A lower p_top: p_top_requested')
+            CALL wrf_debug ( 0, '3) Increase the lowest eta thickness: dzbot')
+            CALL wrf_debug ( 0, '4) Increase the stretching factor: dzstretch_s or dzstretch_u')
+            CALL wrf_debug ( 0, '5) Increase the maximum allowed thickness: max_dz')
+            CALL wrf_debug ( 0, 'All are namelist options')
+            CALL wrf_error_fatal ( 'Upper levels may be too thick')
+         END IF
+    do i=isave,nlev-1
+        zup(i+1)=zup(i)+dz
+        pup(i+1)=1.e5*exp(-g*zup(i+1)/r_d/tt)
+        eta(i+1)=(pup(i+1)-ptop)/(1.e5-ptop)
+        print *,i+1,dz,zup(i+1),eta(i+1)
+    enddo
+    eta(nlev) = 0.
+    print 1000, eta
+    1000 format(10f10.4)
+    !1000 format(10g10.3)
+    return
+    END SUBROUTINE levels
 
 !---------------------------------------------------------------------
 

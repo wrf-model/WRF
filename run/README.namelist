@@ -276,8 +276,18 @@ Namelist variables specifically for the WPS input for real:
 
 Users may explicitly define full eta levels.  Given are two distributions for 28 and 35 levels.  The number
 of levels must agree with the number of eta surfaces allocated (e_vert).  Users may alternatively request 
-only the number of levels (with e_vert), and the real program will compute values.  The computation assumes
+only the number of levels (with e_vert), and the real program will compute values.  From V4.0 there are
+two methods selected with auto_levels_opt = 1 (old) or 2 (new). The old computation assumes
 a known first several layers, then generates equi-height spaced levels up to the top of the model.
+The new method has a stretching factor (dz_stretch_s and dz_stretch_u) to stretch levels according to
+log p up to where it reaches the maximum thickness (max_dz) and starting from thickness dzbot.
+
+ max_dz                              = 1000.     ; maximum level thickness allowed (m)
+ auto_levels_opt                     = 1         ; old
+                                     = 2         ; new default (also set dzstretch_s, dzstretch_u, dzbot, max_dz)
+ dzbot                               = 50.       ; thickness of lowest layer (m) for auto_levels_opt=2
+ dzstretch_s                         = 1.1       ; surface stretch factor for auto_levels_opt=2
+ dzstretch_u                         = 1.1       ; upper stretch factor for auto_levels_opt=2
 
  eta_levels                          = 1.000, 0.990, 0.978, 0.964, 0.946,
                                        0.922, 0.894, 0.860, 0.817, 0.766,

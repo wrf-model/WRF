@@ -742,9 +742,90 @@ char buf1[100], buf2[100];
   FreeVariable( FSPLIT_VAR );
 }
 
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+void GenerateIRRFun()
+{
+int i, j, k;
+int used;
+int l, m;
+int F_VAR, FSPLIT_VAR;
+char buf1[100], buf2[100];
 
+  if( VarNr == 0 ) return;
+  
+  if (useLang != MATLAB_LANG)  /* Matlab generates an additional file per function */
 
+  if ( useWRFConform ) 
+       UseFile( integratorFile );
+  else
+       UseFile( functionFile ); 
 
+  if ( useWRFConform ) 
+    {
+       sprintf( buf1, "%s_IRRFun", rootFileName ); 
+  F_VAR      = DefFnc( buf1,      4, "accumulated time derivatives of variables - Agregate form");
+       sprintf( buf2, "%s_IRRFun_SPLIT", rootFileName ); 
+  FSPLIT_VAR      = DefFnc( buf2,      4, "accumulated time derivatives of variables - Agregate form");
+    }
+  else
+    {
+  F_VAR      = DefFnc( "IRRFun",      4, "accumulated time derivatives of variables - Agregate form");
+  FSPLIT_VAR = DefFnc( "IRRFun_SPLIT", 5, "accumulated time derivatives of variables - Split form");
+
+    }
+  
+  if( useAggregate )
+    FunctionBegin( F_VAR, V, F, RCT, Vdot );
+  else
+    FunctionBegin( FSPLIT_VAR, V, F, RCT, P_VAR, D_VAR );
+
+  if ( (useLang==MATLAB_LANG)&&(!useAggregate) )
+     printf("\nWarning: in the function definition move P_VAR to output vars\n");
+
+  NewLines(1);
+  WriteComment("Computation of accumulated equation rates");
+  
+  for(j=0; j<EqnNr; j++) {
+    used = 0;
+    if( useAggregate ) {
+      for (i = 0; i < VarNr; i++) 
+        if ( Stoich[i][j] != 0 ) { 
+          used = 1;
+          break;
+        }
+    } else {
+      for (i = 0; i < VarNr; i++) 
+        if ( Stoich_Right[i][j] != 0 ) { 
+          used = 1;
+	  break;
+        }
+    }  
+    
+    if ( used ) {    
+      prod = RConst( j );
+      for (i = 0; i < VarNr; i++) 
+        for (k = 1; k <= (int)Stoich_Left[i][j]; k++ )
+          prod = Mul( prod, Elm( V, i ) ); 
+      for ( ; i < SpcNr; i++) 
+        for (k = 1; k <= (int)Stoich_Left[i][j]; k++ )
+          prod = Mul( prod, Elm( F, i - VarNr ) );
+      Assign( Elm( Vdot, j ), prod );
+    }
+  }
+
+  if( useAggregate )
+    MATLAB_Inline("\n   Vdot = Vdot(:);\n");
+  else
+    MATLAB_Inline("\n   P_VAR = P_VAR(:);\n   D_VAR = D_VAR(:);\n");
+
+  if( useAggregate )
+    FunctionEnd( F_VAR );
+  else
+    FunctionEnd( FSPLIT_VAR );
+  
+  FreeVariable( F_VAR );
+  FreeVariable( FSPLIT_VAR );
+}
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 void GenerateStochastic()
@@ -3354,6 +3435,7 @@ int n;
   printf("\nKPP is generating the ODE function:");
   printf("\n    - %s_Function",rootFileName);
   GenerateFun();  
+  GenerateIRRFun();  
 
   if ( useStochastic ) {
     printf("\nKPP is generating the Stochastic description:");

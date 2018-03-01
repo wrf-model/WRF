@@ -981,6 +981,10 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
       zlcl_mean = zlcl_mean/float(ij)
    end if ! lcl for use_radar_rqv
 
+   if ( use_gpsephobs ) then
+      call da_gpseph_init(grid)
+   end if
+
    if (trace_use) call da_trace_exit("da_transfer_wrftoxb")
 
 end subroutine da_transfer_wrftoxb

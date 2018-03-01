@@ -3221,7 +3221,7 @@ subroutine ext_ncd_get_previous_time(DataHandle, DateStr, Status)
     if(DH%CurrentTime.GT.0) then
       DH%CurrentTime     = DH%CurrentTime -1
     endif
-    DateStr            = DH%Times(DH%CurrentTime)
+    DateStr            = DH%Times(MAX(1,DH%CurrentTime))
     DH%CurrentVariable = 0
     Status = WRF_NO_ERR
   else

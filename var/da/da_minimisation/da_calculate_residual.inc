@@ -62,6 +62,9 @@ subroutine da_calculate_residual(iv, y, re)
    if (iv%info(gpsref)%nlocal > 0) &
       call da_residual_gpsref(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
 
+   if (iv%info(gpseph)%nlocal > 0) &
+      call da_residual_gpseph(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
+
    if (iv%info(ssmi_tb)%nlocal > 0) &
       call da_residual_ssmi_tb(iv, y, re, np_missing, np_bad_data, np_obs_used, np_available)
 

@@ -421,6 +421,7 @@ state   integer number_at_same_level    -         -         -     -          -  
 state   real    radtacttime    -        -         -         -     r         "radtacttime"              "RADTACTTIME"         "LW SW ACTIVATION TIME in s"
 state   real    bldtacttime    -        -         -         -     r         "bldtacttime"              "BLDTACTTIME"         "PBL   ACTIVATION TIME in s"
 state   real    cudtacttime    -        -         -         -     r         "cudtacttime"              "CUDTACTTIME"         "CPS   ACTIVATION TIME in s"
+state   real    ltngacttime    -        -         -         -     r         "ltngacttime"              "LTNGACTTIME"         "LTNG  ACTIVATION TIME in s"
 state   real    power          ij       misc      1         -     irh       "Power"                   "Power production"         "W"
 
 
@@ -469,6 +470,8 @@ state   real    qr             ikjftb   moist       1         -     \
    i0rhusdf=(bdy_interp:dt)  "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
 state   real    qi             ikjftb   moist       1         -     \
    i0rhusdf=(bdy_interp:dt)  "QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    qi2             ikjftb   moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "QICE2"             "Ice mixing ratio cat 2"              "kg kg-1"
 state   real    qs             ikjftb   moist       1         -     \
    i0rhusdf=(bdy_interp:dt)  "QSNOW"            "Snow mixing ratio"             "kg kg-1"
 state   real    qg             ikjftb   moist       1         -     \
@@ -484,6 +487,8 @@ state   real    dfi_qr         ikjftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QRAIN"        "Rain water mixing ratio"       "kg kg-1"
 state   real    dfi_qi         ikjftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QICE"         "Ice mixing ratio"              "kg kg-1"
+state   real    dfi_qi2         ikjftb   dfi_moist       1         -     \
+   rusdf=(bdy_interp:dt)  "DFI_QICE2"         "Ice mixing ratio cat 2"              "kg kg-1"
 state   real    dfi_qs         ikjftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QSNOW"        "Snow mixing ratio"             "kg kg-1"
 state   real    dfi_qg         ikjftb   dfi_moist       1         -     \
@@ -509,6 +514,8 @@ state   real    qndrop         ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QNDROP"        "Droplet number mixing ratio"        "# kg-1"
 state   real    qni            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QNICE"         "Ice Number concentration" "# kg-1"
+state   real    qni2            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QNICE2"         "Ice Number concentration cat 2" "# kg-1"
 state   real    qt             ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "CWM"           "Total condensate mixing ratio"      "kg kg-1"
 state   real    qns            ikjftb  scalar      1         -     \
@@ -533,12 +540,18 @@ state   real    qir            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QIR"           "Rime ice mass-1 mixing ratio" "kg kg(-1)"
 state   real    qib            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QIB"           "Rime ice volume-1 mixing ratio" "m(3) kg(-1)"
+state   real    qir2            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QIR2"           "Rime ice mass-2 mixing ratio" "kg kg(-1)"
+state   real    qib2            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QIB2"           "Rime ice volume-2 mixing ratio" "m(3) kg(-1)"
 
 state   real    -              ikjftb  dfi_scalar      1         -     -   -
 state   real    dfi_qndrop     ikjftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNDROP"    "DFI Droplet number mixing ratio"        "# kg-1"
 state   real    dfi_qni        ikjftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNICE"     "DFI Ice Number concentration" "# kg-1"
+state   real    dfi_qni2        ikjftb  dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)    "DFI_QNICE2"     "DFI Ice Number concentration cat 2" "# kg-1"
 state   real    dfi_qt         ikjftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_CWM"       "DFI Total condensate mixing ratio"      "kg kg-1"
 state   real    dfi_qns        ikjftb  dfi_scalar      1         -     \
@@ -561,6 +574,10 @@ state   real    dfi_qir        ikjftb  dfi_scalar      1         -     \
    rhusdf=(bdy_interp:dt)    "DFI_QIR"    "DFI Rime ice mass-1 mixing ratio" "kg kg(-1)"
 state   real    dfi_qib        ikjftb  dfi_scalar      1         -     \
    rhusdf=(bdy_interp:dt)    "DFI_QIB"    "DFI Rime ice volume-1 mixing ratio" "m(3) kg(-1)"
+state   real    dfi_qir2        ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)    "DFI_QIR2"    "DFI Rime ice mass-2 mixing ratio" "kg kg(-1)"
+state   real    dfi_qib2        ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)    "DFI_QIB2"    "DFI Rime ice volume-2 mixing ratio" "m(3) kg(-1)"
 state   real    dfi_qke_adv   ikjftb  dfi_scalar      1         -      \
    rusdf=(bdy_interp:dt) "dfi_qke_adv"   "DFI twice TKE from MYNN"      "m2 s-2"
 
@@ -570,7 +587,7 @@ state   real    dfi_qke_adv   ikjftb  dfi_scalar      1         -      \
 
 state    real   fcx            w         misc     -         -      ir       "fcx"                  "RELAXATION TERM FOR BOUNDARY ZONE"         ""
 state    real   gcx            w         misc     -         -      ir       "gcx"                  "2ND RELAXATION TERM FOR BOUNDARY ZONE"         ""
-state    real   dtbc            -        misc     -         -      ir       "dtbc"                 "TIME SINCE BOUNDARY READ"         ""
+state    real   dtbc            -        misc     -         -       r       "dtbc"                 "TIME SINCE BOUNDARY READ"         ""
 
 #-------------------------------------------------------------------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------------------------------------------------------------------
@@ -807,7 +824,8 @@ state    real   LH_URB2D        ij    misc        1         -       rd=(interp_f
 state    real   G_URB2D         ij    misc        1         -       rd=(interp_fcnm)u=(copy_fcnm)        "G_URB"  "GROUND HEAT FLUX INTO URBAN"        "W m{-2}"
 state    real   RN_URB2D        ij    misc        1         -       rd=(interp_fcnm)u=(copy_fcnm)       "RN_URB"  "NET RADIATION ON URBAN SFC"         "W m{-2}"
 state    real   TS_URB2D        ij    misc        1         -       rd=(interp_fcnm)u=(copy_fcnm)       "TS_URB"  "SKIN TEMPERATURE"          "K"
-state    real   FRC_URB2D       ij    misc        1         -     i10rd=(interp_fcnm)u=(copy_fcnm)       "FRC_URB2D"  "URBAN FRACTION"         "dimensionless"
+state    real   FRC_URB3D       iuj   misc        1         -     i1          "FRC_URB3D"  "LANDUSE FRACTION BY NLCD CATEGORY"         "dimensionless"
+state    real   FRC_URB2D       ij    misc        1         -     irhd=(interp_fcnm)u=(copy_fcnm)       "FRC_URB2D"  "URBAN FRACTION"         "dimensionless"
 state    integer   UTYPE_URB2D  ij    misc        1         -     rd=(interp_fcnm)u=(copy_fcnm)       "UTYPE_URB"  "URBAN TYPE"         "dimensionless"
 state    real   TRB_URB4D       i{ulay}j    misc       1         Z     r      "TRB_URB4D" "ROOF LAYER TEMPERATURE"          "K"
 state    real   TW1_URB4D       i{ulay}j    misc       1         Z     r      "TW1_URB4D" "WALL LAYER TEMPERATURE"          "K"
@@ -1294,9 +1312,12 @@ state    real  HAILNCV          ij      misc        1         -      r        "H
 state    real    refl_10cm      ikj     dyn_em      1         -      hdu       "refl_10cm"             "Radar reflectivity (lamda = 10 cm)"  "dBZ"
 state    real    th_old          ikj      misc        1         -      rusd        "TH_OLD"              "Old Value of Th"   "K"
 state    real    qv_old          ikj      misc        1         -      rusd        "QV_OLD"              "Old Value of qv"   "kg kg-1"
-state    real    vmi3d          ikj     misc        1         -     hdu       "v_ice"                 "Mass-weighted ice fallspeed"  "m s-1"
-state    real    di3d           ikj     misc        1         -     hdu       "d_ice"                 "Mass-weighted mean ice size"  "m"
-state    real    rhopo3d        ikj     misc        1         -     hdu       "rho_ice"               "Mass-weighted mean ice density"  "kg m-3"
+state    real    vmi3d          ikj     misc        1         -     hdu       "v_ice"                 "Mass-weighted ice fallspeed cat 1"  "m s-1"
+state    real    di3d           ikj     misc        1         -     hdu       "d_ice"                 "Mass-weighted mean ice size cat 1"  "m"
+state    real    rhopo3d        ikj     misc        1         -     hdu       "rho_ice"               "Mass-weighted mean ice density cat 1"  "kg m-3"
+state    real    vmi3d_2          ikj     misc        1         -     hdu     "v_ice2"                 "Mass-weighted ice fallspeed cat 2"  "m s-1"
+state    real    di3d_2           ikj     misc        1         -     hdu     "d_ice2"                 "Mass-weighted mean ice size cat 2"  "m"
+state    real    rhopo3d_2        ikj     misc        1         -     hdu     "rho_ice2"               "Mass-weighted mean ice density cat 2"  "kg m-3"
 # LIGHTNING NUDGING
 #state    real    ltg_dat        ij      misc        1         -      r         "ltg_dat"               "gridded lightning data"  "Flash per xkm x xkm per LAD_INT sec"
 # END LIGHTNING NUDGING
@@ -1462,21 +1483,28 @@ state integer  I_ACLWDNB        ij      misc        1         -      rhd=(interp
 state integer  I_ACLWDNBC       ij      misc        1         -      rhd=(interp_fcni)u=(copy_fcni)     "I_ACLWDNBC"    "BUCKET FOR DOWNWELLING CLEAR SKY LONGWAVE FLUX AT BOTTOM" "J m-2"
 state    real  SWUPT            ij      misc        1         -      rhdu     "SWUPT"                 "INSTANTANEOUS UPWELLING SHORTWAVE FLUX AT TOP"          "W m-2"
 state    real  SWUPTC           ij      misc        1         -      rhdu     "SWUPTC"                "INSTANTANEOUS UPWELLING CLEAR SKY SHORTWAVE FLUX AT TOP" "W m-2"
+state    real  SWUPTCLN         ij      misc        1         -      rhdu     "SWUPTCLN"              "INSTANTANEOUS UPWELLING CLEAN SKY SHORTWAVE FLUX AT TOP" "W m-2"
 state    real  SWDNT            ij      misc        1         -      rhdu     "SWDNT"                 "INSTANTANEOUS DOWNWELLING SHORTWAVE FLUX AT TOP"          "W m-2"
 state    real  SWDNTC           ij      misc        1         -      rhdu     "SWDNTC"                "INSTANTANEOUS DOWNWELLING CLEAR SKY SHORTWAVE FLUX AT TOP" "W m-2"
+state    real  SWDNTCLN         ij      misc        1         -      rhdu     "SWDNTCLN"              "INSTANTANEOUS DOWNWELLING CLEAN SKY SHORTWAVE FLUX AT TOP" "W m-2"
 state    real  SWUPB            ij      misc        1         -      rhdu     "SWUPB"                 "INSTANTANEOUS UPWELLING SHORTWAVE FLUX AT BOTTOM"          "W m-2"
 state    real  SWUPBC           ij      misc        1         -      rhdu     "SWUPBC"                "INSTANTANEOUS UPWELLING CLEAR SKY SHORTWAVE FLUX AT BOTTOM" "W m-2"
+state    real  SWUPBCLN         ij      misc        1         -      rhdu     "SWUPBCLN"              "INSTANTANEOUS UPWELLING CLEAN SKY SHORTWAVE FLUX AT BOTTOM" "W m-2"
 state    real  SWDNB            ij      misc        1         -      rhdu     "SWDNB"                 "INSTANTANEOUS DOWNWELLING SHORTWAVE FLUX AT BOTTOM"          "W m-2"
 state    real  SWDNBC           ij      misc        1         -      rhdu     "SWDNBC"                "INSTANTANEOUS DOWNWELLING CLEAR SKY SHORTWAVE FLUX AT BOTTOM" "W m-2"
+state    real  SWDNBCLN         ij      misc        1         -      rhdu     "SWDNBCLN"              "INSTANTANEOUS DOWNWELLING CLEAN SKY SHORTWAVE FLUX AT BOTTOM" "W m-2"
 state    real  LWUPT            ij      misc        1         -      rhdu     "LWUPT"                 "INSTANTANEOUS UPWELLING LONGWAVE FLUX AT TOP"          "W m-2"
 state    real  LWUPTC           ij      misc        1         -      rhdu     "LWUPTC"                "INSTANTANEOUS UPWELLING CLEAR SKY LONGWAVE FLUX AT TOP" "W m-2"
+state    real  LWUPTCLN         ij      misc        1         -      rhdu     "LWUPTCLN"              "INSTANTANEOUS UPWELLING CLEAN SKY LONGWAVE FLUX AT TOP" "W m-2"
 state    real  LWDNT            ij      misc        1         -      rhdu     "LWDNT"                 "INSTANTANEOUS DOWNWELLING LONGWAVE FLUX AT TOP"          "W m-2"
 state    real  LWDNTC           ij      misc        1         -      rhdu     "LWDNTC"                "INSTANTANEOUS DOWNWELLING CLEAR SKY LONGWAVE FLUX AT TOP" "W m-2"
+state    real  LWDNTCLN         ij      misc        1         -      rhdu     "LWDNTCLN"              "INSTANTANEOUS DOWNWELLING CLEAN SKY LONGWAVE FLUX AT TOP" "W m-2"
 state    real  LWUPB            ij      misc        1         -      rhdu     "LWUPB"                 "INSTANTANEOUS UPWELLING LONGWAVE FLUX AT BOTTOM"          "W m-2"
 state    real  LWUPBC           ij      misc        1         -      rhdu     "LWUPBC"                "INSTANTANEOUS UPWELLING CLEAR SKY LONGWAVE FLUX AT BOTTOM" "W m-2"
+state    real  LWUPBCLN         ij      misc        1         -      rhdu     "LWUPBCLN"              "INSTANTANEOUS UPWELLING CLEAN SKY LONGWAVE FLUX AT BOTTOM" "W m-2"
 state    real  LWDNB            ij      misc        1         -      rhdu     "LWDNB"                 "INSTANTANEOUS DOWNWELLING LONGWAVE FLUX AT BOTTOM"          "W m-2"
 state    real  LWDNBC           ij      misc        1         -      rhdu     "LWDNBC"                "INSTANTANEOUS DOWNWELLING CLEAR SKY LONGWAVE FLUX AT BOTTOM" "W m-2"
-
+state    real  LWDNBCLN         ij      misc        1         -      rhdu     "LWDNBCLN"              "INSTANTANEOUS DOWNWELLING CLEAN SKY LONGWAVE FLUX AT BOTTOM" "W m-2"
 state    real  SWCF             ij      misc        1         -      r        "SWCF"                  "SHORT WAVE CLOUD FORCING AT TOA"                     "W m-2"
 state    real  LWCF             ij      misc        1         -      r        "LWCF"                  "LONG WAVE CLOUD FORCING AT TOA"                      "W m-2"
 state    real  OLR              ij      misc        1         -      rh        "OLR"                   "TOA OUTGOING LONG WAVE"                              "W m-2"
@@ -2085,7 +2113,11 @@ rconfig   logical   cycle_y         namelist,domains    max_domains    .false. r
 rconfig   logical   reorder_mesh    namelist,domains    1              .false. rh    "reorder_mesh"       ""      ""
 rconfig   logical   perturb_input   namelist,domains    1              .false. h     "" "" ""
 rconfig   real      eta_levels      namelist,domains    max_eta        -1.
-rconfig   real      max_dz          namelist,domains    1               1000.
+rconfig   integer   auto_levels_opt namelist,domains    1               2      -     "auto_levels_opt" "automatic levels, 1=old, 2=new"
+rconfig   real      max_dz          namelist,domains    1               1000.  -     "max_dz"   "maximum thickness limit for eta calc" "m"
+rconfig   real      dzbot           namelist,domains    1               50.    -     "dzbot"    "surface dz thickness for eta calc" "m"
+rconfig   real      dzstretch_s     namelist,domains    1               1.1    -     "dzstretch_s"  "surface dz stretching factor for eta calc"    ""
+rconfig   real      dzstretch_u     namelist,domains    1               1.1    -     "dzstretch_u"  "upper dz stretching factor for eta calc"    ""
 rconfig   integer   ocean_levels    namelist,domains    1               30     irh   "ocean level"        ""      ""
 rconfig   real      ocean_z         namelist,domains    max_ocean      -1      -     "vertical profile of layer depths for ocean" "m"
 rconfig   real      ocean_t         namelist,domains    max_ocean      -1      -     "vertical profile of ocean temps" "K"
@@ -2303,6 +2335,10 @@ rconfig   integer use_mp_re               namelist,physics     	1              1
 # The following two options are hooked into various microphysics schemes to allow for ensemble perturbations of CCN and hail/graupel PSDs - GAC (AFWA)
 rconfig   real    ccn_conc                namelist,physics      1           1.0E8      h     "ccn_conc"                 "CCN concentration"                                                             "# m-3"
 rconfig   integer hail_opt                namelist,physics      1              0       rh    "hail_opt"                 "Hail/Graupel switch, 1:hail, 0:graupel"                                        ""
+
+rconfig   integer clean_atm_diag          namelist,physics      1              0       rh    "clean_atm_diag"     "option to switch on clean sky diagnostics (for chem)"   "flag"
+rconfig   integer calc_clean_atm_diag     derived               1              0       -     "calc_clean_atm_diag" "carries decision on using clean sky diagnostics"       "flag"
+
 
 # For Noah-MP
 rconfig   integer dveg        namelist,noah_mp      1           4         h    "dveg"     "dynamic vegetation (1 -> off ; 2 -> on)"   ""
@@ -2632,6 +2668,7 @@ package   nssl_2momg      mp_physics==22               -             moist:qv,qc
 package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow,qnwfa2d,taod5503d,taod5502d
 package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi;scalar:qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi;scalar:qnc,qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
+package   p3_2category    mp_physics==52               -             moist:qv,qc,qr,qi,qi2;scalar:qnc,qni,qnr,qir,qib,qni2,qir2,qib2;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,vmi3d_2,rhopo3d_2,di3d_2,refl_10cm,th_old,qv_old
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 
 package   radar_refl      compute_radar_ref==1         -             state:refl_10cm,refd_max
@@ -2660,6 +2697,7 @@ package   nssl_1momlfo_dfi  mp_physics_dfi==21       -             dfi_moist:dfi
 package   thompsonaero_dfi  mp_physics_dfi==28       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qnc,dfi_qnwfa,dfi_qnifa;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   p3_1category_dfi  mp_physics_dfi==50       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
 package   p3_1category_nc_dfi  mp_physics_dfi==51    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qnc,dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
+package   p3_2category_dfi  mp_physics_dfi==52    -                dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qi2;dfi_scalar:dfi_qnc,dfi_qni,dfi_qnr,dfi_qir,dfi_qib,dfi_qni2,dfi_qir2,dfi_qib2;state:dfi_re_cloud,dfi_re_ice
 package   etampnew_dfi      mp_physics_dfi==95       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs;dfi_scalar:dfi_qt
 
 package   noprogn       progn==0                     -             -
@@ -2909,6 +2947,10 @@ package   wrfhydro       wrf_hydro==1                -            state:SOLDRAIN
 #WRF Windfarm
 package   no_windfarm    windfarm_opt==0             -            -
 package   fitchscheme    windfarm_opt==1             -            state:power
+
+# WRF-Chem specific diagnostics
+package   clnatmdiag     calc_clean_atm_diag==1      -            state:SWUPTCLN,SWDNTCLN,SWUPBCLN,SWDNBCLN,LWUPTCLN,LWDNTCLN,LWUPBCLN,LWDNBCLN 
+
 
 #---------------------------------------------------------------------------------------------------------------------------------------
 ## communications                                               

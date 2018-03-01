@@ -28,7 +28,7 @@ MODULE KPP_ROOT_Integrator
 CONTAINS
 
 SUBROUTINE  KPP_ROOT_INTEGRATE( TIN, TOUT, &
-  FIX, VAR,  RCONST, ATOL, RTOL,           &
+  FIX, VAR,  RCONST, ATOL, RTOL, IRR_WRK,  &
   ICNTRL_U, RCNTRL_U, ISTATUS_U, RSTATUS_U, IERR_U  )
 
    USE KPP_ROOT_Parameters
@@ -36,6 +36,7 @@ SUBROUTINE  KPP_ROOT_INTEGRATE( TIN, TOUT, &
    IMPLICIT NONE
    KPP_REAL, INTENT(INOUT), DIMENSION(NFIX) :: FIX
    KPP_REAL, INTENT(INOUT), DIMENSION(NVAR) :: VAR
+   KPP_REAL, INTENT(INOUT) :: IRR_WRK(NREACT)
    KPP_REAL, INTENT(IN), DIMENSION(NSPEC) :: ATOL, RTOL
    KPP_REAL, INTENT(IN), DIMENSION(NREACT) :: RCONST
    KPP_REAL, INTENT(IN) :: TIN  ! Start Time
@@ -56,6 +57,7 @@ SUBROUTINE  KPP_ROOT_INTEGRATE( TIN, TOUT, &
    KPP_REAL :: RCNTRL(20), RSTATUS(20)
    INTEGER :: ICNTRL(20), ISTATUS(20)
 
+
    ICNTRL(:)  = 0
    RCNTRL(:)  = 0.0_dp
    ISTATUS(:) = 0
@@ -72,7 +74,7 @@ SUBROUTINE  KPP_ROOT_INTEGRATE( TIN, TOUT, &
 
    CALL KPP_ROOT_Rosenbrock(VAR, FIX, RCONST, TIN,TOUT,   &
          ATOL,RTOL,               &
-         RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)
+         RCNTRL,ICNTRL,RSTATUS,ISTATUS,IRR_WRK,IERR)
 
    STEPMIN = RCNTRL(ihexit)
    ! if optional parameters are given for output they to return information
@@ -85,7 +87,7 @@ END SUBROUTINE  KPP_ROOT_INTEGRATE
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 SUBROUTINE  KPP_ROOT_Rosenbrock(Y, FIX, RCONST, Tstart,Tend, &
            AbsTol,RelTol,            &
-           RCNTRL,ICNTRL,RSTATUS,ISTATUS,IERR)
+           RCNTRL,ICNTRL,RSTATUS,ISTATUS,IRR_WRK,IERR)
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !
 !    Solves the system y'=F(t,y) using a Rosenbrock method defined by:
@@ -195,6 +197,7 @@ SUBROUTINE  KPP_ROOT_Rosenbrock(Y, FIX, RCONST, Tstart,Tend, &
 
 !~~~>  Arguments
    KPP_REAL, INTENT(INOUT) :: Y(NVAR)
+   KPP_REAL, INTENT(INOUT) :: IRR_WRK(NREACT)
    KPP_REAL, INTENT(IN), DIMENSION(NFIX) :: FIX
    KPP_REAL, INTENT(IN), DIMENSION(NREACT) :: RCONST
    KPP_REAL, INTENT(IN)   :: Tstart,Tend
@@ -394,7 +397,7 @@ SUBROUTINE  KPP_ROOT_Rosenbrock(Y, FIX, RCONST, Tstart,Tend, &
         Roundoff, Hmin, Hmax, Hstart, Hexit,     &
         FacMin, FacMax, FacRej, FacSafe,         &
 !  Error indicator
-        IERR,                                    &
+        IRR_WRK,IERR,                            &
 !  Statistics on the work performed by the Rosenbrock method
          Nfun,Njac,Nstp,Nacc,Nrej,Ndec,Nsol,Nsng,&
 !~~~> 
@@ -454,12 +457,11 @@ CONTAINS !  SUBROUTINES internal to Rosenbrock
         Roundoff, Hmin, Hmax, Hstart, Hexit,     &
         FacMin, FacMax, FacRej, FacSafe,         &
 !~~~> Error indicator
-        IERR,                                    &
+        IRR_WRK,IERR,                            &
 !~~~>   Statistics on the work performed by the Rosenbrock method
         Nfun,Njac,Nstp,Nacc,Nrej,Ndec,Nsol,Nsng, &
 !~~~> 
-        RCONST, FIX &
- )
+        RCONST, FIX )
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !   Template for the implementation of a generic Rosenbrock method
 !      defined by ros_S (no of stages)
@@ -470,6 +472,8 @@ CONTAINS !  SUBROUTINES internal to Rosenbrock
 
 !~~~> Input: the initial condition at Tstart; Output: the solution at T
    KPP_REAL, INTENT(INOUT) :: Y(NVAR)
+!~~~> Output: the reaction rates
+   KPP_REAL, INTENT(INOUT) :: IRR_WRK(NREACT)
 !~~~> Input: integration interval
    KPP_REAL, INTENT(IN) :: Tstart,Tend
 !~~~> Output: time at which the solution is returned (T=Tend if success)
@@ -555,6 +559,9 @@ TimeLoop: DO WHILE ( (Direction > 0).AND.((T-Tend)+Roundoff <= ZERO) &
 
 !~~~>   Compute the function at current time
    CALL KPP_ROOT_FunTemplate(T,Y,Fcn0, RCONST, FIX, Nfun)
+   IF( T == Tstart ) THEN
+     CALL KPP_ROOT_IRRFun( Y, FIX, RCONST, IRR_WRK )
+   ENDIF
 
 !~~~>  Compute the function derivative with respect to T
    IF (.NOT.Autonomous) THEN

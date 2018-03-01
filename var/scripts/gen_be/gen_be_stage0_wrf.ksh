@@ -42,6 +42,14 @@ while [[ $DATE -le $END_DATE_STAGE0 ]]; do
    mkdir ${TMP_DIR}  2>/dev/null
    cd ${TMP_DIR}
 
+   #Find the difference between forecast lead times
+   export DIFF_FCST=$(($FCST_RANGE1 - $FCST_RANGE2))
+
+   if [[ $DIFF_FCST -le 0  ]]; then
+      echo "Later forecast time FCST_RANGE1 ($FCST_RANGE1) must be later than FCST_RANGE2 ($FCST_RANGE2)!"
+      exit -2
+   fi
+
    if [[ $NL_CV_OPTIONS == 7 ]]; then
       for SV in u v t rh ps; do mkdir -p $SV; done
    else
@@ -63,7 +71,7 @@ while [[ $DATE -le $END_DATE_STAGE0 ]]; do
       fi
    export FILE=${FC_DIR}/${DATE}/wrfout_d${DOMAIN}_${FILE_DATE}
    export FILE1=wrfout_d${DOMAIN}_${FILE_DATE}
-   export NEXT_DATE=$($DAAT $DATE $INTERVAL)
+   export NEXT_DATE=$($DAAT $DATE $DIFF_FCST)
    if [[ $BE_METHOD == NMC ]]; then
       export FILE2=wrfout_d${DOMAIN}_${FILE_DATE}.e001
       export FILE3=wrfout_d${DOMAIN}_${FILE_DATE}.e002

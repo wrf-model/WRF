@@ -508,7 +508,8 @@
      &                 ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
      &                 ,EXPLICIT_CONVECTION=config_flags%cu_physics==0  &
      &                 ,CU_PHYSICS=config_flags%cu_physics              &
-     &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS)
+     &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &
+     &                 ,CALC_CLEAN_ATM_DIAG=CONFIG_FLAGS%CALC_CLEAN_ATM_DIAG)
 
 
 !

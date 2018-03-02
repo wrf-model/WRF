@@ -2723,7 +2723,7 @@ SUBROUTINE horizontal_diffusion_u_2( tendency, config_flags,              &
       tendency(i,k,j)=tendency(i,k,j) +  g*tmpdz/dnw(k) *             &
            (mrdx*(titau1(i,k,j  ) - titau1(i-1,k,j)) +                &
             mrdy*(titau2(i,k,j+1) - titau2(i  ,k,j)) -                &
-            msfuy(i,j)*zx_at_u(i,k,j)*(titau1avg(i,k+1,j)-titau1avg(i,k,j)) / tmpdz - &
+            msfux(i,j)*zx_at_u(i,k,j)*(titau1avg(i,k+1,j)-titau1avg(i,k,j)) / tmpdz - &
             msfuy(i,j)*zy_at_u(i,k,j)*(titau2avg(i,k+1,j)-titau2avg(i,k,j)) / tmpdz   &
                                                                   )
    ENDDO
@@ -2918,7 +2918,7 @@ SUBROUTINE horizontal_diffusion_v_2( tendency, config_flags,              &
       tendency(i,k,j)=tendency(i,k,j) +    g*tmpdz/dnw(k) *           &
            (mrdy*(titau2(i,k,j  ) - titau2(i,k,j-1)) +                &
             mrdx*(titau1(i+1,k,j) - titau1(i  ,k,j)) -                &
-            msfvy(i,j)*zx_at_v(i,k,j)*(titau1avg(i,k+1,j)-titau1avg(i,k,j)) / tmpdz - &
+            msfvx(i,j)*zx_at_v(i,k,j)*(titau1avg(i,k+1,j)-titau1avg(i,k,j)) / tmpdz - &
             msfvy(i,j)*zy_at_v(i,k,j)*(titau2avg(i,k+1,j)-titau2avg(i,k,j)) / tmpdz   &
                                                                   )
 

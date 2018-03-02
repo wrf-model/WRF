@@ -66,8 +66,6 @@ MODULE module_small_step_em
 
 CONTAINS
 
-!----------------------------------------------------------------------
-
 SUBROUTINE small_step_prep( u_1, u_2, v_1, v_2, w_1, w_2, &
                             t_1, t_2, ph_1, ph_2,         &
                             mub, mu_1, mu_2,              &
@@ -1888,5 +1886,326 @@ END SUBROUTINE sumflux
 
   SUBROUTINE init_module_small_step
   END SUBROUTINE init_module_small_step
+
+#if ( WRFPLUS == 1 )
+!----------------------------------------------------------------------
+SUBROUTINE advance_all (u, ru_tend,  v, rv_tend,       &
+                        w, rw_tend,  t,  t_tend,       &
+                        mu, mu_tend, ph, ph_tend,      &
+                        muu, muv, mut,                 &
+                        msfuy, msfvx, msfty,           &
+                        dts,                           &
+                        config_flags, spec_zone,       &
+                        ids, ide, jds, jde, kds, kde,  &
+                        ims, ime, jms, jme, kms, kme,  &
+                        ips, ipe, jps, jpe, kps, kpe,  &
+                        its, ite, jts, jte, kts, kte  )
+
+      IMPLICIT NONE  ! religion first
+
+      TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
+
+      INTEGER,      INTENT(IN   )    :: ids,ide, jds,jde, kds,kde
+      INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
+      INTEGER,      INTENT(IN   )    :: ips,ipe, jps,jpe, kps,kpe
+      INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
+      INTEGER,      INTENT(IN   )    :: spec_zone
+
+      REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),  &
+            INTENT(INOUT) ::                          &
+                                                  u,  &
+                                                  v,  &
+                                                  w,  &
+                                                  t,  &
+                                                  ph
+
+      REAL, DIMENSION( ims:ime , kms:kme, jms:jme ), &
+            INTENT(IN   ) ::                          &
+                                             ru_tend, &
+                                             rv_tend, &
+                                             rw_tend, &
+                                              t_tend, &
+                                             ph_tend
+
+      REAL, DIMENSION( ims:ime , jms:jme ),    INTENT(INOUT) :: mu
+      REAL, DIMENSION( ims:ime , jms:jme ),    INTENT(IN   ) :: mu_tend
+
+      REAL, DIMENSION( ims:ime , jms:jme ),    INTENT(IN   ) :: muu,  &
+                                                                muv,  &
+                                                                mut
+
+      REAL, DIMENSION( ims:ime , jms:jme ),    INTENT(IN   ) :: msfuy,  &
+                                                                msfvx,  &
+                                                                msfty
+
+      REAL,                                    INTENT(IN   ) :: dts
+    
+
+      INTEGER :: i,j,k, i_start, i_end, j_start, j_end, k_start, k_end
+      INTEGER :: i_endu, j_endv, k_endw
+
+      INTEGER :: i_start_u_tend, i_end_u_tend, j_start_v_tend, j_end_v_tend
+
+!<DESCRIPTION>
+!
+!  advance_all advances the explicit perturbation horizontal momentum 
+!  equations (u,v) by adding in the large-timestep tendency along with 
+!  the small timestep pressure gradient tendency.
+!
+!</DESCRIPTION>
+
+!  now, the real work.
+!  set the loop bounds taking into account boundary conditions.
+
+   IF( config_flags%nested .or. config_flags%specified ) THEN
+      i_start = max( its,ids+spec_zone )
+      i_end   = min( ite,ide-spec_zone-1 )
+      j_start = max( jts,jds+spec_zone )
+      j_end   = min( jte,jde-spec_zone-1 )
+      k_start = kts
+      k_end   = min( kte, kde-1 )
+
+      i_endu = min( ite,ide-spec_zone )
+      j_endv = min( jte,jde-spec_zone )
+      k_endw = k_end
+
+      IF( config_flags%periodic_x) THEN
+        i_start = its
+        i_end   = min(ite,ide-1)
+        i_endu = ite
+      ENDIF
+   ELSE
+      i_start = its
+      i_end   = min(ite,ide-1)
+      j_start = jts
+      j_end   = min(jte,jde-1)
+      k_start = kts
+      k_end   = kte-1
+
+      i_endu = ite
+      j_endv = jte
+      k_endw = k_end
+   ENDIF
+
+   i_start_u_tend = i_start
+   i_end_u_tend   = i_endu
+   j_start_v_tend = j_start
+   j_end_v_tend   = j_endv
+
+   IF ( config_flags%symmetric_xs .and. (its == ids) ) &
+                  i_start_u_tend = i_start_u_tend+1
+   IF ( config_flags%symmetric_xe .and. (ite == ide) ) &
+                  i_end_u_tend = i_end_u_tend-1
+   IF ( config_flags%symmetric_ys .and. (jts == jds) ) &
+                  j_start_v_tend = j_start_v_tend+1
+   IF ( config_flags%symmetric_ye .and. (jte == jde) ) &
+                  j_end_v_tend = j_end_v_tend-1
+
+   u_outer_j_loop: DO j = j_start, j_end
+      DO k = k_start, k_end
+      DO i = i_start_u_tend, i_end_u_tend
+        u(i,k,j) = u(i,k,j) + dts*ru_tend(i,k,j)*msfuy(i,j)/muu(i,j)
+      ENDDO
+      ENDDO
+   ENDDO u_outer_j_loop
+
+   v_outer_j_loop: DO j = j_start_v_tend, j_end_v_tend
+      DO k = k_start, k_end
+      DO i = i_start, i_end
+        v(i,k,j) = v(i,k,j) + dts*rv_tend(i,k,j)*msfvx(i,j)/muv(i,j)
+      ENDDO
+      ENDDO
+   ENDDO v_outer_j_loop
+
+   i_start = its
+   i_end   = min(ite,ide-1)
+   j_start = jts
+   j_end   = min(jte,jde-1)
+   k_start = kts
+   k_end   = kte-1
+   IF ( .NOT. config_flags%periodic_x )THEN
+     IF ( config_flags%specified .or. config_flags%nested ) then
+       i_start = max(its,ids+1)
+       i_end   = min(ite,ide-2)
+     ENDIF
+   ENDIF
+   IF ( config_flags%specified .or. config_flags%nested ) then
+     j_start = max(jts,jds+1)
+     j_end   = min(jte,jde-2)
+   ENDIF
+
+   DO j = j_start, j_end
+   DO i=i_start, i_end
+     mu(i,j) = mu(i,j)+dts*mu_tend(i,j)
+   ENDDO
+   ENDDO
+
+   DO j=j_start, j_end
+     DO k=1,k_end
+     DO i=i_start, i_end
+       t(i,k,j) = t(i,k,j) + msfty(i,j)*dts*t_tend(i,k,j)/mut(i,j)
+     END DO
+     END DO
+   ENDDO   
+
+   i_start = its
+   i_end   = min(ite,ide-1)
+   j_start = jts
+   j_end   = min(jte,jde-1)
+   k_start = kts
+   k_end   = kte-1
+   IF ( .NOT. config_flags%periodic_x )THEN
+      IF ( config_flags%specified .or. config_flags%nested ) then
+        i_start = max(its,ids+1)
+        i_end   = min(ite,ide-2)
+      ENDIF
+   ENDIF
+   IF ( config_flags%specified .or. config_flags%nested ) then
+      j_start = max(jts,jds+1)
+      j_end   = min(jte,jde-2)
+   ENDIF
+
+IF ( config_flags%non_hydrostatic ) THEN
+  j_loop_w:  DO j = j_start, j_end
+    DO k=2,k_end+1
+      DO i=i_start, i_end
+        w(i,k,j)=w(i,k,j)+dts*rw_tend(i,k,j)*msfty(i,j)/mut(i,j)
+        ph(i,k,j) = ph(i,k,j)+dts*ph_tend(i,k,j)*msfty(i,j)/mut(i,j)
+      ENDDO
+    ENDDO
+  ENDDO j_loop_w
+ENDIF
+
+END SUBROUTINE advance_all
+
+!----------------------------------------------------------------------
+
+SUBROUTINE save_ph_mu ( ph_1, ph_2, ph_save, &
+                        mu_1, mu_2, mu_save, &
+                        rk_step,                      &
+                        ids,ide, jds,jde, kds,kde,    & 
+                        ims,ime, jms,jme, kms,kme,    &
+                        its,ite, jts,jte, kts,kte )
+
+  IMPLICIT NONE  ! religion first
+
+! declarations for the stuff coming in
+
+  INTEGER,      INTENT(IN   )    :: ids,ide, jds,jde, kds,kde
+  INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
+  INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
+
+  INTEGER,      INTENT(IN   )    :: rk_step
+
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme),INTENT(INOUT) :: ph_1
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme),INTENT(  OUT) :: ph_save
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme),INTENT(INOUT) :: ph_2
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: mu_1,mu_2
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(  OUT) :: mu_save
+
+! local variables
+
+  INTEGER :: i, j, k
+  INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end
+
+
+    i_start = its
+    i_end   = min(ite,ide-1)
+    j_start = jts
+    j_end   = min(jte,jde-1)
+    k_start = kts
+    k_end = min(kte,kde-1)
+
+    !  if this is the first RK step, reset *_1 to *_2
+    !  (we are replacing the t-dt fields with the time t fields)
+
+    IF ((rk_step == 1) ) THEN
+
+      DO j=j_start, j_end
+      DO k=k_start, min(kde,kte)
+      DO i=i_start, i_end
+        ph_1(i,k,j) = ph_2(i,k,j)
+      ENDDO
+      ENDDO
+      ENDDO
+
+      DO j=j_start, j_end
+      DO i=i_start, i_end
+        mu_1(i,j)=mu_2(i,j)
+      ENDDO
+      ENDDO
+
+     END IF
+
+    ! set up the small timestep variables
+
+    DO j=j_start, j_end
+!    DO k=k_start, min(kde,kte)
+    DO k=k_start, kde
+    DO i=i_start, i_end
+      ph_save(i,k,j) = ph_2(i,k,j)
+      ph_2(i,k,j) = ph_1(i,k,j)-ph_2(i,k,j)
+    ENDDO
+    ENDDO
+    ENDDO
+
+    DO j=j_start, j_end
+    DO i=i_start, i_end
+      mu_save(i,j)=mu_2(i,j)
+      mu_2(i,j)=mu_1(i,j)-mu_2(i,j)
+    ENDDO
+    ENDDO
+
+END SUBROUTINE save_ph_mu
+
+!----------------------------------------------------------------------
+
+SUBROUTINE restore_ph_mu ( ph_2, ph_save, &
+                           mu_2, mu_save, &
+                           ids,ide, jds,jde, kds,kde,    & 
+                           ims,ime, jms,jme, kms,kme,    &
+                           its,ite, jts,jte, kts,kte )
+
+  IMPLICIT NONE  ! religion first
+
+! declarations for the stuff coming in
+
+  INTEGER,      INTENT(IN   )    :: ids,ide, jds,jde, kds,kde
+  INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
+  INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
+
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme),INTENT(IN   ) :: ph_save
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme),INTENT(INOUT) :: ph_2
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: mu_2
+  REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN   ) :: mu_save
+
+! local variables
+
+  INTEGER :: i, j, k
+  INTEGER :: i_start, i_end, j_start, j_end
+
+
+  i_start = its
+  i_end   = min(ite,ide-1)
+  j_start = jts
+  j_end   = min(jte,jde-1)
+
+  DO j = j_start, j_end
+  DO k = kds, kde
+  DO i = i_start, i_end
+    ph_2(i,k,j) = ph_2(i,k,j) + ph_save(i,k,j)
+  ENDDO
+  ENDDO
+  ENDDO
+
+  DO j = j_start, j_end
+  DO i = i_start, i_end
+    mu_2(i,j) = mu_2(i,j) + mu_save(i,j)
+  ENDDO
+  ENDDO
+
+END SUBROUTINE restore_ph_mu
+!----------------------------------------------------------------------
+#endif
 
 END MODULE module_small_step_em

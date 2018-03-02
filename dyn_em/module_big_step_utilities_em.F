@@ -806,7 +806,11 @@ SUBROUTINE calc_ww_cp ( u, v, mup, mub, c1h, c2h, ww,    &
 !                                     +rdx*(ru(i+1,k-1,j)-ru(i,k-1,j))  &
 !                                     +rdy*(rv(i,k-1,j+1)-rv(i,k-1,j)) )
 
+#if ( WRFPLUS != 1 )
            ww(i,k,j)=ww(i,k-1,j) - dnw(k-1)*c1h(k-1)*dmdt(i) - divv(i,k-1)
+#else
+           ww(i,k,j)=ww(i,k-1,j) - dnw(k-1)*dmdt(i) - divv(i,k-1)
+#endif
 
         ENDDO
         ENDDO
@@ -5474,8 +5478,21 @@ END SUBROUTINE phy_prep_part2
 #endif
        th_phy(i,k,j) = t_new(i,k,j) + t0
        h_diabatic(i,k,j) = th_phy(i,k,j)
+#if ( WRFPLUS == 1 )
+       if ( P_QV >= PARAM_FIRST_SCALAR ) then
+          qv_diabatic(i,k,j) = qv(i,k,j)
+       else
+          qv_diabatic(i,k,j) = 0.0
+       end if
+       if ( P_QC >= PARAM_FIRST_SCALAR ) then
+          qc_diabatic(i,k,j) = qc(i,k,j)
+       else
+          qc_diabatic(i,k,j) = 0.0
+       end if
+#else
        qv_diabatic(i,k,j) = qv(i,k,j)
        qc_diabatic(i,k,j) = qc(i,k,j)
+#endif
        rho(i,k,j)  = 1./(al(i,k,j)+alb(i,k,j))
        pii(i,k,j) = ((p(i,k,j)+pb(i,k,j))/p0)**rcp
        z(i,k,j) = 0.5*(z_at_w(i,k,j) +z_at_w(i,k+1,j) )
@@ -5624,8 +5641,13 @@ END SUBROUTINE phy_prep_part2
      DO k = k_start, k_end
      DO i = i_start, i_end
           mpten = th_phy(i,k,j)-h_diabatic(i,k,j)
+#if ( WRFPLUS == 1 )
+          if ( P_QV >= PARAM_FIRST_SCALAR ) qvten = qv(i,k,j)-qv_diabatic(i,k,j)
+          if ( P_QC >= PARAM_FIRST_SCALAR ) qcten = qc(i,k,j)-qc_diabatic(i,k,j)
+#else
           qvten = qv(i,k,j)-qv_diabatic(i,k,j)
           qcten = qc(i,k,j)-qc_diabatic(i,k,j)
+#endif
        if(mpten.gt.mptenmax) then
           mptenmax=mpten
           imax=i
@@ -5663,8 +5685,21 @@ END SUBROUTINE phy_prep_part2
 !!!         ! KLUDGE:
 !!!         qvten = 0.0
 !!!         qcten = 0.0
+#if ( WRFPLUS == 1 )
+         if ( P_QV >= PARAM_FIRST_SCALAR ) then
+            qv_diabatic(i,k,j) =  qvten/dt
+         else
+            qv_diabatic(i,k,j) =  0.0
+         end if
+         if ( P_QC >= PARAM_FIRST_SCALAR ) then
+            qc_diabatic(i,k,j) =  qcten/dt
+         else
+            qc_diabatic(i,k,j) =  0.0
+         end if
+#else
          qv_diabatic(i,k,j) =  qvten/dt
          qc_diabatic(i,k,j) =  qcten/dt
+#endif
      ENDDO
      ENDDO
      ENDDO

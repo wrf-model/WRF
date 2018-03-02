@@ -40,6 +40,7 @@ while [ $# -ge 1 ]; do
       titan) WRF_TITAN=1 ; break ;;
       mars) WRF_MARS=1 ; break ;;
       venus) WRF_VENUS=1 ; break ;;
+      wrfplus) wrf_core=WRF_PLUS_CORE ; break ;;
     esac
     shift
 done
@@ -596,6 +597,14 @@ else
   compileflags="${compileflags} "
 fi
 
+if [ -n "$WRFPLUS" ] ; then
+  if [ $WRFPLUS = 1 ] ; then
+    echo building WRF for TL and AD
+    compileflags="!-DWRFPLUS"
+    echo $compileflags
+  fi
+fi
+
 if [ -n "$WRF_NMM_CORE" -a -n "$WRF_CHEM" ]; then
   if [ $WRF_NMM_CORE = 1  -a  $WRF_CHEM = 1 ]; then
     echo
@@ -734,11 +743,21 @@ if test -n "$NETCDF" ; then
 fi
 echo "  "
 
-if [ "$wrf_core" = "DA_CORE" -o "$wrf_core" = "4D_DA_CORE" ]; then
+if [ "$wrf_core" = "DA_CORE" -o "$wrf_core" = "WRF_PLUS_CORE" -o "$wrf_core" = "4D_DA_CORE" ]; then
   if [ "`grep '^SFC' configure.wrf | grep -i 'gfortran'`" != "" -o "`grep '^SFC' configure.wrf | grep -i 'frtpx'`" != "" ]; then
-    echo "WRFDA using gfortran/frtpx needs realsize=8"
+    echo "WRFDA/WRFPLUS using gfortran/frtpx needs realsize=8"
     sed -e '/^PROMOTION.*=/s/#//' configure.wrf > configure.wrf.edit
     /bin/mv configure.wrf.edit configure.wrf
+  fi
+fi
+
+if [ -n "$WRFPLUS" ] ; then
+  if [ $WRFPLUS = 1 ] ; then
+    if [ `grep '^SFC' configure.wrf | cut -d= -f2` = "gfortran" ]; then
+      echo "WRFPLUS using gfortran needs realsize=8"
+      sed -e '/^PROMOTION.*=/s/#//' configure.wrf > configure.wrf.edit
+      /bin/mv configure.wrf.edit configure.wrf
+    fi
   fi
 fi
 

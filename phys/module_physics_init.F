@@ -1888,7 +1888,6 @@ integer myproc
 
              aclwalloc = .true.
 
-
         CASE (GFDLLWSCHEME)
              CALL nl_get_start_month(id,month)
              CALL nl_get_start_day(id,iday)
@@ -2196,6 +2195,9 @@ integer myproc
 #if ( EM_CORE == 1 )
    USE module_bl_mynn
    USE module_bl_temf
+#if ( WRFPLUS == 1 )
+   USE module_bl_surface_drag
+#endif
    USE module_sf_temfsfclay
    USE module_sf_mynn
 #endif
@@ -3252,6 +3254,15 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
 
+#if ( WRFPLUS == 1 )
+      CASE (SURFDRAGSCHEME)
+         CALL surface_drag_init(RUBLTEN,RVBLTEN,RTHBLTEN,   &
+                        RQVBLTEN,restart,                     &
+                        ids, ide, jds, jde, kds, kde,         &
+                        ims, ime, jms, jme, kms, kme,         &
+                        its, ite, jts, jte, kts, kte          )
+#endif
+
 
       CASE DEFAULT
 
@@ -3298,6 +3309,9 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_cu_ntiedtke
 #if ( EM_CORE == 1 )
    USE module_cu_kfcup !BSINGH - For WRFCuP Scheme
+#endif
+#if ( WRFPLUS == 1 )
+   USE module_cu_du, ONLY : ducuinit
 #endif
 !------------------------------------------------------------------
    IMPLICIT NONE 
@@ -3533,7 +3547,20 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
 
-     CASE DEFAULT
+#if ( WRFPLUS == 1 )
+! this is for WRFPlus only
+      CASE (DUCUSCHEME)
+          CALL ducuinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,      &
+                      RQICUTEN,RQSCUTEN,NCA,W0AVG,P_QC,P_QR,      &
+                      SVP1,SVP2,SVP3,SVPT0,                       &
+                      PARAM_FIRST_SCALAR,restart,                 &
+                      allowed_to_read ,                           &
+                      ids, ide, jds, jde, kds, kde,               &
+                      ims, ime, jms, jme, kms, kme,               &
+                      its, ite, jts, jte, kts, kte                )
+#endif
+
+      CASE DEFAULT
 
    END SELECT cps_select
 
@@ -3761,6 +3788,10 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
      CASE (KESSLERSCHEME)
           warm_rain = .true.
+#if ( WRFPLUS == 1 )
+     CASE (MKESSLERSCHEME)
+          warm_rain = .true.
+#endif
      CASE (WSM3SCHEME)
           CALL wsm3init(rhoair0,rhowater,rhosnow,cliq,cpv, allowed_to_read )
      CASE (WSM5SCHEME)

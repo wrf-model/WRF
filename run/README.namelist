@@ -1185,7 +1185,7 @@ Options for use with the Noah-MP Land Surface Model:
   k_zfac_q (max_dom)                 = 10       ; 10=model level below which nudging is switched off for qvapor
  guv (max_dom)                       = 0.0003   ; nudging coefficient for u and v (sec-1)
  gt (max_dom)                        = 0.0003   ; nudging coefficient for temp (sec-1)
- gq (max_dom)                        = 0.0003   ; nudging coefficient for qvapor (sec-1)
+ gq (max_dom)                        = 0.00001  ; nudging coefficient for qvapor (sec-1)
  if_ramping                          = 0        ; 0= nudging ends as a step function, 1= ramping nudging down at end of period
  dtramp_min                          = 0        ; time (min) for ramping function 
  grid_sfdda (max_dom)                = 0        ; surface fdda switch
@@ -1214,7 +1214,10 @@ The following are for spectral nudging:
                                                   linearly to full strength
  dk_zfac_t  (max_dom)                = 1,
  dk_zfac_ph (max_dom)                = 1,
+ dk_zfac_q  (max_dom)                = 1,
  gph (max_dom)                       = 0.0003,
+ ktrop                               = 0,       ; layer nominally representing tropopause for limiting nudging to q and t
+                                     		; setting ktrop = 0 allows nudging to extend to the top of the atmosphere
  xwavenum (max_dom)                  = 3,       ; top wave number to nudge in x direction
  ywavenum (max_dom)                  = 3,       ; top wave number to nudge in y direction
 

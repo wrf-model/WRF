@@ -1749,6 +1749,13 @@ SUBROUTINE phy_fg_ten(config_flags,rk_step,n_moist,            &
                 ims, ime, jms, jme, kms, kme,                    &
                 its, ite, jts, jte, kts, kte                     )
 
+        if (P_QV .ge. PARAM_FIRST_SCALAR)                        &
+           CALL add_a2a(moist_tendf(ims,kms,jms,P_QV),RQVNDGDTEN,&
+                config_flags,                                    &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
       CASE DEFAULT
 
    END SELECT

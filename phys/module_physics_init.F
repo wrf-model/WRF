@@ -3986,11 +3986,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       its, ite, jts, jte, kts, kte                 )
 
       CASE (SPNUDGING)
-           CALL fddaspnudginginit(id,rundgdten,rvndgdten,rthndgdten,rphndgdten,&
+           CALL fddaspnudginginit(id,rundgdten,rvndgdten,rthndgdten,rphndgdten,rqvndgdten,&
                config_flags%run_hours, &
                config_flags%if_no_pbl_nudging_uv, &
                config_flags%if_no_pbl_nudging_t, &
                config_flags%if_no_pbl_nudging_ph, &
+               config_flags%if_no_pbl_nudging_q, &
                config_flags%if_zfac_uv, &
                config_flags%k_zfac_uv, &
                config_flags%dk_zfac_uv, &
@@ -4000,8 +4001,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                config_flags%if_zfac_ph, &
                config_flags%k_zfac_ph, &
                config_flags%dk_zfac_ph, &
+               config_flags%if_zfac_q, &
+               config_flags%k_zfac_q, &
+               config_flags%dk_zfac_q, &
+               config_flags%ktrop, &
                config_flags%guv, &
-               config_flags%gt, config_flags%gph, &
+               config_flags%gt, config_flags%gph, config_flags%gq, &
                config_flags%if_ramping, config_flags%dtramp_min, &
                config_flags%auxinput9_end_h, &
                config_flags%xwavenum,config_flags%ywavenum, &

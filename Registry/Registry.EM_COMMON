@@ -1,4 +1,3 @@
-                                         
 # At the present time this file is managed manually and edited by hand.                                         
 #                                               
 ################################################################################
@@ -2276,6 +2275,8 @@ rconfig   integer   k_zfac_q              namelist,fdda         max_domains    0
 rconfig   integer  dk_zfac_uv             namelist,fdda         max_domains    1       rh       "grid_fdda"            ""      ""
 rconfig   integer  dk_zfac_t              namelist,fdda         max_domains    1       rh       "grid_fdda"            ""      ""
 rconfig   integer  dk_zfac_ph             namelist,fdda         max_domains    1       rh       "grid_fdda"            ""      ""
+rconfig   integer  dk_zfac_q              namelist,fdda         max_domains    1       rh       "grid_fdda"            ""      ""
+rconfig   integer  ktrop                  namelist,fdda         1              0       rh       "grid_fdda"            ""      ""
 rconfig   real        guv                 namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
 rconfig   real        guv_sfc             namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""
 rconfig   real        gt                  namelist,fdda         max_domains    0       rh       "grid_fdda"            ""      ""

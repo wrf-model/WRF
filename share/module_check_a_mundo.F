@@ -1675,14 +1675,15 @@
       DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec%irr_opt(i) > 0 .and. &
               (model_config_rec%chem_opt(i) /= mozcart_kpp .and. &
+               model_config_rec%chem_opt(i) /= t1_mozcart_kpp .and. &
                model_config_rec%chem_opt(i) /= mozart_mosaic_4bin_kpp .and. &
                model_config_rec%chem_opt(i) /= mozart_mosaic_4bin_aq_kpp ) ) THEN
            wrf_err_message = '--- ERROR: IRR diagnostics can only be used with the following chem_opt settings:' 
            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-           wrf_err_message = '    MOZCART_KPP, MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP'
+           wrf_err_message = '    MOZCART_KPP, T1_MOZCART_KPP, MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP'
            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-           write(wrf_err_message,'(''    chem_opt = '',i3,'', '',i3,'', or '',i3)') &
-                 MOZCART_KPP, MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP 
+           write(wrf_err_message,'(''    chem_opt = '',i3,'', '',i3,'', '',i3,'', or '',i3)') &
+                 MOZCART_KPP, T1_MOZCART_KPP, MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP 
            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
            count_fatal_error = count_fatal_error + 1
          END IF

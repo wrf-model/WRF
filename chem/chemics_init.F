@@ -273,6 +273,7 @@ call wrf_message("**************************************************************
    endif
 
    is_moz_chm = config_flags%chem_opt == MOZCART_KPP .or. &
+                config_flags%chem_opt == T1_MOZCART_KPP .or. &
                 config_flags%chem_opt == MOZART_KPP .or. &
                 config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
                 config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP
@@ -289,8 +290,9 @@ call wrf_message("**************************************************************
 !-----------------------------------------------------------------------
    if (config_flags%phot_opt == TUV ) then
      if (config_flags%chem_opt /= mozart_mosaic_4bin_kpp .and. &
-              config_flags%chem_opt /= mozart_mosaic_4bin_aq_kpp .and. &
-              config_flags%chem_opt /= mozcart_kpp ) THEN
+         config_flags%chem_opt /= mozart_mosaic_4bin_aq_kpp .and. &
+         config_flags%chem_opt /= mozcart_kpp .and. &
+         config_flags%chem_opt /= t1_mozcart_kpp) THEN
        write(message_txt,'(''--- ERROR: chem_opt '',a,'' not setup for TUV photolysis at this time'')') &
               config_flags%chem_opt
        CALL wrf_error_fatal( trim(message_txt) )
@@ -1749,7 +1751,7 @@ ENDIF ghg_block
 !                if(i.eq.19.and.j.eq.19)write(0,*)TCOSZ(i,j),ttday(i,j),julday, gmtp, sza, cosszax,xlonn,rlat
            enddo
           enddo
-      CASE (MOZCART_KPP)
+      CASE (MOZCART_KPP,T1_MOZCART_KPP)
         CALL wrf_debug(15,'MOZCART dust initialization')
         ch_dust(:,:) = 0.8D-9
 

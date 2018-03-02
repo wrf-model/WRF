@@ -25,6 +25,15 @@ typedef struct knode_struct {
   /* flag if M (third body conc) is found in .spc file */
   int got_air ;
 
+  /* flag if N2 is found in .spc file */
+  int got_n2 ;
+
+  /* flag if O2 is found in .spc file */
+  int got_o2 ;
+
+  /* flag if CO2 is found in .spc file */
+  int got_co2 ;
+
 } knode_t ;
 
 #ifndef DEFINE_GLOBALS

@@ -370,6 +370,9 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
   case (MOZCART_KPP)
      call wrf_debug("setup_profile_maps: nothing done for mozcart_kpp")
 
+  case (T1_MOZCART_KPP)
+     call wrf_debug("setup_profile_maps: nothing done for t1_mozcart_kpp")
+
   case (MOZART_MOSAIC_4BIN_KPP)
      call wrf_debug("setup_profile_maps: nothing done for mozart_mosaic_4bin_kpp")
 
@@ -2225,6 +2228,9 @@ END SUBROUTINE bdy_chem_value_ghg
 
      case (MOZCART_KPP)
         get_last_gas = p_meko2
+
+     case (T1_MOZCART_KPP)
+        get_last_gas = p_xylolo2
 
      case (MOZART_MOSAIC_4BIN_KPP)
         get_last_gas = p_meko2

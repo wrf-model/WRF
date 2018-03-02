@@ -49,6 +49,9 @@ use module_io
    CHARACTER (LEN=80)     :: message
    LOGICAL                :: restart
    LOGICAL, EXTERNAL      :: wrf_dm_on_monitor
+#if (WRFPLUS == 1)
+   INTEGER                :: save_dyn_opt
+#endif
 
    CALL nl_get_restart( 1, restart )
    IF ( .NOT. restart ) THEN
@@ -121,7 +124,16 @@ use module_io
 #if (EM_CORE == 1)
      grid%press_adj = .FALSE.
 #endif
+#if (WRFPLUS == 1)
+     ! if calling start_domain here, we always want it be called as NLM
+     save_dyn_opt = model_config_rec%dyn_opt
+     model_config_rec%dyn_opt = dyn_em
+     IF ( model_config_rec%dyn_opt .NE. dyn_em_check ) &
+#endif
      CALL start_domain ( grid , .TRUE. )
+#if (WRFPLUS == 1)
+     model_config_rec%dyn_opt = save_dyn_opt
+#endif
    ELSE
 
      IF ( wrf_dm_on_monitor() ) CALL start_timing

@@ -247,6 +247,8 @@
       REAL(KIND=8) :: real_time_r8                                 !ext. function in adapt_timestep_em.F
       LOGICAL      :: adapt_step_flag, do_chemstep, do_photstep
 
+      LOGICAL      :: chm_is_mozart
+
       REAL :: DAYI,DPL,FICE,FRAIN,HOUR,PLYR          &
      &       ,QI,QR,QW,RADT,TIMES,WC,TDUM,WMSK,RWMSK
  
@@ -606,6 +608,18 @@
          num_irr_diag = num_irr_diag_mozcart
        ENDIF
 #endif
+     CASE (T1_MOZCART_KPP)
+       CALL wrf_debug(15,'calling t1_mozcart driver from chem_driver')
+#if( WRF_CHEM == 1 && WRF_KPP == 1 )
+       IF( grid%irr_opt == 1 ) then
+         ALLOCATE( irr_rates(grid%sm31:grid%em31,grid%sm32:grid%em32,grid%sm33:grid%em33,num_irr_diag_t1_mozcart),stat=astat )
+         IF( astat /= 0 ) THEN
+           write(msg,'(''chem_driver: Failed to allocate irr_rates; error = '',i8)') astat
+           CALL wrf_error_fatal( trim(msg) )
+         ENDIF
+         num_irr_diag = num_irr_diag_t1_mozcart
+       ENDIF
+#endif
      CASE (CB05_SORG_AQ_KPP)
        CALL wrf_debug(15,'calling cb05_sorg_aq_kpp from chem_driver')
        haveaer = .true.
@@ -726,16 +740,16 @@
          enddo
       enddo
 
+      chm_is_mozart = config_flags%chem_opt == MOZART_KPP .or. &                               
+                      config_flags%chem_opt == MOZCART_KPP .or. &
+                      config_flags%chem_opt == T1_MOZCART_KPP .or. &
+                      config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+                      config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP
 !------------------------------------------------------------------------
 ! setup ftuv column density timing
 !------------------------------------------------------------------------
-      if( config_flags%chem_opt == MOZART_KPP .or. &                               
-          config_flags%chem_opt == MOZCART_KPP .or. &
-          config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
-          config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
-        if( config_flags%phot_opt == FTUV ) then
-          CALL ftuv_timestep_init( grid%id, grid%julday )
-        endif
+      if( chm_is_mozart .and. config_flags%phot_opt == FTUV ) then
+        CALL ftuv_timestep_init( grid%id, grid%julday )
       endif
 
 !------------------------------------------------------------------------
@@ -821,7 +835,7 @@
               grid%ebio_ch3oh,grid%ebio_acet,grid%ebio_nh3,grid%ebio_no2,                  &
               grid%ebio_c2h5oh,grid%ebio_ch3cooh,grid%ebio_mek,grid%ebio_bigene,           &
               grid%ebio_c2h6,grid%ebio_c2h4,grid%ebio_c3h6,grid%ebio_c3h8,grid%ebio_so2,   &
-              grid%ebio_dms,                                                               &
+              grid%ebio_dms,grid%ebio_hcn,                                                 &
               grid%ebio_alk3, grid%ebio_alk4, grid%ebio_alk5, grid%ebio_ole1, grid%ebio_ole2,            &    
               grid%ebio_aro1, grid%ebio_aro2, grid%ebio_ccho, grid%ebio_meoh,             &    
               grid%ebio_ethene, grid%ebio_hcooh, grid%ebio_terp, grid%ebio_bald,          &    
@@ -859,10 +873,7 @@
               ids,ide, jds,jde, kds,kde,                                                   &
               ims,ime, jms,jme, kms,kme,                                                   &
               its,ite,jts,jte,kts,kte)
-              if( config_flags%chem_opt == MOZART_KPP .or. &
-                  config_flags%chem_opt == MOZCART_KPP .or. &
-                  config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
-                  config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
+              if( chm_is_mozart ) then
                  call mozcart_lbc_set( chem, num_chem, grid%id, &
                                        ims, ime, jms, jme, kms, kme,    &                  
                                        its, ite, jts, jte, kts )                           
@@ -1040,10 +1051,7 @@
                  ims,ime, jms,jme, kms,kme,                                           &
                  its,ite,jts,jte,kts,kte)
                  
-            if( config_flags%chem_opt == MOZART_KPP .or. &
-                config_flags%chem_opt == MOZCART_KPP .or. &
-                config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
-                config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
+            if( chm_is_mozart ) then
                call mozcart_lbc_set( chem, num_chem, grid%id, &
                                      ims, ime, jms, jme, kms, kme,    & 
                                      its, ite, jts, jte, kts )
@@ -1134,10 +1142,7 @@
              ids,ide, jds,jde, kds,kde,                                               &
              ims,ime, jms,jme, kms,kme,                                               &
              its,ite,jts,jte,kts,k_end)
-             if( config_flags%chem_opt == MOZART_KPP .or. &
-                 config_flags%chem_opt == MOZCART_KPP .or. &
-                 config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
-                 config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
+             if( chm_is_mozart ) then
                      call mozcart_lbc_set( chem, num_chem, grid%id, &
                                  ims, ime, jms, jme, kms, kme,    &
                                  its, ite, jts, jte, kts )
@@ -1249,7 +1254,7 @@
 CALL kpp_mechanism_driver (chem,                                                      &
    grid%id,dtstepc,config_flags,                                                      &
    p_phy,t_phy,rho,                                                                   &
-   moist,                                                                             &
+   moist,aero_srf_area,                                                               &
    vdrog3, ldrog, vdrog3_vbs, ldrog_vbs,                                              &
 !
 #include "call_to_kpp_mech_drive.inc"
@@ -1257,10 +1262,7 @@ CALL kpp_mechanism_driver (chem,                                                
    ids,ide, jds,jde, kds,kde,                                                         &
    ims,ime, jms,jme, kms,kme,                                                         &
    its,ite,jts,jte,kts,kte,grid%id,num_irr_diag,irr_rates)
-          if( config_flags%chem_opt == MOZART_KPP .or. &
-              config_flags%chem_opt == MOZCART_KPP .or. &
-              config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
-              config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
+          if( chm_is_mozart ) then
              call mozcart_lbc_set( chem, num_chem, grid%id, &
                                    ims, ime, jms, jme, kms, kme,    &
                                     its, ite, jts, jte, kts )
@@ -1272,6 +1274,15 @@ CALL kpp_mechanism_driver (chem,                                                
             do j=jts,jte
               do k=kts,kte
                 irr_diag_mozcart(its:ite,k,j,n) = irr_diag_mozcart(its:ite,k,j,n) &
+                 + dtstepc*irr_rates(its:ite,k,j,n)*1.e6/(dens2con_a*rho(its:ite,k,j))
+              enddo
+            enddo
+          enddo
+        case( t1_mozcart_kpp )
+          do n=param_first_scalar,num_irr_diag
+            do j=jts,jte
+              do k=kts,kte
+                irr_diag_t1_mozcart(its:ite,k,j,n) = irr_diag_t1_mozcart(its:ite,k,j,n) &
                  + dtstepc*irr_rates(its:ite,k,j,n)*1.e6/(dens2con_a*rho(its:ite,k,j))
               enddo
             enddo

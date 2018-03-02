@@ -13,6 +13,7 @@ include registry.cam
 include registry.clm
 include registry.lake
 include registry.ssib
+include registry.noahmp
 include registry.sbm
 include registry.diags
 include registry.afwa

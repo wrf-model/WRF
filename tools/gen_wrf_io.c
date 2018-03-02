@@ -118,6 +118,13 @@ gen_wrf_io2 ( FILE * fp , char * fname, char * structname , char * fourdname, no
         char *bdytag, *xdomainend, *ydomainend, *zdomainend, bdytag2[10],fourd_bnd[NAMELEN] ;
         char *ds1,*de1,*ds2,*de2,*ds3,*de3,*ms1,*me1,*ms2,*me2,*ms3,*me3,*ps1,*pe1,*ps2,*pe2,*ps3,*pe3 ;
 
+#if ( WRFPLUS == 1 )
+/*  adjoint and perturbation variables should not be inputed*/
+        if (( !strncmp( p->name, "a_", 2) || !strncmp( p->name, "g_", 2) ) && sw_io == GEN_INPUT ) continue ; 
+/*  only adjoint variables should be output*/
+        if ( strncmp( p->name, "a_", 2)  && sw_io == GEN_OUTPUT ) continue ; 
+#endif
+
 /* check for the existence of a fourd boundary array */
         sprintf(fourd_bnd,"%s_b",p->name) ;
         if (( fourd_bound_array = get_entry( fourd_bnd  ,Domain.fields)) != NULL ) {
@@ -276,6 +283,13 @@ fprintf(fp, "ENDDO\n") ;
         char *bdytag, *xdomainend, *ydomainend, *zdomainend ;
         char *ds1,*de1,*ds2,*de2,*ds3,*de3,*ms1,*me1,*ms2,*me2,*ms3,*me3,*ps1,*pe1,*ps2,*pe2,*ps3,*pe3 ;
 	char t1[64], t2[64] ;
+
+#if ( WRFPLUS == 1 )
+/*  adjoint and perturbation variables should not be input*/
+        if (( !strncmp( p->name, "a_", 2) || !strncmp( p->name, "g_", 2) ) && sw_io == GEN_INPUT ) continue ; 
+/*  only adjoint variables should be output*/
+        if ( strncmp( p->name, "a_", 2)  && sw_io == GEN_OUTPUT ) continue ; 
+#endif
 
         for ( i = 0 ; i < 3 ; i++ ) strcpy(dimname[i],"") ;
         strcpy( dimname[2] , "bdy_width" ) ;

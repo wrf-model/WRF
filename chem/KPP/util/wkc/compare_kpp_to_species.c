@@ -16,6 +16,15 @@
 
 #define DEBUGR 0
 
+/* variable name of molecular nitrogen in KPP file*/
+char * kpp_n2 = "N2" ;
+
+/* variable name of molecular oxygen in KPP file*/
+char * kpp_o2 = "O2" ;
+
+/* variable name of CO2 in KPP file*/
+char * kpp_co2 = "CO2" ;
+
 /* variable name of water vapor in KPP file*/
 char * kpp_h2o = "H2O" ;
 
@@ -336,10 +345,14 @@ compare_kpp_to_species  ( char * kpp_dirname)
 
      }
 
+     /*  special handling for fixed species */
 
      p1 -> got_air = 0;
+     p1 -> got_o2 = 0;
+     p1 -> got_n2 = 0;
+     p1 -> got_co2 = 0;
      got_h2o = 0;
-     /* take care of water, third body */
+     /* take care of water, third body, N2, O2 */
      for ( pm1 = p1 -> members;  pm1 != NULL ; pm1 = pm1->next ) {
     	  strcpy( name1, pm1->name );
           make_upper_case(name1);
@@ -353,13 +366,27 @@ compare_kpp_to_species  ( char * kpp_dirname)
           strcpy( pm1->assoc_wrf_name,  "WATER VAPOR");
           got_h2o = 1;
        }
+       if ( strcmp (name1, kpp_n2) == 0) {
+          pm1->found_match = 2;
+           strcpy( pm1->assoc_wrf_name,  "MOLECULAR NITROGEN");
+           p1 -> got_n2 = 1;
+       }
+       if ( strcmp (name1, kpp_o2) == 0) {
+          pm1->found_match = 2;
+           strcpy( pm1->assoc_wrf_name,  "MOLECULAR OXYGEN");
+           p1 -> got_o2 = 1;
+       }
+       if ( strcmp (name1, kpp_co2) == 0) {
+          pm1->found_match = 2;
+           strcpy( pm1->assoc_wrf_name,  "CO2");
+           p1 -> got_co2 = 1;
+       }
      }
 
      if  ( p1 -> got_air != 1 ) {
                   fprintf(stderr, "ERROR: variable name for third body in KPP species file is expected to be  %s, but was not found in %s species file \n",  kpp_third_body,  p2->name);
                   /* exit (0); */
                 } 
-
 
      if  ( got_h2o != 1 ) {
                   fprintf(stderr, "ERROR: variable name for water in KPP species file is expected to be  %s, but was not found in %s species file\n",  kpp_h2o,  p2->name);

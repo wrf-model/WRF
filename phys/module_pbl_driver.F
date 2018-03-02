@@ -137,6 +137,9 @@ CONTAINS
                    FITCHSCHEME,SHINHONGSCHEME,                       &
                    TEMFPBLSCHEME,GBMPBLSCHEME,                       &
                    CAMMGMPSCHEME,p_qi,p_qni,p_qnc,param_first_scalar  !CAMMGMPSCHEME, p_qni,p_qnc is used for camuwpbl scheme
+#if ( WRFPLUS == 1 )
+   USE module_state_description, ONLY : SURFDRAGSCHEME
+#endif
 #else
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME &
@@ -164,6 +167,9 @@ CONTAINS
    USE module_bl_gwdo
    USE module_bl_myjurb
    USE module_bl_boulac
+#if ( WRFPLUS == 1 )
+   USE module_bl_surface_drag
+#endif
    USE module_bl_camuwpbl_driver, only:CAMUWPBL
    USE module_bl_temf
    USE module_bl_mfshconvpbl
@@ -187,6 +193,7 @@ CONTAINS
    !      9. camuwpbl
    !      10. temfpbl
    !      11. shinhongpbl
+   !      98. surface_drag
    !      99. mrfpbl
    !      12. gbmpbl
    !
@@ -1848,6 +1855,23 @@ CONTAINS
               ELSE
                CALL wrf_error_fatal('Lack arguments to call GBM pbl')
               ENDIF
+
+#if ( WRFPLUS == 1 )
+! this scheme is for WRFPlus only
+!-----------------------------------
+        CASE (SURFDRAGSCHEME)
+
+           CALL wrf_debug(100,'in SURFDRAG scheme')
+
+           CALL surface_drag(                                     &
+             RUBLTEN=rublten,RVBLTEN=rvblten                      &  !
+            ,U_PHY=u_phy, V_PHY=v_phy, Z=z                                &  !
+            ,XLAND=xland, HT=ht, KPBL2D=kpbl                      &  !
+            ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+            ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+            ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
+                                                                  )
+#endif
 
      CASE DEFAULT
 

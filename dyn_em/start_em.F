@@ -878,10 +878,19 @@
     DO j=jts,min(jte,jde-1)
     DO k=kts,kte-1
     DO i=its,min(ite,ide-1)
+#if ( WRFPLUS == 1 )
+       IF ( .NOT. config_flags%var4d_run ) THEN
+          qvf = 1.+rvovrd*moist(i,k,j,P_QV)
+          grid%p(i,k,j)=p1000mb*( (r_d*(t0+grid%t_1(i,k,j))*qvf)/                     &
+                     (p1000mb*(grid%al(i,k,j)+grid%alb(i,k,j))) )**cpovcv  &
+                     -grid%pb(i,k,j)
+       END IF
+#else
        qvf = 1.+rvovrd*moist(i,k,j,P_QV)
        grid%p(i,k,j)=p1000mb*( (r_d*(t0+grid%t_1(i,k,j))*qvf)/                     &
                   (p1000mb*(grid%al(i,k,j)+grid%alb(i,k,j))) )**cpovcv  &
                   -grid%pb(i,k,j)
+#endif
        grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
        grid%alt(i,k,j) = grid%al(i,k,j) + grid%alb(i,k,j)
     ENDDO
@@ -1490,6 +1499,13 @@ endif
       IF ( ( ABS(w_max) .LT. 1.E-6 ) .AND. &
            ( ABS(w_min) .LT. 1.E-6 ) ) THEN
          w_needs_to_be_set = .TRUE.
+         ! Force use_input_w to false, if there is no input w
+#if ( WRFPLUS == 1 )
+         IF ( config_flags%use_input_w ) THEN
+            config_flags%use_input_w = .FALSE.
+            CALL nl_set_use_input_w (grid%id, .FALSE.)
+         ENDIF
+#endif
       ELSE
          IF ( config_flags%use_input_w ) THEN
             w_needs_to_be_set = .FALSE.
@@ -2069,11 +2085,13 @@ if(config_flags%ifire.eq.2)then
    CALL wrf_debug ( 100 , 'start_domain_em: After call to fire_driver_em_init' )
 endif
 
+#if ( WRFPLUS != 1 )
 if( grid%traj_opt /= no_trajectory ) then
      call trajectory_init( grid, config_flags, &
                            ims,ime, jms,jme, kms,kme )
      CALL wrf_debug ( 100 , 'start_domain_em: After call to trajectory_init' )
 endif
+#endif
 
 
      CALL wrf_debug ( 100 , 'start_domain_em: Returning' )

@@ -362,7 +362,7 @@ REAL,  DIMENSION( ims:ime , kms:kme , jms:jme , ntot_amode ),       &
        CALL wrf_error_fatal('Wet scavenging is currently not possible with MOSAIC unless aqueous aerosols are turned on.')
 
    CASE (CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ, &
-   			CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP )!BSINGH(12/05/2013): Added for SAPRC 8 bin vbs )
+         CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP )!BSINGH(12/05/2013): Added for SAPRC 8 bin vbs )
        CALL wrf_debug(15,'wetscav_driver calling mosaic_wetscav_driver')
        call wetscav_cbmz_mosaic (id,ktau,dtstep,ktauc,config_flags,        &
                dtstepc,alt,t_phy,p8w,t8w,p_phy,chem,rho_phy,cldfra,        &
@@ -371,7 +371,7 @@ REAL,  DIMENSION( ims:ime , kms:kme , jms:jme , ntot_amode ),       &
                ids,ide, jds,jde, kds,kde,                                  &
                ims,ime, jms,jme, kms,kme,                                  &
                its,ite, jts,jte, kts,kte                                   )
-   CASE (MOZART_KPP,MOZCART_KPP,MOZART_MOSAIC_4BIN_KPP)
+   CASE (MOZART_KPP,MOZCART_KPP,T1_MOZCART_KPP,MOZART_MOSAIC_4BIN_KPP)
        CALL wrf_debug(15,'wetscav_driver calling wetscav_mozcart')
        if( config_flags%mp_physics == THOMPSON ) then
          rainrate(:,:,:) = rainprod(:,:,:)

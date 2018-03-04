@@ -5341,7 +5341,7 @@ END SUBROUTINE phy_prep
       ENDDO
       ENDDO
 
-      ELSE IF (config_flags%grid_fdda .EQ. 1) THEN
+      ELSE IF (config_flags%grid_fdda .GE. 1) THEN
       IF (P_QV .ge. PARAM_FIRST_SCALAR) THEN
          DO J=j_start,j_end
          DO K=k_start,k_end

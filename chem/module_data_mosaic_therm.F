@@ -8,12 +8,21 @@
 ! MOSAIC module: see module_mosaic_driver.F for references and terms of
 ! use
 !************************************************************************
+!
+! 2017-10-07 r.c.easter changes for new (openmp) mosaic version
+!
+! nbin_a is now in module_data_mosaic_aero
+! nbin_a_maxd is set to nbin_a_max of module_data_mosaic_aero
+!
+!-----------------------------------------------------------------------
+
       module module_data_mosaic_therm
 
 
+      use module_data_mosaic_aero, only:  nbin_a_max, nbin_a
+
 
       implicit none
-
 
 
 ! mosaic.h (mosaic.22.0)
@@ -32,10 +41,11 @@
 !----------------------------------------------------------------------
 
 ! nbin_a_maxd = maximum num of aerosol bins and is used to dimension arrays
-      integer, parameter :: nbin_a_maxd = 8
+!     integer, parameter :: nbin_a_maxd = 8
+      integer, parameter :: nbin_a_maxd = nbin_a_max
 ! nbin_a = number of bins that are used in a run
 ! (nbin_a is set at run time, and must be <= nbin_a_maxd)
-      integer, save :: nbin_a = 999888777
+!     integer, save :: nbin_a = 999888777
 
 ! mosaic-specific parameters
 ! Alma added 2 smp species - just before the traditional ant1_c 
@@ -88,6 +98,22 @@
       parameter(jhyst_lo = 0)	! lower hysteresis leg
       parameter(jhyst_up = 1) 	! upper hysteresis leg
 
+  
+      ! allowable values for mhyst_method
+      integer, parameter :: mhyst_uporlo_waterhyst = 2	! select upper/lower using "3-d method" involving water_a_hyst
+      integer, parameter :: mhyst_force_up = 3	        ! force upper water hysteresis leg
+      integer, parameter :: mhyst_force_lo = 4	        ! force lower water hysteresis leg
+      integer, parameter :: mhyst_method = mhyst_uporlo_waterhyst
+  
+      real(kind=8), parameter :: xhyst_up_crustal_thresh = 0.30
+      ! when rh_crystal < rh < rh_deliquesce and bin mass fraction of crustal species (oin, caco3, and caso4) 
+      !    exceeds xhyst_up_crustal_thresh, the bin is not allowed to be on the upper hysteresis curve.
+      ! mineral dust is mostly externally mixed, so a minor fraction of mineral dust species 
+      !   will most likely reside in a minor fraction of the particles of the bin, 
+      !   and should not control the bin aerosol water.  (value = 0.0 in previous versions of mosaic)
+  
+      integer, parameter :: mwater_kappa_nonelectro = 1  ! when > 0, use kappa_nonelectro for oin, oc, soa aerosol water
+  
       integer no_aerosol, all_solid, all_liquid, mixed
       parameter(no_aerosol = 0)	! flag
       parameter(all_solid  = 1) ! flag
@@ -433,6 +459,7 @@
 	dens_electrolyte(nelectrolyte),	&  ! g/cc
 	dens_aer_mac(naer),		&  ! g/cc
 	dens_comp_a(naercomp),		&  ! g/cc (density of compounds)
+	kappa_nonelectro(naer),		&  ! 
 	partial_molar_vol(ngas_volatile+ngas_het), & ! cc/mol
 	sigma_water,			&  ! water surface tension (n/m)
 	sigma_soln(nbin_a_maxd),	&  ! solution surface tension (n/m)

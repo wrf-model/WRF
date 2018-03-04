@@ -3190,14 +3190,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
 #if ( EM_CORE == 1 )
 
-#if ( WRFPLUS == 1 )
-        CASE (SURFDRAGSCHEME)
-           CALL surface_drag_init(RUBLTEN,RVBLTEN,RTHBLTEN,   &
-                        RQVBLTEN,restart,                     &
-                        ids, ide, jds, jde, kds, kde,         &
-                        ims, ime, jms, jme, kms, kme,         &
-                        its, ite, jts, jte, kts, kte          )
-#endif
 !mynn 
            
         CASE (MYNNPBLSCHEME2, MYNNPBLSCHEME3)
@@ -3261,6 +3253,15 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                         ids, ide, jds, jde, kds, kde,         &
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
+
+#if ( WRFPLUS == 1 )
+      CASE (SURFDRAGSCHEME)
+         CALL surface_drag_init(RUBLTEN,RVBLTEN,RTHBLTEN,   &
+                        RQVBLTEN,restart,                     &
+                        ids, ide, jds, jde, kds, kde,         &
+                        ims, ime, jms, jme, kms, kme,         &
+                        its, ite, jts, jte, kts, kte          )
+#endif
 
 
       CASE DEFAULT
@@ -3547,6 +3548,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       its, ite, jts, jte, kts, kte                )
 
 #if ( WRFPLUS == 1 )
+! this is for WRFPlus only
       CASE (DUCUSCHEME)
           CALL ducuinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,      &
                       RQICUTEN,RQSCUTEN,NCA,W0AVG,P_QC,P_QR,      &
@@ -3984,11 +3986,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       its, ite, jts, jte, kts, kte                 )
 
       CASE (SPNUDGING)
-           CALL fddaspnudginginit(id,rundgdten,rvndgdten,rthndgdten,rphndgdten,&
+           CALL fddaspnudginginit(id,rundgdten,rvndgdten,rthndgdten,rphndgdten,rqvndgdten,&
                config_flags%run_hours, &
                config_flags%if_no_pbl_nudging_uv, &
                config_flags%if_no_pbl_nudging_t, &
                config_flags%if_no_pbl_nudging_ph, &
+               config_flags%if_no_pbl_nudging_q, &
                config_flags%if_zfac_uv, &
                config_flags%k_zfac_uv, &
                config_flags%dk_zfac_uv, &
@@ -3998,8 +4001,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                config_flags%if_zfac_ph, &
                config_flags%k_zfac_ph, &
                config_flags%dk_zfac_ph, &
+               config_flags%if_zfac_q, &
+               config_flags%k_zfac_q, &
+               config_flags%dk_zfac_q, &
+               config_flags%ktrop, &
                config_flags%guv, &
-               config_flags%gt, config_flags%gph, &
+               config_flags%gt, config_flags%gph, config_flags%gq, &
                config_flags%if_ramping, config_flags%dtramp_min, &
                config_flags%auxinput9_end_h, &
                config_flags%xwavenum,config_flags%ywavenum, &

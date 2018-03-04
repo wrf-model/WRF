@@ -125,6 +125,8 @@ int gen_dealloc ( char * );
 int gen_dealloc1 ( char * );
 int gen_dealloc2 ( FILE *, char *, node_t *);
 int gen_scalar_tables ( FILE *);
+int AppendReg ( char *,int);
+int irr_diag_scalar_indices ( char * );
 int gen_scalar_tables_init ( FILE *);
 int gen_scalar_indices_init ( FILE *);
 int hash(char *);

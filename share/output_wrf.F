@@ -61,6 +61,7 @@
     REAL    fgdt, guv, gt, gq, gph, dtramp_min, &
             obs_coef_wind, obs_coef_temp, obs_coef_mois, obs_coef_pstr, obs_dtramp, fdda_end
     REAL    guv_sfc, gt_sfc, gq_sfc, rinblw
+    REAL    chemdt
     INTEGER moist_adv_opt, scalar_adv_opt, tke_adv_opt
     INTEGER save_topo_orig
     INTEGER scalar_pblmix, tracer_pblmix, grav_settling, ysu_topdown_pblmix
@@ -217,6 +218,7 @@
     CALL nl_get_guv        ( grid%id , guv )
     CALL nl_get_gt         ( grid%id , gt )
     CALL nl_get_gph        ( grid%id , gph )
+    CALL nl_get_gq         ( grid%id , gq )
     CALL nl_get_if_ramping ( 1       , if_ramping )
     CALL nl_get_dtramp_min ( 1       , dtramp_min )
     ENDIF
@@ -721,6 +723,7 @@ endif
         CALL wrf_put_dom_ti_real    ( fid, 'GUV', guv , 1 , ierr )
         CALL wrf_put_dom_ti_real    ( fid, 'GT', gt , 1 , ierr )
         CALL wrf_put_dom_ti_real    ( fid, 'GPH', gph , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'GQ', gq , 1 , ierr )
         CALL wrf_put_dom_ti_integer ( fid, 'IF_RAMPING', if_ramping , 1 , ierr )
         CALL wrf_put_dom_ti_real    ( fid, 'DTRAMP_MIN', dtramp_min , 1 , ierr )
       ENDIF
@@ -784,6 +787,13 @@ endif
       CALL wrf_put_dom_ti_integer   ( fid, 'DFI_OPT',          config_flags%dfi_opt      , 1 , ierr ) 
 
       ENDIF ! history_only
+
+#if (WRF_CHEM == 1 && WRF_KPP == 1)
+      IF ( switch == auxhist9_only .and. config_flags%irr_opt /= 0 ) THEN
+        CALL nl_get_chemdt( grid%id, chemdt )
+        CALL wrf_put_dom_ti_real( fid, 'CHEMDT' , chemdt, 1 , ierr)
+      END IF
+#endif
 
 #if (EM_CORE == 1) && ( DA_CORE != 1)
       IF ( ( switch .EQ. input_only   ) .OR. &

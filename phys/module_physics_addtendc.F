@@ -962,6 +962,22 @@ SUBROUTINE phy_bl_ten(config_flags,rk_step,n_moist,n_scalar,     &
                 ims, ime, jms, jme, kms, kme,                    &
                 its, ite, jts, jte, kts, kte                     )
 
+#if ( WRFPLUS == 1 )
+! this is for WRFPlus only
+!---------------------------
+      CASE (SURFDRAGSCHEME)
+
+           CALL add_a2c_u(ru_tendf,RUBLTEN,config_flags,         &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+           CALL add_a2c_v(rv_tendf,RVBLTEN,config_flags,         &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+#endif
+
       CASE DEFAULT
 
        print*,'phy_bl_ten: The pbl scheme does not exist'
@@ -1483,6 +1499,41 @@ SUBROUTINE phy_cu_ten(config_flags,rk_step,n_moist,n_scalar,     &
 
        ENDIF
 
+#if ( WRFPLUS == 1 )
+! this is for WRFPlus only
+!-------------------------------
+   CASE (DUCUSCHEME)
+        CALL add_a2a(rt_tendf,RTHCUTEN,config_flags,             &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+        if (P_QV .ge. PARAM_FIRST_SCALAR)                                         &
+        CALL add_a2a(moist_tendf(ims,kms,jms,P_QV),RQVCUTEN,     &
+                config_flags,                                    &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+       IF(.not. adv_moist_cond)THEN
+
+        if (P_QC .ge. PARAM_FIRST_SCALAR)                        &
+           CALL add_a2a(scalar_tendf(ims,kms,jms,P_QT),RQCCUTEN, &
+                config_flags,                                    &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+        if (P_QI .ge. PARAM_FIRST_SCALAR)                        &
+           CALL add_a2a(scalar_tendf(ims,kms,jms,P_QT),RQICUTEN, &
+                config_flags,                                    &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+       ENDIF
+#endif
+
    CASE DEFAULT
 
    END SELECT
@@ -1740,6 +1791,13 @@ SUBROUTINE phy_fg_ten(config_flags,rk_step,n_moist,            &
                 its, ite, jts, jte, kts, kte                     )
 
            CALL add_a2a_ph(rph_tendf,RPHNDGDTEN,config_flags,        &
+                ids,ide, jds, jde, kds, kde,                     &
+                ims, ime, jms, jme, kms, kme,                    &
+                its, ite, jts, jte, kts, kte                     )
+
+        if (P_QV .ge. PARAM_FIRST_SCALAR)                        &
+           CALL add_a2a(moist_tendf(ims,kms,jms,P_QV),RQVNDGDTEN,&
+                config_flags,                                    &
                 ids,ide, jds, jde, kds, kde,                     &
                 ims, ime, jms, jme, kms, kme,                    &
                 its, ite, jts, jte, kts, kte                     )
@@ -2029,6 +2087,35 @@ SUBROUTINE advance_ppt(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,           &
            ENDDO
            ENDDO
         ENDIF
+
+#if ( WRFPLUS == 1 )
+! this is for WRFPlus only
+!---------------------------
+   CASE (DUCUSCHEME)
+
+        DO J = j_start,j_end
+        DO i = i_start,i_end
+
+           IF ( NCA(I,J) .GT. 0 ) THEN
+
+              IF ( NINT(NCA(I,J) / DT) .le. 0 ) THEN
+
+              ! set tendency to zero
+!!                PRATEC(I,J)=0.
+!!                RAINCV(I,J)=0.
+                 DO k = k_start,k_end
+                    RTHCUTEN(i,k,j)=0.
+                    RQVCUTEN(i,k,j)=0.
+                 ENDDO
+               ENDIF
+
+              NCA(I,J)=NCA(I,J)-DT ! Decrease NCA
+
+           ENDIF
+!
+        ENDDO
+        ENDDO
+#endif
 
    CASE DEFAULT
 

@@ -75,14 +75,6 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currTime, StartTime=startTime )
    IF ( ( WRFU_AlarmIsRinging( grid%alarms( RESTART_ALARM ), rc=rc ) ) .AND. &
         ( currTime .NE. startTime ) ) THEN
-#ifdef HWRF
-!zhang's doing
-     CALL domain_clock_get( grid, current_time=CurrTime )
-     CALL WRFU_TimeGet( CurrTime, YY=julyr, dayOfYear=julday, H=hr, M=min, S=sec, MS=ms, rc=rc)
-     gmt=hr+real(min)/60.+real(sec)/3600.+real(ms)/(1000*3600)
-      if (grid%id .eq. 2) call med_namelist_out ( grid , config_flags )
-!end of zhang's doing
-#endif
      IF ( grid%id .EQ. 1 ) THEN
        ! Only the parent initiates the restart writing. Otherwise, different
        ! domains may be written out at different times and with different 

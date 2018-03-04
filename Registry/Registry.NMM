@@ -1567,6 +1567,8 @@ rconfig   integer use_mp_re               namelist,physics      1              1
 # The following two options are hooked into various microphysics schemes to allow for ensemble perturbations of CCN and hail/graupel PSDs - GAC (AFWA)
 rconfig   real    ccn_conc                namelist,physics      1           1.0E8      h     "ccn_conc"                 "CCN concentration"                                                             "# m-3"
 rconfig   integer hail_opt                namelist,physics      1              0       rh    "hail_opt"                 "Hail/Graupel switch, 1:hail, 0:graupel"                                        ""
+rconfig   integer clean_atm_diag          namelist,physics      1              0       rh    "clean_atm_diag"     "option to switch on clean sky diagnostics (for chem)"   "flag"
+rconfig   integer calc_clean_atm_diag     derived               1              0       -     "calc_clean_atm_diag" "carries decision on using clean sky diagnostics"       "flag"
 rconfig   integer sf_lake_physics         namelist,physics      max_domains   0       h     "sf_lake_physics"         "activate lake model  0=no, 1=yes"   ""
 
 
@@ -1764,6 +1766,8 @@ package   flglwscheme   ra_lw_physics==7             -             -
 package   gfdllwscheme  ra_lw_physics==99            -             -
 package   hwrflwscheme  ra_lw_physics==98            -             state:o3rad
 
+# WRF-Chem specific diagnostics
+package   clnatmdiag     calc_clean_atm_diag==1      -            state:SWUPTCLN,SWDNTCLN,SWUPBCLN,SWDNBCLN,LWUPTCLN,LWDNTCLN,LWUPBCLN,LWDNBCLN 
 package   swradscheme   ra_sw_physics==1             -             -
 package   gsfcswscheme  ra_sw_physics==2             -             -
 package   camswscheme   ra_sw_physics==3             -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,o3rad

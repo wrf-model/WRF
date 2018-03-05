@@ -1585,8 +1585,6 @@ end if
    END SELECT kpp_select
    endif
 
-
-!   IF( config_flags%do_pvozone .and. p_o3.gt.1 .and. (.not. config_flags%restart) .AND. config_flags%chem_in_opt==0 ) THEN
    IF( config_flags%do_pvozone .and. p_o3.gt.1 .and. (.not. config_flags%restart) ) THEN
       si_zsigf = (grid%ph_1 + grid%phb)/grav
       do k=1,kde-1

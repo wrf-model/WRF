@@ -207,7 +207,7 @@ SUBROUTINE microphysics_driver(grid                                      &
    use module_domain, only : domain ! EMK NUWRF...for MPI-safe CSI
 
    ! EMK NUWRF...MPI-safe CSI
-   use CsiDiagnostic_mod, only: cal_sepa_part1, cal_sepa_part2, &
+   use module_diag_csi, only: cal_sepa_part1, cal_sepa_part2, &
         cal_sepa_part3, var_sepa
 
 !----------------------------------------------------------------------

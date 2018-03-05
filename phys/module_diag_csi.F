@@ -3,7 +3,7 @@
 ! Code 606
 !------------------------------------------------------------------------------
 !
-! MODULE: CsiDiagnostic_mod
+! MODULE: module_diag_csi
 !
 ! AUTHOR: 
 ! Eric Kemp, CISTO/SSAI (based on earlier version from Code 612)
@@ -15,7 +15,7 @@
 ! 18 December 2014 - Initial version - Eric Kemp
 !------------------------------------------------------------------------------
 
-module CsiDiagnostic_mod
+module module_diag_csi
 
   implicit none
   private
@@ -491,4 +491,4 @@ contains
 
   end subroutine var_sepa
 
-end module CsiDiagnostic_mod
+end module module_diag_csi

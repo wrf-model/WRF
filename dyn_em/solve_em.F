@@ -2626,12 +2626,6 @@ end if
                                      grid%u_2,grid%v_2,grid%t_2,grid%znu,grid%msft, &
                                      grid%msfu,grid%msfv,grid%f,grid%mub,grid%dx,grid%xlat,grid%pv)
 
-           !  CALL bdy_chem_value_top_pv (chem(ims,kms,jms,ic),grid%xlat,         &
-           !                        ims,ime, jms,jme, kms,kme,    &
-           !                        ips,ipe, jps,jpe, kps,kpe,    &
-           !                        grid%pb,grid%p, &
-           !                        grid%pv)
-
               ENDIF
          ENDDO chem_tile_loop_2
          !$OMP END PARALLEL DO

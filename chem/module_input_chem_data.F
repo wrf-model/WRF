@@ -3877,7 +3877,9 @@ END SUBROUTINE PVS
        pres=pref_pv2o3(1) ! Limit lower pressure to lowest ref pressure of Xing et al. (58.56 mb)
        pv2o3_con=-99.0
     endif
-! Interpolate according to log(pressure)
+! Interpolate according to log(pressure) 
+! - Recommended that if interpolation performed at pressures outside those in pref_pv2o3, it be done according to potential temperature, not pressure (GG and SAM).
+! - Code kept as placeholder for now
 !    do k=1,levs_pv2o3-1
 !    if(pres.le.pref_pv2o3(k+1))then
 !    wgt=(alog(pref_pv2o3(k+1))-alog(pres))/(alog(pref_pv2o3(k+1))-alog(pref_pv2o3(k)))

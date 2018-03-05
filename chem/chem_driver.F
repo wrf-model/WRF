@@ -1762,19 +1762,6 @@ end if !Chemistry time step check
                                its,ite, jts,jte, kts,kte            )
     endif
 
-
-!   call wrf_debug(15,'set upper boundary condition according to PV')
-!
-!   call PVS(ims,ime,jms,jme,kms,kme,grid%u_2,grid%v_2,grid%t_2,grid%znu,grid%msft, &
-!              grid%msfu,grid%msfv,grid%f,grid%mub,grid%dx,grid%pv,ids,ide,jds,jde, &
-!              kds,kde,its,ite,jts,jte,kts,kte) 
-!
-!   call bdy_chem_value_top_pv( chem, grid%xlat,         &
-!                               ims,ime, jms,jme, kms,kme,    &
-!                               its,ite, jts,jte, kts,kte,         &
-!                               grid%pb,grid%p, &
-!                               grid%pv)
-
    END DO chem_tile_loop_1
 
 !-- Work around for dgnum and dgnumwet not being written to restart files.

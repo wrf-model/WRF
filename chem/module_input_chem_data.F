@@ -1610,12 +1610,6 @@ END SUBROUTINE bdy_chem_value_ghg
                   its,ite,jts,jte,kts,kte)
       endif
 
-   !call wrf_debug(15,'set upper boundary condition according to PV')  
-   !call bdy_chem_value_top_pv( chem, XLAT,                   &
-   !                            its,ite, jts,jte, kts,kte,         &
-   !                            pb,p, &
-   !                            pv)  
-
 ! i_bdy_method determines which "bdy_chem_value" routine to use
 !   1=radm2 or racm gas for  p_so2     <= ic <= p_ho2
 !   2=sorgam aerosol    for  p_so4aj   <= ic <= p_corn

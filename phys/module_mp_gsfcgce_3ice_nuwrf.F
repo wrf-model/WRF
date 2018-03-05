@@ -155,8 +155,8 @@ CONTAINS
                       ,physc, physe, physd, physs, physm, physf    &
                       ,acphysc, acphyse, acphysd                   &
                       ,acphyss, acphysm, acphysf                   &
-                      ,re_cloud, re_rain, re_ice                   & ! effective
-                      ,re_snow, re_graupel                         & ! radii
+                      ,re_cloud_gsfc, re_rain_gsfc, re_ice_gsfc    & ! effective
+                      ,re_snow_gsfc, re_graupel_gsfc               & ! radii
 #if ( WRF_CHEM == 1)
 !JJS 20110525     vvvvv
                       ,aero, icn_diag, nc_diag, gid                &
@@ -247,11 +247,11 @@ CONTAINS
 !JJS 20140225   for calculation of effective radius of cloud species
   REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN)   :: XLAND
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                  &
-        INTENT(INOUT) ::                               re_cloud,   &
-                                                       re_rain,    &
-                                                       re_ice,     &
-                                                       re_snow,    &
-                                                       re_graupel
+        INTENT(INOUT) ::                               re_cloud_gsfc,   &
+                                                       re_rain_gsfc,    &
+                                                       re_ice_gsfc,     &
+                                                       re_snow_gsfc,    &
+                                                       re_graupel_gsfc
 !JJS 20140225  ^^^^^
 
 !+---+-----------------------------------------------------------------+
@@ -465,8 +465,8 @@ CONTAINS
                    rho, pii, p, w,                               &
                    itimestep, xland,                             & 
                    refl_10cm, diagflag, do_radar_ref,           & ! GT added for reflectivity calcs
-                   re_cloud, re_rain, re_ice,                    & ! effecive
-                   re_snow, re_graupel,                          & ! radii
+                   re_cloud_gsfc, re_rain_gsfc, re_ice_gsfc,     & ! effecive
+                   re_snow_gsfc, re_graupel_gsfc,                & ! radii
                    ids,ide, jds,jde, kds,kde,                    & ! domain dims
                    ims,ime, jms,jme, kms,kme,                    & ! memory dims
                    its,ite, jts,jte, kts,kte,                    & ! tile   dims
@@ -1900,7 +1900,8 @@ CONTAINS
                        rho_mks, pi_mks, p0_mks, w_mks,                 &
                        itimestep, xland,                               &
                        refl_10cm, diagflag, do_radar_ref,           & ! GT added for reflectivity calcs
-                       re_cloud, re_rain, re_ice, re_snow, re_graupel, & ! effective radii
+                       re_cloud_gsfc, re_rain_gsfc, re_ice_gsfc,       &
+                       re_snow_gsfc, re_graupel_gsfc,                  & ! effective radii
                        ids,ide, jds,jde, kds,kde,                      &
                        ims,ime, jms,jme, kms,kme,                      &
                        its,ite, jts,jte, kts,kte,                      &
@@ -2067,9 +2068,11 @@ CONTAINS
 
 !JJS 20140225
   real, dimension (ims:ime, kms:kme, jms:jme) , INTENT(OUT   )         &
-                                              ::  re_cloud, re_rain,   &
-                                                  re_ice, re_snow,     &
-                                                  re_graupel 
+      ::  re_cloud_gsfc,       &
+          re_rain_gsfc,        &
+          re_ice_gsfc,         &
+          re_snow_gsfc,        &
+          re_graupel_gsfc 
 
 !  real, dimension (its:ite,jts:jte,kts:kte) ::  ww1
 !  real, dimension (its:ite,jts:jte,kts:kte) ::  rsw
@@ -4720,27 +4723,27 @@ CONTAINS
         
     ! rain
       if (qrn(i,j,k) .lt. cmin) then   
-         re_rain(i,k,j) = 0.e0  
+         re_rain_gsfc(i,k,j) = 0.e0  
       else 
-         re_rain(i,k,j) = eff_rad(zr(i,j))    
+         re_rain_gsfc(i,k,j) = eff_rad(zr(i,j))    
       endif  
     ! snow
       if (qcs(i,j,k) .lt. cmin) then   
-         re_snow(i,k,j) = 0.e0 
+         re_snow_gsfc(i,k,j) = 0.e0 
       else 
-         re_snow(i,k,j) = eff_rad(zs(i,j))    
+         re_snow_gsfc(i,k,j) = eff_rad(zs(i,j))    
       endif  
     ! graupel/hail
       if (qcg(i,j,k) .lt. cmin) then   
-         re_graupel(i,k,j) = 0.e0  
+         re_graupel_gsfc(i,k,j) = 0.e0  
       else 
-         re_graupel(i,k,j) = eff_rad(zg(i,j))    
+         re_graupel_gsfc(i,k,j) = eff_rad(zg(i,j))    
       endif  
 
 ! for cloud water
 
    if (qcl(i,j,k) .lt. cmin) then   
-      re_cloud(i,k,j) = 0.e0
+      re_cloud_gsfc(i,k,j) = 0.e0
    else
       L_cloud = qcl(i,j,k) * rho(i,j,k)             ! cloud water [g/cm3]
 #if ( WRF_CHEM == 1)
@@ -4757,7 +4760,7 @@ CONTAINS
                    gamfac1 = ( gamma_toshi(mu+4.e0) / gamma_toshi(mu+1.e0) )
                    lambda = (4.e0/3.e0*cpi*roqr*ccn_out/L_cloud*   &
                             gamfac1)**(1.e0/3.e0)  ! [1/cm]
-                   re_cloud(i,k,j) = 1.e0/lambda * gamfac3 * 1.e4  !effective radius [micron]
+                   re_cloud_gsfc(i,k,j) = 1.e0/lambda * gamfac3 * 1.e4  !effective radius [micron]
              else
    ! when running with WRF_Chem but no aerosol coupling in Goddard MP
                if (xland(i,j) .eq. 1.0) then
@@ -4774,7 +4777,7 @@ CONTAINS
                       gamfac1 = ( gamma_toshi(mu+4.e0) / gamma_toshi(mu+1.e0) )
                       lambda = (4.e0/3.e0*cpi*roqr*ccn_ref/L_cloud*   &
                                gamfac1)**(1.e0/3.e0)  ! [1/cm]
-                      re_cloud(i,k,j) = 1.e0/lambda * gamfac3 * 1.e4  !effective radius [micron]
+                      re_cloud_gsfc(i,k,j) = 1.e0/lambda * gamfac3 * 1.e4  !effective radius [micron]
             endif ! chem_opt and gsfcgce_gocart_coupling
 #else
   ! Not running with WRF_Chem
@@ -4794,14 +4797,14 @@ CONTAINS
                    gamfac1 = ( gamma_toshi(mu+4.e0) / gamma_toshi(mu+1.e0) )
                    lambda = (4.e0/3.e0*cpi*roqr*ccn_ref/L_cloud*   &
                             gamfac1)**(1.e0/3.e0)  ! [1/cm]
-                   re_cloud(i,k,j) = 1.e0/lambda * gamfac3 * 1.e4  !effective radius [micron]
+                   re_cloud_gsfc(i,k,j) = 1.e0/lambda * gamfac3 * 1.e4  !effective radius [micron]
 #endif
    endif ! qcl(i,j,k) < cmin test
 
 ! for cloud ice
 
    if (qci(i,j,k) .lt. cmin) then   
-      re_ice(i,k,j) = 0.e0
+      re_ice_gsfc(i,k,j) = 0.e0
    else
 #if ( WRF_CHEM == 1)
 !!! No arosol coupling for calaculating eff radius for ice for the time being 20141027 
@@ -4816,28 +4819,28 @@ CONTAINS
 !         gamfac1 = ( gamma_toshi(mu+4.e0) / gamma_toshi(mu+1.e0) )
 !         lambda = (4.e0/3.e0*cpi*roqi*icn_out*1.e-3/I_cloud*  &
 !                  gamfac1)**(1.e0/3.e0)  ! [1/cm]
-!         re_ice(i,k,j) = 1.e0/lambda * gamfac3 * 1.e4  !effective radius [micron]
+!         re_ice_gsfc(i,k,j) = 1.e0/lambda * gamfac3 * 1.e4  !effective radius [micron]
 !         if (mod(itimestep,i24h).eq.1) then
-!            if (re_ice(i,k,j) .gt. 500.) then
+!            if (re_ice_gsfc(i,k,j) .gt. 500.) then
 !               print *,'i ,j ,k = ', i, j, k  
 !               print *,'I_cloud, qci, rho, icn_out = ', I_cloud, icn_out, qci(i,j,k), rho(i,j,k)
 !               print *,'mu, gamfac3, gamfac1 = ', mu, gamfac3, gamfac1
-!               print *,'lambda, re_ice = ', lambda, re_ice 
+!               print *,'lambda, re_ice_gsfc = ', lambda, re_ice_gsfc 
 !            endif
 !         endif 
 !      else
   ! when running with WRF_Chem but no aerosol coupling in Goddard MP
         ! for cloud ice effective radius depends on temperature profile, formula from GCE
-         re_ice(i,k,j) = 125.e0 +(tair(i,j)-243.16)*5.e0     ! [micron]
-         if (tair(i,j) .gt. 243.16) re_ice(i,k,j) = 125.e0
-         if (tair(i,j) .lt. 223.16) re_ice(i,k,j) = 25.e0
+         re_ice_gsfc(i,k,j) = 125.e0 +(tair(i,j)-243.16)*5.e0     ! [micron]
+         if (tair(i,j) .gt. 243.16) re_ice_gsfc(i,k,j) = 125.e0
+         if (tair(i,j) .lt. 223.16) re_ice_gsfc(i,k,j) = 25.e0
 !      endif ! chem_opt and gsfcgce_gocart_coupling
 #else
   ! Not running with WRF_Chem
      ! for cloud ice effective radius depends on temperature profile, formula from GCE
-      re_ice(i,k,j) = 125.e0 +(tair(i,j)-243.16)*5.e0     ! [micron]
-      if (tair(i,j) .gt. 243.16) re_ice(i,k,j) = 125.e0
-      if (tair(i,j) .lt. 223.16) re_ice(i,k,j) = 25.e0
+      re_ice_gsfc(i,k,j) = 125.e0 +(tair(i,j)-243.16)*5.e0     ! [micron]
+      if (tair(i,j) .gt. 243.16) re_ice_gsfc(i,k,j) = 125.e0
+      if (tair(i,j) .lt. 223.16) re_ice_gsfc(i,k,j) = 25.e0
 #endif
    endif ! qci(i,j,k) < cmin test
 

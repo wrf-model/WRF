@@ -73,8 +73,8 @@ SUBROUTINE microphysics_driver(grid                                      &
                       ,comdbz, csi                                  & ! for gsfcgce
                       ,rainncv_sepa, rainnc_sepa                         & 
                       ,ri_sepa, it_sepa                                  & ! for MPI-safe CSI
-                      ,re_cloud, re_ice, re_snow                         & ! for gsfcgce
-                      ,re_rain, re_graupel, re_hail                      & ! for gsfcgce
+                      ,re_cloud_gsfc, re_ice_gsfc, re_snow_gsfc          & ! for gsfcgce
+                      ,re_rain_gsfc, re_graupel_gsfc, re_hail_gsfc       & ! for gsfcgce
                       ,precr3d, preci3d, precs3d, precg3d, prech3d       &
 #if ( WRF_CHEM == 1 )
                       ,icn_diag, nc_diag                           &  ! inline gocart
@@ -100,6 +100,7 @@ SUBROUTINE microphysics_driver(grid                                      &
 ! Added the RI_CURR array to the call
                       ,ri_curr                                           &
                       ,diagflag,   do_radar_ref                          &
+                      ,re_cloud, re_ice, re_snow                         & ! G. Thompson
                       ,has_reqc, has_reqi, has_reqs                      & ! G. Thompson
                       ,ccn_conc                                          & ! RAS
                       ,scalar,num_scalar                                   &
@@ -418,12 +419,12 @@ SUBROUTINE microphysics_driver(grid                                      &
 !NUWRF JJS 20101021   ^^^^^
 !NUWRF JJS 20140225  vvvvv
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                    &
-        INTENT(INOUT) ::                               re_cloud,     &
-                                                       re_rain,      &
-                                                       re_ice,       &
-                                                       re_snow,      &
-                                                       re_graupel,   &
-                                                       re_hail
+        INTENT(INOUT) ::                               re_cloud_gsfc,   &
+                                                       re_rain_gsfc,    &
+                                                       re_ice_gsfc,     &
+                                                       re_snow_gsfc,    &
+                                                       re_graupel_gsfc, &
+                                                       re_hail_gsfc
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                    &
          OPTIONAL,          &
          INTENT(INOUT) ::   &
@@ -661,6 +662,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
    REAL, INTENT(IN) :: ccn_conc ! RAS
    INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) ::  & ! G. Thompson
+                 re_cloud, re_ice, re_snow
    INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
 !  REAL , DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT) :: lwp
 
@@ -1899,8 +1902,11 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,PHYSS=physs, PHYSM=physm, PHYSF=physf             &
                  ,ACPHYSC=acphysc, ACPHYSE=physe, ACPHYSD=acphysd   &
                  ,ACPHYSS=acphyss, ACPHYSM=physm, ACPHYSF=acphysf   &
-                 ,RE_CLOUD=re_cloud, RE_RAIN=re_rain, RE_ICE=re_ice &
-                 ,RE_SNOW=re_snow, RE_GRAUPEL=re_graupel            &
+                 ,RE_CLOUD_GSFC=re_cloud_gsfc                       &
+                 ,RE_RAIN_GSFC=re_rain_gsfc                         &
+                 ,RE_ICE_GSFC=re_ice_gsfc                           &
+                 ,RE_SNOW_GSFC=re_snow_gsfc                         &
+                 ,RE_GRAUPEL_GSFC=re_graupel_gsfc                   &
 #if ( WRF_CHEM == 1)
                  ,AERO=aero                                         &
                  ,ICN_DIAG=icn_diag, NC_DIAG=nc_diag, GID=ID        &
@@ -1985,9 +1991,12 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,PHYSS=physs, PHYSM=physm, PHYSF=physf             &
                  ,ACPHYSC=acphysc, ACPHYSE=acphyse, ACPHYSD=acphysd &
                  ,ACPHYSS=acphyss, ACPHYSM=acphysm, ACPHYSF=acphysf &
-                 ,RE_CLOUD=re_cloud, RE_RAIN=re_rain, RE_ICE=re_ice &
-                 ,RE_SNOW=re_snow, RE_GRAUPEL=re_graupel            &
-                 ,RE_HAIL=re_hail                                   &
+                 ,RE_CLOUD_GSFC=re_cloud_gsfc                       &
+                 ,RE_RAIN_GSFC=re_rain_gsfc                         &
+                 ,RE_ICE_GSFC=re_ice_gsfc                           &
+                 ,RE_SNOW_GSFC=re_snow_gsfc                         &
+                 ,RE_GRAUPEL_GSFC=re_graupel_gsfc                   &
+                 ,RE_HAIL_GSFC=re_hail_gsfc                         &
                  ,PRECR3D=precr3d,PRECI3D=preci3d,PRECS3D=precs3d   &
                  ,PRECG3D=precg3d,PRECH3D=prech3d                   &
 #if ( WRF_CHEM == 1)

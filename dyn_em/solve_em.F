@@ -3872,8 +3872,12 @@ BENCH_START(micro_driver_tim)
       &        , RAINNC_SEPA=grid%rainnc_sepa                             &
       &        , RI_SEPA=grid%ri_sepa                                     & ! MPI-safe CSI
       &        , IT_SEPA=grid%it_sepa                                     & ! MPI-safe CSI
-      &        , re_cloud=grid%re_cloud, re_ice=grid%re_ice, re_snow=grid%re_snow & ! G. Thompson
-      &        , re_rain=grid%re_rain, re_graupel=grid%re_graupel, re_hail=grid%re_hail & ! and gsfcgce
+      &        , RE_CLOUD_GSFC=grid%re_cloud_gsfc                         & ! for gsfcgce
+      &        , RE_RAIN_GSFC=grid%re_rain_gsfc                           & ! for gsfcgce
+      &        , RE_ICE_GSFC=grid%re_ice_gsfc                             & ! for gsfcgce
+      &        , RE_SNOW_GSFC=grid%re_snow_gsfc                           & ! for gsfcgce
+      &        , RE_GRAUPEL_GSFC=grid%re_graupel_gsfc                     & ! for gsfcgce
+      &        , RE_HAIL_GSFC=grid%re_hail_gsfc                           & ! for gsfcgce
       &        , PRECR3D=grid%precr3d, PRECI3D=grid%preci3d, PRECS3D=grid%precs3d  &
       &        , PRECG3D=grid%precg3d, PRECH3D=grid%prech3d               &
 #if ( WRF_CHEM == 1)
@@ -3886,6 +3890,7 @@ BENCH_START(micro_driver_tim)
 ! YLIN
 ! RI_CURR INPUT
       &        , RI_CURR=grid%rimi                                          &
+      &        , re_cloud=grid%re_cloud, re_ice=grid%re_ice, re_snow=grid%re_snow & ! G. Thompson
       &        , has_reqc=grid%has_reqc, has_reqi=grid%has_reqi, has_reqs=grid%has_reqs & ! G. Thompson
       &        , qnwfa2d=grid%qnwfa2d                                                   & ! G. Thompson
       &        , diagflag=diag_flag, do_radar_ref=config_flags%do_radar_ref &

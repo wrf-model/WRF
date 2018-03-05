@@ -61,7 +61,12 @@ CONTAINS
               , SLWDN, SLWUP                        & ! goddard schemes
               , TSWDN, TSWUP                        & ! goddard schemes
               , SSWDN, SSWUP                        & ! goddard schemes
-              , RE_RAIN, RE_GRAUPEL, RE_HAIL        & ! goddard schemes
+              , RE_CLOUD_GSFC                       & ! goddard schemes
+              , RE_RAIN_GSFC                        & ! goddard schemes
+              , RE_ICE_GSFC                         & ! goddard schemes
+              , RE_SNOW_GSFC                        & ! goddard schemes
+              , RE_GRAUPEL_GSFC                     & ! goddard schemes
+              , RE_HAIL_GSFC                        & ! goddard schemes
               , COD2D_OUT                           & ! goddardrad_2014
               , CTOP2D_OUT                          & ! goddardrad_2014
               , CLDFRA,CLDFRA_MP_ALL,CLDT,ZNU       &
@@ -69,7 +74,7 @@ CONTAINS
               , lradius,iradius                     &
 #endif
               , cldfra_dp, cldfra_sh                & ! ckay for sub-grid cloud fraction
-              , re_cloud, re_ice, re_snow           & ! G. Thompson and GSFC
+              , re_cloud, re_ice, re_snow           & ! G. Thompson
               , has_reqc, has_reqi, has_reqs        & ! G. Thompson
               , PB                                                &
               , F_ICE_PHY,F_RAIN_PHY       &
@@ -667,9 +672,9 @@ CONTAINS
 ! NUWRF JJS 20090623  ^^^^^
 
 ! NUWRF JJS 20140225  vvvvv
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),       OPTIONAL ,&
-      INTENT(INOUT)  :: re_cloud, re_rain, re_ice, re_snow,      &
-                        re_graupel, re_hail 
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),               OPTIONAL ,&
+      INTENT(INOUT)  :: re_cloud_gsfc, re_rain_gsfc, re_ice_gsfc, re_snow_gsfc, &
+                        re_graupel_gsfc, re_hail_gsfc 
 ! NUWRF JJS 20140225  ^^^^^
 
   real, dimension( ims:ime, jms:jme, 1:4 )  :: sflxd    !NUWRF SW only for LIS
@@ -712,6 +717,8 @@ CONTAINS
                                                        cldfra_sh, &
                                                        cldfra_bl
 
+!..G. Thompson
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN):: re_cloud, re_ice, re_snow
    INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                     &
@@ -1223,28 +1230,28 @@ CONTAINS
 
 !JJS initlialize cloud droplet effective radius
    if (itimestep.eq.1) then
-     re_cloud(:,:,:) = 0.
-     re_rain(:,:,:) = 0.
-     re_ice(:,:,:) = 0.
-     re_snow(:,:,:) = 0.
-     re_graupel(:,:,:) = 0.
-     re_hail(:,:,:) = 0.
+     re_cloud_gsfc(:,:,:) = 0.
+     re_rain_gsfc(:,:,:) = 0.
+     re_snow_gsfc(:,:,:) = 0.
+     re_ice_gsfc(:,:,:) = 0.
+     re_graupel_gsfc(:,:,:) = 0.
+     re_hail_gsfc(:,:,:) = 0.
    endif 
 !JJS test print
 !   if ( wrf_dm_on_monitor() .and. xtime.eq.60.0 ) then
 !      print *,'inside radiation driver, xtime = ', xtime
 !      write(20+ID,*) 're_cloud'
-!      write(20+ID,*) re_cloud
+!      write(20+ID,*) re_cloud_gsfc
 !      write(30+ID,*) 're_rain'
-!      write(30+ID,*) re_rain
+!      write(30+ID,*) re_rain_gsfc
 !      write(40+ID,*) 're_ice'
-!      write(40+ID,*) re_ice
+!      write(40+ID,*) re_ice_gsfc
 !      write(50+ID,*) 're_snow'
-!      write(50+ID,*) re_snow
+!      write(50+ID,*) re_snow_gsfc
 !      write(60+ID,*) 're_graupel'
-!      write(60+ID,*) re_graupel
+!      write(60+ID,*) re_graupel_gsfc
 !      write(70+ID,*) 're_hail'
-!      write(70+ID,*) re_hail
+!      write(70+ID,*) re_hail_gsfc
 !   endif
 !JJS test print
 
@@ -1598,8 +1605,9 @@ CONTAINS
                     ,qv=qv,qc=qc,qi=qi,qr=qr,qs=qs,qg=qg,qh=qh         &
                     ,f_qv=f_qv,f_qc=f_qc,f_qr=f_qr                     &
                     ,f_qi=f_qi,f_qs=f_qs,f_qg=f_qg ,f_qh=f_qh          &
-                    ,rec3d=re_cloud,rei3d=re_ice,rer3d=re_rain         & !optional
-                    ,res3d=re_snow,reg3d=re_graupel,reh3d=re_hail      & !optional 
+                    ,rec3d=re_cloud_gsfc,rei3d=re_ice_gsfc             & !optional
+                    ,rer3d=re_rain_gsfc,res3d=re_snow_gsfc             & !optional
+                    ,reg3d=re_graupel_gsfc,reh3d=re_hail_gsfc          & !optional 
                     ,erbe_out=erbe_out                                 &
 !NUWRF EMK
                     ,itimestep=itimestep                               &
@@ -1631,8 +1639,9 @@ CONTAINS
                     ,qv=qv,qc=qc,qi=qi,qr=qr,qs=qs,qg=qg,qh=qh         &
                     ,f_qv=f_qv,f_qc=f_qc,f_qr=f_qr                     &
                     ,f_qi=f_qi,f_qs=f_qs,f_qg=f_qg ,f_qh=f_qh          &
-                    ,rec3d=re_cloud,rei3d=re_ice,rer3d=re_rain         & !optional
-                    ,res3d=re_snow,reg3d=re_graupel,reh3d=re_hail      & !optional 
+                    ,rec3d=re_cloud_gsfc,rei3d=re_ice_gsfc             & !optional
+                    ,rer3d=re_rain_gsfc,res3d=re_snow_gsfc             & !optional
+                    ,reg3d=re_graupel_gsfc,reh3d=re_hail_gsfc          & !optional 
                     ,erbe_out=erbe_out                                 &
                     ,itimestep=itimestep, dt_in = dt                   &
 #if (WRF_CHEM == 1)
@@ -2193,8 +2202,9 @@ CONTAINS
                     ,qv=qv,qc=qc,qr=qr,qi=qi,qs=qs,qg=qg,qh=qh         & !optional
                     ,f_qv=f_qv,f_qc=f_qc,f_qr=f_qr                     & !optional
                     ,f_qi=f_qi,f_qs=f_qs,f_qg=f_qg ,f_qh=f_qh          & !optional
-                    ,rec3d=re_cloud,rei3d=re_ice,rer3d=re_rain         & !optional
-                    ,res3d=re_snow,reg3d=re_graupel,reh3d=re_hail      & !optional 
+                    ,rec3d=re_cloud_gsfc,rei3d=re_ice_gsfc             & !optional
+                    ,rer3d=re_rain_gsfc,res3d=re_snow_gsfc             & !optional
+                    ,reg3d=re_graupel_gsfc,reh3d=re_hail_gsfc          & !optional 
                     ,erbe_out=erbe_out                                 &
 !NUWRF EMK
                     ,itimestep=itimestep                               &
@@ -2232,8 +2242,9 @@ CONTAINS
                     ,qv=qv,qc=qc,qr=qr,qi=qi,qs=qs,qg=qg,qh=qh         & !optional
                     ,f_qv=f_qv,f_qc=f_qc,f_qr=f_qr                     & !optional
                     ,f_qi=f_qi,f_qs=f_qs,f_qg=f_qg ,f_qh=f_qh          & !optional
-                    ,rec3d=re_cloud,rei3d=re_ice,rer3d=re_rain         & !optional
-                    ,res3d=re_snow,reg3d=re_graupel,reh3d=re_hail      & !optional 
+                    ,rec3d=re_cloud_gsfc,rei3d=re_ice_gsfc             & !optional
+                    ,rer3d=re_rain_gsfc,res3d=re_snow_gsfc             & !optional
+                    ,reg3d=re_graupel_gsfc,reh3d=re_hail_gsfc          & !optional 
                     ,erbe_out=erbe_out                                 &
                     ,cod2d_out=cod2d_out,ctop2d_out=ctop2d_out         & !optional
                     ,sflxd=sflxd                                       & !optional

@@ -1268,9 +1268,12 @@ state   real    csi            ij       misc        1         -     rh        "C
 state   real    rainncv_sepa   ilj      misc        1         -     rh        "RAINNCV_SEPA"          "TIME-STEP PARTITIONED ACCUMULATED TOTAL GRID SCALE PRECIPITATION"    "mm"
 state   real    rainnc_sepa    ilj      misc        1         -     rh        "RAINNC_SEPA"           "PARTITIONED ACCUMULATED TOTAL GRID SCALE PRECIPITATION"    "mm"
 # NUWRF...Microphysics
-state   real    re_rain        ikj      misc        1         -     rh        "RE_RAIN"               "Rain Water effective radius"        "micron"
-state   real    re_graupel     ikj      misc        1         -     rh        "RE_GRAUPEL"            "Graupel Water effective radius"     "micron"
-state   real    re_hail        ikj      misc        1         -     rh        "RE_HAIL"               "Hail Water effective radius"        "micron"
+state   real    re_cloud_gsfc    ikj      misc        1          -     rh        "RE_CLOUD_GSFC"         "Cloud Water effective radius"       "micron"
+state   real    re_ice_gsfc      ikj      misc        1          -     rh        "RE_ICE_GSFC"           "Cloud Ice effective radius"         "micron"
+state   real    re_snow_gsfc     ikj      misc        1          -     rh        "RE_SNOW_GSFC"          "Snow effective radius"              "micron"
+state   real    re_rain_gsfc     ikj      misc        1         -     rh        "RE_RAIN_GSFC"          "Rain Water effective radius"        "micron"
+state   real    re_graupel_gsfc  ikj      misc        1         -     rh        "RE_GRAUPEL_GSFC"       "Graupel Water effective radius"     "micron"
+state   real    re_hail_gsfc     ikj      misc        1         -     rh        "RE_HAIL_GSFC"          "Hail Water effective radius"        "micron"
 # NUWRF...4ICE output
 state   real    preci3d       ikj      misc        1         -     -       "PRECI3D"                   "Sedimentation Fluxes for cloud ice"             "KG/M^2/S"
 state   real    precs3d       ikj      misc        1         -     -       "PRECS3D"                   "Sedimentation Fluxes for snow"                  "KG/M^2/S"

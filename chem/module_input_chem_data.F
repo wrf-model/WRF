@@ -52,7 +52,6 @@ MODULE module_input_chem_data
    USE module_data_sorgam, ONLY : conmin, rgasuniv, epsilc, grav
    USE module_get_file_names, ONLY : eligible_file_name, number_of_eligible_files, unix_ls
    USE module_model_constants
-!   USE module_data_pv2o3
 
    IMPLICIT NONE
 
@@ -165,15 +164,10 @@ MODULE module_input_chem_data
 !     e.g. p_o3=6, iref(6-1)=1, so xl(1,:) is the ozone profile.
 !     See gasprofile_init_pnnl for an explination of what height
 !     each index represents.
-!      DATA (xl(1,k_loop),k_loop=1,kx) &
-!      / 1.68E-07, 1.68E-07, 5.79E-08, 5.24E-08, 5.26E-08, &
-!       5.16E-08, 4.83E-08, 4.50E-08, 4.16E-08, 3.80E-08, 3.56E-08, &
-!       3.35E-08, 3.15E-08, 3.08E-08, 3.06E-08, 3.00E-08/
-
-       DATA (xl(1,k_loop),k_loop=1,kx) &
-      / 1.68E-07, 1.68E-07, 7.18E-08, 6.40E-08, 6.02E-08, &
-        5.94E-08, 5.61E-08, 5.14E-08, 4.89E-08, 4.53E-08, 4.20E-08, &
-        3.76E-08, 3.48E-08, 3.27E-08, 3.11E-08, 3.00E-08/
+      DATA (xl(1,k_loop),k_loop=1,kx) &
+      / 1.68E-07, 1.68E-07, 5.79E-08, 5.24E-08, 5.26E-08, &
+       5.16E-08, 4.83E-08, 4.50E-08, 4.16E-08, 3.80E-08, 3.56E-08, &
+       3.35E-08, 3.15E-08, 3.08E-08, 3.06E-08, 3.00E-08/
 
       DATA (xl(2,k_loop),k_loop=1,kx) &
       / 4.06E-10, 4.06E-10, 2.16E-10, 1.37E-10, 9.47E-11, &
@@ -394,24 +388,13 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
 
  case (CO2_TRACER,GHG_TRACER)
      call wrf_debug("setup_profile_maps: nothing done for the GHG options")
-!      call setup_gasprofile_map_ghg
+
   case default
      call wrf_error_fatal("setup_profile_maps: could not decipher chem_opt value")
 
   end select
 
 END SUBROUTINE setup_gasprofile_maps
-
-!!!SUBROUTINE setup_gasprofile_map_ghg
-!!!  iref(:)    = 1 !default value
-!!!  iref(1:3) = (/1,1,1/)
-
-!!!  fracref(:)    = 1. !default value
-!!!  fracref(1:3) = (/1., 1., 1./)
-
-!!!  ggnam(:) = 'JUNK' !default value
-!!!  ggnam(1:2) = (/ 'CO ','CO2'/)
-!!!END SUBROUTINE setup_gasprofile_map_ghg
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Maps for indices and fractional apportionment of the default
@@ -699,9 +682,6 @@ SUBROUTINE input_chem_profile (si_grid)
    INTEGER :: fid, ierr, numgas
    INTEGER :: debug_level
 
-   REAL,DIMENSION(si_grid%sm31:si_grid%em31,si_grid%sm32:si_grid%em32,    &
-                  si_grid%sm33:si_grid%em33) :: u_phy,v_phy,t_phy,p_phy
-
    REAL, ALLOCATABLE, DIMENSION(:,:,:) :: si_zsigf, si_zsig
 
 
@@ -725,17 +705,8 @@ SUBROUTINE input_chem_profile (si_grid)
    ALLOCATE( si_zsigf(ims:ime,kms:kme,jms:jme) )
    ALLOCATE(  si_zsig(ims:ime,kms:kme,jms:jme) )
 
-     write(message,'(A)') 'WRF_EM_CORE  '
-     si_zsigf = (si_grid%ph_1 + si_grid%phb) / grav
-     !p_phy = si_grid%p + si_grid%pb
-     !t_phy = (si_grid%t_2+t0)*(p_phy/p1000mb)**rcp
-
-     t_phy=si_grid%t_2+t0
-     u_phy=si_grid%u_2
-     v_phy=si_grid%v_2
-
-
-!  si_zsigf = (si_grid%ph_1 + si_grid%phb) / grav
+   write(message,'(A)') 'WRF_EM_CORE  '
+   si_zsigf = (si_grid%ph_1 + si_grid%phb) / grav
 
    do k=1,kde-1
      si_zsig(:,k,:) = 0.5 * ( si_zsigf(:,k,:) + si_zsigf(:,k+1,:) ) 
@@ -1436,117 +1407,6 @@ SUBROUTINE input_chem_profile (si_grid)
       RETURN
   END SUBROUTINE bdy_chem_value_racm
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   
-!!!SUBROUTINE bdy_chem_value_racm_pv ( chem, z, pv, nch, numgas,p_co2,xlat,preshPa )
-!!!
-!!!    IMPLICIT NONE
-!!!
-!!!    REAL,    intent(OUT)  :: chem
-!!!    REAL,    intent(IN)   :: z,pv          ! 3D height array
-!!!    REAL,    intent(IN)   :: xlat,preshPa   ! for determination of O3/PV proportionality constant
-!!!    INTEGER, intent(IN)   :: nch,p_co2  ! index number of chemical species
-!!!    INTEGER, intent(IN)   :: numgas     ! index number of last gas species
-!!!
-!!!    INTEGER :: i, k, irefcur
-!!!
-!!!    REAL, DIMENSION(kx):: cprof         ! chemical profile, diff. index order
-!!!
-!!!    REAL, DIMENSION(1:kx):: zprof
-!!!    REAL                 :: stor
-!!!    REAL                 :: wgt0
-!!!    REAL                 :: pv2o3_con   ! for determination of O3/PV proportionality constant
-!!!
-!!!    CHARACTER (LEN=80) :: message
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!
-!!!! Check the number of species
-!!!!     if((nch-1).gt.logg)return
-!!!     if (nch.eq.p_co2)then
-!!!       chem=370.
-!!!!       chem=395.
-!!!       return
-!!!     endif
-!!!     if (nch.eq.p_co2+1)then
-!!!       chem=1.7
-!!!!       chem=1.85
-!!!     return
-!!!     endif
-!!!     if (nch.ge.p_co2+2)return
-!!!
-!!!
-!!!!    if( nch .GT. logg+1) then
-!!!     if( nch .GT. numgas) then
-!!!       message = ' Input_chem_profile: wrong number of chemical species'
-!!!       return
-!!!!       CALL WRF_ERROR_FATAL ( message )
-!!!     endif
-!!!     if (nch.ge.p_co2+2)return
-!!!
-!!!
-!!!!    if( nch .GT. logg+1) then
-!!!     if( nch .GT. numgas) then
-!!!       message = ' Input_chem_profile: wrong number of chemical species'
-!!!       return
-!!!!       CALL WRF_ERROR_FATAL ( message )
-!!!     endif
-!!!
-!!!      ! Vertically flip the chemistry data as it is given top down
-!!!      !     and heights in zfa are bottom up
-!!!      ! Fill 1D chemical profile array cprof
-!!!      ! Convert species 28-34 (lo-6:lo) from (molecules/cm3) to (mol/mol)
-!!!      irefcur = iref(nch-1)
-!!!      DO k = 1,kx
-!!!        zprof(k) = 0.5*(zfa_bdy(k)+zfa_bdy(k+1))
-!!!      if (irefcur .lt. lo-6) then
-!!!
-!!!          cprof(k) = xl(irefcur,kx+1-k)
-!!!
-!!!        else
-!!!          cprof(k) = xl(irefcur,kx+1-k)/dens(kx+1-k)
-!!!          end if
-!!!      ENDDO
-!!! ! Interpolate temp 3D chemical profile array to WRF field
-!!!      IF (z .LT. zprof(1)) THEN
-!!!        stor = cprof(1)
-!!!      ELSE IF (z .GT. zprof(kx)) THEN
-!!!        stor = cprof(kx)
-!!!      ELSE
-!!!        ! We can trap between two levels and linearly interpolate
-!!!        input_loop:  DO k = 1, kx-1
-!!!          IF (z .EQ. zprof(k) )THEN
-!!!            stor = cprof(k)
-!!!            EXIT input_loop
-!!!          ELSE IF ( (z .GT. zprof(k)) .AND. &
-!!!                    (z .LT. zprof(k+1)) ) THEN
-!!!            wgt0 = (z   - zprof(k+1)) / &
-!!!                   (zprof(k) - zprof(k+1))
-!!!            stor = MAX( wgt0 *cprof(k  ) + &
-!!!                     (1.-wgt0)*cprof(k+1), 0.)
-!!!            EXIT input_loop
-!!!        ENDIF
-!!!        ENDDO input_loop
-!!!      ENDIF
-!!!
-!!!     
-!!!      ! Here is where the chemistry value is constructed
-!!!       CALL PV2O3_CONST(xlat,preshPa,pv2o3_con)
-!!!! chem is in ppmv, stor is in mixing ratio by volume, pv2o3_con is in ppbv/PVunit
-!!!       IF (stor.lt.pv2o3_con*pv*1.E-9) then
-!!!          chem = fracref(nch-1)*pv*pv2o3_con*1.E-3
-!!!       ELSE
-!!!          chem = fracref(nch-1)*stor*1.E6
-!!!       ENDIF
-!!! ! special code for sulfate/h2so4
-!!!
-!!!      if(nch.eq.p_sulf.and.p_nu0.gt.1)then
-!!!        chem=chem*(1.-so4vaptoaer)
-!!!      endif
-!!! RETURN
-!!!  END SUBROUTINE bdy_chem_value_racm_pv
-!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
   SUBROUTINE bdy_chem_value ( chem, z, nch, numgas )
 
     IMPLICIT NONE

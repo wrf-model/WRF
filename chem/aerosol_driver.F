@@ -206,7 +206,7 @@
 !
    cps_select: SELECT CASE(config_flags%chem_opt)
 
-   CASE (GOCART_SIMPLE,GOCARTRACM_KPP,GOCARTRADM2,MOZCART_KPP)
+   CASE (GOCART_SIMPLE,GOCARTRACM_KPP,GOCARTRADM2,MOZCART_KPP,T1_MOZCART_KPP)
       call gocart_aerosols_driver(ktauc,dtstepc,config_flags,t_phy,moist,  &
          chem,rho_phy,dz8w,p8w,dx,g,         &
          ids,ide, jds,jde, kds,kde,                                        &
@@ -466,7 +466,7 @@
 !
    sum_pm_select: SELECT CASE(config_flags%chem_opt)
 
-   CASE (GOCART_SIMPLE,GOCARTRACM_KPP,GOCARTRADM2,MOZCART_KPP)
+   CASE (GOCART_SIMPLE,GOCARTRACM_KPP,GOCARTRADM2,MOZCART_KPP,T1_MOZCART_KPP)
        CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_gocart')
        CALL sum_pm_gocart (                                            &
             alt, chem,pm2_5_dry, pm2_5_dry_ec, pm10,                   &

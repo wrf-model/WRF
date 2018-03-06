@@ -640,6 +640,301 @@ RSL_LITE_PACK ( int * Fcomm0, char * buf , int * shw0 ,
 
 }
 
+#if ( WRFPLUS == 1 )
+RSL_LITE_PACK_AD ( int * Fcomm0, char * buf , int * shw0 , 
+           int * sendbegm0 , int * sendwm0 , int * sendbegp0 , int * sendwp0 ,
+           int * recvbegm0 , int * recvwm0 , int * recvbegp0 , int * recvwp0 ,
+           int * typesize0 , int * xy0 , int * pu0 , int * imemord , int * xstag0, /* not used */
+           int *me0, int * np0 , int * np_x0 , int * np_y0 , 
+           int * ids0 , int * ide0 , int * jds0 , int * jde0 , int * kds0 , int * kde0 ,
+           int * ims0 , int * ime0 , int * jms0 , int * jme0 , int * kms0 , int * kme0 ,
+           int * ips0 , int * ipe0 , int * jps0 , int * jpe0 , int * kps0 , int * kpe0 )
+{
+  int me, np, np_x, np_y ;
+  int sendbegm , sendwm, sendbegp , sendwp ;
+  int recvbegm , recvwm, recvbegp , recvwp ;
+  int shw , typesize ;
+  int ids , ide , jds , jde , kds , kde ;
+  int ims , ime , jms , jme , kms , kme ;
+  int ips , ipe , jps , jpe , kps , kpe ;
+  int xy ;   /* y = 0 , x = 1 */
+  int pu ;   /* pack = 0 , unpack = 1 */
+  register int i, j, k, t ;
+#ifdef crayx1
+  register int i2,i3,i4,i_offset;
+#endif
+  char *p ;
+  int da_buf ;
+  int yp, ym, xp, xm ;
+  int nbytes, ierr ;
+  register int *pi, *qi ;
+
+#ifndef STUBMPI
+  MPI_Comm comm, *comm0, dummy_comm ;
+  int js, je, ks, ke, is, ie, wcount ;
+
+  comm0 = &dummy_comm ;
+  *comm0 = MPI_Comm_f2c( *Fcomm0 ) ;
+
+  shw = *shw0 ;          /* logical half-width of stencil */
+  sendbegm = *sendbegm0 ;  /* send index of sten copy (edge = 1), lower/left */
+  sendwm   = *sendwm0   ;  /* send width of sten copy counting towards edge, lower/left */
+  sendbegp = *sendbegp0 ;  /* send index of sten copy (edge = 1), upper/right */
+  sendwp   = *sendwp0   ;  /* send width of sten copy counting towards edge, upper/right */
+  recvbegm = *recvbegm0 ;  /* recv index of sten copy (edge = 1), lower/left */
+  recvwm   = *recvwm0   ;  /* recv width of sten copy counting towards edge, lower/left */
+  recvbegp = *recvbegp0 ;  /* recv index of sten copy (edge = 1), upper/right */
+  recvwp   = *recvwp0   ;  /* recv width of sten copy counting towards edge, upper/right */
+  me = *me0 ; np = *np0 ; np_x = *np_x0 ; np_y = *np_y0 ;
+  typesize = *typesize0 ;
+  ids = *ids0-1 ; ide = *ide0-1 ; jds = *jds0-1 ; jde = *jde0-1 ; kds = *kds0-1 ; kde = *kde0-1 ;
+  ims = *ims0-1 ; ime = *ime0-1 ; jms = *jms0-1 ; jme = *jme0-1 ; kms = *kms0-1 ; kme = *kme0-1 ;
+  ips = *ips0-1 ; ipe = *ipe0-1 ; jps = *jps0-1 ; jpe = *jpe0-1 ; kps = *kps0-1 ; kpe = *kpe0-1 ;
+  xy = *xy0 ;
+  pu = *pu0 ;
+
+/* need to adapt for other memory orders */
+
+#define RANGE(S1,E1,S2,E2,S3,E3,S4,E4) (((E1)-(S1)+1)*((E2)-(S2)+1)*((E3)-(S3)+1)*((E4)-(S4)+1))
+#define IMAX(A) (((A)>ids)?(A):ids)
+#define IMIN(A) (((A)<ide)?(A):ide)
+#define JMAX(A) (((A)>jds)?(A):jds)
+#define JMIN(A) (((A)<jde)?(A):jde)
+
+  da_buf = ( pu == 0 ) ? RSL_SENDBUF : RSL_RECVBUF ;
+
+  if ( ips <= ipe && jps <= jpe ) {
+
+  if ( np_y > 1 && xy == 0 ) {
+    MPI_Cart_shift( *comm0 , 0, 1, &ym, &yp ) ;
+    if ( yp != MPI_PROC_NULL && jpe <= jde  && jde != jpe ) {
+      p = buffer_for_proc( yp , 0 , da_buf ) ;
+      if ( pu != 0 ) {
+        if ( sendwp > 0 ) {
+          je = jpe - sendbegp + 1 ; js = je - sendwp + 1 ;
+          ks = kps           ; ke = kpe ;
+          is = IMAX(ips-shw) ; ie = IMIN(ipe+shw) ;
+          nbytes = buffer_size_for_proc( yp, da_buf ) ;
+	  if ( yp_curs + RANGE( js, je, kps, kpe, ips-shw, ipe+shw, 1, typesize ) > nbytes ) {
+#ifndef MS_SUA
+	    fprintf(stderr,"memory overwrite in rsl_lite_pack_ad, Y pack up, %d > %d\n",
+	        yp_curs + RANGE( js, je, kps, kpe, ips-shw, ipe+shw, 1, typesize ), nbytes ) ;
+#endif
+	    MPI_Abort(MPI_COMM_WORLD, 99) ;
+          }
+          if ( typesize == 8 ) {
+            F_UNPACK_LINT_AD ( p+yp_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie, 
+                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+            yp_curs += wcount*typesize ;
+          }
+	  else if ( typesize == 4 ) {
+            F_UNPACK_INT_AD ( p+yp_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
+                                               &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+            yp_curs += wcount*typesize ;
+	  }
+	  else {
+#ifndef MS_SUA
+            fprintf(stderr,"internal error: %s %d\n",__FILE__,__LINE__) ;
+#endif
+          }
+        }
+      } else {
+        if ( recvwp > 0 ) {
+          js = jpe+recvbegp         ; je = js + recvwp - 1 ;
+          ks = kps           ; ke = kpe ;
+          is = IMAX(ips-shw) ; ie = IMIN(ipe+shw) ;
+          if ( typesize == 8 ) {
+            F_PACK_LINT_AD ( buf, p+yp_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
+                                               &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+            yp_curs += wcount*typesize ;
+          }
+	  else if ( typesize == 4 ) {
+            F_PACK_INT_AD ( buf, p+yp_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
+                                               &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+            yp_curs += wcount*typesize ;
+	  }
+	  else {
+#ifndef MS_SUA
+            fprintf(stderr,"internal error: %s %d\n",__FILE__,__LINE__) ;
+#endif
+	  }
+	}
+      }
+    }
+    if ( ym != MPI_PROC_NULL && jps >= jds  && jps != jds ) {
+      p = buffer_for_proc( ym , 0 , da_buf ) ;
+      if ( pu != 0 ) {
+        if ( sendwm > 0 ) {
+          js = jps+sendbegm-1 ; je = js + sendwm -1 ;
+          ks = kps           ; ke = kpe ;
+          is = IMAX(ips-shw) ; ie = IMIN(ipe+shw) ;
+          nbytes = buffer_size_for_proc( ym, da_buf ) ;
+	  if ( ym_curs + RANGE( js, je, kps, kpe, ips-shw, ipe+shw, 1, typesize ) > nbytes ) {
+#ifndef  MS_SUA
+	    fprintf(stderr,"memory overwrite in rsl_lite_pack_ad, Y pack dn, %d > %d\n",
+	        ym_curs + RANGE( js, je, kps, kpe, ips-shw, ipe+shw, 1, typesize ), nbytes ) ;
+#endif
+	    MPI_Abort(MPI_COMM_WORLD, 99) ;
+          }
+          if ( typesize == 8 ) {
+            F_UNPACK_LINT_AD ( p+ym_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
+                                               &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+            ym_curs += wcount*typesize ;
+          }
+	  else if ( typesize == 4 ) {
+            F_UNPACK_INT_AD ( p+ym_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
+                                               &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+            ym_curs += wcount*typesize ;
+  	  }
+	  else {
+#ifndef MS_SUA
+            fprintf(stderr,"internal error: %s %d\n",__FILE__,__LINE__) ;
+#endif
+	  }
+	}
+      } else {
+        if ( recvwm > 0 ) {
+          je = jps-recvbegm ; js = je - recvwm + 1 ;
+          ks = kps           ; ke = kpe ;
+          is = IMAX(ips-shw) ; ie = IMIN(ipe+shw) ;
+          if ( typesize == 8 ) {
+            F_PACK_LINT_AD ( buf, p+ym_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
+                                                  &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+            ym_curs += wcount*typesize ;
+          }
+	  else if ( typesize == 4 ) {
+            F_PACK_INT_AD ( buf, p+ym_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
+                                                 &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+            ym_curs += wcount*typesize ;
+	  }
+	  else {
+#ifndef MS_SUA
+            fprintf(stderr,"internal error: %s %d\n",__FILE__,__LINE__) ;
+#endif
+          }
+        }
+      }
+    }
+  }
+
+  if ( np_x > 1 && xy == 1 ) {
+    MPI_Cart_shift( *comm0, 1, 1, &xm, &xp ) ;
+    if ( xp != MPI_PROC_NULL  && ipe <= ide && ide != ipe ) {
+      p = buffer_for_proc( xp , 0 , da_buf ) ;
+      if ( pu != 0 ) {
+        if ( sendwp > 0 ) {
+          js = JMAX(jps-shw) ; je = JMIN(jpe+shw) ;
+          ks = kps           ; ke = kpe ;
+          ie = ipe - sendbegp + 1 ; is = ie - sendwp + 1 ;
+          nbytes = buffer_size_for_proc( xp, da_buf ) ;
+          if ( xp_curs + RANGE( js, je, kps, kpe, ipe-shw+1, ipe, 1, typesize ) > nbytes ) {
+#ifndef MS_SUA
+	    fprintf(stderr,"memory overwrite in rsl_lite_pack, X pack right, %d > %d\n",
+	        xp_curs + RANGE( js, je, kps, kpe, ipe-shw+1, ipe, 1, typesize ), nbytes ) ;
+#endif
+	    MPI_Abort(MPI_COMM_WORLD, 99) ;
+          }
+          if ( typesize == 8 ) {
+            F_UNPACK_LINT_AD ( p+xp_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
+                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+            xp_curs += wcount*typesize ;
+          }
+	  else if ( typesize == 4 ) {
+            F_UNPACK_INT_AD ( p+xp_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
+                                               &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+            xp_curs += wcount*typesize ;
+	  }
+	  else {
+#ifndef MS_SUA
+            fprintf(stderr,"A internal error: %s %d\n",__FILE__,__LINE__) ;
+#endif
+	  }
+	}
+      } else {
+        if ( recvwp > 0 ) {
+          js = JMAX(jps-shw) ; je = JMIN(jpe+shw) ;
+          ks = kps           ; ke = kpe ;
+          is = ipe+recvbegp  ; ie = is + recvwp - 1 ;
+          if ( typesize == 8 ) {
+            F_PACK_LINT_AD ( buf, p+xp_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
+                                                  &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+            xp_curs += wcount*typesize ;
+          }
+	  else if ( typesize == 4 ) {
+            F_PACK_INT_AD ( buf, p+xp_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
+                                                 &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+            xp_curs += wcount*typesize ;
+	  }
+	  else {
+#ifndef MS_SUA
+            fprintf(stderr,"B internal error: %s %d\n",__FILE__,__LINE__) ;
+            fprintf(stderr,"  stenbeg %d stenw  %d \n",is,ie) ;
+            fprintf(stderr,"  is %d ie %d \n",is,ie) ;
+#endif
+          }
+        }
+      }
+    }
+    if ( xm != MPI_PROC_NULL  && ips >= ids && ids != ips ) {
+      p = buffer_for_proc( xm , 0 , da_buf ) ;
+      if ( pu != 0 ) {
+        if ( sendwm > 0 ) {
+          js = JMAX(jps-shw) ; je = JMIN(jpe+shw) ;
+          ks = kps           ; ke = kpe ;
+          is = ips+sendbegm-1 ; ie = is + sendwm-1 ;
+          nbytes = buffer_size_for_proc( xm, da_buf ) ;
+          if ( xm_curs + RANGE( js, je, kps, kpe, ips, ips+shw-1, 1, typesize ) > nbytes ) {
+#ifndef MS_SUA
+	    fprintf(stderr,"memory overwrite in rsl_lite_pack_ad, X left , %d > %d\n",
+	        xm_curs + RANGE( js, je, kps, kpe, ips, ips+shw-1, 1, typesize ), nbytes ) ;
+#endif
+	    MPI_Abort(MPI_COMM_WORLD, 99) ;
+          }
+          if ( typesize == 8 ) {
+            F_UNPACK_LINT_AD ( p+xm_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
+                                                &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+            xm_curs += wcount*typesize ;
+          }
+	  else if ( typesize == 4 ) {
+            F_UNPACK_INT_AD ( p+xm_curs, buf, imemord, &js, &je, &ks, &ke, &is, &ie,
+                                               &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+            xm_curs += wcount*typesize ;
+	  }
+	  else {
+#ifndef MS_SUA
+            fprintf(stderr,"internal error: %s %d\n",__FILE__,__LINE__) ;
+#endif
+          }
+        }
+      } else {
+        if ( recvwm > 0 ) {
+          js = JMAX(jps-shw) ; je = JMIN(jpe+shw) ;
+          ks = kps           ; ke = kpe ;
+          ie = ips-recvbegm ; is = ie - recvwm + 1 ;
+          if ( typesize == 8 ) {
+            F_PACK_LINT_AD ( buf, p+xm_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
+                                                  &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+            xm_curs += wcount*typesize ;
+          } 
+          else if ( typesize == 4 ) {
+            F_PACK_INT_AD ( buf, p+xm_curs, imemord, &js, &je, &ks, &ke, &is, &ie,
+                                                 &jms,&jme,&kms,&kme,&ims,&ime, &wcount ) ;
+            xm_curs += wcount*typesize ;
+	  }
+	  else {
+#ifndef MS_SUA
+            fprintf(stderr,"internal error: %s %d\n",__FILE__,__LINE__) ;
+#endif
+          }
+        }
+      }
+    }
+  }
+  }
+#endif
+
+}
+#endif
 #ifndef STUBMPI
 static MPI_Request yp_recv, ym_recv, yp_send, ym_send ;
 static MPI_Request xp_recv, xm_recv, xp_send, xm_send ;

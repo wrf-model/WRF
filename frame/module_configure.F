@@ -758,6 +758,15 @@ have_match: &
                  irr_diag_mozcart_units_table(idomain,ndx) = 'ppmv'
                  irr_diag_mozcart_streams_table(idomain,ndx)%stream(1) = 512
                  irr_diag_mozcart_streams_table(idomain,ndx)%stream(2) = 2097152
+               CASE( T1_MOZCART_KPP )
+                 irr_diag_t1_mozcart_num_table(idomain) = irr_diag_t1_mozcart_num_table(idomain) + 1
+                 ndx = irr_diag_t1_mozcart_num_table(idomain)
+                 irr_diag_t1_mozcart_boundary_table(idomain,ndx) = .FALSE.
+                 irr_diag_t1_mozcart_dname_table(idomain,ndx) = trim( irr_rxt ) // '_IRR'
+                 irr_diag_t1_mozcart_desc_table(idomain,ndx)  = trim(rxt_lst(l) ) // ' Integrated Reaction Rate'
+                 irr_diag_t1_mozcart_units_table(idomain,ndx) = 'ppmv'
+                 irr_diag_t1_mozcart_streams_table(idomain,ndx)%stream(1) = 512
+                 irr_diag_t1_mozcart_streams_table(idomain,ndx)%stream(2) = 2097152
                CASE( MOZART_MOSAIC_4BIN_KPP )
                  irr_diag_mozart_mosaic_4bin_num_table(idomain) = irr_diag_mozart_mosaic_4bin_num_table(idomain) + 1
                  ndx = irr_diag_mozart_mosaic_4bin_num_table(idomain)

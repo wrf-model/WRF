@@ -53,6 +53,9 @@ CONTAINS
     USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, wrf_dm_maxval
     USE module_comm_dm, ONLY : halo_em_phys_a_sub,halo_em_fdda_sfc_sub,halo_pwp_sub,halo_em_chem_e_3_sub, &
     halo_em_chem_e_5_sub, halo_em_hydro_noahmp_sub
+#if ( WRFPLUS == 1 )
+    USE module_comm_dm, ONLY : halo_em_phys_a_bl_surf_sub
+#endif
 #endif
     USE module_utility
     IMPLICIT NONE
@@ -836,6 +839,13 @@ BENCH_END(surf_driver_tim)
 
 !*********
 ! pbl
+#if ( WRFPLUS == 1 )
+#ifdef DM_PARALLEL
+      IF ( config_flags%bl_pbl_physics .EQ. 98 ) THEN
+#     include "HALO_EM_PHYS_A_BL_SURF.inc"
+      ENDIF
+#endif
+#endif
 
       CALL wrf_debug ( 200 , ' call pbl_driver' )
 BENCH_START(pbl_driver_tim)

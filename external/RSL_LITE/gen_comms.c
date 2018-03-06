@@ -15,7 +15,11 @@
 static int parent_type;
 
 /* print actual and dummy arguments and declarations for 4D and i1 arrays */
-int print_4d_i1_decls ( FILE *fp , node_t *p, int ad /* 0=argument,1=declaration */, int du /* 0=dummy,1=actual */)   
+#if ( WRFPLUS == 1 )
+int print_4d_i1_decls ( FILE *fp , node_t *p, int ad /* 0=argument,1=declaration */, int du /* 0=dummy,1=actual */, int nta /* 0=NLM,1=TLM,2=ADM */)   
+#else
+int print_4d_i1_decls ( FILE *fp , node_t *p, int ad /* 0=argument,1=declaration */, int du /* 0=dummy,1=actual */)
+#endif
 {
   node_t * q ;
   node_t * dimd ;
@@ -88,7 +92,16 @@ if ( q->mark == 0 ) {
   }
   q->mark = 1 ;
 }
-fprintf(fp,"  %s, &\n",varref) ;
+#if ( WRFPLUS == 1 )
+if ( nta == 0 ) fprintf(fp,"  %s, &\n",varref) ;
+if ( nta == 1 ) {
+   fprintf(fp,"  %s, &\n",varref) ;
+   fprintf(fp,"  g_%s, &\n",varref) ;
+}
+if ( nta == 2 ) fprintf(fp,"  a_%s, &\n",varref) ;
+#else
+   fprintf(fp,"  %s, &\n",varref) ;
+#endif
                 }
                 else
                 {
@@ -109,9 +122,24 @@ if ( q->mark == 0 ) {
   }
   strcat(moredims,",") ;
 
+#if ( WRFPLUS == 1 )
+if ( nta == 0 )
+fprintf(fp,"  %s, INTENT(INOUT) :: %s ( grid%%sm31:grid%%em31,grid%%sm32:grid%%em32,grid%%sm33:grid%%em33%snum_%s)\n",
+                     q->type->name , varref , moredims, q->name ) ;
+if ( nta == 1 ) {
+fprintf(fp,"  %s, INTENT(INOUT) :: %s ( grid%%sm31:grid%%em31,grid%%sm32:grid%%em32,grid%%sm33:grid%%em33%snum_%s)\n",
+                     q->type->name , varref , moredims, q->name ) ;
+fprintf(fp,"  %s, INTENT(INOUT) :: g_%s ( grid%%sm31:grid%%em31,grid%%sm32:grid%%em32,grid%%sm33:grid%%em33%snum_%s)\n",
+                     q->type->name , varref , moredims, q->name ) ;
+}
+if ( nta == 2 )
+fprintf(fp,"  %s, INTENT(INOUT) :: a_%s ( grid%%sm31:grid%%em31,grid%%sm32:grid%%em32,grid%%sm33:grid%%em33%snum_%s)\n",
+                     q->type->name , varref , moredims, q->name ) ;
+#else
               dimspec=dimension_with_ranges( "grid%","",-1,tmp3,q,"","" ) ;
 fprintf(fp,"  %s, INTENT(INOUT) :: %s ( %s %snum_%s)\n",
                      q->type->name , varref , dimspec, moredims, q->name ) ;
+#endif
                 }
               }
               else
@@ -124,14 +152,34 @@ fprintf(fp,"  %s, INTENT(INOUT) :: %s ( %s %snum_%s)\n",
               if ( ad == 0 ) 
               {
 /* explicit dummy or actual arguments for i1 arrays */
+#if ( WRFPLUS == 1 )
+if ( nta == 0 ) fprintf(fp,"  %s, &\n",varref) ;
+if ( nta == 1 ) {
+  fprintf(fp,"  %s, &\n",varref) ;
+  fprintf(fp,"  g_%s, &\n",varref) ;
+}
+if ( nta == 2 ) fprintf(fp,"  a_%s, &\n",varref) ;
+#else
 fprintf(fp,"  %s, &\n",varref) ;
+#endif
               }
               else
               {
 /* declaration of dummy arguments for i1 arrays */
               strcpy(tmp3,"") ;
               dimspec=dimension_with_ranges( "grid%","(",-1,tmp3,q,")","" ) ;
+#if ( WRFPLUS == 1 )
+if ( nta == 0 )
 fprintf(fp,"  %s, INTENT(INOUT) :: %s %s\n", q->type->name , varref , dimspec ) ;
+if ( nta == 1 ) {
+fprintf(fp,"  %s, INTENT(INOUT) :: %s %s\n", q->type->name , varref , dimspec ) ;
+fprintf(fp,"  %s, INTENT(INOUT) :: g_%s %s\n", q->type->name , varref , dimspec ) ;
+}
+if ( nta == 2 )
+fprintf(fp,"  %s, INTENT(INOUT) :: a_%s %s\n", q->type->name , varref , dimspec ) ;
+#else
+fprintf(fp,"  %s, INTENT(INOUT) :: %s %s\n", q->type->name , varref , dimspec ) ;
+#endif
               }
             }
           }
@@ -144,13 +192,27 @@ fprintf(fp,"  %s, INTENT(INOUT) :: %s %s\n", q->type->name , varref , dimspec ) 
 }
 
 int print_call_or_def( FILE * fp , node_t *p, char * callorsub, 
-                       char * commname, char * communicator, 
+#if ( WRFPLUS == 1 )
+                       char * commname, int nta /* 0=NLM,1=TLM,2=ADM */, char * communicator, 
+#else
+                       char * commname, char * communicator,
+#endif
                        int need_config_flags )
   {
+#if ( WRFPLUS == 1 )
+  if ( nta == 0 ) { fprintf(fp,"%s %s_sub ( grid, &\n",callorsub,commname) ; }
+  if ( nta == 1 ) { fprintf(fp,"%s %s_TL_sub ( grid, &\n",callorsub,commname) ; }
+  if ( nta == 2 ) { fprintf(fp,"%s %s_AD_sub ( grid, &\n",callorsub,commname) ; }
+#else
   fprintf(fp,"%s %s_sub ( grid, &\n",callorsub,commname) ;
+#endif
   if (need_config_flags == 1)
     fprintf(fp,"  config_flags, &\n") ;
+#if ( WRFPLUS == 1 )
+  print_4d_i1_decls( fp, p, 0, (!strcmp("CALL",callorsub))?0:1, nta );
+#else
   print_4d_i1_decls( fp, p, 0, (!strcmp("CALL",callorsub))?0:1 );
+#endif
   fprintf(fp,"  %s, &\n",communicator) ;
   fprintf(fp,"  mytask, ntasks, ntasks_x, ntasks_y, &\n") ;
   fprintf(fp,"  ids, ide, jds, jde, kds, kde,       &\n") ;
@@ -160,7 +222,11 @@ int print_call_or_def( FILE * fp , node_t *p, char * callorsub,
   }
 
 int print_decl( FILE * fp , node_t *p, char * communicator, 
+#if ( WRFPLUS == 1 )
+                int need_config_flags, int nta /* 0=NLM,1=TLM,2=ADM */ )
+#else
                 int need_config_flags )
+#endif
   {
   fprintf(fp,"  USE module_domain, ONLY:domain\n") ;
   fprintf(fp,"  USE module_configure, ONLY:grid_config_rec_type,in_use_for_config\n") ;
@@ -169,7 +235,11 @@ int print_decl( FILE * fp , node_t *p, char * communicator,
   fprintf(fp,"  TYPE(domain) ,               INTENT(IN) :: grid\n") ;
   if (need_config_flags == 1) 
     fprintf(fp,"  TYPE(grid_config_rec_type) , INTENT(IN) :: config_flags\n") ;
+#if ( WRFPLUS == 1 )
+  print_4d_i1_decls( fp, p, 1, 0, nta );
+#else
   print_4d_i1_decls( fp, p, 1, 0 );
+#endif
   fprintf(fp,"  INTEGER ,                    INTENT(IN) :: %s\n",communicator) ;
   fprintf(fp,"  INTEGER ,                    INTENT(IN) :: mytask, ntasks, ntasks_x, ntasks_y\n") ;
   fprintf(fp,"  INTEGER ,                    INTENT(IN) :: ids, ide, jds, jde, kds, kde\n") ;
@@ -183,16 +253,32 @@ int print_decl( FILE * fp , node_t *p, char * communicator,
   return 0; /* SamT: bug fix: return a value */
   }
 
+#if ( WRFPLUS == 1 )
+int print_body( FILE * fp, char * commname, int nta /* 0=NLM,1=TLM,2=ADM */ )
+#else
 int print_body( FILE * fp, char * commname )
+#endif
   {
   fprintf(fp,"  \n") ;
   fprintf(fp,"CALL push_communicators_for_domain( grid%%id )\n") ;
   fprintf(fp,"#ifdef DM_PARALLEL\n") ;
+#if ( WRFPLUS == 1 )
+  if ( nta == 0 ) { fprintf(fp,"#include \"%s_inline.inc\"\n",commname) ; }
+  if ( nta == 1 ) { fprintf(fp,"#include \"%s_TL_inline.inc\"\n",commname) ; }
+  if ( nta == 2 ) { fprintf(fp,"#include \"%s_AD_inline.inc\"\n",commname) ; } 
+#else
   fprintf(fp,"#include \"%s_inline.inc\"\n",commname) ;
+#endif
   fprintf(fp,"#endif\n") ;
   fprintf(fp,"CALL pop_communicators_for_domain\n") ;
   fprintf(fp,"  \n") ;
+#if ( WRFPLUS == 1 )
+  if ( nta == 0 ) { fprintf(fp,"  END SUBROUTINE %s_sub\n",commname) ; }
+  if ( nta == 1 ) { fprintf(fp,"  END SUBROUTINE %s_TL_sub\n",commname) ; }
+  if ( nta == 2 ) { fprintf(fp,"  END SUBROUTINE %s_AD_sub\n",commname) ; }
+#else
   fprintf(fp,"  END SUBROUTINE %s_sub\n",commname) ;
+#endif
   return 0; /* SamT: bug fix: return a value */
   }
 
@@ -511,12 +597,20 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %s for Y %s')\n",maxste
     }
 
 /* generate packs prior to stencil exchange in Y */
+#if ( WRFPLUS == 1 )
+    gen_packs_halo( fp, p, maxstenwidth, 0, 0, 0, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+#else
     gen_packs_halo( fp, p, maxstenwidth, 0, 0, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+#endif
 /* generate stencil exchange in Y */
     fprintf(fp,"   CALL RSL_LITE_EXCH_Y ( local_communicator , mytask, ntasks, ntasks_x, ntasks_y, &\n") ;
     fprintf(fp,"                          rsl_sendw_m,  rsl_sendw_p, rsl_recvw_m,  rsl_recvw_p    )\n" ) ;
 /* generate unpacks after stencil exchange in Y */
+#if ( WRFPLUS == 1 )
+    gen_packs_halo( fp, p, maxstenwidth, 0, 1 , 0, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+#else
     gen_packs_halo( fp, p, maxstenwidth, 0, 1 , "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+#endif
     fprintf(fp,"ENDDO\n") ; 
 
 /* generate the stencil init statement for X transfer */
@@ -551,12 +645,20 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %s for Y %s')\n",maxste
       fprintf(fp,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%sr_y,kps,kpe)\n") ;
     }
 /* generate packs prior to stencil exchange in X */
+#if ( WRFPLUS == 1 )
+    gen_packs_halo( fp, p, maxstenwidth, 1, 0, 0, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+#else
     gen_packs_halo( fp, p, maxstenwidth, 1, 0, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+#endif
 /* generate stencil exchange in X */
     fprintf(fp,"   CALL RSL_LITE_EXCH_X ( local_communicator , mytask, ntasks, ntasks_x, ntasks_y, &\n") ;
     fprintf(fp,"                          rsl_sendw_m,  rsl_sendw_p, rsl_recvw_m,  rsl_recvw_p    )\n" ) ;
 /* generate unpacks after stencil exchange in X */
+#if ( WRFPLUS == 1 )
+    gen_packs_halo( fp, p, maxstenwidth, 1, 1, 0, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+#else
     gen_packs_halo( fp, p, maxstenwidth, 1, 1, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+#endif
     fprintf(fp,"    ENDDO\n") ; 
     if ( subgrid != 0 ) {
       fprintf(fp,"ENDIF\n") ;
@@ -564,19 +666,553 @@ fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %s for Y %s')\n",maxste
     close_the_file(fp) ;
     if ( incname == NULL ) {
       /* Finish call to custom routine that encapsulates inlined comm calls */
+#if ( WRFPLUS == 1 )
+      print_call_or_def(fpcall, p, "CALL", commname, 0, "local_communicator", need_config_flags );
+#else
       print_call_or_def(fpcall, p, "CALL", commname, "local_communicator", need_config_flags );
+#endif
       close_the_file(fpcall) ;
       /* Generate definition of custom routine that encapsulates inlined comm calls */
+#if ( WRFPLUS == 1 )
+      print_call_or_def(fpsub, p, "SUBROUTINE", commname, 0, "local_communicator", need_config_flags );
+      print_decl(fpsub, p, "local_communicator", need_config_flags, 0);
+      print_body(fpsub, commname, 0);
+#else
       print_call_or_def(fpsub, p, "SUBROUTINE", commname, "local_communicator", need_config_flags );
       print_decl(fpsub, p, "local_communicator", need_config_flags );
       print_body(fpsub, commname);
+#endif
       close_the_file(fpsub) ;
     }
   }
   return(0) ;
 }
 
+#if ( WRFPLUS == 1 )
+int
+gen_halos_nta ( char * dirname , char * incname , node_t * halos, int split )
+{
+  node_t * p, * q ;
+  node_t * dimd ;
+  char commname[NAMELEN], subs_fname[NAMELEN] ;
+  char fname[NAMELEN], fnamecall[NAMELEN], fnamesub[NAMELEN] ;
+  char tmp[NAMELEN_LONG], tmp2[NAMELEN_LONG], tmp3[NAMELEN_LONG] ;
+  char commuse[NAMELEN] ;
+#define MAX_VDIMS 100
+  char vdims[MAX_VDIMS][2][80] ;
+  char s[NAMELEN], e[NAMELEN] ;
+  int vdimcurs ;
+  int maxstenwidth_int, stenwidth ;
+  char maxstenwidth[NAMELEN] ;
+  /*    for TLM    */
+  FILE * fp1 ;
+  FILE * fpcall1 ;
+  char fname1[NAMELEN], fnamecall1[NAMELEN] ;
+  /*    for ADM    */
+  FILE * fp2 ;
+  FILE * fpcall2 ;
+  char fname2[NAMELEN], fnamecall2[NAMELEN] ;
+  FILE * fpsub ;
+  char * t1, * t2 ;
+  char * pos1 , * pos2 ;
+  char indices[NAMELEN], post[NAMELEN] ;
+  int zdex ;
+  int n2dR, n3dR ;
+  int n2dI, n3dI ;
+  int n2dD, n3dD ;
+  int n4d ;
+  int i, foundvdim ;
+  int subgrid ;
+  int need_config_flags;
+#define MAX_4DARRAYS 1000
+  char name_4d[MAX_4DARRAYS][NAMELEN] ;
+#define FRAC 4
+  int num_halos, fraction, ihalo, j ;
+  int always_interp_mp = 1 ;
+
+  if ( dirname == NULL ) return(1) ;
+
+  if ( split ) {
+    for ( p = halos, num_halos=0 ; p != NULL ; p = p-> next ) {  /* howmany deez guys? */
+      if ( incname == NULL ) {
+        strcpy( commname, p->name ) ;
+        make_upper_case(commname) ;
+      }
+      else {
+        strcpy( commname, incname ) ;
+      }
+      if ( !(   !strcmp(commname,"HALO_INTERP_DOWN") || !strcmp(commname,"HALO_FORCE_DOWN"    )
+             || !strcmp(commname,"HALO_INTERP_UP"  ) || !strcmp(commname,"HALO_INTERP_SMOOTH" ) ) ) {
+        num_halos++ ;
+      }
+    } 
+  } 
+
+  ihalo = 0 ;
+  for ( p = halos ; p != NULL ; p = p->next )
+  {
+    need_config_flags = 0;  /* 0 = do not need, 1 = need */
+    if ( incname == NULL ) {
+      strcpy( commname, p->name ) ;
+      make_upper_case(commname) ;
+    } 
+    else {
+      strcpy( commname, incname ) ;
+    }
+    if ( incname == NULL ) {
+      /*    TLM    */
+      if ( strlen(dirname) > 0 ) { sprintf(fname1,"%s/%s_TL_inline.inc",dirname,commname) ; }
+      else                       { sprintf(fname1,"%s_TL_inline.inc",commname) ; }
+      /* Generate call to custom routine that encapsulates inlined comm calls */
+      if ( strlen(dirname) > 0 ) { sprintf(fnamecall1,"%s/%s_TL.inc",dirname,commname) ; }
+      else                       { sprintf(fnamecall1,"%s_TL.inc",commname) ; }
+      if ((fpcall1 = fopen( fnamecall1 , "w" )) == NULL ) 
+      {
+        fprintf(stderr,"WARNING: gen_halos in registry cannot open %s for writing\n",fnamecall1 ) ;
+        continue ; 
+      }
+      print_warning(fpcall1,fnamecall1) ;
+      /*    ADM    */
+      if ( strlen(dirname) > 0 ) { sprintf(fname2,"%s/%s_AD_inline.inc",dirname,commname) ; }
+      else                       { sprintf(fname2,"%s_AD_inline.inc",commname) ; }
+      /* Generate call to custom routine that encapsulates inlined comm calls */
+      if ( strlen(dirname) > 0 ) { sprintf(fnamecall2,"%s/%s_AD.inc",dirname,commname) ; }
+      else                       { sprintf(fnamecall2,"%s_AD.inc",commname) ; }
+      if ((fpcall2 = fopen( fnamecall2 , "w" )) == NULL ) 
+      {
+        fprintf(stderr,"WARNING: gen_halos in registry cannot open %s for writing\n",fnamecall2 ) ;
+        continue ; 
+      }
+      print_warning(fpcall2,fnamecall2) ;
+
+      if (   !strcmp(commname,"HALO_INTERP_DOWN") || !strcmp(commname,"HALO_FORCE_DOWN") 
+          || !strcmp(commname,"HALO_INTERP_UP"  ) || !strcmp(commname,"HALO_INTERP_SMOOTH") ) {
+         sprintf(subs_fname, "REGISTRY_COMM_NESTING_DM_subs.inc" ) ;
+      } else {
+         if ( split ) {
+           j = ihalo / ((num_halos+1)/FRAC+1) ;  /* the compiler you save may be your own */
+           sprintf(subs_fname, "REGISTRY_COMM_DM_%d_subs.inc", j ) ;
+           ihalo++ ;
+         } else {
+           sprintf(subs_fname, "REGISTRY_COMM_DM_subs.inc" ) ;
+         }
+      }
+
+      /* Generate definition of custom routine that encapsulates inlined comm calls */
+      if ( strlen(dirname) > 0 ) { sprintf(fnamesub,"%s/%s",dirname,subs_fname) ; }
+      else                       { sprintf(fnamesub,"%s",subs_fname) ; }
+      if ((fpsub = fopen( fnamesub , "a" )) == NULL ) 
+      {
+        fprintf(stderr,"WARNING: gen_halos in registry cannot open %s for writing\n",fnamesub ) ;
+        continue ; 
+      }
+      print_warning(fpsub,fnamesub) ;
+    }
+    else {
+      /* for now, retain original behavior when called from gen_shift */
+      if ( strlen(dirname) > 0 ) { sprintf(fname,"%s/%s.inc",dirname,commname) ; }
+      else                       { sprintf(fname,"%s.inc",commname) ; }
+    }
+    /* Generate inlined comm calls */
+    /*    TLM    */
+    if ((fp1 = fopen( fname1 , "w" )) == NULL ) 
+    {
+      fprintf(stderr,"WARNING: gen_halos in registry cannot open %s for writing\n",fname1 ) ;
+      continue ; 
+    }
+    /*    ADM    */
+    if ((fp2 = fopen( fname2 , "w" )) == NULL ) 
+    {
+      fprintf(stderr,"WARNING: gen_halos in registry cannot open %s for writing\n",fname2 ) ;
+      continue ; 
+    }
+    /* get maximum stencil width */
+    maxstenwidth_int = 0 ;
+    strcpy( tmp, p->comm_define ) ;
+    t1 = strtok_rentr( tmp , ";" , &pos1 ) ;
+    while ( t1 != NULL )
+    {
+      strcpy( tmp2 , t1 ) ;
+      if (( t2 = strtok_rentr( tmp2 , ":" , &pos2 )) == NULL )
+       { fprintf(stderr,"unparseable description for halo %s\n", commname ) ; exit(1) ; }
+if ( !strcmp(t2,"SHW") ) {
+   stenwidth = -99 ;
+   maxstenwidth_int = -99 ;   /* use a run-time computed stencil width based on nest ratio */
+   break ;                /* note that SHW is set internally by gen_shift, it should never be used in a Registry file */
+} else {
+      stenwidth = atoi (t2) ;
+      if ( stenwidth == 0 )
+       { fprintf(stderr,"* unparseable description for halo %s\n", commname ) ; exit(1) ; }
+      if      ( stenwidth == 4   || stenwidth == 8  ) stenwidth = 1 ;
+      else if ( stenwidth == 12  || stenwidth == 24 ) stenwidth = 2 ;
+      else if ( stenwidth == 48 ) stenwidth = 3 ;
+      else if ( stenwidth == 80 ) stenwidth = 4 ;
+      else if ( stenwidth == 120 ) stenwidth = 5 ;
+      else if ( stenwidth == 168 ) stenwidth = 6 ;
+      else
+       { fprintf(stderr,"%s: unknown stenci description or just too big: %d\n", commname, stenwidth ) ; exit(1) ; }
+      if ( stenwidth > maxstenwidth_int ) maxstenwidth_int = stenwidth ;
+}
+      t1 = strtok_rentr( NULL , ";" , &pos1 ) ;
+    }
+
+    if ( maxstenwidth_int == -99 ) {
+      sprintf(maxstenwidth,"grid%%parent_grid_ratio") ;
+    } else {
+      sprintf(maxstenwidth,"%d",maxstenwidth_int) ;
+    }
+
+    /*    TLM    */
+    print_warning(fp1,fname1) ;
+
+fprintf(fp1,"CALL wrf_debug(2,'calling %s')\n",fname1) ;
+    /*    ADM    */
+    print_warning(fp2,fname2) ;
+
+fprintf(fp2,"CALL wrf_debug(2,'calling %s')\n",fname2) ;
+
+/* count up the number of 2d and 3d real arrays and their types */
+    n2dR = 0 ; n3dR = 0 ;
+    n2dI = 0 ; n3dI = 0 ;
+    n2dD = 0 ; n3dD = 0 ;
+    n4d = 0 ;
+    vdimcurs = 0 ;
+    subgrid = -1 ;      /* watch to make sure we don't mix subgrid fields with non-subgrid fields in same halo */
+    strcpy( tmp, p->comm_define ) ;
+    strcpy( commuse, p->use ) ;
+    t1 = strtok_rentr( tmp , ";" , &pos1 ) ;
+    for ( i = 0 ; i < MAX_4DARRAYS ; i++ ) strcpy(name_4d[i],"") ;  /* truncate all of these */
+    while ( t1 != NULL )
+    {
+      strcpy( tmp2 , t1 ) ;
+      if (( t2 = strtok_rentr( tmp2 , ":" , &pos2 )) == NULL )
+       { fprintf(stderr,"unparseable description for halo %s\n", commname ) ; continue ; }
+      t2 = strtok_rentr(NULL,",", &pos2) ;
+      while ( t2 != NULL )
+      {
+        if ((q = get_entry_r( t2, commuse, Domain.fields )) == NULL )
+          { fprintf(stderr,"WARNING 1 : %s in halo spec %s (%s) is not defined in registry.\n",t2,commname, commuse) ; }
+        else
+        {
+          if ( subgrid == -1 ) {   /* first one */
+            subgrid = q->subgrid ;
+          } else if ( subgrid != q->subgrid ) {
+            fprintf(stderr,"SERIOUS WARNING: you are mixing subgrid fields with non-subgrid fields in halo %s\n",commname) ;
+          }
+          if      (  strcmp( q->type->name, "real") && strcmp( q->type->name, "integer") && strcmp( q->type->name, "doubleprecision") )
+            { fprintf(stderr,"WARNING: only type 'real', 'doubleprecision', or 'integer' can be part of halo exchange. %s in %s is %s\n",t2,commname,q->type->name) ; }
+          else if ( q->boundary_array )
+            { fprintf(stderr,"WARNING: boundary array %s cannot be member of halo spec %s.\n",t2,commname) ; }
+          else
+          {
+
+            /* 20061004 -- collect all the vertical dimensions so we can use a MAX
+	       on them when calling RSL_LITE_INIT_EXCH */
+
+            if ( q->ndims == 3 || q->node_kind & FOURD ) {
+              if ((dimd = get_dimnode_for_coord( q , COORD_Z )) != NULL ) {
+                zdex = get_index_for_coord( q , COORD_Z ) ;
+                if      ( dimd->len_defined_how == DOMAIN_STANDARD ) { 
+                  strcpy(s,"kps") ;
+                  strcpy(e,"kpe") ;
+                }
+                else if ( dimd->len_defined_how == NAMELIST ) {
+                  need_config_flags = 1;
+                  if ( !strcmp(dimd->assoc_nl_var_s,"1") ) {
+                    strcpy(s,"1") ;
+                    sprintf(e,"config_flags%%%s",dimd->assoc_nl_var_e) ;
+                  } else {
+                    sprintf(s,"config_flags%%%s",dimd->assoc_nl_var_s) ;
+                    sprintf(e,"config_flags%%%s",dimd->assoc_nl_var_e) ;
+                  }
+                }
+                else if ( dimd->len_defined_how == CONSTANT ) {
+                  sprintf(s,"%d",dimd->coord_start) ;
+                  sprintf(e,"%d",dimd->coord_end) ; 
+                }
+                for ( i = 0, foundvdim = 0 ; i < vdimcurs ; i++ ) {
+                  if ( !strcmp( vdims[i][1], e ) ) {
+                    foundvdim = 1 ; break ;
+                  }
+                }
+                if ( ! foundvdim ) {
+                  if (vdimcurs < 100 ) {
+                    strcpy( vdims[vdimcurs][0], s ) ;
+                    strcpy( vdims[vdimcurs][1], e ) ;
+                    vdimcurs++ ;
+                  } else {
+                    fprintf(stderr,"REGISTRY ERROR: too many different vertical dimensions (> %d).\n", MAX_VDIMS ) ;
+                    fprintf(stderr,"That seems like a lot, but if you are sure, increase MAX_VDIMS\n" ) ;
+                    fprintf(stderr,"in external/RSL_LITE/gen_comms.c and recompile\n") ;
+                    exit(5) ;
+                  }
+                }
+              }
+            }
+
+            if ( q->node_kind & FOURD ) {
+              if ( n4d < MAX_4DARRAYS ) {
+                int d ;
+                char temp[80], tx[80], r[10], *colon ;
+                strcpy( name_4d[n4d], q->name ) ;
+                for ( d = 3 ; d < q->ndims ; d++ ) {
+                  sprintf(temp,"*(%s_edim%d-%s_sdim%d+1)",q->name,d-2,q->name,d-2) ;
+                  strcat( name_4d[n4d],temp) ;
+                }
+              } else { 
+                fprintf(stderr,"REGISTRY ERROR: too many 4d arrays (> %d).\n", MAX_4DARRAYS ) ;
+                fprintf(stderr,"That seems like a lot, but if you are sure, increase MAX_4DARRAYS\n" ) ;
+                fprintf(stderr,"in external/RSL_LITE/gen_comms.c and recompile\n") ;
+                exit(5) ;
+              }
+              n4d++ ;
+            }
+            else
+            {
+              if        ( ! strcmp( q->type->name, "real") ) {
+                if         ( q->ndims == 3 )      { n3dR++ ; }
+	        else    if ( q->ndims == 2 )      { n2dR++ ; }
+	      } else if ( ! strcmp( q->type->name, "integer") ) {
+                if         ( q->ndims == 3 )      { n3dI++ ; }
+	        else    if ( q->ndims == 2 )      { n2dI++ ; }
+	      } else if ( ! strcmp( q->type->name, "doubleprecision") ) {
+                if         ( q->ndims == 3 )      { n3dD++ ; }
+	        else    if ( q->ndims == 2 )      { n2dD++ ; }
+	      }
+	    }
+	  }
+	}
+        t2 = strtok_rentr( NULL , "," , &pos2 ) ;
+      }
+      t1 = strtok_rentr( NULL , ";" , &pos1 ) ;
+    }
+
+/* generate the stencil init statement for Y transfer */
+#if 0
+fprintf(fp,"CALL wrf_debug(3,'calling RSL_LITE_INIT_EXCH %s for Y %s')\n",maxstenwidth,fname) ;
+#endif
+    if ( subgrid != 0 ) {
+      /*    TLM    */
+      fprintf(fp1,"IF ( grid%%sr_y .GT. 0 ) THEN\n") ;
+      /*    ADM    */
+      fprintf(fp2,"IF ( grid%%sr_y .GT. 0 ) THEN\n") ;
+    }
+
+    /*    TLM    */
+    fprintf(fp1,"CALL rsl_comm_iter_init(%s,jps,jpe)\n",maxstenwidth) ;
+    fprintf(fp1,"DO WHILE ( rsl_comm_iter( grid%%id , grid%%is_intermediate, %s , &\n", maxstenwidth ) ; 
+    fprintf(fp1,"                         0 , jds,jde,jps,jpe, grid%%njds, grid%%njde , & \n" ) ;
+    fprintf(fp1,"     rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   & \n" ) ;
+    fprintf(fp1,"     rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p    ))\n" ) ;
+    fprintf(fp1," CALL RSL_LITE_INIT_EXCH ( local_communicator, %s, 0, &\n",maxstenwidth) ;
+    fprintf(fp1,"     rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   & \n" ) ;
+    fprintf(fp1,"     rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p,   & \n" ) ;
+    if ( n4d > 0 ) {
+      fprintf(fp1,  "     %d  &\n", 2*n3dR ) ;
+      for ( i = 0 ; i < n4d ; i++ ) {
+	fprintf(fp1,"   + 2*num_%s   &\n", name_4d[i] ) ;
+      }
+      fprintf(fp1,"     , %d, RWORDSIZE, &\n", 2*n2dR ) ;
+    } else {
+      fprintf(fp1,"     %d, %d, RWORDSIZE, &\n", 2*n3dR, 2*n2dR ) ;
+    }
+    fprintf(fp1,"     %d, %d, IWORDSIZE, &\n", 2*n3dI, 2*n2dI ) ;
+    fprintf(fp1,"     %d, %d, DWORDSIZE, &\n", 2*n3dD, 2*n2dD ) ;
+    fprintf(fp1,"      0,  0, LWORDSIZE, &\n" ) ;
+    fprintf(fp1,"      mytask, ntasks, ntasks_x, ntasks_y,   &\n" ) ;
+    if ( subgrid == 0 ) {
+      fprintf(fp1,"      ips, ipe, jps, jpe, kps, MAX(1,1&\n") ;
+      for ( i = 0 ; i < vdimcurs ; i++ ) {
+        fprintf(fp1,",%s &\n",vdims[i][1] ) ;
+      }
+      fprintf(fp1,"))\n") ;
+    } else {
+      fprintf(fp1,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%sr_y,kps,kpe)\n") ;
+    }
+    /*    ADM    */
+    fprintf(fp2,"CALL rsl_comm_iter_init(%s,jps,jpe)\n",maxstenwidth) ;
+    fprintf(fp2,"DO WHILE ( rsl_comm_iter( grid%%id , grid%%is_intermediate, %s , &\n", maxstenwidth ) ; 
+    fprintf(fp2,"                         0 , jds,jde,jps,jpe, grid%%njds, grid%%njde , & \n" ) ;
+    fprintf(fp2,"     rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   & \n" ) ;
+    fprintf(fp2,"     rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p    ))\n" ) ;
+    fprintf(fp2," CALL RSL_LITE_INIT_EXCH ( local_communicator, %s, 0, &\n",maxstenwidth) ;
+    fprintf(fp2,"     rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   & \n" ) ;
+    fprintf(fp2,"     rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p,   & \n" ) ;
+    if ( n4d > 0 ) {
+      fprintf(fp2,  "     %d  &\n", n3dR ) ;
+      for ( i = 0 ; i < n4d ; i++ ) {
+	fprintf(fp2,"   + num_%s   &\n", name_4d[i] ) ;
+      }
+      fprintf(fp2,"     , %d, RWORDSIZE, &\n", n2dR ) ;
+    } else {
+      fprintf(fp2,"     %d, %d, RWORDSIZE, &\n", n3dR, n2dR ) ;
+    }
+    fprintf(fp2,"     %d, %d, IWORDSIZE, &\n", n3dI, n2dI ) ;
+    fprintf(fp2,"     %d, %d, DWORDSIZE, &\n", n3dD, n2dD ) ;
+    fprintf(fp2,"      0,  0, LWORDSIZE, &\n" ) ;
+    fprintf(fp2,"      mytask, ntasks, ntasks_x, ntasks_y,   &\n" ) ;
+    if ( subgrid == 0 ) {
+      fprintf(fp2,"      ips, ipe, jps, jpe, kps, MAX(1,1&\n") ;
+      for ( i = 0 ; i < vdimcurs ; i++ ) {
+        fprintf(fp2,",%s &\n",vdims[i][1] ) ;
+      }
+      fprintf(fp2,"))\n") ;
+    } else {
+      fprintf(fp2,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%sr_y,kps,kpe)\n") ;
+    }
+/* generate packs prior to stencil exchange in Y */
+    /*    TLM    */
+    gen_packs_halo( fp1, p, maxstenwidth, 0, 0, 0, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+    gen_packs_halo( fp1, p, maxstenwidth, 0, 0, 1, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+    /*    ADM    */
+    gen_packs_halo( fp2, p, maxstenwidth, 0, 0, 2, "RSL_LITE_PACK_AD", "local_communicator", always_interp_mp ) ;
+/* generate stencil exchange in Y */
+    /*    TLM    */
+/* generate stencil exchange in Y */
+    fprintf(fp1,"   CALL RSL_LITE_EXCH_Y ( local_communicator , mytask, ntasks, ntasks_x, ntasks_y, &\n") ;
+    fprintf(fp1,"                          rsl_sendw_m,  rsl_sendw_p, rsl_recvw_m,  rsl_recvw_p    )\n" ) ;
+    /*    ADM    */
+/* generate stencil exchange in Y */
+    fprintf(fp2,"   CALL RSL_LITE_EXCH_Y ( local_communicator , mytask, ntasks, ntasks_x, ntasks_y, &\n") ;
+    fprintf(fp2,"                          rsl_sendw_m,  rsl_sendw_p, rsl_recvw_m,  rsl_recvw_p    )\n" ) ;
+/* generate unpacks after stencil exchange in Y */
+    /*    TLM    */
+    gen_packs_halo( fp1, p, maxstenwidth, 0, 1 , 0, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+    gen_packs_halo( fp1, p, maxstenwidth, 0, 1 , 1, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+    /*    ADM    */
+    gen_packs_halo( fp2, p, maxstenwidth, 0, 1 , 2, "RSL_LITE_PACK_AD", "local_communicator", always_interp_mp ) ;
+    /*    TLM    */
+    fprintf(fp1,"ENDDO\n") ; 
+    /*    ADM    */
+    fprintf(fp2,"ENDDO\n") ; 
+
+/* generate the stencil init statement for X transfer */
+    /*    TLM    */
+/* generate the stencil init statement for X transfer */
+    fprintf(fp1,"CALL rsl_comm_iter_init(%s,ips,ipe)\n",maxstenwidth) ;
+    fprintf(fp1,"DO WHILE ( rsl_comm_iter( grid%%id , grid%%is_intermediate, %s , &\n", maxstenwidth ) ; 
+    fprintf(fp1,"                         1 , ids,ide,ips,ipe, grid%%nids, grid%%nide , & \n" ) ;
+    fprintf(fp1,"     rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   & \n" ) ;
+    fprintf(fp1,"     rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p    ))\n" ) ;
+    fprintf(fp1," CALL RSL_LITE_INIT_EXCH ( local_communicator, %s, 1, &\n",maxstenwidth) ;
+    fprintf(fp1,"     rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   & \n" ) ;
+    fprintf(fp1,"     rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p,   & \n" ) ;
+    if ( n4d > 0 ) {
+      fprintf(fp1,  "     %d  &\n", 2*n3dR ) ;
+      for ( i = 0 ; i < n4d ; i++ ) {
+        fprintf(fp1,"   + 2*num_%s   &\n", name_4d[i] ) ;
+      }
+      fprintf(fp1,"     , %d, RWORDSIZE, &\n", 2*n2dR ) ;
+    } else {
+      fprintf(fp1,"     %d, %d, RWORDSIZE, &\n", 2*n3dR, 2*n2dR ) ;
+    }
+    fprintf(fp1,"     %d, %d, IWORDSIZE, &\n", 2*n3dI, 2*n2dI ) ;
+    fprintf(fp1,"     %d, %d, DWORDSIZE, &\n", 2*n3dD, 2*n2dD ) ;
+    fprintf(fp1,"      0,  0, LWORDSIZE, &\n" ) ;
+    fprintf(fp1,"      mytask, ntasks, ntasks_x, ntasks_y,   &\n" ) ;
+    if ( subgrid == 0 ) {
+      fprintf(fp1,"      ips, ipe, jps, jpe, kps, MAX(1,1&\n") ;
+      for ( i = 0 ; i < vdimcurs ; i++ ) {
+        fprintf(fp1,",%s &\n",vdims[i][1] ) ;
+      }
+      fprintf(fp1,"))\n") ;
+    } else {
+      fprintf(fp1,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%sr_y,kps,kpe)\n") ;
+    }
+    /*    ADM    */
+/* generate the stencil init statement for X transfer */
+    fprintf(fp2,"CALL rsl_comm_iter_init(%s,ips,ipe)\n",maxstenwidth) ;
+    fprintf(fp2,"DO WHILE ( rsl_comm_iter( grid%%id , grid%%is_intermediate, %s , &\n", maxstenwidth ) ; 
+    fprintf(fp2,"                         1 , ids,ide,ips,ipe, grid%%nids, grid%%nide , & \n" ) ;
+    fprintf(fp2,"     rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   & \n" ) ;
+    fprintf(fp2,"     rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p    ))\n" ) ;
+    fprintf(fp2," CALL RSL_LITE_INIT_EXCH ( local_communicator, %s, 1, &\n",maxstenwidth) ;
+    fprintf(fp2,"     rsl_sendbeg_m, rsl_sendw_m, rsl_sendbeg_p, rsl_sendw_p,   & \n" ) ;
+    fprintf(fp2,"     rsl_recvbeg_m, rsl_recvw_m, rsl_recvbeg_p, rsl_recvw_p,   & \n" ) ;
+    if ( n4d > 0 ) {
+      fprintf(fp2,  "     %d  &\n", n3dR ) ;
+      for ( i = 0 ; i < n4d ; i++ ) {
+        fprintf(fp2,"   + num_%s   &\n", name_4d[i] ) ;
+      }
+      fprintf(fp2,"     , %d, RWORDSIZE, &\n", n2dR ) ;
+    } else {
+      fprintf(fp2,"     %d, %d, RWORDSIZE, &\n", n3dR, n2dR ) ;
+    }
+    fprintf(fp2,"     %d, %d, IWORDSIZE, &\n", n3dI, n2dI ) ;
+    fprintf(fp2,"     %d, %d, DWORDSIZE, &\n", n3dD, n2dD ) ;
+    fprintf(fp2,"      0,  0, LWORDSIZE, &\n" ) ;
+    fprintf(fp2,"      mytask, ntasks, ntasks_x, ntasks_y,   &\n" ) ;
+    if ( subgrid == 0 ) {
+      fprintf(fp2,"      ips, ipe, jps, jpe, kps, MAX(1,1&\n") ;
+      for ( i = 0 ; i < vdimcurs ; i++ ) {
+        fprintf(fp2,",%s &\n",vdims[i][1] ) ;
+      }
+      fprintf(fp2,"))\n") ;
+    } else {
+      fprintf(fp2,"(ips-1)*grid%%sr_x+1,ipe*grid%%sr_x,(jps-1)*grid%%sr_y+1,jpe*grid%%sr_y,kps,kpe)\n") ;
+    }
+/* generate packs prior to stencil exchange in X */
+    /*    TLM    */
+    gen_packs_halo( fp1, p, maxstenwidth, 1, 0, 0, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+    gen_packs_halo( fp1, p, maxstenwidth, 1, 0, 1, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+    /*    ADM    */
+    gen_packs_halo( fp2, p, maxstenwidth, 1, 0, 2, "RSL_LITE_PACK_AD", "local_communicator", always_interp_mp ) ;
+/* generate stencil exchange in X */
+    /*    TLM    */
+/* generate stencil exchange in X */
+    fprintf(fp1,"   CALL RSL_LITE_EXCH_X ( local_communicator , mytask, ntasks, ntasks_x, ntasks_y, &\n") ;
+    fprintf(fp1,"                          rsl_sendw_m,  rsl_sendw_p, rsl_recvw_m,  rsl_recvw_p    )\n" ) ;
+    /*    ADM    */
+/* generate stencil exchange in X */
+    fprintf(fp2,"   CALL RSL_LITE_EXCH_X ( local_communicator , mytask, ntasks, ntasks_x, ntasks_y, &\n") ;
+    fprintf(fp2,"                          rsl_sendw_m,  rsl_sendw_p, rsl_recvw_m,  rsl_recvw_p    )\n" ) ;
+/* generate unpacks after stencil exchange in X */
+    /*    TLM    */
+    gen_packs_halo( fp1, p, maxstenwidth, 1, 1, 0, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+    gen_packs_halo( fp1, p, maxstenwidth, 1, 1, 1, "RSL_LITE_PACK", "local_communicator", always_interp_mp ) ;
+    /*    ADM    */
+    gen_packs_halo( fp2, p, maxstenwidth, 1, 1, 2, "RSL_LITE_PACK_AD", "local_communicator", always_interp_mp ) ;
+    /*    TLM    */
+    fprintf(fp1,"    ENDDO\n") ; 
+    if ( subgrid != 0 ) {
+      fprintf(fp1,"ENDIF\n") ;
+    }
+    close_the_file(fp1) ;
+    /*    ADM    */
+    fprintf(fp2,"    ENDDO\n") ; 
+    if ( subgrid != 0 ) {
+      fprintf(fp2,"ENDIF\n") ;
+    }
+    close_the_file(fp2) ;
+    if ( incname == NULL ) {
+      /* Finish call to custom routine that encapsulates inlined comm calls */
+      /*    TLM    */
+      print_call_or_def(fpcall1, p, "CALL", commname, 1, "local_communicator", need_config_flags );
+      close_the_file(fpcall1) ;
+      /*    ADM    */
+      print_call_or_def(fpcall2, p, "CALL", commname, 2, "local_communicator", need_config_flags );
+      close_the_file(fpcall2) ;
+      /* Generate definition of custom routine that encapsulates inlined comm calls */
+      /*    TLM    */
+      print_call_or_def(fpsub, p, "SUBROUTINE", commname, 1, "local_communicator", need_config_flags );
+      print_decl(fpsub, p, "local_communicator", need_config_flags, 1 );
+      print_body(fpsub, commname, 1);
+      /*    ADM    */
+      print_call_or_def(fpsub, p, "SUBROUTINE", commname, 2, "local_communicator", need_config_flags );
+      print_decl(fpsub, p, "local_communicator", need_config_flags, 2 );
+      print_body(fpsub, commname, 2);
+      close_the_file(fpsub) ;
+    }
+  }
+  return(0) ;
+}
+#endif
+
+#if ( WRFPLUS == 1 )
+gen_packs_halo ( FILE *fp , node_t *p, char *shw, int xy /* 0=y,1=x */ , int pu /* 0=pack,1=unpack */, int nta /* 0=NLM,1=TLM,2=ADM*/, char * packname, char * commname, int always_interp_mp )   
+#else
 gen_packs_halo ( FILE *fp , node_t *p, char *shw, int xy /* 0=y,1=x */ , int pu /* 0=pack,1=unpack */, char * packname, char * commname, int always_interp_mp )   
+#endif
 {
   node_t * q ;
   node_t * dimd ;
@@ -609,8 +1245,16 @@ gen_packs_halo ( FILE *fp , node_t *p, char *shw, int xy /* 0=y,1=x */ , int pu 
 
           strcpy( varname, t2 ) ;
           strcpy( varref, t2 ) ;
+#if ( WRFPLUS == 1 )
+          if ( nta == 1)  { sprintf(varref,"g_%s",t2) ; }
+          if ( nta == 2 ) { sprintf(varref,"a_%s",t2) ; }
+#endif
           if ( q->node_kind & FIELD  && ! (q->node_kind & I1) ) {
              sprintf(varref,"grid%%%s",t2) ;
+#if ( WRFPLUS == 1 )
+             if ( nta == 1)  { sprintf(varref,"grid%%g_%s",t2) ; }
+             if ( nta == 2 ) { sprintf(varref,"grid%%a_%s",t2) ; }
+#endif
           }
 
           if      (  strcmp( q->type->name, "real") && strcmp( q->type->name, "integer") && strcmp( q->type->name, "doubleprecision") ) { ; }
@@ -1015,7 +1659,11 @@ gen_periods ( char * dirname , node_t * periods )
       continue ; 
     }
     print_warning(fpcall,fnamecall) ;
+#if ( WRFPLUS == 1 )
+    print_call_or_def(fpcall, p, "CALL", commname, 0, "local_communicator_periodic", 1 );
+#else
     print_call_or_def(fpcall, p, "CALL", commname, "local_communicator_periodic", 1 );
+#endif
     close_the_file(fpcall) ;
 
     /* Generate definition of custom routine that encapsulates inlined comm calls */
@@ -1026,9 +1674,15 @@ gen_periods ( char * dirname , node_t * periods )
       fprintf(stderr,"WARNING: gen_periods in registry cannot open %s for writing\n",fnamesub ) ;
       continue ; 
     }
+#if ( WRFPLUS == 1 )
+    print_call_or_def(fpsub, p, "SUBROUTINE", commname, 0, "local_communicator_periodic", 1 );
+    print_decl(fpsub, p, "local_communicator_periodic", 1, 0 );
+    print_body(fpsub, commname, 0);
+#else
     print_call_or_def(fpsub, p, "SUBROUTINE", commname, "local_communicator_periodic", 1 );
     print_decl(fpsub, p, "local_communicator_periodic", 1 );
     print_body(fpsub, commname);
+#endif
     close_the_file(fpsub) ;
 
     /* Generate inlined comm calls */
@@ -2537,6 +3191,9 @@ gen_comms ( char * dirname )
   if ((fpsub = fopen( "inc/REGISTRY_COMM_DM_3_subs.inc" , "w" )) != NULL ) fclose(fpsub) ;
 
   gen_halos( "inc" , NULL, Halos, 1 ) ;
+#if ( WRFPLUS == 1 )
+  gen_halos_nta( "inc" , NULL, Halos_nta, 1 ) ;
+#endif
   gen_shift( "inc" ) ;
   gen_periods( "inc", Periods ) ;
   gen_swaps( "inc", Swaps ) ;

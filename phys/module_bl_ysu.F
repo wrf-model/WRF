@@ -37,7 +37,6 @@ contains
                   its,ite, jts,jte, kts,kte,                                   &
                 !optional
                   regime                                                       &
-                !MPAS specific optional arguments for additional diagnostics:
                   ,rho,kzhout,kzmout,kzqout                                    &
                  )
 !-------------------------------------------------------------------------------
@@ -218,7 +217,6 @@ contains
                                                                         dvsfc, &
                                                                         dtsfc, &
                                                                         dqsfc
-!MPAS specific optional arguments for additional diagnostics:
    real,intent(in),dimension(ims:ime,kms:kme,jms:jme),optional:: rho
    real:: rho_d
    real,intent(out),dimension(ims:ime,kms:kme,jms:jme),optional:: kzhout,kzmout,kzqout
@@ -233,7 +231,6 @@ contains
       enddo
       enddo
    endif
-!MPAS specific end.
 !
    qv2d(its:ite,:) = 0.0
 !
@@ -302,7 +299,6 @@ contains
               ,rthraten=rthraten(ims,kms,j),p2diORG=p3di(ims,kms,j)            &
               ,ysu_topdown_pblmix=ysu_topdown_pblmix                           &
               ,ctopo=ctopo(ims,j),ctopo2=ctopo2(ims,j)                         &
-!MPAS specific optional arguments for additional diagnostics:
               ,kzh=kzhout(ims,kms,j)                                           &
               ,kzm=kzmout(ims,kms,j)                                           &
               ,kzq=kzqout(ims,kms,j)                                           &
@@ -345,7 +341,6 @@ contains
                   its,ite, jts,jte, kts,kte,                                   &
                 !optional
                   regime                                                       &
-                !MPAS specific optional arguments for additional diagnostics:
                  ,kzh,kzm,kzq                                                  &
                    )
 !-------------------------------------------------------------------------------
@@ -591,9 +586,7 @@ contains
    real,    dimension( ims:ime )             ::                       pblh_ysu,&
                                                                       vconvfx
 !
-!MPAS specific begin:
    real,intent(out),dimension(ims:ime,kms:kme),optional::kzh,hzm,kzq
-!MPAS specific end.
 !
 !-------------------------------------------------------------------------------
 !
@@ -697,7 +690,6 @@ contains
      wstar3_2(i) =  0.0
    enddo
 !
-!MPAS specific begin: Added initialization of local vertical diffusion coefficients:
    if(present(kzh) .and. present(kzm) .and. present(kzq)) then
       do k = kts,kte
       do i = its,ite
@@ -708,7 +700,6 @@ contains
       enddo
       enddo
    endif
-!MPAS specific end.
 !
    do k = kts,klpbl
      do i = its,ite
@@ -1502,7 +1493,6 @@ contains
      kpbl1d(i) = kpbl(i)
    enddo
 !
-!MPAS specific begin:
    if(present(kzh) .and. present(kzm) .and. present(kzq)) then
       do i = its,ite
       do k = kts,kte
@@ -1512,7 +1502,6 @@ contains
       enddo
       enddo
    endif
-!MPAS specific end.
 !
    end subroutine ysu2d
 !-------------------------------------------------------------------------------

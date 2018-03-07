@@ -126,6 +126,12 @@ is_mozart:if( is_moz_chm ) then
               if( p_benzene >= param_first_scalar ) then
                 chem(its:ite,k,j,p_benzene) = chem(its:ite,k,j,p_benzene) + emis_ant(its:ite,k,j,p_e_benzene)*conv_rho(its:ite)
               endif
+              if( p_xyl >= param_first_scalar ) then
+                chem(its:ite,k,j,p_xyl) = chem(its:ite,k,j,p_xyl) + emis_ant(its:ite,k,j,p_e_xylene)*conv_rho(its:ite)
+              endif
+              if( p_apin >= param_first_scalar ) then
+                chem(its:ite,k,j,p_apin) = chem(its:ite,k,j,p_apin) + emis_ant(its:ite,k,j,p_e_apin)*conv_rho(its:ite)
+              endif
             endif
             if( config_flags%emiss_opt == mozem  .or. config_flags%emiss_opt == mozcem ) then
               if( p_c10h16 >= param_first_scalar ) then

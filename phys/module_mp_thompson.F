@@ -391,7 +391,7 @@
 
       CONTAINS
 
-      SUBROUTINE thompson_init(hgt, nwfa2d, nwfa, nifa, dx, dy,         &
+      SUBROUTINE thompson_init(hgt, orho, nwfa2d, nwfa, nifa, dx, dy,   &
                           is_start,                                     &
                           ids, ide, jds, jde, kds, kde,                 &
                           ims, ime, jms, jme, kms, kme,                 &
@@ -408,13 +408,14 @@
 
       REAL, DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL, INTENT(INOUT) :: nwfa, nifa
       REAL, DIMENSION(ims:ime,jms:jme), OPTIONAL, INTENT(INOUT) :: nwfa2d
+      REAL, DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL, INTENT(IN) :: orho
       REAL, OPTIONAL, INTENT(IN) :: DX, DY
       LOGICAL, OPTIONAL, INTENT(IN) :: is_start
       CHARACTER*256:: mp_debug
 
 
       INTEGER:: i, j, k, l, m, n
-      REAL:: h_01, niIN3, niCCN3, max_test
+      REAL:: h_01, airmass, niIN3, niCCN3, max_test
       LOGICAL:: micro_init, has_CCN, has_IN
 
       is_aerosol_aware = .FALSE.
@@ -458,6 +459,8 @@
             endif
             niCCN3 = -1.0*ALOG(naCCN1/naCCN0)/h_01
             nwfa(i,1,j) = naCCN1+naCCN0*exp(-((hgt(i,2,j)-hgt(i,1,j))/1000.)*niCCN3)
+            airmass = 1./orho(i,1,j) * (hgt(i,2,j)-hgt(i,1,j))*dx*dy     ! kg
+            nwfa2d(i,j) = nwfa(i,1,j) * 0.000196 * (airmass*2.E-10)
             do k = 2, kte
                nwfa(i,k,j) = naCCN1+naCCN0*exp(-((hgt(i,k,j)-hgt(i,1,j))/1000.)*niCCN3)
             enddo
@@ -505,43 +508,6 @@
          CALL wrf_debug(100, mp_debug)
          write(mp_debug,*) '   column sum at point (i,j) = ', its,jts, SUM(nifa(its,:,jts))
          CALL wrf_debug(100, mp_debug)
-      endif
-
-!..Capture initial state lowest level CCN aerosol data in 2D array.
-
-!     do j = jts, min(jde-1,jte)
-!     do i = its, min(ide-1,ite)
-!        nwfa2d(i,j) = nwfa(i,kts,j)
-!     enddo
-!     enddo
-
-!..Scale the lowest level aerosol data into an emissions rate.  This is
-!.. very far from ideal, but need higher emissions where larger amount
-!.. of existing and lesser emissions where not already lots of aerosols
-!.. for first-order simplistic approach.  Later, proper connection to
-!.. emission inventory would be better, but, for now, scale like this:
-!.. where: Nwfa=50 per cc, emit 0.875E4 aerosols per kg per second
-!..        Nwfa=500 per cc, emit 0.875E5 aerosols per kg per second
-!..        Nwfa=5000 per cc, emit 0.875E6 aerosols per kg per second
-!.. for a grid with 20km spacing and scale accordingly for other spacings.
-
-      if (is_start) then
-         if (SQRT(DX*DY)/20000.0 .ge. 1.0) then
-            h_01 = 0.875
-         else
-            h_01 = (0.875 + 0.125*((20000.-SQRT(DX*DY))/16000.)) * SQRT(DX*DY)/20000.
-         endif
-         write(mp_debug,*) '   aerosol surface flux emission scale factor is: ', h_01
-         CALL wrf_debug(100, mp_debug)
-         do j = jts, min(jde-1,jte)
-         do i = its, min(ide-1,ite)
-            nwfa2d(i,j) = 10.0**(LOG10(nwfa(i,kts,j)*1.E-6)-3.69897)
-            nwfa2d(i,j) = nwfa2d(i,j)*h_01 * 1.E6
-         enddo
-         enddo
-!     else
-!        write(mp_debug,*) '   sample (lower-left) aerosol surface flux emission rate: ', nwfa2d(1,1)
-!        CALL wrf_debug(100, mp_debug)
       endif
 
       endif

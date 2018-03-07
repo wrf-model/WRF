@@ -118,8 +118,12 @@ state    real   qs_gc          igj      dyn_em      1        Z     i1  "QS"    "
 state    real   qi_gc          igj      dyn_em      1        Z     i1  "QI"    "cloud ice mixing ratio"   "kg kg-1"
 state    real   qg_gc          igj      dyn_em      1        Z     i1  "QG"    "graupel mixing ratio"   "kg kg-1"
 state    real   qh_gc          igj      dyn_em      1        Z     i1  "QH"    "hail mixing ratio"   "kg kg-1"
-state    real   qni_gc         igj      dyn_em      1        Z     i1  "QNI"   "ice num concentration"   "m-3"
-state    real   qnr_gc         igj      dyn_em      1        Z     i1  "QNR"   "rain num concentration"   "m-3"
+state    real   qni_gc         igj      dyn_em      1        Z     i1  "QNI"   "ice num concentration"   "# kg-1"
+state    real   qnc_gc         igj      dyn_em      1        Z     i1  "QNC"   "cloud water num concentration"   "# kg-1"
+state    real   qnr_gc         igj      dyn_em      1        Z     i1  "QNR"   "rain num concentration"   "# kg-1"
+state    real   qns_gc         igj      dyn_em      1        Z     i1  "QNS"   "snow num concentration"   "# kg-1"
+state    real   qng_gc         igj      dyn_em      1        Z     i1  "QNG"   "graupel num concentration"   "# kg-1"
+state    real   qnh_gc         igj      dyn_em      1        Z     i1  "QNH"   "hail num concentration"   "# kg-1"
 state    real   qnwfa_gc       igj      dyn_em      1        Z     i1  "QNWFA"   "water-friendly aerosol  num concentration"   "# kg-1"
 state    real   qnifa_gc       igj      dyn_em      1        Z     i1  "QNIFA"   "water-friendly aerosol  num concentration"   "# kg-1"
 state    real   qnwfa_now      igj      dyn_em      1        Z     -   "QNWFA_NOW"   "num water-friendly aerosol Now"   "# kg-1"
@@ -496,7 +500,8 @@ state   real    dfi_qh         ikjftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QHAIL"        "Hail mixing ratio"             "kg kg-1"
 state    real   qvold            ikj    misc        1         -     rdu      "QVOLD"          "Water vapor mixing ratio, old time step"      "kg kg-1"
 state    real   rimi             ikj    misc        1         -     irh      "RIMI"           "riming intensity"  "fraction"
-state    real   qnwfa2d          ij     misc        1         -     rhdu     "QNWFA2D"        "Surface aerosol number conc emission"  "kg-1 s-1"
+state    real   qnwfa2d          ij     misc        1         -     i014rhdu "QNWFA2D"        "Surface aerosol number conc emission"  "kg-1 s-1"
+state    real   qnifa2d          ij     misc        1         -     i014rhdu "QNIFA2D"        "Surface dust number conc emission"  "kg-1 s-1"
 state    real   re_cloud         ikj    misc        1         -     r        "RE_CLOUD"       "Effective radius cloud water"  "m"
 state    real   re_ice           ikj    misc        1         -     r        "RE_ICE"         "Effective radius cloud ice"    "m"
 state    real   re_snow          ikj    misc        1         -     r        "RE_SNOW"        "Effective radius snow"         "m"
@@ -2561,7 +2566,7 @@ package   nssl_2momccn    mp_physics==18               -             moist:qv,qc
 package   nssl_1mom       mp_physics==19               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qvolg
 package   nssl_1momlfo    mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
 package   nssl_2momg      mp_physics==22               -             moist:qv,qc,qr,qi,qs,qg;scalar:qndrop,qnr,qni,qns,qng,qvolg;state:re_cloud,re_ice,re_snow
-package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow,qnwfa2d,taod5503d,taod5502d
+package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow,qnwfa2d,qnifa2d,taod5503d,taod5502d
 package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi;scalar:qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi;scalar:qnc,qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   p3_2category    mp_physics==52               -             moist:qv,qc,qr,qi,qi2;scalar:qnc,qni,qnr,qir,qib,qni2,qir2,qib2;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,vmi3d_2,rhopo3d_2,di3d_2,refl_10cm,th_old,qv_old

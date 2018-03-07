@@ -106,6 +106,23 @@ wrf : framework_only
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
 
+wrfplus : framework_only
+	@/bin/rm -f real.exe  > /dev/null 2>&1
+	@/bin/rm -f tc.exe    > /dev/null 2>&1
+	@/bin/rm -f ndown.exe > /dev/null 2>&1
+	@/bin/rm -f wrf.exe   > /dev/null 2>&1
+	@ echo '--------------------------------------'
+	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" physics
+        $(MAKE) MODULE_DIRS="$(ALL_MODULES)" em_core
+	( cd wrftladj ; $(MAKE) $(J) )
+        ( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real em_real )
+        ( cd run ; /bin/rm -f wrf.exe ; ln -s ../main/wrf.exe . )
+        if [ $(ESMF_COUPLING) -eq 1 ] ; then \
+          ( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_SST_ESMF ) ; \
+        fi
+        @echo "build started:   $(START_OF_COMPILE)"
+        @echo "build completed:" `date`
+
 all_wrfvar : 
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" ext
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir

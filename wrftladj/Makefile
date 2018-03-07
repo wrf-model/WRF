@@ -6,7 +6,7 @@ RM      =       rm -f
 
 # 12 dyn_em pairs
 
-DYN_EM_ADTL =                               \
+DYN_EM_ADTL =                          \
         module_advect_em_tl.o           \
         module_advect_em_ad.o           \
         module_diffusion_em_tl.o        \
@@ -38,16 +38,16 @@ DYN_EM_ADTL =                               \
 PHYS_ADTL = \
 	module_bl_gwdo_tl.o \
 	module_bl_gwdo_ad.o \
-	../phys/module_bl_surface_drag.o \
+	module_bl_surface_drag.o \
 	module_bl_surface_drag_tl.o \
 	module_bl_surface_drag_ad.o \
-	../phys/module_cu_du.o \
+	module_cu_du.o \
 	module_cu_du_tl.o \
 	module_cu_du_ad.o \
-	../phys/module_mp_mkessler.o \
+	module_mp_mkessler.o \
 	module_mp_mkessler_tl.o \
 	module_mp_mkessler_ad.o \
-	../phys/module_mp_nconvp.o \
+	module_mp_nconvp.o \
 	module_mp_nconvp_tl.o \
 	module_mp_nconvp_ad.o \
 	module_physics_addtendc_tl.o \
@@ -89,18 +89,16 @@ adBuffer.o : adBuffer.F
 
 OBJS    =
 
-LIBTARGET    =  adtl
+LIBTARGET    =  wrftladj
 TARGETDIR    =  ./
 
-$(LIBTARGET) :  $(DYN_EM_ADTL) $(PHYS_ADTL) $(FRAME_ADTL) $(SHARE_ADTL)
-                  $(MAKE) $(J) non_nmm      ; \
-                  $(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS) \
-                                   $(FIRE_MODULES) \
-                                   $(DIAGNOSTIC_MODULES_EM)  ; \
+#$(LIBTARGET) :  $(DYN_EM_ADTL) $(PHYS_ADTL) $(FRAME_ADTL) $(SHARE_ADTL)
+#                  $(MAKE) $(J) non_nmm      ; \
+#                  $(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS) \
+#                                   $(FIRE_MODULES) \
+#                                   $(DIAGNOSTIC_MODULES_EM)  ; \
 
 include ../configure.wrf
-
-non_nmm : $(MODULES) $(FIRE_MODULES) $(WIND_MODULES) $(OBJS) $(DIAGNOSTIC_MODULES_EM)
 
 clean:
 	@ echo 'use the clean script'
@@ -108,4 +106,4 @@ clean:
 # DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
 # DO NOT DELETE
 
-include depend.adtl
+include depend.wrftladj

@@ -2,7 +2,7 @@
    call abort
    return
    end
-#if (WRF_USE_CLM == 1)
+#ifdef WRF_USE_CLM
 module TridiagonalMod
 
 !-----------------------------------------------------------------------
@@ -437,7 +437,7 @@ module clm_varcon
 ! !USES:
   use shr_kind_mod, only: r8 => shr_kind_r8
   use clm_varpar, only : numcol,numrad,nlevlak,&
-                         maxpatch_pft,numpft,nlevgrnd, &
+                         maxpatch_pft,numpft,nlevgrnd,&
                          num_landcover_types
 !
 ! !PUBLIC TYPES:
@@ -855,8 +855,8 @@ module clm_varcon
     real(r8) :: clay(19)                           ! percent clay
     integer  :: soic(19)
 
-    integer, allocatable  :: plant(:,:)
-    real(r8), allocatable :: cover(:,:)
+    integer, allocatable :: plant(:,:)
+    real(r8),allocatable :: cover(:,:)
 
 
     data(sand(i), i=1,19)/92.,80.,66.,20.,5.,43.,60.,&
@@ -1357,8 +1357,8 @@ contains
   end subroutine varsur_dealloc
 
 end module clm_varsur
-!#include <misc.h>
-!#include <preproc.h>
+!#include "misc.h"
+!#include "preproc.h"
 
 module clmtype
 
@@ -60351,23 +60351,23 @@ patch_loop_1 : &
 #endif
 
 !czhao add snow aerosol
-      mss_bcphi_buf(m,1:5)=mss_bcphi(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)
-      mss_bcpho_buf(m,1:5)=mss_bcpho(i,m,j,p_mss_bcpho_s1:p_mss_bcpho_s5)
-      mss_ocphi_buf(m,1:5)=mss_ocphi(i,m,j,p_mss_ocphi_s1:p_mss_ocphi_s5)
-      mss_ocpho_buf(m,1:5)=mss_ocpho(i,m,j,p_mss_ocpho_s1:p_mss_ocpho_s5)
-      mss_dst1_buf(m,1:5)=mss_dst1(i,m,j,p_mss_dst1_s1:p_mss_dst1_s5)
-      mss_dst2_buf(m,1:5)=mss_dst2(i,m,j,p_mss_dst2_s1:p_mss_dst2_s5)
-      mss_dst3_buf(m,1:5)=mss_dst3(i,m,j,p_mss_dst3_s1:p_mss_dst3_s5)
-      mss_dst4_buf(m,1:5)=mss_dst4(i,m,j,p_mss_dst4_s1:p_mss_dst4_s5)
+      mss_bcphi_buf(m,1:5)=0.0
+      mss_bcpho_buf(m,1:5)=0.0
+      mss_ocphi_buf(m,1:5)=0.0
+      mss_ocpho_buf(m,1:5)=0.0
+      mss_dst1_buf(m,1:5)=0.0
+      mss_dst2_buf(m,1:5)=0.0
+      mss_dst3_buf(m,1:5)=0.0
+      mss_dst4_buf(m,1:5)=0.0
 
-      mss_cnc_bcphi_buf(m,1:5)=mss_cnc_bcphi_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)
-      mss_cnc_bcpho_buf(m,1:5)=mss_cnc_bcpho_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)
-      mss_cnc_ocphi_buf(m,1:5)=mss_cnc_ocphi_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)
-      mss_cnc_ocpho_buf(m,1:5)=mss_cnc_ocpho_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)
-      mss_cnc_dst1_buf(m,1:5)=mss_cnc_dst1_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)
-      mss_cnc_dst2_buf(m,1:5)=mss_cnc_dst2_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)
-      mss_cnc_dst3_buf(m,1:5)=mss_cnc_dst3_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)
-      mss_cnc_dst4_buf(m,1:5)=mss_cnc_dst4_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)
+      mss_cnc_bcphi_buf(m,1:5)=0.0
+      mss_cnc_bcpho_buf(m,1:5)=0.0
+      mss_cnc_ocphi_buf(m,1:5)=0.0
+      mss_cnc_ocpho_buf(m,1:5)=0.0
+      mss_cnc_dst1_buf(m,1:5)=0.0
+      mss_cnc_dst2_buf(m,1:5)=0.0
+      mss_cnc_dst3_buf(m,1:5)=0.0
+      mss_cnc_dst4_buf(m,1:5)=0.0
 !     endif
 
     end do patch_loop_1
@@ -61340,7 +61340,7 @@ end subroutine clmdrv
 
    !************************megan speciation by Chun Zhao****************************!
 #if( WRF_CHEM == 1)
-master_init: &
+master_init_chem: &
    if (chem_opt > 0 .and. id == 1) then 
      megan_specifier(:)=' '
    chemmech_select: SELECT CASE(chem_opt)
@@ -61491,6 +61491,9 @@ master_init: &
      CASE DEFAULT 
        call wrf_error_fatal( "selected wrong gas chemistry mechanism for CLM-MEGAN! check chem_opt!" )
      END SELECT chemmech_select 
+!jdf
+  endif master_init_chem
+#endif
 
    call CLMDebug('Now in clminit.')
 
@@ -61570,6 +61573,9 @@ IF ( wrf_dm_on_monitor() ) THEN
 
 END IF
 
+!jdf add here
+#if( WRF_CHEM == 1)
+master_init: &
    if( bio_emiss_opt == MEGAN2_CLM .and. id == 1 ) then
      call wrf_message( "megan_specifier diagnostic in clminit" )
      call wrf_message( "megan_specifier(1)" )
@@ -61598,7 +61604,9 @@ END IF
 !------------------------------------------------------------------------------
      CALL VOCEmission_init
      CALL wrf_message( 'clminit: done VOCEmission_init' )
-   endif
+!jdf
+  endif master_init
+#endif
 
   ix = 0
   do i=1, idx_Mie_snw_mx
@@ -61668,8 +61676,6 @@ END IF
   CALL wrf_dm_bcast_real(xx_ext_cff_mss_bc2, numrad_snw*idx_bc_nclrds_max)
   CALL wrf_dm_bcast_real(xx_bcenh, numrad_snw*idx_bc_nclrds_max*idx_bcint_icerds_max)
 
-  endif master_init
-#endif
 
  IF(restart) then
    return

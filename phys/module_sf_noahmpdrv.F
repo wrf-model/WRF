@@ -37,7 +37,7 @@ CONTAINS
 		BGAPXY,   WGAPXY,    TGVXY,     TGBXY,    CHVXY,     CHBXY, & ! OUT Noah MP only
 		 SHGXY,    SHCXY,    SHBXY,     EVGXY,    EVBXY,     GHVXY, & ! OUT Noah MP only
 		 GHBXY,    IRGXY,    IRCXY,     IRBXY,     TRXY,     EVCXY, & ! OUT Noah MP only
-              CHLEAFXY,   CHUCXY,   CHV2XY,    CHB2XY,                      & ! OUT Noah MP only
+              CHLEAFXY,   CHUCXY,   CHV2XY,    CHB2XY, RS,                  & ! OUT Noah MP only !RS for WRF-CMAQ PCC
 !                 BEXP_3D,SMCDRY_3D,SMCWLT_3D,SMCREF_3D,SMCMAX_3D,          & ! placeholders to activate 3D soil
 !		 DKSAT_3D,DWSAT_3D,PSISAT_3D,QUARTZ_3D,                     &
 !		 REFDK_2D,REFKDT_2D,                                        &
@@ -165,7 +165,7 @@ CONTAINS
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  QSFC      ! bulk surface specific humidity
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  Z0        ! combined z0 sent to coupled model
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  ZNT       ! combined z0 sent to coupled model
-
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  RS        ! Total stomatal resistance (s/m)  !Used in WRF-CMAQ PCC
 ! INOUT (with no Noah LSM equivalent)
 
     INTEGER, DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  ISNOWXY   ! actual no. of snow layers
@@ -362,6 +362,9 @@ CONTAINS
     REAL                                :: SAG          ! solar rad absorbed by ground (w/m2)
     REAL                                :: RSSUN        ! sunlit leaf stomatal resistance (s/m)
     REAL                                :: RSSHA        ! shaded leaf stomatal resistance (s/m)
+    REAL                                :: RB           ! leaf boundary layer resistance (s/m)  !Used in RS for WRF-CMAQ PCC
+    REAL                                :: LAISUN       ! sunlit leaf area index (m2/m2)  !Used in RS for WRF-CMAQ PCC
+    REAL                                :: LAISHA       ! shaded leaf area index (m2/m2)  !Used in RS for WRF-CMAQ PCC
     REAL                                :: BGAP         ! between gap fraction
     REAL                                :: WGAP         ! within gap fraction
     REAL                                :: TGV          ! under canopy ground temperature[K]
@@ -412,6 +415,10 @@ CONTAINS
     REAL                                :: QC           ! cloud specific humidity for MYJ [not used]
     REAL                                :: PBLH         ! PBL height for MYJ [not used]
     REAL                                :: DZ8W1D       ! model level heights for MYJ [not used]
+
+    REAL,    DIMENSION( ims:ime,          jms:jme) ::  RBXY        ! leaf boundary layer resistance (s/m)  !Used in RS for WRF-CMAQ PCC
+    REAL,    DIMENSION( ims:ime,          jms:jme) ::  LAISUNXY    ! sunlit leaf area index (m2/m2)  !Used in RS for WRF-CMAQ PCC
+    REAL,    DIMENSION( ims:ime,          jms:jme) ::  LAISHAXY    ! shaded leaf area index (m2/m2)  !Used in RS for WRF-CMAQ PCC
 
     INTEGER                             :: I
     INTEGER                             :: J
@@ -740,6 +747,10 @@ CONTAINS
          SAV    = undefined_value 
          RSSUN  = undefined_value 
          RSSHA  = undefined_value 
+         RB     = undefined_value  !For RS in WRF-CMAQ PCC
+         LAISUN = undefined_value  !For RS in WRF-CMAQ PCC
+         LAISHA = undefined_value  !For RS in WRF-CMAQ PCC
+         RS(I,J)= undefined_value  !For RS in WRF-CMAQ PCC
          BGAP   = undefined_value 
          WGAP   = undefined_value 
          TGV    = undefined_value
@@ -798,7 +809,7 @@ CONTAINS
             SHG     , SHC     , SHB     , EVG     , EVB     , GHV     , & ! OUT :
 	    GHB     , IRG     , IRC     , IRB     , TR      , EVC     , & ! OUT :
 	    CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE   , PAHV    , & 
-            PAHG    , PAHB    , PAH                                     &
+            PAHG    , PAHB    , PAH     , LAISUN  , LAISHA  ,RB         & ! LAISUN, LAISHA, and RB Used for RS in WRF-CMAQ - PCC
 #ifdef WRF_HYDRO
             , sfcheadrt(i,j)                               &
 #endif
@@ -898,6 +909,14 @@ CONTAINS
              SAGXY    (I,J)                = SAG
              RSSUNXY  (I,J)                = RSSUN
              RSSHAXY  (I,J)                = RSSHA
+             LAISUNXY (I,J)                = MAX(LAISUN, 0.0) !New variables needed for RS
+             LAISHAXY (I,J)                = MAX(LAISHA, 0.0) !New variables needed for RS
+             RBXY     (I,J)                = MAX(RB, 0.0)     !New variables needed for RS
+             RS       (I,J)                = ((1.0/(RSSUNXY(I,J)+RBXY(I,J)))*LAISUNXY(I,J)) + ((1.0/(RSSHAXY(I,J)+RBXY(I,J)))*LAISHAXY(I,J))   ! New Calculation of total Canopy/Stomatal Conductance Based on Bonan et al. (2011) -- Inverse of Canopy Resistance (below) for WRF-CMAQ two-way PCC
+             RS       (I,J)                = 1.0/RS(I,J) !Resistance
+              if(RSSUNXY  (I,J) .le. 0.0.and.RSSHAXY(I,J).le.0.0) Then
+             RS       (I,J)                = 0.0
+              endif
              BGAPXY   (I,J)                = BGAP
              WGAPXY   (I,J)                = WGAP
              TGVXY    (I,J)                = TGV

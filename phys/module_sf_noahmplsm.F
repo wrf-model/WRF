@@ -486,9 +486,9 @@ contains
   REAL                           , INTENT(OUT)   :: PONDING!surface ponding [mm]
   REAL                           , INTENT(OUT)   :: PONDING1!surface ponding [mm]
   REAL                           , INTENT(OUT)   :: PONDING2!surface ponding [mm]
-  REAL                           , INTENT(OUT)   :: RB        ! leaf boundary layer resistance (s/m)  !Used in WRF-CMAQ PCC
-  REAL                           , INTENT(OUT)   :: LAISUN    ! sunlit leaf area index (m2/m2)  !Used in WRF-CMAQ PCC
-  REAL                           , INTENT(OUT)   :: LAISHA    ! shaded leaf area index (m2/m2)  !Used in WRF-CMAQ PCC
+  REAL                           , INTENT(OUT)   :: RB        ! leaf boundary layer resistance (s/m)
+  REAL                           , INTENT(OUT)   :: LAISUN    ! sunlit leaf area index (m2/m2)
+  REAL                           , INTENT(OUT)   :: LAISHA    ! shaded leaf area index (m2/m2)
 
 !jref:start; output
   REAL                           , INTENT(OUT)     :: T2MV   !2-m air temperature over vegetated part [k]

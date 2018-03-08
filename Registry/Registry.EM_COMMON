@@ -884,7 +884,7 @@ state    real   ALSWNIRDIR        ij    misc        1         Z      r        "A
 state    real   ALSWNIRDIF        ij    misc        1         Z      r        "ALSWNIRDIF"            "ALB NIR DIF component"  ""
 
 
-# Additional for P-X PBL and LSM;  RS (RC) and RA also for Noah LSM WRF-CMAQ PCC
+# From P-X PBL and LSM; RS (RC) and RA also from Noah and NoahMP
 state    real   RA               ij     misc        1         -      rh       "RA"           "AERODYNAMIC RESISTANCE"            "s m-1"
 state    real   RS               ij     misc        1         -      rh       "RS"           "SURFACE RESISTANCE"                "s m-1"
 state    real   LAI              ij     misc        1         -      i0124rh  "LAI"          "LEAF AREA INDEX"                   "m-2/m-2"

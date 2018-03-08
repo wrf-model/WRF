@@ -94,7 +94,7 @@ CONTAINS
                   b_t_bep,b_q_bep,b_e_bep,dlg_bep,              & !O multi-layer urban
                   dl_u_bep,sf_bep,vl_bep,sfcheadrt,INFXSRT, soldrain      &   !O multi-layer urban         
                  ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas     &   !fasdas
-                 ,RC2,XLAI2                                               &   ! WRF-CMAQ two-way
+                 ,RC2,XLAI2                                               &
                   )
 
 !----------------------------------------------------------------
@@ -152,7 +152,7 @@ CONTAINS
 !-- SHDMIN      minimum areal fractional coverage of annual green vegetation
 !-- SHDMAX      maximum areal fractional coverage of annual green vegetation
 !-- XLAI        leaf area index (dimensionless)
-!-- XLAI2       leaf area index (same as XLAI) passed to WRF-CMAQ two-way
+!-- XLAI2       leaf area index (same as XLAI) passed to output
 !(dimensionless)
 !-- Z0BRD       Background fixed roughness length (M)
 !-- Z0          Background vroughness length (M) as function
@@ -199,7 +199,7 @@ CONTAINS
 !UDRUNOFF      Total Underground Runoff (mm), which is the sum of RUNOFF2 and RUNOFF3
 ! ----------------------------------------------------------------------
 !-- RC          canopy resistance (s m-1)
-!-- RC2         canopy resistance (same as RC) passed to WRF-CMAQ two-way (s m-1)
+!-- RC2         canopy resistance (same as RC) passed to output
 !-- PC          plant coefficient (unitless fraction, 0-1) where PC*ETP = actual transp
 !-- RSMIN       minimum canopy resistance (s m-1)
 !-- RCS         incoming solar rc factor (dimensionless)
@@ -342,7 +342,7 @@ CONTAINS
                INTENT(OUT)    ::                        CHKLOWQ
    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LAI
    REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) ::        QZ0
-   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(OUT) ::  RC2, XLAI2      ! Two-way WRF-CMAQ 
+   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(OUT) ::  RC2, XLAI2
 
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMR_SFCDIF
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHR_SFCDIF
@@ -1089,7 +1089,7 @@ CONTAINS
     ENDIF
 
        lai(i,j) = xlai
-       rc2(I,J) = RC                                              ! WRF-CMAQ twoway model
+       rc2(I,J) = RC                                              ! for output
        xlai2(I,J) = XLAI
 
 #if 0
@@ -2221,7 +2221,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                  ZNT_mosaic, Z0_mosaic,                          & ! danli mosaic 
                  HFX_mosaic,QFX_mosaic,                          & ! danli mosaic
                  LH_mosaic, GRDFLX_mosaic, SNOTIME_mosaic,       & ! danli mosaic                   
-                 RC_mosaic, LAI_mosaic,                          & ! WRF/CMAQ
+                 RC_mosaic, LAI_mosaic,                          &
 ! Noah UA changes
                   ua_phys,flx4_2d,fvb_2d,fbur_2d,fgsn_2d,       &
                   ids,ide, jds,jde, kds,kde,                    &
@@ -2277,7 +2277,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   dl_u_bep,sf_bep,vl_bep                        & !O multi-layer urban
                  ,sfcheadrt,INFXSRT, soldrain                   & !hydro
                  ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas     &   !fasdas
-                 ,RC2,XLAI2                                     & !Two-Way WRF/CMAQ
+                 ,RC2,XLAI2                                     & !O
                   )
 
 !----------------------------------------------------------------
@@ -2523,7 +2523,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                INTENT(OUT)    ::                        CHKLOWQ
    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LAI
    REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) ::        QZ0
-   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(OUT)   :: RC2, XLAI2      ! Two-way WRF-CMAQ
+   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(OUT)   :: RC2, XLAI2
 
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMR_SFCDIF
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHR_SFCDIF
@@ -3902,9 +3902,9 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   Z0_mosaic_avg(i,j)=Z0_mosaic_avg(i,j)+ALOG(Z0_mosaic(i,mosaic_i,j))*FAREA
                   LAI_mosaic_avg(i,j)=LAI_mosaic_avg(i,j)+LAI_mosaic(i,mosaic_i,j)*FAREA
                   if(RC_mosaic(i,mosaic_i,j) .Gt. 0.0) Then
-                     RC_mosaic_avg(i,j) = RC_mosaic_avg(i,j)+1.0/RC_mosaic(i,mosaic_i,j)*FAREA       ! WRF-CMAQ twoway model
-                     else 
-                     RC_mosaic_avg(i,j) = RC_mosaic_avg(i,j) + RC_mosaic(i,mosaic_i,j)*FAREA         ! WRF-CMAQ twoway model
+                     RC_mosaic_avg(i,j) = RC_mosaic_avg(i,j)+1.0/RC_mosaic(i,mosaic_i,j)*FAREA
+                  else 
+                     RC_mosaic_avg(i,j) = RC_mosaic_avg(i,j) + RC_mosaic(i,mosaic_i,j)*FAREA
                   End If
                   ENDDO                     ! ENDDO FOR mosaic_i = 1, mosaic_cat
 

@@ -37,7 +37,7 @@ CONTAINS
 		BGAPXY,   WGAPXY,    TGVXY,     TGBXY,    CHVXY,     CHBXY, & ! OUT Noah MP only
 		 SHGXY,    SHCXY,    SHBXY,     EVGXY,    EVBXY,     GHVXY, & ! OUT Noah MP only
 		 GHBXY,    IRGXY,    IRCXY,     IRBXY,     TRXY,     EVCXY, & ! OUT Noah MP only
-              CHLEAFXY,   CHUCXY,   CHV2XY,    CHB2XY, RS,                  & ! OUT Noah MP only !RS for WRF-CMAQ PCC
+              CHLEAFXY,   CHUCXY,   CHV2XY,    CHB2XY, RS,                  & ! OUT Noah MP only
 !                 BEXP_3D,SMCDRY_3D,SMCWLT_3D,SMCREF_3D,SMCMAX_3D,          & ! placeholders to activate 3D soil
 !		 DKSAT_3D,DWSAT_3D,PSISAT_3D,QUARTZ_3D,                     &
 !		 REFDK_2D,REFKDT_2D,                                        &
@@ -416,9 +416,9 @@ CONTAINS
     REAL                                :: PBLH         ! PBL height for MYJ [not used]
     REAL                                :: DZ8W1D       ! model level heights for MYJ [not used]
 
-    REAL,    DIMENSION( ims:ime,          jms:jme) ::  RBXY        ! leaf boundary layer resistance (s/m)  !Used in RS for WRF-CMAQ PCC
-    REAL,    DIMENSION( ims:ime,          jms:jme) ::  LAISUNXY    ! sunlit leaf area index (m2/m2)  !Used in RS for WRF-CMAQ PCC
-    REAL,    DIMENSION( ims:ime,          jms:jme) ::  LAISHAXY    ! shaded leaf area index (m2/m2)  !Used in RS for WRF-CMAQ PCC
+    REAL                                ::  RBXY        ! leaf boundary layer resistance (s/m)
+    REAL                                ::  LAISUNXY    ! sunlit leaf area index (m2/m2)
+    REAL                                ::  LAISHAXY    ! shaded leaf area index (m2/m2) 
 
     INTEGER                             :: I
     INTEGER                             :: J
@@ -909,15 +909,16 @@ CONTAINS
              SAGXY    (I,J)                = SAG
              RSSUNXY  (I,J)                = RSSUN
              RSSHAXY  (I,J)                = RSSHA
-             LAISUNXY (I,J)                = MAX(LAISUN, 0.0) !New variables needed for RS
-             LAISHAXY (I,J)                = MAX(LAISHA, 0.0) !New variables needed for RS
-             RBXY     (I,J)                = MAX(RB, 0.0)     !New variables needed for RS
+             LAISUNXY                      = MAX(LAISUN, 0.0) !New variables needed for RS
+             LAISHAXY                      = MAX(LAISHA, 0.0) !New variables needed for RS
+             RBXY                          = MAX(RB, 0.0)     !New variables needed for RS
 ! New Calculation of total Canopy/Stomatal Conductance Based on Bonan et al. (2011) 
-! -- Inverse of Canopy Resistance (below) for WRF-CMAQ two-way PCC
-             RS       (I,J)                = ((1.0/(RSSUNXY(I,J)+RBXY(I,J)))*LAISUNXY(I,J)) + ((1.0/(RSSHAXY(I,J)+RBXY(I,J)))*LAISHAXY(I,J))   
-             RS       (I,J)                = 1.0/RS(I,J) !Resistance
-             IF(RSSUNXY  (I,J) .le. 0.0.and.RSSHAXY(I,J).le.0.0) THEN
+! -- Inverse of Canopy Resistance (below)
+             IF(RSSUNXY(I,J) .le. 0.0 .and. RSSHAXY(I,J) .le. 0.0) THEN
                 RS    (I,J)                = 0.0
+             ELSE
+                RS    (I,J)                = ((1.0/(RSSUNXY(I,J)+RBXY)*LAISUNXY) + ((1.0/(RSSHAXY(I,J)+RBXY))*LAISHAXY))   
+                RS    (I,J)                = 1.0/RS(I,J) !Resistance
              ENDIF
              BGAPXY   (I,J)                = BGAP
              WGAPXY   (I,J)                = WGAP

@@ -363,7 +363,7 @@ contains
 		   SHG     , SHC     , SHB     , EVG     , EVB     , GHV     , & ! OUT :
 		   GHB     , IRG     , IRC     , IRB     , TR      , EVC     , & ! OUT :
 		   CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE   , PAHV    , &
-                   PAHG    , PAHB    , PAH     , LAISUN  , LAISHA  , RB        & !OUT   ! LAISUN, LAISHA, and RB Used for RS in WRF-CMAQ - PCC
+                   PAHG    , PAHB    , PAH     , LAISUN  , LAISHA  , RB        & ! OUT
 #ifdef WRF_HYDRO
                    ,SFCHEADRT                                                  & ! IN/OUT :
 #endif
@@ -711,7 +711,7 @@ contains
                  TV     ,TG     ,STC    ,SNOWH  ,EAH    ,TAH    , & !inout
                  SNEQVO ,SNEQV  ,SH2O   ,SMC    ,SNICE  ,SNLIQ  , & !inout
                  ALBOLD ,CM     ,CH     ,DX     ,DZ8W   ,Q2     , & !inout
-                 TAUSS  ,LAISUN ,LAISHA ,RB ,                     & !inout  !LAISUN,LAISHA,RB Used in RS calc WRF-CMAQ PCC
+                 TAUSS  ,LAISUN ,LAISHA ,RB ,                     & !inout
 !jref:start
                  QC     ,QSFC   ,PSFC   , & !in 
                  T2MV   ,T2MB  ,FSRV   , &
@@ -1449,7 +1449,7 @@ contains
                      TV     ,TG     ,STC    ,SNOWH  ,EAH    ,TAH    , & !inout
                      SNEQVO ,SNEQV  ,SH2O   ,SMC    ,SNICE  ,SNLIQ  , & !inout
                      ALBOLD ,CM     ,CH     ,DX     ,DZ8W   ,Q2     , &   !inout
-                     TAUSS  ,LAISUN ,LAISHA ,RB ,                     & !inout !LAISUN,LAISHA,RB Used in RS calc WRF-CMAQ PCC
+                     TAUSS  ,LAISUN ,LAISHA ,RB ,                     & !inout
 !jref:start
                      QC     ,QSFC   ,PSFC   , & !in 
                      T2MV   ,T2MB   ,FSRV   , &
@@ -1642,8 +1642,6 @@ contains
   REAL                                              :: EMG    !ground emissivity
   REAL                                              :: FIRE   !emitted IR (w/m2)
 
-!  REAL                                              :: LAISUN !sunlit leaf area index (m2/m2)
-!  REAL                                              :: LAISHA !shaded leaf area index (m2/m2)
   REAL                                              :: PSNSUN !sunlit photosynthesis (umolco2/m2/s)
   REAL                                              :: PSNSHA !shaded photosynthesis (umolco2/m2/s)
 !jref:start - for debug  

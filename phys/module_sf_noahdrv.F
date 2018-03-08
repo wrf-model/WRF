@@ -342,6 +342,7 @@ CONTAINS
                INTENT(OUT)    ::                        CHKLOWQ
    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LAI
    REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) ::        QZ0
+   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(OUT) ::  RC2, XLAI2      ! Two-way WRF-CMAQ 
 
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMR_SFCDIF
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHR_SFCDIF
@@ -362,8 +363,6 @@ CONTAINS
 
     LOGICAL,    INTENT(IN   )    ::     myj,frpcpn
 
-     REAL, INTENT(OUT) :: RC2(ims:ime,jms:jme)                      !Two-way WRF-CMAQ
-     REAL, INTENT(OUT) :: XLAI2(ims:ime,jms:jme)                    !Two-way WRF-CMAQ
 ! DECLARATIONS - LOGICAL
 ! ----------------------------------------------------------------------
       LOGICAL, PARAMETER :: LOCAL=.false.
@@ -2524,6 +2523,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                INTENT(OUT)    ::                        CHKLOWQ
    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LAI
    REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) ::        QZ0
+   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(OUT)   :: RC2, XLAI2      ! Two-way WRF-CMAQ
 
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMR_SFCDIF
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHR_SFCDIF
@@ -2544,9 +2544,6 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
 
     LOGICAL,    INTENT(IN   )    ::     myj,frpcpn
 
-
-    REAL, INTENT(OUT) :: RC2(ims:ime,jms:jme)                      !Two-way WRF-CMAQ
-    REAL, INTENT(OUT) :: XLAI2(ims:ime,jms:jme)                    !Two-way WRF-CMAQ
 ! DECLARATIONS - LOGICAL
 ! ----------------------------------------------------------------------
       LOGICAL, PARAMETER :: LOCAL=.false.
@@ -3923,12 +3920,12 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
           ZNT(i,j)= EXP(ZNT_mosaic_avg(i,j)/FAREA_mosaic_avg(i,j))
           Z0(i,j)= EXP(Z0_mosaic_avg(i,j)/FAREA_mosaic_avg(i,j))
           XLAI2(i,j)= LAI_mosaic_avg(i,j)
-          if(RC_mosaic_avg(i,j) .Gt. 0.0) Then
-          rc2(i,j) = 1.0/(RC_mosaic_avg(i,j))
-          else
-          rc2(i,j) = RC_mosaic_avg(i,j)
+          IF (RC_mosaic_avg(i,j) .Gt. 0.0) THEN
+              rc2(i,j) = 1.0/(RC_mosaic_avg(i,j))
+          ELSE
 !RC_mosaic_avg was zero for all tiles (cell over water), thus RC2 set to zero to avoid infinity
-          end if
+              rc2(i,j) = RC_mosaic_avg(i,j)
+          END IF
           TSK(i,j)=(TSK_mosaic_avg(I,J)/EMISS_mosaic_avg(I,J))**(0.25)                                  ! from 3D to 2D
           QSFC(i,j)=QSFC_mosaic_avg(I,J)
           CANWAT(i,j) = CANWAT_mosaic_avg(i,j)

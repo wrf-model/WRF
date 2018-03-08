@@ -912,11 +912,13 @@ CONTAINS
              LAISUNXY (I,J)                = MAX(LAISUN, 0.0) !New variables needed for RS
              LAISHAXY (I,J)                = MAX(LAISHA, 0.0) !New variables needed for RS
              RBXY     (I,J)                = MAX(RB, 0.0)     !New variables needed for RS
-             RS       (I,J)                = ((1.0/(RSSUNXY(I,J)+RBXY(I,J)))*LAISUNXY(I,J)) + ((1.0/(RSSHAXY(I,J)+RBXY(I,J)))*LAISHAXY(I,J))   ! New Calculation of total Canopy/Stomatal Conductance Based on Bonan et al. (2011) -- Inverse of Canopy Resistance (below) for WRF-CMAQ two-way PCC
+! New Calculation of total Canopy/Stomatal Conductance Based on Bonan et al. (2011) 
+! -- Inverse of Canopy Resistance (below) for WRF-CMAQ two-way PCC
+             RS       (I,J)                = ((1.0/(RSSUNXY(I,J)+RBXY(I,J)))*LAISUNXY(I,J)) + ((1.0/(RSSHAXY(I,J)+RBXY(I,J)))*LAISHAXY(I,J))   
              RS       (I,J)                = 1.0/RS(I,J) !Resistance
-              if(RSSUNXY  (I,J) .le. 0.0.and.RSSHAXY(I,J).le.0.0) Then
-             RS       (I,J)                = 0.0
-              endif
+             IF(RSSUNXY  (I,J) .le. 0.0.and.RSSHAXY(I,J).le.0.0) THEN
+                RS    (I,J)                = 0.0
+             ENDIF
              BGAPXY   (I,J)                = BGAP
              WGAPXY   (I,J)                = WGAP
              TGVXY    (I,J)                = TGV

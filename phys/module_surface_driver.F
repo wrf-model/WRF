@@ -2333,8 +2333,8 @@ CONTAINS
            DO j = j_start(ij),j_end(ij)
            DO i = i_start(ij),i_end(ij)
              wspdsfc(i,j) = wspd(i,j)
-           enddo
-           enddo
+           ENDDO
+           ENDDO
 !  Compute uratx, vratx, tratx for obs nudging
      IF(PRESENT(uratx) .and. PRESENT(vratx) .and. PRESENT(tratx))THEN
         DO J=j_start(ij),j_end(ij)

@@ -106,22 +106,39 @@ wrf : framework_only
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
 
-wrfplus : framework_only
+wrfplus : configcheck
 	@/bin/rm -f real.exe  > /dev/null 2>&1
 	@/bin/rm -f tc.exe    > /dev/null 2>&1
 	@/bin/rm -f ndown.exe > /dev/null 2>&1
 	@/bin/rm -f wrf.exe   > /dev/null 2>&1
 	@ echo '--------------------------------------'
+	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" ext
+	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" toolsdir
+	/bin/rm -f main/libwrflib.a main/libwrflib.lib
+	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" framework
+	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" shared
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" physics
-        $(MAKE) MODULE_DIRS="$(ALL_MODULES)" em_core
-	( cd wrftladj ; $(MAKE) $(J) )
-        ( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real em_real )
-        ( cd run ; /bin/rm -f wrf.exe ; ln -s ../main/wrf.exe . )
-        if [ $(ESMF_COUPLING) -eq 1 ] ; then \
-          ( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_SST_ESMF ) ; \
-        fi
-        @echo "build started:   $(START_OF_COMPILE)"
-        @echo "build completed:" `date`
+	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" em_core
+	exit
+	cp frame/module_domain.mod                   wrftladj
+	cp external/esmf_time_f90/module_utility.mod wrftladj
+	( cd wrftladj ; $(MAKE) $(J) shareadtl )
+	if [ $(WRF_PLUS_CORE) -eq 1 ] ; then \
+	  LLIST="../wrftladj/module_linked_lisk2.o ../wrftladj/jcdfi.o"  ; \
+	else \
+	  LLIST=" "  ; \
+	fi
+	cp wrftladj/module_linked_list2.mod frame
+	cp wrftladj/jcdfi.mod               frame
+	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" module_integrate
+	( cd wrftladj ; $(MAKE) $(J) wrfplus )
+	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real em_real )
+	( cd run ; /bin/rm -f wrf.exe ; ln -s ../main/wrf.exe . )
+	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
+	  ( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_SST_ESMF ) ; \
+	fi
+	@echo "build started:   $(START_OF_COMPILE)"
+	@echo "build completed:" `date`
 
 all_wrfvar : 
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" ext
@@ -883,12 +900,12 @@ ext :
 
 framework :
 	@ echo '--------------------------------------'
-	( cd frame ; $(MAKE) $(J) framework; \
+	( cd frame ; $(MAKE) $(J) framework ; \
           cd ../external/io_netcdf ; \
           $(MAKE) NETCDFPATH="$(NETCDFPATH)" \
                FC="$(FC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
-	       LIB_LOCAL="$(LIB_LOCAL)" \
+               LIB_LOCAL="$(LIB_LOCAL)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf; \
           cd ../io_netcdf ; \
           $(MAKE) NETCDFPATH="$(NETCDFPATH)" \

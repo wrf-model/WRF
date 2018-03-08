@@ -78,6 +78,7 @@ module_integrate.o: \
 		module_state_description.o \
 		module_nesting.o \
 		module_configure.o \
+		$(LINKLIST_JCDFI) \
 		module_cpl.o \
                 module_dm.o \
 		$(ESMF_MOD_DEPENDENCE)
@@ -994,7 +995,8 @@ mediation_integrate.o: ../frame/module_domain.o ../frame/module_configure.o \
 			$(ESMF_MOD_DEPENDENCE) \
 			module_date_time.o module_bc_time_utilities.o \
 			module_compute_geop.o                         \
-			module_io_domain.o
+			module_io_domain.o \
+			$(SHARE_PERTMOD)
 
 
 mediation_interp_domain.o: ../frame/module_domain.o ../frame/module_configure.o \
@@ -1237,6 +1239,7 @@ module_wrf_top.o: ../frame/module_machine.o \
                   ../frame/module_timing.o \
                   ../frame/module_wrf_error.o \
                   ../frame/module_state_description.o \
+                  $(SHARE_PERTMOD) \
                   ../frame/module_cpl.o \
                   $(ESMF_MOD_DEPENDENCE)
 

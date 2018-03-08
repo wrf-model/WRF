@@ -6,7 +6,7 @@ RM      =       rm -f
 
 # 12 dyn_em pairs
 
-DYN_EM_ADTL =                          \
+DYNEM_MODS =                          \
         module_advect_em_tl.o           \
         module_advect_em_ad.o           \
         module_diffusion_em_tl.o        \
@@ -26,16 +26,17 @@ DYN_EM_ADTL =                          \
         module_sfs_nba_tl.o             \
         module_sfs_nba_ad.o             \
         module_sfs_driver_tl.o          \
-        module_sfs_driver_ad.o          \
+        module_sfs_driver_ad.o
+
+DYNEM_OBJS =       \
         solve_em_tl.o           \
         solve_em_ad.o           \
         start_em_tl.o           \
-        start_em_ad.o           \
-        $(CASE_MODULE)
+        start_em_ad.o
 
 # 11 phys pairs
 
-PHYS_ADTL = \
+PHYS_MODS = \
 	module_bl_gwdo_tl.o \
 	module_bl_gwdo_ad.o \
 	module_bl_surface_drag.o \
@@ -63,40 +64,22 @@ PHYS_ADTL = \
 	module_microphysics_zero_out_tl.o \
 	module_microphysics_zero_out_ad.o
 
-SHARE_ADTL = \
+SHARE_MODS = \
  	module_adtl_grid_utilities.o	\
  	mediation_pertmod_io.o	\
- 	module_linked_lisk2.o	\
+ 	module_linked_list2.o	\
  	module_bc_tl.o	        \
- 	module_bc_ad.o	        \
- 	jcdfi.o
+ 	module_bc_ad.o
+
+SHARE_OBJS = jcdfi.o
   
-FRAME_ADTL = \
- 	adStack.o     \
-	adBuffer.o
+FRAME_OBJS = adStack.o adBuffer.o
 
-adStack.o : adStack.c
-	$(CC) -c $(CFLAGS) adStack.c
+shareadtl : module_linked_lisk2.o jcdfi.o
+	$(MAKE) $(J) shareadtl
 
-adBuffer.o : adBuffer.F
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b
-	$(CPP) $(CPPFLAGS) -I../inc $*.b  > $*.for
-	$(RM) $*.b
-	$(RM) $@
-	$(SFC) -c $(FORMAT_FIXED) $(PROMOTION) $(FCNOOPT) $*.for
-	$(RM) adBuffer.for
-
-OBJS    =
-
-LIBTARGET    =  wrftladj
-TARGETDIR    =  ./
-
-#$(LIBTARGET) :  $(DYN_EM_ADTL) $(PHYS_ADTL) $(FRAME_ADTL) $(SHARE_ADTL)
-#                  $(MAKE) $(J) non_nmm      ; \
-#                  $(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS) \
-#                                   $(FIRE_MODULES) \
-#                                   $(DIAGNOSTIC_MODULES_EM)  ; \
+wrfplus : $(DYN_EM_ADTL) $(PHYS_ADTL) $(FRAME_OBJS) $(SHARE_OBJS)
+	$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(DYN_EM_ADTL) $(PHYS_ADTL) $(FRAME_ADTL) $(SHARE_ADTL)
 
 include ../configure.wrf
 

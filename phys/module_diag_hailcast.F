@@ -122,8 +122,8 @@ CONTAINS
     ! After each history dump, reset max/min value arrays
     ! ----------------------------------------------------------------------
     IF ( is_after_history_dump ) THEN
-      DO j = jms, jme
-        DO i = ims, ime
+      DO j = jts, jte
+        DO i = its, ite
            grid%hailcast_dhail1(i,j) = 0.
            grid%hailcast_dhail2(i,j) = 0.
            grid%hailcast_dhail3(i,j) = 0.
@@ -138,32 +138,39 @@ CONTAINS
     ! duration calculations; set i,j start and end values so we don't go off 
     ! the edges of the domain.  Updraft duration on domain edges will always be 0.
     ! ----------------------------------------------------------------------
-    i_start = ims !its
-    i_end   = ime !ite
-    j_start = jms !jts
-    j_end   = jme !jte
+    i_start = its
+    i_end   = ite
+    j_start = jts
+    j_end   = jte
 
     IF ( config_flags%open_xs .OR. config_flags%specified .OR. &
          config_flags%nested) i_start = MAX( ids+1, its )
     IF ( config_flags%open_xe .OR. config_flags%specified .OR. &
-         config_flags%nested) i_end   = MIN( ide-1, ite )
+         config_flags%nested) i_end   = MIN( ide-2, ite )  !-1
     IF ( config_flags%open_ys .OR. config_flags%specified .OR. &
          config_flags%nested) j_start = MAX( jds+1, jts )
     IF ( config_flags%open_ye .OR. config_flags%specified .OR. &
-         config_flags%nested) j_end   = MIN( jde-1, jte )
+         config_flags%nested) j_end   = MIN( jde-2, jte )  !-1
     IF ( config_flags%periodic_x ) i_start = its
     IF ( config_flags%periodic_x ) i_end = ite
     
 
     ! Make a copy of the updraft duration, mask variables
     ! ---------------------------------------------------
-    wdur_prev(:,:) = grid%hailcast_wdur(:,:)
-    wup_mask_prev(:,:) = grid%hailcast_wup_mask(:,:)
+    !wdur_prev(:,:) = grid%hailcast_wdur(:,:)
+    !wup_mask_prev(:,:) = grid%hailcast_wup_mask(:,:)
+    DO j = MAX( jts-1 , jds ), MIN( jte+1 , jde-1 )
+        DO i = MAX( its-1 , ids ), MIN( ite+1 , ide-1)
+            wdur_prev(i,j) = grid%hailcast_wdur(i,j)
+            wup_mask_prev(i,j) = grid%hailcast_wup_mask(i,j)
+        ENDDO
+    ENDDO
+
 
     ! Determine updraft mask (where updraft greater than some threshold)
     ! ---------------------------------------------------
-    DO j = jms, jme !jts, jte
-      DO i = ims, ime !its, ite
+    DO j = jts, jte
+      DO i = its, ite
         grid%hailcast_wup_mask(i,j) = 0
         grid%hailcast_wdur(i,j) = 0
 
@@ -278,9 +285,9 @@ CONTAINS
     
         ! 3-D arrays for moisture variables
         ! ---------------------------------
-        DO i=ims, ime
+        DO i=its, ite !ims, ime
           DO k=kms, kme
-            DO j=jms, jme
+            DO j=jts, jte !jms, jme
               qv(i,k,j) = moist(i,k,j,P_QV)
               qr(i,k,j) = moist(i,k,j,P_QR)
               qs(i,k,j) = moist(i,k,j,P_QS)
@@ -293,9 +300,9 @@ CONTAINS
 
         ! Total pressure
         ! -------------- 
-        DO i=ims, ime
+        DO i=its, ite! ims, ime
           DO k=kms, kme
-            DO j=jms, jme
+            DO j=jts, jte !jms, jme
               ptot(i,k,j)=grid%pb(i,k,j)+grid%p(i,k,j)
             ENDDO
           ENDDO
@@ -350,8 +357,8 @@ CONTAINS
         ! Calculate the mean and standard deviation of the hail diameter
         ! distribution over different embryo sizes
         ! ----------------------------------------
-        DO j = jms, jme
-          DO i = ims, ime
+        DO j = jts, jte !jms, jme
+          DO i = its, ite !ims, ime
             !mean
             grid%hailcast_diam_mean(i,j)=(grid%hailcast_dhail1(i,j)+&
                  grid%hailcast_dhail2(i,j) +grid%hailcast_dhail3(i,j)+&

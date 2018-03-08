@@ -91,7 +91,7 @@ state    real   fdepthxy   ij      -       1      -     i012rd=(interp_mask_fiel
 state    real   eqzwt      ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "EQZWT"      "equilibrium water table depth "       "m"
 state    real   rechclim   ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "RECHCLIM"   "equilibrium recharge rate "       "mm"
 state    real   riverbedxy ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "RIVERBED"   "river bed depth"       "m"
-state    real   soilcomp  i{soilc}j  -     1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "SOILCOMP"   "soil composition"       "%"
+state    real   soilcomp  i{soilc}j  -     1      Z     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "SOILCOMP"   "soil composition"       "%"
 state    real   soilcl1    ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "SOILCL1"     "soil texture class - level 1"       "cat"
 state    real   soilcl2    ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "SOILCL2"     "soil texture class - level 2"       "cat"
 state    real   soilcl3    ij      -       1      -     i012rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)    "SOILCL3"     "soil texture class - level 3"       "cat"

@@ -52,6 +52,7 @@ int DC;
 int ARP, JVRP, NJVRP, CROW_JVRP, IROW_JVRP, ICOL_JVRP;
 int V, F, VAR, FIX;
 int RCONST, RCT;
+int IRR;
 int Vdot, P_VAR, D_VAR;
 int KR, A, BV, BR, IV;
 int JV, UV, JUV, JTUV, JVS; 
@@ -155,6 +156,7 @@ int i,j;
  
   RCONST = DefvElm( "RCONST", real, -NREACT, "Rate constants (global)" );
   RCT    = DefvElm( "RCT",    real, -NREACT, "Rate constants (local)" );
+  IRR    = DefvElm( "IRR",    real, -NREACT, "Accumulated reaction rate" );
 
   Vdot = DefvElm( "Vdot", real, -NVAR, "Time derivative of variable species concentrations" );
   P_VAR = DefvElm( "P_VAR", real, -NVAR, "Production term" );
@@ -775,9 +777,9 @@ char buf1[100], buf2[100];
     }
   
   if( useAggregate )
-    FunctionBegin( F_VAR, V, F, RCT, Vdot );
+    FunctionBegin( F_VAR, V, F, RCT, IRR );
   else
-    FunctionBegin( FSPLIT_VAR, V, F, RCT, P_VAR, D_VAR );
+    FunctionBegin( FSPLIT_VAR, V, F, IRR, P_VAR, D_VAR );
 
   if ( (useLang==MATLAB_LANG)&&(!useAggregate) )
      printf("\nWarning: in the function definition move P_VAR to output vars\n");
@@ -809,12 +811,12 @@ char buf1[100], buf2[100];
       for ( ; i < SpcNr; i++) 
         for (k = 1; k <= (int)Stoich_Left[i][j]; k++ )
           prod = Mul( prod, Elm( F, i - VarNr ) );
-      Assign( Elm( Vdot, j ), prod );
+      Assign( Elm( IRR, j ), prod );
     }
   }
 
   if( useAggregate )
-    MATLAB_Inline("\n   Vdot = Vdot(:);\n");
+    MATLAB_Inline("\n   IRR = IRR(:);\n");
   else
     MATLAB_Inline("\n   P_VAR = P_VAR(:);\n   D_VAR = D_VAR(:);\n");
 

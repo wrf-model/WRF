@@ -50,9 +50,9 @@ ir=isz2/isz1
 jr=jsz2/jsz1
 avgw = 1.0/(ir*jr)
 
-do j=max(jds+1,jts),min(jte,jde-1)
+do j=max(jds+1,jts),min(jte,jde-2)
     jbase=jtfs+jr*(j-jts)
-    do i=max(ids+1,its),min(ite,ide-1)
+    do i=max(ids+1,its),min(ite,ide-2)
        ibase=ifts+ir*(i-its)
        do joff=0,jr-1
            j_f=joff+jbase

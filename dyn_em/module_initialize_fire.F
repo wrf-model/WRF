@@ -445,11 +445,6 @@ write(6,*) '*************************************'
                 ifms,ifme,jfms,jfme,  &
                 ifts,ifte,jfts,jfte,  &
                 grid%fxlong,grid%fxlat          )
-!  call set_ideal_coord( grid%dx,grid%dy, &
-!                ids,ide,jds,jde,  &
-!                ims,ime,jms,jme,  &
-!                its,ite,jts,jte,  &
-!                grid%xlong,grid%xlat          ) ! DME not needed and creates a problem when initializing nested domains with em_fire
 
 ! set terrain height
 

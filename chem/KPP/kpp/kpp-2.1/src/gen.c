@@ -52,6 +52,7 @@ int DC;
 int ARP, JVRP, NJVRP, CROW_JVRP, IROW_JVRP, ICOL_JVRP;
 int V, F, VAR, FIX;
 int RCONST, RCT;
+int IRR;
 int Vdot, P_VAR, D_VAR;
 int KR, A, BV, BR, IV;
 int JV, UV, JUV, JTUV, JVS; 
@@ -155,6 +156,7 @@ int i,j;
  
   RCONST = DefvElm( "RCONST", real, -NREACT, "Rate constants (global)" );
   RCT    = DefvElm( "RCT",    real, -NREACT, "Rate constants (local)" );
+  IRR    = DefvElm( "IRR",    real, -NREACT, "Accumulated reaction rate" );
 
   Vdot = DefvElm( "Vdot", real, -NVAR, "Time derivative of variable species concentrations" );
   P_VAR = DefvElm( "P_VAR", real, -NVAR, "Production term" );
@@ -775,9 +777,9 @@ char buf1[100], buf2[100];
     }
   
   if( useAggregate )
-    FunctionBegin( F_VAR, V, F, RCT, Vdot );
+    FunctionBegin( F_VAR, V, F, RCT, IRR );
   else
-    FunctionBegin( FSPLIT_VAR, V, F, RCT, P_VAR, D_VAR );
+    FunctionBegin( FSPLIT_VAR, V, F, IRR, P_VAR, D_VAR );
 
   if ( (useLang==MATLAB_LANG)&&(!useAggregate) )
      printf("\nWarning: in the function definition move P_VAR to output vars\n");
@@ -809,12 +811,12 @@ char buf1[100], buf2[100];
       for ( ; i < SpcNr; i++) 
         for (k = 1; k <= (int)Stoich_Left[i][j]; k++ )
           prod = Mul( prod, Elm( F, i - VarNr ) );
-      Assign( Elm( Vdot, j ), prod );
+      Assign( Elm( IRR, j ), prod );
     }
   }
 
   if( useAggregate )
-    MATLAB_Inline("\n   Vdot = Vdot(:);\n");
+    MATLAB_Inline("\n   IRR = IRR(:);\n");
   else
     MATLAB_Inline("\n   P_VAR = P_VAR(:);\n   D_VAR = D_VAR(:);\n");
 
@@ -2254,6 +2256,22 @@ int i;
     case MATLAB_LANG: FatalError(-99,"USE F90 with WRF_conform option"); 
                  break;
   }
+
+  if( !strcmp( rootFileName,"t1_mozcart" ) ) {
+    NewLines(1);
+    bprintf( "   real(dp) :: aer_srf_area(3)\n");
+    bprintf( "   real(dp) :: aer_diam(3)\n");
+    NewLines(1);
+    bprintf( "   call aero_surfarea( aer_srf_area, aer_diam, rh, temp, &\n");
+    bprintf( "                       aer_so4, aer_oc2, aer_bc2 )\n" );
+    NewLines(1);
+    bprintf( "   if( aero_srf_area_diag > 0 ) then\n");
+    bprintf( "     sulf_srf_area = aer_srf_area(1)\n");
+    bprintf( "     oc_srf_area   = aer_srf_area(2)\n");
+    bprintf( "     bc_srf_area   = aer_srf_area(3)\n");
+    bprintf( "   endif\n");
+  }
+
   FlushBuf();
 
   NewLines(1);

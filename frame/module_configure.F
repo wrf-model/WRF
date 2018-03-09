@@ -131,6 +131,8 @@ CONTAINS
       INTEGER, PARAMETER :: nml_write_unit= 9
       INTEGER, PARAMETER :: nml_read_unit = 10
 
+      CHARACTER (LEN=1024) :: entire_line
+
 
 ! define as temporaries
 #include "namelist_defines.inc"
@@ -679,7 +681,7 @@ has_irr_diag: &
      ENDIF
      funit = get_funit()
      write(fname,'(''wrfchem_irr_diag_d'',i2.2)') idomain
-     OPEN( unit = funit, file=trim(fname), iostat=istat )
+     OPEN( unit = funit, file=trim(fname), status='OLD', iostat=istat )
      IF( istat /= 0 ) THEN
        write(err_mes,'(''IRR failed to open '',a)') trim(fname)
        CALL wrf_error_fatal( trim(err_mes) )
@@ -756,6 +758,15 @@ have_match: &
                  irr_diag_mozcart_units_table(idomain,ndx) = 'ppmv'
                  irr_diag_mozcart_streams_table(idomain,ndx)%stream(1) = 512
                  irr_diag_mozcart_streams_table(idomain,ndx)%stream(2) = 2097152
+               CASE( T1_MOZCART_KPP )
+                 irr_diag_t1_mozcart_num_table(idomain) = irr_diag_t1_mozcart_num_table(idomain) + 1
+                 ndx = irr_diag_t1_mozcart_num_table(idomain)
+                 irr_diag_t1_mozcart_boundary_table(idomain,ndx) = .FALSE.
+                 irr_diag_t1_mozcart_dname_table(idomain,ndx) = trim( irr_rxt ) // '_IRR'
+                 irr_diag_t1_mozcart_desc_table(idomain,ndx)  = trim(rxt_lst(l) ) // ' Integrated Reaction Rate'
+                 irr_diag_t1_mozcart_units_table(idomain,ndx) = 'ppmv'
+                 irr_diag_t1_mozcart_streams_table(idomain,ndx)%stream(1) = 512
+                 irr_diag_t1_mozcart_streams_table(idomain,ndx)%stream(2) = 2097152
                CASE( MOZART_MOSAIC_4BIN_KPP )
                  irr_diag_mozart_mosaic_4bin_num_table(idomain) = irr_diag_mozart_mosaic_4bin_num_table(idomain) + 1
                  ndx = irr_diag_mozart_mosaic_4bin_num_table(idomain)

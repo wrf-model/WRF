@@ -26,6 +26,10 @@
 
 
 !   zz01aerchemistry.f (mosaic.28.0)
+!   5/21/2014  raz - updated subr. aerosol_phase_state and function aerosol_water. 
+!                    All particles are forced to be metastable (or stable) for RH > 35%
+!                    OC (POA), SOA, OIN, BC are now included in water content calculation using kappa-Kohler theory.
+!                    The kappa values are hardcoded in function aerosol_water.
 !   11/13/2008 raz - updated calculation of "epercent" variable
 !   6/25/2008  raz - updated nh4no3 and nh4cl condensation algorithm
 !   30-apr-07 raz - made about a dozen changes/bug fixes. search for "raz-30apr07" to see the changes
@@ -3018,6 +3022,8 @@
 !
 ! author: rahul a. zaveri
 ! update: jan 2005
+! update: 21 may 2014 - revised code to force metastable or stable state (upper curve) for RH > 35%
+!
 !-----------------------------------------------------------------------
       subroutine mesa(ibin)	! touch
 !     implicit none
@@ -3031,7 +3037,6 @@
 !     real(kind=8) aerosol_water				! mosaic func
 !     real(kind=8) drh_mutual					! mosaic func
       real(kind=8) h_ion, sum_dum				! raz update 11/13/2008
-
 
 
 ! calculate percent composition	! raz update 11/13/2008
@@ -3065,41 +3070,54 @@
 
 
 ! step 2: check for supersaturation/metastable state
-      if(water_a_hyst(ibin) .gt. 0.5*water_a_up(ibin))then
+!     jdum = 1 ! 1 = forced metastable. 0 = maybe stable               ! RAZ 5/21/2014
+!     if(water_a_hyst(ibin) .gt. 0.5*water_a_up(ibin) .or. jdum .eq. 1)then
+
+! 2017.12.03 water hysteresis changes
+      if (mhyst_method .eq. mhyst_uporlo_waterhyst) then
+         jdum = 0
+         if (water_a_hyst(ibin) .gt. 0.5*water_a_up(ibin)) jdum = 1
+      else if (mhyst_method .eq. mhyst_force_up) then
+         jdum = 1
+      else ! if (mhyst_method .eq. mhyst_force_lo) then
+         jdum = 0
+      end if
+
+      if (jdum .eq. 1) then
 
         call do_full_deliquescence(ibin)
 
-        sum_soluble = 0.0
-        do js = 1, nsoluble
-          sum_soluble = sum_soluble + electrolyte(js,jtotal,ibin)
-        enddo
+!       sum_soluble = 0.0
+!       do js = 1, nsoluble
+!         sum_soluble = sum_soluble + electrolyte(js,jtotal,ibin)
+!       enddo
 
-        solids = electrolyte(jcaso4,jtotal,ibin) +   &
-                 electrolyte(jcaco3,jtotal,ibin) +   &
-                 aer(ioin_a ,jtotal,ibin)
-
-
-        if(sum_soluble .lt. 1.e-15 .and. solids .gt. 0.0)then
-
-          jaerosolstate(ibin) = all_solid ! no soluble material present
-          jphase(ibin) = jsolid
-          call adjust_solid_aerosol(ibin)
-
+!       solids = electrolyte(jcaso4,jtotal,ibin) +   &
+!                electrolyte(jcaco3,jtotal,ibin) +   &
+!                aer(ioin_a ,jtotal,ibin)
+!
+!
+!       if(sum_soluble .lt. 1.e-15 .and. solids .gt. 0.0)then
+!
+!         jaerosolstate(ibin) = all_solid ! no soluble material present
+!         jphase(ibin) = jsolid
+!         call adjust_solid_aerosol(ibin)
+!
 ! new wet mass and wet volume
-          mass_wet_a(ibin) = mass_dry_a(ibin) + water_a(ibin)*1.e-3	! g/cc(air)
-          vol_wet_a(ibin)  = vol_dry_a(ibin) + water_a(ibin)*1.e-3	! cc(aer)/cc(air) or m^3/m^3(air)
-          growth_factor(ibin) = mass_wet_a(ibin)/mass_dry_a(ibin)	! mass growth factor
-
-          return
-
-        elseif(sum_soluble .gt. 0.0 .and. solids .eq. 0.0)then
+!         mass_wet_a(ibin) = mass_dry_a(ibin) + water_a(ibin)*1.e-3	! g/cc(air)
+!         vol_wet_a(ibin)  = vol_dry_a(ibin) + water_a(ibin)*1.e-3	! cc(aer)/cc(air) or m^3/m^3(air)
+!         growth_factor(ibin) = mass_wet_a(ibin)/mass_dry_a(ibin)	! mass growth factor
+!
+!         return
+!
+!       elseif(sum_soluble .gt. 0.0 .and. solids .eq. 0.0)then
 
           jaerosolstate(ibin) = all_liquid
           jhyst_leg(ibin) = jhyst_up
           jphase(ibin) = jliquid
           water_a(ibin) = aerosol_water(jtotal,ibin)
 
-          if(water_a(ibin) .lt. 0.0)then
+          if(water_a(ibin) .lt. 0.0)then    ! one last attempt to catch bad input
             jaerosolstate(ibin) = all_solid ! no soluble material present
             jphase(ibin)    = jsolid
             jhyst_leg(ibin) = jhyst_lo
@@ -3116,7 +3134,7 @@
 
           return
 
-        endif
+!       endif
 
       endif
 
@@ -4570,11 +4588,18 @@
         sumflux = sumflux + abs(flux_sl(js))
       enddo
 
-      crustal_solids = electrolyte(jcaco3,jsolid,ibin) +  &
-                       electrolyte(jcaso4,jsolid,ibin) +  &
-                       aer(ioin_a,jsolid,ibin)
+! 2017.12.03 implement xhyst_up_crustal_thresh
+!     crustal_solids = electrolyte(jcaco3,jsolid,ibin) +  &
+!                      electrolyte(jcaso4,jsolid,ibin) +  &
+!                      aer(ioin_a,jsolid,ibin)
+      crustal_solids = electrolyte(jcaco3,jsolid,ibin)*mw_electrolyte(jcaco3) +  &
+                       electrolyte(jcaso4,jsolid,ibin)*mw_electrolyte(jcaso4) +  &
+                       aer(ioin_a,jsolid,ibin)*mw_aer_mac(ioin_a)
 
-      if(sumflux .eq. 0.0 .and. crustal_solids .eq. 0.0)then
+!     if(sumflux .eq. 0.0 .and. crustal_solids .eq. 0.0)then
+      if ( sumflux .eq. 0.0 .and. &
+           crustal_solids .le. xhyst_up_crustal_thresh*(mass_dry_a(ibin)*1.0e15) ) then
+         ! crustal_solids is ng/m^3, mass_dry_a is g/cm^3
         idissolved = myes
       endif
 
@@ -5345,8 +5370,7 @@
        enddo
 !       Check for total number of species
         if (ntrack.ne.N) then
-        print *, 'Error in mapping fresh and primary species arrays'
-        stop
+        call wrf_error_fatal('Error in mapping fresh and primary species arrays')
         endif
 ! From here on distribute the organic aerosol in size bins following Koo et al. 2003 " Integrated approaches to modeling
 ! the organic and inorganic atmospheric aerosol components"
@@ -5671,9 +5695,9 @@
           if(abs(fmid).le.xtol*xmid.or.dx.le.xtol*xmid) goto 100 ! converged
            if (fmid.lt.0.0) xend=xmid
          enddo
-        write (2,*) "Error in SOAP"
-        write (2,*) "Error: max number of iterations reached"
-50      stop
+50       call wrf_message("Error in SOAP")
+         call wrf_error_fatal("Error: max number of iterations reached")
+
 
 99     xmid=xend
 100    continue
@@ -8722,8 +8746,6 @@
 ! calculate mean dry and wet particle surface areas
         area_dry_a(ibin)= 3.14159*num_a(ibin)*dp_dry_a(ibin)**2	! cm^2/cc(air)
         area_wet_a(ibin)= 3.14159*num_a(ibin)*dp_wet_a(ibin)**2	! cm^2/cc(air)
-
-
 
 ! calculate volume average refractive index
 !   load comp_a array
@@ -15618,6 +15640,7 @@
       d_mdrh(j_index,3) = -0.033488456
       d_mdrh(j_index,4) = 4.12458e-05
 
+      call load_kappa_nonelectro
 
       endif ! first
 
@@ -15627,9 +15650,156 @@
 
 
 
+      subroutine load_kappa_nonelectro
 
+      use module_data_mosaic_asect, only: &
+         hygro_oin_aer, hygro_oc_aer, hygro_bc_aer,  &
+         hygro_pcg1_b_c_aer,  hygro_pcg2_b_c_aer,  hygro_pcg3_b_c_aer,  &
+         hygro_pcg4_b_c_aer,  hygro_pcg5_b_c_aer,  hygro_pcg6_b_c_aer,  &
+         hygro_pcg7_b_c_aer,  hygro_pcg8_b_c_aer,  hygro_pcg9_b_c_aer,  &
+         hygro_pcg1_b_o_aer,  hygro_pcg2_b_o_aer,  hygro_pcg3_b_o_aer,  &
+         hygro_pcg4_b_o_aer,  hygro_pcg5_b_o_aer,  hygro_pcg6_b_o_aer,  &
+         hygro_pcg7_b_o_aer,  hygro_pcg8_b_o_aer,  hygro_pcg9_b_o_aer,  &
+         hygro_opcg1_b_c_aer, hygro_opcg2_b_c_aer, hygro_opcg3_b_c_aer,  &
+         hygro_opcg4_b_c_aer, hygro_opcg5_b_c_aer, hygro_opcg6_b_c_aer,  &
+         hygro_opcg7_b_c_aer, hygro_opcg8_b_c_aer,  &
+         hygro_opcg1_b_o_aer, hygro_opcg2_b_o_aer, hygro_opcg3_b_o_aer,  &
+         hygro_opcg4_b_o_aer, hygro_opcg5_b_o_aer, hygro_opcg6_b_o_aer,  &
+         hygro_opcg7_b_o_aer, hygro_opcg8_b_o_aer,  &
+         hygro_pcg1_f_c_aer,  hygro_pcg2_f_c_aer,  hygro_pcg3_f_c_aer,  &
+         hygro_pcg4_f_c_aer,  hygro_pcg5_f_c_aer,  hygro_pcg6_f_c_aer,  &
+         hygro_pcg7_f_c_aer,  hygro_pcg8_f_c_aer,  hygro_pcg9_f_c_aer,  &
+         hygro_pcg1_f_o_aer,  hygro_pcg2_f_o_aer,  hygro_pcg3_f_o_aer,  &
+         hygro_pcg4_f_o_aer,  hygro_pcg5_f_o_aer,  hygro_pcg6_f_o_aer,  &
+         hygro_pcg7_f_o_aer,  hygro_pcg8_f_o_aer,  hygro_pcg9_f_o_aer,  &
+         hygro_opcg1_f_c_aer, hygro_opcg2_f_c_aer, hygro_opcg3_f_c_aer,  &
+         hygro_opcg4_f_c_aer, hygro_opcg5_f_c_aer, hygro_opcg6_f_c_aer,  &
+         hygro_opcg7_f_c_aer, hygro_opcg8_f_c_aer,  &
+         hygro_opcg1_f_o_aer, hygro_opcg2_f_o_aer, hygro_opcg3_f_o_aer,  &
+         hygro_opcg4_f_o_aer, hygro_opcg5_f_o_aer, hygro_opcg6_f_o_aer,  &
+         hygro_opcg7_f_o_aer, hygro_opcg8_f_o_aer,  &
+         hygro_ant1_c_aer,  hygro_ant2_c_aer,  hygro_ant3_c_aer,  hygro_ant4_c_aer,  &
+         hygro_ant1_o_aer,  hygro_ant2_o_aer,  hygro_ant3_o_aer,  hygro_ant4_o_aer,  &
+         hygro_biog1_c_aer, hygro_biog2_c_aer, hygro_biog3_c_aer, hygro_biog4_c_aer,  &
+         hygro_biog1_o_aer, hygro_biog2_o_aer, hygro_biog3_o_aer, hygro_biog4_o_aer,  &
+         hygro_smpa_aer, hygro_smpbb_aer,  &
+         hygro_glysoa_r1_aer,  hygro_glysoa_r2_aer,  hygro_glysoa_oh_aer,  &
+         hygro_glysoa_nh4_aer, hygro_glysoa_sfc_aer,  &
+         hygro_asoaX_aer, hygro_asoa1_aer, hygro_asoa2_aer,  &
+         hygro_asoa3_aer, hygro_asoa4_aer,  &
+         hygro_bsoaX_aer, hygro_bsoa1_aer, hygro_bsoa2_aer,  &
+         hygro_bsoa3_aer, hygro_bsoa4_aer
 
+      if (ioin_a        > 0) kappa_nonelectro(ioin_a       ) = hygro_oin_aer
+      if (ioc_a         > 0) kappa_nonelectro(ioc_a        ) = hygro_oc_aer
+      if (ibc_a         > 0) kappa_nonelectro(ibc_a        ) = hygro_bc_aer
 
+      if (ipcg1_b_c_a   > 0) kappa_nonelectro(ipcg1_b_c_a  ) = hygro_pcg1_b_c_aer
+      if (ipcg2_b_c_a   > 0) kappa_nonelectro(ipcg2_b_c_a  ) = hygro_pcg2_b_c_aer
+      if (ipcg3_b_c_a   > 0) kappa_nonelectro(ipcg3_b_c_a  ) = hygro_pcg3_b_c_aer
+      if (ipcg4_b_c_a   > 0) kappa_nonelectro(ipcg4_b_c_a  ) = hygro_pcg4_b_c_aer
+      if (ipcg5_b_c_a   > 0) kappa_nonelectro(ipcg5_b_c_a  ) = hygro_pcg5_b_c_aer
+      if (ipcg6_b_c_a   > 0) kappa_nonelectro(ipcg6_b_c_a  ) = hygro_pcg6_b_c_aer
+      if (ipcg7_b_c_a   > 0) kappa_nonelectro(ipcg7_b_c_a  ) = hygro_pcg7_b_c_aer
+      if (ipcg8_b_c_a   > 0) kappa_nonelectro(ipcg8_b_c_a  ) = hygro_pcg8_b_c_aer
+      if (ipcg9_b_c_a   > 0) kappa_nonelectro(ipcg9_b_c_a  ) = hygro_pcg9_b_c_aer
+      if (ipcg1_b_o_a   > 0) kappa_nonelectro(ipcg1_b_o_a  ) = hygro_pcg1_b_o_aer
+      if (ipcg2_b_o_a   > 0) kappa_nonelectro(ipcg2_b_o_a  ) = hygro_pcg2_b_o_aer
+      if (ipcg3_b_o_a   > 0) kappa_nonelectro(ipcg3_b_o_a  ) = hygro_pcg3_b_o_aer
+      if (ipcg4_b_o_a   > 0) kappa_nonelectro(ipcg4_b_o_a  ) = hygro_pcg4_b_o_aer
+      if (ipcg5_b_o_a   > 0) kappa_nonelectro(ipcg5_b_o_a  ) = hygro_pcg5_b_o_aer
+      if (ipcg6_b_o_a   > 0) kappa_nonelectro(ipcg6_b_o_a  ) = hygro_pcg6_b_o_aer
+      if (ipcg7_b_o_a   > 0) kappa_nonelectro(ipcg7_b_o_a  ) = hygro_pcg7_b_o_aer
+      if (ipcg8_b_o_a   > 0) kappa_nonelectro(ipcg8_b_o_a  ) = hygro_pcg8_b_o_aer
+      if (ipcg9_b_o_a   > 0) kappa_nonelectro(ipcg9_b_o_a  ) = hygro_pcg9_b_o_aer
+      if (iopcg1_b_c_a  > 0) kappa_nonelectro(iopcg1_b_c_a ) = hygro_opcg1_b_c_aer
+      if (iopcg2_b_c_a  > 0) kappa_nonelectro(iopcg2_b_c_a ) = hygro_opcg2_b_c_aer
+      if (iopcg3_b_c_a  > 0) kappa_nonelectro(iopcg3_b_c_a ) = hygro_opcg3_b_c_aer
+      if (iopcg4_b_c_a  > 0) kappa_nonelectro(iopcg4_b_c_a ) = hygro_opcg4_b_c_aer
+      if (iopcg5_b_c_a  > 0) kappa_nonelectro(iopcg5_b_c_a ) = hygro_opcg5_b_c_aer
+      if (iopcg6_b_c_a  > 0) kappa_nonelectro(iopcg6_b_c_a ) = hygro_opcg6_b_c_aer
+      if (iopcg7_b_c_a  > 0) kappa_nonelectro(iopcg7_b_c_a ) = hygro_opcg7_b_c_aer
+      if (iopcg8_b_c_a  > 0) kappa_nonelectro(iopcg8_b_c_a ) = hygro_opcg8_b_c_aer
+      if (iopcg1_b_o_a  > 0) kappa_nonelectro(iopcg1_b_o_a ) = hygro_opcg1_b_o_aer
+      if (iopcg2_b_o_a  > 0) kappa_nonelectro(iopcg2_b_o_a ) = hygro_opcg2_b_o_aer
+      if (iopcg3_b_o_a  > 0) kappa_nonelectro(iopcg3_b_o_a ) = hygro_opcg3_b_o_aer
+      if (iopcg4_b_o_a  > 0) kappa_nonelectro(iopcg4_b_o_a ) = hygro_opcg4_b_o_aer
+      if (iopcg5_b_o_a  > 0) kappa_nonelectro(iopcg5_b_o_a ) = hygro_opcg5_b_o_aer
+      if (iopcg6_b_o_a  > 0) kappa_nonelectro(iopcg6_b_o_a ) = hygro_opcg6_b_o_aer
+      if (iopcg7_b_o_a  > 0) kappa_nonelectro(iopcg7_b_o_a ) = hygro_opcg7_b_o_aer
+      if (iopcg8_b_o_a  > 0) kappa_nonelectro(iopcg8_b_o_a ) = hygro_opcg8_b_o_aer
+      if (ipcg1_f_c_a   > 0) kappa_nonelectro(ipcg1_f_c_a  ) = hygro_pcg1_f_c_aer
+      if (ipcg2_f_c_a   > 0) kappa_nonelectro(ipcg2_f_c_a  ) = hygro_pcg2_f_c_aer
+      if (ipcg3_f_c_a   > 0) kappa_nonelectro(ipcg3_f_c_a  ) = hygro_pcg3_f_c_aer
+      if (ipcg4_f_c_a   > 0) kappa_nonelectro(ipcg4_f_c_a  ) = hygro_pcg4_f_c_aer
+      if (ipcg5_f_c_a   > 0) kappa_nonelectro(ipcg5_f_c_a  ) = hygro_pcg5_f_c_aer
+      if (ipcg6_f_c_a   > 0) kappa_nonelectro(ipcg6_f_c_a  ) = hygro_pcg6_f_c_aer
+      if (ipcg7_f_c_a   > 0) kappa_nonelectro(ipcg7_f_c_a  ) = hygro_pcg7_f_c_aer
+      if (ipcg8_f_c_a   > 0) kappa_nonelectro(ipcg8_f_c_a  ) = hygro_pcg8_f_c_aer
+      if (ipcg9_f_c_a   > 0) kappa_nonelectro(ipcg9_f_c_a  ) = hygro_pcg9_f_c_aer
+      if (ipcg1_f_o_a   > 0) kappa_nonelectro(ipcg1_f_o_a  ) = hygro_pcg1_f_o_aer
+      if (ipcg2_f_o_a   > 0) kappa_nonelectro(ipcg2_f_o_a  ) = hygro_pcg2_f_o_aer
+      if (ipcg3_f_o_a   > 0) kappa_nonelectro(ipcg3_f_o_a  ) = hygro_pcg3_f_o_aer
+      if (ipcg4_f_o_a   > 0) kappa_nonelectro(ipcg4_f_o_a  ) = hygro_pcg4_f_o_aer
+      if (ipcg5_f_o_a   > 0) kappa_nonelectro(ipcg5_f_o_a  ) = hygro_pcg5_f_o_aer
+      if (ipcg6_f_o_a   > 0) kappa_nonelectro(ipcg6_f_o_a  ) = hygro_pcg6_f_o_aer
+      if (ipcg7_f_o_a   > 0) kappa_nonelectro(ipcg7_f_o_a  ) = hygro_pcg7_f_o_aer
+      if (ipcg8_f_o_a   > 0) kappa_nonelectro(ipcg8_f_o_a  ) = hygro_pcg8_f_o_aer
+      if (ipcg9_f_o_a   > 0) kappa_nonelectro(ipcg9_f_o_a  ) = hygro_pcg9_f_o_aer
+      if (iopcg1_f_c_a  > 0) kappa_nonelectro(iopcg1_f_c_a ) = hygro_opcg1_f_c_aer
+      if (iopcg2_f_c_a  > 0) kappa_nonelectro(iopcg2_f_c_a ) = hygro_opcg2_f_c_aer
+      if (iopcg3_f_c_a  > 0) kappa_nonelectro(iopcg3_f_c_a ) = hygro_opcg3_f_c_aer
+      if (iopcg4_f_c_a  > 0) kappa_nonelectro(iopcg4_f_c_a ) = hygro_opcg4_f_c_aer
+      if (iopcg5_f_c_a  > 0) kappa_nonelectro(iopcg5_f_c_a ) = hygro_opcg5_f_c_aer
+      if (iopcg6_f_c_a  > 0) kappa_nonelectro(iopcg6_f_c_a ) = hygro_opcg6_f_c_aer
+      if (iopcg7_f_c_a  > 0) kappa_nonelectro(iopcg7_f_c_a ) = hygro_opcg7_f_c_aer
+      if (iopcg8_f_c_a  > 0) kappa_nonelectro(iopcg8_f_c_a ) = hygro_opcg8_f_c_aer
+      if (iopcg1_f_o_a  > 0) kappa_nonelectro(iopcg1_f_o_a ) = hygro_opcg1_f_o_aer
+      if (iopcg2_f_o_a  > 0) kappa_nonelectro(iopcg2_f_o_a ) = hygro_opcg2_f_o_aer
+      if (iopcg3_f_o_a  > 0) kappa_nonelectro(iopcg3_f_o_a ) = hygro_opcg3_f_o_aer
+      if (iopcg4_f_o_a  > 0) kappa_nonelectro(iopcg4_f_o_a ) = hygro_opcg4_f_o_aer
+      if (iopcg5_f_o_a  > 0) kappa_nonelectro(iopcg5_f_o_a ) = hygro_opcg5_f_o_aer
+      if (iopcg6_f_o_a  > 0) kappa_nonelectro(iopcg6_f_o_a ) = hygro_opcg6_f_o_aer
+      if (iopcg7_f_o_a  > 0) kappa_nonelectro(iopcg7_f_o_a ) = hygro_opcg7_f_o_aer
+      if (iopcg8_f_o_a  > 0) kappa_nonelectro(iopcg8_f_o_a ) = hygro_opcg8_f_o_aer
+
+      if (iant1_c_a     > 0) kappa_nonelectro(iant1_c_a    ) = hygro_ant1_c_aer
+      if (iant2_c_a     > 0) kappa_nonelectro(iant2_c_a    ) = hygro_ant2_c_aer
+      if (iant3_c_a     > 0) kappa_nonelectro(iant3_c_a    ) = hygro_ant3_c_aer
+      if (iant4_c_a     > 0) kappa_nonelectro(iant4_c_a    ) = hygro_ant4_c_aer
+      if (iant1_o_a     > 0) kappa_nonelectro(iant1_o_a    ) = hygro_ant1_o_aer
+      if (iant2_o_a     > 0) kappa_nonelectro(iant2_o_a    ) = hygro_ant2_o_aer
+      if (iant3_o_a     > 0) kappa_nonelectro(iant3_o_a    ) = hygro_ant3_o_aer
+      if (iant4_o_a     > 0) kappa_nonelectro(iant4_o_a    ) = hygro_ant4_o_aer
+      if (ibiog1_c_a    > 0) kappa_nonelectro(ibiog1_c_a   ) = hygro_biog1_c_aer
+      if (ibiog2_c_a    > 0) kappa_nonelectro(ibiog2_c_a   ) = hygro_biog2_c_aer
+      if (ibiog3_c_a    > 0) kappa_nonelectro(ibiog3_c_a   ) = hygro_biog3_c_aer
+      if (ibiog4_c_a    > 0) kappa_nonelectro(ibiog4_c_a   ) = hygro_biog4_c_aer
+      if (ibiog1_o_a    > 0) kappa_nonelectro(ibiog1_o_a   ) = hygro_biog1_o_aer
+      if (ibiog2_o_a    > 0) kappa_nonelectro(ibiog2_o_a   ) = hygro_biog2_o_aer
+      if (ibiog3_o_a    > 0) kappa_nonelectro(ibiog3_o_a   ) = hygro_biog3_o_aer
+      if (ibiog4_o_a    > 0) kappa_nonelectro(ibiog4_o_a   ) = hygro_biog4_o_aer
+
+      if (ismpa_a       > 0) kappa_nonelectro(ismpa_a      ) = hygro_smpa_aer
+      if (ismpbb_a      > 0) kappa_nonelectro(ismpbb_a     ) = hygro_smpbb_aer
+      if (iglysoa_r1_a  > 0) kappa_nonelectro(iglysoa_r1_a ) = hygro_glysoa_r1_aer
+      if (iglysoa_r2_a  > 0) kappa_nonelectro(iglysoa_r2_a ) = hygro_glysoa_r2_aer
+      if (iglysoa_oh_a  > 0) kappa_nonelectro(iglysoa_oh_a ) = hygro_glysoa_oh_aer
+      if (iglysoa_nh4_a > 0) kappa_nonelectro(iglysoa_nh4_a) = hygro_glysoa_nh4_aer
+      if (iglysoa_sfc_a > 0) kappa_nonelectro(iglysoa_sfc_a) = hygro_glysoa_sfc_aer
+      if (iasoaX_a      > 0) kappa_nonelectro(iasoaX_a     ) = hygro_asoaX_aer
+      if (iasoa1_a      > 0) kappa_nonelectro(iasoa1_a     ) = hygro_asoa1_aer
+      if (iasoa2_a      > 0) kappa_nonelectro(iasoa2_a     ) = hygro_asoa2_aer
+      if (iasoa3_a      > 0) kappa_nonelectro(iasoa3_a     ) = hygro_asoa3_aer
+      if (iasoa4_a      > 0) kappa_nonelectro(iasoa4_a     ) = hygro_asoa4_aer
+      if (ibsoaX_a      > 0) kappa_nonelectro(ibsoaX_a     ) = hygro_bsoaX_aer
+      if (ibsoa1_a      > 0) kappa_nonelectro(ibsoa1_a     ) = hygro_bsoa1_aer
+      if (ibsoa2_a      > 0) kappa_nonelectro(ibsoa2_a     ) = hygro_bsoa2_aer
+      if (ibsoa3_a      > 0) kappa_nonelectro(ibsoa3_a     ) = hygro_bsoa3_aer
+      if (ibsoa4_a      > 0) kappa_nonelectro(ibsoa4_a     ) = hygro_bsoa4_aer
+
+      return
+      end subroutine load_kappa_nonelectro
 
 
 
@@ -15807,6 +15977,33 @@
         po_soa(ibsoa2_g) = fn_po(9.91d-5, dhr_approx(1.0d0), T_K) ! [Pascal]
         po_soa(ibsoa3_g) = fn_po(9.91d-4, dhr_approx(2.0d0), T_K) ! [Pascal]
         po_soa(ibsoa4_g) = fn_po(9.91d-3, dhr_approx(3.0d0), T_K) ! [Pascal]
+      endif
+
+      if (vbs_nbin(1).eq.3) then
+! these values for pcg and opcg gases are the same as vbs_nbin(1)==2
+! below
+        po_soa(ipcg1_b_c_g)  = fn_po(9.91d-8, 83.0d0, T_K) ! [Pascal]
+        po_soa(ipcg2_b_c_g)  = fn_po(9.91d-1, 83.0d0, T_K) ! [Pascal]
+        po_soa(iopcg1_b_c_g) = fn_po(9.91d-8, 83.0d0, T_K) ! [Pascal]
+        po_soa(ipcg1_b_o_g)  = fn_po(9.91d-8, 83.0d0, T_K) ! [Pascal]
+        po_soa(ipcg2_b_o_g)  = fn_po(9.91d-1, 83.0d0, T_K) ! [Pascal]
+        po_soa(iopcg1_b_o_g) = fn_po(9.91d-8, 83.0d0, T_K) ! [Pascal]
+        po_soa(ipcg1_f_c_g)  = fn_po(9.91d-8, 83.0d0, T_K) ! [Pascal]
+        po_soa(ipcg2_f_c_g)  = fn_po(9.91d-1, 83.0d0, T_K) ! [Pascal]
+        po_soa(iopcg1_f_c_g) = fn_po(9.91d-8, 83.0d0, T_K) ! [Pascal]
+        po_soa(ipcg1_f_o_g)  = fn_po(9.91d-8, 83.0d0, T_K) ! [Pascal]
+        po_soa(ipcg2_f_o_g)  = fn_po(9.91d-1, 83.0d0, T_K) ! [Pascal]
+        po_soa(iopcg1_f_o_g) = fn_po(9.91d-8, 83.0d0, T_K) ! [Pascal]
+! these values for ant and bio gases are from manish wrfchem 3.5
+        po_soa(iant1_c_g)    = fn_po(9.91d-7, 106.0d0, T_K) ! [Pascal]
+        po_soa(iant2_c_g)    = fn_po(9.91d-6, 100.0d0, T_K) ! [Pascal]
+        po_soa(iant3_c_g)    = fn_po(9.91d-5,  94.0d0, T_K) ! [Pascal]
+        po_soa(iant4_c_g)    = fn_po(9.91d-4,  88.0d0, T_K) ! [Pascal]
+        po_soa(ibiog1_c_g)   = fn_po(9.91d-7, 106.0d0, T_K) ! [Pascal]
+        po_soa(ibiog2_c_g)   = fn_po(9.91d-6, 100.0d0, T_K) ! [Pascal]
+        po_soa(ibiog3_c_g)   = fn_po(9.91d-5,  94.0d0, T_K) ! [Pascal]
+        po_soa(ibiog1_o_g)   = fn_po(9.91d-7, 106.0d0, T_K) ! [Pascal]
+        po_soa(ibiog2_o_g)   = fn_po(9.91d-6, 100.0d0, T_K) ! [Pascal]
       endif
 
       if (vbs_nbin(1).eq.2) then
@@ -16012,25 +16209,37 @@
 
 !----------------------------------------------------------
 ! zsr method
+!
+! RAZ 5/21/2014: Included organics, oin, and bc in water absorption (but does not include organic-inorganic interactions)
+!
       real(kind=8) function aerosol_water(jp,ibin) ! kg (water)/m^3 (air)
 !     implicit none
 !     include 'mosaic.h'
 ! subr. arguments
       integer jp, ibin
 ! local variables
-      integer je
-      real(kind=8) dum
+      integer ja, je
+      real(kind=8) dum, tmpa
 ! function
 !     real(kind=8) bin_molality
 
 
-
       dum = 0.0
       do je = 1, (nsalt+4)	! include hno3 and hcl in water calculation
-        dum = dum + 1.e-9*electrolyte(je,jp,ibin)/bin_molality(je,ibin)
+        dum = dum + electrolyte(je,jp,ibin)/bin_molality(je,ibin)
       enddo
 
-      aerosol_water = dum
+      if (mwater_kappa_nonelectro > 0) then
+         tmpa = 0.0
+         do ja = 1, naer
+            if (kappa_nonelectro(ja) > 0.0) then
+               tmpa = tmpa + (aer(ja,jtotal,ibin)*mw_aer_mac(ja)/dens_aer_mac(ja))*kappa_nonelectro(ja)
+            end if
+         end do
+         dum = dum + 1.0e-3*tmpa*aH2O_a(ibin)/(1.0-aH2O_a(ibin))
+      end if
+
+      aerosol_water = dum*1.e-9  ! kg(water)/m^3(air)
 
       if(aerosol_water .le. 0.0)then
         if (iprint_mosaic_diag1 .gt. 0) then
@@ -16912,3 +17121,4 @@
 !-----------------------------------------------------------------------
 
       end module module_mosaic_therm
+

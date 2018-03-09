@@ -218,6 +218,7 @@
     CALL nl_get_guv        ( grid%id , guv )
     CALL nl_get_gt         ( grid%id , gt )
     CALL nl_get_gph        ( grid%id , gph )
+    CALL nl_get_gq         ( grid%id , gq )
     CALL nl_get_if_ramping ( 1       , if_ramping )
     CALL nl_get_dtramp_min ( 1       , dtramp_min )
     ENDIF
@@ -722,6 +723,7 @@ endif
         CALL wrf_put_dom_ti_real    ( fid, 'GUV', guv , 1 , ierr )
         CALL wrf_put_dom_ti_real    ( fid, 'GT', gt , 1 , ierr )
         CALL wrf_put_dom_ti_real    ( fid, 'GPH', gph , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'GQ', gq , 1 , ierr )
         CALL wrf_put_dom_ti_integer ( fid, 'IF_RAMPING', if_ramping , 1 , ierr )
         CALL wrf_put_dom_ti_real    ( fid, 'DTRAMP_MIN', dtramp_min , 1 , ierr )
       ENDIF

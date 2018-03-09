@@ -66,6 +66,10 @@ state   real    g_qg           ijkft   g_moist     1         -     rh   "G_QGRAU
 # Other Misc State Variables                                            
 state   real    g_h_diabatic   ijk     misc         1         -      rdu      "g_h_diabatic"          "MICROPHYSICS LATENT HEATING"         "K s-1"      
 state   real    a_h_diabatic   ijk     misc         1         -      rdu      "a_h_diabatic"          "MICROPHYSICS LATENT HEATING"         "K s-1"      
+state   real    g_qv_diabatic  ijk     misc         1         -      rdu      "g_qv_diabatic"         "MICROPHYSICS QV TENDENCY"            "g g-1 s-1"
+state   real    a_qv_diabatic  ijk     misc         1         -      rdu      "a_qv_diabatic"         "MICROPHYSICS QV TENDENCY"            "g g-1 s-1"
+state   real    g_qc_diabatic  ijk     misc         1         -      rdu      "g_qc_diabatic"         "MICROPHYSICS QC TENDENCY"            "g g-1 s-1"
+state   real    a_qc_diabatic  ijk     misc         1         -      rdu      "a_qc_diabatic"         "MICROPHYSICS QC TENDENCY"            "g g-1 s-1"
 state    real  G_RAINC          ij      misc        1         -      rhdu     "G_RAINC"               "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
 state    real  A_RAINC          ij      misc        1         -      rhdu     "A_RAINC"               "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
 state    real  G_RAINNC         ij      misc        1         -      rhdu     "G_RAINNC"              "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"      
@@ -520,8 +524,10 @@ package   nomoist_4dvar    mp_physics_da_4dvar==-1  -             -
 package   passiveqv_4dvar  mp_physics_da_4dvar==0   -             g_moist:g_qv;a_moist:a_qv
 package   warmrain_4dvar   mp_physics_da_4dvar==1   -             g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
 
-package   surfdragscheme bl_pbl_physics==98          -             -
-package   ducuscheme     cu_physics==98              -             -
+package   lscondscheme    mp_physics==98               -             moist:qv;g_moist:g_qv;a_moist:a_qv
+package   mkesslerscheme  mp_physics==99               -             moist:qv,qc,qr;g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
+package   surfdragscheme  bl_pbl_physics==98           -             -
+package   ducuscheme      cu_physics==98               -             -
 
 # only need to specify these once; not for every io_form* variable
 # Placeholders for additional packages (we can go beyond zzz

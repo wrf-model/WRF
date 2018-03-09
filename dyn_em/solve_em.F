@@ -3462,6 +3462,7 @@ BENCH_END(bc_end_tim)
    END DO Runge_Kutta_loop
 !  grid%dmudt=grid%mu_2 - grid%mu_1
 
+#if ( WRFPLUS != 1 )
    IF      ( config_flags%traj_opt .EQ. UM_TRAJECTORY ) THEN
 #ifdef DM_PARALLEL
 #    include "HALO_EM_F_1.inc"
@@ -3494,6 +3495,7 @@ BENCH_END(bc_end_tim)
         ENDDO
      !$OMP END PARALLEL DO
    ENDIF
+#endif
 !-----------------------------------------------------------
 
    IF (config_flags%do_avgflx_em .EQ. 1) THEN

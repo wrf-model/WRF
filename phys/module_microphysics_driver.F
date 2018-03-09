@@ -118,6 +118,9 @@ SUBROUTINE microphysics_driver(                                          &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN, NSSL_2MOMG  &
                     ,NSSL_1MOM,NSSL_1MOMLFO, FER_MP_HIRES_ADVECT & ! ,NSSL_3MOM       &
                     ,MILBRANDT2MOM , CAMMGMPSCHEME,FULL_KHAIN_LYNN, P3_1CATEGORY, P3_1CATEGORY_NC, P3_2CATEGORY !,MILBRANDT3MOM
+#if ( WRFPLUS == 1 )
+   USE module_state_description, ONLY : LSCONDSCHEME, MKESSLERSCHEME
+#endif
 #endif
 
 #ifdef DM_PARALLEL
@@ -138,6 +141,10 @@ SUBROUTINE microphysics_driver(                                          &
 ! *** add new modules of schemes here
 
    USE module_mp_kessler
+#if ( WRFPLUS == 1 )
+   USE module_mp_mkessler
+   USE module_mp_nconvp    !  added by Zhuxiao
+#endif
    USE module_mp_lin
    USE module_mp_sbu_ylin
    USE module_mp_wsm3
@@ -722,7 +729,34 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling kessler' )
              ENDIF
-
+#if ( WRFPLUS == 1 )
+        CASE (MKESSLERSCHEME)
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling mkessler' )
+             IF ( PRESENT( QV_CURR ) .AND. PRESENT( QC_CURR ) .AND.  &
+                                           PRESENT( QR_CURR ) .AND.  &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
+                                           PRESENT( Z       ))  THEN
+               CALL mkessler(                                        &
+                  T=th                                              &
+                 ,QV=qv_curr                                        &
+                 ,QC=qc_curr                                        &
+                 ,QR=qr_curr                                        &
+!whl P is not recomputed in the HL' Kessler; need be added here
+                 ,P=p                                               &
+!end whl
+                 ,RHO=rho, PII=pi_phy,DT_IN=dt, Z=z, XLV=xlv, CP=cp &
+                 ,EP2=ep_2,SVP1=svp1,SVP2=svp2                      &
+                 ,SVP3=svp3,SVPT0=svpt0,RHOWATER=rhowater           &
+                 ,DZ8W=dz8w                                         &
+                 ,RAINNC=rainnc,RAINNCV=rainncv                     &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling mkessler' )
+             ENDIF
+#endif
 !
         CASE (THOMPSONAERO)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling thompson' )
@@ -2144,6 +2178,32 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              ELSE
                 CALL wrf_error_fatal ( 'arguments not present for calling CAMMGMP SCHEME' )
              ENDIF
+
+!    Added by Zhuxiao,  lscond (simplified Large-scale condensation scheme by Jimy )
+#if ( WRFPLUS == 1 )
+        CASE (LSCONDSCHEME)
+             CALL wrf_debug ( 100 , 'microphysics_driver: calling lscond' )
+             IF ( PRESENT( QV_CURR ) .AND.                          &
+                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV )) THEN
+                                          
+               CALL lscond(                                         &
+                  TH=th                                              &
+                 ,P=p                                               & 
+                 ,QV=qv_curr                                        &
+                 ,RHO=rho, PII=pi_phy, XLV=xlv, CP=cp               &  
+                 ,EP2=ep_2,SVP1=svp1,SVP2=svp2                      &
+                 ,SVP3=svp3,SVPT0=svpt0                             & 
+                 ,R_V= R_v                                          & ! added
+                 ,DZ8W=dz8w                                         &
+                 ,RAINNC=rainnc,RAINNCV=rainncv                     &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                                                                    )
+             ELSE
+                CALL wrf_error_fatal ( 'arguments not present for calling lscond' )
+             ENDIF
+#endif
 #endif
 
       CASE DEFAULT

@@ -45,7 +45,7 @@ CONTAINS
                          STEPBL,STEPRA,STEPCU,                   &
                          W0AVG, RAINNC, RAINC, RAINCV, RAINNCV,  &
                          SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV, &
-                         z_at_q, qnwfa2d, scalar, num_sc,        & ! G. Thompson
+                         z_at_q, inv_dens, qnwfa2d, scalar, num_sc,  & ! G. Thompson
                          re_cloud, re_ice, re_snow,              & ! G. Thompson
                          has_reqc, has_reqi, has_reqs,           & ! G. Thompson
                          NCA,swrad_scat,                         &
@@ -377,6 +377,7 @@ CONTAINS
              RAINNC, RAINC, RAINCV, RAINNCV,  &
              SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV
    REAL,     DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) :: z_at_q            !  G. Thompson
+   REAL,     DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) :: inv_dens          !  G. Thompson
    REAL,     DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: qnwfa2d                !  G. Thompson
    INTEGER,  INTENT(IN) :: num_sc                                                !  G. Thompson
    REAL,     DIMENSION(ims:ime,kms:kme,jms:jme,num_sc), INTENT(INOUT) :: scalar  !  G. Thompson
@@ -1296,7 +1297,7 @@ integer myproc
                          nssl_rho_qh, nssl_rho_qhl,              &
                          nssl_rho_qs,                            &
                 ccn_conc,                                        & ! RAS
-                z_at_q, qnwfa2d, scalar, num_sc,            &  ! G. Thompson
+                z_at_q, inv_dens, qnwfa2d, scalar, num_sc,      &  ! G. Thompson
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte                    )
@@ -1888,7 +1889,6 @@ integer myproc
 
              aclwalloc = .true.
 
-
         CASE (GFDLLWSCHEME)
              CALL nl_get_start_month(id,month)
              CALL nl_get_start_day(id,iday)
@@ -2196,6 +2196,9 @@ integer myproc
 #if ( EM_CORE == 1 )
    USE module_bl_mynn
    USE module_bl_temf
+#if ( WRFPLUS == 1 )
+   USE module_bl_surface_drag
+#endif
    USE module_sf_temfsfclay
    USE module_sf_mynn
 #endif
@@ -3252,6 +3255,15 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
 
+#if ( WRFPLUS == 1 )
+      CASE (SURFDRAGSCHEME)
+         CALL surface_drag_init(RUBLTEN,RVBLTEN,RTHBLTEN,   &
+                        RQVBLTEN,restart,                     &
+                        ids, ide, jds, jde, kds, kde,         &
+                        ims, ime, jms, jme, kms, kme,         &
+                        its, ite, jts, jte, kts, kte          )
+#endif
+
 
       CASE DEFAULT
 
@@ -3298,6 +3310,9 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_cu_ntiedtke
 #if ( EM_CORE == 1 )
    USE module_cu_kfcup !BSINGH - For WRFCuP Scheme
+#endif
+#if ( WRFPLUS == 1 )
+   USE module_cu_du, ONLY : ducuinit
 #endif
 !------------------------------------------------------------------
    IMPLICIT NONE 
@@ -3533,7 +3548,20 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
 
-     CASE DEFAULT
+#if ( WRFPLUS == 1 )
+! this is for WRFPlus only
+      CASE (DUCUSCHEME)
+          CALL ducuinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,      &
+                      RQICUTEN,RQSCUTEN,NCA,W0AVG,P_QC,P_QR,      &
+                      SVP1,SVP2,SVP3,SVPT0,                       &
+                      PARAM_FIRST_SCALAR,restart,                 &
+                      allowed_to_read ,                           &
+                      ids, ide, jds, jde, kds, kde,               &
+                      ims, ime, jms, jme, kms, kme,               &
+                      its, ite, jts, jte, kts, kte                )
+#endif
+
+      CASE DEFAULT
 
    END SELECT cps_select
 
@@ -3650,7 +3678,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                          nssl_rho_qh, nssl_rho_qhl,              &
                          nssl_rho_qs,                            &
                       ccn_conc,                                  & ! RAS
-                      z_at_q, qnwfa2d, scalar, num_sc,        &  ! G. Thompson
+                      z_at_q, inv_dens, qnwfa2d, scalar, num_sc,  &  ! G. Thompson
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
@@ -3707,6 +3735,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    REAL, INTENT(INOUT) :: ccn_conc ! RAS
    REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT):: qnwfa2d                       !  G. Thompson
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN):: z_at_q                   !  G. Thompson
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN):: inv_dens                 !  G. Thompson
    INTEGER, INTENT(IN) :: num_sc                                               !  G. Thompson
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme, num_sc), INTENT(INOUT):: scalar    !  G. Thompson
 
@@ -3761,6 +3790,10 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
      CASE (KESSLERSCHEME)
           warm_rain = .true.
+#if ( WRFPLUS == 1 )
+     CASE (MKESSLERSCHEME)
+          warm_rain = .true.
+#endif
      CASE (WSM3SCHEME)
           CALL wsm3init(rhoair0,rhowater,rhosnow,cliq,cpv, allowed_to_read )
      CASE (WSM5SCHEME)
@@ -3804,6 +3837,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 ! called for each nest move. This is potentially very computationally expensive.
          IF(start_of_simulation.or.restart.or.config_flags%cycling)     &
             CALL thompson_init(HGT=z_at_q,                              &
+                          ORHO=inv_dens,                                &
                           NWFA2D=qnwfa2d,                               &
                           NWFA=scalar(ims,kms,jms,P_QNWFA),             &
                           NIFA=scalar(ims,kms,jms,P_QNIFA),             &
@@ -3955,11 +3989,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       its, ite, jts, jte, kts, kte                 )
 
       CASE (SPNUDGING)
-           CALL fddaspnudginginit(id,rundgdten,rvndgdten,rthndgdten,rphndgdten,&
+           CALL fddaspnudginginit(id,rundgdten,rvndgdten,rthndgdten,rphndgdten,rqvndgdten,&
                config_flags%run_hours, &
                config_flags%if_no_pbl_nudging_uv, &
                config_flags%if_no_pbl_nudging_t, &
                config_flags%if_no_pbl_nudging_ph, &
+               config_flags%if_no_pbl_nudging_q, &
                config_flags%if_zfac_uv, &
                config_flags%k_zfac_uv, &
                config_flags%dk_zfac_uv, &
@@ -3969,8 +4004,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                config_flags%if_zfac_ph, &
                config_flags%k_zfac_ph, &
                config_flags%dk_zfac_ph, &
+               config_flags%if_zfac_q, &
+               config_flags%k_zfac_q, &
+               config_flags%dk_zfac_q, &
+               config_flags%ktrop, &
                config_flags%guv, &
-               config_flags%gt, config_flags%gph, &
+               config_flags%gt, config_flags%gph, config_flags%gq, &
                config_flags%if_ramping, config_flags%dtramp_min, &
                config_flags%auxinput9_end_h, &
                config_flags%xwavenum,config_flags%ywavenum, &

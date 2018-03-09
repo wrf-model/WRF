@@ -102,7 +102,8 @@ else
   setenv A2DCASE `echo $arglist | grep 2d`
 
   if ( ! (   $?WRF_EM_CORE  || $?WRF_NMM_CORE \
-          ||  $?WRF_COAMPS_CORE || $?WRF_EXP_CORE )) then 
+          ||  $?WRF_COAMPS_CORE || $?WRF_EXP_CORE \
+          ||  $?WRF_PLUS_CORE )) then 
     echo 'None of WRF_EM_CORE, WRF_NMM_CORE, '
 #    echo '        WRF_COAMPS_CORE, or WRF_EXP_CORE '
     echo '        specified in shell environment.... '
@@ -110,6 +111,7 @@ else
     setenv WRF_NMM_CORE 0
     setenv WRF_COAMPS_CORE 0
     setenv WRF_EXP_CORE 0
+    setenv WRF_PLUS_CORE 0
   endif
 
 # these settings get passed down through the environment in the
@@ -131,6 +133,7 @@ else
   if ( ! $?WRF_NMM_NEST )    setenv WRF_NMM_NEST 0
   if ( ! $?WRF_COAMPS_CORE ) setenv WRF_COAMPS_CORE 0
   if ( ! $?WRF_EXP_CORE )    setenv WRF_EXP_CORE 0
+  if ( ! $?WRF_PLUS_CORE )   setenv WRF_PLUS_CORE 0
   if ( ! $?WRF_CHEM )        setenv WRF_CHEM 0
   if ( ! $?WRF_DFI_RADAR )   setenv WRF_DFI_RADAR 0
   if ( ! $?HWRF )            setenv HWRF 0
@@ -215,7 +218,7 @@ else
       set overwrite=1
     else
       head -2 Registry/Registry | tail -1 | grep EM > /dev/null
-      if ( $status ) then
+      if ( $status == 0 ) then
         set overwrite=1
       else
         set em_time=`ls -1tr Registry | cat -n | grep -w 'Registry\.EM' | grep -v 'Registry.EM.' | awk '{print $1}'`

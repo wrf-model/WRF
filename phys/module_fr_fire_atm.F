@@ -10,8 +10,68 @@ module module_fr_fire_atm
 
 use module_model_constants, only: cp,xlv
 use module_fr_fire_util
+use module_state_description, only: num_tracer 
+use module_state_description, only: p_fire_smoke
 
 contains
+
+! DME subroutine for passive tracers
+subroutine add_fire_tracer_emissions(    &
+       tracer_opt,dt,dx,dy,              &
+       ifms,ifme,jfms,jfme,              &
+       ifts,ifte,jtfs,jfte,              &
+       ids,ide,kds,kde,jds,jde,          &
+       ims,ime,kms,kme,jms,jme,          &
+       its,ite,kts,kte,jts,jte,          &
+       rho,dz8w,                         &
+       burnt_area_dt,fgip,               &
+       tracer,fire_tracer_smoke          &
+)
+
+implicit none
+! arguments
+integer,intent(in)::tracer_opt
+real,intent(in)::fire_tracer_smoke
+real,intent(in)::dt,dx,dy
+integer,intent(in)::ifms,ifme,jfms,jfme,ifts,ifte,jtfs,jfte,ids,ide,kds,kde,jds,jde,ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte
+real,intent(in)::rho(ims:ime,kms:kme,jms:jme),dz8w(ims:ime,kms:kme,jms:jme)
+real,intent(in),dimension(ifms:ifme,jfms:jfme)::burnt_area_dt,fgip
+real,intent(inout)::tracer(ims:ime,kms:kme,jms:jme,num_tracer)
+! local
+integer::isz1,jsz1,isz2,jsz2,ir,jr
+integer::i,j,ibase,jbase,i_f,ioff,j_f,joff
+real::avgw,emis,conv
+
+isz1 = ite-its+1
+jsz1 = jte-jts+1
+isz2 = ifte-ifts+1
+jsz2 = jfte-jtfs+1
+ir=isz2/isz1
+jr=jsz2/jsz1
+avgw = 1.0/(ir*jr)
+
+do j=max(jds+1,jts),min(jte,jde-2)
+    jbase=jtfs+jr*(j-jts)
+    do i=max(ids+1,its),min(ite,ide-2)
+       ibase=ifts+ir*(i-its)
+       do joff=0,jr-1
+           j_f=joff+jbase
+           do ioff=0,ir-1
+               i_f=ioff+ibase
+               if (num_tracer >0)then
+                     emis=avgw*fire_tracer_smoke*burnt_area_dt(i_f,j_f)*fgip(i_f,j_f)*1000/(rho(i,kts,j)*dz8w(i,kts,j)) ! g_smoke/kg_air
+                     tracer(i,kts,j,p_fire_smoke)=tracer(i,kts,j,p_fire_smoke)+emis
+                endif
+           enddo
+       enddo
+    enddo
+enddo
+
+end subroutine add_fire_tracer_emissions
+
+!
+!***
+!
 
 SUBROUTINE fire_tendency( &
     ids,ide, kds,kde, jds,jde,   & ! dimensions

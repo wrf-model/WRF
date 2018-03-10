@@ -568,11 +568,7 @@
                        + chem(i,k,j,lptr_oin_aer(n,itype,iphase)) &
                        + chem(i,k,j,lptr_oc_aer(n,itype,iphase))  &
                        + chem(i,k,j,lptr_bc_aer(n,itype,iphase))  &
-                       + chem(i,k,j,lptr_glysoa_r1_aer(n,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_r2_aer(n,itype,iphase)) &
                        + chem(i,k,j,lptr_glysoa_sfc_aer(n,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_oh_aer(n,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_nh4_aer(n,itype,iphase)) &
                        + chem(i,k,j,lptr_smpa_aer(n,itype,iphase)) &
                        + chem(i,k,j,lptr_smpbb_aer(n,itype,iphase)) &
                        + chem(i,k,j,lptr_biog1_c_aer(n,itype,iphase))    &
@@ -605,11 +601,7 @@
                                                           + chem(i,k,j,lptr_oin_aer(n,itype,iphase)) &
                                                           + chem(i,k,j,lptr_oc_aer(n,itype,iphase))  &
                                                           + chem(i,k,j,lptr_bc_aer(n,itype,iphase))  &
-                       + chem(i,k,j,lptr_glysoa_r1_aer(n,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_r2_aer(n,itype,iphase)) &
                        + chem(i,k,j,lptr_glysoa_sfc_aer(n,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_oh_aer(n,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_nh4_aer(n,itype,iphase)) &
                        + chem(i,k,j,lptr_smpa_aer(n,itype,iphase)) &
                        + chem(i,k,j,lptr_smpbb_aer(n,itype,iphase)) &
                        + chem(i,k,j,lptr_biog1_c_aer(n,itype,iphase))    &
@@ -897,19 +889,11 @@
                        + chem(i,k,j,lptr_smpbb_aer(1,itype,iphase)) &
                        + chem(i,k,j,lptr_biog1_c_aer(1,itype,iphase))    &
                        + chem(i,k,j,lptr_biog1_o_aer(1,itype,iphase))    &
-                       + chem(i,k,j,lptr_glysoa_r1_aer(1,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_r2_aer(1,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_oh_aer(1,itype,iphase)) &
                        + chem(i,k,j,lptr_glysoa_sfc_aer(1,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_nh4_aer(1,itype,iphase)) &
                        + chem(i,k,j,lptr_oc_aer(1,itype,iphase))
                  totoa_a02(i,k,j)= totoa_a02(i,k,j) &
                         + chem(i,k,j,lptr_oc_aer(2,itype,iphase)) &
-                        + chem(i,k,j,lptr_glysoa_r1_aer(2,itype,iphase)) &
-                        + chem(i,k,j,lptr_glysoa_r2_aer(2,itype,iphase)) &
                         + chem(i,k,j,lptr_glysoa_sfc_aer(2,itype,iphase))    &
-                        + chem(i,k,j,lptr_glysoa_oh_aer(2,itype,iphase))    &
-                        + chem(i,k,j,lptr_glysoa_nh4_aer(2,itype,iphase))    &
                         + chem(i,k,j,lptr_smpa_aer(2,itype,iphase))    &
                         + chem(i,k,j,lptr_smpbb_aer(2,itype,iphase))    &
                         + chem(i,k,j,lptr_biog1_c_aer(2,itype,iphase))    &
@@ -917,22 +901,14 @@
                  totoa_a03(i,k,j)= totoa_a03(i,k,j)  &
                        + chem(i,k,j,lptr_smpa_aer(3,itype,iphase))    &
                        + chem(i,k,j,lptr_smpbb_aer(3,itype,iphase))    &
-                       + chem(i,k,j,lptr_glysoa_r1_aer(3,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_r2_aer(3,itype,iphase)) &
                        + chem(i,k,j,lptr_glysoa_sfc_aer(3,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_oh_aer(3,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_nh4_aer(3,itype,iphase)) &
                        + chem(i,k,j,lptr_biog1_c_aer(3,itype,iphase))    &
                        + chem(i,k,j,lptr_biog1_o_aer(3,itype,iphase))    &
                        + chem(i,k,j,lptr_oc_aer(3,itype,iphase))
                  totoa_a04(i,k,j)= totoa_a04(i,k,j) &
                        + chem(i,k,j,lptr_smpa_aer(4,itype,iphase))    &
                        + chem(i,k,j,lptr_smpbb_aer(4,itype,iphase))    &
-                       + chem(i,k,j,lptr_glysoa_r1_aer(4,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_r2_aer(4,itype,iphase)) &
                        + chem(i,k,j,lptr_glysoa_sfc_aer(4,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_oh_aer(4,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_nh4_aer(4,itype,iphase)) &
                        + chem(i,k,j,lptr_biog1_c_aer(4,itype,iphase))    &
                        + chem(i,k,j,lptr_biog1_o_aer(4,itype,iphase))    &
                        + chem(i,k,j,lptr_oc_aer(4,itype,iphase))
@@ -1017,11 +993,7 @@
         soa_a01(i,k,j)= soa_a01(i,k,j) &
                        + chem(i,k,j,lptr_smpa_aer(1,itype,iphase)) &
                        + chem(i,k,j,lptr_smpbb_aer(1,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_r1_aer(1,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_r2_aer(1,itype,iphase)) &
                        + chem(i,k,j,lptr_glysoa_sfc_aer(1,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_oh_aer(1,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_nh4_aer(1,itype,iphase)) &
                        + chem(i,k,j,lptr_biog1_c_aer(1,itype,iphase))    &
                        + chem(i,k,j,lptr_biog1_o_aer(1,itype,iphase))
 
@@ -1079,11 +1051,7 @@
           soa_a02(i,k,j)= soa_a02(i,k,j) &
                        + chem(i,k,j,lptr_smpa_aer(2,itype,iphase)) &
                        + chem(i,k,j,lptr_smpbb_aer(2,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_r1_aer(2,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_r2_aer(2,itype,iphase)) &
                        + chem(i,k,j,lptr_glysoa_sfc_aer(2,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_oh_aer(2,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_nh4_aer(2,itype,iphase)) &
                        + chem(i,k,j,lptr_biog1_c_aer(2,itype,iphase))    &
                        + chem(i,k,j,lptr_biog1_o_aer(2,itype,iphase))
 
@@ -1140,11 +1108,7 @@
           soa_a03(i,k,j)= soa_a03(i,k,j) &
                        + chem(i,k,j,lptr_smpa_aer(3,itype,iphase)) &
                        + chem(i,k,j,lptr_smpbb_aer(3,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_r1_aer(3,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_r2_aer(3,itype,iphase)) &
                        + chem(i,k,j,lptr_glysoa_sfc_aer(3,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_oh_aer(3,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_nh4_aer(3,itype,iphase)) &
                        + chem(i,k,j,lptr_biog1_c_aer(3,itype,iphase))    &
                        + chem(i,k,j,lptr_biog1_o_aer(3,itype,iphase))
 
@@ -1203,11 +1167,7 @@
           soa_a04(i,k,j)= soa_a04(i,k,j) &
                        + chem(i,k,j,lptr_smpa_aer(4,itype,iphase)) &
                        + chem(i,k,j,lptr_smpbb_aer(4,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_r1_aer(4,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_r2_aer(4,itype,iphase)) &
                        + chem(i,k,j,lptr_glysoa_sfc_aer(4,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_oh_aer(4,itype,iphase)) &
-                       + chem(i,k,j,lptr_glysoa_nh4_aer(4,itype,iphase)) &
                        + chem(i,k,j,lptr_biog1_c_aer(4,itype,iphase))    &
                        + chem(i,k,j,lptr_biog1_o_aer(4,itype,iphase))
 

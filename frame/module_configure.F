@@ -681,7 +681,7 @@ has_irr_diag: &
      ENDIF
      funit = get_funit()
      write(fname,'(''wrfchem_irr_diag_d'',i2.2)') idomain
-     OPEN( unit = funit, file=trim(fname), iostat=istat )
+     OPEN( unit = funit, file=trim(fname), status='OLD', iostat=istat )
      IF( istat /= 0 ) THEN
        write(err_mes,'(''IRR failed to open '',a)') trim(fname)
        CALL wrf_error_fatal( trim(err_mes) )

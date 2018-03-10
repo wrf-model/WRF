@@ -275,7 +275,7 @@ CONTAINS
      &          ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas  &  !fasdas
      &          ,spp_lsm,pattern_spp_lsm,field_sf                     &  !SPP
      &          ,spp_pbl,pattern_spp_pbl                              &  !SPP
-     &          ,XLAIDYN,WSPDSFC                                      &  !WRF-CMAQ PCC/JOB
+     &          ,XLAIDYN,WSPDSFC                                      &  !WRF-CMAQ
      &                                                             )
 
 #if ( ! NMM_CORE == 1 )
@@ -510,7 +510,7 @@ CONTAINS
 !-- SOILCTOP     Top soil fraction                     ! P-X LSM
 !-- SOILCBOT     Bottom soil fraction                  ! P-X LSM
 !-- RA           Aerodynamic resistence                ! P-X LSM
-!-- RS           Stomatal resistence                   ! P-X LSM, also from Noah lsm, lsm_mosaic, or noahmp PCC
+!-- RS           Stomatal resistence                   ! P-X LSM, also from Noah lsm, lsm_mosaic, or noahmp
 !-- VEGF_PX      PX LSM internal LU-based Veg Fraction ! P-X LSM
 !-- IMPERV       Impervious surface fraction           ! P-X LSM
 !-- CANFRA       Canopy/Tree fraction                  ! P-X LSM
@@ -776,7 +776,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   RIBN, ZKMAX
 #endif
 !----------------------------------------------------------
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   WSPDSFC  !For RA calculation used in WRF-CMAQ PCC
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   WSPDSFC  !For RA calculation used in WRF-CMAQ
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   BR
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   CHKLOWQ
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   GZ1OZ0
@@ -1341,7 +1341,7 @@ CONTAINS
 ! local var for SPP_LSM
    INTEGER                                             ::   spp_lsm_loc
 
-   real,    optional,  dimension(ims:ime,jms:jme ),intent(inout) :: XLAIDYN !WRF/CMAQ JOB/PCC
+   real,    optional,  dimension(ims:ime,jms:jme ),intent(inout) :: XLAIDYN !WRF/CMAQ
 !
 !------------------------------------------------------------------
 ! Initialize local variables
@@ -2609,7 +2609,7 @@ CONTAINS
                 dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
                 ,sfcheadrt,INFXSRT, soldrain                    & !hydro
                 ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas    & ! fasdas
-                ,RS,XLAIDYN)                                      !WRF-CMAQ PCC
+                ,RS,XLAIDYN)                                      !WRF-CMAQ
            ELSE
                CALL wrf_error_fatal('Lack arguments to call lsm_mosaic')
            ENDIF
@@ -2719,7 +2719,7 @@ CONTAINS
 !
 !  END FASDAS
 !
-                ,RS,XLAIDYN)                                        !WRF-CMAQ PCC
+                ,RS,XLAIDYN)                                        !WRF-CMAQ
          ENDIF
 
          call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &

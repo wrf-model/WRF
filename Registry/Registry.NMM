@@ -999,6 +999,7 @@ state    real   ACSNOM           ij     misc        1         -     irh023      
 state    real   RMOL             ij     misc        1         -     ir       "RMOL"               ""         ""
 state    real   SNOW             ij     misc        1         -     i01rh       "SNOW"                 "SNOW WATER EQUIVALENT"         "kg m-2"
 state    real   CANWAT           ij     misc        1         -     i01rh       "CANWAT"               "CANOPY WATER" ""
+state    real   XLAIDYN          ij     misc        1         -     -         "XLAIDYN"     "Noah Dynamic LEAF AREA INDEX"       "m-2/m-2"
 state  integer  FORCE_SST        k      misc        1         -     -        "FORCE_SST"          "IF FORCE_SST(1) IS 1, FEED SST FROM PARENT EVERY DT" ""
 state    real   SST              ij     misc        1         -     i014rh0123d=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)       "SST"                  "SEA SURFACE TEMPERATURE" "K"
 state    real   UOCE             ij     misc        1         -     i014rh023    "UOCE"               "SEA SURFACE ZONAL CURRENTS" "m s-1"
@@ -1791,7 +1792,7 @@ package   idealscmsfcscheme  sf_sfclay_physics==89   -             -
 package   gbmpblscheme  sf_sfclay_physics==12       -             -
 
 package   slabscheme     sf_surface_physics==1       -             -
-package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn
+package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn,xlaidyn
 package   ruclsmscheme   sf_surface_physics==3       -             state:ACRUNOFF
 
 package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy

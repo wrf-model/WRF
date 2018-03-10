@@ -68,9 +68,6 @@ foreach a ( $argv )
     if ( "$a" == "wrfplus" ) then 
         setenv WRF_EM_CORE   1
         setenv WRF_PLUS_CORE 1
-    else
-        setenv WRF_EM_CORE   1
-        setenv WRF_PLUS_CORE 0
     endif
     if ( "$a" == "nmm_real" ) then
       grep "NMM_CORE=1" configure.wrf > /dev/null

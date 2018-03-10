@@ -2043,7 +2043,7 @@ rconfig   character  physics_suite        namelist,physics      1           "non
 rconfig   logical  force_read_thompson   namelist,physics      1           .false.
 rconfig   logical  write_thompson_tables   namelist,physics     1           .true.
 rconfig   integer     mp_physics          namelist,physics	max_domains    -1     irh       "mp_physics"            ""      ""
-rconfig   integer  mp_physics_ad          namelist,physics	max_domains   98       rh       "mp_physics_ad"            ""      ""
+rconfig   integer  mp_physics_ad          namelist,physics	max_domains   99       rh       "mp_physics_ad"            ""      ""
 #rconfig   integer     milbrandt_ccntype   namelist,physics      max_domains    0       rh       "milbrandt select maritime(1)/continental(2)"  ""      ""
 rconfig   real     nssl_cccn              namelist,physics      max_domains  0.5e9    rh       "Base CCN concentration for NSSL microphysics"  ""      ""
 rconfig   real     nssl_alphah            namelist,physics      max_domains   0       rh       "Graupel PSD shape paramter"  ""      ""

@@ -902,7 +902,12 @@ ext :
 
 framework :
 	@ echo '--------------------------------------'
-	( cd frame ; $(MAKE) $(J) LLIST=" " framework ; \
+	if [ $(WRF_PLUS_CORE) -eq 1 ] ; then \
+	  LINKLIST="$(MODLL)" ; \
+	else \
+	  LINKLIST=" " ; \
+	fi
+	( cd frame ; $(MAKE) $(J) LLIST="$(LINKLIST)" framework ; \
           cd ../external/io_netcdf ; \
           $(MAKE) NETCDFPATH="$(NETCDFPATH)" \
                FC="$(FC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
@@ -962,13 +967,13 @@ shared :
 	@ echo '--------------------------------------'
 	if [ "`echo $(J) | sed -e 's/-j//g' -e 's/ \+//g'`" -gt "6" ] ; then \
 	  if [ $(WRF_PLUS_CORE) -eq 0 ]   ; then \
-	   ( cd share ; $(MAKE) -j 6 PERTMOD="$(MODPT)" ) ;  \
+	   ( cd share ; $(MAKE) -j 6 PERTMOD=" " ) ;  \
 	  else \
 	   ( cd share ; $(MAKE) -j 6 PERTMOD="$(MODPT)" ) ;  \
 	  fi \
 	else \
 	  if [ $(WRF_PLUS_CORE) -eq 0 ]   ; then \
-	   ( cd share ; $(MAKE) $(J) PERTMOD="$(MODPT)" ) ;  \
+	   ( cd share ; $(MAKE) $(J) PERTMOD=" " ) ;  \
 	  else \
 	   ( cd share ; $(MAKE) $(J) PERTMOD="$(MODPT)" ) ;  \
 	  fi \
@@ -1074,7 +1079,7 @@ nmm_core :
 
 toolsdir :
 	@ echo '--------------------------------------'
-	if [ $(WRFPLUS) -eq 1 ] ; then \
+	if [ $(WRF_PLUS_CORE) -eq 0 ] ; then \
 	  ( cd tools ; $(MAKE) CC_TOOLS_CFLAGS="$(CC_TOOLS_CFLAGS)" CC_TOOLS="$(CC_TOOLS) -DIWORDSIZE=$(IWORDSIZE) -DMAX_HISTORY=$(MAX_HISTORY)" ) ; \
 	else \
 	  ( cd tools ; $(MAKE) CC_TOOLS_CFLAGS="$(CC_TOOLS_CFLAGS)" CC_TOOLS="$(CC_TOOLS) -DIWORDSIZE=$(IWORDSIZE) -DMAX_HISTORY=$(MAX_HISTORY) -DWRFPLUS=1" ) ; \

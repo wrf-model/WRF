@@ -44,6 +44,7 @@ hypsometric_opt                     = 2,
 /
 &physics
 mp_physics=    7,
+mp_physics_ad= 98,
 ra_lw_physics= 1,
 ra_sw_physics= 2,
 radt=         15,

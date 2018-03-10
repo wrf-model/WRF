@@ -20,4 +20,5 @@
  ln -sf ../../run/LANDUSE.TBL        .
 
 #mpirun ./da_wrfvar.exe
-mpiexec_mpt ../../run/wrf.exe
+#mpiexec_mpt ../../run/wrf.exe
+../../run/wrf.exe

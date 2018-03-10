@@ -11,6 +11,19 @@ CHEM_FILES =	../chem/module_aerosols_sorgam.o \
 		../chem/module_aerosols_soa_vbs.o
 CHEM_FILES2 =	../chem/module_data_mosaic_asect.o
 
+# these files are needed to compile 'phys' in wrfplus mode
+MODS4 = ../wrftladj/module_mp_mkessler.o ../wrftladj/module_mp_nconvp.o \
+	../wrftladj/module_bl_surface_drag.o ../wrftladj/module_cu_du.o
+MODMP = ../wrftladj/module_mp_mkessler.o ../wrftladj/module_mp_nconvp.o
+MODBL = ../wrftladj/module_bl_surface_drag.o
+MODCU = ../wrftladj/module_cu_du.o
+
+# this file is needed to compile module_integrate.F under frame in wrfplus mode
+MODLL = ../wrftladj/module_linked_list2.o
+
+# these 2 file are needed to compile mediation_integrate.F under share in wrfplus mode
+MODPT = ../dyn_em/module_bc_em.o ../wrftladj/mediation_pertmod_io.o
+
 deflt :
 		@ echo Please compile the code using ./compile
 
@@ -115,25 +128,14 @@ wrfplus : configcheck
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" ext
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" toolsdir
 	/bin/rm -f main/libwrflib.a main/libwrflib.lib
-	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" framework
+	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" framework_plus
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" shared
-	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" physics
+	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" physics_plus
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" em_core
-	exit
-	cp frame/module_domain.mod                   wrftladj
-	cp external/esmf_time_f90/module_utility.mod wrftladj
-	( cd wrftladj ; $(MAKE) $(J) shareadtl )
-	if [ $(WRF_PLUS_CORE) -eq 1 ] ; then \
-	  LLIST="../wrftladj/module_linked_lisk2.o ../wrftladj/jcdfi.o"  ; \
-	else \
-	  LLIST=" "  ; \
-	fi
-	cp wrftladj/module_linked_list2.mod frame
-	cp wrftladj/jcdfi.mod               frame
-	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" module_integrate
-	( cd wrftladj ; $(MAKE) $(J) wrfplus )
+	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" wrftlmadj
+	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf )
 	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real em_real )
-	( cd run ; /bin/rm -f wrf.exe ; ln -s ../main/wrf.exe . )
+	( cd run ; /bin/rm -f *.exe ; ln -s ../main/*.exe . )
 	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
 	  ( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_SST_ESMF ) ; \
 	fi
@@ -900,7 +902,7 @@ ext :
 
 framework :
 	@ echo '--------------------------------------'
-	( cd frame ; $(MAKE) $(J) framework ; \
+	( cd frame ; $(MAKE) $(J) LLIST=" " framework ; \
           cd ../external/io_netcdf ; \
           $(MAKE) NETCDFPATH="$(NETCDFPATH)" \
                FC="$(FC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
@@ -927,12 +929,49 @@ framework :
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf ; \
           cd ../../frame )
 
+framework_plus :
+	@ echo '--------------------------------------'
+	( cd frame ; $(MAKE) $(J) LLIST="$(MODLL)" framework ; \
+          cd ../external/io_netcdf ; \
+          $(MAKE) NETCDFPATH="$(NETCDFPATH)" \
+               FC="$(FC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
+               CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+               LIB_LOCAL="$(LIB_LOCAL)" \
+               ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf; \
+          cd ../io_netcdf ; \
+          $(MAKE) NETCDFPATH="$(NETCDFPATH)" \
+               FC="$(SFC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
+               CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+               LIB_LOCAL="$(LIB_LOCAL)" \
+               ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR"; \
+          cd ../io_pio ; \
+          echo SKIPPING PIO BUILD $(MAKE) NETCDFPATH="$(PNETCDFPATH)" \
+               FC="$(SFC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
+               CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+               LIB_LOCAL="$(LIB_LOCAL)" \
+               ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR"; \
+          cd ../io_int ; \
+          $(MAKE) SFC="$(SFC) $(FCBASEOPTS)" \
+               FC="$(SFC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" \
+               RANLIB="$(RANLIB)" CPP="$(CPP) $(ARCH_LOCAL)" DM_FC="$(DM_FC) $(FCBASEOPTS)"\
+               TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+               ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf ; \
+          cd ../../frame )
+
 shared :
 	@ echo '--------------------------------------'
 	if [ "`echo $(J) | sed -e 's/-j//g' -e 's/ \+//g'`" -gt "6" ] ; then \
-	  ( cd share ; $(MAKE) -j 6 ) ;  \
+	  if [ $(WRF_PLUS_CORE) -eq 0 ]   ; then \
+	   ( cd share ; $(MAKE) -j 6 PERTMOD="$(MODPT)" ) ;  \
+	  else \
+	   ( cd share ; $(MAKE) -j 6 PERTMOD="$(MODPT)" ) ;  \
+	  fi \
 	else \
-	  ( cd share ; $(MAKE) $(J) ) ;  \
+	  if [ $(WRF_PLUS_CORE) -eq 0 ]   ; then \
+	   ( cd share ; $(MAKE) $(J) PERTMOD="$(MODPT)" ) ;  \
+	  else \
+	   ( cd share ; $(MAKE) $(J) PERTMOD="$(MODPT)" ) ;  \
+	  fi \
 	fi
 
 wrf_hydro :
@@ -959,6 +998,17 @@ physics :
 	else \
 		( cd phys ; $(MAKE) CF2="$(CHEM_FILES2)" ) ; \
 	fi
+
+physics_plus :
+	if [ $(WRF_PLUS_CORE) -eq 0 ] ; then \
+	   ( cd phys ; $(MAKE) PHYS_PLUS=" " PHYS_MP=" " PHYS_BL=" " PHYS_CU=" " ) ; \
+	else \
+	   ( cd phys ; $(MAKE) PHYS_PLUS="$(MODS4)" PHYS_MP="$(MODMP)" PHYS_BL="$(MODBL)" PHYS_CU="$(MODCU)" ) ; \
+	fi
+
+wrftlmadj :
+	@ echo '--------------------------------------'
+	( cd wrftladj ; $(MAKE) $(J) wrftladj )
 
 em_core :
 	@ echo '--------------------------------------'

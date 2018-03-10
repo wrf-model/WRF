@@ -10,6 +10,8 @@ MODULES =       module_driver_constants.o  \
                 module_domain_type.o       \
                 module_streams.o           \
                 module_domain.o            \
+		$(LLIST) \
+		module_integrate.o         \
                 module_timing.o            \
                 module_configure.o         \
                 module_tiles.o             \
@@ -82,10 +84,6 @@ LIBTARGET    =  framework
 TARGETDIR    =  ./
 $(LIBTARGET) :  $(MODULES) $(OBJS) $(SPECIAL) $(NLOBJS) $(ALOBJS)
 		$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(MODULES) $(OBJS) $(NLOBJS) $(ALOBJS)
-		$(RANLIB) ../main/$(LIBWRFLIB)
-
-module_integrate : module_integrate.o
-		$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) module_integrate.o
 		$(RANLIB) ../main/$(LIBWRFLIB)
 
 nl_set_0_routines.o : nl_access_routines.F module_configure.o

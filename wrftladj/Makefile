@@ -39,16 +39,12 @@ DYNEM_OBJS =       \
 PHYS_MODS = \
 	module_bl_gwdo_tl.o \
 	module_bl_gwdo_ad.o \
-	module_bl_surface_drag.o \
 	module_bl_surface_drag_tl.o \
 	module_bl_surface_drag_ad.o \
-	module_cu_du.o \
 	module_cu_du_tl.o \
 	module_cu_du_ad.o \
-	module_mp_mkessler.o \
 	module_mp_mkessler_tl.o \
 	module_mp_mkessler_ad.o \
-	module_mp_nconvp.o \
 	module_mp_nconvp_tl.o \
 	module_mp_nconvp_ad.o \
 	module_physics_addtendc_tl.o \
@@ -66,8 +62,6 @@ PHYS_MODS = \
 
 SHARE_MODS = \
  	module_adtl_grid_utilities.o	\
- 	mediation_pertmod_io.o	\
- 	module_linked_list2.o	\
  	module_bc_tl.o	        \
  	module_bc_ad.o
 
@@ -75,11 +69,12 @@ SHARE_OBJS = jcdfi.o
   
 FRAME_OBJS = adStack.o adBuffer.o
 
-shareadtl : module_linked_lisk2.o jcdfi.o
-	$(MAKE) $(J) shareadtl
+TLMMODULES = $(FRAME_OBJS) $(SHARE_MODS) $(SHARE_OBJS) $(PHYS_MODS) $(DYNEM_OBJS) $(DYNEM_MODS)
 
-wrfplus : $(DYN_EM_ADTL) $(PHYS_ADTL) $(FRAME_OBJS) $(SHARE_OBJS)
-	$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(DYN_EM_ADTL) $(PHYS_ADTL) $(FRAME_ADTL) $(SHARE_ADTL)
+LIBTARGET    =  wrftladj
+TARGETDIR    =  ./
+$(LIBTARGET) : $(TLMMODULES)
+	$(AR) $(ARFLAGS) ../main/$(LIBWRFLIB) $(TLMMODULES)
 
 include ../configure.wrf
 

@@ -43,6 +43,7 @@ INCLUDE_MODULES =    $(MODULE_SRCH_FLAG) \
                       -I$(WRF_SRC_ROOT_DIR)/frame \
                       -I$(WRF_SRC_ROOT_DIR)/share \
                       -I$(WRF_SRC_ROOT_DIR)/phys \
+                      -I$(WRF_SRC_ROOT_DIR)/wrftladj \
                       -I$(WRF_SRC_ROOT_DIR)/chem -I$(WRF_SRC_ROOT_DIR)/inc \
                       -I$(NETCDFPATH)/include \
                       CONFIGURE_RTTOV_INC

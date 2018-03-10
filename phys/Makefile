@@ -31,6 +31,7 @@ MODULES = \
 	module_data_cam_mam_aero.o \
 	module_data_cam_mam_asect.o \
 	module_cam_infnan.o \
+	$(PHYS_PLUS) \
 	module_bl_ysu.o \
 	module_bl_shinhong.o \
 	module_bl_mrf.o \
@@ -172,7 +173,7 @@ MODULES = \
         module_fddaobs_rtfdda.o \
 	module_fddaobs_driver.o \
 	module_wind_fitch.o \
-        module_sf_lake.o \
+	module_sf_lake.o \
 	module_diagnostics_driver.o
 
 FIRE_MODULES = \

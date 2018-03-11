@@ -324,7 +324,7 @@ else
        setenv WRFPLUS_INC " "
     else
        setenv WRFPLUS_DIR $wrfpluspath
-       setenv WRFPLUS_INC "-I${wrfpluspath}/dyn_em -I${wrfpluspath}/main -I${wrfpluspath}/frame -I${wrfpluspath}/share"
+       setenv WRFPLUS_INC "-I${wrfpluspath}/dyn_em -I${wrfpluspath}/main -I${wrfpluspath}/frame -I${wrfpluspath}/share -I${wrfpluspath}/wrftladj"
     endif
 
     setenv BUFR 1

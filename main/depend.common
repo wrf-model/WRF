@@ -1246,7 +1246,6 @@ module_wrf_top.o: ../frame/module_machine.o \
                   ../frame/module_timing.o \
                   ../frame/module_wrf_error.o \
                   ../frame/module_state_description.o \
-                  $(SHARE_PERTMOD) \
                   ../frame/module_cpl.o \
                   $(ESMF_MOD_DEPENDENCE)
 

@@ -898,7 +898,11 @@ io :
 
 ext :
 	@ echo '--------------------------------------'
-	( cd frame ; $(MAKE) externals )
+	if [ $(WRF_PLUS_CORE) -eq 0 ] ; then \
+	  ( cd frame ; $(MAKE) externals ) ; \
+	else \
+	  ( cd frame ; $(MAKE) PLUSFLAG="-DWRFPLUS=1" externals ) ; \
+	fi
 
 framework :
 	@ echo '--------------------------------------'

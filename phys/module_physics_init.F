@@ -3917,7 +3917,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
          CALL p3_init('.',1)
      CASE (P3_2CATEGORY)
          CALL p3_init('.',2)
-         CALL p3_init('./p3_lookup_table_1.dat','./p3_lookup_table_2.dat',1)
      CASE (MILBRANDT2MOM)
          CALL milbrandt2mom_init
 !      CASE (MILBRANDT3MOM)

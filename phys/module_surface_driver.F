@@ -275,7 +275,7 @@ CONTAINS
      &          ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas  &  !fasdas
      &          ,spp_lsm,pattern_spp_lsm,field_sf                     &  !SPP
      &          ,spp_pbl,pattern_spp_pbl                              &  !SPP
-     &          ,XLAIDYN,WSPDSFC                                      &  !WRF-CMAQ
+     &          ,XLAIDYN                                              &  !WRF-CMAQ
      &                                                             )
 
 #if ( ! NMM_CORE == 1 )
@@ -776,7 +776,6 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   RIBN, ZKMAX
 #endif
 !----------------------------------------------------------
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   WSPDSFC  !For RA calculation used in WRF-CMAQ
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   BR
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   CHKLOWQ
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT)::   GZ1OZ0
@@ -2329,12 +2328,7 @@ CONTAINS
        CALL wrf_error_fatal ( message )
 
      END SELECT sfclay_select
-!Saving wspd from select sfclay scheme to new wspdsfc variable, to output as a state variable ~used in coupled WRF-CMAQ PCC
-           DO j = j_start(ij),j_end(ij)
-           DO i = i_start(ij),i_end(ij)
-             wspdsfc(i,j) = wspd(i,j)
-           ENDDO
-           ENDDO
+
 !  Compute uratx, vratx, tratx for obs nudging
      IF(PRESENT(uratx) .and. PRESENT(vratx) .and. PRESENT(tratx))THEN
         DO J=j_start(ij),j_end(ij)
@@ -3851,8 +3845,8 @@ CONTAINS
          U10(i,j) = UV10*u_phytmp(i,1,j)/SQRT(u_phytmp(i,1,j)**2+v_phytmp(i,1,j)**2)
          V10(i,j) = UV10*v_phytmp(i,1,j)/SQRT(u_phytmp(i,1,j)**2+v_phytmp(i,1,j)**2)
 !        Overwrite WSPD to remove convective velocity (wspd=wspd1 in YSU)
-         WSPD(I,J)=sqrt( u_phytmp(i,1,j)*u_phytmp(i,1,j) +      &
-                         v_phytmp(i,1,j)*v_phytmp(i,1,j) ) + 1.e-9
+!        WSPD(I,J)=sqrt( u_phytmp(i,1,j)*u_phytmp(i,1,j) +      &
+!                        v_phytmp(i,1,j)*v_phytmp(i,1,j) ) + 1.e-9
 !
        ENDIF
 !

@@ -1012,7 +1012,7 @@
      &                                  ,RSW_DN_SFC                     &
      &                                  ,SFCEVPX,SFCZ,SNOW,SNOWC,SNOWH  &
      &                                  ,TH2X,THLOW,TLOW,VGFRCK         &
-     &                                  ,WSPD,XLAND,REGIME,HOL,WSPDK1
+     &                                  ,WSPD,XLAND,REGIME,HOL
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: DUDT_PHY,DVDT_PHY,DZ   &
      &                                          ,P_PHY,P8W,PI_PHY       &
@@ -1563,7 +1563,7 @@
      &        ,  smoiseq=grid%smoiseq, smcwtdxy=grid%smcwtdxy, rechxy=grid%rechxy    &                       
      &        ,  deeprechxy=grid%deeprechxy                                          &                       
      &        ,coszen=grid%czen,xlat_urb2d=grid%hlat                                 &
-     &        ,xlaidyn=grid%xlaidyn,wspdsfc=wspdk1                                    &
+     &        ,xlaidyn=grid%xlaidyn                                                   &
 ! mosaic tiling for Noah
      &        ,sf_surface_mosaic=config_flags%sf_surface_mosaic,  mosaic_cat=config_flags%mosaic_cat      &
 ! lake module

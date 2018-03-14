@@ -790,7 +790,8 @@
      &                ,ulowl, vlowl                                     &
      &                ,zkmax, ribn                                      &
      &                ,charn, msang                                     &
-     &                ,DUBLDT,DVBLDT,DTHBLDT,DQVBLDT                    & !wang added PBL tendency output
+     &                ,DUBLDT,DVBLDT,DTHBLDT,DQVBLDT                    & 
+     &                ,hpbl_hold                                        & 
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,IPS,IPE,JPS,JPE,KPS,KPE                          &
@@ -1030,6 +1031,7 @@
       REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME) :: ZERO_SOIL
 !
       REAL,DIMENSION(IMS:IME,JMS:JME) :: wstar_ysu, delta_ysu
+      REAL,DIMENSION(IMS:IME,JMS:JME) :: hpbl_hold
 !
       LOGICAL :: E_BDY,WARM_RAIN
       LOGICAL :: IS_CAMMGMP_USED=.FALSE.
@@ -1648,6 +1650,7 @@
 
      &               ,MZNT=MZ0                                        &
 #endif
+     &               ,HPBL_HOLD=HPBL_HOLD                             &   !for new NSAS
      &               ,HT=SFCZ                                         &   !KWON
      &               ,UST=USTAR,MIXHT=MIXHT,PBLH=PBLH                 &
      &               ,HFX=TWBS,QFX=QWBS,GRDFLX=GRNFLX                 &
@@ -2289,6 +2292,7 @@
      &                 ,SIGMU, SIGMU1                                   & !updraft fraction
      &                 ,AVCNVC,ACUTIM,IHE,IHW                           &
      &                 ,GRID,CONFIG_FLAGS                               &
+     &                 ,HPBL_HOLD                                       & ! for new NSAS
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                         &
      &                 ,IMS,IME,JMS,JME,KMS,KME                         &
      &                 ,IPS,IPE,JPS,JPE,KPS,KPE                         &
@@ -2371,8 +2375,7 @@
                                         RUCUTEN,                        &
                                         RVCUTEN,RQVFTEN
 
-
-
+       REAL,DIMENSION(IMS:IME,JMS:JME) :: HPBL_HOLD
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: F_ICE       &
      &                                                     ,F_RAIN
@@ -2519,6 +2522,8 @@
      &   CONFIG_FLAGS%CU_PHYSICS==BMJSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==NSASSCHEME)RETURN
+      IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
+     &   CONFIG_FLAGS%CU_PHYSICS==NSASOLDSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==TIEDTKESCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
@@ -2808,6 +2813,7 @@
      &                 ,KF_EDRATES=config_flags%kf_edrates              &
 !Biswas
      &                 ,HFX=HFX,QFX=QFX,PBLH=PBLH                       &
+     &                 ,HPBL_HOLD=HPBL_HOLD                             &
      &                 ,ZNU=ZNU                                         &
      &                 ,STEPCU=NSTEP_CNV,GSW=GSW                        &
      &                 ,PERIODIC_X=.FALSE.,PERIODIC_Y=.FALSE.           &
@@ -3014,7 +3020,7 @@
 !
           cps_select: SELECT CASE(config_flags%cu_physics)
 !
-          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,SCALESASSCHEME,OSASSCHEME,NSASSCHEME,TIEDTKESCHEME)
+          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,SCALESASSCHEME,OSASSCHEME,NSASSCHEME,NSASOLDSCHEME,TIEDTKESCHEME)
            IF(config_flags%mp_physics==fer_mp_hires_advect) THEN
              ! Update QI and QRIMEF:
              call QITEND_FER_HIRES_ADVECT( &

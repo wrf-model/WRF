@@ -1996,7 +1996,6 @@ integer myproc
                            ims, ime, jms, jme, kms, kme,    &
                            its, ite, jts, jte, kts, kte     )
 
-
              acswalloc = .true.
 #endif
 

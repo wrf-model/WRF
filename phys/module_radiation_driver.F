@@ -1625,7 +1625,7 @@ CONTAINS
                            ims,ime, jms,jme, kms,kme,               &
                            its,ite, jts,jte, kts,kte)
              ELSE
-                call wrf_error_fatal('Can not call RRTMK.')
+                call wrf_error_fatal('Can not call RRTMG-K. Missing QNC field.')
              ENDIF
 
 

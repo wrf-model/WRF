@@ -2073,7 +2073,6 @@ CONTAINS
              ENDDO
              ENDDO
 
-
         CASE (RRTMG_SWSCHEME_FAST)
              CALL wrf_debug(100, 'CALL rrtmg_sw_fast')
              CALL RRTMG_SWRAD_FAST(                                    &

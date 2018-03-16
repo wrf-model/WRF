@@ -19,6 +19,7 @@ real,pointer,dimension(:,:):: dzdxf,dzdyf          ! terrain grad (1)
 real,pointer,dimension(:,:):: bbb,betafl,phiwc,r_0 ! spread formula coefficients
 real,pointer,dimension(:,:):: fgip                 ! init mass of surface fuel (kg/m^2)
 real,pointer,dimension(:,:):: ischap               ! if fuel is chaparral and want rate of spread treated differently
+real,pointer,dimension(:,:):: iboros               ! fire instensity over rate of spread -> avialable fuel x heat of combustion
 end type fire_params
 
 ! use as
@@ -296,6 +297,7 @@ type(fire_params)::fp
 !real,pointer,dimension(:,:):: ischap               ! 1 if chapparal
 !end type fire_params
 real, dimension(1:2,1:nsteps), target::vx,vy,zsf,dzdxf,dzdyf,bbb,betafl,phiwc,r_0,fgip,ischap
+real, dimension(1:2,1:nsteps), target::iboros
 real, dimension(1:2,1:nsteps)::nfuel_cat,fuel_time,ros
 real::ros_base,ros_wind,ros_slope,propx,propy,r
 
@@ -309,6 +311,7 @@ fp%phiwc=>phiwc
 fp%r_0=>r_0
 fp%fgip=>fgip
 fp%ischap=>ischap
+fp%iboros=>iboros 
 
 iounit = open_text_file('fuels.m','write')
 
@@ -434,21 +437,102 @@ integer:: i,j,k
 integer::nerr
 character(len=128)::msg
 
+integer :: kk
+integer,parameter :: nf_sb = 204 ! maximum category on 
+integer,dimension(1:nf_sb) :: ksb ! Anderson82 + S&B2005 fuel categories array
+
 !*** executable
+
+!*** Scott & Burgan ***! 
+! assign no fuel by default to all the categories
+do kk=1,nf_sb
+   ksb(kk)=14
+enddo
+! Anderson 1982
+ksb(1)=1
+ksb(2)=2
+ksb(3)=3
+ksb(4)=4
+ksb(5)=5
+ksb(6)=6
+ksb(7)=7
+ksb(8)=8
+ksb(9)=9
+ksb(10)=10
+ksb(11)=11
+ksb(12)=12
+ksb(13)=13
+! Scott & Burgan crosswalks
+! Short grass -- 1
+ksb(101)=1
+ksb(104)=1
+ksb(107)=1
+! Timber grass and understory -- 2
+ksb(102)=2
+ksb(121)=2
+ksb(122)=2
+ksb(123)=2
+ksb(124)=2
+! Tall grass -- 3
+ksb(103)=3
+ksb(105)=3
+ksb(106)=3
+ksb(108)=3
+ksb(109)=3
+! Chaparral -- 4
+ksb(145)=4
+ksb(147)=4
+! Brush -- 5
+ksb(142)=5
+! Dormant Brushi -- 6
+ksb(141)=6
+ksb(146)=6
+! Southern Rough -- 7
+ksb(143)=7
+ksb(144)=7
+ksb(148)=7
+ksb(149)=7
+! Compact Timber Litter -- 8
+ksb(181)=8
+ksb(183)=8
+ksb(184)=8
+ksb(187)=8
+! Hardwood Litter -- 9
+ksb(182)=9
+ksb(186)=9
+ksb(188)=9
+ksb(189)=9
+! Timber (understory) -- 10
+ksb(161)=10
+ksb(162)=10
+ksb(163)=10
+ksb(164)=10
+ksb(165)=10
+! Light Logging Slash -- 11
+ksb(185)=11
+ksb(201)=11
+! Medium Logging Slash -- 12
+ksb(202)=12
+! Heavy Logging Slash -- 13
+ksb(203)=13
+ksb(204)=13
+
+! ****** !
 
 nerr=0
 do j=jfts,jfte
    do i=ifts,ifte
      ! fuel category 
-     k=int( nfuel_cat(i,j) )
+     k=ksb(int(nfuel_cat(i,j))) ! DME S&B05
      if(k.eq.no_fuel_cat)then   ! no fuel 
         fp%fgip(i,j)=0.            ! no mass 
         fp%ischap(i,j)=0.
-        fp%betafl(i,j)=0.          ! to prevent division by zero
+        fp%betafl(i,j)=1.          ! DME: set to 1.0 to prevent fp%betafl(i,j)**(-0.3) to be Inf in fire_ros
         fp%bbb(i,j)=1.             !
         fuel_time(i,j)=7./0.85  ! does not matter, just what was there before
         fp%phiwc(i,j)=0.
         fp%r_0(i,j)=0.             ! no fuel, no spread.
+        fp%iboros(i,j)=0.   ! DME Ib/ROS zero for no fuel
      else
         if(k.eq.0.and.nfuel_cat0.ge.1.and.nfuel_cat0.le.nfuelcats)then
             ! replace k=0 by default
@@ -502,6 +586,7 @@ do j=jfts,jfte
         etas = 0.174* se(k)**(-0.19)                ! mineral damping coef
         ir = gamma * wn * fuelheat * etam * etas  !rxn intensity,btu/ft^2 min
         ! irm = ir * 1055./( 0.3048**2 * 60.) * 1.e-6     !for mw/m^2
+        fp%iboros(i,j) = ir * 1055./( 0.3048**2 * 60.) * 1.e-3 * (60.*12.6/savr(k))     ! I_R x t_r (kJ m^-2)
 
         xifr = exp( (0.792 + 0.681*savr(k)**0.5) &
             * (fp%betafl(i,j)+0.1)) /(192. + 0.2595*savr(k)) ! propagating flux ratio
@@ -759,7 +844,7 @@ endif
 ! if advection, multiply by the cosines
 ros_wind=ros_wind*cor_wind
 ros_slope=ros_slope*cor_slope
-!
+
 !     ----------note!  put an 6 m/s cap on max spread rate -----------
 ! rosm= min(rosm, 6.)         ! no faster than this cap   ! param !
 
@@ -770,6 +855,7 @@ if (excess > 0.)then
     ros_wind = ros_wind - excess*ros_wind/(ros_wind+ros_slope)
     ros_slope = ros_slope - excess*ros_slope/(ros_wind+ros_slope)
 endif
+
 
 !write(msg,*)i,j,' speed=',speed,' tanphi',tanphi,' ros=',ros_base,ros_wind,ros_slope
 !call message(msg)

@@ -1,18 +1,9 @@
 subroutine da_read_pseudo_rad (iv)
 
    !---------------------------------------------------------------------------
-   !  Purpose: read in NCEP bufr tovs 1b data to innovation structure
-   !
-   !   METHOD: use F90 sequential data structure to avoid reading file twice  
-   !            so that da_scan_bufrtovs is not necessary any more.
-   !            1. read file radiance data in sequential data structure
-   !            2. do gross QC check
-   !            3. assign sequential data structure to innovation structure
-   !               and deallocate sequential data structure
+   !  Purpose: assign pseudo single radiance obs
+   !            one sensor, one pixel, one channel
    !---------------------------------------------------------------------------
-
-
-
 
    use da_control
 
@@ -38,29 +29,28 @@ subroutine da_read_pseudo_rad (iv)
    platform_id  = pseudo_rad_platid
    satellite_id = pseudo_rad_satid
    sensor_id    = pseudo_rad_senid
-   if (sensor_id == 0) then
-      nchan=19 !nchan_hirs
-   else if (sensor_id == 1) then
+   if (sensor_id == 0) then       ! hirs
+      nchan=19
+   else if (sensor_id == 1) then  ! msu
       nchan=nchan_msu
-   else if (sensor_id == 3) then
+   else if (sensor_id == 3) then  ! amsua
       nchan=nchan_amsua
-   else if (sensor_id == 4)  then
+   else if (sensor_id == 4)  then ! amsub
       nchan=nchan_amsub
-   else if (sensor_id == 15)  then
+   else if (sensor_id == 15)  then ! mhs
       nchan=nchan_mhs
-   else if (sensor_id == 10)  then
+   else if (sensor_id == 10)  then ! ssmis
       nchan=nchan_ssmis
-   else if (sensor_id == 11)  then
+   else if (sensor_id == 11)  then ! airs
       nchan=nchan_airs
-   else if (sensor_id == 16)  then
-   !iasi
+   else if (sensor_id == 16)  then ! iasi
       nchan= 616
-   else if (sensor_id == 21)  then
-   !seviri
+   else if (sensor_id == 21)  then ! seviri
       nchan = 8 
-   else if (sensor_id == 63)  then
-      !amsr2
+   else if (sensor_id == 63)  then ! amsr2
       nchan = 14
+   else if (sensor_id == 22)  then ! goes-imager
+      nchan = 4
    else
       call da_error(__FILE__,__LINE__, &
            (/"Error in setting up pseudo radiance, unknown sensor_id."/))

@@ -1,9 +1,11 @@
 subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
 
    !-----------------------------------------------------------------------
-   ! Purpose: TBD
+   ! Purpose: Adjoint of da_transform_xtoy_radar
+   ! History:
    !    Updated for Analysis on Arakawa-C grid
    !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
+   !    08/2017 - bug fix for Vr operator (Siou-Ying Jiang, CWB, Taiwan)
    !-----------------------------------------------------------------------
 
    !------------------------------------------------------------------------
@@ -22,6 +24,7 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
    integer :: n
 
    real, allocatable :: model_p(:,:)
+   real, allocatable :: model_rho(:,:)
    real, allocatable :: model_u(:,:)
    real, allocatable :: model_v(:,:)
    real, allocatable :: model_w(:,:)
@@ -45,6 +48,7 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
    alog10= alog(10.0)
 
    allocate (model_p(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
+   allocate (model_rho(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_u(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_v(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_w(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
@@ -87,6 +91,7 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
 
       model_qrnb(1:iv%info(radar)%levels(n),n) = iv%radar(n)%model_qrn(1:iv%info(radar)%levels(n))
       model_p   (1:iv%info(radar)%levels(n),n) = iv%radar(n)%model_p(1:iv%info(radar)%levels(n))
+      model_rho (1:iv%info(radar)%levels(n),n) = iv%radar(n)%model_rho(1:iv%info(radar)%levels(n))
 
       do k = 1,iv%info(radar)%levels(n)
          if (iv % radar(n) % height_qc(k) /= below_model_surface .and.  &
@@ -125,7 +130,8 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
 
                   call da_radial_velocity_adj(jo_grad_y%radar(n)%rv(k), &
                      model_p(k,n), model_u(k,n), model_v(k,n), model_w(k,n),  &
-                     model_qrn(k,n), model_ps(n), xr, yr, zr, model_qrnb(k,n))
+                     model_qrn(k,n), model_ps(n), xr, yr, zr, model_qrnb(k,n),&
+                     model_rho(k,n))
 
                end if
             end if
@@ -172,6 +178,7 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
    deallocate (model_tb)
    deallocate (model_qsn)
    deallocate (model_qgr)
+   deallocate (model_rho)
 
    if (trace_use) call da_trace_exit("da_transform_xtoy_radar_adj")
 

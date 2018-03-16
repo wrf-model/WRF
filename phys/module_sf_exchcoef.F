@@ -219,7 +219,143 @@ CONTAINS
 
   END SUBROUTINE znot_t_v2
 
+  SUBROUTINE znot_m_v6(uref,znotm)
+  IMPLICIT NONE
+! Calculate areodynamical roughness over water with input 10-m wind
+! For low-to-moderate winds, try to match the Cd-U10 relationship from COARE V3.5 (Edson et al. 2013)
+! For high winds, try to fit available observational data
+!
+! Bin Liu, NOAA/NCEP/EMC 2017
+! 
+! uref(m/s)   :   wind speed at 10-m height
+! znotm(meter):   areodynamical roughness scale over water
+!
 
+    REAL, INTENT(IN) :: uref
+    REAL, INTENT(OUT):: znotm
+    REAL             :: p13, p12, p11, p10
+    REAL             :: p25, p24, p23, p22, p21, p20
+    REAL             :: p35, p34, p33, p32, p31, p30
+    REAL             :: p40
+
+    p13 = -1.296521881682694e-02
+    p12 =  2.855780863283819e-01
+    p11 = -1.597898515251717e+00
+    p10 = -8.396975715683501e+00
+
+    p25 =  3.790846746036765e-10
+    p24 =  3.281964357650687e-09
+    p23 =  1.962282433562894e-07
+    p22 = -1.240239171056262e-06
+    p21 =  1.739759082358234e-07
+    p20 =  2.147264020369413e-05
+
+    p35 =  1.840430200185075e-07
+    p34 = -2.793849676757154e-05
+    p33 =  1.735308193700643e-03
+    p32 = -6.139315534216305e-02
+    p31 =  1.255457892775006e+00
+    p30 = -1.663993561652530e+01
+
+    p40 =  4.579369142033410e-04
+
+    if (uref >= 0.0 .and.  uref <= 6.5 ) then
+      znotm = exp( p10 + p11*uref + p12*uref**2 + p13*uref**3)
+    elseif (uref > 6.5 .and. uref <= 15.7) then
+      znotm = p25*uref**5 + p24*uref**4 + p23*uref**3 + p22*uref**2 + p21*uref + p20
+    elseif (uref > 15.7 .and. uref <= 53.0) then
+      znotm = exp( p35*uref**5 + p34*uref**4 + p33*uref**3 + p32*uref**2 + p31*uref + p30 )
+    elseif ( uref > 53.0) then
+      znotm = p40
+    else
+      print*, 'Wrong input uref value:',uref
+    endif
+
+  END SUBROUTINE znot_m_v6
+
+  SUBROUTINE znot_t_v6(uref,znott)
+  IMPLICIT NONE
+! Calculate scalar roughness over water with input 10-m wind
+! For low-to-moderate winds, try to match the Ck-U10 relationship from COARE algorithm
+! For high winds, try to retain the Ck-U10 relationship of FY2015 HWRF
+!
+! Bin Liu, NOAA/NCEP/EMC 2017
+!
+! uref(m/s)   :   wind speed at 10-m height
+! znott(meter):   scalar roughness scale over water
+!
+
+    REAL, INTENT(IN) :: uref
+    REAL, INTENT(OUT):: znott
+
+    REAL             :: p00
+    REAL             :: p15, p14, p13, p12, p11, p10
+    REAL             :: p25, p24, p23, p22, p21, p20
+    REAL             :: p35, p34, p33, p32, p31, p30
+    REAL             :: p45, p44, p43, p42, p41, p40
+    REAL             :: p56, p55, p54, p53, p52, p51, p50
+    REAL             :: p60
+
+    p00 =  1.100000000000000e-04
+
+    p15 = -9.144581627678278e-10
+    p14 =  7.020346616456421e-08
+    p13 = -2.155602086883837e-06
+    p12 =  3.333848806567684e-05
+    p11 = -2.628501274963990e-04
+    p10 =  8.634221567969181e-04
+
+    p25 = -8.654513012535990e-12
+    p24 =  1.232380050058077e-09
+    p23 = -6.837922749505057e-08
+    p22 =  1.871407733439947e-06
+    p21 = -2.552246987137160e-05
+    p20 =  1.428968311457630e-04
+
+    p35 =  3.207515102100162e-12
+    p34 = -2.945761895342535e-10
+    p33 =  8.788972147364181e-09
+    p32 = -3.814457439412957e-08
+    p31 = -2.448983648874671e-06
+    p30 =  3.436721779020359e-05
+
+    p45 = -3.530687797132211e-11
+    p44 =  3.939867958963747e-09
+    p43 = -1.227668406985956e-08
+    p42 = -1.367469811838390e-05
+    p41 =  5.988240863928883e-04
+    p40 = -7.746288511324971e-03
+
+    p56 = -1.187982453329086e-13
+    p55 =  4.801984186231693e-11
+    p54 = -8.049200462388188e-09
+    p53 =  7.169872601310186e-07
+    p52 = -3.581694433758150e-05
+    p51 =  9.503919224192534e-04
+    p50 = -1.036679430885215e-02
+
+    p60 =  4.751256171799112e-05
+
+    if (uref >= 0.0 .and. uref < 5.9 ) then
+      znott = p00
+    elseif (uref >= 5.9 .and. uref <= 15.4) then
+      znott = p15*uref**5 + p14*uref**4 + p13*uref**3 + p12*uref**2 + p11*uref + p10
+    elseif (uref > 15.4 .and. uref <= 21.6) then
+      znott = p25*uref**5 + p24*uref**4 + p23*uref**3 + p22*uref**2 + p21*uref + p20
+    elseif (uref > 21.6 .and. uref <= 42.2) then
+      znott = p35*uref**5 + p34*uref**4 + p33*uref**3 + p32*uref**2 + p31*uref + p30
+    elseif ( uref > 42.2 .and. uref <= 53.3) then
+      znott = p45*uref**5 + p44*uref**4 + p43*uref**3 + p42*uref**2 + p41*uref + p40
+    elseif ( uref > 53.3 .and. uref <= 80.0) then
+      znott = p56*uref**6 + p55*uref**5 + p54*uref**4 + p53*uref**3 + p52*uref**2 + p51*uref + p50
+    elseif ( uref > 80.0) then
+      znott = p60
+    else
+      print*, 'Wrong input uref value:',uref
+    endif
+
+  END SUBROUTINE znot_t_v6
+ 
    SUBROUTINE znot_wind10m(w10m,znott,znotm,icoef_sf)
    IMPLICIT NONE
 
@@ -295,9 +431,12 @@ CONTAINS
           tmp=0.4*0.4/(alog(zlevt/zm)*alog(zlevt/zt))  ! ch at zlev using old formula
             zt1=z10/exp( 0.4*0.4/( 1.0*tmp*alog(z10/zm1) )  )
 
+            else  if( icoef_sf .EQ. 6 ) then
+              call  znot_m_v6(windmks,zm1)
+              call  znot_t_v6(windmks,zt1)
            else
-             write(0,*)'stop, icoef_sf must be one of 0,1,2,3, 4, 5'
-             stop
+             CALL wrf_error_fatal('icoef_sf must be one of 0,1,2,3,4,5,6')
+
           endif
           znott=zt1
           znotm=zm1

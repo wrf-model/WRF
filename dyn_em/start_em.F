@@ -878,10 +878,19 @@
     DO j=jts,min(jte,jde-1)
     DO k=kts,kte-1
     DO i=its,min(ite,ide-1)
+#if ( WRFPLUS == 1 )
+       IF ( .NOT. config_flags%var4d_run ) THEN
+          qvf = 1.+rvovrd*moist(i,k,j,P_QV)
+          grid%p(i,k,j)=p1000mb*( (r_d*(t0+grid%t_1(i,k,j))*qvf)/                     &
+                     (p1000mb*(grid%al(i,k,j)+grid%alb(i,k,j))) )**cpovcv  &
+                     -grid%pb(i,k,j)
+       END IF
+#else
        qvf = 1.+rvovrd*moist(i,k,j,P_QV)
        grid%p(i,k,j)=p1000mb*( (r_d*(t0+grid%t_1(i,k,j))*qvf)/                     &
                   (p1000mb*(grid%al(i,k,j)+grid%alb(i,k,j))) )**cpovcv  &
                   -grid%pb(i,k,j)
+#endif
        grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
        grid%alt(i,k,j) = grid%al(i,k,j) + grid%alb(i,k,j)
     ENDDO
@@ -1088,7 +1097,7 @@ endif
                       grid%stepbl,grid%stepra,grid%stepcu,                   &
                       grid%w0avg, grid%rainnc, grid%rainc, grid%raincv, grid%rainncv,  &
                       grid%snownc, grid%snowncv, grid%graupelnc, grid%graupelncv,  &
-                      z_at_q, grid%qnwfa2d, scalar(ims,kms,jms,1), num_scalar,         & ! G. Thompson
+                      z_at_q, grid%alt, grid%qnwfa2d, scalar(ims,kms,jms,1), num_scalar,         & ! G. Thompson
                       grid%re_cloud, grid%re_ice, grid%re_snow,         & ! G. Thompson
                       grid%has_reqc, grid%has_reqi, grid%has_reqs,      & ! G. Thompson
                       grid%nca,grid%swrad_scat,                    &
@@ -1309,13 +1318,14 @@ endif
 #endif
 
    call wrf_debug(100,'start_em: calling lightning_init')
-   CALL lightning_init ( itimestep=grid%itimestep, restart=grid%restart, dt=grid%dt, dx=grid%dx   &
+   CALL lightning_init ( id=grid%id, itimestep=grid%itimestep, restart=grid%restart, dt=grid%dt, dx=grid%dx   &
                     ! Namelist control options
                         ,cu_physics=config_flags%cu_physics,mp_physics=config_flags%mp_physics    &
                         ,do_radar_ref=config_flags%do_radar_ref                                   &
                         ,lightning_option=config_flags%lightning_option                           &
                         ,lightning_dt=config_flags%lightning_dt                                   &
                         ,lightning_start_seconds=config_flags%lightning_start_seconds             &
+                        ,ltngacttime=grid%ltngacttime                                             &
                         ,iccg_prescribed_num=config_flags%iccg_prescribed_num                     &
                         ,iccg_prescribed_den=config_flags%iccg_prescribed_den                     &
                         ,cellcount_method=config_flags%cellcount_method                           &
@@ -1489,6 +1499,13 @@ endif
       IF ( ( ABS(w_max) .LT. 1.E-6 ) .AND. &
            ( ABS(w_min) .LT. 1.E-6 ) ) THEN
          w_needs_to_be_set = .TRUE.
+         ! Force use_input_w to false, if there is no input w
+#if ( WRFPLUS == 1 )
+         IF ( config_flags%use_input_w ) THEN
+            config_flags%use_input_w = .FALSE.
+            CALL nl_set_use_input_w (grid%id, .FALSE.)
+         ENDIF
+#endif
       ELSE
          IF ( config_flags%use_input_w ) THEN
             w_needs_to_be_set = .FALSE.
@@ -2068,11 +2085,13 @@ if(config_flags%ifire.eq.2)then
    CALL wrf_debug ( 100 , 'start_domain_em: After call to fire_driver_em_init' )
 endif
 
+#if ( WRFPLUS != 1 )
 if( grid%traj_opt /= no_trajectory ) then
      call trajectory_init( grid, config_flags, &
                            ims,ime, jms,jme, kms,kme )
      CALL wrf_debug ( 100 , 'start_domain_em: After call to trajectory_init' )
 endif
+#endif
 
 
      CALL wrf_debug ( 100 , 'start_domain_em: Returning' )

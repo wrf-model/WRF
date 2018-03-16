@@ -481,6 +481,12 @@ gen_config_reads ( char * dirname )
   fprintf(fp,"    END SELECT\n") ;
   fprintf(fp,"9201 CALL wrf_message(\"  ------ ERROR while reading namelist \"//TRIM(nml_name)//\" ------\")\n") ;
   fprintf(fp,"    nml_read_error = .TRUE.\n") ;
+  fprintf(fp,"    BACKSPACE ( UNIT = NAMELIST_READ_UNIT )\n") ;
+  fprintf(fp,"    BACKSPACE ( UNIT = NAMELIST_READ_UNIT )\n") ;
+  fprintf(fp,"    READ ( UNIT = NAMELIST_READ_UNIT , FMT = '(A)' ) entire_line\n") ;
+  fprintf(fp,"    CALL wrf_message(\"Maybe here?:     \"//TRIM(entire_line))\n") ;
+  fprintf(fp,"    READ ( UNIT = NAMELIST_READ_UNIT , FMT = '(A)' ) entire_line\n") ;
+  fprintf(fp,"    CALL wrf_message(\"Maybe here?:     \"//TRIM(entire_line))\n") ;
 
   fprintf(fp,"    CALL wrf_alt_nml_obsolete(nml_read_unit, TRIM(nml_name))\n") ;
   fprintf(fp,"    CYCLE NML_LOOP\n") ;

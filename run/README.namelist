@@ -943,8 +943,9 @@ Namelist variables for controlling the adaptive time step option:
                                                 ; 1 = seaice_thickness is read in from input variable ICEDEPTH
  seaice_thickness_default            = 3.0      ; default value of seaice thickness for seaice_thickness_opt=0
  tice2tsk_if2cold                    = .false.  ; set Tice to Tsk to avoid unrealistically low sea ice temperatures
- iz0tlnd                             = 0        ; thermal roughness length for sfclay and myjsfc (0 = old, 1 = veg dependent Chen-Zhang Czil)
-                                                ;     for mynn sfc (0=Zilitinkevitch,1=Chen-Zhang,2=mod Yang,3=const zt)
+ iz0tlnd                             = 0        ; thermal roughness length for sfclay (0 = old, 1 = veg dependent Chen-Zhang Czil,
+                                                      2 = Zilitinkevitch (czil=0.1))
+                                                ;     for mynn sfc (0=Zilitinkevitch (def),1=Chen-Zhang,2=mod Yang,3=const zt)
  mp_tend_lim                         = 10.,     ; limit on temp tendency from mp latent heating from radar data assimilation
  prec_acc_dt (max_dom)               = 0.,      ; number of minutes in precipitation bucket (ARW only) - will add three
                                                   new 2d output fields: prec_acc_c, prec_acc_nc and snow_acc_nc

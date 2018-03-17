@@ -152,8 +152,7 @@ CONTAINS
 !-- SHDMIN      minimum areal fractional coverage of annual green vegetation
 !-- SHDMAX      maximum areal fractional coverage of annual green vegetation
 !-- XLAI        leaf area index (dimensionless)
-!-- XLAI2       leaf area index (same as XLAI) passed to output
-!(dimensionless)
+!-- XLAI2       leaf area index (same as XLAI) passed to output (dimensionless)
 !-- Z0BRD       Background fixed roughness length (M)
 !-- Z0          Background vroughness length (M) as function
 !-- ZNT         Time varying roughness length (M) as function
@@ -2979,7 +2978,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
             
             ! add a new loop for the mosaic_cat
             
-               DO mosaic_i = mosaic_cat, 1, -1 ! mosaic cat
+               DO mosaic_i = mosaic_cat, 1, -1
                
             !   if (mosaic_cat_index(I,mosaic_i,J) .EQ. 16 ) then
             !   PRINT*, 'you still have water tiles at','i=',i,'j=',j, 'mosaic_i',mosaic_i
@@ -2999,7 +2998,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                 EMISS(i,j)= EMISS_mosaic(i,mosaic_i,j) 
                 EMBCK(i,j)= EMBCK_mosaic(i,mosaic_i,j) 
                 ZNT(i,j)= ZNT_mosaic(i,mosaic_i,j) 
-                Z0(i,j)= Z0_mosaic(i,mosaic_i,j)
+                Z0(i,j)= Z0_mosaic(i,mosaic_i,j)    
             
                  SNOTIME(i,j)= SNOTIME_mosaic(i,mosaic_i,j)          
               
@@ -4273,7 +4272,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
           ENDIF
       
              lai(i,j) = xlai
-             
+
 #if 0
                 IF(IPRINT) THEN
       
@@ -4719,7 +4718,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
   REAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), OPTIONAL, INTENT(INOUT)::   &
         TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic
   
-  REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(IN)::   ALBEDO, ALBBCK, EMISS, EMBCK, Z0
+  REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(IN)::   ALBEDO, ALBBCK, EMISS, EMBCK, Z0 
   REAL, DIMENSION( ims:ime, 1:mosaic_cat, jms:jme ) , OPTIONAL, INTENT(INOUT)::   &
         ALBEDO_mosaic,ALBBCK_mosaic, EMISS_mosaic, EMBCK_mosaic, ZNT_mosaic, Z0_mosaic
 

@@ -899,7 +899,7 @@ i1      real   PSIM           ij     misc        1         -     -         "PSIM
 i1      real   PSIH           ij     misc        1         -     -         "PSIH"                "SIMILARITY FUNCTION FOR HEAT"         ""
 state   real   FM             ij     misc        1         -     -         "FM"                  "INTEGRATED FUNCTION FOR MOMENTUM"     ""
 state   real   FH             ij     misc        1         -     -         "FH"                  "INTEGRATED FUNCTION FOR HEAT"         ""
-state   real   WSPD           ij     misc        1         -     -         "WSPD"                "Wind Speed At Lowest Model Level (may contain vconv"             "m s-1"
+state   real   WSPD           ij     misc        1         -     -         "WSPD"                "Wind Speed At Lowest Model Level (may contain vconv)"           "m s-1"
 i1      real   GZ1OZ0         ij     misc        1         -     -         "GZ1OZ0"              "LOG OF Z1 over Z0"                     ""
 state   real   BR             ij     misc        1         -     -         "BR"                  "Bulk Richardson"                       ""
 state   real   ZOL            ij     misc        1         -     -         "ZOL"                 "z/L"                                   ""

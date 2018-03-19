@@ -54,6 +54,7 @@
       INTEGER :: i, j, oops, d1_value
       LOGICAL :: km_opt_already_done , diff_opt_already_done
       INTEGER :: count_opt
+      INTEGER :: hail_count, hail_count2
 
 !TWG2015
 !
@@ -1162,17 +1163,15 @@
       END IF
 
 !-----------------------------------------------------------------------
-! If hailcast_opt = 1, convective parameterization must be off.           
+! If hailcast_opt = 1 for any domain, convective parameterization must be off for that domain.           
 !-----------------------------------------------------------------------
+
       DO i = 1, model_config_rec % max_dom
          IF ( ( model_config_rec%hailcast_opt(i) .NE. 0 ) .AND. &
-              ( model_config_rec%cu_physics(i) .NE. 0) ) THEN
-              !( model_config_rec%dx(i) .GT. 4000 ) ) THEN
-            wrf_err_message = '--- WARNING:  cannot use both hailcast_opt and a convective parameterization.'
-            CALL wrf_message ( wrf_err_message )
-            wrf_err_message = '---          hailcast_opt is now 0.'
-            CALL wrf_message ( wrf_err_message )
-            model_config_rec%hailcast_opt(i) = 0
+              (model_config_rec%cu_physics(i) .NE. 0) ) THEN
+              wrf_err_message = '--- hailcast_opt and cu_physics cannot both be turned on for the same domain. You must turn one of them off (=0).'
+              CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+              count_fatal_error = count_fatal_error + 1
          ENDIF
       ENDDO
 

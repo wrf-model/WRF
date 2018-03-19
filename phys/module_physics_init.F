@@ -48,6 +48,8 @@ CONTAINS
                          z_at_q, qnwfa2d, scalar, num_sc,        & ! G. Thompson
                          re_cloud, re_ice, re_snow,              & ! G. Thompson
                          has_reqc, has_reqi, has_reqs,           & ! G. Thompson
+                         re_cloud_gsfc, re_ice_gsfc, re_snow_gsfc,  & ! Goddard
+                         re_graupel_gsfc, re_hail_gsfc, re_rain_gsfc,  & ! Goddard
                          NCA,swrad_scat,                         &
                          CLDEFI,LOWLYR,                          &
                          MASS_FLUX,                              &
@@ -107,7 +109,7 @@ CONTAINS
                          SMOISEQ  ,SMCWTDXY ,RECHXY, DEEPRECHXY, AREAXY,  & ! Optional Noah-MP 
                          WTDDT , STEPWTD ,QRFSXY ,QSPRINGSXY ,QSLATXY,    & ! Optional Noah-MP
                          FDEPTHXY, RIVERBEDXY, EQZWT, RIVERCONDXY, PEXPXY, & ! Optional Noah-MP
-                         rechclim  ,rivermask ,nonriverxy,                 & ! Optional Noah-MP
+                         rechclim  ,                                       & ! Optional Noah-MP
                          msftx, msfty,                           &           ! Optional Noah-MP
 !                        num_roof_layers,num_wall_layers,        & !Optional urban
 !                        num_road_layers,                        & !Optional urban
@@ -326,6 +328,8 @@ CONTAINS
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: re_cloud, &
              re_ice, re_snow
    INTEGER, INTENT(INOUT):: has_reqc, has_reqi, has_reqs
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: re_cloud_gsfc, &
+             re_ice_gsfc, re_snow_gsfc, re_graupel_gsfc, re_hail_gsfc, re_rain_gsfc
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &!BSINGH(PNNL)- should be declared inout
              RTHRATEN, RTHRATENLW, RTHRATENSW, CLDFRA
@@ -482,8 +486,6 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: RIVERCONDXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: PEXPXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: rechclim
-   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: rivermask
-   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: nonriverxy
    INTEGER, OPTIONAL, DIMENSION(ims:ime,  jms:jme), INTENT(OUT) :: CROPCAT
    REAL,    OPTIONAL, DIMENSION(ims:ime,5,jms:jme), INTENT(IN ) :: CROPTYPE
 
@@ -1140,7 +1142,7 @@ integer myproc
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
                 WTDDT, STEPWTD, QRFSXY ,QSPRINGSXY ,QSLATXY,   &
                 FDEPTHXY, RIVERBEDXY, EQZWT, RIVERCONDXY, PEXPXY, & 
-                rechclim  ,rivermask ,nonriverxy,                 &
+                rechclim  ,                                     &
                 ISICE,                                 &
                 T2MVXY,T2MBXY,CHSTARXY ,                        &
                 allowed_to_read , iopt_run ,                    &
@@ -1377,15 +1379,29 @@ integer myproc
 
 #endif
 #if ( WRF_CHEM == 1)
-   if ((config_flags%chem_opt == 300 .or. &
-        config_flags%chem_opt == 301 .or. &
+    if ((config_flags%chem_opt == gocart_simple .or. &
+        config_flags%chem_opt == gocartracm_kpp .or. &
         config_flags%chem_opt == 302 .or. &
-        config_flags%chem_opt == 303) .and. &
+        config_flags%chem_opt == gocartradm2) .and. &
         config_flags%gsfcgce_gocart_coupling == 1) then
       CALL wrf_debug(200 , 'phy_init: Before call to makelut_ccn_icn')
       call makelut_ccn_icn
    end if
 #endif
+
+!JJS initialize cloud droplet effective radius
+    do j=jts,jtf
+       do k=kts,ktf
+          do i=its,itf
+             re_cloud_gsfc(i,k,j) = 0.
+             re_rain_gsfc(i,k,j) = 0.
+             re_snow_gsfc(i,k,j) = 0.
+             re_ice_gsfc(i,k,j) = 0.
+             re_graupel_gsfc(i,k,j) = 0.
+             re_hail_gsfc(i,k,j) = 0.
+          end do
+       end do
+     end do
 
    END SUBROUTINE phy_init
 
@@ -2063,7 +2079,7 @@ integer myproc
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
                 WTDDT, STEPWTD,QRFSXY ,QSPRINGSXY ,QSLATXY,     &
                 FDEPTHXY, RIVERBEDXY, EQZWT, RIVERCONDXY, PEXPXY, & 
-                rechclim  ,rivermask ,nonriverxy,                 &
+                rechclim  ,                                     &
                 ISICE,                                 &
                 T2MVXY, T2MBXY ,CHSTARXY,                       &
                 allowed_to_read, iopt_run ,                     &
@@ -2360,8 +2376,6 @@ integer myproc
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: RIVERCONDXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme) :: PEXPXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: rechclim
-   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: rivermask
-   REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: nonriverxy
    INTEGER, OPTIONAL, DIMENSION(ims:ime,  jms:jme), INTENT(OUT) :: CROPCAT
    REAL,    OPTIONAL, DIMENSION(ims:ime,5,jms:jme), INTENT(IN ) :: CROPTYPE
    INTEGER, OPTIONAL, INTENT(IN)  ::  ISICE
@@ -2857,7 +2871,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      ,smoiseq  ,smcwtdxy ,rechxy   ,deeprechxy, areaxy ,dx, dy, msftx, msfty,&
                      wtddt    ,stepwtd  ,dt  ,qrfsxy ,qspringsxy  ,qslatxy,                  &
                      fdepthxy ,ht       ,riverbedxy ,eqzwt ,rivercondxy ,pexpxy,              &
-                     rechclim  ,rivermask ,nonriverxy                 &
+                     rechclim                  &
 #endif
                      )
 

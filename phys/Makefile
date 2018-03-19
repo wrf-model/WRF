@@ -183,7 +183,6 @@ MODULES = \
         module_sf_lake.o \
 	module_diagnostics_driver.o
 
-
 FIRE_MODULES = \
         module_fr_fire_driver.o \
         module_fr_fire_driver_wrf.o \
@@ -193,7 +192,6 @@ FIRE_MODULES = \
         module_fr_fire_phys.o \
         module_fr_fire_util.o
 
-#NUWRF...Added DSCALE_mod.o
 DIAGNOSTIC_MODULES_EM = \
 	module_diag_afwa.o \
 	module_diag_cl.o \
@@ -236,7 +234,6 @@ clean:
 	@ echo 'use the clean script'
 
 # DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
-
 # DO NOT DELETE
 
 include ../main/depend.common

@@ -3471,41 +3471,6 @@ BENCH_END(bc_end_tim)
    END DO Runge_Kutta_loop
 !  grid%dmudt=grid%mu_2 - grid%mu_1
 
-! NUWRF
-#ifdef DM_PARALLEL
-!-----------------------------------------------------------------------
-!  Stencils for patch communications  (WCS, 29 June 2001)
-!  Note:  the small size of this halo exchange reflects the
-!         fact that we are carrying the uncoupled variables
-!         as state variables in the mass coordinate model, as
-!         opposed to the coupled variables as in the height
-!         coordinate model.
-!
-!                           * * * * *
-!         *        * * *    * * * * *
-!       * + *      * + *    * * + * *
-!         *        * * *    * * * * *
-!                           * * * * *
-!
-!  3D variables - note staggering!  ru(X), rv(Y), ww(Z), php(Z)
-!
-!  ru     x
-!  rv     x
-!  ww     x
-!  php    x
-!  alt    x
-!  ph_2   x
-!  phb    x
-!
-!  the following are 2D (xy) variables
-!
-!  muu    x
-!  muv    x
-!  mut    x
-!--------------------------------------------------------------
-
-#endif
-
    IF      ( config_flags%traj_opt .EQ. UM_TRAJECTORY ) THEN
 #ifdef DM_PARALLEL
 #    include "HALO_EM_F_1.inc"

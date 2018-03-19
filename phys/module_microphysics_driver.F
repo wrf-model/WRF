@@ -636,8 +636,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 ! NUWRF JJS 20110525 ^^^^^
 #endif
 
-
-
    INTEGER,OPTIONAL,INTENT(IN   )    ::                        id
 
    REAL , DIMENSION( ims:ime , jms:jme ) , OPTIONAL ,             &
@@ -829,18 +827,15 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    if (itimestep .eq. 1) then
       print *,'in microphysics_driver, num_chem = ', num_chem
    endif
-!   print *,'grid ID = ', id
    aero(:,:,:,:) = 0.
    do k = kts, kte
       do j = jts, jte
          do i = its, ite
-!         aero(i,k,j, 1) = max(0.0, chem(i,k,j,p_sulf)*1.0e-6*rho(i,k,j))             !  1 = SO4
-!         aero(i,k,j, 1) = max(chem(i,k,j,p_sulf)*1.0e-6*p(i,k,j)*96.0/(8.314*t(i,k,j)))  ! 1 = SO4
          aero(i,k,j, 1) = max(0.0, chem(i,k,j,p_sulf)*1.0e-6*p(i,k,j)*    &
-                          96.0/(8.314*th(i,k,j)*pi_phy(i,k,j)))  ! 1 = SO4
+                          96.0/(8.314*th(i,k,j)*pi_phy(i,k,j)))                     ! 1 = SO4
          aero(i,k,j, 2) = max(0.0, (chem(i,k,j,p_bc1)+chem(i,k,j,p_bc2))*1.0e-6*rho(i,k,j))  ! 2 = BC1+BC2
-         aero(i,k,j, 3) = max(0.0, chem(i,k,j,p_oc1)*1.0e-6*rho(i,k,j)*1.4e0)          !  3 = OC1
-         aero(i,k,j, 4) = max(0.0, chem(i,k,j,p_oc2)*1.0e-6*rho(i,k,j)*1.4e0)          !  4 = OC2
+         aero(i,k,j, 3) = max(0.0, chem(i,k,j,p_oc1)*1.0e-6*rho(i,k,j)*1.4e0)        !  3 = OC1
+         aero(i,k,j, 4) = max(0.0, chem(i,k,j,p_oc2)*1.0e-6*rho(i,k,j)*1.4e0)        !  4 = OC2
          aero(i,k,j, 5) = max(0.0, chem(i,k,j,p_seas_1)*1.0e-6*rho(i,k,j))           !  5 = SS1
          aero(i,k,j, 6) = max(0.0, (chem(i,k,j,p_seas_2)+chem(i,k,j,p_seas_3)+  &
                                    chem(i,k,j,p_seas_4))*1.0e-6*rho(i,k,j))          !  6 = SS2+SS3+SS4
@@ -852,7 +847,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
          aero(i,k,j,12) = max(0.0, chem(i,k,j,p_dust_3)*1.0e-6*rho(i,k,j))           ! 11 = DU3 dust mode 6
          aero(i,k,j,13) = max(0.0, chem(i,k,j,p_dust_4)*1.0e-6*rho(i,k,j))           ! 11 = DU4 dust mode 7
          aero(i,k,j,14) = max(0.0, chem(i,k,j,p_dust_5)*1.0e-6*rho(i,k,j))           ! 11 = DU5 dust mode 8
-         enddo ! !
+         enddo ! i
       enddo ! j
    enddo ! k
 

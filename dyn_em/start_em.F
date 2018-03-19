@@ -1091,6 +1091,8 @@ endif
                       z_at_q, grid%qnwfa2d, scalar(ims,kms,jms,1), num_scalar,         & ! G. Thompson
                       grid%re_cloud, grid%re_ice, grid%re_snow,         & ! G. Thompson
                       grid%has_reqc, grid%has_reqi, grid%has_reqs,      & ! G. Thompson
+                      grid%re_cloud_gsfc, grid%re_ice_gsfc, grid%re_snow_gsfc,  & 
+                      grid%re_graupel_gsfc, grid%re_hail_gsfc, grid%re_rain_gsfc,  & 
                       grid%nca,grid%swrad_scat,                    &
                       grid%cldefi,grid%lowlyr,                          &
                       grid%mass_flux,                              &
@@ -1156,7 +1158,7 @@ endif
                       grid%SMOISEQ  ,grid%SMCWTDXY ,grid%RECHXY, grid%DEEPRECHXY, grid%AREAXY,  & ! Optional Noah-MP
                       config_flags%wtddt ,grid%stepwtd ,grid%QRFSXY ,grid%QSPRINGSXY ,grid%QSLATXY, & ! Optional Noah-MP
                       grid%FDEPTHXY, grid%RIVERBEDXY, grid%EQZWT, grid%RIVERCONDXY, grid%PEXPXY, & ! Optional Noah-MP
-                      grid%rechclim  ,grid%rivermask ,grid%nonriverxy,                           & ! Optional Noah-MP
+                      grid%rechclim  ,                                     & ! Optional Noah-MP
                       grid%msftx, grid%msfty,                              &
                       grid%DZR, grid%DZB, grid%DZG,                          & !Optional urban
                       grid%TR_URB2D,grid%TB_URB2D,grid%TG_URB2D,grid%TC_URB2D,    & !Optional urban

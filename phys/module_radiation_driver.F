@@ -172,7 +172,7 @@ CONTAINS
 ! !USES:
    USE module_state_description, ONLY : RRTMSCHEME, GFDLLWSCHEME        &
                                        ,RRTMG_LWSCHEME, RRTMG_SWSCHEME  &
-                                       ,RRTMG_LWSCHEME_FAST, RRTMG_SWSCHEME_FAST &
+                                       ,RRTMG_LWSCHEME_FAST, RRTMG_SWSCHEME_FAST  &
                                        ,SWRADSCHEME, GSFCSWSCHEME       &
                                        ,GFDLSWSCHEME, CAMLWSCHEME, CAMSWSCHEME &
                                        ,HELDSUAREZ                      &
@@ -662,8 +662,7 @@ CONTAINS
 
 ! JJS 20090623  vvvvv
 ! Optional, only for Goddard LW and SW
-   REAL, DIMENSION(IMS:IME, JMS:JME, 1:8)       :: erbe_out  !extra output for SDSU
-
+   REAL, DIMENSION(IMS:IME, JMS:JME, 1:8)       :: ERBE_out  !extra output for SDSU
    REAL, DIMENSION(IMS:IME, JMS:JME), OPTIONAL, INTENT(INOUT) ::   & !BSINGH(PNNL)- Lahey compiler forced this specification to be intent-inout
                                                TLWDN, TLWUP,     &
                                                SLWDN, SLWUP,     &
@@ -1090,10 +1089,10 @@ CONTAINS
      ENDDO
      ENDDO
 
-! bug found here (toshii) RTHRATEN vertical k level is from kms to kme, but
+! bug found here (Toshi) RTHRATEN vertical k level is from kms to kme, but
 ! k loop does from kts to kte + 1, which will cause bounds errors. 
      DO j=jts,jte
-     DO k=kts,kte+1  
+     DO k=kts,kte+1
      DO i=its,ite
         RTHRATEN(I,K,J)=0.
         RTHRATENLW(I,K,J)=0.
@@ -1191,7 +1190,7 @@ CONTAINS
           ENDDO
      ENDIF
 
-! these are half level parameters.....so, it shoudl start from kts to kte - 1
+! these are half level parameters.....so, it should start from kts to kte - 1
 !NUWRF JJS 20101021 vvvvv
 #if ( WRF_CHEM == 1)
 ! Pack gocart aerosol species
@@ -1227,33 +1226,6 @@ CONTAINS
    end if ! if (gsfcrad_gocart_coupling == 1)
 #endif
 !NUWRF JJS 20101021 ^^^^^
-
-!JJS initlialize cloud droplet effective radius
-   if (itimestep.eq.1) then
-     re_cloud_gsfc(:,:,:) = 0.
-     re_rain_gsfc(:,:,:) = 0.
-     re_snow_gsfc(:,:,:) = 0.
-     re_ice_gsfc(:,:,:) = 0.
-     re_graupel_gsfc(:,:,:) = 0.
-     re_hail_gsfc(:,:,:) = 0.
-   endif 
-!JJS test print
-!   if ( wrf_dm_on_monitor() .and. xtime.eq.60.0 ) then
-!      print *,'inside radiation driver, xtime = ', xtime
-!      write(20+ID,*) 're_cloud'
-!      write(20+ID,*) re_cloud_gsfc
-!      write(30+ID,*) 're_rain'
-!      write(30+ID,*) re_rain_gsfc
-!      write(40+ID,*) 're_ice'
-!      write(40+ID,*) re_ice_gsfc
-!      write(50+ID,*) 're_snow'
-!      write(50+ID,*) re_snow_gsfc
-!      write(60+ID,*) 're_graupel'
-!      write(60+ID,*) re_graupel_gsfc
-!      write(70+ID,*) 're_hail'
-!      write(70+ID,*) re_hail_gsfc
-!   endif
-!JJS test print
 
 ! Choose how to compute cloud fraction (since 3.6)
 ! Initialize to zero 
@@ -1505,13 +1477,14 @@ CONTAINS
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
                                                                     )
+
         CASE (goddardlwscheme)
 
              CALL wrf_debug (100, 'CALL goddard longwave radiation scheme ')
              IF (itimestep.eq.1) then
                 call wrf_message('running goddard lw radiation')
              ENDIF
-            CALL goddardrad(sw_or_lw='lw'                             &
+             CALL goddardrad(sw_or_lw='lw'                             &
                     ,rthraten=rthraten,gsf=glw,xlat=xlat,xlong=xlong   &
                     ,alb=albedo,t3d=t,p3d=p,p8w3d=p8w,pi3d=pi          &
                     ,dz8w=dz8w,rho_phy=rho,emiss=emiss                 &
@@ -5098,4 +5071,3 @@ END SUBROUTINE aer_p_int
 !+---+-----------------------------------------------------------------+
 
 END MODULE module_radiation_driver
-

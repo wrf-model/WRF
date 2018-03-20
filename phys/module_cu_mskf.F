@@ -31,7 +31,7 @@
 
   implicit none
   private
-  save
+! save
 
   public :: mskf_mphyi, mskf_mphy, mskf_GAMMA, mskf_polysvp
 
@@ -166,7 +166,7 @@ subroutine mskf_mphyi
 ! 
 !-----------------------------------------------------------------------
 
-      save    ! sep6
+!     save    ! sep6
 !wrf   use pmgrid, only: plev, plevp
       integer k
 
@@ -652,7 +652,7 @@ subroutine mskf_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, ep
   logical  lcbase(pcols), libase(pcols)
 
 !ckay introduced save sep6
-  save
+! save
 
 !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ! initialization
@@ -2761,7 +2761,7 @@ end subroutine mskf_mphy
 
       implicit none
 
-       save  ! sep6
+!      save  ! sep6
 
 !      input
 
@@ -2948,7 +2948,7 @@ end subroutine mskf_mphy
 !      2. Multiple aerosol types. J. Geophys. Res., 105, 6837-6844.
 
       implicit none
-       save ! sep6
+!     save ! sep6
       integer nmode ! number of modes
       real(r8) :: smc(:) ! critical supersaturation for number mode radius
       real(r8) zeta
@@ -3009,7 +3009,7 @@ subroutine mskf_nucleati(wbar, tair, pair, qv,  qc,  rhoair, & ! TWG add pair an
 !----------------------------------------------------------------
 ! Input Arguments
 !
-     save   ! sep6
+!    save   ! sep6
   integer  naer_all
   real(r8) :: wbar                ! grid cell mean vertical velocity (m/s)
   real(r8) :: tair                ! temperature (K)
@@ -3203,7 +3203,7 @@ subroutine mskf_nucleati(wbar, tair, pair, qv,  qc,  rhoair, & ! TWG add pair an
     real(r8) A11,A12,A21,A22,B11,B12,B21,B22
     real(r8) A,B,C
 
-     save    ! spe6
+!    save    ! spe6
 !---------------------------------------------------------------------
 ! parameters
 
@@ -3243,7 +3243,7 @@ subroutine mskf_nucleati(wbar, tair, pair, qv,  qc,  rhoair, & ! TWG add pair an
       real(r8)    A,B,C
       real(r8)    RHw
 
-      save   ! sep6
+!     save   ! sep6
 !---------------------------------------------------------------------
 !<Table 1 of  Liu et al., J. Climate, 2007>
 ! parameters
@@ -3435,7 +3435,7 @@ CONTAINS
 !
 !-------------------------------------------------------------
    IMPLICIT NONE
-   SAVE !TWG 2017 Add to avoid memory issues
+!  SAVE !TWG 2017 Add to avoid memory issues
 !-------------------------------------------------------------
    INTEGER,      INTENT(IN   ) ::                            &
                                   ids,ide, jds,jde, kds,kde, &
@@ -3464,6 +3464,7 @@ CONTAINS
                                                        Pcps, &
                                                         rho, &
                                                          pi
+
   INTEGER,      INTENT(IN   ) :: no_src_types_cu !PSH/TWG
   INTEGER,      INTENT(IN   ) :: aercu_opt       !PSH/TWG
   REAL,         INTENT(IN   ) :: aercu_fct       !PSH/TWG
@@ -3988,7 +3989,7 @@ CONTAINS
 !***** Eta model....jsk 8/00
 !
       IMPLICIT NONE
-      SAVE  !TWG 2017 Add to avoid memory issues
+!     SAVE  !TWG 2017 Add to avoid memory issues
 !-----------------------------------------------------------
       INTEGER, INTENT(IN   ) :: ids,ide, jds,jde, kds,kde, &
                                 ims,ime, jms,jme, kms,kme, &
@@ -6708,7 +6709,7 @@ iter:     DO NCOUNT=1,10
 ! End of Lookup table variables:
 !-----------------------------------------------------------------------
    IMPLICIT NONE
-   SAVE !TWG 2017 add to avoid memory issues
+!  SAVE !TWG 2017 add to avoid memory issues
 !-----------------------------------------------------------------------
    REAL,         INTENT(IN   )   :: P,THES,XLV1,XLV0
    REAL,         INTENT(OUT  )   :: QNEWLQ,QNEWIC,QSu
@@ -6828,7 +6829,7 @@ iter:     DO NCOUNT=1,10
       SUBROUTINE DTFRZNEW(TU,P,THTEU,QU,QFRZ,QICE,ALIQ,BLIQ,CLIQ,DLIQ)
 !-----------------------------------------------------------------------
    IMPLICIT NONE
-   SAVE !TWG 2017 Add to avoid memory issues
+!  SAVE !TWG 2017 Add to avoid memory issues
 !-----------------------------------------------------------------------
    REAL,         INTENT(IN   )   :: P,QFRZ,ALIQ,BLIQ,CLIQ,DLIQ
    REAL,         INTENT(INOUT)   :: TU,THTEU,QU,QICE
@@ -6877,7 +6878,7 @@ iter:     DO NCOUNT=1,10
 
 !-----------------------------------------------------------------------
    IMPLICIT NONE
-   SAVE !TWG 2017 add to avoid memory issues
+!  SAVE !TWG 2017 add to avoid memory issues
 !-----------------------------------------------------------------------
 !  9/18/88...THIS PRECIPITATION FALLOUT SCHEME IS BASED ON THE SCHEME US
 !  BY OGURA AND CHO (1973).  LIQUID WATER FALLOUT FROM A PARCEL IS CAL-
@@ -6957,7 +6958,7 @@ iter:     DO NCOUNT=1,10
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 !-----------------------------------------------------------------------
    IMPLICIT NONE
-   SAVE !TWG 2017 add to avoid memory issues
+!  SAVE !TWG 2017 add to avoid memory issues
 !-----------------------------------------------------------------------
    REAL,         INTENT(IN   )   :: EQ
    REAL,         INTENT(INOUT)   :: EE,UD
@@ -6999,7 +7000,7 @@ iter:     DO NCOUNT=1,10
 ! End of Lookup table variables:
 !-----------------------------------------------------------------------
    IMPLICIT NONE
-   SAVE !TWG 2017 add to avoid memory issues
+!  SAVE !TWG 2017 add to avoid memory issues
 !-----------------------------------------------------------------------
    REAL,         INTENT(IN   )   :: P,THES
    REAL,         INTENT(INOUT)   :: TS,QS
@@ -7060,7 +7061,7 @@ iter:     DO NCOUNT=1,10
 !
 !-----------------------------------------------------------------------
    IMPLICIT NONE
-   SAVE !TWG 2017 add to avoid memory issues
+!  SAVE !TWG 2017 add to avoid memory issues
 !-----------------------------------------------------------------------
    REAL,         INTENT(IN   )   :: P1,T1,Q1,ALIQ,BLIQ,CLIQ,DLIQ
    REAL,         INTENT(INOUT)   :: THT1
@@ -7106,7 +7107,7 @@ iter:     DO NCOUNT=1,10
                      its, ite, jts, jte, kts, kte                   )
 !--------------------------------------------------------------------
    IMPLICIT NONE
-   SAVE !TWG 2017 add to avoid memeory issues
+!  SAVE !TWG 2017 add to avoid memeory issues
 !--------------------------------------------------------------------
    LOGICAL , INTENT(IN)           ::  restart,allowed_to_read
    INTEGER , INTENT(IN)           ::  ids, ide, jds, jde, kds, kde, &
@@ -7198,7 +7199,7 @@ iter:     DO NCOUNT=1,10
 !
 !--------------------------------------------------------------------
    IMPLICIT NONE
-   SAVE !TWG 2017 add to avoid memory issues
+!  SAVE !TWG 2017 add to avoid memory issues
 !--------------------------------------------------------------------
 ! Lookup table variables
 !     INTEGER, SAVE, PARAMETER :: KFNT=250,KFNP=220

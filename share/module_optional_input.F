@@ -5,7 +5,8 @@ MODULE module_optional_input
 
    INTEGER :: flag_qv       , flag_qc       , flag_qr       , flag_qi       , flag_qs       , &
               flag_qg       , flag_qh       , &
-              flag_qni      , flag_qnr      , &
+              flag_qni      , flag_qnc      , flag_qnr      , &
+              flag_qns      , flag_qng      , flag_qnh      , &
               flag_qnwfa    , flag_qnifa    , &
               flag_sh       , flag_speccldl , flag_speccldf
 
@@ -315,7 +316,11 @@ USE module_io_domain
       flag_qg       = 0
       flag_qh       = 0
       flag_qni      = 0
+      flag_qnc      = 0
       flag_qnr      = 0
+      flag_qns      = 0
+      flag_qng      = 0
+      flag_qnh      = 0
       flag_qnwfa    = 0
       flag_qnifa    = 0
       flag_sh       = 0
@@ -362,10 +367,30 @@ USE module_io_domain
       IF ( ierr .EQ. 0 ) THEN
          flag_qni       = itmp
       END IF
+      flag_name(1:8) = 'QNC      '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qnc       = itmp
+      END IF
       flag_name(1:8) = 'QNR      '
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_qnr       = itmp
+      END IF
+      flag_name(1:8) = 'QNS      '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qns       = itmp
+      END IF
+      flag_name(1:8) = 'QNG      '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qng       = itmp
+      END IF
+      flag_name(1:8) = 'QNH      '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qnh       = itmp
       END IF
       flag_name(1:8) = 'QNWFA    '
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )

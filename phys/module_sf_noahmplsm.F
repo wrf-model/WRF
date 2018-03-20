@@ -372,7 +372,7 @@ contains
 		   SHG     , SHC     , SHB     , EVG     , EVB     , GHV     , & ! OUT :
 		   GHB     , IRG     , IRC     , IRB     , TR      , EVC     , & ! OUT :
 		   CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE   , PAHV    , &
-                   PAHG    , PAHB    , PAH                                     &
+                   PAHG    , PAHB    , PAH     , LAISUN  , LAISHA  , RB        & ! OUT
 #ifdef WRF_HYDRO
                    ,SFCHEADRT                                                  & ! IN/OUT :
 #endif
@@ -495,6 +495,9 @@ contains
   REAL                           , INTENT(OUT)   :: PONDING!surface ponding [mm]
   REAL                           , INTENT(OUT)   :: PONDING1!surface ponding [mm]
   REAL                           , INTENT(OUT)   :: PONDING2!surface ponding [mm]
+  REAL                           , INTENT(OUT)   :: RB        ! leaf boundary layer resistance (s/m)
+  REAL                           , INTENT(OUT)   :: LAISUN    ! sunlit leaf area index (m2/m2)
+  REAL                           , INTENT(OUT)   :: LAISHA    ! shaded leaf area index (m2/m2)
 
 !jref:start; output
   REAL                           , INTENT(OUT)     :: T2MV   !2-m air temperature over vegetated part [k]
@@ -717,7 +720,7 @@ contains
                  TV     ,TG     ,STC    ,SNOWH  ,EAH    ,TAH    , & !inout
                  SNEQVO ,SNEQV  ,SH2O   ,SMC    ,SNICE  ,SNLIQ  , & !inout
                  ALBOLD ,CM     ,CH     ,DX     ,DZ8W   ,Q2     , & !inout
-                 TAUSS  ,                                         & !inout
+                 TAUSS  ,LAISUN ,LAISHA ,RB ,                     & !inout
 !jref:start
                  QC     ,QSFC   ,PSFC   , & !in 
                  T2MV   ,T2MB  ,FSRV   , &
@@ -1455,7 +1458,7 @@ contains
                      TV     ,TG     ,STC    ,SNOWH  ,EAH    ,TAH    , & !inout
                      SNEQVO ,SNEQV  ,SH2O   ,SMC    ,SNICE  ,SNLIQ  , & !inout
                      ALBOLD ,CM     ,CH     ,DX     ,DZ8W   ,Q2     , &   !inout
-                     TAUSS  ,                                         & !inout
+                     TAUSS  ,LAISUN ,LAISHA ,RB ,                     & !inout
 !jref:start
                      QC     ,QSFC   ,PSFC   , & !in 
                      T2MV   ,T2MB   ,FSRV   , &
@@ -1619,6 +1622,9 @@ contains
   REAL                              , INTENT(INOUT) :: CM     !momentum drag coefficient
   REAL                              , INTENT(INOUT) :: CH     !sensible heat exchange coefficient
   REAL                              , INTENT(INOUT) :: Q1
+  REAL                              , INTENT(INOUT) :: RB     !leaf boundary layer resistance (s/m)
+  REAL                              , INTENT(INOUT) :: LAISUN !sunlit leaf area index (m2/m2)
+  REAL                              , INTENT(INOUT) :: LAISHA !shaded leaf area index (m2/m2)
 !  REAL                                              :: Q2E
   REAL,                               INTENT(OUT)   :: EMISSI
   REAL,                               INTENT(OUT)   :: PAH    !precipitation advected heat - total (W/m2)
@@ -1629,7 +1635,7 @@ contains
   REAL                                              :: UR     !wind speed at height ZLVL (m/s)
   REAL                                              :: ZLVL   !reference height (m)
   REAL                                              :: FSUN   !sunlit fraction of canopy [-]
-  REAL                                              :: RB     !leaf boundary layer resistance (s/m)
+ ! REAL                                              :: RB     !leaf boundary layer resistance (s/m)
   REAL                                              :: RSURF  !ground surface resistance (s/m)
   REAL                                              :: L_RSURF!Dry-layer thickness for computing RSURF (Sakaguchi and Zeng, 2009)
   REAL                                              :: D_RSURF!Reduced vapor diffusivity in soil for computing RSURF (SZ09)
@@ -1645,8 +1651,6 @@ contains
   REAL                                              :: EMG    !ground emissivity
   REAL                                              :: FIRE   !emitted IR (w/m2)
 
-  REAL                                              :: LAISUN !sunlit leaf area index (m2/m2)
-  REAL                                              :: LAISHA !shaded leaf area index (m2/m2)
   REAL                                              :: PSNSUN !sunlit photosynthesis (umolco2/m2/s)
   REAL                                              :: PSNSHA !shaded photosynthesis (umolco2/m2/s)
 !jref:start - for debug  

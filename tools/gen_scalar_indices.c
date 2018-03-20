@@ -128,7 +128,6 @@ gen_scalar_indices1 ( FILE * fp, FILE ** fp2 )
 
   for ( p = FourD ; p != NULL ; p = p->next ) {
     if( strncmp( p->name,"irr_diag",8 ) ) {
-      fprintf( stderr,"Checking FourD variable %s\n",p->name );
       for ( memb = p->members ; memb != NULL ; memb = memb->next )
         if ( strcmp(memb->name,"-") ) fprintf(fp,"  P_%s = 1 ; F_%s = .FALSE. \n", memb->name, memb->name ) ; 
     }

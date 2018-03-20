@@ -1185,11 +1185,11 @@ state    real   SMOISEQ            ilj     -          1         Z     r   "SMOIS
 state    real   smcwtdxy   ij      -       1      -     rh    "smcwtd"    "deep soil moisture "       "m3 m-3"
 state    real   rechxy     ij      -       1      -     h    "rech"    "water table recharge"       "mm"
 state    real   deeprechxy ij      -       1      -     r    "deeprech" "deep water table recharge"       "mm"
-state    real   soilcomp  i{soilc}j  -     1      Z     i012rd=(interp_mask_land_field:lu_index)u=(UpNear)    "SOILCOMP"   "soil composition"       "%"
-state    real   soilcl1    ij      -       1      -     i012rd=(interp_mask_land_field:lu_index)u=(UpNear)    "SOILCL1"     "soil texture class - level 1"       "cat"
-state    real   soilcl2    ij      -       1      -     i012rd=(interp_mask_land_field:lu_index)u=(UpNear)    "SOILCL2"     "soil texture class - level 2"       "cat"
-state    real   soilcl3    ij      -       1      -     i012rd=(interp_mask_land_field:lu_index)u=(UpNear)    "SOILCL3"     "soil texture class - level 3"       "cat"
-state    real   soilcl4    ij      -       1      -     i012rd=(interp_mask_land_field:lu_index)u=(UpNear)    "SOILCL4"     "soil texture class - level 4"       "cat"
+state    real   soilcomp  i{soilc}j  -     1      Z     i02rd=(interp_mask_land_field:lu_index)u=(UpNear)    "SOILCOMP"   "soil composition"       "%"
+state    real   soilcl1    ij      -       1      -     i02rd=(interp_mask_land_field:lu_index)u=(UpNear)    "SOILCL1"     "soil texture class - level 1"       "cat"
+state    real   soilcl2    ij      -       1      -     i02rd=(interp_mask_land_field:lu_index)u=(UpNear)    "SOILCL2"     "soil texture class - level 2"       "cat"
+state    real   soilcl3    ij      -       1      -     i02rd=(interp_mask_land_field:lu_index)u=(UpNear)    "SOILCL3"     "soil texture class - level 3"       "cat"
+state    real   soilcl4    ij      -       1      -     i02rd=(interp_mask_land_field:lu_index)u=(UpNear)    "SOILCL4"     "soil texture class - level 4"       "cat"
 
 # Crop model only
 

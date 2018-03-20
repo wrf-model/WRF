@@ -240,13 +240,13 @@ CONTAINS
                 P1000mb,                                           &
                 ids,ide, jds,jde, kds,kde,                         &
                 ims,ime, jms,jme, kms,kme,                         &
-                its,ite, jts,jte, kts,kte,                         &
+                its,ite, jts,jte, kts,kte                          &
 #if defined(mpas) 
-                isftcflx,iz0tlnd,scm_force_flux,                   &
+                ,isftcflx,iz0tlnd,scm_force_flux,                  &
                 USTM(ims,j),CK(ims,j),CKA(ims,j),                  &
                 CD(ims,j),CDA(ims,j),dxCell(ims,j)                 &
 #elif ( EM_CORE == 1)
-                isftcflx,iz0tlnd,scm_force_flux,                   &
+                ,isftcflx,iz0tlnd,scm_force_flux,                  &
                 USTM(ims,j),CK(ims,j),CKA(ims,j),                  &
                 CD(ims,j),CDA(ims,j)                               & 
 #endif

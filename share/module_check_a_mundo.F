@@ -54,7 +54,6 @@
       INTEGER :: i, j, oops, d1_value
       LOGICAL :: km_opt_already_done , diff_opt_already_done
       INTEGER :: count_opt
-      INTEGER :: hail_count, hail_count2
 
 !TWG2015
 !

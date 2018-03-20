@@ -1077,11 +1077,11 @@ state  real   sulfate   ikjf            aerod       1    -   df=(p2c)     "sulfa
 state  real   upperaer  ikjf            aerod       1    -   df=(p2c)     "upperaer"        "volcanic ash"            -
 state  real   aodtot    ij              misc        1    -      r         "aodtot"          "TOTAL AEROSOL OPTICAL DEPTH"  -
 
-# incoming aerosol data for multiscale Kain Fritsch [PSH/TWG  - 6/11/16]
- state  real   aeromcu    i{lsc}jm{tyc}    misc        1    -   -     -
- state  real   aeropcu    i{lsc}jm         misc        1    -   -      "AEROPCU"     "PRESSURE LEVEL OF AEROSOL DATA"  "millibar"
+# incoming aerosol data for multiscale Kain Fritsch
+state  real   aeromcu   i{lsc}jm{tyc}   misc        1    -   -     -
+state  real   aeropcu   i{lsc}jm        misc        1    -   -      "AEROPCU"     "PRESSURE LEVEL OF AEROSOL DATA"  "millibar"
 
-# array to hold aerosol data that has been interpolated to model levels and time [PSH/TWG  - 6/11/16]
+# array to hold aerosol data that has been interpolated to model levels and time
 state  real   -            ikjf         aerocu      1    -   -             -
 state  real   cu_dust1     ikjf         aerocu      1    -   hdf=(p2c)     "cudust1"           "dust 1"                     "ug m-3"
 state  real   cu_dust2     ikjf         aerocu      1    -   hdf=(p2c)     "cudust2"           "dust 2"                     "ug m-3"

@@ -1798,8 +1798,10 @@ ENDIF ghg_block
         endif
         endif
         chem(its:ite,kts:min(kte,kde-1),jts:jte,:)=max(chem(its:ite,kts:min(kte,kde-1),jts:jte,:),epsilc)
-
-    CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
+!liqy
+    CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP,RACM_SOA_VBS_HET_KPP)
+!    CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
+!liqy-20160227
        CALL wrf_debug(15,'call MADE/SOA_VBS aerosols initialization')
 
        call aerosols_soa_vbs_init(chem,convfac,z_at_w,                &
@@ -2143,9 +2145,13 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_iso,"iso"
      print*,p_ho,"ho"
      print*,p_ho2,"ho2"
+!liqy
+  case (RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP,RACM_KPP,RACMPM_KPP, RACMSORG_KPP, &
+        RACM_ESRLSORG_KPP,RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP,RACM_SOA_VBS_HET_KPP)
+!liqy-20160227
 !!! TUCCELLA
-  case (RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, RACM_KPP, RACMPM_KPP, RACMSORG_KPP, &
-        RACM_ESRLSORG_KPP,RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
+!  case (RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, RACM_KPP, RACMPM_KPP, RACMSORG_KPP, &
+!        RACM_ESRLSORG_KPP,RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
      print*,p_so2,"so2"
      print*,p_sulf,"sulf"
      print*,p_no2,"no2"
@@ -3329,7 +3335,10 @@ subroutine print_chem_species_index( chem_opt )
      print*,p_nh4_c7,"nh4_c7"
      print*,p_num_c7,"num_c7"
 
-  case (RACM_SOA_VBS_KPP)
+!liqy
+  case (RACM_SOA_VBS_KPP,RACM_SOA_VBS_HET_KPP)
+!liqy-20160227
+!  case (RACM_SOA_VBS_KPP)
      print*,p_so4aj,"so4aj"
      print*,p_so4ai,"so4ai"
      print*,p_nh4aj,"nh4aj"

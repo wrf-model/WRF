@@ -2023,6 +2023,47 @@ PROGRAM convert_emissions
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_pm_10)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
 
+!liqy-add cl emission
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe,p_e_hcl)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe,p_e_ch3cl)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe,p_e_cli)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe,p_e_clj)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+!liqy-20160426
    write(message,FMT='(A)') ' PAST READ EMISSIONS 1'
    CALL  wrf_message ( message )
 
@@ -2534,7 +2575,49 @@ PROGRAM convert_emissions
          read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
 #endif
          grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe  ,p_e_pm_10)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+!liqy-add cl emission
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe,p_e_hcl)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
 
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe,p_e_ch3cl)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe,p_e_cli)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+     ENDIF
+     DM_BCAST_MACRO(dumc0)
+#else
+         read(91)dumc0(ids:ide-1,kds:grid%kemit,jds:jde-1)
+#endif
+         grid%emis_ant(ips:ipe  ,kps:grid%kemit,jps:jpe,p_e_clj)=dumc0(ips:ipe  ,kps:grid%kemit,jps:jpe  )
+
+!liqy-20160426
      write(message,FMT='(A)') ' Past reading emissions '
      CALL  wrf_debug ( 100, message ) 
 

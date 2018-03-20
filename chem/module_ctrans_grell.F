@@ -1469,7 +1469,11 @@ END subroutine cup_env_clev_tr
   USE module_state_description, only: RADM2SORG,RADM2SORG_AQ,RACMSORG_AQ,RACMSORG_KPP,   &
                                       RADM2SORG_KPP,RACM_ESRLSORG_KPP,RACM_SOA_VBS_KPP,  &
                                       RADM2SORG_AQCHEM,RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP, &
-                                      RACM_SOA_VBS_AQCHEM_KPP,CB05_SORG_VBS_AQ_KPP
+                                      RACM_SOA_VBS_AQCHEM_KPP,                          &
+!liqy
+                                        RACM_SOA_VBS_HET_KPP,                         &
+!liqy-20160227
+                                      CB05_SORG_VBS_AQ_KPP
   USE module_ctrans_aqchem
   USE module_input_chem_data, only: get_last_gas
         implicit none
@@ -1675,6 +1679,9 @@ END subroutine cup_env_clev_tr
            chemopt .EQ. RACMSORG_KPP .OR. chemopt .EQ. RADM2SORG_KPP .OR. chemopt .EQ. RACM_ESRLSORG_KPP .OR. & 
            chemopt .EQ. RACM_SOA_VBS_KPP .OR. chemopt .EQ. RADM2SORG_AQCHEM .OR. chemopt .EQ. RACMSORG_AQCHEM_KPP .OR. &
            chemopt .EQ. CB05_SORG_VBS_AQ_KPP .OR.                                           &
+!liqy           
+           chemopt .EQ. RACM_SOA_VBS_HET_KPP .OR.   &
+!liqy-20160518
            chemopt .EQ. RACM_ESRLSORG_AQCHEM_KPP .OR. chemopt .EQ. RACM_SOA_VBS_AQCHEM_KPP) &
            .and. (conv_tr_aqchem == 1)) then
         

@@ -449,8 +449,10 @@ CONTAINS
              
        ! get p_of_megan2racm(:), p_of_racm(:), and racm_per_megan(:)
        CALL get_megan2racm_table
-
-    CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
+!liqy
+    CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP,RACM_SOA_VBS_HET_KPP)
+!liqy-20160227
+!    CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
 
         !get p_of_megan2racm(:), p_of_racm(:), and racm_per_megan(:)
         CALL get_megan2racmSOA_table
@@ -1349,8 +1351,10 @@ is_mozm_species : &
                 END IF
              END DO
 
-
-          CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
+!liqy
+          CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP,RACM_SOA_VBS_HET_KPP)
+!liqy-20160227
+!          CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
 
           DO icount = 1, n_megan2racmSOA
 

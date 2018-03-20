@@ -114,6 +114,12 @@ CONTAINS
                          +emis_ant(i,k,j,p_e_no2)*conv_rho
         chem(i,k,j,p_nh3)  = chem(i,k,j,p_nh3)                         &
                          +emis_ant(i,k,j,p_e_nh3)*conv_rho
+!liqy
+        chem(i,k,j,p_hcl)=chem(i,k,j,p_hcl)                           &
+                         +emis_ant(i,k,j,p_e_hcl)*conv_rho
+        chem(i,k,j,p_ch3cl)=chem(i,k,j,p_ch3cl)            &
+                         +emis_ant(i,k,j,p_e_ch3cl)*conv_rho
+!liqy-20150626.
         if( config_flags%chem_opt == MOZART_KPP .or. &
             config_flags%chem_opt == MOZCART_KPP .or. &
             config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &

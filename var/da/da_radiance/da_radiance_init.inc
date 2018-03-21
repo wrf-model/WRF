@@ -131,6 +131,9 @@ subroutine da_radiance_init(iv,ob)
    else if ( trim( crtm_sensor_name(rtminit_sensor(n))) == 'amsr2' ) then
       nchanl(n)  = 14
       nscan(n)   = 486
+   else if ( trim( crtm_sensor_name(rtminit_sensor(n))) == 'imgr' ) then
+      nchanl(n)  = 4
+      nscan(n)   = 60
    else
       write(unit=message(1),fmt='(A)') "Unrecognized instrument: "
       write(unit=message(2),fmt='(A,I4)') "rtminit_platform = ",rtminit_platform(n)

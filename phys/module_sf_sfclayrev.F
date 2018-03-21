@@ -708,11 +708,54 @@ CONTAINS
               Z0T = MAX(Z0T,2.0e-9)
               Z0Q = Z0T
 
-              PSIQ=max(ALOG((ZA(I)+Z0Q)/Z0Q)-PSIH(I), 2.)
-              PSIT=max(ALOG((ZA(I)+Z0T)/Z0T)-PSIH(I), 2.)
-              PSIQ2=max(ALOG((2.+Z0Q)/Z0Q)-PSIH2(I), 2.)
-              PSIT2=max(ALOG((2.+Z0T)/Z0T)-PSIH2(I), 2.)
-              PSIQ10=max(ALOG((10.+Z0Q)/Z0Q)-PSIH10(I), 2.)
+! following paj:
+           zolzz=zol(I)*(za(I)+z0t)/za(I)    ! (z+z0t)/L
+           zol10=zol(I)*(10.+z0t)/za(I)   ! (10+z0t)/L
+           zol2=zol(I)*(2.+z0t)/za(I)     ! (2+z0t)/L
+           zol0=zol(I)*z0t/za(I)          ! z0t/L
+!
+              if (zol(I).gt.0.) then
+              psih(I)=psih_stable(zolzz)-psih_stable(zol0)
+              psih10(I)=psih_stable(zol10)-psih_stable(zol0)
+              psih2(I)=psih_stable(zol2)-psih_stable(zol0)
+              else
+                if (zol(I).eq.0) then
+                psih(I)=0.
+                psih10(I)=0.
+                psih2(I)=0.
+                else
+                psih(I)=psih_unstable(zolzz)-psih_unstable(zol0)
+                psih10(I)=psih_unstable(zol10)-psih_unstable(zol0)
+                psih2(I)=psih_unstable(zol2)-psih_unstable(zol0)
+                endif
+              endif
+              PSIT=ALOG((ZA(I)+z0t)/Z0t)-PSIH(I)
+              PSIT2=ALOG((2.+z0t)/Z0t)-PSIH2(I)
+
+           zolzz=zol(I)*(za(I)+z0q)/za(I)    ! (z+z0q)/L
+           zol10=zol(I)*(10.+z0q)/za(I)   ! (10+z0q)/L
+           zol2=zol(I)*(2.+z0q)/za(I)     ! (2+z0q)/L
+           zol0=zol(I)*z0q/za(I)          ! z0q/L
+!
+              if (zol(I).gt.0.) then
+              psih(I)=psih_stable(zolzz)-psih_stable(zol0)
+              psih10(I)=psih_stable(zol10)-psih_stable(zol0)
+              psih2(I)=psih_stable(zol2)-psih_stable(zol0)
+              else
+                if (zol(I).eq.0) then
+                psih(I)=0.
+                psih10(I)=0.
+                psih2(I)=0.
+                else
+                psih(I)=psih_unstable(zolzz)-psih_unstable(zol0)
+                psih10(I)=psih_unstable(zol10)-psih_unstable(zol0)
+                psih2(I)=psih_unstable(zol2)-psih_unstable(zol0)
+                endif
+              endif
+!
+              PSIQ=ALOG((ZA(I)+z0q)/Z0q)-PSIH(I)
+              PSIQ2=ALOG((2.+z0q)/Z0q)-PSIH2(I)
+              PSIQ10=ALOG((10.+z0q)/Z0q)-PSIH10(I)
         ENDIF
 
         IF ( PRESENT(ISFTCFLX) ) THEN
@@ -833,14 +876,19 @@ CONTAINS
            Cda(I)=(karman/psix)*(karman/psix)
         ENDIF
         IF ( PRESENT(IZ0TLND) ) THEN
-           IF ( IZ0TLND.EQ.1 .AND. (XLAND(I)-1.5).LE.0. ) THEN
+           IF ( IZ0TLND.GE.1 .AND. (XLAND(I)-1.5).LE.0. ) THEN
               ZL=ZNT(I)
 !             CZIL RELATED CHANGES FOR LAND
               VISC=(1.32+0.009*(SCR3(I)-273.15))*1.E-5
               RESTAR=UST(I)*ZL/VISC
-!             Modify CZIL according to Chen & Zhang, 2009
+!             Modify CZIL according to Chen & Zhang, 2009 if iz0tlnd = 1
+!             If iz0tlnd = 2, use traditional value
 
-              CZIL = 10.0 ** ( -0.40 * ( ZL / 0.07 ) )
+              IF ( IZ0TLND.EQ.1 ) THEN
+                 CZIL = 10.0 ** ( -0.40 * ( ZL / 0.07 ) )
+              ELSE IF ( IZ0TLND.EQ.2 ) THEN
+                 CZIL = 0.1 
+              END IF
 !
 ! ... paj: compute phish for z0t over land
 !

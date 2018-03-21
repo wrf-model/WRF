@@ -834,6 +834,23 @@ reg_parse( FILE * infile )
 #endif
       add_node_to_end( comm_struct , &Halos ) ;
     }
+#if ( WRFPLUS == 1 )
+    else if ( !strcmp( tokens[ TABLE ] , "halo_nta" ) )
+    {
+      node_t * comm_struct ;
+      comm_struct = new_node( HALO_NTA ) ;
+      strcpy( comm_struct->name        , tokens[COMM_ID]     ) ;
+      strcpy( comm_struct->use         , tokens[COMM_USE]     ) ;
+#if 1
+      for ( i = COMM_DEFINE, q=comm_struct->comm_define ; strcmp(tokens[i],"-") ; i++ )  {
+        for(p=tokens[i];*p;p++)if(*p!=' '&&*p!='\t'){*q++=*p;}
+      } 
+#else
+      strcpy( comm_struct->comm_define , tokens[COMM_DEFINE] ) ;
+#endif
+      add_node_to_end( comm_struct , &Halos_nta ) ;
+    }
+#endif
     else if ( !strcmp( tokens[ TABLE ] , "period" ) )
     {
       node_t * comm_struct ;

@@ -1316,7 +1316,7 @@ CONTAINS
       INCLUDE 'mpif.h'
       INTEGER, intent(in) :: inval
       INTEGER :: ierr, retval
-      CALL mpi_allreduce ( inval, retval , 1, MPI_INT, MPI_MAX, local_communicator, ierr )
+      CALL mpi_allreduce ( inval, retval , 1, MPI_INTEGER, MPI_MAX, local_communicator, ierr )
       wrf_dm_max_int = retval
 #else
       INTEGER, intent(in) :: inval
@@ -1821,6 +1821,10 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
 #endif
         CALL wrf_set_dm_communicator( mpi_comm_here )
         CALL wrf_termio_dup( mpi_comm_here )
+#if (WRFPLUS == 1)
+      ELSE
+        CALL wrf_set_dm_communicator( local_communicator )
+#endif
       END IF
 ! this should have been reset by init_module_wrf_quilt to be just the compute tasks
       CALL wrf_get_dm_communicator( mpi_comm_here )

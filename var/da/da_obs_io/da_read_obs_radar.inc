@@ -220,7 +220,7 @@ subroutine da_read_obs_radar (iv, filename, grid)
          if( outside_all ) then
             if (print_detail_radar) then
                write(unit=stdout, fmt='(a)') '*** Report is outside of domain:'
-               write(unit=stdout, fmt='(2x,a,2(2x,f7.3),2x,a)') &
+               write(unit=stdout, fmt='(2x,a,2(2x,f8.3),2x,a)') &
                      platform%info%platform,    &
                      platform%info%lat,   &
                      platform%info%lon,   &

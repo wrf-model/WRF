@@ -37,7 +37,7 @@ CONTAINS
 		BGAPXY,   WGAPXY,    TGVXY,     TGBXY,    CHVXY,     CHBXY, & ! OUT Noah MP only
 		 SHGXY,    SHCXY,    SHBXY,     EVGXY,    EVBXY,     GHVXY, & ! OUT Noah MP only
 		 GHBXY,    IRGXY,    IRCXY,     IRBXY,     TRXY,     EVCXY, & ! OUT Noah MP only
-              CHLEAFXY,   CHUCXY,   CHV2XY,    CHB2XY,                      & ! OUT Noah MP only
+              CHLEAFXY,   CHUCXY,   CHV2XY,    CHB2XY, RS,                  & ! OUT Noah MP only
 !                 BEXP_3D,SMCDRY_3D,SMCWLT_3D,SMCREF_3D,SMCMAX_3D,          & ! placeholders to activate 3D soil
 !		 DKSAT_3D,DWSAT_3D,PSISAT_3D,QUARTZ_3D,                     &
 !		 REFDK_2D,REFKDT_2D,                                        &
@@ -165,8 +165,7 @@ CONTAINS
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  QSFC      ! bulk surface specific humidity
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  Z0        ! combined z0 sent to coupled model
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  ZNT       ! combined z0 sent to coupled model
-
-! INOUT (with no Noah LSM equivalent)
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  RS        ! Total stomatal resistance (s/m)
 
     INTEGER, DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  ISNOWXY   ! actual no. of snow layers
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  TVXY      ! vegetation leaf temperature
@@ -362,6 +361,9 @@ CONTAINS
     REAL                                :: SAG          ! solar rad absorbed by ground (w/m2)
     REAL                                :: RSSUN        ! sunlit leaf stomatal resistance (s/m)
     REAL                                :: RSSHA        ! shaded leaf stomatal resistance (s/m)
+    REAL                                :: RB           ! leaf boundary layer resistance (s/m)
+    REAL                                :: LAISUN       ! sunlit leaf area index (m2/m2)
+    REAL                                :: LAISHA       ! shaded leaf area index (m2/m2)
     REAL                                :: BGAP         ! between gap fraction
     REAL                                :: WGAP         ! within gap fraction
     REAL                                :: TGV          ! under canopy ground temperature[K]
@@ -714,7 +716,7 @@ CONTAINS
          TAH    = undefined_value
          FWET   = undefined_value 
          WSLAKE = undefined_value 
-         ZWT    = undefined_value 
+!         ZWT    = undefined_value 
          WA     = undefined_value 
          WT     = undefined_value 
          LFMASS = undefined_value 
@@ -740,6 +742,10 @@ CONTAINS
          SAV    = undefined_value 
          RSSUN  = undefined_value 
          RSSHA  = undefined_value 
+         RB     = undefined_value
+         LAISUN = undefined_value
+         LAISHA = undefined_value
+         RS(I,J)= undefined_value
          BGAP   = undefined_value 
          WGAP   = undefined_value 
          TGV    = undefined_value
@@ -798,7 +804,7 @@ CONTAINS
             SHG     , SHC     , SHB     , EVG     , EVB     , GHV     , & ! OUT :
 	    GHB     , IRG     , IRC     , IRB     , TR      , EVC     , & ! OUT :
 	    CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE   , PAHV    , & 
-            PAHG    , PAHB    , PAH                                     &
+            PAHG    , PAHB    , PAH     , LAISUN  , LAISHA  ,RB         &
 #ifdef WRF_HYDRO
             , sfcheadrt(i,j)                               &
 #endif
@@ -898,6 +904,17 @@ CONTAINS
              SAGXY    (I,J)                = SAG
              RSSUNXY  (I,J)                = RSSUN
              RSSHAXY  (I,J)                = RSSHA
+             LAISUN                        = MAX(LAISUN, 0.0)
+             LAISHA                        = MAX(LAISHA, 0.0)
+             RB                            = MAX(RB, 0.0)
+! New Calculation of total Canopy/Stomatal Conductance Based on Bonan et al. (2011) 
+! -- Inverse of Canopy Resistance (below)
+             IF(RSSUN .le. 0.0 .and. RSSHA .le. 0.0) THEN
+                RS    (I,J)                = 0.0
+             ELSE
+                RS    (I,J)                = ((1.0/(RSSUN+RB)*LAISUN) + ((1.0/(RSSHA+RB))*LAISHA))
+                RS    (I,J)                = 1.0/RS(I,J) !Resistance
+             ENDIF
              BGAPXY   (I,J)                = BGAP
              WGAPXY   (I,J)                = WGAP
              TGVXY    (I,J)                = TGV
@@ -1164,7 +1181,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
        smoiseq  ,smcwtdxy ,rechxy   ,deeprechxy, areaxy, dx, dy, msftx, msfty,&     ! Optional groundwater
        wtddt    ,stepwtd  ,dt       ,qrfsxy     ,qspringsxy  , qslatxy    ,  &      ! Optional groundwater
        fdepthxy ,ht     ,riverbedxy ,eqzwt     ,rivercondxy ,pexpxy       ,  &      ! Optional groundwater
-       rechclim  ,rivermask ,nonriverxy                                        )    ! Optional groundwater
+       rechclim                                                             )    ! Optional groundwater
 
   USE NOAHMP_TABLES
 
@@ -1258,8 +1275,6 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT), OPTIONAL :: RIVERCONDXY !river conductance
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT), OPTIONAL :: PEXPXY      !factor for river conductance
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) , OPTIONAL :: rechclim
-    REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) , OPTIONAL :: rivermask
-    REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) , OPTIONAL :: nonriverxy
 
     INTEGER,  INTENT(OUT) , OPTIONAL :: STEPWTD
     REAL, INTENT(IN) , OPTIONAL :: DT, WTDDT
@@ -1373,7 +1388,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
 	      
               BEXP   =   BEXP_TABLE(ISLTYP(I,J))
               SMCMAX = SMCMAX_TABLE(ISLTYP(I,J))
-              PSISAT = PSISAT_TABLE(ISLTYP(I,J))
+              PSISAT = -1.0*PSISAT_TABLE(ISLTYP(I,J))
 
               DO NS=1, NSOIL
 	        IF ( SMOIS(I,NS,J) > SMCMAX )  SMOIS(I,NS,J) = SMCMAX
@@ -1543,9 +1558,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
             PRESENT(eqzwt)       .AND. &
             PRESENT(rivercondxy) .AND. &
             PRESENT(pexpxy)      .AND. &
-            PRESENT(rechclim)    .AND. &
-            PRESENT(rivermask)   .AND. &
-            PRESENT(nonriverxy)    ) THEN
+            PRESENT(rechclim)    ) THEN
 
              STEPWTD = nint(WTDDT*60./DT)
              STEPWTD = max(STEPWTD,1)
@@ -1554,7 +1567,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
       &       nsoil, zsoil , dzs  ,isltyp, ivgtyp,wtddt , &
       &       fdepthxy, ht, riverbedxy, eqzwt, rivercondxy, pexpxy , areaxy, zwtxy,   &
       &       smois,sh2o, smoiseq, smcwtdxy, deeprechxy, rechxy, qslatxy, qrfsxy, qspringsxy, &
-      &       rechclim  ,rivermask ,nonriverxy,             &
+      &       rechclim  ,                                   &
       &       ids,ide, jds,jde, kds,kde,                    &
       &       ims,ime, jms,jme, kms,kme,                    &
       &       its,ite, jts,jte, kts,kte                     )
@@ -1678,7 +1691,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
             &            FDEPTH, TOPO, RIVERBED, EQWTD, RIVERCOND, PEXP , AREA ,WTD ,  &
             &            SMOIS,SH2O, SMOISEQ, SMCWTDXY, DEEPRECHXY, RECHXY ,  &
             &            QSLATXY, QRFSXY, QSPRINGSXY,                  &
-            &            rechclim  ,rivermask ,nonriverxy,             &
+            &            rechclim  ,                                   &
             &            ids,ide, jds,jde, kds,kde,                    &
             &            ims,ime, jms,jme, kms,kme,                    &
             &            its,ite, jts,jte, kts,kte                     )
@@ -1700,7 +1713,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
     REAL,    INTENT(IN), DIMENSION(1:NSOIL)          :: ZSOIL,DZS
     INTEGER, INTENT(IN), DIMENSION(ims:ime, jms:jme) :: ISLTYP, IVGTYP
     REAL,    INTENT(IN), DIMENSION(ims:ime, jms:jme) :: FDEPTH, TOPO , AREA
-    REAL,    INTENT(IN), DIMENSION(ims:ime, jms:jme) :: rechclim  ,rivermask ,nonriverxy
+    REAL,    INTENT(IN), DIMENSION(ims:ime, jms:jme) :: rechclim 
     REAL,    INTENT(OUT), DIMENSION(ims:ime, jms:jme) :: RIVERCOND
     REAL,    INTENT(INOUT), DIMENSION(ims:ime, jms:jme) :: WTD, RIVERBED, EQWTD, PEXP
     REAL,     DIMENSION( ims:ime , 1:nsoil, jms:jme ), &

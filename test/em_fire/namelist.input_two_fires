@@ -94,6 +94,7 @@
  time_step_sound                     = 20,     20,     20,
  moist_adv_opt                       = 1,      1,      1,
  scalar_adv_opt                      = 1,      1,      1,
+ tracer_opt                          = 3,      3,      3,
  /
 
  &bdy_control
@@ -173,15 +174,12 @@
 !
 ! method switches for developers only, do not change!
 !
- fire_boundary_guard = -1,      ! integer, number of cells to stop when fire close to the domain boundary, -1 turn off
  fire_fuel_left_irl=2,          ! refinement to integrate fuel_left, must be even
  fire_fuel_left_jrl=2,          ! refinement to integrate fuel_left, must be even
  fire_atm_feedback=1.0,         ! real, multiplier for heat fluxes, 1.=normal, 0.=turn off two-way coupling 
- fire_back_weight=0.5,          ! RK timestepping coefficient, 0=forward, 0.5=Heun
  fire_grows_only=1,             ! if >0 level set function cannot increase = fire can only grow
  fire_viscosity=0.4,              ! artificial viscosity in level set method (max 1, needed with fire_upwinding=0)
- fire_upwinding=3,              ! 0=none, 1=standard, 2=godunov, 3=eno, 4=sethian
+ fire_upwinding=9,              ! 0=none, 1=standard, 2=godunov, 3=eno, 4=sethian
  fire_fuel_left_method=1,        ! for now, use 1 only
  fire_lfn_ext_up=1.0,           ! 0.=extend level set function at boundary by reflection, 1.=always up
- fire_advection=0,              ! 0 = cawfe, 1 = use abs speed/slope in spread rate, then project on normal to fireline
 /

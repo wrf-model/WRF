@@ -58,8 +58,13 @@ subroutine da_sensitivity(grid, config_flags, it, cv_size, xbx, be, iv, xhat, qh
       call da_allocate_y  (iv, ktr)
 
     ! Apply observation operator H 
+#ifdef VAR4D
       call da_transform_vtoy(cv_size, be, grid%ep, amat, iv, grid%vp, grid%vv, &
-           grid%vp6, grid%vv6, xbx, ktr, grid, config_flags)
+           xbx, ktr, grid, config_flags, grid%vp6, grid%vv6)
+#else
+      call da_transform_vtoy(cv_size, be, grid%ep, amat, iv, grid%vp, grid%vv, &
+           xbx, ktr, grid, config_flags)
+#endif
 
     ! Apply R-1 (for Observation Sensitivity) and then Dot Product with initial innovations (for Observation Impact)
       call da_obs_sensitivity(ktr, iv)

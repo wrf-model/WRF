@@ -113,9 +113,9 @@
    select case (config_flags%chem_opt)
    case ( RADM2SORG,           RADM2SORG_KPP,      RADM2SORG_AQ, RADM2SORG_AQCHEM, &
           GOCART_SIMPLE,       RACMSORG_KPP,       RACMSORG_AQ,  RACMSORG_AQCHEM_KPP, &
-          RACM_ESRLSORG_AQCHEM_KPP, RACM_SOA_VBS_KPP,                                      &
+          RACM_ESRLSORG_AQCHEM_KPP, RACM_SOA_VBS_KPP, RACM_SOA_VBS_AQCHEM_KPP,        &
           GOCARTRACM_KPP,      GOCARTRADM2,  &
-          RACM_ESRLSORG_KPP,   MOZCART_KPP,                      &
+          RACM_ESRLSORG_KPP,   MOZCART_KPP,        T1_MOZCART_KPP,  &
           CBMZ_MOSAIC_4BIN,    CBMZ_MOSAIC_8BIN, CBMZ_MOSAIC_KPP,   &
           CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ, CBMZSORG, CBMZSORG_AQ, &
           CBMZ_MOSAIC_DMS_4BIN,    CBMZ_MOSAIC_DMS_8BIN,   &
@@ -144,8 +144,8 @@
    case ( RADM2SORG, RACM_ESRLSORG_KPP, RADM2SORG_KPP, RADM2SORG_AQ, RADM2SORG_AQCHEM, &
           GOCARTRACM_KPP,      GOCARTRADM2,      &
           GOCART_SIMPLE,       RACMSORG_KPP,       RACMSORG_AQ,      RACMSORG_AQCHEM_KPP, &
-          RACM_ESRLSORG_AQCHEM_KPP, RACM_SOA_VBS_KPP,                                          &
-          CBMZSORG,            CBMZSORG_AQ,        MOZCART_KPP,       &
+          RACM_ESRLSORG_AQCHEM_KPP, RACM_SOA_VBS_KPP, RACM_SOA_VBS_AQCHEM_KPP,            &
+          CBMZSORG,            CBMZSORG_AQ,        MOZCART_KPP,      T1_MOZCART_KPP,     &
           CBMZ_CAM_MAM3_NOAQ,  CBMZ_CAM_MAM7_NOAQ,  CBMZ_CAM_MAM3_AQ,  CBMZ_CAM_MAM7_AQ, &
           CB05_SORG_AQ_KPP, CB05_SORG_VBS_AQ_KPP )
      nbin_o = 8

@@ -117,7 +117,7 @@
 
     ! io_form is used to determine if multi-file I/O is enabled and to
     ! control writing of format-specific time-independent metadata
-    io_form = io_form_for_stream( switch ) 
+    io_form = io_form_for_stream( switch )
 
     dryrun       = ( filestate .EQ. WRF_FILE_OPENED_NOT_COMMITTED )
 
@@ -196,13 +196,11 @@
     CALL nl_get_ysu_topdown_pblmix  ( grid%id , ysu_topdown_pblmix )
     CALL nl_get_grav_settling  ( grid%id , grav_settling )
 
-#if ( HYBRID_COORD==1 )
     CALL nl_get_hybrid_opt ( 1       , hybrid_opt )
     CALL nl_get_etac       ( 1       , etac )
     IF ( hybrid_opt .EQ. 0 ) THEN
        etac = 0.
     END IF
-#endif
 
     IF ( grid_fdda == 1 ) THEN
     CALL nl_get_fgdt       ( grid%id , fgdt )
@@ -489,42 +487,42 @@ endif
            CALL wrf_put_dom_ti_integer ( fid , 'FLAG_MF_XY' ,  ibuf , 1 , ierr )
        end if   
        if(grid%flag_psfc .eq. 1) then
-          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_PSFC' ,  ibuf , 1 , ierr ) 
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_PSFC' ,  ibuf , 1 , ierr )
        end if    
 
        if(grid%flag_slp .eq. 1) then
-          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SLP' ,  ibuf , 1 , ierr ) 
-       end if 
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SLP' ,  ibuf , 1 , ierr )
+       end if
 
        if(grid%flag_sm000010 .eq. 1)then
-          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SM000010' ,  ibuf , 1 , ierr ) 
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SM000010' ,  ibuf , 1 , ierr )
        end if
        if(grid%flag_sm010040 .eq. 1)then
-          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SM010040' ,  ibuf , 1 , ierr ) 
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SM010040' ,  ibuf , 1 , ierr )
        end if
         if(grid%flag_sm040100 .eq. 1)then
-          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SM040100' ,  ibuf , 1 , ierr ) 
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SM040100' ,  ibuf , 1 , ierr )
        end if
         if(grid%flag_sm100200 .eq. 1)then
-          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SM100200' ,  ibuf , 1 , ierr ) 
-       end if 
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SM100200' ,  ibuf , 1 , ierr )
+       end if
 
        if(grid%flag_st000010 .eq. 1)then
-          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_ST000010' ,  ibuf , 1 , ierr ) 
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_ST000010' ,  ibuf , 1 , ierr )
        end if
        if(grid%flag_st010040 .eq. 1)then
-          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_ST010040' ,  ibuf , 1 , ierr ) 
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_ST010040' ,  ibuf , 1 , ierr )
        end if
         if(grid%flag_st040100 .eq. 1)then
-          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_ST040100' ,  ibuf , 1 , ierr ) 
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_ST040100' ,  ibuf , 1 , ierr )
        end if
         if(grid%flag_st100200 .eq. 1)then
-          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_ST100200' ,  ibuf , 1 , ierr ) 
-       end if 
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_ST100200' ,  ibuf , 1 , ierr )
+       end if
 
         if(grid%flag_soil_layers .eq. 1)then
-          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SOIL_LAYERS' ,  ibuf , 1 , ierr ) 
-       end if 
+          CALL wrf_put_dom_ti_integer ( fid , 'FLAG_SOIL_LAYERS' ,  ibuf , 1 , ierr )
+       end if
 
        ibuf(1) = grid%num_metgrid_levels
        CALL wrf_put_dom_ti_integer ( fid , 'BOTTOM-TOP_GRID_DIMENSION' , ibuf , 1 , ierr )
@@ -669,8 +667,8 @@ endif
 #endif
 
       IF ( switch .EQ. history_only ) THEN
-      CALL wrf_put_dom_ti_integer ( fid, 'SHCU_PHYSICS',     config_flags%shcu_physics , 1 , ierr ) 
-      CALL wrf_put_dom_ti_integer ( fid, 'MFSHCONV',         config_flags%mfshconv , 1 , ierr ) 
+      CALL wrf_put_dom_ti_integer ( fid, 'SHCU_PHYSICS',     config_flags%shcu_physics , 1 , ierr )
+      CALL wrf_put_dom_ti_integer ( fid, 'MFSHCONV',         config_flags%mfshconv , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'FEEDBACK', feedback , 1 , ierr )
       CALL wrf_put_dom_ti_integer ( fid, 'SMOOTH_OPTION', smooth_option , 1 , ierr )
       CALL wrf_put_dom_ti_real    ( fid, 'SWRAD_SCAT', swrad_scat , 1 , ierr )
@@ -752,14 +750,14 @@ endif
         CALL wrf_put_dom_ti_real    ( fid, 'OBS_DTRAMP', obs_dtramp , 1 , ierr )
       ENDIF
 
-      CALL wrf_put_dom_ti_real      ( fid, 'BUCKET_MM',   config_flags%bucket_mm   , 1 , ierr ) 
-      CALL wrf_put_dom_ti_real      ( fid, 'BUCKET_J',    config_flags%bucket_J    , 1 , ierr ) 
-      CALL wrf_put_dom_ti_real      ( fid, 'PREC_ACC_DT', config_flags%prec_acc_dt , 1 , ierr ) 
-      CALL wrf_put_dom_ti_integer   ( fid, 'ISFTCFLX',    config_flags%isftcflx    , 1 , ierr ) 
-      CALL wrf_put_dom_ti_integer   ( fid, 'ISHALLOW',    config_flags%ishallow    , 1 , ierr ) 
-      CALL wrf_put_dom_ti_integer   ( fid, 'ISFFLX',      config_flags%isfflx      , 1 , ierr ) 
-      CALL wrf_put_dom_ti_integer   ( fid, 'ICLOUD',      config_flags%icloud      , 1 , ierr ) 
-      CALL wrf_put_dom_ti_integer   ( fid, 'ICLOUD_CU',   config_flags%icloud_cu   , 1 , ierr ) 
+      CALL wrf_put_dom_ti_real      ( fid, 'BUCKET_MM',   config_flags%bucket_mm   , 1 , ierr )
+      CALL wrf_put_dom_ti_real      ( fid, 'BUCKET_J',    config_flags%bucket_J    , 1 , ierr )
+      CALL wrf_put_dom_ti_real      ( fid, 'PREC_ACC_DT', config_flags%prec_acc_dt , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'ISFTCFLX',    config_flags%isftcflx    , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'ISHALLOW',    config_flags%ishallow    , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'ISFFLX',      config_flags%isfflx      , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'ICLOUD',      config_flags%icloud      , 1 , ierr )
+      CALL wrf_put_dom_ti_integer   ( fid, 'ICLOUD_CU',   config_flags%icloud_cu   , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'TRACER_PBLMIX', tracer_pblmix , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'SCALAR_PBLMIX', scalar_pblmix , 1 , ierr )
       CALL wrf_put_dom_ti_integer   ( fid, 'YSU_TOPDOWN_PBLMIX', ysu_topdown_pblmix , 1 , ierr )
@@ -785,7 +783,7 @@ endif
       ENDIF
 
 
-      CALL wrf_put_dom_ti_integer   ( fid, 'DFI_OPT',          config_flags%dfi_opt      , 1 , ierr ) 
+      CALL wrf_put_dom_ti_integer   ( fid, 'DFI_OPT',          config_flags%dfi_opt      , 1 , ierr )
 
       ENDIF ! history_only
 
@@ -925,7 +923,7 @@ endif
     IF(MMINLU(1:4) == 'USGS') THEN
       MMINLU='USGS'
     ENDIF
-	
+
     IF(MMINLU(1:1) .EQ. " ")THEN
        CALL wrf_put_dom_ti_char ( fid , 'MMINLU',  "    "       , ierr )
     ELSE
@@ -939,7 +937,7 @@ endif
     CALL wrf_put_dom_ti_integer ( fid , 'ISURBAN' ,  config_flags%isurban , 1 , ierr )
     CALL wrf_put_dom_ti_integer ( fid , 'ISOILWATER' ,  config_flags%isoilwater , 1 , ierr )
 ! added these fields for restarting of moving nests, JM
-!For HWRF: zhang 
+!For HWRF: zhang
 #if ( HWRF == 1 )
     CALL wrf_put_dom_ti_integer ( fid , 'I_PARENT_START' ,  grid%i_parent_start  , 1 , ierr )
     CALL wrf_put_dom_ti_integer ( fid , 'J_PARENT_START' ,  grid%j_parent_start  , 1 , ierr )
@@ -959,13 +957,8 @@ endif
     !  Add the hybrid vertical coordinate metadata.
 
 #if (EM_CORE == 1)
-# if ! ( HYBRID_COORD==1 )
-    CALL wrf_put_dom_ti_integer ( fid , 'HYBRID_OPT',          -1  , 1 , ierr )
-    CALL wrf_put_dom_ti_real    ( fid , 'ETAC'      ,           0. , 1 , ierr )
-# else
     CALL wrf_put_dom_ti_integer ( fid , 'HYBRID_OPT',  hybrid_opt  , 1 , ierr )
     CALL wrf_put_dom_ti_real    ( fid , 'ETAC'      ,  etac        , 1 , ierr )
-# endif
 #endif
 
     ! added grib2-specific metadata:  Todd Hutchinson 8/21/2005
@@ -989,7 +982,7 @@ endif
          ! This flag sets the switch which defines the topography as the original
          ! generated by real.exe.   The "zero" value means that for the WRF model
          ! output, the topography has been modified.  All output from the ARW
-         ! WRF model has this flag set.  However, to allow nests to still be 
+         ! WRF model has this flag set.  However, to allow nests to still be
          ! instantiated after a parent does IO, and to allow that nest domain
          ! to have the topo adjusted, we save the incoming value of the save_topo
          ! flag.
@@ -1001,9 +994,9 @@ endif
     IF ( (first_input   .LE. switch .AND. switch .LE. last_input) .OR. &
          (first_history .LE. switch .AND. switch .LE. last_history ) .OR. &
           switch .EQ. restart_only    ) THEN
-      newswitch = switch 
+      newswitch = switch
       p => grid%head_statevars%next
-      DO WHILE ( ASSOCIATED( p ) ) 
+      DO WHILE ( ASSOCIATED( p ) )
         IF ( p%ProcOrient .NE. 'X' .AND. p%ProcOrient .NE. 'Y' ) THEN   ! no I/O for xposed variables
           IF ( p%Ndim .EQ. 0 ) THEN
             IF ((p%Restart.AND.switch.EQ.restart_only).OR.on_stream(p%streams,newswitch)) THEN
@@ -1048,7 +1041,7 @@ endif
                                     ''                      , & ! Dimname 3
                                     TRIM(p%Description)     , & ! Desc
                                     TRIM(p%Units)           , & ! Units
-                    __FILE__ // ' writing 0d real ' // TRIM(p%VarName)     , & ! Debug message
+                    "<stdin>" // ' writing 0d real ' // TRIM(p%VarName)     , & ! Debug message
                     1 , 1 , 1 , 1 , 1 , 1 ,  &
                     1 , 1 , 1 , 1 , 1 , 1 ,  &
                     1 , 1 , 1 , 1 , 1 , 1 ,  &
@@ -1071,7 +1064,7 @@ endif
                                     ''                      , & ! Dimname 3
                                     TRIM(p%Description)     , & ! Desc
                                     TRIM(p%Units)           , & ! Units
-                    __FILE__ // ' writing 0d double ' // TRIM(p%VarName)     , & ! Debug message
+                    "<stdin>" // ' writing 0d double ' // TRIM(p%VarName)     , & ! Debug message
                     1 , 1 , 1 , 1 , 1 , 1 ,  &
                     1 , 1 , 1 , 1 , 1 , 1 ,  &
                     1 , 1 , 1 , 1 , 1 , 1 ,  &
@@ -1094,7 +1087,7 @@ endif
                                     ''                      , & ! Dimname 3
                                     TRIM(p%Description)     , & ! Desc
                                     TRIM(p%Units)           , & ! Units
-                    __FILE__ // ' writing 0d integer ' // TRIM(p%VarName)     , & ! Debug message
+                    "<stdin>" // ' writing 0d integer ' // TRIM(p%VarName)     , & ! Debug message
                     1 , 1 , 1 , 1 , 1 , 1 ,  &
                     1 , 1 , 1 , 1 , 1 , 1 ,  &
                     1 , 1 , 1 , 1 , 1 , 1 ,  &
@@ -1117,7 +1110,7 @@ endif
                                     ''                      , & ! Dimname 3
                                     TRIM(p%Description)     , & ! Desc
                                     TRIM(p%Units)           , & ! Units
-                    __FILE__ // ' writing 0d logical ' // TRIM(p%VarName)     , & ! Debug message
+                    "<stdin>" // ' writing 0d logical ' // TRIM(p%VarName)     , & ! Debug message
                     1 , 1 , 1 , 1 , 1 , 1 ,  &
                     1 , 1 , 1 , 1 , 1 , 1 ,  &
                     1 , 1 , 1 , 1 , 1 , 1 ,  &
@@ -1150,7 +1143,7 @@ endif
                                     TRIM(p%dimname3)        , & ! Dimname 3
                                     TRIM(p%Description)     , & ! Desc
                                     TRIM(p%Units)           , & ! Units
-                     __FILE__ // ' writing 1d real ' // TRIM(p%VarName)     , & ! Debug message
+                     "<stdin>" // ' writing 1d real ' // TRIM(p%VarName)     , & ! Debug message
                      p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
                      p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
                      p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
@@ -1173,7 +1166,7 @@ endif
                                     TRIM(p%dimname3)        , & ! Dimname 3
                                     TRIM(p%Description)     , & ! Desc
                                     TRIM(p%Units)           , & ! Units
-                     __FILE__ // ' writing 1d double ' // TRIM(p%VarName)     , & ! Debug message
+                     "<stdin>" // ' writing 1d double ' // TRIM(p%VarName)     , & ! Debug message
                      p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
                      p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
                      p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
@@ -1196,7 +1189,7 @@ endif
                                     TRIM(p%dimname3)        , & ! Dimname 3
                                     TRIM(p%Description)     , & ! Desc
                                     TRIM(p%Units)           , & ! Units
-                     __FILE__ // ' writing 1d integer ' // TRIM(p%VarName)     , & ! Debug message
+                     "<stdin>" // ' writing 1d integer ' // TRIM(p%VarName)     , & ! Debug message
                      p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
                      p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
                      p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
@@ -1219,7 +1212,7 @@ endif
                                     TRIM(p%dimname3)        , & ! Dimname 3
                                     TRIM(p%Description)     , & ! Desc
                                     TRIM(p%Units)           , & ! Units
-                     __FILE__ // ' writing 1d logical ' // TRIM(p%VarName)     , & ! Debug message
+                     "<stdin>" // ' writing 1d logical ' // TRIM(p%VarName)     , & ! Debug message
                      p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
                      p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
                      p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
@@ -1256,7 +1249,7 @@ endif
                                     TRIM(p%dimname3)        , & ! Dimname 3
                                     TRIM(p%Description)     , & ! Desc
                                     TRIM(p%Units)           , & ! Units
-                     __FILE__ // ' writing 2d real ' // TRIM(p%VarName)     , & ! Debug message
+                     "<stdin>" // ' writing 2d real ' // TRIM(p%VarName)     , & ! Debug message
                      p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
                      p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
                      p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
@@ -1279,7 +1272,7 @@ endif
                                     TRIM(p%dimname3)        , & ! Dimname 3
                                     TRIM(p%Description)     , & ! Desc
                                     TRIM(p%Units)           , & ! Units
-                     __FILE__ // ' writing 2d double ' // TRIM(p%VarName)     , & ! Debug message
+                     "<stdin>" // ' writing 2d double ' // TRIM(p%VarName)     , & ! Debug message
                      p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
                      p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
                      p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
@@ -1302,7 +1295,7 @@ endif
                                     TRIM(p%dimname3)        , & ! Dimname 3
                                     TRIM(p%Description)     , & ! Desc
                                     TRIM(p%Units)           , & ! Units
-                     __FILE__ // ' writing 2d integer ' // TRIM(p%VarName)     , & ! Debug message
+                     "<stdin>" // ' writing 2d integer ' // TRIM(p%VarName)     , & ! Debug message
                      p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
                      p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
                      p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
@@ -1325,7 +1318,7 @@ endif
                                     TRIM(p%dimname3)        , & ! Dimname 3
                                     TRIM(p%Description)     , & ! Desc
                                     TRIM(p%Units)           , & ! Units
-                     __FILE__ // ' writing 2d logical ' // TRIM(p%VarName)     , & ! Debug message
+                     "<stdin>" // ' writing 2d logical ' // TRIM(p%VarName)     , & ! Debug message
                      p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
                      p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
                      p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
@@ -1362,7 +1355,7 @@ endif
                                     TRIM(p%dimname3)        , & ! Dimname 3
                                     TRIM(p%Description)     , & ! Desc
                                     TRIM(p%Units)           , & ! Units
-                     __FILE__ // ' writing 3d real ' // TRIM(p%VarName)     , & ! Debug message
+                     "<stdin>" // ' writing 3d real ' // TRIM(p%VarName)     , & ! Debug message
                      p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
                      p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
                      p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
@@ -1385,7 +1378,7 @@ endif
                                     TRIM(p%dimname3)        , & ! Dimname 3
                                     TRIM(p%Description)     , & ! Desc
                                     TRIM(p%Units)           , & ! Units
-                     __FILE__ // ' writing 3d double ' // TRIM(p%VarName)     , & ! Debug message
+                     "<stdin>" // ' writing 3d double ' // TRIM(p%VarName)     , & ! Debug message
                      p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
                      p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
                      p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
@@ -1408,7 +1401,7 @@ endif
                                     TRIM(p%dimname3)        , & ! Dimname 3
                                     TRIM(p%Description)     , & ! Desc
                                     TRIM(p%Units)           , & ! Units
-                     __FILE__ // ' writing 3d integer ' // TRIM(p%VarName)     , & ! Debug message
+                     "<stdin>" // ' writing 3d integer ' // TRIM(p%VarName)     , & ! Debug message
                      p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
                      p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
                      p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
@@ -1420,7 +1413,7 @@ endif
             ENDIF
           ELSE IF ( p%Ndim .EQ. 4 .AND. p%scalar_array ) THEN
               IF (switch.EQ.restart_only.OR.p%Ntl/100.EQ.mod(p%Ntl,100)) THEN
-! Use a different write routine, wrf_ext_write_field_arr, and pass in the 
+! Use a different write routine, wrf_ext_write_field_arr, and pass in the
 ! tracer indeces so that p%rfield_4d can be passsed in without arguments,
 ! avoiding the possiblity of a copy-in/copy-out problem for some compilers.
 ! JM 20091208
@@ -1450,7 +1443,7 @@ endif
                                     TRIM(p%dimname3)        , & ! Dimname 3
                                     TRIM(p%desc_table( grid%id, itrace))     , & ! Desc
                                     TRIM(p%units_table( grid%id, itrace))           , & ! Units
-                     __FILE__ // ' writing 4d real ' // TRIM(p%dname_table(grid%id,itrace))     , & ! Debug message
+                     "<stdin>" // ' writing 4d real ' // TRIM(p%dname_table(grid%id,itrace))     , & ! Debug message
                      p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
                      p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
                      p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
@@ -1476,7 +1469,7 @@ endif
                                     TRIM(p%dimname3)        , & ! Dimname 3
                                     TRIM(p%desc_table( grid%id, itrace))     , & ! Desc
                                     TRIM(p%units_table( grid%id, itrace))           , & ! Units
-                     __FILE__ // ' writing 4d double ' // TRIM(p%dname_table(grid%id,itrace))     , & ! Debug message
+                     "<stdin>" // ' writing 4d double ' // TRIM(p%dname_table(grid%id,itrace))     , & ! Debug message
                      p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
                      p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
                      p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &
@@ -1502,7 +1495,7 @@ endif
                                     TRIM(p%dimname3)        , & ! Dimname 3
                                     TRIM(p%desc_table( grid%id, itrace))     , & ! Desc
                                     TRIM(p%units_table( grid%id, itrace))           , & ! Units
-                     __FILE__ // ' writing 4d integer ' // TRIM(p%dname_table(grid%id,itrace))     , & ! Debug message
+                     "<stdin>" // ' writing 4d integer ' // TRIM(p%dname_table(grid%id,itrace))     , & ! Debug message
                      p%sd1 , p%ed1 , p%sd2 , p%ed2 , p%sd3 , p%ed3 ,  &
                      p%sm1 , p%em1 , p%sm2 , p%em2 , p%sm3 , p%em3 ,  &
                      p%sp1 , p%ep1 , p%sp2 , p%ep2 , p%sp3 , p%ep3 ,  &

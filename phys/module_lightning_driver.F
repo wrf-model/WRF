@@ -128,8 +128,8 @@
 
     ! Convective parameterized
     CASE (ltng_cpm_PR92z)
-        IF ( cu_physics .ne. GDSCHEME .and. cu_physics .ne. G3SCHEME  ) THEN
-          CALL wrf_error_fatal( ' lightning_init: Selected lightning option requires GD or G3 convective parameterization' )
+        IF ( cu_physics .ne. GDSCHEME .and. cu_physics .ne. G3SCHEME .and. cu_physics .ne. GFSCHEME  ) THEN
+          CALL wrf_error_fatal( ' lightning_init: Selected lightning option requires GD, G3, or GF convective parameterization' )
         ENDIF
 
         WRITE(message, * ) ' lightning_init: CPM lightning option selected: ', lightning_option

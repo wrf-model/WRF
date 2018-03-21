@@ -23,21 +23,31 @@ integer,save::          &
  fuel_left_jrl=2,       &
  boundary_guard=-1,     &  ! crash if fire gets this many cells to domain boundary, -1=off
  fire_grows_only=1,     &  ! fire can spread out only (level set functions may not increase)
- fire_upwinding=3,      &  ! upwind normal spread: 1=standard, 2=godunov, 3=eno, 4=sethian 
+ fire_upwinding=9,      &  ! upwind normal spread: 1=standard, 2=godunov, 3=eno, 4=sethian, 5=2nd-order, 6=WENO3, 7=WENO5, 8=hybrid WENO3/ENO1, 9=hybrid WENO5/ENO1 
  fire_upwind_split=0,   &  ! 1=upwind advection separately from normal direction spread
  fire_test_steps=0,     &  ! 0=no fire, 1=normal, >1 = do specified number of steps and terminate (testing only)
  fire_topo_from_atm=1,  &  ! 0 = expect ZSF set correctly on entry, 1 = populate by interploating from atmosphere
- fire_advection=0          ! 0 = fire spread from normal wind/slope (CAWFE), 1 = full speed projected
- 
+ fire_advection=0,      &  ! 0 = fire spread from normal wind/slope (CAWFE), 1 = full speed projected
+ fire_upwinding_reinit=4, &  ! spatial discretization for reinitialization PDE: 1=WENO3, 2=WENO5, 3=hybrid WENO3-ENO1, 4=hybrid WENO5-ENO1 
+ fire_lsm_reinit_iter=1,  &  ! number of iterations for the reinitialization PDE 
+ fire_lsm_band_ngp=4,     &  ! number of grid points around lfn=0 that the higher-order scheme WENO5/WENO3 is used (ENO1 elsewhere), for ire_upwinding=8,9 and fire_upwinding_reinit=3,4 and
+ fire_viscosity_ngp=4        ! number of grid points around lfn=0 where low artificial viscosity is used = fire_viscosity_bg
 
 real, save::            &
  fire_const_time=-1,    &  ! time from ignition to start constant heat output  <0=never
  fire_const_grnhfx=-1., &  ! if both >=0, the constant heat flux to output then
  fire_const_grnqfx=-1., &  ! if both >=0, the constant heat flux to output then
  fire_atm_feedback=1. , &  ! 1 = normal, 0. = one way coupling atmosphere -> fire only
- fire_back_weight=0.5,  &  ! RK parameter, 0 = Euler method, 0.5 = Heun, 1 = fake backward Euler
  fire_viscosity=0.4,    &  ! artificial viscosity
- fire_lfn_ext_up=1.        ! 0.=extend level set function at boundary by reflection, 1.=always up
+ fire_lfn_ext_up=1.,    &  ! 0.=extend level set function at boundary by reflection, 1.=always up
+ fire_lsm_zcoupling_ref=50., &  ! Reference height from wich u at fire_wind_hegiht is calculated using a logarithmic profile
+ fire_viscosity_bg=0.4,      &  ! artificial viscosity in the near-front region 
+ fire_viscosity_band=0.5,    &  ! number of times the hybrid advection band to transition from fire_viscosity_bg to fire_viscosity
+ fire_slope_factor=1.0          ! slope correction factor
+
+logical,save::              &
+ fire_lsm_reinit=.true.,    &  ! flag to activate reinitialization of level set method
+ fire_lsm_zcoupling=.false.     ! flag to activate reference velocity at a different height from fire_wind_height
 
 integer, parameter:: REAL_SUM=10, REAL_MAX=20, RNRM_SUM=30, RNRM_MAX=40
 
@@ -204,10 +214,9 @@ real,intent(inout),dimension(ims:ime,jms:jme)::lfn
 integer i,j
 character(len=128)::msg
 integer::its1,ite1,jts1,jte1
-integer,parameter::halo=1           ! width of halo region to update 
+integer,parameter::halo=1           ! only 1 domain halo is needed since ENO1 is used near domain boundaries
 !*** executable
-! check if there is space for the extension
-call check_mesh_2dim(its-1,ite+1,jts-1,jte+1,ims,ime,jms,jme)
+
 ! for dislay only
 itso=its
 jtso=jts

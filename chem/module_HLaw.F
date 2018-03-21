@@ -43,7 +43,7 @@ top_level_domain: &
      if( unitno <= 0 ) then
        call wrf_error_fatal( 'init_HLConst: Failed to get Fortran I/O unit number' )
      endif
-     open(unit=unitno,file='HLC.TBL',iostat=istat)
+     open(unit=unitno,file='HLC.TBL',status='OLD',iostat=istat)
      if( istat /= 0 ) then
        write(emsg,'(''init_HLConst: Failed to open HLC.TBL; error = '',i8)') istat
        call wrf_error_fatal( trim(emsg) )

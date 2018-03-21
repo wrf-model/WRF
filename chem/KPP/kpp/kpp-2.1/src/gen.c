@@ -52,6 +52,7 @@ int DC;
 int ARP, JVRP, NJVRP, CROW_JVRP, IROW_JVRP, ICOL_JVRP;
 int V, F, VAR, FIX;
 int RCONST, RCT;
+int IRR;
 int Vdot, P_VAR, D_VAR;
 int KR, A, BV, BR, IV;
 int JV, UV, JUV, JTUV, JVS; 
@@ -155,6 +156,7 @@ int i,j;
  
   RCONST = DefvElm( "RCONST", real, -NREACT, "Rate constants (global)" );
   RCT    = DefvElm( "RCT",    real, -NREACT, "Rate constants (local)" );
+  IRR    = DefvElm( "IRR",    real, -NREACT, "Accumulated reaction rate" );
 
   Vdot = DefvElm( "Vdot", real, -NVAR, "Time derivative of variable species concentrations" );
   P_VAR = DefvElm( "P_VAR", real, -NVAR, "Production term" );
@@ -742,9 +744,90 @@ char buf1[100], buf2[100];
   FreeVariable( FSPLIT_VAR );
 }
 
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+void GenerateIRRFun()
+{
+int i, j, k;
+int used;
+int l, m;
+int F_VAR, FSPLIT_VAR;
+char buf1[100], buf2[100];
 
+  if( VarNr == 0 ) return;
+  
+  if (useLang != MATLAB_LANG)  /* Matlab generates an additional file per function */
 
+  if ( useWRFConform ) 
+       UseFile( integratorFile );
+  else
+       UseFile( functionFile ); 
 
+  if ( useWRFConform ) 
+    {
+       sprintf( buf1, "%s_IRRFun", rootFileName ); 
+  F_VAR      = DefFnc( buf1,      4, "accumulated time derivatives of variables - Agregate form");
+       sprintf( buf2, "%s_IRRFun_SPLIT", rootFileName ); 
+  FSPLIT_VAR      = DefFnc( buf2,      4, "accumulated time derivatives of variables - Agregate form");
+    }
+  else
+    {
+  F_VAR      = DefFnc( "IRRFun",      4, "accumulated time derivatives of variables - Agregate form");
+  FSPLIT_VAR = DefFnc( "IRRFun_SPLIT", 5, "accumulated time derivatives of variables - Split form");
+
+    }
+  
+  if( useAggregate )
+    FunctionBegin( F_VAR, V, F, RCT, IRR );
+  else
+    FunctionBegin( FSPLIT_VAR, V, F, IRR, P_VAR, D_VAR );
+
+  if ( (useLang==MATLAB_LANG)&&(!useAggregate) )
+     printf("\nWarning: in the function definition move P_VAR to output vars\n");
+
+  NewLines(1);
+  WriteComment("Computation of accumulated equation rates");
+  
+  for(j=0; j<EqnNr; j++) {
+    used = 0;
+    if( useAggregate ) {
+      for (i = 0; i < VarNr; i++) 
+        if ( Stoich[i][j] != 0 ) { 
+          used = 1;
+          break;
+        }
+    } else {
+      for (i = 0; i < VarNr; i++) 
+        if ( Stoich_Right[i][j] != 0 ) { 
+          used = 1;
+	  break;
+        }
+    }  
+    
+    if ( used ) {    
+      prod = RConst( j );
+      for (i = 0; i < VarNr; i++) 
+        for (k = 1; k <= (int)Stoich_Left[i][j]; k++ )
+          prod = Mul( prod, Elm( V, i ) ); 
+      for ( ; i < SpcNr; i++) 
+        for (k = 1; k <= (int)Stoich_Left[i][j]; k++ )
+          prod = Mul( prod, Elm( F, i - VarNr ) );
+      Assign( Elm( IRR, j ), prod );
+    }
+  }
+
+  if( useAggregate )
+    MATLAB_Inline("\n   IRR = IRR(:);\n");
+  else
+    MATLAB_Inline("\n   P_VAR = P_VAR(:);\n   D_VAR = D_VAR(:);\n");
+
+  if( useAggregate )
+    FunctionEnd( F_VAR );
+  else
+    FunctionEnd( FSPLIT_VAR );
+  
+  FreeVariable( F_VAR );
+  FreeVariable( FSPLIT_VAR );
+}
 
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 void GenerateStochastic()
@@ -2173,6 +2256,22 @@ int i;
     case MATLAB_LANG: FatalError(-99,"USE F90 with WRF_conform option"); 
                  break;
   }
+
+  if( !strcmp( rootFileName,"t1_mozcart" ) ) {
+    NewLines(1);
+    bprintf( "   real(dp) :: aer_srf_area(3)\n");
+    bprintf( "   real(dp) :: aer_diam(3)\n");
+    NewLines(1);
+    bprintf( "   call aero_surfarea( aer_srf_area, aer_diam, rh, temp, &\n");
+    bprintf( "                       aer_so4, aer_oc2, aer_bc2 )\n" );
+    NewLines(1);
+    bprintf( "   if( aero_srf_area_diag > 0 ) then\n");
+    bprintf( "     sulf_srf_area = aer_srf_area(1)\n");
+    bprintf( "     oc_srf_area   = aer_srf_area(2)\n");
+    bprintf( "     bc_srf_area   = aer_srf_area(3)\n");
+    bprintf( "   endif\n");
+  }
+
   FlushBuf();
 
   NewLines(1);
@@ -3354,6 +3453,7 @@ int n;
   printf("\nKPP is generating the ODE function:");
   printf("\n    - %s_Function",rootFileName);
   GenerateFun();  
+  GenerateIRRFun();  
 
   if ( useStochastic ) {
     printf("\nKPP is generating the Stochastic description:");

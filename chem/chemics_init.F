@@ -273,6 +273,7 @@ call wrf_message("**************************************************************
    endif
 
    is_moz_chm = config_flags%chem_opt == MOZCART_KPP .or. &
+                config_flags%chem_opt == T1_MOZCART_KPP .or. &
                 config_flags%chem_opt == MOZART_KPP .or. &
                 config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
                 config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP
@@ -289,9 +290,10 @@ call wrf_message("**************************************************************
 !-----------------------------------------------------------------------
    if (config_flags%phot_opt == TUV ) then
      if (config_flags%chem_opt /= mozart_mosaic_4bin_kpp .and. &
-              config_flags%chem_opt /= mozart_mosaic_4bin_aq_kpp .and. &
-              config_flags%chem_opt /= mozcart_kpp ) THEN
-       write(message_txt,'(''--- ERROR: chem_opt '',a,'' not setup for TUV photolysis at this time'')') &
+         config_flags%chem_opt /= mozart_mosaic_4bin_aq_kpp .and. &
+         config_flags%chem_opt /= mozcart_kpp .and. &
+         config_flags%chem_opt /= t1_mozcart_kpp) THEN
+       write(message_txt,'(''--- ERROR: chem_opt '',i3,'' not setup for TUV photolysis at this time'')') &
               config_flags%chem_opt
        CALL wrf_error_fatal( trim(message_txt) )
      endif
@@ -413,6 +415,10 @@ call wrf_message("**************************************************************
     IF ( config_flags%chem_opt == 0 .AND. config_flags%aer_ra_feedback .NE. 0 ) THEN
 !       config_flags%aer_ra_feedback = 0
         call wrf_error_fatal(" ERROR: CHEM_INIT: FOR CHEM_OPT = 0, AER_RA_FEEDBACK MUST = 0 ")
+    ENDIF
+
+    IF ( config_flags%calc_clean_atm_diag .gt. 0 .AND. config_flags%aer_ra_feedback .EQ. 0 ) THEN
+    	call wrf_error_fatal("ERROR: clean_atm_diag > 0 requires aer_ra_feedback > 0")
     ENDIF
 
     IF ( config_flags%aer_ra_feedback .EQ. 1   .AND.   &
@@ -1020,7 +1026,7 @@ end if
        !BSINGH(04/03/2014): Added 8 bin vbs non-aq pakage
     CASE (SAPRC99_MOSAIC_8BIN_VBS2_KPP)
        if(config_flags%chem_in_opt == 0 )then
-          grid%vbs_nbin=3
+          grid%vbs_nbin=2
           do j=jts,jte
              do k=kts,kte
                 do i=its,ite
@@ -1745,7 +1751,7 @@ ENDIF ghg_block
 !                if(i.eq.19.and.j.eq.19)write(0,*)TCOSZ(i,j),ttday(i,j),julday, gmtp, sza, cosszax,xlonn,rlat
            enddo
           enddo
-      CASE (MOZCART_KPP)
+      CASE (MOZCART_KPP,T1_MOZCART_KPP)
         CALL wrf_debug(15,'MOZCART dust initialization')
         ch_dust(:,:) = 0.8D-9
 
@@ -1874,7 +1880,7 @@ ENDIF ghg_block
            CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP, &  !BSINGH(12/03/2013): Added SAPRC 8 bin
            SAPRC99_MOSAIC_8BIN_VBS2_KPP) !BSINGH(04/03/2014): Added SAPRC 8 bin non-aq
        call wrf_debug(15,'call MOSAIC aerosols initialization')
-       call init_data_mosaic_asect(id,config_flags%n2o5_hetchem,is_aerosol)
+       call init_data_mosaic_asect( id, config_flags, grid%vbs_nbin, is_aerosol )
        if(config_flags%chem_in_opt == 0 )then
        if( .NOT. config_flags%restart ) &
             call mosaic_init_wrf_mixrats(                            &

@@ -1389,7 +1389,6 @@ state    real  GD_CLOUD_A        ikj      misc        1         -      r      "G
 state    real  GD_CLOUD2_A       ikj      misc        1         -      r      "GD_CLOUD2_A"          "taveragd cloud ice mix ratio in GD"         "kg kg-1"
 state    real  QC_CU             ikj      misc        1         -      r      "QC_CU"                "CLOUD WATER MIXING RATIO FROM A CU SCHEME"         "kg kg-1"
 state    real  QI_CU             ikj      misc        1         -      r      "QI_CU"                "CLOUD ICE MIXUNG RATIO FROM A CU SCHEME"         "kg kg-1"
-#TWG
 state    real  QR_CU            ikj      misc        1         -      rh      "QR_CU"               "RAIN MIXING RATIO FROM A CU SCHEME"         "kg kg-1"
 state    real  QS_CU            ikj      misc        1         -      rh      "QS_CU"               "SNOW MIXING RATIO FROM A CU SCHEME"         "kg kg-1"
 state    real  NC_CU            ikj      misc        1         -      rh      "NC_CU"               "CLOUD WATER NUMBER CONCENTRATION FROM A CU SCHEME"         "kg-1"
@@ -1412,7 +1411,6 @@ state    real  CCN4_GS          ikj      misc        1         -      rh      "C
 state    real  CCN5_GS          ikj      misc        1         -      rh      "CCN5_GS"             "Grid Scale Cloud Condensation Nuclei at S=0.3%"       "#/cm-3"
 state    real  CCN6_GS          ikj      misc        1         -      rh      "CCN6_GS"             "Grid Scale Cloud Condensation Nuclei at S=0.5%"       "#/cm-3"
 state    real  CCN7_GS          ikj      misc        1         -      rh      "CCN7_GS"             "Grid Scale Cloud Condensation Nuclei at S=1.0%"       "#/cm-3"
-#END TWG
 state    real  QC_BL             ikj      misc        1         -      r      "QC_BL"                "CLOUD WATER MIXING RATIO IN PBL schemes"          "kg kg-1"
 state integer  STEPAVE_COUNT     -        misc        1         -      r      "STEPAVE_COUNT"        "time steps contained in averages for convective transport" ""
 
@@ -2220,7 +2218,6 @@ rconfig   real    aer_angexp_val          namelist,physics      max_domains   1.
 rconfig   real    aer_ssa_val             namelist,physics      max_domains   0.85    irh    "aer_ssa_val"    "fixed value for aerosol single-scattering albedo. Valid when aer_ssa_opt=1" ""
 rconfig   real    aer_asy_val             namelist,physics      max_domains   0.90    irh    "aer_asy_val"    "fixed value for aerosol asymmetry parameter. Valid when aer_asy_opt=1" ""
 rconfig   logical cu_rad_feedback         namelist,physics      max_domains   .false. irh    "feedback of cumulus cloud to radiation"  ""
-#[PSH/TWG - 6/11/16]
 rconfig   integer no_src_types_cu         namelist,physics      1             1       -      "no_src_types_cu" "Number of aerosoal species in global aerosol data"  ""
 rconfig   integer alevsiz_cu              namelist,physics      1             1       -      "alevsiz_cu" "Number of levels in global aerosol data"  ""
 rconfig   integer aercu_opt               namelist,physics      1             0       -      "aercu_opt"    "aerosol input option for multiscale KF"      ""
@@ -2733,9 +2730,7 @@ package   g3scheme       cu_physics==5               -             state:cugd_qv
 package   tiedtkescheme  cu_physics==6               -             -
 package   camzmscheme    cu_physics==7               -             state:precz,zmdt,zmdq,zmdice,zmdliq,evaptzm,fzsntzm,evsntzm,evapqzm,zmflxprc,zmflxsnw,zmntprpd,zmntsnpd,zmeiheat,cmfmc,cmfmcdzm,preccdzm,pconvb,pconvt,cape,zmmtu,zmmtv,zmmu,zmmd,zmupgu,zmupgd,zmvpgu,zmvpgd,zmicuu,zmicud,zmicvu,zmicvd,evapcdp3d,icwmrdp3d,rprddp3d,dp3d,du3d,ed3d,eu3d,md3d,mu3d,dsubcld2d,ideep2d,jt2d,maxg2d,lengath2d,dlf,rliq,tpert2d
 package   kfcupscheme    cu_physics==10              -             state:cldfratend_cup,cldfra_cup,updfra_cup,qc_iu_cup,qc_ic_cup,qndrop_ic_cup,wup_cup,mfup_cup,mfup_ent_cup,mfdn_cup,mfdn_ent_cup,fcvt_qc_to_pr_cup,fcvt_qc_to_qi_cup,fcvt_qi_to_pr_cup,lnterms,w0avg
-#PSH/TWG 06/10/16
 package   mskfscheme   cu_physics==11              -             state:w0avg,w_up
-#END/TWG
 package   nsasscheme     cu_physics==14              -             -
 package   ntiedtkescheme cu_physics==16              -             -
 package   gdscheme       cu_physics==93              -             -
@@ -2777,9 +2772,7 @@ package   fasdas         grid_sfdda==2              -              state:u10_ndg
 package   aeropt1        aer_opt==1                 -              state:aerodm
 package   aeropt2        aer_opt==2                 -              state:aod5503d
 
-#PSH/TWG 06/10/16
 package   aercuopt       aercu_opt==1               -              state:aeromcu,CU_UAF,EFCS,EFIS,EFSS,qr_cu,qs_cu,nc_cu,ni_cu,nr_cu,ns_cu,ccn_cu,aerovar;aerocu:cu_sulfate,cu_seasalt,cu_dust1,cu_dust2,cu_dust3,cu_dust4,cu_phoocar,cu_phiocar,cu_phobcar,cu_phibcar
-#END TWG
 
 package   slopeopt       slope_rad==1               -              -
 package   gwdopt         gwd_opt==1                 -              state:oc12d,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,dtaux3d,dtauy3d,dusfcg,dvsfcg

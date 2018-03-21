@@ -442,7 +442,7 @@ CONTAINS
                                                                t, &
                                                              t8w, &
                                                              rho
-!TWG Begin
+
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL,        &
         INTENT(IN)     ::                            EFCG,       & 
                                                      EFCS,       &
@@ -450,8 +450,6 @@ CONTAINS
                                                      EFIS,       &
                                                      EFSG,       &
                                                      EFSS
-!TWG END
-
 
    !BSINGH - For WRFCuP scheme
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL,        &
@@ -573,7 +571,7 @@ CONTAINS
                                                           aer_angexp_opt, & ! input option for aerosol Angstrom exponent
                                                           aer_ssa_opt,    & ! input option for aerosol ssa
                                                           aer_asy_opt,    & ! input option for aerosol asy
-                                                          aercu_opt         ! TWG add for MSKF option
+                                                          aercu_opt         !
     REAL,                                INTENT(IN)    :: aer_aod550_val, & ! AOD at 550 nm if aer_aod550_opt=1
                                                           aer_angexp_val, & ! aerosol Angstrom exponent if aer_angexp_opt=1
                                                           aer_ssa_val,    & ! aerosol ssa if aer_ssa_opt=1
@@ -727,11 +725,10 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qc_temp
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_save,qc_save
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qs_save
-!TWG Start
+
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qc_cu_weight
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_cu_weight
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qs_cu_weight
-!TWG End
 
    REAL    ::    gridkm, Wice,Wh2o
 
@@ -1200,7 +1197,7 @@ CONTAINS
              ENDDO
              ENDDO
              ENDDO
- !TWG Begin
+
              IF (aercu_opt.gt.0.0) THEN
              DO j = jts,jte
              DO k = kts,kte
@@ -1247,7 +1244,7 @@ CONTAINS
                 has_reqi = 1
                 has_reqs = 1
                 qs(i,k,j) = qs(i,k,j)+qs_cu(i,k,j)*cldfra_cu(i,k,j)
-!TWG END
+
              ENDDO
              ENDDO
              ENDDO

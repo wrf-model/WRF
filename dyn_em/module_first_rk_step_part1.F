@@ -32,7 +32,7 @@ CONTAINS
                              , ipsy,ipey,jpsy,jpey,kpsy,kpey    &
                              , k_start , k_end                  &
                              , f_flux                           &
-                             , aerocu                           & !PSH/TWG06/10/16 
+                             , aerocu                           &
                             )
     USE module_state_description
     USE module_model_constants
@@ -88,7 +88,7 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_fdda3d),INTENT(INOUT)  :: fdda3d
     REAL    ,DIMENSION(ims:ime,1:1,jms:jme,num_fdda2d),INTENT(INOUT)      :: fdda2d
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_aerod),INTENT(INOUT)   :: aerod
-    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_aerocu),INTENT(INOUT)  ::aerocu !PSH/TWG 06/10/16
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_aerocu),INTENT(INOUT)  ::aerocu
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: psim
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: psih
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: gz1oz0
@@ -1078,9 +1078,9 @@ BENCH_START(cu_driver_tim)
      &             ,RAINC=grid%rainc   ,RAINCV=grid%raincv   ,PRATEC=grid%pratec       &
      &             ,NCA=grid%nca                                                       &
      &             ,CLDFRA_DP=grid%cldfra_dp  ,CLDFRA_SH=grid%cldfra_sh,W_UP=grid%w_up & ! ckay for subgrid cloud
-     &             ,QC_CU=grid%QC_CU, QI_CU=grid%QI_CU, QR_CU=grid%QR_CU, QS_CU=grid%QS_CU & ! TWG
-     &             ,NC_CU=grid%NC_CU, NI_CU=grid%NI_CU, NR_CU=grid%NR_CU, NS_CU=grid%NS_CU & ! TWG
-     &             ,CCN_CU=grid%CCN_CU, CU_UAF=grid%CU_UAF                                 & ! TWG 
+     &             ,QC_CU=grid%QC_CU, QI_CU=grid%QI_CU, QR_CU=grid%QR_CU, QS_CU=grid%QS_CU &
+     &             ,NC_CU=grid%NC_CU, NI_CU=grid%NI_CU, NR_CU=grid%NR_CU, NS_CU=grid%NS_CU &
+     &             ,CCN_CU=grid%CCN_CU, CU_UAF=grid%CU_UAF                                 &
      &             ,UDR_KF=grid%udr_kf,DDR_KF=grid%ddr_kf                              & ! kf_edrates
      &             ,UER_KF=grid%uer_kf,DER_KF=grid%der_kf,TIMEC_KF=grid%timec_kf       &
      &             ,KF_EDRATES=config_flags%kf_edrates                                 &
@@ -1215,7 +1215,6 @@ BENCH_START(cu_driver_tim)
      &             ,DO_CAPSUPPRESS=do_capsupress                          &
 #endif
      &             ,cfu1=grid%cfu1,cfd1=grid%cfd1,dfu1=grid%dfu1,efu1=grid%efu1,dfd1=grid%dfd1,efd1=grid%efd1,f_flux=l_flux &
-! PSH/TWG 06/10/16
                    ,alevsiz_cu=grid%alevsiz_cu,num_months=grid%num_months               &
                    ,no_src_types_cu=grid%no_src_types_cu                                &
                    ,aercu_opt=config_flags%aercu_opt                                    &
@@ -1224,7 +1223,6 @@ BENCH_START(cu_driver_tim)
                    ,aeropcu=grid%aeropcu,ID=grid%id                                     &
                    ,JULDAY=grid%julday, JULIAN=grid%julian                              &
                    ,aerovar=grid%aerovar,EFCS=grid%EFCS,EFIS=grid%EFIS,EFSS=grid%EFSS)
-! PSH/TWG END
 BENCH_END(cu_driver_tim)
 !
 ! this for calculating (G3 scheme only)  time averaged variables for online (WRF-CHem) or offline (other models) chem runs

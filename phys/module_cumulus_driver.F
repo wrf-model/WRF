@@ -126,10 +126,10 @@ CONTAINS
                      ,do_capsuppress                                  &
 #endif 
 #if (EM_CORE == 1)                               
-          ,QR_CU,QS_CU,NC_CU,NI_CU,NR_CU,NS_CU,CCN_CU,CU_UAF          & !TWG
-          ,alevsiz_cu,num_months,no_src_types_cu,aercu_opt,aercu_fct  & !PSH/TWG 06/10/16
-          ,aeromcu,aerocu,aeropcu,id,JULDAY,JULIAN,aerovar            & !PSH/TWG 06/10/16
-          ,EFCS,EFIS,EFSS                                             & !TWG
+          ,QR_CU,QS_CU,NC_CU,NI_CU,NR_CU,NS_CU,CCN_CU,CU_UAF          &
+          ,alevsiz_cu,num_months,no_src_types_cu,aercu_opt,aercu_fct  &
+          ,aeromcu,aerocu,aeropcu,id,JULDAY,JULIAN,aerovar            &
+          ,EFCS,EFIS,EFSS                                             &
 #endif
                                                                       )
 !----------------------------------------------------------------------
@@ -589,13 +589,13 @@ CONTAINS
 #if (EM_CORE == 1)
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
                   INTENT(INOUT) ::                               &
-                  QR_CU,QS_CU,                                   & !TWG
-                  NC_CU,NI_CU,NR_CU,NS_CU,CCN_CU,                & !TWG
-                  EFCS,EFIS,EFSS                                   !TWG
+                  QR_CU,QS_CU,                                   &
+                  NC_CU,NI_CU,NR_CU,NS_CU,CCN_CU,                &
+                  EFCS,EFIS,EFSS
 
    REAL, DIMENSION( ims:ime, jms:jme ),                          &
                   INTENT(INOUT) ::                               &
-                  CU_UAF                                           !TWG
+                  CU_UAF
 #endif
                   
    REAL, DIMENSION( ims:ime , jms:jme , 1:ensdim ),              &
@@ -701,7 +701,6 @@ CONTAINS
    LOGICAL :: decided , run_param , doing_adapt_dt
 
 #if (EM_CORE == 1)
-!PSH/TWG 06/10/16
    INTEGER,  INTENT(IN)        :: alevsiz_cu, num_months, no_src_types_cu 
    INTEGER,  INTENT(IN)        :: aercu_opt  
    REAL,     INTENT(IN)        :: aercu_fct  
@@ -714,9 +713,7 @@ CONTAINS
    REAL, INTENT(IN)    :: JULIAN        
    INTEGER, INTENT(IN) :: id 
    INTEGER, INTENT(IN) :: JULDAY
-!PSH/TWG END
 #endif
-
 
 !-----------------------------------------------------------------
     pattern_spp_conv=0.
@@ -889,10 +886,9 @@ CONTAINS
         !wig, end.
         !BSINGH - ENDS
 
-!PSH/TWG 06/10/16
         !The following is for introducing aerosol data into the MSKF scheme !
         !If the flag is set, the aerosol data will be interpolated in       !
-        !time and then pressure to the current state.  -PSH                 !
+        !time and then pressure to the current state.
         IF ( aercu_opt .GT. 0 ) THEN
           IF ( aercu_opt .GT. 0 .AND. id .EQ. 1 ) THEN
             call aer_time_int_cu(julday,julian,aeromcu,aerotcu,alevsiz_cu,num_months,no_src_types_cu,&
@@ -921,7 +917,6 @@ CONTAINS
 
           ENDIF
         ENDIF
-!PSH/TWG END
 
 #endif
 
@@ -1049,16 +1044,16 @@ CONTAINS
                ,CLDFRA_DP_KF=cldfra_dp                          & ! ckay for sub-grid cloud
                ,CLDFRA_SH_KF=cldfra_sh                          &
                ,W_UP=w_up                                       & ! ckay
-               ,QC_KF=QC_CU,QI_KF=QI_CU,QR_KF=QR_CU,QS_KF=QS_CU & ! TWG
-               ,NC_KF=NC_CU,NI_KF=NI_CU,NR_KF=NR_CU,NS_KF=NS_CU & ! TWG
-               ,CCN_KF=CCN_CU,AINC_FRAC=CU_UAF                  & ! TWG
+               ,QC_KF=QC_CU,QI_KF=QI_CU,QR_KF=QR_CU,QS_KF=QS_CU &
+               ,NC_KF=NC_CU,NI_KF=NI_CU,NR_KF=NR_CU,NS_KF=NS_CU &
+               ,CCN_KF=CCN_CU,AINC_FRAC=CU_UAF                  &
                ,UDR_KF=udr_kf,DDR_KF=ddr_kf                     & !kf_edrates
                ,UER_KF=uer_kf,DER_KF=der_kf                     & 
                ,TIMEC_KF=timec_kf,KF_EDRATES=kf_edrates         & 
                ,ZOL=zol,WSTAR=wstar,UST=ust,PBLH=pblh           & !ckay
-               ,AEROCU=aerocu,NO_SRC_TYPES_CU=no_src_types_cu   & !PSH/TWG 06/10/16
+               ,AEROCU=aerocu,NO_SRC_TYPES_CU=no_src_types_cu   &
                ,AERCU_FCT=aercu_fct,AERCU_OPT=aercu_opt        &
-               ,EFCS=EFCS,EFIS=EFIS,EFSS=EFSS) !PSH 06/10/16
+               ,EFCS=EFCS,EFIS=EFIS,EFSS=EFSS)
 #endif
 
      CASE (GDSCHEME)
@@ -1877,7 +1872,5 @@ END SUBROUTINE aer_p_int_cu
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!             END    PSH/TWG 06/10/16   EDITS               !!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
 
 END MODULE module_cumulus_driver

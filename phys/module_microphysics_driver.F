@@ -102,12 +102,12 @@ SUBROUTINE microphysics_driver(                                          &
                       ,QV_OLD                                            &
                       ,xlat,xlong,ivgtyp                                 &
                       ,qrimef_curr,f_qrimef                              &
-                      ,aercu_opt                                         & !TWG
+                      ,aercu_opt                                         &
 # if( EM_CORE==1 )
-                      ,aerocu,aercu_fct,no_src_types_cu                  & !TWG
-                      ,PBL,EFCG,EFIG,EFSG,WACT,CCN1_GS,CCN2_GS           & !TWG
-                      ,CCN3_GS,CCN4_GS,CCN5_GS,CCN6_GS,CCN7_GS           & !TWG
-                      ,NR_CU,QR_CU,NS_CU,QS_CU,CU_UAF,mskf_refl_10cm     & !TWG
+                      ,aerocu,aercu_fct,no_src_types_cu                  &
+                      ,PBL,EFCG,EFIG,EFSG,WACT,CCN1_GS,CCN2_GS           &
+                      ,CCN3_GS,CCN4_GS,CCN5_GS,CCN6_GS,CCN7_GS           &
+                      ,NR_CU,QR_CU,NS_CU,QS_CU,CU_UAF,mskf_refl_10cm     &
 # endif
                                                                          )
 
@@ -167,7 +167,7 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_morr_two_moment
    USE module_mp_p3
 # if (EM_CORE == 1)
-   USE module_mp_morr_two_moment_aero ! add TWG
+   USE module_mp_morr_two_moment_aero
 # endif
    USE module_mp_wdm5
    USE module_mp_wdm6
@@ -570,7 +570,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  re_cloud, re_ice, re_snow
    INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
 
-! TWG 06/17/16 Variables for prescribed CESM aerosol
   INTEGER,           INTENT(IN   )    :: aercu_opt
 # if (EM_CORE == 1)
   INTEGER, OPTIONAL, INTENT(IN   )    :: PBL
@@ -598,7 +597,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                                       :: CU_UAF
    REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(OUT) :: mskf_refl_10cm
 # endif
-! END TWG
 
 !  REAL , DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT) :: lwp
 

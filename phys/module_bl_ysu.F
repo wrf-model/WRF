@@ -586,7 +586,7 @@ contains
    real,    dimension( ims:ime )             ::                       pblh_ysu,&
                                                                       vconvfx
 !
-   real,intent(out),dimension(ims:ime,kms:kme),optional::kzh,hzm,kzq
+   real,intent(out),dimension(ims:ime,kms:kme),optional::kzh,kzm,kzq
 !
 !-------------------------------------------------------------------------------
 !

@@ -218,7 +218,7 @@ else
       set overwrite=1
     else
       head -2 Registry/Registry | tail -1 | grep EM > /dev/null
-      if ( $status == 0 ) then
+      if ( $status ) then
         set overwrite=1
       else
         set em_time=`ls -1tr Registry | cat -n | grep -w 'Registry\.EM' | grep -v 'Registry.EM.' | awk '{print $1}'`

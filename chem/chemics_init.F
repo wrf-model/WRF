@@ -293,7 +293,7 @@ call wrf_message("**************************************************************
          config_flags%chem_opt /= mozart_mosaic_4bin_aq_kpp .and. &
          config_flags%chem_opt /= mozcart_kpp .and. &
          config_flags%chem_opt /= t1_mozcart_kpp) THEN
-       write(message_txt,'(''--- ERROR: chem_opt '',a,'' not setup for TUV photolysis at this time'')') &
+       write(message_txt,'(''--- ERROR: chem_opt '',i3,'' not setup for TUV photolysis at this time'')') &
               config_flags%chem_opt
        CALL wrf_error_fatal( trim(message_txt) )
      endif

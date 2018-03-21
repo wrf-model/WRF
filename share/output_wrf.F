@@ -216,6 +216,7 @@
     CALL nl_get_guv        ( grid%id , guv )
     CALL nl_get_gt         ( grid%id , gt )
     CALL nl_get_gph        ( grid%id , gph )
+    CALL nl_get_gq         ( grid%id , gq )
     CALL nl_get_if_ramping ( 1       , if_ramping )
     CALL nl_get_dtramp_min ( 1       , dtramp_min )
     ENDIF
@@ -661,7 +662,8 @@ endif
     ibuf(1) = gwd_opt
     CALL wrf_put_dom_ti_integer ( fid, 'GWD_OPT' ,  ibuf , 1 , ierr )
     CALL wrf_put_dom_ti_integer ( fid, 'SF_URBAN_PHYSICS', sf_urban_physics , 1 , ierr )
-    CALL wrf_put_dom_ti_integer ( fid, 'SF_OCEAN_PHYSICS', config_flags%sf_ocean_physics     , 1 , ierr )
+    CALL wrf_put_dom_ti_integer ( fid, 'SF_SURFACE_MOSAIC', config_flags%sf_surface_mosaic     , 1 , ierr ) 
+    CALL wrf_put_dom_ti_integer ( fid, 'SF_OCEAN_PHYSICS', config_flags%sf_ocean_physics     , 1 , ierr ) 
 #endif
 
       IF ( switch .EQ. history_only ) THEN
@@ -720,6 +722,7 @@ endif
         CALL wrf_put_dom_ti_real    ( fid, 'GUV', guv , 1 , ierr )
         CALL wrf_put_dom_ti_real    ( fid, 'GT', gt , 1 , ierr )
         CALL wrf_put_dom_ti_real    ( fid, 'GPH', gph , 1 , ierr )
+        CALL wrf_put_dom_ti_real    ( fid, 'GQ', gq , 1 , ierr )
         CALL wrf_put_dom_ti_integer ( fid, 'IF_RAMPING', if_ramping , 1 , ierr )
         CALL wrf_put_dom_ti_real    ( fid, 'DTRAMP_MIN', dtramp_min , 1 , ierr )
       ENDIF

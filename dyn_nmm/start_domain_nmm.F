@@ -2135,7 +2135,7 @@
      &             ,STEPBL,STEPRA,STEPCU                                &
      &             ,grid%w0avg, RAINNC, RAINC, grid%raincv, RAINNCV               &
      &             ,SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV              &
-     &             ,z_at_q, grid%qnwfa2d                                &
+     &             ,z_at_q, rri, grid%qnwfa2d                           &
 !     &             ,scalar_trans(ims,kms,jms,1),num_scalar              &
      &             ,scalar_trans,num_scalar              &
      &             ,grid%re_cloud, grid%re_ice, grid%re_snow            & ! G. Thompson

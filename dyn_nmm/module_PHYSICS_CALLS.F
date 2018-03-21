@@ -1532,6 +1532,7 @@
      &        ,iopt_alb=config_flags%opt_alb,   iopt_snf=config_flags%opt_snf &
      &        ,iopt_tbot=config_flags%opt_tbot, iopt_stc=config_flags%opt_stc & 
      &        ,iopt_gla=config_flags%opt_gla,   iopt_rsf=config_flags%opt_rsf & 
+     &        ,iopt_soil=config_flags%opt_soil, iopt_pedo=config_flags%opt_pedo &
      &        , isnowxy=grid%isnowxy  ,    tvxy=grid%tvxy    ,    tgxy=grid%tgxy     &
      &        ,canicexy=grid%canicexy ,canliqxy=grid%canliqxy,   eahxy=grid%eahxy    &
      &        ,   tahxy=grid%tahxy    ,    cmxy=grid%cmxy    ,    chxy=grid%chxy     &
@@ -1544,6 +1545,9 @@
      &        , grainxy=grid%grainxy  ,   gddxy=grid%gddxy   ,   pgsxy=grid%pgsxy    &
      &        , cropcat=grid%cropcat                                                 &
      &        ,planting=grid%planting , harvest=grid%harvest ,season_gdd=grid%season_gdd  &
+     &        , soilcomp=grid%soilcomp                                               &
+     &        , soilcl1=grid%soilcl1  , soilcl2=grid%soilcl2                         &
+     &        , soilcl3=grid%soilcl3  , soilcl4=grid%soilcl4                         &
      &        ,  xsaixy=grid%xsaixy   , taussxy=grid%taussxy                         &
      &        ,  t2mvxy=grid%t2mvxy   ,  t2mbxy=grid%t2mbxy                          &
      &        ,  q2mvxy=grid%q2mvxy   ,  q2mbxy=grid%q2mbxy                          & 

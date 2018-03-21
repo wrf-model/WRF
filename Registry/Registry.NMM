@@ -1093,6 +1093,8 @@ rconfig   integer opt_tbot    namelist,noah_mp      1            2         h    
 rconfig   integer opt_stc     namelist,noah_mp      1            1         h    "opt_stc"  "soil/snow temperature time scheme 1->semi-implicit; 2->full-implicit (original Noah)"   ""
 rconfig   integer opt_gla     namelist,noah_mp      1            1         h    "opt_gla"  "glacier treatment option 1->includes phase change; 2->slab ice (Noah)"   ""
 rconfig   integer opt_rsf     namelist,noah_mp      1            1         h    "opt_rsf"  "surface evaporation resistance option"   ""
+rconfig   integer opt_soil    namelist,noah_mp      1            1         h    "opt_soil" "flag for using different input soil information"   ""
+rconfig   integer opt_pedo    namelist,noah_mp      1            1         h    "opt_pedo" "pedo_transfer function option"   ""
 
 # For WRF Hydro
 rconfig   integer wrf_hydro               derived              1     0      h     "wrf_hydro"   "descrip"  "unit"
@@ -1183,6 +1185,11 @@ state    real   SMOISEQ            ilj     -          1         Z     r   "SMOIS
 state    real   smcwtdxy   ij      -       1      -     rh    "smcwtd"    "deep soil moisture "       "m3 m-3"
 state    real   rechxy     ij      -       1      -     h    "rech"    "water table recharge"       "mm"
 state    real   deeprechxy ij      -       1      -     r    "deeprech" "deep water table recharge"       "mm"
+state    real   soilcomp  i{soilc}j  -     1      Z     i02rd=(interp_mask_land_field:lu_index)u=(UpNear)    "SOILCOMP"   "soil composition"       "%"
+state    real   soilcl1    ij      -       1      -     i02rd=(interp_mask_land_field:lu_index)u=(UpNear)    "SOILCL1"     "soil texture class - level 1"       "cat"
+state    real   soilcl2    ij      -       1      -     i02rd=(interp_mask_land_field:lu_index)u=(UpNear)    "SOILCL2"     "soil texture class - level 2"       "cat"
+state    real   soilcl3    ij      -       1      -     i02rd=(interp_mask_land_field:lu_index)u=(UpNear)    "SOILCL3"     "soil texture class - level 3"       "cat"
+state    real   soilcl4    ij      -       1      -     i02rd=(interp_mask_land_field:lu_index)u=(UpNear)    "SOILCL4"     "soil texture class - level 4"       "cat"
 
 # Crop model only
 
@@ -1794,7 +1801,7 @@ package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn
 package   ruclsmscheme   sf_surface_physics==3       -             state:ACRUNOFF
 
-package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy
+package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy,soilcomp,soilcl1,soilcl2,soilcl3,soilcl4
 
 package   clmscheme      sf_surface_physics==5       -             -
 package   gfdlslab       sf_surface_physics==88      -             -

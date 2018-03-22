@@ -969,7 +969,7 @@ state    real   wm_temf        ij      misc        1         -     rh        "wm
 
 # MYNN PBL variables
 state   real   qke_adv         ikjftb  scalar      1         -      i0rusdf=(bdy_interp:dt) "qke_adv"       "twice TKE from MYNN"      "m2 s-2"
-state   real   qke             ikj     misc        1         -      ir       "qke"               "twice TKE from MYNN"      "m2 s-2"
+state   real   qke             ikj     misc        1         -      irh      "qke"               "twice TKE from MYNN"      "m2 s-2"
 state   real   qSHEAR          ikj     misc        1         Z      h        "qSHEAR"            "TKE Production - shear"          "m2 s-2"
 state   real   qBUOY           ikj     misc        1         Z      h        "qBUOY"             "TKE Production - buoyancy"       "m2 s-2"
 state   real   qDISS           ikj     misc        1         Z      h        "qDISS"             "TKE dissipation"                 "m2 s-2"

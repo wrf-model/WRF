@@ -27,6 +27,7 @@ foreach a ( $argv )
   if ( "$a" == "-h" ) then
     goto hlp
   else if ( "$a" == "all_wrfvar" || "$a" == "gen_be" ) then
+    set arglist = ( $arglist $a )
       grep "DA_CORE=1" configure.wrf > /dev/null
       if ( ! $status ) then 
         # If configuration file has DA_CORE=1, set WRF_DA_CORE to 1
@@ -44,7 +45,8 @@ foreach a ( $argv )
         exit 1
       endif
   else if ( ( "$a" ==  "nmm_real" ) || ( "$a" ==  "nmm_nest" ) || ( "$a" ==  "nmm_hwrf" ) ) then
-       set ZAP = ( main/wrf.exe main/real_nmm.exe )
+    set arglist = ( $arglist $a )
+    set ZAP = ( main/wrf.exe main/real_nmm.exe )
     if ( "$a" == "nmm_real" ) then
       grep "NMM_CORE=1" configure.wrf > /dev/null
       if ( ! $status ) then 
@@ -53,10 +55,13 @@ foreach a ( $argv )
       endif
     endif
   else if ( `echo $a | cut -c 1-4` == "nmm_" ) then
+    set arglist = ( $arglist $a )
     set ZAP = ( main/wrf.exe main/ideal_nmm.exe )
   else if   ( "$a" ==  "em_real" ) then
+    set arglist = ( $arglist $a )
     set ZAP = ( main/wrf.exe main/real.exe main/ndown.exe main/tc.exe )
   else if   ( `echo $a | cut -c 1-3` == "em_" ) then
+    set arglist = ( $arglist $a )
     set ZAP = ( main/wrf.exe main/ideal.exe )
   else if ( "$a" == "-j" ) then
     shift argv

@@ -1,10 +1,4 @@
-!=================================================================================================================
-!module_mp_wsm6.F was modified to integrate MPAS-specific code 
-!integration took place between WRF Master Repository (from 28Feb2018) and MPAS HWT repository (from 27Feb2018)
-!WRF version is >V3.9.1.1 and MPAS module_mp_wsm6.F was originally modified from WRFV3.8.1
-!=================================================================================================================
-
-#if ( ( ! defined(mpas) ) && ( RWORDSIZE == 4 ) ) || ( ( defined(mpas) ) && defined(SINGLE_PRECISION) )
+#if ( (defined(wrfmodel) ) && ( RWORDSIZE == 4 ) ) || ( ( defined(mpas) ) && defined(SINGLE_PRECISION) )
 #  define VREC vsrec
 #  define VSQRT vssqrt
 #else
@@ -14,7 +8,7 @@
 
 MODULE module_mp_wsm6
 !
-#if ( ! defined(mpas) )
+#if ( defined(wrfmodel) )
    USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
    USE module_domain, ONLY : HISTORY_ALARM, Is_alarm_tstep
 #endif

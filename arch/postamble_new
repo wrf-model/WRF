@@ -20,6 +20,7 @@ ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=$(IWORDSIZE) -DDWORDSIZE=$(DWORDSIZ
                       CONFIGURE_WAVELET_FLAG \
                       CONFIGURE_NESTOPT \
                       -DUSE_ALLOCATABLES \
+                      -Dwrfmodel \
                       -DGRIB1 \
                       -DINTIO \
                       -DKEEP_INT_AROUND \

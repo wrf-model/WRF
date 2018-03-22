@@ -987,10 +987,10 @@ state   real   edmf_a          ikj     misc        1         -      h         "e
 state   real   edmf_w          ikj     misc        1         -      h         "edmf_w"           "EDMF vertical velocity  - mean moist updrafts" "m s-1"
 state   real   edmf_thl        ikj     misc        1         -      h         "edmf_thl"         "EDMF thetaL  - mean moist updrafts" "K"
 state   real   edmf_qt         ikj     misc        1         -      h         "edmf_qt"          "EDMF qt  - mean moist updrafts" "kg kg-1"
-state   real   edmf_ent        ikj     misc        1         -      h         "edmf_ent"          "EDMF entrainment  - mean moist updrafts" "m-1"
-state   real   edmf_qc         ikj     misc        1         -      h         "edmf_qc"           "EDMF qc - mean moist updrafts" "kg kg-1"
-state   integer  nupdraft       ij     misc        1         -      ih        "nupdraft"           "Number of updrafts (neg: all dry, pos: moist)"  ""
-state   real   maxMF            ij     misc        1         -      ih        "maxMF"              "Maximum mass-flux"    "m/s * area"
+state   real   edmf_ent        ikj     misc        1         -      h         "edmf_ent"         "EDMF entrainment  - mean moist updrafts" "m-1"
+state   real   edmf_qc         ikj     misc        1         -      h         "edmf_qc"          "EDMF qc - mean moist updrafts" "kg kg-1"
+state   integer  nupdraft       ij     misc        1         -      h         "nupdraft"         "Number of updrafts per grid cell"  ""
+state   real   maxMF            ij     misc        1         -      h         "maxMF"            "Maximum mass-flux (neg: all dry, pos: moist)"   "m/s * area"
 
 #FogDES variables
 state   real   fgdp             ij     misc        1         -      -        "fgdp"                "Accumulated fog deposition"    "mm"

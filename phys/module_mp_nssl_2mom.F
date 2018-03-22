@@ -14726,20 +14726,9 @@ END SUBROUTINE nssl_2mom_driver
 !  shed all at temperatures > 273.15
 !
       if ( temg(mgs) .gt. tfr ) then
-
-       IF ( .false. ) THEN ! old and incorrect -- Thanks to Shaofeng Hua for noticing this error (9/17/2017)
-       qsshr(mgs)   = -qsdry(mgs)
-       qhshr(mgs)  = -qhdry(mgs)
-       qhlshr(mgs)  = -qhldry(mgs)
-
-       ELSE ! new and correct
-       
        qsshr(mgs)   = - qsacr(mgs) - qsacw(mgs) ! -qsdry(mgs)
        qhlshr(mgs)  = - qhlacw(mgs) - qhlacr(mgs) ! -qhldry(mgs)
        qhshr(mgs)  = - qhacw(mgs) - qhacr(mgs) ! -qhdry(mgs)
-
-       ENDIF
-
        vhshdr(mgs)  = -vhacw(mgs) - vhacr(mgs)
        vhlshdr(mgs)  = -vhlacw(mgs) - vhlacr(mgs)
        qhwet(mgs)  = 0.0

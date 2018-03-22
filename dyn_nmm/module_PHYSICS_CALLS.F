@@ -1533,6 +1533,7 @@
      &        ,iopt_tbot=config_flags%opt_tbot, iopt_stc=config_flags%opt_stc & 
      &        ,iopt_gla=config_flags%opt_gla,   iopt_rsf=config_flags%opt_rsf & 
      &        ,iopt_soil=config_flags%opt_soil, iopt_pedo=config_flags%opt_pedo &
+     &        ,iopt_crop=config_flags%opt_crop
      &        , isnowxy=grid%isnowxy  ,    tvxy=grid%tvxy    ,    tgxy=grid%tgxy     &
      &        ,canicexy=grid%canicexy ,canliqxy=grid%canliqxy,   eahxy=grid%eahxy    &
      &        ,   tahxy=grid%tahxy    ,    cmxy=grid%cmxy    ,    chxy=grid%chxy     &
@@ -1567,6 +1568,7 @@
      &        ,  chv2xy=grid%chv2xy   ,  chb2xy=grid%chb2xy , chstarxy=grid%chstarxy &                       
      &        ,  smoiseq=grid%smoiseq, smcwtdxy=grid%smcwtdxy, rechxy=grid%rechxy    &                       
      &        ,  deeprechxy=grid%deeprechxy                                          &                       
+     &        ,gecros_state=grid%gecros_state                                        &   ! Optional gecros crop
      &        ,coszen=grid%czen,xlat_urb2d=grid%hlat                                 &
      &        ,rs=rs,xlaidyn=xlaidyn                                                 &
 ! mosaic tiling for Noah

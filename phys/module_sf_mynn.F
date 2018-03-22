@@ -1043,18 +1043,13 @@ CONTAINS
       GZ1OZt(I)= LOG((ZA(I)+z_t(i))/z_t(i))           
       GZ2OZt(I)= LOG((2.0+z_t(i))/z_t(i))                                        
 
-      !PSIT=MAX(GZ1OZ0(I)-PSIH(I),2.)
       PSIT =MAX(GZ1OZt(I)-PSIH(I) ,1.)
       PSIT2=MAX(GZ2OZt(I)-PSIH2(I),1.)
-      !PSIT=MAX(LOG((ZA(I)+z_t(i))/z_t(i))-PSIH(I) ,2.0)
-      !PSIT2=MAX(LOG((2.0+z_t(i))/z_t(i))-PSIH2(I) ,2.0)                                    
       resist(I)=PSIT
       logres(I)=GZ1OZt(I)
 
-      !PSIQ=MAX(LOG((za(i)+z_q(i))/z_q(I))-PSIH(I) ,2.0)   
-      !PSIQ2=MAX(LOG((2.0+z_q(i))/z_q(I))-PSIH2(I) ,2.0) 
-      PSIQ =MAX(GZ1OZt(I)-PSIH(I) ,1.)
-      PSIQ2=MAX(GZ2OZt(I)-PSIH2(I),1.)
+      PSIQ=MAX(LOG((ZA(I)+z_q(i))/z_q(I))-PSIH(I) ,1.0)
+      PSIQ2=MAX(LOG((2.0+z_q(i))/z_q(I))-PSIH2(I) ,1.0)
 
       IF((XLAND(I)-1.5).LT.0)THEN    !Land only
          IF ( IZ0TLND .EQ. 4 ) THEN
@@ -1123,8 +1118,8 @@ CONTAINS
     PSIT2=MAX(GZ2OZt(I)-PSIH2(I),1.0)
     PSIT10=MAX(GZ10OZ0(I)-PSIH10(I), 1.0)
   
-    PSIQ =MAX(GZ1OZt(I)-PSIH(I), 1.0)
-    PSIQ2=MAX(GZ2OZt(I)-PSIH2(I),1.0)
+    PSIQ=MAX(LOG((ZA(I)+z_q(i))/z_q(I))-PSIH(I) ,1.0)
+    PSIQ2=MAX(LOG((2.0+z_q(i))/z_q(I))-PSIH2(I) ,1.0)
     PSIQ10=MAX(GZ10OZ0(I)-PSIH10(I),1.0)
 
     IF (ISFFLX .LT. 1) THEN                                                

@@ -7,7 +7,7 @@
 #endif
 module dashDwrf_is_OK
 integer :: xxyyz
-#ifdef WRFMODEL
+#ifdef wrfmodel
 end module dashDwrf_is_OK
 #else
 end module dashDwrf_is_baroque

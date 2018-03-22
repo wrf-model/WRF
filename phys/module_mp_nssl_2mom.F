@@ -14239,7 +14239,6 @@ END SUBROUTINE nssl_2mom_driver
         dqcitmp(mgs) = 0.0
         
 
-!      IF ( ( qitmp(mgs) > qxmin(li) .or. qrtmp(mgs) > qxmin(lr) ) ) THEN
       IF ( qitmp(mgs) > qxmin(li)  ) THEN
       
         qitmp1    = qitmp(mgs)
@@ -14260,15 +14259,6 @@ END SUBROUTINE nssl_2mom_driver
 
         qsstmp = qisstmp
 
-!      if ( temg(mgs) .lt. tfr ) then
-!      if( qctmp(mgs) .ge. 0.0 .and. qitmp(mgs) .le. qxmin(li) )   &
-!     &  qsstmp = qvstmp
-!      if( qctmp(mgs) .le. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))   &
-!     &  qsstmp = qisstmp
-!      if( qctmp(mgs) .gt. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))   &
-!     &   qsstmp = (qctmp(mgs)*qvstmp + qitmp(mgs)*qisstmp) /   &
-!     &   (qctmp(mgs) + qitmp(mgs))
-!      end if
       
        dqwvtmp(mgs) = ( qvtmp(mgs) - qsstmp )
 
@@ -14291,13 +14281,6 @@ END SUBROUTINE nssl_2mom_driver
 !  evaporation and sublimation adjustment
 !
       if( dqwv(mgs) .lt. 0. ) then           ! { subsaturated
-!        if( qctmp(mgs) .gt. -dqwv(mgs) ) then  ! check if qc can make up all of the deficit
-!          dqcw(mgs) = dqwv(mgs)
-!!          dqwv(mgs) = 0.
-!        else                                 !  otherwise make all qc available for evap
-!          dqcw(mgs) = -qctmp(mgs)
-!          dqwv(mgs) = dqwv(mgs) + qctmp(mgs)
-!        end if
 
         if( qitmp(mgs) .gt. -dqwv(mgs) ) then  ! check if qi can make up all the deficit
           dqci(mgs) = dqwv(mgs)
@@ -14348,7 +14331,6 @@ END SUBROUTINE nssl_2mom_driver
            fraci(mgs) = 1.0
            fracl(mgs) = 0.0
          end if
-!        fraci(mgs) = 1.0-fracl(mgs)
 
        gamss = (felvcp(mgs)*fracl(mgs) + felscp(mgs)*fraci(mgs))   &
      &      / (pi0(mgs))
@@ -14356,26 +14338,6 @@ END SUBROUTINE nssl_2mom_driver
           dqvcnd(mgs) = dqwv(mgs)/(1. + fcqv2(mgs)*qsstmp/   &
      &  ((temg(mgs)-cbi)**2))
 
-!      IF ( temg(mgs) .lt. tfr ) then
-!        IF (qctmp(mgs) .ge. 0.0 .and. qitmp(mgs) .le. qxmin(li) ) then
-!         dqvcnd(mgs) = dqwv(mgs)/(1. + fcqv1(mgs)*qsstmp/   &
-!     &  ((temg(mgs)-cbw)**2))
-!        END IF
-!        IF ( qctmp(mgs) .eq. 0.0 .and. qitmp(mgs) .gt. qxmin(li) ) then
-!          dqvcnd(mgs) = dqwv(mgs)/(1. + fcqv2(mgs)*qsstmp/   &
-!     &  ((temg(mgs)-cbi)**2))
-!        END IF
-!        IF ( qctmp(mgs) .gt. 0.0 .and. qitmp(mgs) .gt. qxmin(li) ) then
-!         cdw = caw*pi0(mgs)*tfrcbw/((temg(mgs)-cbw)**2)
-!         cdi = cai*pi0(mgs)*tfrcbi/((temg(mgs)-cbi)**2)
-!         denom1 = qctmp(mgs) + qitmp(mgs)
-!         denom2 = 1.0 + gamss*   &
-!     &    (qctmp(mgs)*qvs(mgs)*cdw + qitmp(mgs)*qis(mgs)*cdi) / denom1
-!         dqvcnd(mgs) =  dqwv(mgs) / denom2
-!        END IF 
-
-!      ENDIF  !  temg(mgs) .lt. tfr
-!
       if ( temg(mgs) .ge. tfr ) then
       dqvcnd(mgs) = dqwv(mgs)/(1. + fcqv1(mgs)*qsstmp/   &
      &  ((temg(mgs)-cbw)**2))
@@ -14448,17 +14410,7 @@ END SUBROUTINE nssl_2mom_driver
 !      end if
 
       
-!      qsstmp = qvstmp
       qsstmp = qisstmp
-!      if ( temg(mgs) .lt. tfr ) then
-!      if( qctmp(mgs) .ge. 0.0 .and. qitmp(mgs) .le. qxmin(li) )   &
-!     &  qsstmp = qvstmp
-!      if( qctmp(mgs) .le. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))   &
-!     &  qsstmp = qisstmp
-!      if( qctmp(mgs) .gt. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))   &
-!     &   qsstmp = (qctmp(mgs)*qvstmp + qitmp(mgs)*qisstmp) /   &
-!     &   (qctmp(mgs) + qitmp(mgs))
-!      end if
       
       ELSE
        ! set max depletion

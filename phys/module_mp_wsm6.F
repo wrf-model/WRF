@@ -136,7 +136,7 @@ CONTAINS
                                                           re_ice, &
                                                          re_snow
 !+---+-----------------------------------------------------------------+
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT), OPTIONAL::     &  ! GT
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::     &  ! GT
                                                        refl_10cm
 !+---+-----------------------------------------------------------------+
 

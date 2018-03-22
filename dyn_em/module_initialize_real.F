@@ -117,8 +117,8 @@ CONTAINS
       REAL :: p_top_requested , temp
       INTEGER :: num_metgrid_levels
       REAL , DIMENSION(max_eta) :: eta_levels
-      INTEGER :: auto_levels_opt
       
+      INTEGER :: auto_levels_opt
       REAL :: max_dz, dzbot, dzstretch_s, dzstretch_u, z1, airmass
 
       REAL :: dclat

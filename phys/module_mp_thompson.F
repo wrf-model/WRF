@@ -36,7 +36,7 @@
 !.. Remaining values should probably be left alone.
 !..
 !..Author: Greg Thompson, NCAR-RAL, gthompsn@ucar.edu, 303-497-2805
-!..Last modified: 04 Aug 2017   Aerosol additions to v3.5.1 code 9/2013
+!..Last modified: 24 Jan 2018   Aerosol additions to v3.5.1 code 9/2013
 !..                 Cloud fraction additions 11/2014 part of pre-v3.7
 !+---+-----------------------------------------------------------------+
 !wrft:model_layer:physics
@@ -88,7 +88,7 @@
 !..Generalized gamma distributions for rain, graupel and cloud ice.
 !.. N(D) = N_0 * D**mu * exp(-lamda*D);  mu=0 is exponential.
       REAL, PARAMETER, PRIVATE:: mu_r = 0.0
-      REAL, PARAMETER, PRIVATE:: mu_g = 0.0
+      REAL, PARAMETER, PRIVATE:: mu_g = 1.0
       REAL, PARAMETER, PRIVATE:: mu_i = 0.0
       REAL, PRIVATE:: mu_c
 
@@ -107,8 +107,8 @@
 !.. mixing ratio.  Also, when mu_g is non-zero, these become equiv
 !.. y-intercept for an exponential distrib and proper values are
 !.. computed based on same mixing ratio and total number concentration.
-      REAL, PARAMETER, PRIVATE:: gonv_min = 1.E4
-      REAL, PARAMETER, PRIVATE:: gonv_max = 3.E6
+      REAL, PARAMETER, PRIVATE:: gonv_min = 1.E2
+      REAL, PARAMETER, PRIVATE:: gonv_max = 1.E7
 
 !..Mass power law relations:  mass = am*D**bm
 !.. Snow from Field et al. (2005), others assume spherical form.
@@ -212,8 +212,8 @@
       INTEGER, PARAMETER, PRIVATE:: ntb_i = 64
       INTEGER, PARAMETER, PRIVATE:: ntb_r = 37
       INTEGER, PARAMETER, PRIVATE:: ntb_s = 28
-      INTEGER, PARAMETER, PRIVATE:: ntb_g = 28
-      INTEGER, PARAMETER, PRIVATE:: ntb_g1 = 28
+      INTEGER, PARAMETER, PRIVATE:: ntb_g = 37
+      INTEGER, PARAMETER, PRIVATE:: ntb_g1 = 46
       INTEGER, PARAMETER, PRIVATE:: ntb_r1 = 37
       INTEGER, PARAMETER, PRIVATE:: ntb_i1 = 55
       INTEGER, PARAMETER, PRIVATE:: ntb_t = 9
@@ -264,7 +264,8 @@
 
 !..Lookup tables for graupel content (kg/m**3).
       REAL, DIMENSION(ntb_g), PARAMETER, PRIVATE:: &
-      r_g = (/1.e-5,2.e-5,3.e-5,4.e-5,5.e-5,6.e-5,7.e-5,8.e-5,9.e-5, &
+      r_g = (/1.e-6,2.e-6,3.e-6,4.e-6,5.e-6,6.e-6,7.e-6,8.e-6,9.e-6, &
+              1.e-5,2.e-5,3.e-5,4.e-5,5.e-5,6.e-5,7.e-5,8.e-5,9.e-5, &
               1.e-4,2.e-4,3.e-4,4.e-4,5.e-4,6.e-4,7.e-4,8.e-4,9.e-4, &
               1.e-3,2.e-3,3.e-3,4.e-3,5.e-3,6.e-3,7.e-3,8.e-3,9.e-3, &
               1.e-2/)
@@ -286,7 +287,9 @@
 
 !..Lookup tables for graupel y-intercept parameter (/m**4).
       REAL, DIMENSION(ntb_g1), PARAMETER, PRIVATE:: &
-      N0g_exp = (/1.e4,2.e4,3.e4,4.e4,5.e4,6.e4,7.e4,8.e4,9.e4, &
+      N0g_exp = (/1.e2,2.e2,3.e2,4.e2,5.e2,6.e2,7.e2,8.e2,9.e2, &
+                  1.e3,2.e3,3.e3,4.e3,5.e3,6.e3,7.e3,8.e3,9.e3, &
+                  1.e4,2.e4,3.e4,4.e4,5.e4,6.e4,7.e4,8.e4,9.e4, &
                   1.e5,2.e5,3.e5,4.e5,5.e5,6.e5,7.e5,8.e5,9.e5, &
                   1.e6,2.e6,3.e6,4.e6,5.e6,6.e6,7.e6,8.e6,9.e6, &
                   1.e7/)
@@ -391,8 +394,8 @@
 
       CONTAINS
 
-      SUBROUTINE thompson_init(hgt, orho, nwfa2d, nwfa, nifa, dx, dy,   &
-                          is_start,                                     &
+      SUBROUTINE thompson_init(hgt, orho, nwfa2d, nifa2d, nwfa, nifa,   &
+                          dx, dy, is_start,                             &
                           ids, ide, jds, jde, kds, kde,                 &
                           ims, ime, jms, jme, kms, kme,                 &
                           its, ite, jts, jte, kts, kte)
@@ -407,7 +410,7 @@
 !..OPTIONAL variables that control application of aerosol-aware scheme
 
       REAL, DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL, INTENT(INOUT) :: nwfa, nifa
-      REAL, DIMENSION(ims:ime,jms:jme), OPTIONAL, INTENT(INOUT) :: nwfa2d
+      REAL, DIMENSION(ims:ime,jms:jme), OPTIONAL, INTENT(INOUT) :: nwfa2d, nifa2d
       REAL, DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL, INTENT(IN) :: orho
       REAL, OPTIONAL, INTENT(IN) :: DX, DY
       LOGICAL, OPTIONAL, INTENT(IN) :: is_start
@@ -971,7 +974,7 @@
 !..This is a wrapper routine designed to transfer values from 3D to 1D.
 !+---+-----------------------------------------------------------------+
       SUBROUTINE mp_gt_driver(qv, qc, qr, qi, qs, qg, ni, nr, nc,       &
-                              nwfa, nifa, nwfa2d,                       &
+                              nwfa, nifa, nwfa2d, nifa2d,               &
                               th, pii, p, w, dz, dt_in, itimestep,      &
                               RAINNC, RAINNCV, &
                               SNOWNC, SNOWNCV, &
@@ -996,7 +999,7 @@
                           qv, qc, qr, qi, qs, qg, ni, nr, th
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT):: &
                           nc, nwfa, nifa
-      REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN):: nwfa2d
+      REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN):: nwfa2d, nifa2d
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
                           re_cloud, re_ice, re_snow
       INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
@@ -1173,6 +1176,7 @@
          if (is_aerosol_aware) then
 !-GT        nwfa1d(kts) = nwfa1
             nwfa1d(kts) = nwfa1d(kts) + nwfa2d(i,j)*dt_in
+            nifa1d(kts) = nifa1d(kts) + nifa2d(i,j)*dt_in
 
             do k = kts, kte
                nc(i,k,j) = nc1d(k)
@@ -1590,7 +1594,7 @@
          if (qc1d(k) .gt. R1) then
             no_micro = .false.
             rc(k) = qc1d(k)*rho(k)
-            nc(k) = MAX(2., nc1d(k)*rho(k))
+            nc(k) = MAX(2., MIN(nc1d(k)*rho(k), Nt_c_max))
             L_qc(k) = .true.
             nu_c = MIN(15, NINT(1000.E6/nc(k)) + 2)
             lamc = (nc(k)*am_r*ccg(2,nu_c)*ocg1(nu_c)/rc(k))**obmr
@@ -1832,23 +1836,12 @@
 !+---+-----------------------------------------------------------------+
 !..Calculate y-intercept, slope values for graupel.
 !+---+-----------------------------------------------------------------+
-      N0_min = gonv_max
-      k_0 = kts
       do k = kte, kts, -1
-         if (temp(k).ge.270.65) k_0 = MAX(k_0, k)
-      enddo
-      do k = kte, kts, -1
-         if (k.gt.k_0 .and. L_qr(k) .and. mvd_r(k).gt.100.E-6) then
-            xslw1 = 4.01 + alog10(mvd_r(k))
-         else
-            xslw1 = 0.01
-         endif
-         ygra1 = 4.31 + alog10(max(5.E-5, rg(k)))
-         zans1 = 3.1 + (100./(300.*xslw1*ygra1/(10./xslw1+1.+0.25*ygra1)+30.+10.*ygra1))
+         ygra1 = alog10(max(1.E-9, rg(k)))
+         zans1 = (2. + 2./7. * (ygra1+7.))
+         zans1 = MAX(2., MIN(zans1, 7.))
          N0_exp = 10.**(zans1)
          N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
-         N0_min = MIN(N0_exp, N0_min)
-         N0_exp = N0_min
          lam_exp = (N0_exp*am_g*cgg(1)/rg(k))**oge1
          lamg = lam_exp * (cgg(3)*ogg2*ogg1)**obmg
          ilamg(k) = 1./lamg
@@ -2781,7 +2774,7 @@
 
          if ((qc1d(k) + qcten(k)*DT) .gt. R1) then
             rc(k) = (qc1d(k) + qcten(k)*DT)*rho(k)
-            nc(k) = MAX(2., (nc1d(k) + ncten(k)*DT)*rho(k))
+            nc(k) = MAX(2., MIN((nc1d(k)+ncten(k)*DT)*rho(k), Nt_c_max))
             if (.NOT. is_aerosol_aware) nc(k) = Nt_c
             L_qc(k) = .true.
          else
@@ -2903,23 +2896,12 @@
 !+---+-----------------------------------------------------------------+
 !..Calculate y-intercept, slope values for graupel.
 !+---+-----------------------------------------------------------------+
-      N0_min = gonv_max
-      k_0 = kts
       do k = kte, kts, -1
-         if (temp(k).ge.270.65) k_0 = MAX(k_0, k)
-      enddo
-      do k = kte, kts, -1
-         if (k.gt.k_0 .and. L_qr(k) .and. mvd_r(k).gt.100.E-6) then
-            xslw1 = 4.01 + alog10(mvd_r(k))
-         else
-            xslw1 = 0.01
-         endif
-         ygra1 = 4.31 + alog10(max(5.E-5, rg(k)))
-         zans1 = 3.1 + (100./(300.*xslw1*ygra1/(10./xslw1+1.+0.25*ygra1)+30.+10.*ygra1))
+         ygra1 = alog10(max(1.E-9, rg(k)))
+         zans1 = (2. + 2./7. * (ygra1+7.))
+         zans1 = MAX(2., MIN(zans1, 7.))
          N0_exp = 10.**(zans1)
          N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
-         N0_min = MIN(N0_exp, N0_min)
-         N0_exp = N0_min
          lam_exp = (N0_exp*am_g*cgg(1)/rg(k))**oge1
          lamg = lam_exp * (cgg(3)*ogg2*ogg1)**obmg
          ilamg(k) = 1./lamg
@@ -3032,7 +3014,7 @@
           nwfaten(k) = nwfaten(k) - pnc_wcd(k)
           tten(k) = tten(k) + lvap(k)*ocp(k)*prw_vcd(k)*(1-IFDRY)
           rc(k) = MAX(R1, (qc1d(k) + DT*qcten(k))*rho(k))
-          nc(k) = MAX(2., (nc1d(k) + DT*ncten(k))*rho(k))
+          nc(k) = MAX(2., MIN((nc1d(k)+ncten(k)*DT)*rho(k), Nt_c_max))
           if (.NOT. is_aerosol_aware) nc(k) = Nt_c
           qv(k) = MAX(1.E-10, qv1d(k) + DT*qvten(k))
           temp(k) = t1d(k) + DT*tten(k)
@@ -3475,7 +3457,7 @@
          t1d(k)  = t1d(k) + tten(k)*DT
          qv1d(k) = MAX(1.E-10, qv1d(k) + qvten(k)*DT)
          qc1d(k) = qc1d(k) + qcten(k)*DT
-         nc1d(k) = MAX(2./rho(k), nc1d(k) + ncten(k)*DT)
+         nc1d(k) = MAX(2./rho(k), MIN(nc1d(k) + ncten(k)*DT, Nt_c_max))
          nwfa1d(k) = MAX(11.1E6/rho(k), MIN(9999.E6/rho(k),             &
                        (nwfa1d(k)+nwfaten(k)*DT)))
          nifa1d(k) = MAX(naIN1*0.01, MIN(9999.E6/rho(k),                &
@@ -5041,7 +5023,7 @@
       do k = kts, kte
          rho(k) = 0.622*p1d(k)/(R*t1d(k)*(qv1d(k)+0.622))
          rc(k) = MAX(R1, qc1d(k)*rho(k))
-         nc(k) = MAX(R2, nc1d(k)*rho(k))
+         nc(k) = MAX(2., MIN(nc1d(k)*rho(k), Nt_c_max))
          if (.NOT. is_aerosol_aware) nc(k) = Nt_c
          if (rc(k).gt.R1 .and. nc(k).gt.R2) has_qc = .true.
          ri(k) = MAX(R1, qi1d(k)*rho(k))
@@ -5053,6 +5035,7 @@
 
       if (has_qc) then
       do k = kts, kte
+         re_qc1d(k) = 2.49E-6
          if (rc(k).le.R1 .or. nc(k).le.R2) CYCLE
          if (nc(k).lt.100) then
             inu_c = 15
@@ -5068,14 +5051,16 @@
 
       if (has_qi) then
       do k = kts, kte
+         re_qi1d(k) = 2.49E-6
          if (ri(k).le.R1 .or. ni(k).le.R2) CYCLE
          lami = (am_i*cig(2)*oig1*ni(k)/ri(k))**obmi
-         re_qi1d(k) = MAX(5.01E-6, MIN(SNGL(0.5D0 * DBLE(3.+mu_i)/lami), 125.E-6))
+         re_qi1d(k) = MAX(2.51E-6, MIN(SNGL(0.5D0 * DBLE(3.+mu_i)/lami), 125.E-6))
       enddo
       endif
 
       if (has_qs) then
       do k = kts, kte
+         re_qs1d(k) = 9.99E-6
          if (rs(k).le.R1) CYCLE
          tc0 = MIN(-0.1, t1d(k)-273.15)
          smob = rs(k)*oams
@@ -5264,23 +5249,12 @@
 !..Calculate y-intercept, slope values for graupel.
 !+---+-----------------------------------------------------------------+
 
-      N0_min = gonv_max
-      k_0 = kts
       do k = kte, kts, -1
-         if (temp(k).ge.270.65) k_0 = MAX(k_0, k)
-      enddo
-      do k = kte, kts, -1
-         if (k.gt.k_0 .and. L_qr(k) .and. mvd_r(k).gt.100.E-6) then
-            xslw1 = 4.01 + alog10(mvd_r(k))
-         else
-            xslw1 = 0.01
-         endif
-         ygra1 = 4.31 + alog10(max(5.E-5, rg(k)))
-         zans1 = 3.1 + (100./(300.*xslw1*ygra1/(10./xslw1+1.+0.25*ygra1)+30.+10.*ygra1))
+         ygra1 = alog10(max(1.E-9, rg(k)))
+         zans1 = (2. + 2./7. * (ygra1+7.))
+         zans1 = MAX(2., MIN(zans1, 7.))
          N0_exp = 10.**(zans1)
          N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
-         N0_min = MIN(N0_exp, N0_min)
-         N0_exp = N0_min
          lam_exp = (N0_exp*am_g*cgg(1)/rg(k))**oge1
          lamg = lam_exp * (cgg(3)*ogg2*ogg1)**obmg
          ilamg(k) = 1./lamg

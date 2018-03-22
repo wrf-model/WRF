@@ -79,6 +79,9 @@ dimspec    lake_intl 2   constant=16                       z     interface_level
 dimspec    lake_sll  2   constant=10                       z     soil_levels_or_lake_levels
 dimspec    crop    2     constant=5                        z     crop_types
 
+# Set up the dust erosion dimension irrespective of WRF-Chem, but namelist erosion_dim=3 mandatory when not using WRF-Chem  (gthompsn, 2017Jun23)
+dimspec    .       3     namelist=erosion_dim              z     dust_erosion_dimension
+
 # Dimensions required only for Chemistry
 
 ifdef BUILD_CHEM=1
@@ -91,7 +94,6 @@ dimspec    dust    2     namelist=kfuture                  z     klevs_for_dust
 dimspec    ]       2     namelist=kfire                    z     klevs_for_fire
 dimspec    %       2     namelist=kdvel                    z     klevs_for_dvel
 dimspec    airc    2     namelist=kemit_aircraft           z     ac_emissions_zdim
-dimspec    .       3     namelist=erosion_dim              z     dust_erosion_dimension
 dimspec    ^       2     constant=46                       z     eightday_dimension
 
 # Dimensions for the GHG options

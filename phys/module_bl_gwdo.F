@@ -136,8 +136,8 @@ contains
 ! rotate winds to zonal/meridional
           ugeo(i,k) = u3d(i,k,j)*cosa(i,j) - v3d(i,k,j)*sina(i,j)
           vgeo(i,k) = u3d(i,k,j)*sina(i,j) + v3d(i,k,j)*cosa(i,j)
-          dudt(i,j) = 0.0
-          dvdt(i,j) = 0.0
+          dudt(i,k) = 0.0
+          dvdt(i,k) = 0.0
         enddo
       enddo
         do i = its,ite
@@ -251,9 +251,9 @@ contains
                             its,ite, jts,jte, kts,kte
 !
    real                 ::  g,rd,rv,fv,cp,pi,dxmeter,deltim,rcl
-   real                 ::  dudt(ims:ime,kms:kme),dvdt(ims:ime,kms:kme),       &
-                            dtaux2d(ims:ime,kms:kme),dtauy2d(ims:ime,kms:kme), &
-                            u1(ims:ime,kms:kme),v1(ims:ime,kms:kme),           & 
+   real                 ::  dudt(its:ite,kts:kte),dvdt(its:ite,kts:kte),       &
+                            dtaux2d(its:ite,kts:kte),dtauy2d(its:ite,kts:kte), &
+                            u1(its:ite,kts:kte),v1(its:ite,kts:kte),           & 
                             t1(ims:ime,kms:kme),q1(ims:ime,kms:kme),           &
                             zl(ims:ime,kms:kme),prsl(its:ite,kts:kte),         &
                             prslk(ims:ime,kms:kme)
@@ -262,7 +262,7 @@ contains
 !
    integer              ::  kpbl(ims:ime)
    real                 ::  var(ims:ime),oc1(ims:ime),                         &
-                            dusfc(ims:ime),dvsfc(ims:ime)
+                            dusfc(its:ite),dvsfc(its:ite)
 !
 ! critical richardson number for wave breaking : ! larger drag with larger value
 !

@@ -1904,7 +1904,7 @@ CONTAINS
    IF (PRESENT(dtaux3d)) THEN
        IF(gwd_opt .EQ. 1)THEN
              CALL gwdo(                                              &
-               U3D=u_phytmp,V3D=v_phytmp,T3D=t_phy      &
+               U3D=u_phy,V3D=v_phy,T3D=t_phy                        &
               ,QV3D=qv_curr                                         &
               ,P3D=p_phy,P3DI=p8w,PI3D=pi_phy,Z=z                        &
               ,RUBLTEN=rublten,RVBLTEN=rvblten                      &

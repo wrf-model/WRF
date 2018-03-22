@@ -243,7 +243,6 @@ contains
       enddo
 !For MPAS, we replace the hydrostatic pressures defined at theta and w points by
 !the dry hydrostatic pressures (Laura D. Fowler):
-#if defined(mpas)
       if(present(rho)) then
   203 format(1x,i4,1x,i2,10(1x,e15.8))
         k = kte+1
@@ -261,7 +260,7 @@ contains
            pdh(i,k) = 0.5*(pdhi(i,k) + pdhi(i,k+1))
         enddo
         enddo
-#endif
+      endif
 !MPAS specific end.
 
       do k = kts,kte
@@ -299,9 +298,11 @@ contains
               ,rthraten=rthraten(ims,kms,j),p2diORG=p3di(ims,kms,j)            &
               ,ysu_topdown_pblmix=ysu_topdown_pblmix                           &
               ,ctopo=ctopo(ims,j),ctopo2=ctopo2(ims,j)                         &
+#if defined(mpas)
               ,kzh=kzhout(ims,kms,j)                                           &
               ,kzm=kzmout(ims,kms,j)                                           &
               ,kzq=kzqout(ims,kms,j)                                           &
+#endif
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde               &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme               &
               ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )

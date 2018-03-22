@@ -753,7 +753,8 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
 ! qicuten, cloud ice tendency from parameterized cumulus convection
 
 ! variables below currently not in use, not coupled to PBL or radiation codes
-! KZH - heat eddy diffusion coefficient from YSU scheme (M^2 S-1), NEEDED FOR DROPLET ACTIVATION (SEE CODE BELOW)
+! KZH - heat eddy diffusion coefficient from YSU scheme (exch_h, M^2 S-1), or other PBL that provides this
+!       NEEDED FOR DROPLET ACTIVATION (SEE CODE BELOW)
 ! EFFCS - CLOUD DROPLET EFFECTIVE RADIUS OUTPUT TO RADIATION CODE (micron)
 ! EFFIS - CLOUD DROPLET EFFECTIVE RADIUS OUTPUT TO RADIATION CODE (micron)
 ! HM, ADDED FOR WRF-CHEM COUPLING
@@ -910,13 +911,11 @@ SUBROUTINE MP_MORR_TWO_MOMENT_AERO(ITIMESTEP,                    &
 ! wvar is the ST. DEV. OF sub-grid vertical velocity, used for calculating
 ! droplet 
 ! activation rates.
-! WVAR COMES FROM EDDY DIFFUSION COEFFICIENT KZH (AS IN YSU PBL SCHEME)
+! WVAR COMES FROM EDDY DIFFUSION COEFFICIENT KZH (e.g. FROM YSU PBL SCHEME)
 ! NOTE: IF MODEL HAS HIGH ENOUGH RESOLUTION TO RESOLVE UPDRAFTS, WVAR MAY 
 ! NOT BE NEEDED 
 
-! for YSU pbl scheme:
        WVAR(I,K,J) = KZH(I,K+1,J)/20.
-
        WVAR(I,K,J) = MAX(0.10,WVAR(I,K,J))
        WVAR(I,K,J) = MIN(50.,WVAR(I,K,J))
 

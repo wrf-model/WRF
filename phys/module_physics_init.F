@@ -4791,7 +4791,7 @@ subroutine aerosol_in_cu(aeromcu,alevsiz,no_months,no_src_types,XLAT,XLONG,aerop
                "SULFATE ","BCPHO   ","BCPHI   ","OCPHO   ","OCPHI   "/)
    frmt = '(I0.2)'
 
-      INQUIRE(FILE='./CESM_RCP4.5_Current_Aerosol_Data.dat', EXIST=exists)
+      INQUIRE(FILE='./CESM_RCP4.5_Aerosol_Data.dat', EXIST=exists)
 
       IF (exists) THEN
           iunit = get_unused_unit()

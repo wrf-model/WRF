@@ -176,19 +176,17 @@ wrfio_esmf :
 
 .F.i:
 	$(RM) $@
-	sed -e "s/grid%mu/gridmu/g" -e "s/grid%Mu/gridMu/g" -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F > $*.G
-	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.G > $*.H
-	sed -e "s/gridmu/grid%mu/g" -e "s/gridMu/grid%Mu/g" $*.H > $*.i
+	sed -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F > $*.G
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.G > $*.i
 	mv $*.i $(DEVTOP)/pick/$*.f90
 	cp $*.F $(DEVTOP)/pick
 
 .F.o:
 	$(RM) $@
-	sed -e "s/grid%mu/gridmu/g" -e "s/grid%Mu/gridMu/g" -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F > $*.G
-	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.G  > $*.H
-	sed -e "s/gridmu/grid%mu/g" -e "s/gridMu/grid%Mu/g" $*.H > $*.bb
+	sed -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F > $*.G
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.G  > $*.bb
 	$(SED_FTN) $*.bb | $(CPP) $(TRADFLAG) > $*.f90
-	$(RM) $*.G $*.H $*.bb
+	$(RM) $*.G $*.bb
 	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
           echo COMPILING $*.F for 4DVAR ; \
           $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f90 > $*.f90.tmp ; \
@@ -199,11 +197,10 @@ wrfio_esmf :
 
 .F.f90:
 	$(RM) $@
-	sed -e "s/grid%mu/gridmu/g" -e "s/grid%Mu/gridMu/g" -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F > $*.G
+	sed -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F > $*.G
 	$(SED_FTN) $*.G > $*.H 
-	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.H  > $*.I
-	sed -e "s/gridmu/grid%mu/g" -e "s/gridMu/grid%Mu/g" $*.I > $@
-	$(RM) $*.G $*.H $*.I
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.H  > $@
+	$(RM) $*.G $*.H
 
 .f90.o:
 	$(RM) $@

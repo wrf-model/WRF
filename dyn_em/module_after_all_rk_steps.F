@@ -15,7 +15,7 @@ CONTAINS
                                    moist, chem, tracer, scalar,         &
                                    th_phy, pi_phy, p_phy, rho_phy,      & 
                                    p8w, t8w, dz8w,                      &
-                                   curr_secs2,                          &
+                                   curr_secs, curr_secs2,               &
                                    diag_flag,                           &
                                    ids,  ide,  jds,  jde,  kds,  kde,   &
                                    ims,  ime,  jms,  jme,  kms,  kme,   &
@@ -99,6 +99,7 @@ CONTAINS
 
       !  Time (s) since the beginning of the restart.
 
+      REAL(8) :: curr_secs
       REAL :: curr_secs2
 
       !  Is this to be a history output time?  If so, compute the diagnostics.
@@ -152,7 +153,7 @@ CONTAINS
                                 moist, chem, tracer, scalar,         &
                                 th_phy, pi_phy, p_phy, rho_phy,      & 
                                 p8w, t8w, dz8w,                      &
-                                curr_secs2,                          &
+                                curr_secs, curr_secs2,               &
                                 diag_flag,                           &
                                 ids,  ide,  jds,  jde,  kds,  kde,   &
                                 ims,  ime,  jms,  jme,  kms,  kme,   &

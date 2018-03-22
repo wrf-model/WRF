@@ -506,7 +506,21 @@ gen_med_last_solve_io ( FILE *fp )
   for ( i = 1 ; i < MAX_HISTORY ; i++ )
   {
     fprintf(fp," IF( WRFU_AlarmIsRinging( grid%%alarms( AUXHIST%d_ALARM ), rc=rc ) ) THEN\n",i) ;
+#if ( WRFPLUS == 1 )
+    if ( i == 6 || i == 8 ) fprintf(fp,"   IF ( .NOT. grid%%trajectory_io ) THEN\n") ;
+    fprintf(fp,"    CALL med_hist_out ( grid , AUXHIST%d_ALARM , config_flags )\n",i) ;
+    if ( i == 6 || i == 8 ) fprintf(fp,"   ELSE\n") ;
+    if ( i == 6 || i == 8 ) fprintf(fp,"     CALL domain_clock_get ( grid, current_timestr=message )\n") ;
+    if ( i == 6 ) fprintf(fp,"      CALL save_xtraj  ( message )\n") ;
+    if ( i == 8 ) fprintf(fp,"      IF ( config_flags%%dyn_opt .EQ. dyn_em_tl .and. .not. config_flags%%tl_standalone ) THEN\n") ;
+    if ( i == 8 ) fprintf(fp,"        CALL save_tl_pert  ( message )\n") ;
+    if ( i == 8 ) fprintf(fp,"      ELSEIF ( config_flags%%dyn_opt .EQ. dyn_em_tl .and. config_flags%%tl_standalone ) THEN\n") ;
+    if ( i == 8 ) fprintf(fp,"        CALL med_hist_out ( grid , AUXHIST%d_ALARM , config_flags )\n",i) ;
+    if ( i == 8 ) fprintf(fp,"      ENDIF\n") ;
+    if ( i == 6 || i == 8 ) fprintf(fp,"   ENDIF\n") ;
+#else
     fprintf(fp,"   CALL med_hist_out ( grid , AUXHIST%d_ALARM , config_flags )\n",i) ;
+#endif
     fprintf(fp," ENDIF\n") ;
   }
   return 0; /* SamT: bug fix: return a value */

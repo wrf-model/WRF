@@ -135,7 +135,6 @@ CONTAINS
                                           ,CAMZMSCHEME, SASSCHEME     &
                                           ,OSASSCHEME                 &  
                                           ,SCALESASSCHEME             &  ! scale-sware sas
-
                                           ,NSASSCHEME                 &
 #if (EM_CORE == 1)
                                           ,MSKFSCHEME                 &
@@ -145,6 +144,10 @@ CONTAINS
 #endif
                                           ,TIEDTKESCHEME              &
                                           ,NTIEDTKESCHEME             
+
+#if ( WRFPLUS == 1 )
+   USE module_state_description, ONLY:    DUCUSCHEME
+#endif
 
 
 ! *** add new modules of schemes here
@@ -165,6 +168,9 @@ CONTAINS
    USE module_cu_gd     , ONLY : grelldrv
    USE module_cu_gf_wrfdrv     , ONLY : gfdrv
    USE module_cu_g3     , ONLY : g3drv,conv_grell_spread3d
+#if ( WRFPLUS == 1 )
+   USE module_cu_du     , ONLY : DUCU   
+#endif
    USE module_cu_sas    , ONLY : cu_sas
    USE module_cu_scalesas    , ONLY : cu_scalesas
 
@@ -1274,11 +1280,10 @@ CONTAINS
                ,EU3D=eu3d, MD3D=md3d, MU3D=mu3d,DSUBCLD2D=dsubcld2d &
                ,IDEEP2D=ideep2d, JT2D=jt2d, MAXG2D=maxg2d           &
                ,LENGATH2D=lengath2d                                 )
-        ELSE
+          ELSE
              WRITE( wrf_err_message , * ) 'Insufficient arguments to call CAMZM cu scheme'
              CALL wrf_error_fatal ( wrf_err_message )
           ENDIF
-
 ! TIEDTKE SCHEME - ZCX&YQW (U of Hawaii)
      CASE (TIEDTKESCHEME)
 
@@ -1450,6 +1455,36 @@ CONTAINS
            end do
         end do
         !BSINGH -ENDS
+#endif
+#if ( WRFPLUS == 1 )
+! this scheme is for WRFPlus only
+!----------------------------
+     CASE (DUCUSCHEME)
+          CALL wrf_debug(100,'in ducu')
+
+          CALL DUCU(                                            &
+              ! order independent arguments
+                DT=dt ,KTAU=itimestep ,DX=dx                    &    !
+               ,RHO=rho                                         &    !
+               ,U=u ,V=v ,TH=th ,T=t ,W=w                       &    !
+               ,PCPS=p ,PI=pi                                   &    !
+               ,XLV=xlv0                                        &    !  or XLV=xlv1
+               ,RAINCV=raincv, NCA=nca, PRATEC=tmppratec        &
+               ,DZ8W=dz8w, Z= z                                 &    !  
+               ,W0AVG=w0avg                                     &    !
+               ,CP=cp ,RV=R_v, RD=R_d, G=g                      &    !  RD, RV
+               ,EP2=ep_2                                        &    !  only EP2 needed
+               ,SVP1=svp1 ,SVP2=svp2 ,SVP3=svp3 ,SVPT0=svpt0    &    !  
+               ,STEPCU=stepcu                                   &    !
+               ,CU_ACT_FLAG=cu_act_flag                         &    !
+               ,WARM_RAIN=warm_rain                             &    !
+               ,CUTOP=htop, CUBOT=hbot                          &    ! from other scheme
+               ,QV=qv_curr                                      &    !
+               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &    !
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &    !
+               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &    !
+              ! optionals
+               ,RTHCUTEN=rthcuten ,RQVCUTEN=rqvcuten            )    !
 #endif
 
      CASE DEFAULT 

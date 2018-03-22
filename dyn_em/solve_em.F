@@ -736,7 +736,7 @@ BENCH_END(set_phys_bc_tim)
                              , tke_tend                         &
                              , config_flags%use_adaptive_time_step &
                              , curr_secs                        &
-                             , psim , psih , wspd , gz1oz0      &
+                             , psim , psih , gz1oz0             &
                              , chklowq                          &
                              , cu_act_flag , hol , th_phy       &
                              , pi_phy , p_phy , grid%t_phy      &
@@ -770,7 +770,7 @@ BENCH_END(set_phys_bc_tim)
                              , ph_tendf, mu_tendf               &
                              , tke_tend                         &
                              , adapt_step_flag , curr_secs      &
-                             , psim , psih , wspd , gz1oz0      &
+                             , psim , psih , gz1oz0             &
                              , chklowq                          &
                              , cu_act_flag , hol , th_phy       &
                              , pi_phy , p_phy , grid%t_phy      &
@@ -3463,6 +3463,7 @@ BENCH_END(bc_end_tim)
    END DO Runge_Kutta_loop
 !  grid%dmudt=grid%mu_2 - grid%mu_1
 
+#if ( WRFPLUS != 1 )
    IF      ( config_flags%traj_opt .EQ. UM_TRAJECTORY ) THEN
 #ifdef DM_PARALLEL
 #    include "HALO_EM_F_1.inc"
@@ -3495,6 +3496,7 @@ BENCH_END(bc_end_tim)
         ENDDO
      !$OMP END PARALLEL DO
    ENDIF
+#endif
 !-----------------------------------------------------------
 
    IF (config_flags%do_avgflx_em .EQ. 1) THEN
@@ -4615,7 +4617,7 @@ BENCH_END(bc_2d_tim)
                             moist, chem, tracer, scalar,         &
                             th_phy, pi_phy, p_phy, rho_phy,      &   
                             p8w, t8w, dz8w,                      &
-                            curr_secs2,                          &
+                            REAL(curr_secs,8), curr_secs2,       &
                             diag_flag,                           &
                             ids,  ide,  jds,  jde,  kds,  kde,   &
                             ims,  ime,  jms,  jme,  kms,  kme,   &

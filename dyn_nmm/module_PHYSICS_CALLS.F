@@ -508,7 +508,8 @@
      &                 ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
      &                 ,EXPLICIT_CONVECTION=config_flags%cu_physics==0  &
      &                 ,CU_PHYSICS=config_flags%cu_physics              &
-     &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS)
+     &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &
+     &                 ,CALC_CLEAN_ATM_DIAG=CONFIG_FLAGS%CALC_CLEAN_ATM_DIAG)
 
 
 !
@@ -1011,6 +1012,7 @@
      &                                  ,RSW_DN_SFC                     &
      &                                  ,SFCEVPX,SFCZ,SNOW,SNOWC,SNOWH  &
      &                                  ,TH2X,THLOW,TLOW,VGFRCK         &
+     &                                  ,RS,XLAIDYN                     &
      &                                  ,WSPD,XLAND,REGIME,HOL
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: DUDT_PHY,DVDT_PHY,DZ   &
@@ -1530,6 +1532,7 @@
      &        ,iopt_alb=config_flags%opt_alb,   iopt_snf=config_flags%opt_snf &
      &        ,iopt_tbot=config_flags%opt_tbot, iopt_stc=config_flags%opt_stc & 
      &        ,iopt_gla=config_flags%opt_gla,   iopt_rsf=config_flags%opt_rsf & 
+     &        ,iopt_soil=config_flags%opt_soil, iopt_pedo=config_flags%opt_pedo &
      &        , isnowxy=grid%isnowxy  ,    tvxy=grid%tvxy    ,    tgxy=grid%tgxy     &
      &        ,canicexy=grid%canicexy ,canliqxy=grid%canliqxy,   eahxy=grid%eahxy    &
      &        ,   tahxy=grid%tahxy    ,    cmxy=grid%cmxy    ,    chxy=grid%chxy     &
@@ -1542,6 +1545,9 @@
      &        , grainxy=grid%grainxy  ,   gddxy=grid%gddxy   ,   pgsxy=grid%pgsxy    &
      &        , cropcat=grid%cropcat                                                 &
      &        ,planting=grid%planting , harvest=grid%harvest ,season_gdd=grid%season_gdd  &
+     &        , soilcomp=grid%soilcomp                                               &
+     &        , soilcl1=grid%soilcl1  , soilcl2=grid%soilcl2                         &
+     &        , soilcl3=grid%soilcl3  , soilcl4=grid%soilcl4                         &
      &        ,  xsaixy=grid%xsaixy   , taussxy=grid%taussxy                         &
      &        ,  t2mvxy=grid%t2mvxy   ,  t2mbxy=grid%t2mbxy                          &
      &        ,  q2mvxy=grid%q2mvxy   ,  q2mbxy=grid%q2mbxy                          & 
@@ -1562,7 +1568,7 @@
      &        ,  smoiseq=grid%smoiseq, smcwtdxy=grid%smcwtdxy, rechxy=grid%rechxy    &                       
      &        ,  deeprechxy=grid%deeprechxy                                          &                       
      &        ,coszen=grid%czen,xlat_urb2d=grid%hlat                                 &
-
+     &        ,rs=rs,xlaidyn=xlaidyn                                                 &
 ! mosaic tiling for Noah
      &        ,sf_surface_mosaic=config_flags%sf_surface_mosaic,  mosaic_cat=config_flags%mosaic_cat      &
 ! lake module

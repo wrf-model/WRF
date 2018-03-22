@@ -1166,7 +1166,7 @@ contains
             if(ierr(i).eq.0)then
 
                !- only for convection rooting in the PBL
-               if(zo_cup(i,kbcon(i))-z1(i) > zo(i,kpbl(i)+1)) then 
+               if(zo_cup(i,kbcon(i))-z1(i) > zo(i,min(kte,kpbl(i)+1))) then 
                   aa1_bl(i) = 0.0
                else
                !- multiply aa1_bl the " time-scale" - tau_bl

@@ -482,11 +482,16 @@ module_sf_pxlsm.o: ../share/module_model_constants.o module_sf_pxlsm_data.o
 
 module_ra_rrtmg_sw.o: module_ra_rrtmg_lw.o
 module_ra_rrtmg_swf.o: module_ra_rrtmg_lwf.o
+module_ra_rrtmg_swk.o: module_ra_rrtmg_lwk.o module_ra_effective_radius.o
 
 module_ra_rrtmg_lw.o: ../share/module_model_constants.o \
 		 module_ra_clWRF_support.o 
 module_ra_rrtmg_lwf.o: ../share/module_model_constants.o \
 		 module_ra_clWRF_support.o 
+module_ra_rrtmg_lwk.o: ../share/module_model_constants.o \
+                 module_ra_clWRF_support.o
+
+
 
 module_physics_addtendc.o: \
 		module_cu_kf.o			\
@@ -502,6 +507,8 @@ module_physics_init.o : \
 		module_ra_rrtmg_swf.o		\
 		module_ra_rrtmg_lw.o		\
 		module_ra_rrtmg_sw.o		\
+                module_ra_rrtmg_lwk.o            \
+                module_ra_rrtmg_swk.o            \
 		module_ra_cam.o		\
 		$(PHYS_CU) $(PHYS_BL) \
 		module_ra_cam_support.o		\
@@ -681,6 +688,8 @@ module_radiation_driver.o: \
 		module_ra_rrtmg_sw.o \
 		module_ra_rrtmg_lwf.o \
 		module_ra_rrtmg_swf.o \
+                module_ra_rrtmg_lwk.o \
+                module_ra_rrtmg_swk.o \
 		module_ra_cam.o \
 		module_ra_gfdleta.o \
 		module_ra_HWRF.o \

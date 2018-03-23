@@ -336,6 +336,8 @@ BENCH_START(rad_driver_tim)
      &        , has_reqc=grid%has_reqc, has_reqi=grid%has_reqi, has_reqs=grid%has_reqs & ! G. Thompson
      &        , PB=grid%pb                                                &
      &        , F_ICE_PHY=grid%f_ice_phy,F_RAIN_PHY=grid%f_rain_phy       &
+     &        , F_QNC=F_QNC                                               &
+     &        , QNC_CURR=scalar(ims,kms,jms,P_QNC)                        &
      &        , QV=moist(ims,kms,jms,P_QV), F_QV=F_QV                     &
      &        , QC=moist(ims,kms,jms,P_QC), F_QC=F_QC                     &
      &        , QR=moist(ims,kms,jms,P_QR), F_QR=F_QR                     &

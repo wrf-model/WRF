@@ -789,8 +789,8 @@ integer myproc
    has_reqi = 0
    has_reqs = 0
    IF ( config_flags%use_mp_re .EQ. 1 ) THEN
-   if ((config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME .or. config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME_FAST) .and. &
-       (config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME .or. config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME_FAST) .and. &
+   if ((config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME .or. config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME_FAST .or. config_flags%ra_lw_physics .eq. RRTMK_LWSCHEME  ) .and. &
+       (config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME .or. config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME_FAST .or. config_flags%ra_sw_physics .eq. RRTMK_SWSCHEME ) .and. &
         (config_flags%mp_physics  .eq. THOMPSON .or.        &
          config_flags%mp_physics  .eq. THOMPSONAERO         &
          .or. config_flags%mp_physics  .eq. NSSL_2MOM .or.       &
@@ -1689,6 +1689,10 @@ integer myproc
    USE module_ra_rrtmg_sw  , ONLY : rrtmg_swinit
    USE module_ra_rrtmg_lwf  , ONLY : rrtmg_lwinit_fast
    USE module_ra_rrtmg_swf  , ONLY : rrtmg_swinit_fast
+#if (EM_CORE == 1)
+   USE module_ra_rrtmg_lwk  , ONLY : rrtmg_lwinit_k
+   USE module_ra_rrtmg_swk  , ONLY : rrtmg_swinit_k
+#endif
    USE module_ra_cam       , ONLY : camradinit
    USE module_ra_cam_support , ONLY : oznini
    USE module_ra_sw        , ONLY : swinit
@@ -1885,7 +1889,18 @@ integer myproc
                            ims, ime, jms, jme, kms, kme,    &
                            its, ite, jts, jte, kts, kte     )
 
+            aclwalloc = .true.
+#if ( EM_CORE == 1 )
+        CASE (RRTMK_LWSCHEME)  
+
+             CALL rrtmg_lwinit_k(                           &
+                           allowed_to_read ,                &
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           its, ite, jts, jte, kts, kte     )
+
              aclwalloc = .true.
+#endif
 
         CASE (RRTMG_LWSCHEME_FAST)
              CALL rrtmg_lwinit_fast(                             &
@@ -1978,6 +1993,19 @@ integer myproc
                            its, ite, jts, jte, kts, kte     )
 
              acswalloc = .true.
+
+#if ( EM_CORE == 1 )
+        CASE (RRTMK_SWSCHEME)
+
+             CALL rrtmg_swinit_k(                           &
+                           allowed_to_read ,                &
+                          ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           its, ite, jts, jte, kts, kte     )
+
+             acswalloc = .true.
+#endif
+
 
         CASE (RRTMG_SWSCHEME_FAST)
              CALL rrtmg_swinit_fast(                             &

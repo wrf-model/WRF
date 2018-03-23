@@ -176,7 +176,6 @@ fi
 
 if  test -z "$NETCDF_classic"  ; then
   export NETCDF4=1
-echo dave not classic
 else
   unset NETCDF4
 fi
@@ -205,8 +204,6 @@ else
   echo ' '
   exit 6
 fi
-echo dave usenetcdf is $USENETCDF
-echo dave usenetcdff is $USENETCDFF
 
 if [ -z "$HDF5_PATH" ] ; then HDF5_PATH=''; fi
 if [ -z "$ZLIB_PATH" ] ; then ZLIB_PATH=''; fi

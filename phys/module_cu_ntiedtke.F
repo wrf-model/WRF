@@ -49,9 +49,7 @@ module module_cu_ntiedtke
 #if defined(mpas)
      use mpas_atmphys_constants, only: rd=>R_d, rv=>R_v, &
    &       cpd=>cp, alv=>xlv, als=>xls, alf=>xlf, g=>gravity
-#endif
-
-#if defined(wrfmodel)
+#elif defined(wrfmodel)
      use module_model_constants, only:rd=>r_d, rv=>r_v, &
    &       cpd=>cp, alv=>xlv, als=>xls, alf=>xlf, t13=>Prandtl, g              
 #endif

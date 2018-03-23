@@ -1831,8 +1831,7 @@ endif
                          grid%u_2,grid%v_2,                                                   &
                          ids , ide , jds , jde , kds , kde ,                &
                          ims , ime , jms , jme , kms , kme ,                &
-                         its , ite , jts , jte , kts , kte                  &
-                         )
+                         its , ite , jts , jte , kts , kte                  )
 
 !
 ! calculate initial pm

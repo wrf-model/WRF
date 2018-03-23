@@ -2039,6 +2039,16 @@
       END IF
 
 !-----------------------------------------------------------------------
+! Need to know if this run has aercu_opt set to either 1 or 2,
+! so that we can set a derived namelist for packaging arrays.
+!-----------------------------------------------------------------------
+
+      model_config_rec % aercu_used = 0
+      IF ( model_config_rec %aercu_opt .GT. 0 ) THEN
+         model_config_rec % aercu_used = 1
+      END IF
+
+!-----------------------------------------------------------------------
 ! If any CAM scheme is turned on, then there are a few shared variables.
 ! These need to be allocated when any CAM scheme is active.
 !-----------------------------------------------------------------------

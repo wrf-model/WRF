@@ -2222,7 +2222,7 @@ rconfig   integer no_src_types_cu         namelist,physics      1             1 
 rconfig   integer alevsiz_cu              namelist,physics      1             1       -      "alevsiz_cu" "Number of levels in global aerosol data"  ""
 rconfig   integer aercu_opt               namelist,physics      1             0       -      "aercu_opt"    "aerosol input option for multiscale KF"      ""
 rconfig   real    aercu_fct               namelist,physics      1             1.0     -      "aercu_fct"    "aerosol multiplication factor"               ""
-
+rconfig   integer aercu_used              derived               1             0       -      "aercu_used"   "derived nml for packaging"      ""
 
 #BSINGH - added shallowcu_forced_ra, numBins, thBinSize, rBinSize, minDeepFreq, minShallowFreq, shcu_aerosols_opt for CuP scheme
 
@@ -2772,7 +2772,7 @@ package   fasdas         grid_sfdda==2              -              state:u10_ndg
 package   aeropt1        aer_opt==1                 -              state:aerodm
 package   aeropt2        aer_opt==2                 -              state:aod5503d
 
-package   aercuopt       aercu_opt==1               -              state:aeromcu,CU_UAF,EFCS,EFIS,EFSS,qr_cu,qs_cu,nc_cu,ni_cu,nr_cu,ns_cu,ccn_cu,aerovar;aerocu:cu_sulfate,cu_seasalt,cu_dust1,cu_dust2,cu_dust3,cu_dust4,cu_phoocar,cu_phiocar,cu_phobcar,cu_phibcar
+package   aercuopt       aercu_used==1              -              state:aeromcu,CU_UAF,EFCS,EFIS,EFSS,qr_cu,qs_cu,nc_cu,ni_cu,nr_cu,ns_cu,ccn_cu,aerovar;aerocu:cu_sulfate,cu_seasalt,cu_dust1,cu_dust2,cu_dust3,cu_dust4,cu_phoocar,cu_phiocar,cu_phobcar,cu_phibcar
 
 package   slopeopt       slope_rad==1               -              -
 package   gwdopt         gwd_opt==1                 -              state:oc12d,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,dtaux3d,dtauy3d,dusfcg,dvsfcg

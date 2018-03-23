@@ -3,7 +3,7 @@
 set nonomatch
 
 
-foreach dir ( frame chem share dyn_em dyn_exp dyn_nmm phys main tools )
+foreach dir ( frame chem share dyn_em dyn_exp dyn_nmm phys main tools wrftladj )
   if ( -d $dir ) then
     ( cd $dir ; echo $dir ; /bin/rm -f core wrf *.f90 *.exe *.kmo *.mod *.o *.obj *.inc *.F90 *.a \
                       db_* Warnings module_state_description.F module_dm.F gmeta \

@@ -1976,6 +1976,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,XLS=xls, XLV0=xlv, XLF0=xlf                       &
                  ,DEN0=rhoair0, DENR=rhowater                       &
                  ,CLIQ=cliq,CICE=cice,PSAT=psat                     &
+                 ,xland=xland                                       &  ! land mask, 1: land, 2: water
                  ,RAIN=rainnc ,RAINNCV=rainncv                      &
                  ,SNOW=snownc ,SNOWNCV=snowncv                      &
                  ,SR=sr                                             &

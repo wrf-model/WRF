@@ -681,7 +681,7 @@ has_irr_diag: &
      ENDIF
      funit = get_funit()
      write(fname,'(''wrfchem_irr_diag_d'',i2.2)') idomain
-     OPEN( unit = funit, file=trim(fname), iostat=istat )
+     OPEN( unit = funit, file=trim(fname), status='OLD', iostat=istat )
      IF( istat /= 0 ) THEN
        write(err_mes,'(''IRR failed to open '',a)') trim(fname)
        CALL wrf_error_fatal( trim(err_mes) )
@@ -819,6 +819,7 @@ have_match: &
   RETURN
 END SUBROUTINE set_scalar_indices_from_config
 
+#if ( DA_CORE != 1 )
    SUBROUTINE change_to_lower_case(instr,outstr)
      CHARACTER*(*) ,INTENT(IN)  :: instr
      CHARACTER*(*) ,INTENT(OUT) :: outstr
@@ -838,3 +839,4 @@ END SUBROUTINE set_scalar_indices_from_config
      ENDDO
 
    END SUBROUTINE change_to_lower_case
+#endif

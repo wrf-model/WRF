@@ -31,6 +31,7 @@ MODULES = \
 	module_data_cam_mam_aero.o \
 	module_data_cam_mam_asect.o \
 	module_cam_infnan.o \
+	$(PHYS_PLUS) \
 	module_bl_ysu.o \
 	module_bl_shinhong.o \
 	module_bl_mrf.o \
@@ -65,6 +66,7 @@ MODULES = \
 	module_cu_gf_deep.o \
 	module_cu_gf_sh.o \
 	module_cu_nsas.o \
+	module_cu_nsas_old.o \
 	module_cu_sas.o \
 	module_cu_scalesas.o \
 	module_cu_osas.o \
@@ -95,11 +97,14 @@ MODULES = \
 	module_ra_clWRF_support.o  \
 	module_ra_gsfcsw.o \
 	module_ra_goddard.o \
+        module_ra_effective_radius.o \
 	module_ra_rrtm.o  \
 	module_ra_rrtmg_lw.o  \
 	module_ra_rrtmg_sw.o  \
 	module_ra_rrtmg_lwf.o  \
 	module_ra_rrtmg_swf.o  \
+        module_ra_rrtmg_lwk.o  \
+        module_ra_rrtmg_swk.o  \
         module_ra_cam_support.o \
         module_ra_cam.o \
 	module_ra_gfdleta.o \
@@ -121,6 +126,7 @@ MODULES = \
 	module_sf_noah_seaice_drv.o \
 	module_sf_noahlsm_glacial_only.o \
         module_sf_noahmp_groundwater.o \
+        module_sf_gecros.o \
 	module_sf_noahmpdrv.o \
 	module_sf_noahmplsm.o \
 	module_sf_noahmp_glacier.o \
@@ -172,7 +178,7 @@ MODULES = \
         module_fddaobs_rtfdda.o \
 	module_fddaobs_driver.o \
 	module_wind_fitch.o \
-        module_sf_lake.o \
+	module_sf_lake.o \
 	module_diagnostics_driver.o
 
 FIRE_MODULES = \

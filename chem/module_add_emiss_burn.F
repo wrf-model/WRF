@@ -402,7 +402,8 @@ CONTAINS
               enddo
             enddo
           ENDIF
-          IF( biomass_burn_opt == BIOMASSB_MOZC .or. biomass_burn_opt == BIOMASSB_T1_MOZCART ) THEN
+          IF( (biomass_burn_opt == BIOMASSB_MOZC .and. chem_opt == MOZCART_KPP) .or.  &
+              (biomass_burn_opt == BIOMASSB_T1_MOZCART .and. chem_opt == T1_MOZCART_KPP) ) THEN
             do j=jts,jte
               do k=kts,kte
                 conv_rho_aer(its:ite) = (r_q*dtstep)/(rho_phy(its:ite,k,j)*dz8w(its:ite,k,j))

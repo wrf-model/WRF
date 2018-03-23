@@ -1,38 +1,34 @@
-#if ( HYBRID_COORD==1 )
-#define MU(...) (c1h(k)*XXPCXX(__VA_ARGS__)+c2h(k))
-#define XXPCXX(...) MU(__VA_ARGS__)
-#endif
 
 !WRF:MODEL_LAYER:PHYSICS
 !
 MODULE module_fddaobs_rtfdda
 
-! This obs-nudging FDDA module (RTFDDA) is developed by the 
-! NCAR/RAL/NSAP (National Security Application Programs), under the 
-! sponsorship of ATEC (Army Test and Evaluation Commands). ATEC is 
-! acknowledged for releasing this capability for WRF community 
+! This obs-nudging FDDA module (RTFDDA) is developed by the
+! NCAR/RAL/NSAP (National Security Application Programs), under the
+! sponsorship of ATEC (Army Test and Evaluation Commands). ATEC is
+! acknowledged for releasing this capability for WRF community
 ! research applications.
 !
-! The NCAR/RAL RTFDDA module was adapted, and significantly modified 
-! from the obs-nudging module in the standard MM5V3.1 which was originally 
-! developed by PSU (Stauffer and Seaman, 1994). 
-! 
-! Yubao Liu (NCAR/RAL): lead developer of the RTFDDA module 
+! The NCAR/RAL RTFDDA module was adapted, and significantly modified
+! from the obs-nudging module in the standard MM5V3.1 which was originally
+! developed by PSU (Stauffer and Seaman, 1994).
+!
+! Yubao Liu (NCAR/RAL): lead developer of the RTFDDA module
 ! Al Bourgeois (NCAR/RAL): lead engineer implementing RTFDDA into WRF-ARW
 ! Nov. 2006
-! 
+!
 ! References:
 !   
 !   Liu, Y., A. Bourgeois, T. Warner, S. Swerdlin and J. Hacker, 2005: An
-!     implementation of obs-nudging-based FDDA into WRF for supporting 
+!     implementation of obs-nudging-based FDDA into WRF for supporting
 !     ATEC test operations. 2005 WRF user workshop. Paper 10.7.
 !
-!   Liu, Y., A. Bourgeois, T. Warner, S. Swerdlin and W. Yu, 2006: An update 
-!     on "obs-nudging"-based FDDA for WRF-ARW: Verification using OSSE 
-!     and performance of real-time forecasts. 2006 WRF user workshop. Paper 4.7. 
+!   Liu, Y., A. Bourgeois, T. Warner, S. Swerdlin and W. Yu, 2006: An update
+!     on "obs-nudging"-based FDDA for WRF-ARW: Verification using OSSE
+!     and performance of real-time forecasts. 2006 WRF user workshop. Paper 4.7.
 
 !   
-!   Stauffer, D.R., and N.L. Seaman, 1994: Multi-scale four-dimensional data 
+!   Stauffer, D.R., and N.L. Seaman, 1994: Multi-scale four-dimensional data
 !     assimilation. J. Appl. Meteor., 33, 416-434.
 !
 !   http://www.rap.ucar.edu/projects/armyrange/references.html
@@ -103,7 +99,7 @@ CONTAINS
   REAL, intent(in)     :: twindo_cg      ! time window on coarse grid
   REAL, intent(in)     :: twindo
   INTEGER, intent(in)  :: itimestep
-  INTEGER , INTENT(IN) :: no_pbl_nudge_uv(maxdom)  ! flags for no wind nudging in pbl 
+  INTEGER , INTENT(IN) :: no_pbl_nudge_uv(maxdom)  ! flags for no wind nudging in pbl
   INTEGER , INTENT(IN) :: no_pbl_nudge_t(maxdom)   ! flags for no temperature nudging in pbl
   INTEGER , INTENT(IN) :: no_pbl_nudge_q(maxdom)   ! flags for no moisture nudging in pbl
   INTEGER , INTENT(IN) :: sfc_scheme_horiz ! horizontal spreading scheme for surf obs (wrf or orig mm5)
@@ -149,13 +145,13 @@ CONTAINS
   REAL, INTENT(IN)     :: tlp          ! base state lapse rate
   REAL, INTENT(IN)     :: p_top        ! pressure at top of model
   REAL, INTENT(IN)     :: znu( kms:kme )      ! eta values on half (mass) levels
-#if ( EM_CORE == 1 ) 
+#if ( EM_CORE == 1 )
   TYPE(fdob_type), intent(inout)  :: fdob
 #endif
   LOGICAL, intent(in)  :: iprt         ! Flag enabling printing warning messages
 
 ! Local variables
-  logical            :: nudge_flag      ! nudging flag for this nest 
+  logical            :: nudge_flag      ! nudging flag for this nest
   integer            :: ktau            ! current timestep
   integer            :: nest            ! loop counter
   integer            :: idom            ! domain id
@@ -165,12 +161,12 @@ CONTAINS
   real               :: tl2             ! Lambert standard parallel 2
   real               :: xn1
   real               :: known_lat       ! Latitude of domain point (i,j)=(1,1)
-  real               :: known_lon       ! Longitude of domain point (i,j)=(1,1) 
+  real               :: known_lon       ! Longitude of domain point (i,j)=(1,1)
   character(len=200) :: msg             ! Argument to wrf_message
   real               :: z_at_p( kms:kme )  ! height at p levels
   integer            :: i,j,k           ! loop counters
 
-#if ( EM_CORE == 1 ) 
+#if ( EM_CORE == 1 )
 
 ! Check to see if the nudging flag has been set. If not,
 ! simply RETURN.
@@ -185,7 +181,7 @@ CONTAINS
   if(restart) then
     fdob%ktaur = ktau
   else
-    fdob%ktaur = 0 
+    fdob%ktaur = 0
   endif
 
 ! Create character string containing model starting-date
@@ -245,7 +241,7 @@ CONTAINS
      call wrf_message("Valid selections: 0=Regime-based VIF scheme, 1=Original simple scheme")
      call wrf_error_fatal ( 'fddaobs_init: module_fddaobs_rtfdda STOP' )
   endif
-  fdob%sfc_scheme_horiz = sfc_scheme_horiz 
+  fdob%sfc_scheme_horiz = sfc_scheme_horiz
   fdob%sfc_scheme_vert  = sfc_scheme_vert
 
 
@@ -299,7 +295,7 @@ CONTAINS
   if(dpsmx.gt.0.) then
        fdob%dpsmx = dpsmx
        fdob%dcon = 1.0/fdob%dpsmx
-  else 
+  else
        call wrf_error_fatal('fddaobs_init: Namelist variable dpsmx must be greater than zero!')
   endif
 
@@ -338,7 +334,7 @@ CONTAINS
   call wrf_message(msg)
   call wrf_message("")
 
-! Initialize vertical influence fcn for LML obs 
+! Initialize vertical influence fcn for LML obs
   if(sfc_scheme_vert.eq.0) then
     fdob%vif_uv(1) = nudgezfullr1_uv
     fdob%vif_uv(2) = nudgezrampr1_uv
@@ -392,14 +388,14 @@ CONTAINS
       call wrf_message(msg)
       call wrf_error_fatal ( 'fddaobs_init: STOP on inconsistent namelist values' )
     endif
- 
+
     fdob%vif_fullmin = nudgezfullmin
     fdob%vif_rampmin = nudgezrampmin
     fdob%vif_max     = nudgezmax
- 
+
 ! Check to make sure that if nudgzfullmin > 0, then it must be at least as large as the
 ! first model half-level will be anywhere in the domain at any time within the simulation.
-! We use 1.1 times the base-state value fdob%base_state(1) for this purpose. 
+! We use 1.1 times the base-state value fdob%base_state(1) for this purpose.
 
     if(nudgezfullmin.gt.0.0) then
         if(nudgezfullmin .lt. 1.1*fdob%base_state(1)) then
@@ -497,21 +493,21 @@ CONTAINS
   enddo
 
 
-! fdob%LML_OBS_HT1_LEV = kte 
+! fdob%LML_OBS_HT1_LEV = kte
 ! HT1: do k = kte, kts, -1
 !        if( LML_HT1 .gt. z_at_p(k) ) then
 !          fdob%LML_OBS_HT1_LEV = k
-!          EXIT HT1 
+!          EXIT HT1
 !        endif
 !      enddo  HT1
 
-! fdob%LML_OBS_HT2_LEV = kte 
+! fdob%LML_OBS_HT2_LEV = kte
 ! HT2: do k = kte, kts, -1
 !        if( LML_HT2 .gt. z_at_p(k) ) then
 !          fdob%LML_OBS_HT2_LEV = k
-!          EXIT HT2 
+!          EXIT HT2
 !        endif
-!      enddo HT2 
+!      enddo HT2
   RETURN
 #endif
   END SUBROUTINE fddaobs_init
@@ -529,7 +525,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                  iratio, npfi,                                  &
                  prt_max, prt_freq, iprt,                       &
                  obs_prt, stnid_prt, lat_prt, lon_prt,          &
-                 mlat_prt, mlon_prt,                            & 
+                 mlat_prt, mlon_prt,                            &
                  ids,ide, jds,jde, kds,kde,                     &
                  ims,ime, jms,jme, kms,kme,                     &
                  its,ite, jts,jte, kts,kte  )
@@ -712,7 +708,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   k_start = kts
   k_end = min( kte, kde-1 )
 
-  DO ITYP=1,3   ! Big loop: ityp=1 for U, ityp=2 for V, ityp=3 for T,Q,SP 
+  DO ITYP=1,3   ! Big loop: ityp=1 for U, ityp=2 for V, ityp=3 for T,Q,SP
 
 !   Set grid stagger
     IF(ITYP.EQ.1) THEN        ! U-POINT CASE
@@ -840,14 +836,14 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
         RC(N)=RKO(N)
 
-      ENDDO      ! END COARSE MESH LOOP OVER NSTA 
+      ENDDO      ! END COARSE MESH LOOP OVER NSTA
 
     ELSE       ! FINE MESH CASE
 
 !**********************************************************************
 !ajb_07012008: Conversion of obs coordinates to the fine mesh here
 !ajb   is no longer necessary, since implementation of the WRF map pro-
-!ajb   jections (to each nest directly) is implemented in sub in4dob. 
+!ajb   jections (to each nest directly) is implemented in sub in4dob.
 !**********************************************************************
 !ajb
 !ajb  GET (I,J,K) OF OBSERVATIONS ON FINE MESH VALUES.
@@ -869,7 +865,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
             jobmg(n) = MIN0(MAX0(1,int(RJO(n)-gridy_t)),jde-1)
             dxobmg(n) = RIO(N)-gridx_t-FLOAT(int(RIO(N)-gridx_t))
             dyobmg(n) = RJO(N)-gridy_t-FLOAT(int(RJO(N)-gridy_t))
-          endif 
+          endif
           iob_ms = iobmg(n)
           job_ms = jobmg(n)
           dxob_ms = dxobmg(n)
@@ -1194,7 +1190,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                       VB(IOB+1,KOBP,JOB+1))))
 
 !      if(n.le.10) then
-!        write(6,*) 
+!        write(6,*)
 !        write(6,'(a,i3,i3,i3,a,i3,a,i2)') 'ERRF2 at ',iob,job,kob,   &
 !                                     ' N = ',n,' inest = ',inest
 !        write(6,*) 'VAROBS(2,N) = ',varobs(2,n)
@@ -1416,12 +1412,12 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   INTEGER, INTENT(IN) :: j_end       ! Ending   j index for this model tile
   INTEGER, INTENT(IN) :: ids         ! Starting i index for entire model domain
   INTEGER, INTENT(IN) :: ide         ! Ending   i index for entire model domain
-  INTEGER, INTENT(IN) :: ims         ! Starting i index for model patch 
-  INTEGER, INTENT(IN) :: ime         ! Ending   i index for model patch 
-  INTEGER, INTENT(IN) :: jms         ! Starting j index for model patch 
-  INTEGER, INTENT(IN) :: jme         ! Ending   j index for model patch 
+  INTEGER, INTENT(IN) :: ims         ! Starting i index for model patch
+  INTEGER, INTENT(IN) :: ime         ! Ending   i index for model patch
+  INTEGER, INTENT(IN) :: jms         ! Starting j index for model patch
+  INTEGER, INTENT(IN) :: jme         ! Ending   j index for model patch
   REAL,   INTENT(IN)  :: arrin ( ims:ime, jms:jme )  ! input array on mass points
-  REAL,   INTENT(OUT) :: arrout( ims:ime, jms:jme )  ! output array on U points 
+  REAL,   INTENT(OUT) :: arrout( ims:ime, jms:jme )  ! output array on U points
 
 ! Local variables
   integer :: i, j
@@ -1463,12 +1459,12 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   INTEGER, INTENT(IN) :: j_end       ! Ending   j index for this model tile
   INTEGER, INTENT(IN) :: jds         ! Starting j index for entire model domain
   INTEGER, INTENT(IN) :: jde         ! Ending   j index for entire model domain
-  INTEGER, INTENT(IN) :: ims         ! Starting i index for model patch 
-  INTEGER, INTENT(IN) :: ime         ! Ending   i index for model patch 
-  INTEGER, INTENT(IN) :: jms         ! Starting j index for model patch 
-  INTEGER, INTENT(IN) :: jme         ! Ending   j index for model patch 
+  INTEGER, INTENT(IN) :: ims         ! Starting i index for model patch
+  INTEGER, INTENT(IN) :: ime         ! Ending   i index for model patch
+  INTEGER, INTENT(IN) :: jms         ! Starting j index for model patch
+  INTEGER, INTENT(IN) :: jme         ! Ending   j index for model patch
   REAL,   INTENT(IN)  :: arrin ( ims:ime, jms:jme )  ! input array on mass points
-  REAL,   INTENT(OUT) :: arrout( ims:ime, jms:jme )  ! output array on V points 
+  REAL,   INTENT(OUT) :: arrout( ims:ime, jms:jme )  ! output array on V points
 
 ! Local variables
   integer :: i, j
@@ -1567,7 +1563,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !------------------------------------------------------------------------------
 !
 ! NOTE: This routine was originally designed for MM5, which uses
-!       a nonstandard (I,J) coordinate system. For WRF, I is the 
+!       a nonstandard (I,J) coordinate system. For WRF, I is the
 !       east-west running coordinate, and J is the south-north
 !       running coordinate. So a "J-slab" here is west-east in
 !       extent, not south-north as for MM5.      -ajb 06/10/2004
@@ -1618,11 +1614,11 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   INTEGER, INTENT(IN)  :: nerrf                      ! number of error fields
   INTEGER, INTENT(IN)  :: niobf                      ! number of observations
   INTEGER, INTENT(IN)  :: maxdom                     ! maximum number of domains
-  INTEGER, INTENT(IN)  :: npfi 
+  INTEGER, INTENT(IN)  :: npfi
   INTEGER, INTENT(IN)  :: ionf
   REAL, INTENT(IN)     :: rinxy
   REAL, INTENT(IN)     :: twindo
-  REAL, intent(in)     :: sfcfact                    ! scale for time window (surface obs) 
+  REAL, intent(in)     :: sfcfact                    ! scale for time window (surface obs)
   REAL, intent(in)     :: sfcfacr                    ! scale for hor rad inf (surface obs)
   LOGICAL, intent(in)  :: nudge_pbl                  ! flag for nudging in pbl
   INTEGER, INTENT(IN)  :: levidn(maxdom)             ! level of nest
@@ -1709,7 +1705,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   real :: ri,rj,rx,ry,rsq,pdfac,erfivr,dk,slope,rinfac
   real :: dprim,dsq,d     ! vars for mm5 surface-ob weighting
   real :: rinprs,pijk,pobhi,poblo,pdiffj,w2eowt,gitq
-  real :: dz_ramp         ! For ramping weights for surface obs 
+  real :: dz_ramp         ! For ramping weights for surface obs
 
   real :: scratch
   integer :: kk !ajb temp
@@ -1728,7 +1724,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
     call wrf_error_fatal ( 'wrf_fddaobs_in: in4dob' )
   endif
   IPLO=0  + NSCAN*4
-  GFACTOR=1. +  NSCAN*(-1. + 0.33333) 
+  GFACTOR=1. +  NSCAN*(-1. + 0.33333)
   RFACTOR=1. +  NSCAN*(-1. + 3.0)
 !yliu end
 ! jc
@@ -1850,11 +1846,11 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !***********************************************************************
   DO nnn=1,NSTAT   ! BEGIN OUTER LOOP FOR THE NSTAT OBSERVATIONS
 !***********************************************************************
-! Soundings are consecutive obs, but they need to be treated as a single 
+! Soundings are consecutive obs, but they need to be treated as a single
 ! entity. Thus change the looping to nnn, with n defined separately.
 
 
-!yliu 
+!yliu
 !  note for sfc data: nsndlev=1 and njcsnd=1
     nsndlev=int(nlevs_ob(n)-lev_in_ob(n))+1   
 
@@ -1874,7 +1870,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 ! ATION.
 
 !yliu: Skip bad obs if it is sfc or single level sounding.
-!yliu: Before this (020918), a snd will be skipped if its first 
+!yliu: Before this (020918), a snd will be skipped if its first
 !yliu        level has bad data- often true due to elevation
 
     IF( ABS(ERRF(IVAR,N)).GT.9.E4 .and. njcsnd.eq.1 ) THEN
@@ -1956,12 +1952,12 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 ! WEIGHTS FOR THE 3-D VARIABLES
           ERFIVR=ERRF(IVAR,N)
           QVB_AT_OB_LOC=ERRF(10,N)
- 
+
 !ajb Compute and add weights to sum only if nudge_pbl switch is on.
           if(nudge_pbl) then
 
 ! Apply selected horizontal spreading scheme.
-            if(SFC_SCHEME_HORIZ.eq.1) then        ! original mm5 scheme 
+            if(SFC_SCHEME_HORIZ.eq.1) then        ! original mm5 scheme
               DO I=max0(its,MINI),min0(ite,MAXI)
                 RI=FLOAT(I)
                 RY=RI-RA(N)
@@ -1974,7 +1970,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                 WTIJ(i)=(RIS-DSQ)/(RIS+DSQ)
                 WTIJ(i)=AMAX1(0.0,WTIJ(i))
               ENDDO
-            else                                 ! wrf scheme 
+            else                                 ! wrf scheme
               DO I=max0(its,MINI),min0(ite,MAXI)
                 RI=FLOAT(I)
                 RY=RI-RA(N)
@@ -1990,7 +1986,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
             endif
 
 ! Apply selected vertical spreading scheme.
-            if(SFC_SCHEME_VERT.eq.1) then         ! original simple scheme 
+            if(SFC_SCHEME_VERT.eq.1) then         ! original simple scheme
 
               DO I=max0(its,MINI),min0(ite,MAXI)
 
@@ -2019,10 +2015,10 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                   IF((IVAR.EQ.4).AND.(obs_scl_neg_qv_innov.gt.0)) THEN
                    QVB_AT_CUR_LOC = MAX(QVB(I,K,J),0.0)
                    !If the moisture innovation is negative and the model moisture
-                   ! is less at the current location where we are about to apply 
+                   ! is less at the current location where we are about to apply
                    ! the innovation than at the location where the ob was taken
                    IF((ERFIVR.LT.0).AND.(QVB_AT_CUR_LOC.LT.QVB_AT_OB_LOC)) THEN
-                    !The ratio of the model moisture at the current location 
+                    !The ratio of the model moisture at the current location
                     ! compared to the ob location will be used to scale the
                     !  innovation.
                     QVB_CUR_LOC_OVER_OB_LOC = QVB_AT_CUR_LOC/QVB_AT_OB_LOC
@@ -2077,12 +2073,12 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !         0 -|--|-------|-----------|------|----|----|---------|---->  Z = HT ABOVE
 !              15      55          115    150  175  200       250          GROUND
 !              k=1     k=2         k=3    vih1 k=4  vih2      k=5
- 
+
               DO I=max0(its,MINI),min0(ite,MAXI)
 
                 dz_ramp = 1.0 / max( 1.0, vih2(i)-vih1(i) )   ! vih2 >= vih1 by construct
 
-           LML: do k = kts, kte 
+           LML: do k = kts, kte
                   wtsig(k) = min( 1.0, 1.0 + ( vih1(i)-zslab(i,k)+terrh(i) ) * dz_ramp )
                   wtsig(k) = max( 0.0, wtsig(k))
 
@@ -2157,7 +2153,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
         RINFAC=AMIN1(RINFAC,RINFMX)
 !yliu: for multilevel upper-air data, take the maximum
 !      for the I loop.
-        if(nsndlev.gt.1) RINFAC = RINFMX 
+        if(nsndlev.gt.1) RINFAC = RINFMX
 !yliu end
 
         MAXI=IFIX(RA(N)+0.99+RINDX*RINFAC)
@@ -2173,12 +2169,12 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !    & .or. RB(N).GT.float(JL)+RINFAC*RINDX)then          
 !        print *, " skipped obs far away from this I-range"
 ! currently can use obs within this domain or ones very close to (1/3
-!   influence of radius in the coarse domain) this 
-!   domain. In later case, use BC column value to approximate the model value 
+!   influence of radius in the coarse domain) this
+!   domain. In later case, use BC column value to approximate the model value
 !   at obs point -- ERRF need model field in errob.F !!
 
 !cc         if (i.eq.39 .and. j.eq.34) then
-!cc            write(6,*) 'RA(N) = ',ra(n) 
+!cc            write(6,*) 'RA(N) = ',ra(n)
 !cc            write(6,*) 'rinfac = ',rinfac,' rindx = ',rindx
 !cc         endif
         if(   RA(N).GE.(0.-RINFAC*RINDX/3)                      &
@@ -2226,7 +2222,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 ! yliu: 75 hba for single upper-air, 30hba for multi-level soundings
             if(nsndlev.eq.1) then
               rinprs=7.5
-! 
+!
             else
              rinprs=3.0
             endif
@@ -2236,7 +2232,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !   ---  HANDLE 1-LEVEL and MULTI-LEVEL OBSERVATIONS SEPARATELY  ---
 !$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
-            if(nsndlev.eq.1)then 
+            if(nsndlev.eq.1)then
 !----------------------------------------------------------------------
 !         ---   HANDLE 1-LEVEL OBSERVATIONS  ---
 !----------------------------------------------------------------------
@@ -2354,13 +2350,13 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !----------------------------------------------------------------------
 !         ---   HANDLE MULTI-LEVEL OBSERVATIONS  ---
 !----------------------------------------------------------------------
-!yliu start 
+!yliu start
 !           if(I.eq.MINI) print *, "  Multi-level  snd "
 !             print *, "   n=,nsndlev",n,nsndlev,nlevs_ob(n),lev_in_ob(n)  &
-!                  ,nlevs_ob(n+nsndlev-1),lev_in_ob(n+nsndlev-1) 
+!                  ,nlevs_ob(n+nsndlev-1),lev_in_ob(n+nsndlev-1)
               if(nlevs_ob(n+nsndlev-1).ne.lev_in_ob(n+nsndlev-1)) then
                 IF (iprt) THEN
-                  write(msg,*) "n = ",n,"nsndlev = ",nsndlev 
+                  write(msg,*) "n = ",n,"nsndlev = ",nsndlev
                   call wrf_message(msg)
                   write(msg,*) "nlevs_ob,lev_in_ob",                          &
                            nlevs_ob(n+nsndlev-1),lev_in_ob(n+nsndlev-1)
@@ -2397,7 +2393,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                 endif
 
 ! if sigma level pressure is .lt. than the highest ob level, don't interpolate
-                if(pijk.le.varobs(5,n+nsndlev-1)) then 
+                if(pijk.le.varobs(5,n+nsndlev-1)) then
                   go to 1501
                 endif
 
@@ -2447,7 +2443,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
  1502           continue
 
                 nlo=nhi-1
-                do nnjc=nhi-1,n,-1 
+                do nnjc=nhi-1,n,-1
                   if(varobs(ivar,nnjc).gt.-800000.                             &
                   .and. varobs(5,nnjc).gt.-800000.) then
                     poblo=varobs(5,nnjc)
@@ -2573,7 +2569,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !     print *,'n,nstat=',n,nstat,ivar,j
       go to 1203
     endif
-!   print *, "e-- n=,nsndlev",n,njcsnd,nlevs_ob(n),lev_in_ob(n) 
+!   print *, "e-- n=,nsndlev",n,njcsnd,nlevs_ob(n),lev_in_ob(n)
 
 !***********************************************************************
   ENDDO  ! END OUTER LOOP FOR THE NSTAT OBSERVATIONS
@@ -2602,7 +2598,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   IF(IVAR.GE.3)GOTO 170
 ! this is for u,v
 ! 3-D DOT POINT TENDENCIES
- 
+
 ! Calculate scales for converting nudge factor from u (v)
 ! to rho_u (or rho_v) units.
 
@@ -2611,7 +2607,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   ELSE IF (IVAR == 2) THEN
      call calc_rcouple_scales(mu,msfx,rscale,ims,ime,its,ite)
   END IF
- 
+
   DO K=1,kte
 
     DO I=i_s,i_e
@@ -2656,7 +2652,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
         ATEN(i,k)=ATEN(i,k)+GIV*RSCALE(I)                        &
                     *W2EOWT*TFACI                           &
-                    *ISWIND       *GFACTOR   !yliu *GFACTOR 
+                    *ISWIND       *GFACTOR   !yliu *GFACTOR
 
 !      if(ivar .eq. 1 .and. i.eq.38 .and. j.eq.78 .and. k.eq.1) then
 !           write(6,*) 'U after: aten = ',aten(i,k),' scr = ',scratch
@@ -2704,26 +2700,26 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
       ENDIF
 
 !        if(ivar .eq. 3 .and. i.eq.39 .and. j.eq.49) then
-!            scratch = GITQ*MU(I)*W2EOWT*TFACI*ISTQ*GFACTOR
+!            scratch = GITQ*(c1h(k)*MU(I)+c2h(k))*W2EOWT*TFACI*ISTQ*GFACTOR
 !            write(6,*) 'ATEN calc: k = ',k
 !            write(6,*) 'T before: aten = ',aten(i,k),' scr = ',scratch
-!            write(6,*) 'GITQ = ',gitq,' MU = ',MU(i),                  &
+!            write(6,*) 'GITQ = ',gitq,' MU = ',(c1h(k)*MU(i)+c2h(k)),                  &
 !                       ' W2EOWT = ',w2eowt
 !            write(6,*) ' TFACI = ',tfaci,' ISTQ = ',istq,              &
 !                       ' GFACTOR = ',gfactor
 !        endif
- 
+
 !        if(ivar .eq. 4 .and. i.eq.39 .and. j.eq.29) then
-!            scratch = GITQ*MU(I)*W2EOWT*TFACI*ISTQ*GFACTOR
+!            scratch = GITQ*(c1h(k)*MU(I)+c2h(k))*W2EOWT*TFACI*ISTQ*GFACTOR
 !            write(6,*) 'ATEN calc: k = ',k
 !            write(6,*) 'Q before: aten = ',aten(i,k),' scr = ',scratch
-!            write(6,*) 'GITQ = ',gitq,' MU = ',MU(i),
+!            write(6,*) 'GITQ = ',gitq,' MU = ',(c1h(k)*MU(i)+c2h(k)),
 !     $                 ' W2EOWT = ',w2eowt
 !            write(6,*) ' TFACI = ',tfaci,' ISTQ = ',istq,
 !     $                 ' GFACTOR = ',gfactor
 !        endif
 
-      ATEN(i,k)=ATEN(i,k)+GITQ*MU(I)                       &
+      ATEN(i,k)=ATEN(i,k)+GITQ*(c1h(k)*MU(I)+c2h(k))                       &
                   *W2EOWT*TFACI*ISTQ       *GFACTOR   !yliu *GFACTOR
 
 !        if(ivar .eq. 3 .and. i.eq.39 .and. j.eq.49) then
@@ -2787,7 +2783,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
   INTEGER, INTENT(IN)  :: ims,ime           ! Memory dimensions
   INTEGER, INTENT(IN)  :: its,ite           ! Tile   dimensions
-  REAL, INTENT(IN)     :: a( ims:ime )      ! Air mass array 
+  REAL, INTENT(IN)     :: a( ims:ime )      ! Air mass array
   REAL, INTENT(IN)     :: msf( ims:ime )    ! Map scale factor array
   REAL, INTENT(OUT)    :: rscale( ims:ime ) ! Scales for rho-coupling
 
@@ -2935,11 +2931,11 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   ln_plo = log( pbbc(klo+1) + ppbc(klo+1) )
   ln_phi = log( pbbc(klo) + ppbc(klo) )
   if(h.le.zlo) then
-    ln_p = ln_phi     ! set to k=1 pressure 
+    ln_p = ln_phi     ! set to k=1 pressure
   else if (h.ge.zhi) then
-    ln_p = ln_plo     ! set to k=k_end pressure 
+    ln_p = ln_plo     ! set to k=k_end pressure
   else
-    ln_p = ln_plo + (ln_phi-ln_plo)*((zhi-h)/(zhi-zlo)) 
+    ln_p = ln_plo + (ln_phi-ln_plo)*((zhi-h)/(zhi-zlo))
   endif
 
 ! Return pressure
@@ -2972,7 +2968,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
 
   do k = kds, kde
-      z_at_p(k) =                                     & 
+      z_at_p(k) =                                     &
          (1.-DY)*( (1.-DX)*z(IC,K,JC) +               &
                             DX *z(IC+1,K,JC) ) +      &
              DY* ( (1.-DX)*z(IC,K,JC+1) +             &
@@ -3012,7 +3008,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   integer :: k             ! loop counter
   real    :: ps0           ! base state pressure at surface
   real    :: pb(kms:kme)   ! pressure on half eta levels
-  real    :: logterm       ! temporary for Z calculation 
+  real    :: logterm       ! temporary for Z calculation
   real    :: ginv          ! 1/g
   
   ginv = 1/g
@@ -3110,10 +3106,10 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
       
   call wrf_message(msg1)
 
-! For this variable, print a description of the vif for each regime 
-  call print_vif_regime(1, nfullr1, nrampr1, nfullmin, nrampmin) 
-  call print_vif_regime(2, nfullr2, nrampr2, nfullmin, nrampmin) 
-  call print_vif_regime(4, nfullr4, nrampr4, nfullmin, nrampmin) 
+! For this variable, print a description of the vif for each regime
+  call print_vif_regime(1, nfullr1, nrampr1, nfullmin, nrampmin)
+  call print_vif_regime(2, nfullr2, nrampr2, nfullmin, nrampmin)
+  call print_vif_regime(4, nfullr4, nrampr4, nfullmin, nrampmin)
 
   END SUBROUTINE print_vif_var
 

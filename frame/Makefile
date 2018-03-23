@@ -10,7 +10,8 @@ MODULES =       module_driver_constants.o  \
                 module_domain_type.o       \
                 module_streams.o           \
                 module_domain.o            \
-                module_integrate.o         \
+		$(LLIST) \
+		module_integrate.o         \
                 module_timing.o            \
                 module_configure.o         \
                 module_tiles.o             \

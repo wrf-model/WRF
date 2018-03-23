@@ -819,6 +819,7 @@ have_match: &
   RETURN
 END SUBROUTINE set_scalar_indices_from_config
 
+#if ( DA_CORE != 1 )
    SUBROUTINE change_to_lower_case(instr,outstr)
      CHARACTER*(*) ,INTENT(IN)  :: instr
      CHARACTER*(*) ,INTENT(OUT) :: outstr
@@ -838,3 +839,4 @@ END SUBROUTINE set_scalar_indices_from_config
      ENDDO
 
    END SUBROUTINE change_to_lower_case
+#endif

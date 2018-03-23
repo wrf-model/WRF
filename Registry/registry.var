@@ -498,7 +498,7 @@ rconfig   logical enable_identity           namelist,perturbation  1  .false.  -
 rconfig   logical trajectory_io             namelist,perturbation  1  .true.   -  "0:disk IO;1:memory IO"   ""  ""
 rconfig   logical var4d_detail_out          namelist,perturbation  1  .false.  -  "true:output perturbation, gradient to disk"   ""  ""
 rconfig   logical var4d_run                 namelist,perturbation  1  .true.  -  "true: exlcude the P calculation in start_em"   ""  ""
-rconfig   integer  mp_physics_ad            namelist,physics   max_domains   98   -      "mp_physics_ad"            ""      ""
+rconfig   integer  mp_physics_ad            namelist,physics   max_domains   99   -      "mp_physics_ad"            ""      ""
 # NAMELIST DERIVED
 rconfig   integer mp_physics_4dvar        derived                  max_domains   -1       -        "mp_physics_4dvar"     ""      "-1 = no 4dvar and so no need to allocate a_ and g_ moist and scalar variables, >0 = running 4dvar, so allocate a_ and g_ moist and scalar variables appropriate for selected microphysics package"
 rconfig   integer mp_physics_da           derived                  max_domains    1       -        "mp_physics_da"        ""      "1 when mp_physics>0 for allocating moist variables"

@@ -78,6 +78,7 @@ module_integrate.o: \
 		module_state_description.o \
 		module_nesting.o \
 		module_configure.o \
+		$(LLIST) \
 		module_cpl.o \
                 module_dm.o \
 		$(ESMF_MOD_DEPENDENCE)
@@ -305,6 +306,8 @@ module_cu_gd.o:
 
 module_cu_nsas.o:
 
+module_cu_du.o:  ../frame/module_wrf_error.o
+
 module_gfs_physcons.o: module_gfs_machine.o
 
 module_gfs_funcphys.o: module_gfs_machine.o \
@@ -484,6 +487,7 @@ module_ra_rrtmg_lwf.o: ../share/module_model_constants.o \
 module_physics_addtendc.o: \
 		module_cu_kf.o			\
 		module_cu_kfeta.o		\
+		$(PHYS_CU) \
 		../frame/module_state_description.o \
 		../frame/module_configure.o
 
@@ -495,6 +499,7 @@ module_physics_init.o : \
 		module_ra_rrtmg_lw.o		\
 		module_ra_rrtmg_sw.o		\
 		module_ra_cam.o		\
+		$(PHYS_CU) $(PHYS_BL) \
 		module_ra_cam_support.o		\
 		module_ra_sw.o			\
 		module_ra_gsfcsw.o		\
@@ -584,6 +589,7 @@ module_physics_init.o : \
 module_microphysics_driver.o: \
 		module_mixactivate.o \
 		module_mp_kessler.o  module_mp_sbu_ylin.o module_mp_lin.o \
+		$(PHYS_MP) \
 		module_mp_wsm3.o module_mp_wsm5.o \
 		module_mp_wsm6.o module_mp_etanew.o \
 		module_mp_fer_hires.o module_mp_HWRF.o  \
@@ -615,6 +621,7 @@ module_cumulus_driver.o: \
 		module_cu_g3.o \
 		module_cu_gf_wrfdrv.o \
 		module_cu_kfeta.o \
+		$(PHYS_CU) \
 		module_cu_bmj.o \
 		module_cu_gd.o \
 		module_cu_nsas.o \
@@ -649,6 +656,7 @@ module_pbl_driver.o:  \
 		module_bl_gwdo.o \
 		module_bl_temf.o \
 		module_bl_mfshconvpbl.o \
+		$(PHYS_BL) \
 		module_wind_fitch.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
@@ -994,6 +1002,7 @@ mediation_integrate.o: ../frame/module_domain.o ../frame/module_configure.o \
 			$(ESMF_MOD_DEPENDENCE) \
 			module_date_time.o module_bc_time_utilities.o \
 			module_compute_geop.o                         \
+			$(PERTMOD) \
 			module_io_domain.o
 
 

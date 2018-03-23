@@ -1828,7 +1828,6 @@ endif
                          grid%last_chem_time_day,grid%last_chem_time_hour,                 &
                          grid%last_chem_time_minute,grid%last_chem_time_second,            &
                          grid%chem_in_opt,grid%kemit,grid%num_vert_mix,                       &
-                         grid%u_2,grid%v_2,                                                   &
                          ids , ide , jds , jde , kds , kde ,                &
                          ims , ime , jms , jme , kms , kme ,                &
                          its , ite , jts , jte , kts , kte                  )

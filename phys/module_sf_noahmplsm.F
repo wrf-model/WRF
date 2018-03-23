@@ -150,7 +150,7 @@ MODULE MODULE_SF_NOAHMPLSM
   INTEGER :: OPT_CROP ! options for crop model
                       ! **0 -> No crop model, will run default dynamic vegetation
                       !   1 -> Liu, et al. 2016
-		      !   2 -> Gecros
+		      !   2 -> Gecros (Genotype-by-Environment interaction on CROp growth Simulator) Yin and van Laar, 2005
 
 !------------------------------------------------------------------------------------------!
 ! Physical Constants:                                                                      !

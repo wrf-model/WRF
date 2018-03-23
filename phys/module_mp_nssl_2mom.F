@@ -14323,10 +14323,6 @@ END SUBROUTINE nssl_2mom_driver
 !        qitmp(mgs) = qx(mgs,li)
         fracl(mgs) = 0.0
         fraci(mgs) = 1.0
-        if ( temg(mgs) .lt. tfr .and. temg(mgs) .gt. thnuc ) then
-!          fracl(mgs) = max(min(1.,(temg(mgs)-233.15)/(20.)),0.0)
-!          fraci(mgs) = 1.0-fracl(mgs)
-        end if
         if ( temg(mgs) .le. thnuc ) then
            fraci(mgs) = 1.0
            fracl(mgs) = 0.0

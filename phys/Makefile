@@ -122,6 +122,7 @@ MODULES = \
 	module_sf_noah_seaice_drv.o \
 	module_sf_noahlsm_glacial_only.o \
         module_sf_noahmp_groundwater.o \
+        module_sf_gecros.o \
 	module_sf_noahmpdrv.o \
 	module_sf_noahmplsm.o \
 	module_sf_noahmp_glacier.o \

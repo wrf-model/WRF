@@ -1053,6 +1053,8 @@ endif
                       grid%STMASSXY, grid%WOODXY, grid%STBLCPXY, grid%FASTCPXY,                 &   ! Optional Noah-MP
                       grid%GRAINXY, grid%GDDXY,                                                 &   ! Optional Noah-MP
                       grid%CROPTYPE, grid%CROPCAT,                                                 &   ! Optional Noah-MP
+                      config_flags%opt_crop,                                                    &
+                      grid%gecros_state,                                                        &   ! Optional gecros crop
                       grid%XSAIXY,grid%LAI,                                                     &   ! Optional Noah-MP
                       grid%T2MVXY, grid%T2MBXY, grid%CHSTARXY,                                  &   ! Optional Noah-MP
                       grid%SMOISEQ  ,grid%SMCWTDXY ,grid%RECHXY, grid%DEEPRECHXY, grid%AREAXY,  & ! Optional Noah-MP

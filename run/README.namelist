@@ -1174,6 +1174,10 @@ Options for use with the Noah-MP Land Surface Model:
  opt_pedo                           = 1,        ; Noah-MP options for pedotransfer functions (used when OPT_SOIL = 3)
                                                 ;    1 -> Saxton and Rawls (2006)
 
+ opt_crop                           = 0,        ; options for crop model
+                                                ;    0 -> No crop model, will run default dynamic vegetation
+                                                ;    1 -> Liu, et al. 2016
+		                                ;    2 -> Gecros (Genotype-by-Environment interaction on CROp growth Simulator) Yin and van Laar, 2005
  /
 
  &fdda

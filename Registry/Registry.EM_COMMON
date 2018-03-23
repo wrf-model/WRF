@@ -2690,6 +2690,7 @@ package   camzmscheme    cu_physics==7               -             state:precz,z
 package   kfcupscheme    cu_physics==10              -             state:cldfratend_cup,cldfra_cup,updfra_cup,qc_iu_cup,qc_ic_cup,qndrop_ic_cup,wup_cup,mfup_cup,mfup_ent_cup,mfdn_cup,mfdn_ent_cup,fcvt_qc_to_pr_cup,fcvt_qc_to_qi_cup,fcvt_qi_to_pr_cup,lnterms,w0avg
 package   mskfscheme     cu_physics==11              -             state:w0avg,w_up
 package   nsasscheme     cu_physics==14              -             -
+package   nsasoldscheme  cu_physics==96              -             -
 package   ntiedtkescheme cu_physics==16              -             -
 package   gdscheme       cu_physics==93              -             -
 package   sasscheme      cu_physics==94              -             -

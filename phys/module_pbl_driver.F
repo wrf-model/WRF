@@ -16,7 +16,7 @@ CONTAINS
                  ,mznt                                             &
 #endif
                  ,ht                                               &   
-                 ,ust,pblh,hfx,qfx,grdflx                          &
+                 ,ust,pblh,hfx,qfx,grdflx,hpbl_hold                &
                  ,u_phy,v_phy,w,th_phy,rho                         &
                  ,p_phy,pi_phy,p8w,t_phy,dz8w,z                    &
                  ,exch_h,exch_m,akhs,akms                          &
@@ -525,6 +525,8 @@ CONTAINS
                                                               T2, &
                                                            POWER, &
                                                             WSPD
+   REAL,       DIMENSION( ims:ime, jms:jme )                    , &
+               INTENT(INOUT)    ::                     HPBL_HOLD
 
 !
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
@@ -960,10 +962,7 @@ CONTAINS
          TSKOLD(i,j)=TSK(i,j)
          USTOLD(i,j)=UST(i,j)
          ZNTOLD(i,j)=ZNT(i,j)
-
-! REVERSE ORDER IN THE VERTICAL DIRECTION
-
-! testing change later
+         HPBL_HOLD(i,j)=PBLH(i,j)
 
          DO k=kts,kte
             v_phytmp(i,k,j)=v_phy(i,k,j)+v_frame

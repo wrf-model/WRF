@@ -119,6 +119,10 @@ CONTAINS
     REAL, DIMENSION( ims:ime, jms:jme ) :: exch_temf  ! 1/7/09 WA
 
     REAL, DIMENSION( ims:ime, jms:jme ) :: ht_loc, mixht
+    REAL, DIMENSION( ims:ime, jms:jme ) :: hpbl_hold
+    INTEGER                             :: i, j, istart, iend, jstart, jend
+
+
 
     INTEGER                             :: ij
     INTEGER  num_roof_layers
@@ -864,7 +868,7 @@ BENCH_START(pbl_driver_tim)
      &        ,BLDTACTTIME=grid%bldtacttime                               &  
      &        ,BR=grid%br         ,CHKLOWQ=chklowq    ,CT=grid%ct                   &
      &        ,DT=grid%dt         ,DX=grid%dx         ,DY=grid%dy                   &
-     &        ,DZ8W=dz8w          &
+     &        ,DZ8W=dz8w          ,HPBL_HOLD=hpbl_hold                              &
      &        ,EXCH_H=grid%exch_h     ,EXCH_M=grid%exch_m                           &
      &        ,FM=grid%fm         ,FHH=grid%fh                                      &
      &        ,F=grid%f  ,GRDFLX=grid%grdflx      &
@@ -1085,6 +1089,7 @@ BENCH_START(cu_driver_tim)
      &             ,KF_EDRATES=config_flags%kf_edrates                                 &
      &             ,HTOP=grid%cutop     ,HBOT=grid%cubot       ,KPBL=grid%kpbl         &
      &             ,Z=grid%z ,Z_AT_W=grid%z_at_w ,MAVAIL=grid%mavail ,PBLH=grid%pblh   &
+     &             ,HPBL_HOLD=hpbl_hold                                                &
      &             ,DZ8W=dz8w     ,P8W=grid%p_hyd_w, PSFC=grid%psfc, TSK=grid%tsk      &
      &             ,TKE_PBL=grid%tke_pbl, UST=grid%ust                                 &
      &             ,W0AVG=grid%w0avg   ,STEPCU=grid%stepcu                             &

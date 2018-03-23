@@ -305,6 +305,8 @@ module_cu_kfeta.o: ../frame/module_wrf_error.o
 module_cu_gd.o:
 
 module_cu_nsas.o:
+ 
+module_cu_nsas_old.o:
 
 module_cu_du.o:  ../frame/module_wrf_error.o
 
@@ -549,6 +551,7 @@ module_physics_init.o : \
 		module_cu_bmj.o			\
 		module_cu_gd.o			\
 		module_cu_nsas.o		\
+		module_cu_nsas_old.o		\
 		module_cu_sas.o			\
 		module_cu_scalesas.o            \
 		module_cu_osas.o		\
@@ -626,6 +629,7 @@ module_cumulus_driver.o: \
 		$(PHYS_CU) \
 		module_cu_bmj.o \
 		module_cu_gd.o \
+		module_cu_nsas_old.o \
 		module_cu_nsas.o \
 		module_cu_sas.o \
 		module_cu_scalesas.o \

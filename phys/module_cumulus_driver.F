@@ -104,6 +104,7 @@ CONTAINS
 
                  ! Optional arguments for NSAS scheme
                      ,mp_physics                                      &
+                     ,hpbl_hold                                       &
                  ! Optional moisture and other tendencies
                      ,rqvcuten,rqccuten,rqrcuten                      &
                      ,rqicuten,rqscuten,rqgcuten                      &
@@ -135,7 +136,7 @@ CONTAINS
                                           ,CAMZMSCHEME, SASSCHEME     &
                                           ,OSASSCHEME                 &  
                                           ,SCALESASSCHEME             &  ! scale-sware sas
-                                          ,NSASSCHEME                 &
+                                          ,NSASSCHEME, NSASOLDSCHEME  &
 #if (EM_CORE == 1)
                                           ,MSKFSCHEME                 &
                                           ,CAMMGMPSCHEME              &
@@ -182,6 +183,7 @@ CONTAINS
    USE module_cu_tiedtke, ONLY : cu_tiedtke
    USE module_cu_ntiedtke,ONLY : cu_ntiedtke
    USE module_cu_nsas   , ONLY : cu_nsas
+   USE module_cu_nsas_old,ONLY : cu_nsas_old
    USE module_wrf_error , ONLY : wrf_err_message
 
    !  This driver calls subroutines for the cumulus parameterizations.
@@ -483,6 +485,8 @@ CONTAINS
 
    REAL, DIMENSION( ims:ime , jms:jme ),INTENT(INOUT),OPTIONAL :: &
         PRATEC,MAVAIL,PBLH,PSFC,TSK,TPERT2D,UST,HFX,QFX
+   REAL, DIMENSION( ims:ime , jms:jme ),INTENT(INOUT)          :: &
+                                                      HPBL_HOLD
 
 !ckay
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
@@ -1349,7 +1353,7 @@ CONTAINS
           CALL wrf_error_fatal('Lacking arguments for CU_NTIEDTKE in cumulus driver')
         ENDIF
 
-! New GFS SAS SCHEME - (Yonsei Univ., South Korea)
+! New KIM SAS SCHEME - (KIAPS, South Korea)
      CASE (NSASSCHEME)
         IF ( PRESENT ( QFX ) .AND. PRESENT( HFX ) ) THEN
           CALL wrf_debug(100,'in nsas_cps')
@@ -1366,6 +1370,8 @@ CONTAINS
                 RAINCV=RAINCV,PRATEC=tmpPRATEC,                 &
                 XLAND=XLAND,DZ8W=dz8w,W=w,U3D=u,V3D=v,          &
                 HPBL=pblh,HFX=hfx,QFX=qfx,                      & 
+                HPBL_HOLD=hpbl_hold,                            &
+                ZNU=znu,                                        &
                 MP_PHYSICS=mp_physics,                          & 
                 DX_FACTOR_NSAS=dx_factor_nsas,                  & 
                 pgcon=pgcon,                                    &
@@ -1382,6 +1388,41 @@ CONTAINS
         ELSE
           CALL wrf_error_fatal('Lacking arguments for CU_NSAS in cumulus driver')
         ENDIF
+
+! New GFS SAS SCHEME - (Yonsei Univ., South Korea)
+     CASE (NSASOLDSCHEME)
+        IF ( PRESENT ( QFX ) .AND. PRESENT( HFX ) ) THEN
+          CALL wrf_debug(100,'in nsas_old_cps')
+          CALL CU_NSAS_OLD(                                     &
+                DT=dt,DX=dx,P3DI=p8w,P3D=p,PI3D=pi,             &
+                QC3D=QC_CURR,QI3D=QI_CURR,RHO3D=rho,            &
+                ITIMESTEP=itimestep,STEPCU=STEPCU,              &
+                HBOT=HBOT,HTOP=HTOP,                            &
+                CU_ACT_FLAG=CU_ACT_FLAG,                        &
+                RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN,            &
+                RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN,            &
+                RUCUTEN=RUCUTEN,RVCUTEN=RVCUTEN,                &
+                QV3D=QV_CURR,T3D=t,                             &
+                RAINCV=RAINCV,PRATEC=tmpPRATEC,                 &
+                XLAND=XLAND,DZ8W=dz8w,W=w,U3D=u,V3D=v,          &
+                HPBL=pblh,HFX=hfx,QFX=qfx,                      & 
+                MP_PHYSICS=mp_physics,                          & 
+                DX_FACTOR_NSAS=dx_factor_nsas,                  & 
+                pgcon=pgcon,                                    &
+               P_QC=p_qc,P_QI=p_qi,                            &
+                P_FIRST_SCALAR=param_first_scalar               &
+               ,CP=cp,CLIQ=cliq,CPV=cpv,G=g,XLV=xlv,R_D=r_d     &
+               ,R_V=r_v,EP_1=ep_1,EP_2=EP_2                     &
+               ,CICE=cice,XLS=xls,PSAT=psat                     &
+               ,F_QI=f_qi,F_QC=f_qc                             & 
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+                                                                )
+        ELSE
+          CALL wrf_error_fatal('Lacking arguments for CU_NSASOLD in cumulus driver')
+        ENDIF
+
 #if (EM_CORE == 1)
         !BSINGH -  For WRFCuP scheme
      CASE (KFCUPSCHEME)

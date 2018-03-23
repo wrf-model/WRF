@@ -1838,6 +1838,7 @@ package   kfedrates      kf_edrates==1               -             state:udr_kf,
 package   tiedtkescheme  cu_physics==6               -             -
 package   ntiedtkescheme cu_physics==16              -             -
 package   nsasscheme     cu_physics==14              -             -
+package   nsasoldscheme  cu_physics==96              -             -
 package   kfscheme       cu_physics==99              -             -
 
 package   g3shcuscheme   shcu_physics==1             -             -

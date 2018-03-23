@@ -626,6 +626,7 @@ ENDIF
             config_flags%cu_physics == NTIEDTKESCHEME .or.   &
             config_flags%cu_physics == CAMZMSCHEME    .or.   &
             config_flags%cu_physics == SCALESASSCHEME .or.   &
+            config_flags%cu_physics == NSASOLDSCHEME  .or.   &
             config_flags%cu_physics == NSASSCHEME ) THEN
 #      include "HALO_EM_PHYS_CU.inc"
        ENDIF

@@ -5,13 +5,7 @@
 #  define VREC vrec
 #  define VSQRT vsqrt
 #endif
-module dashDwrf_is_OK
-integer :: xxyyz
-#ifdef wrfmodel
-end module dashDwrf_is_OK
-#else
-end module dashDwrf_is_baroque
-#endif
+
 MODULE module_mp_wsm6
 !
    USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm

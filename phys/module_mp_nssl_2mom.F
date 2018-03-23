@@ -1362,8 +1362,8 @@ END SUBROUTINE nssl_2mom_init_aero
         lccna = ltmp
         denscale(ltmp) = 1
       ENDIF
-
-      IF ( turn_on_cin .or. is_aerosol_aware ) THEN
+!kk
+      IF ( (turn_on_cin .EQ. 1) .or. is_aerosol_aware ) THEN
         ltmp = ltmp + 1
         lcin = ltmp
         denscale(ltmp) = 1
@@ -2140,7 +2140,8 @@ SUBROUTINE nssl_2mom_driver(qv, qc, qr, qi, qs, qh, qhl, ccw, crw, cci, csw, chw
            ELSEIF ( present( cn ) ) THEN
             an(ix,1,kz,lccn) = cn(ix,kz,jy)
            ELSE
-            IF ( lccna == 0 .and. ( f_cnatmp == .false. ) ) THEN
+!kk
+            IF ( lccna == 0 .and. ( .NOT. f_cnatmp ) ) THEN
               an(ix,1,kz,lccn) = qccn - ccw(ix,kz,jy)
            ELSE
               an(ix,1,kz,lccn) = qccn 

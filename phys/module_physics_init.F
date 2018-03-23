@@ -3920,12 +3920,50 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      CASE (NSSL_1MOM)
          CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=0,mixphase=0,ihvol=0)
      CASE (NSSL_2MOM)
+         IF( config_flags%aero_opt > 0 .and. ( start_of_simulation.or.restart.or.config_flags%cycling) )    &
+            CALL nssl_2mom_init_aero(HGT=z_at_q,                        &
+                          NWFA2D=qnwfa2d,                               &
+                          NWFA=scalar(ims,kms,jms,P_QNWFA),             &
+                          NIFA=scalar(ims,kms,jms,P_QNIFA),             &
+                          DX=DX, DY=DY, cccn=nssl_cccn,                 &
+                          is_start=start_of_simulation,                 &
+                          IDS=ids, IDE=ide, JDS=jds, JDE=jde, KDS=kds, KDE=kde,   &
+                          IMS=ims, IME=ime, JMS=jms, JME=jme, KMS=kms, KME=kme,   &
+                          ITS=its, ITE=ite, JTS=jts, JTE=jte, KTS=kts, KTE=kte)
+
          CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=5,mixphase=0,ihvol=1)
+
+
      CASE (NSSL_2MOMG)
+         IF( config_flags%aero_opt > 0 .and. ( start_of_simulation.or.restart.or.config_flags%cycling) )    &
+            CALL nssl_2mom_init_aero(HGT=z_at_q,                        &
+                          NWFA2D=qnwfa2d,                               &
+                          NWFA=scalar(ims,kms,jms,P_QNWFA),             &
+                          NIFA=scalar(ims,kms,jms,P_QNIFA),             &
+                          DX=DX, DY=DY, cccn=nssl_cccn,                 &
+                          is_start=start_of_simulation,                 &
+                          IDS=ids, IDE=ide, JDS=jds, JDE=jde, KDS=kds, KDE=kde,   &
+                          IMS=ims, IME=ime, JMS=jms, JME=jme, KMS=kms, KME=kme,   &
+                          ITS=its, ITE=ite, JTS=jts, JTE=jte, KTS=kts, KTE=kte)
+
          CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=5,mixphase=0,ihvol=-1) ! turn off hail
+
      CASE (NSSL_2MOMCCN)
          ccn_conc = nssl_cccn/1.225 ! set this to have correct boundary conditions
+         IF( config_flags%aero_opt > 0 .and. ( start_of_simulation.or.restart.or.config_flags%cycling) )    &
+            CALL nssl_2mom_init_aero(HGT=z_at_q,                        &
+                          NWFA2D=qnwfa2d,                               &
+                          NWFA=scalar(ims,kms,jms,P_QNWFA),             &
+                          NIFA=scalar(ims,kms,jms,P_QNIFA),             &
+                          DX=DX, DY=DY, cccn=nssl_cccn,                 &
+                          is_start=start_of_simulation,                 &
+                          IDS=ids, IDE=ide, JDS=jds, JDE=jde, KDS=kds, KDE=kde,   &
+                          IMS=ims, IME=ime, JMS=jms, JME=jme, KMS=kms, KME=kme,   &
+                          ITS=its, ITE=ite, JTS=jts, JTE=jte, KTS=kts, KTE=kte)
+
          CALL nssl_2mom_init(ims,ime, jms,jme, kms,kme,nssl_params,ipctmp=5,mixphase=0,ihvol=1)
+
+
 #if (EM_CORE==1)
      CASE (CAMMGMPSCHEME) ! CAM5's microphysics
           CALL CAMMGMP_INIT(ixcldliq, ixcldice, ixnumliq, ixnumice &

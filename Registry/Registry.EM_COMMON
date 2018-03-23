@@ -2080,6 +2080,8 @@ rconfig   real        accum_mode          namelist,physics      1             10
 rconfig   real        aitken_mode         namelist,physics      1             300.0e6  rh       "aitken_mode"                 ""      ""
 rconfig   real        coarse_mode         namelist,physics      1             0.2e6    rh       "coarse_mode"                 ""      ""
 rconfig   integer     do_radar_ref        namelist,physics      1              0       rh       "compute radar reflectivity for a number of schemes"                 ""      ""
+rconfig   integer     aero_opt            namelist,physics      max_domains    0       rh       "Thompson aerosol options"                 ""      ""
+rconfig   real        nssl_aero_scale     namelist,physics      1              1.5e9   rh       "Scale factor for Tanh transform for NSSL using "                 ""      ""
 rconfig   integer     compute_radar_ref   derived               1              0       -        "compute_radar_ref" "0/1 flag: compute radar reflectivity, either do_radar_ref=1 .or. (milbrandt or NSSL schemes)"
 rconfig   integer     ra_lw_physics       namelist,physics	max_domains    -1      rh       "ra_lw_physics"         ""      ""
 rconfig   integer     ra_sw_physics       namelist,physics	max_domains    -1      rh       "ra_sw_physics"         ""      ""
@@ -2578,6 +2580,11 @@ package   p3_2category    mp_physics==52               -             moist:qv,qc
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 
 package   radar_refl      compute_radar_ref==1         -             state:refl_10cm,refd_max
+package   aero_none       aero_opt==0                  -             -
+package   aero_both       aero_opt==1                  -             scalar:qnwfa,qnifa;state:qnwfa2d,taod5503d,taod5502d
+#package   aero_water      aero_opt==2                  -             scalar:qnwfa;state:qnwfa2d,taod5503d,taod5502d
+#package   aero_ice        aero_opt==3                  -             scalar:qnifa;state:qnwfa2d,taod5503d,taod5502d
+                           
 endif
 
 package   nodfimoist        mp_physics_dfi==-1       -             -

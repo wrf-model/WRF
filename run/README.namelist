@@ -484,10 +484,10 @@ Namelist variables for controlling the adaptive time step option:
                                      = 13, SBU_YLIN scheme
                                      = 14, WDM 5-class scheme
                                      = 16, WDM 6-class scheme
-                                     = 17, NSSL 2-moment 4-ice scheme (steady background CCN)
+                                     = 17, NSSL 2-moment 4-ice scheme (steady background CCN, or set aero_opt=1 on each domain to use 
+                                               Thompson aerosol climatology to initialize CCN)
                                      = 18, NSSL 2-moment 4-ice scheme with predicted CCN (better for idealized than real cases)
-                                       ; to set a global CCN value, use
-                                       nssl_cccn  = 0.7e9   ; CCN for NSSL scheme (18). Also sets same value to ccn_conc for mp_physics=18
+                                       ; to set a global CCN value, use nssl_ccn
                                      = 19, NSSL 1-moment (7 class: qv,qc,qr,qi,qs,qg,qh; predicts graupel density)
                                      = 21, NSSL 1-moment, (6-class), very similar to Gilmore et al. 2004
                                            Can set intercepts and particle densities in physics namelist, e.g., nssl_cnor
@@ -545,6 +545,22 @@ Namelist variables for controlling the adaptive time step option:
  use_mp_re                           = 1       ; whether to use effective radii computed in mp schemes in RRTMG (new in 3.8).
                                                  0: do not use; 1: use effective radii
                                                  (The mp schemes that compute effective radii are 3,4,6,8,14,16,17-21)
+ aero_opt (max_dom)                  = 0       ; default 
+                                     = 1       ; Turns on Thompson aerosols for NSSL_2MOM. 
+                                               The same options for mp_physics=28 also apply:
+                                                   use_aero_icbc = .F. : use constant values (NSSL will use value of NSSL_CCCN)
+                                                   use_aero_icbc = .T. : use input from WPS
+                                               Additionally, nssl_aero_scale is used to scale the Thompson water-friendly aerosols
+                                               because of differences in the droplet nucleation. (NSSL treats all aerosols as CCN)
+                                               NOTE: For *ideal* runs, the value of NSSL_CCCN is used to set water-friendly aerosols.
+                                     
+ nssl_aero_scale                     = 1.5e9  ; For NSSL_2MOM with aero_opt=1, this value scales the aerosol concentrations by
+                                                a TanH function to impose a maximum CCN concentration (since NSSL treats nucleation
+                                                differently than Thompson) Reasonable values are 0.9e9 to 2.e9 representing maximum
+                                                continental droplet concentrations.
+ nssl_cccn (max_dom)                 = 0.5e9  ; CCN concentration (per m**3) for NSSL scheme (18) at air density of 1.225. Actual 
+                                                 qnn (number mixing ratio) is set globally to nssl_cccn/1.225, i.e., CCN concentration 
+                                                 is scaled to local air density. 
 
  ra_lw_physics (max_dom)             longwave radiation option
                                      = 0, no longwave radiation

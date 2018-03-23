@@ -1411,6 +1411,7 @@
       oops = 0
       DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
+           model_config_rec%aero_opt(i) = aero_both ! set aero_opt for consistency to have both water- and ice-friendly
             IF ( model_config_rec%grav_settling(i) .NE. FOGSETTLING0 ) THEN
                 model_config_rec%grav_settling(i) = 0
                 oops = oops + 1
@@ -1427,7 +1428,7 @@
 !-----------------------------------------------------------------------
       oops = 0
       DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO ) THEN
+         IF ( model_config_rec%mp_physics(i) .EQ. THOMPSONAERO .or. model_config_rec%aero_opt(i) == aero_both ) THEN
             IF ( model_config_rec%use_aero_icbc .AND. model_config_rec%scalar_pblmix(i) .NE. 1 ) THEN
                 model_config_rec%scalar_pblmix(i) = 1
                 oops = oops + 1
@@ -2045,6 +2046,28 @@
               ( model_config_rec % do_radar_ref  .EQ. 1             ) ) THEN
             model_config_rec % compute_radar_ref = 1
          END IF
+      ENDDO
+
+!-----------------------------------------------------------------------
+! Check that value of aero_opt is either zero or 1
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         IF (  model_config_rec%aero_opt(i) /= aero_none .and.  &
+               model_config_rec%aero_opt(i) /= aero_both ) THEN
+            wrf_err_message = '--- NOTE: aero_opt must be either 0 or 1 for now ' 
+            CALL wrf_message ( wrf_err_message )
+            model_config_rec%aero_opt(i) = aero_both
+         
+         
+         END IF
+
+         IF (  model_config_rec % mp_physics(i) .EQ. NSSL_2MOMCCN .and. &
+                 model_config_rec%aero_opt(i) == aero_both )  THEN
+            wrf_err_message = '--- NOTE: aero_opt=1, so changing mp_physics to NSSL_2MOM (17) instead of (18)' 
+            model_config_rec % mp_physics(i) = NSSL_2MOM
+            CALL wrf_message ( wrf_err_message )
+         ENDIF
       ENDDO
 
 !-----------------------------------------------------------------------

@@ -166,7 +166,10 @@ integer::oops1,oops2
 
       INTEGER :: j_save
 
+
       LOGICAL :: wif_upside_down = .FALSE.
+
+      REAL :: qnwfa_scale_fac  ! scale factor for water aerosols when using NSSL scheme. Set to value of nssl_aero_scale
 
       !  Dimension information stored in grid data structure.
 
@@ -181,6 +184,8 @@ integer::oops1,oops2
                                 ipsy, ipey, jpsy, jpey, kpsy, kpey )
       its = ips ; ite = ipe ; jts = jps ; jte = jpe ; kts = kps ; kte = kpe
 
+      
+      qnwfa_scale_fac = config_flags%nssl_aero_scale
       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
       !  Would the user prefer to forego the use of the level of max winds, or the
@@ -1226,7 +1231,9 @@ integer::oops1,oops2
          !  Interpolate monthly aerosol climatology data to specific date/time.
          !  Since data are 3D, do over a loop of vertical levels using temporary array space.
 
-         IF (config_flags%mp_physics.eq.THOMPSONAERO .and. P_QNWFA.gt.1 .and. config_flags%use_aero_icbc) then
+! for models initialized from GFS
+         IF ( ( ( config_flags%mp_physics.eq.THOMPSONAERO .or. P_QNWFA.gt.1 ) .and. config_flags%use_aero_icbc .and. config_flags%wif_input_opt /= 1 ) .OR.&
+              (config_flags%mp_physics.eq.THOMPSONAERO .and. P_QNWFA.gt.1 .and. config_flags%use_aero_icbc) ) then
          CALL wrf_debug ( 0 , 'Using Thompson_aerosol_aware so using QNWFA monthly climo arrays to create QNWFA_now')
          DO k = 1, num_metgrid_levels
             DO j = jts, MIN(jte,jde-1)
@@ -1263,7 +1270,8 @@ integer::oops1,oops2
          ENDDO
          ENDIF
 
-         IF (config_flags%mp_physics.eq.THOMPSONAERO .and. P_QNIFA.gt.1 .and. config_flags%use_aero_icbc) then
+         IF ( ( ( config_flags%mp_physics.eq.THOMPSONAERO .or. P_QNIFA.gt.1 ) .and. config_flags%use_aero_icbc .and. config_flags%wif_input_opt /= 1) .OR. & 
+            (config_flags%mp_physics.eq.THOMPSONAERO .and. P_QNIFA.gt.1 .and. config_flags%use_aero_icbc) )then
          DO k = 1, num_metgrid_levels
             DO j = jts, MIN(jte,jde-1)
                DO i = its, MIN(ite,ide-1)
@@ -2381,7 +2389,7 @@ integer::oops1,oops2
          !       Stored in scalar arrays, tested and assumed to be upside down.
 
          IF ( ( config_flags%wif_input_opt .EQ. 1 ) .AND. &
-              ( config_flags%mp_physics .EQ. THOMPSONAERO ) .AND. &
+              ( config_flags%mp_physics .EQ. THOMPSONAERO .or. config_flags%aero_opt == aero_both ) .AND. &
               ( flag_qnwfa .EQ. 1 ) .AND.  &
               ( flag_qnifa .EQ. 1 ) ) THEN
 
@@ -2458,6 +2466,21 @@ integer::oops1,oops2
                                              ids , ide , jds , jde , kds , kde , &
                                              ims , ime , jms , jme , kms , kme , &
                                              its , ite , jts , jte , kts , kte )
+                 
+               IF ( config_flags%mp_physics /= THOMPSONAERO ) THEN
+               ! rough scaling for NSSL microphysics to convert general aerosol to CCN concentration
+                 DO j = jts, MIN(jte,jde-1)
+                    DO i = its, MIN(ite,ide-1)
+                       grid%qntemp2 (i, j) = qnwfa_scale_fac*tanh(grid%qntemp2 (i, j) /qnwfa_scale_fac)
+                    END DO
+                 END DO
+               ENDIF
+
+               
+               IF ( k .eq. 1 ) THEN
+                  write(a_message,*) ' QNWFA (now) ', grid%qntemp2(its,jts)
+                  CALL wrf_debug ( 1 , a_message)
+               END IF
                IF      (       wif_upside_down ) THEN
                   DO j = jts, MIN(jte,jde-1)
                      DO i = its, MIN(ite,ide-1)
@@ -2557,7 +2580,7 @@ integer::oops1,oops2
                                its , ite , jts , jte , kts , kte )
 
          ELSE IF ( ( config_flags%wif_input_opt .EQ. 1 ) .AND. &
-                   ( config_flags%mp_physics .EQ. THOMPSONAERO ) .AND. &
+                   ( config_flags%mp_physics .EQ. THOMPSONAERO .or. config_flags%aero_opt == aero_both  ) .AND. &
                    ( ( flag_qnwfa .NE. 1 ) .OR.  &
                      ( flag_qnifa .NE. 1 ) ) ) THEN
             WRITE (a_message,*) 'COMMENT: QNWFA or QNIFA flags not set in metgrid input, cannot have wif_input_opt=1'

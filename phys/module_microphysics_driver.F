@@ -1478,6 +1478,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 #endif
                      nssl_progn=nssl_progn,              &
                      diagflag = diagflag,                &
+                     NWFA=qnwfa_curr, f_qnwfa=f_qnwfa,   &
+                     NIFA=qnifa_curr, f_qnifa=f_qnifa,   &
+                     NWFA2D=qnwfa2d,                     &
                      cu_used=cu_used,                    &
                      qrcuten=qrcuten,                    &  ! hm
                      qscuten=qscuten,                    &  ! hm
@@ -1553,6 +1556,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 #endif
                      nssl_progn=nssl_progn,              &
                       diagflag = diagflag,               &
+                     NWFA=qnwfa_curr, f_qnwfa=f_qnwfa,   &
+                     NIFA=qnifa_curr, f_qnifa=f_qnifa,   &
+                     NWFA2D=qnwfa2d,                     &
                      cu_used=cu_used,                    &
                      qrcuten=qrcuten,                    &  ! hm
                      qscuten=qscuten,                    &  ! hm

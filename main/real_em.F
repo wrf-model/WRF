@@ -787,7 +787,7 @@ real::t1,t2
          ALLOCATE ( qbdy3dtemp2(ims:ime,kms:kme,jms:jme) )
          ALLOCATE ( mbdy2dtemp2(ims:ime,1:1,    jms:jme) )
 
-         IF (config_flags%mp_physics.eq.THOMPSONAERO .AND.  config_flags%use_aero_icbc) THEN
+         IF ( ( config_flags%mp_physics.eq.THOMPSONAERO .or. P_QNWFA.gt.1 ) .AND.  config_flags%use_aero_icbc) THEN
             IF ( ALLOCATED ( qn1bdy3dtemp1 ) ) DEALLOCATE ( qn1bdy3dtemp1 )
             IF ( ALLOCATED ( qn2bdy3dtemp1 ) ) DEALLOCATE ( qn2bdy3dtemp1 )
             IF ( ALLOCATED ( qn1bdy3dtemp2 ) ) DEALLOCATE ( qn1bdy3dtemp2 )
@@ -855,7 +855,7 @@ real::t1,t2
             END DO
          END DO
 
-         IF (config_flags%mp_physics.eq.THOMPSONAERO .AND.  config_flags%use_aero_icbc) THEN
+         IF ( (config_flags%mp_physics.eq.THOMPSONAERO .or. P_QNWFA.gt.1 ) .AND.  config_flags%use_aero_icbc) THEN
             CALL couple ( grid%mu_2 , grid%mub , qn1bdy3dtemp1 , grid%scalar(:,:,:,P_QNWFA)      , 't' , grid%msfty , &
                        grid%c1h, grid%c2h, grid%c1h, grid%c2h, &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
@@ -930,7 +930,7 @@ real::t1,t2
                                                                     ims , ime , jms , jme , 1 , 1 , &
                                                                     ips , ipe , jps , jpe , 1 , 1 )
 
-         IF (config_flags%mp_physics.eq.THOMPSONAERO .AND.  config_flags%use_aero_icbc) THEN
+         IF ((config_flags%mp_physics.eq.THOMPSONAERO .or. P_QNWFA.gt.1 ) .AND.  config_flags%use_aero_icbc) THEN
             CALL stuff_bdy     ( qn1bdy3dtemp1 , grid%scalar_bxs(:,:,:,P_QNWFA), grid%scalar_bxe(:,:,:,P_QNWFA),     &
                                             grid%scalar_bys(:,:,:,P_QNWFA), grid%scalar_bye(:,:,:,P_QNWFA),     &
                                                               'T' , spec_bdy_width      ,               &
@@ -1009,7 +1009,7 @@ real::t1,t2
             END DO
          END DO
 
-         IF (config_flags%mp_physics.eq.THOMPSONAERO .AND.  config_flags%use_aero_icbc) THEN
+         IF ((config_flags%mp_physics.eq.THOMPSONAERO .or. P_QNWFA.gt.1 ) .AND.  config_flags%use_aero_icbc) THEN
             CALL couple ( grid%mu_2 , grid%mub , qn1bdy3dtemp2 , grid%scalar(:,:,:,P_QNWFA)      , 't' , grid%msfty , &
                        grid%c1h, grid%c2h, grid%c1h, grid%c2h, &
                        ids, ide, jds, jde, kds, kde, ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe )
@@ -1101,7 +1101,7 @@ real::t1,t2
                                                                ids , ide , jds , jde , 1 , 1 , &
                                                                ims , ime , jms , jme , 1 , 1 , &
                                                                ips , ipe , jps , jpe , 1 , 1 )
-         IF (config_flags%mp_physics.eq.THOMPSONAERO .AND.  config_flags%use_aero_icbc) THEN
+         IF ( (config_flags%mp_physics.eq.THOMPSONAERO .or. P_QNWFA.gt.1 ) .AND.  config_flags%use_aero_icbc) THEN
             CALL stuff_bdytend ( qn1bdy3dtemp2 , qn1bdy3dtemp1 , REAL(interval_seconds) ,                 &
                                                                grid%scalar_btxs(:,:,:,P_QNWFA), grid%scalar_btxe(:,:,:,P_QNWFA), &
                                                                grid%scalar_btys(:,:,:,P_QNWFA), grid%scalar_btye(:,:,:,P_QNWFA), &
@@ -1229,7 +1229,7 @@ real::t1,t2
                END DO
             END DO
 
-            IF (config_flags%mp_physics.eq.THOMPSONAERO .AND.  config_flags%use_aero_icbc) THEN
+            IF ( (config_flags%mp_physics.eq.THOMPSONAERO .or. P_QNWFA.gt.1 ) .AND.  config_flags%use_aero_icbc) THEN
                DO j = jps , jpe
                   DO k = kps , kpe
                      DO i = ips , ipe
@@ -1306,7 +1306,7 @@ real::t1,t2
                                                                        ims , ime , jms , jme , 1 , 1 , &
                                                                        ips , ipe , jps , jpe , 1 , 1 )
 
-            IF (config_flags%mp_physics.eq.THOMPSONAERO .AND.  config_flags%use_aero_icbc) THEN
+            IF ( (config_flags%mp_physics.eq.THOMPSONAERO .or. P_QNWFA.gt.1 ) .AND.  config_flags%use_aero_icbc) THEN
                CALL stuff_bdy     ( qn1bdy3dtemp1 , grid%scalar_bxs(:,:,:,P_QNWFA), grid%scalar_bxe(:,:,:,P_QNWFA),     &
                                                     grid%scalar_bys(:,:,:,P_QNWFA), grid%scalar_bye(:,:,:,P_QNWFA),     &
                                                                  'T' , spec_bdy_width      ,               &

@@ -906,11 +906,6 @@ ext :
 
 framework :
 	@ echo '--------------------------------------'
-	if [ $(WRF_PLUS_CORE) -eq 1 ] ; then \
-	  LINKLIST="$(MODLL)" ; \
-	else \
-	  LINKLIST=" " ; \
-	fi
 	( cd frame ; $(MAKE) $(J) LLIST="$(LINKLIST)" framework ; \
           cd ../external/io_netcdf ; \
           $(MAKE) NETCDFPATH="$(NETCDFPATH)" \

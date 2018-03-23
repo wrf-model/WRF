@@ -227,9 +227,7 @@ contains
 #if defined(mpas)
       real,    dimension(ims:ime, jms:jme), intent(in) ::               &
                                         dx
-#endif
-
-#if defined(wrfmodel)
+#elif defined(wrfmodel)
       real,    intent(in) ::            dx
 #endif
 
@@ -583,9 +581,7 @@ contains
       real pqvf(lq,km),    ptf(lq,km)
 #if defined(mpas)
       real dx(lq)
-#endif
-
-#if defined(wrfmodel)
+#elif defined(wrfmodel)
       real dx
 #endif
       integer icbot(lq),   ictop(lq),     ktype(lq),   lndj(lq)
@@ -801,9 +797,7 @@ contains
       real     upbl(klon)
 #if defined(mpas)
       real     dx(klon)
-#endif
-
-#if defined(wrfmodel)
+#elif defined(wrfmodel)
       real     dx
 #endif
       real     pmfude_rate(klon,klev), pmfdde_rate(klon,klev)
@@ -1035,9 +1029,7 @@ contains
            ikt = kctop(jl)
 #if defined(mpas)
            ztau = ztauc(jl) * (1.+1.33e-5*dx(jl))
-#endif
-
-#if defined(wrfmodel)
+#elif defined(wrfmodel)
            ztau = ztauc(jl) * (1.+1.33e-5*dx)
 #endif
            ztau = max(ztmst,ztau)

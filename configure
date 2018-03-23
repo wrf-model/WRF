@@ -7,7 +7,6 @@ thiscmd=$0
 FORTRAN_COMPILER_TIMER=""
 opt_level="-f"
 rword="-r4"
-vnest="NOVN"
 print_usage=""
 chemistry=""
 wrf_core=""
@@ -25,7 +24,6 @@ while [ $# -ge 1 ]; do
       -mach) shift ; WRF_MACH=$1 ;;
       -r8) rword="-r8" ;;
       -time) shift ; FORTRAN_COMPILER_TIMER=$1 ;;
-      -vn)  vnest="VN" ;;
       chem) WRF_CHEM=1  ;;
       kpp) WRF_KPP=1  ;;
       radardfi) WRF_DFI_RADAR=1  ;;
@@ -39,6 +37,7 @@ while [ $# -ge 1 ]; do
       mars) WRF_MARS=1 ; break ;;
       venus) WRF_VENUS=1 ; break ;;
       wrfplus) wrf_core=WRF_PLUS_CORE ; break ;;
+      *) echo "This option is not recognized: $1" ; exit 2 ;;
     esac
     shift
 done
@@ -414,16 +413,10 @@ if [ "$wrf_core" = "DA_CORE" -o "$wrf_core" = "4D_DA_CORE" ] ; then
   fi
 fi
 
-if [ -n "$WRF_NMM_CORE" -a "$WRF_NMM_CORE" = "1" ] ; then
-  TFL="-traditional-cpp"
-  CFL="-P -nostdinc"
-elif [ "$wrf_core" = "DA_CORE" -o "$wrf_core" = "4D_DA_CORE" ] ; then
-  TFL="-traditional-cpp"
-  CFL="-P -nostdinc"
-else
-  TFL="-traditional-cpp"
-  CFL="-P -nostdinc"
-fi
+# Set the "traditional" flag and the "cpp" flags
+
+TFL="-traditional-cpp"
+CFL="-P -nostdinc"
 
 if [ "$wrf_core" = "4D_DA_CORE" ]; then
    if [ -n "$WRFPLUS_DIR" ] ; then

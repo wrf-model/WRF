@@ -18,7 +18,7 @@ CONTAINS
                                    moist, chem, tracer, scalar,         &
                                    th_phy, pi_phy, p_phy, rho_phy,      & 
                                    p8w, t8w, dz8w,                      &
-                                   curr_secs2,                          &
+                                   curr_secs, curr_secs2,               &
                                    diag_flag,                           &
                                    ids,  ide,  jds,  jde,  kds,  kde,   &
                                    ims,  ime,  jms,  jme,  kms,  kme,   &
@@ -114,8 +114,9 @@ CONTAINS
                                                                            p8w     , &
                                                                            t8w
 
-      !  Time (s) since the beginning of the restart.
+      !  Time (s) since the beginning of the simulation, restart.
 
+      REAL(8) :: curr_secs
       REAL :: curr_secs2
 
       !  Is this to be a history output time?  If so, compute the diagnostics.
@@ -190,7 +191,7 @@ CONTAINS
          CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: LIGHTNING_DRIVER' )
          CALL lightning_driver ( &
           ! Frequently used prognostics
-            grid%itimestep, grid%dt, grid%dx, grid%dy,         &
+            curr_secs, grid%dt, grid%dx, grid%dy,              &
             grid%xlat, grid%xlong, grid%xland, grid%ht,        &
             grid%t_phy, p_phy, grid%rho,                       &
             grid%u_phy, grid%v_phy, grid%w_2,                  &    
@@ -203,6 +204,7 @@ CONTAINS
             config_flags%lightning_option,                     &
             config_flags%lightning_dt,                         &
             config_flags%lightning_start_seconds,              &
+            grid%ltngacttime,                                  &
             config_flags%flashrate_factor,                     &
           ! IC:CG namelist settings
             config_flags%iccg_method,                          &

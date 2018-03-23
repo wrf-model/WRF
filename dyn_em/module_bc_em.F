@@ -1,13 +1,3 @@
-#if ( HYBRID_COORD==1 ) 
-#  define mut(...) (c1(k)*XXPCTXX(__VA_ARGS__)+c2(k))
-#  define XXPCTXX(...) mut(__VA_ARGS__)
-
-#  define muts(...) (c1(k)*XXPCTSXX(__VA_ARGS__)+c2(k))
-#  define XXPCTSXX(...) muts(__VA_ARGS__)
-
-#  define mu_old(...) (c1(k)*XXPCOLDXX(__VA_ARGS__)+c2(k))
-#  define XXPCOLDXX(...) mu_old(__VA_ARGS__)
-#endif
 
 !WRF:MODEL_LAYER:BOUNDARY
 !
@@ -27,7 +17,7 @@ CONTAINS
    SUBROUTINE spec_bdyupdate_ph( ph_save, field,           &
                                field_tend, mu_tend, muts,  &
                                c1, c2, dt,                 &
-                               variable_in, config_flags,  & 
+                               variable_in, config_flags,  &
                                spec_zone,                  &
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
@@ -98,33 +88,33 @@ CONTAINS
 
               MU_OLD(i,j) = MUTS(i,j) - dt*MU_TEND(i,j)
 
-              field(i,k,j) = field(i,k,j)*mu_old(i,j)/muts(i,j) + &
-                   dt*field_tend(i,k,j)/muts(i,j) +               &
-                   ph_save(i,k,j)*(mu_old(i,j)/muts(i,j) - 1.)
+              field(i,k,j) = field(i,k,j)*(c1(k)*mu_old(i,j)+c2(k))/(c1(k)*muts(i,j)+c2(k)) + &
+                   dt*field_tend(i,k,j)/(c1(k)*muts(i,j)+c2(k)) +               &
+                   ph_save(i,k,j)*((c1(k)*mu_old(i,j)+c2(k))/(c1(k)*muts(i,j)+c2(k)) - 1.)
 
             ENDDO
           ENDDO
         ENDDO
-      ENDIF 
-      IF (jbe - jtf .lt. spec_zone) THEN 
-! Y-end boundary 
-        DO j = max(jts,jbe-spec_zone+1), jtf 
-          b_dist = jbe - j 
+      ENDIF
+      IF (jbe - jtf .lt. spec_zone) THEN
+! Y-end boundary
+        DO j = max(jts,jbe-spec_zone+1), jtf
+          b_dist = jbe - j
           b_limit = b_dist
           IF(periodic_x)b_limit = 0
-          DO k = kts, ktf 
+          DO k = kts, ktf
             DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
 
               MU_OLD(i,j) = MUTS(i,j) - dt*MU_TEND(i,j)
 
-              field(i,k,j) = field(i,k,j)*mu_old(i,j)/muts(i,j) + &
-                   dt*field_tend(i,k,j)/muts(i,j) +               &
-                   ph_save(i,k,j)*(mu_old(i,j)/muts(i,j) - 1.)
+              field(i,k,j) = field(i,k,j)*(c1(k)*mu_old(i,j)+c2(k))/(c1(k)*muts(i,j)+c2(k)) + &
+                   dt*field_tend(i,k,j)/(c1(k)*muts(i,j)+c2(k)) +               &
+                   ph_save(i,k,j)*((c1(k)*mu_old(i,j)+c2(k))/(c1(k)*muts(i,j)+c2(k)) - 1.)
 
             ENDDO
           ENDDO
         ENDDO
-      ENDIF 
+      ENDIF
 
     IF(.NOT.periodic_x)THEN
       IF (its - ibs .lt. spec_zone) THEN
@@ -136,14 +126,14 @@ CONTAINS
 
               MU_OLD(i,j) = MUTS(i,j) - dt*MU_TEND(i,j)
 
-              field(i,k,j) = field(i,k,j)*mu_old(i,j)/muts(i,j) + &
-                   dt*field_tend(i,k,j)/muts(i,j) +               &
-                   ph_save(i,k,j)*(mu_old(i,j)/muts(i,j) - 1.)
+              field(i,k,j) = field(i,k,j)*(c1(k)*mu_old(i,j)+c2(k))/(c1(k)*muts(i,j)+c2(k)) + &
+                   dt*field_tend(i,k,j)/(c1(k)*muts(i,j)+c2(k)) +               &
+                   ph_save(i,k,j)*((c1(k)*mu_old(i,j)+c2(k))/(c1(k)*muts(i,j)+c2(k)) - 1.)
 
             ENDDO
           ENDDO
         ENDDO
-      ENDIF 
+      ENDIF
 
       IF (ibe - itf .lt. spec_zone) THEN
 ! X-end boundary
@@ -154,14 +144,14 @@ CONTAINS
 
               MU_OLD(i,j) = MUTS(i,j) - dt*MU_TEND(i,j)
 
-              field(i,k,j) = field(i,k,j)*mu_old(i,j)/muts(i,j) + &
-                   dt*field_tend(i,k,j)/muts(i,j) +               &
-                   ph_save(i,k,j)*(mu_old(i,j)/muts(i,j) - 1.)
+              field(i,k,j) = field(i,k,j)*(c1(k)*mu_old(i,j)+c2(k))/(c1(k)*muts(i,j)+c2(k)) + &
+                   dt*field_tend(i,k,j)/(c1(k)*muts(i,j)+c2(k)) +               &
+                   ph_save(i,k,j)*((c1(k)*mu_old(i,j)+c2(k))/(c1(k)*muts(i,j)+c2(k)) - 1.)
 
             ENDDO
           ENDDO
         ENDDO
-      ENDIF 
+      ENDIF
     ENDIF
 
    END SUBROUTINE spec_bdyupdate_ph
@@ -198,7 +188,7 @@ CONTAINS
 
    INTEGER ,               INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                             ims, ime, jms, jme, kms, kme, &
-                                            ips, ipe, jps, jpe, kps, kpe, & 
+                                            ips, ipe, jps, jpe, kps, kpe, &
                                             its, ite, jts, jte, kts, kte
    INTEGER ,               INTENT(IN   ) :: spec_bdy_width, spec_zone, relax_zone
 
@@ -274,7 +264,7 @@ CONTAINS
                                its,ite, jts,jte, kts,kte )
 
 ! rfield will be calculated beyond tile limits because relax_bdytend
-!   requires a 5-point stencil, and this avoids need for inter-tile/patch 
+!   requires a 5-point stencil, and this avoids need for inter-tile/patch
 !   communication here
            i_start = max(its-1, ids)
            i_end = min(ite+1, ide-1)
@@ -353,7 +343,7 @@ CONTAINS
                                its-1, ite+1, jts-1,jte+1,kts,kte )  ! dims of first argument
 
         END IF
-   END SUBROUTINE relax_bdy_dry 
+   END SUBROUTINE relax_bdy_dry
 !------------------------------------------------------------------------
    SUBROUTINE relax_bdy_scalar ( scalar_tend,                &
                                  scalar, mu, c1h, c2h,       &
@@ -373,7 +363,7 @@ CONTAINS
 
    INTEGER ,               INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                             ims, ime, jms, jme, kms, kme, &
-                                            ips, ipe, jps, jpe, kps, kpe, & 
+                                            ips, ipe, jps, jpe, kps, kpe, &
                                             its, ite, jts, jte, kts, kte
    INTEGER ,               INTENT(IN   ) :: spec_bdy_width, spec_zone, relax_zone
 
@@ -393,7 +383,7 @@ CONTAINS
    REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) :: rscalar
 
 ! rscalar will be calculated beyond tile limits because relax_bdytend
-!   requires a 5-point stencil, and this avoids need for inter-tile/patch 
+!   requires a 5-point stencil, and this avoids need for inter-tile/patch
 !   communication here
            i_start = max(its-1, ids)
            i_end = min(ite+1, ide-1)
@@ -417,7 +407,7 @@ CONTAINS
                                its,ite, jts,jte, kts,kte )
 
 
-   END SUBROUTINE relax_bdy_scalar 
+   END SUBROUTINE relax_bdy_scalar
 
 !------------------------------------------------------------------------
    SUBROUTINE spec_bdy_dry ( config_flags,                        &
@@ -448,7 +438,7 @@ CONTAINS
 
    INTEGER ,               INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                             ims, ime, jms, jme, kms, kme, &
-                                            ips, ipe, jps, jpe, kps, kpe, & 
+                                            ips, ipe, jps, jpe, kps, kpe, &
                                             its, ite, jts, jte, kts, kte
    INTEGER ,               INTENT(IN   ) :: spec_bdy_width, spec_zone
 
@@ -537,7 +527,7 @@ CONTAINS
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                                its,ite, jts,jte, kts,kte )
 
-   END SUBROUTINE spec_bdy_dry 
+   END SUBROUTINE spec_bdy_dry
 
 
 !------------------------------------------------------------------------
@@ -550,12 +540,12 @@ CONTAINS
 
    SUBROUTINE spec_bdy_dry_perturb ( config_flags,                                   &
                                      ru_tend, rv_tend, t_tend,mu_2, mub, c1, c2,     &
-      			             msfu, msfv, msft,                               &
+                    msfu, msfv, msft,                               &
                                      field_u_tend_perturb,field_v_tend_perturb,field_t_tend_perturb, &
-				     spec_bdy_width, spec_zone,  &
+      spec_bdy_width, spec_zone,  &
                                      kme_stoch,                  & ! stoch dims
                                      ids,ide, jds,jde, kds,kde,  & ! domain dims
-				     ims,ime, jms,jme, kms,kme,  & ! memory dims
+      ims,ime, jms,jme, kms,kme,  & ! memory dims
                                      ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                                      its, ite, jts, jte, kts, kte)
    IMPLICIT NONE
@@ -566,8 +556,8 @@ CONTAINS
 
    INTEGER ,               INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                             ims, ime, jms, jme, kms, kme, &
-                                            ips, ipe, jps, jpe, kps, kpe, & 
-                                            its, ite, jts, jte, kts, kte, & 
+                                            ips, ipe, jps, jpe, kps, kpe, &
+                                            its, ite, jts, jte, kts, kte, &
                                             kme_stoch
    INTEGER ,               INTENT(IN   ) :: spec_bdy_width, spec_zone
 
@@ -575,7 +565,7 @@ CONTAINS
                                                                       rv_tend, &
                                                                       t_tend
 
-   REAL,  DIMENSION( ims:ime ,           jms:jme ), INTENT(INOUT  )   :: mu_2	
+   REAL,  DIMENSION( ims:ime ,           jms:jme ), INTENT(INOUT  )   :: mu_2
    REAL,  DIMENSION( ims:ime ,           jms:jme ), INTENT(INOUT  )   :: mub
    REAL,  DIMENSION( ims:ime ,           jms:jme ), INTENT(IN     )   :: msfu
    REAL,  DIMENSION( ims:ime ,           jms:jme ), INTENT(IN     )   :: msfv
@@ -590,7 +580,7 @@ CONTAINS
                                field_u_tend_perturb,       &
                                mu_2,mub, c1, c2,           &
                                'u', msfu, config_flags,    &
-                               spec_bdy_width, spec_zone,  & 
+                               spec_bdy_width, spec_zone,  &
                                kme_stoch,                  & ! stoch  dims
                                ids,ide, jds,jde, kds,kde,  & ! domain dims
                                ims,ime, jms,jme, kms,kme,  & ! memory dims
@@ -618,7 +608,7 @@ CONTAINS
                                ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                                its,ite, jts,jte, kts,kte )
 
-   END SUBROUTINE spec_bdy_dry_perturb 
+   END SUBROUTINE spec_bdy_dry_perturb
 
 
 
@@ -630,7 +620,7 @@ CONTAINS
                                      spec_bdy_width, spec_zone,  &
                                      kme_stoch,                  & ! stoch  dims
                                      ids,ide, jds,jde, kds,kde,  & ! domain dims
-				     ims,ime, jms,jme, kms,kme,  & ! memory dims
+      ims,ime, jms,jme, kms,kme,  & ! memory dims
                                      ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                                      its, ite, jts, jte, kts, kte)
    IMPLICIT NONE
@@ -639,8 +629,8 @@ CONTAINS
    LOGICAL ,               INTENT(IN   ) :: periodic_x
    INTEGER ,               INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                             ims, ime, jms, jme, kms, kme, &
-                                            ips, ipe, jps, jpe, kps, kpe, & 
-                                            its, ite, jts, jte, kts, kte, & 
+                                            ips, ipe, jps, jpe, kps, kpe, &
+                                            its, ite, jts, jte, kts, kte, &
                                             kme_stoch
    INTEGER ,               INTENT(IN   ) :: spec_bdy_width, spec_zone
 
@@ -654,7 +644,7 @@ CONTAINS
                                           field_scalar_perturb, 'c',       &
                                           periodic_x,                 &
                                           spec_bdy_width, spec_zone,  &
-                                          kme_stoch,                  & 
+                                          kme_stoch,                  &
                                           ids,ide, jds,jde, kds,kde,  & ! domain dims
                                           ims,ime, jms,jme, kms,kme,  & ! memory dims
                                           ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
@@ -682,7 +672,7 @@ CONTAINS
 
    INTEGER ,               INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                             ims, ime, jms, jme, kms, kme, &
-                                            ips, ipe, jps, jpe, kps, kpe, & 
+                                            ips, ipe, jps, jpe, kps, kpe, &
                                             its, ite, jts, jte, kts, kte
    INTEGER ,               INTENT(IN   ) :: spec_bdy_width, spec_zone
 
@@ -708,7 +698,7 @@ CONTAINS
                                its,ite, jts,jte, kts,kte )
 
 
-   END SUBROUTINE spec_bdy_scalar 
+   END SUBROUTINE spec_bdy_scalar
 
 !------------------------------------------------------------------------
 
@@ -1251,7 +1241,7 @@ CONTAINS
 !  [NB - cf1, cf2 and cf3 do vertical weighting of u or v values
 !   nearest the surface]
 
-! get indices for points next to edge of domain 
+! get indices for points next to edge of domain
 
      jm1_limit = jds        ! No periodic BC's
      jp1_limit = jde-1
@@ -1317,7 +1307,7 @@ CONTAINS
   
      ! Local variables.
   
-     INTEGER :: loop 
+     INTEGER :: loop
      REAL :: spongeweight
   
      IF (specified) THEN
@@ -1378,7 +1368,7 @@ CONTAINS
 
       !  This routine is called from the solve_em routine.  The purpose is to
       !  convert the thermal lateral boundary conditions between dry potential
-      !  temperature and moist potential temperature.  The first argument is a 
+      !  temperature and moist potential temperature.  The first argument is a
       !  flag telling us the direction of the conversion:
       !     True  = convert dry to moist potential temp
       !     False = convert moist to dry potential temp
@@ -1450,31 +1440,31 @@ CONTAINS
       INTEGER :: i_min, i_max, j_min, j_max
 
       !  IF      (       theta_to_thetam ) THEN
-      !     Convert dry potential temperature to theta_m 
+      !     Convert dry potential temperature to theta_m
       !     Defined as: theta_m = ( theta   + T0 ) * ( 1. + (R_v/R_d) Qv ) - T0
       !  ELSE
-      !     Convert dry potential temperature to theta_m 
+      !     Convert dry potential temperature to theta_m
       !     Defined as: theta   = ( theta_m + T0 ) / ( 1. + (R_v/R_d) Qv ) - T0
       !  END IF
 
       !  We want the current value and the tendency, using information mostly
-      !  from the lateral boundary file.  In that file, the thermal variable 
+      !  from the lateral boundary file.  In that file, the thermal variable
       !  is a potential temperature with the T0 offset removed (theta-300).  Both
-      !  the moisture variable and the potential temperature are coupled 
+      !  the moisture variable and the potential temperature are coupled
       !  (multiplied by total dry column pressure).  And to add one more complication,
       !  the MU variable in the lateral boundary array is perturbation only.
 
       !  Since we need to end up with lateral boundary values that are coupled,
       !  we need to first DECOUPLE T and Qv, compute Tm, and then couple that.  As
       !  there is a need for the lateral tendency also, we compute the T and Qv
-      !  values at the two boundary times (previous/current and next).  These two 
+      !  values at the two boundary times (previous/current and next).  These two
       !  times are adequate to get us a tendency.  For the tendency, we need to have
       !  coupled values for the T (or Tm) at both times, which gives us a coupled
       !  tendency.  We cannot have an uncoupled tendency and somehow multiply that
       !  by some intermediate/average column pressure.
 
       !  This routine's purpose is to manufacture a lateral boundary set of arrays
-      !  (all eight of them) for the thermal field.  Depending on the logical flag 
+      !  (all eight of them) for the thermal field.  Depending on the logical flag
       !  passed in, this will either be dry potential temperature or moist potential
       !  temperature.
 
@@ -1676,7 +1666,7 @@ CONTAINS
          END DO
       END DO
 
-      !  Put the final values for the tendencies into the arrays that get passed 
+      !  Put the final values for the tendencies into the arrays that get passed
       !  back out to the calling routine.
 
       DO jj = MAX(jts,1) , MIN(jte,jde-1,spec_bdy_width)
@@ -1734,7 +1724,7 @@ CONTAINS
       INTEGER , INTENT(IN   ) :: ids,ide, jds,jde, kds,kde, &
                                  ims,ime, jms,jme, kms,kme, &
                                  irs,ire, jrs,jre, krs,kre, &
-                                 its,ite, jts,jte, kts,kte 
+                                 its,ite, jts,jte, kts,kte
       REAL , DIMENSION(ims:ime, kms:kme, jms:jme) , INTENT(IN   ) :: field
       REAL , DIMENSION(ims:ime,          jms:jme) , INTENT(IN   ) :: mut
       REAL , DIMENSION(         kms:kme         ) , INTENT(IN   ) :: c1, c2
@@ -1747,7 +1737,7 @@ CONTAINS
       DO j = jts , jte
          DO k = kts , kte
             DO i = its , ite
-               rfield(i,k,j) = field(i,k,j) * mut(i,j)
+               rfield(i,k,j) = field(i,k,j) * (c1(k)*mut(i,j)+c2(k))
             END DO
          END DO
       END DO

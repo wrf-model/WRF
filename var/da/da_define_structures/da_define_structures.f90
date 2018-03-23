@@ -12,10 +12,10 @@ module da_define_structures
 
    use da_control, only : anal_type_randomcv, stdout, max_fgat_time, &
       vert_corr, global, vert_evalue,print_detail_be, maxsensor, &
-      max_ob_levels, trace_use, num_ob_indexes, kms, kme, &
+      max_ob_levels, trace_use, num_ob_indexes, kms, kme, kde, &
       vert_corr_1, vert_corr_2, vert_evalue_global, cv_options, do_normalize, use_rf, &
       put_rand_seed, seed_array1, seed_array2, missing_r, &
-      sound, synop, pilot, satem, geoamv, polaramv, airep, gpspw, gpsref, &
+      sound, synop, pilot, satem, geoamv, polaramv, airep, gpspw, gpsref, gpseph, &
       metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, &
       mtgirs, tamdar, tamdar_sfc, pseudo, radar, radiance, airsr, sonde_sfc, rain, &
       trace_use_dull,comm, num_pseudo
@@ -360,6 +360,18 @@ module da_define_structures
       type (field_type), pointer :: q  (:)      ! From NCEP analysis.
    end type gpsref_type
 
+   type gpseph_type
+      integer                    :: level1      ! lowest_level
+      integer                    :: level2      ! highest_level
+      real                       :: rfict       ! Local curvature radius of the reference ellipsoid for the occultation point
+      real             , pointer :: h  (:)      ! Multi-level height
+      type (field_type), pointer :: eph(:)      ! GPS excess phase
+      type (field_type), pointer :: ref(:)      ! GPS Refractivity
+      real,              pointer :: azim(:)     ! Azimuth angle of the occultation plane at tangent point
+      real,              pointer :: lat(:)      ! Latitude of perigee point
+      real,              pointer :: lon(:)      ! Longitude of perigee point
+   end type gpseph_type
+
    type synop_type
       real                    :: h              ! Height in m
       type (field_type)       :: u              ! u-wind.
@@ -617,6 +629,7 @@ module da_define_structures
       real    :: ssmir_ef_speed, ssmir_ef_tpw
       real    :: satem_ef_thickness, ssmt1_ef_t, ssmt2_ef_rh
       real    :: gpsref_ef_ref, gpsref_ef_p, gpsref_ef_t, gpsref_ef_q
+      real    :: gpseph_ef_eph
       real    :: qscat_ef_u, qscat_ef_v
       real    :: profiler_ef_u, profiler_ef_v
       real    :: buoy_ef_u, buoy_ef_v, buoy_ef_t, buoy_ef_p, buoy_ef_q
@@ -640,6 +653,7 @@ module da_define_structures
       type (synop_type)    , pointer :: ships(:)
       type (gpspw_type)    , pointer :: gpspw(:)
       type (gpsref_type)   , pointer :: gpsref(:)
+      type (gpseph_type)   , pointer :: gpseph(:)
       type (ssmi_tb_type)  , pointer :: ssmi_tb(:)
       type (ssmi_rv_type)  , pointer :: ssmi_rv(:)
       type (ssmt1_type)    , pointer :: ssmt1(:)
@@ -681,6 +695,7 @@ module da_define_structures
       type (bad_info_type)       :: tpw
       type (bad_info_type)       :: Speed
       type (bad_info_type)       :: gpsref
+      type (bad_info_type)       :: gpseph
       type (bad_info_type)       :: thickness
       type (bad_info_type)       :: rh
       type (bad_info_type)       :: rv
@@ -791,6 +806,10 @@ module da_define_structures
       real, pointer :: q  (:)         ! q from NCEP used by CDAAC in retrieval
    end type residual_gpsref_type
 
+   type residual_gpseph_type
+      real, pointer :: eph(:)         ! excess phase
+   end type residual_gpseph_type
+
    type residual_ssmi_rv_type
       real                    :: tpw      ! Toatl precipitable water cm
       real                    :: Speed    ! Wind speed m/s
@@ -857,6 +876,7 @@ module da_define_structures
       type (residual_polaramv_type), pointer :: polaramv(:)
       type (residual_gpspw_type),    pointer :: gpspw (:)
       type (residual_gpsref_type),   pointer :: gpsref(:)
+      type (residual_gpseph_type),   pointer :: gpseph(:)
       type (residual_sound_type),    pointer :: sound(:)
       type (residual_mtgirs_type),   pointer :: mtgirs(:)
       type (residual_tamdar_type),   pointer :: tamdar(:)
@@ -907,7 +927,7 @@ module da_define_structures
       real                :: ships_u, ships_v, ships_t, ships_p, ships_q
       real                :: geoamv_u, geoamv_v
       real                :: polaramv_u, polaramv_v
-      real                :: gpspw_tpw, satem_thickness, gpsref_ref
+      real                :: gpspw_tpw, satem_thickness, gpsref_ref, gpseph_eph
       real                :: sound_u, sound_v, sound_t, sound_q
       real                :: sonde_sfc_u, sonde_sfc_v, sonde_sfc_t, &
                              sonde_sfc_p, sonde_sfc_q

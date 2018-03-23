@@ -78,6 +78,7 @@ dimspec    lake_ssl  2   constant=15                       z     snow_and_soil_l
 dimspec    lake_intl 2   constant=16                       z     interface_levels
 dimspec    lake_sll  2   constant=10                       z     soil_levels_or_lake_levels
 dimspec    crop    2     constant=5                        z     crop_types
+dimspec    soilc   2     constant=8                        z     soil_composition_layers
 
 # Dimensions required only for Chemistry
 

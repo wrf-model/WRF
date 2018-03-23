@@ -2124,6 +2124,7 @@ state   real    ch4_ant    ikjftb   chem         1         -     i0{12}rhusdf=(b
 state   real    ch4_bbu    ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CH4_BBU"       "mixing ratio of biomass burning CH4"  "ppmv"
 state   real    ch4_bck    ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CH4_BCK"       "mixing ratio of background CH4"       "ppmv"
 state   real    ch4_tst    ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CH4_TST"       "mixing ratio of CH4, test fluxes"  "ppmv"
+state   real    pv         ikj      misc         1         -     h                             "PV"            "Potential Vorticity"        "pvu"
 
 #SAPRCNOV additional variables, automatically created using diff_mechanisSpc_wrfRegistry.m script (pablo-saide@uiowa.edu)
 state   real    h2so4           ikjftb  chem    1       -       i0{12}rhusdf=(bdy_interp:dt) "h2so4" "H2SO4 mixing ratio"   "ppmv"
@@ -3763,6 +3764,8 @@ rconfig   character   term_opt            namelist,chem        max_domains   "CH
 #                                 gas and aerosol calculations turned on (gaschem_onoff=1 and aerchem_onoff=1), these can be turned off for debugging, etc.
 #                                 wet scavenging and cloud chemistry turned off (wetscav_onoff=0 and cldchem_onoff=0) since these only work with a subset of chemistry options
 #                                 vertical mixing turned on (vertmix_onoff=1) since this is done via the dry deposition routine and works with all chem options
+
+rconfig   logical     do_pvozone          namelist,chem          1             .false.  rh    "do_pvozone"            ""      ""
 rconfig   integer     chem_conv_tr        namelist,chem          max_domains    1       rh    "chem_conv_opt"       ""      ""
 rconfig   integer     conv_tr_wetscav     namelist,chem          max_domains    1       rh    "conv_tr_wetscav_opt"       ""      ""
 rconfig   integer     conv_tr_aqchem      namelist,chem          max_domains    1       rh    "conv_tr_aqchem_opt"       ""      ""

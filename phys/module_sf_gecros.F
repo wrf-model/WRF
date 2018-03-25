@@ -643,7 +643,7 @@ IMPLICIT NONE
     RM = MAX(0., MIN(APCAN-1.E-5/TCP,RMUL/TCP) + RMRE)  !gC m-2 s-1
 
     ! Daily and total C and N returns from crop to soil
-    ! ji: RLVDS eingefuehrt. Standardmaesig war der Wert von RLVDS auf 0.1 hard-gecoded
+    ! ji: RLVDS eingefuehrt. Standardmaessig war der Wert von RLVDS auf 0.1 hard-gecoded
     ! CLVD: Amount of carbon in dead leaves
     ! CLVDS: Amount of carbon in dead leaves that have become litter in soil
 

@@ -4802,7 +4802,7 @@ subroutine aerosol_in_cu(aeromcu,alevsiz,no_months,no_src_types,XLAT,XLONG,aerop
           END IF
 
           ! Read aerosol information 
-          OPEN(UNIT=iunit, FILE='CESM_RCP4.5_Current_Aerosol_Data.dat', FORM='unformatted', &
+          OPEN(UNIT=iunit, FILE='CESM_RCP4.5_Aerosol_Data.dat', FORM='unformatted', &
                STATUS='old', IOSTAT=istatus)
             IF (istatus == 0) THEN
                READ(UNIT=iunit)  numLons, numLats,numLevs

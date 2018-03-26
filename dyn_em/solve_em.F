@@ -3659,7 +3659,6 @@ BENCH_START(moist_physics_prep_tim)
                                    its, ite, jts, jte,               &
                                    k_start    , k_end               )
 
-! Mei Xu 20170203 Mod for dust emission
        IF (config_flags%dust_emis.eq.1 .AND. config_flags%mp_physics.eq.28)  then
          CALL wrf_debug ( 200 , ' call bulk_dust_emis' )
          CALL bulk_dust_emis (grid%itimestep,dtm,config_flags%num_soil_layers  &
@@ -3669,7 +3668,7 @@ BENCH_START(moist_physics_prep_tim)
                ,grid%dx, g, grid%qnifa2d, ids,ide, jds,jde, kds,kde            &
                ,ims,ime, jms,jme, kms,kme                                      &
                ,its,ite, jts,jte, k_start,k_end )
-       ENDIF ! end Mod for dust emission
+       ENDIF
 
 BENCH_END(moist_physics_prep_tim)
      END DO scalar_tile_loop_1a

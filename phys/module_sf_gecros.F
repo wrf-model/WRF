@@ -28,9 +28,9 @@ REAL, PARAMETER :: FLIG = 0.06    !Fraction of lignin in storage organs
 REAL, PARAMETER :: FOAC = 0.02    !Fraction of organic acids in storage organs 
 REAL, PARAMETER :: FMIN = 0.02    !Fraction of minerals in storage organs
 REAL, PARAMETER :: LNCI = 0.03586 !Initial value of LNC (g N g-1)
-REAL, PARAMETER :: TBD = 0.0      !Base temperature of phenology (∞C)
-REAL, PARAMETER :: TOD = 22.5     !Optimum temperature of phenology (∞C)
-REAL, PARAMETER :: TCD = 37.0     !Ceiling temperature of phenology (∞C)
+REAL, PARAMETER :: TBD = 0.0      !Base temperature of phenology (C)
+REAL, PARAMETER :: TOD = 22.5     !Optimum temperature of phenology (C)
+REAL, PARAMETER :: TCD = 37.0     !Ceiling temperature of phenology (C)
 REAL, PARAMETER :: TSEN = 1.0     !Curvature of temperature response (1)
 REAL, PARAMETER :: SPSP = 0.2     !DS for start of photoperiod-sensitive phase
 REAL, PARAMETER :: EPSP = 0.7     !DS for end of photoperiod-sensitive phase
@@ -38,9 +38,9 @@ REAL, PARAMETER :: CDMHT = 492.6  !Stem dry weight per unit plant height (g m-2 
 REAL, PARAMETER :: PMEH = 0.6468  !Fraction of sigmoid curve inflexion in plant height growth period (1)
 REAL, PARAMETER :: ESDI = 1.35    !ESD for indeterminate crops 
 REAL, PARAMETER :: PMES = 0.50    !Fraction of sigmoid curve inflexion in seed growth growth period (1) 
-REAL, PARAMETER :: TBDV = -1.3    !Base temperature of vernalization (∞C)
-REAL, PARAMETER :: TODV = 4.9     !Optimum temperature of vernalization (∞C)
-REAL, PARAMETER :: TCDV = 15.7    !Ceiling temperature of vernalization (∞C)
+REAL, PARAMETER :: TBDV = -1.3    !Base temperature of vernalization (C)
+REAL, PARAMETER :: TODV = 4.9     !Optimum temperature of vernalization (C)
+REAL, PARAMETER :: TCDV = 15.7    !Ceiling temperature of vernalization (C)
 REAL, PARAMETER :: NUPTX = 0.5/24./3600.    !Maximum crop nitrogen uptake (g N m-2 s-1) 
 REAL, PARAMETER :: SLA0 = 0.0237  !Specific leaf area constant (m2 leaf g-1)
 REAL, PARAMETER :: SLNMIN = 0.35  !Base SLN for photosynthesis (g N m-2 leaf)
@@ -49,8 +49,8 @@ REAL, PARAMETER :: STEMNC = 0.01  !Minimum N concentration in stem (g N g-1)
 REAL, PARAMETER :: RLVDS = 0.0904 !Rate of C turnover from dead leaves to litter (d-1) 
 REAL, PARAMETER :: DSCRIT = 0.225 !DS at which winter dormancy ends (1) 
 REAL, PARAMETER :: EAJMAX = 48270.!Energy of activation for JMAX (J mol-1) 
-REAL, PARAMETER :: XVN = 24.96    !Slope of linear relationship between JMAX and leaf N (µmol CO2 s-1 g-1 N)
-REAL, PARAMETER :: XJN = 49.92    !Slope of linear relationship between VCMX and leaf N (µmol e- s-1 g-1 N)
+REAL, PARAMETER :: XVN = 24.96    !Slope of linear relationship between JMAX and leaf N (mu-mol CO2 s-1 g-1 N)
+REAL, PARAMETER :: XJN = 49.92    !Slope of linear relationship between VCMX and leaf N (mu-mol e- s-1 g-1 N)
 REAL, PARAMETER :: NPL = 390.0    !Number of plants per m2
 REAL, PARAMETER :: SEEDW = 0.0475 !Seed weight (g seed-1)
 REAL, PARAMETER :: SEEDNC = 0.020 !Seed N concentration (g N g-1)
@@ -191,7 +191,7 @@ IMPLICIT NONE
     REAL :: DSINBE !DSINB to correct for lower atmospheric transmission at lower solar elevation (s/d)
     REAL :: DVP    !Vapour pressure (kPa)
     REAL :: WNM    !Wind speed (m/s)
-    REAL :: TAIR   !Air temperature (∞C)
+    REAL :: TAIR   !Air temperature (C)
     REAL :: ROOTD  !Rooting depth (m)
     REAL :: WLV    !Dry weight of living leaves (g/m2)
     REAL :: WST    !Dry weight of stems (g/m2)
@@ -254,9 +254,9 @@ IMPLICIT NONE
     REAL :: APCANS !Actual standing canopy CO2 assimilation (g CO2/m2/s)
     REAL :: ATCAN  !Actual canopy transpiration (mm/s)
     REAL :: DAPAR  !PAR absorbed by canopy (J/m2/s)
-    REAL :: DIFS   !Daytime average soil-air temperature difference (∞C)
-    REAL :: DIFSH  !Daytime average shaded leaf-air temperature difference (∞C)
-    REAL :: DIFSU  !Daytime average sunlit leaf-air temperature difference (∞C)
+    REAL :: DIFS   !Daytime average soil-air temperature difference (C)
+    REAL :: DIFSH  !Daytime average shaded leaf-air temperature difference (C)
+    REAL :: DIFSU  !Daytime average sunlit leaf-air temperature difference (C)
     REAL :: FRSH   !Fraction of shaded leaves in the canopy
     REAL :: HOD    !Hour of the day
     REAL :: PESOIL !Potential soil evaporation (mm/s) 
@@ -267,7 +267,7 @@ IMPLICIT NONE
     REAL :: LNLV   !Rate of loss of leaf N because of senescence (g N/m2/s)
     REAL :: LCLV   !Rate of loss of leaf C because of senescence (g C/m2/s)
     REAL :: RMRE   !Residual maintenance respiration (g CO2/m2/s)
-    REAL :: TAVSS  !Soil surface temperature (∞C)
+    REAL :: TAVSS  !Soil surface temperature (C)
     REAL :: RMN    !RM calculated with a small increment in plant N (g CO2/m2/s) 
     REAL :: VDU    !Rate of Vernalization day unit increase (d/s)
     REAL :: TDU    !Rate of thermal day unit increase (d/s)
@@ -460,7 +460,7 @@ IMPLICIT NONE
     nowday = INT(DOY)
     HOD = float(nint((DOY-int(DOY))*86400.))/3600.
     
-    ! Conversion from K to ∞C
+    ! Conversion from K to C
     TAIR   = SFCTMP - 273.15
 
     ! Conversion of rel. humidity into VP (kPa)
@@ -643,7 +643,7 @@ IMPLICIT NONE
     RM = MAX(0., MIN(APCAN-1.E-5/TCP,RMUL/TCP) + RMRE)  !gC m-2 s-1
 
     ! Daily and total C and N returns from crop to soil
-    ! ji: RLVDS eingefuehrt. Standardmaeﬂig war der Wert von RLVDS auf 0.1 hard-gecoded
+    ! ji: RLVDS eingefuehrt. Standardmaessig war der Wert von RLVDS auf 0.1 hard-gecoded
     ! CLVD: Amount of carbon in dead leaves
     ! CLVDS: Amount of carbon in dead leaves that have become litter in soil
 
@@ -2076,7 +2076,7 @@ SUBROUTINE TOTPT(HOD,DS, SC,SINLD,COSLD,DAYL,DSINBE,RSD,TAIR, DVP, &
       SJ     = 650.    !entropy term in JT equation (J/mol/K)
       PHI2M  = 0.85    !maximum electron transport efficiency of PS II
       HH     = 3.      !number of protons required to synthesise 1 ATP
-      KTMP   = 1.0     !Factor for reducing photosynthesis in case of T<5∞C
+      KTMP   = 1.0     !Factor for reducing photosynthesis in case of T<5C
       JTMAX  = 3.12
       TO     = 298.15
       

@@ -143,36 +143,6 @@
    ALLOCATE(z_at_q(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; z_at_q = 0.
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
-   !  If the rotation angle is too large, the GWD option does not do well with the assumed U and V
-   !  being close to earth relative.
-
-   IF ( ( grid%id .EQ. 1 ) .AND. ( config_flags%gwd_opt .EQ. 1 ) ) THEN
-      max_rot_angle = ASIN(ABS(grid%sina(its,jts)))/DEGRAD
-      DO j=jts,MIN(jde-1,jte)
-         DO i=its,MIN(ide-1,ite)
-            max_rot_angle = MAX ( max_rot_angle , ASIN(ABS(grid%sina(i,j)))/DEGRAD )
-         END DO
-      END DO
-#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
-      max_rot_angle = wrf_dm_max_real ( max_rot_angle )
-#endif
-      IF ( max_rot_angle .GT. ABS(config_flags%max_rot_angle_gwd) ) THEN
-         WRITE ( a_message , FMT='(A,F5.2)' ) 'Max projection rotation angle for domain 1 = ',max_rot_angle
-         CALL wrf_message ( a_message )
-         WRITE ( a_message , FMT='(A)'      ) 'This projection may not be appropriate for using the gravity wave drag option.'
-         CALL wrf_message ( a_message )
-         WRITE ( a_message , FMT='(A)'      ) 'In namelist.input make one of the two following changes:'
-         CALL wrf_message ( a_message )
-         WRITE ( a_message , FMT='(A)'      ) ' 1) gwd_opt = 0 '
-         CALL wrf_message ( a_message )
-         WRITE ( a_message , FMT='(A,F5.2)' ) ' 2) max_rot_angle_gwd > ',max_rot_angle
-         CALL wrf_message ( a_message )
-         WRITE ( a_message , FMT='(A)'      ) '--- ERROR: gwd_opt does not work with this domain'
-         CALL wrf_error_fatal ( a_message )
-      END IF
-   END IF
-
-
    IF ( ( MOD (ide-ids,config_flags%parent_grid_ratio) .NE. 0 ) .OR. &
         ( MOD (jde-jds,config_flags%parent_grid_ratio) .NE. 0 ) ) THEN
       WRITE(message, FMT='(A,I2,":  Both MOD(",I4,"-",I1,",",I2,") and MOD(",I4,"-",I1,",",I2,") must = 0" )') &

@@ -75,6 +75,7 @@ CONTAINS
                  ,dtaux3d,dtauy3d                                  &
                  ,dusfcg,dvsfcg,var2d,oc12d                        &
                  ,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4                  &
+                 ,sina,cosa                                        &
              !  Optional moisture tracers
                  ,qv_curr, qc_curr, qr_curr                        &
                  ,qi_curr, qs_curr, qg_curr                        &
@@ -702,7 +703,8 @@ CONTAINS
              intent(in  )   ::                                          var2d, &
                                                                         oc12d, &
                                                               oa1,oa2,oa3,oa4, &
-                                                              ol1,ol2,ol3,ol4
+                                                              ol1,ol2,ol3,ol4, &
+                                                                    sina,cosa
 ! paj
    REAL, OPTIONAL,   DIMENSION( ims:ime , jms:jme ),                    &  !mchen
                INTENT(IN   )    ::                        CTOPO, &
@@ -1925,7 +1927,7 @@ CONTAINS
    IF (PRESENT(dtaux3d)) THEN
        IF(gwd_opt .EQ. 1)THEN
              CALL gwdo(                                              &
-               U3D=u_phytmp,V3D=v_phytmp,T3D=t_phy      &
+               U3D=u_phy,V3D=v_phy,T3D=t_phy                        &
               ,QV3D=qv_curr                                         &
               ,P3D=p_phy,P3DI=p8w,PI3D=pi_phy,Z=z                        &
               ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
@@ -1934,6 +1936,7 @@ CONTAINS
               ,VAR2D=var2d,OC12D=oc12d     &
               ,OA2D1=oa1,OA2D2=oa2,OA2D3=oa3,OA2D4=oa4  &
               ,OL2D1=ol1,OL2D2=ol2,OL2D3=ol3,OL2D4=ol4  &
+              ,SINA=sina,COSA=cosa                      &
               ,ZNU=znu,ZNW=znw,P_TOP=p_top                &
               ,CP=cp,G=g,RD=r_d                           &
               ,RV=r_v,EP1=ep_1,PI=3.141592653                        &

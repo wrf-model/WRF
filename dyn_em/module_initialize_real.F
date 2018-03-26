@@ -1232,8 +1232,7 @@ integer::oops1,oops2
          !  Since data are 3D, do over a loop of vertical levels using temporary array space.
 
 ! for models initialized from GFS
-         IF ( ( ( config_flags%mp_physics.eq.THOMPSONAERO .or. P_QNWFA.gt.1 ) .and. config_flags%use_aero_icbc .and. config_flags%wif_input_opt /= 1 ) .OR.&
-              (config_flags%mp_physics.eq.THOMPSONAERO .and. P_QNWFA.gt.1 .and. config_flags%use_aero_icbc) ) then
+         IF ( P_QNWFA.gt.1 .and. config_flags%use_aero_icbc ) THEN 
          CALL wrf_debug ( 0 , 'Using Thompson_aerosol_aware so using QNWFA monthly climo arrays to create QNWFA_now')
          DO k = 1, num_metgrid_levels
             DO j = jts, MIN(jte,jde-1)
@@ -1270,8 +1269,7 @@ integer::oops1,oops2
          ENDDO
          ENDIF
 
-         IF ( ( ( config_flags%mp_physics.eq.THOMPSONAERO .or. P_QNIFA.gt.1 ) .and. config_flags%use_aero_icbc .and. config_flags%wif_input_opt /= 1) .OR. & 
-            (config_flags%mp_physics.eq.THOMPSONAERO .and. P_QNIFA.gt.1 .and. config_flags%use_aero_icbc) )then
+         IF ( P_QNIFA.gt.1 .and. config_flags%use_aero_icbc ) THEN 
          DO k = 1, num_metgrid_levels
             DO j = jts, MIN(jte,jde-1)
                DO i = its, MIN(ite,ide-1)

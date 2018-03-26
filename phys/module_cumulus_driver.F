@@ -104,6 +104,7 @@ CONTAINS
 
                  ! Optional arguments for NSAS scheme
                      ,mp_physics                                      &
+                     ,hpbl_hold                                       &
                  ! Optional moisture and other tendencies
                      ,rqvcuten,rqccuten,rqrcuten                      &
                      ,rqicuten,rqscuten,rqgcuten                      &
@@ -135,8 +136,7 @@ CONTAINS
                                           ,CAMZMSCHEME, SASSCHEME     &
                                           ,OSASSCHEME                 &  
                                           ,SCALESASSCHEME             &  ! scale-sware sas
-
-                                          ,NSASSCHEME                 &
+                                          ,NSASSCHEME, NSASOLDSCHEME  &
 #if (EM_CORE == 1)
                                           ,MSKFSCHEME                 &
                                           ,CAMMGMPSCHEME              &
@@ -145,6 +145,10 @@ CONTAINS
 #endif
                                           ,TIEDTKESCHEME              &
                                           ,NTIEDTKESCHEME             
+
+#if ( WRFPLUS == 1 )
+   USE module_state_description, ONLY:    DUCUSCHEME
+#endif
 
 
 ! *** add new modules of schemes here
@@ -165,6 +169,9 @@ CONTAINS
    USE module_cu_gd     , ONLY : grelldrv
    USE module_cu_gf_wrfdrv     , ONLY : gfdrv
    USE module_cu_g3     , ONLY : g3drv,conv_grell_spread3d
+#if ( WRFPLUS == 1 )
+   USE module_cu_du     , ONLY : DUCU   
+#endif
    USE module_cu_sas    , ONLY : cu_sas
    USE module_cu_scalesas    , ONLY : cu_scalesas
 
@@ -176,6 +183,7 @@ CONTAINS
    USE module_cu_tiedtke, ONLY : cu_tiedtke
    USE module_cu_ntiedtke,ONLY : cu_ntiedtke
    USE module_cu_nsas   , ONLY : cu_nsas
+   USE module_cu_nsas_old,ONLY : cu_nsas_old
    USE module_wrf_error , ONLY : wrf_err_message
 
    !  This driver calls subroutines for the cumulus parameterizations.
@@ -477,6 +485,8 @@ CONTAINS
 
    REAL, DIMENSION( ims:ime , jms:jme ),INTENT(INOUT),OPTIONAL :: &
         PRATEC,MAVAIL,PBLH,PSFC,TSK,TPERT2D,UST,HFX,QFX
+   REAL, DIMENSION( ims:ime , jms:jme ),INTENT(INOUT)          :: &
+                                                      HPBL_HOLD
 
 !ckay
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
@@ -1274,11 +1284,10 @@ CONTAINS
                ,EU3D=eu3d, MD3D=md3d, MU3D=mu3d,DSUBCLD2D=dsubcld2d &
                ,IDEEP2D=ideep2d, JT2D=jt2d, MAXG2D=maxg2d           &
                ,LENGATH2D=lengath2d                                 )
-        ELSE
+          ELSE
              WRITE( wrf_err_message , * ) 'Insufficient arguments to call CAMZM cu scheme'
              CALL wrf_error_fatal ( wrf_err_message )
           ENDIF
-
 ! TIEDTKE SCHEME - ZCX&YQW (U of Hawaii)
      CASE (TIEDTKESCHEME)
 
@@ -1344,7 +1353,7 @@ CONTAINS
           CALL wrf_error_fatal('Lacking arguments for CU_NTIEDTKE in cumulus driver')
         ENDIF
 
-! New GFS SAS SCHEME - (Yonsei Univ., South Korea)
+! New KIM SAS SCHEME - (KIAPS, South Korea)
      CASE (NSASSCHEME)
         IF ( PRESENT ( QFX ) .AND. PRESENT( HFX ) ) THEN
           CALL wrf_debug(100,'in nsas_cps')
@@ -1361,6 +1370,8 @@ CONTAINS
                 RAINCV=RAINCV,PRATEC=tmpPRATEC,                 &
                 XLAND=XLAND,DZ8W=dz8w,W=w,U3D=u,V3D=v,          &
                 HPBL=pblh,HFX=hfx,QFX=qfx,                      & 
+                HPBL_HOLD=hpbl_hold,                            &
+                ZNU=znu,                                        &
                 MP_PHYSICS=mp_physics,                          & 
                 DX_FACTOR_NSAS=dx_factor_nsas,                  & 
                 pgcon=pgcon,                                    &
@@ -1377,6 +1388,41 @@ CONTAINS
         ELSE
           CALL wrf_error_fatal('Lacking arguments for CU_NSAS in cumulus driver')
         ENDIF
+
+! New GFS SAS SCHEME - (Yonsei Univ., South Korea)
+     CASE (NSASOLDSCHEME)
+        IF ( PRESENT ( QFX ) .AND. PRESENT( HFX ) ) THEN
+          CALL wrf_debug(100,'in nsas_old_cps')
+          CALL CU_NSAS_OLD(                                     &
+                DT=dt,DX=dx,P3DI=p8w,P3D=p,PI3D=pi,             &
+                QC3D=QC_CURR,QI3D=QI_CURR,RHO3D=rho,            &
+                ITIMESTEP=itimestep,STEPCU=STEPCU,              &
+                HBOT=HBOT,HTOP=HTOP,                            &
+                CU_ACT_FLAG=CU_ACT_FLAG,                        &
+                RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN,            &
+                RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN,            &
+                RUCUTEN=RUCUTEN,RVCUTEN=RVCUTEN,                &
+                QV3D=QV_CURR,T3D=t,                             &
+                RAINCV=RAINCV,PRATEC=tmpPRATEC,                 &
+                XLAND=XLAND,DZ8W=dz8w,W=w,U3D=u,V3D=v,          &
+                HPBL=pblh,HFX=hfx,QFX=qfx,                      & 
+                MP_PHYSICS=mp_physics,                          & 
+                DX_FACTOR_NSAS=dx_factor_nsas,                  & 
+                pgcon=pgcon,                                    &
+               P_QC=p_qc,P_QI=p_qi,                            &
+                P_FIRST_SCALAR=param_first_scalar               &
+               ,CP=cp,CLIQ=cliq,CPV=cpv,G=g,XLV=xlv,R_D=r_d     &
+               ,R_V=r_v,EP_1=ep_1,EP_2=EP_2                     &
+               ,CICE=cice,XLS=xls,PSAT=psat                     &
+               ,F_QI=f_qi,F_QC=f_qc                             & 
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+                                                                )
+        ELSE
+          CALL wrf_error_fatal('Lacking arguments for CU_NSASOLD in cumulus driver')
+        ENDIF
+
 #if (EM_CORE == 1)
         !BSINGH -  For WRFCuP scheme
      CASE (KFCUPSCHEME)
@@ -1450,6 +1496,36 @@ CONTAINS
            end do
         end do
         !BSINGH -ENDS
+#endif
+#if ( WRFPLUS == 1 )
+! this scheme is for WRFPlus only
+!----------------------------
+     CASE (DUCUSCHEME)
+          CALL wrf_debug(100,'in ducu')
+
+          CALL DUCU(                                            &
+              ! order independent arguments
+                DT=dt ,KTAU=itimestep ,DX=dx                    &    !
+               ,RHO=rho                                         &    !
+               ,U=u ,V=v ,TH=th ,T=t ,W=w                       &    !
+               ,PCPS=p ,PI=pi                                   &    !
+               ,XLV=xlv0                                        &    !  or XLV=xlv1
+               ,RAINCV=raincv, NCA=nca, PRATEC=tmppratec        &
+               ,DZ8W=dz8w, Z= z                                 &    !  
+               ,W0AVG=w0avg                                     &    !
+               ,CP=cp ,RV=R_v, RD=R_d, G=g                      &    !  RD, RV
+               ,EP2=ep_2                                        &    !  only EP2 needed
+               ,SVP1=svp1 ,SVP2=svp2 ,SVP3=svp3 ,SVPT0=svpt0    &    !  
+               ,STEPCU=stepcu                                   &    !
+               ,CU_ACT_FLAG=cu_act_flag                         &    !
+               ,WARM_RAIN=warm_rain                             &    !
+               ,CUTOP=htop, CUBOT=hbot                          &    ! from other scheme
+               ,QV=qv_curr                                      &    !
+               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &    !
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &    !
+               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &    !
+              ! optionals
+               ,RTHCUTEN=rthcuten ,RQVCUTEN=rqvcuten            )    !
 #endif
 
      CASE DEFAULT 

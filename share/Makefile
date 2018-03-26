@@ -36,6 +36,7 @@ OBJS4   = 		                \
         wrf_bdyout.o                    \
         wrf_bdyin.o                     \
 	dfi.o				\
+	$(PERTMOD) \
 	mediation_integrate.o		\
         mediation_wrfmain.o 
 
@@ -100,6 +101,11 @@ clean:
 
 
 # DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
+
+module_bc_em.o: ../share/module_bc.o \
+                ../share/module_model_constants.o \
+                ../frame/module_configure.o \
+                ../frame/module_wrf_error.o
 
 include ../main/depend.common
 

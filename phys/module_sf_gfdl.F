@@ -159,7 +159,7 @@ CONTAINS
                                         TAUX,                           & ! gopal's doing for Ocean coupling
                                         TAUY
 
-      REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT) ::                 &
+      REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) ::               &
                                         U10,                            &
                                         V10                            
 
@@ -989,11 +989,12 @@ CONTAINS
           !windmks=wind(i)*.01
           windmks=wind10p(i)*.01
           if ( iwavecpl .eq. 1 ) then
-            if (  ntstep == 0 ) then
-              call  znot_m_v1(windmks,znotm)
-              zoc(i)  = -100.*znotm
+            call znot_wind10m(windmks,znott,znotm,icoef_sf)
+            !Check if Charnock parameter ratio is received in a proper range.
+            if ( alpha(i) .ge. 0.2 .and. alpha(i) .le. 5. ) then
+              znotm = znotm*alpha(i)
             endif
-            call  znot_t_v2(windmks,znott)
+            zoc(i)  = -100.*znotm
             zot(i) =  -100* znott
           else
 !            if ( icoef_sf .EQ. 1) then
@@ -1007,7 +1008,6 @@ CONTAINS
 !              call  znot_t_v2(windmks,znott)
 !            endif
             call znot_wind10m(windmks,znott,znotm,icoef_sf)
-
             zoc(i)  = -100.*znotm
             zot(i) =  -100* znott
           endif
@@ -1720,16 +1720,14 @@ CONTAINS
       do i = its,ite
 !!!
         if ( iwavecpl .eq. 1 .and. zoc(i) .le. 0.0 ) then
-          windmks = wind(i) * 0.01
-          ustar = windmks / xxfm(i)
+          windmks = wind10(i) * 0.01
+          call znot_wind10m(windmks,znott,znotm,icoef_sf)
           !Check if Charnock parameter ratio is received in a proper range.
           if ( alpha(i) .ge. 0.2 .and. alpha(i) .le. 5. ) then
-            call  znot_m_v1(windmks,znotm)
             znotm = znotm*alpha(i)
-          else
-            call  znot_m_v1(windmks,znotm)
           endif
           zoc(i)  = -100.*znotm
+          zot(i) =  -100* znott
         endif
 !!!!
         fxh(i) = bq1(i)*(theta(i) - tsg(i))

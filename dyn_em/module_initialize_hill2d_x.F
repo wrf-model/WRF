@@ -1,18 +1,3 @@
-! sed -e "s/grid%mu/gridmu/g" -e "s/grid%Mu/gridMu/g" module_initialize_hill2d_x.F | cpp -DHYBRID_COORD | sed -e "s/gridmu/grid%mu/g" -e "s/gridMu/grid%Mu/g" >> module_initialize_hill2d_x.next
-#if ( HYBRID_COORD==1 )
-#  define gridmu_1(...) (grid%c1h(k)*XXPC1HXX(__VA_ARGS__))
-#  define XXPC1HXX(...) grid%mu_1(__VA_ARGS__)
-
-#  define gridMu_1(...) (grid%c1f(k)*XXPC1FXX(__VA_ARGS__))
-#  define XXPC1FXX(...) grid%Mu_1(__VA_ARGS__)
-
-#  define gridmub(...) (grid%c1h(k)*XXPCBHXX(__VA_ARGS__)+grid%c2h(k))
-#  define XXPCBHXX(...) grid%mub(__VA_ARGS__)
-
-#  define gridMub(...) (grid%c1f(k)*XXPCBFXX(__VA_ARGS__)+grid%c2f(k))
-#  define XXPCBFXX(...) grid%Mub(__VA_ARGS__)
-#endif
-
 !IDEAL:MODEL_LAYER:INITIALIZATION
 !
 
@@ -51,11 +36,11 @@ CONTAINS
 ! Also dereferences the grid variables and passes them down as arguments.
 ! This is crucial, since the lower level routines may do message passing
 ! and this will get fouled up on machines that insist on passing down
-! copies of assumed-shape arrays (by passing down as arguments, the 
+! copies of assumed-shape arrays (by passing down as arguments, the
 ! data are treated as assumed-size -- ie. f77 -- arrays and the copying
 ! business is avoided).  Fie on the F90 designers.  Fie and a pox.
-! NOTE:  Modified to remove all but arrays of rank 4 or more from the 
-!        argument list.  Arrays with rank>3 are still problematic due to the 
+! NOTE:  Modified to remove all but arrays of rank 4 or more from the
+!        argument list.  Arrays with rank>3 are still problematic due to the
 !        above-noted fie- and pox-ities.  TBH 20061129.  
 
    SUBROUTINE init_domain ( grid )
@@ -63,7 +48,7 @@ CONTAINS
    IMPLICIT NONE
 
    !  Input data.
-   TYPE (domain), POINTER :: grid 
+   TYPE (domain), POINTER :: grid
    !  Local data.
    INTEGER :: idum1, idum2
 
@@ -115,7 +100,7 @@ CONTAINS
    REAL    :: hm, xa
    REAL    :: pi
 
-!  stuff from original initialization that has been dropped from the Registry 
+!  stuff from original initialization that has been dropped from the Registry
    REAL    :: vnu, xnu, xnus, dinit0, cbh, p0_temp, t0_temp, zd, zt
    REAL    :: qvf1, qvf2, pd_surf
    INTEGER :: it
@@ -221,7 +206,7 @@ CONTAINS
     CALL nl_set_map_proj(1,0)
 
 
-!  here we initialize data we currently is not initialized 
+!  here we initialize data we currently is not initialized
 !  in the input data
 
     DO j = jts, jte
@@ -276,8 +261,8 @@ CONTAINS
     grid%fnm(k) = .5* grid%dnw(k-1)/grid%dn(k)
    ENDDO
 
-   cof1 = (2.*grid%dn(2)+grid%dn(3))/(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(2) 
-   cof2 =     grid%dn(2)        /(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(3) 
+   cof1 = (2.*grid%dn(2)+grid%dn(3))/(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(2)
+   cof2 =     grid%dn(2)        /(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(3)
    grid%cf1  = grid%fnp(2) + cof1
    grid%cf2  = grid%fnm(2) - cof1 - cof2
    grid%cf3  = cof2       
@@ -287,7 +272,7 @@ CONTAINS
    grid%rdx = 1./config_flags%dx
    grid%rdy = 1./config_flags%dy
 
-!  get the sounding from the ascii sounding file, first get dry sounding and 
+!  get the sounding from the ascii sounding file, first get dry sounding and
 !  calculate base state
 
   write(6,*) ' getting dry sounding for base state '
@@ -354,7 +339,7 @@ CONTAINS
    ENDDO
 
    !  c1 = d(B)/d(eta).  We define c1f as c1 on FULL levels.  For a vertical difference,
-   !  we need to use B and eta on half levels.  The k-loop ends up referring to the 
+   !  we need to use B and eta on half levels.  The k-loop ends up referring to the
    !  full levels, neglecting the top and bottom.
 
    DO k=kds+1, kde-1
@@ -364,9 +349,9 @@ CONTAINS
    !  The boundary conditions to get the coefficients:
    !  1) At k=kts: define d(B)/d(eta) = 1.  This gives us the same value of B and d(B)/d(eta)
    !     when doing the sigma-only B=eta.
-   !  2) At k=kte: with the new vertical coordinate, define d(B)/d(eta) = 0.  The curve B SMOOTHLY 
-   !     goes to zero, and at the very top, B continues to SMOOTHLY go to zero.  Note that for 
-   !     almost all cases of non B=eta, B is ALREADY=ZERO at the top, so this is a reasonable BC to 
+   !  2) At k=kte: with the new vertical coordinate, define d(B)/d(eta) = 0.  The curve B SMOOTHLY
+   !     goes to zero, and at the very top, B continues to SMOOTHLY go to zero.  Note that for
+   !     almost all cases of non B=eta, B is ALREADY=ZERO at the top, so this is a reasonable BC to
    !     assume.
    !  3) At k=kte: when trying to mimic the original vertical coordinate, since B = eta, then
    !     d(B)/d(eta) = 1.
@@ -428,66 +413,40 @@ CONTAINS
 !  interp theta (from interp) and compute 1/rho from eqn. of state
 
     DO K = 1, kte-1
-#if  !( HYBRID_COORD==1 )
-      p_level = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
-#elif ( HYBRID_COORD==1 )
       p_level = grid%c3h(k)*(p_surf - grid%p_top) + grid%c4h(k) + grid%p_top
-#endif
       grid%pb(i,k,j) = p_level
       grid%t_init(i,k,j) = interp_0( theta, p_in, p_level, nl_in ) - t0
       grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
     ENDDO
-
 !  calc hydrostatic balance (alternatively we could interp the geopotential from the
 !  sounding, but this assures that the base state is in exact hydrostatic balance with
 !  respect to the model eqns.
-
     DO kk  = 2,kte
       k=kk - 1
-      grid%phb(i,kk,j) = grid%phb(i,kk-1,j) - grid%dnw(kk-1)*grid%mub(i,j)*grid%alb(i,kk-1,j)
+      grid%phb(i,kk,j) = grid%phb(i,kk-1,j) - grid%dnw(kk-1)*(grid%c1h(k)*grid%mub(i,j)+grid%c2h(k))*grid%alb(i,kk-1,j)
     ENDDO
-
   ENDDO
   ENDDO
-
   write(6,*) ' ptop is ',grid%p_top
-#if  !( HYBRID_COORD==1 )
-  write(6,*) ' base state grid%mub(1,1), p_surf is ',grid%mub(1,1),grid%mub(1,1)+grid%p_top
-#elif ( HYBRID_COORD==1 )
   write(6,*) ' base state grid%MUB(1,1), p_surf is ',grid%MUB(1,1),grid%c3f(kts)*grid%MUB(1,1)+grid%c4f(kts)+grid%p_top
-#endif
-
 !  calculate full state for each column - this includes moisture.
-
   write(6,*) ' getting moist sounding for full state '
   dry_sounding = .false.
   CALL get_sounding( zk, p_in, pd_in, theta, rho, u, v, qv, dry_sounding, &
                      nl_max, nl_in, .false. )
-
   DO J = jts, min(jde-1,jte)
   DO I = its, min(ide-1,ite)
-
-!  At this point grid%p_top is already set. find the DRY mass in the column 
+!  At this point grid%p_top is already set. find the DRY mass in the column
 !  by interpolating the DRY pressure.  
-
    pd_surf = interp_0( pd_in, zk, grid%phb(i,1,j)/g, nl_in )
-
 !  compute the perturbation mass and the full mass
-
     grid%MU_1(i,j) = pd_surf-grid%p_top - grid%MUB(i,j)
     grid%MU_2(i,j) = grid%MU_1(i,j)
     grid%MU0(i,j) = grid%MU_1(i,j) + grid%MUB(i,j)
-
 ! given the dry pressure and coordinate system, interp the potential
 ! temperature and qv
-
     do k=1,kde-1
-
-#if  !( HYBRID_COORD==1 )
-      p_level = grid%znu(k)*(pd_surf - grid%p_top) + grid%p_top
-#elif ( HYBRID_COORD==1 )
       p_level = grid%c3h(k)*(pd_surf - grid%p_top) + grid%c4h(k) + grid%p_top
-#endif
 
       moist(i,k,j,P_QV) = interp_0( qv, pd_in, p_level, nl_in )
       grid%t_1(i,k,j)          = interp_0( theta, pd_in, p_level, nl_in ) - t0
@@ -507,7 +466,7 @@ CONTAINS
     qvf2 = 1./(1.+qvf1)
     qvf1 = qvf1*qvf2
 
-    grid%p(i,kk,j) = - 0.5*(grid%Mu_1(i,j)+qvf1*grid%Mub(i,j))/grid%rdnw(kk)/qvf2
+    grid%p(i,kk,j) = - 0.5*((grid%c1f(k)*grid%Mu_1(i,j))+qvf1*(grid%c1f(k)*grid%Mub(i,j)+grid%c2f(k)))/grid%rdnw(kk)/qvf2
     qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
     grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_1(i,kk,j)+t0)*qvf* &
                 (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
@@ -520,7 +479,7 @@ CONTAINS
       qvf1 = 0.5*(moist(i,kk,j,P_QV)+moist(i,kk+1,j,P_QV))
       qvf2 = 1./(1.+qvf1)
       qvf1 = qvf1*qvf2
-      grid%p(i,kk,j) = grid%p(i,kk+1,j) - (grid%Mu_1(i,j) + qvf1*grid%Mub(i,j))/qvf2/grid%rdn(kk+1)
+      grid%p(i,kk,j) = grid%p(i,kk+1,j) - ((grid%c1f(k)*grid%Mu_1(i,j)) + qvf1*(grid%c1f(k)*grid%Mub(i,j)+grid%c2f(k)))/qvf2/grid%rdn(kk+1)
       qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
       grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_1(i,kk,j)+t0)*qvf* &
                   (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
@@ -536,21 +495,21 @@ CONTAINS
     DO kk  = 2,kte
       k = kk-1
       grid%ph_1(i,kk,j) = grid%ph_1(i,kk-1,j) - (grid%dnw(kk-1))*(       &
-                   (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,kk-1,j)+ &
-                    grid%mu_1(i,j)*grid%alb(i,kk-1,j)  )
+                   ((grid%c1h(k)*grid%mub(i,j)+grid%c2h(k))+(grid%c1h(k)*grid%mu_1(i,j)))*grid%al(i,kk-1,j)+ &
+                    (grid%c1h(k)*grid%mu_1(i,j))*grid%alb(i,kk-1,j)  )
                                                    
-      grid%ph_2(i,kk,j) = grid%ph_1(i,kk,j) 
+      grid%ph_2(i,kk,j) = grid%ph_1(i,kk,j)
       grid%ph0(i,kk,j) = grid%ph_1(i,kk,j) + grid%phb(i,kk,j)
     ENDDO
 
     if((i==2) .and. (j==2)) then
      k=1
      write(6,*) ' grid%ph_1 k=1 calc ',grid%ph_1(2,k,2),&
-                              grid%mu_1(2,2)+grid%mub(2,2),grid%mu_1(2,2), &
+                              (grid%c1h(k)*grid%mu_1(2,2))+(grid%c1h(k)*grid%mub(2,2)+grid%c2h(k)),(grid%c1h(k)*grid%mu_1(2,2)), &
                               grid%alb(2,k,2),grid%rdnw(k)
      k=2
      write(6,*) ' grid%ph_1 k=2 calc ',grid%ph_1(2,k,2),&
-                              grid%mu_1(2,2)+grid%mub(2,2),grid%mu_1(2,2), &
+                              (grid%c1h(k)*grid%mu_1(2,2))+(grid%c1h(k)*grid%mub(2,2)+grid%c2h(k)),(grid%c1h(k)*grid%mu_1(2,2)), &
                               grid%alb(2,k,2)
     endif
 
@@ -584,8 +543,8 @@ CONTAINS
             DO kk  = 2,kte
               k = kk - 1
               grid%ph_1(i,kk,j) = grid%ph_1(i,kk-1,j) - (grid%dnw(kk-1))*(       &
-                           (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,kk-1,j)+ &
-                            grid%mu_1(i,j)*grid%alb(i,kk-1,j)  )
+                           ((grid%c1h(k)*grid%mub(i,j)+grid%c2h(k))+(grid%c1h(k)*grid%mu_1(i,j)))*grid%al(i,kk-1,j)+ &
+                            (grid%c1h(k)*grid%mu_1(i,j))*grid%alb(i,kk-1,j)  )
       
               grid%ph_2(i,kk,j) = grid%ph_1(i,kk,j)
               grid%ph0(i,kk,j) = grid%ph_1(i,kk,j) + grid%phb(i,kk,j)
@@ -597,7 +556,7 @@ CONTAINS
 !===============
 #endif
    k=1
-   write(6,*) ' grid%mu_1 from comp ', grid%mu_1(1,1)
+   write(6,*) ' grid%mu_1 from comp ', (grid%c1h(k)*grid%mu_1(1,1))
    write(6,*) ' full state sounding from comp, ph, grid%p, grid%al, grid%t_1, qv '
    do k=1,kde-1
      write(6,'(i3,1x,5(1x,1pe10.3))') k, grid%ph_1(1,k,1)+grid%phb(1,k,1), &
@@ -652,11 +611,7 @@ CONTAINS
     p_surf = interp_0( p_in, zk, z_at_u, nl_in )
 
     DO K = 1, kte
-#if  !( HYBRID_COORD==1 )
-      p_level = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
-#elif ( HYBRID_COORD==1 )
       p_level = grid%c3h(k)*(p_surf - grid%p_top) + grid%c4h(k) + grid%p_top
-#endif
       grid%u_1(i,k,j) = interp_0( u, p_in, p_level, nl_in )
       grid%u_2(i,k,j) = grid%u_1(i,k,j)
     ENDDO
@@ -820,7 +775,7 @@ CONTAINS
       enddo
 
       p_surf = 100.*p_surf  ! convert to pascals
-      qvf = 1. + rvovrd*qv_input(1) 
+      qvf = 1. + rvovrd*qv_input(1)
       rho_surf = 1./((r/p1000mb)*th_surf*qvf*((p_surf/p1000mb)**cvpm))
       pi_surf = (p_surf/p1000mb)**(r/cp)
 
@@ -834,7 +789,7 @@ CONTAINS
 !  specified surface pressure
 !  -> first, integrate from surface to lowest level
 
-          qvf = 1. + rvovrd*qv_input(1) 
+          qvf = 1. + rvovrd*qv_input(1)
           qvf1 = 1. + qv_input(1)
           rho_input(1) = rho_surf
           dz = h_input(1)
@@ -851,7 +806,7 @@ CONTAINS
             dz = h_input(k)-h_input(k-1)
             qvf1 = 0.5*(2.+(qv_input(k-1)+qv_input(k)))
             qvf = 1. + rvovrd*qv_input(k)   ! qv is in g/kg here
- 
+
             do it=1,20
               pm_input(k) = pm_input(k-1) &
                       - 0.5*dz*(rho_input(k)+rho_input(k-1))*g*qvf1

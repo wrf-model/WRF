@@ -1093,6 +1093,9 @@ rconfig   integer opt_tbot    namelist,noah_mp      1            2         h    
 rconfig   integer opt_stc     namelist,noah_mp      1            1         h    "opt_stc"  "soil/snow temperature time scheme 1->semi-implicit; 2->full-implicit (original Noah)"   ""
 rconfig   integer opt_gla     namelist,noah_mp      1            1         h    "opt_gla"  "glacier treatment option 1->includes phase change; 2->slab ice (Noah)"   ""
 rconfig   integer opt_rsf     namelist,noah_mp      1            1         h    "opt_rsf"  "surface evaporation resistance option"   ""
+rconfig   integer opt_soil    namelist,noah_mp      1            1         h    "opt_soil" "flag for using different input soil information"   ""
+rconfig   integer opt_pedo    namelist,noah_mp      1            1         h    "opt_pedo" "pedo_transfer function option"   ""
+rconfig   integer opt_crop    namelist,noah_mp      1            0         h    "opt_crop" "crop model option"   ""
 
 # For WRF Hydro
 rconfig   integer wrf_hydro               derived              1     0      h     "wrf_hydro"   "descrip"  "unit"
@@ -1183,6 +1186,11 @@ state    real   SMOISEQ            ilj     -          1         Z     r   "SMOIS
 state    real   smcwtdxy   ij      -       1      -     rh    "smcwtd"    "deep soil moisture "       "m3 m-3"
 state    real   rechxy     ij      -       1      -     h    "rech"    "water table recharge"       "mm"
 state    real   deeprechxy ij      -       1      -     r    "deeprech" "deep water table recharge"       "mm"
+state    real   soilcomp  i{soilc}j  -     1      Z     i02rd=(interp_mask_land_field:lu_index)u=(UpNear)    "SOILCOMP"   "soil composition"       "%"
+state    real   soilcl1    ij      -       1      -     i02rd=(interp_mask_land_field:lu_index)u=(UpNear)    "SOILCL1"     "soil texture class - level 1"       "cat"
+state    real   soilcl2    ij      -       1      -     i02rd=(interp_mask_land_field:lu_index)u=(UpNear)    "SOILCL2"     "soil texture class - level 2"       "cat"
+state    real   soilcl3    ij      -       1      -     i02rd=(interp_mask_land_field:lu_index)u=(UpNear)    "SOILCL3"     "soil texture class - level 3"       "cat"
+state    real   soilcl4    ij      -       1      -     i02rd=(interp_mask_land_field:lu_index)u=(UpNear)    "SOILCL4"     "soil texture class - level 4"       "cat"
 
 # Crop model only
 
@@ -1195,6 +1203,7 @@ state    real   season_gdd ij      -       1      -     i02rhd=(interp_mask_land
 state integer   cropcat    ij      -       1      -     rh                                                    "cropcat"      "dominant crop category"              "category"
 state integer   pgsxy      ij      -       1      -     rh                                                    "pgs"          "pgs"                                 ""
 
+state    real    gecros_state i{gecros}j  -       1      Z     rhd=(interp_mask_land_field:lu_index)u=(UpNear)     "gecros"      "gecros state array"         "-"
  
 # added state for etampnew microphysics (needed for restarts)
 state    real  mp_restart_state   p      misc        1         -      r       "MP_RESTART_STATE"       "STATE VECTOR FOR MICROPHYSICS RESTARTS"
@@ -1567,6 +1576,8 @@ rconfig   integer use_mp_re               namelist,physics      1              1
 # The following two options are hooked into various microphysics schemes to allow for ensemble perturbations of CCN and hail/graupel PSDs - GAC (AFWA)
 rconfig   real    ccn_conc                namelist,physics      1           1.0E8      h     "ccn_conc"                 "CCN concentration"                                                             "# m-3"
 rconfig   integer hail_opt                namelist,physics      1              0       rh    "hail_opt"                 "Hail/Graupel switch, 1:hail, 0:graupel"                                        ""
+rconfig   integer clean_atm_diag          namelist,physics      1              0       rh    "clean_atm_diag"     "option to switch on clean sky diagnostics (for chem)"   "flag"
+rconfig   integer calc_clean_atm_diag     derived               1              0       -     "calc_clean_atm_diag" "carries decision on using clean sky diagnostics"       "flag"
 rconfig   integer sf_lake_physics         namelist,physics      max_domains   0       h     "sf_lake_physics"         "activate lake model  0=no, 1=yes"   ""
 
 
@@ -1759,16 +1770,20 @@ package   rrtmscheme    ra_lw_physics==1             -             -
 package   camlwscheme   ra_lw_physics==3             -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,o3rad
 package   rrtmg_lwscheme  ra_lw_physics==4           -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,o3rad
 package   rrtmg_lwscheme_fast  ra_lw_physics==24     -             -
+package   rrtmk_lwscheme  ra_lw_physics==14               -             -
 package   goddardlwscheme  ra_lw_physics==5          -             -
 package   flglwscheme   ra_lw_physics==7             -             -
 package   gfdllwscheme  ra_lw_physics==99            -             -
 package   hwrflwscheme  ra_lw_physics==98            -             state:o3rad
 
+# WRF-Chem specific diagnostics
+package   clnatmdiag     calc_clean_atm_diag==1      -            state:SWUPTCLN,SWDNTCLN,SWUPBCLN,SWDNBCLN,LWUPTCLN,LWDNTCLN,LWUPBCLN,LWDNBCLN 
 package   swradscheme   ra_sw_physics==1             -             -
 package   gsfcswscheme  ra_sw_physics==2             -             -
 package   camswscheme   ra_sw_physics==3             -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,o3rad
 package   rrtmg_swscheme  ra_sw_physics==4           -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,o3rad
 package   rrtmg_swscheme_fast  ra_sw_physics==24     -             -
+package   rrtmk_swscheme  ra_sw_physics==14               -             -
 package   goddardswscheme  ra_sw_physics==5          -             -
 package   flgswscheme   ra_sw_physics==7             -             -
 package   gfdlswscheme  ra_sw_physics==99            -             -
@@ -1790,7 +1805,7 @@ package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn
 package   ruclsmscheme   sf_surface_physics==3       -             state:ACRUNOFF
 
-package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy
+package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy,soilcomp,soilcl1,soilcl2,soilcl3,soilcl4,gecros_state
 
 package   clmscheme      sf_surface_physics==5       -             -
 package   gfdlslab       sf_surface_physics==88      -             -
@@ -1825,6 +1840,7 @@ package   kfedrates      kf_edrates==1               -             state:udr_kf,
 package   tiedtkescheme  cu_physics==6               -             -
 package   ntiedtkescheme cu_physics==16              -             -
 package   nsasscheme     cu_physics==14              -             -
+package   nsasoldscheme  cu_physics==96              -             -
 package   kfscheme       cu_physics==99              -             -
 
 package   g3shcuscheme   shcu_physics==1             -             -

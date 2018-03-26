@@ -108,6 +108,9 @@ EXTERN node_t * Type ;
 EXTERN node_t * Dim ;
 EXTERN node_t * Packages ;
 EXTERN node_t * Halos ;
+#if ( WRFPLUS == 1 )
+EXTERN node_t * Halos_nta ;
+#endif
 EXTERN node_t * Periods ;
 EXTERN node_t * Xposes ;
 EXTERN node_t * FourD ;

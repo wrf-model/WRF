@@ -45,7 +45,7 @@ CONTAINS
                          STEPBL,STEPRA,STEPCU,                   &
                          W0AVG, RAINNC, RAINC, RAINCV, RAINNCV,  &
                          SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV, &
-                         z_at_q, qnwfa2d, scalar, num_sc,        & ! G. Thompson
+                         z_at_q, inv_dens, qnwfa2d, scalar, num_sc,  & ! G. Thompson
                          re_cloud, re_ice, re_snow,              & ! G. Thompson
                          has_reqc, has_reqi, has_reqs,           & ! G. Thompson
                          NCA,swrad_scat,                         &
@@ -102,6 +102,8 @@ CONTAINS
                          STMASSXY, WOODXY, STBLCPXY, FASTCPXY,            & ! Optional Noah-MP
                          GRAINXY, GDDXY,                                  & ! Optional Noah-MP
                          croptype, cropcat,                      &           ! Noah-MP Crop model
+                         iopt_crop,                                       &  
+                         gecros_state,                                    & ! Optional gecros crop
                          XSAIXY, LAI,                                     & ! Optional Noah-MP
                          T2MVXY, T2MBXY, CHSTARXY ,                       & ! Optional Noah-MP
                          SMOISEQ  ,SMCWTDXY ,RECHXY, DEEPRECHXY, AREAXY,  & ! Optional Noah-MP 
@@ -377,6 +379,7 @@ CONTAINS
              RAINNC, RAINC, RAINCV, RAINNCV,  &
              SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV
    REAL,     DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) :: z_at_q            !  G. Thompson
+   REAL,     DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) :: inv_dens          !  G. Thompson
    REAL,     DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: qnwfa2d                !  G. Thompson
    INTEGER,  INTENT(IN) :: num_sc                                                !  G. Thompson
    REAL,     DIMENSION(ims:ime,kms:kme,jms:jme,num_sc), INTENT(INOUT) :: scalar  !  G. Thompson
@@ -484,6 +487,8 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: rechclim
    INTEGER, OPTIONAL, DIMENSION(ims:ime,  jms:jme), INTENT(OUT) :: CROPCAT
    REAL,    OPTIONAL, DIMENSION(ims:ime,5,jms:jme), INTENT(IN ) :: CROPTYPE
+   INTEGER, INTENT(IN ) :: iopt_crop
+   REAL,    OPTIONAL, DIMENSION(ims:ime,60,jms:jme) :: gecros_state      ! Optional gecros crop
 
 !   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),  OPTIONAL,  INTENT(INOUT ) ::   qnn_curr
 
@@ -784,8 +789,8 @@ integer myproc
    has_reqi = 0
    has_reqs = 0
    IF ( config_flags%use_mp_re .EQ. 1 ) THEN
-   if ((config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME .or. config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME_FAST) .and. &
-       (config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME .or. config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME_FAST) .and. &
+   if ((config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME .or. config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME_FAST .or. config_flags%ra_lw_physics .eq. RRTMK_LWSCHEME  ) .and. &
+       (config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME .or. config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME_FAST .or. config_flags%ra_sw_physics .eq. RRTMK_SWSCHEME ) .and. &
         (config_flags%mp_physics  .eq. THOMPSON .or.        &
          config_flags%mp_physics  .eq. THOMPSONAERO         &
          .or. config_flags%mp_physics  .eq. NSSL_2MOM .or.       &
@@ -1128,6 +1133,7 @@ integer myproc
                 QKE,                                            &
                 SFCEVP,GRDFLX,                                  &
                 TRIM (MMINLU_LOC),                              &
+                XLAT,                                           &
                 ISNOWXY, ZSNSOXY, TSNOXY,                       &
                 SNICEXY, SNLIQXY, TVXY, TGXY, CANICEXY,         &
                 CANLIQXY, EAHXY, TAHXY, CMXY,                   &
@@ -1136,6 +1142,8 @@ integer myproc
                 STMASSXY, WOODXY, STBLCPXY, FASTCPXY,           &
                 GRAINXY, GDDXY,                                 & ! Noah-MP Crop model
                 croptype, cropcat,                              & ! Noah-MP Crop model
+                iopt_crop,                                      & 
+                gecros_state,                                   & ! Optional gecros crop
                 XSAIXY, LAI,                                    &
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
                 WTDDT, STEPWTD, QRFSXY ,QSPRINGSXY ,QSLATXY,   &
@@ -1296,7 +1304,7 @@ integer myproc
                          nssl_rho_qh, nssl_rho_qhl,              &
                          nssl_rho_qs,                            &
                 ccn_conc,                                        & ! RAS
-                z_at_q, qnwfa2d, scalar, num_sc,            &  ! G. Thompson
+                z_at_q, inv_dens, qnwfa2d, scalar, num_sc,      &  ! G. Thompson
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte                    )
@@ -1510,7 +1518,6 @@ integer myproc
       ENDIF
       CALL wrf_dm_bcast_bytes (end_of_file, LWORDSIZE )
       IF ( .NOT. end_of_file ) THEN
-        CALL wrf_dm_bcast_bytes (lucats,  IWORDSIZE )
         CALL wrf_dm_bcast_string(lutype, 256)
         CALL wrf_dm_bcast_bytes (lucats,  IWORDSIZE )
         CALL wrf_dm_bcast_bytes (luseas,  IWORDSIZE )
@@ -1681,6 +1688,10 @@ integer myproc
    USE module_ra_rrtmg_sw  , ONLY : rrtmg_swinit
    USE module_ra_rrtmg_lwf  , ONLY : rrtmg_lwinit_fast
    USE module_ra_rrtmg_swf  , ONLY : rrtmg_swinit_fast
+#if (EM_CORE == 1)
+   USE module_ra_rrtmg_lwk  , ONLY : rrtmg_lwinit_k
+   USE module_ra_rrtmg_swk  , ONLY : rrtmg_swinit_k
+#endif
    USE module_ra_cam       , ONLY : camradinit
    USE module_ra_cam_support , ONLY : oznini
    USE module_ra_sw        , ONLY : swinit
@@ -1877,7 +1888,18 @@ integer myproc
                            ims, ime, jms, jme, kms, kme,    &
                            its, ite, jts, jte, kts, kte     )
 
+            aclwalloc = .true.
+#if ( EM_CORE == 1 )
+        CASE (RRTMK_LWSCHEME)  
+
+             CALL rrtmg_lwinit_k(                           &
+                           allowed_to_read ,                &
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           its, ite, jts, jte, kts, kte     )
+
              aclwalloc = .true.
+#endif
 
         CASE (RRTMG_LWSCHEME_FAST)
              CALL rrtmg_lwinit_fast(                             &
@@ -1887,7 +1909,6 @@ integer myproc
                            its, ite, jts, jte, kts, kte     )
 
              aclwalloc = .true.
-
 
         CASE (GFDLLWSCHEME)
              CALL nl_get_start_month(id,month)
@@ -1972,6 +1993,19 @@ integer myproc
 
              acswalloc = .true.
 
+#if ( EM_CORE == 1 )
+        CASE (RRTMK_SWSCHEME)
+
+             CALL rrtmg_swinit_k(                           &
+                           allowed_to_read ,                &
+                          ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           its, ite, jts, jte, kts, kte     )
+
+             acswalloc = .true.
+#endif
+
+
         CASE (RRTMG_SWSCHEME_FAST)
              CALL rrtmg_swinit_fast(                             &
                            allowed_to_read ,                &
@@ -2041,6 +2075,7 @@ integer myproc
 #endif
                 QKE, SFCEVP,GRDFLX,                             &
                 MMINLU,                                         &
+                XLAT,                                           &
                 ISNOWXY, ZSNSOXY, TSNOXY,                       &
                 SNICEXY, SNLIQXY, TVXY, TGXY, CANICEXY,         &
                 CANLIQXY, EAHXY, TAHXY, CMXY,                   &
@@ -2049,6 +2084,8 @@ integer myproc
                 STMASSXY, WOODXY, STBLCPXY, FASTCPXY,           &
                 GRAINXY, GDDXY,                                 & ! Noah-MP Crop model
                 croptype, cropcat,                              & ! Noah-MP Crop model
+                iopt_crop,                                      &
+                gecros_state,                                   & ! Optional gecros crop
                 XSAIXY, LAI,                                    &
                 SMOISEQ, SMCWTDXY, RECHXY, DEEPRECHXY, AREAXY,  &
                 WTDDT, STEPWTD,QRFSXY ,QSPRINGSXY ,QSLATXY,     &
@@ -2196,6 +2233,9 @@ integer myproc
 #if ( EM_CORE == 1 )
    USE module_bl_mynn
    USE module_bl_temf
+#if ( WRFPLUS == 1 )
+   USE module_bl_surface_drag
+#endif
    USE module_sf_temfsfclay
    USE module_sf_mynn
 #endif
@@ -2302,6 +2342,7 @@ integer myproc
 
 !Noah-MP
 
+   REAL,    DIMENSION(ims:ime, jms:jme) :: XLAT
    INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: ISNOWXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,-2:num_soil_layers, jms:jme) :: ZSNSOXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,-2:0, jms:jme) :: TSNOXY
@@ -2352,6 +2393,8 @@ integer myproc
    REAL,    OPTIONAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: rechclim
    INTEGER, OPTIONAL, DIMENSION(ims:ime,  jms:jme), INTENT(OUT) :: CROPCAT
    REAL,    OPTIONAL, DIMENSION(ims:ime,5,jms:jme), INTENT(IN ) :: CROPTYPE
+   INTEGER , INTENT(IN)        ::     iopt_crop
+   REAL,    OPTIONAL, DIMENSION(ims:ime,60,jms:jme) :: gecros_state                  ! Optional gecros crop
    INTEGER, OPTIONAL, INTENT(IN)  ::  ISICE
    INTEGER , OPTIONAL,  INTENT(OUT) :: STEPWTD
    REAL , OPTIONAL, INTENT(IN) :: WTDDT
@@ -2825,7 +2868,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
              CALL wrf_error_fatal ( 'NoahMP does not work with NLCD data. Stop.' )
           ENDIF
 
-          CALL NOAHMP_INIT(MMINLU, SNOW,SNOWH,CANWAT,ISLTYP,IVGTYP,                 &
+          CALL NOAHMP_INIT(MMINLU, SNOW,SNOWH,CANWAT,ISLTYP,IVGTYP,XLAT,                 &
                      TSLB,SMOIS,SH2O,DZS, FNDSOILW, FNDSNOWH,          &
                      TSK,isnowxy  ,tvxy     ,tgxy     ,canicexy ,TMN,XICE,                  &
                      canliqxy ,eahxy    ,tahxy    ,cmxy     ,chxy     ,                     &
@@ -2836,7 +2879,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      croptype ,cropcat  ,                      &
                      t2mvxy   ,t2mbxy   ,chstarxy ,            &
                      num_soil_layers, restart,                 &
-                     allowed_to_read, iopt_run ,               &
+                     allowed_to_read, iopt_run , iopt_crop,    &
                      sf_urban_physics,                         &  ! urban scheme
                      ids,ide, jds,jde, kds,kde,                &
                      ims,ime, jms,jme, kms,kme,                &
@@ -2845,7 +2888,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      ,smoiseq  ,smcwtdxy ,rechxy   ,deeprechxy, areaxy ,dx, dy, msftx, msfty,&
                      wtddt    ,stepwtd  ,dt  ,qrfsxy ,qspringsxy  ,qslatxy,                  &
                      fdepthxy ,ht       ,riverbedxy ,eqzwt ,rivercondxy ,pexpxy,              &
-                     rechclim                  &
+                     rechclim,                  &
+                     gecros_state                              & ! Optional gecros crop
 #endif
                      )
 
@@ -3252,6 +3296,15 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                         ims, ime, jms, jme, kms, kme,         &
                         its, ite, jts, jte, kts, kte          )
 
+#if ( WRFPLUS == 1 )
+      CASE (SURFDRAGSCHEME)
+         CALL surface_drag_init(RUBLTEN,RVBLTEN,RTHBLTEN,   &
+                        RQVBLTEN,restart,                     &
+                        ids, ide, jds, jde, kds, kde,         &
+                        ims, ime, jms, jme, kms, kme,         &
+                        its, ite, jts, jte, kts, kte          )
+#endif
+
 
       CASE DEFAULT
 
@@ -3298,6 +3351,9 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_cu_ntiedtke
 #if ( EM_CORE == 1 )
    USE module_cu_kfcup !BSINGH - For WRFCuP Scheme
+#endif
+#if ( WRFPLUS == 1 )
+   USE module_cu_du, ONLY : ducuinit
 #endif
 !------------------------------------------------------------------
    IMPLICIT NONE 
@@ -3533,7 +3589,20 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
 
-     CASE DEFAULT
+#if ( WRFPLUS == 1 )
+! this is for WRFPlus only
+      CASE (DUCUSCHEME)
+          CALL ducuinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,      &
+                      RQICUTEN,RQSCUTEN,NCA,W0AVG,P_QC,P_QR,      &
+                      SVP1,SVP2,SVP3,SVPT0,                       &
+                      PARAM_FIRST_SCALAR,restart,                 &
+                      allowed_to_read ,                           &
+                      ids, ide, jds, jde, kds, kde,               &
+                      ims, ime, jms, jme, kms, kme,               &
+                      its, ite, jts, jte, kts, kte                )
+#endif
+
+      CASE DEFAULT
 
    END SELECT cps_select
 
@@ -3650,7 +3719,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                          nssl_rho_qh, nssl_rho_qhl,              &
                          nssl_rho_qs,                            &
                       ccn_conc,                                  & ! RAS
-                      z_at_q, qnwfa2d, scalar, num_sc,        &  ! G. Thompson
+                      z_at_q, inv_dens, qnwfa2d, scalar, num_sc,  &  ! G. Thompson
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
@@ -3707,6 +3776,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    REAL, INTENT(INOUT) :: ccn_conc ! RAS
    REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT):: qnwfa2d                       !  G. Thompson
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN):: z_at_q                   !  G. Thompson
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN):: inv_dens                 !  G. Thompson
    INTEGER, INTENT(IN) :: num_sc                                               !  G. Thompson
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme, num_sc), INTENT(INOUT):: scalar    !  G. Thompson
 
@@ -3761,6 +3831,10 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
      CASE (KESSLERSCHEME)
           warm_rain = .true.
+#if ( WRFPLUS == 1 )
+     CASE (MKESSLERSCHEME)
+          warm_rain = .true.
+#endif
      CASE (WSM3SCHEME)
           CALL wsm3init(rhoair0,rhowater,rhosnow,cliq,cpv, allowed_to_read )
      CASE (WSM5SCHEME)
@@ -3804,6 +3878,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 ! called for each nest move. This is potentially very computationally expensive.
          IF(start_of_simulation.or.restart.or.config_flags%cycling)     &
             CALL thompson_init(HGT=z_at_q,                              &
+                          ORHO=inv_dens,                                &
                           NWFA2D=qnwfa2d,                               &
                           NWFA=scalar(ims,kms,jms,P_QNWFA),             &
                           NIFA=scalar(ims,kms,jms,P_QNIFA),             &
@@ -3955,11 +4030,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       its, ite, jts, jte, kts, kte                 )
 
       CASE (SPNUDGING)
-           CALL fddaspnudginginit(id,rundgdten,rvndgdten,rthndgdten,rphndgdten,&
+           CALL fddaspnudginginit(id,rundgdten,rvndgdten,rthndgdten,rphndgdten,rqvndgdten,&
                config_flags%run_hours, &
                config_flags%if_no_pbl_nudging_uv, &
                config_flags%if_no_pbl_nudging_t, &
                config_flags%if_no_pbl_nudging_ph, &
+               config_flags%if_no_pbl_nudging_q, &
                config_flags%if_zfac_uv, &
                config_flags%k_zfac_uv, &
                config_flags%dk_zfac_uv, &
@@ -3969,8 +4045,12 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                config_flags%if_zfac_ph, &
                config_flags%k_zfac_ph, &
                config_flags%dk_zfac_ph, &
+               config_flags%if_zfac_q, &
+               config_flags%k_zfac_q, &
+               config_flags%dk_zfac_q, &
+               config_flags%ktrop, &
                config_flags%guv, &
-               config_flags%gt, config_flags%gph, &
+               config_flags%gt, config_flags%gph, config_flags%gq, &
                config_flags%if_ramping, config_flags%dtramp_min, &
                config_flags%auxinput9_end_h, &
                config_flags%xwavenum,config_flags%ywavenum, &

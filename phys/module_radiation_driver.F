@@ -70,10 +70,13 @@ CONTAINS
               , has_reqc, has_reqi, has_reqs        & ! G. Thompson
               , PB                                                &
               , F_ICE_PHY,F_RAIN_PHY       &
+              , F_QNC                      &
+              , QNC_CURR                   &
               , QV, F_QV                     &
               , QC, F_QC                     &
               , QR, F_QR                     &
               , QI, F_QI                     &
+              , QI2, F_QI2                   & ! for P3
               , QS, F_QS                     &
               , QG, F_QG                     &
               , QNDROP, F_QNDROP    &
@@ -87,14 +90,14 @@ CONTAINS
               ,ACLWDNT   ,ACLWDNTC            &
               ,ACLWUPB   ,ACLWUPBC            &
               ,ACLWDNB   ,ACLWDNBC            &
-              ,SWUPT ,SWUPTC                  &
-              ,SWDNT ,SWDNTC                  &
-              ,SWUPB ,SWUPBC                  &
-              ,SWDNB ,SWDNBC                  &
-              ,LWUPT ,LWUPTC                  &
-              ,LWDNT ,LWDNTC                  &
-              ,LWUPB ,LWUPBC                  &
-              ,LWDNB ,LWDNBC                  &
+              ,SWUPT ,SWUPTC, SWUPTCLN        &
+              ,SWDNT ,SWDNTC, SWDNTCLN        &
+              ,SWUPB ,SWUPBC, SWUPBCLN        &
+              ,SWDNB ,SWDNBC, SWDNBCLN        &
+              ,LWUPT ,LWUPTC, LWUPTCLN        &
+              ,LWDNT ,LWDNTC, LWDNTCLN        &
+              ,LWUPB ,LWUPBC, LWUPBCLN        &
+              ,LWDNB ,LWDNBC, LWDNBCLN        &
               ,LWCF                           &
               ,SWCF                           &
               ,OLR                            &
@@ -104,6 +107,7 @@ CONTAINS
               ,AEROSOLC_2, M_HYBI0            &
               ,ABSTOT, ABSNXT, EMSTOT         &
               ,ICLOUD_CU                      &
+              ,CALC_CLEAN_ATM_DIAG            &
               ,AER_RA_FEEDBACK                &
               ,QC_CU , QI_CU                  &
               ,icloud_bl,qc_bl,cldfra_bl     & !JOE-subgrid bl clouds
@@ -153,6 +157,7 @@ CONTAINS
    USE module_state_description, ONLY : RRTMSCHEME, GFDLLWSCHEME        &
                                        ,RRTMG_LWSCHEME, RRTMG_SWSCHEME  &
                                        ,RRTMG_LWSCHEME_FAST, RRTMG_SWSCHEME_FAST  &
+                                       ,RRTMK_LWSCHEME, RRTMK_SWSCHEME  & 
                                        ,SWRADSCHEME, GSFCSWSCHEME       &
                                        ,GFDLSWSCHEME, CAMLWSCHEME, CAMSWSCHEME &
                                        ,HELDSUAREZ                      &
@@ -178,6 +183,7 @@ CONTAINS
    USE module_ra_rrtmg_sw   , ONLY : rrtmg_swrad
    USE module_ra_rrtmg_lwf  , ONLY : rrtmg_lwrad_fast
    USE module_ra_rrtmg_swf  , ONLY : rrtmg_swrad_fast
+   USE module_ra_rrtmg_swk  , ONLY : rad_rrtmg_driver
    USE module_ra_cam        , ONLY : camrad
    USE module_ra_gfdleta    , ONLY : etara
 #if ( HWRF == 1 )
@@ -465,6 +471,7 @@ CONTAINS
 
    INTEGER, INTENT(IN   ), OPTIONAL  ::   icloud_bl
    INTEGER, INTENT(IN   ), OPTIONAL  ::   aer_ra_feedback
+   INTEGER, INTENT(IN   )  ::   calc_clean_atm_diag
 
 !jdfcz   INTEGER, OPTIONAL, INTENT(IN   )    :: progn,prescribe
    INTEGER, OPTIONAL, INTENT(IN   )    :: progn
@@ -497,12 +504,13 @@ CONTAINS
                       ACLWUPT,ACLWUPTC,ACLWDNT,ACLWDNTC,          &
                       ACLWUPB,ACLWUPBC,ACLWDNB,ACLWDNBC
 
-! TOA and surface, upward and downward, total and clear fluxes
+! TOA and surface, upward and downward, total, clear (no cloud), and clean (no aerosol) fluxes
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(INOUT) ::&
-                        SWUPT,  SWUPTC,  SWDNT,  SWDNTC,          &
-                        SWUPB,  SWUPBC,  SWDNB,  SWDNBC,          &
-                        LWUPT,  LWUPTC,  LWDNT,  LWDNTC,          &
-                        LWUPB,  LWUPBC,  LWDNB,  LWDNBC
+              SWUPT,  SWUPTC, SWUPTCLN,  SWDNT,  SWDNTC, SWDNTCLN,&
+              SWUPB,  SWUPBC, SWUPBCLN,  SWDNB,  SWDNBC, SWDNBCLN,&
+              LWUPT,  LWUPTC, LWUPTCLN,  LWDNT,  LWDNTC, LWDNTCLN,&
+              LWUPB,  LWUPBC, LWUPBCLN,  LWDNB,  LWDNBC, LWDNBCLN
+
 
 ! Upward and downward, total and clear sky layer fluxes (W m-2)
    REAL, DIMENSION( ims:ime, kms:kme+2, jms:jme ),                &
@@ -657,10 +665,15 @@ CONTAINS
          INTENT(INOUT ) ::                                        &
                                                                pb &
                                         ,qv,qc,qr,qi,qs,qg,qndrop,      &
-                                                      qnifa,qnwfa        ! Trude
+                                                      qnifa,qnwfa,      & ! Trude
+                                                      qi2        ! for P3
 
    LOGICAL, OPTIONAL ::     f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop,     &
-                                                f_qnifa,f_qnwfa          ! trude
+                                                f_qnifa,f_qnwfa,        &  ! trude
+                                                f_qi2            ! for P3
+!shbaek
+   real, dimension ( ims:ime, kms:kme, jms:jme ), optional, intent(in) :: qnc_curr
+   LOGICAL, OPTIONAL :: f_qnc
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
@@ -741,6 +754,9 @@ CONTAINS
 #if ( HWRF == 1 )
    CHARACTER(len=255) :: wrf_err_message
 #endif
+
+!---------- local test vars 
+!   real, dimension(ims:ime, kms:kme, jms:jme) ::  hlw, hsw
 
    ! This allows radiation schemes (mainly HWRF) to correctly
    ! interface with the convection scheme when convection is only
@@ -890,7 +906,7 @@ CONTAINS
               allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
               allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
 
-           case(RRTMG_SWSCHEME,RRTMG_SWSCHEME_FAST)
+           case(RRTMG_SWSCHEME,RRTMG_SWSCHEME_FAST,RRTMK_SWSCHEME)
               allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
               allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
               allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
@@ -903,7 +919,8 @@ CONTAINS
    IF (PRESENT(f_qnwfa) .AND. PRESENT(f_qnifa) .AND. PRESENT(taod5503d) .AND.  PRESENT(taod5502d)) THEN
       IF (F_QNWFA .AND. aer_opt.eq.3 .AND.                              &
                  (sw_physics.eq.RRTMG_SWSCHEME .OR.                     &
-                  sw_physics.eq.RRTMG_SWSCHEME_FAST)) THEN
+                  sw_physics.eq.RRTMG_SWSCHEME_FAST .OR.                &
+                  sw_physics.eq.RRTMK_SWSCHEME )) THEN
          CALL wrf_debug (150, 'DEBUG-GT:  computing 3D AOD from QNWFA+QNIFA')
 
          allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
@@ -1106,6 +1123,19 @@ CONTAINS
           ENDDO
           ENDDO
      ENDIF
+#if (EM_CORE == 1)
+! temporarily modify hydrometeors (for P3, if 2 cat then add ice from both categories)
+!
+     IF ( F_QI2) THEN
+          DO j=jts,jte
+          DO k=kts,kte
+          DO i=its,ite
+             qi(i,k,j) = qi(i,k,j) + qi2(i,k,j)
+          ENDDO
+          ENDDO
+          ENDDO
+     ENDIF
+#endif
 
 ! Choose how to compute cloud fraction (since 3.6)
 ! Initialize to zero 
@@ -1520,10 +1550,10 @@ CONTAINS
              CALL wrf_debug (100, 'CALL rrtmg_lw')
              CALL RRTMG_LWRAD(                                      &
                   RTHRATENLW=RTHRATEN,                              &
-                  LWUPT=LWUPT,LWUPTC=LWUPTC,                        &
-                  LWDNT=LWDNT,LWDNTC=LWDNTC,                        &
-                  LWUPB=LWUPB,LWUPBC=LWUPBC,                        &
-                  LWDNB=LWDNB,LWDNBC=LWDNBC,                        &
+                  LWUPT=LWUPT,LWUPTC=LWUPTC,LWUPTCLN=LWUPTCLN,      &
+                  LWDNT=LWDNT,LWDNTC=LWDNTC,LWDNTCLN=LWDNTCLN,      &
+                  LWUPB=LWUPB,LWUPBC=LWUPBC,LWUPBCLN=LWUPBCLN,      &
+                  LWDNB=LWDNB,LWDNBC=LWDNBC,LWDNBCLN=LWDNBCLN,      &
                   GLW=GLW,OLR=RLWTOA,LWCF=LWCF,                     &
                   EMISS=EMISS,                                      &
                   P8W=p8w,P3D=p,PI3D=pi,DZ8W=dz8w,TSK=tsk,T3D=t,    &
@@ -1558,6 +1588,7 @@ CONTAINS
 !jdfcz            progn=progn,prescribe=prescribe,                   &
                   progn=progn,                                      &
 #endif
+                  calc_clean_atm_diag=calc_clean_atm_diag,          &
                   QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
 !ccc Added for time-varying trace gases.
                   YR=YR,JULIAN=JULIAN,                              &
@@ -1568,6 +1599,35 @@ CONTAINS
                   LWUPFLX=LWUPFLX,LWUPFLXC=LWUPFLXC,                &
                   LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC,                &
                   mp_physics=mp_physics                             )
+
+        CASE (RRTMK_LWSCHEME)
+
+           IF ( PRESENT(F_QNC) .AND. PRESENT(QNC_CURR) ) THEN
+             call rad_rrtmg_driver(                                 &
+                           RTHRATEN, RTHRATENSW,                    &
+                           lwupflx, lwupflxc, lwdnflx, lwdnflxc,    &
+                           swupflx, swupflxc, swdnflx, swdnflxc,    &
+                           lwupt, lwuptc, lwdnt, lwdntc,            &
+                           lwupb, lwupbc, lwdnb, lwdnb,             &
+                           glw, olr, lwcf,                          &
+                           swupt, swuptc, swdnt, swdntc,            &
+                           swupb, swupbc, swdnb, swdnb,             &
+                           gsw, swcf,                               &
+                           coszen, solcon, albedo, emiss,           &
+                           t,t8w, tsk, rho, p, p8w, cldfra,         &
+                           r_d, g, qnc_curr, xland,                 &
+                           f_qnc, f_qv, f_qc, f_qr, f_qi,           &
+                           f_qs, f_qg,                              &
+                           qv, qc, qr, qi, qs, qg,                  &
+                           o3input, o3rad,                          &
+                           aer_opt, aerod, no_src_types,            &
+                           ids,ide, jds,jde, kds,kde,               &
+                           ims,ime, jms,jme, kms,kme,               &
+                           its,ite, jts,jte, kts,kte)
+             ELSE
+                call wrf_error_fatal('Can not call RRTMG-K. Missing QNC field.')
+             ENDIF
+
 
         CASE (RRTMG_LWSCHEME_FAST)
              CALL wrf_debug (100, 'CALL rrtmg_lw')
@@ -1726,7 +1786,7 @@ CONTAINS
               end do
            end do
 
-        case(RRTMG_SWSCHEME,RRTMG_SWSCHEME_FAST)
+        case(RRTMG_SWSCHEME,RRTMG_SWSCHEME_FAST,RRTMK_SWSCHEME)
            call wrf_debug(100, 'call calc_aerosol_rrtmg_sw')
            call calc_aerosol_rrtmg_sw(ht,dz8w,p,t,qv,aer_type,aer_aod550_opt,aer_angexp_opt,    &
                                       aer_ssa_opt,aer_asy_opt,aer_aod550_val,aer_angexp_val,    &
@@ -1751,7 +1811,8 @@ CONTAINS
      IF (PRESENT(f_qnwfa) .AND. PRESENT(f_qnifa)) THEN
        IF (F_QNWFA .AND. aer_opt.eq.3 .AND.                             &
                              (sw_physics.eq.RRTMG_SWSCHEME .OR.         &
-                              sw_physics.eq.RRTMG_SWSCHEME_FAST)) THEN
+                              sw_physics.eq.RRTMG_SWSCHEME_FAST .OR.    &
+                              sw_physics.eq.RRTMK_SWSCHEME )) THEN
          call wrf_debug(100, 'call calc_aerosol_rrtmg_sw with 3D AOD values')
          call calc_aerosol_rrtmg_sw(ht,dz8w,p,t,qv,taer_type,taer_aod550_opt,taer_angexp_opt,  &
                                     taer_ssa_opt,taer_asy_opt,aer_aod550_val,aer_angexp_val,   &
@@ -1936,10 +1997,10 @@ CONTAINS
              CALL wrf_debug(100, 'CALL rrtmg_sw')
              CALL RRTMG_SWRAD(                                         &
                      RTHRATENSW=RTHRATENSW,                            &
-                     SWUPT=SWUPT,SWUPTC=SWUPTC,                        &
-                     SWDNT=SWDNT,SWDNTC=SWDNTC,                        &
-                     SWUPB=SWUPB,SWUPBC=SWUPBC,                        &
-                     SWDNB=SWDNB,SWDNBC=SWDNBC,                        &
+                     SWUPT=SWUPT,SWUPTC=SWUPTC,SWUPTCLN=SWUPTCLN,      &
+                     SWDNT=SWDNT,SWDNTC=SWDNTC,SWDNTCLN=SWDNTCLN,      &
+                     SWUPB=SWUPB,SWUPBC=SWUPBC,SWUPBCLN=SWUPBCLN,      &
+                     SWDNB=SWDNB,SWDNBC=SWDNBC,SWDNBCLN=SWDNBCLN,      &
                      SWCF=SWCF,GSW=GSW,                                &
                      XTIME=XTIME,GMT=GMT,XLAT=XLAT,XLONG=XLONG,        &
                      RADT=RADT,DEGRAD=DEGRAD,DECLIN=DECLIN,            &
@@ -1981,6 +2042,7 @@ CONTAINS
 !jdfcz               progn=progn,prescribe=prescribe,                  &
                      progn=progn,                                      &
 #endif
+                     calc_clean_atm_diag=calc_clean_atm_diag,          &
                      QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
                      IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
                      IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
@@ -1993,6 +2055,16 @@ CONTAINS
                      swddir=swddir,swddni=swddni,swddif=swddif,         & ! jararias 2013/08/10
                      xcoszen=coszen,julian=julian,mp_physics=mp_physics ) ! jararias 2013/08/14
 
+             DO j=jts,jte
+             DO k=kts,kte
+             DO i=its,ite
+                RTHRATEN(I,K,J)=RTHRATEN(I,K,J)+RTHRATENSW(I,K,J)
+             ENDDO
+             ENDDO
+             ENDDO
+
+        CASE (RRTMK_SWSCHEME)
+  
              DO j=jts,jte
              DO k=kts,kte
              DO i=its,ite
@@ -2191,6 +2263,7 @@ CONTAINS
      ! Backup method in case sw scheme in use does not provide surface SW direct and diffuse irradiances
      IF ((sw_physics .NE. RRTMG_SWSCHEME) .AND. (sw_physics .NE. RRTMG_SWSCHEME_FAST) &
            .AND. (sw_physics .NE. FLGSWSCHEME) .AND. (sw_physics .NE. CAMSWSCHEME) &  ! amontornes-bcodina (2014-04-20)
+           .AND. (sw_physics .NE. RRTMK_SWSCHEME) &
            .AND. (sw_physics .ne. GODDARDSWSCHEME)) THEN
         DO j=jts,jte
            DO i=its,ite
@@ -2300,7 +2373,7 @@ CONTAINS
 
      accumulate_lw_select: SELECT CASE(lw_physics)
 
-     CASE (CAMLWSCHEME,RRTMG_LWSCHEME,RRTMG_LWSCHEME_FAST)
+     CASE (CAMLWSCHEME,RRTMG_LWSCHEME,RRTMG_LWSCHEME_FAST,RRTMK_LWSCHEME)
    IF(PRESENT(LWUPTC))THEN
 !  NMM calls the driver every RADT time steps, EM calls every DT
 #if (EM_CORE == 1)
@@ -2337,7 +2410,7 @@ CONTAINS
 
      accumulate_sw_select: SELECT CASE(sw_physics)
 
-     CASE (CAMSWSCHEME,RRTMG_SWSCHEME,RRTMG_SWSCHEME_FAST)
+     CASE (CAMSWSCHEME,RRTMG_SWSCHEME,RRTMG_SWSCHEME_FAST,RRTMK_SWSCHEME)
    IF(PRESENT(SWUPTC))THEN
 !  NMM calls the driver every RADT time steps, EM calls every DT
 #if (EM_CORE == 1)

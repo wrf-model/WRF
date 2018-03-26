@@ -52,5 +52,5 @@ state    real      pc             ijb   dyn_em               2         -     irh
 
 
 #<Table> <Type>   <Sym>         <Nml>                    <NumEntry> <Default>                                                     <DESCRIP>                             <UNITS>
-rconfig  integer  hybrid_opt    namelist,dynamics            1          0     i0                  "HYBRID_OPT"   "0=Original WRF coordinate, 1=Terrain Following using hybrid formulation, 2=Klemp cubic form with etac"         "Flag"
+rconfig  integer  hybrid_opt    namelist,dynamics            1          2     i0                  "HYBRID_OPT"   "0=Original WRF coordinate, 1=Terrain Following using hybrid formulation, 2=Klemp cubic form with etac"         "Flag"
 rconfig  real     etac          namelist,dynamics            1         0.2    i0                  "ETAC"         "znw(k) < etac, eta surfaces are isobaric, 0.2 is a good default"          "Pa/Pa"

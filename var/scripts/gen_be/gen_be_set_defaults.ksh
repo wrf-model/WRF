@@ -38,9 +38,9 @@ export DOMAIN=${DOMAIN:-01}                          # domain id.
 export START_DATE=${START_DATE:-2003010200}          # Time of first perturbation.
 export END_DATE=${END_DATE:-2003012812}              # Time of last perturbation.
 export FCST_RANGE=${FCST_RANGE:-24}                  # Forecast range of forecast (hours).
-export FCST_RANGE1=${FCST_RANGE1:-24}                # Forecast range of forecast 1 (hours).
-export FCST_RANGE2=${FCST_RANGE2:-12}                # Forecast range of forecast 2 (hours).
-export INTERVAL=${INTERVAL:-12}                      # Period between files (hours).
+export INTERVAL=${INTERVAL:-12}                      # Period between valid times (hours).
+export FCST_RANGE1=${FCST_RANGE1:-24}                # Forecast range of NMC long-leadtime forecast (hours).
+export FCST_RANGE2=${FCST_RANGE2:-$INTERVAL}         # Forecast range of NMC short-leadtime forecast (hours).
 export BE_METHOD=${BE_METHOD:-NMC}                   # NMC (NMC-method), ENS (Ensemble-Method).
 export NE=${NE:-1}                                   # Number of ensemble members (for ENS).
 export BIN_TYPE=${BIN_TYPE:-5}                       # 0=None, 1=1:ni, 2=latitude, ....

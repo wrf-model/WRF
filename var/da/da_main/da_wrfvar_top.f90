@@ -108,6 +108,7 @@ module da_wrfvar_top
    use da_ssmi, only : da_oi_stats_ssmt1, da_oi_stats_ssmt2, da_oi_stats_ssmi_tb, da_oi_stats_ssmi_rv
    use da_synop, only : da_oi_stats_synop  
    use da_rain, only : da_oi_stats_rain
+   use da_gpseph, only : da_gpseph_final
 
    use da_wrf_interfaces
 

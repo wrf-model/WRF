@@ -15,6 +15,37 @@ CONTAINS
   END SUBROUTINE init_module_scalar_tables
 END MODULE module_scalar_tables
 
+#if( WRF_CHEM == 1 && WRF_KPP == 1 )
+MODULE module_irr_diag
+
+   INTEGER, parameter :: max_eqn = 1200
+   INTEGER :: max_dom
+   INTEGER, ALLOCATABLE :: irr_diag_cnt(:)
+   INTEGER, ALLOCATABLE :: irr_diag_ndx(:,:)
+   LOGICAL, ALLOCATABLE :: irr_option(:)
+   LOGICAL, ALLOCATABLE :: irr_active(:)
+
+CONTAINS
+
+  SUBROUTINE init_module_irr_diag
+    
+    INTEGER :: astat
+
+    IF( .not. ALLOCATED( irr_option ) ) THEN
+      CALL nl_get_max_dom( 1, max_dom )
+      ALLOCATE( irr_option(max_dom),irr_active(max_dom),irr_diag_ndx(max_eqn,max_dom),irr_diag_cnt(max_dom),stat=astat )
+      IF( astat /= 0 ) THEN
+        CALL wrf_error_fatal( "init_module_irr_diag: Failed to allocate irr_option ... irr_diag_cnt" )
+      ENDIF
+      irr_option(:) = .false.
+      irr_active(:) = .false.
+    ENDIF
+
+  END SUBROUTINE init_module_irr_diag
+
+END MODULE module_irr_diag
+#endif
+
 MODULE module_configure
 
    USE module_driver_constants
@@ -99,6 +130,8 @@ CONTAINS
 
       INTEGER, PARAMETER :: nml_write_unit= 9
       INTEGER, PARAMETER :: nml_read_unit = 10
+
+      CHARACTER (LEN=1024) :: entire_line
 
 
 ! define as temporaries
@@ -544,6 +577,25 @@ CONTAINS
 
 END MODULE module_configure
 
+#if( WRF_CHEM == 1 && WRF_KPP == 1 )
+INTEGER FUNCTION get_funit()
+
+    IMPLICIT NONE
+
+    INTEGER, PARAMETER :: min_unit_number = 30
+    INTEGER, PARAMETER :: max_unit_number = 99 
+
+    LOGICAL :: opened
+
+    DO get_funit = min_unit_number, max_unit_number
+       INQUIRE(UNIT=get_funit, OPENED=opened)
+       IF ( .NOT. opened ) RETURN
+    END DO
+
+    get_funit = -1
+
+END FUNCTION get_funit
+#endif
 
 SUBROUTINE set_scalar_indices_from_config ( idomain , dummy2, dummy1 )
   USE module_driver_constants
@@ -551,10 +603,36 @@ SUBROUTINE set_scalar_indices_from_config ( idomain , dummy2, dummy1 )
   USE module_wrf_error
   USE module_configure, ONLY : model_config_rec
   USE module_scalar_tables
+#if( WRF_CHEM == 1 && WRF_KPP == 1 )
+  USE module_irr_diag
+#endif
   IMPLICIT NONE
   INTEGER , INTENT(IN)  :: idomain
   INTEGER               :: dummy1
   INTEGER               :: dummy2
+
+#if( WRF_CHEM == 1 && WRF_KPP == 1 )
+  INTEGER :: astat, istat
+  INTEGER :: l, m, n
+  INTEGER :: ndx
+  INTEGER :: irr_cnt
+  INTEGER :: nFound
+  INTEGER :: funit
+  INTEGER :: chem_opt
+  INTEGER, ALLOCATABLE :: irr_ndx(:)
+  CHARACTER(LEN=128) :: err_mes
+  CHARACTER(LEN=128) :: fname
+  CHARACTER(LEN=64)  :: irr_rxt, lc_tmp
+  CHARACTER(LEN=64), POINTER     :: rxt_lst(:)
+  CHARACTER(LEN=32), ALLOCATABLE :: irr_lst(:)
+  LOGICAL, ALLOCATABLE :: irr_msk(:)
+  LOGICAL :: found, opened
+  LOGICAL :: do_all
+
+  INTEGER :: get_funit
+
+#include "scalar_indices_irr_diag_decls.inc"
+#endif
 
 !<DESCRIPTION>
 !This routine is called to adjust the integer variables that are defined
@@ -582,7 +660,183 @@ SUBROUTINE set_scalar_indices_from_config ( idomain , dummy2, dummy1 )
 !</DESCRIPTION>
 
 #include "scalar_indices.inc"
+#if( WRF_CHEM == 1 && WRF_KPP == 1 )
+#include "scalar_indices_irr_diag.inc"
+
+   CALL init_module_irr_diag
+
+has_irr_diag: &
+   IF( model_config_rec%irr_opt(idomain) == 1 .and. .not. irr_active(idomain) ) THEN
+     do_all = .false.
+     irr_active(idomain) = .true.
+     CALL nl_get_chem_opt( idomain, chem_opt )
+     DO chm_opt_ndx = 1,nchm_opts
+       IF( chem_opt == chm_opts_ndx(chm_opt_ndx) ) THEN
+         EXIT
+       ENDIF
+     ENDDO
+     IF( chm_opt_ndx > nchm_opts ) THEN
+       write(err_mes,'(''IRR not supported for chem option '',i3.3)') chem_opt
+       CALL wrf_error_fatal( trim(err_mes) )
+     ENDIF
+     funit = get_funit()
+     write(fname,'(''wrfchem_irr_diag_d'',i2.2)') idomain
+     OPEN( unit = funit, file=trim(fname), status='OLD', iostat=istat )
+     IF( istat /= 0 ) THEN
+       write(err_mes,'(''IRR failed to open '',a)') trim(fname)
+       CALL wrf_error_fatal( trim(err_mes) )
+     ENDIF
+     irr_cnt = 0
+     DO
+       read(funit,'(a)',iostat=istat) irr_rxt
+       IF( istat /= 0 ) THEN
+         EXIT
+       ENDIF
+       irr_cnt = irr_cnt + 1
+       if( irr_cnt == 1 ) then
+         CALL change_to_lower_case( irr_rxt, lc_tmp )
+         if( trim(lc_tmp) == 'all' ) then
+           do_all  = .true.
+           irr_cnt = chm_opts_cnt(chm_opt_ndx) 
+           write(err_mes,'(''IRR do_all, irr_cnt = '',l,i4)') do_all, irr_cnt
+           CALL wrf_debug( 0,trim(err_mes) )
+           EXIT
+         endif
+       endif
+     ENDDO
+
+has_irr_input: &
+     IF( irr_cnt == 0 ) THEN
+       CALL nl_set_irr_opt( idomain, 0 )
+     ELSE has_irr_input
+       ALLOCATE( irr_lst(irr_cnt),irr_msk(irr_cnt),irr_ndx(irr_cnt),stat=astat )
+       IF( astat /= 0 ) THEN
+         write(err_mes,'(''IRR failed to allocate irr_lst .. irr_ndx; error = '',i8)') astat
+         CALL wrf_error_fatal( trim(err_mes) )
+       ENDIF
+       if( .not. do_all ) THEN
+         REWIND( funit )
+       ENDIF
+       nFound = 0
+       irr_msk(:) = .false.
+       irr_ndx(:) = 0
+       rxt_lst => rxtsym(:,chm_opt_ndx)
+input_irr_loop: &
+       DO n = 1,irr_cnt
+         IF( .not. do_all ) THEN
+           read(funit,'(a)',iostat=istat) irr_lst(n)
+           IF( istat /= 0 ) THEN
+             write(err_mes,'(''IRR failed to read '',a)') trim(fname)
+             CALL wrf_error_fatal( trim(err_mes) )
+           ENDIF
+           found = .false.
+         ELSE
+           irr_lst(n) = rxt_lst(n)
+           found = .false.
+         ENDIF
+rxt_loop: &
+         DO l = 1,chm_opts_cnt(chm_opt_ndx)
+have_match: &
+           IF( trim(rxt_lst(l)) == trim(irr_lst(n)) ) THEN
+             found = .true.
+             nFound = nFound + 1
+             irr_ndx(nFound) = l
+             irr_msk(nFound) = .true.
+             irr_rxt = rxt_lst(l)
+             do m = 1,len_trim( irr_rxt )
+               if( irr_rxt(m:m) == '+' ) then
+                 irr_rxt(m:m) = '_'
+               endif
+             enddo
+             SELECT CASE( chm_opts_ndx(chm_opt_ndx) )
+               CASE( MOZCART_KPP )
+                 irr_diag_mozcart_num_table(idomain) = irr_diag_mozcart_num_table(idomain) + 1
+                 ndx = irr_diag_mozcart_num_table(idomain)
+                 irr_diag_mozcart_boundary_table(idomain,ndx) = .FALSE.
+                 irr_diag_mozcart_dname_table(idomain,ndx) = trim( irr_rxt ) // '_IRR'
+                 irr_diag_mozcart_desc_table(idomain,ndx)  = trim(rxt_lst(l) ) // ' Integrated Reaction Rate'
+                 irr_diag_mozcart_units_table(idomain,ndx) = 'ppmv'
+                 irr_diag_mozcart_streams_table(idomain,ndx)%stream(1) = 512
+                 irr_diag_mozcart_streams_table(idomain,ndx)%stream(2) = 2097152
+               CASE( T1_MOZCART_KPP )
+                 irr_diag_t1_mozcart_num_table(idomain) = irr_diag_t1_mozcart_num_table(idomain) + 1
+                 ndx = irr_diag_t1_mozcart_num_table(idomain)
+                 irr_diag_t1_mozcart_boundary_table(idomain,ndx) = .FALSE.
+                 irr_diag_t1_mozcart_dname_table(idomain,ndx) = trim( irr_rxt ) // '_IRR'
+                 irr_diag_t1_mozcart_desc_table(idomain,ndx)  = trim(rxt_lst(l) ) // ' Integrated Reaction Rate'
+                 irr_diag_t1_mozcart_units_table(idomain,ndx) = 'ppmv'
+                 irr_diag_t1_mozcart_streams_table(idomain,ndx)%stream(1) = 512
+                 irr_diag_t1_mozcart_streams_table(idomain,ndx)%stream(2) = 2097152
+               CASE( MOZART_MOSAIC_4BIN_KPP )
+                 irr_diag_mozart_mosaic_4bin_num_table(idomain) = irr_diag_mozart_mosaic_4bin_num_table(idomain) + 1
+                 ndx = irr_diag_mozart_mosaic_4bin_num_table(idomain)
+                 irr_diag_mozart_mosaic_4bin_boundary_table(idomain,ndx) = .FALSE.
+                 irr_diag_mozart_mosaic_4bin_dname_table(idomain,ndx) = trim( irr_rxt ) // '_IRR'
+                 irr_diag_mozart_mosaic_4bin_desc_table(idomain,ndx)  = trim(rxt_lst(l) ) // ' Integrated Reaction Rate'
+                 irr_diag_mozart_mosaic_4bin_units_table(idomain,ndx) = 'ppmv'
+                 irr_diag_mozart_mosaic_4bin_streams_table(idomain,ndx)%stream(1) = 512
+                 irr_diag_mozart_mosaic_4bin_streams_table(idomain,ndx)%stream(2) = 2097152
+               CASE( MOZART_MOSAIC_4BIN_AQ_KPP )
+                 irr_diag_mozart_mosaic_4bin_aq_num_table(idomain) = irr_diag_mozart_mosaic_4bin_aq_num_table(idomain) + 1
+                 ndx = irr_diag_mozart_mosaic_4bin_aq_num_table(idomain)
+                 irr_diag_mozart_mosaic_4bin_aq_boundary_table(idomain,ndx) = .FALSE.
+                 irr_diag_mozart_mosaic_4bin_aq_dname_table(idomain,ndx) = trim( irr_rxt ) // '_IRR'
+                 irr_diag_mozart_mosaic_4bin_aq_desc_table(idomain,ndx)  = trim( rxt_lst(l) ) // ' Integrated Reaction Rate'
+                 irr_diag_mozart_mosaic_4bin_aq_units_table(idomain,ndx) = 'ppmv'
+                 irr_diag_mozart_mosaic_4bin_aq_streams_table(idomain,ndx)%stream(1) = 512
+                 irr_diag_mozart_mosaic_4bin_aq_streams_table(idomain,ndx)%stream(2) = 2097152
+             END SELECT
+             EXIT rxt_loop
+           ENDIF have_match
+         ENDDO rxt_loop
+       ENDDO input_irr_loop
+       IF( nFound > 0 ) THEN
+         irr_option(idomain) = .true.
+         irr_diag_ndx(:nFound,idomain) = irr_ndx(:nFound)
+         irr_diag_cnt(idomain) = nFound
+       ENDIF
+     ENDIF has_irr_input
+
+     INQUIRE( unit=funit,opened=opened )
+     IF( opened ) THEN
+       CLOSE( funit )
+     ENDIF
+
+     IF( ALLOCATED( irr_lst ) ) THEN
+       DEALLOCATE( irr_lst )
+     ENDIF
+     IF( ALLOCATED( irr_msk ) ) THEN
+       DEALLOCATE( irr_msk )
+     ENDIF
+     IF( ALLOCATED( irr_ndx ) ) THEN
+       DEALLOCATE( irr_ndx )
+     ENDIF
+   ENDIF has_irr_diag
+
+
+#endif
 #include "scalar_indices_init.inc"
   RETURN
 END SUBROUTINE set_scalar_indices_from_config
 
+#if ( DA_CORE != 1 )
+   SUBROUTINE change_to_lower_case(instr,outstr)
+     CHARACTER*(*) ,INTENT(IN)  :: instr
+     CHARACTER*(*) ,INTENT(OUT) :: outstr
+!Local
+     CHARACTER*1                :: c
+     INTEGER       ,PARAMETER   :: upper_to_lower =IACHAR('a')-IACHAR('A')
+     INTEGER                    :: i,n,n1
+!
+     outstr = ' '
+     N  = len(instr)
+     N1 = len(outstr)
+     N  = MIN(N,N1)
+     outstr(1:N) = instr(1:N)
+     DO i=1,N
+       c = instr(i:i)
+       if('A'<=c .and. c <='Z') outstr(i:i)=achar(iachar(c)+upper_to_lower)
+     ENDDO
+
+   END SUBROUTINE change_to_lower_case
+#endif

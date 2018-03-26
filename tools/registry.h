@@ -31,6 +31,9 @@ enum proc_orient     { ALL_Z_ON_PROC , ALL_X_ON_PROC , ALL_Y_ON_PROC } ;
 #define DIM       64
 #define PACKAGE  128
 #define HALO     256
+#if ( WRFPLUS == 1 )
+#define HALO_NTA 256
+#endif
 #define PERIOD   512
 #define SWAP    1024
 #define CYCLE   2048

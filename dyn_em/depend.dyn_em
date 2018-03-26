@@ -247,6 +247,7 @@ start_em.o:     module_bc_em.o \
 		../phys/module_physics_init.o \
 		../phys/module_diag_pld.o \
 		../phys/module_diag_zld.o \
+		../phys/module_diag_trad_fields.o \
                 ../phys/module_fr_fire_driver_wrf.o \
 		$(CF)
 

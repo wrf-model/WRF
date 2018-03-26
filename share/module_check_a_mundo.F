@@ -1164,16 +1164,15 @@
       END IF
 
 !-----------------------------------------------------------------------
-! If hailcast_opt = 1, horizontal grid spacing must be 4 km or finer.
+! If hailcast_opt = 1 for any domain, convective parameterization must be off for that domain.           
 !-----------------------------------------------------------------------
+
       DO i = 1, model_config_rec % max_dom
          IF ( ( model_config_rec%hailcast_opt(i) .NE. 0 ) .AND. &
-              ( model_config_rec%dx(i) .GT. 4000 ) ) THEN
-            wrf_err_message = '--- WARNING:  hailcast_opt requires a grid-spacing of 4 km or finer.'
-            CALL wrf_message ( wrf_err_message )
-            wrf_err_message = '---          hailcast_opt is now 0.'
-            CALL wrf_message ( wrf_err_message )
-            model_config_rec%hailcast_opt(i) = 0
+              (model_config_rec%cu_physics(i) .NE. 0) ) THEN
+              wrf_err_message = '--- hailcast_opt and cu_physics cannot both be turned on for the same domain. You must turn one of them off (=0).'
+              CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+              count_fatal_error = count_fatal_error + 1
          ENDIF
       ENDDO
 
@@ -2090,26 +2089,6 @@
       WRITE (wrf_err_message, FMT='(A,I6)') '--- NOTE: num_soil_layers has been set to ', &
                                              model_config_rec % num_soil_layers
       CALL wrf_message ( wrf_err_message )
-
-!-----------------------------------------------------------------------
-!  The P3 MP schemes must be used with the RRTMG radiation schemes.
-!-----------------------------------------------------------------------
-
-      DO i = 1, model_config_rec % max_dom
-         IF ( ( model_config_rec % mp_physics(i) .EQ. P3_1CATEGORY    )   .OR.  &
-              ( model_config_rec % mp_physics(i) .EQ. P3_1CATEGORY_NC ) ) THEN
-
-            IF ( ( ( model_config_rec % ra_lw_physics(i) .EQ. RRTMG_LWSCHEME      )   .OR.   &
-                   ( model_config_rec % ra_lw_physics(i) .EQ. RRTMG_LWSCHEME_FAST ) ) .AND.  &
-                 ( ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME      )   .OR.   &
-                   ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME_FAST ) ) ) THEN
-               !  No op, everything is fine. This is just easier logic to understand
-            ELSE
-               wrf_err_message = '--- ERROR: P3 MP (mp_physics=50 or 51) requires using RRTMG LW and SW schemes.'
-               CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
-            END IF
-         END IF
-      END DO
 
    END SUBROUTINE set_physics_rconfigs
 

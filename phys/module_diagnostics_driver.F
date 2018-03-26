@@ -250,7 +250,11 @@ CONTAINS
                          ,ips, ipe, jps, jpe, kps, kpe                        &
                          ,ITS=grid%i_start(ij),ITE=grid%i_end(ij)             &
                          ,JTS=grid%j_start(ij),JTE=grid%j_end(ij)             &
-                         ,K_START=k_start,K_END=k_end                         )
+                         ,K_START=k_start,K_END=k_end                         &
+                         ,dt=grid%dt, itimestep=grid%itimestep                &
+                         ,haildt=grid%haildt, curr_secs=curr_secs2            &
+                         ,haildtacttime=grid%haildtacttime                    )
+
         END DO
         !$OMP END PARALLEL DO
       END IF HAILCAST

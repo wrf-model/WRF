@@ -2792,18 +2792,22 @@ package   notseries   process_time_series==0                 -             -
 package   tseries     process_time_series==1                 -             state:ts_hour,ts_u,ts_v,ts_q,ts_t,ts_psfc,ts_glw,ts_gsw,ts_hfx,ts_lh,ts_tsk,ts_tslb,ts_clw,ts_rainc,ts_rainnc,ts_u_profile,ts_v_profile,ts_gph_profile,ts_th_profile
 
 # WRF-HAILCAST
-state    real   HAILCAST_DHAIL1   ij     misc        1         -      -          "HAILCAST_DHAIL1"     "WRF-HAILCAST Hail Diameter, 1st rank order"     "mm"
-state    real   HAILCAST_DHAIL2   ij     misc        1         -      -          "HAILCAST_DHAIL2"     "WRF-HAILCAST Hail Diameter, 2nd rank order"     "mm"
-state    real   HAILCAST_DHAIL3   ij     misc        1         -      -          "HAILCAST_DHAIL3"     "WRF-HAILCAST Hail Diameter, 3rd rank order"     "mm"
-state    real   HAILCAST_DHAIL4   ij     misc        1         -      -          "HAILCAST_DHAIL4"     "WRF-HAILCAST Hail Diameter, 4th rank order"     "mm"
-state    real   HAILCAST_DHAIL5   ij     misc        1         -      -          "HAILCAST_DHAIL5"     "WRF-HAILCAST Hail Diameter, 5th rank order"     "mm"
-state    real   HAILCAST_DIAM_MEAN  ij   misc        1         -      rh02       "HAILCAST_DIAM_MEAN"  "WRF-HAILCAST Mean Hail Diameter"        "mm"
-state    real   HAILCAST_DIAM_STD   ij   misc        1         -      rh02       "HAILCAST_DIAM_STD"   "WRF-HAILCAST Stand. Dev. Hail Diameter" "mm"
+state    real   HAILCAST_DHAIL1   ij     misc        1         -      r          "HAILCAST_DHAIL1"     "WRF-HAILCAST Hail Diameter, 1st rank order"     "mm"
+state    real   HAILCAST_DHAIL2   ij     misc        1         -      r          "HAILCAST_DHAIL2"     "WRF-HAILCAST Hail Diameter, 2nd rank order"     "mm"
+state    real   HAILCAST_DHAIL3   ij     misc        1         -      r          "HAILCAST_DHAIL3"     "WRF-HAILCAST Hail Diameter, 3rd rank order"     "mm"
+state    real   HAILCAST_DHAIL4   ij     misc        1         -      r          "HAILCAST_DHAIL4"     "WRF-HAILCAST Hail Diameter, 4th rank order"     "mm"
+state    real   HAILCAST_DHAIL5   ij     misc        1         -      r          "HAILCAST_DHAIL5"     "WRF-HAILCAST Hail Diameter, 5th rank order"     "mm"
+state    real   HAILCAST_DIAM_MAX   ij   misc        1         -      h02       "HAILCAST_DIAM_MAX"   "WRF-HAILCAST MAX Hail Diameter"        "mm"
+state    real   HAILCAST_DIAM_MEAN  ij   misc        1         -      -          "HAILCAST_DIAM_MEAN"  "WRF-HAILCAST Mean Hail Diameter"        "mm"
+state    real   HAILCAST_DIAM_STD   ij   misc        1         -      -          "HAILCAST_DIAM_STD"   "WRF-HAILCAST Stand. Dev. Hail Diameter" "mm"
 state    real   HAILCAST_WUP_MASK   ij     misc        1         -      r        "HAILCAST_WUP_MASK"           "Updraft mask, 1 if > 10m/s"                             ""
 state    real   HAILCAST_WDUR       ij     misc        1         -      r        "HAILCAST_WDUR"               "Updraft duration"                                       "sec"
+state    real   haildtacttime        -       -         -         -      r        "haildtacttime"              "HAILDTACTTIME"         "HAILCAST ACTIVATION TIME in s"
 
-package   hailcast  hailcast_opt==1        -                    state:hailcast_diam_mean,hailcast_diam_std,hailcast_dhail1,hailcast_dhail2,hailcast_dhail3,hailcast_dhail4,hailcast_dhail5
+
+package   hailcast  hailcast_opt==1        -                    state:hailcast_diam_max,hailcast_diam_mean,hailcast_diam_std,hailcast_dhail1,hailcast_dhail2,hailcast_dhail3,hailcast_dhail4,hailcast_dhail5
 rconfig   integer   hailcast_opt       namelist,physics           max_domains    0       rh    "hailcast_opt"        "WRF-HAILCAST option, 1: on"                   ""
+rconfig   real      HAILDT             namelist,physics           max_domains    0       h     "HAILDT"              "seconds between WRF-HAILCAST calls"           "sec"
 halo      HALO_EM_PHYS_HCW   dyn_em 8:hailcast_wup_mask, hailcast_wdur
 
 # lightning

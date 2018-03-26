@@ -1838,7 +1838,7 @@
 !+---+-----------------------------------------------------------------+
       do k = kte, kts, -1
          ygra1 = alog10(max(1.E-9, rg(k)))
-         zans1 = (2. + 2./7. * (ygra1+7.))
+         zans1 = (2.5 + 2./7. * (ygra1+7.))
          zans1 = MAX(2., MIN(zans1, 7.))
          N0_exp = 10.**(zans1)
          N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
@@ -2898,7 +2898,7 @@
 !+---+-----------------------------------------------------------------+
       do k = kte, kts, -1
          ygra1 = alog10(max(1.E-9, rg(k)))
-         zans1 = (2. + 2./7. * (ygra1+7.))
+         zans1 = (2.5 + 2./7. * (ygra1+7.))
          zans1 = MAX(2., MIN(zans1, 7.))
          N0_exp = 10.**(zans1)
          N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
@@ -5251,7 +5251,7 @@
 
       do k = kte, kts, -1
          ygra1 = alog10(max(1.E-9, rg(k)))
-         zans1 = (2. + 2./7. * (ygra1+7.))
+         zans1 = (2.5 + 2./7. * (ygra1+7.))
          zans1 = MAX(2., MIN(zans1, 7.))
          N0_exp = 10.**(zans1)
          N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))

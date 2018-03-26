@@ -805,6 +805,13 @@ CONTAINS
      CASE (THOMPSON, THOMPSONAERO)
 
        scheme_has_graupel = .true.
+       xmu_g = 1.
+       cge(1) = xbm_g + 1.
+       cge(2) = xmu_g + 1.
+       cge(3) = xbm_g + xmu_g + 1.
+       do n = 1, 3
+          cgg(n) = WGAMMA(cge(n))
+       enddo
 
 !  !$OMP PARALLEL DO   &
 !  !$OMP PRIVATE ( ij )

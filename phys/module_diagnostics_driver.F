@@ -18,7 +18,7 @@ CONTAINS
                                    moist, chem, tracer, scalar,         &
                                    th_phy, pi_phy, p_phy, rho_phy,      & 
                                    p8w, t8w, dz8w,                      &
-                                   curr_secs2,                          &
+                                   curr_secs, curr_secs2,               &
                                    diag_flag,                           &
                                    ids,  ide,  jds,  jde,  kds,  kde,   &
                                    ims,  ime,  jms,  jme,  kms,  kme,   &
@@ -43,7 +43,8 @@ CONTAINS
                      WSM6SCHEME, ETAMPNEW, THOMPSON, THOMPSONAERO,                     &
                      MORR_TWO_MOMENT, GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME,           &
                      NSSL_2MOM, NSSL_2MOMCCN, NSSL_1MOM, NSSL_1MOMLFO,                 &
-                     MILBRANDT2MOM , CAMMGMPSCHEME, FAST_KHAIN_LYNN, FULL_KHAIN_LYNN    !,MILBRANDT3MOM, NSSL_3MOM, MORR_MILB_P3
+                     MILBRANDT2MOM , CAMMGMPSCHEME, FAST_KHAIN_LYNN, FULL_KHAIN_LYNN,  &
+                     MORR_TM_AERO !TWG add    !,MILBRANDT3MOM, NSSL_3MOM, MORR_MILB_P3
 
       USE module_driver_constants, ONLY: max_plevs, max_zlevs
 
@@ -114,8 +115,9 @@ CONTAINS
                                                                            p8w     , &
                                                                            t8w
 
-      !  Time (s) since the beginning of the restart.
+      !  Time (s) since the beginning of the simulation, restart.
 
+      REAL(8) :: curr_secs
       REAL :: curr_secs2
 
       !  Is this to be a history output time?  If so, compute the diagnostics.
@@ -190,7 +192,7 @@ CONTAINS
          CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: LIGHTNING_DRIVER' )
          CALL lightning_driver ( &
           ! Frequently used prognostics
-            grid%itimestep, grid%dt, grid%dx, grid%dy,         &
+            curr_secs, grid%dt, grid%dx, grid%dy,              &
             grid%xlat, grid%xlong, grid%xland, grid%ht,        &
             grid%t_phy, p_phy, grid%rho,                       &
             grid%u_phy, grid%v_phy, grid%w_2,                  &    
@@ -203,6 +205,7 @@ CONTAINS
             config_flags%lightning_option,                     &
             config_flags%lightning_dt,                         &
             config_flags%lightning_start_seconds,              &
+            grid%ltngacttime,                                  &
             config_flags%flashrate_factor,                     &
           ! IC:CG namelist settings
             config_flags%iccg_method,                          &
@@ -248,7 +251,11 @@ CONTAINS
                          ,ips, ipe, jps, jpe, kps, kpe                        &
                          ,ITS=grid%i_start(ij),ITE=grid%i_end(ij)             &
                          ,JTS=grid%j_start(ij),JTE=grid%j_end(ij)             &
-                         ,K_START=k_start,K_END=k_end                         )
+                         ,K_START=k_start,K_END=k_end                         &
+                         ,dt=grid%dt, itimestep=grid%itimestep                &
+                         ,haildt=grid%haildt, curr_secs=curr_secs2            &
+                         ,haildtacttime=grid%haildtacttime                    )
+
         END DO
         !$OMP END PARALLEL DO
       END IF HAILCAST
@@ -414,7 +421,7 @@ CONTAINS
                 ,NUM_TILES=grid%num_tiles                            &
                                                                     )
 
-        CASE (MORR_TWO_MOMENT)
+        CASE (MORR_TWO_MOMENT, MORR_TM_AERO)  ! TWG add
 
       CALL diagnostic_output_calc(                                   &
                  DPSDT=grid%dpsdt   ,DMUDT=grid%dmudt                &

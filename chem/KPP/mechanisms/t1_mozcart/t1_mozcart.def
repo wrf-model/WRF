@@ -1,0 +1,704 @@
+#include atoms_red
+#include t1_mozcart.spc
+#include t1_mozcart.eqn
+
+#INLINE F90_RATES
+
+REAL(kind=dp) FUNCTION JPL_TROE( k0_300K, n, kinf_300K, m, base, temp, cair )
+
+!------------------------------------------------------------
+! ... dummy arguments
+!------------------------------------------------------------
+    REAL(kind=dp), INTENT(IN) :: base      ! base expononent
+    REAL(kind=dp), INTENT(IN) :: temp      ! temperature [K]
+    REAL(kind=dp), INTENT(IN) :: cair      ! air concentration [molecules/cm3]
+    REAL(kind=dp), INTENT(IN) :: k0_300K   ! low pressure limit at 300 K
+    REAL(kind=dp), INTENT(IN) :: n         ! exponent for low pressure limit
+    REAL(kind=dp), INTENT(IN) :: kinf_300K ! high pressure limit at 300 K
+    REAL(kind=dp), INTENT(IN) :: m         ! exponent for high pressure limit
+
+!------------------------------------------------------------
+! ... local variables
+!------------------------------------------------------------
+    REAL(kind=dp)  :: zt_help, k0_T, kinf_T, k_ratio
+
+    zt_help = 300._dp/temp
+    k0_T    = k0_300K   * zt_help**(n) * cair ! k_0   at current T
+    kinf_T  = kinf_300K * zt_help**(m)        ! k_inf at current T
+    k_ratio = k0_T/kinf_T
+
+    JPL_TROE = k0_T/(1._dp + k_ratio)*base**(1._dp/(1._dp + LOG10(k_ratio)**2))
+
+END FUNCTION JPL_TROE
+
+REAL(KIND=dp) FUNCTION usr_O_O2( temp )
+! for cesm-consistent reaction labels
+! O+O2+M -> O3+M
+
+    REAL(KIND=dp), INTENT(IN) :: temp
+
+    usr_O_O2 = 6.00e-34_dp*(temp/300._dp)**(-2.4_dp)
+
+END FUNCTION usr_O_O2
+
+REAL(KIND=dp) FUNCTION usr_O_O_M( temp )
+! for cesm-consistent reaction labels
+! O+O+M->O2+M
+
+    REAL(KIND=dp), INTENT(IN) :: temp
+
+    usr_O_O_M = 2.76e-34_dp * exp( 720.0_dp/temp)
+
+END FUNCTION usr_O_O_M
+
+REAL(KIND=dp) FUNCTION usr_HO2_HO2( temp, c_m, c_h2o )
+! for cesm-consistent reaction labels, equivalent to usr9
+! HO2+HO2 -> H2O2+O2
+! H2O included in fc calculation, not as reactant
+
+    REAL(KIND=dp), INTENT(IN) :: temp
+    REAL(KIND=dp), INTENT(IN) :: c_m
+    REAL(KIND=dp), INTENT(IN) :: c_h2o
+
+    REAL(KIND=dp) :: ko, kinf, fc
+
+    if( c_h2o > 0._dp ) then
+       ko   = 2.3e-13_dp * exp( 600._dp/temp )
+       kinf = 1.7e-33_dp * c_m * exp( 1000._dp/temp )
+       fc = 1._dp + 1.4e-21_dp *c_h2o* exp( 2200._dp/temp )
+       usr_HO2_HO2 = (ko + kinf) * fc
+    else
+       usr_HO2_HO2 = 0._dp
+    end if
+END FUNCTION usr_HO2_HO2
+
+REAL(KIND=dp) FUNCTION usr_HNO3_OH( temp, c_m )
+! for cesm-consistent reaction labels, equivalent to usr5
+! HNO3 + OH -> NO3 + H2O
+
+    REAL(KIND=dp), INTENT(IN) :: temp
+    REAL(KIND=dp), INTENT(IN) :: c_m
+
+    REAL(KIND=dp) :: k0, k2
+
+   k0 = c_m * 6.5e-34_dp * exp( 1335._dp/temp )
+   k2 = exp( 2199._dp/temp )
+   k0 = k0 /(1.0_dp + k0/(2.7e-17_dp*k2))
+   k2 = exp( 460._dp/temp )
+
+   usr_HNO3_OH = k0 + 2.4e-14_dp * k2
+
+END FUNCTION usr_HNO3_OH
+
+
+REAL(KIND=dp) FUNCTION usr_HO2NO2_M( temp, c_m )
+! for cesm-consistent reaction labels
+! HO2NO2 + M -> HO2+NO2+M
+! CESM writes this as dependent on the NO2+HO2 rate
+! *** if M is included in reactants, must divide TROEE function by [M]
+
+    REAL(KIND=dp), INTENT(IN) :: temp
+    REAL(KIND=dp), INTENT(IN) :: c_m
+
+    usr_HO2NO2_M = TROEE( 4.76e26_dp,10900._dp, 1.8e-31_dp , 3.2_dp , &
+                          4.7e-12_dp , 1.4_dp , TEMP, C_M ) /c_m
+
+END FUNCTION usr_HO2NO2_M
+
+REAL(KIND=dp) FUNCTION usr_PAN_M( temp, c_m )
+! for cesm-consistent reaction labels
+! PAN+M -> CH3CO3+NO2
+! *** if M is included in reactants, must divide TROEE function by [M]
+
+    REAL(KIND=dp), INTENT(IN) :: temp
+    REAL(KIND=dp), INTENT(IN) :: c_m
+
+    usr_PAN_M = TROEE(1.111e28_dp, 14000._dp, 8.5e-29_dp, 6.5_dp, &
+                       1.1e-11_dp, 0._dp, TEMP, C_M) /c_m
+
+END FUNCTION usr_PAN_M
+
+REAL(KIND=dp) FUNCTION usr_CH3COCH3_OH( temp )
+! for cesm-consistent reaction labels
+! CH3COCH3 + OH -> RO2 + H2O
+
+    REAL(KIND=dp), INTENT(IN) :: temp
+
+    usr_CH3COCH3_OH = 3.82e-11_dp*exp( -2000._dp/temp ) + 1.33e-13_dp
+
+END FUNCTION usr_CH3COCH3_OH
+
+REAL(KIND=dp) FUNCTION usr_MCO3_NO2( temp, c_m )
+! for cesm-consistent reaction labels
+! MCO3+NO2+M -> MPAN+M
+
+    REAL(KIND=dp), INTENT(IN) :: temp
+    REAL(KIND=dp), INTENT(IN) :: c_m
+
+    usr_MCO3_NO2 = 1.1e-11_dp*300._dp/(temp*c_m)
+
+END FUNCTION usr_MCO3_NO2
+
+
+REAL(KIND=dp) FUNCTION usr_MPAN_M( temp, c_m )
+! for cesm-consistent reaction labels
+! MPAN+M -> MCO3+NO2+M
+
+    REAL(KIND=dp), INTENT(IN) :: temp
+    REAL(KIND=dp), INTENT(IN) :: c_m
+
+    usr_MPAN_M = 1.2221e17_dp*300._dp*exp( -14000._dp/temp )/(temp*c_m)
+
+END FUNCTION usr_MPAN_M
+
+REAL(KIND=dp) FUNCTION usr_N2O5_aer( aero_srf_area, aero_diam, temp )
+! heterogeneous uptake on aerosols: N2O5 -> 2 HNO3
+
+    REAL(KIND=dp), INTENT(IN) :: aero_srf_area(:)         ! aerosol surface area
+    REAL(KIND=dp), INTENT(IN) :: aero_diam(:)             ! aerosol diameter
+    REAL(KIND=dp), INTENT(IN) :: temp                     ! temperature (K)
+
+    INTEGER :: n
+    REAL(KIND=dp), parameter :: dg = .1_dp
+    REAL(KIND=dp), parameter :: gamma_n2o5 = .1_dp
+    REAL(KIND=dp) :: c_n2o5, term
+
+    n = size( aero_srf_area )
+
+    c_n2o5 = 1.40e3_dp * sqrt( temp )
+    term = 4._dp/(c_n2o5*gamma_n2o5)
+    
+    usr_N2O5_aer = &
+     sum( aero_srf_area(1:n)/(.5_dp*aero_diam(1:n)/dg + term) )
+
+END FUNCTION usr_N2O5_aer
+
+REAL(KIND=dp) FUNCTION usr_HONITR_aer( aero_srf_area, aero_diam, temp )
+! heterogeneous uptake on aerosols: HONITR -> HNO3
+
+    REAL(KIND=dp), INTENT(IN) :: aero_srf_area(:)         ! aerosol surface area
+    REAL(KIND=dp), INTENT(IN) :: aero_diam(:)             ! aerosol diameter
+    REAL(KIND=dp), INTENT(IN) :: temp                     ! temperature (K)
+
+    INTEGER :: n
+    REAL(KIND=dp), parameter :: dg = .1_dp
+    REAL(KIND=dp), parameter :: gamma_honitr = .005_dp
+    REAL(KIND=dp) :: c_honitr, term
+
+    n = size( aero_srf_area )
+
+    c_honitr = 1.26e3_dp * sqrt( temp )
+    term = 4._dp/(c_honitr*gamma_honitr)
+    
+    usr_HONITR_aer = &
+     sum( aero_srf_area(1:n)/(.5_dp*aero_diam(1:n)/dg + term) )
+
+END FUNCTION usr_HONITR_aer
+
+REAL(KIND=dp) FUNCTION usr_ONITR_aer( aero_srf_area, aero_diam, temp )
+! heterogeneous uptake on aerosols: ONITR -> HNO3
+
+    REAL(KIND=dp), INTENT(IN) :: aero_srf_area(:)         ! aerosol surface area
+    REAL(KIND=dp), INTENT(IN) :: aero_diam(:)             ! aerosol diameter
+    REAL(KIND=dp), INTENT(IN) :: temp                     ! temperature (K)
+
+    INTEGER :: n
+    REAL(KIND=dp), parameter :: dg = .1_dp
+    REAL(KIND=dp), parameter :: gamma_onitr = .005_dp
+    REAL(KIND=dp) :: c_onitr, term
+
+    n = size( aero_srf_area )
+
+    c_onitr = 1.20e3_dp * sqrt( temp )
+    term = 4._dp/(c_onitr*gamma_onitr)
+    
+    usr_ONITR_aer = &
+     sum( aero_srf_area(1:n)/(.5_dp*aero_diam(1:n)/dg + term) )
+
+END FUNCTION usr_ONITR_aer
+
+REAL(KIND=dp) FUNCTION usr_ISOPNIT_aer( aero_srf_area, aero_diam, temp )
+! heterogeneous uptake on aerosols: ISOPNITA -> HNO3
+! heterogeneous uptake on aerosols: ISOPNITB -> HNO3
+
+    REAL(KIND=dp), INTENT(IN) :: aero_srf_area(:)         ! aerosol surface area
+    REAL(KIND=dp), INTENT(IN) :: aero_diam(:)             ! aerosol diameter
+    REAL(KIND=dp), INTENT(IN) :: temp                     ! temperature (K)
+
+    INTEGER :: n
+    REAL(KIND=dp), parameter :: dg = .1_dp
+    REAL(KIND=dp), parameter :: gamma_isopnit = .005_dp
+    REAL(KIND=dp) :: c_isopnit, term
+
+    n = size( aero_srf_area )
+
+    c_isopnit = 1.20e3_dp * sqrt( temp )
+    term = 4._dp/(c_isopnit*gamma_isopnit)
+    
+    usr_ISOPNIT_aer = &
+     sum( aero_srf_area(1:n)/(.5_dp*aero_diam(1:n)/dg + term) )
+
+END FUNCTION usr_ISOPNIT_aer
+
+REAL(KIND=dp) FUNCTION usr_TERPNIT_aer( aero_srf_area, aero_diam, temp )
+! heterogeneous uptake on aerosols: TERPNIT -> HNO3
+
+    REAL(KIND=dp), INTENT(IN) :: aero_srf_area(:)         ! aerosol surface area
+    REAL(KIND=dp), INTENT(IN) :: aero_diam(:)             ! aerosol diameter
+    REAL(KIND=dp), INTENT(IN) :: temp                     ! temperature (K)
+
+    INTEGER :: n
+    REAL(KIND=dp), parameter :: dg = .1_dp
+    REAL(KIND=dp), parameter :: gamma_terpnit = .01_dp
+    REAL(KIND=dp) :: c_terpnit, term
+
+    n = size( aero_srf_area )
+
+    c_terpnit = .992e3_dp * sqrt( temp )
+    term = 4._dp/(c_terpnit*gamma_terpnit)
+    
+    usr_TERPNIT_aer = &
+     sum( aero_srf_area(1:n)/(.5_dp*aero_diam(1:n)/dg + term) )
+
+END FUNCTION usr_TERPNIT_aer
+
+REAL(KIND=dp) FUNCTION usr_NC4CH2OH_aer( aero_srf_area, aero_diam, temp )
+! heterogeneous uptake on aerosols: NC4CH2OH -> HNO3
+
+    REAL(KIND=dp), INTENT(IN) :: aero_srf_area(:)         ! aerosol surface area
+    REAL(KIND=dp), INTENT(IN) :: aero_diam(:)             ! aerosol diameter
+    REAL(KIND=dp), INTENT(IN) :: temp                     ! temperature (K)
+
+    INTEGER :: n
+    REAL(KIND=dp), parameter :: dg = .1_dp
+    REAL(KIND=dp), parameter :: gamma_nc4ch2oh = .005_dp
+    REAL(KIND=dp) :: c_nc4ch2oh, term
+
+    n = size( aero_srf_area )
+
+    c_nc4ch2oh = 1.20e3_dp * sqrt( temp )
+    term = 4._dp/(c_nc4ch2oh*gamma_nc4ch2oh)
+    
+    usr_NC4CH2OH_aer = &
+     sum( aero_srf_area(1:n)/(.5_dp*aero_diam(1:n)/dg + term) )
+
+END FUNCTION usr_NC4CH2OH_aer
+
+REAL(KIND=dp) FUNCTION usr_NC4CHO_aer( aero_srf_area, aero_diam, temp )
+! heterogeneous uptake on aerosols: NC4CHO -> HNO3
+
+    REAL(KIND=dp), INTENT(IN) :: aero_srf_area(:)         ! aerosol surface area
+    REAL(KIND=dp), INTENT(IN) :: aero_diam(:)             ! aerosol diameter
+    REAL(KIND=dp), INTENT(IN) :: temp                     ! temperature (K)
+
+    INTEGER :: n
+    REAL(KIND=dp), parameter :: dg = .1_dp
+    REAL(KIND=dp), parameter :: gamma_nc4cho = .005_dp
+    REAL(KIND=dp) :: c_nc4cho, term
+
+    n = size( aero_srf_area )
+
+    c_nc4cho = 1.21e3_dp * sqrt( temp )
+    term = 4._dp/(c_nc4cho*gamma_nc4cho)
+    
+    usr_NC4CHO_aer = &
+     sum( aero_srf_area(1:n)/(.5_dp*aero_diam(1:n)/dg + term) )
+
+END FUNCTION usr_NC4CHO_aer
+
+REAL(KIND=dp) FUNCTION usr_NTERPOOH_aer( aero_srf_area, aero_diam, temp )
+! heterogeneous uptake on aerosols: NTERPOOH -> HNO3
+
+    REAL(KIND=dp), INTENT(IN) :: aero_srf_area(:)         ! aerosol surface area
+    REAL(KIND=dp), INTENT(IN) :: aero_diam(:)             ! aerosol diameter
+    REAL(KIND=dp), INTENT(IN) :: temp                     ! temperature (K)
+
+    INTEGER :: n
+    REAL(KIND=dp), parameter :: dg = .1_dp
+    REAL(KIND=dp), parameter :: gamma_nterpooh = .01_dp
+    REAL(KIND=dp) :: c_nterpooh, term
+
+    n = size( aero_srf_area )
+
+    c_nterpooh = .957e3_dp * sqrt( temp )
+    term = 4._dp/(c_nterpooh*gamma_nterpooh)
+    
+    usr_NTERPOOH_aer = &
+     sum( aero_srf_area(1:n)/(.5_dp*aero_diam(1:n)/dg + term) )
+
+END FUNCTION usr_NTERPOOH_aer
+
+REAL(KIND=dp) FUNCTION usr_GLYOXAL_aer( aero_srf_area, temp )
+! heterogeneous uptake on aerosols: GLYOXAL -> 
+
+    REAL(KIND=dp), INTENT(IN) :: aero_srf_area(:)         ! aerosol surface area
+    REAL(KIND=dp), INTENT(IN) :: temp                     ! temperature (K)
+
+    INTEGER :: n
+    REAL(KIND=dp), parameter :: gamma_glyoxal = .0002_dp
+    REAL(KIND=dp) :: c_glyoxal, term
+
+    n = size( aero_srf_area )
+
+    c_glyoxal = 1.455e4_dp * sqrt( temp/58._dp )
+    term = .25_dp * c_glyoxal * gamma_glyoxal
+    
+    usr_GLYOXAL_aer = sum( aero_srf_area(1:n) ) * term
+
+END FUNCTION usr_GLYOXAL_aer
+
+REAL(KIND=dp) FUNCTION usr_NO3_aer( aero_srf_area, aero_diam, temp )
+! heterogeneous uptake on aerosols: NO3 -> HNO3
+
+    REAL(KIND=dp), INTENT(IN) :: aero_srf_area(:)         ! aerosol surface area
+    REAL(KIND=dp), INTENT(IN) :: aero_diam(:)             ! aerosol diameter
+    REAL(KIND=dp), INTENT(IN) :: temp                     ! temperature (K)
+
+    INTEGER :: n
+    REAL(KIND=dp), parameter :: dg = .1_dp
+    REAL(KIND=dp), parameter :: gamma_no3 = 1.e-3_dp
+    REAL(KIND=dp) :: c_no3, term
+
+    n = size( aero_srf_area )
+
+    c_no3 = 1.85e3_dp * sqrt( temp )
+    term = 4._dp/(c_no3*gamma_no3)
+    
+    usr_NO3_aer = &
+     sum( aero_srf_area(1:n)/(.5_dp*aero_diam(1:n)/dg + term) )
+
+END FUNCTION usr_NO3_aer
+
+REAL(KIND=dp) FUNCTION usr_NO2_aer( aero_srf_area, aero_diam, temp )
+! heterogeneous uptake on aerosols: NO2 -> 0.5 OH + 0.5 NO + 0.5 HNO3
+
+    REAL(KIND=dp), INTENT(IN) :: aero_srf_area(:)         ! aerosol surface area
+    REAL(KIND=dp), INTENT(IN) :: aero_diam(:)             ! aerosol diameter
+    REAL(KIND=dp), INTENT(IN) :: temp                     ! temperature (K)
+
+    INTEGER :: n
+    REAL(KIND=dp), parameter :: dg = .1_dp
+    REAL(KIND=dp), parameter :: gamma_no2 = 1.e-4_dp
+    REAL(KIND=dp) :: c_no2, term
+
+    n = size( aero_srf_area )
+
+    c_no2 = 2.15e3_dp * sqrt( temp )
+    term = 4._dp/(c_no2*gamma_no2)
+    
+    usr_NO2_aer = &
+     sum( aero_srf_area(1:n)/(.5_dp*aero_diam(1:n)/dg + term) )
+
+END FUNCTION usr_NO2_aer
+
+REAL(KIND=dp) FUNCTION usr_DMS_OH( temp, c_m )
+! for cesm-consistent reaction labels, equivalent to usr24
+! DMS + OH -> 0.5 SO2 + 0.5 HO2
+
+    REAL(KIND=dp), INTENT(IN) :: temp
+    REAL(KIND=dp), INTENT(IN) :: c_m
+
+    REAL(KIND=dp) :: ko, wrk
+
+    wrk   = .21_dp*c_m
+    ko    = 1._dp + 5.5e-31_dp*exp( 7460._dp/temp )*wrk
+    usr_DMS_OH = 1.7e-42_dp*exp( 7810._dp/temp )*wrk/ko
+
+END FUNCTION usr_DMS_OH
+
+
+REAL(KIND=dp) FUNCTION usr_HO2_aer( aero_srf_area, aero_diam, temp )
+! heterogeneous uptake on aerosols: HO2 -> 0.5 H2O2
+
+    REAL(KIND=dp), INTENT(IN) :: aero_srf_area(:)         ! aerosol surface area
+    REAL(KIND=dp), INTENT(IN) :: aero_diam(:)             ! aerosol diameter
+    REAL(KIND=dp), INTENT(IN) :: temp                     ! temperature (K)
+
+    INTEGER :: n
+    REAL(KIND=dp), parameter :: dg = .1_dp
+    REAL(KIND=dp), parameter :: gamma_ho2 = .2_dp
+    REAL(KIND=dp) :: c_ho2, term
+
+    n = size( aero_srf_area )
+
+    c_ho2 = 2.53e3_dp * sqrt( temp )
+    term = 4._dp/(c_ho2*gamma_ho2)
+    
+    usr_HO2_aer = &
+     sum( aero_srf_area(1:n)/(.5_dp*aero_diam(1:n)/dg + term) )
+
+END FUNCTION usr_HO2_aer
+
+REAL(KIND=dp) FUNCTION usr_PBZNIT_M( temp, c_m )
+! for cesm-consistent reaction labels
+! PBZNIT+M=ACBZO2+NO2+M
+! *** if M is included in reactants, must divide TROEE function by [M]
+
+    REAL(KIND=dp), INTENT(IN) :: temp
+    REAL(KIND=dp), INTENT(IN) :: c_m
+
+    usr_PBZNIT_M = TROEE( 1.111e28_dp,14000._dp, 9.7e-29_dp , 5.6_dp , &
+                          9.3e-12_dp , 0._dp , TEMP, C_M) /c_m
+
+END FUNCTION usr_PBZNIT_M
+
+REAL(KIND=dp) FUNCTION usr_N2O5_M( temp, c_m )
+! for cesm-consistent reaction labels
+! N2O5 + M -> NO2 + NO3 + M
+! CESM writes this as dependent on the NO2+NO3 rate
+! *** if M is included in reactants, must divide TROEE function by [M]
+
+    REAL(KIND=dp), INTENT(IN) :: temp
+    REAL(KIND=dp), INTENT(IN) :: c_m
+
+    usr_N2O5_M = TROEE(3.333e26_dp, 10900._dp, 2.2e-30_dp, 4.4_dp, &
+                       1.4e-12_dp , .7_dp , TEMP, C_M ) /c_m
+
+END FUNCTION usr_N2O5_M
+
+REAL(KIND=dp) FUNCTION usr_SO2_OH( temp, c_m )
+! for cesm-consistent reaction labels, equivalent to usr23
+! SO2 + OH -> SO4
+
+    REAL(KIND=dp), INTENT(IN) :: temp
+    REAL(KIND=dp), INTENT(IN) :: c_m
+
+    REAL(KIND=dp) :: fc, k0
+    REAL(KIND=dp) :: wrk
+
+    fc    = 3.e-11_dp * (300._dp/temp) ** 3.3_dp
+    wrk   = fc * c_m
+    k0    = wrk / (1._dp + wrk/1.5e-12_dp)
+    usr_SO2_OH = k0 * .6_dp ** (1._dp/(1._dp + &
+                 (log10( wrk/1.5e-12_dp ))**2._dp))
+
+END FUNCTION usr_SO2_OH
+
+REAL(KIND=dp) FUNCTION usr_CO_OH_a( temp, c_m )
+! for cesm-consistent reaction labels, equivalent to usr8
+! CO+OH -> CO2+HO2
+
+    REAL(KIND=dp), INTENT(IN) :: temp
+    REAL(KIND=dp), INTENT(IN) :: c_m
+
+    REAL(KIND=dp), parameter :: boltz = 1.38044e-16_dp
+
+    usr_CO_OH_a = 1.5e-13_dp * (1._dp + 6.e-7_dp*boltz*c_m*temp)
+
+END FUNCTION usr_CO_OH_a
+
+
+!__________________________________________________
+
+    REAL(KIND=dp) FUNCTION Keff ( A0,B0,C0, TEMP,X1,X2,y1,y2 )
+    REAL(KIND=dp),INTENT(IN) :: X1,X2,y1,y2
+    REAL(KIND=dp),INTENT(IN) :: TEMP
+    REAL(KIND=dp),INTENT(IN):: A0,B0,C0
+    Keff = A0 * EXP(- B0 /TEMP ) &
+      *(TEMP/300._dp)**C0*(y1*X1/(X1 + X2 + 1.0e-35) &
+       +y2*(1-X1/(X1 + X2 + 1.0e-35)))
+    END FUNCTION Keff
+!__________________________________________________
+
+    REAL(KIND=dp) FUNCTION Keff2 ( C0,X1,X2,y1,y2 )
+    REAL(KIND=dp),INTENT(IN) :: X1,X2,y1,y2
+    REAL(KIND=dp),INTENT(IN):: C0
+    Keff2 = C0*(y1*X1/(X1 + X2 + 1.0e-35) &
+       +y2*(1-X1/(X1 + X2 + 1.0e-35 )))
+    END FUNCTION Keff2
+
+!__________________________________________________
+
+
+    REAL(KIND=dp) FUNCTION vbs_yield ( nume, den, voc_idx, bin_idx )
+    REAL(KIND=dp), INTENT(IN) :: nume, den
+    INTEGER, INTENT(IN)       :: voc_idx, bin_idx
+    INTEGER, PARAMETER        :: vbs_nbin = 4, vbs_nspec = 9
+
+    ! normalized (1 g/m3 density) yield for condensable vapors
+    REAL(KIND=dp)             :: vbs_alphlowN(vbs_nbin,vbs_nspec)
+    REAL(KIND=dp)             :: vbs_alphhiN(vbs_nbin,vbs_nspec)
+    REAL(KIND=dp)             :: vbs_mw_prec(vbs_nspec)
+    ! SOA density (g/m3)
+    REAL(KIND=dp), PARAMETER  :: dens_aer = 1.5
+    ! SOA molecular weight (g/mol)
+    REAL(KIND=dp), PARAMETER  :: mw_aer   = 250.0
+
+    ! --------------------------------------------------------------------------
+    ! Yields used in Murphy and Pandis, 2009; Tsimpidi et al., 2010;
+    ! Ahmadov et al., 2012
+
+    ! low NOx condition
+    DATA vbs_alphlowN /   &
+    0.0000, 0.0750, 0.0000, 0.0000,   & ! ALK4
+    0.0000, 0.3000, 0.0000, 0.0000,   & ! ALK5
+    0.0045, 0.0090, 0.0600, 0.2250,   & ! OLE1
+    0.0225, 0.0435, 0.1290, 0.3750,   & ! OLE2
+    0.0750, 0.2250, 0.3750, 0.5250,   & ! ARO1
+    0.0750, 0.3000, 0.3750, 0.5250,   & ! ARO2
+    0.0090, 0.0300, 0.0150, 0.0000,   & ! ISOP
+    0.0750, 0.1500, 0.7500, 0.9000,   & ! SESQ
+    0.1073, 0.0918, 0.3587, 0.6075/     ! TERP
+
+    ! high NOx condition
+    DATA vbs_alphhiN /    &
+    0.0000, 0.0375, 0.0000, 0.0000,   & ! ALK4
+    0.0000, 0.1500, 0.0000, 0.0000,   & ! ALK5
+    0.0008, 0.0045, 0.0375, 0.1500,   & ! OLE1
+    0.0030, 0.0255, 0.0825, 0.2700,   & ! OLE2
+    0.0030, 0.1650, 0.3000, 0.4350,   & ! ARO1
+    0.0015, 0.1950, 0.3000, 0.4350,   & ! ARO2
+    0.0003, 0.0225, 0.0150, 0.0000,   & ! ISOP
+    0.0750, 0.1500, 0.7500, 0.9000,   & ! SESQ
+    0.0120, 0.1215, 0.2010, 0.5070/     ! TERP
+
+    DATA vbs_mw_prec /    &
+    120.0, & ! ALK4
+    150.0, & ! ALK5
+    120.0, & ! OLE1
+    120.0, & ! OLE2
+    150.0, & ! ARO1
+    150.0, & ! ARO2
+    136.0, & ! ISOP
+    250.0, & ! SESQ
+    180.0/   ! TERP
+
+    REAL(KIND=dp), PARAMETER  :: yields_dens_aer = 1.5 ! g/m3
+
+    !
+    ! --------------------------------------------------------------------------
+
+    REAL(KIND=dp)             :: B, mw_ratio, dens_ratio
+
+    ! Lane et al., ES&T, 2008
+    ! B = (RO2 + NO) / ((RO2 + NO) + (RO2 + RO2) + (RO2 + HO2))
+    ! with nume = (RO2 + NO) and den = (RO2 + RO2) + (RO2 + HO2)
+    B = nume / (nume + den + 1.0e-35_dp)
+
+    ! we need molar yields, not mass yields
+    mw_ratio = vbs_mw_prec(voc_idx)/mw_aer
+
+    ! density correction
+    dens_ratio = dens_aer / yields_dens_aer
+
+    vbs_yield = (vbs_alphhiN(bin_idx,voc_idx)  * B +             &
+                 vbs_alphlowN(bin_idx,voc_idx) * (1.0_dp - B)) * &
+                 dens_ratio * mw_ratio
+
+    END FUNCTION vbs_yield
+
+    SUBROUTINE aero_surfarea( aero_srf_area, aero_diam, rh, temp, &
+                              aer_so4, aer_oc2, aer_bc2 )
+
+    IMPLICIT NONE
+
+    !-----------------------------------------------------------------
+    ! Dummy arguments
+    !-----------------------------------------------------------------
+    REAL(kind=dp), intent(in)  :: rh
+    REAL(kind=dp), intent(in)  :: temp
+    REAL(kind=dp), intent(in)  :: aer_so4, aer_oc2, aer_bc2
+    REAL(kind=dp), intent(out) :: aero_srf_area(3)
+    REAL(kind=dp), intent(out) :: aero_diam(3)
+
+    !-----------------------------------------------------------------
+    ! Local variables
+    !-----------------------------------------------------------------
+    ! mean radius, diameter, and std dev of sulfate particles (cm) (Chin)
+    real(dp), parameter :: rm_sulf  = 6.95e-6_dp
+    real(dp), parameter :: dm_sulf  = 2._dp*rm_sulf
+    real(dp), parameter :: sd_sulf  = 2.03_dp
+
+    ! mean radius, diameter, and std dev of organic carbon particles (cm) (Chin)
+    real(dp), parameter :: rm_orgc  = 2.12e-6_dp
+    real(dp), parameter :: dm_orgc  = 2._dp*rm_orgc
+    real(dp), parameter :: sd_orgc  = 2.20_dp
+
+    ! mean radius, diameter, and std dev of soot/BC particles (cm) (Chin)
+    real(dp), parameter :: rm_bc    = 1.18e-6_dp
+    real(dp), parameter :: dm_bc    = 2._dp*rm_bc
+    real(dp), parameter :: sd_bc    = 2.00_dp
+
+    real(dp), parameter :: pi       = 3.1415926535897932384626433_dp
+
+    integer  :: irh, rh_l, rh_u
+    real(dp) :: log_sd_sulf, log_sd_orgc, log_sd_bc
+    real(dp) :: dm_sulf_wet, dm_orgc_wet, dm_bc_wet
+    real(dp) :: rfac_sulf, rfac_oc, rfac_bc
+    real(dp) :: n, n_exp, factor, s_exp
+    !-----------------------------------------------------------------
+    ! 	... table for hygroscopic growth effect on radius (Chin et al)
+    !           (no growth effect for mineral dust)
+    !-----------------------------------------------------------------
+    real(dp), dimension(7) :: table_rh, table_rfac_sulf
+    real(dp), dimension(7) :: table_rfac_bc, table_rfac_oc
+
+    data table_rh(1:7) &
+        / 0.0_dp, 0.5_dp, 0.7_dp, 0.8_dp, 0.9_dp, 0.95_dp, 0.99_dp /
+    data table_rfac_sulf(1:7) &
+        / 1.0_dp, 1.4_dp, 1.5_dp, 1.6_dp, 1.8_dp, 1.9_dp,  2.2_dp /
+    data table_rfac_oc(1:7) &
+        / 1.0_dp, 1.2_dp, 1.4_dp, 1.5_dp, 1.6_dp, 1.8_dp,  2.2_dp /
+    data table_rfac_bc(1:7) &
+        / 1.0_dp, 1.0_dp, 1.0_dp, 1.2_dp, 1.4_dp, 1.5_dp,  1.9_dp /
+
+    log_sd_sulf = log( sd_sulf )
+    log_sd_orgc = log( sd_orgc )
+    log_sd_bc   = log( sd_bc )
+
+    !-----------------------------------------------------------------
+    ! 	... exponent for calculating number density
+    !-----------------------------------------------------------------
+    n_exp = exp( -4.5_dp*log(sd_sulf)*log(sd_sulf) )
+    !-------------------------------------------------------------------------
+    !       ... aerosol growth interpolated from M.Chins table
+    !-------------------------------------------------------------------------
+    if (rh >= table_rh(7)) then
+      rfac_sulf = table_rfac_sulf(7)
+      rfac_oc = table_rfac_oc(7)
+      rfac_bc = table_rfac_bc(7)
+    else
+      do irh = 2,7
+        if (rh <= table_rh(irh)) then
+          exit
+        end if
+      end do
+      rh_l = irh-1
+      rh_u = irh
+
+      factor = (rh - table_rh(rh_l))/(table_rh(rh_u) - table_rh(rh_l))
+
+      rfac_sulf = table_rfac_sulf(rh_l) &
+                + factor*(table_rfac_sulf(rh_u) - table_rfac_sulf(rh_l))
+      rfac_oc = table_rfac_oc(rh_u) &
+              + factor*(table_rfac_oc(rh_u) - table_rfac_oc(rh_l))
+      rfac_bc = table_rfac_bc(rh_u) &
+              + factor*(table_rfac_bc(rh_u) - table_rfac_bc(rh_l))
+    end if
+
+    dm_sulf_wet = dm_sulf * rfac_sulf
+    dm_orgc_wet = dm_orgc * rfac_oc
+    dm_bc_wet = dm_bc * rfac_bc
+
+    ! maximum size is 0.5 micron (Chin)
+    dm_bc_wet   = min(dm_bc_wet  ,50.e-6_dp)
+    dm_orgc_wet = min(dm_orgc_wet,50.e-6_dp)
+    
+    aero_diam(:) = (/ dm_sulf_wet, dm_orgc_wet, dm_bc_wet /)
+
+    n = aer_so4 * (6._dp/pi)*(1._dp/(dm_sulf**3))*n_exp
+    s_exp = exp( 2._dp*log_sd_sulf*log_sd_sulf )
+    aero_srf_area(1) = n * pi * (dm_sulf_wet*dm_sulf_wet) * s_exp
+
+    n = aer_oc2 * (6._dp/pi)*(1._dp/(dm_orgc**3))*n_exp
+    s_exp = exp( 2._dp*log_sd_orgc*log_sd_orgc )
+    aero_srf_area(2) = n * pi * (dm_orgc_wet*dm_orgc_wet) * s_exp
+
+    n = aer_bc2 * (6._dp/pi)*(1._dp/(dm_bc**3))*n_exp
+    s_exp = exp( 2._dp*log_sd_bc*log_sd_bc )
+    aero_srf_area(3) = n * pi * (dm_bc_wet*dm_bc_wet) * s_exp
+
+    END SUBROUTINE aero_surfarea
+
+
+#ENDINLINE

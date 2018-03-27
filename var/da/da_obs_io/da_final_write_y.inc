@@ -458,6 +458,25 @@ subroutine da_final_write_y(iv)
    end if
 
    !------------------------------------------------------------------
+   ! writing gpseph:
+   !------------------------------------------------------------------
+
+   num_obs = 0
+   if (iv%info(gpseph)%nlocal > 0) then
+      do n = 1, iv%info(gpseph)%nlocal
+         if (iv%info(gpseph)%proc_domain(1,n)) num_obs = num_obs + 1
+      end do
+   end if
+   call da_proc_sum_int(num_obs)
+   if (rootproc .and. num_obs > 0) then
+      write(ounit,'(a20,i8)')'gpseph', num_obs
+      num_obs = 0
+      do k = 0,num_procs-1
+         call da_read_y_unit(trim(filename(k)),ounit,num_obs,'gpseph',6)
+      end do
+   end if
+
+   !------------------------------------------------------------------
    ! [21] writing RAIN  
    !------------------------------------------------------------------
 

@@ -445,11 +445,6 @@ write(6,*) '*************************************'
                 ifms,ifme,jfms,jfme,  &
                 ifts,ifte,jfts,jfte,  &
                 grid%fxlong,grid%fxlat          )
-  call set_ideal_coord( grid%dx,grid%dy, &
-                ids,ide,jds,jde,  &
-                ims,ime,jms,jme,  &
-                its,ite,jts,jte,  &
-                grid%xlong,grid%xlat          )
 
 ! set terrain height
 

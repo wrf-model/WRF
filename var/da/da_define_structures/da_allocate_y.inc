@@ -97,6 +97,17 @@ subroutine da_allocate_y (iv, y)
       end do
    end if
 
+   if (y % nlocal(gpseph) > 0) then
+      allocate (y % gpseph(1:y % nlocal(gpseph)))
+      do n = 1, y % nlocal(gpseph)
+         nlevels = iv%info(gpseph)%levels(n)
+         if ( nlevels > 0 ) then
+            allocate (y % gpseph(n)%eph(1:nlevels))
+            y % gpseph(n) % eph(1:nlevels) = 0.0
+         end if
+      end do
+   end if
+
    if (y % nlocal(sound) > 0) then
       allocate (y % sound(1:y % nlocal(sound)))
       do n = 1, y % nlocal(sound)

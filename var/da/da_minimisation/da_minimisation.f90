@@ -43,7 +43,7 @@ module da_minimisation
       var_scaling4,var_scaling5,var_scaling3, jo_unit, test_gradient, &
       print_detail_grad,omb_set_rand,grad_unit,cost_unit, num_pseudo, cv_options, &
       cv_size_domain_je,cv_size_domain_jb, cv_size_domain_jp, cv_size_domain_js, cv_size_domain_jl, &
-      sound, mtgirs, sonde_sfc, synop, profiler, gpsref, gpspw, polaramv, geoamv, ships, metar, &
+      sound, mtgirs, sonde_sfc, synop, profiler, gpsref, gpseph, gpspw, polaramv, geoamv, ships, metar, &
       satem, radar, ssmi_rv, ssmi_tb, ssmt1, ssmt2, airsr, pilot, airep,tamdar, tamdar_sfc, rain, &
       bogus, buoy, qscat,pseudo, radiance, monitor_on, max_ext_its, use_rttov_kmatrix,&
       use_crtm_kmatrix,precondition_cg, precondition_factor, use_varbc, varbc_factor, &
@@ -54,11 +54,12 @@ module da_minimisation
       use_satcv, sensitivity_option, print_detail_outerloop, adj_sens, filename_len, &
       ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe, fgat_rain_flags, var4d_bin_rain, freeze_varbc, &
       use_wpec, wpec_factor, use_4denvar, anal_type_hybrid_dual_res, alphacv_method, alphacv_method_xa, &
-      write_detail_grad_fn, pseudo_uvtpq, lanczos_ep_filename
+      write_detail_grad_fn, pseudo_uvtpq, lanczos_ep_filename, use_divc, divc_factor
    use da_define_structures, only : iv_type, y_type,  j_type, be_type, &
       xbx_type, jo_type, da_allocate_y,da_zero_x,da_zero_y,da_deallocate_y, &
       da_zero_vp_type, qhat_type
-   use da_dynamics, only : da_wpec_constraint_lin,da_wpec_constraint_adj
+   use da_dynamics, only : da_wpec_constraint_lin,da_wpec_constraint_adj, &
+      da_divergence_constraint, da_divergence_constraint_adj
    use da_obs, only : da_transform_xtoy_adj,da_transform_xtoy, &
       da_add_noise_to_ob,da_random_omb_all, da_obs_sensitivity
    use da_geoamv, only : da_calculate_grady_geoamv, da_ao_stats_geoamv, &
@@ -70,6 +71,9 @@ module da_minimisation
    use da_gpsref, only : da_calculate_grady_gpsref, da_ao_stats_gpsref, &
       da_oi_stats_gpsref, da_get_innov_vector_gpsref, da_residual_gpsref, &
       da_jo_and_grady_gpsref
+   use da_gpseph, only : da_calculate_grady_gpseph, da_ao_stats_gpseph, &
+      da_oi_stats_gpseph, da_get_innov_vector_gpseph, da_residual_gpseph, &
+      da_jo_and_grady_gpseph
    use da_obs_io, only : da_final_write_y, da_write_y, da_final_write_obs, &
       da_write_obs,da_write_obs_etkf,da_write_noise_to_ob, da_use_obs_errfac, &
       da_write_iv_for_multi_inc, da_read_iv_for_multi_inc

@@ -3,7 +3,7 @@
 set nonomatch
 
 
-foreach dir ( frame chem share dyn_em dyn_exp dyn_nmm phys main tools )
+foreach dir ( frame chem share dyn_em dyn_exp dyn_nmm phys main tools wrftladj )
   if ( -d $dir ) then
     ( cd $dir ; echo $dir ; /bin/rm -f core wrf *.f90 *.exe *.kmo *.mod *.o *.obj *.inc *.F90 *.a \
                       db_* Warnings module_state_description.F module_dm.F gmeta \
@@ -58,6 +58,7 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
 	  */CAMtr_volume_mixing_ratio.RCP4.5 */CAMtr_volume_mixing_ratio.RCP6 */CAMtr_volume_mixing_ratio.RCP8.5 \
 	  */CAMtr_volume_mixing_ratio.A1B */CAMtr_volume_mixing_ratio.A2 */CAMtr_volume_mixing_ratio \
 	  */CLM_*DATA */RRTMG_LW_DATA */RRTMG_SW_DATA \
+	  */p3_lookup_table_?.dat* \
 	  */ozone.formatted */ozone_lat.formatted */ozone_plev.formatted \
 	  */aerosol.formatted */aerosol_lat.formatted */aerosol_plev.formatted */aerosol_lon.formatted \
 	  */kernels.asc_s_0_03_0_9 */bulkradii.asc_s_0_03_0_9 */bulkdens.asc_s_0_03_0_9 \

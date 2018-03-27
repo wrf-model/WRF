@@ -90,6 +90,10 @@ subroutine da_wrfvar_finalize
    end if
 #endif
 
+   if ( use_gpsephobs ) then
+      call da_gpseph_final ( )
+   endif
+
    do i=unit_start,unit_end
       if (unit_used(i)) then
          write(unit=stderr,FMT=*) "unit",i,"still used"

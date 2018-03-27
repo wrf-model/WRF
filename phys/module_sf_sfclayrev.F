@@ -876,14 +876,19 @@ CONTAINS
            Cda(I)=(karman/psix)*(karman/psix)
         ENDIF
         IF ( PRESENT(IZ0TLND) ) THEN
-           IF ( IZ0TLND.EQ.1 .AND. (XLAND(I)-1.5).LE.0. ) THEN
+           IF ( IZ0TLND.GE.1 .AND. (XLAND(I)-1.5).LE.0. ) THEN
               ZL=ZNT(I)
 !             CZIL RELATED CHANGES FOR LAND
               VISC=(1.32+0.009*(SCR3(I)-273.15))*1.E-5
               RESTAR=UST(I)*ZL/VISC
-!             Modify CZIL according to Chen & Zhang, 2009
+!             Modify CZIL according to Chen & Zhang, 2009 if iz0tlnd = 1
+!             If iz0tlnd = 2, use traditional value
 
-              CZIL = 10.0 ** ( -0.40 * ( ZL / 0.07 ) )
+              IF ( IZ0TLND.EQ.1 ) THEN
+                 CZIL = 10.0 ** ( -0.40 * ( ZL / 0.07 ) )
+              ELSE IF ( IZ0TLND.EQ.2 ) THEN
+                 CZIL = 0.1 
+              END IF
 !
 ! ... paj: compute phish for z0t over land
 !

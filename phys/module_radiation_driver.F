@@ -148,6 +148,8 @@ CONTAINS
               ,aod5503d                                                   &
               ,taod5502d, taod5503d                                       & !  Trude
               ,mp_physics                                                 &
+              ,EFCG,EFCS,EFIG,EFIS,EFSG,aercu_opt                         &
+              ,EFSS,QS_CU                                                 &
                                                                           )
 
 
@@ -445,6 +447,14 @@ CONTAINS
                                                              t8w, &
                                                              rho
 
+  REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL,        &
+        INTENT(IN)     ::                            EFCG,       & 
+                                                     EFCS,       &
+                                                     EFIG,       &
+                                                     EFIS,       &
+                                                     EFSG,       &
+                                                     EFSS
+
    !BSINGH - For WRFCuP scheme
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL,        &
         INTENT(INOUT ) ::                            cldfra_cup     !CuP, wig 1-Oct-2006
@@ -458,8 +468,11 @@ CONTAINS
                                  gaer300,gaer400,gaer600,gaer999, & ! jcb
                                  waer300,waer400,waer600,waer999
 
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+         INTENT(IN ) ::          qc_cu, qi_cu
+
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
-         INTENT(IN ) ::          qc_cu, qi_cu, qc_bl
+         INTENT(IN ) ::          qc_bl, qs_cu
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
          INTENT(IN ) ::  tauaerlw1,tauaerlw2,tauaerlw3,tauaerlw4, & ! czhao 
@@ -561,7 +574,8 @@ CONTAINS
                                                           aer_aod550_opt, & ! input option for AOD at 550 nm
                                                           aer_angexp_opt, & ! input option for aerosol Angstrom exponent
                                                           aer_ssa_opt,    & ! input option for aerosol ssa
-                                                          aer_asy_opt       ! input option for aerosol asy
+                                                          aer_asy_opt,    & ! input option for aerosol asy
+                                                          aercu_opt         !
     REAL,                                INTENT(IN)    :: aer_aod550_val, & ! AOD at 550 nm if aer_aod550_opt=1
                                                           aer_angexp_val, & ! aerosol Angstrom exponent if aer_angexp_opt=1
                                                           aer_ssa_val,    & ! aerosol ssa if aer_ssa_opt=1
@@ -638,8 +652,8 @@ CONTAINS
                                                        cldfra_bl
 
 !..G. Thompson
-   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN):: re_cloud, re_ice, re_snow
-   INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
+   REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT):: re_cloud, re_ice, re_snow
+   INTEGER, INTENT(INOUT):: has_reqc, has_reqi, has_reqs
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                     &
          OPTIONAL,                                                   &
@@ -718,6 +732,10 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qc_temp
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_save,qc_save
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qs_save
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qc_cu_weight
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qi_cu_weight
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) :: qs_cu_weight
 
    REAL    ::    gridkm, Wice,Wh2o
 
@@ -1074,6 +1092,19 @@ CONTAINS
           ENDDO
      ENDIF
 
+   IF(aercu_opt.gt.0.0) THEN
+     IF ( F_QI ) THEN
+          DO j=jts,jte
+          DO k=kts,kte
+          DO i=its,ite
+             qs_save(i,k,j) = qs(i,k,j)
+          ENDDO
+          ENDDO
+          ENDDO
+     ENDIF
+   END IF
+
+
 ! Fill temporary water variable depending on micro package (tgs 25 Apr 2006)
      if( F_QC ) then
         DO j=jts,jte
@@ -1162,8 +1193,8 @@ CONTAINS
                    its,ite, jts,jte, kts,kte               )
 
         IF ( PRESENT ( CLDFRA_DP ) ) THEN
-! this is for Kain-Fritsch scheme
-          IF ( icloud_cu .EQ. 2 ) THEN
+! this is for Kain-Fritsch schemes
+          IF ( icloud_cu .EQ. 2 .OR. aercu_opt .GT. 0 ) THEN
              CALL wrf_debug (1, 'use kf cldfra')
              DO j = jts,jte
              DO k = kts,kte
@@ -1177,6 +1208,58 @@ CONTAINS
              ENDDO
              ENDDO
              ENDDO
+
+             IF (aercu_opt.gt.0.0) THEN
+             DO j = jts,jte
+             DO k = kts,kte
+             DO i = its,ite
+                IF (qc(i,k,j).eq.0.0.and.qc_cu(i,k,j).gt.0.0) THEN
+                    qc_cu_weight(i,k,j) = 1.0
+                ELSE IF (qc(i,k,j).gt.0.0.and.qc_cu(i,k,j).eq.0.0) THEN
+                    qc_cu_weight(i,k,j) = 0.0
+                ELSE IF (qc(i,k,j).eq.0.0.and.qc_cu(i,k,j).eq.0.0) THEN
+                    qc_cu_weight(i,k,j) = 0.0
+                ELSE
+                    qc_cu_weight(i,k,j) = (qc_cu(i,k,j)*cldfra_cu(i,k,j))/(qc(i,k,j) + qc_cu(i,k,j)*cldfra_cu(i,k,j))
+                END IF
+                IF (qi(i,k,j).eq.0.0.and.qi_cu(i,k,j).gt.0.0) THEN
+                    qi_cu_weight(i,k,j) = 1.0
+                ELSE IF (qi(i,k,j).gt.0.0.and.qi_cu(i,k,j).eq.0.0) THEN
+                    qi_cu_weight(i,k,j) = 0.0
+                ELSE IF (qi(i,k,j).eq.0.0.and.qi_cu(i,k,j).eq.0.0) THEN
+                    qi_cu_weight(i,k,j) = 0.0
+                ELSE
+                    qi_cu_weight(i,k,j) =(qi_cu(i,k,j)*cldfra_cu(i,k,j))/(qi(i,k,j) + qi_cu(i,k,j)*cldfra_cu(i,k,j))
+                END IF
+                IF (qs(i,k,j).eq.0.0.and.qs_cu(i,k,j).gt.0.0) THEN
+                    qs_cu_weight(i,k,j) = 1.0
+                ELSE IF (qs(i,k,j).gt.0.0.and.qs_cu(i,k,j).eq.0.0) THEN
+                    qs_cu_weight(i,k,j) = 0.0
+                ELSE IF (qs(i,k,j).eq.0.0.and.qs_cu(i,k,j).eq.0.0) THEN
+                    qs_cu_weight(i,k,j) = 0.0
+                ELSE
+                    qs_cu_weight(i,k,j)=(qs_cu(i,k,j)*cldfra_cu(i,k,j))/(qs(i,k,j) + qs_cu(i,k,j)*cldfra_cu(i,k,j))
+                END IF
+
+! use re_cloud, re_ice and re_snow to store combined effective radii from MSKF and Morrison microphysics
+                re_cloud(i,k,j) = EFCS(I,K,J)*qc_cu_weight(I,K,J) &
+                                + EFCG(I,K,J)*(1-qc_cu_weight(I,K,J))
+                re_cloud(i,k,j) = re_cloud(i,k,j) * 1.E-6
+                re_ice(i,k,j)   = EFIS(I,K,J)*qi_cu_weight(I,K,J) &
+                                + EFIG(I,K,J)*(1-qi_cu_weight(I,K,J))
+                re_ice(i,k,j)   = re_ice(i,k,j) * 1.E-6
+                re_snow(i,k,j)  = EFSS(I,K,J)*qs_cu_weight(I,K,J) &
+                                + EFSG(I,K,J)*(1-qs_cu_weight(I,K,J))
+                re_snow(i,k,j)  = re_snow(i,k,j) * 1.E-6
+                has_reqc = 1
+                has_reqi = 1
+                has_reqs = 1
+                qs(i,k,j) = qs(i,k,j)+qs_cu(i,k,j)*cldfra_cu(i,k,j)
+
+             ENDDO
+             ENDDO
+             ENDDO
+             END IF
           ENDIF
         ENDIF
 
@@ -2320,6 +2403,18 @@ CONTAINS
          ENDDO
          ENDDO
       ENDIF
+
+      IF (aercu_opt.gt.0.0) THEN
+      IF ( F_QS ) THEN
+         DO j=jts,jte
+         DO k=kts,kte
+         DO i=its,ite
+           qs(i,k,j) = qs_save(i,k,j)
+         ENDDO
+         ENDDO
+         ENDDO
+      ENDIF
+      END IF
 
       IF (ICLOUD == 3 .AND. F_QS ) THEN
           DO j = jts,jte

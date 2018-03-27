@@ -81,9 +81,9 @@ CONTAINS
                          NUM_URBAN_LAYERS,                       &
                          NUM_URBAN_HI,                           &
                          raincv_a,raincv_b,                      &
-                         gd_cloud,gd_cloud2,                     &    ! Optional
-                         gd_cloud_a,gd_cloud2_a,                 &    ! Optional
-                         QC_CU,QI_CU,                            &    ! Optional
+                         gd_cloud,gd_cloud2,                     & 
+                         gd_cloud_a,gd_cloud2_a,                 &
+                         QC_CU,QI_CU,                            &
                          ozmixm,pin,                             &    ! Optional
                          aerodm,pina,                            &    ! Optional
                          m_ps_1,m_ps_2,m_hybi,aerosolc_1,aerosolc_2,& ! Optional
@@ -227,7 +227,12 @@ CONTAINS
                          ,G_URB2D_mosaic,RN_URB2D_mosaic                                                      & ! danli mosaic 
                          ,TS_URB2D_mosaic                                                                     & ! danli mosaic 
                          ,TS_RUL2D_mosaic                                                                     & ! danli mosaic
-                         )
+#if ( EM_CORE == 1 )
+                         ,QR_CU,QS_CU,NC_CU,NI_CU,NR_CU,NS_CU,CCN_CU              & ! TWG
+                         ,alevsiz_cu,num_months,no_src_types_cu,aeromcu,aeropcu   & ! PSH/TWG 06/10/16                         
+                         ,EFCG,EFCS,EFIG,EFIS,EFSG,EFSS                           & ! TWG
+#endif
+                          )
 
 !-----------------------------------------------------------------
    USE module_domain
@@ -274,6 +279,22 @@ CONTAINS
           INTENT(INOUT) ::                                  OZMIXM
    REAL,  DIMENSION( ims:ime, alevsiz, jms:jme, n_ozmixm-1, no_src_types ), OPTIONAL, &
           INTENT(INOUT) ::                                  aerodm
+
+#if ( EM_CORE == 1 )
+  !PSH/TWG 06/10/16
+   INTEGER,      INTENT(IN   )    ::   alevsiz_cu, num_months, no_src_types_cu !PSH/TWG 06/10/16
+   REAL,  DIMENSION( ims:ime, alevsiz_cu, jms:jme, num_months, no_src_types_cu), OPTIONAL, &
+          INTENT(INOUT) ::                                  aeromcu 
+   REAL,  DIMENSION( ims:ime, alevsiz_cu, jms:jme, num_months), OPTIONAL,INTENT(INOUT)  :: aeropcu 
+
+   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,         &
+          OPTIONAL, INTENT(INOUT   ) ::                              &
+                               QR_CU, QS_CU,                         & !TWG
+                               NC_CU, NI_CU, NR_CU, NS_CU,           & !TWG
+                               CCN_CU, EFCG, EFCS, EFIG,             & !TWG
+                               EFIS, EFSG, EFSS
+  !PSH/TWG END
+#endif
 
    REAL,  DIMENSION(levsiz), OPTIONAL, INTENT(INOUT)  ::        PIN
    REAL,  DIMENSION(alevsiz), OPTIONAL, INTENT(INOUT)  ::       PINA
@@ -422,10 +443,8 @@ CONTAINS
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT),OPTIONAL :: TDLY
    REAL,     DIMENSION( ims:ime , 1:lagday , jms:jme ) , INTENT(INOUT),OPTIONAL :: TLAG
 
-
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,         &
-          OPTIONAL,                                                  &
-          INTENT(INOUT   ) ::                                        &
+          OPTIONAL, INTENT(INOUT   ) ::                              &
                                gd_cloud, gd_cloud2,                  &
                                gd_cloud_a, gd_cloud2_a,              &
                                QC_CU, QI_CU
@@ -435,7 +454,6 @@ CONTAINS
                                raincv_a,raincv_b
 
 !Noah-MP
-
 
    INTEGER, OPTIONAL, DIMENSION(ims:ime,jms:jme) :: ISNOWXY
    REAL,    OPTIONAL, DIMENSION(ims:ime,-2:num_soil_layers, jms:jme) :: ZSNSOXY
@@ -725,6 +743,9 @@ CONTAINS
    INTEGER :: mfshconv
    INTEGER :: icloud_cu
    INTEGER :: iopt_run
+   INTEGER :: aercu_opt !PSH/TWG 
+   REAL    :: aercu_fct !PSH/TWG 
+
 
    INTEGER :: i, j, k, itf, jtf, ktf, n
 integer myproc
@@ -760,6 +781,8 @@ integer myproc
    
 !-----------------------------------------------------------------
 
+   aercu_opt=config_flags%aercu_opt !PSH/TWG 06/10/16
+   aercu_fct=config_flags%aercu_fct !PSH/TWG 06/10/16
    sf_urban_physics=config_flags%sf_urban_physics
    usemonalb=config_flags%usemonalb
    rdmaxalb=config_flags%rdmaxalb
@@ -872,9 +895,45 @@ integer myproc
       END IF
    END IF
 #if (EM_CORE == 1)
-   IF ( config_flags%cu_physics == mskfscheme ) THEN
+   IF ( config_flags%cu_physics == mskfscheme) THEN
         icloud_cu = 2
    END IF
+
+!--------------------INPUT FOR AEROSOL DATA-----------------------
+!-----------------------------PSH/TWG-----------------------------
+   IF ( aercu_opt .GT. 0 .AND. id .EQ. 1 ) THEN
+      CALL aerosol_in_cu(aeromcu,alevsiz_cu,num_months,no_src_types_cu,XLAT,XLONG,aeropcu,&
+                     ids, ide, jds, jde, kds, kde,                  &
+                     ims, ime, jms, jme, kms, kme,                  &
+                     its, ite, jts, jte, kts, kte)
+   ENDIF
+!-----------------------------PSH/TWG-----------------------------
+
+! Initialize Cumulus Hydrometeors
+    if (config_flags%aercu_opt == 1 )then
+     do j=jts,jtf
+       do k=kts,ktf
+          do i=its,itf
+            QC_CU(i,k,j) = 0.
+            QI_CU(i,k,j) = 0.
+            QR_CU(i,k,j) = 0.
+            QS_CU(i,k,j) = 0.
+            NC_CU(i,k,j) = 0.
+            NI_CU(i,k,j) = 0.
+            NR_CU(i,k,j) = 0.
+            NS_CU(i,k,j) = 0.
+            CCN_CU(i,k,j) = 0.
+            EFCG(i,k,j) = 2.51
+            EFCS(i,k,j) = 2.51
+            EFIS(i,k,j) = 5.01
+            EFIG(i,k,j) = 5.01
+            EFSG(i,k,j) = 10.01
+            EFSS(i,k,j) = 10.01
+          end do
+       end do
+     end do
+    endif
+
 #endif
    CALL nl_set_icloud_cu ( id , icloud_cu )
 
@@ -1274,7 +1333,7 @@ integer myproc
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte,                   &
-                RQCNCUTEN,RQINCUTEN                            ) 
+                RQCNCUTEN,RQINCUTEN)
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to shcu_init' )
 
@@ -3334,7 +3393,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
                       its, ite, jts, jte, kts, kte,                &
-                      RQCNCUTEN,RQINCUTEN                          )                        
+                      RQCNCUTEN,RQINCUTEN)
 !------------------------------------------------------------------
    USE module_cu_kf
    USE module_cu_kfeta
@@ -3361,7 +3420,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    TYPE (grid_config_rec_type) ::     config_flags
    LOGICAL , INTENT(IN)        :: restart
 
-
    INTEGER , INTENT(IN)        :: ids, ide, jds, jde, kds, kde,   &
                                   ims, ime, jms, jme, kms, kme,   &
                                   its, ite, jts, jte, kts, kte
@@ -3380,7 +3438,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
         cldfra_cup,cldfratend_cup                               !CuP, wig 18-Sep-2006
    !BSINGH -ENDS
 #endif
-   
 
    REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , OPTIONAL, INTENT(INOUT) ::    &    
                         cugd_tten,cugd_ttens,cugd_qvten,            &    
@@ -3744,6 +3801,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_mp_nssl_2mom
 #if (EM_CORE==1)
    USE module_mp_cammgmp_driver, ONLY:CAMMGMP_INIT !CAM5's microphysics
+   USE module_mp_morr_two_moment_aero              !TWG2017
 #endif
 !------------------------------------------------------------------
    IMPLICIT NONE
@@ -3890,6 +3948,10 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
      CASE (MORR_TWO_MOMENT)
          CALL morr_two_moment_init( config_flags%hail_opt )
+#if (EM_CORE==1)
+     CASE (MORR_TM_AERO)
+         CALL morr_two_moment_init_aero( config_flags%hail_opt )
+#endif
      CASE (P3_1CATEGORY)
          CALL p3_init('.',1)
      CASE (P3_1CATEGORY_NC)
@@ -4711,5 +4773,194 @@ END SUBROUTINE aerosol_in
 
   return
   end subroutine interp_vec
+
+!!--------------------START   PSH/TWG   CHANGES-----------------------
+!--------------------INPUT FOR AEROSOL DATA---------------------------
+subroutine aerosol_in_cu(aeromcu,alevsiz,no_months,no_src_types,XLAT,XLONG,aeropcu, &
+                     ids, ide, jds, jde, kds, kde,                  &
+                     ims, ime, jms, jme, kms, kme,                  &
+                     its, ite, jts, jte, kts, kte)
+!
+! This module was taken from the radiation driver and modified for the
+! cumulus aerosol input. - PSH
+!
+  use netcdf !PSH
+   IMPLICIT NONE
+
+   INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde, &
+                                       ims,ime, jms,jme, kms,kme, &
+                                       its,ite, jts,jte, kts,kte
+
+   INTEGER,      INTENT(IN   )    ::   alevsiz, no_months, no_src_types
+
+   REAL,  DIMENSION( ims:ime, jms:jme ), INTENT(IN   )  ::     XLAT, XLONG
+
+   INTEGER :: i, j, k, itf, jtf, ktf, m, pin_unit, lat_unit,lon_unit,od_unit,ks,il, jl
+   INTEGER :: ilon1cu, ilon2cu, jlat1cu, jlat2cu
+   REAL    :: interp_ptcu, interp_pt_latcu, interp_pt_loncu,wlat1cu,wlat2cu,wlon1cu,wlon2cu
+   CHARACTER*256 :: message
+
+   integer                               :: ncId, lonID, latID, levID, &
+                                            lonDimID, latDimId, timeDimId, &
+                                            numLons, numLats, numLevs,    &
+                                            ncfcode, &
+                                            varID
+
+   REAL,  DIMENSION( ims:ime, alevsiz, jms:jme, no_months, no_src_types ),&
+          INTENT(OUT   ) ::                                  aeromcu !PSH
+   REAL,  DIMENSION( ims:ime, alevsiz, jms:jme, no_months), OPTIONAL, &
+   INTENT(OUT)  :: aeropcu !PSH
+   integer, dimension(nf90_max_var_dims) :: dimIDs
+   real, dimension(:, :, :, :, :), allocatable  :: aeroin !PSH
+   real, dimension(:, :, :, :), allocatable  :: aeropin !PSH
+   CHARACTER (len=10), dimension(no_src_types) :: species !PSH
+   CHARACTER (len=100) :: fname !PSH
+   CHARACTER (len=8) :: frmt !PSH
+   CHARACTER (len=2) :: mons !PSH
+   integer :: v, mi !PSH
+   REAL, dimension(:), ALLOCATABLE :: lon_aer, lat_aer !, lev_aer !PSH
+   LOGICAL           :: exists
+   INTEGER, EXTERNAL :: get_unused_unit
+   LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+   INTEGER :: istatus, iunit
+   jtf=min0(jte,jde-1)
+   ktf=min0(kte,kde-1)
+   itf=min0(ite,ide-1)
+
+! - - - - SPECIES OF INTEREST - - - - -
+   species = (/"DUST1   ","DUST2   ","DUST3   ","DUST4   ","SEASALT2", &
+               "SULFATE ","BCPHO   ","BCPHI   ","OCPHO   ","OCPHI   "/)
+   frmt = '(I0.2)'
+
+      INQUIRE(FILE='./CESM_RCP4.5_Aerosol_Data.dat', EXIST=exists)
+
+      IF (exists) THEN
+          iunit = get_unused_unit()
+          IF ( iunit <= 0 ) THEN
+             IF ( wrf_dm_on_monitor() ) THEN
+                CALL wrf_error_fatal('Error in aerosol_in_cu: could not find a free Fortran unit.')
+             END IF
+          END IF
+
+          ! Read aerosol information 
+          OPEN(UNIT=iunit, FILE='CESM_RCP4.5_Aerosol_Data.dat', FORM='unformatted', &
+               STATUS='old', IOSTAT=istatus)
+            IF (istatus == 0) THEN
+               READ(UNIT=iunit)  numLons, numLats,numLevs
+               allocate(aeroin(numLons, numLats, numLevs, no_months, no_src_types))
+               allocate(aeropin(numLons, numLats, numLevs, no_months))
+               allocate(lon_aer(numLons))
+               allocate(lat_aer(numLats))
+               READ(UNIT=iunit)  lat_aer
+               READ(UNIT=iunit)  lon_aer
+               READ(UNIT=iunit)  aeropin
+               READ(UNIT=iunit)  aeroin
+            END IF
+          CLOSE(iunit)
+      END IF
+!---------------------------------------------------------------------------
+!-- latitudinally interpolate ozone data (and extend longitudinally)
+!-- using function lin_interpol2(x, f, y) result(g)
+! Purpose:
+!   interpolates f(x) to point y
+!   assuming f(x) = f(x0) + a * (x - x0)
+!   where a = ( f(x1) - f(x0) ) / (x1 - x0)
+!   x0 <= x <= x1
+!   assumes x is monotonically increasing
+!    real, intent(in), dimension(:) :: x  ! grid points
+!    real, intent(in), dimension(:) :: f  ! grid function values
+!    real, intent(in) :: y                ! interpolation point
+!    real :: g                            ! interpolated function value
+!---------------------------------------------------------------------------
+
+      do j=jts,jtf
+      do i=its,itf
+        interp_pt_latcu=XLAT(i,j)
+        interp_pt_loncu=XLONG(i,j)
+        call interp_vec_cu(lat_aer,interp_pt_latcu,.true.,jlat1cu,jlat2cu,wlat1cu,wlat2cu)
+        call interp_vec_cu(lon_aer,interp_pt_loncu,.true.,ilon1cu,ilon2cu,wlon1cu,wlon2cu)
+
+        do m  = 1,no_months
+        do k  = 1,alevsiz
+          aeropcu(i,k,j,m) = wlon1cu * (wlat1cu * aeropin(ilon1cu,jlat1cu,k,m)+&
+                                           wlat2cu*aeropin(ilon1cu,jlat2cu,k,m))+&
+                                wlon2cu * (wlat1cu*aeropin(ilon2cu,jlat1cu,k,m)+&
+                                           wlat2cu*aeropin(ilon2cu,jlat2cu,k,m))
+        do ks = 1,no_src_types
+          aeromcu(i,k,j,m,ks) = wlon1cu * (wlat1cu*aeroin(ilon1cu,jlat1cu,k,m,ks)  + &
+                                           wlat2cu*aeroin(ilon1cu,jlat2cu,k,m,ks))+ &
+                                wlon2cu * (wlat1cu*aeroin(ilon2cu,jlat1cu,k,m,ks)  + &
+                                           wlat2cu*aeroin(ilon2cu,jlat2cu,k,m,ks))
+
+        end do
+        end do
+        end do
+      end do
+      end do
+
+END SUBROUTINE aerosol_in_cu
+
+subroutine interp_vec_cu(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
+! This subroutine was taken and modified from the radiation driver. -PSH
+  implicit none
+
+  real, intent(in), dimension(:) :: locvec
+  real, intent(in)               :: locwant
+  logical, intent(in)            :: periodic
+  integer, intent(out)           :: loc1, loc2
+  real, intent(out)              :: wght1, wght2
+
+  integer :: vsize, n
+  real    :: locv1, locv2
+
+  vsize = size(locvec)
+
+  loc1 = -1
+  loc2 = -1
+
+  do n = 1, vsize-1
+    if ( locvec(n) <= locwant .and. locvec(n+1) > locwant ) then
+      loc1  = n
+      loc2  = n+1
+      locv1 = locvec(n)
+      locv2 = locvec(n+1)
+      exit
+    end if
+  end do
+
+  if ( loc1 < 0 .and. loc2 < 0 ) then
+    if ( periodic ) then
+      if ( locwant < locvec(1) ) then
+        loc1  = vsize
+        loc2  = 1
+        locv1 = locvec(vsize)-360.0
+        locv2 = locvec(1)
+      else
+        loc1  = vsize
+        loc2  = 1
+        locv1 = locvec(vsize)
+        locv2 = locvec(1)+360.0
+      end if
+    else
+      if ( locwant < locvec(1) ) then
+        loc1  = 1
+        loc2  = 1
+        locv1 = locvec(1)
+        locv2 = locvec(1)
+      else
+        loc1  = vsize
+        loc2  = vsize
+        locv1 = locvec(vsize)
+        locv2 = locvec(vsize)
+      end if
+    end if
+  end if
+
+  wght2 = (locwant-locv1) / (locv2-locv1)
+  wght1 = 1.0 - wght2
+
+  return
+  end subroutine interp_vec_cu
+!---------------------END   PSH/TWG  CHANGES----------------
 
 END MODULE module_physics_init

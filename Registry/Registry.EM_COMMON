@@ -1077,6 +1077,24 @@ state  real   sulfate   ikjf            aerod       1    -   df=(p2c)     "sulfa
 state  real   upperaer  ikjf            aerod       1    -   df=(p2c)     "upperaer"        "volcanic ash"            -
 state  real   aodtot    ij              misc        1    -      r         "aodtot"          "TOTAL AEROSOL OPTICAL DEPTH"  -
 
+# incoming aerosol data for multiscale Kain Fritsch
+state  real   aeromcu   i{lsc}jm{tyc}   misc        1    -   -     -
+state  real   aeropcu   i{lsc}jm        misc        1    -   -      "AEROPCU"     "PRESSURE LEVEL OF AEROSOL DATA"  "millibar"
+
+# array to hold aerosol data that has been interpolated to model levels and time
+state  real   -            ikjf         aerocu      1    -   -             -
+state  real   cu_dust1     ikjf         aerocu      1    -   hdf=(p2c)     "cudust1"           "dust 1"                     "ug m-3"
+state  real   cu_dust2     ikjf         aerocu      1    -   hdf=(p2c)     "cudust2"           "dust 2"                     "ug m-3"
+state  real   cu_dust3     ikjf         aerocu      1    -   hdf=(p2c)     "cudust3"           "dust 3"                     "ug m-3"
+state  real   cu_dust4     ikjf         aerocu      1    -   hdf=(p2c)     "cudust4"           "dust 4"                     "ug m-3"
+state  real   cu_seasalt   ikjf         aerocu      1    -   hdf=(p2c)     "cuseasalt"         "sea salt"                   "ug m-3"
+state  real   cu_sulfate   ikjf         aerocu      1    -   hdf=(p2c)     "cusulfate"         "sulfate"                    "ug m-3"
+state  real   cu_phobcar   ikjf         aerocu      1    -   hdf=(p2c)     "cuphobcar"         "hydrophobic black carbon"   "ug m-3"
+state  real   cu_phibcar   ikjf         aerocu      1    -   hdf=(p2c)     "cuphibcar"         "hydrophilic black carbon"   "ug m-3"
+state  real   cu_phoocar   ikjf         aerocu      1    -   hdf=(p2c)     "cuphoocar"         "hydrophobic organic carbon"   "ug m-3"
+state  real   cu_phiocar   ikjf         aerocu      1    -   hdf=(p2c)     "cuphiocar"         "hydrophilic organic carbon"   "ug m-3"
+state  real   aerovar      ikj          misc        1    -      hr         "AEROVAR"           "Aerosol variable for MSKF"  "ug m-3"
+
 # cam radiation variables
 state  real    -       i{ls}jf ozmixm      1    -   -     -
 state  real   mth01    i{ls}jf ozmixm      1    -   -     -
@@ -1314,7 +1332,8 @@ state    real  HAILNC           ij      misc        1         -      rhdu     "H
 state    real  SNOWNCV          ij      misc        1         -      r        "SNOWNCV"               "TIME-STEP NONCONVECTIVE SNOW AND ICE"                    "mm"
 state    real  GRAUPELNCV       ij      misc        1         -      r        "GRAUPELNCV"            "TIME-STEP NONCONVECTIVE GRAUPEL"                         "mm"
 state    real  HAILNCV          ij      misc        1         -      r        "HAILNCV"               "TIME-STEP NONCONVECTIVE HAIL"                            "mm"
-state    real    refl_10cm      ikj     dyn_em      1         -      hdu       "refl_10cm"             "Radar reflectivity (lamda = 10 cm)"  "dBZ"
+state    real  refl_10cm       ikj      dyn_em      1         -      hdu      "refl_10cm"             "Radar reflectivity (lamda = 10 cm)"  "dBZ"
+state    real  mskf_refl_10cm  ikj      dyn_em      1         -      hdu      "mskf_refl_10cm"        "Full Radar reflectivity (lamda = 10 cm)"  "dBZ"
 state    real    th_old          ikj      misc        1         -      rusd        "TH_OLD"              "Old Value of Th"   "K"
 state    real    qv_old          ikj      misc        1         -      rusd        "QV_OLD"              "Old Value of qv"   "kg kg-1"
 state    real    vmi3d          ikj     misc        1         -     hdu       "v_ice"                 "Mass-weighted ice fallspeed cat 1"  "m s-1"
@@ -1370,6 +1389,28 @@ state    real  GD_CLOUD_A        ikj      misc        1         -      r      "G
 state    real  GD_CLOUD2_A       ikj      misc        1         -      r      "GD_CLOUD2_A"          "taveragd cloud ice mix ratio in GD"         "kg kg-1"
 state    real  QC_CU             ikj      misc        1         -      r      "QC_CU"                "CLOUD WATER MIXING RATIO FROM A CU SCHEME"         "kg kg-1"
 state    real  QI_CU             ikj      misc        1         -      r      "QI_CU"                "CLOUD ICE MIXUNG RATIO FROM A CU SCHEME"         "kg kg-1"
+state    real  QR_CU            ikj      misc        1         -      rh      "QR_CU"               "RAIN MIXING RATIO FROM A CU SCHEME"         "kg kg-1"
+state    real  QS_CU            ikj      misc        1         -      rh      "QS_CU"               "SNOW MIXING RATIO FROM A CU SCHEME"         "kg kg-1"
+state    real  NC_CU            ikj      misc        1         -      rh      "NC_CU"               "CLOUD WATER NUMBER CONCENTRATION FROM A CU SCHEME"         "kg-1"
+state    real  NI_CU            ikj      misc        1         -      rh      "NI_CU"               "CLOUD ICE NUMBER CONCENTRATION FROM A CU SCHEME"         "kg-1"
+state    real  NR_CU            ikj      misc        1         -      rh      "NR_CU"               "RAIN NUMBER CONCENTRATION FROM A CU SCHEME"         "kg-1"
+state    real  NS_CU            ikj      misc        1         -      rh      "NS_CU"               "SNOW NUMBER CONCENTRATION FROM A CU SCHEME"         "kg-1"
+state    real  CCN_CU           ikj      misc        1         -      rh      "CCN_CU"              "CLOUD CONDENSATION NUCLEI CONCENTRATION FROM A CU SCHEME"         "kg-1"
+state    real  CU_UAF            ij      misc        1         -      rh      "CU_UAF"              "CU Updraft Area Fraction"         ""
+state    real  EFCS             ikj      misc        1         -      rh      "EFCS"                "Sub-grid Scale Cloud Effective Radius"         "um"
+state    real  EFIS             ikj      misc        1         -      rh      "EFIS"                "Sub-grid Scale Ice Effective Radius"       "um"
+state    real  EFCG             ikj      misc        1         -      rh      "EFCG"                "Grid Scale Cloud Effective Radius"         "um"
+state    real  EFIG             ikj      misc        1         -      rh      "EFIG"                "Grid Scale Ice Effective Radius"       "um"
+state    real  EFSG             ikj      misc        1         -      rh      "EFSG"                "Grid Scale Snow Effective Radius"       "um"
+state    real  EFSS             ikj      misc        1         -      rh      "EFSS"                "Subgrid Scale Snow Effective Radius"       "um"
+state    real  WACT             ikj      misc        1         -      rh      "WACT"                "Aerosol Activation Updraft"       "m s-1"
+state    real  CCN1_GS          ikj      misc        1         -      rh      "CCN1_GS"             "Grid Scale Cloud Condensation Nuclei at S=0.02%"       "#/cm-3"
+state    real  CCN2_GS          ikj      misc        1         -      rh      "CCN2_GS"             "Grid Scale Cloud Condensation Nuclei at S=0.05%"       "#/cm-3"
+state    real  CCN3_GS          ikj      misc        1         -      rh      "CCN3_GS"             "Grid Scale Cloud Condensation Nuclei at S=0.1%"       "#/cm-3"
+state    real  CCN4_GS          ikj      misc        1         -      rh      "CCN4_GS"             "Grid Scale Cloud Condensation Nuclei at S=0.2%"       "#/cm-3"
+state    real  CCN5_GS          ikj      misc        1         -      rh      "CCN5_GS"             "Grid Scale Cloud Condensation Nuclei at S=0.3%"       "#/cm-3"
+state    real  CCN6_GS          ikj      misc        1         -      rh      "CCN6_GS"             "Grid Scale Cloud Condensation Nuclei at S=0.5%"       "#/cm-3"
+state    real  CCN7_GS          ikj      misc        1         -      rh      "CCN7_GS"             "Grid Scale Cloud Condensation Nuclei at S=1.0%"       "#/cm-3"
 state    real  QC_BL             ikj      misc        1         -      r      "QC_BL"                "CLOUD WATER MIXING RATIO IN PBL schemes"          "kg kg-1"
 state integer  STEPAVE_COUNT     -        misc        1         -      r      "STEPAVE_COUNT"        "time steps contained in averages for convective transport" ""
 
@@ -2177,6 +2218,11 @@ rconfig   real    aer_angexp_val          namelist,physics      max_domains   1.
 rconfig   real    aer_ssa_val             namelist,physics      max_domains   0.85    irh    "aer_ssa_val"    "fixed value for aerosol single-scattering albedo. Valid when aer_ssa_opt=1" ""
 rconfig   real    aer_asy_val             namelist,physics      max_domains   0.90    irh    "aer_asy_val"    "fixed value for aerosol asymmetry parameter. Valid when aer_asy_opt=1" ""
 rconfig   logical cu_rad_feedback         namelist,physics      max_domains   .false. irh    "feedback of cumulus cloud to radiation"  ""
+rconfig   integer no_src_types_cu         namelist,physics      1             1       -      "no_src_types_cu" "Number of aerosoal species in global aerosol data"  ""
+rconfig   integer alevsiz_cu              namelist,physics      1             1       -      "alevsiz_cu" "Number of levels in global aerosol data"  ""
+rconfig   integer aercu_opt               namelist,physics      1             0       -      "aercu_opt"    "aerosol input option for multiscale KF"      ""
+rconfig   real    aercu_fct               namelist,physics      1             1.0     -      "aercu_fct"    "aerosol multiplication factor"               ""
+rconfig   integer aercu_used              derived               1             0       -      "aercu_used"   "derived nml for packaging"      ""
 
 #BSINGH - added shallowcu_forced_ra, numBins, thBinSize, rBinSize, minDeepFreq, minShallowFreq, shcu_aerosols_opt for CuP scheme
 
@@ -2575,6 +2621,7 @@ package   thompsonaero    mp_physics==28               -             moist:qv,qc
 package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi;scalar:qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi;scalar:qnc,qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   p3_2category    mp_physics==52               -             moist:qv,qc,qr,qi,qi2;scalar:qnc,qni,qnr,qir,qib,qni2,qir2,qib2;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,vmi3d_2,rhopo3d_2,di3d_2,refl_10cm,th_old,qv_old
+package   morr_tm_aero    mp_physics==40               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnc,qni,qns,qnr,qng;state:rqrcuten,rqscuten,rqicuten,EFCG,EFIG,EFSG,WACT,CCN1_GS,CCN2_GS,CCN3_GS,CCN4_GS,CCN5_GS,CCN6_GS,CCN7_GS,re_cloud,re_ice,re_snow
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 
 package   radar_refl      compute_radar_ref==1         -             state:refl_10cm,refd_max
@@ -2690,7 +2737,7 @@ package   g3scheme       cu_physics==5               -             state:cugd_qv
 package   tiedtkescheme  cu_physics==6               -             -
 package   camzmscheme    cu_physics==7               -             state:precz,zmdt,zmdq,zmdice,zmdliq,evaptzm,fzsntzm,evsntzm,evapqzm,zmflxprc,zmflxsnw,zmntprpd,zmntsnpd,zmeiheat,cmfmc,cmfmcdzm,preccdzm,pconvb,pconvt,cape,zmmtu,zmmtv,zmmu,zmmd,zmupgu,zmupgd,zmvpgu,zmvpgd,zmicuu,zmicud,zmicvu,zmicvd,evapcdp3d,icwmrdp3d,rprddp3d,dp3d,du3d,ed3d,eu3d,md3d,mu3d,dsubcld2d,ideep2d,jt2d,maxg2d,lengath2d,dlf,rliq,tpert2d
 package   kfcupscheme    cu_physics==10              -             state:cldfratend_cup,cldfra_cup,updfra_cup,qc_iu_cup,qc_ic_cup,qndrop_ic_cup,wup_cup,mfup_cup,mfup_ent_cup,mfdn_cup,mfdn_ent_cup,fcvt_qc_to_pr_cup,fcvt_qc_to_qi_cup,fcvt_qi_to_pr_cup,lnterms,w0avg
-package   mskfscheme     cu_physics==11              -             state:w0avg,w_up
+package   mskfscheme   cu_physics==11              -             state:w0avg,w_up
 package   nsasscheme     cu_physics==14              -             -
 package   nsasoldscheme  cu_physics==96              -             -
 package   ntiedtkescheme cu_physics==16              -             -
@@ -2732,6 +2779,8 @@ package   fasdas         grid_sfdda==2              -              state:u10_ndg
 
 package   aeropt1        aer_opt==1                 -              state:aerodm
 package   aeropt2        aer_opt==2                 -              state:aod5503d
+
+package   aercuopt       aercu_used==1              -              state:aeromcu,CU_UAF,EFCS,EFIS,EFSS,qr_cu,qs_cu,nc_cu,ni_cu,nr_cu,ns_cu,ccn_cu,aerovar;aerocu:cu_sulfate,cu_seasalt,cu_dust1,cu_dust2,cu_dust3,cu_dust4,cu_phoocar,cu_phiocar,cu_phobcar,cu_phibcar
 
 package   slopeopt       slope_rad==1               -              -
 package   gwdopt         gwd_opt==1                 -              state:oc12d,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4,dtaux3d,dtauy3d,dusfcg,dvsfcg

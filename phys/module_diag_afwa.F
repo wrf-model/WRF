@@ -2437,7 +2437,8 @@ CONTAINS
         ELSEIF ( config_flags % mp_physics == WSM5SCHEME .OR.   &
                  config_flags % mp_physics == WSM6SCHEME ) THEN
           icing_opt=4
-        ELSEIF ( config_flags % mp_physics == MORR_TWO_MOMENT ) THEN
+        ELSEIF ( config_flags % mp_physics == MORR_TWO_MOMENT .OR. &
+                 config_flags % mp_physics == MORR_TM_AERO ) THEN  !TWG add 2017
 
           ! Is this run with prognostic cloud droplets or no?
           ! -------------------------------------------------

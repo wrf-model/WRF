@@ -199,8 +199,8 @@
 
 !
 !..Additions for coupling cloud physics effective radii and radiation.  G. Thompson
-      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN):: re_cloud, re_ice, re_snow
-      INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT):: re_cloud, re_ice, re_snow
+      INTEGER, INTENT(INOUT):: has_reqc, has_reqi, has_reqs
 !
       LOGICAL,INTENT(IN) :: RESTRT
 !
@@ -507,6 +507,7 @@
      &                 ,QG=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG      &
      &                 ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
      &                 ,EXPLICIT_CONVECTION=config_flags%cu_physics==0  &
+     &                 ,AERCU_OPT=config_flags%aercu_opt                &
      &                 ,CU_PHYSICS=config_flags%cu_physics              &
      &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &
      &                 ,CALC_CLEAN_ATM_DIAG=CONFIG_FLAGS%CALC_CLEAN_ATM_DIAG)
@@ -3369,6 +3370,7 @@
      &                 ,has_reqi=has_reqi                               & ! G. Thompson
      &                 ,has_reqs=has_reqs                               & ! G. Thompson
      &                 ,ccn_conc=config_flags%ccn_conc                  &
+     &                 ,aercu_opt=config_flags%aercu_opt                &
                                                                         )
 
 !$omp parallel do                                                       &

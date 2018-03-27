@@ -1153,6 +1153,10 @@ endif
                       ,grid%G_URB2D_mosaic,grid%RN_URB2D_mosaic                                      & ! danli mosaic
                       ,grid%TS_URB2D_mosaic                                                          & ! danli mosaic
                       ,grid%TS_RUL2D_mosaic                                                          & ! danli mosaic
+                      ,grid%QR_CU, grid%QS_CU                                                        &
+                      ,grid%NC_CU, grid%NI_CU, grid%NR_CU, grid%NS_CU,grid%CCN_CU                    &
+                      ,grid%alevsiz_cu,grid%num_months,grid%no_src_types_cu,grid%aeromcu             &
+                      ,grid%aeropcu,grid%EFCG,grid%EFCS,grid%EFIG,grid%EFIS,grid%EFSG,grid%EFSS      &
                       )
        ENDDO ! loop of tiles for phy_init
     ENDIF   ! no phy_init for the backwards part of the DFI

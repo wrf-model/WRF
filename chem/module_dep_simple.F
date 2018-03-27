@@ -338,6 +338,9 @@ tile_lon_loop : &
       end if
 !!!!TUCCELLA
      if  (config_flags%chem_opt == RACM_SOA_VBS_KPP .OR.           &
+!liqy
+          config_flags%chem_opt == RACM_SOA_VBS_HET_KPP .OR.           &
+!liqy-20160518
           config_flags%chem_opt == RACM_SOA_VBS_AQCHEM_KPP) then
          do j=jts,jte
             do i=its,ite
@@ -356,6 +359,25 @@ tile_lon_loop : &
             end do
          end do
       end if
+
+!liqy
+     if  (config_flags%chem_opt == RACM_SOA_VBS_HET_KPP) then
+         do j=jts,jte
+            do i=its,ite
+!hcl,clno2,cl2,fmcl,cl,clo,hocl,ch3cl,
+               ddvel(i,j,p_hcl) = dep_vap*ddvel(i,j,p_hno3)
+               ddvel(i,j,p_clno2) = 0.0
+               ddvel(i,j,p_cl2) = 0.0
+               ddvel(i,j,p_fmcl) = 0.0
+               ddvel(i,j,p_cl) = 0.0
+               ddvel(i,j,p_clo) = 0.0
+               ddvel(i,j,p_hocl) = 0.0
+               ddvel(i,j,p_ch3cl) = 0.0
+            end do
+         end do
+      end if
+!liqy-20160518
+
 !-----------------------------------------------------------
 ! For the additional CBM4 species, assign similar RADM counter parts for
 ! now. Short lived species get a zero velocity since dry dep should be

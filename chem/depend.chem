@@ -1,5 +1,11 @@
 # DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
 
+module_isocom.o: module_isofwd.o module_isorev.o
+
+module_isofwd.o:
+
+module_isorev.o:
+
 module_data_isrpia_data.o:
 
 module_data_ISRPIA.o: module_data_isrpia_data.o
@@ -233,7 +239,7 @@ module_prep_wetscav_sorgam.o: module_mosaic_wetscav.o module_data_sorgam.o modul
 
 module_aerosols_sorgam.o: module_data_sorgam.o module_mosaic_addemiss.o module_radm.o module_mosaic_wetscav.o
 
-module_aerosols_soa_vbs.o: module_data_soa_vbs.o module_radm.o module_mosaic_addemiss.o 
+module_aerosols_soa_vbs.o: module_data_soa_vbs.o module_radm.o module_mosaic_addemiss.o module_isocom.o module_isofwd.o module_isorev.o 
 
 module_aerosols_sorgam_vbs.o: module_data_sorgam_vbs.o module_mosaic_wetscav.o
 

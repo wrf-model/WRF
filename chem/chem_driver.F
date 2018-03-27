@@ -500,6 +500,11 @@
      CASE (RACM_SOA_VBS_AQCHEM_KPP)
        CALL wrf_debug(15,'calling racm_soa_vbs_aqchem_kpp aerosols driver from chem_driver')
        haveaer = .false.
+!liqy
+     CASE (RACM_SOA_VBS_HET_KPP)
+       CALL wrf_debug(15,'calling racm_soa_vbs_het_kpp aerosols driver from chem_driver')
+       haveaer = .false.
+!liqy-20160227
      CASE (GOCART_SIMPLE)
        CALL wrf_debug(15,'calling only gocart aerosols driver from chem_driver')
        haveaer = .false.
@@ -694,10 +699,12 @@
          enddo
       enddo
       select case (config_flags%chem_opt)
+!liqy
 !!! TUCCELLA
       case (RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
             RACM_ESRLSORG_KPP,RACMSORG_AQ,RACMSORG_KPP, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, &
-            RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
+            RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP,RACM_SOA_VBS_HET_KPP)
+!liqy-20160227
          do j=jps,jpe
             do k=kps,kpe
                do i=ips,ipe
@@ -955,7 +962,11 @@
               chem,rho,dz8w,grid%xlat,grid%xlong,                                     &
               zmid,z_at_w,                                                            &
               grid%qc_cu,grid%qi_cu,                                                  &
-              grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,grid%ph_no3o2,       &
+              grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,                     &
+!liqy
+                grid%ph_clno2,          &
+!liqy-20140911
+                grid%ph_no3o2,       &
               grid%ph_no3o,grid%ph_hno2,grid%ph_hno3,grid%ph_hno4,grid%ph_h2o2,       &
               grid%ph_ch2or,grid%ph_ch2om,grid%ph_ch3cho,grid%ph_ch3coch3,            &
               grid%ph_ch3coc2h5,grid%ph_hcocho,grid%ph_ch3cocho,                      &
@@ -993,7 +1004,11 @@
                ims,ime, jms,jme, kms,kme,                                             &
                its,ite, jts,jte, kts,kte,                                             &
                config_flags%kemit,                                                    &
-               grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,grid%ph_no3o2,      &
+               grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,                    &
+!liqy
+               grid%ph_cl2,grid%ph_hocl,grid%ph_clno2,grid%ph_fmcl,     &
+!liqy-20140911
+                grid%ph_no3o2,      &
                grid%ph_no3o,grid%ph_hno2,grid%ph_hno3,grid%ph_hno4,grid%ph_h2o2,      &
                grid%ph_ch2or,grid%ph_ch2om,grid%ph_ch3cho,grid%ph_ch3coch3,           &
                grid%ph_ch3coc2h5,grid%ph_hcocho,grid%ph_ch3cocho,                     &
@@ -1080,7 +1095,11 @@
                ims,ime, jms,jme, kms,kme,                                             &
                its,ite, jts,jte, kts, kte,                                            &
                config_flags%kemit,                                                    &
-               grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,grid%ph_no3o2,      &
+               grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,                    &
+!liqy
+               grid%ph_cl2,grid%ph_hocl,grid%ph_clno2,grid%ph_fmcl,     &
+!liqy-20140911
+                grid%ph_no3o2,      &
                grid%ph_no3o,grid%ph_hno2,grid%ph_hno3,grid%ph_hno4,grid%ph_h2o2,      &
                grid%ph_ch2or,grid%ph_ch2om,grid%ph_ch3cho,grid%ph_ch3coch3,           &
                grid%ph_ch3coc2h5,grid%ph_hcocho,grid%ph_ch3cocho,                     &
@@ -1222,7 +1241,11 @@
               p_phy,chem,rho,dz8w,grid%dx,g,                                          &
               zmid,z_at_w,grid%xlat,grid%xlong,                                       &
               vdrog3,vcsulf_old,vcso2_old,vch2o2_old,grid%ttday,grid%tcosz,           &
-              grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,grid%ph_no3o2,       &
+              grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,                     &
+!liqy
+              grid%ph_cl2,grid%ph_hocl,grid%ph_clno2,grid%ph_fmcl,      &
+!liqy-20140911
+                grid%ph_no3o2,       &
               grid%ph_no3o,grid%ph_hno2,grid%ph_hno3,grid%ph_hno4,grid%ph_h2o2,       &
               grid%ph_ch2or,grid%ph_ch2om,grid%ph_ch3cho,grid%ph_ch3coch3,            &
               grid%ph_ch3coc2h5,grid%ph_hcocho,grid%ph_ch3cocho,grid%ph_hcochest,     &
@@ -1325,7 +1348,10 @@ CALL kpp_mechanism_driver (chem,                                                
 
    IF(config_flags%conv_tr_aqchem == 0 ) THEN
       so2so4_selecta: SELECT CASE(config_flags%chem_opt)
-      CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP,RACM_SOA_VBS_KPP)
+!liqy
+      CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP,RACM_SOA_VBS_KPP,RACM_SOA_VBS_HET_KPP)
+!liqy-20160227
+!      CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP,RACM_SOA_VBS_KPP)
          CALL wrf_debug(15,'gocart so2-so4 conversion')
          CALL  so2so4(0,chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,           &
               grid%qc_cu, grid%gd_cldfr,                                    &
@@ -1338,7 +1364,10 @@ CALL kpp_mechanism_driver (chem,                                                
       END SELECT so2so4_selecta
    else IF(config_flags%conv_tr_aqchem == 1 ) THEN
       so2so4_selectb: SELECT CASE(config_flags%chem_opt)
-      CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP,RACM_SOA_VBS_KPP)
+!liqy
+      CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP,RACM_SOA_VBS_KPP,RACM_SOA_VBS_HET_KPP)
+!liqy-20160227
+!      CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP,RACM_SOA_VBS_KPP)
          CALL wrf_debug(15,'gocart so2-so4 conversion')
          CALL  so2so4(1,chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,           &
               grid%qc_cu, grid%gd_cldfr,                                    &
@@ -1399,7 +1428,11 @@ CALL kpp_mechanism_driver (chem,                                                
                ims,ime, jms,jme, kms,kme,                                             &
                its,ite, jts,jte, kts,kte,                                             &
                config_flags%kemit,                                                    &
-               grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,grid%ph_no3o2,      &
+               grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,                    &
+!liqy
+               grid%ph_cl2,grid%ph_hocl,grid%ph_clno2,grid%ph_fmcl,&
+!liqy-20140911
+                grid%ph_no3o2,      &
                grid%ph_no3o,grid%ph_hno2,grid%ph_hno3,grid%ph_hno4,grid%ph_h2o2,      &
                grid%ph_ch2or,grid%ph_ch2om,grid%ph_ch3cho,grid%ph_ch3coch3,           &
                grid%ph_ch3coc2h5,grid%ph_hcocho,grid%ph_ch3cocho,                     &
@@ -1552,6 +1585,9 @@ if ( cam_mam_aerosols ) &
               rri,t_phy,moist,grid%aerwrf,p8w,t8w,                                    &
               p_phy,chem,rho,dz8w, rh,                                                & 
               zmid,z_at_w,pbl_h,grid%cldfra,grid%cldfra_mp_all,grid%vbs_nbin,         &
+!liqy
+              grid%gamn2o5,grid%cn2o5,grid%kn2o5,grid%yclno2,grid%snu,grid%sac,       &
+!liqy - 20150319
               grid%h2oaj,grid%h2oai,grid%nu3,grid%ac3,grid%cor3,grid%asulf,           &
               grid%ahno3,grid%anh3,grid%cvaro1,grid%cvaro2,grid%cvalk1,grid%cvole1,   &
               grid%cvapi1,grid%cvapi2,grid%cvlim1,grid%cvlim2,vcsulf_old,             &
@@ -1573,7 +1609,11 @@ if ( cam_mam_aerosols ) &
                ims,ime, jms,jme, kms,kme,                                             &
                its,ite, jts,jte, kts, kte,                                            &
                config_flags%kemit,                                                    &
-               grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,grid%ph_no3o2,      &
+               grid%ph_macr,grid%ph_o31d,grid%ph_o33p,grid%ph_no2,                    &
+!liqy
+               grid%ph_cl2,grid%ph_hocl,grid%ph_clno2,grid%ph_fmcl,&
+!liqy-20140911
+                grid%ph_no3o2,      &
                grid%ph_no3o,grid%ph_hno2,grid%ph_hno3,grid%ph_hno4,grid%ph_h2o2,      &
                grid%ph_ch2or,grid%ph_ch2om,grid%ph_ch3cho,grid%ph_ch3coch3,           &
                grid%ph_ch3coc2h5,grid%ph_hcocho,grid%ph_ch3cocho,                     &

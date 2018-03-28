@@ -158,6 +158,9 @@ state    real  e_orgj_bb      i+jf     emis_ant     1         Z      i5r     "E_
 state    real  e_co_a         i+jf     emis_ant     1         Z      i5     "E_CO_A"                "EMISSIONS CO_A AER"       "ug/m3 m/s"
 state    real  e_co_bb        i+jf     emis_ant     1         Z      i5     "E_CO_BB"                "EMISSIONS CO_BB AER"       "ug/m3 m/s"
 
+#Additional Chlorin. emission - Alex Zhang 2015/05/15
+state    real  e_ch3cl        i+jf     emis_ant     1         Z      i5     "E_CH3CL"               "EMISSIONS CH3CL"                "mol km^-2 hr^-1"
+
 # GOCART
 state    real  e_bc          i+jf     emis_ant     1         Z      i5     "E_BC"                "EMISSIONS BC AER"       "ug/m3 m/s"
 state    real  e_oc          i+jf     emis_ant     1         Z      i5     "E_OC"                "EMISSIONS BC AER"       "ug/m3 m/s"
@@ -1323,6 +1326,7 @@ state    real  ph_pan          ikj     misc        1         -      r        "PH
 state    real  ph_acet         ikj     misc        1         -      r        "PHOTR102"              "acetone photolysis rate" "min{-1}"
 state    real  ph_mglo         ikj     misc        1         -      r        "PHOTR103"              "mglo photolysis rate" "min{-1}"
 state    real  ph_hno4_2       ikj     misc        1         -      r        "PHOTR104"              "mglo photolysis rate" "min{-1}"
+state    real  ph_clno2        ikj     misc        1         -      rh        "PHOTR204"                "CLNO2 Photolysis Rate" "min{-1}"
 # mozart photolysis rates
 state    real  ph_n2o          ikj     misc        1         -      r        "PHOTR114"              "n2o photolysis rate" "min{-1}"
 state    real  ph_pooh         ikj     misc        1         -      r        "PHOTR118"              "pooh photolysis rate" "min{-1}"
@@ -1476,6 +1480,8 @@ state    real  cvapi1          ikj     misc        1         -      r        "cv
 state    real  cvapi2          ikj     misc        1         -      r        "cvapi2"                "cond.vapor from biogenics"            "?"
 state    real  cvlim1          ikj     misc        1         -      r        "cvlim1"                "cond.vapor from biogenics"            "?"
 state    real  cvlim2          ikj     misc        1         -      r        "cvlim2"                "cond.vapor from biogenics"            "?"
+state    real  snu             ikj     misc        1         -      rh        "snu"                   "2nd moment Aitken mode"               "m2 m-3"
+state    real  sac             ikj     misc        1         -      rh        "sac"                   "2nd moment Aitken mode"               "m2 m-3"
 # non-transported radical species for RACM
 state    real  addt         ikj     misc        1         -      r        "addt"                "Radicals" "ppm"
 state    real  addx         ikj     misc        1         -      r        "addx"                "Radicals" "ppm"
@@ -2303,7 +2309,20 @@ state   real   bsoa3j     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_i
 state   real   bsoa3i     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa3i"       "SOA Biog. org. conc. with  C* value=100  ug/m^3 Aitken mode"    "ug/kg-dryair"
 state   real   bsoa4j     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa4j"       "SOA Biog. org. conc. with  C* value=1000 ug/m^3 Acc. mode"      "ug/kg-dryair"
 state   real   bsoa4i     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa4i"       "SOA Biog. org. conc. with  C* value=1000 ug/m^3 Aitken mode"    "ug/kg-dryair"
-
+# # crustal species for RACM_SOA_VBS mechanism
+state   real   caaj       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "caaj"         "Calcium conc. Acc. mode"       "ug/kg-dryair"
+state   real   caai       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "caai"         "Calcium conc. Aitken mode"       "ug/kg-dryair"
+state   real   kaj        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "kaj"          "Potassium conc. Acc. mode"       "ug/kg-dryair"
+state   real   kai        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "kai"          "Potassium conc. Aitken mode"       "ug/kg-dryair"
+state   real   mgaj       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "mgaj"         "Magnesium conc. Acc. mode"       "ug/kg-dryair"
+state   real   mgai       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "mgai"         "Magnesium conc. Aitken mode"       "ug/kg-dryair"
+#
+# parameters for the N2O5 uptake process in RACM_SOA_VBS mechanism
+state    real  gamn2o5         ikj     misc        1         -      rh        "gamn2o5"                "n2o5 uptake by aerosol" "numerical value"
+state    real  cn2o5         ikj     misc        1         -      rh        "cn2o5"                "n2o5 velocity" "m/s"
+state    real  kn2o5         ikj     misc        1         -      rh        "kn2o5"                "n2o5 het reaction rate" "s-1"
+state    real  yclno2         ikj     misc        1         -      rh        "yclno2"                "clno2 yield from n2o5 het" "numerical value"
+# #
 #cloud-phase aerosol
 state   real   so4cwj      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "so4cwj"         "Sulfate conc. Acc. mode in cloud"       "ug/kg-dryair"
 state   real   so4cwi      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "so4cwi"         "Sulfate conc. Aitken mode in cloud"       "ug/kg-dryair"
@@ -3917,7 +3936,8 @@ package   racm_esrlsorg_kpp      chem_opt==107                  -            che
 
 # new scheme for better SOA simulations
 package   racm_soa_vbs_kpp  chem_opt==108                  -         chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,hace,ishp,ison,mahp,mpan,nald,sesq,mbo,cvasoa1,cvasoa2,cvasoa3,cvasoa4,cvbsoa1,cvbsoa2,cvbsoa3,cvbsoa4,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,asoa1j,asoa1i,asoa2j,asoa2i,asoa3j,asoa3i,asoa4j,asoa4i,bsoa1j,bsoa1i,bsoa2j,bsoa2i,bsoa3j,bsoa3i,bsoa4j,bsoa4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn
-
+# new scheme for better SOA simulations + ISORROPIA+N2O5+ClNO2  
+package   racm_soa_vbs_het_kpp  chem_opt==100                  -         chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,hace,ishp,ison,mahp,mpan,nald,sesq,mbo,cvasoa1,cvasoa2,cvasoa3,cvasoa4,cvbsoa1,cvbsoa2,cvbsoa3,cvbsoa4,hcl,clno2,cl2,fmcl,cl,clo,hocl,ch3cl,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,asoa1j,asoa1i,asoa2j,asoa2i,asoa3j,asoa3i,asoa4j,asoa4i,bsoa1j,bsoa1i,bsoa2j,bsoa2i,bsoa3j,bsoa3i,bsoa4j,bsoa4i,orgpaj,orgpai,ecj,eci,caaj,caai,kaj,kai,mgaj,mgai,p25j,p25i,antha,seas,soila,nu0,ac0,corn
 # new scheme for better SOA simulations + AQ chem
 package   racm_soa_vbs_aqchem_kpp  chem_opt==109                  -         chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,hace,ishp,ison,mahp,mpan,nald,sesq,mbo,cvasoa1,cvasoa2,cvasoa3,cvasoa4,cvbsoa1,cvbsoa2,cvbsoa3,cvbsoa4,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,asoa1j,asoa1i,asoa2j,asoa2i,asoa3j,asoa3i,asoa4j,asoa4i,bsoa1j,bsoa1i,bsoa2j,bsoa2i,bsoa3j,bsoa3i,bsoa4j,bsoa4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn,so4cwj,so4cwi,nh4cwj,nh4cwi,no3cwj,no3cwi,nacwj,nacwi,clcwj,clcwi,asoa1cwj,asoa1cwi,asoa2cwj,asoa2cwi,asoa3cwj,asoa2cwi,asoa3cwj,asoa3cwi,asoa4cwj,asoa4cwi,bsoa1cwj,bsoa1cwi,bsoa2cwj,bsoa2cwi,bsoa3cwj,bsoa3cwi,bsoa4cwj,bsoa4cwi,orgpacwj,orgpacwi,eccwj,eccwi,p25cwj,p25cwi,anthcw,seascw,soilcw,nu0cw,ac0cw,corncw
 
@@ -3995,7 +4015,7 @@ package   cri_mosaic_4bin_aq_kpp  chem_opt==611          -             chem:dms,
 #emission package definitions
 #
 package   eradm           emiss_opt==2                   -             emis_ant:e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3
-package   eradmsorg       emiss_opt==3                   -             emis_ant:e_iso,e_so2,e_no,e_no2,e_co,e_ch4,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_pm25i,e_pm25j,e_pm_10,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_naaj,e_naai,e_orgi_a,e_orgj_a,e_orgi_bb,e_orgj_bb
+package   eradmsorg       emiss_opt==3                   -             emis_ant:e_iso,e_so2,e_no,e_no2,e_co,e_ch4,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_pm25i,e_pm25j,e_pm_10,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_naaj,e_naai,e_orgi_a,e_orgj_a,e_orgi_bb,e_orgj_bb,e_hcl,e_cli,e_clj,e_ch3cl
 package   ecbmz_mosaic    emiss_opt==4                   -             emis_ant:e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_no2,e_ch3oh,e_c2h5oh,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_so4c,e_no3c,e_orgc,e_ecc
 package   ecptec          emiss_opt==5                   -             emis_ant:e_iso,e_so2,e_no,e_no2,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_pm_25,e_pm_10,e_oc,e_sulf,e_bc
 package   gocart_ecptec   emiss_opt==6                   -             emis_ant:e_so2,e_sulf,e_bc,e_oc,e_pm_25,e_pm_10

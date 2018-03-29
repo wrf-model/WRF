@@ -1490,7 +1490,18 @@ The following are for observation nudging:
  idtadt                              = 1,       ; fundamental timesteps between calls to Euler advection, dynamics (NMM only)
  idtadc                              = 1        ; fundamental timesteps between calls to Euler advection, chemistry (NMM only)
 
-
+ &ideal
+ ideal_case                          = 0        ; ideal case number. Option selects CASEs within module_initialize_ideal.F
+                                                  realcase       ideal_case=0
+                                                  hill2d_x       ideal_case=1
+                                                  quarter_ss     ideal_case=2
+                                                  convrad        ideal_case=3
+                                                  squall2d_x     ideal_case=4
+                                                  squall2d_y     ideal_case=5
+                                                  grav2d_x       ideal_case=6
+                                                  b_wave         ideal_case=7
+                                                  seabreeze2d_x  ideal_case=8
+                                                  les            ideal_case=9
 
  &tc                                            ; controls for tc_em.exe ONLY, no impact on real, ndown, or model
 

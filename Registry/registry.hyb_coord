@@ -31,11 +31,9 @@
 
 #<Table> <Type>   <Sym>         <Dims>   <Use>           <NumTLev> <Stagger>        <IO>            <DNAME>                        <DESCRIP>                            <UNITS>
 
-state    real      bf              k     misc                1         Z     i02rh0{22}{23}{24}      "BF"        "full levels, bf=0 => isobaric; bf=znw => sigma"     "Dimensionless"
 state    real      c1h             k     misc                1         -     i02rh0{22}{23}{24}      "C1H"       "half levels, c1h = d bf / d eta, using znw"         "Dimensionless"
 state    real      c2h             k     misc                1         -     i02rh0{22}{23}{24}      "C2H"       "half levels, c2h = (1-c1h)*(p0-pt)"                 "Pa"
 
-state    real      bh              k     misc                1         -     i02rh0{22}{23}{24}      "BH"        "half levels, bh=0 => isobaric; bh=znu => sigma"     "Dimensionless"
 state    real      c1f             k     misc                1         Z     i02rh0{22}{23}{24}      "C1F"       "full levels, c1f = d bf / d eta, using znu"         "Dimensionless"
 state    real      c2f             k     misc                1         Z     i02rh0{22}{23}{24}      "C2F"       "full levels, c2f = (1-c1f)*(p0-pt)"                 "Pa"
 

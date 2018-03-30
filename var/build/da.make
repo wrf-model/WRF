@@ -344,8 +344,8 @@ da_etkf.o da_tools.o :
 da_4dvar.o :
 	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
           ${LN} ${WRFPLUS_DIR}/dyn_em/module_big_step_utilities_em.mod . ; \
-          ${LN} ${WRFPLUS_DIR}/dyn_em/g_module_big_step_utilities_em.mod . ; \
-          ${LN} ${WRFPLUS_DIR}/dyn_em/a_module_big_step_utilities_em.mod . ; \
+          ${LN} ${WRFPLUS_DIR}/wrftladj/g_module_big_step_utilities_em.mod . ; \
+          ${LN} ${WRFPLUS_DIR}/wrftladj/a_module_big_step_utilities_em.mod . ; \
           ${LN} ${WRFPLUS_DIR}/main/module_wrf_top.mod . ; \
           ${LN} ${WRFPLUS_DIR}/share/mediation_pertmod_io.mod . ; \
         fi

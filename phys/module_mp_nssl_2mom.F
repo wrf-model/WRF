@@ -9381,6 +9381,7 @@ END SUBROUTINE nssl_2mom_driver
       
       real :: qsimxdep(ngs) ! max sublimation of qi+qs+qis
       real :: qsimxsub(ngs) ! max depositionof qi+qs+qis
+      logical,parameter :: DoSublimationFix = .true.
       real :: qrtmp(ngs),qvtmp(ngs),qctmp(ngs)
       real :: felvcptmp,felscptmp,qsstmp
       real :: thetatmp, thetaptmp, temcgtmp,qvaptmp
@@ -14224,6 +14225,8 @@ END SUBROUTINE nssl_2mom_driver
 !  and rain evaporation
 !
 !
+      IF ( DoSublimationFix ) THEN
+      
       do mgs = 1,ngscnt
 
         qitmp(mgs) = qx(mgs,li) + qx(mgs,ls) + qx(mgs,lh)
@@ -14236,7 +14239,7 @@ END SUBROUTINE nssl_2mom_driver
         dqcitmp(mgs) = 0.0
         
 
-      IF ( ( qitmp(mgs) > qxmin(li) .or. qrtmp(mgs) > qxmin(lr) ) ) THEN
+      IF ( qitmp(mgs) > qxmin(li)  ) THEN
       
         qitmp1    = qitmp(mgs)
         qctmp1    = qctmp(mgs)
@@ -14253,15 +14256,9 @@ END SUBROUTINE nssl_2mom_driver
         temcgtmp  = temcg(mgs)
         qvaptmp   = qx(mgs,lv) ! qwvp(mgs) + qv0(mgs)
         qvptmp    = 0.0 ! qwvp(mgs)  ! qv pertubation
-      if ( temg(mgs) .lt. tfr ) then
-      if( qctmp(mgs) .ge. 0.0 .and. qitmp(mgs) .le. qxmin(li) )   &
-     &  qsstmp = qvstmp
-      if( qctmp(mgs) .le. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))   &
-     &  qsstmp = qisstmp
-      if( qctmp(mgs) .gt. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))   &
-     &   qsstmp = (qctmp(mgs)*qvstmp + qitmp(mgs)*qisstmp) /   &
-     &   (qctmp(mgs) + qitmp(mgs))
-      end if
+
+        qsstmp = qisstmp
+
       
        dqwvtmp(mgs) = ( qvtmp(mgs) - qsstmp )
 
@@ -14284,14 +14281,7 @@ END SUBROUTINE nssl_2mom_driver
 !  evaporation and sublimation adjustment
 !
       if( dqwv(mgs) .lt. 0. ) then           ! { subsaturated
-        if( qctmp(mgs) .gt. -dqwv(mgs) ) then  ! check if qc can make up all of the deficit
-          dqcw(mgs) = dqwv(mgs)
-!          dqwv(mgs) = 0.
-        else                                 !  otherwise make all qc available for evap
-          dqcw(mgs) = -qctmp(mgs)
-          dqwv(mgs) = dqwv(mgs) + qctmp(mgs)
-        end if
-!
+
         if( qitmp(mgs) .gt. -dqwv(mgs) ) then  ! check if qi can make up all the deficit
           dqci(mgs) = dqwv(mgs)
           dqwv(mgs) = 0.
@@ -14315,7 +14305,7 @@ END SUBROUTINE nssl_2mom_driver
 
 
 !      qitmp(mgs) = qx(mgs,li)
-      qctmp(mgs) = qctmp(mgs) + dqcw(mgs)
+      qctmp(mgs) = qctmp(mgs) + dqcw(mgs) ! dqcw is zero
       qitmp(mgs) = qitmp(mgs) + dqci(mgs)
       thetaptmp = thetaptmp +   &
      &  1./pi0(mgs)*   &
@@ -14331,52 +14321,30 @@ END SUBROUTINE nssl_2mom_driver
 !      write(iunit,*) 'satadj: mgs,iter = ',mgs,itertd,dqwv(mgs),qss(mgs),qx(mgs,lv),qx(mgs,lc)
 !
 !        qitmp(mgs) = qx(mgs,li)
-        fracl(mgs) = 1.0
-        fraci(mgs) = 0.0
-        if ( temg(mgs) .lt. tfr .and. temg(mgs) .gt. thnuc ) then
-          fracl(mgs) = max(min(1.,(temg(mgs)-233.15)/(20.)),0.0)
-          fraci(mgs) = 1.0-fracl(mgs)
-        end if
+        fracl(mgs) = 0.0
+        fraci(mgs) = 1.0
         if ( temg(mgs) .le. thnuc ) then
            fraci(mgs) = 1.0
            fracl(mgs) = 0.0
          end if
-        fraci(mgs) = 1.0-fracl(mgs)
-!
+
        gamss = (felvcp(mgs)*fracl(mgs) + felscp(mgs)*fraci(mgs))   &
      &      / (pi0(mgs))
-!
-      IF ( temg(mgs) .lt. tfr ) then
-        IF (qctmp(mgs) .ge. 0.0 .and. qitmp(mgs) .le. qxmin(li) ) then
-         dqvcnd(mgs) = dqwv(mgs)/(1. + fcqv1(mgs)*qsstmp/   &
-     &  ((temg(mgs)-cbw)**2))
-        END IF
-        IF ( qctmp(mgs) .eq. 0.0 .and. qitmp(mgs) .gt. qxmin(li) ) then
+
           dqvcnd(mgs) = dqwv(mgs)/(1. + fcqv2(mgs)*qsstmp/   &
      &  ((temg(mgs)-cbi)**2))
-        END IF
-        IF ( qctmp(mgs) .gt. 0.0 .and. qitmp(mgs) .gt. qxmin(li) ) then
-         cdw = caw*pi0(mgs)*tfrcbw/((temg(mgs)-cbw)**2)
-         cdi = cai*pi0(mgs)*tfrcbi/((temg(mgs)-cbi)**2)
-         denom1 = qctmp(mgs) + qitmp(mgs)
-         denom2 = 1.0 + gamss*   &
-     &    (qctmp(mgs)*qvs(mgs)*cdw + qitmp(mgs)*qis(mgs)*cdi) / denom1
-         dqvcnd(mgs) =  dqwv(mgs) / denom2
-        END IF 
 
-      ENDIF  !  temg(mgs) .lt. tfr
-!
       if ( temg(mgs) .ge. tfr ) then
       dqvcnd(mgs) = dqwv(mgs)/(1. + fcqv1(mgs)*qsstmp/   &
      &  ((temg(mgs)-cbw)**2))
       end if
-!
+
       delqci1=qx(mgs,li)
-!
-!
-      dqcw(mgs) = dqvcnd(mgs)*fracl(mgs)
+
+
+      dqcw(mgs) = dqvcnd(mgs)*fracl(mgs) ! is zero
       dqci(mgs) = dqvcnd(mgs)*fraci(mgs)
-!
+
       thetaptmp = thetaptmp +   &
      &   (felvcp(mgs)*dqcw(mgs) + felscp(mgs)*dqci(mgs))   &
      & / (pi0(mgs))
@@ -14438,16 +14406,7 @@ END SUBROUTINE nssl_2mom_driver
 !      end if
 
       
-      qsstmp = qvstmp
-      if ( temg(mgs) .lt. tfr ) then
-      if( qctmp(mgs) .ge. 0.0 .and. qitmp(mgs) .le. qxmin(li) )   &
-     &  qsstmp = qvstmp
-      if( qctmp(mgs) .le. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))   &
-     &  qsstmp = qisstmp
-      if( qctmp(mgs) .gt. qxmin(lc) .and. qitmp(mgs) .gt. qxmin(li))   &
-     &   qsstmp = (qctmp(mgs)*qvstmp + qitmp(mgs)*qisstmp) /   &
-     &   (qctmp(mgs) + qitmp(mgs))
-      end if
+      qsstmp = qisstmp
       
       ELSE
        ! set max depletion
@@ -14473,7 +14432,16 @@ END SUBROUTINE nssl_2mom_driver
       
       end do ! mgs
 
+      ELSE
+      
+       DO mgs = 1,ngscnt
+         qsimxdep(mgs) = qvimxd(mgs)
+         qsimxsub(mgs) = 1.e20
+       ENDDO
+      
+      ENDIF
 
+! end of qlimit
 
       do mgs = 1,ngscnt
       qisbv(mgs) = 0.0
@@ -14754,20 +14722,9 @@ END SUBROUTINE nssl_2mom_driver
 !  shed all at temperatures > 273.15
 !
       if ( temg(mgs) .gt. tfr ) then
-
-       IF ( .false. ) THEN ! old and incorrect
-       qsshr(mgs)   = -qsdry(mgs)
-       qhshr(mgs)  = -qhdry(mgs)
-       qhlshr(mgs)  = -qhldry(mgs)
-
-       ELSE ! new and correct
-       
        qsshr(mgs)   = - qsacr(mgs) - qsacw(mgs) ! -qsdry(mgs)
        qhlshr(mgs)  = - qhlacw(mgs) - qhlacr(mgs) ! -qhldry(mgs)
        qhshr(mgs)  = - qhacw(mgs) - qhacr(mgs) ! -qhdry(mgs)
-
-       ENDIF
-
        vhshdr(mgs)  = -vhacw(mgs) - vhacr(mgs)
        vhlshdr(mgs)  = -vhlacw(mgs) - vhlacr(mgs)
        qhwet(mgs)  = 0.0
@@ -14881,23 +14838,6 @@ END SUBROUTINE nssl_2mom_driver
 !     qsdry(mgs) = 0.0
 !     end if
 !
-
-! zero the shedding rates when wet snow/graupel included.
-! shedding of wet snow/graupel is calculated after summing other sources/sinks.
-      if (mixedphase) then
-        qsshr(mgs) = 0.0
-        qhshr(mgs) = 0.0
-        csshr(mgs) = 0.0
-        chshr(mgs) = 0.0
-        chshrr(mgs) = 0.0
-        vhshdr(mgs) = 0.0
-        IF ( lhlw > 1 ) THEN
-          qhlshr(mgs) = 0.0
-          vhlshdr(mgs) = 0.0
-          chlshr(mgs) = 0.0
-          chlshrr(mgs) = 0.0
-        ENDIF
-      end if
 
 !  graupel
 !

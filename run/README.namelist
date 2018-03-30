@@ -808,6 +808,14 @@ Namelist variables for controlling the adaptive time step option:
  minShallowFreq(max_dom)             minimum frequency required before shallow convection is allowed (1.0e-2)
  shcu_aerosols_opt(max_dom)          whether aerosols in shcu:  0=none, 2=prognostic (run with WRF-Chem), 
 
+ For MSKF scheme:
+ aercu_opt                           option to control aerosol interaction in MSKF and Morrison microphysics (mp_physics=40)
+                                     = 0: no aerosol interaction
+                                     = 1: aerosol interaction with MSKF only
+                                     = 2: aerosol interaction with both MSKF and Morrison
+ aercu_fct                           factor to multiply with aerosol amount
+                                     = 1.: default value
+
  ncnvc (max_dom)                     = FOR NMM: number of fundamental timesteps between
                                                 calls to convection; the value is set in Registry.NMM
                                                 but is overridden by namelist value; cudt will be
@@ -1176,6 +1184,10 @@ Options for use with the Noah-MP Land Surface Model:
  opt_pedo                           = 1,        ; Noah-MP options for pedotransfer functions (used when OPT_SOIL = 3)
                                                 ;    1 -> Saxton and Rawls (2006)
 
+ opt_crop                           = 0,        ; options for crop model
+                                                ;    0 -> No crop model, will run default dynamic vegetation
+                                                ;    1 -> Liu, et al. 2016
+		                                ;    2 -> Gecros (Genotype-by-Environment interaction on CROp growth Simulator) Yin and van Laar, 2005
  /
 
  &fdda

@@ -199,8 +199,8 @@
 
 !
 !..Additions for coupling cloud physics effective radii and radiation.  G. Thompson
-      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN):: re_cloud, re_ice, re_snow
-      INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT):: re_cloud, re_ice, re_snow
+      INTEGER, INTENT(INOUT):: has_reqc, has_reqi, has_reqs
 !
       LOGICAL,INTENT(IN) :: RESTRT
 !
@@ -507,6 +507,7 @@
      &                 ,QG=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG      &
      &                 ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
      &                 ,EXPLICIT_CONVECTION=config_flags%cu_physics==0  &
+     &                 ,AERCU_OPT=config_flags%aercu_opt                &
      &                 ,CU_PHYSICS=config_flags%cu_physics              &
      &                 ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS              &
      &                 ,CALC_CLEAN_ATM_DIAG=CONFIG_FLAGS%CALC_CLEAN_ATM_DIAG)
@@ -790,7 +791,8 @@
      &                ,ulowl, vlowl                                     &
      &                ,zkmax, ribn                                      &
      &                ,charn, msang                                     &
-     &                ,DUBLDT,DVBLDT,DTHBLDT,DQVBLDT                    & !wang added PBL tendency output
+     &                ,DUBLDT,DVBLDT,DTHBLDT,DQVBLDT                    & 
+     &                ,hpbl_hold                                        & 
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,IPS,IPE,JPS,JPE,KPS,KPE                          &
@@ -1031,6 +1033,7 @@
       REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME) :: ZERO_SOIL
 !
       REAL,DIMENSION(IMS:IME,JMS:JME) :: wstar_ysu, delta_ysu
+      REAL,DIMENSION(IMS:IME,JMS:JME) :: hpbl_hold
 !
       LOGICAL :: E_BDY,WARM_RAIN
       LOGICAL :: IS_CAMMGMP_USED=.FALSE.
@@ -1533,6 +1536,7 @@
      &        ,iopt_tbot=config_flags%opt_tbot, iopt_stc=config_flags%opt_stc & 
      &        ,iopt_gla=config_flags%opt_gla,   iopt_rsf=config_flags%opt_rsf & 
      &        ,iopt_soil=config_flags%opt_soil, iopt_pedo=config_flags%opt_pedo &
+     &        ,iopt_crop=config_flags%opt_crop
      &        , isnowxy=grid%isnowxy  ,    tvxy=grid%tvxy    ,    tgxy=grid%tgxy     &
      &        ,canicexy=grid%canicexy ,canliqxy=grid%canliqxy,   eahxy=grid%eahxy    &
      &        ,   tahxy=grid%tahxy    ,    cmxy=grid%cmxy    ,    chxy=grid%chxy     &
@@ -1567,6 +1571,7 @@
      &        ,  chv2xy=grid%chv2xy   ,  chb2xy=grid%chb2xy , chstarxy=grid%chstarxy &                       
      &        ,  smoiseq=grid%smoiseq, smcwtdxy=grid%smcwtdxy, rechxy=grid%rechxy    &                       
      &        ,  deeprechxy=grid%deeprechxy                                          &                       
+     &        ,gecros_state=grid%gecros_state                                        &   ! Optional gecros crop
      &        ,coszen=grid%czen,xlat_urb2d=grid%hlat                                 &
      &        ,rs=rs,xlaidyn=xlaidyn                                                 &
 ! mosaic tiling for Noah
@@ -1653,6 +1658,7 @@
 
      &               ,MZNT=MZ0                                        &
 #endif
+     &               ,HPBL_HOLD=HPBL_HOLD                             &   !for new NSAS
      &               ,HT=SFCZ                                         &   !KWON
      &               ,UST=USTAR,MIXHT=MIXHT,PBLH=PBLH                 &
      &               ,HFX=TWBS,QFX=QWBS,GRDFLX=GRNFLX                 &
@@ -2294,6 +2300,7 @@
      &                 ,SIGMU, SIGMU1                                   & !updraft fraction
      &                 ,AVCNVC,ACUTIM,IHE,IHW                           &
      &                 ,GRID,CONFIG_FLAGS                               &
+     &                 ,HPBL_HOLD                                       & ! for new NSAS
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                         &
      &                 ,IMS,IME,JMS,JME,KMS,KME                         &
      &                 ,IPS,IPE,JPS,JPE,KPS,KPE                         &
@@ -2376,8 +2383,7 @@
                                         RUCUTEN,                        &
                                         RVCUTEN,RQVFTEN
 
-
-
+       REAL,DIMENSION(IMS:IME,JMS:JME) :: HPBL_HOLD
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: F_ICE       &
      &                                                     ,F_RAIN
@@ -2524,6 +2530,8 @@
      &   CONFIG_FLAGS%CU_PHYSICS==BMJSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==NSASSCHEME)RETURN
+      IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
+     &   CONFIG_FLAGS%CU_PHYSICS==NSASOLDSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==TIEDTKESCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
@@ -2813,6 +2821,7 @@
      &                 ,KF_EDRATES=config_flags%kf_edrates              &
 !Biswas
      &                 ,HFX=HFX,QFX=QFX,PBLH=PBLH                       &
+     &                 ,HPBL_HOLD=HPBL_HOLD                             &
      &                 ,ZNU=ZNU                                         &
      &                 ,STEPCU=NSTEP_CNV,GSW=GSW                        &
      &                 ,PERIODIC_X=.FALSE.,PERIODIC_Y=.FALSE.           &
@@ -3019,7 +3028,7 @@
 !
           cps_select: SELECT CASE(config_flags%cu_physics)
 !
-          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,SCALESASSCHEME,OSASSCHEME,NSASSCHEME,TIEDTKESCHEME)
+          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,SCALESASSCHEME,OSASSCHEME,NSASSCHEME,NSASOLDSCHEME,TIEDTKESCHEME)
            IF(config_flags%mp_physics==fer_mp_hires_advect) THEN
              ! Update QI and QRIMEF:
              call QITEND_FER_HIRES_ADVECT( &
@@ -3361,6 +3370,7 @@
      &                 ,has_reqi=has_reqi                               & ! G. Thompson
      &                 ,has_reqs=has_reqs                               & ! G. Thompson
      &                 ,ccn_conc=config_flags%ccn_conc                  &
+     &                 ,aercu_opt=config_flags%aercu_opt                &
                                                                         )
 
 !$omp parallel do                                                       &

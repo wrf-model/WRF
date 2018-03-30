@@ -23,6 +23,7 @@ endif
 
 set ZAP = .foofoo
 set arglist=""
+set prev_was_j = false
 foreach a ( $argv )
   if ( "$a" == "-h" ) then
     goto hlp
@@ -72,6 +73,9 @@ foreach a ( $argv )
   else if ( "$a" == "-j" ) then
     shift argv
     setenv J "-j $argv[1]"
+    set prev_was_j = true
+  else if ( "$prev_was_j" == "true" ) then
+    set prev_was_j = false
   else
     echo "This option is not recognized: $a"
     exit ( 1 )

@@ -2,17 +2,17 @@
 #	Dry surface pressure = Pds
 #	Model top pressure = Pt
 #	Mass in column, Pc = Pds - Pt
-# 1d column weighting term, B: BF is full levels, BH is half levels
+#	1d column weighting term, B: BF is full levels, BH is half levels
 
 #	Total dry pressure
 #	Pd = BF ( Pds - Pt ) + ( eta - BF ) ( P0 - Pt ) + Pt
 
-# Note that when B (full levels, BF) is identically eta (full levels, ZNW),
-# the dry pressure, Pd = the terrain following coordinate.
+#	Note that when B (full levels, BF) is identically eta (full levels, ZNW),
+#	the dry pressure, Pd = the terrain following coordinate.
 #	Pd = eta ( Pds - Pt ) + Pt
 
-# Note that when B (full levels, BF) is zero,
-# the dry pressure, Pd = isobaric.
+#	Note that when B (full levels, BF) is zero,
+#	the dry pressure, Pd = isobaric.
 #	Pd = eta ( P0 - Pt ) + Pt
 
 #	Hybrid coordinate: mu is still d(Pd)/d(eta)

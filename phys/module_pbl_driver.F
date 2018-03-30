@@ -52,6 +52,7 @@ CONTAINS
                  ,edmf_a,edmf_w,edmf_thl                           &
                  ,edmf_qt,edmf_ent,edmf_qc                         &
                  ,vdfg                                             &
+                 ,nupdraft,maxMF,ktop_shallow                      & 
                  ,spp_pbl,pattern_spp_pbl                          &
 #if (NMM_CORE==1)
                  ,DISHEAT                                          &
@@ -574,6 +575,10 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,              &
         &    INTENT(INOUT)::                               vdfg
 ! Katata-end
+   INTEGER, OPTIONAL, DIMENSION( ims:ime , jms:jme ),           &
+        &    INTENT(OUT) ::               nupdraft,ktop_shallow
+   REAL, OPTIONAL, DIMENSION( ims:ime , jms:jme ),              &
+        &    INTENT(OUT) ::                               maxMF
 
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), &
         & INTENT(INOUT) ::  exch_tke      ! for GBM PBL scheme
@@ -1691,7 +1696,10 @@ CONTAINS
                    &,bl_mynn_mixqt=bl_mynn_mixqt                         &
                    &,edmf_a=edmf_a,edmf_w=edmf_w,edmf_qt=edmf_qt         &
                    &,edmf_thl=edmf_thl,edmf_ent=edmf_ent,edmf_qc=edmf_qc &
+                   &,nupdraft=nupdraft,maxMF=maxMF                       &
+                   &,ktop_shallow=ktop_shallow                           &
                    &,spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl     &
+                   &,RTHRATEN=rthraten                                   &  
                    &,FLAG_QI=flag_qi,FLAG_QNI=flag_qni                   &
                    &,FLAG_QC=flag_qc,FLAG_QNC=flag_qnc                   &
                    ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &

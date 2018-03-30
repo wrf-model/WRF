@@ -973,9 +973,10 @@ BENCH_START(pbl_driver_tim)
      &        ,rmol=grid%rmol, ch=grid%ch                                 &
      &        ,qcg=grid%qcg, grav_settling=config_flags%grav_settling     &
 !    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &
-     &        ,vdfg=grid%vdfg                                             &
-     &        ,spp_pbl=config_flags%spp_pbl                               & !SPP
-     &        ,pattern_spp_pbl=grid%pattern_spp_pbl                       & !SPP
+     &        ,vdfg=grid%vdfg,nupdraft=grid%nupdraft,maxMF=grid%maxmf     &
+     &        ,ktop_shallow=grid%ktop_shallow                             &
+     &        ,spp_pbl=config_flags%spp_pbl                               &
+     &        ,pattern_spp_pbl=grid%pattern_spp_pbl                       &
 !GWD for ARW
      &        ,GWD_OPT=config_flags%gwd_opt &
      &        ,DTAUX3D=grid%dtaux3d,DTAUY3D=grid%dtauy3d &

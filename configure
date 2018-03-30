@@ -191,6 +191,8 @@ if [ -n "$NETCDF" ] ; then
   else
     USENETCDF=" "
   fi
+  export USENETCDF=$USENETCDF
+  export USENETCDFF=$USENETCDFF
 else
   echo ' '
   echo '*****************************************************************************'

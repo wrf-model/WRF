@@ -275,7 +275,7 @@ BENCH_START(g_pbl_driver_tim)
      &        ,U10=grid%u10 ,UZ0=grid%uz0 ,U_FRAME=grid%u_frame ,U_PHY=grid%u_phy ,U_PHYD=grid%g_u_phy &
      &        ,V10=grid%v10 ,VZ0=grid%vz0 ,V_FRAME=grid%v_frame ,V_PHY=grid%v_phy ,V_PHYD=grid%g_v_phy &
               ,T2=grid%t2 &
-     &        ,WARM_RAIN=grid%warm_rain                    ,WSPD=wspd          &
+     &        ,WARM_RAIN=grid%warm_rain                    ,WSPD=grid%wspd          &
      &        ,XICE=grid%xice   ,XLAND=grid%xland  ,Z=grid%z ,ZD=grid%g_z      &
      &        ,ZNT=grid%znt                                                    &
 ! paj: topo_wind

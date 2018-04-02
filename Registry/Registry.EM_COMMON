@@ -829,7 +829,7 @@ state    real   LH_URB2D        ij    misc        1         -       rd=(interp_f
 state    real   G_URB2D         ij    misc        1         -       rd=(interp_fcnm)u=(copy_fcnm)        "G_URB"  "GROUND HEAT FLUX INTO URBAN"        "W m{-2}"
 state    real   RN_URB2D        ij    misc        1         -       rd=(interp_fcnm)u=(copy_fcnm)       "RN_URB"  "NET RADIATION ON URBAN SFC"         "W m{-2}"
 state    real   TS_URB2D        ij    misc        1         -       rd=(interp_fcnm)u=(copy_fcnm)       "TS_URB"  "SKIN TEMPERATURE"          "K"
-state    real   FRC_URB2D       ij    misc        1         -     i10rd=(interp_fcnm)u=(copy_fcnm       "FRC_URB2D"  "URBAN FRACTION"         "dimensionless"
+state    real   FRC_URB2D       ij    misc        1         -     i10rd=(interp_fcnm)u=(copy_fcnm)      "FRC_URB2D"  "URBAN FRACTION"         "dimensionless"
 state    integer   UTYPE_URB2D  ij    misc        1         -     rd=(interp_fcnm)u=(copy_fcnm)       "UTYPE_URB"  "URBAN TYPE"         "dimensionless"
 state    real   TRB_URB4D       i{ulay}j    misc       1         Z     r      "TRB_URB4D" "ROOF LAYER TEMPERATURE"          "K"
 state    real   TW1_URB4D       i{ulay}j    misc       1         Z     r      "TW1_URB4D" "WALL LAYER TEMPERATURE"          "K"

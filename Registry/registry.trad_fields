@@ -6,12 +6,14 @@ rconfig   integer     trad_fields         namelist,diags   1            0   -   
 
 #  Arrays that will be filled with diagnosed quantities.
 
-state    real   sealevelp     ij    dyn_em    1  -   h1  "sealevelp"    "sea level pressure"    "Pa"
-state    real   temperature   ikj   dyn_em    1  -   h1  "temperature"  "sensible temperature"  "K"
-state    real   geoheight     ikj   dyn_em    1  -   h1  "geoheight"    "geopotential height"   "m"
-state    real   pressure      ikj   dyn_em    1  -   h1  "pressure"     "atmospheric pressure"  "Pa"
+state    real   sealevelp     ij    dyn_em    1  -   h1  "sealevelp"    "sea level pressure"               "Pa"
+state    real   temperature   ikj   dyn_em    1  -   h1  "temperature"  "sensible temperature"             "K"
+state    real   geoheight     ikj   dyn_em    1  -   h1  "geoheight"    "geopotential height"              "m"
+state    real   pressure      ikj   dyn_em    1  -   h1  "pressure"     "atmospheric pressure"             "Pa"
+state    real   umgeo         ikj   dyn_em    1  -   h1  "umgeo"        "earth relative U at mass points"  "m/s"
+state    real   vmgeo         ikj   dyn_em    1  -   h1  "vmgeo"        "earth relative V at mass points"  "m/s"
 
 #  Package declarations
 
 package   skip_trad_fields   trad_fields==0  -   -
-package     do_trad_fields   trad_fields==1  -   state:sealevelp,temperature,pressure,geoheight
+package     do_trad_fields   trad_fields==1  -   state:sealevelp,temperature,pressure,geoheight,umgeo,vmgeo

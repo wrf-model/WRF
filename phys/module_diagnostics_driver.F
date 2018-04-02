@@ -285,6 +285,8 @@ CONTAINS
                ,msfty=grid%msfty                                    &
                ,f=grid%f                                            &
                ,e=grid%e                                            &
+               ,sina=grid%sina                                      &
+               ,cosa=grid%cosa                                      &
                !  Terrestrial data                
                ,ht=grid%ht                                          &
                !  Namelist info
@@ -294,6 +296,8 @@ CONTAINS
                ,temperature=grid%temperature                        &
                ,pressure=grid%pressure                              &
                ,geoheight=grid%geoheight                            &
+               ,umgeo=grid%umgeo                                    &
+               ,vmgeo=grid%vmgeo                                    &
                !  Various indexes for declarations, loop bounds
                ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde   &
                ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme   &

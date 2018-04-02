@@ -13,11 +13,12 @@ CONTAINS
 
    SUBROUTINE trad_fields ( u,v,w,t,qv,zp,zb,pp,pb,p,pw,            &
                     msfux,msfuy,msfvx,msfvy,msftx,msfty,            &
-                    f,e,                                            &
+                    f,e,sina,cosa,                                  &
                     ht,                                             &
                     use_theta_m,                                    &
                     sealevelp,                                      &
                     temperature,pressure,geoheight,                 &
+                    umgeo,vmgeo,                                    &
                     ids,ide, jds,jde, kds,kde,                      &
                     ims,ime, jms,jme, kms,kme,                      &
                     ips,ipe, jps,jpe, kps,kpe,                      &
@@ -36,7 +37,7 @@ CONTAINS
                                                                          ips,ipe, jps,jpe, kps,kpe, &
                                                                          its,ite, jts,jte, kts,kte
       REAL   , INTENT(IN   ) , DIMENSION(ims:ime , jms:jme)           :: msfux,msfuy,msfvx,msfvy,msftx,msfty, &
-                                                                         f,e,ht
+                                                                         f,e,sina,cosa,ht
       INTEGER, INTENT(IN   )                                          :: use_theta_m
       REAL   , INTENT(IN   ) , DIMENSION(ims:ime , kms:kme , jms:jme) :: u,v,w,t,qv,zp,zb,pp,pb,p,pw
    
@@ -45,7 +46,9 @@ CONTAINS
       REAL   , INTENT(  OUT) ,  DIMENSION(ims:ime , jms:jme)           :: sealevelp
       REAL   , INTENT(  OUT) ,  DIMENSION(ims:ime , kms:kme , jms:jme) :: temperature , &
                                                                           pressure    , &
-                                                                          geoheight
+                                                                          geoheight   , &
+                                                                          umgeo       , &
+                                                                          vmgeo
    
       !  Local variables
    
@@ -79,6 +82,11 @@ CONTAINS
                !  Height
 
                geoheight(i,k,j) = ( zb(i,k,j)+zp(i,k,j)+zb(i,k+1,j)+zp(i,k+1,j) ) / (2.0 * g )
+   
+               !  Earth relative winds
+
+               umgeo(i,k,j) = (u(i,k,j)+u(i+1,k,j))*cosa(i,j) - (v(i,k,j)+v(i,k,j+1))*sina(i,j)
+               vmgeo(i,k,j) = (u(i,k,j)+u(i+1,k,j))*sina(i,j) + (v(i,k,j)+v(i,k,j+1))*cosa(i,j)
 
             END DO i_loop_h
          END DO k_loop_h

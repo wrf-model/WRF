@@ -91,6 +91,8 @@ k_loop: DO k=kts,min(config_flags%kemit,kte)
           chem(its:ite,k,j,p_no)  = chem(its:ite,k,j,p_no) + emis_ant(its:ite,k,j,p_e_no)*conv_rho(its:ite)
           chem(its:ite,k,j,p_no2) = chem(its:ite,k,j,p_no2) + emis_ant(its:ite,k,j,p_e_no2)*conv_rho(its:ite)
           chem(its:ite,k,j,p_nh3) = chem(its:ite,k,j,p_nh3) + emis_ant(its:ite,k,j,p_e_nh3)*conv_rho(its:ite)
+          chem(its:ite,k,j,p_hcl) = chem(its:ite,k,j,p_hcl) + emis_ant(its:ite,k,j,p_e_hcl)*conv_rho(its:ite)
+          chem(its:ite,k,j,p_ch3cl) = chem(its:ite,k,j,p_ch3cl) + emis_ant(its:ite,k,j,p_e_ch3cl)*conv_rho(its:ite)
 is_mozart:if( is_moz_chm ) then
             chem(its:ite,k,j,p_bigalk) = chem(its:ite,k,j,p_bigalk) + emis_ant(its:ite,k,j,p_e_bigalk)*conv_rho(its:ite)
             chem(its:ite,k,j,p_bigene) = chem(its:ite,k,j,p_bigene) + emis_ant(its:ite,k,j,p_e_bigene)*conv_rho(its:ite)

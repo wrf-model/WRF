@@ -1,0 +1,58 @@
+#	This file sets up default notification for reviews based on who "owns" code.
+
+/run					@weiwangncar
+/configure				@davegill @llpcarson @liujake
+/compile				@davegill @llpcarson @liujake
+/clean					@davegill @llpcarson @liujake
+Makefile				@davegill
+
+#	Architecture directories
+
+/arch					@davegill
+/tools					@davegill
+
+#	Chemistry
+/chem					@ravanah @kayeekayee @stacywalters
+
+#	Physics
+
+/phys					@dudhia @weiwangncar @llpcarson
+/phys/module_mp_thompson.F		@gthompsnWRF
+
+#	Data Assimilation
+
+/wrftladj				@liujake
+/var					@liujake
+
+#	Dynamics
+
+/dyn_em					@dudhia @weiwangncar @davegill
+/dyn_nmm				@llpcarson
+
+#	Registry
+
+/Registry				@davegill
+/Registry/Registry.NMM			@llpcarson
+
+/Registry/EM_CHEM			@ravanah @kayeekayee @stacywalters
+/Registry/registry.chem			@ravanah @kayeekayee @stacywalters
+
+/Registry/registry.var 			@liujake
+/Registry/registry.var_chem		@liujake @jjguerrette
+/Registry/registry.wrfplus		@liujake
+/Registry/Registry.wrfvar		@liujake
+/Registry/Registry.tladj		@liujake
+
+#	Test directories
+
+/test/em_*				@dudhia @weiwangncar @davegill
+/test/nmm_*				@llpcarson
+/test/em_fire				@domingom
+
+#	Executable directory
+
+/main					@dudhia @weiwangncar @davegill @llpcarson @ravanah @kayeekayee @stacywalters @liujake
+
+#	Externals directory structure
+
+/external 				@davegill

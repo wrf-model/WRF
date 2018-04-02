@@ -464,9 +464,11 @@ CONTAINS
 
        idrydep_onoff = 1
        aer_mech_id_select: SELECT CASE(config_flags%chem_opt)
+
 !!! TUCCELLA
           CASE (RADM2SORG,RADM2SORG_AQ,RADM2SORG_AQCHEM,RADM2SORG_KPP, &
                 RACM_ESRLSORG_KPP,RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP, &
+                RACM_SOA_VBS_HET_KPP, &
                 CBMZSORG,CBMZSORG_AQ, &
                 CB05_SORG_AQ_KPP,CB05_SORG_VBS_AQ_KPP)
              aer_mech_id = 1
@@ -567,7 +569,7 @@ CONTAINS
                ims,ime, jms,jme, kms,kme,                               &
                its,ite, jts,jte, kts,kte                                )
 !!! TUCCELLA
-     CASE ( RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP )
+     CASE ( RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP,RACM_SOA_VBS_HET_KPP )
        CALL wrf_debug(15,'DOING DRY DEP VELOCITIES FOR SOA_VBS AEROSOLS')
        call soa_vbs_depdriver (id,config_flags,ktau,dtstep,             &
                ust,t_phy,moist,p8w,t8w,rmol,znt,pbl,                    &

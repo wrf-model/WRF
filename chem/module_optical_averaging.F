@@ -241,7 +241,7 @@
           ims,ime, jms,jme, kms,kme,                                   &
           its,ite, jts,jte, kts,kte                                    )
 !!! TUCCELLA
-   CASE (RACM_SOA_VBS_KPP, RACM_SOA_VBS_AQCHEM_KPP)
+   CASE (RACM_SOA_VBS_KPP, RACM_SOA_VBS_AQCHEM_KPP,RACM_SOA_VBS_HET_KPP)
      call optical_prep_modal_soa_vbs(nbin_o, chem, alt,                &
 !         h2oai, h2oaj, refindx, radius_wet, number_bin,               &
 !         radius_core, refindx_core, refindx_shell,                    &

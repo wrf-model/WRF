@@ -87,6 +87,10 @@ subroutine da_setup_obs_structures_bufr(grid, ob, iv)
       call da_read_obs_bufrgpsro(iv)
    end if
 
+   if ( use_gpsephobs ) then
+      call da_read_obs_bufrgpsro_eph(iv)
+   end if
+
    if ( thin_conv ) then
       do n = 1, num_ob_indexes
          call destroygrids_conv (n)

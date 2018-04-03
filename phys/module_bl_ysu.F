@@ -1,3 +1,8 @@
+!=================================================================================================================
+!module_bl_ysu.F was modified to integrate MPAS-specific code 
+!integration took place between WRF Master Repository (from 28Feb2018) and MPAS HWT Repository (from 27Feb2018)
+!WRF version is >V3.9.1.1 and MPAS module_bl_ysu.F was originally modified from WRFV3.8.1
+!=================================================================================================================
 !WRF:model_layer:physics
 !
 !
@@ -31,7 +36,9 @@ contains
                   ims,ime, jms,jme, kms,kme,                                   &
                   its,ite, jts,jte, kts,kte,                                   &
                 !optional
-                  regime                                           )
+                  regime                                                       &
+                  ,rho,kzhout,kzmout,kzqout                                    &
+                 )
 !-------------------------------------------------------------------------------
    implicit none
 !-------------------------------------------------------------------------------
@@ -210,6 +217,20 @@ contains
                                                                         dvsfc, &
                                                                         dtsfc, &
                                                                         dqsfc
+   real,intent(in),dimension(ims:ime,kms:kme,jms:jme),optional:: rho
+   real:: rho_d
+   real,intent(out),dimension(ims:ime,kms:kme,jms:jme),optional:: kzhout,kzmout,kzqout
+   if(present(kzhout) .and. present(kzmout) .and. present(kzqout)) then
+      do j = jts,jte
+      do k = kts,kte
+      do i = its,ite
+         kzhout(i,k,j) = 0.
+         kzmout(i,k,j) = 0.
+         kzqout(i,k,j) = 0.
+      enddo
+      enddo
+      enddo
+   endif
 !
    qv2d(its:ite,:) = 0.0
 !
@@ -220,6 +241,28 @@ contains
           pdhi(i,k) = p3di(i,k,j)
         enddo
       enddo
+!For MPAS, we replace the hydrostatic pressures defined at theta and w points by
+!the dry hydrostatic pressures (Laura D. Fowler):
+      if(present(rho)) then
+  203 format(1x,i4,1x,i2,10(1x,e15.8))
+        k = kte+1
+        do i = its,ite
+          pdhi(i,k) = p3di(i,k,j)
+        enddo
+        do k = kte,kts,-1
+        do i = its,ite
+           rho_d = rho(i,k,j) / (1. + qv3d(i,k,j))
+           if(k.le.kte) pdhi(i,k) = pdhi(i,k+1) + g*rho_d*dz8w(i,k,j)
+        enddo
+       enddo
+        do k = kts,kte
+        do i = its,ite
+           pdh(i,k) = 0.5*(pdhi(i,k) + pdhi(i,k+1))
+        enddo
+        enddo
+      endif
+!MPAS specific end.
+
       do k = kts,kte
         do i = its,ite
           qv2d(i,k) = qv3d(i,k,j)
@@ -255,6 +298,11 @@ contains
               ,rthraten=rthraten(ims,kms,j),p2diORG=p3di(ims,kms,j)            &
               ,ysu_topdown_pblmix=ysu_topdown_pblmix                           &
               ,ctopo=ctopo(ims,j),ctopo2=ctopo2(ims,j)                         &
+#if defined(mpas)
+              ,kzh=kzhout(ims,kms,j)                                           &
+              ,kzm=kzmout(ims,kms,j)                                           &
+              ,kzq=kzqout(ims,kms,j)                                           &
+#endif
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde               &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme               &
               ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
@@ -293,7 +341,9 @@ contains
                   ims,ime, jms,jme, kms,kme,                                   &
                   its,ite, jts,jte, kts,kte,                                   &
                 !optional
-                  regime )
+                  regime                                                       &
+                 ,kzh,kzm,kzq                                                  &
+                   )
 !-------------------------------------------------------------------------------
    implicit none
 !-------------------------------------------------------------------------------
@@ -537,6 +587,8 @@ contains
    real,    dimension( ims:ime )             ::                       pblh_ysu,&
                                                                       vconvfx
 !
+   real,intent(out),dimension(ims:ime,kms:kme),optional::kzh,kzm,kzq
+!
 !-------------------------------------------------------------------------------
 !
    klpbl = kte
@@ -638,6 +690,17 @@ contains
      delta(i)  = 0.0
      wstar3_2(i) =  0.0
    enddo
+!
+   if(present(kzh) .and. present(kzm) .and. present(kzq)) then
+      do k = kts,kte
+      do i = its,ite
+         xkzh(i,k)  = 0.0
+         xkzm(i,k)  = 0.0
+         xkzhl(i,k) = 0.0
+         xkzml(i,k) = 0.0
+      enddo
+      enddo
+   endif
 !
    do k = kts,klpbl
      do i = its,ite
@@ -1431,6 +1494,15 @@ contains
      kpbl1d(i) = kpbl(i)
    enddo
 !
+   if(present(kzh) .and. present(kzm) .and. present(kzq)) then
+      do i = its,ite
+      do k = kts,kte
+         kzh(i,k) = xkzh(i,k)
+         kzm(i,k) = xkzm(i,k)
+         kzq(i,k) = xkzq(i,k)
+      enddo
+      enddo
+   endif
 !
    end subroutine ysu2d
 !-------------------------------------------------------------------------------

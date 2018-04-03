@@ -153,13 +153,13 @@ subroutine da_transform_xtoxa(grid, wpec_on)
       end if
 
       if (use_ssmt1obs .or. use_ssmt2obs .or. use_gpspwobs .or. use_gpsztdobs .or. &
-          use_ssmitbobs .or. use_ssmiretrievalobs .or. use_gpsrefobs) then
+          use_ssmitbobs .or. use_ssmiretrievalobs .or. use_gpsrefobs .or. use_gpsephobs) then
 
          ! Now do something for PW
          call da_transform_xtotpw(grid)
 
-         ! Space-based GPS Refractivity and Ground-based GPS ZTD: 
-         if ( use_gpsrefObs .or. use_gpsztdObs ) then  
+         ! Space-based GPS Refractivity, GPS Excess Phase, and Ground-based GPS ZTD:
+         if ( use_gpsrefObs .or. use_gpsephObs .or. use_gpsztdObs) then
             call da_transform_xtogpsref_lin(grid)  
             if (use_GpsztdObs) call da_transform_xtoztd_lin(grid) 
          endif 

@@ -614,6 +614,31 @@ subroutine da_write_y (iv, y)
       end if
    end if
 
+   ! [19.1] Transfer gpseph obs:
+
+   if (iv%info(gpseph)%nlocal > 0) then
+      num_obs = 0
+      do n = 1, iv%info(gpseph)%nlocal
+         if (iv%info(gpseph)%proc_domain(1,n)) num_obs = num_obs + 1
+      end do
+      if (num_obs > 0) then
+         write(ounit,'(a20,i8)')'gpseph', num_obs
+         num_obs = 0
+         do n = 1, iv%info(gpseph)%nlocal
+            if (iv%info(gpseph)%proc_domain(1,n)) then
+               num_obs = num_obs + 1
+               !write(ounit,'(i8)')iv%info(gpseph)%levels(n)
+               write(ounit,'(i8)') iv%gpseph(n)%level2 - iv%gpseph(n)%level1 + 1
+               !do k = 1, iv%info(gpseph)%levels(n)
+               do k = iv%gpseph(n)%level1, iv%gpseph(n)%level2
+                  call da_check_missing(iv%gpseph(n)%eph(k)%qc, y%gpseph(n)%eph(k), f1)
+                  write(ounit,'(2i8,7e15.7)')num_obs, k, f1, dum, dum, dum, dum, dum,dum
+               end do
+            end if
+         end do
+      end if
+   end if
+
    ! [20] Transfer tamdar obs:
 
    if (iv%info(tamdar)%nlocal > 0) then

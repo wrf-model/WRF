@@ -577,6 +577,7 @@ CONTAINS
                config_flags%if_no_pbl_nudging_uv, &
                config_flags%if_no_pbl_nudging_t, &
                config_flags%if_no_pbl_nudging_ph, &
+               config_flags%if_no_pbl_nudging_q, &
                config_flags%if_zfac_uv, &
                config_flags%k_zfac_uv, &
                config_flags%dk_zfac_uv,  &
@@ -586,15 +587,20 @@ CONTAINS
                config_flags%if_zfac_ph, &
                config_flags%k_zfac_ph, &
                config_flags%dk_zfac_ph,  &
+               config_flags%if_zfac_q, &
+               config_flags%k_zfac_q, &
+               config_flags%dk_zfac_q, &
+               config_flags%ktrop, &
                config_flags%guv, &
                config_flags%gt,  &
                config_flags%gph,  &
+               config_flags%gq,  &
                config_flags%if_ramping, config_flags%dtramp_min, &
                config_flags%xwavenum, config_flags%ywavenum, &
-               u3d,v3d,th_phy,ph,                 &
-               u_ndg_old,v_ndg_old,t_ndg_old,ph_ndg_old,       &
-               u_ndg_new,v_ndg_new,t_ndg_new,ph_ndg_new,       &
-               RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RPHNDGDTEN,&
+               u3d,v3d,th_phy,ph,moist(ims,kms,jms,P_QV),                &
+               u_ndg_old,v_ndg_old,t_ndg_old,ph_ndg_old,q_ndg_old,       &
+               u_ndg_new,v_ndg_new,t_ndg_new,ph_ndg_new,q_ndg_new,       &
+               RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RPHNDGDTEN,RQVNDGDTEN,&
                pblh, ht, z, z_at_w,                             &
                ids,ide, jds,jde, kds,kde,                           &
                ims,ime, jms,jme, kms,kme,                           &

@@ -97,11 +97,20 @@ subroutine da_check_xtoy_adjoint(cv_size, cv, xbx, be, grid, config_flags, iv, y
    xa2_rh(ims:ime, jms:jme, kms:kme)= grid%xa%rh(ims:ime, jms:jme, kms:kme)
    xa2_psfc(ims:ime, jms:jme)       = grid%xa%psfc(ims:ime, jms:jme)
 
-   xa2_qcw(ims:ime, jms:jme, kms:kme) = grid%xa%qcw(ims:ime, jms:jme, kms:kme)
-   xa2_qci(ims:ime, jms:jme, kms:kme) = grid%xa%qci(ims:ime, jms:jme, kms:kme)
-   xa2_qrn(ims:ime, jms:jme, kms:kme) = grid%xa%qrn(ims:ime, jms:jme, kms:kme)
-   xa2_qsn(ims:ime, jms:jme, kms:kme) = grid%xa%qsn(ims:ime, jms:jme, kms:kme)
-   xa2_qgr(ims:ime, jms:jme, kms:kme) = grid%xa%qgr(ims:ime, jms:jme, kms:kme)
+   xa2_qcw = 0.0
+   xa2_qrn = 0.0
+   xa2_qci = 0.0
+   xa2_qsn = 0.0
+   xa2_qgr = 0.0
+   if ( cloud_cv_options >= 1 ) then
+      xa2_qcw(ims:ime, jms:jme, kms:kme) = grid%xa%qcw(ims:ime, jms:jme, kms:kme)
+      xa2_qrn(ims:ime, jms:jme, kms:kme) = grid%xa%qrn(ims:ime, jms:jme, kms:kme)
+      if ( cloud_cv_options >= 2 ) then
+         xa2_qci(ims:ime, jms:jme, kms:kme) = grid%xa%qci(ims:ime, jms:jme, kms:kme)
+         xa2_qsn(ims:ime, jms:jme, kms:kme) = grid%xa%qsn(ims:ime, jms:jme, kms:kme)
+         xa2_qgr(ims:ime, jms:jme, kms:kme) = grid%xa%qgr(ims:ime, jms:jme, kms:kme)
+      end if
+   end if
 
    x6a2_u = 0.0
    x6a2_v = 0.0
@@ -252,14 +261,14 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
       end if
 
       if (use_ssmt1obs .or. use_ssmt2obs .or. use_gpspwobs .or. &
-          use_gpsztdobs .or. use_gpsrefobs .or.                 &
+          use_gpsztdobs .or. use_gpsrefobs .or. use_gpsephobs .or. &
           use_ssmitbobs .or. use_ssmiretrievalobs) then
 
          ! Now do something for PW
          call da_transform_xtotpw(grid)
 
          ! GPS Refractivity:
-         if (use_gpsrefobs .or. use_gpsztdobs) then
+         if (use_gpsrefobs .or. use_gpsztdobs .or. use_gpsephobs) then
             call da_transform_xtogpsref_lin(grid)
             if (use_gpsztdobs) call da_transform_xtoztd_lin(grid)
          end if
@@ -334,6 +343,7 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
       if (iv%info(ships)%nlocal    > 0) call da_check_xtoy_adjoint_ships    (iv, y, partial_lhs, pertile_lhs)
       if (iv%info(gpspw)%nlocal    > 0) call da_check_xtoy_adjoint_gpspw    (iv, y, partial_lhs, pertile_lhs)
       if (iv%info(gpsref)%nlocal   > 0) call da_check_xtoy_adjoint_gpsref   (iv, y, partial_lhs, pertile_lhs)
+      if (iv%info(gpseph)%nlocal   > 0) call da_check_xtoy_adjoint_gpseph   (iv, y, partial_lhs, pertile_lhs)
       if (iv%info(ssmi_tb)%nlocal  > 0) call da_check_xtoy_adjoint_ssmi_tb  (iv, y, partial_lhs, pertile_lhs)
       if (iv%info(ssmi_rv)%nlocal  > 0) call da_check_xtoy_adjoint_ssmi_rv  (iv, y, partial_lhs, pertile_lhs)
       if (iv%info(ssmt2)%nlocal    > 0) call da_check_xtoy_adjoint_ssmt1    (iv, y, partial_lhs, pertile_lhs)
@@ -392,7 +402,7 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
    end if
 
       if (use_ssmt1obs .or. use_ssmt2obs .or. use_gpspwobs .or. &
-          use_gpsztdobs .or. use_gpsrefobs .or.                 &
+          use_gpsztdobs .or. use_gpsrefobs .or. use_gpsephobs .or. &
           use_ssmitbobs .or. use_ssmiretrievalobs) then
 
          if (use_ssmitbobs) call da_transform_xtotb_adj (grid)
@@ -401,7 +411,7 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
          call da_transform_xtotpw_adj (grid)
 
          ! GPS Refractivity:
-         if (use_gpsrefobs .or. use_gpsztdobs) then
+         if (use_gpsrefobs .or. use_gpsztdobs .or. use_gpsephobs) then
             if (use_gpsztdobs) call da_transform_xtoztd_adj(grid)
             call da_transform_xtogpsref_adj (grid)
          end if
@@ -543,12 +553,17 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
       + sum (grid%x6a%rh(ims:ime, jms:jme, kms:kme)* x6a2_rh(ims:ime, jms:jme, kms:kme))       &
       + sum (grid%x6a%psfc(ims:ime, jms:jme) * x6a2_psfc(ims:ime, jms:jme))
 #endif
-   pertile_rhs = pertile_rhs &
-      + sum (grid%xa%qcw(ims:ime, jms:jme, kms:kme) * xa2_qcw(ims:ime, jms:jme, kms:kme))      &
-      + sum (grid%xa%qci(ims:ime, jms:jme, kms:kme) * xa2_qci(ims:ime, jms:jme, kms:kme))      &
-      + sum (grid%xa%qrn(ims:ime, jms:jme, kms:kme) * xa2_qrn(ims:ime, jms:jme, kms:kme))      &
-      + sum (grid%xa%qsn(ims:ime, jms:jme, kms:kme) * xa2_qsn(ims:ime, jms:jme, kms:kme))      &
-      + sum (grid%xa%qgr(ims:ime, jms:jme, kms:kme) * xa2_qgr(ims:ime, jms:jme, kms:kme))
+   if ( cloud_cv_options >= 1 ) then
+      pertile_rhs = pertile_rhs &
+         + sum (grid%xa%qcw(ims:ime, jms:jme, kms:kme) * xa2_qcw(ims:ime, jms:jme, kms:kme))   &
+         + sum (grid%xa%qrn(ims:ime, jms:jme, kms:kme) * xa2_qrn(ims:ime, jms:jme, kms:kme))
+      if ( cloud_cv_options >= 2 ) then
+         pertile_rhs = pertile_rhs &
+            + sum (grid%xa%qci(ims:ime, jms:jme, kms:kme) * xa2_qci(ims:ime, jms:jme, kms:kme))&
+            + sum (grid%xa%qsn(ims:ime, jms:jme, kms:kme) * xa2_qsn(ims:ime, jms:jme, kms:kme))&
+            + sum (grid%xa%qgr(ims:ime, jms:jme, kms:kme) * xa2_qgr(ims:ime, jms:jme, kms:kme))
+      end if
+   end if
 #ifdef VAR4D
    pertile_rhs = pertile_rhs &
       + sum (grid%x6a%qcw(ims:ime, jms:jme, kms:kme) * x6a2_qcw(ims:ime, jms:jme, kms:kme))    &
@@ -583,12 +598,17 @@ print*,__FILE__,jte,' grid%xa%v.grid%x%%v for row= ',jte+1,sum(grid%xa%v(its:ite
       + sum (grid%x6a%psfc(its:ite, jts:jte) * x6a2_psfc(its:ite, jts:jte)) 
 #endif
 
-   partial_rhs = partial_rhs &
-      + sum (grid%xa%qcw(its:ite, jts:jte, kts:kte) * xa2_qcw(its:ite, jts:jte, kts:kte))   &
-      + sum (grid%xa%qci(its:ite, jts:jte, kts:kte) * xa2_qci(its:ite, jts:jte, kts:kte))   & 
-      + sum (grid%xa%qrn(its:ite, jts:jte, kts:kte) * xa2_qrn(its:ite, jts:jte, kts:kte))   & 
-      + sum (grid%xa%qsn(its:ite, jts:jte, kts:kte) * xa2_qsn(its:ite, jts:jte, kts:kte))   & 
-      + sum (grid%xa%qgr(its:ite, jts:jte, kts:kte) * xa2_qgr(its:ite, jts:jte, kts:kte))
+   if ( cloud_cv_options >= 1 ) then
+      partial_rhs = partial_rhs &
+         + sum (grid%xa%qcw(its:ite, jts:jte, kts:kte) * xa2_qcw(its:ite, jts:jte, kts:kte))   &
+         + sum (grid%xa%qrn(its:ite, jts:jte, kts:kte) * xa2_qrn(its:ite, jts:jte, kts:kte))
+      if ( cloud_cv_options >= 2 ) then
+         partial_rhs = partial_rhs &
+            + sum (grid%xa%qci(its:ite, jts:jte, kts:kte) * xa2_qci(its:ite, jts:jte, kts:kte)) &
+            + sum (grid%xa%qsn(its:ite, jts:jte, kts:kte) * xa2_qsn(its:ite, jts:jte, kts:kte)) &
+            + sum (grid%xa%qgr(its:ite, jts:jte, kts:kte) * xa2_qgr(its:ite, jts:jte, kts:kte))
+      end if
+   end if
 #ifdef VAR4D
    partial_rhs = partial_rhs &
       + sum (grid%x6a%qcw(its:ite, jts:jte, kts:kte) * x6a2_qcw(its:ite, jts:jte, kts:kte)) &

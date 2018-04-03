@@ -8494,6 +8494,7 @@
                zomcc(jk) = (zomcc(jk) - zwf) / (1.0_rb - zwf)
                zgcc (jk) = (zgcc(jk) - zf) / (1.0_rb - zf)
 
+
 ! Total sky optical parameters (cloud properties already delta-scaled)
 !   Use this code if cloud properties are derived in rrtmg_sw_cldprop       
                if (icpr .ge. 1) then
@@ -8736,12 +8737,13 @@
              taucmcl ,ssacmcl ,asmcmcl ,fsfcmcl , &
              ciwpmcl ,clwpmcl ,cswpmcl ,reicmcl ,relqmcl ,resnmcl, &
              tauaer  ,ssaaer  ,asmaer  ,ecaer   , &
-             swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc, aer_opt,  &
+             swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc, swuflxcln ,swdflxcln , aer_opt,  &
 ! --------- Add the following four compenants for ssib shortwave down radiation ---!
 ! -------------------      by Zhenxin 2011-06-20      --------------------------------!
              sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
 ! ----------------------  End,  Zhenxin 2011-06-20    --------------------------------!
              swdkdir,swdkdif                                & ! jararias, 2013/08/10
+             ,calc_clean_atm_diag                          &
                                                                 )
 
 
@@ -8939,6 +8941,7 @@
       real(kind=rb), intent(in) :: ecaer(:,:,:)       ! Aerosol optical depth at 0.55 micron (iaer=6 only)
                                                       !    Dimensions: (ncol,nlay,naerec)
                                                       ! (non-delta scaled)      
+      integer, intent(in)       :: calc_clean_atm_diag! Control for clean air diagnositic calls for WRF-Chem
 
 ! ----- Output -----
 
@@ -8962,6 +8965,10 @@
                                                       !    Dimensions: (ncol,nlay+1)
       real(kind=rb), intent(out) :: swhrc(:,:)        ! Clear sky shortwave radiative heating rate (K/d)
                                                       !    Dimensions: (ncol,nlay)
+      real(kind=rb), intent(out) :: swuflxcln(:,:)    ! Clean sky shortwave upward flux (W/m2)
+                                                      !    Dimensions: (ncol,nlay+1)
+      real(kind=rb), intent(out) :: swdflxcln(:,:)    ! Clean sky shortwave downward flux (W/m2)
+                                                      !    Dimensions: (ncol,nlay+1)
 
       integer, intent(in)        :: aer_opt
       real(kind=rb), intent(out) :: &
@@ -9086,6 +9093,7 @@
                                                 !  (first moment of phase function)
       real(kind=rb) :: zomgc(nlay+1,nbndsw)     ! cloud single scattering albedo
       real(kind=rb) :: ztaua(nlay+1,nbndsw)     ! total aerosol optical depth
+      real(kind=rb) :: ztauacln(nlay+1,nbndsw)  ! dummy total aerosol optical depth for clean case (=zero)
       real(kind=rb) :: zasya(nlay+1,nbndsw)     ! total aerosol asymmetry parameter 
       real(kind=rb) :: zomga(nlay+1,nbndsw)     ! total aerosol single scattering albedo
 
@@ -9109,6 +9117,13 @@
       real(kind=rb) :: znicd(nlay+2)          ! temporary clear sky near-IR downward shortwave flux (w/m2)
       real(kind=rb) :: znifddir(nlay+2)       ! temporary near-IR downward direct shortwave flux (w/m2)
       real(kind=rb) :: znicddir(nlay+2)       ! temporary clear sky near-IR downward direct shortwave flux (w/m2)
+      real(kind=rb) :: zbbclnu(nlay+2)        ! temporary clean sky upward shortwave flux (w/m2)
+      real(kind=rb) :: zbbclnd(nlay+2)        ! temporary clean sky downward shortwave flux (w/m2)
+      real(kind=rb) :: zbbclnddir(nlay+2)     ! temporary clean sky downward direct shortwave flux (w/m2)
+      real(kind=rb) :: zuvclnd(nlay+2)        ! temporary clean sky UV downward shortwave flux (w/m2)
+      real(kind=rb) :: zuvclnddir(nlay+2)     ! temporary clean sky UV downward direct shortwave flux (w/m2)
+      real(kind=rb) :: zniclnd(nlay+2)        ! temporary clean sky near-IR downward shortwave flux (w/m2)
+      real(kind=rb) :: zniclnddir(nlay+2)     ! temporary clean sky near-IR downward direct shortwave flux (w/m2)
 
 ! Optional output fields 
       real(kind=rb) :: swnflx(nlay+2)         ! Total sky shortwave net flux (W/m2)
@@ -9320,6 +9335,7 @@
             do i = 1 ,nlayers
                do ib = 1 ,nbndsw
                   ztaua(i,ib) = taua(i,ib)
+                  ztauacln(i,ib) = 0.0
                   zasya(i,ib) = asma(i,ib)
                   zomga(i,ib) = ssaa(i,ib)
                enddo
@@ -9407,6 +9423,57 @@
          swhrc(iplon,nlayers) = 0._rb
          swhr(iplon,nlayers) = 0._rb
 
+#if (WRF_CHEM == 1)
+         !  Repeat call to 2-stream radiation model using "clean sky" 
+         !  variables and aerosol tau set to 0
+         if(calc_clean_atm_diag .gt. 0)then
+            do i=1,nlayers+1
+                zbbcu(i) = 0._rb
+                zbbcd(i) = 0._rb
+                zbbclnu(i) = 0._rb
+                zbbclnd(i) = 0._rb
+                zbbcddir(i) = 0._rb
+                zbbclnddir(i) = 0._rb
+                zuvcd(i) = 0._rb
+                zuvclnd(i) = 0._rb
+                zuvcddir(i) = 0._rb
+                zuvclnddir(i) = 0._rb
+                znicd(i) = 0._rb
+                zniclnd(i) = 0._rb
+                znicddir(i) = 0._rb
+                zniclnddir(i) = 0._rb
+             enddo         
+
+             call spcvmc_sw &
+                 (nlayers, istart, iend, icpr, iout, &
+                  pavel, tavel, pz, tz, tbound, albdif, albdir, &
+                  zcldfmc, ztaucmc, zasycmc, zomgcmc, ztaormc, &
+                  ztauacln, zasya, zomga, cossza, coldry, wkl, adjflux, &	 
+                  laytrop, layswtch, laylow, jp, jt, jt1, &
+                  co2mult, colch4, colco2, colh2o, colmol, coln2o, colo2, colo3, &
+                  fac00, fac01, fac10, fac11, &
+                  selffac, selffrac, indself, forfac, forfrac, indfor, &
+                  zbbclnd, zbbclnu, zbbcd, zbbcu, zuvclnd, zuvcd, zniclnd, znicd, &
+                  zbbclnddir, zbbcddir, zuvclnddir, zuvcddir, zniclnddir, znicddir)
+
+            do i = 1, nlayers+1
+               swuflxcln(iplon,i) = zbbclnu(i) 
+               swdflxcln(iplon,i) = zbbclnd(i)
+            enddo
+         else
+            do i = 1, nlayers+1
+               swuflxcln(iplon,i) = 0.0 
+               swdflxcln(iplon,i) = 0.0
+            enddo
+         end if
+
+#else
+         do i = 1, nlayers+1
+            swuflxcln(iplon,i) = 0.0 
+            swdflxcln(iplon,i) = 0.0
+         enddo
+
+#endif
 ! End longitude loop
       enddo
 
@@ -9823,8 +9890,8 @@ CONTAINS
 !------------------------------------------------------------------
    SUBROUTINE RRTMG_SWRAD(                                        &
                        rthratensw,                                &
-                       swupt, swuptc, swdnt, swdntc,              &
-                       swupb, swupbc, swdnb, swdnbc,              &
+                       swupt, swuptc, swuptcln, swdnt, swdntc, swdntcln, &
+                       swupb, swupbc, swupbcln, swdnb, swdnbc, swdnbcln, &
 !                      swupflx, swupflxc, swdnflx, swdnflxc,      &
                        swcf, gsw,                                 &
                        xtime, gmt, xlat, xlong,                   &
@@ -9854,13 +9921,14 @@ CONTAINS
                        waer300,waer400,waer600,waer999,           & ! czhao 
                        aer_ra_feedback,                           &
 !jdfcz                 progn,prescribe,                           &
-                       progn,                                     &
+                       progn,calc_clean_atm_diag,                 &
                        qndrop3d,f_qndrop,                         & !czhao
                        mp_physics,                                & !wang 2014/12
                        ids,ide, jds,jde, kds,kde,                 & 
                        ims,ime, jms,jme, kms,kme,                 &
                        its,ite, jts,jte, kts,kte,                 &
-                       swupflx, swupflxc, swdnflx, swdnflxc,      &
+                       swupflx, swupflxc,                         &
+                       swdnflx, swdnflxc,                         &
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
                        swddir, swddni, swddif,                    & ! jararias 2013/08
                        xcoszen,julian                             & ! jararias 2013/08
@@ -9984,6 +10052,8 @@ CONTAINS
    INTEGER,    INTENT(IN  ), OPTIONAL   ::       aer_ra_feedback
 !jdfcz   INTEGER,    INTENT(IN  ), OPTIONAL   ::       progn,prescribe
    INTEGER,    INTENT(IN  ), OPTIONAL   ::       progn
+   INTEGER,    INTENT(IN  )             ::       calc_clean_atm_diag
+
 !  Ozone
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          OPTIONAL                                               , &
@@ -10011,14 +10081,15 @@ CONTAINS
 ! Top of atmosphere and surface shortwave fluxes (W m-2)
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          OPTIONAL, INTENT(INOUT) ::                               &
-                                       SWUPT,SWUPTC,SWDNT,SWDNTC, &
-                                       SWUPB,SWUPBC,SWDNB,SWDNBC
+                    SWUPT,SWUPTC,SWUPTCLN,SWDNT,SWDNTC,SWDNTCLN,  &
+                    SWUPB,SWUPBC,SWUPBCLN,SWDNB,SWDNBC,SWDNBCLN
 
 ! Layer shortwave fluxes (including extra layer above model top)
 ! Vertical ordering is from bottom to top (W m-2)
    REAL, DIMENSION( ims:ime, kms:kme+2, jms:jme ),                &
          OPTIONAL, INTENT(OUT) ::                                 &
-                               SWUPFLX,SWUPFLXC,SWDNFLX,SWDNFLXC
+                               SWUPFLX,SWUPFLXC,                  &
+                               SWDNFLX,SWDNFLXC
 
 !  LOCAL VARS
  
@@ -10103,6 +10174,8 @@ CONTAINS
                                                           swdflx, &
                                                          swuflxc, &
                                                          swdflxc, &
+                                                       swuflxcln, &
+                                                       swdflxcln, &
                                                        sibvisdir, &  ! Zhenxin 2011-06-20
                                                        sibvisdif, &
                                                        sibnirdir, &
@@ -11022,11 +11095,12 @@ CONTAINS
              taucmcl ,ssacmcl ,asmcmcl ,fsfcmcl , &
              ciwpmcl ,clwpmcl ,cswpmcl, reicmcl ,relqmcl ,resnmcl, &
              tauaer  ,ssaaer  ,asmaer  ,ecaer   , &
-             swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc, aer_opt, &
+             swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc, swuflxcln, swdflxcln, aer_opt, &
 ! -----      Zhenxin added for ssib coupiling 2011-06-20 --------!
              sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
 ! --------------------   End of addiation by Zhenxin 2011-06-20 ------!
              swdkdir, swdkdif                      &  ! jararias, 2012/08/10
+             ,calc_clean_atm_diag                 &
                                                    )
 
 
@@ -11052,6 +11126,12 @@ CONTAINS
             swnirdif(i,j)  = sibnirdif(1,1)
 !  Ended, Zhenxin (2011/06/20)
             swdnbc(i,j)    = swdflxc(1,1)
+            if(calc_clean_atm_diag .gt. 0)then
+            	swuptcln(i,j)  = swuflxcln(1,kte+2)
+            	swdntcln(i,j)  = swdflxcln(1,kte+2)
+            	swupbcln(i,j)  = swuflxcln(1,1)
+            	swdnbcln(i,j)  = swdflxcln(1,1)
+            end if
          endif
             swddir(i,j)    = swdkdir(1,1)          ! jararias 2013/08/10
             swddni(i,j)    = swddir(i,j) / coszrs  ! jararias 2013/08/10
@@ -11090,6 +11170,12 @@ CONTAINS
             swvisdif(i,j)  = 0.
             swnirdir(i,j)  = 0.
             swnirdif(i,j)  = 0.  ! Add by Zhenxin (2011/06/20)
+            if(calc_clean_atm_diag .gt. 0)then
+				swuptcln(i,j)  = 0.
+				swdntcln(i,j)  = 0.
+				swupbcln(i,j)  = 0.
+				swdnbcln(i,j)  = 0.
+            end if
          endif
             swddir(i,j)    = 0.  ! jararias 2013/08/10
             swddni(i,j)    = 0.  ! jararias 2013/08/10

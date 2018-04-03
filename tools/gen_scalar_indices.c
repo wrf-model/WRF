@@ -122,9 +122,18 @@ gen_scalar_indices1 ( FILE * fp, FILE ** fp2 )
   char * scalars ;
   int i ;
 
-  for ( p = FourD ; p != NULL ; p = p->next )
+/*  for ( p = FourD ; p != NULL ; p = p->next )
    { for ( memb = p->members ; memb != NULL ; memb = memb->next )
-      { if ( strcmp(memb->name,"-") ) fprintf(fp,"  P_%s = 1 ; F_%s = .FALSE. \n", memb->name, memb->name ) ; } }
+      { if ( strcmp(memb->name,"-") ) fprintf(fp,"  P_%s = 1 ; F_%s = .FALSE. \n", memb->name, memb->name ) ; } } */
+
+  for ( p = FourD ; p != NULL ; p = p->next ) {
+    if( strncmp( p->name,"irr_diag",8 ) ) {
+      for ( memb = p->members ; memb != NULL ; memb = memb->next )
+        if ( strcmp(memb->name,"-") ) fprintf(fp,"  P_%s = 1 ; F_%s = .FALSE. \n", memb->name, memb->name ) ; 
+    }
+  }
+
+  fprintf(stderr,"Packages in gen_scalar_indices1\n");
 
   for ( pkg = Packages ; pkg != NULL ; pkg = pkg->next )
   {

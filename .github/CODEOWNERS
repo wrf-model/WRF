@@ -31,10 +31,12 @@ Makefile				@davegill
 
 #	Registry
 
-/Registry				@davegill
+/Registry				            @davegill
 /Registry/Registry.NMM			@llpcarson
+/Registry/registry.tracker	@llpcarson
+/Registry/registry.tornado	@llpcarson
 
-/Registry/EM_CHEM			@ravanah @kayeekayee @stacywalters
+/Registry/EM_CHEM			      @ravanah @kayeekayee @stacywalters
 /Registry/registry.chem			@ravanah @kayeekayee @stacywalters
 
 /Registry/registry.var 			@liujake

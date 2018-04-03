@@ -72,6 +72,7 @@
  /
 
  &dynamics
+ hybrid_opt                          = 0, 
  rk_ord                              = 3,
  diff_opt                            = 1,      1,      1,
  km_opt                              = 4,      4,      4,

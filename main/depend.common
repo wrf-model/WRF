@@ -825,9 +825,14 @@ module_sf_lake.o : \
 module_fr_fire_driver.o: \
 		../share/module_model_constants.o  \
                 ../frame/module_comm_dm.o \
+		../frame/module_domain.o \
+	        ../frame/module_configure.o \
+	        ../frame/module_dm.o \
 		module_fr_fire_phys.o \
 		module_fr_fire_model.o \
-		module_fr_fire_util.o 
+		module_fr_fire_util.o \
+		module_fr_fire_core.o \
+		module_fr_fire_atm.o 
 
 module_fr_fire_driver_wrf.o: \
 		../share/module_model_constants.o  \

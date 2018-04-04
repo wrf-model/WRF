@@ -2587,6 +2587,8 @@ state integer nodyn_dummy - dyn_nodyn -  -  -  "" "" ""
 rconfig   integer     windfarm_opt        namelist,physics      max_domains    0       rh       "windfarm_opt"                ""      ""
 rconfig   integer     windfarm_ij         namelist,physics      1              0       rh       "windfarm_ij"                ""      ""
 #
+# Ideal case selection
+rconfig   integer     ideal_case          namelist,ideal        1              0       rh       "ideal_case"                 ""      ""
 #---------------------------------------------------------------------------------------------------------------------------------------
 # Package Declarations
 #                                               
@@ -2913,6 +2915,17 @@ package   wrfhydro       wrf_hydro==1                -            state:SOLDRAIN
 package   no_windfarm    windfarm_opt==0             -            -
 package   fitchscheme    windfarm_opt==1             -            state:power
 
+#Ideal Cases
+package   realcase       ideal_case==0               -            -
+package   hill2d_x       ideal_case==1               -            -
+package   quarter_ss     ideal_case==2               -            -
+package   convrad        ideal_case==3               -            -
+package   squall2d_x     ideal_case==4               -            -
+package   squall2d_y     ideal_case==5               -            -
+package   grav2d_x       ideal_case==6               -            -
+package   b_wave         ideal_case==7               -            -
+package   seabreeze2d_x  ideal_case==8               -            -
+package   les            ideal_case==9               -            -
 # WRF-Chem specific diagnostics
 package   clnatmdiag     calc_clean_atm_diag==1      -            state:SWUPTCLN,SWDNTCLN,SWUPBCLN,SWDNBCLN,LWUPTCLN,LWDNTCLN,LWUPBCLN,LWDNBCLN 
 

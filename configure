@@ -8,7 +8,6 @@ FORTRAN_COMPILER_TIMER=""
 opt_level="-f"
 rword="-r4"
 vnest="NOVN"
-hyb="NOHYB"
 print_usage=""
 chemistry=""
 wrf_core=""
@@ -22,7 +21,6 @@ while [ $# -ge 1 ]; do
       -f) opt_level="-f" ;;
       -h) print_usage="yes" ;;
       -help) print_usage="yes" ;;
-      -hyb) hyb="HYB" ;;
       -os) shift ; WRF_OS=$1 ;;
       -mach) shift ; WRF_MACH=$1 ;;
       -r8) rword="-r8" ;;
@@ -51,7 +49,6 @@ if [ -n "$print_usage" ] ; then
   echo '-d    build with debugging information and no optimization'
   echo '-D    build with -d AND floating traps, traceback, uninitialized variables'
   echo '-r8   build with 8 byte reals'
-  echo '-hyb  build with hybrid vertical coordinate (HVC) for ARW only'
   echo '-help print this message'
   echo '*****************************************************************************'
   echo ' '
@@ -417,25 +414,15 @@ if [ "$wrf_core" = "DA_CORE" -o "$wrf_core" = "4D_DA_CORE" ] ; then
   fi
 fi
 
-# For the hybrid build, stay away from NMM and DA; Vertical nesting is 
-# a problem for ARW
-
 if [ -n "$WRF_NMM_CORE" -a "$WRF_NMM_CORE" = "1" ] ; then
   TFL="-traditional-cpp"
   CFL="-P -nostdinc"
 elif [ "$wrf_core" = "DA_CORE" -o "$wrf_core" = "4D_DA_CORE" ] ; then
   TFL="-traditional-cpp"
   CFL="-P -nostdinc"
-elif [ "$vnest" = "VN" ] ; then
-  TFL="-traditional-cpp"
-  CFL="-P -nostdinc"
-elif [ "$hyb" = "NOHYB" ] ; then
-  TFL="-traditional-cpp"
-  CFL="-P -nostdinc"
 else
-  TFL=" "
-  CFL="-P -C -nostdinc"
-  compileflags="${compileflags}!-DHYBRID_COORD=1"
+  TFL="-traditional-cpp"
+  CFL="-P -nostdinc"
 fi
 
 if [ "$wrf_core" = "4D_DA_CORE" ]; then

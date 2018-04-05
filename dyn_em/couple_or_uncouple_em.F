@@ -1,18 +1,3 @@
-! sed -e "s/grid%mu/gridmu/g" -e "s/grid%Mu/gridMu/g" couple_or_uncouple_em.F | cpp -DHYBRID_COORD | sed -e "s/gridmu/grid%mu/g" -e "s/gridMu/grid%Mu/g" >> couple_or_uncouple_em.next
-#if ( HYBRID_COORD==1 )
-#  define gridmu_2(...) (grid%c1h(k)*XXPC2HXX(__VA_ARGS__))
-#  define XXPC2HXX(...) grid%mu_2(__VA_ARGS__)
-
-#  define gridmub(...) (grid%c1h(k)*XXPCBHXX(__VA_ARGS__)+grid%c2h(k))
-#  define XXPCBHXX(...) grid%mub(__VA_ARGS__)
-
-#  define gridMu_2(...) (grid%c1f(k)*XXPC2FXX(__VA_ARGS__))
-#  define XXPC2FXX(...) grid%Mu_2(__VA_ARGS__)
-
-#  define gridMub(...) (grid%c1f(k)*XXPCBFXX(__VA_ARGS__)+grid%c2f(k))
-#  define XXPCBFXX(...) grid%Mub(__VA_ARGS__)
-#endif
-
 !WRF:MEDIATION_LAYER:couple_uncouple_utility
 
 SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
@@ -134,8 +119,8 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
      DO j = max(jds,jps),min(jde-1,jpe)
      DO k = kps,kpe
      DO i = max(ids,ips),min(ide-1,ipe)
-       mutf_2(i,k,j) = grid%Mub(i,j) + grid%Mu_2(i,j)
-       muwt_2(i,k,j) = (grid%Mub(i,j) + grid%Mu_2(i,j))/grid%msfty(i,j) ! w coupled with y
+       mutf_2(i,k,j) = (grid%c1f(k)*grid%Mub(i,j)+grid%c2f(k)) + (grid%c1f(k)*grid%Mu_2(i,j))
+       muwt_2(i,k,j) = ((grid%c1f(k)*grid%Mub(i,j)+grid%c2f(k)) + (grid%c1f(k)*grid%Mu_2(i,j)))/grid%msfty(i,j) ! w coupled with y
      ENDDO
      ENDDO
      ENDDO
@@ -143,7 +128,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
      DO j = max(jds,jps),min(jde-1,jpe)
      DO k = kps,kpe-1
      DO i = max(ids,ips),min(ide-1,ipe)
-       muth_2(i,k,j) = grid%mub(i,j) + grid%mu_2(i,j)
+       muth_2(i,k,j) = (grid%c1h(k)*grid%mub(i,j)+grid%c2h(k)) + (grid%c1h(k)*grid%mu_2(i,j))
      ENDDO
      ENDDO
      ENDDO
@@ -155,8 +140,8 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
      DO j = max(jds,jps),min(jde-1,jpe)
      DO k = kps,kpe-1
      DO i = max(ids,ips),min(ide-1,ipe)
-       muut_2(i,k,j) = 0.5*(grid%mub(i,j)+grid%mub(i-1,j) + grid%mu_2(i,j) + grid%mu_2(i-1,j))/grid%msfuy(i,j) ! u coupled with y
-       muvt_2(i,k,j) = 0.5*(grid%mub(i,j)+grid%mub(i,j-1) + grid%mu_2(i,j) + grid%mu_2(i,j-1))/grid%msfvx(i,j) ! v coupled with x
+       muut_2(i,k,j) = 0.5*((grid%c1h(k)*grid%mub(i,j)+grid%c2h(k))+(grid%c1h(k)*grid%mub(i-1,j)+grid%c2h(k)) + (grid%c1h(k)*grid%mu_2(i,j)) + (grid%c1h(k)*grid%mu_2(i-1,j)))/grid%msfuy(i,j) ! u coupled with y
+       muvt_2(i,k,j) = 0.5*((grid%c1h(k)*grid%mub(i,j)+grid%c2h(k))+(grid%c1h(k)*grid%mub(i,j-1)+grid%c2h(k)) + (grid%c1h(k)*grid%mu_2(i,j)) + (grid%c1h(k)*grid%mu_2(i,j-1)))/grid%msfvx(i,j) ! v coupled with x
      ENDDO
      ENDDO
      ENDDO
@@ -167,7 +152,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
          j = jde
          DO k = kps,kpe-1
          DO i = max(ids,ips),min(ide-1,ipe)
-           muvt_2(i,k,j) = (grid%mub(i,j-1) + grid%mu_2(i,j-1))/grid%msfvx(i,j) ! v coupled with x
+           muvt_2(i,k,j) = ((grid%c1h(k)*grid%mub(i,j-1)+grid%c2h(k)) + (grid%c1h(k)*grid%mu_2(i,j-1)))/grid%msfvx(i,j) ! v coupled with x
          ENDDO
          ENDDO
        ENDIF
@@ -175,7 +160,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
          i = ide
          DO j = max(jds,jps),min(jde-1,jpe)
          DO k = kps,kpe-1
-           muut_2(i,k,j) = (grid%mub(i-1,j) + grid%mu_2(i-1,j))/grid%msfuy(i,j) ! u coupled with y
+           muut_2(i,k,j) = ((grid%c1h(k)*grid%mub(i-1,j)+grid%c2h(k)) + (grid%c1h(k)*grid%mu_2(i-1,j)))/grid%msfuy(i,j) ! u coupled with y
          ENDDO
          ENDDO
        ENDIF
@@ -186,7 +171,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
          j = jde
          DO k = kps,kpe-1
          DO i = max(ids,ips),min(ide-1,ipe)
-           muvt_2(i,k,j) = 0.5*(grid%mub(i,j)+grid%mub(i,j-1) + grid%mu_2(i,j) + grid%mu_2(i,j-1))/grid%msfvx(i,j) ! v coupled with x
+           muvt_2(i,k,j) = 0.5*((grid%c1h(k)*grid%mub(i,j)+grid%c2h(k))+(grid%c1h(k)*grid%mub(i,j-1)+grid%c2h(k)) + (grid%c1h(k)*grid%mu_2(i,j)) + (grid%c1h(k)*grid%mu_2(i,j-1)))/grid%msfvx(i,j) ! v coupled with x
          ENDDO
          ENDDO
        ENDIF
@@ -194,7 +179,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
          i = ide       
          DO j = max(jds,jps),min(jde-1,jpe)
          DO k = kps,kpe-1
-           muut_2(i,k,j) = 0.5*(grid%mub(i,j)+grid%mub(i-1,j) + grid%mu_2(i,j) + grid%mu_2(i-1,j))/grid%msfuy(i,j) ! u coupled with y
+           muut_2(i,k,j) = 0.5*((grid%c1h(k)*grid%mub(i,j)+grid%c2h(k))+(grid%c1h(k)*grid%mub(i-1,j)+grid%c2h(k)) + (grid%c1h(k)*grid%mu_2(i,j)) + (grid%c1h(k)*grid%mu_2(i-1,j)))/grid%msfuy(i,j) ! u coupled with y
          ENDDO
          ENDDO
        ENDIF
@@ -208,8 +193,8 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
      DO j = max(jds,jps),min(jde-1,jpe)
      DO k = kps,kpe
      DO i = max(ids,ips),min(ide-1,ipe)
-       mutf_2(i,k,j) = 1./(grid%Mub(i,j) + grid%Mu_2(i,j))
-       muwt_2(i,k,j) = grid%msfty(i,j)/(grid%Mub(i,j) + grid%Mu_2(i,j)) ! w coupled with y
+       mutf_2(i,k,j) = 1./((grid%c1f(k)*grid%Mub(i,j)+grid%c2f(k)) + (grid%c1f(k)*grid%Mu_2(i,j)))
+       muwt_2(i,k,j) = grid%msfty(i,j)/((grid%c1f(k)*grid%Mub(i,j)+grid%c2f(k)) + (grid%c1f(k)*grid%Mu_2(i,j))) ! w coupled with y
      ENDDO
      ENDDO
      ENDDO
@@ -217,7 +202,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
      DO j = max(jds,jps),min(jde-1,jpe)
      DO k = kps,kpe-1
      DO i = max(ids,ips),min(ide-1,ipe)
-       muth_2(i,k,j) = 1./(grid%mub(i,j) + grid%mu_2(i,j))
+       muth_2(i,k,j) = 1./((grid%c1h(k)*grid%mub(i,j)+grid%c2h(k)) + (grid%c1h(k)*grid%mu_2(i,j)))
      ENDDO
      ENDDO
      ENDDO
@@ -227,7 +212,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
      DO j = max(jds,jps),min(jde-1,jpe)
      DO k = kps,kpe-1
      DO i = max(ids,ips),min(ide-1,ipe)
-       muut_2(i,k,j) = 2.*grid%msfuy(i,j)/(grid%mub(i,j)+grid%mub(i-1,j) + grid%mu_2(i,j) + grid%mu_2(i-1,j)) ! u coupled with y
+       muut_2(i,k,j) = 2.*grid%msfuy(i,j)/((grid%c1h(k)*grid%mub(i,j)+grid%c2h(k))+(grid%c1h(k)*grid%mub(i-1,j)+grid%c2h(k)) + (grid%c1h(k)*grid%mu_2(i,j)) + (grid%c1h(k)*grid%mu_2(i-1,j))) ! u coupled with y
      ENDDO
      ENDDO
      ENDDO
@@ -235,7 +220,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
      DO j = max(jds,jps),min(jde-1,jpe)
      DO k = kps,kpe-1
      DO i = max(ids,ips),min(ide-1,ipe)
-       muvt_2(i,k,j) = 2.*grid%msfvx(i,j)/(grid%mub(i,j)+grid%mub(i,j-1) + grid%mu_2(i,j) + grid%mu_2(i,j-1)) ! v coupled with x
+       muvt_2(i,k,j) = 2.*grid%msfvx(i,j)/((grid%c1h(k)*grid%mub(i,j)+grid%c2h(k))+(grid%c1h(k)*grid%mub(i,j-1)+grid%c2h(k)) + (grid%c1h(k)*grid%mu_2(i,j)) + (grid%c1h(k)*grid%mu_2(i,j-1))) ! v coupled with x
      ENDDO
      ENDDO
      ENDDO
@@ -243,10 +228,10 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
      IF ( config_flags%nested .or. config_flags%specified .or. config_flags%polar ) THEN
 
        IF ( jpe .eq. jde ) THEN
-         j = jde 
+         j = jde
          DO k = kps,kpe-1
          DO i = max(ids,ips),min(ide-1,ipe)
-           muvt_2(i,k,j) = grid%msfvx(i,j)/(grid%mub(i,j-1) + grid%mu_2(i,j-1)) ! v coupled with x
+           muvt_2(i,k,j) = grid%msfvx(i,j)/((grid%c1h(k)*grid%mub(i,j-1)+grid%c2h(k)) + (grid%c1h(k)*grid%mu_2(i,j-1))) ! v coupled with x
          ENDDO
          ENDDO
        ENDIF
@@ -254,7 +239,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
          i = ide
          DO j = max(jds,jps),min(jde-1,jpe)
          DO k = kps,kpe-1
-           muut_2(i,k,j) = grid%msfuy(i,j)/(grid%mub(i-1,j) + grid%mu_2(i-1,j)) ! u coupled with y
+           muut_2(i,k,j) = grid%msfuy(i,j)/((grid%c1h(k)*grid%mub(i-1,j)+grid%c2h(k)) + (grid%c1h(k)*grid%mu_2(i-1,j))) ! u coupled with y
          ENDDO
          ENDDO
        ENDIF
@@ -265,7 +250,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
          j = jde
          DO k = kps,kpe-1
          DO i = max(ids,ips),min(ide-1,ipe)
-           muvt_2(i,k,j) = 2.*grid%msfvx(i,j)/(grid%mub(i,j)+grid%mub(i,j-1) + grid%mu_2(i,j) + grid%mu_2(i,j-1)) ! v coupled with x
+           muvt_2(i,k,j) = 2.*grid%msfvx(i,j)/((grid%c1h(k)*grid%mub(i,j)+grid%c2h(k))+(grid%c1h(k)*grid%mub(i,j-1)+grid%c2h(k)) + (grid%c1h(k)*grid%mu_2(i,j)) + (grid%c1h(k)*grid%mu_2(i,j-1))) ! v coupled with x
          ENDDO
          ENDDO
        ENDIF
@@ -273,7 +258,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
          i = ide       
          DO j = max(jds,jps),min(jde-1,jpe)
          DO k = kps,kpe-1
-           muut_2(i,k,j) = 2.*grid%msfuy(i,j)/(grid%mub(i,j)+grid%mub(i-1,j) + grid%mu_2(i,j) + grid%mu_2(i-1,j)) ! u coupled with y
+           muut_2(i,k,j) = 2.*grid%msfuy(i,j)/((grid%c1h(k)*grid%mub(i,j)+grid%c2h(k))+(grid%c1h(k)*grid%mub(i-1,j)+grid%c2h(k)) + (grid%c1h(k)*grid%mu_2(i,j)) + (grid%c1h(k)*grid%mu_2(i-1,j))) ! u coupled with y
          ENDDO
          ENDDO
        ENDIF
@@ -464,7 +449,7 @@ SUBROUTINE couple_or_uncouple_em ( grid , config_flags , couple &
 
      IF (num_tracer >= PARAM_FIRST_SCALAR) THEN
        DO im = PARAM_FIRST_SCALAR , num_tracer
- 
+
      CALL set_physical_bc3d( tracer(ims,kms,jms,im), 'p',        &
                              config_flags,                   &
                              ids,ide, jds,jde, kds,kde,  & ! domain dims
@@ -491,7 +476,7 @@ LOGICAL FUNCTION cd_feedback_mask( pig, ips_save, ipe_save , pjg, jps_save, jpe_
    INTEGER ioff, joff, spec_zone
 
    CALL nl_get_spec_zone( 1, spec_zone )
-   ioff = 0 ; joff = 0 
+   ioff = 0 ; joff = 0
    IF ( xstag  ) ioff = 1
    IF ( ystag  ) joff = 1
 

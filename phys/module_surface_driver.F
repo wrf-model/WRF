@@ -261,6 +261,7 @@ CONTAINS
      &          ,CANWAT_mosaic,SNOW_mosaic,SNOWH_mosaic,SNOWC_mosaic                              & !danli mosaic
      &          ,ALBEDO_mosaic,ALBBCK_mosaic, EMISS_mosaic, EMBCK_mosaic, ZNT_mosaic, Z0_mosaic   & !danli mosaic
      &          ,HFX_mosaic,QFX_mosaic, LH_mosaic, GRDFLX_mosaic,SNOTIME_mosaic                   & !danli mosaic
+     &          ,RS_mosaic,LAI_mosaic                                 &  !mosaic
      &          ,TR_URB2D_mosaic,TB_URB2D_mosaic                      &  !danli mosaic 
      &          ,TG_URB2D_mosaic,TC_URB2D_mosaic                      &  !danli mosaic 
      &          ,QC_URB2D_mosaic,UC_URB2D_mosaic                      &  !danli mosaic                  
@@ -274,6 +275,7 @@ CONTAINS
      &          ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas  &  !fasdas
      &          ,spp_lsm,pattern_spp_lsm,field_sf                     &  !SPP
      &          ,spp_pbl,pattern_spp_pbl                              &  !SPP
+     &          ,XLAIDYN                                              &
      &                                                             )
 
 #if ( ! NMM_CORE == 1 )
@@ -508,7 +510,7 @@ CONTAINS
 !-- SOILCTOP     Top soil fraction                     ! P-X LSM
 !-- SOILCBOT     Bottom soil fraction                  ! P-X LSM
 !-- RA           Aerodynamic resistence                ! P-X LSM
-!-- RS           Stomatal resistence                   ! P-X LSM
+!-- RS           Stomatal resistence                   ! P-X LSM, also from Noah lsm, lsm_mosaic, or noahmp
 !-- VEGF_PX      PX LSM internal LU-based Veg Fraction ! P-X LSM
 !-- IMPERV       Impervious surface fraction           ! P-X LSM
 !-- CANFRA       Canopy/Tree fraction                  ! P-X LSM
@@ -1232,7 +1234,8 @@ CONTAINS
         TSK_mosaic, QSFC_mosaic, CANWAT_mosaic, SNOW_mosaic,SNOWH_mosaic, SNOWC_mosaic
   REAL, DIMENSION( ims:ime, 1:mosaic_cat, jms:jme ) , OPTIONAL, INTENT(INOUT)::   &
         ALBEDO_mosaic,ALBBCK_mosaic, EMISS_mosaic, EMBCK_mosaic, ZNT_mosaic, Z0_mosaic,   &
-        HFX_mosaic,QFX_mosaic, LH_mosaic, GRDFLX_mosaic,SNOTIME_mosaic    
+        HFX_mosaic,QFX_mosaic, LH_mosaic,GRDFLX_mosaic,SNOTIME_mosaic, &
+        RS_mosaic,LAI_mosaic
   REAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), OPTIONAL, INTENT(INOUT)::   &
         TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic
 
@@ -1336,6 +1339,8 @@ CONTAINS
    REAL                                                ::   HFX_KAY, QFX_KAY
 ! local var for SPP_LSM
    INTEGER                                             ::   spp_lsm_loc
+
+   real,    optional,  dimension(ims:ime,jms:jme ),intent(inout) :: XLAIDYN
 !
 !------------------------------------------------------------------
 ! Initialize local variables
@@ -2542,7 +2547,8 @@ CONTAINS
                 EMISS_mosaic, EMBCK_mosaic,                     & ! danli mosaic
                 ZNT_mosaic, Z0_mosaic,                          & ! danli mosaic 
                 HFX_mosaic,QFX_mosaic,                          & ! danli mosaic
-                LH_mosaic, GRDFLX_mosaic, SNOTIME_mosaic,       & ! danli mosaic          
+                LH_mosaic, GRDFLX_mosaic, SNOTIME_mosaic,       & ! danli mosaic
+                RS_mosaic, LAI_mosaic,                          & ! mosaic
                 ua_phys,flx4,fvb,fbur,fgsn,                     &
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
@@ -2597,8 +2603,7 @@ CONTAINS
                 dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
                 ,sfcheadrt,INFXSRT, soldrain                    & !hydro
                 ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas    & ! fasdas
-                )
-
+                ,RS,XLAIDYN)
            ELSE
                CALL wrf_error_fatal('Lack arguments to call lsm_mosaic')
            ENDIF
@@ -2708,7 +2713,7 @@ CONTAINS
 !
 !  END FASDAS
 !
-                )
+                ,RS,XLAIDYN)
          ENDIF
 
          call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &
@@ -2947,7 +2952,7 @@ CONTAINS
                  BGAPXY,   WGAPXY,    TGVXY,    TGBXY,     CHVXY,      CHBXY, &
 		  SHGXY,    SHCXY,    SHBXY,    EVGXY,     EVBXY,      GHVXY, &
 		  GHBXY,    IRGXY,    IRCXY,    IRBXY,      TRXY,      EVCXY, &
-	       CHLEAFXY,   CHUCXY,   CHV2XY,   CHB2XY,                        &                          
+	       CHLEAFXY,   CHUCXY,   CHV2XY,   CHB2XY,    RS,                 &
 #ifdef WRF_HYDRO
                  sfcheadrt,INFXSRT,soldrain,                          &    !O
 #endif
@@ -3840,8 +3845,8 @@ CONTAINS
          U10(i,j) = UV10*u_phytmp(i,1,j)/SQRT(u_phytmp(i,1,j)**2+v_phytmp(i,1,j)**2)
          V10(i,j) = UV10*v_phytmp(i,1,j)/SQRT(u_phytmp(i,1,j)**2+v_phytmp(i,1,j)**2)
 !        Overwrite WSPD to remove convective velocity (wspd=wspd1 in YSU)
-         WSPD(I,J)=sqrt( u_phytmp(i,1,j)*u_phytmp(i,1,j) +      &
-                         v_phytmp(i,1,j)*v_phytmp(i,1,j) ) + 1.e-9
+!        WSPD(I,J)=sqrt( u_phytmp(i,1,j)*u_phytmp(i,1,j) +      &
+!                        v_phytmp(i,1,j)*v_phytmp(i,1,j) ) + 1.e-9
 !
        ENDIF
 !

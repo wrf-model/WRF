@@ -232,7 +232,7 @@ i1       real   ph_save        ikj     dyn_em      1         Z
 # Potential Temperature
 #KAL added d (interpolating down to t_init) for the vertical nesting code
 state    real   t              ikjb     dyn_em      2         -     \
-       i0rhusdf=(bdy_interp:dt)   "t"      "perturbation potential temperature (theta-t0)" "K"
+       i0rhusdf=(bdy_interp:dt)   "t"      "perturbation moist potential temperature (1+Rv/Rd Qv)*(theta-t0)" "K"
 
 state    real   t_init         ikj     dyn_em      1         -      ird       "t_init" "initial potential temperature" "K"
 i1       real   t_tend         ikj     dyn_em      1         -  

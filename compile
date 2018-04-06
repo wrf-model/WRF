@@ -64,6 +64,8 @@ foreach a ( $argv )
   else if   ( `echo $a | cut -c 1-3` == "em_" ) then
     set arglist = ( $arglist $a )
     set ZAP = ( main/wrf.exe main/ideal.exe )
+  else if   ( "$a" ==  "io" ) then
+    set arglist = ( $arglist $a )
   else if ( "$a" == "wrfplus" ) then
     set arglist = ( $arglist $a )
     set ZAP = ( main/wrf.exe main/real.exe main/ndown.exe main/tc.exe )

@@ -4401,6 +4401,22 @@ endif
       grid%got_var_sso = wrf_dm_lor_logical ( grid%got_var_sso )
 #endif
 
+      !  Turn dry potential temperature into moist potential temperature
+      !  at the very end of this routine, just before the halo communications.
+      !  This field will be in the model IC and BC file. Only a single time
+      !  level, t_2 is required in the output file.
+
+!     IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
+         DO j = jts, min(jde-1,jte)
+            DO k = kts, kte
+               DO i = its, min(ide,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
+                  grid%t_2(i,k,j) = ( grid%t_2(i,k,j) + T0 ) * (1. + (R_v/R_d) * moist(i,k,j,P_QV)) - T0
+               END DO
+            END DO
+         END DO
+!     END IF
+
 #ifdef DM_PARALLEL
 # include "HALO_EM_INIT_1.inc"
 # include "HALO_EM_INIT_2.inc"

@@ -443,39 +443,36 @@ SUBROUTINE solve_em ( grid , config_flags  &
        !  towards the end of the RK loop.  For the first time in the RK loop, we need
        !  a reasonable value for moist_old.
 
-!      IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
-         CALL initialize_moist_old ( moist_old(:,:,:,P_Qv),              &
-                            moist(:,:,:,P_Qv) ,                          &
-                            ids,ide, jds,jde, kds,kde,                   &
-                            ims,ime, jms,jme, kms,kme,                   &
-                            grid%i_start(ij), grid%i_end(ij),            &
-                            grid%j_start(ij), grid%j_end(ij),            &
-                            k_start, k_end                               )
-!      END IF
+       CALL initialize_moist_old ( moist_old(:,:,:,P_Qv),              &
+                          moist(:,:,:,P_Qv) ,                          &
+                          ids,ide, jds,jde, kds,kde,                   &
+                          ims,ime, jms,jme, kms,kme,                   &
+                          grid%i_start(ij), grid%i_end(ij),            &
+                          grid%j_start(ij), grid%j_end(ij),            &
+                          k_start, k_end                               )
      ENDDO
      !$OMP END PARALLEL DO
 
-     !  Now that we might have initialized the moist_old values for P_Qv, fill
-     !  out some halos, etc.
-!    IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
+     !  Now that we might have initialized the moist_old values with P_Qv for
+     !  eventual use by the theta_m field for t_1, fill out some halos, etc.
+
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 #  include "HALO_EM_MOIST_OLD_E_7.inc"
 #  include "PERIOD_BDY_EM_MOIST_OLD.inc"
 #endif
-       !$OMP PARALLEL DO   &
-       !$OMP PRIVATE ( ij )
-       DO ij = 1 , grid%num_tiles
-         im = P_Qv
-         CALL set_physical_bc3d( moist_old(ims,kms,jms,im), 'p', config_flags,  &
-                                 ids, ide, jds, jde, kds, kde,                  &
-                                 ims, ime, jms, jme, kms, kme,                  &
-                                 ips, ipe, jps, jpe, kps, kpe,                  &
-                                 grid%i_start(ij), grid%i_end(ij),              &
-                                 grid%j_start(ij), grid%j_end(ij),              &
-                                 k_start    , k_end                             )
-       END DO
-       !$OMP END PARALLEL DO
-!    END IF
+     !$OMP PARALLEL DO   &
+     !$OMP PRIVATE ( ij )
+     DO ij = 1 , grid%num_tiles
+       im = P_Qv
+       CALL set_physical_bc3d( moist_old(ims,kms,jms,im), 'p', config_flags,  &
+                               ids, ide, jds, jde, kds, kde,                  &
+                               ims, ime, jms, jme, kms, kme,                  &
+                               ips, ipe, jps, jpe, kps, kpe,                  &
+                               grid%i_start(ij), grid%i_end(ij),              &
+                               grid%j_start(ij), grid%j_end(ij),              &
+                               k_start    , k_end                             )
+     END DO
+     !$OMP END PARALLEL DO
 
 !**********************************************************************
 !
@@ -2890,13 +2887,6 @@ BENCH_END(tracer_adv_tim)
      !$OMP PRIVATE ( ij )
      DO ij = 1 , grid%num_tiles
 
-!      CALL thetam_to_theta_t ( grid%t_2 , moist(ims,kms,jms,P_qv) ,      &
-!                               ids, ide, jds, jde, kds, kde ,            &
-!                               ims, ime, jms, jme, kms, kme ,            &
-!                               grid%i_start(ij), grid%i_end(ij),         &
-!                               grid%j_start(ij), grid%j_end(ij),         &
-!                               k_start    , k_end                        )
-
        CALL calc_p_rho_phi( moist, num_3d_m, config_flags%hypsometric_opt,             &
                             grid%al, grid%alb, grid%mu_2, grid%muts,              &
                             grid%c1h, grid%c2h, grid%c3h, grid%c4h, grid%c3f, grid%c4f, &
@@ -2908,13 +2898,6 @@ BENCH_END(tracer_adv_tim)
                             grid%i_start(ij), grid%i_end(ij), &
                             grid%j_start(ij), grid%j_end(ij), &
                             k_start    , k_end               )
-
-!      CALL theta_to_thetam_t ( grid%t_2 , moist(ims,kms,jms,P_qv) ,      &
-!                               ids, ide, jds, jde, kds, kde ,            &
-!                               ims, ime, jms, jme, kms, kme ,            &
-!                               grid%i_start(ij), grid%i_end(ij),         &
-!                               grid%j_start(ij), grid%j_end(ij),         &
-!                               k_start    , k_end                        )
 
 BENCH_END(calc_p_rho_tim)
 
@@ -4036,12 +4019,6 @@ BENCH_START(moist_phys_end_tim)
      jts = max(grid%j_start(ij),jds+sz)
      jte = min(grid%j_end(ij),jde-1-sz)
 
-!    CALL thetam_to_theta_t ( grid%t_2 , moist(ims,kms,jms,P_qv) ,      &
-!                             ids, ide, jds, jde, kds, kde ,            &
-!                             ims, ime, jms, jme, kms, kme ,            &
-!                             its, ite, jts, jte,                       &
-!                             k_start    , k_end                        )
-
      CALL calc_p_rho_phi( moist, num_3d_m, config_flags%hypsometric_opt,             &
                           grid%al, grid%alb, grid%mu_2, grid%muts,              &
                           grid%c1h, grid%c2h, grid%c3h, grid%c4h, grid%c3f, grid%c4f, &
@@ -4052,12 +4029,6 @@ BENCH_START(moist_phys_end_tim)
                           ims, ime, jms, jme, kms, kme,     &
                           its, ite, jts, jte,               &
                           k_start    , k_end               )
-
-!    CALL theta_to_thetam_t ( grid%t_2 , moist(ims,kms,jms,P_qv) ,      &
-!                             ids, ide, jds, jde, kds, kde ,            &
-!                             ims, ime, jms, jme, kms, kme ,            &
-!                             its, ite, jts, jte,                       &
-!                             k_start    , k_end                        )
 
    END DO scalar_tile_loop_1ba
    !$OMP END PARALLEL DO

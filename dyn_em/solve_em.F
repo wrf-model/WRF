@@ -2886,8 +2886,8 @@ BENCH_END(tracer_adv_tim)
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
      DO ij = 1 , grid%num_tiles
-     
-     BENCH_START(calc_p_rho_tim)
+
+BENCH_START(calc_p_rho_tim)
 
        CALL calc_p_rho_phi( moist, num_3d_m, config_flags%hypsometric_opt,             &
                             grid%al, grid%alb, grid%mu_2, grid%muts,              &

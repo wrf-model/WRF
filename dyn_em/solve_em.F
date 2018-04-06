@@ -2882,7 +2882,6 @@ BENCH_END(tracer_adv_tim)
 
  !  update the pressure and density at the new time level
 
-
      !$OMP PARALLEL DO   &
      !$OMP PRIVATE ( ij )
      DO ij = 1 , grid%num_tiles

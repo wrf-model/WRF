@@ -762,6 +762,7 @@ BENCH_START(calc_p_rho_tim)
                              , psim , psih , gz1oz0             &
                              , chklowq                          &
                              , cu_act_flag , hol , th_phy       &
+                             , th_phy_m_t0                      &
                              , pi_phy , p_phy , grid%t_phy      &
                              , dz8w , p8w , t8w                 &
                              , ids, ide, jds, jde, kds, kde     &
@@ -797,6 +798,7 @@ BENCH_START(calc_p_rho_tim)
                              , psim , psih , gz1oz0             &
                              , chklowq                          &
                              , cu_act_flag , hol , th_phy       &
+                             , th_phy_m_t0                      &
                              , pi_phy , p_phy , grid%t_phy      &
                              , dz8w , p8w , t8w                 &
                              , nba_mij, num_nba_mij             & !JDM 

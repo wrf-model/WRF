@@ -1645,6 +1645,7 @@ state    integer  landuse_isn     -      misc       -          -     r
 state    real     lu_state        p      misc       -          -     r
 
 i1       real  th_phy          ikj      misc        1         -
+i1       real  th_phy_m_t0     ikj      misc        1         -
 i1       real  pi_phy          ikj      misc        1         -
 i1       real  p_phy           ikj      misc        1         -
 state    real  t_phy           ikj      misc        1         -      r      "T_PHY"                        "Temperature"         "K"

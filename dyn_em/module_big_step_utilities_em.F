@@ -4694,7 +4694,8 @@ END SUBROUTINE pole_point_bc
                          c1h, c2h, c1f, c2f,                          &
                          u, v, p, pb, alt, ph,                        &  ! input
                          phb, t, moist, n_moist,                      &  ! input
-                         rho, th_phy, p_phy , pi_phy ,                &  ! output
+                         rho, th_phy, th_phy_m_t0,                    &  ! output
+                         p_phy , pi_phy ,                             &  ! output
                          u_phy, v_phy, p8w, t_phy, t8w,               &  ! output
                          z, z_at_w, dz8w,                             &  ! output
                          p_hyd, p_hyd_w, dnw,                         &  ! output
@@ -4726,6 +4727,7 @@ END SUBROUTINE pole_point_bc
                                                                 p8w, &
                                                               t_phy, &
                                                              th_phy, &
+                                                        th_phy_m_t0, &
                                                                 t8w, &
                                                                 rho, &
                                                                   z, &
@@ -4791,7 +4793,8 @@ END SUBROUTINE pole_point_bc
     do k = k_start, k_end
     do i = i_start, i_end
 
-      th_phy(i,k,j) = t(i,k,j) + t0
+      th_phy(i,k,j) = (t(i,k,j)+t0)/(1.+R_v/R_d*moist(i,k,j,P_QV))
+      th_phy_m_t0(i,k,j) = th_phy(i,k,j)-t0
       p_phy(i,k,j) = p(i,k,j) + pb(i,k,j)
       pi_phy(i,k,j) = (p_phy(i,k,j)/p1000mb)**rcp
       t_phy(i,k,j) = th_phy(i,k,j)*pi_phy(i,k,j)

@@ -176,12 +176,10 @@ CONTAINS
 #if ( HWRF == 1 )
                                        ,HWRFSWSCHEME, HWRFLWSCHEME  &
 #endif
-                                       ,goddardlwscheme                 & 
-                                       ,goddardswscheme                 &  
+                                       ,goddardswscheme             & !NUWRF
+                                       ,goddardlwscheme             & !NUWRF
 # if (EM_CORE == 1)
                                        ,CAMMGMPSCHEME                   &
-                                       ,goddardswscheme_2017 & !NUWRF
-                                       ,goddardlwscheme_2017 & !NUWRF
 #if (WRF_CHEM == 1)
 
                                        ,num_chem             & !NUWRF
@@ -215,13 +213,8 @@ CONTAINS
    USE module_ra_hwrf
 #endif
    USE module_ra_hs         , ONLY : hsrad
-
    USE module_ra_goddard    , ONLY : goddardrad
-   USE module_ra_goddard_2017    , ONLY : goddardrad_2017 ! NUWRF
-
-
    USE module_ra_flg        , ONLY : RAD_FLG
-
    USE module_ra_aerosol    , ONLY : calc_aerosol_goddard_sw, &
                                      calc_aerosol_rrtmg_sw
 
@@ -967,11 +960,6 @@ CONTAINS
      IF ( aer_opt .EQ. 2 ) THEN
         swrad_aerosol_select: select case(sw_physics)
 
-           case(GODDARDSWSCHEME)
-              allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
-              allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
-              allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
-
            case(RRTMG_SWSCHEME,RRTMG_SWSCHEME_FAST)
               allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
               allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
@@ -1483,49 +1471,13 @@ CONTAINS
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
                                                                     )
-        CASE (goddardlwscheme)
-
-             CALL wrf_debug (100, 'CALL goddard longwave radiation scheme ')
-             IF (itimestep.eq.1) then
-                call wrf_message('running goddard lw radiation')
-             ENDIF
-             CALL goddardrad(sw_or_lw='lw'                             &
-                    ,rthraten=rthraten,gsf=glw,xlat=xlat,xlong=xlong   &
-                    ,alb=albedo,t3d=t,p3d=p,p8w3d=p8w,pi3d=pi          &
-                    ,dz8w=dz8w,rho_phy=rho,emiss=emiss                 &
-                    ,cldfra3d=cldfra                                   &
-                    ,gmt=gmt,cp=cp,g=g,t8w=t8w                         &
-                    ,julday=julday,xtime=xtime                         &
-                    ,declin=declin,solcon=solcon                       &
-                    , center_lat = cen_lat                             &
-                    ,radfrq=radt,degrad=degrad                         &
-                    ,taucldi=taucldi,taucldc=taucldc                   &
-                    ,warm_rain=warm_rain                               &
-                    ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde &
-                    ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme &
-                    ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte &
-!                    ,cosz_urb2d=cosz_urb2d ,omg_urb2d=omg_urb2d        & !urban
-                    ,qv3d=qv                                           &
-                    ,qc3d=qc                                           &
-                    ,qr3d=qr                                           &
-                    ,qi3d=qi                                           &
-                    ,qs3d=qs                                           &
-                    ,qg3d=qg                                           &
-                    ,f_qv=f_qv,f_qc=f_qc,f_qr=f_qr                     &
-                    ,f_qi=f_qi,f_qs=f_qs,f_qg=f_qg                     &
-                    ,erbe_out=erbe_out                                 & !optional
-                    ,aer_opt=aer_opt                                   &
-                    ,tauaer3d_sw=tauaer_sw                             & ! jararias, 2013/11
-                    ,ssaaer3d_sw=ssaaer_sw                             & ! jararias, 2013/11
-                    ,asyaer3d_sw=asyaer_sw                             & ! jararias, 2012/11
-                                                                       )
 
 ! NUWRF Version by Toshihisa Matsui and Jainn Shi 20090623
-        case (goddardlwscheme_2017)
+        case (goddardlwscheme)
 
-           !CALL wrf_debug (100, 'CALL NUWRF goddard longwave radiation scheme 2017')
+             CALL wrf_debug(100, 'CALL NUWRF goddard longwave radiation scheme 2017')
 
-             CALL goddardrad_2017(sw_or_lw='lw',dx=dx                  &
+             CALL goddardrad(sw_or_lw='lw',dx=dx                  &
                     ,rthraten=rthraten,gsf=glw,xlat=xlat,xlong=xlong   &
                     ,alb=albedo,t3d=t,p3d=p,p8w3d=p8w,pi3d=pi          &
                     ,dz8w=dz8w,rho_phy=rho,emiss=emiss,tsk=tsk         &
@@ -1857,8 +1809,7 @@ CONTAINS
      ENDIF
 
 !NUWRF JJS 20090623 vvvvv
-     IF ((lw_physics .eq. goddardlwscheme_2017) .or. &
-         (lw_physics .eq. goddardlwscheme     )    ) THEN
+     IF (lw_physics .eq. goddardlwscheme) THEN
           IF ( PRESENT (tlwdn) ) THEN
         DO j=jts,jte
         DO i=its,ite
@@ -1876,20 +1827,6 @@ CONTAINS
      ! jararias, 2013/11
      IF ( aer_opt .EQ. 2 ) THEN
      swrad_aerosol_select2: select case(sw_physics)
-        case(GODDARDSWSCHEME)
-           call wrf_debug(100, 'call calc_aerosol_goddard_sw')
-           call calc_aerosol_goddard_sw(ht,dz8w,p,t,qv,aer_type,aer_aod550_opt,aer_angexp_opt,    &
-                                        aer_ssa_opt,aer_asy_opt,aer_aod550_val,aer_angexp_val,    &
-                                        aer_ssa_val,aer_asy_val,aod5502d,angexp2d,aerssa2d,       &
-                                        aerasy2d,ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte, &
-                                        tauaer_sw,ssaaer_sw,asyaer_sw                             )
-           do j=jts,jte
-              do i=its,ite
-                 do k=kts,kte
-                    aod5503d(i,k,j)=tauaer_sw(i,k,j,8) ! band at 550 nm
-                 end do
-              end do
-           end do
 
         case(RRTMG_SWSCHEME,RRTMG_SWSCHEME_FAST)
            call wrf_debug(100, 'call calc_aerosol_rrtmg_sw')
@@ -1994,50 +1931,12 @@ CONTAINS
                     ,F_QNDROP=f_qndrop                                 &
                     ,COSZEN=coszen                                     &
                                                                        )
-        CASE (goddardswscheme)
 
-             CALL wrf_debug(100, 'CALL goddard shortwave radiation scheme ')
-             IF (itimestep.eq.1) then
-                call wrf_message('running goddard sw radiation')
-             ENDIF
-             CALL goddardrad(sw_or_lw='sw'                             &
-                    ,rthraten=rthraten,gsf=gsw,xlat=xlat,xlong=xlong   &
-                    ,alb=albedo,t3d=t,p3d=p,p8w3d=p8w,pi3d=pi          &
-                    ,dz8w=dz8w,rho_phy=rho,emiss=emiss                 &
-                    ,cldfra3d=cldfra                                   &
-                    ,gmt=gmt,cp=cp,g=g,t8w=t8w                         &
-                    ,julday=julday,xtime=xtime                         &
-                    ,declin=declin,solcon=solcon                       &
-                    ,center_lat = cen_lat                              &
-                    ,radfrq=radt,degrad=degrad                         &
-                    ,taucldi=taucldi,taucldc=taucldc                   &
-                    ,warm_rain=warm_rain                               &
-                    ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde &
-                    ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme &
-                    ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte &
-!                    ,cosz_urb2d=cosz_urb2d ,omg_urb2d=omg_urb2d        & !urban
-                    ,qv3d=qv                                           &
-                    ,qc3d=qc                                           &
-                    ,qr3d=qr                                           &
-                    ,qi3d=qi                                           &
-                    ,qs3d=qs                                           &
-                    ,qg3d=qg                                           &
-                    ,f_qv=f_qv,f_qc=f_qc,f_qr=f_qr                     &
-                    ,f_qi=f_qi,f_qs=f_qs,f_qg=f_qg                     &
-                    ,erbe_out=erbe_out                                 & !optional
-                    ,swddir=swddir,swddni=swddni,swddif=swddif         & ! jararias, 14/08/2013
-                    ,coszen=coszen,julian=julian                       & ! jararias, 14/08/2013
-                    ,tauaer3d_sw=tauaer_sw                             & ! jararias, 2013/11
-                    ,ssaaer3d_sw=ssaaer_sw                             & ! jararias, 2013/11
-                    ,asyaer3d_sw=asyaer_sw                             & ! jararias, 2012/11
-                    ,aer_opt=aer_opt                                   &
-                                                                       )
-
-        case (goddardswscheme_2017)
+        case (goddardswscheme)
 
              CALL wrf_debug(100, 'CALL NUWRF goddard shortwave radiation scheme 2017')
 
-             CALL goddardrad_2017(sw_or_lw='sw',dx=dx                  &
+             CALL goddardrad(sw_or_lw='sw',dx=dx                  &
                     ,rthraten=rthraten,gsf=gsw,xlat=xlat,xlong=xlong   &
                     ,alb=albedo,t3d=t,p3d=p,p8w3d=p8w,pi3d=pi          &
                     ,dz8w=dz8w,rho_phy=rho,emiss=emiss,tsk=tsk         &
@@ -2365,8 +2264,7 @@ CONTAINS
      END SELECT swrad_select    
 
 !NUWRF JJS 20090623  vvvvv
-     IF ( (sw_physics .eq. goddardswscheme_2017) .or. &
-          (sw_physics .eq. goddardswscheme     )  ) THEN
+     IF (sw_physics .eq. goddardswscheme) THEN
           IF ( PRESENT (tswdn) ) THEN
         DO j=jts,jte
         DO i=its,ite
@@ -2402,8 +2300,7 @@ CONTAINS
 ! EMK NUWRF...Skip NUWRF Goddard SW schemes
      IF ((sw_physics .NE. RRTMG_SWSCHEME) .AND. (sw_physics .NE. RRTMG_SWSCHEME_FAST) &
            .AND. (sw_physics .NE. FLGSWSCHEME) .AND. (sw_physics .NE. CAMSWSCHEME) &  ! amontornes-bcodina (2014-04-20)
-           .AND. (sw_physics .ne. GODDARDSWSCHEME) &
-           .and. (sw_physics .ne. goddardswscheme_2017) ) THEN
+           .AND. (sw_physics .ne. GODDARDSWSCHEME) ) THEN
         DO j=jts,jte
            DO i=its,ite
               IF (coszen(i,j).GT.1e-3) THEN

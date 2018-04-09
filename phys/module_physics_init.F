@@ -1714,7 +1714,7 @@ CONTAINS
    USE module_ra_sw        , ONLY : swinit
    USE module_ra_gsfcsw    , ONLY : gsfc_swinit
    USE module_ra_gfdleta   , ONLY : gfdletainit
-   USE module_ra_goddard_2017 , ONLY : init_goddardrad_2017
+   USE module_ra_goddard   , ONLY : init_goddardrad
 #if(NMM_CORE==1)
    USE module_ra_hwrf      , ONLY : hwrfrainit
 #endif
@@ -1869,9 +1869,9 @@ CONTAINS
 
    lwrad_select: SELECT CASE(config_flags%ra_lw_physics)
 
-!goddardrad_2017
-        CASE (goddardlwscheme_2017)
-             CALL init_goddardrad_2017(                     &
+!goddardrad
+        CASE (goddardlwscheme)
+             CALL init_goddardrad(                          &
                            allowed_to_read ,                &
                            ids, ide, jds, jde, kds, kde,    &
                            ims, ime, jms, jme, kms, kme,    &
@@ -1973,8 +1973,8 @@ CONTAINS
 
    swrad_select: SELECT CASE(config_flags%ra_sw_physics)
 
-        CASE (goddardswscheme_2017)
-             CALL init_goddardrad_2017(                     &
+        CASE (goddardswscheme)
+             CALL init_goddardrad(                          &
                            allowed_to_read ,                &
                            ids, ide, jds, jde, kds, kde,    &
                            ims, ime, jms, jme, kms, kme,    &

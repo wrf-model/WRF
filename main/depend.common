@@ -418,8 +418,6 @@ module_cam_mp_radconstants.o : module_cam_shr_kind_mod.o \
 		module_cam_support.o 
 module_cam_infnan.o: module_cam_shr_kind_mod.o
 
-module_ra_goddard.o : ../frame/module_wrf_error.o
-
 module_mp_gsfcgce.o : ../frame/module_wrf_error.o \
 		module_mp_radar.o
 
@@ -690,7 +688,6 @@ module_radiation_driver.o: \
 		module_ra_HWRF.o \
 		module_ra_hs.o \
 		module_ra_goddard.o \
-		module_ra_goddard_2017.o \
                 module_ra_flg.o \
                 module_ra_aerosol.o \
                 module_mp_thompson.o \
@@ -911,7 +908,7 @@ module_gocart_coupling.o:
                  $(PROMOTION) $(FCSUFFIX) $*.f90                 
 
 
-module_ra_goddard_2017.o : ../frame/module_wrf_error.o \
+module_ra_goddard.o : ../frame/module_wrf_error.o \
                             module_gocart_coupling.o \
                             module_checkerror.o
 

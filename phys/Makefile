@@ -100,7 +100,6 @@ MODULES = \
 	module_ra_clWRF_support.o  \
 	module_ra_gsfcsw.o \
 	module_ra_goddard.o \
-        module_ra_goddard_2017.o \
 	module_ra_rrtm.o  \
 	module_ra_rrtmg_lw.o  \
 	module_ra_rrtmg_sw.o  \

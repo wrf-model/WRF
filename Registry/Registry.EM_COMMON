@@ -1286,20 +1286,6 @@ state   real    acphysm          ikj      misc        1         -     r       "A
 state   real    acphysf          ikj      misc        1         -     r       "ACPHYSF"               "ACCUMULATED LATENT HEATING DUE TO FREEZING"      "K"
 
 #state   real    dbz            ikj      misc        1         -     -         "DBZ"                   "RADAR REFLECTIVITIES"             "dbz"
-state   real    comdbz         ij       misc        1         -     h         "COMDBZ"                "COMPOSITE RADAR REFLECTIVITIES"             "dBZ"
-#NUWRF...Add thread-safe CSI diagnostic
-state   real    ri_sepa        ij       misc        1         -     rh        "RI_SEPA"               "TIME-STEP EXPLICIT PRECIPITATION RATE"  "mm/hr"
-state   integer it_sepa        ij       misc        1         -     rh        "IT_SEPA"               "INTERMEDIATE CONVECTIVE STRATIFORM CLASSIFICATION"  ""
-state   real    csi            ij       misc        1         -     rh        "CSI"                   "CONVECTIVE STRATIFORM REGION INDEX"  " "
-state   real    rainncv_sepa   ilj      misc        1         -     rh        "RAINNCV_SEPA"          "TIME-STEP PARTITIONED ACCUMULATED TOTAL GRID SCALE PRECIPITATION"    "mm"
-state   real    rainnc_sepa    ilj      misc        1         -     rh        "RAINNC_SEPA"           "PARTITIONED ACCUMULATED TOTAL GRID SCALE PRECIPITATION"    "mm"
-# NUWRF...Microphysics
-state   real    re_cloud_gsfc    ikj      misc        1          -     rh        "RE_CLOUD_GSFC"         "Cloud Water effective radius"       "micron"
-state   real    re_ice_gsfc      ikj      misc        1          -     rh        "RE_ICE_GSFC"           "Cloud Ice effective radius"         "micron"
-state   real    re_snow_gsfc     ikj      misc        1          -     rh        "RE_SNOW_GSFC"          "Snow effective radius"              "micron"
-state   real    re_rain_gsfc     ikj      misc        1         -     rh        "RE_RAIN_GSFC"          "Rain Water effective radius"        "micron"
-state   real    re_graupel_gsfc  ikj      misc        1         -     rh        "RE_GRAUPEL_GSFC"       "Graupel Water effective radius"     "micron"
-state   real    re_hail_gsfc     ikj      misc        1         -     rh        "RE_HAIL_GSFC"          "Hail Water effective radius"        "micron"
 # NUWRF...4ICE output
 state   real    preci3d       ikj      misc        1         -     -       "PRECI3D"                   "Sedimentation Fluxes for cloud ice"             "KG/M^2/S"
 state   real    precs3d       ikj      misc        1         -     -       "PRECS3D"                   "Sedimentation Fluxes for snow"                  "KG/M^2/S"
@@ -1834,9 +1820,6 @@ state    real    NUMCOLPTS        ij     misc        1         -     -          
 state    real    GRPL_COLINT      ij     misc        1         -     -           "GRPL_COLINT"    "COL INT GRAUPEL"         "kg m-2"
 state    real    HAIL_MAXK1       ij     misc        1         -      rh02       "HAIL_MAXK1"     "MAX HAIL DIAMETER K=1"   "m"
 state    real    HAIL_MAX2D       ij     misc        1         -      rh02       "HAIL_MAX2D"     "MAX HAIL DIAMETER ENTIRE COLUMN"   "m"
-# NU-WRF:  These next variables are added for NSSL real-time WRF diagnostics  
-# SRD    
-state    real    LTG1_MAX         ij     misc        1         -     irh         "LTG1_MAX"       "MAX LTG THREAT 1"        "flashes km-2 5min-1"
 
 state   real    max_cfl         -       misc        1         -     -       "max_cfl"           "maximum CFL value in grid at a time" "-"
 
@@ -1933,9 +1916,9 @@ rconfig   logical nocolons                namelist,time_control         1       
 rconfig   logical cycling                 namelist,time_control         1             .false. -    "true for cycling (using wrfout file as input data)"
 rconfig   integer output_diagnostics      namelist,time_control         1              0
 rconfig   integer nwp_diagnostics         namelist,time_control         1              0
-# EMK NUWRF...Time period for mean integrated vapor transport
-rconfig   integer ivt_interval            namelist,time_control         1              60      rh    "ivt_interval"  "Time interval for mean integrated vapor transport (min)"
 rconfig   logical output_ready_flag       namelist,time_control         1             .false. -    "drop a flag called wrfoutReady_d<domain>_<date> after history write" "" ""
+
+pioprocs, piostart, piostride, pioshift
 # PIO namelist
 rconfig   logical usepio                 namelist,pio_control   1     .false. rh   "pioprocs"                  ""      "" 
 rconfig   integer pioprocs               namelist,pio_control   1       0     rh   "pioprocs"                  ""      "" 
@@ -2148,8 +2131,7 @@ rconfig   integer     progn               namelist,physics      max_domains    0
 rconfig   real        accum_mode          namelist,physics      1             1000.0e6 rh       "accum_mode"                 ""      ""
 rconfig   real        aitken_mode         namelist,physics      1             300.0e6  rh       "aitken_mode"                 ""      ""
 rconfig   real        coarse_mode         namelist,physics      1             0.2e6    rh       "coarse_mode"                 ""      ""
-#NUWRF EMK...By default, output radar reflectivity
-rconfig   integer     do_radar_ref        namelist,physics      1              1       rh       "compute radar reflectivity for a number of schemes"                 ""      ""
+rconfig   integer     do_radar_ref        namelist,physics      1              0       rh       "compute radar reflectivity for a number of schemes"                 ""      ""
 rconfig   integer     compute_radar_ref   derived               1              0       -        "compute_radar_ref" "0/1 flag: compute radar reflectivity, either do_radar_ref=1 .or. (milbrandt or NSSL schemes)"
 rconfig   integer     ra_lw_physics       namelist,physics	max_domains    -1      rh       "ra_lw_physics"         ""      ""
 rconfig   integer     ra_sw_physics       namelist,physics	max_domains    -1      rh       "ra_sw_physics"         ""      ""
@@ -2685,10 +2667,9 @@ package   rrtmscheme       ra_lw_physics==1          -             -
 package   camlwscheme      ra_lw_physics==3          -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;aerosolc:sul,sslt,dust1,dust2,dust3,dust4,ocpho,bcpho,ocphi,bcphi,bg,volc;state:emstot,abstot,absnxt,acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,taucldc,taucldi
 package   rrtmg_lwscheme   ra_lw_physics==4          -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,o3rad
 package   rrtmg_lwscheme_fast  ra_lw_physics==24     -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,o3rad
-package   goddardlwscheme  ra_lw_physics==5          -             state:tlwdn,tlwup,slwdn,slwup,taucldc,taucldi
+package   goddardlwscheme  ra_lw_physics==5          -             state:tlwdn,tlwup,slwdn,slwup
 package   flglwscheme      ra_lw_physics==7          -             -
 package   heldsuarez       ra_lw_physics==31         -             -
-package   goddardlwscheme_2017 ra_lw_physics==57     -             state:tlwdn,tlwup,slwdn,slwup
 package   gfdllwscheme     ra_lw_physics==99         -             -
 
 package   swradscheme     ra_sw_physics==1           -             -
@@ -2696,9 +2677,8 @@ package   gsfcswscheme    ra_sw_physics==2           -             state:taucldc
 package   camswscheme     ra_sw_physics==3           -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;aerosolc:sul,sslt,dust1,dust2,dust3,dust4,ocpho,bcpho,ocphi,bcphi,bg,volc;state:emstot,abstot,absnxt,acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,taucldc,taucldi
 package   rrtmg_swscheme  ra_sw_physics==4           -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,o3rad;aerod:ocarbon,seasalt,dust,bcarbon,sulfate,upperaer
 package   rrtmg_swscheme_fast  ra_sw_physics==24     -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,o3rad;aerod:ocarbon,seasalt,dust,bcarbon,sulfate,upperaer
-package   goddardswscheme ra_sw_physics==5           -             state:tswdn,tswup,sswdn,sswup,taucldc,taucldi
+package   goddardswscheme ra_sw_physics==5           -             state:tswdn,tswup,sswdn,sswup
 package   flgswscheme     ra_sw_physics==7           -             -
-package   goddardswscheme_2017  ra_sw_physics==57    -             state:tswdn,tswup,sswdn,sswup
 package   gfdlswscheme    ra_sw_physics==99          -             -
 
 package   sfclayrevscheme    sf_sfclay_physics==1        -             -
@@ -2939,20 +2919,12 @@ halo      HALO_EM_INIT_1 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,ph_1,ph_2
 halo      HALO_EM_INIT_2 dyn_em 48:t_1,t_2,mu_1,mu_2,tke_1,tke_2,ww,phb
 halo      HALO_EM_INIT_3 dyn_em 48:ph0,php,t_init,mub,mu0,p,al,alt,alb
 halo      HALO_EM_INIT_4 dyn_em 48:pb,h_diabatic,qv_diabatic,qc_diabatic,msftx,msfty,msfux,msfuy,msfvx,msfvy,msfvx_inv,f,e,sina,cosa,ht,potevp,snopcx,soiltb,xlat,xlong,xlat_u,xlat_v,xlong_u,xlong_v,clat
-#halo      HALO_EM_INIT_5 dyn_em 48:moist,chem,scalar,tracer
-halo      HALO_EM_INIT_5 dyn_em 48:moist,chem,scalar,tracer,tpw,lwp,iwp,clwp,rwp,ciwp,fpwp,freezing_level
+halo      HALO_EM_INIT_5 dyn_em 48:moist,chem,scalar,tracer
 halo      HALO_EM_INIT_6 dyn_em 48:om_tmp,om_s,om_u,om_v,om_depth,om_tini,om_sini,om_lat,om_lon,om_ml
 halo      HALO_EM_VINTERP_UV_1 dyn_em 48:pd_gc,pb,pmaxw,ptrop,pmaxwnn,ptropnn
 halo      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
 halo      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2
 halo      HALO_EM_PHYS_PBL dyn_em        4:rublten,rvblten
-# NUWRF EMK: For MPI-safe CSI
-halo      HALO_EM_PHYS_MP_0 dyn_em        24:RAINNCV
-halo      HALO_EM_PHYS_MP_1 dyn_em        24:RI_SEPA,IT_SEPA
-halo      HALO_EM_PHYS_MP_2 dyn_em        24:IT_SEPA
-halo      HALO_EM_PHYS_MP_3 dyn_em        24:IT_SEPA,CSI
-halo      HALO_EM_PHYS_MP_4 dyn_em        24:RAINNCV_SEPA,RAINNC_SEPA
-
 halo      HALO_EM_PHYS_CU dyn_em         4:rucuten,rvcuten
 halo      HALO_EM_PHYS_SHCU dyn_em       4:rushten,rvshten
 halo      HALO_EM_FDDA dyn_em            4:rundgdten,rvndgdten
@@ -2983,9 +2955,9 @@ halo      HALO_EM_D3_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1
 halo      HALO_EM_D3_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist,chem,tracer,scalar;4:mu_1,mu_2
 halo      HALO_EM_E_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,;4:mu_1,mu_2
 halo      HALO_EM_E_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,;4:mu_1,mu_2
-halo      HALO_EM_MOIST_E_3 dyn_em 24:moist,tpw,lwp,iwp,clwp,rwp,ciwp,fpwp,freezing_level,mean_ivt_u,mean_ivt_v,sum_ivt_u,sum_ivt_v
-halo      HALO_EM_MOIST_E_5 dyn_em 48:moist,tpw,lwp,iwp,clwp,rwp,ciwp,fpwp,freezing_level,mean_ivt_u,mean_ivt_v,sum_ivt_u,sum_ivt_v
-halo      HALO_EM_MOIST_E_7 dyn_em 80:moist,tpw,lwp,iwp,clwp,rwp,ciwp,fpwp,freezing_level,mean_ivt_u,mean_ivt_v,sum_ivt_u,sum_ivt_v
+halo      HALO_EM_MOIST_E_3 dyn_em 24:moist
+halo      HALO_EM_MOIST_E_5 dyn_em 48:moist
+halo      HALO_EM_MOIST_E_7 dyn_em 80:moist
 halo      HALO_CUP_G3_IN dyn_em 24:RTHFTEN,RQVFTEN,w_2,t_phy
 halo      HALO_CUP_G3_OUT dyn_em 48:cugd_tten,cugd_qvten,cugd_ttens,cugd_qvtens,raincv
 halo      HALO_EM_CHEM_E_3 dyn_em 24:chem

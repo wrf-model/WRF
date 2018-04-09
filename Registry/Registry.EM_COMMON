@@ -1332,7 +1332,7 @@ state    real  TSWUP           ij      misc        1         -      h         "T
 state    real  SSWDN           ij      misc        1         -      h         "SSWDN"                 "Surface SW downwelling flux"       "W m-2"
 state    real  SSWUP           ij      misc        1         -      h         "SSWUP"                 "Surface SW upwelling flux"         "W m-2"
 
-#goddardrad_2014
+#goddardrad
 state    real  COD2D_OUT       ij      misc        1         -      h         "COD2D_OUT"           "Column Cloud Optical Depth"   " "
 state    real  CTOP2D_OUT      ij      misc        1         -      h         "CTOP2D_OUT"          "Cloud-Top Pressure"          "mb"
                 
@@ -2151,7 +2151,6 @@ rconfig   real        coarse_mode         namelist,physics      1             0.
 #NUWRF EMK...By default, output radar reflectivity
 rconfig   integer     do_radar_ref        namelist,physics      1              1       rh       "compute radar reflectivity for a number of schemes"                 ""      ""
 rconfig   integer     compute_radar_ref   derived               1              0       -        "compute_radar_ref" "0/1 flag: compute radar reflectivity, either do_radar_ref=1 .or. (milbrandt or NSSL schemes)"
-rconfig   integer    goddardrad_2014_skip namelist,physics      1              0       rh       "goddard radiation skip(1) or not(0)"   ""   ""
 rconfig   integer     ra_lw_physics       namelist,physics	max_domains    -1      rh       "ra_lw_physics"         ""      ""
 rconfig   integer     ra_sw_physics       namelist,physics	max_domains    -1      rh       "ra_sw_physics"         ""      ""
 rconfig   real    radt                    namelist,physics	max_domains    0       h    "RADT"          ""      ""
@@ -2689,8 +2688,6 @@ package   rrtmg_lwscheme_fast  ra_lw_physics==24     -             ozmixm:mth01,
 package   goddardlwscheme  ra_lw_physics==5          -             state:tlwdn,tlwup,slwdn,slwup,taucldc,taucldi
 package   flglwscheme      ra_lw_physics==7          -             -
 package   heldsuarez       ra_lw_physics==31         -             -
-package   goddardlwscheme_2011 ra_lw_physics==55     -             state:tlwdn,tlwup,slwdn,slwup,taucldc,taucldi 
-package   goddardlwscheme_2014 ra_lw_physics==56     -             state:tlwdn,tlwup,slwdn,slwup
 package   goddardlwscheme_2017 ra_lw_physics==57     -             state:tlwdn,tlwup,slwdn,slwup
 package   gfdllwscheme     ra_lw_physics==99         -             -
 
@@ -2701,8 +2698,6 @@ package   rrtmg_swscheme  ra_sw_physics==4           -             ozmixm:mth01,
 package   rrtmg_swscheme_fast  ra_sw_physics==24     -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,o3rad;aerod:ocarbon,seasalt,dust,bcarbon,sulfate,upperaer
 package   goddardswscheme ra_sw_physics==5           -             state:tswdn,tswup,sswdn,sswup,taucldc,taucldi
 package   flgswscheme     ra_sw_physics==7           -             -
-package   goddardswscheme_2011  ra_sw_physics==55    -             state:tswdn,tswup,sswdn,sswup,taucldc,taucldi 
-package   goddardswscheme_2014  ra_sw_physics==56    -             state:tswdn,tswup,sswdn,sswup
 package   goddardswscheme_2017  ra_sw_physics==57    -             state:tswdn,tswup,sswdn,sswup
 package   gfdlswscheme    ra_sw_physics==99          -             -
 

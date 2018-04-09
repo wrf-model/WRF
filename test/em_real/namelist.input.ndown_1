@@ -91,6 +91,7 @@
  /
 
  &dynamics
+ hybrid_opt                          = 2, 
  w_damping                           = 0,
  diff_opt                            = 1,      1,      1,
  km_opt                              = 4,      4,      4,

@@ -788,16 +788,10 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 ! All aerosol species in chem are in "ug/kg-dryair"
 !  and conerted to (g/m**3)
 
-   if (itimestep .eq. 1) then
-      print *,'in microphysics_driver, num_chem = ', num_chem
-   endif
-!   print *,'grid ID = ', id
    aero(:,:,:,:) = 0.
    do k = kts, kte
       do j = jts, jte
          do i = its, ite
-!         aero(i,k,j, 1) = max(0.0, chem(i,k,j,p_sulf)*1.0e-6*rho(i,k,j))             !  1 = SO4
-!         aero(i,k,j, 1) = max(chem(i,k,j,p_sulf)*1.0e-6*p(i,k,j)*96.0/(8.314*t(i,k,j)))  ! 1 = SO4
          aero(i,k,j, 1) = max(0.0, chem(i,k,j,p_sulf)*1.0e-6*p(i,k,j)*    &
                           96.0/(8.314*th(i,k,j)*pi_phy(i,k,j)))  ! 1 = SO4
          aero(i,k,j, 2) = max(0.0, (chem(i,k,j,p_bc1)+chem(i,k,j,p_bc2))*1.0e-6*rho(i,k,j))  ! 2 = BC1+BC2
@@ -817,7 +811,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
          enddo ! !
       enddo ! j
    enddo ! k
-
 !NUWRF JJS 20110525 ^^^^^
 #endif
 

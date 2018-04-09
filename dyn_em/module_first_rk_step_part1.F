@@ -353,7 +353,7 @@ BENCH_START(rad_driver_tim)
      &        , QI2=moist(ims,kms,jms,P_QI2), F_QI2=F_QI2                 & ! for P3
      &        , QS=moist(ims,kms,jms,P_QS), F_QS=F_QS                     &
      &        , QG=moist(ims,kms,jms,P_QG), F_QG=F_QG                     &
-     &        , QH=moist(ims,kms,jms,P_QH), F_QH=F_QH                     &  ! goddardrad_2014
+     &        , QH=moist(ims,kms,jms,P_QH), F_QH=F_QH                     & ! goddardrad
      &        , QNDROP=scalar(ims,kms,jms,P_QNDROP), F_QNDROP=F_QNDROP    &
      &        ,QNIFA=scalar(ims,kms,jms,P_QNIFA),F_QNIFA=F_QNIFA          & !Trude
      &        ,QNWFA=scalar(ims,kms,jms,P_QNWFA),F_QNWFA=F_QNWFA          & !Trude

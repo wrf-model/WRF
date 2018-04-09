@@ -313,6 +313,11 @@ module_gfs_funcphys.o: module_gfs_machine.o \
 module_cu_sas.o: module_gfs_machine.o \
 		 module_gfs_funcphys.o \
 		 module_gfs_physcons.o
+
+module_cu_mesosas.o: module_gfs_machine.o \
+	         module_gfs_funcphys.o \
+	         module_gfs_physcons.o
+
 module_cu_scalesas.o: module_gfs_machine.o \
 		module_gfs_funcphys.o \
 		module_gfs_physcons.o
@@ -487,7 +492,8 @@ module_physics_addtendc.o: \
 		../frame/module_state_description.o \
 		../frame/module_configure.o
 
-
+# NUWRF...Added NUWRF GSFCGCE Microphysics schemes with coupling
+# to GOCART
 module_physics_init.o : \
 		module_ra_rrtm.o		\
 		module_ra_rrtmg_lwf.o		\
@@ -561,6 +567,8 @@ module_physics_init.o : \
 		module_fddaobs_rtfdda.o		\
 		module_mp_thompson.o            \
 		module_mp_gsfcgce.o 		\
+		module_mp_gsfcgce_3ice_nuwrf.o 	\
+		module_mp_gsfcgce_4ice_nuwrf.o  \
                 module_mp_morr_two_moment.o     \
                 module_mp_milbrandt2mom.o     \
                 module_mp_nssl_2mom.o         \
@@ -574,6 +582,8 @@ module_physics_init.o : \
 		module_cam_mp_modal_aero_initialize_data_phys.o \
 		module_cam_support.o \
 		module_wind_fitch.o \
+		module_gocart_coupling.o \
+		module_data_gocart_dust.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../frame/module_wrf_error.o \
@@ -581,7 +591,11 @@ module_physics_init.o : \
 		../share/module_llxy.o \
 		../share/module_model_constants.o 
 
+module_diag_csi.o: \
+		../frame/module_wrf_error.o
+
 module_microphysics_driver.o: \
+		module_diag_csi.o \
 		module_mixactivate.o \
 		module_mp_kessler.o  module_mp_sbu_ylin.o module_mp_lin.o \
 		module_mp_wsm3.o module_mp_wsm5.o \
@@ -589,6 +603,8 @@ module_microphysics_driver.o: \
 		module_mp_fer_hires.o module_mp_HWRF.o  \
 		module_mp_thompson.o            \
 		module_mp_gsfcgce.o 		\
+		module_mp_gsfcgce_3ice_nuwrf.o  \
+		module_mp_gsfcgce_4ice_nuwrf.o  \
                 module_mp_morr_two_moment.o     \
                 module_mp_milbrandt2mom.o     \
                 module_mp_nssl_2mom.o         \
@@ -598,6 +614,8 @@ module_microphysics_driver.o: \
 		../frame/module_state_description.o \
 		../frame/module_wrf_error.o \
 		../frame/module_configure.o \
+		../frame/module_comm_dm.o \
+		../frame/module_dm.o \
 		../share/module_model_constants.o 
 
 module_shallowcu_driver.o: \
@@ -672,6 +690,7 @@ module_radiation_driver.o: \
 		module_ra_HWRF.o \
 		module_ra_hs.o \
 		module_ra_goddard.o \
+		module_ra_goddard_2017.o \
                 module_ra_flg.o \
                 module_ra_aerosol.o \
                 module_mp_thompson.o \
@@ -730,6 +749,7 @@ module_diagnostics_driver.o: \
 		module_diag_pld.o 			\
 		module_diag_zld.o 			\
 		module_diag_afwa.o 			\
+		module_diag_downscale.o                 \
 		module_diag_hailcast.o 			\
                 module_diag_rasm.o                      \
 		../frame/module_comm_dm.o		\
@@ -752,6 +772,8 @@ module_diag_pld.o: \
 module_diag_zld.o: \
 		../share/module_model_constants.o
 
+module_diag_afwa_hail.o:
+
 module_diag_afwa.o: \
 		../frame/module_domain.o 		\
 		../frame/module_dm.o 			\
@@ -759,7 +781,8 @@ module_diag_afwa.o: \
 		../frame/module_configure.o 		\
 		../frame/module_streams.o		\
 		../external/esmf_time_f90/module_utility.o \
-		../share/module_model_constants.o
+	        ../share/module_model_constants.o       \
+	        module_diag_afwa_hail.o
 
 module_diag_hailcast.o: \
 		../frame/module_configure.o 		\
@@ -776,6 +799,9 @@ module_diag_rasm.o: \
 module_diag_refl.o: \
 		../frame/module_dm.o			\
 		../share/module_model_constants.o
+
+module_diag_downscale.o: \
+	        ../share/module_model_constants.o
 
 module_mixactivate.o: \
 		module_radiation_driver.o
@@ -875,6 +901,28 @@ module_ltng_iccg.o :
 module_ra_aerosol.o :\
 	../frame/module_wrf_error.o
 
+# NUWRF
+module_gocart_coupling.o:
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
+	$(RM) $*.b
+	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(INCLUDE_MODULES) \
+                 $(PROMOTION) $(FCSUFFIX) $*.f90                 
+
+
+module_ra_goddard_2017.o : ../frame/module_wrf_error.o \
+                            module_gocart_coupling.o \
+                            module_checkerror.o
+
+module_mp_gsfcgce_3ice_nuwrf.o : ../frame/module_wrf_error.o \
+                            module_checkerror.o \
+                            module_mp_radar.o
+
+module_mp_gsfcgce_4ice_nuwrf.o : ../frame/module_wrf_error.o \
+                            module_checkerror.o \
+                            module_mp_radar.o
+
 # End of DEPENDENCIES for phys
 
 
@@ -889,8 +937,11 @@ module_trajectory.o: ../frame/module_domain.o \
 		module_date_time.o \
 		module_llxy.o
 
+# NUWRF...Added dependencies for error checking
 solve_interface.o: solve_em.int ../frame/module_domain.o ../frame/module_configure.o \
 		../frame/module_timing.o ../frame/module_driver_constants.o \
+		../frame/module_wrf_error.o \
+		../frame/module_state_description.o ../phys/module_checkerror.o \
 		../frame/module_wrf_error.o module_trajectory.o
 
 start_domain.o: start_domain_em.int wrf_timeseries.o track_driver.o ../frame/module_domain.o ../frame/module_configure.o ../share/module_llxy.o
@@ -952,8 +1003,7 @@ wrf_ext_read_field.o : ../frame/module_io.o ../frame/module_wrf_error.o \
 module_soil_pre.o: module_date_time.o ../frame/module_state_description.o
 
 module_check_a_mundo.o: ../frame/module_configure.o ../frame/module_wrf_error.o \
-		../frame/module_state_description.o \
-		../share/module_model_constants.o
+		../frame/module_state_description.o
 
 dfi.o : 	../frame/module_wrf_error.o ../frame/module_configure.o \
 		../frame/module_state_description.o \
@@ -1185,6 +1235,24 @@ ndown_em.o: \
 	../dyn_em/module_initialize_$(IDEAL_CASE).o \
 	../dyn_em/module_big_step_utilities_em.o \
 	$(ESMF_MOD_DEPENDENCE)
+
+#TEMPORARILY REMOVED nup_em.o: \
+#	../frame/module_machine.o \
+#	../frame/module_domain.o \
+#	../frame/module_streams.o \
+#	../frame/module_driver_constants.o \
+#	../frame/module_configure.o \
+#	../frame/module_timing.o \
+#	../frame/module_dm.o \
+#	../frame/module_wrf_error.o \
+#	../frame/module_integrate.o \
+#	../share/module_bc.o \
+#	../share/module_io_domain.o \
+#	../share/module_get_file_names.o \
+#	../share/module_soil_pre.o \
+#	../dyn_em/module_initialize_real.o \
+#	../dyn_em/module_big_step_utilities_em.o \
+#	$(ESMF_MOD_DEPENDENCE)
 
 # this already built above :../dyn_em/module_initialize.real.o \
 real_em.o: \

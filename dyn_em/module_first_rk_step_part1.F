@@ -318,8 +318,8 @@ BENCH_START(rad_driver_tim)
 #if ( WRF_CHEM == 1)
      &        , CHEM=chem                                                 &
      &        , AOD_OUT=grid%aod_out                                      &
-     &        , AOD2D_OUT=grid%aod2d_out                                  &  !goddardrad_2014
-     &        , ATOP2D_OUT=grid%atop2d_out                                &  !goddardrad_2014
+     &        , AOD2D_OUT=grid%aod2d_out                                  &  !goddardrad
+     &        , ATOP2D_OUT=grid%atop2d_out                                &  !goddardrad
      &        , CHEM_OPT=config_flags%chem_opt                            &
      &        , GSFCRAD_GOCART_COUPLING=config_flags%gsfcrad_gocart_coupling &
 #endif
@@ -327,15 +327,11 @@ BENCH_START(rad_driver_tim)
      &        , SLWDN=grid%slwdn, SLWUP=grid%slwup                        & ! goddard schemes
      &        , TSWDN=grid%tswdn, TSWUP=grid%tswup                        & ! goddard schemes
      &        , SSWDN=grid%sswdn, SSWUP=grid%sswup                        & ! goddard schemes
-     &        , RE_CLOUD_GSFC=grid%re_cloud_gsfc                          & ! goddard schemes
-     &        , RE_RAIN_GSFC=grid%re_rain_gsfc                            & ! goddard schemes
-     &        , RE_ICE_GSFC=grid%re_ice_gsfc                              & ! goddard schemes
-     &        , RE_SNOW_GSFC=grid%re_snow_gsfc                            & ! goddard schemes
-     &        , RE_GRAUPEL_GSFC=grid%re_graupel_gsfc                      & ! goddard schemes
-     &        , RE_HAIL_GSFC=grid%re_hail_gsfc                            & ! goddard schemes
-     &        , COD2D_OUT=grid%cod2d_out                                  & ! goddardrad_2014
-     &        , CTOP2D_OUT=grid%ctop2d_out                                & ! goddardrad_2014
-     &        , goddardrad_2014_skip=config_flags%goddardrad_2014_skip    & ! goddardrad_2014
+     &        , REFC=grid%refc, REFR=grid%refr                            & ! goddard schemes
+     &        , REFI=grid%refi, REFS=grid%refs                            & ! goddard schemes
+     &        , REFG=grid%refg, REFH=grid%refh                            & ! goddard schemes
+     &        , COD2D_OUT=grid%cod2d_out                                  & ! goddardrad
+     &        , CTOP2D_OUT=grid%ctop2d_out                                & ! goddardrad
 !JJS 20101020 ^^^^^
 !ZCX+ cloud fraction for CLWRF
      &        , CLDT=grid%cldt, ZNU=grid%znu                              &

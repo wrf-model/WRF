@@ -100,8 +100,6 @@ MODULES = \
 	module_ra_clWRF_support.o  \
 	module_ra_gsfcsw.o \
 	module_ra_goddard.o \
-	module_ra_goddard_2011.o \
-        module_ra_goddard_2014.o \
         module_ra_goddard_2017.o \
 	module_ra_rrtm.o  \
 	module_ra_rrtmg_lw.o  \
@@ -183,6 +181,7 @@ MODULES = \
         module_sf_lake.o \
 	module_diagnostics_driver.o
 
+
 FIRE_MODULES = \
         module_fr_fire_driver.o \
         module_fr_fire_driver_wrf.o \
@@ -193,6 +192,7 @@ FIRE_MODULES = \
         module_fr_fire_util.o
 
 DIAGNOSTIC_MODULES_EM = \
+	module_diag_downscale.o \
 	module_diag_afwa.o \
 	module_diag_cl.o \
         module_diag_hailcast.o \
@@ -234,6 +234,7 @@ clean:
 	@ echo 'use the clean script'
 
 # DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
+
 # DO NOT DELETE
 
 include ../main/depend.common

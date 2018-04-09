@@ -5426,9 +5426,14 @@ END SUBROUTINE phy_prep_part2
      DO i = i_start, i_end
 
 #ifdef REVERT
+This is an intentional compiler error. h_diabatic is also "moist"
        t_new(i,k,j) = t_new(i,k,j)-h_diabatic(i,k,j)*dt
 #endif
-       th_phy(i,k,j) = t_new(i,k,j) + t0
+       if ( P_QV >= PARAM_FIRST_SCALAR ) then
+          th_phy(i,k,j) = (t_new(i,k,j)+t0)/(1.+R_v/R_d*qv(i,k,j))
+       else
+          th_phy(i,k,j) = t_new(i,k,j) + t0
+       end if
        h_diabatic(i,k,j) = th_phy(i,k,j)
 #if ( WRFPLUS == 1 )
        if ( P_QV >= PARAM_FIRST_SCALAR ) then
@@ -5624,16 +5629,16 @@ END SUBROUTINE phy_prep_part2
                dfi_tten_rad(i,k,j) <= 0.1 .and. k < k_end ) THEN
 ! add radar temp tendency
 ! there is radar coverage
-               t_new(i,k,j) = t_new(i,k,j) + (dfi_tten_rad(i,k,j))*dt
+               t_new(i,k,j) = t_new(i,k,j) + (dfi_tten_rad(i,k,j)*(1.+R_v/R_d*qv(i,k,j)))*dt
           ELSE
 ! no radar coverage
-               t_new(i,k,j) = t_new(i,k,j) + mpten
+               t_new(i,k,j) = t_new(i,k,j) + mpten*(1.+R_v/R_d*qv(i,k,j))
           ENDIF
        ENDIF
 #else
-         t_new(i,k,j) = t_new(i,k,j) + mpten
+         t_new(i,k,j) = t_new(i,k,j) + mpten*(1.+R_v/R_d*qv(i,k,j))
 #endif
-         h_diabatic(i,k,j) =  mpten/dt
+         h_diabatic(i,k,j) =  mpten*(1.+R_v/R_d*qv(i,k,j))/dt
 !!!         ! KLUDGE:
 !!!         qvten = 0.0
 !!!         qcten = 0.0
@@ -6423,14 +6428,11 @@ END SUBROUTINE initialize_moist_old
 
 SUBROUTINE theta_to_thetam_phy ( t_1 , moist_old ,                &
                              t_tendf  , moist_tend ,          &
-                             t_2 , moist ,                    &
-                             itimestep ,                      &
-                             rk_step ,                        &
                              ids, ide, jds, jde, kds, kde ,   &
                              ims, ime, jms, jme, kms, kme ,   &
                              its, ite, jts, jte, kts, kte     )
 
-   !  Convert dry potential temperature to "moist" theta:
+   !  Convert dry potential temperature tendency to "moist" tendency.
    !  theta_m = theta ( 1 + Rv/Rd Qv )
 
    IMPLICIT NONE
@@ -6438,128 +6440,27 @@ SUBROUTINE theta_to_thetam_phy ( t_1 , moist_old ,                &
    INTEGER , INTENT(IN) ::   ids, ide, jds, jde, kds, kde ,   &
                              ims, ime, jms, jme, kms, kme ,   &
                              its, ite, jts, jte, kts, kte     
-   INTEGER , INTENT(IN) ::   rk_step, itimestep
-   REAL    , INTENT(IN   ) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist, moist_tend
-   REAL    , INTENT(INOUT) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist_old
-   REAL    , INTENT(INOUT) , DIMENSION(ims:ime,kms:kme,jms:jme) :: t_1, t_tendf, t_2
+   REAL    , INTENT(IN   ) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist_tend, moist_old
+   REAL    , INTENT(IN   ) , DIMENSION(ims:ime,kms:kme,jms:jme) :: t_1
+   REAL    , INTENT(  OUT) , DIMENSION(ims:ime,kms:kme,jms:jme) :: t_tendf
 
    !  Local variables
 
    INTEGER :: i , j , k
 
-   !  First RK loop, this info is from the physics packages.  It is modified immediately after the
+   !  The t_tendf field is from the physics packages.  It is modified immediately after the
    !  call to the physics schemes, and the remains constant for the remainder of the RK loops.
-
-   IF ( rk_step .EQ. 1 ) THEN
-      DO j = jts , MIN(jte,jde-1)
-         DO k = kts , kte-1
-            DO i = its , MIN(ite,ide-1)
-               t_tendf(i,k,j) = (1. + (R_v/R_d) * moist_old(i,k,j))*t_tendf(i,k,j) + (R_v/R_d)*(t_1(i,k,j)+T0)*moist_tend(i,k,j)
-            END DO
-         END DO
-      END DO
-   END IF
-
-   !  T at time period 1 and 2 are modified in the small steps, so they are each converted from dry to moist.
 
    DO j = jts , MIN(jte,jde-1)
       DO k = kts , kte-1
          DO i = its , MIN(ite,ide-1)
-            t_1(i,k,j) = ( t_1(i,k,j) + T0 ) * (1. + (R_v/R_d) * moist_old(i,k,j)) - T0
-            t_2(i,k,j) = ( t_2(i,k,j) + T0 ) * (1. + (R_v/R_d) * moist(i,k,j))     - T0
+            t_tendf(i,k,j) = (1. + (R_v/R_d) * moist_old(i,k,j))*t_tendf(i,k,j) + &
+                             (R_v/R_d)*(t_1(i,k,j)+T0)/(1.+(R_v/R_d)*moist_old(i,k,j))*moist_tend(i,k,j)
          END DO
       END DO
    END DO
 
 END SUBROUTINE theta_to_thetam_phy
-
-!==============================================================================
-
-SUBROUTINE theta_to_thetam_mp ( t_1 , moist_old ,                &
-                             t_2 , moist ,                    &
-                             h_diabatic ,                     &
-                             itimestep ,                      &
-                             rk_step ,                        &
-                             ids, ide, jds, jde, kds, kde ,   &
-                             ims, ime, jms, jme, kms, kme ,   &
-                             its, ite, jts, jte, kts, kte     )
-
-   !  Convert dry potential temperature to "moist" theta:
-   !  theta_m = theta ( 1 + Rv/Rd Qv )
-
-   IMPLICIT NONE
-
-   INTEGER , INTENT(IN) ::   ids, ide, jds, jde, kds, kde ,   &
-                             ims, ime, jms, jme, kms, kme ,   &
-                             its, ite, jts, jte, kts, kte     
-   INTEGER , INTENT(IN) ::   rk_step, itimestep
-   REAL    , INTENT(IN   ) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist
-   REAL    , INTENT(INOUT) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist_old
-   REAL    , INTENT(INOUT) , DIMENSION(ims:ime,kms:kme,jms:jme) :: t_1, t_2, h_diabatic
-
-   !  Local variables
-
-   INTEGER :: i , j , k
-
-   !  First RK loop, this info is from the physics packages.  It is modified immediately after the
-   !  call to the physics schemes, and the remains constant for the remainder of the RK loops.
-
-   IF ( rk_step .EQ. 1 ) THEN
-      DO j = jts , MIN(jte,jde-1)
-         DO k = kts , kte-1
-            DO i = its , MIN(ite,ide-1)
-               h_diabatic(i,k,j) =  (1. + (R_v/R_d) * moist_old(i,k,j))*h_diabatic(i,k,j)
-            END DO
-         END DO
-      END DO
-   END IF
-
-   !  T at time period 1 and 2 are modified in the small steps, so they are each converted from dry to moist.
-
-   DO j = jts , MIN(jte,jde-1)
-      DO k = kts , kte-1
-         DO i = its , MIN(ite,ide-1)
-            t_1(i,k,j) = ( t_1(i,k,j) + T0 ) * (1. + (R_v/R_d) * moist_old(i,k,j)) - T0
-            t_2(i,k,j) = ( t_2(i,k,j) + T0 ) * (1. + (R_v/R_d) * moist(i,k,j))     - T0
-         END DO
-      END DO
-   END DO
-
-END SUBROUTINE theta_to_thetam_mp
-
-!==============================================================================
-
-SUBROUTINE thetam_to_theta ( t_1 , moist_old ,                &
-                             t_2 , moist ,                    &
-                             ids, ide, jds, jde, kds, kde ,   &
-                             ims, ime, jms, jme, kms, kme ,   &
-                             its, ite, jts, jte, kts, kte     )
-
-   !  Convert moist potential temperature to dry theta:
-   !  theta = theta_m / ( 1 + Rv/Rd Qv )
-
-   IMPLICIT NONE
-
-   INTEGER , INTENT(IN) ::   ids, ide, jds, jde, kds, kde ,   &
-                             ims, ime, jms, jme, kms, kme ,   &
-                             its, ite, jts, jte, kts, kte     
-   REAL    , INTENT(IN   ) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist, moist_old
-   REAL    , INTENT(INOUT) , DIMENSION(ims:ime,kms:kme,jms:jme) :: t_1, t_2
-
-   !  Local variables
-
-   INTEGER :: i , j , k
-
-   DO j = jts , MIN(jte,jde-1)
-      DO k = kts , kte-1
-         DO i = its , MIN(ite,ide-1)
-            t_1(i,k,j) = -T0 + (t_1(i,k,j)+T0)/(1. + (R_v/R_d) * moist_old(i,k,j))
-            t_2(i,k,j) = -T0 + (t_2(i,k,j)+T0)/(1. + (R_v/R_d) * moist(i,k,j))
-         END DO
-      END DO
-   END DO
-
-END SUBROUTINE thetam_to_theta
 
 !==============================================================================
 

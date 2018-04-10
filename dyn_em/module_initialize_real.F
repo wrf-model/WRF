@@ -7365,7 +7365,7 @@ end do
     print *,1,dz,zup(1),eta(1)
     isave=1
     do i=1,nlev-1
-        a=dzstretch_u+(dzstretch_s-dzstretch_u)*max((zscale-zup(i))/zscale, 0.)
+        a=dzstretch_u+(dzstretch_s-dzstretch_u)*max((dzmax*0.5-dz)/(dzmax*0.5), 0.)
         dz=a*dz
         dztest=(ztop-zup(isave))/(nlev-isave)
         if(dztest.lt.dz)exit

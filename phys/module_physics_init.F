@@ -48,8 +48,8 @@ CONTAINS
                          z_at_q, inv_dens, qnwfa2d, scalar, num_sc,  & ! G. Thompson
                          re_cloud, re_ice, re_snow,              & ! G. Thompson
                          has_reqc, has_reqi, has_reqs,           & ! G. Thompson
-                         refc, refi, refs,                       & ! Goddard
-                         refg, refh, refr,                       & ! Goddard
+                         re_cloud_gsfc, re_ice_gsfc, re_snow_gsfc,    & ! Goddard
+                         re_graupel_gsfc, re_hail_gsfc, re_rain_gsfc, & ! Goddard
                          NCA,swrad_scat,                         &
                          CLDEFI,LOWLYR,                          &
                          MASS_FLUX,                              &
@@ -328,8 +328,8 @@ CONTAINS
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: re_cloud, &
              re_ice, re_snow
    INTEGER, INTENT(INOUT):: has_reqc, has_reqi, has_reqs
-   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: refc, &
-             refi, refs, refg, refh, refr
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: re_cloud_gsfc, &
+             re_ice_gsfc, re_snow_gsfc, re_graupel_gsfc, re_hail_gsfc, re_rain_gsfc
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &!BSINGH(PNNL)- should be declared inout
              RTHRATEN, RTHRATENLW, RTHRATENSW, CLDFRA
@@ -1396,12 +1396,12 @@ CONTAINS
     do j=jts,jtf
        do k=kts,ktf
           do i=its,itf
-             refc(i,k,j) = 0.
-             refr(i,k,j) = 0.
-             refs(i,k,j) = 0.
-             refi(i,k,j) = 0.
-             refg(i,k,j) = 0.
-             refh(i,k,j) = 0.
+             re_cloud_gsfc(i,k,j) = 0.
+             re_rain_gsfc(i,k,j) = 0.
+             re_snow_gsfc(i,k,j) = 0.
+             re_ice_gsfc(i,k,j) = 0.
+             re_graupel_gsfc(i,k,j) = 0.
+             re_hail_gsfc(i,k,j) = 0.
           end do
        end do
      end do

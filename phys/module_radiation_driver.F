@@ -61,8 +61,12 @@ CONTAINS
               , SLWDN, SLWUP                        & ! goddard schemes
               , TSWDN, TSWUP                        & ! goddard schemes
               , SSWDN, SSWUP                        & ! goddard schemes
-              , REFC, REFR, REFI                    & ! goddard schemes
-              , REFS, REFG, REFH                    & ! goddard schemes
+              , RE_CLOUD_GSFC                       & ! goddard
+              , RE_RAIN_GSFC                        & ! goddard
+              , RE_ICE_GSFC                         & ! goddard
+              , RE_SNOW_GSFC                        & ! goddard
+              , RE_GRAUPEL_GSFC                     & ! goddard
+              , RE_HAIL_GSFC                        & ! goddard
               , COD2D_OUT                           & ! goddardrad
               , CTOP2D_OUT                          & ! goddardrad
               , CLDFRA,CLDFRA_MP_ALL,CLDT,ZNU       &
@@ -658,7 +662,8 @@ CONTAINS
 
 ! NUWRF JJS 20140225  vvvvv
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),               OPTIONAL ,&
-         INTENT(INOUT)  :: refc, refr, refi, refs, refg, refh 
+      INTENT(INOUT)  :: re_cloud_gsfc, re_rain_gsfc, re_ice_gsfc,        &
+                        re_snow_gsfc, re_graupel_gsfc, re_hail_gsfc 
 ! NUWRF JJS 20140225  ^^^^^
 
   real, dimension( ims:ime, jms:jme, 1:4 )  :: sflxd    !NUWRF SW only for LIS
@@ -1493,8 +1498,9 @@ CONTAINS
                     ,qv=qv,qc=qc,qi=qi,qr=qr,qs=qs,qg=qg,qh=qh         &
                     ,f_qv=f_qv,f_qc=f_qc,f_qr=f_qr                     &
                     ,f_qi=f_qi,f_qs=f_qs,f_qg=f_qg ,f_qh=f_qh          &
-                    ,rec3d=refc,rei3d=refi,rer3d=refr,res3d=refs       & !optional
-                    ,reg3d=refg,reh3d=refh                             & !optional 
+                    ,rec3d=re_cloud_gsfc,rei3d=re_ice_gsfc             &
+                    ,rer3d=re_rain_gsfc,res3d=re_snow_gsfc             & !optional
+                    ,reg3d=re_graupel_gsfc,reh3d=re_hail_gsfc          & !optional 
                     ,erbe_out=erbe_out                                 &
                     ,itimestep=itimestep, dt_in = dt                   &
 #if (WRF_CHEM == 1)
@@ -1952,8 +1958,9 @@ CONTAINS
                     ,qv=qv,qc=qc,qr=qr,qi=qi,qs=qs,qg=qg,qh=qh         & !optional
                     ,f_qv=f_qv,f_qc=f_qc,f_qr=f_qr                     & !optional
                     ,f_qi=f_qi,f_qs=f_qs,f_qg=f_qg ,f_qh=f_qh          & !optional
-                    ,rec3d=refc,rei3d=refi,rer3d=refr,res3d=refs       & !optional
-                    ,reg3d=refg,reh3d=refh                             & !optional 
+                    ,rec3d=re_cloud_gsfc,rei3d=re_ice_gsfc             & !optional
+                    ,rer3d=re_rain_gsfc,res3d=re_snow_gsfc             & !optional
+                    ,reg3d=re_graupel_gsfc,reh3d=re_hail_gsfc          & !optional 
                     ,erbe_out=erbe_out                                 &
                     ,cod2d_out=cod2d_out,ctop2d_out=ctop2d_out         & !optional
                     ,sflxd=sflxd                                       & !optional

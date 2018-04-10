@@ -71,7 +71,8 @@ SUBROUTINE microphysics_driver(                                          &
                       ,acphys_tot, acphysc, acphyse, acphysd  & ! for gsfcgce
                       ,acphyss, acphysm, acphysf              & ! for gsfcgce
 
-                      ,refc, refr, refi, refs, refg, refh                & ! cloud effective radius
+                      ,re_cloud_gsfc, re_rain_gsfc, re_ice_gsfc          &
+                      ,re_snow_gsfc, re_graupel_gsfc, re_hail_gsfc       & ! cloud effective radius
                       ,precr3d, preci3d, precs3d, precg3d, prech3d       &
 #if ( WRF_CHEM == 1 )
                       ,icn_diag, nc_diag                           &  ! inline gocart
@@ -407,12 +408,12 @@ SUBROUTINE microphysics_driver(                                          &
 !NUWRF JJS 20101021   ^^^^^
 !NUWRF JJS 20140225  vvvvv
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
-        INTENT(INOUT) ::                               refc,      &
-                                                       refr,      &
-                                                       refi,      &
-                                                       refs,      &
-                                                       refg,      &
-                                                       refh
+        INTENT(INOUT) ::                               re_cloud_gsfc,   &
+                                                       re_rain_gsfc,    &
+                                                       re_ice_gsfc,     &
+                                                       re_snow_gsfc,    &
+                                                       re_graupel_gsfc, &
+                                                       re_hail_gsfc
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                    &
          OPTIONAL,          &
          INTENT(INOUT) ::   &
@@ -1840,8 +1841,11 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,PHYSS=physs, PHYSM=physm, PHYSF=physf             &
                  ,ACPHYSC=acphysc, ACPHYSE=physe, ACPHYSD=acphysd   &
                  ,ACPHYSS=acphyss, ACPHYSM=physm, ACPHYSF=acphysf   &
-                 ,REFC=refc, REFR=refr, REFI=refi                   &
-                 ,REFS=refs, REFG=refg                              &
+                 ,RE_CLOUD_GSFC=re_cloud_gsfc                       &
+                 ,RE_RAIN_GSFC=re_rain_gsfc                         &
+                 ,RE_ICE_GSFC=re_ice_gsfc                           &
+                 ,RE_SNOW_GSFC=re_snow_gsfc                         &
+                 ,RE_GRAUPEL_GSFC=re_graupel_gsfc                   &
 #if ( WRF_CHEM == 1)
                  ,AERO=aero                                         &
                  ,ICN_DIAG=icn_diag, NC_DIAG=nc_diag, GID=ID        &
@@ -1919,8 +1923,12 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,PHYSS=physs, PHYSM=physm, PHYSF=physf             &
                  ,ACPHYSC=acphysc, ACPHYSE=acphyse, ACPHYSD=acphysd  &
                  ,ACPHYSS=acphyss, ACPHYSM=acphysm, ACPHYSF=acphysf  &
-                 ,REFC=refc, REFR=refr, REFI=refi                   &
-                 ,REFS=refs, REFG=refg, REFH=refh                   &
+                 ,RE_CLOUD_GSFC=re_cloud_gsfc                       &
+                 ,RE_RAIN_GSFC=re_rain_gsfc                         &
+                 ,RE_ICE_GSFC=re_ice_gsfc                           &
+                 ,RE_SNOW_GSFC=re_snow_gsfc                         &
+                 ,RE_GRAUPEL_GSFC=re_graupel_gsfc                   &
+                 ,RE_HAIL_GSFC=re_hail_gsfc                         &
                  ,PRECR3D=precr3d,PRECI3D=preci3d,PRECS3D=precs3d   &
                  ,PRECG3D=precg3d,PRECH3D=prech3d                   &
 #if ( WRF_CHEM == 1)

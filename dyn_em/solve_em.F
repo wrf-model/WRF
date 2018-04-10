@@ -3830,12 +3830,12 @@ BENCH_START(micro_driver_tim)
       &        , ACPHYSM=grid%acphysm                                     & ! for gsfcgce
       &        , ACPHYSF=grid%acphysf                                     & ! for gsfcgce
 
-      &        , REFC=grid%refc                                           & ! for gsfcgce
-      &        , REFR=grid%refr                                           & ! for gsfcgce
-      &        , REFI=grid%refi                                           & ! for gsfcgce
-      &        , REFS=grid%refs                                           & ! for gsfcgce
-      &        , REFG=grid%refg                                           & ! for gsfcgce
-      &        , REFH=grid%refh                                           & ! for gsfcgce
+      &        , RE_CLOUD_GSFC=grid%re_cloud_gsfc                         & ! for gsfcgce
+      &        , RE_RAIN_GSFC=grid%re_rain_gsfc                           & ! for gsfcgce
+      &        , RE_ICE_GSFC=grid%re_ice_gsfc                             & ! for gsfcgce
+      &        , RE_SNOW_GSFC=grid%re_snow_gsfc                           & ! for gsfcgce
+      &        , RE_GRAUPEL_GSFC=grid%re_graupel_gsfc                     & ! for gsfcgce
+      &        , RE_HAIL_GSFC=grid%re_hail_gsfc                           & ! for gsfcgce
       &        , PRECR3D=grid%precr3d, PRECI3D=grid%preci3d, PRECS3D=grid%precs3d  &
       &        , PRECG3D=grid%precg3d, PRECH3D=grid%prech3d               &
 #if ( WRF_CHEM == 1)

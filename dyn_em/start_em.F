@@ -1091,8 +1091,9 @@ endif
                       z_at_q, grid%alt, grid%qnwfa2d, scalar(ims,kms,jms,1), num_scalar,         & ! G. Thompson
                       grid%re_cloud, grid%re_ice, grid%re_snow,         & ! G. Thompson
                       grid%has_reqc, grid%has_reqi, grid%has_reqs,      & ! G. Thompson
-                      grid%refc, grid%refi, grid%refs,                  & ! Goddard
-                      grid%refg, grid%refh, grid%refr,                  & ! Goddard
+                      grid%re_cloud_gsfc, grid%re_ice_gsfc,             & ! Goddard
+                      grid%re_snow_gsfc, grid%re_graupel_gsfc,          & ! Goddard
+                      grid%re_hail_gsfc, grid%re_rain_gsfc,             & ! Goddard
                       grid%nca,grid%swrad_scat,                    &
                       grid%cldefi,grid%lowlyr,                          &
                       grid%mass_flux,                              &

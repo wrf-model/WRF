@@ -327,9 +327,12 @@ BENCH_START(rad_driver_tim)
      &        , SLWDN=grid%slwdn, SLWUP=grid%slwup                        & ! goddard schemes
      &        , TSWDN=grid%tswdn, TSWUP=grid%tswup                        & ! goddard schemes
      &        , SSWDN=grid%sswdn, SSWUP=grid%sswup                        & ! goddard schemes
-     &        , REFC=grid%refc, REFR=grid%refr                            & ! goddard schemes
-     &        , REFI=grid%refi, REFS=grid%refs                            & ! goddard schemes
-     &        , REFG=grid%refg, REFH=grid%refh                            & ! goddard schemes
+     &        , RE_CLOUD_GSFC=grid%re_cloud_gsfc                          & ! goddard schemes
+     &        , RE_RAIN_GSFC=grid%re_rain_gsfc                            & ! goddard schemes
+     &        , RE_ICE_GSFC=grid%re_ice_gsfc                              & ! goddard schemes
+     &        , RE_SNOW_GSFC=grid%re_snow_gsfc                            & ! goddard schemes
+     &        , RE_GRAUPEL_GSFC=grid%re_graupel_gsfc                      & ! goddard schemes
+     &        , RE_HAIL_GSFC=grid%re_hail_gsfc                            & ! goddard schemes
      &        , COD2D_OUT=grid%cod2d_out                                  & ! goddardrad
      &        , CTOP2D_OUT=grid%ctop2d_out                                & ! goddardrad
 !JJS 20101020 ^^^^^

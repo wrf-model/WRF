@@ -819,7 +819,7 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
    if (ierr /= 0) call wrf_error_fatal('MSG read_lut_nc: LUT parameter allocation error -> Terminate program. ')
    open(11, file='BROADBAND_CLOUD_GODDARD.bin', form='unformatted', &
       status='old', access='direct', &
-      recl=mxpts_re_visir*id_hmax*mxband*mxisl)
+      recl=mxpts_re_visir*id_hmax*mxband*mxisl*4)
    ! extinction cross section per unit mass [km-1 / (g/m3) ]
    read(11, rec=1) kext_q_unit_array
    ! signle scattering albedo [-] 

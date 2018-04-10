@@ -1292,21 +1292,6 @@ state   real    precs3d       ikj      misc        1         -     -       "PREC
 state   real    precg3d       ikj      misc        1         -     -       "PRECG3D"                   "Sedimentation Fluxes for graupel"               "KG/M^2/S"
 state   real    prech3d       ikj      misc        1         -     -       "PRECH3D"                   "Sedimentation Fluxes for hail"               "KG/M^2/S"
 state   real    precr3d       ikj      misc        1         -     -       "PRECR3D"                   "Sedimentation Fluxes for rain"                  "KG/M^2/S"
-# EMK NUWRF
-state   real    tpw            ij       misc        1         -     h         "TPW"                   "TOTAL PRECIPITABLE WATER"            "kg m-2"
-state   real    lwp            ij       misc        1         -     h         "LWP"                   "LIQUID WATER PATH (LWP)"             "kg m-2"
-state   real    iwp            ij       misc        1         -     h         "IWP"                   "ICE WATER PATH (IWP)"                "kg m-2"
-state   real    clwp           ij       misc        1         -     h         "CLWP"                  "CLOUD LIQUID WATER PATH (CLWP)"      "kg m-2"
-state   real    rwp            ij       misc        1         -     h         "RWP"                   "RAIN WATER PATH (RWP)"               "kg m-2"
-state   real    ciwp           ij       misc        1         -     h         "CIWP"                  "CLOUD ICE WATER PATH (CIWP)"         "kg m-2"
-state   real    fpwp           ij       misc        1         -     h         "FPWP"                  "FROZEN PRECIP WATER PATH (FPWP)"     "kg m-2"
-state   real    mean_ivt_u     ij       misc        1         -     rh        "MEAN_IVT_U"            "MEAN INTEGRATED VAPOR TRANSPORT (X-DIRECTION)" "kg m-1 s-1"
-state   real    mean_ivt_v     ij       misc        1         -     rh        "MEAN_IVT_V"            "MEAN INTEGRATED VAPOR TRANSPORT (Y-DIRECTION)" "kg m-1 s-1"
-state   real    sum_ivt_u      ij       misc        1         -     r         "SUM_IVT_U"             "INTERMEDIATE SUM OF INTEGRATED VAPOR TRANSPORT (X-DIRECTION)" "kg m-1 s-1"
-state   real    sum_ivt_v      ij       misc        1         -     r         "SUM_IVT_V"             "INTERMEDIATE SUM OF INTEGRATED VAPOR TRANSPORT (Y-DIRECTION)" "kg m-1 s-1"
-state   integer ivt_count      -        misc        1         -     r         "IVT_COUNT"             "INTERMEDIATE TIME LEVEL SUM FOR INTEGRATED VAPOR TRANSPORT (Y-DIRECTION)" ""
-state   real    freezing_level  ij       misc        1         -     h         "FRZLVL"                "FREEZING LEVEL" "m"
-
 
 # State variables for Goddard LW and SW radiation
 state    real  TLWDN           ij      misc        1         -      h         "TLWDN"                 "TOA LW downwelling flux"           "W m-2"
@@ -2606,7 +2591,7 @@ package   wsm5scheme      mp_physics==4                -             moist:qv,qc
 package   fer_mp_hires    mp_physics==5                -             moist:qv,qc,qr,qi;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 package   fer_mp_hires_advect  mp_physics==15          -             moist:qv,qc,qr,qi;scalar:qrimef
 package   wsm6scheme      mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg;state:re_cloud,re_ice,re_snow
-package   gsfcgcescheme   mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
+package   gsfcgcescheme   mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg;state:phys_tot,physc,physe,physd,physs,physm,physf,acphys_tot,acphysc,acphyse,acphysd,acphyss,acphysm,acphysf,preci3d,precs3d,precg3d,precr3d
 package   thompson        mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow
 package   milbrandt2mom   mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
 package   morr_two_moment mp_physics==10               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng;state:rqrcuten,rqscuten,rqicuten
@@ -2620,7 +2605,7 @@ package   nssl_2momccn    mp_physics==18               -             moist:qv,qc
 package   nssl_1mom       mp_physics==19               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qvolg
 package   nssl_1momlfo    mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
 package   nssl_2momg      mp_physics==22               -             moist:qv,qc,qr,qi,qs,qg;scalar:qndrop,qnr,qni,qns,qng,qvolg;state:re_cloud,re_ice,re_snow
-package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow,qnwfa2d,qnifa2d,taod5503d,taod5502d 
+package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow,qnwfa2d,qnifa2d,taod5503d,taod5502d
 package   nuwrf3icescheme mp_physics==55             -               moist:qv,qc,qr,qi,qs,qg
 package   nuwrf4icescheme mp_physics==56             -               moist:qv,qc,qr,qi,qs,qg,qh
 package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi;scalar:qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
@@ -2667,7 +2652,7 @@ package   rrtmscheme       ra_lw_physics==1          -             -
 package   camlwscheme      ra_lw_physics==3          -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;aerosolc:sul,sslt,dust1,dust2,dust3,dust4,ocpho,bcpho,ocphi,bcphi,bg,volc;state:emstot,abstot,absnxt,acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,taucldc,taucldi
 package   rrtmg_lwscheme   ra_lw_physics==4          -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,o3rad
 package   rrtmg_lwscheme_fast  ra_lw_physics==24     -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,o3rad
-package   goddardlwscheme  ra_lw_physics==5          -             state:tlwdn,tlwup,slwdn,slwup
+package   goddardlwscheme  ra_lw_physics==5          -             state:tlwdn,tlwup,slwdn,slwup,taucldc,taucldi
 package   flglwscheme      ra_lw_physics==7          -             -
 package   heldsuarez       ra_lw_physics==31         -             -
 package   gfdllwscheme     ra_lw_physics==99         -             -
@@ -2677,7 +2662,7 @@ package   gsfcswscheme    ra_sw_physics==2           -             state:taucldc
 package   camswscheme     ra_sw_physics==3           -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;aerosolc:sul,sslt,dust1,dust2,dust3,dust4,ocpho,bcpho,ocphi,bcphi,bg,volc;state:emstot,abstot,absnxt,acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,taucldc,taucldi
 package   rrtmg_swscheme  ra_sw_physics==4           -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,o3rad;aerod:ocarbon,seasalt,dust,bcarbon,sulfate,upperaer
 package   rrtmg_swscheme_fast  ra_sw_physics==24     -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,o3rad;aerod:ocarbon,seasalt,dust,bcarbon,sulfate,upperaer
-package   goddardswscheme ra_sw_physics==5           -             state:tswdn,tswup,sswdn,sswup
+package   goddardswscheme ra_sw_physics==5           -             state:tswdn,tswup,sswdn,sswup,taucldc,taucldi
 package   flgswscheme     ra_sw_physics==7           -             -
 package   gfdlswscheme    ra_sw_physics==99          -             -
 

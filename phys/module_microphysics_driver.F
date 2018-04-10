@@ -4,8 +4,8 @@
 MODULE module_microphysics_driver
 CONTAINS
 
-SUBROUTINE microphysics_driver(grid                                      &
-                      ,th, rho, pi_phy, p                                &
+SUBROUTINE microphysics_driver(                                          &
+                       th, rho, pi_phy, p                                &
                       ,ht, dz8w, p8w, dt,dx,dy                           &
                       ,mp_physics, spec_zone                             &
                       ,specified, channel_switch                         &
@@ -199,7 +199,6 @@ SUBROUTINE microphysics_driver(grid                                      &
 ! For checking model timestep is history time (for radar reflectivity)
    USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
    USE module_domain, ONLY : HISTORY_ALARM, Is_alarm_tstep
-   USE module_domain, ONLY : domain ! NUWRF...for grid
 
 !----------------------------------------------------------------------
    ! This driver calls subroutines for the microphys.
@@ -356,8 +355,6 @@ SUBROUTINE microphysics_driver(grid                                      &
 !-- diagflag      Logical to tell us when to produce diagnostics for history or restart
 !
 !======================================================================
-
-   type(domain), intent(inout) :: grid ! EMK NUWRF for MPI-safe CSI
 
   INTEGER,parameter :: iunit=6
   INTEGER :: mpi_error_code=1

@@ -6,7 +6,6 @@ RM      =       rm -f
 
 
 MODULES = \
-	module_diag_csi.o \
 	module_cam_shr_kind_mod.o \
 	module_cam_support.o \
 	module_cam_shr_const_mod.o \
@@ -191,7 +190,6 @@ FIRE_MODULES = \
         module_fr_fire_util.o
 
 DIAGNOSTIC_MODULES_EM = \
-	module_diag_downscale.o \
 	module_diag_afwa.o \
 	module_diag_cl.o \
         module_diag_hailcast.o \

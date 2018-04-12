@@ -739,7 +739,6 @@ BENCH_START(calc_p_rho_tim)
                              , psim , psih , gz1oz0             &
                              , chklowq                          &
                              , cu_act_flag , hol , th_phy       &
-                             , th_phy_m_t0                      &
                              , pi_phy , p_phy , grid%t_phy      &
                              , dz8w , p8w , t8w                 &
                              , ids, ide, jds, jde, kds, kde     &
@@ -775,7 +774,6 @@ BENCH_START(calc_p_rho_tim)
                              , psim , psih , gz1oz0             &
                              , chklowq                          &
                              , cu_act_flag , hol , th_phy       &
-                             , th_phy_m_t0                      &
                              , pi_phy , p_phy , grid%t_phy      &
                              , dz8w , p8w , t8w                 &
                              , nba_mij, num_nba_mij             & !JDM 
@@ -790,11 +788,12 @@ BENCH_START(calc_p_rho_tim)
                              , k_start , k_end                  &
                             )
 
-        CALL theta_to_thetam_phy( grid%t_1 , moist_old(ims,kms,jms,P_qv) ,  &
-                               t_tendf  , moist_tend(ims,kms,jms,P_qv) , &
-                               ids, ide, jds, jde, kds, kde ,            &
-                               ims, ime, jms, jme, kms, kme ,            &
-                               ips, ipe, jps, jpe, kps, kpe              )
+        CALL conv_t_tendf_to_moist ( grid%t_1 , moist_old(ims,kms,jms,P_qv) ,  &
+                                     t_tendf  , moist_tend(ims,kms,jms,P_qv) , &
+                                     ids, ide, jds, jde, kds, kde ,            &
+                                     ims, ime, jms, jme, kms, kme ,            &
+                                     ips, ipe, jps, jpe, kps, kpe              )
+
      END IF rk_step_is_one
 
 BENCH_START(rk_tend_tim)
@@ -3831,22 +3830,35 @@ BENCH_START(moist_phys_end_tim)
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
-       CALL moist_physics_finish_em( grid%t_2, grid%t_1, t0, grid%muts, th_phy,       &
-                                      grid%h_diabatic, dtm,                    &
-                                      moist(ims,kms,jms,P_QV),grid%qv_diabatic, &
-                                      moist(ims,kms,jms,P_QC),grid%qc_diabatic, &
-                                      config_flags,                            &
+       CALL moist_physics_finish_em( grid%t_2, grid%t_1, t0, grid%muts, th_phy,  &
+                                     grid%h_diabatic, dtm,                       &
+                                     moist(ims,kms,jms,P_QV),grid%qv_diabatic,   &
+                                     moist(ims,kms,jms,P_QC),grid%qc_diabatic,   &
+                                     grid%th_phy_m_t0,                           &
+                                     config_flags,                               &
 #if ( WRF_DFI_RADAR == 1 )
-                                      grid%dfi_tten_rad,grid%dfi_stage,        &
+                                     grid%dfi_tten_rad,grid%dfi_stage,           &
 #endif
-                                      ids, ide, jds, jde, kds, kde,     &
-                                      ims, ime, jms, jme, kms, kme,     &
-                                      its, ite, jts, jte,               &
-                                      k_start    , k_end               )
+                                     ids, ide, jds, jde, kds, kde,               &
+                                     ims, ime, jms, jme, kms, kme,               &
+                                     its, ite, jts, jte,                         &
+                                     k_start    , k_end                          )
 
      END DO
      !$OMP END PARALLEL DO
 
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+#       include "HALO_EM_THETAM.inc"
+#       include "PERIOD_EM_THETAM.inc"
+#endif
+        its=ips ; ite = ipe
+        jts=jps ; jte = jpe
+        CALL set_physical_bc3d( grid%h_diabatic, 'p', config_flags,      &
+                                ids, ide, jds, jde, kds, kde,     &
+                                ims, ime, jms, jme, kms, kme,     &
+                                ips, ipe, jps, jpe, kps, kpe,     &
+                                its, ite, jts, jte,               &
+                                k_start    , k_end                )
    ENDIF  ! microphysics test
 
 !-----------------------------------------------------------

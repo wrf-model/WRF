@@ -20,7 +20,6 @@ CONTAINS
                              , adapt_step_flag , curr_secs      &
                              , psim , psih , gz1oz0 , chklowq   &
                              , cu_act_flag , hol , th_phy       &
-                             , th_phy_m_t0                      &
                              , pi_phy , p_phy , t_phy           &
                              , dz8w , p8w , t8w                 &
                              , nba_mij, n_nba_mij               & !JDM
@@ -97,7 +96,6 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: hol
 
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: th_phy
-    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: th_phy_m_t0
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: pi_phy
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: p_phy
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: t_phy
@@ -932,7 +930,7 @@ BENCH_END(hor_diff_tim)
                    grid%mut, grid%muu, grid%muv, grid%c1h, grid%c2h,    &
                    grid%msftx, grid%msfty, grid%msfux, grid%msfuy, grid%msfvx, grid%msfvy, &
                    p_phy, t_tendf, t0,                                  &
-                   grid%u_2, grid%v_2, th_phy_m_t0,                     &
+                   grid%u_2, grid%v_2, grid%th_phy_m_t0,                &
                    moist(ims,kms,jms,P_QV),                             &
                    grid%pb, grid%p_top, grid%p, grid%phb, grid%ph_2,    &
                    grid%uratx, grid%vratx, grid%tratx,                  &

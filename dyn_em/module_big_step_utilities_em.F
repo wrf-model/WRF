@@ -5426,14 +5426,10 @@ END SUBROUTINE phy_prep_part2
      DO i = i_start, i_end
 
 #ifdef REVERT
-This is an intentional compiler error. h_diabatic is also "moist"
+intentional compiler error, t_new is moist, h_diabatic is moist
        t_new(i,k,j) = t_new(i,k,j)-h_diabatic(i,k,j)*dt
 #endif
-       if ( P_QV >= PARAM_FIRST_SCALAR ) then
-          th_phy(i,k,j) = (t_new(i,k,j)+t0)/(1.+R_v/R_d*qv(i,k,j))
-       else
-          th_phy(i,k,j) = t_new(i,k,j) + t0
-       end if
+       th_phy(i,k,j) = (t_new(i,k,j) + t0) / (1. + (R_v/R_d) * qv(i,k,j))
        h_diabatic(i,k,j) = th_phy(i,k,j)
 #if ( WRFPLUS == 1 )
        if ( P_QV >= PARAM_FIRST_SCALAR ) then
@@ -5459,7 +5455,7 @@ This is an intentional compiler error. h_diabatic is also "moist"
      ENDDO
      ENDDO
 
-!  interp t and p at w points
+!  interp p at w points
 
     do j = j_start,j_end
     do k = 2, k_end
@@ -5469,7 +5465,7 @@ This is an intentional compiler error. h_diabatic is also "moist"
     enddo
     enddo
 
-!  extrapolate p and t to surface and top.
+!  extrapolate p to surface and top.
 !  we'll use an extrapolation in z for now
 
     do j = j_start,j_end
@@ -5505,6 +5501,7 @@ This is an intentional compiler error. h_diabatic is also "moist"
                                        th_phy, h_diabatic, dt,    &
                                        qv,qv_diabatic,            &
                                        qc,qc_diabatic,            &
+                                       th_phy_m_t0,               &
                                        config_flags,              &
 #if ( WRF_DFI_RADAR == 1 )
                                        dfi_tten_rad,dfi_stage,    &
@@ -5531,6 +5528,9 @@ This is an intentional compiler error. h_diabatic is also "moist"
                                                   h_diabatic, &
                                                  qv_diabatic, &
                                                  qc_diabatic
+
+   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),        &
+         INTENT(  OUT) ::                         th_phy_m_t0
 
    REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),        &
          INTENT(IN   ) ::                           qv,  &
@@ -5570,11 +5570,6 @@ This is an intentional compiler error. h_diabatic is also "moist"
     i_end   = min( ite,ide-1 )
     j_start = jts    
     j_end   = min( jte,jde-1 )
-!      i_start=max(its,ids+4)
-!      i_end=min(ite,ide-5)
-!      j_start=max(jts,jds+4)
-!      j_end=min(jte,jde-5)
-
     k_start = kts
     k_end = min( kte, kde-1 )
 
@@ -5619,6 +5614,7 @@ This is an intentional compiler error. h_diabatic is also "moist"
           mpten=max(-config_flags%mp_tend_lim*dt, mpten)
 
 #if ( WRF_DFI_RADAR == 1 )
+compiler error, not handled yet
        if(k < k_end ) then
          if(dfi_tten_max < dfi_tten_rad(i,k,j) ) dfi_tten_max = dfi_tten_rad(i,k,j)
          if(old_max < (th_phy(i,k,j)-h_diabatic(i,k,j)) ) old_max=th_phy(i,k,j)-h_diabatic(i,k,j)
@@ -5629,16 +5625,25 @@ This is an intentional compiler error. h_diabatic is also "moist"
                dfi_tten_rad(i,k,j) <= 0.1 .and. k < k_end ) THEN
 ! add radar temp tendency
 ! there is radar coverage
-               t_new(i,k,j) = t_new(i,k,j) + (dfi_tten_rad(i,k,j)*(1.+R_v/R_d*qv(i,k,j)))*dt
+               t_new(i,k,j) = t_new(i,k,j) + (dfi_tten_rad(i,k,j))*dt
           ELSE
 ! no radar coverage
-               t_new(i,k,j) = t_new(i,k,j) + mpten*(1.+R_v/R_d*qv(i,k,j))
+               t_new(i,k,j) = t_new(i,k,j) + mpten
           ENDIF
        ENDIF
 #else
-         t_new(i,k,j) = t_new(i,k,j) + mpten*(1.+R_v/R_d*qv(i,k,j))
+! pertubation theta_moist(new) = theta_dry(old)*(1+rv/rd qv(old))    +   ! term 1
+!                                delta theta_dry * (1+rv/rd qv(new)) +   ! term 2
+!                                (rv/rd)*delta qv * theta_dry(new)   -   ! term 3
+!                                300                                     ! term 4
+!                    
+         t_new(i,k,j) =  h_diabatic(i,k,j)*(1. + (R_v/R_d)*qv_diabatic(i,k,j)) + \
+                         mpten*(1. + (R_v/R_d)*qv(i,k,j)) + \
+                         (R_v/R_d)*qvten*th_phy(i,k,j) - T0
+         th_phy_m_t0(i,k,j) = (t_new(i,k,j)+T0)/(1.+(R_v/R_d)*qv(i,k,j)) - T0
 #endif
-         h_diabatic(i,k,j) =  mpten*(1.+R_v/R_d*qv(i,k,j))/dt
+         h_diabatic(i,k,j) =  ( mpten*(1. + (R_v/R_d)*qv(i,k,j)) + \
+                              (R_v/R_d)*qvten*th_phy(i,k,j) ) / dt
 !!!         ! KLUDGE:
 !!!         qvten = 0.0
 !!!         qcten = 0.0
@@ -6426,13 +6431,13 @@ END SUBROUTINE initialize_moist_old
 
 !==============================================================================
 
-SUBROUTINE theta_to_thetam_phy ( t_1 , moist_old ,                &
-                             t_tendf  , moist_tend ,          &
-                             ids, ide, jds, jde, kds, kde ,   &
-                             ims, ime, jms, jme, kms, kme ,   &
-                             its, ite, jts, jte, kts, kte     )
+SUBROUTINE conv_t_tendf_to_moist ( t_1 , moist_old ,                &
+                                   t_tendf  , moist_tend ,          &
+                                   ids, ide, jds, jde, kds, kde ,   &
+                                   ims, ime, jms, jme, kms, kme ,   &
+                                   its, ite, jts, jte, kts, kte     )
 
-   !  Convert dry potential temperature tendency to "moist" tendency.
+   !  Convert dry potential temperature to "moist" theta:
    !  theta_m = theta ( 1 + Rv/Rd Qv )
 
    IMPLICIT NONE
@@ -6440,27 +6445,26 @@ SUBROUTINE theta_to_thetam_phy ( t_1 , moist_old ,                &
    INTEGER , INTENT(IN) ::   ids, ide, jds, jde, kds, kde ,   &
                              ims, ime, jms, jme, kms, kme ,   &
                              its, ite, jts, jte, kts, kte     
-   REAL    , INTENT(IN   ) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist_tend, moist_old
-   REAL    , INTENT(IN   ) , DIMENSION(ims:ime,kms:kme,jms:jme) :: t_1
-   REAL    , INTENT(  OUT) , DIMENSION(ims:ime,kms:kme,jms:jme) :: t_tendf
+   REAL    , INTENT(IN   ) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist_tend, moist_old, t_1
+   REAL    , INTENT(INOUT) , DIMENSION(ims:ime,kms:kme,jms:jme) :: t_tendf
 
    !  Local variables
 
    INTEGER :: i , j , k
 
-   !  The t_tendf field is from the physics packages.  It is modified immediately after the
+   !  This dry tendency is from the physics packages.  It is modified immediately after the
    !  call to the physics schemes, and the remains constant for the remainder of the RK loops.
 
    DO j = jts , MIN(jte,jde-1)
       DO k = kts , kte-1
          DO i = its , MIN(ite,ide-1)
             t_tendf(i,k,j) = (1. + (R_v/R_d) * moist_old(i,k,j))*t_tendf(i,k,j) + &
-                             (R_v/R_d)*(t_1(i,k,j)+T0)/(1.+(R_v/R_d)*moist_old(i,k,j))*moist_tend(i,k,j)
+                             (R_v/R_d)*(t_1(i,k,j)+T0)/(1.+R_v/R_d*moist_old(i,k,j))*moist_tend(i,k,j)
          END DO
       END DO
    END DO
 
-END SUBROUTINE theta_to_thetam_phy
+END SUBROUTINE conv_t_tendf_to_moist
 
 !==============================================================================
 

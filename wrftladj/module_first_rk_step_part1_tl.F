@@ -19,7 +19,7 @@ CONTAINS
                              , ph_tendf, g_ph_tendf, mu_tendf, g_mu_tendf               &
                              , tke_tend, g_tke_tend                         &
                              , adapt_step_flag , curr_secs      &
-                             , psim , psih , wspd , gz1oz0 , chklowq &
+                             , psim , psih , gz1oz0 , chklowq &
                              , cu_act_flag , hol , th_phy , g_th_phy        &
                              , pi_phy, g_pi_phy, p_phy ,g_p_phy, t_phy ,g_t_phy  &
                              , dz8w , g_dz8w, p8w ,g_p8w, t8w ,g_t8w  &
@@ -96,7 +96,6 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_aerod),INTENT(INOUT)   :: aerod
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: psim
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: psih
-    REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: wspd
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: gz1oz0
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: chklowq
     LOGICAL ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: cu_act_flag
@@ -275,7 +274,7 @@ BENCH_START(g_pbl_driver_tim)
      &        ,U10=grid%u10 ,UZ0=grid%uz0 ,U_FRAME=grid%u_frame ,U_PHY=grid%u_phy ,U_PHYD=grid%g_u_phy &
      &        ,V10=grid%v10 ,VZ0=grid%vz0 ,V_FRAME=grid%v_frame ,V_PHY=grid%v_phy ,V_PHYD=grid%g_v_phy &
               ,T2=grid%t2 &
-     &        ,WARM_RAIN=grid%warm_rain                    ,WSPD=wspd          &
+     &        ,WARM_RAIN=grid%warm_rain                    ,WSPD=grid%wspd          &
      &        ,XICE=grid%xice   ,XLAND=grid%xland  ,Z=grid%z ,ZD=grid%g_z      &
      &        ,ZNT=grid%znt                                                    &
 ! paj: topo_wind

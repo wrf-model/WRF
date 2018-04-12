@@ -648,7 +648,7 @@ BENCH_END(g_set_phys_bc_tim)
                              , tke_tend,g_tke_tend                         &
                              , config_flags%use_adaptive_time_step         &
                              , curr_secs                 &
-                             , psim ,psih ,wspd  &
+                             , psim ,psih  &
                              , gz1oz0 , chklowq           &
                              , cu_act_flag , hol , th_phy ,g_th_phy                 &
                              , pi_phy ,g_pi_phy, p_phy ,g_p_phy, grid%t_phy ,grid%g_t_phy         &
@@ -692,7 +692,7 @@ BENCH_END(g_set_phys_bc_tim)
 !                 gz1oz0 ,g_gz1oz0 , br ,g_br , chklowq,g_chklowq     &
 !               , cu_act_flag , hol ,g_hol, th_phy,g_th_phy           &
 !!!!! REMOVE THE FOLLOWING 3 STATEMENTS WHEN CODING TL OF PHYSICS. Ning Pan, 2010-08-20
-               , psim ,  psim , psih ,  psih , wspd ,  wspd ,         &
+               , psim ,  psim , psih ,  psih ,         &
 !201602                 gz1oz0 ,  gz1oz0 , br ,  br , chklowq,  chklowq      &
 !201602: br became a state variable and was removed from the argument
                  gz1oz0 ,  gz1oz0 , chklowq,  chklowq      &

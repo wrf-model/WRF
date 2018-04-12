@@ -19,7 +19,7 @@ CONTAINS
                              , ph_tendf, a_ph_tendf, mu_tendf, a_mu_tendf        &
                              , tke_tend, a_tke_tend             &
                              , adapt_step_flag , curr_secs      &
-                             , psim , psih , wspd , gz1oz0 , chklowq &
+                             , psim , psih , gz1oz0 , chklowq &
                              , cu_act_flag , hol , th_phy , a_th_phy      &
                              , pi_phy , a_pi_phy , p_phy , a_p_phy , t_phy , a_t_phy &
                              , dz8w , a_dz8w , p8w , a_p8w , t8w , a_t8w   &
@@ -95,7 +95,6 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_aerod),INTENT(INOUT)   :: aerod
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: psim
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: psih
-    REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: wspd
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: gz1oz0
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: chklowq
     LOGICAL ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: cu_act_flag
@@ -337,7 +336,7 @@ BENCH_START(a_pbl_driver_tim)
      &        ,U10=grid%u10 ,UZ0=grid%uz0 ,U_FRAME=grid%u_frame ,U_PHY=grid%u_phy ,U_PHYB=grid%a_u_phy &
      &        ,V10=grid%v10 ,VZ0=grid%vz0 ,V_FRAME=grid%v_frame ,V_PHY=grid%v_phy ,V_PHYB=grid%a_v_phy &
               ,T2=grid%t2 &
-     &        ,WARM_RAIN=grid%warm_rain                    ,WSPD=wspd          &
+     &        ,WARM_RAIN=grid%warm_rain                    ,WSPD=grid%wspd          &
      &        ,XICE=grid%xice   ,XLAND=grid%xland  ,Z=grid%z ,ZB=grid%a_z      &
      &        ,ZNT=grid%znt                                                    &
 ! paj: topo_wind
@@ -405,6 +404,7 @@ BENCH_START(a_pbl_driver_tim)
      &        ,VAR2D=grid%var2d,OC12D=grid%oc12d     &
      &        ,OA1=grid%oa1,OA2=grid%oa2,OA3=grid%oa3,OA4=grid%oa4        &
      &        ,OL1=grid%ol1,OL2=grid%ol2,OL3=grid%ol3,OL4=grid%ol4        &
+     &        ,SINA=grid%sina, COSA=grid%cosa                             &
      &        ,MFSHCONV=grid%mfshconv                                     & 
      &        ,MASSFLUX_EDKF=grid%massflux_EDKF                           & 
      &        ,ENTR_EDKF=grid%entr_EDKF, DETR_EDKF=grid%detr_EDKF         &

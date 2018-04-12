@@ -662,7 +662,7 @@ BENCH_END(set_phys_bc_tim)
                              , tke_tend                         &
                              , config_flags%use_adaptive_time_step &
                              , curr_secs                        &
-                             , psim , psih , wspd , gz1oz0      &
+                             , psim , psih , gz1oz0             &
                              , chklowq                          &
                              , cu_act_flag , hol , th_phy       &
                              , pi_phy , p_phy , grid%t_phy      &
@@ -676,6 +676,7 @@ BENCH_END(set_phys_bc_tim)
                              , ipsy, ipey, jpsy, jpey, kpsy, kpey    &
                              , k_start , k_end                  &
                              , f_flux                           &
+                             , aerocu                           &
                             )
 
 #ifdef DM_PARALLEL
@@ -707,7 +708,7 @@ BENCH_END(set_phys_bc_tim)
                              , ph_tendf, mu_tendf               &
                              , tke_tend                         &
                              , adapt_step_flag , curr_secs      &
-                             , psim , psih , wspd , gz1oz0      &
+                             , psim , psih , gz1oz0             &
                              , chklowq                          &
                              , cu_act_flag , hol , th_phy       &
                              , pi_phy , p_phy , grid%t_phy      &
@@ -3890,7 +3891,17 @@ BENCH_START(micro_driver_tim)
       &        ,height=grid%height                                         &
       &        ,tempc=grid%tempc                                         &
       &        ,ccn_conc=grid%ccn_conc                                   & ! RAS
-                                                                          )
+      &        ,aerocu=aerocu                                            &
+      &        ,aercu_fct=config_flags%aercu_fct                         &
+      &        ,aercu_opt=config_flags%aercu_opt                         &
+      &        ,no_src_types_cu=grid%no_src_types_cu                     &
+         )
+!      &        ,PBL=grid%bl_pbl_physics,EFCG=grid%EFCG,EFIG=grid%EFIG,EFSG=grid%EFSG &
+!      &        ,WACT=grid%WACT,CCN1_GS=grid%CCN1_GS,CCN2_GS=grid%CCN2_GS,CCN3_GS=grid%CCN3_GS  &
+!      &        ,CCN4_GS=grid%CCN4_GS,CCN5_GS=grid%CCN5_GS,CCN6_GS=grid%CCN6_GS &
+!      &        ,CCN7_GS=grid%CCN7_GS,NR_CU=grid%NR_CU,QR_CU=grid%QR_CU,NS_CU=grid%NS_CU &
+!      &        ,QS_CU=grid%QS_CU,CU_UAF=grid%CU_UAF,mskf_refl_10cm=grid%mskf_refl_10cm)
+
 BENCH_END(micro_driver_tim)
 
 #if 0
@@ -7571,7 +7582,7 @@ BENCH_END(adj_rk_tend_tim)
 !                gz1oz0 ,a_gz1oz0 , br ,a_br , chklowq,a_chklowq     &
 !              , cu_act_flag , hol ,a_hol, th_phy,a_th_phy           &
 !!!!! REMOVE THE FOLLOWING 3 STATEMENTS WHEN CODING AD OF PHYSICS. Ning Pan, 2010-08-20
-              , psim ,  psim , psih ,  psih , wspd ,  wspd ,        &
+              , psim ,  psim , psih ,  psih ,       &
 !201602                gz1oz0 ,  gz1oz0 , br ,  br , chklowq,  chklowq     &
 !201602: br became a state variable and was removed from the argument
                 gz1oz0 ,  gz1oz0 , chklowq,  chklowq     &
@@ -7603,7 +7614,7 @@ BENCH_END(adj_rk_tend_tim)
                              , tke_tend, a_tke_tend             &
                              , config_flags%use_adaptive_time_step &
                              , curr_secs      &
-                             , psim , psih , wspd , gz1oz0      &
+                             , psim , psih ,  gz1oz0      &
                              , chklowq                          &
                              , cu_act_flag , hol , th_phy , a_th_phy      &
                              , pi_phy , a_pi_phy, p_phy , a_p_phy, grid%t_phy , grid%a_t_phy     &

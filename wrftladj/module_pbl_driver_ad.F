@@ -50,7 +50,7 @@ SUBROUTINE A_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 &  , kms, kme, i_start, i_end, j_start, j_end, kts, kte, num_tiles, hol, &
 &  mol, regime, gwd_opt, dtaux3d, dtaux3db, dtauy3d, dtauy3db, dusfcg, &
 &  dusfcgb, dvsfcg, dvsfcgb, var2d, oc12d, oa1, oa2, oa3, oa4, ol1, ol2, &
-&  ol3, ol4, qv_curr, qv_currb, qc_curr, qr_curr, qi_curr, qs_curr, &
+&  ol3, ol4, sina,cosa, qv_curr, qv_currb, qc_curr, qr_curr, qi_curr, qs_curr, &
 &  qg_curr, rqvblten, rqvbltenb, rqcblten, rqcbltenb, rqiblten, rqibltenb&
 &  , rqrblten, rqsblten, rqgblten, f_qv, f_qc, f_qr, f_qi, f_qs, f_qg, &
 &  frc_urb2d, a_u_bep, a_v_bep, a_t_bep, a_q_bep, b_u_bep, b_v_bep, &
@@ -439,7 +439,7 @@ SUBROUTINE A_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
   REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL :: dusfcgb, dvsfcgb
 !
   REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN) :: var2d, &
-&  oc12d, oa1, oa2, oa3, oa4, ol1, ol2, ol3, ol4
+&  oc12d, oa1, oa2, oa3, oa4, ol1, ol2, ol3, ol4, sina, cosa
 ! paj
 !mchen
   REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN) :: ctopo, &
@@ -675,7 +675,8 @@ SUBROUTINE A_PBL_DRIVER(itimestep, dt, u_frame, v_frame, bldt, curr_secs&
 &                rublten, rvblten=rvblten, dtaux3d=dtaux3d, dtauy3d=&
 &                dtauy3d, dusfcg=dusfcg, dvsfcg=dvsfcg, var2d=var2d, &
 &                oc12d=oc12d, oa2d1=oa1, oa2d2=oa2, oa2d3=oa3, oa2d4=oa4&
-&                , ol2d1=ol1, ol2d2=ol2, ol2d3=ol3, ol2d4=ol4, znu=znu, &
+&                , ol2d1=ol1, ol2d2=ol2, ol2d3=ol3, ol2d4=ol4, &
+&                SINA=sina,COSA=cosa, znu=znu, &
 &                znw=znw, p_top=p_top, cp=cp, g=g, rd=r_d, rv=&
 &                r_v, ep1=ep_1, pi=3.141592653, dt=dtbl, dx=dx, kpbl2d=&
 &                kpbl, itimestep=itimestep, ids=ids, ide=ide, jds=jds, &

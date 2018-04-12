@@ -2592,7 +2592,7 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
 !--- water, and DRYCAN is the fraction of vegetated area where
 !--- transpiration may take place.
 
-          WETCAN=min(0.25,(CST/SAT)**CN)
+          WETCAN=min(0.25,max(0.,(CST/SAT))**CN)
 !          if(lai > 1.) wetcan=wetcan/lai
           DRYCAN=1.-WETCAN
 
@@ -3618,7 +3618,7 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
             SNWE=0.
          ENDIF
 
-          WETCAN=min(0.25,(CST/SAT)**CN)
+          WETCAN=min(0.25,max(0.,(CST/SAT))**CN)
 !          if(lai > 1.) wetcan=wetcan/lai
           DRYCAN=1.-WETCAN
 

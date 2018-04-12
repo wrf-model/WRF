@@ -257,7 +257,7 @@ CONTAINS
         !$OMP END PARALLEL DO
       END IF HAILCAST
 
-      TRADITIONAL_FIELDS: IF ( config_flags%trad_fields == do_trad_fields ) THEN 
+      TRADITIONAL_FIELDS: IF ( config_flags%diag_nwp2 == do_trad_fields ) THEN 
          !$OMP PARALLEL DO   &
          !$OMP PRIVATE ( ij )
          DO ij = 1 , grid%num_tiles
@@ -268,7 +268,7 @@ CONTAINS
                U=grid%u_2                                           &
                ,V=grid%v_2                                          &
                ,W=grid%w_2                                          &
-               ,t=grid%t_2                                          &
+               ,t=grid%th_phy_m_t0                                  &
                ,qv=moist(:,:,:,P_QV)                                &
                ,zp=grid%ph_2                                        &
                ,zb=grid%phb                                         &
@@ -296,8 +296,10 @@ CONTAINS
                ,temperature=grid%temperature                        &
                ,pressure=grid%pressure                              &
                ,geoheight=grid%geoheight                            &
-               ,umgeo=grid%umgeo                                    &
-               ,vmgeo=grid%vmgeo                                    &
+               ,umet=grid%umet                                      &
+               ,vmet=grid%vmet                                      &
+               ,speed=grid%speed                                    &
+               ,dir=grid%dir                                        &
                !  Various indexes for declarations, loop bounds
                ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde   &
                ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme   &

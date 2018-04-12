@@ -18,7 +18,7 @@ CONTAINS
                     use_theta_m,                                    &
                     sealevelp,                                      &
                     temperature,pressure,geoheight,                 &
-                    umgeo,vmgeo,                                    &
+                    umet,vmet,speed,dir,                            &
                     ids,ide, jds,jde, kds,kde,                      &
                     ims,ime, jms,jme, kms,kme,                      &
                     ips,ipe, jps,jpe, kps,kpe,                      &
@@ -47,8 +47,10 @@ CONTAINS
       REAL   , INTENT(  OUT) ,  DIMENSION(ims:ime , kms:kme , jms:jme) :: temperature , &
                                                                           pressure    , &
                                                                           geoheight   , &
-                                                                          umgeo       , &
-                                                                          vmgeo
+                                                                          umet        , &
+                                                                          vmet        , &
+                                                                          speed       , &
+                                                                          dir
    
       !  Local variables
    
@@ -85,8 +87,24 @@ CONTAINS
    
                !  Earth relative winds
 
-               umgeo(i,k,j) = (u(i,k,j)+u(i+1,k,j))*cosa(i,j) - (v(i,k,j)+v(i,k,j+1))*sina(i,j)
-               vmgeo(i,k,j) = (u(i,k,j)+u(i+1,k,j))*sina(i,j) + (v(i,k,j)+v(i,k,j+1))*cosa(i,j)
+               umet(i,k,j) = (u(i,k,j)+u(i+1,k,j))*cosa(i,j) - (v(i,k,j)+v(i,k,j+1))*sina(i,j)
+               vmet(i,k,j) = (u(i,k,j)+u(i+1,k,j))*sina(i,j) + (v(i,k,j)+v(i,k,j+1))*cosa(i,j)
+   
+               !  Horizontal wind speed
+
+               speed(i,k,j) = SQRT ( umet(i,k,j)**2 + vmet(i,k,j)**2 )
+   
+               !  Direction
+
+               IF      ( ( umet(i,k,j) .EQ. 0. ) .AND. ( vmet(i,k,j) .EQ. 0. ) ) THEN
+                  dir(i,k,j) = 0.
+               ELSE IF ( ( umet(i,k,j) .EQ. 0. ) .AND. ( vmet(i,k,j) .GT. 0. ) ) THEN
+                  dir(i,k,j) = 180.
+               ELSE IF ( ( umet(i,k,j) .EQ. 0. ) .AND. ( vmet(i,k,j) .LT. 0. ) ) THEN
+                  dir(i,k,j) = 0.
+               ELSE
+                  dir(i,k,j) = 270. - atan2(vmet(i,k,j),umet(i,k,j)) * 180./3.14159265358979
+               END IF
 
             END DO i_loop_h
          END DO k_loop_h

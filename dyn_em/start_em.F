@@ -1970,7 +1970,7 @@ DEALLOCATE(z_at_q)
    ENDIF
 
 print *,'DO_TRAD_FIELDS = ',DO_TRAD_FIELDS
-   IF ( config_flags%trad_fields == DO_TRAD_FIELDS ) THEN
+   IF ( config_flags%diag_nwp2 == DO_TRAD_FIELDS ) THEN
       CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: TRAD_FIELDS' )
       CALL trad_fields ( &
                !  Input data for computing
@@ -2005,8 +2005,10 @@ print *,'DO_TRAD_FIELDS = ',DO_TRAD_FIELDS
                ,temperature=grid%temperature                        &
                ,pressure=grid%pressure                              &
                ,geoheight=grid%geoheight                            &
-               ,umgeo=grid%umgeo                                    &
-               ,vmgeo=grid%vmgeo                                    &
+               ,umet=grid%umet                                      &
+               ,vmet=grid%vmet                                      &
+               ,speed=grid%speed                                    &
+               ,dir=grid%dir                                        &
                !  Various indexes for declarations, loop bounds
                ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde   &
                ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme   &

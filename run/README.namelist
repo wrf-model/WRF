@@ -555,6 +555,7 @@ Namelist variables for controlling the adaptive time step option:
                                           also requires levsiz, paerlev, cam_abs_dim1/2 (see below)
                                      = 4, rrtmg scheme
                                        (Default values for GHG in V3.5: co2vmr=379.e-6, n2ovmr=319.e-9, ch4vmr=1774.e-9)
+                                     = 14, rrtmg-k scheme from KIAPS
                                      = 24, fast rrtmg scheme for GPU and MIC (since 3.7)
                                      = 5, Goddard longwave scheme
                                      = 7, FLG (UCLA) scheme 
@@ -569,6 +570,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 3, cam scheme
                                           also must set levsiz, paerlev, cam_abs_dim1/2 (see below)
                                      = 4, rrtmg scheme
+                                     = 14, rrtmg-k scheme from KIAPS
                                      = 24, fast rrtmg scheme for GPU and MIC (since 3.7)
                                      = 5, Goddard shortwave scheme
                                      = 7, FLG (UCLA) scheme
@@ -763,10 +765,12 @@ Namelist variables for controlling the adaptive time step option:
                                      = 7, Zhang-McFarlane scheme from CAM5 (CESM 1_0_1)
                                      = 10, Modified Kain-Fritsch scheme with trigger function based on PDFs (ARW only)
                                      = 11, Multi-scale Kain-Fritsch scheme
-                                     = 14, New GFS simplified Arakawa-Schubert scheme from YSU (ARW only)
+                                     = 14, A modified  GFS simplified Arakawa-Schubert scheme that enables NSAS to work 
+                                           in various model grids across gray-zone resolutions (from KIAPS,ARW only)
                                      = 16, A newer Tiedtke scheme
                                      = 94, 2015 GFS Simplified Arakawa-Schubert scheme (HWRF) 
                                      = 95, Previous GFS Simplified Arakawa-Schubert scheme (HWRF) 
+                                     = 96, Previous NEW GFS simplified Arakawa-Schubert scheme from YSU (ARW only)
                                      = 93, Grell-Devenyi ensemble scheme
                                      = 99, previous Kain-Fritsch scheme
 

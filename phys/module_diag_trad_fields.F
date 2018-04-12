@@ -77,9 +77,9 @@ CONTAINS
                   temperature(i,k,j) = ( ( t(i,k,j) + t0 ) * ( (pb(i,k,j)+pp(i,k,j)) / p1000mb ) ** rcp )
                END IF
  
-               !  Pressure
+               !  Hydrostatic ressure
 
-               pressure(i,k,j) = pb(i,k,j)+pp(i,k,j)
+               pressure(i,k,j) = p(i,k,j)
  
                !  Height
 

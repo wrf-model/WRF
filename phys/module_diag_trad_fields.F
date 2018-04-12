@@ -104,6 +104,12 @@ CONTAINS
                   dir(i,k,j) = 0.
                ELSE
                   dir(i,k,j) = 270. - atan2(vmet(i,k,j),umet(i,k,j)) * 180./3.14159265358979
+                  IF ( dir(i,k,j) .GE. 360. ) THEN
+                     dir(i,k,j) = dir(i,k,j) - 360.
+                  END IF
+                  IF ( dir(i,k,j) .LE.   0. ) THEN
+                     dir(i,k,j) = dir(i,k,j) + 360.
+                  END IF
                END IF
 
             END DO i_loop_h

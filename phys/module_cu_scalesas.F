@@ -837,31 +837,34 @@ CONTAINS
       real :: rr                     !zhang
       logical,save :: pert_sas_local            !zhang
       integer,save :: ens_random_seed_local,env_pp_local         !zhang
+      integer :: ensda_physics_pert !zhang
       real,save :: ens_sasamp_local         !zhang
       data ens_random_seed_local/0/
       data env_pp_local/0/
       CHARACTER(len=3) :: env_memb,env_pp
       if ( ens_random_seed_local .eq. 0 ) then
-         CALL getenv("ENSDA_PP", env_pp)
-         CALL getenv("ENSDA_MEMB", env_memb)
-         read(env_pp,'(i3.3)') env_pp_local
-         ens_random_seed_local=99
+         CALL nl_get_ensda_physics_pert(1,ensda_physics_pert)
+         ens_random_seed_local=ens_random_seed
+         env_pp_local=ensda_physics_pert
          pert_sas_local=.false.
          ens_sasamp_local=0.0
 ! env_pp=1: do physics perturbations for ensda members, ens_random_seed must be 99
          if ( env_pp_local .eq. 1 ) then
-            read(env_memb,'(i3.3)') ens_random_seed_local
-            pert_sas_local=.true.
-            ens_sasamp_local=ens_sasamp
-         else
+            if ( ens_random_seed .ne. 99 ) then
+               pert_sas_local=.true.
+               ens_sasamp_local=ens_sasamp
+            else
 ! ens_random_seed!=99 do physics perturbation for ensemble forecasts, env_pp  must be zero
-            if ( ens_random_seed_local  .ne. 99 ) then
+               ens_random_seed_local=ens_random_seed
+               pert_sas_local=pert_sas
+               ens_sasamp_local=ens_sasamp
+            endif
+         else
             ens_random_seed_local=ens_random_seed
             pert_sas_local=pert_sas
             ens_sasamp_local=ens_sasamp
-            endif
          endif
-         print*, "DESAS OLD ==", ens_random_seed_local,pert_sas_local,ens_sasamp_local
+         print*, "DESAS OLD ==", ens_random_seed_local,pert_sas_local,ens_sasamp_local,ensda_physics_pert
       endif
 #endif
 !
@@ -4733,31 +4736,34 @@ CONTAINS
       real :: rr                     !zhang
       logical,save :: pert_sas_local            !zhang
       integer,save :: ens_random_seed_local,env_pp_local         !zhang
+      integer :: ensda_physics_pert !zhang
       real,save :: ens_sasamp_local         !zhang
       data ens_random_seed_local/0/
       data env_pp_local/0/
       CHARACTER(len=3) :: env_memb,env_pp
       if ( ens_random_seed_local .eq. 0 ) then
-         CALL getenv("ENSDA_PP", env_pp)
-         CALL getenv("ENSDA_MEMB", env_memb)
-         read(env_pp,'(i3.3)') env_pp_local
-         ens_random_seed_local=99
+         CALL nl_get_ensda_physics_pert(1,ensda_physics_pert)
+         ens_random_seed_local=ens_random_seed
+         env_pp_local=ensda_physics_pert
          pert_sas_local=.false.
          ens_sasamp_local=0.0
 ! env_pp=1: do physics perturbations for ensda members, ens_random_seed must be 99
          if ( env_pp_local .eq. 1 ) then
-            read(env_memb,'(i3.3)') ens_random_seed_local
-            pert_sas_local=.true.
-            ens_sasamp_local=ens_sasamp
+            if ( ens_random_seed .ne. 99 ) then
+               pert_sas_local=.true.
+               ens_sasamp_local=ens_sasamp
+            else
+! ens_random_seed=99 do physics perturbation for ensemble forecasts, env_pp  must be zero
+               ens_random_seed_local=ens_random_seed
+               pert_sas_local=pert_sas
+               ens_sasamp_local=ens_sasamp
+            endif
          else
-! ens_random_seed!=99 do physics perturbation for ensemble forecasts, env_pp  must be zero
-            if ( ens_random_seed_local  .ne. 99 ) then
             ens_random_seed_local=ens_random_seed
             pert_sas_local=pert_sas
             ens_sasamp_local=ens_sasamp
-            endif
          endif
-         print*, "DESAS ==", ens_random_seed_local,pert_sas_local,ens_sasamp_local
+         print*, "DESAS ==", ens_random_seed_local,pert_sas_local,ens_sasamp_local,ensda_physics_pert
       endif
 #endif
 !
@@ -7014,31 +7020,35 @@ CONTAINS
       real :: rr                     !zhang
       logical,save :: pert_sas_local            !zhang
       integer,save :: ens_random_seed_local,env_pp_local         !zhang
+      integer :: ensda_physics_pert !zhang
       real,save :: ens_sasamp_local         !zhang
       data ens_random_seed_local/0/
       data env_pp_local/0/
       CHARACTER(len=3) :: env_memb,env_pp
       if ( ens_random_seed_local .eq. 0 ) then
-         CALL getenv("ENSDA_PP", env_pp)
-         CALL getenv("ENSDA_MEMB", env_memb)
-         read(env_pp,'(i3.3)') env_pp_local
-         ens_random_seed_local=99
+         CALL nl_get_ensda_physics_pert(1,ensda_physics_pert)
+         ens_random_seed_local=ens_random_seed
+         env_pp_local=ensda_physics_pert
          pert_sas_local=.false.
          ens_sasamp_local=0.0
 ! env_pp=1: do physics perturbations for ensda members, ens_random_seed must be 99
          if ( env_pp_local .eq. 1 ) then
-            read(env_memb,'(i3.3)') ens_random_seed_local
-            pert_sas_local=.true.
-            ens_sasamp_local=ens_sasamp
+            if ( ens_random_seed .ne. 99 ) then
+               pert_sas_local=.true.
+               ens_sasamp_local=ens_sasamp
+            else
+! ens_random_seed=99 do physics perturbation for ensemble forecasts, env_pp  must be zero
+               ens_random_seed_local=ens_random_seed
+               pert_sas_local=pert_sas
+               ens_sasamp_local=ens_sasamp
+            endif
          else
-! ens_random_seed!=99 do physics perturbation for ensemble forecasts, env_pp  must be zero
-            if ( ens_random_seed_local  .ne. 99 ) then
             ens_random_seed_local=ens_random_seed
             pert_sas_local=pert_sas
             ens_sasamp_local=ens_sasamp
-            endif
          endif
-         print*, "SHSAS ==", ens_random_seed_local,pert_sas_local,ens_sasamp_local
+
+         print*, "SHSAS ==", ens_random_seed_local,pert_sas_local,ens_sasamp_local,ensda_physics_pert
       endif
 #endif
 

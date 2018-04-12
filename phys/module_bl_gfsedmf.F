@@ -712,32 +712,35 @@ CONTAINS
       real*8 :: ran1           !zhang
       real :: rr
       logical,save :: pert_pbl_local !zhang
-      integer,save :: ens_random_seed_local,env_pp_local !zhang
+      integer,save :: ens_random_seed_local,env_pp_local!zhang
+      integer :: ensda_physics_pert !zhang
       real,save :: ens_pblamp_local   !zhang
       CHARACTER(len=3) :: env_memb,env_pp
       data ens_random_seed_local/0/
       data env_pp_local/0/
       if ( ens_random_seed_local .eq. 0 ) then
-         CALL getenv("ENSDA_PP", env_pp)
-         CALL getenv("ENSDA_MEMB", env_memb)
-         read(env_pp,'(i3.3)') env_pp_local
+         CALL nl_get_ensda_physics_pert(1,ensda_physics_pert)
+         ens_random_seed_local=ens_random_seed
+         env_pp_local=ensda_physics_pert
          pert_pbl_local=.false.
-         ens_random_seed_local=99
          ens_pblamp_local=0.0
 ! env_pp=1: do physics perturbations for ensda members, ens_random_seed must be 99
          if ( env_pp_local .eq. 1 ) then
-            read(env_memb,'(i3.3)') ens_random_seed_local
-            pert_pbl_local=.true.
-            ens_pblamp_local=ens_pblamp
+            if ( ens_random_seed .ne. 99 ) then
+               pert_pbl_local=.true.
+               ens_pblamp_local=ens_pblamp
+            else
+! ens_random_seed=99 do physics perturbation for ensemble forecasts, env_pp must be zero
+               ens_random_seed_local=ens_random_seed
+               pert_pbl_local=pert_pbl
+               ens_pblamp_local=ens_pblamp
+            endif
          else
-! ens_random_seed!=99 do physics perturbation for ensemble forecasts, env_pp must be zero
-            if ( ens_random_seed_local  .ne. 99 ) then
             ens_random_seed_local=ens_random_seed
             pert_pbl_local=pert_pbl
             ens_pblamp_local=ens_pblamp
-            endif
          endif
-       print*,"PBL==",ens_random_seed_local,pert_pbl_local,ens_pblamp_local
+       print*,"PBL==",ens_random_seed_local,pert_pbl_local,ens_pblamp_local,ensda_physics_pert
 !      print*, "zhang in pbl= one time ", pert_pbl_local,ens_random_seed_local, ens_pblamp_local
       endif
 !      print*, "zhang in pbl=",pert_pbl_local, ens_random_seed_local, ens_pblamp_local

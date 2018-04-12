@@ -1511,6 +1511,7 @@ rconfig   logical lcurr_sf                namelist,physics     max_domains    .f
 ifdef HWRF=1
 #added by Zhan Zhang for perturbings for SAS and PBL
 rconfig   integer ens_random_seed         namelist,physics     max_domains   -1       irh   "ens_random_seed"  "ensemble random number generator initial seed"
+rconfig   integer ensda_physics_pert      namelist,physics     max_domains    0       irh   "ensda_physics_pert"  "0: no stochastic phys pert., 1: yes"
 rconfig   logical pert_sas                namelist,physics      1        .false.      irh   "pert_sas"  "ensemble choice:F, no pert, T, pert SAS"
 rconfig   logical pert_pbl                namelist,physics      1        .false.      irh   "pert_pbl"  "ensemble choice:F, no pert, T, pert PBL"
 rconfig   logical pert_Cd                 namelist,physics      1        .false.      irh   "pert_Cd"  "ensemble choice:F, no pert, T, pert Cd"

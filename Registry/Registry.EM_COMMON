@@ -230,9 +230,9 @@ i1       real   ph_tendf       ikj     dyn_em      1         Z
 i1       real   ph_save        ikj     dyn_em      1         Z 
 
 # Potential Temperature
-#KAL added d (interpolating down to t_init) for the vertical nesting code
+state    real   th_phy_m_t0    ikj      dyn_em      1         -     h   "t"      "perturbation potential temperature theta-t0" "K"
 state    real   t              ikjb     dyn_em      2         -     \
-       i0rhusdf=(bdy_interp:dt)   "t"      "perturbation potential temperature (theta-t0)" "K"
+       i0rhusdf=(bdy_interp:dt)   "moist_theta-T0"      "perturbation moist potential temperature (1+Rv/Rd Qv)*(theta-t0)" "K"
 
 state    real   t_init         ikj     dyn_em      1         -      ird       "t_init" "initial potential temperature" "K"
 i1       real   t_tend         ikj     dyn_em      1         -  
@@ -2993,7 +2993,7 @@ halo      HALO_EM_SCALAR_E_5 dyn_em 48:scalar
 halo      HALO_EM_SCALAR_E_7 dyn_em 80:scalar
 halo      HALO_TOPOSHAD phys 24:ht_shad
 halo      HALO_EM_HORIZ_INTERP dyn_em 24:t_2,ph_2,ht,t_max_p,ght_max_p,max_p,t_min_p,ght_min_p,min_p
-halo      HALO_EM_THETAM dyn_em 48:t_1,t_2,h_diabatic
+halo      HALO_EM_THETAM dyn_em 48:h_diabatic
 
 halo      HALO_EM_MOIST_OLD_E_3 dyn_em 24:moist_old
 halo      HALO_EM_MOIST_OLD_E_5 dyn_em 48:moist_old
@@ -3070,7 +3070,7 @@ period    PERIOD_BDY_EM_D3 dyn_em 3:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tk
 period    PERIOD_EM_DA dyn_em 2:ru_m,rv_m,ww_m,mut,muts
 period    PERIOD_EM_F dyn_em 2:muus,muvs
 period    PERIOD_EM_G dyn_em 2:msftx,msfux,msfvy
-period    PERIOD_EM_THETAM dyn_em 3:t_1,t_2,h_diabatic
+period    PERIOD_EM_THETAM dyn_em 3:h_diabatic
 
 #
 #swap SWAP_ETAMP_NEW  dyn_em 1:dz8w,p_phy,pi_phy,rho,th_phy,moist,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,RAINNC,RAINNCV,SR,LOWLYR

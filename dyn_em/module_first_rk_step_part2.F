@@ -19,11 +19,11 @@ CONTAINS
                              , tke_tend                         &
                              , adapt_step_flag , curr_secs      &
                              , psim , psih , gz1oz0 , chklowq   &
-                             , cu_act_flag , hol , th_phy        &
-                             , pi_phy , p_phy , t_phy     &
-                             , dz8w , p8w , t8w           &
-                             , nba_mij, n_nba_mij         & !JDM
-                             , nba_rij, n_nba_rij         & !JDM
+                             , cu_act_flag , hol , th_phy       &
+                             , pi_phy , p_phy , t_phy           &
+                             , dz8w , p8w , t8w                 &
+                             , nba_mij, n_nba_mij               & !JDM
+                             , nba_rij, n_nba_rij               & !JDM
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &
@@ -750,8 +750,10 @@ BENCH_END(update_phy_ten_tim)
 
 =============================================================
 INTENTIONALLY PLACED HERE TO BREAK COMPILE
-The DAMPTOP routine needs to have 1d column arrays c1 and c2
+1. The DAMPTOP routine needs to have 1d column arrays c1 and c2
 to correctly use the column pressures mut, muu, and muv.
+2. The DAMPTOP routine needs to have the grid%t_2 evaluated
+to see if perturbation of moist potential temperature is OK.
 =============================================================
 
        IF ( (config_flags%damp_opt == 101) .OR. &
@@ -928,7 +930,7 @@ BENCH_END(hor_diff_tim)
                    grid%mut, grid%muu, grid%muv, grid%c1h, grid%c2h,    &
                    grid%msftx, grid%msfty, grid%msfux, grid%msfuy, grid%msfvx, grid%msfvy, &
                    p_phy, t_tendf, t0,                                  &
-                   grid%u_2, grid%v_2, grid%t_2,                        &
+                   grid%u_2, grid%v_2, grid%th_phy_m_t0,                &
                    moist(ims,kms,jms,P_QV),                             &
                    grid%pb, grid%p_top, grid%p, grid%phb, grid%ph_2,    &
                    grid%uratx, grid%vratx, grid%tratx,                  &

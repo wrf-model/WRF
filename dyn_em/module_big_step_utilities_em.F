@@ -998,7 +998,7 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
   ! Local stuff
 
   INTEGER :: i, j, k, kk, itf, jtf, ktf, ispe
-  REAL    :: qvf, qtot, qf1, qf2
+  REAL    :: qtot, qf1, qf2
   REAL, DIMENSION( its:ite) :: temp,cpovcv_v
   REAL    :: pfu, phm, pfd
 
@@ -1023,9 +1023,9 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
   cpovcv_v = cpovcv
 #endif
 
-  IF (non_hydrostatic) THEN
+  nonhydro : IF (non_hydrostatic) THEN
 
-      IF (hypsometric_opt == 1) THEN
+      hypso_nonhydro : IF (hypsometric_opt == 1) THEN
         DO j=jts,jtf
         DO k=kts,ktf
         DO i=its,itf
@@ -1033,7 +1033,7 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
         END DO
         END DO
         END DO
-      ELSE IF (hypsometric_opt == 2) THEN
+      ELSE IF (hypsometric_opt == 2) THEN hypso_nonhydro
 
         ! The relation used to get specific volume, al, is: al = -dZ/dp,
         ! where dp = mut * d(eta). The pressure depth, dp, is replaced with
@@ -1052,17 +1052,16 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
         END DO
         END DO
         END DO
-      ELSE
+      ELSE hypso_nonhydro
         CALL wrf_error_fatal ( 'calc_p_rho_phi: hypsometric_opt should be 1 or 2' )
-      END IF
+      END IF hypso_nonhydro
 
-      IF (n_moist >= PARAM_FIRST_SCALAR ) THEN  
+      moist_nonhydro : IF (n_moist >= PARAM_FIRST_SCALAR ) THEN  
 
         DO j=jts,jtf
         DO k=kts,ktf
         DO i=its,itf
-          qvf = 1.+rvovrd*moist(i,k,j,P_QV)
-          temp(i)=(r_d*(t0+t(i,k,j))*qvf)/(p0*(al(i,k,j)+alb(i,k,j)))
+          temp(i)=(r_d*(t0+t(i,k,j)))/(p0*(al(i,k,j)+alb(i,k,j)))
         ENDDO
 #ifdef INTELMKL
         CALL VPOWX ( itf-its+1, temp(its), cpovcv, p(its,k,j) )
@@ -1076,7 +1075,7 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
         ENDDO
         ENDDO
 
-      ELSE
+      ELSE moist_nonhydro           
 
         DO j=jts,jtf
         DO k=kts,ktf
@@ -1088,14 +1087,14 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
         ENDDO
         ENDDO
 
-      END IF
+      END IF moist_nonhydro
 
-   ELSE
+   ELSE nonhydro
 
 !  hydrostatic pressure, al, and ph1 calc; WCS, 5 sept 2001
 
 
-      IF (n_moist >= PARAM_FIRST_SCALAR ) THEN  
+      moist_hydro : IF (n_moist >= PARAM_FIRST_SCALAR ) THEN  
 
         DO j=jts,jtf
 
@@ -1110,8 +1109,7 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
             qf1 = qtot*qf2
 
             p(i,k,j) = - 0.5*((c1(k)*mu(i,j))+qf1*(c1(k)*muts(i,j)+c2(k)))/rdnw(k)/qf2
-            qvf = 1.+rvovrd*moist(i,k,j,P_QV)
-            al(i,k,j) = (r_d/p1000mb)*(t(i,k,j)+t0)*qvf* &
+            al(i,k,j) = (r_d/p1000mb)*(t(i,k,j)+t0)* &
                 (((p(i,k,j)+pb(i,k,j))/p1000mb)**cvpm) - alb(i,k,j)
 
           ENDDO
@@ -1127,15 +1125,14 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
             qf1 = qtot*qf2
 
             p(i,k,j) = p(i,k+1,j) - ((c1(k)*mu(i,j)) + qf1*(c1(k)*muts(i,j)+c2(k)))/qf2/rdn(k+1)
-            qvf = 1.+rvovrd*moist(i,k,j,P_QV)
-            al(i,k,j) = (r_d/p1000mb)*(t(i,k,j)+t0)*qvf* &
+            al(i,k,j) = (r_d/p1000mb)*(t(i,k,j)+t0)* &
                         (((p(i,k,j)+pb(i,k,j))/p1000mb)**cvpm) - alb(i,k,j)
             ENDDO
           ENDDO
 
         ENDDO
 
-      ELSE
+      ELSE moist_hydro
 
         DO j=jts,jtf
 
@@ -1147,8 +1144,7 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
             qf1 = qtot*qf2
 
             p(i,k,j) = - 0.5*((c1(k)*mu(i,j))+qf1*(c1(k)*muts(i,j)+c2(k)))/rdnw(k)/qf2
-            qvf = 1.
-            al(i,k,j) = (r_d/p1000mb)*(t(i,k,j)+t0)*qvf* &
+            al(i,k,j) = (r_d/p1000mb)*(t(i,k,j)+t0)* &
                 (((p(i,k,j)+pb(i,k,j))/p1000mb)**cvpm) - alb(i,k,j)
 
           ENDDO
@@ -1161,17 +1157,16 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
             qf1 = qtot*qf2
 
             p(i,k,j) = p(i,k+1,j) - ((c1(k)*mu(i,j)) + qf1*(c1(k)*muts(i,j)+c2(k)))/qf2/rdn(k+1)
-            qvf = 1.
-            al(i,k,j) = (r_d/p1000mb)*(t(i,k,j)+t0)*qvf* &
+            al(i,k,j) = (r_d/p1000mb)*(t(i,k,j)+t0)* &
                         (((p(i,k,j)+pb(i,k,j))/p1000mb)**cvpm) - alb(i,k,j)
             ENDDO
           ENDDO
 
         ENDDO
 
-     END IF
+     END IF moist_hydro
 
-     IF (hypsometric_opt == 1) THEN
+     hypso_hydro : IF (hypsometric_opt == 1) THEN
         DO j=jts,jtf
           DO kk=2,ktf+1  ! integrate hydrostatic equation for geopotential
             k = kk-1
@@ -1182,7 +1177,7 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
             ENDDO
           ENDDO
         ENDDO
-     ELSE
+     ELSE hypso_hydro
 
      ! Revised hypsometric eq.: dZ=-al*p*dLOG(p), where p is dry pressure
 
@@ -1207,9 +1202,9 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
         END DO
       END DO
 
-     END IF
+     END IF hypso_hydro
 
-   END IF
+   END IF nonhydro
 
 END SUBROUTINE calc_p_rho_phi
 
@@ -4699,7 +4694,8 @@ END SUBROUTINE pole_point_bc
                          c1h, c2h, c1f, c2f,                          &
                          u, v, p, pb, alt, ph,                        &  ! input
                          phb, t, moist, n_moist,                      &  ! input
-                         rho, th_phy, p_phy , pi_phy ,                &  ! output
+                         rho, th_phy, th_phy_m_t0,                    &  ! output
+                         p_phy , pi_phy ,                             &  ! output
                          u_phy, v_phy, p8w, t_phy, t8w,               &  ! output
                          z, z_at_w, dz8w,                             &  ! output
                          p_hyd, p_hyd_w, dnw,                         &  ! output
@@ -4731,6 +4727,7 @@ END SUBROUTINE pole_point_bc
                                                                 p8w, &
                                                               t_phy, &
                                                              th_phy, &
+                                                        th_phy_m_t0, &
                                                                 t8w, &
                                                                 rho, &
                                                                   z, &
@@ -4796,7 +4793,8 @@ END SUBROUTINE pole_point_bc
     do k = k_start, k_end
     do i = i_start, i_end
 
-      th_phy(i,k,j) = t(i,k,j) + t0
+      th_phy(i,k,j) = (t(i,k,j)+t0)/(1.+R_v/R_d*moist(i,k,j,P_QV))
+      th_phy_m_t0(i,k,j) = th_phy(i,k,j)-t0
       p_phy(i,k,j) = p(i,k,j) + pb(i,k,j)
       pi_phy(i,k,j) = (p_phy(i,k,j)/p1000mb)**rcp
       t_phy(i,k,j) = th_phy(i,k,j)*pi_phy(i,k,j)
@@ -5428,9 +5426,10 @@ END SUBROUTINE phy_prep_part2
      DO i = i_start, i_end
 
 #ifdef REVERT
+intentional compiler error, t_new is moist, h_diabatic is moist
        t_new(i,k,j) = t_new(i,k,j)-h_diabatic(i,k,j)*dt
 #endif
-       th_phy(i,k,j) = t_new(i,k,j) + t0
+       th_phy(i,k,j) = (t_new(i,k,j) + t0) / (1. + (R_v/R_d) * qv(i,k,j))
        h_diabatic(i,k,j) = th_phy(i,k,j)
 #if ( WRFPLUS == 1 )
        if ( P_QV >= PARAM_FIRST_SCALAR ) then
@@ -5456,7 +5455,7 @@ END SUBROUTINE phy_prep_part2
      ENDDO
      ENDDO
 
-!  interp t and p at w points
+!  interp p at w points
 
     do j = j_start,j_end
     do k = 2, k_end
@@ -5466,7 +5465,7 @@ END SUBROUTINE phy_prep_part2
     enddo
     enddo
 
-!  extrapolate p and t to surface and top.
+!  extrapolate p to surface and top.
 !  we'll use an extrapolation in z for now
 
     do j = j_start,j_end
@@ -5502,6 +5501,7 @@ END SUBROUTINE phy_prep_part2
                                        th_phy, h_diabatic, dt,    &
                                        qv,qv_diabatic,            &
                                        qc,qc_diabatic,            &
+                                       th_phy_m_t0,               &
                                        config_flags,              &
 #if ( WRF_DFI_RADAR == 1 )
                                        dfi_tten_rad,dfi_stage,    &
@@ -5528,6 +5528,9 @@ END SUBROUTINE phy_prep_part2
                                                   h_diabatic, &
                                                  qv_diabatic, &
                                                  qc_diabatic
+
+   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),        &
+         INTENT(  OUT) ::                         th_phy_m_t0
 
    REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),        &
          INTENT(IN   ) ::                           qv,  &
@@ -5567,11 +5570,6 @@ END SUBROUTINE phy_prep_part2
     i_end   = min( ite,ide-1 )
     j_start = jts    
     j_end   = min( jte,jde-1 )
-!      i_start=max(its,ids+4)
-!      i_end=min(ite,ide-5)
-!      j_start=max(jts,jds+4)
-!      j_end=min(jte,jde-5)
-
     k_start = kts
     k_end = min( kte, kde-1 )
 
@@ -5616,6 +5614,7 @@ END SUBROUTINE phy_prep_part2
           mpten=max(-config_flags%mp_tend_lim*dt, mpten)
 
 #if ( WRF_DFI_RADAR == 1 )
+compiler error, not handled yet
        if(k < k_end ) then
          if(dfi_tten_max < dfi_tten_rad(i,k,j) ) dfi_tten_max = dfi_tten_rad(i,k,j)
          if(old_max < (th_phy(i,k,j)-h_diabatic(i,k,j)) ) old_max=th_phy(i,k,j)-h_diabatic(i,k,j)
@@ -5633,9 +5632,18 @@ END SUBROUTINE phy_prep_part2
           ENDIF
        ENDIF
 #else
-         t_new(i,k,j) = t_new(i,k,j) + mpten
+! pertubation theta_moist(new) = theta_dry(old)*(1+rv/rd qv(old))    +   ! term 1
+!                                delta theta_dry * (1+rv/rd qv(new)) +   ! term 2
+!                                (rv/rd)*delta qv * theta_dry(new)   -   ! term 3
+!                                300                                     ! term 4
+!                    
+         t_new(i,k,j) =  h_diabatic(i,k,j)*(1. + (R_v/R_d)*qv_diabatic(i,k,j)) + \
+                         mpten*(1. + (R_v/R_d)*qv(i,k,j)) + \
+                         (R_v/R_d)*qvten*th_phy(i,k,j) - T0
+         th_phy_m_t0(i,k,j) = (t_new(i,k,j)+T0)/(1.+(R_v/R_d)*qv(i,k,j)) - T0
 #endif
-         h_diabatic(i,k,j) =  mpten/dt
+         h_diabatic(i,k,j) =  ( mpten*(1. + (R_v/R_d)*qv(i,k,j)) + \
+                              (R_v/R_d)*qvten*th_phy(i,k,j) ) / dt
 !!!         ! KLUDGE:
 !!!         qvten = 0.0
 !!!         qcten = 0.0
@@ -6423,15 +6431,11 @@ END SUBROUTINE initialize_moist_old
 
 !==============================================================================
 
-SUBROUTINE theta_to_thetam ( t_1 , moist_old ,                &
-                             t_tendf  , moist_tend ,          &
-                             t_2 , moist ,                    &
-                             h_diabatic ,                     &
-                             itimestep ,                      &
-                             rk_step ,                        &
-                             ids, ide, jds, jde, kds, kde ,   &
-                             ims, ime, jms, jme, kms, kme ,   &
-                             its, ite, jts, jte, kts, kte     )
+SUBROUTINE conv_t_tendf_to_moist ( t_1 , moist_old ,                &
+                                   t_tendf  , moist_tend ,          &
+                                   ids, ide, jds, jde, kds, kde ,   &
+                                   ims, ime, jms, jme, kms, kme ,   &
+                                   its, ite, jts, jte, kts, kte     )
 
    !  Convert dry potential temperature to "moist" theta:
    !  theta_m = theta ( 1 + Rv/Rd Qv )
@@ -6441,75 +6445,26 @@ SUBROUTINE theta_to_thetam ( t_1 , moist_old ,                &
    INTEGER , INTENT(IN) ::   ids, ide, jds, jde, kds, kde ,   &
                              ims, ime, jms, jme, kms, kme ,   &
                              its, ite, jts, jte, kts, kte     
-   INTEGER , INTENT(IN) ::   rk_step, itimestep
-   REAL    , INTENT(IN   ) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist, moist_tend
-   REAL    , INTENT(INOUT) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist_old
-   REAL    , INTENT(INOUT) , DIMENSION(ims:ime,kms:kme,jms:jme) :: t_1, t_tendf, t_2, h_diabatic
+   REAL    , INTENT(IN   ) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist_tend, moist_old, t_1
+   REAL    , INTENT(INOUT) , DIMENSION(ims:ime,kms:kme,jms:jme) :: t_tendf
 
    !  Local variables
 
    INTEGER :: i , j , k
 
-   !  First RK loop, this info is from the physics packages.  It is modified immediately after the
+   !  This dry tendency is from the physics packages.  It is modified immediately after the
    !  call to the physics schemes, and the remains constant for the remainder of the RK loops.
 
-   IF ( rk_step .EQ. 1 ) THEN
-      DO j = jts , MIN(jte,jde-1)
-         DO k = kts , kte-1
-            DO i = its , MIN(ite,ide-1)
-               t_tendf(i,k,j) = (1. + (R_v/R_d) * moist_old(i,k,j))*t_tendf(i,k,j) + (R_v/R_d)*(t_1(i,k,j)+T0)*moist_tend(i,k,j)
-               h_diabatic(i,k,j) =  (1. + (R_v/R_d) * moist_old(i,k,j))*h_diabatic(i,k,j)
-            END DO
-         END DO
-      END DO
-   END IF
-
-   !  T at time period 1 and 2 are modified in the small steps, so they are each converted from dry to moist.
-
    DO j = jts , MIN(jte,jde-1)
       DO k = kts , kte-1
          DO i = its , MIN(ite,ide-1)
-            t_1(i,k,j) = ( t_1(i,k,j) + T0 ) * (1. + (R_v/R_d) * moist_old(i,k,j)) - T0
-            t_2(i,k,j) = ( t_2(i,k,j) + T0 ) * (1. + (R_v/R_d) * moist(i,k,j))     - T0
+            t_tendf(i,k,j) = (1. + (R_v/R_d) * moist_old(i,k,j))*t_tendf(i,k,j) + &
+                             (R_v/R_d)*(t_1(i,k,j)+T0)/(1.+R_v/R_d*moist_old(i,k,j))*moist_tend(i,k,j)
          END DO
       END DO
    END DO
 
-END SUBROUTINE theta_to_thetam
-
-!==============================================================================
-
-SUBROUTINE thetam_to_theta ( t_1 , moist_old ,                &
-                             t_2 , moist ,                    &
-                             ids, ide, jds, jde, kds, kde ,   &
-                             ims, ime, jms, jme, kms, kme ,   &
-                             its, ite, jts, jte, kts, kte     )
-
-   !  Convert moist potential temperature to dry theta:
-   !  theta = theta_m / ( 1 + Rv/Rd Qv )
-
-   IMPLICIT NONE
-
-   INTEGER , INTENT(IN) ::   ids, ide, jds, jde, kds, kde ,   &
-                             ims, ime, jms, jme, kms, kme ,   &
-                             its, ite, jts, jte, kts, kte     
-   REAL    , INTENT(IN   ) , DIMENSION(ims:ime,kms:kme,jms:jme) :: moist, moist_old
-   REAL    , INTENT(INOUT) , DIMENSION(ims:ime,kms:kme,jms:jme) :: t_1, t_2
-
-   !  Local variables
-
-   INTEGER :: i , j , k
-
-   DO j = jts , MIN(jte,jde-1)
-      DO k = kts , kte-1
-         DO i = its , MIN(ite,ide-1)
-            t_1(i,k,j) = -T0 + (t_1(i,k,j)+T0)/(1. + (R_v/R_d) * moist_old(i,k,j))
-            t_2(i,k,j) = -T0 + (t_2(i,k,j)+T0)/(1. + (R_v/R_d) * moist(i,k,j))
-         END DO
-      END DO
-   END DO
-
-END SUBROUTINE thetam_to_theta
+END SUBROUTINE conv_t_tendf_to_moist
 
 !==============================================================================
 

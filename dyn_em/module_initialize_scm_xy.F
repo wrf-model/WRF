@@ -604,6 +604,19 @@ CONTAINS
     grid%z_base(k) = 0.5*(grid%phb(1,k,1)+grid%phb(1,k+1,1)+grid%ph_1(1,k,1)+grid%ph_1(1,k+1,1))/g
   ENDDO
 
+ !  Turn dry potential temperature into moist potential temperature
+      !  at the very end of this routine
+      !  This field will be in the model IC and and used to construct the 
+      !  BC file.
+
+      DO J  = jts, min(jde-1,jte)
+         DO K = kts, kte-1
+            DO I = its, min(ide-1,ite)
+               grid%t_2(i,k,j) = ( grid%t_2(i,k,j) + T0 ) * (1. + (R_v/R_d) * moist(i,k,j,p_qv)) - T0
+            END DO
+         END DO
+      END DO
+ 
   RETURN
 
  END SUBROUTINE init_domain_rk

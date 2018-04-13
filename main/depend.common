@@ -757,6 +757,7 @@ module_diagnostics_driver.o: \
 		module_diag_afwa.o 			\
 		module_diag_hailcast.o 			\
                 module_diag_rasm.o                      \
+                module_diag_trad_fields.o               \
 		../frame/module_comm_dm.o		\
 		../frame/module_state_description.o 	\
 		../frame/module_domain.o 		\
@@ -797,6 +798,10 @@ module_diag_hailcast.o: \
 
 module_diag_rasm.o: \
                 module_cam_shr_const_mod.o
+
+module_diag_trad_fields.o: \
+		../phys/module_diag_afwa.o		\
+		../share/module_model_constants.o
 
 module_diag_refl.o: \
 		../frame/module_dm.o			\

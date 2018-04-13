@@ -1684,3 +1684,24 @@ Assuming that the WRF and real codes have been built with the HVC compile-time o
 2. To turn OFF the HVC
 &dynamics
  hybrid_opt         = 0,
+
+
+
+Traditional / full fields model output
+
+The ARW WRF model output may be modified at run-time to also include a stream that contains
+more traditional fields: temperature, pressure, geopotential height, etc. The flag needs to 
+be activated in the namelist (diag_nwp2 = 1). In the registry.trad_fields, the output stream 
+is "h1", so that stream needs to be explicitly requested in the namelist.input file.
+
+ &diags
+ diag_nwp2 = 1
+ /
+
+ &time_control
+ io_form_auxhist1                    = 2
+ auxhist1_interval                   = 180,  30,   30,
+ frames_per_auxhist1                 = 1,     1,    1,
+ auxhist1_outname                    = "wrf_trad_fields_d<domain>_<date>"
+ /
+

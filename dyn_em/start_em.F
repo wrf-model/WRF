@@ -39,6 +39,7 @@
 #endif
    USE module_diag_pld, ONLY : pld
    USE module_diag_zld, ONLY : zld
+   USE module_trad_fields, ONLY : trad_fields
 
 !!debug
 !USE module_compute_geop
@@ -1940,6 +1941,53 @@ DEALLOCATE(z_at_q)
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde    &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme    &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte    )
+   ENDIF
+
+print *,'DO_TRAD_FIELDS = ',DO_TRAD_FIELDS
+   IF ( config_flags%diag_nwp2 == DO_TRAD_FIELDS ) THEN
+      CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: TRAD_FIELDS' )
+      CALL trad_fields ( &
+               !  Input data for computing
+               U=grid%u_2                                           &
+               ,V=grid%v_2                                          &
+               ,W=grid%w_2                                          &
+               ,t=grid%t_2                                          &
+               ,qv=moist(:,:,:,P_QV)                                &
+               ,zp=grid%ph_2                                        &
+               ,zb=grid%phb                                         &
+               ,pp=grid%p                                           &
+               ,pb=grid%pb                                          &
+               ,p=grid%p_hyd                                        &
+               ,pw=grid%p_hyd_w                                     &
+               !  Map factors, coriolis for diags
+               ,msfux=grid%msfux                                    &
+               ,msfuy=grid%msfuy                                    &
+               ,msfvx=grid%msfvx                                    &
+               ,msfvy=grid%msfvy                                    &
+               ,msftx=grid%msftx                                    &
+               ,msfty=grid%msfty                                    &
+               ,f=grid%f                                            &
+               ,e=grid%e                                            &
+               ,sina=grid%sina                                      &
+               ,cosa=grid%cosa                                      &
+               !  Terrestrial data                
+               ,ht=grid%ht                                          &
+               !  Namelist info
+               ,use_theta_m=config_flags%use_theta_m                &
+               !  The diagnostic output variables
+               ,sealevelp=grid%sealevelp                            &
+               ,temperature=grid%temperature                        &
+               ,pressure=grid%pressure                              &
+               ,geoheight=grid%geoheight                            &
+               ,umet=grid%umet                                      &
+               ,vmet=grid%vmet                                      &
+               ,speed=grid%speed                                    &
+               ,dir=grid%dir                                        &
+               !  Various indexes for declarations, loop bounds
+               ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde   &
+               ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme   &
+               ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe   &
+               ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte   )
    ENDIF
 
 

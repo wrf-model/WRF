@@ -45,7 +45,8 @@ SUBROUTINE solve_em ( grid , config_flags  &
                  ,period_bdy_em_tracer2_sub,period_bdy_em_tracer_old_sub                   &
                  ,period_bdy_em_tracer_sub,period_em_da_sub,period_em_hydro_uv_sub         &
                  ,period_em_f_sub,period_em_g_sub                                          &
-                 ,halo_em_f_1_sub,halo_em_init_4_sub,halo_em_thetam_sub,period_em_thetam_sub
+                 ,halo_em_f_1_sub,halo_em_init_4_sub,halo_em_thetam_sub,period_em_thetam_sub &
+                 ,halo_em_d_pv_sub
 #endif
    USE module_utility
 ! Mediation layer modules
@@ -750,6 +751,7 @@ BENCH_END(set_phys_bc_tim)
                              , ipsy, ipey, jpsy, jpey, kpsy, kpey    &
                              , k_start , k_end                  &
                              , f_flux                           &
+                             , aerocu                           &
                             )
 
 #ifdef DM_PARALLEL
@@ -2552,6 +2554,12 @@ BENCH_START(chem_adv_tim)
          ENDDO chem_tile_loop_1
          !$OMP END PARALLEL DO
 
+if ( config_flags%do_pvozone ) then
+#ifdef DM_PARALLEL
+#  include "HALO_EM_D_PV.inc"
+#endif
+end if
+
          !$OMP PARALLEL DO   &
          !$OMP PRIVATE ( ij, tenddec )
 
@@ -2610,14 +2618,17 @@ BENCH_START(chem_adv_tim)
                                      grid%have_bcs_chem,      &
                                      grid%ru_m, grid%rv_m, config_flags,grid%alt,       &
                                      grid%t_1,grid%pb,grid%p,t0,p1000mb,rcp,grid%ph_2,grid%phb,g, &
-                                     grid%spec_zone,ic,                  &
+                                     grid%spec_zone,ic,grid%julday,      &
                                      ids,ide, jds,jde, kds,kde,  & ! domain dims
                                      ims,ime, jms,jme, kms,kme,  & ! memory dims
                                      ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                                      grid%i_start(ij), grid%i_end(ij),   &
                                      grid%j_start(ij), grid%j_end(ij),   &
-                                     k_start, k_end                      )
-           ENDIF
+                                     k_start, k_end,                     &
+                                     grid%u_2,grid%v_2,grid%t_2,grid%znu,grid%msft, &
+                                     grid%msfu,grid%msfv,grid%f,grid%mub,grid%dx,grid%xlat,grid%pv)
+
+              ENDIF
          ENDDO chem_tile_loop_2
          !$OMP END PARALLEL DO
 
@@ -3862,8 +3873,16 @@ BENCH_START(micro_driver_tim)
       &        ,height=grid%height                                         &
       &        ,tempc=grid%tempc                                         &
       &        ,ccn_conc=grid%ccn_conc                                   & ! RAS
-
-                                                                          )
+      &        ,aerocu=aerocu                                            &
+      &        ,aercu_fct=config_flags%aercu_fct                         &
+      &        ,aercu_opt=config_flags%aercu_opt                         &
+      &        ,no_src_types_cu=grid%no_src_types_cu                     &
+      &        ,PBL=grid%bl_pbl_physics,EFCG=grid%EFCG,EFIG=grid%EFIG,EFSG=grid%EFSG &
+      &        ,WACT=grid%WACT,CCN1_GS=grid%CCN1_GS,CCN2_GS=grid%CCN2_GS,CCN3_GS=grid%CCN3_GS  &
+      &        ,CCN4_GS=grid%CCN4_GS,CCN5_GS=grid%CCN5_GS,CCN6_GS=grid%CCN6_GS &
+      &        ,CCN7_GS=grid%CCN7_GS,NR_CU=grid%NR_CU,QR_CU=grid%QR_CU,NS_CU=grid%NS_CU &
+      &        ,QS_CU=grid%QS_CU,CU_UAF=grid%CU_UAF,mskf_refl_10cm=grid%mskf_refl_10cm)
+                                                                          
 BENCH_END(micro_driver_tim)
 
 #if 0

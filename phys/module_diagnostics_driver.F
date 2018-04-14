@@ -43,7 +43,8 @@ CONTAINS
                      WSM6SCHEME, ETAMPNEW, THOMPSON, THOMPSONAERO,                     &
                      MORR_TWO_MOMENT, GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME,           &
                      NSSL_2MOM, NSSL_2MOMCCN, NSSL_1MOM, NSSL_1MOMLFO,                 &
-                     MILBRANDT2MOM , CAMMGMPSCHEME, FAST_KHAIN_LYNN, FULL_KHAIN_LYNN    !,MILBRANDT3MOM, NSSL_3MOM, MORR_MILB_P3
+                     MILBRANDT2MOM , CAMMGMPSCHEME, FAST_KHAIN_LYNN, FULL_KHAIN_LYNN,  &
+                     MORR_TM_AERO !TWG add    !,MILBRANDT3MOM, NSSL_3MOM, MORR_MILB_P3
 
       USE module_driver_constants, ONLY: max_plevs, max_zlevs
 
@@ -250,7 +251,11 @@ CONTAINS
                          ,ips, ipe, jps, jpe, kps, kpe                        &
                          ,ITS=grid%i_start(ij),ITE=grid%i_end(ij)             &
                          ,JTS=grid%j_start(ij),JTE=grid%j_end(ij)             &
-                         ,K_START=k_start,K_END=k_end                         )
+                         ,K_START=k_start,K_END=k_end                         &
+                         ,dt=grid%dt, itimestep=grid%itimestep                &
+                         ,haildt=grid%haildt, curr_secs=curr_secs2            &
+                         ,haildtacttime=grid%haildtacttime                    )
+
         END DO
         !$OMP END PARALLEL DO
       END IF HAILCAST
@@ -416,7 +421,7 @@ CONTAINS
                 ,NUM_TILES=grid%num_tiles                            &
                                                                     )
 
-        CASE (MORR_TWO_MOMENT)
+        CASE (MORR_TWO_MOMENT, MORR_TM_AERO)  ! TWG add
 
       CALL diagnostic_output_calc(                                   &
                  DPSDT=grid%dpsdt   ,DMUDT=grid%dmudt                &

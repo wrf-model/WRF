@@ -46,7 +46,8 @@
 #if (defined(CHEM_DBG_I) && defined(CHEM_DBG_J) && defined(CHEM_DBG_K))
                                      chem_dbg,      &
 #endif
-                                     get_last_gas,mozcart_lbc_set
+                                     get_last_gas,mozcart_lbc_set, &
+                                     bdy_chem_value_top_pv,PVS
   USE module_upper_bc_driver, only: upper_bc_driver
   USE module_tropopause,      only: tropopause_driver
   USE modal_aero_data, only: ntot_amode_cam_mam => ntot_amode
@@ -283,6 +284,8 @@
 ! ..
 ! .. Intrinsic Functions ..
       INTRINSIC max, min
+
+      REAL, ALLOCATABLE, DIMENSION(:,:,:) :: si_zsigf, si_zsig
 !<DESCRIPTION>
 !<pre>
 ! chem_driver is the main driver for handling chemistry related tasks
@@ -1768,7 +1771,6 @@ end if !Chemistry time step check
                                ims,ime, jms,jme, kms,kme,           &
                                its,ite, jts,jte, kts,kte            )
     endif
-
 
    END DO chem_tile_loop_1
 

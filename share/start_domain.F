@@ -19,8 +19,8 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
 #    include "start_domain_em.int"
 #endif
 #if ((EM_CORE == 1) && (WRFPLUS == 1))
-#    include "start_domain_em_tl.int"
-#    include "start_domain_em_ad.int"
+#    include "../wrftladj/start_domain_em_tl.int"
+#    include "../wrftladj/start_domain_em_ad.int"
 #endif
 #if (NMM_CORE == 1)
 #    include "start_domain_nmm.int"

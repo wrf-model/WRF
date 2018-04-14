@@ -13,14 +13,6 @@ include registry.cam
 include registry.clm
 include registry.ssib
 include registry.noahmp
-###ifdef WRFPLUS=1
-#package   lscondscheme  mp_physics==98               -             moist:qv
-#package   mkesslerscheme mp_physics==99              -             moist:qv,qc,qr
-#package   surfdragscheme bl_pbl_physics==98          -             -
-#package   ducuscheme     cu_physics==98              -             -
-#halo      HALO_EM_PHYS_A_BL_SURF  dyn_em 4:xland
-###include registry.wrfplus
-#######endif
 include registry.lake
 include registry.diags
 include registry.afwa

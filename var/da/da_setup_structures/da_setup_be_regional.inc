@@ -608,19 +608,12 @@ subroutine da_setup_be_regional(xb, be, grid)
          be8_eval_glo        = 1.0e-6
          be9_eval_glo        = 1.0e-6
          be10_eval_glo       = 1.0e-6
-         if ( use_cv_w ) then
-            be % v11 % name     = "w"
-            be11_eval_glo       = 1.0
-         end if
          if ( use_rf ) then
             be6_rf_lengthscale  = 1.0
             be7_rf_lengthscale  = 1.0
             be8_rf_lengthscale  = 1.0
             be9_rf_lengthscale  = 1.0
             be10_rf_lengthscale = 1.0
-            if ( use_cv_w ) then
-               be11_rf_lengthscale = 1.0
-            end if
          end if
       else if ( ccv_be_inp_opt == 1 ) then
          fname = 'be_ccv.txt'
@@ -654,6 +647,7 @@ subroutine da_setup_be_regional(xb, be, grid)
             be10_rf_lengthscale(:) = rval
          end if
          close(ccv_be_unit)
+         call da_free_unit(ccv_be_unit)
          write (unit=message(1),fmt='(3x,A,5e10.3)') 'eval from be_ccv.txt: ',   &
             be6_eval_glo(1), be7_eval_glo(1), be8_eval_glo(1), be9_eval_glo(1),  &
             be10_eval_glo(1)
@@ -661,33 +655,75 @@ subroutine da_setup_be_regional(xb, be, grid)
             be6_rf_lengthscale(1), be7_rf_lengthscale(1), be8_rf_lengthscale(1), &
             be9_rf_lengthscale(1), be10_rf_lengthscale(1)
          call da_message(message(1:2))
-         if ( use_cv_w ) then
-            fname = 'be_w.txt'
-            inquire(file=trim(fname), exist=fexist)
-            if ( .not. fexist ) then
-               write (unit=message(1),fmt='(3x,A,5e10.3)') trim(fname)//' does not exist for ccv_be_inp_opt=1'
-               call da_error(__FILE__,__LINE__,message(1:1))
-            end if
-            open(unit=ccv_be_unit,file=trim(fname), status="old",form="formatted")
-            read(ccv_be_unit,*) rval
-            be11_eval_glo(:) = rval
-            if ( use_rf ) then
-               read(ccv_be_unit,*) rval
-               be11_rf_lengthscale(:) = rval
-            end if
-            close(ccv_be_unit)
-            write (unit=message(1),fmt='(3x,A,e10.3)') 'eval from be_w.txt: ',   &
-               be11_eval_glo(1)
-            write (unit=message(2),fmt='(3x,A,f10.3)') 'sl   from be_w.txt: ',   &
-               be11_rf_lengthscale(1)
-            call da_message(message(1:2))
-         end if
-         call da_free_unit(ccv_be_unit)
       else
          write (unit=message(1),fmt='(3x,A)') 'Please set ccv_be_inp_opt = 0 or 1 for cloud_cv_options=3'
          call da_error(__FILE__,__LINE__,message(1:1))
       end if ! ccv_be_inp_opt for cloud_cv_options=3
    end if
+
+   if ( use_cv_w ) then
+      be % v11 % name = "w"
+      if ( ccv_be_inp_opt == 0 ) then
+         be11_eval_glo = 1.0
+         if ( use_rf ) then
+            be11_rf_lengthscale = 1.0
+         end if
+      else if ( ccv_be_inp_opt == 1 ) then
+         fname = 'be_w.txt'
+         inquire(file=trim(fname), exist=fexist)
+         if ( .not. fexist ) then
+            write (unit=message(1),fmt='(3x,A,5e10.3)') trim(fname)//' does not exist for ccv_be_inp_opt=1'
+            call da_error(__FILE__,__LINE__,message(1:1))
+         end if
+         call da_get_unit(ccv_be_unit)
+         open(unit=ccv_be_unit,file=trim(fname), status="old",form="formatted")
+         read(ccv_be_unit,*) rval
+         be11_eval_glo(:) = rval
+         if ( use_rf ) then
+            read(ccv_be_unit,*) rval
+            be11_rf_lengthscale(:) = rval
+         end if
+         close(ccv_be_unit)
+         call da_free_unit(ccv_be_unit)
+         write (unit=message(1),fmt='(3x,A,e10.3)') 'eval from be_w.txt: ',   &
+            be11_eval_glo(1)
+         write (unit=message(2),fmt='(3x,A,f10.3)') 'sl   from be_w.txt: ',   &
+            be11_rf_lengthscale(1)
+         call da_message(message(1:2))
+      else if ( ccv_be_inp_opt == 3 ) then
+         ! w
+         fname = 'be_W.dat'
+         inquire(file=trim(fname), exist=fexist)
+         if ( .not. fexist ) then
+            write (unit=message(1),fmt='(3x,A,5e10.3)') trim(fname)//' does not exist for ccv_be_inp_opt=3'
+            call da_error(__FILE__,__LINE__,message(1:1))
+         end if
+         call da_get_unit(ccv_be_unit)
+         open(unit=ccv_be_unit,file=trim(fname), status="old",form="unformatted")
+         do n = 1, 7
+            ! skip the first 7 records
+            read (ccv_be_unit)
+         end do
+         allocate (evec_loc(1:nk,1:nk,1:num_bins2d))
+         allocate (eval_loc(1:nk,     1:num_bins2d))
+         read (ccv_be_unit) be11_evec_glo
+         read (ccv_be_unit) be11_eval_glo
+         read (ccv_be_unit) evec_loc
+         read (ccv_be_unit) eval_loc
+         if ( use_rf ) then
+            read (ccv_be_unit) be11_rf_lengthscale
+         end if
+         do j=1,nj
+            b = bin2d(1,j)
+            be11_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+            be11_eval_loc(j,1:nk  )    = eval_loc(1:nk,b)
+         end do
+         close(ccv_be_unit)
+         call da_free_unit(ccv_be_unit)
+         deallocate (evec_loc)
+         deallocate (eval_loc)
+      end if ! ccv_be_inp_opt for w
+   end if ! use_cv_w
 
    ! 2.2 Read in the eigenvector and eigenvalue
 
@@ -899,9 +935,6 @@ subroutine da_setup_be_regional(xb, be, grid)
       be % v8  % name = "qice"
       be % v9  % name = "qsnow"
       be % v10 % name = "qgraup"
-      if ( use_cv_w ) then
-         be % v11 % name = "w"
-      end if
       call da_get_unit(ccv_be_unit)
       allocate (evec_loc(1:nk,1:nk,1:num_bins2d))
       allocate (eval_loc(1:nk,     1:num_bins2d))
@@ -924,7 +957,9 @@ subroutine da_setup_be_regional(xb, be, grid)
       read (ccv_be_unit) be6_eval_glo
       read (ccv_be_unit) evec_loc
       read (ccv_be_unit) eval_loc
-      read (ccv_be_unit) be6_rf_lengthscale
+      if ( use_rf ) then
+         read (ccv_be_unit) be6_rf_lengthscale
+      end if
       do j=1,nj
          b = bin2d(1,j)
          be6_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
@@ -947,7 +982,9 @@ subroutine da_setup_be_regional(xb, be, grid)
       read (ccv_be_unit) be7_eval_glo
       read (ccv_be_unit) evec_loc
       read (ccv_be_unit) eval_loc
-      read (ccv_be_unit) be7_rf_lengthscale
+      if ( use_rf ) then
+         read (ccv_be_unit) be7_rf_lengthscale
+      end if
       do j=1,nj
          b = bin2d(1,j)
          be7_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
@@ -970,7 +1007,9 @@ subroutine da_setup_be_regional(xb, be, grid)
       read (ccv_be_unit) be8_eval_glo
       read (ccv_be_unit) evec_loc
       read (ccv_be_unit) eval_loc
-      read (ccv_be_unit) be8_rf_lengthscale
+      if ( use_rf ) then
+         read (ccv_be_unit) be8_rf_lengthscale
+      end if
       do j=1,nj
          b = bin2d(1,j)
          be8_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
@@ -993,7 +1032,9 @@ subroutine da_setup_be_regional(xb, be, grid)
       read (ccv_be_unit) be9_eval_glo
       read (ccv_be_unit) evec_loc
       read (ccv_be_unit) eval_loc
-      read (ccv_be_unit) be9_rf_lengthscale
+      if ( use_rf ) then
+         read (ccv_be_unit) be9_rf_lengthscale
+      end if
       do j=1,nj
          b = bin2d(1,j)
          be9_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
@@ -1016,38 +1057,15 @@ subroutine da_setup_be_regional(xb, be, grid)
       read (ccv_be_unit) be10_eval_glo
       read (ccv_be_unit) evec_loc
       read (ccv_be_unit) eval_loc
-      read (ccv_be_unit) be10_rf_lengthscale
+      if ( use_rf ) then
+         read (ccv_be_unit) be10_rf_lengthscale
+      end if
       do j=1,nj
          b = bin2d(1,j)
          be10_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
          be10_eval_loc(j,1:nk  )    = eval_loc(1:nk,b)
       end do
       close(ccv_be_unit)
-      if ( use_cv_w ) then
-         ! w
-         fname = 'be_W.dat'
-         inquire(file=trim(fname), exist=fexist)
-         if ( .not. fexist ) then
-            write (unit=message(1),fmt='(3x,A,5e10.3)') trim(fname)//' does not exist for ccv_be_inp_opt=3'
-            call da_error(__FILE__,__LINE__,message(1:1))
-         end if
-         open(unit=ccv_be_unit,file=trim(fname), status="old",form="unformatted")
-         do n = 1, 7
-            ! skip the first 7 records
-            read (ccv_be_unit)
-         end do
-         read (ccv_be_unit) be11_evec_glo
-         read (ccv_be_unit) be11_eval_glo
-         read (ccv_be_unit) evec_loc
-         read (ccv_be_unit) eval_loc
-         read (ccv_be_unit) be11_rf_lengthscale
-         do j=1,nj
-            b = bin2d(1,j)
-            be11_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
-            be11_eval_loc(j,1:nk  )    = eval_loc(1:nk,b)
-         end do
-         close(ccv_be_unit)
-      end if
       deallocate (evec_loc)
       deallocate (eval_loc)
       call da_free_unit(ccv_be_unit)
@@ -1466,9 +1484,10 @@ subroutine da_setup_be_regional(xb, be, grid)
             call da_check_eof_decomposition(be8_eval_glo(:),  be8_evec_glo(:,:),  be % v8 % name)
             call da_check_eof_decomposition(be9_eval_glo(:),  be9_evec_glo(:,:),  be % v9 % name)
             call da_check_eof_decomposition(be10_eval_glo(:), be10_evec_glo(:,:), be % v10 % name)
-            if ( use_cv_w ) then
-               call da_check_eof_decomposition(be11_eval_glo(:), be11_evec_glo(:,:), be % v11 % name)
-            end if
+         end if
+
+         if ( use_cv_w .and. (ccv_be_inp_opt == 2 .or. ccv_be_inp_opt == 3) ) then
+            call da_check_eof_decomposition(be11_eval_glo(:), be11_evec_glo(:,:), be % v11 % name)
          end if
       end if
 
@@ -1485,9 +1504,6 @@ subroutine da_setup_be_regional(xb, be, grid)
          call da_get_vertical_truncation(max_vert_var8, be8_eval_glo(:), be % v8)
          call da_get_vertical_truncation(max_vert_var9, be9_eval_glo(:), be % v9)
          call da_get_vertical_truncation(max_vert_var10,be10_eval_glo(:),be % v10)
-         if ( use_cv_w ) then
-            call da_get_vertical_truncation(max_vert_var11,be11_eval_glo(:),be % v11)
-         end if
       else
          if ( jb_factor > 0.0 ) then
             be % v6  % mz = xb % mkz
@@ -1495,16 +1511,24 @@ subroutine da_setup_be_regional(xb, be, grid)
             be % v8  % mz = xb % mkz
             be % v9  % mz = xb % mkz
             be % v10 % mz = xb % mkz
-            if ( use_cv_w ) then
-               be % v11 % mz = xb % mkz
-            end if
          else
             be % v6  % mz = 0
             be % v7  % mz = 0
             be % v8  % mz = 0
             be % v9  % mz = 0
             be % v10 % mz = 0
-            be % v11 % mz = 0
+         end if
+      end if
+
+      if ( use_cv_w ) then
+         if ( ccv_be_inp_opt == 2 .or. ccv_be_inp_opt == 3 ) then
+            call da_get_vertical_truncation(max_vert_var11,be11_eval_glo(:),be % v11)
+         else
+            if ( jb_factor > 0.0 ) then
+               be % v11 % mz = xb % mkz
+            else
+               be % v11 % mz = 0
+            end if
          end if
       end if
 

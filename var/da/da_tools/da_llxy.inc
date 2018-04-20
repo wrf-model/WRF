@@ -49,8 +49,8 @@ subroutine da_llxy (info, loc, outside, outside_all)
       outside_all = .false.
       ! Do not check for global options 
       if (.not. global) then 
-         if ((int(loc%x) < ids) .or. (int(loc%x) >= ide) .or. &
-            (int(loc%y) < jds) .or. (int(loc%y) >= jde)) then
+         if ((int(loc%x) < ids) .or. (int(loc%x) > ide) .or. &
+            (int(loc%y) < jds) .or. (int(loc%y) > jde)) then
             outside_all = .true. 
             outside = .true. 
             return

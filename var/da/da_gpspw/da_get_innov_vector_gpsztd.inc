@@ -9,7 +9,7 @@ SUBROUTINE da_get_innov_vector_gpsztd ( it, num_qcstat_conv, grid, ob, iv )
 !                                 Y.-R. Guo           05/21/2008
 ! History:
 !    2017-06: Jamie Bresch
-!             (1) reject obs-model height difference larger than Max_StHeight_Diff
+!             (1) reject obs-model height difference larger than Max_StHeight_Diff_ztd
 !             (2) properly write out ztd innov info
 !             (3) minor clean-up
 !----------------------------------------------------------------
@@ -134,7 +134,7 @@ SUBROUTINE da_get_innov_vector_gpsztd ( it, num_qcstat_conv, grid, ob, iv )
          end if !pseudo_ztd
       end if ! valid obs
 
-      if ( abs(obs_terr - model_terr) > Max_StHeight_Diff ) then
+      if ( abs(obs_terr - model_terr) > Max_StHeight_Diff_ztd ) then
          iv%gpspw(n)%tpw%qc = -66
       end if
 

@@ -7,7 +7,7 @@ module da_gpspw
       v_interp_p, v_interp_h, check_max_iv_print,kts,kte, &
       missing, max_error_uv, max_error_t, rootproc, gpspw, &
       max_error_p,max_error_q, check_max_iv_unit,check_max_iv,  &
-      max_stheight_diff,missing_data,max_error_bq,max_error_slp, &
+      max_stheight_diff_ztd,missing_data,max_error_bq,max_error_slp, &
       max_error_bt, max_error_buv, gpspw,max_error_thickness, &
       pseudo_var, num_pseudo, use_gpspwobs, use_gpsztdobs, max_error_pw,fails_error_max, &
       fails_error_max,pseudo_err,pseudo_x, pseudo_y, stdout, &

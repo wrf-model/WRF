@@ -1,0 +1,28 @@
+#	These are the collection of shared registry files for the
+#	EM build for the atmosphere model and for Chemistry.
+
+#	Currently, these go into the following top-level Registry files:
+#		Registry.EM
+#		Registry.EM_CHEM
+
+include registry.afwa
+include registry.avgflx
+include registry.bdy_perturb
+include registry.cam
+include registry.clm
+include registry.diags
+include registry.dimspec
+include registry.elec
+include Registry.EM_COMMON
+include registry.fire
+include registry.hyb_coord
+include registry.io_boilerplate
+include registry.lake
+include registry.les
+include registry.new3d_wif
+include registry.noahmp
+include registry.rasm_diag
+include registry.sbm
+include registry.ssib
+include registry.stoch
+include registry.trad_fields

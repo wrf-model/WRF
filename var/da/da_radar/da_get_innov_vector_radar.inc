@@ -381,7 +381,8 @@ if ( iv%info(radar)%nlocal > 0 ) then
 
                      ob_radar_rf = ob % radar(n) % rf(k)
 
-                     if ( radar_non_precip_opt > 0 ) then ! assimilate non_precip echo
+                     if ( radar_non_precip_opt > 0 .and. radar_non_precip_opt /= 3 ) then
+                        ! assimilate non_precip echo
                         if ( echo_non_precip ) then ! ob is non-precip
                            if ( bg_rf > -15.0 ) then
                               ! when background/model is precip
@@ -440,6 +441,19 @@ if ( iv%info(radar)%nlocal > 0 ) then
                         iv % radar(n) % rsn(k) % qc = 0
                         iv % radar(n) % rgr(k) % qc = 0
                      end if  ! temp
+
+!------ norain modify by yating 20180212
+                     if ( radar_non_precip_opt == 3 ) then ! assimilate non_precip echo
+                        if ( echo_non_precip ) then ! ob is non-precip
+                           iv % radar(n) % rrno(k)  = 0.
+                           iv % radar(n) % rsno(k)  = 0.
+                           iv % radar(n) % rgro(k)  = 0.
+                           iv % radar(n) % rrn(k) % qc = 0
+                           iv % radar(n) % rsn(k) % qc = 0
+                           iv % radar(n) % rgr(k) % qc = 0
+                        end if
+                     end if
+!---------------------------------------------------
 
                      ! rainwater error
                      iv % radar(n) % rrn(k) % error = iv % radar(n) % rf(k) % error * iv % radar(n) % rrno(k) * alog_10/leh2

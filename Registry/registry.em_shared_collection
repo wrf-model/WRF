@@ -5,13 +5,15 @@
 #		Registry.EM
 #		Registry.EM_CHEM
 
+# Dimension specifications MUST GO FIRST
+include registry.dimspec
+
 include registry.afwa
 include registry.avgflx
 include registry.bdy_perturb
 include registry.cam
 include registry.clm
 include registry.diags
-include registry.dimspec
 include registry.elec
 include Registry.EM_COMMON
 include registry.fire

@@ -949,6 +949,7 @@ ENDIF
       !  This field will be in the model IC and and used to construct the 
       !  BC file.
 
+      IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
       DO J  = jts, min(jde-1,jte)
          DO K = kts, kte-1
             DO I = its, min(ide-1,ite)
@@ -956,6 +957,7 @@ ENDIF
             END DO
          END DO
       END DO
+      ENDIF
 
  END SUBROUTINE init_domain_rk
 

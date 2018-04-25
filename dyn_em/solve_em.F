@@ -2846,17 +2846,17 @@ BENCH_END(tracer_adv_tim)
 
 BENCH_START(calc_p_rho_tim)
 
-       CALL calc_p_rho_phi( moist, num_3d_m, config_flags%hypsometric_opt,             &
-                            grid%al, grid%alb, grid%mu_2, grid%muts,              &
-                            grid%c1h, grid%c2h, grid%c3h, grid%c4h, grid%c3f, grid%c4f, &
-                            grid%ph_2, grid%phb, grid%p, grid%pb, grid%t_2,                 &
-                            p0, t0, grid%p_top, grid%znu, grid%znw, grid%dnw, grid%rdnw,           &
-                            grid%rdn, config_flags%non_hydrostatic,             &
-                            ids, ide, jds, jde, kds, kde,     &
-                            ims, ime, jms, jme, kms, kme,     &
-                            grid%i_start(ij), grid%i_end(ij), &
-                            grid%j_start(ij), grid%j_end(ij), &
-                            k_start    , k_end               )
+       CALL calc_p_rho_phi( moist, num_3d_m, config_flags%hypsometric_opt,                    &
+                            grid%al, grid%alb, grid%mu_2, grid%muts,                          &
+                            grid%c1h, grid%c2h, grid%c3h, grid%c4h, grid%c3f, grid%c4f,       &
+                            grid%ph_2, grid%phb, grid%p, grid%pb, grid%t_2,                   &
+                            p0, t0, grid%p_top, grid%znu, grid%znw, grid%dnw, grid%rdnw,      &
+                            grid%rdn, config_flags%non_hydrostatic,config_flags%use_theta_m,  &
+                            ids, ide, jds, jde, kds, kde,                                     &
+                            ims, ime, jms, jme, kms, kme,                                     &
+                            grid%i_start(ij), grid%i_end(ij),                                 &
+                            grid%j_start(ij), grid%j_end(ij),                                 &
+                            k_start    , k_end                                                )
 
 BENCH_END(calc_p_rho_tim)
 
@@ -3947,16 +3947,16 @@ BENCH_START(moist_phys_end_tim)
      jts = max(grid%j_start(ij),jds+sz)
      jte = min(grid%j_end(ij),jde-1-sz)
 
-     CALL calc_p_rho_phi( moist, num_3d_m, config_flags%hypsometric_opt,             &
-                          grid%al, grid%alb, grid%mu_2, grid%muts,              &
-                          grid%c1h, grid%c2h, grid%c3h, grid%c4h, grid%c3f, grid%c4f, &
-                          grid%ph_2, grid%phb, grid%p, grid%pb, grid%t_2,                 &
-                          p0, t0, grid%p_top, grid%znu, grid%znw, grid%dnw, grid%rdnw,           &
-                          grid%rdn, config_flags%non_hydrostatic,             &
-                          ids, ide, jds, jde, kds, kde,     &
-                          ims, ime, jms, jme, kms, kme,     &
-                          its, ite, jts, jte,               &
-                          k_start    , k_end               )
+     CALL calc_p_rho_phi( moist, num_3d_m, config_flags%hypsometric_opt,                    &
+                          grid%al, grid%alb, grid%mu_2, grid%muts,                          &
+                          grid%c1h, grid%c2h, grid%c3h, grid%c4h, grid%c3f, grid%c4f,       &
+                          grid%ph_2, grid%phb, grid%p, grid%pb, grid%t_2,                   &
+                          p0, t0, grid%p_top, grid%znu, grid%znw, grid%dnw, grid%rdnw,      &
+                          grid%rdn, config_flags%non_hydrostatic,config_flags%use_theta_m,  &
+                          ids, ide, jds, jde, kds, kde,                                     &
+                          ims, ime, jms, jme, kms, kme,                                     &
+                          its, ite, jts, jte,                                               &
+                          k_start    , k_end                                                )
 
    END DO scalar_tile_loop_1ba
    !$OMP END PARALLEL DO

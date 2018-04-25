@@ -959,16 +959,17 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
                             c1, c2, c3h, c4h, c3f, c4f,           &
                             ph, phb, p, pb,                       &
                             t, p0, t0, ptop, znu, znw, dnw, rdnw, &
-                            rdn, non_hydrostatic,          &
-                            ids, ide, jds, jde, kds, kde,  &
-                            ims, ime, jms, jme, kms, kme,  &
-                            its, ite, jts, jte, kts, kte  )
+                            rdn, non_hydrostatic, use_theta_m,    &
+                            ids, ide, jds, jde, kds, kde,         &
+                            ims, ime, jms, jme, kms, kme,         &
+                            its, ite, jts, jte, kts, kte          )
 
   IMPLICIT NONE
    
    ! Input data
 
   LOGICAL ,          INTENT(IN   ) :: non_hydrostatic
+  INTEGER ,          INTENT(IN   ) :: use_theta_m
 
   INTEGER ,          INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                       ims, ime, jms, jme, kms, kme, &
@@ -998,7 +999,7 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
   ! Local stuff
 
   INTEGER :: i, j, k, kk, itf, jtf, ktf, ispe
-  REAL    :: qtot, qf1, qf2
+  REAL    :: qtot, qf1, qf2, qvf
   REAL, DIMENSION( its:ite) :: temp,cpovcv_v
   REAL    :: pfu, phm, pfd
 
@@ -1061,7 +1062,12 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
         DO j=jts,jtf
         DO k=kts,ktf
         DO i=its,itf
+        IF ( use_theta_m .EQ. 1 ) THEN
           temp(i)=(r_d*(t0+t(i,k,j)))/(p0*(al(i,k,j)+alb(i,k,j)))
+        ELSE
+          qvf = 1.+rvovrd*moist(i,k,j,P_QV)
+          temp(i)=(r_d*(t0+t(i,k,j))*qvf)/(p0*(al(i,k,j)+alb(i,k,j)))
+        ENDIF
         ENDDO
 #ifdef INTELMKL
         CALL VPOWX ( itf-its+1, temp(its), cpovcv, p(its,k,j) )
@@ -1109,8 +1115,14 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
             qf1 = qtot*qf2
 
             p(i,k,j) = - 0.5*((c1(k)*mu(i,j))+qf1*(c1(k)*muts(i,j)+c2(k)))/rdnw(k)/qf2
+            IF ( use_theta_m .EQ. 1 ) THEN
             al(i,k,j) = (r_d/p1000mb)*(t(i,k,j)+t0)* &
                 (((p(i,k,j)+pb(i,k,j))/p1000mb)**cvpm) - alb(i,k,j)
+            ELSE
+            qvf = 1.+rvovrd*moist(i,k,j,P_QV)
+            al(i,k,j) = (r_d/p1000mb)*(t(i,k,j)+t0)*qvf* &
+                (((p(i,k,j)+pb(i,k,j))/p1000mb)**cvpm) - alb(i,k,j)
+            END IF
 
           ENDDO
 
@@ -1125,8 +1137,14 @@ SUBROUTINE calc_p_rho_phi ( moist, n_moist, hypsometric_opt,      &
             qf1 = qtot*qf2
 
             p(i,k,j) = p(i,k+1,j) - ((c1(k)*mu(i,j)) + qf1*(c1(k)*muts(i,j)+c2(k)))/qf2/rdn(k+1)
+            IF ( use_theta_m .EQ. 1 ) THEN
             al(i,k,j) = (r_d/p1000mb)*(t(i,k,j)+t0)* &
                         (((p(i,k,j)+pb(i,k,j))/p1000mb)**cvpm) - alb(i,k,j)
+            ELSE
+            qvf = 1.+rvovrd*moist(i,k,j,P_QV)
+            al(i,k,j) = (r_d/p1000mb)*(t(i,k,j)+t0)*qvf* &
+                        (((p(i,k,j)+pb(i,k,j))/p1000mb)**cvpm) - alb(i,k,j)
+            END IF
             ENDDO
           ENDDO
 
@@ -4789,11 +4807,28 @@ END SUBROUTINE pole_point_bc
 
 !  compute thermodynamics and velocities at pressure points (or half levels)
 
+    IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
+       do j = j_start,j_end
+       do k = k_start, k_end
+       do i = i_start, i_end
+         th_phy(i,k,j) = (t(i,k,j)+t0)/(1.+R_v/R_d*moist(i,k,j,P_QV))
+       enddo
+       enddo
+       enddo
+    ELSE
+       do j = j_start,j_end
+       do k = k_start, k_end
+       do i = i_start, i_end
+         th_phy(i,k,j) =  t(i,k,j)+t0
+       enddo
+       enddo
+       enddo
+    END IF
+
     do j = j_start,j_end
     do k = k_start, k_end
     do i = i_start, i_end
 
-      th_phy(i,k,j) = (t(i,k,j)+t0)/(1.+R_v/R_d*moist(i,k,j,P_QV))
       th_phy_m_t0(i,k,j) = th_phy(i,k,j)-t0
       p_phy(i,k,j) = p(i,k,j) + pb(i,k,j)
       pi_phy(i,k,j) = (p_phy(i,k,j)/p1000mb)**rcp
@@ -5421,15 +5456,34 @@ END SUBROUTINE phy_prep_part2
            !  convert perturbation theta to full theta (th_phy)
            !  use h_diabatic to temporarily save pre-microphysics full theta
 
+     IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
+       DO j = j_start, j_end
+       DO k = k_start, k_end
+       DO i = i_start, i_end
+#ifdef REVERT
+intentional compiler error, t_new is moist, h_diabatic is dry
+         t_new(i,k,j) = t_new(i,k,j)-h_diabatic(i,k,j)*dt
+#endif
+           th_phy(i,k,j) = (t_new(i,k,j) + t0) / (1. + (R_v/R_d) * qv(i,k,j))
+       ENDDO
+       ENDDO
+       ENDDO
+     ELSE
+       DO j = j_start, j_end
+       DO k = k_start, k_end
+       DO i = i_start, i_end
+#ifdef REVERT
+         t_new(i,k,j) = t_new(i,k,j)-h_diabatic(i,k,j)*dt
+#endif
+         th_phy(i,k,j) =  t_new(i,k,j) + t0
+       ENDDO
+       ENDDO
+       ENDDO
+     END IF
+
      DO j = j_start, j_end
      DO k = k_start, k_end
      DO i = i_start, i_end
-
-#ifdef REVERT
-intentional compiler error, t_new is moist, h_diabatic is moist
-       t_new(i,k,j) = t_new(i,k,j)-h_diabatic(i,k,j)*dt
-#endif
-       th_phy(i,k,j) = (t_new(i,k,j) + t0) / (1. + (R_v/R_d) * qv(i,k,j))
        h_diabatic(i,k,j) = th_phy(i,k,j)
 #if ( WRFPLUS == 1 )
        if ( P_QV >= PARAM_FIRST_SCALAR ) then
@@ -5631,19 +5685,27 @@ compiler error, not handled yet
                t_new(i,k,j) = t_new(i,k,j) + mpten
           ENDIF
        ENDIF
+         th_phy_m_t0(i,k,j) = t_new(i,k,j)
+         h_diabatic(i,k,j) =  mpten / dt
 #else
 ! pertubation theta_moist(new) = theta_dry(old)*(1+rv/rd qv(old))    +   ! term 1
 !                                delta theta_dry * (1+rv/rd qv(new)) +   ! term 2
 !                                (rv/rd)*delta qv * theta_dry(new)   -   ! term 3
 !                                300                                     ! term 4
 !                    
-         t_new(i,k,j) =  h_diabatic(i,k,j)*(1. + (R_v/R_d)*qv_diabatic(i,k,j)) + \
-                         mpten*(1. + (R_v/R_d)*qv(i,k,j)) + \
-                         (R_v/R_d)*qvten*th_phy(i,k,j) - T0
-         th_phy_m_t0(i,k,j) = (t_new(i,k,j)+T0)/(1.+(R_v/R_d)*qv(i,k,j)) - T0
+         IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
+            t_new(i,k,j) =  h_diabatic(i,k,j)*(1. + (R_v/R_d)*qv_diabatic(i,k,j)) + \
+                            mpten*(1. + (R_v/R_d)*qv(i,k,j)) + \
+                            (R_v/R_d)*qvten*th_phy(i,k,j) - T0
+            th_phy_m_t0(i,k,j) = (t_new(i,k,j)+T0)/(1.+(R_v/R_d)*qv(i,k,j)) - T0
+            h_diabatic(i,k,j) =  ( mpten*(1. + (R_v/R_d)*qv(i,k,j)) + \
+                                 (R_v/R_d)*qvten*th_phy(i,k,j) ) / dt
+         ELSE
+            t_new(i,k,j) = t_new(i,k,j) + mpten
+            th_phy_m_t0(i,k,j) = t_new(i,k,j)
+            h_diabatic(i,k,j) =  mpten/dt
+         END IF
 #endif
-         h_diabatic(i,k,j) =  ( mpten*(1. + (R_v/R_d)*qv(i,k,j)) + \
-                              (R_v/R_d)*qvten*th_phy(i,k,j) ) / dt
 !!!         ! KLUDGE:
 !!!         qvten = 0.0
 !!!         qcten = 0.0

@@ -5,7 +5,6 @@ rconfig   character  auxinput12_inname   namelist,time_control   1  "wrf_chem_in
 rconfig   integer    io_form_auxinput12  namelist,time_control   1  2
 
 
-state    real    erod            ij.    misc        1         -      i012rhdu "EROD"                "fraction of erodible surface in each grid cell (0-1)"       "none"
 state    real    CLDFRA2         ikj    misc        1         -      h        "CLDFRA2"             "CLOUD FRACTION"
 state    real    RAINPROD        ikj    misc        1         -      h        "RAINPROD"            "TOTAL RAIN PRODUCTION RATE"       "s-1"
 state    real    EVAPPROD        ikj    misc        1         -      h        "EVAPPROD"            "RAIN EVAPORATION RATE"            "s-1"
@@ -3749,7 +3748,6 @@ rconfig   integer kemit_aircraft           namelist,chem        1              1
 rconfig   integer kdvel                    namelist,chem        1              1       -       "kdvel"                ""      ""
 rconfig   integer ndepvel                  namelist,chem        1              140     -       "ndepvel"                ""      ""
 rconfig   integer kdepvel                  namelist,chem        1              1       -       "kdepvel"                ""      ""
-rconfig   integer erosion_dim              namelist,chem        1              3       -       "erosion_dim"          ""      ""
 rconfig   integer    biomass_emiss_opt     namelist,chem        max_domains    0       rh      "biomass_emiss_opt"                   ""    ""
 rconfig   integer cam_mam_mode             namelist,chem        1              3       irh     "cam_mam_mode"                   ""    ""
 rconfig   integer cam_mam_nspec            namelist,chem        1              85      irh     "cam_mam_nspec"                   ""    ""

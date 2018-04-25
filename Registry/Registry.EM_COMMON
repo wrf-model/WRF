@@ -172,6 +172,7 @@ state    real   umaxw          ij       dyn_em      1        X     i1  "UMAXW"  
 state    real   utrop          ij       dyn_em      1        X     i1  "UTROP"      "U-component of the tropopause wind" "m s-1"
 state    real   vmaxw          ij       dyn_em      1        Y     i1  "VMAXW"      "V-component of the max wind speed"  "m s-1"
 state    real   vtrop          ij       dyn_em      1        Y     i1  "VTROP"      "V-component of the tropopause wind" "m s-1"
+state    real   erod           ij.      misc        1        -     i012rh "EROD" "fraction of erodible surface in each grid cell (0-1)"       "none"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 #                                               
@@ -2219,6 +2220,8 @@ rconfig   real    aer_angexp_val          namelist,physics      max_domains   1.
 rconfig   real    aer_ssa_val             namelist,physics      max_domains   0.85    irh    "aer_ssa_val"    "fixed value for aerosol single-scattering albedo. Valid when aer_ssa_opt=1" ""
 rconfig   real    aer_asy_val             namelist,physics      max_domains   0.90    irh    "aer_asy_val"    "fixed value for aerosol asymmetry parameter. Valid when aer_asy_opt=1" ""
 rconfig   logical cu_rad_feedback         namelist,physics      max_domains   .false. irh    "feedback of cumulus cloud to radiation"  ""
+rconfig   integer dust_emis               namelist,physics      1             0        rh    "option for dust emission outside of chem"  ""      ""
+rconfig   integer erosion_dim             namelist,physics      1             3        -     "erosion_dim"            ""      ""
 rconfig   integer no_src_types_cu         namelist,physics      1             1       -      "no_src_types_cu" "Number of aerosoal species in global aerosol data"  ""
 rconfig   integer alevsiz_cu              namelist,physics      1             1       -      "alevsiz_cu" "Number of levels in global aerosol data"  ""
 rconfig   integer aercu_opt               namelist,physics      1             0       -      "aercu_opt"    "aerosol input option for multiscale KF"      ""

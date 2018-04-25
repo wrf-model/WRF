@@ -162,6 +162,7 @@ MODULES = \
 	module_progtm.o \
 	module_pbl_driver.o \
 	module_data_gocart_dust.o \
+        module_dust_emis.o \
 	module_cumulus_driver.o \
 	module_shallowcu_driver.o \
 	module_microphysics_driver.o \

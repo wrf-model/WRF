@@ -71,6 +71,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
    USE module_input_tracer
    USE module_chem_utilities
 #endif
+   USE module_dust_emis
    USE module_first_rk_step_part1
    USE module_first_rk_step_part2
    USE module_after_all_rk_steps
@@ -3536,6 +3537,18 @@ BENCH_START(moist_physics_prep_tim)
                                    ims, ime, jms, jme, kms, kme,     &
                                    its, ite, jts, jte,               &
                                    k_start    , k_end               )
+
+       IF (config_flags%dust_emis.eq.1 .AND. config_flags%mp_physics.eq.28)  then
+         CALL wrf_debug ( 200 , ' call bulk_dust_emis' )
+         CALL bulk_dust_emis (grid%itimestep,dtm,config_flags%num_soil_layers  &
+               ,grid%u_phy,grid%v_phy,grid%rho,grid%alt                        &
+               ,grid%u10,grid%v10,p8w,dz8w,grid%smois,grid%erod                &
+               ,grid%ivgtyp,grid%isltyp,grid%vegfra,grid%albbck,grid%xland     &
+               ,grid%dx, g, grid%qnifa2d, ids,ide, jds,jde, kds,kde            &
+               ,ims,ime, jms,jme, kms,kme                                      &
+               ,its,ite, jts,jte, k_start,k_end )
+       ENDIF
+
 BENCH_END(moist_physics_prep_tim)
      END DO scalar_tile_loop_1a
      !$OMP END PARALLEL DO
@@ -3699,7 +3712,7 @@ BENCH_START(micro_driver_tim)
       &        , RI_CURR=grid%rimi                                          &
       &        , re_cloud=grid%re_cloud, re_ice=grid%re_ice, re_snow=grid%re_snow & ! G. Thompson
       &        , has_reqc=grid%has_reqc, has_reqi=grid%has_reqi, has_reqs=grid%has_reqs & ! G. Thompson
-      &        , qnwfa2d=grid%qnwfa2d                                                   & ! G. Thompson
+      &        , qnwfa2d=grid%qnwfa2d, qnifa2d=grid%qnifa2d                             & ! G. Thompson
       &        , diagflag=diag_flag, do_radar_ref=config_flags%do_radar_ref &
       &        ,u=grid%u_phy,v=grid%v_phy &
       &        ,scalar=scalar,num_scalar=num_scalar                             &

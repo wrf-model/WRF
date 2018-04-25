@@ -544,7 +544,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1       ; turn off latent heating from a microphysics scheme
  use_mp_re                           = 1       ; whether to use effective radii computed in mp schemes in RRTMG (new in 3.8).
                                                  0: do not use; 1: use effective radii
-                                                 (The mp schemes that compute effective radii are 3,4,6,8,14,16,17-21)
+                                                 (The mp schemes that compute effective radii are 3,4,6,8,14,16,17-21,28)
 
  ra_lw_physics (max_dom)             longwave radiation option
                                      = 0, no longwave radiation
@@ -907,6 +907,8 @@ Namelist variables for controlling the adaptive time step option:
  rdmaxalb                            = .true.   ; use snow albedo from geogrid; false means using values from table
  rdlai2d                             = .false.  ; use LAI from input; false means using values from table
                                                   if sst_update=1, LAI will also be in wrflowinp file
+ dust_emis                           = 0        ; Enable (0=no, 1=yes) surface dust emission scheme to enter mp_physics=28 QNIFA (ice-friendly aerosol variable)
+ erosion_dim                         = 3        ; In conjunction with dust_emis=1, this value can only be set equal to 3 (erodibility information)
  bucket_mm                           = -1.      ; bucket reset value for water accumulations (value in mm, -1.=inactive)
  bucket_J                            = -1.      ; bucket reset value for energy accumulations (value in J, -1.=inactive)
  tmn_update                          = 0        ; update deep soil temperature (1, yes; 0, no)
@@ -966,7 +968,7 @@ Namelist variables for controlling the adaptive time step option:
                                                   Noah, aimed particularly toward improving treatment of snow as it relates 
                                                   to the vegetation canopy. Also uses new columns added in VEGPARM.TBL
  do_radar_ref			     = 0, 	; 1 = allows radar reflectivity to be computed using mp-scheme-specific
- 						  parameters.  Currently works for mp_physics = 2,4,6,7,8,10,14,16
+ 						  parameters.  Currently works for mp_physics = 2,4,6,7,8,10,14,16,28
  hailcast_opt (max_dom)              = 0, 	; 1 = 1-D hail growth model which predicts 1st-5th rank-ordered hail diameters, mean hail 
                                                   diagmeter and standard deviation of hail diameter. (Adams-Selin and Ziegler, MWR Dec 2016.) 
                                                   Updated in V3.9, replacing afwa_hailcast_opt in previous versions.

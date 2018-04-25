@@ -72,6 +72,9 @@ foreach a ( $argv )
     setenv WRF_EM_CORE   1
     setenv WRF_PLUS_CORE 1
     echo not sure what to do, but this seems to be legit so far
+  else if   ( "$a" ==  "wrf" ) then
+    set arglist = ( $arglist $a )
+    set ZAP = ( main/wrf.exe )
   else if ( "$a" == "-j" ) then
     shift argv
     setenv J "-j $argv[1]"

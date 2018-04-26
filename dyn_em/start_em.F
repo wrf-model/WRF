@@ -26,6 +26,7 @@
    USE module_comm_dm
    USE module_llxy, ONLY : proj_cassini
    USE module_physics_init
+   USE module_sf_noahmpdrv, ONLY : groundwater_init
    USE module_lightning_driver, ONLY : lightning_init
    USE module_fr_fire_driver_wrf, ONLY : fire_driver_em_init
    USE module_stoch, ONLY : setup_rand_perturb, rand_seed, update_stoch, initialize_stoch
@@ -1160,6 +1161,25 @@ endif
                       ,grid%aeropcu,grid%EFCG,grid%EFCS,grid%EFIG,grid%EFIS,grid%EFSG,grid%EFSS      &
                       )
        ENDDO ! loop of tiles for phy_init
+
+       if(.not.grid%restart) then
+
+         if(config_flags%sf_surface_physics .eq. NOAHMPSCHEME .and. config_flags%opt_run .eq. 5) then
+              call groundwater_init ( grid ,                                                            &
+                 config_flags%num_soil_layers, grid%dzs, grid%isltyp, grid%ivgtyp, config_flags%wtddt , &
+                 grid%fdepthxy   , grid%ht     , grid%riverbedxy, grid%eqzwt     ,                      &
+                 grid%rivercondxy, grid%pexpxy , grid%areaxy    , grid%zwtxy     ,                      &
+                 grid%smois      , grid%sh2o   , grid%smoiseq   , grid%smcwtdxy  , grid%deeprechxy,     &
+                 grid%rechxy     , grid%qslatxy, grid%qrfsxy    , grid%qspringsxy,                      &
+                 grid%rechclim   ,                                                                      &
+                 ids,ide, jds,jde, kds,kde,                                                             &
+                 ims,ime, jms,jme, kms,kme,                                                             &
+                 ips,ipe, jps,jpe, kps,kpe,                                                             &
+                 its,ite, jts,jte, kts,kte )
+         endif
+
+       endif
+
     ENDIF   ! no phy_init for the backwards part of the DFI
 
    CALL wrf_debug ( 100 , 'start_domain_em: After call to phy_init' )

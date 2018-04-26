@@ -692,7 +692,6 @@ SUBROUTINE vert_cons_check ( obs , counter , print_vert, iunit, failed )
    REAL                                   :: p1 , p2 , h1 , h2
    LOGICAL                                :: found
    LOGICAL                                :: failed
-   LOGICAL                                :: fatal, listing
    INTEGER                                :: iunit
 
 !  INCLUDE 'error.inc'
@@ -738,15 +737,14 @@ SUBROUTINE vert_cons_check ( obs , counter , print_vert, iunit, failed )
           IF ((      eps_equal (h1 , h2 , 0.1 )) .AND. &
               (.NOT. eps_equal (p1 , p2 , 0.1 ))) THEN
 
+             if ( print_vert ) then
                WRITE (message, FMT = '(" Duplicate surface found at ",A8,A8)') &
                TRIM  (obs%location%id),  TRIM (obs%location%name)
-               fatal = .true.
-               listing = .false.
+               WRITE (iunit, '(A)') TRIM (message)
+             end if
 
 ! To discard the OBS:                
                obs%info % discard = .TRUE.
-
-               CALL error_handler (proc_name, message, "",fatal)
 
                current%meas%pressure%data     = missing_r
                current%meas%height%data       = missing_r

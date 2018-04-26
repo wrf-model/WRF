@@ -1879,11 +1879,7 @@ integer myproc
 !   Read in CAM ozone data, and interpolate data to model grid
 !   Interpolation is done on domain 1 only
 
-#if (EM_CORE==1) 
-   IF ( config_flags%o3input .EQ. 2 .AND. id .EQ. 1 ) THEN
-#else
    IF ( config_flags%o3input .EQ. 2 ) THEN
-#endif
       CALL oznini(ozmixm,pin,levsiz,n_ozmixm,XLAT,                &
                      ids, ide, jds, jde, kds, kde,                  &
                      ims, ime, jms, jme, kms, kme,                  &

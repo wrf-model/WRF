@@ -955,7 +955,6 @@ ENDIF
          END DO
       END DO
 
-
  !  Turn dry potential temperature into moist potential temperature
       !  at the very end of this routine
       !  This field will be in the model IC and and used to construct the 

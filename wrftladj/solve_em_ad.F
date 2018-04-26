@@ -3017,7 +3017,7 @@ BENCH_START(calc_p_rho_tim)
                             grid%c1h, grid%c2h, grid%c3h, grid%c4h, grid%c3f, grid%c4f, &
                             grid%ph_2, grid%phb, grid%p, grid%pb, grid%t_2,     &
                             p0, t0, grid%p_top, grid%znu, grid%znw, grid%dnw, grid%rdnw,    &
-                            grid%rdn, config_flags%non_hydrostatic,   &
+                            grid%rdn, config_flags%non_hydrostatic, config_flags%use_theta_m, &
                             ids, ide, jds, jde, kds, kde,     &
                             ims, ime, jms, jme, kms, kme,     &
                             grid%i_start(ij), grid%i_end(ij), &
@@ -4004,6 +4004,7 @@ BENCH_START(moist_phys_end_tim)
                                      grid%h_diabatic, dtm,              &
                                      moist(ims,kms,jms,P_QV),grid%qv_diabatic,   &
                                      moist(ims,kms,jms,P_QC),grid%qc_diabatic,   &
+                                     grid%th_phy_m_t0,                           &
                                      config_flags,                      &
 #if ( WRF_DFI_RADAR == 1 )
                                       grid%dfi_tten_rad,grid%dfi_stage,        &
@@ -4101,7 +4102,7 @@ BENCH_START(moist_phys_end_tim)
                           grid%c1h, grid%c2h, grid%c3h, grid%c4h, grid%c3f, grid%c4f, &
                           grid%ph_2, grid%phb, grid%p, grid%pb, grid%t_2,                 &
                           p0, t0, grid%p_top,grid%znu, grid%znw, grid%dnw, grid%rdnw,     &
-                          grid%rdn, config_flags%non_hydrostatic,             &
+                          grid%rdn, config_flags%non_hydrostatic, config_flags%use_theta_m, &
                           ids, ide, jds, jde, kds, kde,     &
                           ims, ime, jms, jme, kms, kme,     &
                           its, ite, jts, jte,               &

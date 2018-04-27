@@ -6177,13 +6177,17 @@ END SUBROUTINE set_tend
  END SUBROUTINE theta_relaxation
 
 !==============================================================================
-!==============================================================================
-                                                                                
+
       SUBROUTINE sixth_order_diffusion( name, field, tendency, MUT, dt,  &
-                                        config_flags, c1, c2,           &
-                                        diff_6th_opt, diff_6th_factor,  &
-                                        ids, ide, jds, jde, kds, kde,   &
-                                        ims, ime, jms, jme, kms, kme,   &
+                                        config_flags, c1, c2,            &
+                                        diff_6th_opt, diff_6th_factor,   &
+                                        phb, ph,                         &
+                                        rdx, rdy,                        &
+                                        msftx, msfty,                    &
+                                        msfux, msfuy,                    &
+                                        msfvx, msfvy,                    &
+                                        ids, ide, jds, jde, kds, kde,    &
+                                        ims, ime, jms, jme, kms, kme,    &
                                         its, ite, jts, jte, kts, kte )
                                                                                 
 ! History:       14 Nov 2006   Name of variable changed by Jason Knievel
@@ -6216,6 +6220,9 @@ END SUBROUTINE set_tend
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN)  &
     :: field
 
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN)  &
+    :: ph, phb
+ 
     REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)  &
     :: MUT
 
@@ -6223,7 +6230,7 @@ END SUBROUTINE set_tend
     :: c1, c2
 
     REAL, INTENT(IN)  &
-    :: dt
+    :: dt, rdx, rdy
 
     REAL, INTENT(IN)  &
     :: diff_6th_factor
@@ -6240,6 +6247,13 @@ END SUBROUTINE set_tend
        j_start, j_end,  &
        k_start, k_end,  &
        ktf
+ 
+    REAL , DIMENSION( ims:ime, jms:jme) , INTENT(IN   ) ::   msfux
+    REAL , DIMENSION( ims:ime, jms:jme) , INTENT(IN   ) ::   msfuy
+    REAL , DIMENSION( ims:ime, jms:jme) , INTENT(IN   ) ::   msfvx
+    REAL , DIMENSION( ims:ime, jms:jme) , INTENT(IN   ) ::   msfvy
+    REAL , DIMENSION( ims:ime, jms:jme) , INTENT(IN   ) ::   msftx
+    REAL , DIMENSION( ims:ime, jms:jme) , INTENT(IN   ) ::   msfty
 
     REAL  &
     :: dflux_x_p0, dflux_y_p0,  &
@@ -6247,6 +6261,9 @@ END SUBROUTINE set_tend
        tendency_x, tendency_y,  &
        mu_avg_p0, mu_avg_p1,    &
        diff_6th_coef
+
+    REAL  &
+    :: dzmax_p0, dzmax_p1, dx, dy, slopedamp_p0, slopedamp_p1, dzthresh
 
     LOGICAL  &
     :: specified
@@ -6350,11 +6367,33 @@ END SUBROUTINE set_tend
 
       END IF
 
+      slopedamp_p0 = 1.
+      slopedamp_p1 = 1.
+
+      IF (config_flags%diff_6th_slopeopt .ge. 1) THEN
+         dx=1./rdx
+         dzthresh = config_flags%diff_6th_thresh*9.81*dx
+         IF      ( name .EQ. 'u' ) THEN
+           dzmax_p0 = MAX( ABS(phb(i  ,k,j)-phb(i-1,k,j))*msfux(i  ,j), ABS(phb(i-1,k,j)-phb(i-2,k,j))*msfux(i-1,j) )
+           dzmax_p1 = MAX( ABS(phb(i+1,k,j)-phb(i  ,k,j))*msfux(i+1,j), ABS(phb(i  ,k,j)-phb(i-1,k,j))*msfux(i  ,j) )
+         ELSE IF ( name .EQ. 'v' ) THEN
+           dzmax_p0 = max( ABS(phb(i  ,k,j) - phb(i-1,k,j))*msfux(i  ,j), ABS(phb(i  ,k,j-1) - phb(i-1,k,j-1))*msfux(i  ,j-1) )
+           dzmax_p1 = max( ABS(phb(i+1,k,j) - phb(i  ,k,j))*msfux(i+1,j), ABS(phb(i+1,k,j-1) - phb(i  ,k,j-1))*msfux(i+1,j-1) )
+         ELSE
+           dzmax_p0 = ABS(phb(i  ,k,j) - phb(i-1,k,j))*msfux(i,j)
+           dzmax_p1 = ABS(phb(i+1,k,j) - phb(i  ,k,j))*msfux(i+1,j)
+         END IF
+         slopedamp_p0 = MAX(1.- (dzmax_p0/dzthresh) , 0.)
+         slopedamp_p1 = MAX(1.- (dzmax_p1/dzthresh) , 0.)
+      ENDIF
+
 ! Apply 6th-order diffusion in x direction.
 
       IF      ( name .EQ. 'u' ) THEN
         mu_avg_p0 = (c1(k)*MUT(i-1,j)+c2(k))
         mu_avg_p1 = (c1(k)*MUT(i  ,j)+c2(k))
+         tendency_x = diff_6th_coef * msfux(i,j) * &
+                   ( ( slopedamp_p1 * mu_avg_p1 * dflux_x_p1 ) - ( slopedamp_p0 * mu_avg_p0 * dflux_x_p0 ) )
       ELSE IF ( name .EQ. 'v' ) THEN
         mu_avg_p0 = 0.25 * (       &
                     (c1(k)*MUT(i-1,j-1)+c2(k)) +  &
@@ -6366,6 +6405,8 @@ END SUBROUTINE set_tend
                     (c1(k)*MUT(i+1,j-1)+c2(k)) +  &
                     (c1(k)*MUT(i  ,j  )+c2(k)) +  &
                     (c1(k)*MUT(i+1,j  )+c2(k)) )
+        tendency_x = diff_6th_coef * msfvx(i,j) * &
+                   ( ( slopedamp_p1 * mu_avg_p1 * dflux_x_p1 ) - ( slopedamp_p0 * mu_avg_p0 * dflux_x_p0 ) )
       ELSE
         mu_avg_p0 = 0.5 * (        &
                     (c1(k)*MUT(i-1,j)+c2(k)) +    &
@@ -6373,11 +6414,10 @@ END SUBROUTINE set_tend
         mu_avg_p1 = 0.5 * (        &
                     (c1(k)*MUT(i  ,j)+c2(k)) +    &
                     (c1(k)*MUT(i+1,j)+c2(k)) )
+        tendency_x = diff_6th_coef * msftx(i,j) * &
+                 ( ( slopedamp_p1 * mu_avg_p1 * dflux_x_p1 ) - ( slopedamp_p0 * mu_avg_p0 * dflux_x_p0 ) )
       END IF
-
-      tendency_x = diff_6th_coef *  &
-                 ( ( mu_avg_p1 * dflux_x_p1 ) - ( mu_avg_p0 * dflux_x_p0 ) )
-
+  
 ! End: Diffusion in x.
 !------------------------------------------------------------------------------
 
@@ -6409,6 +6449,26 @@ END SUBROUTINE set_tend
 
       END IF
 
+      slopedamp_p0 = 1. 
+      slopedamp_p1 = 1. 
+
+      IF (config_flags%diff_6th_slopeopt .ge. 1) THEN
+         dy=1./rdy
+         dzthresh = config_flags%diff_6th_thresh*9.81*dy
+         IF      ( name .EQ. 'u' ) THEN
+           dzmax_p0 = max( ABS(phb(i,k,j  ) - phb(i,k,j-1))*msfvy(i,j  ), ABS(phb(i-1,k,j  ) - phb(i-1,k,j-1))*msfvy(i-1,j  ) )
+           dzmax_p1 = max( ABS(phb(i,k,j+1) - phb(i,k,j  ))*msfvy(i,j+1), ABS(phb(i-1,k,j+1) - phb(i-1,k,j  ))*msfvy(i-1,j+1) )
+         ELSE IF ( name .EQ. 'v' ) THEN
+           dzmax_p0 = MAX( ABS(phb(i,k,j  )-phb(i,k,j-1))*msfvy(i,j  ), ABS(phb(i,k,j-1)-phb(i,k,j-2))*msfvy(i,j-1) )
+           dzmax_p1 = MAX( ABS(phb(i,k,j+1)-phb(i,k,j  ))*msfvy(i,j+1), ABS(phb(i,k,j  )-phb(i,k,j-1))*msfvy(i,j  ) )
+         ELSE
+           dzmax_p0 = ABS(phb(i,k,j  ) - phb(i,k,j-1))*msfvy(i,j  )
+           dzmax_p1 = ABS(phb(i,k,j+1) - phb(i,k,j  ))*msfvy(i,j+1)
+         END IF
+         slopedamp_p0 = MAX(1.- (dzmax_p0/dzthresh) , 0.)
+         slopedamp_p1 = MAX(1.- (dzmax_p1/dzthresh) , 0.)
+      ENDIF
+
 ! Apply 6th-order diffusion in y direction.
 
       IF      ( name .EQ. 'u' ) THEN
@@ -6422,9 +6482,14 @@ END SUBROUTINE set_tend
                     (c1(k)*MUT(i  ,j  )+c2(k)) +  &
                     (c1(k)*MUT(i-1,j+1)+c2(k)) +  &
                     (c1(k)*MUT(i  ,j+1)+c2(k)) )
+        tendency_y = diff_6th_coef * msfuy(i,j) * &
+                 ( ( slopedamp_p1 * mu_avg_p1 * dflux_y_p1 ) - ( slopedamp_p0 * mu_avg_p0 * dflux_y_p0 ) )
+ 
       ELSE IF ( name .EQ. 'v' ) THEN
         mu_avg_p0 = (c1(k)*MUT(i,j-1)+c2(k))
         mu_avg_p1 = (c1(k)*MUT(i,j  )+c2(k))
+        tendency_y = diff_6th_coef * msfvy(i,j) * &
+                   ( ( slopedamp_p1 * mu_avg_p1 * dflux_y_p1 ) - ( slopedamp_p0 * mu_avg_p0 * dflux_y_p0 ) )
       ELSE
         mu_avg_p0 = 0.5 * (      &
                     (c1(k)*MUT(i,j-1)+c2(k)) +  &
@@ -6432,11 +6497,10 @@ END SUBROUTINE set_tend
         mu_avg_p1 = 0.5 * (      &
                     (c1(k)*MUT(i,j  )+c2(k)) +  &
                     (c1(k)*MUT(i,j+1)+c2(k)) )
+        tendency_y = diff_6th_coef * msfty(i,j) * &
+                   ( ( slopedamp_p1 * mu_avg_p1 * dflux_y_p1 ) - ( slopedamp_p0 * mu_avg_p0 * dflux_y_p0 ) )
       END IF
-
-      tendency_y = diff_6th_coef *  &
-                 ( ( mu_avg_p1 * dflux_y_p1 ) - ( mu_avg_p0 * dflux_y_p0 ) )
-
+ 
 ! End: Diffusion in y.
 !------------------------------------------------------------------------------
 

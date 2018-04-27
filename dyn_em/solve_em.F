@@ -2154,6 +2154,9 @@ BENCH_START(rk_scalar_tend_tim)
                            grid%kvdif, grid%xkhh,                            &
                            grid%diff_6th_opt, grid%diff_6th_factor,          &
                            config_flags%moist_adv_opt,                       &
+                           grid%phb, grid%ph_2,                              &
+                           config_flags%moist_mix2_off,                      &
+                           config_flags%moist_mix6_off,                      &
                            ids, ide, jds, jde, kds, kde,     &
                            ims, ime, jms, jme, kms, kme,     &
                            grid%i_start(ij), grid%i_end(ij), &
@@ -2319,6 +2322,9 @@ BENCH_START(tke_adv_tim)
                             grid%kvdif, grid%xkhh,                                 &
                             grid%diff_6th_opt, grid%diff_6th_factor,               &
                             config_flags%tke_adv_opt,                              &
+                            grid%phb, grid%ph_2,                                   &
+                            config_flags%tke_mix2_off,                             &
+                            config_flags%tke_mix6_off,                             &
                             ids, ide, jds, jde, kds, kde,     &
                             ims, ime, jms, jme, kms, kme,     &
                             grid%i_start(ij), grid%i_end(ij), &
@@ -2408,6 +2414,9 @@ BENCH_START(chem_adv_tim)
                               grid%khdif, grid%kvdif, grid%xkhh,                 &
                               grid%diff_6th_opt, grid%diff_6th_factor,           &
                               config_flags%chem_adv_opt,                         &
+                              grid%phb, grid%ph_2,                               &
+                              config_flags%chem_mix2_off,                        &
+                              config_flags%chem_mix6_off,                        &
                               ids, ide, jds, jde, kds, kde,                      &
                               ims, ime, jms, jme, kms, kme,                      &
                               grid%i_start(ij), grid%i_end(ij),                  &
@@ -2565,7 +2574,10 @@ BENCH_START(tracer_adv_tim)
                               grid%rdx, grid%rdy, grid%rdn, grid%rdnw,           &
                               grid%khdif, grid%kvdif, grid%xkhh,                 &
                               grid%diff_6th_opt, grid%diff_6th_factor,           &
-                              config_flags%tracer_adv_opt,                         &
+                              config_flags%tracer_adv_opt,                       &
+                              grid%phb, grid%ph_2,                               &
+                              config_flags%tracer_mix2_off,                      &
+                              config_flags%tracer_mix6_off,                      &
                               ids, ide, jds, jde, kds, kde,                      &
                               ims, ime, jms, jme, kms, kme,                      &
                               grid%i_start(ij), grid%i_end(ij),                  &
@@ -2704,6 +2716,9 @@ BENCH_END(tracer_adv_tim)
                                  grid%khdif, grid%kvdif, grid%xkhh,               &
                                  grid%diff_6th_opt, grid%diff_6th_factor,         &
                                  config_flags%scalar_adv_opt,                     &
+                                 grid%phb, grid%ph_2,                             &
+                                 config_flags%scalar_mix2_off,                    &
+                                 config_flags%scalar_mix6_off,                    &
                                  ids, ide, jds, jde, kds, kde,     &
                                  ims, ime, jms, jme, kms, kme,     &
                                  grid%i_start(ij), grid%i_end(ij), &

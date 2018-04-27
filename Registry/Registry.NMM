@@ -549,9 +549,11 @@ state  integer  has_reqs   -      misc        1    -     r       "has_reqs"     
 
 #
 # added WRF-Solar
-state   real    swddir       ij     misc         1         -     rhd    "SWDDIR"     "Shortwave surface downward direct irradiance" "W/m^2" ""
-state   real    swddni       ij     misc         1         -     rhd    "SWDDNI"     "Shortwave surface downward direct normal irradiance" "W/m^2" ""
-state   real    swddif       ij     misc         1         -     rhd    "SWDDIF"     "Shortwave surface downward diffuse irradiance" "W/m^2" ""
+state   real    swddir       ij     misc         1         -     rhd    "SWDDIR"     "Shortwave surface downward direct irradiance" "W m-2" ""
+state   real    swddirc      ij     misc         1         -     rd     "SWDDIRC"    "Clear-sky Shortwave surface downward direct irradiance" "W m-2" ""
+state   real    swddni       ij     misc         1         -     rhd    "SWDDNI"     "Shortwave surface downward direct normal irradiance" "W m-2" ""
+state   real    swddnic      ij     misc         1         -     rd     "SWDDNIC"    "Clear-sky Shortwave surface downward direct normal irradiance" "W m-2" ""
+state   real    swddif       ij     misc         1         -     rhd    "SWDDIF"     "Shortwave surface downward diffuse irradiance" "W m-2" ""
 state   real    Gx           ij     misc         1         -     rd     "Gx" "" ""
 state   real    Bx           ij     misc         1         -     rd     "Bx" "" ""
 state   real    gg           ij     misc         1         -     rd     "gg" "" ""

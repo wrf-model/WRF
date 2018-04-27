@@ -1658,7 +1658,6 @@
            ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME )  .OR. &
            ( model_config_rec % ra_lw_physics(1) .EQ. RRTMK_LWSCHEME )  .OR. &
            ( model_config_rec % ra_lw_physics(1) .EQ. RRTMK_SWSCHEME )  .OR. &
-           ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME )  .OR. &
            ( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME_FAST )  .OR. &
            ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME_FAST )  ) THEN
          wrf_err_message = '--- NOTE: RRTMG radiation is used, namelist ' // &

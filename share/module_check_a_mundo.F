@@ -215,6 +215,12 @@
 ! Check that all values of ra_physics are the same for all domains
 !-----------------------------------------------------------------------
 
+if (model_config_rec % ra_lw_physics(1) .ne. 4 ) then
+print *,'PROBS with radiation'
+else
+print *,'radiation already set'
+endif
+stop
       DO i = 2, model_config_rec % max_dom
          IF ( model_config_rec % ra_lw_physics(i)     .NE. &
               model_config_rec % ra_lw_physics(1) ) THEN

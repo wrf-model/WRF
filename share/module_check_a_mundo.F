@@ -2071,6 +2071,18 @@
       ENDDO
 
 !-----------------------------------------------------------------------
+! If MYNN PBL is not used, set bl_mynn_edmf = 0 so that we don't get 
+! additional output 
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME2 ) .AND. &
+              ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME3 ) ) THEN
+            model_config_rec % bl_mynn_edmf = 0
+         END IF
+      ENDDO
+
+!-----------------------------------------------------------------------
 ! Set the namelist parameters for the RRTMG radiation scheme if either
 ! ra_lw_physics = RRTMG_LWSCHEME or ra_sw_physics = RRTMG_SWSCHEME.
 !-----------------------------------------------------------------------

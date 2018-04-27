@@ -54,7 +54,7 @@ MODULE module_wrf_top
    IMPLICIT NONE
 
 #if ( WRFPLUS == 1 )
-#include <wrf_io_flags.h>
+#include "wrf_io_flags.h"
 #endif
 
    REAL    :: time

@@ -2428,7 +2428,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                    ims, ime, jms, jme, kms, kme,           &
                                    its, ite, jts, jte, kts, kte           )
 
-    IF (km_opt .eq. 2)                                                     &
+    IF ( (km_opt .eq. 2) .and. (.not.config_flags%tke_mix2_off) )          &
     CALL horizontal_diffusion_s  ( tke_tendf(ims,kms,jms),                 &
                                    config_flags,                           &
                                    tke(ims,kms,jms),                       &
@@ -2441,7 +2441,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                    ims, ime, jms, jme, kms, kme,           &
                                    its, ite, jts, jte, kts, kte           )
 
-    IF (n_moist .ge. PARAM_FIRST_SCALAR) THEN
+    IF ((n_moist .ge. PARAM_FIRST_SCALAR) .and. (.not.config_flags%moist_mix2_off)) THEN
 
       moist_loop: do im = PARAM_FIRST_SCALAR, n_moist
 
@@ -2461,7 +2461,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
 
     ENDIF
 
-    IF (n_chem .ge. PARAM_FIRST_SCALAR) THEN
+    IF ((n_chem .ge. PARAM_FIRST_SCALAR) .and. (.not.config_flags%chem_mix2_off)) THEN
 
       chem_loop: do ic = PARAM_FIRST_SCALAR, n_chem
 
@@ -2481,7 +2481,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
 
     ENDIF
 
-    IF (n_tracer .ge. PARAM_FIRST_SCALAR) THEN
+    IF ((n_tracer .ge. PARAM_FIRST_SCALAR) .and. (.not.config_flags%tracer_mix2_off)) THEN
 
       tracer_loop: do ic = PARAM_FIRST_SCALAR, n_tracer
 
@@ -2500,7 +2500,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
       ENDDO tracer_loop
 
     ENDIF
-    IF (n_scalar .ge. PARAM_FIRST_SCALAR) THEN
+    IF ((n_scalar .ge. PARAM_FIRST_SCALAR) .and. (.not.config_flags%scalar_mix2_off)) THEN
 
       scalar_loop: do is = PARAM_FIRST_SCALAR, n_scalar
 

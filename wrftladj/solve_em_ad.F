@@ -157,7 +157,7 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
 
 ! storage for tendencies and decoupled state (generated from Registry)
 
-#include <i1_decl.inc>
+#include "i1_decl.inc"
 ! Previous time level of tracer arrays now defined as i1 variables;
 ! the state 4d arrays now redefined as 1-time level arrays in Registry.
 ! Benefit: save memory in nested runs, since only 1 domain is active at a
@@ -202,7 +202,7 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
    TYPE(WRFU_TimeInterval)                    :: dtInterval, intervaltime,restartinterval
 
 ! Define benchmarking timers if -DBENCH is compiled
-#include <bench_solve_em_def.h>
+#include "bench_solve_em_def.h"
 
 !----------------------
 ! Executable statements
@@ -240,7 +240,7 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
 !</DESCRIPTION>
 
 ! Initialize timers if compiled with -DBENCH
-#include <bench_solve_em_init.h>
+#include "bench_solve_em_init.h"
 
 ! dtbc will be read from basic state at every time step, so it doesn't need to be updated here.
 !  IF( config_flags%specified .or. config_flags%nested ) THEN
@@ -4693,7 +4693,7 @@ BENCH_END(bc_2d_tim)
 !  not used in adjoint
 #endif  
 ! Finish timers if compiled with -DBENCH.
-#include <bench_solve_em_end.h>
+#include "bench_solve_em_end.h"
 
 !---------------------------------------- 
 ! Start adjoint computations

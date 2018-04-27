@@ -765,6 +765,8 @@ module_diagnostics_driver.o: \
 		../frame/module_driver_constants.o 	\
 		../share/module_model_constants.o
 
+module_diag_functions.o:
+		
 module_diag_misc.o: \
 		../frame/module_dm.o
 

@@ -411,6 +411,7 @@
 ! WRF-Solar variables
                        ,swint_opt=config_flags%swint_opt                &   
      &       ,SWDDIR=grid%swddir,SWDDNI=grid%swddni,SWDDIF=grid%swddif     & ! jararias
+     &       ,SWDDIRC=grid%swddirc,SWDDNIC=grid%swddnic                    & ! clearsky sw diags
      &       ,Gx=grid%Gx,Bx=grid%Bx,gg=grid%gg,bb=grid%bb                  & ! for sza-interpolation
      &       ,swdown_ref=grid%swdown_ref,swddir_ref=grid%swddir_ref        & !
      &       ,coszen_ref=grid%coszen_ref                                   & 

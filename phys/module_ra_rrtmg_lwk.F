@@ -6127,10 +6127,9 @@
 !                                  (high key - nothing; high minor-cfc11, cfc12)
 !
 !-------------------------------------------------------------------------------
-   use parrrtm_k,   only : ng6, ngs5
+   use parrrtm_k,   only : ngs5
    use rrlw_ref_k,  only : chi_mls
-   use rrlw_kg06_k, only : fracrefa, absa, ka, ka_mco2,                        &
-                         selfref, forref, cfc11adj, cfc12
+   use rrlw_kg06_k
 !
 ! Local 
 !
@@ -9002,11 +9001,8 @@
 !  old band 6:  820-980 cm-1 (low - h2o; high - nothing)
 !
 !-------------------------------------------------------------------------------
-   use parrrtm_k,   only : mg, nbndlw, ngptlw, ng6
-   use rrlw_kg06_k, only : fracrefao, kao, kao_mco2, cfc11adjo, cfc12o,        &
-                         selfrefo, forrefo,                                    &
-                         fracrefa, absa, ka, ka_mco2, cfc11adj, cfc12,         &
-                         selfref, forref
+   use parrrtm_k,   only : mg, nbndlw, ngptlw
+   use rrlw_kg06
 !
 ! Local
 !
@@ -12813,8 +12809,7 @@
 !  etc.  The second index runs over the g-channel (1 to 16).
 !
 !-------------------------------------------------------------------------------
-   use rrlw_kg06_k, only : fracrefao, kao, kao_mco2, selfrefo, forrefo,        &
-                         cfc11adjo, cfc12o
+   use rrlw_kg06_k
 !
    implicit none
 !

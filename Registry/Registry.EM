@@ -1,6 +1,7 @@
 #  Registry file, EM
 
 #INCLUDES
+include registry.dimspec
 include registry.em_shared_collection
 
 # added to output 5 for ESMF

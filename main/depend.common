@@ -765,6 +765,8 @@ module_diagnostics_driver.o: \
 		../frame/module_driver_constants.o 	\
 		../share/module_model_constants.o
 
+module_diag_functions.o:
+		
 module_diag_misc.o: \
 		../frame/module_dm.o
 
@@ -779,6 +781,7 @@ module_diag_zld.o: \
 		../share/module_model_constants.o
 
 module_diag_afwa.o: \
+		module_diag_functions.o			\
 		../frame/module_domain.o 		\
 		../frame/module_dm.o 			\
 		../frame/module_state_description.o 	\
@@ -800,7 +803,7 @@ module_diag_rasm.o: \
                 module_cam_shr_const_mod.o
 
 module_diag_trad_fields.o: \
-		../phys/module_diag_afwa.o		\
+		module_diag_functions.o			\
 		../share/module_model_constants.o
 
 module_diag_refl.o: \

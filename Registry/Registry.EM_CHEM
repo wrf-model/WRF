@@ -2,28 +2,9 @@
 
 #INCLUDES
 include registry.dimspec
-include Registry.EM_COMMON
-include registry.io_boilerplate
 include registry.chem
-include registry.fire
-include registry.avgflx
-include registry.stoch
-include registry.les
-include registry.cam
-include registry.clm
-include registry.lake
-include registry.ssib
-include registry.noahmp
-include registry.sbm
-include registry.diags
-include registry.afwa
-include registry.rasm_diag
-include registry.elec
-include registry.bdy_perturb
 include registry.new3d_gca
-include registry.hyb_coord
-include registry.new3d_wif
-include registry.trad_fields
+include registry.em_shared_collection
 
 state   real   landmask            ij    misc          1     -     i012rh0d=(interp_fcnm_imask)u=(copy_fcnm)   "LANDMASK"      "LAND MASK (1 FOR LAND, 0 FOR WATER)"  ""
 state   real   lakemask            ij    misc          1     -     i012rh0d=(interp_fcnm_imask)u=(copy_fcnm)   "LAKEMASK"      "LAKE MASK (1 FOR LAND, 0 FOR WATER)"  ""

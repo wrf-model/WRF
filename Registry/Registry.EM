@@ -2,28 +2,7 @@
 
 #INCLUDES
 include registry.dimspec
-include Registry.EM_COMMON
-include registry.io_boilerplate
-
-include registry.fire
-include registry.avgflx
-include registry.stoch
-include registry.les
-include registry.cam
-include registry.clm
-include registry.ssib
-include registry.noahmp
-include registry.lake
-include registry.diags
-include registry.afwa
-include registry.rasm_diag
-include registry.sbm
-include registry.elec
-include registry.bdy_perturb
-include registry.hyb_coord
-include registry.new3d_wif
-include registry.trad_fields
-
+include registry.em_shared_collection
 
 # added to output 5 for ESMF
 state   real   landmask            ij    misc          1     -     i0125rh056d=(interp_fcnm_imask)u=(copy_fcnm)   "LANDMASK"      "LAND MASK (1 FOR LAND, 0 FOR WATER)"  ""

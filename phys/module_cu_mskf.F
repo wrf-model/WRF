@@ -2107,7 +2107,7 @@ subroutine mskf_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, ep
            if (qi(i,k-1).ge.qsmall) then
 ! add upper limit to in-cloud number concentration to prevent numerical error
               ni(i,k-1)=min(ni(i,k-1),qi(i,k-1)*1.e20_r8)
-              lami(k-1) = (gamma(1._r8+di)*ci* &
+              lami(k-1) = (mskf_gamma(1._r8+di)*ci* &
                   ni(i,k-1)/qi(i,k-1))**(1._r8/di)
               n0i(k-1) = ni(i,k-1)*lami(k-1)
 ! check for slope
@@ -2116,11 +2116,11 @@ subroutine mskf_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, ep
 ! adjust vars
               if (lami(k-1).lt.lammin) then
                 lami(k-1) = lammin
-                n0i(k-1) = lami(k-1)**(di+1._r8)*qi(i,k-1)/(ci*gamma(1._r8+di))
+                n0i(k-1) = lami(k-1)**(di+1._r8)*qi(i,k-1)/(ci*mskf_gamma(1._r8+di))
                 ni(i,k-1) = n0i(k-1)/lami(k-1)
               else if (lami(k-1).gt.lammax) then
                 lami(k-1) = lammax
-                n0i(k-1) = lami(k-1)**(di+1._r8)*qi(i,k-1)/(ci*gamma(1._r8+di))
+                n0i(k-1) = lami(k-1)**(di+1._r8)*qi(i,k-1)/(ci*mskf_gamma(1._r8+di))
                 ni(i,k-1) = n0i(k-1)/lami(k-1)
               end if
               effi(i,k-1) = 1.5_r8/lami(k-1)*1.e6_r8
@@ -2150,8 +2150,8 @@ subroutine mskf_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, ep
               pgam(k-1)=min(pgam(k-1),15._r8)
 ! calculate lamc
 
-              lamc(k-1) = (pi/6._r8*rhow*nc(i,k-1)*gamma(pgam(k-1)+4._r8)/ &
-                 (qc(i,k-1)*gamma(pgam(k-1)+1._r8)))**(1._r8/3._r8)
+              lamc(k-1) = (pi/6._r8*rhow*nc(i,k-1)*mskf_gamma(pgam(k-1)+4._r8)/ &
+                 (qc(i,k-1)*mskf_gamma(pgam(k-1)+1._r8)))**(1._r8/3._r8)
 
 ! lammin, 50 micron diameter max mean size
               lammin = (pgam(k)+1._r8)/50.e-6_r8
@@ -2160,19 +2160,19 @@ subroutine mskf_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, ep
               if (lamc(k-1).lt.lammin) then
                  lamc(k-1) = lammin
                  nc(i,k-1) = 6._r8*lamc(k-1)**3*qc(i,k-1)* &
-                      gamma(pgam(k-1)+1._r8)/ &
-                      (pi*rhow*gamma(pgam(k-1)+4._r8))
+                      mskf_gamma(pgam(k-1)+1._r8)/ &
+                      (pi*rhow*mskf_gamma(pgam(k-1)+4._r8))
               else if (lamc(k-1).gt.lammax) then
                  lamc(k-1) = lammax
                  nc(i,k-1) = 6._r8*lamc(k-1)**3*qc(i,k-1)* &
-                       gamma(pgam(k-1)+1._r8)/ &
-                      (pi*rhow*gamma(pgam(k-1)+4._r8))
+                       mskf_gamma(pgam(k-1)+1._r8)/ &
+                      (pi*rhow*mskf_gamma(pgam(k-1)+4._r8))
               end if
-              effc(i,k-1) = gamma(pgam(k-1)+4._r8)/ &
-                            gamma(pgam(k-1)+3._r8)/lamc(k-1)/2._r8*1.e6_r8
+              effc(i,k-1) = mskf_gamma(pgam(k-1)+4._r8)/ &
+                            mskf_gamma(pgam(k-1)+3._r8)/lamc(k-1)/2._r8*1.e6_r8
 ! parameter to calculate droplet freezing
 
-              cdist1(k-1) = nc(i,k-1)/gamma(pgam(k-1)+1._r8)
+              cdist1(k-1) = nc(i,k-1)/mskf_gamma(pgam(k-1)+1._r8)
            else
               lamc(k-1) = 0._r8
               cdist1(k-1) = 0._r8
@@ -2225,7 +2225,7 @@ subroutine mskf_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, ep
 !......................................................................
 ! snow
            if (qni(i,k-1).ge.qsmall) then
-             lams(k-1) = (gamma(1._r8+ds)*cs*ns(i,k-1)/ &
+             lams(k-1) = (mskf_gamma(1._r8+ds)*cs*ns(i,k-1)/ &
                        qni(i,k-1))**(1._r8/ds)
              n0s(k-1) = ns(i,k-1)*lams(k-1)
 
@@ -2235,11 +2235,11 @@ subroutine mskf_mphy(su,    qu,   mu,   du,   cmel, cmei, zf,  pm,  te,   qe, ep
 ! adjust vars
              if (lams(k-1).lt.lammin) then
                lams(k-1) = lammin
-               n0s(k-1) = lams(k-1)**(ds+1._r8)*qni(i,k-1)/(cs*gamma(1._r8+ds))
+               n0s(k-1) = lams(k-1)**(ds+1._r8)*qni(i,k-1)/(cs*mskf_gamma(1._r8+ds))
                ns(i,k-1) = n0s(k-1)/lams(k-1)
              else if (lams(k-1).gt.lammax) then
                lams(k-1) = lammax
-               n0s(k-1) = lams(k-1)**(ds+1._r8)*qni(i,k-1)/(cs*gamma(1._r8+ds))
+               n0s(k-1) = lams(k-1)**(ds+1._r8)*qni(i,k-1)/(cs*mskf_gamma(1._r8+ds))
                ns(i,k-1) = n0s(k-1)/lams(k-1)
              end if
              effs(i,k-1) = 1.5_r8/lams(k-1)*1.e6_r8

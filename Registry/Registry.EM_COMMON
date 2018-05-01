@@ -2642,7 +2642,7 @@ package   thompsonaero    mp_physics==28               -             moist:qv,qc
 package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi;scalar:qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi;scalar:qnc,qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   p3_2category    mp_physics==52               -             moist:qv,qc,qr,qi,qi2;scalar:qnc,qni,qnr,qir,qib,qni2,qir2,qib2;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,vmi3d_2,rhopo3d_2,di3d_2,refl_10cm,th_old,qv_old
-package   morr_tm_aero    mp_physics==40               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnc,qni,qns,qnr,qng;state:rqrcuten,rqscuten,rqicuten,EFCG,EFIG,EFSG,WACT,CCN1_GS,CCN2_GS,CCN3_GS,CCN4_GS,CCN5_GS,CCN6_GS,CCN7_GS,re_cloud,re_ice,re_snow
+package   morr_tm_aero    mp_physics==40               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnc,qni,qns,qnr,qng;state:rqrcuten,rqscuten,rqicuten,EFCG,EFIG,EFSG,WACT,CCN1_GS,CCN2_GS,CCN3_GS,CCN4_GS,CCN5_GS,CCN6_GS,CCN7_GS,re_cloud,re_ice,re_snow,mskf_refl_10cm
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 
 package   radar_refl      compute_radar_ref==1         -             state:refl_10cm,refd_max

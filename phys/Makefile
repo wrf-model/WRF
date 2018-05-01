@@ -66,7 +66,7 @@ MODULES = \
 	module_cu_gf_deep.o \
 	module_cu_gf_sh.o \
 	module_cu_ksas.o \
-	module_cu_nsas_old.o \
+	module_cu_nsas.o \
 	module_cu_sas.o \
 	module_cu_scalesas.o \
 	module_cu_osas.o \

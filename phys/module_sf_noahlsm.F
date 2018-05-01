@@ -3262,13 +3262,9 @@ CONTAINS
 ! ABOVE FREEZING BLOCK
 ! ----------------------------------------------------------------------
       ELSE
-#if defined(mpas)
-         T1 - TFREEZ * SNCOVR ** SNOEXP + T12 * (1.0- SNCOVR ** SNOEXP)
-#else
 !     From V3.9 original code (commented) replaced to allow complete melting of small snow amounts
 !        T1 = TFREEZ * SNCOVR ** SNOEXP + T12 * (1.0- SNCOVR ** SNOEXP)
          T1 = TFREEZ * max(0.01,SNCOVR ** SNOEXP) + T12 * (1.0- max(0.01,SNCOVR ** SNOEXP))
-#endif
          BETA = 1.0
 
 ! ----------------------------------------------------------------------

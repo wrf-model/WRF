@@ -142,7 +142,7 @@ CONTAINS
                                           ,CAMZMSCHEME, SASSCHEME     &
                                           ,OSASSCHEME                 &  
                                           ,SCALESASSCHEME             &  ! scale-sware sas
-                                          ,NSASSCHEME, NSASOLDSCHEME  &
+                                          ,KSASSCHEME, NSASOLDSCHEME  &
 #if (EM_CORE == 1)
                                           ,MSKFSCHEME                 &
                                           ,CAMMGMPSCHEME              &
@@ -188,7 +188,7 @@ CONTAINS
    USE module_cu_camzm_driver, ONLY : camzm_driver
    USE module_cu_tiedtke, ONLY : cu_tiedtke
    USE module_cu_ntiedtke,ONLY : cu_ntiedtke
-   USE module_cu_nsas   , ONLY : cu_nsas
+   USE module_cu_ksas   , ONLY : cu_ksas
    USE module_cu_nsas_old,ONLY : cu_nsas_old
    USE module_wrf_error , ONLY : wrf_err_message
 
@@ -1422,10 +1422,10 @@ CONTAINS
         ENDIF
 
 ! New KIM SAS SCHEME - (KIAPS, South Korea)
-     CASE (NSASSCHEME)
+     CASE (KSASSCHEME)
         IF ( PRESENT ( QFX ) .AND. PRESENT( HFX ) ) THEN
-          CALL wrf_debug(100,'in nsas_cps')
-          CALL CU_NSAS(                                         &
+          CALL wrf_debug(100,'in ksas_cps')
+          CALL CU_KSAS(                                         &
                 DT=dt,DX=dx,P3DI=p8w,P3D=p,PI3D=pi,             &
                 QC3D=QC_CURR,QI3D=QI_CURR,RHO3D=rho,            &
                 ITIMESTEP=itimestep,STEPCU=STEPCU,              &
@@ -1454,7 +1454,7 @@ CONTAINS
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                                                                 )
         ELSE
-          CALL wrf_error_fatal('Lacking arguments for CU_NSAS in cumulus driver')
+          CALL wrf_error_fatal('Lacking arguments for CU_KSAS in cumulus driver')
         ENDIF
 
 ! New GFS SAS SCHEME - (Yonsei Univ., South Korea)
@@ -1488,7 +1488,7 @@ CONTAINS
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                                                                 )
         ELSE
-          CALL wrf_error_fatal('Lacking arguments for CU_NSASOLD in cumulus driver')
+          CALL wrf_error_fatal('Lacking arguments for CU_NSAS_OLD in cumulus driver')
         ENDIF
 
 #if (EM_CORE == 1)

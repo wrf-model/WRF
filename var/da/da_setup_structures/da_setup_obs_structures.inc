@@ -91,7 +91,8 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_hsbobs .OR. use_kma1dvar .OR. use_filtered_rad .OR. &
       use_ssmisobs .OR. use_hirs4obs .OR. use_mhsobs .OR. use_pseudo_rad .OR. &
       use_mwtsobs  .OR. use_mwhsobs .OR. use_atmsobs .OR. use_simulated_rad .OR. &
-      use_iasiobs .OR. use_seviriobs .OR. use_amsr2obs .OR. use_goesimgobs) then
+      use_iasiobs .OR. use_seviriobs .OR. use_amsr2obs .OR. use_goesimgobs .OR. &
+      use_goesabiobs) then
       use_rad = .true.
    else
       use_rad = .false.
@@ -280,6 +281,12 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       call da_message((/'Using NCEP BUFR radiance 1b input'/))
       if ( use_amsr2obs ) then
          call da_message((/'Using AMSR2 radiance input in HDF5 format'/))
+      end if
+      if ( use_goesimgobs ) then
+         call da_message((/'Using GOES IMAGER radiance input in netcdf format'/))
+      end if
+      if ( use_goesabiobs ) then
+         call da_message((/'Using GOES ABI radiance input in netcdf format'/))
       end if
       call da_setup_radiance_structures(grid, ob, iv)
 #else

@@ -134,7 +134,7 @@ subroutine  da_read_obs_ncgoesimg (iv,infile)
    elseif(infile(6:7)=='15') then
       satellite_id = 15
    else
-      write(*,*) 'goes satellite ', satellite_id, ' is not supported'
+      write(*,*) 'goes satellite ', satellite_id, ' is not supported for imager instrument'
       return
    endif
 

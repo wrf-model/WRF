@@ -14,7 +14,7 @@ subroutine da_qc_rad (it, ob, iv)
 
    integer :: i, nchan,p,j
    logical   :: amsua, amsub, hirs, msu,airs, hsb, ssmis, mhs, iasi, seviri
-   logical   :: mwts, mwhs, atms, amsr2, imager
+   logical   :: mwts, mwhs, atms, amsr2, imager, abi
 
    integer, allocatable :: index(:)
    integer :: num_tovs_avg
@@ -64,6 +64,7 @@ subroutine da_qc_rad (it, ob, iv)
       seviri = trim(rttov_inst_name(rtminit_sensor(i))) == 'seviri'
       amsr2 = trim(rttov_inst_name(rtminit_sensor(i))) == 'amsr2'
       imager = trim(rttov_inst_name(rtminit_sensor(i))) == 'imager'
+      abi = trim(rttov_inst_name(rtminit_sensor(i))) == 'abi'
 
       if (hirs) then
          ! 1.0 QC for HIRS
@@ -98,6 +99,8 @@ subroutine da_qc_rad (it, ob, iv)
          call da_qc_amsr2(it,i,nchan,ob,iv)
       else if (imager) then
          call da_qc_goesimg(it,i,nchan,ob,iv)
+      else if (abi) then
+         call da_qc_goesabi(it,i,nchan,ob,iv)
       else
          write(unit=message(1),fmt='(A,A)') &
             "Unrecognized instrument",trim(rttov_inst_name(rtminit_sensor(i)))

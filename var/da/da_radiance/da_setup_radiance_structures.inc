@@ -11,6 +11,7 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
    type (iv_type), intent(inout)   :: iv         ! O-B structure.
 
    character(len=200)          :: filename
+   character(len=200)          :: fpath(4)
    integer                     :: i, j, n, ios, ifgat
    logical                     :: lprinttovs 
 
@@ -219,6 +220,14 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
          !end if
          !write(unit=stdout,fmt='(a)') 'Finish reading goesimg data'
       end if
+      if (use_goesabiobs) then
+         write(unit=stdout,fmt='(a)') 'Reading netcdf goes ABI radiance data'
+
+         call da_read_obs_ncgoesabi(iv, 16)
+
+!         call da_read_obs_ncgoesabi(iv, 17)
+      end if
+
    end if
 
    if ( use_filtered_rad ) then

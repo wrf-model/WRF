@@ -209,6 +209,7 @@
                               ph_n2o5,ph_mvk,ph_glyald,ph_hyac,        &
                               ph_cl2,ph_hocl,ph_fmcl,                  &
                               ivgtyp,                                  &
+                              nref0, nw0, tuv_jmax0,                   &
                               ph_radfld, ph_adjcoe, ph_prate,          &
                               wc,zref,                                 &
                               tauaer1, tauaer2, tauaer3, tauaer4,      &    !rajesh

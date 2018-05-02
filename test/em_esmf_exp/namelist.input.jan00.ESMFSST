@@ -107,10 +107,7 @@
 
  &bdy_control
  spec_bdy_width                      = 5,
- spec_zone                           = 1,
- relax_zone                          = 4,
- specified                           = .true., .false.,.false.,
- nested                              = .false., .true., .true.,
+ specified                           = .true.,
  /
 
  &grib2

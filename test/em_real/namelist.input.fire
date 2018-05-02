@@ -163,20 +163,7 @@
 
   &bdy_control
  spec_bdy_width                      = 5,
- spec_zone                           = 1,
- relax_zone                          = 4,
  specified                           = .true.,
- periodic_x                          = .false.,
- symmetric_xs                        = .false.,
- symmetric_xe                        = .false.,
- open_xs                             = .false.,
- open_xe                             = .false.,
- periodic_y                          = .false.,
- symmetric_ys                        = .false.,
- symmetric_ye                        = .false.,
- open_ys                             = .false.,
- open_ye                             = .false.,
- nested                              = .false.,
  /
 
  &grib2

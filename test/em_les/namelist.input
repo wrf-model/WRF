@@ -98,17 +98,16 @@
  /
 
  &bdy_control
- periodic_x                          = .true., .false.,.false.,
- symmetric_xs                        = .false.,.false.,.false.,
- symmetric_xe                        = .false.,.false.,.false.,
- open_xs                             = .false.,.false.,.false.,
- open_xe                             = .false.,.false.,.false.,
- periodic_y                          = .true., .false.,.false.,
- symmetric_ys                        = .false.,.false.,.false.,
- symmetric_ye                        = .false.,.false.,.false.,
- open_ys                             = .false.,.false.,.false.,
- open_ye                             = .false.,.false.,.false.,
- nested                              = .false., .true., .true.,
+ periodic_x                          = .true., 
+ symmetric_xs                        = .false.,
+ symmetric_xe                        = .false.,
+ open_xs                             = .false.,
+ open_xe                             = .false.,
+ periodic_y                          = .true., 
+ symmetric_ys                        = .false.,
+ symmetric_ye                        = .false.,
+ open_ys                             = .false.,
+ open_ye                             = .false.,
  /
 
  &grib2

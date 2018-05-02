@@ -583,6 +583,19 @@ subroutine da_update_firstguess(grid, out_filename)
                              start_index,end_index1,               & !mem
                              start_index,end_index1,               & !pat
                              ierr                                 )
+
+! Update moist potential temperature: now it is identical to T.
+     rmse_var='MOIST_TEHTA-T0'
+     call ext_ncd_get_var_info (dh1,trim(rmse_var),ndim1,ordering,staggering, &
+          start_index,end_index1, WrfType, ierr    )
+     call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),         &
+                             field3,WRF_REAL,0,0,0,ordering,       &
+                             staggering, dimnames ,                &
+                             start_index,end_index1,               & !dom
+                             start_index,end_index1,               & !mem
+                             start_index,end_index1,               & !pat
+                             ierr                                 )
+
   end if  
   
 #ifdef DM_PARALLEL

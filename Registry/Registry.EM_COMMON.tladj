@@ -172,6 +172,7 @@ state    real   umaxw          ij       dyn_em      1        X     i1  "UMAXW"  
 state    real   utrop          ij       dyn_em      1        X     i1  "UTROP"      "U-component of the tropopause wind" "m s-1"
 state    real   vmaxw          ij       dyn_em      1        Y     i1  "VMAXW"      "V-component of the max wind speed"  "m s-1"
 state    real   vtrop          ij       dyn_em      1        Y     i1  "VTROP"      "V-component of the tropopause wind" "m s-1"
+state    real   erod           ij.      misc        1        -     i012rh "EROD" "fraction of erodible surface in each grid cell (0-1)"       "none"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 #                                               
@@ -230,9 +231,9 @@ i1       real   ph_tendf       ikj     dyn_em      1         Z
 i1       real   ph_save        ikj     dyn_em      1         Z 
 
 # Potential Temperature
-#KAL added d (interpolating down to t_init) for the vertical nesting code
+state    real   th_phy_m_t0    ikj      dyn_em      1         -     ih  "t"      "perturbation potential temperature theta-t0" "K"
 state    real   t              ikjb     dyn_em      2         -     \
-       i0rhusdf=(bdy_interp:dt)   "t"      "perturbation potential temperature (theta-t0)" "K"
+       i0rhusdf=(bdy_interp:dt)   "moist_theta-T0"      "perturbation moist potential temperature (1+Rv/Rd Qv)*(theta-t0)" "K"
 
 state    real   t_init         ikj     dyn_em      1         -      ird       "t_init" "initial potential temperature" "K"
 i1       real   t_tend         ikj     dyn_em      1         -  
@@ -309,7 +310,7 @@ state    real   tsk_force_tend      -     dyn_em      1      -      i3rh     "TS
 
 # Mass
 state    real   mu              ijb     dyn_em      2         -     \
-     irhusdf=(bdy_interp:dt)   "mu"  "perturbation dry air mass in column" "Pa"
+     irh01usdf=(bdy_interp:dt) "mu"  "perturbation dry air mass in column" "Pa"
 state    real   mub             ij     dyn_em      1         -     irhdus       "mub" "base state dry air mass in column" "Pa"
 state    real   mub_fine        ij     dyn_em      1         -      -           "mub_fine" "nest temp, holds interpolated coarse grid mub" "Pa"
 state    real   mub_save        ij     dyn_em      1         -      -           "mub_save" "nest temp, holds orig fine grid mub" "Pa"
@@ -392,8 +393,8 @@ state    real   p_hyd           ikj     dyn_em      1         -      irh       "
 state    real   p_hyd_w         ikj     dyn_em      1         Z       r        "p_hyd_w"     "hydrostatic pressure at full levels"         "Pa"
 
 # 2m and 10m output diagnostics
-state    real   Q2               ij     misc        1         -     irh0{22}{23}du     "Q2"                   "QV at 2 M"         "kg kg-1"
-state    real   T2               ij     misc        1         -     i01rh0{22}{23}du   "T2"                   "TEMP at 2 M"       "K"
+state    real   Q2               ij     misc        1         -     irh01{22}{23}du    "Q2"                   "QV at 2 M"         "kg kg-1"
+state    real   T2               ij     misc        1         -     i01rh01{22}{23}du  "T2"                   "TEMP at 2 M"       "K"
 state    real   TH2              ij     misc        1         -     irhdu     "TH2"                  "POT TEMP at 2 M"   "K"
 state    real   PSFC             ij     misc        1         -     i01rhdu   "PSFC"                 "SFC PRESSURE"      "Pa"
 
@@ -466,21 +467,21 @@ state    real    vc_j                 -       misc     -     -    r
 #                                               
 state   real    -              ikjftb   moist       1         -     -    -
 state   real    qv             ikjftb   moist       1         -     \
-   i0rhusdf=(bdy_interp:dt)  "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
+  i0rh01usdf=(bdy_interp:dt) "QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
 state   real    qc             ikjftb   moist       1         -     \
-   i0rhusdf=(bdy_interp:dt)  "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
+  i0rhusdf=(bdy_interp:dt)   "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
 state   real    qr             ikjftb   moist       1         -     \
-   i0rhusdf=(bdy_interp:dt)  "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
+  i0rhusdf=(bdy_interp:dt)   "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
 state   real    qi             ikjftb   moist       1         -     \
-   i0rhusdf=(bdy_interp:dt)  "QICE"             "Ice mixing ratio"              "kg kg-1"
+  i0rhusdf=(bdy_interp:dt)   "QICE"             "Ice mixing ratio"              "kg kg-1"
 state   real    qi2             ikjftb   moist       1         -     \
-   i0rhusdf=(bdy_interp:dt)  "QICE2"             "Ice mixing ratio cat 2"              "kg kg-1"
+  i0rhusdf=(bdy_interp:dt)   "QICE2"             "Ice mixing ratio cat 2"              "kg kg-1"
 state   real    qs             ikjftb   moist       1         -     \
-   i0rhusdf=(bdy_interp:dt)  "QSNOW"            "Snow mixing ratio"             "kg kg-1"
+  i0rhusdf=(bdy_interp:dt)   "QSNOW"            "Snow mixing ratio"             "kg kg-1"
 state   real    qg             ikjftb   moist       1         -     \
-   i0rhusdf=(bdy_interp:dt)  "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
+  i0rhusdf=(bdy_interp:dt)   "QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
 state   real    qh             ikjftb   moist       1         -     \
-   i0rhusdf=(bdy_interp:dt)  "QHAIL"            "Hail mixing ratio"             "kg kg-1"
+  i0rhusdf=(bdy_interp:dt)   "QHAIL"            "Hail mixing ratio"             "kg kg-1"
 state   real    -              ikjftb   dfi_moist       1         -     -    -
 state   real    dfi_qv         ikjftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QVAPOR"       "Water vapor mixing ratio"      "kg kg-1"
@@ -1316,9 +1317,9 @@ state    real  RQCNCUTEN       ikj      misc        1         -      r        "R
 state    real  RQINCUTEN       ikj      misc        1         -      r        "RQINCUTEN"             "Q_IN TENDENCY DUE TO CUMULUS SCHEME"      "# kg-1 s-1"
 state    real  W0AVG           ikj      misc        1         -      r        "W0AVG"                 "AVERAGE VERTICAL VELOCITY FOR KF CUMULUS SCHEME"         "m s-1"
 
-state    real  RAINC            ij      misc        1         -      rhdu     "RAINC"                 "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
-state    real  RAINSH           ij      misc        1         -      rhdu     "RAINSH"                "ACCUMULATED SHALLOW CUMULUS PRECIPITATION"               "mm"
-state    real  RAINNC           ij      misc        1         -      rhdu     "RAINNC"                "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"      
+state    real  RAINC            ij      misc        1         -      rh01du   "RAINC"                 "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
+state    real  RAINSH           ij      misc        1         -      rh01du   "RAINSH"                "ACCUMULATED SHALLOW CUMULUS PRECIPITATION"               "mm"
+state    real  RAINNC           ij      misc        1         -      rh01du   "RAINNC"                "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"      
 state  integer I_RAINC          ij      misc        1         -      rhd=(interp_fcni)u=(copy_fcni)     "I_RAINC"            "BUCKET FOR RAINC"                    ""
 state  integer I_RAINNC         ij      misc        1         -      rhd=(interp_fcni)u=(copy_fcni)     "I_RAINNC"           "BUCKET FOR RAINNC"                   ""
 state    real  PRATEC           ij      misc        1         -      r        "PRATEC"                "PRECIP RATE FROM CUMULUS SCHEME"                         "mm s-1"
@@ -1558,10 +1559,10 @@ state    real  OLR              ij      misc        1         -      rh        "
 
 # these next 2 are for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
 # with wave model, only if compiled with -DMCELIO, JM 2003/05/29
-state    real  XLAT_U           ij      dyn_em      1         X     i012rh01du=(copy_fcnm)       "XLAT_U"              "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
-state    real  XLONG_U          ij      dyn_em      1         X     i012rh01d=(interp_fcn_blint_ll:xlat_u,input_from_file)u=(copy_fcnm)       "XLONG_U"             "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
-state    real  XLAT_V           ij      dyn_em      1         Y     i012rh01du=(copy_fcnm)       "XLAT_V"              "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
-state    real  XLONG_V          ij      dyn_em      1         Y     i012rh01d=(interp_fcn_blint_ll:xlat_v,input_from_file)u=(copy_fcnm)       "XLONG_V"             "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
+state    real  XLAT_U           ij      dyn_em      1         X     i012rhdu=(copy_fcnm)         "XLAT_U"              "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
+state    real  XLONG_U          ij      dyn_em      1         X     i012rhd=(interp_fcn_blint_ll:xlat_u,input_from_file)u=(copy_fcnm)         "XLONG_U"             "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
+state    real  XLAT_V           ij      dyn_em      1         Y     i012rhdu=(copy_fcnm)         "XLAT_V"              "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
+state    real  XLONG_V          ij      dyn_em      1         Y     i012rhd=(interp_fcn_blint_ll:xlat_v,input_from_file)u=(copy_fcnm)         "XLONG_V"             "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
 state    real  ALBEDO           ij      misc        1         -      rh          "ALBEDO"                   "ALBEDO"
 state    real  CLAT             ij      misc        1         -     i012rhdu=(copy_fcnm)         "CLAT"                "COMPUTATIONAL GRID LATITUDE, SOUTH IS NEGATIVE"                       "degree_north"
 state    real  ALBBCK           ij      misc        1         -     i0124rh   "ALBBCK"                "BACKGROUND ALBEDO"        ""
@@ -2059,7 +2060,7 @@ rconfig   real      eta_levels      namelist,domains    max_eta        -1.
 rconfig   integer   auto_levels_opt namelist,domains    1               2      -     "auto_levels_opt" "automatic levels, 1=old, 2=new"
 rconfig   real      max_dz          namelist,domains    1               1000.  -     "max_dz"   "maximum thickness limit for eta calc" "m"
 rconfig   real      dzbot           namelist,domains    1               50.    -     "dzbot"    "surface dz thickness for eta calc" "m"
-rconfig   real      dzstretch_s     namelist,domains    1               1.1    -     "dzstretch_s"  "surface dz stretching factor for eta calc"    ""
+rconfig   real      dzstretch_s     namelist,domains    1               1.3    -     "dzstretch_s"  "surface dz stretching factor for eta calc"    ""
 rconfig   real      dzstretch_u     namelist,domains    1               1.1    -     "dzstretch_u"  "upper dz stretching factor for eta calc"    ""
 rconfig   integer   ocean_levels    namelist,domains    1               30     irh   "ocean level"        ""      ""
 rconfig   real      ocean_z         namelist,domains    max_ocean      -1      -     "vertical profile of layer depths for ocean" "m"
@@ -2220,6 +2221,8 @@ rconfig   real    aer_angexp_val          namelist,physics      max_domains   1.
 rconfig   real    aer_ssa_val             namelist,physics      max_domains   0.85    irh    "aer_ssa_val"    "fixed value for aerosol single-scattering albedo. Valid when aer_ssa_opt=1" ""
 rconfig   real    aer_asy_val             namelist,physics      max_domains   0.90    irh    "aer_asy_val"    "fixed value for aerosol asymmetry parameter. Valid when aer_asy_opt=1" ""
 rconfig   logical cu_rad_feedback         namelist,physics      max_domains   .false. irh    "feedback of cumulus cloud to radiation"  ""
+rconfig   integer dust_emis               namelist,physics      1             0        rh    "option for dust emission outside of chem"  ""      ""
+rconfig   integer erosion_dim             namelist,physics      1             3        -     "erosion_dim"            ""      ""
 rconfig   integer no_src_types_cu         namelist,physics      1             1       -      "no_src_types_cu" "Number of aerosoal species in global aerosol data"  ""
 rconfig   integer alevsiz_cu              namelist,physics      1             1       -      "alevsiz_cu" "Number of levels in global aerosol data"  ""
 rconfig   integer aercu_opt               namelist,physics      1             0       -      "aercu_opt"    "aerosol input option for multiscale KF"      ""
@@ -2284,6 +2287,7 @@ rconfig   integer use_mp_re               namelist,physics     	1              1
 # The following two options are hooked into various microphysics schemes to allow for ensemble perturbations of CCN and hail/graupel PSDs - GAC (AFWA)
 rconfig   real    ccn_conc                namelist,physics      1           1.0E8      h     "ccn_conc"                 "CCN concentration"                                                             "# m-3"
 rconfig   integer hail_opt                namelist,physics      1              0       rh    "hail_opt"                 "Hail/Graupel switch, 1:hail, 0:graupel"                                        ""
+
 rconfig   integer clean_atm_diag          namelist,physics      1              0       rh    "clean_atm_diag"     "option to switch on clean sky diagnostics (for chem)"   "flag"
 rconfig   integer calc_clean_atm_diag     derived               1              0       -     "calc_clean_atm_diag" "carries decision on using clean sky diagnostics"       "flag"
 
@@ -2458,6 +2462,8 @@ rconfig   real    dampcoef                namelist,dynamics     max_domains    0
 rconfig   real    khdif                   namelist,dynamics	max_domains    0       h    "khdif"         ""      ""
 rconfig   real    kvdif                   namelist,dynamics	max_domains    0       h    "kvdif"         ""      ""
 rconfig   real    diff_6th_factor         namelist,dynamics     max_domains    0.12    h    "diff_6th_factor" "factor that controls rate of 6th-order numerical diffusion"
+rconfig   integer diff_6th_slopeopt       namelist,dynamics     max_domains    0      irh   "diff_6th_slopeopt" "switch for 6th-order numerical diffusion - terrain-slope tapering"
+rconfig   real    diff_6th_thresh         namelist,dynamics     max_domains    0.10    ih    "diff_6th_thresh" "slope threshold (m/m) that turns off 6th order diff is steep terrain"
 rconfig   integer diff_6th_opt            namelist,dynamics     max_domains    0      irh   "diff_6th_opt" "switch for 6th-order numerical diffusion"
 rconfig   integer use_theta_m             namelist,dynamics	1              0       rh    "use_theta_m" "theta_m = theta (1 + 1.61 Qv); 0-no, 1=yes"     ""
 rconfig   integer use_q_diabatic          namelist,dynamics     1              0       rh    "use_q_diabatic" "account for q diabatic terms in advection "     ""
@@ -2480,6 +2486,18 @@ rconfig   integer  chem_adv_opt           namelist,dynamics	max_domains    1    
 rconfig   integer  tracer_adv_opt         namelist,dynamics     max_domains    1       rh    "tracer_adv_opt"        "positive-definite RK3 transport switch"      ""
 rconfig   integer  scalar_adv_opt         namelist,dynamics	max_domains    1       rh    "scalar_adv_opt"        "positive-definite RK3 transport switch"      ""
 rconfig   integer  tke_adv_opt            namelist,dynamics	max_domains    1       rh    "tke_adv_opt"           "positive-definite RK3 transport switch"      ""
+# switches for selectively deactivating 2nd and 6th order horizontal filters for specific scalar variable classes
+rconfig   logical  moist_mix2_off         namelist,dynamics	max_domains    .false. rh    "moist_mix2_off"        "de-activate 2nd-order horizontal mixing for moisture"      ""
+rconfig   logical  chem_mix2_off          namelist,dynamics	max_domains    .false. rh    "chem_mix2_off"         "de-activate 2nd-order horizontal mixing for chem species"  ""
+rconfig   logical  tracer_mix2_off        namelist,dynamics	max_domains    .false. rh    "tracer_mix2_off"       "de-activate 2nd-order horizontal mixing for tracers"       ""
+rconfig   logical  scalar_mix2_off        namelist,dynamics	max_domains    .false. rh    "scalar_mix2_off"       "de-activate 2nd-order horizontal mixing for scalars"       ""
+rconfig   logical  tke_mix2_off           namelist,dynamics	max_domains    .false. rh    "tke_mix2_off"          "de-activate 2nd-order horizontal mixing for tke"           ""
+#
+rconfig   logical  moist_mix6_off         namelist,dynamics	max_domains    .false. rh    "moist_mix6_off"        "de-activate 6th-order horizontal filter for moisture"      ""
+rconfig   logical  chem_mix6_off          namelist,dynamics	max_domains    .false. rh    "chem_mix6_off"         "de-activate 6th-order horizontal filter for chem species"  ""
+rconfig   logical  tracer_mix6_off        namelist,dynamics	max_domains    .false. rh    "tracer_mix6_off"       "de-activate 6th-order horizontal filter for tracers"       ""
+rconfig   logical  scalar_mix6_off        namelist,dynamics	max_domains    .false. rh    "scalar_mix6_off"       "de-activate 6th-order horizontal filter for scalars"       ""
+rconfig   logical  tke_mix6_off           namelist,dynamics	max_domains    .false. rh    "tke_mix6_off"          "de-activate 6th-order horizontal filter for tke"           ""
 rconfig   logical top_radiation           namelist,dynamics	max_domains    .false. rh    "top_radiation"         ""      ""
 rconfig   integer mix_isotropic           namelist,dynamics     max_domains    0       h    "mix_isotropic"            "0=anistropic, 1=isotropic"      ""
 rconfig   real    mix_upper_bound         namelist,dynamics     max_domains    0.1     h    "mix_upper_bound"          "non-dimensional limit"      ""
@@ -2587,6 +2605,8 @@ state integer nodyn_dummy - dyn_nodyn -  -  -  "" "" ""
 rconfig   integer     windfarm_opt        namelist,physics      max_domains    0       rh       "windfarm_opt"                ""      ""
 rconfig   integer     windfarm_ij         namelist,physics      1              0       rh       "windfarm_ij"                ""      ""
 #
+# Ideal case selection
+rconfig   integer     ideal_case          namelist,ideal        1              0       rh       "ideal_case"                 ""      ""
 #---------------------------------------------------------------------------------------------------------------------------------------
 # Package Declarations
 #                                               
@@ -2710,8 +2730,8 @@ package   ysuscheme      bl_pbl_physics==1           -             -
 package   myjpblscheme   bl_pbl_physics==2           -             state:tke_pbl,el_pbl
 package   gfsscheme      bl_pbl_physics==3           -             -
 package   qnsepblscheme  bl_pbl_physics==4           -             state:tke_pbl,el_pbl,massflux_EDKF,entr_EDKF,detr_EDKF,thl_up,thv_up,rv_up,rt_up,rc_up,u_up,v_up,frac_up,rc_mf
-package   mynnpblscheme2 bl_pbl_physics==5           -             scalar:qke_adv;state:qke,tke_pbl,sh3d,tsq,qsq,cov,el_pbl;g_scalar:g_qke_adv;a_scalar:a_qke_adv
-package   mynnpblscheme3 bl_pbl_physics==6           -             scalar:qke_adv;state:qke,tke_pbl,sh3d,tsq,qsq,cov,el_pbl;g_scalar:g_qke_adv;a_scalar:a_qke_adv
+package   mynnpblscheme2 bl_pbl_physics==5           -             scalar:qke_adv;state:qke,tke_pbl,sh3d,tsq,qsq,cov,el_pbl
+package   mynnpblscheme3 bl_pbl_physics==6           -             scalar:qke_adv;state:qke,tke_pbl,sh3d,tsq,qsq,cov,el_pbl
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   boulacscheme   bl_pbl_physics==8           -             state:el_pbl,tke_pbl,wu_tur,wv_tur,wt_tur,wq_tur
 package   camuwpblscheme bl_pbl_physics==9           -             state:tauresx2d,tauresy2d,tpert2d,qpert2d,wpert2d,tke_pbl,smaw3d,wsedl3d,turbtype3d
@@ -2854,6 +2874,7 @@ state    real   HAILCAST_WUP_MASK   ij     misc        1         -      r       
 state    real   HAILCAST_WDUR       ij     misc        1         -      r        "HAILCAST_WDUR"               "Updraft duration"                                       "sec"
 state    real   haildtacttime        -       -         -         -      r        "haildtacttime"              "HAILDTACTTIME"         "HAILCAST ACTIVATION TIME in s"
 
+
 package   hailcast  hailcast_opt==1        -                    state:hailcast_diam_max,hailcast_diam_mean,hailcast_diam_std,hailcast_dhail1,hailcast_dhail2,hailcast_dhail3,hailcast_dhail4,hailcast_dhail5
 rconfig   integer   hailcast_opt       namelist,physics           max_domains    0       rh    "hailcast_opt"        "WRF-HAILCAST option, 1: on"                   ""
 rconfig   real      HAILDT             namelist,physics           max_domains    0       h     "HAILDT"              "seconds between WRF-HAILCAST calls"           "sec"
@@ -2912,6 +2933,17 @@ package   wrfhydro       wrf_hydro==1                -            state:SOLDRAIN
 package   no_windfarm    windfarm_opt==0             -            -
 package   fitchscheme    windfarm_opt==1             -            state:power
 
+#Ideal Cases
+package   realcase       ideal_case==0               -            -
+package   hill2d_x       ideal_case==1               -            -
+package   quarter_ss     ideal_case==2               -            -
+package   convrad        ideal_case==3               -            -
+package   squall2d_x     ideal_case==4               -            -
+package   squall2d_y     ideal_case==5               -            -
+package   grav2d_x       ideal_case==6               -            -
+package   b_wave         ideal_case==7               -            -
+package   seabreeze2d_x  ideal_case==8               -            -
+package   les            ideal_case==9               -            -
 # WRF-Chem specific diagnostics
 package   clnatmdiag     calc_clean_atm_diag==1      -            state:SWUPTCLN,SWDNTCLN,SWUPBCLN,SWDNBCLN,LWUPTCLN,LWDNTCLN,LWUPBCLN,LWDNBCLN 
 
@@ -2979,7 +3011,7 @@ halo      HALO_EM_SCALAR_E_5 dyn_em 48:scalar
 halo      HALO_EM_SCALAR_E_7 dyn_em 80:scalar
 halo      HALO_TOPOSHAD phys 24:ht_shad
 halo      HALO_EM_HORIZ_INTERP dyn_em 24:t_2,ph_2,ht,t_max_p,ght_max_p,max_p,t_min_p,ght_min_p,min_p
-halo      HALO_EM_THETAM dyn_em 48:t_1,t_2,h_diabatic
+halo      HALO_EM_THETAM dyn_em 48:h_diabatic
 
 halo      HALO_EM_MOIST_OLD_E_3 dyn_em 24:moist_old
 halo      HALO_EM_MOIST_OLD_E_5 dyn_em 48:moist_old
@@ -3056,7 +3088,7 @@ period    PERIOD_BDY_EM_D3 dyn_em 3:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tk
 period    PERIOD_EM_DA dyn_em 2:ru_m,rv_m,ww_m,mut,muts
 period    PERIOD_EM_F dyn_em 2:muus,muvs
 period    PERIOD_EM_G dyn_em 2:msftx,msfux,msfvy
-period    PERIOD_EM_THETAM dyn_em 3:t_1,t_2,h_diabatic
+period    PERIOD_EM_THETAM dyn_em 3:h_diabatic
 
 #
 #swap SWAP_ETAMP_NEW  dyn_em 1:dz8w,p_phy,pi_phy,rho,th_phy,moist,F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY,RAINNC,RAINNCV,SR,LOWLYR

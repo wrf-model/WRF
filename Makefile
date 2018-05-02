@@ -18,8 +18,8 @@ MODMP = ../wrftladj/module_mp_mkessler.o ../wrftladj/module_mp_nconvp.o
 MODBL = ../wrftladj/module_bl_surface_drag.o
 MODCU = ../wrftladj/module_cu_du.o
 
-# this file is needed to compile module_integrate.F under frame in wrfplus mode
-MODLL = ../wrftladj/module_linked_list2.o
+# this file is needed to compile module_integrate.F and module_cpl.F under frame in wrfplus mode
+MODLL = ../wrftladj/module_linked_list2.o ../share/module_model_constants.o
 
 # these 2 file are needed to compile mediation_integrate.F under share in wrfplus mode
 MODPT = ../dyn_em/module_bc_em.o ../wrftladj/mediation_pertmod_io.o

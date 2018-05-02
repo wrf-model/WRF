@@ -10,6 +10,7 @@ ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=$(IWORDSIZE) -DDWORDSIZE=$(DWORDSIZ
                       CONFIGURE_STUBMPI \
                       CONFIGURE_NETCDF_FLAG \
                       CONFIGURE_PNETCDF_FLAG \
+                      CONFIGURE_PIO_FLAG \
                       CONFIGURE_ESMF_FLAG \
                       CONFIGURE_GRIB2_FLAG \
                       CONFIGURE_RTTOV_FLAG \
@@ -62,7 +63,7 @@ CC_TOOLS_CFLAGS = CONFIGURE_NMM_CORE
 #NOWIN                      $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o 
 
 #NOWIN LIB_EXTERNAL    = \
-#NOWIN                      CONFIGURE_NETCDF_LIB_PATH CONFIGURE_PNETCDF_LIB_PATH CONFIGURE_GRIB2_LIB CONFIGURE_ATMOCN_LIB CONFIGURE_HDF5_LIB_PATH
+#NOWIN                      CONFIGURE_NETCDF_LIB_PATH CONFIGURE_PNETCDF_LIB_PATH CONFIGURE_PIO_LIB_PATH CONFIGURE_GRIB2_LIB CONFIGURE_ATMOCN_LIB CONFIGURE_HDF5_LIB_PATH
 
 LIB             =    $(LIB_BUNDLED) $(LIB_EXTERNAL) $(LIB_LOCAL) $(LIB_WRF_HYDRO)
 LDFLAGS         =    $(OMP) $(FCFLAGS) $(LDFLAGS_LOCAL) CONFIGURE_LDFLAGS
@@ -73,10 +74,11 @@ HDF5PATH        =    CONFIGURE_HDF5_PATH
 WRFPLUSPATH     =    CONFIGURE_WRFPLUS_PATH
 RTTOVPATH       =    CONFIGURE_RTTOV_PATH
 PNETCDFPATH     =    CONFIGURE_PNETCDF_PATH
+PIOPATH         =    CONFIGURE_PIO_PATH
 
 bundled:  io_only CONFIGURE_ATMOCN
 external: io_only CONFIGURE_COMMS_EXTERNAL $(ESMF_TARGET)
-io_only:  esmf_time CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_PNF CONFIGURE_WRFIO_GRIB2 \
+io_only:  esmf_time CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_PNF CONFIGURE_WRFIO_PIO CONFIGURE_WRFIO_GRIB2 \
 	  wrf_ioapi_includes wrfio_grib_share wrfio_grib1 wrfio_int fftpack
 
 
@@ -108,6 +110,12 @@ wrfio_pnf :
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_pnetcdf ; \
           make $(J) NETCDFPATH="$(PNETCDFPATH)" RANLIB="$(RANLIB)" CPP="$(CPP) $(ARCHFLAGS)" \
           FC="$(FC) $(PROMOTION) $(OMP) $(FCFLAGS)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
+
+wrfio_pio :
+	( cd $(WRF_SRC_ROOT_DIR)/external/io_pio ; \
+          make $(J) NETCDFPATH="$(PIOPATH)" RANLIB="$(RANLIB)" CPP="$(CPP)" \
+          CC="$(SCC)" CFLAGS="$(CFLAGS)" \
+          FC="$(SFC) $(PROMOTION) $(OMP) $(FCFLAGS)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
 
 wrfio_grib_share :
 	( cd $(WRF_SRC_ROOT_DIR)/external/io_grib_share ; \

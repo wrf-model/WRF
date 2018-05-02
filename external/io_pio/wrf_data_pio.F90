@@ -5,7 +5,7 @@
 ! Date:    May 8, 2014
 !
 !---------------------------------------------------------------------------
-!$Id$
+!$Id: wrf_data_pio.F90 7681 2014-10-08 21:23:55Z huangwei@ucar.edu $
 !---------------------------------------------------------------------------
 
 module wrf_data_pio
@@ -20,7 +20,7 @@ module wrf_data_pio
   integer                , parameter      :: MaxVars          = 3000
   integer                , parameter      :: MaxTimes         = 10000
   integer                , parameter      :: DateStrLen       = 19
-  integer                , parameter      :: VarNameLen       = 31
+  integer                , parameter      :: VarNameLen       = 50
   integer                , parameter      :: NO_DIM           = 0
   integer                , parameter      :: NVarDims         = 5
   integer                , parameter      :: NMDVarDims       = 2

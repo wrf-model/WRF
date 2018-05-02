@@ -5,7 +5,7 @@
 ! Date:    June 01, 2014
 !
 !---------------------------------------------------------------------------
-!$Id$
+!$Id: pio_routines.F90 7687 2014-10-10 04:12:05Z huangwei@ucar.edu $
 !---------------------------------------------------------------------------
 
 module pio_routines
@@ -154,6 +154,8 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
   integer                               :: i
   character(len=DateStrLen)             :: tmpdatestr(1)
 
+  Status = -9999
+
   if(len(Datestr) == DateStrLen) then
     tmpdatestr = DateStr
   else
@@ -181,6 +183,8 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
     TimeIndex = DH%TimeIndex
     if(TimeIndex <= 0) then
       TimeIndex = 1
+      DH%TimeIndex        = TimeIndex
+      DH%Times(TimeIndex) = DateStr
     elseif(DateStr == DH%Times(TimeIndex)) then
       Status = WRF_NO_ERR
       return
@@ -200,7 +204,10 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
     VCount(1) = DateStrLen
     VCount(2) = 1
    !write(unit=0, fmt='(3a,i6)') 'DateStr: <', trim(DateStr), '>, TimeIndex =', TimeIndex
-    stat = pio_put_var(DH%file_handle, DH%vtime, VStart, VCount, tmpdatestr)
+    DH%vtime%rec = TimeIndex
+    DH%vtime%name = 'Times'
+   !stat = pio_put_var(DH%file_handle, DH%vtime, VStart, VCount, tmpdatestr)
+    stat = pio_put_var(DH%file_handle, DH%vtime, tmpdatestr)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__ 
@@ -1035,8 +1042,8 @@ subroutine FieldIO(IO,DataHandle,DateStr,Dimens,Starts,Counts,Length,MemoryOrder
  !isbdy = BDY_VAR == DH%vartype(DH%CurrentVariable)
 
   pioidx = TimeIndex
+  DH%descVar(DH%CurrentVariable)%rec = TimeIndex
   call pio_setframe(DH%descVar(DH%CurrentVariable), pioidx)
- !DH%descVar(DH%CurrentVariable)%rec = TimeIndex
 
  !write(unit=0, fmt='(3a,i6)') 'File: ', __FILE__, ', line: ', __LINE__
  !write(unit=0, fmt='(3a,l8)') 'IO = ', trim(IO), ', whole = ', whole
@@ -1105,8 +1112,8 @@ subroutine FieldBDY(IO,DataHandle,DateStr,NDim,Domains, &
   endif
 
   pioidx = TimeIndex
+  DH%descVar(DH%CurrentVariable)%rec = TimeIndex
   call pio_setframe(DH%descVar(DH%CurrentVariable), pioidx)
- !DH%descVar(DH%CurrentVariable)%rec = TimeIndex
   Domains(NDim+1) = TimeIndex
 
   select case (FieldType)
@@ -1205,8 +1212,11 @@ subroutine initialize_pio(grid, DH)
    else
       pioprocs = grid%pioprocs
    endif
+      write(unit=0, fmt='(a,i6)') 'pioprocs is now = ', pioprocs, &
+                                  'grid%pioprocs = ', grid%pioprocs
 
-   piostride = nprocs / grid%pioprocs
+!  piostride = nprocs / grid%pioprocs
+   piostride = nprocs / pioprocs
 
    if((grid%pioprocs * piostride) < nprocs) then
      !We expect that: nprocs = piostride * grid%pioprocs
@@ -1219,6 +1229,7 @@ subroutine initialize_pio(grid, DH)
       write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
       write(unit=0, fmt='(a,i6)') 'Calculated piostride = ', piostride, &
                                   'User provided piostride = ', grid%piostride
+      piostride = grid%piostride
    endif
 
    if(grid%pioshift < 0) then
@@ -1285,7 +1296,22 @@ subroutine initialize_pio(grid, DH)
 
 end subroutine initialize_pio
 
-subroutine define_pio_iodesc(grid, DH)
+subroutine finalize_pio(DH)
+   implicit none
+
+   type(wrf_data_handle), pointer :: DH
+
+   integer     :: ierr
+
+   call PIO_finalize(DH%iosystem, ierr)
+
+  !if(associated(DH%iosystem)) then
+  !   deallocate(DH%iosystem)
+  !end if
+
+end subroutine finalize_pio
+
+subroutine init_pio_iodesc(grid, DH)
    implicit none
 
    type(domain)                   :: grid
@@ -1309,9 +1335,10 @@ subroutine define_pio_iodesc(grid, DH)
    integer(kind=PIO_Offset), &
            dimension((ime - ims + 1) * (jme - jms + 1) * grid%num_ext_model_couple_dom) &
            :: compdof_3d_mdl_cpl
-   integer(kind=PIO_Offset), &
-           dimension((ime - ims + 1) * (jme - jms + 1) * grid%ensdim) &
-           :: compdof_3d_ensemble
+!  integer(kind=PIO_Offset), &
+!          dimension((ime - ims + 1) * (jme - jms + 1) * grid%ensdim) &
+!          :: compdof_3d_ensemble
+   integer(kind=PIO_Offset), allocatable, dimension(:) :: compdof_3d_ensemble
    integer(kind=PIO_Offset), &
            dimension((jme - jms + 1) * (kme - kms + 1) * grid%spec_bdy_width ) &
            :: compdof_3d_xsz, compdof_3d_xez
@@ -1327,6 +1354,7 @@ subroutine define_pio_iodesc(grid, DH)
    integer(kind=PIO_Offset), &
            dimension((ime - ims + 1) * (jme - jms + 1)) &
            :: compdof_2d
+  !integer(kind=PIO_Offset) :: min_compdof_3d, max_compdof_3d
    integer :: dims3d(3), dims2d(2), dims2di(3)
    integer :: dims3d_xb(3), dims2d_xb(2)
    integer :: dims3d_yb(3), dims2d_yb(2)
@@ -1371,7 +1399,14 @@ subroutine define_pio_iodesc(grid, DH)
 
    dims3d_ensemble(1) = dims3d(1)
    dims3d_ensemble(2) = dims3d(2)
-   dims3d_ensemble(3) = grid%ensdim
+
+   if(grid%ensdim > 5) then
+      dims3d_ensemble(3) = 5
+   else
+      dims3d_ensemble(3) = grid%ensdim
+   end if
+
+   allocate(compdof_3d_ensemble((ime - ims + 1) * (jme - jms + 1) * dims3d_ensemble(3)))
 
    dims2d(1) = dims3d(1)
    dims2d(2) = dims3d(2)
@@ -1626,6 +1661,8 @@ subroutine define_pio_iodesc(grid, DH)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d, compdof_3d, DH%iodesc3d_m_real)
    call PIO_initdecomp(DH%iosystem, PIO_double, dims3d, compdof_3d, DH%iodesc3d_m_double)
 
+  !call pio_setdebuglevel(0)
+
    call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_land, compdof_3d_land, DH%iodesc3d_land_int)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_land, compdof_3d_land, DH%iodesc3d_land_real)
    call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_land, compdof_3d_land, DH%iodesc3d_land_double)
@@ -1647,6 +1684,8 @@ subroutine define_pio_iodesc(grid, DH)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_ensemble, compdof_3d_ensemble, DH%iodesc3d_ensemble_real)
    call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_ensemble, compdof_3d_ensemble, DH%iodesc3d_ensemble_double)
   !call pio_setdebuglevel(0)
+
+   deallocate(compdof_3d_ensemble)
 
 #ifndef INTSPECIAL
    call PIO_initdecomp(DH%iosystem, PIO_int,    dims2d, compdof_2d, DH%iodesc2d_m_int)
@@ -2099,7 +2138,149 @@ subroutine define_pio_iodesc(grid, DH)
    call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_yb, compdof_3d_yez, DH%iodesc3d_yez_w_real)
    call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_yb, compdof_3d_yez, DH%iodesc3d_yez_w_double)
 
-end subroutine define_pio_iodesc
+end subroutine init_pio_iodesc
+
+subroutine free_pio_iodesc(DH)
+   implicit none
+
+   type(wrf_data_handle), pointer :: DH
+
+!--call free_decomp in order to free the IO decomposition with PIO
+  !call pio_setdebuglevel(1)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_m_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_m_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_m_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_land_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_land_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_land_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_soil_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_soil_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_soil_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_soil_layers_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_soil_layers_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_soil_layers_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_mdl_cpl_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_mdl_cpl_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_mdl_cpl_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_ensemble_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_ensemble_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_ensemble_double)
+
+#ifndef INTSPECIAL
+   call PIO_freedecomp(DH%iosystem, DH%iodesc2d_m_int)
+#else
+   call PIO_freedecomp(DH%iosystem, DH%iodesc2d_m_int)
+#endif
+   call PIO_freedecomp(DH%iosystem, DH%iodesc2d_m_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc2d_m_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xsz_m_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xsz_m_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xsz_m_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xez_m_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xez_m_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xez_m_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_ysz_m_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_ysz_m_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_ysz_m_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_yez_m_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_yez_m_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_yez_m_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc2d_xs_m_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc2d_xs_m_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc2d_xs_m_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc2d_xe_m_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc2d_xe_m_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc2d_xe_m_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc2d_ys_m_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc2d_ys_m_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc2d_ys_m_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc2d_ye_m_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc2d_ye_m_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc2d_ye_m_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_u_double)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_u_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_u_int)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc2d_u_double)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc2d_u_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc2d_u_int)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xsz_u_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xsz_u_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xsz_u_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xez_u_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xez_u_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xez_u_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_ysz_u_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_ysz_u_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_ysz_u_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_yez_u_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_yez_u_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_yez_u_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_v_double)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_v_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_v_int)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc2d_v_double)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc2d_v_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc2d_v_int)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xsz_v_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xsz_v_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xsz_v_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xez_v_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xez_v_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xez_v_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_ysz_v_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_ysz_v_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_ysz_v_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_yez_v_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_yez_v_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_yez_v_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_w_double)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_w_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_w_int)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xsz_w_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xsz_w_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xsz_w_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xez_w_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xez_w_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_xez_w_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_ysz_w_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_ysz_w_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_ysz_w_double)
+
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_yez_w_int)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_yez_w_real)
+   call PIO_freedecomp(DH%iosystem, DH%iodesc3d_yez_w_double)
+
+end subroutine free_pio_iodesc
 
 subroutine reorder (MemoryOrder,MemO)
   implicit none

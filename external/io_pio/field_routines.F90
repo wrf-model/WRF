@@ -1,5 +1,5 @@
 !------------------------------------------------------------------
-!$Id$
+!$Id: field_routines.F90 7668 2014-09-29 16:48:30Z huangwei@ucar.edu $
 !------------------------------------------------------------------
 
 subroutine ext_pio_RealFieldIO(whole,IO,DH,Starts,Counts,fldsize,datasize,Data,Status)
@@ -23,7 +23,7 @@ subroutine ext_pio_RealFieldIO(whole,IO,DH,Starts,Counts,fldsize,datasize,Data,S
   if(IO == 'write') then
     if(whole)then
        stat = pio_put_var(DH%file_handle,DH%descVar(DH%CurrentVariable), &
-                          Starts,Counts,Data(1:datasize))
+                          Starts(1:1),Counts(1:1),Data(1:datasize))
     else
       call pio_write_darray(DH%file_handle, DH%descVar(DH%CurrentVariable), &
                             DH%ioVar(DH%CurrentVariable), Data, stat, fillvalue)
@@ -64,15 +64,16 @@ subroutine ext_pio_DoubleFieldIO(whole,IO,DH,Starts,Counts,fldsize,datasize,Data
 
   if(IO == 'write') then
     if(whole)then
-      stat = pio_put_var(DH%file_handle,DH%descVar(DH%CurrentVariable), &
-                         Starts,Counts,Data(1:datasize))
+       stat = pio_put_var(DH%file_handle,DH%descVar(DH%CurrentVariable), &
+                          Starts(1:1),Counts(1:1),Data(1:datasize))
     else
       call pio_write_darray(DH%file_handle, DH%descVar(DH%CurrentVariable), &
                             DH%ioVar(DH%CurrentVariable), Data, stat)
     end if
   else
     if(whole)then
-      stat = pio_get_var(DH%file_handle,DH%descVar(DH%CurrentVariable),Data)
+      stat = pio_get_var(DH%file_handle,DH%descVar(DH%CurrentVariable), &
+                         Starts(1:1),Counts(1:1),Data(1:datasize))
     else
       call pio_read_darray(DH%file_handle, DH%descVar(DH%CurrentVariable), &
                            DH%ioVar(DH%CurrentVariable), Data, stat)
@@ -95,7 +96,7 @@ subroutine ext_pio_IntFieldIO(whole,IO,DH,Starts,Counts,fldsize,datasize,Data,St
   include 'wrf_status_codes.h'
   logical                     ,intent(in)    :: whole
   character (*)               ,intent(in)    :: IO
-  type(wrf_data_handle)       ,pointer       :: DH
+  type(wrf_data_handle)                      :: DH
   integer,dimension(NVarDims) ,intent(in)    :: Starts
   integer,dimension(NVarDims) ,intent(in)    :: Counts
   integer                     ,intent(in)    :: fldsize, datasize
@@ -103,26 +104,18 @@ subroutine ext_pio_IntFieldIO(whole,IO,DH,Starts,Counts,fldsize,datasize,Data,St
   integer                     ,intent(out)   :: Status
   integer                                    :: stat
   integer, parameter                         :: fillvalue = 20140822
-  integer                                    :: Buffer(1)
-
- !call pio_setdebuglevel(1)
 
   if(IO == 'write') then
     if(whole)then
-      stat = pio_put_var(DH%file_handle,DH%descVar(DH%CurrentVariable), &
-                         Starts,Counts,Data(1:datasize))
+       stat = pio_put_var(DH%file_handle,DH%descVar(DH%CurrentVariable), &
+                          Starts(1:1),Counts(1:1),Data(1:datasize))
     else
       call pio_write_darray(DH%file_handle, DH%descVar(DH%CurrentVariable), &
                             DH%ioVar(DH%CurrentVariable), Data, stat, fillvalue)
     end if
   else
     if(whole)then
-      if(1 == fldsize) then
-        stat = pio_get_var(DH%file_handle,DH%descVar(DH%CurrentVariable),Buffer)
-        Data(1) = Buffer(1)
-      else
-        stat = pio_get_var(DH%file_handle,DH%descVar(DH%CurrentVariable),Data)
-      endif
+      stat = pio_get_var(DH%file_handle,DH%descVar(DH%CurrentVariable),Data(1:datasize))
     else
       call pio_read_darray(DH%file_handle, DH%descVar(DH%CurrentVariable), &
                            DH%ioVar(DH%CurrentVariable), Data, stat)
@@ -133,6 +126,7 @@ subroutine ext_pio_IntFieldIO(whole,IO,DH,Starts,Counts,fldsize,datasize,Data,St
     write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
     call wrf_debug ( WARN , msg)
   endif
+
   return
 end subroutine ext_pio_IntFieldIO
 
@@ -164,8 +158,7 @@ subroutine ext_pio_LogicalFieldIO(whole,IO,DH,Starts,Counts,fldsize,datasize,Dat
       endif
     enddo
     if(whole)then
-      stat = pio_put_var(DH%file_handle,DH%descVar(DH%CurrentVariable), &
-                         Starts,Counts,Buffer(1:datasize))
+      stat = pio_put_var(DH%file_handle,DH%descVar(DH%CurrentVariable),Buffer(1:datasize))
     else
       call pio_write_darray(DH%file_handle, DH%descVar(DH%CurrentVariable), &
                             DH%ioVar(DH%CurrentVariable), Buffer, stat)

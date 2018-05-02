@@ -3994,8 +3994,10 @@ CONTAINS
        !$OMP END PARALLEL DO
      ENDIF
 
-! Limit Q2 diagnostic to 5 per cent higher than lowest level value
-!     and set to that value in that case
+! Limit Q2 diagnostic to no more than 5 per cent higher than lowest level value
+!     This prevents unrealistic values when QFX is not mostly surface flux 
+!          because calculation is based on surface flux only
+!     Problems occurred in transition periods and weak winds and vegetation source
        !$OMP PARALLEL DO   &
        !$OMP PRIVATE ( ij, i, j, k )
        DO ij = 1 , num_tiles

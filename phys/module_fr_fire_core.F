@@ -92,7 +92,7 @@ subroutine ignite_fire( ifds,ifde,jfds,jfde,                    & ! fire domain 
                         lfn,tign,ignited)
 implicit none
 
-!*** purpose: ignite a circular/line fire 
+!*** purpose: ignite a circular/line/prescribed fire 
 
 !*** description
 ! ignite fire in the region within radius r from the line (sx,sy) to (ex,ey).
@@ -142,21 +142,19 @@ start_time = ignition_line%start_time ! ignition time for the start point from s
 end_time   = ignition_line%end_time! ignition time for the end poin from simulation start (s)
 radius     = ignition_line%radius  ! all within this radius ignites immediately
 ros        = ignition_line%ros     ! rate of spread
-
-
 tos        = radius/ros            ! time of spread to the given radius
 st         = start_time            ! the start time of ignition considered in this time step
 et         = min(end_ts,end_time)  ! the end time of the ignition segment in this time step
 
 ! this should be called whenever (start_ts, end_ts) \subset (start_time, end_time + tos) 
 if(start_ts>et+tos .or. end_ts<st)return   ! too late or too early, nothing to do
-
+!print *, 'IGNITING'
 if(start_time < end_time)then  ! we really want to test start_time .ne. end_time, but avoiding test of floats on equality
         ! segment of nonzero length
         !rels =  (st - start_time) / (end_time - start_time)  ! relative position of st in the segment (start,end)
 	!sx = start_x + rels * (end_x - start_x)
 	!sy = start_y + rels * (end_y - start_y)
-        rels = 0.
+!paj        rels = 0.
         sx = start_x
         sy = start_y
         rele =  (et - start_time) / (end_time - start_time)    ! relative position of et in the segment (start,end)
@@ -164,8 +162,8 @@ if(start_time < end_time)then  ! we really want to test start_time .ne. end_time
 	ey = start_y + rele * (end_y - start_y)
 else
         ! just a point
-        rels = 0.
-        rele = 1.
+!paj        rels = 0.
+!paj        rele = 1.
 	sx = start_x
 	sy = start_y
 	ex = end_x
@@ -216,7 +214,7 @@ do j=jfts,jfte
         if(.not.lfn_new>0.) then
             ignited=ignited+1   ! count
         endif
-        if(lfn(i,j)>0. .and. .not. lfn_new > 0.) then
+        if(lfn(i,j)>0. .and. .not. lfn_new > 0.) then 
             tign(i,j)=time_ign + d/ros  ! newly ignited now
             if(fire_print_msg.ge.3)then
 !$OMP CRITICAL(FIRE_CORE_CRIT)
@@ -381,9 +379,6 @@ real::lffij,lffi1j,lffij1,lffi1j1,tifij,tifi1j,tifij1,tifi1j1,tx,ty,txx,tyy
 character(len=128)::msg
 integer::m,omp_get_thread_num
      
-
-call check_mesh_2dim(its-1,ite+1,jts-1,jte+1,ims,ime,jms,jme)
-call check_mesh_2dim(its,ite,jts,jte,ifs,ife,jfs,jfe)
 
 ! refinement
 ir=fuel_left_irl
@@ -1273,19 +1268,43 @@ end subroutine
 !
 #endif
 
-subroutine prop_ls( id, &                                ! for debug
-                ids,ide,jds,jde, &                       ! domain dims
-                ims,ime,jms,jme, &                       ! memory dims
-                ips,ipe,jps,jpe, &                ! patch - nodes owned by this process 
-                its,ite,jts,jte, &                       ! tile dims
-                ts,dt,dx,dy,     &                       ! scalars in
-                tbound,          &                       ! scalars out
-                lfn_in,lfn_out,tign,ros,  &              ! arrays inout          
-                fp               &
+subroutine prop_ls_rk3(id,               &             
+                ifds,ifde,jfds,jfde,     &                 
+                ifms,ifme,jfms,jfme,     &                    
+                ifps,ifpe,jfps,jfpe,     &            
+                ifts,ifte,jfts,jfte,     &                    
+                ts,dt,dx,dy,             &                     
+                tbound,                  &                  
+                lfn_in,                  &
+                lfn_0,lfn_1,lfn_2,       & 
+                lfn_out,tign,ros,        &           
+                fp,                      &
+                grid,                    &       
+                ids,ide,jds,jde,kds,kde, & 
+                ims,ime,jms,jme,kms,kme, & 
+                ips,ipe,jps,jpe,kps,kpe  &
                    )
+
+
+#ifdef DM_PARALLEL
+    USE module_dm        , ONLY : ntasks_x,ntasks_y,local_communicator,mytask,ntasks
+    USE module_comm_dm , ONLY : halo_fire_lfn_1_sub, halo_fire_lfn_2_sub, halo_fire_lfn_0_sub
+#endif
+USE module_domain , only: domain
+
 implicit none
 
 !*** purpose: advance level function in time
+
+!***************************************************************************************!
+!*** Level-set method recoded for true mpi communications and added                  ***!
+!*** 3rd-order Runge-Kutta time integration and 3rd/5th-order WENO advection schemes ***!
+!*** Implemented by: Domingo Munoz-Esparza (NCAR/RAL, April 2016)                    ***!
+!*** Reference: D. Munoz-Esparza, B. Kosovic, P. Jimenez, J. Coen: "An accurate      ***!
+!*** fire-spread algorithm in the Weather Research and Forecasting model using the   ***!
+!*** level-set method", Journal of Advances in Modeling Earth Systems, 2018          ***!
+!*** https://doi.org/10.1002/2017MS001108                                            ***!
+!***************************************************************************************!
 
 !*** description
 !
@@ -1329,47 +1348,28 @@ implicit none
 ! lfn_in,lfn_out    inout,out the level set function at nodes
 ! tign              inout the ignition time at nodes
 
-! The dimensions are cell-based, the nodal value is associated with the south-west corner.
-! The whole computation is on domain indices ids:ide+1,jds:jde+1.
-!
-! The region where new lfn and tign are computed is the tile its:ite,jts:jte 
-! except when the tile is at domain upper boundary, an extra band of points is added:
-! if ite=ide then region goes up to ite+1, if jte=jde then region goes up to jte+1.
-
-! The time step requires values from 2 rows of nodes beyond the region except when at the 
-! domain boundary one-sided derivatives are used. This is implemented by extending the input
-! beyond the domain boundary so sufficient memory bounds must be allocated. 
-! The update on all tiles can be done in parallel. To avoid the race condition (different regions
-! of the same array updated by different threads), the in and out versions of the
-! arrays lft and tign are distinct. If the time step dt is larger
-! that the returned tbound, the routine should be called again with timestep td<=tbound, and then
-! having distinct inputs and outputs comes handy.
-
 !*** calls
 !
-! tend_ls
+! DME added for halo update
+type(domain) , target :: grid                     
+integer, intent(in):: ids,ide,jds,jde,kds,kde, &
+    ims,ime,jms,jme,kms,kme, &
+    ips,ipe,jps,jpe,kps,kpe
 !
 
-integer,intent(in)::id,ims,ime,jms,jme,ids,ide,jds,jde,its,ite,jts,jte,ips,ipe,jps,jpe 
-real,dimension(ims:ime,jms:jme),intent(inout)::lfn_in,tign
-real,dimension(ims:ime,jms:jme),intent(out)::lfn_out,ros
+integer,intent(in)::id,ifms,ifme,jfms,jfme,ifds,ifde,jfds,jfde,ifts,ifte,jfts,jfte,ifps,ifpe,jfps,jfpe 
+real,dimension(ifms:ifme,jfms:jfme),intent(inout)::lfn_in,tign
+real,dimension(ifms:ifme,jfms:jfme),intent(inout)::lfn_1,lfn_2,lfn_0 
+real,dimension(ifms:ifme,jfms:jfme),intent(out)::lfn_out,ros
 real,intent(in)::dx,dy,ts,dt
 real,intent(out)::tbound
 type(fire_params),intent(in)::fp
 
-!*** local 
-! arrays
-#define IMTS its-1
-#define IMTE ite+1
-#define JMTS jts-1
-#define JMTE jte+1
-real,dimension(IMTS:IMTE,JMTS:JMTE):: tend, lfn1 ! region-sized with halo
+real,dimension(ifms:ifme,jfms:jfme):: tend
 ! scalars
-real::grad2,rr,tbound2,a,a1 ! a=0 euler, a=0.5 heun
+real::grad2,rr,tbound2,tbound3
 
 real::gradx,grady,aspeed,err,aerr,time_now
-integer::ihs,ihe,jhs,jhe
-integer::ihs2,ihe2,jhs2,jhe2
 integer::i,j,its1,ite1,jts1,jte1,k,kk,id1
 character(len=128)::msg
 integer::nfirenodes,nfireline
@@ -1383,98 +1383,110 @@ real, parameter:: zero=0.,one=1.,eps=epsilon(zero),tol=100*eps, &
 ! f90 intrinsic function
 
 intrinsic max,min,sqrt,nint,epsilon,tiny,huge
-  
+
 !*** executable
 
 !$OMP CRITICAL(FIRE_CORE_CRIT)
-write(msg,'(a8,i5,a6,i5,3(a1,i5))')'prop_ls:',id,' tile ',its,':',ite,',',jts,':',jte
+write(msg,'(a8,i5,a6,i5,3(a1,i5))')'prop_ls:',id,' tile ',ifts,':',ifte,',',jfts,':',jfte
 !$OMP END CRITICAL(FIRE_CORE_CRIT)
 call message(msg)
 
-    a=fire_back_weight ! from module_fr_fire_util
-    a1=1. - a
-    
-    ! tend = F(lfn)
+!!!!!!!!!!!!!!!!!!!!!!
+! Runge-Kutta step 1 !
+!!!!!!!!!!!!!!!!!!!!!!
 
-    ihs2=max(its-2,ids)   ! need lfn two beyond the tile but not outside the domain 
-    ihe2=min(ite+2,ide)
-    jhs2=max(jts-2,jds) 
-    jhe2=min(jte+2,jde)
-
-    ihs=max(its-1,ids)   ! compute tend one beyond the tile but not outside the domain 
-    ihe=min(ite+1,ide)
-    jhs=max(jts-1,jds) 
-    jhe=min(jte+1,jde)
-
-#ifdef DEBUG_OUT    
-    call write_array_m(ihs,ihe,jhs,jhe,ims,ime,jms,jme,lfn_in,'lfn_in',id)
-#endif
-
-    ! check array dimensions
-    call check_mesh_2dim(ihs2,ihe2,jhs2,jhe2,ims,ime,jms,jme)
-    call print_2d_stats(ihs2,ihe2,jhs2,jhe2,ims,ime,jms,jme, &
-                   lfn_in,'prop_ls: lfn in')
-    
-    ! NOTE: tend_ls will extrapolate to one node strip at domain boundaries
-    ! so that it can compute gradient at domain boundaries.
-    ! To avoid copying, lfn_in is declared inout.
-    ! At tile boundaries that are not domain boundaries values of lfn_in two nodes
-    ! outside of the tile are needed.
-    id1 = id  ! for debug prints
-    if(id1.ne.0)id1=id1+1000
-    call  tend_ls( id1, &
-    ims,ime,jms,jme, &                       ! memory dims for lfn_in
-    IMTS,IMTE,JMTS,JMTE, &                   ! memory dims for tend 
-    ids,ide,jds,jde, &                       ! domain dims - where lfn exists
-    ips,ipe,jps,jpe, &                       ! patch - nodes owned by this process 
-    ihs,ihe,jhs,jhe, &                       ! where tend computed
-    ims,ime,jms,jme, &                       ! memory dims for ros 
-    its,ite,jts,jte, &                       ! tile dims - where to set ros
-    ts,dt,dx,dy,      &                      ! scalars in
-    lfn_in, &                                ! arrays in
-    tbound, &                                ! scalars out 
-    tend, ros, &                              ! arrays out        
-    fp         &                             ! params
-)
-
-#ifdef DEBUG_OUT    
-    call write_array_m(ihs,ihe,jhs,jhe,IMTS,IMTE,JMTS,JMTE,tend,'tend1',id)
-#endif
-
-    ! Euler method, the half-step, same region as ted
-    do j=jhs,jhe
-        do i=ihs,ihe
-            lfn1(i,j) = lfn_in(i,j) + dt*tend(i,j)
+    do j=jfts,jfte
+        do i=ifts,ifte
+            lfn_0(i,j) = lfn_in(i,j)
         enddo
     enddo
-    
-    call print_2d_stats(ihs,ihe,jhs,jhe,IMTS,IMTE,JMTS,JMTE, &
-                   lfn1,'prop_ls: lfn1')
-    ! tend = F(lfn1) on the tile (not beyond)
 
-    if(id1.ne.0)id1=id1+1000
-    call  tend_ls( id1,&
-    IMTS,IMTE,JMTS,JMTE, &                   ! memory dims for lfn
-    IMTS,IMTE,JMTS,JMTE, &                   ! memory dims for tend 
-    ids,ide,jds,jde,     &                   ! domain dims - where lfn exists
-    ips,ipe,jps,jpe, &                       ! patch - nodes owned by this process 
-    its,ite,jts,jte, &                       ! tile dims - where is tend computed
-    ims,ime,jms,jme, &                       ! memory dims for ros 
-    its,ite,jts,jte, &                       ! tile dims - where is ros set
-    ts+dt,dt,dx,dy,      &                   ! scalars in
-    lfn1, &                                  ! arrays in
-    tbound2, &                               ! scalars out 
-    tend,ros, &                               ! arrays out        
-    fp &
-)
-
-#ifdef DEBUG_OUT    
-    call write_array_m(its,ite,jts,jte,IMTS,IMTE,JMTS,JMTE,tend,'tend2',id)
+#ifdef DM_PARALLEL
+#      include "HALO_FIRE_LFN_0.inc"
 #endif
 
-    call print_2d_stats(its,ite,jts,jte,IMTS,IMTE,JMTS,JMTE,tend,'prop_ls: tend2')
-        
-    tbound=min(tbound,tbound2)
+    id1 = id  ! for debug prints
+    if(id1.ne.0)id1=id1+1000
+    call tend_ls(id1,    &
+    ifds,ifde,jfds,jfde, &                       ! domain dims 
+    ifps,ifpe,jfps,jfpe, &                       ! patch dims
+    ifts,ifte,jfts,jfte, &                       ! tile dims
+    ifms,ifme,jfms,jfme, &                       ! memory dims
+    ts,dt,dx,dy,         &                       ! scalars in
+    lfn_0,               &                       ! arrays in
+    tbound,              &                       ! scalars out 
+    tend, ros,           &                       ! arrays out        
+    fp                   &                       ! params
+)
+
+    do j=jfts,jfte 
+        do i=ifts,ifte 
+            lfn_1(i,j) = lfn_0(i,j) + (dt/3.0)*tend(i,j) 
+        enddo
+    enddo
+
+#ifdef DM_PARALLEL
+#      include "HALO_FIRE_LFN_1.inc"
+#endif
+
+!!!!!!!!!!!!!!!!!!!!!!
+! Runge-Kutta step 2 !
+!!!!!!!!!!!!!!!!!!!!!!
+
+    if(id1.ne.0)id1=id1+1000
+    call tend_ls(id1,    &
+    ifds,ifde,jfds,jfde, &                     
+    ifps,ifpe,jfps,jfpe, &                    
+    ifts,ifte,jfts,jfte, &                    
+    ifms,ifme,jfms,jfme, &               
+    ts+dt,dt,dx,dy,      &                  
+    lfn_1,               &                             
+    tbound2,             &                              
+    tend,ros,            &                           
+    fp                   &
+)
+
+    do j=jfts,jfte
+        do i=ifts,ifte
+            lfn_2(i,j) = lfn_0(i,j) + (dt/2.0)*tend(i,j)
+        enddo
+    enddo     
+
+#ifdef DM_PARALLEL
+#      include "HALO_FIRE_LFN_2.inc"
+#endif
+
+!!!!!!!!!!!!!!!!!!!!!!
+! Runge-Kutta step 3 !
+!!!!!!!!!!!!!!!!!!!!!!
+
+    if(id1.ne.0)id1=id1+1000
+    call tend_ls(id1,    &
+    ifds,ifde,jfds,jfde, &                      
+    ifps,ifpe,jfps,jfpe, &                     
+    ifts,ifte,jfts,jfte, &                    
+    ifms,ifme,jfms,jfme, &                 
+    ts+dt,dt,dx,dy,      &                  
+    lfn_2,               &                            
+    tbound3,             &                            
+    tend,ros,            &                           
+    fp                   &
+)
+
+    do j=jfts,jfte
+        do i=ifts,ifte
+            lfn_out(i,j) = lfn_0(i,j) + dt*tend(i,j)
+            lfn_2(i,j) = lfn_out(i,j) ! lfn_2=lfn_out (needed for reinitialization purposes)
+        enddo
+    enddo     
+
+#ifdef DM_PARALLEL
+#      include "HALO_FIRE_LFN_2.inc"
+#endif
+
+! CFL check
+
+    tbound=min(tbound,tbound2,tbound3)
 
 !$OMP CRITICAL(FIRE_CORE_CRIT)
     write(msg,'(a,f10.2,4(a,f7.2))')'prop_ls: time',ts,' dt=',dt,' bound',min(tbound,999.99), &
@@ -1489,146 +1501,398 @@ call message(msg)
         call message(msg)
     endif
     
-    ! combine lfn1 and lfn_in + dt*tend -> lfn_out
-    
-    do j=jts,jte
-        do i=its,ite
-            lfn_out(i,j) = a1*lfn1(i,j) + a*(lfn_in(i,j) + dt*tend(i,j))
-            lfn_out(i,j) = min(lfn_out(i,j),lfn_in(i,j)) ! fire area can only increase
-        enddo
-    enddo      
+end subroutine prop_ls_rk3
 
-    ! compute ignition time by interpolation
-    ! the node was not burning at start but it is burning at end
-    ! interpolate from the level functions at start and at end
-    ! lfn_in   is the level set function value at time ts
-    ! lfn_out  is the level set function value at time ts+dt
-    ! 0        is the level set function value at time tign(i,j)
-    ! thus assuming the level function is approximately linear =>
-    ! tign(i,j)= ts + ((ts + td) - ts) * lfn_in / (lfn_in - lfn_out)
-    !        = ts + dt * lfn_in / (lfn_in - lfn_out)
+!
+!*****************************
+!
 
-    time_now=ts+dt
-    time_now = time_now + abs(time_now)*epsilon(time_now)*2.
-    do j=jts,jte
-        do i=its,ite
-            ! interpolate the cross-over time
-            if (.not. lfn_out(i,j)>0 .and. lfn_in(i,j)>0)then
-                tign(i,j) = ts + dt * lfn_in(i,j) / (lfn_in(i,j) - lfn_out(i,j))
-            endif
-            ! set the ignition time outside of burning region
-            if(lfn_out(i,j)>0.)tign(i,j)=time_now
+subroutine reinit_ls_rk3(id,                       &
+                ifts,ifte,jfts,jfte,               &                     
+                ifms,ifme,jfms,jfme,               &                     
+                ifds,ifde,jfds,jfde,               &                     
+                ifps,ifpe,jfps,jfpe,               &                      
+                ts,dt,dx,dy,                       &                    
+                lfn_in,                            & 
+                lfn_2,lfn_s0,lfn_s1,lfn_s2,lfn_s3, & 
+                lfn_out,tign,                      &             
+                grid,                              &          
+                ids,ide,jds,jde,kds,kde,           &
+                ims,ime,jms,jme,kms,kme,           & 
+                ips,ipe,jps,jpe,kps,kpe            &
+                ) 
+
+
+#ifdef DM_PARALLEL
+    USE module_dm        , ONLY : ntasks_x,ntasks_y,local_communicator,mytask,ntasks
+    USE module_comm_dm , ONLY : halo_fire_lfn_s1_sub,halo_fire_lfn_s2_sub,halo_fire_lfn_s3_sub
+#endif
+USE module_domain , only: domain
+USE module_configure, only: grid_config_rec_type
+
+implicit none
+
+!*************************************************************************************!
+!*** Level-set function reinitialization following:                                ***!
+!*** Sussman, Smereka, Osher. Journal of Computational Physics 114, 146-159 (1994) ***!
+!*** implemented by Domingo Munoz-Esparza (NCAR/RAL, April 2016)                   ***!
+!*** Reference: D. Munoz-Esparza, B. Kosovic, P. Jimenez, J. Coen: "An accurate    ***!
+!*** fire-spread algorithm in the Weather Research and Forecasting model using the ***!
+!*** level-set method", Journal of Advances in Modeling Earth Systems, 2018        ***!
+!*** https://doi.org/10.1002/2017MS001108                                          ***!
+!*************************************************************************************!
+
+!*** purpose: reinitialize the level-set function
+
+type(domain) , target :: grid
+integer, intent(in):: ids,ide,jds,jde,kds,kde, & 
+                      ims,ime,jms,jme,kms,kme, & 
+                      ips,ipe,jps,jpe,kps,kpe    
+
+integer,intent(in)::ifts,ifte,jfts,jfte,ifms,ifme,jfms,jfme,id 
+integer,intent(in)::ifds,ifde,jfds,jfde,ifps,ifpe,jfps,jfpe  
+real,dimension(ifms:ifme,jfms:jfme),intent(inout)::lfn_in,tign
+real,dimension(ifms:ifme,jfms:jfme),intent(inout)::lfn_2,lfn_s0,lfn_s1,lfn_s2,lfn_s3
+real,dimension(ifms:ifme,jfms:jfme),intent(inout)::lfn_out
+real,intent(in)::dx,dy,ts,dt
+real::dt_s
+real,dimension(ifts:ifte,jfts:jfte):: tend_1,tend_2,tend_3
+real::diffLx,diffLy,diffRx,diffRy,diff2x,diff2y,grad,time_now
+integer::nts,i,j,k,kk
+intrinsic epsilon
+character(len=128)::msg
+integer::itso,iteo,jtso,jteo
+real::threshold_HLl,threshold_HLu
+integer,parameter::bdy_eno1=10
+!*** executable
+
+threshold_HLl=-fire_lsm_band_ngp*dx 
+threshold_HLu=fire_lsm_band_ngp*dx
+
+! Define S0 based on current lfn values
+
+    do j=jfts,jfte 
+        do i=ifts,ifte 
+            lfn_s0(i,j) = lfn_2(i,j)/sqrt(lfn_2(i,j)**2.0+dx**2.0) 
+            lfn_s3(i,j) = lfn_2(i,j)
         enddo
     enddo
+#ifdef DM_PARALLEL
+#      include "HALO_FIRE_LFN_S3.inc"
+#endif
+
+    call continue_at_boundary(1,1,fire_lfn_ext_up, &   !extend by extrapolation but never down 
+    ifms,ifme,jfms,jfme, &                             ! memory dims
+    ifds,ifde,jfds,jfde, &                             ! domain
+    ifps,ifpe,jfps,jfpe, &                             ! patch
+    ifts,ifte,jfts,jfte, &                             ! tile
+    itso,iteo,jtso,jteo, &                             ! where set now
+    lfn_s3) 
+
     
-    ! check local speed error and stats 
-    ! may not work correctly in parallel
-    ! init stats
-    nfirenodes=0
-    nfireline=0
-    sum_err=0.
-    min_err=rmax
-    max_err=rmin     
-    sum_aerr=0.
-    min_aerr=rmax
-    max_aerr=rmin    
-    its1=its+1
-    jts1=jts+1
-    ite1=ite-1
-    jte1=jte-1
-    ! loop over right inside of the domain
-    ! cannot use values outside of the domain, would have to reflect and that
-    ! would change lfn_out
-    ! cannot use values outside of tile, not synchronized yet
-    ! so in parallel mode the statistics is not accurate
-    do j=jts1,jte1
-        do i=its1,ite1
-            if(lfn_out(i,j)>0.0)then   ! a point out of burning region
-                if(lfn_out(i+1,j)<=0.or.lfn_out(i,j+1)<=0.or. & ! neighbor in burning region
-                   lfn_out(i-1,j)<=0.or.lfn_out(i,j-1)<=0)then ! point next to fireline
-                   gradx=(lfn_out(i+1,j)-lfn_out(i-1,j))/(2.0*dx) ! central differences
-                   grady=(lfn_out(i,j+1)-lfn_out(i,j-1))/(2.0*dy)
-                   grad2=sqrt(gradx*gradx+grady*grady)
-                   aspeed = (lfn_in(i,j)-lfn_out(i,j))/(dt*max(grad2,rmin))                   
-                    rr = speed_func(gradx,grady,dx,dy,i,j,fp)
-                   err=aspeed-rr
-                   sum_err=sum_err+err
-                   min_err=min(min_err,err)
-                   max_err=max(max_err,err)     
-                   aerr=abs(err)
-                   sum_aerr=sum_aerr+aerr
-                   min_aerr=min(min_aerr,aerr)
-                   max_aerr=max(max_aerr,aerr)
-                   nfireline=nfireline+1
-                endif
-            else
-                nfirenodes=nfirenodes+1
-            endif
+dt_s=0.01*dx
+do nts=1,fire_lsm_reinit_iter ! iterate to solve to steady state (1 iter each time step is enoguh)
+    ! Runge-Kutta step 1 !
+    
+    call advance_ls_reinit( &
+    ifms,ifme,jfms,jfme,    &           
+    ifds,ifde,jfds,jfde,    &           
+    ifts,ifte,jfts,jfte,    &               
+    dx,dy,dt_s,bdy_eno1,threshold_HLu, &               
+    lfn_s0,lfn_s3,lfn_s3,lfn_s1,1.0/3.0)   ! sign funcition, initial ls, current stage ls, next stage advanced ls, RK coefficient
+
+#ifdef DM_PARALLEL
+#      include "HALO_FIRE_LFN_S1.inc"
+#endif
+
+    call continue_at_boundary(1,1,fire_lfn_ext_up, & 
+    ifms,ifme,jfms,jfme, &                          
+    ifds,ifde,jfds,jfde, &                           
+    ifps,ifpe,jfps,jfpe, &                           
+    ifts,ifte,jfts,jfte, &                           
+    itso,iteo,jtso,jteo, &               
+    lfn_s1) 
+
+    ! Runge-Kutta step 2 !
+
+    call advance_ls_reinit( &
+    ifms,ifme,jfms,jfme,    &
+    ifds,ifde,jfds,jfde,    &
+    ifts,ifte,jfts,jfte,    &
+    dx,dy,dt_s,bdy_eno1,threshold_HLu, &
+    lfn_s0,lfn_s3,lfn_s1,lfn_s2,1.0/2.0)
+
+#ifdef DM_PARALLEL
+#      include "HALO_FIRE_LFN_S2.inc"
+#endif
+
+    call continue_at_boundary(1,1,fire_lfn_ext_up, &  
+    ifms,ifme,jfms,jfme, &              
+    ifds,ifde,jfds,jfde, &                 
+    ifps,ifpe,jfps,jfpe, &                 
+    ifts,ifte,jfts,jfte, &               
+    itso,iteo,jtso,jteo, & 
+    lfn_s2) 
+
+    ! Runge-Kutta step 3 !
+
+    call advance_ls_reinit( &
+    ifms,ifme,jfms,jfme,    &
+    ifds,ifde,jfds,jfde,    &
+    ifts,ifte,jfts,jfte,    &
+    dx,dy,dt_s,bdy_eno1,threshold_HLu, &
+    lfn_s0,lfn_s3,lfn_s2,lfn_s3,1.0)  
+
+#ifdef DM_PARALLEL
+#      include "HALO_FIRE_LFN_S3.inc"
+#endif
+
+    call continue_at_boundary(1,1,fire_lfn_ext_up, &  
+    ifms,ifme,jfms,jfme, &              
+    ifds,ifde,jfds,jfde, &                  
+    ifps,ifpe,jfps,jfpe, &                
+    ifts,ifte,jfts,jfte, &              
+    itso,iteo,jtso,jteo, &           
+    lfn_s3) 
+
+enddo ! end iterations for steady state solution of reinitialization PDE
+
+    do j=jfts,jfte 
+        do i=ifts,ifte 
+          lfn_out(i,j)=lfn_s3(i,j) ! assing to lfn_out the reinitialized level-set function
+          lfn_out(i,j)=min(lfn_out(i,j),lfn_in(i,j)) ! fire area can only increase
         enddo
     enddo
-!$OMP CRITICAL(FIRE_CORE_CRIT)
-    write(msg,'(2(a,i6,f8.4))')'prop_ls: nodes burning',nfirenodes, &
-        (100.*nfirenodes)/((ite1-its1+1)*(jte1-jts1+1)),'% next to fireline',nfireline
-!$OMP END CRITICAL(FIRE_CORE_CRIT)
-    call message(msg)
-    if(nfireline>0)then
-        call print_stat_line('speed error',its1,ite1,jts1,jte1,min_err,max_err,sum_err/nfireline)
-        call print_stat_line('abs(speed error)',its1,ite1,jts1,jte1,min_aerr,max_aerr,sum_aerr/nfireline)
+
+end subroutine reinit_ls_rk3
+
+!
+!*****************************
+!
+
+subroutine advance_ls_reinit(ifms,ifme,jfms,jfme, &
+                          ifds,ifde,jfds,jfde,    &
+                          ifts,ifte,jfts,jfte,    &
+                          dx,dy,dt_s,bdy_eno1,threshold_HLu, &
+                          lfn_s0,lfn_ini,lfn_curr,lfn_fin,rk_coeff)
+
+! Calculates right-hand-side forcing and advances a RK-stage the level-set reinitialization PDE
+! Domingo Munoz-Esparza, NCAR/RAL
+! Reference: D. Munoz-Esparza, B. Kosovic, P. Jimenez, J. Coen: "An accurate   
+! fire-spread algorithm in the Weather Research and Forecasting model using the 
+! level-set method", Journal of Advances in Modeling Earth Systems, 2018      
+! https://doi.org/10.1002/2017MS001108
+
+
+implicit none
+
+integer,intent(in)::ifms,ifme,jfms,jfme,ifts,ifte,jfts,jfte,ifds,ifde,jfds,jfde,bdy_eno1
+real,dimension(ifms:ifme,jfms:jfme),intent(in)::lfn_s0,lfn_ini,lfn_curr
+real,dimension(ifms:ifme,jfms:jfme),intent(inout)::lfn_fin
+real,intent(in)::dx,dy,dt_s,threshold_HLu,rk_coeff
+!
+integer::i,j
+real::diffLx,diffLy,diffRx,diffRy,diff2x,diff2y,grad,tend_r
+!
+
+    do j=jfts,jfte 
+        do i=ifts,ifte 
+          if (i.lt.ifds+bdy_eno1 .OR. i.gt.ifde-bdy_eno1 .OR. j.lt.jfds+bdy_eno1 .OR. j.gt.jfde-bdy_eno1) then ! 
+            diffLx=(lfn_curr(i,j)-lfn_curr(i-1,j))/dx
+            diffLy=(lfn_curr(i,j)-lfn_curr(i,j-1))/dy
+            diffRx=(lfn_curr(i+1,j)-lfn_curr(i,j))/dx
+            diffRy=(lfn_curr(i,j+1)-lfn_curr(i,j))/dy
+            diff2x=select_eno(diffLx,diffRx)
+            diff2y=select_eno(diffLy,diffRy)
+          else
+            select case(fire_upwinding_reinit)
+            case(1)
+             diff2x=select_4th(dx,lfn_curr(i,j),lfn_curr(i-1,j),lfn_curr(i-2,j),lfn_curr(i+1,j),lfn_curr(i+2,j))
+             diff2y=select_4th(dy,lfn_curr(i,j),lfn_curr(i,j-1),lfn_curr(i,j-2),lfn_curr(i,j+1),lfn_curr(i,j+2))
+             diff2x=select_weno3(dx,lfn_curr(i,j),lfn_curr(i-1,j),lfn_curr(i-2,j),lfn_curr(i+1,j),lfn_curr(i+2,j),lfn_s0(i,j)*diff2x)
+             diff2y=select_weno3(dy,lfn_curr(i,j),lfn_curr(i,j-1),lfn_curr(i,j-2),lfn_curr(i,j+1),lfn_curr(i,j+2),lfn_s0(i,j)*diff2y)
+            case(2)
+             diff2x=select_4th(dx,lfn_curr(i,j),lfn_curr(i-1,j),lfn_curr(i-2,j),lfn_curr(i+1,j),lfn_curr(i+2,j))
+             diff2y=select_4th(dy,lfn_curr(i,j),lfn_curr(i,j-1),lfn_curr(i,j-2),lfn_curr(i,j+1),lfn_curr(i,j+2))
+             diff2x=select_weno5(dx,lfn_curr(i,j),lfn_curr(i-1,j),lfn_curr(i-2,j),lfn_curr(i-3,j),lfn_curr(i+1,j),lfn_curr(i+2,j),lfn_curr(i+3,j),lfn_s0(i,j)*diff2x)
+             diff2y=select_weno5(dy,lfn_curr(i,j),lfn_curr(i,j-1),lfn_curr(i,j-2),lfn_curr(i,j-3),lfn_curr(i,j+1),lfn_curr(i,j+2),lfn_curr(i,j+3),lfn_s0(i,j)*diff2y)
+            case(3)
+             if (lfn_curr(i,j).lt.threshold_HLu) then
+               diff2x=select_4th(dx,lfn_curr(i,j),lfn_curr(i-1,j),lfn_curr(i-2,j),lfn_curr(i+1,j),lfn_curr(i+2,j))
+               diff2y=select_4th(dy,lfn_curr(i,j),lfn_curr(i,j-1),lfn_curr(i,j-2),lfn_curr(i,j+1),lfn_curr(i,j+2))
+               diff2x=select_weno3(dx,lfn_curr(i,j),lfn_curr(i-1,j),lfn_curr(i-2,j),lfn_curr(i+1,j),lfn_curr(i+2,j),lfn_s0(i,j)*diff2x)
+               diff2y=select_weno3(dy,lfn_curr(i,j),lfn_curr(i,j-1),lfn_curr(i,j-2),lfn_curr(i,j+1),lfn_curr(i,j+2),lfn_s0(i,j)*diff2y)
+             else
+               diffLx=(lfn_curr(i,j)-lfn_curr(i-1,j))/dx
+               diffLy=(lfn_curr(i,j)-lfn_curr(i,j-1))/dy
+               diffRx=(lfn_curr(i+1,j)-lfn_curr(i,j))/dx
+               diffRy=(lfn_curr(i,j+1)-lfn_curr(i,j))/dy
+               diff2x=select_eno(diffLx,diffRx)
+               diff2y=select_eno(diffLy,diffRy)
+             endif
+            case(4)
+             if (lfn_curr(i,j).lt.threshold_HLu) then
+               diff2x=select_4th(dx,lfn_curr(i,j),lfn_curr(i-1,j),lfn_curr(i-2,j),lfn_curr(i+1,j),lfn_curr(i+2,j))
+               diff2y=select_4th(dy,lfn_curr(i,j),lfn_curr(i,j-1),lfn_curr(i,j-2),lfn_curr(i,j+1),lfn_curr(i,j+2))
+               diff2x=select_weno5(dx,lfn_curr(i,j),lfn_curr(i-1,j),lfn_curr(i-2,j),lfn_curr(i-3,j),lfn_curr(i+1,j),lfn_curr(i+2,j),lfn_curr(i+3,j),lfn_s0(i,j)*diff2x)
+               diff2y=select_weno5(dy,lfn_curr(i,j),lfn_curr(i,j-1),lfn_curr(i,j-2),lfn_curr(i,j-3),lfn_curr(i,j+1),lfn_curr(i,j+2),lfn_curr(i,j+3),lfn_s0(i,j)*diff2y)
+             else
+               diffLx=(lfn_curr(i,j)-lfn_curr(i-1,j))/dx
+               diffLy=(lfn_curr(i,j)-lfn_curr(i,j-1))/dy
+               diffRx=(lfn_curr(i+1,j)-lfn_curr(i,j))/dx
+               diffRy=(lfn_curr(i,j+1)-lfn_curr(i,j))/dy
+               diff2x=select_eno(diffLx,diffRx)
+               diff2y=select_eno(diffLy,diffRy)
+             endif
+            case default
+             if (lfn_curr(i,j).lt.threshold_HLu) then
+               diff2x=select_4th(dx,lfn_curr(i,j),lfn_curr(i-1,j),lfn_curr(i-2,j),lfn_curr(i+1,j),lfn_curr(i+2,j))
+               diff2y=select_4th(dy,lfn_curr(i,j),lfn_curr(i,j-1),lfn_curr(i,j-2),lfn_curr(i,j+1),lfn_curr(i,j+2))
+               diff2x=select_weno5(dx,lfn_curr(i,j),lfn_curr(i-1,j),lfn_curr(i-2,j),lfn_curr(i-3,j),lfn_curr(i+1,j),lfn_curr(i+2,j),lfn_curr(i+3,j),lfn_s0(i,j)*diff2x)
+               diff2y=select_weno5(dy,lfn_curr(i,j),lfn_curr(i,j-1),lfn_curr(i,j-2),lfn_curr(i,j-3),lfn_curr(i,j+1),lfn_curr(i,j+2),lfn_curr(i,j+3),lfn_s0(i,j)*diff2y)
+             else
+               diffLx=(lfn_curr(i,j)-lfn_curr(i-1,j))/dx
+               diffLy=(lfn_curr(i,j)-lfn_curr(i,j-1))/dy
+               diffRx=(lfn_curr(i+1,j)-lfn_curr(i,j))/dx
+               diffRy=(lfn_curr(i,j+1)-lfn_curr(i,j))/dy
+               diff2x=select_eno(diffLx,diffRx)
+               diff2y=select_eno(diffLy,diffRy)
+             endif
+            end select
+          endif
+            grad=sqrt(diff2x*diff2x+diff2y*diff2y)
+            tend_r=lfn_s0(i,j)*(1.0-grad)
+            lfn_fin(i,j)=lfn_ini(i,j)+(dt_s*rk_coeff)*tend_r
+        enddo
+    enddo
+
+end subroutine advance_ls_reinit
+
+!
+!*****************************
+!
+
+subroutine tign_update(ifts,ifte,jfts,jfte, &              ! tile dims
+                       ifms,ifme,jfms,jfme, &              ! memory dims
+                       ifds,jfds,ifde,jfde, &              ! domain dims         
+                       ts,dt,               &              ! scalars in
+                       lfn_in,lfn_out,tign  &              ! arrays inout          
+                      )
+
+implicit none
+
+integer,intent(in)::ifts,ifte,jfts,jfte,ifms,ifme,jfms,jfme,ifds,jfds,ifde,jfde
+real,dimension(ifms:ifme,jfms:jfme),intent(inout)::tign
+real,dimension(ifms:ifme,jfms:jfme),intent(in)::lfn_in,lfn_out
+real,intent(in)::ts,dt
+real::time_now
+integer::i,j,k,kk
+intrinsic epsilon
+character(len=128)::msg
+!*** executable
+
+! compute ignition time by interpolation
+! the node was not burning at start but it is burning at end
+! interpolate from the level functions at start and at end
+! lfn_in==lfn   is the level set function value at time ts
+! lfn_out  is the level set function value at time ts+dt (after reinitialization)
+! 0        is the level set function value at time tign(i,j)
+! thus assuming the level function is approximately linear =>
+! tign(i,j)= ts + ((ts + td) - ts) * lfn_in / (lfn_in - lfn_out)
+!        = ts + dt * lfn_in / (lfn_in - lfn_out)
+    
+time_now=ts+dt
+time_now = time_now + abs(time_now)*epsilon(time_now)*2.
+do j=jfts,jfte
+    do i=ifts,ifte
+        ! interpolate the cross-over time
+        if (.not. lfn_out(i,j)>0 .and. lfn_in(i,j)>0)then
+            tign(i,j) = ts + dt * lfn_in(i,j) / (lfn_in(i,j) - lfn_out(i,j))
     endif
-
-    ! check if the fire did not get to the domain boundary
-    do k=-1,1,2
-        ! do kk=1,(boundary_guard*(ide-ids+1))/100  ! in %
-        do kk=1,boundary_guard   ! measured in cells
-            i=ids+k*kk
-            if(i.ge.its.and.i.le.ite)then
-                do j=jts,jte
-                    if(lfn_out(i,j)<=0.)goto 9
-                enddo
-            endif
+        ! set the ignition time outside of burning region
+        if(lfn_out(i,j)>0.)tign(i,j)=time_now
     enddo
-        ! do kk=1,(boundary_guard*(jde-jds+1))/100
-        do kk=1,boundary_guard    ! measured in cells
-            j=jds+k*kk
-            if(j.ge.jts.and.j.le.jte)then
-                do i=its,ite
-                    if(lfn_out(i,j)<=0.)goto 9
-                enddo
-            endif
-        enddo
+enddo
+! stop simulation if fire is within boundary_guard grid points from the domain boundaries 
+do j=jfts,jfte
+  if (j.le.boundary_guard .or. j.gt.(jfde-boundary_guard)) then
+    do i=ifts,ifte
+      if (lfn_out(i,j).lt.0.) then 
+        WRITE(msg,*)'j-boundary reached'
+        CALL wrf_debug(0,msg)
+        WRITE(msg,*)'i,j,lfn_out=',i,j,lfn_out(i,j)
+        CALL wrf_debug(0,msg)
+        call crash('wrf: SUCCESS COMPLETE WRF. Fire has reached domain boundary.')
+      endif
     enddo
-    goto 10
-9   continue
-!$OMP CRITICAL(FIRE_CORE_CRIT)
-    write(msg,'(a,i2,a,2i8)')'prop_ls: fire',boundary_guard, &
-        ' cells from domain boundary at node ',i,j
-!$OMP END CRITICAL(FIRE_CORE_CRIT)
-    call message(msg)     
-    call crash('prop_ls: increase the fire region')
-10  continue
+  endif
+enddo
+do i=ifts,ifte
+  if (i.le.boundary_guard .or. i.gt.(ifde-boundary_guard)) then
+    do j=jfts,jfte
+      if (lfn_out(i,j).lt.0.) then 
+        WRITE(msg,*)'i-boundary reached'
+        CALL wrf_debug(0,msg)
+        WRITE(msg,*)'i,j,lfn_out=',i,j,lfn_out(i,j)
+        CALL wrf_debug(0,msg)
+        call crash('wrf: SUCCESS COMPLETE WRF. Fire has reached domain boundary.')
+      endif
+    enddo
+  endif
+enddo
+    
+call print_2d_stats(ifts,ifte,jfts,jfte,ifms,ifme,jfms,jfme, &
+               lfn_out,'prop_ls: lfn out')
 
-    call print_2d_stats(its,ite,jts,jte,ims,ime,jms,jme, &
-                   lfn_out,'prop_ls: lfn out')
+end subroutine tign_update
 
-end subroutine prop_ls
+!
+!*****************************
+!
+
+subroutine calc_flame_length(ifts,ifte,jfts,jfte, &
+                             ifms,ifme,jfms,jfme, &
+                             ros,iboros,flame_length,ros_fl,fire_area)
+
+! Diagnoses flame length
+! Domingo Munoz-Esparza, NCAR/RAL
+
+implicit none
+
+integer,intent(in)::ifts,ifte,jfts,jfte,ifms,ifme,jfms,jfme
+real,dimension(ifms:ifme,jfms:jfme),intent(in)::ros,iboros,fire_area
+real,dimension(ifms:ifme,jfms:jfme),intent(out)::flame_length,ros_fl
+! local
+integer::i,j
+
+do j=jfts,jfte
+  do i=ifts,ifte
+    if (fire_area(i,j).gt.0.0 .AND. fire_area(i,j).lt.1.0) then
+      flame_length(i,j)=0.0775*(iboros(i,j)*ros(i,j))**0.46 ! flame length according to Byram (1959)
+      ros_fl(i,j)=ros(i,j)
+    else
+      flame_length(i,j)=0.0
+      ros_fl(i,j)=0.0
+    endif
+  enddo
+enddo
+
+end subroutine calc_flame_length
 
 !
 !*****************************
 !
 
 subroutine tend_ls( id, &
-    lims,lime,ljms,ljme, &                   ! memory dims for lfn
-    tims,time,tjms,tjme, &                   ! memory dims for tend 
-    ids,ide,jds,jde, &                       ! domain - nodes where lfn defined
-    ips,ipe,jps,jpe, &                       ! patch - nodes owned by this process 
-    ints,inte,jnts,jnte, &                   ! region - nodes where tend computed
-    ims,ime,jms,jme, &                       ! memory dims for ros 
-    its,ite,jts,jte, &                       ! tile dims - where is ros set
-    t,dt,dx,dy,      &                       ! scalars in
-    lfn, &                                   ! arrays in
-    tbound, &                                ! scalars out 
-    tend, ros,  &                              ! arrays out
-    fp &
+    ids,ide,jds,jde,    &              ! domain - nodes where lfn defined
+    ips,ipe,jps,jpe,    &              ! patch - nodes owned by this process 
+    its,ite,jts,jte,    &              ! region - nodes where tend computed
+    ims,ime,jms,jme,    &              ! memory dims for ros 
+    t,dt,dx,dy,         &              ! scalars in
+    lfn,                &              ! arrays in
+    tbound,             &              ! scalars out 
+    tend, ros,          &              ! arrays out
+    fp                  &
 )
 
 implicit none
@@ -1636,15 +1900,15 @@ implicit none
 ! compute the right hand side of the level set equation
 
 !*** arguments
-integer,intent(in)::id,lims,lime,ljms,ljme,tims,time,tjms,tjme
+integer,intent(in)::id 
 integer,intent(in)::ims,ime,jms,jme,its,ite,jts,jte
-integer, intent(in)::ids,ide,jds,jde,ints,inte,jnts,jnte,ips,ipe,jps,jpe 
-real,intent(in)::t                                     ! time
-real,intent(in)::dt,dx,dy                                 ! mesh step
-real,dimension(lims:lime,ljms:ljme),intent(inout)::lfn ! level set function
-real,intent(out)::tbound                               ! max allowed time step
-real,dimension(tims:time,tjms:tjme),intent(out)::tend  ! tendency (rhs of the level set pde)
-real,dimension(ims:ime,jms:jme),intent(out)::ros  ! rate of spread 
+integer, intent(in)::ids,ide,jds,jde,ips,ipe,jps,jpe 
+real,intent(in)::t                                 ! time
+real,intent(in)::dt,dx,dy                          ! mesh step
+real,dimension(ims:ime,jms:jme),intent(inout)::lfn ! level set function 
+real,dimension(ims:ime,jms:jme),intent(out)::tend  ! tendency (rhs of the level set pde)
+real,dimension(ims:ime,jms:jme),intent(out)::ros   ! rate of spread 
+real,intent(out)::tbound                           ! max allowed time step
 type(fire_params),intent(in)::fp
 
 !*** local 
@@ -1660,41 +1924,35 @@ real, parameter:: eps=epsilon(0.0)
 !intrinsic epsilon
 real, parameter:: zero=0.,one=1.,tol=100*eps, &
     safe=2.,rmin=safe*tiny(zero),rmax=huge(zero)/safe
-
+!
+real :: diff2xn, diff2yn
+real :: a_valor, signo_x, signo_y
+real :: threshold_HLl,threshold_HLu
+real :: threshold_AV,fire_viscosity_var
+integer,parameter :: bdy_eno1=10
 
 ! f90 intrinsic function
 
 intrinsic max,min,sqrt,nint,tiny,huge
 
 
-#ifdef DEBUG_OUT
-real,dimension(tims:time,tjms:tjme)::rra,grada,speeda,tanphia
-#endif
-
 !*** executable
-    
-    ! check array dimensions
-    call check_mesh_2dim(ints-1,inte+1,jnts-1,jnte+1,lims,lime,ljms,ljme)
-    call check_mesh_2dim(ints,inte,jnts,jnte,tims,time,tjms,tjme)
+
+threshold_HLl=-fire_lsm_band_ngp*dx 
+threshold_HLu=fire_lsm_band_ngp*dx
+threshold_AV=fire_viscosity_ngp*dx
     
     call continue_at_boundary(1,1,fire_lfn_ext_up, &   !extend by extrapolation but never down 
-    lims,lime,ljms,ljme, &                ! memory dims
-    ids,ide,jds,jde, &                    ! domain - nodes where lfn defined
-    ips,ipe,jps,jpe, &                    ! patch - nodes owned by this process 
-    ints,inte,jnts,jnte, &                ! tile - nodes update by this thread
-    itso,iteo,jtso,jteo, &                ! where set now
-    lfn)                                  ! array
+    ims,ime,jms,jme, &                                 ! memory dims
+    ids,ide,jds,jde, &                                 ! domain
+    ips,ipe,jps,jpe, &                                 ! patch
+    its,ite,jts,jte, &                                 ! tile
+    itso,iteo,jtso,jteo, &                             ! where set now
+    lfn)                                               ! field 
 
-    call print_2d_stats(itso,iteo,jtso,jteo,lims,lime,ljms,ljme, &
-                   lfn,'tend_ls: lfn cont')
-
-#ifdef DEBUG_OUT
-    call write_array_m(ints-1,inte+1,jnts-1,jnte+1,lims,lime,ljms,ljme,lfn,'tend_lfn_in',id)
-#endif
-    
     tbound=0    
-    do j=jnts,jnte
-        do i=ints,inte
+    do j=jts,jte
+        do i=its,ite
             ! one sided differences
             diffRx = (lfn(i+1,j)-lfn(i,j))/dx
             diffLx = (lfn(i,j)-lfn(i-1,j))/dx
@@ -1702,47 +1960,95 @@ real,dimension(tims:time,tjms:tjme)::rra,grada,speeda,tanphia
             diffLy = (lfn(i,j)-lfn(i,j-1))/dy
             diffCx = diffLx+diffRx   ! 	TWICE CENTRAL DIFFERENCE
             diffCy = diffLy+diffRy
-    
-            !upwinding - select right or left derivative
-            select case(fire_upwinding)
-            case(0)  ! none
-                grad=sqrt(diffCx**2 + diffCy**2)
-            case(1) ! standard
-                diff2x=select_upwind(diffLx,diffRx)
-                diff2y=select_upwind(diffLy,diffRy)
-                grad=sqrt(diff2x*diff2x + diff2y*diff2y)
-            case(2) ! godunov per osher/fedkiw
-                diff2x=select_godunov(diffLx,diffRx)
-                diff2y=select_godunov(diffLy,diffRy)
-                grad=sqrt(diff2x*diff2x + diff2y*diff2y)
-            case(3) ! eno
-                diff2x=select_eno(diffLx,diffRx)
-                diff2y=select_eno(diffLy,diffRy)
-                grad=sqrt(diff2x*diff2x + diff2y*diff2y)
-            case(4) ! Sethian - twice stronger pushdown of bumps
-                grad=sqrt(max(diffLx,0.)**2+min(diffRx,0.)**2   &
-                        + max(diffLy,0.)**2+min(diffRy,0.)**2)
-            case default
-                grad=0.
-            end select
-  
-            ! normal direction, from central differences
-            scale=sqrt(diffCx*diffCx+diffCy*diffCy+eps) 
-            nvx=diffCx/scale
-            nvy=diffCy/scale
-                      
+
+            if (i.lt.ids+bdy_eno1 .OR. i.gt.ide-bdy_eno1 .OR. j.lt.jds+bdy_eno1 .OR. j.gt.jde-bdy_eno1) then ! DME: use eno1 near domain boundaries
+              diff2x=select_eno(diffLx,diffRx)
+              diff2y=select_eno(diffLy,diffRy)
+              grad=sqrt(diff2x*diff2x + diff2y*diff2y)
+            else
+              select case(fire_upwinding)
+              case(0)  ! none
+                  grad=sqrt(diffCx**2 + diffCy**2)
+              case(1) ! standard
+                  diff2x=select_upwind(diffLx,diffRx)
+                  diff2y=select_upwind(diffLy,diffRy)
+                  grad=sqrt(diff2x*diff2x + diff2y*diff2y)
+              case(2) ! godunov per osher/fedkiw
+                  diff2x=select_godunov(diffLx,diffRx)
+                  diff2y=select_godunov(diffLy,diffRy)
+                  grad=sqrt(diff2x*diff2x + diff2y*diff2y)
+              case(3) ! eno
+                  diff2x=select_eno(diffLx,diffRx)
+                  diff2y=select_eno(diffLy,diffRy)
+                  grad=sqrt(diff2x*diff2x + diff2y*diff2y)
+              case(4) ! Sethian - twice stronger pushdown of bumps
+                  grad=sqrt(max(diffLx,0.)**2+min(diffRx,0.)**2   &
+                          + max(diffLy,0.)**2+min(diffRy,0.)**2)
+              case(5) ! 2nd order (DME)
+                  diff2x=select_2nd(rr,dx,lfn(i,j),lfn(i-1,j),lfn(i+1,j))
+                  diff2y=select_2nd(rr,dy,lfn(i,j),lfn(i,j-1),lfn(i,j+1))
+                  grad=sqrt(diff2x*diff2x + diff2y*diff2y)
+              case(6) ! 3rd-order WENO (DME)
+                  a_valor=select_4th(dx,lfn(i,j),lfn(i-1,j),lfn(i-2,j),lfn(i+1,j),lfn(i+2,j))*fp%vx(i,j)+ &
+                          select_4th(dy,lfn(i,j),lfn(i,j-1),lfn(i,j-2),lfn(i,j+1),lfn(i,j+2))*fp%vy(i,j)
+                  signo_x=a_valor*select_4th(dx,lfn(i,j),lfn(i-1,j),lfn(i-2,j),lfn(i+1,j),lfn(i+2,j))
+                  signo_y=a_valor*select_4th(dy,lfn(i,j),lfn(i,j-1),lfn(i,j-2),lfn(i,j+1),lfn(i,j+2))
+                  diff2x=select_weno3(dx,lfn(i,j),lfn(i-1,j),lfn(i-2,j),lfn(i+1,j),lfn(i+2,j),signo_x)
+                  diff2y=select_weno3(dy,lfn(i,j),lfn(i,j-1),lfn(i,j-2),lfn(i,j+1),lfn(i,j+2),signo_y)
+                  grad=sqrt(diff2x*diff2x + diff2y*diff2y)
+              case(7) ! 5th-order WENO (DME)
+                  a_valor=select_4th(dx,lfn(i,j),lfn(i-1,j),lfn(i-2,j),lfn(i+1,j),lfn(i+2,j))*fp%vx(i,j)+ &
+                          select_4th(dy,lfn(i,j),lfn(i,j-1),lfn(i,j-2),lfn(i,j+1),lfn(i,j+2))*fp%vy(i,j)
+                  signo_x=a_valor*select_4th(dx,lfn(i,j),lfn(i-1,j),lfn(i-2,j),lfn(i+1,j),lfn(i+2,j))
+                  signo_y=a_valor*select_4th(dy,lfn(i,j),lfn(i,j-1),lfn(i,j-2),lfn(i,j+1),lfn(i,j+2))
+                  diff2x=select_weno5(dx,lfn(i,j),lfn(i-1,j),lfn(i-2,j),lfn(i-3,j),lfn(i+1,j),lfn(i+2,j),lfn(i+3,j),signo_x)
+                  diff2y=select_weno5(dy,lfn(i,j),lfn(i,j-1),lfn(i,j-2),lfn(i,j-3),lfn(i,j+1),lfn(i,j+2),lfn(i,j+3),signo_y)
+                  grad=sqrt(diff2x*diff2x + diff2y*diff2y)
+              case(8) ! high-order local band method WENO3/ENO1 (DME)
+                  if (abs(lfn(i,j)).lt.threshold_HLu) then
+                    a_valor=select_4th(dx,lfn(i,j),lfn(i-1,j),lfn(i-2,j),lfn(i+1,j),lfn(i+2,j))*fp%vx(i,j)+ &
+                            select_4th(dy,lfn(i,j),lfn(i,j-1),lfn(i,j-2),lfn(i,j+1),lfn(i,j+2))*fp%vy(i,j)
+                    signo_x=a_valor*select_4th(dx,lfn(i,j),lfn(i-1,j),lfn(i-2,j),lfn(i+1,j),lfn(i+2,j))
+                    signo_y=a_valor*select_4th(dy,lfn(i,j),lfn(i,j-1),lfn(i,j-2),lfn(i,j+1),lfn(i,j+2))
+                    diff2x=select_weno3(dx,lfn(i,j),lfn(i-1,j),lfn(i-2,j),lfn(i+1,j),lfn(i+2,j),signo_x)
+                    diff2y=select_weno3(dy,lfn(i,j),lfn(i,j-1),lfn(i,j-2),lfn(i,j+1),lfn(i,j+2),signo_y)
+                    grad=sqrt(diff2x*diff2x + diff2y*diff2y)
+                  else
+                    diff2x=select_eno(diffLx,diffRx)
+                    diff2y=select_eno(diffLy,diffRy)
+                    grad=sqrt(diff2x*diff2x + diff2y*diff2y)
+                  endif
+              case(9) ! high-order local band method WENO5/ENO1 (DME)
+                  if (abs(lfn(i,j)).lt.threshold_HLu) then
+                    a_valor=select_4th(dx,lfn(i,j),lfn(i-1,j),lfn(i-2,j),lfn(i+1,j),lfn(i+2,j))*fp%vx(i,j)+ &
+                            select_4th(dy,lfn(i,j),lfn(i,j-1),lfn(i,j-2),lfn(i,j+1),lfn(i,j+2))*fp%vy(i,j)
+                    signo_x=a_valor*select_4th(dx,lfn(i,j),lfn(i-1,j),lfn(i-2,j),lfn(i+1,j),lfn(i+2,j))
+                    signo_y=a_valor*select_4th(dy,lfn(i,j),lfn(i,j-1),lfn(i,j-2),lfn(i,j+1),lfn(i,j+2))
+                    diff2x=select_weno5(dx,lfn(i,j),lfn(i-1,j),lfn(i-2,j),lfn(i-3,j),lfn(i+1,j),lfn(i+2,j),lfn(i+3,j),signo_x)
+                    diff2y=select_weno5(dy,lfn(i,j),lfn(i,j-1),lfn(i,j-2),lfn(i,j-3),lfn(i,j+1),lfn(i,j+2),lfn(i,j+3),signo_y)
+                    grad=sqrt(diff2x*diff2x + diff2y*diff2y)
+                  else
+                    diff2x=select_eno(diffLx,diffRx)
+                    diff2y=select_eno(diffLy,diffRy)
+                    grad=sqrt(diff2x*diff2x + diff2y*diff2y)
+                  endif
+              case default
+                   grad=0.
+              end select
+            endif
+! DME use the same discretization scheme from fire_upwinding option to calculate the normals
+            scale=sqrt(grad**2.0+eps) 
+            nvx=diff2x/scale 
+            nvy=diff2y/scale 
+
             ! wind speed in direction of spread
             speed =  fp%vx(i,j)*nvx + fp%vy(i,j)*nvy
-        
-    
             ! get rate of spread from wind speed and slope
-
             call fire_ros(ros_base,ros_wind,ros_slope, &
             nvx,nvy,i,j,fp)
+            rr=ros_base + ros_wind + fire_slope_factor*ros_slope
 
-            rr=ros_base + ros_wind + ros_slope
             if(fire_grows_only.gt.0)rr=max(rr,0.)
-
             ! set ros for output
             if(i.ge.its.and.i.le.ite.and.j.ge.jts.and.j.le.jte)ros(i,j)=rr
 
@@ -1796,35 +2102,20 @@ real,dimension(tims:time,tjms:tjme)::rra,grada,speeda,tanphia
                  tbound = max(tbound,rr*(abs(diff2x)/dx+abs(diff2y)/dy)/grad)
             endif
 
-            ! add numerical viscosity
-            te=te + fire_viscosity*abs(rr)*((diffRx-diffLx)+(diffRy-diffLy))
-
+            ! DME: adds spatially variable artificial viscosity
+            if (abs(lfn(i,j)).lt.threshold_AV .AND. (i.gt.ids+bdy_eno1 .and. i.lt.ide-bdy_eno1) .AND. (j.gt.jds+bdy_eno1 .and. j.lt.jde-bdy_eno1)) then 
+              fire_viscosity_var=fire_viscosity_bg
+            elseif (abs(lfn(i,j)).ge.threshold_AV .AND. abs(lfn(i,j)).lt.threshold_AV*(1.0+fire_viscosity_band) .AND. (i.gt.ids+10 .and. i.lt.ide-10) .AND. (j.gt.jds+10 .and. j.lt.jde-10)) then
+              fire_viscosity_var=min(fire_viscosity_bg+(fire_viscosity-fire_viscosity_bg)*(abs(lfn(i,j))-threshold_AV)/(fire_viscosity_band*threshold_AV),fire_viscosity)
+            else
+              fire_viscosity_var=fire_viscosity
+            endif
+            te=te + fire_viscosity_var*abs(rr)*((diffRx-diffLx)+(diffRy-diffLy))
             tend(i,j)=te
-#ifdef DEBUG_OUT    
-            rra(i,j)=rr
-            grada(i,j)=grad    
-            speeda(i,j)=speed
-            tanphia(i,j)=tanphi
-#endif
-            !write(msg,*)i,j,grad,dzdx,dzdy
-            !call message(msg)
-
-            !if(abs(te)>1e4)then
-            !    write(msg,'(a,2i5,e12.3)')'tend_ls: tend out of bounds at ',i,j,te
-            !    call crash(msg)
-            !endif
         enddo
     enddo        
 
-#ifdef DEBUG_OUT    
-    call write_array_m(ints,inte,jnts,jnte,tims,time,tjms,tjme,rra,'rr',id)
-    call write_array_m(ints,inte,jnts,jnte,tims,time,tjms,tjme,grada,'grad',id)
-    call write_array_m(ints,inte,jnts,jnte,tims,time,tjms,tjme,speeda,'speed',id)
-    call write_array_m(ints,inte,jnts,jnte,tims,time,tjms,tjme,tanphia,'tanphi',id)
-    call write_array_m(ints,inte,jnts,jnte,tims,time,tjms,tjme,tend,'tend',id)
-#endif
-
-    call print_2d_stats(ints,inte,jnts,jnte,tims,time,tjms,tjme, &
+    call print_2d_stats(its,ite,jts,jte,ims,ime,jms,jme, & 
                    tend,'tend_ls: tend out')
 
     ! the final CFL bound
@@ -1834,6 +2125,7 @@ end subroutine tend_ls
 
 !
 !**************************
+!
 !
 
 real function select_upwind(diffLx,diffRx)
@@ -1854,7 +2146,6 @@ end function select_upwind
 !
 !**************************
 !
-
 
 real function select_godunov(diffLx,diffRx)
 implicit none
@@ -1902,6 +2193,178 @@ endif
 select_eno=diff2x
 end function select_eno
       
+!
+!**************************
+!
+
+
+real function select_2nd(ros,dx,lfn_i,lfn_im1,lfn_ip1)
+implicit none
+real, intent(in):: lfn_i, lfn_im1, lfn_ip1
+real, intent(in):: ros, dx
+real:: diff2x_p, diff2x_m 
+
+! 2nd-order advection scheme in the x,y-direction (DME)
+
+diff2x_p=0.
+diff2x_m=0.
+diff2x_p=(lfn_ip1+lfn_i)/(2.*dx)
+diff2x_m=(lfn_i+lfn_im1)/(2.*dx)
+select_2nd=diff2x_p-diff2x_m
+end function select_2nd
+
+!
+!**************************
+!
+
+
+real function select_4th(dx,lfn_i,lfn_im1,lfn_im2,lfn_ip1,lfn_ip2)
+implicit none
+real, intent(in):: lfn_i,lfn_im1,lfn_im2,lfn_ip1,lfn_ip2
+real, intent(in):: dx
+real:: diff2x_p,diff2x_m 
+
+! 4th-order advection scheme in the x,y-direction (DME)
+
+diff2x_p=0.
+diff2x_m=0.
+diff2x_p=(7.0*lfn_ip1+7.0*lfn_i-lfn_ip2-lfn_im1)/(12.*dx)
+diff2x_m=(7.0*lfn_i+7.0*lfn_im1-lfn_ip1-lfn_im2)/(12.*dx)
+select_4th=diff2x_p-diff2x_m
+end function select_4th
+
+!
+!**************************
+!
+
+
+real function select_weno3(dx,lfn_it,lfn_im1t,lfn_im2t,lfn_ip1t,lfn_ip2t,uf)
+implicit none
+real, intent(in)::lfn_it,lfn_im1t,lfn_im2t,lfn_ip1t,lfn_ip2t,uf
+real:: lfn_i,lfn_im1,lfn_im2,lfn_ip1,lfn_ip2
+real, intent(in):: dx
+real:: flux_p,flux_m 
+real, parameter:: gamma1=1./3.,gamma2=2./3.,tol=1e-6
+real:: w1,w2,w1t,w2t,beta1,beta2 
+real:: fh_1,fh_2
+
+! 3rd-order advection WENO scheme in the x,y-direction (DME)
+
+flux_p=0.
+flux_m=0.
+
+if (uf .ge. 0.0 ) then
+  lfn_i=lfn_it
+  lfn_im1=lfn_im1t
+  lfn_im2=lfn_im2t
+  lfn_ip1=lfn_ip1t
+else
+  lfn_i=lfn_it
+  lfn_im1=lfn_ip1t
+  lfn_im2=lfn_ip2t
+  lfn_ip1=lfn_im1t
+endif
+
+! numerical flux at i,j+1/2 face
+fh_1=-0.5*lfn_im1+1.5*lfn_i
+fh_2=0.5*lfn_i+0.5*lfn_ip1
+beta1=(lfn_i-lfn_im1)**2
+beta2=(lfn_ip1-lfn_i)**2
+w1t=gamma1/(beta1+tol)**2
+w2t=gamma2/(beta2+tol)**2
+w1=w1t/(w1t+w2t)
+w2=w2t/(w1t+w2t)
+flux_p=w1*fh_1+w2*fh_2
+! numerical flux at i,j-1/2 face
+fh_1=-0.5*lfn_im2+1.5*lfn_im1
+fh_2=0.5*lfn_im1+0.5*lfn_i
+beta1=(lfn_im1-lfn_im2)**2
+beta2=(lfn_i-lfn_im1)**2
+w1t=gamma1/(beta1+tol)**2
+w2t=gamma2/(beta2+tol)**2
+w1=w1t/(w1t+w2t)
+w2=w2t/(w1t+w2t)
+flux_m=w1*fh_1+w2*fh_2
+
+if (uf .ge. 0.0 ) then
+  select_weno3=(flux_p-flux_m)/dx
+else
+  select_weno3=(flux_m-flux_p)/dx
+endif
+end function select_weno3
+
+!
+!**************************
+!
+
+
+real function select_weno5(dx,lfn_it,lfn_im1t,lfn_im2t,lfn_im3t,lfn_ip1t,lfn_ip2t,lfn_ip3t,uf)
+implicit none
+real, intent(in):: lfn_it,lfn_im1t,lfn_im2t,lfn_im3t,lfn_ip1t,lfn_ip2t,lfn_ip3t,uf
+real:: lfn_i,lfn_im1,lfn_im2,lfn_im3,lfn_ip1,lfn_ip2,lfn_ip3
+real, intent(in):: dx
+real:: flux_p,flux_m 
+real, parameter:: gamma1=1./10.,gamma2=3./5.,gamma3=3./10.,tol=1e-6
+real:: w1,w2,w3,w1t,w2t,w3t,beta1,beta2,beta3 
+real:: fh_1,fh_2,fh_3
+
+! 5th-order advection WENO scheme in the x,y-direction (DME)
+
+flux_p=0.
+flux_m=0.
+
+if (uf .ge. 0.0 ) then
+  lfn_i=lfn_it
+  lfn_im1=lfn_im1t
+  lfn_im2=lfn_im2t
+  lfn_im3=lfn_im3t
+  lfn_ip1=lfn_ip1t
+  lfn_ip2=lfn_ip2t
+else
+  lfn_i=lfn_it
+  lfn_im1=lfn_ip1t
+  lfn_im2=lfn_ip2t
+  lfn_im3=lfn_ip3t
+  lfn_ip1=lfn_im1t
+  lfn_ip2=lfn_im2t
+endif
+
+! numerical flux at i,j+1/2 face
+fh_1=(2.0*lfn_im2-7.0*lfn_im1+11.0*lfn_i)/6.0
+fh_2=(-1.0*lfn_im1+5.0*lfn_i+2.0*lfn_ip1)/6.0
+fh_3=(2.0*lfn_i+5.0*lfn_ip1-1.0*lfn_ip2)/6.0
+beta1=(13.0/12.0)*(lfn_im2-2.0*lfn_im1+lfn_i)**2+0.25*(lfn_im2-4.0*lfn_im1+3.0*lfn_i)**2
+beta2=(13.0/12.0)*(lfn_im1-2.0*lfn_i+lfn_ip1)**2+0.25*(lfn_im1-lfn_ip1)**2
+beta3=(13.0/12.0)*(lfn_i-2.0*lfn_ip1+lfn_ip2)**2+0.25*(3.0*lfn_i-4.0*lfn_ip1+lfn_ip2)**2
+w1t=gamma1/(beta1+tol)**2
+w2t=gamma2/(beta2+tol)**2
+w3t=gamma3/(beta3+tol)**2
+w1=w1t/(w1t+w2t+w3t)
+w2=w2t/(w1t+w2t+w3t)
+w3=w3t/(w1t+w2t+w3t)
+flux_p=w1*fh_1+w2*fh_2+w3*fh_3
+! numerical flux at i,j-1/2 face
+fh_1=(2.0*lfn_im3-7.0*lfn_im2+11.0*lfn_im1)/6.0
+fh_2=(-1.0*lfn_im2+5.0*lfn_im1+2.0*lfn_i)/6.0
+fh_3=(2.0*lfn_im1+5.0*lfn_i-1.0*lfn_ip1)/6.0
+beta1=(13.0/12.0)*(lfn_im3-2.0*lfn_im2+lfn_im1)**2+0.25*(lfn_im3-4.0*lfn_im2+3.0*lfn_im1)**2
+beta2=(13.0/12.0)*(lfn_im2-2.0*lfn_im1+lfn_i)**2+0.25*(lfn_im2-lfn_i)**2
+beta3=(13.0/12.0)*(lfn_im1-2.0*lfn_i+lfn_ip1)**2+0.25*(3.0*lfn_im1-4.0*lfn_i+lfn_ip1)**2
+w1t=gamma1/(beta1+tol)**2
+w2t=gamma2/(beta2+tol)**2
+w3t=gamma3/(beta3+tol)**2
+w1=w1t/(w1t+w2t+w3t)
+w2=w2t/(w1t+w2t+w3t)
+w3=w3t/(w1t+w2t+w3t)
+flux_m=w1*fh_1+w2*fh_2+w3*fh_3
+
+if (uf .ge. 0.0 ) then
+  select_weno5=(flux_p-flux_m)/dx
+else
+  select_weno5=(flux_m-flux_p)/dx
+endif
+end function select_weno5
+
 !
 !**************************
 !

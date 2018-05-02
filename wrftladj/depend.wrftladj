@@ -1,0 +1,379 @@
+# DEPENDENCIES for dyn_em
+
+module_advect_em_tl.o: ../share/module_bc.o \
+		../share/module_model_constants.o \
+		../frame/module_wrf_error.o
+
+module_advect_em_ad.o: ../share/module_bc.o \
+		../share/module_model_constants.o \
+		../frame/module_wrf_error.o
+
+module_bc_em_tl.o: ../share/module_bc.o \
+		../share/module_model_constants.o \
+		../frame/module_configure.o \
+		module_bc_tl.o \
+		../frame/module_wrf_error.o
+
+module_bc_em_ad.o: ../share/module_bc.o \
+		../share/module_model_constants.o \
+		../frame/module_configure.o \
+		module_bc_ad.o \
+		../frame/module_wrf_error.o
+
+module_big_step_utilities_em_tl.o: \
+		../share/module_llxy.o  \
+		../frame/module_domain.o \
+		../frame/module_configure.o  \
+		../frame/module_state_description.o \
+		../share/module_model_constants.o
+
+module_big_step_utilities_em_ad.o: \
+		../share/module_llxy.o  \
+		../frame/module_domain.o \
+		../frame/module_configure.o  \
+		../frame/module_state_description.o \
+		../share/module_model_constants.o
+
+module_diffusion_em_tl.o:  module_big_step_utilities_em_tl.o \
+		../frame/module_configure.o  \
+		../frame/module_state_description.o \
+		../share/module_model_constants.o \
+		module_bc_tl.o \
+		../frame/module_wrf_error.o
+
+module_diffusion_em_ad.o:  module_big_step_utilities_em_ad.o \
+		../dyn_em/module_diffusion_em.o \
+		../frame/module_configure.o  \
+		../frame/module_state_description.o \
+		../share/module_model_constants.o \
+		../share/module_bc.o \
+		module_bc_ad.o \
+		../frame/module_wrf_error.o
+
+module_em_tl.o: ../dyn_em/module_big_step_utilities_em.o \
+		../dyn_em/module_advect_em.o \
+		module_big_step_utilities_em_tl.o \
+		module_advect_em_tl.o \
+		../dyn_em/module_damping_em.o \
+		../frame/module_state_description.o \
+		../share/module_model_constants.o
+
+module_em_ad.o: ../dyn_em/module_big_step_utilities_em.o \
+		../dyn_em/module_advect_em.o \
+		module_big_step_utilities_em_ad.o \
+		module_advect_em_ad.o \
+		../dyn_em/module_damping_em.o \
+		../frame/module_state_description.o \
+		../share/module_model_constants.o
+
+module_sfs_nba_tl.o: ../frame/module_configure.o \
+		../dyn_em/module_sfs_nba.o
+
+module_sfs_nba_ad.o: ../frame/module_configure.o \
+		../dyn_em/module_sfs_nba.o
+
+module_sfs_driver_tl.o:  \
+		../dyn_em/module_sfs_nba.o \
+		module_sfs_nba_tl.o \
+		../frame/module_state_description.o \
+		../frame/module_domain.o \
+		../frame/module_configure.o \
+		../frame/module_tiles.o \
+		../frame/module_dm.o \
+		../frame/module_machine.o \
+		module_bc_tl.o
+
+module_sfs_driver_ad.o:  \
+		../dyn_em/module_sfs_nba.o \
+		module_sfs_nba_ad.o \
+		../frame/module_state_description.o \
+		../frame/module_domain.o \
+		../frame/module_configure.o \
+		../frame/module_tiles.o \
+		../frame/module_dm.o \
+		../frame/module_machine.o \
+		../share/module_bc.o \
+		module_bc_ad.o
+
+module_small_step_em_tl.o: \
+		../frame/module_configure.o  \
+		../share/module_model_constants.o
+
+module_small_step_em_ad.o: \
+		../frame/module_configure.o  \
+		../share/module_model_constants.o
+
+start_em_tl.o:  module_bc_em_tl.o \
+		../frame/module_domain.o \
+		../frame/module_configure.o  \
+		../frame/module_state_description.o \
+		../frame/module_timing.o \
+		../frame/module_dm.o \
+		../frame/module_comm_dm.o \
+		../share/module_io_domain.o \
+		../share/module_model_constants.o \
+		module_bc_tl.o \
+		../share/module_date_time.o \
+		module_physics_init_tl.o \
+		../phys/module_diag_pld.o
+
+start_em_ad.o:  module_bc_em_ad.o \
+		../frame/module_domain.o \
+		../frame/module_configure.o  \
+		../frame/module_state_description.o \
+		../frame/module_timing.o \
+		../frame/module_dm.o \
+		../frame/module_comm_dm.o \
+		../share/module_io_domain.o \
+		../share/module_model_constants.o \
+		module_bc_ad.o \
+		../share/module_date_time.o \
+		module_physics_init_ad.o \
+		../phys/module_diag_pld.o
+
+solve_em_tl.o:  ../dyn_em/module_small_step_em.o \
+		module_small_step_em_tl.o            \
+		../dyn_em/module_em.o            \
+		module_em_tl.o            \
+		../dyn_em/module_solvedebug_em.o \
+                ../dyn_em/module_bc_em.o         \
+                module_bc_em_tl.o         \
+		../dyn_em/module_diffusion_em.o  \
+		../dyn_em/module_big_step_utilities_em.o \
+		module_big_step_utilities_em_tl.o \
+		module_first_rk_step_part1_tl.o \
+		module_first_rk_step_part2_tl.o \
+		../dyn_em/module_after_all_rk_steps.o  \
+		../dyn_em/module_avgflx_em.o              \
+		../frame/module_domain.o \
+		../frame/module_configure.o  \
+		../frame/module_driver_constants.o \
+		../frame/module_state_description.o \
+		../frame/module_machine.o \
+		../frame/module_tiles.o \
+		../frame/module_dm.o \
+		../frame/module_comm_dm.o \
+		../share/module_llxy.o	\
+		../share/module_model_constants.o \
+		../share/module_bc.o \
+		module_bc_tl.o \
+		module_microphysics_driver_tl.o \
+		../phys/module_microphysics_zero_out.o \
+		module_microphysics_zero_out_tl.o \
+		module_physics_addtendc_tl.o
+
+solve_em_ad.o:  ../dyn_em/module_small_step_em.o 		\
+		module_small_step_em_ad.o       \
+		../dyn_em/module_em.o            \
+		module_em_ad.o         \
+		../dyn_em/module_solvedebug_em.o \
+                ../dyn_em/module_bc_em.o         \
+                module_bc_em_ad.o      \
+		../dyn_em/module_diffusion_em.o  \
+		../dyn_em/module_big_step_utilities_em.o    \
+		module_big_step_utilities_em_ad.o \
+                ../dyn_em/module_first_rk_step_part1.o \
+                module_first_rk_step_part1_ad.o \
+                ../dyn_em/module_first_rk_step_part2.o \
+                module_first_rk_step_part2_ad.o \
+                ../dyn_em/module_avgflx_em.o           \
+		../frame/module_domain.o \
+		../frame/module_configure.o  \
+		../frame/module_driver_constants.o \
+		../frame/module_state_description.o \
+		../frame/module_machine.o \
+		../frame/module_tiles.o \
+		../frame/module_dm.o \
+		../frame/module_comm_dm.o \
+		../share/module_llxy.o	\
+		../share/module_model_constants.o \
+		../share/module_bc.o \
+		module_bc_ad.o \
+		module_linked_list2.o        \
+		../phys/module_microphysics_driver.o \
+		module_microphysics_driver_ad.o \
+		../phys/module_microphysics_zero_out.o \
+		module_microphysics_zero_out_ad.o \
+		../phys/module_physics_addtendc.o \
+		module_physics_addtendc_ad.o
+
+module_first_rk_step_part1_tl.o : \
+                ../dyn_em/module_force_scm.o \
+		../dyn_em/module_big_step_utilities_em.o \
+                ../dyn_em/module_convtrans_prep.o \
+                module_em_tl.o \
+		module_cumulus_driver_tl.o \
+		module_pbl_driver_tl.o \
+		../frame/module_comm_dm.o
+
+module_first_rk_step_part1_ad.o : \
+		../dyn_em/module_big_step_utilities_em.o \
+		module_big_step_utilities_em_ad.o \
+                module_em_ad.o \
+		module_cumulus_driver_ad.o \
+		module_pbl_driver_ad.o
+
+module_first_rk_step_part2_tl.o : \
+                module_em_tl.o \
+		module_diffusion_em_tl.o  \
+		module_sfs_driver_tl.o \
+		../frame/module_domain.o \
+		../frame/module_state_description.o \
+		../frame/module_driver_constants.o \
+		../frame/module_configure.o \
+		../frame/module_dm.o \
+		module_bc_tl.o \
+		../frame/module_comm_dm.o \
+		../phys/module_fddaobs_driver.o \
+		module_physics_addtendc_tl.o
+
+module_first_rk_step_part2_ad.o : \
+                module_em_ad.o \
+		module_diffusion_em_ad.o  \
+		module_sfs_driver_ad.o \
+		../frame/module_domain.o \
+		../frame/module_state_description.o \
+		../frame/module_driver_constants.o \
+		../frame/module_configure.o \
+		../frame/module_dm.o \
+		module_bc_ad.o \
+		../frame/module_comm_dm.o \
+		module_physics_addtendc_ad.o
+
+
+# End of DEPENDENCIES for dyn_em
+
+# DEPENDENCIES for frame
+
+adStack.o : adStack.c
+	$(CC) -c $(CFLAGS) adStack.c
+
+adBuffer.o : adBuffer.F
+	$(RM) $@
+	$(SED_FTN) $*.F > $*.b
+	$(CPP) $(CPPFLAGS) -I../inc $*.b  > $*.for
+	$(RM) $*.b
+	$(RM) $@
+	$(SFC) -c $(FORMAT_FIXED) $(PROMOTION) $(FCNOOPT) $*.for
+	$(RM) adBuffer.for
+
+# End of DEPENDENCIES for frame
+
+# DEPENDENCIES for phys
+
+module_cu_du.o:  ../frame/module_wrf_error.o
+
+module_cu_du_tl.o:  ../frame/module_wrf_error.o
+
+module_cu_du_ad.o:  ../frame/module_wrf_error.o
+
+module_physics_addtendc_tl.o: \
+		../phys/module_cu_kf.o                  \
+		../phys/module_cu_kfeta.o               \
+		module_cu_du.o          \
+		../frame/module_state_description.o \
+		../frame/module_configure.o
+
+module_physics_addtendc_ad.o: \
+		../frame/module_state_description.o \
+		../frame/module_configure.o
+
+module_physics_init_tl.o : \
+		module_bl_surface_drag_tl.o     \
+		module_cu_du_tl.o               \
+		../phys/module_physics_init.o           \
+		../frame/module_state_description.o \
+		../frame/module_configure.o \
+		../frame/module_wrf_error.o \
+		../share/module_model_constants.o
+
+module_physics_init_ad.o : \
+		module_bl_surface_drag_ad.o     \
+		module_cu_du_ad.o               \
+		../frame/module_state_description.o \
+		../frame/module_configure.o \
+		../frame/module_wrf_error.o \
+		../share/module_model_constants.o
+
+module_microphysics_driver_tl.o: \
+		module_mp_nconvp_tl.o                      \
+		module_mp_mkessler.o                      \
+		module_mp_mkessler_tl.o                      \
+		../frame/module_driver_constants.o \
+		../frame/module_state_description.o \
+		../frame/module_wrf_error.o \
+		../frame/module_configure.o \
+		../share/module_model_constants.o
+
+module_microphysics_driver_ad.o: \
+		module_mp_nconvp.o                      \
+		module_mp_nconvp_ad.o                      \
+		module_mp_mkessler.o                      \
+		module_mp_mkessler_ad.o                      \
+		../frame/module_driver_constants.o \
+		../frame/module_state_description.o \
+		../frame/module_wrf_error.o \
+		../frame/module_configure.o \
+		../share/module_model_constants.o
+
+module_mp_mkessler_tl.o: \
+		module_mp_mkessler.o
+
+module_mp_mkessler_ad.o: \
+		module_mp_mkessler.o
+
+module_cumulus_driver_tl.o: \
+		module_cu_du_tl.o \
+		../frame/module_state_description.o \
+		../frame/module_configure.o \
+		../frame/module_domain.o \
+		../frame/module_dm.o \
+		../frame/module_comm_dm.o \
+		../frame/module_wrf_error.o \
+		../share/module_model_constants.o
+
+module_cumulus_driver_ad.o: \
+		module_cu_du_ad.o \
+		../frame/module_state_description.o \
+		../frame/module_configure.o \
+		../frame/module_domain.o \
+		../frame/module_dm.o \
+		../frame/module_comm_dm.o \
+		../frame/module_wrf_error.o \
+		../share/module_model_constants.o
+
+module_pbl_driver_tl.o:  \
+		module_bl_surface_drag_tl.o \
+		module_bl_gwdo_tl.o \
+		../frame/module_state_description.o \
+		../frame/module_configure.o \
+		../share/module_model_constants.o 
+
+module_pbl_driver_ad.o:  \
+		module_bl_surface_drag.o \
+		../phys/module_bl_gwdo.o \
+		module_bl_surface_drag_ad.o \
+		module_bl_gwdo_ad.o \
+		../frame/module_state_description.o \
+		../share/module_model_constants.o 
+
+# End of DEPENDENCIES for phys
+
+
+# DEPENDENCIES for share
+
+module_bc_tl.o: ../frame/module_configure.o ../frame/module_state_description.o \
+		../frame/module_wrf_error.o ../share/module_model_constants.o
+
+module_bc_ad.o: ../frame/module_configure.o ../frame/module_state_description.o \
+		../frame/module_wrf_error.o ../share/module_model_constants.o
+
+module_adtl_grid_utilities.o: ../frame/module_domain.o ../frame/module_configure.o \
+		../frame/module_tiles.o ../frame/module_state_description.o
+
+mediation_pertmod_io.o: ../frame/module_domain.o ../frame/module_state_description.o  \
+			../frame/module_dm.o ../frame/module_comm_dm.o
+
+jcdfi.o: ../frame/module_domain.o ../external/esmf_time_f90/module_utility.o
+
+# End of DEPENDENCIES for share

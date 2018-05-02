@@ -50,7 +50,7 @@ gen_module_state_description1 ( FILE * fp , node_t * node )
     int c1 ;
     for( q = p->members, c1=0 ; q != NULL ; q=q->next, c1++ )
     {
-      if ( strcmp(q->name,"-" ) ) 
+      if( strncmp( p->name,"irr_diag",8 ) && strcmp(q->name,"-" ) ) 
       {
         fprintf(fp,"  INTEGER, PARAMETER :: PARAM_%s = %d\n",q->name,c1) ;
         fprintf(fp,"  INTEGER            ::     P_%s = 1\n",q->name) ;

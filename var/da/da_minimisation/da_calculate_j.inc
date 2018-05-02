@@ -46,8 +46,11 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    integer                           :: n, cldtoplevel(1), icld, nclouds, ncv, minlev_cld
    real                              :: jd_local
    real                              :: js_local
+   real                              :: jm_local
    real, allocatable                 :: cc(:)
-   
+
+   real                              :: inc_div(ims:ime,jms:jme,kms:kme)
+
    if (trace_use) call da_trace_entry("da_calculate_j")
 
    !-------------------------------------------------------------------------
@@ -59,6 +62,8 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    jp_end   = cv_size_jb + cv_size_je + cv_size_jp
    jl_start = cv_size_jb + cv_size_je + cv_size_jp + 1
    jl_end =   cv_size_jb + cv_size_je + cv_size_jp + cv_size_jl
+
+   inc_div = 0.0
 
    call da_allocate_y(iv, jo_grad_y)
 
@@ -290,10 +295,29 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    end if
 
    !-------------------------------------------------------------------------
+   ! [6.1] calculate jm:
+   !-------------------------------------------------------------------------
+   j % jm = 0.0
+   if (use_divc) then
+      call da_transform_vtox(grid, cv_size, xbx, be, grid%ep, xhat+cv, grid%vv, grid%vp)
+      if ( be%ne > 0 .and. alphacv_method == alphacv_method_xa ) then
+         call da_transform_vpatox(grid, be, grid%ep, grid%vp)
+         call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
+      end if
+      call da_transform_xtoxa(grid)
+      call da_divergence_constraint(grid%xb, grid%xa%u, grid%xa%v, inc_div)
+      j % jm   = 0.5* SUM(inc_div(its:ite, jts:jte, kts:kte)* &
+                          inc_div(its:ite, jts:jte, kts:kte))/divc_factor
+      jm_local = j % jm
+      ! summation across processors:
+      j % jm  = wrf_dm_sum_real(jm_local)
+   end if
+
+   !-------------------------------------------------------------------------
    ! [7.0] calculate total cost function j = jo + jb + jc + je + jd + jp + js:
    !-------------------------------------------------------------------------
 
-   j % total = j % jb + j % jo % total + j % je + j % jd + j % jp + j % js
+   j % total = j % jb + j % jo % total + j % je + j % jd + j % jp + j % js + j % jm
    if (grid%jcdfi_use) j % total = j % total  + j % jc
    if (var4d) j % total = j % total  + j % jl
 
@@ -302,12 +326,12 @@ subroutine da_calculate_j(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size_jp,
    !-------------------------------------------------------------------------
    if (rootproc) then
       if (it == 1 .and. iter == 0) then
-         write(unit=cost_unit,fmt='(a)')'Outer    EPS     Inner      J           Jb       Jo           Jc         Je         Jd         Jp         Js        jl'
+         write(unit=cost_unit,fmt='(a)')'Outer    EPS     Inner      J           Jb       Jo           Jc         Je         Jd         Jp         Js        Jl        Jm'
          write(unit=cost_unit,fmt='(a)')'Iter             Iter                            '
       end if
 
-      write(unit=cost_unit,fmt='(2x,i2,1x,e10.3,2x,i4,9(1x,f10.3))') &
-         it, EPS(it), iter, j % total, j % jb, j % jo % total, j % jc, j % je, j % jd, j % jp, j%js, j%jl
+      write(unit=cost_unit,fmt='(2x,i2,1x,e10.3,2x,i4,10(1x,f10.3))') &
+         it, EPS(it), iter, j % total, j % jb, j % jo % total, j % jc, j % je, j % jd, j % jp, j%js, j%jl, j%jm
    end if
 
    call da_deallocate_y (jo_grad_y)

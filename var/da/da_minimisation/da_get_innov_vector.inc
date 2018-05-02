@@ -136,6 +136,8 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       endif
       if ( iv%info(gpsref)%nlocal  > 0  ) &
          call da_get_innov_vector_gpsref    (it, num_qcstat_conv, grid, ob, iv)
+      if ( iv%info(gpseph)%nlocal  > 0 ) &
+         call da_get_innov_vector_gpseph    (it, ob, iv)
       if (iv%info(ssmi_tb)%nlocal   > 0) &
          call da_get_innov_vector_ssmi_tb   (it, grid, ob, iv)
       if (iv%info(ssmi_rv)%nlocal   > 0) &

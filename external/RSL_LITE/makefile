@@ -1,11 +1,11 @@
 OBJSL   = c_code.o buf_for_proc.o rsl_malloc.o rsl_bcast.o task_for_point.o period.o swap.o cycle.o f_pack.o f_xpose.o
 OBJS    = $(OBJSL)
-OPTS    =
+OPTS    = $(PLUSFLAG)
 FFLAGS  =  $(OPTS)
 LIBS    = 
 M4      = m4 -Uinclude -Uindex -Ulen
 AR      = ar
-CFLAGS = 
+CFLAGS = $(PLUSFLAG)
 CPPFLAGS =
 FFLAGS =
 

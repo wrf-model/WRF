@@ -4,21 +4,21 @@
 
 !<DESCRIPTION>
 !
-! Contains subroutines that check the consistency of some namelist 
-! settings. Some namelist settings depend on other values in the 
-! namelist. The routine check_nml_consistency can detect quite a 
+! Contains subroutines that check the consistency of some namelist
+! settings. Some namelist settings depend on other values in the
+! namelist. The routine check_nml_consistency can detect quite a
 ! few fatal inconsistencies. These are all bundled up as a convenience.
 ! The fatal errors are reported, and after the routine completes, then
 ! a single call to wrf_error_fatal is issued. The setup_physics_suite routine
 ! has only one fatal call, so that routine does not need this user-
-! friendly concept of bundling errors. The set_physics_rconfigs 
+! friendly concept of bundling errors. The set_physics_rconfigs
 ! routine does not detect any problems that would result in a fatal
 ! error, so the bundling of errors is also not required there.
 !
 !   SUBROUTINE check_nml_consistency :
 !      Check namelist settings for consistency
 !
-!   SUBROUTINE setup_physics_suite : 
+!   SUBROUTINE setup_physics_suite :
 !      Interpret user setting as referring to which supported schemes
 !      Currently: conus and tropical
 !
@@ -28,6 +28,7 @@
 !</DESCRIPTION>
 
       USE module_state_description
+      USE module_model_constants
       USE module_wrf_error
       USE module_configure
 
@@ -40,7 +41,7 @@
 !=======================================================================
 
    SUBROUTINE check_nml_consistency
- 
+
 !<DESCRIPTION>
 !
 ! Check consistency of namelist settings
@@ -54,6 +55,7 @@
       INTEGER :: i, j, oops, d1_value
       LOGICAL :: km_opt_already_done , diff_opt_already_done
       INTEGER :: count_opt
+      LOGICAL :: lon_extent_is_global , lat_extent_is_global
 
 !TWG2015
 !
@@ -120,9 +122,9 @@
 !-----------------------------------------------------------------------
 ! Check that all values of diff_opt and km_opt are filled in.  A flag
 ! value of "-1" from the nml file means that this column (domain) is not
-! filled as a max_doamins variable.  Since we changed these two variables 
-! from being single entries to max_domain entries, we need to do special 
-! checking.  If there are missing values (if we find any -1 entries), we 
+! filled as a max_doamins variable.  Since we changed these two variables
+! from being single entries to max_domain entries, we need to do special
+! checking.  If there are missing values (if we find any -1 entries), we
 ! fill those columns with the value from the entry from column (domain) #1.
 !-----------------------------------------------------------------------
 
@@ -164,15 +166,15 @@
 #endif
 
 !-----------------------------------------------------------------------
-! Check that NSSL microphysics is not allowed for WRF-NMM run 
+! Check that NSSL microphysics is not allowed for WRF-NMM run
 !-----------------------------------------------------------------------
-#if (NMM_CORE == 1) || (HWRF == 1) 
+#if (NMM_CORE == 1) || (HWRF == 1)
       DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec % mp_physics(i) == nssl_2mom .OR. &
-              model_config_rec % mp_physics(i) == nssl_2momccn .OR. & 
-              model_config_rec % mp_physics(i) == nssl_1mom .OR. & 
-              model_config_rec % mp_physics(i) == nssl_1momlfo .OR. & 
-              model_config_rec % mp_physics(i) == nssl_2momg ) THEN 
+              model_config_rec % mp_physics(i) == nssl_2momccn .OR. &
+              model_config_rec % mp_physics(i) == nssl_1mom .OR. &
+              model_config_rec % mp_physics(i) == nssl_1momlfo .OR. &
+              model_config_rec % mp_physics(i) == nssl_2momg ) THEN
             wrf_err_message = '--- ERROR: Chosen microphysics scheme cannot run with WRF-NMM '
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- Fix mp_physics in namelist.input '
@@ -405,7 +407,7 @@
 
 #if (NMM_CORE == 1) || (HWRF == 1)
 !-----------------------------------------------------------------------
-!           Check that NOAH-MP LSM is not allowed for WRF-NMM run 
+!           Check that NOAH-MP LSM is not allowed for WRF-NMM run
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec%sf_surface_physics(i) == NOAHMPSCHEME ) THEN
@@ -430,11 +432,11 @@
    DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec % sppt(i) .ne. 0)  then
            model_config_rec % sppt_on=1
-           IF (( model_config_rec%KMINFORCT .ne. 1) .or. (model_config_rec%KMAXFORCT .ne. 1000000) .or.   & 
+           IF (( model_config_rec%KMINFORCT .ne. 1) .or. (model_config_rec%KMAXFORCT .ne. 1000000) .or.   &
                ( model_config_rec%LMINFORCT .ne. 1) .or. (model_config_rec%LMAXFORCT .ne. 1000000)) then    
                wrf_err_message = '--- Warning: the namelist parameter "kminforct" etc. are for SKEBS only'
                CALL wrf_message ( wrf_err_message )
-               wrf_err_message = '             and should not be changed from their default value for SPPT' 
+               wrf_err_message = '             and should not be changed from their default value for SPPT'
                CALL wrf_message ( wrf_err_message )
                wrf_err_message = '--- ERROR: If you really want to modify "kminforct" etc.,  edit module_check a_mundo.'
                CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
@@ -445,11 +447,11 @@
    DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec % rand_perturb(i) .ne. 0)  then
            model_config_rec % rand_perturb_on=1
-           IF (( model_config_rec%KMINFORCT .ne. 1) .or. (model_config_rec%KMAXFORCT .ne. 1000000) .or.   & 
+           IF (( model_config_rec%KMINFORCT .ne. 1) .or. (model_config_rec%KMAXFORCT .ne. 1000000) .or.   &
                ( model_config_rec%LMINFORCT .ne. 1) .or. (model_config_rec%LMAXFORCT .ne. 1000000)) then    
                wrf_err_message = '--- Warning: the namelist parameter "kminforct" etc are for SKEBS only'
                CALL wrf_message ( wrf_err_message )
-               wrf_err_message = '             and should not be changed from their default value for RAND_PERTURB' 
+               wrf_err_message = '             and should not be changed from their default value for RAND_PERTURB'
                CALL wrf_message ( wrf_err_message )
                wrf_err_message = '--- ERROR: If you really want to modify "kminforct" etc.,  edit module_check a_mundo.'
                CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
@@ -458,14 +460,14 @@
          endif
    ENDDO
    DO i = 1, model_config_rec % max_dom
-         IF (( model_config_rec % spp_conv(i) .ne. 0).or.( model_config_rec % spp_pbl(i) .ne. 0).or. (model_config_rec % spp_lsm(i) .ne. 0)  & 
+         IF (( model_config_rec % spp_conv(i) .ne. 0).or.( model_config_rec % spp_pbl(i) .ne. 0).or. (model_config_rec % spp_lsm(i) .ne. 0)  &
            .or. ( model_config_rec % spp(i) .ne. 0))  then
            model_config_rec % spp_on=1
-           IF (( model_config_rec%KMINFORCT .ne. 1) .or. (model_config_rec%KMAXFORCT .ne. 1000000) .or.   & 
+           IF (( model_config_rec%KMINFORCT .ne. 1) .or. (model_config_rec%KMAXFORCT .ne. 1000000) .or.   &
                ( model_config_rec%LMINFORCT .ne. 1) .or. (model_config_rec%LMAXFORCT .ne. 1000000)) then    
                wrf_err_message = '--- Warning: the namelist parameter "kminforct" etc are for SKEBS only'
                CALL wrf_message ( wrf_err_message )
-               wrf_err_message = '             and should not be changed from their default value for RAND_PERTURB' 
+               wrf_err_message = '             and should not be changed from their default value for RAND_PERTURB'
                CALL wrf_message ( wrf_err_message )
                wrf_err_message = '--- ERROR: If you really want to modify "kminforct" etc.,  edit module_check a_mundo.'
                CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
@@ -573,7 +575,7 @@
          WRITE (wrf_err_message, FMT='(A,A)') '--- WARNING: traj_opt is zero, but ', &
                 'num_traj is not zero; setting num_traj to zero.'
          CALL wrf_message ( wrf_err_message )
-         model_config_rec%num_traj = 0 
+         model_config_rec%num_traj = 0
    END IF
 
 #elif( NMM_CORE == 1 )
@@ -589,7 +591,7 @@
 
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
-! In program real, if hypsometric_opt = 2, adjust_heights cannot be set to .true. 
+! In program real, if hypsometric_opt = 2, adjust_heights cannot be set to .true.
 !-----------------------------------------------------------------------
       IF ( model_config_rec%hypsometric_opt .EQ. 2 &
            .AND. model_config_rec%adjust_heights ) THEN
@@ -629,6 +631,44 @@
             model_config_rec%icloud = 1
          END IF
       ENDDO
+
+!-----------------------------------------------------------------------
+! aercu_opt = 1 (CESM-aerosal) only works with MSKF, special Morrison
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%aercu_opt .GT. 0 .AND.       &
+              ( model_config_rec%cu_physics(i) .NE. MSKFSCHEME .OR. &
+              model_config_rec%mp_physics(i) .NE. MORR_TM_AERO ) ) THEN
+              oops = oops + 1
+         END IF
+      ENDDO
+
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: aercu_opt requires cu_physics = 11, and mp_physics = 40 '
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- Fix these options in namelist.input if you would like to use aercu_opt'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+
+!-----------------------------------------------------------------------
+! Set the namelist parameters for the aercu_opt > 0
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec % aercu_opt .GT. 0 ) THEN
+         model_config_rec % alevsiz_cu = 30
+         model_config_rec % no_src_types_cu = 10
+         DO i = 1, model_config_rec % max_dom
+            model_config_rec % scalar_pblmix(i) = 1
+         END DO
+
+         wrf_err_message = '--- NOTE: aercu_opt is in use, setting:  ' // &
+                           'alevsiz_cu=30, no_src_types_cu=10, scalar_pblmix = 1'
+         CALL wrf_message ( wrf_err_message )
+
+      END IF
 
 #endif
 
@@ -675,11 +715,11 @@
             count_fatal_error = count_fatal_error + 1
          END IF
 
-         IF ( ( model_config_rec%auxinput4_interval(1)   .EQ. 0 ) .AND. & 
-              ( model_config_rec%auxinput4_interval_y(1) .EQ. 0 ) .AND. & 
-              ( model_config_rec%auxinput4_interval_d(1) .EQ. 0 ) .AND. & 
-              ( model_config_rec%auxinput4_interval_h(1) .EQ. 0 ) .AND. & 
-              ( model_config_rec%auxinput4_interval_m(1) .EQ. 0 ) .AND. & 
+         IF ( ( model_config_rec%auxinput4_interval(1)   .EQ. 0 ) .AND. &
+              ( model_config_rec%auxinput4_interval_y(1) .EQ. 0 ) .AND. &
+              ( model_config_rec%auxinput4_interval_d(1) .EQ. 0 ) .AND. &
+              ( model_config_rec%auxinput4_interval_h(1) .EQ. 0 ) .AND. &
+              ( model_config_rec%auxinput4_interval_m(1) .EQ. 0 ) .AND. &
               ( model_config_rec%auxinput4_interval_s(1) .EQ. 0 ) ) THEN
             wrf_err_message = '--- ERROR: If sst_update /= 0, one of the auxinput4_interval settings must be /= 0'
             CALL wrf_debug ( 0, TRIM(wrf_err_message) )
@@ -702,7 +742,7 @@
          END IF
       END DO
 
-#elif (WRF_CHEM == 1) 
+#elif (WRF_CHEM == 1)
       model_config_rec%alloc_qndropsource = 1
 #endif
 
@@ -828,7 +868,7 @@
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          count_fatal_error = count_fatal_error + 1
        END IF
-    END IF 
+    END IF
     END DO
 
 !------------------------------------------------------------------------
@@ -848,7 +888,7 @@
 !        CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
 !        count_fatal_error = count_fatal_error + 1
 !       END IF
-!     END IF 
+!     END IF
      END DO
 !
 !END FASDAS
@@ -1078,22 +1118,22 @@
          count_opt = 0
          IF ( model_config_rec%mean_diag_interval_s (i) .GT. 0 ) THEN
             count_opt = count_opt + 1
-         END IF 
+         END IF
          IF ( model_config_rec%mean_diag_interval_m (i) .GT. 0 ) THEN
             count_opt = count_opt + 1
-         END IF 
+         END IF
          IF ( model_config_rec%mean_diag_interval_h (i) .GT. 0 ) THEN
             count_opt = count_opt + 1
-         END IF 
+         END IF
          IF ( model_config_rec%mean_diag_interval_d (i) .GT. 0 ) THEN
             count_opt = count_opt + 1
-         END IF 
+         END IF
          IF ( model_config_rec%mean_diag_interval_mo(i) .GT. 0 ) THEN
             count_opt = count_opt + 1
-         END IF 
+         END IF
          IF ( model_config_rec%mean_diag_interval   (i) .GT. 0 ) THEN
             count_opt = count_opt + 1
-         END IF 
+         END IF
          IF ( count_opt .GT. 1 ) THEN
             wrf_err_message = '--- ERROR:  Only use one of: mean_diag_interval, _s, _m, _h, _d, _mo '
             CALL wrf_message ( wrf_err_message )
@@ -1107,27 +1147,27 @@
          IF ( model_config_rec%mean_diag_interval_s (i) .GT. 0 ) THEN
             model_config_rec%mean_interval(i) = model_config_rec%mean_diag_interval_s (i)
             model_config_rec%mean_freq = 1
-         END IF 
+         END IF
          IF ( model_config_rec%mean_diag_interval_m (i) .GT. 0 ) THEN
             model_config_rec%mean_interval(i) = model_config_rec%mean_diag_interval_m (i)
             model_config_rec%mean_freq = 2
-         END IF 
+         END IF
          IF ( model_config_rec%mean_diag_interval_h (i) .GT. 0 ) THEN
             model_config_rec%mean_interval(i) = model_config_rec%mean_diag_interval_h (i)
             model_config_rec%mean_freq = 3
-         END IF 
+         END IF
          IF ( model_config_rec%mean_diag_interval_d (i) .GT. 0 ) THEN
             model_config_rec%mean_interval(i) = model_config_rec%mean_diag_interval_d (i)
             model_config_rec%mean_freq = 4
-         END IF 
+         END IF
          IF ( model_config_rec%mean_diag_interval_mo(i) .GT. 0 ) THEN
             model_config_rec%mean_interval(i) = model_config_rec%mean_diag_interval_mo(i)
             model_config_rec%mean_freq = 5
-         END IF 
+         END IF
          IF ( model_config_rec%mean_diag_interval   (i) .GT. 0 ) THEN
             model_config_rec%mean_interval(i) = model_config_rec%mean_diag_interval   (i)
             model_config_rec%mean_freq = 2
-         END IF 
+         END IF
       END DO
 
 ! 3. If requested, need an interval.
@@ -1137,7 +1177,7 @@
          DO i = 1, model_config_rec % max_dom
             IF ( model_config_rec%mean_interval   (i) .GT. 0 ) THEN
                count_opt = count_opt + 1
-            END IF 
+            END IF
          END DO
          IF ( count_opt .LT. 1 ) THEN
             wrf_err_message = '--- ERROR:  mean_diag = 1, but no computation interval given'
@@ -1162,16 +1202,15 @@
       END IF
 
 !-----------------------------------------------------------------------
-! If hailcast_opt = 1, horizontal grid spacing must be 4 km or finer.
+! If hailcast_opt = 1 for any domain, convective parameterization must be off for that domain.           
 !-----------------------------------------------------------------------
+
       DO i = 1, model_config_rec % max_dom
          IF ( ( model_config_rec%hailcast_opt(i) .NE. 0 ) .AND. &
-              ( model_config_rec%dx(i) .GT. 4000 ) ) THEN
-            wrf_err_message = '--- WARNING:  hailcast_opt requires a grid-spacing of 4 km or finer.'
-            CALL wrf_message ( wrf_err_message )
-            wrf_err_message = '---          hailcast_opt is now 0.'
-            CALL wrf_message ( wrf_err_message )
-            model_config_rec%hailcast_opt(i) = 0
+              (model_config_rec%cu_physics(i) .NE. 0) ) THEN
+              wrf_err_message = '--- hailcast_opt and cu_physics cannot both be turned on for the same domain. You must turn one of them off (=0).'
+              CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+              count_fatal_error = count_fatal_error + 1
          ENDIF
       ENDDO
 
@@ -1202,10 +1241,11 @@
               ( model_config_rec%cu_physics(1) .EQ. SASSCHEME     ) .OR. &
               ( model_config_rec%cu_physics(1) .EQ. OSASSCHEME    ) .OR. &
               ( model_config_rec%cu_physics(1) .EQ. NSASSCHEME    ) .OR. &
+              ( model_config_rec%cu_physics(1) .EQ. NSASOLDSCHEME ) .OR. &
               ( model_config_rec%cu_physics(1) .EQ. TIEDTKESCHEME ) ) THEN
             wrf_err_message = '--- WARNING: If use_adaptive_time_step, must use cudt=0 for the following CU schemes:'
             CALL wrf_message ( wrf_err_message )
-            wrf_err_message = '---          BMJ, all SAS, Tiedtke' 
+            wrf_err_message = '---          BMJ, all SAS, Tiedtke'
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '---          CUDT=0 has been done for you.'
             CALL wrf_message ( wrf_err_message )
@@ -1233,7 +1273,7 @@
       END IF
 
 !-----------------------------------------------------------------------
-! The cu_rad_feedback namelist flag with the two Grell cumulus parameterization 
+! The cu_rad_feedback namelist flag with the two Grell cumulus parameterization
 ! schemes needs to have the namelist flag cu_diag=1
 !-----------------------------------------------------------------------
 
@@ -1256,7 +1296,7 @@
 ! The namelist flag cu_diag=1 must have one of the two Grell cumulus parameterizations
 ! turned on.  All other cumulus parameterizations need to have cu_diag=0
 !-----------------------------------------------------------------------
- 
+
        DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec%cu_diag(i) .EQ. G3TAVE ) THEN
           IF ( ( model_config_rec%cu_physics(i) .NE. GDSCHEME ) .AND. &
@@ -1265,20 +1305,20 @@
                ( model_config_rec%cu_physics(i) .NE. G3SCHEME ) ) THEN
                 wrf_err_message = '--- ERROR: Using cu_diag=1 requires use of one of the following CU schemes:'
                 CALL wrf_message ( wrf_err_message )
-                wrf_err_message = '---          Grell (G3) CU scheme' 
+                wrf_err_message = '---          Grell (G3) CU scheme'
                 CALL wrf_message ( wrf_err_message )
-                wrf_err_message = '---          Grell-Devenyi (GD) CU scheme' 
+                wrf_err_message = '---          Grell-Devenyi (GD) CU scheme'
             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
             count_fatal_error = count_fatal_error + 1
           END IF
          END IF
        END DO
- 
+
 !-----------------------------------------------------------------------
 ! The namelist flag kf_edrates=1 must have one of the three KF cumulus parameterizations
 ! turned on.  All other cumulus parameterizations need to have kf_edrates=0
 !-----------------------------------------------------------------------
- 
+
        DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec%kf_edrates(i) .EQ. KFEDRATES ) THEN
           IF ( ( model_config_rec%cu_physics(i) .NE. KFETASCHEME ) .AND. &
@@ -1286,17 +1326,17 @@
                ( model_config_rec%cu_physics(i) .NE. KFSCHEME ) ) THEN
                 wrf_err_message = '--- ERROR: Using kf_edrates=1 requires use of one of the following KF schemes:'
                 CALL wrf_message ( wrf_err_message )
-                wrf_err_message = '---          Kain-Fritsch (cu_physics=1)' 
+                wrf_err_message = '---          Kain-Fritsch (cu_physics=1)'
                 CALL wrf_message ( wrf_err_message )
-                wrf_err_message = '---          Multi-scale Kain-Fritsch (cu_physics=11)' 
+                wrf_err_message = '---          Multi-scale Kain-Fritsch (cu_physics=11)'
                 CALL wrf_message ( wrf_err_message )
-                wrf_err_message = '---          old Kain-Fritsch (cu_physics=99)' 
+                wrf_err_message = '---          old Kain-Fritsch (cu_physics=99)'
             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
             count_fatal_error = count_fatal_error + 1
           END IF
          END IF
        END DO
- 
+
 !-----------------------------------------------------------------------
 ! Test to see if we allocate space for the time series.
 !-----------------------------------------------------------------------
@@ -1313,7 +1353,7 @@
       CALL wrf_dm_bcast_integer(model_config_rec%process_time_series, 1)
 #endif
 !-----------------------------------------------------------------------
-! The three Grell cumulus parameterization schemes need to have the 
+! The three Grell cumulus parameterization schemes need to have the
 ! namelist flag cu_diag=1, and all other cumulus schemes must have
 ! cu_diag=0.
 !-----------------------------------------------------------------------
@@ -1321,7 +1361,7 @@
       DO i = 1, model_config_rec % max_dom
          IF ( ( model_config_rec%cu_physics(i) .EQ. GDSCHEME ) .OR. &
               ( model_config_rec%cu_physics(i) .EQ. GFSCHEME ) .OR. &
-              ( model_config_rec%cu_physics(i) .EQ. KFCUPSCHEME ) .OR. & 
+              ( model_config_rec%cu_physics(i) .EQ. KFCUPSCHEME ) .OR. &
               ( model_config_rec%cu_physics(i) .EQ. G3SCHEME ) ) THEN
             model_config_rec%cu_diag(i) = 1
          ELSE
@@ -1352,7 +1392,7 @@
 !-----------------------------------------------------------------------
 
       IF ( model_config_rec%tmn_update .EQ. 1 .AND. &
-           model_config_rec%lagday .EQ. 1 ) THEN 
+           model_config_rec%lagday .EQ. 1 ) THEN
            wrf_err_message = '--- ERROR: Using tmn_update=1 requires lagday=150 '
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          count_fatal_error = count_fatal_error + 1
@@ -1388,7 +1428,7 @@
       oops = 0
       DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec%sf_surface_physics(i) .EQ. CLMSCHEME ) THEN
-            oops = oops + 1 
+            oops = oops + 1
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
@@ -1418,7 +1458,7 @@
          wrf_err_message = '--- NOTE: mp_physics == 28, already has gravitational fog settling; resetting grav_settling to 0'
          CALL wrf_message ( wrf_err_message )
       END IF
- 
+
 !-----------------------------------------------------------------------
 !  scalar_pblmix = 1 should be turned on for mp_physics=28.
 !-----------------------------------------------------------------------
@@ -1447,27 +1487,13 @@
            CALL wrf_message( wrf_err_message )
            count_fatal_error = count_fatal_error + 1
         ENDIF
-     END DO 
+     END DO
 
 !-----------------------------------------------------------------------
-!  The hybrid vertical coordinate (HVC) namelist.input option (hybrid_opt=2) 
+!  The hybrid vertical coordinate (HVC) namelist.input option (hybrid_opt=2)
 !  requires the code to be built with the HVC code enabled.  This is a run-time
 !  test to make sure the correct compile-time capabilities are available.
 !-----------------------------------------------------------------------
-#if ( HYBRID_COORD==1 )
-#else
-     IF (model_config_rec%hybrid_opt .NE. 0) THEN
-        WRITE(wrf_err_message,'(A)') '--- ERROR: The code was not built with hybrid vertical coordinate enabled'
-        CALL wrf_message( wrf_err_message )
-        WRITE(wrf_err_message,'(A)') '---        Either set hybrid_opt=0 in the namelist.input file, or '
-        CALL wrf_message( wrf_err_message )
-        WRITE(wrf_err_message,'(A)') '---        re-compile with the hybrid vertical coordinate enabled'       
-        CALL wrf_message( wrf_err_message )
-        WRITE(wrf_err_message,'(A)') '---        For example: clean -a ; configure -hyb ; compile em_real '
-        CALL wrf_message( wrf_err_message )
-        count_fatal_error = count_fatal_error + 1
-     ENDIF
-#endif
 
 !-----------------------------------------------------------------------
 !  DJW Check that we're not using ndown and vertical nesting.
@@ -1555,13 +1581,13 @@
                  ( model_config_rec%ra_lw_physics(i) .EQ. RRTMSCHEME          ) ) .AND. &
                ( ( model_config_rec%ra_sw_physics(i) .EQ. 0                   ) .OR. &
                  ( model_config_rec%ra_sw_physics(i) .EQ. SWRADSCHEME         ) ) ) THEN
-             !  We are OK, I just hate writing backwards / negative / convoluted if tests 
+             !  We are OK, I just hate writing backwards / negative / convoluted if tests
              !  that are not easily comprehensible.
           ELSE
             wrf_err_message = '--- ERROR: vert_refine_method=2 only works with ra_lw_physics=1 (RRTM) and ra_sw_physics=1 (Dudhia)'
             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
             count_fatal_error = count_fatal_error + 1
-          END IF 
+          END IF
         END IF
       END DO
 
@@ -1576,11 +1602,33 @@
       END IF
 
 !-----------------------------------------------------------------------
+! If the user did not specify a global setting in the lateral BC
+! portion of the namelist file (polar), but the distance around the
+! equator is approximately equal to the entire globe, then it is likely
+! that the user probably forgot to flip that polar switch on.
+!-----------------------------------------------------------------------
+      lon_extent_is_global = .FALSE.
+      IF ( ABS ( model_config_rec % e_we(1) * model_config_rec % dx(1) - 2. * piconst / reradius ) .LT. model_config_rec % dx(1) ) THEN
+         lon_extent_is_global = .TRUE.
+      END IF
+
+      lat_extent_is_global = .FALSE.
+      IF ( ABS ( model_config_rec % e_sn(1) * model_config_rec % dy(1) -      piconst / reradius ) .LT. model_config_rec % dy(1) ) THEN
+         lat_extent_is_global = .TRUE.
+      END IF
+
+      IF ( ( .NOT. model_config_rec % polar(1) ) .AND. &
+           ( lon_extent_is_global .AND. lat_extent_is_global ) ) THEN
+         CALL wrf_debug ( 0, '--- ERROR: Domain size is global, set &bdy_control polar=.TRUE.' )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+
+!-----------------------------------------------------------------------
 !  Remapping namelist variables for gridded and surface fdda to aux streams 9 and 10.
 !  Relocated here so that the remappings are after checking the namelist for inconsistencies.
 !-----------------------------------------------------------------------
 
-#     include "../dyn_em/namelist_remappings_em.h"
+# include "../dyn_em/namelist_remappings_em.h"
 
 #endif
 
@@ -1590,7 +1638,7 @@
 !  selected by the user are consistent.
 !  1. If the user has turned-off using the surface level, do not allow the force
 !     option to select how many layers the surface is to be used through.
-!  2. If the user has turned-off using the surface level, do not allow the 
+!  2. If the user has turned-off using the surface level, do not allow the
 !     lowest level from surface option to be activated.
 !-----------------------------------------------------------------------
 
@@ -1614,6 +1662,17 @@
       END IF
 #endif
 
+#if (EM_CORE == 1 && WRFPLUS == 1 )
+      IF ( ( model_config_rec%jcdfi_use ).AND. &
+           ( model_config_rec%jcdfi_diag .NE. 1 ) ) THEN
+         wrf_err_message = '--- ERROR: If jcdfi_use = 1, then jcdfi_io must also = 1 for that domain '
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- Change jcdfi_io in namelist.input '
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+#endif
+
 !-----------------------------------------------------------------------
 !  Set the namelist parameter o3input to 0 for the radiation schemes other
 !  than RRTMG_LWSCHEME and RRTMG_SWSCHEME.
@@ -1633,6 +1692,81 @@
          CALL wrf_message ( wrf_err_message )
       END IF
 
+#if (WRF_CHEM == 1 && WRF_KPP == 1 )
+!-----------------------------------------------------------------------
+! Check for consistent chem_opt and irr_opt
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%irr_opt(i) > 0 .and. &
+              (model_config_rec%chem_opt(i) /= mozcart_kpp .and. &
+               model_config_rec%chem_opt(i) /= t1_mozcart_kpp .and. &
+               model_config_rec%chem_opt(i) /= mozart_mosaic_4bin_kpp .and. &
+               model_config_rec%chem_opt(i) /= mozart_mosaic_4bin_aq_kpp ) ) THEN
+           wrf_err_message = '--- ERROR: IRR diagnostics can only be used with the following chem_opt settings:'
+           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+           wrf_err_message = '    MOZCART_KPP, T1_MOZCART_KPP, MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP'
+           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+           write(wrf_err_message,'(''    chem_opt = '',i3,'', '',i3,'', '',i3,'', or '',i3)') &
+                 MOZCART_KPP, T1_MOZCART_KPP, MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP 
+           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+           count_fatal_error = count_fatal_error + 1
+         END IF
+      ENDDO
+#endif
+
+#if ( ( EM_CORE == 1) && ( defined(DM_PARALLEL) )&& ( ! defined(STUBMPI) ) )
+!-----------------------------------------------------------------------
+! Did the user ask for too many MPI tasks, or are those tasks poorly distributed.
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec % e_we(i) /  model_config_rec % nproc_x .LT. 10 ) .OR. &
+              ( model_config_rec % e_sn(i) /  model_config_rec % nproc_y .LT. 10 ) ) THEN
+            WRITE ( wrf_err_message , * ) 'For domain ',i,', the domain size is too small for this many processors, ', & 
+                                          'or the decomposition aspect ratio is poor.'
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            WRITE ( wrf_err_message , * ) 'Minimum decomposed computational patch size, either x-dir or y-dir, is 10 grid cells.'
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            WRITE ( wrf_err_message , fmt='(a,i5,a,i4,a,i4)' ) &
+                                          'e_we = ', model_config_rec % e_we(i),', nproc_x = ',model_config_rec % nproc_x, &
+                                          ', with cell width in x-direction = ', &
+                                          model_config_rec % e_we(i) /  model_config_rec % nproc_x
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            WRITE ( wrf_err_message , fmt='(a,i5,a,i4,a,i4)' ) &
+                                          'e_sn = ', model_config_rec % e_sn(i),', nproc_y = ',model_config_rec % nproc_y, &
+                                          ', with cell width in y-direction = ', &
+                                          model_config_rec % e_sn(i) /  model_config_rec % nproc_y
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            wrf_err_message = '--- ERROR: Reduce the MPI rank count, or redistribute the tasks.'
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            oops = oops + 1
+         END IF
+      ENDDO
+      IF ( oops .GT. 0 ) THEN
+         count_fatal_error = count_fatal_error + 1
+      END IF
+#endif
+
+
+
+
+!---------------------------------------------------------------------
+!  The "clean" atmosphere radiative flux diagnostics can only be used 
+!     with WRF-Chem.
+!---------------------------------------------------------------------
+
+      IF ( model_config_rec%clean_atm_diag > 0 ) THEN
+
+#if (WRF_CHEM != 1)
+         wrf_err_message = '--- NOTE: "Clean" atmosphere diagnostics can only be used in WRF-Chem' 
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         model_config_rec%calc_clean_atm_diag = 0
+#else
+         model_config_rec%calc_clean_atm_diag = 1
+#endif
+
+      ENDIF
 
 !-----------------------------------------------------------------------
 !  MUST BE AFTER ALL OF THE PHYSICS CHECKS.
@@ -1819,7 +1953,7 @@
       WRITE (wrf_err_message, FMT=TRIM(formatstring)) &
             'sf_surface_physics: ', (model_config_rec % sf_surface_physics(i), modified_sf_surface_option(i), i=1,max_dom)
       CALL wrf_message (wrf_err_message)
- 
+
       !
       ! Print footnote if any physics schemes were overridden by the user
       !
@@ -1891,6 +2025,16 @@
       END IF
 
 !-----------------------------------------------------------------------
+! Need to know if this run has aercu_opt set to either 1 or 2,
+! so that we can set a derived namelist for packaging arrays.
+!-----------------------------------------------------------------------
+
+      model_config_rec % aercu_used = 0
+      IF ( model_config_rec %aercu_opt .GT. 0 ) THEN
+         model_config_rec % aercu_used = 1
+      END IF
+
+!-----------------------------------------------------------------------
 ! If any CAM scheme is turned on, then there are a few shared variables.
 ! These need to be allocated when any CAM scheme is active.
 !-----------------------------------------------------------------------
@@ -1905,22 +2049,23 @@
          END IF
       ENDDO
 
-#elif (WRF_CHEM == 1) 
+#elif (WRF_CHEM == 1)
       model_config_rec % cam_used = 1
 #endif
 
 #endif
+
       
 !-----------------------------------------------------------------------
-! Set the namelist parameters for the CAM radiation scheme if either 
+! Set the namelist parameters for the CAM radiation scheme if either
 ! ra_lw_physics = CAMLWSCHEME or ra_sw_physics = CAMSWSCHEME.  
 !-----------------------------------------------------------------------
 
-      IF (( model_config_rec % ra_lw_physics(1) .EQ. CAMLWSCHEME ) .OR. & 
+      IF (( model_config_rec % ra_lw_physics(1) .EQ. CAMLWSCHEME ) .OR. &
           ( model_config_rec % ra_sw_physics(1) .EQ. CAMSWSCHEME )) THEN
          model_config_rec % paerlev = 29
          model_config_rec % levsiz = 59
-         model_config_rec % cam_abs_dim1 = 4 
+         model_config_rec % cam_abs_dim1 = 4
          model_config_rec % cam_abs_dim2 = model_config_rec % e_vert(1)
 
          wrf_err_message = '--- NOTE: CAM radiation is in use, setting:  ' // &
@@ -1967,7 +2112,7 @@
       END IF
 
 !-----------------------------------------------------------------------
-! Set namelist parameter num_soil_levels depending on the value of 
+! Set namelist parameter num_soil_levels depending on the value of
 ! sf_surface_physics
 !-----------------------------------------------------------------------
 
@@ -1992,26 +2137,6 @@
       WRITE (wrf_err_message, FMT='(A,I6)') '--- NOTE: num_soil_layers has been set to ', &
                                              model_config_rec % num_soil_layers
       CALL wrf_message ( wrf_err_message )
-
-!-----------------------------------------------------------------------
-!  The P3 MP schemes must be used with the RRTMG radiation schemes.
-!-----------------------------------------------------------------------
-
-      DO i = 1, model_config_rec % max_dom
-         IF ( ( model_config_rec % mp_physics(i) .EQ. P3_1CATEGORY    )   .OR.  &
-              ( model_config_rec % mp_physics(i) .EQ. P3_1CATEGORY_NC ) ) THEN
-
-            IF ( ( ( model_config_rec % ra_lw_physics(i) .EQ. RRTMG_LWSCHEME      )   .OR.   &
-                   ( model_config_rec % ra_lw_physics(i) .EQ. RRTMG_LWSCHEME_FAST ) ) .AND.  &
-                 ( ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME      )   .OR.   &
-                   ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME_FAST ) ) ) THEN
-               !  No op, everything is fine. This is just easier logic to understand
-            ELSE
-               wrf_err_message = '--- ERROR: P3 MP (mp_physics=50 or 51) requires using RRTMG LW and SW schemes.'
-               CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
-            END IF
-         END IF
-      END DO
 
    END SUBROUTINE set_physics_rconfigs
 

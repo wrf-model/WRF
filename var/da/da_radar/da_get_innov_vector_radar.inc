@@ -8,6 +8,7 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    !    08/08/2016 - Updated to include null-echo assimilation
    !                 (Yu-Shin Kim and Ki-Hong Min, School of Earth System
    !                  Sciences/Kyungpook National University, Daegu, S.Korea)
+   !    08/2017 - bug fix for Vr operator (Siou-Ying Jiang, CWB, Taiwan)
    !-----------------------------------------------------------------------
 
    implicit none
@@ -323,9 +324,11 @@ END IF
                   if (abs(ob % radar(n) % rv(k) - missing_r) > 1.0 .AND. &
                        iv % radar(n) % rv(k) % qc >= obs_qc_pointer) then
 
+                     !reference: Sun and Crook (1997)
                      call da_radial_velocity(model_rv(k,n), model_p(k,n),  &
                         model_u(k,n), model_v(k,n), model_w(k,n),          &
-                        model_qrn(k,n), model_ps(n), xr, yr, zr)
+                        model_qrn(k,n), model_ps(n), xr, yr, zr,           &
+                        model_rho(k,n))
 
                      iv % radar(n) % rv(k) % inv = ob % radar(n) % rv(k) - model_rv(k,n)
                   end if
@@ -343,7 +346,7 @@ END IF
             if (use_radar_rhv .or. use_radar_rqv) then
                if ( echo_rf_good ) then
                   call da_radar_rf (model_qrn(k,n),model_qsn(k,n),model_qgr(k,n),model_tc(k,n),model_rho(k,n),bg_rze)
-                  bg_rf = 10.0*log(bg_rze)  ! Z to dBZ
+                  bg_rf = 10.0*log10(bg_rze)  ! Z to dBZ
                end if
             end if
 

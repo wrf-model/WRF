@@ -11,8 +11,8 @@ CONTAINS
 
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
-   SUBROUTINE ACMPBL(XTIME,    DTPBL,    ZNW,   SIGMAH,               &
-                     U3D,      V3D,      PP3D,  DZ8W, TH3D, T3D,      &
+   SUBROUTINE ACMPBL(XTIME,    DTPBL,    U3D,   V3D,                  &
+                     PP3D,     DZ8W,     TH3D,  T3D,                  &
                      QV3D,     QC3D,     QI3D,  RR3D,                 &
 #if (WRF_CHEM == 1)
                      CHEM3D,   VD3D,     NCHEM,                       &  ! For WRF-Chem
@@ -48,12 +48,8 @@ CONTAINS
 !     RG and JP 7/2006   - Finished WRF adaptation
 !     JP 12/2011 12/2011 - ACM2 modified so it's not dependent on first layer thickness. 
 !     JP        3/2013   - WRFChem version. Mixing of chemical species are added
-!     JP 12/2014         - Km and Kh updated. New Richardson number stability function.
-!                          Reduces day and night 2-m temperature bias.
-!     JP 12/2014         - Minimum PBL height bug caused PBLH lower than first level thickness in very stable 
-!                          conditions. Fixed so PBLH minimum is layer 1 thickness.
-!     JP 12/2015         - RMOL updated after initial calculation in the PX-SFCLAY.
-!                                                  
+!     HF        5/2016   - MPAS version  
+!     JP        8/2017   - Z-coord version from MPAS version for hybrid coords  
 !
 !**********************************************************************
 !   ARGUMENT LIST:
@@ -61,8 +57,6 @@ CONTAINS
 !... Inputs:
 !-- XTIME           Time since simulation start (min)
 !-- DTPBL           PBL time step
-!-- ZNW             Sigma at full layer
-!-- SIGMAH          Sigma at half layer
 !-- U3D             3D u-velocity interpolated to theta points (m/s)
 !-- V3D             3D v-velocity interpolated to theta points (m/s)
 !-- PP3D            Pressure at half levels (Pa)
@@ -90,7 +84,6 @@ CONTAINS
 !-- WSPD            wind speed at lowest model level (m/s)
 !-- PSIM            similarity stability function for momentum
 !-- MUT             Total Mu : Psfc - Ptop
-!-- RMOL            inverse (1/MOL) of Monin-Obukhov length (m)  (added for v3.8)
  
 !-- ids             start index for i in domain
 !-- ide             end index for i in domain
@@ -133,8 +126,6 @@ CONTAINS
     REAL,                                INTENT(IN)  ::  DTPBL, EP1,   &
                                                         G, ROVCP, RD, CPD
 
-    REAL,    DIMENSION( kms:kme ),       INTENT(IN)  :: ZNW, SIGMAH
-
     REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ),                         &
              INTENT(IN) ::                              U3D, V3D,            &
                                                         PP3D, DZ8W, T3D,     &
@@ -145,7 +136,7 @@ CONTAINS
                                                           HFX, QFX, TSK,    &
                                                           PSFC, WSPD, MUT
 
-    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::  PBLH, REGIME,  &
+    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) ::  PBLH, REGIME, & 
                                                               UST, RMOL
 
     REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ),                         &
@@ -157,7 +148,6 @@ CONTAINS
              intent(inout)   ::                         exch_h
 
     INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(OUT  ) ::  KPBL2D
-
  
 #if (WRF_CHEM == 1)
 !... Chem
@@ -170,8 +160,6 @@ CONTAINS
 !... Integer
       INTEGER :: I, J, K, L
 !... Real
-      REAL, DIMENSION( kts:kte ) :: DSIGH, DSIGHI, DSIGFI
-      REAL, DIMENSION( 0:kte )   :: SIGMAF
       REAL  RDT
       REAL, PARAMETER :: KARMAN = 0.4
 
@@ -180,26 +168,23 @@ CONTAINS
     REAL,    DIMENSION( ims:ime, kms:kme, nchem ) :: CHEM2D
     REAL,    DIMENSION( ims:ime, kdvel, ndvel ) :: VD2D
 #endif
-!...
+   
 
+
+!**************************************
+! dry air density - Hosein, June 2015
+!     do j = jts,jte
+!     do k = kts,kte
+!     do i = its,ite
+!       RR3DA(i,k,j) = RR3D(i,k,j) * (1.0 + 1.609*QV3D(i,k,j)) / (1.0 + QV3D(i,k,j))
+!     enddo
+!     enddo
+!     enddo
+!***************************************
    RDT = 1.0 / DTPBL
 
-   DO K = 1, kte
-     SIGMAF(K-1) = ZNW(K)
-   ENDDO
-   SIGMAF(kte) = 0.0
+!==================================================
 
-   DO K = 1, kte
-     DSIGH(K)  = SIGMAF(K) - SIGMAF(K-1)
-     DSIGHI(K) = 1.0 / DSIGH(K)
-   ENDDO
-
-   DO K = kts,kte-1
-     DSIGFI(K) = 1.0 / (SIGMAH(K+1) - SIGMAH(K))
-   ENDDO
-
-   DSIGFI(kte) = DSIGFI(kte-1)
-   
    DO j = jts,jte   
 #if (WRF_CHEM == 1)
       DO L = 1, nchem
@@ -218,8 +203,7 @@ CONTAINS
       ENDDO
       ENDDO
 #endif
-      CALL ACM2D(j=J,xtime=XTIME, dtpbl=DTPBL, sigmaf=SIGMAF, sigmah=SIGMAH    &
-              ,dsigfi=DSIGFI,dsighi=DSIGHI,dsigh=DSIGH             &
+      CALL ACM2D(j=j,xtime=xtime,dtpbl=dtpbl                       &
               ,us=u3d(ims,kms,j),vs=v3d(ims,kms,j)                 &
               ,theta=th3d(ims,kms,j),tt=t3d(ims,kms,j)             &
               ,qvs=qv3d(ims,kms,j),qcs=qc3d(ims,kms,j)             &
@@ -231,7 +215,7 @@ CONTAINS
               ,num_vert_mix=num_vert_mix                           &
 #endif
               ,dzf=DZ8W(ims,kms,j)                                 &
-              ,densx=RR3D(ims,kms,j)                               &
+              ,densx=RR3D(ims,kms,j)                              &
               ,utnp=rublten(ims,kms,j),vtnp=rvblten(ims,kms,j)     &
               ,ttnp=rthblten(ims,kms,j),qvtnp=rqvblten(ims,kms,j)  &
               ,qctnp=rqcblten(ims,kms,j),qitnp=rqiblten(ims,kms,j) &
@@ -257,6 +241,14 @@ CONTAINS
 #endif
    ENDDO
 
+
+!   write(46,*) pblh (7221,1)
+!   write(56,*) 'rublten'  , rublten (1000,6,1)
+!   write(56,*) 'rvblten'  , rvblten (1000,6,1)
+!   write(56,*) 'rthblten' , rthblten(1000,6,1)
+!   write(56,*) '==========='
+
+
    END SUBROUTINE ACMPBL
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
@@ -264,8 +256,7 @@ CONTAINS
 
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
-   SUBROUTINE ACM2D(j,XTIME, DTPBL, sigmaf, sigmah          &
-              ,dsigfi,dsighi,dsigh                          &
+   SUBROUTINE ACM2D(j,xtime,dtpbl                           &
               ,us,vs,theta,tt,qvs,qcs,qis                   &
 #if (WRF_CHEM == 1)
               ,chem,  vd, nchem, kdvel, ndvel               &
@@ -288,21 +279,18 @@ CONTAINS
 !.......Arguments
 
 !... Real
-      REAL, DIMENSION( 0:kte ),             INTENT(IN)  :: SIGMAF
-      REAL, DIMENSION( kms:kme ),           INTENT(IN)  :: SIGMAH
-      REAL, DIMENSION( kts:kte ),           INTENT(IN)  :: DSIGH, DSIGHI, DSIGFI
       REAL ,                                INTENT(IN)  :: DTPBL, G, RD,ep1,karman,CPD,ROVCP,RDT
       REAL , DIMENSION( ims:ime ),          INTENT(INOUT)  :: PBL, UST
       
       REAL , DIMENSION( ims:ime, kms:kme ), INTENT(IN)  :: US,VS, THETA, TT,   &
                                                            QVS, QCS, QIS, DENSX
       REAL,  DIMENSION( ims:ime, kms:kme ), intent(in)  :: DZF
-      REAL,  DIMENSION( ims:ime, kms:kme ), intent(inout)   ::  utnp, &
-							        vtnp, &
-							        ttnp, &
-							        qvtnp, &
-							        qctnp, &
-							        qitnp
+      REAL,  DIMENSION( ims:ime, kms:kme ), intent(inout)   ::  utnp,  &
+                                                                vtnp,  &
+                                                                ttnp,  &
+                                                                qvtnp, &
+                                                                qctnp, &
+                                                                qitnp
       real,     dimension( ims:ime ), intent(in   )   ::   psfcpa
       real,     dimension( ims:ime ), intent(in   )   ::   tg
       real,     dimension( ims:ime ), intent(inout)   ::   regime, rmol
@@ -334,21 +322,19 @@ CONTAINS
       REAL    ::  ZH1,UH1,VH1                                   ! NEW FOR V3.7
       REAL    ::  psix, THV1
       REAL, DIMENSION( its:ite )          :: FINT, PSTAR, CPAIR
-      REAL, DIMENSION( its:ite, kts:kte ) :: THETAV, RIB,             &
-                                             EDDYZ, EDDYZM, UX, VX, THETAX,   &
-                                             QVX, QCX, QIX, ZA
+      REAL, DIMENSION( its:ite, kts:kte ) :: THETAV, RIB,                        &
+                                             EDDYZ, EDDYZM, UX, VX, THETAX,      &
+                                             QVX, QCX, QIX, ZA, DZHI, DZFI, DZH
       REAL, DIMENSION( its:ite, 0:kte )   :: ZF
-      REAL,    DIMENSION( its:ite)           :: WST, TST, QST, USTM, TSTV
-      REAL,    DIMENSION( its:ite )          :: PBLSIG, MOL
+      REAL,    DIMENSION( its:ite)        :: WST, TST, QST, USTM, TSTV
+      REAL,    DIMENSION( its:ite )       :: MOL
       REAL    ::  FINTT, ZMIX, UMIX, VMIX
       REAL    ::  TMPFX, TMPVTCON, TMPP, TMPTHS, TMPTH1, TMPVCONV, WS1, DTH
-	REAL    ::  A,TST12,RL,ZFUNC,DENSF
-!    REAL, PARAMETER :: KARMAN = 0.4
+      REAL    ::  A,TST12,RL,ZFUNC,DENSF
 
 !... Integer
       INTEGER :: KL, jtf, ktf, itf, KMIX, KSRC
-!...
-        character*512 :: message
+      character*512 :: message
 !-----initialize vertical tendencies and
 
       DO i = its,ite
@@ -388,7 +374,7 @@ CONTAINS
              TSTV(I) = SIGN(1.0E-6,TSTV(I))
            ENDIF
            MOL(I)    = THV1 * UST(i)**2/(KARMAN*G*TSTV(I))
-           RMOL(I)   = 1./MOL(I)
+           RMOL(I)   = 1.0/MOL(I)
            WST(I)    = UST(I) * (PBL(I)/(KARMAN*ABS(MOL(I)))) ** 0.333333       
            PSTAR(I)  =  MUT(I)/1000.                                     ! P* in cb 
      ENDDO
@@ -402,11 +388,24 @@ CONTAINS
        KLPBL(I)   = 1
      ENDDO
 
+!     write(0,*) 'HHHHH2'
      DO K = kts, kte
        DO I = its,ite
          ZF(I,K) = DZF(I,K) + ZF(I,K-1)
          ZA(I,K) = 0.5 * (ZF(I,K) + ZF(I,K-1))
+!         write(0,*) i , k , zf, za 
+         DZH(I,K) = ZF(I,K) - ZF(I,K-1)
+         DZHI(I,K)= 1./DZH(I,K)
        ENDDO
+     ENDDO
+
+     DO K = kts, kte-1
+       DO I = its,ite
+         DZFI(I,K) = 1./(ZA(I,K+1)-ZA(I,K))
+       ENDDO
+     ENDDO
+     DO I = its,ite
+       DZFI(I,KTE) = DZFI(I,KTE-1)
      ENDDO
 
      DO K = kts, kte
@@ -421,7 +420,7 @@ CONTAINS
      DO 100 I = its,ite
        DO K = 1,kte
          KSRC = K
-         IF (SIGMAF(K).lT.0.9955) GO TO 69
+         IF (ZF(I,K).gt.30.0) GO TO 69
        ENDDO
 69     CONTINUE
        TH1 = 0.0
@@ -471,13 +470,15 @@ CONTAINS
          IF (RIB(I,K) .GE. RIC) GO TO 201
        ENDDO
 
-       write (message, *)' RIBX never exceeds RIC, RIB(i,kte) = ',rib(i,5),        &
+
+       write (message,*)' RIBX never exceeds RIC, RIB(i,kte) = ',rib(i,5),        &
                ' THETAV(i,1) = ',thetav(i,1),' MOL=',mol(i),            &
                ' TCONV = ',TCONV,' WST = ',WST(I),                      &
                ' KMIX = ',kmix,' UST = ',UST(I),                       &
                ' TST = ',TST(I),' U,V = ',US(I,1),VS(I,1),              &
                ' I,J=',I,J
        CALL wrf_error_fatal ( message )
+
 201    CONTINUE
 
        KPBLH(I) = K
@@ -499,11 +500,9 @@ CONTAINS
          PBL(I)  = FINT(I) * (ZF(I,KPBLHT) - ZF(I,KPBLHT-1)) +          &
                      ZF(I,KPBLHT-1)
          KLPBL(I) = KPBLHT
-         PBLSIG(I)   = FINT(I) * DSIGH(KPBLHT) + SIGMAF(KPBLHT-1)    ! sigma at PBL height
        ELSE
          KLPBL(I) = KSRC
          PBL(I)    = ZA(I,KSRC)                                                  
-         PBLSIG(I)   = SIGMAH(KSRC)                                             
        ENDIF
 
      ENDDO
@@ -520,25 +519,25 @@ CONTAINS
      ENDDO
 
 !... Calculate Kz
-     CALL EDDYX(DTPBL, ZF,  ZA,     MOL, PBL,  UST,                &
+     CALL EDDYX(DTPBL, ZF,  ZA,     MOL, PBL,  UST,                 &
                 US,    VS,  TT,  THETAV, DENSX, PSTAR,              &
-                QVS,   QCS, QIS, DSIGFI, G, RD, CPAIR,              &
+                QVS,   QCS, QIS, G, RD, CPAIR,                      &
                 EDDYZ, EDDYZM, its,ite, kts,kte,ims,ime, kms,kme)
 
-     CALL ACM(DTPBL, PSTAR,  NOCONV, SIGMAF, DSIGH, DSIGHI, J,      &
-                 KLPBL, PBL,   PBLSIG, MOL,  UST,                  &
+     CALL ACM(DTPBL, PSTAR,  NOCONV, ZF, DZH, DZHI, J,              &
+                 KLPBL, PBL,   DZFI, MOL,  UST,                     &
                  TST, QST,  USTM,   EDDYZ,  DENSX,                  &
-                 THETA,  QVS,    QCS,    QIS,        &
-                 THETAX, QVX,    QCX,    QIX,        &
+                 THETA,  QVS,    QCS,    QIS,                       &
+                 THETAX, QVX,    QCX,    QIX,                       &
 #if (WRF_CHEM == 1)
                  CHEM,  VD,  NCHEM, KDVEL, NDVEL,NUM_VERT_MIX,      &
 #endif
                  ids,ide, jds,jde, kds,kde,                         &
                  ims,ime, jms,jme, kms,kme,                         &
                  its,ite, jts,jte, kts,kte)
-     CALL ACMM(DTPBL, PSTAR,  NOCONV, SIGMAF, DSIGH, DSIGHI, J,      &
-                 KLPBL, PBL,   PBLSIG, MOL,  UST,                  &
-                 TST, QST,  USTM,  EDDYZM, DENSX,                  &
+     CALL ACMM(DTPBL, PSTAR,  NOCONV, ZF, DZH, DZHI, J,             &
+                 KLPBL, PBL,   DZFI, MOL,  UST,                     &
+                 TST, QST,  USTM,  EDDYZM, DENSX,                   &
                  US,    VS,         &
                  UX,    VX,         &
                  ids,ide, jds,jde, kds,kde,                         &
@@ -549,9 +548,7 @@ CONTAINS
 
      DO K = kts, kte-1
        DO I = its, ite
-         DENSF     = 0.5 * (DENSX(I,K+1) + DENSX(I,K))
-         exch_hx(I,K) = EDDYZ(I,K) /( (DENSF * G / PSTAR(I)) ** 2 *  &
-                       DTPBL * DSIGFI(K)*1E-6 )
+         exch_hx(I,K) = EDDYZ(I,K)
        ENDDO
      ENDDO
 
@@ -652,7 +649,7 @@ CONTAINS
 !-------------------------------------------------------------------          
    SUBROUTINE EDDYX(DTPBL, ZF,  ZA,     MOL, PBL,  UST,               &
                     US,    VS,  TT,  THETAV, DENSX, PSTAR,            &
-                    QVS,   QCS, QIS, DSIGFI, G, RD, CPAIR,            &
+                    QVS,   QCS, QIS, G, RD, CPAIR,                    &
                     EDDYZ, EDDYZM, its,ite, kts,kte,ims,ime,kms,kme )
 
 
@@ -665,8 +662,8 @@ CONTAINS
 !**********************************************************************
 !
 !-- DTPBL           time step of the minor loop for the land-surface/pbl model
-!-- ZF              height of full sigma level
-!-- ZA              height of half sigma level
+!-- ZF              height of full level
+!-- ZA              height of half level
 !-- MOL             Monin-Obukhov length in 1D form
 !-- PBL             PBL height in 1D form
 !-- UST             friction velocity U* in 1D form (m/s)
@@ -679,7 +676,6 @@ CONTAINS
 !-- QVS             water vapor mixing ratio (Kg/Kg)
 !-- QCS             cloud mixing ratio (Kg/Kg)
 !-- QIS             ice mixing ratio (Kg/Kg)
-!-- DSIGFI          inverse of sigma layer delta
 !-- G               gravity
 !-- RD              gas constant for dry air (j/kg/k)
 !-- CPAIR           specific heat of moist air (M^2 S^-2 K^-1)
@@ -697,7 +693,6 @@ CONTAINS
 !... Real
       REAL , DIMENSION( ims:ime ),          INTENT(IN)  :: PBL, UST
       REAL ,                                INTENT(IN)  :: DTPBL, G, RD
-      REAL , DIMENSION( kts:kte ),          INTENT(IN)  :: DSIGFI
       REAL , DIMENSION( its:ite ),          INTENT(IN)  :: MOL, PSTAR, CPAIR
 
       REAL , DIMENSION( ims:ime, kms:kme ), INTENT(IN)  :: US,VS, TT,   &
@@ -792,7 +787,7 @@ CONTAINS
           ENDIF
 !--------------------------------------------------------------------------
             
-	        ZK  = 0.4 * ZF(I,K)
+          ZK  = 0.4 * ZF(I,K)
           SQL = (ZK * RLAM / (RLAM + ZK)) ** 2
             
           IF (RI .GE. 0.0) THEN
@@ -811,7 +806,7 @@ CONTAINS
             EDDYZ(I,K) = KZO + SQRT(SS * (1.0 - 25.0 * RI)) * SQL
             EDDYZM(I,K) = EDDYZ(I,K) * PR
           ENDIF
-	  
+  
           IF(EDYZ.GT.EDDYZ(I,K)) THEN
             EDDYZ(I,K) = EDYZ
             EDDYZM(I,K) = MIN(EDYZM,EDYZ*0.8)  !PR
@@ -821,14 +816,6 @@ CONTAINS
           EDDYZ(I,K) = MAX(KZO,EDDYZ(I,K))
           EDDYZM(I,K) = MIN(1000.0,EDDYZM(I,K))
           EDDYZM(I,K) = MAX(KZO,EDDYZM(I,K))
-
-          DENSF     = 0.5 * (DENSX(I,K+1) + DENSX(I,K))
-
-          EDDYZ(I,K) = EDDYZ(I,K) * (DENSF * G / PSTAR(I)) ** 2 *       &
-                       DTPBL * DSIGFI(K)*1E-6
-          EDDYZM(I,K) = EDDYZM(I,K) * (DENSF * G / PSTAR(I)) ** 2 *       &
-                       DTPBL * DSIGFI(K)*1E-6
-
 
         ENDDO             ! for I loop
       ENDDO               ! for k loop
@@ -844,11 +831,11 @@ CONTAINS
 
 !-----------------------------------------------------------------------
 !-------------------------------------------------------------------          
-   SUBROUTINE ACM (DTPBL, PSTAR,  NOCONV, SIGMAF, DSIGH, DSIGHI, JX, &
-                   KLPBL, PBL,   PBLSIG, MOL,  UST,                  &
+   SUBROUTINE ACM (DTPBL, PSTAR,  NOCONV, ZF, DZH, DZHI, JX,       &
+                   KLPBL, PBL,   DZFI, MOL,  UST,                  &
                    TST, QST,  USTM,   EDDYZ,  DENSX,               &
-                   THETA,  QVS,    QCS,    QIS,     &
-                   THETAX, QVX,    QCX,    QIX,     &
+                   THETA,  QVS,    QCS,    QIS,                    &
+                   THETAX, QVX,    QCX,    QIX,                    &
 #if (WRF_CHEM == 1)
                    CHEM,  VD, NCHEM, KDVEL, NDVEL,                 &
                    NUM_VERT_MIX,                                   &
@@ -870,13 +857,13 @@ CONTAINS
 !-- DTPBL           PBL time step
 !-- PSTAR           Psurf - Ptop in cb
 !-- NOCONV          If free convection =0, no; =1, yes
-!-- SIGMAF          Sigma for full layer
-!-- DSIGH           Sigma thickness
-!-- DSIGHI          Inverse of sigma thickness
+!-- ZF              Height for full layer
+!-- DZH             Layer thickness --> ZF(K) - ZF(K-1)
+!-- DZHI            Inverse of layer thickness
 !-- JX              N-S index
 !-- KLPBL           PBL level at K index
 !-- PBL             PBL height in m
-!-- PBLSIG          Sigma level for PBL 
+!-- DZFI            Inverse layer thickness --> 1/(Z(K+1)-Z(K))
 !-- MOL             Monin-Obukhov length in 1D form
 !-- UST             U* in 1D form
 !-- TST             Theta* in 1D form
@@ -916,11 +903,11 @@ CONTAINS
 !... Real
       REAL , DIMENSION( ims:ime ),          INTENT(IN)  :: PBL, UST
       REAL ,                                INTENT(IN)  :: DTPBL
-      REAL , DIMENSION( its:ite ),          INTENT(IN)  :: PSTAR, PBLSIG,  &
+      REAL , DIMENSION( its:ite ),          INTENT(IN)  :: PSTAR,    &
                                                            MOL, TST, &
                                                            QST, USTM
-      REAL , DIMENSION( kts:kte ),          INTENT(IN)  :: DSIGHI, DSIGH
-      REAL , DIMENSION( 0:kte ),            INTENT(IN)  :: SIGMAF
+      REAL , DIMENSION( its:ite, kts:kte ), INTENT(IN)  :: DZHI, DZH, DZFI
+      REAL , DIMENSION( its:ite, 0:kte ),   INTENT(IN)  :: ZF
       REAL , DIMENSION( its:ite, kts:kte ), INTENT(INOUT)  :: EDDYZ
       REAL , DIMENSION( ims:ime, kms:kme ), INTENT(IN)  :: THETA,   &
                                                            QVS, QCS, QIS, DENSX
@@ -937,10 +924,6 @@ CONTAINS
 !... Parameters
       INTEGER, PARAMETER :: NSP   = 4 
 !
-!......ACM2 Parameters
-!     INTEGER, PARAMETER :: IFACM = 0
-!
-      REAL,    PARAMETER :: G1000 = 9.8 * 1.0E-3
       REAL,    PARAMETER :: XX    = 0.5          ! FACTOR APPLIED TO CONV MIXING TIME STEP
       REAL,    PARAMETER :: KARMAN = 0.4
 
@@ -950,7 +933,7 @@ CONTAINS
       INTEGER, DIMENSION( its:ite ) :: KCBL
 
 !... Real
-      REAL                               :: G1000I, MBMAX, HOVL, MEDDY, MBAR
+      REAL                               :: MBMAX, HOVL, MEDDY, MBAR
       REAL                               :: EKZ, RZ, FM, WSPD, DTS, DTRAT, F1
       REAL, DIMENSION( its:ite )         :: PSTARI, FSACM, DTLIM
       REAL, DIMENSION( kts:kte, its:ite) :: MBARKS, MDWN
@@ -974,7 +957,6 @@ CONTAINS
       NSPX = NSPX + NUM_VERT_MIX 
 #endif
 
-      G1000I = 1.0 / G1000
       KCBLMX = 0
       MBMAX  = 0.0
 !...Allocate species variables
@@ -997,7 +979,7 @@ CONTAINS
 !--New couple ACM & EDDY-------------------------------------------------------------
           HOVL     = -PBL(I) / MOL(I)
           FSACM(I) = 1./(1.+((KARMAN/(HOVL))**0.3333)/(0.72*KARMAN))
-          MEDDY    = EDDYZ(I,1) / (DTPBL * (PBLSIG(I) - SIGMAF(1)))
+          MEDDY    = EDDYZ(I,1) * DZFI(i,1) / (PBL(I) - ZF(i,1))
           MBAR     = MEDDY * FSACM(I)
           DO K = kts,KCBL(I)-1
             EDDYZ(I,K) = EDDYZ(I,K) * (1.0 - FSACM(I))
@@ -1006,7 +988,7 @@ CONTAINS
           MBMAX = AMAX1(MBMAX,MBAR)
           DO K = kts+1,KCBL(I)
             MBARKS(K,I) = MBAR
-            MDWN(K,I)   = MBAR * (PBLSIG(I) - SIGMAF(K-1)) * DSIGHI(K)
+            MDWN(K,I)   = MBAR * (PBL(I) - ZF(i,K-1)) * DZHI(i,K)
           ENDDO
           MBARKS(1,I) = MBAR
           MBARKS(KCBL(I),I) = MDWN(KCBL(I),I)
@@ -1016,7 +998,7 @@ CONTAINS
 
       DO K = kts,KLM
         DO I = its,ILX
-          EKZ   = EDDYZ(I,K) / DTPBL * DSIGHI(K)
+          EKZ = EDDYZ(I,K) * DZFI(i,K) * DZHI(i,K)
           DTLIM(I) = AMIN1(0.75 / EKZ,DTLIM(I))
         ENDDO
       ENDDO
@@ -1024,7 +1006,7 @@ CONTAINS
       DO I = its,ILX 
         IF (NOCONV(I) .EQ. 1) THEN
           KCBLMX = AMAX0(KLPBL(I),KCBLMX)
-          RZ     = (SIGMAF(KCBL(I)) - SIGMAF(1)) * DSIGHI(1)
+          RZ     = (ZF(i,KCBL(I)) - ZF(i,1)) * DZHI(i,1)
           DTLIM(I)  = AMIN1(XX / (MBARKS(1,I) * RZ),DTLIM(I))
         ENDIF
       ENDDO
@@ -1046,13 +1028,13 @@ CONTAINS
       ENDDO
 
       DO I = its,ILX
-        FS(1,I) = -UST(I) * TST(I) * DENSX(I,1) * PSTARI(I)
-        FS(2,I) = -UST(I) * QST(I) * DENSX(I,1) * PSTARI(I)
+        FS(1,I) = -UST(I) * TST(I)
+        FS(2,I) = -UST(I) * QST(I)
         FS(3,I) = 0.0
         FS(4,I) = 0.0                      ! SURFACE FLUXES OF CLOUD WATER AND ICE = 0
 #if (WRF_CHEM == 1)
         DO L= NSP+1, NSPX
-          FS(L,I) = -VD(I,1,L-NSP) * CHEM(I,1,L-NSP) * DENSX(I,1) * PSTARI(I)
+          FS(L,I) = -VD(I,1,L-NSP) * CHEM(I,1,L-NSP)
         ENDDO
 #endif
       ENDDO
@@ -1075,31 +1057,31 @@ CONTAINS
           ENDDO
 
           DO K = 2, KCBL(I)
-            EI(K-1) = -CRANKP * MDWN(K,I) * DTS * DSIGH(K) * DSIGHI(K-1)
+            EI(K-1) = -CRANKP * MDWN(K,I) * DTS * DZH(i,K) * DZHI(i,K-1)
             BI(K)   = 1.0 + CRANKP * MDWN(K,I) * DTS
             AI(K)   = -CRANKP * MBARKS(K,I) * DTS
           ENDDO
 
-          EI(1) = EI(1) -EDDYZ(I,1) * CRANKP * DSIGHI(1 )* DTRAT
-          AI(2) = AI(2) -EDDYZ(I,1) * CRANKP * DSIGHI(2) * DTRAT
+          EI(1) = EI(1) -EDDYZ(I,1) * CRANKP * DZHI(i,1) * DZFI(i,1) * DTS
+          AI(2) = AI(2) -EDDYZ(I,1) * CRANKP * DZHI(i,2) * DZFI(i,1) * DTS
 
           DO K =  KCBL(I)+1, KL
             BI(K) = 1.0
           ENDDO
 
           DO K = 2,KL
-            XPLUS(K)  = EDDYZ(I,K) * DSIGHI(K) * DTRAT
-            XMINUS(K) = EDDYZ(I,K-1) * DSIGHI(K) * DTRAT
+            XPLUS(K)  = EDDYZ(I,K) * DZHI(i,K) * DZFI(i,K) * DTS
+            XMINUS(K) = EDDYZ(I,K-1) * DZHI(i,K) * DZFI(i,K-1) * DTS
             CI(K)     = - XMINUS(K) * CRANKP
             EI(K)     = EI(K) - XPLUS(K) * CRANKP
             BI(K)     = BI(K) + XPLUS(K) * CRANKP + XMINUS(K) * CRANKP
           ENDDO
 
           IF (NOCONV(I) .EQ. 1) THEN
-            BI(1) = 1.0 + CRANKP * MBARKS(1,I) * (PBLSIG(I) - SIGMAF(1)) *    &
-                    DTS * DSIGHI(1) + EDDYZ(I,1) * DSIGHI(1) * CRANKP * DTRAT
+            BI(1) = 1.0 + CRANKP * MBARKS(1,I) * (PBL(I) - ZF(i,1)) * DTS   &
+                  * DZHI(i,1) + EDDYZ(I,1) * CRANKP * DZHI(i,1) * DZFI(i,1) * DTS
           ELSE
-            BI(1) = 1.0  + EDDYZ(I,1) * DSIGHI(1) * CRANKP * DTRAT
+            BI(1) = 1.0  + EDDYZ(I,1) * CRANKP * DZHI(i,1) * DZFI(i,1) * DTS
           ENDIF
 
 
@@ -1113,7 +1095,7 @@ CONTAINS
           DO K = 2,KCBL(I)
             DO L = 1,NSPX                    
               DELC = DTS * (MBARKS(K,I) * VCI(L,I,1) - MDWN(K,I) *          &
-                 VCI(L,I,K) + DSIGH(K+1) * DSIGHI(K) *                  &
+                 VCI(L,I,K) + DZH(i,K+1) * DZHI(i,K) *                      &
                         MDWN(K+1,I) * VCI(L,I,K+1))
               DI(L,K)   = VCI(L,I,K) + (1.0 - CRANKP) * DELC
             ENDDO
@@ -1128,14 +1110,14 @@ CONTAINS
           DO K = 2,KL
             IF (K .EQ. KL) THEN
               DO L = 1,NSPX                    
-                DI(L,K) = DI(L,K)  - (1.0 - CRANKP) * XMINUS(K) *                  &
+                DI(L,K) = DI(L,K)  - (1.0 - CRANKP) * XMINUS(K) *           &
                           (VCI(L,I,K) - VCI(L,I,K-1))
               ENDDO
             ELSE
               DO L = 1,NSPX                    
-                DI(L,K) = DI(L,K) + (1.0 - CRANKP) * XPLUS(K) *                   &
-                          (VCI(L,I,K+1) - VCI(L,I,K))  -                         &
-                          (1.0 - CRANKP) * XMINUS(K) *                           &
+                DI(L,K) = DI(L,K) + (1.0 - CRANKP) * XPLUS(K) *             &
+                          (VCI(L,I,K+1) - VCI(L,I,K))  -                    &
+                          (1.0 - CRANKP) * XMINUS(K) *                      &
                           (VCI(L,I,K) - VCI(L,I,K-1))
               ENDDO
             ENDIF
@@ -1143,21 +1125,19 @@ CONTAINS
 
           IF (NOCONV(I) .EQ. 1) THEN
             DO L = 1,NSPX                    
-              F1    = -G1000I * (MBARKS(1,I) *                                &
-                      (PBLSIG(I) - SIGMAF(1)) * VCI(L,I,1) -                  &
-                      MDWN(2,I) * VCI(L,I,2) * DSIGH(2))
-
-              DI(L,1) = VCI(L,I,1) - G1000 * (FS(L,I) - (1.0 - CRANKP)        &
-                        * F1) * DSIGHI(1) * DTS
+              DI(L,1) = VCI(L,I,1) + (FS(L,I) - (1.0 - CRANKP)              &
+                        * (MBARKS(1,I) *                                    &
+                        (PBL(I) - ZF(i,1)) * VCI(L,I,1) -                   &
+                        MDWN(2,I) * VCI(L,I,2) * DZH(i,2))) * DZHI(i,1) * DTS
             ENDDO
           ELSE
             DO L = 1,NSPX                    
-              DI(L,1) = VCI(L,I,1) - G1000 * FS(L,I) * DSIGHI(1) * DTS
+              DI(L,1) = VCI(L,I,1) + FS(L,I) * DZHI(i,1) * DTS
             ENDDO
           ENDIF
           DO L = 1,NSPX                    
-            DI(L,1) = DI(L,1) + (1.0 - CRANKP) * EDDYZ(I,1) * DSIGHI(1)      &
-                     * DTRAT * (VCI(L,I,2) - VCI(L,I,1))
+            DI(L,1) = DI(L,1) + (1.0 - CRANKP) * EDDYZ(I,1) * DZHI(i,1)     &
+                    * DZFI(i,1) * DTS * (VCI(L,I,2) - VCI(L,I,1))
           ENDDO
           IF ( NOCONV(I) .EQ. 1 ) THEN
             CALL MATRIX (AI, BI, CI, DI, EI, UI, KL, NSPX)
@@ -1200,11 +1180,11 @@ CONTAINS
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
 !-------------------------------------------------------------------          
-   SUBROUTINE ACMM (DTPBL, PSTAR,  NOCONV, SIGMAF, DSIGH, DSIGHI, JX, &
-                   KLPBL, PBL,   PBLSIG, MOL,  UST,                  &
-                   TST, QST,  USTM,   EDDYZM, DENSX,        &
-                   US,    VS,     &
-                   UX,    VX,     &
+   SUBROUTINE ACMM (DTPBL, PSTAR,  NOCONV, ZF, DZH, DZHI, JX,      &
+                   KLPBL, PBL, DZFI, MOL, UST,                     &
+                   TST, QST,  USTM, EDDYZM, DENSX,                 &
+                   US,    VS,                                      &
+                   UX,    VX,                                      &
                    ids,ide, jds,jde, kds,kde,                      &
                    ims,ime, jms,jme, kms,kme,                      &
                    its,ite, jts,jte, kts,kte)
@@ -1221,13 +1201,13 @@ CONTAINS
 !-- DTPBL           PBL time step
 !-- PSTAR           Psurf - Ptop in cb
 !-- NOCONV          If free convection =0, no; =1, yes
-!-- SIGMAF          Sigma for full layer
-!-- DSIGH           Sigma thickness
-!-- DSIGHI          Inverse of sigma thickness
+!-- ZF              Height for full layer
+!-- DZH             Layer thickness --> ZF(K) - ZF(K-1)
+!-- DZHI            Inverse of layer thickness
 !-- JX              N-S index
 !-- KLPBL           PBL level at K index
 !-- PBL             PBL height in m
-!-- PBLSIG          Sigma level for PBL 
+!-- DZFI            Inverse layer thickness --> 1/(Z(K+1)-Z(K))
 !-- MOL             Monin-Obukhov length in 1D form
 !-- UST             U* in 1D form
 !-- TST             Theta* in 1D form
@@ -1264,11 +1244,11 @@ CONTAINS
 !... Real
       REAL , DIMENSION( ims:ime ),          INTENT(IN)  :: PBL, UST
       REAL ,                                INTENT(IN)  :: DTPBL
-      REAL , DIMENSION( its:ite ),          INTENT(IN)  :: PSTAR, PBLSIG,  &
+      REAL , DIMENSION( its:ite ),          INTENT(IN)  :: PSTAR,    &
                                                            MOL, TST, &
                                                            QST, USTM
-      REAL , DIMENSION( kts:kte ),          INTENT(IN)  :: DSIGHI, DSIGH
-      REAL , DIMENSION( 0:kte ),            INTENT(IN)  :: SIGMAF
+      REAL , DIMENSION( its:ite, kts:kte ), INTENT(IN)  :: DZHI, DZH, DZFI
+      REAL , DIMENSION( its:ite, 0:kte ),   INTENT(IN)  :: ZF
       REAL , DIMENSION( its:ite, kts:kte ), INTENT(INOUT)  :: EDDYZM
       REAL , DIMENSION( ims:ime, kms:kme ), INTENT(IN)  :: US,VS,    &
                                                            DENSX
@@ -1278,10 +1258,6 @@ CONTAINS
 !... Parameters
       INTEGER, PARAMETER :: NSP   = 2
 !
-!......ACM2 Parameters
-!     INTEGER, PARAMETER :: IFACM = 0
-!
-      REAL,    PARAMETER :: G1000 = 9.8 * 1.0E-3
       REAL,    PARAMETER :: XX    = 0.5          ! FACTOR APPLIED TO CONV MIXING TIME STEP
       REAL,    PARAMETER :: KARMAN = 0.4
 
@@ -1291,7 +1267,7 @@ CONTAINS
       INTEGER, DIMENSION( its:ite ) :: KCBL
 
 !... Real
-      REAL                               :: G1000I, MBMAX, HOVL, MEDDY, MBAR
+      REAL                               :: MBMAX, HOVL, MEDDY, MBAR
       REAL                               :: EKZ, RZ, FM, WSPD, DTS, DTRAT, F1
       REAL, DIMENSION( its:ite )         :: PSTARI, FSACM, DTLIM
       REAL, DIMENSION( kts:kte, its:ite) :: MBARKS, MDWN
@@ -1309,7 +1285,6 @@ CONTAINS
       KL  = kte
       KLM = kte - 1
 
-      G1000I = 1.0 / G1000
       KCBLMX = 0
       MBMAX  = 0.0
 
@@ -1327,7 +1302,7 @@ CONTAINS
 !--New couple ACM & EDDY-------------------------------------------------------------
           HOVL     = -PBL(I) / MOL(I)
           FSACM(I) = 1./(1.+((KARMAN/(HOVL))**0.3333)/(0.72*KARMAN))
-          MEDDY    = EDDYZM(I,1) / (DTPBL * (PBLSIG(I) - SIGMAF(1)))
+          MEDDY    = EDDYZM(I,1) * DZFI(i,1) / (PBL(I) - ZF(i,1))
           MBAR     = MEDDY * FSACM(I)
           DO K = kts,KCBL(I)-1
             EDDYZM(I,K) = EDDYZM(I,K) * (1.0 - FSACM(I))
@@ -1336,7 +1311,7 @@ CONTAINS
           MBMAX = AMAX1(MBMAX,MBAR)
           DO K = kts+1,KCBL(I)
             MBARKS(K,I) = MBAR
-            MDWN(K,I)   = MBAR * (PBLSIG(I) - SIGMAF(K-1)) * DSIGHI(K)
+            MDWN(K,I)   = MBAR * (PBL(I) - ZF(i,K-1)) * DZHI(i,K)
           ENDDO
           MBARKS(1,I) = MBAR
           MBARKS(KCBL(I),I) = MDWN(KCBL(I),I)
@@ -1346,7 +1321,7 @@ CONTAINS
 
       DO K = kts,KLM
         DO I = its,ILX
-          EKZ   = EDDYZM(I,K) / DTPBL * DSIGHI(K)
+          EKZ   = EDDYZM(I,K) * DZFI(i,K) * DZHI(i,K)
           DTLIM(I) = AMIN1(0.75 / EKZ,DTLIM(I))
         ENDDO
       ENDDO
@@ -1354,7 +1329,7 @@ CONTAINS
       DO I = its,ILX 
         IF (NOCONV(I) .EQ. 1) THEN
           KCBLMX = AMAX0(KLPBL(I),KCBLMX)
-          RZ     = (SIGMAF(KCBL(I)) - SIGMAF(1)) * DSIGHI(1)
+          RZ     = (ZF(i,KCBL(I)) - ZF(i,1)) * DZHI(i,1)
           DTLIM(I)  = AMIN1(XX / (MBARKS(1,I) * RZ),DTLIM(I))
         ENDIF
       ENDDO
@@ -1369,7 +1344,7 @@ CONTAINS
       NSPX=2
 
       DO I = its,ILX
-        FM      = -USTM(I) * USTM(I) * DENSX(I,1) * PSTARI(I)
+        FM      = -USTM(I) * USTM(I)
         WSPD    = SQRT(US(I,1) * US(I,1) + VS(I,1) * VS(I,1)) + 1.E-9
         FS(1,I) = FM * US(I,1) / WSPD
         FS(2,I) = FM * VS(I,1) / WSPD
@@ -1393,31 +1368,31 @@ CONTAINS
           ENDDO
 
           DO K = 2, KCBL(I)
-            EI(K-1) = -CRANKP * MDWN(K,I) * DTS * DSIGH(K) * DSIGHI(K-1)
+            EI(K-1) = -CRANKP * MDWN(K,I) * DTS * DZH(i,K) * DZHI(i,K-1)
             BI(K)   = 1.0 + CRANKP * MDWN(K,I) * DTS
             AI(K)   = -CRANKP * MBARKS(K,I) * DTS
           ENDDO
 
-          EI(1) = EI(1) -EDDYZM(I,1) * CRANKP * DSIGHI(1 )* DTRAT
-          AI(2) = AI(2) -EDDYZM(I,1) * CRANKP * DSIGHI(2) * DTRAT
+          EI(1) = EI(1) -EDDYZM(I,1) * CRANKP * DZHI(i,1) * DZFI(i,1) * DTS
+          AI(2) = AI(2) -EDDYZM(I,1) * CRANKP * DZHI(i,2) * DZFI(i,1) * DTS
 
           DO K =  KCBL(I)+1, KL
             BI(K) = 1.0
           ENDDO
 
           DO K = 2,KL
-            XPLUS(K)  = EDDYZM(I,K) * DSIGHI(K) * DTRAT
-            XMINUS(K) = EDDYZM(I,K-1) * DSIGHI(K) * DTRAT
+            XPLUS(K)  = EDDYZM(I,K) * DZHI(i,K) * DZFI(i,K) * DTS
+            XMINUS(K) = EDDYZM(I,K-1) * DZHI(i,K) * DZFI(i,K-1) * DTS
             CI(K)     = - XMINUS(K) * CRANKP
             EI(K)     = EI(K) - XPLUS(K) * CRANKP
             BI(K)     = BI(K) + XPLUS(K) * CRANKP + XMINUS(K) * CRANKP
           ENDDO
 
           IF (NOCONV(I) .EQ. 1) THEN
-            BI(1) = 1.0 + CRANKP * MBARKS(1,I) * (PBLSIG(I) - SIGMAF(1)) *    &
-                    DTS * DSIGHI(1) + EDDYZM(I,1) * DSIGHI(1) * CRANKP * DTRAT
+            BI(1) = 1.0 + CRANKP * MBARKS(1,I) * (PBL(I) - ZF(i,1)) * DTS   &
+                  * DZHI(i,1) + EDDYZM(I,1) * DZHI(i,1) * DZFI(i,1) * CRANKP * DTS
           ELSE
-            BI(1) = 1.0  + EDDYZM(I,1) * DSIGHI(1) * CRANKP * DTRAT
+            BI(1) = 1.0  + EDDYZM(I,1) * DZHI(i,1) * DZFI(i,1) * CRANKP * DTS
           ENDIF
 
 
@@ -1431,7 +1406,7 @@ CONTAINS
           DO K = 2,KCBL(I)
             DO L = 1,NSPX                    
               DELC = DTS * (MBARKS(K,I) * VCI(L,I,1) - MDWN(K,I) *          &
-                 VCI(L,I,K) + DSIGH(K+1) * DSIGHI(K) *                  &
+                 VCI(L,I,K) + DZH(i,K+1) * DZHI(i,K) *                      &
                         MDWN(K+1,I) * VCI(L,I,K+1))
               DI(L,K)   = VCI(L,I,K) + (1.0 - CRANKP) * DELC
             ENDDO
@@ -1446,14 +1421,14 @@ CONTAINS
           DO K = 2,KL
             IF (K .EQ. KL) THEN
               DO L = 1,NSPX                    
-                DI(L,K) = DI(L,K)  - (1.0 - CRANKP) * XMINUS(K) *                  &
+                DI(L,K) = DI(L,K)  - (1.0 - CRANKP) * XMINUS(K) *           &
                           (VCI(L,I,K) - VCI(L,I,K-1))
               ENDDO
             ELSE
               DO L = 1,NSPX                    
-                DI(L,K) = DI(L,K) + (1.0 - CRANKP) * XPLUS(K) *                   &
-                          (VCI(L,I,K+1) - VCI(L,I,K))  -                         &
-                          (1.0 - CRANKP) * XMINUS(K) *                           &
+                DI(L,K) = DI(L,K) + (1.0 - CRANKP) * XPLUS(K) *             &
+                          (VCI(L,I,K+1) - VCI(L,I,K))  -                    &
+                          (1.0 - CRANKP) * XMINUS(K) *                      &
                           (VCI(L,I,K) - VCI(L,I,K-1))
               ENDDO
             ENDIF
@@ -1461,21 +1436,19 @@ CONTAINS
 
           IF (NOCONV(I) .EQ. 1) THEN
             DO L = 1,NSPX                    
-              F1    = -G1000I * (MBARKS(1,I) *                                &
-                      (PBLSIG(I) - SIGMAF(1)) * VCI(L,I,1) -                  &
-                      MDWN(2,I) * VCI(L,I,2) * DSIGH(2))
-
-              DI(L,1) = VCI(L,I,1) - G1000 * (FS(L,I) - (1.0 - CRANKP)        &
-                        * F1) * DSIGHI(1) * DTS
+              DI(L,1) = VCI(L,I,1) + (FS(L,I) - (1.0 - CRANKP)              &
+                        * (MBARKS(1,I) *                                    &
+                        (PBL(I) - ZF(i,1)) * VCI(L,I,1) -                   &
+                        MDWN(2,I) * VCI(L,I,2) * DZH(i,2))) * DZHI(i,1) * DTS
             ENDDO
           ELSE
             DO L = 1,NSPX                    
-              DI(L,1) = VCI(L,I,1) - G1000 * FS(L,I) * DSIGHI(1) * DTS
+              DI(L,1) = VCI(L,I,1) + FS(L,I) * DZHI(i,1) * DTS
             ENDDO
           ENDIF
           DO L = 1,NSPX                    
-            DI(L,1) = DI(L,1) + (1.0 - CRANKP) * EDDYZM(I,1) * DSIGHI(1)      &
-                     * DTRAT * (VCI(L,I,2) - VCI(L,I,1))
+            DI(L,1) = DI(L,1) + (1.0 - CRANKP) * EDDYZM(I,1) * DZHI(i,1)    &
+                    * DZFI(i,1) * DTS * (VCI(L,I,2) - VCI(L,I,1))
           ENDDO
           IF ( NOCONV(I) .EQ. 1 ) THEN
             CALL MATRIX (AI, BI, CI, DI, EI, UI, KL, NSPX)

@@ -16,7 +16,7 @@ CONTAINS
                  ,mznt                                             &
 #endif
                  ,ht                                               &   
-                 ,ust,pblh,hfx,qfx,grdflx                          &
+                 ,ust,pblh,hfx,qfx,grdflx,hpbl_hold                &
                  ,u_phy,v_phy,w,th_phy,rho                         &
                  ,p_phy,pi_phy,p8w,t_phy,dz8w,z                    &
                  ,exch_h,exch_m,akhs,akms                          &
@@ -75,6 +75,7 @@ CONTAINS
                  ,dtaux3d,dtauy3d                                  &
                  ,dusfcg,dvsfcg,var2d,oc12d                        &
                  ,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4                  &
+                 ,sina,cosa                                        &
              !  Optional moisture tracers
                  ,qv_curr, qc_curr, qr_curr                        &
                  ,qi_curr, qs_curr, qg_curr                        &
@@ -137,6 +138,9 @@ CONTAINS
                    FITCHSCHEME,SHINHONGSCHEME,                       &
                    TEMFPBLSCHEME,GBMPBLSCHEME,                       &
                    CAMMGMPSCHEME,p_qi,p_qni,p_qnc,param_first_scalar  !CAMMGMPSCHEME, p_qni,p_qnc is used for camuwpbl scheme
+#if ( WRFPLUS == 1 )
+   USE module_state_description, ONLY : SURFDRAGSCHEME
+#endif
 #else
    USE module_state_description, ONLY :                            &
                    YSUSCHEME,MRFSCHEME,GFSSCHEME,MYJPBLSCHEME,ACMPBLSCHEME &
@@ -164,6 +168,9 @@ CONTAINS
    USE module_bl_gwdo
    USE module_bl_myjurb
    USE module_bl_boulac
+#if ( WRFPLUS == 1 )
+   USE module_bl_surface_drag
+#endif
    USE module_bl_camuwpbl_driver, only:CAMUWPBL
    USE module_bl_temf
    USE module_bl_mfshconvpbl
@@ -187,6 +194,7 @@ CONTAINS
    !      9. camuwpbl
    !      10. temfpbl
    !      11. shinhongpbl
+   !      98. surface_drag
    !      99. mrfpbl
    !      12. gbmpbl
    !
@@ -518,6 +526,8 @@ CONTAINS
                                                               T2, &
                                                            POWER, &
                                                             WSPD
+   REAL,       DIMENSION( ims:ime, jms:jme )                    , &
+               INTENT(INOUT)    ::                     HPBL_HOLD
 
 !
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
@@ -693,7 +703,8 @@ CONTAINS
              intent(in  )   ::                                          var2d, &
                                                                         oc12d, &
                                                               oa1,oa2,oa3,oa4, &
-                                                              ol1,ol2,ol3,ol4
+                                                              ol1,ol2,ol3,ol4, &
+                                                                    sina,cosa
 ! paj
    REAL, OPTIONAL,   DIMENSION( ims:ime , jms:jme ),                    &  !mchen
                INTENT(IN   )    ::                        CTOPO, &
@@ -953,10 +964,7 @@ CONTAINS
          TSKOLD(i,j)=TSK(i,j)
          USTOLD(i,j)=UST(i,j)
          ZNTOLD(i,j)=ZNT(i,j)
-
-! REVERSE ORDER IN THE VERTICAL DIRECTION
-
-! testing change later
+         HPBL_HOLD(i,j)=PBLH(i,j)
 
          DO k=kts,kte
             v_phytmp(i,k,j)=v_phy(i,k,j)+v_frame
@@ -1584,8 +1592,8 @@ CONTAINS
              CALL wrf_debug(100,'in ACM PBL')
 
              CALL ACMPBL(                                                        &
-               XTIME=itimestep, DTPBL=dtbl, ZNW=znw, SIGMAH=znu               &
-              ,U3D=u_phytmp, V3D=v_phytmp, PP3D=p_phy, DZ8W=dz8w, TH3D=th_phy, T3D=t_phy            &
+               XTIME=itimestep, DTPBL=dtbl,U3D=u_phytmp, V3D=v_phytmp          &
+              ,PP3D=p_phy, DZ8W=dz8w, TH3D=th_phy, T3D=t_phy                   &
               ,QV3D=qv_curr, QC3D=qc_curr, QI3D=qi_curr, RR3D=rho                &
 #if (WRF_CHEM == 1)
               ,CHEM3D=CHEM,   VD3D=VD,  NCHEM=nchem, KDVEL=kdvel              &
@@ -1849,6 +1857,23 @@ CONTAINS
                CALL wrf_error_fatal('Lack arguments to call GBM pbl')
               ENDIF
 
+#if ( WRFPLUS == 1 )
+! this scheme is for WRFPlus only
+!-----------------------------------
+        CASE (SURFDRAGSCHEME)
+
+           CALL wrf_debug(100,'in SURFDRAG scheme')
+
+           CALL surface_drag(                                     &
+             RUBLTEN=rublten,RVBLTEN=rvblten                      &  !
+            ,U_PHY=u_phy, V_PHY=v_phy, Z=z                                &  !
+            ,XLAND=xland, HT=ht, KPBL2D=kpbl                      &  !
+            ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
+            ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
+            ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &
+                                                                  )
+#endif
+
      CASE DEFAULT
 
        WRITE( message , * ) 'The pbl option does not exist: bl_pbl_physics = ', bl_pbl_physics
@@ -1902,7 +1927,7 @@ CONTAINS
    IF (PRESENT(dtaux3d)) THEN
        IF(gwd_opt .EQ. 1)THEN
              CALL gwdo(                                              &
-               U3D=u_phytmp,V3D=v_phytmp,T3D=t_phy      &
+               U3D=u_phy,V3D=v_phy,T3D=t_phy                        &
               ,QV3D=qv_curr                                         &
               ,P3D=p_phy,P3DI=p8w,PI3D=pi_phy,Z=z                        &
               ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
@@ -1911,6 +1936,7 @@ CONTAINS
               ,VAR2D=var2d,OC12D=oc12d     &
               ,OA2D1=oa1,OA2D2=oa2,OA2D3=oa3,OA2D4=oa4  &
               ,OL2D1=ol1,OL2D2=ol2,OL2D3=ol3,OL2D4=ol4  &
+              ,SINA=sina,COSA=cosa                      &
               ,ZNU=znu,ZNW=znw,P_TOP=p_top                &
               ,CP=cp,G=g,RD=r_d                           &
               ,RV=r_v,EP1=ep_1,PI=3.141592653                        &

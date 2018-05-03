@@ -762,7 +762,7 @@ BENCH_START(calc_p_rho_tim)
 #endif
 
        CALL first_rk_step_part2 (    grid, config_flags         &
-                             , moist , moist_tend               &
+                             , moist , moist_old , moist_tend   &
                              , chem  , chem_tend                &
                              , tracer, tracer_tend              &
                              , scalar , scalar_tend             &
@@ -788,12 +788,6 @@ BENCH_START(calc_p_rho_tim)
                              , ipsy, ipey, jpsy, jpey, kpsy, kpey    &
                              , k_start , k_end                  &
                             )
-
-        CALL conv_t_tendf_to_moist ( grid%t_1 , moist_old(ims,kms,jms,P_qv) ,  &
-                                     t_tendf  , moist_tend(ims,kms,jms,P_qv) , &
-                                     ids, ide, jds, jde, kds, kde ,            &
-                                     ims, ime, jms, jme, kms, kme ,            &
-                                     ips, ipe, jps, jpe, kps, kpe              )
 
      END IF rk_step_is_one
 

@@ -322,7 +322,7 @@ MODULE MODULE_MP_MORR_TWO_MOMENT_AERO
 CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-SUBROUTINE MORR_TWO_MOMENT_INIT_AERO(hail_opt) ! RAS
+ SUBROUTINE MORR_TWO_MOMENT_INIT_AERO(morr_rimed_ice) ! RAS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! THIS SUBROUTINE INITIALIZES ALL PHYSICAL CONSTANTS AMND PARAMETERS 
 ! NEEDED BY THE MICROPHYSICS SCHEME.
@@ -332,7 +332,7 @@ SUBROUTINE MORR_TWO_MOMENT_INIT_AERO(hail_opt) ! RAS
       IMPLICIT NONE
       SAVE !TWG 2017 add to avoid memory issues
 
-      INTEGER, INTENT(IN):: hail_opt ! RAS
+      INTEGER, INTENT(IN):: morr_rimed_ice ! RAS
 
       integer n,i,m !TWG add
 
@@ -417,9 +417,9 @@ SUBROUTINE MORR_TWO_MOMENT_INIT_AERO(hail_opt) ! RAS
 ! IHAIL = 1, DENSE PRECIPITATING ICE IS HAIL
 ! NOTE ---> RECOMMEND IHAIL = 1 FOR CONTINENTAL DEEP CONVECTION
 
-      !IHAIL = 0 !changed to namelist option (hail_opt) by RAS
+      !IHAIL = 0 !changed to namelist option (morr_rimed_ice) by RAS
       ! Check if namelist option is feasible, otherwise default to graupel - RAS
-      IF (hail_opt .eq. 1) THEN
+      IF (morr_rimed_ice .eq. 1) THEN
          IHAIL = 1
       ELSE
          IHAIL = 0

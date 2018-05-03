@@ -514,7 +514,7 @@ CONTAINS
                 ,MPHYSICS_OPT=config_flags%mp_physics                &  !  gthompsn
                 ,GSFCGCE_HAIL=config_flags%gsfcgce_hail              &  !  gthompsn
                 ,GSFCGCE_2ICE=config_flags%gsfcgce_2ice              &  !  gthompsn
-                ,MPUSE_HAIL=config_flags%hail_opt                    &  !  gthompsn
+                ,MPUSE_HAIL=config_flags%morr_rimed_ice              &  !  gthompsn
                 ,NSSL_ALPHAH=config_flags%nssl_alphah                &  !  gthompsn
                 ,NSSL_ALPHAHL=config_flags%nssl_alphahl              &  !  gthompsn
                 ,NSSL_CNOH=config_flags%nssl_cnoh                    &  !  gthompsn

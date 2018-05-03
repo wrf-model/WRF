@@ -335,7 +335,6 @@ CONTAINS
             INTENT(INOUT)    ::                         IVGTYP, &
                                                         ISLTYP
 
-   INTEGER                             ::             HAIL_OPT
 #if ( EM_CORE == 1 )
    !BSINGH - For WRFCuP scheme
    REAL, DIMENSION( ims:ime, jms:jme )                        , &
@@ -3943,10 +3942,10 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                           ITS=its, ITE=ite, JTS=jts, JTE=jte, KTS=kts, KTE=kte)
 
      CASE (MORR_TWO_MOMENT)
-         CALL morr_two_moment_init( config_flags%hail_opt )
+         CALL morr_two_moment_init( config_flags%morr_rimed_ice )
 #if (EM_CORE==1)
      CASE (MORR_TM_AERO)
-         CALL morr_two_moment_init_aero( config_flags%hail_opt )
+         CALL morr_two_moment_init_aero( config_flags%morr_rimed_ice )
 #endif
      CASE (P3_1CATEGORY)
          CALL p3_init('.',1)

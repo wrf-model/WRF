@@ -5266,21 +5266,6 @@ END SUBROUTINE phy_prep
 
 !  decouple advective forcing required by a few CPS schemes
 
-   IF(( config_flags%cu_physics == GDSCHEME ) .OR.    &
-      ( config_flags%cu_physics == GFSCHEME ) .OR.    &
-      ( config_flags%cu_physics == G3SCHEME ) .OR.    &
-      ( config_flags%cu_physics == NTIEDTKESCHEME )) THEN
-
-      DO J=j_start,j_end
-      DO I=i_start,i_end
-         DO K=k_start,k_end
-            RTHFTEN(I,K,J)=RTHFTEN(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
-         ENDDO
-      ENDDO
-      ENDDO
-
-   END IF
-
    IF(( config_flags%cu_physics == GDSCHEME )      .OR. &
       ( config_flags%cu_physics == GFSCHEME )      .OR. &
       ( config_flags%cu_physics == G3SCHEME )      .OR. &
@@ -5301,17 +5286,31 @@ END SUBROUTINE phy_prep
 
    END IF
 
-!  if using moist theta, get dry theta tendency for CPSs
-   IF ( config_flags%use_theta_m == 1 ) THEN
+   IF(( config_flags%cu_physics == GDSCHEME ) .OR.    &
+      ( config_flags%cu_physics == GFSCHEME ) .OR.    &
+      ( config_flags%cu_physics == G3SCHEME ) .OR.    &
+      ( config_flags%cu_physics == NTIEDTKESCHEME )) THEN
+
+      DO J=j_start,j_end
+      DO I=i_start,i_end
+         DO K=k_start,k_end
+            RTHFTEN(I,K,J)=RTHFTEN(I,K,J)/(c1(k)*MUT(I,J)+c2(k))
+         ENDDO
+      ENDDO
+      ENDDO
+
+!  If using moist theta, get dry theta tendency for CPSs
+      IF ( config_flags%use_theta_m == 1 ) THEN
          DO J=j_start,j_end
          DO I=i_start,i_end
             DO K=k_start,k_end
                th_phy(i,k,j) = (t_new(i,k,j) + t0) / (1. + (R_v/R_d) * qv(i,k,j))
-               rthften(i,k,j) = th_phy(i,k,j)/t_new(i,k,j) *          &
+               rthften(i,k,j) = th_phy(i,k,j)/(t_new(i,k,j)+t0) *          &
                                (rthften(i,k,j) - (R_v/R_d) * th_phy(i,k,j) * rqvften(i,k,j))
             ENDDO
          ENDDO
          ENDDO
+      END IF
    END IF
 
 ! fdda

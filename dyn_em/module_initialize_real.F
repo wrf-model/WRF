@@ -4405,7 +4405,7 @@ endif
 
       DO j = jts, min(jde-1,jte)
          DO k = kts, kte
-            DO i = its, min(ide,ite)
+            DO i = its, min(ide-1,ite)
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
                grid%th_phy_m_t0(i,k,j) = grid%t_2(i,k,j)
             END DO

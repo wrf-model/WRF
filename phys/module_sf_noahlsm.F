@@ -1,5 +1,13 @@
 MODULE module_sf_noahlsm
-  USE module_model_constants, only : CP, R_D, XLF, XLV, RHOWATER, STBOLT, KARMAN
+#if defined(mpas)
+use mpas_atmphys_constants,only: CP=>cp,R_D=>R_d,XLF=>xlf,XLV=>xlv,RHOWATER=>rho_w,STBOLT=>stbolt,KARMAN=>karman
+use mpas_atmphys_utilities, only: physics_error_fatal
+#define FATAL_ERROR(M) call physics_error_fatal( M )
+#else
+USE module_model_constants, only : CP, R_D, XLF, XLV, RHOWATER, STBOLT, KARMAN
+use module_wrf_error
+#define FATAL_ERROR(M) call wrf_error_fatal( M )
+#endif
 
 !ckay=KIRAN ALAPATY @ US EPA -- November 01, 2015
 !
@@ -497,7 +505,7 @@ CONTAINS
          ELSE
             SNDENS = SNEQV / SNOWH
             IF(SNDENS > 1.0) THEN
-             CALL wrf_error_fatal ( 'Physical snow depth is less than snow water equiv.' )
+             FATAL_ERROR( 'Physical snow depth is less than snow water equiv.' )
             ENDIF
             CALL CSNOW (SNCOND,SNDENS)
          END IF
@@ -2417,13 +2425,13 @@ CONTAINS
 ! ----------------------------------------------------------------------
 !
                IF (SOILTYP .gt. SLCATS) THEN
-                        CALL wrf_error_fatal ( 'Warning: too many input soil types' )
+                        FATAL_ERROR( 'Warning: too many input soil types' )
                END IF
                IF (VEGTYP .gt. LUCATS) THEN
-                     CALL wrf_error_fatal ( 'Warning: too many input landuse types' )
+                     FATAL_ERROR( 'Warning: too many input landuse types' )
                END IF
                IF (SLOPETYP .gt. SLPCATS) THEN
-                     CALL wrf_error_fatal ( 'Warning: too many input slope types' )
+                     FATAL_ERROR( 'Warning: too many input slope types' )
                END IF
 
 ! ----------------------------------------------------------------------
@@ -2490,7 +2498,7 @@ CONTAINS
                IF (NROOT .gt. NSOIL) THEN
                   WRITE (err_message,*) 'Error: too many root layers ',  &
                                                  NSOIL,NROOT
-                  CALL wrf_error_fatal ( err_message )
+                  FATAL_ERROR( err_message )
 ! ----------------------------------------------------------------------
 ! CALCULATE ROOT DISTRIBUTION.  PRESENT VERSION ASSUMES UNIFORM
 ! DISTRIBUTION BASED ON SOIL LAYER DEPTHS.

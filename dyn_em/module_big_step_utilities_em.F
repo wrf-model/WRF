@@ -4972,6 +4972,7 @@ END SUBROUTINE phy_prep
                          RTHFTEN,  RQVFTEN,                           &
                          RUNDGDTEN, RVNDGDTEN, RTHNDGDTEN,            &
                          RPHNDGDTEN,RQVNDGDTEN, RMUNDGDTEN,           &
+                         t_new, th_phy, qv,                           &
                          ids, ide, jds, jde, kds, kde,                &
                          ims, ime, jms, jme, kms, kme,                &
                          its, ite, jts, jte, kts, kte                )
@@ -5030,6 +5031,12 @@ END SUBROUTINE phy_prep
 
    REAL,  DIMENSION( ims:ime, jms:jme )                            , &
           INTENT(INOUT)   ::                               RMUNDGDTEN
+
+   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                   , &
+          INTENT(IN   )   ::                                t_new, qv   
+
+   REAL,  DIMENSION( ims:ime, kms:kme, jms:jme )                   , &
+          INTENT(INOUT)   ::                                th_phy
 
    REAL, DIMENSION( kms:kme ) ,            INTENT(IN   ) ::     c1h, c2h, c1f, c2f
 
@@ -5257,15 +5264,12 @@ END SUBROUTINE phy_prep
 
     ENDIF
 
-!  decouple advective forcing required by Grell-Devenyi scheme
+!  decouple advective forcing required by a few CPS schemes
 
-   if(( config_flags%cu_physics == GDSCHEME ) .OR.    &
+   IF(( config_flags%cu_physics == GDSCHEME ) .OR.    &
       ( config_flags%cu_physics == GFSCHEME ) .OR.    &
       ( config_flags%cu_physics == G3SCHEME ) .OR.    &
-      ( config_flags%cu_physics == KFETASCHEME ) .OR. &
-      ( config_flags%cu_physics == MSKFSCHEME ) .OR. &
-      ( config_flags%cu_physics == TIEDTKESCHEME ) .OR. &
-      ( config_flags%cu_physics == NTIEDTKESCHEME )) then  ! Tiedtke ZCX&YQW
+      ( config_flags%cu_physics == NTIEDTKESCHEME )) THEN
 
       DO J=j_start,j_end
       DO I=i_start,i_end
@@ -5274,6 +5278,16 @@ END SUBROUTINE phy_prep
          ENDDO
       ENDDO
       ENDDO
+
+   END IF
+
+   IF(( config_flags%cu_physics == GDSCHEME )      .OR. &
+      ( config_flags%cu_physics == GFSCHEME )      .OR. &
+      ( config_flags%cu_physics == G3SCHEME )      .OR. &
+      ( config_flags%cu_physics == KFETASCHEME )   .OR. &
+      ( config_flags%cu_physics == MSKFSCHEME )    .OR. &
+      ( config_flags%cu_physics == TIEDTKESCHEME ) .OR. &
+      ( config_flags%cu_physics == NTIEDTKESCHEME )) THEN
 
       IF (P_QV .ge. PARAM_FIRST_SCALAR)THEN
          DO J=j_start,j_end
@@ -5285,6 +5299,19 @@ END SUBROUTINE phy_prep
          ENDDO
       ENDIF
 
+   END IF
+
+!  if using moist theta, get dry theta tendency for CPSs
+   IF ( config_flags%use_theta_m == 1 ) THEN
+         DO J=j_start,j_end
+         DO I=i_start,i_end
+            DO K=k_start,k_end
+               th_phy(i,k,j) = (t_new(i,k,j) + t0) / (1. + (R_v/R_d) * qv(i,k,j))
+               rthften(i,k,j) = th_phy(i,k,j)/t_new(i,k,j) *          &
+                               (rthften(i,k,j) - (R_v/R_d) * th_phy(i,k,j) * rqvften(i,k,j))
+            ENDDO
+         ENDDO
+         ENDDO
    END IF
 
 ! fdda

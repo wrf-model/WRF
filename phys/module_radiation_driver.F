@@ -1,3 +1,4 @@
+
 !WRF:MEDIATION_LAYER:PHYSICS
 !
 MODULE module_radiation_driver
@@ -138,6 +139,7 @@ CONTAINS
               ,SF_SURFACE_PHYSICS, IS_CAMMGMP_USED                        & !fds
               ,EXPLICIT_CONVECTION                                        & ! .true.=no conv. scheme
               ,swddir,swddni,swddif                                       & ! jararias 2013/08
+              ,swddirc,swddnic                                            & ! PAJ: clear-sky direct irradiance
               ,swdown_ref,swddir_ref,coszen_ref,Gx,gg,Bx,bb               &
               ,aer_type                                                   & ! jararias 2013/11
               ,aer_aod550_opt, aer_aod550_val                             &
@@ -672,7 +674,7 @@ CONTAINS
 
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          OPTIONAL,                                                &
-         INTENT(OUT) ::                                   SWDOWNC
+         INTENT(OUT) ::                                   SWDOWNC, SWDDIRC, SWDDNIC
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
@@ -2136,6 +2138,7 @@ CONTAINS
                      ssaaer3d_sw=ssaaer_sw,                             & ! jararias 2013/11
                      asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11
                      swddir=swddir,swddni=swddni,swddif=swddif,         & ! jararias 2013/08/10
+                     swdownc=swdownc, swddnic=swddnic, swddirc=swddirc, & ! PAJ
                      xcoszen=coszen,julian=julian,mp_physics=mp_physics ) ! jararias 2013/08/14
 
              DO j=jts,jte
@@ -2215,6 +2218,7 @@ CONTAINS
                      ssaaer3d_sw=ssaaer_sw,                             & ! jararias 2013/11
                      asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11
                      swddir=swddir,swddni=swddni,swddif=swddif,         & ! jararias 2013/08/10
+                     swdownc=swdownc, swddnic=swddnic, swddirc=swddirc, & ! PAJ
                      xcoszen=coszen,julian=julian                       ) ! jararias 2013/08/14
 
              DO j=jts,jte

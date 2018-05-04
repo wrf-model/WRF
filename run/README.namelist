@@ -535,7 +535,8 @@ Namelist variables for controlling the adaptive time step option:
                                                  (only used in very extreme situation)
                                                  default value = 0
                                                  gsfcgce_hail is ignored if gsfcgce_2ice is set to 1 or 2.
- hail_opt                            = 0       ; hail switch for WSM6, WDM6 and Morrison schemes: 0 - off, 1 - on (new in 3.6.1)
+ hail_opt                            = 0       ; hail switch for WSM6 and WDM6 : 0 - off, 1 - on (new in 3.6.1)
+ morr_rimed_ice                      = 1       ; hail switch for Morrison schemes (mp_physics=10 and 40: 0 - off, 1 - on (new in 4.0)
  progn (max_dom)                     = 0       ; switch to use mix-activate scheme (Only for Morrison, WDM6, WDM5, 
                                                  and NSSL_2MOMCCN/NSSL_2MOM
  ccn_conc                            = 1.E8    ; CCN concentration, used by WDM schemes (new in 3.6.1)

@@ -1807,15 +1807,6 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
              STEPWTD = nint(WTDDT*60./DT)
              STEPWTD = max(STEPWTD,1)
 
-              CALL groundwater_init ( & 
-      &       nsoil, zsoil , dzs  ,isltyp, ivgtyp,wtddt , &
-      &       fdepthxy, ht, riverbedxy, eqzwt, rivercondxy, pexpxy , areaxy, zwtxy,   &
-      &       smois,sh2o, smoiseq, smcwtdxy, deeprechxy, rechxy, qslatxy, qrfsxy, qspringsxy, &
-      &       rechclim  ,                                   &
-      &       ids,ide, jds,jde, kds,kde,                    &
-      &       ims,ime, jms,jme, kms,kme,                    &
-      &       its,ite, jts,jte, kts,kte                     )
-
           ELSE
              CALL wrf_error_fatal ('Not enough fields to use groundwater option in Noah-MP')
           END IF
@@ -1932,19 +1923,27 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
 ! ==================================================================================================
 ! ----------------------------------------------------------------------
     SUBROUTINE GROUNDWATER_INIT (   &
-            &            NSOIL , ZSOIL , DZS, ISLTYP, IVGTYP, WTDDT , &
+            &            GRID, NSOIL , DZS, ISLTYP, IVGTYP, WTDDT , &
             &            FDEPTH, TOPO, RIVERBED, EQWTD, RIVERCOND, PEXP , AREA ,WTD ,  &
             &            SMOIS,SH2O, SMOISEQ, SMCWTDXY, DEEPRECHXY, RECHXY ,  &
             &            QSLATXY, QRFSXY, QSPRINGSXY,                  &
             &            rechclim  ,                                   &
             &            ids,ide, jds,jde, kds,kde,                    &
             &            ims,ime, jms,jme, kms,kme,                    &
+            &            ips,ipe, jps,jpe, kps,kpe,                    &
             &            its,ite, jts,jte, kts,kte                     )
 
 
   USE NOAHMP_TABLES, ONLY : BEXP_TABLE,SMCMAX_TABLE,PSISAT_TABLE,SMCWLT_TABLE,DWSAT_TABLE,DKSAT_TABLE, &
                                 ISURBAN_TABLE, ISICE_TABLE ,ISWATER_TABLE
   USE module_sf_noahmp_groundwater, ONLY : LATERALFLOW
+  USE module_domain, only: domain
+#if (EM_CORE == 1)
+#ifdef DM_PARALLEL
+    USE module_dm        , ONLY : ntasks_x,ntasks_y,local_communicator,mytask,ntasks
+    USE module_comm_dm , ONLY : halo_em_hydro_noahmp_sub
+#endif
+#endif
 
 ! ----------------------------------------------------------------------
   IMPLICIT NONE
@@ -1952,10 +1951,12 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
 
     INTEGER,  INTENT(IN   )   ::     ids,ide, jds,jde, kds,kde,  &
          &                           ims,ime, jms,jme, kms,kme,  &
+         &                           ips,ipe, jps,jpe, kps,kpe,  &
          &                           its,ite, jts,jte, kts,kte
+    TYPE(domain) , TARGET :: grid                             ! state
     INTEGER, INTENT(IN)                              :: NSOIL
     REAL,   INTENT(IN)                               ::     WTDDT
-    REAL,    INTENT(IN), DIMENSION(1:NSOIL)          :: ZSOIL,DZS
+    REAL,    INTENT(IN), DIMENSION(1:NSOIL)          :: DZS
     INTEGER, INTENT(IN), DIMENSION(ims:ime, jms:jme) :: ISLTYP, IVGTYP
     REAL,    INTENT(IN), DIMENSION(ims:ime, jms:jme) :: FDEPTH, TOPO , AREA
     REAL,    INTENT(IN), DIMENSION(ims:ime, jms:jme) :: rechclim 
@@ -1973,14 +1974,21 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
                                                            QRFSXY, &
                                                            QSPRINGSXY  
 ! local
-    INTEGER  :: I,J,K,ITER,itf,jtf, NITER, NCOUNT
+    INTEGER  :: I,J,K,ITER,itf,jtf, NITER, NCOUNT,NS
     REAL :: BEXP,SMCMAX,PSISAT,SMCWLT,DWSAT,DKSAT
     REAL :: FRLIQ,SMCEQDEEP
     REAL :: DELTAT,RCOND,TOTWATER
     REAL :: AA,BBB,CC,DD,DX,FUNC,DFUNC,DDZ,EXPON,SMC,FLUX
-    REAL, DIMENSION(1:NSOIL) :: SMCEQ
+    REAL, DIMENSION(1:NSOIL) :: SMCEQ,ZSOIL
     REAL,      DIMENSION( ims:ime, jms:jme )    :: QLAT, QRF
     INTEGER,   DIMENSION( ims:ime, jms:jme )    :: LANDMASK !-1 for water (ice or no ice) and glacial areas, 1 for land where the LSM does its soil moisture calculations
+
+       ! Given the soil layer thicknesses (in DZS), calculate the soil layer
+       ! depths from the surface.
+       ZSOIL(1)         = -DZS(1)          ! negative
+       DO NS=2, NSOIL
+          ZSOIL(NS)       = ZSOIL(NS-1) - DZS(NS)
+       END DO
 
 
        itf=min0(ite,ide-1)
@@ -1999,32 +2007,50 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
 
 !readjust the raw aggregated water table from hires, so that it is better compatible with topography
 
- DO NITER=1,500
+!use WTD here, to use the lateral communication routine
+    WTD=EQWTD
 
     NCOUNT=0
 
+ DO NITER=1,500
+
+#if (EM_CORE == 1)
+#ifdef DM_PARALLEL
+#     include "HALO_EM_HYDRO_NOAHMP.inc"
+#endif
+#endif
+
 !Calculate lateral flow
 
+IF(NCOUNT.GT.0.OR.NITER.eq.1)THEN
     QLAT = 0.
-    CALL LATERALFLOW(ISLTYP,EQWTD,QLAT,FDEPTH,TOPO,LANDMASK,DELTAT,AREA       &
+    CALL LATERALFLOW(ISLTYP,WTD,QLAT,FDEPTH,TOPO,LANDMASK,DELTAT,AREA       &
                         ,ids,ide,jds,jde,kds,kde                      & 
                         ,ims,ime,jms,jme,kms,kme                      &
                         ,its,ite,jts,jte,kts,kte                      )
 
+    NCOUNT=0
     DO J=jts,jtf
        DO I=its,itf
           IF(LANDMASK(I,J).GT.0)THEN
             IF(QLAT(i,j).GT.1.e-2)THEN
                  NCOUNT=NCOUNT+1
-                 EQWTD(i,j)=min(EQWTD(i,j)+0.25,0.)
+                 WTD(i,j)=min(WTD(i,j)+0.25,0.)
             ENDIF
           ENDIF
         ENDDO
      ENDDO
-
-   IF(NCOUNT.EQ.0)EXIT
+ENDIF
 
  ENDDO
+
+#if (EM_CORE == 1)
+#ifdef DM_PARALLEL
+#     include "HALO_EM_HYDRO_NOAHMP.inc"
+#endif
+#endif
+
+EQWTD=WTD
 
 !after adjusting, where qlat > 1cm/year now wtd is at the surface.
 !it may still happen that qlat + rech > 0 and eqwtd-rbed <0. There the wtd can
@@ -2061,11 +2087,6 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
 !make riverbed to be height down from the surface instead of above sea level
 
     RIVERBED = min( RIVERBED-TOPO, 0.)
-
-!now inititalize wtd
-
-    WTD = EQWTD
-
 
 !now recompute lateral flow and flow to rivers to initialize deep soil moisture
 

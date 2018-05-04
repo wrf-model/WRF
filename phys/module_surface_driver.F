@@ -3994,6 +3994,21 @@ CONTAINS
        !$OMP END PARALLEL DO
      ENDIF
 
+! Limit Q2 diagnostic to no more than 5 per cent higher than lowest level value
+!     This prevents unrealistic values when QFX is not mostly surface flux 
+!          because calculation is based on surface flux only
+!     Problems occurred in transition periods and weak winds and vegetation source
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij, i, j, k )
+       DO ij = 1 , num_tiles
+         DO j=j_start(ij),j_end(ij)
+         DO i=i_start(ij),i_end(ij)
+            Q2(i,j) = MIN(Q2(i,j),1.05*QV_CURR(i,1,j))
+         ENDDO
+         ENDDO
+       ENDDO
+       !$OMP END PARALLEL DO
+
      IF( PRESENT(slope_rad).AND. radiation )THEN
 ! topographic slope effects removed from SWDOWN and GSW here for output
        IF (slope_rad .EQ. 1) THEN

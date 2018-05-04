@@ -2516,6 +2516,14 @@ CONTAINS
          if(HYDRO_dt .ge. 0) HYDRO_dt = dtbl
 #endif
 
+! added RA population for WRF/Noah-CMAQ RS Consistency
+! following Garland et al. (1977) and Nemitz et al., 2009
+         DO j=j_start(ij),j_end(ij)
+         DO i=i_start(ij),i_end(ij)
+            RA(I,J) = WSPD(I,J)/UST(I,J)**2.0
+         ENDDO
+         ENDDO
+
          CALL wrf_debug(100,'in NOAH DRV')
                 
          IF (sf_surface_mosaic == 1) THEN
@@ -3197,6 +3205,13 @@ CONTAINS
            ENDDO                                                  !urban
          ENDIF
 
+! added RA population for WRF/Noah-CMAQ RS Consistency
+! following Garland et al. (1977) and Nemitz et al., 2009
+         DO j=j_start(ij),j_end(ij)
+         DO i=i_start(ij),i_end(ij)
+            RA(I,J) = WSPD(I,J)/UST(I,J)**2.0
+         ENDDO
+         ENDDO
 !------------------------------------------------------------------
 
        ELSE

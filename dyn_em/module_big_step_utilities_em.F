@@ -772,11 +772,7 @@ SUBROUTINE calc_ww_cp ( u, v, mup, mub, c1h, c2h, ww,    &
 !                                     +rdx*(ru(i+1,k-1,j)-ru(i,k-1,j))  &
 !                                     +rdy*(rv(i,k-1,j+1)-rv(i,k-1,j)) )
 
-#if ( WRFPLUS != 1 )
            ww(i,k,j)=ww(i,k-1,j) - dnw(k-1)*c1h(k-1)*dmdt(i) - divv(i,k-1)
-#else
-           ww(i,k,j)=ww(i,k-1,j) - dnw(k-1)*dmdt(i) - divv(i,k-1)
-#endif
 
         ENDDO
         ENDDO

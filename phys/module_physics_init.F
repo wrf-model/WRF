@@ -3400,7 +3400,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_cu_scalesas
    USE module_cu_osas
    USE module_cu_camzm_driver, ONLY : zm_conv_init
-   USE module_cu_nsas_old
+   USE module_cu_nsas
    USE module_cu_tiedtke
    USE module_cu_ntiedtke
 #if ( EM_CORE == 1 )
@@ -3539,7 +3539,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )
-     CASE (KSASSCHEME,NSASOLDSCHEME)
+     CASE (KSASSCHEME,NSASSCHEME)
          CALL nsasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,       &
                       RUCUTEN,RVCUTEN,                            & 
                       restart,P_QC,P_QI,PARAM_FIRST_SCALAR,       &

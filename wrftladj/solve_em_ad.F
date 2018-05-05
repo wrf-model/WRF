@@ -650,7 +650,7 @@ BENCH_END(set_phys_bc_tim)
 !</DESCRIPTION>
 
        CALL first_rk_step_part1 (    grid, config_flags         &
-                             , moist , moist_tend    &
+                             , moist , moist_tend               &
                              , chem  , chem_tend                &
                              , tracer, tracer_tend              &
                              , scalar , scalar_tend             &

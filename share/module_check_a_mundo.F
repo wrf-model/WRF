@@ -1216,7 +1216,7 @@
               ( model_config_rec%cu_physics(1) .EQ. SCALESASSCHEME) .OR. &
               ( model_config_rec%cu_physics(1) .EQ. SASSCHEME     ) .OR. &
               ( model_config_rec%cu_physics(1) .EQ. OSASSCHEME    ) .OR. &
-              ( model_config_rec%cu_physics(1) .EQ. NSASSCHEME    ) .OR. &
+              ( model_config_rec%cu_physics(1) .EQ. KSASSCHEME    ) .OR. &
               ( model_config_rec%cu_physics(1) .EQ. NSASOLDSCHEME ) .OR. &
               ( model_config_rec%cu_physics(1) .EQ. TIEDTKESCHEME ) ) THEN
             wrf_err_message = '--- WARNING: If use_adaptive_time_step, must use cudt=0 for the following CU schemes:'

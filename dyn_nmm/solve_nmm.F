@@ -1665,7 +1665,7 @@
      &            ,grid%zsig1,grid%rchno                               &
      &            ,grid%charn,grid%msang                               &
      &            ,grid%DUBLDT,grid%DVBLDT,grid%DTHBLDT,grid%DQVBLDT   &!wang added PBL tendency output
-     &            ,hpbl_hold                                           & !used by new NSAS
+     &            ,hpbl_hold                                           & !used by new KSAS
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
      &            ,IPS,IPE,JPS,JPE,KPS,KPE                             &
@@ -1807,7 +1807,7 @@
       IF(MOD(grid%ntsd,GRID%NCNVC)==0.AND.                              &
      &   (CONFIG_FLAGS%CU_PHYSICS.eq.KFETASCHEME .or.                     &
      &   CONFIG_FLAGS%CU_PHYSICS.eq.OSASSCHEME .or.                       &
-     &   CONFIG_FLAGS%CU_PHYSICS.eq.NSASSCHEME .or.                       &
+     &   CONFIG_FLAGS%CU_PHYSICS.eq.KSASSCHEME .or.                       &
      &   CONFIG_FLAGS%CU_PHYSICS.eq.NSASOLDSCHEME .or.                    &
      &   CONFIG_FLAGS%CU_PHYSICS.eq.SCALESASSCHEME .or.                   &
      &   CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN                       ! 
@@ -1897,7 +1897,7 @@
      &             ,grid%sigmu, grid%sigmu1                            & !wang
      &             ,grid%avcnvc,grid%acutim,grid%ihe,grid%ihw          &
      &             ,GRID,CONFIG_FLAGS                                  &
-     &             ,hpbl_hold                                          & !used by new NSAS
+     &             ,hpbl_hold                                          & !used by new KSAS
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &
      &             ,IMS,IME,JMS,JME,KMS,KME                            &
      &             ,IPS,IPE,JPS,JPE,KPS,KPE                            &
@@ -1923,7 +1923,7 @@
 !emc_2010_bugfix_h50
         IF(MOD(grid%ntsd, GRID%NCNVC).eq.0.and.                 &
      &    (CONFIG_FLAGS%CU_PHYSICS.eq.OSASSCHEME.or.            &
-     &     CONFIG_FLAGS%CU_PHYSICS.eq.NSASSCHEME.or.            &
+     &     CONFIG_FLAGS%CU_PHYSICS.eq.KSASSCHEME.or.            &
      &     CONFIG_FLAGS%CU_PHYSICS.eq.NSASOLDSCHEME.or.         &
      &     CONFIG_FLAGS%CU_PHYSICS.eq.SCALESASSCHEME.or.        &
      &     CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN 

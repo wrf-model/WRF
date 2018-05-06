@@ -3209,11 +3209,13 @@ CONTAINS
 
 ! added RA population for WRF/Noah-CMAQ RS Consistency
 ! following Garland et al. (1977) and Nemitz et al., 2009
+         IF ( PRESENT(RA) ) THEN
          DO j=j_start(ij),j_end(ij)
          DO i=i_start(ij),i_end(ij)
             RA(I,J) = WSPD(I,J)/UST(I,J)**2.0
          ENDDO
          ENDDO
+         END IF
 !------------------------------------------------------------------
 
        ELSE

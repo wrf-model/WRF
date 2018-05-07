@@ -2532,7 +2532,7 @@
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==KSASSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
-     &   CONFIG_FLAGS%CU_PHYSICS==NSASOLDSCHEME)RETURN
+     &   CONFIG_FLAGS%CU_PHYSICS==NSASSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==TIEDTKESCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
@@ -3029,7 +3029,7 @@
 !
           cps_select: SELECT CASE(config_flags%cu_physics)
 !
-          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,SCALESASSCHEME,OSASSCHEME,KSASSCHEME,NSASOLDSCHEME,TIEDTKESCHEME)
+          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,SCALESASSCHEME,OSASSCHEME,KSASSCHEME,NSASSCHEME,TIEDTKESCHEME)
            IF(config_flags%mp_physics==fer_mp_hires_advect) THEN
              ! Update QI and QRIMEF:
              call QITEND_FER_HIRES_ADVECT( &

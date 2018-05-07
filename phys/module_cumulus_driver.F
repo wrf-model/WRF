@@ -1458,7 +1458,7 @@ CONTAINS
         ENDIF
 
 ! New GFS SAS SCHEME - (Yonsei Univ., South Korea)
-     CASE (NSASOLDSCHEME)
+     CASE (NSASSCHEME)
         IF ( PRESENT ( QFX ) .AND. PRESENT( HFX ) ) THEN
           CALL wrf_debug(100,'in nsas_cps')
           CALL CU_NSAS(                                         &

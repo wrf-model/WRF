@@ -2,10 +2,10 @@
 !
 !
 !
-MODULE module_cu_nsas_old
+MODULE module_cu_nsas
 CONTAINS
 !-------------------------------------------------------------------------------
-   subroutine cu_nsas_old(dt,dx,p3di,p3d,pi3d,qc3d,qi3d,rho3d,itimestep,stepcu,&
+   subroutine cu_nsas(dt,dx,p3di,p3d,pi3d,qc3d,qi3d,rho3d,itimestep,stepcu,    &
                      hbot,htop,cu_act_flag,                                    &
                      rthcuten,rqvcuten,rqccuten,rqicuten,                      &
                      rucuten,rvcuten,                                          &
@@ -305,7 +305,7 @@ CONTAINS
    enddo ! outer most J_loop
 !
    return
-   end subroutine cu_nsas_old
+   end subroutine cu_nsas
 !
 !-------------------------------------------------------------------------------
 ! NCEP SAS (Deep Convection Scheme)
@@ -3287,5 +3287,5 @@ CONTAINS
       end subroutine nscv2d
 !-------------------------------------------------------------------------------
 !
-END MODULE module_cu_nsas_old
+END MODULE module_cu_nsas
 !

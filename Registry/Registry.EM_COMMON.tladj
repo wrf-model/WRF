@@ -2764,7 +2764,6 @@ package   kfcupscheme    cu_physics==10              -             state:cldfrat
 package   mskfscheme   cu_physics==11              -             state:w0avg,w_up
 package   ksasscheme     cu_physics==14              -             -
 package   nsasscheme     cu_physics==96              -             -
-package   nsasoldscheme  cu_physics==96              -             -
 package   ntiedtkescheme cu_physics==16              -             -
 package   gdscheme       cu_physics==93              -             -
 package   sasscheme      cu_physics==94              -             -

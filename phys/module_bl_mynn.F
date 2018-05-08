@@ -1039,6 +1039,7 @@ CONTAINS
     if (spp_pbl==1) then
        DO k = kts+1,kte
          if (k.lt.25) then
+            zwk = zw(k)
             el(k)= el(k) + el(k)* rstoch_col(k) * 1.5 * MAX(exp(-MAX(zwk-3000.,0.0)/2000.),0.01)
          endif
        END DO
@@ -4298,27 +4299,28 @@ ENDIF
                qc_bl(i,k,j)=qc_bl1D(k) !*Psig_shcu(i,j)
                cldfra_bl(i,k,j)=cldfra_bl1D(k) !*Psig_shcu(i,j)
 
-               !DIAGNOSTIC-DECAY FOR SUBGRID-SCALE CLOUDS
-               IF (CLDFRA_BL(i,k,j) > cldfra_bl1D_old(k)) THEN
-                  !KEEP UPDATED CLOUD FRACTION & MIXING RATIO
-               ELSE
-                  !DECAY TIMESCALE FOR CALM CONDITION IS THE EDDY TURNOVER TIMESCALE, BUT FOR
-                  !WINDY CONDITIONS, IT IS THE ADVECTIVE TIMESCALE. USE THE MINIMUM OF THE TWO.
-                  ts_decay = MIN( 1800., 3.*dx/MAX(SQRT(u1(k)**2 + v1(k)**2), 1.0) )
-                  cldfra_bl(i,k,j)= MAX(cldfra_bl1D(k), cldfra_bl1D_old(k)-(0.25*delt/ts_decay))
-                  IF (cldfra_bl(i,k,j) > 0.01) THEN
-                     IF (QC_BL(i,k,j) < 1E-5)QC_BL(i,k,j)= MAX(qc_bl1D_old(k), 1E-5)
-                  ELSE
-                     CLDFRA_BL(i,k,j)= 0.
-                     QC_BL(i,k,j)    = 0.
-                  ENDIF
-               ENDIF
-
                !Stochastic perturbations to cldfra_bl and qc_bl
                if (spp_pbl==1) then
-                   cldfra_bl(i,k,j)= cldfra_bl(i,k,j)*(1.0-rstoch_col(k))
+                  cldfra_bl(i,k,j)= cldfra_bl(i,k,j)*(1.0-rstoch_col(k))
                   IF ((cldfra_bl(i,k,j) > 1.0) .or. (cldfra_bl(i,k,j) < 0.0)) then
                      cldfra_bl(i,k,j)=MAX(MIN(cldfra_bl(i,k,j),1.0),0.0)
+                  ENDIF
+               ELSE
+                  !DIAGNOSTIC-DECAY FOR SUBGRID-SCALE CLOUDS
+                  IF (CLDFRA_BL(i,k,j) > cldfra_bl1D_old(k)) THEN
+                     !KEEP UPDATED CLOUD FRACTION & MIXING RATIO
+                  ELSE
+                     !DECAY TIMESCALE FOR CALM CONDITION IS THE EDDY TURNOVER TIMESCALE, 
+                     !BUT FOR WINDY CONDITIONS, IT IS THE ADVECTIVE TIMESCALE.
+                     !USE THE MINIMUM OF THE TWO.
+                     ts_decay = MIN( 1800., 3.*dx/MAX(SQRT(u1(k)**2 + v1(k)**2), 1.0) )
+                     cldfra_bl(i,k,j)= MAX(cldfra_bl1D(k), cldfra_bl1D_old(k)-(0.25*delt/ts_decay))
+                     IF (cldfra_bl(i,k,j) > 0.01) THEN
+                        IF (QC_BL(i,k,j) < 1E-5)QC_BL(i,k,j)= MAX(qc_bl1D_old(k), 1E-5)
+                     ELSE
+                        CLDFRA_BL(i,k,j)= 0.
+                        QC_BL(i,k,j)    = 0.
+                     ENDIF
                   ENDIF
                ENDIF
 
@@ -4330,6 +4332,7 @@ ENDIF
                  IF (CLDFRA_BL(i,k,j) < 1E-2)CLDFRA_BL(i,k,j)= 0.
                ENDIF
              ENDIF
+
              el_pbl(i,k,j)=el(k)
              qke(i,k,j)=qke1(k)
              tsq(i,k,j)=tsq1(k)

@@ -50,6 +50,7 @@ MODULES = \
 	module_shcu_camuwshcu_driver.o \
 	module_shcu_camuwshcu.o \
 	module_shcu_grims.o \
+	module_shcu_nscv.o \
 	module_cu_camzm_driver.o \
 	module_cu_camzm.o \
 	module_bl_temf.o \

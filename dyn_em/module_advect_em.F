@@ -10166,6 +10166,108 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
 
       ENDDO
 
+    ELSE IF (vert_order == 5) THEN
+
+      DO j = j_start, j_end
+
+         DO i = i_start, i_end
+           fqz(i,1,j)  = 0.
+           fqzl(i,1,j) = 0.
+           fqz(i,kde,j)  = 0.
+           fqzl(i,kde,j) = 0.
+         ENDDO
+
+         DO k=kts+3,ktf-2
+         DO i = i_start, i_end
+
+           vel = rom(i,k,j)
+           cr = -vel
+           fqzl(i,k,j) = vel*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
+
+           fqz(i,k,j) = vel*flux5(                                 &
+                   field(i,k-3,j), field(i,k-2,j), field(i,k-1,j),       &
+                   field(i,k  ,j), field(i,k+1,j), field(i,k+2,j),  -vel )
+           fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+
+          if(cr.gt. 0) then
+             qmax(i,k,j)  = amax1(qmax(i,k,j),field_old(i,k-1,j))
+             qmin(i,k,j)  = amin1(qmin(i,k,j),field_old(i,k-1,j))
+          else
+             qmax(i,k-1,j)  = amax1(qmax(i,k-1,j),field_old(i,k,j))
+             qmin(i,k-1,j)  = amin1(qmin(i,k-1,j),field_old(i,k,j))
+          end if
+
+         ENDDO
+         ENDDO
+
+         DO i = i_start, i_end
+
+           k=kts+1
+           vel = rom(i,k,j)
+           cr = -vel
+           fqzl(i,k,j) = vel*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
+           fqz(i,k,j)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
+           fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+
+          if(cr.gt. 0) then
+             qmax(i,k,j)  = amax1(qmax(i,k,j),field_old(i,k-1,j))
+             qmin(i,k,j)  = amin1(qmin(i,k,j),field_old(i,k-1,j))
+          else
+             qmax(i,k-1,j)  = amax1(qmax(i,k-1,j),field_old(i,k,j))
+             qmin(i,k-1,j)  = amin1(qmin(i,k-1,j),field_old(i,k,j))
+          end if
+
+           k=kts+2
+           vel = rom(i,k,j)
+           cr = -vel
+           fqzl(i,k,j) = vel*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
+           fqz(i,k,j)= vel*flux3(field(i,k-2,j), field(i,k-1,j),   &
+                                 field(i,k  ,j), field(i,k+1,j), -vel )
+           fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+
+          if(cr.gt. 0) then
+             qmax(i,k,j)  = amax1(qmax(i,k,j),field_old(i,k-1,j))
+             qmin(i,k,j)  = amin1(qmin(i,k,j),field_old(i,k-1,j))
+          else
+             qmax(i,k-1,j)  = amax1(qmax(i,k-1,j),field_old(i,k,j))
+             qmin(i,k-1,j)  = amin1(qmin(i,k-1,j),field_old(i,k,j))
+          end if
+
+           k=ktf-1
+           vel = rom(i,k,j)
+           cr = -vel
+           fqzl(i,k,j) = vel*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
+           fqz(i,k,j)= vel*flux3( field(i,k-2,j), field(i,k-1,j),   &
+                                  field(i,k  ,j), field(i,k+1,j), -vel )
+           fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+
+          if(cr.gt. 0) then
+             qmax(i,k,j)  = amax1(qmax(i,k,j),field_old(i,k-1,j))
+             qmin(i,k,j)  = amin1(qmin(i,k,j),field_old(i,k-1,j))
+          else
+             qmax(i,k-1,j)  = amax1(qmax(i,k-1,j),field_old(i,k,j))
+             qmin(i,k-1,j)  = amin1(qmin(i,k-1,j),field_old(i,k,j))
+          end if
+
+           k=ktf
+           vel = rom(i,k,j)
+           cr = -vel
+           fqzl(i,k,j) = vel*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
+           fqz(i,k,j)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
+           fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+
+          if(cr.gt. 0) then
+             qmax(i,k,j)  = amax1(qmax(i,k,j),field_old(i,k-1,j))
+             qmin(i,k,j)  = amin1(qmin(i,k,j),field_old(i,k-1,j))
+          else
+             qmax(i,k-1,j)  = amax1(qmax(i,k-1,j),field_old(i,k,j))
+             qmin(i,k-1,j)  = amin1(qmin(i,k-1,j),field_old(i,k,j))
+          end if
+
+         ENDDO
+
+      ENDDO
+
    ELSE
 
       WRITE (wrf_err_message,*) ' advect_scalar_mono, v_order not known ',vert_order

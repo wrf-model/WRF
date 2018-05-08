@@ -69,6 +69,7 @@
  /
 
  &dynamics
+ hybrid_opt                          = 0, 
  rk_ord                              = 3,
  diff_opt                            = 2,      2,      2,
  km_opt                              = 2,      2,      2,
@@ -114,3 +115,8 @@
  nio_tasks_per_group = 0,
  nio_groups = 1,
  /
+
+ &ideal
+ ideal_case = 2
+ /
+

@@ -894,6 +894,7 @@
       DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec%shcu_physics(i) .EQ. GRIMSSHCUSCHEME ) THEN
             IF ( (model_config_rec%bl_pbl_physics(i) .EQ. YSUSCHEME) .OR. &
+                 (model_config_rec%bl_pbl_physics(i) .EQ. SHINHONGSCHEME) .OR. &
                  (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2) .OR. &
                  (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3) ) THEN
                !NO PROBLEM
@@ -904,19 +905,19 @@
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = '--- NOTE: bl_pbl_physics /= 1,5,6 implies shcu_physics cannot be 3, resetting'
+         wrf_err_message = '--- NOTE: bl_pbl_physics /= 1,5,6,11 implies shcu_physics cannot be 3, resetting'
          CALL wrf_message ( wrf_err_message )
       END IF
 
 !-----------------------------------------------------------------------
-! If MYNN PBL is not used, set bl_mynn_edmf = 0 so that we don't get
-! additional output
+! If MYNN PBL is not used, set bl_mynn_edmf = 0 so that shallow convection
+! options can be set and we don't get additional output
 !-----------------------------------------------------------------------
 
       DO i = 1, model_config_rec % max_dom
          IF ( ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME2 ) .AND. &
               ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME3 ) ) THEN
-            model_config_rec % bl_mynn_edmf = 0
+              model_config_rec % bl_mynn_edmf(i) = 0
          END IF
       ENDDO
 

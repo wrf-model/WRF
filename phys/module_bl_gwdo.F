@@ -10,7 +10,7 @@ contains
                   rublten,rvblten,                                             &
                   dtaux3d,dtauy3d,dusfcg,dvsfcg,                               &
                   var2d,oc12d,oa2d1,oa2d2,oa2d3,oa2d4,ol2d1,ol2d2,ol2d3,ol2d4, &
-                  znu,znw,p_top,                                               &
+                  sina,cosa,znu,znw,p_top,                                     &
                   cp,g,rd,rv,ep1,pi,                                           &
                   dt,dx,kpbl2d,itimestep,                                      &
                   ids,ide, jds,jde, kds,kde,                                   &
@@ -29,6 +29,8 @@ contains
 !-- pi3d        3d exner function (dimensionless)
 !-- rublten     u tendency due to pbl parameterization (m/s/s) 
 !-- rvblten     v tendency due to pbl parameterization (m/s/s)
+!-- sina        sine rotation angle
+!-- cosa        cosine rotation angle
 !-- znu         eta values (sigma values)
 !-- cp          heat capacity at constant pressure for dry air (j/kg/k)
 !-- g           acceleration due to gravity (m/s^2)
@@ -95,7 +97,8 @@ contains
              intent(in  )   ::                                          var2d, &
                                                                         oc12d, &
                                                       oa2d1,oa2d2,oa2d3,oa2d4, &
-                                                      ol2d1,ol2d2,ol2d3,ol2d4
+                                                      ol2d1,ol2d2,ol2d3,ol2d4, &
+                                                                    sina,cosa
 !
   real,     dimension( kms:kme )                                             , &
             optional                                                         , &
@@ -108,6 +111,8 @@ contains
 !
   real,   dimension( its:ite, kts:kte )  ::                           delprsi, &
                                                                           pdh
+  real,   dimension( its:ite, kts:kte )  ::  ugeo, vgeo, dudt, dvdt, dtaux, dtauy
+  real,   dimension( its:ite )  ::  dusfc, dvsfc
   real,     dimension( its:ite, kts:kte+1 )   ::                         pdhi
   real,   dimension( its:ite, 4 )        ::                               oa4, &
                                                                           ol4
@@ -128,6 +133,11 @@ contains
       do k = kts,kte
         do i = its,ite
           delprsi(i,k) = pdhi(i,k)-pdhi(i,k+1)
+! rotate winds to zonal/meridional
+          ugeo(i,k) = u3d(i,k,j)*cosa(i,j) - v3d(i,k,j)*sina(i,j)
+          vgeo(i,k) = u3d(i,k,j)*sina(i,j) + v3d(i,k,j)*cosa(i,j)
+          dudt(i,k) = 0.0
+          dvdt(i,k) = 0.0
         enddo
       enddo
         do i = its,ite
@@ -140,16 +150,16 @@ contains
             ol4(i,3) = ol2d3(i,j)
             ol4(i,4) = ol2d4(i,j)
         enddo
-      call gwdo2d(dudt=rublten(ims,kms,j),dvdt=rvblten(ims,kms,j)              &
-              ,dtaux2d=dtaux3d(ims,kms,j),dtauy2d=dtauy3d(ims,kms,j)           &
-              ,u1=u3d(ims,kms,j),v1=v3d(ims,kms,j)                             &
+      call gwdo2d(dudt=dudt(its,kts),dvdt=dvdt(its,kts)                        &
+              ,dtaux2d=dtaux(its,kts),dtauy2d=dtauy(its,kts)                   &
+              ,u1=ugeo(its,kts),v1=vgeo(its,kts)                               &
               ,t1=t3d(ims,kms,j),q1=qv3d(ims,kms,j)                            &
               ,del=delprsi(its,kts)                                            &
               ,prsi=pdhi(its,kts)                                              &
               ,prsl=pdh(its,kts),prslk=pi3d(ims,kms,j)                         &
               ,zl=z(ims,kms,j),rcl=1.0                                         &
               ,kpblmax=kpblmax                                                 &
-              ,dusfc=dusfcg(ims,j),dvsfc=dvsfcg(ims,j)                         &
+              ,dusfc=dusfc(its),dvsfc=dvsfc(its)                               &
               ,var=var2d(ims,j),oc1=oc12d(ims,j)                               &
               ,oa4=oa4,ol4=ol4                                                 &
               ,g=g,cp=cp,rd=rd,rv=rv,fv=ep1,pi=pi                              &
@@ -158,6 +168,19 @@ contains
               ,ids=ids,ide=ide, jds=jds,jde=jde, kds=kds,kde=kde               &
               ,ims=ims,ime=ime, jms=jms,jme=jme, kms=kms,kme=kme               &
               ,its=its,ite=ite, jts=jts,jte=jte, kts=kts,kte=kte   )
+      do k = kts,kte
+        do i = its,ite
+! rotate tendencies from zonal/meridional to model grid
+          rublten(i,k,j) = rublten(i,k,j)+dudt(i,k)*cosa(i,j) + dvdt(i,k)*sina(i,j)
+          rvblten(i,k,j) = rvblten(i,k,j)-dudt(i,k)*sina(i,j) + dvdt(i,k)*cosa(i,j)
+          dtaux3d(i,k,j) = dtaux(i,k)*cosa(i,j) + dtauy(i,k)*sina(i,j)
+          dtauy3d(i,k,j) =-dtaux(i,k)*sina(i,j) + dtauy(i,k)*cosa(i,j)
+          if(k.eq.kts)then
+             dusfcg(i,j) = dusfc(i)*cosa(i,j) + dvsfc(i)*sina(i,j)
+             dvsfcg(i,j) =-dusfc(i)*sina(i,j) + dvsfc(i)*cosa(i,j)
+          endif
+        enddo
+      enddo
    enddo
 !
    end subroutine gwdo
@@ -228,9 +251,9 @@ contains
                             its,ite, jts,jte, kts,kte
 !
    real                 ::  g,rd,rv,fv,cp,pi,dxmeter,deltim,rcl
-   real                 ::  dudt(ims:ime,kms:kme),dvdt(ims:ime,kms:kme),       &
-                            dtaux2d(ims:ime,kms:kme),dtauy2d(ims:ime,kms:kme), &
-                            u1(ims:ime,kms:kme),v1(ims:ime,kms:kme),           & 
+   real                 ::  dudt(its:ite,kts:kte),dvdt(its:ite,kts:kte),       &
+                            dtaux2d(its:ite,kts:kte),dtauy2d(its:ite,kts:kte), &
+                            u1(its:ite,kts:kte),v1(its:ite,kts:kte),           & 
                             t1(ims:ime,kms:kme),q1(ims:ime,kms:kme),           &
                             zl(ims:ime,kms:kme),prsl(its:ite,kts:kte),         &
                             prslk(ims:ime,kms:kme)
@@ -239,7 +262,7 @@ contains
 !
    integer              ::  kpbl(ims:ime)
    real                 ::  var(ims:ime),oc1(ims:ime),                         &
-                            dusfc(ims:ime),dvsfc(ims:ime)
+                            dusfc(its:ite),dvsfc(its:ite)
 !
 ! critical richardson number for wave breaking : ! larger drag with larger value
 !

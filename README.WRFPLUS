@@ -1,0 +1,38 @@
+
+ WRFPLUS Model Version 3.9.1 (August 17, 2017)
+
+ http://www2.mmm.ucar.edu/wrf/users/wrfda/download/wrfplus.html
+
+------------------------
+WRF PUBLIC DOMAIN NOTICE
+------------------------
+
+WRF was developed at the National Center for Atmospheric Research
+(NCAR) which is operated by the University Corporation for
+Atmospheric Research (UCAR). NCAR and UCAR make no proprietary
+claims, either statutory or otherwise, to this version and
+release of WRF and consider WRF to be in the public domain for
+use by any person or entity for any purpose without any fee or
+charge. UCAR requests that any WRF user include this notice on
+any partial or full copies of WRF. WRF is provided on an "AS
+IS" basis and any warranties, either express or implied,
+including but not limited to implied warranties of
+non-infringement, originality, merchantability and fitness for a
+particular purpose, are disclaimed. In no event shall
+UCAR be liable for any damages, whatsoever, whether direct,
+indirect, consequential or special, that arise out of or in
+connection with the access, use or performance of WRF, including
+infringement actions.
+
+
+======================================
+This is the main directory for the WRFPLUS Version 3 source code release.
+======================================
+
+WRFPLUS contains the WRF non-linear, WRF tangent-linear, and WRF adjoint models, and is intended for use with WRFDA 4DVAR.
+
+For information on how to compile/run, reference the User's Guide:
+http://www2.mmm.ucar.edu/wrf/users/wrfda/usersguide.html
+
+You can find more information about WRFDA and WRFPLUS at the WRFDA User's Page: http://www2.mmm.ucar.edu/wrf/users/wrfda/index.html
+

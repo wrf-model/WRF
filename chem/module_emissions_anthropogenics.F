@@ -91,6 +91,8 @@ k_loop: DO k=kts,min(config_flags%kemit,kte)
           chem(its:ite,k,j,p_no)  = chem(its:ite,k,j,p_no) + emis_ant(its:ite,k,j,p_e_no)*conv_rho(its:ite)
           chem(its:ite,k,j,p_no2) = chem(its:ite,k,j,p_no2) + emis_ant(its:ite,k,j,p_e_no2)*conv_rho(its:ite)
           chem(its:ite,k,j,p_nh3) = chem(its:ite,k,j,p_nh3) + emis_ant(its:ite,k,j,p_e_nh3)*conv_rho(its:ite)
+          chem(its:ite,k,j,p_hcl) = chem(its:ite,k,j,p_hcl) + emis_ant(its:ite,k,j,p_e_hcl)*conv_rho(its:ite)
+          chem(its:ite,k,j,p_ch3cl) = chem(its:ite,k,j,p_ch3cl) + emis_ant(its:ite,k,j,p_e_ch3cl)*conv_rho(its:ite)
 is_mozart:if( is_moz_chm ) then
             chem(its:ite,k,j,p_bigalk) = chem(its:ite,k,j,p_bigalk) + emis_ant(its:ite,k,j,p_e_bigalk)*conv_rho(its:ite)
             chem(its:ite,k,j,p_bigene) = chem(its:ite,k,j,p_bigene) + emis_ant(its:ite,k,j,p_e_bigene)*conv_rho(its:ite)
@@ -172,7 +174,6 @@ is_mozart:if( is_moz_chm ) then
                    config_flags%chem_opt == CRI_MOSAIC_8BIN_AQ_KPP .or. &
                    config_flags%chem_opt == CRI_MOSAIC_4BIN_AQ_KPP) then
             do i=its,ite  
-              chem(i,k,j,p_no2) = chem(i,k,j,p_no2) + emis_ant(i,k,j,p_e_no2)*conv_rho(i)
               chem(i,k,j,p_c2h6) = chem(i,k,j,p_c2h6) + emis_ant(i,k,j,p_e_c2h6)*conv_rho(i)
               chem(i,k,j,p_c2h4) = chem(i,k,j,p_c2h4) + emis_ant(i,k,j,p_e_c2h4)*conv_rho(i)
               chem(i,k,j,p_c5h8) = chem(i,k,j,p_c5h8) + emis_ant(i,k,j,p_e_c5h8)*conv_rho(i)

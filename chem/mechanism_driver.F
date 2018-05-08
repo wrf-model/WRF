@@ -4,7 +4,9 @@
                config_flags,gmt,julday,t_phy,moist,p8w,t8w,gd_cldfr,   &
                p_phy,chem,rho_phy,dz8w,dx,g,z,z_at_w,xlat,xlong,vdrog3,&
                vcsulf_old,vcso2_old,vch2o2_old,ttday,tcosz,            &
-               ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,&
+               ph_macr,ph_o31d,ph_o33p,ph_no2,                         &
+               ph_cl2,ph_hocl,ph_clno2,ph_fmcl,                        &
+               ph_no3o2,ph_no3o,ph_hno2,                               &
                ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,    &
                ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,         &
                ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,&
@@ -52,7 +54,9 @@
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &
          INTENT(INOUT ) ::                                             &
-           ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,    &
+           ph_macr,ph_o31d,ph_o33p,ph_no2,                             &
+           ph_cl2,ph_hocl,ph_clno2,ph_fmcl,                            &
+           ph_no3o2,ph_no3o,ph_hno2,                                   &
            ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,        &
            ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,             &
            ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,    &
@@ -137,9 +141,10 @@
                ids,ide, jds,jde, kds,kde,                              &
                ims,ime, jms,jme, kms,kme,                              &
                its,ite, jts,jte, kts,kte                               )
-
-     CASE (RACMSORG_KPP,RADM2SORG_KPP,RACMSORG_AQ,RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP,RACM_ESRLSORG_KPP,RACM_SOA_VBS_KPP)
-       vcsulf_old(its:ite,kts:kte,jts:jte) = &
+     CASE(RACMSORG_KPP,RADM2SORG_KPP,RACMSORG_AQ,RACMSORG_AQCHEM_KPP,  &
+          RACM_ESRLSORG_AQCHEM_KPP,RACM_ESRLSORG_KPP,RACM_SOA_VBS_KPP, &
+          RACM_SOA_VBS_HET_KPP)
+         vcsulf_old(its:ite,kts:kte,jts:jte) = &
           max(chem(its:ite,kts:kte,jts:jte,p_sulf),epsilc)
 
      CASE (CBMZ, CBMZ_BB, CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN,      &

@@ -2942,11 +2942,18 @@ integer::oops1,oops2
       IF ( ( config_flags%sf_urban_physics == 1 ) .OR. ( config_flags%sf_urban_physics == 2 ) .OR. ( config_flags%sf_urban_physics == 3 ) ) THEN
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
+              IF ( MMINLU == 'NLCD40' .OR. MMINLU == 'MODIFIED_IGBP_MODIS_NOAH') THEN
+                  IF ( grid%FRC_URB2D(i,j) .GE. 0.5 .AND.  &
+                      (grid%ivgtyp(i,j).NE.13 .OR. grid%ivgtyp(i,j).NE.24 .OR. grid%ivgtyp(i,j).NE.25 .OR. grid%ivgtyp(i,j).NE.26)) grid%ivgtyp(i,j)=13
+              ELSE IF ( MMINLU == "USGS" ) THEN
+                  IF ( grid%FRC_URB2D(i,j) .GE. 0.5 .AND.  &
+                       grid%ivgtyp(i,j).NE.1 ) grid%ivgtyp(i,j)=1
+              ENDIF
 
-              IF ( MMINLU == 'NLCD40') THEN
-                   IF (grid%ivgtyp(i,j) == 24 .or. grid%ivgtyp(i,j) == 25 .or. grid%ivgtyp(i,j) == 26) &
-                   grid%FRC_URB2D(i,j) = (grid%FRC_URB3D(i,24,j)*0.5+grid%FRC_URB3D(i,25,j)*0.9+grid%FRC_URB3D(i,26,j)*0.95)/100.
-                   IF (grid%ivgtyp(i,j) == 13 ) grid%FRC_URB2D(i,j) = 0.9
+              IF ( grid%FRC_URB2D(i,j) == 0. ) THEN
+                 IF ( (MMINLU == 'NLCD40' .OR. MMINLU == 'MODIFIED_IGBP_MODIS_NOAH') .AND. &
+                   (grid%ivgtyp(i,j)==24 .OR. grid%ivgtyp(i,j)==25 .OR. grid%ivgtyp(i,j)==26 .OR. grid%ivgtyp(i,j)==13) ) grid%FRC_URB2D(i,j) = 0.9
+                 IF ( MMINLU == 'USGS' .AND. grid%ivgtyp(i,j)==1 ) grid%FRC_URB2D(i,j) = 0.9
               ENDIF
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%LP_URB2D(i,j)  = grid%URB_PARAM(i,91,j)
@@ -4393,6 +4400,33 @@ endif
 #if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
       grid%got_var_sso = wrf_dm_lor_logical ( grid%got_var_sso )
 #endif
+
+      !  Save the dry perturbation potential temperature.
+
+      DO j = jts, min(jde-1,jte)
+         DO k = kts, kte
+            DO i = its, min(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
+               grid%th_phy_m_t0(i,k,j) = grid%t_2(i,k,j)
+            END DO
+         END DO
+      END DO
+
+      !  Turn dry potential temperature into moist potential temperature
+      !  at the very end of this routine, just before the halo communications.
+      !  This field will be in the model IC and and used to construct the 
+      !  BC file.
+
+      IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
+         DO j = jts, min(jde-1,jte)
+            DO k = kts, kte
+               DO i = its, min(ide,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
+                  grid%t_2(i,k,j) = ( grid%t_2(i,k,j) + T0 ) * (1. + (R_v/R_d) * moist(i,k,j,P_QV)) - T0
+               END DO
+            END DO
+         END DO
+      END IF
 
 #ifdef DM_PARALLEL
 # include "HALO_EM_INIT_1.inc"
@@ -7358,7 +7392,7 @@ end do
     print *,1,dz,zup(1),eta(1)
     isave=1
     do i=1,nlev-1
-        a=dzstretch_u+(dzstretch_s-dzstretch_u)*max((zscale-zup(i))/zscale, 0.)
+        a=dzstretch_u+(dzstretch_s-dzstretch_u)*max((dzmax*0.5-dz)/(dzmax*0.5), 0.)
         dz=a*dz
         dztest=(ztop-zup(isave))/(nlev-isave)
         if(dztest.lt.dz)exit

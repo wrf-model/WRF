@@ -36,7 +36,7 @@
 !.. Remaining values should probably be left alone.
 !..
 !..Author: Greg Thompson, NCAR-RAL, gthompsn@ucar.edu, 303-497-2805
-!..Last modified: 04 Aug 2017   Aerosol additions to v3.5.1 code 9/2013
+!..Last modified: 24 Jan 2018   Aerosol additions to v3.5.1 code 9/2013
 !..                 Cloud fraction additions 11/2014 part of pre-v3.7
 !+---+-----------------------------------------------------------------+
 !wrft:model_layer:physics
@@ -391,8 +391,8 @@
 
       CONTAINS
 
-      SUBROUTINE thompson_init(hgt, orho, nwfa2d, nwfa, nifa, dx, dy,   &
-                          is_start,                                     &
+      SUBROUTINE thompson_init(hgt, orho, nwfa2d, nwfa, nifa,           &
+                          dx, dy, is_start,                             &
                           ids, ide, jds, jde, kds, kde,                 &
                           ims, ime, jms, jme, kms, kme,                 &
                           its, ite, jts, jte, kts, kte)
@@ -971,7 +971,7 @@
 !..This is a wrapper routine designed to transfer values from 3D to 1D.
 !+---+-----------------------------------------------------------------+
       SUBROUTINE mp_gt_driver(qv, qc, qr, qi, qs, qg, ni, nr, nc,       &
-                              nwfa, nifa, nwfa2d,                       &
+                              nwfa, nifa, nwfa2d, nifa2d,               &
                               th, pii, p, w, dz, dt_in, itimestep,      &
                               RAINNC, RAINNCV, &
                               SNOWNC, SNOWNCV, &
@@ -996,7 +996,7 @@
                           qv, qc, qr, qi, qs, qg, ni, nr, th
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT):: &
                           nc, nwfa, nifa
-      REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN):: nwfa2d
+      REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN):: nwfa2d, nifa2d
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
                           re_cloud, re_ice, re_snow
       INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
@@ -1173,6 +1173,7 @@
          if (is_aerosol_aware) then
 !-GT        nwfa1d(kts) = nwfa1
             nwfa1d(kts) = nwfa1d(kts) + nwfa2d(i,j)*dt_in
+            nifa1d(kts) = nifa1d(kts) + nifa2d(i,j)*dt_in
 
             do k = kts, kte
                nc(i,k,j) = nc1d(k)
@@ -1590,7 +1591,7 @@
          if (qc1d(k) .gt. R1) then
             no_micro = .false.
             rc(k) = qc1d(k)*rho(k)
-            nc(k) = MAX(2., nc1d(k)*rho(k))
+            nc(k) = MAX(2., MIN(nc1d(k)*rho(k), Nt_c_max))
             L_qc(k) = .true.
             nu_c = MIN(15, NINT(1000.E6/nc(k)) + 2)
             lamc = (nc(k)*am_r*ccg(2,nu_c)*ocg1(nu_c)/rc(k))**obmr
@@ -2781,7 +2782,7 @@
 
          if ((qc1d(k) + qcten(k)*DT) .gt. R1) then
             rc(k) = (qc1d(k) + qcten(k)*DT)*rho(k)
-            nc(k) = MAX(2., (nc1d(k) + ncten(k)*DT)*rho(k))
+            nc(k) = MAX(2., MIN((nc1d(k)+ncten(k)*DT)*rho(k), Nt_c_max))
             if (.NOT. is_aerosol_aware) nc(k) = Nt_c
             L_qc(k) = .true.
          else
@@ -3032,7 +3033,7 @@
           nwfaten(k) = nwfaten(k) - pnc_wcd(k)
           tten(k) = tten(k) + lvap(k)*ocp(k)*prw_vcd(k)*(1-IFDRY)
           rc(k) = MAX(R1, (qc1d(k) + DT*qcten(k))*rho(k))
-          nc(k) = MAX(2., (nc1d(k) + DT*ncten(k))*rho(k))
+          nc(k) = MAX(2., MIN((nc1d(k)+ncten(k)*DT)*rho(k), Nt_c_max))
           if (.NOT. is_aerosol_aware) nc(k) = Nt_c
           qv(k) = MAX(1.E-10, qv1d(k) + DT*qvten(k))
           temp(k) = t1d(k) + DT*tten(k)
@@ -3475,7 +3476,7 @@
          t1d(k)  = t1d(k) + tten(k)*DT
          qv1d(k) = MAX(1.E-10, qv1d(k) + qvten(k)*DT)
          qc1d(k) = qc1d(k) + qcten(k)*DT
-         nc1d(k) = MAX(2./rho(k), nc1d(k) + ncten(k)*DT)
+         nc1d(k) = MAX(2./rho(k), MIN(nc1d(k) + ncten(k)*DT, Nt_c_max))
          nwfa1d(k) = MAX(11.1E6/rho(k), MIN(9999.E6/rho(k),             &
                        (nwfa1d(k)+nwfaten(k)*DT)))
          nifa1d(k) = MAX(naIN1*0.01, MIN(9999.E6/rho(k),                &
@@ -4212,6 +4213,7 @@
       ENDIF
 
       end subroutine freezeH2O
+
 !+---+-----------------------------------------------------------------+
 !ctrlL
 !+---+-----------------------------------------------------------------+
@@ -5041,7 +5043,7 @@
       do k = kts, kte
          rho(k) = 0.622*p1d(k)/(R*t1d(k)*(qv1d(k)+0.622))
          rc(k) = MAX(R1, qc1d(k)*rho(k))
-         nc(k) = MAX(R2, nc1d(k)*rho(k))
+         nc(k) = MAX(2., MIN(nc1d(k)*rho(k), Nt_c_max))
          if (.NOT. is_aerosol_aware) nc(k) = Nt_c
          if (rc(k).gt.R1 .and. nc(k).gt.R2) has_qc = .true.
          ri(k) = MAX(R1, qi1d(k)*rho(k))
@@ -5053,6 +5055,7 @@
 
       if (has_qc) then
       do k = kts, kte
+         re_qc1d(k) = 2.49E-6
          if (rc(k).le.R1 .or. nc(k).le.R2) CYCLE
          if (nc(k).lt.100) then
             inu_c = 15
@@ -5068,14 +5071,16 @@
 
       if (has_qi) then
       do k = kts, kte
+         re_qi1d(k) = 2.49E-6
          if (ri(k).le.R1 .or. ni(k).le.R2) CYCLE
          lami = (am_i*cig(2)*oig1*ni(k)/ri(k))**obmi
-         re_qi1d(k) = MAX(5.01E-6, MIN(SNGL(0.5D0 * DBLE(3.+mu_i)/lami), 125.E-6))
+         re_qi1d(k) = MAX(2.51E-6, MIN(SNGL(0.5D0 * DBLE(3.+mu_i)/lami), 125.E-6))
       enddo
       endif
 
       if (has_qs) then
       do k = kts, kte
+         re_qs1d(k) = 4.99E-6
          if (rs(k).le.R1) CYCLE
          tc0 = MIN(-0.1, t1d(k)-273.15)
          smob = rs(k)*oams
@@ -5110,7 +5115,7 @@
      &        + sb(7)*tc0*tc0*cse(1) + sb(8)*tc0*cse(1)*cse(1) &
      &        + sb(9)*tc0*tc0*tc0 + sb(10)*cse(1)*cse(1)*cse(1)
          smoc = a_ * smo2**b_
-         re_qs1d(k) = MAX(10.E-6, MIN(0.5*(smoc/smob), 999.E-6))
+         re_qs1d(k) = MAX(5.01E-6, MIN(0.5*(smoc/smob), 999.E-6))
       enddo
       endif
 

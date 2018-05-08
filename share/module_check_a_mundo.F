@@ -96,30 +96,6 @@
 
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
-! There are restrictions for the use_theta_m option:
-! 1. The option to include moist theta in the WRF solver only works with a single domain.
-! 2. The option may not be used in conjunction with damp_opt=2.
-! 3. The option may not be used with rad_nudge.
-!-----------------------------------------------------------------------
-
-      IF ( ( model_config_rec % use_theta_m .EQ. 1 ) .AND. &
-           ( model_config_rec % damp_opt    .EQ. 2 ) ) THEN
-         CALL wrf_message ( "The use_theta_m option may not be paired with damp_opt=2." )
-         wrf_err_message = '--- ERROR: Either turn off use_theta_m, or select a different damp_opt option'
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         count_fatal_error = count_fatal_error + 1
-      END IF
-
-      IF ( ( model_config_rec % use_theta_m .EQ. 1 ) .AND. &
-           ( model_config_rec % rad_nudge   .EQ. 1 ) ) THEN
-         CALL wrf_message ( "The use_theta_m option may not be paired with rad_nudge=1." )
-         wrf_err_message = '--- ERROR: Either turn off use_theta_m, or turn off the rad_nudge option'
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         count_fatal_error = count_fatal_error + 1
-      END IF
-
-
-!-----------------------------------------------------------------------
 ! Check that all values of diff_opt and km_opt are filled in.  A flag
 ! value of "-1" from the nml file means that this column (domain) is not
 ! filled as a max_doamins variable.  Since we changed these two variables
@@ -631,6 +607,44 @@
             model_config_rec%icloud = 1
          END IF
       ENDDO
+
+!-----------------------------------------------------------------------
+! aercu_opt = 1 (CESM-aerosal) only works with MSKF, special Morrison
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%aercu_opt .GT. 0 .AND.       &
+              ( model_config_rec%cu_physics(i) .NE. MSKFSCHEME .OR. &
+              model_config_rec%mp_physics(i) .NE. MORR_TM_AERO ) ) THEN
+              oops = oops + 1
+         END IF
+      ENDDO
+
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: aercu_opt requires cu_physics = 11, and mp_physics = 40 '
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- Fix these options in namelist.input if you would like to use aercu_opt'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+
+!-----------------------------------------------------------------------
+! Set the namelist parameters for the aercu_opt > 0
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec % aercu_opt .GT. 0 ) THEN
+         model_config_rec % alevsiz_cu = 30
+         model_config_rec % no_src_types_cu = 10
+         DO i = 1, model_config_rec % max_dom
+            model_config_rec % scalar_pblmix(i) = 1
+         END DO
+
+         wrf_err_message = '--- NOTE: aercu_opt is in use, setting:  ' // &
+                           'alevsiz_cu=30, no_src_types_cu=10, scalar_pblmix = 1'
+         CALL wrf_message ( wrf_err_message )
+
+      END IF
 
 #endif
 
@@ -1164,16 +1178,15 @@
       END IF
 
 !-----------------------------------------------------------------------
-! If hailcast_opt = 1, horizontal grid spacing must be 4 km or finer.
+! If hailcast_opt = 1 for any domain, convective parameterization must be off for that domain.           
 !-----------------------------------------------------------------------
+
       DO i = 1, model_config_rec % max_dom
          IF ( ( model_config_rec%hailcast_opt(i) .NE. 0 ) .AND. &
-              ( model_config_rec%dx(i) .GT. 4000 ) ) THEN
-            wrf_err_message = '--- WARNING:  hailcast_opt requires a grid-spacing of 4 km or finer.'
-            CALL wrf_message ( wrf_err_message )
-            wrf_err_message = '---          hailcast_opt is now 0.'
-            CALL wrf_message ( wrf_err_message )
-            model_config_rec%hailcast_opt(i) = 0
+              (model_config_rec%cu_physics(i) .NE. 0) ) THEN
+              wrf_err_message = '--- hailcast_opt and cu_physics cannot both be turned on for the same domain. You must turn one of them off (=0).'
+              CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+              count_fatal_error = count_fatal_error + 1
          ENDIF
       ENDDO
 
@@ -1203,6 +1216,7 @@
               ( model_config_rec%cu_physics(1) .EQ. SCALESASSCHEME) .OR. &
               ( model_config_rec%cu_physics(1) .EQ. SASSCHEME     ) .OR. &
               ( model_config_rec%cu_physics(1) .EQ. OSASSCHEME    ) .OR. &
+              ( model_config_rec%cu_physics(1) .EQ. KSASSCHEME    ) .OR. &
               ( model_config_rec%cu_physics(1) .EQ. NSASSCHEME    ) .OR. &
               ( model_config_rec%cu_physics(1) .EQ. TIEDTKESCHEME ) ) THEN
             wrf_err_message = '--- WARNING: If use_adaptive_time_step, must use cudt=0 for the following CU schemes:'
@@ -1987,6 +2001,16 @@
       END IF
 
 !-----------------------------------------------------------------------
+! Need to know if this run has aercu_opt set to either 1 or 2,
+! so that we can set a derived namelist for packaging arrays.
+!-----------------------------------------------------------------------
+
+      model_config_rec % aercu_used = 0
+      IF ( model_config_rec %aercu_opt .GT. 0 ) THEN
+         model_config_rec % aercu_used = 1
+      END IF
+
+!-----------------------------------------------------------------------
 ! If any CAM scheme is turned on, then there are a few shared variables.
 ! These need to be allocated when any CAM scheme is active.
 !-----------------------------------------------------------------------
@@ -2047,6 +2071,20 @@
       ENDDO
 
 !-----------------------------------------------------------------------
+! If MYNN PBL is not used, set bl_mynn_edmf = 0 so that we don't get 
+! additional output 
+!-----------------------------------------------------------------------
+
+#if (EM_CORE == 1)
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME2 ) .AND. &
+              ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME3 ) ) THEN
+            model_config_rec % bl_mynn_edmf = 0
+         END IF
+      ENDDO
+#endif
+
+!-----------------------------------------------------------------------
 ! Set the namelist parameters for the RRTMG radiation scheme if either
 ! ra_lw_physics = RRTMG_LWSCHEME or ra_sw_physics = RRTMG_SWSCHEME.
 !-----------------------------------------------------------------------
@@ -2089,26 +2127,6 @@
       WRITE (wrf_err_message, FMT='(A,I6)') '--- NOTE: num_soil_layers has been set to ', &
                                              model_config_rec % num_soil_layers
       CALL wrf_message ( wrf_err_message )
-
-!-----------------------------------------------------------------------
-!  The P3 MP schemes must be used with the RRTMG radiation schemes.
-!-----------------------------------------------------------------------
-
-      DO i = 1, model_config_rec % max_dom
-         IF ( ( model_config_rec % mp_physics(i) .EQ. P3_1CATEGORY    )   .OR.  &
-              ( model_config_rec % mp_physics(i) .EQ. P3_1CATEGORY_NC ) ) THEN
-
-            IF ( ( ( model_config_rec % ra_lw_physics(i) .EQ. RRTMG_LWSCHEME      )   .OR.   &
-                   ( model_config_rec % ra_lw_physics(i) .EQ. RRTMG_LWSCHEME_FAST ) ) .AND.  &
-                 ( ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME      )   .OR.   &
-                   ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME_FAST ) ) ) THEN
-               !  No op, everything is fine. This is just easier logic to understand
-            ELSE
-               wrf_err_message = '--- ERROR: P3 MP (mp_physics=50 or 51) requires using RRTMG LW and SW schemes.'
-               CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
-            END IF
-         END IF
-      END DO
 
    END SUBROUTINE set_physics_rconfigs
 

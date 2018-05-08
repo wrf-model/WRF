@@ -31,7 +31,8 @@ module da_obs_io
       wind_sd_airep,wind_sd_sound,wind_sd_metar,wind_sd_ships,wind_sd_qscat,wind_sd_buoy,wind_sd_pilot,wind_stats_sd,&
       thin_conv, thin_conv_ascii, lsac_nh_step, lsac_nv_step, lsac_nv_start, lsac_print_details, &
       lsac_use_u, lsac_use_v, lsac_use_t, lsac_use_q, lsac_u_error, lsac_v_error, lsac_t_error, lsac_q_error, &
-      gpsro_drift, max_gpseph_input, use_gpsephobs, gpseph, gpseph_loadbalance, kds, kde, kts, kte
+      gpsro_drift, max_gpseph_input, use_gpsephobs, gpseph, gpseph_loadbalance, kds, kde, kts, kte, &
+      use_radar_rhv, use_radar_rqv
 
    use da_define_structures, only : iv_type, multi_level_type, multi_level_type_BUFR, &
       radar_multi_level_type, y_type, field_type, each_level_type, &

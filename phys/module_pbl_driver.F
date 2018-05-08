@@ -16,7 +16,7 @@ CONTAINS
                  ,mznt                                             &
 #endif
                  ,ht                                               &   
-                 ,ust,pblh,hfx,qfx,grdflx                          &
+                 ,ust,pblh,hfx,qfx,grdflx,hpbl_hold                &
                  ,u_phy,v_phy,w,th_phy,rho                         &
                  ,p_phy,pi_phy,p8w,t_phy,dz8w,z                    &
                  ,exch_h,exch_m,akhs,akms                          &
@@ -52,6 +52,7 @@ CONTAINS
                  ,edmf_a,edmf_w,edmf_thl                           &
                  ,edmf_qt,edmf_ent,edmf_qc                         &
                  ,vdfg                                             &
+                 ,nupdraft,maxMF,ktop_shallow                      & 
                  ,spp_pbl,pattern_spp_pbl                          &
 #if (NMM_CORE==1)
                  ,DISHEAT                                          &
@@ -75,6 +76,7 @@ CONTAINS
                  ,dtaux3d,dtauy3d                                  &
                  ,dusfcg,dvsfcg,var2d,oc12d                        &
                  ,oa1,oa2,oa3,oa4,ol1,ol2,ol3,ol4                  &
+                 ,sina,cosa                                        &
              !  Optional moisture tracers
                  ,qv_curr, qc_curr, qr_curr                        &
                  ,qi_curr, qs_curr, qg_curr                        &
@@ -525,6 +527,8 @@ CONTAINS
                                                               T2, &
                                                            POWER, &
                                                             WSPD
+   REAL,       DIMENSION( ims:ime, jms:jme )                    , &
+               INTENT(INOUT)    ::                     HPBL_HOLD
 
 !
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ),            &
@@ -571,6 +575,10 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,              &
         &    INTENT(INOUT)::                               vdfg
 ! Katata-end
+   INTEGER, OPTIONAL, DIMENSION( ims:ime , jms:jme ),           &
+        &    INTENT(OUT) ::               nupdraft,ktop_shallow
+   REAL, OPTIONAL, DIMENSION( ims:ime , jms:jme ),              &
+        &    INTENT(OUT) ::                               maxMF
 
    REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ), &
         & INTENT(INOUT) ::  exch_tke      ! for GBM PBL scheme
@@ -700,7 +708,8 @@ CONTAINS
              intent(in  )   ::                                          var2d, &
                                                                         oc12d, &
                                                               oa1,oa2,oa3,oa4, &
-                                                              ol1,ol2,ol3,ol4
+                                                              ol1,ol2,ol3,ol4, &
+                                                                    sina,cosa
 ! paj
    REAL, OPTIONAL,   DIMENSION( ims:ime , jms:jme ),                    &  !mchen
                INTENT(IN   )    ::                        CTOPO, &
@@ -960,10 +969,7 @@ CONTAINS
          TSKOLD(i,j)=TSK(i,j)
          USTOLD(i,j)=UST(i,j)
          ZNTOLD(i,j)=ZNT(i,j)
-
-! REVERSE ORDER IN THE VERTICAL DIRECTION
-
-! testing change later
+         HPBL_HOLD(i,j)=PBLH(i,j)
 
          DO k=kts,kte
             v_phytmp(i,k,j)=v_phy(i,k,j)+v_frame
@@ -1690,7 +1696,10 @@ CONTAINS
                    &,bl_mynn_mixqt=bl_mynn_mixqt                         &
                    &,edmf_a=edmf_a,edmf_w=edmf_w,edmf_qt=edmf_qt         &
                    &,edmf_thl=edmf_thl,edmf_ent=edmf_ent,edmf_qc=edmf_qc &
+                   &,nupdraft=nupdraft,maxMF=maxMF                       &
+                   &,ktop_shallow=ktop_shallow                           &
                    &,spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl     &
+                   &,RTHRATEN=rthraten                                   &  
                    &,FLAG_QI=flag_qi,FLAG_QNI=flag_qni                   &
                    &,FLAG_QC=flag_qc,FLAG_QNC=flag_qnc                   &
                    ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
@@ -1926,7 +1935,7 @@ CONTAINS
    IF (PRESENT(dtaux3d)) THEN
        IF(gwd_opt .EQ. 1)THEN
              CALL gwdo(                                              &
-               U3D=u_phytmp,V3D=v_phytmp,T3D=t_phy      &
+               U3D=u_phy,V3D=v_phy,T3D=t_phy                        &
               ,QV3D=qv_curr                                         &
               ,P3D=p_phy,P3DI=p8w,PI3D=pi_phy,Z=z                        &
               ,RUBLTEN=rublten,RVBLTEN=rvblten                      &
@@ -1935,6 +1944,7 @@ CONTAINS
               ,VAR2D=var2d,OC12D=oc12d     &
               ,OA2D1=oa1,OA2D2=oa2,OA2D3=oa3,OA2D4=oa4  &
               ,OL2D1=ol1,OL2D2=ol2,OL2D3=ol3,OL2D4=ol4  &
+              ,SINA=sina,COSA=cosa                      &
               ,ZNU=znu,ZNW=znw,P_TOP=p_top                &
               ,CP=cp,G=g,RD=r_d                           &
               ,RV=r_v,EP1=ep_1,PI=3.141592653                        &

@@ -8742,7 +8742,8 @@
 ! -------------------      by Zhenxin 2011-06-20      --------------------------------!
              sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
 ! ----------------------  End,  Zhenxin 2011-06-20    --------------------------------!
-             swdkdir,swdkdif                                & ! jararias, 2013/08/10
+             swdkdir,swdkdif,                               & ! jararias, 2013/08/10
+             swdkdirc                                       & ! PAJ
              ,calc_clean_atm_diag                          &
                                                                 )
 
@@ -8973,7 +8974,8 @@
       integer, intent(in)        :: aer_opt
       real(kind=rb), intent(out) :: &
         swdkdir(:,:), & ! Total shortwave downward direct flux (W/m2),  Dimensions: (ncol,nlay) jararias, 2013/08/10
-        swdkdif(:,:)    ! Total shortwave downward diffuse flux (W/m2), Dimensions: (ncol,nlay) jararias, 2013/08/10
+        swdkdif(:,:), & ! Total shortwave downward diffuse flux (W/m2), Dimensions: (ncol,nlay) jararias, 2013/08/10
+        swdkdirc(:,:)   ! Total shortwave downward direct flux clear sky (W/m2),  Dimensions: (ncol,nlay)
 
 
 
@@ -9391,6 +9393,7 @@
             difdflux(i) = swdflx(iplon,i) - dirdflux(i)
             swdkdir(iplon,i) = dirdflux(i) ! all-sky direct flux   jararias, 2013/08/10
             swdkdif(iplon,i) = difdflux(i) ! all-sky diffuse flux  jararias, 2013/08/10
+            swdkdirc(iplon,i) = zbbcddir(i) ! PAJ: clear-sky direct flux
 
 !  UV/visible direct/diffuse fluxes
             dirdnuv(i) = zuvfddir(i)
@@ -9931,6 +9934,7 @@ CONTAINS
                        swdnflx, swdnflxc,                         &
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
                        swddir, swddni, swddif,                    & ! jararias 2013/08
+                       swdownc, swddnic, swddirc,                 & ! PAJ
                        xcoszen,julian                             & ! jararias 2013/08
                                                                   )
 !------------------------------------------------------------------
@@ -9999,7 +10003,11 @@ CONTAINS
    real, dimension(ims:ime,jms:jme), intent(out) :: &
             swddir,  &  ! All-sky broadband surface direct horiz irradiance
             swddni,  &  ! All-sky broadband surface direct normal irradiance
-            swddif      ! All-sky broadband surface diffuse irradiance
+            swddif,  &  ! All-sky broadband surface diffuse irradiance
+            swdownc, & ! Clear sky GHI
+            swddnic, & ! Clear ski DNI
+            swddirc    ! Clear ski direct horizontal irradiance
+
    real, optional, intent(in) :: &
             julian      ! julian day (1-366)
    real, dimension(ims:ime,jms:jme), intent(in) :: &
@@ -10182,7 +10190,8 @@ CONTAINS
                                                        sibnirdif     ! Zhenxin 2011-06-20
 
     real, dimension( 1, kts:kte+2 ) ::                   swdkdir, &  ! jararias, 2013/08/10
-                                                         swdkdif     ! jararias, 2013/08/10
+                                                         swdkdif, &  ! jararias, 2013/08/10
+                                                        swdkdirc     ! PAJ
 
     real, dimension( 1, kts:kte+1 )  ::                     swhr, &
                                                            swhrc
@@ -11099,7 +11108,8 @@ CONTAINS
 ! -----      Zhenxin added for ssib coupiling 2011-06-20 --------!
              sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
 ! --------------------   End of addiation by Zhenxin 2011-06-20 ------!
-             swdkdir, swdkdif                      &  ! jararias, 2012/08/10
+             swdkdir, swdkdif,                     &  ! jararias, 2012/08/10
+             swdkdirc                              &  ! PAJ
              ,calc_clean_atm_diag                 &
                                                    )
 
@@ -11136,6 +11146,9 @@ CONTAINS
             swddir(i,j)    = swdkdir(1,1)          ! jararias 2013/08/10
             swddni(i,j)    = swddir(i,j) / coszrs  ! jararias 2013/08/10
             swddif(i,j)    = swdkdif(1,1)          ! jararias 2013/08/10
+            swdownc(i, j)  = swdflxc(1,1)          ! PAJ: clear-sky GHI
+            swddirc(i,j)   = swdkdirc(1,1)         ! PAJ: clear-sky direct normal irradiance
+            swddnic(i,j)   = swddirc(i,j) / coszrs ! PAJ: clear-sky direct normal irradiance
 
 ! Output up and down layer fluxes for total and clear sky.
 ! Vertical ordering is from bottom to top in units of W m-2. 
@@ -11180,6 +11193,9 @@ CONTAINS
             swddir(i,j)    = 0.  ! jararias 2013/08/10
             swddni(i,j)    = 0.  ! jararias 2013/08/10
             swddif(i,j)    = 0.  ! jararias 2013/08/10
+            swdownc(i, j)  = 0.0 ! PAJ
+            swddnic(i,j)   = 0.0 ! PAJ
+            swddirc(i,j)   = 0.0 ! PAJ
             swcf(i,j)      = 0.
 
       endif

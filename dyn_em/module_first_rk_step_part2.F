@@ -7,8 +7,8 @@ MODULE module_first_rk_step_part2
 
 CONTAINS
 
-  SUBROUTINE first_rk_step_part2 (   grid , config_flags              &
-                             , moist , moist_tend               &
+  SUBROUTINE first_rk_step_part2 (   grid , config_flags        &
+                             , moist , moist_old , moist_tend   &
                              , chem  , chem_tend                &
                              , tracer, tracer_tend              &
                              , scalar , scalar_tend             &
@@ -18,12 +18,12 @@ CONTAINS
                              , ph_tendf, mu_tendf               &
                              , tke_tend                         &
                              , adapt_step_flag , curr_secs      &
-                             , psim , psih , wspd , gz1oz0 , chklowq &
-                             , cu_act_flag , hol , th_phy        &
-                             , pi_phy , p_phy , t_phy     &
-                             , dz8w , p8w , t8w           &
-                             , nba_mij, n_nba_mij         & !JDM
-                             , nba_rij, n_nba_rij         & !JDM
+                             , psim , psih , gz1oz0 , chklowq   &
+                             , cu_act_flag , hol , th_phy       &
+                             , pi_phy , p_phy , t_phy           &
+                             , dz8w , p8w , t8w                 &
+                             , nba_mij, n_nba_mij               & !JDM
+                             , nba_rij, n_nba_rij               & !JDM
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &
@@ -37,6 +37,7 @@ CONTAINS
     USE module_model_constants
     USE module_domain, ONLY : domain
     USE module_configure, ONLY : grid_config_rec_type, model_config_rec
+    USE module_big_step_utilities_em, ONLY : conv_t_tendf_to_moist
 #ifdef DM_PARALLEL
     USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, &
                           wrf_dm_maxval, wrf_err_message, local_communicator_x, local_communicator_y
@@ -79,6 +80,7 @@ CONTAINS
     REAL, INTENT(IN)                           :: curr_secs
 
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_moist),INTENT(INOUT)   :: moist
+    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_moist),INTENT(IN)      :: moist_old
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_moist),INTENT(INOUT)   :: moist_tend
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_chem),INTENT(INOUT)   :: chem
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,num_chem),INTENT(INOUT)   :: chem_tend
@@ -90,7 +92,6 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,1:1,jms:jme,num_fdda2d),INTENT(INOUT)      :: fdda2d
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: psim
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: psih
-    REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: wspd
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: gz1oz0
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: chklowq
     LOGICAL ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: cu_act_flag
@@ -627,7 +628,8 @@ ENDIF
             config_flags%cu_physics == NTIEDTKESCHEME .or.   &
             config_flags%cu_physics == CAMZMSCHEME    .or.   &
             config_flags%cu_physics == SCALESASSCHEME .or.   &
-            config_flags%cu_physics == NSASSCHEME ) THEN
+            config_flags%cu_physics == NSASSCHEME     .or.   &
+            config_flags%cu_physics == KSASSCHEME ) THEN
 #      include "HALO_EM_PHYS_CU.inc"
        ENDIF
        IF ( config_flags%grid_fdda .ge. 1) THEN
@@ -750,8 +752,10 @@ BENCH_END(update_phy_ten_tim)
 
 =============================================================
 INTENTIONALLY PLACED HERE TO BREAK COMPILE
-The DAMPTOP routine needs to have 1d column arrays c1 and c2
+1. The DAMPTOP routine needs to have 1d column arrays c1 and c2
 to correctly use the column pressures mut, muu, and muv.
+2. The DAMPTOP routine needs to have the grid%t_2 evaluated
+to see if perturbation of moist potential temperature is OK.
 =============================================================
 
        IF ( (config_flags%damp_opt == 101) .OR. &
@@ -806,6 +810,85 @@ BENCH_START(tke_rhs_tim)
 BENCH_END(tke_rhs_tim)
 
        ENDIF
+
+       IF ( grid%obs_nudge_opt .EQ. 1 .AND. grid%xtime <= grid%fdda_end ) THEN
+# ifdef DM_PARALLEL
+#       include "HALO_OBS_NUDGE.inc"
+#endif
+!***********************************************************************
+! This section for obs nudging
+         !$OMP PARALLEL DO   &
+         !$OMP PRIVATE ( ij )
+
+         DO ij = 1 , grid%num_tiles
+
+           CALL fddaobs_driver (grid%grid_id, model_config_rec%grid_id, &
+                   model_config_rec%parent_id, config_flags%restart,    &
+                   config_flags,                                        &
+                   grid%obs_nudge_opt,                                  &
+                   grid%obs_ipf_errob,                                  &
+                   grid%obs_ipf_nudob,                                  &
+                   grid%fdda_start,                                     &
+                   grid%fdda_end,                                       &
+                   grid%obs_nudge_wind,                                 &
+                   grid%obs_nudge_temp,                                 &
+                   grid%obs_nudge_mois,                                 &
+                   grid%obs_nudge_pstr,                                 &
+                   grid%obs_coef_wind,                                  &
+                   grid%obs_coef_temp,                                  &
+                   grid%obs_coef_mois,                                  &
+                   grid%obs_coef_pstr,                                  &             
+                   grid%obs_rinxy,                                      &
+                   grid%obs_rinsig,                                     &
+                   grid%obs_npfi,                                       &
+                   grid%obs_ionf,                                       &
+                   grid%obs_prt_max,                                    &
+                   grid%obs_prt_freq,                                   &
+                   grid%obs_idynin,                                     &
+                   grid%obs_dtramp,                                     &
+                   grid%parent_grid_ratio,                              &
+                   grid%max_dom, grid%itimestep,                        &
+                   grid%xtime,                                          &
+                   grid%dt, grid%gmt, grid%julday, grid%fdob,           &
+                   grid%max_obs,                                        &
+                   model_config_rec%nobs_ndg_vars,                      &
+                   model_config_rec%nobs_err_flds,                      &
+                   grid%fdob%nstat, grid%fdob%varobs, grid%fdob%errf,   &
+                   grid%dx, grid%KPBL,grid%HT,                          &
+                   grid%mut, grid%muu, grid%muv, grid%c1h, grid%c2h,    &
+                   grid%msftx, grid%msfty, grid%msfux, grid%msfuy, grid%msfvx, grid%msfvy, &
+                   p_phy, t_tendf, t0,                                  &
+                   grid%u_2, grid%v_2, grid%th_phy_m_t0,                &
+                   moist(ims,kms,jms,P_QV),                             &
+                   grid%pb, grid%p_top, grid%p, grid%phb, grid%ph_2,    &
+                   grid%uratx, grid%vratx, grid%tratx,                  &
+                   ru_tendf, rv_tendf,                                  &
+                   moist_tend(ims,kms,jms,P_QV), grid%obs_savwt,        &
+                   grid%regime, grid%pblh, grid%z_at_w, grid%z,         &
+                   ids,ide, jds,jde, kds,kde,                           &
+                   ims,ime, jms,jme, kms,kme,                           &
+                   grid%i_start(ij), min(grid%i_end(ij),ide-1),         &
+                   grid%j_start(ij), min(grid%j_end(ij),jde-1),         &
+                   k_start    , min(k_end,kde-1)                     )
+ 
+         ENDDO
+         !$OMP END PARALLEL DO
+       ENDIF  ! obs_nudge_opt .eq. 1
+
+       IF ( config_flags%use_theta_m .EQ. 1 ) THEN
+         !$OMP PARALLEL DO   &
+         !$OMP PRIVATE ( ij )
+         DO ij = 1 , grid%num_tiles
+           CALL conv_t_tendf_to_moist ( grid%t_1 , moist_old(ims,kms,jms,P_qv) ,  &
+                                        t_tendf  , moist_tend(ims,kms,jms,P_qv) , &
+                                        ids, ide, jds, jde, kds, kde ,            &
+                                        ims, ime, jms, jme, kms, kme ,            &
+                                        grid%i_start(ij), grid%i_end(ij),         &
+                                        grid%j_start(ij), grid%j_end(ij),         &
+                                        k_start    , k_end                        )
+         END DO 
+         !$OMP END PARALLEL DO
+       END IF ! use moist theta
 
 ! calculate vertical diffusion first and then horizontal
 ! (keep this order)
@@ -881,69 +964,6 @@ BENCH_START(hor_diff_tim)
 BENCH_END(hor_diff_tim)
        ENDIF
 
-       IF ( grid%obs_nudge_opt .EQ. 1 .AND. grid%xtime <= grid%fdda_end ) THEN
-# ifdef DM_PARALLEL
-#       include "HALO_OBS_NUDGE.inc"
-#endif
-!***********************************************************************
-! This section for obs nudging
-         !$OMP PARALLEL DO   &
-         !$OMP PRIVATE ( ij )
-
-         DO ij = 1 , grid%num_tiles
-
-           CALL fddaobs_driver (grid%grid_id, model_config_rec%grid_id, &
-                   model_config_rec%parent_id, config_flags%restart,    &
-                   config_flags,                                        &
-                   grid%obs_nudge_opt,                                  &
-                   grid%obs_ipf_errob,                                  &
-                   grid%obs_ipf_nudob,                                  &
-                   grid%fdda_start,                                     &
-                   grid%fdda_end,                                       &
-                   grid%obs_nudge_wind,                                 &
-                   grid%obs_nudge_temp,                                 &
-                   grid%obs_nudge_mois,                                 &
-                   grid%obs_nudge_pstr,                                 &
-                   grid%obs_coef_wind,                                  &
-                   grid%obs_coef_temp,                                  &
-                   grid%obs_coef_mois,                                  &
-                   grid%obs_coef_pstr,                                  &             
-                   grid%obs_rinxy,                                      &
-                   grid%obs_rinsig,                                     &
-                   grid%obs_npfi,                                       &
-                   grid%obs_ionf,                                       &
-                   grid%obs_prt_max,                                    &
-                   grid%obs_prt_freq,                                   &
-                   grid%obs_idynin,                                     &
-                   grid%obs_dtramp,                                     &
-                   grid%parent_grid_ratio,                              &
-                   grid%max_dom, grid%itimestep,                        &
-                   grid%xtime,                                          &
-                   grid%dt, grid%gmt, grid%julday, grid%fdob,           &
-                   grid%max_obs,                                        &
-                   model_config_rec%nobs_ndg_vars,                      &
-                   model_config_rec%nobs_err_flds,                      &
-                   grid%fdob%nstat, grid%fdob%varobs, grid%fdob%errf,   &
-                   grid%dx, grid%KPBL,grid%HT,                          &
-                   grid%mut, grid%muu, grid%muv, grid%c1h, grid%c2h,    &
-                   grid%msftx, grid%msfty, grid%msfux, grid%msfuy, grid%msfvx, grid%msfvy, &
-                   p_phy, t_tendf, t0,                                  &
-                   grid%u_2, grid%v_2, grid%t_2,                        &
-                   moist(ims,kms,jms,P_QV),                             &
-                   grid%pb, grid%p_top, grid%p, grid%phb, grid%ph_2,    &
-                   grid%uratx, grid%vratx, grid%tratx,                  &
-                   ru_tendf, rv_tendf,                                  &
-                   moist_tend(ims,kms,jms,P_QV), grid%obs_savwt,        &
-                   grid%regime, grid%pblh, grid%z_at_w, grid%z,         &
-                   ids,ide, jds,jde, kds,kde,                           &
-                   ims,ime, jms,jme, kms,kme,                           &
-                   grid%i_start(ij), min(grid%i_end(ij),ide-1),         &
-                   grid%j_start(ij), min(grid%j_end(ij),jde-1),         &
-                   k_start    , min(k_end,kde-1)                     )
- 
-         ENDDO
-         !$OMP END PARALLEL DO
-       ENDIF  ! obs_nudge_opt .eq. 1
 ! 
 !***********************************************************************
 

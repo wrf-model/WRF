@@ -535,7 +535,8 @@ Namelist variables for controlling the adaptive time step option:
                                                  (only used in very extreme situation)
                                                  default value = 0
                                                  gsfcgce_hail is ignored if gsfcgce_2ice is set to 1 or 2.
- hail_opt                            = 0       ; hail switch for WSM6, WDM6 and Morrison schemes: 0 - off, 1 - on (new in 3.6.1)
+ hail_opt                            = 0       ; hail switch for WSM6 and WDM6 : 0 - off, 1 - on (new in 3.6.1)
+ morr_rimed_ice                      = 1       ; hail switch for Morrison schemes (mp_physics=10 and 40: 0 - off, 1 - on (new in 4.0)
  progn (max_dom)                     = 0       ; switch to use mix-activate scheme (Only for Morrison, WDM6, WDM5, 
                                                  and NSSL_2MOMCCN/NSSL_2MOM
  ccn_conc                            = 1.E8    ; CCN concentration, used by WDM schemes (new in 3.6.1)
@@ -544,7 +545,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1       ; turn off latent heating from a microphysics scheme
  use_mp_re                           = 1       ; whether to use effective radii computed in mp schemes in RRTMG (new in 3.8).
                                                  0: do not use; 1: use effective radii
-                                                 (The mp schemes that compute effective radii are 3,4,6,8,14,16,17-21)
+                                                 (The mp schemes that compute effective radii are 3,4,6,8,14,16,17-21,28)
 
  ra_lw_physics (max_dom)             longwave radiation option
                                      = 0, no longwave radiation
@@ -555,6 +556,7 @@ Namelist variables for controlling the adaptive time step option:
                                           also requires levsiz, paerlev, cam_abs_dim1/2 (see below)
                                      = 4, rrtmg scheme
                                        (Default values for GHG in V3.5: co2vmr=379.e-6, n2ovmr=319.e-9, ch4vmr=1774.e-9)
+                                     = 14, rrtmg-k scheme from KIAPS
                                      = 24, fast rrtmg scheme for GPU and MIC (since 3.7)
                                      = 5, Goddard longwave scheme
                                      = 7, FLG (UCLA) scheme 
@@ -569,6 +571,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 3, cam scheme
                                           also must set levsiz, paerlev, cam_abs_dim1/2 (see below)
                                      = 4, rrtmg scheme
+                                     = 14, rrtmg-k scheme from KIAPS
                                      = 24, fast rrtmg scheme for GPU and MIC (since 3.7)
                                      = 5, Goddard shortwave scheme
                                      = 7, FLG (UCLA) scheme
@@ -763,10 +766,12 @@ Namelist variables for controlling the adaptive time step option:
                                      = 7, Zhang-McFarlane scheme from CAM5 (CESM 1_0_1)
                                      = 10, Modified Kain-Fritsch scheme with trigger function based on PDFs (ARW only)
                                      = 11, Multi-scale Kain-Fritsch scheme
-                                     = 14, New GFS simplified Arakawa-Schubert scheme from YSU (ARW only)
+                                     = 14, A modified  GFS simplified Arakawa-Schubert scheme that enables NSAS to work 
+                                           in various model grids across gray-zone resolutions (from KIAPS,ARW only)
                                      = 16, A newer Tiedtke scheme
                                      = 94, 2015 GFS Simplified Arakawa-Schubert scheme (HWRF) 
                                      = 95, Previous GFS Simplified Arakawa-Schubert scheme (HWRF) 
+                                     = 96, Previous NEW GFS simplified Arakawa-Schubert scheme from YSU (ARW only)
                                      = 93, Grell-Devenyi ensemble scheme
                                      = 99, previous Kain-Fritsch scheme
 
@@ -807,6 +812,14 @@ Namelist variables for controlling the adaptive time step option:
  minDeepFreq(max_dom)                minimum frequency required before deep convection is allowed (0.333)
  minShallowFreq(max_dom)             minimum frequency required before shallow convection is allowed (1.0e-2)
  shcu_aerosols_opt(max_dom)          whether aerosols in shcu:  0=none, 2=prognostic (run with WRF-Chem), 
+
+ For MSKF scheme:
+ aercu_opt                           option to control aerosol interaction in MSKF and Morrison microphysics (mp_physics=40)
+                                     = 0: no aerosol interaction
+                                     = 1: aerosol interaction with MSKF only
+                                     = 2: aerosol interaction with both MSKF and Morrison
+ aercu_fct                           factor to multiply with aerosol amount
+                                     = 1.: default value
 
  ncnvc (max_dom)                     = FOR NMM: number of fundamental timesteps between
                                                 calls to convection; the value is set in Registry.NMM
@@ -895,6 +908,8 @@ Namelist variables for controlling the adaptive time step option:
  rdmaxalb                            = .true.   ; use snow albedo from geogrid; false means using values from table
  rdlai2d                             = .false.  ; use LAI from input; false means using values from table
                                                   if sst_update=1, LAI will also be in wrflowinp file
+ dust_emis                           = 0        ; Enable (0=no, 1=yes) surface dust emission scheme to enter mp_physics=28 QNIFA (ice-friendly aerosol variable)
+ erosion_dim                         = 3        ; In conjunction with dust_emis=1, this value can only be set equal to 3 (erodibility information)
  bucket_mm                           = -1.      ; bucket reset value for water accumulations (value in mm, -1.=inactive)
  bucket_J                            = -1.      ; bucket reset value for energy accumulations (value in J, -1.=inactive)
  tmn_update                          = 0        ; update deep soil temperature (1, yes; 0, no)
@@ -954,7 +969,7 @@ Namelist variables for controlling the adaptive time step option:
                                                   Noah, aimed particularly toward improving treatment of snow as it relates 
                                                   to the vegetation canopy. Also uses new columns added in VEGPARM.TBL
  do_radar_ref			     = 0, 	; 1 = allows radar reflectivity to be computed using mp-scheme-specific
- 						  parameters.  Currently works for mp_physics = 2,4,6,7,8,10,14,16
+ 						  parameters.  Currently works for mp_physics = 2,4,6,7,8,10,14,16,28
  hailcast_opt (max_dom)              = 0, 	; 1 = 1-D hail growth model which predicts 1st-5th rank-ordered hail diameters, mean hail 
                                                   diagmeter and standard deviation of hail diameter. (Adams-Selin and Ziegler, MWR Dec 2016.) 
                                                   Updated in V3.9, replacing afwa_hailcast_opt in previous versions.
@@ -1165,6 +1180,19 @@ Options for use with the Noah-MP Land Surface Model:
                                                 ;    2 -> Sellers (1992)
                                                 ;    3 -> adjusted Sellers to decrease RSURF for wet soil
                                                 ;    4 -> option 1 for non-snow; rsurf = rsurf_snow for snow (set in MPTABLE); AD v3.8
+ opt_soil                           = 1,        ; Noah-MP options for defining soil properties
+                                                ;    1 -> use input dominant soil texture
+		                                ;    2 -> use input soil texture that varies with depth
+                                                ;    3 -> use soil composition (sand, clay, orgm) and pedotransfer functions (OPT_PEDO)
+		                                ;    4 -> use input soil properties (BEXP_3D, SMCMAX_3D, etc.)
+
+ opt_pedo                           = 1,        ; Noah-MP options for pedotransfer functions (used when OPT_SOIL = 3)
+                                                ;    1 -> Saxton and Rawls (2006)
+
+ opt_crop                           = 0,        ; options for crop model
+                                                ;    0 -> No crop model, will run default dynamic vegetation
+                                                ;    1 -> Liu, et al. 2016
+		                                ;    2 -> Gecros (Genotype-by-Environment interaction on CROp growth Simulator) Yin and van Laar, 2005
  /
 
  &fdda
@@ -1469,7 +1497,18 @@ The following are for observation nudging:
  idtadt                              = 1,       ; fundamental timesteps between calls to Euler advection, dynamics (NMM only)
  idtadc                              = 1        ; fundamental timesteps between calls to Euler advection, chemistry (NMM only)
 
-
+ &ideal
+ ideal_case                          = 0        ; ideal case number. Option selects CASEs within module_initialize_ideal.F
+                                                  realcase       ideal_case=0
+                                                  hill2d_x       ideal_case=1
+                                                  quarter_ss     ideal_case=2
+                                                  convrad        ideal_case=3
+                                                  squall2d_x     ideal_case=4
+                                                  squall2d_y     ideal_case=5
+                                                  grav2d_x       ideal_case=6
+                                                  b_wave         ideal_case=7
+                                                  seabreeze2d_x  ideal_case=8
+                                                  les            ideal_case=9
 
  &tc                                            ; controls for tc_em.exe ONLY, no impact on real, ndown, or model
 
@@ -1648,3 +1687,24 @@ Assuming that the WRF and real codes have been built with the HVC compile-time o
 2. To turn OFF the HVC
 &dynamics
  hybrid_opt         = 0,
+
+
+
+Traditional / full fields model output
+
+The ARW WRF model output may be modified at run-time to also include a stream that contains
+more traditional fields: temperature, pressure, geopotential height, etc. The flag needs to 
+be activated in the namelist (diag_nwp2 = 1). In the registry.trad_fields, the output stream 
+is "h1", so that stream needs to be explicitly requested in the namelist.input file.
+
+ &diags
+ diag_nwp2 = 1
+ /
+
+ &time_control
+ io_form_auxhist1                    = 2
+ auxhist1_interval                   = 180,  30,   30,
+ frames_per_auxhist1                 = 1,     1,    1,
+ auxhist1_outname                    = "wrf_trad_fields_d<domain>_<date>"
+ /
+

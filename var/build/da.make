@@ -344,8 +344,8 @@ da_etkf.o da_tools.o :
 da_4dvar.o :
 	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
           ${LN} ${WRFPLUS_DIR}/dyn_em/module_big_step_utilities_em.mod . ; \
-          ${LN} ${WRFPLUS_DIR}/dyn_em/g_module_big_step_utilities_em.mod . ; \
-          ${LN} ${WRFPLUS_DIR}/dyn_em/a_module_big_step_utilities_em.mod . ; \
+          ${LN} ${WRFPLUS_DIR}/wrftladj/g_module_big_step_utilities_em.mod . ; \
+          ${LN} ${WRFPLUS_DIR}/wrftladj/a_module_big_step_utilities_em.mod . ; \
           ${LN} ${WRFPLUS_DIR}/main/module_wrf_top.mod . ; \
           ${LN} ${WRFPLUS_DIR}/share/mediation_pertmod_io.mod . ; \
         fi
@@ -387,10 +387,10 @@ da_radiance.o :
         fi
 	if $(FGREP) '!$$OMP' $*.f ; then \
           if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITH OMP ; fi ; \
-	  $(FC) -c $(FCFLAGS) $(OMP) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC) $(HDF5_INC) $*.f ; \
+	  $(FC) -c $(FCFLAGS) $(OMP) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC) $(HDF5_INC) -I$(NETCDF)/include $*.f ; \
         else \
 	if [ -n "$(OMP)" ] ; then echo COMPILING $*.f90 WITHOUT OMP ; fi ; \
-	  $(FC) -c $(FCFLAGS) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC) $(HDF5_INC) $*.f ; \
+	  $(FC) -c $(FCFLAGS) $(PROMOTION) $(CRTM_SRC) $(RTTOV_SRC) $(HDF5_INC) -I$(NETCDF)/include $*.f ; \
         fi
 
 da_radiance1.o \

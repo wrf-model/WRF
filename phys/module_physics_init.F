@@ -335,7 +335,6 @@ CONTAINS
             INTENT(INOUT)    ::                         IVGTYP, &
                                                         ISLTYP
 
-   INTEGER                             ::             HAIL_OPT
 #if ( EM_CORE == 1 )
    !BSINGH - For WRFCuP scheme
    REAL, DIMENSION( ims:ime, jms:jme )                        , &

@@ -345,7 +345,7 @@ activated, the user must specify a reasonable ocean.  Currently, this is the onl
 available to run the 3d ocean option.
 
  &physics
- sf_ocean_physics                    = 0 (default), Activate ocean model; 1 (mixed layer model), 2 (3d ocean)
+ sf_ocean_physics                    = activate ocean model (0=no, 1=1d mixed layer; 2=3D PWP, no bathymetry)
 
  &domains
  ocean_levels                        = 30,
@@ -918,8 +918,7 @@ Namelist variables for controlling the adaptive time step option:
  slope_rad (max_dom)                 = 0        ; slope effects for solar radiation (1=on, 0=off)
  topo_shading (max_dom)              = 0        ; neighboring-point shadow effects for solar radiation (1=on, 0=off)
  shadlen                             = 25000.   ; max shadow length in meters for topo_shading=1
- sf_ocean_physics                    = 0        ; activate ocean model (0=no, 1=1d mixed layer; 2=3D PWP, no bathy)
-                                                ; works with sf_surface_physics = 1 only
+ sf_ocean_physics                    = 0        ; activate ocean model (0=no, 1=1d mixed layer; 2=3D PWP, no bathymetry)
  oml_hml0                            = 50       ; oml model can be initialized with a constant depth everywhere (m)
  oml_gamma                           = 0.14     ; oml deep water lapse rate (K m-1)
  oml_relaxation_time                 = 0.       ; Relaxation time (in second) of mixed layer ocean model back to original values 

@@ -285,7 +285,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
    {
    if ( $ENV{JASPERLIB} && $ENV{JASPERINC} )
      {
-     printf "\n\nIf you REALLY want Grib2 output from WRF, modify the arch/Config_new.pl script.\n" ;
+     printf "\n\nIf you REALLY want Grib2 output from WRF, modify the arch/Config.pl script.\n" ;
      printf "Right now you are not getting the Jasper lib, from the environment, compiled into WRF.\n\n" ;
      }
    else
@@ -369,8 +369,8 @@ until ( $validresponse ) {
 
   $opt = 1 ;
   $optstr = "";
-  open CONFIGURE_DEFAULTS, "< ./arch/configure_new.defaults" 
-      or die "Cannot open ./arch/configure_new.defaults for reading" ;
+  open CONFIGURE_DEFAULTS, "< ./arch/configure.defaults" 
+      or die "Cannot open ./arch/configure.defaults for reading" ;
   while ( <CONFIGURE_DEFAULTS> ) {
 
      $currline = $_;
@@ -453,7 +453,7 @@ if ( $response == 2 || $response == 3 ) {
     $sw_terrain_and_landuse =" -DTERRAIN_AND_LANDUSE" ;
   }
 } 
-open CONFIGURE_DEFAULTS, "cat ./arch/configure_new.defaults |"  ;
+open CONFIGURE_DEFAULTS, "cat ./arch/configure.defaults |"  ;
 $latchon = 0 ;
 while ( <CONFIGURE_DEFAULTS> )
 {
@@ -461,9 +461,9 @@ while ( <CONFIGURE_DEFAULTS> )
   {
     close CONFIGURE_DEFAULTS ;
     if ( $sw_opt_level eq "-f" ) {
-      open CONFIGURE_DEFAULTS, "cat ./arch/postamble_new ./arch/noopt_exceptions_f |"  or die "horribly" ;
+      open CONFIGURE_DEFAULTS, "cat ./arch/postamble ./arch/noopt_exceptions_f |"  or die "horribly" ;
     } else {
-      open CONFIGURE_DEFAULTS, "cat ./arch/postamble_new ./arch/noopt_exceptions |"  or die "horribly" ;
+      open CONFIGURE_DEFAULTS, "cat ./arch/postamble ./arch/noopt_exceptions |"  or die "horribly" ;
     }
   }
   $_ =~ s:CONFIGURE_NMM_CORE:$sw_nmm_core:g ;
@@ -657,7 +657,7 @@ while ( <CONFIGURE_DEFAULTS> )
           && ( index( $_, $sw_os ) >= 0 ) && ( index( $_, $sw_mach ) >= 0 ) 
           && ( index($_, $paropt) >= 0 ) )
     {
-      # We are cycling through the configure_new.defaults file again.
+      # We are cycling through the configure.defaults file again.
       # This bit tries to match the line corresponding to the option we previously selected.
       $x=substr($_,6) ;
       $x =~ s/#.*$//g ;
@@ -779,7 +779,7 @@ close POSTAMBLE ;
 close ARCH_NOOPT_EXCEPTIONS ;
 
 open CONFIGURE_WRF, "> configure.wrf" or die "cannot append configure.wrf" ;
-open ARCH_PREAMBLE, "< arch/preamble_new" or die "cannot open arch/preamble_new" ;
+open ARCH_PREAMBLE, "< arch/preamble" or die "cannot open arch/preamble" ;
 my @preamble;
 # apply substitutions to the preamble...
 while ( <ARCH_PREAMBLE> )

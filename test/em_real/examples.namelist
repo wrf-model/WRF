@@ -306,18 +306,18 @@ Switching off latent heating from a microphysics scheme (must also set cu_physic
  dampcoef                            = 0.2,    0.2,    0.2
 
 ** Using expanded boundary zone and exponential decay option (add or modify these in
-    namelist record &bdy_control):
+    namelist record &bdy_control). 
+    spec_zone is ALWAYS = 1 
+    relax_zone is ALWAYS = spec_bdy_width - spec_zone
 
  spec_bdy_width                      = 10,
- spec_zone                           = 1,
- relax_zone                          = 9,
- specified                           = .true., .false.,.false.,
+ specified                           = .true.,
  spec_exp                            = 0.33
 
 For a tropical channel configuration, set the following:
 
- specified                           = .true., .false.,.false.,
- periodic_x                          = .true., .false.,.false.,
+ specified                           = .true.,
+ periodic_x                          = .true.,
 
 ** using io quilting option to improve output efficiency for large domain runs
     (note that this is a separate namelist record):

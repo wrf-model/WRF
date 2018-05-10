@@ -96,6 +96,42 @@
 
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
+! LBC: Always the case, nested setup up: F, T, T, T
+!-----------------------------------------------------------------------
+   model_config_rec%nested(1)    = .FALSE.
+   DO i=2,model_config_rec%max_dom
+      model_config_rec%nested(i) = .TRUE.
+   END DO 
+
+!-----------------------------------------------------------------------
+! LBC: Always the case, nested domain BCs are always false.
+!-----------------------------------------------------------------------
+   DO i=2,model_config_rec%max_dom
+      model_config_rec%periodic_x(i)   = .FALSE.
+      model_config_rec%symmetric_xs(i) = .FALSE.
+      model_config_rec%symmetric_xe(i) = .FALSE.
+      model_config_rec%open_xs(i)      = .FALSE.
+      model_config_rec%open_xe(i)      = .FALSE.
+      model_config_rec%periodic_y(i)   = .FALSE.
+      model_config_rec%symmetric_ys(i) = .FALSE.
+      model_config_rec%symmetric_ye(i) = .FALSE.
+      model_config_rec%open_ys(i)      = .FALSE.
+      model_config_rec%open_ye(i)      = .FALSE.
+      model_config_rec%polar(i)        = .FALSE.
+      model_config_rec%specified(i)    = .FALSE.
+   END DO 
+
+!-----------------------------------------------------------------------
+! LBC: spec_bdy_width = spec_zone + relax_zone
+!-----------------------------------------------------------------------
+   IF ( model_config_rec%specified(1) ) THEN
+      model_config_rec%spec_zone = 1
+      model_config_rec%relax_zone = model_config_rec%spec_bdy_width - model_config_rec%spec_zone
+   END IF
+#endif
+
+#if (EM_CORE == 1)
+!-----------------------------------------------------------------------
 ! Check that all values of diff_opt and km_opt are filled in.  A flag
 ! value of "-1" from the nml file means that this column (domain) is not
 ! filled as a max_doamins variable.  Since we changed these two variables

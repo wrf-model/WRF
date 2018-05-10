@@ -1657,11 +1657,9 @@
 #if( BUILD_RRTMG_FAST != 1)
       IF ( ( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME_FAST )  .OR. &
            ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME_FAST )  ) THEN
-         wrf_err_message = '--- NOTE: RRTMG FAST schemes must be built with a compile-time flag'
+         wrf_err_message = '--- ERROR: RRTMG FAST schemes must be built with a default compile-time flag'
          CALL wrf_message ( wrf_err_message )
-         wrf_err_message = '--- NOTE: In configure.wrf, add "-DBUILD_RRTMG_FAST=1" to ARCHFLAGS'
-         CALL wrf_message ( wrf_err_message )
-         wrf_err_message = '--- NOTE: Remove all files that use that CPP flag'
+         wrf_err_message = '--- ERROR: Run ./clean -a, ./configure, ./compile scripts again'
          CALL wrf_message ( wrf_err_message )
          count_fatal_error = count_fatal_error + 1
       END IF

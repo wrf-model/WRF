@@ -1566,7 +1566,7 @@ state  real   mth12    i{ls}jf ozmixm      1    -   -     "OZMIXMTH12"  "Month 1
 state  real   pin       {ls}     misc      1    -   -      "PIN"             "PRESSURE LEVEL OF OZONE MIXING RATIO"  "millibar"
 
 # new rad variables
-state    real   o3rad           ikj     misc        1         -      irh      "o3rad"    "RADIATION 3D OZONE" "ppmv"
+state    real   o3rad           ikj     misc        1         -      rh       "o3rad"    "RADIATION 3D OZONE" "ppmv"
 
 ifdef HWRF=1
 rconfig   integer ntrack                 namelist,physics      max_domains  10       irh    "ntrack" "nest movement timestep (multiples of nphs)"

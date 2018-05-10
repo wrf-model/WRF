@@ -133,12 +133,8 @@ wrfplus : configcheck
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" physics_plus
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" em_core
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" wrftlmadj
-	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf )
-	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real em_real )
+	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrfplus )
 	( cd run ; /bin/rm -f *.exe ; ln -s ../main/*.exe . )
-	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
-	  ( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_SST_ESMF ) ; \
-	fi
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
 

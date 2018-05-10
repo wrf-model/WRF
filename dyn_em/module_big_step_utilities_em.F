@@ -5482,10 +5482,6 @@ END SUBROUTINE phy_prep_part2
        DO j = j_start, j_end
        DO k = k_start, k_end
        DO i = i_start, i_end
-#ifdef REVERT
-intentional compiler error, t_new is moist, h_diabatic is dry
-         t_new(i,k,j) = t_new(i,k,j)-h_diabatic(i,k,j)*dt
-#endif
            th_phy(i,k,j) = (t_new(i,k,j) + t0) / (1. + (R_v/R_d) * qv(i,k,j))
        ENDDO
        ENDDO
@@ -5494,9 +5490,6 @@ intentional compiler error, t_new is moist, h_diabatic is dry
        DO j = j_start, j_end
        DO k = k_start, k_end
        DO i = i_start, i_end
-#ifdef REVERT
-         t_new(i,k,j) = t_new(i,k,j)-h_diabatic(i,k,j)*dt
-#endif
          th_phy(i,k,j) =  t_new(i,k,j) + t0
        ENDDO
        ENDDO

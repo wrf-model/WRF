@@ -438,12 +438,12 @@ else
        /bin/cat Registry/Registry.NMM >> Registry/Registry
     endif
 # integrity check for a kludge where a hard coded value in the 
-# registry must match the same value in arch/preamble_new
+# registry must match the same value in arch/preamble
     set registryvalue=`grep 'dimspec.* q ' Registry/registry.dimspec | sed -e 's/..*constant=//' -e 's/ ..*$//'`
-    set preamblevalue=`grep 'DNMM_MAX_DIM=.*' arch/preamble_new | sed -e 's/..*-DNMM_MAX_DIM=//' -e 's/ ..*$//'`
+    set preamblevalue=`grep 'DNMM_MAX_DIM=.*' arch/preamble | sed -e 's/..*-DNMM_MAX_DIM=//' -e 's/ ..*$//'`
     if ( $registryvalue != $preamblevalue ) then
       echo "Harded coded value of dimspec q in Registry ($registryvalue) does not"
-      echo "equal the hard coded value of NMM_MAX_DIM in arch/preamble_new ($preamblevalue)"
+      echo "equal the hard coded value of NMM_MAX_DIM in arch/preamble ($preamblevalue)"
       echo "Please fix and try again."
       exit 2
     endif

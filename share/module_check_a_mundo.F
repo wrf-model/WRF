@@ -1692,6 +1692,8 @@
 
       IF ( ( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME )  .OR. &
            ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME )  .OR. &
+           ( model_config_rec % ra_lw_physics(1) .EQ. RRTMK_LWSCHEME )  .OR. &
+           ( model_config_rec % ra_lw_physics(1) .EQ. RRTMK_SWSCHEME )  .OR. &
            ( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME_FAST )  .OR. &
            ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME_FAST )  ) THEN
          wrf_err_message = '--- NOTE: RRTMG radiation is used, namelist ' // &
@@ -2122,16 +2124,20 @@
 
 !-----------------------------------------------------------------------
 ! Set the namelist parameters for the RRTMG radiation scheme if either
-! ra_lw_physics = RRTMG_LWSCHEME or ra_sw_physics = RRTMG_SWSCHEME.
+! ra_lw_physics or ra_sw_physics is set to one of the RRTMG schemes.
 !-----------------------------------------------------------------------
 
-      IF (( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME ) .OR. &
-          ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME )) THEN
+      IF (( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME      ) .OR. &
+          ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME      ) .OR. &
+          ( model_config_rec % ra_lw_physics(1) .EQ. RRTMK_LWSCHEME      ) .OR. &
+          ( model_config_rec % ra_sw_physics(1) .EQ. RRTMK_SWSCHEME      ) .OR. &
+          ( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME_FAST ) .OR. &
+          ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME_FAST )) THEN
          model_config_rec % levsiz = 59
          model_config_rec % alevsiz = 12
          model_config_rec % no_src_types = 6
 
-         wrf_err_message = '--- NOTE: RRTMG radiation is in use, setting:  ' // &
+         wrf_err_message = '--- NOTE: One of the RRTMG radiation schemes is in use, setting:  ' // &
                            'levsiz=59, alevsiz=12, no_src_types=6'
          CALL wrf_message ( wrf_err_message )
 

@@ -383,7 +383,7 @@ if [ "$os" = "AIX" ] ; then
 fi
 
 # compile options that come from the environment, such as chemistry
-# the "!" is removed by Config_new.pl
+# the "!" is removed by Config.pl
 if [ -n "$WRF_HYDRO" ] ; then
   if [ $WRF_HYDRO = 1 ] ; then
       echo building WRF-HYDRO 
@@ -393,7 +393,7 @@ if [ -n "$WRF_HYDRO" ] ; then
 fi
 
 # compile options that come from the environment, such as chemistry
-# the "!" is removed by Config_new.pl
+# the "!" is removed by Config.pl
 if [ -n "$WRF_MARS" ] ; then
   if [ $WRF_MARS = 1 ] ; then
     echo building WRF for Mars
@@ -516,7 +516,7 @@ fi
 if test -n "$PERL" ; then
    srch=`grep -i "^#ARCH.*$os" arch/configure_new.defaults | grep -i "$mach"`
    if [ -n "$srch" ] ; then
-     $PERL arch/Config_new.pl -dmparallel=$COMMLIB -ompparallel=$OMP -perl=$PERL \
+     $PERL arch/Config.pl -dmparallel=$COMMLIB -ompparallel=$OMP -perl=$PERL \
           -netcdf=$NETCDF -pnetcdf=$PNETCDF -hdf5=$HDF5 -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
           -compileflags=$compileflags -opt_level=$opt_level -USENETCDFF=$USENETCDFF -USENETCDF=$USENETCDF \
           -time=$FORTRAN_COMPILER_TIMER -tfl="$TFL" -cfl="$CFL" -config_line="$config_line" \

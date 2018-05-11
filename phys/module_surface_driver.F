@@ -2067,10 +2067,10 @@ CONTAINS
                ustm(i,j) = ust(i,j)
             END DO
          END DO
+#endif
        ELSE
          CALL wrf_error_fatal('Lacking arguments for MYJSFC in surface driver')
        ENDIF
-#endif
 
       CASE (QNSESFCSCHEME)
        IF(PRESENT(SCM_FORCE_FLUX))THEN

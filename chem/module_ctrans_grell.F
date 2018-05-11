@@ -13,8 +13,8 @@ USE module_state_description, only:p_cvasoaX,p_cvasoa1,p_cvasoa2,p_cvasoa3,p_cva
                               p_cvbsoaX,p_cvbsoa1,p_cvbsoa2,p_cvbsoa3,p_cvbsoa4
 
 USE module_state_description, ONLY: mozart_mosaic_4bin_kpp, &
-                              mozart_mosaic_4bin_aq_kpp,&
-                              mozcart_kpp, &
+                              mozart_mosaic_4bin_aq_kpp, &
+                              mozcart_kpp, t1_mozcart_kpp, &
                               p_hcho, p_c3h6ooh, p_onit, p_mvk, p_macr, &
                               p_etooh, p_prooh, p_acetp, p_mgly, p_mvkooh, &
                               p_onitr, p_isooh, p_ch3oh, p_c2h5oh, &
@@ -1472,7 +1472,9 @@ END subroutine cup_env_clev_tr
   USE module_state_description, only: RADM2SORG,RADM2SORG_AQ,RACMSORG_AQ,RACMSORG_KPP,   &
                                       RADM2SORG_KPP,RACM_ESRLSORG_KPP,RACM_SOA_VBS_KPP,  &
                                       RADM2SORG_AQCHEM,RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP, &
-                                      RACM_SOA_VBS_AQCHEM_KPP,CB05_SORG_VBS_AQ_KPP
+                                      RACM_SOA_VBS_AQCHEM_KPP,                           &
+                                      RACM_SOA_VBS_HET_KPP,                              &
+                                      CB05_SORG_VBS_AQ_KPP
   USE module_ctrans_aqchem
   USE module_input_chem_data, only: get_last_gas
   USE module_HLawConst, only: HLC
@@ -1687,6 +1689,7 @@ END subroutine cup_env_clev_tr
            chemopt .EQ. RACMSORG_KPP .OR. chemopt .EQ. RADM2SORG_KPP .OR. chemopt .EQ. RACM_ESRLSORG_KPP .OR. & 
            chemopt .EQ. RACM_SOA_VBS_KPP .OR. chemopt .EQ. RADM2SORG_AQCHEM .OR. chemopt .EQ. RACMSORG_AQCHEM_KPP .OR. &
            chemopt .EQ. CB05_SORG_VBS_AQ_KPP .OR.                                           &
+           chemopt .EQ. RACM_SOA_VBS_HET_KPP .OR.   &
            chemopt .EQ. RACM_ESRLSORG_AQCHEM_KPP .OR. chemopt .EQ. RACM_SOA_VBS_AQCHEM_KPP) &
            .and. (conv_tr_aqchem == 1)) then
         
@@ -1963,16 +1966,13 @@ END subroutine cup_env_clev_tr
           do nv=2,num_chem
             
             aq_gas_ratio = 0.0
-is_moz_chm: if( chemopt == MOZCART_KPP .or. chemopt == MOZART_MOSAIC_4BIN_KPP .or. &
-                                            chemopt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
+is_moz_chm: if( chemopt == MOZCART_KPP .or. chemopt == T1_MOZCART_KPP .or. &
+                chemopt == MOZART_MOSAIC_4BIN_KPP .or. chemopt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
               HLndx = HLC_ndx(nv)
               if( HLndx /= 0 ) then
                 HLCnst1 = HLC(HLndx)%hcnst(1) ; HLCnst2 = HLC(HLndx)%hcnst(2)
                 HLCnst3 = HLC(HLndx)%hcnst(3) ; HLCnst4 = HLC(HLndx)%hcnst(4)
                 HLCnst5 = HLC(HLndx)%hcnst(5) ; HLCnst6 = HLC(HLndx)%hcnst(6)
-!               if( HLCnst1 == 0 .and. HLCnst2 == 0. ) then
-!                 HLCnst1 = HLC(HLndx)%hcnst(3) ; HLCnst2 = HLC(HLndx)%hcnst(4)
-!               endif
                 kh = HLCnst1 * exp( HLCnst2* tfac )
                 if( HLCnst3 /= 0. ) then
                   dk1s = HLCnst3 * exp( HLCnst4* tfac )
@@ -1989,7 +1989,6 @@ is_moz_chm: if( chemopt == MOZCART_KPP .or. chemopt == MOZART_MOSAIC_4BIN_KPP .o
                 else
                   heff = kh*(1. + dk1s*hion/dk2s)
                 endif
-!               aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, HLCnst1, HLCnst2 )
                 aq_gas_ratio = moz_aq_frac(t(i,k), clw_all(i,k)*dens, heff )
               endif
             else is_moz_chm

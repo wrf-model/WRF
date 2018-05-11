@@ -26,7 +26,6 @@
       real, parameter    :: wpan = 121.04793
       character(len=4), parameter :: mminlu = 'USGS'
 
-      LOGICAL, private :: chm_is_moz
       INTEGER :: month = 0
       INTEGER :: ixxxlu(nlu)
 !     include modis landuse 
@@ -148,6 +147,7 @@ SUBROUTINE wesely_driver( id, ktau, dtstep, config_flags, current_month,  &
       REAL    ::  rhchem, ta, ustar, vegfrac, z1, zntt
       INTEGER :: i, iland, iprt, iseason, j, jce, jcs, n, nr, ipr,jpr,nvr
       LOGICAL :: highnh3, rainflag, vegflag, wetflag
+      LOGICAL :: chm_is_moz
 !--------------------------------------------------
 ! .. Local Arrays
 !--------------------------------------------------
@@ -164,6 +164,12 @@ SUBROUTINE wesely_driver( id, ktau, dtstep, config_flags, current_month,  &
 ! .. Intrinsic Functions
 !-----------------------------------------------------------
       INTRINSIC max, min                             
+
+      chm_is_moz = config_flags%chem_opt == MOZART_KPP .or. &
+                   config_flags%chem_opt == MOZCART_KPP .or. &
+                   config_flags%chem_opt == T1_MOZCART_KPP .or. &
+                   config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+                   config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP
 
       dep_vap= config_flags%depo_fact
 
@@ -188,10 +194,6 @@ tile_lon_loop : &
             iland = luse2usgs( ivgtyp(i,j) )
 !--
 
-!           if( config_flags%chem_opt == MOZART_KPP .or. &
-!               config_flags%chem_opt == MOZCART_KPP .or. &
-!               config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
-!               config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
             if( chm_is_moz ) then
                if( snowh(i,j) < .01 ) then 
                   iseason = seasonal_pft(id)%seasonal_wes(i,j,iland,current_month)
@@ -235,7 +237,8 @@ tile_lon_loop : &
 !     if(snowc(i,j).gt.0.)iseason=4
             CALL rc( rcx, ta, rad, rhchem, iland, &
                      iseason, numgas, wetflag, rainflag, highnh3, &
-                     iprt, moist(i,kts,j,p_qv), p8w(i,kts,j), config_flags%chem_opt )
+                     iprt, moist(i,kts,j,p_qv), p8w(i,kts,j), &
+                     config_flags%chem_opt, chm_is_moz )
             if( .not. chm_is_moz ) then
                srfres(1:numgas-2) = rcx(1:numgas-2)
                srfres(numgas-1:numgas) = 0.
@@ -335,6 +338,7 @@ tile_lon_loop : &
       end if
 !!!!TUCCELLA
      if  (config_flags%chem_opt == RACM_SOA_VBS_KPP .OR.           &
+          config_flags%chem_opt == RACM_SOA_VBS_HET_KPP .OR.           &
           config_flags%chem_opt == RACM_SOA_VBS_AQCHEM_KPP) then
          do j=jts,jte
             do i=its,ite
@@ -353,6 +357,22 @@ tile_lon_loop : &
             end do
          end do
       end if
+
+     if  (config_flags%chem_opt == RACM_SOA_VBS_HET_KPP) then
+         do j=jts,jte
+            do i=its,ite
+               ddvel(i,j,p_hcl) = dep_vap*ddvel(i,j,p_hno3)
+               ddvel(i,j,p_clno2) = 0.0
+               ddvel(i,j,p_cl2) = 0.0
+               ddvel(i,j,p_fmcl) = 0.0
+               ddvel(i,j,p_cl) = 0.0
+               ddvel(i,j,p_clo) = 0.0
+               ddvel(i,j,p_hocl) = 0.0
+               ddvel(i,j,p_ch3cl) = 0.0
+            end do
+         end do
+      end if
+
 !-----------------------------------------------------------
 ! For the additional CBM4 species, assign similar RADM counter parts for
 ! now. Short lived species get a zero velocity since dry dep should be
@@ -469,53 +489,107 @@ tile_lon_loop : &
                ddvel(i,j,p_xoh)     = 0.
                ddvel(i,j,p_isopn)   = 0.
                ddvel(i,j,p_meko2)   = 0.
-!              ddvel(i,j,p_sulf)    = 0.
                ddvel(i,j,p_dms)     = 0.
                IF ( config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .OR. &
                     config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) THEN
-               ddvel(i,j,p_benzene)  = 0.
-               ddvel(i,j,p_phen)     = 0.
-               ddvel(i,j,p_bepomuc)  = 0.
-               ddvel(i,j,p_benzo2)   = 0.
-               ddvel(i,j,p_pheno2)   = 0.
-               ddvel(i,j,p_pheno)    = 0.
-               ddvel(i,j,p_phenooh)  = ddvel(i,j,p_h2o2)
-               ddvel(i,j,p_c6h5o2)   = 0.
-               ddvel(i,j,p_c6h5ooh)  = ddvel(i,j,p_h2o2)
-               ddvel(i,j,p_benzooh)  = ddvel(i,j,p_h2o2)
-               ddvel(i,j,p_bigald1)  = 0.
-               ddvel(i,j,p_bigald2)  = 0.
-               ddvel(i,j,p_bigald3)  = 0.
-               ddvel(i,j,p_bigald4)  = 0.
-               ddvel(i,j,p_malo2)    = 0.
-               ddvel(i,j,p_pbznit)   = 0.
-               ddvel(i,j,p_tepomuc)  = 0.
-               ddvel(i,j,p_bzoo)     = 0.
-               ddvel(i,j,p_bzooh)    = ddvel(i,j,p_h2o2)
-               ddvel(i,j,p_bald)     = 0.
-               ddvel(i,j,p_acbzo2)   = 0.
-               ddvel(i,j,p_dicarbo2) = 0.
-               ddvel(i,j,p_mdialo2)  = 0.
-               ddvel(i,j,p_xyl)      = 0.
-               ddvel(i,j,p_xylol)    = 0.
-               ddvel(i,j,p_xylolo2)  = 0.
-               ddvel(i,j,p_xylolooh) = ddvel(i,j,p_h2o2)
-               ddvel(i,j,p_xyleno2)  = 0.
-               ddvel(i,j,p_xylenooh) = ddvel(i,j,p_h2o2)
-
-               IF ( config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP) THEN
-                 ddvel(i,j,p_voca)     = 0.
-                 ddvel(i,j,p_vocbb)     = 0.
-                 ddvel(i,j,p_smpa)        = 0.
-                 ddvel(i,j,p_smpbb)        = 0.
+                 ddvel(i,j,p_benzene)  = 0.
+                 ddvel(i,j,p_phen)     = 0.
+                 ddvel(i,j,p_bepomuc)  = 0.
+                 ddvel(i,j,p_benzo2)   = 0.
+                 ddvel(i,j,p_pheno2)   = 0.
+                 ddvel(i,j,p_pheno)    = 0.
+                 ddvel(i,j,p_phenooh)  = ddvel(i,j,p_h2o2)
+                 ddvel(i,j,p_c6h5o2)   = 0.
+                 ddvel(i,j,p_c6h5ooh)  = ddvel(i,j,p_h2o2)
+                 ddvel(i,j,p_benzooh)  = ddvel(i,j,p_h2o2)
+                 ddvel(i,j,p_bigald1)  = 0.
+                 ddvel(i,j,p_bigald2)  = 0.
+                 ddvel(i,j,p_bigald3)  = 0.
+                 ddvel(i,j,p_bigald4)  = 0.
+                 ddvel(i,j,p_malo2)    = 0.
+                 ddvel(i,j,p_pbznit)   = 0.
+                 ddvel(i,j,p_tepomuc)  = 0.
+                 ddvel(i,j,p_bzoo)     = 0.
+                 ddvel(i,j,p_bzooh)    = ddvel(i,j,p_h2o2)
+                 ddvel(i,j,p_bald)     = 0.
+                 ddvel(i,j,p_acbzo2)   = 0.
+                 ddvel(i,j,p_dicarbo2) = 0.
+                 ddvel(i,j,p_mdialo2)  = 0.
+                 ddvel(i,j,p_xyl)      = 0.
+                 ddvel(i,j,p_xylol)    = 0.
+                 ddvel(i,j,p_xylolo2)  = 0.
+                 ddvel(i,j,p_xylolooh) = ddvel(i,j,p_h2o2)
+                 ddvel(i,j,p_xyleno2)  = 0.
+                 ddvel(i,j,p_xylenooh) = ddvel(i,j,p_h2o2)
+                 IF ( config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP) THEN
+                   ddvel(i,j,p_voca)     = 0.
+                   ddvel(i,j,p_vocbb)    = 0.
+                   ddvel(i,j,p_smpa)     = 0.
+                   ddvel(i,j,p_smpbb)    = 0.
+                 ENDIF
                ENDIF
-
-              ENDIF
             end do
-            if ( config_flags%chem_opt == MOZCART_KPP ) then
-               ddvel(its:ite,j,p_sulf) = 0.
-            end if
          end do
+         IF ( config_flags%chem_opt /= T1_MOZCART_KPP) THEN
+           do j=jts,jte
+             ddvel(its:ite,j,p_iso2)    = 0.
+           end do
+         ELSE
+           do j=jts,jte
+             ddvel(its:ite,j,p_benzene)  = 0.
+             ddvel(its:ite,j,p_bepomuc)  = 0.
+             ddvel(its:ite,j,p_benzo2)   = 0.
+             ddvel(its:ite,j,p_pheno2)   = 0.
+             ddvel(its:ite,j,p_pheno)    = 0.
+             ddvel(its:ite,j,p_phenol)   = 0.
+             ddvel(its:ite,j,p_phenooh)  = ddvel(its:ite,j,p_h2o2)
+             ddvel(its:ite,j,p_c6h5o2)   = 0.
+             ddvel(its:ite,j,p_c6h5ooh)  = ddvel(its:ite,j,p_h2o2)
+             ddvel(its:ite,j,p_benzooh)  = ddvel(its:ite,j,p_h2o2)
+             ddvel(its:ite,j,p_bigald1)  = 0.
+             ddvel(its:ite,j,p_bigald2)  = 0.
+             ddvel(its:ite,j,p_bigald3)  = 0.
+             ddvel(its:ite,j,p_bigald4)  = 0.
+             ddvel(its:ite,j,p_bzald)    = 0.
+             ddvel(its:ite,j,p_malo2)    = 0.
+             ddvel(its:ite,j,p_pbznit)   = 0.
+             ddvel(its:ite,j,p_tepomuc)  = 0.
+             ddvel(its:ite,j,p_bzoo)     = 0.
+             ddvel(its:ite,j,p_bzooh)    = ddvel(its:ite,j,p_h2o2)
+             ddvel(its:ite,j,p_acbzo2)   = 0.
+             ddvel(its:ite,j,p_dicarbo2) = 0.
+             ddvel(its:ite,j,p_mdialo2)  = 0.
+             ddvel(its:ite,j,p_xylenes)  = 0.
+             ddvel(its:ite,j,p_xylol)    = 0.
+             ddvel(its:ite,j,p_xylolo2)  = 0.
+             ddvel(its:ite,j,p_xylolooh) = ddvel(its:ite,j,p_h2o2)
+             ddvel(its:ite,j,p_xyleno2)  = 0.
+             ddvel(its:ite,j,p_xylenooh) = ddvel(its:ite,j,p_h2o2)
+           end do
+         ENDIF
+         IF( config_flags%chem_opt == MOZART_KPP .or. config_flags%chem_opt == MOZCART_KPP ) THEN
+           do j=jts,jte
+             ddvel(its:ite,j,p_c10h16)  = 0.
+             ddvel(its:ite,j,p_xoh)     = 0.
+           end do
+         ENDIF
+
+         IF( config_flags%chem_opt == MOZART_KPP .or. config_flags%chem_opt == MOZCART_KPP &
+                                                 .or. config_flags%chem_opt == T1_MOZCART_KPP ) then
+           do j=jts,jte
+             ddvel(its:ite,j,p_sulf) = 0.
+           end do
+         ENDIF
+         IF( p_o1d > param_first_scalar ) then
+           do j=jts,jte
+             ddvel(its:ite,j,p_o1d) = 0.
+           end do
+         ENDIF
+         IF( p_o1d_cb4 > param_first_scalar ) then
+           do j=jts,jte
+             ddvel(its:ite,j,p_o1d_cb4) = 0.
+           end do
+         ENDIF
       end if
 
       
@@ -813,7 +887,7 @@ END SUBROUTINE wesely_driver
 
       SUBROUTINE rc( rcx, t, rad, rh, iland, &
                      iseason, numgas, wetflag, rainflag, highnh3, &
-                     iprt, spec_hum, p_srf, chem_opt )
+                     iprt, spec_hum, p_srf, chem_opt, chm_is_moz )
 !----------------------------------------------------------------------
 !     THIS SUBROUTINE CALCULATES SURFACE RESISTENCES ACCORDING
 !     TO THE MODEL OF
@@ -841,6 +915,7 @@ END SUBROUTINE wesely_driver
         REAL, intent(in)    :: spec_hum                     ! surface specific humidity (kg/kg)
         real, intent(out)   :: rcx(numgas)
         LOGICAL, intent(in) :: highnh3, rainflag, wetflag
+        LOGICAL, intent(in) :: chm_is_moz
 
 !----------------------------------------------------------------------
 ! .. Local Scalars ..
@@ -1551,7 +1626,6 @@ is_nh3: if( p_nh3 >= param_first_scalar ) then
   USE module_model_constants
   USE module_configure
   USE module_state_description                       
-  USE module_HLawConst, only : HLCnst_type, HLC
 
    TYPE (grid_config_rec_type) , INTENT (in) ::     config_flags
         character(len=*), intent(in) :: mminlu_loc
@@ -1582,6 +1656,7 @@ is_nh3: if( p_nh3 >= param_first_scalar ) then
         character(len=128) :: err_msg
         character(len=128) :: filename
         character(len=3)   :: id_num
+        LOGICAL :: chm_is_moz
 !--------------------------------------------------
 ! .. Local Arrays
 !--------------------------------------------------
@@ -1598,6 +1673,7 @@ include 'netcdf.inc'
 #else
       if( config_flags%chem_opt == MOZART_KPP .or. &
           config_flags%chem_opt == MOZCART_KPP .or. &
+          config_flags%chem_opt == T1_MOZCART_KPP .or. &
           config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
           config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
          call wrf_message( 'dep_init: mozart,mozcart chem option requires netcdf' )
@@ -1894,12 +1970,9 @@ include 'netcdf.inc'
 !--
         chm_is_moz = config_flags%chem_opt == MOZART_KPP .or. &
                config_flags%chem_opt == MOZCART_KPP .or. &
+               config_flags%chem_opt == T1_MOZCART_KPP .or. &
                config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
                config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP
-
-        if( chm_is_moz .and. id == 1 ) then
-          call HL_init( numgas )
-        endif
 
 !--------------------------------------------------
 !     HENRY''S LAW COEFFICIENTS
@@ -1907,20 +1980,70 @@ include 'netcdf.inc'
 !     [KH298]=mole/(l atm)
 !--------------------------------------------------
 is_cbm4_kpp : &
-        if( config_flags%chem_opt /= CBM4_KPP .or. &
-            config_flags%chem_opt /= CB05_SORG_AQ_KPP .or. &
-            config_flags%chem_opt /= CB05_SORG_VBS_AQ_KPP) then
+        if( .not. (config_flags%chem_opt == CBM4_KPP .or. &
+                   config_flags%chem_opt == CB05_SORG_AQ_KPP .or. &
+                   config_flags%chem_opt == CB05_SORG_VBS_AQ_KPP) ) then
            if( chm_is_moz ) then
-             do l = param_first_scalar,numgas
-               m = HL_ndx(l)
-               if( m > 0 ) then
-                 hstar(l) = HLC(m)%hcnst(1)
-               endif
-             end do
+              hstar(p_o3)      = 1.15E-2
+              hstar(p_co)      = 1.e-3
+              hstar(p_h2o2)    = 8.33E+4
+              hstar(p_hcho)    = 6.3e3
+              hstar(p_ch3ooh)  = 311.
+              hstar(p_ch3oh)   = 220.
+              hstar(p_ch3cooh) = 6.3e3
+              hstar(p_acet)    = 27.
+              hstar(p_paa)     = 837.
+              hstar(p_c3h6ooh) = 220.
+              hstar(p_pan)     = 5.
+              hstar(p_mpan)    = 1.15e-2
+              hstar(p_c2h5oh)  = 200.
+              hstar(p_etooh)   = 336.
+              hstar(p_prooh)   = 336.
+              hstar(p_acetp)   = 336.
+              hstar(p_onit)    = 1.e3
+              hstar(p_onitr)   = 7.51e3
+              hstar(p_acetol)  = 6.3e3
+              hstar(p_glyald)  = 4.14e4
+              hstar(p_hydrald) = 70.
+              hstar(p_alkooh)  = 311.
+              hstar(p_mekooh)  = 311.
+              hstar(p_tolooh)  = 311.
+              hstar(p_terpooh) = 311.
+              if (config_flags%chem_opt == T1_MOZCART_KPP ) then
+                hstar(p_alknit)   = 1.0e+03
+                hstar(p_ch3cn)    = 5.3e+01
+                hstar(p_eooh)     = 1.7e+06
+                hstar(p_hcn)      = 1.2e+01
+                hstar(p_honitr)   = 1.0e+03
+                hstar(p_hpald)    = 9.5e+02
+                hstar(p_iepox)    = 3.0e+07
+                hstar(p_isopao2)  = 2.0e+03
+                hstar(p_isopbo2)  = 2.0e+03
+                hstar(p_isopnita) = 9.5e+02
+                hstar(p_isopnitb) = 9.5e+02
+                hstar(p_isopnooh) = 3.4e+02
+                hstar(p_nc4ch2oh) = 4.0e+04
+                hstar(p_nc4cho)   = 1.0e+03
+                hstar(p_noa)      = 1.0e+03
+                hstar(p_nterpooh) = 1.0e+03
+                hstar(p_terpnit)  = 9.5e+02
+              endif
 
               if( config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
                   config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
                 hstar(p_sulf) = 2.600E+06
+                if ( config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
+                  hstar(p_cvasoaX) = 0.0
+                  hstar(p_cvasoa1) = 1.06E+08
+                  hstar(p_cvasoa2) = 1.84E+07
+                  hstar(p_cvasoa3) = 3.18E+06
+                  hstar(p_cvasoa4) = 5.50E+05
+                  hstar(p_cvbsoaX) = 0.0
+                  hstar(p_cvbsoa1) = 5.25E+09
+                  hstar(p_cvbsoa2) = 7.00E+08
+                  hstar(p_cvbsoa3) = 9.33E+07
+                  hstar(p_cvbsoa4) = 1.24E+07
+                endif
               end if
               
      else if( config_flags%chem_opt == crimech_kpp .or. &
@@ -2140,17 +2263,52 @@ is_cbm4_kpp : &
 !     [-DH/R]=K
 !--------------------------------------------------
         if( chm_is_moz ) then
-           do l = param_first_scalar,numgas
-             m = HL_ndx(l)
-             if( m > 0 ) then
-               dhr(l) = HLC(m)%hcnst(2)
-             endif
-           end do
-
-           if( config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
-             config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
+           dhr(p_o3)      = 2560.
+           dhr(p_h2o2)    = 7379.
+           dhr(p_hcho)    = 6425.
+           dhr(p_ch3ooh)  = 5241.
+           dhr(p_ch3oh)   = 4934.
+           dhr(p_ch3cooh) = 6425.
+           dhr(p_acet)    = 5300.
+           dhr(p_paa)     = 5308.
+           dhr(p_c3h6ooh) = 5653.
+           dhr(p_pan)     = 0.
+           dhr(p_mpan)    = 2560.
+           dhr(p_c2h5oh)  = 6500.
+           dhr(p_etooh)   = 5995.
+           dhr(p_prooh)   = 5995.
+           dhr(p_acetp)   = 5995.
+           dhr(p_onit)    = 6000.
+           dhr(p_onitr)   = 6485.
+           dhr(p_acetol)  = 6425.
+           dhr(p_glyald)  = 4630.
+           dhr(p_hydrald) = 6000.
+           dhr(p_alkooh)  = 5241.
+           dhr(p_mekooh)  = 5241.
+           dhr(p_tolooh)  = 5241.
+           dhr(p_terpooh) = 5241.
+           if (config_flags%chem_opt == T1_MOZCART_KPP ) then
+             dhr(p_alknit)   = 0.
+             dhr(p_ch3cn)    = 4100.
+             dhr(p_eooh)     = 9700.
+             dhr(p_hcn)      = 5000.
+             dhr(p_honitr)   = 0.
+             dhr(p_hpald)    = 0.
+             dhr(p_iepox)    = 0.
+             dhr(p_isopao2)  = 6600.
+             dhr(p_isopbo2)  = 6600.
+             dhr(p_isopnita) = 0.
+             dhr(p_isopnitb) = 0.
+             dhr(p_isopnooh) = 6000.
+             dhr(p_nc4ch2oh) = 8600.
+             dhr(p_nc4cho)   = 0.
+             dhr(p_noa)      = 0.
+             dhr(p_nterpooh) = 0.
+             dhr(p_terpnit)  = 0.
+           elseif( config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+               config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
              dhr(p_sulf) = 0.000E+00
-          end if
+           end if
 
            if (config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
              dhr(p_cvasoaX) = 0.
@@ -2357,11 +2515,13 @@ is_cbm4_kpp : &
            f0(p_mekooh)  = .1
            f0(p_tolooh)  = .1
            f0(p_terpooh) = .1
-
-            if( config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
-              config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
+           if (config_flags%chem_opt == T1_MOZCART_KPP ) then
+             f0(p_eooh)    = f0(p_hcho)
+             f0(p_honitr)  = f0(p_h2o2)
+           elseif( config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+                   config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
              f0(p_sulf) = 0.
-            end if
+           end if
            
            if (config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
              f0(p_cvasoaX) = 0.

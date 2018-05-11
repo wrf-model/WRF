@@ -445,11 +445,6 @@ write(6,*) '*************************************'
                 ifms,ifme,jfms,jfme,  &
                 ifts,ifte,jfts,jfte,  &
                 grid%fxlong,grid%fxlat          )
-  call set_ideal_coord( grid%dx,grid%dy, &
-                ids,ide,jds,jde,  &
-                ims,ime,jms,jme,  &
-                its,ite,jts,jte,  &
-                grid%xlong,grid%xlat          )
 
 ! set terrain height
 
@@ -948,6 +943,31 @@ ENDIF
    ENDDO
    ENDDO
  ENDIF
+
+      !  Save the dry perturbation potential temperature.
+
+      DO j = jts, min(jde-1,jte)
+         DO k = kts, kte
+            DO i = its, min(ide-1,ite)
+               grid%th_phy_m_t0(i,k,j) = grid%t_2(i,k,j)
+            END DO
+         END DO
+      END DO
+
+ !  Turn dry potential temperature into moist potential temperature
+      !  at the very end of this routine
+      !  This field will be in the model IC and and used to construct the 
+      !  BC file.
+
+      IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
+      DO J  = jts, min(jde-1,jte)
+         DO K = kts, kte-1
+            DO I = its, min(ide-1,ite)
+               grid%t_2(i,k,j) = ( grid%t_2(i,k,j) + T0 ) * (1. + (R_v/R_d) * moist(i,k,j,p_qv)) - T0
+            END DO
+         END DO
+      END DO
+      ENDIF
 
  END SUBROUTINE init_domain_rk
 

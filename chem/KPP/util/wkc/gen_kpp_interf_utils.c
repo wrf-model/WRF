@@ -316,8 +316,15 @@ wki_one_d_vars( FILE * ofile,   knode_t * pp )
     fprintf(ofile,"    C_M = 0.0_dp ! not used \n\n");
   }
 
- 
+  if ( pp -> got_o2 == 1 ) {
+   fprintf(ofile,"      ! o2 concentration (molec/cm^3)\n");
+   fprintf(ofile,"    FIX(indf_O2)  = .209_dp*REAL(dens2con_a * rho_phy(i,k,j), KIND=dp)\n");
+  }
 
+  if ( pp -> got_n2 == 1 ) {
+   fprintf(ofile,"      ! n2 concentration (molec/cm^3)\n");
+   fprintf(ofile,"    FIX(indf_N2)  = .79_dp*REAL(dens2con_a * rho_phy(i,k,j), KIND=dp)\n");
+  }
 
    fprintf(ofile,"      ! water concentration (molec/cm^3)\n");
    fprintf(ofile,"    FIX(indf_H2O) = REAL(dens2con_w * moist(i,k,j,P_QV) * rho_phy(i,k,j), KIND=dp)\n\n\n");

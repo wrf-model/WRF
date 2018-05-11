@@ -94,7 +94,8 @@ CONTAINS
                   b_t_bep,b_q_bep,b_e_bep,dlg_bep,              & !O multi-layer urban
                   dl_u_bep,sf_bep,vl_bep,sfcheadrt,INFXSRT, soldrain      &   !O multi-layer urban         
                  ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas     &   !fasdas
-                  )   !O multi-layer urban         
+                 ,RC2,XLAI2                                               &
+                  )
 
 !----------------------------------------------------------------
     IMPLICIT NONE
@@ -151,6 +152,7 @@ CONTAINS
 !-- SHDMIN      minimum areal fractional coverage of annual green vegetation
 !-- SHDMAX      maximum areal fractional coverage of annual green vegetation
 !-- XLAI        leaf area index (dimensionless)
+!-- XLAI2       leaf area index (same as XLAI) passed to output (dimensionless)
 !-- Z0BRD       Background fixed roughness length (M)
 !-- Z0          Background vroughness length (M) as function
 !-- ZNT         Time varying roughness length (M) as function
@@ -196,6 +198,7 @@ CONTAINS
 !UDRUNOFF      Total Underground Runoff (mm), which is the sum of RUNOFF2 and RUNOFF3
 ! ----------------------------------------------------------------------
 !-- RC          canopy resistance (s m-1)
+!-- RC2         canopy resistance (same as RC) passed to output
 !-- PC          plant coefficient (unitless fraction, 0-1) where PC*ETP = actual transp
 !-- RSMIN       minimum canopy resistance (s m-1)
 !-- RCS         incoming solar rc factor (dimensionless)
@@ -338,6 +341,7 @@ CONTAINS
                INTENT(OUT)    ::                        CHKLOWQ
    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LAI
    REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) ::        QZ0
+   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(OUT) ::  RC2, XLAI2
 
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMR_SFCDIF
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHR_SFCDIF
@@ -1084,6 +1088,8 @@ CONTAINS
     ENDIF
 
        lai(i,j) = xlai
+       rc2(I,J) = RC                                              ! for output
+       xlai2(I,J) = XLAI
 
 #if 0
           IF(IPRINT) THEN
@@ -2214,6 +2220,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                  ZNT_mosaic, Z0_mosaic,                          & ! danli mosaic 
                  HFX_mosaic,QFX_mosaic,                          & ! danli mosaic
                  LH_mosaic, GRDFLX_mosaic, SNOTIME_mosaic,       & ! danli mosaic                   
+                 RC_mosaic, LAI_mosaic,                          &
 ! Noah UA changes
                   ua_phys,flx4_2d,fvb_2d,fbur_2d,fgsn_2d,       &
                   ids,ide, jds,jde, kds,kde,                    &
@@ -2269,6 +2276,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   dl_u_bep,sf_bep,vl_bep                        & !O multi-layer urban
                  ,sfcheadrt,INFXSRT, soldrain                   & !hydro
                  ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas     &   !fasdas
+                 ,RC2,XLAI2                                     & !O
                   )
 
 !----------------------------------------------------------------
@@ -2514,6 +2522,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                INTENT(OUT)    ::                        CHKLOWQ
    REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LAI
    REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) ::        QZ0
+   REAL,    DIMENSION( ims:ime, jms:jme ), INTENT(OUT)   :: RC2, XLAI2
 
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CMR_SFCDIF
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CHR_SFCDIF
@@ -2819,10 +2828,13 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
         HFX_mosaic,QFX_mosaic, LH_mosaic, GRDFLX_mosaic,SNOTIME_mosaic    
   REAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), OPTIONAL, INTENT(INOUT)::   &
         TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic
+  REAL, DIMENSION( ims:ime, 1:mosaic_cat, jms:jme ), OPTIONAL, INTENT(INOUT):: LAI_mosaic, RC_mosaic
+
   REAL, DIMENSION( ims:ime, jms:jme ) :: TSK_mosaic_avg, QSFC_mosaic_avg, CANWAT_mosaic_avg,SNOW_mosaic_avg,SNOWH_mosaic_avg, &
                                          SNOWC_mosaic_avg, HFX_mosaic_avg, QFX_mosaic_avg, LH_mosaic_avg, GRDFLX_mosaic_avg,  &
                                          ALBEDO_mosaic_avg, ALBBCK_mosaic_avg, EMISS_mosaic_avg, EMBCK_mosaic_avg,            &
-                                         ZNT_mosaic_avg, Z0_mosaic_avg, SNOTIME_mosaic_avg, FAREA_mosaic_avg  
+                                         ZNT_mosaic_avg, Z0_mosaic_avg, LAI_mosaic_avg, RC_mosaic_avg, SNOTIME_mosaic_avg,    &
+                                         FAREA_mosaic_avg
   REAL, DIMENSION( ims:ime, 1:num_soil_layers, jms:jme )                     ::   &
         TSLB_mosaic_avg,SMOIS_mosaic_avg,SH2O_mosaic_avg
   
@@ -2935,32 +2947,34 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
       
             ! INITIALIZE THE AREA-AVERAGED FLUXES 
                
-                 TSK_mosaic_avg(i,j)= 0                              ! from 3D to 2D
-                 QSFC_mosaic_avg(i,j)= 0
-                 CANWAT_mosaic_avg(i,j)= 0
-                 SNOW_mosaic_avg(i,j)= 0
-                 SNOWH_mosaic_avg(i,j)= 0
-                 SNOWC_mosaic_avg(i,j)= 0
+                 TSK_mosaic_avg(i,j)= 0.0                              ! from 3D to 2D
+                 QSFC_mosaic_avg(i,j)= 0.0
+                 CANWAT_mosaic_avg(i,j)= 0.0
+                 SNOW_mosaic_avg(i,j)= 0.0
+                 SNOWH_mosaic_avg(i,j)= 0.0
+                 SNOWC_mosaic_avg(i,j)= 0.0
             
                           DO NS=1,NSOIL
             
-                     TSLB_mosaic_avg(i,NS,j)=0
-                     SMOIS_mosaic_avg(i,NS,j)=0
-                     SH2O_mosaic_avg(i,NS,j)=0
+                     TSLB_mosaic_avg(i,NS,j)=0.0
+                     SMOIS_mosaic_avg(i,NS,j)=0.0
+                     SH2O_mosaic_avg(i,NS,j)=0.0
             
                          ENDDO
             
-                 HFX_mosaic_avg(i,j)= 0
-                 QFX_mosaic_avg(i,j)= 0  
-                 LH_mosaic_avg(i,j)=  0 
-                 GRDFLX_mosaic_avg(i,j)= 0
-                 ALBEDO_mosaic_avg(i,j)=0
-                 ALBBCK_mosaic_avg(i,j)=0
-                 EMISS_mosaic_avg(i,j)=0
-                 EMBCK_mosaic_avg(i,j)=0
-                 ZNT_mosaic_avg(i,j)=0
-                 Z0_mosaic_avg(i,j)=0  
-                 FAREA_mosaic_avg(i,j)=0  
+                 HFX_mosaic_avg(i,j)= 0.0
+                 QFX_mosaic_avg(i,j)= 0.0
+                 LH_mosaic_avg(i,j)=  0.0
+                 GRDFLX_mosaic_avg(i,j)= 0.0
+                 ALBEDO_mosaic_avg(i,j)=0.0
+                 ALBBCK_mosaic_avg(i,j)=0.0
+                 EMISS_mosaic_avg(i,j)=0.0
+                 EMBCK_mosaic_avg(i,j)=0.0
+                 ZNT_mosaic_avg(i,j)=0.0
+                 Z0_mosaic_avg(i,j)=0.0
+                 LAI_mosaic_avg(i,j)=0.0
+                 RC_mosaic_avg(i,j)=0.0
+                 FAREA_mosaic_avg(i,j)=0.0
             
             ! add a new loop for the mosaic_cat
             
@@ -3368,9 +3382,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   &    RIBB)
       
           ENDIF
-      
              lai(i,j) = xlai
-      
 #if 0
                 IF(IPRINT) THEN
       
@@ -3819,6 +3831,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   EMBCK_mosaic(i,mosaic_i,j)=EMBCK(i,j)  
                   ZNT_mosaic(i,mosaic_i,j)=ZNT(i,j)  
                   Z0_mosaic(i,mosaic_i,j)=Z0(i,j)    
+                  LAI_mosaic(i,mosaic_i,j)=XLAI
+                  RC_mosaic(i,mosaic_i,j)=RC
                                                                                        
                   HFX_mosaic(i,mosaic_i,j)=HFX(i,j) 
                   QFX_mosaic(i,mosaic_i,j)=QFX(i,j)  
@@ -3840,7 +3854,8 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   print*, 'mosaic_cat_index',mosaic_cat_index(I,mosaic_i,J), 'landusef2',landusef2(i,mosaic_i,j)
                   print*, 'TSK_mosaic', TSK_mosaic(i,mosaic_i,j), 'HFX_mosaic', HFX_mosaic(i,mosaic_i,j), &
                           'LH_mosaic',LH_mosaic(i,mosaic_i,j),'GRDFLX_mosaic',GRDFLX_mosaic(i,mosaic_i,j)
-                  print*, 'ZNT_mosaic', ZNT_mosaic(i, mosaic_i,j), 'Z0_mosaic', Z0_mosaic(i,mosaic_i,j) 
+                  print*, 'ZNT_mosaic', ZNT_mosaic(i, mosaic_i,j), 'Z0_mosaic', Z0_mosaic(i,mosaic_i,j)
+                  print*, 'LAI_mosaic', LAI_mosaic(i, mosaic_i,j)
                   print*, 'FRC_URB2D',FRC_URB2D(I,J)
                   print*, 'TS_URB',TS_URB2D(I,J),'T1',T1
                   print*, 'SH_URB2D',SH_URB2D(I,J),'SHEAT',SHEAT
@@ -3884,9 +3899,14 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   EMBCK_mosaic_avg(i,j)=EMBCK_mosaic_avg(i,j)+EMBCK_mosaic(i,mosaic_i,j)*FAREA
                   ZNT_mosaic_avg(i,j)=ZNT_mosaic_avg(i,j)+ALOG(ZNT_mosaic(i,mosaic_i,j))*FAREA
                   Z0_mosaic_avg(i,j)=Z0_mosaic_avg(i,j)+ALOG(Z0_mosaic(i,mosaic_i,j))*FAREA
-       
-         ENDDO                     ! ENDDO FOR mosaic_i = 1, mosaic_cat
-      
+                  LAI_mosaic_avg(i,j)=LAI_mosaic_avg(i,j)+LAI_mosaic(i,mosaic_i,j)*FAREA
+                  if(RC_mosaic(i,mosaic_i,j) .Gt. 0.0) Then
+                     RC_mosaic_avg(i,j) = RC_mosaic_avg(i,j)+1.0/RC_mosaic(i,mosaic_i,j)*FAREA
+                  else 
+                     RC_mosaic_avg(i,j) = RC_mosaic_avg(i,j) + RC_mosaic(i,mosaic_i,j)*FAREA
+                  End If
+                  ENDDO                     ! ENDDO FOR mosaic_i = 1, mosaic_cat
+
       !-----------------------------------------------------------------------
       ! Now let's send the 3D values to the 2D variables that might be needed in other routines
       !-----------------------------------------------------------------------
@@ -3898,7 +3918,13 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
           EMBCK(i,j)= EMBCK_mosaic_avg(i,j)  
           ZNT(i,j)= EXP(ZNT_mosaic_avg(i,j)/FAREA_mosaic_avg(i,j))
           Z0(i,j)= EXP(Z0_mosaic_avg(i,j)/FAREA_mosaic_avg(i,j))
-                                                                                       
+          XLAI2(i,j)= LAI_mosaic_avg(i,j)
+          IF (RC_mosaic_avg(i,j) .Gt. 0.0) THEN
+              rc2(i,j) = 1.0/(RC_mosaic_avg(i,j))
+          ELSE
+!RC_mosaic_avg was zero for all tiles (cell over water), thus RC2 set to zero to avoid infinity
+              rc2(i,j) = RC_mosaic_avg(i,j)
+          END IF
           TSK(i,j)=(TSK_mosaic_avg(I,J)/EMISS_mosaic_avg(I,J))**(0.25)                                  ! from 3D to 2D
           QSFC(i,j)=QSFC_mosaic_avg(I,J)
           CANWAT(i,j) = CANWAT_mosaic_avg(i,j)
@@ -4246,7 +4272,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
           ENDIF
       
              lai(i,j) = xlai
-      
+
 #if 0
                 IF(IPRINT) THEN
       
@@ -4974,7 +5000,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
             EMISS_mosaic(i,mosaic_i,j)=EMISS(i,j) 
             EMBCK_mosaic(i,mosaic_i,j)=EMBCK(i,j) 
             ZNT_mosaic(i,mosaic_i,j)=Z0(i,j)
-            Z0_mosaic(i,mosaic_i,j)=Z0(i,j)              
+            Z0_mosaic(i,mosaic_i,j)=Z0(i,j)
   
               DO soil_k=1,num_soil_layers 
   

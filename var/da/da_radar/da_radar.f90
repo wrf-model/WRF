@@ -39,8 +39,6 @@ module da_radar
       real                    :: rrn
       real                    :: rsn
       real                    :: rgr
-      real                    :: rcl
-      real                    :: rci
       real                    :: rqv
    end type residual_radar1_type
 
@@ -50,8 +48,6 @@ module da_radar
       type (maxmin_type)         :: rrn
       type (maxmin_type)         :: rsn
       type (maxmin_type)         :: rgr
-      type (maxmin_type)         :: rcl
-      type (maxmin_type)         :: rci
       type (maxmin_type)         :: rqv
    end type maxmin_radar_stats_type
 

@@ -32,6 +32,7 @@ $sw_os = "ARCH" ;           # ARCH will match any
 $sw_mach = "ARCH" ;         # ARCH will match any
 $sw_wrf_core = "" ;
 $sw_da_core = "-DDA_CORE=\$\(WRF_DA_CORE\)" ;
+$sw_wrfplus_core = "-DWRFPLUS=\$\(WRF_PLUS_CORE\)" ;
 $sw_nmm_core = "-DNMM_CORE=\$\(WRF_NMM_CORE\)" ;
 $sw_em_core = "-DEM_CORE=\$\(WRF_EM_CORE\)" ;
 $sw_exp_core = "-DEXP_CORE=\$\(WRF_EXP_CORE\)" ;
@@ -141,11 +142,31 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
     {
       $sw_em_core = "-DEM_CORE=1" ;
       $sw_da_core = "-DDA_CORE=0" ;
+      $sw_wrfplus_core = "-DWRFPLUS=0" ;
       $sw_nmm_core = "-DNMM_CORE=0" ;
       $sw_exp_core = "-DEXP_CORE=0" ;
       $sw_coamps_core = "-DCOAMPS_CORE=0" ;
     }
+    if ( index ( $sw_wrf_core , "WRF_PLUS_CORE" ) > -1 ) 
+    {
+      $sw_em_core = "-DEM_CORE=1" ;
+      $sw_da_core = "-DDA_CORE=0" ;
+      $sw_wrfplus_core = "-DWRFPLUS=1" ;
+      $sw_nmm_core = "-DNMM_CORE=0" ;
+      $sw_exp_core = "-DEXP_CORE=0" ;
+      $sw_coamps_core = "-DCOAMPS_CORE=0" ;
+      $sw_dfi_radar = "-DDFI_RADAR=0" ;
+    }
     if ( index ( $sw_wrf_core , "DA_CORE" ) > -1 ) 
+    {
+      $sw_em_core = "-DEM_CORE=1" ;
+      $sw_da_core = "-DDA_CORE=1" ;
+      $sw_wrfplus_core = "-DWRFPLUS=0" ;
+      $sw_nmm_core = "-DNMM_CORE=0" ;
+      $sw_exp_core = "-DEXP_CORE=0" ;
+      $sw_coamps_core = "-DCOAMPS_CORE=0" ;
+    }
+    if ( index ( $sw_wrf_core , "4D_DA_CORE" ) > -1 ) 
     {
       $sw_em_core = "-DEM_CORE=1" ;
       $sw_da_core = "-DDA_CORE=1" ;
@@ -165,6 +186,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
     {
       $sw_em_core = "-DEM_CORE=0" ;
       $sw_da_core = "-DDA_CORE=0" ;
+      $sw_wrfplus_core = "-DWRFPLUS=0" ;
       $sw_nmm_core = "-DNMM_CORE=1" ;
       $sw_exp_core = "-DEXP_CORE=0" ;
       $sw_coamps_core = "-DCOAMPS_CORE=0" ;
@@ -173,6 +195,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
     {
       $sw_em_core = "-DEM_CORE=0" ;
       $sw_da_core = "-DDA_CORE=0" ;
+      $sw_wrfplus_core = "-DWRFPLUS=0" ;
       $sw_nmm_core = "-DNMM_CORE=0" ;
       $sw_exp_core = "-DEXP_CORE=1" ;
       $sw_coamps_core = "-DCOAMPS_CORE=0" ;
@@ -181,6 +204,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
     {
       $sw_em_core = "-DEM_CORE=0" ;
       $sw_da_core = "-DDA_CORE=0" ;
+      $sw_wrfplus_core = "-DWRFPLUS=0" ;
       $sw_nmm_core = "-DNMM_CORE=0" ;
       $sw_exp_core = "-DEXP_CORE=0" ;
       $sw_coamps_core = "-DCOAMPS_CORE=1" ;
@@ -270,7 +294,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
      }
    }
 
-# When compiling DA code, we need to always use 8-byte reals.
+# When compiling DA and WRFPLUS code, we need to always use 8-byte reals.
  if ( $ENV{WRF_DA_CORE} eq "1" || $sw_da_core eq "-DDA_CORE=1" )
    {
      $sw_rwordsize = "8";  
@@ -308,6 +332,8 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
        }
    }
 
+ $sw_rwordsize = "8" if ( $sw_wrfplus_core eq "-DWRFPLUS=1" );
+
 # A separately-installed ESMF library is required to build the ESMF 
 # implementation of WRF IOAPI in external/io_esmf.  This is needed 
 # to couple WRF with other ESMF components.  User must set environment 
@@ -331,7 +357,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
 
 $validresponse = 0 ;
 
-if ( $sw_wrf_core eq "4D_DA_CORE" ) 
+if ( ($sw_wrf_core eq "WRF_PLUS_CORE") || ($sw_wrf_core eq "4D_DA_CORE") ) 
    { @platforms = qw ( serial dmpar ) ; }
    else
    { @platforms = qw ( serial smpar dmpar dm+sm ) ; }
@@ -654,6 +680,8 @@ while ( <CONFIGURE_DEFAULTS> )
         until ( $validresponse ) {
           if ( $ENV{WRF_DA_CORE} eq "1" || $sw_da_core eq "-DDA_CORE=1" ) {
              $response = 1 ;
+          } elsif ( $sw_wrfplus_core eq "-DWRFPLUS=1" ) {
+             $response = 0 ;
           } elsif ( $ENV{HWRF} ) {
              printf "HWRF requires moving nests";
              $response = "2\n";
@@ -789,6 +817,7 @@ while ( <ARCH_PREAMBLE> )
     }
   $_ =~ s:CONFIGURE_EM_CORE:$sw_em_core:g ;
   $_ =~ s:CONFIGURE_DA_CORE:$sw_da_core:g ;
+  $_ =~ s:CONFIGURE_WRFPLUS_CORE:$sw_wrfplus_core:g ;
   $_ =~ s:CONFIGURE_NMM_CORE:$sw_nmm_core:g ;
   $_ =~ s:CONFIGURE_COAMPS_CORE:$sw_coamps_core:g ;
   $_ =~ s:CONFIGURE_EXP_CORE:$sw_exp_core:g ;

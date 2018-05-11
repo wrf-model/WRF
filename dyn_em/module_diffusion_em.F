@@ -1,7 +1,3 @@
-#if ( HYBRID_COORD==1 )
-#  define mu(...) (c1(k)*XXPCTXX(__VA_ARGS__)+c2(k))
-#  define XXPCTXX(...) mu(__VA_ARGS__)
-#endif
 
 ! WRF:MODEL_LAYER:PHYSICS
 
@@ -2432,7 +2428,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                    ims, ime, jms, jme, kms, kme,           &
                                    its, ite, jts, jte, kts, kte           )
 
-    IF (km_opt .eq. 2)                                                     &
+    IF ( (km_opt .eq. 2) .and. (.not.config_flags%tke_mix2_off) )          &
     CALL horizontal_diffusion_s  ( tke_tendf(ims,kms,jms),                 &
                                    config_flags,                           &
                                    tke(ims,kms,jms),                       &
@@ -2445,7 +2441,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                    ims, ime, jms, jme, kms, kme,           &
                                    its, ite, jts, jte, kts, kte           )
 
-    IF (n_moist .ge. PARAM_FIRST_SCALAR) THEN
+    IF ((n_moist .ge. PARAM_FIRST_SCALAR) .and. (.not.config_flags%moist_mix2_off)) THEN
 
       moist_loop: do im = PARAM_FIRST_SCALAR, n_moist
 
@@ -2465,7 +2461,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
 
     ENDIF
 
-    IF (n_chem .ge. PARAM_FIRST_SCALAR) THEN
+    IF ((n_chem .ge. PARAM_FIRST_SCALAR) .and. (.not.config_flags%chem_mix2_off)) THEN
 
       chem_loop: do ic = PARAM_FIRST_SCALAR, n_chem
 
@@ -2485,7 +2481,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
 
     ENDIF
 
-    IF (n_tracer .ge. PARAM_FIRST_SCALAR) THEN
+    IF ((n_tracer .ge. PARAM_FIRST_SCALAR) .and. (.not.config_flags%tracer_mix2_off)) THEN
 
       tracer_loop: do ic = PARAM_FIRST_SCALAR, n_tracer
 
@@ -2504,7 +2500,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
       ENDDO tracer_loop
 
     ENDIF
-    IF (n_scalar .ge. PARAM_FIRST_SCALAR) THEN
+    IF ((n_scalar .ge. PARAM_FIRST_SCALAR) .and. (.not.config_flags%scalar_mix2_off)) THEN
 
       scalar_loop: do is = PARAM_FIRST_SCALAR, n_scalar
 
@@ -2723,7 +2719,7 @@ SUBROUTINE horizontal_diffusion_u_2( tendency, config_flags,              &
       tendency(i,k,j)=tendency(i,k,j) +  g*tmpdz/dnw(k) *             &
            (mrdx*(titau1(i,k,j  ) - titau1(i-1,k,j)) +                &
             mrdy*(titau2(i,k,j+1) - titau2(i  ,k,j)) -                &
-            msfuy(i,j)*zx_at_u(i,k,j)*(titau1avg(i,k+1,j)-titau1avg(i,k,j)) / tmpdz - &
+            msfux(i,j)*zx_at_u(i,k,j)*(titau1avg(i,k+1,j)-titau1avg(i,k,j)) / tmpdz - &
             msfuy(i,j)*zy_at_u(i,k,j)*(titau2avg(i,k+1,j)-titau2avg(i,k,j)) / tmpdz   &
                                                                   )
    ENDDO
@@ -2918,7 +2914,7 @@ SUBROUTINE horizontal_diffusion_v_2( tendency, config_flags,              &
       tendency(i,k,j)=tendency(i,k,j) +    g*tmpdz/dnw(k) *           &
            (mrdy*(titau2(i,k,j  ) - titau2(i,k,j-1)) +                &
             mrdx*(titau1(i+1,k,j) - titau1(i  ,k,j)) -                &
-            msfvy(i,j)*zx_at_v(i,k,j)*(titau1avg(i,k+1,j)-titau1avg(i,k,j)) / tmpdz - &
+            msfvx(i,j)*zx_at_v(i,k,j)*(titau1avg(i,k+1,j)-titau1avg(i,k,j)) / tmpdz - &
             msfvy(i,j)*zy_at_v(i,k,j)*(titau2avg(i,k+1,j)-titau2avg(i,k,j)) / tmpdz   &
                                                                   )
 
@@ -5164,7 +5160,7 @@ END SUBROUTINE phy_bc
     DO j = j_start, j_end
     DO k = kts, ktf
     DO i = i_start, i_end
-      tendency(i,k,j) = max( tendency(i,k,j), -mu(i,j) * max( 0.0 , tke(i,k,j) ) / dt )
+      tendency(i,k,j) = max( tendency(i,k,j), -(c1(k)*mu(i,j)+c2(k)) * max( 0.0 , tke(i,k,j) ) / dt )
     END DO
     END DO
     END DO
@@ -5253,7 +5249,7 @@ END SUBROUTINE phy_bc
     DO j = j_start, j_end
     DO k = kts+1, ktf
     DO i = i_start, i_end
-      tendency(i,k,j) = tendency(i,k,j) - mu(i,j) * xkhv(i,k,j) * BN2(i,k,j)
+      tendency(i,k,j) = tendency(i,k,j) - (c1(k)*mu(i,j)+c2(k)) * xkhv(i,k,j) * BN2(i,k,j)
     END DO
     END DO
     END DO
@@ -5274,7 +5270,7 @@ END SUBROUTINE phy_bc
    DO i = i_start, i_end
       heat_flux = heat_flux0
       tendency(i,k,j)= tendency(i,k,j) - &
-                   mu(i,j)*((xkhv(i,k,j)*BN2(i,k,j))- (g/theta(i,k,j))*heat_flux)/2.
+                   (c1(k)*mu(i,j)+c2(k))*((xkhv(i,k,j)*BN2(i,k,j))- (g/theta(i,k,j))*heat_flux)/2.
 
    ENDDO
    ENDDO
@@ -5287,7 +5283,7 @@ END SUBROUTINE phy_bc
       heat_flux = (hfx(i,j)/cpm)/rho(i,k,j)
 
       tendency(i,k,j)= tendency(i,k,j) - &
-                   mu(i,j)*((xkhv(i,k,j)*BN2(i,k,j))- (g/theta(i,k,j))*heat_flux)/2.
+                   (c1(k)*mu(i,j)+c2(k))*((xkhv(i,k,j)*BN2(i,k,j))- (g/theta(i,k,j))*heat_flux)/2.
 
    ENDDO
    ENDDO
@@ -5421,7 +5417,7 @@ END SUBROUTINE phy_bc
         END IF
 
         tendency(i,k,j) = tendency(i,k,j) - &
-                          mu(i,j) * coefc * tketmp**1.5 / l_scale(i,k,j)
+                          (c1(k)*mu(i,j)+c2(k)) * coefc * tketmp**1.5 / l_scale(i,k,j)
       END DO
       END DO
       END DO
@@ -5584,7 +5580,7 @@ END SUBROUTINE phy_bc
     DO k = kts, ktf
     DO i = i_start, i_end
       tendency(i,k,j) = tendency(i,k,j) + 0.5 *  &
-                        mu(i,j) * xkmh(i,k,j) * ( ( defor11(i,k,j) )**2 )
+                        (c1(k)*mu(i,j)+c2(k)) * xkmh(i,k,j) * ( ( defor11(i,k,j) )**2 )
     END DO
     END DO
     END DO
@@ -5595,7 +5591,7 @@ END SUBROUTINE phy_bc
     DO k = kts, ktf
     DO i = i_start, i_end
       tendency(i,k,j) = tendency(i,k,j) + 0.5 *  &
-                        mu(i,j) * xkmh(i,k,j) * ( ( defor22(i,k,j) )**2 )
+                        (c1(k)*mu(i,j)+c2(k)) * xkmh(i,k,j) * ( ( defor22(i,k,j) )**2 )
     END DO
     END DO
     END DO
@@ -5606,7 +5602,7 @@ END SUBROUTINE phy_bc
     DO k = kts, ktf
     DO i = i_start, i_end
       tendency(i,k,j) = tendency(i,k,j) + 0.5 *  &
-                        mu(i,j) * xkmv(i,k,j) * ( ( defor33(i,k,j) )**2 )
+                        (c1(k)*mu(i,j)+c2(k)) * xkmv(i,k,j) * ( ( defor33(i,k,j) )**2 )
     END DO
     END DO
     END DO
@@ -5626,7 +5622,7 @@ END SUBROUTINE phy_bc
     DO j = j_start, j_end
     DO k = kts, ktf
     DO i = i_start, i_end
-      tendency(i,k,j) = tendency(i,k,j) + mu(i,j) * xkmh(i,k,j) * avg(i,k,j)
+      tendency(i,k,j) = tendency(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmh(i,k,j) * avg(i,k,j)
     END DO
     END DO
     END DO
@@ -5661,7 +5657,7 @@ END SUBROUTINE phy_bc
     DO j = j_start, j_end
     DO k = kts, ktf
     DO i = i_start, i_end
-      tendency(i,k,j) = tendency(i,k,j) + mu(i,j) * xkmv(i,k,j) * avg(i,k,j)
+      tendency(i,k,j) = tendency(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmv(i,k,j) * avg(i,k,j)
     END DO
     END DO
     END DO
@@ -5680,7 +5676,7 @@ END SUBROUTINE phy_bc
       absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)
       Cd = cd0
       tendency(i,k,j) = tendency(i,k,j) +       &
-           mu(i,j)*( (u(i,k,j)+u(i+1,k,j))*0.5* &
+           (c1(k)*mu(i,j)+c2(k))*( (u(i,k,j)+u(i+1,k,j))*0.5* &
                      Cd*absU*(defor13(i,kts+1,j)+defor13(i+1,kts+1,j))*0.5 )
 
     END DO
@@ -5694,7 +5690,7 @@ END SUBROUTINE phy_bc
       absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)+epsilon
       Cd = (ust(i,j)**2)/(absU**2)
       tendency(i,k,j) = tendency(i,k,j) +       &
-           mu(i,j)*( (u(i,k,j)+u(i+1,k,j))*0.5* &
+           (c1(k)*mu(i,j)+c2(k))*( (u(i,k,j)+u(i+1,k,j))*0.5* &
                      Cd*absU*(defor13(i,kts+1,j)+defor13(i+1,kts+1,j))*0.5 )
 
     END DO
@@ -5735,7 +5731,7 @@ END SUBROUTINE phy_bc
     DO j = j_start, j_end
     DO k = kts, ktf
     DO i = i_start, i_end
-      tendency(i,k,j) = tendency(i,k,j) + mu(i,j) * xkmv(i,k,j) * avg(i,k,j)
+      tendency(i,k,j) = tendency(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmv(i,k,j) * avg(i,k,j)
     END DO
     END DO
     END DO
@@ -5754,7 +5750,7 @@ END SUBROUTINE phy_bc
       absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)
       Cd = cd0
       tendency(i,k,j) = tendency(i,k,j) +       &
-           mu(i,j)*( (v(i,k,j)+v(i,k,j+1))*0.5* &
+           (c1(k)*mu(i,j)+c2(k))*( (v(i,k,j)+v(i,k,j+1))*0.5* &
                      Cd*absU*(defor23(i,kts+1,j)+defor23(i,kts+1,j+1))*0.5 )
 
     END DO
@@ -5768,7 +5764,7 @@ END SUBROUTINE phy_bc
       absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)+epsilon
       Cd = (ust(i,j)**2)/(absU**2)
       tendency(i,k,j) = tendency(i,k,j) +       &
-           mu(i,j)*( (v(i,k,j)+v(i,k,j+1))*0.5* &
+           (c1(k)*mu(i,j)+c2(k))*( (v(i,k,j)+v(i,k,j+1))*0.5* &
                      Cd*absU*(defor23(i,kts+1,j)+defor23(i,kts+1,j+1))*0.5 )
 
     END DO

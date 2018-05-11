@@ -1,4 +1,3 @@
-#define MYNN_DBG_LVL 3000
 !WRF:MODEL_LAYER:PHYSICS
 !
 ! translated from NN f77 to F90 and put into WRF by Mariusz Pagowski

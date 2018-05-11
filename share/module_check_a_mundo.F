@@ -434,6 +434,18 @@
       END DO
 #endif
 
+!-----------------------------------------------------------------------
+!           Check that NSAS shallow convection is not allowed to turn on simultaneously with NSAS
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%shcu_physics(i) == nscvshcuscheme .AND. model_config_rec%cu_physics(i) == nsasscheme) THEN
+            WRITE(wrf_err_message, '(" --- ERROR: NSCV shallow convection scheme is already included in NSAS ")')
+            CALL wrf_message ( TRIM ( wrf_err_message ) )
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+         END IF
+      END DO
+
 #if (EM_CORE == 1)
 
 !-----------------------------------------------------------------------
@@ -643,7 +655,6 @@
             model_config_rec%icloud = 1
          END IF
       ENDDO
-
 !-----------------------------------------------------------------------
 ! aercu_opt = 1 (CESM-aerosal) only works with MSKF, special Morrison
 !-----------------------------------------------------------------------

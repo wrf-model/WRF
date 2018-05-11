@@ -1326,6 +1326,10 @@ BENCH_START(shcu_driver_tim)
      &             ,WSTAR=grid%wstar_ysu,DELTA=grid%delta_ysu             &
      &             ,KPBL=grid%kpbl,ZNU=grid%znu                           &
      &             ,RAINCV=grid%raincv                                    &
+     &             ,W=grid%w_2 ,XLAND=grid%xland                          &
+     &             ,HFX=grid%hfx, QFX=grid%qfx                            &
+     &             ,MP_PHYSICS=config_flags%mp_physics                    &
+     &             ,pgcon=config_flags%sas_pgcon                          &
      &                                                                    )
 
 #if (WRF_CHEM == 1)

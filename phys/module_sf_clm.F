@@ -462,12 +462,10 @@ module clm_varcon
   integer,  parameter :: idx_rhos_max   = 8              ! maxiumum snow density index used in aging lookup table [idx]
   integer,  parameter :: numrad_snw  =   5               ! number of spectral bands used in snow model [nbr]
 
-  !mgf++czhao
   integer,  parameter :: idx_bc_nclrds_min      = 1      ! minimum index for BC particle size in optics lookup table
   integer,  parameter :: idx_bc_nclrds_max      = 10     ! maximum index for BC particle size in optics lookup table
   integer,  parameter :: idx_bcint_icerds_min   = 1      ! minimum index for snow grain size in optics lookup table for within-ice BC
   integer,  parameter :: idx_bcint_icerds_max   = 8      ! maximum index for snow grain size in optics lookup table for within-ice BC
-  !mgf--czhao
 
   real(r8), parameter :: pie    = 3.141592653589793_r8 ! pi
   real(r8), parameter :: rpi    = 3.141592653589793_r8 ! pi
@@ -592,12 +590,10 @@ module clm_varcon
   real(r8) :: asm_prm_snw_dfs(idx_Mie_snw_mx,numrad_snw)
   real(r8) :: ext_cff_mss_snw_dfs(idx_Mie_snw_mx,numrad_snw)
 
-  !mgf++czhao
   ! Size-dependent BC optical properties. Currently a fixed BC size is
   ! assumed, but this framework enables optical properties to be
   ! assigned based on the BC effective radius, should this be
   ! implemented in the future.
-  !czhao
   !now using size-resolved BC optical properties for 10-size-bin
   !effective radius in um: 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5
   !
@@ -610,7 +606,6 @@ module clm_varcon
   real(r8) :: ss_alb_bc2(numrad_snw,idx_bc_nclrds_max)
   real(r8) :: asm_prm_bc2(numrad_snw,idx_bc_nclrds_max)
   real(r8) :: ext_cff_mss_bc2(numrad_snw,idx_bc_nclrds_max)
-  !mgf--czhao
 
   ! hydrophobic OC
   real(r8) :: ss_alb_oc1(1,numrad_snw)
@@ -642,10 +637,8 @@ module clm_varcon
   real(r8) :: asm_prm_dst4(1,numrad_snw)
   real(r8) :: ext_cff_mss_dst4(1,numrad_snw)
 
-  !mgf++czhao
   ! Absorption enhancement factors for within-ice BC
   real(r8) :: bcenh(numrad_snw,idx_bc_nclrds_max,idx_bcint_icerds_max)
-  !mgf--czhao
  data(ss_alb_oc1(1,i),i=1,5) / 0.996738033108225, 0.993951726870337, 0.98995641641622, &
     0.986792757460599, 0.950852907010411/
 
@@ -1122,7 +1115,6 @@ contains
 
     allocate  (plant(num_landcover_types,maxpatch_pft))
     allocate  (cover(num_landcover_types,maxpatch_pft))
-
   if(num_landcover_types== 24.or. num_landcover_types==28) then ! USGS
       plant(:,1) = (/ 0,  15,  15,  15,  15,  15, &
                             14,   9,   9,  14,   7,   3, &
@@ -1168,25 +1160,25 @@ contains
         plant(:,1) = (/1, 4,  3, 7,  1, 9,  9, 9, 14, 14, &
                        0, 15, 0, 15, 0, 11, 0, 2, 11, 11/)
 
-        cover(:,1) = (/75., 95.,50.,  75., 37., 80., 50., 80., 70.,60.,&
+        cover(1:20,1) = (/75., 95.,50.,  75., 37., 80., 50., 80., 70.,60.,&
                        100.,85.,100., 50., 100.,10., 100.,13., 20.,10./)
 
         plant(:,2) = (/0, 0, 0, 0, 7, 0, 14, 0, 6, 13, &
                        0, 0, 0, 14,0, 0, 0,  3, 12,12/)
 
-        cover(:,2) = (/25., 5., 50.,25.,37.,20.,30.,20.,30.,20.,&
+        cover(1:20,2) = (/25., 5., 50.,25.,37.,20.,30.,20.,30.,20.,&
                        0.,  15.,0., 35.,0., 90.,0., 13.,20.,10./)
 
         plant(:,3) = (/0, 0, 0, 0, 0, 0, 0, 0, 0, 0, &
                        0, 0, 0, 0, 0, 0, 0,10, 0, 0/)
 
-        cover(:,3) = (/0.,0.,0., 0., 26.,0., 20., 0., 0., 20.,&
+        cover(1:20,3) = (/0.,0.,0., 0., 26.,0., 20., 0., 0., 20.,&
                        0.,0.,0., 15.,0., 0., 0., 24., 60.,80./)
 
         plant(:,4) = (/0, 0, 0, 0, 0, 0, 0, 0, 0, 0, &
                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0/)
 
-        cover(:,4) = (/0.,0.,0.,0.,0.,0.,0.,0., 0.,0.,&
+        cover(1:20,4) = (/0.,0.,0.,0.,0.,0.,0.,0., 0.,0.,&
                        0.,0.,0.,0.,0.,0.,0.,50.,0.,0./)
   else
         write(6,*)'CLM works only for USGS (24) and MODIS(20) land use types, '
@@ -4832,89 +4824,40 @@ contains
 ! !IROUTINE: megan_factors_init
 !
 ! !INTERFACE:
-  subroutine megan_factors_init( filename )
+  subroutine megan_factors_init( )
 !
 ! !DESCRIPTION:
-! Initializes the MEGAN factors using data from input file 
-!
-!
-! !ARGUMENTS:
-    character(len=*),intent(in) :: filename ! MEGAN factors input file
+! Initializes the MEGAN factors using data from input files 
+
+
 
 !EOP
 !-----------------------------------------------------------------------
 !
-    integer :: ncid             ! netcdf id
-    integer :: start(2), count(2)
+    logical :: opened
+    integer :: lu_unit             ! id for opening file
 
-    integer :: i, vid
-    integer :: dimid, n_comps, n_classes, n_pfts
-    integer :: class_ef_vid,comp_ef_vid,comp_name_vid,class_num_vid
-    integer :: comp_mw_vid
+    integer :: i, j
+    integer :: n_comps, n_classes, n_pfts
     integer, allocatable :: class_nums(:)
 
     real(r8),allocatable :: factors(:,:)
-    real(r8),allocatable :: comp_factors(:)
-    real(r8),allocatable :: class_factors(:)
+    real(r8),allocatable :: class_factors2d(:,:),comp_factors2d(:,:)
 
     character(len=132) :: err_msg
 
     logical, external :: wrf_dm_on_monitor
 
-#ifdef NETCDF
-include 'netcdf.inc'
-#else
-    call wrf_error_fatal( 'megan_factors_init: clm megan2.1 requires netcdf' )
-#endif
+    !A temporary solution to avoid reading netcdf file. Some of the data
+    ! is hardwired while other is read from the text files
 
-    allocate( comp_factors_table(150) )
+    !hardwired data (future work: avoid hardwiring this data)
+    n_comps   = 150
+    n_classes = 20 
+    n_pfts    = 16
+
+    allocate( comp_factors_table(n_comps) )
     allocate( hash_table_indices(tbl_hash_sz) )
-
-!-----------------------------------------------------------------------
-!   read dimensions from megan factors file
-!-----------------------------------------------------------------------
-    if( wrf_dm_on_monitor() ) then
-
-      err_msg = 'megan_factors_init: failed to open file ' // trim(filename)
-      call handle_ncerr( nf_open( trim(filename), nf_noclobber, ncid ), trim(err_msg) )
-
-      err_msg = 'megan_factors_init: failed to get Comp_num id'
-      call handle_ncerr( nf_inq_dimid( ncid, 'Comp_Num', dimid ), trim(err_msg) ) 
-      err_msg = 'megan_factors_init: failed to get Comp_Num'
-      call handle_ncerr( nf_inq_dimlen( ncid, dimid, n_comps ), trim(err_msg) )
-
-      err_msg = 'megan_factors_init: failed to get Class_Num id'
-      call handle_ncerr( nf_inq_dimid( ncid, 'Class_Num', dimid ), trim(err_msg) ) 
-      err_msg = 'ftuv_init: failed to get Class_Num'
-      call handle_ncerr( nf_inq_dimlen( ncid, dimid, n_classes ), trim(err_msg) )
-
-      err_msg = 'megan_factors_init: failed to get PFT_Num id'
-      call handle_ncerr( nf_inq_dimid( ncid, 'PFT_Num', dimid ), trim(err_msg) ) 
-      err_msg = 'ftuv_init: failed to get PFT_Num'
-      call handle_ncerr( nf_inq_dimlen( ncid, dimid, n_pfts ), trim(err_msg) )
-
-      err_msg = 'megan_factors_init: failed to get Class_EF id'
-      call handle_ncerr( nf_inq_varid( ncid, 'Class_EF', class_ef_vid ), trim(err_msg) ) 
-
-      err_msg = 'megan_factors_init: failed to get Comp_EF id'
-      call handle_ncerr( nf_inq_varid( ncid, 'Comp_EF', comp_ef_vid ), trim(err_msg) ) 
-
-      err_msg = 'megan_factors_init: failed to get Comp_Name id'
-      call handle_ncerr( nf_inq_varid( ncid, 'Comp_Name', comp_name_vid ), trim(err_msg) ) 
-
-      err_msg = 'megan_factors_init: failed to get Class_Num id'
-      call handle_ncerr( nf_inq_varid( ncid, 'Class_Num', class_num_vid ), trim(err_msg) ) 
-
-      err_msg = 'megan_factors_init: failed to get Comp_MW id'
-      call handle_ncerr( nf_inq_varid( ncid, 'Comp_MW', comp_mw_vid ), trim(err_msg) ) 
-    endif
-
-!-----------------------------------------------------------------------
-!   bcast dimensions from megan factors file
-!-----------------------------------------------------------------------
-    CALL wrf_dm_bcast_bytes ( n_pfts , IWORDSIZE )
-    CALL wrf_dm_bcast_bytes ( n_classes , IWORDSIZE )
-    CALL wrf_dm_bcast_bytes ( n_comps , IWORDSIZE )
 
     write(err_msg,'('' megan_factors_init: n_{pts,classes,comps} = '',3i4)') &
            n_pfts, n_classes, n_comps
@@ -4924,17 +4867,36 @@ include 'netcdf.inc'
 
     allocate( factors(n_pfts,n_comps) )
 
-    allocate( comp_names(n_comps) )
-    allocate( comp_molecwghts(n_comps) )
-    allocate( class_nums(n_comps) )
+    allocate( comp_names(n_comps))
+    allocate( comp_molecwghts(n_comps))
+    allocate( class_nums(n_comps))
 
     if( wrf_dm_on_monitor() ) then
-      err_msg = 'megan_factors_init: failed to read comp_names variable'
-      call handle_ncerr( nf_get_var_text( ncid, comp_name_vid, comp_names ), trim(err_msg) )
-      err_msg = 'megan_factors_init: failed to read comp_molecwghts variable'
-      call handle_ncerr( nf_get_var_double( ncid, comp_mw_vid, comp_molecwghts ), trim(err_msg) )
-      err_msg = 'megan_factors_init: failed to read class_nums variable'
-      call handle_ncerr( nf_get_var_int( ncid, class_num_vid, class_nums ), trim(err_msg) )
+
+      lu_unit = -1
+      DO i=10,99
+         INQUIRE ( i , OPENED = opened )
+         IF ( .NOT. opened ) THEN
+            lu_unit=i
+            exit
+         ENDIF
+      ENDDO
+      
+      if(lu_unit<0) then
+         call wrf_error_fatal( " megan_factors_init: can not assign unit to read CLM MEGAN Factors input data" )
+      end if
+      
+      open(lu_unit,file='CLM_MEGAN21_COMP_NAMES')
+      read(lu_unit,*) (comp_names(i),i=1,n_comps)
+      close(lu_unit)
+      
+      open(lu_unit,file='CLM_MEGAN21_COMP_MW')
+      read(lu_unit,*) (comp_molecwghts(i),i=1,n_comps)
+      close(lu_unit)
+      
+      open(lu_unit,file='CLM_MEGAN21_CLASS_NUM')
+      read(lu_unit,*) (class_nums(i),i=1,n_comps)
+      close(lu_unit)
     endif
 
     CALL wrf_dm_bcast_bytes ( comp_names , n_comps*32 )
@@ -4959,19 +4921,21 @@ include 'netcdf.inc'
     CALL wrf_message( "megan_factors_init: finished bld_hash_table_indices" )
 
    if( wrf_dm_on_monitor() ) then
-      allocate( comp_factors(n_pfts) )
-      allocate( class_factors(n_pfts) )
+
+      allocate( class_factors2d(n_classes,n_pfts),comp_factors2d(n_comps,n_pfts) )
+      open(lu_unit,file='CLM_MEGAN21_COMP_EF', access="sequential", form="formatted")
+      read(lu_unit,*)comp_factors2d
+      close(lu_unit)
+
+      open(lu_unit,file='CLM_MEGAN21_CLASS_EF', access="sequential", form="formatted")
+      read(lu_unit,*)class_factors2d
+      close(lu_unit)
+
       do i = 1,n_comps
-        start = (/i,1/)
-        count = (/1,16/)
-        err_msg = 'megan_factors_init: failed to read comp_factors variable'
-        call handle_ncerr( nf_get_vara_double( ncid, comp_ef_vid, start, count, comp_factors ), trim(err_msg) )
-        start = (/class_nums(i),1/)
-        err_msg = 'megan_factors_init: failed to read class_factors variable'
-        call handle_ncerr( nf_get_vara_double( ncid, class_ef_vid, start, count, class_factors ), trim(err_msg) )
-        factors(:,i) = comp_factors(:)*class_factors(:)
+         !Future work: comp_factors and class_factors should be transposed so that "i" is the 2nd index
+         factors(:,i) = comp_factors2d(i,:)*class_factors2d(class_nums(i),:)
       enddo
-      deallocate( comp_factors, class_factors )
+      deallocate( comp_factors2d, class_factors2d )
     endif
 
     CALL wrf_dm_bcast_bytes ( factors , n_comps*n_pfts*DWORDSIZE )
@@ -4982,64 +4946,54 @@ include 'netcdf.inc'
 
     CALL wrf_message( "megan_factors_init: after hash table loop" )
 
-    allocate( LDF(n_classes) )
+    allocate( LDF(n_classes)  )
     allocate( Agro(n_classes) )
     allocate( Amat(n_classes) )
     allocate( Anew(n_classes) )
     allocate( Aold(n_classes) )
-    allocate( betaT(n_classes) )
-    allocate( ct1(n_classes) )
-    allocate( ct2(n_classes) )
-    allocate( Ceo(n_classes) )
+    allocate( betaT(n_classes))
+    allocate( ct1(n_classes)  )
+    allocate( ct2(n_classes)  )
+    allocate( Ceo(n_classes)  )
 
     if( wrf_dm_on_monitor() ) then
-      err_msg = 'megan_factors_init: failed to get LDF id'
-      call handle_ncerr( nf_inq_varid( ncid, 'LDF', vid ), trim(err_msg) ) 
-      err_msg = 'megan_factors_init: failed to read LDF variable'
-      call handle_ncerr( nf_get_var_double( ncid, vid, LDF ), trim(err_msg) )
 
-      err_msg = 'megan_factors_init: failed to get Agro id'
-      call handle_ncerr( nf_inq_varid( ncid, 'Agro', vid ), trim(err_msg) ) 
-      err_msg = 'megan_factors_init: failed to read Agro variable'
-      call handle_ncerr( nf_get_var_double( ncid, vid, Agro ), trim(err_msg) )
+      open(lu_unit,file='CLM_MEGAN21_LDF', access="sequential", form="formatted")
+      read(lu_unit,*)LDF
+      close(lu_unit)
 
-      err_msg = 'megan_factors_init: failed to get Amat id'
-      call handle_ncerr( nf_inq_varid( ncid, 'Amat', vid ), trim(err_msg) ) 
-      err_msg = 'megan_factors_init: failed to read Amat variable'
-      call handle_ncerr( nf_get_var_double( ncid, vid, Amat ), trim(err_msg) )
+      open(lu_unit,file='CLM_MEGAN21_AGRO', access="sequential", form="formatted")
+      read(lu_unit,*)Agro
+      close(lu_unit)
 
-      err_msg = 'megan_factors_init: failed to get Anew id'
-      call handle_ncerr( nf_inq_varid( ncid, 'Anew', vid ), trim(err_msg) ) 
-      err_msg = 'megan_factors_init: failed to read Anew variable'
-      call handle_ncerr( nf_get_var_double( ncid, vid, Anew ), trim(err_msg) )
+      open(lu_unit,file='CLM_MEGAN21_AMAT', access="sequential", form="formatted")
+      read(lu_unit,*)Amat
+      close(lu_unit)
 
-      err_msg = 'megan_factors_init: failed to get Aold id'
-      call handle_ncerr( nf_inq_varid( ncid, 'Aold', vid ), trim(err_msg) ) 
-      err_msg = 'megan_factors_init: failed to read Aold variable'
-      call handle_ncerr( nf_get_var_double( ncid, vid, Aold ), trim(err_msg) )
+      open(lu_unit,file='CLM_MEGAN21_ANEW', access="sequential", form="formatted")
+      read(lu_unit,*)Anew
+      close(lu_unit)
 
-      err_msg = 'megan_factors_init: failed to get betaT id'
-      call handle_ncerr( nf_inq_varid( ncid, 'betaT', vid ), trim(err_msg) ) 
-      err_msg = 'megan_factors_init: failed to read betaT variable'
-      call handle_ncerr( nf_get_var_double( ncid, vid, betaT ), trim(err_msg) )
+      open(lu_unit,file='CLM_MEGAN21_AOLD', access="sequential", form="formatted")
+      read(lu_unit,*)Aold
+      close(lu_unit)
 
-      err_msg = 'megan_factors_init: failed to get ct1 id'
-      call handle_ncerr( nf_inq_varid( ncid, 'ct1', vid ), trim(err_msg) ) 
-      err_msg = 'megan_factors_init: failed to read ct1 variable'
-      call handle_ncerr( nf_get_var_double( ncid, vid, ct1 ), trim(err_msg) )
+      open(lu_unit,file='CLM_MEGAN21_BETAT', access="sequential", form="formatted")
+      read(lu_unit,*)betaT
+      close(lu_unit)
 
-      err_msg = 'megan_factors_init: failed to get ct2 id'
-      call handle_ncerr( nf_inq_varid( ncid, 'ct2', vid ), trim(err_msg) ) 
-      err_msg = 'megan_factors_init: failed to read ct2 variable'
-      call handle_ncerr( nf_get_var_double( ncid, vid, ct2 ), trim(err_msg) )
+      open(lu_unit,file='CLM_MEGAN21_CT1', access="sequential", form="formatted")
+      read(lu_unit,*)ct1
+      close(lu_unit)
 
-      err_msg = 'megan_factors_init: failed to get Ceo id'
-      call handle_ncerr( nf_inq_varid( ncid, 'Ceo', vid ), trim(err_msg) ) 
-      err_msg = 'megan_factors_init: failed to read Ceo variable'
-      call handle_ncerr( nf_get_var_double( ncid, vid, Ceo ), trim(err_msg) )
+      open(lu_unit,file='CLM_MEGAN21_CT2', access="sequential", form="formatted")
+      read(lu_unit,*)ct2
+      close(lu_unit)
 
-      err_msg = 'megan_factors_init: failed to close megan factors file'
-      call handle_ncerr( nf_close( ncid ), trim(err_msg) )
+      open(lu_unit,file='CLM_MEGAN21_CEO', access="sequential", form="formatted")
+      read(lu_unit,*)Ceo
+      close(lu_unit)
+
     endif
 
     CALL wrf_dm_bcast_bytes ( LDF , n_classes*DWORDSIZE )
@@ -22944,8 +22898,7 @@ grid_cell_loop_1 : &
 !              pctgla(g)      = 100.0
 !           end if
 !----------------------------------------------------
-!czhao add fraction information, assume g is always 1
-!czhao +++
+!add fraction information, assume g is always 1
           pftfrac(:) = 0.0
           do nn=0,numpft
             indpft(nn)=nn
@@ -23413,7 +23366,6 @@ module SNICARMod
   real(r8), public, parameter :: scvng_fct_mlt_dst3  = 0.01_r8   ! scavenging factor for dust species 3 inclusion in meltwater [frc]
   real(r8), public, parameter :: scvng_fct_mlt_dst4  = 0.01_r8   ! scavenging factor for dust species 4 inclusion in meltwater [frc]
 
-  !mgf++czhao
   !  "Rfast" parameters used by Flanner et al (2012, ACP)
   !real(r8), public, parameter :: scvng_fct_mlt_bcphi = 1.00_r8   ! scavenging factor for hydrophillic BC inclusion in meltwater [frc]
   !real(r8), public, parameter :: scvng_fct_mlt_bcpho = 0.03_r8   ! scavenging factor for hydrophobic BC inclusion in meltwater [frc]
@@ -23423,7 +23375,6 @@ module SNICARMod
   !real(r8), public, parameter :: scvng_fct_mlt_dst2  = 0.03_r8   ! scavenging factor for dust species 2 inclusion in meltwater [frc]
   !real(r8), public, parameter :: scvng_fct_mlt_dst3  = 0.03_r8   ! scavenging factor for dust species 3 inclusion in meltwater [frc]
   !real(r8), public, parameter :: scvng_fct_mlt_dst4  = 0.03_r8   ! scavenging factor for dust species 4 inclusion in meltwater [frc]
-  !mgf--czhao
 
 
 ! !PRIVATE MEMBER FUNCTIONS:
@@ -23573,10 +23524,8 @@ contains
     real(r8):: asm_prm_aer_lcl(sno_nbr_aer)       ! asymmetry parameter of aerosol species (aer_nbr) [frc]
     real(r8):: ext_cff_mss_aer_lcl(sno_nbr_aer)   ! mass extinction coefficient of aerosol species (aer_nbr) [m2/kg]
 
-    !mgf++czhao
     real(r8) :: rds_bcint_lcl(-nlevsno+1:0)       ! effective radius of within-ice BC [nm]
     real(r8) :: rds_bcext_lcl(-nlevsno+1:0)       ! effective radius of external BC [nm]
-    !mgf--czhao
 
     ! Other local variables
     integer :: APRX_TYP                           ! two-stream approximation type (1=Eddington, 2=Quadrature, 3=Hemispheric Mean) [nbr]
@@ -23663,13 +23612,11 @@ contains
     real(r8):: X(-2*nlevsno+1:0)                  ! tri-diag intermediate variable from Toon et al. (2*lyr)
     real(r8):: Y(-2*nlevsno+1:0)                  ! tri-diag intermediate variable from Toon et al. (2*lyr)
 
-    !mgf++czhao
     integer :: idx_bcint_icerds                  ! index of ice effective radius for optical properties lookup table
     integer :: idx_bcint_nclrds                  ! index of within-ice BC effective radius for optical properties lookup table
     integer :: idx_bcext_nclrds                  ! index of external BC effective radius for optical properties lookup table
     real(r8):: enh_fct                           ! extinction/absorption enhancement factor for within-ice BC
     real(r8):: tmp1                              ! temporary variable
-    !mgf--czhao
 
 
     ! Assign local pointers to derived subtypes components (column-level)
@@ -23811,8 +23758,6 @@ contains
              lon_coord         = 0
           endif
 
-          !mgf++czhao
-          !
           ! Assume fixed BC effective radii of 100nm. This is close to
           ! the effective radius of 95nm (number median radius of
           ! 40nm) assumed for freshly-emitted BC in MAM.  Future
@@ -23820,7 +23765,6 @@ contains
           ! snow.
           rds_bcint_lcl(:)  =  100._r8
           rds_bcext_lcl(:)  =  100._r8
-          !mgf--czhao
 
           ! Set local aerosol array
           do j=1,sno_nbr_aer
@@ -23995,7 +23939,7 @@ contains
                 endif
               
      
-                !mgf++ BC property now dependent on snow grain size, handled below -czhao 
+                !BC property now dependent on snow grain size, handled below -czhao 
                 
                 ! aerosol species 3 optical properties
                 ss_alb_aer_lcl(3)        = ss_alb_oc1(1,bnd_idx)      
@@ -24035,7 +23979,7 @@ contains
                 ! Weighted Mie parameters of each layer
                 do i=snl_top,snl_btm,1
 
-                   !mgf++ within-ice and external BC optical properties-czhao
+                   !within-ice and external BC optical properties-czhao
                    ! Lookup table indices for BC optical properties,
                    ! dependent on snow grain size and BC particle
                    ! size.
@@ -24078,8 +24022,6 @@ contains
                    ss_alb_aer_lcl(2)        = ss_alb_bc2(bnd_idx,idx_bcext_nclrds)
                    asm_prm_aer_lcl(2)       = asm_prm_bc2(bnd_idx,idx_bcext_nclrds)
                    ext_cff_mss_aer_lcl(2)   = ext_cff_mss_bc2(bnd_idx,idx_bcext_nclrds)
-
-                   !mgf--czhao
 
                    L_snw(i)   = h2osno_ice_lcl(i)+h2osno_liq_lcl(i)
 
@@ -32100,9 +32042,7 @@ contains
     real(r8), pointer :: flx_dst_dep_wet4(:) ! wet dust (species 4) deposition (col) [kg m-2 s-1]
     real(r8), pointer :: flx_dst_dep(:)      ! total dust deposition (col) [kg m-2 s-1]
     real(r8), pointer :: forc_aer(:,:)       ! aerosol deposition from atmosphere model (grd,aer) [kg m-1 s-1]
-    !mgf++czhao
     real(r8), pointer :: qflx_snofrz_lyr(:,:)  ! snow freezing rate (col,lyr) [kg m-2 s-1]
-    !mgf--czhao
 
 !
 !
@@ -32137,14 +32077,12 @@ contains
     !czhao add for bulk aerosol
     logical, parameter :: do_bulkaerosol = .false.   ! bulkaerosol for deposition 
 
-    !mgf++czhao
     real(r8) :: refrzsnow                   ! re-frozen snow [kg m-2]
     real(r8) :: subsnow                     ! sublimated snow [kg m-2]
     real(r8) :: frc_refrz                   ! fraction of layer mass that is re-frozen snow [frc]
     real(r8) :: frc_sub                     ! fraction of layer mass that has sublimated [frc]
     real(r8) :: frc_transfer                ! frc_refrz + frc_sub
     real(r8) :: dm_int                      ! mass transfer [kg]
-    !mgf--czhao
  
 !-----------------------------------------------------------------------
 
@@ -32192,11 +32130,9 @@ contains
     flx_dst_dep_dry4 => clm3%g%l%c%cwf%flx_dst_dep_dry4
     forc_aer         => clm_a2l%forc_aer
 
-    !mgf++czhao
     !cwf%qflx_snofrz_lyr does not existed and not used in the code 
     !Re-freezing effect is inactived by default due to uncertainty
     !qflx_snofrz_lyr    => cwf%qflx_snofrz_lyr
-    !mgf--czhao
 
     ! Renew the mass of ice lens (h2osoi_ice) and liquid (h2osoi_liq) in the
     ! surface snow layer resulting from sublimation (frost) / evaporation (condense)
@@ -32421,8 +32357,7 @@ contains
        qflx_top_soil(c) = qflx_rain_grnd(c) + qflx_snomelt(c)
     end do
 
-    !mgf++czhao 
-    ! 
+
     ! Transfer BC and OC from the within-ice state to the external
     ! state based on snow sublimation and re-freezing of liquid water.
     ! Re-freezing effect is inactived by default because of
@@ -32478,7 +32413,6 @@ contains
           end if
        end do
     end do
-    !mgf--czhao
     
     !  set aerosol deposition fluxes from forcing array
     !  The forcing array is either set from an external file 
@@ -33288,9 +33222,8 @@ contains
              mdst2(c,2) = mdst2(c,2)+zmdst2  ! (combo)
              mdst3(c,2) = mdst3(c,2)+zmdst3  ! (combo)
              mdst4(c,2) = mdst4(c,2)+zmdst4  ! (combo)
-             !mgf++ 20140225: Mass-weighted combination of radius -czhao
+             !Mass-weighted combination of radius -czhao
              rds(c,2) = (rds(c,2)*(swliq(c,2)+swice(c,2)) + rds(c,1)*(zwliq+zwice))/(swliq(c,2)+swice(c,2)+zwliq+zwice)
-             !mgf--czhao
 
              call Combo (dzsno(c,2), swliq(c,2), swice(c,2), tsno(c,2), drr, &
                   zwliq, zwice, tsno(c,1))
@@ -33373,9 +33306,8 @@ contains
              mdst2(c,3) = mdst2(c,3)+zmdst2  ! (combo)
              mdst3(c,3) = mdst3(c,3)+zmdst3  ! (combo)
              mdst4(c,3) = mdst4(c,3)+zmdst4  ! (combo)
-             !mgf++ 20140225: Mass-weighted combination of radius-czhao
+             !Mass-weighted combination of radius-czhao
              rds(c,3) = (rds(c,3)*(swliq(c,3)+swice(c,3)) + rds(c,2)*(zwliq+zwice))/(swliq(c,3)+swice(c,3)+zwliq+zwice)
-             !mgf--czhao
 
 
 
@@ -33460,9 +33392,8 @@ contains
              mdst2(c,4) = mdst2(c,4)+zmdst2  ! (combo)
              mdst3(c,4) = mdst3(c,4)+zmdst3  ! (combo)
              mdst4(c,4) = mdst4(c,4)+zmdst4  ! (combo)
-             !mgf++ 20140225: Mass-weighted combination of radius
+             !Mass-weighted combination of radius
              rds(c,4) = (rds(c,4)*(swliq(c,4)+swice(c,4)) + rds(c,3)*(zwliq+zwice))/(swliq(c,4)+swice(c,4)+zwliq+zwice)
-             !mgf--czhao
 
              call Combo (dzsno(c,4), swliq(c,4), swice(c,4), tsno(c,4), drr, &
                   zwliq, zwice, tsno(c,3))
@@ -33545,9 +33476,8 @@ contains
              mdst2(c,5) = mdst2(c,5)+zmdst2  ! (combo)
              mdst3(c,5) = mdst3(c,5)+zmdst3  ! (combo)
              mdst4(c,5) = mdst4(c,5)+zmdst4  ! (combo)
-             !mgf++ 20140225: Mass-weighted combination of radius
+             !Mass-weighted combination of radius
              rds(c,5) = (rds(c,5)*(swliq(c,5)+swice(c,5)) + rds(c,4)*(zwliq+zwice))/(swliq(c,5)+swice(c,5)+zwliq+zwice)
-             !mgf--czhao
 
              call Combo (dzsno(c,5), swliq(c,5), swice(c,5), tsno(c,5), drr, &
                   zwliq, zwice, tsno(c,4))
@@ -59255,9 +59185,7 @@ MODULE module_sf_clm
   use clmMod,     only: clm
   use module_cam_support, only: endrun
 
-!sw++
   logical, allocatable :: dm_initialized(:)
-!sw--
   
 CONTAINS
 
@@ -59284,9 +59212,7 @@ CONTAINS
                    ,inest, sf_urban_physics,do_bioe,id,          &
 !Optional urban
                 CMR_SFCDIF,CHR_SFCDIF,CMC_SFCDIF,CHC_SFCDIF,    &
-!sw++
                 cmgr_sfcdif,chgr_sfcdif,                        &
-!sw--
                 tr_urb2d,tb_urb2d,tg_urb2d,tc_urb2d,qc_urb2d,   & !H urban
                 uc_urb2d,                                       & !H urban
                 xxxr_urb2d,xxxb_urb2d,xxxg_urb2d,xxxc_urb2d,    & !H urban
@@ -59300,15 +59226,11 @@ CONTAINS
                 num_roof_layers, num_wall_layers,               & !I urban
                 num_road_layers, DZR, DZB, DZG,                 & !I urban
                 FRC_URB2D, UTYPE_URB2D,                         & ! urban
-!sw++
                 cmcr_urb2d,tgr_urb2d,tgrl_urb3d,smr_urb3d,      & ! urban
                 drelr_urb2d,drelb_urb2d,drelg_urb2d,            & ! urban
                 flxhumr_urb2d,flxhumb_urb2d,flxhumg_urb2d,      &
-!sw--
 ! subgrids
-!sw++
                 numc,nump,sabv,sabg,lwup,snl, &
-!sw--
                 snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
                 h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm ,    &
                 t_ref2m,h2osoi_liq_s1,                 &
@@ -59908,10 +59830,8 @@ CONTAINS
 !    print*,'nlevsoi and nlevlak must be equal to num_soil_layers in CLM; Stop in module_sf_clm.F'
 !    call endrun() 
 !  end if
-!sw++
   nstep = nint( (xtime*60. + dtwrf) / dt)
   nstep = max( 1,nstep )
-!sw--
 
   dtt = dt
   
@@ -60208,10 +60128,9 @@ patch_loop_1 : &
       t_ref2m_buf(m)    = t_ref2m(i,m,j)
       q_ref2m_buf(m)    = q_ref2m(i,m,j)
 
-      !czhao add and check wtp_buf   -czhao +++++ 
+      !add and check wtp_buf
         wtc_buf(m)=wtc(i,m,j)        
         wtp_buf(m)=wtp(i,m,j)         
-      !czhao ----------
 
 #ifdef CN
 !CROP CN VARS
@@ -61300,10 +61219,8 @@ end subroutine clmdrv
 #endif
      !czhao add megan_specifier to replace namelist input
      character(len=2000) :: megan_specifier(100)
-!sw++
 !    character(len=256) :: term1,term2,term3,term4,term5,term6,term7,term8 
      character(len=300) :: term1,term2,term3,term4,term5,term6,term7,term8 
-!sw--
 #if(WRF_CHEM == 1)
      character(len=*), intent(in) :: megan_factors_file
      logical, intent(in)          :: megan_mapped_emisfctrs
@@ -61323,7 +61240,6 @@ end subroutine clmdrv
 
    write(msg,'(''clminit: beginning for domain = '',i2)') id
    call wrf_debug( 0,trim(msg) )
-!sw++
    if( id == 1 .and. .not. allocated(dm_initialized) ) then
      call nl_get_max_dom( 1,max_dom ) 
      allocate( dm_initialized(max_dom),stat=errflag )
@@ -61336,7 +61252,6 @@ end subroutine clmdrv
    if( dm_initialized(id) ) then
      return
    endif
-!sw--
 
    !************************megan speciation by Chun Zhao****************************!
 #if( WRF_CHEM == 1)
@@ -61592,7 +61507,7 @@ master_init: &
 !  Read the CLM Megan2.1 factors
 !------------------------------------------------------------------------------
      CALL wrf_message( 'clminit: B4 call to megan_factors_init' )
-     CALL megan_factors_init( megan_factors_file )
+     CALL megan_factors_init( )
 !------------------------------------------------------------------------------
 !  Initialize the CLM Megan2.1 factors and maps
 !------------------------------------------------------------------------------

@@ -111,6 +111,29 @@ state   real    H2OSOI_VOL8    i4j      misc      1          Z     rd=(interp_ma
 state   real    H2OSOI_VOL9    i4j      misc      1          Z     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)           "H2OSOI_VOL9"      "9TH  SOILLAYER VOL MOIST"   "fraction"
 state   real    H2OSOI_VOL10   i4j      misc      1          Z     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)           "H2OSOI_VOL10"     "10TH SOILLAYER VOL MOIST"   "fraction"
 
+state    real   watsat2d        ij     misc        1         -     rh    "watsat2d"     "volumetric soil water at saturation from CLM"      ""
+state    real   snowdust_col    ij     misc        1         -     rh03    "snowdust_col"     "dust mass in column snow from CLM"      "kg m-2"
+state    real   snowdust_top    ij     misc        1         -     rh03    "snowdust_top"     "dust mass in top snow from CLM"      "kg m-2"
+state    real   snowbc_col      ij     misc        1         -     rh03    "snowbc_col"     "bc mass in column snow from CLM"      "kg m-2"
+state    real   snowbc_top      ij     misc        1         -     rh03    "snowbc_top"     "bc mass in top snow from CLM"      "kg m-2"
+state    real   snow_top        ij     misc        1         -     rh03    "snow_top"     "snow mass in top snow from CLM"      "kg m-2"
+state    real   snow_frac       ij     misc        1         -     rh03    "snow_frac"     "snow fraction from CLM"      "0~1"
+state    real   snowlayer2d     ij     misc        1         -     rh03    "snowlayer2d"     "number of snow layer from CLM"      ""
+state    real   snowrds2d1      ij     misc        1         -     rh03    "snowrds2d1"     "1st snow effective radius from CLM"      "um"
+state    real   snowrds2d2      ij     misc        1         -     rh03    "snowrds2d2"     "2nd snow effective radius from CLM"      "um"
+state    real   snowrds2d3      ij     misc        1         -     rh03    "snowrds2d3"     "3rd snow effective radius from CLM"      "um"
+state    real   snowrds2d4      ij     misc        1         -     rh03    "snowrds2d4"     "4th snow effective radius from CLM"      "um"
+state    real   snowrds2d5      ij     misc        1         -     rh03    "snowrds2d5"     "5th snow effective radius from CLM"      "um"
+
+state    real   sfc_frc_aer       ij     misc        1         -     rh03    "sfc_frc_aer"     "aerosol forcing in snow from CLM"      "W m-2"
+state    real   sfc_frc_aer_snow  ij     misc        1         -     rh03    "sfc_frc_aer_snow"     "aerosol forcing in snow from CLM (averaged with snow only)"      "W m-2"
+state    real   sfc_frc_bc        ij     misc        1         -     rh03    "sfc_frc_bc"     "bc forcing in snow from CLM"      "W m-2"
+state    real   sfc_frc_bc_snow   ij     misc        1         -     rh03    "sfc_frc_bc_snow"     "bc forcing in snow from CLM (averaged with snow only)"      "W m-2"
+state    real   sfc_frc_dst       ij     misc        1         -     rh03    "sfc_frc_dst"     "dust forcing in snow from CLM"      "W m-2"
+state    real   sfc_frc_dst_snow  ij     misc        1         -     rh03    "sfc_frc_dst_snow"     "dust forcing in snow from CLM (averaged with snow only)"      "W m-2"
+
+state    real   pct_pft_input     i{npft}j misc      1       Z      i012rh   "PCT_PFT"   "PFT PERCENTAGE BY CATEGORY"  ""
+
 #Extra subgrid (PFT-level) output variables
 state   real    ALBEDOsubgrid  i4j      misc      1          Z     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)           "ALBEDOsubgrid"    "PFT-level ALBEDO"           ""
 state   real    LHsubgrid      i4j      misc      1          Z     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)           "LHsubgrid"        "PFT-level Latent Heat"      "W/m^2"
@@ -121,6 +144,13 @@ state   real    SABVsubgrid    i4j      misc      1          Z     rd=(interp_ma
 state   real    SABGsubgrid    i4j      misc      1          Z     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)           "SABGsubgrid"      "PFT-level SABG"             "W/m^2"
 state   real    NRAsubgrid     i4j      misc      1          Z     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)           "NRAsubgrid"       "PFT-level Net Radiation"    "W/m^2"
 state   real    SWUPsubgrid    i4j      misc      1          Z     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)           "SWUPsubgrid"      "PFT-level Shortwave Up"     "W/m^2"
+
+#CLM SNOW ALBEDO without aerosol
+state    real  ALBEDOG          ij      misc        1         -      rh02          "ALBEDOG"                   "GROUND ALBEDO"
+state    real  ALBEDO_AER       ij      misc        1         -      rh02          "ALBEDO_AER"                   "SNOW ALBEDO without aerosol"
+state    real  ALBEDO_BC        ij      misc        1         -      rh02          "ALBEDO_BC"                   "SNOW ALBEDO without BC"
+state    real  ALBEDO_DST       ij      misc        1         -      rh02          "ALBEDO_DST"                   "SNOW ALBEDO without dust"
+
 #
 #snow aerosol-czhao
 state   real    -         i4jf   MSS_BCPHI        1         -     -    -

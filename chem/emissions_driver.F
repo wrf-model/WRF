@@ -918,7 +918,7 @@ CONTAINS
        !print*,'jdf index c3h8    ',p_c3h8
        do m = 1,shr_megan_mechcomps_n
          p_in_chem = shr_megan_mechcomps(m)%index
-         print*,'jdf index',m,p_in_chem
+         !print*,'jdf index',m,p_in_chem
 !jdf     IF ( p_in_chem+1 == p_isopr ) THEN
          IF ( p_in_chem+1 == p_isoprene ) THEN
            ebio_iso(its:ite,jts:jte) = e_bio(its:ite,jts:jte,p_in_chem)*convert2(its:ite,jts:jte)

@@ -540,6 +540,20 @@ em_real : wrf
                ln -sf ../../run/CLM_EXT_ICE_DRC_DATA . ;               \
                ln -sf ../../run/CLM_KAPPA_DATA . ;                     \
                ln -sf ../../run/CLM_TAU_DATA . ;                       \
+               ln -sf ../../run/CLM_MEGAN21_COMP_NAMES . ;             \
+               ln -sf ../../run/CLM_MEGAN21_COMP_MW . ;                \
+               ln -sf ../../run/CLM_MEGAN21_CLASS_NUM . ;              \
+               ln -sf ../../run/CLM_MEGAN21_COMP_EF . ;                \
+               ln -sf ../../run/CLM_MEGAN21_LDF . ;                    \
+               ln -sf ../../run/CLM_MEGAN21_AGRO . ;                   \
+               ln -sf ../../run/CLM_MEGAN21_AMAT . ;                   \
+               ln -sf ../../run/CLM_MEGAN21_ANEW . ;                   \
+               ln -sf ../../run/CLM_MEGAN21_CLASS_EF . ;               \
+               ln -sf ../../run/CLM_MEGAN21_AOLD . ;                   \
+               ln -sf ../../run/CLM_MEGAN21_BETAT . ;                  \
+               ln -sf ../../run/CLM_MEGAN21_CT1 . ;                    \
+               ln -sf ../../run/CLM_MEGAN21_CT2 . ;                    \
+               ln -sf ../../run/CLM_MEGAN21_CEO . ;                    \
                ln -sf ../../run/ozone.formatted . ;                    \
                ln -sf ../../run/ozone_lat.formatted . ;                \
                ln -sf ../../run/ozone_plev.formatted . ;               \

@@ -1416,7 +1416,7 @@
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          count_fatal_error = count_fatal_error + 1
       END IF
-#ifdef WRF_CHEM
+#if (WRF_CHEM == 1)
       DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec%bio_emiss_opt(i) == MEGAN2_CLM ) THEN
             oops = oops + 1 
@@ -1438,7 +1438,7 @@
 !  Check for possible logic errors with namelist settings.
 !-----------------------------------------------------------------------
       oops = 0
-#ifdef WRF_CHEM
+#if (WRF_CHEM == 1)
       DO i = 1, model_config_rec % max_dom
         IF ( model_config_rec%bio_emiss_opt(i) == MEGAN2_CLM .and. &
              model_config_rec%sf_surface_physics(i) /= CLMSCHEME ) THEN

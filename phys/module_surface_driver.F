@@ -6,10 +6,8 @@ CONTAINS
    SUBROUTINE surface_driver(                                         &
      &           HYDRO_dt,sfcheadrt,INFXSRT,soldrain,                 &
      &           acgrdflx,achfx,aclhf                                 &
-!sw++
      &          ,acsnom,acsnow,snowfallac,akhs,akms                   &
                 ,albedo,albedog,albedo_aer,albedo_bc,albedo_dst,br,canwat &
-!sw--
      &          ,chklowq,dt,dx,dz8w,dzs,glw                           &
      &          ,grdflx,gsw,swdown,gz1oz0,hfx,ht,ifsnow,isfflx        &
      &          ,fractional_seaice,seaice_albedo_opt                  &
@@ -17,9 +15,7 @@ CONTAINS
      &          seaice_thickness_default                              &
      &          ,seaice_snowdepth_opt,seaice_snowdepth_max            &
      &          ,seaice_snowdepth_min,tice2tsk_if2cold                &
-!sw++
      &          ,ifndalbsi, ifndicedepth, ifndsnowsi, do_bioe         &
-!sw--
      &          ,isltyp,itimestep,julian_in,ivgtyp,lowlyr,mavail,rmol &
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,fm,fhh,psih   &
 #if (NMM_CORE==1)
@@ -104,11 +100,9 @@ CONTAINS
      &          ,OM_LAT,okms,okme,rdx,rdy,msfu,msfv,msft              &
      &          ,XTIME,OM_TINI,OM_SINI,id,omdt                        &
 ! CLM variables
-!sw++
 #if(WRF_CHEM == 1 )
      &          ,bio_emiss_opt,e_bio, ne_area                         &
 #endif
-!sw--
      &          ,numc,nump,sabv,sabg,lwup,snl,history_interval &
      &          ,snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
      &           h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm ,         &
@@ -138,10 +132,8 @@ CONTAINS
      &           ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
      &           Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,       &
      &           SWUPsubgrid,LHsoi,LHveg,LHtran                      &
-!sw++
      &           ,t_veg24, t_veg240, fsun24, fsun240,                &
      &           fsd24, fsd240, fsi24, fsi240, laip                  &
-!sw--
 #ifdef CN
 !ADD_NEW_VAR for crop and cn
      &           ,dyntlai,dyntsai,dyntop,dynbot                              &
@@ -175,7 +167,6 @@ CONTAINS
      &           ,dwt_frootn_to_litr1n,dwt_frootn_to_litr2n, dwt_frootn_to_litr3n &
      &           ,dwt_livecrootn_to_cwdn,dwt_deadcrootn_to_cwdn,retransn &
 #endif
-!sw++
                  ,watsat2d,snowdust_col2d,snowdust_top2d,snowbc_col2d,snowbc_top2d,snow_top2d &
                  ,snow_frac2d,snowlayer2d,snowrds2d1,snowrds2d2,snowrds2d3,snowrds2d4,snowrds2d5 &
                  ,sfc_frc_aer,sfc_frc_aer_snow,sfc_frc_bc,sfc_frc_bc_snow,sfc_frc_dst,sfc_frc_dst_snow &
@@ -187,7 +178,6 @@ CONTAINS
 #if( WRF_CHEM == 1 )
      &           ,drydep_flux,wetdep_flux       &
 #endif
-!sw--
             !  Optional urban
      &          ,slope_rad,topo_shading,shadowmask                    & !I solar
      &          ,swnorm,slope,slp_azi,diffuse_frac                    & !I solar
@@ -326,13 +316,11 @@ CONTAINS
                                        ,MYNNSFCSCHEME             &
                                        ,OMLSCHEME                 &
                                        ,PWP3DSCHEME               &
-!sw++
 #if( WRF_CHEM == 1)
                                        ,num_drydep_flux           &
                                        ,num_wetdep_flux           &
 #endif
                                        ,num_mss_bcphi
-!sw--
 #else
    USE module_state_description, ONLY : SFCLAYSCHEME              &
                                        ,SFCLAYREVSCHEME           &
@@ -686,9 +674,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   SNOTIME
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   AKHS
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   AKMS
-!sw++
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   ALBEDO,ALBEDOG,ALBEDO_AER,ALBEDO_BC,ALBEDO_DST
-!sw--
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   CANWAT
 
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   GRDFLX
@@ -1084,19 +1070,14 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)          ::   ZOL
 
    INTEGER, INTENT(IN) :: MAXPATCH, inest
-!sw++
 #if (WRF_CHEM == 1 )
    INTEGER, INTENT(IN) :: bio_emiss_opt
    INTEGER, INTENT(IN) :: ne_area
 #endif
-
-!sw--
-
   integer, optional,  dimension(ims:ime,jms:jme ),intent(inout) :: numc,nump
   real,    optional,  dimension(ims:ime,jms:jme ),intent(inout) :: sabv,sabg,lwup
   integer, optional,  dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) :: snl
   real,    optional,  dimension(ims:ime,jms:jme ),intent(inout) ::t2m_max,t2m_min,t2clm
-!sw++
   real,    optional, dimension(ims:ime,1:maxpatch,jms:jme,num_mss_bcphi),intent(inout) ::  &
                   mss_bcphi,mss_bcpho,mss_ocphi,mss_ocpho,mss_dst1,mss_dst2,mss_dst3,mss_dst4
   real,    optional, dimension(ims:ime,1:maxpatch,jms:jme,num_mss_bcphi),intent(inout) ::  &
@@ -1106,7 +1087,6 @@ CONTAINS
   INTEGER, INTENT(IN)         :: num_pft_input
   LOGICAL,OPTIONAL,INTENT(IN) :: input_pft_flag
   REAL, DIMENSION(ims:ime, num_pft_input,jms:jme ),OPTIONAL, INTENT(IN) ::  pct_pft_input
-!sw--
   real,    optional,  dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) ::  &
                 snowdp,wtc,wtp,h2osno,t_grnd,t_veg,         &
                 h2ocan,h2ocan_col,   &
@@ -1135,12 +1115,10 @@ CONTAINS
                 ALBEDOsubgrid,LHsubgrid,HFXsubgrid,LWUPsubgrid,     &
                 Q2subgrid,SABVsubgrid,SABGsubgrid,NRAsubgrid,SWUPsubgrid ,&
                 LHsoi,LHveg,LHtran
-!sw++
 #if (WRF_CHEM == 1)
   real,    optional,  dimension(ims:ime,jms:jme,1:ne_area ),intent(inout) ::  &
                 e_bio
 #endif
-!sw--
 #ifdef CN
 !ylu 05/31/2011
 
@@ -3605,7 +3583,6 @@ CONTAINS
             ENDIF
          ENDIF
 
-!sw++
        write(message,'('' surface_driver: B4 call to clmdrv with do_bioe = '',l)') do_bioe
        CALL wrf_debug( 100,trim(message) )
        CALL wrf_debug(100,'in clmdrv')
@@ -3613,15 +3590,12 @@ CONTAINS
        if (num_soil_layers.ne.10) then
         CALL wrf_error_fatal('CLM land surface model need num_soil_layers=10')
        endif
-!sw--
 
        CALL clmdrv(dz8w,qv_curr,p8w, t_phy,tsk,                   &
                 hfx,qfx,lh,grdflx,qgh,gsw,swdown,               &
                 ra_sw_physics,history_interval,glw,smstav,smstot, &
                 sfcrunoff,udrunoff,ivgtyp,isltyp,vegfra,        &
-!sw++
                 albedo,albedog,albedo_aer,albedo_bc,albedo_dst, &
-!sw--
                 znt,z0, tmn,xland,xice, emiss,                  &
                 snowc,qsfc,rainbl,maxpatch,                     &
                 num_soil_layers,dtbl,xtime, dt,dzs,             &
@@ -3637,9 +3611,7 @@ CONTAINS
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte, &
-!sw++
                 inest,sf_urban_physics,do_bioe,id               &
-!sw--
 !Optional urban
                ,cmr_sfcdif,chr_sfcdif,cmc_sfcdif,chc_sfcdif    &
                ,cmgr_sfcdif,chgr_sfcdif                        &
@@ -3744,11 +3716,9 @@ CONTAINS
                DO i=i_start(ij),i_end(ij)
                   IF ( ( XICE(I,J) .GE. XICE_THRESHOLD) .AND. ( XICE(i,j) .LE.  1.0 ) ) THEN
                      albedo(i,j) = ( albedo(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.08  )
-!sw++
                      albedo_aer(i,j) = ( albedo_aer(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.08  )
                      albedo_bc(i,j) = ( albedo_bc(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.08  )
                      albedo_dst(i,j) = ( albedo_dst(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.08  )
-!sw--
                      emiss(i,j) = ( emiss(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.98  )
                   ENDIF
                ENDDO

@@ -603,6 +603,10 @@ em_real : wrf
              ln -sf ../../run/CLM_ALB_ICE_DFS_DATA . ;              \
              ln -sf ../../run/CLM_ALB_ICE_DRC_DATA . ;              \
              ln -sf ../../run/CLM_ASM_ICE_DFS_DATA . ;              \
+             ln -sf ../../run/CLM_ASM_BC_DATA . ;                   \
+             ln -sf ../../run/CLM_BCENH_DATA . ;                    \
+             ln -sf ../../run/CLM_EXT_BC_DATA . ;                   \
+             ln -sf ../../run/CLM_SS_BC_DATA . ;                    \
              ln -sf ../../run/CLM_ASM_ICE_DRC_DATA . ;              \
              ln -sf ../../run/CLM_DRDSDT0_DATA . ;                  \
              ln -sf ../../run/CLM_EXT_ICE_DFS_DATA . ;              \
@@ -616,12 +620,12 @@ em_real : wrf
              ln -sf ../../run/aerosol_lat.formatted . ;             \
              ln -sf ../../run/aerosol_lon.formatted . ;             \
              ln -sf ../../run/aerosol_plev.formatted . ;            \
-             ln -sf ../../run/capacity.asc . ;            \
-             ln -sf ../../run/coeff_p.asc . ;            \
-             ln -sf ../../run/coeff_q.asc . ;            \
-             ln -sf ../../run/constants.asc . ;            \
-             ln -sf ../../run/masses.asc . ;            \
-             ln -sf ../../run/termvels.asc . ;            \
+             ln -sf ../../run/capacity.asc . ;                      \
+             ln -sf ../../run/coeff_p.asc . ;                       \
+             ln -sf ../../run/coeff_q.asc . ;                       \
+             ln -sf ../../run/constants.asc . ;                     \
+             ln -sf ../../run/masses.asc . ;                        \
+             ln -sf ../../run/termvels.asc . ;                      \
              ln -sf ../../run/kernels.asc_s_0_03_0_9 . ;            \
              ln -sf ../../run/kernels_z.asc . ;            \
              ln -sf ../../run/bulkdens.asc_s_0_03_0_9 . ;            \

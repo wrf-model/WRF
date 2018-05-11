@@ -445,7 +445,6 @@ BENCH_START(surf_driver_tim)
       else
           HYDRO_dt = -1
       endif
-!sw++
 #if( WRF_USE_CLM == 1)
       if(config_flags%chem_opt > 0) then !czhao +++++
 #if (WRF_CHEM == 1)
@@ -455,11 +454,11 @@ BENCH_START(surf_driver_tim)
           do_bioe = .false.
         endif
 #endif
-      endif !czhao-----
+      endif 
 #else
       do_bioe = .false.
 #endif
-!sw--
+
 
       CALL surface_driver(                                                &
      &        HYDRO_dt=HYDRO_dt,  sfcheadrt=grid%sfcheadrt,               &
@@ -467,9 +466,7 @@ BENCH_START(surf_driver_tim)
      &         ACGRDFLX=grid%acgrdflx  ,ACHFX=grid%achfx        ,ACLHF=grid%aclhf        &
      &        ,ACSNOM=grid%acsnom      ,ACSNOW=grid%acsnow      ,AKHS=grid%akhs          &
      &        ,AKMS=grid%akms          ,ALBBCK=grid%albbck      ,ALBEDO=grid%albedo      &
-!sw++
               ,ALBEDOG=grid%albedog,ALBEDO_AER=grid%albedo_aer,ALBEDO_BC=grid%albedo_bc,ALBEDO_DST=grid%albedo_dst  &
-!sw--
      &        ,EMBCK=grid%embck                                                          &
      &        ,BR=br              ,CANWAT=grid%canwat      ,CHKLOWQ=chklowq    &
      &        ,CT=grid%ct              ,DT=grid%dt         ,DX=grid%dx         &
@@ -488,12 +485,10 @@ BENCH_START(surf_driver_tim)
      &        ,SEAICE_SNOWDEPTH_MIN=config_flags%seaice_snowdepth_min     &
      &        ,TICE2TSK_IF2COLD=config_flags%tice2tsk_if2cold             &
      &        ,IFNDALBSI=grid%ifndalbsi, IFNDICEDEPTH=grid%ifndicedepth   &
-!sw++
 #if (WRF_CHEM == 1)
               ,BIO_EMISS_OPT=grid%bio_emiss_opt,NE_AREA=grid%ne_area,E_BIO=grid%e_bio &
 #endif
               ,IFNDSNOWSI=grid%ifndsnowsi, DO_BIOE=do_bioe                &
-!sw--
      &        ,ISLTYP=grid%isltyp      ,ITIMESTEP=grid%itimestep, JULIAN_IN=grid%julian                  &
      &        ,IVGTYP=grid%ivgtyp      ,LH=grid%lh              ,LOWLYR=grid%lowlyr      &
      &        ,MAVAIL=grid%mavail      ,NUM_SOIL_LAYERS=config_flags%num_soil_layers        &
@@ -616,7 +611,6 @@ BENCH_START(surf_driver_tim)
      &         SABGsubgrid=grid%SABGsubgrid,NRAsubgrid=grid%NRAsubgrid,             &
      &         SWUPsubgrid=grid%SWUPsubgrid,LHsoi=grid%LHsoi,                       &
      &         LHveg=grid%LHveg, LHtran=grid%LHtran                                 &
-!sw++
                ,t_veg24=grid%t_veg24,            t_veg240=grid%t_veg240,            & !voce accum variables
                fsun24=grid%fsun24,              fsun240=grid%fsun240,               & !voce accum variables
                fsd24=grid%fsd24,                fsd240=grid%fsd240,                 & !voce accum variables
@@ -644,7 +638,6 @@ BENCH_START(surf_driver_tim)
 #if( WRF_CHEM == 1)
               ,drydep_flux=grid%drydep_flux,wetdep_flux=grid%wetdep_flux   & !czhao add aerosol deposition to surface 
 #endif
-!sw--
 ! end of CLM variables
      &        ,SLOPE_RAD=config_flags%slope_rad,TOPO_SHADING=config_flags%topo_shading & ! solar
      &        ,SHADOWMASK=grid%shadowmask,DIFFUSE_FRAC=grid%diffuse_frac               & ! solar

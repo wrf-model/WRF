@@ -101,11 +101,10 @@ CONTAINS
   USE module_ghg_fluxes
   USE module_lightning_nox_driver
   USE module_cam_mam_addemiss, only: cam_mam_addemiss
-!sw++
+
 #if( WRF_USE_CLM == 1)
   USE shr_megan_mod, only : shr_megan_mechcomps_n, shr_megan_mechcomps
 #endif
-!sw--
   
   IMPLICIT NONE
 
@@ -340,11 +339,9 @@ CONTAINS
 !
       INTEGER :: begday,endday,i, j, k, m, p_in_chem, ksub, dust_emiss_active, seasalt_emiss_active,emiss_ash_hgt
       REAL :: conv,conv3,conv4,oconv3,oconv4
-!sw++
 #if( WRF_USE_CLM == 1)
       REAL :: convert2(its:ite,jts:jte)
 #endif
-!sw--
       CHARACTER (LEN=80) :: message
       LOGICAL :: do_bioemiss, do_plumerisefire,do_ex_volcanoe
 
@@ -888,7 +885,6 @@ CONTAINS
                ims,ime, jms,jme, kms,kme,                              &
                its,ite, jts,jte, kts,kte                               )
        endif
-!sw++
 #if( WRF_USE_CLM == 1)
      CASE (MEGAN2_CLM)
 !...conversion factor from ppm m min-1 to mol km-2 hr-1
@@ -967,7 +963,6 @@ CONTAINS
          ENDIF
        end do
 #endif
-!sw--
 
      CASE DEFAULT 
        if( do_bioemiss ) &

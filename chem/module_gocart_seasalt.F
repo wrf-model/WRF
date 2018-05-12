@@ -258,12 +258,12 @@ SUBROUTINE source_ss(imx,jmx,lmx,nmx, dt1, tc, &
                  src = dfm*dxy(j)*w10m(i,j)**c0(2)
 !                 src = ch_ss(n,dt(1)%mn)*dfm*dxy(j)*w10m(i,j)**c0(2)
                  if(src < 0.0 ) src=0.
-                 tc(i,j,1,n) = tc(i,j,1,n) + .25*src/airmas(i,j,1)
+                 tc(i,j,1,n) = tc(i,j,1,n) + src/airmas(i,j,1)
 !                if(ipr.eq.1)write(0,*)n,dfm,c0(2),dxy(j),w10m(i,j),src,airmas(i,j,1)
               ELSE
                  src = 0.0
               END IF
-              bems(i,j,n) = bems(i,j,n) + .25*src
+              bems(i,j,n) = bems(i,j,n) + src
            END DO  ! i
         END DO ! j
      END DO ! ir

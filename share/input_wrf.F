@@ -120,17 +120,23 @@
     CALL wrf_debug( 300 , wrf_err_message )
 
 #if ( NMM_CORE != 1 )
-    !  Determine is the input file we are reading is acceptable given the
-    !  assumptions about the current version of the modeling system.
+    IF ( .NOT. dryrun ) THEN
 
-    CALL is_this_data_ok_to_use ( fid , yes_use_this_data )
-
-    IF ( ( yes_use_this_data ) .OR. ( config_flags%force_use_old_data ) ) THEN
-       WRITE(wrf_err_message,*)'Yes, this data is acceptable to use'
-       CALL wrf_debug( 0 , wrf_err_message )
-    ELSE
-       WRITE(wrf_err_message,*)'Whoa there pard, there are troubles with this data. It might be too old.'
-       CALL wrf_error_fatal( wrf_err_message )
+       !  Determine is the input file we are reading is acceptable given the
+       !  assumptions about the current version of the modeling system.
+   
+       CALL is_this_data_ok_to_use ( fid , yes_use_this_data )
+   
+       CALL wrf_inquire_filename ( fid , fname , filestate , ierr )
+       IF ( ( yes_use_this_data ) .OR. ( config_flags%force_use_old_data ) ) THEN
+          WRITE(wrf_err_message,*)'Input data is acceptable to use: ' // TRIM(fname) 
+          CALL wrf_debug( 0 , wrf_err_message )
+       ELSE
+          CALL wrf_debug( 0 , 'File name that is causing troubles = ' // TRIM(fname) )
+          CALL wrf_debug( 0 , TRIM(fname) )
+          WRITE(wrf_err_message,*)'Whoa there pard, there are troubles with this data. It might be too old.'
+          CALL wrf_error_fatal( wrf_err_message )
+       END IF
     END IF
 #endif
 
@@ -1780,9 +1786,11 @@
 
     IF ( &
          ( INDEX(TRIM(input_title_char),'METGRID'     ) .NE. 0 ) .OR. &
+         ( INDEX(TRIM(input_title_char),'SFCFDDA'     ) .NE. 0 ) .OR. &
+         ( INDEX(TRIM(input_title_char),'EMISSIONS'   ) .NE. 0 ) .OR. &
          ( INDEX(TRIM(input_title_char),'XYZZY'       ) .NE. 0 )      &
        ) THEN
-      WRITE(wrf_err_message,*)'Yes, this data is acceptable to use: ' // TRIM(input_title_char)
+      WRITE(wrf_err_message,*)'Yes, this special data is acceptable to use: ' // TRIM(input_title_char)
       CALL wrf_debug( 0 , wrf_err_message )
       skip_rigorous_and_return_right_away = .TRUE.
     END IF

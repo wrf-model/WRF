@@ -337,9 +337,8 @@ CONTAINS
                                        ,TEMFSFCSCHEME             &
                                        ,GFDLSFCSCHEME             &
                                        ,SSIBSCHEME                & ! ssib
-                                       ,GFDLSLAB 
-
-
+                                       ,GFDLSLAB                  &
+                                       ,num_mss_bcphi
 #endif
    USE module_model_constants
 ! *** add new modules of schemes here

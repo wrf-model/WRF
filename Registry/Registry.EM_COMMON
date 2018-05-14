@@ -1853,6 +1853,47 @@ state    real  track_qsnow    {tl}k      misc     1         -      -       "trac
 state    real  track_qgraup   {tl}k      misc     1         -      -       "track_qgraup"       "graupel mixing ratio"       "kg kg-1"
 state    real  track_qvapor   {tl}k      misc     1         -      -       "track_qvapor"       "water vapor mixing ratio"   "kg kg-1"
 
+
+#
+#snow aerosol-czhao
+state   real    -         i4jf   MSS_BCPHI        1         -     -    -
+state   real    MSS_BCPHI_S1      i4jf      MSS_BCPHI      1          Z     rh      "MSS_BCPHI_S1" "1 SUBGRID BCPHI" "kg m-2"
+state   real    MSS_BCPHI_S2      i4jf      MSS_BCPHI      1          Z     rh      "MSS_BCPHI_S2" "2 SUBGRID BCPHI" "kg m-2"
+state   real    MSS_BCPHI_S3      i4jf      MSS_BCPHI      1          Z     rh      "MSS_BCPHI_S3" "3 SUBGRID BCPHI" "kg m-2"
+state   real    MSS_BCPHI_S4      i4jf      MSS_BCPHI      1          Z     rh      "MSS_BCPHI_S4" "4 SUBGRID BCPHI" "kg m-2"
+state   real    MSS_BCPHI_S5      i4jf      MSS_BCPHI      1          Z     rh      "MSS_BCPHI_S5" "5 SUBGRID BCPHI" "kg m-2"
+state   real    -         i4jf   MSS_BCPHO        1         -     -    -
+state   real    MSS_BCPHO_S1      i4jf      MSS_BCPHO      1          Z     rh      "MSS_BCPHO_S1" "1 SUBGRID BCPHO" "kg m-2"
+state   real    MSS_BCPHO_S2      i4jf      MSS_BCPHO      1          Z     rh      "MSS_BCPHO_S2" "2 SUBGRID BCPHO" "kg m-2"
+state   real    MSS_BCPHO_S3      i4jf      MSS_BCPHO      1          Z     rh      "MSS_BCPHO_S3" "3 SUBGRID BCPHO" "kg m-2"
+state   real    MSS_BCPHO_S4      i4jf      MSS_BCPHO      1          Z     rh      "MSS_BCPHO_S4" "4 SUBGRID BCPHO" "kg m-2"
+state   real    MSS_BCPHO_S5      i4jf      MSS_BCPHO      1          Z     rh      "MSS_BCPHO_S5" "5 SUBGRID BCPHO" "kg m-2"
+state   real    -         i4jf   MSS_OCPHI        1         -     -    -
+state   real    MSS_OCPHI_S1      i4jf      MSS_OCPHI      1          Z     rh      "MSS_OCPHI_S1" "1 SUBGRID OCPHI" "kg m-2"
+state   real    MSS_OCPHI_S2      i4jf      MSS_OCPHI      1          Z     rh      "MSS_OCPHI_S2" "2 SUBGRID OCPHI" "kg m-2"
+state   real    MSS_OCPHI_S3      i4jf      MSS_OCPHI      1          Z     rh      "MSS_OCPHI_S3" "3 SUBGRID OCPHI" "kg m-2"
+state   real    MSS_OCPHI_S4      i4jf      MSS_OCPHI      1          Z     rh      "MSS_OCPHI_S4" "4 SUBGRID OCPHI" "kg m-2"
+state   real    MSS_OCPHI_S5      i4jf      MSS_OCPHI      1          Z     rh      "MSS_OCPHI_S5" "5 SUBGRID OCPHI" "kg m-2"
+state   real    -         i4jf   MSS_OCPHO        1         -     -    -
+state   real    MSS_OCPHO_S1      i4jf      MSS_OCPHO      1          Z     rh      "MSS_OCPHO_S1" "1 SUBGRID OCPHO" "kg m-2"
+state   real    MSS_OCPHO_S2      i4jf      MSS_OCPHO      1          Z     rh      "MSS_OCPHO_S2" "2 SUBGRID OCPHO" "kg m-2"
+state   real    MSS_OCPHO_S3      i4jf      MSS_OCPHO      1          Z     rh      "MSS_OCPHO_S3" "3 SUBGRID OCPHO" "kg m-2"
+state   real    MSS_OCPHO_S4      i4jf      MSS_OCPHO      1          Z     rh      "MSS_OCPHO_S4" "4 SUBGRID OCPHO" "kg m-2"
+state   real    MSS_OCPHO_S5      i4jf      MSS_OCPHO      1          Z     rh      "MSS_OCPHO_S5" "5 SUBGRID OCPHO" "kg m-2"
+state   real    -         i4jf   MSS_DST1        1         -     -    -
+state   real    MSS_DST1_S1      i4jf      MSS_DST1      1          Z     rh        "MSS_DST1_S1" "1 SUBGRID DST1" "kg m-2"
+state   real    MSS_DST1_S2      i4jf      MSS_DST1      1          Z     rh        "MSS_DST1_S2" "2 SUBGRID DST1" "kg m-2"
+state   real    MSS_DST1_S3      i4jf      MSS_DST1      1          Z     rh        "MSS_DST1_S3" "3 SUBGRID DST1" "kg m-2"
+state   real    MSS_DST1_S4      i4jf      MSS_DST1      1          Z     rh        "MSS_DST1_S4" "4 SUBGRID DST1" "kg m-2"
+state   real    MSS_DST1_S5      i4jf      MSS_DST1      1          Z     rh        "MSS_DST1_S5" "5 SUBGRID DST1" "kg m-2"
+state   real    -         i4jf   MSS_DST2        1         -     -    -
+state   real    MSS_DST2_S1      i4jf      MSS_DST2      1          Z     rh        "MSS_DST2_S1" "1 SUBGRID DST2" "kg m-2"
+state   real    MSS_DST2_S2      i4jf      MSS_DST2      1          Z     rh        "MSS_DST2_S2" "2 SUBGRID DST2" "kg m-2"
+state   real    MSS_DST2_S3      i4jf      MSS_DST2      1          Z     rh        "MSS_DST2_S3" "3 SUBGRID DST2" "kg m-2"
+state   real    MSS_DST2_S4      i4jf      MSS_DST2      1          Z     rh        "MSS_DST2_S4" "4 SUBGRID DST2" "kg m-2"
+state   real    MSS_DST2_S5      i4jf      MSS_DST2      1          Z     rh        "MSS_DST2_S5" "5 SUBGRID Deal    MSS_CNC_OCPHO_S3      i4jf      MSS_CNC_OCPHO      1          Z  
+
+
 #
 #---------------------------------------------------------------------------------------------------------------------------------------
 #                                               

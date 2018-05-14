@@ -27,6 +27,9 @@
       USE MODULE_MP_ETANEW
       USE MODULE_MICROPHYSICS_DRIVER
       USE MODULE_MICROPHYSICS_ZERO_OUT
+
+      integer, parameter ::      DP = selected_real_kind(12)
+
 !-----------------------------------------------------------------------
 !
       CONTAINS
@@ -1035,6 +1038,9 @@
       REAL,DIMENSION(IMS:IME,JMS:JME) :: wstar_ysu, delta_ysu
       REAL,DIMENSION(IMS:IME,JMS:JME) :: hpbl_hold
 !
+      REAL,DIMENSION(IMS:IME,JMS:JME) :: DMY_REAL2D
+      REAL(DP),DIMENSION(IMS:IME,1,JMS:JME) :: DMY_REAL3D
+!
       LOGICAL :: E_BDY,WARM_RAIN
       LOGICAL :: IS_CAMMGMP_USED=.FALSE.
 !
@@ -1407,6 +1413,8 @@
 !-----------------------------------------------------------------------
 !
       CALL SET_TILES(GRID,IDS,IDE-1,JDS+1,JDE-1,ITS,ITE,JTS,JTE)
+      DMY_REAL2D(:,:)   = 1.0
+      DMY_REAL3D(:,:,:) = 1.0
 
 !
       CALL SURFACE_DRIVER(                                              &
@@ -1414,7 +1422,9 @@
      &           INFXSRT=INFXSRT,  SOLDRAIN=SOLDRAIN,                   &
      &           JULIAN_IN=grid%julian,                                 &
      &           ACSNOM=ACSNOM,ACSNOW=ACSNOW,AKHS=AKHS,AKMS=AKMS        &
-     &          ,ALBEDO=ALBEDO,BR=BR,CANWAT=CMC,CHKLOWQ=CHKLOWQ         &
+     &          ,ALBEDO=ALBEDO,ALBEDOG=DMY_REAL2D,ALBEDO_AER=DMY_REAL2D &
+     &          ,ALBEDO_BC=DMY_REAL2D,ALBEDO_DST=DMY_REAL2D,BR=BR       &
+     &          ,CANWAT=CMC,CHKLOWQ=CHKLOWQ                             &
      &          ,DT=DT,DX=DX,DZ8W=DZ,DZS=DZSOIL,GLW=RLW_DN_SFC          &
      &          ,GRDFLX=GRNFLX,GSW=RSW_NET_SFC,SWDOWN=RSW_DN_SFC        &
      &          ,GZ1OZ0=GZ1OZ0,HFX=TWBS                                 &
@@ -1585,7 +1595,9 @@
      &        ,tkdry3d=grid%tkdry3d,tksatu3d=grid%tksatu3d, LakeModel=grid%sf_lake_physics,  lake_min_elev=grid%lake_min_elev  &
 ! end lake module
      &        ,maxpatch=1,inest=1,history_interval=config_flags%history_interval  & !clm
-     &        ,fasdas=fasdas
+     &        ,fasdas=fasdas, DO_BIOE = .FALSE.,T_VEG24 =DMY_REAL3D ,T_VEG240=DMY_REAL3D,FSUN24=DMY_REAL3D,FSUN240=DMY_REAL3D&
+     &        ,FSD24=DMY_REAL3D,FSD240=DMY_REAL3D       &
+     &        ,FSI24 =DMY_REAL3D,FSI240=DMY_REAL3D,LAIP=DMY_REAL3D,NUM_PFT_INPUT=0                                                                         &
      &                                                          )
 !
 !-----------------------------------------------------------------------

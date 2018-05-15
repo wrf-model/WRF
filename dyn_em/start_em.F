@@ -517,12 +517,12 @@
       !  the half eta levels and the base-profile surface pressure.  Compute 1/rho
       !  from equation of state.  The potential temperature is a perturbation from t0.
 
-      DO k = 1, kte
-         IF ( grid%c1f(1) .NE. 1. ) THEN
-            CALL wrf_debug ( 0 , '---- WARNING : Maybe old non-HVC input, setting default 1d array values for TF' )
-            IF ( grid%hybrid_opt .NE. 0 ) THEN
-               CALL wrf_error_fatal ( '---- Error : Cannot use old input and try to use hybrid vertical coordinate option' )
-            END IF
+      IF ( grid%c1f(1) .NE. 1. ) THEN
+         CALL wrf_debug ( 0 , '---- WARNING : Maybe old non-HVC input, setting default 1d array values for TF' )
+         IF ( grid%hybrid_opt .NE. 0 ) THEN
+            CALL wrf_error_fatal ( '---- Error : Cannot use old input and try to use hybrid vertical coordinate option' )
+         END IF
+         DO k = 1, kte
             grid%c1f(k) = 1.
             grid%c2f(k) = 0.
             grid%c3f(k) = grid%znw(k)
@@ -531,8 +531,27 @@
             grid%c2h(k) = 0.
             grid%c3h(k) = grid%znu(k)
             grid%c4h(k) = 0.
+         END DO
+      END IF
+
+      !  With newer versions of WRF, the grid%t_2 field might come in as "zero"
+      !  from an older data set. Yikes, but it can be corrected unless the user
+      !  has requested moist theta.
+
+      IF ( grid%t_2(its,kte-1,jts) .EQ. 0. ) THEN
+         CALL wrf_debug ( 0 , '---- WARNING : Older v3 input data detected' )
+         IF ( grid%use_theta_m .NE. 0 ) THEN
+            CALL wrf_error_fatal ( '---- Error : Cannot use moist theta option with old data' )
          END IF
-      END DO
+         DO j = jts, MIN(jte,jde-1)
+            DO k = 1, kte-1
+               DO i = its, MIN(ite,ide-1)
+                  grid%t_2(i,k,j) = grid%th_phy_m_t0(i,k,j)
+               END DO
+            END DO
+         END DO
+      END IF
+
       DO j = jts, MIN(jte,jde-1)
          DO i = its, MIN(ite,ide-1)
             !  Base state pressure is a function of eta level and terrain, only, plus
@@ -1626,6 +1645,7 @@ endif
 
    ENDIF
 
+
 ! Some initializations for the simple ccn field.
 
    IF ( f_qnn ) THEN
@@ -1963,7 +1983,6 @@ DEALLOCATE(z_at_q)
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte    )
    ENDIF
 
-print *,'DO_TRAD_FIELDS = ',DO_TRAD_FIELDS
    IF ( config_flags%diag_nwp2 == DO_TRAD_FIELDS ) THEN
       CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: TRAD_FIELDS' )
       CALL trad_fields ( &

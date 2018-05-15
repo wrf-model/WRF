@@ -792,9 +792,9 @@ endif
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_STC',     config_flags%opt_stc     , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_GLA',     config_flags%opt_gla     , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_RSF',     config_flags%opt_rsf     , 1 , ierr )
-        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_SOIL',    config_flags%opt_rsf     , 1 , ierr )
-        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_PEDO',    config_flags%opt_rsf     , 1 , ierr )
-        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_CROP',    config_flags%opt_rsf     , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_SOIL',    config_flags%opt_soil    , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_PEDO',    config_flags%opt_pedo    , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_CROP',    config_flags%opt_crop    , 1 , ierr )
       ENDIF
 
       CALL wrf_put_dom_ti_integer   ( fid, 'DFI_OPT',          config_flags%dfi_opt      , 1 , ierr )

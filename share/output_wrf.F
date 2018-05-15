@@ -479,7 +479,7 @@ endif
     CALL wrf_put_dom_ti_integer( fid, 'IDEAL_CASE'         , config_flags%ideal_case         , 1, ierr )
     CALL wrf_put_dom_ti_integer( fid, 'DIFF_6TH_SLOPEOPT'  , config_flags%diff_6th_slopeopt  , 1, ierr )
     CALL wrf_put_dom_ti_integer( fid, 'AUTO_LEVELS_OPT'    , config_flags%auto_levels_opt    , 1, ierr )
-    CALL wrf_put_dom_ti_real   ( fid, 'DIFF_6TH_THRESH  '  , config_flags%diff_6th_thresh    , 1, ierr )
+    CALL wrf_put_dom_ti_real   ( fid, 'DIFF_6TH_THRESH'    , config_flags%diff_6th_thresh    , 1, ierr )
     CALL wrf_put_dom_ti_real   ( fid, 'DZBOT'              , config_flags%dzbot              , 1, ierr )
     CALL wrf_put_dom_ti_real   ( fid, 'DZSTRETCH_S'        , config_flags%dzstretch_s        , 1, ierr )
     CALL wrf_put_dom_ti_real   ( fid, 'DZSTRETCH_U'        , config_flags%dzstretch_u        , 1, ierr )

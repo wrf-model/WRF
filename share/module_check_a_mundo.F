@@ -1840,6 +1840,13 @@
       CHARACTER (LEN=256) :: physics_suite_lowercase
       CHARACTER (LEN=32) :: formatstring
 
+      !
+      ! Initialize the debug level so that it can be used in the namelist testing.
+      ! wrf_debug_level is a global value in module_wrf_error.
+      !
+
+      wrf_debug_level = model_config_rec%debug_level
+
       max_dom = model_config_rec % max_dom
 
       !

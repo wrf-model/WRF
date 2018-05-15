@@ -193,7 +193,6 @@ CONTAINS
                                                            XICE, &
                                                           XLAND, &
 !                                                         ALBBCK, &
-!                                                         VEGFRA, &
                                                            TBOT
 
 !beka
@@ -490,7 +489,6 @@ CONTAINS
            qsfc(i,j) = qvg(i,j)/(1.+qvg(i,j))
            SMELT(i,j) = 0.
            SNOM (i,j) = 0.
-!           ACSNOW(i,j) = 0.
            SNOWFALLAC(i,j) = 0.
            PRECIPFR(i,j) = 0.
            RHOSNF(i,j) = -1.e3 ! non-zero flag
@@ -816,11 +814,8 @@ CONTAINS
              SNOWH(I,J)=0.0
              SNOWC(I,J)=0.0
            LMAVAIL(I,J)=1.0
-! accumulated water equivalent of frozen precipitation over water [mm]
-!           acsnow(i,j)=acsnow(i,j)+precipfr(i,j)
 
            ILAND=iswater
-!           ILAND=16
            ISOIL=14
 
            patmb=P8w(i,1,j)*1.e-2
@@ -1516,21 +1511,12 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
         BSN=delt/3600.*c1sn*exp(0.08*min(0.,tsnav)-c2sn*rhosn*1.e-3)
        if(bsn*snwe*100..lt.1.e-4) goto 777
         XSN=rhosn*(exp(bsn*snwe*100.)-1.)/(bsn*snwe*100.)
-        rhosn=MIN(MAX(58.8,XSN),500.)
-!13mar18        rhosn=MIN(MAX(76.9,XSN),500.)
-!        rhosn=MIN(MAX(62.5,XSN),890.)
-!        rhosn=MIN(MAX(100.,XSN),400.)
-!        rhosn=MIN(MAX(50.,XSN),400.)
+        rhosn=MIN(MAX(58.8,XSN),500.) ! 13mar18 - switch from 76.9 to 58.8
  777   continue
 
-!      else
-!        rhosn     =200.
-!        rhonewsn  =200.
       endif
 
            newsn=newsnms*delt
-!---- ACSNOW - run-total snowfall water [mm]
-!           acsnow=acsnow+newsn*1.e3
 
        IF(NEWSN.GT.0.) THEN
 !       IF(NEWSN.GE.1.E-8) THEN
@@ -1540,19 +1526,6 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
     ENDIF
 
         newsnowratio = min(1.,newsn/(snwe+newsn))
-
-!*** Calculate fresh snow density (t > -15C, else MIN value)
-!*** Eq. 10 from Koren et al. (1999)
-!--- old formulation from Koren (1999)
-!        if(tabs.lt.258.15) then
-!          rhonewsn=50.
-!          rhonewsn=100.
-!          rhonewsn=62.5
-
-!        else
-!          rhonewsn=MIN(rhonewsn,400.)
-!        endif
-!--- end of old formulation
 
 !--- 27 Feb 2014 - empirical formulations from John M. Brown
 !        rhonewsn=min(250.,rhowater/max(4.179,(13.*tanh((274.15-Tabs)*0.3333))))
@@ -1564,8 +1537,7 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
 !--- compute density of "snowfall" from weighted contribution
 !                 of snow, graupel and ice fractions
 
-         rhosnfall = min(500.,max(58.8,(rhonewsn*snowrat +  &
-!13mar18         rhosnfall = min(500.,max(76.9,(rhonewsn*snowrat +  &
+         rhosnfall = min(500.,max(58.8,(rhonewsn*snowrat +  &  ! 13mar18-switch from 76.9 to 58.8
                      rhonewgr*grauprat + rhonewice*icerat + rhonewgr*curat)))
 
 ! from now on rhonewsn is the density of falling frozen precipitation
@@ -1576,16 +1548,8 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
 !*** without snow melt )
          xsn=(rhosn*snwe+rhonewsn*newsn)/                         &
              (snwe+newsn)
-         rhosn=MIN(MAX(58.8,XSN),500.)
-!13mar18         rhosn=MIN(MAX(76.9,XSN),500.)
-!         rhosn=MIN(MAX(100.,XSN),500.)
-!         rhosn=MIN(MAX(50.,XSN),400.)
+         rhosn=MIN(MAX(58.8,XSN),500.) ! 13mar18 - switch from 76.9 to 58.8
 
-!Update snow on the ground
-!         snwe=snwe+newsn
-!         newsnowratio = min(1.,newsn/snwe)
-!         snhei=snwe*rhowater/rhosn
-!         NEWSN=NEWSN*rhowater/rhonewsn
        ENDIF ! end NEWSN > 0.
 
        IF(PRCPMS.NE.0.) THEN
@@ -1606,9 +1570,6 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
 ! J. of Hydrometeorology, 2006, CLM.
          interw=0.25*DELT*PRCPMS*(1.-exp(-0.5*lai))*vegfrac
          intersn=0.25*NEWSN*(1.-exp(-0.5*lai))*vegfrac
-!original - next 2 lines
-!         interw=DELT*PRCPMS*vegfrac
-!         intersn=NEWSN*vegfrac
          infwater=PRCPMS - interw/delt
     if((interw+intersn) > 0.) then
        intwratio=interw/(interw+intersn)
@@ -1617,7 +1578,6 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
 ! Update water/snow intercepted by the canopy
          dd1=CST + interw + intersn
          CST=DD1
-!  if(i==666.and.j==282)  print *,'666,282 - cst,sat,interw,intersn',cst,sat,interw,intersn
         IF(CST.GT.SAT) THEN
           CST=SAT
           DRIP=DD1-SAT
@@ -6393,17 +6353,6 @@ print *,'INFMAX,INFMAX1,HYDRO(1)*SOILIQW(1),-TOTLIQ', &
          endif
 
        ENDDO
-
-!beka        perturb hydrolic conductivity by 10-30%, not more than 50%
-!         if (spp_lsm==1) then 
-!         DO K=1,NZS !lala
-!            fieldcol_sf(k)=hydro(k)*rstochcol(k)
-!            hydro(k)=hydro(k)*(1+rstochcol(k))
-!         ENDDO
-!         ENDIF
-
-!       RETURN
-!       END
 
 !-----------------------------------------------------------------------
    END SUBROUTINE SOILPROP

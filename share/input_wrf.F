@@ -101,6 +101,10 @@
 
     INTEGER :: count_fatal_error
 
+    !  Make sure that the input data is consistent with the current code.
+
+    LOGICAL :: yes_use_this_data
+
 
 
 !<DESCRIPTION>
@@ -150,6 +154,27 @@
       IF ( switch .EQ. boundary_only ) THEN
          grid%just_read_boundary = .true.
       END IF
+#endif
+
+#if ( NMM_CORE != 1 )
+    IF ( .NOT. dryrun ) THEN
+
+       !  Determine is the input file we are reading is acceptable given the
+       !  assumptions about the current version of the modeling system.
+   
+       CALL is_this_data_ok_to_use ( fid , yes_use_this_data )
+   
+       CALL wrf_inquire_filename ( fid , fname , filestate , ierr )
+       IF ( ( yes_use_this_data ) .OR. ( config_flags%force_use_old_data ) ) THEN
+          WRITE(wrf_err_message,*)'Input data is acceptable to use: ' // TRIM(fname) 
+          CALL wrf_debug( 0 , wrf_err_message )
+       ELSE
+          CALL wrf_debug( 0 , 'File name that is causing troubles = ' // TRIM(fname) )
+          CALL wrf_debug( 0 , TRIM(fname) )
+          WRITE(wrf_err_message,*)'Whoa there pard, there are troubles with this data. It might be too old.'
+          CALL wrf_error_fatal( wrf_err_message )
+       END IF
+    END IF
 #endif
 
       ! INPUT ONLY (KK)
@@ -1731,3 +1756,70 @@
 
     RETURN
   END SUBROUTINE input_wrf
+    
+#if ( NMM_CORE != 1 )
+  SUBROUTINE is_this_data_ok_to_use ( fid , yes_use_this_data )
+
+    USE module_io
+   
+    IMPLICIT NONE
+
+    INTEGER , INTENT(IN)  :: fid
+    LOGICAL , INTENT(OUT) :: yes_use_this_data
+
+    !  Local vars
+  
+    CHARACTER (LEN=1024) :: input_title_char
+    LOGICAL :: skip_rigorous_and_return_right_away
+    INTEGER :: ierr
+
+#include "version_decl"
+
+    !  Make sure that the input data is consistent with the current code.
+
+    input_title_char = ' '
+    CALL wrf_get_dom_ti_char ( fid , 'TITLE' , input_title_char , ierr )
+    IF      ( ierr .NE. 0 ) THEN
+      WRITE(wrf_err_message,*)'Error trying to read metadata'
+      CALL wrf_debug( 0 , wrf_err_message )
+      yes_use_this_data = .FALSE.
+      RETURN
+    ELSE IF ( TRIM(input_title_char) .EQ. "" ) THEN
+      WRITE(wrf_err_message,*)'The type of file is empty'
+      CALL wrf_debug( 0 , wrf_err_message )
+      yes_use_this_data = .FALSE.
+      RETURN
+    END IF
+
+    !  There are some data sets that will be immune to the rigorous vetting.
+
+    skip_rigorous_and_return_right_away = .FALSE.
+
+    IF ( &
+         ( INDEX(TRIM(input_title_char),'METGRID'     ) .NE. 0 ) .OR. &
+         ( INDEX(TRIM(input_title_char),'SFCFDDA'     ) .NE. 0 ) .OR. &
+         ( INDEX(TRIM(input_title_char),'EMISSIONS'   ) .NE. 0 ) .OR. &
+         ( INDEX(TRIM(input_title_char),'XYZZY'       ) .NE. 0 )      &
+       ) THEN
+      WRITE(wrf_err_message,*)'Yes, this special data is acceptable to use: ' // TRIM(input_title_char)
+      CALL wrf_debug( 0 , wrf_err_message )
+      skip_rigorous_and_return_right_away = .TRUE.
+    END IF
+
+    !  Based on the file testing, do we return right away?
+
+    IF ( skip_rigorous_and_return_right_away ) THEN
+       yes_use_this_data = .TRUE.
+       RETURN
+    END IF
+
+    IF ( INDEX(TRIM(input_title_char),' V4.' ) .NE. 0 ) THEN
+      yes_use_this_data = .TRUE.
+    ELSE
+      WRITE(wrf_err_message,*)'This input data is not V4: ' // TRIM(input_title_char)
+      CALL wrf_debug( 0 , wrf_err_message )
+      yes_use_this_data = .FALSE.
+    END IF
+    
+  END SUBROUTINE is_this_data_ok_to_use
+#endif

@@ -11,6 +11,9 @@ module da_radiance
 #if defined(RTTOV) || defined(CRTM)
 
    use module_domain, only : xb_type, domain
+#ifdef DM_PARALLEL
+   use module_dm, only : ntasks_x, ntasks_y
+#endif
    use module_radiance, only : satinfo, &
       i_kind,r_kind, r_double, &
        one, zero, three,deg2rad,rad2deg, &

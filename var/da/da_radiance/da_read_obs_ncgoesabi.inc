@@ -2,6 +2,27 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
    implicit none
 
+! 1.0 Read locs, parse, and select NC files: identify files for channels, views, times, overlap w/ patch/domain
+!----------------------------------------------------------------------------------------------------------
+! 2.0 Read (BT) NC files: grab radiance data and convert to BT (K)
+!----------------------------------------------------------------------------------------------------------
+!
+! JJG:  NEED TO ADD A MORE COMPLETE DESCRIPTION HERE
+!
+
+   !These libraries must be linked: netcdf, mpi
+
+   !!These externally defined variables/routines are used herein:
+   ! cpp: DM_PARALLEL
+   ! PARALLELIZATION: ntasks_x, ntasks_y, num_procs, myproc, comm, ierr, true_mpi_real
+   ! RADIANCE OPERATOR: rtminit_nsensor, rtminit_platform, rtminit_sensor, rtminit_satid
+   ! THINNING: thinning_grid
+   ! GENERAL OBS: num_fgat_time, time_slots
+   ! WRFDA types: iv_type, datalink_type, info_type, model_loc_type
+   ! WRFDA subs: da_get_satzen, da_llxy, da_get_unit, da_free_unit, da_get_julian_time
+   !             da_trace_entry, da_trace_exit
+   ! precisions: r_kind, i_kind
+
    type (iv_type),intent (inout) :: iv
    integer, intent(in)           :: satellite_id ! 16 or 17
 
@@ -15,28 +36,35 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    logical                      :: found, head_found
 
    !! ABI Fixed Grid Variables
-   integer                      :: ny, nx
+   integer                      :: ny_global, nx_global
    integer                      :: yoff_fd, xoff_fd
+   ! For MPI parallelization
+   integer                      :: nrad_locals(num_procs)
+   integer                      :: ny_local, ny_locals(num_procs)
+   integer                      :: nx_local, nx_locals(num_procs)
+   integer                      :: ys_local, ys_locals(num_procs)
+   integer                      :: xs_local, xs_locals(num_procs)
 
    !! Earth location info
    real(r_kind)                 :: req, rpol, pph, nam
 !!!   real                         :: lat_sat, lon_sat ! Assume fixed values in da_get_satzen
-   real, allocatable            :: lat(:,:), lon(:,:), satzen(:,:)
+   real, allocatable, target    :: buf_real(:,:,:)
+   real, pointer                :: lat(:,:), lon(:,:), satzen(:,:)
 
    !! Masks for data reduction
-   logical, allocatable         :: &
-      earthmask(:,:), &
-      zenmask(:,:), &
-      fgatmask(:,:), &
-      allmask_local(:,:), &
-      allmask_global(:,:), &
-      patchmask(:,:), &
-      domainmask(:,:), &
-      radmask(:,:), &
+   logical, allocatable, target :: buf_logical(:,:,:)
+   logical, pointer             :: &
+      earthmask(:,:)     , &
+      zenmask(:,:)       , &
+      domainmask(:,:)    , &
+      patchmask(:,:)     , &
+      allmask_patch(:,:) , &
       thinmask(:,:)
 
-   integer(kind=1), allocatable :: view_choice(:,:,:,:)
-   logical                      :: use_view_choice, best_view
+!   integer(kind=1), allocatable :: view_mask(:,:,:,:)
+   logical, allocatable :: view_mask(:,:,:,:,:)
+
+   logical                      :: use_view_mask, best_view
 
    !! Brightness Temperature (K)
    real, allocatable            :: bt(:,:)
@@ -49,13 +77,13 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 !!!                                   print_bt = .false.
 
    !! Iterates
-   integer                      :: ichan, ifile, iview, ifgat, ipass, ioff, &
-                                   jchan, jfile, jview, &
-                                   n, i, j, ix, iy
+   integer                      :: ichan, ifile, iview, ikeep, ifgat, ipass, ioff, &
+                                   jchan, jfile, jview, jkeep, &
+                                   n, i, j, iy, ix, iyl, ixl, iproc
 
-   !! Thinning Variables, need to replace with applicable WRFDA ones
-   integer, parameter           :: xthin=1
-   integer, parameter           :: ythin=1
+!   !! Thinning Variables, need to replace with applicable WRFDA ones
+!   integer, parameter           :: xthin=1
+!   integer, parameter           :: ythin=1
 
    !! Satellite variables
    integer(i_kind),parameter    :: nchan = 10
@@ -78,6 +106,23 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
       integer                   :: yr, mt, dy, hr, mn, sc
    end type
 
+   type viewgrid
+      real, allocatable                :: &
+         lat(:,:), lon(:,:), satzen(:,:)
+      logical, allocatable             :: &
+         earthmask(:,:), zenmask(:,:), &
+         patchmask(:,:), domainmask(:,:)
+      integer, allocatable             :: &
+         iy_global(:), ix_global(:)
+   end type viewgrid
+
+   type viewlist
+      real    :: lat, lon, satzen
+      integer :: iy, ix
+      type(viewlist), pointer :: next
+      integer :: i
+   end type viewlist
+
    type viewinfo
       logical                          :: select
       integer                          :: nfiles
@@ -89,18 +134,27 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
       real*8, allocatable              :: fgat_time_diff(:,:) ! seconds
       real*8, allocatable              :: min_time_diff(:,:) ! seconds
       integer, allocatable             :: nfiles_used(:) 
-      integer                          :: ny, nx, yoff, xoff
-      real, allocatable                :: &
-         lat(:,:), lon(:,:), satzen(:,:)
-      logical, allocatable             :: &
-         earthmask(:,:), zenmask(:,:), &
-         patchmask(:,:), domainmask(:,:)
+      integer                          :: ny_global, nx_global, yoff_fd, xoff_fd
+      integer                          :: ny_local, nx_local
+      integer                          :: ys_local, xs_local
+      integer                          :: ys_patch, xs_patch
+      integer                          :: ye_patch, xe_patch
+      integer                          :: ys_patch_fd, xs_patch_fd
+      integer                          :: ye_patch_fd, xe_patch_fd
+      integer                          :: nrad_on_patch, nrad_on_domain
+      type(viewgrid)                   :: obsgrid
+      type(viewlist), pointer          :: head
+      type(viewlist), pointer          :: current
       character(len=2)                 :: name_short
       character(len=10)                :: name
+      logical                          :: moving
    end type viewinfo
 
    type(viewinfo), target, allocatable :: view_att(:)
    type(viewinfo), pointer             :: this_view
+   type(viewgrid), pointer             :: this_obsgrid
+   type(viewlist), pointer             :: this_obslist
+!   type(viewgrid)                      :: tmp_grid(num_procs)
 
    integer                             :: first_file, tot_files_used, npass
    integer                             :: ncid, varid
@@ -161,14 +215,6 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    ptotal(0:num_fgat_time) = 0
    iobs = 0                 ! for thinning, argument is inout
 
-
-! 1.0 Read (grid), parse, and select NC files: identify files for channels, views, times, overlap w/ patch/domain
-!----------------------------------------------------------------------------------------------------------
-! 2.0 Read (BT) NC files: grab radiance data and convert to BT (K)
-!----------------------------------------------------------------------------------------------------------
-!
-! JJG:  NEED TO ADD A MORE COMPLETE DESCRIPTION HERE
-!
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    !! Initialize ABI L1B reading
@@ -263,6 +309,11 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    view_att(3)%fpath = './goes-meso/'
    view_att(4)%fpath = './goes-meso/'
 
+   view_att(1)%moving = .false.
+   view_att(2)%moving = .false.
+   view_att(3)%moving = .true.
+   view_att(4)%moving = .true.
+
    !! Initialize local obs structures
    allocate (head)
    nullify  (head % next )
@@ -281,6 +332,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    npass = 1
    if (nviews.gt.1 .and. view_att(1)%select) npass = 2
    tot_files_used = 0
+   use_view_mask = .false.
 
    do ipass = 1, npass
       write(unit=stdout,fmt=*) ' '
@@ -292,6 +344,16 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    !! Loop over the available views for this instrument (ABI)
    do iview = 1, nviews
       this_view => view_att(iview)
+      this_obsgrid => view_att(iview)%obsgrid
+
+      !Initialize linked list for obs in this view
+      if (ipass .eq. 1) then
+         allocate(view_att(iview)%head)
+         view_att(iview)%head%i = 0
+      end if
+      ! Associate this_obslist
+      this_obslist => view_att(iview)%head
+
       if ( .not.this_view%select ) cycle
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -550,131 +612,411 @@ write(stdout,fmt=*) 'TEST1'
          if ( ipass.eq.1 .and. sum(this_view%nfiles_used(:)).eq.0 ) then
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             !! Get ABI metadata (first pass for FD, CONUS, MESO)
-            ! Only ny and nx need to be read for all views, but this is a cheap subroutine
+            ! Only ny_global and nx_global need to be read for all views, but this is a cheap subroutine
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
             write(unit=stdout,fmt='(2A)') &
-               '          Reading metadata for ',trim(this_view%name)
+               '          Reading abi metadata for ',trim(this_view%name)
 
             call get_abil1b_metadata( &
-               fname, this_view%ny, this_view%nx, req, rpol, pph, nam)! , lat_sat, lon_sat )
+               fname, this_view%ny_global, this_view%nx_global, req, rpol, pph, nam)! , lat_sat, lon_sat )
 
 write(stdout,fmt=*) 'TEST2'
-write(stdout,fmt=*) this_view%ny, this_view%nx, req, rpol, pph, nam
+write(stdout,fmt=*) this_view%ny_global, this_view%nx_global, req, rpol, pph, nam
 
-            if ( iview.eq.1 .and. ipass.lt.npass ) then
-               allocate(view_choice(this_view%ny,this_view%nx,nchan,num_fgat_time))
-               view_choice = 0
+#ifdef DM_PARALLEL
+            ! Split the global ABI grid for this view into local segments
+            call split_grid( this_view%ny_global, this_view%nx_global , &
+                             this_view%ny_local,  this_view%nx_local  , &
+                             this_view%ys_local,  this_view%xs_local  , &
+                             (iview.eq.1) )
 
-write(stdout,fmt=*) size(view_choice)
-write(stdout,fmt=*) sizeof(view_choice)
+write(stdout,fmt=*) 'ntasks_y, ntasks_x, num_procs, myproc = ', ntasks_y, ntasks_x, num_procs, myproc
 
-            end if
-         end if
-         ny = this_view%ny
-         nx = this_view%nx
+
 write(stdout,fmt=*) 'TEST3'
 
+#else
+            ! When mpi parallelism is not available, assign global values to local variables
+            this_view%ny_local = this_view%ny_global
+            this_view%nx_local = this_view%nx_global
+            this_view%ys_local = 1
+            this_view%xs_local = 1
+#endif
 
-         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-         !! Generate grid if
-         !!  + CONUS or FD and first matching fgat
-         !!  + MESO and any fgat (extent changes in time)
-         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-         if (  ( any(iview.eq.(/1,2/)) .and. sum(this_view%nfiles_used(:)).eq.0 ) &
-            .or. any(iview.eq.(/3,4/)) ) then
-
-            if (allocated(lat)) then
-               deallocate(lat)
-               deallocate(lon)
-               deallocate(satzen)
-               deallocate(earthmask)
-               deallocate(zenmask)
-            end if
-
-            !! Allocate spatial information
-            allocate(lat(ny,nx))
-            allocate(lon(ny,nx))
-            allocate(satzen(ny,nx))
-            allocate(earthmask(ny,nx))
-            allocate(zenmask(ny,nx))
-            allocate(patchmask(ny,nx))
-            allocate(domainmask(ny,nx))
+write(stdout,fmt=*) 'ny_local, nx_local, ys_local, xs_local = ', &
+                     this_view%ny_local, this_view%nx_local, this_view%ys_local, this_view%xs_local
 
 write(stdout,fmt=*) 'TEST4'
 
-write(stdout,fmt=*) sizeof(lat), size(lat)
-write(stdout,fmt=*) sizeof(lon), size(lon)
-write(stdout,fmt=*) sizeof(satzen), size(satzen)
+         end if
+         ny_global = this_view%ny_global
+         nx_global = this_view%nx_global
+
+         ! Recall local dims
+         ny_local = this_view%ny_local
+         nx_local = this_view%nx_local
+         ys_local = this_view%ys_local
+         xs_local = this_view%xs_local
+
+#ifdef DM_PARALLEL
+         call mpi_allgather(ny_local,1,mpi_integer,ny_locals,1,mpi_integer,comm,ierr)
+         call mpi_allgather(nx_local,1,mpi_integer,nx_locals,1,mpi_integer,comm,ierr)
+         call mpi_allgather(ys_local,1,mpi_integer,ys_locals,1,mpi_integer,comm,ierr)
+         call mpi_allgather(xs_local,1,mpi_integer,xs_locals,1,mpi_integer,comm,ierr)
+#endif
 
 write(stdout,fmt=*) 'TEST5'
 
-            if ( ipass.eq.2 .and. iview .eq. 1 ) then
-               ! Restore FD grid from memory
-               lat = this_view%lat
-               lon = this_view%lon
-               satzen = this_view%satzen
-               earthmask = this_view%earthmask
-               zenmask = this_view%zenmask
-               patchmask = this_view%patchmask
-               domainmask = this_view%domainmask
+         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+         !! Generate grid locations if
+         !!  + CONUS or FD and first matching fgat
+         !!  + MESO and any fgat (extent changes in time)
+         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+         if (  ( .not.this_view%moving .and. sum(this_view%nfiles_used(:)).eq.0 ) &
+                 .or. this_view%moving ) then
 
-               deallocate(this_view%lat)
-               deallocate(this_view%lon)
-               deallocate(this_view%satzen)
-               deallocate(this_view%earthmask)
-               deallocate(this_view%zenmask)
-               deallocate(this_view%patchmask)
-               deallocate(this_view%domainmask)
+!            if ( ipass.eq.2 .and. iview .eq. 1 ) then
+!               ! Restore FD attributes from memory
+!               this_view%yoff_fd = yoff_fd
+!               this_view%xoff_fd = xoff_fd
+!            end if
 
-               this_view%yoff = yoff_fd
-               this_view%xoff = xoff_fd
-            else
+            if ( ipass.eq.1 .or. this_view%moving ) then
 write(stdout,fmt=*) 'TEST6'
 
-               ! Read grid from file
+               ! Read grid from file, convert to lat, lon, satzen
                write(unit=stdout,fmt='(2A)') &
-                  '          Reading grid info for ',trim(this_view%name)
+                  '          Reading abi grid info for ',trim(this_view%name)
+
+               !! Allocate local spatial information for this view
+               if (allocated(this_obsgrid%lat)) deallocate(this_obsgrid%lat)
+               if (allocated(this_obsgrid%lon)) deallocate(this_obsgrid%lon)
+               if (allocated(this_obsgrid%satzen)) deallocate(this_obsgrid%satzen)
+               allocate(this_obsgrid%lat(ny_local,nx_local))
+               allocate(this_obsgrid%lon(ny_local,nx_local))
+               allocate(this_obsgrid%satzen(ny_local,nx_local))
+
+               !! Allocate local mask information for this view
+               if (allocated(this_obsgrid%earthmask)) deallocate(this_obsgrid%earthmask)
+               if (allocated(this_obsgrid%zenmask)) deallocate(this_obsgrid%zenmask)
+               if (allocated(this_obsgrid%domainmask)) deallocate(this_obsgrid%domainmask)
+               allocate(this_obsgrid%earthmask(ny_local,nx_local))
+               allocate(this_obsgrid%zenmask(ny_local,nx_local))
+               allocate(this_obsgrid%domainmask(ny_local,nx_local))
+
+write(stdout,fmt=*) sizeof(this_obsgrid%lat), size(this_obsgrid%lat)
+write(stdout,fmt=*) sizeof(this_obsgrid%lon), size(this_obsgrid%lon)
+write(stdout,fmt=*) sizeof(this_obsgrid%satzen), size(this_obsgrid%satzen)
+
 write(stdout,fmt=*) 'TEST7'
 
-               call get_abil1b_grid( fname, ny, nx, &
-                                        req, rpol, pph, nam, satellite_id, &
-                                        lat, lon, satzen, earthmask, zenmask, &
-                                        this_view%yoff, this_view%xoff )
+               call get_abil1b_grid( fname, &
+                                     ny_global, nx_global, &
+                                     ny_local, nx_local, &
+                                     ys_local, xs_local, &
+                                     req, rpol, pph, nam, satellite_id, &
+                                     this_obsgrid%lat, this_obsgrid%lon, this_obsgrid%satzen, &
+                                     this_obsgrid%earthmask, &
+                                     this_obsgrid%zenmask, &
+                                     this_obsgrid%domainmask, &
+                                     this_view%yoff_fd, this_view%xoff_fd )
 write(stdout,fmt=*) 'TEST8'
 
-               !! With domain/patch pruning was here, view_choice can be allocated smaller
-               patchmask = .false.
-               domainmask = .false.
-               do ix = 1, nx
-if (mod(ix,100).eq.0) write(stdout,fmt=*) 'TEST9', ix
 
-                  do iy = 1, ny
-                     if (earthmask(iy,ix)) then
-                        info%lon  =  lon(iy,ix)  ! longitude
-                        info%lat  =  lat(iy,ix)  ! latitude
-                        call da_llxy (info, loc, outside, outside_all)
-                        patchmask(iy,ix) = outside
-                        domainmask(iy,ix) = outside_all
+               if ( iview.eq.1 ) then
+                  yoff_fd = this_view%yoff_fd
+                  xoff_fd = this_view%xoff_fd
+                  this_view%yoff_fd = 1
+                  this_view%xoff_fd = 1
+               else
+                  this_view%yoff_fd = this_view%yoff_fd - yoff_fd
+                  this_view%xoff_fd = this_view%xoff_fd - xoff_fd
+!                  this_view%yoff_fd = this_view%yoff_fd - yoff_fd + 1
+!                  this_view%xoff_fd = this_view%xoff_fd - xoff_fd + 1
+               end if
+
+               !======================================================
+               ! Reduce the obsgrid to vectors of lat, lon, zenith
+               !  for locations on this WRF patch
+               !======================================================
+
+               ! Setup patch mask for this view
+               allocate(this_obsgrid%patchmask(ny_global,nx_global))
+               patchmask => this_obsgrid%patchmask
+               patchmask = .false.
+
+               this_view%nrad_on_domain = 0
+               nrad_locals = 0
+
+write(stdout,fmt=*) 'TEST9'
+
+               ! Destroy this_obslist if it was previously populated
+               if (this_obslist%i .gt. 0) then
+                  n = this_obslist%i
+                  this_obslist => view_att(iview)%head%next
+                  do i = 1, n
+                     view_att(iview)%current => this_obslist
+                     this_obslist => this_obslist%next
+
+                     ! free current data
+                     deallocate ( view_att(iview)%current )
+                  end do
+                  ! Reassociate this_obslist
+                  this_obslist => view_att(iview)%head
+               end if
+
+write(stdout,fmt=*) 'TEST10'
+              
+               do iproc = 0, num_procs-1
+                  ny_local = ny_locals(iproc+1)
+                  nx_local = nx_locals(iproc+1)
+                  ys_local = ys_locals(iproc+1)
+                  xs_local = xs_locals(iproc+1)
+write(stdout,fmt=*) 'TEST11', iproc
+
+#ifdef DM_PARALLEL
+                  !BCAST LOCAL SEGMENTS OF EARTHMASK, ZENMASK, DOMAINMASK
+                  allocate( buf_logical(ny_local,nx_local,3) )
+                  if (iproc .eq. myproc) then
+                     buf_logical(:,:,1) = this_obsgrid%earthmask
+                     buf_logical(:,:,2) = this_obsgrid%zenmask
+                     buf_logical(:,:,3) = this_obsgrid%domainmask
+                  else
+                     buf_logical = .false.
+                  end if
+write(stdout,fmt=*) 'TEST12'
+
+                  call mpi_bcast(buf_logical, ny_local * nx_local * 3, mpi_logical, &
+                              iproc, comm, ierr )
+write(stdout,fmt=*) 'TEST13'
+
+                  earthmask  => buf_logical(:,:,1)
+                  zenmask    => buf_logical(:,:,2)
+                  domainmask => buf_logical(:,:,3)
+#else
+                  earthmask  => this_obsgrid%earthmask
+                  zenmask    => this_obsgrid%zenmask
+                  domainmask => this_obsgrid%domainmask
+#endif
+write(stdout,fmt=*) 'TEST14', count(earthmask .and. domainmask .and. zenmask)
+
+                  !Ignore observations that are off-earth, off-domain, or breaking zenith limit
+                  if (count(earthmask .and. domainmask .and. zenmask) .eq. 0) then
+#ifdef DM_PARALLEL
+                     deallocate(buf_logical)
+#endif
+                     cycle
+                  end if
+write(stdout,fmt=*) 'TEST15'
+
+!#ifdef DM_PARALLEL
+!   call mpi_barrier(comm, ierr)
+!#endif
+
+#ifdef DM_PARALLEL
+                  !BCAST LOCAL SEGMENTS OF LAT, LON, SATZEN
+                  allocate( buf_real(ny_local,nx_local,3) )
+                  if (iproc .eq. myproc) then
+                     buf_real(:,:,1) = this_obsgrid%lat
+                     buf_real(:,:,2) = this_obsgrid%lon
+                     buf_real(:,:,3) = this_obsgrid%satzen
+                  else
+                     buf_real = 0.0
+                  end if
+                  call mpi_bcast(buf_real, ny_local * nx_local * 3, true_mpi_real, &
+                              iproc, comm, ierr )
+                  lat    => buf_real(:,:,1)
+                  lon    => buf_real(:,:,2)
+                  satzen => buf_real(:,:,3)
+#else
+                  lat    => this_obsgrid%lat
+                  lon    => this_obsgrid%lon
+                  satzen => this_obsgrid%satzen
+#endif
+write(stdout,fmt=*) 'TEST16'
+
+                  !Populate patchmask with on/off patch test for each local set of obs
+                  do ixl = 1, nx_local
+                     ix = ixl + xs_local - 1
+write(stdout,fmt=*) 'TEST17', ix
+
+                     do iyl = 1, ny_local
+                        if (earthmask(iyl,ixl) .and. domainmask(iyl,ixl) .and. zenmask(iyl,ixl)) then
+                           iy = iyl + ys_local - 1
+
+                           this_view%nrad_on_domain = this_view%nrad_on_domain + 1
+#ifdef DM_PARALLEL
+                           info%lat  =  lat(iyl,ixl)  ! latitude
+                           info%lon  =  lon(iyl,ixl)  ! longitude
+                           call da_llxy (info, loc, outside)
+                           patchmask(iy,ix) = .not.outside
+#else
+                           patchmask(iy,ix) = .true.
+#endif
+
+
+                           if (patchmask(iy,ix)) then
+                              nrad_locals(iproc+1) = nrad_locals(iproc+1) + 1
+write(stdout,fmt=*) 'TEST18', iy, iproc, nrad_locals(iproc+1)
+
+                              i = this_obslist%i
+                              allocate(this_obslist%next)
+                              this_obslist => this_obslist%next
+                              this_obslist%i = i + 1
+                              this_obslist%lat = lat(iyl,ixl)
+                              this_obslist%lon = lon(iyl,ixl)
+                              this_obslist%satzen = satzen(iyl,ixl)
+                              this_obslist%ix = ix
+                              this_obslist%iy = iy
+
+!Is there some way to send a message to other processors not to test this point??
+!Would also need to ensure that each processor is testing in a randomized order such that the fewest points get tested in total...
+!What about round-robin testing, where each process is working on a different subsection of the grid at the same time.  Then they modify a subsection of a global obs_used_mask before the next process sees that subsection...
+
+                           end if
+                        end if
+                     end do
+                  end do
+
+write(stdout,fmt=*) 'TEST19', iproc, nrad_locals(iproc+1)
+
+!                  if (nrad_locals(iproc+1) .gt. 0) then
+!                     ! Allocate local transition data vectors
+!                     allocate(tmp_grid(iproc+1)%lat(nrad_locals(iproc+1),1))
+!                     allocate(tmp_grid(iproc+1)%lon(nrad_locals(iproc+1),1))
+!                     allocate(tmp_grid(iproc+1)%satzen(nrad_locals(iproc+1),1))
+!                     allocate(tmp_grid(iproc+1)%ix_global(nrad_locals(iproc+1)))
+!                     allocate(tmp_grid(iproc+1)%iy_global(nrad_locals(iproc+1)))
+write(stdout,fmt=*) 'TEST20'
+
+!                     ikeep = 0
+!                     do ixl = 1, nx_local
+!                        ix = ixl + xs_local - 1
+!                        do iyl = 1, ny_local
+!                           iy = iyl + ys_local - 1
+!                           if (patchmask(iy,ix)) then
+!                              ikeep = ikeep + 1
+!                              tmp_grid(iproc+1)%lat(ikeep,1)     = lat(iyl,ixl)  ! longitude
+!                              tmp_grid(iproc+1)%lon(ikeep,1)     = lon(iyl,ixl)  ! longitude
+!                              tmp_grid(iproc+1)%satzen(ikeep,1)  = satzen(iyl,ixl)  ! zenith
+!                              tmp_grid(iproc+1)%ix_global(ikeep) = ix
+!                              tmp_grid(iproc+1)%iy_global(ikeep) = iy
+!                           end if
+!                        end do
+!                     end do
+!                  end if
+#ifdef DM_PARALLEL
+                  deallocate( buf_logical )
+                  deallocate( buf_real )
+#endif
+                  nullify( earthmask )
+                  nullify( zenmask )
+                  nullify( domainmask )
+                  nullify( lat )
+                  nullify( lon )
+                  nullify( satzen )
+               end do
+write(stdout,fmt=*) 'TEST21'
+
+
+!THESE MAY NOT BE NEEDED AGAIN
+               ny_local = this_view%ny_local
+               nx_local = this_view%nx_local
+               ys_local = this_view%ys_local
+               xs_local = this_view%xs_local
+!THESE MAY NOT BE NEEDED AGAIN
+
+               deallocate( this_obsgrid%lat )
+               deallocate( this_obsgrid%lon )
+               deallocate( this_obsgrid%satzen )
+               deallocate( this_obsgrid%earthmask )
+               deallocate( this_obsgrid%zenmask )
+               deallocate( this_obsgrid%domainmask )
+write(stdout,fmt=*) 'TEST22'
+
+!               !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!               ! Place retained data in single vector for each parameter
+!               !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+               this_view%nrad_on_patch = sum(nrad_locals)
+               if ( this_view%nrad_on_patch.gt.0 ) then
+!
+!                  allocate( this_obsgrid%lat(this_view%nrad_on_patch,1) )
+!                  allocate( this_obsgrid%lon(this_view%nrad_on_patch,1) )
+!                  allocate( this_obsgrid%satzen(this_view%nrad_on_patch,1) )
+!
+!                  if (allocated(this_obsgrid%ix_global)) deallocate(this_obsgrid%ix_global)
+!                  if (allocated(this_obsgrid%iy_global)) deallocate(this_obsgrid%iy_global)
+!                  allocate( this_obsgrid%ix_global(this_view%nrad_on_patch) )
+!                  allocate( this_obsgrid%iy_global(this_view%nrad_on_patch) )
+!write(stdout,fmt=*) 'TEST23'
+!
+!                  jkeep = 0
+!                  do iproc = 0, num_procs-1
+!                     if (nrad_locals(iproc+1) .gt. 0) then
+!                        ikeep = jkeep + 1
+!                        jkeep = ikeep + nrad_locals(iproc+1) - 1
+!
+!                        this_obsgrid%lat(ikeep:jkeep,1)    = tmp_grid(iproc+1)%lat(:,1)
+!                        this_obsgrid%lon(ikeep:jkeep,1)    = tmp_grid(iproc+1)%lon(:,1)
+!                        this_obsgrid%satzen(ikeep:jkeep,1) = tmp_grid(iproc+1)%satzen(:,1)
+!                        this_obsgrid%ix_global(ikeep:jkeep)   = tmp_grid(iproc+1)%ix_global(:)
+!                        this_obsgrid%iy_global(ikeep:jkeep)   = tmp_grid(iproc+1)%iy_global(:)
+!
+!                        deallocate(tmp_grid(iproc+1)%lat)
+!                        deallocate(tmp_grid(iproc+1)%lon)
+!                        deallocate(tmp_grid(iproc+1)%satzen)
+!                        deallocate(tmp_grid(iproc+1)%ix_global)
+!                        deallocate(tmp_grid(iproc+1)%iy_global)
+!                     end if
+!                  end do
+
+                  ! Determine ys & ye for this patch
+                  this_view%ys_patch = ny_global
+                  this_view%ye_patch = 1
+                  do iy = 1, ny_global
+                     if ( any(patchmask(iy,:)) ) then
+                        this_view%ys_patch = iy
+                        this_view%ys_patch_fd = iy+this_view%yoff_fd-1  ! offset to FD grid
+                        exit
                      end if
                   end do
-               end do
-            end if
-write(stdout,fmt=*) 'TEST10'
+                  do iy = ny_global, 1, -1
+                     if ( any(patchmask(iy,:)) ) then
+                        this_view%ye_patch = iy
+                        this_view%ye_patch_fd = iy+this_view%yoff_fd-1  ! offset to FD grid
+                        exit
+                     end if
+                  end do
 
-            if ( iview.eq.1 ) then
-               yoff_fd = this_view%yoff
-               xoff_fd = this_view%xoff
-               this_view%yoff = 1
-               this_view%xoff = 1
-            else
-               this_view%yoff = this_view%yoff - yoff_fd
-               this_view%xoff = this_view%xoff - xoff_fd
-            end if
-write(stdout,fmt=*) 'TEST11'
+                  ! Determine xs & xe for this patch
+                  this_view%xs_patch = nx_global
+                  this_view%xe_patch = 1
+                  do ix = 1, nx_global
+                     if ( any(patchmask(:,ix)) ) then
+                        this_view%xs_patch = ix
+                        this_view%xs_patch_fd = ix+this_view%xoff_fd-1  ! offset to FD grid
+                        exit
+                     end if
+                  end do
+                  do ix = nx_global, 1, -1
+                     if ( any(patchmask(:,ix)) ) then
+                        this_view%xe_patch = ix
+                        this_view%xe_patch_fd = ix+this_view%xoff_fd-1  ! offset to FD grid
+                        exit
+                     end if
+                  end do
 
-!!!!               print*,'yoff = ',this_view%yoff
-!!!!               print*,'xoff = ',this_view%xoff
+               end if
+            end if
+
+write(stdout,fmt=*) 'TEST24'
+
+
+write(stdout,fmt=*) 'TEST25'
+
+!!!!               print*,'yoff_fd = ',this_view%yoff_fd
+!!!!               print*,'xoff_fd = ',this_view%xoff_fd
 !!!!!!! START GRID WRITE
 !!!            if ( ipass .eq. 1 .and. print_grid .and. iview.eq.1) then
 !!!               write(prefix,fmt='(3A)') &
@@ -705,58 +1047,94 @@ write(stdout,fmt=*) 'TEST11'
 !!!!!!! END GRID WRITE
          end if
 
-write(stdout,fmt=*) 'TEST12'
+         PatchMatch: if (this_view%nrad_on_patch .gt. 0) then
+write(stdout,fmt=*) 'TEST26'
 
-         ! Loop over channels
-         ! This loop over channels could be parallelized, if needed for time savings
+            patchmask => this_obsgrid%patchmask
 
-         ChannelLoop: do ichan = 1, nchan
+            if ( iview.eq.1 .and. ipass.lt.npass .and. sum(this_view%nfiles_used(:)).eq.0 ) then
+               allocate(view_mask(&
+                   this_view%ys_patch:this_view%ye_patch, &
+                   this_view%xs_patch:this_view%xe_patch, &
+                   nchan, num_fgat_time, nviews))
 
-            ifile = 0
-            do jfile = 1, this_view%nfiles
-               if ( .not. this_view%file_fgat_match(jfile,ifgat) ) cycle
-               call get_ichan(this_view%filechan(jfile), channel_list, nchan, jchan)
-               if ( ichan .eq. jchan ) then
-                  ifile = jfile
-                  exit
-               end if
-            end do
-            if ( ifile .eq. 0 ) cycle
+               view_mask = .false.
+               use_view_mask = .true.
 
-            this_view%nfiles_used(ifgat) = this_view%nfiles_used(ifgat) + 1
+write(stdout,fmt=*) size(view_mask)
+write(stdout,fmt=*) sizeof(view_mask)
+            end if
 
-            use_view_choice = ( sum(view_att(1)%nfiles_used(:)).gt.0 )
+write(stdout,fmt=*) 'TEST27'
 
-            VIEW_SELECT: &
-            if ( ipass.lt.npass .and. use_view_choice ) then
-               !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-               !! Determine which view has the closest observed 
-               !!  time to fgat for this channel
-               !!  Note: this only needs to be done for a single channel, 
-               !!    unless individual channel files are missing at fgat.
-               !!    Solution where file view availability differs by channel used here.
-               !!  (only available when FD data present for one of the fgat times)
-               !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-               if ( iview.eq.1 ) then
-                  view_choice(:,:, ichan, ifgat) = 1
-               else
-                  best_view = .true.
-!                  do jview = 1, iview-1 !This assumes MESO1 and MESO2 are in identical locations
-                  do jview = 1, min(iview-1,2) !This assumes MESO1 and MESO2 do not overlap
-                     best_view = best_view .and. &
-                        this_view%min_time_diff(ichan, ifgat) .lt. &
-                           view_att(jview)%min_time_diff(ichan, ifgat)
-                  end do
-                  if ( best_view ) &
-                     view_choice(this_view%yoff:ny+this_view%yoff-1, &
-                                 this_view%xoff:nx+this_view%xoff-1, &
-                                 ichan, ifgat) = iview
-               end if
+            ! Loop over channels
+            ! This loop over channels could be parallelized, if needed for time savings
+
+            ChannelLoop: do ichan = 1, nchan
+
+               ifile = 0
+               do jfile = 1, this_view%nfiles
+                  if ( .not. this_view%file_fgat_match(jfile,ifgat) ) cycle
+                  call get_ichan(this_view%filechan(jfile), channel_list, nchan, jchan)
+                  if ( ichan .eq. jchan ) then
+                     ifile = jfile
+                     exit
+                  end if
+               end do
+               if ( ifile .eq. 0 ) cycle
+
+               this_view%nfiles_used(ifgat) = this_view%nfiles_used(ifgat) + 1
+
+!               use_view_mask = ( sum(view_att(1)%nfiles_used(:)).gt.0 )
+
+               VIEW_SELECT: &
+               if ( ipass.lt.npass .and. use_view_mask ) then
+                  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                  !! Determine which view has the closest observed 
+                  !!  time to fgat for this channel
+                  !!  Note: this only needs to be done for a single channel, 
+                  !!    unless individual channel files are missing at fgat.
+                  !!    Solution where file view availability differs by channel used here.
+                  !!  (only available when FD data present for one of the fgat times)
+                  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                  if ( iview.eq.1 ) then
+                     view_mask(:,:, ichan, ifgat, iview) = .true.
+                  else
+                     best_view = .true.
+!                     do jview = 1, iview-1 !This assumes MESO1 and MESO2 are in identical locations
+                     do jview = 1, min(iview-1,2) !This assumes MESO1 and MESO2 do not overlap
+                        best_view = best_view .and. &
+                           this_view%min_time_diff(ichan, ifgat) .lt. &
+                              view_att(jview)%min_time_diff(ichan, ifgat)
+                     end do
+                     
+                     if ( best_view ) then
+!                        view_mask(this_view%yoff_fd:ny_global+this_view%yoff_fd-1, &
+!                                    this_view%xoff_fd:nx_global+this_view%xoff_fd-1, &
+!                                    ichan, ifgat, iview) = .true.
+
+                        view_mask(this_view%ys_patch_fd:this_view%ye_patch_fd, &
+                                    this_view%ys_patch_fd:this_view%ye_patch_fd, &
+                                    ichan, ifgat, iview) = .true.
+
+!                        do jview = 1, iview-1 !This assumes MESO1 and MESO2 are in identical locations
+                        do jview = 1, min(iview-1,2) !This assumes MESO1 and MESO2 do not overlap
+!                        view_mask(this_view%yoff_fd:ny_global+this_view%yoff_fd-1, &
+!                                    this_view%xoff_fd:nx_global+this_view%xoff_fd-1, &
+!                                    ichan, ifgat, jview) = .false.
+
+                           view_mask(this_view%ys_patch_fd:this_view%ye_patch_fd, &
+                                       this_view%ys_patch_fd:this_view%ye_patch_fd, &
+                                       ichan, ifgat, jview) = .false.
+                        end do
+                     end if
+
+                  end if
 
 !!!!!!! START VIEW_CHOICE WRITE
 !!!               if ( this_view%nfiles_used(ifgat).eq.1 .and. print_view  .and. iview.eq.nviews) then
 !!!                  write(unit=stdout,fmt='(A)') &
-!!!                     '          printing view_choice'
+!!!                     '          printing view_mask'
 !!!
 !!!                  write(prefix,fmt='(5A)') &
 !!!                       'VIEW',trim(this_view%name_short),'_', &
@@ -767,81 +1145,74 @@ write(stdout,fmt=*) 'TEST12'
 !!!                  write(nxthin,fmt='(I0)') view_att(1)%nx
 !!!
 !!!                  do iy=1, view_att(1)%ny
-!!!                     write(30,fmt='('//trim(nxthin)//'I3)') view_choice (iy, 1:view_att(1)%nx, ichan, ifgat)
+!!!                     write(30,fmt='('//trim(nxthin)//'I3)') view_mask (iy, 1:view_att(1)%nx, ichan, ifgat)
 !!!                  end do
 !!!
 !!!                  close(30)
 !!!               end if
 !!!!! END VIEW_CHOICE WRITE
-            else
-               if (inst == 0) cycle
+               else
+                  if (inst == 0) cycle
 
-               fname_short = trim(this_view%filename(ifile))
-               fname = trim(this_view%fpath)//trim(fname_short)
+                  fname_short = trim(this_view%filename(ifile))
+                  fname = trim(this_view%fpath)//trim(fname_short)
 
-               allocate(allmask_local(ny,nx))
-               allocate(allmask_global(ny,nx))
 
-               !!Utilizing these masks to eliminate data:
-               !! + earthmask
-               !! + zenmask
-               !! + fgatmask [only if npass > 1]
-               !! + model domain mask
-               !! + patch mask
-               !! + thinning
+                  !!Utilizing these masks to eliminate data:
+                  !! + earthmask
+                  !! + zenmask
+                  !! + view_mask [only if npass > 1]
+                  !! + model domain mask
+                  !! + patch mask
+                  !! + thinning
 
-               allmask_global = (earthmask .and. zenmask .and. domainmask)
-               allmask_local = (earthmask .and. zenmask .and. patchmask)
+                  allocate(allmask_patch(ny_global,nx_global))
+                  allmask_patch = patchmask
 
-               ! Only use locations where this view is nearest to this fgat time
-               ! - only available when FD data present for any fgat time
-               if (  use_view_choice ) then
-                  allocate(fgatmask(ny,nx))
-                  fgatmask = ( view_choice(this_view%yoff:ny+this_view%yoff-1, &
-                                             this_view%xoff:nx+this_view%xoff-1, &
-                                             ichan, ifgat) .eq. iview )
+                  ! Only use locations where this view is nearest to this fgat time
+                  ! - only available when FD data present for any fgat time
+                  if (  use_view_mask ) then
+                     if ( count(view_mask(this_view%ys_patch_fd:this_view%ye_patch_fd, &
+                                    this_view%ys_patch_fd:this_view%ye_patch_fd, &
+                                    ichan, ifgat, iview)) .eq. 0 ) then
+                        deallocate(allmask_patch)
+                        cycle
+                     end if
 
-                  if ( count(fgatmask) .eq. 0 ) then
-                     deallocate(fgatmask)
-                     deallocate(allmask_local)
-                     deallocate(allmask_global)
-                     cycle
+                     allmask_patch(this_view%ys_patch:this_view%ye_patch , &
+                                   this_view%ys_patch:this_view%ye_patch ) = ( &
+                        allmask_patch(this_view%ys_patch:this_view%ye_patch , &
+                                      this_view%ys_patch:this_view%ye_patch ) &
+                        .and. &
+                        view_mask(this_view%ys_patch_fd:this_view%ye_patch_fd, &
+                                    this_view%ys_patch_fd:this_view%ye_patch_fd, &
+                                    ichan, ifgat, iview) )
                   end if
-                  allmask_local = (allmask_local .and. fgatmask)
-                  allmask_global = (allmask_global .and. fgatmask)
-               end if
 
-               !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-               !! Read radiance and convert to brightness temp.
-               !! once per permutation of 
-               !! + INST VIEW (FD, CONUS, MESOx2)
-               !! + fgat
-               !! + channel/band
-               !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-               write(unit=stdout,fmt='(2A)') &
-                  '          Reading radiances: ',trim(fname_short)
+                  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                  !! Read radiance and convert to brightness temp.
+                  !! once per permutation of 
+                  !! + INST VIEW (FD, CONUS, MESOx2)
+                  !! + fgat
+                  !! + channel/band
+                  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                  write(unit=stdout,fmt='(2A)') &
+                     '          Reading abi radiances: ',trim(fname_short)
 
 !!print*,this_view%fgat_time_diff(ifile,ifgat)
 
-               ! Allocate this bt
-               allocate(bt(ny,nx))
-               allocate(radmask(ny,nx))
+                  ! Allocate this patch bt
+                  allocate(bt(this_view%ys_patch:this_view%ye_patch, &
+                              this_view%xs_patch:this_view%xe_patch))
 
-!               ! This reads in bt only for the local patch,
-!               !  reduces read time, but would mess up global count below
-!               call get_abil1b_bt( fname, ny, nx, allmask_local, &
-!                                      bt )
+                  ! This reads in bt only for the local patch,
+                  !  reduces read time, but would mess up global count below
+                  call get_abil1b_bt( fname, &
+                                      ny_global, nx_global, &
+                                      this_view%ys_patch, this_view%ye_patch, &
+                                      this_view%xs_patch, this_view%xe_patch, &
+                                      allmask_patch, bt )
 
-               ! This reads in bt for whole domain, 
-               !  creates valid plocal check at end of this subroutine, 
-               !  could read only on rootproc and distribute data,
-               !  or switch to round-robin reading+distribution across channels
-               call get_abil1b_bt( fname, ny, nx, allmask_global, radmask, &
-                                      bt )
-
-               allmask_local  = (allmask_local .and. radmask)
-               allmask_global = (allmask_global .and. radmask)
-               deallocate(radmask)
 
 !!!!!!! START BT WRITE
 !!!               if ( ipass .eq. npass .and. print_bt ) then
@@ -862,148 +1233,161 @@ write(stdout,fmt=*) 'TEST12'
 !!!               end if
 !!!!! END BT WRITE
 
-               !! Write bt, lat, lon, and satzen to datalink structures
+                  !! Write bt, lat, lon, and satzen to datalink structures
 
-               first_chan = (this_view%nfiles_used(ifgat).eq.1)
-               if (first_chan) then
-                  p_fgat => p
-                  allocate(thinmask(ny,nx))
-                  thinmask = .false.
-
-                  yr = this_view%filedate(ifile)%yr
-                  mt = this_view%filedate(ifile)%mt
-                  dy = this_view%filedate(ifile)%dy
-                  hr = this_view%filedate(ifile)%hr
-                  mn = this_view%filedate(ifile)%mn
-                  sc = this_view%filedate(ifile)%sc
-               else
-                  p => p_fgat
-               end if
-
-               do iy = 1, ny
-               do ix = 1, nx
-
-                  if (.not. allmask_global(iy,ix)) cycle
-
+                  first_chan = (this_view%nfiles_used(ifgat).eq.1)
                   if (first_chan) then
-                     info%lon  =  lon(iy,ix)  ! longitude
-                     info%lat  =  lat(iy,ix)  ! latitude
-                     call da_llxy (info, loc, outside)
+                     p_fgat => p
+                     allocate(thinmask(ny_global,nx_global))
+                     thinmask = .false.
 
-                     ptotal(ifgat) = ptotal(ifgat) + 1
-                     num_goesabi_global = num_goesabi_global + 1
+                     yr = this_view%filedate(ifile)%yr
+                     mt = this_view%filedate(ifile)%mt
+                     dy = this_view%filedate(ifile)%dy
+                     hr = this_view%filedate(ifile)%hr
+                     mn = this_view%filedate(ifile)%mn
+                     sc = this_view%filedate(ifile)%sc
+                     num_goesabi_global = num_goesabi_global + this_view%nrad_on_domain
+                  else
+                     p => p_fgat
                   end if
 
-                  if (.not. allmask_local(iy,ix)) cycle
+!                  lat    => this_obsgrid%lat
+!                  lon    => this_obsgrid%lon
+!                  satzen => this_obsgrid%satzen
 
-                  if (first_chan) &
-                     num_goesabi_local = num_goesabi_local + 1
+                  this_obslist => view_att(iview)%head
 
-                  if (thinning) then
+                  do ikeep = 1, this_view%nrad_on_patch
+
+                     this_obslist => this_obslist%next
+
+                     iy = this_obslist%iy
+                     ix = this_obslist%ix
+
+!                     iy = this_obsgrid%iy_global(ikeep)
+!                     ix = this_obsgrid%ix_global(ikeep)
+
                      if (first_chan) then
-                        dlat_earth = info%lat
-                        dlon_earth = info%lon
-                        if (dlon_earth<zero) dlon_earth = dlon_earth+r360
-                        if (dlon_earth>=r360) dlon_earth = dlon_earth-r360
-                        dlat_earth = dlat_earth*deg2rad
-                        dlon_earth = dlon_earth*deg2rad
-                        crit = 1.
-                        call map2grids(inst,ifgat,dlat_earth,dlon_earth,crit,iobs,itx,1,itt,iout,iuse)
-                        if (.not. iuse) then
-                           num_goesabi_thinned=num_goesabi_thinned+1
-                           thinmask(iy,ix) = .true.
-                           cycle
+                        info%lat = this_obslist%lat ! latitude
+                        info%lon = this_obslist%lon ! longitude
+
+!                        info%lat  =  lat(ikeep,1)  ! latitude
+!                        info%lon  =  lon(ikeep,1)  ! longitude
+                        ptotal(ifgat) = ptotal(ifgat) + 1
+                     end if
+
+                     if (.not. allmask_patch(iy,ix)) cycle
+
+                     if (first_chan) &
+                        num_goesabi_local = num_goesabi_local + 1
+
+                     if (thinning) then
+                        if (first_chan) then
+                           dlat_earth = info%lat
+                           dlon_earth = info%lon
+                           if (dlon_earth<zero) dlon_earth = dlon_earth+r360
+                           if (dlon_earth>=r360) dlon_earth = dlon_earth-r360
+                           dlat_earth = dlat_earth*deg2rad
+                           dlon_earth = dlon_earth*deg2rad
+                           crit = 1.
+                           call map2grids(inst,ifgat,dlat_earth,dlon_earth,crit,iobs,itx,1,itt,iout,iuse)
+                           if (.not. iuse) then
+                              num_goesabi_thinned=num_goesabi_thinned+1
+                              thinmask(iy,ix) = .true.
+                              cycle
+                           end if
+                        else
+                           if (thinmask(iy,ix)) cycle
                         end if
-                     else
-                        if (thinmask(iy,ix)) cycle
-                     end if
-                  end if
-
-                  if (first_chan) then
-                     num_goesabi_used = num_goesabi_used + 1
-
-                     write(unit=info%date_char, &
-                        fmt='(I4.4,A,I2.2,A,I2.2,A,I2.2,A,I2.2,A,I2.2)')  &
-                        yr, '-', mt, '-', dy, '_', hr, ':', mn, ':', sc
-                     info%elv = 0.0  !aquaspot%selv
-                     allocate ( p % tb_inv (1:nchan) )
-
-                     p%info                  = info
-                     p%loc                   = loc
-                     p%landsea_mask          = 1  ! ???
-                     if (use_view_choice) then
-                        p%scanpos               = &
-                           (iy + this_view%yoff-1 - 1) * (nscan+1) / view_att(1)%ny  
-                           ! ??? "scan" position (IS THIS CORRECT?)
-                     else
-                        p%scanpos               = &
-                           (iy + this_view%yoff-1 - 1) * (nscan+1) / 5423
-                           ! ??? "scan" position (IS THIS CORRECT?)
                      end if
 
-                     p%satzen                = satzen(iy,ix)
-                     p%solzen                = 0.0
-                     p%sensor_index          = inst
-                     p%ifgat                 = ifgat
-                  end if
+                     if (first_chan) then
+                        num_goesabi_used = num_goesabi_used + 1
 
-                  ! Transfer BT from all files
-                  p%tb_inv(ichan)         = bt(iy,ix)
+                        write(unit=info%date_char, &
+                           fmt='(I4.4,A,I2.2,A,I2.2,A,I2.2,A,I2.2,A,I2.2)')  &
+                           yr, '-', mt, '-', dy, '_', hr, ':', mn, ':', sc
+                        info%elv = 0.0  !aquaspot%selv
+                        allocate ( p % tb_inv (1:nchan) )
 
-                  if (first_chan) &
-                     allocate (p%next)   ! add next data
+                        p%info                  = info
+                        p%loc                   = loc
+                        p%landsea_mask          = 1  ! ???
+                        if (use_view_mask) then
+                           p%scanpos               = &
+                              (iy + this_view%yoff_fd-1 - 1) * (nscan+1) / view_att(1)%ny_global
+                              ! ??? "scan" position (IS THIS CORRECT?)
+                        else
+                           p%scanpos               = &
+                              (iy + this_view%yoff_fd-1 - 1) * (nscan+1) / 5423
+                              ! ??? "scan" position (IS THIS CORRECT?)
+                        end if
+                        p%satzen                = this_obslist%satzen
+!                        p%satzen                = satzen(ikeep,1)
+                        p%solzen                = 0.0
+                        p%sensor_index          = inst
+                        p%ifgat                 = ifgat
+                     end if
 
-                  p => p%next
+                     ! Transfer BT from all files
+                     p%tb_inv(ichan)         = bt(iy,ix)
 
-                  if (first_chan) &
-                     nullify (p%next)
-               end do
-               end do
+                     if (first_chan) &
+                        allocate (p%next)   ! add next data
 
-               deallocate(bt)
-               deallocate(allmask_local)
-               deallocate(allmask_global)
+                     p => p%next
 
-               if ( use_view_choice ) &
-                  deallocate(fgatmask)
+                     if (first_chan) &
+                        nullify (p%next)
 
-            end if VIEW_SELECT
+                  end do
+                  nullify( lat )
+                  nullify( lon )
+                  nullify( satzen )
 
-         end do ChannelLoop
+                  deallocate(bt)
+                  deallocate(allmask_patch)
 
-         if (this_view%nfiles_used(ifgat).ge.1) &
-            deallocate(thinmask)
+               end if VIEW_SELECT
 
+            end do ChannelLoop
+
+
+            if (this_view%nfiles_used(ifgat).gt.0) &
+               deallocate(thinmask)
+
+         end if PatchMatch
+
+!#ifdef DM_PARALLEL
+!   call mpi_barrier(comm, ierr)
+!#endif
       end do ! end fgat loop
 
-      if (sum(this_view%nfiles_used) .gt. 0) then
-         if (iview.eq.1) then
-            ! Store FD grid in memory
-            if(ipass.eq.1) then
-               allocate(this_view%lat(this_view%ny,this_view%nx))
-               allocate(this_view%lon(this_view%ny,this_view%nx))
-               allocate(this_view%satzen(this_view%ny,this_view%nx))
-               allocate(this_view%earthmask(this_view%ny,this_view%nx))
-               allocate(this_view%zenmask(this_view%ny,this_view%nx))
-               allocate(this_view%patchmask(this_view%ny,this_view%nx))
-               allocate(this_view%domainmask(this_view%ny,this_view%nx))
-
-               this_view%lat = lat
-               this_view%lon = lon
-               this_view%satzen = satzen
-               this_view%earthmask = earthmask
-               this_view%zenmask = zenmask
-               this_view%patchmask = patchmask
-               this_view%domainmask = domainmask
-            end if
-         end if
-
+      if (this_view%moving .or. ipass.eq.npass) then
          ! Deallocate static data
-         deallocate(lat)
-         deallocate(lon)
-         deallocate(satzen)
-         deallocate(earthmask)
-         deallocate(zenmask)
+!         if (allocated(this_obsgrid%lat)) deallocate(this_obsgrid%lat)
+!         if (allocated(this_obsgrid%lon)) deallocate(this_obsgrid%lon)
+!         if (allocated(this_obsgrid%satzen)) deallocate(this_obsgrid%satzen)
+         if (allocated(this_obsgrid%patchmask)) deallocate(this_obsgrid%patchmask)
+!         if (allocated(this_obsgrid%ix_global)) deallocate(this_obsgrid%ix_global)
+!         if (allocated(this_obsgrid%iy_global)) deallocate(this_obsgrid%iy_global)
+      end if
+
+      if (ipass.eq.npass) then
+         if (this_obslist%i .gt. 0) then
+            ! Destroy this_obslist and head
+            n = this_obslist%i
+            this_obslist => view_att(iview)%head%next
+            do i = 1, n
+               view_att(iview)%current => this_obslist
+               this_obslist => this_obslist%next
+
+               ! free current data
+               deallocate ( view_att(iview)%current )
+            end do
+            deallocate(view_att(iview)%head)
+         end if
       end if
 
       tot_files_used = tot_files_used + sum(view_att(iview)%nfiles_used)
@@ -1017,7 +1401,7 @@ write(stdout,fmt=*) 'TEST12'
       end if
    end do ! end pass loop
 
-   if (allocated(view_choice)) deallocate(view_choice)
+   if (allocated(view_mask)) deallocate(view_mask)
 
    do iview = 1, nviews
       if ( .not.view_att(iview)%select ) cycle
@@ -1214,18 +1598,18 @@ subroutine get_abil1b_metadata( filename, &
 
    integer                  :: ierr, ncid, varid, dimid
    real(r_kind), parameter  :: pi=3.1415926535898D0
-write(stdout,fmt=*) 'TEST13'
+write(stdout,fmt=*) 'TEST28'
 
    ierr=nf_open(trim(filename),nf_nowrite,ncid)
    call handle_err('Error opening file',ierr)
-write(stdout,fmt=*) 'TEST14'
+write(stdout,fmt=*) 'TEST29'
 
    !! Determine ABI satellite parameters (optional outputs)
    ierr=nf_inq_dimid(ncid,'y',dimid)
    ierr=nf_inq_dimlen(ncid,dimid,ydim)
    ierr=nf_inq_dimid(ncid,'x',dimid)
    ierr=nf_inq_dimlen(ncid,dimid,xdim)
-write(stdout,fmt=*) 'TEST15'
+write(stdout,fmt=*) 'TEST30'
 
    ierr=nf_inq_varid(ncid,'goes_imager_projection',varid)
    ierr=nf_get_att_double(ncid,varid,'semi_major_axis',req)
@@ -1233,279 +1617,269 @@ write(stdout,fmt=*) 'TEST15'
    ierr=nf_get_att_double(ncid,varid,'perspective_point_height',pph)
    ierr=nf_get_att_double(ncid,varid,'longitude_of_projection_origin',nam)
    nam=nam*pi/180
-write(stdout,fmt=*) 'TEST16'
+write(stdout,fmt=*) 'TEST31'
 
 !!!   ierr=nf_inq_varid(ncid,'nominal_satellite_subpoint_lat',varid)
-!!!   ierr=nf_get_var_real(ncid,varid,lat_sat)
+!!!   ierr=nf_get_var_double(ncid,varid,lat_sat)
 !!!   ierr=nf_inq_varid(ncid,'nominal_satellite_subpoint_lon',varid)
-!!!   ierr=nf_get_var_real(ncid,varid,lon_sat)
+!!!   ierr=nf_get_var_double(ncid,varid,lon_sat)
 
-#ifdef DM_PARALLEL
-   call mpi_barrier(comm, ierr)
-#endif
-write(stdout,fmt=*) 'TEST17'
+!#ifdef DM_PARALLEL
+!   call mpi_barrier(comm, ierr)
+!#endif
+write(stdout,fmt=*) 'TEST32'
 
    ierr=nf_close(ncid)
    call handle_err('Error closing file',ierr)
-write(stdout,fmt=*) 'TEST18'
-
+write(stdout,fmt=*) 'TEST33'
 
 end subroutine get_abil1b_metadata
 
-subroutine get_abil1b_grid( filename, ydim, xdim, req, rpol, pph, nam, satellite_id, &
-                               lat, lon, satzen, earthmask, zenmask, &
-                               yoff, xoff )
+
+subroutine get_abil1b_grid( filename, &
+                            ny, nx, nyl, nxl, ys, xs, &
+                            req, rpol, pph, nam, satellite_id, &
+                            lat, lon, satzen, earthmask, zenmask, domainmask, &
+                            yoff, xoff )
 
    implicit none
 
    character(*), intent(in) :: filename
-   integer, intent(in)      :: ydim, xdim, satellite_id
+   integer, intent(in)      :: ny, nx, nyl, nxl, ys, xs
    real(r_kind), intent(in) :: req, rpol, pph, nam
+   integer, intent(in)      :: satellite_id
+
 !!!   real, intent(in)         :: lon_sat
 
-   real, intent(out)        :: lat(ydim,xdim), lon(ydim,xdim), satzen(ydim,xdim)
-   logical, intent(out)     :: earthmask(ydim, xdim), zenmask(ydim, xdim)
+   real, intent(out)        :: lat(nyl,nxl), lon(nyl,nxl), satzen(nyl,nxl)
+   logical, intent(out)     :: earthmask(nyl,nxl), zenmask(nyl,nxl), domainmask(nyl,nxl)
    integer, intent(out)     :: yoff, xoff
 
-   real                     :: yy(ydim), xx(xdim)
+   type(info_type)          :: info
+   type(model_loc_type)     :: loc
+   logical                  :: outside_all, dummy_bool
+
+   real                     :: yy(ny), xx(nx)
    integer                  :: ierr, ncid, varid
-   integer                  :: iy, ix
+   integer                  :: iy, ix, iyl, ixl
    real                     :: slp, itp
    real(r_kind)             :: hh
 
    real                     :: alat, alon ! , alon_sat
    real                     :: theta, theta1, theta2, r1
+   real, parameter          :: satzen_limit=75.0
 
-   real, parameter         :: rre=6371.004*1e3
-   real(r_kind), parameter :: pi=3.1415926535898D0
-   real, parameter         :: satzen_limit=75.0
-   real, parameter         :: fillv=-999.000
-write(stdout,fmt=*) 'TEST19'
+write(stdout,fmt=*) 'TEST34'
 
    ierr=nf_open(trim(filename),nf_nowrite,ncid)
    call handle_err('Error opening file',ierr)
-write(stdout,fmt=*) 'TEST20'
+write(stdout,fmt=*) 'TEST35'
 
    ierr=nf_inq_varid(ncid,'y',varid)
-write(stdout,fmt=*) 'TEST21'
+write(stdout,fmt=*) 'TEST36'
 
-   ierr=nf_get_var_real(ncid,varid,yy)
-write(stdout,fmt=*) 'TEST22'
+   ierr=nf_get_var_double(ncid,varid,yy)
+write(stdout,fmt=*) 'TEST37'
 
-   ierr=nf_get_att_real(ncid,varid,'scale_factor',slp)
-   ierr=nf_get_att_real(ncid,varid,'add_offset',itp)
+   ierr=nf_get_att_double(ncid,varid,'scale_factor',slp)
+   ierr=nf_get_att_double(ncid,varid,'add_offset',itp)
    yy = yy*slp+itp 
    yoff = floor(itp/slp)
-write(stdout,fmt=*) 'TEST23'
+write(stdout,fmt=*) 'TEST38'
 
    ierr=nf_inq_varid(ncid,'x',varid)
-write(stdout,fmt=*) 'TEST24'
+write(stdout,fmt=*) 'TEST39'
 
-   ierr=nf_get_var_real(ncid,varid,xx)
-write(stdout,fmt=*) 'TEST25'
+   ierr=nf_get_var_double(ncid,varid,xx)
+write(stdout,fmt=*) 'TEST40'
 
-   ierr=nf_get_att_real(ncid,varid,'scale_factor',slp)
-   ierr=nf_get_att_real(ncid,varid,'add_offset',itp)
+   ierr=nf_get_att_double(ncid,varid,'scale_factor',slp)
+   ierr=nf_get_att_double(ncid,varid,'add_offset',itp)
    xx = xx*slp+itp
    xoff = floor(itp/slp)
 
-write(stdout,fmt=*) 'TEST26'
+write(stdout,fmt=*) 'TEST41'
 
    earthmask=.false.
-write(stdout,fmt=*) 'TEST27'
+write(stdout,fmt=*) 'TEST42'
 
    zenmask=.false.
-write(stdout,fmt=*) 'TEST28'
+write(stdout,fmt=*) 'TEST43'
 
 !!!   alon_sat=lon_sat*pi/180.D0
 
    hh=pph+req
-write(stdout,fmt=*) 'TEST29'
+write(stdout,fmt=*) 'TEST44'
 
 write(stdout,fmt=*) hh,pph,req,rpol,nam,slp,itp,xoff,yoff
-write(stdout,fmt=*) 'TEST30'
+write(stdout,fmt=*) 'TEST45'
 
-   lat = fillv
-write(stdout,fmt=*) 'TEST31'
+   lat = missing_r
+write(stdout,fmt=*) 'TEST46'
 
-   lon = fillv
-write(stdout,fmt=*) 'TEST32'
+   lon = missing_r
+write(stdout,fmt=*) 'TEST47'
 
-   satzen = fillv
-write(stdout,fmt=*) 'TEST33'
-   do ix=1,xdim
-if (mod(ix,100).eq.0) write(stdout,fmt=*) 'TEST34', ix
+   satzen = missing_r
+write(stdout,fmt=*) 'TEST48'
+   do ixl = 1, nxl
+      ix = ixl + xs - 1
+write(stdout,fmt=*) 'TEST49', ixl
 
-      do iy=1,ydim
-         call get_abil1b_latlon(yy(iy),xx(ix),req,rpol,hh,nam,lat(iy,ix),lon(iy,ix))
+      do iyl = 1, nyl
+         iy = iyl + ys - 1
 
-         if (isnan(lat(iy,ix)) .OR. isnan(lon(iy,ix))) then
-            lat(iy,ix) = fillv
-            lon(iy,ix) = fillv
+         call get_abil1b_latlon(yy(iy),xx(ix),req,rpol,hh,nam,lat(iyl,ixl),lon(iyl,ixl))
+
+!         if ( isnan(lat(iyl,ixl)) .OR. isnan(lon(iyl,ixl)) ) then
+!            lat(iyl,ixl) = missing_r
+!            lon(iyl,ixl) = missing_r
+!         end if
+         if( lat(iyl,ixl).eq.missing_r .OR. lon(iyl,ixl).eq.missing_r ) cycle
+
+         call da_get_satzen(lat(iyl,ixl),lon(iyl,ixl),satellite_id,satzen(iyl,ixl))
+
+!         if (isnan(satzen(iyl,ixl))) then
+!            lat(iyl,ixl) = missing_r
+!            lon(iyl,ixl) = missing_r
+!            satzen(iyl,ixl) = missing_r
+!            cycle
+!         end if
+         earthmask(iyl,ixl)=.true.
+
+         if (satzen(iyl,ixl).gt.satzen_limit) then
+            satzen(iyl,ixl) = missing_r
             cycle
          end if
-
-         call da_get_satzen(lat(iy,ix),lon(iy,ix),satellite_id,satzen(iy,ix))
-
-         if (isnan(satzen(iy,ix))) then
-            lat(iy,ix) = fillv
-            lon(iy,ix) = fillv
-            satzen(iy,ix) = fillv
-            cycle
-         end if
-         earthmask(iy,ix)=.true.
-
-         if (satzen(iy,ix).gt.satzen_limit) then
-            cycle
-         end if
-         zenmask(iy,ix)=.true.
+         zenmask(iyl,ixl)=.true.
       end do
    end do
 
-write(stdout,fmt=*) 'TEST35'
-
-#ifdef DM_PARALLEL
-   call mpi_barrier(comm, ierr)
-#endif
-write(stdout,fmt=*) 'TEST36'
+write(stdout,fmt=*) 'TEST50'
 
    ierr=nf_close(ncid)
    call handle_err('Error closing file',ierr)
 
-write(stdout,fmt=*) 'TEST37'
+write(stdout,fmt=*) 'TEST51'
+
+write(stdout,fmt=*) 'TEST52'
+
+   !Populate domainmask with on/off domain test for local set of obs
+   domainmask = .false.
+   do ixl = 1, nxl
+write(stdout,fmt=*) 'TEST53', ixl
+      do iyl = 1, nyl
+         if (earthmask(iyl,ixl)) then
+            info%lon  =  lon(iyl,ixl)  ! longitude
+            info%lat  =  lat(iyl,ixl)  ! latitude
+            call da_llxy (info, loc, dummy_bool, outside_all)
+            domainmask(iyl,ixl) = .not. outside_all
+         end if
+      end do
+   end do
 
 end subroutine get_abil1b_grid
 
-subroutine get_abil1b_bt( filename, ydim, xdim, allmask, radmask, &
-                             bt )
+subroutine get_abil1b_bt( filename, ny, nx, ys, ye, xs, xe, &
+                             radmask, bt )
    implicit none
 
    character(*), intent(in)      :: filename
-   integer, intent(in)           :: ydim, xdim
-   logical, intent(in)           :: allmask(ydim, xdim)
-   logical, intent(out)          :: radmask(ydim, xdim)
-   real, intent(out)             :: bt(ydim, xdim)
 
-   real             :: rad(ydim, xdim)
-   integer(kind=1)  :: DQF(ydim, xdim)
+   !Size of full data set
+   integer, intent(in)           :: ny, nx
+
+   !Starting and stopping indices of this view desired (not equivalent to Full Disk indices)
+   integer, intent(in)           :: ys, ye, xs, xe 
+
+   logical, intent(inout)        :: radmask(ny, nx)
+   real, intent(out)             :: bt(ys:ye, xs:xe)
+
+   real             :: rad(ys:ye, xs:xe)
+   integer(kind=1)  :: DQF(ys:ye, xs:xe)
    integer          :: ierr, ncid, varid
    integer          :: iy, ix
-   integer          :: ystart, yend, xstart, xend, nykeep, nxkeep
+   integer          :: nykeep, nxkeep
    real             :: slp, itp
    real             :: bc1, bc2, fk1, fk2
-   real, parameter  :: fillv=-999.000
 
-   bt = fillv
-   radmask = .false.
-!   if (.true.) then
-      !! Attempt to save rad reading time by selecting a subset of netcdf var
-      ystart = ydim
-      yend = 1
-      do iy = 1, ydim
-         if ( any(allmask(iy,:)) ) then
-            ystart = iy
-            exit
-         end if
-      end do
-      do iy = ydim, 1, -1
-         if ( any(allmask(iy,:)) ) then
-            yend = iy
-            exit
-         end if
-      end do
+   bt = missing_r
 
-      xstart = xdim
-      xend = 1
-      do ix = 1, xdim
-         if ( any(allmask(:,ix)) ) then
-            xstart = ix
-            exit
-         end if
-      end do
-      do ix = xdim, 1, -1
-         if ( any(allmask(:,ix)) ) then
-            xend = ix
-            exit
-         end if
-      end do
-      nykeep = yend - ystart + 1
-      nxkeep = xend - xstart + 1
+   !! Save rad reading time by selecting a subset of netcdf var
+   nykeep = ye - ys + 1
+   nxkeep = xe - xs + 1
 
-      if (nykeep.gt.0 .and. nxkeep.gt.0) then
-         ierr=nf_open(trim(filename),nf_nowrite,ncid)
-         call handle_err('Error opening file',ierr)
+   if (nykeep.gt.0 .and. nxkeep.gt.0) then
+      ierr=nf_open(trim(filename),nf_nowrite,ncid)
+      call handle_err('Error opening file',ierr)
 
-         ierr=nf_inq_varid(ncid,'Rad',varid)
-         ierr=nf_get_vara_real(ncid,varid,(/ystart,xstart/),(/nykeep,nxkeep/), &
-                                  rad(ystart:yend,xstart:xend) )
+      ierr=nf_inq_varid(ncid,'Rad',varid)
+      ierr=nf_get_vara_double(ncid,varid,(/ys,xs/),(/nykeep,nxkeep/), &
+                               rad(ys:ye,xs:xe) )
 
-         ierr=nf_inq_varid(ncid,'DQF',varid)
-         ierr=nf_get_vara_int(ncid,varid,(/ystart,xstart/),(/nykeep,nxkeep/), &
-                                  DQF(ystart:yend,xstart:xend) )
-      else
-         return
-      end if
-!   else
-!      ystart = 1
-!      yend   = ydim
-!      xstart = 1
-!      xend   = xdim
-!
-!      ierr=nf_open(trim(filename),nf_nowrite,ncid)
-!      ierr=nf_inq_varid(ncid,'Rad',varid)
-!
-!      ierr=nf_get_var_real(ncid,varid,rad)
-!
-!      ierr=nf_inq_varid(ncid,'DQF',varid)
-!      ierr=nf_get_var_real(ncid,varid,DQF)
-!   end if
+      ierr=nf_inq_varid(ncid,'DQF',varid)
+      ierr=nf_get_vara_int(ncid,varid,(/ys,xs/),(/nykeep,nxkeep/), &
+                               DQF(ys:ye,xs:xe) )
+   else
+      return
+   end if
 
-   ierr=nf_get_att_real(ncid,varid,'scale_factor',slp)
-   ierr=nf_get_att_real(ncid,varid,'add_offset',itp)
+   ierr=nf_get_att_double(ncid,varid,'scale_factor',slp)
+   ierr=nf_get_att_double(ncid,varid,'add_offset',itp)
    rad=rad*slp+itp
 
    ierr=nf_inq_varid(ncid,'planck_bc1',varid)
-   ierr=nf_get_var_real(ncid,varid,bc1)
+   ierr=nf_get_var_double(ncid,varid,bc1)
    ierr=nf_inq_varid(ncid,'planck_bc2',varid)
-   ierr=nf_get_var_real(ncid,varid,bc2)
+   ierr=nf_get_var_double(ncid,varid,bc2)
    ierr=nf_inq_varid(ncid,'planck_fk1',varid)
-   ierr=nf_get_var_real(ncid,varid,fk1)
+   ierr=nf_get_var_double(ncid,varid,fk1)
    ierr=nf_inq_varid(ncid,'planck_fk2',varid)
-   ierr=nf_get_var_real(ncid,varid,fk2)
+   ierr=nf_get_var_double(ncid,varid,fk2)
 
-   do ix=xstart, xend
-      do iy=ystart, yend
-         if ( allmask(iy,ix) ) then
-            if ( rad(iy,ix).ge.0.0 .and. any(DQF(iy,ix).eq.(/0,1/)) ) then
+   do ix=xs, xe
+write(stdout,fmt=*) 'TEST54', ix
+      do iy=ys, ye
+         if ( radmask(iy,ix) ) then
+            if( rad(iy,ix).ge.0.0 .and. any(DQF(iy,ix).eq.(/0,1/)) ) then
                bt(iy,ix)=(fk2/(alog((fk1/rad(iy,ix))+1.))-bc1)/bc2
+            else
                radmask(iy,ix) = .true.
             end if
          end if
       end do
    end do
 
-#ifdef DM_PARALLEL
-   call mpi_barrier(comm, ierr)
-#endif
+!#ifdef DM_PARALLEL
+!   call mpi_barrier(comm, ierr)
+!#endif
 
    ierr=nf_close(ncid)
    call handle_err('Error closing file',ierr)
-
 
 end subroutine get_abil1b_bt
 
 
 subroutine get_abil1b_latlon(yy,xx,req,rpol,hh,nam,lat,lon)
-implicit none
-   real::yy,xx,lat,lon,lat1,lon1
-   real::aa,bb,cc,rs,sx,sy,sz
-   real*8::req,rpol,hh,nam
-   real*8,parameter::pi=3.1415926535898D0
 
+   implicit none
+
+   real, intent(in) :: yy, xx
+   real, intent(in) :: req, rpol, hh, nam
+   real, intent(inout) :: lat,lon
+
+   real   :: lat1,lon1
+   real   :: aa,bb,cc,rs,sx,sy,sz
+   real   :: radicand
+  
    aa=sin(xx)**2+cos(xx)**2*(cos(yy)**2+req**2/rpol**2*sin(yy)**2)
    bb=-2.D0*hh*cos(xx)*cos(yy)
    cc=hh**2-req**2
-   rs=(-bb-sqrt(bb**2-4.D0*aa*cc))/(2.D0*aa)
+
+   radicand = bb**2 - 4.D0*aa*cc
+   if (radicand .lt. 0.) return
+
+   rs=(-bb-sqrt(radicand))/(2.D0*aa)
    sx=rs*cos(xx)*cos(yy)
    sy=-rs*sin(xx)
    sz=rs*cos(xx)*sin(yy)
@@ -1516,13 +1890,141 @@ implicit none
    lat=lat1*180.D0/pi
    lon=lon1*180.D0/pi
 
-!	print*,hh,rpol,hh
-!	print*,aa,bb,cc,rs
-!	print*,aa,bb,cc,rs,sx,sy,sz
-!	print*,'aaa',lat,lon
-!	pause
 end subroutine get_abil1b_latlon
 
+
+subroutine split_grid( ny_global, nx_global, &
+                       ny_local, nx_local, &
+                       ys_local, xs_local, &
+                       redist )
+
+   implicit none
+
+   integer, intent(in)  :: ny_global, nx_global
+   logical, intent(in)  :: redist
+   integer, intent(out) :: ny_local, nx_local, &
+                           ys_local, xs_local
+
+   integer, target   :: ny_grid(ntasks_y), ys_grid(ntasks_y)  !, ye_grid(ntasks_y)
+   integer, target   :: nx_grid(ntasks_x), xs_grid(ntasks_x)  !, xe_grid(ntasks_x)
+   integer, pointer  :: ngrid(:), sgrid(:)
+
+   integer           :: mm, i, j, iproc, ig, ntasks, nglobal
+
+write(stdout,fmt=*) 'TEST55'
+
+   do ig = 1, 2
+      if (ig.eq.1) then
+         ngrid => ny_grid
+         sgrid => ys_grid
+         ntasks = ntasks_y
+         nglobal = ny_global
+      else if (ig.eq.2) then
+         ngrid => nx_grid
+         sgrid => xs_grid
+         ntasks = ntasks_x
+         nglobal = nx_global
+      end if
+
+      ngrid = nglobal / ntasks
+      mm = mod( nglobal , ntasks )
+      do j = 1, ntasks
+         ngrid(j) = ngrid(j) + 1
+         mm = mm - 1
+         if (mm .eq. 0) exit
+      end do
+
+      if (redist) then
+      !Redistribute grid from middle to edges to balance load 
+      !  for da_llxy in get_abil1b_grid
+      do i = 1, 2
+         if (mod(ntasks,2).eq.0) then
+            do j = ntasks/2, 2, -1
+               mm = ngrid(j) / 6
+               ngrid(j)   = ngrid(j)   - mm
+               ngrid(j-1) = ngrid(j-1) + mm
+            end do
+            do j = ntasks/2+1, ntasks-1
+               mm = ngrid(j) / 6
+               ngrid(j)   = ngrid(j)   - mm
+               ngrid(j+1) = ngrid(j+1) + mm
+            end do
+         else
+            do j = ntasks/2+1, 2, -1
+               mm = ngrid(j) / 6
+               mm = mm/2
+               ngrid(j)          = ngrid(j)          - 2*mm
+               ngrid(j-1)        = ngrid(j-1)        + mm
+               ngrid(ntasks-j+2) = ngrid(ntasks-j+2) + mm
+            end do
+         end if
+      end do
+      end if
+
+      sgrid(1) = 1
+      do j = 1, ntasks_y
+!         if (j .eq. 1) egrid(1) = ngrid(1) !NOT NECESSARY
+         if (j .lt. ntasks) then
+            sgrid(j+1) = sgrid(j) + ngrid(j)
+!            egrid(j+1) = egrid(j) + ngrid(j+1) !NOT NECESSARY
+         end if
+      end do
+   end do
+
+!   nx_grid = nx_global / ntasks_x
+!   mm = mod( nx_global , ntasks_x )
+!   do i = 1, ntasks_x
+!      if (mm .gt. 0) then
+!         nx_grid(i) = nx_grid(i) + 1
+!         mm = mm - 1
+!      end if
+!   end do
+!
+!   xs_grid(1) = 1
+!   do i = 1, ntasks_x
+!      if (mm .gt. 0) then
+!         nx_grid(i) = nx_grid(i) + 1
+!         mm = mm - 1
+!      end if
+!      if (i .eq. 1) xe_grid(1) = nx_grid(1) !NOT NECESSARY
+!      if (i .lt. ntasks_x) then
+!         xs_grid(i+1) = xs_grid(i) + nx_grid(i)
+!         xe_grid(i+1) = xe_grid(i) + nx_grid(i+1) !NOT NECESSARY
+!      end if
+!   end do
+
+write(stdout,fmt=*) 'TEST56'
+
+   j = myproc / ntasks_y + 1
+   i = mod(myproc, ntasks_x) + 1
+   ny_local = ny_grid(j)
+   ys_local = ys_grid(j)
+   nx_local = nx_grid(i)
+   xs_local = xs_grid(i)
+
+write(stdout,fmt=*) 'TEST57', myproc, j, i
+
+!   iproc = 0
+!   do j = 1, ntasks_y
+!      do i = 1, ntasks_x
+!write(stdout,fmt=*) 'TEST58'
+!         if (iproc .eq. myproc) then
+!write(stdout,fmt=*) 'TEST59', iproc, j, i
+!
+!            ny_local = ny_grid(j)
+!            ys_local = ys_grid(j)
+!
+!            nx_local = nx_grid(i)
+!            xs_local = xs_grid(i)
+!
+!            exit
+!         end if
+!         iproc = iproc + 1
+!      end do
+!      if (iproc .eq. myproc) exit
+!   end do
+
+end subroutine split_grid
 
 !subroutine j2000day2cal(j2000,yr,mt,dy,hr,mn,sc)
 !  ! Converts J2000 epoch day to Gregorian calender date

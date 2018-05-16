@@ -4431,10 +4431,6 @@ endif
       !  Test initialization of a 4d array 
 
       IF ( config_flags%opt_test4d .EQ. WANTTEST4D ) THEN
-print *,'DAVE inside the initializations for test4d'
-print *,'p_sinx = ',P_sinx
-print *,'p_cosy = ',P_cosy
-print *,'p_tanxy= ',P_tanxy
          DO j = jts, min(jde-1,jte)
             DO k = kts, kte
                DO i = its, min(ide,ite)

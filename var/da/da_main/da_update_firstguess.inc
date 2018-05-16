@@ -585,7 +585,7 @@ subroutine da_update_firstguess(grid, out_filename)
                              ierr                                 )
 
 ! Update moist potential temperature: for now, it is identical to T with use_theta_m=0.
-     rmse_var='MOIST_THETA-T0'
+     rmse_var='THM'
      call ext_ncd_get_var_info (dh1,trim(rmse_var),ndim1,ordering,staggering, &
           start_index,end_index1, WrfType, ierr    )
      call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),         &

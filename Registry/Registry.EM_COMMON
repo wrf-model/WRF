@@ -233,7 +233,7 @@ i1       real   ph_save        ikj     dyn_em      1         Z
 # Potential Temperature
 state    real   th_phy_m_t0    ikj      dyn_em      1         -     ih  "t"      "perturbation potential temperature theta-t0" "K"
 state    real   t              ikjb     dyn_em      2         -     \
-       i0rhusdf=(bdy_interp:dt)   "moist_theta-T0"      "perturbation moist potential temperature (1+Rv/Rd Qv)*(theta-t0)" "K"
+       i0rhusdf=(bdy_interp:dt)   "thm"      "either 1) pert moist pot temp=(1+Rv/Rd Qv)*(theta)-T0, or 2) pert dry pot temp=theta-T0; based on use_theta_m setting" "K"
 
 state    real   t_init         ikj     dyn_em      1         -      ird       "t_init" "initial potential temperature" "K"
 i1       real   t_tend         ikj     dyn_em      1         -  

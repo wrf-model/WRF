@@ -473,6 +473,18 @@ endif
     CALL wrf_put_dom_ti_real ( fid , 'SBD0' , grid%sbd0 , 1 , ierr )
 #endif
 
+    CALL wrf_put_dom_ti_integer( fid, 'AERCU_OPT'          , config_flags%aercu_opt          , 1, ierr )
+    CALL wrf_put_dom_ti_real   ( fid, 'AERCU_FCT'          , config_flags%aercu_fct          , 1, ierr )
+#if (EM_CORE == 1)
+    CALL wrf_put_dom_ti_integer( fid, 'IDEAL_CASE'         , config_flags%ideal_case         , 1, ierr )
+    CALL wrf_put_dom_ti_integer( fid, 'DIFF_6TH_SLOPEOPT'  , config_flags%diff_6th_slopeopt  , 1, ierr )
+    CALL wrf_put_dom_ti_integer( fid, 'AUTO_LEVELS_OPT'    , config_flags%auto_levels_opt    , 1, ierr )
+    CALL wrf_put_dom_ti_real   ( fid, 'DIFF_6TH_THRESH'    , config_flags%diff_6th_thresh    , 1, ierr )
+    CALL wrf_put_dom_ti_real   ( fid, 'DZBOT'              , config_flags%dzbot              , 1, ierr )
+    CALL wrf_put_dom_ti_real   ( fid, 'DZSTRETCH_S'        , config_flags%dzstretch_s        , 1, ierr )
+    CALL wrf_put_dom_ti_real   ( fid, 'DZSTRETCH_U'        , config_flags%dzstretch_u        , 1, ierr )
+#endif
+
 #if (EM_CORE == 1)
 !added the following for tc bogusing
     if( ((config_flags%insert_bogus_storm) .or. (config_flags%remove_storm)) .and. &
@@ -780,8 +792,10 @@ endif
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_STC',     config_flags%opt_stc     , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_GLA',     config_flags%opt_gla     , 1 , ierr )
         CALL wrf_put_dom_ti_integer   ( fid, 'OPT_RSF',     config_flags%opt_rsf     , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_SOIL',    config_flags%opt_soil    , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_PEDO',    config_flags%opt_pedo    , 1 , ierr )
+        CALL wrf_put_dom_ti_integer   ( fid, 'OPT_CROP',    config_flags%opt_crop    , 1 , ierr )
       ENDIF
-
 
       CALL wrf_put_dom_ti_integer   ( fid, 'DFI_OPT',          config_flags%dfi_opt      , 1 , ierr )
 

@@ -8788,9 +8788,9 @@ END SUBROUTINE CO2FLUX_CROP
       TDIFF = TC - parameters%GDDTBASE
     END IF
 
-    GDD     = (GDD + TDIFF) * IPA * IHA
+    GDD     = (GDD + TDIFF * DT / 86400.0) * IPA * IHA
 
-    GDDDAY  = GDD / (86400.0 / DT)
+    GDDDAY  = GDD
 
    ! Decide corn growth stage, based on Hybrid-Maize 
    !   PGS = 1 : Before planting

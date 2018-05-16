@@ -781,6 +781,8 @@ contains
 
 ! compute carbon budgets (carbon storages and co2 & bvoc fluxes)
 
+   crop_active = .false.
+   dveg_active = .false.
    IF (DVEG == 2 .OR. DVEG == 5 .OR. DVEG == 6) dveg_active = .true.
    IF (OPT_CROP > 0 .and. CROPTYPE > 0) THEN
      crop_active = .true.

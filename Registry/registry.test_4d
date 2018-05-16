@@ -1,0 +1,20 @@
+#	Test 4d array, no boundary conditions, not time tendencies, not output, physics so no nesting, no restart
+
+#	Always start with an empty
+state  real    -     ikjf   test4d   1   -  -  -
+
+#	Here are the multiple 3d arrays that will be part of the 4d array
+
+#ikjftb works
+state  real  sinx    ikjf   test4d   1   -  i "TESTSINX"   "Test pattern sin(x)"   "unitless"
+state  real  cosy    ikjf   test4d   1   -  i "TESTCOSY"   "Test pattern cos(y)"   "unitless"
+state  real  tanxy   ikjf   test4d   1   -  i "TESTTANXY"  "Test pattern tan(xy)"  "unitless"
+
+#	Namelist option to turn arrays "on"
+
+rconfig  integer  opt_test4d  namelist,physics  1  0   irh  "opt_test4d"  "enable test4d array"      ""
+
+#	Mandatory package to associate 4d array with a namelist option
+package   wanttest4d  opt_test4d==1    -  test4d:sinx,cosy,tanxy
+
+

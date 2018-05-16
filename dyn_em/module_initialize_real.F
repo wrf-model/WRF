@@ -4428,6 +4428,24 @@ endif
          END DO
       END IF
 
+      !  Test initialization of a 4d array 
+
+      IF ( config_flags%opt_test4d .EQ. WANTTEST4D ) THEN
+print *,'DAVE inside the initializations for test4d'
+print *,'p_sinx = ',P_sinx
+print *,'p_cosy = ',P_cosy
+print *,'p_tanxy= ',P_tanxy
+         DO j = jts, min(jde-1,jte)
+            DO k = kts, kte
+               DO i = its, min(ide,ite)
+                  test4d(i,k,j,P_sinx) = sin(real(i-1)/real(ide-1)*2*3.14159)
+                  test4d(i,k,j,P_cosy) = cos(real(j-1)/real(jde-1)*4*3.14159)
+                  test4d(i,k,j,P_tanxy)= tan(real(i-1)/real(ide-1)*real(j-1)/real(jde-1)*0.49*3.14159)
+               END DO
+            END DO
+         END DO
+      END IF
+
 #ifdef DM_PARALLEL
 # include "HALO_EM_INIT_1.inc"
 # include "HALO_EM_INIT_2.inc"

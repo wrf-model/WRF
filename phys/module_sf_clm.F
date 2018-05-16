@@ -462,10 +462,11 @@ module clm_varcon
   integer,  parameter :: idx_rhos_max   = 8              ! maxiumum snow density index used in aging lookup table [idx]
   integer,  parameter :: numrad_snw  =   5               ! number of spectral bands used in snow model [nbr]
 
-  integer,  parameter :: idx_bc_nclrds_min      = 1      ! minimum index for BC particle size in optics lookup table
-  integer,  parameter :: idx_bc_nclrds_max      = 10     ! maximum index for BC particle size in optics lookup table
-  integer,  parameter :: idx_bcint_icerds_min   = 1      ! minimum index for snow grain size in optics lookup table for within-ice BC
-  integer,  parameter :: idx_bcint_icerds_max   = 8      ! maximum index for snow grain size in optics lookup table for within-ice BC
+  ! snicar codes, not needed, M.H.
+  !integer,  parameter :: idx_bc_nclrds_min      = 1      ! minimum index for BC particle size in optics lookup table
+  !integer,  parameter :: idx_bc_nclrds_max      = 10     ! maximum index for BC particle size in optics lookup table
+  !integer,  parameter :: idx_bcint_icerds_min   = 1      ! minimum index for snow grain size in optics lookup table for within-ice BC
+  !integer,  parameter :: idx_bcint_icerds_max   = 8      ! maximum index for snow grain size in optics lookup table for within-ice BC
 
   real(r8), parameter :: pie    = 3.141592653589793_r8 ! pi
   real(r8), parameter :: rpi    = 3.141592653589793_r8 ! pi
@@ -590,22 +591,23 @@ module clm_varcon
   real(r8) :: asm_prm_snw_dfs(idx_Mie_snw_mx,numrad_snw)
   real(r8) :: ext_cff_mss_snw_dfs(idx_Mie_snw_mx,numrad_snw)
 
-  ! Size-dependent BC optical properties. Currently a fixed BC size is
-  ! assumed, but this framework enables optical properties to be
-  ! assigned based on the BC effective radius, should this be
-  ! implemented in the future.
-  !now using size-resolved BC optical properties for 10-size-bin
-  !effective radius in um: 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5
-  !
-  ! within-ice BC (i.e., BC that was deposited within hydrometeors)
-  real(r8) :: ss_alb_bc1(numrad_snw,idx_bc_nclrds_max)
-  real(r8) :: asm_prm_bc1(numrad_snw,idx_bc_nclrds_max)
-  real(r8) :: ext_cff_mss_bc1(numrad_snw,idx_bc_nclrds_max)
+  ! snicar code, not necessary, M.H.
+  !! Size-dependent BC optical properties. Currently a fixed BC size is
+  !! assumed, but this framework enables optical properties to be
+  !! assigned based on the BC effective radius, should this be
+  !! implemented in the future.
+  !!now using size-resolved BC optical properties for 10-size-bin
+  !!effective radius in um: 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5
+  !!
+  !! within-ice BC (i.e., BC that was deposited within hydrometeors)
+  !real(r8) :: ss_alb_bc1(numrad_snw,idx_bc_nclrds_max)
+  !real(r8) :: asm_prm_bc1(numrad_snw,idx_bc_nclrds_max)
+  !real(r8) :: ext_cff_mss_bc1(numrad_snw,idx_bc_nclrds_max)
 
   ! external BC
-  real(r8) :: ss_alb_bc2(numrad_snw,idx_bc_nclrds_max)
-  real(r8) :: asm_prm_bc2(numrad_snw,idx_bc_nclrds_max)
-  real(r8) :: ext_cff_mss_bc2(numrad_snw,idx_bc_nclrds_max)
+  !real(r8) :: ss_alb_bc2(numrad_snw,idx_bc_nclrds_max)
+  !real(r8) :: asm_prm_bc2(numrad_snw,idx_bc_nclrds_max)
+  !real(r8) :: ext_cff_mss_bc2(numrad_snw,idx_bc_nclrds_max)
 
   ! hydrophobic OC
   real(r8) :: ss_alb_oc1(1,numrad_snw)
@@ -637,8 +639,9 @@ module clm_varcon
   real(r8) :: asm_prm_dst4(1,numrad_snw)
   real(r8) :: ext_cff_mss_dst4(1,numrad_snw)
 
-  ! Absorption enhancement factors for within-ice BC
-  real(r8) :: bcenh(numrad_snw,idx_bc_nclrds_max,idx_bcint_icerds_max)
+  ! snicar code, not necessary, M.H.
+  !! Absorption enhancement factors for within-ice BC
+  !real(r8) :: bcenh(numrad_snw,idx_bc_nclrds_max,idx_bcint_icerds_max)
  data(ss_alb_oc1(1,i),i=1,5) / 0.996738033108225, 0.993951726870337, 0.98995641641622, &
     0.986792757460599, 0.950852907010411/
 
@@ -712,17 +715,18 @@ module clm_varcon
                         ,xx_ss_alb_snw_dfs       &
                         ,xx_asm_prm_snw_dfs      
 
-  real, dimension(numrad_snw*idx_bc_nclrds_max) :: &
-                         xx_ss_alb_bc1,     &
-                         xx_asm_prm_bc1,    &
-                         xx_ext_cff_mss_bc1,  &
-                         xx_ss_alb_bc2,      &
-                         xx_asm_prm_bc2,     &
-                         xx_ext_cff_mss_bc2   
-
-  real,dimension(numrad_snw*idx_bc_nclrds_max*idx_bcint_icerds_max) :: xx_bcenh
-
-
+  ! snicar code, not necessary, M.H.
+  !real, dimension(numrad_snw*idx_bc_nclrds_max) :: &
+  !                       xx_ss_alb_bc1,     &
+  !                       xx_asm_prm_bc1,    &
+  !                       xx_ext_cff_mss_bc1,  &
+  !                       xx_ss_alb_bc2,      &
+  !                       xx_asm_prm_bc2,     &
+  !                       xx_ext_cff_mss_bc2   
+  !
+  !real,dimension(numrad_snw*idx_bc_nclrds_max*idx_bcint_icerds_max) :: xx_bcenh
+  !
+  !
   real, dimension(idx_rhos_max*idx_Tgrd_max*idx_T_max) ::   &
                          xx_snowage_tau                     &
                         ,xx_snowage_kappa                   &
@@ -23321,25 +23325,26 @@ module SNICARMod
                         ,idx_Tgrd_max             &
                         ,idx_rhos_max             &
                         ,numrad_snw               &
-                        !czhao add BC optical properties
-                        ,idx_bc_nclrds_min        &
-                        ,idx_bc_nclrds_max        &
-                        ,idx_bcint_icerds_min     &
-                        ,idx_bcint_icerds_max     &
-                        ,ss_alb_bc1               &
-                        ,asm_prm_bc1              &
-                        ,ext_cff_mss_bc1          &
-                        ,ss_alb_bc2               &
-                        ,asm_prm_bc2              &
-                        ,ext_cff_mss_bc2          &
-                        ,bcenh                    &
-                        ,xx_ss_alb_bc1            &
-                        ,xx_asm_prm_bc1           &
-                        ,xx_ext_cff_mss_bc1       &
-                        ,xx_ss_alb_bc2            &
-                        ,xx_asm_prm_bc2           &
-                        ,xx_ext_cff_mss_bc2       &
-                        ,xx_bcenh
+                        !snicar, not necessary, M.H.
+                        !!czhao add BC optical properties
+                        !,idx_bc_nclrds_min        &
+                        !,idx_bc_nclrds_max        &
+                        !,idx_bcint_icerds_min     &
+                        !,idx_bcint_icerds_max     &
+                        !,ss_alb_bc1               &
+                        !,asm_prm_bc1              &
+                        !,ext_cff_mss_bc1          &
+                        !,ss_alb_bc2               &
+                        !,asm_prm_bc2              &
+                        !,ext_cff_mss_bc2          &
+                        !,bcenh                    &
+                        !,xx_ss_alb_bc1            &
+                        !,xx_asm_prm_bc1           &
+                        !,xx_ext_cff_mss_bc1       &
+                        !,xx_ss_alb_bc2            &
+                        !,xx_asm_prm_bc2           &
+                        !,xx_ext_cff_mss_bc2       &
+                        !,xx_bcenh
 
   use module_cam_support, only: endrun
 
@@ -23366,15 +23371,16 @@ module SNICARMod
   real(r8), public, parameter :: scvng_fct_mlt_dst3  = 0.01_r8   ! scavenging factor for dust species 3 inclusion in meltwater [frc]
   real(r8), public, parameter :: scvng_fct_mlt_dst4  = 0.01_r8   ! scavenging factor for dust species 4 inclusion in meltwater [frc]
 
-  !  "Rfast" parameters used by Flanner et al (2012, ACP)
-  !real(r8), public, parameter :: scvng_fct_mlt_bcphi = 1.00_r8   ! scavenging factor for hydrophillic BC inclusion in meltwater [frc]
-  !real(r8), public, parameter :: scvng_fct_mlt_bcpho = 0.03_r8   ! scavenging factor for hydrophobic BC inclusion in meltwater [frc]
-  !real(r8), public, parameter :: scvng_fct_mlt_ocphi = 1.00_r8   ! scavenging factor for hydrophillic OC inclusion in meltwater [frc]
-  !real(r8), public, parameter :: scvng_fct_mlt_ocpho = 0.03_r8   ! scavenging factor for hydrophobic OC inclusion in meltwater [frc]
-  !real(r8), public, parameter :: scvng_fct_mlt_dst1  = 0.03_r8   ! scavenging factor for dust species 1 inclusion in meltwater [frc]
-  !real(r8), public, parameter :: scvng_fct_mlt_dst2  = 0.03_r8   ! scavenging factor for dust species 2 inclusion in meltwater [frc]
-  !real(r8), public, parameter :: scvng_fct_mlt_dst3  = 0.03_r8   ! scavenging factor for dust species 3 inclusion in meltwater [frc]
-  !real(r8), public, parameter :: scvng_fct_mlt_dst4  = 0.03_r8   ! scavenging factor for dust species 4 inclusion in meltwater [frc]
+  !snicar, not necessary, M.H. 
+  !!  "Rfast" parameters used by Flanner et al (2012, ACP)
+  !!real(r8), public, parameter :: scvng_fct_mlt_bcphi = 1.00_r8   ! scavenging factor for hydrophillic BC inclusion in meltwater [frc]
+  !!real(r8), public, parameter :: scvng_fct_mlt_bcpho = 0.03_r8   ! scavenging factor for hydrophobic BC inclusion in meltwater [frc]
+  !!real(r8), public, parameter :: scvng_fct_mlt_ocphi = 1.00_r8   ! scavenging factor for hydrophillic OC inclusion in meltwater [frc]
+  !!real(r8), public, parameter :: scvng_fct_mlt_ocpho = 0.03_r8   ! scavenging factor for hydrophobic OC inclusion in meltwater [frc]
+  !!real(r8), public, parameter :: scvng_fct_mlt_dst1  = 0.03_r8   ! scavenging factor for dust species 1 inclusion in meltwater [frc]
+  !!real(r8), public, parameter :: scvng_fct_mlt_dst2  = 0.03_r8   ! scavenging factor for dust species 2 inclusion in meltwater [frc]
+  !!real(r8), public, parameter :: scvng_fct_mlt_dst3  = 0.03_r8   ! scavenging factor for dust species 3 inclusion in meltwater [frc]
+  !!real(r8), public, parameter :: scvng_fct_mlt_dst4  = 0.03_r8   ! scavenging factor for dust species 4 inclusion in meltwater [frc]
 
 
 ! !PRIVATE MEMBER FUNCTIONS:
@@ -23524,8 +23530,9 @@ contains
     real(r8):: asm_prm_aer_lcl(sno_nbr_aer)       ! asymmetry parameter of aerosol species (aer_nbr) [frc]
     real(r8):: ext_cff_mss_aer_lcl(sno_nbr_aer)   ! mass extinction coefficient of aerosol species (aer_nbr) [m2/kg]
 
-    real(r8) :: rds_bcint_lcl(-nlevsno+1:0)       ! effective radius of within-ice BC [nm]
-    real(r8) :: rds_bcext_lcl(-nlevsno+1:0)       ! effective radius of external BC [nm]
+   !snicar, not necessary, M.H.
+   !real(r8) :: rds_bcint_lcl(-nlevsno+1:0)       ! effective radius of within-ice BC [nm]
+   !real(r8) :: rds_bcext_lcl(-nlevsno+1:0)       ! effective radius of external BC [nm]
 
     ! Other local variables
     integer :: APRX_TYP                           ! two-stream approximation type (1=Eddington, 2=Quadrature, 3=Hemispheric Mean) [nbr]
@@ -23612,11 +23619,12 @@ contains
     real(r8):: X(-2*nlevsno+1:0)                  ! tri-diag intermediate variable from Toon et al. (2*lyr)
     real(r8):: Y(-2*nlevsno+1:0)                  ! tri-diag intermediate variable from Toon et al. (2*lyr)
 
-    integer :: idx_bcint_icerds                  ! index of ice effective radius for optical properties lookup table
-    integer :: idx_bcint_nclrds                  ! index of within-ice BC effective radius for optical properties lookup table
-    integer :: idx_bcext_nclrds                  ! index of external BC effective radius for optical properties lookup table
-    real(r8):: enh_fct                           ! extinction/absorption enhancement factor for within-ice BC
-    real(r8):: tmp1                              ! temporary variable
+    !!snicar, not necessary,M.H.
+    !integer :: idx_bcint_icerds                  ! index of ice effective radius for optical properties lookup table
+    !integer :: idx_bcint_nclrds                  ! index of within-ice BC effective radius for optical properties lookup table
+    !integer :: idx_bcext_nclrds                  ! index of external BC effective radius for optical properties lookup table
+    !real(r8):: enh_fct                           ! extinction/absorption enhancement factor for within-ice BC
+    !real(r8):: tmp1                              ! temporary variable
 
 
     ! Assign local pointers to derived subtypes components (column-level)
@@ -23644,28 +23652,29 @@ contains
   end do
   end do
 
-  ix=0
-  do j=1, idx_bc_nclrds_max
-  do i=1, numrad_snw
-  ix=ix+1
-  ss_alb_bc1(i,j)=xx_ss_alb_bc1(ix)
-  asm_prm_bc1(i,j)=xx_asm_prm_bc1(ix)
-  ext_cff_mss_bc1(i,j)=xx_ext_cff_mss_bc1(ix)
-  ss_alb_bc2(i,j)=xx_ss_alb_bc2(ix)
-  asm_prm_bc2(i,j)=xx_asm_prm_bc2(ix)
-  ext_cff_mss_bc2(i,j)=xx_ext_cff_mss_bc2(ix)
-  enddo
-  enddo
-
-  ix=0
-  do k=1, idx_bcint_icerds_max 
-  do j=1, idx_bc_nclrds_max
-  do i=1, numrad_snw
-  ix=ix+1
-  bcenh(i,j,k)=xx_bcenh(ix)
-  enddo
-  enddo
-  enddo
+  !snicar, not necessary,M.H.
+  !ix=0
+  !do j=1, idx_bc_nclrds_max
+  !do i=1, numrad_snw
+  !ix=ix+1
+  !ss_alb_bc1(i,j)=xx_ss_alb_bc1(ix)
+  !asm_prm_bc1(i,j)=xx_asm_prm_bc1(ix)
+  !ext_cff_mss_bc1(i,j)=xx_ext_cff_mss_bc1(ix)
+  !ss_alb_bc2(i,j)=xx_ss_alb_bc2(ix)
+  !asm_prm_bc2(i,j)=xx_asm_prm_bc2(ix)
+  !ext_cff_mss_bc2(i,j)=xx_ext_cff_mss_bc2(ix)
+  !enddo
+  !enddo
+  !
+  !ix=0
+  !do k=1, idx_bcint_icerds_max 
+  !do j=1, idx_bc_nclrds_max
+  !do i=1, numrad_snw
+  !ix=ix+1
+  !bcenh(i,j,k)=xx_bcenh(ix)
+  !enddo
+  !enddo
+  !enddo
 
  ix = 0
  do i=1,idx_T_max
@@ -23758,13 +23767,14 @@ contains
              lon_coord         = 0
           endif
 
-          ! Assume fixed BC effective radii of 100nm. This is close to
-          ! the effective radius of 95nm (number median radius of
-          ! 40nm) assumed for freshly-emitted BC in MAM.  Future
-          ! implementations may prognose the BC effective radius in
-          ! snow.
-          rds_bcint_lcl(:)  =  100._r8
-          rds_bcext_lcl(:)  =  100._r8
+          !snicar, not necessary, M.H.
+          !! Assume fixed BC effective radii of 100nm. This is close to
+          !! the effective radius of 95nm (number median radius of
+          !! 40nm) assumed for freshly-emitted BC in MAM.  Future
+          !! implementations may prognose the BC effective radius in
+          !! snow.
+          !rds_bcint_lcl(:)  =  100._r8
+          !rds_bcext_lcl(:)  =  100._r8
 
           ! Set local aerosol array
           do j=1,sno_nbr_aer
@@ -23979,49 +23989,50 @@ contains
                 ! Weighted Mie parameters of each layer
                 do i=snl_top,snl_btm,1
 
-                   !within-ice and external BC optical properties-czhao
-                   ! Lookup table indices for BC optical properties,
-                   ! dependent on snow grain size and BC particle
-                   ! size.
-                   ! valid for 25 < snw_rds < 1625 um:
-                   if (snw_rds_lcl(i) < 125) then
-                      tmp1 = snw_rds_lcl(i)/50
-                      idx_bcint_icerds = nint(tmp1)
-                   elseif (snw_rds_lcl(i) < 175) then
-                      idx_bcint_icerds = 2 
-                   else
-                      tmp1 = (snw_rds_lcl(i)/250)+2
-                      idx_bcint_icerds = nint(tmp1)
-                   endif
-
-                   ! valid for 25 < bc_rds < 525 nm
-                   idx_bcint_nclrds = nint(rds_bcint_lcl(i)/50)
-                   idx_bcext_nclrds = nint(rds_bcext_lcl(i)/50)
-
-                   ! check bounds:
-                   if (idx_bcint_icerds < idx_bcint_icerds_min)  idx_bcint_icerds = idx_bcint_icerds_min
-                   if (idx_bcint_icerds > idx_bcint_icerds_max)  idx_bcint_icerds = idx_bcint_icerds_max
-                   if (idx_bcint_nclrds < idx_bc_nclrds_min)     idx_bcint_nclrds = idx_bc_nclrds_min
-                   if (idx_bcint_nclrds > idx_bc_nclrds_max)     idx_bcint_nclrds = idx_bc_nclrds_max
-                   if (idx_bcext_nclrds < idx_bc_nclrds_min)     idx_bcext_nclrds = idx_bc_nclrds_min
-                   if (idx_bcext_nclrds > idx_bc_nclrds_max)     idx_bcext_nclrds = idx_bc_nclrds_max
-
-                   ! print ice index (debug):
-                   !write(iulog,*) "MGF: ice index= ", idx_bcint_icerds
-
-                   ! retrieve absorption enhancement factor for within-ice BC
-                   enh_fct = bcenh(bnd_idx,idx_bcint_nclrds,idx_bcint_icerds)
-
-                   ! get BC optical properties (moved from above)
-                   ! aerosol species 1 optical properties (within-ice BC)
-                   ss_alb_aer_lcl(1)        = ss_alb_bc1(bnd_idx,idx_bcint_nclrds)
-                   asm_prm_aer_lcl(1)       = asm_prm_bc1(bnd_idx,idx_bcint_nclrds)
-                   ext_cff_mss_aer_lcl(1)   = ext_cff_mss_bc1(bnd_idx,idx_bcint_nclrds)*enh_fct
-
-                   ! aerosol species 2 optical properties (external BC)
-                   ss_alb_aer_lcl(2)        = ss_alb_bc2(bnd_idx,idx_bcext_nclrds)
-                   asm_prm_aer_lcl(2)       = asm_prm_bc2(bnd_idx,idx_bcext_nclrds)
-                   ext_cff_mss_aer_lcl(2)   = ext_cff_mss_bc2(bnd_idx,idx_bcext_nclrds)
+                   !snicar, not necessary, M.H.
+                   !!within-ice and external BC optical properties-czhao
+                   !! Lookup table indices for BC optical properties,
+                   !! dependent on snow grain size and BC particle
+                   !! size.
+                   !! valid for 25 < snw_rds < 1625 um:
+                   !if (snw_rds_lcl(i) < 125) then
+                   !   tmp1 = snw_rds_lcl(i)/50
+                   !   idx_bcint_icerds = nint(tmp1)
+                   !elseif (snw_rds_lcl(i) < 175) then
+                   !   idx_bcint_icerds = 2 
+                   !else
+                   !   tmp1 = (snw_rds_lcl(i)/250)+2
+                   !   idx_bcint_icerds = nint(tmp1)
+                   !endif
+                   !
+                   !! valid for 25 < bc_rds < 525 nm
+                   !idx_bcint_nclrds = nint(rds_bcint_lcl(i)/50)
+                   !idx_bcext_nclrds = nint(rds_bcext_lcl(i)/50)
+                   !
+                   !! check bounds:
+                   !if (idx_bcint_icerds < idx_bcint_icerds_min)  idx_bcint_icerds = idx_bcint_icerds_min
+                   !if (idx_bcint_icerds > idx_bcint_icerds_max)  idx_bcint_icerds = idx_bcint_icerds_max
+                   !if (idx_bcint_nclrds < idx_bc_nclrds_min)     idx_bcint_nclrds = idx_bc_nclrds_min
+                   !if (idx_bcint_nclrds > idx_bc_nclrds_max)     idx_bcint_nclrds = idx_bc_nclrds_max
+                   !if (idx_bcext_nclrds < idx_bc_nclrds_min)     idx_bcext_nclrds = idx_bc_nclrds_min
+                   !if (idx_bcext_nclrds > idx_bc_nclrds_max)     idx_bcext_nclrds = idx_bc_nclrds_max
+                   !
+                   !! print ice index (debug):
+                   !!write(iulog,*) "MGF: ice index= ", idx_bcint_icerds
+                   !
+                   !! retrieve absorption enhancement factor for within-ice BC
+                   !enh_fct = bcenh(bnd_idx,idx_bcint_nclrds,idx_bcint_icerds)
+                   !
+                   !! get BC optical properties (moved from above)
+                   !! aerosol species 1 optical properties (within-ice BC)
+                   !ss_alb_aer_lcl(1)        = ss_alb_bc1(bnd_idx,idx_bcint_nclrds)
+                   !asm_prm_aer_lcl(1)       = asm_prm_bc1(bnd_idx,idx_bcint_nclrds)
+                   !ext_cff_mss_aer_lcl(1)   = ext_cff_mss_bc1(bnd_idx,idx_bcint_nclrds)*enh_fct
+                   !
+                   !! aerosol species 2 optical properties (external BC)
+                   !ss_alb_aer_lcl(2)        = ss_alb_bc2(bnd_idx,idx_bcext_nclrds)
+                   !asm_prm_aer_lcl(2)       = asm_prm_bc2(bnd_idx,idx_bcext_nclrds)
+                   !ext_cff_mss_aer_lcl(2)   = ext_cff_mss_bc2(bnd_idx,idx_bcext_nclrds)
 
                    L_snw(i)   = h2osno_ice_lcl(i)+h2osno_liq_lcl(i)
 
@@ -24051,12 +24062,13 @@ contains
                    omega(i)  = (1/tau(i))*(omega_sum+(ss_alb_snw_lcl(i)*tau_snw(i)))
                    g(i)      = (1/(tau(i)*omega(i)))*(g_sum+ (asm_prm_snw_lcl(i)*ss_alb_snw_lcl(i)*tau_snw(i)))
 
-                  do j=1,sno_nbr_aer
-                   if (ss_alb_snw_lcl(i).lt.ss_alb_aer_lcl(j).and.tau_aer(i,j).gt.0.and.j.ne.5) then
-                   write(0,*) 'czhao found dark snow',i,j,bnd_idx,snl_top,snl_btm,ss_alb_snw_lcl(i),ss_alb_aer_lcl(j),tau_aer(i,j),tau_snw(i),snw_rds_lcl(i)
-                   print*, 'czhao found dark snow',i,j,bnd_idx,snl_top,snl_btm,ss_alb_snw_lcl(i),ss_alb_aer_lcl(j),tau_aer(i,j),tau_snw(i),snw_rds_lcl(i)
-                   endif
-                  enddo
+                  !snicar, not necessary, M.H.
+                  !do j=1,sno_nbr_aer
+                  ! if (ss_alb_snw_lcl(i).lt.ss_alb_aer_lcl(j).and.tau_aer(i,j).gt.0.and.j.ne.5) then
+                  ! write(0,*) 'czhao found dark snow',i,j,bnd_idx,snl_top,snl_btm,ss_alb_snw_lcl(i),ss_alb_aer_lcl(j),tau_aer(i,j),tau_snw(i),snw_rds_lcl(i)
+                  ! print*, 'czhao found dark snow',i,j,bnd_idx,snl_top,snl_btm,ss_alb_snw_lcl(i),ss_alb_aer_lcl(j),tau_aer(i,j),tau_snw(i),snw_rds_lcl(i)
+                  ! endif
+                  !enddo
 
                 enddo
 
@@ -24751,10 +24763,11 @@ subroutine mkarbinit(snlx   ,snowdpx ,   dzclmx  ,zclmx      ,&
                   ziclmx    ,h2osnox ,h2osoi_liqx,h2osoi_icex,t_grndx,&
                   t_soisnox ,t_lakex ,t_vegx    ,h2ocanx ,h2ocan_colx,&
                   h2osoi_volx,t_ref2mx,snw_rdsx,&
-                  mss_bcphi_buf,mss_bcpho_buf,mss_ocphi_buf,mss_ocpho_buf, &
-                  mss_dst1_buf,mss_dst2_buf,mss_dst3_buf,mss_dst4_buf, &
-                  mss_cnc_bcphi_buf,mss_cnc_bcpho_buf,mss_cnc_ocphi_buf,mss_cnc_ocpho_buf, &
-                  mss_cnc_dst1_buf,mss_cnc_dst2_buf,mss_cnc_dst3_buf,mss_cnc_dst4_buf   &
+                  !snicar, not necessary, M.H.
+                  !mss_bcphi_buf,mss_bcpho_buf,mss_ocphi_buf,mss_ocpho_buf, &
+                  !mss_dst1_buf,mss_dst2_buf,mss_dst3_buf,mss_dst4_buf, &
+                  !mss_cnc_bcphi_buf,mss_cnc_bcpho_buf,mss_cnc_ocphi_buf,mss_cnc_ocpho_buf, &
+                  !mss_cnc_dst1_buf,mss_cnc_dst2_buf,mss_cnc_dst3_buf,mss_cnc_dst4_buf   &
 #ifdef CN
                    ,tlaix,tsaix,htopx,hbotx &
 #endif
@@ -24847,14 +24860,15 @@ subroutine mkarbinit(snlx   ,snowdpx ,   dzclmx  ,zclmx      ,&
 
 ! The following vraiables for a  WRF restart run
 
-!snow aerosol -czhao 
-  real(r8),dimension(maxpatch,5)::  &
-          mss_bcphi_buf,mss_bcpho_buf,mss_ocphi_buf,mss_ocpho_buf, &
-          mss_dst1_buf,mss_dst2_buf,mss_dst3_buf,mss_dst4_buf 
-
-  real(r8),dimension(maxpatch,5)::  &
-          mss_cnc_bcphi_buf,mss_cnc_bcpho_buf,mss_cnc_ocphi_buf,mss_cnc_ocpho_buf, &
-          mss_cnc_dst1_buf,mss_cnc_dst2_buf,mss_cnc_dst3_buf,mss_cnc_dst4_buf
+!snicar, not necessary, M.H.
+!!snow aerosol -czhao 
+!  real(r8),dimension(maxpatch,5)::  &
+!          mss_bcphi_buf,mss_bcpho_buf,mss_ocphi_buf,mss_ocpho_buf, &
+!          mss_dst1_buf,mss_dst2_buf,mss_dst3_buf,mss_dst4_buf 
+!
+!  real(r8),dimension(maxpatch,5)::  &
+!          mss_cnc_bcphi_buf,mss_cnc_bcpho_buf,mss_cnc_ocphi_buf,mss_cnc_ocpho_buf, &
+!          mss_cnc_dst1_buf,mss_cnc_dst2_buf,mss_cnc_dst3_buf,mss_cnc_dst4_buf
 
     integer   :: snlx(maxpatch)
     real(r8)  :: snowdpx(maxpatch)
@@ -25129,29 +25143,49 @@ subroutine mkarbinit(snlx   ,snowdpx ,   dzclmx  ,zclmx      ,&
    !   write(6,*) 'snl=',snl
     ! initialize SNICAR fields:
     ! may need to change later.
-    ! save the snow aerosol from last step -czhao 2014/1/1
+    ! snicar, M.H., not necessary,save the snow aerosol from last step -czhao 2014/1/1
     do c = begc,endc
        mss_bctot(c,:) = 0._r8
-       mss_bcpho(c,:) = mss_bcpho_buf(c,:) 
-       mss_bcphi(c,:) = mss_bcphi_buf(c,:)   !r
-       mss_cnc_bcphi(c,:)=mss_cnc_bcphi_buf(c,:)
-       mss_cnc_bcpho(c,:)=mss_cnc_bcpho_buf(c,:)
+       mss_bcpho(c,:) = 0._r8   !r
+       mss_bcphi(c,:) = 0._r8   !r
+       mss_cnc_bcphi(c,:)=0._r8
+       mss_cnc_bcpho(c,:)=0._r8
+       ! snicar, not necessary,M.H.
+       !mss_bcpho(c,:) = mss_bcpho_buf(c,:) 
+       !mss_bcphi(c,:) = mss_bcphi_buf(c,:)   !r
+       !mss_cnc_bcphi(c,:)=mss_cnc_bcphi_buf(c,:)
+       !mss_cnc_bcpho(c,:)=mss_cnc_bcpho_buf(c,:)
   
        mss_octot(c,:) = 0._r8 
-       mss_ocpho(c,:) = mss_ocpho_buf(c,:)   !r
-       mss_ocphi(c,:) = mss_ocphi_buf(c,:)   !r
-       mss_cnc_ocphi(c,:)=mss_cnc_ocphi_buf(c,:)
-       mss_cnc_ocpho(c,:)=mss_cnc_ocpho_buf(c,:)
+       mss_ocpho(c,:) = 0._r8   !r
+       mss_ocphi(c,:) = 0._r8   !r
+       mss_cnc_ocphi(c,:)=0._r8
+       mss_cnc_ocpho(c,:)=0._r8
+       ! snicar, not necessary,M.H.
+       !mss_ocpho(c,:) = mss_ocpho_buf(c,:)   !r
+       !mss_ocphi(c,:) = mss_ocphi_buf(c,:)   !r
+       !mss_cnc_ocphi(c,:)=mss_cnc_ocphi_buf(c,:)
+       !mss_cnc_ocpho(c,:)=mss_cnc_ocpho_buf(c,:)
 
-       mss_dst1(c,:) = mss_dst1_buf(c,:)   !r
-       mss_dst2(c,:) = mss_dst2_buf(c,:)   !r
-       mss_dst3(c,:) = mss_dst3_buf(c,:)   !r
-       mss_dst4(c,:) = mss_dst4_buf(c,:)   !r 5layers
+       mss_dst1(c,:) = 0._r8   !r
+       mss_dst2(c,:) = 0._r8   !r
+       mss_dst3(c,:) = 0._r8   !r
+       mss_dst4(c,:) = 0._r8   !r 5layers
+       ! snicar, not necessary,M.H.
+       !mss_dst1(c,:) = mss_dst1_buf(c,:)   !r
+       !mss_dst2(c,:) = mss_dst2_buf(c,:)   !r
+       !mss_dst3(c,:) = mss_dst3_buf(c,:)   !r
+       !mss_dst4(c,:) = mss_dst4_buf(c,:)   !r 5layers
        mss_dsttot(c,:) = 0._r8
-       mss_cnc_dst1(c,:)=mss_cnc_dst1_buf(c,:)
-       mss_cnc_dst2(c,:)=mss_cnc_dst2_buf(c,:)
-       mss_cnc_dst3(c,:)=mss_cnc_dst3_buf(c,:)
-       mss_cnc_dst4(c,:)=mss_cnc_dst4_buf(c,:)
+       mss_cnc_dst1(c,:)=0._r8
+       mss_cnc_dst2(c,:)=0._r8
+       mss_cnc_dst3(c,:)=0._r8
+       mss_cnc_dst4(c,:)=0._r8
+       ! snicar, not necessary,M.H.
+       !mss_cnc_dst1(c,:)=mss_cnc_dst1_buf(c,:)
+       !mss_cnc_dst2(c,:)=mss_cnc_dst2_buf(c,:)
+       !mss_cnc_dst3(c,:)=mss_cnc_dst3_buf(c,:)
+       !mss_cnc_dst4(c,:)=mss_cnc_dst4_buf(c,:)
 
 !   if(nstep == 1) then
 
@@ -28702,7 +28736,7 @@ contains
     endif
 
 
-!czhao check the aerosol-induced albedo change calculation
+!M.H., not necessary, czhao check the aerosol-induced albedo change calculation
 ! If radiative forcing is being calculated, first estimate clean-snow albedo
 ! NOTE: To invoke radiative forcing, user must define #SNICAR_FRC in misc.h or cpp
 #if (defined SNICAR_FRC)
@@ -32042,7 +32076,8 @@ contains
     real(r8), pointer :: flx_dst_dep_wet4(:) ! wet dust (species 4) deposition (col) [kg m-2 s-1]
     real(r8), pointer :: flx_dst_dep(:)      ! total dust deposition (col) [kg m-2 s-1]
     real(r8), pointer :: forc_aer(:,:)       ! aerosol deposition from atmosphere model (grd,aer) [kg m-1 s-1]
-    real(r8), pointer :: qflx_snofrz_lyr(:,:)  ! snow freezing rate (col,lyr) [kg m-2 s-1]
+    ! not necessary, M.H.
+    !real(r8), pointer :: qflx_snofrz_lyr(:,:)  ! snow freezing rate (col,lyr) [kg m-2 s-1]
 
 !
 !
@@ -32074,14 +32109,14 @@ contains
     real(r8) :: qin_dst4(lbc:ubc)                 ! flux of dust species 4 into layer [kg]
     real(r8) :: qout_dst4(lbc:ubc)                ! flux of dust species 4 out of layer [kg]
     real(r8) :: mss_liqice                        ! mass of liquid+ice in a layer
-    !czhao add for bulk aerosol
-    logical, parameter :: do_bulkaerosol = .false.   ! bulkaerosol for deposition 
-
-    real(r8) :: refrzsnow                   ! re-frozen snow [kg m-2]
-    real(r8) :: subsnow                     ! sublimated snow [kg m-2]
-    real(r8) :: frc_refrz                   ! fraction of layer mass that is re-frozen snow [frc]
-    real(r8) :: frc_sub                     ! fraction of layer mass that has sublimated [frc]
-    real(r8) :: frc_transfer                ! frc_refrz + frc_sub
+    !not necessary, M.H,czhao add for bulk aerosol
+    !logical, parameter :: do_bulkaerosol = .false.   ! bulkaerosol for deposition 
+    !
+    !real(r8) :: refrzsnow                   ! re-frozen snow [kg m-2]
+    !real(r8) :: subsnow                     ! sublimated snow [kg m-2]
+    !real(r8) :: frc_refrz                   ! fraction of layer mass that is re-frozen snow [frc]
+    !real(r8) :: frc_sub                     ! fraction of layer mass that has sublimated [frc]
+    !real(r8) :: frc_transfer                ! frc_refrz + frc_sub
     real(r8) :: dm_int                      ! mass transfer [kg]
  
 !-----------------------------------------------------------------------
@@ -32130,9 +32165,10 @@ contains
     flx_dst_dep_dry4 => clm3%g%l%c%cwf%flx_dst_dep_dry4
     forc_aer         => clm_a2l%forc_aer
 
-    !cwf%qflx_snofrz_lyr does not existed and not used in the code 
-    !Re-freezing effect is inactived by default due to uncertainty
-    !qflx_snofrz_lyr    => cwf%qflx_snofrz_lyr
+    !snicar, not necessary, M.H.
+    !!cwf%qflx_snofrz_lyr does not existed and not used in the code 
+    !!Re-freezing effect is inactived by default due to uncertainty
+    !!qflx_snofrz_lyr    => cwf%qflx_snofrz_lyr
 
     ! Renew the mass of ice lens (h2osoi_ice) and liquid (h2osoi_liq) in the
     ! surface snow layer resulting from sublimation (frost) / evaporation (condense)
@@ -32325,22 +32361,23 @@ contains
        end do
     end do
 
-    !czhao add lines below from the cesm1_2_1
-    ! Adjust layer thickness for any water+ice content changes in excess of previous 
-    ! layer thickness. Strictly speaking, only necessary for top snow layer, but doing
-    ! it for all snow layers will catch problems with older initial files.
-    ! Layer interfaces (zi) and node depths (z) do not need adjustment here because they
-    ! are adjusted in CombineSnowLayers and are not used up to that point.
-
-    do j = -nlevsno+1, 0
-       do fc = 1, num_snowc 
-          c = filter_snowc(fc)
-          if (j >= snl(c)+1) then
-              dz(c,j) = max(dz(c,j),h2osoi_liq(c,j)/denh2o + h2osoi_ice(c,j)/denice)
-          end if
-       end do
-    end do
-    !czhao add lines above
+    !snicar, not necessary, M.H.
+    !!czhao add lines below from the cesm1_2_1
+    !! Adjust layer thickness for any water+ice content changes in excess of previous 
+    !! layer thickness. Strictly speaking, only necessary for top snow layer, but doing
+    !! it for all snow layers will catch problems with older initial files.
+    !! Layer interfaces (zi) and node depths (z) do not need adjustment here because they
+    !! are adjusted in CombineSnowLayers and are not used up to that point.
+    !
+    !do j = -nlevsno+1, 0
+    !   do fc = 1, num_snowc 
+    !      c = filter_snowc(fc)
+    !      if (j >= snl(c)+1) then
+    !          dz(c,j) = max(dz(c,j),h2osoi_liq(c,j)/denh2o + h2osoi_ice(c,j)/denice)
+    !      end if
+    !   end do
+    !end do
+    !!czhao add lines above
 
 !dir$ concurrent
 !cdir nodep
@@ -32357,62 +32394,62 @@ contains
        qflx_top_soil(c) = qflx_rain_grnd(c) + qflx_snomelt(c)
     end do
 
-
-    ! Transfer BC and OC from the within-ice state to the external
-    ! state based on snow sublimation and re-freezing of liquid water.
-    ! Re-freezing effect is inactived by default because of
-    ! uncertainty in how this process operates.
-    do j = -nlevsno+1, 0
-       do fc = 1, num_snowc
-          c = filter_snowc(fc)
-          if (j >= snl(c)+1) then
-             !! snow that has re-frozen [kg/m2]
-             !refrzsnow = max(0._r8, (qflx_snofrz_lyr(c,j)*dtime))
-             !
-             !! fraction of layer mass that is re-frozen
-             !if ((h2osoi_liq(c,j) + h2osoi_ice(c,j)) > 0._r8) then
-             !   frc_refrz = refrzsnow / (h2osoi_liq(c,j) + h2osoi_ice(c,j))
-             !else
-             !   frc_refrz = 0._r8
-             !endif
-
-             if (j == snl(c)+1) then
-                ! snow that has sublimated [kg/m2] (top layer only)
-                subsnow = max(0._r8, (qflx_sub_snow(c)*dtime))
-
-                ! fraction of layer mass that has sublimated:
-                if ((h2osoi_liq(c,j) + h2osoi_ice(c,j)) > 0._r8) then
-                   frc_sub = subsnow / (h2osoi_liq(c,j) + h2osoi_ice(c,j))
-                else
-                   frc_sub = 0._r8
-                endif
-             else
-                ! prohibit sublimation effect to operate on
-                ! sub-surface layers:
-                frc_sub = 0._r8
-             endif
-
-             ! fraction of layer mass transformed (sublimation only)
-             !frc_transfer = frc_refrz + frc_sub
-             frc_transfer = frc_sub
-
-             ! cap the fraction at 1
-             if (frc_transfer > 1._r8) then
-                frc_transfer = 1._r8
-             endif
-
-             ! transfer proportionate mass of BC and OC:
-             dm_int         = mss_bcphi(c,j)*frc_transfer
-             mss_bcphi(c,j) = mss_bcphi(c,j) - dm_int
-             mss_bcpho(c,j) = mss_bcpho(c,j) + dm_int
-
-             dm_int         = mss_ocphi(c,j)*frc_transfer
-             mss_ocphi(c,j) = mss_ocphi(c,j) - dm_int
-             mss_ocpho(c,j) = mss_ocpho(c,j) + dm_int
-
-          end if
-       end do
-    end do
+    !snicar, not necessary, M.H.
+    !! Transfer BC and OC from the within-ice state to the external
+    !! state based on snow sublimation and re-freezing of liquid water.
+    !! Re-freezing effect is inactived by default because of
+    !! uncertainty in how this process operates.
+    !do j = -nlevsno+1, 0
+    !   do fc = 1, num_snowc
+    !      c = filter_snowc(fc)
+    !      if (j >= snl(c)+1) then
+    !         !! snow that has re-frozen [kg/m2]
+    !         !refrzsnow = max(0._r8, (qflx_snofrz_lyr(c,j)*dtime))
+    !         !
+    !         !! fraction of layer mass that is re-frozen
+    !         !if ((h2osoi_liq(c,j) + h2osoi_ice(c,j)) > 0._r8) then
+    !         !   frc_refrz = refrzsnow / (h2osoi_liq(c,j) + h2osoi_ice(c,j))
+    !         !else
+    !         !   frc_refrz = 0._r8
+    !         !endif
+    !
+    !         if (j == snl(c)+1) then
+    !            ! snow that has sublimated [kg/m2] (top layer only)
+    !            subsnow = max(0._r8, (qflx_sub_snow(c)*dtime))
+    !
+    !            ! fraction of layer mass that has sublimated:
+    !            if ((h2osoi_liq(c,j) + h2osoi_ice(c,j)) > 0._r8) then
+    !               frc_sub = subsnow / (h2osoi_liq(c,j) + h2osoi_ice(c,j))
+    !            else
+    !               frc_sub = 0._r8
+    !            endif
+    !         else
+    !            ! prohibit sublimation effect to operate on
+    !            ! sub-surface layers:
+    !            frc_sub = 0._r8
+    !         endif
+    !
+    !         ! fraction of layer mass transformed (sublimation only)
+    !         !frc_transfer = frc_refrz + frc_sub
+    !         frc_transfer = frc_sub
+    !
+    !         ! cap the fraction at 1
+    !         if (frc_transfer > 1._r8) then
+    !            frc_transfer = 1._r8
+    !         endif
+    !
+    !         ! transfer proportionate mass of BC and OC:
+    !         dm_int         = mss_bcphi(c,j)*frc_transfer
+    !         mss_bcphi(c,j) = mss_bcphi(c,j) - dm_int
+    !         mss_bcpho(c,j) = mss_bcpho(c,j) + dm_int
+    !
+    !         dm_int         = mss_ocphi(c,j)*frc_transfer
+    !         mss_ocphi(c,j) = mss_ocphi(c,j) - dm_int
+    !         mss_ocpho(c,j) = mss_ocpho(c,j) + dm_int
+    !
+    !      end if
+    !   end do
+    !end do
     
     !  set aerosol deposition fluxes from forcing array
     !  The forcing array is either set from an external file 
@@ -32420,7 +32457,8 @@ contains
     do c = lbc,ubc
        g = cgridcell(c)
       
-       if (do_bulkaerosol) then !czhao 
+       !snicar, not necessary, M.H.
+       !if (do_bulkaerosol) then !czhao 
        flx_bc_dep_dry(c)   = forc_aer(g,1) + forc_aer(g,2)
        flx_bc_dep_wet(c)   = forc_aer(g,3)
        flx_bc_dep_phi(c)   = forc_aer(g,1) + forc_aer(g,3)
@@ -32444,31 +32482,32 @@ contains
        flx_dst_dep(c)      = forc_aer(g,7) + forc_aer(g,8) + forc_aer(g,9) + &
                              forc_aer(g,10) + forc_aer(g,11) + forc_aer(g,12) + &
                              forc_aer(g,13) + forc_aer(g,14)
-       else !modal or bin aerosol -czhao 
-       flx_bc_dep_dry(c)   = forc_aer(g,2)
-       flx_bc_dep_wet(c)   = forc_aer(g,1) + forc_aer(g,3)
-       flx_bc_dep_phi(c)   = forc_aer(g,3)
-       flx_bc_dep_pho(c)   = forc_aer(g,1) + forc_aer(g,2)
-       flx_bc_dep(c)       = forc_aer(g,1) + forc_aer(g,2) + forc_aer(g,3)
-
-       flx_oc_dep_dry(c)   = forc_aer(g,5)
-       flx_oc_dep_wet(c)   = forc_aer(g,4) + forc_aer(g,6)
-       flx_oc_dep_phi(c)   = forc_aer(g,6)
-       flx_oc_dep_pho(c)   = forc_aer(g,4) + forc_aer(g,5)
-       flx_oc_dep(c)       = forc_aer(g,4) + forc_aer(g,5) + forc_aer(g,6)
-
-       flx_dst_dep_wet1(c) = forc_aer(g,7)
-       flx_dst_dep_dry1(c) = forc_aer(g,8)
-       flx_dst_dep_wet2(c) = forc_aer(g,9)
-       flx_dst_dep_dry2(c) = forc_aer(g,10)
-       flx_dst_dep_wet3(c) = forc_aer(g,11)
-       flx_dst_dep_dry3(c) = forc_aer(g,12)
-       flx_dst_dep_wet4(c) = forc_aer(g,13)
-       flx_dst_dep_dry4(c) = forc_aer(g,14)
-       flx_dst_dep(c)      = forc_aer(g,7) + forc_aer(g,8) + forc_aer(g,9) + &
-                             forc_aer(g,10) + forc_aer(g,11) + forc_aer(g,12) + &
-                             forc_aer(g,13) + forc_aer(g,14)
-       endif
+       !snicar, not necessary, M.H.
+       !else !modal or bin aerosol -czhao 
+       !flx_bc_dep_dry(c)   = forc_aer(g,2)
+       !flx_bc_dep_wet(c)   = forc_aer(g,1) + forc_aer(g,3)
+       !flx_bc_dep_phi(c)   = forc_aer(g,3)
+       !flx_bc_dep_pho(c)   = forc_aer(g,1) + forc_aer(g,2)
+       !flx_bc_dep(c)       = forc_aer(g,1) + forc_aer(g,2) + forc_aer(g,3)
+       !
+       !flx_oc_dep_dry(c)   = forc_aer(g,5)
+       !flx_oc_dep_wet(c)   = forc_aer(g,4) + forc_aer(g,6)
+       !flx_oc_dep_phi(c)   = forc_aer(g,6)
+       !flx_oc_dep_pho(c)   = forc_aer(g,4) + forc_aer(g,5)
+       !flx_oc_dep(c)       = forc_aer(g,4) + forc_aer(g,5) + forc_aer(g,6)
+       !
+       !flx_dst_dep_wet1(c) = forc_aer(g,7)
+       !flx_dst_dep_dry1(c) = forc_aer(g,8)
+       !flx_dst_dep_wet2(c) = forc_aer(g,9)
+       !flx_dst_dep_dry2(c) = forc_aer(g,10)
+       !flx_dst_dep_wet3(c) = forc_aer(g,11)
+       !flx_dst_dep_dry3(c) = forc_aer(g,12)
+       !flx_dst_dep_wet4(c) = forc_aer(g,13)
+       !flx_dst_dep_dry4(c) = forc_aer(g,14)
+       !flx_dst_dep(c)      = forc_aer(g,7) + forc_aer(g,8) + forc_aer(g,9) + &
+       !                      forc_aer(g,10) + forc_aer(g,11) + forc_aer(g,12) + &
+       !                      forc_aer(g,13) + forc_aer(g,14)
+       !endif
     
     end do
 
@@ -33222,8 +33261,10 @@ contains
              mdst2(c,2) = mdst2(c,2)+zmdst2  ! (combo)
              mdst3(c,2) = mdst3(c,2)+zmdst3  ! (combo)
              mdst4(c,2) = mdst4(c,2)+zmdst4  ! (combo)
-             !Mass-weighted combination of radius -czhao
-             rds(c,2) = (rds(c,2)*(swliq(c,2)+swice(c,2)) + rds(c,1)*(zwliq+zwice))/(swliq(c,2)+swice(c,2)+zwliq+zwice)
+             rds(c,2) = rds(c,1) ! (combo)
+             !snicar, not necessary, M.H.
+             !!Mass-weighted combination of radius -czhao
+             !rds(c,2) = (rds(c,2)*(swliq(c,2)+swice(c,2)) + rds(c,1)*(zwliq+zwice))/(swliq(c,2)+swice(c,2)+zwliq+zwice)
 
              call Combo (dzsno(c,2), swliq(c,2), swice(c,2), tsno(c,2), drr, &
                   zwliq, zwice, tsno(c,1))
@@ -33306,8 +33347,10 @@ contains
              mdst2(c,3) = mdst2(c,3)+zmdst2  ! (combo)
              mdst3(c,3) = mdst3(c,3)+zmdst3  ! (combo)
              mdst4(c,3) = mdst4(c,3)+zmdst4  ! (combo)
+             rds(c,3) = rds(c,2) ! (combo)
+             !snicar, not necessary, M.H.
              !Mass-weighted combination of radius-czhao
-             rds(c,3) = (rds(c,3)*(swliq(c,3)+swice(c,3)) + rds(c,2)*(zwliq+zwice))/(swliq(c,3)+swice(c,3)+zwliq+zwice)
+             !rds(c,3) = (rds(c,3)*(swliq(c,3)+swice(c,3)) + rds(c,2)*(zwliq+zwice))/(swliq(c,3)+swice(c,3)+zwliq+zwice)
 
 
 
@@ -33392,8 +33435,9 @@ contains
              mdst2(c,4) = mdst2(c,4)+zmdst2  ! (combo)
              mdst3(c,4) = mdst3(c,4)+zmdst3  ! (combo)
              mdst4(c,4) = mdst4(c,4)+zmdst4  ! (combo)
+             !snicar, not necessary, M.H.
              !Mass-weighted combination of radius
-             rds(c,4) = (rds(c,4)*(swliq(c,4)+swice(c,4)) + rds(c,3)*(zwliq+zwice))/(swliq(c,4)+swice(c,4)+zwliq+zwice)
+             !rds(c,4) = (rds(c,4)*(swliq(c,4)+swice(c,4)) + rds(c,3)*(zwliq+zwice))/(swliq(c,4)+swice(c,4)+zwliq+zwice)
 
              call Combo (dzsno(c,4), swliq(c,4), swice(c,4), tsno(c,4), drr, &
                   zwliq, zwice, tsno(c,3))
@@ -33476,8 +33520,9 @@ contains
              mdst2(c,5) = mdst2(c,5)+zmdst2  ! (combo)
              mdst3(c,5) = mdst3(c,5)+zmdst3  ! (combo)
              mdst4(c,5) = mdst4(c,5)+zmdst4  ! (combo)
-             !Mass-weighted combination of radius
-             rds(c,5) = (rds(c,5)*(swliq(c,5)+swice(c,5)) + rds(c,4)*(zwliq+zwice))/(swliq(c,5)+swice(c,5)+zwliq+zwice)
+             !snicar, not necessary, M.H.
+             !!Mass-weighted combination of radius
+             !rds(c,5) = (rds(c,5)*(swliq(c,5)+swice(c,5)) + rds(c,4)*(zwliq+zwice))/(swliq(c,5)+swice(c,5)+zwliq+zwice)
 
              call Combo (dzsno(c,5), swliq(c,5), swice(c,5), tsno(c,5), drr, &
                   zwliq, zwice, tsno(c,4))
@@ -56927,10 +56972,11 @@ contains
                   ,isl         ,lndmsk  ,id                                &
                   ,t_ref2m ,ilx    ,jlx,calday,declin,declinp1 &
                   ,  organicxy, efisopxy,gtixy ,snw_rdsx    &
-                  ,mss_bcphi_buf,mss_bcpho_buf,mss_ocphi_buf,mss_ocpho_buf & 
-                  ,mss_dst1_buf,mss_dst2_buf,mss_dst3_buf,mss_dst4_buf & 
-                  ,mss_cnc_bcphi_buf,mss_cnc_bcpho_buf,mss_cnc_ocphi_buf,mss_cnc_ocpho_buf  &
-                  ,mss_cnc_dst1_buf,mss_cnc_dst2_buf,mss_cnc_dst3_buf,mss_cnc_dst4_buf     &
+                  !snicar, not necessary, M.H.
+                  !,mss_bcphi_buf,mss_bcpho_buf,mss_ocphi_buf,mss_ocpho_buf & 
+                  !,mss_dst1_buf,mss_dst2_buf,mss_dst3_buf,mss_dst4_buf & 
+                  !,mss_cnc_bcphi_buf,mss_cnc_bcpho_buf,mss_cnc_ocphi_buf,mss_cnc_ocpho_buf  &
+                  !,mss_cnc_dst1_buf,mss_cnc_dst2_buf,mss_cnc_dst3_buf,mss_cnc_dst4_buf     &
 #ifdef CN
                 ,tlai        ,tsai    ,htop      ,hbot                &
                 ,htmx_buf,croplive_buf,gdd1020_buf,gdd820_buf,gdd020_buf,grainc_buf,grainc_storage_buf  &
@@ -57077,14 +57123,15 @@ contains
     real(r8)  :: h2ocan(maxpatch)
     real(r8)  :: h2ocan_col(maxpatch)
 
-!snow aerosol -czhao 
-    real(r8),dimension(maxpatch,5) ::   &
-    mss_bcphi_buf,mss_bcpho_buf,mss_ocphi_buf,mss_ocpho_buf, &
-    mss_dst1_buf,mss_dst2_buf,mss_dst3_buf,mss_dst4_buf
-
-    real(r8),dimension(maxpatch,5) ::   &
-    mss_cnc_bcphi_buf,mss_cnc_bcpho_buf,mss_cnc_ocphi_buf,mss_cnc_ocpho_buf, &
-    mss_cnc_dst1_buf,mss_cnc_dst2_buf,mss_cnc_dst3_buf,mss_cnc_dst4_buf
+!snicar, not necessary, M.H.
+!!snow aerosol -czhao 
+!    real(r8),dimension(maxpatch,5) ::   &
+!    mss_bcphi_buf,mss_bcpho_buf,mss_ocphi_buf,mss_ocpho_buf, &
+!    mss_dst1_buf,mss_dst2_buf,mss_dst3_buf,mss_dst4_buf
+!
+!    real(r8),dimension(maxpatch,5) ::   &
+!    mss_cnc_bcphi_buf,mss_cnc_bcpho_buf,mss_cnc_ocphi_buf,mss_cnc_ocpho_buf, &
+!    mss_cnc_dst1_buf,mss_cnc_dst2_buf,mss_cnc_dst3_buf,mss_cnc_dst4_buf
 
 #ifdef CN
     real(r8)  :: tlai(maxpatch)
@@ -57227,10 +57274,11 @@ contains
                   ziclm    ,h2osno ,h2osoi_liq,h2osoi_ice,t_grnd,&
                   t_soisno ,t_lake ,t_veg    ,h2ocan ,h2ocan_col,&
                   h2osoi_vol,t_ref2m ,snw_rdsx, &
-                  mss_bcphi_buf,mss_bcpho_buf,mss_ocphi_buf,mss_ocpho_buf, &
-                  mss_dst1_buf,mss_dst2_buf,mss_dst3_buf,mss_dst4_buf, &
-                  mss_cnc_bcphi_buf,mss_cnc_bcpho_buf,mss_cnc_ocphi_buf,mss_cnc_ocpho_buf, &
-                  mss_cnc_dst1_buf,mss_cnc_dst2_buf,mss_cnc_dst3_buf,mss_cnc_dst4_buf    &
+                  !snicar, not necessary, M.H.
+                  !mss_bcphi_buf,mss_bcpho_buf,mss_ocphi_buf,mss_ocpho_buf, &
+                  !mss_dst1_buf,mss_dst2_buf,mss_dst3_buf,mss_dst4_buf, &
+                  !mss_cnc_bcphi_buf,mss_cnc_bcpho_buf,mss_cnc_ocphi_buf,mss_cnc_ocpho_buf, &
+                  !mss_cnc_dst1_buf,mss_cnc_dst2_buf,mss_cnc_dst3_buf,mss_cnc_dst4_buf    &
 
 #ifdef CN
                  ,tlai,tsai,htop,hbot &
@@ -57424,12 +57472,14 @@ end module initializeMod
                   ,soiflx          ,sabv               ,sabg          &
                   ,lwupxy          ,znt0               ,q_ref2m       &
                   ,rhoxy                                              &
-                  ,nlcat,landusef1d,num_pft_input,pct_pft1d,input_pft_flag,lai1d,watsat1d,snowdust_col1d,snowdust_top1d,snowbc_col1d,snowbc_top1d,snow_top1d,snow_frac1d    &
-                  ,sfc_frc_aer_1d,sfc_frc_aer_snow_1d,sfc_frc_bc_1d,sfc_frc_bc_snow_1d,sfc_frc_dst_1d,sfc_frc_dst_snow_1d          &
-                  ,mss_bcphi_buf,mss_bcpho_buf,mss_ocphi_buf,mss_ocpho_buf,mss_dst1_buf,mss_dst2_buf,mss_dst3_buf,mss_dst4_buf     &
-                  ,mss_cnc_bcphi_buf,mss_cnc_bcpho_buf,mss_cnc_ocphi_buf,mss_cnc_ocpho_buf,mss_cnc_dst1_buf,mss_cnc_dst2_buf,mss_cnc_dst3_buf,mss_cnc_dst4_buf    &
-                  ,albxy_1d,albxy_aer_1d,albxy_bc_1d,albxy_dst_1d  &
-                  ,snowlayer_1d,snowrds_1d &
+                  ,nlcat,landusef1d,num_pft_input,pct_pft1d,input_pft_flag,lai1d, &
+                  !snicar, not necessary, M.H.
+                  !watsat1d,snowdust_col1d,snowdust_top1d,snowbc_col1d,snowbc_top1d,snow_top1d,snow_frac1d    &
+                  !,sfc_frc_aer_1d,sfc_frc_aer_snow_1d,sfc_frc_bc_1d,sfc_frc_bc_snow_1d,sfc_frc_dst_1d,sfc_frc_dst_snow_1d          &
+                  !,mss_bcphi_buf,mss_bcpho_buf,mss_ocphi_buf,mss_ocpho_buf,mss_dst1_buf,mss_dst2_buf,mss_dst3_buf,mss_dst4_buf     &
+                  !,mss_cnc_bcphi_buf,mss_cnc_bcpho_buf,mss_cnc_ocphi_buf,mss_cnc_ocpho_buf,mss_cnc_dst1_buf,mss_cnc_dst2_buf,mss_cnc_dst3_buf,mss_cnc_dst4_buf    &
+                  !,albxy_1d,albxy_aer_1d,albxy_bc_1d,albxy_dst_1d  &
+                  !,snowlayer_1d,snowrds_1d &
 #if( WRF_CHEM == 1)
                   ,drydep_buf,wetdep_buf   &
 #endif
@@ -57615,14 +57665,14 @@ end module initializeMod
     real(r8) :: agdd(maxpatch)
 #endif
 
-
-  !snow aerosol  -czhao 
-  real(r8),dimension(maxpatch,5) :: mss_bcphi_buf,mss_bcpho_buf,mss_ocphi_buf,mss_ocpho_buf,mss_dst1_buf,mss_dst2_buf,mss_dst3_buf,mss_dst4_buf
-  real(r8),dimension(maxpatch,5) :: mss_cnc_bcphi_buf,mss_cnc_bcpho_buf,mss_cnc_ocphi_buf,mss_cnc_ocpho_buf,mss_cnc_dst1_buf,mss_cnc_dst2_buf,mss_cnc_dst3_buf,mss_cnc_dst4_buf
-
-  real(r8),dimension(5)   :: snowrds_1d   !5 snow layers
-  real(r8),dimension(-nlevsno+1:0)   :: snowrds_1d0   !5 snow layers
-  real(r8)  :: snowlayer_1d
+!snicar, not necessary, M.H.
+!  !snow aerosol  -czhao 
+!  real(r8),dimension(maxpatch,5) :: mss_bcphi_buf,mss_bcpho_buf,mss_ocphi_buf,mss_ocpho_buf,mss_dst1_buf,mss_dst2_buf,mss_dst3_buf,mss_dst4_buf
+!  real(r8),dimension(maxpatch,5) :: mss_cnc_bcphi_buf,mss_cnc_bcpho_buf,mss_cnc_ocphi_buf,mss_cnc_ocpho_buf,mss_cnc_dst1_buf,mss_cnc_dst2_buf,mss_cnc_dst3_buf,mss_cnc_dst4_buf
+!
+!  real(r8),dimension(5)   :: snowrds_1d   !5 snow layers
+!  real(r8),dimension(-nlevsno+1:0)   :: snowrds_1d0   !5 snow layers
+!  real(r8)  :: snowlayer_1d
 
   integer   :: snl(maxpatch)
   real(r8)  :: snowdp(maxpatch)
@@ -57707,16 +57757,19 @@ end module initializeMod
 #if( WRF_CHEM == 1)
    real(r8), dimension(4,num_drydep_flux) :: drydep_buf,wetdep_buf  !czhao
 #endif
+!snicar, not necessary, M.H.
 !czhao
-   real(r8) :: watsat1d      !soil porosity for dust emission
-   real(r8) :: snowdust_col1d,snowdust_top1d,snowbc_col1d,snowbc_top1d,snow_top1d,snow_frac1d      !aerosol mass in snow (kg/m2)
-   real(r8) :: sfc_frc_aer_1d,sfc_frc_aer_snow_1d,sfc_frc_bc_1d,sfc_frc_bc_snow_1d,sfc_frc_dst_1d,sfc_frc_dst_snow_1d  !aerosol forcing in snow (W/m2) 
-
+!   real(r8) :: watsat1d      !soil porosity for dust emission
+!   real(r8) :: snowdust_col1d,snowdust_top1d,snowbc_col1d,snowbc_top1d,snow_top1d,snow_frac1d      !aerosol mass in snow (kg/m2)
+!   real(r8) :: sfc_frc_aer_1d,sfc_frc_aer_snow_1d,sfc_frc_bc_1d,sfc_frc_bc_snow_1d,sfc_frc_dst_1d,sfc_frc_dst_snow_1d  !aerosol forcing in snow (W/m2) 
+!
   logical doalb     !true if surface albedo calculation time step
 
   real(r8)  :: albxy,albixy(numrad),albdxy(numrad) &
 !For new output variables
-              ,albedotemp(maxpatch, numrad),albxy_1d,albxy_aer_1d,albxy_bc_1d,albxy_dst_1d
+              ,albedotemp(maxpatch, numrad)
+!snicar, not necessary, M.H.
+!,albxy_1d,albxy_aer_1d,albxy_bc_1d,albxy_dst_1d
   real(r8)  :: trefxy,tsxy
   real(r8)  :: shxy
   real(r8)  :: lhxy
@@ -57853,11 +57906,12 @@ end module initializeMod
                   ,isl         ,lndmsk  ,id   &
                   ,t_ref2m ,ilx,jlx,calday,declin,declinp1&
                   ,organicxy, efisopxy,gtixy, snw_rdsxy   &
-                  !czhao snow aerosol
-                  ,mss_bcphi_buf,mss_bcpho_buf,mss_ocphi_buf,mss_ocpho_buf &
-                  ,mss_dst1_buf,mss_dst2_buf,mss_dst3_buf,mss_dst4_buf &
-                  ,mss_cnc_bcphi_buf,mss_cnc_bcpho_buf,mss_cnc_ocphi_buf,mss_cnc_ocpho_buf  &
-                  ,mss_cnc_dst1_buf,mss_cnc_dst2_buf,mss_cnc_dst3_buf,mss_cnc_dst4_buf       &
+!snicar, not necessary, M.H.
+!                  !czhao snow aerosol
+!                  ,mss_bcphi_buf,mss_bcpho_buf,mss_ocphi_buf,mss_ocpho_buf &
+!                  ,mss_dst1_buf,mss_dst2_buf,mss_dst3_buf,mss_dst4_buf &
+!                  ,mss_cnc_bcphi_buf,mss_cnc_bcpho_buf,mss_cnc_ocphi_buf,mss_cnc_ocpho_buf  &
+!                  ,mss_cnc_dst1_buf,mss_cnc_dst2_buf,mss_cnc_dst3_buf,mss_cnc_dst4_buf       &
 #ifdef CN
                 ,tlaixy   ,tsaixy  ,htopxy    ,hbotxy                & 
                 ,htmx_buf,croplive_buf,gdd1020_buf,gdd820_buf,gdd020_buf,grainc_buf,grainc_storage_buf  &
@@ -58171,112 +58225,113 @@ grid_cell_loop : &
 !!
     end do
 
-!czhao output soil porocity
-     watsat1d=0._r8
-     snowdust_col1d=0._r8
-     snowdust_top1d=0._r8
-     snowbc_col1d=0._r8
-     snowbc_top1d=0._r8
-     snow_top1d=0._r8
-     snow_frac1d=0._r8
-     snowlayer_1d=0._r8
-     snowrds_1d0=0._r8
-     snowrds_1d=0._r8
-
-     mss_bcphi_buf=0._r8
-     mss_bcpho_buf=0._r8
-     mss_ocphi_buf=0._r8
-     mss_ocpho_buf=0._r8
-     mss_dst1_buf=0._r8
-     mss_dst2_buf=0._r8
-     mss_dst3_buf=0._r8
-     mss_dst4_buf=0._r8
-     mss_cnc_bcphi_buf=0._r8
-     mss_cnc_bcpho_buf=0._r8
-     mss_cnc_ocphi_buf=0._r8
-     mss_cnc_ocpho_buf=0._r8
-     mss_cnc_dst1_buf=0._r8
-     mss_cnc_dst2_buf=0._r8
-     mss_cnc_dst3_buf=0._r8
-     mss_cnc_dst4_buf=0._r8
-
-!czhao output aerosol mass in snow
-     do c = begc,endc
-     watsat1d=watsat1d+clm3%g%l%c%cps%watsat(c,1)*wtc(c)
-     snowdust_col1d=snowdust_col1d+clm3%g%l%c%cps%mss_dst_col(c)*wtc(c) 
-     snowdust_top1d=snowdust_top1d+clm3%g%l%c%cps%mss_dst_top(c)*wtc(c) 
-     snowbc_col1d=snowbc_col1d+clm3%g%l%c%cps%mss_bc_col(c)*wtc(c) 
-     snowbc_top1d=snowbc_top1d+clm3%g%l%c%cps%mss_bc_top(c)*wtc(c) 
-     snow_top1d=snow_top1d+clm3%g%l%c%cps%h2osno_top(c)*wtc(c) 
-     snow_frac1d=snow_frac1d+clm3%g%l%c%cps%frac_sno(c)*wtc(c)
-
-     mss_bcphi_buf(c,:)=clm3%g%l%c%cps%mss_bcphi(c,:)
-     mss_bcpho_buf(c,:)=clm3%g%l%c%cps%mss_bcpho(c,:)
-     mss_ocphi_buf(c,:)=clm3%g%l%c%cps%mss_ocphi(c,:)
-     mss_ocpho_buf(c,:)=clm3%g%l%c%cps%mss_ocpho(c,:)
-     mss_dst1_buf(c,:)=clm3%g%l%c%cps%mss_dst1(c,:)
-     mss_dst2_buf(c,:)=clm3%g%l%c%cps%mss_dst2(c,:)
-     mss_dst3_buf(c,:)=clm3%g%l%c%cps%mss_dst3(c,:)
-     mss_dst4_buf(c,:)=clm3%g%l%c%cps%mss_dst4(c,:)
-
-
-     mss_cnc_bcphi_buf(c,:)=clm3%g%l%c%cps%mss_cnc_bcphi(c,:)
-     mss_cnc_bcpho_buf(c,:)=clm3%g%l%c%cps%mss_cnc_bcpho(c,:)
-     mss_cnc_ocphi_buf(c,:)=clm3%g%l%c%cps%mss_cnc_ocphi(c,:)
-     mss_cnc_ocpho_buf(c,:)=clm3%g%l%c%cps%mss_cnc_ocpho(c,:)
-     mss_cnc_dst1_buf(c,:) =clm3%g%l%c%cps%mss_cnc_dst1(c,:)
-     mss_cnc_dst2_buf(c,:) =clm3%g%l%c%cps%mss_cnc_dst2(c,:)
-     mss_cnc_dst3_buf(c,:) =clm3%g%l%c%cps%mss_cnc_dst3(c,:)
-     mss_cnc_dst4_buf(c,:) =clm3%g%l%c%cps%mss_cnc_dst4(c,:)
-
-     enddo
-
-!czhao output aerosol forcing in snow
-     sfc_frc_aer_1d=0._r8
-     sfc_frc_aer_snow_1d=0._r8
-     sfc_frc_bc_1d=0._r8
-     sfc_frc_bc_snow_1d=0._r8
-     sfc_frc_dst_1d=0._r8
-     sfc_frc_dst_snow_1d=0._r8
-    do p = begp,endp
-     sfc_frc_aer_1d = sfc_frc_aer_1d+clm3%g%l%c%p%pef%sfc_frc_aer(p)*wtp(p) 
-     sfc_frc_aer_snow_1d = sfc_frc_aer_snow_1d+clm3%g%l%c%p%pef%sfc_frc_aer_sno(p)*wtp(p) 
-     sfc_frc_bc_1d = sfc_frc_bc_1d+clm3%g%l%c%p%pef%sfc_frc_bc(p)*wtp(p) 
-     sfc_frc_bc_snow_1d = sfc_frc_bc_snow_1d+clm3%g%l%c%p%pef%sfc_frc_bc_sno(p)*wtp(p) 
-     sfc_frc_dst_1d = sfc_frc_dst_1d+clm3%g%l%c%p%pef%sfc_frc_dst(p)*wtp(p) 
-     sfc_frc_dst_snow_1d = sfc_frc_dst_snow_1d+clm3%g%l%c%p%pef%sfc_frc_dst_sno(p)*wtp(p) 
-    enddo
-
-     if (sfc_frc_aer_1d.ge.1.e30_r8) sfc_frc_aer_1d=0._r8 
-     if (sfc_frc_aer_snow_1d.ge.1.e30_r8) sfc_frc_aer_snow_1d=0._r8 
-     if (sfc_frc_bc_1d.ge.1.e30_r8) sfc_frc_bc_1d=0._r8
-     if (sfc_frc_bc_snow_1d.ge.1.e30_r8) sfc_frc_bc_snow_1d=0._r8 
-     if (sfc_frc_dst_1d.ge.1.e30_r8) sfc_frc_dst_1d=0._r8
-     if (sfc_frc_dst_snow_1d.ge.1.e30_r8) sfc_frc_dst_snow_1d=0._r8 
-
-     albxy_1d=0._r8
-     albxy_aer_1d=0._r8
-     albxy_bc_1d=0._r8
-     albxy_dst_1d=0._r8
-    do j = 1,numrad
-    do c = begc,endc
-     albxy_1d = albxy_1d +  (clm3%g%l%c%cps%albgrd(c,j)*wtc(c)*cof_dir(j) + clm3%g%l%c%cps%albgri(c,j)*wtc(c)*cof_dif(j))
-     albxy_aer_1d = albxy_aer_1d +  (clm3%g%l%c%cps%albgrd_pur(c,j)*wtc(c)*cof_dir(j) + clm3%g%l%c%cps%albgri_pur(c,j)*wtc(c)*cof_dif(j))
-     albxy_bc_1d = albxy_bc_1d +  (clm3%g%l%c%cps%albgrd_bc(c,j)*wtc(c)*cof_dir(j) + clm3%g%l%c%cps%albgri_bc(c,j)*wtc(c)*cof_dif(j))
-     albxy_dst_1d = albxy_dst_1d +  (clm3%g%l%c%cps%albgrd_dst(c,j)*wtc(c)*cof_dir(j) + clm3%g%l%c%cps%albgri_dst(c,j)*wtc(c)*cof_dif(j))
-    enddo
-    enddo
-
-    do j = -nlevsno+1,0
-     do c = begc,endc
-       snowrds_1d0(j)=snowrds_1d0(j)+clm3%g%l%c%cps%snw_rds(c,j)*wtc(c)
-     end do
-    end do
-       snowrds_1d(1:5)=snowrds_1d0(-nlevsno+1:0)
-
-    do c = begc,endc
-       snowlayer_1d=snowlayer_1d+snl(c)*wtc(c)
-    enddo
+!snicar, not necessary, M.H.
+!!czhao output soil porocity
+!     watsat1d=0._r8
+!     snowdust_col1d=0._r8
+!     snowdust_top1d=0._r8
+!     snowbc_col1d=0._r8
+!     snowbc_top1d=0._r8
+!     snow_top1d=0._r8
+!     snow_frac1d=0._r8
+!     snowlayer_1d=0._r8
+!     snowrds_1d0=0._r8
+!     snowrds_1d=0._r8
+!
+!     mss_bcphi_buf=0._r8
+!     mss_bcpho_buf=0._r8
+!     mss_ocphi_buf=0._r8
+!     mss_ocpho_buf=0._r8
+!     mss_dst1_buf=0._r8
+!     mss_dst2_buf=0._r8
+!     mss_dst3_buf=0._r8
+!     mss_dst4_buf=0._r8
+!     mss_cnc_bcphi_buf=0._r8
+!     mss_cnc_bcpho_buf=0._r8
+!     mss_cnc_ocphi_buf=0._r8
+!     mss_cnc_ocpho_buf=0._r8
+!     mss_cnc_dst1_buf=0._r8
+!     mss_cnc_dst2_buf=0._r8
+!     mss_cnc_dst3_buf=0._r8
+!     mss_cnc_dst4_buf=0._r8
+!
+!!czhao output aerosol mass in snow
+!     do c = begc,endc
+!     watsat1d=watsat1d+clm3%g%l%c%cps%watsat(c,1)*wtc(c)
+!     snowdust_col1d=snowdust_col1d+clm3%g%l%c%cps%mss_dst_col(c)*wtc(c) 
+!     snowdust_top1d=snowdust_top1d+clm3%g%l%c%cps%mss_dst_top(c)*wtc(c) 
+!     snowbc_col1d=snowbc_col1d+clm3%g%l%c%cps%mss_bc_col(c)*wtc(c) 
+!     snowbc_top1d=snowbc_top1d+clm3%g%l%c%cps%mss_bc_top(c)*wtc(c) 
+!     snow_top1d=snow_top1d+clm3%g%l%c%cps%h2osno_top(c)*wtc(c) 
+!     snow_frac1d=snow_frac1d+clm3%g%l%c%cps%frac_sno(c)*wtc(c)
+!
+!     mss_bcphi_buf(c,:)=clm3%g%l%c%cps%mss_bcphi(c,:)
+!     mss_bcpho_buf(c,:)=clm3%g%l%c%cps%mss_bcpho(c,:)
+!     mss_ocphi_buf(c,:)=clm3%g%l%c%cps%mss_ocphi(c,:)
+!     mss_ocpho_buf(c,:)=clm3%g%l%c%cps%mss_ocpho(c,:)
+!     mss_dst1_buf(c,:)=clm3%g%l%c%cps%mss_dst1(c,:)
+!     mss_dst2_buf(c,:)=clm3%g%l%c%cps%mss_dst2(c,:)
+!     mss_dst3_buf(c,:)=clm3%g%l%c%cps%mss_dst3(c,:)
+!     mss_dst4_buf(c,:)=clm3%g%l%c%cps%mss_dst4(c,:)
+!
+!
+!     mss_cnc_bcphi_buf(c,:)=clm3%g%l%c%cps%mss_cnc_bcphi(c,:)
+!     mss_cnc_bcpho_buf(c,:)=clm3%g%l%c%cps%mss_cnc_bcpho(c,:)
+!     mss_cnc_ocphi_buf(c,:)=clm3%g%l%c%cps%mss_cnc_ocphi(c,:)
+!     mss_cnc_ocpho_buf(c,:)=clm3%g%l%c%cps%mss_cnc_ocpho(c,:)
+!     mss_cnc_dst1_buf(c,:) =clm3%g%l%c%cps%mss_cnc_dst1(c,:)
+!     mss_cnc_dst2_buf(c,:) =clm3%g%l%c%cps%mss_cnc_dst2(c,:)
+!     mss_cnc_dst3_buf(c,:) =clm3%g%l%c%cps%mss_cnc_dst3(c,:)
+!     mss_cnc_dst4_buf(c,:) =clm3%g%l%c%cps%mss_cnc_dst4(c,:)
+!
+!     enddo
+!
+!!czhao output aerosol forcing in snow
+!     sfc_frc_aer_1d=0._r8
+!     sfc_frc_aer_snow_1d=0._r8
+!     sfc_frc_bc_1d=0._r8
+!     sfc_frc_bc_snow_1d=0._r8
+!     sfc_frc_dst_1d=0._r8
+!     sfc_frc_dst_snow_1d=0._r8
+!    do p = begp,endp
+!     sfc_frc_aer_1d = sfc_frc_aer_1d+clm3%g%l%c%p%pef%sfc_frc_aer(p)*wtp(p) 
+!     sfc_frc_aer_snow_1d = sfc_frc_aer_snow_1d+clm3%g%l%c%p%pef%sfc_frc_aer_sno(p)*wtp(p) 
+!     sfc_frc_bc_1d = sfc_frc_bc_1d+clm3%g%l%c%p%pef%sfc_frc_bc(p)*wtp(p) 
+!     sfc_frc_bc_snow_1d = sfc_frc_bc_snow_1d+clm3%g%l%c%p%pef%sfc_frc_bc_sno(p)*wtp(p) 
+!     sfc_frc_dst_1d = sfc_frc_dst_1d+clm3%g%l%c%p%pef%sfc_frc_dst(p)*wtp(p) 
+!     sfc_frc_dst_snow_1d = sfc_frc_dst_snow_1d+clm3%g%l%c%p%pef%sfc_frc_dst_sno(p)*wtp(p) 
+!    enddo
+!
+!     if (sfc_frc_aer_1d.ge.1.e30_r8) sfc_frc_aer_1d=0._r8 
+!     if (sfc_frc_aer_snow_1d.ge.1.e30_r8) sfc_frc_aer_snow_1d=0._r8 
+!     if (sfc_frc_bc_1d.ge.1.e30_r8) sfc_frc_bc_1d=0._r8
+!     if (sfc_frc_bc_snow_1d.ge.1.e30_r8) sfc_frc_bc_snow_1d=0._r8 
+!     if (sfc_frc_dst_1d.ge.1.e30_r8) sfc_frc_dst_1d=0._r8
+!     if (sfc_frc_dst_snow_1d.ge.1.e30_r8) sfc_frc_dst_snow_1d=0._r8 
+!
+!     albxy_1d=0._r8
+!     albxy_aer_1d=0._r8
+!     albxy_bc_1d=0._r8
+!     albxy_dst_1d=0._r8
+!    do j = 1,numrad
+!    do c = begc,endc
+!     albxy_1d = albxy_1d +  (clm3%g%l%c%cps%albgrd(c,j)*wtc(c)*cof_dir(j) + clm3%g%l%c%cps%albgri(c,j)*wtc(c)*cof_dif(j))
+!     albxy_aer_1d = albxy_aer_1d +  (clm3%g%l%c%cps%albgrd_pur(c,j)*wtc(c)*cof_dir(j) + clm3%g%l%c%cps%albgri_pur(c,j)*wtc(c)*cof_dif(j))
+!     albxy_bc_1d = albxy_bc_1d +  (clm3%g%l%c%cps%albgrd_bc(c,j)*wtc(c)*cof_dir(j) + clm3%g%l%c%cps%albgri_bc(c,j)*wtc(c)*cof_dif(j))
+!     albxy_dst_1d = albxy_dst_1d +  (clm3%g%l%c%cps%albgrd_dst(c,j)*wtc(c)*cof_dir(j) + clm3%g%l%c%cps%albgri_dst(c,j)*wtc(c)*cof_dif(j))
+!    enddo
+!    enddo
+!
+!    do j = -nlevsno+1,0
+!     do c = begc,endc
+!       snowrds_1d0(j)=snowrds_1d0(j)+clm3%g%l%c%cps%snw_rds(c,j)*wtc(c)
+!     end do
+!    end do
+!       snowrds_1d(1:5)=snowrds_1d0(-nlevsno+1:0)
+!
+!    do c = begc,endc
+!       snowlayer_1d=snowlayer_1d+snl(c)*wtc(c)
+!    enddo
 
 !czhao output LAI for dust emission 
     lai1d = 0._r8 
@@ -59193,7 +59248,9 @@ CONTAINS
                    ,shxy       ,qfx        ,lhxy        ,soiflx      ,qgh       &
                    ,gsw, swdown,ra_sw_physics &   
                    ,history_interval ,flwdsxy    ,smstav      ,smstot      ,qsfxy     &
-                   ,qdnxy      ,ivgtyp     ,isltyp      ,vegfra      ,albxy,albxyg,albxy_aer,albxy_bc,albxy_dst     &
+                   ,qdnxy      ,ivgtyp     ,isltyp      ,vegfra      ,albxy,    &
+                   ! snicar, not necessry, M.H.
+                   !,albxyg,albxy_aer,albxy_bc,albxy_dst     &
                    ,znt        ,z0         ,tmn         ,xland       ,xice      &
                    ,emiss      ,snowc      ,qsfc        ,prec        ,maxpatch  &
                    ,num_soil_layers        ,dt          ,xtime      ,dtwrf ,dzs &
@@ -59297,12 +59354,13 @@ CONTAINS
                 ,dwt_livecrootn_to_cwdn,dwt_deadcrootn_to_cwdn,retransn &
 #endif
                 ,nlcat,landusef,num_pft_input,pct_pft_input,input_pft_flag,lai2d                                           &
-                ,watsat2d,snowdust_col2d,snowdust_top2d,snowbc_col2d,snowbc_top2d,snow_top2d                               &
-                ,snow_frac2d,snowlayer2d,snowrds2d1,snowrds2d2,snowrds2d3,snowrds2d4,snowrds2d5                            &
-                ,sfc_frc_aer_2d,sfc_frc_aer_snow_2d,sfc_frc_bc_2d,sfc_frc_bc_snow_2d,sfc_frc_dst_2d,sfc_frc_dst_snow_2d    &
-                ,mss_bcpho,mss_bcphi,mss_ocpho,mss_ocphi,mss_dst1,mss_dst2,mss_dst3,mss_dst4                               &
-                ,mss_cnc_bcphi_save,mss_cnc_bcpho_save,mss_cnc_ocphi_save,mss_cnc_ocpho_save                               &
-                ,mss_cnc_dst1_save,mss_cnc_dst2_save,mss_cnc_dst3_save,mss_cnc_dst4_save                                   &
+!snicar, not necessary, M.H.
+!                ,watsat2d,snowdust_col2d,snowdust_top2d,snowbc_col2d,snowbc_top2d,snow_top2d                               &
+!                ,snow_frac2d,snowlayer2d,snowrds2d1,snowrds2d2,snowrds2d3,snowrds2d4,snowrds2d5                            &
+!                ,sfc_frc_aer_2d,sfc_frc_aer_snow_2d,sfc_frc_bc_2d,sfc_frc_bc_snow_2d,sfc_frc_dst_2d,sfc_frc_dst_snow_2d    &
+!                ,mss_bcpho,mss_bcphi,mss_ocpho,mss_ocphi,mss_dst1,mss_dst2,mss_dst3,mss_dst4                               &
+!                ,mss_cnc_bcphi_save,mss_cnc_bcpho_save,mss_cnc_ocphi_save,mss_cnc_ocpho_save                               &
+!                ,mss_cnc_dst1_save,mss_cnc_dst2_save,mss_cnc_dst3_save,mss_cnc_dst4_save                                   &
 
 #if( WRF_CHEM == 1)
                 ,drydep_flux,wetdep_flux    &
@@ -59315,13 +59373,14 @@ CONTAINS
   USE module_sf_noahlsm, only: low_density_residential, high_density_residential, high_intensity_industrial
   USE module_ra_gfdleta,  only: cal_mon_day
   USE module_configure
-  USE module_state_description, ONLY : CAMSWSCHEME,num_mss_bcphi,  &
-                     p_mss_bcphi_s1,p_mss_bcphi_s2,p_mss_bcphi_s3,p_mss_bcphi_s4,p_mss_bcphi_s5,  &
-                     p_mss_bcpho_s1,p_mss_bcpho_s2,p_mss_bcpho_s3,p_mss_bcpho_s4,p_mss_bcpho_s5,  &
-                     p_mss_dst1_s1,p_mss_dst1_s2,p_mss_dst1_s3,p_mss_dst1_s4,p_mss_dst1_s5,   &
-                     p_mss_dst2_s1,p_mss_dst2_s2,p_mss_dst2_s3,p_mss_dst2_s4,p_mss_dst2_s5,   &
-                     p_mss_dst3_s1,p_mss_dst3_s2,p_mss_dst3_s3,p_mss_dst3_s4,p_mss_dst3_s5,   &
-                     p_mss_dst4_s1,p_mss_dst4_s2,p_mss_dst4_s3,p_mss_dst4_s4,p_mss_dst4_s5
+!snicar, not necessary, M.H.
+!  USE module_state_description, ONLY : CAMSWSCHEME,num_mss_bcphi,  &
+!                     p_mss_bcphi_s1,p_mss_bcphi_s2,p_mss_bcphi_s3,p_mss_bcphi_s4,p_mss_bcphi_s5,  &
+!                     p_mss_bcpho_s1,p_mss_bcpho_s2,p_mss_bcpho_s3,p_mss_bcpho_s4,p_mss_bcpho_s5,  &
+!                     p_mss_dst1_s1,p_mss_dst1_s2,p_mss_dst1_s3,p_mss_dst1_s4,p_mss_dst1_s5,   &
+!                     p_mss_dst2_s1,p_mss_dst2_s2,p_mss_dst2_s3,p_mss_dst2_s4,p_mss_dst2_s5,   &
+!                     p_mss_dst3_s1,p_mss_dst3_s2,p_mss_dst3_s3,p_mss_dst3_s4,p_mss_dst3_s5,   &
+!                     p_mss_dst4_s1,p_mss_dst4_s2,p_mss_dst4_s3,p_mss_dst4_s4,p_mss_dst4_s5
 #if( WRF_CHEM == 1)
   USE module_state_description, ONLY : num_drydep_flux
 #endif
@@ -59451,18 +59510,19 @@ CONTAINS
 
 #endif
 !!!
-  real,dimension(ims:ime,jms:jme),intent(inout) :: watsat2d
-  real(r8) :: watsat_buf      !output soil porosity -czhao
-
-  real,dimension(ims:ime,jms:jme),intent(inout) :: snowdust_col2d,snowdust_top2d,snowbc_col2d,snowbc_top2d,snow_top2d,snow_frac2d,snowlayer2d,snowrds2d1,snowrds2d2,snowrds2d3,snowrds2d4,snowrds2d5 !kg/m2 
-
-  real,dimension(ims:ime,jms:jme),intent(inout) :: sfc_frc_aer_2d,sfc_frc_aer_snow_2d,sfc_frc_bc_2d,sfc_frc_bc_snow_2d,sfc_frc_dst_2d,sfc_frc_dst_snow_2d 
-
-  real(r8):: snowdust_col_buf,snowdust_top_buf,snowbc_col_buf,snowbc_top_buf,snow_top_buf,snow_frac_buf,snowlayer_buf
-  real(r8),dimension(5):: snowrds_buf
-  real(r8):: sfc_frc_aer_buf,sfc_frc_aer_snow_buf,sfc_frc_bc_buf,sfc_frc_bc_snow_buf,sfc_frc_dst_buf,sfc_frc_dst_snow_buf 
-
-  !czhao
+!snicar, not necessary, M.H.
+!  real,dimension(ims:ime,jms:jme),intent(inout) :: watsat2d
+!  real(r8) :: watsat_buf      !output soil porosity -czhao
+!
+!  real,dimension(ims:ime,jms:jme),intent(inout) :: snowdust_col2d,snowdust_top2d,snowbc_col2d,snowbc_top2d,snow_top2d,snow_frac2d,snowlayer2d,snowrds2d1,snowrds2d2,snowrds2d3,snowrds2d4,snowrds2d5 !kg/m2 
+!
+!  real,dimension(ims:ime,jms:jme),intent(inout) :: sfc_frc_aer_2d,sfc_frc_aer_snow_2d,sfc_frc_bc_2d,sfc_frc_bc_snow_2d,sfc_frc_dst_2d,sfc_frc_dst_snow_2d 
+!
+!  real(r8):: snowdust_col_buf,snowdust_top_buf,snowbc_col_buf,snowbc_top_buf,snow_top_buf,snow_frac_buf,snowlayer_buf
+!  real(r8),dimension(5):: snowrds_buf
+!  real(r8):: sfc_frc_aer_buf,sfc_frc_aer_snow_buf,sfc_frc_bc_buf,sfc_frc_bc_snow_buf,sfc_frc_dst_buf,sfc_frc_dst_snow_buf 
+!
+!  !czhao
   real,dimension(ims:ime,jms:jme),intent(inout) :: lai2d
 
   INTEGER, INTENT(IN)::  NLCAT
@@ -59521,10 +59581,11 @@ CONTAINS
   integer  :: isltyp (ims:ime,jms:jme)
 
   real :: albxy(ims:ime,jms:jme)           
-  real :: albxyg(ims:ime,jms:jme)           
-  real :: albxy_aer(ims:ime,jms:jme)           
-  real :: albxy_bc(ims:ime,jms:jme)           
-  real :: albxy_dst(ims:ime,jms:jme)           
+!snicar, not necessary, M.H.
+!  real :: albxyg(ims:ime,jms:jme)           
+!  real :: albxy_aer(ims:ime,jms:jme)           
+!  real :: albxy_bc(ims:ime,jms:jme)           
+!  real :: albxy_dst(ims:ime,jms:jme)           
   real :: tsxy(ims:ime,jms:jme)           
   real :: t2clm(ims:ime,jms:jme)
   real :: shxy(ims:ime,jms:jme)           
@@ -59537,10 +59598,11 @@ CONTAINS
   real(r8) :: swvisdir_buf,swvisdif_buf,swnirdir_buf,swnirdif_buf
 
   real(r8) :: albxy_buf
-  real(r8) :: albxyg_buf
-  real(r8) :: albxy_aer_buf
-  real(r8) :: albxy_bc_buf
-  real(r8) :: albxy_dst_buf
+!snicar, not necessary, M.H.
+!  real(r8) :: albxyg_buf
+!  real(r8) :: albxy_aer_buf
+!  real(r8) :: albxy_bc_buf
+!  real(r8) :: albxy_dst_buf
   real(r8) :: tsxy_buf,trefxy_buf
   real(r8) :: shxy_buf
   real(r8) :: lhxy_buf
@@ -59598,17 +59660,18 @@ CONTAINS
 !------------------------------------------------------------------------
  real(r8),dimension(maxpatch) :: organic_buf
 
-  real(r8),dimension(maxpatch,5)   :: &   !5 snow layers
-     mss_bcphi_buf,mss_bcpho_buf,mss_ocphi_buf,mss_ocpho_buf, &
-     mss_dst1_buf,mss_dst2_buf,mss_dst3_buf,mss_dst4_buf
-
-  real(r8),dimension(maxpatch,5)   :: &   !5 snow layers
-     mss_cnc_bcphi_buf,mss_cnc_bcpho_buf,mss_cnc_ocphi_buf,mss_cnc_ocpho_buf,  &
-     mss_cnc_dst1_buf,mss_cnc_dst2_buf,mss_cnc_dst3_buf,mss_cnc_dst4_buf
-
-  real(r8),dimension(5)   :: snowrds_1d   !5 snow layers
-  real(r8),dimension(-nlevsno+1:0)   :: snowrds_1d0   !5 snow layers
-  real(r8)  :: snowlayer_1d   
+!snicar, not necessary, M.H.
+!  real(r8),dimension(maxpatch,5)   :: &   !5 snow layers
+!     mss_bcphi_buf,mss_bcpho_buf,mss_ocphi_buf,mss_ocpho_buf, &
+!     mss_dst1_buf,mss_dst2_buf,mss_dst3_buf,mss_dst4_buf
+!
+!  real(r8),dimension(maxpatch,5)   :: &   !5 snow layers
+!     mss_cnc_bcphi_buf,mss_cnc_bcpho_buf,mss_cnc_ocphi_buf,mss_cnc_ocpho_buf,  &
+!     mss_cnc_dst1_buf,mss_cnc_dst2_buf,mss_cnc_dst3_buf,mss_cnc_dst4_buf
+!
+!  real(r8),dimension(5)   :: snowrds_1d   !5 snow layers
+!  real(r8),dimension(-nlevsno+1:0)   :: snowrds_1d0   !5 snow layers
+!  real(r8)  :: snowlayer_1d   
 
   real(r8), dimension(maxpatch)  ::                 &
                 snowdp_buf,wtc_buf,wtp_buf,h2osno_buf,t_grnd_buf,t_veg_buf,         & 
@@ -59890,27 +59953,28 @@ i_loop : &
         lndmsk = 0
       end if
 
-   watsat2d(i,j) = 0.0
-   snowdust_col2d(i,j) = 0.0
-   snowdust_top2d(i,j) = 0.0
-   snowbc_col2d(i,j) = 0.0
-   snowbc_top2d(i,j) = 0.0
-   snow_top2d(i,j) = 0.0
-   snow_frac2d(i,j) = 0.0
-   snowlayer2d(i,j) = 0.0
-   snowrds2d1(i,j) = 0.0
-   snowrds2d2(i,j) = 0.0
-   snowrds2d3(i,j) = 0.0
-   snowrds2d4(i,j) = 0.0
-   snowrds2d5(i,j) = 0.0
+!snicar, not necessary, M.H.
+!   watsat2d(i,j) = 0.0
+!   snowdust_col2d(i,j) = 0.0
+!   snowdust_top2d(i,j) = 0.0
+!   snowbc_col2d(i,j) = 0.0
+!   snowbc_top2d(i,j) = 0.0
+!   snow_top2d(i,j) = 0.0
+!   snow_frac2d(i,j) = 0.0
+!   snowlayer2d(i,j) = 0.0
+!   snowrds2d1(i,j) = 0.0
+!   snowrds2d2(i,j) = 0.0
+!   snowrds2d3(i,j) = 0.0
+!   snowrds2d4(i,j) = 0.0
+!   snowrds2d5(i,j) = 0.0
    lai2d(i,j) = 0.0
 
-   sfc_frc_aer_2d(i,j) = 0.0
-   sfc_frc_aer_snow_2d(i,j) = 0.0
-   sfc_frc_bc_2d(i,j) = 0.0
-   sfc_frc_bc_snow_2d(i,j) = 0.0
-   sfc_frc_dst_2d(i,j) = 0.0
-   sfc_frc_dst_snow_2d(i,j) = 0.0
+!  sfc_frc_aer_2d(i,j) = 0.0
+!   sfc_frc_aer_snow_2d(i,j) = 0.0
+!   sfc_frc_bc_2d(i,j) = 0.0
+!   sfc_frc_bc_snow_2d(i,j) = 0.0
+!   sfc_frc_dst_2d(i,j) = 0.0
+!   sfc_frc_dst_snow_2d(i,j) = 0.0
   
 is_land : &
     if(lndmsk == 1) then
@@ -59923,10 +59987,11 @@ is_land : &
       xlon_buf       = real( xlong(i,j),kind=r8 ) + 360.0_r8
       xlat_buf       = real( xlat(i,j),kind=r8 )
       albxy_buf      = real( albxy(i,j),kind=r8 )
-      albxyg_buf      = real(albxyg(i,j),kind=r8) 
-      albxy_aer_buf      = real(albxy_aer(i,j),kind=r8) 
-      albxy_bc_buf      = real(albxy_bc(i,j),kind=r8) 
-      albxy_dst_buf      = real(albxy_dst(i,j),kind=r8) 
+!snicar, not necessary, M.H.
+!      albxyg_buf      = real(albxyg(i,j),kind=r8) 
+!      albxy_aer_buf      = real(albxy_aer(i,j),kind=r8) 
+!      albxy_bc_buf      = real(albxy_bc(i,j),kind=r8) 
+!      albxy_dst_buf      = real(albxy_dst(i,j),kind=r8) 
       if(gsw(i,j) > 0._r8 .and. albxy_buf < 0.99_r8 .and. albxy_buf > 0._r8 )then
          swd_buf     = real(gsw(i,j),kind=r8)/(1._r8 - albxy_buf)
          swdown(i,j) = real(gsw(i,j),kind=r8)/(1._r8 - albxy_buf)
@@ -60269,25 +60334,26 @@ patch_loop_1 : &
       retransn_buf(m)               = retransn(i,m,j)
 #endif
 
-!czhao add snow aerosol
-      mss_bcphi_buf(m,1:5)=0.0
-      mss_bcpho_buf(m,1:5)=0.0
-      mss_ocphi_buf(m,1:5)=0.0
-      mss_ocpho_buf(m,1:5)=0.0
-      mss_dst1_buf(m,1:5)=0.0
-      mss_dst2_buf(m,1:5)=0.0
-      mss_dst3_buf(m,1:5)=0.0
-      mss_dst4_buf(m,1:5)=0.0
-
-      mss_cnc_bcphi_buf(m,1:5)=0.0
-      mss_cnc_bcpho_buf(m,1:5)=0.0
-      mss_cnc_ocphi_buf(m,1:5)=0.0
-      mss_cnc_ocpho_buf(m,1:5)=0.0
-      mss_cnc_dst1_buf(m,1:5)=0.0
-      mss_cnc_dst2_buf(m,1:5)=0.0
-      mss_cnc_dst3_buf(m,1:5)=0.0
-      mss_cnc_dst4_buf(m,1:5)=0.0
-!     endif
+!snicar, not necessary, M.H.
+!!czhao add snow aerosol
+!      mss_bcphi_buf(m,1:5)=0.0
+!      mss_bcpho_buf(m,1:5)=0.0
+!      mss_ocphi_buf(m,1:5)=0.0
+!      mss_ocpho_buf(m,1:5)=0.0
+!      mss_dst1_buf(m,1:5)=0.0
+!      mss_dst2_buf(m,1:5)=0.0
+!      mss_dst3_buf(m,1:5)=0.0
+!      mss_dst4_buf(m,1:5)=0.0
+!
+!      mss_cnc_bcphi_buf(m,1:5)=0.0
+!      mss_cnc_bcpho_buf(m,1:5)=0.0
+!      mss_cnc_ocphi_buf(m,1:5)=0.0
+!      mss_cnc_ocpho_buf(m,1:5)=0.0
+!      mss_cnc_dst1_buf(m,1:5)=0.0
+!      mss_cnc_dst2_buf(m,1:5)=0.0
+!      mss_cnc_dst3_buf(m,1:5)=0.0
+!      mss_cnc_dst4_buf(m,1:5)=0.0
+!     endif(not sure what this is about, M.H.)
 
     end do patch_loop_1
        
@@ -60339,12 +60405,14 @@ patch_loop_1 : &
                   ,soiflx_buf          ,sabv_buf               ,sabg_buf        &
                   ,lwup_buf            ,znt_buf                ,q_ref2m_buf     &
                   ,rhoxy_buf                                                    &
-                  ,nlcat,landusef_buf,num_pft_input,pct_pft_input_buf,input_pft_flag,lai_buf,watsat_buf,snowdust_col_buf,snowdust_top_buf,snowbc_col_buf,snowbc_top_buf,snow_top_buf,snow_frac_buf        &
-                  ,sfc_frc_aer_buf,sfc_frc_aer_snow_buf,sfc_frc_bc_buf,sfc_frc_bc_snow_buf,sfc_frc_dst_buf,sfc_frc_dst_snow_buf    &
-                  ,mss_bcphi_buf,mss_bcpho_buf,mss_ocphi_buf,mss_ocpho_buf,mss_dst1_buf,mss_dst2_buf,mss_dst3_buf,mss_dst4_buf       &
-                  ,mss_cnc_bcphi_buf,mss_cnc_bcpho_buf,mss_cnc_ocphi_buf,mss_cnc_ocpho_buf,mss_cnc_dst1_buf,mss_cnc_dst2_buf,mss_cnc_dst3_buf,mss_cnc_dst4_buf   &
-                  ,albxyg_buf,albxy_aer_buf,albxy_bc_buf,albxy_dst_buf &
-                  ,snowlayer_buf,snowrds_buf     &
+                  ,nlcat,landusef_buf,num_pft_input,pct_pft_input_buf,input_pft_flag,lai_buf, &
+!snicar, not necessary, M.H.
+                  !,watsat_buf,snowdust_col_buf,snowdust_top_buf,snowbc_col_buf,snowbc_top_buf,snow_top_buf,snow_frac_buf        &
+                  !,sfc_frc_aer_buf,sfc_frc_aer_snow_buf,sfc_frc_bc_buf,sfc_frc_bc_snow_buf,sfc_frc_dst_buf,sfc_frc_dst_snow_buf    &
+                  !,mss_bcphi_buf,mss_bcpho_buf,mss_ocphi_buf,mss_ocpho_buf,mss_dst1_buf,mss_dst2_buf,mss_dst3_buf,mss_dst4_buf       &
+                  !,mss_cnc_bcphi_buf,mss_cnc_bcpho_buf,mss_cnc_ocphi_buf,mss_cnc_ocpho_buf,mss_cnc_dst1_buf,mss_cnc_dst2_buf,mss_cnc_dst3_buf,mss_cnc_dst4_buf   &
+                  !,albxyg_buf,albxy_aer_buf,albxy_bc_buf,albxy_dst_buf &
+                  !,snowlayer_buf,snowrds_buf     &
 #if( WRF_CHEM == 1)
                   ,drydep_buf,wetdep_buf     &
 #endif
@@ -60408,16 +60476,18 @@ patch_loop_1 : &
 #endif
 
                  if(albxy_buf ==  1) albxy_buf = 0.991_r8
-                 if(albxyg_buf ==  1) albxyg_buf = 0.991_r8
-                 if(albxy_aer_buf ==  1) albxy_aer_buf = 0.991_r8
-                 if(albxy_bc_buf ==  1) albxy_bc_buf = 0.991_r8
-                 if(albxy_dst_buf ==  1) albxy_dst_buf = 0.991_r8
+!snicar, not necessary, M.H.
+!                 if(albxyg_buf ==  1) albxyg_buf = 0.991_r8
+!                 if(albxy_aer_buf ==  1) albxy_aer_buf = 0.991_r8
+!                 if(albxy_bc_buf ==  1) albxy_bc_buf = 0.991_r8
+!                 if(albxy_dst_buf ==  1) albxy_dst_buf = 0.991_r8
 
                   albxy(i,j)          = albxy_buf
-                  albxyg(i,j)          = albxyg_buf
-                  albxy_aer(i,j)          = albxy_aer_buf
-                  albxy_bc(i,j)          = albxy_bc_buf
-                  albxy_dst(i,j)          = albxy_dst_buf
+!snicar, not necessary, M.H.
+!                  albxyg(i,j)          = albxyg_buf
+!                  albxy_aer(i,j)          = albxy_aer_buf
+!                  albxy_bc(i,j)          = albxy_bc_buf
+!                  albxy_dst(i,j)          = albxy_dst_buf
                   call CLMDebug('get albxy')
                   snowh(i,j)          = sum(snowdp_buf(1:numc(i,j))*wtc_buf(1:numc(i,j)))
                   call CLMDebug('get snowh')
@@ -60731,51 +60801,53 @@ patch_loop_2 : &
                     retransn(i,m,j)                    = retransn_buf(m)
 #endif
 
-!snow aerosol -czhao
-              mss_bcphi(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)=mss_bcphi_buf(m,1:5)
-              mss_bcpho(i,m,j,p_mss_bcpho_s1:p_mss_bcpho_s5)=mss_bcpho_buf(m,1:5)
-              mss_ocphi(i,m,j,p_mss_ocphi_s1:p_mss_ocphi_s5)=mss_ocphi_buf(m,1:5)
-              mss_ocpho(i,m,j,p_mss_ocpho_s1:p_mss_ocpho_s5)=mss_ocpho_buf(m,1:5)
-              mss_dst1(i,m,j,p_mss_dst1_s1:p_mss_dst1_s5)=mss_dst1_buf(m,1:5)
-              mss_dst2(i,m,j,p_mss_dst1_s1:p_mss_dst2_s5)=mss_dst2_buf(m,1:5)
-              mss_dst3(i,m,j,p_mss_dst1_s1:p_mss_dst3_s5)=mss_dst3_buf(m,1:5)
-              mss_dst4(i,m,j,p_mss_dst1_s1:p_mss_dst4_s5)=mss_dst4_buf(m,1:5)
-
-              mss_cnc_bcphi_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)=mss_cnc_bcphi_buf(m,1:5)
-              mss_cnc_bcpho_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)=mss_cnc_bcpho_buf(m,1:5)
-              mss_cnc_ocphi_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)=mss_cnc_ocphi_buf(m,1:5)
-              mss_cnc_ocpho_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)=mss_cnc_ocpho_buf(m,1:5)
-              mss_cnc_dst1_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)=mss_cnc_dst1_buf(m,1:5)
-              mss_cnc_dst2_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)=mss_cnc_dst2_buf(m,1:5)
-              mss_cnc_dst3_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)=mss_cnc_dst3_buf(m,1:5)
-              mss_cnc_dst4_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)=mss_cnc_dst4_buf(m,1:5)
+!snicar, not necessary, M.H.
+!!snow aerosol -czhao
+!              mss_bcphi(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)=mss_bcphi_buf(m,1:5)
+!              mss_bcpho(i,m,j,p_mss_bcpho_s1:p_mss_bcpho_s5)=mss_bcpho_buf(m,1:5)
+!              mss_ocphi(i,m,j,p_mss_ocphi_s1:p_mss_ocphi_s5)=mss_ocphi_buf(m,1:5)
+!              mss_ocpho(i,m,j,p_mss_ocpho_s1:p_mss_ocpho_s5)=mss_ocpho_buf(m,1:5)
+!              mss_dst1(i,m,j,p_mss_dst1_s1:p_mss_dst1_s5)=mss_dst1_buf(m,1:5)
+!              mss_dst2(i,m,j,p_mss_dst1_s1:p_mss_dst2_s5)=mss_dst2_buf(m,1:5)
+!              mss_dst3(i,m,j,p_mss_dst1_s1:p_mss_dst3_s5)=mss_dst3_buf(m,1:5)
+!              mss_dst4(i,m,j,p_mss_dst1_s1:p_mss_dst4_s5)=mss_dst4_buf(m,1:5)
+!
+!              mss_cnc_bcphi_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)=mss_cnc_bcphi_buf(m,1:5)
+!              mss_cnc_bcpho_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)=mss_cnc_bcpho_buf(m,1:5)
+!              mss_cnc_ocphi_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)=mss_cnc_ocphi_buf(m,1:5)
+!              mss_cnc_ocpho_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)=mss_cnc_ocpho_buf(m,1:5)
+!              mss_cnc_dst1_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)=mss_cnc_dst1_buf(m,1:5)
+!              mss_cnc_dst2_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)=mss_cnc_dst2_buf(m,1:5)
+!              mss_cnc_dst3_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)=mss_cnc_dst3_buf(m,1:5)
+!              mss_cnc_dst4_save(i,m,j,p_mss_bcphi_s1:p_mss_bcphi_s5)=mss_cnc_dst4_buf(m,1:5)
 
               end do patch_loop_2
 
-!czhao add soil porosity
-              watsat2d(i,j)  = watsat_buf
-
+!snicar, not necessary, M.H.
+!!czhao add soil porosity
+!              watsat2d(i,j)  = watsat_buf
+!
 !czhao add snow variables 
-              snowdust_col2d(i,j)  = snowdust_col_buf
-              snowdust_top2d(i,j)  = snowdust_top_buf
-              snowbc_col2d(i,j)  = snowbc_col_buf
-              snowbc_top2d(i,j)  = snowbc_top_buf
-              snow_top2d(i,j)  = snow_top_buf
-              snow_frac2d(i,j)  = snow_frac_buf
-              snowlayer2d(i,j) = snowlayer_buf
-              snowrds2d1(i,j) = snowrds_buf(1)
-              snowrds2d2(i,j) = snowrds_buf(2)
-              snowrds2d3(i,j) = snowrds_buf(3)
-              snowrds2d4(i,j) = snowrds_buf(4)
-              snowrds2d5(i,j) = snowrds_buf(5)
-
-              sfc_frc_aer_2d(i,j)  = sfc_frc_aer_buf 
-              sfc_frc_aer_snow_2d(i,j)  = sfc_frc_aer_snow_buf 
-              sfc_frc_bc_2d(i,j)  = sfc_frc_bc_buf 
-              sfc_frc_bc_snow_2d(i,j)  = sfc_frc_bc_snow_buf 
-              sfc_frc_dst_2d(i,j)  = sfc_frc_dst_buf 
-              sfc_frc_dst_snow_2d(i,j)  = sfc_frc_dst_snow_buf 
-
+!              snowdust_col2d(i,j)  = snowdust_col_buf
+!              snowdust_top2d(i,j)  = snowdust_top_buf
+!              snowbc_col2d(i,j)  = snowbc_col_buf
+!              snowbc_top2d(i,j)  = snowbc_top_buf
+!              snow_top2d(i,j)  = snow_top_buf
+!              snow_frac2d(i,j)  = snow_frac_buf
+!              snowlayer2d(i,j) = snowlayer_buf
+!              snowrds2d1(i,j) = snowrds_buf(1)
+!              snowrds2d2(i,j) = snowrds_buf(2)
+!              snowrds2d3(i,j) = snowrds_buf(3)
+!              snowrds2d4(i,j) = snowrds_buf(4)
+!              snowrds2d5(i,j) = snowrds_buf(5)
+!
+!              sfc_frc_aer_2d(i,j)  = sfc_frc_aer_buf 
+!              sfc_frc_aer_snow_2d(i,j)  = sfc_frc_aer_snow_buf 
+!              sfc_frc_bc_2d(i,j)  = sfc_frc_bc_buf 
+!              sfc_frc_bc_snow_2d(i,j)  = sfc_frc_bc_snow_buf 
+!              sfc_frc_dst_2d(i,j)  = sfc_frc_dst_buf 
+!              sfc_frc_dst_snow_2d(i,j)  = sfc_frc_dst_snow_buf 
+!
 !czhao add LAI outputs 
               lai2d(i,j)  = lai_buf 
 
@@ -60915,10 +60987,11 @@ has_urban_physics : &
             TS_URB2D(I,J) = TS_URB
 
             albxy(i,j) = FRC_URB2D(I,J)*ALB_URB+(1-FRC_URB2D(I,J))*albxy_buf   ![-]
-            albxyg(i,j) = FRC_URB2D(I,J)*ALB_URB+(1-FRC_URB2D(I,J))*albxyg_buf   ![-]
-            albxy_aer(i,j) = FRC_URB2D(I,J)*ALB_URB+(1-FRC_URB2D(I,J))*albxy_aer_buf   ![-]
-            albxy_bc(i,j) = FRC_URB2D(I,J)*ALB_URB+(1-FRC_URB2D(I,J))*albxy_bc_buf   ![-]
-            albxy_dst(i,j) = FRC_URB2D(I,J)*ALB_URB+(1-FRC_URB2D(I,J))*albxy_dst_buf   ![-]
+!snicar, not necessary, M.H.
+!            albxyg(i,j) = FRC_URB2D(I,J)*ALB_URB+(1-FRC_URB2D(I,J))*albxyg_buf   ![-]
+!            albxy_aer(i,j) = FRC_URB2D(I,J)*ALB_URB+(1-FRC_URB2D(I,J))*albxy_aer_buf   ![-]
+!            albxy_bc(i,j) = FRC_URB2D(I,J)*ALB_URB+(1-FRC_URB2D(I,J))*albxy_bc_buf   ![-]
+!            albxy_dst(i,j) = FRC_URB2D(I,J)*ALB_URB+(1-FRC_URB2D(I,J))*albxy_dst_buf   ![-]
             shxy(i,j)  = FRC_URB2D(I,J)*SH_URB+(1-FRC_URB2D(I,J))*shxy_buf     ![W/m/m]
             qfx(i,j)   = FRC_URB2D(I,J)*LH_KINEMATIC_URB &
                      + (1-FRC_URB2D(I,J))*qfx(i,j)                ![kg/m/m/s]
@@ -61107,23 +61180,24 @@ end subroutine clmdrv
                         ,idx_Tgrd_max             &
                         ,idx_rhos_max             &
                         ,numrad_snw               &
-                        !czhao add BC optical properties
-                        ,idx_bc_nclrds_max        &
-                        ,idx_bcint_icerds_max     &
-                        ,ss_alb_bc1               &
-                        ,asm_prm_bc1              &
-                        ,ext_cff_mss_bc1          &
-                        ,ss_alb_bc2               &
-                        ,asm_prm_bc2              &
-                        ,ext_cff_mss_bc2          &
-                        ,bcenh                    &
-                        ,xx_ss_alb_bc1            &
-                        ,xx_asm_prm_bc1           &
-                        ,xx_ext_cff_mss_bc1       &
-                        ,xx_ss_alb_bc2            &
-                        ,xx_asm_prm_bc2           &
-                        ,xx_ext_cff_mss_bc2       &
-                        ,xx_bcenh
+                        !snicar, not necessary, M.H.
+                        !!czhao add BC optical properties
+                        !,idx_bc_nclrds_max        &
+                        !,idx_bcint_icerds_max     &
+                        !,ss_alb_bc1               &
+                        !,asm_prm_bc1              &
+                        !,ext_cff_mss_bc1          &
+                        !,ss_alb_bc2               &
+                        !,asm_prm_bc2              &
+                        !,ext_cff_mss_bc2          &
+                        !,bcenh                    &
+                        !,xx_ss_alb_bc1            &
+                        !,xx_asm_prm_bc1           &
+                        !,xx_ext_cff_mss_bc1       &
+                        !,xx_ss_alb_bc2            &
+                        !,xx_asm_prm_bc2           &
+                        !,xx_ext_cff_mss_bc2       &
+                        !,xx_bcenh
 
 !New in CLM4_crop
 !#if (defined CROP)
@@ -61464,27 +61538,27 @@ IF ( wrf_dm_on_monitor() ) THEN
   read(lu_unit,*)&
   (((snowage_drdt0(i,j,k),i=1,idx_T_max),j=1,idx_Tgrd_max),k=1,idx_rhos_max)
   close(lu_unit)
-
-  open(lu_unit,file='CLM_SS_BC_DATA')
-  read(lu_unit,*) ((ss_alb_bc1(i,j),i=1,numrad_snw),j=1,idx_bc_nclrds_max)
-  close(lu_unit)
-
-  open(lu_unit,file='CLM_ASM_BC_DATA')
-  read(lu_unit,*) ((asm_prm_bc1(i,j),i=1,numrad_snw),j=1,idx_bc_nclrds_max)
-  close(lu_unit)
-
-  open(lu_unit,file='CLM_EXT_BC_DATA')
-  read(lu_unit,*) ((ext_cff_mss_bc1(i,j),i=1,numrad_snw),j=1,idx_bc_nclrds_max)
-  close(lu_unit)
-
-  open(lu_unit,file='CLM_BCENH_DATA')
-  read(lu_unit,*) (((bcenh(i,j,k),i=1,numrad_snw),j=1,idx_bc_nclrds_max),k=1,idx_bcint_icerds_max)
-  close(lu_unit)
-
-  ! BC species 2 Mie parameters (identical, before enhancement factors applied)
-  ss_alb_bc2=ss_alb_bc1
-  asm_prm_bc2=asm_prm_bc1
-  ext_cff_mss_bc2=ext_cff_mss_bc1
+!snicar, not necessary, M.H.
+!  open(lu_unit,file='CLM_SS_BC_DATA')
+!  read(lu_unit,*) ((ss_alb_bc1(i,j),i=1,numrad_snw),j=1,idx_bc_nclrds_max)
+!  close(lu_unit)
+!
+!  open(lu_unit,file='CLM_ASM_BC_DATA')
+!  read(lu_unit,*) ((asm_prm_bc1(i,j),i=1,numrad_snw),j=1,idx_bc_nclrds_max)
+!  close(lu_unit)
+!
+!  open(lu_unit,file='CLM_EXT_BC_DATA')
+!  read(lu_unit,*) ((ext_cff_mss_bc1(i,j),i=1,numrad_snw),j=1,idx_bc_nclrds_max)
+!  close(lu_unit)
+!
+!  open(lu_unit,file='CLM_BCENH_DATA')
+!  read(lu_unit,*) (((bcenh(i,j,k),i=1,numrad_snw),j=1,idx_bc_nclrds_max),k=1,idx_bcint_icerds_max)
+!  close(lu_unit)
+!
+!  ! BC species 2 Mie parameters (identical, before enhancement factors applied)
+!  ss_alb_bc2=ss_alb_bc1
+!  asm_prm_bc2=asm_prm_bc1
+!  ext_cff_mss_bc2=ext_cff_mss_bc1
 
 END IF
 
@@ -61536,28 +61610,29 @@ master_init: &
   end do
   end do
 
-  ix = 0
-  do j=1, idx_bc_nclrds_max 
-  do i=1, numrad_snw
-    ix = ix + 1
-    xx_ss_alb_bc1(ix)      = ss_alb_bc1(i,j)
-    xx_asm_prm_bc1(ix)     = asm_prm_bc1(i,j)
-    xx_ext_cff_mss_bc1(ix) = ext_cff_mss_bc1(i,j)
-    xx_ss_alb_bc2(ix)      = ss_alb_bc2(i,j)
-    xx_asm_prm_bc2(ix)     = asm_prm_bc2(i,j)
-    xx_ext_cff_mss_bc2(ix) = ext_cff_mss_bc2(i,j)
-  enddo
-  enddo
-
-  ix = 0
-  do k=1, idx_bcint_icerds_max 
-  do j=1, idx_bc_nclrds_max
-  do i=1, numrad_snw
-    ix=ix+1
-    xx_bcenh(ix)=bcenh(i,j,k)
-  enddo
-  enddo
-  enddo
+!snicar, not necessary, M.H.
+!  ix = 0
+!  do j=1, idx_bc_nclrds_max 
+!  do i=1, numrad_snw
+!    ix = ix + 1
+!    xx_ss_alb_bc1(ix)      = ss_alb_bc1(i,j)
+!    xx_asm_prm_bc1(ix)     = asm_prm_bc1(i,j)
+!    xx_ext_cff_mss_bc1(ix) = ext_cff_mss_bc1(i,j)
+!    xx_ss_alb_bc2(ix)      = ss_alb_bc2(i,j)
+!    xx_asm_prm_bc2(ix)     = asm_prm_bc2(i,j)
+!    xx_ext_cff_mss_bc2(ix) = ext_cff_mss_bc2(i,j)
+!  enddo
+!  enddo
+!
+!  ix = 0
+!  do k=1, idx_bcint_icerds_max 
+!  do j=1, idx_bc_nclrds_max
+!  do i=1, numrad_snw
+!    ix=ix+1
+!    xx_bcenh(ix)=bcenh(i,j,k)
+!  enddo
+!  enddo
+!  enddo
 
  ix = 0
  do i=1,idx_T_max
@@ -61583,13 +61658,14 @@ master_init: &
   CALL wrf_dm_bcast_real(xx_snowage_kappa,idx_T_max*idx_Tgrd_max*idx_rhos_max)
   CALL wrf_dm_bcast_real(xx_snowage_drdt0,idx_T_max*idx_Tgrd_max*idx_rhos_max)
 
-  CALL wrf_dm_bcast_real(xx_ss_alb_bc1, numrad_snw*idx_bc_nclrds_max)
-  CALL wrf_dm_bcast_real(xx_ss_alb_bc2, numrad_snw*idx_bc_nclrds_max)
-  CALL wrf_dm_bcast_real(xx_asm_prm_bc1, numrad_snw*idx_bc_nclrds_max)
-  CALL wrf_dm_bcast_real(xx_asm_prm_bc2, numrad_snw*idx_bc_nclrds_max)
-  CALL wrf_dm_bcast_real(xx_ext_cff_mss_bc1, numrad_snw*idx_bc_nclrds_max)
-  CALL wrf_dm_bcast_real(xx_ext_cff_mss_bc2, numrad_snw*idx_bc_nclrds_max)
-  CALL wrf_dm_bcast_real(xx_bcenh, numrad_snw*idx_bc_nclrds_max*idx_bcint_icerds_max)
+!snicar, not necessary, M.H.
+!  CALL wrf_dm_bcast_real(xx_ss_alb_bc1, numrad_snw*idx_bc_nclrds_max)
+!  CALL wrf_dm_bcast_real(xx_ss_alb_bc2, numrad_snw*idx_bc_nclrds_max)
+!  CALL wrf_dm_bcast_real(xx_asm_prm_bc1, numrad_snw*idx_bc_nclrds_max)
+!  CALL wrf_dm_bcast_real(xx_asm_prm_bc2, numrad_snw*idx_bc_nclrds_max)
+!  CALL wrf_dm_bcast_real(xx_ext_cff_mss_bc1, numrad_snw*idx_bc_nclrds_max)
+!  CALL wrf_dm_bcast_real(xx_ext_cff_mss_bc2, numrad_snw*idx_bc_nclrds_max)
+!  CALL wrf_dm_bcast_real(xx_bcenh, numrad_snw*idx_bc_nclrds_max*idx_bcint_icerds_max)
 
 
  IF(restart) then

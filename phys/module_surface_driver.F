@@ -6,8 +6,9 @@ CONTAINS
    SUBROUTINE surface_driver(                                         &
      &           HYDRO_dt,sfcheadrt,INFXSRT,soldrain,                 &
      &           acgrdflx,achfx,aclhf                                 &
-     &          ,acsnom,acsnow,snowfallac,akhs,akms                   &
-                ,albedo,albedog,albedo_aer,albedo_bc,albedo_dst,br,canwat &
+     &          ,acsnom,acsnow,snowfallac,akhs,akms,,albedo,br,canwat &
+!snicar, not necessary, M.H.                    &
+!                albedog,albedo_aer,albedo_bc,albedo_dst,              &
      &          ,chklowq,dt,dx,dz8w,dzs,glw                           &
      &          ,grdflx,gsw,swdown,gz1oz0,hfx,ht,ifsnow,isfflx        &
      &          ,fractional_seaice,seaice_albedo_opt                  &
@@ -167,13 +168,15 @@ CONTAINS
      &           ,dwt_frootn_to_litr1n,dwt_frootn_to_litr2n, dwt_frootn_to_litr3n &
      &           ,dwt_livecrootn_to_cwdn,dwt_deadcrootn_to_cwdn,retransn &
 #endif
-                 ,watsat2d,snowdust_col2d,snowdust_top2d,snowbc_col2d,snowbc_top2d,snow_top2d &
-                 ,snow_frac2d,snowlayer2d,snowrds2d1,snowrds2d2,snowrds2d3,snowrds2d4,snowrds2d5 &
-                 ,sfc_frc_aer,sfc_frc_aer_snow,sfc_frc_bc,sfc_frc_bc_snow,sfc_frc_dst,sfc_frc_dst_snow &
-                 ,mss_bcpho,mss_bcphi,mss_ocpho,mss_ocphi     &
-                 ,mss_dst1,mss_dst2,mss_dst3,mss_dst4     &
-                 ,mss_cnc_bcphi,mss_cnc_bcpho,mss_cnc_ocphi,mss_cnc_ocpho &
-                 ,mss_cnc_dst1,mss_cnc_dst2,mss_cnc_dst3,mss_cnc_dst4   &
+!snicar, not necessary, M.H.
+!                 ,watsat2d,snowdust_col2d,snowdust_top2d,snowbc_col2d,snowbc_top2d,snow_top2d &
+!                 ,snow_frac2d,snowlayer2d,snowrds2d1,snowrds2d2,snowrds2d3,snowrds2d4,snowrds2d5 &
+!                 ,sfc_frc_aer,sfc_frc_aer_snow,sfc_frc_bc,sfc_frc_bc_snow,sfc_frc_dst,sfc_frc_dst_snow &
+!                 ,mss_bcpho,mss_bcphi,mss_ocpho,mss_ocphi     &
+!                 ,mss_dst1,mss_dst2,mss_dst3,mss_dst4     &
+!                 ,mss_cnc_bcphi,mss_cnc_bcpho,mss_cnc_ocphi,mss_cnc_ocpho &
+!                 ,mss_cnc_dst1,mss_cnc_dst2,mss_cnc_dst3,mss_cnc_dst4   &
+!MEGAN, M.H.
                  ,pct_pft_input,num_pft_input,input_pft_flag  &
 #if( WRF_CHEM == 1 )
      &           ,drydep_flux,wetdep_flux       &
@@ -320,7 +323,8 @@ CONTAINS
                                        ,num_drydep_flux           &
                                        ,num_wetdep_flux           &
 #endif
-                                       ,num_mss_bcphi
+!snicar, not necessary, M.H.
+!                                       ,num_mss_bcphi
 #else
    USE module_state_description, ONLY : SFCLAYSCHEME              &
                                        ,SFCLAYREVSCHEME           &
@@ -338,7 +342,8 @@ CONTAINS
                                        ,GFDLSFCSCHEME             &
                                        ,SSIBSCHEME                & ! ssib
                                        ,GFDLSLAB                  &
-                                       ,num_mss_bcphi
+!snicar, not necessary, M.H.
+!                                       ,num_mss_bcphi
 #endif
    USE module_model_constants
 ! *** add new modules of schemes here
@@ -673,7 +678,9 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT)::   SNOTIME
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   AKHS
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   AKMS
-   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   ALBEDO,ALBEDOG,ALBEDO_AER,ALBEDO_BC,ALBEDO_DST
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   ALBEDO
+!snicar, not necessary, M.H. 
+!   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   ALBEDOG,ALBEDO_AER,ALBEDO_BC,ALBEDO_DST
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   CANWAT
 
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   GRDFLX
@@ -1077,11 +1084,12 @@ CONTAINS
   real,    optional,  dimension(ims:ime,jms:jme ),intent(inout) :: sabv,sabg,lwup
   integer, optional,  dimension(ims:ime,1:maxpatch,jms:jme ),intent(inout) :: snl
   real,    optional,  dimension(ims:ime,jms:jme ),intent(inout) ::t2m_max,t2m_min,t2clm
-  real,    optional, dimension(ims:ime,1:maxpatch,jms:jme,num_mss_bcphi),intent(inout) ::  &
-                  mss_bcphi,mss_bcpho,mss_ocphi,mss_ocpho,mss_dst1,mss_dst2,mss_dst3,mss_dst4
-  real,    optional, dimension(ims:ime,1:maxpatch,jms:jme,num_mss_bcphi),intent(inout) ::  &
-                  mss_cnc_bcphi,mss_cnc_bcpho,mss_cnc_ocphi,mss_cnc_ocpho,   &
-                  mss_cnc_dst1,mss_cnc_dst2,mss_cnc_dst3,mss_cnc_dst4
+!snicar, not necessary, M.H. 
+!  real,    optional, dimension(ims:ime,1:maxpatch,jms:jme,num_mss_bcphi),intent(inout) ::  &
+!                  mss_bcphi,mss_bcpho,mss_ocphi,mss_ocpho,mss_dst1,mss_dst2,mss_dst3,mss_dst4
+!  real,    optional, dimension(ims:ime,1:maxpatch,jms:jme,num_mss_bcphi),intent(inout) ::  &
+!                  mss_cnc_bcphi,mss_cnc_bcpho,mss_cnc_ocphi,mss_cnc_ocpho,   &
+!                  mss_cnc_dst1,mss_cnc_dst2,mss_cnc_dst3,mss_cnc_dst4
 
   INTEGER, INTENT(IN)         :: num_pft_input
   LOGICAL,OPTIONAL,INTENT(IN) :: input_pft_flag
@@ -1156,11 +1164,12 @@ CONTAINS
                 , dwt_livecrootn_to_cwdn,dwt_deadcrootn_to_cwdn,retransn
 #endif
 
-  real,optional,dimension(ims:ime,jms:jme),intent(inout) ::  &
-                watsat2d,snowdust_col2d,snowdust_top2d,snowbc_col2d,snowbc_top2d,snow_top2d, &
-                snow_frac2d,snowlayer2d,snowrds2d1,snowrds2d2,snowrds2d3,snowrds2d4,snowrds2d5
-  real,optional,dimension(ims:ime,jms:jme),intent(inout) :: &
-                sfc_frc_aer,sfc_frc_aer_snow,sfc_frc_bc,sfc_frc_bc_snow,sfc_frc_dst,sfc_frc_dst_snow
+!snicar, not necessary, M.H. 
+!  real,optional,dimension(ims:ime,jms:jme),intent(inout) ::  &
+!                watsat2d,snowdust_col2d,snowdust_top2d,snowbc_col2d,snowbc_top2d,snow_top2d, &
+!                snow_frac2d,snowlayer2d,snowrds2d1,snowrds2d2,snowrds2d3,snowrds2d4,snowrds2d5
+!  real,optional,dimension(ims:ime,jms:jme),intent(inout) :: &
+!                sfc_frc_aer,sfc_frc_aer_snow,sfc_frc_bc,sfc_frc_bc_snow,sfc_frc_dst,sfc_frc_dst_snow
 #if( WRF_CHEM == 1)
   REAL,DIMENSION(ims:ime,jms:jme,4,num_drydep_flux), OPTIONAL ,       &
          INTENT(IN ) ::  drydep_flux,wetdep_flux   !czhao 
@@ -3594,8 +3603,9 @@ CONTAINS
                 hfx,qfx,lh,grdflx,qgh,gsw,swdown,               &
                 ra_sw_physics,history_interval,glw,smstav,smstot, &
                 sfcrunoff,udrunoff,ivgtyp,isltyp,vegfra,        &
-                albedo,albedog,albedo_aer,albedo_bc,albedo_dst, &
-                znt,z0, tmn,xland,xice, emiss,                  &
+                albedo,znt,z0, tmn,xland,xice, emiss,           &
+!snicar, not necessary, M.H.
+!                albedog,albedo_aer,albedo_bc,albedo_dst, &
                 snowc,qsfc,rainbl,maxpatch,                     &
                 num_soil_layers,dtbl,xtime, dt,dzs,             &
                 smois,tslb,snow,canwat,                         &
@@ -3698,12 +3708,13 @@ CONTAINS
                 ,dwt_livecrootn_to_cwdn,dwt_deadcrootn_to_cwdn,retransn &
 #endif
                 ,nlcat,landusef,num_pft_input,pct_pft_input,input_pft_flag,lai                           &
-                ,watsat2d,snowdust_col2d,snowdust_top2d,snowbc_col2d,snowbc_top2d,snow_top2d             &
-                ,snow_frac2d,snowlayer2d,snowrds2d1,snowrds2d2,snowrds2d3,snowrds2d4,snowrds2d5          &
-                ,sfc_frc_aer,sfc_frc_aer_snow,sfc_frc_bc,sfc_frc_bc_snow,sfc_frc_dst,sfc_frc_dst_snow    &
-                ,mss_bcpho,mss_bcphi,mss_ocpho,mss_ocphi,mss_dst1,mss_dst2,mss_dst3,mss_dst4             &
-                ,mss_cnc_bcphi,mss_cnc_bcpho,mss_cnc_ocphi,mss_cnc_ocpho                                 &
-                ,mss_cnc_dst1,mss_cnc_dst2,mss_cnc_dst3,mss_cnc_dst4                                     &
+!snicar, not necessary, M.H. 
+!                ,watsat2d,snowdust_col2d,snowdust_top2d,snowbc_col2d,snowbc_top2d,snow_top2d             &
+!                ,snow_frac2d,snowlayer2d,snowrds2d1,snowrds2d2,snowrds2d3,snowrds2d4,snowrds2d5          &
+!                ,sfc_frc_aer,sfc_frc_aer_snow,sfc_frc_bc,sfc_frc_bc_snow,sfc_frc_dst,sfc_frc_dst_snow    &
+!                ,mss_bcpho,mss_bcphi,mss_ocpho,mss_ocphi,mss_dst1,mss_dst2,mss_dst3,mss_dst4             &
+!                ,mss_cnc_bcphi,mss_cnc_bcpho,mss_cnc_ocphi,mss_cnc_ocpho                                 &
+!                ,mss_cnc_dst1,mss_cnc_dst2,mss_cnc_dst3,mss_cnc_dst4                                     &
 #if( WRF_CHEM == 1)
                 ,drydep_flux,wetdep_flux     &
 #endif
@@ -3715,9 +3726,10 @@ CONTAINS
                DO i=i_start(ij),i_end(ij)
                   IF ( ( XICE(I,J) .GE. XICE_THRESHOLD) .AND. ( XICE(i,j) .LE.  1.0 ) ) THEN
                      albedo(i,j) = ( albedo(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.08  )
-                     albedo_aer(i,j) = ( albedo_aer(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.08  )
-                     albedo_bc(i,j) = ( albedo_bc(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.08  )
-                     albedo_dst(i,j) = ( albedo_dst(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.08  )
+!snicar, not necessary, M.H.
+!                     albedo_aer(i,j) = ( albedo_aer(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.08  )
+!                     albedo_bc(i,j) = ( albedo_bc(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.08  )
+!                     albedo_dst(i,j) = ( albedo_dst(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.08  )
                      emiss(i,j) = ( emiss(i,j) * XICE(i,j) ) + ( (1.0-XICE(i,j)) * 0.98  )
                   ENDIF
                ENDDO

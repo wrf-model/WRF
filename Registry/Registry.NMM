@@ -459,107 +459,6 @@ state  real   AKHS_OUT  ij    dyn_nmm   1    -     rh023       "AKHS_OUT"  "Outp
 state  real   AKMS_OUT  ij    dyn_nmm   1    -     rh023       "AKMS_OUT"  "Output sfc exch coeff for momentum"           "m2 s-1"
 
 #
-#snow aerosol-czhao
-state   real    -         i4jf   MSS_BCPHI        1         -     -    -
-state   real    MSS_BCPHI_S1      i4jf      MSS_BCPHI      1          Z     rh      "MSS_BCPHI_S1" "1 SUBGRID BCPHI" "kg m-2"
-state   real    MSS_BCPHI_S2      i4jf      MSS_BCPHI      1          Z     rh      "MSS_BCPHI_S2" "2 SUBGRID BCPHI" "kg m-2"
-state   real    MSS_BCPHI_S3      i4jf      MSS_BCPHI      1          Z     rh      "MSS_BCPHI_S3" "3 SUBGRID BCPHI" "kg m-2"
-state   real    MSS_BCPHI_S4      i4jf      MSS_BCPHI      1          Z     rh      "MSS_BCPHI_S4" "4 SUBGRID BCPHI" "kg m-2"
-state   real    MSS_BCPHI_S5      i4jf      MSS_BCPHI      1          Z     rh      "MSS_BCPHI_S5" "5 SUBGRID BCPHI" "kg m-2"
-state   real    -         i4jf   MSS_BCPHO        1         -     -    -
-state   real    MSS_BCPHO_S1      i4jf      MSS_BCPHO      1          Z     rh      "MSS_BCPHO_S1" "1 SUBGRID BCPHO" "kg m-2"
-state   real    MSS_BCPHO_S2      i4jf      MSS_BCPHO      1          Z     rh      "MSS_BCPHO_S2" "2 SUBGRID BCPHO" "kg m-2"
-state   real    MSS_BCPHO_S3      i4jf      MSS_BCPHO      1          Z     rh      "MSS_BCPHO_S3" "3 SUBGRID BCPHO" "kg m-2"
-state   real    MSS_BCPHO_S4      i4jf      MSS_BCPHO      1          Z     rh      "MSS_BCPHO_S4" "4 SUBGRID BCPHO" "kg m-2"
-state   real    MSS_BCPHO_S5      i4jf      MSS_BCPHO      1          Z     rh      "MSS_BCPHO_S5" "5 SUBGRID BCPHO" "kg m-2"
-state   real    -         i4jf   MSS_OCPHI        1         -     -    -
-state   real    MSS_OCPHI_S1      i4jf      MSS_OCPHI      1          Z     rh      "MSS_OCPHI_S1" "1 SUBGRID OCPHI" "kg m-2"
-state   real    MSS_OCPHI_S2      i4jf      MSS_OCPHI      1          Z     rh      "MSS_OCPHI_S2" "2 SUBGRID OCPHI" "kg m-2"
-state   real    MSS_OCPHI_S3      i4jf      MSS_OCPHI      1          Z     rh      "MSS_OCPHI_S3" "3 SUBGRID OCPHI" "kg m-2"
-state   real    MSS_OCPHI_S4      i4jf      MSS_OCPHI      1          Z     rh      "MSS_OCPHI_S4" "4 SUBGRID OCPHI" "kg m-2"
-state   real    MSS_OCPHI_S5      i4jf      MSS_OCPHI      1          Z     rh      "MSS_OCPHI_S5" "5 SUBGRID OCPHI" "kg m-2"
-state   real    -         i4jf   MSS_OCPHO        1         -     -    -
-state   real    MSS_OCPHO_S1      i4jf      MSS_OCPHO      1          Z     rh      "MSS_OCPHO_S1" "1 SUBGRID OCPHO" "kg m-2"
-state   real    MSS_OCPHO_S2      i4jf      MSS_OCPHO      1          Z     rh      "MSS_OCPHO_S2" "2 SUBGRID OCPHO" "kg m-2"
-state   real    MSS_OCPHO_S3      i4jf      MSS_OCPHO      1          Z     rh      "MSS_OCPHO_S3" "3 SUBGRID OCPHO" "kg m-2"
-state   real    MSS_OCPHO_S4      i4jf      MSS_OCPHO      1          Z     rh      "MSS_OCPHO_S4" "4 SUBGRID OCPHO" "kg m-2"
-state   real    MSS_OCPHO_S5      i4jf      MSS_OCPHO      1          Z     rh      "MSS_OCPHO_S5" "5 SUBGRID OCPHO" "kg m-2"
-state   real    -         i4jf   MSS_DST1        1         -     -    -
-state   real    MSS_DST1_S1      i4jf      MSS_DST1      1          Z     rh        "MSS_DST1_S1" "1 SUBGRID DST1" "kg m-2"
-state   real    MSS_DST1_S2      i4jf      MSS_DST1      1          Z     rh        "MSS_DST1_S2" "2 SUBGRID DST1" "kg m-2"
-state   real    MSS_DST1_S3      i4jf      MSS_DST1      1          Z     rh        "MSS_DST1_S3" "3 SUBGRID DST1" "kg m-2"
-state   real    MSS_DST1_S4      i4jf      MSS_DST1      1          Z     rh        "MSS_DST1_S4" "4 SUBGRID DST1" "kg m-2"
-state   real    MSS_DST1_S5      i4jf      MSS_DST1      1          Z     rh        "MSS_DST1_S5" "5 SUBGRID DST1" "kg m-2"
-state   real    -         i4jf   MSS_DST2        1         -     -    -
-state   real    MSS_DST2_S1      i4jf      MSS_DST2      1          Z     rh        "MSS_DST2_S1" "1 SUBGRID DST2" "kg m-2"
-state   real    MSS_DST2_S2      i4jf      MSS_DST2      1          Z     rh        "MSS_DST2_S2" "2 SUBGRID DST2" "kg m-2"
-state   real    MSS_DST2_S3      i4jf      MSS_DST2      1          Z     rh        "MSS_DST2_S3" "3 SUBGRID DST2" "kg m-2"
-state   real    MSS_DST2_S4      i4jf      MSS_DST2      1          Z     rh        "MSS_DST2_S4" "4 SUBGRID DST2" "kg m-2"
-state   real    MSS_DST2_S5      i4jf      MSS_DST2      1          Z     rh        "MSS_DST2_S5" "5 SUBGRID DST2" "kg m-2"
-state   real    -         i4jf   MSS_DST3        1         -     -    -
-state   real    MSS_DST3_S1      i4jf      MSS_DST3      1          Z     rh        "MSS_DST3_S1" "1 SUBGRID DST3" "kg m-2"
-state   real    MSS_DST3_S2      i4jf      MSS_DST3      1          Z     rh        "MSS_DST3_S2" "2 SUBGRID DST3" "kg m-2"
-state   real    MSS_DST3_S3      i4jf      MSS_DST3      1          Z     rh        "MSS_DST3_S3" "3 SUBGRID DST3" "kg m-2"
-state   real    MSS_DST3_S4      i4jf      MSS_DST3      1          Z     rh        "MSS_DST3_S4" "4 SUBGRID DST3" "kg m-2"
-state   real    MSS_DST3_S5      i4jf      MSS_DST3      1          Z     rh        "MSS_DST3_S5" "5 SUBGRID DST3" "kg m-2"
-state   real    -         i4jf   MSS_DST4        1         -     -    -
-state   real    MSS_DST4_S1      i4jf      MSS_DST4      1          Z     rh        "MSS_DST4_S1" "1 SUBGRID DST4" "kg m-2"
-state   real    MSS_DST4_S2      i4jf      MSS_DST4      1          Z     rh        "MSS_DST4_S2" "2 SUBGRID DST4" "kg m-2"
-state   real    MSS_DST4_S3      i4jf      MSS_DST4      1          Z     rh        "MSS_DST4_S3" "3 SUBGRID DST4" "kg m-2"
-state   real    MSS_DST4_S4      i4jf      MSS_DST4      1          Z     rh        "MSS_DST4_S4" "4 SUBGRID DST4" "kg m-2"
-state   real    MSS_DST4_S5      i4jf      MSS_DST4      1          Z     rh        "MSS_DST4_S5" "5 SUBGRID DST4" "kg m-2"
-state   real    -         i4jf   MSS_CNC_BCPHI        1         -     -    -
-state   real    MSS_CNC_BCPHI_S1      i4jf      MSS_CNC_BCPHI      1          Z     rh      "MSS_CNC_BCPHI_S1" "1 SUBGRID BCPHI" "kg m-2"
-state   real    MSS_CNC_BCPHI_S2      i4jf      MSS_CNC_BCPHI      1          Z     rh      "MSS_CNC_BCPHI_S2" "2 SUBGRID BCPHI" "kg m-2"
-state   real    MSS_CNC_BCPHI_S3      i4jf      MSS_CNC_BCPHI      1          Z     rh      "MSS_CNC_BCPHI_S3" "3 SUBGRID BCPHI" "kg m-2"
-state   real    MSS_CNC_BCPHI_S4      i4jf      MSS_CNC_BCPHI      1          Z     rh      "MSS_CNC_BCPHI_S4" "4 SUBGRID BCPHI" "kg m-2"
-state   real    MSS_CNC_BCPHI_S5      i4jf      MSS_CNC_BCPHI      1          Z     rh      "MSS_CNC_BCPHI_S5" "5 SUBGRID BCPHI" "kg m-2"
-state   real    -         i4jf   MSS_CNC_BCPHO        1         -     -    -
-state   real    MSS_CNC_BCPHO_S1      i4jf      MSS_CNC_BCPHO      1          Z     rh      "MSS_CNC_BCPHO_S1" "1 SUBGRID BCPHO" "kg m-2"
-state   real    MSS_CNC_BCPHO_S2      i4jf      MSS_CNC_BCPHO      1          Z     rh      "MSS_CNC_BCPHO_S2" "2 SUBGRID BCPHO" "kg m-2"
-state   real    MSS_CNC_BCPHO_S3      i4jf      MSS_CNC_BCPHO      1          Z     rh      "MSS_CNC_BCPHO_S3" "3 SUBGRID BCPHO" "kg m-2"
-state   real    MSS_CNC_BCPHO_S4      i4jf      MSS_CNC_BCPHO      1          Z     rh      "MSS_CNC_BCPHO_S4" "4 SUBGRID BCPHO" "kg m-2"
-state   real    MSS_CNC_BCPHO_S5      i4jf      MSS_CNC_BCPHO      1          Z     rh      "MSS_CNC_BCPHO_S5" "5 SUBGRID BCPHO" "kg m-2"
-state   real    -         i4jf   MSS_CNC_OCPHI        1         -     -    -
-state   real    MSS_CNC_OCPHI_S1      i4jf      MSS_CNC_OCPHI      1          Z     rh      "MSS_CNC_OCPHI_S1" "1 SUBGRID OCPHI" "kg m-2"
-state   real    MSS_CNC_OCPHI_S2      i4jf      MSS_CNC_OCPHI      1          Z     rh      "MSS_CNC_OCPHI_S2" "2 SUBGRID OCPHI" "kg m-2"
-state   real    MSS_CNC_OCPHI_S3      i4jf      MSS_CNC_OCPHI      1          Z     rh      "MSS_CNC_OCPHI_S3" "3 SUBGRID CNC_OCPHI" "kg m-2"
-state   real    MSS_CNC_OCPHI_S4      i4jf      MSS_CNC_OCPHI      1          Z     rh      "MSS_CNC_OCPHI_S4" "4 SUBGRID CNC_OCPHI" "kg m-2"
-state   real    MSS_CNC_OCPHI_S5      i4jf      MSS_CNC_OCPHI      1          Z     rh      "MSS_CNC_OCPHI_S5" "5 SUBGRID CNC_OCPHI" "kg m-2"
-state   real    -         i4jf   MSS_CNC_OCPHO        1         -     -    -
-state   real    MSS_CNC_OCPHO_S1      i4jf      MSS_CNC_OCPHO      1          Z     rh      "MSS_CNC_OCPHO_S1" "1 SUBGRID CNC_OCPHO" "kg m-2"
-state   real    MSS_CNC_OCPHO_S2      i4jf      MSS_CNC_OCPHO      1          Z     rh      "MSS_CNC_OCPHO_S2" "2 SUBGRID CNC_OCPHO" "kg m-2"
-state   real    MSS_CNC_OCPHO_S3      i4jf      MSS_CNC_OCPHO      1          Z     rh      "MSS_CNC_OCPHO_S3" "3 SUBGRID CNC_OCPHO" "kg m-2"
-state   real    MSS_CNC_OCPHO_S4      i4jf      MSS_CNC_OCPHO      1          Z     rh      "MSS_CNC_OCPHO_S4" "4 SUBGRID CNC_OCPHO" "kg m-2"
-state   real    MSS_CNC_OCPHO_S5      i4jf      MSS_CNC_OCPHO      1          Z     rh      "MSS_CNC_OCPHO_S5" "5 SUBGRID CNC_OCPHO" "kg m-2"
-state   real    -         i4jf   MSS_CNC_DST1        1         -     -    -
-state   real    MSS_CNC_DST1_S1      i4jf      MSS_CNC_DST1      1          Z     rh        "MSS_CNC_DST1_S1" "1 SUBGRID CNC_DST1" "kg m-2"
-state   real    MSS_CNC_DST1_S2      i4jf      MSS_CNC_DST1      1          Z     rh        "MSS_CNC_DST1_S2" "2 SUBGRID CNC_DST1" "kg m-2"
-state   real    MSS_CNC_DST1_S3      i4jf      MSS_CNC_DST1      1          Z     rh        "MSS_CNC_DST1_S3" "3 SUBGRID CNC_DST1" "kg m-2"
-state   real    MSS_CNC_DST1_S4      i4jf      MSS_CNC_DST1      1          Z     rh        "MSS_CNC_DST1_S4" "4 SUBGRID CNC_DST1" "kg m-2"
-state   real    MSS_CNC_DST1_S5      i4jf      MSS_CNC_DST1      1          Z     rh        "MSS_CNC_DST1_S5" "5 SUBGRID CNC_DST1" "kg m-2"
-state   real    -         i4jf   MSS_CNC_DST2        1         -     -    -
-state   real    MSS_CNC_DST2_S1      i4jf      MSS_CNC_DST2      1          Z     rh        "MSS_CNC_DST2_S1" "1 SUBGRID CNC_DST2" "kg m-2"
-state   real    MSS_CNC_DST2_S2      i4jf      MSS_CNC_DST2      1          Z     rh        "MSS_CNC_DST2_S2" "2 SUBGRID CNC_DST2" "kg m-2"
-state   real    MSS_CNC_DST2_S3      i4jf      MSS_CNC_DST2      1          Z     rh        "MSS_CNC_DST2_S3" "3 SUBGRID CNC_DST2" "kg m-2"
-state   real    MSS_CNC_DST2_S4      i4jf      MSS_CNC_DST2      1          Z     rh        "MSS_CNC_DST2_S4" "4 SUBGRID CNC_DST2" "kg m-2"
-state   real    MSS_CNC_DST2_S5      i4jf      MSS_CNC_DST2      1          Z     rh        "MSS_CNC_DST2_S5" "5 SUBGRID CNC_DST2" "kg m-2"
-state   real    -         i4jf   MSS_CNC_DST3        1         -     -    -
-state   real    MSS_CNC_DST3_S1      i4jf      MSS_CNC_DST3      1          Z     rh        "MSS_CNC_DST3_S1" "1 SUBGRID CNC_DST3" "kg m-2"
-state   real    MSS_CNC_DST3_S2      i4jf      MSS_CNC_DST3      1          Z     rh        "MSS_CNC_DST3_S2" "2 SUBGRID CNC_DST3" "kg m-2"
-state   real    MSS_CNC_DST3_S3      i4jf      MSS_CNC_DST3      1          Z     rh        "MSS_CNC_DST3_S3" "3 SUBGRID CNC_DST3" "kg m-2"
-state   real    MSS_CNC_DST3_S4      i4jf      MSS_CNC_DST3      1          Z     rh        "MSS_CNC_DST3_S4" "4 SUBGRID CNC_DST3" "kg m-2"
-state   real    MSS_CNC_DST3_S5      i4jf      MSS_CNC_DST3      1          Z     rh        "MSS_CNC_DST3_S5" "5 SUBGRID CNC_DST3" "kg m-2"
-state   real    -         i4jf   MSS_CNC_DST4        1         -     -    -
-state   real    MSS_CNC_DST4_S1      i4jf      MSS_CNC_DST4      1          Z     rh        "MSS_CNC_DST4_S1" "1 SUBGRID CNC_DST4" "kg m-2"
-state   real    MSS_CNC_DST4_S2      i4jf      MSS_CNC_DST4      1          Z     rh        "MSS_CNC_DST4_S2" "2 SUBGRID CNC_DST4" "kg m-2"
-state   real    MSS_CNC_DST4_S3      i4jf      MSS_CNC_DST4      1          Z     rh        "MSS_CNC_DST4_S3" "3 SUBGRID CNC_DST4" "kg m-2"
-state   real    MSS_CNC_DST4_S4      i4jf      MSS_CNC_DST4      1          Z     rh        "MSS_CNC_DST4_S4" "4 SUBGRID CNC_DST4" "kg m-2"
-state   real    MSS_CNC_DST4_S5      i4jf      MSS_CNC_DST4      1          Z     rh        "MSS_CNC_DST4_S5" "5 SUBGRID CNC_DST4" "kg m-2"
-
-
-
-#
 # module_PHYS
 #
 state  real   cd_out    ij    dyn_nmm   1    -     rh0123d=(DownCopy)       "CD_OUT"  "sfc exch coeff for momentum"        "m2 s-1"
@@ -1912,7 +1811,7 @@ package   ruclsmscheme   sf_surface_physics==3       -             state:ACRUNOF
 
 package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy,soilcomp,soilcl1,soilcl2,soilcl3,soilcl4,gecros_state
 
-package   clmscheme      sf_surface_physics==5       -             mss_bcphi:mss_bcphi_s1,mss_bcphi_s2,mss_bcphi_s3,mss_bcphi_s4,mss_bcphi_s5;mss_bcpho:mss_bcpho_s1,mss_bcpho_s2,mss_bcpho_s3,mss_bcpho_s4,mss_bcpho_s5;mss_ocphi:mss_ocphi_s1,mss_ocphi_s2,mss_ocphi_s3,mss_ocphi_s4,mss_ocphi_s5;mss_ocpho:mss_ocpho_s1,mss_ocpho_s2,mss_ocpho_s3,mss_ocpho_s4,mss_ocpho_s5;mss_dst1:mss_dst1_s1,mss_dst1_s2,mss_dst1_s3,mss_dst1_s4,mss_dst1_s5;mss_dst2:mss_dst2_s1,mss_dst2_s2,mss_dst2_s3,mss_dst2_s4,mss_dst2_s5;mss_dst3:mss_dst3_s1,mss_dst3_s2,mss_dst3_s3,mss_dst3_s4,mss_dst3_s5;mss_dst4:mss_dst4_s1,mss_dst4_s2,mss_dst4_s3,mss_dst4_s4,mss_dst4_s5;mss_cnc_bcphi:mss_cnc_bcphi_s1,mss_cnc_bcphi_s2,mss_cnc_bcphi_s3,mss_cnc_bcphi_s4,mss_cnc_bcphi_s5;mss_cnc_bcpho:mss_cnc_bcpho_s1,mss_cnc_bcpho_s2,mss_cnc_bcpho_s3,mss_cnc_bcpho_s4,mss_cnc_bcpho_s5;mss_cnc_ocphi:mss_cnc_ocphi_s1,mss_cnc_ocphi_s2,mss_cnc_ocphi_s3,mss_cnc_ocphi_s4,mss_cnc_ocphi_s5;mss_cnc_ocpho:mss_cnc_ocpho_s1,mss_cnc_ocpho_s2,mss_cnc_ocpho_s3,mss_cnc_ocpho_s4,mss_cnc_ocpho_s5;mss_cnc_dst1:mss_cnc_dst1_s1,mss_cnc_dst1_s2,mss_cnc_dst1_s3,mss_cnc_dst1_s4,mss_cnc_dst1_s5;mss_cnc_dst2:mss_cnc_dst2_s1,mss_cnc_dst2_s2,mss_cnc_dst2_s3,mss_cnc_dst2_s4,mss_cnc_dst2_s5;mss_cnc_dst3:mss_cnc_dst3_s1,mss_cnc_dst3_s2,mss_cnc_dst3_s3,mss_cnc_dst3_s4,mss_cnc_dst3_s5;mss_cnc_dst4:mss_cnc_dst4_s1,mss_cnc_dst4_s2,mss_cnc_dst4_s3,mss_cnc_dst4_s4,mss_cnc_dst4_s5
+package   clmscheme      sf_surface_physics==5       -             -
 package   gfdlslab       sf_surface_physics==88      -             -
 package   pxlsmscheme    sf_surface_physics==7       -             -
 package   ssibscheme     sf_surface_physics==8       -             -

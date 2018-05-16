@@ -466,7 +466,6 @@ BENCH_START(surf_driver_tim)
      &         ACGRDFLX=grid%acgrdflx  ,ACHFX=grid%achfx        ,ACLHF=grid%aclhf        &
      &        ,ACSNOM=grid%acsnom      ,ACSNOW=grid%acsnow      ,AKHS=grid%akhs          &
      &        ,AKMS=grid%akms          ,ALBBCK=grid%albbck      ,ALBEDO=grid%albedo      &
-              ,ALBEDOG=grid%albedog,ALBEDO_AER=grid%albedo_aer,ALBEDO_BC=grid%albedo_bc,ALBEDO_DST=grid%albedo_dst  &
      &        ,EMBCK=grid%embck                                                          &
      &        ,BR=br              ,CANWAT=grid%canwat      ,CHKLOWQ=chklowq    &
      &        ,CT=grid%ct              ,DT=grid%dt         ,DX=grid%dx         &
@@ -616,23 +615,6 @@ BENCH_START(surf_driver_tim)
                fsd24=grid%fsd24,                fsd240=grid%fsd240,                 & !voce accum variables
                fsi24=grid%fsi24,                fsi240=grid%fsi240,                 & !voce accum variables
                laip=grid%laip,                                                      & !voce accum variables
-               watsat2d=grid%watsat2d,     &
-               snowdust_col2d=grid%snowdust_col,snowdust_top2d=grid%snowdust_top,snow_top2d=grid%snow_top,snow_frac2d=grid%snow_frac,     &
-               snowlayer2d=grid%snowlayer2d,snowrds2d1=grid%snowrds2d1,   &
-               snowrds2d2=grid%snowrds2d2,snowrds2d3=grid%snowrds2d3,     &
-               snowrds2d4=grid%snowrds2d4,snowrds2d5=grid%snowrds2d5,     &
-               sfc_frc_aer=grid%sfc_frc_aer,sfc_frc_aer_snow=grid%sfc_frc_aer_snow,    &
-               sfc_frc_bc=grid%sfc_frc_bc,sfc_frc_bc_snow=grid%sfc_frc_bc_snow,        &
-               sfc_frc_dst=grid%sfc_frc_dst,sfc_frc_dst_snow=grid%sfc_frc_dst_snow,    &
-               snowbc_col2d=grid%snowbc_col,snowbc_top2d=grid%snowbc_top,              &
-               mss_bcpho=grid%mss_bcpho,mss_bcphi=grid%mss_bcphi,    &
-               mss_ocpho=grid%mss_ocpho,mss_ocphi=grid%mss_ocphi,    &
-               mss_dst1=grid%mss_dst1,mss_dst2=grid%mss_dst2,    &
-               mss_dst3=grid%mss_dst3,mss_dst4=grid%mss_dst4,    &
-               mss_cnc_bcpho=grid%mss_cnc_bcpho,mss_cnc_bcphi=grid%mss_cnc_bcphi,    &
-               mss_cnc_ocpho=grid%mss_cnc_ocpho,mss_cnc_ocphi=grid%mss_cnc_ocphi,    &
-               mss_cnc_dst1=grid%mss_cnc_dst1,mss_cnc_dst2=grid%mss_cnc_dst2,    &
-               mss_cnc_dst3=grid%mss_cnc_dst3,mss_cnc_dst4=grid%mss_cnc_dst4,    &
                pct_pft_input=grid%pct_pft_input,num_pft_input=grid%num_pft_clm,  &
                input_pft_flag=config_flags%input_pft                             &
 #if( WRF_CHEM == 1)

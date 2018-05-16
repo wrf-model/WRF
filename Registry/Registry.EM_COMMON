@@ -1853,47 +1853,6 @@ state    real  track_qsnow    {tl}k      misc     1         -      -       "trac
 state    real  track_qgraup   {tl}k      misc     1         -      -       "track_qgraup"       "graupel mixing ratio"       "kg kg-1"
 state    real  track_qvapor   {tl}k      misc     1         -      -       "track_qvapor"       "water vapor mixing ratio"   "kg kg-1"
 
-
-#
-#snow aerosol-czhao
-state   real    -         i4jf   MSS_BCPHI        1         -     -    -
-state   real    MSS_BCPHI_S1      i4jf      MSS_BCPHI      1          Z     rh      "MSS_BCPHI_S1" "1 SUBGRID BCPHI" "kg m-2"
-state   real    MSS_BCPHI_S2      i4jf      MSS_BCPHI      1          Z     rh      "MSS_BCPHI_S2" "2 SUBGRID BCPHI" "kg m-2"
-state   real    MSS_BCPHI_S3      i4jf      MSS_BCPHI      1          Z     rh      "MSS_BCPHI_S3" "3 SUBGRID BCPHI" "kg m-2"
-state   real    MSS_BCPHI_S4      i4jf      MSS_BCPHI      1          Z     rh      "MSS_BCPHI_S4" "4 SUBGRID BCPHI" "kg m-2"
-state   real    MSS_BCPHI_S5      i4jf      MSS_BCPHI      1          Z     rh      "MSS_BCPHI_S5" "5 SUBGRID BCPHI" "kg m-2"
-state   real    -         i4jf   MSS_BCPHO        1         -     -    -
-state   real    MSS_BCPHO_S1      i4jf      MSS_BCPHO      1          Z     rh      "MSS_BCPHO_S1" "1 SUBGRID BCPHO" "kg m-2"
-state   real    MSS_BCPHO_S2      i4jf      MSS_BCPHO      1          Z     rh      "MSS_BCPHO_S2" "2 SUBGRID BCPHO" "kg m-2"
-state   real    MSS_BCPHO_S3      i4jf      MSS_BCPHO      1          Z     rh      "MSS_BCPHO_S3" "3 SUBGRID BCPHO" "kg m-2"
-state   real    MSS_BCPHO_S4      i4jf      MSS_BCPHO      1          Z     rh      "MSS_BCPHO_S4" "4 SUBGRID BCPHO" "kg m-2"
-state   real    MSS_BCPHO_S5      i4jf      MSS_BCPHO      1          Z     rh      "MSS_BCPHO_S5" "5 SUBGRID BCPHO" "kg m-2"
-state   real    -         i4jf   MSS_OCPHI        1         -     -    -
-state   real    MSS_OCPHI_S1      i4jf      MSS_OCPHI      1          Z     rh      "MSS_OCPHI_S1" "1 SUBGRID OCPHI" "kg m-2"
-state   real    MSS_OCPHI_S2      i4jf      MSS_OCPHI      1          Z     rh      "MSS_OCPHI_S2" "2 SUBGRID OCPHI" "kg m-2"
-state   real    MSS_OCPHI_S3      i4jf      MSS_OCPHI      1          Z     rh      "MSS_OCPHI_S3" "3 SUBGRID OCPHI" "kg m-2"
-state   real    MSS_OCPHI_S4      i4jf      MSS_OCPHI      1          Z     rh      "MSS_OCPHI_S4" "4 SUBGRID OCPHI" "kg m-2"
-state   real    MSS_OCPHI_S5      i4jf      MSS_OCPHI      1          Z     rh      "MSS_OCPHI_S5" "5 SUBGRID OCPHI" "kg m-2"
-state   real    -         i4jf   MSS_OCPHO        1         -     -    -
-state   real    MSS_OCPHO_S1      i4jf      MSS_OCPHO      1          Z     rh      "MSS_OCPHO_S1" "1 SUBGRID OCPHO" "kg m-2"
-state   real    MSS_OCPHO_S2      i4jf      MSS_OCPHO      1          Z     rh      "MSS_OCPHO_S2" "2 SUBGRID OCPHO" "kg m-2"
-state   real    MSS_OCPHO_S3      i4jf      MSS_OCPHO      1          Z     rh      "MSS_OCPHO_S3" "3 SUBGRID OCPHO" "kg m-2"
-state   real    MSS_OCPHO_S4      i4jf      MSS_OCPHO      1          Z     rh      "MSS_OCPHO_S4" "4 SUBGRID OCPHO" "kg m-2"
-state   real    MSS_OCPHO_S5      i4jf      MSS_OCPHO      1          Z     rh      "MSS_OCPHO_S5" "5 SUBGRID OCPHO" "kg m-2"
-state   real    -         i4jf   MSS_DST1        1         -     -    -
-state   real    MSS_DST1_S1      i4jf      MSS_DST1      1          Z     rh        "MSS_DST1_S1" "1 SUBGRID DST1" "kg m-2"
-state   real    MSS_DST1_S2      i4jf      MSS_DST1      1          Z     rh        "MSS_DST1_S2" "2 SUBGRID DST1" "kg m-2"
-state   real    MSS_DST1_S3      i4jf      MSS_DST1      1          Z     rh        "MSS_DST1_S3" "3 SUBGRID DST1" "kg m-2"
-state   real    MSS_DST1_S4      i4jf      MSS_DST1      1          Z     rh        "MSS_DST1_S4" "4 SUBGRID DST1" "kg m-2"
-state   real    MSS_DST1_S5      i4jf      MSS_DST1      1          Z     rh        "MSS_DST1_S5" "5 SUBGRID DST1" "kg m-2"
-state   real    -         i4jf   MSS_DST2        1         -     -    -
-state   real    MSS_DST2_S1      i4jf      MSS_DST2      1          Z     rh        "MSS_DST2_S1" "1 SUBGRID DST2" "kg m-2"
-state   real    MSS_DST2_S2      i4jf      MSS_DST2      1          Z     rh        "MSS_DST2_S2" "2 SUBGRID DST2" "kg m-2"
-state   real    MSS_DST2_S3      i4jf      MSS_DST2      1          Z     rh        "MSS_DST2_S3" "3 SUBGRID DST2" "kg m-2"
-state   real    MSS_DST2_S4      i4jf      MSS_DST2      1          Z     rh        "MSS_DST2_S4" "4 SUBGRID DST2" "kg m-2"
-state   real    MSS_DST2_S5      i4jf      MSS_DST2      1          Z     rh        "MSS_DST2_S5" "5 SUBGRID Deal    MSS_CNC_OCPHO_S3      i4jf      MSS_CNC_OCPHO      1          Z  
-
-
 #
 #---------------------------------------------------------------------------------------------------------------------------------------
 #                                               
@@ -2747,7 +2706,8 @@ package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn,smcrel,xlaidyn
 package   ruclsmscheme   sf_surface_physics==3       -             state:smfr3d,keepfr3dflag,soilt1,rhosnf,snowfallac,precipfr,acrunoff
 package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,rechclim,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy,soilcomp,soilcl1,soilcl2,soilcl3,soilcl4
-package   clmscheme      sf_surface_physics==5       -             state:numc,nump,sabv,sabg,lwup,lhsoi,lhveg,lhtran,snl,snowdp,wtc,wtp,h2osno,t_grnd,t_veg,h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm,t_ref2m,q_ref2m,h2osoi_liq_s1,h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,h2osoi_ice_s1,h2osoi_ice_s2,h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,t_soisno4,t_soisno5,t_soisno6,t_soisno7,t_soisno8,t_soisno9,t_soisno10,dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,h2osoi_vol7,h2osoi_vol8,h2osoi_vol9,h2osoi_vol10,albedosubgrid,lhsubgrid,hfxsubgrid,lwupsubgrid,q2subgrid,sabvsubgrid,sabgsubgrid,nrasubgrid,swupsubgrid;mss_bcphi:mss_bcphi_s1,mss_bcphi_s2,mss_bcphi_s3,mss_bcphi_s4,mss_bcphi_s5;mss_bcpho:mss_bcpho_s1,mss_bcpho_s2,mss_bcpho_s3,mss_bcpho_s4,mss_bcpho_s5;mss_ocphi:mss_ocphi_s1,mss_ocphi_s2,mss_ocphi_s3,mss_ocphi_s4,mss_ocphi_s5;mss_ocpho:mss_ocpho_s1,mss_ocpho_s2,mss_ocpho_s3,mss_ocpho_s4,mss_ocpho_s5;mss_dst1:mss_dst1_s1,mss_dst1_s2,mss_dst1_s3,mss_dst1_s4,mss_dst1_s5;mss_dst2:mss_dst2_s1,mss_dst2_s2,mss_dst2_s3,mss_dst2_s4,mss_dst2_s5;mss_dst3:mss_dst3_s1,mss_dst3_s2,mss_dst3_s3,mss_dst3_s4,mss_dst3_s5;mss_dst4:mss_dst4_s1,mss_dst4_s2,mss_dst4_s3,mss_dst4_s4,mss_dst4_s5;mss_cnc_bcphi:mss_cnc_bcphi_s1,mss_cnc_bcphi_s2,mss_cnc_bcphi_s3,mss_cnc_bcphi_s4,mss_cnc_bcphi_s5;mss_cnc_bcpho:mss_cnc_bcpho_s1,mss_cnc_bcpho_s2,mss_cnc_bcpho_s3,mss_cnc_bcpho_s4,mss_cnc_bcpho_s5;mss_cnc_ocphi:mss_cnc_ocphi_s1,mss_cnc_ocphi_s2,mss_cnc_ocphi_s3,mss_cnc_ocphi_s4,mss_cnc_ocphi_s5;mss_cnc_ocpho:mss_cnc_ocpho_s1,mss_cnc_ocpho_s2,mss_cnc_ocpho_s3,mss_cnc_ocpho_s4,mss_cnc_ocpho_s5;mss_cnc_dst1:mss_cnc_dst1_s1,mss_cnc_dst1_s2,mss_cnc_dst1_s3,mss_cnc_dst1_s4,mss_cnc_dst1_s5;mss_cnc_dst2:mss_cnc_dst2_s1,mss_cnc_dst2_s2,mss_cnc_dst2_s3,mss_cnc_dst2_s4,mss_cnc_dst2_s5;mss_cnc_dst3:mss_cnc_dst3_s1,mss_cnc_dst3_s2,mss_cnc_dst3_s3,mss_cnc_dst3_s4,mss_cnc_dst3_s5;mss_cnc_dst4:mss_cnc_dst4_s1,mss_cnc_dst4_s2,mss_cnc_dst4_s3,mss_cnc_dst4_s4,mss_cnc_dst4_s5
+package   clmscheme      sf_surface_physics==5       -             state:numc,nump,sabv,sabg,lwup,lhsoi,lhveg,lhtran,snl,snowdp,wtc,wtp,h2osno,t_grnd,t_veg,h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm,t_ref2m,q_ref2m,h2osoi_liq_s1,h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,h2osoi_ice_s1,h2osoi_ice_s2,h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,t_soisno4,t_soisno5,t_soisno6,t_soisno7,t_soisno8,t_soisno9,t_soisno10,dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,h2osoi_vol7,h2osoi_vol8,h2osoi_vol9,h2osoi_vol10,albedosubgrid,lhsubgrid,hfxsubgrid,lwupsubgrid,q2subgrid,sabvsubgrid,sabgsubgrid,nrasubgrid,swupsubgrid
+
 package   pxlsmscheme    sf_surface_physics==7       -             state:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old,vegf_px,imperv,canfra
 package   ssibscheme     sf_surface_physics==8       -             state:ssib_fm,ssib_fh,ssib_cm,ssibxdd,ssib_br,ssib_lhf,ssib_shf,ssib_ghf,ssib_egs,ssib_eci,ssib_ect,ssib_egi,ssib_egt,ssib_sdn,ssib_sup,ssib_ldn,ssib_lup,ssib_wat,ssib_shc,ssib_shg,ssib_lai,ssib_vcf,ssib_z00,ssib_veg,isnow,swe,snowden,snowdepth,tkair,dzo1,wo1,tssn1,tssno1,bwo1,bto1,cto1,fio1,flo1,bio1,blo1,ho1,dzo2,wo2,tssn2,tssno2,bwo2,bto2,cto2,fio2,flo2,bio2,blo2,ho2,dzo3,wo3,tssn3,tssno3,bwo3,bto3,cto3,fio3,flo3,bio3,blo3,ho3,dzo4,wo4,tssn4,tssno4,bwo4,bto4,cto4,fio4,flo4,bio4,blo4,ho4
 

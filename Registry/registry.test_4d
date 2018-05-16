@@ -5,7 +5,6 @@ state  real    -     ikjf   test4d   1   -  -  -
 
 #	Here are the multiple 3d arrays that will be part of the 4d array
 
-#ikjftb works
 state  real  sinx    ikjf   test4d   1   -  i "TESTSINX"   "Test pattern sin(x)"   "unitless"
 state  real  cosy    ikjf   test4d   1   -  i "TESTCOSY"   "Test pattern cos(y)"   "unitless"
 state  real  tanxy   ikjf   test4d   1   -  i "TESTTANXY"  "Test pattern tan(xy)"  "unitless"

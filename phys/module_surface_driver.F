@@ -2059,6 +2059,15 @@ CONTAINS
 #endif         
 
         ENDIF
+#if ( EM_CORE==1)
+!       ustm is not available in NMM
+!       ustm is needed for LES tke calculation (ustm is ust used in friction)
+         DO j = j_start(ij),j_end(ij)
+            DO i = i_start(ij),i_end(ij)
+               ustm(i,j) = ust(i,j)
+            END DO
+         END DO
+#endif
        ELSE
          CALL wrf_error_fatal('Lacking arguments for MYJSFC in surface driver')
        ENDIF

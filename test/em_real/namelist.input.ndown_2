@@ -7,25 +7,20 @@
  start_month                         = 01,   01,   01,
  start_day                           = 24,   24,   24,
  start_hour                          = 12,   12,   12,
- start_minute                        = 00,   00,   00,
- start_second                        = 00,   00,   00,
  end_year                            = 2000, 2000, 2000,
  end_month                           = 01,   01,   01,
  end_day                             = 25,   25,   25,
  end_hour                            = 00,   00,   00,
- end_minute                          = 00,   00,   00,
- end_second                          = 00,   00,   00,
  interval_seconds                    = 3600, 
  input_from_file                     = .true.,.true.,.true.,
  history_interval                    = 60,   60,   60,
  frames_per_outfile                  = 1000, 1000, 1000,
  restart                             = .false.,
- restart_interval                    = 5000,
+ restart_interval                    = 7200,
  io_form_history                     = 2
  io_form_restart                     = 2
  io_form_input                       = 2
  io_form_boundary                    = 2
- debug_level                         = 0
  io_form_auxinput2                   = 2
  fine_input_stream                   = 0,     2,    2,
  /

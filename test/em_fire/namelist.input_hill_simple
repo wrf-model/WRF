@@ -22,7 +22,6 @@
  io_form_restart                     = 2
  io_form_input                       = 2
  io_form_boundary                    = 2
- debug_level                         = 1 
  /
 
  &domains

@@ -7,25 +7,20 @@
  start_month                         = 01,   01,   01,
  start_day                           = 02,   01,   01,
  start_hour                          = 12,   00,   00,
- start_minute                        = 00,   00,   00,
- start_second                        = 00,   00,   00,
  end_year                            = 2008, 2008, 2008,
  end_month                           = 01,   01,   01,
  end_day                             = 02,   01,   01,
  end_hour                            = 12,   00,   00,
- end_minute                          = 00,   00,   00,
- end_second                          = 00,   00,   00,
  history_interval                    = 60,   30,   30,
  interval_seconds                    = 21600 
  input_from_file                     = .true.,.true.,.true.,
  frames_per_outfile                  = 200,  100,  100,
  restart                             = .false.,
- restart_interval_h                  = 1120,
+ restart_interval_h                  = 120,
  io_form_history                     = 2
  io_form_restart                     = 2
  io_form_input                       = 2
  io_form_boundary                    = 2
- debug_level                         = 0
  /
 
  &domains

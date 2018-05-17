@@ -18,12 +18,11 @@
  history_interval                    = 60,
  frames_per_outfile                  = 1000,
  restart                             = .false.,
- restart_interval                    = 1000,
+ restart_interval                    = 1440,
  io_form_history                     = 2
  io_form_restart                     = 2
  io_form_input                       = 2
  io_form_boundary                    = 2
- debug_level                         = 0
  /
 
  &domains

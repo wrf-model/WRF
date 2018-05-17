@@ -176,6 +176,8 @@ CONTAINS
 
    END SELECT
 
+   CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+
   ideal_constants: SELECT CASE ( model_config_rec%ideal_case )
   CASE ( hill2d_x )
    hm = 100.
@@ -288,7 +290,6 @@ CONTAINS
 
 
 
-   CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
 ! here we check to see if the boundary conditions are set properly
 

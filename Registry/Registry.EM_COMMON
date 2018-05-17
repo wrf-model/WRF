@@ -1441,7 +1441,7 @@ state    real  diffuse_frac     ij      misc        1         -      rd       "D
 state   real    swddir       ij     misc         1         -     rd     "SWDDIR"     "Shortwave surface downward direct irradiance" "W m-2" ""
 state   real    swddirc      ij     misc         1         -     rd     "SWDDIRC"    "Clear-sky Shortwave surface downward direct irradiance" "W m-2" ""
 state   real    swddni       ij     misc         1         -     rd     "SWDDNI"     "Shortwave surface downward direct normal irradiance" "W m-2" ""
-state   real    swddnic      ij     misc         1         -     rd     "SWDDNIC"    "Clear-sky Shortwave surface downward direct normal irradiance" "W m-2" "
+state   real    swddnic      ij     misc         1         -     rd     "SWDDNIC"    "Clear-sky Shortwave surface downward direct normal irradiance" "W m-2" ""
 state   real    swddif       ij     misc         1         -     rd     "SWDDIF"     "Shortwave surface downward diffuse irradiance" "W m-2" ""
 state   real    Gx           ij     misc         1         -     rd     "Gx" "" ""
 state   real    Bx           ij     misc         1         -     rd     "Bx" "" ""

@@ -1907,10 +1907,14 @@
       ! If physics suite is 'none', we can return early
       !
       IF ( trim(physics_suite_lowercase) == 'none' ) THEN
-         CALL wrf_message ('*************************************')
-         CALL wrf_message ('No physics suite selected.')
-         CALL wrf_message ('Physics options will be used directly from the namelist.')
-         CALL wrf_message ('*************************************')
+         wrf_err_message = '*************************************'
+         call wrf_debug ( 1, wrf_err_message )
+         wrf_err_message = 'No physics suite selected.'
+         call wrf_debug ( 1, wrf_err_message )
+         wrf_err_message = 'Physics options will be used directly from the namelist.'
+         call wrf_debug ( 1, wrf_err_message )
+         wrf_err_message = '*************************************'
+         call wrf_debug ( 1, wrf_err_message )
          RETURN
       END IF
 

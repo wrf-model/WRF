@@ -64,21 +64,26 @@ subroutine da_transfer_wrftltoxa_adj(grid, config_flags, filnam, timestr)
    grid%xa%w(is:ie,js:je,ks:ke+1) = 0.0
 
    if ( var4d ) then
-      if ( f_g_qc ) then
-         grid%g_moist(is:ie,js:je,ks:ke,p_g_qc)=grid%xa%qcw(is:ie,js:je,ks:ke)
+      if ( config_flags%mp_physics_ad == warmrain_ad ) then
+         if ( f_g_qc .and. cloud_cv_options >= 1 ) then
+            grid%g_moist(is:ie,js:je,ks:ke,p_g_qc)=grid%xa%qcw(is:ie,js:je,ks:ke)
+         end if
+         if ( f_g_qr .and. cloud_cv_options >= 1 ) then
+            grid%g_moist(is:ie,js:je,ks:ke,p_g_qr)=grid%xa%qrn(is:ie,js:je,ks:ke)
+         end if
       end if
-      if ( f_g_qr ) then
-         grid%g_moist(is:ie,js:je,ks:ke,p_g_qr)=grid%xa%qrn(is:ie,js:je,ks:ke)
-      end if
-      if ( f_g_qi ) then
-         grid%g_moist(is:ie,js:je,ks:ke,p_g_qi)=grid%xa%qci(is:ie,js:je,ks:ke)
-      end if
-      if ( f_g_qs ) then
-         grid%g_moist(is:ie,js:je,ks:ke,p_g_qs)=grid%xa%qsn(is:ie,js:je,ks:ke)
-      end if
-      if ( f_g_qg ) then
-         grid%g_moist(is:ie,js:je,ks:ke,p_g_qg)=grid%xa%qgr(is:ie,js:je,ks:ke)
-      end if
+      !placeholder
+      !if ( config_flags%mp_physics_ad == icecld_ad ) then
+      !   if ( f_g_qi .and. cloud_cv_options >= 2 ) then
+      !      grid%g_moist(is:ie,js:je,ks:ke,p_g_qi)=grid%xa%qci(is:ie,js:je,ks:ke)
+      !   end if
+      !   if ( f_g_qs .and. cloud_cv_options >= 2 ) then
+      !      grid%g_moist(is:ie,js:je,ks:ke,p_g_qs)=grid%xa%qsn(is:ie,js:je,ks:ke)
+      !   end if
+      !   if ( f_g_qg .and. cloud_cv_options >= 2 ) then
+      !      grid%g_moist(is:ie,js:je,ks:ke,p_g_qg)=grid%xa%qgr(is:ie,js:je,ks:ke)
+      !   end if
+      !end if
    end if
 
    !----------------------------------------------------------------------------

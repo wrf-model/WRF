@@ -28,7 +28,8 @@ subroutine da_update_firstguess(grid, out_filename)
   use da_control,    only : use_radarobs, use_rad, crtm_cloud, &
                             use_radar_rhv, use_radar_rqv    
   use module_state_description, only : p_qv, p_qc, p_qr, p_qi, &
-                                       p_qs, p_qg
+                                       p_qs, p_qg, &
+                                       f_qc, f_qr, f_qi, f_qs, f_qg
 
   implicit none
 
@@ -854,7 +855,7 @@ subroutine da_update_firstguess(grid, out_filename)
 
 !-------------Update QCLOUD, QRAIN, QICE, QSNOW & QGROUP 
 if ( cloud_cv_options >= 1 ) then ! update qcw and qrn
-   if (size(grid%moist,dim=4) >= 4) then         ! update QCLOUD & QRAIN
+   if ( f_qc ) then
 !
 !  update QCLOUD
 !
@@ -904,7 +905,9 @@ if ( cloud_cv_options >= 1 ) then ! update qcw and qrn
 #ifdef DM_PARALLEL
       deallocate(globbuf) 
 #endif
+   end if ! f_qc
 
+   if ( f_qr ) then
 !
 !  update QRAIN
 !
@@ -955,11 +958,11 @@ if ( cloud_cv_options >= 1 ) then ! update qcw and qrn
       deallocate(globbuf) 
 #endif
 
-   end if    ! end of update QCLOUD & QRAIN
+   end if ! f_qr
 end if ! cloud_cv_options >= 1
 
 if ( cloud_cv_options >= 2 ) then ! update qci, qsn, qgr
-   if (size(grid%moist,dim=4) >= 6) then     ! update QICE & QSNOW
+   if ( f_qi ) then
 !
 !  update QICE
 !
@@ -1010,6 +1013,9 @@ if ( cloud_cv_options >= 2 ) then ! update qci, qsn, qgr
       deallocate(globbuf) 
 #endif
 
+   end if ! f_qi
+
+   if ( f_qs ) then
 !
 !  update QSNOW
 !
@@ -1060,9 +1066,9 @@ if ( cloud_cv_options >= 2 ) then ! update qci, qsn, qgr
       deallocate(globbuf) 
 #endif
 
-   end if    ! end of update QICE & QSNOW 
+   end if ! f_qs
 
-   if (size(grid%moist,dim=4) >= 7) then      ! update QGRAUP
+   if ( f_qg ) then
 !
 !  update QGRAUP
 !
@@ -1113,7 +1119,7 @@ if ( cloud_cv_options >= 2 ) then ! update qci, qsn, qgr
       deallocate(globbuf) 
 #endif
 
-   end if     ! end of update QGRAUP
+   end if ! f_qg
 end if ! cloud_cv_options >= 2
 !-------------End of update QCLOUD, QRAIN, QICE, QSNOW & QGROUP
 

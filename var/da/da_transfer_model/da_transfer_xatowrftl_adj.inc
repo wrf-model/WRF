@@ -296,20 +296,25 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
       end do
    end do
 
-   if ( f_a_qc ) then
-      grid%xa%qcw(its:ite,jts:jte,kts:kte)=grid%a_moist(its:ite,jts:jte,kts:kte,p_a_qc)
-   end if
-   if ( f_a_qr ) then
-      grid%xa%qrn(its:ite,jts:jte,kts:kte)=grid%a_moist(its:ite,jts:jte,kts:kte,p_a_qr)
-   end if
-   if ( f_a_qi ) then
-      grid%xa%qci(its:ite,jts:jte,kts:kte)=grid%a_moist(its:ite,jts:jte,kts:kte,p_a_qi)
-   end if
-   if ( f_a_qs ) then
-      grid%xa%qsn(its:ite,jts:jte,kts:kte)=grid%a_moist(its:ite,jts:jte,kts:kte,p_a_qs)
-   end if
-   if ( f_a_qg ) then
-      grid%xa%qgr(its:ite,jts:jte,kts:kte)=grid%a_moist(its:ite,jts:jte,kts:kte,p_a_qg)
+   if ( config_flags%mp_physics_ad == warmrain_ad ) then
+      if ( f_a_qc .and. cloud_cv_options >= 1 ) then
+         grid%xa%qcw(its:ite,jts:jte,kts:kte)=grid%a_moist(its:ite,jts:jte,kts:kte,p_a_qc)
+      end if
+      if ( f_a_qr .and. cloud_cv_options >= 1 ) then
+         grid%xa%qrn(its:ite,jts:jte,kts:kte)=grid%a_moist(its:ite,jts:jte,kts:kte,p_a_qr)
+      end if
+      !placeholder
+      !if ( config_flags%mp_physics_ad == icecld_ad ) then
+      !   if ( f_a_qi .and. cloud_cv_options >= 2 ) then
+      !      grid%xa%qci(its:ite,jts:jte,kts:kte)=grid%a_moist(its:ite,jts:jte,kts:kte,p_a_qi)
+      !   end if
+      !   if ( f_a_qs .and. cloud_cv_options >= 2 ) then
+      !      grid%xa%qsn(its:ite,jts:jte,kts:kte)=grid%a_moist(its:ite,jts:jte,kts:kte,p_a_qs)
+      !   end if
+      !   if ( f_a_qg .and. cloud_cv_options >= 2 ) then
+      !      grid%xa%qgr(its:ite,jts:jte,kts:kte)=grid%a_moist(its:ite,jts:jte,kts:kte,p_a_qg)
+      !   end if
+      !end if
    end if
 
    grid%a_moist = 0.0

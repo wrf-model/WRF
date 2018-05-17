@@ -1,4 +1,4 @@
-subroutine da_llxy (info, loc, outside, outside_all)
+subroutine da_llxy (info, loc, outside, outside_all, patch_test_only)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -14,56 +14,69 @@ subroutine da_llxy (info, loc, outside, outside_all)
    type(model_loc_type),  intent(inout) :: loc
    logical      ,         intent(out)   :: outside      !wrt local domain
    logical, optional,     intent(out)   :: outside_all  !wrt all domains
+   logical, optional,     intent(in)    :: patch_test_only
+
+   logical :: include_xy
 
    ! too many return statments to trace
    ! if (trace_use_frequent) call da_trace_entry("da_llxy")
 
-   outside = .false.
-   loc % x   = -1.0
-   loc % y   = -1.0
-   
-   ! get the (x, y) coordinates
+   include_xy = .true.
+   if (present(patch_test_only)) include_xy = .not.patch_test_only
 
-   if ( fg_format == fg_format_wrf_arw_regional ) then
-      call da_llxy_wrf(map_info, info%lat, info%lon, loc%x, loc%y)
-   else if (fg_format == fg_format_wrf_nmm_regional) then
-      call da_llxy_rotated_latlon(info%lat, info%lon, map_info, loc%x, loc%y)
-   else if (global) then
-      call da_llxy_global (info%lat, info%lon, loc%x, loc%y)
-   else
-      call da_llxy_default (info%lat, info%lon, loc%x, loc%y)
-   end if
+
+   outside = .false.
+
+   if (include_xy) then
+      loc % x   = -1.0
+      loc % y   = -1.0
+   
+      ! get the (x, y) coordinates
+
+      if ( fg_format == fg_format_wrf_arw_regional ) then
+         call da_llxy_wrf(map_info, info%lat, info%lon, loc%x, loc%y)
+      else if (fg_format == fg_format_wrf_nmm_regional) then
+         call da_llxy_rotated_latlon(info%lat, info%lon, map_info, loc%x, loc%y)
+      else if (global) then
+         call da_llxy_global (info%lat, info%lon, loc%x, loc%y)
+      else
+         call da_llxy_default (info%lat, info%lon, loc%x, loc%y)
+      end if
 
 #ifdef A2C
-   call da_togrid (loc%x, its-3, ite+3, loc%i, loc%dx, loc%dxm)!
+      call da_togrid (loc%x, its-3, ite+3, loc%i, loc%dx, loc%dxm)!
 
-   call da_togrid (loc%y, jts-3, jte+3, loc%j, loc%dy, loc%dym)
+      call da_togrid (loc%y, jts-3, jte+3, loc%j, loc%dy, loc%dym)
 #else
-   call da_togrid (loc%x, its-2, ite+2, loc%i, loc%dx, loc%dxm)!
+      call da_togrid (loc%x, its-2, ite+2, loc%i, loc%dx, loc%dxm)!
 
-   call da_togrid (loc%y, jts-2, jte+2, loc%j, loc%dy, loc%dym)
+      call da_togrid (loc%y, jts-2, jte+2, loc%j, loc%dy, loc%dym)
 
 #endif
-   ! refactor to remove this ugly duplication later
-   if (present(outside_all)) then
-      outside_all = .false.
-      ! Do not check for global options 
-      if (.not. global) then 
-         if ((int(loc%x) < ids) .or. (int(loc%x) >= ide) .or. &
-            (int(loc%y) < jds) .or. (int(loc%y) >= jde)) then
-            outside_all = .true. 
-            outside = .true. 
-            return
-         end if
-         if (def_sub_domain) then
-            if (x_start_sub_domain > loc%x .or. y_start_sub_domain > loc%y .or. &
-                x_end_sub_domain   < loc%x .or. y_end_sub_domain   < loc%y) then
-               outside_all = .true.
-            outside = .true. 
-            return
+      ! refactor to remove this ugly duplication later
+      if (present(outside_all)) then
+         outside_all = .false.
+         ! Do not check for global options 
+         if (.not. global) then 
+            if ((int(loc%x) < ids) .or. (int(loc%x) >= ide) .or. &
+               (int(loc%y) < jds) .or. (int(loc%y) >= jde)) then
+               outside_all = .true. 
+               outside = .true. 
+               return
+            end if
+            if (def_sub_domain) then
+               if (x_start_sub_domain > loc%x .or. y_start_sub_domain > loc%y .or. &
+                   x_end_sub_domain   < loc%x .or. y_end_sub_domain   < loc%y) then
+                  outside_all = .true.
+               outside = .true. 
+               return
+               end if
             end if
          end if
       end if
+
+   else
+      if (present(outside_all)) outside_all = .false.
    end if
 
    if (fg_format == fg_format_kma_global) then

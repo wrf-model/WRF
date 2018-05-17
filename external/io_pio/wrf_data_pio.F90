@@ -10,8 +10,9 @@
 
 module wrf_data_pio
 
-  use pio
   use pio_kinds
+  use pio
+  use perf_mod, only : t_startf, t_stopf   !_EXTERNAL
 
   integer                , parameter      :: FATAL            = 0
   integer                , parameter      :: WARN             = 0
@@ -30,6 +31,7 @@ module wrf_data_pio
   integer                , parameter      :: SOIL_LAYERS_VAR  = 3
   integer                , parameter      :: MDL_CPL_VAR      = 4
   integer                , parameter      :: ENSEMBLE_VAR     = 5
+  integer                , parameter      :: EROSION_VAR      = 6
   integer                , parameter      :: BDY_VAR          = 10
   character (8)          , parameter      :: NO_NAME          = 'NULL'
   character (DateStrLen) , parameter      :: ZeroDate = '0000-00-00-00:00:00'
@@ -94,6 +96,10 @@ module wrf_data_pio
    type (io_desc_t)        :: iodesc3d_ensemble_double
    type (io_desc_t)        :: iodesc3d_ensemble_real
    type (io_desc_t)        :: iodesc3d_ensemble_int
+
+   type (io_desc_t)        :: iodesc3d_erosion_double
+   type (io_desc_t)        :: iodesc3d_erosion_real
+   type (io_desc_t)        :: iodesc3d_erosion_int
 
    type (io_desc_t)        :: iodesc3d_xsz_u_real, iodesc3d_xsz_u_double, iodesc3d_xsz_u_int
    type (io_desc_t)        :: iodesc3d_xsz_v_real, iodesc3d_xsz_v_double, iodesc3d_xsz_v_int

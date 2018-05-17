@@ -107,7 +107,7 @@ subroutine ext_pio_open_for_read_begin( FileName, grid, SysDepInfo, DataHandle, 
 
   if(DH%first_operation) then
      call initialize_pio(grid, DH)
-     call init_pio_iodesc(grid, DH)
+     call define_pio_iodesc(grid, DH)
      DH%first_operation = .false.
   end if
 
@@ -278,7 +278,7 @@ subroutine ext_pio_open_for_update( FileName, grid, SysDepInfo, DataHandle, Stat
 
   if(DH%first_operation) then
      call initialize_pio(grid, DH)
-     call init_pio_iodesc(grid, DH)
+     call define_pio_iodesc(grid, DH)
      DH%first_operation = .false.
   end if
 
@@ -289,7 +289,7 @@ subroutine ext_pio_open_for_update( FileName, grid, SysDepInfo, DataHandle, Stat
 !       PIO_iotype_netcdf  = 6, &   ! serial read/write of NetCDF file using 'base_node'
 !       PIO_iotype_netcdf4c = 7, &  ! netcdf4 (hdf5 format) file opened for compression (serial write access only)
 !       PIO_iotype_netcdf4p = 8, &  ! netcdf4 (hdf5 format) file opened in parallel (all netcdf4 files for read will be opened this way)
-!       PIO_iotype_vdc2 = 10
+!       PIO_iotype_vdc2 = 10       
 ! stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_pnetcdf, FileName)
 ! stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_netcdf, FileName)
   stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_netcdf4p, FileName)
@@ -430,9 +430,13 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
 
   if(DH%first_operation) then
      call initialize_pio(grid, DH)
-     call init_pio_iodesc(grid, DH)
+     call define_pio_iodesc(grid, DH)
      DH%first_operation = .false.
   end if
+
+ !WRITE(unit=0, fmt='(/6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
+ !WRITE(unit=0, fmt='(6x, a)') 'Entering ext_pio_open_for_write_begin'
+ !WRITE(unit=0, fmt='(2a)') 'FileName = ', trim(FileName)
 
  !call mpi_info_create( info, ierr )
   stat = pio_CreateFile(DH%iosystem, DH%file_handle, &
@@ -446,6 +450,9 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
+
+ !WRITE(unit=0, fmt='(3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
+ !WRITE(unit=0, fmt='(a, i6)') 'Status = ', Status
 
  !JPE added for performance
  !stat = nf90_set_fill(DH%file_handle, NF90_NOFILL, i)
@@ -479,6 +486,8 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
 
   VDimIDs(1) = DH%DimIDs(1)
   VDimIDs(2) = DH%DimUnlimID
+  WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
+  WRITE(unit=0, fmt='(6x, 3a, i6)') '0 Define Var: ', DH%TimesName, ', PIO_CHAR = ', PIO_CHAR
   stat = pio_def_var(DH%file_handle,DH%TimesName,PIO_CHAR,VDimIDs,DH%vtime)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
@@ -487,6 +496,9 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
     return
   endif
   DH%DimLengths(1) = DateStrLen
+
+  WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
+  WRITE(unit=0, fmt='(6x, a)') 'Leaving ext_pio_open_for_write_begin normally'
 
   return
 end subroutine ext_pio_open_for_write_begin
@@ -546,13 +558,14 @@ SUBROUTINE ext_pio_open_for_write_commit(DataHandle, Status)
   return
 end subroutine ext_pio_open_for_write_commit
 
-subroutine ext_pio_ioclose(DataHandle, Status)
+subroutine ext_pio_ioclose(grid, DataHandle, Status)
   use wrf_data_pio
   use pio_routines
   use pio
   use pio_kinds
   implicit none
   include 'wrf_status_codes.h'
+  type(domain)                      :: grid
   integer              ,intent(in)  :: DataHandle
   integer              ,intent(out) :: Status
   type(wrf_data_handle),pointer     :: DH
@@ -585,8 +598,8 @@ subroutine ext_pio_ioclose(DataHandle, Status)
     return
   endif
 
-  call free_pio_iodesc(DH)
-  call finalize_pio(DH)
+  call free_pio_iodesc(grid, DH)
+  call finalize_pio(grid, DH)
 
   call pio_closefile(DH%file_handle)
   CALL deallocHandle( DataHandle, Status )
@@ -720,7 +733,7 @@ subroutine ext_pio_get_dom_ti_real_arr(DataHandle,Element,Data,Count,OutCount,St
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
   integer                               :: XType
-  integer                               :: Len
+  integer(pio_offset_kind)              :: Len
   integer                               :: stat
   real,                  allocatable    :: Buffer(:)
 
@@ -822,7 +835,7 @@ subroutine ext_pio_get_dom_ti_real_sca(DataHandle,Element,Data,Count,OutCount,St
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
   integer                               :: XType
-  integer                               :: Len
+  integer(pio_offset_kind)              :: Len
   integer                               :: stat
   real,                  allocatable    :: Buffer(:)
 
@@ -924,7 +937,7 @@ subroutine ext_pio_get_dom_ti_integer_arr(DataHandle,Element,Data,Count,OutCount
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
   integer                               :: XType
-  integer                               :: Len
+  integer(pio_offset_kind)              :: Len
   integer                               :: stat
   integer,               allocatable    :: Buffer(:)
 
@@ -1026,7 +1039,7 @@ subroutine ext_pio_get_dom_ti_integer_sca(DataHandle,Element,Data,Count,OutCount
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
   integer                               :: XType
-  integer                               :: Len
+  integer(pio_offset_kind)              :: Len
   integer                               :: stat
   integer,               allocatable    :: Buffer(:)
 
@@ -1128,7 +1141,7 @@ subroutine ext_pio_get_dom_ti_double_arr(DataHandle,Element,Data,Count,OutCount,
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
   integer                               :: XType
-  integer                               :: Len
+  integer(pio_offset_kind)              :: Len
   integer                               :: stat
   real*8,                allocatable    :: Buffer(:)
 
@@ -1230,7 +1243,7 @@ subroutine ext_pio_get_dom_ti_double_sca(DataHandle,Element,Data,Count,OutCount,
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
   integer                               :: XType
-  integer                               :: Len
+  integer(pio_offset_kind)              :: Len
   integer                               :: stat
   real*8,                allocatable    :: Buffer(:)
 
@@ -1332,7 +1345,7 @@ subroutine ext_pio_get_dom_ti_logical_arr(DataHandle,Element,Data,Count,OutCount
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
   integer                               :: XType
-  integer                               :: Len
+  integer(pio_offset_kind)              :: Len
   integer                               :: stat
   integer,               allocatable    :: Buffer(:)
 
@@ -1443,7 +1456,7 @@ subroutine ext_pio_get_dom_ti_logical_sca(DataHandle,Element,Data,Count,OutCount
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
   integer                               :: XType
-  integer                               :: Len
+  integer(pio_offset_kind)              :: Len
   integer                               :: stat
   integer,               allocatable    :: Buffer(:)
 
@@ -1554,7 +1567,7 @@ subroutine ext_pio_get_dom_ti_char_arr(DataHandle,Element,Data,Status)
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
   integer                               :: XType
-  integer                               :: Len
+  integer(pio_offset_kind)              :: Len
   integer                               :: stat
   
 
@@ -1629,7 +1642,7 @@ subroutine ext_pio_get_dom_ti_char_sca(DataHandle,Element,Data,Status)
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
   integer                               :: XType
-  integer                               :: Len
+  integer(pio_offset_kind)              :: Len
   integer                               :: stat
   
 
@@ -4577,18 +4590,11 @@ subroutine ext_pio_put_var_ti_char_arr(DataHandle,Element,Var,Data,Status)
     endif
 
     if(1 > length) then
-     !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-     !write(unit=0, fmt='(6a)') 'Var: ', trim(Var), ', Element: ', trim(Element), ', tmpdata: ', trim(tmpdata)
-     !write(unit=0, fmt='(2(a,i6))') 'DH%descVar(NVar)%VarID = ', DH%descVar(NVar)%VarID, &
-     !   ', length = ', length
       stat = pio_put_att(DH%file_handle,DH%descVar(NVar),trim(Element),null)
     else
-     !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-     !write(unit=0, fmt='(6a)') 'Var: ', trim(Var), ', Element: ', trim(Element), ', tmpdata: ', trim(tmpdata)
-     !write(unit=0, fmt='(2(a,i6))') 'DH%descVar(NVar)%VarID = ', DH%descVar(NVar)%VarID, &
-     !   ', length = ', length
       stat = pio_put_att(DH%file_handle,DH%descVar(NVar),trim(Element),tmpdata)
     endif
+
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error for Var ',TRIM(Var),&
@@ -5054,7 +5060,7 @@ subroutine ext_pio_get_var_ti_real_arr(DataHandle,Element,Var,Data,Count,OutCoun
   integer,               intent(out)    :: OutCount
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
-  integer                               :: XLen
+  integer(pio_offset_kind)              :: XLen
   real,                     allocatable :: Buffer(:)
   character (VarNameLen)                :: VarName
   integer                               :: stat
@@ -5161,7 +5167,7 @@ subroutine ext_pio_get_var_ti_real_sca(DataHandle,Element,Var,Data,Count,OutCoun
   integer,               intent(out)    :: OutCount
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
-  integer                               :: XLen
+  integer(pio_offset_kind)              :: XLen
   real,                     allocatable :: Buffer(:)
   character (VarNameLen)                :: VarName
   integer                               :: stat
@@ -5574,7 +5580,7 @@ subroutine ext_pio_get_var_ti_double_arr(DataHandle,Element,Var,Data,Count,OutCo
   integer,               intent(out)    :: OutCount
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
-  integer                               :: XLen
+  integer(pio_offset_kind)              :: XLen
   real*8,                allocatable    :: Buffer(:)
   character (VarNameLen)                :: VarName
   integer                               :: stat
@@ -5681,7 +5687,7 @@ subroutine ext_pio_get_var_ti_double_sca(DataHandle,Element,Var,Data,Count,OutCo
   integer,               intent(out)    :: OutCount
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
-  integer                               :: XLen
+  integer(pio_offset_kind)              :: XLen
   real*8,                allocatable    :: Buffer(:)
   character (VarNameLen)                :: VarName
   integer                               :: stat
@@ -6094,7 +6100,7 @@ subroutine ext_pio_get_var_ti_integer_arr(DataHandle,Element,Var,Data,Count,OutC
   integer,               intent(out)    :: OutCount
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
-  integer                               :: XLen
+  integer(pio_offset_kind)              :: XLen
   integer,               allocatable    :: Buffer(:)
   character (VarNameLen)                :: VarName
   integer                               :: stat
@@ -6201,7 +6207,7 @@ subroutine ext_pio_get_var_ti_integer_sca(DataHandle,Element,Var,Data,Count,OutC
   integer,               intent(out)    :: OutCount
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
-  integer                               :: XLen
+  integer(pio_offset_kind)              :: XLen
   integer,               allocatable    :: Buffer(:)
   character (VarNameLen)                :: VarName
   integer                               :: stat
@@ -6614,7 +6620,7 @@ subroutine ext_pio_get_var_ti_logical_arr(DataHandle,Element,Var,Data,Count,OutC
   integer,               intent(out)    :: OutCount
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
-  integer                               :: XLen
+  integer(pio_offset_kind)              :: XLen
   integer,               allocatable    :: Buffer(:)
   character (VarNameLen)                :: VarName
   integer                               :: stat
@@ -6721,7 +6727,7 @@ subroutine ext_pio_get_var_ti_logical_sca(DataHandle,Element,Var,Data,Count,OutC
   integer,               intent(out)    :: OutCount
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
-  integer                               :: XLen
+  integer(pio_offset_kind)              :: XLen
   integer,               allocatable    :: Buffer(:)
   character (VarNameLen)                :: VarName
   integer                               :: stat
@@ -7132,7 +7138,7 @@ subroutine ext_pio_get_var_ti_char_arr(DataHandle,Element,Var,Data,Status)
   
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
-  integer                               :: XLen
+  integer(pio_offset_kind)              :: XLen
   
   character (VarNameLen)                :: VarName
   integer                               :: stat
@@ -7223,7 +7229,7 @@ subroutine ext_pio_get_var_ti_char_sca(DataHandle,Element,Var,Data,Status)
   
   integer               ,intent(out)    :: Status
   type(wrf_data_handle) ,pointer        :: DH
-  integer                               :: XLen
+  integer(pio_offset_kind)              :: XLen
   
   character (VarNameLen)                :: VarName
   integer                               :: stat
@@ -7902,6 +7908,10 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
   write(msg,*)'ext_pio_write_field: called for ',TRIM(Var)
   CALL wrf_debug( 100, msg )
 
+ !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
+ !WRITE(unit=0, fmt='(6x, 6a)') 'ext_pio_write_field: called for ', trim(Var), &
+ !                              ', Stagger: ', trim(Stagger), ', MemoryOrder = ', trim(MemoryOrder)
+
   VCount(1:NDim) = PatchEnd(1:NDim)-PatchStart(1:NDim)+1
   Length_global(1:NDim) = DomainEnd(1:NDim)-DomainStart(1:NDim)+1
 
@@ -7935,6 +7945,9 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
         exit
       endif
     enddo
+
+   !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
+   !WRITE(unit=0, fmt='(6x, 3a, i6)') 'Found var ', trim(VarName), ' as NVar = ', NVar
 
     if(NotFound) then
       Status = WRF_WARN_TOO_MANY_VARIABLES
@@ -8039,8 +8052,8 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     end select
 
     VDimIDs(NDim+1) = DH%DimUnlimID
-   !write(unit=0, fmt='(/3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   !write(unit=0, fmt='(3a,i6)') '1 Define Var <', trim(Var), '> as NVar:', DH%NumVars
+   !write(unit=0, fmt='(6x,3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(6x,3a,i6,4x,a,i4)') '1 Define Var <', trim(Var), '> as NVar:', DH%NumVars, 'NDim = ', NDim
     stat = pio_def_var(DH%file_handle,VarName,XType,VDimIDs(1:NDim+1),DH%descVar(DH%NumVars))
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -8048,11 +8061,15 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
       call wrf_debug ( WARN , TRIM(msg))
       return
     endif
-   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   !write(unit=0, fmt='(a,i6)') 'DH%descVar(DH%NumVars)%VarID = ', DH%descVar(DH%NumVars)%VarID
+    
+   !DH%descVar(DH%NumVars)%name = VarName
 
-    DH%descVar(DH%NumVars)%name = VarName
-
+   !write(unit=0, fmt='(6x,3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(6x,a,i4,a,4i4,2x,a)') 'DH%descVar(', DH%NumVars, ') = ', &
+   !                  DH%descVar(DH%NumVars)%VarID, DH%descVar(DH%NumVars)%rec, &
+   !                  DH%descVar(DH%NumVars)%type,  DH%descVar(DH%NumVars)%ndims, &
+   !                  DH%descVar(DH%NumVars)%name
+    
     stat = pio_put_att(DH%file_handle,DH%descVar(DH%NumVars),'FieldType',FieldType)
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -8140,8 +8157,13 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
           DH%vartype(DH%CurrentVariable) = MDL_CPL_VAR
        else if("ensemble_stag" == DimNames(n)) then
           DH%vartype(DH%CurrentVariable) = ENSEMBLE_VAR
+       else if("erosion_stag" == DimNames(n)) then
+          DH%vartype(DH%CurrentVariable) = EROSION_VAR
        endif
     end do
+
+   !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
+   !WRITE(unit=0, fmt='(6x, 3a, i6)') 'Before FieldIO'
 
 #ifndef INTSPECIAL
     call FieldIO('write',DataHandle,DateStr,Length_global,VStart,VCount,Length,MemoryOrder, &
@@ -8239,7 +8261,7 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
   integer                                      :: VarID
   integer                                      :: NDims
   integer                                      :: NAtts
-  integer(KIND=PIO_OFFSET)                     :: Len
+  integer(KIND=PIO_OFFSET_KIND)                :: Len
   integer                                      :: stat
   integer                                      :: i, j, n, fldsize
   integer                                      :: FType

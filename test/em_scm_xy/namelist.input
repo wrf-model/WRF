@@ -26,7 +26,6 @@
  auxinput3_inname                    = "force_ideal.nc"
  auxinput3_interval_h                = 59
  io_form_auxinput3                   = 2
- debug_level                         = 0
  /
 
  &domains

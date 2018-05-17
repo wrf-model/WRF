@@ -167,6 +167,9 @@
       CALL nl_set_cu_diag( grid%id, 0 )
       CALL nl_set_damp_opt( grid%id, 0 )
       CALL nl_set_sst_update( grid%id, 0 )
+#if (EM_CORE == 1)
+      CALL nl_set_sf_ocean_physics( grid%id, 0 )
+#endif
       CALL nl_set_fractional_seaice( grid%id, 0 )
       CALL nl_set_gwd_opt( grid%id, 0 )
       CALL nl_set_feedback( grid%id, 0 )
@@ -337,6 +340,9 @@
       CALL nl_set_cu_diag( grid%id, grid%cu_diag )
       CALL nl_set_damp_opt( grid%id, grid%damp_opt)
       CALL nl_set_sst_update( grid%id, 0)
+#if (EM_CORE == 1)
+      CALL nl_set_sf_ocean_physics( grid%id, 0)
+#endif
       CALL nl_set_fractional_seaice( grid%id, grid%fractional_seaice)
       CALL nl_set_gwd_opt( grid%id, grid%gwd_opt)
       CALL nl_set_feedback( grid%id, 0 )
@@ -484,6 +490,7 @@
          CALL nl_set_use_adaptive_time_step( 1, grid%use_adaptive_time_step )
       endif
       CALL nl_set_sst_update( grid%id, grid%sst_update)
+      CALL nl_set_sf_ocean_physics( grid%id, grid%sf_ocean_physics)
       ! reset to normal bc
       CALL nl_set_constant_bc(grid%id, .false.)
 #endif
@@ -2853,6 +2860,9 @@ call wrf_message(mess)
       CALL nl_set_cu_diag( grid%id, 0 )
       CALL nl_set_damp_opt( grid%id, 0 )
       CALL nl_set_sst_update( grid%id, 0 )
+#if (EM_CORE == 1)
+      CALL nl_set_sf_ocean_physics( grid%id, 0 )
+#endif
       CALL nl_set_gwd_opt( grid%id, 0 )
 #if (EM_CORE == 1)
       CALL nl_set_diff_6th_opt( grid%id, 0 )

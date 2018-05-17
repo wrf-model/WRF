@@ -13,8 +13,8 @@
  end_month                           = 01,   01,   01,
  end_day                             = 01,   01,   01,
  end_hour                            = 10,   00,   00,
- end_minute                          = 00,    0,   0,
- end_second                          = 0,    00,   00,
+ end_minute                          = 00,   00,   00,
+ end_second                          = 00,   00,   00,
  history_interval_s                  = 120,  30,   30,
  frames_per_outfile                  = 1,     1,    1,
  restart                             = .false.,
@@ -23,7 +23,6 @@
  io_form_restart                     = 2
  io_form_input                       = 2
  io_form_boundary                    = 2
- debug_level                         = 1
 /
 
  &domains

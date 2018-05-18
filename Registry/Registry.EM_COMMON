@@ -172,7 +172,7 @@ state    real   umaxw          ij       dyn_em      1        X     i1  "UMAXW"  
 state    real   utrop          ij       dyn_em      1        X     i1  "UTROP"      "U-component of the tropopause wind" "m s-1"
 state    real   vmaxw          ij       dyn_em      1        Y     i1  "VMAXW"      "V-component of the max wind speed"  "m s-1"
 state    real   vtrop          ij       dyn_em      1        Y     i1  "VTROP"      "V-component of the tropopause wind" "m s-1"
-state    real   erod           ij.      misc        1        -     i012rh "EROD" "fraction of erodible surface in each grid cell (0-1)"       "none"
+state    real   erod           ij.      misc        1        -     i012r  "EROD" "fraction of erodible surface in each grid cell (0-1)"       "none"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 #                                               
@@ -1063,7 +1063,7 @@ state    real   acfrcv           ij     misc        1         -      -
 state integer   ncfrcv           ij     misc        1         -      -
 
 # new rad variables
-state    real   o3rad           ikj     misc        1         -      rh        "o3rad"    "RADIATION 3D OZONE" "ppmv"
+state    real   o3rad           ikj     misc        1         -      r         "o3rad"    "RADIATION 3D OZONE" "ppmv"
 
 # incoming optical depth derived from aerosol data
 state  real   aerodm    i{lsa}jm{ty}    misc        1    -   -     -

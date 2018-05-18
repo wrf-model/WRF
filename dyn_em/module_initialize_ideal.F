@@ -176,6 +176,8 @@ CONTAINS
 
    END SELECT
 
+   CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+
   ideal_constants: SELECT CASE ( model_config_rec%ideal_case )
   CASE ( hill2d_x )
    hm = 100.
@@ -193,8 +195,8 @@ CONTAINS
 
    stretch_grid = .true.
    delt = 0.
-!   z_scale = .50
-   z_scale = .40
+!   z_scale = .40
+   z_scale = 8000./config_flags%ztop
    pi = 2.*asin(1.0)
    write(6,*) ' pi is ',pi
    nxc = (ide-ids)/2
@@ -204,8 +206,8 @@ CONTAINS
 
    stretch_grid = .true.
    delt = 3.
-!   z_scale = .50
-   z_scale = .40
+!   z_scale = .40
+   z_scale = 8000./config_flags%ztop
    pi = 2.*asin(1.0)
    write(6,*) ' pi is ',pi
    nxc = (ide-ids)/2
@@ -214,8 +216,8 @@ CONTAINS
   CASE (grav2d_x)
 
    stretch_grid = .true.
-!   z_scale = .50
-   z_scale = 1.675
+!    z_scale = 1.675
+   z_scale = 8000./config_flags%ztop
    pi = 2.*asin(1.0)
    write(6,*) ' pi is ',pi
    nxc = (ide-ids)/2
@@ -224,8 +226,8 @@ CONTAINS
   CASE (convrad)
    stretch_grid = .true.
    delt = 1.
-!   z_scale = .50
-   z_scale = .32
+!   z_scale = .32
+   z_scale = 8000./config_flags%ztop
    pi = 2.*asin(1.0)
    write(6,*) ' pi is ',pi
    nxc = (ide-ids)/2
@@ -245,7 +247,8 @@ CONTAINS
 
    stretch_grid = .true.
    delt = 0.
-   z_scale = .50
+!   z_scale = .50
+   z_scale = 8000./config_flags%ztop
    pi = 2.*asin(1.0)
    write(6,*) ' pi is ',pi
    nxc = (ide-ids)/4
@@ -255,8 +258,8 @@ CONTAINS
 
    stretch_grid = .true.
    delt = 6.
-!   z_scale = .50
-   z_scale = .40
+!   z_scale = .40
+   z_scale = 8000./config_flags%ztop
    pi = 2.*asin(1.0)
    write(6,*) ' pi is ',pi
    nxc = (ide-ids)/2
@@ -270,8 +273,8 @@ CONTAINS
   !  FOR LES, set stretch to false
    stretch_grid = .false.
    delt = 3.
-!   z_scale = .50
-   z_scale = .40
+!   z_scale = .40
+   z_scale = 8000./config_flags%ztop  ! not used if stretch_grid = .false.
    pi = 2.*asin(1.0)
    write(6,*) ' pi is ',pi
    nxc = (ide-ids)/2
@@ -287,7 +290,6 @@ CONTAINS
 
 
 
-   CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
 ! here we check to see if the boundary conditions are set properly
 

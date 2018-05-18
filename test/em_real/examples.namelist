@@ -278,7 +278,7 @@ Topographic shading (only effective when grid sizes are a few kilometers)
  topo_shading                        = 1,     1,     1,
  shadlen                             = 25000, 
 
-Setting threashold value for defining seaice if seaice is not in the input file:
+Setting threshold value for defining seaice if seaice is not in the input file:
 
  seaice_threshold                    = 271,
 
@@ -638,4 +638,12 @@ To overwrite the cu_physics option for a second nest, set
  physics_suite                       = 'tropical'
  cu_physics                          = -1,    -1,     0,
  ...
+
+** New way to automatically choose levels (default auto_levels_opt=2)
+ max_dz                              = 1000.
+ auto_levels_opt                     = 2
+ dzbot                               = 50.
+ dzstretch_s                         = 1.3
+ dzstretch_u                         = 1.1
+
 

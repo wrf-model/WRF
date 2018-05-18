@@ -1735,8 +1735,11 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
 ! Initialize cropcat for gecros crop model
 
 	     if(iopt_crop == 2) then
-	       cropcat    (i,j) = 1
-               if(croptype(i,1,j) > croptype(i,3,j)) cropcat(i,j) = 2 ! change to maize
+	       cropcat    (i,j) = 0
+               if(croptype(i,5,j) >= 0.5) then
+                  if(croptype(i,3,j) > 0.0)             cropcat(i,j) = 1 ! if any wheat, set to wheat
+                  if(croptype(i,1,j) > croptype(i,3,j)) cropcat(i,j) = 2 ! change to maize
+	       end if
 
                hti    = 0.01
                rdi    = 10.
@@ -1753,16 +1756,14 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
                nrti   = npl * seedw * eg * seednc - nlvi
                slnbi  = nlvi/laii
     
+               call gecros_init(xlat(i,j),hti,rdi,clvi,crti,nlvi,laii,nrti,slnbi,gecros_state(i,:,j))
+
              end if
 
 	   END IF
 
           enddo
        enddo
-       
-       if(iopt_crop == 2) then
-           call gecros_init(xlat,hti,rdi,clvi,crti,nlvi,laii,nrti,slnbi,jds,jde,ids,ide,gecros_state)
-       end if
        
 
        ! Given the soil layer thicknesses (in DZS), initialize the soil layer
@@ -2271,9 +2272,8 @@ END  SUBROUTINE EQSMOISTURE
 
 ! gecros initialization routines
 
-SUBROUTINE gecros_init(xlat,hti,rdi,clvi,crti,nlvi,laii,nrti,slnbi,jms,jme,ims,ime,state_gecrosxy)   
+SUBROUTINE gecros_init(xlat,hti,rdi,clvi,crti,nlvi,laii,nrti,slnbi,state_gecros)   
 implicit none
-INTEGER, INTENT(IN)  :: jms, jme, ims, ime   !grid indecies
 REAL, INTENT(IN)     :: HTI
 REAL, INTENT(IN)     :: RDI
 REAL, INTENT(IN)     :: CLVI
@@ -2282,77 +2282,69 @@ REAL, INTENT(IN)     :: NLVI
 REAL, INTENT(IN)     :: LAII
 REAL, INTENT(IN)     :: NRTI
 REAL, INTENT(IN)     :: SLNBI
-REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: XLAT
-REAL, DIMENSION(ims:ime,1:60,jms:jme), INTENT(INOUT) :: STATE_GECROSXY
-INTEGER :: I, J
-  
-  JLOOP : DO J = jms, jme
-
-  ILOOP : DO I = ims, ime
+REAL, INTENT(IN)     :: XLAT
+REAL, DIMENSION(1:60), INTENT(INOUT) :: STATE_GECROS
 
   !Inititalization of Gecros variables  
-  STATE_GECROSXY(I,1,J) = 0.      !DS
-  STATE_GECROSXY(I,2,J) = 0.      !CTDURDI, HTI, CLVI, CRTI, NLVI, LAII, NRTI, SLNBI,
-  STATE_GECROSXY(I,3,J) = 0.      !CVDU
-  STATE_GECROSXY(I,4,J) = CLVI    !CLV 
-  STATE_GECROSXY(I,5,J) = 0.      !CLVD  
-  STATE_GECROSXY(I,6,J) = 0.      !CSST  
-  STATE_GECROSXY(I,7,J) = 0.      !CSO
-  STATE_GECROSXY(I,8,J) = CRTI    !CSRT 
-  STATE_GECROSXY(I,9,J) =  0.     !CRTD 
-  STATE_GECROSXY(I,10,J) = 0.     !CLVDS 
-  STATE_GECROSXY(I,11,J) = NRTI   !NRT
-  STATE_GECROSXY(I,12,J) = 0.     !NST
-  STATE_GECROSXY(I,13,J) = NLVI   !NLV 
-  STATE_GECROSXY(I,14,J) = 0.     !NSO
-  STATE_GECROSXY(I,15,J) = NLVI   !TNLV
-  STATE_GECROSXY(I,16,J) = 0.     !NLVD
-  STATE_GECROSXY(I,17,J) = 0.     !NRTD
-  STATE_GECROSXY(I,18,J) = 0.     !CRVS
-  STATE_GECROSXY(I,19,J) = 0.     !CRVR
-  STATE_GECROSXY(I,20,J) = 0.     !NREOE
-  STATE_GECROSXY(I,21,J) = 0.     !NREOF
-  STATE_GECROSXY(I,22,J) = 0.     !DCDSR
-  STATE_GECROSXY(I,23,J) = 0.     !DCDTR
-  STATE_GECROSXY(I,24,J) = SLNBI  !SLNB
-  STATE_GECROSXY(I,25,J) = LAII   !LAIC
-  STATE_GECROSXY(I,26,J) = 0.     !RMUL
-  STATE_GECROSXY(I,27,J) = 0.     !NDEMP
-  STATE_GECROSXY(I,28,J) = 0.     !NSUPP
-  STATE_GECROSXY(I,29,J) = 0.     !NFIXT
-  STATE_GECROSXY(I,30,J) = 0.     !NFIXR
-  STATE_GECROSXY(I,31,J) = 0.     !DCDTP
-  STATE_GECROSXY(I,32,J) = 0.01   !HTI
-  STATE_GECROSXY(I,33,J) = RDI    !RDI
-  STATE_GECROSXY(I,34,J) = 0.     !TPCAN
-  STATE_GECROSXY(I,35,J) = 0.     !TRESP
-  STATE_GECROSXY(I,36,J) = 0.     !TNUPT
-  STATE_GECROSXY(I,37,J) = 0.     !LITNT
-  STATE_GECROSXY(I,38,J) = 0.     !daysSinceDS1
-  STATE_GECROSXY(I,39,J) = 0.     !daysSinceDS2
-  STATE_GECROSXY(I,40,J) = -1.    !drilled -1:false, 1:true
-  STATE_GECROSXY(I,41,J) = -1.    !emerged -1:false, 1:true
-  STATE_GECROSXY(I,42,J) = -1.    !harvested -1:false, 1:true
-  STATE_GECROSXY(I,43,J) = 0.     !TTEM
-  STATE_GECROSXY(I,44,J) = XLAT(I,J)     !GLAT
-  STATE_GECROSXY(I,45,J) = 0.     !WSO
-  STATE_GECROSXY(I,46,J) = 0.     !WSTRAW
-  STATE_GECROSXY(I,47,J) = 0.     !GrainNC
-  STATE_GECROSXY(I,48,J) = 0.     !StrawNC
-  STATE_GECROSXY(I,49,J) = 0.01   !GLAI
-  STATE_GECROSXY(I,50,J) = 0.01   !TLAI
-  STATE_GECROSXY(I,51,J) = HTI    !Fields 51-58 set for reinitialization  
-  STATE_GECROSXY(I,52,J) = RDI    
-  STATE_GECROSXY(I,53,J) = CLVI   
-  STATE_GECROSXY(I,54,J) = CRTI   
-  STATE_GECROSXY(I,55,J) = NRTI   
-  STATE_GECROSXY(I,56,J) = NLVI   
-  STATE_GECROSXY(I,57,J) = SLNBI  
-  STATE_GECROSXY(I,58,J) = LAII   
+  STATE_GECROS(1) = 0.      !DS
+  STATE_GECROS(2) = 0.      !CTDURDI, HTI, CLVI, CRTI, NLVI, LAII, NRTI, SLNBI,
+  STATE_GECROS(3) = 0.      !CVDU
+  STATE_GECROS(4) = CLVI    !CLV 
+  STATE_GECROS(5) = 0.      !CLVD  
+  STATE_GECROS(6) = 0.      !CSST  
+  STATE_GECROS(7) = 0.      !CSO
+  STATE_GECROS(8) = CRTI    !CSRT 
+  STATE_GECROS(9) =  0.     !CRTD 
+  STATE_GECROS(10) = 0.     !CLVDS 
+  STATE_GECROS(11) = NRTI   !NRT
+  STATE_GECROS(12) = 0.     !NST
+  STATE_GECROS(13) = NLVI   !NLV 
+  STATE_GECROS(14) = 0.     !NSO
+  STATE_GECROS(15) = NLVI   !TNLV
+  STATE_GECROS(16) = 0.     !NLVD
+  STATE_GECROS(17) = 0.     !NRTD
+  STATE_GECROS(18) = 0.     !CRVS
+  STATE_GECROS(19) = 0.     !CRVR
+  STATE_GECROS(20) = 0.     !NREOE
+  STATE_GECROS(21) = 0.     !NREOF
+  STATE_GECROS(22) = 0.     !DCDSR
+  STATE_GECROS(23) = 0.     !DCDTR
+  STATE_GECROS(24) = SLNBI  !SLNB
+  STATE_GECROS(25) = LAII   !LAIC
+  STATE_GECROS(26) = 0.     !RMUL
+  STATE_GECROS(27) = 0.     !NDEMP
+  STATE_GECROS(28) = 0.     !NSUPP
+  STATE_GECROS(29) = 0.     !NFIXT
+  STATE_GECROS(30) = 0.     !NFIXR
+  STATE_GECROS(31) = 0.     !DCDTP
+  STATE_GECROS(32) = 0.01   !HTI
+  STATE_GECROS(33) = RDI    !RDI
+  STATE_GECROS(34) = 0.     !TPCAN
+  STATE_GECROS(35) = 0.     !TRESP
+  STATE_GECROS(36) = 0.     !TNUPT
+  STATE_GECROS(37) = 0.     !LITNT
+  STATE_GECROS(38) = 0.     !daysSinceDS1
+  STATE_GECROS(39) = 0.     !daysSinceDS2
+  STATE_GECROS(40) = -1.    !drilled -1:false, 1:true
+  STATE_GECROS(41) = -1.    !emerged -1:false, 1:true
+  STATE_GECROS(42) = -1.    !harvested -1:false, 1:true
+  STATE_GECROS(43) = 0.     !TTEM
+  STATE_GECROS(44) = XLAT   !GLAT
+  STATE_GECROS(45) = 0.     !WSO
+  STATE_GECROS(46) = 0.     !WSTRAW
+  STATE_GECROS(47) = 0.     !GrainNC
+  STATE_GECROS(48) = 0.     !StrawNC
+  STATE_GECROS(49) = 0.01   !GLAI
+  STATE_GECROS(50) = 0.01   !TLAI
+  STATE_GECROS(51) = HTI    !Fields 51-58 set for reinitialization  
+  STATE_GECROS(52) = RDI    
+  STATE_GECROS(53) = CLVI   
+  STATE_GECROS(54) = CRTI   
+  STATE_GECROS(55) = NRTI   
+  STATE_GECROS(56) = NLVI   
+  STATE_GECROS(57) = SLNBI  
+  STATE_GECROS(58) = LAII   
     
-  ENDDO ILOOP 
-  ENDDO JLOOP 
-  
 END SUBROUTINE gecros_init
 
 SUBROUTINE gecros_reinit(STATE_GECROS)   

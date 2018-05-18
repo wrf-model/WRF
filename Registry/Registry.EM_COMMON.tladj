@@ -1442,7 +1442,7 @@ state    real  diffuse_frac     ij      misc        1         -      rd       "D
 state   real    swddir       ij     misc         1         -     rd     "SWDDIR"     "Shortwave surface downward direct irradiance" "W m-2" ""
 state   real    swddirc      ij     misc         1         -     rd     "SWDDIRC"    "Clear-sky Shortwave surface downward direct irradiance" "W m-2" ""
 state   real    swddni       ij     misc         1         -     rd     "SWDDNI"     "Shortwave surface downward direct normal irradiance" "W m-2" ""
-state   real    swddnic      ij     misc         1         -     rd     "SWDDNIC"    "Clear-sky Shortwave surface downward direct normal irradiance" "W m-2" "
+state   real    swddnic      ij     misc         1         -     rd     "SWDDNIC"    "Clear-sky Shortwave surface downward direct normal irradiance" "W m-2" ""
 state   real    swddif       ij     misc         1         -     rd     "SWDDIF"     "Shortwave surface downward diffuse irradiance" "W m-2" ""
 state   real    Gx           ij     misc         1         -     rd     "Gx" "" ""
 state   real    Bx           ij     misc         1         -     rd     "Bx" "" ""
@@ -1911,7 +1911,7 @@ rconfig   logical cycling                 namelist,time_control         1       
 rconfig   integer output_diagnostics      namelist,time_control         1              0
 rconfig   integer nwp_diagnostics         namelist,time_control         1              0
 rconfig   logical output_ready_flag       namelist,time_control         1             .false. -    "drop a flag called wrfoutReady_d<domain>_<date> after history write" "" ""
-rconfig   logical force_use_old_data      namelist,time_control         1             .false. -    "T=use v3 input data, F=only use v4 data"
+rconfig   logical force_use_old_data      namelist,time_control         1             .false. -    "T=use v3 input data, F=only use v4 data" "" ""
 
 pioprocs, piostart, piostride, pioshift
 # PIO namelist
@@ -2291,7 +2291,7 @@ rconfig   integer use_mp_re               namelist,physics     	1              1
 # The following two options are hooked into various microphysics schemes to allow for ensemble perturbations of CCN and hail/graupel PSDs - GAC (AFWA)
 rconfig   real    ccn_conc                namelist,physics      1           1.0E8      h     "ccn_conc"                 "CCN concentration"                                                             "# m-3"
 rconfig   integer hail_opt                namelist,physics      1              0       rh    "hail_opt"                 "Hail/Graupel switch, 1:hail, 0:graupel"                                        ""
-rconfig   integer morr_rimed_ice          namelist,physics      1              1       rh    "morr_rimed_ice "          "Hail/Graupel switch for Morrison schemes, 1:hail, 0:graupel"                                        ""
+rconfig   integer morr_rimed_ice          namelist,physics      1              1       rh    "morr_rimed_ice "          "Hail/Graupel switch for Morrison Scheme (options 10 and 40), 1:hail, 0:graupel"                                        ""
 
 rconfig   integer clean_atm_diag          namelist,physics      1              0       rh    "clean_atm_diag"     "option to switch on clean sky diagnostics (for chem)"   "flag"
 rconfig   integer calc_clean_atm_diag     derived               1              0       -     "calc_clean_atm_diag" "carries decision on using clean sky diagnostics"       "flag"
@@ -2467,9 +2467,9 @@ rconfig   real    dampcoef                namelist,dynamics     max_domains    0
 rconfig   real    khdif                   namelist,dynamics	max_domains    0       h    "khdif"         ""      ""
 rconfig   real    kvdif                   namelist,dynamics	max_domains    0       h    "kvdif"         ""      ""
 rconfig   real    diff_6th_factor         namelist,dynamics     max_domains    0.12    h    "diff_6th_factor" "factor that controls rate of 6th-order numerical diffusion"
+rconfig   integer diff_6th_opt            namelist,dynamics     max_domains    0      irh   "diff_6th_opt" "switch for 6th-order numerical diffusion"
 rconfig   integer diff_6th_slopeopt       namelist,dynamics     max_domains    0      irh   "diff_6th_slopeopt" "switch for 6th-order numerical diffusion - terrain-slope tapering"
 rconfig   real    diff_6th_thresh         namelist,dynamics     max_domains    0.10    ih    "diff_6th_thresh" "slope threshold (m/m) that turns off 6th order diff is steep terrain"
-rconfig   integer diff_6th_opt            namelist,dynamics     max_domains    0      irh   "diff_6th_opt" "switch for 6th-order numerical diffusion"
 rconfig   integer use_theta_m             namelist,dynamics	1              0       rh    "use_theta_m" "theta_m = theta (1 + 1.61 Qv); 0-no, 1=yes"     ""
 rconfig   integer use_q_diabatic          namelist,dynamics     1              0       rh    "use_q_diabatic" "account for q diabatic terms in advection "     ""
 rconfig   real    c_s                     namelist,dynamics     max_domains    0.25    h    "c_s"         "Smagorinsky coeff"      ""
@@ -2486,7 +2486,7 @@ rconfig   integer     h_sca_adv_order     namelist,dynamics	max_domains    5    
 rconfig   integer     v_sca_adv_order     namelist,dynamics	max_domains    3       rh       "v_sca_adv_order"               ""      ""
 rconfig   integer  momentum_adv_opt       namelist,dynamics     max_domains    1       rh    "momentum_adv_opt"      "weno RK3 transport switch"      ""
 rconfig   integer  moist_adv_opt          namelist,dynamics	max_domains    1       rh    "moist_adv_opt"         "positive-definite RK3 transport switch"      ""
-rconfig   integer  moist_adv_dfi_opt      namelist,dynamics	max_domains    0       rh    "moist_adv_dfi_opt"    "positive-definite RK3 transport switch"      ""
+rconfig   integer  moist_adv_dfi_opt      namelist,dynamics	max_domains    0       rh    "moist_adv_dfi_opt"     "positive-definite RK3 transport switch"      ""
 rconfig   integer  chem_adv_opt           namelist,dynamics	max_domains    1       rh    "chem_adv_opt"          "positive-definite RK3 transport switch"      ""
 rconfig   integer  tracer_adv_opt         namelist,dynamics     max_domains    1       rh    "tracer_adv_opt"        "positive-definite RK3 transport switch"      ""
 rconfig   integer  scalar_adv_opt         namelist,dynamics	max_domains    1       rh    "scalar_adv_opt"        "positive-definite RK3 transport switch"      ""
@@ -2503,6 +2503,7 @@ rconfig   logical  chem_mix6_off          namelist,dynamics	max_domains    .fals
 rconfig   logical  tracer_mix6_off        namelist,dynamics	max_domains    .false. rh    "tracer_mix6_off"       "de-activate 6th-order horizontal filter for tracers"       ""
 rconfig   logical  scalar_mix6_off        namelist,dynamics	max_domains    .false. rh    "scalar_mix6_off"       "de-activate 6th-order horizontal filter for scalars"       ""
 rconfig   logical  tke_mix6_off           namelist,dynamics	max_domains    .false. rh    "tke_mix6_off"          "de-activate 6th-order horizontal filter for tke"           ""
+#
 rconfig   logical top_radiation           namelist,dynamics	max_domains    .false. rh    "top_radiation"         ""      ""
 rconfig   integer mix_isotropic           namelist,dynamics     max_domains    0       h    "mix_isotropic"            "0=anistropic, 1=isotropic"      ""
 rconfig   real    mix_upper_bound         namelist,dynamics     max_domains    0.1     h    "mix_upper_bound"          "non-dimensional limit"      ""

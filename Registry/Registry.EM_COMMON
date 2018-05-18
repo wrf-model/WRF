@@ -1911,7 +1911,7 @@ rconfig   logical cycling                 namelist,time_control         1       
 rconfig   integer output_diagnostics      namelist,time_control         1              0
 rconfig   integer nwp_diagnostics         namelist,time_control         1              0
 rconfig   logical output_ready_flag       namelist,time_control         1             .false. -    "drop a flag called wrfoutReady_d<domain>_<date> after history write" "" ""
-rconfig   logical force_use_old_data      namelist,time_control         1             .false. -    "T=use v3 input data, F=only use v4 data"
+rconfig   logical force_use_old_data      namelist,time_control         1             .false. -    "T=use v3 input data, F=only use v4 data" "" ""
 
 pioprocs, piostart, piostride, pioshift
 # PIO namelist

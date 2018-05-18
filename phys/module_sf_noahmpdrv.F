@@ -1735,8 +1735,11 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
 ! Initialize cropcat for gecros crop model
 
 	     if(iopt_crop == 2) then
-	       cropcat    (i,j) = 1
-               if(croptype(i,1,j) > croptype(i,3,j)) cropcat(i,j) = 2 ! change to maize
+	       cropcat    (i,j) = 0
+               if(croptype(i,5,j) >= 0.5) then
+                  if(croptype(i,3,j) > 0.0)             cropcat(i,j) = 1 ! if any wheat, set to wheat
+                  if(croptype(i,1,j) > croptype(i,3,j)) cropcat(i,j) = 2 ! change to maize
+	       end if
 
                hti    = 0.01
                rdi    = 10.

@@ -54,6 +54,10 @@ subroutine da_get_satzen ( lat,lon,sate_index,theta_true )
    !ZENITH, FROM SOLER et al., 1994 (spherical) (up to 1 deg difference with above code)
    gam = acos( cos(alat) * cos(theta) )
    r_tmp = (satellite_height+earth_radius)**2 * ( 1.d0 + ( earth_radius / (satellite_height+earth_radius) )**2 - 2.d0 * (earth_radius) / (satellite_height+earth_radius) * cos(gam) )
+
+   theta_true = missing_r
+   if (r_tmp .lt. 0) return
+
    r_tmp = sqrt(r_tmp)
    theta_true = asin((satellite_height+earth_radius) / r_tmp * sin(gam)) * 180.d0 / pi
 

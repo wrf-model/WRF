@@ -781,6 +781,8 @@ contains
 
 ! compute carbon budgets (carbon storages and co2 & bvoc fluxes)
 
+   crop_active = .false.
+   dveg_active = .false.
    IF (DVEG == 2 .OR. DVEG == 5 .OR. DVEG == 6) dveg_active = .true.
    IF (OPT_CROP > 0 .and. CROPTYPE > 0) THEN
      crop_active = .true.
@@ -1026,6 +1028,8 @@ contains
   REAL                                   :: T       !current month (1.00, ..., 12.00)
 ! --------------------------------------------------------------------------------------------------
 
+IF (CROPTYPE == 0) THEN
+
   IF ( DVEG == 1 .or. DVEG == 3 .or. DVEG == 4 ) THEN
 
      IF (LAT >= 0.) THEN
@@ -1053,14 +1057,16 @@ contains
     IF (LAI < 0.05) SAI = 0.0  ! if LAI below minimum, make sure SAI = 0
   ENDIF
 
-  IF (SAI < 0.05 .and. CROPTYPE == 0) SAI = 0.0                    ! MB: SAI CHECK, change to 0.05 v3.6
-  IF ((LAI < 0.05 .OR. SAI == 0.0) .and. CROPTYPE == 0) LAI = 0.0  ! MB: LAI CHECK
+  IF (SAI < 0.05) SAI = 0.0                    ! MB: SAI CHECK, change to 0.05 v3.6
+  IF (LAI < 0.05 .OR. SAI == 0.0) LAI = 0.0  ! MB: LAI CHECK
 
   IF ( ( VEGTYP == parameters%iswater ) .OR. ( VEGTYP == parameters%ISBARREN ) .OR. &
        ( VEGTYP == parameters%ISICE   ) .or. ( parameters%urban_flag ) ) THEN
      LAI  = 0.
      SAI  = 0.
   ENDIF
+
+ENDIF   ! CROPTYPE == 0
 
 !buried by snow
 
@@ -1076,6 +1082,8 @@ contains
      ESAI =  SAI*(1.-FB)
      IF (ESAI < 0.05 .and. CROPTYPE == 0) ESAI = 0.0                   ! MB: ESAI CHECK, change to 0.05 v3.6
      IF ((ELAI < 0.05 .OR. ESAI == 0.0) .and. CROPTYPE == 0) ELAI = 0.0  ! MB: LAI CHECK
+
+! set growing season flag
 
      IF ((TV .GT. parameters%TMIN .and. CROPTYPE == 0).or.(PGS > 2 .and. PGS < 7 .and. CROPTYPE > 0)) THEN
          IGS = 1.
@@ -8780,9 +8788,9 @@ END SUBROUTINE CO2FLUX_CROP
       TDIFF = TC - parameters%GDDTBASE
     END IF
 
-    GDD     = (GDD + TDIFF) * IPA * IHA
+    GDD     = (GDD + TDIFF * DT / 86400.0) * IPA * IHA
 
-    GDDDAY  = GDD / (86400.0 / DT)
+    GDDDAY  = GDD
 
    ! Decide corn growth stage, based on Hybrid-Maize 
    !   PGS = 1 : Before planting

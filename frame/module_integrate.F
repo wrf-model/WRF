@@ -16,7 +16,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
    USE module_timing
    USE module_utility
 #if ( WRFPLUS == 1 )
-   USE module_linked_list2, only : linkedlist_initialize
+!   USE module_linked_list2, only : linkedlist_initialize
 #endif
    USE module_cpl, ONLY : coupler_on, cpl_snd, cpl_defdomain
 #ifdef DM_PARALLEL

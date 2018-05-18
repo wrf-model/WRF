@@ -20,7 +20,7 @@
  history_interval                    = 60,   60,   60,
  frames_per_outfile                  = 1,    1,    1,
  restart                             = .false.,
- restart_interval                    = 1440,
+ restart_interval                    = 60,
  io_form_history                     = 2
  io_form_restart                     = 2
  io_form_input                       = 2
@@ -54,7 +54,7 @@
  mp_physics                          = 8,     8,     8,
  ra_lw_physics                       = 4,     4,     4,
  ra_sw_physics                       = 4,     4,     4,
- radt                                = 10,    10,    10,
+ radt                                = 1,     1,     1,
  sf_sfclay_physics                   = 1,     1,     1,
  sf_surface_physics                  = 2,     2,     2,
  bl_pbl_physics                      = 1,     0,     0,
@@ -68,11 +68,9 @@
  sf_urban_physics                    = 0,     0,     0,
  /
 
- &fdda
- /
-
  &dynamics
  hybrid_opt                          = 2, 
+ use_theta_m                         = 1,
  w_damping                           = 0,
  diff_opt                            = 2,      2,      2,
  km_opt                              = 4,      3,      3,
@@ -92,9 +90,6 @@
  &bdy_control
  spec_bdy_width                      = 5,
  specified                           = .true.,
- /
-
- &grib2
  /
 
  &namelist_quilt

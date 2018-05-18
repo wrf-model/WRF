@@ -1712,6 +1712,23 @@
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          count_fatal_error = count_fatal_error + 1
       END IF
+      ! derived namelist for packaged a_/g_ variables
+      model_config_rec%mp_physics_plus = 0
+      DO i = 1, model_config_rec % max_dom
+         model_config_rec%mp_physics_plus(i) = model_config_rec%mp_physics(i)
+      ENDDO
+      model_config_rec%cu_used_plus = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%cu_physics(i) .NE. NOCUSCHEME ) THEN
+            model_config_rec%cu_used_plus = 1
+         END IF
+      ENDDO
+      model_config_rec%shcu_used_plus = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%shcu_physics(i) .NE. NOSHCUSCHEME ) THEN
+            model_config_rec%shcu_used_plus = 1
+         END IF
+      ENDDO
 #endif
 
 !-----------------------------------------------------------------------

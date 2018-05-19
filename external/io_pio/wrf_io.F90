@@ -120,8 +120,9 @@ subroutine ext_pio_open_for_read_begin( FileName, grid, SysDepInfo, DataHandle, 
 !       PIO_iotype_netcdf4p = 8, &  ! netcdf4 (hdf5 format) file opened in parallel (all netcdf4 files for read will be opened this way)
 !       PIO_iotype_vdc2 = 10
 ! stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_pnetcdf, FileName)
+  stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_pnetcdf, FileName, PIO_write)
 ! stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_netcdf, FileName)
-  stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_netcdf4p, FileName)
+! stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_netcdf4p, FileName)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
      write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
@@ -291,8 +292,9 @@ subroutine ext_pio_open_for_update( FileName, grid, SysDepInfo, DataHandle, Stat
 !       PIO_iotype_netcdf4p = 8, &  ! netcdf4 (hdf5 format) file opened in parallel (all netcdf4 files for read will be opened this way)
 !       PIO_iotype_vdc2 = 10       
 ! stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_pnetcdf, FileName)
+  stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_pnetcdf, FileName, PIO_write)
 ! stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_netcdf, FileName)
-  stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_netcdf4p, FileName)
+! stat = pio_openfile(DH%iosystem, DH%file_handle, pio_iotype_netcdf4p, FileName)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__
@@ -440,7 +442,8 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
 
  !call mpi_info_create( info, ierr )
   stat = pio_CreateFile(DH%iosystem, DH%file_handle, &
-                        pio_iotype_pnetcdf, FileName, PIO_64BIT_OFFSET)
+                        pio_iotype_pnetcdf, FileName, PIO_NOCLOBBER)
+!                       pio_iotype_pnetcdf, FileName, PIO_64BIT_OFFSET)
  !call mpi_info_free( info, ierr)
 
   call netcdf_err(stat,Status)
@@ -558,18 +561,19 @@ SUBROUTINE ext_pio_open_for_write_commit(DataHandle, Status)
   return
 end subroutine ext_pio_open_for_write_commit
 
-subroutine ext_pio_ioclose(grid, DataHandle, Status)
+subroutine ext_pio_ioclose(DataHandle, Status)
   use wrf_data_pio
   use pio_routines
   use pio
   use pio_kinds
   implicit none
   include 'wrf_status_codes.h'
-  type(domain)                      :: grid
   integer              ,intent(in)  :: DataHandle
   integer              ,intent(out) :: Status
   type(wrf_data_handle),pointer     :: DH
   integer                           :: stat
+
+  write(0,*) 'Get in ext_pio_ioclose ',__FILE__,', line', __LINE__
 
   call GetDH(DataHandle,DH,Status)
   if(Status /= WRF_NO_ERR) then
@@ -577,6 +581,7 @@ subroutine ext_pio_ioclose(grid, DataHandle, Status)
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
+  write(0,*) '    in ext_pio_ioclose ',__FILE__,', line', __LINE__
   if(DH%FileStatus == WRF_FILE_NOT_OPENED) then
     Status = WRF_WARN_FILE_NOT_OPENED
     write(msg,*) 'Warning FILE NOT OPENED in ext_pio_ioclose ',__FILE__,', line', __LINE__
@@ -598,12 +603,21 @@ subroutine ext_pio_ioclose(grid, DataHandle, Status)
     return
   endif
 
-  call free_pio_iodesc(grid, DH)
-  call finalize_pio(grid, DH)
 
-  call pio_closefile(DH%file_handle)
+ !call pio_setdebuglevel(1)
+  write(0,*) '    in ext_pio_ioclose ',__FILE__,', line', __LINE__
+  call pio_closefile(DH%file_handle) 
+  write(0,*) '    in ext_pio_ioclose ',__FILE__,', line', __LINE__
+  call free_pio_iodesc(DH)
+  write(0,*) '    in ext_pio_ioclose ',__FILE__,', line', __LINE__
+ !call pio_setdebuglevel(0)
+  write(0,*) '    in ext_pio_ioclose ',__FILE__,', line', __LINE__
+  call finalize_pio(DH)
+  write(0,*) '    in ext_pio_ioclose ',__FILE__,', line', __LINE__
   CALL deallocHandle( DataHandle, Status )
   DH%Free=.true.
+  write(0,*) 'Done in ext_pio_ioclose ',__FILE__,', line', __LINE__
+
   return
 end subroutine ext_pio_ioclose
 

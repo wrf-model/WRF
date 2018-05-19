@@ -76,8 +76,6 @@ subroutine deallocHandle(DataHandle, Status)
       DH => WrfDataHandles(DataHandle)
       DH%Free      =.TRUE.
     endif
-
-   !deallocate(DH%iosystem)
   ENDIF
   Status = WRF_NO_ERR
 end subroutine deallocHandle
@@ -218,14 +216,14 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
     VCount(2) = 1
    !DH%vtime%rec = TimeIndex
    !DH%vtime%name = 'Times'
-    WRITE(unit=0, fmt='(///6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(6x, 3a,i6)') 'DateStr: <', trim(DateStr), '>, TimeIndex =', TimeIndex
-    write(unit=0, fmt=*) '      DH%vtime = ', DH%vtime
+   !WRITE(unit=0, fmt='(///6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(6x, 3a,i6)') 'DateStr: <', trim(DateStr), '>, TimeIndex =', TimeIndex
+   !write(unit=0, fmt=*) '      DH%vtime = ', DH%vtime
    !stat = pio_put_var(DH%file_handle, DH%vtime, VStart, VCount, tmpdatestr)
     stat = pio_put_var(DH%file_handle, DH%vtime, tmpdatestr)
     call netcdf_err(stat,Status)
-    WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt=*) '      pio_put_var return Status = ', Status
+   !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt=*) '      pio_put_var return Status = ', Status
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__ 
       call wrf_debug ( WARN , TRIM(msg))
@@ -1076,18 +1074,18 @@ subroutine FieldIO(IO,DataHandle,DateStr,Dimens,Starts,Counts,Length,MemoryOrder
   type(wrf_data_handle)      ,pointer       :: DH
   integer(KIND=PIO_OFFSET_KIND)             :: pioidx
 
-  WRITE(unit=0, fmt='(6x, 3a, i6)') 'enter FieldIO, File: ', __FILE__, ', line: ', __LINE__
-  WRITE(unit=0, fmt='(6x, 2a)') 'DateStr = ', trim(DateStr)
-  WRITE(unit=0, fmt='(6x, 3a, i6, 4a)') 'IO: ', trim(IO), ', FieldType = ', FieldType, &
-                    ', Stagger: ', trim(Stagger), ', MemoryOrder = ', trim(MemoryOrder)
+ !WRITE(unit=0, fmt='(6x, 3a, i6)') 'enter FieldIO, File: ', __FILE__, ', line: ', __LINE__
+ !WRITE(unit=0, fmt='(6x, 2a)') 'DateStr = ', trim(DateStr)
+ !WRITE(unit=0, fmt='(6x, 3a, i6, 4a)') 'IO: ', trim(IO), ', FieldType = ', FieldType, &
+ !                  ', Stagger: ', trim(Stagger), ', MemoryOrder = ', trim(MemoryOrder)
 
  !call pio_setdebuglevel(1)
 
   DH => WrfDataHandles(DataHandle)
   call GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
 
-  WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
-  WRITE(unit=0, fmt='(6x, 2(a, i6))') ' GetTimeIndex Status = ', Status, ', TimeIndex = ', TimeIndex
+ !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
+ !WRITE(unit=0, fmt='(6x, 2(a, i6))') ' GetTimeIndex Status = ', Status, ', TimeIndex = ', TimeIndex
 
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'Warning in ',__FILE__,', line', __LINE__
@@ -1098,9 +1096,9 @@ subroutine FieldIO(IO,DataHandle,DateStr,Dimens,Starts,Counts,Length,MemoryOrder
   endif
   call GetDim(MemoryOrder,NDim,Status)
 
-  WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
-  WRITE(unit=0, fmt='(6x, a, i6)') ' GetDim Status = ', Status
-  WRITE(unit=0, fmt='(6x, a, i6)') ' NDim = ', NDim
+ !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
+ !WRITE(unit=0, fmt='(6x, a, i6)') ' GetDim Status = ', Status
+ !WRITE(unit=0, fmt='(6x, a, i6)') ' NDim = ', NDim
 
   fldsize = 1
   datasize = 1
@@ -1122,13 +1120,13 @@ subroutine FieldIO(IO,DataHandle,DateStr,Dimens,Starts,Counts,Length,MemoryOrder
  !DH%descVar(DH%CurrentVariable)%rec = TimeIndex
   call pio_setframe(DH%file_handle, DH%descVar(DH%CurrentVariable), pioidx)
 
-  write(unit=0, fmt='(3a,i6)') 'File: ', __FILE__, ', line: ', __LINE__
-  write(unit=0, fmt='(3a,l8,a,i6)') 'IO = ', trim(IO), ', whole = ', whole, ', pioidx = ', pioidx
-  write(unit=0, fmt='(4a)') 'MemoryOrder = ', trim(MemoryOrder), ', Stagger = ', trim(Stagger)
-  write(unit=0, fmt='(a,i4,a,i3)') 'DH%vartype(', DH%CurrentVariable, ') = ', DH%vartype(DH%CurrentVariable)
-  write(unit=0, fmt='(a,4i4)') 'Starts: ', Starts(1:ndim+1)
-  write(unit=0, fmt='(a,4i4)') 'Counts: ', Counts(1:ndim+1)
-  write(unit=0, fmt='(a,4i4)') 'Length: ', Length(1:ndim)
+ !write(unit=0, fmt='(3a,i6)') 'File: ', __FILE__, ', line: ', __LINE__
+ !write(unit=0, fmt='(3a,l8,a,i6)') 'IO = ', trim(IO), ', whole = ', whole, ', pioidx = ', pioidx
+ !write(unit=0, fmt='(4a)') 'MemoryOrder = ', trim(MemoryOrder), ', Stagger = ', trim(Stagger)
+ !write(unit=0, fmt='(a,i4,a,i3)') 'DH%vartype(', DH%CurrentVariable, ') = ', DH%vartype(DH%CurrentVariable)
+ !write(unit=0, fmt='(a,4i4)') 'Starts: ', Starts(1:ndim+1)
+ !write(unit=0, fmt='(a,4i4)') 'Counts: ', Counts(1:ndim+1)
+ !write(unit=0, fmt='(a,4i4)') 'Length: ', Length(1:ndim)
 
  !if(whole .and. (ENSEMBLE_VAR == DH%vartype(DH%CurrentVariable))) then
  !   whole = .false.
@@ -1160,8 +1158,8 @@ subroutine FieldIO(IO,DataHandle,DateStr,Dimens,Starts,Counts,Length,MemoryOrder
       return
   end select
 
-  WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
-  WRITE(unit=0, fmt='(a, i6)') 'Leave FieldIO with Status = ', Status
+ !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
+ !WRITE(unit=0, fmt='(a, i6)') 'Leave FieldIO with Status = ', Status
 
   return
 end subroutine FieldIO
@@ -1376,15 +1374,14 @@ subroutine initialize_pio(grid, DH)
 
 end subroutine initialize_pio
 
-subroutine finalize_pio(grid, DH)
+subroutine finalize_pio(DH)
    implicit none
 
-   type(domain)                   :: grid
    type(wrf_data_handle), pointer :: DH
 
    integer     :: ierr
 
-   call PIO_finalize(DH%iosystem, ierr)
+  !call PIO_finalize(DH%iosystem, ierr)
 
   !if(associated(DH%iosystem)) then
   !   deallocate(DH%iosystem)
@@ -2249,10 +2246,9 @@ subroutine define_pio_iodesc(grid, DH)
 
 end subroutine define_pio_iodesc
 
-subroutine free_pio_iodesc(grid, DH)
+subroutine free_pio_iodesc(DH)
    implicit none
 
-   type(domain)                   :: grid
    type(wrf_data_handle), pointer :: DH
 
 !--call free_decomp in order to free the IO decomposition with PIO

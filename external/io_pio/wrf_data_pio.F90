@@ -12,7 +12,6 @@ module wrf_data_pio
 
   use pio_kinds
   use pio
-  use perf_mod, only : t_startf, t_stopf   !_EXTERNAL
 
   integer                , parameter      :: FATAL            = 0
   integer                , parameter      :: WARN             = 0
@@ -68,8 +67,8 @@ module wrf_data_pio
     logical                               :: first_operation
 
 !--PIO specific
-   type (IOsystem_desc_t), pointer :: iosystem    ! PIO type handle to hold PIO-specific information
-                                                  ! about a file IO decomposition
+  !type (IOsystem_desc_t), pointer :: iosystem    ! PIO type handle to hold PIO-specific information
+  !                                               ! about a file IO decomposition
    type (File_desc_t)      :: file_handle ! file handle for normal PIO variables
 
    type (Var_desc_t)       :: vtime

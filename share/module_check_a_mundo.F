@@ -188,6 +188,7 @@
             wrf_err_message = '--- ERROR: mosaic option cannot work with urban options 2 and 3 '
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- ERROR: Fix sf_surface_mosaic and sf_urban_physics in namelist.input.'
+            CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- ERROR: Either: use Noah LSM without the mosaic option, OR change the urban option to 1 '
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          count_fatal_error = count_fatal_error + 1

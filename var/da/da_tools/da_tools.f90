@@ -48,6 +48,7 @@ contains
 
 #include "da_llxy.inc"
 #include "da_llxy_new.inc"
+#include "da_outside.inc"
 #include "da_llxy_default.inc"
 #include "da_llxy_default_new.inc"
 #include "da_llxy_kma_global.inc"

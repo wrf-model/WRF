@@ -1,4 +1,4 @@
-subroutine da_llxy (info, loc, outside, outside_all, outside_only)
+subroutine da_llxy (info, loc, outside, outside_all, xy_only)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -14,36 +14,30 @@ subroutine da_llxy (info, loc, outside, outside_all, outside_only)
    type(model_loc_type),  intent(inout) :: loc
    logical      ,         intent(out)   :: outside      !wrt local domain
    logical, optional,     intent(out)   :: outside_all  !wrt all domains
-   logical, optional,     intent(in)    :: outside_only
-
-   logical :: include_xy_convert
+   logical, optional,     intent(in)    :: xy_only
 
    ! too many return statments to trace
    ! if (trace_use_frequent) call da_trace_entry("da_llxy")
 
-   include_xy_convert = .true.
-   if (present(outside_only)) include_xy_convert = .not.outside_only
-
 
    outside = .false.
 
-   if (include_xy_convert) then
-      loc % x   = -1.0
-      loc % y   = -1.0
+   loc % x   = -1.0
+   loc % y   = -1.0
    
-      ! get the (x, y) coordinates
+   ! get the (x, y) coordinates
 
-      if ( fg_format == fg_format_wrf_arw_regional ) then
-         call da_llxy_wrf(map_info, info%lat, info%lon, loc%x, loc%y)
-      else if (fg_format == fg_format_wrf_nmm_regional) then
-         call da_llxy_rotated_latlon(info%lat, info%lon, map_info, loc%x, loc%y)
-      else if (global) then
-         call da_llxy_global (info%lat, info%lon, loc%x, loc%y)
-      else
-         call da_llxy_default (info%lat, info%lon, loc%x, loc%y)
-      end if
+   if ( fg_format == fg_format_wrf_arw_regional ) then
+      call da_llxy_wrf(map_info, info%lat, info%lon, loc%x, loc%y)
+   else if (fg_format == fg_format_wrf_nmm_regional) then
+      call da_llxy_rotated_latlon(info%lat, info%lon, map_info, loc%x, loc%y)
+   else if (global) then
+      call da_llxy_global (info%lat, info%lon, loc%x, loc%y)
+   else
+      call da_llxy_default (info%lat, info%lon, loc%x, loc%y)
    end if
 
+   if ( xy_only ) return
 
 #ifdef A2C
    call da_togrid (loc%x, its-3, ite+3, loc%i, loc%dx, loc%dxm)!

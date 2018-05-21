@@ -91,7 +91,7 @@ module da_radiance
 #endif
    use da_statistics, only : da_stats_calculate
    use da_tools, only : da_residual, da_obs_sfc_correction, &
-      da_llxy, da_llxy_new, da_togrid_new, da_get_julian_time, da_get_time_slots, &
+      da_llxy, da_llxy_new, da_outside, da_togrid_new, da_get_julian_time, da_get_time_slots, &
       da_xyll, map_info
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace, &
       da_trace_int_sort
@@ -129,6 +129,7 @@ contains
 #include "da_read_obs_ncgoesimg.inc"
 #include "da_read_obs_ncgoesabi.inc"
 #include "da_get_satzen.inc"
+#include "da_get_satzen_1d.inc"
 #include "da_allocate_rad_iv.inc"
 #include "da_initialize_rad_iv.inc"
 #include "da_read_kma1dvar.inc"

@@ -417,9 +417,6 @@ CONTAINS
              enddo
            enddo
          enddo 
-  if(ktau.eq.10 .and. ktau.eq.20 .and. ktau.eq.30) then
-   print *,'ktau, min/max rstoch',ktau,minval(rstoch(:,1,:)),maxval(rstoch(:,1,:))
-  endif
        endif  
 #endif
 !---- table TBQ is for resolution of balance equation in VILKA

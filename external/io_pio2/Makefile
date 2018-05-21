@@ -23,9 +23,10 @@ FC              = $(DM_FC)
 
 OBJS    = wrf_data_pio.o pio_routines.o wrf_io.o field_routines.o read_bdy_routines.o module_wrfsi_static.o
 
-PIOPATH = /glade/u/home/huangwei/mysw/pio2
+#PIOPATH = /glade/u/home/huangwei/mysw/pio2
+PIOPATH = /glade/u/apps/ch/opt/pio/2.2/mpt/2.15f/intel/17.0.1
 FFLAGS  = $(FCFLAGS) -I. -I$(PIOPATH)/include -I../ioapi_share -I../../frame -I../esmf_time_f90
-LIBS    = -L$(PIOPATH)/lib -lpioc -lpiof
+LIBS    = -L$(PIOPATH)/lib -lpiof -lpioc -lgptl
 #CPP1    = $(CPP) -P $(TRADFLAG) -DINTSPECIAL -D_PNETCDF -D_NETCDF4
 CPP1    = $(CPP) -P $(TRADFLAG) -D_PNETCDF -D_NETCDF4
 M4      = m4 -Uinclude -Uindex -Ulen

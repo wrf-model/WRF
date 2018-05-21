@@ -586,16 +586,11 @@ subroutine ext_pio_ioclose(DataHandle, Status)
   endif
 
  !call pio_setdebuglevel(1)
-  write(0,*) '    in ext_pio_ioclose ',__FILE__,', line', __LINE__
   call pio_closefile(DH%file_handle)
-  write(0,*) '    in ext_pio_ioclose ',__FILE__,', line', __LINE__
   call free_pio_iodesc(DH)
-  write(0,*) '    in ext_pio_ioclose ',__FILE__,', line', __LINE__
  !call pio_setdebuglevel(0)
 
-  write(0,*) '    in ext_pio_ioclose ',__FILE__,', line', __LINE__
   call finalize_pio(DH)
-  write(0,*) 'Done in ext_pio_ioclose ',__FILE__,', line', __LINE__
 
   DH%Free=.true.
   return

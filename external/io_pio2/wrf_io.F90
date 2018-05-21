@@ -486,8 +486,8 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
 
   VDimIDs(1) = DH%DimIDs(1)
   VDimIDs(2) = DH%DimUnlimID
-  WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
-  WRITE(unit=0, fmt='(6x, 3a, i6)') '0 Define Var: ', DH%TimesName, ', PIO_CHAR = ', PIO_CHAR
+ !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
+ !WRITE(unit=0, fmt='(6x, 3a, i6)') '0 Define Var: ', DH%TimesName, ', PIO_CHAR = ', PIO_CHAR
   stat = pio_def_var(DH%file_handle,DH%TimesName,PIO_CHAR,VDimIDs,DH%vtime)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
@@ -497,8 +497,8 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
   endif
   DH%DimLengths(1) = DateStrLen
 
-  WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
-  WRITE(unit=0, fmt='(6x, a)') 'Leaving ext_pio_open_for_write_begin normally'
+ !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
+ !WRITE(unit=0, fmt='(6x, a)') 'Leaving ext_pio_open_for_write_begin normally'
 
   return
 end subroutine ext_pio_open_for_write_begin
@@ -596,9 +596,6 @@ subroutine ext_pio_ioclose(DataHandle, Status)
     call wrf_debug ( FATAL , TRIM(msg))
     return
   endif
-
-! call pio_closefile(DH%file_handle)
-! CALL deallocHandle( DataHandle, Status )
 
  !call pio_setdebuglevel(1)
   write(0,*) '    in ext_pio_ioclose ',__FILE__,', line', __LINE__
@@ -7898,6 +7895,10 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     return
   endif
 
+ !WRITE(unit=0, fmt='(6x, 6a)') 'Enter ext_pio_write_field: called for ', trim(Var), &
+ !                              ', Stagger: ', trim(Stagger), ', MemoryOrder = ', trim(MemoryOrder)
+ !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
+
  !call pio_setdebuglevel(1)
 
   call DateCheck(DateStr,Status)
@@ -7917,12 +7918,13 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
   write(msg,*)'ext_pio_write_field: called for ',TRIM(Var)
   CALL wrf_debug( 100, msg )
 
- !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
- !WRITE(unit=0, fmt='(6x, 6a)') 'ext_pio_write_field: called for ', trim(Var), &
- !                              ', Stagger: ', trim(Stagger), ', MemoryOrder = ', trim(MemoryOrder)
-
   VCount(1:NDim) = PatchEnd(1:NDim)-PatchStart(1:NDim)+1
   Length_global(1:NDim) = DomainEnd(1:NDim)-DomainStart(1:NDim)+1
+
+ !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
+ !WRITE(unit=0, fmt='(6x, a, 3i6)') 'VStart = ', VStart(1:NDim)
+ !WRITE(unit=0, fmt='(6x, a, 3i6)') 'VCount = ', VCount(1:NDim)
+ !WRITE(unit=0, fmt='(6x, a, 3i6)') 'Length_global = ', Length_global(1:NDim)
 
   call ExtOrder(MemoryOrder,VCount,Status)
   call ExtOrder(MemoryOrder,Length_global,Status)
@@ -8220,6 +8222,9 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     write(msg,*) 'Fatal error BAD FILE STATUS in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( FATAL , TRIM(msg))
   endif
+
+ !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
+ !WRITE(unit=0, fmt='(6x, 6a)') 'Leave ext_pio_write_field: called for ', trim(Var)
   return
 end subroutine ext_pio_write_field
 

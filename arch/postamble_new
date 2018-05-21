@@ -111,8 +111,8 @@ wrfio_pnf :
           make $(J) NETCDFPATH="$(PNETCDFPATH)" RANLIB="$(RANLIB)" CPP="$(CPP) $(ARCHFLAGS)" \
           FC="$(FC) $(PROMOTION) $(OMP) $(FCFLAGS)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
 
-wrfio_pio :
-	( cd $(WRF_SRC_ROOT_DIR)/external/io_pio ; \
+wrfio_pio2 :
+	( cd $(WRF_SRC_ROOT_DIR)/external/io_pio2 ; \
           make $(J) NETCDFPATH="$(PIOPATH)" RANLIB="$(RANLIB)" CPP="$(CPP)" \
           CC="$(SCC)" CFLAGS="$(CFLAGS)" \
           FC="$(SFC) $(PROMOTION) $(OMP) $(FCFLAGS)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )

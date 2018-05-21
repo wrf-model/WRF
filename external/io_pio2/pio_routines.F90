@@ -218,14 +218,14 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
     VCount(2) = 1
    !DH%vtime%rec = TimeIndex
    !DH%vtime%name = 'Times'
-    WRITE(unit=0, fmt='(///6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt='(6x, 3a,i6)') 'DateStr: <', trim(DateStr), '>, TimeIndex =', TimeIndex
-    write(unit=0, fmt=*) '      DH%vtime = ', DH%vtime
+   !WRITE(unit=0, fmt='(///6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt='(6x, 3a,i6)') 'DateStr: <', trim(DateStr), '>, TimeIndex =', TimeIndex
+   !write(unit=0, fmt=*) '      DH%vtime = ', DH%vtime
    !stat = pio_put_var(DH%file_handle, DH%vtime, VStart, VCount, tmpdatestr)
     stat = pio_put_var(DH%file_handle, DH%vtime, tmpdatestr)
     call netcdf_err(stat,Status)
-    WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
-    write(unit=0, fmt=*) '      pio_put_var return Status = ', Status
+   !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
+   !write(unit=0, fmt=*) '      pio_put_var return Status = ', Status
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__ 
       call wrf_debug ( WARN , TRIM(msg))
@@ -1076,10 +1076,10 @@ subroutine FieldIO(IO,DataHandle,DateStr,Dimens,Starts,Counts,Length,MemoryOrder
   type(wrf_data_handle)      ,pointer       :: DH
   integer(KIND=PIO_OFFSET_KIND)             :: pioidx
 
-  WRITE(unit=0, fmt='(6x, 3a, i6)') 'enter FieldIO, File: ', __FILE__, ', line: ', __LINE__
-  WRITE(unit=0, fmt='(6x, 2a)') 'DateStr = ', trim(DateStr)
-  WRITE(unit=0, fmt='(6x, 3a, i6, 4a)') 'IO: ', trim(IO), ', FieldType = ', FieldType, &
-                    ', Stagger: ', trim(Stagger), ', MemoryOrder = ', trim(MemoryOrder)
+ !WRITE(unit=0, fmt='(6x, 3a, i6)') 'enter FieldIO, File: ', __FILE__, ', line: ', __LINE__
+ !WRITE(unit=0, fmt='(6x, 2a)') 'DateStr = ', trim(DateStr)
+ !WRITE(unit=0, fmt='(6x, 3a, i6, 4a)') 'IO: ', trim(IO), ', FieldType = ', FieldType, &
+ !                  ', Stagger: ', trim(Stagger), ', MemoryOrder = ', trim(MemoryOrder)
 
  !call pio_setdebuglevel(1)
 
@@ -1100,7 +1100,7 @@ subroutine FieldIO(IO,DataHandle,DateStr,Dimens,Starts,Counts,Length,MemoryOrder
 
  !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
  !WRITE(unit=0, fmt='(6x, a, i6)') ' GetDim Status = ', Status
-  WRITE(unit=0, fmt='(6x, a, i6)') ' NDim = ', NDim
+ !WRITE(unit=0, fmt='(6x, a, i6)') ' NDim = ', NDim
 
   fldsize = 1
   datasize = 1

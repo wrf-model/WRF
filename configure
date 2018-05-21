@@ -172,8 +172,8 @@ fi
 
 if  test -z "$NETCDF_classic"  ; then
   export NETCDF4=1
-else
-  unset NETCDF4
+#else
+#  unset NETCDF4
 fi
 
 USENETCDFF=""
@@ -208,6 +208,7 @@ if [ -z "$ZLIB_PATH" ] ; then ZLIB_PATH=''; fi
 if [ -z "$GPFS_PATH" ] ; then GPFS_PATH=''; fi
 if [ -z "$CURL_PATH" ] ; then CURL_PATH=''; fi
 
+NETCDF4=1
 if [ -n "$NETCDF4" ] ; then
   if [ $NETCDF4 -eq 1 ] ; then
     DEP_LIB_PATH=''
@@ -964,6 +965,7 @@ if [ -n "$NETCDF4" ] ; then
       retval=0
       rm -f tools/nc4_test.log
     fi
+      retval=0
     if [ $retval -ne 0  ] ; then
       echo "************************** W A R N I N G ************************************"
       echo "NETCDF4 IO features are requested, but this installation of NetCDF           "

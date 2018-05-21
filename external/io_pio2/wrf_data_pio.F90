@@ -12,7 +12,6 @@ module wrf_data_pio
 
   use pio_kinds
   use pio
-  use perf_mod, only : t_startf, t_stopf   !_EXTERNAL
 
   integer                , parameter      :: FATAL            = 0
   integer                , parameter      :: WARN             = 0
@@ -89,17 +88,9 @@ module wrf_data_pio
    type (io_desc_t)        :: iodesc3d_land_real,   iodesc3d_soil_real, iodesc3d_soil_layers_real
    type (io_desc_t)        :: iodesc3d_land_int,    iodesc3d_soil_int, iodesc3d_soil_layers_int
 
-   type (io_desc_t)        :: iodesc3d_mdl_cpl_double
-   type (io_desc_t)        :: iodesc3d_mdl_cpl_real
-   type (io_desc_t)        :: iodesc3d_mdl_cpl_int
-
-   type (io_desc_t)        :: iodesc3d_ensemble_double
-   type (io_desc_t)        :: iodesc3d_ensemble_real
-   type (io_desc_t)        :: iodesc3d_ensemble_int
-
-   type (io_desc_t)        :: iodesc3d_erosion_double
-   type (io_desc_t)        :: iodesc3d_erosion_real
-   type (io_desc_t)        :: iodesc3d_erosion_int
+   type (io_desc_t)        :: iodesc3d_mdl_cpl_real,  iodesc3d_mdl_cpl_double,  iodesc3d_mdl_cpl_int
+   type (io_desc_t)        :: iodesc3d_ensemble_real, iodesc3d_ensemble_double, iodesc3d_ensemble_int
+   type (io_desc_t)        :: iodesc3d_erosion_real,  iodesc3d_erosion_double,  iodesc3d_erosion_int
 
    type (io_desc_t)        :: iodesc3d_xsz_u_real, iodesc3d_xsz_u_double, iodesc3d_xsz_u_int
    type (io_desc_t)        :: iodesc3d_xsz_v_real, iodesc3d_xsz_v_double, iodesc3d_xsz_v_int

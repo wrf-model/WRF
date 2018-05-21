@@ -548,12 +548,12 @@ while ( <CONFIGURE_DEFAULTS> )
 	 }
 
     if ( $sw_pio_path )
-      { $_ =~ s/CONFIGURE_WRFIO_PIO/wrfio_pio/g ;
+      { $_ =~ s/CONFIGURE_WRFIO_PIO/wrfio_pio2/g ;
         $_ =~ s:CONFIGURE_PIO_FLAG:-DPIO: ;
         if ( $sw_os eq "Interix" ) {
-          $_ =~ s:CONFIGURE_PIO_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_pio/libwrfio_pio.a -L$sw_pio_path/lib -lpio: ;
+          $_ =~ s:CONFIGURE_PIO_LIB_PATH:\$\(WRF_SRC_ROOT_DIR\)/external/io_pio2/libwrfio_pio2.a -L$sw_pio_path/lib -lpiof -lpioc -lcurl: ;
         } else {
-          $_ =~ s:CONFIGURE_PIO_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_pio -lwrfio_pio -L$sw_pio_path/lib -lpio: ;
+          $_ =~ s:CONFIGURE_PIO_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_pio2 -lwrfio_pio2 -L$sw_pio_path/lib -lpiof -lpioc -lcurl: ;
         }
          }
     else
@@ -563,7 +563,7 @@ while ( <CONFIGURE_DEFAULTS> )
          }
 
     if ( $sw_hdf5_path ) 
-      { $_ =~ s:CONFIGURE_HDF5_LIB_PATH:-L$sw_hdf5_path/lib -lhdf5_fortran -lhdf5 -lm -lz: ;
+      { $_ =~ s:CONFIGURE_HDF5_LIB_PATH:-L$sw_hdf5_path/lib -lhdf5 -lhdf5_hl -lm -lz -lcurl: ;
         $_ =~ s:CONFIGURE_HDF5_FLAG:-DHDF5: ;
          }
     else
@@ -575,7 +575,7 @@ while ( <CONFIGURE_DEFAULTS> )
 
       { $_ =~ s/CONFIGURE_WRFIO_PHDF5/wrfio_phdf5/g ;
 	$_ =~ s:CONFIGURE_PHDF5_FLAG:-DPHDF5: ;
-	$_ =~ s:CONFIGURE_PHDF5_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_phdf5 -lwrfio_phdf5 -L$sw_phdf5_path/lib -lhdf5_fortran -lhdf5 -lm -lz -L$sw_phdf5_path/lib -lsz: ;
+	$_ =~ s:CONFIGURE_PHDF5_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_phdf5 -lwrfio_phdf5 -L$sw_phdf5_path/lib -lhdf5 -lhdf5_hl -lm -lz -L$sw_phdf5_path/lib -lsz: ;
 	 }
     else                   
       { $_ =~ s/CONFIGURE_WRFIO_PHDF5//g ;

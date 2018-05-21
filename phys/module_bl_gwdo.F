@@ -401,7 +401,7 @@ contains
      kbl(i) = max(min(kbl(i),kpblmax),kpblmin)
    enddo
 !
-! determine the level of maximum orograhpic height
+! determine the level of maximum orographic height
 !
    komax(:) = kbl(:)
 !
@@ -444,7 +444,7 @@ contains
      ol4p(4) = ol4(i,3)
      olp(i)  = ol4p(mod(nwd-1,4)+1) 
 !
-! compute orograhpic direction (horizontal orograhpic aspect ratio)
+! compute orographic direction (horizontal orographic aspect ratio)
 !
      od(i) = olp(i)/max(ol(i),olmin)
      od(i) = min(od(i),odmax)

@@ -228,11 +228,11 @@ Namelist variables specifically for the WPS input for real:
                                                 ; 0 = perform traditional trapping interpolation
                                                 ; n = first n eta levels directly use surface level
  maxw_horiz_pres_diff                = 5000     ; Pressure threshold (Pa).  For using the level of max winds, when the
-                                                ; pressure differnce between neighboring values exceeds this maximum,
+                                                ; pressure difference between neighboring values exceeds this maximum,
                                                 ; the variable is NOT inserted into the column for vertical interpolation.
                                                 ; ARW real only.
  trop_horiz_pres_diff                = 5000     ; Pressure threshold (Pa).  For using the tropopause level, when the
-                                                ; pressure differnce between neighboring values exceeds this maximum,
+                                                ; pressure difference between neighboring values exceeds this maximum,
                                                 ; the variable is NOT inserted into the column for vertical interpolation.
                                                 ; ARW real only.
  maxw_above_this_level               = 30000    ; Minimum height (actually it is pressure in Pa) to allow using the 
@@ -247,12 +247,12 @@ Namelist variables specifically for the WPS input for real:
  smooth_cg_topo	                     = .false.  ; Smooth the outer rows and columns of domain 1's topography w.r.t.
                                                 ; the input data
  use_tavg_for_tsk                    = .false.  ; whether to use diurnally averaged surface temp as skin temp. The 
-                                                  diurnall averaged surface temp can be computed using WPS utility
+                                                  diurnally averaged surface temp can be computed using WPS utility
                                                   avg_tsfc.exe. May use this option when SKINTEMP is not present.
- aggregate_lu                        = .false.  ; whetger to aggregate the grass, shrubs, trees in dominant landuse;
+ aggregate_lu                        = .false.  ; whether to aggregate the grass, shrubs, trees in dominant landuse;
                                                   default is false.
  rh2qv_wrt_liquid                    = .true.,  ; whether to compute RH with respect to water (true) or ice (false)
- rh2qv_method                        = 1,       ; which methed to use to computer mixing ratio from RH:
+ rh2qv_method                        = 1,       ; which method to use to computer mixing ratio from RH:
                                                   default is option 1, the old MM5 method; option 2 uses a WMO 
                                                   recommended method (WMO-No. 49, corrigendum, August 2000) - 
                                                   there is a difference between the two methods though small
@@ -261,7 +261,7 @@ Namelist variables specifically for the WPS input for real:
                                                   compared with input data
  hypsometric_opt                     = 2,       ; = 1: default method
                                                   = 2: it uses an alternative way (less biased 
-                                                  when compared agaist input data) to compute height in program 
+                                                  when compared against input data) to compute height in program 
                                                   real and pressure in model (ARW only). 
  p_top_requested                     = 5000     ; p_top (Pa) to use in the model
  ptsgm                               = 42000.   ; FOR NMM:  defines the pressure interface dividing
@@ -369,7 +369,7 @@ available to run the 3d ocean option.
                                         34.6490,   34.6446,   34.6396,   34.6347,   34.6297,   34.6247,
                                         34.6490,   34.6446,   34.6396,   34.6347,   34.6297,   34.6247
 
-Namelist variables for controling the specified moving nest: 
+Namelist variables for controlling the specified moving nest: 
                    Note that this moving nest option needs to be activated at the compile time by adding -DMOVE_NESTS
                    to the ARCHFLAGS. The maximum number of moves, max_moves, is set to 50 
                    but can be modified in source code file frame/module_driver_constants.F.
@@ -383,9 +383,9 @@ Namelist variables for controling the specified moving nest:
                                                   0 means no move. The limitation now is to move only 1 grid cell
                                                   at each move.
 
-Namelist variables for controling the automatic moving nest: 
+Namelist variables for controlling the automatic moving nest: 
                    Note that this moving nest option needs to be activated at the compile time by adding -DMOVE_NESTS
-                   and -DVORTEX_CENTER to the ARCHFLAGS. This option uses an mid-level vortex following algorthm to
+                   and -DVORTEX_CENTER to the ARCHFLAGS. This option uses a mid-level vortex following algorithm to
                    determine the nest move. This option is experimental.
  vortex_interval(max_dom)            = 15       ; how often the new vortex position is computed
  max_vortex_speed(max_dom)           = 40       ; used to compute the search radius for the new vortex position
@@ -506,7 +506,7 @@ Namelist variables for controlling the adaptive time step option:
                                        nssl_rho_qs  = 100.  ! snow density
                                      = 28, aerosol-aware Thompson scheme with water- and ice-friendly aerosol climatology 
                                            (new for V3.6)
-                                       This option has two climatogical aerosol input options:
+                                       This option has two climatological aerosol input options:
                                        use_aero_icbc = .F. : use constant values
                                        use_aero_icbc = .T. : use input from WPS
                                      = 30, HUJI (Hebrew University of Jerusalem, Israel) spectral bin microphysics,
@@ -517,7 +517,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version
 
  For non-zero mp_physics options, to keep Qv .GE. 0, and to set the other moisture
- fields .LT. a critcal value to zero
+ fields .LT. a critical value to zero
 
  mp_zero_out                         = 0,      ; no action taken, no adjustment to any moist field
                                      = 1,      ; except for Qv, all other moist arrays are set to zero
@@ -944,7 +944,7 @@ Namelist variables for controlling the adaptive time step option:
                                                   If fractional_seaice = 1, also set seaice_threshold = 0.
  seaice_albedo_opt                   = 0        ; option to set albedo over sea ice
                                                 ; 0 = seaice albedo is a constant value from namelist option seaice_albedo_default
-                                                ; 1 = seaice albedo is f(Tair,Tskin,Snow) follwing Mills (2011) for Arctic Ocean
+                                                ; 1 = seaice albedo is f(Tair,Tskin,Snow) following Mills (2011) for Arctic Ocean
                                                 ; 2 = seaice albedo read in from input variable ALBSI
  seaice_albedo_default               =  0.65    ; default value of seaice albedo for seaice_albedo_opt=0
  seaice_snowdepth_opt                = 0        ; method for treating snow depth on sea ice
@@ -971,7 +971,7 @@ Namelist variables for controlling the adaptive time step option:
  do_radar_ref			     = 0, 	; 1 = allows radar reflectivity to be computed using mp-scheme-specific
  						  parameters.  Currently works for mp_physics = 2,4,6,7,8,10,14,16,28
  hailcast_opt (max_dom)              = 0, 	; 1 = 1-D hail growth model which predicts 1st-5th rank-ordered hail diameters, mean hail 
-                                                  diagmeter and standard deviation of hail diameter. (Adams-Selin and Ziegler, MWR Dec 2016.) 
+                                                  diameter and standard deviation of hail diameter. (Adams-Selin and Ziegler, MWR Dec 2016.) 
                                                   Updated in V3.9, replacing afwa_hailcast_opt in previous versions.
 				
 Namelist variables for lake module: 
@@ -1073,7 +1073,7 @@ Stochastic parameterization schemes:
 
 Stochastically perturbed parameter scheme (SPP) (spp=1)
  sppt (max_dom)                      = 0        ; Stochastically perturbed parameter (SPP) scheme for
-                                                ; GF convection schems, MYNN boundary layer scheme and RUC LSM. 0: off, 1: on
+                                                ; GF convection scheme, MYNN boundary layer scheme and RUC LSM. 0: off, 1: on
  spp_conv (max_dom)                  = 0        ; Perturb parameters of GF convection scheme only
  gridpt_stddev_spp_conv (max_dom)    = 0.3      ; Standard deviation of random perturbation field at each gridpoint.
                                                 ; Determines amplitude of random perturbations
@@ -1175,7 +1175,7 @@ Options for use with the Noah-MP Land Surface Model:
  opt_gla                            = 1,        ; Noah-MP glacier treatment option (new in 3.8)
                                                 ;    1 = includes phase change
                                                 ;    2 = slab ice (Noah)
- opt_rsf                            = 1,        ; Noah-MP surface evaporation resistence option (new in 3.8)
+ opt_rsf                            = 1,        ; Noah-MP surface evaporation resistance option (new in 3.8)
                                                 ;    1 -> Sakaguchi and Zeng, 2009
                                                 ;    2 -> Sellers (1992)
                                                 ;    3 -> adjusted Sellers to decrease RSURF for wet soil
@@ -1415,7 +1415,7 @@ The following are for observation nudging:
  mix_full_fields(max_dom)            = .true.,  ; used with diff_opt = 2; value of ".true." is recommended, except for
                                                   highly idealized numerical tests; damp_opt must not be 1 if ".true."
                                                   is chosen. .false. means subtract 1-d base-state profile before mixing
- mix_isotropic(max_dom)              = 0        ; 0=anistropic vertical/horizontal diffusion coeffs, 1=isotropic
+ mix_isotropic(max_dom)              = 0        ; 0=anisotropic vertical/horizontal diffusion coeffs, 1=isotropic
  mix_upper_bound(max_dom)            = 0.1      ; non-dimensional upper limit for diffusion coeffs
  tke_drag_coefficient(max_dom)       = 0.,      ; surface drag coefficient (Cd, dimensionless) for diff_opt=2 only
  tke_heat_flux(max_dom)              = 0.,      ; surface thermal flux (H/(rho*cp), K m/s) for diff_opt=2 only
@@ -1674,7 +1674,7 @@ The user must build the code with
 Run-time requirement for HVC:
 There are two namelist settings that control the HVC option. Conventionally, the suggested value
 for the level at which the eta levels become isobaric is the default value in the Registry file
-(as this valus is not intuitively easy to remember). The second switch, to turn on the HVC, is by default
+(as this value is not intuitively easy to remember). The second switch, to turn on the HVC, is by default
 set to the TF value (hybrid_opt=0) in the Registry. To activate the hybrid coordinate capability,
 this value needs to be modified in the namelist (hybrid_opt=2).
 

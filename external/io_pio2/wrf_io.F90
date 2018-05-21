@@ -434,10 +434,6 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
      DH%first_operation = .false.
   end if
 
- !WRITE(unit=0, fmt='(/6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
- !WRITE(unit=0, fmt='(6x, a)') 'Entering ext_pio_open_for_write_begin'
- !WRITE(unit=0, fmt='(2a)') 'FileName = ', trim(FileName)
-
  !call mpi_info_create( info, ierr )
   stat = pio_CreateFile(DH%iosystem, DH%file_handle, &
                         pio_iotype_pnetcdf, FileName, PIO_64BIT_OFFSET)
@@ -450,9 +446,6 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
-
- !WRITE(unit=0, fmt='(3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
- !WRITE(unit=0, fmt='(a, i6)') 'Status = ', Status
 
  !JPE added for performance
  !stat = nf90_set_fill(DH%file_handle, NF90_NOFILL, i)
@@ -486,8 +479,6 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
 
   VDimIDs(1) = DH%DimIDs(1)
   VDimIDs(2) = DH%DimUnlimID
- !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
- !WRITE(unit=0, fmt='(6x, 3a, i6)') '0 Define Var: ', DH%TimesName, ', PIO_CHAR = ', PIO_CHAR
   stat = pio_def_var(DH%file_handle,DH%TimesName,PIO_CHAR,VDimIDs,DH%vtime)
   call netcdf_err(stat,Status)
   if(Status /= WRF_NO_ERR) then
@@ -496,9 +487,6 @@ SUBROUTINE ext_pio_open_for_write_begin(FileName,grid,SysDepInfo,DataHandle,Stat
     return
   endif
   DH%DimLengths(1) = DateStrLen
-
- !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
- !WRITE(unit=0, fmt='(6x, a)') 'Leaving ext_pio_open_for_write_begin normally'
 
   return
 end subroutine ext_pio_open_for_write_begin
@@ -4580,10 +4568,6 @@ subroutine ext_pio_put_var_ti_char_arr(DataHandle,Element,Var,Data,Status)
       endif
     enddo
 
-   !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   !write(unit=0, fmt='(6a)') 'Var: ', trim(Var), ', Element: ', trim(Element), ', tmpdata: ', trim(tmpdata)
-   !write(unit=0, fmt='(3(a,i6))') 'DH%descVar(', NVar, ')%VarID = ', DH%descVar(NVar)%VarID, ', length = ', length
-
     if(DH%Write) then
       DH%Write = .false.
       stat = pio_redef(DH%file_handle)
@@ -7895,10 +7879,6 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     return
   endif
 
- !WRITE(unit=0, fmt='(6x, 6a)') 'Enter ext_pio_write_field: called for ', trim(Var), &
- !                              ', Stagger: ', trim(Stagger), ', MemoryOrder = ', trim(MemoryOrder)
- !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
-
  !call pio_setdebuglevel(1)
 
   call DateCheck(DateStr,Status)
@@ -7920,11 +7900,6 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
 
   VCount(1:NDim) = PatchEnd(1:NDim)-PatchStart(1:NDim)+1
   Length_global(1:NDim) = DomainEnd(1:NDim)-DomainStart(1:NDim)+1
-
- !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
- !WRITE(unit=0, fmt='(6x, a, 3i6)') 'VStart = ', VStart(1:NDim)
- !WRITE(unit=0, fmt='(6x, a, 3i6)') 'VCount = ', VCount(1:NDim)
- !WRITE(unit=0, fmt='(6x, a, 3i6)') 'Length_global = ', Length_global(1:NDim)
 
   call ExtOrder(MemoryOrder,VCount,Status)
   call ExtOrder(MemoryOrder,Length_global,Status)
@@ -7956,9 +7931,6 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
         exit
       endif
     enddo
-
-   !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
-   !WRITE(unit=0, fmt='(6x, 3a, i6)') 'Found var ', trim(VarName), ' as NVar = ', NVar
 
     if(NotFound) then
       Status = WRF_WARN_TOO_MANY_VARIABLES
@@ -8063,8 +8035,6 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     end select
 
     VDimIDs(NDim+1) = DH%DimUnlimID
-   !write(unit=0, fmt='(6x,3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   !write(unit=0, fmt='(6x,3a,i6,4x,a,i4)') '1 Define Var <', trim(Var), '> as NVar:', DH%NumVars, 'NDim = ', NDim
     stat = pio_def_var(DH%file_handle,VarName,XType,VDimIDs(1:NDim+1),DH%descVar(DH%NumVars))
     call netcdf_err(stat,Status)
     if(Status /= WRF_NO_ERR) then
@@ -8074,11 +8044,6 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     endif
     
    !DH%descVar(DH%NumVars)%name = VarName
-   !write(unit=0, fmt='(6x,3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-   !write(unit=0, fmt='(6x,a,i4,a,4i4,2x,a)') 'DH%descVar(', DH%NumVars, ') = ', &
-   !                  DH%descVar(DH%NumVars)%VarID, DH%descVar(DH%NumVars)%rec, &
-   !                  DH%descVar(DH%NumVars)%type,  DH%descVar(DH%NumVars)%ndims, &
-   !                  DH%descVar(DH%NumVars)%name
     
     stat = pio_put_att(DH%file_handle,DH%descVar(DH%NumVars),'FieldType',FieldType)
     call netcdf_err(stat,Status)
@@ -8172,9 +8137,6 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
        endif
     end do
 
-   !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
-   !WRITE(unit=0, fmt='(6x, 3a, i6)') 'Before FieldIO'
-
 #ifndef INTSPECIAL
     call FieldIO('write',DataHandle,DateStr,Length_global,VStart,VCount,Length,MemoryOrder, &
                   Stagger,FieldType,Field,Status)
@@ -8223,8 +8185,6 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     call wrf_debug ( FATAL , TRIM(msg))
   endif
 
- !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
- !WRITE(unit=0, fmt='(6x, 6a)') 'Leave ext_pio_write_field: called for ', trim(Var)
   return
 end subroutine ext_pio_write_field
 
@@ -8452,20 +8412,10 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
       endif
     enddo
 #endif
-   !write(unit=0, fmt='(//3a,i6)') 'file: ',__FILE__,', line', __LINE__
-   !write(unit=0, fmt='(4x,a,i6,2a)') 'DH%CurrentVariable = ', DH%CurrentVariable, ', name: ', trim(VarName)
 
     VStart(1:NDim) = PatchStart(1:NDim)
     VCount(1:NDim) = PatchEnd(1:NDim) - PatchStart(1:NDim) + 1
     VDimen(1:NDim) = DomainEnd(1:NDim) - DomainStart(1:NDim) + 1
-
-   !do n = 1, NDim
-   !   write(unit=0, fmt='(4x,8(a,i2,a,i6))') &
-   !        'DomainStart(', n, ')=', DomainStart(n), ', DomainEnd(', n, ')=', DomainEnd(n), &
-   !        ', MemoryStart(', n, ')=', MemoryStart(n), ', MemoryEnd(', n, ')=', MemoryEnd(n), &
-   !        ', PatchStart(', n, ')=', PatchStart(n), ', PatchEnd(', n, ')=', PatchEnd(n), &
-   !        ', VStart(', n, ')=', VStart(n), ', VCount(', n, ')=', VCount(n)
-   !end do
 
     call ExtOrder(MemoryOrder,VStart,Status)
     call ExtOrder(MemoryOrder,VCount,Status)
@@ -8476,9 +8426,6 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     do n = 1, NDim
        Length(n) = MemoryEnd(n) - MemoryStart(n) + 1
        fldsize = fldsize * Length(n)
-
-      !write(unit=0, fmt='(4x,2(a,i2,a,i6))') &
-      !     'VStart(', n, ')=', VStart(n), ', VCount(', n, ')=', VCount(n)
 
        if("land_cat_stag" == DH%DimNames(VDimIDs(n))) then
           DH%vartype(DH%CurrentVariable) = LAND_CAT_VAR
@@ -8496,10 +8443,6 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
 #ifndef INTSPECIAL
     isbdy = is_boundary(MemoryOrder)
     if(isbdy) then
-     !write(unit=0, fmt='(//3a,i6)') 'file: ',__FILE__,', line', __LINE__
-     !write(unit=0, fmt='(4x,a,i6,2a)') 'DH%CurrentVariable = ',
-     !DH%CurrentVariable, ', name: ', trim(VarName)
-
       call FieldBDY('read',DataHandle,DateStr,NDim,VDimen, &
                     MemoryStart,MemoryEnd,PatchStart,PatchEnd, &
                     FieldType,Field,Status)
@@ -8537,9 +8480,6 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
     else
       isbdy = is_boundary(MemoryOrder)
       if(isbdy) then
-       !write(unit=0, fmt='(//3a,i6)') 'file: ',__FILE__,', line', __LINE__
-       !write(unit=0, fmt='(4x,a,i6,2a)') 'DH%CurrentVariable = ', DH%CurrentVariable, ', name: ', trim(VarName)
-
         call FieldBDY('read',DataHandle,DateStr,NDim,VDimen, &
                       MemoryStart,MemoryEnd,PatchStart,PatchEnd, &
                       FieldType,Field,Status)

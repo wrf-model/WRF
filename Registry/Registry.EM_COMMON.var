@@ -186,6 +186,8 @@ state   real    qr             ijkftb   moist       1         -     \
    i0rhusdf=(bdy_interp:dt)  "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
 state   real    qi             ijkftb   moist       1         -     \
    i0rhusdf=(bdy_interp:dt)  "QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    qi2            ijkftb   moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "QICE2"            "Ice mixing ratio cat 2"        "kg kg-1"
 state   real    qs             ijkftb   moist       1         -     \
    i0rhusdf=(bdy_interp:dt)  "QSNOW"            "Snow mixing ratio"             "kg kg-1"
 state   real    qg             ijkftb   moist       1         -     \

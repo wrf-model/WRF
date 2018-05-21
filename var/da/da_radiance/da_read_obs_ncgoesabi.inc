@@ -39,7 +39,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    integer                      :: ny_global, nx_global
    integer                      :: yoff_fd, xoff_fd
    ! For MPI parallelization
-   integer                      :: nbuf, nrad_local
+   integer                      :: nbuf, nrad_local, buf_i, buf_f
    integer                      :: ny_local, nx_local
    integer                      :: ys_local, xs_local
 
@@ -707,20 +707,31 @@ write(stdout,fmt=*) 'TEST8', subgrid, n, icount
 
 write(stdout,fmt=*) 'TEST9'
 
-               call mpi_allreduce(nrad_local, nbuf, 1, mpi_integer, mpi_max, comm, ierr)
+               call mpi_allreduce(nrad_local, nbuf, 1, mpi_integer, mpi_sum, comm, ierr)
 
                !ALLOCATE COMMUNICATION BUFFERS
                allocate( buf_real( nbuf, 3 ) )
                allocate( buf_int ( nbuf, 2 ) )
                allocate( buf_loc ( nbuf, 1 ) )
 
+               this_view % nrad_on_domain = nbuf
+
+!This loop is much faster when num_procs is small (36) versus large (288)
+!In addition to reducing communications, I believe the small num_procs balances the load
+! in the nbuf loop by ensuring that each local data set includes locations from
+! more than 1-5 processors.  I thought that the load balancing above would solve that
+! issue, but clearly it does not.  Both the above loop and the below loop need to
+! have balanced loads to perform well in large num_procs.  How to balance the following loop?
+
+               buf_f = 0
                ProcLoop: do iproc = 0, num_procs-1
                   nbuf = nrad_local
 #ifdef DM_PARALLEL
                   call mpi_bcast(nbuf, 1, mpi_integer, iproc, comm, ierr )
 #endif
                   if (nbuf .eq. 0) cycle
-
+                  buf_i = buf_f + 1
+                  buf_f = buf_i + nbuf - 1
 write(stdout,fmt=*) 'TEST10', nbuf
 
 !                  !BCAST REMOTE FIELDS
@@ -731,96 +742,95 @@ write(stdout,fmt=*) 'TEST10', nbuf
 !                  allocate( buf_loc ( nbuf, 1 ) )
 
                   if (iproc .eq. myproc) then
-                     buf_real(1:nbuf,1) = lat_1d % local    (1:nbuf)
-                     buf_real(1:nbuf,2) = lon_1d % local    (1:nbuf)
-                     buf_real(1:nbuf,3) = satzen_1d % local (1:nbuf)
-                     buf_int (1:nbuf,1) = iy_1d % local     (1:nbuf)
-                     buf_int (1:nbuf,2) = ix_1d % local     (1:nbuf)
-                     buf_loc (1:nbuf,1) = loc_1d % local    (1:nbuf)
+                     buf_real(buf_i:buf_f,1) = lat_1d % local    (1:nbuf)
+                     buf_real(buf_i:buf_f,2) = lon_1d % local    (1:nbuf)
+                     buf_real(buf_i:buf_f,3) = satzen_1d % local (1:nbuf)
+                     buf_int (buf_i:buf_f,1) = iy_1d % local     (1:nbuf)
+                     buf_int (buf_i:buf_f,2) = ix_1d % local     (1:nbuf)
+                     buf_loc (buf_i:buf_f,1) = loc_1d % local    (1:nbuf)
                   else
-                     buf_real = missing_r
-                     buf_int = missing
-                     buf_loc(:,1)%j = missing
-                     buf_loc(:,1)%i = missing
-                     buf_loc(:,1)%y = missing_r
-                     buf_loc(:,1)%x = missing_r
+                     buf_real(buf_i:buf_f,:)  = missing_r
+                     buf_int(buf_i:buf_f,:)   = missing
+                     buf_loc(buf_i:buf_f,1)%j = missing
+                     buf_loc(buf_i:buf_f,1)%i = missing
+                     buf_loc(buf_i:buf_f,1)%y = missing_r
+                     buf_loc(buf_i:buf_f,1)%x = missing_r
                   end if
 #ifdef DM_PARALLEL
 
 write(stdout,fmt=*) 'TEST11'
 
-                  call mpi_bcast(buf_real(1:nbuf,:), nbuf * 3, true_mpi_real, iproc, comm, ierr )
-                  call mpi_bcast(buf_int (1:nbuf,:), nbuf * 2, mpi_integer,   iproc, comm, ierr )
+                  call mpi_bcast(buf_real(buf_i:buf_f,:), nbuf * 3, true_mpi_real, iproc, comm, ierr )
+                  call mpi_bcast(buf_int (buf_i:buf_f,:), nbuf * 2, mpi_integer,   iproc, comm, ierr )
 
 write(stdout,fmt=*) 'TEST12'
 
                   !Only certain domain-wide components of loc previously defined in da_llxy
                   ! need to be communicated
                   ! i and j are needed for "outside" test below
-                  call mpi_bcast( buf_loc(1:nbuf,1)%j, nbuf, mpi_integer,   iproc, comm, ierr )
-                  call mpi_bcast( buf_loc(1:nbuf,1)%i, nbuf, mpi_integer,   iproc, comm, ierr )
+                  call mpi_bcast( buf_loc(buf_i:buf_f,1)%j, nbuf, mpi_integer,   iproc, comm, ierr )
+                  call mpi_bcast( buf_loc(buf_i:buf_f,1)%i, nbuf, mpi_integer,   iproc, comm, ierr )
 
 write(stdout,fmt=*) 'TEST13'
                   ! These are needed in the linked list for da_initialize_rad_iv
-                  call mpi_bcast( buf_loc(1:nbuf,1)%y, nbuf, true_mpi_real, iproc, comm, ierr )
-                  call mpi_bcast( buf_loc(1:nbuf,1)%x, nbuf, true_mpi_real, iproc, comm, ierr )
+                  call mpi_bcast( buf_loc(buf_i:buf_f,1)%y, nbuf, true_mpi_real, iproc, comm, ierr )
+                  call mpi_bcast( buf_loc(buf_i:buf_f,1)%x, nbuf, true_mpi_real, iproc, comm, ierr )
 #endif
-
 write(stdout,fmt=*) 'TEST14', iproc
 
-                  ! ASSOCIATE REMOTE POINTERS
-                  lat_1d % remote    => buf_real(1:nbuf,1)
-                  lon_1d % remote    => buf_real(1:nbuf,2)
-                  satzen_1d % remote => buf_real(1:nbuf,3)
-                  iy_1d % remote     => buf_int (1:nbuf,1)
-                  ix_1d % remote     => buf_int (1:nbuf,2)
-                  loc_1d % remote    => buf_loc (1:nbuf,1)
+               end do ProcLoop
 
-                  ! PROCESS REMOTE LIST BUFFERS
-                  this_view % nrad_on_domain = this_view % nrad_on_domain + nbuf
-                  do n = 1, nbuf
+
+               ! ASSOCIATE REMOTE POINTERS
+               lat_1d % remote    => buf_real(:,1)
+               lon_1d % remote    => buf_real(:,2)
+               satzen_1d % remote => buf_real(:,3)
+               iy_1d % remote     => buf_int (:,1)
+               ix_1d % remote     => buf_int (:,2)
+               loc_1d % remote    => buf_loc (:,1)
+
+               ! PROCESS REMOTE BUFFERS
+               do n = 1, this_view % nrad_on_domain
 
 !Technically "outside" has already been determined for iproc, could utilize that knowledge to maintain iproc as master processor during this stage.  Then it could transfer true_mpi_real quantities from buf_loc as needed by each processor.  Would need to set up a query and response system somehow...
 
-                     loc = loc_1d % remote(n)
+                  loc = loc_1d % remote(n)
 #ifdef DM_PARALLEL
-                     call da_llxy (info, loc, outside, outside_only = .true.)
-                     if (outside) cycle
+                  call da_llxy (info, loc, outside, outside_only = .true.)
+                  if (outside) cycle
 #endif
-                     iy = iy_1d % remote(n)
-                     ix = ix_1d % remote(n)
-                     this_view % patchmask(iy,ix) = .true.
+                  iy = iy_1d % remote(n)
+                  ix = ix_1d % remote(n)
+                  this_view % patchmask(iy,ix) = .true.
 
-                     allocate(this_obslist % next)
-                     i = this_obslist % i
-                     this_obslist => this_obslist % next
-                     this_obslist % i = i + 1
-                     this_obslist % lat = lat_1d % remote(n)
-                     this_obslist % lon = lon_1d % remote(n)
-                     this_obslist % satzen = satzen_1d % remote(n)
-                     this_obslist % iy = iy
-                     this_obslist % ix = ix
-                     this_obslist % loc = loc
+                  allocate(this_obslist % next)
+                  i = this_obslist % i
+                  this_obslist => this_obslist % next
+                  this_obslist % i = i + 1
+                  this_obslist % lat = lat_1d % remote(n)
+                  this_obslist % lon = lon_1d % remote(n)
+                  this_obslist % satzen = satzen_1d % remote(n)
+                  this_obslist % iy = iy
+                  this_obslist % ix = ix
+                  this_obslist % loc = loc
 
-                     nullify (this_obslist % next)
+                  nullify (this_obslist % next)
 
-write(stdout,fmt=*) 'TEST15', iy, iproc, this_obslist % i
+write(stdout,fmt=*) 'TEST15', iy, ix, this_obslist % i
 
-                  end do
+               end do
 
-                  !FREE UP POINTERS AND BUFFERS
-                  nullify ( lat_1d % remote    )
-                  nullify ( lon_1d % remote    )
-                  nullify ( satzen_1d % remote )
-                  nullify ( loc_1d % remote    )
-                  nullify ( iy_1d % remote     )
-                  nullify ( ix_1d % remote     )
+               !FREE UP POINTERS AND BUFFERS
+               nullify ( lat_1d % remote    )
+               nullify ( lon_1d % remote    )
+               nullify ( satzen_1d % remote )
+               nullify ( loc_1d % remote    )
+               nullify ( iy_1d % remote     )
+               nullify ( ix_1d % remote     )
 
-!                  deallocate( buf_real, buf_int, buf_loc )
 
 write(stdout,fmt=*) 'TEST16', iproc, this_obslist % i
 
-               end do ProcLoop
 
                deallocate( buf_real, buf_int, buf_loc )
 

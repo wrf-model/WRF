@@ -1608,7 +1608,7 @@ subroutine define_pio_iodesc(grid, DH)
    do j = jts, ljte
    do i = its, lite
       npos = (i - ims + 1) + (ime - ims + 1) * (j - jms + (jme - jms + 1) * (k - kms))
-      compdof_3d_erosion(npos) = i + dims3d(1) * (j - 1 + dims3d(2) * (k - 1))
+      compdof_3d_erosion(npos) = i + dims3d_erosion(1) * (j - 1 + dims3d_erosion(2) * (k - 1))
    enddo
    enddo
    enddo
@@ -1724,9 +1724,9 @@ subroutine define_pio_iodesc(grid, DH)
 
    deallocate(compdof_3d_ensemble)
 
-   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d, compdof_3d_erosion, DH%iodesc3d_erosion_int)
-   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d, compdof_3d_erosion, DH%iodesc3d_erosion_real)
-   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d, compdof_3d_erosion, DH%iodesc3d_erosion_double)
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_erosion, compdof_3d_erosion, DH%iodesc3d_erosion_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_erosion, compdof_3d_erosion, DH%iodesc3d_erosion_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_erosion, compdof_3d_erosion, DH%iodesc3d_erosion_double)
 
 #ifndef INTSPECIAL
    call PIO_initdecomp(DH%iosystem, PIO_int,    dims2d, compdof_2d, DH%iodesc2d_m_int)

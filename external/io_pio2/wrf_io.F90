@@ -8127,9 +8127,10 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
           DH%vartype(DH%CurrentVariable) = MDL_CPL_VAR
        else if("ensemble_stag" == DimNames(n)) then
           DH%vartype(DH%CurrentVariable) = ENSEMBLE_VAR
-        else if("erosion_stag" == DimNames(n)) then
-           DH%vartype(DH%CurrentVariable) = EROSION_VAR
+       else if("dust_erosion_dimension" == DimNames(n)) then
+          DH%vartype(DH%CurrentVariable) = EROSION_VAR
        endif
+
     end do
 
 #ifndef INTSPECIAL
@@ -8141,12 +8142,12 @@ subroutine ext_pio_write_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
          tmp0dint(1,1) = Field(1)
          i = 1
          j = 1
-         WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
-         WRITE(unit=0, fmt='(6x, a, 3i6)') 'VStart = ', VStart(1:3)
-         WRITE(unit=0, fmt='(6x, a, 3i6)') 'VCount = ', VCount(1:3)
-         stat = pio_put_var(DH%file_handle,DH%descVar(DH%CurrentVariable), &
-                            VStart(1:1), VStart(1:1), tmp0dint(1,1))
-!        stat = pio_put_var(DH%file_handle,DH%descVar(DH%CurrentVariable),tmp0dint)
+        !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
+        !WRITE(unit=0, fmt='(6x, a, 3i6)') 'VStart = ', VStart(1:3)
+        !WRITE(unit=0, fmt='(6x, a, 3i6)') 'VCount = ', VCount(1:3)
+        !stat = pio_put_var(DH%file_handle,DH%descVar(DH%CurrentVariable), &
+        !                   VStart(1:1), VStart(1:1), tmp0dint(1,1))
+         stat = pio_put_var(DH%file_handle,DH%descVar(DH%CurrentVariable),tmp0dint)
          call netcdf_err(stat,Status)
       else if(2 == Ndim) then
          allocate(tmp2dint(Length(1),Length(2),1), stat=Status)
@@ -8432,6 +8433,8 @@ subroutine ext_pio_read_field(DataHandle,DateStr,Var,Field,FieldType,grid, &
           DH%vartype(DH%CurrentVariable) = MDL_CPL_VAR
        else if("ensemble_stag" == DH%DimNames(VDimIDs(n))) then
           DH%vartype(DH%CurrentVariable) = ENSEMBLE_VAR
+       else if("dust_erosion_dimension" == DH%DimNames(VDimIDs(n))) then
+          DH%vartype(DH%CurrentVariable) = EROSION_VAR
        endif
     end do
    

@@ -48,7 +48,7 @@
     Type(WRFU_Time) time, currtime, currentTime
     CHARACTER*19  new_date
     CHARACTER*24  base_date
-    CHARACTER*256  fname
+    CHARACTER*256  fname, version_name
     CHARACTER*80  dname, memord, sim_type
     LOGICAL dryrun
     INTEGER idt
@@ -1010,6 +1010,35 @@
           CALL wrf_debug( 0 , wrf_err_message )
         END IF
        END IF
+
+       !  In pre v4.0 data, the moist potential temperature was entirely handled in the model. In 
+       !  v4.0 and later, the pre-processors handle the moist potential temperature field directly.
+
+       !                      Input from old data
+       !     
+       !                        WRF NML Setting
+       !                        ---------------
+       !                  use_theta_m=1 | use_theta_m=0
+       !                  ---------------------------
+       !                  |             |           | 
+       !         thetam=1 |   NO        |     OK    |
+       ! Input            |             |           | 
+       ! NML     ------------------------------------
+       ! Setting          |             |           |
+       !         thetam=0 |   NO        |     OK    |
+       !                  |             |           |
+       !                  ---------------------------
+
+       !  Old input data cannot be used when the namelist has use_theta_m=1
+
+       CALL wrf_get_dom_ti_char ( fid , 'TITLE' , version_name , ierr )
+       IF ( ( switch .EQ. input_only ) .AND. &
+            ( INDEX(TRIM(version_name),' V4.' ) .EQ. 0 ) .AND. &
+            ( config_flags%use_theta_m .EQ. 1 ) ) THEN
+          CALL wrf_debug ( 0, "---- ERROR: Cannot have old input data when requesting use_theta_m=1" )
+          count_fatal_error = count_fatal_error + 1
+       END IF
+     
 #endif
 
     ENDIF check_if_dryrun

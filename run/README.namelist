@@ -1398,7 +1398,7 @@ The following are for observation nudging:
  diff_6th_factor (max_dom)           = 0.12,    ; 6th-order numerical diffusion non-dimensional rate (max value 1.0
                                                       corresponds to complete removal of 2dx wave in one timestep)
  diff_6th_slopeopt (max_dom)         = 0        ; if set to =1, turns on 6th-order numerical diffusion - terrain-slope tapering. default is 0=off
- diff_6th_thresh (max_dom)           = 0.10     ; slope threshold (m/m) that turns off 6th order diff is steep terrain
+ diff_6th_thresh (max_dom)           = 0.10     ; slope threshold (m/m) that turns off 6th order diff in steep terrain
  dampcoef (max_dom)                  = 0.,	; damping coefficient (see above)
  zdamp (max_dom)                     = 5000.,	; damping depth (m) from model top
  w_damping                           = 0,       ; vertical velocity damping flag (for operational use)

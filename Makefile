@@ -480,6 +480,11 @@ convert_em : framework_only
             ( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" convert_em ) ; \
         fi
 
+# Link wrf.exe and wrf_SST_ESMF.exe into 
+# test/em_esmf_exp when ESMF_COUPLING is set.  wrf.exe 
+# can be used for stand-alone testing in this case.  
+# wrf_SST_ESMF.exe is a coupled application.  Note that make 
+# target $(SOLVER)_wrf_SST_ESMF builds wrf_SST_ESMF.exe.  
 em_real : wrf
 	@/bin/rm -f real.exe  > /dev/null 2>&1
 	@/bin/rm -f tc.exe    > /dev/null 2>&1
@@ -488,6 +493,63 @@ em_real : wrf
 	@ echo '--------------------------------------'
 	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real em_real )
 	( cd test/em_real ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
+	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
+	  ( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real em_wrf_SST_ESMF ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f wrf_SST_ESMF.exe ; ln -s ../../main/wrf_SST_ESMF.exe . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f real.exe ; ln -s ../../main/real.exe . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA RRTM_DATA RRTMG_LW_DATA RRTMG_SW_DATA ; \
+               ln -sf ../../run/ETAMPNEW_DATA . ;                      \
+               ln -sf ../../run/ETAMPNEW_DATA.expanded_rain . ;        \
+               ln -sf ../../run/RRTM_DATA . ;                          \
+               ln -sf ../../run/RRTMG_LW_DATA . ;                      \
+               ln -sf ../../run/RRTMG_SW_DATA . ;                      \
+               ln -sf ../../run/CAM_ABS_DATA . ;                       \
+               ln -sf ../../run/CAM_AEROPT_DATA . ;                    \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP4.5 . ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP6   . ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.RCP8.5 CAMtr_volume_mixing_ratio ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.A1B    . ;   \
+               ln -sf ../../run/CAMtr_volume_mixing_ratio.A2     . ;   \
+               ln -sf ../../run/CLM_ALB_ICE_DFS_DATA . ;               \
+               ln -sf ../../run/CLM_ALB_ICE_DRC_DATA . ;               \
+               ln -sf ../../run/CLM_ASM_ICE_DFS_DATA . ;               \
+               ln -sf ../../run/CLM_ASM_ICE_DRC_DATA . ;               \
+               ln -sf ../../run/CLM_DRDSDT0_DATA . ;                   \
+               ln -sf ../../run/CLM_EXT_ICE_DFS_DATA . ;               \
+               ln -sf ../../run/CLM_EXT_ICE_DRC_DATA . ;               \
+               ln -sf ../../run/CLM_KAPPA_DATA . ;                     \
+               ln -sf ../../run/CLM_TAU_DATA . ;                       \
+               ln -sf ../../run/ozone.formatted . ;                    \
+               ln -sf ../../run/ozone_lat.formatted . ;                \
+               ln -sf ../../run/ozone_plev.formatted . ;               \
+               ln -sf ../../run/aerosol.formatted . ;                  \
+               ln -sf ../../run/aerosol_lat.formatted . ;              \
+               ln -sf ../../run/aerosol_lon.formatted . ;              \
+               ln -sf ../../run/aerosol_plev.formatted . ;             \
+               ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
+               ln -sf ../../run/p3_lookup_table_1.dat-v2.8.2 . ;              \
+               ln -sf ../../run/p3_lookup_table_2.dat-v2.8.2 . ;              \
+               if [ $(RWORDSIZE) -eq 8 ] ; then                        \
+                  ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;   \
+                  ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
+                  ln -sf ../../run/RRTM_DATA_DBL RRTM_DATA         ;   \
+                  ln -sf ../../run/RRTMG_LW_DATA_DBL RRTMG_LW_DATA ;   \
+                  ln -sf ../../run/RRTMG_SW_DATA_DBL RRTMG_SW_DATA ;   \
+               fi ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f GENPARM.TBL ; ln -s ../../run/GENPARM.TBL . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f LANDUSE.TBL ; ln -s ../../run/LANDUSE.TBL . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f SOILPARM.TBL ; ln -s ../../run/SOILPARM.TBL . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f URBPARM.TBL ; ln -s ../../run/URBPARM.TBL . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f VEGPARM.TBL ; ln -s ../../run/VEGPARM.TBL . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f MPTABLE.TBL ; ln -s ../../run/MPTABLE.TBL . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f tr49t67 ; ln -s ../../run/tr49t67 . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f tr49t85 ; ln -s ../../run/tr49t85 . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f tr67t85 ; ln -s ../../run/tr67t85 . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f gribmap.txt ; ln -s ../../run/gribmap.txt . ) ; \
+	  ( cd test/em_esmf_exp ; /bin/rm -f grib2map.tbl ; ln -s ../../run/grib2map.tbl . ) ; \
+	fi
 	( cd test/em_real ; /bin/rm -f real.exe ; ln -s ../../main/real.exe . )
 	( cd test/em_real ; /bin/rm -f tc.exe ; ln -s ../../main/tc.exe . )
 	( cd test/em_real ; /bin/rm -f ndown.exe ; ln -s ../../main/ndown.exe . )

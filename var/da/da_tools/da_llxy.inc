@@ -1,4 +1,4 @@
-subroutine da_llxy (info, loc, outside, outside_all, xy_only)
+subroutine da_llxy (info, loc, outside, outside_all)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -14,14 +14,11 @@ subroutine da_llxy (info, loc, outside, outside_all, xy_only)
    type(model_loc_type),  intent(inout) :: loc
    logical      ,         intent(out)   :: outside      !wrt local domain
    logical, optional,     intent(out)   :: outside_all  !wrt all domains
-   logical, optional,     intent(in)    :: xy_only
 
    ! too many return statments to trace
    ! if (trace_use_frequent) call da_trace_entry("da_llxy")
 
-
    outside = .false.
-
    loc % x   = -1.0
    loc % y   = -1.0
    
@@ -36,8 +33,6 @@ subroutine da_llxy (info, loc, outside, outside_all, xy_only)
    else
       call da_llxy_default (info%lat, info%lon, loc%x, loc%y)
    end if
-
-   if ( xy_only ) return
 
 #ifdef A2C
    call da_togrid (loc%x, its-3, ite+3, loc%i, loc%dx, loc%dxm)!

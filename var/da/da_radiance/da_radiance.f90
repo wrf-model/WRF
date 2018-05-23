@@ -91,8 +91,8 @@ module da_radiance
 #endif
    use da_statistics, only : da_stats_calculate
    use da_tools, only : da_residual, da_obs_sfc_correction, &
-      da_llxy, da_llxy_new, da_outside, da_togrid_new, da_get_julian_time, da_get_time_slots, &
-      da_xyll, map_info
+      da_llxy, da_llxy_new, da_togrid_new, da_get_julian_time, da_get_time_slots, &
+      da_xyll, map_info, da_llxy_1d
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace, &
       da_trace_int_sort
    use da_varbc, only : da_varbc_direct,da_varbc_coldstart,da_varbc_precond, &

@@ -85,8 +85,8 @@ information on NMM specific settings (http://www.dtcenter.org/wrf-nmm/users)
  output_ready_flag		     = .true.,  ; asks the model to write-out an empty file with the name 'wrfoutReady_d<domain>_<date>.  
                                                   Useful in production runs so that post-processing code can check on the 
                                                   completeness of this file
- force_use_old_data                  = .false., ; if set to .true., use WRF Version 3 input data
-                                                  =.false. is default, use Version 4 data
+ force_use_old_data                  = .false., ; if set to .true., allow WRF Version 3 input data
+                                                  =.false., stop when WRF model detects Version 3 input data
 
 To choose between SI and WPS input to real for EM core:
  auxinput1_inname                    = "met_em.d<domain>.<date>"             ; Input to real from WPS (default since 3.0)

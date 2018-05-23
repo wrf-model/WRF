@@ -1177,24 +1177,6 @@ print * ,'Soil moisture is below wilting in mixed grassland/cropland category at
         ENDIF
 2999  continue ! lakes
 
-!beka
-       if (ktau == 2) then
-           EMISSO(i,j)=EMISS(i,j)
-           VEGFRAO(i,j)=VEGFRA(i,j)
-           ALBO(i,j)=ALB(i,j)
-           SNOALBO(i,j)=SNOALB(i,j)
-
-       if (spp_lsm == 1 .and. ktau .ge. 2) then
-           EMISS(i,j) = min(EMISSO(i,j)*(1. + 0.1*rstoch(i,1,j)), 1.)
-           EMISSL(i,j) = min(EMISSLO(i,j)*(1. + 0.1*rstoch(i,1,j)), 1.)
-           VEGFRA(i,j) = min(VEGFRAO(i,j)*(1. + 0.33*rstoch(i,1,j)), 100.)
-           ALB(i,j) = min(ALBO(i,j)*(1. + rstoch(i,1,j)), 1.)
-           SNOALB(i,j) = min(SNOALBO(i,j)*(1. + rstoch(i,1,j)), 1.)
-       endif
-       endif
-!beka
-
-
       ENDDO
 
    ENDDO

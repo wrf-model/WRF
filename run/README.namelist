@@ -1350,8 +1350,7 @@ The following are for observation nudging:
 
  &dynamics
  hybrid_opt                          = 2,       ; default; Klemp cubic form with etac
-                                                  0 = original WRF coordinate (through V3)
-                                                  1 = terrain-following, using hybrid formulation
+                                                  0 = original WRF terrain-following coordinate (through V3)
  etac                                = 0.2      ; znw(k) < etac, eta surfaces are isobaric, 0.2 is a good default (Pa/Pa)
  rk_ord                              = 3,	; time-integration scheme option:
                                                   2 = Runge-Kutta 2nd order

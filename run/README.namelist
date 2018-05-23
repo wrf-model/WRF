@@ -85,8 +85,8 @@ information on NMM specific settings (http://www.dtcenter.org/wrf-nmm/users)
  output_ready_flag		     = .true.,  ; asks the model to write-out an empty file with the name 'wrfoutReady_d<domain>_<date>.  
                                                   Useful in production runs so that post-processing code can check on the 
                                                   completeness of this file
- force_use_old_data                  = .false., ; if set to .true., use WRF Version 3 input data
-                                                  =.false. is default, use Version 4 data
+ force_use_old_data                  = .false., ; if set to .true., allow WRF Version 3 input data
+                                                  =.false., stop when WRF model detects Version 3 input data
 
 To choose between SI and WPS input to real for EM core:
  auxinput1_inname                    = "met_em.d<domain>.<date>"             ; Input to real from WPS (default since 3.0)
@@ -1350,8 +1350,7 @@ The following are for observation nudging:
 
  &dynamics
  hybrid_opt                          = 2,       ; default; Klemp cubic form with etac
-                                                  0 = original WRF coordinate (through V3)
-                                                  1 = terrain-following, using hybrid formulation
+                                                  0 = original WRF terrain-following coordinate (through V3)
  etac                                = 0.2      ; znw(k) < etac, eta surfaces are isobaric, 0.2 is a good default (Pa/Pa)
  rk_ord                              = 3,	; time-integration scheme option:
                                                   2 = Runge-Kutta 2nd order
@@ -1399,7 +1398,7 @@ The following are for observation nudging:
  diff_6th_factor (max_dom)           = 0.12,    ; 6th-order numerical diffusion non-dimensional rate (max value 1.0
                                                       corresponds to complete removal of 2dx wave in one timestep)
  diff_6th_slopeopt (max_dom)         = 0        ; if set to =1, turns on 6th-order numerical diffusion - terrain-slope tapering. default is 0=off
- diff_6th_thresh (max_dom)           = 0.10     ; slope threshold (m/m) that turns off 6th order diff is steep terrain
+ diff_6th_thresh (max_dom)           = 0.10     ; slope threshold (m/m) that turns off 6th order diff in steep terrain
  dampcoef (max_dom)                  = 0.,	; damping coefficient (see above)
  zdamp (max_dom)                     = 5000.,	; damping depth (m) from model top
  w_damping                           = 0,       ; vertical velocity damping flag (for operational use)

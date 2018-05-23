@@ -727,8 +727,8 @@ Namelist variables for controlling the adaptive time step option:
                                        Note qnc and qni are mixed when scalar_pblmix =1.
  bl_mynn_mixlength                   option to change mixing length formulation in MYNN
                                      0:original as in Nakanishi and Niino 2009, 
-                                     1:RAP/HRRR (default, including BouLac in free atmosphere), 
-                                     2:experimental (includes cloud-specific mixing length and a scale-aware mixing 
+                                     1:RAP/HRRR (including BouLac in free atmosphere), 
+                                     2:experimental (default; includes cloud-specific mixing length and a scale-aware mixing 
                                        length, following Ito et al. 2015, BLM). Option 2 has been well tested with 
                                        the edmf options.
  bl_mynn_cloudpdf                    option to switch to different cloud PDFs to represent subgrid clouds
@@ -737,10 +737,10 @@ Namelist variables for controlling the adaptive time step option:
                                         as opposed to higher order moments ; 
                                      2: from Chaboureau and Bechtold (2002, JAS, with mods, default) 
  bl_mynn_edmf (max_dom)              = 0, default; = 1 activates mass-flux scheme in MYNN 
-                                     1: for StEM; 2: for TEMF; default =0, just regular MYNN. 
+                                     1: (default) for StEM; 2: for TEMF; 0: just regular MYNN. 
                                      Related (hidden) options: 
- bl_mynn_edmf_mom (max_dom)          = 1, default - activates momentum transport in MYNN mass-flux scheme 
-                                     (assuming bl_mynn_edmf > 0); 0=off
+ bl_mynn_edmf_mom (max_dom)          = 1 - activates momentum transport in MYNN mass-flux scheme 
+                                     (assuming bl_mynn_edmf > 0); 0=off (default)
                                      0: no momentum transport; 1: momentum transport activated (default)
  bl_mynn_edmf_tke (max_dom)          = 0, default; = 1 activates TKE transport in MYNN mass-flux scheme 
                                      (assuming bl_mynn_edmf > 0)

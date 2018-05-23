@@ -368,6 +368,7 @@ include Registry.rconfig
 
 #package   passivec1     chem_opt==0                  -             
 
+package   nolsmscheme    sf_surface_physics==0       -             -
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             -
 package   ruclsmscheme   sf_surface_physics==3       -             -

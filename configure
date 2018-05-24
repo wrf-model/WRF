@@ -32,7 +32,6 @@ while [ $# -ge 1 ]; do
       arw) wrf_core=EM_CORE  ;;
       nmm) wrf_core=NMM_CORE  ;;
       coamps) wrf_core=COAMPS_CORE  ;;
-      exp) wrf_core=EXP_CORE  ;;
       titan) WRF_TITAN=1 ; break ;;
       mars) WRF_MARS=1 ; break ;;
       venus) WRF_VENUS=1 ; break ;;

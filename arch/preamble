@@ -24,10 +24,8 @@ LIBINCLUDE      =       .
 
 COREDEFS = CONFIGURE_EM_CORE \
            CONFIGURE_NMM_CORE -DNMM_MAX_DIM=2600 \
-	   CONFIGURE_COAMPS_CORE \
 	   CONFIGURE_DA_CORE \
-	   CONFIGURE_WRFPLUS_CORE \
-           CONFIGURE_EXP_CORE
+	   CONFIGURE_WRFPLUS_CORE
 
 #### Single location for defining total number of domains.  You need
 #### at least 1 + 2*(number of total nests).  For example, 1 coarse

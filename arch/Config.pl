@@ -35,8 +35,6 @@ $sw_da_core = "-DDA_CORE=\$\(WRF_DA_CORE\)" ;
 $sw_wrfplus_core = "-DWRFPLUS=\$\(WRF_PLUS_CORE\)" ;
 $sw_nmm_core = "-DNMM_CORE=\$\(WRF_NMM_CORE\)" ;
 $sw_em_core = "-DEM_CORE=\$\(WRF_EM_CORE\)" ;
-$sw_exp_core = "-DEXP_CORE=\$\(WRF_EXP_CORE\)" ;
-$sw_coamps_core = "-DCOAMPS_CORE=\$\(WRF_COAMPS_CORE\)" ;
 $sw_dmparallel = "" ;
 $sw_ompparallel = "" ;
 $sw_stubmpi = "" ;
@@ -144,8 +142,6 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
       $sw_da_core = "-DDA_CORE=0" ;
       $sw_wrfplus_core = "-DWRFPLUS=0" ;
       $sw_nmm_core = "-DNMM_CORE=0" ;
-      $sw_exp_core = "-DEXP_CORE=0" ;
-      $sw_coamps_core = "-DCOAMPS_CORE=0" ;
     }
     if ( index ( $sw_wrf_core , "WRF_PLUS_CORE" ) > -1 ) 
     {
@@ -153,8 +149,6 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
       $sw_da_core = "-DDA_CORE=0" ;
       $sw_wrfplus_core = "-DWRFPLUS=1" ;
       $sw_nmm_core = "-DNMM_CORE=0" ;
-      $sw_exp_core = "-DEXP_CORE=0" ;
-      $sw_coamps_core = "-DCOAMPS_CORE=0" ;
       $sw_dfi_radar = "-DDFI_RADAR=0" ;
     }
     if ( index ( $sw_wrf_core , "DA_CORE" ) > -1 ) 
@@ -163,24 +157,18 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
       $sw_da_core = "-DDA_CORE=1" ;
       $sw_wrfplus_core = "-DWRFPLUS=0" ;
       $sw_nmm_core = "-DNMM_CORE=0" ;
-      $sw_exp_core = "-DEXP_CORE=0" ;
-      $sw_coamps_core = "-DCOAMPS_CORE=0" ;
     }
     if ( index ( $sw_wrf_core , "4D_DA_CORE" ) > -1 ) 
     {
       $sw_em_core = "-DEM_CORE=1" ;
       $sw_da_core = "-DDA_CORE=1" ;
       $sw_nmm_core = "-DNMM_CORE=0" ;
-      $sw_exp_core = "-DEXP_CORE=0" ;
-      $sw_coamps_core = "-DCOAMPS_CORE=0" ;
     }
     if ( index ( $sw_wrf_core , "4D_DA_CORE" ) > -1 ) 
     {
       $sw_em_core = "-DEM_CORE=1" ;
       $sw_da_core = "-DDA_CORE=1" ;
       $sw_nmm_core = "-DNMM_CORE=0" ;
-      $sw_exp_core = "-DEXP_CORE=0" ;
-      $sw_coamps_core = "-DCOAMPS_CORE=0" ;
     }
     if ( index ( $sw_wrf_core , "NMM_CORE" ) > -1 ) 
     {
@@ -188,26 +176,6 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
       $sw_da_core = "-DDA_CORE=0" ;
       $sw_wrfplus_core = "-DWRFPLUS=0" ;
       $sw_nmm_core = "-DNMM_CORE=1" ;
-      $sw_exp_core = "-DEXP_CORE=0" ;
-      $sw_coamps_core = "-DCOAMPS_CORE=0" ;
-    }
-    if ( index ( $sw_wrf_core , "EXP_CORE" ) > -1 ) 
-    {
-      $sw_em_core = "-DEM_CORE=0" ;
-      $sw_da_core = "-DDA_CORE=0" ;
-      $sw_wrfplus_core = "-DWRFPLUS=0" ;
-      $sw_nmm_core = "-DNMM_CORE=0" ;
-      $sw_exp_core = "-DEXP_CORE=1" ;
-      $sw_coamps_core = "-DCOAMPS_CORE=0" ;
-    }
-    if ( index ( $sw_wrf_core , "COAMPS_CORE" ) > -1 ) 
-    {
-      $sw_em_core = "-DEM_CORE=0" ;
-      $sw_da_core = "-DDA_CORE=0" ;
-      $sw_wrfplus_core = "-DWRFPLUS=0" ;
-      $sw_nmm_core = "-DNMM_CORE=0" ;
-      $sw_exp_core = "-DEXP_CORE=0" ;
-      $sw_coamps_core = "-DCOAMPS_CORE=1" ;
     }
   }
   if ( substr( $ARGV[0], 1, 13 ) eq "compileflags=" )
@@ -819,8 +787,6 @@ while ( <ARCH_PREAMBLE> )
   $_ =~ s:CONFIGURE_DA_CORE:$sw_da_core:g ;
   $_ =~ s:CONFIGURE_WRFPLUS_CORE:$sw_wrfplus_core:g ;
   $_ =~ s:CONFIGURE_NMM_CORE:$sw_nmm_core:g ;
-  $_ =~ s:CONFIGURE_COAMPS_CORE:$sw_coamps_core:g ;
-  $_ =~ s:CONFIGURE_EXP_CORE:$sw_exp_core:g ;
   $_ =~ s/CONFIGURE_CONFIG_LINE/$sw_config_line/g ;
   $_ =~ s/CONFIGURE_CONFIG_NUM/Compiler choice: $response_opt/g ;
   $_ =~ s/CONFIGURE_CONFIG_NEST/Nesting option: $response_nesting/g ;

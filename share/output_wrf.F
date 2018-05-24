@@ -617,9 +617,6 @@ endif
 #if (EM_CORE == 1)
           CALL wrf_put_dom_ti_char ( fid , 'GRIDTYPE',  'C' , ierr )
 #endif
-#if (COAMPS_CORE == 1 )
-          CALL wrf_put_dom_ti_char ( fid , 'GRIDTYPE',  'B' , ierr )
-#endif
 
 ! added these fields for W. Skamarock, 020402, JM
     ibuf(1) = diff_opt

@@ -2254,7 +2254,6 @@
          model_config_rec % num_soil_layers = 9
       ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. RUCLSMSCHEME ) THEN
          model_config_rec % num_soil_layers = 6
-#if (DA_CORE != 1)
       ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. PXLSMSCHEME  ) THEN
          model_config_rec % num_soil_layers = 2
       ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. CLMSCHEME    ) THEN
@@ -2264,7 +2263,6 @@
 #if (NMM_CORE == 1)
       ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. GFDLSLAB     ) THEN
          model_config_rec % num_soil_layers = 4
-#endif
 #endif
       ELSE
          CALL wrf_debug       ( 0 , '--- ERROR: Unknown sf_surface_physics has no associated number of soil levels' )

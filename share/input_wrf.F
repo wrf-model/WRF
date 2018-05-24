@@ -54,6 +54,7 @@
     INTEGER idt
     INTEGER itmp
     INTEGER filestate, ierr3
+    INTEGER hybrid_opt, use_theta_m
     INTEGER :: ide_compare , jde_compare , kde_compare
     CHARACTER (len=19) simulation_start_date , first_date_input , first_date_nml
     INTEGER first_date_start_year   , &
@@ -174,6 +175,42 @@
           WRITE(wrf_err_message,*)'Whoa there pard, there are troubles with this data. It might be too old.'
           CALL wrf_error_fatal( wrf_err_message )
        END IF
+    END IF
+#endif
+
+#if ( NMM_CORE != 1 )
+    ! Verify feature consistency between model input and model nml settings
+
+    IF ( .NOT. dryrun ) THEN
+
+      IF ( switch .EQ. input_only ) THEN
+        CALL wrf_get_dom_ti_char ( fid , 'TITLE' , version_name, ierr )
+
+        IF ( INDEX(TRIM(version_name),' V4.') .NE. 0 ) THEN
+          CALL wrf_get_dom_ti_integer( fid , 'HYBRID_OPT',  hybrid_opt,  1, icnt, ierr )
+          CALL wrf_get_dom_ti_integer( fid , 'USE_THETA_M', use_theta_m, 1, icnt, ierr )
+
+          IF ( hybrid_opt .NE. config_flags%hybrid_opt ) THEN
+            WRITE(wrf_err_message,*) '---- ERROR: Input file hybrid_opt = ',hybrid_opt
+            CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+            WRITE(wrf_err_message,*) '---- ERROR: Namelist hybrid_opt   = ',config_flags%hybrid_opt
+            CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+            CALL wrf_debug ( 0, "---- ERROR: hybrid_opt values must be consistent" )
+            count_fatal_error = count_fatal_error + 1
+          END IF
+
+          IF ( use_theta_m .NE. config_flags%use_theta_m ) THEN
+            WRITE(wrf_err_message,*) '---- ERROR: Input file use_theta_m = ',use_theta_m
+            CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+            WRITE(wrf_err_message,*) '---- ERROR: Namelist use_theta_m   = ',config_flags%use_theta_m
+            CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+            CALL wrf_debug ( 0, "---- ERROR: use_theta_m values must be consistent" )
+            count_fatal_error = count_fatal_error + 1
+          END IF
+
+        END IF
+
+      END IF
     END IF
 #endif
 

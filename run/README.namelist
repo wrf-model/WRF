@@ -1242,14 +1242,25 @@ Options for use with the Noah-MP Land Surface Model:
 
 The following are for spectral nudging:
  fgdtzero (max_dom)                  = 0,       ; 1= nudging tendencies are set to zero in between fdda calls
- if_no_pbl_nudging_ph (max_dom)      = 0,       ; 1= no nudging of ph in the pbl, 0= nuding in the pbl
- if_zfac_ph (max_dom)                = 0,       ; 0= nudge ph in all layers, 1= limit nudging to levels above k_zfac_ph
-  k_zfac_ph (max_dom)                = 10,      ; 10= model level below which nudging is switched off for ph
- dk_zfac_uv (max_dom)                = 1,       ; depth in k between k_zfac_X to dk_zfac_X where nudging increases 
+ if_no_pbl_nudging_uv (max_dom)      = 0,       ; 1= no nudging of uv in the pbl, 0= nudging in the pbl
+ if_no_pbl_nudging_t  (max_dom)      = 0,       ; 1= no nudging of t in the pbl, 0= nudging in the pbl
+ if_no_pbl_nudging_ph (max_dom)      = 0,       ; 1= no nudging of ph in the pbl, 0= nudging in the pbl
+ if_no_pbl_nudging_q  (max_dom)      = 0,       ; 1= no nudging of q in the pbl, 0= nudging in the pbl
+ if_zfac_uv (max_dom)                = 0,       ; 0= nudge uv in all layers, 1= limit nudging to levels above k_zfac_uv
+  k_zfac_uv (max_dom)                = 0,       ; 0= model level below which nudging is switched off for uv
+ dk_zfac_uv (max_dom)                = 1,       ; depth in k between k_zfac_X to dk_zfac_X where nudging increases
                                                   linearly to full strength
- dk_zfac_t  (max_dom)                = 1,
- dk_zfac_ph (max_dom)                = 1,
- dk_zfac_q  (max_dom)                = 1,
+ if_zfac_t  (max_dom)                = 0,       ; 0= nudge t in all layers, 1= limit nudging to levels above k_zfac_t
+  k_zfac_t  (max_dom)                = 0,       ; 0= model level below which nudging is switched off for t
+ dk_zfac_t  (max_dom)                = 1,       ; depth in k between k_zfac_X to dk_zfac_X where nudging increases
+                                                  linearly to full strength
+ if_zfac_ph (max_dom)                = 0,       ; 0= nudge ph in all layers, 1= limit nudging to levels above k_zfac_ph
+  k_zfac_ph (max_dom)                = 0,       ; 0= model level below which nudging is switched off for ph
+ dk_zfac_ph  (max_dom)               = 1,       ; depth in k between k_zfac_X to dk_zfac_X where nudging increases
+                                                  linearly to full strength
+ if_zfac_q  (max_dom)                = 0,       ; 0= nudge q in all layers, 1= limit nudging to levels above k_zfac_q
+  k_zfac_q  (max_dom)                = 0,       ; 0= model level below which nudging is switched off for q
+ dk_zfac_q  (max_dom)                = 1,       ; depth in k between k_zfac_X to dk_zfac_X where nudging increases
  gph (max_dom)                       = 0.0003,
  ktrop                               = 0,       ; layer nominally representing tropopause for limiting nudging to q and t
                                      		; setting ktrop = 0 allows nudging to extend to the top of the atmosphere

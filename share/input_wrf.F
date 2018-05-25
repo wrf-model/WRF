@@ -172,7 +172,12 @@
        ELSE
           CALL wrf_debug( 0 , 'File name that is causing troubles = ' // TRIM(fname) )
           CALL wrf_debug( 0 , TRIM(fname) )
-          WRITE(wrf_err_message,*)'Whoa there pard, there are troubles with this data. It might be too old.'
+          CALL wrf_debug( 0 , TRIM(wrf_err_message) )
+          WRITE(wrf_err_message,*)'You can try 1) ensure that the input file was created with WRF v4 pre-processors, or '
+          CALL wrf_debug( 0 , TRIM(wrf_err_message) )
+          WRITE(wrf_err_message,*)'2) use force_use_old_data=T in the time_control record of the namelist.input file'
+          CALL wrf_debug( 0 , TRIM(wrf_err_message) )
+          WRITE(wrf_err_message,*)'---- ERROR: The input file appears to be from a pre-v4 version of WRF initialization routines'
           CALL wrf_error_fatal( wrf_err_message )
        END IF
     END IF

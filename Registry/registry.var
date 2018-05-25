@@ -64,8 +64,6 @@ state   real    g_qg           ijkft   g_moist     1         -     rh   "G_QGRAU
 state   real    a_qh           ijkft   a_moist     1         -     rh   "A_QHAIL"            "Hail mixing ratio"             "kg kg-1"
 state   real    g_qh           ijkft   g_moist     1         -     rh   "G_QHAIL"            "Hail mixing ratio"             "kg kg-1"
 # Other Misc State Variables                                            
-state   real    g_h_diabatic   ijk     misc         1         -      rdu      "g_h_diabatic"          "MICROPHYSICS LATENT HEATING"         "K s-1"      
-state   real    a_h_diabatic   ijk     misc         1         -      rdu      "a_h_diabatic"          "MICROPHYSICS LATENT HEATING"         "K s-1"      
 state    real  G_RAINC          ij      misc        1         -      rhdu     "G_RAINC"               "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
 state    real  A_RAINC          ij      misc        1         -      rhdu     "A_RAINC"               "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
 state    real  G_RAINNC         ij      misc        1         -      rhdu     "G_RAINNC"              "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"      
@@ -490,7 +488,7 @@ rconfig   logical enable_identity           namelist,perturbation  1  .false.  -
 rconfig   logical trajectory_io             namelist,perturbation  1  .true.   -  "0:disk IO;1:memory IO"   ""  ""
 rconfig   logical var4d_detail_out          namelist,perturbation  1  .false.  -  "true:output perturbation, gradient to disk"   ""  ""
 rconfig   logical var4d_run                 namelist,perturbation  1  .true.  -  "true: exlcude the P calculation in start_em"   ""  ""
-rconfig   integer  mp_physics_ad            namelist,physics   max_domains   98   -      "mp_physics_ad"            ""      ""
+rconfig   integer  mp_physics_ad            namelist,physics   max_domains   99   -      "mp_physics_ad"            ""      ""
 # NAMELIST DERIVED
 rconfig   integer mp_physics_4dvar        derived                  max_domains   -1       -        "mp_physics_4dvar"     ""      "-1 = no 4dvar and so no need to allocate a_ and g_ moist and scalar variables, >0 = running 4dvar, so allocate a_ and g_ moist and scalar variables appropriate for selected microphysics package"
 #
@@ -552,8 +550,8 @@ package   thompson_4dvar         mp_physics_4dvar==8      -          g_moist:g_q
 package   milbrandt2mom_4dvar    mp_physics_4dvar==9      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
 package   morr_two_mom_4dvar     mp_physics_4dvar==10     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
 package   cammgmp_4dvar          mp_physics_4dvar==11     -          g_moist:g_qv,g_qc,g_qi,g_qr,g_qs;a_moist:a_qv,a_qc,a_qi,a_qr,a_qs
-package   sbu_ylin_4dvar         mp_physics_4dvar==13     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;g_moist:a_qv,a_qc,a_qr,a_qi,a_qs
-package   wdm5_4dvar             mp_physics_4dvar==14     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;g_moist:a_qv,a_qc,a_qr,a_qi,a_qs
+package   sbu_ylin_4dvar         mp_physics_4dvar==13     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
+package   wdm5_4dvar             mp_physics_4dvar==14     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
 package   wdm6_4dvar             mp_physics_4dvar==16     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
 package   nssl_2mom_4dvar        mp_physics_4dvar==17     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
 package   nssl_2momccn_4dvar     mp_physics_4dvar==18     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
@@ -911,7 +909,7 @@ rconfig   integer var4d_used              derived               1             0 
 package   no_adj_sens    adj_sens_used==0            -             -
 package   do_adj_sens    adj_sens_used==1            -             state:a_u,a_v,a_t,a_mu,a_ph,g_u,g_v,g_t,g_mu,g_ph;a_moist:a_qv;g_moist:g_qv
 package   no_var4d       var4d_used==0               -             -
-package   do_var4d       var4d_used==1               -             state:a_u,a_v,a_w,a_ph,a_t,a_mu,a_p,a_z,g_u,g_v,g_w,g_ph,g_t,g_mu,g_p,g_z,a_h_diabatic,g_h_diabatic,a_rainc,g_rainc,a_rainnc,g_rainnc,a_raincv,g_raincv,a_rainncv,g_rainncv
+package   do_var4d       var4d_used==1               -             state:a_u,a_v,a_w,a_ph,a_t,a_mu,a_p,g_u,g_v,g_w,g_ph,g_t,g_mu,g_p,a_rainc,g_rainc,a_rainnc,g_rainnc,a_raincv,g_raincv,a_rainncv,g_rainncv
 
 rconfig   integer cv_w_used               derived               1             0       -     "cv_w_used"       "turn on if use_cv_w=true"
 rconfig   integer ens_used                derived               1             0       -     "ens_used"        "turn on if ensdim_alpha>0"

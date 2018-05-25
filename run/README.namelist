@@ -1233,7 +1233,7 @@ Options for use with the Noah-MP Land Surface Model:
  io_form_sgfdda                      = 2        ; sfc analysis data io format (2 = netCDF)
  guv_sfc (max_dom)                   = 0.0003   ; nudging coefficient for sfc u and v (sec-1)
  gt_sfc (max_dom)                    = 0.0003   ; nudging coefficient for sfc temp (sec-1)
- gq_sfc (max_dom)                    = 0.0003   ; nudging coefficient for sfc qvapor (sec-1)
+ gq_sfc (max_dom)                    = 0.00001  ; nudging coefficient for sfc qvapor (sec-1)
  rinblw (max_dom)                    = 0.       ; radius of influence used to determine the confidence (or weights) for
                                                   the analysis, which is based on the distance between the grid point to the nearest
                                                   obs. The analysis without nearby observation is used at a reduced weight.

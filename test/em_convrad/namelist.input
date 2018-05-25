@@ -60,7 +60,6 @@
  bldt                                = 0,
  cu_physics                          = 0,
  cudt                                = 0,
- num_soil_layers                     = 5,
  bucket_mm                           =10.,
  bucket_J                            =1.e8,
  /

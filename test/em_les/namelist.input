@@ -62,7 +62,6 @@
  cu_physics                          = 0,     0,     0,
  cudt                                = 0,     0,     0,
  isfflx                              = 2,
- num_soil_layers                     = 5,
  /
 
  &fdda

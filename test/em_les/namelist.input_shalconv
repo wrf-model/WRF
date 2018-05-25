@@ -63,7 +63,6 @@
  cudt                                = 0,     0,     0,
  isfflx                              = 1,
  ideal_xland                         = 2,
- num_soil_layers                     = 5,
  /
 
  &fdda

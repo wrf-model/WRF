@@ -59,7 +59,6 @@
  cu_physics                          = 0,     0,     0,
  cudt                                = 0,     0,     0,
  icloud                              = 1,
- num_soil_layers                     = 4,
  num_land_cat                        = 21,
  sf_urban_physics                    = 0,     0,     0,
  /

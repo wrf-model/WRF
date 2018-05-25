@@ -2237,23 +2237,39 @@
 ! sf_surface_physics
 !-----------------------------------------------------------------------
 
-      IF ( model_config_rec % sf_surface_physics(1) .EQ. 0           ) &
-           model_config_rec % num_soil_layers = 5
-      IF ( model_config_rec % sf_surface_physics(1) .EQ. SLABSCHEME  ) &
-           model_config_rec % num_soil_layers = 5
-      IF ( model_config_rec % sf_surface_physics(1) .EQ. LSMSCHEME   ) &
-           model_config_rec % num_soil_layers = 4
-      IF ( model_config_rec % sf_surface_physics(1) .EQ. NOAHMPSCHEME   ) &
-           model_config_rec % num_soil_layers = 4
-      IF ( model_config_rec % sf_surface_physics(1) .EQ. RUCLSMSCHEME .AND. &
-           (model_config_rec % num_soil_layers .NE. 6 .AND. model_config_rec % num_soil_layers .NE. 9) ) &
-           model_config_rec % num_soil_layers = 6
-      IF ( model_config_rec % sf_surface_physics(1) .EQ. PXLSMSCHEME ) &
-           model_config_rec % num_soil_layers = 2
-      IF ( model_config_rec % sf_surface_physics(1) .EQ. CLMSCHEME ) &
-           model_config_rec % num_soil_layers = 10
-      IF ( model_config_rec % sf_surface_physics(1) .EQ. 88          ) &
-           model_config_rec % num_soil_layers = 4
+#if ((EM_CORE == 1) || (NMM_CORE == 1))
+      IF      (   model_config_rec % sf_surface_physics(1) .EQ. NOLSMSCHEME  ) THEN
+         model_config_rec % num_soil_layers = 5
+      ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. SLABSCHEME   ) THEN
+         model_config_rec % num_soil_layers = 5
+      ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. LSMSCHEME    ) THEN
+         model_config_rec % num_soil_layers = 4
+      ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. NOAHMPSCHEME ) THEN
+         model_config_rec % num_soil_layers = 4
+      ELSE IF ( ( model_config_rec % sf_surface_physics(1) .EQ. RUCLSMSCHEME ) .AND. &
+                ( model_config_rec % num_soil_layers .EQ. 6 ) ) THEN
+         model_config_rec % num_soil_layers = 6
+      ELSE IF ( ( model_config_rec % sf_surface_physics(1) .EQ. RUCLSMSCHEME ) .AND. &
+                ( model_config_rec % num_soil_layers .EQ. 9 ) ) THEN
+         model_config_rec % num_soil_layers = 9
+      ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. RUCLSMSCHEME ) THEN
+         model_config_rec % num_soil_layers = 6
+      ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. PXLSMSCHEME  ) THEN
+         model_config_rec % num_soil_layers = 2
+      ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. CLMSCHEME    ) THEN
+         model_config_rec % num_soil_layers = 10
+      ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. SSIBSCHEME   ) THEN
+         model_config_rec % num_soil_layers = 3
+#if (NMM_CORE == 1)
+      ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. GFDLSLAB     ) THEN
+         model_config_rec % num_soil_layers = 4
+#endif
+      ELSE
+         CALL wrf_debug       ( 0 , '--- ERROR: Unknown sf_surface_physics has no associated number of soil levels' )
+         WRITE (wrf_err_message, FMT='(A,I6)') '--- ERROR: sf_surface_physics = ' , model_config_rec % sf_surface_physics(1)
+         CALL wrf_error_fatal ( TRIM(wrf_err_message) )
+      END IF 
+#endif
 
       WRITE (wrf_err_message, FMT='(A,I6)') '--- NOTE: num_soil_layers has been set to ', &
                                              model_config_rec % num_soil_layers

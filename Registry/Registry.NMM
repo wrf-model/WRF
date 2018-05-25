@@ -1807,6 +1807,7 @@ package   sfclayrevscheme sf_sfclay_physics==1       -             -
 package   idealscmsfcscheme  sf_sfclay_physics==89   -             -
 package   gbmpblscheme  sf_sfclay_physics==12       -             -
 
+package   nolsmscheme    sf_surface_physics==0       -             -
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn
 package   ruclsmscheme   sf_surface_physics==3       -             state:ACRUNOFF

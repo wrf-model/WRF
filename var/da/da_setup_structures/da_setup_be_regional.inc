@@ -164,7 +164,7 @@ subroutine da_setup_be_regional(xb, be, grid)
    end if
 
    if ( cloud_cv_options == 2 .and. &
-        (ccv_be_inp_opt /= 2 .or. ccv_be_inp_opt /= 3) ) then
+        (ccv_be_inp_opt /= 2 .and. ccv_be_inp_opt /= 3) ) then
       write (unit=message(1),fmt='(3x,A)') 'Please set ccv_be_inp_opt = 2 or 3 for cloud_cv_options=2'
       call da_error(__FILE__,__LINE__,message(1:1))
    end if

@@ -71,7 +71,6 @@
  isfflx                              = 1,
  ifsnow                              = 0,
  icloud                              = 1,
- num_soil_layers                     = 5,
  mp_zero_out                         = 0,
  /
 

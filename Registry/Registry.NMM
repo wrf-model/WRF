@@ -798,7 +798,6 @@ state   real   toposlpy            ij    misc          1     -     i1      "TOPO
 state   real   greenmax            ij    misc          1     -     i1      "GREENMAX"      "description"  "units"
 state   real   greenmin            ij    misc          1     -     i1      "GREENMIN"      "description"  "units"
 state   real   albedomx            ij    misc          1     -     i1      "ALBEDOMX"      "description"  "units"
-state   real   slopecat            ij    misc          1     -     i1      "SLOPECAT"      "description"  "units"
 state   real   toposoil            ij    misc          1     -     i1d=(DownNear)      "TOPOSOIL"      "description"  "units"
 state   real   landusef            iuj   misc          1     Z     -      ""      "description"  "units"
 state   real   soilctop            isj   misc          1     Z     -      ""      "description"  "units"

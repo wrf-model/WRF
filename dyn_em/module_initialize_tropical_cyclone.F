@@ -891,7 +891,7 @@ CONTAINS
     p_surf = interp_0( p_in, zk, z_at_v, nl_in )
 
     DO K = 1, kte
-      p_level = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
+      p_level = grid%c3h(k)*(p_surf - grid%p_top)+grid%c4h(k) + grid%p_top
       grid%v_1(i,k,j) = interp_0( v, p_in, p_level, nl_in )
       grid%v_2(i,k,j) = grid%v_1(i,k,j)
     ENDDO
@@ -934,7 +934,7 @@ CONTAINS
     p_surf = interp_0( p_in, zk, z_at_u, nl_in )
 
     DO K = 1, kte
-      p_level = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
+      p_level = grid%c3h(k)*(p_surf - grid%p_top)+grid%c4h(k) + grid%p_top
       grid%u_1(i,k,j) = interp_0( u, p_in, p_level, nl_in )
       grid%u_2(i,k,j) = grid%u_1(i,k,j)
     ENDDO
@@ -1047,7 +1047,7 @@ CONTAINS
 !    p_surf = interp_0( p_in, zk, z_at_v, nl_in )
 !
 !    DO K = 1, kte
-!      p_level = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
+!      p_level = grid%c3h(k)*(p_surf - grid%p_top)+grid%c4h(k) + grid%p_top
 !      grid%v_1(i,k,j) = interp_0( v, p_in, p_level, nl_in )
 !      grid%v_2(i,k,j) = grid%v_1(i,k,j)
 !    ENDDO
@@ -1071,7 +1071,7 @@ CONTAINS
 !    p_surf = interp_0( p_in, zk, z_at_u, nl_in )
 !
 !    DO K = 1, kte
-!      p_level = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
+!      p_level = grid%c3h(k)*(p_surf - grid%p_top)+grid%c4h(k) + grid%p_top
 !      grid%u_1(i,k,j) = interp_0( u, p_in, p_level, nl_in )
 !      grid%u_2(i,k,j) = grid%u_1(i,k,j)
 !    ENDDO

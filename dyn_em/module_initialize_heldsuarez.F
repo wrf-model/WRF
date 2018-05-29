@@ -436,7 +436,7 @@ CONTAINS
       ! perturbation potential temperature (t/t_1/t_2)
 
       DO k = kds, kde-1
-         p_level = grid%c3h(k)*(pd_surf - grid%p_top)+c4h(k) + grid%p_top
+         p_level = grid%c3h(k)*(pd_surf - grid%p_top)+grid%c4h(k) + grid%p_top
          grid%t_1(i,k,j) = T0*(p0/p_level)**rcp
          ! Add a small perturbation to initial isothermal profile
          CALL random_number(tperturb)

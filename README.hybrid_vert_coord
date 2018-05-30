@@ -27,9 +27,13 @@ The real program and the WRF model need to consistently use the same run-time
 setting for either TFC or HVC. The code will stop if the user mixes the vertical 
 coordinate run-time settings between real and WRF (or between ideal and WRF). 
 The WRF code has been modified to use pre-v3.9 input and lateral boundary 
-files, but only for the run-time choice of the TFC coordinate.
+files, but only for the run-time choice of the TF (terrain following) 
+coordinate option.
 
-SECTION ABOUT WHICH IDEAL CASES ARE HVC, AND WHICH ARE NOT
+All of the ARW WRF atmosphere test cases are able to use the HVC option. The 
+work to supply an initialization for all of the ideal cases has been completed 
+since the first release of the HVC option. With v4.0, now all of the ideal and 
+real cases are eligible to use hybrid_opt=2.
 
 Choosing the TF vs the HVC Option
 ---------------------------------
@@ -91,7 +95,8 @@ Even with each instance of "mu" being scaled and most instances of "mu" getting
 an offset applied, the elapsed time to run the v3.9 TFC vs the v3.9 HVC was
 quite small. With better simulation fidelity and no timing penalty, the decision
 was made to incorporate the HVC code entirely into v4.0, and to have the default
-behavior be HVC.
+behavior be HVC. Note that with v4.0, the code still reflects the explicit
+multiplication and addition by the respective 1d arrays.
 
 Cautionary note
 ---------------

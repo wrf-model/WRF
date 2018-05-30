@@ -8,12 +8,12 @@ Vertical Coordinate (HVC) has been added to the existing Terrain Following
 requires that a user activate both a compile-time and a run-time flag. 
 
 v4.0
-With the release of WRF v4.0, the Hybrid Vertical Coordinate (HVC) and the
-original Terrain Following Coordinate (TFC) are both available via namelist
-settings. The code for both is compiled into the model.
+With the release of WRF v4.0 (Summer 2018), the Hybrid Vertical Coordinate 
+(HVC) and the original Terrain Following Coordinate (TFC) are both available 
+via namelist settings. The code for both options is compiled into the model.
 
 Users are STRONGLY cautioned about adding any code into the WRF model that
-has the column pressure (for example, mu, mub, etc). 
+directly uses the column pressure (for example, mu, mub, etc). 
 
 HVC: What is it, what's available
 ---------------------------------
@@ -26,7 +26,7 @@ influence of topography towards the top of the model.
 The real program and the WRF model need to consistently use the same run-time 
 setting for either TFC or HVC. The code will stop if the user mixes the vertical 
 coordinate run-time settings between real and WRF (or between ideal and WRF). 
-The WRF code has been modified to use pre-v3.9 input and lateral boundary 
+The v4.0 WRF code has been modified to use pre-v4.0 input and lateral boundary 
 files, but only for the run-time choice of the TF (terrain following) 
 coordinate option.
 
@@ -43,9 +43,10 @@ To turn on the HVC run-time option, a switch is set in the namelist.input file:
  hybrid_opt = 2
 /
 
-This is a single entry value, which is set to two by default through the 
-Registry. For completeness, to explicitly turn off the HVC (turn on the 
-TFC option) in the namelist.input file:
+This is a single entry value, which is set to "2" (activating the hybrid 
+coordinate option) by default through the Registry. For completeness, to 
+explicitly turn off the HVC option (turn on the TFC option) in the 
+namelist.input file:
 &dynamics
  hybrid_opt = 0
 /
@@ -69,6 +70,8 @@ areas of high topography (not necessarily steep or complex), the vertical eta
 levels get too compressed when etac values get larger than about etac = 0.22. 
 Over the Himalayan Plateau with a 10 hPa model lid, a value of etac = 0.25 
 causes model failures. Globally then, a value of 0.2 is considered "safe".
+The east-coast of the US would be able to use etac = 0.30, and pure oceanic
+domains could probably use etac = 0.40.
 
 How the code has been modified
 ------------------------------
@@ -96,7 +99,8 @@ an offset applied, the elapsed time to run the v3.9 TFC vs the v3.9 HVC was
 quite small. With better simulation fidelity and no timing penalty, the decision
 was made to incorporate the HVC code entirely into v4.0, and to have the default
 behavior be HVC. Note that with v4.0, the code still reflects the explicit
-multiplication and addition by the respective 1d arrays.
+multiplication and addition by the respective 1d arrays to reduce the need to 
+have so many new 3d "mu" arrays.
 
 Cautionary note
 ---------------

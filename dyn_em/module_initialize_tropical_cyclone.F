@@ -515,7 +515,7 @@ CONTAINS
 
     do k=1,kde-1
 
-      p_level = grid%znu(k)*(pd_surf - grid%p_top) + grid%p_top
+      p_level = grid%c3h(k)*(pd_surf - grid%p_top)+grid%c4h(k) + grid%p_top
 
       moist(i,k,j,P_QV) = interp_0( qv, pd_in, p_level, nl_in )
       grid%t_1(i,k,j)          = interp_0( theta, pd_in, p_level, nl_in ) - t0

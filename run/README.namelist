@@ -824,6 +824,10 @@ Namelist variables for controlling the adaptive time step option:
                                      = 2: aerosol interaction with both MSKF and Morrison
  aercu_fct                           factor to multiply with aerosol amount
                                      = 1.: default value
+ no_src_types_cu                     = 1        ; number of aerosol species in global aerosol data: 10 for CESM input,
+                                                ; set automatically
+ alevsiz_cu                          = 1        ; number of levels in global aerosol data: 30 for CESM input,
+                                                ; set automatically
 
  ncnvc (max_dom)                     = FOR NMM: number of fundamental timesteps between
                                                 calls to convection; the value is set in Registry.NMM
@@ -907,15 +911,13 @@ Namelist variables for controlling the adaptive time step option:
                                                 ; namelists in &time_control: auxinput4_interval, auxinput4_end_h,
                                                 ; auxinput4_inname = "wrflowinp_d<domain>", 
                                                 ; and in V3.2 io_form_auxinput4
- usemonalb                           = .true.   ; use monthly albedo map instead of table value
-                                                ; (must be used for NMM and recommended for sst_update=1)
+ usemonalb                           = .false.  ; use monthly albedo map instead of table value
+                                                ; (must be set to true for NMM, and recommended for sst_update=1)
  rdmaxalb                            = .true.   ; use snow albedo from geogrid; false means using values from table
  rdlai2d                             = .false.  ; use LAI from input; false means using values from table
                                                   if sst_update=1, LAI will also be in wrflowinp file
  dust_emis                           = 0        ; Enable (0=no, 1=yes) surface dust emission scheme to enter mp_physics=28 QNIFA (ice-friendly aerosol variable)
  erosion_dim                         = 3        ; In conjunction with dust_emis=1, this value can only be set equal to 3 (erodibility information)
- no_src_types_cu                     = 1        ; number of aerosol species in global aerosol data
- alevsiz_cu                          = 1        ; number of levels in global aerosol data
  bucket_mm                           = -1.      ; bucket reset value for water accumulations (value in mm, -1.=inactive)
  bucket_J                            = -1.      ; bucket reset value for energy accumulations (value in J, -1.=inactive)
  tmn_update                          = 0        ; update deep soil temperature (1, yes; 0, no)

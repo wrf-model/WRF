@@ -14,7 +14,7 @@ module da_transfer_model
       p_g_qv, p_g_qr, p_g_qi, p_g_qs, p_g_qg, p_g_qc, &
       p_a_qv, p_a_qr, p_a_qi, p_a_qs, p_a_qg, p_a_qc, num_g_moist, num_a_moist, &
       f_qc, f_qr, f_qi, f_qs, f_qg, f_g_qc, f_g_qr, f_g_qi, f_g_qs, f_g_qg, &
-      f_a_qc, f_a_qr, f_a_qi, f_a_qs, f_a_qg
+      f_a_qc, f_a_qr, f_a_qi, f_a_qs, f_a_qg, warmrain_ad
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_reals
 #ifdef DM_PARALLEL
    use module_dm, only : local_communicator, &
@@ -42,7 +42,8 @@ module da_transfer_model
       t_kelvin, num_fgat_time, num_pseudo, iso_temp, interval_seconds, trajectory_io, &
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, num_fft_factors, &
       its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, qlimit, &
-      update_sfcdiags, use_wrf_sfcinfo, use_radar_rqv, cloudbase_calc_opt, use_gpsephobs
+      update_sfcdiags, use_wrf_sfcinfo, use_radar_rqv, cloudbase_calc_opt, use_gpsephobs, &
+      cloud_cv_options
    use da_control, only: base_pres_strat, base_lapse_strat
    use da_control, only: c1f, c2f, c1h, c2h, c3f, c3h, c4f, c4h
    use da_define_structures, only : xbx_type, be_type

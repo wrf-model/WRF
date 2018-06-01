@@ -916,12 +916,13 @@ CONTAINS
         ENDIF              
 
         ! LOWER LIMIT ON PSI IN STABLE CONDITIONS
-        PSIM(I)=MAX(PSIM(I),psilim)
-        PSIH(I)=MAX(PSIH(I),psilim)                                     
         PSIM10(I)=MAX(10./ZA(I)*PSIM(I), psilim)
         PSIH10(I)=MAX(10./ZA(I)*PSIH(I), psilim)
         PSIM2(I)=MAX(2./ZA(I)*PSIM(I), psilim)
         PSIH2(I)=MAX(2./ZA(I)*PSIH(I), psilim)
+        PSIM(I)=MAX(PSIM(I),psilim)
+        PSIH(I)=MAX(PSIH(I),psilim)                                     
+
         ! 1.0 over Monin-Obukhov length
         RMOL(I)= ZOL(I)/ZA(I)
 
@@ -984,17 +985,17 @@ CONTAINS
            !CALL PSI_Hogstrom_1996(PSIM(I),PSIH(I),ZOL(I), z_t(I), ZNTstoch(I), ZA(I))
            !CALL PSI_Businger_1971(PSIM(I),PSIH(I),ZOL(I))
            CALL PSI_DyerHicks(PSIM(I),PSIH(I),ZOL(I),z_t(I),ZNTstoch(I),ZA(I))
+           CALL PSI_DyerHicks(PSIM2(I),PSIH2(I),ZOL2,z_t(I),ZNTstoch(I),2.)
         ELSE           
            ! LAND  
            !CALL PSI_Hogstrom_1996(PSIM(I),PSIH(I),ZOL(I), z_t(I), ZNTstoch(I), ZA(I))
            !CALL PSI_Businger_1971(PSIM(I),PSIH(I),ZOL(I))
            CALL PSI_DyerHicks(PSIM(I),PSIH(I),ZOL(I),z_t(I),ZNTstoch(I),ZA(I))
+           CALL PSI_DyerHicks(PSIM2(I),PSIH2(I),ZOL2,z_t(I),ZNTstoch(I),2.)
         ENDIF              
 
         PSIM10(I)=10./ZA(I)*PSIM(I)
         PSIH10(I)=10./ZA(I)*PSIH(I)
-        PSIM2(I)=2./ZA(I)*PSIM(I)
-        PSIH2(I)=2./ZA(I)*PSIH(I)
 
         !---LIMIT PSIH AND PSIM IN THE CASE OF THIN LAYERS AND
         !---HIGH ROUGHNESS.  THIS PREVENTS DENOMINATOR IN FLUXES

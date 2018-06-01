@@ -4678,8 +4678,13 @@ endif
             qvf1 = qvf1*qvf2
             grid%p(i,kk,j) = - 0.5*((grid%c1f(k)*grid%Mu_2(i,j))+qvf1*(grid%c1f(k)*grid%Mub(i,j)+grid%c2f(k)))/grid%rdnw(kk)/qvf2
             qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
-            grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf* &
-                                 (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
+            IF ( config_flags%use_theta_m .EQ. 1 ) THEN
+               grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)* &
+                                  (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
+            ELSE 
+               grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf* &
+                                  (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
+            END IF
             grid%al(i,kk,j) = grid%alt(i,kk,j) - grid%alb(i,kk,j)
             grid%p_hyd(i,kk,j) = grid%p(i,kk,j) + grid%pb(i,kk,j)
             !  Now, integrate down the column to compute the pressure perturbation, and diagnose the two
@@ -4691,8 +4696,13 @@ endif
                qvf1 = qvf1*qvf2
                grid%p(i,kk,j) = grid%p(i,kk+1,j) - ((grid%c1f(k)*grid%Mu_2(i,j)) + qvf1*(grid%c1f(k)*grid%Mub(i,j)+grid%c2f(k)))/qvf2/grid%rdn(kk+1)
                qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
-               grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf* &
-                           (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
+               IF ( config_flags%use_theta_m .EQ. 1 ) THEN
+                  grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)* &
+                                     (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
+               ELSE
+                  grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf* &
+                                     (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
+               END IF
                grid%al(i,kk,j) = grid%alt(i,kk,j) - grid%alb(i,kk,j)
                grid%p_hyd(i,kk,j) = grid%p(i,kk,j) + grid%pb(i,kk,j)
             END DO

@@ -1,3 +1,12 @@
+#if( BUILD_RRTMG_FAST != 1)
+      MODULE module_ra_rrtmg_swf
+      CONTAINS
+      SUBROUTINE RRTMG_SWRAD_FAST
+         REAL :: dummy
+         dummy = 1
+      END SUBROUTINE RRTMG_SWRAD_FAST
+      END MODULE module_ra_rrtmg_swf
+#else
 !!MODULE module_ra_rrtmg_swf
 #define CHNK 8
 !#define CHNK 1849
@@ -13765,3 +13774,4 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !------------------------------------------------------------------
 
       END MODULE module_ra_rrtmg_swf
+#endif

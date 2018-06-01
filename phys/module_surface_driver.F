@@ -241,6 +241,7 @@ CONTAINS
      &          ,sf_urban_physics,gmt,xlat,xlong,julday               &
      &          ,num_urban_layers                                     & !multi-layer urban
      &          ,num_urban_hi                                         & !multi-layer urban
+     &          ,tsk_rural                                            & !multi-layer urban
      &          ,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d              & !multi-layer urban
      &          ,tlev_urb3d,qlev_urb3d                                & !multi-layer urban
      &          ,tw1lev_urb3d,tw2lev_urb3d                            & !multi-layer urban
@@ -887,6 +888,7 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   )        ::XLAT, XLONG
    INTEGER, INTENT(IN )::   NUM_URBAN_LAYERS
    INTEGER, INTENT(IN )::   NUM_URBAN_HI
+   REAL, OPTIONAL, DIMENSION( ims:ime,                     jms:jme ), INTENT(INOUT) :: tsk_rural
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: trb_urb4d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw1_urb4d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw2_urb4d
@@ -2059,6 +2061,15 @@ CONTAINS
 #endif         
 
         ENDIF
+#if ( EM_CORE==1)
+!       ustm is not available in NMM
+!       ustm is needed for LES tke calculation (ustm is ust used in friction)
+         DO j = j_start(ij),j_end(ij)
+            DO i = i_start(ij),i_end(ij)
+               ustm(i,j) = ust(i,j)
+            END DO
+         END DO
+#endif
        ELSE
          CALL wrf_error_fatal('Lacking arguments for MYJSFC in surface driver')
        ENDIF
@@ -2601,6 +2612,7 @@ CONTAINS
                 FRC_URB2D, UTYPE_URB2D,                         & !I urban
                 num_urban_layers,                               & !I multi-layer urban
                 num_urban_hi,                                   & !I multi-layer urban
+                tsk_rural,                                      & !H multi-layer urban
                 trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,        & !H multi-layer urban
                 tlev_urb3d,qlev_urb3d,                          & !H multi-layer urban
                 tw1lev_urb3d,tw2lev_urb3d,                      & !H multi-layer urban
@@ -2705,6 +2717,7 @@ CONTAINS
                 FRC_URB2D, UTYPE_URB2D,                         & !I urban
                 num_urban_layers,                               & !I multi-layer urban
                 num_urban_hi,                                   & !I multi-layer urban
+                tsk_rural,                                      & !H multi-layer urban
                 trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,        & !H multi-layer urban
                 tlev_urb3d,qlev_urb3d,                          & !H multi-layer urban
                 tw1lev_urb3d,tw2lev_urb3d,                      & !H multi-layer urban

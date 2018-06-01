@@ -278,7 +278,7 @@ Topographic shading (only effective when grid sizes are a few kilometers)
  topo_shading                        = 1,     1,     1,
  shadlen                             = 25000, 
 
-Setting threashold value for defining seaice if seaice is not in the input file:
+Setting threshold value for defining seaice if seaice is not in the input file:
 
  seaice_threshold                    = 271,
 
@@ -306,18 +306,18 @@ Switching off latent heating from a microphysics scheme (must also set cu_physic
  dampcoef                            = 0.2,    0.2,    0.2
 
 ** Using expanded boundary zone and exponential decay option (add or modify these in
-    namelist record &bdy_control):
+    namelist record &bdy_control). 
+    spec_zone is ALWAYS = 1 
+    relax_zone is ALWAYS = spec_bdy_width - spec_zone
 
  spec_bdy_width                      = 10,
- spec_zone                           = 1,
- relax_zone                          = 9,
- specified                           = .true., .false.,.false.,
+ specified                           = .true.,
  spec_exp                            = 0.33
 
 For a tropical channel configuration, set the following:
 
- specified                           = .true., .false.,.false.,
- periodic_x                          = .true., .false.,.false.,
+ specified                           = .true.,
+ periodic_x                          = .true.,
 
 ** using io quilting option to improve output efficiency for large domain runs
     (note that this is a separate namelist record):
@@ -638,4 +638,12 @@ To overwrite the cu_physics option for a second nest, set
  physics_suite                       = 'tropical'
  cu_physics                          = -1,    -1,     0,
  ...
+
+** New way to automatically choose levels (default auto_levels_opt=2)
+ max_dz                              = 1000.
+ auto_levels_opt                     = 2
+ dzbot                               = 50.
+ dzstretch_s                         = 1.3
+ dzstretch_u                         = 1.1
+
 

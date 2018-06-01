@@ -7,25 +7,20 @@
  start_month                         = 06,   06,   06,
  start_day                           = 11,   11,   11,
  start_hour                          = 12,   12,   12,
- start_minute                        = 00,   00,   00,
- start_second                        = 00,   00,   00,
  end_year                            = 2001, 2001, 2001,
  end_month                           = 06,   06,   06,
  end_day                             = 12,   12,   12,
  end_hour                            = 12,   12,   12,
- end_minute                          = 00,   00,   00,
- end_second                          = 00,   00,   00,
  interval_seconds                    = 10800
  input_from_file                     = .true.,.true.,.true.,
  history_interval                    = 60,   60,   60,
  frames_per_outfile                  = 1,    1,    1,
  restart                             = .false.,
- restart_interval                    = 5000,
+ restart_interval                    = 1440,
  io_form_history                     = 2
  io_form_restart                     = 2
  io_form_input                       = 2
  io_form_boundary                    = 2
- debug_level                         = 0
  /
 
  &domains
@@ -64,7 +59,6 @@
  cu_physics                          = 0,     0,     0,
  cudt                                = 0,     0,     0,
  icloud                              = 1,
- num_soil_layers                     = 4,
  num_land_cat                        = 21,
  sf_urban_physics                    = 0,     0,     0,
  /
@@ -92,10 +86,7 @@
 
  &bdy_control
  spec_bdy_width                      = 5,
- spec_zone                           = 1,
- relax_zone                          = 4,
- specified                           = .true., .false.,.false.,
- nested                              = .false., .true., .true.,
+ specified                           = .true.,
  /
 
  &grib2

@@ -1455,8 +1455,8 @@
 !jdfcz           (mass_naj/dens_na)+(mass_clj/dens_cl) +    &  
 !jdfcz           (mass_dustj/dens_dust)
         vol_ac = (mass_antha/dens_oin)+ &
-                 (mass_seas*(22.9897/58.4428)/dens_na)+ &
-                 (mass_seas*(35.4270/58.4428)/dens_cl)+ &
+                 (mass_seas*(22.9898/58.4428)/dens_na)+ &
+                 (mass_seas*(35.4530/58.4428)/dens_cl)+ &
                  (mass_soil/dens_dust)
 !
 ! Now divide mass into sections which is done by sect02:
@@ -1500,9 +1500,9 @@
                      mass_ba1j+mass_ba2j+mass_ba3j+mass_ba4j)*xmas_sectj(isize)
           mass_bc  = mass_bci*xmas_secti(isize) + mass_bcj*xmas_sectj(isize)
           mass_na  = mass_nai*xmas_secti(isize) + mass_naj*xmas_sectj(isize)+ &
-                     mass_seas*xmas_sectc(isize)*(22.9897/58.4428)
+                     mass_seas*xmas_sectc(isize)*(22.9898/58.4428)
           mass_cl  = mass_cli*xmas_secti(isize) + mass_clj*xmas_sectj(isize)+ &
-                     mass_seas*xmas_sectc(isize)*(35.4270/58.4428)
+                     mass_seas*xmas_sectc(isize)*(35.4530/58.4428)
           mass_h2o = mass_h2oi*xmas_secti(isize) + mass_h2oj*xmas_sectj(isize)
 !         mass_h2o = 0.0 ! testing purposes only
           vol_so4 = mass_so4 / dens_so4
@@ -2173,8 +2173,8 @@ if (l .ge. p1st)  mass_asoa2j= chem(i,k,j,l)*conv1a
 !jdfcz           (mass_naj/dens_na)+(mass_clj/dens_cl) +    &  
 !jdfcz           (mass_dustj/dens_dust)
         vol_ac = (mass_antha/dens_oin)+ &
-                 (mass_seas*(22.9897/58.4428)/dens_na)+ &
-                 (mass_seas*(35.4270/58.4428)/dens_cl)+ &
+                 (mass_seas*(22.9898/58.4428)/dens_na)+ &
+                 (mass_seas*(35.4530/58.4428)/dens_cl)+ &
                  (mass_soil/dens_dust)
 !
 ! Now divide mass into sections which is done by sect02:
@@ -2222,9 +2222,9 @@ if (l .ge. p1st)  mass_asoa2j= chem(i,k,j,l)*conv1a
           mass_oc  = mass_oci*xmas_secti(isize) + mass_ocj*xmas_sectj(isize)
           mass_bc  = mass_bci*xmas_secti(isize) + mass_bcj*xmas_sectj(isize)
           mass_na  = mass_nai*xmas_secti(isize) + mass_naj*xmas_sectj(isize)+ &
-                     mass_seas*xmas_sectc(isize)*(22.9897/58.4428)
+                     mass_seas*xmas_sectc(isize)*(22.9898/58.4428)
           mass_cl  = mass_cli*xmas_secti(isize) + mass_clj*xmas_sectj(isize)+ &
-                     mass_seas*xmas_sectc(isize)*(35.4270/58.4428)
+                     mass_seas*xmas_sectc(isize)*(35.4530/58.4428)
           mass_h2o = mass_h2oi*xmas_secti(isize) + mass_h2oj*xmas_sectj(isize)
 !         mass_h2o = 0.0 ! testing purposes only
           vol_so4 = mass_so4 / dens_so4
@@ -2829,8 +2829,8 @@ END subroutine optical_prep_modal_soa_vbs
 !jdfcz           (mass_naj/dens_na)+(mass_clj/dens_cl) +    &
 !jdfcz           (mass_dustj/dens_dust)
         vol_ac = (mass_antha/dens_oin)+ &
-                 (mass_seas*(22.9897/58.4428)/dens_na)+ &
-                 (mass_seas*(35.4270/58.4428)/dens_cl)+ &
+                 (mass_seas*(22.9898/58.4428)/dens_na)+ &
+                 (mass_seas*(35.4530/58.4428)/dens_cl)+ &
                  (mass_soil/dens_dust)
 
 !
@@ -2875,9 +2875,9 @@ END subroutine optical_prep_modal_soa_vbs
                      mass_ba1j+mass_ba2j+mass_ba3j+mass_ba4j)*xmas_sectj(isize)
           mass_bc  = mass_bci*xmas_secti(isize) + mass_bcj*xmas_sectj(isize)
           mass_na  = mass_nai*xmas_secti(isize) + mass_naj*xmas_sectj(isize)+ &
-                     mass_seas*xmas_sectc(isize)*(22.9897/58.4428)
+                     mass_seas*xmas_sectc(isize)*(22.9898/58.4428)
           mass_cl  = mass_cli*xmas_secti(isize) + mass_clj*xmas_sectj(isize)+ &
-                     mass_seas*xmas_sectc(isize)*(35.4270/58.4428)
+                     mass_seas*xmas_sectc(isize)*(35.4530/58.4428)
           mass_h2o = mass_h2oi*xmas_secti(isize) + mass_h2oj*xmas_sectj(isize)
 !         mass_h2o = 0.0 ! testing purposes only
           vol_so4 = mass_so4 / dens_so4
@@ -3995,8 +3995,8 @@ END subroutine optical_prep_modal_soa_vbs
        n = n+1
         mass_soil=mass_soil+dustfrc_goc8bin(n,isize)*chem(i,k,j,m)
        end do
-       mass_cl=mass_seas*conv1a*22.9897/58.4428
-       mass_na=mass_seas*conv1a*35.4270/58.4428
+       mass_cl=mass_seas*conv1a*35.4530/58.4428
+       mass_na=mass_seas*conv1a*22.9898/58.4428
        mass_soil=mass_soil*conv1a
 !         mass_h2o = 0.0 ! testing purposes only
           vol_so4 = mass_so4 / dens_so4

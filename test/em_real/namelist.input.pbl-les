@@ -69,7 +69,6 @@
 
  &dynamics
  hybrid_opt                          = 2, 
- use_theta_m                         = 1,
  w_damping                           = 0,
  diff_opt                            = 2,      2,      2,
  km_opt                              = 4,      3,      3,

@@ -160,7 +160,9 @@ CONTAINS
 ! !USES:
    USE module_state_description, ONLY : RRTMSCHEME, GFDLLWSCHEME        &
                                        ,RRTMG_LWSCHEME, RRTMG_SWSCHEME  &
+#if( BUILD_RRTMG_FAST == 1)
                                        ,RRTMG_LWSCHEME_FAST, RRTMG_SWSCHEME_FAST  &
+#endif
                                        ,RRTMK_LWSCHEME, RRTMK_SWSCHEME  & 
                                        ,SWRADSCHEME, GSFCSWSCHEME       &
                                        ,GFDLSWSCHEME, CAMLWSCHEME, CAMSWSCHEME &
@@ -185,8 +187,10 @@ CONTAINS
    USE module_ra_rrtm       , ONLY : rrtmlwrad
    USE module_ra_rrtmg_lw   , ONLY : rrtmg_lwrad
    USE module_ra_rrtmg_sw   , ONLY : rrtmg_swrad
+#if( BUILD_RRTMG_FAST == 1)
    USE module_ra_rrtmg_lwf  , ONLY : rrtmg_lwrad_fast
    USE module_ra_rrtmg_swf  , ONLY : rrtmg_swrad_fast
+#endif
    USE module_ra_rrtmg_swk  , ONLY : rad_rrtmg_driver
    USE module_ra_cam        , ONLY : camrad
    USE module_ra_gfdleta    , ONLY : etara
@@ -926,7 +930,11 @@ CONTAINS
               allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
               allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:11))
 
-           case(RRTMG_SWSCHEME,RRTMG_SWSCHEME_FAST,RRTMK_SWSCHEME)
+           case(RRTMG_SWSCHEME,&
+#if( BUILD_RRTMG_FAST == 1)
+                RRTMG_SWSCHEME_FAST,&
+#endif
+                RRTMK_SWSCHEME)
               allocate(tauaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
               allocate(ssaaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
               allocate(asyaer_sw(ims:ime, kms:kme, jms:jme, 1:14))
@@ -939,7 +947,9 @@ CONTAINS
    IF (PRESENT(f_qnwfa) .AND. PRESENT(f_qnifa) .AND. PRESENT(taod5503d) .AND.  PRESENT(taod5502d)) THEN
       IF (F_QNWFA .AND. aer_opt.eq.3 .AND.                              &
                  (sw_physics.eq.RRTMG_SWSCHEME .OR.                     &
+#if( BUILD_RRTMG_FAST == 1)
                   sw_physics.eq.RRTMG_SWSCHEME_FAST .OR.                &
+#endif
                   sw_physics.eq.RRTMK_SWSCHEME )) THEN
          CALL wrf_debug (150, 'DEBUG-GT:  computing 3D AOD from QNWFA+QNIFA')
 
@@ -1714,6 +1724,7 @@ CONTAINS
              ENDIF
 
 
+#if( BUILD_RRTMG_FAST == 1)
         CASE (RRTMG_LWSCHEME_FAST)
              CALL wrf_debug (100, 'CALL rrtmg_lw')
 
@@ -1767,6 +1778,7 @@ CONTAINS
                   LWUPFLX=LWUPFLX,LWUPFLXC=LWUPFLXC,                &
                   LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC                 &
                                                                     )
+#endif
 
         CASE (HELDSUAREZ)
              CALL wrf_debug (100, 'CALL heldsuarez')
@@ -1871,7 +1883,11 @@ CONTAINS
               end do
            end do
 
-        case(RRTMG_SWSCHEME,RRTMG_SWSCHEME_FAST,RRTMK_SWSCHEME)
+        case(RRTMG_SWSCHEME,&
+#if( BUILD_RRTMG_FAST == 1)
+             RRTMG_SWSCHEME_FAST,&
+#endif
+             RRTMK_SWSCHEME)
            call wrf_debug(100, 'call calc_aerosol_rrtmg_sw')
            call calc_aerosol_rrtmg_sw(ht,dz8w,p,t,qv,aer_type,aer_aod550_opt,aer_angexp_opt,    &
                                       aer_ssa_opt,aer_asy_opt,aer_aod550_val,aer_angexp_val,    &
@@ -1896,7 +1912,9 @@ CONTAINS
      IF (PRESENT(f_qnwfa) .AND. PRESENT(f_qnifa)) THEN
        IF (F_QNWFA .AND. aer_opt.eq.3 .AND.                             &
                              (sw_physics.eq.RRTMG_SWSCHEME .OR.         &
+#if( BUILD_RRTMG_FAST == 1)
                               sw_physics.eq.RRTMG_SWSCHEME_FAST .OR.    &
+#endif
                               sw_physics.eq.RRTMK_SWSCHEME )) THEN
          call wrf_debug(100, 'call calc_aerosol_rrtmg_sw with 3D AOD values')
          call calc_aerosol_rrtmg_sw(ht,dz8w,p,t,qv,taer_type,taer_aod550_opt,taer_angexp_opt,  &
@@ -2159,6 +2177,7 @@ CONTAINS
              ENDDO
              ENDDO
 
+#if( BUILD_RRTMG_FAST == 1)
         CASE (RRTMG_SWSCHEME_FAST)
              CALL wrf_debug(100, 'CALL rrtmg_sw_fast')
              CALL RRTMG_SWRAD_FAST(                                    &
@@ -2228,6 +2247,7 @@ CONTAINS
              ENDDO
              ENDDO
              ENDDO
+#endif
 
         CASE (GFDLSWSCHEME)
 
@@ -2348,7 +2368,10 @@ CONTAINS
 ! jararias, 14/08/2013
      ! surface direct and diffuse SW fluxes computation. Only for schemes other than RRTMG and Goddard
      ! Backup method in case sw scheme in use does not provide surface SW direct and diffuse irradiances
-     IF ((sw_physics .NE. RRTMG_SWSCHEME) .AND. (sw_physics .NE. RRTMG_SWSCHEME_FAST) &
+     IF ((sw_physics .NE. RRTMG_SWSCHEME) &
+#if( BUILD_RRTMG_FAST == 1)
+           .AND. (sw_physics .NE. RRTMG_SWSCHEME_FAST) &
+#endif
            .AND. (sw_physics .NE. FLGSWSCHEME) .AND. (sw_physics .NE. CAMSWSCHEME) &  ! amontornes-bcodina (2014-04-20)
            .AND. (sw_physics .NE. RRTMK_SWSCHEME) &
            .AND. (sw_physics .ne. GODDARDSWSCHEME)) THEN
@@ -2472,7 +2495,12 @@ CONTAINS
 
      accumulate_lw_select: SELECT CASE(lw_physics)
 
-     CASE (CAMLWSCHEME,RRTMG_LWSCHEME,RRTMG_LWSCHEME_FAST,RRTMK_LWSCHEME)
+     CASE (CAMLWSCHEME,& 
+           RRTMG_LWSCHEME,&
+#if( BUILD_RRTMG_FAST == 1)
+           RRTMG_LWSCHEME_FAST,&
+#endif
+           RRTMK_LWSCHEME)
    IF(PRESENT(LWUPTC))THEN
 !  NMM calls the driver every RADT time steps, EM calls every DT
 #if (EM_CORE == 1)
@@ -2509,7 +2537,12 @@ CONTAINS
 
      accumulate_sw_select: SELECT CASE(sw_physics)
 
-     CASE (CAMSWSCHEME,RRTMG_SWSCHEME,RRTMG_SWSCHEME_FAST,RRTMK_SWSCHEME)
+     CASE (CAMSWSCHEME,&
+           RRTMG_SWSCHEME,&
+#if( BUILD_RRTMG_FAST == 1)
+           RRTMG_SWSCHEME_FAST,&
+#endif
+           RRTMK_SWSCHEME)
    IF(PRESENT(SWUPTC))THEN
 !  NMM calls the driver every RADT time steps, EM calls every DT
 #if (EM_CORE == 1)

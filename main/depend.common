@@ -765,14 +765,6 @@ module_diagnostics_driver.o: \
 		../frame/module_driver_constants.o 	\
 		../share/module_model_constants.o
 
-module_diag_functions.o:
-	$(RM) $@
-	sed -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F > $*.G
-	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.G  > $*.bb
-	$(SED_FTN) $*.bb | $(CPP) $(TRADFLAG) > $*.f90
-	$(RM) $*.G $*.bb
-	$(FC) -o $@ -c $(FCFLAGS) $(OMP) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $*.f90
-
 module_diag_misc.o: \
 		../frame/module_dm.o
 
@@ -787,7 +779,7 @@ module_diag_zld.o: \
 		../share/module_model_constants.o
 
 module_diag_afwa.o: \
-		module_diag_functions.o			\
+		module_diag_trad_fields.o		\
 		../frame/module_domain.o 		\
 		../frame/module_dm.o 			\
 		../frame/module_state_description.o 	\

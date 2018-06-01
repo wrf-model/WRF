@@ -405,15 +405,6 @@ SUBROUTINE small_step_finish( u_2, u_1, v_2, v_1, w_2, w_1,    &
   ENDDO
   ENDDO
 
-#ifdef REVERT
-  DO j = j_start, j_end
-  DO k = kds, kde-1
-  DO i = i_start, i_end
-    t_2(i,k,j) = (t_2(i,k,j) + t_save(i,k,j)*(c1f(k)*mut(i,j)+c2f(k)))/(c1f(k)*muts(i,j)+c2f(k))
-  ENDDO
-  ENDDO
-  ENDDO
-#else
   IF ( rk_step < rk_order ) THEN
     DO j = j_start, j_end
     DO k = kds, kde-1
@@ -433,7 +424,6 @@ SUBROUTINE small_step_finish( u_2, u_1, v_2, v_1, w_2, w_1,    &
     ENDDO
     ENDDO
   ENDIF
-#endif
 
   DO j = j_start, j_end
   DO i = i_start, i_end

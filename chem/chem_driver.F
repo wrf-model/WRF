@@ -1339,7 +1339,7 @@ CALL kpp_mechanism_driver (chem,                                                
       CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP,RACM_SOA_VBS_KPP,RACM_SOA_VBS_HET_KPP)
          CALL wrf_debug(15,'gocart so2-so4 conversion')
          CALL  so2so4(0,chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,           &
-              grid%qc_cu, grid%gd_cldfr,                                    &
+              grid%qc_cu, grid%gd_cldfr, config_flags%cu_diag,                   &
               NUM_CHEM,NUM_MOIST,                                                &
               ids,ide, jds,jde, kds,kde,                                         &
               ims,ime, jms,jme, kms,kme,                                         &
@@ -1352,7 +1352,7 @@ CALL kpp_mechanism_driver (chem,                                                
       CASE (RADM2SORG,RADM2SORG_KPP,RACMSORG_KPP,RACM_SOA_VBS_KPP,RACM_SOA_VBS_HET_KPP)
          CALL wrf_debug(15,'gocart so2-so4 conversion')
          CALL  so2so4(1,chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,           &
-              grid%qc_cu, grid%gd_cldfr,                                    &
+              grid%qc_cu, grid%gd_cldfr, config_flags%cu_diag,                 &
               NUM_CHEM,NUM_MOIST,                                                &
               ids,ide, jds,jde, kds,kde,                                         &
               ims,ime, jms,jme, kms,kme,                                         &
@@ -1374,7 +1374,7 @@ CALL kpp_mechanism_driver (chem,                                                
       CASE (RADM2SORG)
          CALL wrf_debug(15,'gocart so2-so4 conversion')
          CALL  so2so4(0,chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,           &
-              grid%qc_cu, grid%gd_cldfr,                                    &
+              grid%qc_cu, grid%gd_cldfr, config_flags%cu_diag,                 &
               NUM_CHEM,NUM_MOIST,                                                &
               ids,ide, jds,jde, kds,kde,                                         &
               ims,ime, jms,jme, kms,kme,                                         &
@@ -1387,7 +1387,7 @@ CALL kpp_mechanism_driver (chem,                                                
       CASE (RADM2SORG)
          CALL wrf_debug(15,'gocart so2-so4 conversion')
          CALL  so2so4(1,chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,           &
-              grid%qc_cu, grid%gd_cldfr,                                    &
+              grid%qc_cu, grid%gd_cldfr, config_flags%cu_diag,                   &
               NUM_CHEM,NUM_MOIST,                                                &
               ids,ide, jds,jde, kds,kde,                                         &
               ims,ime, jms,jme, kms,kme,                                         &
@@ -1658,7 +1658,7 @@ end if !Chemistry time step check
         if(config_flags%chem_opt == CHEM_VOLC)then
           CALL wrf_debug(15,'gocart so2-so4 conversion')
           CALL  so2so4(0,chem,p_so2,p_sulf,p_h2o2,p_QC,T_PHY,MOIST,         &
-         grid%qc_cu, grid%gd_cldfr,                                    &
+         grid%qc_cu, grid%gd_cldfr, config_flags%cu_diag,                   &
          NUM_CHEM,NUM_MOIST,                                                &
          ids,ide, jds,jde, kds,kde,                                         &
          ims,ime, jms,jme, kms,kme,                                         &

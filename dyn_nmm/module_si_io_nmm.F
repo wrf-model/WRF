@@ -1650,10 +1650,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
                        grid%t_gc(its:imax, jts:jmax, kts:num_metgrid_levels),&
                          ierr)
 
-      call io_int_fetch_data(iunit, r, 'SLOPECAT', &
-                         grid%slopecat(its:imax, jts:jmax), &
-                         ierr)
-
       call io_int_fetch_data(iunit, r, 'SNOALB', &
                          grid%snoalb(its:imax, jts:jmax), &
                          ierr)

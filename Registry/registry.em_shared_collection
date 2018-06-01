@@ -4,6 +4,7 @@
 #	Currently, these go into the following top-level Registry files:
 #		Registry.EM
 #		Registry.EM_CHEM
+#		Registry.tladj
 
 include Registry.EM_COMMON
 include registry.io_boilerplate

@@ -798,7 +798,6 @@ state   real   toposlpy            ij    misc          1     -     i1      "TOPO
 state   real   greenmax            ij    misc          1     -     i1      "GREENMAX"      "description"  "units"
 state   real   greenmin            ij    misc          1     -     i1      "GREENMIN"      "description"  "units"
 state   real   albedomx            ij    misc          1     -     i1      "ALBEDOMX"      "description"  "units"
-state   real   slopecat            ij    misc          1     -     i1      "SLOPECAT"      "description"  "units"
 state   real   toposoil            ij    misc          1     -     i1d=(DownNear)      "TOPOSOIL"      "description"  "units"
 state   real   landusef            iuj   misc          1     Z     -      ""      "description"  "units"
 state   real   soilctop            isj   misc          1     Z     -      ""      "description"  "units"
@@ -1566,7 +1565,7 @@ state  real   mth12    i{ls}jf ozmixm      1    -   -     "OZMIXMTH12"  "Month 1
 state  real   pin       {ls}     misc      1    -   -      "PIN"             "PRESSURE LEVEL OF OZONE MIXING RATIO"  "millibar"
 
 # new rad variables
-state    real   o3rad           ikj     misc        1         -      irh      "o3rad"    "RADIATION 3D OZONE" "ppmv"
+state    real   o3rad           ikj     misc        1         -      rh       "o3rad"    "RADIATION 3D OZONE" "ppmv"
 
 ifdef HWRF=1
 rconfig   integer ntrack                 namelist,physics      max_domains  10       irh    "ntrack" "nest movement timestep (multiples of nphs)"
@@ -1807,6 +1806,7 @@ package   sfclayrevscheme sf_sfclay_physics==1       -             -
 package   idealscmsfcscheme  sf_sfclay_physics==89   -             -
 package   gbmpblscheme  sf_sfclay_physics==12       -             -
 
+package   nolsmscheme    sf_surface_physics==0       -             -
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn
 package   ruclsmscheme   sf_surface_physics==3       -             state:ACRUNOFF
@@ -1852,6 +1852,7 @@ package   kfscheme       cu_physics==99              -             -
 package   g3shcuscheme   shcu_physics==1             -             -
 package   camuwshcuscheme shcu_physics==2            -             -
 package   grimsshcuscheme shcu_physics==3            -             -
+package   nscvshcuscheme  shcu_physics==4            -             -
 
 package   dfi_setup      dfi_stage==0                -             -
 package   dfi_bck        dfi_stage==1                -             -

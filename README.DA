@@ -41,7 +41,7 @@ Version 4.0 was released on June 7, 2018.
   WRFDA with hybrid vertical coordinate (HVC) and moist potential temperature (THM):
   -----------------------------------------------------------------------------------
     - 3DVAR shall work with HVC since V3.9, but not work with THM
-    - WRFPlus and 4DVAR does not work with HVC and THM
+    - WRFPlus and 4DVAR do not work with HVC and THM
 
 See http://www2.mmm.ucar.edu/wrf/users/wrfda/updates-4.0.html for a full list of updates
 

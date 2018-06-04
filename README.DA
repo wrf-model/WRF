@@ -32,7 +32,7 @@ Version 4.0 was released on June 7, 2018.
 
   Updated features:
   ------------------
-    - WRFPlus code is fully integrated into WRF and TLM/ADJ code is under the 'wrftladj' folder
+    - WRFPlus code is now fully integrated into WRF and TLM/ADJ code, located under the 'wrftladj' directory
     - GOES-Imager radiance data assimilation
     - GPSRO Excess PHase (GPSEPH) observation operator
     - Large-scale analysis constraint (LSAC)
@@ -40,8 +40,8 @@ Version 4.0 was released on June 7, 2018.
 
   WRFDA with hybrid vertical coordinate (HVC) and moist potential temperature (THM):
   -----------------------------------------------------------------------------------
-    - 3DVAR shall work with HVC since V3.9, but not work with THM
-    - WRFPlus and 4DVAR do not work with HVC and THM
+    - 3DVAR works with HVC since V3.9, but does not work with THM
+    - Neither WRFPlus nor 4DVAR work with HVC or THM
 
 See http://www2.mmm.ucar.edu/wrf/users/wrfda/updates-4.0.html for a full list of updates
 

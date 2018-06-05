@@ -4035,7 +4035,9 @@ CONTAINS
        DO ij = 1 , num_tiles
          DO j=j_start(ij),j_end(ij)
          DO i=i_start(ij),i_end(ij)
+            IF (XLAND(I,J).LT.1.5) THEN
             Q2(i,j) = MIN(Q2(i,j),1.05*QV_CURR(i,1,j))
+            END IF
          ENDDO
          ENDDO
        ENDDO

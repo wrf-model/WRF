@@ -1155,6 +1155,7 @@ Options for use with the Noah-MP Land Surface Model:
                                                 ;    2 = TOPMODEL with equilibrium water table
                                                 ;    3 = original surface and subsurface runoff (free drainage) - default
                                                 ;    4 = BATS surface and subsurface runoff (free drainage)
+                                                ;    5 = Miguez-Macho & Fan groundwater scheme 
  opt_frz                            = 1,        ; Noah-MP Supercooled Liquid Water option
                                                 ;    1 = No iteration; 2 = Koren's iteration
  opt_inf                            = 1,        ; Noah-MP Soil Permeability option

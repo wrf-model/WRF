@@ -1357,7 +1357,11 @@ CONTAINS
 
 !     Interpolating climatological ozone and aerosol to model time and levels
 !     Adapted from camrad code
+#if (EM_CORE==1)
+     IF ( o3input .EQ. 2 .AND. id .EQ. 1 ) THEN
+#else
      IF ( o3input .EQ. 2 ) THEN
+#endif
 !       ! Find the current month (adapted from Cavallo)
 !       CALL cam_time_interp( ozmixm, pin, levsiz, date_str, &
 !                             ids , ide , jds , jde , kds , kde , &

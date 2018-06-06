@@ -27,6 +27,19 @@ infringement actions.
 This is the main directory for the WRF Version 4 source code release.
 ======================================
 
+Other README files are located in the WRF/info directory:
+info/README.DA
+info/README.NMM
+info/README.SSIB
+info/README.WRFPLUS
+info/README.hybrid_vert_coord
+info/README.hydro
+info/README.io_config
+info/README.irr_diag
+info/README.rsl_output
+info/README.windturbine
+info/README_test_cases
+
 V3.9.1.1 Release Notes (8/28/17):
 -------------------
 

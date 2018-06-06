@@ -8,7 +8,7 @@ University Corporation for Atmospheric Research (UCAR). NCAR and
 UCAR make no proprietary claims, either statutory or otherwise, 
 to this version and release of WRFDA and consider WRFDA to be in 
 the public domain for use by any person or entity for any purpose 
-without any fee or charge. UCAR requests that any WRFDA user include
+without any fee or charge. UCAR requests that any WRFDA users include
 this notice on any partial or full copies of WRFDA. WRFDA is provided
 on an "AS IS" basis and any warranties, either express or implied, 
 including but not limited to implied warranties of non-infringement, 
@@ -18,6 +18,32 @@ whatsoever, whether direct, indirect, consequential or special, that
 arise out of or in connection with the access, use or performance of 
 WRFDA, including infringement actions.
 
+======================================
+This is the main directory for the WRFDA Version 4 source code release.
+======================================
+
+V4.0 Release Notes :
+-------------------
+
+Version 4.0 was released on June 7, 2018.
+
+  For more information about WRFDA, visit the WRFDA Users home page
+  http://www2.mmm.ucar.edu/wrf/users/wrfda/index.html
+
+  Updated features:
+  ------------------
+    - WRFPlus code is now fully integrated into WRF and TLM/ADJ code, located under the 'wrftladj' directory
+    - GOES-Imager radiance data assimilation
+    - GPSRO Excess PHase (GPSEPH) observation operator
+    - Large-scale analysis constraint (LSAC)
+    - Divergence constraint (DIVC)
+
+  WRFDA with hybrid vertical coordinate (HVC) and moist potential temperature (THM):
+  -----------------------------------------------------------------------------------
+    - 3DVAR works with HVC since V3.9, but does not work with THM
+    - Neither WRFPlus nor 4DVAR work with HVC or THM
+
+See http://www2.mmm.ucar.edu/wrf/users/wrfda/updates-4.0.html for a full list of updates
 
 ======================================
 This is the main directory for the WRFDA Version 3 source code release.
@@ -454,6 +480,8 @@ WRFDA update history:
 - V3.8:     Apr  8, 2016
 - V3.8.1:   Aug 12, 2016
 - V3.9:     Apr 17, 2017
+- V3.9.1:   Aug 17, 2017
+- V4.0:     Jun  7, 2018
 ======================================
 
 How to compile and run?

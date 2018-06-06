@@ -72,10 +72,18 @@ time_window_max="2008-02-05_13:30:00.0000",
 
 (1) for CRTM
 
-Some CRTM coefficient files are included in the WRFDA tar file under
-WRFDA/var/run/crtm_coeffs_2.2.3 directory (please see also WRFDA/var/run/README).
-The full set of CRTM coefficients can be downloaded from:
+Starting with V4.0, CRTM coefficient files are NOT included in any of the
+WRF or WRFDA tar files. There are two ways to get this data.
+1. Users need to download their required subset of CRTM coefficient files 
+from this web page:
+http://www2.mmm.ucar.edu/wrf/users/wrfda/download/crtm_coeffs.html
+2. The full set of CRTM coefficients may be downloaded from:
 ftp://ftp.emc.ncep.noaa.gov/jcsda/CRTM/REL-2.2.3/crtm_v2.2.3.tar.gz
+
+Prior to  V4.0, the subset of CRTM coefficient files were included in the 
+WRFDA tar file in the WRFDA/var/run/crtm_coeffs_2.2.3 directory (please see 
+also WRFDA/var/run/README).
+
 After unzip/untar crtm_v2.2.3.tar.gz, you will find all the coefficient files
 under the directory fix. You will need to create another directory to copy or link 
 the files that will be used in WRFDA. Please see also the CRTM user guide

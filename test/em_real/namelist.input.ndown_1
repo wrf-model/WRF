@@ -92,7 +92,7 @@
  diff_6th_opt                        = 0,      0,      0,
  diff_6th_factor                     = 0.12,   0.12,   0.12,
  base_temp                           = 290.
- damp_opt                            = 0,
+ damp_opt                            = 3,
  zdamp                               = 5000.,  5000.,  5000.,
  dampcoef                            = 0.2,    0.2,    0.2
  khdif                               = 0,      0,      0,

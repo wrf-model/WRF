@@ -253,6 +253,7 @@
 #if ( HWRF == 1 )
       REAL :: xshift,xfar,yfar,dfar,close2edge
       REAL :: fedge,fmid,fdiff
+      REAL :: parent_CLAT,parent_CLON  ! Gus doing
 #endif
 
 ! z0base new
@@ -279,7 +280,7 @@
 
 #if ( HWRF == 1 )
       call clear_ij_halos(grid,config_flags%halo_debug)
-      if(grid%id==3) then
+      if(grid%id > 1) then      !Biju doing 
          grid%force_sst=1
       else
          grid%force_sst=2
@@ -2167,6 +2168,28 @@
          call wrf_debug(1,'Set E grid locations for PHY_INIT.')
          if(grid%id==1) then
             call med_set_egrid_locs(grid,grid)
+
+            if(model_config_rec%max_dom==1)then      ! Gus doing
+!
+            CALL nl_get_cen_lat(grid%id, parent_CLAT)    !-- CEN_LAT in deg
+            CALL nl_get_cen_lon(grid%id, parent_CLON)    !-- CEN_LON in deg
+!
+
+            grid%wbd0 = -(IDE-2)*grid%dx     ! WBD0: in degrees;factor 2 takes care of dummy last column
+            grid%sbd0 = -((JDE-1)/2)*grid%dy ! SBD0: in degrees; note that JDE-1 should be odd
+
+
+            WRITE(0,*)'Gus Change',parent_CLAT,parent_CLON,grid%dx,grid%dy,grid%wbd0,grid%sbd0
+
+            CALL EARTH_LATLON ( grid%HLAT,grid%HLON,grid%VLAT,grid%VLON,  & !output
+                                grid%dx,grid%dy,grid%wbd0,grid%sbd0,      & !inputs
+                                parent_CLAT,parent_CLON,                  &
+                                IDS,IDE,JDS,JDE,KDS,KDE,                  &
+                                IMS,IME,JMS,JME,KMS,KME,                  &
+                                ITS,ITE,JTS,JTE,KTS,KTE                   )
+
+            endif
+!
          else
             call med_set_egrid_locs(grid%parents(1)%ptr,grid)
          endif

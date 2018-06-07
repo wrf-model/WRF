@@ -13,7 +13,7 @@ SOURCE: Either "developer's name (affiliation)" .XOR. "internal" for a WRF Dev c
 
 DESCRIPTION OF CHANGES: One or more paragraphs describing problem, solution, and required changes.
 
-ISSUE: FOr use when this PR closes an issue. For issue number 123
+ISSUE: For use when this PR closes an issue. For issue number 123
 ```
 Fixes #123
 ```

@@ -187,54 +187,60 @@ integer::oops1,oops2
 
       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
-      !  Check flags from geogrid and the various model settings for any
-      !  inconsistency.
+      !  Check flags from geogrid and the various model settings for any inconsistency.
+      !  The optional data from geogrid mostly started with the v4.0 release. Older 
+      !  WPS data could have the required fields. Assume users know what they are 
+      !  doing when they bring old data into the newer real program ...
 
-      geogrid_flag_error = 0
+      IF ( grid%v4_metgrid ) THEN
 
-      IF ( ( config_flags%topo_wind          .EQ. 1          ) .AND. ( flag_var_sso    .EQ. 0 ) ) THEN
-         CALL wrf_message ( '----- ERROR: topo_wind          = 1 AND flag_var_sso    = 0 ' )
-         geogrid_flag_error = geogrid_flag_error + 1
+         geogrid_flag_error = 0
+
+         IF ( ( config_flags%topo_wind          .EQ. 1          ) .AND. ( flag_var_sso    .EQ. 0 ) ) THEN
+            CALL wrf_message ( '----- ERROR: topo_wind          = 1 AND flag_var_sso    = 0 ' )
+            geogrid_flag_error = geogrid_flag_error + 1
+         END IF
+
+         IF ( ( config_flags%sf_lake_physics    .EQ. 1           ) .AND. ( flag_lake_depth .EQ. 0 ) ) THEN
+            CALL wrf_message ( '----- ERROR: sf_lake_physics    = 1 AND flag_lake_depth = 0 ' )
+            geogrid_flag_error = geogrid_flag_error + 1
+         END IF
+
+         IF ( ( config_flags%sf_surface_physics .EQ. pxlsmscheme  ) .AND. ( flag_imperv    .EQ. 0 ) ) THEN
+            CALL wrf_message ( '----- ERROR: sf_surface_physics = 7 AND flag_imperv     = 0 ' )
+            geogrid_flag_error = geogrid_flag_error + 1
+         END IF
+
+         IF ( ( config_flags%sf_surface_physics .EQ. pxlsmscheme  ) .AND. ( flag_canfra    .EQ. 0 ) ) THEN
+            CALL wrf_message ( '----- ERROR: sf_surface_physics = 7 AND flag_canfra     = 0 ' )
+            geogrid_flag_error = geogrid_flag_error + 1
+         END IF
+
+         IF ( ( config_flags%mp_physics         .EQ. thompsonaero ) .AND. &
+              ( config_flags%dust_emis          .EQ. 1            ) .AND. ( flag_erod      .EQ. 0 ) ) THEN
+            CALL wrf_message ( '----- ERROR: mp=28 AND dust_emis= 1 AND flag_erod       = 0 ' )
+            geogrid_flag_error = geogrid_flag_error + 1
+         END IF
+
+         IF ( ( config_flags%mp_physics         .EQ. thompsonaero ) .AND. &
+              ( config_flags%dust_emis          .EQ. 1            ) .AND. ( flag_clayfrac  .EQ. 0 ) ) THEN
+            CALL wrf_message ( '----- ERROR: mp=28 AND dust_emis= 1 AND flag_clayfrac   = 0 ' )
+            geogrid_flag_error = geogrid_flag_error + 1
+         END IF
+
+         IF ( ( config_flags%mp_physics         .EQ. thompsonaero ) .AND. &
+              ( config_flags%dust_emis          .EQ. 1            ) .AND. ( flag_sandfrac  .EQ. 0 ) ) THEN
+            CALL wrf_message ( '----- ERROR: mp=28 AND dust_emis= 1 AND flag_sandfrac   = 0 ' )
+            geogrid_flag_error = geogrid_flag_error + 1
+         END IF
+        
+         IF ( geogrid_flag_error .GT. 0 ) THEN
+            CALL wrf_error_fatal ('Either modify the namelist settings, or rebuild the geogrid/metgrid data' )
+         END IF
+
+         !  Geogrid flags that are not yet used: FLAG_FRC_URB2D FLAG_LAI12M FLAG_URB_PARAM
+   
       END IF
-
-      IF ( ( config_flags%sf_lake_physics    .EQ. 1           ) .AND. ( flag_lake_depth .EQ. 0 ) ) THEN
-         CALL wrf_message ( '----- ERROR: sf_lake_physics    = 1 AND flag_lake_depth = 0 ' )
-         geogrid_flag_error = geogrid_flag_error + 1
-      END IF
-
-      IF ( ( config_flags%sf_surface_physics .EQ. pxlsmscheme  ) .AND. ( flag_imperv    .EQ. 0 ) ) THEN
-         CALL wrf_message ( '----- ERROR: sf_surface_physics = 7 AND flag_imperv     = 0 ' )
-         geogrid_flag_error = geogrid_flag_error + 1
-      END IF
-
-      IF ( ( config_flags%sf_surface_physics .EQ. pxlsmscheme  ) .AND. ( flag_canfra    .EQ. 0 ) ) THEN
-         CALL wrf_message ( '----- ERROR: sf_surface_physics = 7 AND flag_canfra     = 0 ' )
-         geogrid_flag_error = geogrid_flag_error + 1
-      END IF
-
-      IF ( ( config_flags%mp_physics         .EQ. thompsonaero ) .AND. &
-           ( config_flags%dust_emis          .EQ. 1            ) .AND. ( flag_erod      .EQ. 0 ) ) THEN
-         CALL wrf_message ( '----- ERROR: mp=28 AND dust_emis= 1  AND flag_erod      = 0 ' )
-         geogrid_flag_error = geogrid_flag_error + 1
-      END IF
-
-      IF ( ( config_flags%mp_physics         .EQ. thompsonaero ) .AND. &
-           ( config_flags%dust_emis          .EQ. 1            ) .AND. ( flag_clayfrac  .EQ. 0 ) ) THEN
-         CALL wrf_message ( '----- ERROR: mp=28 AND dust_emis= 1  AND flag_clayfrac  = 0 ' )
-         geogrid_flag_error = geogrid_flag_error + 1
-      END IF
-
-      IF ( ( config_flags%mp_physics         .EQ. thompsonaero ) .AND. &
-           ( config_flags%dust_emis          .EQ. 1            ) .AND. ( flag_sandfrac  .EQ. 0 ) ) THEN
-         CALL wrf_message ( '----- ERROR: mp=28 AND dust_emis= 1  AND flag_sandfrac  = 0 ' )
-         geogrid_flag_error = geogrid_flag_error + 1
-      END IF
-     
-      IF ( geogrid_flag_error .GT. 0 ) THEN
-         CALL wrf_error_fatal ('Either modify the namelist settings, or rebuild the geogrid/metgrid data' )
-      END IF
-
-      !  Geogrid flags that are not yet used: FLAG_FRC_URB2D FLAG_LAI12M FLAG_URB_PARAM
 
       !  Would the user prefer to forego the use of the level of max winds, or the
       !  tropopause level data?  This is an option the user may select.  While the

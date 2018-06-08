@@ -215,6 +215,13 @@
 
         END IF
 
+      ELSE IF ( switch .EQ. auxinput1_only ) THEN
+        CALL wrf_get_dom_ti_char ( fid , 'TITLE' , version_name, ierr )
+        IF ( INDEX(TRIM(version_name),' V4.') .NE. 0 ) THEN
+           grid%v4_metgrid = .TRUE.
+        ELSE
+           grid%v4_metgrid = .FALSE.
+        END IF
       END IF
     END IF
 #endif

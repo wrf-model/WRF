@@ -202,18 +202,35 @@ else
   exit 6
 fi
 
-# testing for netcdf4 IO features
-if [ -n "$NETCDF4" ] ; then
-  if [ $NETCDF4 -eq 1 ] ; then
-    make nc4_test > tools/nc4_test.log 2>&1
-    retval=-1
-    if  [ -f tools/nc4_test.exe ] ; then
-      retval=0
-      rm -f tools/nc4_test.log
+# If the user asked for classic netcdf, acquiesce to the request.
+
+if [ "`uname`" = "Linux" ] ; then
+  ans="`whereis nf-config`"
+elif [ "`uname`" = "Darwin" ] ; then
+  ans="`which nf-config`"
+else
+  ans=""
+# echo "Add in your architecture's uname and the command to find executables in the path"
+# exit 1
+fi
+if [ "$ans" = "nf-config:" -o "$ans" = "" ] ; then
+    export NETCDF_classic=1
+    unset NETCDF4
+else
+  if [ -n "$NETCDF_classic" ] ; then
+    if [ $NETCDF_classic -eq 1 ] ; then
+      unset  NETCDF4
+    else
+      unset  NETCDF_classic
+      export NETCDF4=1
     fi
-    if [ $retval -ne 0 ] ; then
+  else
+    if [ "`nf-config --has-nc4`" = "yes" ] ; then
+      unset  NETCDF_classic
+      export NETCDF4=1
+    else
       export NETCDF_classic=1
-      unset NETCDF4
+      unset  NETCDF4
     fi
   fi
 fi

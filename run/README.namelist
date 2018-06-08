@@ -1401,7 +1401,7 @@ The following are for observation nudging:
                                                       not for real-data cases)
                                                   3 = with w-Rayleigh damping (dampcoef inverse time scale [1/s] e.g. .2; 
                                                       for real-data cases)
- use_theta_m                         = 0        ; 1: use theta_m=theta(1+1.61Qv)
+ use_theta_m                         = 1        ; 1: use theta_m=theta(1+1.61Qv)
                                                   0: use dry theta in dynamics
  use_q_diabatic                      = 0        ; whether to include QV and QC tendencies in advection (new in 3.7)
                                                   0 = default, old behavior

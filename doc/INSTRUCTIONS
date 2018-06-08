@@ -1,3 +1,3 @@
-This directory, WRF/info, houses all but one of the top-level README* files
+This directory, WRF/doc, houses all but one of the top-level README* files
 for the WRF system. When adding a file in here, also modify WRF/README file
 to list the name of your new README file.

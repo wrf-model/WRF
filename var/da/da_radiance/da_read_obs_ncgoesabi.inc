@@ -315,11 +315,11 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                     " -type f -name '",trim(fname), &
                     "*G",satellite_id, &
                     "*' -printf '%P\n' > ",trim(list_file)
-            write(stdout,*) trim(command)
+write(stdout,*) trim(command)
             call execute_command_line (trim(command))
 
             write(command,fmt='(4A)') "cat ",trim(list_file)," | wc -l > ",trim(count_file)
-            write(stdout,*) trim(command)
+write(stdout,*) trim(command)
             call execute_command_line (trim(command))
 
             open(unit=file_unit,file=trim(count_file))
@@ -968,21 +968,37 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
 #endif
          end if DoGridGen
 
-         num_goesabi_global = num_goesabi_global + this_view % nrad_on_domain
-         ptotal(ifgat) = ptotal(ifgat) + this_view % nrad_on_domain
-
-         PatchMatch: if (this_view % nrad_on_patch .gt. 0) then
-            if ( iview.eq.1 .and. ipass.lt.npass .and. sum(this_view % nfiles_used(:)).eq.0 ) then
+         if ( iview.eq.1 .and. ipass.lt.npass .and. sum(this_view % nfiles_used(:)).eq.0 ) then
+            if (this_view % nrad_on_patch .gt. 0) then
                allocate(view_mask(&
                    this_view % ys_p_fd-2:this_view % ye_p_fd+2, &
                    this_view % xs_p_fd-2:this_view % xe_p_fd+2, &
                    nviews, nchan, num_fgat_time))
-
                view_mask = .false.
-               use_view_mask = .true.
             end if
+            use_view_mask = .true.
+         end if
+
+         if ( ipass.lt.npass .or. .not.use_view_mask ) then
+            num_goesabi_global = num_goesabi_global + this_view % nrad_on_domain
+            ptotal(ifgat) = ptotal(ifgat) + this_view % nrad_on_domain
+         end if
+         if ( use_view_mask .and. ipass.lt.npass .and. iview .gt. 1 ) then
+            best_view = .true.
+!            do jview = 1, iview-1 !This assumes MESO1 and MESO2 are in identical locations
+            do jview = 1, min(iview-1,2) !This assumes MESO1 and MESO2 do not overlap
+               best_view = best_view .and. &
+                  this_view % min_time_diff(ichan, ifgat) .lt. &
+                     view_att(jview) % min_time_diff(ichan, ifgat)
+            end do 
+            if (best_view) then
+               num_goesabi_global = num_goesabi_global - this_view % nrad_on_domain
+               ptotal(ifgat) = ptotal(ifgat) - this_view % nrad_on_domain
+            end if
+         end if
 
 
+         PatchMatch: if (this_view % nrad_on_patch .gt. 0) then
             ! Loop over channels; each process reads radiance data only for its subdomain
             ChannelLoop: do ichan = 1, nchan
                ifile = 0
@@ -997,8 +1013,6 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
                if ( ifile .eq. 0 ) cycle
 
                this_view % nfiles_used(ifgat) = this_view % nfiles_used(ifgat) + 1
-
-!               use_view_mask = ( sum(view_att(1) % nfiles_used(:)).gt.0 )
 
                VIEW_SELECT: &
                if ( ipass.lt.npass .and. use_view_mask ) then
@@ -1016,17 +1030,7 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
                         ixfd = this_view % ix_1d % patch (n) + this_view % xoff_fd-1
                         view_mask( iyfd, ixfd, iview, ichan, ifgat) = .true.
                      end do
-                  else
-
-!OLD CODE
-                     best_view = .true.
-!                     do jview = 1, iview-1 !This assumes MESO1 and MESO2 are in identical locations
-                     do jview = 1, min(iview-1,2) !This assumes MESO1 and MESO2 do not overlap
-                        best_view = best_view .and. &
-                           this_view % min_time_diff(ichan, ifgat) .lt. &
-                              view_att(jview) % min_time_diff(ichan, ifgat)
-                     end do
-                     
+                  else                    
                      if ( best_view ) then
                         do n = 1, this_view % nrad_on_patch
                            iyfd = this_view % iy_1d % patch (n) + this_view % yoff_fd-1
@@ -1039,23 +1043,8 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
 !                           !This assumes MESO1 and MESO2 are in identical locations
 !                           view_mask( iyfd, ixfd, 1:iview-1, ichan, ifgat) = .false.
                         end do
-
-!OLD CODE
-!                        view_mask(this_view % ys_p_fd:this_view % ye_p_fd, &
-!                                    this_view % ys_p_fd:this_view % ye_p_fd, &
-!                                    iview, ichan, ifgat) = .true.
-!
-!!                        do jview = 1, iview-1 !This assumes MESO1 and MESO2 are in identical locations
-!!                        do jview = 1, min(iview-1,2) !This assumes MESO1 and MESO2 do not overlap
-!
-!                           view_mask(this_view % ys_p_fd:this_view % ye_p_fd, &
-!                                       this_view % ys_p_fd:this_view % ye_p_fd, &
-!                                       iview, ichan, ifgat) = .false.
-!                        end do
                      end if
-
                   end if
-
                else
                   if (inst == 0) cycle
                   fname_short = trim(this_view % filename(ifile))
@@ -1260,12 +1249,12 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
    deallocate(view_att)
 
    if (tot_files_used .lt. 1) then
-!!      write(unit=message(1),fmt='(A,I2,3A)') "Either no L1B data found or no matching fgat windows for GOES-",satellite_id," ABI using prefix ",INST_PREFIX, "for this process rank.  This subdomain may have an unacceptable zenith angle or fall entirely outside the GOES viewing extent."
+!!      write(unit=message(1),fmt='(A,I2,3A)') "Either no L1B data found or no matching fgat windows for GOES-",satellite_id," ABI using prefix ",INST_PREFIX, " for this process rank.  This subdomain may have an unacceptable zenith angle or fall entirely outside the GOES viewing extent."
       write(unit=message(1),fmt=*) "Either no L1B data found or no matching fgat windows for GOES-",satellite_id," ABI using prefix ",INST_PREFIX, "for this process rank.  This subdomain may have an unacceptable zenith angle or fall entirely outside the GOES viewing extent."
 
 !      write(unit=message(1),fmt='(A)') "Either no L1B data found or no matching"
 !      write(unit=message(2),fmt='(A,I2,A)') "fgat windows for GOES-",satellite_id," ABI using"
-!      write(unit=message(3),fmt='(3A)') "prefix ",INST_PREFIX, "for this process rank." 
+!      write(unit=message(3),fmt='(3A)') "prefix ",INST_PREFIX, " for this process rank." 
 !      write(unit=message(4),fmt='(A)') "This subdomain may have an unacceptable zenith "
 !      write(unit=message(5),fmt='(A)') "angle or fall entirely outside the GOES viewing"
 !      write(unit=message(6),fmt='(A)') "extent."

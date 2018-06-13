@@ -1353,12 +1353,12 @@ CONTAINS
 !--------------------------------------------------------------------------------
 
   ELEMENTAL SUBROUTINE Destroy( self )
-    CLASS(CRTM_CloudCover_type), INTENT(OUT) :: self
+    CLASS(CRTM_CloudCover_type), INTENT(INOUT) :: self
     self%Is_Allocated = .FALSE.
   END SUBROUTINE Destroy
 
   ELEMENTAL SUBROUTINE iVar_Destroy( self )
-    CLASS(iVar_type), INTENT(OUT) :: self
+    CLASS(iVar_type), INTENT(INOUT) :: self
     self%Is_Allocated = .FALSE.
   END SUBROUTINE iVar_Destroy
 
@@ -1426,7 +1426,7 @@ CONTAINS
     Forward      , &
     Error_Message  )
     ! Arguments
-    CLASS(CRTM_CloudCover_type), INTENT(OUT) :: self
+    CLASS(CRTM_CloudCover_type), INTENT(INOUT) :: self
     INTEGER                    , INTENT(IN)  :: n_Layers
     INTEGER                    , INTENT(IN)  :: n_Clouds  
     LOGICAL,           OPTIONAL, INTENT(IN)  :: Forward
@@ -1480,7 +1480,7 @@ CONTAINS
     n_Clouds     , &  
     Error_Message  )
     ! Arguments
-    CLASS(iVar_type)      , INTENT(OUT) :: self
+    CLASS(iVar_type)      , INTENT(INOUT) :: self
     INTEGER               , INTENT(IN)  :: n_Layers
     INTEGER               , INTENT(IN)  :: n_Clouds 
     CHARACTER(*), OPTIONAL, INTENT(OUT) :: Error_Message

@@ -680,6 +680,10 @@ CONTAINS
                                            AAvar           )  ! Internal variable output
 
 
+          ! Gamma correction to optical depth
+          AtmOptics%Optical_Depth = AtmOptics%Optical_Depth * (RTSolution(ln,m)%Gamma + ONE)
+
+
           ! Compute the molecular scattering properties
           ! ...Solar radiation
           IF ( SC(SensorIndex)%Solar_Irradiance(ChannelIndex) > ZERO .AND. &

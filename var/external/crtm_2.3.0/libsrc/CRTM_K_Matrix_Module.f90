@@ -815,6 +815,10 @@ CONTAINS
                                            AAvar           )  ! Internal variable output
 
 
+          ! Gamma correction to optical depth
+          AtmOptics%Optical_Depth = AtmOptics%Optical_Depth * (RTSolution(ln,m)%Gamma + ONE)
+
+
           ! Compute the molecular scattering properties
           ! ...Solar radiation
           IF( SC(SensorIndex)%Solar_Irradiance(ChannelIndex) > ZERO .AND. &
@@ -1372,6 +1376,12 @@ CONTAINS
                                               AtmOptics_K , &  ! K   Input
                                               Predictor_K , &  ! K   Output
                                               AAvar         )  ! Internal variable input
+
+
+          ! Gamma correction to optical depth
+          RTSolution_K(ln,m)%Gamma      = RTSolution_K(ln,m)%Gamma + &
+                                          SUM(AtmOptics%Optical_Depth * AtmOptics_K%Optical_Depth)
+          AtmOptics_K%Optical_Depth = AtmOptics_K%Optical_Depth * (RTSolution(ln,m)%Gamma + ONE)
 
 
           ! K-matrix of the NLTE correction predictor calculations

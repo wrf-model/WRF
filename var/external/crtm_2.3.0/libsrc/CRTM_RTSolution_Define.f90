@@ -149,6 +149,7 @@ MODULE CRTM_RTSolution_Define
     ! Radiative transfer results for a single channel
     REAL(fp) :: Radiance               = ZERO
     REAL(fp) :: Brightness_Temperature = ZERO
+    REAL(fp) :: Gamma                  = ZERO
   END TYPE CRTM_RTSolution_type
   !:tdoc-:
 
@@ -342,6 +343,7 @@ CONTAINS
     RTSolution%Tb_clear                = ZERO
     RTSolution%Radiance                = ZERO
     RTSolution%Brightness_Temperature  = ZERO
+    RTSolution%Gamma                   = ZERO
 
     ! Zero out the array data components
     IF ( CRTM_RTSolution_Associated(RTSolution) ) THEN
@@ -419,6 +421,7 @@ CONTAINS
     WRITE(fid,'(3x,"Brightness Temperature (clear): ",es13.6)') RTSolution%Tb_clear
     WRITE(fid,'(3x,"Radiance                      : ",es13.6)') RTSolution%Radiance
     WRITE(fid,'(3x,"Brightness Temperature        : ",es13.6)') RTSolution%Brightness_Temperature
+    WRITE(fid,'(3x,"Gamma                         : ",es13.6)') RTSolution%Gamma
     IF ( .NOT. CRTM_RTSolution_Associated(RTSolution) ) RETURN
     WRITE(fid,'(3x,"n_Layers : ",i0)') RTSolution%n_Layers
     WRITE(fid,'(3x,"Upwelling Overcast Radiance :")')
@@ -660,8 +663,10 @@ CONTAINS
         rts_stats(l,1) = rts_stats(l,1) + rts(l,m)
       END DO
     END DO
-    rts_stats(:,1) = rts_stats(:,1)/factor
-
+    !rts_stats(:,1) = rts_stats(:,1)/factor
+    DO l = 1, n_channels
+      rts_stats(l,1) = rts_stats(l,1)/factor
+    END DO
 
     ! Compute the standard deviation
     DO m = 1, n_profiles
@@ -669,8 +674,10 @@ CONTAINS
         rts_stats(l,2) = rts_stats(l,2) + (rts(l,m) - rts_stats(l,1))**2
       END DO
     END DO
-    rts_stats(:,2) = SQRT(rts_stats(:,2)/factor)
-
+    !rts_stats(:,2) = SQRT(rts_stats(:,2)/factor)
+    DO l = 1, n_channels
+      rts_stats(l,2) = SQRT(rts_stats(l,2)/factor)
+    END DO
 
     ! Replace the algorithm identifier
     rts_stats(:,1)%RT_Algorithm_Name = 'Average'

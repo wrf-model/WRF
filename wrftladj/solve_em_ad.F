@@ -157,7 +157,7 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
 
 ! storage for tendencies and decoupled state (generated from Registry)
 
-#include <i1_decl.inc>
+#include "i1_decl.inc"
 ! Previous time level of tracer arrays now defined as i1 variables;
 ! the state 4d arrays now redefined as 1-time level arrays in Registry.
 ! Benefit: save memory in nested runs, since only 1 domain is active at a
@@ -202,7 +202,7 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
    TYPE(WRFU_TimeInterval)                    :: dtInterval, intervaltime,restartinterval
 
 ! Define benchmarking timers if -DBENCH is compiled
-#include <bench_solve_em_def.h>
+#include "bench_solve_em_def.h"
 
 !----------------------
 ! Executable statements
@@ -240,7 +240,7 @@ SUBROUTINE solve_em_ad ( grid , config_flags  &
 !</DESCRIPTION>
 
 ! Initialize timers if compiled with -DBENCH
-#include <bench_solve_em_init.h>
+#include "bench_solve_em_init.h"
 
 ! dtbc will be read from basic state at every time step, so it doesn't need to be updated here.
 !  IF( config_flags%specified .or. config_flags%nested ) THEN
@@ -662,7 +662,7 @@ BENCH_END(set_phys_bc_tim)
                              , tke_tend                         &
                              , config_flags%use_adaptive_time_step &
                              , curr_secs                        &
-                             , psim , psih , wspd , gz1oz0      &
+                             , psim , psih , gz1oz0             &
                              , chklowq                          &
                              , cu_act_flag , hol , th_phy       &
                              , pi_phy , p_phy , grid%t_phy      &
@@ -676,6 +676,7 @@ BENCH_END(set_phys_bc_tim)
                              , ipsy, ipey, jpsy, jpey, kpsy, kpey    &
                              , k_start , k_end                  &
                              , f_flux                           &
+                             , aerocu                           &
                             )
 
 #ifdef DM_PARALLEL
@@ -697,7 +698,7 @@ BENCH_END(set_phys_bc_tim)
         end if
 
        CALL first_rk_step_part2 (    grid, config_flags         &
-                             , moist , moist_tend               &
+                             , moist , moist_old, moist_tend    &
                              , chem  , chem_tend                &
                              , tracer, tracer_tend              &
                              , scalar , scalar_tend             &
@@ -707,7 +708,7 @@ BENCH_END(set_phys_bc_tim)
                              , ph_tendf, mu_tendf               &
                              , tke_tend                         &
                              , adapt_step_flag , curr_secs      &
-                             , psim , psih , wspd , gz1oz0      &
+                             , psim , psih , gz1oz0             &
                              , chklowq                          &
                              , cu_act_flag , hol , th_phy       &
                              , pi_phy , p_phy , grid%t_phy      &
@@ -2282,6 +2283,9 @@ BENCH_START(rk_scalar_tend_tim)
                            grid%kvdif, grid%xkhh,                            &
                            grid%diff_6th_opt, grid%diff_6th_factor,          &
                            config_flags%moist_adv_opt,                       &
+                           grid%phb, grid%ph_2,                              &
+                           config_flags%moist_mix2_off,                      &
+                           config_flags%moist_mix6_off,                      &
                            ids, ide, jds, jde, kds, kde,     &
                            ims, ime, jms, jme, kms, kme,     &
                            grid%i_start(ij), grid%i_end(ij), &
@@ -2485,6 +2489,9 @@ BENCH_START(tke_adv_tim)
                             grid%kvdif, grid%xkhh,                                 &
                             grid%diff_6th_opt, grid%diff_6th_factor,               &
                             config_flags%tke_adv_opt,                              &
+                            grid%phb, grid%ph_2,                                   &
+                            config_flags%tke_mix2_off,                             &
+                            config_flags%tke_mix6_off,                             &
                             ids, ide, jds, jde, kds, kde,     &
                             ims, ime, jms, jme, kms, kme,     &
                             grid%i_start(ij), grid%i_end(ij), &
@@ -2587,6 +2594,9 @@ BENCH_START(chem_adv_tim)
                               grid%khdif, grid%kvdif, grid%xkhh,                 &
                               grid%diff_6th_opt, grid%diff_6th_factor,           &
                               config_flags%chem_adv_opt,                         &
+                              grid%phb, grid%ph_2,                               &
+                              config_flags%chem_mix2_off,                        &
+                              config_flags%chem_mix6_off,                        &
                               ids, ide, jds, jde, kds, kde,                      &
                               ims, ime, jms, jme, kms, kme,                      &
                               grid%i_start(ij), grid%i_end(ij),                  &
@@ -2727,6 +2737,9 @@ BENCH_START(tracer_adv_tim)
                               grid%khdif, grid%kvdif, grid%xkhh,                 &
                               grid%diff_6th_opt, grid%diff_6th_factor,           &
                               config_flags%tracer_adv_opt,                       &
+                              grid%phb, grid%ph_2,                               &
+                              config_flags%tracer_mix2_off,                      &
+                              config_flags%tracer_mix6_off,                      &
                               ids, ide, jds, jde, kds, kde,                      &
                               ims, ime, jms, jme, kms, kme,                      &
                               grid%i_start(ij), grid%i_end(ij),                  &
@@ -2884,6 +2897,9 @@ BENCH_END(tracer_adv_tim)
                                  grid%khdif, grid%kvdif, grid%xkhh,               &
                                  grid%diff_6th_opt, grid%diff_6th_factor,         &
                                  config_flags%scalar_adv_opt,                     &
+                                 grid%phb, grid%ph_2,                             &
+                                 config_flags%scalar_mix2_off,                    &
+                                 config_flags%scalar_mix6_off,                    &
                                  ids, ide, jds, jde, kds, kde,     &
                                  ims, ime, jms, jme, kms, kme,     &
                                  grid%i_start(ij), grid%i_end(ij), &
@@ -3016,7 +3032,7 @@ BENCH_START(calc_p_rho_tim)
                             grid%c1h, grid%c2h, grid%c3h, grid%c4h, grid%c3f, grid%c4f, &
                             grid%ph_2, grid%phb, grid%p, grid%pb, grid%t_2,     &
                             p0, t0, grid%p_top, grid%znu, grid%znw, grid%dnw, grid%rdnw,    &
-                            grid%rdn, config_flags%non_hydrostatic,   &
+                            grid%rdn, config_flags%non_hydrostatic, config_flags%use_theta_m, &
                             ids, ide, jds, jde, kds, kde,     &
                             ims, ime, jms, jme, kms, kme,     &
                             grid%i_start(ij), grid%i_end(ij), &
@@ -3627,6 +3643,7 @@ BENCH_END(advance_ppt_tim)
                         grid%rthften,  grid%rqvften,                     &
                         grid%RUNDGDTEN, grid%RVNDGDTEN, grid%RTHNDGDTEN, &
                         grid%RPHNDGDTEN,grid%RQVNDGDTEN, grid%RMUNDGDTEN,&
+                        grid%t_2, th_phy, moist(ims,kms,jms,P_QV),       &
                         ids, ide, jds, jde, kds, kde,                    &
                         ims, ime, jms, jme, kms, kme,                    &
                         grid%i_start(ij), grid%i_end(ij),                &
@@ -3890,7 +3907,17 @@ BENCH_START(micro_driver_tim)
       &        ,height=grid%height                                         &
       &        ,tempc=grid%tempc                                         &
       &        ,ccn_conc=grid%ccn_conc                                   & ! RAS
-                                                                          )
+      &        ,aerocu=aerocu                                            &
+      &        ,aercu_fct=config_flags%aercu_fct                         &
+      &        ,aercu_opt=config_flags%aercu_opt                         &
+      &        ,no_src_types_cu=grid%no_src_types_cu                     &
+         )
+!      &        ,PBL=grid%bl_pbl_physics,EFCG=grid%EFCG,EFIG=grid%EFIG,EFSG=grid%EFSG &
+!      &        ,WACT=grid%WACT,CCN1_GS=grid%CCN1_GS,CCN2_GS=grid%CCN2_GS,CCN3_GS=grid%CCN3_GS  &
+!      &        ,CCN4_GS=grid%CCN4_GS,CCN5_GS=grid%CCN5_GS,CCN6_GS=grid%CCN6_GS &
+!      &        ,CCN7_GS=grid%CCN7_GS,NR_CU=grid%NR_CU,QR_CU=grid%QR_CU,NS_CU=grid%NS_CU &
+!      &        ,QS_CU=grid%QS_CU,CU_UAF=grid%CU_UAF,mskf_refl_10cm=grid%mskf_refl_10cm)
+
 BENCH_END(micro_driver_tim)
 
 #if 0
@@ -3993,6 +4020,7 @@ BENCH_START(moist_phys_end_tim)
                                      grid%h_diabatic, dtm,              &
                                      moist(ims,kms,jms,P_QV),grid%qv_diabatic,   &
                                      moist(ims,kms,jms,P_QC),grid%qc_diabatic,   &
+                                     grid%th_phy_m_t0,                           &
                                      config_flags,                      &
 #if ( WRF_DFI_RADAR == 1 )
                                       grid%dfi_tten_rad,grid%dfi_stage,        &
@@ -4090,7 +4118,7 @@ BENCH_START(moist_phys_end_tim)
                           grid%c1h, grid%c2h, grid%c3h, grid%c4h, grid%c3f, grid%c4f, &
                           grid%ph_2, grid%phb, grid%p, grid%pb, grid%t_2,                 &
                           p0, t0, grid%p_top,grid%znu, grid%znw, grid%dnw, grid%rdnw,     &
-                          grid%rdn, config_flags%non_hydrostatic,             &
+                          grid%rdn, config_flags%non_hydrostatic, config_flags%use_theta_m, &
                           ids, ide, jds, jde, kds, kde,     &
                           ims, ime, jms, jme, kms, kme,     &
                           its, ite, jts, jte,               &
@@ -4682,7 +4710,7 @@ BENCH_END(bc_2d_tim)
 !  not used in adjoint
 #endif  
 ! Finish timers if compiled with -DBENCH.
-#include <bench_solve_em_end.h>
+#include "bench_solve_em_end.h"
 
 !---------------------------------------- 
 ! Start adjoint computations
@@ -7571,7 +7599,7 @@ BENCH_END(adj_rk_tend_tim)
 !                gz1oz0 ,a_gz1oz0 , br ,a_br , chklowq,a_chklowq     &
 !              , cu_act_flag , hol ,a_hol, th_phy,a_th_phy           &
 !!!!! REMOVE THE FOLLOWING 3 STATEMENTS WHEN CODING AD OF PHYSICS. Ning Pan, 2010-08-20
-              , psim ,  psim , psih ,  psih , wspd ,  wspd ,        &
+              , psim ,  psim , psih ,  psih ,       &
 !201602                gz1oz0 ,  gz1oz0 , br ,  br , chklowq,  chklowq     &
 !201602: br became a state variable and was removed from the argument
                 gz1oz0 ,  gz1oz0 , chklowq,  chklowq     &
@@ -7603,7 +7631,7 @@ BENCH_END(adj_rk_tend_tim)
                              , tke_tend, a_tke_tend             &
                              , config_flags%use_adaptive_time_step &
                              , curr_secs      &
-                             , psim , psih , wspd , gz1oz0      &
+                             , psim , psih ,  gz1oz0      &
                              , chklowq                          &
                              , cu_act_flag , hol , th_phy , a_th_phy      &
                              , pi_phy , a_pi_phy, p_phy , a_p_phy, grid%t_phy , grid%a_t_phy     &

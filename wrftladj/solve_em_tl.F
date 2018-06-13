@@ -134,7 +134,7 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
 
 ! storage for tendencies and decoupled state (generated from Registry)
 
-#include <i1_decl.inc>
+#include "i1_decl.inc"
 ! Previous time level of tracer arrays now defined as i1 variables;
 ! the state 4d arrays now redefined as 1-time level arrays in Registry.
 ! Benefit: save memory in nested runs, since only 1 domain is active at a
@@ -179,7 +179,7 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
    TYPE(WRFU_TimeInterval)                    :: dtInterval, intervaltime,restartinterval
 
 ! Define benchmarking timers if -DBENCH is compiled
-#include <bench_solve_em_def.h>
+#include "bench_solve_em_def.h"
 
 !----------------------
 ! Executable statements
@@ -217,7 +217,7 @@ SUBROUTINE solve_em_tl ( grid , config_flags  &
 !</DESCRIPTION>
 
 ! Initialize timers if compiled with -DBENCH
-#include <bench_solve_em_init.h>
+#include "bench_solve_em_init.h"
 
 !  set runge-kutta solver (2nd or 3rd order)
 
@@ -648,7 +648,7 @@ BENCH_END(g_set_phys_bc_tim)
                              , tke_tend,g_tke_tend                         &
                              , config_flags%use_adaptive_time_step         &
                              , curr_secs                 &
-                             , psim ,psih ,wspd  &
+                             , psim ,psih  &
                              , gz1oz0 , chklowq           &
                              , cu_act_flag , hol , th_phy ,g_th_phy                 &
                              , pi_phy ,g_pi_phy, p_phy ,g_p_phy, grid%t_phy ,grid%g_t_phy         &
@@ -692,7 +692,7 @@ BENCH_END(g_set_phys_bc_tim)
 !                 gz1oz0 ,g_gz1oz0 , br ,g_br , chklowq,g_chklowq     &
 !               , cu_act_flag , hol ,g_hol, th_phy,g_th_phy           &
 !!!!! REMOVE THE FOLLOWING 3 STATEMENTS WHEN CODING TL OF PHYSICS. Ning Pan, 2010-08-20
-               , psim ,  psim , psih ,  psih , wspd ,  wspd ,         &
+               , psim ,  psim , psih ,  psih ,         &
 !201602                 gz1oz0 ,  gz1oz0 , br ,  br , chklowq,  chklowq      &
 !201602: br became a state variable and was removed from the argument
                  gz1oz0 ,  gz1oz0 , chklowq,  chklowq      &
@@ -4486,7 +4486,7 @@ BENCH_END(g_bc_2d_tim)
    CALL wrf_debug ( 200 , ' call end of solve_em_tl' )
 
 ! Finish timers if compiled with -DBENCH.
-#include <bench_solve_em_end.h>
+#include "bench_solve_em_end.h"
 
    RETURN
 

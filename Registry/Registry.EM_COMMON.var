@@ -186,6 +186,8 @@ state   real    qr             ijkftb   moist       1         -     \
    i0rhusdf=(bdy_interp:dt)  "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
 state   real    qi             ijkftb   moist       1         -     \
    i0rhusdf=(bdy_interp:dt)  "QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    qi2            ijkftb   moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "QICE2"            "Ice mixing ratio cat 2"        "kg kg-1"
 state   real    qs             ijkftb   moist       1         -     \
    i0rhusdf=(bdy_interp:dt)  "QSNOW"            "Snow mixing ratio"             "kg kg-1"
 state   real    qg             ijkftb   moist       1         -     \
@@ -301,6 +303,7 @@ state   real    tlp_strat      -       misc         -         -     i02rh     "t
 state   real    p_strat        -       misc         -         -     i02rh     "p_strat"               "BASE STATE PRESSURE AT BOTTOM OF STRATOSPHERE" "Pa"
 state   real    max_msftx      -       misc         -         -      rh       "max_mstfx"             "Max map factor in domain"  ""
 state   real    max_msfty      -       misc         -         -      rh       "max_mstfy"             "Max map factor in domain"  ""
+state logical   v4_metgrid     -       misc         -         -       -       "v4_metgrid"            "for real, T/F: identify if this is v4 metgrid data" ""
 
 state    real  RAINC            ij      misc        1         -      rhdu     "RAINC"                 "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
 state    real  RAINNC           ij      misc        1         -      rhdu     "RAINNC"                "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"      
@@ -366,6 +369,7 @@ include Registry.rconfig
 
 #package   passivec1     chem_opt==0                  -             
 
+package   nolsmscheme    sf_surface_physics==0       -             -
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             -
 package   ruclsmscheme   sf_surface_physics==3       -             -

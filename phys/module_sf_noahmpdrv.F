@@ -1735,8 +1735,11 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
 ! Initialize cropcat for gecros crop model
 
 	     if(iopt_crop == 2) then
-	       cropcat    (i,j) = 1
-               if(croptype(i,1,j) > croptype(i,3,j)) cropcat(i,j) = 2 ! change to maize
+	       cropcat    (i,j) = 0
+               if(croptype(i,5,j) >= 0.5) then
+                  if(croptype(i,3,j) > 0.0)             cropcat(i,j) = 1 ! if any wheat, set to wheat
+                  if(croptype(i,1,j) > croptype(i,3,j)) cropcat(i,j) = 2 ! change to maize
+	       end if
 
                hti    = 0.01
                rdi    = 10.
@@ -1753,16 +1756,14 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
                nrti   = npl * seedw * eg * seednc - nlvi
                slnbi  = nlvi/laii
     
+               call gecros_init(xlat(i,j),hti,rdi,clvi,crti,nlvi,laii,nrti,slnbi,gecros_state(i,:,j))
+
              end if
 
 	   END IF
 
           enddo
        enddo
-       
-       if(iopt_crop == 2) then
-           call gecros_init(xlat,hti,rdi,clvi,crti,nlvi,laii,nrti,slnbi,jds,jde,ids,ide,gecros_state)
-       end if
        
 
        ! Given the soil layer thicknesses (in DZS), initialize the soil layer
@@ -1806,15 +1807,6 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
 
              STEPWTD = nint(WTDDT*60./DT)
              STEPWTD = max(STEPWTD,1)
-
-              CALL groundwater_init ( & 
-      &       nsoil, zsoil , dzs  ,isltyp, ivgtyp,wtddt , &
-      &       fdepthxy, ht, riverbedxy, eqzwt, rivercondxy, pexpxy , areaxy, zwtxy,   &
-      &       smois,sh2o, smoiseq, smcwtdxy, deeprechxy, rechxy, qslatxy, qrfsxy, qspringsxy, &
-      &       rechclim  ,                                   &
-      &       ids,ide, jds,jde, kds,kde,                    &
-      &       ims,ime, jms,jme, kms,kme,                    &
-      &       its,ite, jts,jte, kts,kte                     )
 
           ELSE
              CALL wrf_error_fatal ('Not enough fields to use groundwater option in Noah-MP')
@@ -1932,19 +1924,27 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
 ! ==================================================================================================
 ! ----------------------------------------------------------------------
     SUBROUTINE GROUNDWATER_INIT (   &
-            &            NSOIL , ZSOIL , DZS, ISLTYP, IVGTYP, WTDDT , &
+            &            GRID, NSOIL , DZS, ISLTYP, IVGTYP, WTDDT , &
             &            FDEPTH, TOPO, RIVERBED, EQWTD, RIVERCOND, PEXP , AREA ,WTD ,  &
             &            SMOIS,SH2O, SMOISEQ, SMCWTDXY, DEEPRECHXY, RECHXY ,  &
             &            QSLATXY, QRFSXY, QSPRINGSXY,                  &
             &            rechclim  ,                                   &
             &            ids,ide, jds,jde, kds,kde,                    &
             &            ims,ime, jms,jme, kms,kme,                    &
+            &            ips,ipe, jps,jpe, kps,kpe,                    &
             &            its,ite, jts,jte, kts,kte                     )
 
 
   USE NOAHMP_TABLES, ONLY : BEXP_TABLE,SMCMAX_TABLE,PSISAT_TABLE,SMCWLT_TABLE,DWSAT_TABLE,DKSAT_TABLE, &
                                 ISURBAN_TABLE, ISICE_TABLE ,ISWATER_TABLE
   USE module_sf_noahmp_groundwater, ONLY : LATERALFLOW
+  USE module_domain, only: domain
+#if (EM_CORE == 1)
+#ifdef DM_PARALLEL
+    USE module_dm        , ONLY : ntasks_x,ntasks_y,local_communicator,mytask,ntasks
+    USE module_comm_dm , ONLY : halo_em_hydro_noahmp_sub
+#endif
+#endif
 
 ! ----------------------------------------------------------------------
   IMPLICIT NONE
@@ -1952,10 +1952,12 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
 
     INTEGER,  INTENT(IN   )   ::     ids,ide, jds,jde, kds,kde,  &
          &                           ims,ime, jms,jme, kms,kme,  &
+         &                           ips,ipe, jps,jpe, kps,kpe,  &
          &                           its,ite, jts,jte, kts,kte
+    TYPE(domain) , TARGET :: grid                             ! state
     INTEGER, INTENT(IN)                              :: NSOIL
     REAL,   INTENT(IN)                               ::     WTDDT
-    REAL,    INTENT(IN), DIMENSION(1:NSOIL)          :: ZSOIL,DZS
+    REAL,    INTENT(IN), DIMENSION(1:NSOIL)          :: DZS
     INTEGER, INTENT(IN), DIMENSION(ims:ime, jms:jme) :: ISLTYP, IVGTYP
     REAL,    INTENT(IN), DIMENSION(ims:ime, jms:jme) :: FDEPTH, TOPO , AREA
     REAL,    INTENT(IN), DIMENSION(ims:ime, jms:jme) :: rechclim 
@@ -1973,14 +1975,21 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
                                                            QRFSXY, &
                                                            QSPRINGSXY  
 ! local
-    INTEGER  :: I,J,K,ITER,itf,jtf, NITER, NCOUNT
+    INTEGER  :: I,J,K,ITER,itf,jtf, NITER, NCOUNT,NS
     REAL :: BEXP,SMCMAX,PSISAT,SMCWLT,DWSAT,DKSAT
     REAL :: FRLIQ,SMCEQDEEP
     REAL :: DELTAT,RCOND,TOTWATER
     REAL :: AA,BBB,CC,DD,DX,FUNC,DFUNC,DDZ,EXPON,SMC,FLUX
-    REAL, DIMENSION(1:NSOIL) :: SMCEQ
+    REAL, DIMENSION(1:NSOIL) :: SMCEQ,ZSOIL
     REAL,      DIMENSION( ims:ime, jms:jme )    :: QLAT, QRF
     INTEGER,   DIMENSION( ims:ime, jms:jme )    :: LANDMASK !-1 for water (ice or no ice) and glacial areas, 1 for land where the LSM does its soil moisture calculations
+
+       ! Given the soil layer thicknesses (in DZS), calculate the soil layer
+       ! depths from the surface.
+       ZSOIL(1)         = -DZS(1)          ! negative
+       DO NS=2, NSOIL
+          ZSOIL(NS)       = ZSOIL(NS-1) - DZS(NS)
+       END DO
 
 
        itf=min0(ite,ide-1)
@@ -1999,32 +2008,50 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
 
 !readjust the raw aggregated water table from hires, so that it is better compatible with topography
 
- DO NITER=1,500
+!use WTD here, to use the lateral communication routine
+    WTD=EQWTD
 
     NCOUNT=0
 
+ DO NITER=1,500
+
+#if (EM_CORE == 1)
+#ifdef DM_PARALLEL
+#     include "HALO_EM_HYDRO_NOAHMP.inc"
+#endif
+#endif
+
 !Calculate lateral flow
 
+IF(NCOUNT.GT.0.OR.NITER.eq.1)THEN
     QLAT = 0.
-    CALL LATERALFLOW(ISLTYP,EQWTD,QLAT,FDEPTH,TOPO,LANDMASK,DELTAT,AREA       &
+    CALL LATERALFLOW(ISLTYP,WTD,QLAT,FDEPTH,TOPO,LANDMASK,DELTAT,AREA       &
                         ,ids,ide,jds,jde,kds,kde                      & 
                         ,ims,ime,jms,jme,kms,kme                      &
                         ,its,ite,jts,jte,kts,kte                      )
 
+    NCOUNT=0
     DO J=jts,jtf
        DO I=its,itf
           IF(LANDMASK(I,J).GT.0)THEN
             IF(QLAT(i,j).GT.1.e-2)THEN
                  NCOUNT=NCOUNT+1
-                 EQWTD(i,j)=min(EQWTD(i,j)+0.25,0.)
+                 WTD(i,j)=min(WTD(i,j)+0.25,0.)
             ENDIF
           ENDIF
         ENDDO
      ENDDO
-
-   IF(NCOUNT.EQ.0)EXIT
+ENDIF
 
  ENDDO
+
+#if (EM_CORE == 1)
+#ifdef DM_PARALLEL
+#     include "HALO_EM_HYDRO_NOAHMP.inc"
+#endif
+#endif
+
+EQWTD=WTD
 
 !after adjusting, where qlat > 1cm/year now wtd is at the surface.
 !it may still happen that qlat + rech > 0 and eqwtd-rbed <0. There the wtd can
@@ -2061,11 +2088,6 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
 !make riverbed to be height down from the surface instead of above sea level
 
     RIVERBED = min( RIVERBED-TOPO, 0.)
-
-!now inititalize wtd
-
-    WTD = EQWTD
-
 
 !now recompute lateral flow and flow to rivers to initialize deep soil moisture
 
@@ -2250,9 +2272,8 @@ END  SUBROUTINE EQSMOISTURE
 
 ! gecros initialization routines
 
-SUBROUTINE gecros_init(xlat,hti,rdi,clvi,crti,nlvi,laii,nrti,slnbi,jms,jme,ims,ime,state_gecrosxy)   
+SUBROUTINE gecros_init(xlat,hti,rdi,clvi,crti,nlvi,laii,nrti,slnbi,state_gecros)   
 implicit none
-INTEGER, INTENT(IN)  :: jms, jme, ims, ime   !grid indecies
 REAL, INTENT(IN)     :: HTI
 REAL, INTENT(IN)     :: RDI
 REAL, INTENT(IN)     :: CLVI
@@ -2261,77 +2282,69 @@ REAL, INTENT(IN)     :: NLVI
 REAL, INTENT(IN)     :: LAII
 REAL, INTENT(IN)     :: NRTI
 REAL, INTENT(IN)     :: SLNBI
-REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: XLAT
-REAL, DIMENSION(ims:ime,1:60,jms:jme), INTENT(INOUT) :: STATE_GECROSXY
-INTEGER :: I, J
-  
-  JLOOP : DO J = jms, jme
-
-  ILOOP : DO I = ims, ime
+REAL, INTENT(IN)     :: XLAT
+REAL, DIMENSION(1:60), INTENT(INOUT) :: STATE_GECROS
 
   !Inititalization of Gecros variables  
-  STATE_GECROSXY(I,1,J) = 0.      !DS
-  STATE_GECROSXY(I,2,J) = 0.      !CTDURDI, HTI, CLVI, CRTI, NLVI, LAII, NRTI, SLNBI,
-  STATE_GECROSXY(I,3,J) = 0.      !CVDU
-  STATE_GECROSXY(I,4,J) = CLVI    !CLV 
-  STATE_GECROSXY(I,5,J) = 0.      !CLVD  
-  STATE_GECROSXY(I,6,J) = 0.      !CSST  
-  STATE_GECROSXY(I,7,J) = 0.      !CSO
-  STATE_GECROSXY(I,8,J) = CRTI    !CSRT 
-  STATE_GECROSXY(I,9,J) =  0.     !CRTD 
-  STATE_GECROSXY(I,10,J) = 0.     !CLVDS 
-  STATE_GECROSXY(I,11,J) = NRTI   !NRT
-  STATE_GECROSXY(I,12,J) = 0.     !NST
-  STATE_GECROSXY(I,13,J) = NLVI   !NLV 
-  STATE_GECROSXY(I,14,J) = 0.     !NSO
-  STATE_GECROSXY(I,15,J) = NLVI   !TNLV
-  STATE_GECROSXY(I,16,J) = 0.     !NLVD
-  STATE_GECROSXY(I,17,J) = 0.     !NRTD
-  STATE_GECROSXY(I,18,J) = 0.     !CRVS
-  STATE_GECROSXY(I,19,J) = 0.     !CRVR
-  STATE_GECROSXY(I,20,J) = 0.     !NREOE
-  STATE_GECROSXY(I,21,J) = 0.     !NREOF
-  STATE_GECROSXY(I,22,J) = 0.     !DCDSR
-  STATE_GECROSXY(I,23,J) = 0.     !DCDTR
-  STATE_GECROSXY(I,24,J) = SLNBI  !SLNB
-  STATE_GECROSXY(I,25,J) = LAII   !LAIC
-  STATE_GECROSXY(I,26,J) = 0.     !RMUL
-  STATE_GECROSXY(I,27,J) = 0.     !NDEMP
-  STATE_GECROSXY(I,28,J) = 0.     !NSUPP
-  STATE_GECROSXY(I,29,J) = 0.     !NFIXT
-  STATE_GECROSXY(I,30,J) = 0.     !NFIXR
-  STATE_GECROSXY(I,31,J) = 0.     !DCDTP
-  STATE_GECROSXY(I,32,J) = 0.01   !HTI
-  STATE_GECROSXY(I,33,J) = RDI    !RDI
-  STATE_GECROSXY(I,34,J) = 0.     !TPCAN
-  STATE_GECROSXY(I,35,J) = 0.     !TRESP
-  STATE_GECROSXY(I,36,J) = 0.     !TNUPT
-  STATE_GECROSXY(I,37,J) = 0.     !LITNT
-  STATE_GECROSXY(I,38,J) = 0.     !daysSinceDS1
-  STATE_GECROSXY(I,39,J) = 0.     !daysSinceDS2
-  STATE_GECROSXY(I,40,J) = -1.    !drilled -1:false, 1:true
-  STATE_GECROSXY(I,41,J) = -1.    !emerged -1:false, 1:true
-  STATE_GECROSXY(I,42,J) = -1.    !harvested -1:false, 1:true
-  STATE_GECROSXY(I,43,J) = 0.     !TTEM
-  STATE_GECROSXY(I,44,J) = XLAT(I,J)     !GLAT
-  STATE_GECROSXY(I,45,J) = 0.     !WSO
-  STATE_GECROSXY(I,46,J) = 0.     !WSTRAW
-  STATE_GECROSXY(I,47,J) = 0.     !GrainNC
-  STATE_GECROSXY(I,48,J) = 0.     !StrawNC
-  STATE_GECROSXY(I,49,J) = 0.01   !GLAI
-  STATE_GECROSXY(I,50,J) = 0.01   !TLAI
-  STATE_GECROSXY(I,51,J) = HTI    !Fields 51-58 set for reinitialization  
-  STATE_GECROSXY(I,52,J) = RDI    
-  STATE_GECROSXY(I,53,J) = CLVI   
-  STATE_GECROSXY(I,54,J) = CRTI   
-  STATE_GECROSXY(I,55,J) = NRTI   
-  STATE_GECROSXY(I,56,J) = NLVI   
-  STATE_GECROSXY(I,57,J) = SLNBI  
-  STATE_GECROSXY(I,58,J) = LAII   
+  STATE_GECROS(1) = 0.      !DS
+  STATE_GECROS(2) = 0.      !CTDURDI, HTI, CLVI, CRTI, NLVI, LAII, NRTI, SLNBI,
+  STATE_GECROS(3) = 0.      !CVDU
+  STATE_GECROS(4) = CLVI    !CLV 
+  STATE_GECROS(5) = 0.      !CLVD  
+  STATE_GECROS(6) = 0.      !CSST  
+  STATE_GECROS(7) = 0.      !CSO
+  STATE_GECROS(8) = CRTI    !CSRT 
+  STATE_GECROS(9) =  0.     !CRTD 
+  STATE_GECROS(10) = 0.     !CLVDS 
+  STATE_GECROS(11) = NRTI   !NRT
+  STATE_GECROS(12) = 0.     !NST
+  STATE_GECROS(13) = NLVI   !NLV 
+  STATE_GECROS(14) = 0.     !NSO
+  STATE_GECROS(15) = NLVI   !TNLV
+  STATE_GECROS(16) = 0.     !NLVD
+  STATE_GECROS(17) = 0.     !NRTD
+  STATE_GECROS(18) = 0.     !CRVS
+  STATE_GECROS(19) = 0.     !CRVR
+  STATE_GECROS(20) = 0.     !NREOE
+  STATE_GECROS(21) = 0.     !NREOF
+  STATE_GECROS(22) = 0.     !DCDSR
+  STATE_GECROS(23) = 0.     !DCDTR
+  STATE_GECROS(24) = SLNBI  !SLNB
+  STATE_GECROS(25) = LAII   !LAIC
+  STATE_GECROS(26) = 0.     !RMUL
+  STATE_GECROS(27) = 0.     !NDEMP
+  STATE_GECROS(28) = 0.     !NSUPP
+  STATE_GECROS(29) = 0.     !NFIXT
+  STATE_GECROS(30) = 0.     !NFIXR
+  STATE_GECROS(31) = 0.     !DCDTP
+  STATE_GECROS(32) = 0.01   !HTI
+  STATE_GECROS(33) = RDI    !RDI
+  STATE_GECROS(34) = 0.     !TPCAN
+  STATE_GECROS(35) = 0.     !TRESP
+  STATE_GECROS(36) = 0.     !TNUPT
+  STATE_GECROS(37) = 0.     !LITNT
+  STATE_GECROS(38) = 0.     !daysSinceDS1
+  STATE_GECROS(39) = 0.     !daysSinceDS2
+  STATE_GECROS(40) = -1.    !drilled -1:false, 1:true
+  STATE_GECROS(41) = -1.    !emerged -1:false, 1:true
+  STATE_GECROS(42) = -1.    !harvested -1:false, 1:true
+  STATE_GECROS(43) = 0.     !TTEM
+  STATE_GECROS(44) = XLAT   !GLAT
+  STATE_GECROS(45) = 0.     !WSO
+  STATE_GECROS(46) = 0.     !WSTRAW
+  STATE_GECROS(47) = 0.     !GrainNC
+  STATE_GECROS(48) = 0.     !StrawNC
+  STATE_GECROS(49) = 0.01   !GLAI
+  STATE_GECROS(50) = 0.01   !TLAI
+  STATE_GECROS(51) = HTI    !Fields 51-58 set for reinitialization  
+  STATE_GECROS(52) = RDI    
+  STATE_GECROS(53) = CLVI   
+  STATE_GECROS(54) = CRTI   
+  STATE_GECROS(55) = NRTI   
+  STATE_GECROS(56) = NLVI   
+  STATE_GECROS(57) = SLNBI  
+  STATE_GECROS(58) = LAII   
     
-  ENDDO ILOOP 
-  ENDDO JLOOP 
-  
 END SUBROUTINE gecros_init
 
 SUBROUTINE gecros_reinit(STATE_GECROS)   

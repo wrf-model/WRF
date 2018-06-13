@@ -53,13 +53,13 @@
  bldt                                = 0,
  cu_physics                          = 0,
  cudt                                = 0,
- num_soil_layers                     = 5,
  /
 
  &fdda
  /
 
  &dynamics
+ hybrid_opt                          = 2, 
  rk_ord                              = 3,
  diff_opt                            = 0,      2,      2,
  km_opt                              = 1,      1,      1,
@@ -100,4 +100,8 @@
  &namelist_quilt
  nio_tasks_per_group = 0,
  nio_groups = 1,
+ /
+
+ &ideal
+ ideal_case = 1
  /

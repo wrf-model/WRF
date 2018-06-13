@@ -143,6 +143,7 @@
                               ph_hyac,                                 &
                               ph_cl2,ph_hocl,ph_fmcl,                  &
                               ivgtyp,                                  &
+                              ntuv_lev, ntuv_bin, ntuv_pht,            &
                               ph_radfld, ph_adjcoe, ph_prate,          &
                               wc_x, zref_x,                            &
                               tauaer1, tauaer2, tauaer3, tauaer4,      &    !rajesh
@@ -169,6 +170,7 @@
                                 ids,ide, jds,jde, kds,kde,       &
                                 ims,ime, jms,jme, kms,kme,       &
                                 its,ite, jts,jte, kts,kte
+      integer, intent(in   ) :: ntuv_lev, ntuv_bin, ntuv_pht
       integer, intent(in)    :: ivgtyp(ims:ime,jms:jme)                         
 
       real,     intent(in  ) :: dtstep, gmt
@@ -217,15 +219,15 @@
                              ph_n2o5,ph_mvk,ph_glyald,ph_hyac,         &
                              ph_cl2,ph_hocl,ph_fmcl
 
-      real, dimension( ims:ime, nref, jms:jme, nw-1 ),                 &
+      real, dimension( ims:ime, ntuv_lev, jms:jme, ntuv_bin ),         &
             intent(out  ) :: ph_radfld
-      real, dimension( ims:ime, nref, jms:jme, tuv_jmax ),             &
+      real, dimension( ims:ime, ntuv_lev, jms:jme, ntuv_pht ),         &
             intent(out  ) :: ph_adjcoe
-      real, dimension( ims:ime, nref, jms:jme, tuv_jmax ),             &
+      real, dimension( ims:ime, ntuv_lev, jms:jme, ntuv_pht ),         &
             intent(out  ) :: ph_prate
-      real, dimension(nw-1),             &
+      real, dimension(ntuv_bin),             &
             intent(out  ) :: wc_x
-      real, dimension(nref),             &
+      real, dimension(ntuv_lev),             &
             intent(out  ) :: zref_x
 
 !----------------------------------------------------
@@ -568,21 +570,21 @@ level_loop : &
           ph_n2o5(i,k,j)  = max( 0._dp,prate(k,pid_n2o5)*m2s )
         enddo
 
-        do m = 1,nw-1
-          do k = 1,nz
+        do m = 1,min(nw-1,ntuv_bin)
+          do k = 1,min(nz,ntuv_lev)
             ph_radfld(i,k,j,m) = radfld(k,m)
           end do
         end do
 
-        do m = 1,tuv_jmax
-          do k = 1,nz
+        do m = 1,min(ntuv_pht,tuv_jmax)
+          do k = 1,min(nz,ntuv_lev)
             ph_adjcoe(i,k,j,m) = adjcoe(k,m)
             ph_prate (i,k,j,m) = prate0(k,m)
           end do
         end do
 
-        wc_x(1:nw-1) = wc(1:nw-1)
-        zref_x(1:nref) = zref(1:nref)
+        wc_x(1:min(ntuv_bin,nw-1)) = wc(1:min(ntuv_bin,nw-1))
+        zref_x(1:min(nz,ntuv_lev)) = zref(1:min(nz,ntuv_lev))
 
         if( chm_is_mozart ) then
           do k = kts, kte

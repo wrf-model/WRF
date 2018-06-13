@@ -76,7 +76,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,rainprod, evapprod                                &
                       ,qv_b4mp, qc_b4mp, qi_b4mp, qs_b4mp                &
 #endif
-                      ,qnwfa2d                                           & ! for water/ice-friendly aerosols
+                      ,qnwfa2d, qnifa2d                                  & ! for water/ice-friendly aerosols
                       ,refl_10cm                                         & ! HM, 9/22/09, add for refl
                       ,vmi3d                                             & ! for P3 
                       ,di3d                                              & ! for P3 
@@ -483,7 +483,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
    LOGICAL,  OPTIONAL,   INTENT(IN   )    :: channel_switch
    REAL, OPTIONAL,  INTENT(INOUT   ) :: naer  ! aerosol number concentration (/kg)
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) , OPTIONAL :: qnwfa2d      ! Added by G. Thompson
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) , OPTIONAL :: qnwfa2d, qnifa2d
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
          INTENT(INOUT ) ::                                        &
@@ -807,6 +807,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                   PRESENT( QNR_CURR) .AND. PRESENT ( QNI_CURR)   .AND.  &
                   PRESENT( QNC_CURR) .AND. PRESENT ( QNWFA_CURR) .AND.  &
                   PRESENT( QNIFA_CURR).AND.PRESENT ( QNWFA2D)    .AND.  &
+                  PRESENT( QNIFA2D)                              .AND.  &
                   PRESENT( SNOWNC)   .AND. PRESENT ( SNOWNCV)    .AND.  &
                   PRESENT( GRAUPELNC).AND. PRESENT ( GRAUPELNCV) .AND.  &
                   PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) ) THEN
@@ -829,6 +830,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      NWFA=qnwfa_curr,                    &
                      NIFA=qnifa_curr,                    &
                      NWFA2D=qnwfa2d,                     &
+                     NIFA2D=qnifa2d,                     &
                      TH=th,                              &
                      PII=pi_phy,                         &
                      P=p,                                &

@@ -10,7 +10,6 @@ more levels in the sea breeeze layer.
 
 The input sounding has no wind.
 
-The routine initializing this case is dyn_em/module_initialize_seabreeze2d_x.F.
 There is no Coriolis [grid%f(i,j)=0.]. 
 There is a diurnal cycle and the latitude and longitude are set for radiation to work.
 Note that since the longitude is set to zero, start_hour in the namelist
@@ -21,7 +20,7 @@ The land-surface fields are filled so that the slab, Noah or RUC LSMs can be use
 This setup is for a 2D case with 202 grid points in x and 35 eta levels. The land occupies 50 grid
 points in the middle of the domain. The width of the land can be changed
 by modifying variable lm (half width for land points) in 
-dyn_em/module_initialize_seabreeze2d_x.F.
+dyn_em/module_initialize_ideal.F.
 
 As of V3.6 an example of 8 tracers are initialized in this case and mixed with
 the PBL option. These are set up in the initialize module.

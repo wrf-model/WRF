@@ -96,11 +96,6 @@ SUBROUTINE med_interp_domain ( parent_grid , nested_grid )
 !  End of gopal's doing.
 !=======================================================================
 #endif
-! ----------------------------------------------------------
-!    Interface definitions for COAMPS (placeholder)
-! ----------------------------------------------------------
-#if (COAMPS_CORE == 1)
-#endif
    END INTERFACE
 ! ----------------------------------------------------------
 ! End of Interface blocks

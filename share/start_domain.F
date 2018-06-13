@@ -60,7 +60,7 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
 
       CALL start_domain_em( grid, allowed_to_read  &
 !
-# include <actual_new_args.inc>
+# include "actual_new_args.inc"
 !
                          )
 
@@ -71,13 +71,6 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
 #endif
 #if (NMM_CORE == 1) 
    CALL start_domain_nmm( grid, allowed_to_read   &
-!
-# include "actual_new_args.inc"
-!
-                         )
-#endif
-#if (COAMPS_CORE == 1)
-   CALL start_domain_coamps( grid, allowed_to_read   &
 !
 # include "actual_new_args.inc"
 !

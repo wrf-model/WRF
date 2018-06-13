@@ -411,6 +411,7 @@
 ! WRF-Solar variables
                        ,swint_opt=config_flags%swint_opt                &   
      &       ,SWDDIR=grid%swddir,SWDDNI=grid%swddni,SWDDIF=grid%swddif     & ! jararias
+     &       ,SWDDIRC=grid%swddirc,SWDDNIC=grid%swddnic                    & ! clearsky sw diags
      &       ,Gx=grid%Gx,Bx=grid%Bx,gg=grid%gg,bb=grid%bb                  & ! for sza-interpolation
      &       ,swdown_ref=grid%swdown_ref,swddir_ref=grid%swddir_ref        & !
      &       ,coszen_ref=grid%coszen_ref                                   & 
@@ -1658,7 +1659,7 @@
 
      &               ,MZNT=MZ0                                        &
 #endif
-     &               ,HPBL_HOLD=HPBL_HOLD                             &   !for new NSAS
+     &               ,HPBL_HOLD=HPBL_HOLD                             &   !for new KSAS
      &               ,HT=SFCZ                                         &   !KWON
      &               ,UST=USTAR,MIXHT=MIXHT,PBLH=PBLH                 &
      &               ,HFX=TWBS,QFX=QWBS,GRDFLX=GRNFLX                 &
@@ -2300,7 +2301,7 @@
      &                 ,SIGMU, SIGMU1                                   & !updraft fraction
      &                 ,AVCNVC,ACUTIM,IHE,IHW                           &
      &                 ,GRID,CONFIG_FLAGS                               &
-     &                 ,HPBL_HOLD                                       & ! for new NSAS
+     &                 ,HPBL_HOLD                                       & ! for new KSAS
      &                 ,IDS,IDE,JDS,JDE,KDS,KDE                         &
      &                 ,IMS,IME,JMS,JME,KMS,KME                         &
      &                 ,IPS,IPE,JPS,JPE,KPS,KPE                         &
@@ -2529,9 +2530,9 @@
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==BMJSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
-     &   CONFIG_FLAGS%CU_PHYSICS==NSASSCHEME)RETURN
+     &   CONFIG_FLAGS%CU_PHYSICS==KSASSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
-     &   CONFIG_FLAGS%CU_PHYSICS==NSASOLDSCHEME)RETURN
+     &   CONFIG_FLAGS%CU_PHYSICS==NSASSCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
      &   CONFIG_FLAGS%CU_PHYSICS==TIEDTKESCHEME)RETURN
       IF(MOD(NTSD,NCNVC)/=0.AND.                                      &
@@ -3028,7 +3029,7 @@
 !
           cps_select: SELECT CASE(config_flags%cu_physics)
 !
-          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,SCALESASSCHEME,OSASSCHEME,NSASSCHEME,NSASOLDSCHEME,TIEDTKESCHEME)
+          CASE (KFSCHEME,KFETASCHEME,GDSCHEME,SASSCHEME,SCALESASSCHEME,OSASSCHEME,KSASSCHEME,NSASSCHEME,TIEDTKESCHEME)
            IF(config_flags%mp_physics==fer_mp_hires_advect) THEN
              ! Update QI and QRIMEF:
              call QITEND_FER_HIRES_ADVECT( &

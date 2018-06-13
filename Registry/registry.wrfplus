@@ -35,6 +35,8 @@ rconfig   real    jcdfi_penalty         namelist,perturbation          1        
 rconfig   logical enable_identity       namelist,perturbation          1      .false. -   "enable identity AD/TL model"                         ""      ""
 rconfig   logical var4d_detail_out      namelist,perturbation          1      .false. -   "true:output perturbation, gradient to disk"                         ""      ""
 
+rconfig   integer mp_physics_ad         namelist,physics     max_domains   99       rh    "mp_physics_ad"            ""      ""
+
 #
 ######
 # Variables for Eulerian mass coordinate dynamics
@@ -457,6 +459,8 @@ state   real    a_qr             ikjftb   a_moist       1         -     \
    i0rhusdf=(bdy_interp:dt)  "A_QRAIN"            "Rain water mixing ratio"       "kg kg-1"
 state   real    a_qi             ikjftb   a_moist       1         -     \
    i0rhusdf=(bdy_interp:dt)  "A_QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    a_qi2            ikjftb   a_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "A_QICE2"            "Ice mixing ratio cat 2"        "kg kg-1"
 state   real    a_qs             ikjftb   a_moist       1         -     \
    i0rhusdf=(bdy_interp:dt)  "A_QSNOW"            "Snow mixing ratio"             "kg kg-1"
 state   real    a_qg             ikjftb   a_moist       1         -     \
@@ -473,6 +477,8 @@ state   real    g_qr             ikjftb   g_moist       1         -     \
    i0rhusdf=(bdy_interp:dt)  "G_QRAIN"            "Rain water mixing ratio"       "kg kg-1"
 state   real    g_qi             ikjftb   g_moist       1         -     \
    i0rhusdf=(bdy_interp:dt)  "G_QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    g_qi2            ikjftb   g_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "G_QICE2"            "Ice mixing ratio cat 2"        "kg kg-1"
 state   real    g_qs             ikjftb   g_moist       1         -     \
    i0rhusdf=(bdy_interp:dt)  "G_QSNOW"            "Snow mixing ratio"             "kg kg-1"
 state   real    g_qg             ikjftb   g_moist       1         -     \
@@ -621,6 +627,13 @@ package   dyn_em_ad     dyn_opt==302                 -             -
 
 package   jcdfi_off     jcdfi_diag==0                  -             -
 package   jcdfi_on      jcdfi_diag==1                  -             state:jcdfi_u,dfi_v,jcdfi_t,jcdfi_p
+
+package   lscondscheme   mp_physics==98              -             moist:qv
+package   mkesslerscheme mp_physics==99              -             moist:qv,qc,qr
+package   surfdragscheme bl_pbl_physics==98          -             -
+package   ducuscheme     cu_physics==98              -             -
+
+halo      HALO_EM_PHYS_A_BL_SURF  dyn_em 4:xland
 
 ## communications                                               
 
@@ -780,3 +793,40 @@ halo          HALO_GSI_EM_BDY        dyn_em 4:a_u_1,a_v_1,a_ph_1,a_mu_1,a_t_1,a_
 #state xtraj_type xtraj - -
 #state ad_forcing_type ad_forcing - -
 
+rconfig   integer mp_physics_plus   derived   max_domains   0    -   "mp_physics_plus"   ""   "allocate a_ and g_ moist variables for selected microphysics package"
+package   passiveqv_plus        mp_physics_plus==0      -          g_moist:g_qv;a_moist:a_qv
+package   kessler_plus          mp_physics_plus==1      -          g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
+package   lins_plus             mp_physics_plus==2      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr
+package   wsm3_plus             mp_physics_plus==3      -          g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
+package   wsm5_plus             mp_physics_plus==4      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
+package   fer_mp_hi_plus        mp_physics_plus==5      -          g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
+package   fer_mp_hi_advect_plus mp_physics_plus==15     -          g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
+package   wsm6_plus             mp_physics_plus==6      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   gsfcgce_plus          mp_physics_plus==7      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   thompson_plus         mp_physics_plus==8      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   milbrandt2mom_plus    mp_physics_plus==9      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
+package   morr_two_mom_plus     mp_physics_plus==10     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   cammgmp_plus          mp_physics_plus==11     -          g_moist:g_qv,g_qc,g_qi,g_qr,g_qs;a_moist:a_qv,a_qc,a_qi,a_qr,a_qs
+package   sbu_ylin_plus         mp_physics_plus==13     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
+package   wdm5_plus             mp_physics_plus==14     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
+package   wdm6_plus             mp_physics_plus==16     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   nssl_2mom_plus        mp_physics_plus==17     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
+package   nssl_2momccn_plus     mp_physics_plus==18     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
+package   nssl_1mom_plus        mp_physics_plus==19     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
+package   nssl_1momlfo_plus     mp_physics_plus==21     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   nssl_2momg_plus       mp_physics_plus==22     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   thompsonaero_plus     mp_physics_plus==28     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   p3_1category_plus     mp_physics_plus==50     -          g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
+package   p3_1category_nc_plus  mp_physics_plus==51     -          g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
+package   p3_2category_4dvar    mp_physics_plus==52     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qi2;a_moist:a_qv,a_qc,a_qr,a_qi,a_qi2
+package   morr_tm_aero_4dvar    mp_physics_plus==40     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   etampnew_plus         mp_physics_plus==95     -          g_moist:g_qv,g_qc,g_qr,g_qs;a_moist:a_qv,a_qc,a_qr,a_qs
+package   lscond_plus           mp_physics_plus==98     -          g_moist:g_qv;a_moist:a_qv
+package   mkessler_plus         mp_physics_plus==99     -          g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
+
+rconfig   integer cu_used_plus    derived               1          0       -     "cu_used_plus"   "turn on if any cumulus scheme is used"
+rconfig   integer shcu_used_plus  derived               1          0       -     "shcu_used_plus" "turn on if any shallow cumulus scheme is used"
+package   no_cu_used_plus       cu_used_plus==0         -          -
+package   any_cu_used_plus      cu_used_plus==1         -          state:g_rucuten,g_rvcuten,g_rthcuten,g_rqvcuten,g_rqrcuten,g_rqccuten,g_rqscuten,g_rqicuten,g_rqcncuten,g_rqincuten,a_rucuten,a_rvcuten,a_rthcuten,a_rqvcuten,a_rqrcuten,a_rqccuten,a_rqscuten,a_rqicuten,a_rqcncuten,a_rqincuten
+package   no_shcu_used_plus    shcu_used_plus==0        -          -
+package   any_shcu_used_plus   shcu_used_plus==1        -          state:g_rushten,g_rvshten,g_rthshten,g_rqvshten,g_rqrshten,g_rqcshten,g_rqsshten,g_rqishten,g_rqgshten,g_rqcnshten,g_rqinshten,a_rushten,a_rvshten,a_rthshten,a_rqvshten,a_rqrshten,a_rqcshten,a_rqsshten,a_rqishten,a_rqgshten,a_rqcnshten,a_rqinshten

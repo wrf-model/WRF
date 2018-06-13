@@ -77,6 +77,7 @@ CONTAINS
                   FRC_URB2D,UTYPE_URB2D,                        & !O
                   num_urban_layers,                             & !I multi-layer urban
                   num_urban_hi,                                 & !I multi-layer urban
+                  tsk_rural_bep,                                & !H multi-layer urban
                   trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,      & !H multi-layer urban
                   tlev_urb3d,qlev_urb3d,                        & !H multi-layer urban
                   tw1lev_urb3d,tw2lev_urb3d,                    & !H multi-layer urban
@@ -569,6 +570,7 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   )        ::XLAT, XLONG
    INTEGER, INTENT(IN  ) ::                               NUM_URBAN_LAYERS
    INTEGER, INTENT(IN  ) ::                               NUM_URBAN_HI
+   REAL, OPTIONAL, DIMENSION( ims:ime,                     jms:jme ), INTENT(INOUT) :: tsk_rural_bep
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: trb_urb4d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw1_urb4d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw2_urb4d
@@ -625,7 +627,6 @@ CONTAINS
    REAL, DIMENSION(its:ite,jts:jte) ::RS_ABS_URB
    REAL, DIMENSION(its:ite,jts:jte) ::GRDFLX_URB
    REAL :: SIGMA_SB,RL_UP_RURAL,RL_UP_TOT,RS_ABS_TOT,UMOM,VMOM
-   REAL :: r1,r2,r3
    REAL :: CMR_URB, CHR_URB, CMC_URB, CHC_URB, CMGR_URB, CHGR_URB
    REAL :: frc_urb,lb_urb
    REAL :: check 
@@ -662,6 +663,8 @@ CONTAINS
   FBUR  = 0.0 !BSINGH - Initialized to 0.0
   FGSN  = 0.0 !BSINGH - Initialized to 0.0
   SOILW = 0.0 !BSINGH - Initialized to 0.0
+
+  sigma_sb=5.67e-08
 
 ! MEK MAY 2007
       FDTLIW=DT/ROWLIW
@@ -896,12 +899,9 @@ CONTAINS
                  EMISSI = 0.98                                 !for VEGTYP=5
 		 IF ( FRC_URB2D(I,J) < 0.99 ) THEN
                    if(sf_urban_physics.eq.1)then
-           T1= ( TSK(I,J) -FRC_URB2D(I,J) * TS_URB2D (I,J) )/ (1-FRC_URB2D(I,J))
+                     T1= ( TSK(I,J) -FRC_URB2D(I,J) * TS_URB2D (I,J) )/ (1-FRC_URB2D(I,J))
                    elseif((sf_urban_physics.eq.2).OR.(sf_urban_physics.eq.3))then
-                r1= (tsk(i,j)**4.)
-                r2= frc_urb2d(i,j)*(ts_urb2d(i,j)**4.)
-                r3= (1.-frc_urb2d(i,j))
-                t1= ((r1-r2)/r3)**.25
+                     T1=tsk_rural_bep(i,j)
                    endif
 	         ELSE
 		 T1 = TSK(I,J)
@@ -1148,6 +1148,9 @@ CONTAINS
 !
           TSK(I,J)=T1
           TSK_RURAL(I,J)=T1
+          IF(SF_URBAN_PHYSICS == 2 .or. SF_URBAN_PHYSICS == 3) THEN
+            TSK_RURAL_BEP(I,J)=T1
+          END IF
           HFX(I,J)=SHEAT
           HFX_RURAL(I,J)=SHEAT
 ! MEk Jul07 add potential evap accum
@@ -1557,8 +1560,6 @@ CONTAINS
        ENDIF
 
     if((sf_urban_physics.eq.2).OR.(sf_urban_physics.eq.3))then         !Bep begin
-! fix the value of the Stefan-Boltzmann constant
-         sigma_sb=5.67e-08
          do j=jts,jte
          do i=its,ite
             UMOM_URB(I,J)=0.
@@ -1606,7 +1607,7 @@ CONTAINS
 !           emiss(i,j)=(1.-frc_urb2d(i,j))*emiss_rural(i,j)+frc_urb2d(i,j)*emiss_urb(i,j)
 ! using the emissivity and the total longwave upward radiation estimate the averaged skin temperature
            IF (FRC_URB2D(I,J).GT.0.) THEN
-              rl_up_rural=-emiss_rural(i,j)*sigma_sb*(tsk_rural(i,j)**4.)-(1.-emiss_rural(i,j))*glw(i,j)
+              rl_up_rural=-emiss_rural(i,j)*sigma_sb*(tsk_rural(i,j)**4.)-(1.-emissi)*glw(i,j)
               rl_up_tot=(1.-frc_urb2d(i,j))*rl_up_rural+frc_urb2d(i,j)*rl_up_urb(i,j)   
               emiss(i,j)=(1.-frc_urb2d(i,j))*emiss_rural(i,j)+frc_urb2d(i,j)*emiss_urb(i,j)
               ts_urb2d(i,j)=(max(0.,(-rl_up_urb(i,j)-(1.-emiss_urb(i,j))*glw(i,j))/emiss_urb(i,j)/sigma_sb))**0.25
@@ -2258,6 +2259,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                   FRC_URB2D,UTYPE_URB2D,                        & !O
                   num_urban_layers,                             & !I multi-layer urban
                   num_urban_hi,                                 & !I multi-layer urban
+                  tsk_rural_bep,                                & !H multi-layer urban
                   trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,      & !H multi-layer urban
                   tlev_urb3d,qlev_urb3d,                        & !H multi-layer urban
                   tw1lev_urb3d,tw2lev_urb3d,                    & !H multi-layer urban
@@ -2748,6 +2750,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   )        ::XLAT, XLONG
    INTEGER, INTENT(IN  ) ::                               NUM_URBAN_LAYERS
    INTEGER, INTENT(IN  ) ::                               NUM_URBAN_HI
+   REAL, OPTIONAL, DIMENSION( ims:ime,                     jms:jme ), INTENT(INOUT) :: tsk_rural_bep
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: trb_urb4d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw1_urb4d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw2_urb4d
@@ -2804,7 +2807,6 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
    REAL, DIMENSION(its:ite,jts:jte) ::RS_ABS_URB
    REAL, DIMENSION(its:ite,jts:jte) ::GRDFLX_URB
    REAL :: SIGMA_SB,RL_UP_RURAL,RL_UP_TOT,RS_ABS_TOT,UMOM,VMOM
-   REAL :: r1,r2,r3
    REAL :: CMR_URB, CHR_URB, CMC_URB, CHC_URB, CMGR_URB, CHGR_URB
    REAL :: frc_urb,lb_urb
    REAL :: check 
@@ -4110,15 +4112,12 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
                        ALBBRD  =0.2         !0.2
                        EMISSI = 0.98                                 !for VEGTYP=5
       		 IF ( FRC_URB2D(I,J) < 0.99 ) THEN
-                         if(sf_urban_physics.eq.1)then
-                 T1= ( TSK(I,J) -FRC_URB2D(I,J) * TS_URB2D (I,J) )/ (1-FRC_URB2D(I,J))
-                         elseif((sf_urban_physics.eq.2).OR.(sf_urban_physics.eq.3))then
-                      r1= (tsk(i,j)**4.)
-                      r2= frc_urb2d(i,j)*(ts_urb2d(i,j)**4.)
-                      r3= (1.-frc_urb2d(i,j))
-                      t1= ((r1-r2)/r3)**.25
-                         endif
-      	         ELSE
+                   if(sf_urban_physics.eq.1)then
+                     T1= ( TSK(I,J) -FRC_URB2D(I,J) * TS_URB2D (I,J) )/ (1-FRC_URB2D(I,J))
+                   elseif((sf_urban_physics.eq.2).OR.(sf_urban_physics.eq.3))then
+                     T1=tsk_rural_bep(i,j)
+                   endif
+     	         ELSE
       		 T1 = TSK(I,J)
                        ENDIF
                       ENDIF

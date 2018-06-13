@@ -90,6 +90,7 @@ CONTAINS
    INTEGER :: nl_in
 
    INTEGER :: icm,jcm, ii, im1, jj, jm1, loop, error, fid, nxc, nyc, lm
+   REAL    :: B1, B2, B3, B4, B5
    REAL    :: u_mean,v_mean, f0, p_surf, p_level, qvf, z_at_v, z_at_u
    REAL    :: z_scale, xrad, yrad, zrad, rad, delt, cof1, cof2
 !   REAL, EXTERNAL :: interp_0
@@ -328,22 +329,6 @@ CONTAINS
     grid%znu(k) = 0.5*(grid%znw(k+1)+grid%znw(k))
    ENDDO
 
-   IF ( config_flags%hybrid_opt .NE. 0 ) THEN
-      call wrf_error_fatal ( '--- ERROR: Hybrid Vertical Coordinate option not supported with this idealized case' )
-   END IF
-   grid%hybrid_opt = 0
-
-   DO k=1, kde
-    grid%c3f(k) = grid%znw(k)
-    grid%c4f(k) = 0.
-    grid%c3h(k) = grid%znu(k)
-    grid%c4h(k) = 0.
-    grid%c1f(k) = 1.
-    grid%c2f(k) = 0.
-    grid%c1h(k) = 1.
-    grid%c2h(k) = 0.
-   ENDDO 
-
    DO k=2, kde-1
     grid%dn(k) = 0.5*(grid%dnw(k)+grid%dnw(k-1))
     grid%rdn(k) = 1./grid%dn(k)
@@ -376,6 +361,96 @@ CONTAINS
 
   grid%p_top = interp_0( p_in, zk, config_flags%ztop, nl_in )
 
+  !  For hybrid coord
+
+  DO k=kts, kte
+     IF      ( config_flags%hybrid_opt .EQ. 0 ) THEN
+        grid%c3f(k) = grid%znw(k)
+     ELSE IF ( config_flags%hybrid_opt .EQ. 1 ) THEN
+        grid%c3f(k) = grid%znw(k)
+     ELSE IF ( config_flags%hybrid_opt .EQ. 2 ) THEN
+        B1 = 2. * grid%etac**2 * ( 1. - grid%etac )
+        B2 = -grid%etac * ( 4. - 3. * grid%etac - grid%etac**3 )
+        B3 = 2. * ( 1. - grid%etac**3 )
+        B4 = - ( 1. - grid%etac**2 )
+        B5 = (1.-grid%etac)**4
+        grid%c3f(k) = ( B1 + B2*grid%znw(k) + B3*grid%znw(k)**2 + B4*grid%znw(k)**3 ) / B5
+        IF ( grid%znw(k) .LT. grid%etac ) THEN
+           grid%c3f(k) = 0.
+        END IF
+        IF ( k .EQ. kds ) THEN
+           grid%c3f(k) = 1.
+        ELSE IF ( k .EQ. kde ) THEN
+           grid%c3f(k) = 0.
+        END IF
+     ELSE IF ( config_flags%hybrid_opt .EQ. 3 ) THEN
+        grid%c3f(k) = grid%znw(k)*sin(0.5*3.14159*grid%znw(k))**2
+        IF      ( k .EQ. kds ) THEN
+           grid%c3f(k) = 1.
+        ELSE IF ( k .EQ. kds ) THEN
+           grid%c3f(kde) = 0.
+        END IF
+     ELSE
+        CALL wrf_message     ( 'ERROR: --- hybrid_opt' )
+        CALL wrf_message     ( 'ERROR: --- hybrid_opt=0    ==> Standard WRF terrain-following coordinate' )
+        CALL wrf_message     ( 'ERROR: --- hybrid_opt=1    ==> Standard WRF terrain-following coordinate, hybrid c1, c2, c3, c4' )
+        CALL wrf_message     ( 'ERROR: --- hybrid_opt=2    ==> Hybrid, Klemp polynomial' )
+        CALL wrf_message     ( 'ERROR: --- hybrid_opt=3    ==> Hybrid, sin^2' )
+        CALL wrf_error_fatal ( 'ERROR: --- Invalid option' )
+     END IF
+  END DO
+
+  !  c4 is a function of c3 and eta.
+
+  DO k=1, kde
+     grid%c4f(k) = ( grid%znw(k) - grid%c3f(k) ) * ( p1000mb - grid%p_top )
+  ENDDO
+      
+  !  Now on half levels, just add up and divide by 2 (for c3h).  Use (eta-c3)*(p00-pt) for c4 on half levels.
+      
+  DO k=1, kde-1
+     grid%znu(k) = ( grid%znw(k+1) + grid%znw(k) ) * 0.5
+     grid%c3h(k) = ( grid%c3f(k+1) + grid%c3f(k) ) * 0.5
+     grid%c4h(k) = ( grid%znu(k) - grid%c3h(k) ) * ( p1000mb - grid%p_top )
+  ENDDO
+      
+  !  c1 = d(B)/d(eta).  We define c1f as c1 on FULL levels.  For a vertical difference,
+  !  we need to use B and eta on half levels.  The k-loop ends up referring to the
+  !  full levels, neglecting the top and bottom.
+      
+  DO k=kds+1, kde-1
+     grid%c1f(k) = ( grid%c3h(k) - grid%c3h(k-1) ) / ( grid%znu(k) - grid%znu(k-1) )
+  ENDDO
+      
+  !  The boundary conditions to get the coefficients:
+  !  1) At k=kts: define d(B)/d(eta) = 1.  This gives us the same value of B and d(B)/d(eta)
+  !     when doing the sigma-only B=eta.
+  !  2) At k=kte: define d(B)/d(eta) = 0.  The curve B SMOOTHLY goes to zero, and at the very
+  !     top, B continues to SMOOTHLY go to zero.  Note that for almost all cases of non B=eta,
+  !     B is ALREADY=ZERO at the top, so this is a reasonable BC to assume.
+      
+  grid%c1f(kds) = 1.
+  IF ( ( config_flags%hybrid_opt .EQ. 0 ) .OR. ( config_flags%hybrid_opt .EQ. 1 ) ) THEN
+     grid%c1f(kde) = 1.
+  ELSE
+     grid%c1f(kde) = 0.
+  END IF
+      
+  !  c2 = ( 1. - c1(k) ) * (p00 - pt).  There is no vertical differencing, so we can do the
+  !  full kds to kde looping.
+      
+  DO k=kds, kde
+     grid%c2f(k) = ( 1. - grid%c1f(k) ) * ( p1000mb - grid%p_top )
+  ENDDO
+      
+  !  Now on half levels for c1 and c2.  The c1h will result from the full level c3 and full
+  !  level eta differences.  The c2 value use the half level c1(k).
+      
+  DO k=1, kde-1
+     grid%c1h(k) = ( grid%c3f(k+1) - grid%c3f(k) ) / ( grid%znw(k+1) - grid%znw(k) )
+     grid%c2h(k) = ( 1. - grid%c1h(k) ) * ( p1000mb - grid%p_top )
+  ENDDO
+
   DO j=jts,jte
   DO i=its,ite  ! flat surface
     grid%phb(i,1,j) = 0.
@@ -395,7 +470,7 @@ CONTAINS
 !  interp theta (from interp) and compute 1/rho from eqn. of state
 
     DO K = 1, kte-1
-      p_level = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
+      p_level = grid%c3h(k)*(p_surf - grid%p_top)+grid%c4h(k) + grid%p_top
       grid%pb(i,k,j) = p_level
       grid%t_init(i,k,j) = interp_0( theta, p_in, p_level, nl_in ) - t0
       grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
@@ -406,7 +481,7 @@ CONTAINS
 !  respect to the model eqns.
 
     DO k  = 2,kte
-      grid%phb(i,k,j) = grid%phb(i,k-1,j) - grid%dnw(k-1)*grid%mub(i,j)*grid%alb(i,k-1,j)
+      grid%phb(i,k,j) = grid%phb(i,k-1,j) - grid%dnw(k-1)*(grid%c1h(k-1)*grid%mub(i,j)+grid%c2h(k-1))*grid%alb(i,k-1,j)
     ENDDO
 
   ENDDO
@@ -440,7 +515,7 @@ CONTAINS
 
     do k=1,kde-1
 
-      p_level = grid%znu(k)*(pd_surf - grid%p_top) + grid%p_top
+      p_level = grid%c3h(k)*(pd_surf - grid%p_top)+grid%c4h(k) + grid%p_top
 
       moist(i,k,j,P_QV) = interp_0( qv, pd_in, p_level, nl_in )
       grid%t_1(i,k,j)          = interp_0( theta, pd_in, p_level, nl_in ) - t0
@@ -459,8 +534,7 @@ CONTAINS
     qvf2 = 1./(1.+qvf1)
     qvf1 = qvf1*qvf2
 
-!    grid%p(i,k,j) = - 0.5*grid%mu_1(i,j)/grid%rdnw(k)
-    grid%p(i,k,j) = - 0.5*(grid%mu_1(i,j)+qvf1*grid%mub(i,j))/grid%rdnw(k)/qvf2
+    grid%p(i,k,j) = - 0.5*((grid%c1f(k+1)*grid%mu_1(i,j))+qvf1*(grid%c1f(k+1)*grid%mub(i,j)+grid%c2f(k+1)))/grid%rdnw(k)/qvf2
     qvf = 1. + rvovrd*moist(i,k,j,P_QV)
     grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
                 (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
@@ -472,7 +546,7 @@ CONTAINS
       qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k+1,j,P_QV))
       qvf2 = 1./(1.+qvf1)
       qvf1 = qvf1*qvf2
-      grid%p(i,k,j) = grid%p(i,k+1,j) - (grid%mu_1(i,j) + qvf1*grid%mub(i,j))/qvf2/grid%rdn(k+1)
+      grid%p(i,k,j) = grid%p(i,k+1,j) - ((grid%c1f(k+1)*grid%mu_1(i,j)) + qvf1*(grid%c1f(k+1)*grid%mub(i,j)+grid%c2f(k+1)))/qvf2/grid%rdn(k+1)
       qvf = 1. + rvovrd*moist(i,k,j,P_QV)
       grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
                   (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
@@ -487,8 +561,8 @@ CONTAINS
     grid%ph_1(i,1,j) = 0.
     DO k  = 2,kte
       grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
-                   (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,k-1,j)+ &
-                    grid%mu_1(i,j)*grid%alb(i,k-1,j)  )
+                   ((grid%c1h(k-1)*grid%mub(i,j)+grid%c2h(k-1))+(grid%c1h(k-1)*grid%mu_1(i,j)))*grid%al(i,k-1,j)+ &
+                    (grid%c1h(k-1)*grid%mu_1(i,j))*grid%alb(i,k-1,j)  )
                                                    
       grid%ph_2(i,k,j) = grid%ph_1(i,k,j) 
       grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
@@ -721,7 +795,7 @@ CONTAINS
 
     do k=1,kde-1
 
-      p_level = grid%znu(k)*(pd_surf - grid%p_top) + grid%p_top
+      p_level = grid%c3h(k)*(pd_surf - grid%p_top)+grid%c4h(k) + grid%p_top
 
       moist(i,k,j,P_QV) = interp_0( qv, pd_in, p_level, nl_in )
       grid%t_1(i,k,j)          = interp_0( theta, pd_in, p_level, nl_in ) - t0
@@ -742,8 +816,7 @@ CONTAINS
     qvf2 = 1./(1.+qvf1)
     qvf1 = qvf1*qvf2
 
-!    grid%p(i,k,j) = - 0.5*grid%mu_1(i,j)/grid%rdnw(k)
-    grid%p(i,k,j) = - 0.5*(grid%mu_1(i,j)+qvf1*grid%mub(i,j))/grid%rdnw(k)/qvf2
+    grid%p(i,k,j) = - 0.5*((grid%c1f(k+1)*grid%mu_1(i,j))+qvf1*(grid%c1f(k+1)*grid%mub(i,j)+grid%c2f(k+1)))/grid%rdnw(k)/qvf2
     qvf = 1. + rvovrd*moist(i,k,j,P_QV)
     grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
                 (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
@@ -755,7 +828,7 @@ CONTAINS
       qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k+1,j,P_QV))
       qvf2 = 1./(1.+qvf1)
       qvf1 = qvf1*qvf2
-      grid%p(i,k,j) = grid%p(i,k+1,j) - (grid%mu_1(i,j) + qvf1*grid%mub(i,j))/qvf2/grid%rdn(k+1)
+      grid%p(i,k,j) = grid%p(i,k+1,j) - ((grid%c1f(k+1)*grid%mu_1(i,j)) + qvf1*(grid%c1f(k+1)*grid%mub(i,j)+grid%c2f(k+1)))/qvf2/grid%rdn(k+1)
       qvf = 1. + rvovrd*moist(i,k,j,P_QV)
       grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
                   (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
@@ -770,8 +843,8 @@ CONTAINS
     grid%ph_1(i,1,j) = 0.
     DO k  = 2,kte
       grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
-                   (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,k-1,j)+ &
-                    grid%mu_1(i,j)*grid%alb(i,k-1,j)  )
+                   (grid%c1h(k-1)*(grid%mub(i,j)+grid%mu_1(i,j))+grid%c2h(k-1))*grid%al(i,k-1,j)+ &
+                    (grid%c1h(k-1)*grid%mu_1(i,j))*grid%alb(i,k-1,j)  )
                                                    
       grid%ph_2(i,k,j) = grid%ph_1(i,k,j) 
       grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
@@ -818,7 +891,7 @@ CONTAINS
     p_surf = interp_0( p_in, zk, z_at_v, nl_in )
 
     DO K = 1, kte
-      p_level = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
+      p_level = grid%c3h(k)*(p_surf - grid%p_top)+grid%c4h(k) + grid%p_top
       grid%v_1(i,k,j) = interp_0( v, p_in, p_level, nl_in )
       grid%v_2(i,k,j) = grid%v_1(i,k,j)
     ENDDO
@@ -861,7 +934,7 @@ CONTAINS
     p_surf = interp_0( p_in, zk, z_at_u, nl_in )
 
     DO K = 1, kte
-      p_level = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
+      p_level = grid%c3h(k)*(p_surf - grid%p_top)+grid%c4h(k) + grid%p_top
       grid%u_1(i,k,j) = interp_0( u, p_in, p_level, nl_in )
       grid%u_2(i,k,j) = grid%u_1(i,k,j)
     ENDDO
@@ -931,8 +1004,8 @@ CONTAINS
 
       DO k  = 2,kte
         grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
-                     (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,k-1,j)+ &
-                      grid%mu_1(i,j)*grid%alb(i,k-1,j)  )
+                     (grid%c1h(k-1)*(grid%mub(i,j)+grid%mu_1(i,j))+grid%c2h(k-1))*grid%al(i,k-1,j)+ &
+                      (grid%c1h(k-1)*grid%mu_1(i,j))*grid%alb(i,k-1,j)  )
                                                    
         grid%ph_2(i,k,j) = grid%ph_1(i,k,j) 
         grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
@@ -974,7 +1047,7 @@ CONTAINS
 !    p_surf = interp_0( p_in, zk, z_at_v, nl_in )
 !
 !    DO K = 1, kte
-!      p_level = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
+!      p_level = grid%c3h(k)*(p_surf - grid%p_top)+grid%c4h(k) + grid%p_top
 !      grid%v_1(i,k,j) = interp_0( v, p_in, p_level, nl_in )
 !      grid%v_2(i,k,j) = grid%v_1(i,k,j)
 !    ENDDO
@@ -998,7 +1071,7 @@ CONTAINS
 !    p_surf = interp_0( p_in, zk, z_at_u, nl_in )
 !
 !    DO K = 1, kte
-!      p_level = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
+!      p_level = grid%c3h(k)*(p_surf - grid%p_top)+grid%c4h(k) + grid%p_top
 !      grid%u_1(i,k,j) = interp_0( u, p_in, p_level, nl_in )
 !      grid%u_2(i,k,j) = grid%u_1(i,k,j)
 !    ENDDO
@@ -1052,6 +1125,31 @@ CONTAINS
 !!!     grid%tmn(I,J)=grid%tsk(I,J)-0.5
   ENDDO
   ENDDO
+
+      !  Save the dry perturbation potential temperature.
+
+      DO j = jts, min(jde-1,jte)
+         DO k = kts, kte
+            DO i = its, min(ide-1,ite)
+               grid%th_phy_m_t0(i,k,j) = grid%t_2(i,k,j)
+            END DO
+         END DO
+      END DO
+
+  !  Turn dry potential temperature into moist potential temperature
+      !  at the very end of this routine
+      !  This field will be in the model IC and and used to construct the 
+      !  BC file.
+
+      IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
+      DO J  = jts, min(jde-1,jte)
+         DO K = kts, kte-1
+            DO I = its, min(ide-1,ite)
+               grid%t_2(i,k,j) = ( grid%t_2(i,k,j) + T0 ) * (1. + (R_v/R_d) * moist(i,k,j,p_qv)) - T0
+            END DO
+         END DO
+      END DO
+      ENDIF
 
   RETURN
 

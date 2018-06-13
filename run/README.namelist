@@ -1733,3 +1733,34 @@ is "h1", so that stream needs to be explicitly requested in the namelist.input f
  auxhist1_outname                    = "wrf_trad_fields_d<domain>_<date>"
  /
 
+USE PIO
+
+to use PIO(2), one must have PIO2(_3_1) installed, and set
+environment variable PIO points to the place where PIO is installed before configure WRF.
+
+&time_control
+ io_form_history = 12
+/
+
+For example, assuming the job is 10 nodes with 36 cores per node. To have 1 I/O processor
+per node, set
+
+&pio_control
+ usepio = .true.,  ; turn PIO on
+ pioprocs = 10,    ; Number of processors to do IO
+ piostart = 0,     ; starting from processor 0
+ piostride = 36,   ; number of intervals between IO processsors.  pioprocs * piostride = total number of procs.
+ pioshift = 1,     ; Shift PIO master to this processor (instead of default 0)
+/
+
+For example, assuming the job is 10 nodes with 36 cores per node. To have 4 I/O processor
+per node, set
+
+&pio_control
+ usepio = .true.,  ; turn PIO on
+ pioprocs = 40     ; Number of processors to do IO
+ piostart = 0,     ; starting from processor 0
+ piostride = 9,    ; number of intervals between IO processsors.  pioprocs * piostride = total number of procs.
+ pioshift = 1,     ; Shift PIO master to this processor (instead of default 0)
+/
+

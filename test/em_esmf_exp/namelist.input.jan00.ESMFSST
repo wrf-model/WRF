@@ -75,7 +75,6 @@
  ifsnow                              = 0,
  icloud                              = 1,
  surface_input_source                = 1,
- num_soil_layers                     = 4,
  sf_urban_physics                    = 0,
  maxiens                             = 1,
  maxens                              = 3,
@@ -88,6 +87,7 @@
  /
 
  &dynamics
+ hybrid_opt                          = 0, 
  w_damping                           = 0,
  diff_opt                            = 1,      1,      1,
  km_opt                              = 4,      4,      4,
@@ -106,10 +106,7 @@
 
  &bdy_control
  spec_bdy_width                      = 5,
- spec_zone                           = 1,
- relax_zone                          = 4,
- specified                           = .true., .false.,.false.,
- nested                              = .false., .true., .true.,
+ specified                           = .true.,
  /
 
  &grib2

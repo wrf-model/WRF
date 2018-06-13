@@ -23,7 +23,6 @@
  io_form_restart                     = 2
  io_form_input                       = 2
  io_form_boundary                    = 2
- debug_level                         = 0
  /
 
  &domains
@@ -61,7 +60,6 @@
  bldt                                = 0,
  cu_physics                          = 0,
  cudt                                = 0,
- num_soil_layers                     = 5,
  bucket_mm                           =10.,
  bucket_J                            =1.e8,
  /
@@ -70,6 +68,7 @@
  /
 
  &dynamics
+ hybrid_opt                          = 0, 
  rk_ord                              = 3,
  diff_opt                            = 1,      1,      1,
  km_opt                              = 4,      4,      4,
@@ -111,3 +110,7 @@
  nio_tasks_per_group = 0,
  nio_groups = 1,
  /
+&ideal
+ ideal_case = 3
+ /
+

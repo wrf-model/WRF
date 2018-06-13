@@ -199,7 +199,8 @@ BENCH_END(init_zero_tend_tim)
                         grid%c1h, grid%c2h, grid%c1f, grid%c2f,          &
                         grid%u_2, grid%v_2, grid%p, grid%pb, grid%alt,   &
                         grid%ph_2, grid%phb, grid%t_2, moist, num_moist, &
-                        grid%rho,th_phy, p_phy, pi_phy, grid%u_phy, grid%v_phy,      &
+                        grid%rho,th_phy, grid%th_phy_m_t0,               &
+                        p_phy, pi_phy, grid%u_phy, grid%v_phy,           &
                         p8w, t_phy, t8w, grid%z, grid%z_at_w, dz8w,      &
                         grid%p_hyd, grid%p_hyd_w, grid%dnw,              &
                         grid%fnm, grid%fnp, grid%znw, grid%p_top,        &
@@ -281,6 +282,7 @@ BENCH_START(rad_driver_tim)
      &        ,SF_SURFACE_PHYSICS=config_flags%sf_surface_physics          &  !ssib
 ! WRF-solar and aerosol variables from jararias 2013/8 and 2013/11
      &       ,SWDDIR=grid%swddir,SWDDNI=grid%swddni,SWDDIF=grid%swddif                              & 
+     &       ,SWDDIRC=grid%swddirc, SWDDNIC=grid%swddnic                                            &
      &       ,Gx=grid%Gx,Bx=grid%Bx,gg=grid%gg,bb=grid%bb                                           &
      &       ,swdown_ref=grid%swdown_ref,swddir_ref=grid%swddir_ref                                 &
      &       ,coszen_ref=grid%coszen_ref                                                            &
@@ -627,6 +629,7 @@ BENCH_START(surf_driver_tim)
      &        ,SF_URBAN_PHYSICS=config_flags%sf_urban_physics             &
      &        ,NUM_URBAN_LAYERS=config_flags%num_urban_layers             & !multi-layer urban
      &        ,NUM_URBAN_HI=config_flags%num_urban_hi                     & !multi-layer urban
+     &        ,TSK_RURAL=grid%tsk_rural                                   & !multi-layer urban
      &        ,TRB_URB4D=grid%trb_urb4d,TW1_URB4D=grid%tw1_urb4d          & !multi-layer urban
      &        ,TW2_URB4D=grid%tw2_urb4d,TGB_URB4D=grid%tgb_urb4d          & !multi-layer urban
      &        ,TLEV_URB3D=grid%tlev_urb3d                               & !multi-layer urban
@@ -973,9 +976,10 @@ BENCH_START(pbl_driver_tim)
      &        ,rmol=grid%rmol, ch=grid%ch                                 &
      &        ,qcg=grid%qcg, grav_settling=config_flags%grav_settling     &
 !    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   &
-     &        ,vdfg=grid%vdfg                                             &
-     &        ,spp_pbl=config_flags%spp_pbl                               & !SPP
-     &        ,pattern_spp_pbl=grid%pattern_spp_pbl                       & !SPP
+     &        ,vdfg=grid%vdfg,nupdraft=grid%nupdraft,maxMF=grid%maxmf     &
+     &        ,ktop_shallow=grid%ktop_shallow                             &
+     &        ,spp_pbl=config_flags%spp_pbl                               &
+     &        ,pattern_spp_pbl=grid%pattern_spp_pbl                       &
 !GWD for ARW
      &        ,GWD_OPT=config_flags%gwd_opt &
      &        ,DTAUX3D=grid%dtaux3d,DTAUY3D=grid%dtauy3d &
@@ -1323,6 +1327,10 @@ BENCH_START(shcu_driver_tim)
      &             ,WSTAR=grid%wstar_ysu,DELTA=grid%delta_ysu             &
      &             ,KPBL=grid%kpbl,ZNU=grid%znu                           &
      &             ,RAINCV=grid%raincv                                    &
+     &             ,W=grid%w_2 ,XLAND=grid%xland                          &
+     &             ,HFX=grid%hfx, QFX=grid%qfx                            &
+     &             ,MP_PHYSICS=config_flags%mp_physics                    &
+     &             ,pgcon=config_flags%sas_pgcon                          &
      &                                                                    )
 
 #if (WRF_CHEM == 1)

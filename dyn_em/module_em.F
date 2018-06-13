@@ -723,6 +723,11 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
       CALL sixth_order_diffusion( 'u', u, ru_tendf, mut, dt,          &
                                        config_flags, c1h, c2h,        &
                                        diff_6th_opt, diff_6th_factor, &
+                                       phb, ph,                       &
+                                       rdx, rdy,                      &
+                                       msftx, msfty,                  &
+                                       msfux, msfuy,                  &
+                                       msfvx, msfvy,                  &
                                        ids, ide, jds, jde, kds, kde,  &
                                        ims, ime, jms, jme, kms, kme,  &
                                        its, ite, jts, jte, kts, kte )
@@ -730,6 +735,11 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
       CALL sixth_order_diffusion( 'v', v, rv_tendf, mut, dt,          &
                                        config_flags, c1h, c2h,        &
                                        diff_6th_opt, diff_6th_factor, &
+                                       phb, ph,                       &
+                                       rdx, rdy,                      &
+                                       msftx, msfty,                  &
+                                       msfux, msfuy,                  &
+                                       msfvx, msfvy,                  &
                                        ids, ide, jds, jde, kds, kde,  &
                                        ims, ime, jms, jme, kms, kme,  &
                                        its, ite, jts, jte, kts, kte )
@@ -738,6 +748,11 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
       CALL sixth_order_diffusion( 'w', w, rw_tendf, mut, dt,          &
                                        config_flags, c1f, c2f,        &
                                        diff_6th_opt, diff_6th_factor, &
+                                       phb, ph,                       &
+                                       rdx, rdy,                      &
+                                       msftx, msfty,                  &
+                                       msfux, msfuy,                  &
+                                       msfvx, msfvy,                  &
                                        ids, ide, jds, jde, kds, kde,  &
                                        ims, ime, jms, jme, kms, kme,  &
                                        its, ite, jts, jte, kts, kte )
@@ -745,6 +760,11 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
       CALL sixth_order_diffusion( 'm', t,  t_tendf, mut, dt,          &
                                        config_flags, c1h, c2h,        &
                                        diff_6th_opt, diff_6th_factor, &
+                                       phb, ph,                       &
+                                       rdx, rdy,                      &
+                                       msftx, msfty,                  &
+                                       msfux, msfuy,                  &
+                                       msfvx, msfvy,                  &
                                        ids, ide, jds, jde, kds, kde,  &
                                        ims, ime, jms, jme, kms, kme,  &
                                        its, ite, jts, jte, kts, kte )
@@ -930,6 +950,8 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
                             khdif, kvdif, xkmhd,             &
                             diff_6th_opt, diff_6th_factor,   &
                             adv_opt,                         &
+                            phb, ph,                         &
+                            mix2_off, mix6_off,              &
                             ids, ide, jds, jde, kds, kde,    &
                             ims, ime, jms, jme, kms, kme,    &
                             its, ite, jts, jte, kts, kte    )
@@ -964,8 +986,9 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
                                                                       rv,  &
                                                                       ww,  &
                                                                       xkmhd,  &
-                                                                      alt
-
+                                                                      alt,    &
+                                                                      phb,    &
+                                                                      ph
 
    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) :: fnm,  &
                                                                   fnp,  &
@@ -997,6 +1020,7 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
    REAL ,                                        INTENT(IN   ) :: dt
 
    INTEGER, INTENT(IN   ) :: adv_opt          
+   LOGICAL, INTENT(IN   ) :: mix2_off, mix6_off
 
    ! Local data
   
@@ -1132,15 +1156,16 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
 
        diff_opt1 : IF (config_flags%diff_opt .eq. 1) THEN
 
-       CALL horizontal_diffusion ( 'm', scalar(ims,kms,jms,im),            &
-                                        scalar_tends(ims,kms,jms,im), mut, &
-                                        c1h, c2h, config_flags,            &
-                                        msfux, msfuy, msfvx, msfvx_inv,    &
-                                        msfvy, msftx, msfty,               &
-                                        khdq , xkmhd, rdx, rdy,            &
-                                        ids, ide, jds, jde, kds, kde,      &
-                                        ims, ime, jms, jme, kms, kme,      &
-                                        its, ite, jts, jte, kts, kte      )
+       IF (.not. mix2_off)                                                   &
+         CALL horizontal_diffusion ( 'm', scalar(ims,kms,jms,im),            &
+                                          scalar_tends(ims,kms,jms,im), mut, &
+                                          c1h, c2h, config_flags,            &
+                                          msfux, msfuy, msfvx, msfvx_inv,    &
+                                          msfvy, msftx, msfty,               &
+                                          khdq , xkmhd, rdx, rdy,            &
+                                          ids, ide, jds, jde, kds, kde,      &
+                                          ims, ime, jms, jme, kms, kme,      &
+                                          its, ite, jts, jte, kts, kte      )
 
        pbl_test : IF (config_flags%bl_pbl_physics .eq. 0) THEN
 
@@ -1170,11 +1195,16 @@ SUBROUTINE rk_scalar_tend ( scs, sce, config_flags,          &
 
     ENDIF diff_opt1
 
-    IF ( diff_6th_opt .NE. 0 )                                        &
+    IF ( (diff_6th_opt .NE. 0 ) .and. (.not. mix6_off) )              &
       CALL sixth_order_diffusion( 'm', scalar(ims,kms,jms,im),        &
                                        scalar_tends(ims,kms,jms,im),  &
                                        mut, dt, config_flags, c1h,c2h,&
                                        diff_6th_opt, diff_6th_factor, &
+                                       phb, ph,                       &
+                                       rdx, rdy,                      &
+                                       msftx, msfty,                  &
+                                       msfux, msfuy,                  &
+                                       msfvx, msfvy,                  &
                                        ids, ide, jds, jde, kds, kde,  &
                                        ims, ime, jms, jme, kms, kme,  &
                                        its, ite, jts, jte, kts, kte )

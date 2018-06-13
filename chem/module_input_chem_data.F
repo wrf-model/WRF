@@ -333,7 +333,8 @@ SUBROUTINE setup_gasprofile_maps(chem_opt, numgas)
   case (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
         RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM_KPP,       &
         RACM_ESRLSORG_AQCHEM_KPP, RACM_ESRLSORG_KPP, RACMSORG_KPP, RACM_SOA_VBS_KPP,&
-        RACM_SOA_VBS_AQCHEM_KPP,GOCARTRACM_KPP, GOCARTRADM2, CHEM_TRACER, CHEM_TRACE2)
+        RACM_SOA_VBS_AQCHEM_KPP,GOCARTRACM_KPP, GOCARTRADM2, CHEM_TRACER, CHEM_TRACE2, &
+        RACM_SOA_VBS_HET_KPP)
      call setup_gasprofile_map_radm_racm
 
   case (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP,      &
@@ -1637,7 +1638,8 @@ END SUBROUTINE bdy_chem_value_ghg
             config_flags%chem_opt == RACM_MIM_KPP .or.      & 
             config_flags%chem_opt == RACMSORG_AQCHEM_KPP .or.      & 
             config_flags%chem_opt == RACM_ESRLSORG_AQCHEM_KPP .or. &
-            config_flags%chem_opt == RACM_SOA_VBS_AQCHEM_KPP  ) then
+            config_flags%chem_opt == RACM_SOA_VBS_AQCHEM_KPP  .or. &
+            config_flags%chem_opt == RACM_SOA_VBS_HET_KPP ) then
           i_bdy_method = 9
         end if
         if (config_flags%chem_opt == RACMPM_KPP ) then
@@ -2403,7 +2405,8 @@ END SUBROUTINE bdy_chem_value_ghg
      case (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
            RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM_KPP,       &
            RACM_ESRLSORG_AQCHEM_KPP, RACM_ESRLSORG_KPP, RACMSORG_KPP, RACM_SOA_VBS_KPP,& 
-           RACM_SOA_VBS_AQCHEM_KPP,GOCARTRACM_KPP,GOCARTRADM2)
+           RACM_SOA_VBS_AQCHEM_KPP,GOCARTRACM_KPP,GOCARTRADM2,  &
+           RACM_SOA_VBS_HET_KPP)
         get_last_gas = p_ho2
 
      case (SAPRC99_KPP,SAPRC99_MOSAIC_4BIN_VBS2_KPP, &
@@ -3440,7 +3443,9 @@ subroutine chem_dbg(i,j,k,dtstep,itimestep,                           &
      ims,ime, jms,jme, kms,kme,                                       &
      its,ite, jts,jte, kts,kte,                                       &
      kemit,                                                           &
-     ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,         &
+     ph_macr,ph_o31d,ph_o33p,ph_no2,                                  &
+     ph_cl2,ph_hocl,ph_clno2,ph_fmcl,                                 &
+     ph_no3o2,ph_no3o,ph_hno2,                                        &
      ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,             &
      ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,                  &
      ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,ph_n2o5, &
@@ -3463,7 +3468,9 @@ subroutine chem_dbg(i,j,k,dtstep,itimestep,                           &
                 emis_ant
   REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),                      &
        INTENT(IN   ), OPTIONAL ::                                       &
-       ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,         &
+       ph_macr,ph_o31d,ph_o33p,ph_no2,                                  &
+       ph_cl2,ph_hocl,ph_clno2,ph_fmcl,                                 &
+       ph_no3o2,ph_no3o,ph_hno2,                                        &
        ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,             &
        ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,                  &
        ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,ph_n2o5, &

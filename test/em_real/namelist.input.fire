@@ -7,25 +7,20 @@
  start_month                         = 08,
  start_day                           = 28,
  start_hour                          = 12,
- start_minute                        = 00,
- start_second                        = 00,
  end_year                            = 2005,
  end_month                           = 08,
  end_day                             = 28,
  end_hour                            = 18,
- end_minute                          = 00,
- end_second                          = 00,
  interval_seconds                    = 21600
  input_from_file                     = .true.,
  history_interval_s                  = 5,
  frames_per_outfile                  = 1000,
  restart                             = .false.,
- restart_interval                    = 100,
+ restart_interval                    = 60,
  io_form_history                     = 2
  io_form_restart                     = 2
  io_form_input                       = 2
  io_form_boundary                    = 2
- debug_level                         = 0
  /
 
  &domains
@@ -37,7 +32,7 @@
  e_sn                                = 43,
  e_vert                              = 41,
  p_top_requested                     = 5000,
- num_metgrid_levels                  = 27
+ num_metgrid_levels                  = 32
  num_metgrid_soil_levels             = 4,
  dx                                  = 60,
  dy                                  = 60,
@@ -66,7 +61,6 @@
  cu_physics                          = 1,
  cudt                                = 5,
  surface_input_source                = 3,
- num_soil_layers                     = 5,
  num_land_cat                        = 21,
  sf_urban_physics                    = 0,
  /
@@ -76,11 +70,12 @@
  /
 
  &dynamics
+ hybrid_opt                          = 2, 
  rk_ord                              = 3,
  w_damping                           = 0,
  diff_opt                            = 2,      2,      2,
  km_opt                              = 2,      2,      2,
- damp_opt                            = 0,
+ damp_opt                            = 3,
  base_temp                           = 290.
  zdamp                               = 5000.,
  dampcoef                            = 0.2,
@@ -162,20 +157,7 @@
 
   &bdy_control
  spec_bdy_width                      = 5,
- spec_zone                           = 1,
- relax_zone                          = 4,
  specified                           = .true.,
- periodic_x                          = .false.,
- symmetric_xs                        = .false.,
- symmetric_xe                        = .false.,
- open_xs                             = .false.,
- open_xe                             = .false.,
- periodic_y                          = .false.,
- symmetric_ys                        = .false.,
- symmetric_ye                        = .false.,
- open_ys                             = .false.,
- open_ye                             = .false.,
- nested                              = .false.,
  /
 
  &grib2

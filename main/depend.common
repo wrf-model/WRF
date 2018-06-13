@@ -304,9 +304,9 @@ module_cu_kfeta.o: ../frame/module_wrf_error.o
 
 module_cu_gd.o:
 
-module_cu_nsas.o:
+module_cu_ksas.o:
  
-module_cu_nsas_old.o:
+module_cu_nsas.o:
 
 module_cu_du.o:  ../frame/module_wrf_error.o
 
@@ -557,8 +557,8 @@ module_physics_init.o : \
 		module_cu_mskf.o		\
 		module_cu_bmj.o			\
 		module_cu_gd.o			\
+		module_cu_ksas.o		\
 		module_cu_nsas.o		\
-		module_cu_nsas_old.o		\
 		module_cu_sas.o			\
 		module_cu_scalesas.o            \
 		module_cu_osas.o		\
@@ -637,7 +637,7 @@ module_cumulus_driver.o: \
 		$(PHYS_CU) \
 		module_cu_bmj.o \
 		module_cu_gd.o \
-		module_cu_nsas_old.o \
+		module_cu_ksas.o \
 		module_cu_nsas.o \
 		module_cu_sas.o \
 		module_cu_scalesas.o \
@@ -757,6 +757,7 @@ module_diagnostics_driver.o: \
 		module_diag_afwa.o 			\
 		module_diag_hailcast.o 			\
                 module_diag_rasm.o                      \
+                module_diag_trad_fields.o               \
 		../frame/module_comm_dm.o		\
 		../frame/module_state_description.o 	\
 		../frame/module_domain.o 		\
@@ -778,6 +779,7 @@ module_diag_zld.o: \
 		../share/module_model_constants.o
 
 module_diag_afwa.o: \
+		module_diag_trad_fields.o		\
 		../frame/module_domain.o 		\
 		../frame/module_dm.o 			\
 		../frame/module_state_description.o 	\
@@ -797,6 +799,10 @@ module_diag_hailcast.o: \
 
 module_diag_rasm.o: \
                 module_cam_shr_const_mod.o
+
+module_diag_trad_fields.o: \
+		module_diag_functions.o			\
+		../share/module_model_constants.o
 
 module_diag_refl.o: \
 		../frame/module_dm.o			\
@@ -825,9 +831,14 @@ module_sf_lake.o : \
 module_fr_fire_driver.o: \
 		../share/module_model_constants.o  \
                 ../frame/module_comm_dm.o \
+		../frame/module_domain.o \
+	        ../frame/module_configure.o \
+	        ../frame/module_dm.o \
 		module_fr_fire_phys.o \
 		module_fr_fire_model.o \
-		module_fr_fire_util.o 
+		module_fr_fire_util.o \
+		module_fr_fire_core.o \
+		module_fr_fire_atm.o 
 
 module_fr_fire_driver_wrf.o: \
 		../share/module_model_constants.o  \

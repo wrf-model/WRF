@@ -228,6 +228,7 @@ rconfig  real     fire_viscosity_band       namelist,fire         max_domains   
 rconfig  integer  fire_viscosity_ngp        namelist,fire         max_domains               2       -     "number of grid points around lfn=0 where low artificial viscosity is used = fire_viscosity_bg"
 rconfig  real     fire_slope_factor         namelist,fire         max_domains             1.0       -     "slope correction factor" "-"
 # tracers for WRF-Fire
+state    real            -          ikjftb  tracer        1         -     -    -
 state    real         fire_smoke    ikjftb  tracer        1         -     irhusdf=(bdy_interp:dt)    "fire_smoke"         "fire_smoke"     "g_smoke/kg_air"
 package  tracer_fire  tracer_opt==3       -             tracer:fire_smoke
 #

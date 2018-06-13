@@ -50,6 +50,7 @@ MODULES = \
 	module_shcu_camuwshcu_driver.o \
 	module_shcu_camuwshcu.o \
 	module_shcu_grims.o \
+	module_shcu_nscv.o \
 	module_cu_camzm_driver.o \
 	module_cu_camzm.o \
 	module_bl_temf.o \
@@ -65,8 +66,8 @@ MODULES = \
 	module_cu_gf_wrfdrv.o \
 	module_cu_gf_deep.o \
 	module_cu_gf_sh.o \
+	module_cu_ksas.o \
 	module_cu_nsas.o \
-	module_cu_nsas_old.o \
 	module_cu_sas.o \
 	module_cu_scalesas.o \
 	module_cu_osas.o \
@@ -162,6 +163,7 @@ MODULES = \
 	module_progtm.o \
 	module_pbl_driver.o \
 	module_data_gocart_dust.o \
+        module_dust_emis.o \
 	module_cumulus_driver.o \
 	module_shallowcu_driver.o \
 	module_microphysics_driver.o \
@@ -194,11 +196,13 @@ FIRE_MODULES = \
 DIAGNOSTIC_MODULES_EM = \
 	module_diag_afwa.o \
 	module_diag_cl.o \
+	module_diag_functions.o \
         module_diag_hailcast.o \
 	module_diag_misc.o \
         module_diag_rasm.o \
 	module_diag_pld.o \
-	module_diag_zld.o
+	module_diag_zld.o \
+	module_diag_trad_fields.o
   
 DIAGNOSTIC_MODULES_NMM = \
 	module_diag_refl.o

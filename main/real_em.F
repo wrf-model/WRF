@@ -135,8 +135,8 @@ real::t1,t2
 
    CALL nl_set_use_wps_input ( 1 , REALONLY )
 
-   CALL check_nml_consistency
    CALL setup_physics_suite
+   CALL check_nml_consistency
    CALL set_physics_rconfigs
 
    CALL nl_get_debug_level ( 1, debug_level )
@@ -872,7 +872,7 @@ real::t1,t2
                DO i = ips , ipe
                   grid%fdda3d(i,k,j,p_u_ndg_old) = grid%u_2(i,k,j)
                   grid%fdda3d(i,k,j,p_v_ndg_old) = grid%v_2(i,k,j)
-                  grid%fdda3d(i,k,j,p_t_ndg_old) = grid%t_2(i,k,j)
+                  grid%fdda3d(i,k,j,p_t_ndg_old) = grid%th_phy_m_t0(i,k,j)
                   grid%fdda3d(i,k,j,p_q_ndg_old) = grid%moist(i,k,j,P_QV)
                   grid%fdda3d(i,k,j,p_ph_ndg_old) = grid%ph_2(i,k,j)
                END DO
@@ -1026,7 +1026,7 @@ real::t1,t2
                DO i = ips , ipe
                   grid%fdda3d(i,k,j,p_u_ndg_new) = grid%u_2(i,k,j)
                   grid%fdda3d(i,k,j,p_v_ndg_new) = grid%v_2(i,k,j)
-                  grid%fdda3d(i,k,j,p_t_ndg_new) = grid%t_2(i,k,j)
+                  grid%fdda3d(i,k,j,p_t_ndg_new) = grid%th_phy_m_t0(i,k,j)
                   grid%fdda3d(i,k,j,p_q_ndg_new) = grid%moist(i,k,j,P_QV)
                   grid%fdda3d(i,k,j,p_ph_ndg_new) = grid%ph_2(i,k,j)
                END DO

@@ -1,3 +1,12 @@
+#if( BUILD_RRTMG_FAST != 1)
+      MODULE module_ra_rrtmg_lwf
+      CONTAINS
+      SUBROUTINE RRTMG_LWRAD_FAST
+         REAL :: dummy 
+         dummy = 1
+      END SUBROUTINE RRTMG_LWRAD_FAST
+      END MODULE module_ra_rrtmg_lwf
+#else
 !MODULE module_ra_rrtmg_lwf
 #define CHNK 8
 !#define CHNK 1849
@@ -18234,3 +18243,4 @@ IMPLICIT NONE
 !------------------------------------------------------------------
 
 END MODULE module_ra_rrtmg_lwf
+#endif

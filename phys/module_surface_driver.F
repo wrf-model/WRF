@@ -241,6 +241,7 @@ CONTAINS
      &          ,sf_urban_physics,gmt,xlat,xlong,julday               &
      &          ,num_urban_layers                                     & !multi-layer urban
      &          ,num_urban_hi                                         & !multi-layer urban
+     &          ,tsk_rural                                            & !multi-layer urban
      &          ,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d              & !multi-layer urban
      &          ,tlev_urb3d,qlev_urb3d                                & !multi-layer urban
      &          ,tw1lev_urb3d,tw2lev_urb3d                            & !multi-layer urban
@@ -887,6 +888,7 @@ CONTAINS
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   )        ::XLAT, XLONG
    INTEGER, INTENT(IN )::   NUM_URBAN_LAYERS
    INTEGER, INTENT(IN )::   NUM_URBAN_HI
+   REAL, OPTIONAL, DIMENSION( ims:ime,                     jms:jme ), INTENT(INOUT) :: tsk_rural
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: trb_urb4d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw1_urb4d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw2_urb4d
@@ -2059,6 +2061,15 @@ CONTAINS
 #endif         
 
         ENDIF
+#if ( EM_CORE==1)
+!       ustm is not available in NMM
+!       ustm is needed for LES tke calculation (ustm is ust used in friction)
+         DO j = j_start(ij),j_end(ij)
+            DO i = i_start(ij),i_end(ij)
+               ustm(i,j) = ust(i,j)
+            END DO
+         END DO
+#endif
        ELSE
          CALL wrf_error_fatal('Lacking arguments for MYJSFC in surface driver')
        ENDIF
@@ -2516,6 +2527,16 @@ CONTAINS
          if(HYDRO_dt .ge. 0) HYDRO_dt = dtbl
 #endif
 
+! added RA population for WRF/Noah-CMAQ RS Consistency
+! following Garland et al. (1977) and Nemitz et al., 2009
+         IF ( PRESENT(RA) ) THEN
+         DO j=j_start(ij),j_end(ij)
+         DO i=i_start(ij),i_end(ij)
+            RA(I,J) = WSPD(I,J)/UST(I,J)**2.0
+         ENDDO
+         ENDDO
+         END IF
+
          CALL wrf_debug(100,'in NOAH DRV')
                 
          IF (sf_surface_mosaic == 1) THEN
@@ -2591,6 +2612,7 @@ CONTAINS
                 FRC_URB2D, UTYPE_URB2D,                         & !I urban
                 num_urban_layers,                               & !I multi-layer urban
                 num_urban_hi,                                   & !I multi-layer urban
+                tsk_rural,                                      & !H multi-layer urban
                 trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,        & !H multi-layer urban
                 tlev_urb3d,qlev_urb3d,                          & !H multi-layer urban
                 tw1lev_urb3d,tw2lev_urb3d,                      & !H multi-layer urban
@@ -2695,6 +2717,7 @@ CONTAINS
                 FRC_URB2D, UTYPE_URB2D,                         & !I urban
                 num_urban_layers,                               & !I multi-layer urban
                 num_urban_hi,                                   & !I multi-layer urban
+                tsk_rural,                                      & !H multi-layer urban
                 trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,        & !H multi-layer urban
                 tlev_urb3d,qlev_urb3d,                          & !H multi-layer urban
                 tw1lev_urb3d,tw2lev_urb3d,                      & !H multi-layer urban
@@ -3197,6 +3220,15 @@ CONTAINS
            ENDDO                                                  !urban
          ENDIF
 
+! added RA population for WRF/Noah-CMAQ RS Consistency
+! following Garland et al. (1977) and Nemitz et al., 2009
+         IF ( PRESENT(RA) ) THEN
+         DO j=j_start(ij),j_end(ij)
+         DO i=i_start(ij),i_end(ij)
+            RA(I,J) = WSPD(I,J)/UST(I,J)**2.0
+         ENDDO
+         ENDDO
+         END IF
 !------------------------------------------------------------------
 
        ELSE
@@ -3993,6 +4025,23 @@ CONTAINS
        ENDDO
        !$OMP END PARALLEL DO
      ENDIF
+
+! Limit Q2 diagnostic to no more than 5 per cent higher than lowest level value
+!     This prevents unrealistic values when QFX is not mostly surface flux 
+!          because calculation is based on surface flux only
+!     Problems occurred in transition periods and weak winds and vegetation source
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij, i, j, k )
+       DO ij = 1 , num_tiles
+         DO j=j_start(ij),j_end(ij)
+         DO i=i_start(ij),i_end(ij)
+            IF (XLAND(I,J).LT.1.5) THEN
+            Q2(i,j) = MIN(Q2(i,j),1.05*QV_CURR(i,1,j))
+            END IF
+         ENDDO
+         ENDDO
+       ENDDO
+       !$OMP END PARALLEL DO
 
      IF( PRESENT(slope_rad).AND. radiation )THEN
 ! topographic slope effects removed from SWDOWN and GSW here for output

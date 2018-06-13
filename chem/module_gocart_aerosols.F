@@ -94,9 +94,9 @@ end subroutine gocart_aerosols_driver
          INTENT(IN ) ::                                   chem
    real d_2_5,s_2_5,d_10,sulfate
    integer i,j,k,ii,jj,n
-    d_2_5=0.286
-    s_2_5=0.942
-    d_10=0.87
+    d_2_5=0.380       ! ln(2.5/2)/ln(3.6/2)
+    s_2_5=0.834       ! ln(2.5/1)/ln(3/1)
+    d_10=0.737        ! ln(10/6)/ln(12/6)
 
 !
 ! sum up pm2_5 and pm10 output

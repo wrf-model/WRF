@@ -354,7 +354,6 @@
   2 | 0 |196| TOPOSTDV  | Standard Deviation of topography         |  3 |  0 |
   2 | 0 |197| TOPOSLPX  | Sub-gridscale mean topographic slope     |  6 |  0 |
   2 | 0 |198| TOPOSLPY  | Sub-gridscale mean topographic slope     |  6 |  0 |
-  2 | 0 |199| SLOPECAT  | Topographical Categorical Slope          |  1 |  0 |
   2 | 0 |200| LANDUSEF  | Land use categorical fraction on mass gr |  3 |  0 |
   2 | 0 |201| SOILCTOP  | Top layer soil type as a categ. fraction |  3 |  0 |
   2 | 0 |202| SOILCBOT  | Bot layer soil type as a categ. fraction |  3 |  0 |

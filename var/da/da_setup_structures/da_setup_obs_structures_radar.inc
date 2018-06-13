@@ -57,10 +57,6 @@ subroutine da_setup_obs_structures_radar( grid, ob, iv )
       allocate (iv%info(radar)%lat(iv%info(radar)%max_lev,iv%info(radar)%nlocal))
       allocate (iv%info(radar)%lon(iv%info(radar)%max_lev,iv%info(radar)%nlocal))
       allocate (iv%info(radar)%elv(iv%info(radar)%nlocal))
-      allocate (iv%info(radar)%pstar(iv%info(radar)%nlocal))
-
-      allocate (iv%info(radar)%slp(iv%info(radar)%nlocal))
-      allocate (iv%info(radar)%pw(iv%info(radar)%nlocal))
 
       allocate (iv%info(radar)%x  (kms:kme,iv%info(radar)%nlocal))
       allocate (iv%info(radar)%y  (kms:kme,iv%info(radar)%nlocal))

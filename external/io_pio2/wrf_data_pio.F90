@@ -67,8 +67,8 @@ module wrf_data_pio
     logical                               :: first_operation
 
 !--PIO specific
-  !type (IOsystem_desc_t), pointer :: iosystem    ! PIO type handle to hold PIO-specific information
-  !                                               ! about a file IO decomposition
+   type (IOsystem_desc_t), pointer :: iosystem    ! PIO type handle to hold PIO-specific information
+                                                  ! about a file IO decomposition
    type (File_desc_t)      :: file_handle ! file handle for normal PIO variables
 
    type (Var_desc_t)       :: vtime
@@ -88,17 +88,9 @@ module wrf_data_pio
    type (io_desc_t)        :: iodesc3d_land_real,   iodesc3d_soil_real, iodesc3d_soil_layers_real
    type (io_desc_t)        :: iodesc3d_land_int,    iodesc3d_soil_int, iodesc3d_soil_layers_int
 
-   type (io_desc_t)        :: iodesc3d_mdl_cpl_double
-   type (io_desc_t)        :: iodesc3d_mdl_cpl_real
-   type (io_desc_t)        :: iodesc3d_mdl_cpl_int
-
-   type (io_desc_t)        :: iodesc3d_ensemble_double
-   type (io_desc_t)        :: iodesc3d_ensemble_real
-   type (io_desc_t)        :: iodesc3d_ensemble_int
-
-   type (io_desc_t)        :: iodesc3d_erosion_double
-   type (io_desc_t)        :: iodesc3d_erosion_real
-   type (io_desc_t)        :: iodesc3d_erosion_int
+   type (io_desc_t)        :: iodesc3d_mdl_cpl_real,  iodesc3d_mdl_cpl_double,  iodesc3d_mdl_cpl_int
+   type (io_desc_t)        :: iodesc3d_ensemble_real, iodesc3d_ensemble_double, iodesc3d_ensemble_int
+   type (io_desc_t)        :: iodesc3d_erosion_real,  iodesc3d_erosion_double,  iodesc3d_erosion_int
 
    type (io_desc_t)        :: iodesc3d_xsz_u_real, iodesc3d_xsz_u_double, iodesc3d_xsz_u_int
    type (io_desc_t)        :: iodesc3d_xsz_v_real, iodesc3d_xsz_v_double, iodesc3d_xsz_v_int

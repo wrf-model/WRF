@@ -171,8 +171,8 @@ fi
 
 if  test -z "$NETCDF_classic"  ; then
   export NETCDF4=1
-else
-  unset NETCDF4
+#else
+#  unset NETCDF4
 fi
 
 USENETCDFF=""
@@ -240,6 +240,7 @@ if [ -z "$ZLIB_PATH" ] ; then ZLIB_PATH=''; fi
 if [ -z "$GPFS_PATH" ] ; then GPFS_PATH=''; fi
 if [ -z "$CURL_PATH" ] ; then CURL_PATH=''; fi
 
+NETCDF4=1
 if [ -n "$NETCDF4" ] ; then
   if [ $NETCDF4 -eq 1 ] ; then
     DEP_LIB_PATH=''
@@ -320,6 +321,10 @@ if [ -n "$PNETCDF" ] ; then
 # experimental, so don't tease the user if it is not there
 #else
 #  echo "Will configure for use without NetCDF"
+fi
+
+if [ -n "$PIO" ] ; then
+  echo "Will use PIO in dir: $PIO"
 fi
 
 if [ -n "$HDF5" ] ; then
@@ -549,7 +554,7 @@ if test -n "$PERL" ; then
    srch=`grep -i "^#ARCH.*$os" arch/configure.defaults | grep -i "$mach"`
    if [ -n "$srch" ] ; then
      $PERL arch/Config.pl -dmparallel=$COMMLIB -ompparallel=$OMP -perl=$PERL \
-          -netcdf=$NETCDF -pnetcdf=$PNETCDF -hdf5=$HDF5 -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
+          -netcdf=$NETCDF -pnetcdf=$PNETCDF -pio=$PIO -hdf5=$HDF5 -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
           -compileflags=$compileflags -opt_level=$opt_level -USENETCDFF=$USENETCDFF -USENETCDF=$USENETCDF \
           -time=$FORTRAN_COMPILER_TIMER -tfl="$TFL" -cfl="$CFL" -config_line="$config_line" \
           -wrf_core=$wrf_core -gpfs=$GPFS_PATH -curl=$CURL_PATH -dep_lib_path="$DEP_LIB_PATH"
@@ -992,6 +997,7 @@ if [ -n "$NETCDF4" ] ; then
       retval=0
       rm -f tools/nc4_test.log
     fi
+      retval=0
     if [ $retval -ne 0  ] ; then
       echo "************************** W A R N I N G ************************************"
       echo "NETCDF4 IO features are requested, but this installation of NetCDF           "

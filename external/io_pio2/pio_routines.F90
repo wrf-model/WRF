@@ -76,6 +76,8 @@ subroutine deallocHandle(DataHandle, Status)
       DH => WrfDataHandles(DataHandle)
       DH%Free      =.TRUE.
     endif
+
+   !deallocate(DH%iosystem)
   ENDIF
   Status = WRF_NO_ERR
 end subroutine deallocHandle
@@ -154,9 +156,6 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
 
   Status = -9999
 
- !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
- !WRITE(unit=0, fmt='(6x, 2a)') 'Enter GetTimeIndex DateStr = ', trim(DateStr)
-
   if(len(Datestr) == DateStrLen) then
     tmpdatestr = DateStr
   else
@@ -175,18 +174,12 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
   DH => WrfDataHandles(DataHandle)
   call DateCheck(DateStr,Status)
 
- !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
- !WRITE(unit=0, fmt='(6x,  a, i6)') 'DateCheck Status = ', Status
-
   if(Status /= WRF_NO_ERR) then
     Status =  WRF_WARN_DATESTR_ERROR
     write(msg,*) 'Warning DATE STRING ERROR in ',__FILE__,', line', __LINE__ 
     call wrf_debug ( WARN , TRIM(msg))
     return
   endif
-
- !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
- !WRITE(unit=0, fmt='(6x, 3a, i6)') 'IO: ', trim(IO), ', DH%TimeIndex = ', DH%TimeIndex
 
   if(IO == 'write') then
     TimeIndex = DH%TimeIndex
@@ -216,14 +209,9 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
     VCount(2) = 1
    !DH%vtime%rec = TimeIndex
    !DH%vtime%name = 'Times'
-   !WRITE(unit=0, fmt='(///6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
-   !write(unit=0, fmt='(6x, 3a,i6)') 'DateStr: <', trim(DateStr), '>, TimeIndex =', TimeIndex
-   !write(unit=0, fmt=*) '      DH%vtime = ', DH%vtime
    !stat = pio_put_var(DH%file_handle, DH%vtime, VStart, VCount, tmpdatestr)
     stat = pio_put_var(DH%file_handle, DH%vtime, tmpdatestr)
     call netcdf_err(stat,Status)
-   !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
-   !write(unit=0, fmt=*) '      pio_put_var return Status = ', Status
     if(Status /= WRF_NO_ERR) then
       write(msg,*) 'NetCDF error in ',__FILE__,', line', __LINE__ 
       call wrf_debug ( WARN , TRIM(msg))
@@ -246,8 +234,6 @@ subroutine GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
     enddo
   endif
 
- !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
- !WRITE(unit=0, fmt='(6x,  a, i6)') 'Leave GetTimeIndex Status = ', Status
   return
 end subroutine GetTimeIndex
 
@@ -1074,18 +1060,10 @@ subroutine FieldIO(IO,DataHandle,DateStr,Dimens,Starts,Counts,Length,MemoryOrder
   type(wrf_data_handle)      ,pointer       :: DH
   integer(KIND=PIO_OFFSET_KIND)             :: pioidx
 
- !WRITE(unit=0, fmt='(6x, 3a, i6)') 'enter FieldIO, File: ', __FILE__, ', line: ', __LINE__
- !WRITE(unit=0, fmt='(6x, 2a)') 'DateStr = ', trim(DateStr)
- !WRITE(unit=0, fmt='(6x, 3a, i6, 4a)') 'IO: ', trim(IO), ', FieldType = ', FieldType, &
- !                  ', Stagger: ', trim(Stagger), ', MemoryOrder = ', trim(MemoryOrder)
-
  !call pio_setdebuglevel(1)
 
   DH => WrfDataHandles(DataHandle)
   call GetTimeIndex(IO,DataHandle,DateStr,TimeIndex,Status)
-
- !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
- !WRITE(unit=0, fmt='(6x, 2(a, i6))') ' GetTimeIndex Status = ', Status, ', TimeIndex = ', TimeIndex
 
   if(Status /= WRF_NO_ERR) then
     write(msg,*) 'Warning in ',__FILE__,', line', __LINE__
@@ -1096,17 +1074,11 @@ subroutine FieldIO(IO,DataHandle,DateStr,Dimens,Starts,Counts,Length,MemoryOrder
   endif
   call GetDim(MemoryOrder,NDim,Status)
 
- !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
- !WRITE(unit=0, fmt='(6x, a, i6)') ' GetDim Status = ', Status
- !WRITE(unit=0, fmt='(6x, a, i6)') ' NDim = ', NDim
-
   fldsize = 1
   datasize = 1
   do n = 1, NDim
      fldsize = fldsize * Length(n)
      datasize = datasize * Counts(n)
-    !WRITE(unit=0, fmt='(6x, 2(a, i6))') ' Length(', n, ')=', Length(n)
-    !WRITE(unit=0, fmt='(6x, 2(a, i6))') ' Counts(', n, ')=', Counts(n)
   end do
 
   Starts(NDim+1) = TimeIndex
@@ -1119,14 +1091,6 @@ subroutine FieldIO(IO,DataHandle,DateStr,Dimens,Starts,Counts,Length,MemoryOrder
   pioidx = TimeIndex
  !DH%descVar(DH%CurrentVariable)%rec = TimeIndex
   call pio_setframe(DH%file_handle, DH%descVar(DH%CurrentVariable), pioidx)
-
- !write(unit=0, fmt='(3a,i6)') 'File: ', __FILE__, ', line: ', __LINE__
- !write(unit=0, fmt='(3a,l8,a,i6)') 'IO = ', trim(IO), ', whole = ', whole, ', pioidx = ', pioidx
- !write(unit=0, fmt='(4a)') 'MemoryOrder = ', trim(MemoryOrder), ', Stagger = ', trim(Stagger)
- !write(unit=0, fmt='(a,i4,a,i3)') 'DH%vartype(', DH%CurrentVariable, ') = ', DH%vartype(DH%CurrentVariable)
- !write(unit=0, fmt='(a,4i4)') 'Starts: ', Starts(1:ndim+1)
- !write(unit=0, fmt='(a,4i4)') 'Counts: ', Counts(1:ndim+1)
- !write(unit=0, fmt='(a,4i4)') 'Length: ', Length(1:ndim)
 
  !if(whole .and. (ENSEMBLE_VAR == DH%vartype(DH%CurrentVariable))) then
  !   whole = .false.
@@ -1157,9 +1121,6 @@ subroutine FieldIO(IO,DataHandle,DateStr,Dimens,Starts,Counts,Length,MemoryOrder
       call wrf_debug ( WARN , TRIM(msg))
       return
   end select
-
- !WRITE(unit=0, fmt='(6x, 3a, i6)') 'File: ', __FILE__, ', line: ', __LINE__
- !WRITE(unit=0, fmt='(a, i6)') 'Leave FieldIO with Status = ', Status
 
   return
 end subroutine FieldIO
@@ -1344,13 +1305,6 @@ subroutine initialize_pio(grid, DH)
       piostart = grid%piostart
    endif
 
-  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  !write(unit=0, fmt='(2(a,i6))') 'nprocs = ', nprocs, ', myrank = ', myrank
-  !write(unit=0, fmt='(4(a,i6))') 'pioprocs = ', pioprocs, &
-  !                             ', piostride = ', piostride, &
-  !                             ', piostart = ', piostart, &
-  !                             ', pioshift = ', pioshift
-
   !call PIO_init to initiate iosystem
   !call PIO_init(my_rank, MPI_COMM_WORLD, 4, 0, 4, PIO_rearr_box, iosystem, 1)
   !call PIO_init(myrank, MPI_COMM_WORLD, pioprocs, &
@@ -1381,11 +1335,7 @@ subroutine finalize_pio(DH)
 
    integer     :: ierr
 
-  !call PIO_finalize(DH%iosystem, ierr)
-
-  !if(associated(DH%iosystem)) then
-  !   deallocate(DH%iosystem)
-  !end if
+   call PIO_finalize(DH%iosystem, ierr)
 
 end subroutine finalize_pio
 
@@ -1514,17 +1464,6 @@ subroutine define_pio_iodesc(grid, DH)
 
    dims2d_yb(1) = dims2d(1)
    dims2d_yb(2) = grid%spec_bdy_width
-
-  !write(unit=0, fmt='(3a,i6)') 'file: ', __FILE__, ', line: ', __LINE__
-  !write(unit=0, fmt='(a, 6i6)') 'dims2d = ', dims2d
-  !write(unit=0, fmt='(a, 6i6)') 'dims3d = ', dims3d
-  !write(unit=0, fmt='(a, 6i6)') 'dims3d_land = ', dims3d_land
-  !write(unit=0, fmt='(a, 6i6)') 'dims3d_soil = ', dims3d_soil
-  !write(unit=0, fmt='(a, 6i6)') 'grid%num_land_cat = ', grid%num_land_cat
-  !write(unit=0, fmt='(a, 6i6)') 'grid%num_soil_cat = ', grid%num_soil_cat
-  !write(unit=0, fmt='(a, 6i6)') 'grid%num_soil_layers = ', grid%num_soil_layers
-  !write(unit=0, fmt='(a, 6i6)') 'grid%num_ext_model_couple_dom = ', grid%num_ext_model_couple_dom
-  !write(unit=0, fmt='(a, 6i6)') 'grid%spec_bdy_width = ', grid%spec_bdy_width
 
    do j = jms, jme
       do i = ims, ime
@@ -1669,14 +1608,10 @@ subroutine define_pio_iodesc(grid, DH)
    do j = jts, ljte
    do i = its, lite
       npos = (i - ims + 1) + (ime - ims + 1) * (j - jms + (jme - jms + 1) * (k - kms))
-      compdof_3d_erosion(npos) = i + dims3d(1) * (j - 1 + dims3d(2) * (k - 1))
+      compdof_3d_erosion(npos) = i + dims3d_erosion(1) * (j - 1 + dims3d_erosion(2) * (k - 1))
    enddo
    enddo
    enddo
-
-  !write(unit=0, fmt='(3a,i6)') 'File: ', __FILE__, ', line: ', __LINE__
-  !write(unit=0, fmt='(4x,a,i6)') 'npos = ', npos
-  !write(unit=0, fmt='(4x,a,i16)') 'compdof_3d_ensemble(npos) = ', compdof_3d_ensemble(npos)
 
    if(1 == its) then
       do n = 1, grid%spec_bdy_width
@@ -1789,9 +1724,9 @@ subroutine define_pio_iodesc(grid, DH)
 
    deallocate(compdof_3d_ensemble)
 
-   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d, compdof_3d_erosion, DH%iodesc3d_erosion_int)
-   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d, compdof_3d_erosion, DH%iodesc3d_erosion_real)
-   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d, compdof_3d_erosion, DH%iodesc3d_erosion_double)
+   call PIO_initdecomp(DH%iosystem, PIO_int,    dims3d_erosion, compdof_3d_erosion, DH%iodesc3d_erosion_int)
+   call PIO_initdecomp(DH%iosystem, PIO_real,   dims3d_erosion, compdof_3d_erosion, DH%iodesc3d_erosion_real)
+   call PIO_initdecomp(DH%iosystem, PIO_double, dims3d_erosion, compdof_3d_erosion, DH%iodesc3d_erosion_double)
 
 #ifndef INTSPECIAL
    call PIO_initdecomp(DH%iosystem, PIO_int,    dims2d, compdof_2d, DH%iodesc2d_m_int)

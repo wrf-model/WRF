@@ -56942,7 +56942,7 @@ contains
     call mkarbinit(snl     ,snowdp, dzclm  ,zclm      ,&
                   ziclm    ,h2osno ,h2osoi_liq,h2osoi_ice,t_grnd,&
                   t_soisno ,t_lake ,t_veg    ,h2ocan ,h2ocan_col,&
-                  h2osoi_vol,t_ref2m ,snw_rdsx, &
+                  h2osoi_vol,t_ref2m ,snw_rdsx &
 
 #ifdef CN
                  ,tlai,tsai,htop,hbot &

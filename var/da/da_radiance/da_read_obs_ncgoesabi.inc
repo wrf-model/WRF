@@ -535,8 +535,7 @@ write(stdout,*) trim(command)
 
             call split_grid( this_view % ny_global, this_view % nx_global , &
                              this_view % ny_grid,  this_view % nx_grid    , &
-                             this_view % ys_grid,  this_view % xs_grid      )
-
+                             this_view % ys_grid,  this_view % xs_grid    )
 #else
             ! When mpi parallelism is not available, assign global values to local variables
             this_view % ny_grid = this_view % ny_global
@@ -819,7 +818,11 @@ write(stdout,*) trim(command)
 
             ! BEGIN SOLUTION 2
             !ALLOCATE COMMUNICATION BUFFERS
+#ifdef DM_PARALLEL
             call mpi_allreduce( nrad_mask, nbuf, 1, mpi_integer, mpi_sum, comm, ierr )
+#else
+            nbuf = nrad_mask
+#endif
             allocate( buf_real( nbuf, 3 ) )
             allocate( buf_int ( nbuf, 2 ) )
             allocate( buf_loc ( nbuf ) )
@@ -1844,10 +1847,10 @@ end subroutine get_abil1b_latlon
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+#ifdef DM_PARALLEL
 subroutine split_grid( ny_global, nx_global, &
                        ny_grid, nx_grid, &
                        ys_grid, xs_grid )
-
    implicit none
 
    integer, intent(in)  :: ny_global, nx_global
@@ -1940,6 +1943,7 @@ subroutine split_grid( ny_global, nx_global, &
 !   xs_local = xs_grid(i)
 
 end subroutine split_grid
+#endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

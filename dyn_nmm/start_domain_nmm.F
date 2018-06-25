@@ -195,6 +195,7 @@
       REAL,ALLOCATABLE,DIMENSION(:) :: SFULL,SMID
       REAL,ALLOCATABLE,DIMENSION(:) :: DZS,ZS
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: RQCBLTEN,RQIBLTEN            &
+     &                                    ,RQNIBLTEN                     & ! RGF
      &                                    ,RQVBLTEN,RTHBLTEN            &
      &                                    ,RUBLTEN,RVBLTEN              &
      &                                    ,RQCCUTEN,RQICUTEN,RQRCUTEN   &
@@ -1969,6 +1970,7 @@
       ALLOCATE(DZS(KMS:KME),STAT=I)                         ; DZS = 0.
       ALLOCATE(RQCBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQCBLTEN = 0.
       ALLOCATE(RQIBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQIBLTEN = 0.
+      ALLOCATE(RQNIBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQNIBLTEN = 0. ! RGF
       ALLOCATE(RQVBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RQVBLTEN =  0.
       ALLOCATE(RTHBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)    ; RTHBLTEN =  0.
       ALLOCATE(RUBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=I)     ; RUBLTEN = 0.
@@ -2180,7 +2182,7 @@
      &             ,RQVSHTEN, RQRSHTEN, RQCSHTEN                        &
      &             ,RQSSHTEN, RQISHTEN, RQGSHTEN                        &
      &             ,RUBLTEN,RVBLTEN,RTHBLTEN                            &
-     &             ,RQVBLTEN,RQCBLTEN,RQIBLTEN                          &
+     &             ,RQVBLTEN,RQCBLTEN,RQIBLTEN, RQNIBLTEN                         & ! RGF mod
      &             ,RTHRATEN,RTHRATENLW,RTHRATENSW                      &
      &             ,STEPBL,STEPRA,STEPCU                                &
      &             ,grid%w0avg, RAINNC, RAINC, grid%raincv, RAINNCV               &
@@ -2529,6 +2531,7 @@
       DEALLOCATE(RAINNCV)
       DEALLOCATE(RQCBLTEN)
       DEALLOCATE(RQIBLTEN)
+      DEALLOCATE(RQNIBLTEN) ! RGF
       DEALLOCATE(RQVBLTEN)
       DEALLOCATE(RTHBLTEN)
       DEALLOCATE(RUBLTEN)

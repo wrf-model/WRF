@@ -33,7 +33,7 @@ CONTAINS
                          RQVSHTEN, RQRSHTEN, RQCSHTEN,           &
                          RQSSHTEN, RQISHTEN, RQGSHTEN,           &
                          RUBLTEN,RVBLTEN,RTHBLTEN,               &
-                         RQVBLTEN,RQCBLTEN,RQIBLTEN,             &
+                         RQVBLTEN,RQCBLTEN,RQIBLTEN, RQNIBLTEN,            & ! RGF mod
                          RTHRATEN,RTHRATENLW,RTHRATENSW,         &
 #if ( EM_CORE == 1 )
                          !BSINGH - For WRFCuP scheme(11/12/2013)
@@ -393,7 +393,7 @@ CONTAINS
    REAL,     DIMENSION(1:num_soil_layers),      INTENT(INOUT) :: ZS,DZS
 
   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    & !BSINGH(PNNL)- should be declared inout
-             RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN,EXCH_H,TKE_PBL
+             RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,RQIBLTEN,EXCH_H,TKE_PBL, RQNIBLTEN ! RGF mod
   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT), OPTIONAL :: QKE
 
   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT), OPTIONAL :: &
@@ -2194,11 +2194,13 @@ USE module_dm, ONLY : local_communicator
    USE module_sf_lake
    USE module_bl_mfshconvpbl
    USE module_bl_gbmpbl
+   USE module_bl_mynn ! RGF moved
+   USE module_sf_mynn ! RGF moved
 #if ( EM_CORE == 1 )
-   USE module_bl_mynn
+
    USE module_bl_temf
    USE module_sf_temfsfclay
-   USE module_sf_mynn
+
 #endif
 
 #if (NMM_CORE == 1)
@@ -2555,10 +2557,10 @@ integer,intent(in) :: id
 ! End of Noah-mosaic related variables 
 !-------------------------------------------------  
 
-#if ( EM_CORE == 1 )
+! RGF removed #if ( EM_CORE == 1 )
 !local mynn 
    INTEGER :: mynn_closure_level
-#endif
+! RGF removed #endif
 
   if ( config_flags%fractional_seaice == 0 ) then
      xice_threshold = 0.5
@@ -2665,7 +2667,7 @@ integer,intent(in) :: id
            isfc = 2
 #endif
 
-#if ( EM_CORE == 1 )
+
 !mynn 
 
         CASE (MYNNSFCSCHEME)
@@ -2674,6 +2676,8 @@ integer,intent(in) :: id
            isfc=5
 !          isfc=3
 
+! RGF moved here
+#if ( EM_CORE == 1 )  
       CASE (TEMFSFCSCHEME)
            CALL wrf_debug( 100, 'calling temfsfclayinit' )
            CALL temfsfclayinit( restart, allowed_to_read ,        &
@@ -3187,7 +3191,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                 its, ite, jts, jte, kts, kte                           )
 #endif
 
-#if ( EM_CORE == 1 )
+
 
 !mynn 
            
@@ -3219,6 +3223,9 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                 &,IDS,IDE,JDS,JDE,KDS,KDE                    &
                 &,IMS,IME,JMS,JME,KMS,KME                    &
                 &,ITS,ITE,JTS,JTE,KTS,KTE)
+
+! RGF moved here
+#if ( EM_CORE == 1 )
 
       CASE (TEMFPBLSCHEME)
            ! if(isfc .ne. 0)CALL wrf_error_fatal &

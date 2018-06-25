@@ -220,6 +220,8 @@ contains
                                                                         dqsfc
     real,     dimension( its:ite, kts:kte )  ::                      dku,dkt       ! RGF
 
+
+     print *,' RGF its,ite, jts,jte, kts,kte ',its,ite, jts,jte, kts,kte
 !
    qv2d(its:ite,:) = 0.0
 !
@@ -1442,6 +1444,10 @@ contains
        if(pblflg(i).and.k.lt.kpbl(i))then
          dsdzu     = tem1*(-hgamu(i)/hpbl(i)-ufxpbl(i)*zfacent(i,k)/xkzm(i,k))
          dsdzv     = tem1*(-hgamv(i)/hpbl(i)-vfxpbl(i)*zfacent(i,k)/xkzm(i,k))
+         if(ysu_cgrad_mom.eq.0)then
+         dsdzu     = tem1*(-ufxpbl(i)*zfacent(i,k)/xkzm(i,k))
+         dsdzv     = tem1*(-vfxpbl(i)*zfacent(i,k)/xkzm(i,k))
+         endif
          f1(i,k)   = f1(i,k)+dtodsd*dsdzu
          f1(i,k+1) = ux(i,k+1)-dtodsu*dsdzu
          f2(i,k)   = f2(i,k)+dtodsd*dsdzv

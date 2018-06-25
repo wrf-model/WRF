@@ -496,6 +496,8 @@ state  real  GD_CLOUD_A    ikj  misc     1   -      r      "GD_CLOUD_A"   "taver
 state  real  GD_CLOUD2_A   ikj  misc     1   -      r      "GD_CLOUD2_A"  "taveragd cloud ice mix ratio in GD"         "kg kg-1"
 state  real  QC_CU         ikj  misc     1   -      r      "QC_CU"        "CLOUD WATER MIXING RATIO FROM A CU SCHEME"  "kg kg-1"
 state  real  QI_CU         ikj  misc     1   -      r      "QI_CU"        "CLOUD ICE MIXUNG RATIO FROM A CU SCHEME"    "kg kg-1"
+state    real  QC_BL             ikj      misc        1         -      r      "QC_BL"                "CLOUD WATER MIXING RATIO IN PBL schemes"          "kg kg-1"
+state    real  CLDFRA_BL       ikj      misc        1         -      -        "CLDFRA_BL"             "CLOUD FRACTION pbl"                                   ""
 state    real  GD_CLDFR         ikj      misc        1         -      r     "GD_CLDFR"              "GD CLOUD Fraction"         " ? "
 state  real  xmb_shallow    ij   misc    1   -      rh      "XMB_SHALLOW"     "MASSFLUX FROM SHALLOW CONVECTION (G3, GF only)"        ""
 state  integer  k22_shallow  ij   misc    1   -      rh     "K22_SHALLOW"     "K22 LEVEL FROM SHALLOW CONVECTION (G3, GF only)"       ""
@@ -934,6 +936,39 @@ state    real   lake_depth       ij     misc        1         -     rd=(interp_m
 
 # MYJ PBL variables
 
+# RGF add start
+# MYNN PBL variables
+state   real   qke_adv         ikjftb  scalar      1         -      isrh023u=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0) "qke_adv"       "twice TKE from MYNN"      "m2 s-2"
+state   real   qke             ikj     misc        1         -      irh      "qke"               "twice TKE from MYNN"      "m2 s-2"
+state   real   qSHEAR          ikj     misc        1         Z      h        "qSHEAR"            "TKE Production - shear"          "m2 s-2"
+state   real   qBUOY           ikj     misc        1         Z      h        "qBUOY"             "TKE Production - buoyancy"       "m2 s-2"
+state   real   qDISS           ikj     misc        1         Z      h        "qDISS"             "TKE dissipation"                 "m2 s-2"
+state   real   qWT             ikj     misc        1         Z      h        "qWT"               "TKE vertical transport"          "m2 s-2"
+state   real   dqke            ikj     misc        1         -      h        "Dtke"              "TKE change"                     "m2 s-2"
+state   real   tsq             ikj     misc        1         -      r        "tsq"               "liquid water pottemp variance"      "K2"
+state   real   qsq             ikj     misc        1         -      r        "qsq"               "liquid water variance"      "(kg/kg)**2"
+state   real   cov             ikj     misc        1         -      r        "cov"               "liquid water-liquid water pottemp covariance"   "K kg/kg"
+state   real   Sh3d            ikj     misc        1         -      r        "Sh3d"              "Stability function for heat"   ""
+state   real   ch               ij     misc        1         -      -        "ch"                "surface exchange coeff for heat"    "m s-1"
+#state   real   K_m             ikj     misc        1         -     -          "K_m"               "EXCHANGE COEFFICIENT for momentum "
+#state   real   K_h             ikj     misc        1         -     -          "K_h"               "EXCHANGE COEFFICIENT for heat "
+#state   real   K_q             ikj     misc        1         -     -          "K_q"               "EXCHANGE COEFFICIENT for qke "
+#MYNN-EDMF VARIABLES
+state   real   edmf_a          ikj     misc        1         -      h         "edmf_a"           "EDMF relative updraft  area - moist updrafts" "-"
+state   real   edmf_w          ikj     misc        1         -      h         "edmf_w"           "EDMF vertical velocity  - mean moist updrafts" "m s-1"
+state   real   edmf_thl        ikj     misc        1         -      h         "edmf_thl"         "EDMF thetaL  - mean moist updrafts" "K"
+state   real   edmf_qt         ikj     misc        1         -      h         "edmf_qt"          "EDMF qt  - mean moist updrafts" "kg kg-1"
+state   real   edmf_ent        ikj     misc        1         -      h         "edmf_ent"          "EDMF entrainment  - mean moist updrafts" "m-1"
+state   real   edmf_qc         ikj     misc        1         -      h         "edmf_qc"           "EDMF qc - mean moist updrafts" "kg kg-1"
+
+#FogDES variables
+state   real   fgdp             ij     misc        1         -      -        "fgdp"                "Accumulated fog deposition"    "mm"
+state   real   dfgdp            ij     misc        1         -      -        "dfgdp"               "Fog deposition during timestep"    "mm"
+state   real   vdfg             ij     misc        1         -      -        "vdfg"                "Deposition velocity of fog"    "m/s"
+
+# RGF added this because tke_pbl is ijk and ikj is needed
+state    real   tke_mynn        ikj     misc        1         Z      rh       "tke_mynn"              "TKE from PBL"      "m2 s-2"
+# RGF add end
 
 # gfdl (eta) radiation State Variables
 
@@ -1017,8 +1052,11 @@ state    real   UOCE             ij     misc        1         -     i014rh023   
 state    real   VOCE             ij     misc        1         -     i014rh023    "VOCE"               "SEA SURFACE MERIDIONAL CURRENTS" "m s-1"
 state    real   WEASD            ij     misc        1         -     i01rh023d=(DownNear)       "WEASD"                "WATER EQUIVALENT OF ACCUMULATED SNOW" "kg m-2"
 state    real  ZNT              ij      misc        1         -     irh023        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
+# RGF CDX
+state    real  CDX               ij      misc        1         -      r        "CDX"                    "DRAG COEFF AT 10m"  
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"
 state    real  NOAHRES          ij      misc        1         -     rh        "NOAHRES"               "RESIDUAL OF THE NOAH SURFACE ENERGY BUDGET" "W m{-2}"
+
 
 state    real   tke_pbl         ijk     misc        1         Z     r         "TKE_PBL"               "TKE FROM PBL SCHEME"     "m2 s-2"
 state    real   el_pbl          ikj     misc        1         Z     -         "EL_PBL"                "MIXING LENGTH FROM PBL SCHEME"     "m"
@@ -1423,6 +1461,7 @@ rconfig   real    radt                    namelist,physics	max_domains    0     
 rconfig   integer     sf_sfclay_physics   namelist,physics	max_domains    0       rh0123       "sf_sfclay_physics"             ""      ""
 rconfig   integer     sf_surface_physics  namelist,physics	max_domains    0       rh0123       "sf_surface_physics"            ""      ""
 rconfig   integer     bl_pbl_physics      namelist,physics	max_domains    0       rh0123       "bl_pbl_physics"                ""      ""
+rconfig   integer     bl_mynn_tkebudget   namelist,physics      max_domains    0       rh       "bl_mynn_tkebudget"  
 rconfig   integer     ysu_topdown_pblmix  namelist,physics      max_domains    0       rh       "ysu_topdown_pblmix"            ""      ""
 rconfig   integer     shinhong_tke_diag   namelist,physics      max_domains    0       rh       "shinhong_tke_diag"             ""      ""
 rconfig   integer     ysu_firstorder      namelist,physics      1              0       rh       "ysu_firstorder"                ""      ""
@@ -1437,6 +1476,18 @@ rconfig   integer     cu_physics          namelist,physics	max_domains    0     
 rconfig   integer shcu_physics            namelist,physics      max_domains    0       rh0123   "shcu_physics"  ""      ""
 rconfig   integer     cu_diag             namelist,physics      max_domains    0       rh0123       "cu_diag"            " additional t-averaged stuff for cuphys"      ""
 rconfig   integer kf_edrates              namelist,physics      max_domains    0       rh   "kf_edrates"           "output entrainment/detrainment rates and convective timescale for KF schemes"      ""
+rconfig   logical     bl_mynn_tkeadvect   namelist,physics      max_domains    .false.  rh      "bl_mynn_tkeadvect"             ""      ""
+rconfig   integer     bl_mynn_cloudpdf    namelist,physics      1              2       irh      "bl_mynn_cloudpdf"              ""      ""
+rconfig   integer     bl_mynn_mixlength   namelist,physics      1              1       irh      "bl_mynn_mixlength"             "0:original,1:RAP/HRRR,2:new blending&cloud mix length" ""
+rconfig   integer     bl_mynn_edmf        namelist,physics      max_domains    0       irh      "bl_mynn_edmf"                  "0:off,1:activate mass-flux in mynn"                    ""
+rconfig   integer     bl_mynn_edmf_mom    namelist,physics      max_domains    1       irh      "bl_mynn_edmf_mom"              "0:off,1:activate mass-flux transport of momentum"      ""
+rconfig   integer     bl_mynn_edmf_tke    namelist,physics      max_domains    0       irh      "bl_mynn_edmf_tke"              "0:off,1:activate mass-flux transport of tke"           ""
+rconfig   integer     bl_mynn_edmf_part   namelist,physics      max_domains    0       irh      "bl_mynn_edmf_part"             "0:off,1:activate areal partitioning of ed and mf"      ""
+rconfig   integer     bl_mynn_cloudmix    namelist,physics      max_domains    1       irh      "bl_mynn_cloudmix"              "0:off,1:activate mixing of all cloud species"          ""
+rconfig   integer     bl_mynn_mixqt       namelist,physics      max_domains    0       irh      "bl_mynn_mixqt" 
+rconfig   integer     icloud_bl           namelist,physics      1              1       irh      "icloud_bl"                     "0:no subgrid cloud-radiation coupling,1:activated"     ""
+
+
 
 ifdef HWRF=1
 rconfig   real      gfs_alpha             namelist,physics      max_domains    1       irh0123      "boundary depth factor"  "" ""
@@ -1501,6 +1552,7 @@ rconfig   real    sas_pgcon               namelist,physics      max_domains  0.5
 rconfig   real    sas_shal_pgcon          namelist,physics      max_domains  -1        irh0123   "sas_shal_pgcon"   "convectively forced pressure gradient factor, -1 means use sas_pgcon (SAS shallow conv)" ""
 rconfig   integer sas_shal_conv           namelist,physics     max_domains    1        -     "sas_shal_conv"   "1=enable shallow convection in SAS (must use bl_pbl_physics=83)"
 rconfig   real    sas_mass_flux           namelist,physics      max_domains  9e9       -     "sas_mass_flux"   "mass flux limit (SAS scheme)" ""
+rconfig   integer grav_settling           namelist,physics      max_domains  0         h    "grav_settling"     "activate gravitationalsettling of fog  0=no, 1=yes"
 
 ifdef HWRF=1
 rconfig   real    var_ric                 namelist,physics      1             1.       -     "1: use variable Ric 0: constant Ric"
@@ -1802,11 +1854,23 @@ package   myjsfcscheme   sf_sfclay_physics==2        -             -
 package   gfssfcscheme   sf_sfclay_physics==3        -             -
 package   gfdlsfcscheme  sf_sfclay_physics==88       -             -
 package   qnsesfcscheme  sf_sfclay_physics==4        -             -
+package   mynnsfcscheme      sf_sfclay_physics==5        -             -
 package   pxsfcscheme    sf_sfclay_physics==7        -             -
 package   temfsfcscheme  sf_sfclay_physics==10       -             -
 package   sfclayrevscheme sf_sfclay_physics==1       -             -
 package   idealscmsfcscheme  sf_sfclay_physics==89   -             -
 package   gbmpblscheme  sf_sfclay_physics==12       -             -
+
+# RGF added
+package   mynn_tkebudget bl_mynn_tkebudget==1        -             state:qSHEAR,qBUOY,qDISS,qWT,dqke
+package   mynn_stem_edmf bl_mynn_edmf==1            -              state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc
+package   mynn_temf_edmf bl_mynn_edmf==2            -              state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc
+package   pbl_cloud      icloud_bl==1                -             state:cldfra_bl,qc_bl
+
+# dfi
+package   mynnpblscheme2_dfi bl_pbl_physics_dfi==5   -             dfi_scalar:dfi_qke_adv
+package   mynnpblscheme3_dfi bl_pbl_physics_dfi==6   -             dfi_scalar:dfi_qke_adv
+
 
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn
@@ -1823,6 +1887,9 @@ package   myjpblscheme   bl_pbl_physics==2           -             -
 package   gfsscheme      bl_pbl_physics==93          -             state:hpbl2d,heat2d,evap2d,rc2d
 package   gfsedmfscheme  bl_pbl_physics==3           -             state:hpbl2d,heat2d,evap2d
 package   qnsepblscheme  bl_pbl_physics==4           -             -
+# RGF swapped tke_pbl for tke_mynn in next two lines, then removed tke_mynn and el_pbl since MYJ does not use either
+package   mynnpblscheme2 bl_pbl_physics==5           -             scalar:qke_adv;state:qke,sh3d,tsq,qsq,cov
+package   mynnpblscheme3 bl_pbl_physics==6           -             scalar:qke_adv;state:qke,sh3d,tsq,qsq,cov
 package   acmpblscheme   bl_pbl_physics==7           -             -
 package   boulacscheme   bl_pbl_physics==8           -             - 
 package   camuwpblscheme bl_pbl_physics==9           -             -
@@ -1853,6 +1920,12 @@ package   kfscheme       cu_physics==99              -             -
 package   g3shcuscheme   shcu_physics==1             -             -
 package   camuwshcuscheme shcu_physics==2            -             -
 package   grimsshcuscheme shcu_physics==3            -             -
+
+# RGF
+package   fogsettling0   grav_settling==0            -             state:vdfg
+package   fogsettling1   grav_settling==1            -             state:vdfg,fgdp,dfgdp
+package   fogsettling2   grav_settling==2            -             state:vdfg,fgdp,dfgdp
+
 
 package   dfi_setup      dfi_stage==0                -             -
 package   dfi_bck        dfi_stage==1                -             -

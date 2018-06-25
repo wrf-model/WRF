@@ -20,6 +20,9 @@ CONTAINS
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,EOMEG,STBOLT,                          &
+#if (NMM_CORE==1)
+                 cdx, & ! RGF
+#endif
                      P1000mb,                                      &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
@@ -185,6 +188,8 @@ CONTAINS
       REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
                 INTENT(OUT)     ::                  ck,cka,cd,cda
 
+      REAL,    DIMENSION(ims:ime, jms:jme), INTENT(INOUT) :: CDX ! RGF
+
       REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
                 INTENT(INOUT)   ::                           USTM
 
@@ -201,6 +206,9 @@ CONTAINS
       REAL,     DIMENSION( its:ite ) ::                    dz8w1d
 
       INTEGER ::  I,J
+
+
+    !  print *,' RGF SFCLAYREV DX = ',dx
 
       DO J=jts,jte
         DO i=its,ite
@@ -230,6 +238,9 @@ CONTAINS
                 QSFC(ims,j),LH(ims,j),                             &
                 GZ1OZ0(ims,j),WSPD(ims,j),BR(ims,j),ISFFLX,DX,     &
                 SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,EOMEG,STBOLT,  &
+#if ( NMM_CORE == 1 )
+                CDX(ims,j),          & ! RGF
+#endif
                 P1000mb,                                           &
                 ids,ide, jds,jde, kds,kde,                         &
                 ims,ime, jms,jme, kms,kme,                         &
@@ -256,6 +267,9 @@ CONTAINS
                      QSFC,LH,GZ1OZ0,WSPD,BR,ISFFLX,DX,             &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,EOMEG,STBOLT,                          &
+#if ( NMM_CORE == 1 )
+                CDX,          & ! RGF
+#endif
                      P1000mb,                                      &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
@@ -335,6 +349,8 @@ CONTAINS
                 INTENT(OUT)     ::                  ck,cka,cd,cda
       REAL, OPTIONAL, DIMENSION( ims:ime )                       , &
                 INTENT(INOUT)   ::                           USTM
+
+      REAL,    DIMENSION(ims:ime), INTENT(INOUT) :: CDX ! RGF
 
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX, IZ0TLND
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX
@@ -870,6 +886,10 @@ CONTAINS
 !              PSIQ10=GZ10OZ0(I)-PSIH(I)+2.28*SQRT(SQRT(RESTAR))-2.
            ENDIF
         ENDIF
+#if (NMM_CORE==1)
+         cdx(i) = (karman/psix10)*(karman/psix10) ! RGF
+       ! write(6,*) " i= ",i," CDX ",cdx(i)
+#endif
         IF(PRESENT(ck) .and. PRESENT(cd) .and. PRESENT(cka) .and. PRESENT(cda)) THEN
            Ck(I)=(karman/psix10)*(karman/psiq10)
            Cd(I)=(karman/psix10)*(karman/psix10)

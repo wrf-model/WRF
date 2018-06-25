@@ -146,7 +146,7 @@ CONTAINS
                    , TEMFPBLSCHEME, GFSEDMFSCHEME           &
                    , CAMUWPBLSCHEME                                       &
                    , FITCHSCHEME, SHINHONGSCHEME                          &
-                   , GBMPBLSCHEME, MYJSFCSCHEME
+                   , GBMPBLSCHEME, MYJSFCSCHEME, MYNNPBLSCHEME2, MYNNPBLSCHEME3 ! RGF mod
 #endif
 
    USE module_model_constants
@@ -170,9 +170,10 @@ CONTAINS
    USE module_bl_temf
    USE module_bl_mfshconvpbl
    USE module_bl_gbmpbl
+   USE module_bl_mynn ! RGF moved
+   USE module_bl_fogdes ! RGF moved
 #if (EM_CORE==1)
-   USE module_bl_mynn
-   USE module_bl_fogdes
+
    USE module_wind_fitch
 #endif
 
@@ -1658,9 +1659,10 @@ CONTAINS
                CALL wrf_error_fatal('Lack arguments to call ACM2 pbl')
            ENDIF
 
-#if (EM_CORE==1)
+! #if (EM_CORE==1) ! RGF moved
 
         CASE (MYNNPBLSCHEME2, MYNNPBLSCHEME3)
+           CALL wrf_debug(100,'calling MYNNPBL')
 
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
@@ -1779,6 +1781,8 @@ CONTAINS
               CALL wrf_error_fatal('Lack arguments to call MYNN pbl')
            ENDIF
 
+! RGF moved here
+#if (EM_CORE==1) 
         CASE (BOULACSCHEME)
 
              CALL wrf_debug(100,'in boulac')
@@ -1963,7 +1967,8 @@ CONTAINS
        ENDIF
    ENDIF
 
-#if (EM_CORE==1)                                                                                                                                                                             
+! RGF removed wrapper
+!!! #if (EM_CORE==1)                                                                                                                                                                             
 !JOE-added - fog (cloud) water deposition calculation
    IF (grav_settling .GE. 1) THEN
       IF ( PRESENT(vdfg) .AND. PRESENT(qc_curr)) THEN
@@ -1981,7 +1986,8 @@ CONTAINS
       ENDIF
    ENDIF
 !JOE-END
-#endif
+!!! #endif
+! RGF removed wrapper end
 
 #if (NMM_CORE != 1)
 

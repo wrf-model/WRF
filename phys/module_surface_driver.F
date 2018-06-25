@@ -25,6 +25,9 @@ CONTAINS
 #else
      &          ,psim,p_phy,q10,q2,qfx,qsfc,qshltr,qz0                &
 #endif
+#if (NMM_CORE==1)
+     &           ,cdx & ! RGF
+#endif
      &          ,raincv,rho,sfcevp,sfcexc,sfcrunoff ,acrunoff         &
      &          ,smois,smstav,smstot,snoalb,snow,snowc,snowh,stepbl   &
      &          ,smcrel                                               &
@@ -77,11 +80,9 @@ CONTAINS
      &          ,opt_thcnd                                                 &
            ! Noah UA changes
      &          ,ua_phys,flx4,fvb,fbur,fgsn                                  &
-#if (EM_CORE==1)
-     &          ,ch,tsq,qsq,cov,Sh3d,el_pbl,bl_mynn_cloudpdf          & ! MYNN
-     &          ,icloud_bl,qc_bl,cldfra_bl                            & ! MYNN
+     &          ,ch,tsq,qsq,cov,Sh3d,el_pbl,bl_mynn_cloudpdf          & ! MYNN  ! RGF moved
+     &          ,icloud_bl,qc_bl,cldfra_bl                            & ! MYNN  ! RGF moved
      &          ,fgdp,dfgdp,vdfg,grav_settling                        & ! Katata - fog dep
-#endif
      &          ,lakedepth2d,  savedtke12d,  snowdp2d,   h2osno2d       & !lake
      &          ,snl2d,        t_grnd2d,     t_lake3d,   lake_icefrac3d & !lake
      &          ,z_lake3d,     dz_lake3d,    t_soisno3d, h2osoi_ice3d   & !lake
@@ -311,6 +312,7 @@ CONTAINS
                                        ,TEMFSFCSCHEME             &
                                        ,GFDLSFCSCHEME             &
                                        ,SSIBSCHEME                & ! ssib
+                                       ,MYNNSFCSCHEME             & ! RGF added
                                        ,GFDLSLAB 
 
 
@@ -337,12 +339,13 @@ CONTAINS
    USE module_sf_temfsfclay
    USE module_sf_sfclayrev
    USE module_sf_noah_seaice_drv
+   USE module_sf_fogdes    ! Katata - fog deposition module ! RGF moved
 #if ( EM_CORE==1)
-   USE module_sf_mynn
-   USE module_sf_fogdes    ! Katata - fog deposition module
+
    USE module_sf_ocean_driver
    USE module_sf_idealscmsfclay
 #endif
+   USE module_sf_mynn  ! RGF moved
    USE module_sf_scmflux       
    USE module_sf_scmskintemp
 
@@ -661,6 +664,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT):: TAUY
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT):: cd_out
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT):: ch_out
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT):: CDX ! RGF
 #endif
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   QSFC
    REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   QZ0
@@ -930,21 +934,28 @@ CONTAINS
 
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT )::   TSK_SAVE
 
-#if ( EM_CORE==1)
    REAL, DIMENSION( ims:ime , jms:jme ), &
-        &OPTIONAL, INTENT(INOUT   ):: ch
+        &OPTIONAL, INTENT(INOUT   ):: ch ! RGF moved
+
+! RGF removed wrapper start
+!!!#if ( EM_CORE==1)
+
 
 !Katata-added - extra in-output
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT):: fgdp,dfgdp,vdfg
    INTEGER, OPTIONAL, INTENT(IN)                                :: grav_settling
 !Katata-end
 
+
+!!! #endif
+! RGF removed wrapper end
+
+! begin RGF moved
    REAL, DIMENSION( ims:ime , kms:kme, jms:jme ), &
         &OPTIONAL, INTENT(IN   ):: tsq,qsq,cov,Sh3d,el_pbl,qc_bl,cldfra_bl
    INTEGER, OPTIONAL, INTENT(IN)                                :: bl_mynn_cloudpdf, &
                                                                    icloud_bl
-#endif
-
+! end RGF moved
 
    INTEGER, OPTIONAL, INTENT(IN )::   slope_rad, topo_shading
    INTEGER, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN):: shadowmask
@@ -1416,6 +1427,7 @@ CONTAINS
 #if (NMM_CORE==1)
          Cd_out(i,j) = 0.
          Ch_out(i,j) = 0.
+         cdx(i,j) = 0. ! RGF
 #endif
       ENDDO
     ENDDO
@@ -1724,9 +1736,9 @@ CONTAINS
             (sf_sfclay_physics .EQ. PXSFCSCHEME  ) .OR. &
             (sf_sfclay_physics .EQ. MYJSFCSCHEME ) .OR. &
             (sf_sfclay_physics .EQ. QNSESFCSCHEME ) .OR. &  !emt
-#if (EM_CORE==1)
+!  RGF removed #if (EM_CORE==1)
             (sf_sfclay_physics .EQ. MYNNSFCSCHEME ) .OR. &
-#endif
+! RGF removed  #endif
             (sf_sfclay_physics .EQ. GFSSFCSCHEME ) )    &
            )
 
@@ -1916,6 +1928,9 @@ CONTAINS
                  u10,v10,th2,t2,q2,                                  &
                  gz1oz0,wspd,br,isfflx,dx,                           &
                  svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,eomeg,stbolt, &
+#if (NMM_CORE==1)
+                 cdx, & ! RGF
+#endif
                  P1000mb,                                            &
                  XICE,SST,TSK_SEA,                                                  &
                  CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
@@ -1934,6 +1949,9 @@ CONTAINS
                u10,v10,th2,t2,q2,                                  &
                gz1oz0,wspd,br,isfflx,dx,                           &
                svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,eomeg,stbolt, &
+#if (NMM_CORE==1)
+                 cdx, & ! RGF
+#endif
                P1000mb,                                            &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
@@ -1944,6 +1962,13 @@ CONTAINS
            DO i = i_start(ij),i_end(ij)
              ch(i,j) = chs (i,j)
 !!             ch(i,j) = flhc(i,j)/( cpm(i,j)*rho(i,kts,j) )
+           end do
+           end do
+#endif
+#if ( NMM_CORE==1)
+           DO j = j_start(ij),j_end(ij)
+           DO i = i_start(ij),i_end(ij)
+             cd_out(i,j) = cdx (i,j)
            end do
            end do
 #endif
@@ -2172,7 +2197,7 @@ CONTAINS
          CALL wrf_error_fatal('Lacking arguments for SF_GFS in surface driver')
       ENDIF
 
-#if ( EM_CORE==1)
+! RGF removed #if ( EM_CORE==1)
     CASE(MYNNSFCSCHEME)
 
        IF (PRESENT(qv_curr)    .AND.  PRESENT(qc_curr)     &
@@ -2221,7 +2246,7 @@ CONTAINS
           CALL wrf_error_fatal('Lacking arguments for SFCLAY_mynn in surface driver')
  
        ENDIF
-#endif
+! RGF removed  #endif
 
 #if ( EM_CORE==1)
      CASE (TEMFSFCSCHEME)
@@ -2345,7 +2370,8 @@ CONTAINS
         ENDDO
      ENDIF
 
-#if ( EM_CORE==1)
+! RGF remove wrapper
+!!! #if ( EM_CORE==1)
 !Katata-added - fog (cloud) water deposition calculation
      IF ( grav_settling .EQ. 0 ) THEN
         !vdfg = 0.
@@ -2384,7 +2410,8 @@ CONTAINS
         ENDIF
      ENDIF
 !Katata/Joe-END
-#endif
+!!!#endif
+! RGF remove wrapper end
 
      ENDDO
      !$OMP END PARALLEL DO
@@ -5426,6 +5453,9 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                      GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,EOMEG,STBOLT,                          &
+#if (NMM_CORE==1)
+                     cdx, & ! RGF
+#endif
                      P1000,                                      &
                      XICE,SST,TSK_SEA,                                                  &
                      CHS2_SEA,CHS_SEA,CPM_SEA,CQS2_SEA,FLHC_SEA,FLQC_SEA,               &
@@ -5507,6 +5537,9 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
 
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
                INTENT(OUT)     ::                   ck,cka,cd,cda
+#if (NMM_CORE==1)
+   REAL, DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT):: CDX ! RGF
+#endif
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
                INTENT(INOUT)   ::                            ustm
 
@@ -5678,6 +5711,9 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                  GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                  SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                  KARMAN,EOMEG,STBOLT,                          &
+#if (NMM_CORE==1)
+                 cdx, & ! RGF
+#endif
                  P1000,                                      &
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
@@ -5768,6 +5804,9 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                  ISFFLX,DX,                                    &
                  SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                  KARMAN,EOMEG,STBOLT,                          &
+#if (NMM_CORE==1)
+                 cdx, & ! RG
+#endif
                  P1000,                                      &
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &

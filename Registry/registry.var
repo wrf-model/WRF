@@ -87,6 +87,7 @@ rconfig   integer   var4d_bin               namelist,wrfvar1  1  3600     -  "va
 rconfig   integer   var4d_bin_rain          namelist,wrfvar1  1  3600     -  "var4d_bin_rain"          ""  ""
 rconfig   logical   var4d_lbc               namelist,wrfvar1  1  .false.  -  "var4d_lbc"               ""  ""
 rconfig   integer   multi_inc               namelist,wrfvar1  1  0        -  "multi_incremental_flag"  ""  ""
+rconfig   integer   multi_inc_io_opt        namelist,wrfvar1  1  1        -  "multi_incremental_io_opt"  "1: original 2:new"  ""
 rconfig   logical   print_detail_radar      namelist,wrfvar1  1  .false.  -  "print_detail_radar"      ""  ""
 rconfig   logical   print_detail_rain       namelist,wrfvar1  1  .false.  -  "print_detail_rain"       ""  ""
 rconfig   logical   print_detail_rad        namelist,wrfvar1  1  .false.  -  "print_detail_rad"        ""  ""

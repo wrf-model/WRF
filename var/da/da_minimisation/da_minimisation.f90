@@ -54,7 +54,8 @@ module da_minimisation
       use_satcv, sensitivity_option, print_detail_outerloop, adj_sens, filename_len, &
       ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe, fgat_rain_flags, var4d_bin_rain, freeze_varbc, &
       use_wpec, wpec_factor, use_4denvar, anal_type_hybrid_dual_res, alphacv_method, alphacv_method_xa, &
-      write_detail_grad_fn, pseudo_uvtpq, lanczos_ep_filename, use_divc, divc_factor, use_radarobs
+      write_detail_grad_fn, pseudo_uvtpq, lanczos_ep_filename, use_divc, divc_factor, use_radarobs, &
+      multi_inc_io_opt
    use da_define_structures, only : iv_type, y_type,  j_type, be_type, &
       xbx_type, jo_type, da_allocate_y,da_zero_x,da_zero_y,da_deallocate_y, &
       da_zero_vp_type, qhat_type
@@ -73,7 +74,8 @@ module da_minimisation
       da_jo_and_grady_gpsref
    use da_obs_io, only : da_final_write_y, da_write_y, da_final_write_obs, &
       da_write_obs,da_write_obs_etkf,da_write_noise_to_ob, da_use_obs_errfac, &
-      da_write_iv_for_multi_inc, da_read_iv_for_multi_inc
+      da_write_iv_for_multi_inc, da_read_iv_for_multi_inc, &
+      da_write_iv_for_multi_inc_opt2, da_read_iv_for_multi_inc_opt2
    use da_metar, only : da_calculate_grady_metar, da_ao_stats_metar, &
       da_oi_stats_metar, da_get_innov_vector_metar, da_residual_metar, &
       da_jo_and_grady_metar

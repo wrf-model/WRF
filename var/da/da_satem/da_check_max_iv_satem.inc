@@ -34,8 +34,10 @@ subroutine da_check_max_iv_satem(iv, it, num_qcstat_conv)
             num_qcstat_conv(1,satem,9,ipr-1) = num_qcstat_conv(1,satem,9,ipr-1) + 1
             if (failed) then
                num_qcstat_conv(2,satem,9,ipr-1) = num_qcstat_conv(2,satem,9,ipr-1) + 1
+               if ( write_rej_obs_conv ) then
                write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
                      'satem',ob_vars(9),iv%info(satem)%lat(k,n),iv%info(satem)%lon(k,n),0.01*iv%satem(n)%p(k)
+               end if
             end if
             end if
             end if

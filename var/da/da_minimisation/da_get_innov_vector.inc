@@ -32,21 +32,22 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
    if (trace_use) call da_trace_entry("da_get_innov_vector") 
 
    call da_message((/"Calculate innovation vector(iv)"/))
-   call da_get_unit(qcstat_conv_unit)
 
+   if ( write_rej_obs_conv ) then
+      call da_get_unit(qcstat_conv_unit)
 #ifdef DM_PARALLEL
-    write(unit=filename, fmt='(a,i2.2,a,i4.4)') 'rej_obs_conv_',it,'.', myproc
+      write(unit=filename, fmt='(a,i2.2,a,i4.4)') 'rej_obs_conv_',it,'.', myproc
 #else
-    write(unit=filename, fmt='(a,i2.2,a)') 'rej_obs_conv_',it,'.000'
+      write(unit=filename, fmt='(a,i2.2,a)') 'rej_obs_conv_',it,'.000'
 #endif
 
-   open (unit=qcstat_conv_unit,file=trim(filename),form='formatted',status='replace', &
-      iostat=ios)
-   if (ios /= 0) then
-      call da_error(__FILE__,__LINE__, &
-         (/"Cannot open qc observation file"//filename/))
+      open (unit=qcstat_conv_unit,file=trim(filename),form='formatted',status='replace', &
+         iostat=ios)
+      if (ios /= 0) then
+         call da_error(__FILE__,__LINE__, &
+            (/"Cannot open qc observation file"//filename/))
+      end if
    end if
-
 
    iv%ptop = grid%xb%ptop
 
@@ -237,8 +238,10 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
        !call wrfu_finalize
        !call wrf_shutdown
        !stop
-       close(qcstat_conv_unit)
-       call da_free_unit(qcstat_conv_unit)
+       if ( write_rej_obs_conv ) then
+          close(qcstat_conv_unit)
+          call da_free_unit(qcstat_conv_unit)
+       end if
        if (trace_use) call da_trace_exit("da_get_innov_vector")
        return
    endif
@@ -289,8 +292,10 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
    end if
 #endif
 
-   close(qcstat_conv_unit)
-   call da_free_unit(qcstat_conv_unit)
+   if ( write_rej_obs_conv ) then
+      close(qcstat_conv_unit)
+      call da_free_unit(qcstat_conv_unit)
+   end if
 
    if (trace_use) call da_trace_exit("da_get_innov_vector")
 

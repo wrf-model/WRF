@@ -15,7 +15,8 @@ module da_ssmi
       test_transforms,stdout, use_ssmiretrievalobs, use_ssmitbobs, &
       global, print_detail_obs, max_ssmi_rv_input, max_ssmi_tb_input, &
       its,ite,jts,jte,kts,kte,kms,kme,ids,ide,jds,jde,fails_error_max, &
-      ssmi_tb, ssmi_rv, num_ob_indexes, ssmt1, ssmt2, ob_vars,qcstat_conv_unit
+      ssmi_tb, ssmi_rv, num_ob_indexes, ssmt1, ssmt2, ob_vars,qcstat_conv_unit, &
+      write_rej_obs_conv
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &
       bad_data_type, x_type, number_type, bad_data_type, &
       maxmin_type,residual_ssmi_rv_type, &

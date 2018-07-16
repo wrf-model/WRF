@@ -10,7 +10,7 @@ module da_qscat
       max_error_bt, max_error_buv, anal_type_verify, kms,kme,kts,kte,&
       ob_vars,qcstat_conv_unit, fails_error_max, &
       convert_fd2uv,convert_uv2fd,max_error_spd,max_error_dir,max_omb_spd,max_omb_dir,pi,qc_rej_both,&
-      wind_sd_qscat, wind_stats_sd 
+      wind_sd_qscat, wind_stats_sd, write_rej_obs_conv
    use da_grid_definitions, only : da_ffdduv, da_ffdduv_model, da_ffdduv_diagnose
    use da_physics, only : da_uv_to_sd_lin, da_uv_to_sd_adj
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &

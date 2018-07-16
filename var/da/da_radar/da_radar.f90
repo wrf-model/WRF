@@ -18,7 +18,8 @@ module da_radar
    use da_control, only : cloudbase_calc_opt, &
       radar_non_precip_rf, radar_non_precip_opt, radar_rqv_thresh1, radar_rqv_thresh2, &
       radar_rqv_rh1, radar_rqv_rh2, radar_non_precip_rh_w, radar_non_precip_rh_i, &
-      radar_rqv_h_lbound, radar_rqv_h_ubound, radar_saturated_rf, cloud_cv_options
+      radar_rqv_h_lbound, radar_rqv_h_ubound, radar_saturated_rf, cloud_cv_options, &
+      radar_rhv_err_opt, radar_rhv_rrn_err, radar_rhv_rsn_err, radar_rhv_rgr_err
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &
       bad_data_type, x_type, number_type, bad_data_type, &
       infa_type, field_type

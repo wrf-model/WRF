@@ -486,6 +486,7 @@ rconfig   integer   radar_rhv_err_opt       namelist,radar_da  1   1       - "ra
 rconfig   real      radar_rhv_rrn_err       namelist,radar_da  1   0.15    - "radar_rhv_rrn_err"       "obs error of retrieved qrain"              "g/kg"
 rconfig   real      radar_rhv_rsn_err       namelist,radar_da  1   0.15    - "radar_rhv_rsn_err"       "obs error of retrieved qsnow"              "g/kg"
 rconfig   real      radar_rhv_rgr_err       namelist,radar_da  1   0.15    - "radar_rhv_rgr_err"       "obs error of retrieved qgraup"             "g/kg"
+rconfig   logical   write_oa_radar_ascii    namelist,radar_da  1   .true.  - "write_oa_radar_ascii"    "switch for writing out radar_omb_oma"      ""
 rconfig   logical jcdfi_use                 namelist,perturbation  1  .false.  -   "jcdfi_use"   "JcDFI on/off"      ""
 rconfig   integer jcdfi_diag                namelist,perturbation  1  1        -   "jcdfi_diag"  "JcDFI diag. on/off"      ""
 rconfig   real    jcdfi_penalty             namelist,perturbation  1  10.      -   "jcdfi_penalty"    "Penalty parameter for JcDF"      ""

@@ -228,7 +228,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       call domain_clockprint(150, grid, 'get CurrTime from clock,')
    end if
 
-   if ( multi_inc == 1 .and. multi_inc_io_opt == 1 ) then
+   if ( multi_inc == 1 ) then
 #ifdef DM_PARALLEL
        call mpi_barrier(MPI_COMM_WORLD,ierr)
        if ( myproc == 0 )  call da_join_iv_for_multi_inc()

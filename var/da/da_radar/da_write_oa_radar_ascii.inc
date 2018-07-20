@@ -154,8 +154,8 @@ subroutine da_write_oa_radar_ascii ( ob, iv, re, it )
                                        (/"Cannot open file "//trim(filename1(k))/))
          read(omb_radar_unit, '(20x,i8)', iostat=ios)num_obs
          IF(ios /= 0)THEN
-            write(unit=message(1),fmt='(A,A)') 'Nothing to read from ',filename1(k)
-            call da_message(message(1:1))
+            !write(unit=message(1),fmt='(A,A)') 'Nothing to read from ',filename1(k)
+            !call da_message(message(1:1))
             cycle
          ENDIF
          if (num_obs > 0) then

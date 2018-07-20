@@ -180,7 +180,7 @@ program da_thin
 
       coordinates=char(0)
       status = nf90_get_att(ncidin, varid, "coordinates" , coordinates)
-      print *, coordinates
+      !print *, coordinates
 
       stride=(/decimation_factor,decimation_factor,1,1/)
 

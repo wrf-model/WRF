@@ -180,12 +180,12 @@ subroutine da_read_obs_radar (iv, filename, grid)
                              platform % each (i) % rf % error
 
             if (platform % each (i) % rv % error == 0.0 .or. &
-                abs(platform % each (i) % rv % error - missing_r) > 1.0) then
+                abs(platform % each (i) % rv % error - missing_r) < 1.0) then
                  platform % each (i) % rv % error  = 1.0
             end if
 
             if (platform % each (i) % rf % error == 0.0 .or. &
-                abs(platform % each (i) % rf % error - missing_r) > 1.0) then
+                abs(platform % each (i) % rf % error - missing_r) < 1.0) then
                  platform % each (i) % rf % error  = 1.0
             end if
 

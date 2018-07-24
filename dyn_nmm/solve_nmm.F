@@ -1686,6 +1686,7 @@
      &            ,GRID,CONFIG_FLAGS                                   &
      &            ,grid%ihe,grid%ihw,grid%ive,grid%ivw                 &
      &            ,GRID%DISHEAT,GRID%DKU3D,GRID%DKT3D                          &
+     &            ,GRID%CDX    & ! RGF
      &            ,GRID%HPBL2D, GRID%EVAP2D, GRID%HEAT2D,GRID%RC2D               &  !S&P Kwon
      &            ,GRID%SFCHEADRT,GRID%INFXSRT,GRID%SOLDRAIN           &  !Hydrology, no-op right now
      &            ,grid%cd_out,grid%ch_out                             &
@@ -2014,7 +2015,7 @@
         CALL GSMDRIVE(grid%ntsd,GRID%DT,GRID%NPHS,N_MOIST                   &
      &               ,grid%dx_nmm(ITS,JC),GRID%DY,grid%sm,grid%hbm2,grid%fis               &
      &               ,grid%deta1,grid%deta2,grid%aeta1,grid%aeta2,grid%eta1,grid%eta2                &
-     &               ,grid%pdtop,grid%pt,grid%pd,grid%res,grid%pint,grid%t,grid%q,grid%cwm,grid%train               &
+     &               ,grid%pdtop,grid%pt,grid%pd,grid%res,grid%pint,grid%t,grid%q,grid%cwm,grid%train,grid%train_ins               & ! RGF mod
      &               ,MOIST,SCALAR,NUM_SCALAR                          &
      &               ,grid%f_ice,grid%f_rain,grid%f_rimef,grid%sr                          &
      &               ,grid%prec,grid%acprec,grid%avrain                               &

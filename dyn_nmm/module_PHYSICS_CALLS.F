@@ -271,6 +271,7 @@
 
       DXKM=grid%dlmd*0.01745329*6371200. ! numbers from module_initialize_real.F
       DYKM=grid%dy_nmm
+   !  print *,' RGF RADIATION dxkm ',dxkm,' grid%dlmd ',grid%dlmd
 !
 !-----------------------------------------------------------------------
 !
@@ -790,6 +791,7 @@
      &                ,GRID,CONFIG_FLAGS                                &
      &                ,IHE,IHW,IVE,IVW                                  &
      &                ,DISHEAT,DKU3D,DKT3D                              &
+     &                ,CDX   & ! RGF
      &                ,HPBL2D, EVAP2D, HEAT2D,RC2D                      &  !Kwon S&P
      &                ,SFCHEADRT,INFXSRT,SOLDRAIN                       &  !Hydrology, no-op right now
      &                ,cd_out,ch_out                                    &
@@ -934,6 +936,7 @@
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN)  :: scurx, scury
 
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: cd_out,ch_out
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: CDX ! RGF
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: &
                                                        DTHBLDT         &
                                                       ,DQVBLDT         &  
@@ -950,6 +953,8 @@
      &                                                        ,DVDT     &
      &                                                        ,Q,Q2     &
      &                                                        ,T,U,V
+
+
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: F_ICE    &   !<--- Used only in physics (IKJ)
      &                                                        ,F_RAIN   &
@@ -1022,7 +1027,7 @@
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: DUDT_PHY,DVDT_PHY,DZ   &
      &                                          ,P_PHY,P8W,PI_PHY       &
-     &                                          ,RQCBLTEN,RQIBLTEN      &
+     &                                          ,RQCBLTEN,RQIBLTEN, RQNIBLTEN      & ! RGF mod
 !BSF &                                     ,RQSBLTEN,RQRBLTEN,RQGBLTEN  &
      &                                          ,RR,DELP                & ! GWD
      &                                          ,T_PHY,TH_PHY,TKE       &
@@ -1031,7 +1036,7 @@
 
       REAL,DIMENSION(IMS:IME,JMS:JME), INTENT(OUT) :: ULOWL, VLOWL
 !
-      REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: MOIST_TRANS
+      REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: MOIST_TRANS, SCALAR_TRANS ! scalar_trans added by RGF
 !
       REAL,DIMENSION(IMS:IME,NSOIL,JMS:JME) :: ZERO_SOIL
 !
@@ -1079,7 +1084,14 @@
 !-----------------------------------------------------------------------
 !
       ALLOCATE(MOIST_TRANS(IMS:IME,KMS:KME,JMS:JME,N_MOIST),STAT=ISTAT)
+      ALLOCATE(SCALAR_TRANS(IMS:IME,KMS:KME,JMS:JME,N_SCALAR),STAT=ISTAT) ! RGF
 !
+
+    !  print *,' RGF TURB dxkm ',grid%dlmd*0.01745329*6371200., &
+    !       ' grid%dlmd ',grid%dlmd
+    !  print *,' RGF TURB  grid%dy_nmm ', grid%dy_nmm 
+
+
       SF_URBAN_PHYSICS=CONFIG_FLAGS%SF_URBAN_PHYSICS
       FASDAS=0
 
@@ -1127,8 +1139,21 @@
 !
       IDUMMY=0
       ISFFLX=1
+! original lines
       DX=0.
       DY=0.
+! --------------------------------------------------------------------
+! RGF mod: replace DX, DY with effectively domain-center values
+! - MYNN pbl needs dx for scale_aware mod of mixing length, and other uses
+! - sfclay/sfclayrev needs dx for Mahrt and Sun low-res correction
+! - shinhong pbl also uses dy
+! This code does provide an appropriate dx, dy for each domain
+      print *,' RGF about to alter DX and DY'
+      DX=grid%dlmd*0.01745329*6371200.
+      DY=DX
+     ! print *,' RGF DX, DY ',dx,dy
+! end RGF mod
+! --------------------------------------------------------------------
       SST_UPDATE=config_flags%SST_UPDATE
 !
 !$omp parallel do                                                       &
@@ -1286,6 +1311,7 @@
           RQVBLTEN(I,K,J)=0.
           RQCBLTEN(I,K,J)=0.
           RQIBLTEN(I,K,J)=0.
+          RQNIBLTEN(I,K,J)=0. ! RGF
 !BSF          RQSBLTEN(I,K,J)=0.
 !BSF          RQRBLTEN(I,K,J)=0.
 !BSF          RQGBLTEN(I,K,J)=0.
@@ -1464,6 +1490,9 @@
      &          ,ens_Cdamp=config_flags%ens_Cdamp                       &
 #endif
      &          ,cd_out=grid%cd_out,ch_out=grid%ch_out                  &
+#if (NMM_CORE==1)
+     &          ,cdx=grid%cdx   & ! RGF
+#endif
      &          ,RAINCV=RAIN                                            &
      &          ,RHO=RR,SFCEVP=SFCEVPX,SFCEXC=SFCEXC,SFCRUNOFF=SSROFF   &
      &          ,SMOIS=SMC,SMSTAV=SMSTAV,SMSTOT=SMSTOT,SNOALB=MXSNAL    &
@@ -1494,6 +1523,7 @@
      &          ,RA_SW_PHYSICS=CONFIG_FLAGS%RA_SW_PHYSICS               &
      &          ,LAI=GRID%LAI,IZ0TLND=CONFIG_FLAGS%IZ0TLND              &
      &          ,SF_URBAN_PHYSICS=SF_URBAN_PHYSICS                      &
+     &          ,ISFTCFLX=config_flags%isftcflx                          & ! RGF
 !     &          ,GMT=GMT,XLAT=XLAT,XLONG=XLONG,JULDAY=JULDAY            &
      &          ,NUM_URBAN_LAYERS=NUM_URBAN_LAYERS                      &
      &          ,NUM_URBAN_HI=config_flags%num_urban_hi                 & !multi-layer urban
@@ -1595,6 +1625,14 @@
 ! end lake module
      &        ,maxpatch=1,inest=1,history_interval=config_flags%history_interval  & !clm
      &        ,fasdas=fasdas
+! RGF added for MYNN
+     &        ,ch=grid%ch,tsq=grid%tsq,qsq=grid%qsq,cov=grid%cov          & !MYNN - MP
+     &        ,Sh3d=grid%sh3d,el_pbl=el_myj                         & !JOE- MYNN cloudpdf ! RGF ,EL_PBL=grid%el_pbl  MOD
+     &        ,bl_mynn_cloudpdf=config_flags%bl_mynn_cloudpdf             & !JOE- MYNN cloudpdf
+     &        ,icloud_bl=config_flags%icloud_bl                           & !JOE- subgrid cloud
+     &        ,qc_bl=grid%qc_bl,cldfra_bl=grid%cldfra_bl                  & !JOE- subgrid cloud
+     &        ,fgdp=grid%fgdp,dfgdp=grid%dfgdp,vdfg=grid%vdfg             & !Katata - fogdes
+     &        ,grav_settling=config_flags%grav_settling                   & !Katata - fogdes
      &                                                          )
 !
 !-----------------------------------------------------------------------
@@ -1677,6 +1715,10 @@
      &               ,EXCH_H=EXCH_H,EXCH_M=EXCH_M,AKHS=AKHS,AKMS=AKMS &
      &               ,FM=FM,FHH=FH                                    &
      &               ,YSU_TOPDOWN_PBLMIX=CONFIG_FLAGS%YSU_TOPDOWN_PBLMIX &
+     &        ,ysu_firstorder=config_flags%ysu_firstorder                      & ! RGF
+     &        ,ysu_brcr_ub=config_flags%ysu_brcr_ub                      & ! RGF
+     &        ,ysu_cgrad_scalar=config_flags%ysu_cgrad_scalar                 & ! RGF
+     &        ,ysu_cgrad_mom=config_flags%ysu_cgrad_mom                       & ! RGF
      &               ,SHINHONG_TKE_DIAG=CONFIG_FLAGS%SHINHONG_TKE_DIAG &
      &               ,THZ0=THZ0,QZ0=QZ0,UZ0=UZ0H,VZ0=VZ0H             &
      &               ,QSFC=QS,LOWLYR=LOWLYR                           &
@@ -1724,6 +1766,35 @@
      &               ,QS_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS &
      &               ,QG_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG &
      &               ,HOL=HOL,sf_sfclay_physics=CONFIG_FLAGS%SF_SFCLAY_PHYSICS &
+! RGF add start
+!mynn mp@
+     &        ,QKE=grid%qke, Sh3d=grid%sh3d                               &
+     &        ,QKE_ADV=scalar_TRANS(ims,kms,jms,P_qke_adv)                      & !ACF-QKE advection
+     &        ,bl_mynn_tkeadvect=config_flags%bl_mynn_tkeadvect           & !ACF-QKE advection
+     &        ,tsq=grid%tsq, qsq=grid%qsq, cov=grid%cov                   &
+     &        ,DQKE=grid%dqke,QWT=grid%qWT                                &
+     &        ,QSHEAR=grid%qSHEAR,QBUOY=grid%qBUOY,QDISS=grid%qDISS       &
+     &        ,bl_mynn_tkebudget=config_flags%bl_mynn_tkebudget           &
+     &        ,bl_mynn_cloudpdf=config_flags%bl_mynn_cloudpdf             &
+     &        ,bl_mynn_mixlength=config_flags%bl_mynn_mixlength           &
+     &        ,icloud_bl=config_flags%icloud_bl                           &
+     &        ,qc_bl=grid%qc_bl,cldfra_bl=grid%cldfra_bl                  &
+     &        ,bl_mynn_edmf=config_flags%bl_mynn_edmf                     &
+     &        ,bl_mynn_edmf_mom=config_flags%bl_mynn_edmf_mom             &
+     &        ,bl_mynn_edmf_tke=config_flags%bl_mynn_edmf_tke             &
+     &        ,bl_mynn_edmf_part=config_flags%bl_mynn_edmf_part           &
+     &        ,bl_mynn_cloudmix=config_flags%bl_mynn_cloudmix             &
+     &        ,bl_mynn_mixqt=config_flags%bl_mynn_mixqt                   &
+     &        ,edmf_a=grid%edmf_a,edmf_w=grid%edmf_w                      &
+     &        ,edmf_thl=grid%edmf_thl,edmf_qt=grid%edmf_qt                &
+     &        ,edmf_ent=grid%edmf_ent,edmf_qc=grid%edmf_qc                &
+     &        ,rmol=grid%rmol, ch=grid%ch                                 &
+     &        ,qcg=grid%qcg, grav_settling=config_flags%grav_settling     &
+!    &        ,K_m=grid%K_m, K_h=grid%K_h, K_q=grid%K_q                   & ! was commented out in ARW
+     &        ,vdfg=grid%vdfg                                             &
+     &        ,QNI_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QNI), F_QNI=F_QNI      &
+     &        ,RQNIBLTEN=RQNIBLTEN                                   &
+! RGF add end
      &               ,IS_CAMMGMP_USED=IS_CAMMGMP_USED                 &
      &               ,wstar=wstar_ysu,delta=delta_ysu                 &
      &               ,fasdas=fasdas                                   &
@@ -2522,6 +2593,10 @@
 !***  CONVECTIVE CLOUD BETWEEN RADIATION CALLS.  CUPPT IS THE ACCUMULATED
 !***  CONVECTIVE PRECIPITATION BETWEEN RADIATION CALLS.
 !-----------------------------------------------------------------------
+
+    !  print *,' RGF CUCNVC grid%dy_nmm ', &
+	!	grid%dy_nmm,' DYNMM ',DYNMM 
+
 !
 ! Biswas's doing
        DO J=MYJS,MYJE
@@ -2863,6 +2938,13 @@
         ENDDO
         ENDDO
 #endif
+!       print *,' RGF time is ',grid%ntsd*GRID%DT/3600.
+!     if(grid%ntsd*GRID%DT/3600..gt.24..and.grid%id.eq.3)then  ! turn off D3 CU at 1 h
+!     if(grid%ntsd*GRID%DT/3600..gt.24..and.grid%id.ge.1)then  ! turn off CU in all at 1 h
+!       print *,' grid%id ',grid%id,' skipping cumulus'
+!     else
+!     print *,' RGF grid%id ',grid%id
+!     print *,' RGF time is ',grid%ntsd*GRID%DT/3600.,' cu_ is ',CONFIG_FLAGS%CU_PHYSICS
       CALL CUMULUS_DRIVER(GRID                                          &
      &                 ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &
      &                 ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME &
@@ -2943,6 +3025,7 @@
      &                 ,QI_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QI),F_QI=F_QI &
      &                 ,QS_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS &
      &                 ,QG_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG)
+!     endif ! RGF
 !
 #if (NMM_CORE==1)
 !$omp parallel do                                                       &
@@ -3162,7 +3245,7 @@
       SUBROUTINE GSMDRIVE(NTSD,DT,NPHS,N_MOIST                          &
      &                   ,DX,DY,SM,HBM2,FIS                             &
      &                   ,DETA1,DETA2,AETA1,AETA2,ETA1,ETA2             &
-     &                   ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TRAIN            &
+     &                   ,PDTOP,PT,PD,RES,PINT,T,Q,CWM,TRAIN,TRAIN_INS  & ! RGF
      &                   ,MOIST,SCALAR,N_SCALAR                         &
      &                   ,F_ICE,F_RAIN,F_RIMEF,SR                       &
      &                   ,PREC,ACPREC,AVRAIN                            &
@@ -3221,7 +3304,7 @@
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: ACPREC,PREC
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: CWM,Q    &
-     &                                                        ,T,TRAIN
+     &                                                        ,T,TRAIN,TRAIN_INS ! RGF
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: F_ICE    &   !<--- Used only with physics (IKJ)
      &                                                        ,F_RAIN   &
@@ -3481,6 +3564,7 @@
           DO I=MYIS1,IENDX
             TNEW=TH_PHY(I,K,J)*PI_PHY(I,K,J)
             TRAIN(I,J,K)=TRAIN(I,J,K)+(TNEW-T(I,J,K))*RDTPHS
+            TRAIN_INS(I,J,K)=(TNEW-T(I,J,K))*RDTPHS ! RGF
             T(I,J,K)=TNEW
             Q(I,J,K)=MOIST_TRANS(I,K,J,P_QV)/(1.+MOIST_TRANS(I,K,J,P_QV))
             CWM(I,J,K)=CWM_PHY(I,K,J)

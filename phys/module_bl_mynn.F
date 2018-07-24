@@ -144,7 +144,7 @@ MODULE module_bl_mynn
   !Use Ito et al. (2015, BLM) scale-aware (0: no, 1: yes). Note that this also has impacts
   !on the cloud PDF and mass-flux scheme, using Honnert et al. (2011) similarity function
   !for TKE in the upper PBL/cloud layer.
-  REAL, PARAMETER :: scaleaware=1.
+  REAL, PARAMETER :: scaleaware= 1.   ! RGF    was 1.
 
 
   !Temporary switch to deactivate the mixing of chemical species (already done when WRF_CHEM = 1)
@@ -676,6 +676,8 @@ CONTAINS
     INTEGER, INTENT(IN)   :: spp_pbl
     REAL, DIMENSION(kts:kte), INTENT(in)   :: rstoch_col
 
+    ! print *,' RGF IN mym_length'
+
     IF ( bl_mynn_mixlength .EQ. 0 ) THEN
        cns  = 2.7
        alp1 = 0.23
@@ -881,11 +883,15 @@ CONTAINS
        END IF
 
 !      Stochastic perturbations of turbulent mixing length
+! RGF
+#if ( HWRF != 1 )
        if (spp_pbl==1) then
           if (k.lt.25) then
              el(k)= el(k) + el(k)* rstoch_col(k) * 1.5 * MAX(exp(-MAX(zwk-3000.,0.0)/2000.),0.01)
           endif
        endif
+#endif
+! RGF end
 
 
        IF ( wrf_at_debug_level(MYNN_DBG_LVL) ) THEN
@@ -1635,12 +1641,17 @@ CONTAINS
        END IF
 !
 !      Add stochastic perturbation of prandtl number limit
+! RGF
+#if ( HWRF != 1 )
        if (spp_pbl==1) then
           prlimit = MIN(MAX(1.,2.5 + 5.0*rstoch_col(k)), 10.)
           IF(sm(k) > sh(k)*Prlimit) THEN
              sm(k) = sh(k)*Prlimit
           ENDIF
        ENDIF
+#endif
+! RGF end
+
 !
        elq = el(k)*qkw(k)
        elh = elq*qdiv
@@ -3396,9 +3407,25 @@ ENDIF
       edmf_qc(its:ite,kts:kte,jts:jte)=0.
     ENDIF
 
+! RGF start
+    IF ( wrf_at_debug_level(MYNN_DBG_LVL) ) THEN
+        WRITE ( mynn_message , FMT='(A,1x,I5)' ) &
+           'in MYNN driver about to reach initflag',initflag
+        CALL wrf_debug ( 0 , mynn_message )
+    ENDIF
+! RGF end
+
     IF (initflag > 0) THEN
  
        Sh3D(its:ite,kts:kte,jts:jte)=0.
+
+! RGF start
+    IF ( wrf_at_debug_level(MYNN_DBG_LVL) ) THEN
+        WRITE ( mynn_message , FMT='(A)' ) &
+           'in MYNN driver pass sh3d'
+        CALL wrf_debug ( 0 , mynn_message )
+    ENDIF
+! RGF end
        el_pbl(its:ite,kts:kte,jts:jte)=0.
        tsq(its:ite,kts:kte,jts:jte)=0.
        qsq(its:ite,kts:kte,jts:jte)=0.
@@ -3423,7 +3450,14 @@ ENDIF
                 dz1(k)=dz(i,k,j)
                 u1(k) = u(i,k,j)
                 v1(k) = v(i,k,j)
-                w1(k) = w(i,k,j)
+
+! RGF - avoiding W problem in HWRF
+#if (HWRF==1)
+			 w1(k) = 0.             
+#else
+             w1(k) = w(i,k,j)
+#endif
+! end RGF
                 th1(k)=th(i,k,j)
                 tk1(k)=T3D(i,k,j)
                 rho1(k)=rho(i,k,j)
@@ -3464,11 +3498,15 @@ ENDIF
                 tsq1(k)=tsq(i,k,j)
                 qsq1(k)=qsq(i,k,j)
                 cov1(k)=cov(i,k,j)
+! RGF
+#if ( HWRF != 1 )
                 if (spp_pbl==1) then
                     rstoch_col(k)=pattern_spp_pbl(i,k,j)
                 else
                     rstoch_col(k)=0.0
                 endif
+#endif
+! RGF end
 
 
                 IF ( bl_mynn_tkebudget == 1) THEN
@@ -3483,8 +3521,24 @@ ENDIF
 
              zw(kte+1)=zw(kte)+dz(i,kte,j)
 
+! RGF start
+    IF ( wrf_at_debug_level(MYNN_DBG_LVL) ) THEN
+        WRITE ( mynn_message , FMT='(A)' ) &
+           'in MYNN driver about to call GET_PBLH'
+        CALL wrf_debug ( 0 , mynn_message )
+    ENDIF
+! RGF end
+
              CALL GET_PBLH(KTS,KTE,PBLH(i,j),thetav,&
                &  Qke1,zw,dz1,xland(i,j),KPBL(i,j))
+
+! RGF start
+    IF ( wrf_at_debug_level(MYNN_DBG_LVL) ) THEN
+        WRITE ( mynn_message , FMT='(A)' ) &
+           'in MYNN driver AFTER GET_PBLH'
+        CALL wrf_debug ( 0 , mynn_message )
+    ENDIF
+! RGF end
              
              IF (scaleaware > 0.) THEN
                 CALL SCALE_AWARE(dx,PBLH(i,j),Psig_bl(i,j),Psig_shcu(i,j))
@@ -3534,14 +3588,125 @@ ENDIF
 
     ENDIF ! end initflag
 
+! RGF start
+    IF ( wrf_at_debug_level(MYNN_DBG_LVL) ) THEN
+        WRITE ( mynn_message , FMT='(A,1x,A)' ) &
+           'in MYNN driver passed initflag.  bl_mynn_tkeadvect=',bl_mynn_tkeadvect
+        CALL wrf_debug ( 0 , mynn_message )
+    ENDIF
+! RGF end
+!    print *," RGF bl_mynn_tkeadvec = ",bl_mynn_tkeadvect
+
     !ACF- copy qke_adv array into qke if using advection
     IF (bl_mynn_tkeadvect) THEN
        qke=qke_adv
     ENDIF
 
+! RGF start
+    IF ( wrf_at_debug_level(MYNN_DBG_LVL) ) THEN
+        WRITE ( mynn_message , FMT='(A,1x,6I5)' ) &
+           'in MYNN driver before triple loop',jts,jtf,its,itf,kts,ktf
+        CALL wrf_debug ( 0 , mynn_message )
+    ENDIF
+! RGF end
+
+
+
+! RGF test loop
+    if(1.gt.2)then
+    print *,' RGF - START TEST LOOP '
     DO j=JTS,JTF
        DO i=ITS,ITF
           DO k=KTS,KTF
+       !   print *,' RGF jik ',j,i,k,' EL QKE ',el_pbl(i,k,j), qke(i,k,j)
+   ! print *,' RGF jik ',j,i,k,' DZ U V ',dz(i,k,j),u(i,k,j),v(i,k,j)
+    !print *,' RGF jik ',j,i,k,' vars ',qi(i,k,j),exner(i,k,j)
+
+! RGF start
+    IF ( wrf_at_debug_level(MYNN_DBG_LVL) ) THEN
+        WRITE ( mynn_message , FMT='(A,1x,3I5)' ) &
+           'in MYNN driver in TEST LOOP',j,i,k
+        CALL wrf_debug ( 0 , mynn_message )
+    ENDIF
+! RGF end
+
+! test code
+
+             thetav(k)=th(i,k,j)*(1.+0.608*sqv(k))
+			 print *,' after thetav'
+
+             p1(k) = p(i,k,j)
+			 print *,' after p1'
+
+             ex1(k)= exner(i,k,j)
+			 print *,' after ex1'
+
+             el(k) = el_pbl(i,k,j)
+			 print *,' after el'
+
+             qke1(k)=qke(i,k,j)
+			 print *,' after qke1'
+
+             sh(k) = sh3d(i,k,j)
+			 print *,' after sh'
+             tsq1(k)=tsq(i,k,j)
+			 print *,' after tsq1'
+             qsq1(k)=qsq(i,k,j)
+			 print *,' after qsq1'
+             cov1(k)=cov(i,k,j)
+			 print *,' after cov'
+
+! RGF
+#if ( HWRF != 1 )
+             if (spp_pbl==1) then
+                rstoch_col(k)=pattern_spp_pbl(i,k,j)
+             else
+                rstoch_col(k)=0.0
+             endif
+#endif
+! RGF end
+
+
+             !edmf
+             edmf_a1(k)=0.0
+             edmf_qc1(k)=0.0
+             s_aw1(k)=0.
+             s_awthl1(k)=0.
+             s_awqt1(k)=0.
+             s_awqv1(k)=0.
+             s_awqc1(k)=0.
+             s_awu1(k)=0.
+             s_awv1(k)=0.
+             s_awqke1(k)=0.
+
+
+          enddo
+        enddo
+     enddo
+     print *,' RGF - END TEST LOOP'
+    endif ! 1 vs 2
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !           IF(PRESENT(qi) .AND. FLAG_QI)THEN
+  !            print *,' yes '
+  !           endif
+
+ !   print *,' RGF - icloud_bl ',icloud_bl
+ !   print *,' RGF - bl_mynn_tkebudget ',bl_mynn_tkebudget
+ !   print *," RGF - about to start big loop"
+! end RGF test
+
+    DO j=JTS,JTF
+
+       DO i=ITS,ITF
+          DO k=KTS,KTF
+! RGF start
+!    IF ( wrf_at_debug_level(MYNN_DBG_LVL) ) THEN
+!        WRITE ( mynn_message , FMT='(A,1x,3I5)' ) &
+!           'in MYNN driver in triple loop',j,i,k
+!        CALL wrf_debug ( 0 , mynn_message )
+!    ENDIF
+! RGF end
+
              !JOE-TKE BUDGET
              IF ( bl_mynn_tkebudget == 1) THEN
                 dqke(i,k,j)=qke(i,k,j)
@@ -3549,7 +3714,13 @@ ENDIF
              dz1(k)= dz(i,k,j)
              u1(k) = u(i,k,j)
              v1(k) = v(i,k,j)
+! RGF - avoiding W problem in HWRF
+#if (HWRF==1)
+			 w1(k) = 0.             
+#else
              w1(k) = w(i,k,j)
+#endif
+! end if
              th1(k)= th(i,k,j)
              tk1(k)=T3D(i,k,j)
              rho1(k)=rho(i,k,j)
@@ -3604,11 +3775,15 @@ ENDIF
              tsq1(k)=tsq(i,k,j)
              qsq1(k)=qsq(i,k,j)
              cov1(k)=cov(i,k,j)
+! RGF
+#if ( HWRF != 1 )
              if (spp_pbl==1) then
                 rstoch_col(k)=pattern_spp_pbl(i,k,j)
              else
                 rstoch_col(k)=0.0
              endif
+#endif
+! RGF end
 
 
              !edmf
@@ -3641,7 +3816,8 @@ ENDIF
              ELSE
                 zw(k)=zw(k-1)+dz(i,k-1,j)
              ENDIF
-          ENDDO
+
+          ENDDO ! end k
 
           zw(kte+1)=zw(kte)+dz(i,kte,j)
           !EDMF
@@ -3659,6 +3835,13 @@ ENDIF
           ENDDO
 #endif
 
+! RGF start
+!    IF ( wrf_at_debug_level(MYNN_DBG_LVL) ) THEN
+!        WRITE ( mynn_message , FMT='(A,1x,3I5)' ) &
+!           'in MYNN driver reaching get_pblh',j,i,k
+!        CALL wrf_debug ( 0 , mynn_message )
+!    ENDIF
+! RGF end
           CALL GET_PBLH(KTS,KTE,PBLH(i,j),thetav,&
           & Qke1,zw,dz1,xland(i,j),KPBL(i,j))
 
@@ -3719,6 +3902,15 @@ ENDIF
                &qc_bl1D,cldfra_bl1D,             &
                &PBLH(i,j),HFX(i,j),              &
                &Vt, Vq, th1, sgm )
+
+
+! RGF prevent this from operating with HWRF, owing to w/w1 issue
+#if (HWRF==1)
+			 IF (bl_mynn_edmf > 0) THEN
+              stop ' NO_MYNN_EDMF'
+             ENDIF
+#endif
+! end RGF
 
           IF (bl_mynn_edmf == 1) THEN
             !PRINT*,"Calling StEM Mass-Flux: i= ",i," j=",j
@@ -3930,12 +4122,16 @@ ENDIF
                ENDIF
 
                !Stochastic perturbations to cldfra_bl and qc_bl
+! RGF
+#if ( HWRF != 1 )
                if (spp_pbl==1) then
                    cldfra_bl(i,k,j)= cldfra_bl(i,k,j)*(1.0-rstoch_col(k))
                   IF ((cldfra_bl(i,k,j) > 1.0) .or. (cldfra_bl(i,k,j) < 0.0)) then
                      cldfra_bl(i,k,j)=MAX(MIN(cldfra_bl(i,k,j),1.0),0.0)
                   ENDIF
                ENDIF
+#endif
+! RGF end
 
                !Reapply checks on cldfra_bl and qc_bl to avoid FPEs in radiation driver
                ! when these two quantities are multiplied by eachother (they may have changed
@@ -4011,8 +4207,16 @@ ENDIF
 !          ENDIF
 !***  End debugging
 
-       ENDDO
-    ENDDO
+       ENDDO ! i
+    ENDDO ! j
+
+! RGF start
+    IF ( wrf_at_debug_level(MYNN_DBG_LVL) ) THEN
+        WRITE ( mynn_message , FMT='(A)' ) &
+           'in MYNN driver - finished big loop'
+        CALL wrf_debug ( 0 , mynn_message )
+    ENDIF
+! RGF end
 
 !ACF copy qke into qke_adv if using advection
     IF (bl_mynn_tkeadvect) THEN
@@ -5415,9 +5619,12 @@ SUBROUTINE SCALE_AWARE(dx,PBL1,Psig_bl,Psig_shcu)
     REAL, INTENT(OUT) :: Psig_bl,Psig_shcu
     REAL :: dxdh
 
+
     Psig_bl=1.0
     Psig_shcu=1.0
     dxdh=MAX(dx,10.)/MIN(PBL1,3000.)
+    ! print *,' RGF scale_aware DX ',dx,' dxdh ',dxdh
+
     ! Honnert et al. 2011, TKE in PBL  *** original form used until 201605
     !Psig_bl= ((dxdh**2) + 0.07*(dxdh**0.667))/((dxdh**2) + &
     !         (3./21.)*(dxdh**0.67) + (3./42.))

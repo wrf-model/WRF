@@ -30,6 +30,8 @@ CONTAINS
 ! paj
                  ,ctopo,ctopo2,windfarm_opt,power                  &
                  ,ysu_topdown_pblmix                               &
+                 ,ysu_firstorder,ysu_brcr_ub                       & ! RGF
+                 ,ysu_cgrad_scalar,ysu_cgrad_mom                   & ! RGF
                  ,shinhong_tke_diag                                &
               ! OPTIONAL for TEMF scheme
                  ,te_temf,km_temf,kh_temf                     &
@@ -59,12 +61,12 @@ CONTAINS
 #if ( HWRF == 1 )
                  ,VAR_RIC                                          &   !Kwon for Variable Ric
 #endif
-                 ,DKU3D,DKT3D                                      &
 #endif
 #if (HWRF==1)
                  ,coef_ric_l,coef_ric_s,gfs_alpha                  &
                  ,pert_pbl, ens_random_seed, ens_pblamp            &
 #endif
+                ,DKU3D,DKT3D                                      & ! RGF moved
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,i_start,i_end, j_start,j_end, kts,kte, num_tiles &
@@ -144,7 +146,7 @@ CONTAINS
                    , TEMFPBLSCHEME, GFSEDMFSCHEME           &
                    , CAMUWPBLSCHEME                                       &
                    , FITCHSCHEME, SHINHONGSCHEME                          &
-                   , GBMPBLSCHEME, MYJSFCSCHEME
+                   , GBMPBLSCHEME, MYJSFCSCHEME, MYNNPBLSCHEME2, MYNNPBLSCHEME3 ! RGF mod
 #endif
 
    USE module_model_constants
@@ -168,9 +170,10 @@ CONTAINS
    USE module_bl_temf
    USE module_bl_mfshconvpbl
    USE module_bl_gbmpbl
+   USE module_bl_mynn ! RGF moved
+   USE module_bl_fogdes ! RGF moved
 #if (EM_CORE==1)
-   USE module_bl_mynn
-   USE module_bl_fogdes
+
    USE module_wind_fitch
 #endif
 
@@ -369,7 +372,8 @@ CONTAINS
 
 
    INTEGER,    INTENT(IN   )    ::     bl_pbl_physics, ra_lw_physics,sf_sfclay_physics,sf_urban_physics,windfarm_opt
-   INTEGER,    INTENT(IN   )    ::     ysu_topdown_pblmix
+   INTEGER,    INTENT(IN   )    ::     ysu_topdown_pblmix, ysu_firstorder, ysu_cgrad_scalar, ysu_cgrad_mom ! RGF mod
+   REAL,       INTENT(IN   )    ::     ysu_brcr_ub ! RGF
    INTEGER,    OPTIONAL,  INTENT(IN   )    ::     shinhong_tke_diag
    INTEGER,    OPTIONAL,  INTENT(IN   )    ::     scalar_pblmix, tracer_pblmix
 
@@ -396,8 +400,6 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
                    INTENT(OUT) ::  HPBL2D, EVAP2D, HEAT2D, RC2D      !Kwon for Shallow Convection
 
-   REAL, DIMENSION( ims:ime , jms:jme , kms:kme ),                         &
-                   INTENT(OUT) ::  DKU3D,DKT3D                      !Kwon duffusivity
 #endif
 #if ( HWRF == 1 )
    REAL,       INTENT(IN)         ::   VAR_RIC                       !Kwon for variable Ric
@@ -406,6 +408,8 @@ CONTAINS
    logical,intent(in) :: pert_pbl
    REAL,       INTENT(IN)         ::   gfs_alpha,coef_ric_l,coef_ric_s
 #endif
+   REAL, DIMENSION( ims:ime , jms:jme , kms:kme ),                         &
+ INTENT(OUT) ::  DKU3D,DKT3D                      !Kwon duffusivity ! RGF moved
 
 
    REAL,       DIMENSION( kms:kme ),                              &
@@ -760,7 +764,7 @@ CONTAINS
    INTEGER :: i,J,K,NK,jj,ij,its,ite,jts,jte
    LOGICAL :: radiation
    LOGICAL :: flag_bep
-   LOGICAL :: flag_myjsfc
+   LOGICAL :: flag_myjsfc, flag_gfdlsfc ! RGF
    LOGICAL :: flag_qv, flag_qc, flag_qr, flag_qi, flag_qs, flag_qg, flag_qnc,flag_qni !flag_qnc,flag_qnc are used in camuwpbl scheme
    CHARACTER*256 :: message
    REAL    :: next_bl_time
@@ -769,6 +773,8 @@ CONTAINS
    integer iu_bep,iurb,idiff
    real seamask,thsk,zzz,unew,vnew,tnew,qnew,umom,vmom
    REAL :: z0,z1,z2,w1,w2
+   real wmax,wmin ! RGF
+   REAL,       DIMENSION( ims:ime , jms:jme ) :: fm_,fhh_ ! RGF 
 !
 ! FASDAS
 !
@@ -798,6 +804,19 @@ CONTAINS
       CASE DEFAULT
          flag_myjsfc=.false.
     END SELECT
+! start RGF
+!   SELECT CASE(sf_sfclay_physics)
+!     CASE (GFDLSFCSCHEME)
+!        flag_gfdsfc=.true.
+!     CASE DEFAULT
+!        flag_gfdlsfc=.false.
+!   END SELECT
+    if(sf_sfclay_physics.eq.88)then
+      flag_gfdlsfc=.true.
+    else
+      flag_gfdlsfc=.false.
+    endif
+! end RGF
 !
   flag_qv = .FALSE. ; IF ( PRESENT( F_QV ) ) flag_qv = F_QV
   flag_qc = .FALSE. ; IF ( PRESENT( F_QC ) ) flag_qc = F_QC
@@ -1151,6 +1170,18 @@ CONTAINS
                 PRESENT( rqiblten )                           .AND. &
                 PRESENT( hol      ) ) THEN
 !
+! RGF start
+    write(6,*) " sf_sfclay_physics = ",sf_sfclay_physics
+       if(flag_gfdlsfc)then
+         fm_ = psim
+         fhh_ = psih
+         write(6,*) " CALLING YSU with fm=psim, fhh=psih "
+       else
+         fm_ = fm
+         fhh_ = fhh
+         write(6,*) " CALLING YSU with fm, fhh as standard with sfclayrev "
+       endif
+! RGF end
              CALL ysu(                                              &
                U3D=u_phytmp,V3D=v_phytmp,TH3D=th_phy,T3D=t_phy      &
               ,QV3D=qv_curr,QC3D=qc_curr,QI3D=qi_curr               &
@@ -1163,16 +1194,23 @@ CONTAINS
               ,DZ8W=dz8w,XLV=XLV,RV=r_v,PSFC=PSFC                   &
               ,ZNU=znu,ZNW=znw,P_TOP=p_top                          &
               ,ZNT=znt,UST=ust,HPBL=pblh                            &
-              ,PSIM=fm,PSIH=fhh,XLAND=xland                         &
+        !     ,PSIM=fm,PSIH=fhh,XLAND=xland                         & ! original line
+              ,PSIM=fm_,PSIH=fhh_,GZ1OZ0=gz1oz0,XLAND=xland         & ! RGF replace and restored GZ1OZ0
+              ,SFCLAY=sf_sfclay_physics                             & ! RGF added
               ,HFX=hfx,QFX=qfx                                      &
               ,U10=u10,V10=v10                                      &
               ,UOCE=uoce,VOCE=voce                                  &
 ! paj
               ,CTOPO=ctopo,CTOPO2=ctopo2                            &
+              ,DKU3D=DKU3D,DKT3D=DKT3D                              & ! RGF
               ,YSU_TOPDOWN_PBLMIX=ysu_topdown_pblmix                &
+              ,YSU_FIRSTORDER=ysu_firstorder                        & ! RGF
+              ,YSU_BRCR_UB=ysu_brcr_ub                              & ! RGF
+              ,YSU_CGRAD_SCALAR=ysu_cgrad_scalar                    & ! RGF
+              ,YSU_CGRAD_MOM=ysu_cgrad_mom                          & ! RGF
               ,WSPD=wspd,BR=br,DT=dtbl,KPBL2D=kpbl                  &
               ,EP1=ep_1,EP2=ep_2,KARMAN=karman                      &
-              ,EXCH_H=exch_h,REGIME=regime                          &
+              ,EXCH_H=exch_h,EXCH_M=exch_m,REGIME=regime            & ! RGF
               ,RTHRATEN=RTHRATEN                                    &
 ! for grims shallow convection with ysupbl
               ,WSTAR=wstar,DELTA=delta                              &
@@ -1621,9 +1659,10 @@ CONTAINS
                CALL wrf_error_fatal('Lack arguments to call ACM2 pbl')
            ENDIF
 
-#if (EM_CORE==1)
+! #if (EM_CORE==1) ! RGF moved
 
         CASE (MYNNPBLSCHEME2, MYNNPBLSCHEME3)
+           CALL wrf_debug(100,'calling MYNNPBL')
 
            IF ( PRESENT( qv_curr )  .AND. PRESENT( qc_curr )  .AND. &
                 PRESENT( rqvblten ) .AND. PRESENT( rqcblten ) .AND. &
@@ -1742,6 +1781,8 @@ CONTAINS
               CALL wrf_error_fatal('Lack arguments to call MYNN pbl')
            ENDIF
 
+! RGF moved here
+#if (EM_CORE==1) 
         CASE (BOULACSCHEME)
 
              CALL wrf_debug(100,'in boulac')
@@ -1926,7 +1967,8 @@ CONTAINS
        ENDIF
    ENDIF
 
-#if (EM_CORE==1)                                                                                                                                                                             
+! RGF removed wrapper
+!!! #if (EM_CORE==1)                                                                                                                                                                             
 !JOE-added - fog (cloud) water deposition calculation
    IF (grav_settling .GE. 1) THEN
       IF ( PRESENT(vdfg) .AND. PRESENT(qc_curr)) THEN
@@ -1944,7 +1986,8 @@ CONTAINS
       ENDIF
    ENDIF
 !JOE-END
-#endif
+!!! #endif
+! RGF removed wrapper end
 
 #if (NMM_CORE != 1)
 

@@ -683,7 +683,7 @@ CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_
           do j=jts,jte
              do k=kts,kte
                 do i=its,ite
-                   chem(i,k,j,p_co2)=400.83 ! 2015 Mauna Loa average 
+                   chem(i,k,j,p_co2)=400. 
                    chem(i,k,j,p_ch4)=1.7
                    chem(i,k,j,p_ete)=chem(i,k,j,p_olt)
                    chem(i,k,j,p_ete)=epsilc

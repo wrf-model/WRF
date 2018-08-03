@@ -36,11 +36,12 @@ module da_crtm
       use_crtm_kmatrix, use_varbc, freeze_varbc, use_pseudo_rad, &
       use_antcorr, time_slots, use_satcv, use_simulated_rad, simulated_rad_io, &
       simulated_rad_ngrid, interp_option, use_mspps_emis, use_mspps_ts, calc_weightfunc, &
-      use_clddet_ecmwf,its,ite,jts,jte, &
+      use_clddet_ecmwf, use_clddet_zz, its,ite,jts,jte, &
       crtm_coef_path, crtm_irwater_coef, crtm_mwwater_coef, crtm_irland_coef, crtm_visland_coef, &
       cloud_cv_options
    use da_interpolation, only : da_interp_lin_2d_partial,da_interp_lin_2d_adj_partial, &
       da_interp_2d_partial
+   use da_physics, only: da_trop_wmo
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_reals
    use da_radiance1, only : da_biasprep,da_detsurtyp,da_biascorr, &
        da_biasprep,da_cld_eff_radius, da_mspps_emis, da_mspps_ts

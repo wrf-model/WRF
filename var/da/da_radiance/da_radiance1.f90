@@ -9,9 +9,11 @@ module da_radiance1
 #ifdef CRTM
    use module_radiance, only : CRTM_Planck_Radiance, CRTM_Planck_Temperature
 #endif
+   use module_radiance, only : &
 #ifdef RTTOV
-   use module_radiance, only : coefs
+     coefs, &
 #endif
+     deg2rad
 
    use da_control, only : trace_use,missing_r, rootproc, &
       stdout,myproc,qc_good,num_fgat_time,qc_bad, &
@@ -20,11 +22,11 @@ module da_radiance1
       rtm_option_rttov,rtm_option_crtm, radiance, only_sea_rad, &
       global, gas_constant, gravity, monitor_on,kts,kte,use_rttov_kmatrix, &
       use_pseudo_rad, pi, t_triple, crtm_cloud, DT_cloud_model,write_jacobian, &
-      use_crtm_kmatrix,use_clddet_mmr, use_satcv, cv_size_domain, &
+      use_crtm_kmatrix,use_clddet_mmr, use_clddet_zz, use_satcv, cv_size_domain, &
       cv_size_domain_js, calc_weightfunc, use_clddet_ecmwf, deg_to_rad, rad_to_deg
    use da_define_structures, only : info_type,model_loc_type,maxmin_type, &
       iv_type, y_type, jo_type,bad_data_type,bad_data_type,number_type, &
-      be_type
+      be_type, cld_qc_type
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_integer
    use da_par_util, only : da_proc_stats_combine
    use da_par_util1, only : da_proc_sum_int,da_proc_sum_ints
@@ -41,12 +43,12 @@ module da_radiance1
 #endif
 
    implicit none
-   
+  
    type datalink_type
 
       type (info_type)        :: info
       type (model_loc_type)   :: loc
-
+      type (cld_qc_type), pointer :: cld_qc => null()
       integer   ::  ifgat, landsea_mask, rain_flag
       integer   ::  scanline, scanpos
       real      ::  satzen, satazi, solzen, solazi  !  satellite and solar angles

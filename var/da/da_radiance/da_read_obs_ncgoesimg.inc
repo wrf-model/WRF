@@ -305,7 +305,7 @@ subroutine  da_read_obs_ncgoesimg (iv,infile)
          sat_zen=missing_r
          do jj=1,dims(2)
          do ii=1,dims(1)
-            call da_get_satzen(lat(ii,jj),lon(ii,jj),satellite_id,sat_zen(ii,jj))
+            call da_get_sat_angles(lat(ii,jj),lon(ii,jj),satellite_id,sat_zen(ii,jj))
             if(sat_zen(ii,jj) > 75.0) sat_zen(ii,jj)=missing_r
          end do
          end do

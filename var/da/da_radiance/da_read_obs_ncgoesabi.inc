@@ -19,9 +19,11 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    ! THINNING: thinning_grid
    ! GENERAL OBS: num_fgat_time, time_slots
    ! WRFDA types: iv_type, datalink_type, info_type, model_loc_type
-   ! WRFDA subs: da_get_satzen, da_llxy, da_get_unit, da_free_unit, da_get_julian_time
-   !             da_trace_entry, da_trace_exit
-   ! precisions: r_kind, i_kind
+   ! WRFDA subs: da_llxy, da_get_julian_time,
+   !             da_get_unit, da_free_unit,
+   !             da_get_sat_angles(_1d), da_get_solar_angles(_1d)
+   !             da_trace_entry, da_trace_exit, 
+   ! precisions: r_double, i_kind
 
    type (iv_type),intent (inout) :: iv
    integer, intent(in)           :: satellite_id ! 16 or 17
@@ -30,7 +32,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    type(info_type)              :: info
    type(model_loc_type)         :: loc
    integer(i_kind), allocatable :: ptotal(:)
-   real(r_kind)                 :: crit
+   real(r_double)               :: crit
    integer(i_kind)              :: iout, iobs, i_dummy(1)
    logical                      :: outside, outside_all, iuse, first_chan
    logical                      :: found, head_found
@@ -42,19 +44,33 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    integer                      :: nbuf, nrad_local, nrad_mask, buf_i, buf_f
    integer, allocatable         :: nbufs(:), displs(:)
    integer                      :: ny_local, nx_local
-   integer                      :: ys_local, xs_local
 
    !! Earth location info
    real, allocatable            :: yy_abi(:), xx_abi(:)
    real, allocatable            :: yy_1d(:), xx_1d(:)
    real, allocatable            :: iy_1d(:), ix_1d(:)
+   real, allocatable            :: solzen_1d(:), solazi_1d(:)
 
-   real(r_kind)                 :: req, rpol, pph, nam
-!!!   real                         :: lat_sat, lon_sat ! Assume fixed values in da_get_satzen
+   real(r_double)               :: req, rpol, pph, nam
+!!!   real                         :: lat_sat, lon_sat ! Assume fixed values in da_get_sat_angles
    real, allocatable, target    :: buf_real(:,:)
    integer, allocatable, target :: buf_int(:,:)
    type(model_loc_type), allocatable, target :: buf_loc(:)
    type(info_type), allocatable :: info_1d(:)
+
+
+   !Cloud QC variables
+   integer :: tbuf, nkeep, ikeep
+   integer :: cld_qc_buffer  ! Must be ≥ 0
+   real    :: mean10, mean14, sigma10, sigma14, pearson, temp_max
+   real, allocatable :: tb_10(:), tb_14(:)
+   logical :: cldqc
+   character(18), parameter :: terr_fname = 'OR_ABI-TERR_G16.nc'
+
+   integer :: TEMPIR_ifile
+   real    :: TEMPIR_min_time_diff, TEMPIR_time_abs_diff
+   real, parameter :: TEMPIR_delay_minutes = 15.0
+
 
    ! Masks for data reduction
 !!!   logical :: include_local, load_balance
@@ -66,6 +82,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
       patchmask_1d(:)    , &
       dummybool_2d(:,:)    , &
       allmask_p(:,:) , &
+      readmask_p(:,:) , &
       thinmask(:,:)
 
    logical, allocatable :: view_mask(:,:,:,:,:)
@@ -74,12 +91,12 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
 
    ! Brightness Temperature (K)
-   real, allocatable            :: bt_p(:,:)
+   real, allocatable            :: bt_p(:,:,:), terrain_hgt(:,:)
 
    !! Iterates
    integer                      :: ichan, ifile, iview, ifgat, ipass, ioff, &
                                    jchan, jfile, jview, icount, &
-                                   n, i, j, iy, ix, iyl, ixl, iyfd, ixfd, iproc, subgrid
+                                   n, i, j, iy, ix, jy, jx, iyl, ixl, iyfd, ixfd, iproc, subgrid
 
    !! Satellite variables
    integer(i_kind),parameter    :: nchan = 10
@@ -97,12 +114,13 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    integer                      :: file_unit
 
    type date_type
-      integer                   :: yr, mt, dy, hr, mn, sc
+      integer                   :: yr, mt, dy, hr, mn, sc, jdy
+      real(r_double)            :: obs_time
    end type date_type
 
 !   ! Linked list type for radiance location information
 !   type viewnode
-!      real    :: lat, lon, satzen
+!      real    :: lat, lon, satzen, satazi
 !      integer :: iy, ix
 !      type(model_loc_type)    :: loc
 !      type(viewnode), pointer :: next
@@ -133,10 +151,12 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
       integer, allocatable             :: filechan(:)
       type(date_type), allocatable     :: filedate(:)
       logical, allocatable             :: file_fgat_match(:,:)
-      real*8, allocatable              :: fgat_time_diff(:,:) ! seconds
+      real*8, allocatable              :: fgat_time_abs_diff(:,:) ! seconds
       real*8, allocatable              :: min_time_diff(:,:) ! seconds
       integer, allocatable             :: nfiles_used(:) 
       integer                          :: ny_global, nx_global, yoff_fd, xoff_fd
+      integer                          :: ys_local, xs_local
+      integer                          :: ye_local, xe_local
       integer, allocatable             :: ny_grid(:), nx_grid(:)
       integer, allocatable             :: ys_grid(:), xs_grid(:)
       integer                          :: ys_p, xs_p
@@ -144,11 +164,12 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
       integer                          :: ys_p_fd, xs_p_fd
       integer                          :: ye_p_fd, xe_p_fd
       integer                          :: nrad_on_patch, nrad_on_domain
-      logical, allocatable             :: patchmask(:,:)
+      integer                          :: nrad_on_patch_cldqc, nrad_on_domain_cldqc
+      logical, allocatable             :: patchmask(:,:,:)
 !      type(viewnode), pointer          :: head
 !      type(viewnode), pointer          :: current
 
-      type(field_r)   :: lat_1d, lon_1d, satzen_1d
+      type(field_r)   :: lat_1d, lon_1d, satzen_1d, satazi_1d
       type(field_i)   :: iy_1d, ix_1d
       type(field_loc) :: loc_1d
 
@@ -170,16 +191,16 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
    ! Global WRFDA obs timing info
    character(len=19)                   :: fgat_times_c(num_fgat_time)
-   real(r_kind)                        :: fgat_times_r(num_fgat_time)
+   real(r_double)                      :: fgat_times_r(num_fgat_time)
 
    ! Local Obs date/time variables
-   real(r_kind)                        :: obs_time
+   real(r_double)                      :: obs_time
    integer(i_kind)                     :: yr, mt, dy, hr, mn, sc, jdy
-   real(r_kind)                        :: timbdy(2)
+   real(r_double)                      :: timbdy(2)
 
    ! Other work variables
-   real(r_kind)     :: dlon_earth,dlat_earth,dlon_earth_deg,dlat_earth_deg
-   real(r_kind)     :: ngoes
+   real(r_double)   :: dlon_earth,dlat_earth,dlon_earth_deg,dlat_earth_deg
+   real(r_double)   :: ngoes
    integer(i_kind)  :: num_goesabi_local, num_goesabi_global, num_goesabi_used, &
                  num_goesabi_used_tmp, num_goesabi_thinned
    integer(i_kind)  :: itx, itt
@@ -242,7 +263,9 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    end do
 
    allocate(view_att(nviews))
-   view_att(:) % select = .true.  ! Need to set this according to namelist entries
+   ! (default) All views are used (algorithm figures out which views have files present)
+   ! Could set this according to namelist entries
+   view_att(:) % select = .true.  
    view_att(1) % name_short = 'F'
    view_att(2) % name_short = 'C'
    view_att(3) % name_short = 'M1'
@@ -258,10 +281,17 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    view_att(3) % fpath = './goes-meso/'
    view_att(4) % fpath = './goes-meso/'
 
+   ! (default) Full Disk and CONUS are fixed while MESO 1 & 2 can move within an assimilation window
    view_att(1) % moving = .false.
    view_att(2) % moving = .false.
    view_att(3) % moving = .true.
    view_att(4) % moving = .true.
+
+!   ! Full Disk, CONUS, and MESO 1 & 2 are fixed within an assimilation window (e.g., 3D-Var)
+!   view_att(1) % moving = .false.
+!   view_att(2) % moving = .false.
+!   view_att(3) % moving = .false.
+!   view_att(4) % moving = .false.
 
    !! Initialize local obs structures
    allocate (head)
@@ -273,10 +303,21 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    num_goesabi_used    = 0
    num_goesabi_thinned = 0
 
+   if ( use_clddet_zz ) then
+      cld_qc_buffer = 10
+   else
+      cld_qc_buffer = 0
+   end if
 
-   !! Take 2 passes over the data:
-   !! + 1st pass: determine which views should be used for each fgat and each channel across observed domain
-   !! + 2nd pass: read radiance values and convert to BT
+   !! If Full Disk is selected, take 2 passes over the data:
+   !! + 1st pass: (A) Determine portions of each view corresponding to this patch
+   !!                 for each fgat and each channel across observed domain
+   !!             (B) Eliminate portions of broader views (Full Disk and CONUS) that
+   !!                 can be replaced by narrower views (CONUS and MESO) with times
+   !!                 closer to fgat time
+   !! + 2nd pass: read radiance values, convert to BT, calculate quantities for online cloud detection QC
+   !!
+   !! Otherwise only take one pass, and duplicated data cannot be removed from CONUS/MESO
 
    npass = 1
    if (nviews.gt.1 .and. view_att(1) % select) npass = 2
@@ -347,17 +388,17 @@ write(stdout,*) trim(command)
          allocate(this_view % filechan(this_view % nfiles))
          allocate(this_view % filedate(this_view % nfiles))
          allocate(this_view % file_fgat_match(this_view % nfiles,num_fgat_time))
-         allocate(this_view % fgat_time_diff(this_view % nfiles,num_fgat_time))
+         allocate(this_view % fgat_time_abs_diff(this_view % nfiles,num_fgat_time))
          allocate(this_view % min_time_diff(nchan,num_fgat_time))
          allocate(this_view % nfiles_used(num_fgat_time))
 
          this_view % file_fgat_match = .false.
          do ifgat=1,num_fgat_time
-            this_view % fgat_time_diff(:,ifgat) = &
-               (time_slots(ifgat) - time_slots(ifgat-1)) * 60.D0 !seconds
+            this_view % fgat_time_abs_diff(:,ifgat) = &
+               abs(time_slots(ifgat) - time_slots(ifgat-1)) * 60.D0 !seconds
 
             this_view % min_time_diff(:,ifgat) = &
-               (time_slots(ifgat) - time_slots(ifgat-1)) * 60.D0 / 2.D0 !seconds
+               abs(time_slots(ifgat) - time_slots(ifgat-1)) * 60.D0 / 2.D0 !seconds
          end do
 
          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -438,6 +479,8 @@ write(stdout,*) trim(command)
             this_view % filedate(ifile) % hr = hr
             this_view % filedate(ifile) % mn = mn
             this_view % filedate(ifile) % sc = sc
+            this_view % filedate(ifile) % jdy = jdy
+            this_view % filedate(ifile) % obs_time = obs_time
 
             if ( obs_time < time_slots(0) * 60.D0 .or.  &
                obs_time >= time_slots(num_fgat_time) * 60.D0 ) then
@@ -451,15 +494,15 @@ write(stdout,*) trim(command)
                if (this_view % file_fgat_match(ifile,ifgat)) exit
             end do
 
-            this_view % fgat_time_diff(ifile,ifgat) = &
+            this_view % fgat_time_abs_diff(ifile,ifgat) = &
                 abs( obs_time - fgat_times_r(ifgat) )
 
             call get_ichan(this_view % filechan(ifile), channel_list, nchan, ichan)
-            if ( abs(this_view % fgat_time_diff(ifile, ifgat)) .ge. &
+            if ( this_view % fgat_time_abs_diff(ifile, ifgat) .ge. &
                  this_view % min_time_diff(ichan, ifgat) ) then
                this_view % file_fgat_match(ifile,ifgat) = .false.
             else
-               this_view % min_time_diff(ichan, ifgat) = abs(this_view % fgat_time_diff(ifile, ifgat))
+               this_view % min_time_diff(ichan, ifgat) = this_view % fgat_time_abs_diff(ifile, ifgat)
             end if
 
             if (count(this_view % file_fgat_match(ifile,:)) .gt. 1) then
@@ -490,7 +533,7 @@ write(stdout,*) trim(command)
             do ifile = 1, this_view % nfiles
                if ( .not. this_view % file_fgat_match(ifile,ifgat) ) cycle
                call get_ichan(this_view % filechan(ifile), channel_list, nchan, ichan)
-               if ( abs(this_view % fgat_time_diff(ifile, ifgat)) .gt. &
+               if ( this_view % fgat_time_abs_diff(ifile, ifgat) .gt. &
                     this_view % min_time_diff(ichan, ifgat) ) then
                   this_view % file_fgat_match(ifile,ifgat) = .false.
                end if
@@ -505,10 +548,22 @@ write(stdout,*) trim(command)
          end do
          if (first_file .eq. 0) cycle
 
-         write(unit=stdout,fmt='(A,I0,A)') &
-            'Processing GOES-',satellite_id,' ABI data for:'
-         write(unit=stdout,fmt='(4A)') &
-            '          ',trim(this_view % name)," ; ",fgat_times_c(ifgat)
+         if ( sum(this_view % nfiles_used(:)).eq.0) &
+            write(unit=stdout,fmt='(A,I0,2A)') &
+               'Processing GOES-',satellite_id,' ABI data for view: ', trim(this_view % name)
+         write(unit=stdout,fmt=*) ''
+         write(unit=stdout,fmt='(2A)') &
+            '          fgat time: ',fgat_times_c(ifgat)
+
+         yr = this_view % filedate(first_file) % yr
+         mt = this_view % filedate(first_file) % mt
+         dy = this_view % filedate(first_file) % dy
+         hr = this_view % filedate(first_file) % hr
+         mn = this_view % filedate(first_file) % mn
+         sc = this_view % filedate(first_file) % sc
+         write(unit=stdout, &
+            fmt='(A,I4.4,A,I2.2,A,I2.2,A,I2.2,A,I2.2,A,I2.2)')  &
+            '          data time: ',yr, '-', mt, '-', dy, '_', hr, ':', mn, ':', sc
 
          fname_short = trim(this_view % filename(first_file))
          fname = trim(this_view % fpath)//trim(fname_short)
@@ -543,7 +598,6 @@ write(stdout,*) trim(command)
             this_view % ys_grid = 1
             this_view % xs_grid = 1
 #endif
-
          end if
 
          ! Recall global dims for this_view
@@ -555,12 +609,12 @@ write(stdout,*) trim(command)
          !!  + CONUS or FD and first matching fgat
          !!  + MESO and any fgat (extent changes in time)
          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-         DoGridGen: if (  ( ipass.eq.1 .and. sum(this_view % nfiles_used(:)).eq.0 ) &
-                 .or. this_view % moving ) then
+         DoGridGen: if (  this_view % moving .or. &
+                        ( ipass.eq.1 .and. sum(this_view % nfiles_used(:)).eq.0 ) ) then
 
-            ! Read grid from file, convert to lat, lon, satzen
+            ! Read grid from file, convert to lat, lon, satzen, satazi
             write(unit=stdout,fmt='(2A)') &
-               '          Reading/calculating abi grid info...'
+               '          Establishing abi grid info...'
 
             !========================================================
             ! Establish GOES metadata for this view and ifgat
@@ -589,7 +643,8 @@ write(stdout,*) trim(command)
             !===========================================================
 !!!               load_balance = any(iview.eq.(/1,2/))
 !!!               if (load_balance) then
-               nrad_local = ny_global * nx_global / num_procs + 1
+!               nrad_local = ny_global * nx_global / num_procs + 1
+               nrad_local = ny_global * nx_global / (num_procs-1)
 !!!               else
 !!!                  nrad_local = this_view % ny_grid(iproc+1) * this_view % nx_grid(iproc+1)
 !!!               end if
@@ -599,7 +654,7 @@ write(stdout,*) trim(command)
             allocate( iy_1d (nrad_local) )
             allocate( ix_1d (nrad_local) )
 
-            n = 0 ; icount = 1
+            n = 0 ; icount = 0
             ! This loop over subgrids and the selective logic 
             !  below for myproc balances the processor loads  
             !  when some imager pixels are off-earth or outside
@@ -608,8 +663,8 @@ write(stdout,*) trim(command)
                ! Recall local dims for this_view
                ny_local = this_view % ny_grid(subgrid)
                nx_local = this_view % nx_grid(subgrid)
-               ys_local = this_view % ys_grid(subgrid)
-               xs_local = this_view % xs_grid(subgrid)
+               this_view % ys_local = this_view % ys_grid(subgrid)
+               this_view % xs_local = this_view % xs_grid(subgrid)
 
 !!!                 !This version of include_local produces unbalanced loads between processors
 !!!                  include_local = ( subgrid-1 .eq. myproc )
@@ -622,47 +677,53 @@ write(stdout,*) trim(command)
 !!!                        if ( include_local ) then
 
                      if ( mod( n, num_procs ) .eq. myproc ) then
-                        iy = iyl + ys_local - 1
-                        ix = ixl + xs_local - 1
-                        yy_1d(icount) = yy_abi( iy )
-                        xx_1d(icount) = xx_abi( ix )
-                        iy_1d(icount) = iy
-                        ix_1d(icount) = ix
-
                         icount = icount + 1
 
+                        iy = iyl + this_view % ys_local - 1
+                        ix = ixl + this_view % xs_local - 1
+                        yy_1d ( icount ) = yy_abi( iy )
+                        xx_1d ( icount ) = xx_abi( ix )
+                        iy_1d ( icount ) = iy
+                        ix_1d ( icount ) = ix
                      end if
                      n = n + 1
                   end do
                end do
             end do
 
-            nrad_local = icount - 1
+            nrad_local = icount
 
             deallocate( yy_abi, xx_abi )
 
-            allocate( earthmask_1d                  (nrad_local) )
-            allocate( zenmask_1d                    (nrad_local) )
-            allocate( this_view % lat_1d % local    (nrad_local) )
-            allocate( this_view % lon_1d % local    (nrad_local) )
-            allocate( this_view % satzen_1d % local (nrad_local) )
-            allocate( this_view % iy_1d % local     (nrad_local) )
-            allocate( this_view % ix_1d % local     (nrad_local) )
+            allocate( earthmask_1d                  (1:nrad_local) )
+            allocate( zenmask_1d                    (1:nrad_local) )
+            allocate( this_view % lat_1d % local    (1:nrad_local) )
+            allocate( this_view % lon_1d % local    (1:nrad_local) )
+            allocate( this_view % satzen_1d % local (1:nrad_local) )
+            allocate( this_view % satazi_1d % local (1:nrad_local) )
+            allocate( this_view % iy_1d % local     (1:nrad_local) )
+            allocate( this_view % ix_1d % local     (1:nrad_local) )
 
-            ! Assign values for iy, ix, lat, lon, satzen
+            ! Assign values for iy, ix, lat, lon, satzen, satazi
             this_view % iy_1d % local = iy_1d (1:nrad_local)
             this_view % ix_1d % local = ix_1d (1:nrad_local)
             deallocate( iy_1d )
             deallocate( ix_1d )
 
-            call get_abil1b_grid2_1d( yy_1d(1:nrad_local), xx_1d(1:nrad_local), &
-                                   req, rpol, pph, nam, satellite_id, &
-                                   this_view % lat_1d % local, &
-                                   this_view % lon_1d % local, &
-                                   this_view % satzen_1d % local, &
-                                   earthmask_1d, zenmask_1d )
+            write(unit=stdout,fmt='(3A,I0)') &
+               '          ',trim(this_view % name),' locations processed on this core: ', nrad_local
 
-            ! Reduce values for iy, ix, lat, lon, satzen using earth and zenith masks
+            if (nrad_local .gt. 0) &
+               call get_abil1b_grid2_1d( yy_1d(1:nrad_local), xx_1d(1:nrad_local), &
+                                         req, rpol, pph, nam, satellite_id, &
+                                         this_view % lat_1d % local, &
+                                         this_view % lon_1d % local, &
+                                         this_view % satzen_1d % local, &
+                                         this_view % satazi_1d % local, &
+                                         earthmask_1d, zenmask_1d )
+
+            ! Reduce values for iy, ix, lat, lon, satzen, satazi 
+            ! using earth and zenith masks
             nrad_mask = count ( earthmask_1d .and. zenmask_1d ) 
             this_view % lat_1d % local(1:nrad_mask) = &
                      pack(this_view % lat_1d % local    , earthmask_1d .and. zenmask_1d )
@@ -670,6 +731,8 @@ write(stdout,*) trim(command)
                      pack(this_view % lon_1d % local    , earthmask_1d .and. zenmask_1d )
             this_view % satzen_1d % local(1:nrad_mask) = &
                      pack(this_view % satzen_1d % local , earthmask_1d .and. zenmask_1d )
+            this_view % satazi_1d % local(1:nrad_mask) = &
+                     pack(this_view % satazi_1d % local , earthmask_1d .and. zenmask_1d )
             this_view % iy_1d % local(1:nrad_mask) = &
                      pack(this_view % iy_1d % local     , earthmask_1d .and. zenmask_1d )
             this_view % ix_1d % local(1:nrad_mask) = &
@@ -695,7 +758,9 @@ write(stdout,*) trim(command)
             deallocate( info_1d )
             nrad_mask = count( domainmask_1d )
 
-
+#ifdef DM_PARALLEL
+            call mpi_barrier(comm, ierr)
+#endif
             ! COMMUNICATE 1D FIELDS FROM REMOTE PROCS TO LOCAL BUFFER
             !  Note: these comms are a minor bottleneck, which will be 
             !  more noticeable for 4D-Var when MESO1/2 is processed
@@ -712,6 +777,8 @@ write(stdout,*) trim(command)
 !!               pack(this_view % lon_1d % local    (1:nrad_local),   domainmask_1d )
 !!            this_view % satzen_1d % local (1:nrad_mask) = &
 !!               pack(this_view % satzen_1d % local (1:nrad_local),   domainmask_1d )
+!!            this_view % satazi_1d % local (1:nrad_mask) = &
+!!               pack(this_view % satazi_1d % local (1:nrad_local),   domainmask_1d )
 !!            this_view % iy_1d % local     (1:nrad_mask) = &
 !!               pack(this_view % iy_1d % local     (1:nrad_local),   domainmask_1d )
 !!            this_view % ix_1d % local     (1:nrad_mask) = &
@@ -737,7 +804,7 @@ write(stdout,*) trim(command)
 !
 !            this_view % nrad_on_domain = sum( nbufs )
 !
-!            allocate( buf_real( this_view % nrad_on_domain, 3 ) )
+!            allocate( buf_real( this_view % nrad_on_domain, 4 ) )
 !            allocate( buf_int ( this_view % nrad_on_domain, 2 ) )
 !            allocate( buf_loc ( this_view % nrad_on_domain ) )
 !
@@ -755,6 +822,8 @@ write(stdout,*) trim(command)
 !               pack(this_view % lon_1d % local    (1:nrad_local),     domainmask_1d )
 !            buf_real( buf_i:buf_f, 3 ) = &
 !               pack(this_view % satzen_1d % local (1:nrad_local),     domainmask_1d )
+!            buf_real( buf_i:buf_f, 4 ) = &
+!               pack(this_view % satazi_1d % local (1:nrad_local),     domainmask_1d )
 !            buf_int ( buf_i:buf_f, 1 ) = &
 !               pack(this_view % iy_1d % local     (1:nrad_local),     domainmask_1d )
 !            buf_int ( buf_i:buf_f, 2 ) = &
@@ -775,6 +844,8 @@ write(stdout,*) trim(command)
 !            call mpi_allgatherv ( &
 !               MPI_IN_PLACE, 0, true_mpi_real, buf_real(:,3), nbufs, displs, true_mpi_real, comm, ierr )
 !            call mpi_allgatherv ( &
+!               MPI_IN_PLACE, 0, true_mpi_real, buf_real(:,4), nbufs, displs, true_mpi_real, comm, ierr )
+!            call mpi_allgatherv ( &
 !               MPI_IN_PLACE, 0, mpi_integer,   buf_int(:,1),  nbufs, displs, mpi_integer,   comm, ierr )
 !            call mpi_allgatherv ( &
 !               MPI_IN_PLACE, 0, mpi_integer,   buf_int(:,2),  nbufs, displs, mpi_integer,   comm, ierr )
@@ -793,6 +864,9 @@ write(stdout,*) trim(command)
 !!               this_view % satzen_1d % local (1:nrad_mask), nrad_mask, true_mpi_real, &
 !!               buf_real(:,3),  nbufs, displs,  true_mpi_real, comm, ierr )
 !!            call mpi_allgatherv ( &
+!!               this_view % satazi_1d % local (1:nrad_mask), nrad_mask, true_mpi_real, &
+!!               buf_real(:,4),  nbufs, displs,  true_mpi_real, comm, ierr )
+!!            call mpi_allgatherv ( &
 !!               this_view % iy_1d % local     (1:nrad_mask), nrad_mask, mpi_integer,   &
 !!               buf_int(:,1),  nbufs, displs,  mpi_integer,   comm, ierr )
 !!            call mpi_allgatherv ( &
@@ -808,6 +882,7 @@ write(stdout,*) trim(command)
 !!            buf_real( :, 1 ) = this_view % lat_1d % local    (1:nrad_mask)
 !!            buf_real( :, 2 ) = this_view % lon_1d % local    (1:nrad_mask)
 !!            buf_real( :, 3 ) = this_view % satzen_1d % local (1:nrad_mask)
+!!            buf_real( :, 4 ) = this_view % satazi_1d % local (1:nrad_mask)
 !!            buf_int ( :, 1 ) = this_view % iy_1d % local     (1:nrad_mask)
 !!            buf_int ( :, 2 ) = this_view % ix_1d % local     (1:nrad_mask)
 !!            buf_loc ( : ) % y = this_view % loc_1d % local   (1:nrad_mask) % y
@@ -823,7 +898,7 @@ write(stdout,*) trim(command)
 #else
             nbuf = nrad_mask
 #endif
-            allocate( buf_real( nbuf, 3 ) )
+            allocate( buf_real( nbuf, 4 ) )
             allocate( buf_int ( nbuf, 2 ) )
             allocate( buf_loc ( nbuf ) )
 
@@ -847,6 +922,8 @@ write(stdout,*) trim(command)
                      pack(this_view % lon_1d % local    (1:nrad_local),   domainmask_1d )
                   buf_real( buf_i:buf_f, 3 ) = &
                      pack(this_view % satzen_1d % local (1:nrad_local),   domainmask_1d )
+                  buf_real( buf_i:buf_f, 4 ) = &
+                     pack(this_view % satazi_1d % local (1:nrad_local),   domainmask_1d )
                   buf_int ( buf_i:buf_f, 1 ) = &
                      pack(this_view % iy_1d % local     (1:nrad_local),   domainmask_1d )
                   buf_int ( buf_i:buf_f, 2 ) = &
@@ -863,7 +940,7 @@ write(stdout,*) trim(command)
                end if
 #ifdef DM_PARALLEL
                !PERFORM COMMS
-               call mpi_bcast(buf_real(buf_i:buf_f,:), nbuf * 3, true_mpi_real, iproc, comm, ierr )
+               call mpi_bcast(buf_real(buf_i:buf_f,:), nbuf * 4, true_mpi_real, iproc, comm, ierr )
                call mpi_bcast(buf_int (buf_i:buf_f,:), nbuf * 2, mpi_integer,   iproc, comm, ierr )
 
                !Only x & y components of loc need to be communicated
@@ -877,6 +954,7 @@ write(stdout,*) trim(command)
             deallocate ( this_view % lat_1d % local    )
             deallocate ( this_view % lon_1d % local    )
             deallocate ( this_view % satzen_1d % local )
+            deallocate ( this_view % satazi_1d % local )
             deallocate ( this_view % iy_1d % local     )
             deallocate ( this_view % ix_1d % local     )
             deallocate ( this_view % loc_1d % local    )
@@ -886,11 +964,12 @@ write(stdout,*) trim(command)
             this_view % lat_1d % domain    => buf_real(:,1)
             this_view % lon_1d % domain    => buf_real(:,2)
             this_view % satzen_1d % domain => buf_real(:,3)
+            this_view % satazi_1d % domain => buf_real(:,4)
             this_view % iy_1d % domain     => buf_int (:,1)
             this_view % ix_1d % domain     => buf_int (:,2)
             this_view % loc_1d % domain    => buf_loc (:)
-
-write(stdout,fmt=*) 'Total locations within domain: ', this_view % nrad_on_domain
+            write(unit=stdout,fmt='(3A,I0)') &
+               '          ',trim(this_view % name),' locations within domain: ', this_view % nrad_on_domain
 
             ! Populate remainder of loc and determine in/outside patch
             allocate ( patchmask_1d (this_view % nrad_on_domain) )
@@ -900,8 +979,8 @@ write(stdout,fmt=*) 'Total locations within domain: ', this_view % nrad_on_domai
             patchmask_1d = .not.dummybool_2d(:,1)
             deallocate( dummybool_2d )
             this_view % nrad_on_patch = count(patchmask_1d)
-
-write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_on_patch
+            write(unit=stdout,fmt='(3A,I0)') &
+               '          ',trim(this_view % name),' locations within this subdomain: ', this_view % nrad_on_patch
 
             if ( this_view % nrad_on_patch .gt. 0 ) then
                if ( allocated ( this_view % patchmask ) ) then
@@ -909,6 +988,7 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
                   deallocate ( this_view % lat_1d % patch    )
                   deallocate ( this_view % lon_1d % patch    )
                   deallocate ( this_view % satzen_1d % patch )
+                  deallocate ( this_view % satazi_1d % patch )
                   deallocate ( this_view % iy_1d % patch     )
                   deallocate ( this_view % ix_1d % patch     )
                   deallocate ( this_view % loc_1d % patch    )
@@ -916,6 +996,7 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
                allocate( this_view % lat_1d % patch    (this_view % nrad_on_patch) )
                allocate( this_view % lon_1d % patch    (this_view % nrad_on_patch) )
                allocate( this_view % satzen_1d % patch (this_view % nrad_on_patch) )
+               allocate( this_view % satazi_1d % patch (this_view % nrad_on_patch) )
                allocate( this_view % iy_1d % patch     (this_view % nrad_on_patch) )
                allocate( this_view % ix_1d % patch     (this_view % nrad_on_patch) ) 
                allocate( this_view % loc_1d % patch    (this_view % nrad_on_patch) )
@@ -926,6 +1007,8 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
                   pack( this_view % lon_1d % domain,    patchmask_1d )
                this_view % satzen_1d % patch = &
                   pack( this_view % satzen_1d % domain, patchmask_1d )
+               this_view % satazi_1d % patch = &
+                  pack( this_view % satazi_1d % domain, patchmask_1d )
                this_view % iy_1d % patch     = &
                   pack( this_view % iy_1d % domain,     patchmask_1d )
                this_view % ix_1d % patch     = &
@@ -933,7 +1016,7 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
                this_view % loc_1d % patch    = &
                   pack( this_view % loc_1d % domain,    patchmask_1d )
 
-               ! Determine ys, ye, xs, xe for this patch and for Full Disk offset grid
+               ! Determine grid extents for this patch on this_view and on Full Disk
                this_view % ys_p = minval(this_view % iy_1d % patch)
                this_view % ye_p = maxval(this_view % iy_1d % patch)
                this_view % xs_p = minval(this_view % ix_1d % patch)
@@ -943,23 +1026,55 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
                this_view % xs_p_fd = this_view % xs_p + this_view % xoff_fd - 1
                this_view % xe_p_fd = this_view % xe_p + this_view % xoff_fd - 1
 
-               ! Setup patch mask for this view
-               allocate(this_view % patchmask( &
-                   this_view % ys_p:this_view % ye_p, &
-                   this_view % xs_p:this_view % xe_p ))
+               write(stdout,*) 'ABI grid extents for this view:'
+               write(stdout,'(A,4I10)') 'ys_p, ye_p, xs_p, xe_p            ',this_view % ys_p, this_view % ye_p, this_view % xs_p, this_view % xe_p
+               write(stdout,*) 'ABI grid extents for Full Disk:'
+               write(stdout,'(A,4I10)') 'ys_p_fd, ye_p_fd, xs_p_fd, xe_p_fd',this_view % ys_p_fd, this_view % ye_p_fd, this_view % xs_p_fd, this_view % xe_p_fd
+
+               ! Setup ZZ clddet extents
+               this_view % ys_local = max(this_view % ys_p - cld_qc_buffer, 1)
+               this_view % ye_local = min(this_view % ye_p + cld_qc_buffer, ny_global)
+               this_view % xs_local = max(this_view % xs_p - cld_qc_buffer, 1)
+               this_view % xe_local = min(this_view % xe_p + cld_qc_buffer, nx_global)
+
+               ! Setup patch mask for this view, including ZZ clddet buffer
+               allocate( this_view % patchmask( &
+                   this_view % ys_local:this_view % ye_local, &
+                   this_view % xs_local:this_view % xe_local, 2 ) )
 
                this_view % patchmask = .false.
                do n = 1, this_view % nrad_on_patch
-                  this_view % patchmask ( this_view % iy_1d % patch (n) &
-                                        , this_view % ix_1d % patch (n) &
-                                          ) = .true.
+                  iy = this_view % iy_1d % patch (n)
+                  ix = this_view % ix_1d % patch (n)
+
+                  cldqc = .true.
+                  do jy = iy - cld_qc_buffer, iy + cld_qc_buffer
+                  do jx = ix - cld_qc_buffer, ix + cld_qc_buffer
+                     if ( &
+                          jy.ge.1 .and. jy.le.ny_global &
+                    .and. jx.ge.1 .and. jx.le.nx_global &
+                           ) then
+                        this_view % patchmask ( jy, jx, 2 ) = .true.
+                     else
+                        cldqc = .false.
+                     end if
+                  end do
+                  end do
+                  this_view % patchmask ( iy, ix, 1 ) = cldqc
                end do
+               this_view % nrad_on_patch_cldqc = count( this_view % patchmask (:,:,1) )
+            else
+               this_view % nrad_on_patch_cldqc = 0
             end if
+            write(unit=stdout,fmt='(3A,I0)') &
+               '          ',trim(this_view % name),' locations within this subdomain eligible for ZZ clddet: ', this_view % nrad_on_patch_cldqc
+
 
             !FREE UP POINTERS AND BUFFERS
             nullify ( this_view % lat_1d % domain    )
             nullify ( this_view % lon_1d % domain    )
             nullify ( this_view % satzen_1d % domain )
+            nullify ( this_view % satazi_1d % domain )
             nullify ( this_view % iy_1d % domain     )
             nullify ( this_view % ix_1d % domain     )
             nullify ( this_view % loc_1d % domain    )
@@ -967,41 +1082,33 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
             deallocate ( patchmask_1d )
 
 #ifdef DM_PARALLEL
+            call mpi_allreduce( this_view % nrad_on_patch_cldqc, &
+                                this_view % nrad_on_domain_cldqc, &
+                                1, mpi_integer, mpi_sum, comm, ierr )
             call mpi_barrier(comm, ierr)
+#else
+            this_view % nrad_on_domain_cldqc = this_view % nrad_on_patch_cldqc
 #endif
          end if DoGridGen
 
          if ( iview.eq.1 .and. ipass.lt.npass .and. sum(this_view % nfiles_used(:)).eq.0 ) then
-            if (this_view % nrad_on_patch .gt. 0) then
-               allocate(view_mask(&
+            if (this_view % nrad_on_patch_cldqc .gt. 0) then
+               allocate( view_mask( &
                    this_view % ys_p_fd-2:this_view % ye_p_fd+2, &
                    this_view % xs_p_fd-2:this_view % xe_p_fd+2, &
-                   nviews, nchan, num_fgat_time))
+                   nviews, nchan, num_fgat_time ) )
                view_mask = .false.
             end if
             use_view_mask = .true.
          end if
 
-         if ( ipass.lt.npass .or. .not.use_view_mask ) then
-            num_goesabi_global = num_goesabi_global + this_view % nrad_on_domain
-            ptotal(ifgat) = ptotal(ifgat) + this_view % nrad_on_domain
-         end if
-         if ( use_view_mask .and. ipass.lt.npass .and. iview .gt. 1 ) then
-            best_view = .true.
-!            do jview = 1, iview-1 !This assumes MESO1 and MESO2 are in identical locations
-            do jview = 1, min(iview-1,2) !This assumes MESO1 and MESO2 do not overlap
-               best_view = best_view .and. &
-                  this_view % min_time_diff(ichan, ifgat) .lt. &
-                     view_att(jview) % min_time_diff(ichan, ifgat)
-            end do 
-            if (best_view) then
-               num_goesabi_global = num_goesabi_global - this_view % nrad_on_domain
-               ptotal(ifgat) = ptotal(ifgat) - this_view % nrad_on_domain
-            end if
+         if ( (ipass.lt.npass .and. iview.eq.1) .or. .not.use_view_mask ) then
+            num_goesabi_global = num_goesabi_global + this_view % nrad_on_domain_cldqc
+            ptotal(ifgat) = ptotal(ifgat) + this_view % nrad_on_domain_cldqc
          end if
 
+         PatchMatch: if (this_view % nrad_on_patch_cldqc .gt. 0) then
 
-         PatchMatch: if (this_view % nrad_on_patch .gt. 0) then
             ! Loop over channels; each process reads radiance data only for its subdomain
             ChannelLoop: do ichan = 1, nchan
                ifile = 0
@@ -1029,30 +1136,43 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
                   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                   if ( iview.eq.1 ) then
                      do n = 1, this_view % nrad_on_patch
-                        iyfd = this_view % iy_1d % patch (n) + this_view % yoff_fd-1
-                        ixfd = this_view % ix_1d % patch (n) + this_view % xoff_fd-1
-                        view_mask( iyfd, ixfd, iview, ichan, ifgat) = .true.
+                        iy = this_view % iy_1d % patch (n)
+                        ix = this_view % ix_1d % patch (n)
+                        iyfd = iy + this_view % yoff_fd-1
+                        ixfd = ix + this_view % xoff_fd-1
+                        view_mask( iyfd, ixfd, iview, ichan, ifgat) = &
+                           this_view % patchmask ( iy, ix, 1 )
                      end do
-                  else                    
+                  else
+                     best_view = .true.
+!                     do jview = 1, iview-1 !This assumes MESO1 and MESO2 are in identical locations
+                     do jview = 1, min(iview-1,2) !This assumes MESO1 and MESO2 do not overlap
+                        best_view = best_view .and. &
+                           this_view % min_time_diff(ichan, ifgat) .lt. &
+                              view_att(jview) % min_time_diff(ichan, ifgat)
+                     end do 
                      if ( best_view ) then
                         do n = 1, this_view % nrad_on_patch
-                           iyfd = this_view % iy_1d % patch (n) + this_view % yoff_fd-1
-                           ixfd = this_view % ix_1d % patch (n) + this_view % xoff_fd-1
-                           view_mask( iyfd, ixfd, iview, ichan, ifgat) = .true.
+                           iy = this_view % iy_1d % patch (n)
+                           ix = this_view % ix_1d % patch (n)
+                           if ( this_view % patchmask ( iy, ix, 1 ) ) then
+                              iyfd = iy + this_view % yoff_fd-1
+                              ixfd = ix + this_view % xoff_fd-1
 
-                           !This assumes MESO1 and MESO2 do not overlap
-                           view_mask( iyfd, ixfd, 1:min(iview-1,2), ichan, ifgat) = .false.
+                              view_mask( iyfd, ixfd, iview, ichan, ifgat) = .true.
 
-!                           !This assumes MESO1 and MESO2 are in identical locations
-!                           view_mask( iyfd, ixfd, 1:iview-1, ichan, ifgat) = .false.
+                              !This assumes MESO1 and MESO2 do not overlap
+                              view_mask( iyfd, ixfd, 1:min(iview-1,2), ichan, ifgat) = .false.
+
+!                              !This assumes MESO1 and MESO2 are in identical locations
+!                              view_mask( iyfd, ixfd, 1:iview-1, ichan, ifgat) = .false.
+                           end if
                         end do
                      end if
                   end if
+
                else
                   if (inst == 0) cycle
-                  fname_short = trim(this_view % filename(ifile))
-                  fname = trim(this_view % fpath)//trim(fname_short)
-
                   !!Utilizing these masks to eliminate data:
                   !! + earthmask
                   !! + zenmask
@@ -1061,11 +1181,19 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
                   !! + patch mask
                   !! + thinning
 
-                  allocate(allmask_p( &
-                      this_view % ys_p:this_view % ye_p, &
-                      this_view % xs_p:this_view % xe_p ))
+                  allocate( allmask_p( &
+                     this_view % ys_local:this_view % ye_local, &
+                     this_view % xs_local:this_view % xe_local ) )
+                  allmask_p = this_view % patchmask ( &
+                     this_view % ys_local:this_view % ye_local, &
+                     this_view % xs_local:this_view % xe_local, 1 )
 
-                  allmask_p = this_view % patchmask
+                  allocate( readmask_p( &
+                     this_view % ys_local:this_view % ye_local, &
+                     this_view % xs_local:this_view % xe_local ) )
+                  readmask_p = this_view % patchmask ( &
+                     this_view % ys_local:this_view % ye_local, &
+                     this_view % xs_local:this_view % xe_local, 2 )
 
                   ! Only use locations where this view is nearest to this fgat time
                   ! - only available when FD data present for any fgat time
@@ -1073,7 +1201,11 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
                      if ( count( view_mask ( this_view % ys_p_fd:this_view % ye_p_fd, &
                                              this_view % xs_p_fd:this_view % xe_p_fd, &
                                              iview, ichan, ifgat ) ) .eq. 0 ) then
-                        deallocate(allmask_p)
+                        deallocate(allmask_p, readmask_p)
+
+                        write(unit=stdout,fmt='(3A,I0)') &
+                           '          ZERO pixels selected for ',trim(this_view % name),' on band ', channel_list(ichan)
+                        this_view % nfiles_used(ifgat) = this_view % nfiles_used(ifgat) - 1
                         cycle
                      end if
                      do n = 1, this_view % nrad_on_patch
@@ -1084,6 +1216,9 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
 
                         allmask_p( iy, ix ) = &
                            ( allmask_p( iy, ix ) .and. view_mask( iyfd, ixfd, iview, ichan, ifgat) )
+
+                        readmask_p( iy, ix ) = &
+                           ( readmask_p( iy, ix ) .and. view_mask( iyfd, ixfd, iview, ichan, ifgat) )
                      end do
                   end if
 
@@ -1094,22 +1229,72 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
                   !! + fgat
                   !! + channel/band
                   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                  write(unit=stdout,fmt='(A,I4)') &
-                     '          Reading abi radiances for band ',ichan
+                  write(unit=stdout,fmt='(A,I0)') &
+                     '          Reading abi radiances for band ',channel_list(ichan)
 
-                  ! Allocate this patch bt
-                  allocate( bt_p ( this_view % ys_p:this_view % ye_p, &
-                                   this_view % xs_p:this_view % xe_p ) )
+                  TEMPIR_ifile = -1
+                  if ( use_clddet_zz .and. channel_list(ichan).eq.14 ) then
+                     ! Require earlier file to be withn 1/2 of TEMPIR_delay_minutes
+                     TEMPIR_min_time_diff = 0.5 * TEMPIR_delay_minutes
+                     do jfile = 1, this_view % nfiles
+                        if ( this_view % filechan(jfile) .ne. channel_list(ichan) ) cycle
 
-                  ! This reads in bt only for the local patch
+                        obs_time = this_view % filedate(jfile) % obs_time
+
+                        TEMPIR_time_abs_diff = &
+                            abs( this_view % filedate(jfile) % obs_time / 60.D0 - &
+                                (this_view % filedate(ifile) % obs_time / 60.D0 - TEMPIR_delay_minutes) )
+
+                        if ( TEMPIR_time_abs_diff .lt. TEMPIR_min_time_diff ) TEMPIR_ifile = jfile
+                     end do
+                  end if
+
+                  ! Allocate and read bt for this patch and current time
+                  if ( TEMPIR_ifile.gt.0 ) then
+                     allocate( bt_p ( &
+                        this_view % ys_local:this_view % ye_local, &
+                        this_view % xs_local:this_view % xe_local, 2 ) )
+                  else
+                     allocate( bt_p ( &
+                        this_view % ys_local:this_view % ye_local, &
+                        this_view % xs_local:this_view % xe_local, 1 ) )
+                  end if
+
+                  fname_short = trim(this_view % filename(ifile))
+                  fname = trim(this_view % fpath)//trim(fname_short)
                   call get_abil1b_bt( fname, &
-                                      this_view % ys_p, this_view % ye_p, &
-                                      this_view % xs_p, this_view % xe_p, &
-                                      allmask_p, bt_p )
+                                      this_view % ys_local, this_view % ye_local, &
+                                      this_view % xs_local, this_view % xe_local, &
+                                      readmask_p, bt_p(:,:,1) )
 
+                  allmask_p = (allmask_p .and. readmask_p)
 
-                  !! Write bt, lat, lon, and satzen to datalink structures
+                  if ( TEMPIR_ifile.gt.0 ) then
+                     fname_short = trim(this_view % filename(TEMPIR_ifile))
+                     fname = trim(this_view % fpath)//trim(fname_short)
+                     call get_abil1b_bt( fname, &
+                                         this_view % ys_local, this_view % ye_local, &
+                                         this_view % xs_local, this_view % xe_local, &
+                                         readmask_p, bt_p(:,:,2) )
+                  end if
 
+                  if ( use_clddet_zz .and. channel_list(ichan).eq.14 .and. cld_qc_buffer.ge.1) then
+                     ! Allocate terrain_hgt using local indices for this view
+                     allocate( terrain_hgt ( &
+                                       this_view % ys_local:this_view % ye_local, &
+                                       this_view % xs_local:this_view % xe_local ) )
+
+                     ! Read terrain file using Full Disk global indices
+                     call get_abil1b_terr( terr_fname, &
+                                       this_view % ys_local + this_view % yoff_fd - 1, &
+                                       this_view % ye_local + this_view % yoff_fd - 1, &
+                                       this_view % xs_local + this_view % xoff_fd - 1, &
+                                       this_view % xe_local + this_view % xoff_fd - 1, &
+                                       terrain_hgt )
+
+                  end if
+
+                  !! Write bt, lat, lon, satzen, satazi, solzen, solazi to datalink structures
                   first_chan = (this_view % nfiles_used(ifgat).eq.1)
                   if (first_chan) then
                      p_fgat => p
@@ -1120,6 +1305,15 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
                      hr = this_view % filedate(ifile) % hr
                      mn = this_view % filedate(ifile) % mn
                      sc = this_view % filedate(ifile) % sc
+
+                     if ( use_clddet_zz ) then
+                        allocate( solzen_1d (this_view % nrad_on_patch) )
+                        allocate( solazi_1d (this_view % nrad_on_patch) )
+
+                        call da_get_solar_angles_1d ( yr, mt, dy, hr, mn, sc, &
+                           this_view % lat_1d % patch, this_view % lon_1d % patch, &
+                           solzen_1d, solazi_1d )
+                     end if
 
                      allocate(thinmask(this_view % ys_p:this_view % ye_p, &
                                        this_view % xs_p:this_view % xe_p))
@@ -1147,8 +1341,8 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
                            dlon_earth = info % lon
                            if (dlon_earth<zero) dlon_earth = dlon_earth+r360
                            if (dlon_earth>=r360) dlon_earth = dlon_earth-r360
-                           dlat_earth = dlat_earth*deg2rad
-                           dlon_earth = dlon_earth*deg2rad
+                           dlat_earth = dlat_earth * deg2rad
+                           dlon_earth = dlon_earth * deg2rad
                            crit = 1.
                            call map2grids(inst,ifgat,dlat_earth,dlon_earth,crit,iobs,itx,1,itt,iout,iuse)
                            if (.not. iuse) then
@@ -1177,21 +1371,166 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
                         if (use_view_mask) then
                            p % scanpos               = &
                               ( iy + this_view % yoff_fd-1 - 1) * (nscan+1) / view_att(1) % ny_global
-                              ! ??? "scan" position (IS THIS CORRECT?)
+                              ! ??? "scan" position (IS THIS CORRECT? NECESSARY? iFOV?)
                         else
                            p % scanpos               = &
                               ( iy + this_view % yoff_fd-1 - 1) * (nscan+1) / 5424
-                              ! ??? "scan" position (IS THIS CORRECT?)
+                              ! ??? "scan" position (IS THIS CORRECT? NECESSARY? iFOV?)
                         end if
                         p % satzen                = this_view % satzen_1d % patch (n)
-
-                        p % solzen                = 0.0
+                        p % satazi                = this_view % satazi_1d % patch (n)
+                        if ( use_clddet_zz ) then
+                           p % solzen             = solzen_1d (n)
+                           p % solazi             = solazi_1d (n)
+                        else
+                           p % solzen             = missing_r
+                           p % solazi             = missing_r
+                        end if
                         p % sensor_index          = inst
                         p % ifgat                 = ifgat
                      end if
 
                      ! Transfer BT from all files
-                     p % tb_inv(ichan)         = bt_p( iy, ix )
+                     p % tb_inv(ichan)         = bt_p( iy, ix, 1 )
+
+                     ! Extract values from cloud QC buffer
+                     if (.not. associated(p % cld_qc)) allocate( p % cld_qc)
+
+                     tbuf = 1
+                     if (cld_qc_buffer.ge.tbuf) then
+                        ! Values for RTCT cloud QC
+                        ! - channel 14 and sigma_z (std. dev. of terrain height in km)
+                        !   w/ landmask and lapse rate of 7 K km^-1
+                        if (channel_list(ichan).eq.14) then
+                        if ( allocated(terrain_hgt) ) then
+                           temp_max = 0.
+                           do jy = iy-tbuf, iy+tbuf
+                           do jx = ix-tbuf, ix+tbuf
+                              if ( bt_p( jy, jx, 1) .gt. 0. ) &
+                                 temp_max = max(temp_max,bt_p( jy, jx, 1 ) )
+                           end do
+                           end do
+
+                           ! Determine sigma_z of terrain height across these pixels
+                           nkeep = count ( terrain_hgt ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf ) .gt. missing_r )
+                           allocate( tb_14 ( nkeep ) )
+                           tb_14 = pack( terrain_hgt ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf ), &
+                                         terrain_hgt ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf ) .gt. missing_r)
+                           mean14 = sum( tb_14 ) / real(nkeep,r_double)
+                           sigma14 = sqrt( sum( (tb_14 - mean14)**2 ) / real(nkeep,r_double) )
+                           deallocate( tb_14 )
+
+                           ! Store RTCT and diagnostic terrain height
+                           p % cld_qc % RTCT = temp_max - p % tb_inv(ichan) - &
+                                               3.0_r_double * 0.007_r_double * sigma14
+                           p % cld_qc % RTCT_terr = terrain_hgt( iy, ix )
+                        else
+                           p % cld_qc % RTCT = missing_r
+                           p % cld_qc % RTCT_terr = missing_r
+                        end if
+                        end if
+                     else
+                        if (channel_list(ichan).eq.14) then
+                           p % cld_qc % RTCT = missing_r
+                           p % cld_qc % RTCT_terr = missing_r
+                        end if
+                     end if
+
+                     ! Values for RFMFT cloud QC
+                     ! - channels 14 and 15
+                     tbuf = 10
+                     if (cld_qc_buffer.ge.tbuf) then
+                        if (channel_list(ichan).eq.14) then
+                           !Determine Neighboring Warm Center (NWC) for this pixel
+                           temp_max = 0.
+                           do jy = iy-tbuf, iy+tbuf
+                           do jx = ix-tbuf, ix+tbuf
+                              if ( bt_p( jy, jx, 1 ) .gt. missing_r ) then
+                                 if ( bt_p( jy, jx, 1 ) .gt. temp_max ) then
+                                    temp_max = bt_p( jy, jx, 1 )
+                                    p % cld_qc % RFMFT_ij(1) = jy
+                                    p % cld_qc % RFMFT_ij(2) = jx
+                                 end if
+                              end if
+                           end do
+                           end do
+                           p % cld_qc % RFMFT = &
+                                       p % tb_inv(ichan) - temp_max
+                        end if
+                        if (channel_list(ichan).eq.15) then
+                           temp_max = bt_p ( p % cld_qc % RFMFT_ij(1), &
+                                             p % cld_qc % RFMFT_ij(2), 1 )
+                           p % cld_qc % RFMFT = abs( p % cld_qc % RFMFT + &
+                                       temp_max  - p % tb_inv(ichan) )
+                        end if
+                     else
+                        if (channel_list(ichan).eq.15) then
+                           p % cld_qc % RFMFT = missing_r
+                           p % cld_qc % RFMFT_ij = -1
+                        end if
+                     end if
+
+                     ! Values for CIRH2O cloud QC
+                     !  - channels 10 and 14 for Pearson correlation coefficient of CIRH2O test
+                     tbuf = 2
+                     if (cld_qc_buffer.ge.tbuf) then
+                        if (channel_list(ichan).eq.10) then
+                           allocate( p % cld_qc % CIRH2O ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 2 ) )
+                           p % cld_qc % CIRH2O(:,:,1) = bt_p( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 )
+                        end if
+                        if (channel_list(ichan).eq.14) then
+                           p % cld_qc % CIRH2O(:,:,2) = bt_p( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 )
+                           nkeep = 0
+                           do jy = iy-tbuf, iy+tbuf
+                           do jx = ix-tbuf, ix+tbuf
+                              if ( all(p % cld_qc % CIRH2O( jy, jx, : ) .gt. missing_r) ) nkeep = nkeep + 1
+                           end do
+                           end do
+                           allocate( tb_10 ( nkeep ) )
+                           allocate( tb_14 ( nkeep ) )
+                           ikeep = 0
+                           do jy = iy-tbuf, iy+tbuf
+                           do jx = ix-tbuf, ix+tbuf
+                              if ( all(p % cld_qc % CIRH2O( jy, jx, : ) .gt. missing_r) ) then
+                                 ikeep = ikeep + 1
+                                 tb_10(ikeep) = p % cld_qc % CIRH2O( jy, jx, 1 )
+                                 tb_14(ikeep) = p % cld_qc % CIRH2O( jy, jx, 2 )
+                              end if
+                           end do
+                           end do
+                           mean10 = sum( tb_10 ) / real(nkeep,r_double)
+                           mean14 = sum( tb_14 ) / real(nkeep,r_double)
+                           sigma10 = sqrt( sum( (tb_10 - mean10)**2 ) / real(nkeep,r_double) )
+                           sigma14 = sqrt( sum( (tb_14 - mean14)**2 ) / real(nkeep,r_double) )
+                           pearson = sum((tb_10 - mean10) * (tb_14 - mean14)) / real(nkeep,r_double) / &
+                                     ( sigma10 * sigma14 )
+                           deallocate( tb_10 )
+                           deallocate( tb_14 )
+                           deallocate( p % cld_qc % CIRH2O )
+                           allocate( p % cld_qc % CIRH2O (1,1,1) )
+                           p % cld_qc % CIRH2O (1,1,1) = pearson
+                        end if
+                     else
+                        if (channel_list(ichan).eq.14) then
+                           allocate( p % cld_qc % CIRH2O (1,1,1))
+                           p % cld_qc % CIRH2O = missing_r
+                        end if
+                     end if
+
+                     ! Values for TEMPIR cloud QC
+                     ! - channel 14
+                     if ( use_clddet_zz ) then
+                        if ( TEMPIR_ifile.gt.0 ) then
+                           if ( bt_p( iy, ix, 2 ) .lt. 330. ) then
+                              p % cld_qc % TEMPIR = bt_p( iy, ix, 2 ) - bt_p( iy, ix, 1 )
+                           else
+                              p % cld_qc % TEMPIR = missing_r
+                           end if
+                        end if
+                     else
+                        if (channel_list(ichan).eq.14) &
+                           p % cld_qc % TEMPIR = missing_r
+                     end if
 
                      if (first_chan) &
                         allocate (p % next)   ! add next data
@@ -1202,17 +1541,20 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
                         nullify (p % next)
 
                   end do
-                  deallocate( bt_p, allmask_p )
+                  deallocate( bt_p, allmask_p, readmask_p)
                end if VIEW_SELECT
             end do ChannelLoop
 
-            if (allocated(thinmask)) deallocate(thinmask)
-
+            if ( allocated(thinmask)    ) deallocate ( thinmask )
+            if ( allocated(solzen_1d)   ) deallocate ( solzen_1d )
+            if ( allocated(solazi_1d)   ) deallocate ( solazi_1d )
+            if ( allocated(terrain_hgt) ) deallocate ( terrain_hgt )
          end if PatchMatch
 
 #ifdef DM_PARALLEL
          call mpi_barrier(comm, ierr)
 #endif
+
       end do ! end fgat loop
 
       if ( (this_view % moving .or. ipass.eq.npass) .and. this_view%nrad_on_patch.gt.0 ) then
@@ -1221,18 +1563,19 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
          deallocate ( this_view % lat_1d % patch    )
          deallocate ( this_view % lon_1d % patch    )
          deallocate ( this_view % satzen_1d % patch )
+         deallocate ( this_view % satazi_1d % patch )
          deallocate ( this_view % iy_1d % patch     )
          deallocate ( this_view % ix_1d % patch     )
          deallocate ( this_view % loc_1d % patch    )
       end if
 
-      tot_files_used = tot_files_used + sum(view_att(iview) % nfiles_used)
+      if (ipass .eq. 2) tot_files_used = tot_files_used + sum(view_att(iview) % nfiles_used)
 
    end do ! end view loop
    
    end do ! end pass loop
 
-   if (allocated(view_mask)) deallocate(view_mask)
+   if ( allocated(view_mask) ) deallocate(view_mask)
 
    do iview = 1, nviews
       if ( .not.view_att(iview) % select ) cycle
@@ -1241,7 +1584,7 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
       deallocate ( this_view % filechan )
       deallocate ( this_view % filedate )
       deallocate ( this_view % file_fgat_match )
-      deallocate ( this_view % fgat_time_diff )
+      deallocate ( this_view % fgat_time_abs_diff )
       deallocate ( this_view % min_time_diff )
       deallocate ( this_view % nfiles_used )
       deallocate ( this_view % ny_grid )
@@ -1315,7 +1658,7 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
          found = .false.
 
          do i = 1, thinning_grid(n,ifgat) % itxmax
-            if ( thinning_grid(n,ifgat) % ibest_obs(i) == j .and. thinning_grid(n,ifgat) % score_crit(i) < 9.99e6_r_kind ) then
+            if ( thinning_grid(n,ifgat) % ibest_obs(i) == j .and. thinning_grid(n,ifgat) % score_crit(i) < 9.99e6_r_double ) then
                found = .true.
                exit
             end if
@@ -1333,6 +1676,10 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
             end if
             deallocate ( current % tb_inv )
       !      deallocate ( current % cloud_flag )
+            if (associated(current % cld_qc)) then
+               if (allocated(current % cld_qc % CIRH2O)) deallocate(current % cld_qc % CIRH2O)
+               deallocate(current % cld_qc)
+            end if
             deallocate ( current )
             num_goesabi_thinned = num_goesabi_thinned + 1
             num_goesabi_used = num_goesabi_used - 1
@@ -1400,6 +1747,10 @@ write(stdout,fmt=*) 'Total locations within this subdomain: ', this_view % nrad_
       ! free current data
       deallocate ( current % tb_inv )
 !!!      deallocate ( current % cloud_flag )
+      if (associated(current % cld_qc)) then
+         if (allocated(current % cld_qc % CIRH2O)) deallocate(current % cld_qc % CIRH2O)
+         deallocate(current % cld_qc)
+      end if
       deallocate ( current )
    end do
    deallocate ( p )
@@ -1447,14 +1798,12 @@ subroutine get_abil1b_metadata( filename, &
 
    implicit none
 
-   character(*), intent(in)  :: filename
-
-   integer, intent(out)      :: ydim, xdim
-   real(r_kind), intent(out) :: req, rpol, pph, nam
+   character(*), intent(in)    :: filename
+   integer, intent(out)        :: ydim, xdim
+   real(r_double), intent(out) :: req, rpol, pph, nam
 !!!   real, intent(out)         :: lat_sat, lon_sat
 
    integer                  :: ierr, ncid, varid, dimid
-   real(r_kind), parameter  :: pi=3.1415926535898D0
 
    if (trace_use) call da_trace_entry("get_abil1b_metadata")
 
@@ -1472,7 +1821,7 @@ subroutine get_abil1b_metadata( filename, &
    ierr=nf_get_att_double(ncid,varid,'semi_minor_axis',rpol)
    ierr=nf_get_att_double(ncid,varid,'perspective_point_height',pph)
    ierr=nf_get_att_double(ncid,varid,'longitude_of_projection_origin',nam)
-   nam=nam*pi/180
+   nam = nam * deg2rad
 
 !!!   ierr=nf_inq_varid(ncid,'nominal_satellite_subpoint_lat',varid)
 !!!   ierr=nf_get_var_double(ncid,varid,lat_sat)
@@ -1538,17 +1887,18 @@ end subroutine get_abil1b_grid1
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 subroutine get_abil1b_grid2_1d( yy_abi, xx_abi, req, rpol, pph, nam, satellite_id, &
-                             lat, lon, satzen, &
+                             lat, lon, satzen, satazi, &
                              earthmask, zenmask )
 
    implicit none
 
    real,              intent(in)  :: yy_abi(:), xx_abi(:)
-   real(r_kind),      intent(in)  :: req, rpol, pph, nam
+   real(r_double),    intent(in)  :: req, rpol, pph, nam
    integer,           intent(in)  :: satellite_id
 
    ! GOES-ABI fields
-   real,              intent(out) :: lat(:), lon(:), satzen(:)
+   real,              intent(out) :: lat(:), lon(:)
+   real,              intent(out) :: satzen(:), satazi(:)
    logical,           intent(out) :: earthmask(:), zenmask(:)
 
    ! Internal Variables
@@ -1556,7 +1906,7 @@ subroutine get_abil1b_grid2_1d( yy_abi, xx_abi, req, rpol, pph, nam, satellite_i
    logical                  :: outside_all, dummy_bool
 
    integer                  :: iy, ix, n
-   real(r_kind)             :: hh
+   real(r_double)           :: hh
    real, parameter          :: satzen_limit=75.0
 
    if (trace_use) call da_trace_entry("get_abil1b_grid2_1d")
@@ -1564,6 +1914,7 @@ subroutine get_abil1b_grid2_1d( yy_abi, xx_abi, req, rpol, pph, nam, satellite_i
    lat = missing_r
    lon = missing_r
    satzen = missing_r
+   satazi = missing_r
    earthmask=.true.
    zenmask=.true.
 
@@ -1571,9 +1922,11 @@ subroutine get_abil1b_grid2_1d( yy_abi, xx_abi, req, rpol, pph, nam, satellite_i
 
    call get_abil1b_latlon_1d ( yy_abi, xx_abi, lat, lon, req, rpol, hh, nam )
 
+!!!JJGDEBUG
 !   do n = lbound(yy_abi,1), ubound(yy_abi,1)
 !      call get_abil1b_latlon ( yy_abi(n), xx_abi(n), lat(n), lon(n), req, rpol, hh, nam )
 !   end do
+!!!JJGDEBUG
 
    where( lat.eq.missing_r .OR. lon.eq.missing_r .OR. &
           isnan(lat)       .OR. isnan(lon) ) 
@@ -1582,14 +1935,18 @@ subroutine get_abil1b_grid2_1d( yy_abi, xx_abi, req, rpol, pph, nam, satellite_i
       lon       = missing_r
    end where
 
-   call da_get_satzen_1d( lat, lon, satellite_id, satzen )
+   call da_get_sat_angles_1d( lat, lon, satellite_id, satzen, satazi )
 
+!!!JJGDEBUG
 !   do n = lbound(yy_abi,1), ubound(yy_abi,1)
-!      if ( earthmask(n) ) &
-!         call da_get_satzen( lat(n), lon(n), satellite_id, satzen(n) )
+!      if ( earthmask(n) ) then
+!         call da_get_sat_angles( lat(n), lon(n), satellite_id, satzen(n), satazi(n) )
+!
+!      end if
 !   end do
+!!!JJGDEBUG
 
-   where ( isnan(satzen) .or. satzen.gt.satzen_limit )
+   where ( isnan(satzen) .or. satzen.gt.satzen_limit .or. satzen.eq.missing_r )
       satzen  = missing_r
       zenmask = .false.
    end where
@@ -1601,57 +1958,60 @@ end subroutine get_abil1b_grid2_1d
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-subroutine get_abil1b_grid2( yy_abi, xx_abi, req, rpol, pph, nam, satellite_id, &
-                             lat, lon, satzen, &
-                             earthmask, zenmask )
-
-   implicit none
-
-   real,              intent(in)  :: yy_abi, xx_abi
-   real(r_kind),      intent(in)  :: req, rpol, pph, nam
-   integer,           intent(in)  :: satellite_id
-
-   ! GOES-ABI fields
-   real,              intent(out) :: lat, lon, satzen
-   logical,           intent(out) :: earthmask, zenmask
-
-   ! Internal Variables
-   type(info_type)          :: info
-   logical                  :: outside_all, dummy_bool
-
-   integer                  :: iy, ix
-   real(r_kind)             :: hh
-   real, parameter          :: satzen_limit=75.0
-
-   if (trace_use) call da_trace_entry("get_abil1b_grid2")
-
-   lat = missing_r
-   lon = missing_r
-   satzen = missing_r
-
-   earthmask=.false.
-   zenmask=.false.
-
-   hh=pph+req
-
-   call get_abil1b_latlon ( yy_abi, xx_abi, lat, lon, req, rpol, hh, nam )
-
-   if( lat.eq.missing_r .OR. lon.eq.missing_r .OR. &
-       isnan(lat) .OR. isnan(lon) ) return
-
-   earthmask=.true.
-
-   call da_get_satzen(lat,lon,satellite_id,satzen)
-
-   if ( isnan(satzen) .or. satzen.gt.satzen_limit ) then
-      satzen = missing_r
-      return
-   end if
-   zenmask=.true.
-
-   if (trace_use) call da_trace_exit("get_abil1b_grid2")
-
-end subroutine get_abil1b_grid2
+!subroutine get_abil1b_grid2( yy_abi, xx_abi, req, rpol, pph, nam, satellite_id, &
+!                             lat, lon, satzen, satazi, &
+!                             earthmask, zenmask )
+!
+!   implicit none
+!
+!   real,              intent(in)  :: yy_abi, xx_abi
+!   real(r_double),    intent(in)  :: req, rpol, pph, nam
+!   integer,           intent(in)  :: satellite_id
+!
+!   ! GOES-ABI fields
+!   real,              intent(out) :: lat, lon
+!   real,              intent(out) :: satzen, satazi
+!   logical,           intent(out) :: earthmask, zenmask
+!
+!   ! Internal Variables
+!   type(info_type)          :: info
+!   logical                  :: outside_all, dummy_bool
+!
+!   integer                  :: iy, ix
+!   real(r_double)           :: hh
+!   real, parameter          :: satzen_limit=75.0
+!
+!   if (trace_use) call da_trace_entry("get_abil1b_grid2")
+!
+!   lat = missing_r
+!   lon = missing_r
+!   satzen = missing_r
+!   satazi = missing_r
+!   earthmask=.false.
+!   zenmask=.false.
+!
+!   hh=pph+req
+!
+!   call get_abil1b_latlon ( yy_abi, xx_abi, lat, lon, req, rpol, hh, nam )
+!
+!   if( lat.eq.missing_r .OR. lon.eq.missing_r .OR. &
+!       isnan(lat) .OR. isnan(lon) ) return
+!
+!   earthmask=.true.
+!
+!   call da_get_sat_angles(lat, lon, satellite_id, satzen, satazi)
+!!   call da_get_solar_angles_1d( yr, mt, dy, hr, mn, sc, &
+!!                                lat, lon, solzen, solazi )
+!
+!   if ( isnan(satzen) .or. satzen.gt.satzen_limit ) then
+!      satzen = missing_r
+!      return
+!   end if
+!   zenmask=.true.
+!
+!   if (trace_use) call da_trace_exit("get_abil1b_grid2")
+!
+!end subroutine get_abil1b_grid2
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1669,8 +2029,11 @@ subroutine get_abil1b_bt( filename, ys, ye, xs, xe, radmask, bt )
    logical, intent(inout)        :: radmask( ys:ye, xs:xe )
    real, intent(out)             :: bt( ys:ye, xs:xe )
 
-   real             :: rad(ys:ye, xs:xe)
-   integer          :: DQF(ys:ye, xs:xe)
+!   real             :: rad(ys:ye, xs:xe)
+!   integer          :: DQF(ys:ye, xs:xe)
+   real             :: rad(xs:xe, ys:ye)
+   integer          :: DQF(xs:xe, ys:ye)
+
    integer          :: ierr, ncid, varid
    integer          :: iy, ix
    integer          :: nykeep, nxkeep
@@ -1696,14 +2059,17 @@ subroutine get_abil1b_bt( filename, ys, ye, xs, xe, radmask, bt )
    call handle_err('Error opening file',ierr)
 
    ierr=nf_inq_varid( ncid, 'Rad', varid )
-   ierr=nf_get_vara_double ( ncid, varid, (/ys,xs/), (/nykeep,nxkeep/), rad )
+   ierr=nf_get_vara_double ( ncid, varid, (/xs,ys/), (/nxkeep,nykeep/), rad )
+!   ierr=nf_get_vara_double ( ncid, varid, (/ys,xs/), (/nykeep,nxkeep/), rad )
 !                            rad(ys:ye,xs:xe) )
    ierr=nf_get_att_double(ncid,varid,'scale_factor',slp)
    ierr=nf_get_att_double(ncid,varid,'add_offset',itp)
    rad=rad*slp+itp
 
    ierr=nf_inq_varid ( ncid, 'DQF', varid )
-   ierr=nf_get_vara_int ( ncid, varid, (/ys,xs/), (/nykeep,nxkeep/), DQF )
+   ierr=nf_get_vara_int ( ncid, varid, (/xs,ys/), (/nxkeep,nykeep/), DQF )
+!   ierr=nf_get_vara_int ( ncid, varid, (/ys,xs/), (/nykeep,nxkeep/), DQF )
+
 !                            DQF(ys:ye,xs:xe) )
 
    ierr=nf_inq_varid( ncid, 'planck_bc1', varid )
@@ -1715,20 +2081,28 @@ subroutine get_abil1b_bt( filename, ys, ye, xs, xe, radmask, bt )
    ierr=nf_inq_varid( ncid, 'planck_fk2', varid )
    ierr=nf_get_var_double( ncid, varid, fk2 )
 
-!   radmask = ( radmask .and. (DQF.eq.0 .or. DQF.eq.1) .and. rad.ge.0.0 )
+!   radmask = ( radmask .and. (transpose(DQF).eq.0 .or. transpose(DQF).eq.1) &
+!                       .and. transpose(rad).ge.0.0 )
 
-   radmask = ( radmask .and. (DQF.eq.0 .or. DQF.eq.1) )
-   radmask = ( radmask .and. rad.ge.0.0 )
+   radmask = ( radmask .and. (transpose(DQF).eq.0 .or. transpose(DQF).eq.1) )
+   radmask = ( radmask .and. transpose(rad).ge.0.0 )
+
+!!   radmask = ( radmask .and. (DQF.eq.0 .or. DQF.eq.1) &
+!!                       .and. rad.ge.0.0 )
+!
+!   radmask = ( radmask .and. (DQF.eq.0 .or. DQF.eq.1) )
+!   radmask = ( radmask .and. rad.ge.0.0 )
 
    where ( radmask )
-      bt = ( fk2 / ( alog(( fk1 / rad ) + 1.0) ) - bc1 ) / bc2
+!      bt = ( fk2 / ( log(( fk1 / rad ) + 1.0) ) - bc1 ) / bc2
+      bt = ( fk2 / ( log(( fk1 / transpose(rad) ) + 1.0) ) - bc1 ) / bc2
    end where
 
 !   do ix = xs, xe
 !      do iy = ys, ye
 !         if ( radmask( iy, ix ) ) then
 !            if( rad( iy, ix ).ge.0.0 .and. any(DQF( iy, ix ).eq.(/0,1/)) ) then
-!               bt( iy, ix ) = ( fk2 / ( alog( ( fk1 / rad( iy, ix )) + 1. ) ) - bc1 ) / bc2
+!               bt( iy, ix ) = ( fk2 / ( log( ( fk1 / rad( iy, ix )) + 1. ) ) - bc1 ) / bc2
 !            else
 !               radmask( iy, ix ) = .false.
 !            end if
@@ -1746,6 +2120,59 @@ subroutine get_abil1b_bt( filename, ys, ye, xs, xe, radmask, bt )
    if (trace_use) call da_trace_exit("get_abil1b_bt")
 
 end subroutine get_abil1b_bt
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+subroutine get_abil1b_terr( filename, ys, ye, xs, xe, terr )
+   implicit none
+
+   character(*), intent(in)      :: filename
+
+   !Size of full data set
+
+   !Starting and stopping indices of this view desired (not equivalent to Full Disk indices)
+   integer, intent(in)           :: ys, ye, xs, xe 
+   real, intent(out)             :: terr( ys:ye, xs:xe ) ! unit = meters
+
+   real             :: terr_trans( xs:xe, ys:ye ) ! unit = meters
+   integer          :: ncid, varid
+   integer          :: nykeep, nxkeep
+   real             :: terr_miss
+
+   if (trace_use) call da_trace_entry("get_abil1b_terr")
+
+   terr = missing_r
+
+   !! Save rad reading time by selecting a subset of netcdf var
+   nykeep = ye - ys + 1
+   nxkeep = xe - xs + 1
+
+   if (nykeep.le.0 .or. nxkeep.le.0) then
+      return
+   end if
+
+   call handle_err ( 'Error opening file', &
+                     nf_open(trim(filename),nf_nowrite,ncid) )
+   call handle_err ( 'Error getting terr ID', &
+                     nf_inq_varid( ncid, 'terr', varid ) )
+   call handle_err ( 'Error reading terrain height', &
+                     nf_get_vara_double ( ncid, varid, (/xs,ys/), (/nxkeep,nykeep/), terr_trans ) )
+!                     nf_get_vara_double ( ncid, varid, (/ys,xs/), (/nykeep,nxkeep/), terr ) )
+   terr = transpose(terr_trans)
+
+   call handle_err ( 'Error with _FillValue', &
+                     nf_get_att_double(ncid, varid, '_FillValue', terr_miss) )
+
+   where ( terr .le. terr_miss ) &
+      terr = missing_r
+
+   call handle_err('Error closing file', &
+                   nf_close(ncid) )
+
+   if (trace_use) call da_trace_exit("get_abil1b_terr")
+
+end subroutine get_abil1b_terr
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1795,8 +2222,8 @@ subroutine get_abil1b_latlon_1d( yy_abi, xx_abi, lat, lon, req, rpol, hh, nam )
       lat1 = atan( req**2 / rpol**2 * sz / sqrt( ( hh - sx )**2 + sy**2) )
       lon1 = nam - atan( sy / ( hh - sx ) )
 
-      lat  = lat1 * 180.D0/pi
-      lon  = lon1 * 180.D0/pi
+      lat  = lat1 / deg2rad
+      lon  = lon1 / deg2rad
    end where
 
    deallocate ( lat1, lon1, aa, bb, cc, rs, sx, sy, sz, radicand )
@@ -1837,8 +2264,8 @@ subroutine get_abil1b_latlon( yy_abi, xx_abi, lat, lon, req, rpol, hh, nam )
    lat1 = atan( req**2/rpol**2 * sz / sqrt( ( hh - sx )**2 + sy**2) )
    lon1 = nam-atan( sy / ( hh - sx ) )
 
-   lat  = lat1 * 180.D0/pi
-   lon  = lon1 * 180.D0/pi
+   lat  = lat1 / deg2rad
+   lon  = lon1 / deg2rad
 
    if (trace_use) call da_trace_exit("get_abil1b_latlon")
 
@@ -1976,27 +2403,23 @@ subroutine da_get_cal_time(jmod,yr,mt,dy,hr,mn,sc)
 
   implicit none
 
-  real(r_kind), intent(in) :: jmod
-  integer, intent(out) :: yr,mt,dy,hr,mn
+  real(r_double), intent(in)     :: jmod
+  integer, intent(out)           :: yr,mt,dy,hr,mn
   integer, intent(out), optional :: sc
 
-  real(r_kind) :: ju, j0, F
+  real(r_double) :: ju, j0, F
   integer      :: yr0, sc0
   INTEGER :: A, B, C, D, E, Z, ALPHA   ! intermediate variables
-  real(r_kind) :: dd
+  real(r_double) :: dd
 
-  ! J2000 Reference time: 2000 Jan 01 00:12:00
-  real(r_kind), parameter :: jd_j2000 = 2451545.0
-
-  ! This MJD Reference time: 1978 Jan 01 00:00:00 (see da_get_julian_time)
-  real(r_kind), parameter :: jd_jmod = jd_j2000 - 8035.5
+  ! Conversion to Julian day from MJD reference time: 1978 Jan 01 00:12:00 (see da_get_julian_time)
+  real(r_double), parameter :: jd_jmod = 2443510.0
 
   ! Convert to days
   ju = jmod / 1440.D0
 
   !! Convert reference MJD to actual Julian time
   ju = ju+jd_jmod
-  ju = ju + 0.5D0 
   Z = INT(ju)
   F = ju - Z
 

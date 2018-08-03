@@ -489,6 +489,11 @@ module da_define_structures
       real, pointer        :: vtox(:,:)
    end type cv_index_type
 
+   type cld_qc_type
+     real  :: RTCT, RFMFT, RFMFT_ij(2), TEMPIR, RTCT_terr
+     real, allocatable :: CIRH2O(:,:,:)
+   end type cld_qc_type
+ 
    type instid_type
       ! Instrument triplet, follow the convension of RTTOV
       integer              :: platform_id, satellite_id, sensor_id
@@ -519,6 +524,7 @@ module da_define_structures
       real,    pointer     :: satazi(:) 
       real,    pointer     :: solzen(:) 
       real,    pointer     :: solazi(:) 
+      real,    pointer     :: tropt(:) 
       real,    pointer     :: t(:,:)
       real,    pointer     :: q(:,:)
       real,    pointer     :: mr(:,:)
@@ -594,6 +600,7 @@ module da_define_structures
       real,    pointer     :: ice_coverage(:)
       real,    pointer     :: snow_coverage(:)
       integer, pointer     :: crtm_climat(:) ! CRTM only
+      type (cld_qc_type), pointer :: cld_qc(:)
 
       type (varbc_info_type)        :: varbc_info
       type (varbc_type),pointer     :: varbc(:)

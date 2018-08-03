@@ -62,7 +62,7 @@ module da_radiance
       airs_warmest_fov, time_slots, interp_option, ids, ide, jds, jde, &
       ips, ipe, jps, jpe, simulated_rad_ngrid, obs_qc_pointer, use_blacklist_rad, use_satcv, &
       use_goesimgobs, use_goesabiobs, pi, earth_radius, satellite_height, &
-      var4d, var4d_bin
+      var4d, var4d_bin, use_clddet_zz
  
 #ifdef CRTM
    use da_crtm, only : da_crtm_init, da_get_innov_vector_crtm
@@ -128,8 +128,10 @@ contains
 #include "da_read_obs_hdf5amsr2.inc"
 #include "da_read_obs_ncgoesimg.inc"
 #include "da_read_obs_ncgoesabi.inc"
-#include "da_get_satzen.inc"
-#include "da_get_satzen_1d.inc"
+#include "da_get_sat_angles.inc"
+#include "da_get_sat_angles_1d.inc"
+#include "da_get_solar_angles.inc"
+#include "da_get_solar_angles_1d.inc"
 #include "da_allocate_rad_iv.inc"
 #include "da_initialize_rad_iv.inc"
 #include "da_read_kma1dvar.inc"

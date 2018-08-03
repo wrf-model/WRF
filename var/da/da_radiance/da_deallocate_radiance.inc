@@ -124,7 +124,15 @@
             deallocate (iv%instid(i)%satazi)
             deallocate (iv%instid(i)%solzen)
             deallocate (iv%instid(i)%solazi)
-            deallocate (iv%instid(i)%gamma_jacobian)
+            deallocate (iv%instid(i)%tropt)
+            if ( use_clddet_zz ) then
+               do n = 1,iv%instid(i)%num_rad
+                  if ( allocated (iv%instid(i)%cld_qc(n)%CIRH2O) ) &
+                     deallocate (iv%instid(i)%cld_qc(n)%CIRH2O)
+               end do
+               deallocate (iv%instid(i)%cld_qc)
+               deallocate (iv%instid(i)%gamma_jacobian)
+           end if
 
            if (ANY(use_satcv)) then
 	      if (use_satcv(2)) then

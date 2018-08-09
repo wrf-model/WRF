@@ -44,16 +44,26 @@
 !
       MODULE module_mp_thompson
 
+#if defined(mpas)
+      use mpas_kind_types
+      use mpas_atmphys_functions, only: gammp,wgamma,rslf,rsif
+      use mpas_atmphys_utilities
+#else
       USE module_wrf_error
-      USE module_mp_radar
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
       USE module_dm, ONLY : wrf_dm_max_real
 #endif
+#endif
+      USE module_mp_radar
 
       IMPLICIT NONE
 
       LOGICAL, PARAMETER, PRIVATE:: iiwarm = .false.
+#if defined(mpas)
+      LOGICAL, PUBLIC:: is_aerosol_aware = .false.
+#else
       LOGICAL, PRIVATE:: is_aerosol_aware = .false.
+#endif
       LOGICAL, PARAMETER, PRIVATE:: dustyIce = .true.
       LOGICAL, PARAMETER, PRIVATE:: homogIce = .true.
 
@@ -74,7 +84,11 @@
 !.. scheme.  In 2-moment cloud water, Nt_c represents a maximum of
 !.. droplet concentration and nu_c is also variable depending on local
 !.. droplet number concentration.
+#if defined(mpas)
+      REAL, PRIVATE:: Nt_c
+#else
       REAL, PARAMETER, PRIVATE:: Nt_c = 100.E6
+#endif
       REAL, PARAMETER, PRIVATE:: Nt_c_max = 1999.E6
 
 !..Declaration of constants for assumed CCN/IN aerosols when none in
@@ -341,8 +355,13 @@
 !.. and temperature array indices.  Variables beginning with t-p/c/m/n
 !.. represent lookup tables.  Save compile-time memory by making
 !.. allocatable (2009Jun12, J. Michalakes).
+#if defined(mpas)
+      INTEGER, PARAMETER, PRIVATE:: R8SIZE = R8KIND
+      INTEGER, PARAMETER, PRIVATE:: R4SIZE = R4KIND
+#else
       INTEGER, PARAMETER, PRIVATE:: R8SIZE = 8
       INTEGER, PARAMETER, PRIVATE:: R4SIZE = 4
+#endif
       REAL (KIND=R8SIZE), ALLOCATABLE, DIMENSION(:,:,:,:)::             &
                 tcg_racg, tmr_racg, tcr_gacr, tmg_gacr,                 &
                 tnr_racg, tnr_gacr
@@ -391,35 +410,50 @@
 
       CONTAINS
 
-      SUBROUTINE thompson_init(hgt, orho, nwfa2d, nwfa, nifa,           &
+      SUBROUTINE thompson_init(                                         &
+#if defined(mpas)
+                          l_mp_tables)
+#else
+                          hgt, orho, nwfa2d, nwfa, nifa,                &
                           dx, dy, is_start,                             &
                           ids, ide, jds, jde, kds, kde,                 &
                           ims, ime, jms, jme, kms, kme,                 &
                           its, ite, jts, jte, kts, kte)
+#endif
+
 
       IMPLICIT NONE
 
+#if defined(mpas)
+      LOGICAL, INTENT(IN):: l_mp_tables
+      INTEGER, PARAMETER:: open_OK = 0
+      INTEGER:: istat
+#else
       INTEGER, INTENT(IN):: ids,ide, jds,jde, kds,kde, &
                             ims,ime, jms,jme, kms,kme, &
                             its,ite, jts,jte, kts,kte
       REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN):: hgt
 
 !..OPTIONAL variables that control application of aerosol-aware scheme
-
       REAL, DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL, INTENT(INOUT) :: nwfa, nifa
       REAL, DIMENSION(ims:ime,jms:jme), OPTIONAL, INTENT(INOUT) :: nwfa2d
       REAL, DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL, INTENT(IN) :: orho
+      REAL:: airmass
       REAL, OPTIONAL, INTENT(IN) :: DX, DY
       LOGICAL, OPTIONAL, INTENT(IN) :: is_start
       CHARACTER*256:: mp_debug
-
-
+      REAL:: h_01, niIN3, niCCN3, max_test
+      LOGICAL:: has_CCN, has_IN
+#endif
+      LOGICAL:: micro_init
       INTEGER:: i, j, k, l, m, n
-      REAL:: h_01, airmass, niIN3, niCCN3, max_test
-      LOGICAL:: micro_init, has_CCN, has_IN
 
-      is_aerosol_aware = .FALSE.
+
+!..Allocate space for lookup tables (J. Michalakes 2009Jun08)
       micro_init = .FALSE.
+
+#if defined(wrfmodel)
+      is_aerosol_aware = .FALSE.
       has_CCN    = .FALSE.
       has_IN     = .FALSE.
 
@@ -512,6 +546,8 @@
 
       endif
 
+#endif
+
 
 !..Allocate space for lookup tables (J. Michalakes 2009Jun08).
 
@@ -569,7 +605,9 @@
 !.. disp=SQRT((mu+2)/(mu+1) - 1) so mu varies from 15 for Maritime
 !.. to 2 for really dirty air.  This not used in 2-moment cloud water
 !.. scheme and nu_c used instead and varies from 2 to 15 (integer-only).
+#if defined(wrfmodel)
       mu_c = MIN(15., (1000.E6/Nt_c + 2.))
+#endif
 
 !..Schmidt number to one-third used numerous times.
       Sc3 = Sc**(1./3.)
@@ -906,6 +944,10 @@
          enddo
       enddo
 
+#if defined(mpas)
+!..Check that the look-up tables are available.
+      if(.not. l_mp_tables) return
+#else
       CALL wrf_debug(150, 'CREATING MICROPHYSICS LOOKUP TABLES ... ')
       WRITE (wrf_err_message, '(a, f5.2, a, f5.2, a, f5.2, a, f5.2)') &
           ' using: mu_c=',mu_c,' mu_i=',mu_i,' mu_r=',mu_r,' mu_g=',mu_g
@@ -918,15 +960,138 @@
          CALL wrf_debug(200, '  calling table_ccnAct routine')
          call table_ccnAct
       endif
+#endif
 
 !..Collision efficiency between rain/snow and cloud water.
+#if defined(wrfmodel)
       CALL wrf_debug(200, '  creating qc collision eff tables')
+#endif
       call table_Efrw
       call table_Efsw
 
 !..Drop evaporation.
+#if defined(wrfmodel)
       CALL wrf_debug(200, '  creating rain evap table')
+#endif
       call table_dropEvap
+
+#if defined(mpas)
+!..Rain collecting graupel & graupel collecting rain.
+      open(unit=11,file='MP_THOMPSON_QRacrQG_DATA.DBL',form='UNFORMATTED',status='OLD',action='READ', &
+           iostat = istat)
+      if(istat /= open_OK) &
+         call physics_error_fatal('subroutine thompson_init: ' // &
+                                  'failure opening MP_THOMPSON_QRacrQG.DBL')
+      read(11) tcg_racg
+      read(11) tmr_racg
+      read(11) tcr_gacr
+      read(11) tmg_gacr
+      read(11) tnr_racg
+      read(11) tnr_gacr
+      close(unit=11)
+!     write(0,*) '--- end read MP_THOMPSON_QRacrQG.DBL'
+!     write(0,*) 'max tcg_racg =',maxval(tcg_racg)
+!     write(0,*) 'min tcg_racg =',minval(tcg_racg)
+!     write(0,*) 'max tmr_racg =',maxval(tmr_racg)
+!     write(0,*) 'min tmr_racg =',minval(tmr_racg)
+!     write(0,*) 'max tcr_gacr =',maxval(tcr_gacr)
+!     write(0,*) 'min tcr_gacr =',minval(tcr_gacr)
+!     write(0,*) 'max tmg_gacr =',maxval(tmg_gacr)
+!     write(0,*) 'min tmg_gacr =',minval(tmg_gacr)
+!     write(0,*) 'max tnr_racg =',maxval(tnr_racg)
+!     write(0,*) 'min tnr_racg =',minval(tnr_racg)
+!     write(0,*) 'max tnr_gacr =',maxval(tnr_gacr)
+!     write(0,*) 'min tnr_gacr =',minval(tnr_gacr)
+
+!..Rain collecting snow & snow collecting rain.
+      open(unit=11,file='MP_THOMPSON_QRacrQS_DATA.DBL',form='UNFORMATTED',status='OLD',action='READ', &
+           iostat=istat)
+      if(istat /= open_OK) &
+         call physics_error_fatal('subroutine thompson_init: ' // &
+                                  'failure opening MP_THOMPSON_QRacrQS.DBL')
+      read(11) tcs_racs1
+      read(11) tmr_racs1
+      read(11) tcs_racs2
+      read(11) tmr_racs2
+      read(11) tcr_sacr1
+      read(11) tms_sacr1
+      read(11) tcr_sacr2
+      read(11) tms_sacr2
+      read(11) tnr_racs1
+      read(11) tnr_racs2
+      read(11) tnr_sacr1
+      read(11) tnr_sacr2
+      close(unit=11)
+!     write(0,*) '--- end read MP_THOMPSON_QRacrQS.DBL'
+!     write(0,*) 'max tcs_racs1 =',maxval(tcs_racs1)
+!     write(0,*) 'min tcs_racs1 =',minval(tcs_racs1)
+!     write(0,*) 'max tmr_racs1 =',maxval(tmr_racs1)
+!     write(0,*) 'min tmr_racs1 =',minval(tmr_racs1)
+!     write(0,*) 'max tcs_racs2 =',maxval(tcs_racs2)
+!     write(0,*) 'min tcs_racs2 =',minval(tcs_racs2)
+!     write(0,*) 'max tmr_racs2 =',maxval(tmr_racs2)
+!     write(0,*) 'min tmr_racs2 =',minval(tmr_racs2)
+!     write(0,*) 'max tcr_sacr1 =',maxval(tcr_sacr1)
+!     write(0,*) 'min tcr_sacr1 =',minval(tcr_sacr1)
+!     write(0,*) 'max tms_sacr1 =',maxval(tms_sacr1)
+!     write(0,*) 'min tms_sacr1 =',minval(tms_sacr1)
+!     write(0,*) 'max tcr_sacr2 =',maxval(tcr_sacr2)
+!     write(0,*) 'min tcr_sacr2 =',minval(tcr_sacr2)
+!     write(0,*) 'max tms_sacr2 =',maxval(tms_sacr2)
+!     write(0,*) 'min tms_sacr2 =',minval(tms_sacr2)
+!     write(0,*) 'max tnr_racs1 =',maxval(tnr_racs1)
+!     write(0,*) 'min tnr_racs1 =',minval(tnr_racs1)
+!     write(0,*) 'max tnr_racs2 =',maxval(tnr_racs2)
+!     write(0,*) 'min tnr_racs2 =',minval(tnr_racs2)
+!     write(0,*) 'max tnr_sacr1 =',maxval(tnr_sacr1)
+!     write(0,*) 'min tnr_sacr1 =',minval(tnr_sacr1)
+!     write(0,*) 'max tnr_sacr2 =',maxval(tnr_sacr2)
+!     write(0,*) 'min tnr_sacr2 =',minval(tnr_sacr2)
+
+!..Cloud water and rain freezing (Bigg, 1953).
+      open(unit=11,file='MP_THOMPSON_freezeH2O_DATA.DBL',form='UNFORMATTED',status='OLD',action='READ', &
+           iostat=istat)
+      if(istat /= open_OK) &
+         call physics_error_fatal('subroutine thompson_init: ' // &
+                                  'failure opening MP_THOMPSON_freezeH2O.DBL')
+      read(11) tpi_qrfz
+      read(11) tni_qrfz
+      read(11) tpg_qrfz
+      read(11) tnr_qrfz
+      read(11) tpi_qcfz
+      read(11) tni_qcfz
+      close(unit=11)
+!     write(0,*) '--- end read MP_THOMPSON_freezeH2O.DBL:'
+!     write(0,*) 'max tpi_qrfz =',maxval(tpi_qrfz)
+!     write(0,*) 'min tpi_qrfz =',minval(tpi_qrfz)
+!     write(0,*) 'max tni_qrfz =',maxval(tni_qrfz)
+!     write(0,*) 'min tni_qrfz =',minval(tni_qrfz)
+!     write(0,*) 'max tpg_qrfz =',maxval(tpg_qrfz)
+!     write(0,*) 'min tpg_qrfz =',minval(tpg_qrfz)
+!     write(0,*) 'max tnr_qrfz =',maxval(tnr_qrfz)
+!     write(0,*) 'min tnr_qrfz =',minval(tnr_qrfz)
+!     write(0,*) 'max tpi_qcfz =',maxval(tpi_qcfz)
+!     write(0,*) 'min tpi_qcfz =',minval(tpi_qcfz)
+!     write(0,*) 'max tni_qcfz =',maxval(tni_qcfz)
+!     write(0,*) 'min tni_qcfz =',minval(tni_qcfz)
+
+!..Conversion of some ice mass into snow category.
+      open(unit=11,file='MP_THOMPSON_QIautQS_DATA.DBL',form='UNFORMATTED',status='OLD',action='READ', &
+           iostat=istat)
+      if(istat /= open_OK) &
+         call physics_error_fatal('subroutine thompson_init: ' // &
+                                  'failure opening MP_THOMPSON_QIautQS.DBL')
+      read(11) tpi_ide
+      read(11) tps_iaus
+      read(11) tni_iaus
+      close(unit=11)
+!     write(0,*) '--- end read MP_THOMPSON_QIautQS.DBL '
+!     write(0,*) 'max tps_iaus =',maxval(tps_iaus)
+!     write(0,*) 'min tps_iaus =',minval(tps_iaus)
+!     write(0,*) 'max tni_iaus =',maxval(tni_iaus)
+!     write(0,*) 'min tni_iaus =',minval(tni_iaus)
+
+#endif
 
 !..Initialize various constants for computing radar reflectivity.
       xam_r = am_r
@@ -940,6 +1105,7 @@
       xmu_g = mu_g
       call radar_init
 
+#if defined(wrfmodel)
       if (.not. iiwarm) then
 
 !..Rain collecting graupel & graupel collecting rain.
@@ -961,6 +1127,7 @@
       endif
 
       CALL wrf_debug(150, ' ... DONE microphysical lookup tables')
+#endif
 
       endif
 
@@ -971,20 +1138,25 @@
 !..This is a wrapper routine designed to transfer values from 3D to 1D.
 !+---+-----------------------------------------------------------------+
       SUBROUTINE mp_gt_driver(qv, qc, qr, qi, qs, qg, ni, nr, nc,       &
-                              nwfa, nifa, nwfa2d, nifa2d,               &
+                              nwfa, nifa, nwfa2d,                       &
                               th, pii, p, w, dz, dt_in, itimestep,      &
                               RAINNC, RAINNCV, &
                               SNOWNC, SNOWNCV, &
                               GRAUPELNC, GRAUPELNCV, SR, &
-#if ( WRF_CHEM == 1 )
-                              rainprod, evapprod, &
-#endif
                               refl_10cm, diagflag, do_radar_ref,      &
                               re_cloud, re_ice, re_snow,              &
                               has_reqc, has_reqi, has_reqs,           &
                               ids,ide, jds,jde, kds,kde, &             ! domain dims
                               ims,ime, jms,jme, kms,kme, &             ! memory dims
-                              its,ite, jts,jte, kts,kte)               ! tile dims
+                              its,ite, jts,jte, kts,kte, &             ! tile dims 
+#if ( WRF_CHEM == 1)
+                              rainprod, evapprod)
+#elif defined(mpas)
+                              ntc,muc,             &
+                              rainprod, evapprod)
+#else
+                              nifa2d)
+#endif                        
 
       implicit none
 
@@ -996,24 +1168,33 @@
                           qv, qc, qr, qi, qs, qg, ni, nr, th
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT):: &
                           nc, nwfa, nifa
-      REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN):: nwfa2d, nifa2d
+      REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN):: nwfa2d 
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
                           re_cloud, re_ice, re_snow
       INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
-#if ( WRF_CHEM == 1 )
-      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
-                          rainprod, evapprod
-#endif
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN):: &
                           pii, p, w, dz
       REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT):: &
                           RAINNC, RAINNCV, SR
       REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(INOUT)::      &
                           SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV
-      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::       &
-                          refl_10cm
       REAL, INTENT(IN):: dt_in
       INTEGER, INTENT(IN):: itimestep
+#if ( WRF_CHEM == 1 ) 
+      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
+                          rainprod, evapprod
+#elif defined(mpas)
+      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
+                          rainprod, evapprod
+      REAL, DIMENSION(ims:ime, jms:jme), INTENT(IN):: &
+                          ntc,muc
+      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT), OPTIONAL:: &
+                          refl_10cm
+#else
+      REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::       &
+                          refl_10cm
+      REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN):: nifa2d
+#endif
 
 !..Local variables
       REAL, DIMENSION(kts:kte):: &
@@ -1021,10 +1202,6 @@
                           nr1d, nc1d, nwfa1d, nifa1d,                   &
                           t1d, p1d, w1d, dz1d, rho, dBZ
       REAL, DIMENSION(kts:kte):: re_qc1d, re_qi1d, re_qs1d
-#if ( WRF_CHEM == 1 )
-      REAL, DIMENSION(kts:kte):: &
-                          rainprod1d, evapprod1d
-#endif
       REAL, DIMENSION(its:ite, jts:jte):: pcp_ra, pcp_sn, pcp_gr, pcp_ic
       REAL:: dt, pptrain, pptsnow, pptgraul, pptice
       REAL:: qc_max, qr_max, qs_max, qi_max, qg_max, ni_max, nr_max
@@ -1037,6 +1214,10 @@
       LOGICAL, OPTIONAL, INTENT(IN) :: diagflag
       INTEGER, OPTIONAL, INTENT(IN) :: do_radar_ref
       CHARACTER*256:: mp_debug
+#if ( ( WRF_CHEM == 1 ) || ( defined(mpas) ) )
+      REAL, DIMENSION(kts:kte):: &
+                          rainprod1d, evapprod1d
+#endif
 
 !+---+
 
@@ -1088,11 +1269,13 @@
          mp_debug(i:i) = char(0)
       enddo
 
+#if defined(wrfmodel)
       if (.NOT. is_aerosol_aware .AND. PRESENT(nc) .AND. PRESENT(nwfa)  &
                 .AND. PRESENT(nifa) .AND. PRESENT(nwfa2d)) then
          write(mp_debug,*) 'WARNING, nc-nwfa-nifa-nwfa2d present but is_aerosol_aware is FALSE'
          CALL wrf_debug(0, mp_debug)
       endif
+#endif
 
       j_loop:  do j = j_start, j_end
       i_loop:  do i = i_start, i_end
@@ -1110,6 +1293,10 @@
          ENDIF
          SR(i,j) = 0.
 
+#if defined(mpas)
+         Nt_c = ntc(i,j)
+         mu_c = muc(i,j)
+#endif
          do k = kts, kte
             t1d(k) = th(i,k,j)*pii(i,k,j)
             p1d(k) = p(i,k,j)
@@ -1144,7 +1331,7 @@
          call mp_thompson(qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d,     &
                       nr1d, nc1d, nwfa1d, nifa1d, t1d, p1d, w1d, dz1d,  &
                       pptrain, pptsnow, pptgraul, pptice, &
-#if ( WRF_CHEM == 1 )
+#if ( ( WRF_CHEM == 1 ) || ( defined(mpas) ) )
                       rainprod1d, evapprod1d, &
 #endif
                       kts, kte, dt, i, j)
@@ -1173,7 +1360,9 @@
          if (is_aerosol_aware) then
 !-GT        nwfa1d(kts) = nwfa1
             nwfa1d(kts) = nwfa1d(kts) + nwfa2d(i,j)*dt_in
+#if defined(wrfmodel)
             nifa1d(kts) = nifa1d(kts) + nifa2d(i,j)*dt_in
+#endif
 
             do k = kts, kte
                nc(i,k,j) = nc1d(k)
@@ -1192,7 +1381,7 @@
             ni(i,k,j) = ni1d(k)
             nr(i,k,j) = nr1d(k)
             th(i,k,j) = t1d(k)/pii(i,k,j)
-#if ( WRF_CHEM == 1 )
+#if ( ( WRF_CHEM == 1 ) || ( defined(mpas) ) )
             rainprod(i,k,j) = rainprod1d(k)
             evapprod(i,k,j) = evapprod1d(k)
 #endif
@@ -1204,7 +1393,9 @@
             elseif (qc1d(k) .lt. 0.0) then
              write(mp_debug,*) 'WARNING, negative qc ', qc1d(k),        &
                         ' at i,j,k=', i,j,k
+#if defined(wrfmodel)
              CALL wrf_debug(150, mp_debug)
+#endif
             endif
             if (qr1d(k) .gt. qr_max) then
              imax_qr = i
@@ -1214,7 +1405,9 @@
             elseif (qr1d(k) .lt. 0.0) then
              write(mp_debug,*) 'WARNING, negative qr ', qr1d(k),        &
                         ' at i,j,k=', i,j,k
+#if defined(wrfmodel)
              CALL wrf_debug(150, mp_debug)
+#endif
             endif
             if (nr1d(k) .gt. nr_max) then
              imax_nr = i
@@ -1224,7 +1417,9 @@
             elseif (nr1d(k) .lt. 0.0) then
              write(mp_debug,*) 'WARNING, negative nr ', nr1d(k),        &
                         ' at i,j,k=', i,j,k
+#if defined(wrfmodel)
              CALL wrf_debug(150, mp_debug)
+#endif
             endif
             if (qs1d(k) .gt. qs_max) then
              imax_qs = i
@@ -1234,7 +1429,9 @@
             elseif (qs1d(k) .lt. 0.0) then
              write(mp_debug,*) 'WARNING, negative qs ', qs1d(k),        &
                         ' at i,j,k=', i,j,k
+#if defined(wrfmodel)
              CALL wrf_debug(150, mp_debug)
+#endif
             endif
             if (qi1d(k) .gt. qi_max) then
              imax_qi = i
@@ -1244,7 +1441,9 @@
             elseif (qi1d(k) .lt. 0.0) then
              write(mp_debug,*) 'WARNING, negative qi ', qi1d(k),        &
                         ' at i,j,k=', i,j,k
+#if defined(wrfmodel)
              CALL wrf_debug(150, mp_debug)
+#endif
             endif
             if (qg1d(k) .gt. qg_max) then
              imax_qg = i
@@ -1254,7 +1453,9 @@
             elseif (qg1d(k) .lt. 0.0) then
              write(mp_debug,*) 'WARNING, negative qg ', qg1d(k),        &
                         ' at i,j,k=', i,j,k
+#if defined(wrfmodel)
              CALL wrf_debug(150, mp_debug)
+#endif
             endif
             if (ni1d(k) .gt. ni_max) then
              imax_ni = i
@@ -1264,15 +1465,21 @@
             elseif (ni1d(k) .lt. 0.0) then
              write(mp_debug,*) 'WARNING, negative ni ', ni1d(k),        &
                         ' at i,j,k=', i,j,k
+#if defined(wrfmodel)
              CALL wrf_debug(150, mp_debug)
+#endif
             endif
             if (qv1d(k) .lt. 0.0) then
              write(mp_debug,*) 'WARNING, negative qv ', qv1d(k),        &
                         ' at i,j,k=', i,j,k
+#if defined(wrfmodel)
              CALL wrf_debug(150, mp_debug)
+#endif
              if (k.lt.kte-2 .and. k.gt.kts+1) then
                 write(mp_debug,*) '   below and above are: ', qv(i,k-1,j), qv(i,k+1,j)
+#if defined(wrfmodel)
                 CALL wrf_debug(150, mp_debug)
+#endif
                 qv(i,k,j) = MAX(1.E-7, 0.5*(qv(i,k-1,j) + qv(i,k+1,j)))
              else
                 qv(i,k,j) = 1.E-7
@@ -1280,6 +1487,7 @@
             endif
          enddo
 
+#if defined(wrfmodel)
          IF ( PRESENT (diagflag) ) THEN
          if (diagflag .and. do_radar_ref == 1) then
           call calc_refl10cm (qv1d, qc1d, qr1d, nr1d, qs1d, qg1d,       &
@@ -1289,6 +1497,7 @@
           enddo
          endif
          ENDIF
+#endif
 
          IF (has_reqc.ne.0 .and. has_reqi.ne.0 .and. has_reqs.ne.0) THEN
           do k = kts, kte
@@ -1317,7 +1526,9 @@
          'qg: ', qg_max, '(', imax_qg, ',', jmax_qg, ',', kmax_qg, ')', &
          'ni: ', ni_max, '(', imax_ni, ',', jmax_ni, ',', kmax_ni, ')', &
          'nr: ', nr_max, '(', imax_nr, ',', jmax_nr, ',', kmax_nr, ')'
+#if defined(wrfmodel)
       CALL wrf_debug(150, mp_debug)
+#endif
 ! END DEBUG - GT
 
       do i = 1, 256
@@ -1337,13 +1548,14 @@
 !.. Thompson et al. (2004, 2008).
 !+---+-----------------------------------------------------------------+
 !
-      subroutine mp_thompson (qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d, &
+      SUBROUTINE mp_thompson (qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d,   &
                           nr1d, nc1d, nwfa1d, nifa1d, t1d, p1d, w1d, dzq, &
-                          pptrain, pptsnow, pptgraul, pptice, &
-#if ( WRF_CHEM == 1 )
-                          rainprod, evapprod, &
+                          pptrain, pptsnow, pptgraul, pptice,             &
+                          kts, kte, dt, ii, jj                            &
+#if ( ( WRF_CHEM == 1 ) || ( defined(mpas) ) )
+                          rainprod, evapprod                              &
 #endif
-                          kts, kte, dt, ii, jj)
+                              )
 
       implicit none
 
@@ -1355,7 +1567,7 @@
       REAL, DIMENSION(kts:kte), INTENT(IN):: p1d, w1d, dzq
       REAL, INTENT(INOUT):: pptrain, pptsnow, pptgraul, pptice
       REAL, INTENT(IN):: dt
-#if ( WRF_CHEM == 1 )
+#if ( ( WRF_CHEM == 1 ) || ( defined(mpas) ) )
       REAL, DIMENSION(kts:kte), INTENT(INOUT):: &
                           rainprod, evapprod
 #endif
@@ -1363,38 +1575,29 @@
 !..Local variables
       REAL, DIMENSION(kts:kte):: tten, qvten, qcten, qiten, &
            qrten, qsten, qgten, niten, nrten, ncten, nwfaten, nifaten
-
       DOUBLE PRECISION, DIMENSION(kts:kte):: prw_vcd
-
       DOUBLE PRECISION, DIMENSION(kts:kte):: pnc_wcd, pnc_wau, pnc_rcw, &
            pnc_scw, pnc_gcw
-
       DOUBLE PRECISION, DIMENSION(kts:kte):: pna_rca, pna_sca, pna_gca, &
            pnd_rcd, pnd_scd, pnd_gcd
-
       DOUBLE PRECISION, DIMENSION(kts:kte):: prr_wau, prr_rcw, prr_rcs, &
            prr_rcg, prr_sml, prr_gml, &
            prr_rci, prv_rev,          &
            pnr_wau, pnr_rcs, pnr_rcg, &
            pnr_rci, pnr_sml, pnr_gml, &
            pnr_rev, pnr_rcr, pnr_rfz
-
       DOUBLE PRECISION, DIMENSION(kts:kte):: pri_inu, pni_inu, pri_ihm, &
            pni_ihm, pri_wfz, pni_wfz, &
            pri_rfz, pni_rfz, pri_ide, &
            pni_ide, pri_rci, pni_rci, &
            pni_sci, pni_iau, pri_iha, pni_iha
-
       DOUBLE PRECISION, DIMENSION(kts:kte):: prs_iau, prs_sci, prs_rcs, &
            prs_scw, prs_sde, prs_ihm, &
            prs_ide
-
       DOUBLE PRECISION, DIMENSION(kts:kte):: prg_scw, prg_rfz, prg_gde, &
            prg_gcw, prg_rci, prg_rcs, &
            prg_rcg, prg_ihm
-
       DOUBLE PRECISION, PARAMETER:: zeroD0 = 0.0d0
-
       REAL, DIMENSION(kts:kte):: temp, pres, qv
       REAL, DIMENSION(kts:kte):: rc, ri, rr, rs, rg, ni, nr, nc, nwfa, nifa
       REAL, DIMENSION(kts:kte):: rho, rhof, rhof2
@@ -1402,14 +1605,11 @@
       REAL, DIMENSION(kts:kte):: satw, sati, ssatw, ssati
       REAL, DIMENSION(kts:kte):: diffu, visco, vsc2, &
            tcond, lvap, ocp, lvt2
-
       DOUBLE PRECISION, DIMENSION(kts:kte):: ilamr, ilamg, N0_r, N0_g
       REAL, DIMENSION(kts:kte):: mvd_r, mvd_c
       REAL, DIMENSION(kts:kte):: smob, smo2, smo1, smo0, &
            smoc, smod, smoe, smof
-
       REAL, DIMENSION(kts:kte):: sed_r, sed_s, sed_g, sed_i, sed_n,sed_c
-
       REAL:: rgvm, delta_tp, orho, lfus2
       REAL, DIMENSION(5):: onstep
       DOUBLE PRECISION:: N0_exp, N0_min, lam_exp, lamc, lamr, lamg
@@ -1439,7 +1639,6 @@
       INTEGER:: nir, nis, nig, nii, nic, niin
       INTEGER:: idx_tc, idx_t, idx_s, idx_g1, idx_g, idx_r1, idx_r,     &
                 idx_i1, idx_i, idx_c, idx, idx_d, idx_n, idx_in
-
       LOGICAL:: melti, no_micro
       LOGICAL, DIMENSION(kts:kte):: L_qc, L_qi, L_qr, L_qs, L_qg
       LOGICAL:: debug_flag
@@ -1452,7 +1651,9 @@
 !     if (ii.eq.901 .and. jj.eq.379) debug_flag = .true.
       if(debug_flag) then
         write(mp_debug, *) 'DEBUG INFO, mp_thompson at (i,j) ', ii, ', ', jj
+#if defined(wrfmodel)
         CALL wrf_debug(550, mp_debug)
+#endif
       endif
 
       no_micro = .true.
@@ -1558,7 +1759,7 @@
          pnd_scd(k) = 0.
          pnd_gcd(k) = 0.
       enddo
-#if ( WRF_CHEM == 1 )
+#if ( ( WRF_CHEM == 1 ) || ( defined(mpas) ) )
       do k = kts, kte
          rainprod(k) = 0.
          evapprod(k) = 0.
@@ -1591,7 +1792,11 @@
          if (qc1d(k) .gt. R1) then
             no_micro = .false.
             rc(k) = qc1d(k)*rho(k)
+#if defined(mpas)
+            nc(k) = MAX(2., nc1d(k)*rho(k))
+#else
             nc(k) = MAX(2., MIN(nc1d(k)*rho(k), Nt_c_max))
+#endif
             L_qc(k) = .true.
             nu_c = MIN(15, NINT(1000.E6/nc(k)) + 2)
             lamc = (nc(k)*am_r*ccg(2,nu_c)*ocg1(nu_c)/rc(k))**obmr
@@ -2494,7 +2699,11 @@
 !.. supersat again.
          sump = pri_inu(k) + pri_ide(k) + prs_ide(k) &
               + prs_sde(k) + prg_gde(k) + pri_iha(k)
+#if defined(mpas)
+         rate_max = (qv(k)-qvsi(k))*odts*0.999
+#else
          rate_max = (qv(k)-qvsi(k))*rho(k)*odts*0.999
+#endif
          if ( (sump.gt. eps .and. sump.gt. rate_max) .or. &
               (sump.lt. -eps .and. sump.lt. rate_max) ) then
           ratio = rate_max/sump
@@ -2782,7 +2991,11 @@
 
          if ((qc1d(k) + qcten(k)*DT) .gt. R1) then
             rc(k) = (qc1d(k) + qcten(k)*DT)*rho(k)
+#if defined(mpas)
+            nc(k) = MAX(2.,(nc1d(k)+ncten(k)*DT)*rho(k))
+#else
             nc(k) = MAX(2., MIN((nc1d(k)+ncten(k)*DT)*rho(k), Nt_c_max))
+#endif
             if (.NOT. is_aerosol_aware) nc(k) = Nt_c
             L_qc(k) = .true.
          else
@@ -2845,12 +3058,14 @@
 !+---+-----------------------------------------------------------------+
       if (.not. iiwarm) then
       do k = kts, kte
+#if defined(wrfmodel)
          smo2(k) = 0.
          smob(k) = 0.
          smoc(k) = 0.
          smod(k) = 0.
       enddo
       do k = kts, kte
+#endif
          if (.not. L_qs(k)) CYCLE
          tc0 = MIN(-0.1, temp(k)-273.15)
          smob(k) = rs(k)*oams
@@ -3017,8 +3232,11 @@
            !           -tpc_wev(idx_d, idx_c, idx_n)*orho*odt)
             prw_vcd(k) = MAX(DBLE(-rc(k)*0.99*orho*odt), prw_vcd(k))
             pnc_wcd(k) = MAX(DBLE(-nc(k)*0.99*orho*odt),                &
+#if defined(mpas)
+                       DBLE(-tnc_wev(idx_d, idx_c, idx_n)*orho*odt))
+#else
                        -tnc_wev(idx_d, idx_c, idx_n)*orho*odt)
-
+#endif
            endif
           else
            prw_vcd(k) = -rc(k)*orho*odt
@@ -3033,7 +3251,11 @@
           nwfaten(k) = nwfaten(k) - pnc_wcd(k)
           tten(k) = tten(k) + lvap(k)*ocp(k)*prw_vcd(k)*(1-IFDRY)
           rc(k) = MAX(R1, (qc1d(k) + DT*qcten(k))*rho(k))
+#if defined(mpas)
+          nc(k) = MAX(2.,(nc1d(k) + DT*ncten(k))*rho(k))
+#else
           nc(k) = MAX(2., MIN((nc1d(k)+ncten(k)*DT)*rho(k), Nt_c_max))
+#endif
           if (.NOT. is_aerosol_aware) nc(k) = Nt_c
           qv(k) = MAX(1.E-10, qv1d(k) + DT*qvten(k))
           temp(k) = t1d(k) + DT*tten(k)
@@ -3122,7 +3344,7 @@
           rho(k) = 0.622*pres(k)/(R*temp(k)*(qv(k)+0.622))
          endif
       enddo
-#if ( WRF_CHEM == 1 )
+#if ( ( WRF_CHEM == 1 ) || ( defined(mpas) ) )
       do k = kts, kte
          evapprod(k) = prv_rev(k) - (min(zeroD0,prs_sde(k)) + &
                                      min(zeroD0,prg_gde(k)))
@@ -3476,7 +3698,11 @@
          t1d(k)  = t1d(k) + tten(k)*DT
          qv1d(k) = MAX(1.E-10, qv1d(k) + qvten(k)*DT)
          qc1d(k) = qc1d(k) + qcten(k)*DT
+#if defined(mpas)
+         nc1d(k) = MAX(2./rho(k), nc1d(k) + ncten(k)*DT)
+#else
          nc1d(k) = MAX(2./rho(k), MIN(nc1d(k) + ncten(k)*DT, Nt_c_max))
+#endif
          nwfa1d(k) = MAX(11.1E6/rho(k), MIN(9999.E6/rho(k),             &
                        (nwfa1d(k)+nwfaten(k)*DT)))
          nifa1d(k) = MAX(naIN1*0.01, MIN(9999.E6/rho(k),                &
@@ -3537,7 +3763,7 @@
          if (qg1d(k) .le. R1) qg1d(k) = 0.0
       enddo
 
-      end subroutine mp_thompson
+      END SUBROUTINE mp_thompson
 !+---+-----------------------------------------------------------------+
 !ctrlL
 !+---+-----------------------------------------------------------------+
@@ -3546,7 +3772,7 @@
 !..Rain collecting graupel (and inverse).  Explicit CE integration.
 !+---+-----------------------------------------------------------------+
 
-      subroutine qr_acr_qg
+      SUBROUTINE qr_acr_qg
 
       implicit none
 
@@ -3557,6 +3783,7 @@
       DOUBLE PRECISION, DIMENSION(nbr):: vr, N_r
       DOUBLE PRECISION:: N0_r, N0_g, lam_exp, lamg, lamr
       DOUBLE PRECISION:: massg, massr, dvg, dvr, t1, t2, z1, z2, y1, y2
+#if defined(wrfmodel)
       LOGICAL force_read_thompson, write_thompson_tables
       LOGICAL lexist,lopen
       INTEGER good
@@ -3620,6 +3847,7 @@
 #endif
       ELSE
         CALL wrf_message("ThompMP: computing qr_acr_qg")
+#endif
         do n2 = 1, nbr
 !        vr(n2) = av_r*Dr(n2)**bv_r * DEXP(-fv_r*Dr(n2))
          vr(n2) = -0.1021 + 4.932E3*Dr(n2) - 0.9551E6*Dr(n2)*Dr(n2)     &
@@ -3633,7 +3861,7 @@
 !..Note values returned from wrf_dm_decomp1d are zero-based, add 1 for
 !.. fortran indices.  J. Michalakes, 2009Oct30.
 
-#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+#if ( defined( DM_PARALLEL ) ) && ( ! defined( STUBMPI ) ) && ( defined(wrfmodel) ) 
         CALL wrf_dm_decomp1d ( ntb_r*ntb_r1, km_s, km_e )
 #else
         km_s = 0
@@ -3699,7 +3927,7 @@
          enddo
          enddo
         enddo
-
+#if defined(wrfmodel)
 !..Note wrf_dm_gatherv expects zero-based km_s, km_e (J. Michalakes, 2009Oct30).
 
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
@@ -3726,15 +3954,16 @@
           CALL wrf_error_fatal("Error writing qr_acr_qg.dat")
         ENDIF
       ENDIF
+#endif
 
-      end subroutine qr_acr_qg
+      END SUBROUTINE qr_acr_qg
 !+---+-----------------------------------------------------------------+
 !ctrlL
 !+---+-----------------------------------------------------------------+
 !..Rain collecting snow (and inverse).  Explicit CE integration.
 !+---+-----------------------------------------------------------------+
 
-      subroutine qr_acr_qs
+      SUBROUTINE qr_acr_qs
 
       implicit none
 
@@ -3748,6 +3977,7 @@
       DOUBLE PRECISION:: dvs, dvr, masss, massr
       DOUBLE PRECISION:: t1, t2, t3, t4, z1, z2, z3, z4
       DOUBLE PRECISION:: y1, y2, y3, y4
+#if defined(wrfmodel)
       LOGICAL force_read_thompson, write_thompson_tables
       LOGICAL lexist,lopen
       INTEGER good
@@ -3823,6 +4053,7 @@
 #endif
       ELSE
         CALL wrf_message("ThompMP: computing qr_acr_qs")
+#endif
         do n2 = 1, nbr
 !        vr(n2) = av_r*Dr(n2)**bv_r * DEXP(-fv_r*Dr(n2))
          vr(n2) = -0.1021 + 4.932E3*Dr(n2) - 0.9551E6*Dr(n2)*Dr(n2)     &
@@ -3837,7 +4068,7 @@
 !..Note values returned from wrf_dm_decomp1d are zero-based, add 1 for
 !.. fortran indices.  J. Michalakes, 2009Oct30.
 
-#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+#if ( defined( DM_PARALLEL ) ) && ( ! defined( STUBMPI ) ) && ( defined(wrfmodel) ) 
         CALL wrf_dm_decomp1d ( ntb_r*ntb_r1, km_s, km_e )
 #else
         km_s = 0
@@ -3973,6 +4204,7 @@
          enddo
         enddo
 
+#if defined(wrfmodel)
 !..Note wrf_dm_gatherv expects zero-based km_s, km_e (J. Michalakes, 2009Oct30).
 
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
@@ -4011,8 +4243,9 @@
           CALL wrf_error_fatal("Error writing qr_acr_qs.dat")
         ENDIF
       ENDIF
+#endif
 
-      end subroutine qr_acr_qs
+      END SUBROUTINE qr_acr_qs
 !+---+-----------------------------------------------------------------+
 !ctrlL
 !+---+-----------------------------------------------------------------+
@@ -4021,25 +4254,30 @@
 !..the proportion of drops summing their masses.
 !+---+-----------------------------------------------------------------+
 
-      subroutine freezeH2O
+      SUBROUTINE freezeH2O
 
       implicit none
 
 !..Local variables
       INTEGER:: i, j, k, m, n, n2
       INTEGER:: km, km_s, km_e
+      INTEGER:: nu_c
+      REAL:: T_adjust
+      DOUBLE PRECISION:: sum1, sum2, sumn1, sumn2, &
+                         prob, vol, Texp, orho_w, &
+                         lam_exp, lamr, N0_r, lamc, N0_c, y 
+#if defined(mpas)
+      DOUBLE PRECISION, DIMENSION(nbr):: N_r, massr
+      DOUBLE PRECISION, DIMENSION(nbc):: N_c, massc
+#else
       DOUBLE PRECISION:: N_r, N_c
       DOUBLE PRECISION, DIMENSION(nbr):: massr
       DOUBLE PRECISION, DIMENSION(nbc):: massc
-      DOUBLE PRECISION:: sum1, sum2, sumn1, sumn2, &
-                         prob, vol, Texp, orho_w, &
-                         lam_exp, lamr, N0_r, lamc, N0_c, y
-      INTEGER:: nu_c
-      REAL:: T_adjust
       LOGICAL force_read_thompson, write_thompson_tables
       LOGICAL lexist,lopen
       INTEGER good
       LOGICAL, EXTERNAL :: wrf_dm_on_monitor
+#endif
 
 !+---+
       CALL nl_get_force_read_thompson(1,force_read_thompson)
@@ -4099,6 +4337,7 @@
 #endif
       ELSE
         CALL wrf_message("ThompMP: computing freezeH2O")
+#endif
 
         orho_w = 1./rho_w
 
@@ -4111,7 +4350,7 @@
 
 ! Need to split loops between MPI processes to speedup
 ! (2017Jul26, Jason Do)
-#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+#if ( defined( DM_PARALLEL ) ) && ( ! defined( STUBMPI ) ) && ( defined(wrfmodel) )
         CALL wrf_dm_decomp1d ( ntb_IN*45, km_s, km_e )
 #else
         km_s = 0
@@ -4119,16 +4358,26 @@
 #endif
 
 !..Freeze water (smallest drops become cloud ice, otherwise graupel).
+#if defined(mpas)
+        do m = 1, ntb_IN
+        T_adjust = MAX(-3.0, MIN(3.0 - ALOG10(Nt_IN(m)), 3.0))
+        do k = 1, 45
+#else
         do km = km_s, km_e
          m = km / 45 + 1
          k = mod( km , 45 ) + 1
          T_adjust = MAX(-3.0, MIN(3.0 - ALOG10(Nt_IN(m)), 3.0))
+#endif
 !         print*, ' Freezing water for temp = ', -k
          Texp = DEXP( DFLOAT(k) - T_adjust*1.0D0 ) - 1.0D0
+
+#if defined(wrfmodel)
 #ifdef THOMPSON_OMP
 !$OMP PARALLEL DO SCHEDULE(dynamic) &
 !$OMP PRIVATE(j,i,lam_exp,lamr,N0_r,sum1,sum2,sumn1,sumn2,n2,N_r,vol,prob)
 #endif
+#endif
+
          do j = 1, ntb_r1
             do i = 1, ntb_r
                lam_exp = (N0r_exp(j)*am_r*crg(1)/r_r(i))**ore1
@@ -4139,15 +4388,33 @@
                sumn1 = 0.0d0
                sumn2 = 0.0d0
                do n2 = nbr, 1, -1
+#if defined(mpas)
+                  N_r(n2) = N0_r*Dr(n2)**mu_r*DEXP(-lamr*Dr(n2))*dtr(n2)
+#else
                   N_r = N0_r*Dr(n2)**mu_r*DEXP(-lamr*Dr(n2))*dtr(n2)
+#endif
                   vol = massr(n2)*orho_w
+#if defined(mpas)
+                  prob = 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp)   
+#else
                   prob = MAX(0.0D0, 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp))
+#endif
                   if (massr(n2) .lt. xm0g) then
+#if defined(mpas)
+                     sumn1 = sumn1 + prob*N_r(n2)
+                     sum1 = sum1 + prob*N_r(n2)*massr(n2)
+#else
                      sumn1 = sumn1 + prob*N_r
                      sum1 = sum1 + prob*N_r*massr(n2)
+#endif
                   else
+#if defined(mpas)
+                     sumn2 = sumn2 + prob*N_r(n2)
+                     sum2 = sum2 + prob*N_r(n2)*massr(n2)
+#else
                      sumn2 = sumn2 + prob*N_r
                      sum2 = sum2 + prob*N_r*massr(n2)
+#endif
                   endif
                   if ((sum1+sum2).ge.r_r(i)) EXIT
                enddo
@@ -4157,11 +4424,13 @@
                tnr_qrfz(i,j,k,m) = sumn2
             enddo
          enddo
+#if defined(wrfmodel)
 #ifdef THOMPSON_OMP
 !$OMP END PARALLEL DO
 
 !$OMP PARALLEL DO SCHEDULE(dynamic) &
 !$OMP PRIVATE(j,i,nu_c,lamc,N0_c,sum1,sumn2,vol,prob,N_c)
+#endif
 #endif
          do j = 1, nbc
             nu_c = MIN(15, NINT(1000.E6/t_Nc(j)) + 2)
@@ -4172,22 +4441,31 @@
                sumn2 = 0.0d0
                do n = nbc, 1, -1
                   vol = massc(n)*orho_w
+#if defined(mpas)
+                  prob = 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp)
+                  N_c(n) = N0_c*Dc(n)**nu_c*EXP(-lamc*Dc(n))*dtc(n)
+                  sumn2 = MIN(t_Nc(j), sumn2 + prob*N_c(n))
+                  sum1 = sum1 + prob*N_c(n)*massc(n)
+#else
                   prob = MAX(0.0D0, 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp))
                   N_c = N0_c*Dc(n)**nu_c*EXP(-lamc*Dc(n))*dtc(n)
                   sumn2 = MIN(t_Nc(j), sumn2 + prob*N_c)
                   sum1 = sum1 + prob*N_c*massc(n)
+#endif
                   if (sum1 .ge. r_c(i)) EXIT
                enddo
                tpi_qcfz(i,j,k,m) = sum1
                tni_qcfz(i,j,k,m) = sumn2
             enddo
          enddo
+#if defined(wrfmodel)
 #ifdef THOMPSON_OMP
 !$OMP END PARALLEL DO
 #endif
+#endif
         enddo
 
-#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) && ( defined(wrfmodel)) )
         CALL wrf_dm_gatherv(tpi_qrfz, ntb_r*ntb_r1, km_s, km_e, R8SIZE)
         CALL wrf_dm_gatherv(tni_qrfz, ntb_r*ntb_r1, km_s, km_e, R8SIZE)
         CALL wrf_dm_gatherv(tpg_qrfz, ntb_r*ntb_r1, km_s, km_e, R8SIZE)
@@ -4212,7 +4490,7 @@
         ENDIF
       ENDIF
 
-      end subroutine freezeH2O
+      END SUBROUTINE freezeH2O
 
 !+---+-----------------------------------------------------------------+
 !ctrlL
@@ -4227,7 +4505,7 @@
 !.. diameters contribute to snow growth (as in Harrington et al. 1995).
 !+---+-----------------------------------------------------------------+
 
-      subroutine qi_aut_qs
+      SUBROUTINE qi_aut_qs
 
       implicit none
 
@@ -4270,7 +4548,7 @@
          enddo
       enddo
 
-      end subroutine qi_aut_qs
+      END SUBROUTINE qi_aut_qs
 !ctrlL
 !+---+-----------------------------------------------------------------+
 !..Variable collision efficiency for rain collecting cloud water using
@@ -4278,7 +4556,7 @@
 !.. uses polynomials to get close match of Pruppacher & Klett Fig 14-9.
 !+---+-----------------------------------------------------------------+
 
-      subroutine table_Efrw
+      SUBROUTINE table_Efrw
 
       implicit none
 
@@ -4334,7 +4612,7 @@
       enddo
       enddo
 
-      end subroutine table_Efrw
+      END SUBROUTINE table_Efrw
 !ctrlL
 !+---+-----------------------------------------------------------------+
 !..Variable collision efficiency for snow collecting cloud water using
@@ -4342,7 +4620,7 @@
 !.. their "effective collision cross-section."
 !+---+-----------------------------------------------------------------+
 
-      subroutine table_Efsw
+      SUBROUTINE table_Efsw
 
       implicit none
 
@@ -4378,7 +4656,7 @@
       enddo
       enddo
 
-      end subroutine table_Efsw
+      END SUBROUTINE table_Efsw
 !ctrlL
 !+---+-----------------------------------------------------------------+
 !..Function to compute collision efficiency of collector species (rain,
@@ -4432,7 +4710,7 @@
 !.. not affect number concentration.
 !+---+-----------------------------------------------------------------+
 
-      subroutine table_dropEvap
+      SUBROUTINE table_dropEvap
 
       implicit none
 
@@ -4520,8 +4798,9 @@
 !         pnr_rev(k) = MIN(nr(k)*odts, SNGL(tnr_rev(idx_d,idx_r1,idx_r) &   ! RAIN2M
 !                    * odts))
 
-      end subroutine table_dropEvap
+      END SUBROUTINE table_dropEvap
 !
+#if defined(wrfmodel)
 !ctrlL
 !+---+-----------------------------------------------------------------+
 !..Fill the table of CCN activation data created from parcel model run
@@ -4531,7 +4810,7 @@
 !.. contain activated fraction of CCN for given conditions.
 !+---+-----------------------------------------------------------------+
 
-      subroutine table_ccnAct
+      SUBROUTINE table_ccnAct
 
       USE module_domain
       USE module_dm
@@ -4587,7 +4866,9 @@
       WRITE( errmess , '(A,I2)' ) 'module_mp_thompson: error reading CCN_ACTIVATE.BIN on unit ',iunit_mp_th1
       CALL wrf_error_fatal(errmess)
 
-      end subroutine table_ccnAct
+      END SUBROUTINE table_ccnAct
+
+#endif
 !^L
 !+---+-----------------------------------------------------------------+
 !..Retrieve fraction of CCN that gets activated given the model temp,
@@ -4676,6 +4957,7 @@
 
       end function activ_ncloud
 
+#if defined(wrfmodel)
 !+---+-----------------------------------------------------------------+
 !+---+-----------------------------------------------------------------+
       SUBROUTINE GCF(GAMMCF,A,X,GLN)
@@ -4867,6 +5149,7 @@
 
       END FUNCTION RSIF
 
+#endif
 !+---+-----------------------------------------------------------------+
       real function iceDeMott(tempc, qv, qvs, qvsi, rho, nifa)
       implicit none
@@ -5015,7 +5298,7 @@
 !.. distribution, not the second part, which is the larger sizes.
 !+---+-----------------------------------------------------------------+
 
-      subroutine calc_effectRad (t1d, p1d, qv1d, qc1d, nc1d, qi1d, ni1d, qs1d,   &
+      SUBROUTINE calc_effectRad (t1d, p1d, qv1d, qc1d, nc1d, qi1d, ni1d, qs1d,   &
      &                re_qc1d, re_qi1d, re_qs1d, kts, kte)
 
       IMPLICIT NONE
@@ -5043,7 +5326,11 @@
       do k = kts, kte
          rho(k) = 0.622*p1d(k)/(R*t1d(k)*(qv1d(k)+0.622))
          rc(k) = MAX(R1, qc1d(k)*rho(k))
+#if defined(mpas)
+         nc(k) = MAX(R2, nc1d(k)*rho(k))
+#else
          nc(k) = MAX(2., MIN(nc1d(k)*rho(k), Nt_c_max))
+#endif
          if (.NOT. is_aerosol_aware) nc(k) = Nt_c
          if (rc(k).gt.R1 .and. nc(k).gt.R2) has_qc = .true.
          ri(k) = MAX(R1, qi1d(k)*rho(k))
@@ -5055,7 +5342,9 @@
 
       if (has_qc) then
       do k = kts, kte
+#if defined(wrfmodel)
          re_qc1d(k) = 2.49E-6
+#endif
          if (rc(k).le.R1 .or. nc(k).le.R2) CYCLE
          if (nc(k).lt.100) then
             inu_c = 15
@@ -5071,16 +5360,24 @@
 
       if (has_qi) then
       do k = kts, kte
+#if defined(wrfmodel)
          re_qi1d(k) = 2.49E-6
+#endif
          if (ri(k).le.R1 .or. ni(k).le.R2) CYCLE
          lami = (am_i*cig(2)*oig1*ni(k)/ri(k))**obmi
+#if defined(mpas)
+         re_qi1d(k) = MAX(5.01E-6, MIN(SNGL(0.5D0 * DBLE(3.+mu_i)/lami), 125.E-6))
+#else
          re_qi1d(k) = MAX(2.51E-6, MIN(SNGL(0.5D0 * DBLE(3.+mu_i)/lami), 125.E-6))
+#endif
       enddo
       endif
 
       if (has_qs) then
       do k = kts, kte
+#if defined(wrfmodel)
          re_qs1d(k) = 4.99E-6
+#endif
          if (rs(k).le.R1) CYCLE
          tc0 = MIN(-0.1, t1d(k)-273.15)
          smob = rs(k)*oams
@@ -5115,11 +5412,15 @@
      &        + sb(7)*tc0*tc0*cse(1) + sb(8)*tc0*cse(1)*cse(1) &
      &        + sb(9)*tc0*tc0*tc0 + sb(10)*cse(1)*cse(1)*cse(1)
          smoc = a_ * smo2**b_
+#if defined(mpas)
+         re_qs1d(k) = MAX(10.E-6, MIN(0.5*(smoc/smob), 999.E-6))
+#else
          re_qs1d(k) = MAX(5.01E-6, MIN(0.5*(smoc/smob), 999.E-6))
+#endif
       enddo
       endif
 
-      end subroutine calc_effectRad
+      END SUBROUTINE calc_effectRad
 
 !+---+-----------------------------------------------------------------+
 !..Compute radar reflectivity assuming 10 cm wavelength radar and using
@@ -5130,7 +5431,7 @@
 !.. melting level interface.
 !+---+-----------------------------------------------------------------+
 
-      subroutine calc_refl10cm (qv1d, qc1d, qr1d, nr1d, qs1d, qg1d,     &
+      SUBROUTINE calc_refl10cm (qv1d, qc1d, qr1d, nr1d, qs1d, qg1d,     &
                           t1d, p1d, dBZ, kts, kte, ii, jj)
 
       IMPLICIT NONE
@@ -5430,7 +5731,7 @@
 !    &                / (ze_rain(k)+ze_snow(k)+ze_graupel(k))
 !     enddo
 
-      end subroutine calc_refl10cm
+      END SUBROUTINE calc_refl10cm
 !
 !+---+-----------------------------------------------------------------+
 

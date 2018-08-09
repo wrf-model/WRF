@@ -30,7 +30,7 @@ contains
                   rthraten,ysu_topdown_pblmix, ysu_firstorder, ysu_brcr_ub,    & ! RGF mod
                   ysu_cgrad_scalar, ysu_cgrad_mom,                             & ! RGF mod
                   ctopo,ctopo2,                                                &
-                  DKU3D,DKT3D,    &    ! RGF
+                  DKU3D,DKT3D,                                                 & ! RGF
                   ids,ide, jds,jde, kds,kde,                                   &
                   ims,ime, jms,jme, kms,kme,                                   &
                   its,ite, jts,jte, kts,kte,                                   &
@@ -219,9 +219,6 @@ contains
                                                                         dtsfc, &
                                                                         dqsfc
     real,     dimension( its:ite, kts:kte )  ::                      dku,dkt       ! RGF
-
-
-     print *,' RGF its,ite, jts,jte, kts,kte ',its,ite, jts,jte, kts,kte
 !
    qv2d(its:ite,:) = 0.0
 !
@@ -1074,7 +1071,6 @@ contains
        if(ysu_firstorder.gt.0)then ! if ysu_firstorder ON
         kpbl(i) = 0.
         pblflg(i) = .false.
-      ! print *,' i k ',i,k,' FIRSTORDER '
        endif
 ! end first-order
        if(k.lt.kpbl(i)) then

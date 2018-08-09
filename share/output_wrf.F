@@ -63,7 +63,7 @@
     REAL    guv_sfc, gt_sfc, gq_sfc, rinblw
     INTEGER moist_adv_opt, scalar_adv_opt, tke_adv_opt
     INTEGER save_topo_orig
-    INTEGER scalar_pblmix, tracer_pblmix, grav_settling, ysu_topdown_pblmix,ysu_firstorder,ysu_cgrad_mom,ysu_cgrad_scalar ! RGF mod
+    INTEGER scalar_pblmix, tracer_pblmix, grav_settling, ysu_topdown_pblmix,ysu_firstorder,ysu_cgrad_mom,ysu_cgrad_scalar
     REAL   ysu_brcr_ub ! RGF
 #endif
     CHARACTER (len=19) simulation_start_date

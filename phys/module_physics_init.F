@@ -33,7 +33,7 @@ CONTAINS
                          RQVSHTEN, RQRSHTEN, RQCSHTEN,           &
                          RQSSHTEN, RQISHTEN, RQGSHTEN,           &
                          RUBLTEN,RVBLTEN,RTHBLTEN,               &
-                         RQVBLTEN,RQCBLTEN,RQIBLTEN, RQNIBLTEN,            & ! RGF mod
+                         RQVBLTEN,RQCBLTEN,RQIBLTEN, RQNIBLTEN,  & ! RGF mod
                          RTHRATEN,RTHRATENLW,RTHRATENSW,         &
 #if ( EM_CORE == 1 )
                          !BSINGH - For WRFCuP scheme(11/12/2013)
@@ -2197,10 +2197,8 @@ USE module_dm, ONLY : local_communicator
    USE module_bl_mynn ! RGF moved
    USE module_sf_mynn ! RGF moved
 #if ( EM_CORE == 1 )
-
    USE module_bl_temf
    USE module_sf_temfsfclay
-
 #endif
 
 #if (NMM_CORE == 1)
@@ -2557,10 +2555,8 @@ integer,intent(in) :: id
 ! End of Noah-mosaic related variables 
 !-------------------------------------------------  
 
-! RGF removed #if ( EM_CORE == 1 )
 !local mynn 
    INTEGER :: mynn_closure_level
-! RGF removed #endif
 
   if ( config_flags%fractional_seaice == 0 ) then
      xice_threshold = 0.5
@@ -2666,8 +2662,6 @@ integer,intent(in) :: id
                          its, ite, jts, jte, kts, kte          )
            isfc = 2
 #endif
-
-
 !mynn 
 
         CASE (MYNNSFCSCHEME)
@@ -2676,7 +2670,6 @@ integer,intent(in) :: id
            isfc=5
 !          isfc=3
 
-! RGF moved here
 #if ( EM_CORE == 1 )  
       CASE (TEMFSFCSCHEME)
            CALL wrf_debug( 100, 'calling temfsfclayinit' )
@@ -3049,8 +3042,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    pbl_select: SELECT CASE(config_flags%bl_pbl_physics)
 
       CASE (YSUSCHEME)
-           !if(isfc .ne. 1)CALL wrf_error_fatal &
-            !( 'module_physics_init: Use sf_sfclay_physics= 1 or 91 for this pbl option' )
            IF ((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.EQ.3)) CALL wrf_error_fatal &
             ( 'module_physics_init: use myj (option 2) or boulac (option 8) with BEP/BEM urban scheme' )
            CALL ysuinit(RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,    &
@@ -3192,7 +3183,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 #endif
 
 
-
 !mynn 
            
         CASE (MYNNPBLSCHEME2, MYNNPBLSCHEME3)
@@ -3224,7 +3214,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                 &,IMS,IME,JMS,JME,KMS,KME                    &
                 &,ITS,ITE,JTS,JTE,KTS,KTE)
 
-! RGF moved here
 #if ( EM_CORE == 1 )
 
       CASE (TEMFPBLSCHEME)

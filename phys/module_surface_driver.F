@@ -26,7 +26,7 @@ CONTAINS
      &          ,psim,p_phy,q10,q2,qfx,qsfc,qshltr,qz0                &
 #endif
 #if (NMM_CORE==1)
-     &           ,cdx & ! RGF
+     &          ,cdx                                                  & ! RGF
 #endif
      &          ,raincv,rho,sfcevp,sfcexc,sfcrunoff ,acrunoff         &
      &          ,smois,smstav,smstot,snoalb,snow,snowc,snowh,stepbl   &
@@ -80,8 +80,8 @@ CONTAINS
      &          ,opt_thcnd                                                 &
            ! Noah UA changes
      &          ,ua_phys,flx4,fvb,fbur,fgsn                                  &
-     &          ,ch,tsq,qsq,cov,Sh3d,el_pbl,bl_mynn_cloudpdf          & ! MYNN  ! RGF moved
-     &          ,icloud_bl,qc_bl,cldfra_bl                            & ! MYNN  ! RGF moved
+     &          ,ch,tsq,qsq,cov,Sh3d,el_pbl,bl_mynn_cloudpdf          & ! MYNN
+     &          ,icloud_bl,qc_bl,cldfra_bl                            & ! MYNN
      &          ,fgdp,dfgdp,vdfg,grav_settling                        & ! Katata - fog dep
      &          ,lakedepth2d,  savedtke12d,  snowdp2d,   h2osno2d       & !lake
      &          ,snl2d,        t_grnd2d,     t_lake3d,   lake_icefrac3d & !lake
@@ -339,13 +339,12 @@ CONTAINS
    USE module_sf_temfsfclay
    USE module_sf_sfclayrev
    USE module_sf_noah_seaice_drv
-   USE module_sf_fogdes    ! Katata - fog deposition module ! RGF moved
+   USE module_sf_fogdes    ! Katata - fog deposition module
 #if ( EM_CORE==1)
-
    USE module_sf_ocean_driver
    USE module_sf_idealscmsfclay
 #endif
-   USE module_sf_mynn  ! RGF moved
+   USE module_sf_mynn
    USE module_sf_scmflux       
    USE module_sf_scmskintemp
 
@@ -935,27 +934,17 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT )::   TSK_SAVE
 
    REAL, DIMENSION( ims:ime , jms:jme ), &
-        &OPTIONAL, INTENT(INOUT   ):: ch ! RGF moved
-
-! RGF removed wrapper start
-!!!#if ( EM_CORE==1)
-
+        &OPTIONAL, INTENT(INOUT   ):: ch
 
 !Katata-added - extra in-output
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT):: fgdp,dfgdp,vdfg
    INTEGER, OPTIONAL, INTENT(IN)                                :: grav_settling
 !Katata-end
 
-
-!!! #endif
-! RGF removed wrapper end
-
-! begin RGF moved
    REAL, DIMENSION( ims:ime , kms:kme, jms:jme ), &
         &OPTIONAL, INTENT(IN   ):: tsq,qsq,cov,Sh3d,el_pbl,qc_bl,cldfra_bl
    INTEGER, OPTIONAL, INTENT(IN)                                :: bl_mynn_cloudpdf, &
                                                                    icloud_bl
-! end RGF moved
 
    INTEGER, OPTIONAL, INTENT(IN )::   slope_rad, topo_shading
    INTEGER, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN):: shadowmask
@@ -1737,9 +1726,7 @@ CONTAINS
             (sf_sfclay_physics .EQ. PXSFCSCHEME  ) .OR. &
             (sf_sfclay_physics .EQ. MYJSFCSCHEME ) .OR. &
             (sf_sfclay_physics .EQ. QNSESFCSCHEME ) .OR. &  !emt
-!  RGF removed #if (EM_CORE==1)
             (sf_sfclay_physics .EQ. MYNNSFCSCHEME ) .OR. &
-! RGF removed  #endif
             (sf_sfclay_physics .EQ. GFSSFCSCHEME ) )    &
            )
 
@@ -1930,7 +1917,7 @@ CONTAINS
                  gz1oz0,wspd,br,isfflx,dx,                           &
                  svp1,svp2,svp3,svpt0,ep_1,ep_2,karman,eomeg,stbolt, &
 #if (NMM_CORE==1)
-                 cdx, & ! RGF
+                 cdx,                                                & ! RGF
 #endif
                  P1000mb,                                            &
                  XICE,SST,TSK_SEA,                                                  &
@@ -2198,7 +2185,6 @@ CONTAINS
          CALL wrf_error_fatal('Lacking arguments for SF_GFS in surface driver')
       ENDIF
 
-! RGF removed #if ( EM_CORE==1)
     CASE(MYNNSFCSCHEME)
 
        IF (PRESENT(qv_curr)    .AND.  PRESENT(qc_curr)     &
@@ -2247,7 +2233,6 @@ CONTAINS
           CALL wrf_error_fatal('Lacking arguments for SFCLAY_mynn in surface driver')
  
        ENDIF
-! RGF removed  #endif
 
 #if ( EM_CORE==1)
      CASE (TEMFSFCSCHEME)
@@ -2371,8 +2356,6 @@ CONTAINS
         ENDDO
      ENDIF
 
-! RGF remove wrapper
-!!! #if ( EM_CORE==1)
 !Katata-added - fog (cloud) water deposition calculation
      IF ( grav_settling .EQ. 0 ) THEN
         !vdfg = 0.
@@ -2411,8 +2394,6 @@ CONTAINS
         ENDIF
      ENDIF
 !Katata/Joe-END
-!!!#endif
-! RGF remove wrapper end
 
      ENDDO
      !$OMP END PARALLEL DO
@@ -5467,7 +5448,7 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,EOMEG,STBOLT,                          &
 #if (NMM_CORE==1)
-                     cdx, & ! RGF
+                     cdx,                                          & ! RGF
 #endif
                      P1000,                                      &
                      XICE,SST,TSK_SEA,                                                  &

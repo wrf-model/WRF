@@ -66,7 +66,7 @@ CONTAINS
                  ,coef_ric_l,coef_ric_s,gfs_alpha                  &
                  ,pert_pbl, ens_random_seed, ens_pblamp            &
 #endif
-                ,DKU3D,DKT3D                                      & ! RGF moved
+                 ,DKU3D,DKT3D                                      & ! RGF moved
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,i_start,i_end, j_start,j_end, kts,kte, num_tiles &
@@ -173,7 +173,6 @@ CONTAINS
    USE module_bl_mynn ! RGF moved
    USE module_bl_fogdes ! RGF moved
 #if (EM_CORE==1)
-
    USE module_wind_fitch
 #endif
 
@@ -805,12 +804,6 @@ CONTAINS
          flag_myjsfc=.false.
     END SELECT
 ! start RGF
-!   SELECT CASE(sf_sfclay_physics)
-!     CASE (GFDLSFCSCHEME)
-!        flag_gfdsfc=.true.
-!     CASE DEFAULT
-!        flag_gfdlsfc=.false.
-!   END SELECT
     if(sf_sfclay_physics.eq.88)then
       flag_gfdlsfc=.true.
     else
@@ -1659,8 +1652,6 @@ CONTAINS
                CALL wrf_error_fatal('Lack arguments to call ACM2 pbl')
            ENDIF
 
-! #if (EM_CORE==1) ! RGF moved
-
         CASE (MYNNPBLSCHEME2, MYNNPBLSCHEME3)
            CALL wrf_debug(100,'calling MYNNPBL')
 
@@ -1781,7 +1772,6 @@ CONTAINS
               CALL wrf_error_fatal('Lack arguments to call MYNN pbl')
            ENDIF
 
-! RGF moved here
 #if (EM_CORE==1) 
         CASE (BOULACSCHEME)
 
@@ -1967,8 +1957,6 @@ CONTAINS
        ENDIF
    ENDIF
 
-! RGF removed wrapper
-!!! #if (EM_CORE==1)                                                                                                                                                                             
 !JOE-added - fog (cloud) water deposition calculation
    IF (grav_settling .GE. 1) THEN
       IF ( PRESENT(vdfg) .AND. PRESENT(qc_curr)) THEN
@@ -1986,8 +1974,6 @@ CONTAINS
       ENDIF
    ENDIF
 !JOE-END
-!!! #endif
-! RGF removed wrapper end
 
 #if (NMM_CORE != 1)
 

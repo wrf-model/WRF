@@ -21,7 +21,7 @@ CONTAINS
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,EOMEG,STBOLT,                          &
 #if (NMM_CORE==1)
-                 cdx, & ! RGF
+                     cdx,                                          & ! RGF
 #endif
                      P1000mb,                                      &
                      ids,ide, jds,jde, kds,kde,                    &
@@ -207,9 +207,6 @@ CONTAINS
 
       INTEGER ::  I,J
 
-
-    !  print *,' RGF SFCLAYREV DX = ',dx
-
       DO J=jts,jte
         DO i=its,ite
           dz8w1d(I) = dz8w(i,1,j)
@@ -239,15 +236,15 @@ CONTAINS
                 GZ1OZ0(ims,j),WSPD(ims,j),BR(ims,j),ISFFLX,DX,     &
                 SVP1,SVP2,SVP3,SVPT0,EP1,EP2,KARMAN,EOMEG,STBOLT,  &
 #if ( NMM_CORE == 1 )
-                CDX(ims,j),          & ! RGF
+                CDX(ims,j),                                        & ! RGF
 #endif
                 P1000mb,                                           &
                 ids,ide, jds,jde, kds,kde,                         &
                 ims,ime, jms,jme, kms,kme,                         &
-                its,ite, jts,jte, kts,kte                          &
-                ,isftcflx                                          & ! RGF MOVED
+                its,ite, jts,jte, kts,kte,                         &
+                isftcflx                                           & ! RGF MOVED
 #if ( EM_CORE == 1 )
-                ,iz0tlnd,scm_force_flux,                               &
+                ,iz0tlnd,scm_force_flux,                           &
                 USTM(ims,j),CK(ims,j),CKA(ims,j),                  &
                 CD(ims,j),CDA(ims,j)                               &
 #endif
@@ -268,7 +265,7 @@ CONTAINS
                      SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                      KARMAN,EOMEG,STBOLT,                          &
 #if ( NMM_CORE == 1 )
-                CDX,          & ! RGF
+                     CDX,                                          & ! RGF
 #endif
                      P1000mb,                                      &
                      ids,ide, jds,jde, kds,kde,                    &
@@ -888,7 +885,6 @@ CONTAINS
         ENDIF
 #if (NMM_CORE==1)
          cdx(i) = (karman/psix10)*(karman/psix10) ! RGF
-       ! write(6,*) " i= ",i," CDX ",cdx(i)
 #endif
         IF(PRESENT(ck) .and. PRESENT(cd) .and. PRESENT(cka) .and. PRESENT(cda)) THEN
            Ck(I)=(karman/psix10)*(karman/psiq10)

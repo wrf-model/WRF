@@ -271,7 +271,6 @@
 
       DXKM=grid%dlmd*0.01745329*6371200. ! numbers from module_initialize_real.F
       DYKM=grid%dy_nmm
-   !  print *,' RGF RADIATION dxkm ',dxkm,' grid%dlmd ',grid%dlmd
 !
 !-----------------------------------------------------------------------
 !
@@ -791,7 +790,7 @@
      &                ,GRID,CONFIG_FLAGS                                &
      &                ,IHE,IHW,IVE,IVW                                  &
      &                ,DISHEAT,DKU3D,DKT3D                              &
-     &                ,CDX   & ! RGF
+     &                ,CDX                                              &  ! RGF
      &                ,HPBL2D, EVAP2D, HEAT2D,RC2D                      &  !Kwon S&P
      &                ,SFCHEADRT,INFXSRT,SOLDRAIN                       &  !Hydrology, no-op right now
      &                ,cd_out,ch_out                                    &
@@ -953,8 +952,6 @@
      &                                                        ,DVDT     &
      &                                                        ,Q,Q2     &
      &                                                        ,T,U,V
-
-
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(INOUT) :: F_ICE    &   !<--- Used only in physics (IKJ)
      &                                                        ,F_RAIN   &
@@ -1086,12 +1083,6 @@
       ALLOCATE(MOIST_TRANS(IMS:IME,KMS:KME,JMS:JME,N_MOIST),STAT=ISTAT)
       ALLOCATE(SCALAR_TRANS(IMS:IME,KMS:KME,JMS:JME,N_SCALAR),STAT=ISTAT) ! RGF
 !
-
-    !  print *,' RGF TURB dxkm ',grid%dlmd*0.01745329*6371200., &
-    !       ' grid%dlmd ',grid%dlmd
-    !  print *,' RGF TURB  grid%dy_nmm ', grid%dy_nmm 
-
-
       SF_URBAN_PHYSICS=CONFIG_FLAGS%SF_URBAN_PHYSICS
       FASDAS=0
 
@@ -1148,10 +1139,10 @@
 ! - sfclay/sfclayrev needs dx for Mahrt and Sun low-res correction
 ! - shinhong pbl also uses dy
 ! This code does provide an appropriate dx, dy for each domain
-      print *,' RGF about to alter DX and DY'
+!      print *,'about to alter DX and DY'
       DX=grid%dlmd*0.01745329*6371200.
       DY=DX
-     ! print *,' RGF DX, DY ',dx,dy
+!      print *,' RGF DX, DY ',dx,dy
 ! end RGF mod
 ! --------------------------------------------------------------------
       SST_UPDATE=config_flags%SST_UPDATE
@@ -2593,10 +2584,6 @@
 !***  CONVECTIVE CLOUD BETWEEN RADIATION CALLS.  CUPPT IS THE ACCUMULATED
 !***  CONVECTIVE PRECIPITATION BETWEEN RADIATION CALLS.
 !-----------------------------------------------------------------------
-
-    !  print *,' RGF CUCNVC grid%dy_nmm ', &
-	!	grid%dy_nmm,' DYNMM ',DYNMM 
-
 !
 ! Biswas's doing
        DO J=MYJS,MYJE
@@ -2938,13 +2925,6 @@
         ENDDO
         ENDDO
 #endif
-!       print *,' RGF time is ',grid%ntsd*GRID%DT/3600.
-!     if(grid%ntsd*GRID%DT/3600..gt.24..and.grid%id.eq.3)then  ! turn off D3 CU at 1 h
-!     if(grid%ntsd*GRID%DT/3600..gt.24..and.grid%id.ge.1)then  ! turn off CU in all at 1 h
-!       print *,' grid%id ',grid%id,' skipping cumulus'
-!     else
-!     print *,' RGF grid%id ',grid%id
-!     print *,' RGF time is ',grid%ntsd*GRID%DT/3600.,' cu_ is ',CONFIG_FLAGS%CU_PHYSICS
       CALL CUMULUS_DRIVER(GRID                                          &
      &                 ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &
      &                 ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME &
@@ -3025,7 +3005,6 @@
      &                 ,QI_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QI),F_QI=F_QI &
      &                 ,QS_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QS),F_QS=F_QS &
      &                 ,QG_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QG),F_QG=F_QG)
-!     endif ! RGF
 !
 #if (NMM_CORE==1)
 !$omp parallel do                                                       &

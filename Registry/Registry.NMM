@@ -936,7 +936,6 @@ state    real   lake_depth       ij     misc        1         -     rd=(interp_m
 
 # MYJ PBL variables
 
-# RGF add start
 # MYNN PBL variables
 state   real   qke_adv         ikjftb  scalar      1         -      isrh023u=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)f=(BdyMassIKJ:@ECopy,0.0) "qke_adv"       "twice TKE from MYNN"      "m2 s-2"
 state   real   qke             ikj     misc        1         -      irh      "qke"               "twice TKE from MYNN"      "m2 s-2"
@@ -968,7 +967,6 @@ state   real   vdfg             ij     misc        1         -      -        "vd
 
 # RGF added this because tke_pbl is ijk and ikj is needed
 state    real   tke_mynn        ikj     misc        1         Z      rh       "tke_mynn"              "TKE from PBL"      "m2 s-2"
-# RGF add end
 
 # gfdl (eta) radiation State Variables
 
@@ -1052,11 +1050,9 @@ state    real   UOCE             ij     misc        1         -     i014rh023   
 state    real   VOCE             ij     misc        1         -     i014rh023    "VOCE"               "SEA SURFACE MERIDIONAL CURRENTS" "m s-1"
 state    real   WEASD            ij     misc        1         -     i01rh023d=(DownNear)       "WEASD"                "WATER EQUIVALENT OF ACCUMULATED SNOW" "kg m-2"
 state    real  ZNT              ij      misc        1         -     irh023        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
-# RGF CDX
 state    real  CDX               ij      misc        1         -      r        "CDX"                    "DRAG COEFF AT 10m"  
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"
 state    real  NOAHRES          ij      misc        1         -     rh        "NOAHRES"               "RESIDUAL OF THE NOAH SURFACE ENERGY BUDGET" "W m{-2}"
-
 
 state    real   tke_pbl         ijk     misc        1         Z     r         "TKE_PBL"               "TKE FROM PBL SCHEME"     "m2 s-2"
 state    real   el_pbl          ikj     misc        1         Z     -         "EL_PBL"                "MIXING LENGTH FROM PBL SCHEME"     "m"
@@ -1487,8 +1483,6 @@ rconfig   integer     bl_mynn_cloudmix    namelist,physics      max_domains    1
 rconfig   integer     bl_mynn_mixqt       namelist,physics      max_domains    0       irh      "bl_mynn_mixqt" 
 rconfig   integer     icloud_bl           namelist,physics      1              1       irh      "icloud_bl"                     "0:no subgrid cloud-radiation coupling,1:activated"     ""
 
-
-
 ifdef HWRF=1
 rconfig   real      gfs_alpha             namelist,physics      max_domains    1       irh0123      "boundary depth factor"  "" ""
 endif
@@ -1862,7 +1856,6 @@ package   sfclayrevscheme sf_sfclay_physics==1       -             -
 package   idealscmsfcscheme  sf_sfclay_physics==89   -             -
 package   gbmpblscheme  sf_sfclay_physics==12       -             -
 
-# RGF added
 package   mynn_tkebudget bl_mynn_tkebudget==1        -             state:qSHEAR,qBUOY,qDISS,qWT,dqke
 package   mynn_stem_edmf bl_mynn_edmf==1            -              state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc
 package   mynn_temf_edmf bl_mynn_edmf==2            -              state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc
@@ -1871,7 +1864,6 @@ package   pbl_cloud      icloud_bl==1                -             state:cldfra_
 # dfi
 package   mynnpblscheme2_dfi bl_pbl_physics_dfi==5   -             dfi_scalar:dfi_qke_adv
 package   mynnpblscheme3_dfi bl_pbl_physics_dfi==6   -             dfi_scalar:dfi_qke_adv
-
 
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn
@@ -1888,7 +1880,6 @@ package   myjpblscheme   bl_pbl_physics==2           -             -
 package   gfsscheme      bl_pbl_physics==93          -             state:hpbl2d,heat2d,evap2d,rc2d
 package   gfsedmfscheme  bl_pbl_physics==3           -             state:hpbl2d,heat2d,evap2d
 package   qnsepblscheme  bl_pbl_physics==4           -             -
-# RGF swapped tke_pbl for tke_mynn in next two lines, then removed tke_mynn and el_pbl since MYJ does not use either
 package   mynnpblscheme2 bl_pbl_physics==5           -             scalar:qke_adv;state:qke,sh3d,tsq,qsq,cov
 package   mynnpblscheme3 bl_pbl_physics==6           -             scalar:qke_adv;state:qke,sh3d,tsq,qsq,cov
 package   acmpblscheme   bl_pbl_physics==7           -             -
@@ -1922,11 +1913,9 @@ package   g3shcuscheme   shcu_physics==1             -             -
 package   camuwshcuscheme shcu_physics==2            -             -
 package   grimsshcuscheme shcu_physics==3            -             -
 
-# RGF
 package   fogsettling0   grav_settling==0            -             state:vdfg
 package   fogsettling1   grav_settling==1            -             state:vdfg,fgdp,dfgdp
 package   fogsettling2   grav_settling==2            -             state:vdfg,fgdp,dfgdp
-
 
 package   dfi_setup      dfi_stage==0                -             -
 package   dfi_bck        dfi_stage==1                -             -

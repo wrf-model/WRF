@@ -144,7 +144,7 @@ MODULE module_bl_mynn
   !Use Ito et al. (2015, BLM) scale-aware (0: no, 1: yes). Note that this also has impacts
   !on the cloud PDF and mass-flux scheme, using Honnert et al. (2011) similarity function
   !for TKE in the upper PBL/cloud layer.
-  REAL, PARAMETER :: scaleaware= 1.   ! RGF    was 1.
+  REAL, PARAMETER :: scaleaware=1.
 
 
   !Temporary switch to deactivate the mixing of chemical species (already done when WRF_CHEM = 1)
@@ -675,8 +675,6 @@ CONTAINS
 
     INTEGER, INTENT(IN)   :: spp_pbl
     REAL, DIMENSION(kts:kte), INTENT(in)   :: rstoch_col
-
-    ! print *,' RGF IN mym_length'
 
     IF ( bl_mynn_mixlength .EQ. 0 ) THEN
        cns  = 2.7
@@ -1651,7 +1649,6 @@ CONTAINS
        ENDIF
 #endif
 ! RGF end
-
 !
        elq = el(k)*qkw(k)
        elh = elq*qdiv
@@ -3595,7 +3592,6 @@ ENDIF
         CALL wrf_debug ( 0 , mynn_message )
     ENDIF
 ! RGF end
-!    print *," RGF bl_mynn_tkeadvec = ",bl_mynn_tkeadvect
 
     !ACF- copy qke_adv array into qke if using advection
     IF (bl_mynn_tkeadvect) THEN
@@ -3610,103 +3606,9 @@ ENDIF
     ENDIF
 ! RGF end
 
-
-
-! RGF test loop
-    if(1.gt.2)then
-    print *,' RGF - START TEST LOOP '
     DO j=JTS,JTF
        DO i=ITS,ITF
           DO k=KTS,KTF
-       !   print *,' RGF jik ',j,i,k,' EL QKE ',el_pbl(i,k,j), qke(i,k,j)
-   ! print *,' RGF jik ',j,i,k,' DZ U V ',dz(i,k,j),u(i,k,j),v(i,k,j)
-    !print *,' RGF jik ',j,i,k,' vars ',qi(i,k,j),exner(i,k,j)
-
-! RGF start
-    IF ( wrf_at_debug_level(MYNN_DBG_LVL) ) THEN
-        WRITE ( mynn_message , FMT='(A,1x,3I5)' ) &
-           'in MYNN driver in TEST LOOP',j,i,k
-        CALL wrf_debug ( 0 , mynn_message )
-    ENDIF
-! RGF end
-
-! test code
-
-             thetav(k)=th(i,k,j)*(1.+0.608*sqv(k))
-			 print *,' after thetav'
-
-             p1(k) = p(i,k,j)
-			 print *,' after p1'
-
-             ex1(k)= exner(i,k,j)
-			 print *,' after ex1'
-
-             el(k) = el_pbl(i,k,j)
-			 print *,' after el'
-
-             qke1(k)=qke(i,k,j)
-			 print *,' after qke1'
-
-             sh(k) = sh3d(i,k,j)
-			 print *,' after sh'
-             tsq1(k)=tsq(i,k,j)
-			 print *,' after tsq1'
-             qsq1(k)=qsq(i,k,j)
-			 print *,' after qsq1'
-             cov1(k)=cov(i,k,j)
-			 print *,' after cov'
-
-! RGF
-#if ( HWRF != 1 )
-             if (spp_pbl==1) then
-                rstoch_col(k)=pattern_spp_pbl(i,k,j)
-             else
-                rstoch_col(k)=0.0
-             endif
-#endif
-! RGF end
-
-
-             !edmf
-             edmf_a1(k)=0.0
-             edmf_qc1(k)=0.0
-             s_aw1(k)=0.
-             s_awthl1(k)=0.
-             s_awqt1(k)=0.
-             s_awqv1(k)=0.
-             s_awqc1(k)=0.
-             s_awu1(k)=0.
-             s_awv1(k)=0.
-             s_awqke1(k)=0.
-
-
-          enddo
-        enddo
-     enddo
-     print *,' RGF - END TEST LOOP'
-    endif ! 1 vs 2
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  !           IF(PRESENT(qi) .AND. FLAG_QI)THEN
-  !            print *,' yes '
-  !           endif
-
- !   print *,' RGF - icloud_bl ',icloud_bl
- !   print *,' RGF - bl_mynn_tkebudget ',bl_mynn_tkebudget
- !   print *," RGF - about to start big loop"
-! end RGF test
-
-    DO j=JTS,JTF
-
-       DO i=ITS,ITF
-          DO k=KTS,KTF
-! RGF start
-!    IF ( wrf_at_debug_level(MYNN_DBG_LVL) ) THEN
-!        WRITE ( mynn_message , FMT='(A,1x,3I5)' ) &
-!           'in MYNN driver in triple loop',j,i,k
-!        CALL wrf_debug ( 0 , mynn_message )
-!    ENDIF
-! RGF end
-
              !JOE-TKE BUDGET
              IF ( bl_mynn_tkebudget == 1) THEN
                 dqke(i,k,j)=qke(i,k,j)
@@ -3720,7 +3622,6 @@ ENDIF
 #else
              w1(k) = w(i,k,j)
 #endif
-! end if
              th1(k)= th(i,k,j)
              tk1(k)=T3D(i,k,j)
              rho1(k)=rho(i,k,j)
@@ -3835,13 +3736,6 @@ ENDIF
           ENDDO
 #endif
 
-! RGF start
-!    IF ( wrf_at_debug_level(MYNN_DBG_LVL) ) THEN
-!        WRITE ( mynn_message , FMT='(A,1x,3I5)' ) &
-!           'in MYNN driver reaching get_pblh',j,i,k
-!        CALL wrf_debug ( 0 , mynn_message )
-!    ENDIF
-! RGF end
           CALL GET_PBLH(KTS,KTE,PBLH(i,j),thetav,&
           & Qke1,zw,dz1,xland(i,j),KPBL(i,j))
 
@@ -5619,12 +5513,9 @@ SUBROUTINE SCALE_AWARE(dx,PBL1,Psig_bl,Psig_shcu)
     REAL, INTENT(OUT) :: Psig_bl,Psig_shcu
     REAL :: dxdh
 
-
     Psig_bl=1.0
     Psig_shcu=1.0
     dxdh=MAX(dx,10.)/MIN(PBL1,3000.)
-    ! print *,' RGF scale_aware DX ',dx,' dxdh ',dxdh
-
     ! Honnert et al. 2011, TKE in PBL  *** original form used until 201605
     !Psig_bl= ((dxdh**2) + 0.07*(dxdh**0.667))/((dxdh**2) + &
     !         (3./21.)*(dxdh**0.67) + (3./42.))

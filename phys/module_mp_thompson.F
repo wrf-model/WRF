@@ -1792,11 +1792,7 @@
          if (qc1d(k) .gt. R1) then
             no_micro = .false.
             rc(k) = qc1d(k)*rho(k)
-#if defined(mpas)
-            nc(k) = MAX(2., nc1d(k)*rho(k))
-#else
             nc(k) = MAX(2., MIN(nc1d(k)*rho(k), Nt_c_max))
-#endif
             L_qc(k) = .true.
             nu_c = MIN(15, NINT(1000.E6/nc(k)) + 2)
             lamc = (nc(k)*am_r*ccg(2,nu_c)*ocg1(nu_c)/rc(k))**obmr
@@ -2699,11 +2695,7 @@
 !.. supersat again.
          sump = pri_inu(k) + pri_ide(k) + prs_ide(k) &
               + prs_sde(k) + prg_gde(k) + pri_iha(k)
-#if defined(mpas)
-         rate_max = (qv(k)-qvsi(k))*odts*0.999
-#else
          rate_max = (qv(k)-qvsi(k))*rho(k)*odts*0.999
-#endif
          if ( (sump.gt. eps .and. sump.gt. rate_max) .or. &
               (sump.lt. -eps .and. sump.lt. rate_max) ) then
           ratio = rate_max/sump
@@ -2991,11 +2983,7 @@
 
          if ((qc1d(k) + qcten(k)*DT) .gt. R1) then
             rc(k) = (qc1d(k) + qcten(k)*DT)*rho(k)
-#if defined(mpas)
-            nc(k) = MAX(2.,(nc1d(k)+ncten(k)*DT)*rho(k))
-#else
             nc(k) = MAX(2., MIN((nc1d(k)+ncten(k)*DT)*rho(k), Nt_c_max))
-#endif
             if (.NOT. is_aerosol_aware) nc(k) = Nt_c
             L_qc(k) = .true.
          else
@@ -3058,14 +3046,12 @@
 !+---+-----------------------------------------------------------------+
       if (.not. iiwarm) then
       do k = kts, kte
-#if defined(wrfmodel)
          smo2(k) = 0.
          smob(k) = 0.
          smoc(k) = 0.
          smod(k) = 0.
       enddo
       do k = kts, kte
-#endif
          if (.not. L_qs(k)) CYCLE
          tc0 = MIN(-0.1, temp(k)-273.15)
          smob(k) = rs(k)*oams
@@ -3251,11 +3237,7 @@
           nwfaten(k) = nwfaten(k) - pnc_wcd(k)
           tten(k) = tten(k) + lvap(k)*ocp(k)*prw_vcd(k)*(1-IFDRY)
           rc(k) = MAX(R1, (qc1d(k) + DT*qcten(k))*rho(k))
-#if defined(mpas)
-          nc(k) = MAX(2.,(nc1d(k) + DT*ncten(k))*rho(k))
-#else
           nc(k) = MAX(2., MIN((nc1d(k)+ncten(k)*DT)*rho(k), Nt_c_max))
-#endif
           if (.NOT. is_aerosol_aware) nc(k) = Nt_c
           qv(k) = MAX(1.E-10, qv1d(k) + DT*qvten(k))
           temp(k) = t1d(k) + DT*tten(k)
@@ -3698,11 +3680,7 @@
          t1d(k)  = t1d(k) + tten(k)*DT
          qv1d(k) = MAX(1.E-10, qv1d(k) + qvten(k)*DT)
          qc1d(k) = qc1d(k) + qcten(k)*DT
-#if defined(mpas)
-         nc1d(k) = MAX(2./rho(k), nc1d(k) + ncten(k)*DT)
-#else
          nc1d(k) = MAX(2./rho(k), MIN(nc1d(k) + ncten(k)*DT, Nt_c_max))
-#endif
          nwfa1d(k) = MAX(11.1E6/rho(k), MIN(9999.E6/rho(k),             &
                        (nwfa1d(k)+nwfaten(k)*DT)))
          nifa1d(k) = MAX(naIN1*0.01, MIN(9999.E6/rho(k),                &

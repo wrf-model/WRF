@@ -1138,7 +1138,7 @@
 !..This is a wrapper routine designed to transfer values from 3D to 1D.
 !+---+-----------------------------------------------------------------+
       SUBROUTINE mp_gt_driver(qv, qc, qr, qi, qs, qg, ni, nr, nc,       &
-                              nwfa, nifa, nwfa2d,                       &
+                              nwfa, nifa, nwfa2d, nifa2d,              &
                               th, pii, p, w, dz, dt_in, itimestep,      &
                               RAINNC, RAINNCV, &
                               SNOWNC, SNOWNCV, &
@@ -1148,16 +1148,14 @@
                               has_reqc, has_reqi, has_reqs,           &
                               ids,ide, jds,jde, kds,kde, &             ! domain dims
                               ims,ime, jms,jme, kms,kme, &             ! memory dims
-                              its,ite, jts,jte, kts,kte, &             ! tile dims 
+                              its,ite, jts,jte, kts,kte  &             ! tile dims 
 #if ( WRF_CHEM == 1)
-                              rainprod, evapprod)
+                              ,rainprod, evapprod   &
 #elif defined(mpas)
-                              ntc,muc,             &
-                              rainprod, evapprod)
-#else
-                              nifa2d)
+                              ,ntc,muc,             &
+                              rainprod, evapprod   &
 #endif                        
-
+                               )
       implicit none
 
 !..Subroutine arguments
@@ -1168,7 +1166,7 @@
                           qv, qc, qr, qi, qs, qg, ni, nr, th
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT):: &
                           nc, nwfa, nifa
-      REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN):: nwfa2d 
+      REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN):: nwfa2d, nifa2d 
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
                           re_cloud, re_ice, re_snow
       INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
@@ -1193,7 +1191,6 @@
 #else
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::       &
                           refl_10cm
-      REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN):: nifa2d
 #endif
 
 !..Local variables
@@ -1331,10 +1328,11 @@
          call mp_thompson(qv1d, qc1d, qi1d, qr1d, qs1d, qg1d, ni1d,     &
                       nr1d, nc1d, nwfa1d, nifa1d, t1d, p1d, w1d, dz1d,  &
                       pptrain, pptsnow, pptgraul, pptice, &
+                      kts, kte, dt, i, j       &
 #if ( ( WRF_CHEM == 1 ) || ( defined(mpas) ) )
-                      rainprod1d, evapprod1d, &
+                      ,rainprod1d, evapprod1d &
 #endif
-                      kts, kte, dt, i, j)
+                      )
 
          pcp_ra(i,j) = pptrain
          pcp_sn(i,j) = pptsnow
@@ -1360,9 +1358,9 @@
          if (is_aerosol_aware) then
 !-GT        nwfa1d(kts) = nwfa1
             nwfa1d(kts) = nwfa1d(kts) + nwfa2d(i,j)*dt_in
-#if defined(wrfmodel)
+           if(present(nifa2d)) then
             nifa1d(kts) = nifa1d(kts) + nifa2d(i,j)*dt_in
-#endif
+           endif
 
             do k = kts, kte
                nc(i,k,j) = nc1d(k)
@@ -1553,7 +1551,7 @@
                           pptrain, pptsnow, pptgraul, pptice,             &
                           kts, kte, dt, ii, jj                            &
 #if ( ( WRF_CHEM == 1 ) || ( defined(mpas) ) )
-                          rainprod, evapprod                              &
+                          ,rainprod, evapprod                             &
 #endif
                               )
 
@@ -1645,6 +1643,11 @@
       CHARACTER*256:: mp_debug
       INTEGER:: nu_c
 
+#if defined(mpas)
+!     modifications proposed by Ted Mansell for MPAS.
+!     Laura D. Fowler (laura@ucar.edu) / 2017-03-27.
+      real, parameter:: mvd_r_breakup = 1.e-3
+#endif
 !+---+
 
       debug_flag = .false.
@@ -2410,6 +2413,17 @@
             prr_rcg(k) = MIN(DBLE(rg(k)*odts), prr_rcg(k))
             prg_rcg(k) = -prr_rcg(k)
 !..Put in explicit drop break-up due to collisions.
+#if defined(mpas)
+!...  modifications to drop break-up due to collision of rain collecting graupel, ad-hoc
+!     change proposed by Ted Mansell for MPAS: basically reduces rain breakup in graupel
+!     collisions when the mean volume diameter of rain is less than 1mm.
+!     Laura D. Fowler (laura@ucar.edu) / 2017-03-27.
+            if ( mvd_r(k) > mvd_r_breakup ) then
+              pnr_rcg(k) = -5.0*tnr_gacr(idx_g1,idx_g,idx_r1,idx_r)       ! RAIN2M
+            else
+              pnr_rcg(k) = -3.0*tnr_gacr(idx_g1,idx_g,idx_r1,idx_r)       ! RAIN2M
+            endif
+#endif
             pnr_rcg(k) = -5.*tnr_gacr(idx_g1,idx_g,idx_r1,idx_r)         ! RAIN2M
            endif
           endif
@@ -4255,7 +4269,6 @@
       LOGICAL lexist,lopen
       INTEGER good
       LOGICAL, EXTERNAL :: wrf_dm_on_monitor
-#endif
 
 !+---+
       CALL nl_get_force_read_thompson(1,force_read_thompson)
@@ -4349,11 +4362,9 @@
 !         print*, ' Freezing water for temp = ', -k
          Texp = DEXP( DFLOAT(k) - T_adjust*1.0D0 ) - 1.0D0
 
-#if defined(wrfmodel)
 #ifdef THOMPSON_OMP
 !$OMP PARALLEL DO SCHEDULE(dynamic) &
 !$OMP PRIVATE(j,i,lam_exp,lamr,N0_r,sum1,sum2,sumn1,sumn2,n2,N_r,vol,prob)
-#endif
 #endif
 
          do j = 1, ntb_r1
@@ -4372,11 +4383,7 @@
                   N_r = N0_r*Dr(n2)**mu_r*DEXP(-lamr*Dr(n2))*dtr(n2)
 #endif
                   vol = massr(n2)*orho_w
-#if defined(mpas)
-                  prob = 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp)   
-#else
                   prob = MAX(0.0D0, 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp))
-#endif
                   if (massr(n2) .lt. xm0g) then
 #if defined(mpas)
                      sumn1 = sumn1 + prob*N_r(n2)
@@ -4402,13 +4409,11 @@
                tnr_qrfz(i,j,k,m) = sumn2
             enddo
          enddo
-#if defined(wrfmodel)
 #ifdef THOMPSON_OMP
 !$OMP END PARALLEL DO
 
 !$OMP PARALLEL DO SCHEDULE(dynamic) &
 !$OMP PRIVATE(j,i,nu_c,lamc,N0_c,sum1,sumn2,vol,prob,N_c)
-#endif
 #endif
          do j = 1, nbc
             nu_c = MIN(15, NINT(1000.E6/t_Nc(j)) + 2)
@@ -4419,13 +4424,12 @@
                sumn2 = 0.0d0
                do n = nbc, 1, -1
                   vol = massc(n)*orho_w
+                  prob = MAX(0.0D0, 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp))
 #if defined(mpas)
-                  prob = 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp)
                   N_c(n) = N0_c*Dc(n)**nu_c*EXP(-lamc*Dc(n))*dtc(n)
                   sumn2 = MIN(t_Nc(j), sumn2 + prob*N_c(n))
                   sum1 = sum1 + prob*N_c(n)*massc(n)
 #else
-                  prob = MAX(0.0D0, 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp))
                   N_c = N0_c*Dc(n)**nu_c*EXP(-lamc*Dc(n))*dtc(n)
                   sumn2 = MIN(t_Nc(j), sumn2 + prob*N_c)
                   sum1 = sum1 + prob*N_c*massc(n)
@@ -4436,12 +4440,13 @@
                tni_qcfz(i,j,k,m) = sumn2
             enddo
          enddo
-#if defined(wrfmodel)
 #ifdef THOMPSON_OMP
 !$OMP END PARALLEL DO
 #endif
-#endif
         enddo
+#if defined(mpas)
+        enddo
+#endif
 
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) && ( defined(wrfmodel)) )
         CALL wrf_dm_gatherv(tpi_qrfz, ntb_r*ntb_r1, km_s, km_e, R8SIZE)
@@ -4452,6 +4457,7 @@
         CALL wrf_dm_gatherv(tni_qcfz, ntb_c*nbc, km_s, km_e, R8SIZE)
 #endif
 
+#if defined(wrfmodel)
         IF ( write_thompson_tables .AND. wrf_dm_on_monitor() ) THEN
           CALL wrf_message("Writing freezeH2O.dat in Thompson MP init")
           OPEN(63,file="freezeH2O.dat",form="unformatted",err=9234)
@@ -4467,6 +4473,7 @@
           CALL wrf_error_fatal("Error writing freezeH2O.dat")
         ENDIF
       ENDIF
+#endif
 
       END SUBROUTINE freezeH2O
 

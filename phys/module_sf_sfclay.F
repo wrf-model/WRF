@@ -24,8 +24,8 @@ CONTAINS
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
-                     ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux &
-                    ,dxCell                                        &
+                     ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux, &
+                     dxCell                                        &
                          )
 !-------------------------------------------------------------------
       IMPLICIT NONE
@@ -240,16 +240,11 @@ CONTAINS
                 P1000mb,                                           &
                 ids,ide, jds,jde, kds,kde,                         &
                 ims,ime, jms,jme, kms,kme,                         &
-                its,ite, jts,jte, kts,kte                          &
-#if defined(mpas) 
-                ,isftcflx,iz0tlnd,scm_force_flux,                  &
+                its,ite, jts,jte, kts,kte,                         &
+                isftcflx,iz0tlnd,scm_force_flux,                   &
                 USTM(ims,j),CK(ims,j),CKA(ims,j),                  &
-                CD(ims,j),CDA(ims,j),dxCell(ims,j)                 &
-#elif ( EM_CORE == 1)
-                ,isftcflx,iz0tlnd,scm_force_flux,                  &
-                USTM(ims,j),CK(ims,j),CKA(ims,j),                  &
-                CD(ims,j),CDA(ims,j)                               & 
-#endif
+                CD(ims,j),CDA(ims,j),                              &
+                dxCell(ims,j)                                      &
                                                                    )
       ENDDO
 

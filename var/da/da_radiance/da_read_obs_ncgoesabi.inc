@@ -59,19 +59,6 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    type(info_type), allocatable :: info_1d(:)
 
 
-   !Cloud QC variables
-   integer :: tbuf, nkeep, ikeep
-   integer :: cld_qc_buffer  ! Must be ≥ 0
-   real    :: mean10, mean14, sigma10, sigma14, pearson, temp_max
-   real, allocatable :: tb_10(:), tb_14(:)
-   logical :: cldqc
-   character(18), parameter :: terr_fname = 'OR_ABI-TERR_G16.nc'
-
-   integer :: TEMPIR_ifile
-   real    :: TEMPIR_min_time_diff, TEMPIR_time_abs_diff
-   real, parameter :: TEMPIR_delay_minutes = 15.0
-
-
    ! Masks for data reduction
 !!!   logical :: include_local, load_balance
    logical :: earthmask, zenmask
@@ -205,6 +192,19 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                  num_goesabi_used_tmp, num_goesabi_thinned
    integer(i_kind)  :: itx, itt
    real, allocatable :: in(:), out(:)
+
+   !Cloud QC variables
+   integer :: tbuf, nkeep, ikeep
+   integer :: cld_qc_buffer  ! Must be ≥ 0
+   real    :: mu10, mu14, sigma10, sigma14, pearson, temp_max
+   real    :: mu, sigma
+   real, allocatable :: tb_temp(:,:)
+   logical :: cldqc
+   character(18), parameter :: terr_fname = 'OR_ABI-TERR_G16.nc'
+
+   integer :: TEMPIR_ifile
+   real    :: TEMPIR_min_time_diff, TEMPIR_time_abs_diff
+   real, parameter :: TEMPIR_delay_minutes = 15.0
 
    if (trace_use) call da_trace_entry("da_read_obs_ncgoesabi")
 
@@ -1278,6 +1278,8 @@ write(stdout,*) trim(command)
                                          readmask_p, bt_p(:,:,2) )
                   end if
 
+                  first_chan = (this_view % nfiles_used(ifgat).eq.1)
+
                   if ( use_clddet_zz .and. channel_list(ichan).eq.14 .and. cld_qc_buffer.ge.1) then
                      ! Allocate terrain_hgt using local indices for this view
                      allocate( terrain_hgt ( &
@@ -1295,7 +1297,6 @@ write(stdout,*) trim(command)
                   end if
 
                   !! Write bt, lat, lon, satzen, satazi, solzen, solazi to datalink structures
-                  first_chan = (this_view % nfiles_used(ifgat).eq.1)
                   if (first_chan) then
                      p_fgat => p
 
@@ -1394,45 +1395,65 @@ write(stdout,*) trim(command)
                      p % tb_inv(ichan)         = bt_p( iy, ix, 1 )
 
                      ! Extract values from cloud QC buffer
-                     if (.not. associated(p % cld_qc)) allocate( p % cld_qc)
+                     if (.not. associated(p % cld_qc)) then
+                        allocate( p % cld_qc )
+                        allocate( p % cld_qc % tb_stddev_3x3(nchan) )
+                     end if
 
                      tbuf = 1
                      if (cld_qc_buffer.ge.tbuf) then
-                        ! Values for RTCT cloud QC
-                        ! - channel 14 and sigma_z (std. dev. of terrain height in km)
-                        !   w/ landmask and lapse rate of 7 K km^-1
+
+                        nkeep = count ( bt_p ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 ) .gt. missing_r )
+                        allocate( tb_temp ( nkeep, 1 ) )
+                        tb_temp(:,1) = pack( bt_p ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 ), &
+                                             bt_p ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 ) .gt. missing_r)
+                        mu  = sum( tb_temp(:,1) ) / real(nkeep,r_double)
+                        sigma = sqrt( sum( (tb_temp(:,1) - mu)**2 ) / real(nkeep,r_double) )
+                        deallocate( tb_temp )
+
+                        p % cld_qc % tb_stddev_3x3(ichan) = sigma
+
                         if (channel_list(ichan).eq.14) then
-                        if ( allocated(terrain_hgt) ) then
-                           temp_max = 0.
-                           do jy = iy-tbuf, iy+tbuf
-                           do jx = ix-tbuf, ix+tbuf
-                              if ( bt_p( jy, jx, 1) .gt. 0. ) &
-                                 temp_max = max(temp_max,bt_p( jy, jx, 1 ) )
-                           end do
-                           end do
 
-                           ! Determine sigma_z of terrain height across these pixels
-                           nkeep = count ( terrain_hgt ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf ) .gt. missing_r )
-                           allocate( tb_14 ( nkeep ) )
-                           tb_14 = pack( terrain_hgt ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf ), &
-                                         terrain_hgt ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf ) .gt. missing_r)
-                           mean14 = sum( tb_14 ) / real(nkeep,r_double)
-                           sigma14 = sqrt( sum( (tb_14 - mean14)**2 ) / real(nkeep,r_double) )
-                           deallocate( tb_14 )
+                           if ( allocated(terrain_hgt) ) then
+                              ! Determine sigma_z of terrain height across these pixels
+                              nkeep = count ( terrain_hgt ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf ) .gt. missing_r )
+                              allocate( tb_temp ( nkeep, 1 ) )
+                              tb_temp(:,1) = pack( terrain_hgt ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf ), &
+                                            terrain_hgt ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf ) .gt. missing_r)
+                              mu = sum( tb_temp(:,1) ) / real(nkeep,r_double)
+                              sigma = sqrt( sum( (tb_temp(:,1) - mu)**2 ) / real(nkeep,r_double) )
+                              deallocate( tb_temp )
 
-                           ! Store RTCT and diagnostic terrain height
-                           p % cld_qc % RTCT = temp_max - p % tb_inv(ichan) - &
-                                               3.0_r_double * 0.007_r_double * sigma14
-                           p % cld_qc % RTCT_terr = terrain_hgt( iy, ix )
-                        else
-                           p % cld_qc % RTCT = missing_r
-                           p % cld_qc % RTCT_terr = missing_r
-                        end if
+                              p % cld_qc % terr_hgt = terrain_hgt( iy, ix )
+
+                              ! Values for RTCT cloud QC
+                              ! - channel 14 and sigma_z (std. dev. of terrain height in km)
+                              !   w/ landmask and lapse rate of 7 K km^-1
+
+                              temp_max = 0.
+                              do jy = iy-tbuf, iy+tbuf
+                              do jx = ix-tbuf, ix+tbuf
+                                 if ( bt_p( jy, jx, 1) .gt. 0. ) &
+                                    temp_max = max(temp_max,bt_p( jy, jx, 1 ) )
+                              end do
+                              end do
+
+                              ! Store RTCT and diagnostic terrain height
+                              p % cld_qc % RTCT = temp_max - p % tb_inv(ichan) - &
+                                                  3.0_r_double * 0.007_r_double * sigma
+
+                           else
+                              p % cld_qc % RTCT = missing_r
+                              p % cld_qc % terr_hgt = missing_r
+                           end if
+
                         end if
                      else
+                        p % cld_qc % tb_stddev_3x3(ichan) = missing_r
                         if (channel_list(ichan).eq.14) then
                            p % cld_qc % RTCT = missing_r
-                           p % cld_qc % RTCT_terr = missing_r
+                           p % cld_qc % terr_hgt = missing_r
                         end if
                      end if
 
@@ -1486,26 +1507,26 @@ write(stdout,*) trim(command)
                               if ( all(p % cld_qc % CIRH2O( jy, jx, : ) .gt. missing_r) ) nkeep = nkeep + 1
                            end do
                            end do
-                           allocate( tb_10 ( nkeep ) )
-                           allocate( tb_14 ( nkeep ) )
+                           allocate( tb_temp ( nkeep, 2 ) )
                            ikeep = 0
                            do jy = iy-tbuf, iy+tbuf
                            do jx = ix-tbuf, ix+tbuf
                               if ( all(p % cld_qc % CIRH2O( jy, jx, : ) .gt. missing_r) ) then
                                  ikeep = ikeep + 1
-                                 tb_10(ikeep) = p % cld_qc % CIRH2O( jy, jx, 1 )
-                                 tb_14(ikeep) = p % cld_qc % CIRH2O( jy, jx, 2 )
+                                 tb_temp(ikeep,1) = p % cld_qc % CIRH2O( jy, jx, 1 )
+                                 tb_temp(ikeep,2) = p % cld_qc % CIRH2O( jy, jx, 2 )
                               end if
                            end do
                            end do
-                           mean10 = sum( tb_10 ) / real(nkeep,r_double)
-                           mean14 = sum( tb_14 ) / real(nkeep,r_double)
-                           sigma10 = sqrt( sum( (tb_10 - mean10)**2 ) / real(nkeep,r_double) )
-                           sigma14 = sqrt( sum( (tb_14 - mean14)**2 ) / real(nkeep,r_double) )
-                           pearson = sum((tb_10 - mean10) * (tb_14 - mean14)) / real(nkeep,r_double) / &
-                                     ( sigma10 * sigma14 )
-                           deallocate( tb_10 )
-                           deallocate( tb_14 )
+                           mu10 = sum( tb_temp(:,1) ) / real(nkeep,r_double)
+                           sigma10 = sqrt( sum( (tb_temp(:,1) - mu10)**2 ) &
+                                        / real(nkeep,r_double) )
+                           mu14 = sum( tb_temp(:,2) ) / real(nkeep,r_double)
+                           sigma14 = sqrt( sum( (tb_temp(:,2) - mu14)**2 ) / &
+                                        real(nkeep,r_double) )
+                           pearson = sum((tb_temp(:,1) - mu10) * (tb_temp(:,2) - mu14)) / &
+                                        real(nkeep,r_double) / ( sigma10 * sigma14 )
+                           deallocate( tb_temp )
                            deallocate( p % cld_qc % CIRH2O )
                            allocate( p % cld_qc % CIRH2O (1,1,1) )
                            p % cld_qc % CIRH2O (1,1,1) = pearson
@@ -1542,13 +1563,13 @@ write(stdout,*) trim(command)
 
                   end do
                   deallocate( bt_p, allmask_p, readmask_p)
+                  if ( allocated(terrain_hgt) ) deallocate ( terrain_hgt )
                end if VIEW_SELECT
             end do ChannelLoop
 
             if ( allocated(thinmask)    ) deallocate ( thinmask )
             if ( allocated(solzen_1d)   ) deallocate ( solzen_1d )
             if ( allocated(solazi_1d)   ) deallocate ( solazi_1d )
-            if ( allocated(terrain_hgt) ) deallocate ( terrain_hgt )
          end if PatchMatch
 
 #ifdef DM_PARALLEL
@@ -1676,9 +1697,11 @@ write(stdout,*) trim(command)
             end if
             deallocate ( current % tb_inv )
       !      deallocate ( current % cloud_flag )
-            if (associated(current % cld_qc)) then
-               if (allocated(current % cld_qc % CIRH2O)) deallocate(current % cld_qc % CIRH2O)
-               deallocate(current % cld_qc)
+            if ( associated(current % cld_qc ) ) then
+               if ( allocated ( current % cld_qc % CIRH2O ) ) &
+                  deallocate ( current % cld_qc % CIRH2O )
+               deallocate ( current % cld_qc % tb_stddev_3x3 )
+               deallocate ( current % cld_qc )
             end if
             deallocate ( current )
             num_goesabi_thinned = num_goesabi_thinned + 1
@@ -1747,9 +1770,11 @@ write(stdout,*) trim(command)
       ! free current data
       deallocate ( current % tb_inv )
 !!!      deallocate ( current % cloud_flag )
-      if (associated(current % cld_qc)) then
-         if (allocated(current % cld_qc % CIRH2O)) deallocate(current % cld_qc % CIRH2O)
-         deallocate(current % cld_qc)
+      if ( associated ( current % cld_qc ) ) then
+         if ( allocated ( current % cld_qc % CIRH2O ) ) &
+            deallocate ( current % cld_qc % CIRH2O )
+         deallocate ( current % cld_qc % tb_stddev_3x3 )
+         deallocate ( current % cld_qc )
       end if
       deallocate ( current )
    end do

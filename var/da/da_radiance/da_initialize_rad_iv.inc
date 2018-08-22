@@ -101,9 +101,11 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
    if ( use_clddet_zz ) then
    if ( associated ( p % cld_qc ) ) then
       iv%instid(i)%cld_qc(n)%RTCT = p % cld_qc % RTCT
-      iv%instid(i)%cld_qc(n)%RTCT_terr = p % cld_qc % RTCT_terr
       iv%instid(i)%cld_qc(n)%RFMFT = p % cld_qc % RFMFT
       iv%instid(i)%cld_qc(n)%TEMPIR = p % cld_qc % TEMPIR
+      if ( allocated ( p % cld_qc % tb_stddev_3x3 ) ) &
+         iv%instid(i)%cld_qc(n)%tb_stddev_3x3(:) = p % cld_qc % tb_stddev_3x3(:)
+      iv%instid(i)%cld_qc(n)%terr_hgt = p % cld_qc % terr_hgt
       if ( allocated ( p % cld_qc % CIRH2O ) .and. &
          size(p % cld_qc % CIRH2O).eq.1) then
          allocate ( iv%instid(i)%cld_qc(n)%CIRH2O(1,1,1) )

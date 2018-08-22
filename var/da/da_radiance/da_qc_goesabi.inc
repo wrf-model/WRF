@@ -38,14 +38,16 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
    real      :: c37_mean
 
    !! Additional variables used by Zhuge and Zou(2017)
-   integer :: nrej_rtct(nchan), nrej_etrop(nchan), nrej_pfmft(nchan), &
+   integer, target :: nrej_rtct(nchan), nrej_etrop(nchan), nrej_pfmft(nchan), &
               nrej_nfmft(nchan), nrej_rfmft(nchan), &
               nrej_cirh2o(nchan), nrej_emiss4(nchan), &
               nrej_ulst(nchan), nrej_tempir(nchan), nrej_notc(nchan)
-   logical :: reject_zz, print_zz
-   integer*2 :: clddet_zz_tests(10)
-   real    :: eps_zz_ocean, eps_zz_land, eps_zz_snow
+   logical            :: reject_zz, print_zz
+   integer*2          :: clddet_zz_tests(10)
+   real               :: eps_zz_ocean, eps_zz_land, eps_zz_snow
+   logical            :: qualifier_ocean, qualifier_land, qualifier_snow
    real, pointer      :: crit_zz
+   integer, pointer   :: nrej_zz(:)
    character(len=10)  :: crit_name
 
    real, target :: rtct, etrop, pfmft, nfmft, rfmft, cirh2o, emiss4, ulst, tempir, notc
@@ -55,16 +57,26 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
    real :: wave_num(10)
    real :: plbc1(10), plbc2(10)
    real :: plfk1(10), plfk2(10)
+   integer, parameter :: num_zz_tests = 10
+   real :: zz_thresh(num_zz_tests+2,4)
+   real :: zz_qual(4)
+   integer :: zz_index(num_zz_tests)
+   integer :: zz_isflgs(4)
+
 
    real, pointer :: tb_ob(:,:), tb_xb(:,:), tb_inv(:,:)
 
    ! note: these values are constant across channels
-   real(8), parameter :: C1=1.19104276e-5     ! = 2 * h * c**2 mWm-2sr-1(cm-1)-4
-   real(8), parameter :: C2=1.43877516        ! = h * c / b = 1.43877 K(cm-1)-1
+   real, parameter :: C1=1.19104276e-5     ! = 2 * h * c**2 mWm-2sr-1(cm-1)-4
+   real, parameter :: C2=1.43877516        ! = h * c / b = 1.43877 K(cm-1)-1
    ! h = Planck's constant
    ! b = Boltzmann constant
    ! c = velocity of light
 
+   integer, parameter :: ch7  = 1
+   integer, parameter :: ch10 = 4
+   integer, parameter :: ch14 = 8
+   integer, parameter :: ch15 = 9
 
    if (trace_use) call da_trace_entry("da_qc_goesabi")
 
@@ -81,6 +93,22 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
    plfk1 = C1 * wave_num**3
    plfk2 = C2 * wave_num
 
+   zz_thresh = transpose( reshape( (/ &
+                    3.2,      4.1, huge(C1), huge(C1) &
+                 ,  0.1,      0.3,      0.4,      0.4 &
+                 ,  0.8,      2.5,      1.0,      1.0 &
+                 ,  1.0,      2.0,      5.0,      5.0 &
+                 ,  0.7,      1.0, huge(C1), huge(C1) &
+                 ,  0.7,      0.7,      0.7,      0.7 &
+                 ,  0.1,      0.2,      0.3,      0.3 &
+                 , 2.86, huge(C1), huge(C1), huge(C1) &
+                 , 0.05,      0.1,     0.12,     0.12 &
+                 ,  15.,      21.,      10.,      10. &
+                 ,  11.,      15.,      4.5,      4.5 &
+                 ,  2.0,      2.0,      2.0,      2.0 &
+                /), (/ size(zz_thresh, 2), size(zz_thresh, 1) /)) )
+   zz_index  = (/1, 2, 3, 4, 5, 6, 7, 9, 10, 12/)
+   zz_isflgs = (/sea_flag, land_flag, snow_flag, ice_flag/)
 
    ngood(:)        = 0
    nrej(:)         = 0
@@ -216,7 +244,7 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
             iv%instid(i)%info%lat(1,n), iv%instid(i)%info%lon(1,n), &
             iv%instid(i)%satzen(n), iv%instid(i)%satazi(n), &
             iv%instid(i)%solzen(n), iv%instid(i)%solazi(n), &
-            iv%instid(i)%tropt(n), iv%instid(i)%cld_qc(n)%RTCT_terr, &
+            iv%instid(i)%tropt(n), iv%instid(i)%cld_qc(n)%terr_hgt, &
             iv%instid(i)%info%date_char(n)
 
 
@@ -227,25 +255,38 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
          !--------------------------------------------------------------------------
          eps_zz_ocean = 3.2
          eps_zz_land  = 4.1
-!         eps_zz_snow  = 1.e10
+         eps_zz_snow  = huge(eps_zz_snow)
+!         qualifier_ocean = .true.
+!         qualifier_land  = .true.
+         qualifier_snow  = .false.
+
          crit_name = "rtct"
 
          rtct = iv%instid(i)%cld_qc(n)%RTCT
-         reject_zz = .false.
-         if (.not. rtct.eq.missing_r) then
-            crit_zz => rtct
-            if ( isflg==sea_flag .and. crit_zz > eps_zz_ocean ) reject_zz = .true.  ! Ocean
-            if ( isflg==land_flag .and. crit_zz > eps_zz_land ) reject_zz = .true.  ! land
-!            if ( any(isflg==(/snow_flag,ice_flag/)) .and. crit_zz > eps_zz_snow ) reject_zz = .true.  ! snow and ice
-            if (reject_zz) then
-               iv%instid(i)%tb_qc(:,n)  = qc_bad
-               if (iv%instid(i)%info%proc_domain(1,n)) &
-                  nrej_rtct(:) = nrej_rtct(:) + 1
 
-               if (print_zz) write(*,"(A,F14.6,A,I4,2D12.4)") trim(crit_name), crit_zz, " isflg", isflg, &
-                        iv%instid(i)%info%lat(1,n),iv%instid(i)%info%lon(1,n)
-            end if
-         end if
+         crit_zz => rtct
+         nrej_zz => nrej_rtct
+
+         call evaluate_clddet_test ( &
+               crit_name, crit_zz, isflg, &
+               eps_zz_ocean, eps_zz_land, eps_zz_snow, &
+               iv%instid(i)%info%proc_domain(1,n), &
+               reject_zz , iv%instid(i)%tb_qc(:,n), nrej_zz(:), &
+               iv%instid(i)%info%lat(1,n), iv%instid(i)%info%lon(1,n), &
+               .true., .true., qualifier_snow )
+
+!         reject_zz = crit_zz .gt. missing_r .AND. &
+!            (     ( isflg==sea_flag .and. crit_zz > eps_zz_ocean .and. qualifier_ocean ) &  ! Ocean
+!             .OR. ( isflg==land_flag .and. crit_zz > eps_zz_land .and. qualifier_land ) &  ! land
+!             .OR. ( any(isflg==(/snow_flag,ice_flag/)) .and. crit_zz > eps_zz_snow .and. qualifier_snow ) )  ! snow and ice
+!         if (reject_zz) then
+!            iv%instid(i)%tb_qc(:,n)  = qc_bad
+!            if (iv%instid(i)%info%proc_domain(1,n)) &
+!               nrej_zz(:) = nrej_zz(:) + 1
+!
+!            if (print_zz) write(*,"(A,F14.6,A,I4,2D12.4)") trim(crit_name), crit_zz, " isflg", isflg, &
+!                     iv%instid(i)%info%lat(1,n),iv%instid(i)%info%lon(1,n)
+!         end if
 
          if (reject_zz) clddet_zz_tests(1) = 1
 
@@ -260,35 +301,51 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
          eps_zz_ocean = 0.1
          eps_zz_land  = 0.3
          eps_zz_snow  = 0.4
+!         qualifier_ocean = .true.
+!         qualifier_land  = .true.
+!         qualifier_snow  = .true.
+
          crit_name = "etrop"
-         if ( tb_xb(8,n) .gt. 0. .and. & 
+
+         if ( tb_xb(ch14,n) .gt. 0. .and. & 
               iv%instid(i)%tropt(n)   .gt. 0. ) then
-            tb_temp1  = tb_ob(8,n)
-            rad_O14   = plfk1(8) / &
-                        ( exp( plfk2(8) / (plbc1(8) + plbc2(8) * tb_temp1 ) ) -1 )
-            tb_temp1  = tb_xb(8,n)
-            rad_M14   = plfk1(8) / &
-                        ( exp( plfk2(8) / (plbc1(8) + plbc2(8) * tb_temp1) ) -1 )
+            tb_temp1  = tb_ob(ch14,n)
+            rad_O14   = plfk1(ch14) / &
+                        ( exp( plfk2(ch14) / (plbc1(ch14) + plbc2(ch14) * tb_temp1 ) ) -1 )
+            tb_temp1  = tb_xb(ch14,n)
+            rad_M14   = plfk1(ch14) / &
+                        ( exp( plfk2(ch14) / (plbc1(ch14) + plbc2(ch14) * tb_temp1) ) -1 )
             tb_temp1  = iv%instid(i)%tropt(n)
-            rad_tropt = plfk1(8) / &
-                        ( exp( plfk2(8) / (plbc1(8) + plbc2(8) * tb_temp1) ) -1 )
+            rad_tropt = plfk1(ch14) / &
+                        ( exp( plfk2(ch14) / (plbc1(ch14) + plbc2(ch14) * tb_temp1) ) -1 )
             etrop     =  (rad_O14 - rad_M14) / (rad_tropt - rad_M14)
          else 
             etrop = missing_r
          end if
-         reject_zz = .false.
-         crit_zz => etrop
-         if ( isflg==sea_flag .and. crit_zz > eps_zz_ocean ) reject_zz = .true.  ! Ocean
-         if ( isflg==land_flag .and. crit_zz > eps_zz_land ) reject_zz = .true.  ! land
-         if ( any(isflg==(/snow_flag,ice_flag/)) .and. crit_zz > eps_zz_snow ) reject_zz = .true.  ! snow and ice
-         if (reject_zz) then
-            iv%instid(i)%tb_qc(:,n)  = qc_bad    
-            if (iv%instid(i)%info%proc_domain(1,n)) &
-               nrej_etrop(:) = nrej_etrop(:) + 1
 
-            if (print_zz) write(*,"(A,F14.6,A,I4,4D12.4)") trim(crit_name), crit_zz, " isflg", isflg, &
-                     iv%instid(i)%info%lat(1,n),iv%instid(i)%info%lon(1,n),tb_xb(8,n),tb_ob(8,n)
-         end if
+         crit_zz => etrop
+         nrej_zz => nrej_etrop
+
+         call evaluate_clddet_test ( &
+               crit_name, crit_zz, isflg, &
+               eps_zz_ocean, eps_zz_land, eps_zz_snow, &
+               iv%instid(i)%info%proc_domain(1,n), &
+               reject_zz , iv%instid(i)%tb_qc(:,n), nrej_zz(:), &
+               iv%instid(i)%info%lat(1,n), iv%instid(i)%info%lon(1,n), &
+               .true., .true., .true. )
+
+!         reject_zz = crit_zz .gt. missing_r .AND. &
+!            (     ( isflg==sea_flag .and. crit_zz > eps_zz_ocean .and. qualifier_ocean ) &  ! Ocean
+!             .OR. ( isflg==land_flag .and. crit_zz > eps_zz_land .and. qualifier_land ) &  ! land
+!             .OR. ( any(isflg==(/snow_flag,ice_flag/)) .and. crit_zz > eps_zz_snow .and. qualifier_snow ) )  ! snow and ice
+!         if (reject_zz) then
+!            iv%instid(i)%tb_qc(:,n)  = qc_bad    
+!            if (iv%instid(i)%info%proc_domain(1,n)) &
+!               nrej_zz(:) = nrej_zz(:) + 1
+!
+!            if (print_zz) write(*,"(A,F14.6,A,I4,4D12.4)") trim(crit_name), crit_zz, " isflg", isflg, &
+!                     iv%instid(i)%info%lat(1,n),iv%instid(i)%info%lon(1,n),tb_xb(ch14,n),tb_ob(ch14,n)
+!         end if
 
          if (reject_zz) clddet_zz_tests(2) = 1
 
@@ -301,56 +358,60 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
          eps_zz_ocean = 0.8
          eps_zz_land  = 2.5
          eps_zz_snow  = 1.0
+!         qualifier_ocean = .true.
+!         qualifier_land  = .true.
+!         qualifier_snow  = .true.
+
          crit_name = "pfmft"
 
-!JJG: Why does this logical test not use tb_ob(8,n)? Something to do with VarBC...
-
          pfmft = missing_r
-         if ( (tb_inv(8,n) + tb_xb(8,n)) >270. .and. &
-               tb_xb(8,n) >270.) then 
-            if (tb_ob(8,n) .gt. 0. .and. tb_ob(9,n) .gt. 0.) then
-! using ob with VarBC  
-!             pfmft = (tb_inv(8,n) + tb_xb(8,n) - & 
-!                       tb_inv(9,n) + tb_xb(9,n)) - & 
-!                      (tb_xb(8,n) - tb_xb(9,n))* & 
-!                      (tb_inv(8,n) + tb_xb(8,n) - 260.)/ & 
-!                      (tb_xb(8,n) - 260.) 
-! using ob without VarBC
-               pfmft = (tb_ob(8,n) - tb_ob(9,n))     - &
-                       (tb_xb(8,n) - tb_xb(9,n)) * &
-                       (tb_ob(8,n) - 260.) / (tb_xb(8,n) - 260.) 
-            end if 
-!JJG: Changed the following to else (should be .or. instead of .and.)
-!         end if 
-!
-!         if ( (tb_inv(8,n) + tb_xb(8,n)) < 270. .and. &
-!               tb_xb(8,n) < 270.) then 
-
-         else
-            if (tb_ob(8,n) .gt. 0. .and. tb_ob(9,n) .gt. 0.) then
+         if ( (tb_inv(ch14,n) + tb_xb(ch14,n)).le.310. .and. &
+              iv%instid(i)%cld_qc(n)%tb_stddev_3x3(ch14).ge.0.3 .and. &
+              tb_ob(ch14,n).gt.0. .and. tb_ob(ch15,n).gt.0. ) &
+               pfmft = ( tb_ob(ch14,n) - tb_ob(ch15,n) )
+! above using ob without VarBC 
 ! -------------------------------
-! using ob with VarBC
-!               pfmft = (tb_inv(8,n) + tb_xb(8,n) - &
-!                       (tb_inv(9,n) + tb_xb(9,n)) ) 
-! using ob without VarBC 
-               pfmft = ( tb_ob(8,n) - tb_ob(9,n) )
+!               pfmft = (tb_inv(ch14,n) + tb_xb(ch14,n) - &
+!                       (tb_inv(ch15,n) + tb_xb(ch15,n)) ) 
+! above using ob with VarBC
 ! -------------------------------
-            end if 
-         end if
 
-         reject_zz = .false.
+!JJG: Why does this logical test not use tb_ob(ch14,n)? Something to do with VarBC...
+         if ( pfmft.gt.missing_r .and. &
+              (tb_inv(ch14,n) + tb_xb(ch14,n)).gt.270. .and. &
+              tb_xb(ch14,n).gt.270. .and. &
+              tb_xb(ch14,n).ge.tb_xb(ch15,n) ) &
+               pfmft = pfmft       - &
+                       (tb_xb(ch14,n) - tb_xb(ch15,n)) * &
+                       (tb_ob(ch14,n) - 260.) / (tb_xb(ch14,n) - 260.) 
+! above 1 line using ob without VarBC
+!                      (tb_inv(ch14,n) + tb_xb(ch14,n) - 260.)/ & 
+!                      (tb_xb(ch14,n) - 260.) 
+! above 2 lines using ob with VarBC  
+
          crit_zz => pfmft
-         if ( isflg==sea_flag .and. crit_zz > eps_zz_ocean ) reject_zz = .true.  ! Ocean
-         if ( isflg==land_flag .and. crit_zz > eps_zz_land ) reject_zz = .true.  ! land
-         if ( any(isflg==(/snow_flag,ice_flag/)) .and. crit_zz > eps_zz_snow ) reject_zz = .true.  ! snow and ice
-         if (reject_zz) then
-            iv%instid(i)%tb_qc(:,n)  = qc_bad    
-            if (iv%instid(i)%info%proc_domain(1,n)) &
-               nrej_pfmft(:) = nrej_pfmft(:) + 1
+         nrej_zz => nrej_pfmft
 
-            if (print_zz) write(*,"(A,F14.6,A,I4,4D12.4)") trim(crit_name), crit_zz, " isflg", isflg, &
-                     iv%instid(i)%info%lat(1,n),iv%instid(i)%info%lon(1,n),tb_xb(8,n),tb_ob(8,n)
-         end if
+         call evaluate_clddet_test ( &
+               crit_name, crit_zz, isflg, &
+               eps_zz_ocean, eps_zz_land, eps_zz_snow, &
+               iv%instid(i)%info%proc_domain(1,n), &
+               reject_zz , iv%instid(i)%tb_qc(:,n), nrej_zz(:), &
+               iv%instid(i)%info%lat(1,n), iv%instid(i)%info%lon(1,n), &
+               .true., .true., .true. )
+
+!         reject_zz = crit_zz .gt. missing_r .AND. &
+!            (     ( isflg==sea_flag .and. crit_zz > eps_zz_ocean .and. qualifier_ocean ) &  ! Ocean
+!             .OR. ( isflg==land_flag .and. crit_zz > eps_zz_land .and. qualifier_land ) &  ! land
+!             .OR. ( any(isflg==(/snow_flag,ice_flag/)) .and. crit_zz > eps_zz_snow .and. qualifier_snow ) )  ! snow and ice
+!         if (reject_zz) then
+!            iv%instid(i)%tb_qc(:,n)  = qc_bad    
+!            if (iv%instid(i)%info%proc_domain(1,n)) &
+!               nrej_zz(:) = nrej_zz(:) + 1
+!
+!            if (print_zz) write(*,"(A,F14.6,A,I4,4D12.4)") trim(crit_name), crit_zz, " isflg", isflg, &
+!                     iv%instid(i)%info%lat(1,n),iv%instid(i)%info%lon(1,n),tb_xb(ch14,n),tb_ob(ch14,n)
+!         end if
 
          if (reject_zz) clddet_zz_tests(3) = 1
 
@@ -362,27 +423,42 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
          eps_zz_ocean = 1.0
          eps_zz_land  = 2.0
          eps_zz_snow  = 5.0
+!         qualifier_ocean = .true.
+!         qualifier_land  = .true.
+!         qualifier_snow  = .true.
+
          crit_name = "nfmft"
 
-         if (tb_ob(8,n) .gt. 0. .and. tb_ob(9,n) .gt. 0.) then
-            nfmft=tb_inv(9,n) - tb_inv(8,n)
+         if (tb_ob(ch14,n) .gt. 0. .and. tb_ob(ch15,n) .gt. 0.) then
+            nfmft=tb_inv(ch15,n) - tb_inv(ch14,n)
          else 
             nfmft = missing_r
          end if 
 
-         reject_zz = .false.
          crit_zz => nfmft
-         if ( isflg==sea_flag .and. crit_zz > eps_zz_ocean ) reject_zz = .true.  ! Ocean
-         if ( isflg==land_flag .and. crit_zz > eps_zz_land ) reject_zz = .true.  ! land
-         if ( any(isflg==(/snow_flag,ice_flag/)) .and. crit_zz > eps_zz_snow ) reject_zz = .true.  ! snow and ice
-         if (reject_zz) then
-            iv%instid(i)%tb_qc(:,n)  = qc_bad    
-            if (iv%instid(i)%info%proc_domain(1,n)) &
-               nrej_nfmft(:) = nrej_nfmft(:) + 1
+         nrej_zz => nrej_nfmft
 
-            if (print_zz) write(*,"(A,F14.6,A,I4,2D12.4)") trim(crit_name), crit_zz, " isflg", isflg, &
-                     iv%instid(i)%info%lat(1,n),iv%instid(i)%info%lon(1,n)
-         end if
+         call evaluate_clddet_test ( &
+               crit_name, crit_zz, isflg, &
+               eps_zz_ocean, eps_zz_land, eps_zz_snow, &
+               iv%instid(i)%info%proc_domain(1,n), &
+               reject_zz , iv%instid(i)%tb_qc(:,n), nrej_zz(:), &
+               iv%instid(i)%info%lat(1,n), iv%instid(i)%info%lon(1,n), &
+               .true., .true., .true. )
+
+!         reject_zz = crit_zz .gt. missing_r .AND. &
+!            (     ( isflg==sea_flag .and. crit_zz > eps_zz_ocean .and. qualifier_ocean ) &  ! Ocean
+!             .OR. ( isflg==land_flag .and. crit_zz > eps_zz_land .and. qualifier_land ) &  ! land
+!             .OR. ( any(isflg==(/snow_flag,ice_flag/)) .and. crit_zz > eps_zz_snow .and. qualifier_snow ) )  ! snow and ice
+!         if (reject_zz) then
+!            iv%instid(i)%tb_qc(:,n)  = qc_bad    
+!            if (iv%instid(i)%info%proc_domain(1,n)) &
+!               nrej_zz(:) = nrej_zz(:) + 1
+!
+!            if (print_zz) write(*,"(A,F14.6,A,I4,2D12.4)") trim(crit_name), crit_zz, " isflg", isflg, &
+!                     iv%instid(i)%info%lat(1,n),iv%instid(i)%info%lon(1,n)
+!         end if
+
          if (reject_zz) clddet_zz_tests(4) = 1
 
 
@@ -393,25 +469,39 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
          !--------------------------------------------------------------------------
          eps_zz_ocean = 0.7
          eps_zz_land  = 1.0
-!         eps_zz_snow  = 1.e10
+         eps_zz_snow  = huge(eps_zz_snow)
+         qualifier_ocean = ( tb_ob(ch14,n) - tb_ob(ch15,n) ).lt.1.0
+         qualifier_land  = ( tb_ob(ch14,n) - tb_ob(ch15,n) ).lt.1.0 .and. tb_ob(ch14,n).le.300.
+         qualifier_snow  = .false.
+
          crit_name = "rfmft"
 
          rfmft = iv%instid(i)%cld_qc(n)%RFMFT
-         reject_zz = .false.
-         if (.not. rfmft.eq.missing_r) then
-            crit_zz => rfmft
-            if ( isflg==sea_flag .and. crit_zz > eps_zz_ocean ) reject_zz = .true.  ! Ocean
-            if ( isflg==land_flag .and. crit_zz > eps_zz_land ) reject_zz = .true.  ! land
-!            if ( any(isflg==(/snow_flag,ice_flag/)) .and. crit_zz > eps_zz_snow ) reject_zz = .true.  ! snow and ice
-            if (reject_zz) then
-               iv%instid(i)%tb_qc(:,n)  = qc_bad
-               if (iv%instid(i)%info%proc_domain(1,n)) &
-                  nrej_rfmft(:) = nrej_rfmft(:) + 1
 
-               if (print_zz) write(*,"(A,F14.6,A,I4,2D12.4)") trim(crit_name), crit_zz, " isflg", isflg, &
-                        iv%instid(i)%info%lat(1,n),iv%instid(i)%info%lon(1,n)
-            end if
-         end if
+         crit_zz => rfmft
+         nrej_zz => nrej_rfmft
+
+         call evaluate_clddet_test ( &
+               crit_name, crit_zz, isflg, &
+               eps_zz_ocean, eps_zz_land, eps_zz_snow, &
+               iv%instid(i)%info%proc_domain(1,n), &
+               reject_zz , iv%instid(i)%tb_qc(:,n), nrej_zz(:), &
+               iv%instid(i)%info%lat(1,n), iv%instid(i)%info%lon(1,n), &
+               qualifier_ocean, qualifier_land, qualifier_snow )
+
+!         reject_zz = crit_zz .gt. missing_r .AND. &
+!           (      ( isflg==sea_flag .and. crit_zz > eps_zz_ocean .and. qualifier_ocean ) &  ! Ocean
+!             .OR. ( isflg==land_flag .and. crit_zz > eps_zz_land .and. qualifier_land  ) & ! land
+!             .OR. ( any(isflg==(/snow_flag,ice_flag/)) .and. crit_zz > eps_zz_snow .and. qualifier_snow ) ) ! snow and ice
+!         if (reject_zz) then
+!            iv%instid(i)%tb_qc(:,n)  = qc_bad
+!            if (iv%instid(i)%info%proc_domain(1,n)) &
+!               nrej_zz(:) = nrej_zz(:) + 1
+!
+!            if (print_zz) write(*,"(A,F14.6,A,I4,2D12.4)") trim(crit_name), crit_zz, " isflg", isflg, &
+!                     iv%instid(i)%info%lat(1,n),iv%instid(i)%info%lon(1,n)
+!         end if
+
          if (reject_zz) clddet_zz_tests(5) = 1
 
 
@@ -423,28 +513,45 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
          eps_zz_ocean = 0.7
          eps_zz_land  = 0.7
          eps_zz_snow  = 0.7
+!         qualifier_ocean = .true.
+!         qualifier_land  = .true.
+!         qualifier_snow  = .true.
+
          crit_name = "cirh2o"
 
-         if (allocated(iv%instid(i)%cld_qc(n)%CIRH2O)) then
+         if ( iv%instid(i)%cld_qc(n)%terr_hgt .le. 2000. .and. &
+              iv%instid(i)%cld_qc(n)%tb_stddev_3x3(ch10) .gt. 0.5 .and. &
+              iv%instid(i)%cld_qc(n)%tb_stddev_3x3(ch14) .gt. 0.5 .and. &
+              allocated(iv%instid(i)%cld_qc(n)%CIRH2O) ) then
             cirh2o = iv%instid(i)%cld_qc(n)%CIRH2O(1,1,1)
          else
             cirh2o = missing_r
          end if
-         reject_zz = .false.
-         if (.not. cirh2o.eq.missing_r) then
-            crit_zz => cirh2o
-            if ( isflg==sea_flag .and. crit_zz > eps_zz_ocean ) reject_zz = .true.  ! Ocean
-            if ( isflg==land_flag .and. crit_zz > eps_zz_land ) reject_zz = .true.  ! land
-            if ( any(isflg==(/snow_flag,ice_flag/)) .and. crit_zz > eps_zz_snow ) reject_zz = .true.  ! snow and ice
-            if (reject_zz) then
-               iv%instid(i)%tb_qc(:,n)  = qc_bad
-               if (iv%instid(i)%info%proc_domain(1,n)) &
-                  nrej_cirh2o(:) = nrej_cirh2o(:) + 1
 
-               if (print_zz) write(*,"(A,F14.6,A,I4,2D12.4)") trim(crit_name), crit_zz, " isflg", isflg, &
-                        iv%instid(i)%info%lat(1,n),iv%instid(i)%info%lon(1,n)
-            end if
-         end if
+         crit_zz => cirh2o
+         nrej_zz => nrej_cirh2o
+
+         call evaluate_clddet_test ( &
+               crit_name, crit_zz, isflg, &
+               eps_zz_ocean, eps_zz_land, eps_zz_snow, &
+               iv%instid(i)%info%proc_domain(1,n), &
+               reject_zz , iv%instid(i)%tb_qc(:,n), nrej_zz(:), &
+               iv%instid(i)%info%lat(1,n), iv%instid(i)%info%lon(1,n), &
+               .true., .true., .true. )
+
+!         reject_zz = crit_zz .gt. missing_r .AND. &
+!            (     ( isflg==sea_flag .and. crit_zz > eps_zz_ocean .and. qualifier_ocean ) &  ! Ocean
+!             .OR. ( isflg==land_flag .and. crit_zz > eps_zz_land .and. qualifier_land ) &  ! land
+!             .OR. ( any(isflg==(/snow_flag,ice_flag/)) .and. crit_zz > eps_zz_snow .and. qualifier_snow ) )  ! snow and ice
+!         if (reject_zz) then
+!            iv%instid(i)%tb_qc(:,n)  = qc_bad
+!            if (iv%instid(i)%info%proc_domain(1,n)) &
+!               nrej_zz(:) = nrej_zz(:) + 1
+!
+!            if (print_zz) write(*,"(A,F14.6,A,I4,2D12.4)") trim(crit_name), crit_zz, " isflg", isflg, &
+!                     iv%instid(i)%info%lat(1,n),iv%instid(i)%info%lon(1,n)
+!         end if
+
          if (reject_zz) clddet_zz_tests(6) = 1
 
 
@@ -454,39 +561,11 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
          ! e_emiss4 = 0.1(Ocean), 0.2(land), 0.3(snow) for daytime, 2.86(Ocean) for night
          ! e_modemiss4 = 0.26-3*1.04(Ocean) for sun-glint area
          !--------------------------------------------------------------------------
-         eps_zz_ocean = 0.1
+!         qualifier_ocean = .true.
+!         qualifier_land  = .true.
+!         qualifier_snow  = .true.
 
-         ! Modified EMISS4 from Zhuge and Zou
-         eps_zz_land  = 0.2
-
-         ! Default value from ABI CM algorithm
-         eps_zz_land  = 0.46
-
-         eps_zz_snow  = 0.3
          crit_name = "emiss4"
-
-         if (tb_ob(1,n) .gt. 0. .and. tb_ob(8,n) .gt. 0.) then
-            tb_temp1   = tb_ob(1,n)
-            rad_o_ch7  = plfk1(1) / & 
-                          ( exp( plfk2(1) / ( plbc1(1) + plbc2(1) * tb_temp1 ) ) - 1. )
-
-            tb_temp1   = tb_xb(1,n)
-            rad_b_ch7  = plfk1(1) / & 
-                          ( exp( plfk2(1) / ( plbc1(1) + plbc2(1) * tb_temp1 ) ) - 1. )
-
-            tb_temp1   = tb_ob(8,n)
-            rad_o_ch14 = plfk1(1) / & 
-                          ( exp( plfk2(1) / ( plbc1(1) + plbc2(1) * tb_temp1 ) ) - 1. )
-
-            tb_temp1   = tb_xb(8,n)
-            rad_b_ch14 = plfk1(1) / & 
-                          ( exp( plfk2(1) / ( plbc1(1) + plbc2(1) * tb_temp1 ) ) - 1. )
-! ---------------------------------------
-            emiss4 = (rad_o_ch7/rad_o_ch14 - rad_b_ch7/rad_b_ch14)/ & 
-                      (rad_b_ch7 / rad_b_ch14)
-         else 
-            emiss4 = missing_r
-         end if
 
 !JJG: Need to check over this code to ensure relative azimuth is calculated correctly
          ! Modify EMISS for sun glint area may be  not work, because we are at north land
@@ -500,26 +579,68 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
          if (print_zz) write(*,"(A,4D12.4)") "PIXEL_DEBUG8: ", & 
             iv%instid(i)%info%lat(1,n),iv%instid(i)%info%lon(1,n), Relaz, Glintzen
 
-         reject_zz = .false.
-         crit_zz => emiss4
          if ( Glintzen.lt.40.0 .and. isflg==sea_flag) then
-!            if ( isflg==sea_flag .and. tb_inv(1,n) < -2.86  ) reject_zz = .true.
+!            if ( isflg==sea_flag .and. tb_inv(ch7,n) < -2.86  ) reject_zz = .true.
             eps_zz_ocean = 2.86
-            emiss4 = - tb_inv(1,n) ! (B_ch7 - O_ch7)
-            if ( crit_zz > eps_zz_ocean ) reject_zz = .true.  ! Ocean
+            eps_zz_land  = huge(eps_zz_land)
+            eps_zz_snow  = huge(eps_zz_snow)
+            emiss4 = - tb_inv(ch7,n) ! (B_ch7 - O_ch7)
          else
-            if ( isflg==sea_flag .and. crit_zz > eps_zz_ocean ) reject_zz = .true.  ! Ocean
-            if ( isflg==land_flag .and. crit_zz > eps_zz_land ) reject_zz = .true.  ! land
-            if ( any(isflg==(/snow_flag,ice_flag/)) .and. crit_zz > eps_zz_snow ) reject_zz = .true.  ! snow and ice
-         end if 
-         if (reject_zz) then
-            iv%instid(i)%tb_qc(:,n)  = qc_bad    
-            if (iv%instid(i)%info%proc_domain(1,n)) &
-               nrej_emiss4(:) = nrej_emiss4(:) + 1
+            eps_zz_ocean = 0.1
 
-            if (print_zz) write(*,"(A,F14.6,A,I4,2D12.4)") trim(crit_name), crit_zz, " isflg", isflg, &
-                     iv%instid(i)%info%lat(1,n),iv%instid(i)%info%lon(1,n)
+!            ! Modified EMISS4 from Zhuge and Zou
+!            eps_zz_land  = 0.2
+
+            ! Default value from ABI CM algorithm
+            eps_zz_land  = 0.46
+
+            eps_zz_snow  = 0.3
+
+            if (tb_ob(ch7,n) .gt. 0. .and. tb_ob(ch14,n) .gt. 0.) then
+               tb_temp1   = tb_ob(ch7,n)
+               rad_o_ch7  = plfk1(ch7) / & 
+                             ( exp( plfk2(ch7) / ( plbc1(ch7) + plbc2(ch7) * tb_temp1 ) ) - 1. )
+               tb_temp1   = tb_xb(ch7,n)
+               rad_b_ch7  = plfk1(ch7) / & 
+                             ( exp( plfk2(ch7) / ( plbc1(ch7) + plbc2(ch7) * tb_temp1 ) ) - 1. )
+               tb_temp1   = tb_ob(ch14,n)
+               rad_o_ch14 = plfk1(ch7) / & 
+                             ( exp( plfk2(ch7) / ( plbc1(ch7) + plbc2(ch7) * tb_temp1 ) ) - 1. )
+               tb_temp1   = tb_xb(ch14,n)
+               rad_b_ch14 = plfk1(ch7) / & 
+                             ( exp( plfk2(ch7) / ( plbc1(ch7) + plbc2(ch7) * tb_temp1 ) ) - 1. )
+! ---------------------------------------
+               emiss4 = (rad_o_ch7/rad_o_ch14 - rad_b_ch7/rad_b_ch14)/ & 
+                         (rad_b_ch7 / rad_b_ch14)
+            else 
+               emiss4 = missing_r
+            end if
          end if
+
+         crit_zz => emiss4
+         nrej_zz => nrej_emiss4
+
+         call evaluate_clddet_test ( &
+               crit_name, crit_zz, isflg, &
+               eps_zz_ocean, eps_zz_land, eps_zz_snow, &
+               iv%instid(i)%info%proc_domain(1,n), &
+               reject_zz , iv%instid(i)%tb_qc(:,n), nrej_zz(:), &
+               iv%instid(i)%info%lat(1,n), iv%instid(i)%info%lon(1,n), &
+               .true., .true., .true. )
+
+!         reject_zz = crit_zz .gt. missing_r .AND. &
+!            (     ( isflg==sea_flag .and. crit_zz > eps_zz_ocean .and. qualifier_ocean ) &  ! Ocean
+!             .OR. ( isflg==land_flag .and. crit_zz > eps_zz_land .and. qualifier_land ) &  ! land
+!             .OR. ( any(isflg==(/snow_flag,ice_flag/)) .and. crit_zz > eps_zz_snow .and. qualifier_snow ) )  ! snow and ice
+!         if (reject_zz) then
+!            iv%instid(i)%tb_qc(:,n)  = qc_bad    
+!            if (iv%instid(i)%info%proc_domain(1,n)) &
+!               nrej_zz(:) = nrej_zz(:) + 1
+!
+!            if (print_zz) write(*,"(A,F14.6,A,I4,2D12.4)") trim(crit_name), crit_zz, " isflg", isflg, &
+!                     iv%instid(i)%info%lat(1,n),iv%instid(i)%info%lon(1,n)
+!         end if
+
          if (reject_zz) clddet_zz_tests(7) = 1
 
 
@@ -531,29 +652,43 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
          eps_zz_ocean = 0.05
          eps_zz_land  = 0.1
          eps_zz_snow  = 0.12
+!JJG: Changed this to solzen instead of solazi for night/day test
+         qualifier_ocean = iv%instid(i)%solzen(n) >= 85.0
+         qualifier_land  = iv%instid(i)%solzen(n) >= 85.0
+         qualifier_snow  = iv%instid(i)%solzen(n) >= 85.0
+
          crit_name = "ulst"
 
-         if (tb_ob(1,n) .gt. 0. .and. tb_ob(8,n) .gt. 0.) then
+         if (tb_ob(ch7,n) .gt. 0. .and. tb_ob(ch14,n) .gt. 0.) then
             ulst = rad_b_ch7/rad_b_ch14 - rad_o_ch7/rad_o_ch14
          else 
             ulst = missing_r
-         end if 
-!JJG: Changed this to solzen instead of solazi for night/day test
-         reject_zz = .false.
-         if ( iv%instid(i)%solzen(n) >= 85.0 .and. ulst.gt.missing_r ) then   ! night Time 
-            crit_zz => ulst
-            if ( isflg==sea_flag .and. crit_zz > eps_zz_ocean ) reject_zz = .true.  ! Ocean
-            if ( isflg==land_flag .and. crit_zz > eps_zz_land ) reject_zz = .true.  ! land
-            if ( any(isflg==(/snow_flag,ice_flag/)) .and. crit_zz > eps_zz_snow ) reject_zz = .true.  ! snow and ice
-            if (reject_zz) then
-               iv%instid(i)%tb_qc(:,n)  = qc_bad    
-               if (iv%instid(i)%info%proc_domain(1,n)) &
-                  nrej_ulst(:) = nrej_ulst(:) + 1
+         end if
 
-               if (print_zz) write(*,"(A,F14.6,A,I4,2D12.4)") trim(crit_name), crit_zz, " isflg", isflg, &
-                        iv%instid(i)%info%lat(1,n),iv%instid(i)%info%lon(1,n)
-            end if
-         end if 
+         crit_zz => ulst
+         nrej_zz => nrej_ulst
+
+         call evaluate_clddet_test ( &
+               crit_name, crit_zz, isflg, &
+               eps_zz_ocean, eps_zz_land, eps_zz_snow, &
+               iv%instid(i)%info%proc_domain(1,n), &
+               reject_zz , iv%instid(i)%tb_qc(:,n), nrej_zz(:), &
+               iv%instid(i)%info%lat(1,n), iv%instid(i)%info%lon(1,n), &
+               qualifier_ocean, qualifier_land, qualifier_snow )
+
+!         reject_zz = crit_zz .gt. missing_r .AND. &
+!            (     ( isflg==sea_flag .and. crit_zz > eps_zz_ocean .and. qualifier_ocean ) &  ! Ocean
+!             .OR. ( isflg==land_flag .and. crit_zz > eps_zz_land .and. qualifier_land ) &  ! land
+!             .OR. ( any(isflg==(/snow_flag,ice_flag/)) .and. crit_zz > eps_zz_snow .and. qualifier_snow ) )  ! snow and ice
+!         if (reject_zz) then
+!            iv%instid(i)%tb_qc(:,n)  = qc_bad    
+!            if (iv%instid(i)%info%proc_domain(1,n)) &
+!               nrej_zz(:) = nrej_zz(:) + 1
+!
+!            if (print_zz) write(*,"(A,F14.6,A,I4,2D12.4)") trim(crit_name), crit_zz, " isflg", isflg, &
+!                     iv%instid(i)%info%lat(1,n),iv%instid(i)%info%lon(1,n)
+!         end if
+
          if (reject_zz) clddet_zz_tests(8) = 1
 
 
@@ -565,24 +700,39 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
          eps_zz_ocean = 2.0
          eps_zz_land  = 2.0
          eps_zz_snow  = 2.0
+!         qualifier_ocean = .true.
+!         qualifier_land  = .true.
+!         qualifier_snow  = .true.
+
          crit_name = "tempir"
 
          tempir = iv%instid(i)%cld_qc(n)%TEMPIR
-         reject_zz = .false.
-         if (.not. tempir.eq.missing_r) then
-            crit_zz => tempir
-            if ( isflg==sea_flag .and. crit_zz > eps_zz_ocean ) reject_zz = .true.  ! Ocean
-            if ( isflg==land_flag .and. crit_zz > eps_zz_land ) reject_zz = .true.  ! land
-            if ( any(isflg==(/snow_flag,ice_flag/)) .and. crit_zz > eps_zz_snow ) reject_zz = .true.  ! snow and ice
-            if (reject_zz) then
-               iv%instid(i)%tb_qc(:,n)  = qc_bad
-               if (iv%instid(i)%info%proc_domain(1,n)) &
-                  nrej_tempir(:) = nrej_tempir(:) + 1
 
-               if (print_zz) write(*,"(A,F14.6,A,I4,2D12.4)") trim(crit_name), crit_zz, " isflg", isflg, &
-                        iv%instid(i)%info%lat(1,n),iv%instid(i)%info%lon(1,n)
-            end if
-         end if
+         crit_zz => tempir
+         nrej_zz => nrej_tempir
+
+         call evaluate_clddet_test ( &
+               crit_name, crit_zz, isflg, &
+               eps_zz_ocean, eps_zz_land, eps_zz_snow, &
+               iv%instid(i)%info%proc_domain(1,n), &
+               reject_zz , iv%instid(i)%tb_qc(:,n), nrej_zz(:), &
+               iv%instid(i)%info%lat(1,n), iv%instid(i)%info%lon(1,n), &
+               .true., .true., .true. )
+
+!         reject_zz = crit_zz .gt. missing_r .AND. &
+!            (     ( isflg==sea_flag .and. crit_zz > eps_zz_ocean .and. qualifier_ocean ) &  ! Ocean
+!             .OR. ( isflg==land_flag .and. crit_zz > eps_zz_land .and. qualifier_land ) &  ! land
+!             .OR. ( any(isflg==(/snow_flag,ice_flag/)) .and. crit_zz > eps_zz_snow .and. qualifier_snow ) )  ! snow and ice
+!
+!         if (reject_zz) then
+!            iv%instid(i)%tb_qc(:,n)  = qc_bad
+!            if (iv%instid(i)%info%proc_domain(1,n)) &
+!               nrej_zz(:) = nrej_zz(:) + 1
+!
+!            if (print_zz) write(*,"(A,F14.6,A,I4,2D12.4)") trim(crit_name), crit_zz, " isflg", isflg, &
+!                     iv%instid(i)%info%lat(1,n),iv%instid(i)%info%lon(1,n)
+!         end if
+
          if (reject_zz) clddet_zz_tests(9) = 1
 
 
@@ -602,35 +752,53 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
             eps_zz_land  = 25.
             eps_zz_snow  = 4.5
          end if
+!         qualifier_ocean = .true.
+!         qualifier_land  = .true.
+!         qualifier_snow  = .true.
+
          crit_name = "notc"
 
-         if (tb_ob(1,n) .gt. 0. .and. tb_ob(9,n) .gt. 0.) then
+         if (tb_ob(ch7,n) .gt. 0. .and. tb_ob(ch15,n) .gt. 0.) then
 ! using ob with VarBC
-!          notc = tb_inv(1,n) + tb_xb(1,n) - & 
-!                (tb_inv(9,n) + tb_xb(9,n))
+!          notc = tb_inv(ch7,n) + tb_xb(ch7,n) - & 
+!                (tb_inv(ch15,n) + tb_xb(ch15,n))
 ! using ob without VarBC
-              notc = tb_ob(1,n) - tb_ob(9,n)  
+              notc = tb_ob(ch7,n) - tb_ob(ch15,n)  
          else 
             notc = missing_r
-         end if 
-
-         reject_zz = .false.
-         crit_zz => notc
-         if ( isflg==sea_flag .and. crit_zz > eps_zz_ocean ) reject_zz = .true.  ! Ocean
-         if ( isflg==land_flag .and. crit_zz > eps_zz_land ) reject_zz = .true.  ! land
-         if ( any(isflg==(/snow_flag,ice_flag/)) .and. crit_zz > eps_zz_snow ) reject_zz = .true.  ! snow and ice
-         if (reject_zz) then
-            iv%instid(i)%tb_qc(:,n)  = qc_bad    
-            if (iv%instid(i)%info%proc_domain(1,n)) &
-               nrej_notc(:) = nrej_notc(:) + 1
-
-            if (print_zz) write(*,"(A,F14.6,A,I4,2D12.4)") trim(crit_name), crit_zz, " isflg", isflg, &
-                     iv%instid(i)%info%lat(1,n),iv%instid(i)%info%lon(1,n)
          end if
+
+         crit_zz => notc
+         nrej_zz => nrej_notc
+
+         call evaluate_clddet_test ( &
+               crit_name, crit_zz, isflg, &
+               eps_zz_ocean, eps_zz_land, eps_zz_snow, &
+               iv%instid(i)%info%proc_domain(1,n), &
+               reject_zz , iv%instid(i)%tb_qc(:,n), nrej_zz(:), &
+               iv%instid(i)%info%lat(1,n), iv%instid(i)%info%lon(1,n), &
+               .true., .true., .true. )
+
+!         reject_zz = crit_zz .gt. missing_r .AND. &
+!            (     ( isflg==sea_flag .and. crit_zz > eps_zz_ocean .and. qualifier_ocean ) &  ! Ocean
+!             .OR. ( isflg==land_flag .and. crit_zz > eps_zz_land .and. qualifier_land ) &  ! land
+!             .OR. ( any(isflg==(/snow_flag,ice_flag/)) .and. crit_zz > eps_zz_snow .and. qualifier_snow ) )  ! snow and ice
+!         if (reject_zz) then
+!            iv%instid(i)%tb_qc(:,n)  = qc_bad    
+!            if (iv%instid(i)%info%proc_domain(1,n)) &
+!               nrej_zz(:) = nrej_zz(:) + 1
+!
+!            if (print_zz) write(*,"(A,F14.6,A,I4,2D12.4)") trim(crit_name), crit_zz, " isflg", isflg, &
+!                     iv%instid(i)%info%lat(1,n),iv%instid(i)%info%lon(1,n)
+!         end if
+
          if (reject_zz) clddet_zz_tests(10) = 1
+
+
 
          if (print_zz) write(*,'(A,I8,10I4)') 'PIXEL_DEBUG9: ', n, &
             clddet_zz_tests
+
 
       end if clddet_zz
 
@@ -820,12 +988,59 @@ function glint_angle ( sol_zen , sat_zen , rel_az  )
 
 end function glint_angle
 
+subroutine evaluate_clddet_test ( crit_name, crit_zz, isflg, eps_o, eps_l, eps_s, &
+                                  on_proc, reject_zz , tb_qc, nrej, &
+                                  lat, lon, q_ocean, q_land, q_snow)
 
+   character(*), intent(in) :: crit_name
+   integer, intent(in)      :: isflg
+   logical, intent(in)      :: on_proc
+   real, intent(in)         :: crit_zz, eps_o, eps_l, eps_s, lat, lon
+   logical, intent(in)      :: q_ocean, q_land, q_snow
+!   logical, intent(in), optional :: q_ocean, q_land, q_snow
 
+   logical, intent(out) :: reject_zz
+   integer, intent(inout) :: tb_qc(:), nrej(:)
 
+   integer, parameter :: sea_flag = 0
+   integer, parameter :: ice_flag = 1
+   integer, parameter :: land_flag = 2
+   integer, parameter :: snow_flag = 3
+   integer, parameter :: msea_flag = 4
+   integer, parameter :: mice_flag = 5
+   integer, parameter :: mland_flag = 6
+   integer, parameter :: msnow_flag = 7
 
+!   logical :: q_o, q_l, q_s
+!
+!   if (present(q_o)) then
+!      q_o = q_ocean
+!   else
+!      q_o = .true.
+!   end if
+!   if (present(q_l)) then
+!      q_l = q_land
+!   else
+!      q_l = .true.
+!   end if
+!   if (present(q_s)) then
+!      q_s = q_snow
+!   else
+!      q_s = .true.
+!   end if
 
+   reject_zz = crit_zz .gt. missing_r .AND. &
+      (     ( isflg==sea_flag .and. crit_zz > eps_o .and. q_ocean ) &  ! Ocean
+       .OR. ( isflg==land_flag .and. crit_zz > eps_l .and. q_land ) &  ! land
+       .OR. ( any(isflg==(/snow_flag,ice_flag/)) .and. crit_zz > eps_s .and. q_snow ) )  ! snow and ice
 
+   if (reject_zz) then
+      tb_qc(:) = qc_bad
+      if (on_proc) then
+         nrej(:) = nrej(:) + 1
+         write(*,"(A,F14.6,A,I4,2D12.4)") trim(crit_name), crit_zz, " isflg", isflg, lat,lon
+      end if
+   end if
 
-
+end subroutine evaluate_clddet_test
 

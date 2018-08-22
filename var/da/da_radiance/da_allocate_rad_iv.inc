@@ -11,6 +11,8 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
    integer           ,  intent (in)    :: i, nchan
    type (iv_type)    ,  intent (inout) :: iv
 
+   integer :: n
+
    call da_trace_entry("da_allocate_rad_iv")
 
       allocate (iv%instid(i)%info%date_char(iv%instid(i)%num_rad))
@@ -103,7 +105,12 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
       allocate (iv%instid(i)%solazi(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%tropt(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%gamma_jacobian(nchan,iv%instid(i)%num_rad))
-      if ( use_clddet_zz ) allocate (iv%instid(i)%cld_qc(iv%instid(i)%num_rad))
+      if ( use_clddet_zz ) then
+         allocate (iv%instid(i)%cld_qc(iv%instid(i)%num_rad))
+         do n = 1, iv%instid(i)%num_rad
+            allocate (iv%instid(i)%cld_qc(n)%tb_stddev_3x3(nchan))
+         end do
+      end if
       if ( use_rttov_kmatrix .or. use_crtm_kmatrix ) then
          allocate(iv%instid(i)%ts_jacobian(nchan,iv%instid(i)%num_rad))
          allocate(iv%instid(i)%ps_jacobian(nchan,iv%instid(i)%num_rad))

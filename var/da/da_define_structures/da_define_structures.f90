@@ -490,7 +490,8 @@ module da_define_structures
    end type cv_index_type
 
    type cld_qc_type
-     real  :: RTCT, RFMFT, RFMFT_ij(2), TEMPIR, RTCT_terr
+     real  :: RTCT, RFMFT, RFMFT_ij(2), TEMPIR, terr_hgt
+     real, allocatable :: tb_stddev_3x3(:)
      real, allocatable :: CIRH2O(:,:,:)
    end type cld_qc_type
  

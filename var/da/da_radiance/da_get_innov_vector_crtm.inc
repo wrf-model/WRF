@@ -517,8 +517,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
          ! CRTM GeometryInfo Structure
          GeometryInfo(1)%Sensor_Zenith_Angle=iv%instid(inst)%satzen(n)
-         if (.not. use_clddet_zz) &
-            GeometryInfo(1)%Source_Zenith_Angle=iv%instid(inst)%solzen(n)
+         GeometryInfo(1)%Source_Zenith_Angle=iv%instid(inst)%solzen(n)
          GeometryInfo(1)%iFOV=iv%instid(inst)%scanpos(n)
          ! GeometryInfo(1)%Satellite_Height=830.0
          ! GeometryInfo(1)%Sensor_Scan_Angle=

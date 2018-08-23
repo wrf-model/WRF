@@ -928,15 +928,38 @@ write(stdout,*) trim(command)
                      pack(this_view % iy_1d % local     (1:nrad_local),   domainmask_1d )
                   buf_int ( buf_i:buf_f, 2 ) = &
                      pack(this_view % ix_1d % local     (1:nrad_local),   domainmask_1d )
+
                   buf_loc ( buf_i:buf_f ) % y = &
                      pack(this_view % loc_1d % local    (1:nrad_local) % y, domainmask_1d )
                   buf_loc ( buf_i:buf_f ) % x = &
                      pack(this_view % loc_1d % local    (1:nrad_local) % x, domainmask_1d )
+!!!!
+!                  buf_loc ( buf_i:buf_f ) % j = &
+!                     pack(this_view % loc_1d % local    (1:nrad_local) % j, domainmask_1d )
+!                  buf_loc ( buf_i:buf_f ) % i = &
+!                     pack(this_view % loc_1d % local    (1:nrad_local) % i, domainmask_1d )
+!                  buf_loc ( buf_i:buf_f ) % dy = &
+!                     pack(this_view % loc_1d % local    (1:nrad_local) % dy, domainmask_1d )
+!                  buf_loc ( buf_i:buf_f ) % dx = &
+!                     pack(this_view % loc_1d % local    (1:nrad_local) % dx, domainmask_1d )
+!                  buf_loc ( buf_i:buf_f ) % dym = &
+!                     pack(this_view % loc_1d % local    (1:nrad_local) % dym, domainmask_1d )
+!                  buf_loc ( buf_i:buf_f ) % dxm = &
+!                     pack(this_view % loc_1d % local    (1:nrad_local) % dxm, domainmask_1d )
+!!!!
                else
                   buf_real(buf_i:buf_f,:)  = missing_r
                   buf_int(buf_i:buf_f,:)   = missing
-                  buf_loc(buf_i:buf_f)%y = missing_r
-                  buf_loc(buf_i:buf_f)%x = missing_r
+!!!!
+!                  buf_loc(buf_i:buf_f)%y   = missing_r
+!                  buf_loc(buf_i:buf_f)%x   = missing_r
+!                  buf_loc(buf_i:buf_f)%j   = missing
+!                  buf_loc(buf_i:buf_f)%i   = missing
+!                  buf_loc(buf_i:buf_f)%dy  = missing_r
+!                  buf_loc(buf_i:buf_f)%dx  = missing_r
+!                  buf_loc(buf_i:buf_f)%dym = missing_r
+!                  buf_loc(buf_i:buf_f)%dxm = missing_r
+!!!!
                end if
 #ifdef DM_PARALLEL
                !PERFORM COMMS
@@ -946,8 +969,15 @@ write(stdout,*) trim(command)
                !Only x & y components of loc need to be communicated
                call mpi_bcast( buf_loc(buf_i:buf_f)%y, nbuf, true_mpi_real, iproc, comm, ierr )
                call mpi_bcast( buf_loc(buf_i:buf_f)%x, nbuf, true_mpi_real, iproc, comm, ierr )
+!!!!
+!               call mpi_bcast( buf_loc(buf_i:buf_f)%j, nbuf, mpi_integer, iproc, comm, ierr )
+!               call mpi_bcast( buf_loc(buf_i:buf_f)%i, nbuf, mpi_integer, iproc, comm, ierr )
+!               call mpi_bcast( buf_loc(buf_i:buf_f)%dy, nbuf, true_mpi_real, iproc, comm, ierr )
+!               call mpi_bcast( buf_loc(buf_i:buf_f)%dx, nbuf, true_mpi_real, iproc, comm, ierr )
+!               call mpi_bcast( buf_loc(buf_i:buf_f)%dym, nbuf, true_mpi_real, iproc, comm, ierr )
+!               call mpi_bcast( buf_loc(buf_i:buf_f)%dxm, nbuf, true_mpi_real, iproc, comm, ierr )
+!!!!
 #endif
-
             end do ProcLoop
             ! END SOLUTION 2
 
@@ -1364,6 +1394,7 @@ write(stdout,*) trim(command)
                            yr, '-', mt, '-', dy, '_', hr, ':', mn, ':', sc
                         info % elv = 0.0  !aquaspot % selv
                         allocate ( p % tb_inv (1:nchan) )
+                        p % tb_inv = missing_r
 
                         p % info                  = info
                         p % loc                   = this_view % loc_1d % patch (n)
@@ -1426,6 +1457,7 @@ write(stdout,*) trim(command)
                               deallocate( tb_temp )
 
                               p % cld_qc % terr_hgt = terrain_hgt( iy, ix )
+                              p % info % elv = p % cld_qc % terr_hgt
 
                               ! Values for RTCT cloud QC
                               ! - channel 14 and sigma_z (std. dev. of terrain height in km)

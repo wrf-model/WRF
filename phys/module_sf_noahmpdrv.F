@@ -16,7 +16,9 @@ CONTAINS
 	       PLANTING,  HARVEST,SEASON_GDD,                               &
                  IDVEG, IOPT_CRS,  IOPT_BTR, IOPT_RUN, IOPT_SFC, IOPT_FRZ,  & ! IN : User options
               IOPT_INF, IOPT_RAD,  IOPT_ALB, IOPT_SNF,IOPT_TBOT, IOPT_STC,  & ! IN : User options
-              IOPT_GLA, IOPT_RSF,   IZ0TLND, SF_URBAN_PHYSICS,              & ! IN : User options
+              IOPT_GLA, IOPT_RSF, IOPT_SOIL,IOPT_PEDO,IOPT_CROP,            & ! IN : User options
+              IZ0TLND, SF_URBAN_PHYSICS,                                    & ! IN : User options
+	      SOILCOMP,  SOILCL1,  SOILCL2,   SOILCL3,  SOILCL4,            & ! IN : User options
                    T3D,     QV3D,     U_PHY,    V_PHY,   SWDOWN,      GLW,  & ! IN : Forcing
 		 P8W3D,PRECIP_IN,        SR,                                & ! IN : Forcing
                    TSK,      HFX,      QFX,        LH,   GRDFLX,    SMSTAV, & ! IN/OUT LSM eqv
@@ -30,6 +32,7 @@ CONTAINS
 	       ZSNSOXY,  SNICEXY,  SNLIQXY,  LFMASSXY, RTMASSXY,  STMASSXY, & ! IN/OUT Noah MP only
 	        WOODXY, STBLCPXY, FASTCPXY,    XLAIXY,   XSAIXY,   TAUSSXY, & ! IN/OUT Noah MP only
 	       SMOISEQ, SMCWTDXY,DEEPRECHXY,   RECHXY,  GRAINXY,    GDDXY,PGSXY,  & ! IN/OUT Noah MP only
+               GECROS_STATE,                                                & ! IN/OUT gecros model
 	        T2MVXY,   T2MBXY,    Q2MVXY,   Q2MBXY,                      & ! OUT Noah MP only
 	        TRADXY,    NEEXY,    GPPXY,     NPPXY,   FVEGXY,   RUNSFXY, & ! OUT Noah MP only
 	       RUNSBXY,   ECANXY,   EDIRXY,   ETRANXY,    FSAXY,    FIRAXY, & ! OUT Noah MP only
@@ -37,7 +40,7 @@ CONTAINS
 		BGAPXY,   WGAPXY,    TGVXY,     TGBXY,    CHVXY,     CHBXY, & ! OUT Noah MP only
 		 SHGXY,    SHCXY,    SHBXY,     EVGXY,    EVBXY,     GHVXY, & ! OUT Noah MP only
 		 GHBXY,    IRGXY,    IRCXY,     IRBXY,     TRXY,     EVCXY, & ! OUT Noah MP only
-              CHLEAFXY,   CHUCXY,   CHV2XY,    CHB2XY,                      & ! OUT Noah MP only
+              CHLEAFXY,   CHUCXY,   CHV2XY,    CHB2XY, RS,                  & ! OUT Noah MP only
 !                 BEXP_3D,SMCDRY_3D,SMCWLT_3D,SMCREF_3D,SMCMAX_3D,          & ! placeholders to activate 3D soil
 !		 DKSAT_3D,DWSAT_3D,PSISAT_3D,QUARTZ_3D,                     &
 !		 REFDK_2D,REFKDT_2D,                                        &
@@ -95,8 +98,16 @@ CONTAINS
     INTEGER,                                         INTENT(IN   ) ::  IOPT_STC  ! snow/soil temperature time scheme
     INTEGER,                                         INTENT(IN   ) ::  IOPT_GLA  ! glacier option (1->phase change; 2->simple)
     INTEGER,                                         INTENT(IN   ) ::  IOPT_RSF  ! surface resistance (1->Sakaguchi/Zeng; 2->Seller; 3->mod Sellers; 4->1+snow)
+    INTEGER,                                         INTENT(IN   ) ::  IOPT_SOIL ! soil configuration option
+    INTEGER,                                         INTENT(IN   ) ::  IOPT_PEDO ! soil pedotransfer function option
+    INTEGER,                                         INTENT(IN   ) ::  IOPT_CROP ! crop model option (0->none; 1->Liu et al.; 2->Gecros)
     INTEGER,                                         INTENT(IN   ) ::  IZ0TLND   ! option of Chen adjustment of Czil (not used)
     INTEGER,                                         INTENT(IN   ) ::  sf_urban_physics   ! urban physics option
+    REAL,    DIMENSION( ims:ime,       8, jms:jme ), INTENT(IN   ) ::  SOILCOMP  ! soil sand and clay percentage
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  SOILCL1   ! soil texture in layer 1
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  SOILCL2   ! soil texture in layer 2
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  SOILCL3   ! soil texture in layer 3
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) ::  SOILCL4   ! soil texture in layer 4
     REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   ) ::  T3D       ! 3D atmospheric temperature valid at mid-levels [K]
     REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   ) ::  QV3D      ! 3D water vapor mixing ratio [kg/kg_dry]
     REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN   ) ::  U_PHY     ! 3D U wind component [m/s]
@@ -123,6 +134,9 @@ CONTAINS
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  GRAINXY   ! mass of grain XING [g/m2]
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  GDDXY     ! growing degree days XING (based on 10C) 
  INTEGER,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  PGSXY
+
+! gecros model
+    REAL,    DIMENSION( ims:ime,       60,jms:jme ), INTENT(INOUT) :: gecros_state !  gecros crop
 
 #ifdef WRF_HYDRO
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  sfcheadrt,INFXSRT,soldrain   ! for WRF-Hydro
@@ -165,8 +179,7 @@ CONTAINS
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  QSFC      ! bulk surface specific humidity
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  Z0        ! combined z0 sent to coupled model
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  ZNT       ! combined z0 sent to coupled model
-
-! INOUT (with no Noah LSM equivalent)
+    REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  RS        ! Total stomatal resistance (s/m)
 
     INTEGER, DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  ISNOWXY   ! actual no. of snow layers
     REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(INOUT) ::  TVXY      ! vegetation leaf temperature
@@ -262,7 +275,7 @@ CONTAINS
     REAL                                :: LAT          ! latitude [rad]
     REAL                                :: Z_ML         ! model height [m]
     INTEGER                             :: VEGTYP       ! vegetation type
-    INTEGER                             :: SOILTYP      ! soil type
+    INTEGER,    DIMENSION(NSOIL)        :: SOILTYP      ! soil type
     INTEGER                             :: CROPTYPE     ! crop type
     REAL                                :: FVEG         ! vegetation fraction [-]
     REAL                                :: FVGMAX       ! annual max vegetation fraction []
@@ -362,6 +375,9 @@ CONTAINS
     REAL                                :: SAG          ! solar rad absorbed by ground (w/m2)
     REAL                                :: RSSUN        ! sunlit leaf stomatal resistance (s/m)
     REAL                                :: RSSHA        ! shaded leaf stomatal resistance (s/m)
+    REAL                                :: RB           ! leaf boundary layer resistance (s/m)
+    REAL                                :: LAISUN       ! sunlit leaf area index (m2/m2)
+    REAL                                :: LAISHA       ! shaded leaf area index (m2/m2)
     REAL                                :: BGAP         ! between gap fraction
     REAL                                :: WGAP         ! within gap fraction
     REAL                                :: TGV          ! under canopy ground temperature[K]
@@ -402,6 +418,10 @@ CONTAINS
 
 ! Local terms
 
+    REAL, DIMENSION(1:60)               :: gecros1d     !  gecros crop
+    REAL                                :: gecros_dd ,gecros_tbem,gecros_emb ,gecros_ema, &
+                                           gecros_ds1,gecros_ds2 ,gecros_ds1x,gecros_ds2x 
+
     REAL                                :: FSR          ! total reflected solar radiation (w/m2)
     REAL, DIMENSION(-2:0)               :: FICEOLD      ! snow layer ice fraction []
     REAL                                :: CO2PP        ! CO2 partial pressure [Pa]
@@ -429,6 +449,10 @@ CONTAINS
     INTEGER, PARAMETER                  :: NSNOW = 3    ! number of snow layers fixed to 3
     REAL, PARAMETER                     :: undefined_value = -1.E36
     
+    REAL, DIMENSION( 1:nsoil ) :: SAND
+    REAL, DIMENSION( 1:nsoil ) :: CLAY
+    REAL, DIMENSION( 1:nsoil ) :: ORGM
+    
     type(noahmp_parameters) :: parameters
 
 
@@ -436,7 +460,7 @@ CONTAINS
 
     CALL NOAHMP_OPTIONS(IDVEG  ,IOPT_CRS  ,IOPT_BTR  ,IOPT_RUN  ,IOPT_SFC  ,IOPT_FRZ , &
                      IOPT_INF  ,IOPT_RAD  ,IOPT_ALB  ,IOPT_SNF  ,IOPT_TBOT, IOPT_STC , &
-		     IOPT_RSF )
+		     IOPT_RSF  ,IOPT_SOIL ,IOPT_PEDO ,IOPT_CROP )
 
     IPRINT    =  .false.                     ! debug printout
 
@@ -504,7 +528,16 @@ CONTAINS
        LAT    = XLAT  (I,J)                           ! latitude [rad]
        Z_ML   = 0.5*DZ8W(I,1,J)                       ! DZ8W: thickness of full levels; ZLVL forcing height [m]
        VEGTYP = IVGTYP(I,J)                           ! vegetation type
-       SOILTYP= ISLTYP(I,J)                           ! soil type
+       if(iopt_soil == 1) then
+         SOILTYP= ISLTYP(I,J)                         ! soil type same in all layers
+       elseif(iopt_soil == 2) then
+         SOILTYP(1) = nint(SOILCL1(I,J))              ! soil type in layer1
+         SOILTYP(2) = nint(SOILCL2(I,J))              ! soil type in layer2
+         SOILTYP(3) = nint(SOILCL3(I,J))              ! soil type in layer3
+         SOILTYP(4) = nint(SOILCL4(I,J))              ! soil type in layer4
+       elseif(iopt_soil == 3) then
+         SOILTYP= ISLTYP(I,J)                         ! to initialize with default
+       end if 
        FVEG   = VEGFRA(I,J)/100.                      ! vegetation fraction [0-1]
        FVGMAX = VEGMAX (I,J)/100.                     ! Vegetation fraction annual max [0-1]
        TBOT = TMN(I,J)                                ! Fixed deep soil temperature for land
@@ -520,8 +553,8 @@ CONTAINS
        PRCP   = PRECIP_IN (I,J) / DT                  ! timestep total precip rate (glacier) [mm/s]! MB: v3.7
 
        CROPTYPE = 0
-       IF (IDVEG == 10 .AND. VEGTYP == ISCROP_TABLE) CROPTYPE = DEFAULT_CROP_TABLE ! default croptype is generic dynamic vegetation crop
-       IF (IDVEG == 10 .AND. CROPCAT(I,J) > 0) THEN
+       IF (IOPT_CROP > 0 .AND. VEGTYP == ISCROP_TABLE) CROPTYPE = DEFAULT_CROP_TABLE ! default croptype is generic dynamic vegetation crop
+       IF (IOPT_CROP > 0 .AND. CROPCAT(I,J) > 0) THEN
          CROPTYPE = CROPCAT(I,J)                      ! crop type
 	 VEGTYP = ISCROP_TABLE
          FVGMAX = 0.95
@@ -595,13 +628,41 @@ CONTAINS
        SMCEQ(       1:NSOIL) = SMOISEQ (I,       1:NSOIL,J)
        SMCWTD                = SMCWTDXY(I,J)
        RECH                  = 0.
-       DEEPRECH              = 0.
+       DEEPRECH              = 0.  
+
+       if(iopt_crop == 2) then   ! gecros crop model
+
+         gecros1d(1:60)      = gecros_state(I,1:60,J)       ! Gecros variables 2D -> local
+         
+         if(croptype == 1) then
+           gecros_dd   =  2.5
+           gecros_tbem =  2.0
+           gecros_emb  = 10.2 
+           gecros_ema  = 40.0
+           gecros_ds1  =  2.1 !BBCH 92
+           gecros_ds2  =  2.0 !BBCH 90
+           gecros_ds1x =  0.0
+           gecros_ds2x = 10.0
+         end if
+           
+         if(croptype == 2) then
+           gecros_dd   =  5.0
+           gecros_tbem =  8.0
+           gecros_emb  = 15.0 
+           gecros_ema  =  6.0
+           gecros_ds1  =  1.78  !BBCH 85
+           gecros_ds2  =  1.63  !BBCH 80
+           gecros_ds1x =  0.0
+           gecros_ds2x = 14.0
+         end if
+
+       end if 
 
        SLOPETYP     = 1                               ! set underground runoff slope term
        IST          = 1                               ! MP surface type: 1 = land; 2 = lake
        SOILCOLOR    = 4                               ! soil color: assuming a middle color category ?????????
 
-       IF(SOILTYP == 14 .AND. XICE(I,J) == 0.) THEN
+       IF(any(SOILTYP == 14) .AND. XICE(I,J) == 0.) THEN
           IF(IPRINT) PRINT *, ' SOIL TYPE FOUND TO BE WATER AT A LAND-POINT'
           IF(IPRINT) PRINT *, i,j,'RESET SOIL in surfce.F'
           SOILTYP = 7
@@ -634,11 +695,21 @@ CONTAINS
 
        CALL TRANSFER_MP_PARAMETERS(VEGTYP,SOILTYP,SLOPETYP,SOILCOLOR,CROPTYPE,parameters)
        
+       if(iopt_soil == 3 .and. .not. parameters%urban_flag) then
+         
+	sand = 0.01 * soilcomp(i,1:4,j)
+	clay = 0.01 * soilcomp(i,5:8,j)
+        orgm = 0.0
+
+        if(opt_pedo == 1) call pedotransfer_sr2006(nsoil,sand,clay,orgm,parameters)
+
+       end if
+
        GRAIN = GRAINXY (I,J)                ! mass of grain XING [g/m2]
        GDD   = GDDXY (I,J)                  ! growing degree days XING
        PGS   = PGSXY (I,J)                  ! growing degree days XING
 
-       if(idveg == 10 .and. croptype > 0) then
+       if(iopt_crop == 1 .and. croptype > 0) then
          parameters%PLTDAY = PLANTING(I,J)
 	 parameters%HSDAY  = HARVEST (I,J)
 	 parameters%GDDS1  = SEASON_GDD(I,J) / 1770.0 * parameters%GDDS1
@@ -740,6 +811,10 @@ CONTAINS
          SAV    = undefined_value 
          RSSUN  = undefined_value 
          RSSHA  = undefined_value 
+         RB     = undefined_value
+         LAISUN = undefined_value
+         LAISHA = undefined_value
+         RS(I,J)= undefined_value
          BGAP   = undefined_value 
          WGAP   = undefined_value 
          TGV    = undefined_value
@@ -787,6 +862,7 @@ CONTAINS
             CM      , CH      , TAUSS   ,                               & ! IN/OUT : 
             GRAIN   , GDD     , PGS     ,                               & ! IN/OUT 
             SMCWTD  ,DEEPRECH , RECH    ,                               & ! IN/OUT :
+            GECROS1D,                                                   & ! IN/OUT :
             Z0WRF   ,                                                   &
             FSA     , FSR     , FIRA    , FSH     , SSOIL   , FCEV    , & ! OUT : 
             FGEV    , FCTR    , ECAN    , ETRAN   , ESOIL   , TRAD    , & ! OUT : 
@@ -798,7 +874,7 @@ CONTAINS
             SHG     , SHC     , SHB     , EVG     , EVB     , GHV     , & ! OUT :
 	    GHB     , IRG     , IRC     , IRB     , TR      , EVC     , & ! OUT :
 	    CHLEAF  , CHUC    , CHV2    , CHB2    , FPICE   , PAHV    , & 
-            PAHG    , PAHB    , PAH                                     &
+            PAHG    , PAHB    , PAH     , LAISUN  , LAISHA  , RB        &
 #ifdef WRF_HYDRO
             , sfcheadrt(i,j)                               &
 #endif
@@ -898,6 +974,17 @@ CONTAINS
              SAGXY    (I,J)                = SAG
              RSSUNXY  (I,J)                = RSSUN
              RSSHAXY  (I,J)                = RSSHA
+             LAISUN                        = MAX(LAISUN, 0.0)
+             LAISHA                        = MAX(LAISHA, 0.0)
+             RB                            = MAX(RB, 0.0)
+! New Calculation of total Canopy/Stomatal Conductance Based on Bonan et al. (2011) 
+! -- Inverse of Canopy Resistance (below)
+             IF(RSSUN .le. 0.0 .and. RSSHA .le. 0.0) THEN
+                RS    (I,J)                = 0.0
+             ELSE
+                RS    (I,J)                = ((1.0/(RSSUN+RB)*LAISUN) + ((1.0/(RSSHA+RB))*LAISHA))
+                RS    (I,J)                = 1.0/RS(I,J) !Resistance
+             ENDIF
              BGAPXY   (I,J)                = BGAP
              WGAPXY   (I,J)                = WGAP
              TGVXY    (I,J)                = TGV
@@ -928,6 +1015,20 @@ CONTAINS
              GDDXY    (I,J) = GDD   !XING 
 	     PGSXY    (I,J) = PGS
 
+             if(iopt_crop == 2) then   ! gecros crop model
+
+               !*** Check for harvest
+               if ((gecros1d(1) >= gecros_ds1).and.(gecros1d(42) < 0)) then   
+                 if (checkIfHarvest(gecros_state, DT, gecros_ds1, gecros_ds2, gecros_ds1x, &
+                     gecros_ds2x) == 1) then
+           
+                   call gecros_reinit(gecros1d)
+                 endif
+               endif                  
+
+               gecros_state (i,1:60,j)     = gecros1d(1:60)
+             end if 
+ 
           ENDIF                                                         ! endif of land-sea test
 
       ENDDO ILOOP                                                       ! of I loop
@@ -945,7 +1046,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
   implicit none
 
   INTEGER, INTENT(IN)    :: VEGTYPE
-  INTEGER, INTENT(IN)    :: SOILTYPE
+  INTEGER, INTENT(IN)    :: SOILTYPE(4)
   INTEGER, INTENT(IN)    :: SLOPETYPE
   INTEGER, INTENT(IN)    :: SOILCOLOR
   INTEGER, INTENT(IN)    :: CROPTYPE
@@ -956,6 +1057,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
   REAL    :: REFKDT
   REAL    :: FRZK
   REAL    :: FRZFACT
+  INTEGER :: ISOIL
 
   parameters%ISWATER   =   ISWATER_TABLE
   parameters%ISBARREN  =  ISBARREN_TABLE
@@ -1102,16 +1204,19 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
 !  Transfer soil parameters
 ! ----------------------------------------------------------------------
 
-    parameters%BEXP   = BEXP_TABLE   (SOILTYPE)
-    parameters%DKSAT  = DKSAT_TABLE  (SOILTYPE)
-    parameters%DWSAT  = DWSAT_TABLE  (SOILTYPE)
-    parameters%F1     = F1_TABLE     (SOILTYPE)
-    parameters%PSISAT = PSISAT_TABLE (SOILTYPE)
-    parameters%QUARTZ = QUARTZ_TABLE (SOILTYPE)
-    parameters%SMCDRY = SMCDRY_TABLE (SOILTYPE)
-    parameters%SMCMAX = SMCMAX_TABLE (SOILTYPE)
-    parameters%SMCREF = SMCREF_TABLE (SOILTYPE)
-    parameters%SMCWLT = SMCWLT_TABLE (SOILTYPE)
+    do isoil = 1, size(soiltype)
+      parameters%BEXP(isoil)   = BEXP_TABLE   (SOILTYPE(isoil))
+      parameters%DKSAT(isoil)  = DKSAT_TABLE  (SOILTYPE(isoil))
+      parameters%DWSAT(isoil)  = DWSAT_TABLE  (SOILTYPE(isoil))
+      parameters%PSISAT(isoil) = PSISAT_TABLE (SOILTYPE(isoil))
+      parameters%QUARTZ(isoil) = QUARTZ_TABLE (SOILTYPE(isoil))
+      parameters%SMCDRY(isoil) = SMCDRY_TABLE (SOILTYPE(isoil))
+      parameters%SMCMAX(isoil) = SMCMAX_TABLE (SOILTYPE(isoil))
+      parameters%SMCREF(isoil) = SMCREF_TABLE (SOILTYPE(isoil))
+      parameters%SMCWLT(isoil) = SMCWLT_TABLE (SOILTYPE(isoil))
+    end do
+    
+    parameters%F1     = F1_TABLE(SOILTYPE(1))
     parameters%REFDK  = REFDK_TABLE
     parameters%REFKDT = REFKDT_TABLE
 
@@ -1136,14 +1241,127 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
 
 ! adjust FRZK parameter to actual soil type: FRZK * FRZFACT
 
-    IF(SOILTYPE /= 14) then
+    IF(SOILTYPE(1) /= 14) then
       FRZFACT = (parameters%SMCMAX(1) / parameters%SMCREF(1)) * (0.412 / 0.468)
       parameters%FRZX = FRZK * FRZFACT
     END IF
 
  END SUBROUTINE TRANSFER_MP_PARAMETERS
 
-  SUBROUTINE NOAHMP_INIT ( MMINLU, SNOW , SNOWH , CANWAT , ISLTYP ,   IVGTYP, &
+SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
+
+  use module_sf_noahmplsm
+  use noahmp_tables
+        
+  integer,                    intent(in   ) :: nsoil     ! number of soil layers
+  real, dimension( 1:nsoil ), intent(inout) :: sand
+  real, dimension( 1:nsoil ), intent(inout) :: clay
+  real, dimension( 1:nsoil ), intent(inout) :: orgm
+    
+  real, dimension( 1:nsoil ) :: theta_1500t
+  real, dimension( 1:nsoil ) :: theta_1500
+  real, dimension( 1:nsoil ) :: theta_33t
+  real, dimension( 1:nsoil ) :: theta_33
+  real, dimension( 1:nsoil ) :: theta_s33t
+  real, dimension( 1:nsoil ) :: theta_s33
+  real, dimension( 1:nsoil ) :: psi_et
+  real, dimension( 1:nsoil ) :: psi_e
+    
+  type(noahmp_parameters), intent(inout) :: parameters
+
+  do k = 1,4
+    if(sand(k) <= 0 .or. clay(k) <= 0) then
+      sand(k) = 0.41
+      clay(k) = 0.18
+    end if
+    if(orgm(k) <= 0 ) orgm(k) = 0.0
+  end do
+        
+  theta_1500t =   sr2006_theta_1500t_a*sand       &
+                + sr2006_theta_1500t_b*clay       &
+                + sr2006_theta_1500t_c*orgm       &
+                + sr2006_theta_1500t_d*sand*orgm  &
+                + sr2006_theta_1500t_e*clay*orgm  &
+                + sr2006_theta_1500t_f*sand*clay  &
+                + sr2006_theta_1500t_g
+
+  theta_1500  =   theta_1500t                      &
+                + sr2006_theta_1500_a*theta_1500t  &
+                + sr2006_theta_1500_b
+
+  theta_33t   =   sr2006_theta_33t_a*sand       &
+                + sr2006_theta_33t_b*clay       &
+                + sr2006_theta_33t_c*orgm       &
+                + sr2006_theta_33t_d*sand*orgm  &
+                + sr2006_theta_33t_e*clay*orgm  &
+                + sr2006_theta_33t_f*sand*clay  &
+                + sr2006_theta_33t_g
+
+  theta_33    =   theta_33t                              &
+                + sr2006_theta_33_a*theta_33t*theta_33t  &
+                + sr2006_theta_33_b*theta_33t            &
+                + sr2006_theta_33_c
+
+  theta_s33t  =   sr2006_theta_s33t_a*sand      &
+                + sr2006_theta_s33t_b*clay      &
+                + sr2006_theta_s33t_c*orgm      &
+                + sr2006_theta_s33t_d*sand*orgm &
+                + sr2006_theta_s33t_e*clay*orgm &
+                + sr2006_theta_s33t_f*sand*clay &
+                + sr2006_theta_s33t_g
+
+  theta_s33   = theta_s33t                       &
+                + sr2006_theta_s33_a*theta_s33t  &
+                + sr2006_theta_s33_b
+
+  psi_et      =   sr2006_psi_et_a*sand           &
+                + sr2006_psi_et_b*clay           &
+                + sr2006_psi_et_c*theta_s33      &
+                + sr2006_psi_et_d*sand*theta_s33 &
+                + sr2006_psi_et_e*clay*theta_s33 &
+                + sr2006_psi_et_f*sand*clay      &
+                + sr2006_psi_et_g
+ 
+  psi_e       =   psi_et                        &
+                + sr2006_psi_e_a*psi_et*psi_et  &
+                + sr2006_psi_e_b*psi_et         &
+                + sr2006_psi_e_c
+    
+  parameters%smcwlt = theta_1500
+  parameters%smcref = theta_33
+  parameters%smcmax =   theta_33    &
+                      + theta_s33            &
+                      + sr2006_smcmax_a*sand &
+                      + sr2006_smcmax_b
+
+  parameters%bexp   = 3.816712826 / (log(theta_33) - log(theta_1500) )
+  parameters%psisat = psi_e
+  parameters%dksat  = 1930.0 * (parameters%smcmax - theta_33) ** (3.0 - 1.0/parameters%bexp)
+  parameters%quartz = sand
+    
+! Units conversion
+    
+  parameters%psisat = max(0.1,parameters%psisat)     ! arbitrarily impose a limit of 0.1kpa
+  parameters%psisat = 0.101997 * parameters%psisat   ! convert kpa to m
+  parameters%dksat  = parameters%dksat / 3600000.0   ! convert mm/h to m/s
+  parameters%dwsat  = parameters%dksat * parameters%psisat *parameters%bexp / parameters%smcmax  ! units should be m*m/s
+  parameters%smcdry = parameters%smcwlt
+  
+! Introducing somewhat arbitrary limits (based on SOILPARM) to prevent bad things
+  
+  parameters%smcmax = max(0.32 ,min(parameters%smcmax,             0.50 ))
+  parameters%smcref = max(0.17 ,min(parameters%smcref,parameters%smcmax ))
+  parameters%smcwlt = max(0.01 ,min(parameters%smcwlt,parameters%smcref ))
+  parameters%smcdry = max(0.01 ,min(parameters%smcdry,parameters%smcref ))
+  parameters%bexp   = max(2.50 ,min(parameters%bexp,               12.0 ))
+  parameters%psisat = max(0.03 ,min(parameters%psisat,             1.00 ))
+  parameters%dksat  = max(5.e-7,min(parameters%dksat,              1.e-5))
+  parameters%dwsat  = max(1.e-6,min(parameters%dwsat,              3.e-5))
+  parameters%quartz = max(0.05 ,min(parameters%quartz,             0.95 ))
+    
+ END SUBROUTINE PEDOTRANSFER_SR2006
+
+  SUBROUTINE NOAHMP_INIT ( MMINLU, SNOW , SNOWH , CANWAT , ISLTYP ,   IVGTYP, XLAT, &
        TSLB , SMOIS , SH2O , DZS , FNDSOILW , FNDSNOWH ,             &
        TSK, isnowxy , tvxy     ,tgxy     ,canicexy ,         TMN,     XICE,   &
        canliqxy ,eahxy    ,tahxy    ,cmxy     ,chxy     ,                     &
@@ -1156,7 +1374,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
        t2mvxy   ,t2mbxy   ,chstarxy,            &
 !jref:end       
        NSOIL, restart,                 &
-       allowed_to_read , iopt_run,                         &
+       allowed_to_read , iopt_run,  iopt_crop,                        &
        sf_urban_physics,                         &  ! urban scheme
        ids,ide, jds,jde, kds,kde,                &
        ims,ime, jms,jme, kms,kme,                &
@@ -1164,9 +1382,12 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
        smoiseq  ,smcwtdxy ,rechxy   ,deeprechxy, areaxy, dx, dy, msftx, msfty,&     ! Optional groundwater
        wtddt    ,stepwtd  ,dt       ,qrfsxy     ,qspringsxy  , qslatxy    ,  &      ! Optional groundwater
        fdepthxy ,ht     ,riverbedxy ,eqzwt     ,rivercondxy ,pexpxy       ,  &      ! Optional groundwater
-       rechclim                                                             )    ! Optional groundwater
+       rechclim,                                                             &      ! Optional groundwater
+       gecros_state)                                                                ! Optional gecros crop
 
   USE NOAHMP_TABLES
+  use module_sf_gecros, only: seednc,sla0,slnmin,ffat,flig,foac,fmin,npl,seedw,eg,fcrsh,seednc,lnci,cfv
+
 
   IMPLICIT NONE
 
@@ -1176,7 +1397,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
          &                           ims,ime, jms,jme, kms,kme,  &
          &                           its,ite, jts,jte, kts,kte
 
-    INTEGER, INTENT(IN)       ::     NSOIL, iopt_run
+    INTEGER, INTENT(IN)       ::     NSOIL, iopt_run, iopt_crop
 
     LOGICAL, INTENT(IN)       ::     restart,                    &
          &                           allowed_to_read
@@ -1203,6 +1424,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
     LOGICAL, INTENT(IN)       ::     FNDSOILW,                   &
          &                           FNDSNOWH
 
+    REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: XLAT         !latitude
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: TSK         !skin temperature (k)
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: TMN         !deep soil temperature (k)
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) :: XICE         !sea ice fraction
@@ -1259,6 +1481,8 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT), OPTIONAL :: PEXPXY      !factor for river conductance
     REAL, DIMENSION(ims:ime,jms:jme), INTENT(IN) , OPTIONAL :: rechclim
 
+    REAL, DIMENSION(ims:ime,60,jms:jme), INTENT(INOUT),   OPTIONAL :: gecros_state                                     ! Optional gecros crop
+
     INTEGER,  INTENT(OUT) , OPTIONAL :: STEPWTD
     REAL, INTENT(IN) , OPTIONAL :: DT, WTDDT
 
@@ -1274,6 +1498,10 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
 
     REAL                      :: BEXP, SMCMAX, PSISAT
     REAL                      :: FK, masslai,masssai
+    
+! gecros local variables
+    REAL ::  hti,rdi,fpro,lncmin,fcar,cfo,clvi,crti,ygo,nlvi,laii,nrti,slnbi
+
 
     REAL, PARAMETER           :: BLIM  = 5.5
     REAL, PARAMETER           :: HLICE = 3.335E5
@@ -1292,6 +1520,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
     call read_mp_rad_parameters()
     call read_mp_global_parameters()
     call read_mp_crop_parameters()
+    call read_mp_optional_parameters()
 
     IF( .NOT. restart ) THEN
 
@@ -1467,42 +1696,75 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
              fastcpxy   (I,J) = 1000.0                         !
              grainxy    (I,J) = 1E-10
              gddxy      (I,J) = 0    
-	     cropcat    (i,j) = default_crop_table
 
-	     if(croptype(i,5,j) >= 0.5) then
-               rtmassxy(i,j) = 0.0
-               woodxy  (i,j) = 0.0                    
+! Initialize crop for Liu crop model
 
-	       if(    croptype(i,1,j) > croptype(i,2,j) .and. &
-		      croptype(i,1,j) > croptype(i,3,j) .and. &
-		      croptype(i,1,j) > croptype(i,4,j) ) then   ! choose corn
+	     if(iopt_crop == 1 ) then
+	       cropcat    (i,j) = default_crop_table
+               if(croptype(i,5,j) >= 0.5) then
+                 rtmassxy(i,j) = 0.0
+                 woodxy  (i,j) = 0.0                    
+
+	         if(    croptype(i,1,j) > croptype(i,2,j) .and. &
+		        croptype(i,1,j) > croptype(i,3,j) .and. &
+		        croptype(i,1,j) > croptype(i,4,j) ) then   ! choose corn
 
 		   cropcat (i,j) = 1
                    lfmassxy(i,j) =    lai(i,j)/0.035
                    stmassxy(i,j) = xsaixy(i,j)/0.003
 
-	       elseif(croptype(i,2,j) > croptype(i,1,j) .and. &
-		      croptype(i,2,j) > croptype(i,3,j) .and. &
-		      croptype(i,2,j) > croptype(i,4,j) ) then   ! choose soybean
+	         elseif(croptype(i,2,j) > croptype(i,1,j) .and. &
+		        croptype(i,2,j) > croptype(i,3,j) .and. &
+		        croptype(i,2,j) > croptype(i,4,j) ) then   ! choose soybean
 
 		   cropcat (i,j) = 2
                    lfmassxy(i,j) =    lai(i,j)/0.015
                    stmassxy(i,j) = xsaixy(i,j)/0.003
 
-	       else
+	         else
 
 		   cropcat (i,j) = default_crop_table
                    lfmassxy(i,j) =    lai(i,j)/0.035
                    stmassxy(i,j) = xsaixy(i,j)/0.003
 
+	         end if
+
+	       end if
+	     end if
+
+! Initialize cropcat for gecros crop model
+
+	     if(iopt_crop == 2) then
+	       cropcat    (i,j) = 0
+               if(croptype(i,5,j) >= 0.5) then
+                  if(croptype(i,3,j) > 0.0)             cropcat(i,j) = 1 ! if any wheat, set to wheat
+                  if(croptype(i,1,j) > croptype(i,3,j)) cropcat(i,j) = 2 ! change to maize
 	       end if
 
-	     end if
+               hti    = 0.01
+               rdi    = 10.
+               fpro   = 6.25*seednc
+               lncmin = sla0*slnmin
+               fcar   = 1.-fpro-ffat-flig-foac-fmin
+               cfo    = 0.444*fcar+0.531*fpro+0.774*ffat+0.667*flig+0.368*foac
+               clvi   = npl * seedw * cfo * eg * fcrsh
+               crti   = npl * seedw * cfo * eg * (1.-fcrsh)
+               ygo    = cfo/(1.275*fcar+1.887*fpro+3.189*ffat+2.231*flig+0.954* &
+                        foac)*30./12.
+               nlvi   = min(0.75 * npl * seedw * eg * seednc, lnci * clvi/cfv)
+               laii   = clvi/cfv*sla0
+               nrti   = npl * seedw * eg * seednc - nlvi
+               slnbi  = nlvi/laii
+    
+               call gecros_init(xlat(i,j),hti,rdi,clvi,crti,nlvi,laii,nrti,slnbi,gecros_state(i,:,j))
+
+             end if
 
 	   END IF
 
           enddo
        enddo
+       
 
        ! Given the soil layer thicknesses (in DZS), initialize the soil layer
        ! depths from the surface.
@@ -1546,21 +1808,13 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
              STEPWTD = nint(WTDDT*60./DT)
              STEPWTD = max(STEPWTD,1)
 
-              CALL groundwater_init ( & 
-      &       nsoil, zsoil , dzs  ,isltyp, ivgtyp,wtddt , &
-      &       fdepthxy, ht, riverbedxy, eqzwt, rivercondxy, pexpxy , areaxy, zwtxy,   &
-      &       smois,sh2o, smoiseq, smcwtdxy, deeprechxy, rechxy, qslatxy, qrfsxy, qspringsxy, &
-      &       rechclim  ,                                   &
-      &       ids,ide, jds,jde, kds,kde,                    &
-      &       ims,ime, jms,jme, kms,kme,                    &
-      &       its,ite, jts,jte, kts,kte                     )
-
           ELSE
              CALL wrf_error_fatal ('Not enough fields to use groundwater option in Noah-MP')
           END IF
        endif
 
     ENDIF
+    
   END SUBROUTINE NOAHMP_INIT
 
 !------------------------------------------------------------------------------------------
@@ -1670,19 +1924,27 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
 ! ==================================================================================================
 ! ----------------------------------------------------------------------
     SUBROUTINE GROUNDWATER_INIT (   &
-            &            NSOIL , ZSOIL , DZS, ISLTYP, IVGTYP, WTDDT , &
+            &            GRID, NSOIL , DZS, ISLTYP, IVGTYP, WTDDT , &
             &            FDEPTH, TOPO, RIVERBED, EQWTD, RIVERCOND, PEXP , AREA ,WTD ,  &
             &            SMOIS,SH2O, SMOISEQ, SMCWTDXY, DEEPRECHXY, RECHXY ,  &
             &            QSLATXY, QRFSXY, QSPRINGSXY,                  &
             &            rechclim  ,                                   &
             &            ids,ide, jds,jde, kds,kde,                    &
             &            ims,ime, jms,jme, kms,kme,                    &
+            &            ips,ipe, jps,jpe, kps,kpe,                    &
             &            its,ite, jts,jte, kts,kte                     )
 
 
   USE NOAHMP_TABLES, ONLY : BEXP_TABLE,SMCMAX_TABLE,PSISAT_TABLE,SMCWLT_TABLE,DWSAT_TABLE,DKSAT_TABLE, &
                                 ISURBAN_TABLE, ISICE_TABLE ,ISWATER_TABLE
   USE module_sf_noahmp_groundwater, ONLY : LATERALFLOW
+  USE module_domain, only: domain
+#if (EM_CORE == 1)
+#ifdef DM_PARALLEL
+    USE module_dm        , ONLY : ntasks_x,ntasks_y,local_communicator,mytask,ntasks
+    USE module_comm_dm , ONLY : halo_em_hydro_noahmp_sub
+#endif
+#endif
 
 ! ----------------------------------------------------------------------
   IMPLICIT NONE
@@ -1690,10 +1952,12 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
 
     INTEGER,  INTENT(IN   )   ::     ids,ide, jds,jde, kds,kde,  &
          &                           ims,ime, jms,jme, kms,kme,  &
+         &                           ips,ipe, jps,jpe, kps,kpe,  &
          &                           its,ite, jts,jte, kts,kte
+    TYPE(domain) , TARGET :: grid                             ! state
     INTEGER, INTENT(IN)                              :: NSOIL
     REAL,   INTENT(IN)                               ::     WTDDT
-    REAL,    INTENT(IN), DIMENSION(1:NSOIL)          :: ZSOIL,DZS
+    REAL,    INTENT(IN), DIMENSION(1:NSOIL)          :: DZS
     INTEGER, INTENT(IN), DIMENSION(ims:ime, jms:jme) :: ISLTYP, IVGTYP
     REAL,    INTENT(IN), DIMENSION(ims:ime, jms:jme) :: FDEPTH, TOPO , AREA
     REAL,    INTENT(IN), DIMENSION(ims:ime, jms:jme) :: rechclim 
@@ -1711,14 +1975,21 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
                                                            QRFSXY, &
                                                            QSPRINGSXY  
 ! local
-    INTEGER  :: I,J,K,ITER,itf,jtf, NITER, NCOUNT
+    INTEGER  :: I,J,K,ITER,itf,jtf, NITER, NCOUNT,NS
     REAL :: BEXP,SMCMAX,PSISAT,SMCWLT,DWSAT,DKSAT
     REAL :: FRLIQ,SMCEQDEEP
     REAL :: DELTAT,RCOND,TOTWATER
     REAL :: AA,BBB,CC,DD,DX,FUNC,DFUNC,DDZ,EXPON,SMC,FLUX
-    REAL, DIMENSION(1:NSOIL) :: SMCEQ
+    REAL, DIMENSION(1:NSOIL) :: SMCEQ,ZSOIL
     REAL,      DIMENSION( ims:ime, jms:jme )    :: QLAT, QRF
     INTEGER,   DIMENSION( ims:ime, jms:jme )    :: LANDMASK !-1 for water (ice or no ice) and glacial areas, 1 for land where the LSM does its soil moisture calculations
+
+       ! Given the soil layer thicknesses (in DZS), calculate the soil layer
+       ! depths from the surface.
+       ZSOIL(1)         = -DZS(1)          ! negative
+       DO NS=2, NSOIL
+          ZSOIL(NS)       = ZSOIL(NS-1) - DZS(NS)
+       END DO
 
 
        itf=min0(ite,ide-1)
@@ -1737,32 +2008,50 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
 
 !readjust the raw aggregated water table from hires, so that it is better compatible with topography
 
- DO NITER=1,500
+!use WTD here, to use the lateral communication routine
+    WTD=EQWTD
 
     NCOUNT=0
 
+ DO NITER=1,500
+
+#if (EM_CORE == 1)
+#ifdef DM_PARALLEL
+#     include "HALO_EM_HYDRO_NOAHMP.inc"
+#endif
+#endif
+
 !Calculate lateral flow
 
+IF(NCOUNT.GT.0.OR.NITER.eq.1)THEN
     QLAT = 0.
-    CALL LATERALFLOW(ISLTYP,EQWTD,QLAT,FDEPTH,TOPO,LANDMASK,DELTAT,AREA       &
+    CALL LATERALFLOW(ISLTYP,WTD,QLAT,FDEPTH,TOPO,LANDMASK,DELTAT,AREA       &
                         ,ids,ide,jds,jde,kds,kde                      & 
                         ,ims,ime,jms,jme,kms,kme                      &
                         ,its,ite,jts,jte,kts,kte                      )
 
+    NCOUNT=0
     DO J=jts,jtf
        DO I=its,itf
           IF(LANDMASK(I,J).GT.0)THEN
             IF(QLAT(i,j).GT.1.e-2)THEN
                  NCOUNT=NCOUNT+1
-                 EQWTD(i,j)=min(EQWTD(i,j)+0.25,0.)
+                 WTD(i,j)=min(WTD(i,j)+0.25,0.)
             ENDIF
           ENDIF
         ENDDO
      ENDDO
-
-   IF(NCOUNT.EQ.0)EXIT
+ENDIF
 
  ENDDO
+
+#if (EM_CORE == 1)
+#ifdef DM_PARALLEL
+#     include "HALO_EM_HYDRO_NOAHMP.inc"
+#endif
+#endif
+
+EQWTD=WTD
 
 !after adjusting, where qlat > 1cm/year now wtd is at the surface.
 !it may still happen that qlat + rech > 0 and eqwtd-rbed <0. There the wtd can
@@ -1799,11 +2088,6 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
 !make riverbed to be height down from the surface instead of above sea level
 
     RIVERBED = min( RIVERBED-TOPO, 0.)
-
-!now inititalize wtd
-
-    WTD = EQWTD
-
 
 !now recompute lateral flow and flow to rivers to initialize deep soil moisture
 
@@ -1985,8 +2269,192 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
    ENDDO
 
 END  SUBROUTINE EQSMOISTURE
-!
+
+! gecros initialization routines
+
+SUBROUTINE gecros_init(xlat,hti,rdi,clvi,crti,nlvi,laii,nrti,slnbi,state_gecros)   
+implicit none
+REAL, INTENT(IN)     :: HTI
+REAL, INTENT(IN)     :: RDI
+REAL, INTENT(IN)     :: CLVI
+REAL, INTENT(IN)     :: CRTI
+REAL, INTENT(IN)     :: NLVI
+REAL, INTENT(IN)     :: LAII
+REAL, INTENT(IN)     :: NRTI
+REAL, INTENT(IN)     :: SLNBI
+REAL, INTENT(IN)     :: XLAT
+REAL, DIMENSION(1:60), INTENT(INOUT) :: STATE_GECROS
+
+  !Inititalization of Gecros variables  
+  STATE_GECROS(1) = 0.      !DS
+  STATE_GECROS(2) = 0.      !CTDURDI, HTI, CLVI, CRTI, NLVI, LAII, NRTI, SLNBI,
+  STATE_GECROS(3) = 0.      !CVDU
+  STATE_GECROS(4) = CLVI    !CLV 
+  STATE_GECROS(5) = 0.      !CLVD  
+  STATE_GECROS(6) = 0.      !CSST  
+  STATE_GECROS(7) = 0.      !CSO
+  STATE_GECROS(8) = CRTI    !CSRT 
+  STATE_GECROS(9) =  0.     !CRTD 
+  STATE_GECROS(10) = 0.     !CLVDS 
+  STATE_GECROS(11) = NRTI   !NRT
+  STATE_GECROS(12) = 0.     !NST
+  STATE_GECROS(13) = NLVI   !NLV 
+  STATE_GECROS(14) = 0.     !NSO
+  STATE_GECROS(15) = NLVI   !TNLV
+  STATE_GECROS(16) = 0.     !NLVD
+  STATE_GECROS(17) = 0.     !NRTD
+  STATE_GECROS(18) = 0.     !CRVS
+  STATE_GECROS(19) = 0.     !CRVR
+  STATE_GECROS(20) = 0.     !NREOE
+  STATE_GECROS(21) = 0.     !NREOF
+  STATE_GECROS(22) = 0.     !DCDSR
+  STATE_GECROS(23) = 0.     !DCDTR
+  STATE_GECROS(24) = SLNBI  !SLNB
+  STATE_GECROS(25) = LAII   !LAIC
+  STATE_GECROS(26) = 0.     !RMUL
+  STATE_GECROS(27) = 0.     !NDEMP
+  STATE_GECROS(28) = 0.     !NSUPP
+  STATE_GECROS(29) = 0.     !NFIXT
+  STATE_GECROS(30) = 0.     !NFIXR
+  STATE_GECROS(31) = 0.     !DCDTP
+  STATE_GECROS(32) = 0.01   !HTI
+  STATE_GECROS(33) = RDI    !RDI
+  STATE_GECROS(34) = 0.     !TPCAN
+  STATE_GECROS(35) = 0.     !TRESP
+  STATE_GECROS(36) = 0.     !TNUPT
+  STATE_GECROS(37) = 0.     !LITNT
+  STATE_GECROS(38) = 0.     !daysSinceDS1
+  STATE_GECROS(39) = 0.     !daysSinceDS2
+  STATE_GECROS(40) = -1.    !drilled -1:false, 1:true
+  STATE_GECROS(41) = -1.    !emerged -1:false, 1:true
+  STATE_GECROS(42) = -1.    !harvested -1:false, 1:true
+  STATE_GECROS(43) = 0.     !TTEM
+  STATE_GECROS(44) = XLAT   !GLAT
+  STATE_GECROS(45) = 0.     !WSO
+  STATE_GECROS(46) = 0.     !WSTRAW
+  STATE_GECROS(47) = 0.     !GrainNC
+  STATE_GECROS(48) = 0.     !StrawNC
+  STATE_GECROS(49) = 0.01   !GLAI
+  STATE_GECROS(50) = 0.01   !TLAI
+  STATE_GECROS(51) = HTI    !Fields 51-58 set for reinitialization  
+  STATE_GECROS(52) = RDI    
+  STATE_GECROS(53) = CLVI   
+  STATE_GECROS(54) = CRTI   
+  STATE_GECROS(55) = NRTI   
+  STATE_GECROS(56) = NLVI   
+  STATE_GECROS(57) = SLNBI  
+  STATE_GECROS(58) = LAII   
+    
+END SUBROUTINE gecros_init
+
+SUBROUTINE gecros_reinit(STATE_GECROS)   
+implicit none
+REAL, DIMENSION(1:60), INTENT(INOUT) :: STATE_GECROS
+
+  !Re-inititalization of Gecros variables after harvest
+  STATE_GECROS(1) = 0.               !DS
+  STATE_GECROS(2) = 0.               !CTDU
+  STATE_GECROS(3) = 0.               !CVDU
+  STATE_GECROS(4) = STATE_GECROS(53) !CLV 
+  STATE_GECROS(5) = 0.               !CLVD  
+  STATE_GECROS(6) = 0.               !CSST  
+  STATE_GECROS(7) = 0.               !CSO
+  STATE_GECROS(8) = STATE_GECROS(54) !CRT 
+  STATE_GECROS(9) = 0.               !CRTD 
+  STATE_GECROS(10) = 0.              !CLVDS 
+  STATE_GECROS(11) = STATE_GECROS(55)!NRT
+  STATE_GECROS(12) = 0.              !NST
+  STATE_GECROS(13) = STATE_GECROS(56)!NLV 
+  STATE_GECROS(14) = 0.              !NSO
+  STATE_GECROS(15) = STATE_GECROS(56)!TNLV
+  STATE_GECROS(16) = 0.              !NLVD
+  STATE_GECROS(17) = 0.              !NRTD
+  STATE_GECROS(18) = 0.              !CRVS
+  STATE_GECROS(19) = 0.              !CRVR
+  STATE_GECROS(20) = 0.              !NREOE
+  STATE_GECROS(21) = 0.              !NREOF
+  STATE_GECROS(22) = 0.              !DCDSR
+  STATE_GECROS(23) = 0.              !DCDTR
+  STATE_GECROS(24) = STATE_GECROS(57)!SLNB
+  STATE_GECROS(25) = STATE_GECROS(58)!LAIC
+  STATE_GECROS(26) = 0.              !RMUL
+  STATE_GECROS(27) = 0.              !NDEMP
+  STATE_GECROS(28) = 0.              !NSUPP
+  STATE_GECROS(29) = 0.              !NFIXT
+  STATE_GECROS(30) = 0.              !NFIXR
+  STATE_GECROS(31) = 0.              !DCDTP
+  STATE_GECROS(32) = STATE_GECROS(51)!HT
+  STATE_GECROS(33) = STATE_GECROS(52)!ROOTD
+  STATE_GECROS(34) = 0.              !TPCAN
+  STATE_GECROS(35) = 0.              !TRESP
+  STATE_GECROS(36) = 0.              !TNUPT
+  STATE_GECROS(37) = 0.              !LITNT
+  STATE_GECROS(38) = 0.              !daysSinceDS1
+  STATE_GECROS(39) = 0.              !daysSinceDS2
+  STATE_GECROS(40) = -1.             !drilled -1:false, 1:true
+  STATE_GECROS(41) = -1.             !emerged -1:false, 1:true
+  STATE_GECROS(42) = 1.              !harvested -1:false, 1:true
+  STATE_GECROS(43) = 0.              !TTEM
+  STATE_GECROS(45) = 0.              !WSO
+  STATE_GECROS(46) = 0.              !WSTRAW
+  STATE_GECROS(47) = 0.              !GrainNC
+  STATE_GECROS(48) = 0.              !StrawNC
+  STATE_GECROS(49) = 0.01            !GLAI
+  STATE_GECROS(50) = 0.01            !TLAI
+  
+END SUBROUTINE gecros_reinit
+
+!***Function for HARVEST DATES:
+
+!Determine if crop is to be harvested today
+!function to be called once a day
+!return codes: 0 - no, 1- yes 
+!requires two counters 'daysSinceDS2', 'daysSinceDS1' , zero-initialized to be maintained within caller
+!STATE_GECROS(1) = current DS
+!STATE_GECROS(38)=daysSinceDS1
+!STATE_GECROS(39)=daysSinceDS2
+
+function checkIfHarvest(STATE_GECROS, DT, harvestDS1, harvestDS2, harvestDS1ExtraDays, harvestDS2ExtraDays) 
+implicit none
+real :: DT, harvestDS1, harvestDS2
+real :: daysSinceDS1, daysSinceDS2
+real :: harvestDS1ExtraDays, harvestDS2ExtraDays
+integer :: checkIfHarvest
+REAL, DIMENSION(1:60), INTENT(INOUT) :: STATE_GECROS
+
+
+ !***check whether maturity (DS1) has been reached
+ if (STATE_GECROS(1) >= harvestDS1) then
+ 
+    if (STATE_GECROS(38) >= harvestDS1ExtraDays) then
+        checkIfHarvest=1
+ !if we are > DS1, but not over the limit, increase the counter of days
+    else
+        STATE_GECROS(38) = STATE_GECROS(38) + DT/86400.
+    endif
+ else 
+ 
+ !if maturity has not been reached, but we are close (> DS2)
+ !check the number of days for which we have been > DS2
+ !and harvest in case we are over the limit given for that stage 
+ !(in case that maturity will not be reached at all)
+ 
+ checkIfHarvest=0
+ if (STATE_GECROS(1) >= harvestDS2 ) then
+
+       if (STATE_GECROS(39) >= harvestDS2ExtraDays) then
+           checkIfHarvest=1
+       else !if we are > DS2, but not over the limit, increase the counter of days
+           STATE_GECROS(39) = STATE_GECROS(39) + DT/86400.
+           checkIfHarvest=0
+      endif
+ endif
+ endif
+ return
+end function checkIfHarvest
+
 !------------------------------------------------------------------------------------------
+
   SUBROUTINE noahmp_urban(sf_urban_physics,   NSOIL,         IVGTYP,  ITIMESTEP,            & ! IN : Model configuration 
                                  DT,     COSZ_URB2D,     XLAT_URB2D,                        & ! IN : Time/Space-related
                                 T3D,           QV3D,          U_PHY,      V_PHY,   SWDOWN,  & ! IN : Forcing

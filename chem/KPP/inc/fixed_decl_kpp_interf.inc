@@ -12,7 +12,8 @@
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_moist ),            &
 	        INTENT(IN ) ::                               moist 
 
-
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_aero_srf_area ), &
+	        INTENT(INOUT) ::                             aero_srf_area 
 
      REAL,  DIMENSION( ims:ime , kms:kme , jms:jme ),              &
              INTENT(IN   ) ::                                      &          

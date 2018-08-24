@@ -9,7 +9,9 @@
       SUBROUTINE aerosols_driver (id,curr_secs,ktau,dtstep,ktauc,          &
                config_flags,dtstepc,dx,                                    &
                alt,t_phy,moist,aerwrf,p8w,t8w,p_phy,chem,rho_phy,dz8w,rh,  &
-               z,z_at_w,pbl_h,cldfra,cldfra_mp_all,vbs_nbin,h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,  &
+               z,z_at_w,pbl_h,cldfra,cldfra_mp_all,vbs_nbin,               &
+               gamn2o5,cn2o5,kn2o5,yclno2,snu,sac,          &
+               h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,  &
                cvaro2,cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,vcsulf_old,&
                vdrog3, vdrog3_vbs,brch_ratio,dgnum,dgnumwet,wetdens_ap,    &
                del_h2so4_gasprod,dvmrdt_sv13d,dvmrcwdt_sv13d,              &
@@ -136,6 +138,7 @@
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                    &
          INTENT(INOUT ) ::                                          &
+           gamn2o5,cn2o5,kn2o5,yclno2,snu,sac,                   &
            h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,cvaro1,cvaro2, &
            cvalk1,cvole1,cvapi1,cvapi2,cvlim1,cvlim2,brch_ratio
 
@@ -206,7 +209,7 @@
 !
    cps_select: SELECT CASE(config_flags%chem_opt)
 
-   CASE (GOCART_SIMPLE,GOCARTRACM_KPP,GOCARTRADM2,MOZCART_KPP)
+   CASE (GOCART_SIMPLE,GOCARTRACM_KPP,GOCARTRADM2,MOZCART_KPP,T1_MOZCART_KPP)
       call gocart_aerosols_driver(ktauc,dtstepc,config_flags,t_phy,moist,  &
          chem,rho_phy,dz8w,p8w,dx,g,         &
          ids,ide, jds,jde, kds,kde,                                        &
@@ -288,8 +291,7 @@
             ids,ide, jds,jde, kds,kde,                                  &
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
-
-   CASE ( RACM_SOA_VBS_KPP, RACM_SOA_VBS_AQCHEM_KPP )
+   CASE ( RACM_SOA_VBS_KPP, RACM_SOA_VBS_AQCHEM_KPP, RACM_SOA_VBS_HET_KPP )
        CALL wrf_debug(15,'aerosols_driver calling soa_vbs_driver')
        do ii=its,ite
           do kk=kts,kte
@@ -302,6 +304,7 @@
        enddo
        call soa_vbs_driver ( id,ktauc,dtstepc,t_phy,moist,aerwrf,p8w,t8w, &
             alt,p_phy,chem,rho_phy,dz8w,rh,z,z_at_w,                 &
+            gamn2o5,cn2o5,kn2o5,yclno2,snu,sac,                    &
             h2oaj,h2oai,nu3,ac3,cor3,asulf,ahno3,anh3,               &
             vcsulf_old,vdrog3_vbs,                                   &
             config_flags%kemit,brch_ratio,                           &
@@ -466,7 +469,7 @@
 !
    sum_pm_select: SELECT CASE(config_flags%chem_opt)
 
-   CASE (GOCART_SIMPLE,GOCARTRACM_KPP,GOCARTRADM2,MOZCART_KPP)
+   CASE (GOCART_SIMPLE,GOCARTRACM_KPP,GOCARTRADM2,MOZCART_KPP,T1_MOZCART_KPP)
        CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_gocart')
        CALL sum_pm_gocart (                                            &
             alt, chem,pm2_5_dry, pm2_5_dry_ec, pm10,                   &
@@ -491,8 +494,7 @@
             config_flags%dust_opt,ids,ide, jds,jde, kds,kde,           &
             ims,ime, jms,jme, kms,kme,                                 &
             its,ite, jts,jte, kts,kte                                  )
-
-   CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
+   CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP,RACM_SOA_VBS_HET_KPP)
        CALL wrf_debug(15,'sum_pm_driver: calling sum_pm_soa_vbs')
        CALL sum_pm_soa_vbs (                                           &
             alt, chem, h2oaj, h2oai,                                   &

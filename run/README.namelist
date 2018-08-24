@@ -85,6 +85,8 @@ information on NMM specific settings (http://www.dtcenter.org/wrf-nmm/users)
  output_ready_flag		     = .true.,  ; asks the model to write-out an empty file with the name 'wrfoutReady_d<domain>_<date>.  
                                                   Useful in production runs so that post-processing code can check on the 
                                                   completeness of this file
+ force_use_old_data                  = .false., ; if set to .true., allow WRF Version 3 input data
+                                                  =.false., stop when WRF model detects Version 3 input data
 
 To choose between SI and WPS input to real for EM core:
  auxinput1_inname                    = "met_em.d<domain>.<date>"             ; Input to real from WPS (default since 3.0)
@@ -228,11 +230,11 @@ Namelist variables specifically for the WPS input for real:
                                                 ; 0 = perform traditional trapping interpolation
                                                 ; n = first n eta levels directly use surface level
  maxw_horiz_pres_diff                = 5000     ; Pressure threshold (Pa).  For using the level of max winds, when the
-                                                ; pressure differnce between neighboring values exceeds this maximum,
+                                                ; pressure difference between neighboring values exceeds this maximum,
                                                 ; the variable is NOT inserted into the column for vertical interpolation.
                                                 ; ARW real only.
  trop_horiz_pres_diff                = 5000     ; Pressure threshold (Pa).  For using the tropopause level, when the
-                                                ; pressure differnce between neighboring values exceeds this maximum,
+                                                ; pressure difference between neighboring values exceeds this maximum,
                                                 ; the variable is NOT inserted into the column for vertical interpolation.
                                                 ; ARW real only.
  maxw_above_this_level               = 30000    ; Minimum height (actually it is pressure in Pa) to allow using the 
@@ -247,12 +249,12 @@ Namelist variables specifically for the WPS input for real:
  smooth_cg_topo	                     = .false.  ; Smooth the outer rows and columns of domain 1's topography w.r.t.
                                                 ; the input data
  use_tavg_for_tsk                    = .false.  ; whether to use diurnally averaged surface temp as skin temp. The 
-                                                  diurnall averaged surface temp can be computed using WPS utility
+                                                  diurnally averaged surface temp can be computed using WPS utility
                                                   avg_tsfc.exe. May use this option when SKINTEMP is not present.
- aggregate_lu                        = .false.  ; whetger to aggregate the grass, shrubs, trees in dominant landuse;
+ aggregate_lu                        = .false.  ; whether to aggregate the grass, shrubs, trees in dominant landuse;
                                                   default is false.
  rh2qv_wrt_liquid                    = .true.,  ; whether to compute RH with respect to water (true) or ice (false)
- rh2qv_method                        = 1,       ; which methed to use to computer mixing ratio from RH:
+ rh2qv_method                        = 1,       ; which method to use to computer mixing ratio from RH:
                                                   default is option 1, the old MM5 method; option 2 uses a WMO 
                                                   recommended method (WMO-No. 49, corrigendum, August 2000) - 
                                                   there is a difference between the two methods though small
@@ -261,7 +263,7 @@ Namelist variables specifically for the WPS input for real:
                                                   compared with input data
  hypsometric_opt                     = 2,       ; = 1: default method
                                                   = 2: it uses an alternative way (less biased 
-                                                  when compared agaist input data) to compute height in program 
+                                                  when compared against input data) to compute height in program 
                                                   real and pressure in model (ARW only). 
  p_top_requested                     = 5000     ; p_top (Pa) to use in the model
  ptsgm                               = 42000.   ; FOR NMM:  defines the pressure interface dividing
@@ -276,8 +278,19 @@ Namelist variables specifically for the WPS input for real:
 
 Users may explicitly define full eta levels.  Given are two distributions for 28 and 35 levels.  The number
 of levels must agree with the number of eta surfaces allocated (e_vert).  Users may alternatively request 
-only the number of levels (with e_vert), and the real program will compute values.  The computation assumes
+only the number of levels (with e_vert), and the real program will compute values.  From V4.0 there are
+two methods selected with auto_levels_opt = 1 (old) or 2 (new). The old computation assumes
 a known first several layers, then generates equi-height spaced levels up to the top of the model.
+The new method has surface and upper stretching factors (dz_stretch_s and dz_stretch_u) to stretch levels according to
+log p up to where it reaches the maximum thickness (max_dz) and starting from thickness dzbot.
+The stretching transitions from dzstretch_s to dzstretch_u by the time the thickness reaches max_dz/2.
+
+ max_dz                              = 1000.     ; maximum level thickness allowed (m)
+ auto_levels_opt                     = 1         ; old
+                                     = 2         ; new default (also set dzstretch_s, dzstretch_u, dzbot, max_dz)
+ dzbot                               = 50.       ; thickness of lowest layer (m) for auto_levels_opt=2
+ dzstretch_s                         = 1.3       ; surface stretch factor for auto_levels_opt=2
+ dzstretch_u                         = 1.1       ; upper stretch factor for auto_levels_opt=2
 
  eta_levels                          = 1.000, 0.990, 0.978, 0.964, 0.946,
                                        0.922, 0.894, 0.860, 0.817, 0.766,
@@ -335,7 +348,7 @@ activated, the user must specify a reasonable ocean.  Currently, this is the onl
 available to run the 3d ocean option.
 
  &physics
- sf_ocean_physics                    = 0 (default), Activate ocean model; 1 (mixed layer model), 2 (3d ocean)
+ sf_ocean_physics                    = activate ocean model (0=no, 1=1d mixed layer; 2=3D PWP, no bathymetry)
 
  &domains
  ocean_levels                        = 30,
@@ -358,7 +371,7 @@ available to run the 3d ocean option.
                                         34.6490,   34.6446,   34.6396,   34.6347,   34.6297,   34.6247,
                                         34.6490,   34.6446,   34.6396,   34.6347,   34.6297,   34.6247
 
-Namelist variables for controling the specified moving nest: 
+Namelist variables for controlling the specified moving nest: 
                    Note that this moving nest option needs to be activated at the compile time by adding -DMOVE_NESTS
                    to the ARCHFLAGS. The maximum number of moves, max_moves, is set to 50 
                    but can be modified in source code file frame/module_driver_constants.F.
@@ -372,9 +385,9 @@ Namelist variables for controling the specified moving nest:
                                                   0 means no move. The limitation now is to move only 1 grid cell
                                                   at each move.
 
-Namelist variables for controling the automatic moving nest: 
+Namelist variables for controlling the automatic moving nest: 
                    Note that this moving nest option needs to be activated at the compile time by adding -DMOVE_NESTS
-                   and -DVORTEX_CENTER to the ARCHFLAGS. This option uses an mid-level vortex following algorthm to
+                   and -DVORTEX_CENTER to the ARCHFLAGS. This option uses a mid-level vortex following algorithm to
                    determine the nest move. This option is experimental.
  vortex_interval(max_dom)            = 15       ; how often the new vortex position is computed
  max_vortex_speed(max_dom)           = 40       ; used to compute the search radius for the new vortex position
@@ -495,7 +508,7 @@ Namelist variables for controlling the adaptive time step option:
                                        nssl_rho_qs  = 100.  ! snow density
                                      = 28, aerosol-aware Thompson scheme with water- and ice-friendly aerosol climatology 
                                            (new for V3.6)
-                                       This option has two climatogical aerosol input options:
+                                       This option has two climatological aerosol input options:
                                        use_aero_icbc = .F. : use constant values
                                        use_aero_icbc = .T. : use input from WPS
                                      = 30, HUJI (Hebrew University of Jerusalem, Israel) spectral bin microphysics,
@@ -506,7 +519,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version
 
  For non-zero mp_physics options, to keep Qv .GE. 0, and to set the other moisture
- fields .LT. a critcal value to zero
+ fields .LT. a critical value to zero
 
  mp_zero_out                         = 0,      ; no action taken, no adjustment to any moist field
                                      = 1,      ; except for Qv, all other moist arrays are set to zero
@@ -525,7 +538,9 @@ Namelist variables for controlling the adaptive time step option:
                                                  (only used in very extreme situation)
                                                  default value = 0
                                                  gsfcgce_hail is ignored if gsfcgce_2ice is set to 1 or 2.
- hail_opt                            = 0       ; hail switch for WSM6, WDM6 and Morrison schemes: 0 - off, 1 - on (new in 3.6.1)
+ hail_opt                            = 0       ; hail switch for WSM6 and WDM6 : 0 - off, 1 - on (new in 3.6.1)
+ morr_rimed_ice                      = 1       ; hail switch for Morrison schemes (mp_physics=10 and 40: 0 - off, 1 - on (new in 4.0)
+ clean_atm_diag                      = 0       ; if set to =1, turns on clean sky diagnostics (for chem); default is 0=off
  progn (max_dom)                     = 0       ; switch to use mix-activate scheme (Only for Morrison, WDM6, WDM5, 
                                                  and NSSL_2MOMCCN/NSSL_2MOM
  ccn_conc                            = 1.E8    ; CCN concentration, used by WDM schemes (new in 3.6.1)
@@ -534,7 +549,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1       ; turn off latent heating from a microphysics scheme
  use_mp_re                           = 1       ; whether to use effective radii computed in mp schemes in RRTMG (new in 3.8).
                                                  0: do not use; 1: use effective radii
-                                                 (The mp schemes that compute effective radii are 3,4,6,8,14,16,17-21)
+                                                 (The mp schemes that compute effective radii are 3,4,6,8,14,16,17-21,28)
 
  ra_lw_physics (max_dom)             longwave radiation option
                                      = 0, no longwave radiation
@@ -545,6 +560,7 @@ Namelist variables for controlling the adaptive time step option:
                                           also requires levsiz, paerlev, cam_abs_dim1/2 (see below)
                                      = 4, rrtmg scheme
                                        (Default values for GHG in V3.5: co2vmr=379.e-6, n2ovmr=319.e-9, ch4vmr=1774.e-9)
+                                     = 14, rrtmg-k scheme from KIAPS
                                      = 24, fast rrtmg scheme for GPU and MIC (since 3.7)
                                      = 5, Goddard longwave scheme
                                      = 7, FLG (UCLA) scheme 
@@ -559,6 +575,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 3, cam scheme
                                           also must set levsiz, paerlev, cam_abs_dim1/2 (see below)
                                      = 4, rrtmg scheme
+                                     = 14, rrtmg-k scheme from KIAPS
                                      = 24, fast rrtmg scheme for GPU and MIC (since 3.7)
                                      = 5, Goddard shortwave scheme
                                      = 7, FLG (UCLA) scheme
@@ -710,8 +727,8 @@ Namelist variables for controlling the adaptive time step option:
                                        Note qnc and qni are mixed when scalar_pblmix =1.
  bl_mynn_mixlength                   option to change mixing length formulation in MYNN
                                      0:original as in Nakanishi and Niino 2009, 
-                                     1:RAP/HRRR (default, including BouLac in free atmosphere), 
-                                     2:experimental (includes cloud-specific mixing length and a scale-aware mixing 
+                                     1:RAP/HRRR (including BouLac in free atmosphere), 
+                                     2:experimental (default; includes cloud-specific mixing length and a scale-aware mixing 
                                        length, following Ito et al. 2015, BLM). Option 2 has been well tested with 
                                        the edmf options.
  bl_mynn_cloudpdf                    option to switch to different cloud PDFs to represent subgrid clouds
@@ -720,10 +737,10 @@ Namelist variables for controlling the adaptive time step option:
                                         as opposed to higher order moments ; 
                                      2: from Chaboureau and Bechtold (2002, JAS, with mods, default) 
  bl_mynn_edmf (max_dom)              = 0, default; = 1 activates mass-flux scheme in MYNN 
-                                     1: for StEM; 2: for TEMF; default =0, just regular MYNN. 
+                                     1: (default) for StEM; 2: for TEMF; 0: just regular MYNN. 
                                      Related (hidden) options: 
- bl_mynn_edmf_mom (max_dom)          = 1, default - activates momentum transport in MYNN mass-flux scheme 
-                                     (assuming bl_mynn_edmf > 0); 0=off
+ bl_mynn_edmf_mom (max_dom)          = 1 - activates momentum transport in MYNN mass-flux scheme 
+                                     (assuming bl_mynn_edmf > 0); 0=off (default)
                                      0: no momentum transport; 1: momentum transport activated (default)
  bl_mynn_edmf_tke (max_dom)          = 0, default; = 1 activates TKE transport in MYNN mass-flux scheme 
                                      (assuming bl_mynn_edmf > 0)
@@ -753,10 +770,12 @@ Namelist variables for controlling the adaptive time step option:
                                      = 7, Zhang-McFarlane scheme from CAM5 (CESM 1_0_1)
                                      = 10, Modified Kain-Fritsch scheme with trigger function based on PDFs (ARW only)
                                      = 11, Multi-scale Kain-Fritsch scheme
-                                     = 14, New GFS simplified Arakawa-Schubert scheme from YSU (ARW only)
+                                     = 14, A modified  GFS simplified Arakawa-Schubert scheme that enables NSAS to work 
+                                           in various model grids across gray-zone resolutions (from KIAPS,ARW only)
                                      = 16, A newer Tiedtke scheme
                                      = 94, 2015 GFS Simplified Arakawa-Schubert scheme (HWRF) 
                                      = 95, Previous GFS Simplified Arakawa-Schubert scheme (HWRF) 
+                                     = 96, Previous NEW GFS simplified Arakawa-Schubert scheme from YSU (ARW only)
                                      = 93, Grell-Devenyi ensemble scheme
                                      = 99, previous Kain-Fritsch scheme
 
@@ -798,6 +817,18 @@ Namelist variables for controlling the adaptive time step option:
  minShallowFreq(max_dom)             minimum frequency required before shallow convection is allowed (1.0e-2)
  shcu_aerosols_opt(max_dom)          whether aerosols in shcu:  0=none, 2=prognostic (run with WRF-Chem), 
 
+ For MSKF scheme:
+ aercu_opt                           option to control aerosol interaction in MSKF and Morrison microphysics (mp_physics=40)
+                                     = 0: no aerosol interaction
+                                     = 1: aerosol interaction with MSKF only
+                                     = 2: aerosol interaction with both MSKF and Morrison
+ aercu_fct                           factor to multiply with aerosol amount
+                                     = 1.: default value
+ no_src_types_cu                     = 1        ; number of aerosol species in global aerosol data: 10 for CESM input,
+                                                ; set automatically
+ alevsiz_cu                          = 1        ; number of levels in global aerosol data: 30 for CESM input,
+                                                ; set automatically
+
  ncnvc (max_dom)                     = FOR NMM: number of fundamental timesteps between
                                                 calls to convection; the value is set in Registry.NMM
                                                 but is overridden by namelist value; cudt will be
@@ -835,12 +866,6 @@ Namelist variables for controlling the adaptive time step option:
                                                       on threshold
                                                   3 = with cloud effect, and use cloud fraction option 3, based on
                                                       Sundqvist et al. (1989) (since 3.7)
- cldovrlp                            = 2,       ; RRTMG cloud overlap technique
-                                                  1 = random
-                                                  2 = maximum-random (default)
-                                                  3 = maximum
-                                                  4 = exponential
-                                                  5 = exponential-random
  swrad_scat                          = 1.       ; scattering tuning parameter (default 1. is 1.e-5 m2/kg)
                                                   (works for ra_sw_physics = 1 option only)
  surface_input_source                = 3,	; where landuse and soil category data come from:
@@ -886,11 +911,13 @@ Namelist variables for controlling the adaptive time step option:
                                                 ; namelists in &time_control: auxinput4_interval, auxinput4_end_h,
                                                 ; auxinput4_inname = "wrflowinp_d<domain>", 
                                                 ; and in V3.2 io_form_auxinput4
- usemonalb                           = .true.   ; use monthly albedo map instead of table value
-                                                ; (must be used for NMM and recommended for sst_update=1)
+ usemonalb                           = .false.  ; use monthly albedo map instead of table value
+                                                ; (must be set to true for NMM, and recommended for sst_update=1)
  rdmaxalb                            = .true.   ; use snow albedo from geogrid; false means using values from table
  rdlai2d                             = .false.  ; use LAI from input; false means using values from table
                                                   if sst_update=1, LAI will also be in wrflowinp file
+ dust_emis                           = 0        ; Enable (0=no, 1=yes) surface dust emission scheme to enter mp_physics=28 QNIFA (ice-friendly aerosol variable)
+ erosion_dim                         = 3        ; In conjunction with dust_emis=1, this value can only be set equal to 3 (erodibility information)
  bucket_mm                           = -1.      ; bucket reset value for water accumulations (value in mm, -1.=inactive)
  bucket_J                            = -1.      ; bucket reset value for energy accumulations (value in J, -1.=inactive)
  tmn_update                          = 0        ; update deep soil temperature (1, yes; 0, no)
@@ -899,8 +926,7 @@ Namelist variables for controlling the adaptive time step option:
  slope_rad (max_dom)                 = 0        ; slope effects for solar radiation (1=on, 0=off)
  topo_shading (max_dom)              = 0        ; neighboring-point shadow effects for solar radiation (1=on, 0=off)
  shadlen                             = 25000.   ; max shadow length in meters for topo_shading=1
- sf_ocean_physics                    = 0        ; activate ocean model (0=no, 1=1d mixed layer; 2=3D PWP, no bathy)
-                                                ; works with sf_surface_physics = 1 only
+ sf_ocean_physics                    = 0        ; activate ocean model (0=no, 1=1d mixed layer; 2=3D PWP, no bathymetry)
  oml_hml0                            = 50       ; oml model can be initialized with a constant depth everywhere (m)
  oml_gamma                           = 0.14     ; oml deep water lapse rate (K m-1)
  oml_relaxation_time                 = 0.       ; Relaxation time (in second) of mixed layer ocean model back to original values 
@@ -925,7 +951,7 @@ Namelist variables for controlling the adaptive time step option:
                                                   If fractional_seaice = 1, also set seaice_threshold = 0.
  seaice_albedo_opt                   = 0        ; option to set albedo over sea ice
                                                 ; 0 = seaice albedo is a constant value from namelist option seaice_albedo_default
-                                                ; 1 = seaice albedo is f(Tair,Tskin,Snow) follwing Mills (2011) for Arctic Ocean
+                                                ; 1 = seaice albedo is f(Tair,Tskin,Snow) following Mills (2011) for Arctic Ocean
                                                 ; 2 = seaice albedo read in from input variable ALBSI
  seaice_albedo_default               =  0.65    ; default value of seaice albedo for seaice_albedo_opt=0
  seaice_snowdepth_opt                = 0        ; method for treating snow depth on sea ice
@@ -939,8 +965,9 @@ Namelist variables for controlling the adaptive time step option:
                                                 ; 1 = seaice_thickness is read in from input variable ICEDEPTH
  seaice_thickness_default            = 3.0      ; default value of seaice thickness for seaice_thickness_opt=0
  tice2tsk_if2cold                    = .false.  ; set Tice to Tsk to avoid unrealistically low sea ice temperatures
- iz0tlnd                             = 0        ; thermal roughness length for sfclay and myjsfc (0 = old, 1 = veg dependent Chen-Zhang Czil)
-                                                ;     for mynn sfc (0=Zilitinkevitch,1=Chen-Zhang,2=mod Yang,3=const zt)
+ iz0tlnd                             = 0        ; thermal roughness length for sfclay (0 = old, 1 = veg dependent Chen-Zhang Czil,
+                                                      2 = Zilitinkevitch (czil=0.1))
+                                                ;     for mynn sfc (0=Zilitinkevitch (def),1=Chen-Zhang,2=mod Yang,3=const zt)
  mp_tend_lim                         = 10.,     ; limit on temp tendency from mp latent heating from radar data assimilation
  prec_acc_dt (max_dom)               = 0.,      ; number of minutes in precipitation bucket (ARW only) - will add three
                                                   new 2d output fields: prec_acc_c, prec_acc_nc and snow_acc_nc
@@ -949,10 +976,11 @@ Namelist variables for controlling the adaptive time step option:
                                                   Noah, aimed particularly toward improving treatment of snow as it relates 
                                                   to the vegetation canopy. Also uses new columns added in VEGPARM.TBL
  do_radar_ref			     = 0, 	; 1 = allows radar reflectivity to be computed using mp-scheme-specific
- 						  parameters.  Currently works for mp_physics = 2,4,6,7,8,10,14,16
+ 						  parameters.  Currently works for mp_physics = 2,4,6,7,8,10,14,16,28
  hailcast_opt (max_dom)              = 0, 	; 1 = 1-D hail growth model which predicts 1st-5th rank-ordered hail diameters, mean hail 
-                                                  diagmeter and standard deviation of hail diameter. (Adams-Selin and Ziegler, MWR Dec 2016.) 
+                                                  diameter and standard deviation of hail diameter. (Adams-Selin and Ziegler, MWR Dec 2016.) 
                                                   Updated in V3.9, replacing afwa_hailcast_opt in previous versions.
+ haildt (max_dom)                    = 0.,      ; seconds between WRF-HAILCAST calls (s)
 				
 Namelist variables for lake module: 
 
@@ -1053,7 +1081,7 @@ Stochastic parameterization schemes:
 
 Stochastically perturbed parameter scheme (SPP) (spp=1)
  sppt (max_dom)                      = 0        ; Stochastically perturbed parameter (SPP) scheme for
-                                                ; GF convection schems, MYNN boundary layer scheme and RUC LSM. 0: off, 1: on
+                                                ; GF convection scheme, MYNN boundary layer scheme and RUC LSM. 0: off, 1: on
  spp_conv (max_dom)                  = 0        ; Perturb parameters of GF convection scheme only
  gridpt_stddev_spp_conv (max_dom)    = 0.3      ; Standard deviation of random perturbation field at each gridpoint.
                                                 ; Determines amplitude of random perturbations
@@ -1110,56 +1138,75 @@ Options for use with the Noah-MP Land Surface Model:
                                                 ;    2 = On  (LAI predicted;  FVEG calculated)
                                                 ;    3 = Off (LAI from table; FVEG calculated)
                                                 ;    4 = Off (LAI from table; FVEG = maximum veg. fraction)
-                         			;    5 = On  (LAI predicted;  FVEG = maximum veg. fraction)
+                                                ;    5 = On  (LAI predicted;  FVEG = maximum veg. fraction)
                                                 ;    6 = On  (use FVEG = SHDFAC from input)
                                                 ;    7 = Off (use input LAI; use FVEG = SHDFAC from input)
                                                 ;    8 = Off (use input LAI; calculate FVEG)
                                                 ;    9 = Off (use input LAI; use maximum vegetation fraction)
-                                                ;   10 = crop model on (use maximum vegetation fraction)
  opt_crs                            = 1,        ; Noah-MP Stomatal Resistance option:
-                                                ;    1 = Ball-Berry; 2 = Jarvis
+                                                ;    1 = Ball-Berry
+                                                ;    2 = Jarvis
  opt_sfc                            = 1         ; Noah-MP surface layer drag coefficient calculation
-                                                ;    1 = Monin-Obukhov; 2 = original Noah (Chen97);
-                                                ;    3 = MYJ consistent; 4 = YSU consistent.
-                                                ;    options 3 and 4 removed in 3.7
+                                                ;    1 = Monin-Obukhov
+                                                ;    2 = original Noah (Chen97)
  opt_btr                            = 1,        ; Noah-MP Soil Moisture Factor for Stomatal Resistance
-                                                ;    1 = Noah; 2 = CLM; 3 = SSiB
+                                                ;    1 = Noah
+                                                ;    2 = CLM
+                                                ;    3 = SSiB
  opt_run                            = 3,        ; Noah-MP Runoff and Groundwater option
                                                 ;    1 = TOPMODEL with groundwater
                                                 ;    2 = TOPMODEL with equilibrium water table
                                                 ;    3 = original surface and subsurface runoff (free drainage) - default
                                                 ;    4 = BATS surface and subsurface runoff (free drainage)
+                                                ;    5 = Miguez-Macho & Fan groundwater scheme (Miguez-Macho et al. 2007 JGR; Fan et al. 2007 JGR)
+                                                ;          geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
  opt_frz                            = 1,        ; Noah-MP Supercooled Liquid Water option
-                                                ;    1 = No iteration; 2 = Koren's iteration
+                                                ;    1 = No iteration
+                                                ;    2 = Koren's iteration
  opt_inf                            = 1,        ; Noah-MP Soil Permeability option
-                                                ;    1 = Linear effects, more permeable;
+                                                ;    1 = Linear effects, more permeable
                                                 ;    2 = Non-linear effects, less permeable
  opt_rad                            = 3,        ; Noah-MP Radiative Transfer option
-                                                ;    1 = Modified two-stream;
+                                                ;    1 = Modified two-stream (known to cause problems when vegetation fraction is small)
                                                 ;    2 = Two-stream applied to grid-cell
                                                 ;    3 = Two-stream applied to vegetated fraction
  opt_alb                            = 2,        ; Noah-MP Ground Surface Albedo option
-                                                ;    1 = BATS; 2 = CLASS
+                                                ;    1 = BATS
+                                                ;    2 = CLASS
  opt_snf                            = 1,        ; Noah-MP Precipitation Partitioning between snow and rain
                                                 ;    1 = Jordan (1991)
                                                 ;    2 = BATS:  Snow when SFCTMP < TFRZ+2.2
                                                 ;    3 = Snow when SFCTMP < TFRZ
-						;    4 = Use WRF precipitation partitioning
+                                                ;    4 = Use WRF precipitation partitioning
  opt_tbot                           = 2,        ; Noah-MP Soil Temperature Lower Boundary Condition
                                                 ;    1 = Zero heat flux
                                                 ;    2 = TBOT at 8 m from input file
  opt_stc                            = 1,        ; Noah-MP Snow/Soil temperature time scheme
                                                 ;    1 = semi-implicit
                                                 ;    2 = full-implicit
-						;    3 = semi-implicit where Ts uses snow cover fraction
+                                                ;    3 = semi-implicit where Ts uses snow cover fraction
  opt_gla                            = 1,        ; Noah-MP glacier treatment option (new in 3.8)
                                                 ;    1 = includes phase change
                                                 ;    2 = slab ice (Noah)
- opt_rsf                            = 1,        ; Noah-MP surface evaporation resistence option (new in 3.8)
+ opt_rsf                            = 1,        ; Noah-MP surface evaporation resistance option (new in 3.8)
                                                 ;    1 -> Sakaguchi and Zeng, 2009
                                                 ;    2 -> Sellers (1992)
                                                 ;    3 -> adjusted Sellers to decrease RSURF for wet soil
-                                                ;    4 -> option 1 for non-snow; rsurf = rsurf_snow for snow (set in MPTABLE); AD v3.8
+                                                ;    4 -> option 1 for non-snow; rsurf = rsurf_snow for snow (set in MPTABLE)
+ opt_soil                           = 1,        ; Noah-MP options for defining soil properties
+                                                ;          geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
+                                                ;    1 -> use input dominant soil texture
+                                                ;    2 -> use input soil texture that varies with depth
+                                                ;    3 -> use soil composition (sand, clay, orgm) and pedotransfer functions (OPT_PEDO)
+                                                ;    4 -> use input soil properties (BEXP_3D, SMCMAX_3D, etc.) (not valid in WRF)
+ opt_pedo                           = 1,        ; Noah-MP options for pedotransfer functions (used when OPT_SOIL = 3)
+                                                ;          geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
+                                                ;    1 -> Saxton and Rawls (2006)
+ opt_crop                           = 0,        ; options for crop model
+                                                ;          geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
+                                                ;    0 -> No crop model, will run default dynamic vegetation
+                                                ;    1 -> Liu, et al. 2016
+                                                ;    2 -> Gecros (Genotype-by-Environment interaction on CROp growth Simulator) Yin and van Laar, 2005
  /
 
  &fdda
@@ -1181,7 +1228,7 @@ Options for use with the Noah-MP Land Surface Model:
   k_zfac_q (max_dom)                 = 10       ; 10=model level below which nudging is switched off for qvapor
  guv (max_dom)                       = 0.0003   ; nudging coefficient for u and v (sec-1)
  gt (max_dom)                        = 0.0003   ; nudging coefficient for temp (sec-1)
- gq (max_dom)                        = 0.0003   ; nudging coefficient for qvapor (sec-1)
+ gq (max_dom)                        = 0.00001  ; nudging coefficient for qvapor (sec-1)
  if_ramping                          = 0        ; 0= nudging ends as a step function, 1= ramping nudging down at end of period
  dtramp_min                          = 0        ; time (min) for ramping function 
  grid_sfdda (max_dom)                = 0        ; surface fdda switch
@@ -1194,7 +1241,7 @@ Options for use with the Noah-MP Land Surface Model:
  io_form_sgfdda                      = 2        ; sfc analysis data io format (2 = netCDF)
  guv_sfc (max_dom)                   = 0.0003   ; nudging coefficient for sfc u and v (sec-1)
  gt_sfc (max_dom)                    = 0.0003   ; nudging coefficient for sfc temp (sec-1)
- gq_sfc (max_dom)                    = 0.0003   ; nudging coefficient for sfc qvapor (sec-1)
+ gq_sfc (max_dom)                    = 0.00001  ; nudging coefficient for sfc qvapor (sec-1)
  rinblw (max_dom)                    = 0.       ; radius of influence used to determine the confidence (or weights) for
                                                   the analysis, which is based on the distance between the grid point to the nearest
                                                   obs. The analysis without nearby observation is used at a reduced weight.
@@ -1203,14 +1250,28 @@ Options for use with the Noah-MP Land Surface Model:
 
 The following are for spectral nudging:
  fgdtzero (max_dom)                  = 0,       ; 1= nudging tendencies are set to zero in between fdda calls
- if_no_pbl_nudging_ph (max_dom)      = 0,       ; 1= no nudging of ph in the pbl, 0= nuding in the pbl
- if_zfac_ph (max_dom)                = 0,       ; 0= nudge ph in all layers, 1= limit nudging to levels above k_zfac_ph
-  k_zfac_ph (max_dom)                = 10,      ; 10= model level below which nudging is switched off for ph
- dk_zfac_uv (max_dom)                = 1,       ; depth in k between k_zfac_X to dk_zfac_X where nudging increases 
+ if_no_pbl_nudging_uv (max_dom)      = 0,       ; 1= no nudging of uv in the pbl, 0= nudging in the pbl
+ if_no_pbl_nudging_t  (max_dom)      = 0,       ; 1= no nudging of t in the pbl, 0= nudging in the pbl
+ if_no_pbl_nudging_ph (max_dom)      = 0,       ; 1= no nudging of ph in the pbl, 0= nudging in the pbl
+ if_no_pbl_nudging_q  (max_dom)      = 0,       ; 1= no nudging of q in the pbl, 0= nudging in the pbl
+ if_zfac_uv (max_dom)                = 0,       ; 0= nudge uv in all layers, 1= limit nudging to levels above k_zfac_uv
+  k_zfac_uv (max_dom)                = 0,       ; 0= model level below which nudging is switched off for uv
+ dk_zfac_uv (max_dom)                = 1,       ; depth in k between k_zfac_X to dk_zfac_X where nudging increases
                                                   linearly to full strength
- dk_zfac_t  (max_dom)                = 1,
- dk_zfac_ph (max_dom)                = 1,
+ if_zfac_t  (max_dom)                = 0,       ; 0= nudge t in all layers, 1= limit nudging to levels above k_zfac_t
+  k_zfac_t  (max_dom)                = 0,       ; 0= model level below which nudging is switched off for t
+ dk_zfac_t  (max_dom)                = 1,       ; depth in k between k_zfac_X to dk_zfac_X where nudging increases
+                                                  linearly to full strength
+ if_zfac_ph (max_dom)                = 0,       ; 0= nudge ph in all layers, 1= limit nudging to levels above k_zfac_ph
+  k_zfac_ph (max_dom)                = 0,       ; 0= model level below which nudging is switched off for ph
+ dk_zfac_ph  (max_dom)               = 1,       ; depth in k between k_zfac_X to dk_zfac_X where nudging increases
+                                                  linearly to full strength
+ if_zfac_q  (max_dom)                = 0,       ; 0= nudge q in all layers, 1= limit nudging to levels above k_zfac_q
+  k_zfac_q  (max_dom)                = 0,       ; 0= model level below which nudging is switched off for q
+ dk_zfac_q  (max_dom)                = 1,       ; depth in k between k_zfac_X to dk_zfac_X where nudging increases
  gph (max_dom)                       = 0.0003,
+ ktrop                               = 0,       ; layer nominally representing tropopause for limiting nudging to q and t
+                                     		; setting ktrop = 0 allows nudging to extend to the top of the atmosphere
  xwavenum (max_dom)                  = 3,       ; top wave number to nudge in x direction
  ywavenum (max_dom)                  = 3,       ; top wave number to nudge in y direction
 
@@ -1307,6 +1368,9 @@ The following are for observation nudging:
  scm_force_wind_largescale           = .false.  ; Turn on large scale wind forcing in SCM
 
  &dynamics
+ hybrid_opt                          = 2,       ; default; Klemp cubic form with etac
+                                                  0 = original WRF terrain-following coordinate (through V3)
+ etac                                = 0.2      ; znw(k) < etac, eta surfaces are isobaric, 0.2 is a good default (Pa/Pa)
  rk_ord                              = 3,	; time-integration scheme option:
                                                   2 = Runge-Kutta 2nd order
                                                   3 = Runge-Kutta 3rd order
@@ -1337,7 +1401,7 @@ The following are for observation nudging:
                                                       not for real-data cases)
                                                   3 = with w-Rayleigh damping (dampcoef inverse time scale [1/s] e.g. .2; 
                                                       for real-data cases)
- use_theta_m                         = 0        ; 1: use theta_m=theta(1+1.61Qv)
+ use_theta_m                         = 1        ; 1: use theta_m=theta(1+1.61Qv)
                                                   0: use dry theta in dynamics
  use_q_diabatic                      = 0        ; whether to include QV and QC tendencies in advection (new in 3.7)
                                                   0 = default, old behavior
@@ -1352,6 +1416,8 @@ The following are for observation nudging:
                                                   2 = 6th-order numerical diffusion but prohibit up-gradient diffusion
  diff_6th_factor (max_dom)           = 0.12,    ; 6th-order numerical diffusion non-dimensional rate (max value 1.0
                                                       corresponds to complete removal of 2dx wave in one timestep)
+ diff_6th_slopeopt (max_dom)         = 0        ; if set to =1, turns on 6th-order numerical diffusion - terrain-slope tapering. default is 0=off
+ diff_6th_thresh (max_dom)           = 0.10     ; slope threshold (m/m) that turns off 6th order diff in steep terrain
  dampcoef (max_dom)                  = 0.,	; damping coefficient (see above)
  zdamp (max_dom)                     = 5000.,	; damping depth (m) from model top
  w_damping                           = 0,       ; vertical velocity damping flag (for operational use)
@@ -1379,7 +1445,7 @@ The following are for observation nudging:
  mix_full_fields(max_dom)            = .true.,  ; used with diff_opt = 2; value of ".true." is recommended, except for
                                                   highly idealized numerical tests; damp_opt must not be 1 if ".true."
                                                   is chosen. .false. means subtract 1-d base-state profile before mixing
- mix_isotropic(max_dom)              = 0        ; 0=anistropic vertical/horizontal diffusion coeffs, 1=isotropic
+ mix_isotropic(max_dom)              = 0        ; 0=anisotropic vertical/horizontal diffusion coeffs, 1=isotropic
  mix_upper_bound(max_dom)            = 0.1      ; non-dimensional upper limit for diffusion coeffs
  tke_drag_coefficient(max_dom)       = 0.,      ; surface drag coefficient (Cd, dimensionless) for diff_opt=2 only
  tke_heat_flux(max_dom)              = 0.,      ; surface thermal flux (H/(rho*cp), K m/s) for diff_opt=2 only
@@ -1393,10 +1459,22 @@ The following are for observation nudging:
                                                 ; advection options for scalar variables: 0=simple, 1=positive definite,
                                                   2=monotonic, 3=5th order WENO, 4=5th-order WENO with positive definite filter
  moist_adv_opt (max_dom)             = 1        ; for moisture
+ moist_adv_dfi_opt (max_dom)         = 0        ; positive-definite RK3 transport switch. Default is 0=off
  scalar_adv_opt (max_dom)            = 1        ; for scalars
  chem_adv_opt (max_dom)              = 1        ; for chem variables
  tracer_adv_opt (max_dom)            = 1        ; for tracer variables (WRF-Chem activated)
  tke_adv_opt (max_dom)               = 1        ; for tke
+ moist_mix2_off (max_dom)            = .false.  ; if set to T, deactivate 2nd-order horizontal mixing for moisture. default is F.
+ chem_mix2_off (max_dom)             = .false.  ; if set to T, deactivate 2nd-order horizontal mixing for chem species. default is F.
+ tracer_mix2_off (max_dom)           = .false.  ; if set to T, deactivate 2nd-order horizontal mixing for tracers. default is F. 
+ scalar_mix2_off (max_dom)           = .false.  ; if set to T, deactivate 2nd-order horizontal mixing for scalars. default is F.
+ tke_mix2_off (max_dom)              = .false.  ; if set to T, deactivate 2nd-order horizontal mixing for tke. default is F.
+ moist_mix6_off (max_dom)            = .false.  ; if set to T, deactivate 6th-order horizontal mixing for moisture. default is F.
+ chem_mix6_off (max_dom)             = .false.  ; if set to T, deactivate 6th-order horizontal mixing for chem species. default is F.
+ tracer_mix6_off (max_dom)           = .false.  ; if set to T, deactivate 6th-order horizontal mixing for tracers. default is F.
+ scalar_mix6_off (max_dom)           = .false.  ; if set to T, deactivate 6th-order horizontal mixing for scalars. default is F.
+ tke_mix6_off (max_dom)              = .false.  ; if set to T, deactivate 6th-order horizontal mixing for tke. default is F.
+
 
  time_step_sound (max_dom)           = 4 /	; number of sound steps per time-step (0=set automatically)
                                                   (if using a time_step much larger than 6*dx (in km),
@@ -1461,7 +1539,18 @@ The following are for observation nudging:
  idtadt                              = 1,       ; fundamental timesteps between calls to Euler advection, dynamics (NMM only)
  idtadc                              = 1        ; fundamental timesteps between calls to Euler advection, chemistry (NMM only)
 
-
+ &ideal
+ ideal_case                          = 0        ; ideal case number. Option selects CASEs within module_initialize_ideal.F
+                                                  realcase       ideal_case=0
+                                                  hill2d_x       ideal_case=1
+                                                  quarter_ss     ideal_case=2
+                                                  convrad        ideal_case=3
+                                                  squall2d_x     ideal_case=4
+                                                  squall2d_y     ideal_case=5
+                                                  grav2d_x       ideal_case=6
+                                                  b_wave         ideal_case=7
+                                                  seabreeze2d_x  ideal_case=8
+                                                  les            ideal_case=9
 
  &tc                                            ; controls for tc_em.exe ONLY, no impact on real, ndown, or model
 
@@ -1616,23 +1705,6 @@ suite option 16 to 0 (turning cumulus off).
 
 Hybrid Vertical Coordinate (HVC) vs Terrain Following (TF)
 
-The HVC option is available starting in WRFv3.9. There is both a compile-time activation and
-a run-time activation. This option may not be used in conjunction with the vertical nesting
-refinement.
-
-Compile-time requirement for HVC:
-The user must build the code with 
-./configure -hyb
-
-Run-time requirement for HVC:
-There are two namelist settings that control the HVC option. Conventionally, the suggested value
-for the level at which the eta levels become isobaric is the default value in the Registry file
-(as this valus is not intuitively easy to remember). The second switch, to turn on the HVC, is by default
-set to the TF value (hybrid_opt=0) in the Registry. To activate the hybrid coordinate capability,
-this value needs to be modified in the namelist (hybrid_opt=2).
-
-Assuming that the WRF and real codes have been built with the HVC compile-time option, then
-
 1. To turn ON the HVC
 &dynamics
  hybrid_opt         = 2,
@@ -1640,3 +1712,24 @@ Assuming that the WRF and real codes have been built with the HVC compile-time o
 2. To turn OFF the HVC
 &dynamics
  hybrid_opt         = 0,
+
+
+
+Traditional / full fields model output
+
+The ARW WRF model output may be modified at run-time to also include a stream that contains
+more traditional fields: temperature, pressure, geopotential height, etc. The flag needs to 
+be activated in the namelist (diag_nwp2 = 1). In the registry.trad_fields, the output stream 
+is "h1", so that stream needs to be explicitly requested in the namelist.input file.
+
+ &diags
+ diag_nwp2 = 1
+ /
+
+ &time_control
+ io_form_auxhist1                    = 2
+ auxhist1_interval                   = 180,  30,   30,
+ frames_per_auxhist1                 = 1,     1,    1,
+ auxhist1_outname                    = "wrf_trad_fields_d<domain>_<date>"
+ /
+

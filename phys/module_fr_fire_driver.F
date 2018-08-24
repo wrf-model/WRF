@@ -20,6 +20,7 @@ use module_fr_fire_model
 use module_fr_fire_phys, only : fire_params , init_fuel_cats
 use module_fr_fire_util
 use module_fr_fire_core, only: ignition_line_type
+use module_fr_fire_atm, only: add_fire_tracer_emissions 
 
 USE module_domain, only: domain
 USE module_configure, only: grid_config_rec_type
@@ -45,7 +46,9 @@ subroutine fire_driver_em ( grid , config_flags                    &
             ,ips,ipe, kps,kpe, jps,jpe                              &
             ,ifds,ifde, jfds,jfde                                   &
             ,ifms,ifme, jfms,jfme                                   &
-            ,ifps,ifpe, jfps,jfpe )
+            ,ifps,ifpe, jfps,jfpe                                   &
+            ,rho,z_at_w,dz8w           &  
+            )
 
 !*** purpose: driver from grid structure
 
@@ -69,6 +72,7 @@ halo_fire_phb_sub, halo_fire_z0_sub, halo_fire_lfn_sub
              ifds,ifde, jfds,jfde,                                   &
              ifms,ifme, jfms,jfme,                                   &
              ifps,ifpe, jfps,jfpe 
+    real,dimension(ims:ime, kms:kme, jms:jme),intent(in), optional::rho,z_at_w,dz8w 
 
 !*** local
     INTEGER:: fire_num_ignitions
@@ -99,6 +103,7 @@ halo_fire_phb_sub, halo_fire_z0_sub, halo_fire_lfn_sub
     fp%r_0 => grid%r_0       ! a rate of spread formula variable
     fp%fgip => grid%fgip     ! a rate of spread formula coeff 
     fp%ischap => grid%ischap ! a rate of spread formula switch
+    fp%iboros => grid%iboros ! Ib divided by ROS
             
     ! get ignition data 
     call fire_ignition_convert (config_flags,fire_max_ignitions,fire_ignition_longlat, &
@@ -136,7 +141,7 @@ halo_fire_phb_sub, halo_fire_z0_sub, halo_fire_lfn_sub
 
 #ifdef DM_PARALLEL
         if(need_lfn_update)then
-!           halo exchange on lfn width 2
+!           halo exchange on lfn width 3
 #include "HALO_FIRE_LFN.inc"
         endif
 
@@ -148,6 +153,7 @@ halo_fire_phb_sub, halo_fire_z0_sub, halo_fire_lfn_sub
 !!            endif 
 ! base geopotential and roughness
 #include "HALO_FIRE_PHB.inc"
+
 #include "HALO_FIRE_Z0.inc"
 
         elseif(fire_ifun.eq.2)then
@@ -169,6 +175,8 @@ halo_fire_phb_sub, halo_fire_z0_sub, halo_fire_lfn_sub
 
         endif
 #endif
+
+        
         ! need domain by 1 smaller, in last row.col winds are not set properly
         call fire_driver_phys ( &
             fire_ifun,need_lfn_update,                  &
@@ -195,21 +203,33 @@ halo_fire_phb_sub, halo_fire_z0_sub, halo_fire_lfn_sub
             grid%ph_2,grid%phb,               & ! geopotential
             grid%z0,                        & ! roughness height
             grid%ht,                        &                         ! terrain height
-            grid%xlong,grid%xlat,                         & ! coordinates of atm grid centers, for ignition location           
-            grid%lfn,grid%tign_g,grid%fuel_frac,          & ! state arrays, fire grid
+            grid%xlong,grid%xlat,                         & ! coordinates of atm grid centers, for ignition location
+            grid%lfn, &
+            grid%lfn_hist, &  ! PAJ: to initialize fire perimeter from obs
+            config_flags%fire_is_real_perim,  & ! PAJ: use obs fire perimeter. 
+            grid%lfn_0,grid%lfn_1,grid%lfn_2,grid%lfn_s0,grid%lfn_s1,grid%lfn_s2,grid%lfn_s3,grid%flame_length,grid%ros_front, & 
+            grid%tign_g,grid%fuel_frac,          & ! state arrays, fire grid
             grid%fire_area,                               & ! redundant, for display, fire grid
+            grid%burnt_area_dt,                               & ! redundant, for display
             lfn_out,                                      & ! work - one timestep    
             grid%avg_fuel_frac,                           & ! out redundant arrays, atm grid
             grid%grnhfx,grid%grnqfx,grid%canhfx,grid%canqfx, & ! out redundant arrays, atm grid
+            grid%grnhfx_fu,grid%grnqfx_fu, & ! out redundant arrays, atm grid
             grid%uah,grid%vah,                          &
             grid%fgrnhfx,grid%fgrnqfx,grid%fcanhfx,grid%fcanqfx, & ! out redundant arrays, atm grid
             grid%ros,                                   & ! rate of spread
-            grid%fxlong,grid%fxlat,                           &       
+            grid%fxlong,grid%fxlat,grid%fz0,                           &       
             grid%nfuel_cat,                               & ! input, or internal for safekeeping
             grid%fuel_time,                      & 
-            fp &
+            fp, &
+            grid, & ! DME added for halo update
+            ids,ide,jds,jde,kds,kde, & 
+            ims,ime,jms,jme,kms,kme, & 
+            ips,ipe,jps,jpe,kps,kpe, &
+            config_flags & 
         )
 
+   
 #ifdef DM_PARALLEL
             if(fire_ifun.eq.2)then
 !               halo exchange on all fuel data width 2
@@ -217,8 +237,19 @@ halo_fire_phb_sub, halo_fire_z0_sub, halo_fire_lfn_sub
             endif
 #endif
 
-                
-
+! DME update tracer emissions
+     if(fire_ifun.eq.6 .AND. config_flags%tracer_opt.eq.3)then
+       call add_fire_tracer_emissions(config_flags%tracer_opt,grid%dt,grid%dx,grid%dy, &
+                 ifms,ifme,jfms,jfme,    &
+                 ifps,ifpe,jfps,jfpe,    &
+                 ids,ide,kds,kde,jds,jde,          &
+                 ims,ime,kms,kme,jms,jme,          &
+                 ips,ipe,kps,kpe,jps,jpe,          &
+                 rho,dz8w,                         &
+                 grid%burnt_area_dt,grid%fgip, &
+                 grid%tracer,config_flags%fire_tracer_smoke)
+     endif
+! DME
       enddo
     enddo
     if(tsteps>0)call crash('fire_driver_em: test run of uncoupled fire model completed')
@@ -251,22 +282,37 @@ subroutine fire_driver_phys (ifun,need_lfn_update,    &
     ph,phb,                                       &
     z0,zs,                                        & 
     xlong,xlat,                                   &
-    lfn,tign,fuel_frac,                           & ! state arrays, fire grid
+    lfn,                                      &
+    lfn_hist,                                      & ! PAJ to init perimeter from obs
+    fire_is_real_perim,                            & ! PAJ to init perimeter from obs
+    lfn_0,lfn_1,lfn_2,lfn_s0,lfn_s1,lfn_s2,lfn_s3,flame_length,ros_front, & 
+    tign,fuel_frac,                           & ! state arrays, fire grid
     fire_area,                                    & ! redundant state, fire grid
+    burnt_area_dt,                                    & ! redundant state, fire grid
     lfn_out,                                      & ! out level set function    
     avg_fuel_frac,                                &
     grnhfx,grnqfx,canhfx,canqfx,                  & ! out redundant arrays, atm grid  
+    grnhfx_fu,grnqfx_fu,                 & ! out redundant arrays, atm grid
     uah,vah,                                      & ! out atm grid
     fgrnhfx,fgrnqfx,fcanhfx,fcanqfx,              & ! out redundant arrays, fire grid
     ros,                                          &
-    fxlong,fxlat,                                 & !  
+    fxlong,fxlat,fz0,                                 & 
     nfuel_cat,                                    & ! in array, data, fire grid, or constant internal
     fuel_time,                                & ! save constant internal data, fire grid
-    fp                                           & ! fire params
+    fp,                                           & ! fire params
+    grid,                                         & 
+    ids_hu,ide_hu,jds_hu,jde_hu,kds_hu,kde_hu, &
+    ims_hu,ime_hu,jms_hu,jme_hu,kms_hu,kme_hu, &
+    ips_hu,ipe_hu,jps_hu,jpe_hu,kps_hu,kpe_hu, &
+    config_flags & 
     )
+
 USE module_dm, only:wrf_dm_maxval
+USE module_domain, only: domain
 
 implicit none
+
+    type(domain) , target :: grid                             ! state 
 
 !*** arguments
 
@@ -286,6 +332,12 @@ integer, intent(in)::ifun,                        &
                                                        ! 2=from file
     nfuel_cat0,                                   & ! fuel category to initialize everything to
     num_tiles                                       ! number of tiles
+
+integer, intent(in)::ids_hu,ide_hu,jds_hu,jde_hu,kds_hu,kde_hu, & 
+                     ims_hu,ime_hu,jms_hu,jme_hu,kms_hu,kme_hu, & 
+                     ips_hu,ipe_hu,jps_hu,jpe_hu,kps_hu,kpe_hu   
+
+type (grid_config_rec_type), intent(in)          :: config_flags 
 
 logical, intent(in)::restart
     
@@ -324,10 +376,19 @@ real, intent(inout), dimension(ifms:ifme,jfms:jfme):: &
 
 real, intent(inout), dimension(ifms:ifme, jfms:jfme)::     &
     lfn,tign,fuel_frac,                        &     ! state: level function, ign time, fuel left
+    lfn_hist,                                  &     ! PAJ: to init obs. fira perimeter
     lfn_out                                    ! fire wind velocities
+
+real, intent(inout), dimension(ifms:ifme, jfms:jfme)::     &
+    lfn_0,lfn_1,lfn_2,lfn_s0,lfn_s1,lfn_s2,lfn_s3,flame_length,ros_front  ! level set function and reinitialization steps
 
 real, intent(out), dimension(ifms:ifme, jfms:jfme)::  &
     fire_area                                        ! fraction of each cell burning
+
+real, intent(out), dimension(ifms:ifme, jfms:jfme)::  &
+    burnt_area_dt                                        
+real, intent(out), dimension(ims:ime, jms:jme)::  &
+   grnhfx_fu,grnqfx_fu                                        
 
 real, intent(out), dimension(ims:ime, jms:jme):: &  ! redundant arrays, for display purposes only (atm grid)
     avg_fuel_frac,                               &  ! average fuel fraction
@@ -345,7 +406,7 @@ real, intent(out), dimension(ifms:ifme, jfms:jfme):: &  ! redundant arrays, for 
 
 !  ***** data (constant in time) *****
 
-real, dimension(ifms:ifme, jfms:jfme), intent(inout)::fxlong,fxlat ! fire mesh coordinates
+real, dimension(ifms:ifme, jfms:jfme), intent(inout)::fxlong,fxlat,fz0 ! fire mesh coordinates
 real, intent(out), dimension(ifms:ifme, jfms:jfme)::fuel_time   ! fire params arrays
 
 type(fire_params),intent(inout)::fp
@@ -360,6 +421,8 @@ character(len=3)::kk
 integer::ignitions_done_tile(num_tiles),ignited_tile(num_ignitions,num_tiles)
 integer::ignitions_done,ignited_patch(num_ignitions),idex,jdex
 
+    ! PAJ:
+  logical :: fire_is_real_perim
 
 !*** executable
 
@@ -505,11 +568,26 @@ do ij=1,num_tiles
         if(ignition_longlat .eq.0)then
             ! set ideal fire mesh coordinates - used for ignition only
             ! do not forget to set unit_fxlong, unit_fxlat outside of parallel loop
-            !call set_ideal_coord( dxf,dyf, &
-            !    ifds,ifde,jfds,jfde,  &
-            !    ifms,ifme,jfms,jfme,  &
-            !    ifts,ifte,jfts,jfte,  &
-            !    fxlong,fxlat          )
+
+            ! DME: Next call added to fixe a bug when
+            ! initializing a nested domain (before, fxlong & fxlat where not
+            ! assigned, therefore were zero and fire does not ignite)
+            call set_ideal_coord( dxf,dyf, &
+                ifds,ifde,jfds,jfde,  &
+                ifms,ifme,jfms,jfme,  &
+                ifts,ifte,jfts,jfte,  &
+                fxlong,fxlat          )
+            call interpolate_z2fire(id,             & 
+                ids,ide,jds,jde,                    &
+                ims,ime,jms,jme,                    &
+                ips,ipe,jps,jpe,                    &
+                its,ite,jts,jte,                    &
+                ifds,ifde,jfds,jfde,                &
+                ifms,ifme,jfms,jfme,                &
+                ifts,ifte,jfts,jfte,                &
+                ir,jr,                              &
+                z0,                                 &
+                fz0,1)
             !call set_ideal_coord( dx,dy, &
             !    ids,ide,jds,jde,  &
             !    ims,ime,jms,jme,  &
@@ -533,7 +611,7 @@ do ij=1,num_tiles
             ifts,ifte,jfts,jfte,                          &
             ir,jr,                                        & ! atm/fire grid ratio
             xlat,                                       & ! atm grid arrays in
-            fxlat)                                      ! fire grid arrays out
+            fxlat,0)                                      ! fire grid arrays out
 
         call interpolate_z2fire(id,                 & ! for debug output, <= 0 no output
             ids,ide,  jds,jde,                    & ! atm grid dimensions
@@ -545,7 +623,19 @@ do ij=1,num_tiles
             ifts,ifte,jfts,jfte,                          &
             ir,jr,                                        & ! atm/fire grid ratio
             xlong,                                       & ! atm grid arrays in
-            fxlong)                                      ! fire grid arrays out
+            fxlong,0)                                      ! fire grid arrays out
+
+        call interpolate_z2fire(id,                       & 
+            ids,ide,  jds,jde,                            &
+            ims,ime,  jms,jme,                            &
+            ips,ipe,jps,jpe,                              &
+            its,ite,jts,jte,                              &
+            ifds, ifde, jfds, jfde,                       &
+            ifms, ifme, jfms, jfme,                       &
+            ifts,ifte,jfts,jfte,                          &
+            ir,jr,                                        &
+            z0,                                           &
+            fz0,1)
 
         endif
 
@@ -557,9 +647,10 @@ do ij=1,num_tiles
         call print_2d_stats(ifts,ifte,jfts,jfte,ifms,ifme,jfms,jfme,fp%zsf,'driver_phys:zsf')        
 
     elseif(ifun.eq.3)then  ! interpolate winds to the fire grid
-    
+
+
       if(use_atm_vars)then                                  
-     
+
         call write_array_m(its,ite,jts,jte,ims,ime,jms,jme,z0,'z0',id)
         call write_array_m3(its,ite1,kts,kde-1,jts,jte,ims,ime,kms,kme,jms,jme,u,'u_2',id)
         call write_array_m3(its,ite,kts,kde-1,jts,jte1,ims,ime,kms,kme,jms,jme,v,'v_2',id)
@@ -581,9 +672,10 @@ do ij=1,num_tiles
             ph,phb,                                       &
             z0,zs,                                        & ! 2D atm grid arrays in
             uah,vah,                                      & ! 2D atm grid out
-            fp%vx,fp%vy)                                    ! fire grid arrays out
+            fp%vx,fp%vy,fz0)                                    ! fire grid arrays out
+
       endif
-    
+
     endif
 
 !   the following executes in any case
@@ -600,15 +692,24 @@ do ij=1,num_tiles
         ignition_line,                          & ! description of ignition lines
         ignitions_done_tile(ij),ignited_tile(1,ij),  &
         fxlong,fxlat,unit_fxlong,unit_fxlat,      & ! fire mesh coordinates
-        lfn,lfn_out,tign,fuel_frac,                     & ! state: level function, ign time, fuel left
+        lfn,                                     & ! state: level function
+        lfn_hist,                                & ! PAJ: to init obs fire perimeter
+        fire_is_real_perim,                      & ! PAJ: to init obs fire perimeter
+        lfn_0,lfn_1,lfn_2,lfn_s0,lfn_s1,lfn_s2,lfn_s3,flame_length,ros_front,  & ! state
+        lfn_out,tign,fuel_frac,                     & ! state: ign time, fuel left
         fire_area,                              & ! output: fraction of cell burning
+        burnt_area_dt,                              & 
         fgrnhfx,fgrnqfx,                        & ! output: heat fluxes
         ros,                                    & ! output: rate of spread for display
         nfuel_cat,                              & ! fuel data per point 
         fuel_time,                              & ! save derived internal data
-        fp                                      & ! fire coefficients
+        fp,                                      & ! fire coefficients
+        grid,            &  ! DME added for halo update
+        ids_hu,ide_hu,jds_hu,jde_hu,kds_hu,kde_hu, & 
+        ims_hu,ime_hu,jms_hu,jme_hu,kms_hu,kme_hu, & 
+        ips_hu,ipe_hu,jps_hu,jpe_hu,kps_hu,kpe_hu  &
     )
-    
+
     if(ifun.eq.6)then ! heat fluxes into the atmosphere    
     
         call print_2d_stats(ifts,ifte,jfts,jfte,ifms,ifme,jfms,jfme,fgrnhfx,'fire_driver:fgrnhfx')
@@ -646,6 +747,9 @@ do ij=1,num_tiles
           s = 1./(ir*jr)
           do j=jts,jte
             do i=its,ite
+                ! DME heat fluxes contribution for the case wiythout feedback
+                grnhfx_fu(i,j)=grnhfx(i,j)*s
+                grnqfx_fu(i,j)=grnqfx(i,j)*s
                 ! scale surface fluxes to get the averages
                 avg_fuel_frac(i,j)=avg_fuel_frac(i,j)*s
                 grnhfx(i,j)=fire_atm_feedback*grnhfx(i,j)*s
@@ -881,7 +985,7 @@ subroutine interpolate_z2fire(id,                 & ! for debug output, <= 0 no 
     ifts,ifte,jfts,jfte,                          &
     ir,jr,                                        & ! atm/fire grid ratio
     zs,                                       & ! atm grid arrays in
-    zsf)                                      ! fire grid arrays out
+    zsf,flag_z0)                                      ! fire grid arrays out
     
 implicit none
 !*** purpose: interpolate height
@@ -899,6 +1003,7 @@ integer, intent(in)::id,                          &
 real, intent(in), dimension(ims:ime, jms:jme):: zs  ! terrain height at atm cell centers                                        & ! terrain height  
 real,intent(out), dimension(ifms:ifme,jfms:jfme)::&
     zsf                                             ! terrain height fire grid nodes
+integer,intent(in)::flag_z0 
     
     
 !*** local
@@ -942,6 +1047,14 @@ integer:: i,j,jts1,jte1,its1,ite1,jfts1,jfte1,ifts1,ifte1,itso,jtso,iteo,jteo
         za,                     & ! in atm grid     
         zsf)                      ! out fire grid
 
+if (flag_z0 .eq. 1 ) then 
+  do j=jfts1,jfte1
+    do i=ifts1,ifte1
+      zsf(i,j)=max(zsf(i,j),0.001)
+    enddo
+  enddo
+endif
+
 end subroutine interpolate_z2fire
 !
 !*****************************
@@ -963,7 +1076,7 @@ subroutine interpolate_atm2fire(id,               & ! for debug output, <= 0 no 
     ph,phb,                                       &
     z0,zs,                                        &
     uah,vah,                                      &
-    uf,vf)                                          ! fire grid arrays out
+    uf,vf,z0f)                                          ! fire grid arrays out
     
 implicit none
 !*** purpose: interpolate winds and height
@@ -993,6 +1106,7 @@ real,intent(out),dimension(ims:ime,jms:jme)::&
     vah                                              ! 
 real,intent(out), dimension(ifms:ifme,jfms:jfme)::&
     uf,vf                                           ! wind velocity fire grid nodes 
+real,intent(in),dimension(ifms:ifme,jfms:jfme)::z0f ! roughness length in fire grid 
     
     
 !*** local
@@ -1008,6 +1122,9 @@ real:: ground,loght,loglast,logz0,logfwh,ht,zr
 real::r_nan
 integer::i_nan
 equivalence (i_nan,r_nan)
+real::fire_wind_height_local,z0fc
+real::ust_d,wsf,wsf1,uf_temp,vf_temp
+real,parameter::vk_kappa=0.4
 
 !*** executable
 
@@ -1153,17 +1270,25 @@ endif
         call write_array_m3(itsu,iteu,kds,kdmax,jtsu,jteu,its-2,ite+2,kds,kde,jts-2,jte+2,hgtu,'hgtu',id)
         call write_array_m3(itsv,itev,kds,kdmax,jtsv,jtev,its-2,ite+2,kds,kde,jts-2,jte+2,hgtv,'hgtv',id)
 #endif
-    logfwh = log(fire_wind_height)
+! DME
+if (fire_lsm_zcoupling) then
+  logfwh = log(fire_lsm_zcoupling_ref)
+  fire_wind_height_local = fire_lsm_zcoupling_ref
+else
+  logfwh = log(fire_wind_height)
+  fire_wind_height_local = fire_wind_height
+endif
 
     ! interpolate u, staggered in X
 
     do j = jtsu,jteu            ! compute on domain by 1 smaller, otherwise z0 and ph not available
-      do i = itsu,iteu        ! compute with halo 2
+!      do i = itsu,iteu        ! compute with halo 2
+      do i = itsu,iteu       
         zr = 0.5*(z0(i,j)+z0(i-1,j)) ! interpolated roughness length under this u point
-        if(fire_wind_height > zr)then       !  
+        if(fire_wind_height_local > zr)then       !  
           do k=kds,kdmax
             ht = hgtu(i,k,j)      ! height of this u point above the ground
-            if( .not. ht < fire_wind_height) then ! found layer k this point is in
+            if( .not. ht < fire_wind_height_local) then ! found layer k this point is in
               loght = log(ht)
               if(k.eq.kds)then               ! first layer, log linear interpolation from 0 at zr
                 logz0 = log(zr)
@@ -1185,15 +1310,20 @@ endif
       enddo
     enddo
 
+    do j = jtsu,jteu 
+      ua(itsu-1,j)=ua(itsu,j)
+    enddo
+
+
     ! interpolate v, staggered in Y
 
     do j = jtsv,jtev
       do i = itsv,itev
         zr = 0.5*(z0(i,j-1)+z0(i,j)) ! roughness length under this v point
-        if(fire_wind_height > zr)then       !  
+        if(fire_wind_height_local > zr)then       !  
           do k=kds,kdmax
             ht = hgtv(i,k,j)      ! height of this u point above the ground
-            if( .not. ht < fire_wind_height) then ! found layer k this point is in
+            if( .not. ht < fire_wind_height_local) then ! found layer k this point is in
               loght = log(ht)
               if(k.eq.kds)then               ! first layer, log linear interpolation from 0 at zr
                 logz0 = log(zr)
@@ -1215,6 +1345,10 @@ endif
       enddo
     enddo
 
+    do i = itsv,itev 
+      va(i,jtsv-1)=va(i,jtsv)
+    enddo
+
 #ifdef DEBUG_OUT
 !   store the output for diagnostics
     do j = jts,jte1
@@ -1229,6 +1363,7 @@ endif
 #endif
 
     ips1 = ifval(ips.eq.ids,ips+1,ips)
+
     call continue_at_boundary(1,1,0., & ! x direction 
        TDIMS,                  &! memory dims atm grid tile
        ids+1,ide,jds,jde, &     ! domain dims - where u defined
@@ -1238,6 +1373,7 @@ endif
        ua)                           ! array
 
     jps1 = ifval(jps.eq.jds,jps+1,jps)
+
     call continue_at_boundary(1,1,0., & ! y direction 
        TDIMS,                  & ! memory dims atm grid tile
        ids,ide,jds+1,jde, &      ! domain dims - where v wind defined
@@ -1329,6 +1465,23 @@ endif
         va,                     & ! in atm grid     
         vf)                      ! out fire grid
 
+! DME here code to extrapolate mid-flame height velocity -> fire_lsm_zcoupling = .true.
+if (fire_lsm_zcoupling) then
+  do j = jfts,jfte
+    do i = ifts,ifte
+      uf_temp=uf(i,j)
+      vf_temp=vf(i,j)
+      wsf=max(sqrt(uf_temp**2.+vf_temp**2.),0.1)
+      z0fc=z0f(i,j)
+      ust_d=wsf*vk_kappa/log(fire_lsm_zcoupling_ref/z0fc)
+      wsf1=(ust_d/vk_kappa)*log((fire_wind_height+z0fc)/z0fc)
+      uf(i,j)=wsf1*uf_temp/wsf
+      vf(i,j)=wsf1*vf_temp/wsf
+    enddo
+  enddo
+endif
+
+
 call print_2d_stats_vec(ifts,ifte,jfts,jfte,ifms,ifme,jfms,jfme,uf,vf,'fire wind (m/s)')
 ! call print_2d_stats_vec(ifts1,ifte1,jfts1,jfte1,ifms,ifme,jfms,jfme,uf,vf,'fire wind extended')
 #ifdef DEBUG_OUT
@@ -1383,15 +1536,23 @@ fire_const_grnhfx       = config_flags%fire_const_grnhfx
 fire_const_grnqfx       = config_flags%fire_const_grnqfx
 fire_atm_feedback       = config_flags%fire_atm_feedback
 boundary_guard          = config_flags%fire_boundary_guard
-fire_back_weight        = config_flags%fire_back_weight
 fire_grows_only         = config_flags%fire_grows_only
 fire_upwinding          = config_flags%fire_upwinding
 fire_upwind_split       = config_flags%fire_upwind_split 
 fire_viscosity          = config_flags%fire_viscosity 
 fire_lfn_ext_up         = config_flags%fire_lfn_ext_up 
 fire_test_steps         = config_flags%fire_test_steps 
-!fire_topo_from_atm      = config_flags%fire_topo_from_atm
 fire_advection          = config_flags%fire_advection
+fire_lsm_reinit         = config_flags%fire_lsm_reinit
+fire_lsm_reinit_iter    = config_flags%fire_lsm_reinit_iter 
+fire_upwinding_reinit   = config_flags%fire_upwinding_reinit 
+fire_lsm_band_ngp       = config_flags%fire_lsm_band_ngp
+fire_lsm_zcoupling      = config_flags%fire_lsm_zcoupling
+fire_lsm_zcoupling_ref  = config_flags%fire_lsm_zcoupling_ref 
+fire_viscosity_bg       = config_flags%fire_viscosity_bg 
+fire_viscosity_band     = config_flags%fire_viscosity_band 
+fire_viscosity_ngp      = config_flags%fire_viscosity_ngp
+fire_slope_factor       = config_flags%fire_slope_factor 
 
 
 

@@ -61,11 +61,11 @@ state   real    a_qs           ijkft   a_moist     1         -     rh   "A_QSNOW
 state   real    g_qs           ijkft   g_moist     1         -     rh   "G_QSNOW"            "Snow mixing ratio"             "kg kg-1"
 state   real    a_qg           ijkft   a_moist     1         -     rh   "A_QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
 state   real    g_qg           ijkft   g_moist     1         -     rh   "G_QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
-#state   real    a_qh           ijkft   a_moist     1         -     rh   "A_QHAIL"            "Hail mixing ratio"             "kg kg-1"
-#state   real    g_qh           ijkft   g_moist     1         -     rh   "G_QHAIL"            "Hail mixing ratio"             "kg kg-1"
+state   real    a_qh           ijkft   a_moist     1         -     rh   "A_QHAIL"            "Hail mixing ratio"             "kg kg-1"
+state   real    g_qh           ijkft   g_moist     1         -     rh   "G_QHAIL"            "Hail mixing ratio"             "kg kg-1"
+state   real    a_qi2          ijkft   a_moist     1         -     rh   "A_QICE2"            "Ice mixing ratio cat 2"        "kg kg-1"
+state   real    g_qi2          ijkft   g_moist     1         -     rh   "G_QICE2"            "Ice mixing ratio cat 2"        "kg kg-1"
 # Other Misc State Variables                                            
-state   real    g_h_diabatic   ijk     misc         1         -      rdu      "g_h_diabatic"          "MICROPHYSICS LATENT HEATING"         "K s-1"      
-state   real    a_h_diabatic   ijk     misc         1         -      rdu      "a_h_diabatic"          "MICROPHYSICS LATENT HEATING"         "K s-1"      
 state    real  G_RAINC          ij      misc        1         -      rhdu     "G_RAINC"               "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
 state    real  A_RAINC          ij      misc        1         -      rhdu     "A_RAINC"               "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"      
 state    real  G_RAINNC         ij      misc        1         -      rhdu     "G_RAINNC"              "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"      
@@ -83,6 +83,7 @@ rconfig   logical   update_sfcdiags         namelist,wrfvar1  1  .false.  -  "up
 rconfig   logical   use_wrf_sfcinfo         namelist,wrfvar1  1  .true.   -  "use_wrf_sfcinfo"         ""  ""
 rconfig   logical   use_background_errors   namelist,wrfvar1  1  .true.   -  "use_background_errors"   ""  ""
 rconfig   logical   write_increments        namelist,wrfvar1  1  .false.  -  "write_increments"        ""  ""
+rconfig   logical   write_iv_gpsztd         namelist,wrfvar1  1  .false.  -  "write_iv_gpsztd"         "switch for writing out ztd innov information"  ""
 rconfig   logical   var4d                   namelist,wrfvar1  1  .false.  -  "var4d"                   ""  ""
 rconfig   integer   var4d_bin               namelist,wrfvar1  1  3600     -  "var4d_bin"               ""  ""
 rconfig   integer   var4d_bin_rain          namelist,wrfvar1  1  3600     -  "var4d_bin_rain"          ""  ""
@@ -150,6 +151,7 @@ rconfig   logical   use_satemobs            namelist,wrfvar4  1  .true.   - "use
 rconfig   logical   use_gpsztdobs           namelist,wrfvar4  1  .false.  - "use_gpsztdobs"            ""  ""
 rconfig   logical   use_gpspwobs            namelist,wrfvar4  1  .true.   - "use_gpspwobs"             ""  ""
 rconfig   logical   use_gpsrefobs           namelist,wrfvar4  1  .true.   - "use_gpsrefobs"            ""  ""
+rconfig   logical   use_gpsephobs           namelist,wrfvar4  1  .false.  - "use_gpsephobs"            ""  ""
 rconfig   real      top_km_gpsro            namelist,wrfvar4  1  30.0     - "top_km_gpsro"             ""  ""
 rconfig   real      bot_km_gpsro            namelist,wrfvar4  1   0.0     - "bot_km_gpsro"             ""  ""
 rconfig   logical   use_ssmiretrievalobs    namelist,wrfvar4  1  .false.  - "use_ssmiretrievalobs"     ""  ""
@@ -178,6 +180,7 @@ rconfig   logical   use_ssmisobs            namelist,wrfvar4  1  .false.  - "use
 rconfig   logical   use_iasiobs             namelist,wrfvar4  1  .false.  - "use_iasiobs"              ""  ""
 rconfig   logical   use_seviriobs           namelist,wrfvar4  1  .false.  - "use_seviriobs"            ""  ""
 rconfig   logical   use_amsr2obs            namelist,wrfvar4  1  .false.  - "use_amsr2obs"             ""  ""
+rconfig   logical   use_goesimgobs          namelist,wrfvar4  1  .false.  - "use_goesimgobs"           ""  ""
 rconfig   logical   use_kma1dvar            namelist,wrfvar4  1  .false.  - "use_kma1dvar"             ""  ""
 rconfig   logical   use_filtered_rad        namelist,wrfvar4  1  .false.  - "use_filtered_rad"         ""  ""
 rconfig   logical   use_obs_errfac          namelist,wrfvar4  1  .false.  - "use_obs_errfac"           ""  ""
@@ -193,6 +196,7 @@ rconfig   real      max_omb_spd             namelist,wrfvar5  1   100.0   - "max
 rconfig   real      max_omb_dir             namelist,wrfvar5  1   1000.0  - "max_omb_dir"              ""  ""
 rconfig   real      max_error_pw            namelist,wrfvar5  1   5.0     - "max_error_pw"             ""  ""
 rconfig   real      max_error_ref           namelist,wrfvar5  1   5.0     - "max_error_ref"            ""  ""
+rconfig   real      max_error_eph           namelist,wrfvar5  1   5.0     - "max_error_eph"            ""  ""
 rconfig   real      max_error_rh            namelist,wrfvar5  1   5.0     - "max_error_rh"             ""  ""
 rconfig   real      max_error_q             namelist,wrfvar5  1   5.0     - "max_error_q"              ""  ""
 rconfig   real      max_error_p             namelist,wrfvar5  1   5.0     - "max_error_p"              ""  ""
@@ -235,6 +239,7 @@ rconfig   integer   max_ssmt1_input         namelist,wrfvar5  1  30000000 - "max
 rconfig   integer   max_ssmt2_input         namelist,wrfvar5  1  30000000 - "max_ssmt2_input"          ""  ""
 rconfig   integer   max_qscat_input         namelist,wrfvar5  1  50000000 - "max_qscat_input"          ""  ""
 rconfig   integer   max_gpsref_input        namelist,wrfvar5  1  80000000 - "max_gpsref_input"         ""  ""
+rconfig   integer   max_gpseph_input        namelist,wrfvar5  1  80000000 - "max_gpseph_input"         ""  ""
 rconfig   integer   max_airsr_input         namelist,wrfvar5  1  10000000 - "max_airsr_input"          ""  ""
 rconfig   integer   max_tovs_input          namelist,wrfvar5  1  10000000 - "max_tovs_input"           ""  ""
 rconfig   integer   max_ssmis_input         namelist,wrfvar5  1  10000000 - "max_ssmis_input"          ""  ""
@@ -245,7 +250,7 @@ rconfig   integer   tovs_end                namelist,wrfvar5  1  10000000 - "tov
 rconfig   logical   gpsref_thinning         namelist,wrfvar5  1  .false.  - "gpsref_thinning"          ""  ""
 rconfig   logical   outer_loop_restart      namelist,wrfvar6  1  .false.  - "outer_loop_restart"       ""  ""
 rconfig   integer   max_ext_its             namelist,wrfvar6  1  1        - "max_ext_its"              ""  ""
-rconfig   integer   ntmax                   namelist,wrfvar6  max_outer_iterations  200      - "ntmax"                    ""  ""
+rconfig   integer   ntmax                   namelist,wrfvar6  max_outer_iterations  75      - "ntmax"                    ""  ""
 rconfig   integer   nsave                   namelist,wrfvar6  1  4        - "nsave"                    ""  ""
 rconfig   integer   write_interval          namelist,wrfvar6  1  5        - "write_interval"           ""  ""
 rconfig   real      eps                     namelist,wrfvar6  max_outer_iterations 0.01     - "eps"                      ""  ""
@@ -328,15 +333,32 @@ rconfig   logical   sfcht_adjust_q          namelist,wrfvar11  1  .false.  - "sf
 rconfig   integer   sfc_hori_intp_options   namelist,wrfvar11  1  1        - "sfc_hori_intp_options"   "how the background is calculated"  "1: 4-point, 2: nearest point"
 rconfig   integer   q_error_options         namelist,wrfvar11  1  1        - "q_error_options"         "how specific humidity errors are calculated from RH errors"  "1: orig, 2: new"
 rconfig   real      max_stheight_diff       namelist,wrfvar11  1  100.0    - "max_stheight_diff"       "Stations whose |Zdiff|>max_stHeight_diff will not be assimilated when sfc_assi_options=1"  "m"
+rconfig   real      max_stheight_diff_ztd   namelist,wrfvar11  1  1000.0   - "max_stheight_diff_ztd"   "For ZTD, stations whose |Zdiff|>max_stHeight_diff_ztd will not be assimilated"  "m"
 rconfig   real      stn_ht_diff_scale       namelist,wrfvar11  1  200.0    - "stn_ht_diff_scale"       "factor=exp(|Zdiff|/stn_ht_diff_scale)"  "m"
 rconfig   logical   obs_err_inflate         namelist,wrfvar11  1  .false.  - "obs_err_inflate"         "switch for inflating obs err by exp(|Zdiff|/stn_ht_diff_scale)"  ""
+rconfig   logical   consider_xap4ztd        namelist,wrfvar11  1  .true.   - "consider_xap4ztd"        "whether or not including xa%p in TL/AD of xtoztd operator"  ""
 rconfig   logical   calculate_cg_cost_fn    namelist,wrfvar11  1  .false.  - "calculate_cg_cost_fn"    ""  ""  
 rconfig   logical   write_detail_grad_fn    namelist,wrfvar11  1  .false.  - "write_detail_grad_fn"    "calculate and write out gradient of each iteration in grad_fn"  ""
 rconfig   logical   lat_stats_option        namelist,wrfvar11  1  .false.  - "lat_stats_option"        ""  ""  
 rconfig   integer   interp_option           namelist,wrfvar11  1  1        - "interp_option"           ""  ""
+rconfig   logical   use_divc                namelist,wrfvar12  1  .false.  - "use_divc"                "switch for divergence constraint"  ""
+rconfig   real      divc_factor             namelist,wrfvar12  1  1000.    - "divc_factor"             ""  ""
 rconfig   integer   balance_type            namelist,wrfvar12  1  3        - "balance_type"            ""  "For use_wpec: 1 = geostrophic; 2 = cyclostrophic; 3 = both"
 rconfig   logical   use_wpec                namelist,wrfvar12  1  .false.  - "use_wpec"                ""  ""
 rconfig   real      wpec_factor             namelist,wrfvar12  1  0.001    - "wpec_factor"             ""  "Inverse of WPEC gamma factor"
+rconfig   logical   use_lsac                namelist,wrfvar12  1  .false.  - "use_lsac"                "switch for large scale analysis constraint"  ""
+rconfig   integer   lsac_nh_step            namelist,wrfvar12  1  1        - "lsac_nh_step"            "increment step in grid points in the horizontal direction"  ""
+rconfig   integer   lsac_nv_step            namelist,wrfvar12  1  1        - "lsac_nv_step"            "increment step in grid points in the vertical direction"  ""
+rconfig   integer   lsac_nv_start           namelist,wrfvar12  1  1        - "lsac_nv_start"           "index of starting grid point in the vertical direction"  ""
+rconfig   logical   lsac_use_u              namelist,wrfvar12  1  .true.   - "lsac_use_u"              "switch for large scale u analysis constraint"  ""
+rconfig   logical   lsac_use_v              namelist,wrfvar12  1  .true.   - "lsac_use_v"              "switch for large scale v analysis constraint"  ""
+rconfig   logical   lsac_use_t              namelist,wrfvar12  1  .true.   - "lsac_use_t"              "switch for large scale t analysis constraint"  ""
+rconfig   logical   lsac_use_q              namelist,wrfvar12  1  .true.   - "lsac_use_q"              "switch for large scale q analysis constraint"  ""
+rconfig   real      lsac_u_error            namelist,wrfvar12  1  2.5      - "lsac_u_error"            ""  "m/s"
+rconfig   real      lsac_v_error            namelist,wrfvar12  1  2.5      - "lsac_v_error"            ""  "m/s"
+rconfig   real      lsac_t_error            namelist,wrfvar12  1  2.0      - "lsac_t_error"            ""  "degree C"
+rconfig   real      lsac_q_error            namelist,wrfvar12  1  0.002    - "lsac_q_error"            ""  "kg/kg"
+rconfig   logical   lsac_print_details      namelist,wrfvar12  1  .false.  - "lsac_print_details"      "switch for printout"  ""
 rconfig   integer   vert_corr               namelist,wrfvar13  1  2        - "vert_corr"               ""  ""  
 rconfig   integer   vertical_ip             namelist,wrfvar13  1  0        - "vertical_ip"             ""  ""  
 rconfig   integer   vert_evalue             namelist,wrfvar13  1  1        - "vert_evalue"             ""  ""  
@@ -379,7 +401,7 @@ rconfig   logical   write_profile           namelist,wrfvar14  1  .false.  - "wr
 rconfig   logical   write_jacobian          namelist,wrfvar14  1  .false.  - "write_jacobian"          ""  ""
 rconfig   logical   qc_rad                  namelist,wrfvar14  1  .true.   - "qc_rad"                  ""  ""   
 rconfig   logical   write_iv_rad_ascii      namelist,wrfvar14  1  .false.  - "write_iv_rad_ascii"      ""  ""   
-rconfig   logical   write_oa_rad_ascii      namelist,wrfvar14  1  .false.  - "write_oa_rad_ascii"      ""  ""   
+rconfig   logical   write_oa_rad_ascii      namelist,wrfvar14  1  .true.   - "write_oa_rad_ascii"      ""  ""   
 rconfig   logical   write_filtered_rad      namelist,wrfvar14  1  .false.  - "write_filtered_rad"      ""  ""   
 rconfig   logical   use_error_factor_rad    namelist,wrfvar14  1  .false.  - "use_error_factor_rad"    ""  ""   
 rconfig   logical   use_landem              namelist,wrfvar14  1  .false.  - "use_landem"              ""  ""   
@@ -406,7 +428,7 @@ rconfig   real      pseudo_rad_err          namelist,wrfvar14  1 1.0       - "ps
 rconfig   logical   use_simulated_rad       namelist,wrfvar14  1  .false.  - "use_simulated_rad"       ""  ""
 rconfig   logical   simulated_rad_io        namelist,wrfvar14  1  .false.  - "simulated_rad_io"        ""  ""
 rconfig   integer   simulated_rad_ngrid     namelist,wrfvar14  1  0        - "simulated_rad_ngrid"     ""  ""
-rconfig   logical   use_varbc               namelist,wrfvar14  1  .false.  - "use_varbc"               ""  ""
+rconfig   logical   use_varbc               namelist,wrfvar14  1  .true.   - "use_varbc"               ""  ""
 rconfig   logical   freeze_varbc            namelist,wrfvar14  1  .false.  - "freeze_varbc"            ""  ""
 rconfig   real      varbc_factor            namelist,wrfvar14  1  1.0      - "varbc_factor"            ""  ""
 rconfig   integer   varbc_nbgerr            namelist,wrfvar14  1  5000     - "varbc_nbgerr"            ""  ""
@@ -462,6 +484,9 @@ rconfig   real      radar_rqv_rh1           namelist,radar_da  1   85.0    - "ra
 rconfig   real      radar_rqv_rh2           namelist,radar_da  1   95.0    - "radar_rqv_rh2"           "RH for (radar_rqv_thresh1 < rf < radar_rqv_thresh2)"     "%"
 rconfig   real      radar_rqv_h_lbound      namelist,radar_da  1   -999.0  - "radar_rqv_h_lbound"      "height lower bound for rqv"                "m"
 rconfig   real      radar_rqv_h_ubound      namelist,radar_da  1   -999.0  - "radar_rqv_h_ubound"      "height upper bound for rqv"                "m"
+rconfig   integer   gpsro_drift             namelist,obs_opt   1  1        - "gpsro_drift"             "horizontal drifting for GPSRO"  "0=no drift, 1=drift"
+rconfig   integer   gpseph_opt              namelist,obs_opt   1  1        - "gpseph_opt"              "0: local operator variant, 1: non-local"  ""
+rconfig   logical   gpseph_loadbalance      namelist,obs_opt   1  .true.   - "gpseph_loadbalance"      ""  ""
 rconfig   logical jcdfi_use                 namelist,perturbation  1  .false.  -   "jcdfi_use"   "JcDFI on/off"      ""
 rconfig   integer jcdfi_diag                namelist,perturbation  1  1        -   "jcdfi_diag"  "JcDFI diag. on/off"      ""
 rconfig   real    jcdfi_penalty             namelist,perturbation  1  10.      -   "jcdfi_penalty"    "Penalty parameter for JcDF"      ""
@@ -469,11 +494,9 @@ rconfig   logical enable_identity           namelist,perturbation  1  .false.  -
 rconfig   logical trajectory_io             namelist,perturbation  1  .true.   -  "0:disk IO;1:memory IO"   ""  ""
 rconfig   logical var4d_detail_out          namelist,perturbation  1  .false.  -  "true:output perturbation, gradient to disk"   ""  ""
 rconfig   logical var4d_run                 namelist,perturbation  1  .true.  -  "true: exlcude the P calculation in start_em"   ""  ""
-rconfig   integer  mp_physics_ad            namelist,physics   max_domains   98   -      "mp_physics_ad"            ""      ""
+rconfig   integer  mp_physics_ad            namelist,physics   max_domains   99   -      "mp_physics_ad"            ""      ""
 # NAMELIST DERIVED
 rconfig   integer mp_physics_4dvar        derived                  max_domains   -1       -        "mp_physics_4dvar"     ""      "-1 = no 4dvar and so no need to allocate a_ and g_ moist and scalar variables, >0 = running 4dvar, so allocate a_ and g_ moist and scalar variables appropriate for selected microphysics package"
-rconfig   integer mp_physics_da           derived                  max_domains    1       -        "mp_physics_da"        ""      "1 when mp_physics>0 for allocating moist variables"
-rconfig   integer mp_physics_da_4dvar     derived                  max_domains   -1       -        "mp_physics_da_4dvar"  ""      "1 when mp_physics>0 for allocating g_/a_moist variables"
 #
 #---------------------------------------------------------------------------------------------------------------------------------------
 # Package Declarations
@@ -488,15 +511,72 @@ package   dyn_em_ad    dyn_opt==302                 -             -
 package   dyn_em_tst   dyn_opt==402                 -             -
 package   dyn_em_var   dyn_opt==502                 -             -
 
-package   mp_phys_zero     mp_physics_da==0         -             moist:qv
-package   mp_phys_set      mp_physics_da==1         -             moist:qv,qc,qr,qi,qs,qg
+package   nomoist_ad   mp_physics_ad==98            -             -
+package   warmrain_ad  mp_physics_ad==99            -             -
 
-package   nomoist_4dvar    mp_physics_da_4dvar==-1  -             -
-package   passiveqv_4dvar  mp_physics_da_4dvar==0   -             g_moist:g_qv;a_moist:a_qv
-package   warmrain_4dvar   mp_physics_da_4dvar==1   -             g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
+#do "grep package Registry/Registry.EM_COMMON | grep mp_physics==", then remove non-moist lists
+package   passiveqv       mp_physics==0                -             moist:qv
+package   kesslerscheme   mp_physics==1                -             moist:qv,qc,qr
+package   linscheme       mp_physics==2                -             moist:qv,qc,qr,qi,qs,qg
+package   wsm3scheme      mp_physics==3                -             moist:qv,qc,qr
+package   wsm5scheme      mp_physics==4                -             moist:qv,qc,qr,qi,qs
+package   fer_mp_hires    mp_physics==5                -             moist:qv,qc,qr,qi
+package   fer_mp_hires_advect  mp_physics==15          -             moist:qv,qc,qr,qi
+package   wsm6scheme      mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg
+package   gsfcgcescheme   mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
+package   thompson        mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg
+package   milbrandt2mom   mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh
+package   morr_two_moment mp_physics==10               -             moist:qv,qc,qr,qi,qs,qg
+package   cammgmpscheme   mp_physics==11               -             moist:qv,qc,qi,qr,qs
+package   sbu_ylinscheme  mp_physics==13               -             moist:qv,qc,qr,qi,qs
+package   wdm5scheme      mp_physics==14               -             moist:qv,qc,qr,qi,qs
+package   wdm6scheme      mp_physics==16               -             moist:qv,qc,qr,qi,qs,qg
+package   nssl_2mom       mp_physics==17               -             moist:qv,qc,qr,qi,qs,qg,qh
+package   nssl_2momccn    mp_physics==18               -             moist:qv,qc,qr,qi,qs,qg,qh
+package   nssl_1mom       mp_physics==19               -             moist:qv,qc,qr,qi,qs,qg,qh
+package   nssl_1momlfo    mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
+package   nssl_2momg      mp_physics==22               -             moist:qv,qc,qr,qi,qs,qg
+package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg
+package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi
+package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi
+package   p3_2category    mp_physics==52               -             moist:qv,qc,qr,qi,qi2
+package   morr_tm_aero    mp_physics==40               -             moist:qv,qc,qr,qi,qs,qg
+package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs
+package   lscondscheme    mp_physics==98               -             moist:qv
+package   mkesslerscheme  mp_physics==99               -             moist:qv,qc,qr
+#
+package   passiveqv_4dvar        mp_physics_4dvar==0      -          g_moist:g_qv;a_moist:a_qv
+package   kessler_4dvar          mp_physics_4dvar==1      -          g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
+package   lins_4dvar             mp_physics_4dvar==2      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr
+package   wsm3_4dvar             mp_physics_4dvar==3      -          g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
+package   wsm5_4dvar             mp_physics_4dvar==4      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
+package   fer_mp_hi_4dvar        mp_physics_4dvar==5      -          g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
+package   fer_mp_hi_advect_4dvar mp_physics_4dvar==15     -          g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
+package   wsm6_4dvar             mp_physics_4dvar==6      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   gsfcgce_4dvar          mp_physics_4dvar==7      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   thompson_4dvar         mp_physics_4dvar==8      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   milbrandt2mom_4dvar    mp_physics_4dvar==9      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
+package   morr_two_mom_4dvar     mp_physics_4dvar==10     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   cammgmp_4dvar          mp_physics_4dvar==11     -          g_moist:g_qv,g_qc,g_qi,g_qr,g_qs;a_moist:a_qv,a_qc,a_qi,a_qr,a_qs
+package   sbu_ylin_4dvar         mp_physics_4dvar==13     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
+package   wdm5_4dvar             mp_physics_4dvar==14     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
+package   wdm6_4dvar             mp_physics_4dvar==16     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   nssl_2mom_4dvar        mp_physics_4dvar==17     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
+package   nssl_2momccn_4dvar     mp_physics_4dvar==18     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
+package   nssl_1mom_4dvar        mp_physics_4dvar==19     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
+package   nssl_1momlfo_4dvar     mp_physics_4dvar==21     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   nssl_2momg_4dvar       mp_physics_4dvar==22     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   thompsonaero_4dvar     mp_physics_4dvar==28     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   p3_1category_4dvar     mp_physics_4dvar==50     -          g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
+package   p3_1category_nc_4dvar  mp_physics_4dvar==51     -          g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
+package   p3_2category_4dvar     mp_physics_4dvar==52     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qi2;a_moist:a_qv,a_qc,a_qr,a_qi,a_qi2
+package   morr_tm_aero_4dvar     mp_physics_4dvar==40     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   etampnew_4dvar         mp_physics_4dvar==95     -          g_moist:g_qv,g_qc,g_qr,g_qs;a_moist:a_qv,a_qc,a_qr,a_qs
+package   lscond_4dvar           mp_physics_4dvar==98     -          g_moist:g_qv;a_moist:a_qv
+package   mkessler_4dvar         mp_physics_4dvar==99     -          g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
 
-package   surfdragscheme bl_pbl_physics==98          -             -
-package   ducuscheme     cu_physics==98              -             -
+package   surfdragscheme  bl_pbl_physics==98           -             -
+package   ducuscheme      cu_physics==98               -             -
 
 # only need to specify these once; not for every io_form* variable
 # Placeholders for additional packages (we can go beyond zzz
@@ -839,7 +919,7 @@ rconfig   integer var4d_used              derived               1             0 
 package   no_adj_sens    adj_sens_used==0            -             -
 package   do_adj_sens    adj_sens_used==1            -             state:a_u,a_v,a_t,a_mu,a_ph,g_u,g_v,g_t,g_mu,g_ph;a_moist:a_qv;g_moist:g_qv
 package   no_var4d       var4d_used==0               -             -
-package   do_var4d       var4d_used==1               -             state:a_u,a_v,a_w,a_ph,a_t,a_mu,a_p,a_z,g_u,g_v,g_w,g_ph,g_t,g_mu,g_p,g_z,a_h_diabatic,g_h_diabatic,a_rainc,g_rainc,a_rainnc,g_rainnc,a_raincv,g_raincv,a_rainncv,g_rainncv
+package   do_var4d       var4d_used==1               -             state:a_u,a_v,a_w,a_ph,a_t,a_mu,a_p,g_u,g_v,g_w,g_ph,g_t,g_mu,g_p,a_rainc,g_rainc,a_rainnc,g_rainnc,a_raincv,g_raincv,a_rainncv,g_rainncv
 
 rconfig   integer cv_w_used               derived               1             0       -     "cv_w_used"       "turn on if use_cv_w=true"
 rconfig   integer ens_used                derived               1             0       -     "ens_used"        "turn on if ensdim_alpha>0"
@@ -855,7 +935,7 @@ package   cloud_cv_1      cloud_cv_options==1         -             state:xa%qt,
 package   cloud_cv_2      cloud_cv_options==2         -             state:xa%qrn,xa%qcw,xa%qci,xa%qsn,xa%qgr,vp%v6,vp%v7,vp%v8,vp%v9,vp%v10,vv%v6,vv%v7,vv%v8,vv%v9,vv%v10
 package   cloud_cv_3      cloud_cv_options==3         -             state:xa%qrn,xa%qcw,xa%qci,xa%qsn,xa%qgr,vp%v6,vp%v7,vp%v8,vp%v9,vp%v10,vv%v6,vv%v7,vv%v8,vv%v9,vv%v10
 package   not_var4d       var4d_cloudcv==-1           -             -
-package   no_var4d_ccv    var4d_cloudcv==0            -             state:vp6%v1,vp6%v2,vp6%v3,vp6%v4,vp6%v5,vv6%v1,vv6%v2,vv6%v3,vv6%v4,vv6%v5,xa%qrn,xa%qcw
+package   no_var4d_ccv    var4d_cloudcv==0            -             state:vp6%v1,vp6%v2,vp6%v3,vp6%v4,vp6%v5,vv6%v1,vv6%v2,vv6%v3,vv6%v4,vv6%v5
 package   var4d_ccv_1     var4d_cloudcv==1            -             state:vp6%v1,vp6%v2,vp6%v3,vp6%v4,vp6%v5,vv6%v1,vv6%v2,vv6%v3,vv6%v4,vv6%v5,x6a%qt,x6a%qrn,x6a%qcw
 package   var4d_ccv_2     var4d_cloudcv==2            -             state:vp6%v1,vp6%v2,vp6%v3,vp6%v4,vp6%v5,vv6%v1,vv6%v2,vv6%v3,vv6%v4,vv6%v5,vp6%v6,vp6%v7,vp6%v8,vp6%v9,vp6%v10,vv6%v6,vv6%v7,vv6%v8,vv6%v9,vv6%v10,x6a%qrn,x6a%qcw,x6a%qci,x6a%qsn,x6a%qgr
 package   var4d_ccv_3     var4d_cloudcv==3            -             state:vp6%v1,vp6%v2,vp6%v3,vp6%v4,vp6%v5,vv6%v1,vv6%v2,vv6%v3,vv6%v4,vv6%v5,vp6%v6,vp6%v7,vp6%v8,vp6%v9,vp6%v10,vv6%v6,vv6%v7,vv6%v8,vv6%v9,vv6%v10,x6a%qrn,x6a%qcw,x6a%qci,x6a%qsn,x6a%qgr

@@ -5,7 +5,9 @@
                dt_cld,af_dir,af_dn,af_up,par,erythema,                   &
                gmt,julday,t_phy,moist,aerwrf,p8w,t8w,p_phy,              &
                chem,rho_phy,dz8w,xlat,xlong,z,z_at_w,gd_cloud,gd_cloud2, &
-               ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,                  &
+               ph_macr,ph_o31d,ph_o33p,ph_no2,                           &
+               ph_clno2,                                                 &
+               ph_no3o2,                                                 &
                ph_no3o,ph_hno2,ph_hno3,ph_hno4,ph_h2o2,                  &
                ph_ch2or,ph_ch2om,ph_ch3cho,ph_ch3coch3,                  &
                ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,                       &
@@ -63,7 +65,9 @@
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                       &  
          INTENT(INOUT ) ::                                             &
-           ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,    &  
+           ph_macr,ph_o31d,ph_o33p,ph_no2,                             &
+           ph_clno2,                                                   &
+           ph_no3o2,ph_no3o,ph_hno2,                                   &
            ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,        &  
            ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,             &  
            ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,    &
@@ -155,7 +159,11 @@
        call madronich1_driver(id,curr_secs,ktau,config_flags,haveaer,  &
                gmt,julday,t_phy,moist,aerwrf,p8w,t8w,p_phy,            &
                chem,rho_phy,dz8w,xlat,xlong,z_at_w,gd_cloud,gd_cloud2, &
-               ph_macr,ph_o31d,ph_o33p,ph_no2,ph_no3o2,ph_no3o,ph_hno2,&
+               ph_macr,ph_o31d,ph_o33p,ph_no2,                  &
+!liqy
+                ph_cl2,ph_hocl,ph_clno2,ph_fmcl,        &
+!liqy-20140911 
+                ph_no3o2,ph_no3o,ph_hno2,&
                ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,    &
                ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,         &
                ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,&
@@ -201,6 +209,7 @@
                               ph_n2o5,ph_mvk,ph_glyald,ph_hyac,        &
                               ph_cl2,ph_hocl,ph_fmcl,                  &
                               ivgtyp,                                  &
+                              nref0, nw0, tuv_jmax0,                   &
                               ph_radfld, ph_adjcoe, ph_prate,          &
                               wc,zref,                                 &
                               tauaer1, tauaer2, tauaer3, tauaer4,      &    !rajesh

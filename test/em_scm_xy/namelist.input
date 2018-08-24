@@ -26,7 +26,6 @@
  auxinput3_inname                    = "force_ideal.nc"
  auxinput3_interval_h                = 59
  io_form_auxinput3                   = 2
- debug_level                         = 0
  /
 
  &domains
@@ -71,10 +70,10 @@
  bldt                                = 0,
  cu_physics                          = 0,
  cudt                                = 0,
- num_soil_layers                     = 4,
  /
 
  &dynamics
+ hybrid_opt                          = 0, 
  rk_ord                              = 3,
  diff_opt                            = 2,      2,      2,
  km_opt                              = 2,      2,      2,

@@ -414,6 +414,24 @@ subroutine da_write_noise_to_ob (iv)
       end do
    end if
 
+   !------------------------------------------------------------------
+   ! writing gpseph
+   !------------------------------------------------------------------
+
+   num_obs = 0
+   if (iv%info(gpseph)%nlocal > 0) then
+      do n = 1, iv%info(gpseph)%nlocal
+         if (iv%info(gpseph)%proc_domain(1,n)) num_obs = num_obs + 1
+      end do
+   end if
+   call da_proc_sum_int(num_obs)
+   if (num_obs > 0 .and. rootproc) then
+      write(rand_unit,'(a20,20i8)')'gpseph', num_obs
+      num_obs = 0
+      do k = 0,num_procs-1
+         call da_read_rand_unit(filename(k),iunit,num_obs,'gpseph',6)
+      end do
+   end if
 
    !------------------------------------------------------------------
    ! [20] writing Radiance data:  

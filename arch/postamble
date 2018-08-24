@@ -1,0 +1,219 @@
+######################
+# POSTAMBLE
+
+FGREP = fgrep -iq
+
+ARCHFLAGS       =    $(COREDEFS) -DIWORDSIZE=$(IWORDSIZE) -DDWORDSIZE=$(DWORDSIZE) -DRWORDSIZE=$(RWORDSIZE) -DLWORDSIZE=$(LWORDSIZE) \
+                     $(ARCH_LOCAL) \
+                     $(DA_ARCHFLAGS) \
+                      CONFIGURE_DMPARALLEL \
+                      CONFIGURE_STUBMPI \
+                      CONFIGURE_NETCDF_FLAG \
+                      CONFIGURE_PNETCDF_FLAG \
+                      CONFIGURE_ESMF_FLAG \
+                      CONFIGURE_GRIB2_FLAG \
+                      CONFIGURE_RTTOV_FLAG \
+                      CONFIGURE_CRTM_FLAG \
+                      CONFIGURE_HDF5_FLAG \
+                      CONFIGURE_CLOUDCV_FLAG \
+                      CONFIGURE_4DVAR_FLAG \
+                      CONFIGURE_WAVELET_FLAG \
+                      CONFIGURE_NESTOPT \
+                      -DUSE_ALLOCATABLES \
+                      -Dwrfmodel \
+                      -DGRIB1 \
+                      -DINTIO \
+                      -DKEEP_INT_AROUND \
+                      -DLIMIT_ARGS \
+                      -DBUILD_RRTMG_FAST=1 \
+                      -DCONFIG_BUF_LEN=$(CONFIG_BUF_LEN) \
+                      -DMAX_DOMAINS_F=$(MAX_DOMAINS) \
+                      -DMAX_HISTORY=$(MAX_HISTORY) \
+		      -DNMM_NEST=$(WRF_NMM_NEST)
+CFLAGS          =    $(CFLAGS_LOCAL) CONFIGURE_DMPARALLEL CONFIGURE_STUBMPI \
+                      -DMAX_HISTORY=$(MAX_HISTORY) CONFIGURE_NMM_CORE
+FCFLAGS         =    $(FCOPTIM) $(FCBASEOPTS)
+ESMF_LIB_FLAGS  =    ESMFLIBFLAG
+# ESMF 5 -- these are defined in esmf.mk, included above
+#NOWIN ESMF_IO_LIB     =    ESMFIOLIB
+ESMF_IO_LIB_EXT =    ESMFIOEXTLIB
+INCLUDE_MODULES =    $(MODULE_SRCH_FLAG) \
+                     $(ESMF_MOD_INC) $(ESMF_LIB_FLAGS) \
+                      -I$(WRF_SRC_ROOT_DIR)/main \
+                      -I$(WRF_SRC_ROOT_DIR)/external/io_netcdf \
+                      -I$(WRF_SRC_ROOT_DIR)/external/io_int \
+                      -I$(WRF_SRC_ROOT_DIR)/frame \
+                      -I$(WRF_SRC_ROOT_DIR)/share \
+                      -I$(WRF_SRC_ROOT_DIR)/phys \
+                      -I$(WRF_SRC_ROOT_DIR)/wrftladj \
+                      -I$(WRF_SRC_ROOT_DIR)/chem -I$(WRF_SRC_ROOT_DIR)/inc \
+                      -I$(NETCDFPATH)/include \
+                      CONFIGURE_RTTOV_INC
+REGISTRY        =    Registry
+CC_TOOLS_CFLAGS = CONFIGURE_NMM_CORE
+
+#NOWIN LIB_BUNDLED     = \
+#NOWIN                      $(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5/libfftpack.a \
+#NOWIN                      $(WRF_SRC_ROOT_DIR)/external/io_grib1/libio_grib1.a \
+#NOWIN                      $(WRF_SRC_ROOT_DIR)/external/io_grib_share/libio_grib_share.a \
+#NOWIN                      $(WRF_SRC_ROOT_DIR)/external/io_int/libwrfio_int.a \
+#NOWIN                      $(ESMF_IO_LIB) \
+#NOWIN                      CONFIGURE_COMMS_LIB \
+#NOWIN                      $(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o \
+#NOWIN                      $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o 
+
+#NOWIN LIB_EXTERNAL    = \
+#NOWIN                      CONFIGURE_NETCDF_LIB_PATH CONFIGURE_PNETCDF_LIB_PATH CONFIGURE_GRIB2_LIB CONFIGURE_ATMOCN_LIB CONFIGURE_HDF5_LIB_PATH
+
+LIB             =    $(LIB_BUNDLED) $(LIB_EXTERNAL) $(LIB_LOCAL) $(LIB_WRF_HYDRO)
+LDFLAGS         =    $(OMP) $(FCFLAGS) $(LDFLAGS_LOCAL) CONFIGURE_LDFLAGS
+ENVCOMPDEFS     =    CONFIGURE_COMPILEFLAGS
+CPPFLAGS        =    $(ARCHFLAGS) $(ENVCOMPDEFS) -I$(LIBINCLUDE) $(TRADFLAG) CONFIGURE_COMMS_INCLUDE
+NETCDFPATH      =    CONFIGURE_NETCDF_PATH
+HDF5PATH        =    CONFIGURE_HDF5_PATH
+WRFPLUSPATH     =    CONFIGURE_WRFPLUS_PATH
+RTTOVPATH       =    CONFIGURE_RTTOV_PATH
+PNETCDFPATH     =    CONFIGURE_PNETCDF_PATH
+
+bundled:  io_only CONFIGURE_ATMOCN
+external: io_only CONFIGURE_COMMS_EXTERNAL $(ESMF_TARGET)
+io_only:  esmf_time CONFIGURE_WRFIO_NF CONFIGURE_WRFIO_PNF CONFIGURE_WRFIO_GRIB2 \
+	  wrf_ioapi_includes wrfio_grib_share wrfio_grib1 wrfio_int fftpack
+
+
+######################
+externals: io_only bundled external
+
+gen_comms_serial :
+	( /bin/rm -f $(WRF_SRC_ROOT_DIR)/tools/gen_comms.c )
+
+module_dm_serial :
+	( if [ ! -e module_dm.F ] ; then /bin/cp module_dm_warning module_dm.F ; cat module_dm_stubs.F >> module_dm.F ; fi )
+
+gen_comms_rsllite :
+	( if [ ! -e $(WRF_SRC_ROOT_DIR)/tools/gen_comms.c ] ; then \
+          /bin/cp $(WRF_SRC_ROOT_DIR)/tools/gen_comms_warning $(WRF_SRC_ROOT_DIR)/tools/gen_comms.c ; \
+          cat $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/gen_comms.c >> $(WRF_SRC_ROOT_DIR)/tools/gen_comms.c ; fi )
+
+module_dm_rsllite :
+	( if [ ! -e module_dm.F ] ; then /bin/cp module_dm_warning module_dm.F ; \
+          cat $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/module_dm.F >> module_dm.F ; fi )
+
+wrfio_nf : 
+	( cd $(WRF_SRC_ROOT_DIR)/external/io_netcdf ; \
+          make $(J) NETCDFPATH="$(NETCDFPATH)" RANLIB="$(RANLIB)" CPP="$(CPP)" \
+          CC="$(SCC)" CFLAGS="$(CFLAGS)" \
+          FC="$(SFC) $(PROMOTION) $(OMP) $(FCFLAGS)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
+
+wrfio_pnf : 
+	( cd $(WRF_SRC_ROOT_DIR)/external/io_pnetcdf ; \
+          make $(J) NETCDFPATH="$(PNETCDFPATH)" RANLIB="$(RANLIB)" CPP="$(CPP) $(ARCHFLAGS)" \
+          FC="$(FC) $(PROMOTION) $(OMP) $(FCFLAGS)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
+
+wrfio_grib_share :
+	( cd $(WRF_SRC_ROOT_DIR)/external/io_grib_share ; \
+          make $(J) CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" \
+          FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) $(FCSUFFIX)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" archive) 
+
+wrfio_grib1 :
+	( cd $(WRF_SRC_ROOT_DIR)/external/io_grib1 ; \
+          make $(J) CC="$(SCC)" CFLAGS="$(CFLAGS)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" \
+          FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) $(FCSUFFIX)" TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" archive)
+
+wrfio_grib2 :
+	( cd $(WRF_SRC_ROOT_DIR)/external/io_grib2 ; \
+          make $(J) CC="$(SCC)" CFLAGS="$(CFLAGS) CONFIGURE_GRIB2_INC" RM="$(RM)" RANLIB="$(RANLIB)" \
+          CPP="$(CPP)" \
+          FC="$(SFC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) $(FCSUFFIX)" TRADFLAG="-traditional" AR="$(AR)" ARFLAGS="$(ARFLAGS)" \
+          FIXED="$(FORMAT_FIXED)" archive)
+
+wrfio_int : 
+	( cd $(WRF_SRC_ROOT_DIR)/external/io_int ; \
+          make $(J) CC="$(CC)" CFLAGS_LOCAL="$(CFLAGS_LOCAL)" RM="$(RM)" RANLIB="$(RANLIB)" CPP="$(CPP)" \
+          FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) $(OMP)" FGREP="$(FGREP)" \
+          TRADFLAG="$(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" ARCHFLAGS="$(ARCHFLAGS)" all )
+
+esmf_time : 
+	( cd $(WRF_SRC_ROOT_DIR)/external/esmf_time_f90 ; \
+          make $(J) FC="$(SFC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" \
+          CPP="$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc -I. $(ARCHFLAGS) $(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
+
+fftpack :
+	( cd $(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5 ; \
+          make $(J) FC="$(SFC)" FFLAGS="$(PROMOTION) $(FCDEBUG) $(FCBASEOPTS)" RANLIB="$(RANLIB)" AR="$(AR)" \
+          ARFLAGS="$(ARFLAGS)" CPP="$(CPP)" CPPFLAGS="$(CPPFLAGS)" RM="$(RM)" )
+
+atm_ocn :
+	( cd $(WRF_SRC_ROOT_DIR)/external/atm_ocn ; \
+          make $(J) CC="$(SCC)" CFLAGS="$(CFLAGS) " RM="$(RM)" RANLIB="$(RANLIB)" \
+          CPP="$(CPP)" CPPFLAGS="$(CPPFLAGS)" \
+          FC="$(DM_FC) $(PROMOTION) -I. $(FCDEBUG) $(FCBASEOPTS) $(FCSUFFIX)" TRADFLAG="-traditional" AR="$(AR)" ARFLAGS="$(ARFLAGS)" \
+          FIXED="$(FORMAT_FIXED)" )
+
+$(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a :
+	( cd $(WRF_SRC_ROOT_DIR)/external/RSL_LITE ; make $(J) CC="$(CC) $(CFLAGS)" \
+          FC="$(FC) $(FCFLAGS) $(OMP) $(PROMOTION) $(BYTESWAPIO)" \
+          CPP="$(CPP) -I. $(ARCHFLAGS) $(OMPCPP) $(TRADFLAG)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" ;\
+          $(RANLIB) $(WRF_SRC_ROOT_DIR)/external/RSL_LITE/librsl_lite.a )
+
+######################
+#	Macros, these should be generic for all machines
+
+LN	=	ln -sf
+MAKE	=	make -i -r
+RM	= 	rm -f
+
+
+# These sub-directory builds are identical across all architectures
+
+wrf_ioapi_includes :
+	( cd $(WRF_SRC_ROOT_DIR)/external/ioapi_share ; \
+          $(MAKE) NATIVE_RWORDSIZE="$(NATIVE_RWORDSIZE)" RWORDSIZE="$(RWORDSIZE)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
+
+wrfio_esmf :
+	( cd $(WRF_SRC_ROOT_DIR)/external/io_esmf ; \
+          make FC="$(FC) $(PROMOTION) $(FCDEBUG) $(FCBASEOPTS) $(ESMF_MOD_INC)" \
+          RANLIB="$(RANLIB)" CPP="$(CPP) $(POUND_DEF) " AR="$(AR)" ARFLAGS="$(ARFLAGS)" )
+
+#	There is probably no reason to modify these rules
+
+.F.i:
+	$(RM) $@
+	sed -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F > $*.G
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.G > $*.i
+	mv $*.i $(DEVTOP)/pick/$*.f90
+	cp $*.F $(DEVTOP)/pick
+
+.F.o:
+	$(RM) $@
+	sed -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F > $*.G
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.G  > $*.bb
+	$(SED_FTN) $*.bb | $(CPP) $(TRADFLAG) > $*.f90
+	$(RM) $*.G $*.bb
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.F for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f90 > $*.f90.tmp ; \
+          mv $*.f90.tmp $*.f90 ; \
+        fi
+	$(FC) -o $@ -c $(FCFLAGS) $(OMP) $(MODULE_DIRS) $(PROMOTION) $(FCSUFFIX) $*.f90
+        
+
+.F.f90:
+	$(RM) $@
+	sed -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F > $*.G
+	$(SED_FTN) $*.G > $*.H 
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $*.H  > $@
+	$(RM) $*.G $*.H
+
+.f90.o:
+	$(RM) $@
+	$(FC) -o $@ -c $(FCFLAGS) $(PROMOTION) $(FCSUFFIX) $*.f90
+
+setfeenv.o : setfeenv.c
+	$(RM) $@
+	$(CCOMP) -o $@ -c $(CFLAGS) $(OMPCC) $*.c
+
+.c.o:
+	$(RM) $@
+	$(CC) -o $@ -c $(CFLAGS) $*.c
+

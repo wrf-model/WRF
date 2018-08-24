@@ -5,7 +5,6 @@ rconfig   character  auxinput12_inname   namelist,time_control   1  "wrf_chem_in
 rconfig   integer    io_form_auxinput12  namelist,time_control   1  2
 
 
-state    real    erod            ij.    misc        1         -      i012rhdu "EROD"                "fraction of erodible surface in each grid cell (0-1)"       "none"
 state    real    CLDFRA2         ikj    misc        1         -      h        "CLDFRA2"             "CLOUD FRACTION"
 state    real    RAINPROD        ikj    misc        1         -      h        "RAINPROD"            "TOTAL RAIN PRODUCTION RATE"       "s-1"
 state    real    EVAPPROD        ikj    misc        1         -      h        "EVAPPROD"            "RAIN EVAPORATION RATE"            "s-1"
@@ -106,6 +105,10 @@ state   real    e_voca          i+jf    emis_ant        1       Z       i5      
 state   real    e_vocbb         i+jf    emis_ant        1       Z       i5      "E_VOCBB"       "VOCBB emissions"        "mol km^-2 hr^-1"
 state   real    e_macr          i+jf    emis_ant        1       Z       i5      "E_MACR"    "MACR emissions" "mol km^-2 hr^-1"
 state   real    e_hono          i+jf    emis_ant        1       Z       i5      "E_HONO"    "HONO emissions" "mol km^-2 hr^-1"
+# Additional T1_MOZART emission variables...
+state   real    e_ch3cn         i+jf    emis_ant        1       Z       i5      "E_CH3CN"   "CH3CN emissions" "mol km^-2 hr^-1"
+state   real    e_ch3cooh       i+jf    emis_ant        1       Z       i5      "E_CH3COOH" "CH3COOH emissions" "mol km^-2 hr^-1"
+state   real    e_hcn           i+jf    emis_ant        1       Z       i5      "E_HCN"     "HCN emissions" "mol km^-2 hr^-1"
 
 # Additional crimech emission variables...
 state    real  e_c5h8         i+jf     emis_ant     1         Z      i5      "E_C5H8"             "EMISSIONS C5H8"              "mol km^-2 hr^-1"
@@ -154,6 +157,9 @@ state    real  e_orgj_bb      i+jf     emis_ant     1         Z      i5r     "E_
 state    real  e_co_a         i+jf     emis_ant     1         Z      i5     "E_CO_A"                "EMISSIONS CO_A AER"       "ug/m3 m/s"
 state    real  e_co_bb        i+jf     emis_ant     1         Z      i5     "E_CO_BB"                "EMISSIONS CO_BB AER"       "ug/m3 m/s"
 
+#Additional Chlorin. emission - Alex Zhang 2015/05/15
+state    real  e_ch3cl        i+jf     emis_ant     1         Z      i5     "E_CH3CL"               "EMISSIONS CH3CL"                "mol km^-2 hr^-1"
+
 # GOCART
 state    real  e_bc          i+jf     emis_ant     1         Z      i5     "E_BC"                "EMISSIONS BC AER"       "ug/m3 m/s"
 state    real  e_oc          i+jf     emis_ant     1         Z      i5     "E_OC"                "EMISSIONS BC AER"       "ug/m3 m/s"
@@ -180,27 +186,27 @@ state    real  e_dms           i+jf     emis_ant     1         Z      i5r     "E
 state    real  ust_t         ij       misc         1         -      i012rh "UST_T"               "Threshold Friction Velocity"          "m s-1"
 state    real  rough_cor     ij       misc         1         -       rh      "Rough_cor"     "roughness elements correction"        ""
 state    real  smois_cor     ij       misc         1         -       rh      "Smois_cor"     "soil moisture correction"             ""
-state    real  dustload_1    ij       misc         1         -       rh      "dustload_1"     "dust loading for size 1"        "ug/m2"
-state    real  dustload_2    ij       misc         1         -       rh      "dustload_2"     "dust loading for size 2"        "ug/m2"
-state    real  dustload_3    ij       misc         1         -       rh      "dustload_3"     "dust loading for size 3"        "ug/m2"
-state    real  dustload_4    ij       misc         1         -       rh      "dustload_4"     "dust loading for size 4"        "ug/m2"
-state    real  dustload_5    ij       misc         1         -       rh      "dustload_5"     "total dust loading"             "ug/m2"
+state    real  dustload_1    ij       misc         1         -       r      "dustload_1"     "dust loading for size 1"        "ug/m2"
+state    real  dustload_2    ij       misc         1         -       r      "dustload_2"     "dust loading for size 2"        "ug/m2"
+state    real  dustload_3    ij       misc         1         -       r      "dustload_3"     "dust loading for size 3"        "ug/m2"
+state    real  dustload_4    ij       misc         1         -       r      "dustload_4"     "dust loading for size 4"        "ug/m2"
+state    real  dustload_5    ij       misc         1         -       r      "dustload_5"     "total dust loading"             "ug/m2"
 state    real  depvelocity   ij       misc         1         -       rh      "drydepvel"    "dust dry deposition velocity "         "m/s"
 state    real  setvel_1      ij       misc         1         -       r      "setvel_1"     "dust gravitational settling velocity for size 1"    "m/s"
 state    real  setvel_2      ij       misc         1         -       r      "setvel_2"     "dust gravitational settling velocity for size 2"    "m/s"
 state    real  setvel_3      ij       misc         1         -       r      "setvel_3"     "dust gravitational settling velocity for size 3"    "m/s"
 state    real  setvel_4      ij       misc         1         -       r      "setvel_4"     "dust gravitational settling velocity for size 4"    "m/s"
 state    real  setvel_5      ij       misc         1         -       r      "setvel_5"     "effective gravitational settling velocity for total"    "m/s"
-state    real  dustgraset_1  ij       misc         1         -       rh      "graset_1"     "dust gravitational settling  for size 1"        "ug/m2/s"
-state    real  dustgraset_2  ij       misc         1         -       rh      "graset_2"     "dust gravitational settling  for size 2"        "ug/m2/s"
-state    real  dustgraset_3  ij       misc         1         -       rh      "graset_3"     "dust gravitational settling  for size 3"        "ug/m2/s"
-state    real  dustgraset_4  ij       misc         1         -       rh      "graset_4"     "dust gravitational settling  for size 4"        "ug/m2/s"
-state    real  dustgraset_5  ij       misc         1         -       rh      "graset_5"     "dust gravitational settling  for size 5"        "ug/m2/s"
-state    real  dustdrydep_1   ij      misc        1         -       rh      "drydep_1"     "dust dry deposition for size 1"        "ug/m2/s"
-state    real  dustdrydep_2   ij      misc        1         -       rh      "drydep_2"     "dust dry deposition for size 2"        "ug/m2/s"
-state    real  dustdrydep_3   ij      misc        1         -       rh      "drydep_3"     "dust dry deposition for size 3"        "ug/m2/s"
-state    real  dustdrydep_4   ij      misc        1         -       rh      "drydep_4"     "dust dry deposition for size 4"        "ug/m2/s"
-state    real  dustdrydep_5   ij      misc        1         -       rh      "drydep_5"     "dust dry deposition for size 5"        "ug/m2/s"
+state    real  dustgraset_1  ij       misc         1         -       r      "graset_1"     "dust gravitational settling  for size 1"        "ug/m2/s"
+state    real  dustgraset_2  ij       misc         1         -       r      "graset_2"     "dust gravitational settling  for size 2"        "ug/m2/s"
+state    real  dustgraset_3  ij       misc         1         -       r      "graset_3"     "dust gravitational settling  for size 3"        "ug/m2/s"
+state    real  dustgraset_4  ij       misc         1         -       r      "graset_4"     "dust gravitational settling  for size 4"        "ug/m2/s"
+state    real  dustgraset_5  ij       misc         1         -       r      "graset_5"     "dust gravitational settling  for size 5"        "ug/m2/s"
+state    real  dustdrydep_1   ij      misc        1         -       r      "drydep_1"     "dust dry deposition for size 1"        "ug/m2/s"
+state    real  dustdrydep_2   ij      misc        1         -       r      "drydep_2"     "dust dry deposition for size 2"        "ug/m2/s"
+state    real  dustdrydep_3   ij      misc        1         -       r      "drydep_3"     "dust dry deposition for size 3"        "ug/m2/s"
+state    real  dustdrydep_4   ij      misc        1         -       r      "drydep_4"     "dust dry deposition for size 4"        "ug/m2/s"
+state    real  dustdrydep_5   ij      misc        1         -       r      "drydep_5"     "dust dry deposition for size 5"        "ug/m2/s"
 state    real  dustwd_1       ikj      misc        1         -      r       "dustwd_1"       "dust loss by wet deposition for size 1"        "ug/kg-dryair"
 state    real  dustwd_2       ikj      misc        1         -      r       "dustwd_2"       "dust loss by wet deposition for size 2"        "ug/kg-dryair"
 state    real  dustwd_3       ikj      misc        1         -      r       "dustwd_3"       "dust loss by wet deposition for size 3"        "ug/kg-dryair"
@@ -291,11 +297,11 @@ state    real  e_hum          i+jf     emis_ant     1         Z      i5     "E_H
 
 # dust and seas emission arrays
 state   real     -          i{dust}jf      emis_dust      -        -        -         -                    "Dust Emissions"         ""
-state    real  edust1       i{dust}jf      emis_dust      1         Z      h     "EDUST1"         "DUST emissions bin1"  ""
-state    real  edust2       i{dust}jf      emis_dust      1         Z      h     "EDUST2"         "DUST emissions bin2"  ""
-state    real  edust3       i{dust}jf      emis_dust      1         Z      h     "EDUST3"         "DUST emissions bin3"  ""
-state    real  edust4       i{dust}jf      emis_dust      1         Z      h     "EDUST4"         "DUST emissions bin4"  ""
-state    real  edust5       i{dust}jf      emis_dust      1         Z      h     "EDUST5"         "DUST emissions bin5"  ""
+state    real  edust1       i{dust}jf      emis_dust      1         Z      -     "EDUST1"         "DUST emissions bin1"  ""
+state    real  edust2       i{dust}jf      emis_dust      1         Z      -     "EDUST2"         "DUST emissions bin2"  ""
+state    real  edust3       i{dust}jf      emis_dust      1         Z      -     "EDUST3"         "DUST emissions bin3"  ""
+state    real  edust4       i{dust}jf      emis_dust      1         Z      -     "EDUST4"         "DUST emissions bin4"  ""
+state    real  edust5       i{dust}jf      emis_dust      1         Z      -     "EDUST5"         "DUST emissions bin5"  ""
 state   real     -          i{dust}jf      emis_seas      -        -        -         -                    "Sea-Salt Emissions"         ""
 state    real  eseas1       i{dust}jf      emis_seas      1         Z      -     "ESEAS1"         "Sea-Salt emissions bin1 "  ""
 state    real  eseas2       i{dust}jf      emis_seas      1         Z      -     "ESEAS2"         "Sea-Salt emissions bin2 "  ""
@@ -381,6 +387,15 @@ state    real  ebu_gly      ikjf     ebu           1         Z        -      "eb
 state    real  ebu_acetol   ikjf     ebu           1         Z        -      "ebu_acetol"    "biomass burning emiss"  "mol km^-2 hr^-1"
 state    real  ebu_isop     ikjf     ebu           1         Z        -      "ebu_isop"      "biomass burning emiss"  "mol km^-2 hr^-1"
 state    real  ebu_mvk      ikjf     ebu           1         Z        -      "ebu_mvk"       "biomass burning emiss"  "mol km^-2 hr^-1"
+# additional arrays for t1_mozcart biomass burning
+state    real  ebu_apin     ikjf     ebu           1         Z        -      "ebu_apin"      "biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_benzene  ikjf     ebu           1         Z        -      "ebu_benzene"   "biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_ch3cn    ikjf     ebu           1         Z        -      "ebu_ch3cn"     "biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_hcn      ikjf     ebu           1         Z        -      "ebu_hcn"       "biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_hcooh    ikjf     ebu           1         Z        -      "ebu_hcooh"     "biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_c2h2     ikjf     ebu           1         Z        -      "ebu_c2h2"      "biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_hpald    ikjf     ebu           1         Z        -      "ebu_hpald"     "biomass burning emiss"  "mol km^-2 hr^-1"
+state    real  ebu_xylenes  ikjf     ebu           1         Z        -      "ebu_xylenes"   "biomass burning emiss"  "mol km^-2 hr^-1"
 
 # CH4 biomass burning emissions
 state    real  ebu_ch4      ikjf     ebu           1         Z        h      "ebu_ch4"       "biomass burning emiss"  "mol km^-2 hr^-1"
@@ -444,6 +459,15 @@ state    real  ebu_in_gly         i]jf      ebu_in      1         -        i07  
 state    real  ebu_in_acetol      i]jf      ebu_in      1         -        i07        "ebu_in_acetol"     "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  ebu_in_isop        i]jf      ebu_in      1         -        i07        "ebu_in_isop"       "EMISSIONS"          "mol km^-2 hr^-1"
 state    real  ebu_in_mvk         i]jf      ebu_in      1         -        i07        "ebu_in_mvk"        "EMISSIONS"          "mol km^-2 hr^-1"
+# additional arrays for t1_mozcart biomass burning
+state    real  ebu_in_apin        i]jf      ebu_in      1         -        i07        "ebu_in_apin"       "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_benzene     i]jf      ebu_in      1         -        i07        "ebu_in_benzene"    "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_ch3cn       i]jf      ebu_in      1         -        i07        "ebu_in_ch3cn"      "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_hcn         i]jf      ebu_in      1         -        i07        "ebu_in_hcn"        "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_hcooh       i]jf      ebu_in      1         -        i07        "ebu_in_hcooh"      "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_c2h2        i]jf      ebu_in      1         -        i07        "ebu_in_c2h2"       "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_hpald       i]jf      ebu_in      1         -        i07        "ebu_in_hpald"      "EMISSIONS"          "mol km^-2 hr^-1"
+state    real  ebu_in_xylenes     i]jf      ebu_in      1         -        i07        "ebu_in_xylenes"    "EMISSIONS"          "mol km^-2 hr^-1"
 
 # additional array for ch4 bbm emission
 state    real  ebu_in_ch4         i]jf      ebu_in      1         -        i07        "ebu_in_ch4"        "EMISSIONS"          "mol km^-2 hr^-1"
@@ -510,8 +534,8 @@ state   real  asympar106      ikjf     asym_par     1         Z      -     "ASYM
 
 #for dep outputs
 state    real  ddlen          ijo     misc        1         Z      rh       "DRY_DEP_LEN"       "dry deposition velocity"           "cm/s"
-state    real  ddflx          ijo     misc        1         Z      rh       "DRY_DEP_FLUX"      "dry deposition flux"             "mol or ug m^-2"
-state    real  wdflx          ijo     misc        1         Z      rh       "WET_DEP_FLUX"      "column wet scavening flux"       "mmol or ug m^-2"
+state    real  ddflx          ijo     misc        1         Z      r       "DRY_DEP_FLUX"      "dry deposition flux"             "mol or ug m^-2"
+state    real  wdflx          ijo     misc        1         Z      r       "WET_DEP_FLUX"      "column wet scavening flux"       "mmol or ug m^-2"
 
 #
 state    real  e_bio          ijo     misc        1         Z      r        "E_BIO"             "EMISSIONS"             "ppm m/min"
@@ -586,6 +610,8 @@ state    real  ebio_so2       ij      misc        1         -       r        "eb
 state    real  ebio_dms       ij      misc        1         -       r        "ebio_dms"         "Actual biog emiss"  "mol km^-2 hr^-1"
 state    real  ebio_myrc      ij      misc        1         -       r        "ebio_myrc"         "Actual biog emiss"  "mol km^-2 hr^-1"
 state    real  ebio_bpi       ij      misc        1         -       r        "ebio_bpi"         "Actual biog emiss"  "mol km^-2 hr^-1"
+# t1_mozcart megan2 bio emission species 
+state    real  ebio_hcn       ij      misc        1         -       r        "ebio_hcn"         "Actual biog emiss"  "mol km^-2 hr^-1"
 # crimech megan2 bio emission species
 state    real  ebio_c5h8      ij      misc        1         -      -        "ebio_c5h8"        "Actual biog emiss"  "mol km^-2 hr^-1"
 state    real  ebio_apinene   ij      misc        1         -      -        "ebio_apinene"     "Actual biog emiss"  "mol km^-2 hr^-1"
@@ -1033,6 +1059,11 @@ state    real  ddmass_co3_cw02      i%jf      dvel          1         -      rdu
 state    real  ddmass_co3_cw03      i%jf      dvel          1         -      rdu    "ddmass_co3_cw03"    "co3_cw03 dry deposition, accumulated"  "ug/m2"
 state    real  ddmass_co3_cw04      i%jf      dvel          1         -      rdu    "ddmass_co3_cw04"    "co3_cw04 dry deposition, accumulated"  "ug/m2"
 
+# aerosol surface area diagnostic
+state  real  -                ikjf    aero_srf_area   1    -   -     - 
+state  real  sulf_srf_area    ikjf    aero_srf_area   1    -   -   "sulf_srf_area"      "Sulfate aerosol srf area"                       "cm^2"
+state  real  oc_srf_area      ikjf    aero_srf_area   1    -   -   "oc_srf_area"        "Hydrophylic organic carbon aerosol srf area"    "cm^2"
+state  real  bc_srf_area      ikjf    aero_srf_area   1    -   -   "bc_srf_area"        "Hydrophylic black carbon aerosol srf area"      "cm^2"
 # deposition velocities for diagnostic package, feel free to add if you like!
 #
 state    real  dep_vel   i{kdv}j{ndv}  misc           1         Z      r      "DEP_VEL"        "deposition velocity"             "cm/s"
@@ -1294,6 +1325,7 @@ state    real  ph_pan          ikj     misc        1         -      r        "PH
 state    real  ph_acet         ikj     misc        1         -      r        "PHOTR102"              "acetone photolysis rate" "min{-1}"
 state    real  ph_mglo         ikj     misc        1         -      r        "PHOTR103"              "mglo photolysis rate" "min{-1}"
 state    real  ph_hno4_2       ikj     misc        1         -      r        "PHOTR104"              "mglo photolysis rate" "min{-1}"
+state    real  ph_clno2        ikj     misc        1         -      rh        "PHOTR204"                "CLNO2 Photolysis Rate" "min{-1}"
 # mozart photolysis rates
 state    real  ph_n2o          ikj     misc        1         -      r        "PHOTR114"              "n2o photolysis rate" "min{-1}"
 state    real  ph_pooh         ikj     misc        1         -      r        "PHOTR118"              "pooh photolysis rate" "min{-1}"
@@ -1447,6 +1479,8 @@ state    real  cvapi1          ikj     misc        1         -      r        "cv
 state    real  cvapi2          ikj     misc        1         -      r        "cvapi2"                "cond.vapor from biogenics"            "?"
 state    real  cvlim1          ikj     misc        1         -      r        "cvlim1"                "cond.vapor from biogenics"            "?"
 state    real  cvlim2          ikj     misc        1         -      r        "cvlim2"                "cond.vapor from biogenics"            "?"
+state    real  snu             ikj     misc        1         -      rh        "snu"                   "2nd moment Aitken mode"               "m2 m-3"
+state    real  sac             ikj     misc        1         -      rh        "sac"                   "2nd moment Aitken mode"               "m2 m-3"
 # non-transported radical species for RACM
 state    real  addt         ikj     misc        1         -      r        "addt"                "Radicals" "ppm"
 state    real  addx         ikj     misc        1         -      r        "addx"                "Radicals" "ppm"
@@ -1795,6 +1829,26 @@ state   real   terprod2       ikjftb   chem        1         -   i0{12}rhusdf=(b
 state   real   terp2o2       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "terp2o2"         "TERP2O2 -> C10H15O4 mixing ratio"        "ppmv"
 state   real   terp2ooh       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "terp2ooh"         "TERP2OOH -> C10H16O4 mixing ratio"        "ppmv"
 state   real   nterpo2       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nterpo2"         "NTERPO2 -> C10H16NO5 mixing ratio"        "ppmv"
+
+#Additional T1 MOZART gas variables inside the chem array...
+state   real   alknit      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "alknit"        "alknit mixing ratio"        "ppmv"
+state   real   bzald       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "bzald"         "bzald  mixing ratio"        "ppmv"
+state   real   ch3cn       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "ch3cn"         "ch3cn  mixing ratio"        "ppmv"
+state   real   eooh        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "eooh"          "eooh   mixing ratio"        "ppmv"
+state   real   hcn         ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "hcn"           "hcn    mixing ratio"        "ppmv"
+state   real   honitr      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "honitr"        "honitr mixing ratio"        "ppmv"
+state   real   hpald       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "hpald"         "hpald  mixing ratio"        "ppmv"
+state   real   iepox       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "iepox"         "iepox  mixing ratio"        "ppmv"
+state   real   isopnita    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "isopnita"      "isopnita mixing ratio"      "ppmv"
+state   real   isopnitb    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "isopnitb"      "isopnitb mixing ratio"      "ppmv"
+state   real   isopnooh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "isopnooh"      "isopnooh mixing ratio"      "ppmv"
+state   real   isopao2     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "isopao2"       "isopao2  mixing ratio"      "ppmv"
+state   real   isopbo2     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "isopbo2"       "isopbo2  mixing ratio"      "ppmv"
+state   real   nc4ch2oh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nc4ch2oh"      "nc4ch2oh mixing ratio"      "ppmv"
+state   real   nc4cho      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nc4cho"        "nc4cho  mixing ratio"       "ppmv"
+state   real   nterpooh    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "nterpooh"      "nterpooh mixing ratio"      "ppmv"
+state   real   phenol      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "phenol"        "phenol mixing ratio"        "ppmv"
+state   real   terpnit     ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "terpnit"       "terpnit mixing ratio"       "ppmv"
 #volcanic ash variables inside the chem array...
 #
 state   real   vash_1    ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "vash_1"             "vash1  mixing ratio"        "ug/kg-dryair"
@@ -2075,6 +2129,7 @@ state   real    ch4_ant    ikjftb   chem         1         -     i0{12}rhusdf=(b
 state   real    ch4_bbu    ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CH4_BBU"       "mixing ratio of biomass burning CH4"  "ppmv"
 state   real    ch4_bck    ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CH4_BCK"       "mixing ratio of background CH4"       "ppmv"
 state   real    ch4_tst    ikjftb   chem         1         -     i0{12}rhusdf=(bdy_interp:dt)  "CH4_TST"       "mixing ratio of CH4, test fluxes"  "ppmv"
+state   real    pv         ikj      misc         1         -     h                             "PV"            "Potential Vorticity"        "pvu"
 
 #SAPRCNOV additional variables, automatically created using diff_mechanisSpc_wrfRegistry.m script (pablo-saide@uiowa.edu)
 state   real    h2so4           ikjftb  chem    1       -       i0{12}rhusdf=(bdy_interp:dt) "h2so4" "H2SO4 mixing ratio"   "ppmv"
@@ -2253,7 +2308,20 @@ state   real   bsoa3j     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_i
 state   real   bsoa3i     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa3i"       "SOA Biog. org. conc. with  C* value=100  ug/m^3 Aitken mode"    "ug/kg-dryair"
 state   real   bsoa4j     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa4j"       "SOA Biog. org. conc. with  C* value=1000 ug/m^3 Acc. mode"      "ug/kg-dryair"
 state   real   bsoa4i     ikjftb    chem       1         -   i0{12}rhusdf=(bdy_interp:dt)  "bsoa4i"       "SOA Biog. org. conc. with  C* value=1000 ug/m^3 Aitken mode"    "ug/kg-dryair"
-
+# # crustal species for RACM_SOA_VBS mechanism
+state   real   caaj       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "caaj"         "Calcium conc. Acc. mode"       "ug/kg-dryair"
+state   real   caai       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "caai"         "Calcium conc. Aitken mode"       "ug/kg-dryair"
+state   real   kaj        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "kaj"          "Potassium conc. Acc. mode"       "ug/kg-dryair"
+state   real   kai        ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "kai"          "Potassium conc. Aitken mode"       "ug/kg-dryair"
+state   real   mgaj       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "mgaj"         "Magnesium conc. Acc. mode"       "ug/kg-dryair"
+state   real   mgai       ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "mgai"         "Magnesium conc. Aitken mode"       "ug/kg-dryair"
+#
+# parameters for the N2O5 uptake process in RACM_SOA_VBS mechanism
+state    real  gamn2o5         ikj     misc        1         -      rh        "gamn2o5"                "n2o5 uptake by aerosol" "numerical value"
+state    real  cn2o5         ikj     misc        1         -      rh        "cn2o5"                "n2o5 velocity" "m/s"
+state    real  kn2o5         ikj     misc        1         -      rh        "kn2o5"                "n2o5 het reaction rate" "s-1"
+state    real  yclno2         ikj     misc        1         -      rh        "yclno2"                "clno2 yield from n2o5 het" "numerical value"
+# #
 #cloud-phase aerosol
 state   real   so4cwj      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "so4cwj"         "Sulfate conc. Acc. mode in cloud"       "ug/kg-dryair"
 state   real   so4cwi      ikjftb   chem        1         -   i0{12}rhusdf=(bdy_interp:dt)  "so4cwi"         "Sulfate conc. Aitken mode in cloud"       "ug/kg-dryair"
@@ -3680,7 +3748,6 @@ rconfig   integer kemit_aircraft           namelist,chem        1              1
 rconfig   integer kdvel                    namelist,chem        1              1       -       "kdvel"                ""      ""
 rconfig   integer ndepvel                  namelist,chem        1              140     -       "ndepvel"                ""      ""
 rconfig   integer kdepvel                  namelist,chem        1              1       -       "kdepvel"                ""      ""
-rconfig   integer erosion_dim              namelist,chem        1              3       -       "erosion_dim"          ""      ""
 rconfig   integer    biomass_emiss_opt     namelist,chem        max_domains    0       rh      "biomass_emiss_opt"                   ""    ""
 rconfig   integer cam_mam_mode             namelist,chem        1              3       irh     "cam_mam_mode"                   ""    ""
 rconfig   integer cam_mam_nspec            namelist,chem        1              85      irh     "cam_mam_nspec"                   ""    ""
@@ -3688,7 +3755,7 @@ rconfig   logical CAM_MP_MAM_cpled         namelist,chem        1            .tr
 # Lightning
 rconfig   integer     lightning_opt       namelist,chem        max_domains        0       rh      "lightning_opt"     ""      ""
 rconfig   integer     lightning_time_step namelist,chem        max_domains        0       rh     "lightning_time_step"  ""      ""
-rconfig   integer     lightning_start_seconds namelist,chem    max_domains        0       rh     "lightning_start_seconds"    ""      ""
+rconfig   real        lightning_start_seconds namelist,chem    max_domains        0       rh     "lightning_start_seconds"    ""      ""
 rconfig   real        temp_upper          namelist,chem        max_domains      -45.      rh     "temp_upper"         ""      ""
 rconfig   real        temp_lower          namelist,chem        max_domains      -15.      rh     "temp_lower"         ""      ""
 rconfig   real        N_IC                namelist,chem        max_domains        0.      rh     "N_IC"               ""    ""
@@ -3714,6 +3781,8 @@ rconfig   character   term_opt            namelist,chem        max_domains   "CH
 #                                 gas and aerosol calculations turned on (gaschem_onoff=1 and aerchem_onoff=1), these can be turned off for debugging, etc.
 #                                 wet scavenging and cloud chemistry turned off (wetscav_onoff=0 and cldchem_onoff=0) since these only work with a subset of chemistry options
 #                                 vertical mixing turned on (vertmix_onoff=1) since this is done via the dry deposition routine and works with all chem options
+
+rconfig   logical     do_pvozone          namelist,chem          1             .false.  rh    "do_pvozone"            ""      ""
 rconfig   integer     chem_conv_tr        namelist,chem          max_domains    1       rh    "chem_conv_opt"       ""      ""
 rconfig   integer     conv_tr_wetscav     namelist,chem          max_domains    1       rh    "conv_tr_wetscav_opt"       ""      ""
 rconfig   integer     conv_tr_aqchem      namelist,chem          max_domains    1       rh    "conv_tr_aqchem_opt"       ""      ""
@@ -3775,6 +3844,7 @@ rconfig   character   exo_coldens_inname  namelist,chem          max_domains    
 rconfig   character   wes_seasonal_inname namelist,chem          max_domains    "wrf_season_wes_usgs_<domain>.nc"      h    "name of wesely seasonal infile"  ""      ""
 
 rconfig   integer        chemdiag        namelist,chem        max_domains        0      -     "Chemical tendency diagnostics"   ""    ""
+rconfig   integer        aero_srf_area_diag        namelist,chem        max_domains        0      -     "Aerosol srf area diagnostics"   ""    ""
 
 # Options for AFWA GOCART Dust model (dust_opt=3)
 #
@@ -3807,6 +3877,8 @@ rconfig   integer    track_tuv_lev        namelist,chem       1               51
 
 # control for N2O5 heterogenenous chemistry option in MOSAIC
 rconfig   integer    n2o5_hetchem         namelist,chem          1              0       rh    "n2o5_hetchem"      ""     ""           
+# control for MOSAIC aerosol chemistry and microphysics versions
+rconfig   integer   mosaic_aerchem_optaa  namelist,chem          1              1       rh    "mosaic_aerchem_optaa"      ""     ""
 #
 # control for AF wavelength
 rconfig   real        af_lambda_start     namelist,chem          max_domains    200.    rh    "start wavelength for AF output" "nm"      ""
@@ -3862,7 +3934,8 @@ package   racm_esrlsorg_kpp      chem_opt==107                  -            che
 
 # new scheme for better SOA simulations
 package   racm_soa_vbs_kpp  chem_opt==108                  -         chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,hace,ishp,ison,mahp,mpan,nald,sesq,mbo,cvasoa1,cvasoa2,cvasoa3,cvasoa4,cvbsoa1,cvbsoa2,cvbsoa3,cvbsoa4,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,asoa1j,asoa1i,asoa2j,asoa2i,asoa3j,asoa3i,asoa4j,asoa4i,bsoa1j,bsoa1i,bsoa2j,bsoa2i,bsoa3j,bsoa3i,bsoa4j,bsoa4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn
-
+# new scheme for better SOA simulations + ISORROPIA+N2O5+ClNO2  
+package   racm_soa_vbs_het_kpp  chem_opt==100                  -         chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,hace,ishp,ison,mahp,mpan,nald,sesq,mbo,cvasoa1,cvasoa2,cvasoa3,cvasoa4,cvbsoa1,cvbsoa2,cvbsoa3,cvbsoa4,hcl,clno2,cl2,fmcl,cl,clo,hocl,ch3cl,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,asoa1j,asoa1i,asoa2j,asoa2i,asoa3j,asoa3i,asoa4j,asoa4i,bsoa1j,bsoa1i,bsoa2j,bsoa2i,bsoa3j,bsoa3i,bsoa4j,bsoa4i,orgpaj,orgpai,ecj,eci,caaj,caai,kaj,kai,mgaj,mgai,p25j,p25i,antha,seas,soila,nu0,ac0,corn
 # new scheme for better SOA simulations + AQ chem
 package   racm_soa_vbs_aqchem_kpp  chem_opt==109                  -         chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,paa,ora1,ora2,nh3,n2o5,no3,pan,hc3,hc5,hc8,eth,co,ete,olt,oli,tol,xyl,aco3,tpan,hono,hno4,ket,gly,mgly,dcb,onit,csl,iso,co2,ch4,udd,hket,api,lim,dien,macr,hace,ishp,ison,mahp,mpan,nald,sesq,mbo,cvasoa1,cvasoa2,cvasoa3,cvasoa4,cvbsoa1,cvbsoa2,cvbsoa3,cvbsoa4,ho,ho2,so4aj,so4ai,nh4aj,nh4ai,no3aj,no3ai,naaj,naai,claj,clai,asoa1j,asoa1i,asoa2j,asoa2i,asoa3j,asoa3i,asoa4j,asoa4i,bsoa1j,bsoa1i,bsoa2j,bsoa2i,bsoa3j,bsoa3i,bsoa4j,bsoa4i,orgpaj,orgpai,ecj,eci,p25j,p25i,antha,seas,soila,nu0,ac0,corn,so4cwj,so4cwi,nh4cwj,nh4cwi,no3cwj,no3cwi,nacwj,nacwi,clcwj,clcwi,asoa1cwj,asoa1cwi,asoa2cwj,asoa2cwi,asoa3cwj,asoa2cwi,asoa3cwj,asoa3cwi,asoa4cwj,asoa4cwi,bsoa1cwj,bsoa1cwi,bsoa2cwj,bsoa2cwi,bsoa3cwj,bsoa3cwi,bsoa4cwj,bsoa4cwi,orgpacwj,orgpacwi,eccwj,eccwi,p25cwj,p25cwi,anthcw,seascw,soilcw,nu0cw,ac0cw,corncw
 
@@ -3873,6 +3946,8 @@ package   mozart_kpp        chem_opt==111                  -          chem:o3,o1
 # KPP mechanism from mozart + gocart
 package   mozcart_kpp       chem_opt==112                  -          chem:o3,o1d_cb4,o,no,no2,no3,n2o5,hno3,hno4,so2,ho,ho2,h2o2,sulf,co,hcho,ch3ooh,ch3o2,ch4,h2,eo2,ch3cooh,c2h4,n2o,ch3oh,aco3,acet,mgly,paa,gly,c3h6ooh,pan,mpan,macr,mvk,c3h6,etooh,prooh,acetp,xooh,onitr,isooh,acetol,glyald,mek,eto2,open,alkooh,mekooh,tolooh,terpooh,ald,mco3,c2h5oh,eo,c2h6,c3h8,pro2,po2,aceto2,bigene,bigalk,eneo2,alko2,isopr,iso2,mvko2,mvkooh,hydrald,xo2,c10h16,terpo2,tol,cres,to2,xoh,onit,isopn,dms,nh3,meko2,p25,bc1,bc2,oc1,oc2,dust_1,dust_2,dust_3,dust_4,dust_5,seas_1,seas_2,seas_3,seas_4,p10
 
+# KPP mechanism for t1 mozart + gocart
+package  t1_mozcart_kpp     chem_opt==114                  -          chem:alknit,alkooh,apin,bcary,benzene,benzooh,bepomuc,open,bigald1,bigald2,bigald3,bigald4,bigalk,bigene,bpin,bzald,bzooh,c2h2,c2h4,c2h5oh,etooh,c2h6,c3h6,prooh,c3h8,c6h5ooh,hcho,ald,ch3cn,acet,mgly,ch3cooh,paa,ch3oh,ch3ooh,ch4,co,cres,dms,eooh,glyald,gly,h2,h2o2,hcn,hcooh,hmprop,hmpropo2,hno3,hno4,honitr,hpald,acetol,hydrald,iepox,isopr,isopnita,isopnitb,isopn,isopnooh,isooh,limon,macr,mvkooh,malo2,mbo,mbono3o2,mboo2,mboooh,mek,mekooh,mpan,mvk,myrc,n2o,n2o5,nc4ch2oh,nc4cho,nh3,no,no2,no3,noa,nterpooh,o,o3,onitr,pan,pbznit,pheno,phenol,phenooh,c3h6ooh,acetp,so2,sulf,tepomuc,terp2ooh,terpnit,terpooh,terprod1,terprod2,tolooh,tol,xooh,xylenes,xylenooh,xylol,xylolooh,acbzo2,alko2,benzo2,bzoo,eto2,pro2,c6h5o2,aco3,ch3o2,dicarbo2,eneo2,eo,eo2,ho2,hoch2oo,isopao2,isopbo2,mvko2,mco3,mdialo2,meko2,nterpo2,o1d,ho,pheno2,po2,aceto2,terp2o2,terpo2,to2,xo2,xyleno2,xylolo2,p25,bc1,bc2,oc1,oc2,dust_1,dust_2,dust_3,dust_4,dust_5,seas_1,seas_2,seas_3,seas_4,p10
 # KPP mechanism from CBMZ
 package   cbmz_bb_kpp       chem_opt==120                -             chem:so2,sulf,no2,no,o3,hno3,h2o2,ald,hcho,op1,op2,ora1,ora2,nh3,n2o5,no3,pan,eth,co,ol2,olt,oli,tol,xyl,hono,hno4,ket,mgly,onit,csl,iso,ho,ho2,ch4,hcl,ch3o2,ethp,ch3oh,c2h5oh,par,to2,cro,open,op3,c2o3,ro2,ano2,nap,xo2,xpar,isoprd,isopp,isopn,isopo2
 
@@ -3938,7 +4013,7 @@ package   cri_mosaic_4bin_aq_kpp  chem_opt==611          -             chem:dms,
 #emission package definitions
 #
 package   eradm           emiss_opt==2                   -             emis_ant:e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3
-package   eradmsorg       emiss_opt==3                   -             emis_ant:e_iso,e_so2,e_no,e_no2,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_pm25i,e_pm25j,e_pm_10,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_naaj,e_naai,e_orgi_a,e_orgj_a,e_orgi_bb,e_orgj_bb
+package   eradmsorg       emiss_opt==3                   -             emis_ant:e_iso,e_so2,e_no,e_no2,e_co,e_ch4,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_pm25i,e_pm25j,e_pm_10,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_naaj,e_naai,e_orgi_a,e_orgj_a,e_orgi_bb,e_orgj_bb,e_hcl,e_cli,e_clj,e_ch3cl
 package   ecbmz_mosaic    emiss_opt==4                   -             emis_ant:e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_no2,e_ch3oh,e_c2h5oh,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_so4c,e_no3c,e_orgc,e_ecc
 package   ecptec          emiss_opt==5                   -             emis_ant:e_iso,e_so2,e_no,e_no2,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_pm_25,e_pm_10,e_oc,e_sulf,e_bc
 package   gocart_ecptec   emiss_opt==6                   -             emis_ant:e_so2,e_sulf,e_bc,e_oc,e_pm_25,e_pm_10
@@ -3946,7 +4021,8 @@ package   mozem           emiss_opt==7                   -             emis_ant:
 package   mozcem          emiss_opt==8                   -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_nh3,e_isop,e_c10h16,e_pm_10,e_pm_25,e_bc,e_oc,e_sulf
 package   cammam          emiss_opt==9                   -             emis_ant:e_iso,e_so2,e_no,e_co,e_eth,e_hc3,e_hc5,e_hc8,e_xyl,e_ol2,e_olt,e_oli,e_tol,e_csl,e_hcho,e_ald,e_ket,e_ora2,e_nh3,e_dms,e_ecj,e_orgj,e_so4i,e_so4j,e_soag_bigene,e_soag_isoprene,e_soag_terpene,e_soag_toluene,e_dust_a1,e_dust_a3,e_ncl_a1,e_ncl_a2,e_ncl_a3,e_orgj_num,e_ecj_num,e_so4j_num,e_so4i_num
 
-package   mozmem           emiss_opt==10                   -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_benzene,e_xylene,e_nh3,e_isop,e_c10h16,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_nh4i,e_nh4j,e_nai,e_naj,e_cli,e_clj,e_co_a,e_orgi_a,e_orgj_a,e_co_bb,e_orgi_bb,e_orgj_bb,e_pm_10,e_c2h2,e_gly,e_sulf,e_macr,e_mgly,e_mvk,e_hcooh,e_hono
+package   mozmem           emiss_opt==10                   -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_benzene,e_xylene,e_nh3,e_isop,e_apin,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_nh4i,e_nh4j,e_nai,e_naj,e_cli,e_clj,e_co_a,e_orgi_a,e_orgj_a,e_co_bb,e_orgi_bb,e_orgj_bb,e_pm_10,e_c2h2,e_gly,e_sulf,e_macr,e_mgly,e_mvk,e_hcooh,e_hono
+package   mozc_t1_em      emiss_opt==11                  -             emis_ant:e_co,e_no,e_no2,e_bigalk,e_bigene,e_c2h4,e_c2h5oh,e_c2h6,e_c3h6,e_c3h8,e_ch2o,e_ch3cho,e_ch3coch3,e_ch3oh,e_mek,e_so2,e_toluene,e_nh3,e_isop,e_hcooh,e_ch3cn,e_ch3cooh,e_hcn,e_apin,e_mvk,e_mgly,e_benzene,e_xylene,e_sulf,e_c2h2,e_pm_10,e_pm_25,e_bc,e_oc
 package   esaprcnov       emiss_opt==13                  -             emis_ant:e_so2,e_c2h6,e_c3h8,e_c2h2,e_alk3,e_alk4,e_alk5,e_ethene,e_c3h6,e_ole1,e_ole2,e_aro1,e_aro2,e_hcho,e_ccho,e_rcho,e_acet,e_mek,e_isoprene,e_terp,e_sesq,e_co,e_no,e_no2,e_phen,e_cres,e_meoh,e_gly,e_mgly,e_bacl,e_isoprod,e_methacro,e_mvk,e_prod2,e_ch4,e_bald,e_hcooh,e_cco_oh,e_rco_oh,e_nh3,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_orgi_a,e_orgj_a,e_orgi_bb,e_orgj_bb
 # For CB05 mechanism based on CBMZ speciation, used with emiss_inpt_opt = 102 
 package   ecb05_opt1      emiss_opt==14                   -             emis_ant:e_no2,e_xyl,e_tol,e_terp,e_so2,e_ora2,e_olt,e_oli,e_ol2,e_no,e_nh3,e_iso,e_hcl,e_hcho,e_eth,e_csl,e_co,e_ch3oh,e_c2h5oh,e_ald,e_aldx,e_hc3,e_hc5,e_hc8,e_ket,e_pm25i,e_pm25j,e_eci,e_ecj,e_orgi,e_orgj,e_so4i,e_so4j,e_no3i,e_no3j,e_so4c,e_no3c,e_orgc,e_ecc,e_pm10
@@ -3993,6 +4069,7 @@ package   ebioghg       bio_emiss_opt==17            -             state:rad_vpr
 package   biomassb      biomass_burn_opt==1             -          state:mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr;ebu:ebu_no,ebu_no2,ebu_co,ebu_co2,ebu_eth,ebu_hc3,ebu_hc5,ebu_hc8,ebu_ete,ebu_olt,ebu_oli,ebu_pm25,ebu_pm10,ebu_dien,ebu_iso,ebu_api,ebu_lim,ebu_tol,ebu_csl,ebu_hcho,ebu_ald,ebu_ket,ebu_macr,ebu_ora1,ebu_ora2,ebu_so2,ebu_nh3,ebu_oc,ebu_bc,ebu_sulf,ebu_dms;ebu_in:ebu_in_no,ebu_in_no2,ebu_in_co,ebu_in_co2,ebu_in_eth,ebu_in_hc3,ebu_in_hc5,ebu_in_hc8,ebu_in_ete,ebu_in_olt,ebu_in_oli,ebu_in_pm25,ebu_in_pm10,ebu_in_dien,ebu_in_iso,ebu_in_api,ebu_in_lim,ebu_in_tol,ebu_in_csl,ebu_in_hcho,ebu_in_ald,ebu_in_xyl,ebu_in_ket,ebu_in_macr,ebu_in_ora1,ebu_in_ora2,ebu_in_so2,ebu_in_nh3,ebu_in_oc,ebu_in_bc,ebu_in_sulf,ebu_in_dms,ebu_in_ash
 package   biomassb_mozc      biomass_burn_opt==2             -          state:mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr;ebu:ebu_co,ebu_no,ebu_no2,ebu_bigalk,ebu_bigene,ebu_c2h4,ebu_c2h5oh,ebu_c2h6,ebu_c3h6,ebu_c3h8,ebu_ch2o,ebu_ch3cho,ebu_ch3coch3,ebu_ch3oh,ebu_mek,ebu_so2,ebu_toluene,ebu_nh3,ebu_oc,ebu_bc,ebu_pm25,ebu_pm10,ebu_open,ebu_c10h16,ebu_mgly,ebu_ch3cooh,ebu_cres,ebu_glyald,ebu_gly,ebu_acetol,ebu_isop,ebu_macr,ebu_mvk;ebu_in:ebu_in_co,ebu_in_no,ebu_in_bigalk,ebu_in_bigene,ebu_in_c2h4,ebu_in_c2h5oh,ebu_in_c2h6,ebu_in_c3h6,ebu_in_c3h8,ebu_in_ch2o,ebu_in_ch3cho,ebu_in_ch3coch3,ebu_in_ch3oh,ebu_in_mek,ebu_in_so2,ebu_in_toluene,ebu_in_nh3,ebu_in_no2,ebu_in_open,ebu_in_c10h16,ebu_in_mgly,ebu_in_ch3cooh,ebu_in_cres,ebu_in_glyald,ebu_in_gly,ebu_in_acetol,ebu_in_isop,ebu_in_macr,ebu_in_mvk,ebu_in_pm25,ebu_in_pm10,ebu_in_oc,ebu_in_bc
 package   biomassb_moz       biomass_burn_opt==3             -          state:mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr;ebu:ebu_co,ebu_no,ebu_no2,ebu_bigalk,ebu_bigene,ebu_c2h4,ebu_c2h5oh,ebu_c2h6,ebu_c3h6,ebu_c3h8,ebu_ch2o,ebu_ch3cho,ebu_ch3coch3,ebu_ch3oh,ebu_mek,ebu_so2,ebu_toluene,ebu_nh3,ebu_open,ebu_c10h16,ebu_mgly,ebu_ch3cooh,ebu_cres,ebu_glyald,ebu_gly,ebu_acetol,ebu_isop,ebu_macr,ebu_mvk;ebu_in:ebu_in_co,ebu_in_no,ebu_in_bigalk,ebu_in_bigene,ebu_in_c2h4,ebu_in_c2h5oh,ebu_in_c2h6,ebu_in_c3h6,ebu_in_c3h8,ebu_in_ch2o,ebu_in_ch3cho,ebu_in_ch3coch3,ebu_in_ch3oh,ebu_in_mek,ebu_in_so2,ebu_in_toluene,ebu_in_nh3,ebu_in_no2,ebu_in_open,ebu_in_c10h16,ebu_in_mgly,ebu_in_ch3cooh,ebu_in_cres,ebu_in_glyald,ebu_in_gly,ebu_in_acetol,ebu_in_isop,ebu_in_macr,ebu_in_mvk
+package   biomassb_t1_mozcart   biomass_burn_opt==4          -          state:mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr;ebu:ebu_co,ebu_no,ebu_no2,ebu_bigalk,ebu_bigene,ebu_c2h4,ebu_c2h5oh,ebu_c2h6,ebu_c3h6,ebu_c3h8,ebu_ch2o,ebu_ch3cho,ebu_ch3coch3,ebu_ch3oh,ebu_mek,ebu_so2,ebu_toluene,ebu_nh3,ebu_oc,ebu_bc,ebu_pm25,ebu_pm10,ebu_mgly,ebu_ch3cooh,ebu_cres,ebu_glyald,ebu_acetol,ebu_isop,ebu_macr,ebu_mvk,ebu_apin,ebu_benzene,ebu_ch3cn,ebu_hcn,ebu_hcooh,ebu_c2h2,ebu_dms,ebu_hpald,ebu_xylenes;ebu_in:ebu_in_co,ebu_in_no,ebu_in_bigalk,ebu_in_bigene,ebu_in_c2h4,ebu_in_c2h5oh,ebu_in_c2h6,ebu_in_c3h6,ebu_in_c3h8,ebu_in_ch2o,ebu_in_ch3cho,ebu_in_ch3coch3,ebu_in_ch3oh,ebu_in_mek,ebu_in_so2,ebu_in_toluene,ebu_in_nh3,ebu_in_no2,ebu_in_mgly,ebu_in_ch3cooh,ebu_in_cres,ebu_in_glyald,ebu_in_acetol,ebu_in_isop,ebu_in_macr,ebu_in_mvk,ebu_in_pm25,ebu_in_pm10,ebu_in_oc,ebu_in_bc,ebu_in_apin,ebu_in_benzene,ebu_in_ch3cn,ebu_in_hcn,ebu_in_hcooh,ebu_in_c2h2,ebu_in_dms,ebu_in_hpald,ebu_in_xylenes
 
 # GHG biomass burning
 package   biomassb_ghg  biomass_burn_opt==5          -             state::mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr;ebu:ebu_co,ebu_co2,ebu_ch4;ebu_in:ebu_in_co,ebu_in_co2,ebu_in_ch4
@@ -4062,6 +4139,8 @@ package   aircraft1      aircraft_emiss_opt==1             -       emis_aircraft
 package   nochemdiag     chemdiag==0         -                -
 package   usechemdiag    chemdiag==1         -                conv_ct:conv_co,conv_o3,conv_no,conv_no2,conv_hno3,conv_iso,conv_ho,conv_ho2;chem_ct:chem_co,chem_o3,chem_no,chem_no2,chem_hno3,chem_iso,chem_ho,chem_ho2;vmix_ct:vmix_co,vmix_o3,vmix_no,vmix_no2,vmix_hno3,vmix_iso,vmix_ho,vmix_ho2;advh_ct:advh_co,advh_o3,advh_no,advh_no2,advh_hno3,advh_iso,advh_ho,advh_ho2;advz_ct:advz_co,advz_o3,advz_no,advz_no2,advz_hno3,advz_iso,advz_ho,advz_ho2
 
+# package for aerosol srf area diagnostic
+package   has_aero_srf_area_diag    aero_srf_area_diag==1         -                aero_srf_area:sulf_srf_area,oc_srf_area,bc_srf_area
 
 # Lightning NOx tracers
 state   real    lnox_total   ikjf    tracer        1         -     i8rhusdf=(bdy_interp:dt)    "lnox_total"      "Total LNOx tracer"          "ppmv"
@@ -4084,3 +4163,5 @@ package  lnox_opt_none      lnox_opt==0    -   -
 package  lnox_opt_ott       lnox_opt==1    -   tracer:lnox_total
 package  lnox_opt_decaria   lnox_opt==2    -   tracer:lnox_ic,lnox_cg
 
+# Integrated Reaction Rate option
+rconfig   integer    irr_opt  namelist,chem     max_domains        0     rh     "IRR_OPT"            "" ""

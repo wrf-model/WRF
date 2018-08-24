@@ -36,7 +36,7 @@
 !.. Remaining values should probably be left alone.
 !..
 !..Author: Greg Thompson, NCAR-RAL, gthompsn@ucar.edu, 303-497-2805
-!..Last modified: 04 Aug 2017   Aerosol additions to v3.5.1 code 9/2013
+!..Last modified: 24 Jan 2018   Aerosol additions to v3.5.1 code 9/2013
 !..                 Cloud fraction additions 11/2014 part of pre-v3.7
 !+---+-----------------------------------------------------------------+
 !wrft:model_layer:physics
@@ -391,8 +391,8 @@
 
       CONTAINS
 
-      SUBROUTINE thompson_init(hgt, nwfa2d, nwfa, nifa, dx, dy,         &
-                          is_start,                                     &
+      SUBROUTINE thompson_init(hgt, orho, nwfa2d, nwfa, nifa,           &
+                          dx, dy, is_start,                             &
                           ids, ide, jds, jde, kds, kde,                 &
                           ims, ime, jms, jme, kms, kme,                 &
                           its, ite, jts, jte, kts, kte)
@@ -408,13 +408,14 @@
 
       REAL, DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL, INTENT(INOUT) :: nwfa, nifa
       REAL, DIMENSION(ims:ime,jms:jme), OPTIONAL, INTENT(INOUT) :: nwfa2d
+      REAL, DIMENSION(ims:ime,kms:kme,jms:jme), OPTIONAL, INTENT(IN) :: orho
       REAL, OPTIONAL, INTENT(IN) :: DX, DY
       LOGICAL, OPTIONAL, INTENT(IN) :: is_start
       CHARACTER*256:: mp_debug
 
 
       INTEGER:: i, j, k, l, m, n
-      REAL:: h_01, niIN3, niCCN3, max_test
+      REAL:: h_01, airmass, niIN3, niCCN3, max_test
       LOGICAL:: micro_init, has_CCN, has_IN
 
       is_aerosol_aware = .FALSE.
@@ -458,6 +459,8 @@
             endif
             niCCN3 = -1.0*ALOG(naCCN1/naCCN0)/h_01
             nwfa(i,1,j) = naCCN1+naCCN0*exp(-((hgt(i,2,j)-hgt(i,1,j))/1000.)*niCCN3)
+            airmass = 1./orho(i,1,j) * (hgt(i,2,j)-hgt(i,1,j))*dx*dy     ! kg
+            nwfa2d(i,j) = nwfa(i,1,j) * 0.000196 * (airmass*2.E-10)
             do k = 2, kte
                nwfa(i,k,j) = naCCN1+naCCN0*exp(-((hgt(i,k,j)-hgt(i,1,j))/1000.)*niCCN3)
             enddo
@@ -505,43 +508,6 @@
          CALL wrf_debug(100, mp_debug)
          write(mp_debug,*) '   column sum at point (i,j) = ', its,jts, SUM(nifa(its,:,jts))
          CALL wrf_debug(100, mp_debug)
-      endif
-
-!..Capture initial state lowest level CCN aerosol data in 2D array.
-
-!     do j = jts, min(jde-1,jte)
-!     do i = its, min(ide-1,ite)
-!        nwfa2d(i,j) = nwfa(i,kts,j)
-!     enddo
-!     enddo
-
-!..Scale the lowest level aerosol data into an emissions rate.  This is
-!.. very far from ideal, but need higher emissions where larger amount
-!.. of existing and lesser emissions where not already lots of aerosols
-!.. for first-order simplistic approach.  Later, proper connection to
-!.. emission inventory would be better, but, for now, scale like this:
-!.. where: Nwfa=50 per cc, emit 0.875E4 aerosols per kg per second
-!..        Nwfa=500 per cc, emit 0.875E5 aerosols per kg per second
-!..        Nwfa=5000 per cc, emit 0.875E6 aerosols per kg per second
-!.. for a grid with 20km spacing and scale accordingly for other spacings.
-
-      if (is_start) then
-         if (SQRT(DX*DY)/20000.0 .ge. 1.0) then
-            h_01 = 0.875
-         else
-            h_01 = (0.875 + 0.125*((20000.-SQRT(DX*DY))/16000.)) * SQRT(DX*DY)/20000.
-         endif
-         write(mp_debug,*) '   aerosol surface flux emission scale factor is: ', h_01
-         CALL wrf_debug(100, mp_debug)
-         do j = jts, min(jde-1,jte)
-         do i = its, min(ide-1,ite)
-            nwfa2d(i,j) = 10.0**(LOG10(nwfa(i,kts,j)*1.E-6)-3.69897)
-            nwfa2d(i,j) = nwfa2d(i,j)*h_01 * 1.E6
-         enddo
-         enddo
-!     else
-!        write(mp_debug,*) '   sample (lower-left) aerosol surface flux emission rate: ', nwfa2d(1,1)
-!        CALL wrf_debug(100, mp_debug)
       endif
 
       endif
@@ -1005,7 +971,7 @@
 !..This is a wrapper routine designed to transfer values from 3D to 1D.
 !+---+-----------------------------------------------------------------+
       SUBROUTINE mp_gt_driver(qv, qc, qr, qi, qs, qg, ni, nr, nc,       &
-                              nwfa, nifa, nwfa2d,                       &
+                              nwfa, nifa, nwfa2d, nifa2d,               &
                               th, pii, p, w, dz, dt_in, itimestep,      &
                               RAINNC, RAINNCV, &
                               SNOWNC, SNOWNCV, &
@@ -1030,7 +996,7 @@
                           qv, qc, qr, qi, qs, qg, ni, nr, th
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL, INTENT(INOUT):: &
                           nc, nwfa, nifa
-      REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN):: nwfa2d
+      REAL, DIMENSION(ims:ime, jms:jme), OPTIONAL, INTENT(IN):: nwfa2d, nifa2d
       REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: &
                           re_cloud, re_ice, re_snow
       INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
@@ -1207,6 +1173,7 @@
          if (is_aerosol_aware) then
 !-GT        nwfa1d(kts) = nwfa1
             nwfa1d(kts) = nwfa1d(kts) + nwfa2d(i,j)*dt_in
+            nifa1d(kts) = nifa1d(kts) + nifa2d(i,j)*dt_in
 
             do k = kts, kte
                nc(i,k,j) = nc1d(k)
@@ -1624,7 +1591,7 @@
          if (qc1d(k) .gt. R1) then
             no_micro = .false.
             rc(k) = qc1d(k)*rho(k)
-            nc(k) = MAX(2., nc1d(k)*rho(k))
+            nc(k) = MAX(2., MIN(nc1d(k)*rho(k), Nt_c_max))
             L_qc(k) = .true.
             nu_c = MIN(15, NINT(1000.E6/nc(k)) + 2)
             lamc = (nc(k)*am_r*ccg(2,nu_c)*ocg1(nu_c)/rc(k))**obmr
@@ -2815,7 +2782,7 @@
 
          if ((qc1d(k) + qcten(k)*DT) .gt. R1) then
             rc(k) = (qc1d(k) + qcten(k)*DT)*rho(k)
-            nc(k) = MAX(2., (nc1d(k) + ncten(k)*DT)*rho(k))
+            nc(k) = MAX(2., MIN((nc1d(k)+ncten(k)*DT)*rho(k), Nt_c_max))
             if (.NOT. is_aerosol_aware) nc(k) = Nt_c
             L_qc(k) = .true.
          else
@@ -3066,7 +3033,7 @@
           nwfaten(k) = nwfaten(k) - pnc_wcd(k)
           tten(k) = tten(k) + lvap(k)*ocp(k)*prw_vcd(k)*(1-IFDRY)
           rc(k) = MAX(R1, (qc1d(k) + DT*qcten(k))*rho(k))
-          nc(k) = MAX(2., (nc1d(k) + DT*ncten(k))*rho(k))
+          nc(k) = MAX(2., MIN((nc1d(k)+ncten(k)*DT)*rho(k), Nt_c_max))
           if (.NOT. is_aerosol_aware) nc(k) = Nt_c
           qv(k) = MAX(1.E-10, qv1d(k) + DT*qvten(k))
           temp(k) = t1d(k) + DT*tten(k)
@@ -3509,7 +3476,7 @@
          t1d(k)  = t1d(k) + tten(k)*DT
          qv1d(k) = MAX(1.E-10, qv1d(k) + qvten(k)*DT)
          qc1d(k) = qc1d(k) + qcten(k)*DT
-         nc1d(k) = MAX(2./rho(k), nc1d(k) + ncten(k)*DT)
+         nc1d(k) = MAX(2./rho(k), MIN(nc1d(k) + ncten(k)*DT, Nt_c_max))
          nwfa1d(k) = MAX(11.1E6/rho(k), MIN(9999.E6/rho(k),             &
                        (nwfa1d(k)+nwfaten(k)*DT)))
          nifa1d(k) = MAX(naIN1*0.01, MIN(9999.E6/rho(k),                &
@@ -3604,7 +3571,7 @@
       IF ( wrf_dm_on_monitor() ) THEN
         INQUIRE(FILE="qr_acr_qg.dat",EXIST=lexist)
         IF ( lexist ) THEN
-          CALL wrf_message("ThompMP: read qr_acr_qg.dat stead of computing")
+          CALL wrf_message("ThompMP: read qr_acr_qg.dat instead of computing")
           OPEN(63,file="qr_acr_qg.dat",form="unformatted",err=1234)
           READ(63,err=1234) tcg_racg
           READ(63,err=1234) tmr_racg
@@ -4060,8 +4027,10 @@
 
 !..Local variables
       INTEGER:: i, j, k, m, n, n2
-      DOUBLE PRECISION, DIMENSION(nbr):: N_r, massr
-      DOUBLE PRECISION, DIMENSION(nbc):: N_c, massc
+      INTEGER:: km, km_s, km_e
+      DOUBLE PRECISION:: N_r, N_c
+      DOUBLE PRECISION, DIMENSION(nbr):: massr
+      DOUBLE PRECISION, DIMENSION(nbc):: massc
       DOUBLE PRECISION:: sum1, sum2, sumn1, sumn2, &
                          prob, vol, Texp, orho_w, &
                          lam_exp, lamr, N0_r, lamc, N0_c, y
@@ -4080,7 +4049,7 @@
       IF ( wrf_dm_on_monitor() ) THEN
         INQUIRE(FILE="freezeH2O.dat",EXIST=lexist)
         IF ( lexist ) THEN
-          CALL wrf_message("ThompMP: read freezeH2O.dat stead of computing")
+          CALL wrf_message("ThompMP: read freezeH2O.dat instead of computing")
           OPEN(63,file="freezeH2O.dat",form="unformatted",err=1234)
           READ(63,err=1234)tpi_qrfz
           READ(63,err=1234)tni_qrfz
@@ -4140,12 +4109,26 @@
          massc(n) = am_r*Dc(n)**bm_r
         enddo
 
+! Need to split loops between MPI processes to speedup
+! (2017Jul26, Jason Do)
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+        CALL wrf_dm_decomp1d ( ntb_IN*45, km_s, km_e )
+#else
+        km_s = 0
+        km_e = ntb_IN*45 - 1
+#endif
+
 !..Freeze water (smallest drops become cloud ice, otherwise graupel).
-        do m = 1, ntb_IN
-        T_adjust = MAX(-3.0, MIN(3.0 - ALOG10(Nt_IN(m)), 3.0))
-        do k = 1, 45
+        do km = km_s, km_e
+         m = km / 45 + 1
+         k = mod( km , 45 ) + 1
+         T_adjust = MAX(-3.0, MIN(3.0 - ALOG10(Nt_IN(m)), 3.0))
 !         print*, ' Freezing water for temp = ', -k
          Texp = DEXP( DFLOAT(k) - T_adjust*1.0D0 ) - 1.0D0
+#ifdef THOMPSON_OMP
+!$OMP PARALLEL DO SCHEDULE(dynamic) &
+!$OMP PRIVATE(j,i,lam_exp,lamr,N0_r,sum1,sum2,sumn1,sumn2,n2,N_r,vol,prob)
+#endif
          do j = 1, ntb_r1
             do i = 1, ntb_r
                lam_exp = (N0r_exp(j)*am_r*crg(1)/r_r(i))**ore1
@@ -4156,15 +4139,15 @@
                sumn1 = 0.0d0
                sumn2 = 0.0d0
                do n2 = nbr, 1, -1
-                  N_r(n2) = N0_r*Dr(n2)**mu_r*DEXP(-lamr*Dr(n2))*dtr(n2)
+                  N_r = N0_r*Dr(n2)**mu_r*DEXP(-lamr*Dr(n2))*dtr(n2)
                   vol = massr(n2)*orho_w
                   prob = MAX(0.0D0, 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp))
                   if (massr(n2) .lt. xm0g) then
-                     sumn1 = sumn1 + prob*N_r(n2)
-                     sum1 = sum1 + prob*N_r(n2)*massr(n2)
+                     sumn1 = sumn1 + prob*N_r
+                     sum1 = sum1 + prob*N_r*massr(n2)
                   else
-                     sumn2 = sumn2 + prob*N_r(n2)
-                     sum2 = sum2 + prob*N_r(n2)*massr(n2)
+                     sumn2 = sumn2 + prob*N_r
+                     sum2 = sum2 + prob*N_r*massr(n2)
                   endif
                   if ((sum1+sum2).ge.r_r(i)) EXIT
                enddo
@@ -4174,7 +4157,12 @@
                tnr_qrfz(i,j,k,m) = sumn2
             enddo
          enddo
+#ifdef THOMPSON_OMP
+!$OMP END PARALLEL DO
 
+!$OMP PARALLEL DO SCHEDULE(dynamic) &
+!$OMP PRIVATE(j,i,nu_c,lamc,N0_c,sum1,sumn2,vol,prob,N_c)
+#endif
          do j = 1, nbc
             nu_c = MIN(15, NINT(1000.E6/t_Nc(j)) + 2)
             do i = 1, ntb_c
@@ -4185,17 +4173,28 @@
                do n = nbc, 1, -1
                   vol = massc(n)*orho_w
                   prob = MAX(0.0D0, 1.0D0 - DEXP(-120.0D0*vol*5.2D-4 * Texp))
-                  N_c(n) = N0_c*Dc(n)**nu_c*EXP(-lamc*Dc(n))*dtc(n)
-                  sumn2 = MIN(t_Nc(j), sumn2 + prob*N_c(n))
-                  sum1 = sum1 + prob*N_c(n)*massc(n)
+                  N_c = N0_c*Dc(n)**nu_c*EXP(-lamc*Dc(n))*dtc(n)
+                  sumn2 = MIN(t_Nc(j), sumn2 + prob*N_c)
+                  sum1 = sum1 + prob*N_c*massc(n)
                   if (sum1 .ge. r_c(i)) EXIT
                enddo
                tpi_qcfz(i,j,k,m) = sum1
                tni_qcfz(i,j,k,m) = sumn2
             enddo
          enddo
+#ifdef THOMPSON_OMP
+!$OMP END PARALLEL DO
+#endif
         enddo
-        enddo
+
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+        CALL wrf_dm_gatherv(tpi_qrfz, ntb_r*ntb_r1, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tni_qrfz, ntb_r*ntb_r1, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tpg_qrfz, ntb_r*ntb_r1, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tnr_qrfz, ntb_r*ntb_r1, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tpi_qcfz, ntb_c*nbc, km_s, km_e, R8SIZE)
+        CALL wrf_dm_gatherv(tni_qcfz, ntb_c*nbc, km_s, km_e, R8SIZE)
+#endif
 
         IF ( write_thompson_tables .AND. wrf_dm_on_monitor() ) THEN
           CALL wrf_message("Writing freezeH2O.dat in Thompson MP init")
@@ -4214,6 +4213,7 @@
       ENDIF
 
       end subroutine freezeH2O
+
 !+---+-----------------------------------------------------------------+
 !ctrlL
 !+---+-----------------------------------------------------------------+
@@ -5043,7 +5043,7 @@
       do k = kts, kte
          rho(k) = 0.622*p1d(k)/(R*t1d(k)*(qv1d(k)+0.622))
          rc(k) = MAX(R1, qc1d(k)*rho(k))
-         nc(k) = MAX(R2, nc1d(k)*rho(k))
+         nc(k) = MAX(2., MIN(nc1d(k)*rho(k), Nt_c_max))
          if (.NOT. is_aerosol_aware) nc(k) = Nt_c
          if (rc(k).gt.R1 .and. nc(k).gt.R2) has_qc = .true.
          ri(k) = MAX(R1, qi1d(k)*rho(k))
@@ -5055,6 +5055,7 @@
 
       if (has_qc) then
       do k = kts, kte
+         re_qc1d(k) = 2.49E-6
          if (rc(k).le.R1 .or. nc(k).le.R2) CYCLE
          if (nc(k).lt.100) then
             inu_c = 15
@@ -5070,14 +5071,16 @@
 
       if (has_qi) then
       do k = kts, kte
+         re_qi1d(k) = 2.49E-6
          if (ri(k).le.R1 .or. ni(k).le.R2) CYCLE
          lami = (am_i*cig(2)*oig1*ni(k)/ri(k))**obmi
-         re_qi1d(k) = MAX(5.01E-6, MIN(SNGL(0.5D0 * DBLE(3.+mu_i)/lami), 125.E-6))
+         re_qi1d(k) = MAX(2.51E-6, MIN(SNGL(0.5D0 * DBLE(3.+mu_i)/lami), 125.E-6))
       enddo
       endif
 
       if (has_qs) then
       do k = kts, kte
+         re_qs1d(k) = 4.99E-6
          if (rs(k).le.R1) CYCLE
          tc0 = MIN(-0.1, t1d(k)-273.15)
          smob = rs(k)*oams
@@ -5112,7 +5115,7 @@
      &        + sb(7)*tc0*tc0*cse(1) + sb(8)*tc0*cse(1)*cse(1) &
      &        + sb(9)*tc0*tc0*tc0 + sb(10)*cse(1)*cse(1)*cse(1)
          smoc = a_ * smo2**b_
-         re_qs1d(k) = MAX(10.E-6, MIN(0.5*(smoc/smob), 999.E-6))
+         re_qs1d(k) = MAX(5.01E-6, MIN(0.5*(smoc/smob), 999.E-6))
       enddo
       endif
 

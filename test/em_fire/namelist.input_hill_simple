@@ -22,7 +22,6 @@
  io_form_restart                     = 2
  io_form_input                       = 2
  io_form_boundary                    = 2
- debug_level                         = 1 
  /
 
  &domains
@@ -65,7 +64,6 @@
  isfflx                              = 1,
  ifsnow                              = 0,
  icloud                              = 0,
- num_soil_layers                     = 5,
  mp_zero_out                         = 0,
  /
 
@@ -73,6 +71,7 @@
  /
 
  &dynamics
+ hybrid_opt                          = 0, 
  rk_ord                              = 3,
  diff_opt                            = 2,      2,      2,
  km_opt                              = 2,      2,      2,
@@ -93,20 +92,20 @@
  time_step_sound                     = 20,     20,     20,
  moist_adv_opt                       = 1,      1,      1,
  scalar_adv_opt                      = 1,      1,      1,
+ tracer_opt                          = 3,      3,      3,
  /
 
  &bdy_control
- periodic_x                          = .false.,.false.,.false.,
- symmetric_xs                        = .false.,.false.,.false.,
- symmetric_xe                        = .false.,.false.,.false.,
- open_xs                             = .true., .false.,.false.,
- open_xe                             = .true., .false.,.false.,
- periodic_y                          = .false.,.false.,.false.,
- symmetric_ys                        = .false.,.false.,.false.,
- symmetric_ye                        = .false.,.false.,.false.,
- open_ys                             = .true., .false.,.false.,
- open_ye                             = .true., .false.,.false.,
- nested                              = .false., .true., .true.,
+ periodic_x                          = .false.,
+ symmetric_xs                        = .false.,
+ symmetric_xe                        = .false.,
+ open_xs                             = .true., 
+ open_xe                             = .true., 
+ periodic_y                          = .false.,
+ symmetric_ys                        = .false.,
+ symmetric_ye                        = .false.,
+ open_ys                             = .true., 
+ open_ye                             = .true., 
  /
 
  &grib2
@@ -166,15 +165,12 @@
 !
 ! method switches for developers only, do not change!
 !
- fire_boundary_guard = -1,      ! integer, number of cells to stop when fire close to the domain boundary, -1 turn off
  fire_fuel_left_irl=2,          ! refinement to integrate fuel_left, must be even
  fire_fuel_left_jrl=2,          ! refinement to integrate fuel_left, must be even
  fire_atm_feedback=1.0,         ! real, multiplier for heat fluxes, 1.=normal, 0.=turn off two-way coupling 
- fire_back_weight=0.5,          ! RK timestepping coefficient, 0=forward, 0.5=Heun
  fire_grows_only=1,             ! if >0 level set function cannot increase = fire can only grow
  fire_viscosity=0.4,              ! artificial viscosity in level set method (max 1, needed with fire_upwinding=0)
- fire_upwinding=3,              ! 0=none, 1=standard, 2=godunov, 3=eno, 4=sethian
+ fire_upwinding=9,              ! 0=none, 1=standard, 2=godunov, 3=eno, 4=sethian
  fire_fuel_left_method=1,        ! for now, use 1 only
  fire_lfn_ext_up=1.0,           ! 0.=extend level set function at boundary by reflection, 1.=always up
- fire_advection=0,              ! 0 = cawfe, 1 = use abs speed/slope in spread rate, then project on normal to fireline
 /

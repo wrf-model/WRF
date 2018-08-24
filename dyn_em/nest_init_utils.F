@@ -1,192 +1,69 @@
-! careful adding any HYBRID_COORD stuff in here, adjust_tempqv has
+! careful adding any 1 stuff in here, adjust_tempqv has
 ! c3 and c4 to compute pressure with two reference pressures
 
 SUBROUTINE init_domain_constants_em ( parent , nest )
-   USE module_dm
    USE module_domain, ONLY : domain
-   USE module_configure, ONLY : model_config_rec
    IMPLICIT NONE
-   TYPE(domain), TARGET  :: parent , nest
-   TYPE(domain), POINTER  :: grid
+   TYPE(domain)  :: parent , nest
 
    INTEGER iswater, islake, isice, isurban, isoilwater, map_proj, julyr, julday
    REAL    truelat1 , truelat2 , gmt , moad_cen_lat , stand_lon, pole_lat, pole_lon
    CHARACTER (LEN=256) :: char_junk
-   INTEGER :: comzilla
 
-   IF ( parent%active_this_task .AND. nest%active_this_task ) THEN
-     nest%p_top   = parent%p_top
-     nest%save_topo_from_real   = parent%save_topo_from_real
-     nest%cfn     = parent%cfn
-     nest%cfn1    = parent%cfn1
-     nest%rdx     = 1./nest%dx
-     nest%rdy     = 1./nest%dy
-  !  nest%dts     = nest%dt/float(nest%time_step_sound)
-     nest%dtseps  = parent%dtseps  ! used in height model only?
-     nest%resm    = parent%resm    ! used in height model only?
-     nest%zetatop = parent%zetatop ! used in height model only?
-     nest%cf1     = parent%cf1
-     nest%cf2     = parent%cf2
-     nest%cf3     = parent%cf3
-     nest%gmt     = parent%gmt
-     nest%julyr   = parent%julyr
-     nest%julday  = parent%julday
-     nest%iswater = parent%iswater
-     nest%isice   = parent%isice
-     nest%isurban = parent%isurban
-     nest%islake  = parent%islake
-     nest%isoilwater = parent%isoilwater
-     nest%mminlu  = trim(parent%mminlu)
-     nest%tiso    = parent%tiso
-     nest%tlp     = parent%tlp
-     nest%p00     = parent%p00
-     nest%t00     = parent%t00
-  !cyl: variables for trajectory /float
-     nest%traj_k = parent%traj_k
-     nest%traj_long = parent%traj_long
-     nest%traj_lat = parent%traj_lat
-  
-     nest%this_is_an_ideal_run = parent%this_is_an_ideal_run
-  
-     CALL nl_get_mminlu ( 1, char_junk )
-     CALL nl_get_iswater( 1, iswater )
-     CALL nl_get_islake ( 1, islake )
-     CALL nl_get_isice  ( 1, isice )
-     CALL nl_get_isurban( 1, isurban )
-     CALL nl_get_isoilwater(1, isoilwater )
-     CALL nl_get_truelat1 ( 1 , truelat1 )
-     CALL nl_get_truelat2 ( 1 , truelat2 )
-     CALL nl_get_moad_cen_lat ( 1 , moad_cen_lat )
-     CALL nl_get_stand_lon ( 1 , stand_lon )
-     CALL nl_get_pole_lat ( 1 , pole_lat )
-     CALL nl_get_pole_lon ( 1 , pole_lon )
-     CALL nl_get_map_proj ( 1 , map_proj )
-     CALL nl_get_gmt ( 1 , gmt)
-     CALL nl_get_julyr ( 1 , julyr)
-     CALL nl_get_julday ( 1 , julday)
-     IF ( nest%id .NE. 1 ) THEN
-       CALL nl_set_gmt (nest%id, gmt)
-       CALL nl_set_julyr (nest%id, julyr)
-       CALL nl_set_julday (nest%id, julday)
-       CALL nl_set_iswater ( nest%id, iswater )
-       CALL nl_set_islake  ( nest%id, islake )
-       CALL nl_set_isice   ( nest%id, isice )
-       CALL nl_set_isurban ( nest%id, isurban )
-       CALL nl_set_isoilwater ( nest%id, isoilwater )
-       CALL nl_set_mminlu ( nest%id, char_junk )
-       CALL nl_set_truelat1 ( nest%id , truelat1 )
-       CALL nl_set_truelat2 ( nest%id , truelat2 )
-       CALL nl_set_moad_cen_lat ( nest%id , moad_cen_lat )
-       CALL nl_set_stand_lon ( nest%id , stand_lon )
-       CALL nl_set_pole_lat ( nest%id , pole_lat )
-       CALL nl_set_pole_lon ( nest%id , pole_lon )
-       CALL nl_set_map_proj ( nest%id , map_proj )
-     END IF
-     nest%gmt     = gmt
-     nest%julday  = julday
-     nest%julyr   = julyr
-     nest%iswater = iswater
-     nest%islake  = islake
-     nest%isice   = isice
-     nest%isoilwater = isoilwater
-     nest%mminlu  = trim(char_junk)
-     nest%truelat1= truelat1
-     nest%truelat2= truelat2
-     nest%moad_cen_lat= moad_cen_lat
-     nest%stand_lon= stand_lon
-     nest%pole_lat= pole_lat
-     nest%pole_lon= pole_lon
-     nest%map_proj= map_proj
-  
-     nest%step_number  = parent%step_number
-  
-  ! 1D constants (Z)
-  
-     nest%fnm    = parent%fnm
-     nest%fnp    = parent%fnp
-     nest%rdnw   = parent%rdnw
-     nest%rdn    = parent%rdn
-     nest%dnw    = parent%dnw
-     nest%dn     = parent%dn
-     nest%znu    = parent%znu
-     nest%znw    = parent%znw
-     nest%t_base = parent%t_base
-     nest%u_base    = parent%u_base
-     nest%v_base    = parent%v_base
-     nest%qv_base   = parent%qv_base
-     nest%z_base    = parent%z_base
-     nest%dzs       = parent%dzs
-     nest%zs        = parent%zs
-   ENDIF
-   IF ( parent%active_this_task .OR. nest%active_this_task ) THEN
-     IF ( parent%active_this_task ) THEN
-       comzilla = mpi_comm_to_kid( which_kid( nest%id ) , parent%id )
-!debug write(0,*)__FILE__,__LINE__,'Patt: mpi_comm_to_kid ',comzilla,which_kid( nest%id ) ,nest%id, parent%id
-       grid => parent
-     ELSE
-       comzilla = mpi_comm_to_mom( nest%id )
-!debug write(0,*)__FILE__,__LINE__,'Natt: mpi_comm_to_mom ',comzilla,nest%id 
-       grid => nest
-     ENDIF
+! single-value constants
 
-     CALL BYTE_BCAST(grid%p_top,RWORDSIZE,comzilla) !   nest%p_top   = parent%p_top
-     CALL BYTE_BCAST( grid%save_topo_from_real,IWORDSIZE,comzilla) !   nest%save_topo_from_real   = parent%save_topo_from_real
-     CALL BYTE_BCAST( grid%cfn,RWORDSIZE,comzilla) !   nest%cfn     = parent%cfn
-     CALL BYTE_BCAST( grid%cfn1,RWORDSIZE,comzilla) !   nest%cfn1    = parent%cfn1
-     IF ( nest%active_this_task ) THEN
+   nest%p_top   = parent%p_top
+   nest%save_topo_from_real   = parent%save_topo_from_real
+   nest%cfn     = parent%cfn
+   nest%cfn1    = parent%cfn1
    nest%rdx     = 1./nest%dx
    nest%rdy     = 1./nest%dy
-     ENDIF
-     CALL BYTE_BCAST( grid%dtseps,RWORDSIZE,comzilla) !   nest%dtseps  = parent%dtseps  ! used in height model only?
-     CALL BYTE_BCAST( grid%resm,RWORDSIZE,comzilla) !   nest%resm    = parent%resm    ! used in height model only?
-     CALL BYTE_BCAST( grid%zetatop,RWORDSIZE,comzilla) !   nest%zetatop = parent%zetatop ! used in height model only?
-     CALL BYTE_BCAST( grid%cf1,RWORDSIZE,comzilla) !   nest%cf1     = parent%cf1
-     CALL BYTE_BCAST( grid%cf2,RWORDSIZE,comzilla) !   nest%cf2     = parent%cf2
-     CALL BYTE_BCAST( grid%cf3,RWORDSIZE,comzilla) !   nest%cf3     = parent%cf3
-     CALL BYTE_BCAST( grid%gmt,RWORDSIZE,comzilla) !   nest%gmt     = parent%gmt
-     CALL BYTE_BCAST( grid%julyr,IWORDSIZE,comzilla) !   nest%julyr   = parent%julyr
-     CALL BYTE_BCAST( grid%julday,IWORDSIZE,comzilla) !   nest%julday  = parent%julday
-     CALL BYTE_BCAST( grid%iswater,IWORDSIZE,comzilla) !   nest%iswater = parent%iswater
-     CALL BYTE_BCAST( grid%isice,IWORDSIZE,comzilla) !   nest%isice   = parent%isice
-     CALL BYTE_BCAST( grid%isurban,IWORDSIZE,comzilla) !   nest%isurban = parent%isurban
-     CALL BYTE_BCAST( grid%islake,IWORDSIZE,comzilla) !   nest%islake  = parent%islake
-     CALL BYTE_BCAST( grid%isoilwater,IWORDSIZE,comzilla) !   nest%isoilwater = parent%isoilwater
-     CALL wrf_dm_bcast_string_comm( grid%mminlu, LEN(grid%mminlu),comzilla) ! nest%mminlu  = trim(parent%mminlu)
-     CALL BYTE_BCAST( grid%tiso,RWORDSIZE,comzilla) !   nest%tiso    = parent%tiso
-     CALL BYTE_BCAST( grid%tlp,RWORDSIZE,comzilla) !   nest%tlp     = parent%tlp
-     CALL BYTE_BCAST( grid%p00,RWORDSIZE,comzilla) !   nest%p00     = parent%p00
-     CALL BYTE_BCAST( grid%t00,RWORDSIZE,comzilla) !   nest%t00     = parent%t00
-     CALL BYTE_BCAST( grid%tlp_strat,RWORDSIZE,comzilla) !   nest%tlp_strat     = parent%tlp_strat
-     CALL BYTE_BCAST( grid%p_strat,RWORDSIZE,comzilla) !   nest%p_strat     = parent%p_strat
-     CALL BYTE_BCAST( grid%traj_k,RWORDSIZE,comzilla) !   nest%traj_k = parent%traj_k
-     CALL BYTE_BCAST( grid%traj_long,RWORDSIZE,comzilla) !   nest%traj_long = parent%traj_long
-     CALL BYTE_BCAST( grid%traj_lat,RWORDSIZE,comzilla) !   nest%traj_lat = parent%traj_lat
-     CALL BYTE_BCAST( grid%this_is_an_ideal_run,LWORDSIZE,comzilla) ! nest%this_is_an_ideal_run = parent%this_is_an_ideal_run
-     CALL BYTE_BCAST( grid%lake_depth_flag,LWORDSIZE,comzilla) ! nest%lake_depth_flag = parent%lake_depth_flag
+!  nest%dts     = nest%dt/float(nest%time_step_sound)
+   nest%dtseps  = parent%dtseps  ! used in height model only?
+   nest%resm    = parent%resm    ! used in height model only?
+   nest%zetatop = parent%zetatop ! used in height model only?
+   nest%cf1     = parent%cf1
+   nest%cf2     = parent%cf2
+   nest%cf3     = parent%cf3
+   nest%gmt     = parent%gmt
+   nest%julyr   = parent%julyr
+   nest%julday  = parent%julday
+   nest%iswater = parent%iswater
+   nest%isice   = parent%isice
+   nest%isurban = parent%isurban
+   nest%islake  = parent%islake
+   nest%isoilwater = parent%isoilwater
+   nest%mminlu  = trim(parent%mminlu)
+   nest%tiso    = parent%tiso
+   nest%tlp     = parent%tlp
+   nest%p00     = parent%p00
+   nest%t00     = parent%t00
+   nest%tlp_strat= parent%tlp_strat
+   nest%p_strat = parent%p_strat
+!cyl: variables for trajectory /float
+   nest%traj_k = parent%traj_k
+   nest%traj_long = parent%traj_long
+   nest%traj_lat = parent%traj_lat
+   nest%this_is_an_ideal_run = parent%this_is_an_ideal_run
+   nest%lake_depth_flag = parent%lake_depth_flag
 
-     IF ( parent%active_this_task ) THEN
    CALL nl_get_mminlu ( 1, char_junk )
-     ENDIF
-     CALL wrf_dm_bcast_string_comm( char_junk, LEN(char_junk),comzilla) ! nest%mminlu  = trim(parent%mminlu)
+   CALL nl_get_iswater( 1, iswater )
+   CALL nl_get_islake ( 1, islake )
    CALL nl_get_isice  ( 1, isice )
-
-     CALL nl_get_iswater( 1, iswater )             ; CALL BYTE_BCAST( iswater,IWORDSIZE,comzilla)
-     CALL nl_get_islake ( 1, islake )              ; CALL BYTE_BCAST( isice,IWORDSIZE,comzilla)
-     CALL nl_get_isice  ( 1, isice )               ; CALL BYTE_BCAST( isurban,IWORDSIZE,comzilla)
-     CALL nl_get_isurban( 1, isurban )             ; CALL BYTE_BCAST( islake,IWORDSIZE,comzilla)
-     CALL nl_get_isoilwater(1, isoilwater )        ; CALL BYTE_BCAST( isoilwater,IWORDSIZE,comzilla)
-     CALL nl_get_truelat1 ( 1 , truelat1 )         ; CALL BYTE_BCAST( truelat1,RWORDSIZE,comzilla)
-     CALL nl_get_truelat2 ( 1 , truelat2 )         ; CALL BYTE_BCAST( truelat2,RWORDSIZE,comzilla)
-     CALL nl_get_moad_cen_lat ( 1 , moad_cen_lat ) ; CALL BYTE_BCAST( moad_cen_lat,RWORDSIZE,comzilla)
-     CALL nl_get_stand_lon ( 1 , stand_lon )       ; CALL BYTE_BCAST( stand_lon,RWORDSIZE,comzilla)
-     CALL nl_get_pole_lat ( 1 , pole_lat )         ; CALL BYTE_BCAST( pole_lat,RWORDSIZE,comzilla)
-     CALL nl_get_pole_lon ( 1 , pole_lon )         ; CALL BYTE_BCAST( pole_lon,RWORDSIZE,comzilla)
-     CALL nl_get_map_proj ( 1 , map_proj )         ; CALL BYTE_BCAST( map_proj,IWORDSIZE,comzilla)
-     CALL nl_get_gmt ( 1 , gmt)                    ; CALL BYTE_BCAST( gmt,RWORDSIZE,comzilla)
-     CALL nl_get_julyr ( 1 , julyr)                ; CALL BYTE_BCAST( julyr,IWORDSIZE,comzilla)
-     CALL nl_get_julday ( 1 , julday)              ; CALL BYTE_BCAST( julday,IWORDSIZE,comzilla)
-
-     IF ( nest%active_this_task .AND. nest%id .NE. 1 ) THEN
+   CALL nl_get_isurban( 1, isurban )
+   CALL nl_get_isoilwater(1, isoilwater )
+   CALL nl_get_truelat1 ( 1 , truelat1 )
+   CALL nl_get_truelat2 ( 1 , truelat2 )
+   CALL nl_get_moad_cen_lat ( 1 , moad_cen_lat )
+   CALL nl_get_stand_lon ( 1 , stand_lon )
+   CALL nl_get_pole_lat ( 1 , pole_lat )
+   CALL nl_get_pole_lon ( 1 , pole_lon )
+   CALL nl_get_map_proj ( 1 , map_proj )
+   CALL nl_get_gmt ( 1 , gmt)
+   CALL nl_get_julyr ( 1 , julyr)
+   CALL nl_get_julday ( 1 , julday)
+   IF ( nest%id .NE. 1 ) THEN
      CALL nl_set_gmt (nest%id, gmt)
      CALL nl_set_julyr (nest%id, julyr)
      CALL nl_set_julday (nest%id, julday)
@@ -203,7 +80,7 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
      CALL nl_set_pole_lat ( nest%id , pole_lat )
      CALL nl_set_pole_lon ( nest%id , pole_lon )
      CALL nl_set_map_proj ( nest%id , map_proj )
-
+   END IF
    nest%gmt     = gmt
    nest%julday  = julday
    nest%julyr   = julyr
@@ -219,9 +96,8 @@ SUBROUTINE init_domain_constants_em ( parent , nest )
    nest%pole_lat= pole_lat
    nest%pole_lon= pole_lon
    nest%map_proj= map_proj
-     END IF
 
-     CALL BYTE_BCAST( grid%step_number,IWORDSIZE,comzilla) !   nest%step_number  = parent%step_number
+   nest%step_number  = parent%step_number
 
 ! 1D constants (Z)
 
@@ -293,7 +169,7 @@ SUBROUTINE init_domain_vert_nesting ( parent, nest, use_baseparam_fr_nml )
    znw_c = nest%znw(1:parent%e_vert)
    
    ! calculate the nest (fine) grid values here
-   ! one of these calls goes to integer refinement in the vertical direction, and one goes to arbitrary refinement.  Eventually the call to integer refinement will be obsolete. 
+   ! one of these calls goes to integer refinement in the vertical direction, and one goes to arbitrary refinement.  Eventually the call to integer refinement will be obsolete.
    if (nest%vert_refine_method .EQ. 1) then  !if you are in this subroutine there is vertical nesting- (i.e. nest%e_vert /= parent%e_vert to enter this subroutine)
       CALL vert_cor_vertical_nesting_integer(nest,znw_c,parent%e_vert)
    elseif (nest%vert_refine_method .EQ. 2) then
@@ -322,13 +198,13 @@ END SUBROUTINE init_domain_vert_nesting
 !KAL everything else is set from znw
 !KAL dnw is delta eta on w levels
 !KAL rdn is inverse delta eta on w levels
-!KAL fnp 
+!KAL fnp
 
         kde_c = k_dim_c
         kde_n = nest%e_vert
 !        n_refine = nest%vert_refine_fact
         n_refine = (kde_n-1)/(kde_c-1)
-	
+
          kkk = 0
          do k = 1 , kde_c-1
          dznw_m = znw_c(k+1) - znw_c(k)
@@ -931,11 +807,7 @@ SUBROUTINE adjust_tempqv ( mub, save_mub, c3, c4, znw, p_top, &
    DO j = jps , MIN(jpe, jde-1)
       DO k = kps , kpe-1
          DO i = ips , MIN(ipe, ide-1)
-#if  !( HYBRID_COORD==1 )
-            p_old(i,k,j) = 0.5*(znw(k+1)+znw(k))*save_mub(i,j) + p_top + pp(i,k,j)
-#elif ( HYBRID_COORD==1 )
             p_old(i,k,j) = c4(k) +         c3(k)*save_mub(i,j) + p_top + pp(i,k,j)
-#endif
             tc = (th(i,k,j)+300.)*(p_old(i,k,j)/1.e5)**(2./7.) - 273.15
             es = 610.78*exp(17.0809*tc/(234.175+tc))
             e = qv(i,k,j)*p_old(i,k,j)/(0.622+qv(i,k,j))
@@ -943,16 +815,11 @@ SUBROUTINE adjust_tempqv ( mub, save_mub, c3, c4, znw, p_top, &
          END DO
       END DO
    END DO
-
 ! p_new = full pressure after terrain blending; also compute temperature correction and convert RH back to QV
    DO j = jps , MIN(jpe, jde-1)
       DO k = kps , kpe-1
          DO i = ips , MIN(ipe, ide-1)
-#if  !( HYBRID_COORD==1 )
-            p_new(i,k,j) = 0.5*(znw(k+1)+znw(k))*mub(i,j) + p_top + pp(i,k,j)
-#elif ( HYBRID_COORD==1 )
             p_new(i,k,j) = c4(k) +         c3(k)*mub(i,j) + p_top + pp(i,k,j)
-#endif
 ! 2*(g/cp-6.5e-3)*R_dry/g = -191.86e-3
             dth1 = -191.86e-3*(th(i,k,j)+300.)/(p_new(i,k,j)+p_old(i,k,j))*(p_new(i,k,j)-p_old(i,k,j))
             dth = -191.86e-3*(th(i,k,j)+0.5*dth1+300.)/(p_new(i,k,j)+p_old(i,k,j))*(p_new(i,k,j)-p_old(i,k,j))
@@ -1095,7 +962,6 @@ SUBROUTINE update_after_feedback_em ( grid  &
 
   CALL wrf_debug( 500, "entering update_after_feedback_em" )
 
-IF ( grid%active_this_task ) THEN
 !  Obtain dimension information stored in the grid data structure.
   CALL get_ijk_from_grid (  grid ,                   &
                             ids, ide, jds, jde, kds, kde,    &
@@ -1107,7 +973,6 @@ IF ( grid%active_this_task ) THEN
 #include "HALO_EM_FEEDBACK.inc"
 #endif
   CALL wrf_debug( 500, "leaving update_after_feedback_em" )
-ENDIF
 
 END SUBROUTINE update_after_feedback_em
 

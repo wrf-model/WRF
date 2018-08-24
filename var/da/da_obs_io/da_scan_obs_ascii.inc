@@ -7,6 +7,9 @@ subroutine da_scan_obs_ascii (iv, filename, grid)
    !           Added the time range check when reading in observations.
    !       Syed RH Rizvi NCAR/NESL/MMM/DAS Date:  02/21/2013 
    !          Updated with thinning option
+   !
+   !      12-2017 - Jamie Bresch
+   !      Add a call to da_gpseph_create_ob for gpseph
    !---------------------------------------------------------------------------
 
    implicit none
@@ -37,6 +40,10 @@ subroutine da_scan_obs_ascii (iv, filename, grid)
    real                  :: dx,dy,dxm,dym,zk
    real                  :: v_p(kms:kme),v_h(kms:kme)
 
+   ! for gpseph
+   type(ob_in_mean_h) :: pseudo_ob
+   integer            :: lowest_level
+
    if (trace_use) call da_trace_entry("da_scan_obs_ascii")
 ! Initialize 
       if ( thin_conv_ascii ) then
@@ -62,6 +69,13 @@ subroutine da_scan_obs_ascii (iv, filename, grid)
       call da_free_unit(iunit)
       if (trace_use) call da_trace_exit("da_scan_obs_ascii")
       return
+   end if
+
+   if ( use_gpsephobs ) then
+      allocate (pseudo_ob%ref(kds:kde))
+      allocate (pseudo_ob%lat(kds:kde))
+      allocate (pseudo_ob%lon(kds:kde))
+      allocate (pseudo_ob%azim(kds:kde))
    end if
 
    ! read header
@@ -510,6 +524,33 @@ subroutine da_scan_obs_ascii (iv, filename, grid)
                iv%info(gpsref)%nlocal = iv%info(gpsref)%nlocal + 1
             end if
 
+         case (118) ;
+            if (.not.use_gpsephobs .or. iv%info(gpseph)%ntotal == max_gpseph_input) cycle reports
+            if (n==1) iv%info(gpseph)%ntotal = iv%info(gpseph)%ntotal + 1
+            if ( gpseph_loadbalance ) then
+               if ( myproc /= mod( (iv%info(gpseph)%ntotal-1), num_procs ) ) cycle reports
+            else
+               if (outside) cycle reports
+            endif
+            if (gpsro_drift ==  0) then
+               ! lat stored in speed, lon stored in v
+               ! replacing all levels with one lat/lon for gpsro_drift=0
+               platform%each(1:nlevels)%speed%inv = platform%info%lat
+               platform%each(1:nlevels)%v%inv = platform%info%lon
+            end if
+            !create pseudo_ob on grid mean altitude for gpseph
+            call da_gpseph_create_ob(              &
+               nlevels,                            &
+               platform%each(1:nlevels)%height,    &
+               platform%each(1:nlevels)%td%inv,    & ! ref stored in td
+               platform%each(1:nlevels)%speed%inv, & ! lat stored in speed
+               platform%each(1:nlevels)%v%inv,     & ! lon stored in v
+               platform%each(1:nlevels)%rh%inv,    & ! azim stored in rh
+               pseudo_ob, lowest_level)
+            ! cycle when no valid levels
+            if ( lowest_level < 1 ) cycle reports
+            iv%info(gpseph)%nlocal = iv%info(gpseph)%nlocal + 1
+
           case (121) ;
             ! SSM/T1 temperatures
             if (.not.use_ssmt1obs .or. iv%info(ssmt1)%ntotal == max_ssmt1_input) cycle reports
@@ -610,12 +651,21 @@ subroutine da_scan_obs_ascii (iv, filename, grid)
       end do        !  loop over duplicate
    end do reports
 
+   if ( use_gpsephobs ) then
+      deallocate (pseudo_ob%ref)
+      deallocate (pseudo_ob%lat)
+      deallocate (pseudo_ob%lon)
+      deallocate (pseudo_ob%azim)
+   end if
+
    iv%info(sonde_sfc)%max_lev=1
    iv%info(tamdar_sfc)%max_lev=1
    iv%info(synop)%max_lev=1   ! To prevent some bad observations with more than 1 level, should I add more?
    iv%info(ships)%max_lev=1   
    iv%info(qscat)%max_lev=1   
    iv%info(metar)%max_lev=1   
+
+   iv%info(gpseph)%max_lev= kde-kds+1
 
    close(iunit)
 

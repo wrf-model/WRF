@@ -15,6 +15,10 @@ subroutine da_transform_xtoy_adj(cv_size, cv, grid, iv, jo_grad_y, jo_grad_x)
    type (y_type),  intent(inout) :: jo_grad_y   ! grad_y(jo)
    type (x_type),  intent(inout) :: jo_grad_x   ! grad_x(jo)
 
+   integer :: i,j,k
+   real, dimension(:), allocatable :: adj_ref
+   real, dimension(:), allocatable :: adj_ref_tot
+
    if (trace_use) call da_trace_entry("da_transform_xtoy_adj")
   
    !--------------------------------------------------------------------------
@@ -49,6 +53,43 @@ subroutine da_transform_xtoy_adj(cv_size, cv, grid, iv, jo_grad_y, jo_grad_x)
    if (iv%info(profiler)%nlocal > 0) call da_transform_xtoy_profiler_adj (grid, iv, jo_grad_y, jo_grad_x)
    if (iv%info(buoy)%nlocal     > 0) call da_transform_xtoy_buoy_adj     (grid, iv, jo_grad_y, jo_grad_x)
    if (iv%info(gpsref)%nlocal   > 0) call da_transform_xtoy_gpsref_adj   (iv, jo_grad_y, jo_grad_x)
+   if (iv%info(gpseph)%nlocal   > 0) call da_transform_xtoy_gpseph_adj   (iv, jo_grad_y, jo_grad_x)
+   if ( use_gpsephobs ) then
+#ifdef DM_PARALLEL
+      allocate ( adj_ref ((ide-ids+1)*(jde-jds+1)*(kde-kds+1)) )
+      allocate ( adj_ref_tot ((ide-ids+1)*(jde-jds+1)*(kde-kds+1)) )
+
+      adj_ref = 0.0
+      adj_ref_tot = 0.0
+
+      adj_ref = reshape ( global_adj_ref, (/(ide-ids+1)*(jde-jds+1)*(kde-kds+1)/) )
+      global_adj_ref = 0.0
+
+      call wrf_dm_sum_reals ( adj_ref, adj_ref_tot)
+      global_adj_ref = reshape ( adj_ref_tot, (/(ide-ids+1),(jde-jds+1),(kde-kds+1)/) )
+
+      do k = kts, kte
+         do j = jts, jte
+            do i = its, ite
+               jo_grad_x%ref(i,j,k) = jo_grad_x%ref(i,j,k) + global_adj_ref(i,j,k)
+            enddo
+         enddo
+      enddo
+      global_adj_ref = 0.0
+
+      deallocate (adj_ref)
+      deallocate (adj_ref_tot)
+#else
+      do k = kts, kte
+         do j = jts, jte
+            do i = its, ite
+               jo_grad_x%ref(i,j,k) = jo_grad_x%ref(i,j,k) + global_adj_ref(i,j,k)
+            enddo
+         enddo
+      enddo
+      global_adj_ref = 0.0
+#endif
+   endif
    if (iv%info(radar)%nlocal    > 0) call da_transform_xtoy_radar_adj    (grid, iv, jo_grad_y, jo_grad_x)
    if (iv%info(bogus)%nlocal    > 0) call da_transform_xtoy_bogus_adj    (grid, iv, jo_grad_y, jo_grad_x)
    if (iv%info(airsr)%nlocal    > 0) call da_transform_xtoy_airsr_adj    (iv, jo_grad_y, jo_grad_x)

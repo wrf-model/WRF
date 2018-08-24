@@ -1,5 +1,5 @@
 subroutine da_fm_decoder (fm, platform, synop, ship,  metar, pilot, sound,   &
-                                      satem, satob, airep, gpspw, gpsref,  &
+                                      satem, satob, airep, gpspw, gpsref, gpseph, &
                                       ssmi_retrieval, ssmi_tb, ssmt1, ssmt2, &
                                       qscat,profiler, buoy, other)
 
@@ -21,6 +21,7 @@ subroutine da_fm_decoder (fm, platform, synop, ship,  metar, pilot, sound,   &
    !   gpspw    111         'GPSPW'
    !   gpsztd   114         'GPSZD'
    !   gpsref   116         'GPSRF'
+   !   gpseph   118         'GPSEP'
    !   ssmi_retrieval 125         'SSMI_RETRIEVAL'
    !   ssmi_tb  126         'SSMI_TB'
    !   SSM/T1   121         'SSMT1'
@@ -43,7 +44,7 @@ subroutine da_fm_decoder (fm, platform, synop, ship,  metar, pilot, sound,   &
                                             satob, airep, gpspw, &
                                             ssmi_retrieval, ssmi_tb,&
                                             ssmt1, ssmt2, qscat, &
-                                            profiler, buoy, gpsref, mtgirs,&
+                                            profiler, buoy, gpsref, gpseph, mtgirs,&
                                             tamdar, other
 
    if (trace_use_frequent) call da_trace_entry("da_fm_decoder")
@@ -323,6 +324,9 @@ subroutine da_fm_decoder (fm, platform, synop, ship,  metar, pilot, sound,   &
 
       case (116) ; platform = 'GPSRF'
          if (present (gpsref)) gpsref = gpsref + 1
+
+      case (118) ; platform = 'GPSEP'
+         if (present (gpseph)) gpseph = gpseph + 1
 
       case (121) ; platform = 'SSMT1'
          if (present (ssmt1)) ssmt1 = ssmt1 + 1

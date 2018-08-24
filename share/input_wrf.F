@@ -48,12 +48,13 @@
     Type(WRFU_Time) time, currtime, currentTime
     CHARACTER*19  new_date
     CHARACTER*24  base_date
-    CHARACTER*256  fname
+    CHARACTER*256  fname, version_name
     CHARACTER*80  dname, memord, sim_type
     LOGICAL dryrun
     INTEGER idt
     INTEGER itmp
     INTEGER filestate, ierr3
+    INTEGER hybrid_opt, use_theta_m
     INTEGER :: ide_compare , jde_compare , kde_compare
     CHARACTER (len=19) simulation_start_date , first_date_input , first_date_nml
     INTEGER first_date_start_year   , &
@@ -100,6 +101,10 @@
     !  Bundle up the fatal errors in one piece at the end of the file.
 
     INTEGER :: count_fatal_error
+
+    !  Make sure that the input data is consistent with the current code.
+
+    LOGICAL :: yes_use_this_data
 
 
 
@@ -150,6 +155,75 @@
       IF ( switch .EQ. boundary_only ) THEN
          grid%just_read_boundary = .true.
       END IF
+#endif
+
+#if ( NMM_CORE != 1 )
+    IF ( .NOT. dryrun ) THEN
+
+       !  Determine is the input file we are reading is acceptable given the
+       !  assumptions about the current version of the modeling system.
+   
+       CALL is_this_data_ok_to_use ( fid , yes_use_this_data )
+   
+       CALL wrf_inquire_filename ( fid , fname , filestate , ierr )
+       IF ( ( yes_use_this_data ) .OR. ( config_flags%force_use_old_data ) ) THEN
+          WRITE(wrf_err_message,*)'Input data is acceptable to use: ' // TRIM(fname) 
+          CALL wrf_debug( 0 , wrf_err_message )
+       ELSE
+          CALL wrf_debug( 0 , 'File name that is causing troubles = ' // TRIM(fname) )
+          CALL wrf_debug( 0 , TRIM(fname) )
+          CALL wrf_debug( 0 , TRIM(wrf_err_message) )
+          WRITE(wrf_err_message,*)'You can try 1) ensure that the input file was created with WRF v4 pre-processors, or '
+          CALL wrf_debug( 0 , TRIM(wrf_err_message) )
+          WRITE(wrf_err_message,*)'2) use force_use_old_data=T in the time_control record of the namelist.input file'
+          CALL wrf_debug( 0 , TRIM(wrf_err_message) )
+          WRITE(wrf_err_message,*)'---- ERROR: The input file appears to be from a pre-v4 version of WRF initialization routines'
+          CALL wrf_error_fatal( wrf_err_message )
+       END IF
+    END IF
+#endif
+
+#if ( NMM_CORE != 1 )
+    ! Verify feature consistency between model input and model nml settings
+
+    IF ( .NOT. dryrun ) THEN
+
+      IF ( switch .EQ. input_only ) THEN
+        CALL wrf_get_dom_ti_char ( fid , 'TITLE' , version_name, ierr )
+
+        IF ( INDEX(TRIM(version_name),' V4.') .NE. 0 ) THEN
+          CALL wrf_get_dom_ti_integer( fid , 'HYBRID_OPT',  hybrid_opt,  1, icnt, ierr )
+          CALL wrf_get_dom_ti_integer( fid , 'USE_THETA_M', use_theta_m, 1, icnt, ierr )
+
+          IF ( hybrid_opt .NE. config_flags%hybrid_opt ) THEN
+            WRITE(wrf_err_message,*) '---- ERROR: Input file hybrid_opt = ',hybrid_opt
+            CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+            WRITE(wrf_err_message,*) '---- ERROR: Namelist hybrid_opt   = ',config_flags%hybrid_opt
+            CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+            CALL wrf_debug ( 0, "---- ERROR: hybrid_opt values must be consistent" )
+            count_fatal_error = count_fatal_error + 1
+          END IF
+
+          IF ( use_theta_m .NE. config_flags%use_theta_m ) THEN
+            WRITE(wrf_err_message,*) '---- ERROR: Input file use_theta_m = ',use_theta_m
+            CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+            WRITE(wrf_err_message,*) '---- ERROR: Namelist use_theta_m   = ',config_flags%use_theta_m
+            CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+            CALL wrf_debug ( 0, "---- ERROR: use_theta_m values must be consistent" )
+            count_fatal_error = count_fatal_error + 1
+          END IF
+
+        END IF
+
+      ELSE IF ( switch .EQ. auxinput1_only ) THEN
+        CALL wrf_get_dom_ti_char ( fid , 'TITLE' , version_name, ierr )
+        IF ( INDEX(TRIM(version_name),' V4.') .NE. 0 ) THEN
+           grid%v4_metgrid = .TRUE.
+        ELSE
+           grid%v4_metgrid = .FALSE.
+        END IF
+      END IF
+    END IF
 #endif
 
       ! INPUT ONLY (KK)
@@ -644,29 +718,100 @@
     ! Test here to check that config_flags%sf_surface_physics in namelist
     ! is equal to what is in the global attributes of the wrfinput files
 
-    IF ( switch .EQ. input_only  ) THEN
-       CALL wrf_get_dom_ti_integer ( fid, 'SF_SURFACE_PHYSICS', itmp, 1, icnt, ierr )
-       IF ( ierr .EQ. 0 ) THEN
-          WRITE(wrf_err_message,*)'input_wrf: global attribute SF_SURFACE_PHYSICS returns ', itmp
-          CALL wrf_debug ( 300 , wrf_err_message )
-          IF ( config_flags%sf_surface_physics /= itmp ) THEN
-             IF ( ( config_flags%sf_surface_physics == LSMSCHEME ) .and. ( itmp == NOAHMPSCHEME ) ) then
-                ! All is well.  Noah-MP and Noah have compatible wrfinput files.
-             ELSE IF ( ( config_flags%sf_surface_physics == NOAHMPSCHEME ) .and. ( itmp == LSMSCHEME ) ) then
-                ! All is well.  Noah-MP and Noah have compatible wrfinput files.
-             ELSE
-                call wrf_message("----------------- ERROR -------------------")
-                WRITE(wrf_err_message,'("namelist    : sf_surface_physics = ",I10)') config_flags%sf_surface_physics
-                call wrf_message(wrf_err_message)
-                WRITE(wrf_err_message,'("input files : SF_SURFACE_PHYSICS = ",I10, " (from wrfinput files).")') itmp
-                call wrf_message(wrf_err_message)
-                CALL wrf_debug ( 0, "---- ERROR: Mismatch between namelist and global attribute SF_SURFACE_PHYSICS")
-                count_fatal_error = count_fatal_error + 1
+    IF ( config_flags%sf_surface_physics /= 0 ) THEN
+       IF ( switch .EQ. input_only  ) THEN
+          CALL wrf_get_dom_ti_integer ( fid, 'SF_SURFACE_PHYSICS', itmp, 1, icnt, ierr )
+          IF ( ierr .EQ. 0 ) THEN
+             WRITE(wrf_err_message,*)'input_wrf: global attribute SF_SURFACE_PHYSICS returns ', itmp
+             CALL wrf_debug ( 300 , wrf_err_message )
+             IF ( config_flags%sf_surface_physics /= itmp ) THEN
+                IF ( ( config_flags%sf_surface_physics == LSMSCHEME ) .and. ( itmp == NOAHMPSCHEME ) ) then
+                   ! All is well.  Noah-MP and Noah have compatible wrfinput files.
+                ELSE IF ( ( config_flags%sf_surface_physics == NOAHMPSCHEME ) .and. ( itmp == LSMSCHEME ) ) then
+                   ! All is well.  Noah-MP and Noah have compatible wrfinput files.
+                ELSE
+                   call wrf_message("----------------- ERROR -------------------")
+                   WRITE(wrf_err_message,'("namelist    : sf_surface_physics = ",I10)') config_flags%sf_surface_physics
+                   call wrf_message(wrf_err_message)
+                   WRITE(wrf_err_message,'("input files : SF_SURFACE_PHYSICS = ",I10, " (from wrfinput files).")') itmp
+                   call wrf_message(wrf_err_message)
+                   CALL wrf_debug ( 0, "---- ERROR: Mismatch between namelist and global attribute SF_SURFACE_PHYSICS")
+                   count_fatal_error = count_fatal_error + 1
+                END IF
              END IF
           END IF
        END IF
     END IF
 
+
+    ! Test here to check that config_flags%gwd_opt in namelist
+    ! is equal to what is in the global attributes of the wrfinput files
+
+    IF ( config_flags%gwd_opt /= 0 ) THEN
+       IF ( switch .EQ. input_only  ) THEN
+          CALL wrf_get_dom_ti_integer ( fid, 'GWD_OPT', itmp, 1, icnt, ierr )
+          IF ( ierr .EQ. 0 ) THEN
+             WRITE(wrf_err_message,*)'input_wrf: global attribute GWD_OPT returns ', itmp
+             CALL wrf_debug ( 300 , wrf_err_message )
+             IF ( config_flags%gwd_opt /= itmp ) THEN
+                call wrf_message("----------------- ERROR -------------------")
+                WRITE(wrf_err_message,'("namelist    : gwd_opt            = ",I10)') config_flags%gwd_opt
+                call wrf_message(wrf_err_message)
+                WRITE(wrf_err_message,'("input files : GWD_OPT            = ",I10, " (from wrfinput files).")') itmp
+                call wrf_message(wrf_err_message)
+                call wrf_debug ( 0, "---- ERROR: Mismatch between namelist and global attribute GWD_OPT")
+                count_fatal_error = count_fatal_error + 1
+             END IF
+          END IF
+       END IF
+    END IF
+#endif
+
+#if ( ( EM_CORE == 1 ) && ( DA_CORE != 1 ) )
+    ! Test here to check that config_flags%sf_ocean_physics in namelist
+    ! is equal to what is in the global attributes of the wrfinput files
+
+    IF ( config_flags%sf_ocean_physics /= 0 ) THEN
+       IF ( switch .EQ. input_only  ) THEN
+          CALL wrf_get_dom_ti_integer ( fid, 'SF_OCEAN_PHYSICS', itmp, 1, icnt, ierr )
+          IF ( ierr .EQ. 0 ) THEN
+             WRITE(wrf_err_message,*)'input_wrf: global attribute SF_OCEAN_PHYSICS returns ', itmp
+             CALL wrf_debug ( 300 , wrf_err_message )
+             IF ( config_flags%sf_ocean_physics /= itmp ) THEN
+                call wrf_message("----------------- ERROR -------------------")
+                WRITE(wrf_err_message,'("namelist    : sf_ocean_physics   = ",I10)') config_flags%sf_ocean_physics
+                call wrf_message(wrf_err_message)
+                WRITE(wrf_err_message,'("input files : SF_OCEAN_PHYSICS   = ",I10, " (from wrfinput files).")') itmp
+                call wrf_message(wrf_err_message)
+                call wrf_debug ( 0, "---- ERROR: Mismatch between namelist and global attribute SF_OCEAN_PHYSICS")
+                count_fatal_error = count_fatal_error + 1
+             END IF
+          END IF
+       END IF
+    END IF
+#endif
+
+#if ( DA_CORE != 1 )
+    ! Test here to check that config_flags%sf_urban_physics in namelist
+    ! is equal to what is in the global attributes of the wrfinput files
+
+    IF ( switch .EQ. input_only  ) THEN
+       CALL wrf_get_dom_ti_integer ( fid, 'SF_URBAN_PHYSICS', itmp, 1, icnt, ierr )
+       IF ( ierr .EQ. 0 ) THEN
+          WRITE(wrf_err_message,*)'input_wrf: global attribute SF_URBAN_PHYSICS returns ', itmp
+          CALL wrf_debug ( 300 , wrf_err_message )
+          IF ( config_flags%sf_urban_physics /= itmp ) THEN
+             call wrf_message("----------------- ERROR -------------------")
+             WRITE(wrf_err_message,'("namelist    : sf_urban_physics   = ",I10)') config_flags%sf_urban_physics
+             call wrf_message(wrf_err_message)
+             WRITE(wrf_err_message,'("input files : SF_URBAN_PHYSICS   = ",I10, " (from wrfinput files).")') itmp
+             call wrf_message(wrf_err_message)
+             call wrf_debug ( 0, "---- ERROR: Mismatch between namelist and global attribute SF_URBAN_PHYSICS")
+             count_fatal_error = count_fatal_error + 1
+          END IF
+       END IF
+    END IF
+#endif
 
     ! Test here to check that config_flags%gwd_opt in namelist
     ! is equal to what is in the global attributes of the wrfinput files
@@ -979,6 +1124,35 @@
           CALL wrf_debug( 0 , wrf_err_message )
         END IF
        END IF
+
+       !  In pre v4.0 data, the moist potential temperature was entirely handled in the model. In 
+       !  v4.0 and later, the pre-processors handle the moist potential temperature field directly.
+
+       !                      Input from old data
+       !     
+       !                        WRF NML Setting
+       !                        ---------------
+       !                  use_theta_m=1 | use_theta_m=0
+       !                  ---------------------------
+       !                  |             |           | 
+       !         thetam=1 |   NO        |     OK    |
+       ! Input            |             |           | 
+       ! NML     ------------------------------------
+       ! Setting          |             |           |
+       !         thetam=0 |   NO        |     OK    |
+       !                  |             |           |
+       !                  ---------------------------
+
+       !  Old input data cannot be used when the namelist has use_theta_m=1
+
+       CALL wrf_get_dom_ti_char ( fid , 'TITLE' , version_name , ierr )
+       IF ( ( switch .EQ. input_only ) .AND. &
+            ( INDEX(TRIM(version_name),' V4.' ) .EQ. 0 ) .AND. &
+            ( config_flags%use_theta_m .EQ. 1 ) ) THEN
+          CALL wrf_debug ( 0, "---- ERROR: Cannot have old input data when requesting use_theta_m=1" )
+          count_fatal_error = count_fatal_error + 1
+       END IF
+     
 #endif
 
     ENDIF check_if_dryrun
@@ -1139,13 +1313,23 @@
           CALL wrf_atotime( next_datestr(1:19), grid%next_bdy_time )
        END IF
 #if (DA_CORE != 1)
+#if ( WRFPLUS == 1 )
+       IF( config_flags%dyn_opt .NE. dyn_em_ad .AND. currentTime .GE. grid%next_bdy_time ) THEN
+#else
        IF( currentTime .GE. grid%next_bdy_time ) THEN
+#endif
           IF ( wrf_dm_on_monitor() ) THEN
              write(a_message,*) 'THIS TIME ',this_datestr(1:19),', NEXT TIME ',next_datestr(1:19)
              CALL wrf_message ( a_message ) 
           END IF
           RETURN
        ENDIF
+#if ( WRFPLUS == 1 )
+       IF( config_flags%dyn_opt .EQ. dyn_em_ad .AND. currentTime .GT. grid%next_bdy_time ) THEN
+          IF ( wrf_dm_on_monitor() ) write(0,*) 'THIS TIME ',this_datestr(1:19),'NEXT TIME ',next_datestr(1:19)
+          RETURN
+       ENDIF
+#endif
 #endif
     ENDIF
 
@@ -1709,5 +1893,76 @@
     WRITE(wrf_err_message,*)'input_wrf: end, fid = ',fid
     CALL wrf_debug( 300 , wrf_err_message )
 
+     IF ( (switch .EQ. input_only) .and. (grid%id .EQ. 1) ) THEN
+         grid%dtbc = 0.0
+      ENDIF
+
     RETURN
   END SUBROUTINE input_wrf
+    
+#if ( NMM_CORE != 1 )
+  SUBROUTINE is_this_data_ok_to_use ( fid , yes_use_this_data )
+
+    USE module_io
+   
+    IMPLICIT NONE
+
+    INTEGER , INTENT(IN)  :: fid
+    LOGICAL , INTENT(OUT) :: yes_use_this_data
+
+    !  Local vars
+  
+    CHARACTER (LEN=1024) :: input_title_char
+    LOGICAL :: skip_rigorous_and_return_right_away
+    INTEGER :: ierr
+
+#include "version_decl"
+
+    !  Make sure that the input data is consistent with the current code.
+
+    input_title_char = ' '
+    CALL wrf_get_dom_ti_char ( fid , 'TITLE' , input_title_char , ierr )
+    IF      ( ierr .NE. 0 ) THEN
+      WRITE(wrf_err_message,*)'Error trying to read metadata'
+      CALL wrf_debug( 0 , wrf_err_message )
+      yes_use_this_data = .FALSE.
+      RETURN
+    ELSE IF ( TRIM(input_title_char) .EQ. "" ) THEN
+      WRITE(wrf_err_message,*)'The type of file is empty'
+      CALL wrf_debug( 0 , wrf_err_message )
+      yes_use_this_data = .FALSE.
+      RETURN
+    END IF
+
+    !  There are some data sets that will be immune to the rigorous vetting.
+
+    skip_rigorous_and_return_right_away = .FALSE.
+
+    IF ( &
+         ( INDEX(TRIM(input_title_char),'METGRID'     ) .NE. 0 ) .OR. &
+         ( INDEX(TRIM(input_title_char),'SFCFDDA'     ) .NE. 0 ) .OR. &
+         ( INDEX(TRIM(input_title_char),'EMISSIONS'   ) .NE. 0 ) .OR. &
+         ( INDEX(TRIM(input_title_char),'XYZZY'       ) .NE. 0 )      &
+       ) THEN
+      WRITE(wrf_err_message,*)'Yes, this special data is acceptable to use: ' // TRIM(input_title_char)
+      CALL wrf_debug( 0 , wrf_err_message )
+      skip_rigorous_and_return_right_away = .TRUE.
+    END IF
+
+    !  Based on the file testing, do we return right away?
+
+    IF ( skip_rigorous_and_return_right_away ) THEN
+       yes_use_this_data = .TRUE.
+       RETURN
+    END IF
+
+    IF ( INDEX(TRIM(input_title_char),' V4.' ) .NE. 0 ) THEN
+      yes_use_this_data = .TRUE.
+    ELSE
+      WRITE(wrf_err_message,*)'This input data is not V4: ' // TRIM(input_title_char)
+      CALL wrf_debug( 0 , wrf_err_message )
+      yes_use_this_data = .FALSE.
+    END IF
+    
+  END SUBROUTINE is_this_data_ok_to_use
+#endif

@@ -1,3 +1,12 @@
+#if( BUILD_RRTMG_FAST != 1)
+      MODULE module_ra_rrtmg_swf
+      CONTAINS
+      SUBROUTINE RRTMG_SWRAD_FAST
+         REAL :: dummy
+         dummy = 1
+      END SUBROUTINE RRTMG_SWRAD_FAST
+      END MODULE module_ra_rrtmg_swf
+#else
 !!MODULE module_ra_rrtmg_swf
 #define CHNK 8
 !#define CHNK 1849
@@ -9932,7 +9941,8 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 ! -------------------      by Zhenxin 2011-06-20      --------------------------------!
              sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
 ! ----------------------  End,  Zhenxin 2011-06-20    --------------------------------!
-             swdkdir,   swdkdif                                  & ! jararias, 2013/08/10
+             swdkdir,swdkdif,                               & ! jararias, 2013/08/10
+             swdkdirc                                       & ! PAJ
                                 )
 
 
@@ -10078,6 +10088,8 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                                                !    Dimensions: (ncol,nlay+1) jararias, 2013/08/10
       real, intent(out) :: swdkdif(:,:)        ! Total shortwave downward diffuse flux (W/m2)
                                                !    Dimensions: (ncol,nlay+1) jararias, 2013/08/10
+      real, intent(out) :: swdkdirc(:,:)       ! Total shortwave downward direct flux clear sky (W/m2)
+                                               !    Dimensions: (ncol,nlay+1) 
 
       integer :: npart, pncol, ns
       CHARACTER(LEN=256) :: message
@@ -10164,7 +10176,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
              tauaer  ,ssaaer  ,asmaer  ,ecaer   , &
              swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc, &
              sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
-             swdkdir  , swdkdif                                  & ! jararias, 2013/08/10
+             swdkdir  , swdkdif , swdkdirc                       & ! jararias, 2013/08/10
                                 )
       call cpu_time(t2)
       WRITE(message,*)'------------------------------------------------'
@@ -10189,7 +10201,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
              gtauaer ,gssaaer ,gasmaer ,gecaer  , &
              swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc, &
              sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
-             swdkdir  , swdkdif                                  & ! jararias, 2013/08/10
+             swdkdir  , swdkdif , swdkdirc                       & ! jararias, 2013/08/10
                                 )
       use parrrsw_f, only : nbndsw, ngptsw, naerec, nstr, nmol, mxmol, &
                           jpband, jpb1, jpb2, rrsw_scon
@@ -10375,6 +10387,8 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                                                        !    Dimensions: (ncol,nlay+1) jararias, 2013/08/10
       real, intent(out) :: swdkdif(:,:)                ! Total shortwave downward diffuse flux (W/m2)
                                                        !    Dimensions: (ncol,nlay+1) jararias, 2013/08/10
+      real, intent(out) :: swdkdirc(:,:)               ! Total shortwave downward direct flux clear sky (W/m2)
+                                                       !    Dimensions: (ncol,nlay+1) 
 
 ! ----- Local -----
 
@@ -10665,7 +10679,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !$acc copyin(gh2ovmr, gco2vmr, go3vmr, gn2ovmr, gch4vmr, go2vmr)&
 !$acc copyin(gcld, gciwp, gclwp, gcswp, grei, grel, gres, gplay, gplev, gtlay, gtlev, gtsfc)&
 !$acc copyin(gasdir, galdir, gasdif, galdif,profi,profic,gcoszen)&
-!$acc copyout(sibvisdir,sibvisdif,sibnirdir,sibnirdif,swdkdir,swdkdif)
+!$acc copyout(sibvisdir,sibvisdif,sibnirdir,sibnirdif,swdkdir,swdkdif,swdkdirc)
 
 !$acc update device(extliq1, ssaliq1, asyliq1, extice2, ssaice2, asyice2) &
 !$acc device(extice3, ssaice3, asyice3, fdlice3, abari, bbari, cbari, dbari, ebari, fbari) &
@@ -11062,6 +11076,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !  All-sky downwward direct and diffuse fluxes
                 swdkdir(piplon,i) = zbbfddir(iplon,i)
                 swdkdif(piplon,i) = zbbfd(iplon,i) - zbbfddir(iplon,i)
+                swdkdirc(piplon,i) = zbbcddir(iplon,i) ! PAJ: clear-sky direct flux
 !  UV/visible downward direct/diffuse fluxes
                 sibvisdir(piplon,i) = zuvfddir(iplon,i)
                 sibvisdif(piplon,i) = zuvfd(iplon,i) - zuvfddir(iplon,i)
@@ -11105,6 +11120,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !  All-sky downwward direct and diffuse fluxes
                 swdkdir(piplon,i) = zbbfddir(iplon,i)
                 swdkdif(piplon,i) = zbbfd(iplon,i) - zbbfddir(iplon,i)
+                swdkdirc(piplon,i) = zbbcddir(iplon,i) ! PAJ: clear-sky direct flux
 !  UV/visible downward direct/diffuse fluxes
                 sibvisdir(piplon,i) = zuvfddir(iplon,i)
                 sibvisdif(piplon,i) = zuvfd(iplon,i) - zuvfddir(iplon,i)
@@ -11235,6 +11251,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
                        use_aer3d,                                 & !bug fix, SGT 2015/03
                        swddir, swddni, swddif,                    & ! jararias 2013/08
+                       swdownc, swddnic, swddirc,                 & ! PAJ
                        xcoszen,julian                             & ! jararias 2013/08
                                                                   )
 !------------------------------------------------------------------
@@ -11302,7 +11319,10 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
    real, dimension(ims:ime,jms:jme), intent(out) :: &
          swddir,  &  ! All-sky broadband surface direct horiz irradiance
          swddni,  &  ! All-sky broadband surface direct normal irradiance
-         swddif      ! All-sky broadband surface diffuse irradiance
+         swddif,  &  ! All-sky broadband surface diffuse irradiance
+         swdownc, & ! Clear sky GHI
+         swddnic, & ! Clear ski DNI
+         swddirc    ! Clear ski direct horizontal irradiance
    real, optional, intent(in) :: &
          julian      ! julian day (1-366)
    real, dimension(ims:ime,jms:jme), optional, intent(in) :: &
@@ -11478,7 +11498,8 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                                                        sibnirdif     ! Zhenxin 2011-06-20
 
     real, dimension( (jte-jts+1)*(ite-its+1), kts:kte+2 ) ::                swdkdir, &  ! jararias, 2013/08/10
-                                                         swdkdif     ! jararias, 2013/08/10
+                                                         swdkdif, &  ! jararias, 2013/08/10
+                                                        swdkdirc     ! PAJ
 
     real, dimension( (jte-jts+1)*(ite-its+1), kts:kte+1 )  ::                  swhr, &
                                                            swhrc
@@ -12422,7 +12443,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 ! -----      Zhenxin added for ssib coupiling 2011-06-20 --------!
              sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
 ! --------------------   End of addition by Zhenxin 2011-06-20 ------!
-             swdkdir, swdkdif                      &  ! jararias, 2012/08/10
+             swdkdir, swdkdif , swdkdirc          &  ! jararias, 2012/08/10
                                                   )
 
       endif
@@ -12480,6 +12501,9 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
             swddir(i,j)    = swdkdir(icol,1)       ! jararias 2013/08/10
             swddni(i,j)    = swddir(i,j) / coszrs  ! jararias 2013/08/10
             swddif(i,j)    = swdkdif(icol,1)          ! jararias 2013/08/10
+            swdownc(i, j)  = swdflxc(1,1)          ! PAJ: clear-sky GHI
+            swddirc(i,j)   = swdkdirc(1,1)         ! PAJ: clear-sky direct normal irradiance
+            swddnic(i,j)   = swddirc(i,j) / coszrs ! PAJ: clear-sky direct normal irradiance
 
 ! Output up and down layer fluxes for total and clear sky.
 ! Vertical ordering is from bottom to top in units of W m-2. 
@@ -12519,6 +12543,10 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
             swddir(i,j)    = 0.  ! jararias 2013/08/10
             swddni(i,j)    = 0.  ! jararias 2013/08/10
             swddif(i,j)    = 0.  ! jararias 2013/08/10
+            swdownc(i, j)  = 0.0 ! PAJ
+            swddnic(i,j)   = 0.0 ! PAJ
+            swddirc(i,j)   = 0.0 ! PAJ
+            swcf(i,j)      = 0.
 
       endif
 
@@ -13760,3 +13788,4 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 !------------------------------------------------------------------
 
       END MODULE module_ra_rrtmg_swf
+#endif

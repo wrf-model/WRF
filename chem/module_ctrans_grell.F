@@ -13,7 +13,8 @@ USE module_state_description, only:p_cvasoaX,p_cvasoa1,p_cvasoa2,p_cvasoa3,p_cva
                               p_cvbsoaX,p_cvbsoa1,p_cvbsoa2,p_cvbsoa3,p_cvbsoa4
 
 USE module_state_description, ONLY: mozart_mosaic_4bin_kpp, &
-                              mozart_mosaic_4bin_aq_kpp,&
+                              mozart_mosaic_4bin_aq_kpp, &
+                              mozcart_kpp, t1_mozcart_kpp, &
                               p_hcho, p_c3h6ooh, p_onit, p_mvk, p_macr, &
                               p_etooh, p_prooh, p_acetp, p_mgly, p_mvkooh, &
                               p_onitr, p_isooh, p_ch3oh, p_c2h5oh, &
@@ -69,6 +70,8 @@ USE module_state_description, ONLY: mozart_mosaic_4bin_kpp, &
   REAL, PARAMETER :: mwnh4 = 18.0985 ! Molecular mass of NH4+ (g/mol)
 
   REAL, PARAMETER :: mwoa  = 250.0   ! Molecular mass of OA (g/mol)
+
+  INTEGER, allocatable :: HLC_ndx(:)
   
 CONTAINS
 
@@ -1469,9 +1472,12 @@ END subroutine cup_env_clev_tr
   USE module_state_description, only: RADM2SORG,RADM2SORG_AQ,RACMSORG_AQ,RACMSORG_KPP,   &
                                       RADM2SORG_KPP,RACM_ESRLSORG_KPP,RACM_SOA_VBS_KPP,  &
                                       RADM2SORG_AQCHEM,RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP, &
-                                      RACM_SOA_VBS_AQCHEM_KPP,CB05_SORG_VBS_AQ_KPP
+                                      RACM_SOA_VBS_AQCHEM_KPP,                           &
+                                      RACM_SOA_VBS_HET_KPP,                              &
+                                      CB05_SORG_VBS_AQ_KPP
   USE module_ctrans_aqchem
   USE module_input_chem_data, only: get_last_gas
+  USE module_HLawConst, only: HLC
         implicit none
 ! Aqeuous species pointers INCLUDE File
 
@@ -1580,9 +1586,13 @@ END subroutine cup_env_clev_tr
 !  local variables in this routine
 !
       real :: conc_equi,conc_mxr,partialp,taucld
+      real :: HLCnst1, HLCnst2
+      real :: HLCnst3, HLCnst4
+      real :: HLCnst5, HLCnst6
+      real :: kh, dk1s, dk2s, heff, tfac
 
      integer                              ::                           &
-        iall,i,k,iwd,nv
+        iall,i,k,iwd,nv, HLndx
      real                                 ::                           &
         trcc,trch,dh,c0,dz,radius,airm,dens
      integer                              ::                           &
@@ -1603,6 +1613,10 @@ END subroutine cup_env_clev_tr
      real, dimension (nliqs) :: liquid
      real hpwdep
      real alfa0,alfa2,alfa3 ! Aerosol scavenging coefficients for Aitken mode
+
+     real, parameter :: hion = 1.e-5
+     real, parameter :: hion_inv = 1./hion
+     real, parameter :: HL_t0 = 298.
      
      itf=MIN(ite,ide-1)
      ktf=MIN(kte,kde-1)
@@ -1675,6 +1689,7 @@ END subroutine cup_env_clev_tr
            chemopt .EQ. RACMSORG_KPP .OR. chemopt .EQ. RADM2SORG_KPP .OR. chemopt .EQ. RACM_ESRLSORG_KPP .OR. & 
            chemopt .EQ. RACM_SOA_VBS_KPP .OR. chemopt .EQ. RADM2SORG_AQCHEM .OR. chemopt .EQ. RACMSORG_AQCHEM_KPP .OR. &
            chemopt .EQ. CB05_SORG_VBS_AQ_KPP .OR.                                           &
+           chemopt .EQ. RACM_SOA_VBS_HET_KPP .OR.   &
            chemopt .EQ. RACM_ESRLSORG_AQCHEM_KPP .OR. chemopt .EQ. RACM_SOA_VBS_AQCHEM_KPP) &
            .and. (conv_tr_aqchem == 1)) then
         
@@ -1947,9 +1962,36 @@ END subroutine cup_env_clev_tr
       if (conv_tr_wetscav == 1) then
         
         
+          tfac = (HL_t0 - t(i,k))/(t(i,k)*HL_t0)
           do nv=2,num_chem
             
             aq_gas_ratio = 0.0
+is_moz_chm: if( chemopt == MOZCART_KPP .or. chemopt == T1_MOZCART_KPP .or. &
+                chemopt == MOZART_MOSAIC_4BIN_KPP .or. chemopt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
+              HLndx = HLC_ndx(nv)
+              if( HLndx /= 0 ) then
+                HLCnst1 = HLC(HLndx)%hcnst(1) ; HLCnst2 = HLC(HLndx)%hcnst(2)
+                HLCnst3 = HLC(HLndx)%hcnst(3) ; HLCnst4 = HLC(HLndx)%hcnst(4)
+                HLCnst5 = HLC(HLndx)%hcnst(5) ; HLCnst6 = HLC(HLndx)%hcnst(6)
+                kh = HLCnst1 * exp( HLCnst2* tfac )
+                if( HLCnst3 /= 0. ) then
+                  dk1s = HLCnst3 * exp( HLCnst4* tfac )
+                else
+                  dk1s = 0.
+                endif
+                if( HLCnst5 /= 0. ) then
+                  dk2s = HLCnst5 * exp( HLCnst6* tfac )
+                else
+                  dk2s = 0.
+                endif
+                if( nv /= p_nh3 ) then
+                  heff = kh*(1. + dk1s*hion_inv*(1. + dk2s*hion_inv))
+                else
+                  heff = kh*(1. + dk1s*hion/dk2s)
+                endif
+                aq_gas_ratio = moz_aq_frac(t(i,k), clw_all(i,k)*dens, heff )
+              endif
+            else is_moz_chm
             
             ! Fraction of gas phase species that partions into the liquid phase:
 
@@ -1986,19 +2028,7 @@ END subroutine cup_env_clev_tr
             if (nv .eq. p_ch3cooh) aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 4.1e3, 6300.)
             if (nv .eq. p_so2)     aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 1.2, 3100.)
             if (nv .eq. p_sulf)    aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 1e+11, 0.) ! order of magnitude approx. (Gmitro and Vermeulen, 1964)
-
-            IF (chemopt .EQ. mozart_mosaic_4bin_aq_kpp) THEN
-              if (nv .eq. p_cvasoaX) aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 0.0e+00, 0.)
-              if (nv .eq. p_cvasoa1) aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 1.06E+08, 6014.)
-              if (nv .eq. p_cvasoa2) aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 1.84E+07, 6014.)
-              if (nv .eq. p_cvasoa3) aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 3.18E+06, 6014.)
-              if (nv .eq. p_cvasoa4) aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 5.50E+05, 6014.)
-              if (nv .eq. p_cvbsoaX) aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 0.0e+00, 0.)
-              if (nv .eq. p_cvbsoa1) aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 5.25E+09, 6014.)
-              if (nv .eq. p_cvbsoa2) aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 7.00E+08, 6014.)
-              if (nv .eq. p_cvbsoa3) aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 9.33E+07, 6014.)
-              if (nv .eq. p_cvbsoa4) aq_gas_ratio = aq_frac(p(i,k)*100., t(i,k), clw_all(i,k)*dens, 1.24E+07, 6014.)
-            ENDIF
+            ENDIF is_moz_chm
             
 !            if (nv.eq.p_so2)  aq_gas_ratio = 1.0
 !            if (nv.eq.p_sulf) aq_gas_ratio = 1.0
@@ -2063,6 +2093,27 @@ REAL FUNCTION aq_frac(p, T, q, Kh_298, dHoR)
   aq_frac = min( 1.0, max( 0.0, tr_aq / (tr_aq + tr_air) ) )
 
 END FUNCTION aq_frac
+
+REAL FUNCTION moz_aq_frac(T, q, heff )
+
+  REAL, INTENT(IN)  :: T,           & ! air temperature (K)
+                       q,           & ! total liquid water content (kg/m3)
+                       heff           ! Henry's law constant (M/atm == (mol_aq/dm3_aq)/atm)
+
+  REAL, PARAMETER   :: Rgas = 8.31446 ! ideal gas constant (J mol-1 K-1)
+
+  ! local variables
+  REAL              :: tr_air, tr_aq
+
+  ! moles tracer m-3_air
+  tr_air  = 1. / (Rgas * T)
+
+  ! moles tracer m-3 (air)
+  tr_aq   = heff * (q / 1000.0)
+
+  moz_aq_frac = min( 1.0, max( 0.0, tr_aq / (tr_aq + tr_air) ) )
+
+END FUNCTION moz_aq_frac
 
 
 
@@ -2383,6 +2434,49 @@ END subroutine cup_dd_tracer
       endif
 
    END SUBROUTINE neg_check_ct
+
+   SUBROUTINE conv_tr_wetscav_init( numgas, num_chem )
+
+   use module_state_description, only : param_first_scalar
+   use module_scalar_tables, only : chem_dname_table
+   use module_chem_utilities, only : UPCASE
+   use module_HLawConst
+
+   integer, intent(in) :: numgas, num_chem
+
+!----------------------------------------------------------------------
+!  local variables
+!----------------------------------------------------------------------
+   integer :: m, m1
+   integer :: astat
+   character(len=64) :: HL_tbl_name
+   character(len=64) :: wrf_spc_name
+
+is_allocated : &
+   if( .not. allocated(HLC_ndx) ) then
+!----------------------------------------------------------------------
+!  scan HLawConst table for match with chem_opt scheme gas phase species
+!----------------------------------------------------------------------
+     allocate( HLC_ndx(num_chem),stat=astat )
+     if( astat /= 0 ) then
+       call wrf_error_fatal("conv_tr_wetscav_init: failed to allocate HLC_ndx")
+     endif
+     HLC_ndx(:) = 0
+     do m = param_first_scalar,numgas
+       wrf_spc_name = chem_dname_table(1,m)
+       call upcase( wrf_spc_name )
+       do m1 = 1,nHLC
+         HL_tbl_name = HLC(m1)%name
+         call upcase( HL_tbl_name )
+         if( trim(HL_tbl_name) == trim(wrf_spc_name) ) then
+           HLC_ndx(m) = m1
+           exit
+         endif
+       end do
+     end do
+   endif is_allocated
+
+   END SUBROUTINE conv_tr_wetscav_init
 
 !-------------------------------------------------------
 END MODULE module_ctrans_grell

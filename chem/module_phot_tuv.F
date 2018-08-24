@@ -550,7 +550,7 @@ has_daylight : &
            aircol(n_tuv_z-1) = aircol(n_tuv_z-1) + o2col(n_tuv_z-1)/o2vmr
          endif
          if( config_flags%scale_o3_to_grnd_exo_coldens ) then
-           dobsi = real( o3_exo_col_at_grnd(i,j),4 )
+           dobsi = real( o3_exo_col_at_grnd(i,j),4 )/2.687e16
          endif
 
          so2col(:) = 0.

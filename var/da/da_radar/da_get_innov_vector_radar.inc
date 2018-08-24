@@ -8,6 +8,7 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    !    08/08/2016 - Updated to include null-echo assimilation
    !                 (Yu-Shin Kim and Ki-Hong Min, School of Earth System
    !                  Sciences/Kyungpook National University, Daegu, S.Korea)
+   !    08/2017 - bug fix for Vr operator (Siou-Ying Jiang, CWB, Taiwan)
    !-----------------------------------------------------------------------
 
    implicit none
@@ -38,8 +39,6 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
 
    real, allocatable :: model_rho(:,:)
    real, allocatable :: model_qrn(:,:)
-   real, allocatable :: model_qcl(:,:)
-   real, allocatable :: model_qci(:,:)
    real, allocatable :: model_qsn(:,:)
    real, allocatable :: model_qgr(:,:)
 
@@ -91,8 +90,8 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    allocate (model_v(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_w(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
 
-   allocate (model_rv(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
-   allocate (model_rf(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
+   if ( use_radar_rv ) allocate (model_rv(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
+   if ( use_radar_rf ) allocate (model_rf(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_ps(iv%info(radar)%n1:iv%info(radar)%n2))
 
    allocate (model_qv(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
@@ -101,8 +100,6 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
 
    allocate (model_rho(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_qrn(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
-   allocate (model_qcl(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
-   allocate (model_qci(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_qsn(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_qgr(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
 
@@ -117,8 +114,8 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    model_v(:,:)    = 0.
    model_w(:,:)    = 0.
 
-   model_rv(:,:)   = 0.
-   model_rf(:,:)   = 0.
+   if ( use_radar_rv ) model_rv(:,:)   = 0.
+   if ( use_radar_rf ) model_rf(:,:)   = 0.
    model_ps(:)     = 0.
 
    model_qv(:,:)   = 0.
@@ -127,8 +124,6 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
 
    model_rho(:,:)  = 0.
    model_qrn(:,:)  = 0.
-   model_qcl(:,:)  = 0.
-   model_qci(:,:)  = 0.
    model_qsn(:,:)  = 0.
    model_qgr(:,:)  = 0.
 
@@ -183,8 +178,6 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    call da_interp_lin_3d (grid%xb % wh,  iv%info(radar), model_w)
    call da_interp_lin_3d (grid%xb % rho, iv%info(radar), model_rho)
    call da_interp_lin_3d (grid%xb % qrn, iv%info(radar), model_qrn)
-   call da_interp_lin_3d (grid%xb % qcw, iv%info(radar), model_qcl)
-   call da_interp_lin_3d (grid%xb % qci, iv%info(radar), model_qci)
    call da_interp_lin_3d (grid%xb % qsn, iv%info(radar), model_qsn)
 IF ( ASSOCIATED( grid%xb%qgr ) ) THEN
    call da_interp_lin_3d (grid%xb % qgr, iv%info(radar), model_qgr)
@@ -274,8 +267,6 @@ END IF
       iv%radar(n)%model_p(1:iv%info(radar)%levels(n))   = model_p(1:iv%info(radar)%levels(n),n)
       iv%radar(n)%model_rho(1:iv%info(radar)%levels(n)) = model_rho(1:iv%info(radar)%levels(n),n)
       iv%radar(n)%model_qrn(1:iv%info(radar)%levels(n)) = model_qrn(1:iv%info(radar)%levels(n),n)
-      iv%radar(n)%model_qcl(1:iv%info(radar)%levels(n)) = model_qcl(1:iv%info(radar)%levels(n),n)
-      iv%radar(n)%model_qci(1:iv%info(radar)%levels(n)) = model_qci(1:iv%info(radar)%levels(n),n)
       iv%radar(n)%model_qsn(1:iv%info(radar)%levels(n)) = model_qsn(1:iv%info(radar)%levels(n),n)
       iv%radar(n)%model_qgr(1:iv%info(radar)%levels(n)) = model_qgr(1:iv%info(radar)%levels(n),n)
 
@@ -323,9 +314,11 @@ END IF
                   if (abs(ob % radar(n) % rv(k) - missing_r) > 1.0 .AND. &
                        iv % radar(n) % rv(k) % qc >= obs_qc_pointer) then
 
+                     !reference: Sun and Crook (1997)
                      call da_radial_velocity(model_rv(k,n), model_p(k,n),  &
                         model_u(k,n), model_v(k,n), model_w(k,n),          &
-                        model_qrn(k,n), model_ps(n), xr, yr, zr)
+                        model_qrn(k,n), model_ps(n), xr, yr, zr,           &
+                        model_rho(k,n))
 
                      iv % radar(n) % rv(k) % inv = ob % radar(n) % rv(k) - model_rv(k,n)
                   end if
@@ -343,7 +336,7 @@ END IF
             if (use_radar_rhv .or. use_radar_rqv) then
                if ( echo_rf_good ) then
                   call da_radar_rf (model_qrn(k,n),model_qsn(k,n),model_qgr(k,n),model_tc(k,n),model_rho(k,n),bg_rze)
-                  bg_rf = 10.0*log(bg_rze)  ! Z to dBZ
+                  bg_rf = 10.0*log10(bg_rze)  ! Z to dBZ
                end if
             end if
 
@@ -558,8 +551,8 @@ END IF
    deallocate (model_v)
    deallocate (model_w)
 
-   deallocate (model_rv)
-   deallocate (model_rf)
+   if ( allocated(model_rv) ) deallocate (model_rv)
+   if ( allocated(model_rf) ) deallocate (model_rf)
    deallocate (model_ps)
 
    deallocate (model_qv)
@@ -568,8 +561,6 @@ END IF
 
    deallocate (model_qrn)
    deallocate (model_rho)
-   deallocate (model_qcl) 
-   deallocate (model_qci)
    deallocate (model_qsn)
    deallocate (model_qgr)
 

@@ -469,3 +469,60 @@ BIO2LAI   =  0.035,  0.015,  0.015,  0.015,  0.015,  ! leaf are per living leaf 
 
 /
  
+&noahmp_optional_parameters
+
+ !------------------------------------------------------------------------------
+ ! Saxton and Rawls 2006 Pedo-transfer function coefficients
+ !------------------------------------------------------------------------------
+
+ sr2006_theta_1500t_a =   -0.024   ! sand coefficient
+ sr2006_theta_1500t_b =    0.487   ! clay coefficient
+ sr2006_theta_1500t_c =    0.006   ! orgm coefficient
+ sr2006_theta_1500t_d =    0.005   ! sand*orgm coefficient
+ sr2006_theta_1500t_e =   -0.013   ! clay*orgm coefficient
+ sr2006_theta_1500t_f =    0.068   ! sand*clay coefficient
+ sr2006_theta_1500t_g =    0.031   ! constant adjustment
+
+ sr2006_theta_1500_a  =    0.14    ! theta_1500t coefficient
+ sr2006_theta_1500_b  =   -0.02    ! constant adjustment
+
+ sr2006_theta_33t_a   =   -0.251   ! sand coefficient
+ sr2006_theta_33t_b   =    0.195   ! clay coefficient
+ sr2006_theta_33t_c   =    0.011   ! orgm coefficient
+ sr2006_theta_33t_d   =    0.006   ! sand*orgm coefficient
+ sr2006_theta_33t_e   =   -0.027   ! clay*orgm coefficient
+ sr2006_theta_33t_f   =    0.452   ! sand*clay coefficient
+ sr2006_theta_33t_g   =    0.299   ! constant adjustment
+
+ sr2006_theta_33_a    =    1.283   ! theta_33t*theta_33t coefficient
+ sr2006_theta_33_b    =   -0.374   ! theta_33t coefficient
+ sr2006_theta_33_c    =   -0.015   ! constant adjustment
+
+ sr2006_theta_s33t_a  =    0.278   ! sand coefficient
+ sr2006_theta_s33t_b  =    0.034   ! clay coefficient
+ sr2006_theta_s33t_c  =    0.022   ! orgm coefficient
+ sr2006_theta_s33t_d  =   -0.018   ! sand*orgm coefficient
+ sr2006_theta_s33t_e  =   -0.027   ! clay*orgm coefficient
+ sr2006_theta_s33t_f  =   -0.584   ! sand*clay coefficient
+ sr2006_theta_s33t_g  =    0.078   ! constant adjustment
+
+ sr2006_theta_s33_a   =    0.636   ! theta_s33t coefficient
+ sr2006_theta_s33_b   =   -0.107   ! constant adjustment
+
+ sr2006_psi_et_a      =  -21.67    ! sand coefficient
+ sr2006_psi_et_b      =  -27.93    ! clay coefficient
+ sr2006_psi_et_c      =  -81.97    ! theta_s33 coefficient
+ sr2006_psi_et_d      =   71.12    ! sand*theta_s33 coefficient
+ sr2006_psi_et_e      =    8.29    ! clay*theta_s33 coefficient
+ sr2006_psi_et_f      =   14.05    ! sand*clay coefficient
+ sr2006_psi_et_g      =   27.16    ! constant adjustment
+
+ sr2006_psi_e_a       =    0.02    ! psi_et*psi_et coefficient
+ sr2006_psi_e_b       =   -0.113   ! psi_et coefficient
+ sr2006_psi_e_c       =   -0.7     ! constant adjustment
+
+ sr2006_smcmax_a      =   -0.097   ! sand adjustment
+ sr2006_smcmax_b      =    0.043   ! constant adjustment
+ 
+/
+

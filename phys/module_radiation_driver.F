@@ -2565,7 +2565,6 @@ CONTAINS
           ENDDO
           ENDDO
           ENDDO
->>>>>>> 3cc2b9b1b71824e398a84d0ceccc2a6f99cb60b1
       ENDIF
 
       ! jararias, aug 2013, updated 2013/11

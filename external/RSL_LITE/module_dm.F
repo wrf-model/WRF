@@ -5464,7 +5464,8 @@ END IF
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       INTEGER iparstrt,jparstrt,sw
       TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
+      REAL xv(2000000)
+      INTEGER ixv
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe
@@ -5565,7 +5566,8 @@ END IF
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
+      REAL xv(2000000)
+      INTEGER ixv
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe
@@ -5669,7 +5671,8 @@ END IF
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       INTEGER iparstrt,jparstrt,sw
       TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
+      REAL xv(2000000)
+      INTEGER ixv
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe
@@ -5775,7 +5778,8 @@ END IF
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
+      REAL xv(2000000)
+      INTEGER ixv
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe
@@ -5971,7 +5975,8 @@ END IF
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
+      REAL xv(2000000)
+      INTEGER ixv
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe
@@ -6046,7 +6051,8 @@ integer myproc
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE(domain), POINTER :: xgrid
       TYPE (grid_config_rec_type)            :: config_flags, nconfig_flags
-      REAL xv(2000)
+      REAL xv(2000000)
+      INTEGER ixv
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe
@@ -6187,7 +6193,8 @@ integer myproc
       INTEGER nlev, msize
       INTEGER i,j,pig,pjg,cm,cn,nig,njg,retval,k
       TYPE (grid_config_rec_type)            :: config_flags
-      REAL xv(2000)
+      REAL xv(2000000)
+      INTEGER ixv
       INTEGER       ::          cids, cide, cjds, cjde, ckds, ckde,    &
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe

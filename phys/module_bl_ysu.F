@@ -272,7 +272,6 @@ contains
       endif
 !MPAS specific end.
 
->>>>>>> 3cc2b9b1b71824e398a84d0ceccc2a6f99cb60b1
       do k = kts,kte
         do i = its,ite
           qv2d(i,k) = qv3d(i,k,j)

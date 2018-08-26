@@ -201,7 +201,7 @@
 !
 !..Additions for coupling cloud physics effective radii and radiation.  G. Thompson
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN):: re_cloud, re_ice, re_snow
-      INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
+      INTEGER, INTENT(INOUT):: has_reqc, has_reqi, has_reqs
 
 !..Output daily longwave and shortwave heating rates: ! J. Henderson AER
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(OUT):: hrlwpd,hrswpd

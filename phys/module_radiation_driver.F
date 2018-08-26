@@ -477,7 +477,7 @@ CONTAINS
                                  gaer300,gaer400,gaer600,gaer999, & ! jcb
                                  waer300,waer400,waer600,waer999
 
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
          INTENT(IN ) ::          qc_cu, qi_cu
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
@@ -717,7 +717,7 @@ CONTAINS
      REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(OUT) :: diffuse_frac
 
    REAL , OPTIONAL, INTENT(INOUT) ::    radtacttime ! Storing the time in s when radiation is called next
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
          INTENT(INOUT)  ::                       o3rad
 
    ! vert nesting
@@ -2464,32 +2464,8 @@ CONTAINS
          ENDDO
      ENDIF
 
-      IF (ICLOUD == 3) THEN
-        IF (PRESENT(CLDFRA) .AND.                                       &
-            PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
-           CALL wrf_debug (150, 'DEBUG-GT, back to micro-only Qc and Qi')
-           DO j = jts,jte
-           DO k = kts,kte
-           DO i = its,ite
-              qc(i,k,j) = qc_save(i,k,j)
-              qi(i,k,j) = qi_save(i,k,j)
-           ENDDO
-           ENDDO
-           ENDDO
-           IF (PRESENT(F_QS)) THEN
-              DO j = jts,jte
-              DO k = kts,kte
-              DO i = its,ite
-                 qs(i,k,j) = qs_save(i,k,j)
-              ENDDO
-              ENDDO
-              ENDDO
-           ENDIF
-        ENDIF
-      ENDIF
-
-      IF ( PRESENT( qc  ) .AND. PRESENT( qc_cu ) ) THEN 
-         IF ( icloud_cu .NE. 0 ) THEN
+ ! Restore qc & qi for any model physics configuration
+      IF ( F_QC ) THEN
          DO j=jts,jte
          DO k=kts,kte
          DO i=its,ite
@@ -2497,10 +2473,8 @@ CONTAINS
          ENDDO
          ENDDO
          ENDDO
-         ENDIF
       ENDIF
-      IF ( PRESENT( qi  ) .AND. PRESENT( qi_cu ) ) THEN
-         IF ( icloud_cu .NE. 0 ) THEN
+      IF ( F_QI ) THEN
          DO j=jts,jte
          DO k=kts,kte
          DO i=its,ite
@@ -2508,39 +2482,7 @@ CONTAINS
          ENDDO
          ENDDO
          ENDDO
-         ENDIF
       ENDIF
-      IF (ICLOUD == 3) THEN
-        IF (PRESENT(CLDFRA) ) THEN
-           CALL wrf_debug (150, 'DEBUG-GT, back to micro-only Qc and Qi')
-           IF (PRESENT(F_QC)) THEN
-              DO j = jts,jte
-              DO k = kts,kte
-              DO i = its,ite
-                 qc(i,k,j) = qc_save(i,k,j)
-              ENDDO
-              ENDDO
-              ENDDO
-           ENDIF
-           IF (PRESENT(F_QI)) THEN
-              DO j = jts,jte
-              DO k = kts,kte
-              DO i = its,ite
-                 qi(i,k,j) = qi_save(i,k,j)
-              ENDDO
-              ENDDO
-              ENDDO
-           ENDIF
-           IF (PRESENT(F_QS)) THEN
-              DO j = jts,jte
-              DO k = kts,kte
-              DO i = its,ite
-                 qs(i,k,j) = qs_save(i,k,j)
-              ENDDO
-              ENDDO
-              ENDDO
-           ENDIF
-        ENDIF
 
       IF (aercu_opt.gt.0.0) THEN
       IF ( F_QS ) THEN

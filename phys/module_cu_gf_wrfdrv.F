@@ -434,15 +434,16 @@ CONTAINS
          endif
      enddo
      enddo
-      DO K=kts,ktf-1
-      DO I = its,itf
-        dq=(q2d(i,k+1)-q2d(i,k))
-        mconv(i)=mconv(i)+omeg(i,k)*dq/g
-      enddo
-      ENDDO
-      DO I = its,itf
-        if(mconv(i).lt.0.)mconv(i)=0.
-      ENDDO
+!mconv now computed in cup_gf
+!      DO K=kts,ktf-1
+!      DO I = its,itf
+!        dq=(q2d(i,k+1)-q2d(i,k))
+!        mconv(i)=mconv(i)+omeg(i,k)*dq/g
+!      enddo
+!      ENDDO
+!      DO I = its,itf
+!        if(mconv(i).lt.0.)mconv(i)=0.
+!      ENDDO
 !
 !---- CALL CUMULUS PARAMETERIZATION
 !
@@ -471,7 +472,7 @@ CONTAINS
            if(xmbs(i).le.0.)cutens(i)=0.
           enddo
           CALL neg_check('shallow',ipr,dt,q2d,outqs,outts,outus,outvs,   &
-                                 outqcs,prets,its,ite,kts,kte,itf,ktf)
+                                 outqcs,prets,its,ite,kts,kte,itf,ktf,ktops)
 
         endif
 ! Mid-level convection
@@ -552,7 +553,7 @@ CONTAINS
             enddo
             enddo
       CALL neg_check('mid',ipr,dt,qcheck,outqm,outtm,outum,outvm,   &
-                     outqcm,pretm,its,ite,kts,kte,itf,ktf)
+                     outqcm,pretm,its,ite,kts,kte,itf,ktf,ktopm)
     endif
 
 #if ( WRF_DFI_RADAR == 1 )
@@ -638,7 +639,7 @@ CONTAINS
             enddo
             enddo
       CALL neg_check('deep',ipr,dt,qcheck,outq,outt,outu,outv,   &
-                                         outqc,pret,its,ite,kts,kte,itf,ktf)
+                                         outqc,pret,its,ite,kts,kte,itf,ktf,ktop)
 !
       endif
             if(j.lt.jbegc.or.j.gt.jendc)go to 100
@@ -686,9 +687,9 @@ CONTAINS
             ENDDO
 
             DO I=ibegc,iendc
-              if(pret(i).gt.0. .or. pretm(i).gt.0. .or. prets(i).gt.0.)then
-                 pratec(i,j)=cuten(i)*pret(i)+cutenm(i)*pretm(i)+cutens(i)*prets(i)
-                 raincv(i,j)=pratec(i,j)*dt
+              if(pret(i).gt.0.)then
+                 raincv(i,j)=pret(i)*dt
+                 pratec(i,j)=pret(i)
                  rkbcon = kte+kts - kbcon(i)
                  rktop  = kte+kts -  ktop(i)
                  if (ktop(i)  > HTOP(i,j)) HTOP(i,j) = ktop(i)+.001
@@ -712,17 +713,11 @@ CONTAINS
                    if(t2d(i,k).lt.258.)then
                       RQICUTEN(I,K,J)=outqcm(i,k)+outqcs(i,k)+outqc(I,K)*cuten(i)
                       RQCCUTEN(I,K,J)=0.
-                      IF ( PRESENT( GDC2 ) ) THEN
-                        GDC2(I,K,J)=cupclwm(i,k)+cupclws(i,k)+CUPCLW(I,K)*cuten(i)
-                        GDC(I,K,J) = 0.
-                      ENDIF
+                      IF ( PRESENT( GDC2 ) ) GDC2(I,K,J)=cupclwm(i,k)+cupclws(i,k)+CUPCLW(I,K)*cuten(i)
                    else
                       RQICUTEN(I,K,J)=0.
                       RQCCUTEN(I,K,J)=outqcm(i,k)+outqcs(i,k)+outqc(I,K)*cuten(i)
-                      IF ( PRESENT( GDC ) ) THEN
-                        GDC(I,K,J)=cupclwm(i,k)+cupclws(i,k)+CUPCLW(I,K)*cuten(i)
-                        GDC2(I,K,J) = 0.
-                      ENDIF
+                      IF ( PRESENT( GDC ) ) GDC(I,K,J)=cupclwm(i,k)+cupclws(i,k)+CUPCLW(I,K)*cuten(i)
                    endif
                 ENDDO
                 ENDDO

@@ -1731,10 +1731,7 @@ CONTAINS
                    &,bl_mynn_mixqt=bl_mynn_mixqt                         &
                    &,edmf_a=edmf_a,edmf_w=edmf_w,edmf_qt=edmf_qt         &
                    &,edmf_thl=edmf_thl,edmf_ent=edmf_ent,edmf_qc=edmf_qc &
-                   &,nupdraft=nupdraft,maxMF=maxMF                       &
-                   &,ktop_shallow=ktop_shallow                           &
                    &,spp_pbl=spp_pbl,pattern_spp_pbl=pattern_spp_pbl     &
-                   &,RTHRATEN=rthraten                                   &  
                    &,FLAG_QI=flag_qi,FLAG_QNI=flag_qni                   &
                    &,FLAG_QC=flag_qc,FLAG_QNC=flag_qnc                   &
                    ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &

@@ -12,7 +12,7 @@
 # first installed.
 #
 # To permanently change options, change the settings for your platform
-# in the file arch/configure_new.defaults then rerun configure.
+# in the file arch/configure.defaults then rerun configure.
 #
 SHELL           =       /bin/sh
 DEVTOP          =       `pwd`

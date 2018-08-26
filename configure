@@ -7,8 +7,6 @@ thiscmd=$0
 FORTRAN_COMPILER_TIMER=""
 opt_level="-f"
 rword="-r4"
-vnest="NOVN"
-hyb="NOHYB"
 print_usage=""
 chemistry=""
 wrf_core=""
@@ -22,12 +20,10 @@ while [ $# -ge 1 ]; do
       -f) opt_level="-f" ;;
       -h) print_usage="yes" ;;
       -help) print_usage="yes" ;;
-      -hyb) hyb="HYB" ;;
       -os) shift ; WRF_OS=$1 ;;
       -mach) shift ; WRF_MACH=$1 ;;
       -r8) rword="-r8" ;;
       -time) shift ; FORTRAN_COMPILER_TIMER=$1 ;;
-      -vn)  vnest="VN" ;;
       chem) WRF_CHEM=1  ;;
       kpp) WRF_KPP=1  ;;
       radardfi) WRF_DFI_RADAR=1  ;;
@@ -51,7 +47,6 @@ if [ -n "$print_usage" ] ; then
   echo '-d    build with debugging information and no optimization'
   echo '-D    build with -d AND floating traps, traceback, uninitialized variables'
   echo '-r8   build with 8 byte reals'
-  echo '-hyb  build with hybrid vertical coordinate (HVC) for ARW only'
   echo '-help print this message'
   echo '*****************************************************************************'
   echo ' '

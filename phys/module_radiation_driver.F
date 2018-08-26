@@ -174,9 +174,6 @@ CONTAINS
 #endif
                                        ,goddardlwscheme                 & 
                                        ,goddardswscheme                 &  
-# if (EM_CORE == 1)
-                                       ,CAMMGMPSCHEME                   &
-# endif
                                        ,KFCUPSCHEME                     & !BSINGH - Added KFCUPSCHEME for WRFCuP scheme
                                        ,FLGLWSCHEME, FLGSWSCHEME
 
@@ -3213,8 +3210,6 @@ CONTAINS
    USE module_state_description, ONLY : FER_MP_HIRES, FER_MP_HIRES_ADVECT
 #endif
 !---------------------------------------------------------------------
-   use module_state_description, only: etamp_hwrf, fer_mp_hires, &
-                                       fer_mp_hires_advect
    IMPLICIT NONE
 !---------------------------------------------------------------------
    INTEGER,  INTENT(IN   )   ::           ids,ide, jds,jde, kds,kde, &

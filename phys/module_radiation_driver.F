@@ -1400,6 +1400,8 @@ CONTAINS
 
 !     Interpolating climatological ozone and aerosol to model time and levels
 !     Adapted from camrad code
+     IF ( PRESENT( O3RAD ) ) THEN
+        call wrf_debug(1,'Have o3rad')
 #if (EM_CORE==1)
      IF ( o3input .EQ. 2 .AND. id .EQ. 1 ) THEN
 #else
@@ -1422,6 +1424,7 @@ CONTAINS
                               ids , ide , jds , jde , kds , kde ,     &
                               ims , ime , jms , jme , kms , kme ,     &
                               its , ite , jts , jte , kts , kte )
+     ENDIF
      ENDIF
 
      IF ( PRESENT( AEROD ) ) THEN
@@ -2464,8 +2467,32 @@ CONTAINS
          ENDDO
      ENDIF
 
- ! Restore qc & qi for any model physics configuration
-      IF ( F_QC ) THEN
+      IF (ICLOUD == 3) THEN
+        IF (PRESENT(CLDFRA) .AND.                                       &
+            PRESENT(F_QC) .AND. PRESENT ( F_QI ) ) THEN
+           CALL wrf_debug (150, 'DEBUG-GT, back to micro-only Qc and Qi')
+           DO j = jts,jte
+           DO k = kts,kte
+           DO i = its,ite
+              qc(i,k,j) = qc_save(i,k,j)
+              qi(i,k,j) = qi_save(i,k,j)
+           ENDDO
+           ENDDO
+           ENDDO
+           IF (PRESENT(F_QS)) THEN
+              DO j = jts,jte
+              DO k = kts,kte
+              DO i = its,ite
+                 qs(i,k,j) = qs_save(i,k,j)
+              ENDDO
+              ENDDO
+              ENDDO
+           ENDIF
+        ENDIF
+      ENDIF
+
+      IF ( PRESENT( qc  ) .AND. PRESENT( qc_cu ) ) THEN 
+         IF ( icloud_cu .NE. 0 ) THEN
          DO j=jts,jte
          DO k=kts,kte
          DO i=its,ite
@@ -2473,8 +2500,10 @@ CONTAINS
          ENDDO
          ENDDO
          ENDDO
+         ENDIF
       ENDIF
-      IF ( F_QI ) THEN
+      IF ( PRESENT( qi  ) .AND. PRESENT( qi_cu ) ) THEN
+         IF ( icloud_cu .NE. 0 ) THEN
          DO j=jts,jte
          DO k=kts,kte
          DO i=its,ite
@@ -2482,28 +2511,39 @@ CONTAINS
          ENDDO
          ENDDO
          ENDDO
+         ENDIF
       ENDIF
-
-      IF (aercu_opt.gt.0.0) THEN
-      IF ( F_QS ) THEN
-         DO j=jts,jte
-         DO k=kts,kte
-         DO i=its,ite
-           qs(i,k,j) = qs_save(i,k,j)
-         ENDDO
-         ENDDO
-         ENDDO
-      ENDIF
-      END IF
-
-      IF (ICLOUD == 3 .AND. F_QS ) THEN
-          DO j = jts,jte
-          DO k = kts,kte
-          DO i = its,ite
-             qs(i,k,j) = qs_save(i,k,j)
-          ENDDO
-          ENDDO
-          ENDDO
+      IF (ICLOUD == 3) THEN
+        IF (PRESENT(CLDFRA) ) THEN
+           CALL wrf_debug (150, 'DEBUG-GT, back to micro-only Qc and Qi')
+           IF (PRESENT(F_QC)) THEN
+              DO j = jts,jte
+              DO k = kts,kte
+              DO i = its,ite
+                 qc(i,k,j) = qc_save(i,k,j)
+              ENDDO
+              ENDDO
+              ENDDO
+           ENDIF
+           IF (PRESENT(F_QI)) THEN
+              DO j = jts,jte
+              DO k = kts,kte
+              DO i = its,ite
+                 qi(i,k,j) = qi_save(i,k,j)
+              ENDDO
+              ENDDO
+              ENDDO
+           ENDIF
+           IF (PRESENT(F_QS)) THEN
+              DO j = jts,jte
+              DO k = kts,kte
+              DO i = its,ite
+                 qs(i,k,j) = qs_save(i,k,j)
+              ENDDO
+              ENDDO
+              ENDDO
+           ENDIF
+        ENDIF
       ENDIF
 
       ! jararias, aug 2013, updated 2013/11
@@ -3439,7 +3479,7 @@ CONTAINS
       DO j = jts,jte
       DO k = kts,kte
       DO i = its,ite
-
+         RHI_max = 0.0
          CLDFRA(I,K,J) = 0.0
 
          if (qc(i,k,j).gt.1.E-6 .or. qi(i,k,j).ge.1.E-7 .or. qs(i,k,j).gt.1.E-5) then
@@ -3835,8 +3875,7 @@ CONTAINS
 
       iwp = 0.
       do k = kts, k_tropo
-         if (cfr(k).gt.0.0) then
-            lwp = lwp + qc(k)*Rho(k)*dz(k)
+         if (cfr(k).gt.0.01 .and. cfr(k).lt.0.99) then
             iwp = iwp + qi(k)*Rho(k)*dz(k)
          endif
       enddo

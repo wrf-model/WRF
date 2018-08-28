@@ -1295,7 +1295,7 @@ write(stdout,*) trim(command)
                   call get_abil1b_bt( fname, &
                                       this_view % ys_local, this_view % ye_local, &
                                       this_view % xs_local, this_view % xe_local, &
-                                      readmask_p, bt_p(:,:,1) )
+                                      readmask_p, bt_p(:,:,1), inst, ichan )
 
                   allmask_p = (allmask_p .and. readmask_p)
 
@@ -1305,7 +1305,7 @@ write(stdout,*) trim(command)
                      call get_abil1b_bt( fname, &
                                          this_view % ys_local, this_view % ye_local, &
                                          this_view % xs_local, this_view % xe_local, &
-                                         readmask_p, bt_p(:,:,2) )
+                                         readmask_p, bt_p(:,:,2), inst, ichan )
                   end if
 
                   first_chan = (this_view % nfiles_used(ifgat).eq.1)
@@ -2073,7 +2073,7 @@ end subroutine get_abil1b_grid2_1d
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-subroutine get_abil1b_bt( filename, ys, ye, xs, xe, radmask, bt )
+subroutine get_abil1b_bt( filename, ys, ye, xs, xe, radmask, bt, inst, ichan )
    implicit none
 
    character(*), intent(in)      :: filename
@@ -2082,6 +2082,7 @@ subroutine get_abil1b_bt( filename, ys, ye, xs, xe, radmask, bt )
 
    !Starting and stopping indices of this view desired (not equivalent to Full Disk indices)
    integer, intent(in)           :: ys, ye, xs, xe 
+   integer, intent(in)           :: inst, ichan
 
    logical, intent(inout)        :: radmask( ys:ye, xs:xe )
    real, intent(out)             :: bt( ys:ye, xs:xe )
@@ -2150,10 +2151,27 @@ subroutine get_abil1b_bt( filename, ys, ye, xs, xe, radmask, bt )
 !   radmask = ( radmask .and. (DQF.eq.0 .or. DQF.eq.1) )
 !   radmask = ( radmask .and. rad.ge.0.0 )
 
-   where ( radmask )
-!      bt = ( fk2 / ( log(( fk1 / rad ) + 1.0) ) - bc1 ) / bc2
-      bt = ( fk2 / ( log(( fk1 / transpose(rad) ) + 1.0) ) - bc1 ) / bc2
-   end where
+!!!JJGDEBUG
+!   if (rtm_option == rtm_option_crtm) then
+!      do ix = xs, xe
+!         do iy = ys, ye
+!            if ( radmask( iy, ix ) ) then
+!!               call CRTM_Planck_Temperature(inst, ichan, rad( iy, ix ), bt( iy, ix ))
+!               call CRTM_Planck_Temperature(inst, ichan, rad( ix, iy ), bt( iy, ix ))
+!            end if
+!         end do
+!      end do
+!   else
+!!!JJGDEBUG
+
+      where ( radmask )
+!         bt = ( fk2 / ( log(( fk1 / rad ) + 1.0) ) - bc1 ) / bc2
+         bt = ( fk2 / ( log(( fk1 / transpose(rad) ) + 1.0) ) - bc1 ) / bc2
+      end where
+
+!!!JJGDEBUG
+!   end if
+!!!JJGDEBUG
 
 !   do ix = xs, xe
 !      do iy = ys, ye

@@ -99,7 +99,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    real              :: geoht_pixel(kts:min(kte,kme-1))
    real              :: tt_pixel(kts:min(kte,kme-1))
    real              :: pp_pixel(kts:min(kte,kme-1))
- 
+
       Band_Size(1:5) = (/86, 0, 0, 16, 0 /)
       Bands(:,:)     = 0  
       Bands(1:Band_Size(1),1) = &

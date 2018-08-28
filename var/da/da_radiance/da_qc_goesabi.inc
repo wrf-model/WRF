@@ -72,6 +72,8 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
    integer, parameter :: ch14 = 8
    integer, parameter :: ch15 = 9
 
+   character(len=3)   :: nlayc
+
    if (trace_use) call da_trace_entry("da_qc_goesabi")
 
 
@@ -245,6 +247,20 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
             iv%instid(i)%solzen(n), iv%instid(i)%solazi(n), &
             iv%instid(i)%tropt(n), iv%instid(i)%cld_qc(n)%terr_hgt, &
             iv%instid(i)%info%date_char(n)
+
+
+!         write(nlayc,'(I0)') (kte - kts)+1
+!         if (print_zz) write(*,'(A,I8,'//trim(nlayc)//'D21.12)') 'PIXEL_DEBUG10: ', n, iv%instid(i)%pm(1:(kte - kts)+1,n)
+!         if (print_zz) write(*,'(A,I8,'//trim(nlayc)//'D21.12)') 'PIXEL_DEBUG11: ', n, iv%instid(i)%tm(1:(kte - kts)+1,n)
+!         if (print_zz) write(*,'(A,I8,'//trim(nlayc)//'D21.12)') 'PIXEL_DEBUG12: ', n, iv%instid(i)%qm(1:(kte - kts)+1,n)
+!         if (print_zz) write(*,'(A,I8,'//trim(nlayc)//'I10)') 'PIXEL_DEBUG13: ', n, iv%instid(i)%info%i  (kts:kte,n)
+!         if (print_zz) write(*,'(A,I8,'//trim(nlayc)//'I10)') 'PIXEL_DEBUG14: ', n, iv%instid(i)%info%j  (kts:kte,n)
+!         if (print_zz) write(*,'(A,I8,'//trim(nlayc)//'D21.12)') 'PIXEL_DEBUG15: ', n, iv%instid(i)%info%dx (kts:kte,n)
+!         if (print_zz) write(*,'(A,I8,'//trim(nlayc)//'D21.12)') 'PIXEL_DEBUG16: ', n, iv%instid(i)%info%dy (kts:kte,n)
+!         if (print_zz) write(*,'(A,I8,'//trim(nlayc)//'D21.12)') 'PIXEL_DEBUG17: ', n, iv%instid(i)%info%dxm(kts:kte,n)
+!         if (print_zz) write(*,'(A,I8,'//trim(nlayc)//'D21.12)') 'PIXEL_DEBUG18: ', n, iv%instid(i)%info%dym(kts:kte,n)
+
+
 !JJGDEBUG
 
          clddet_zz_tests = 0

@@ -72,8 +72,6 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
    integer, parameter :: ch14 = 8
    integer, parameter :: ch15 = 9
 
-   character(len=3)   :: nlayc
-
    if (trace_use) call da_trace_entry("da_qc_goesabi")
 
 
@@ -184,9 +182,6 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
       !  3.0 check cloud
       !-----------------------------------------------------------------
       if (.not. crtm_cloud ) then
-
-!         do k = 1, nchan
- 
          if (iv%instid(i)%clwp(n) >= 0.2) then
             iv%instid(i)%tb_qc(:,n) = qc_bad
             if (iv%instid(i)%info%proc_domain(1,n)) &
@@ -208,15 +203,7 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
                      nrej_eccloud(:) = nrej_eccloud(:) + 1
                end if
             end if
-!         else
-!            if (iv%instid(i)%cloudflag(n) <= 0) then ! only use abs clear pixel, read clm by Zhuge and Zou(2017)
-!                iv%instid(i)%tb_qc(:,n) = qc_bad
-!                if (iv%instid(i)%info%proc_domain(1,n)) &
-!                    nrej_eccloud(:) = nrej_eccloud(:) + 1
-!            end if
          end if
- 
-!         end do
       end if
 
       clddet_zz: if ( use_clddet_zz .and. all(tb_inv((/1,8,9/),n).gt.missing_r) ) then
@@ -228,40 +215,26 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
          !!==========================================================================
          !!==========================================================================
 
-!JJGDEBUG
-!         print_zz = iv%instid(i)%info%proc_domain(1,n)
-         print_zz = .true.
-         if (print_zz) write(*,'(A,I8,10F12.4)') 'PIXEL_DEBUG1: ', n, &
-            tb_inv(:,n)
-         if (print_zz) write(*,'(A,I8,10F12.4)') 'PIXEL_DEBUG2: ', n, &
-            tb_xb(:,n)
-         if (print_zz) write(*,'(A,I8,10F12.4)') 'PIXEL_DEBUG3: ', n, &
-            tb_ob(:,n)
-
-         if (print_zz) write(*,'(A,3I8)')       'PIXEL_DEBUG4: n, n1, n2 = ', &
-            n, iv%instid(i)%info%n1, iv%instid(i)%info%n2
-         if (print_zz) write(*,'(A)') 'PIXEL_DEBUG5: n, lat, lon, satzen, satazi, solzen, solazi, tropt, terrain, date = '
-         if (print_zz) write(*,'(A,I8,8F12.4,A)') 'PIXEL_DEBUG6: ', n, &
-            iv%instid(i)%info%lat(1,n), iv%instid(i)%info%lon(1,n), &
-            iv%instid(i)%satzen(n), iv%instid(i)%satazi(n), &
-            iv%instid(i)%solzen(n), iv%instid(i)%solazi(n), &
-            iv%instid(i)%tropt(n), iv%instid(i)%cld_qc(n)%terr_hgt, &
-            iv%instid(i)%info%date_char(n)
-
-
-!         write(nlayc,'(I0)') (kte - kts)+1
-!         if (print_zz) write(*,'(A,I8,'//trim(nlayc)//'D21.12)') 'PIXEL_DEBUG10: ', n, iv%instid(i)%pm(1:(kte - kts)+1,n)
-!         if (print_zz) write(*,'(A,I8,'//trim(nlayc)//'D21.12)') 'PIXEL_DEBUG11: ', n, iv%instid(i)%tm(1:(kte - kts)+1,n)
-!         if (print_zz) write(*,'(A,I8,'//trim(nlayc)//'D21.12)') 'PIXEL_DEBUG12: ', n, iv%instid(i)%qm(1:(kte - kts)+1,n)
-!         if (print_zz) write(*,'(A,I8,'//trim(nlayc)//'I10)') 'PIXEL_DEBUG13: ', n, iv%instid(i)%info%i  (kts:kte,n)
-!         if (print_zz) write(*,'(A,I8,'//trim(nlayc)//'I10)') 'PIXEL_DEBUG14: ', n, iv%instid(i)%info%j  (kts:kte,n)
-!         if (print_zz) write(*,'(A,I8,'//trim(nlayc)//'D21.12)') 'PIXEL_DEBUG15: ', n, iv%instid(i)%info%dx (kts:kte,n)
-!         if (print_zz) write(*,'(A,I8,'//trim(nlayc)//'D21.12)') 'PIXEL_DEBUG16: ', n, iv%instid(i)%info%dy (kts:kte,n)
-!         if (print_zz) write(*,'(A,I8,'//trim(nlayc)//'D21.12)') 'PIXEL_DEBUG17: ', n, iv%instid(i)%info%dxm(kts:kte,n)
-!         if (print_zz) write(*,'(A,I8,'//trim(nlayc)//'D21.12)') 'PIXEL_DEBUG18: ', n, iv%instid(i)%info%dym(kts:kte,n)
-
-
-!JJGDEBUG
+!!JJGDEBUG
+!!         print_zz = iv%instid(i)%info%proc_domain(1,n)
+!         print_zz = .true.
+!         if (print_zz) write(*,'(A,I8,10F12.4)') 'PIXEL_DEBUG1: ', n, &
+!            tb_inv(:,n)
+!         if (print_zz) write(*,'(A,I8,10F12.4)') 'PIXEL_DEBUG2: ', n, &
+!            tb_xb(:,n)
+!         if (print_zz) write(*,'(A,I8,10F12.4)') 'PIXEL_DEBUG3: ', n, &
+!            tb_ob(:,n)
+!
+!         if (print_zz) write(*,'(A,3I8)')       'PIXEL_DEBUG4: n, n1, n2 = ', &
+!            n, iv%instid(i)%info%n1, iv%instid(i)%info%n2
+!         if (print_zz) write(*,'(A)') 'PIXEL_DEBUG5: n, lat, lon, satzen, satazi, solzen, solazi, tropt, terrain, date = '
+!         if (print_zz) write(*,'(A,I8,8F12.4,A)') 'PIXEL_DEBUG6: ', n, &
+!            iv%instid(i)%info%lat(1,n), iv%instid(i)%info%lon(1,n), &
+!            iv%instid(i)%satzen(n), iv%instid(i)%satazi(n), &
+!            iv%instid(i)%solzen(n), iv%instid(i)%solazi(n), &
+!            iv%instid(i)%tropt(n), iv%instid(i)%cld_qc(n)%terr_hgt, &
+!            iv%instid(i)%info%date_char(n)
+!!JJGDEBUG
 
          clddet_zz_tests = 0
 
@@ -389,17 +362,17 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
                   ! 4.7 Modified 4um Emissivity Test 
                   ! (Zhuge and Zou, 2016, JAMC; TEST7, New/Mod TEST1)
                   !--------------------------------------------------------------------------
-!JJG: Need to check over this code to ensure relative azimuth is calculated correctly
                   ! Modify EMISS for sun glint area may be  not work, because we are at north land
                   ! - compute relative azimuth
                   Relaz = RELATIVE_AZIMUTH(iv%instid(i)%solazi(n),iv%instid(i)%satazi(n))
 
-!JJG:  At least the use of solzen, satze, Relaz appears to be correct for Glintzen calculation
                   ! - compute glint angle
                   Glintzen = GLINT_ANGLE(iv%instid(i)%solzen(n),iv%instid(i)%satzen(n),Relaz )
-                  if (print_zz) write(*,"(A)") "PIXEL_DEBUG7: lat, lon, Relaz, Glintzen = " 
-                  if (print_zz) write(*,"(A,4D12.4)") "PIXEL_DEBUG8: ", & 
-                     iv%instid(i)%info%lat(1,n),iv%instid(i)%info%lon(1,n), Relaz, Glintzen
+!!JJGDEBUG
+!                  if (print_zz) write(*,"(A)") "PIXEL_DEBUG7: lat, lon, Relaz, Glintzen = " 
+!                  if (print_zz) write(*,"(A,4D12.4)") "PIXEL_DEBUG8: ", & 
+!                     iv%instid(i)%info%lat(1,n),iv%instid(i)%info%lon(1,n), Relaz, Glintzen
+!!JJGDEBUG
 
                   if ( Glintzen.lt.40.0 .and. isflg==sea_flag) then
                      crit_zz = - tb_inv(ch7,n) ! (B_ch7 - O_ch7)
@@ -456,9 +429,9 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
             if (reject_zz) clddet_zz_tests(itest) = 1
          end do
 
-!JJGDEBUG
-         if (print_zz) write(*,'(A,I8,10I4)') 'PIXEL_DEBUG9: ', n, clddet_zz_tests
-!JJGDEBUG
+!!JJGDEBUG
+!         if (print_zz) write(*,'(A,I8,10I4)') 'PIXEL_DEBUG9: ', n, clddet_zz_tests
+!!JJGDEBUG
       end if clddet_zz
 
       ! ---------------------------
@@ -593,8 +566,6 @@ function relative_azimuth ( sol_az ,sen_az )
   real :: sen_az
   real :: relative_azimuth
 
-!JJG: why all the corrections? abs? 360-rel_az? 180-rel_az?
-
   relative_azimuth = abs(sol_az - sen_az)
   if (relative_azimuth > 180.0) then
        relative_azimuth = 360.0 - relative_azimuth
@@ -625,7 +596,7 @@ function glint_angle ( sol_zen , sat_zen , rel_az  )
 end function glint_angle
 
 subroutine evaluate_clddet_test ( crit_name, &
-                                  isflg, isflgs, crit_zz, eps, q, &
+                                  isflg, isflgs, crit_zz, eps, extra_qual, &
                                   on_proc, lat, lon, &
                                   reject_zz , tb_qc, nrej )
 
@@ -633,12 +604,12 @@ subroutine evaluate_clddet_test ( crit_name, &
    integer, intent(in)      :: isflg, isflgs(:)
    logical, intent(in)      :: on_proc
    real, intent(in)         :: crit_zz, eps(:), lat, lon
-   logical, intent(in)      :: q(:)
+   logical, intent(in)      :: extra_qual(:)
    logical, intent(out)     :: reject_zz
    integer, intent(inout)   :: tb_qc(:), nrej(:)
 
    reject_zz = .false.
-   reject_zz = crit_zz.gt.missing_r .and. any( isflg.eq.isflgs .and. crit_zz.gt.eps .and. q )
+   reject_zz = crit_zz.gt.missing_r .and. any( isflg.eq.isflgs .and. crit_zz.gt.eps .and. extra_qual )
 
    if (reject_zz) then
       tb_qc(:) = qc_bad

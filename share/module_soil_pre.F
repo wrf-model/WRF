@@ -594,7 +594,7 @@ print *,'WATER CHANGE = ',change_water
                                 landmask , sst , ht, toposoil, &
                                 st_input , sm_input , sw_input , &
                                 st_levels_input , sm_levels_input , sw_levels_input , &
-                                zs , dzs , tslb , smois , sh2o , &
+                                zs , dzs , flag_sm_adj, tslb , smois , sh2o , &
                                 flag_sst , flag_tavgsfc, flag_soilhgt, &
                                 flag_soil_layers, flag_soil_levels, &
                                 ids , ide , jds , jde , kds , kde , &
@@ -613,7 +613,7 @@ print *,'WATER CHANGE = ',change_water
                               num_st_levels_input , num_sm_levels_input , num_sw_levels_input , &
                               num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc
 
-      INTEGER , INTENT(IN) :: flag_sst, flag_tavgsfc
+      INTEGER , INTENT(IN) :: flag_sst, flag_tavgsfc, flag_sm_adj
       INTEGER , INTENT(IN) :: flag_soil_layers, flag_soil_levels, flag_soilhgt
 
       REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: landmask , sst
@@ -816,7 +816,7 @@ print *,'WATER CHANGE = ',change_water
          CALL init_soil_depth_3 ( zs , dzs , num_soil_layers )
          CALL init_soil_3_real ( tsk , tmn , smois , tslb , &
                                  st_input , sm_input , landmask , sst , &
-                                 zs , dzs , &
+                                 zs , dzs , flag_sm_adj,    &
                                  st_levels_input , sm_levels_input , &
                                  num_soil_layers , num_st_levels_input , num_sm_levels_input , &
                                  num_st_levels_alloc , num_sm_levels_alloc , &
@@ -1811,20 +1811,20 @@ cycle
 
    END SUBROUTINE init_soil_2_ideal
 
-   SUBROUTINE init_soil_3_real ( tsk , tmn , smois , tslb , &
+   SUBROUTINE init_soil_3_real ( tsk , tmn , smois , tslb ,           &
                                  st_input , sm_input , landmask, sst, &
-                                 zs , dzs , &
-                                 st_levels_input , sm_levels_input , &
-                                 num_soil_layers , num_st_levels_input , num_sm_levels_input ,  &
+                                 zs , dzs , flag_sm_adj,              &
+                                 st_levels_input , sm_levels_input ,  &
+                                 num_soil_layers , num_st_levels_input , num_sm_levels_input , &
                                  num_st_levels_alloc , num_sm_levels_alloc , &
                                  flag_sst , flag_soil_layers , flag_soil_levels , &
-                                 ids , ide , jds , jde , kds , kde , &
-                                 ims , ime , jms , jme , kms , kme , &
+                                 ids , ide , jds , jde , kds , kde ,  &
+                                 ims , ime , jms , jme , kms , kme ,  &
                                  its , ite , jts , jte , kts , kte )
 
       IMPLICIT NONE
 
-      INTEGER , INTENT(IN) :: num_soil_layers , &
+      INTEGER , INTENT(IN) :: num_soil_layers , flag_sm_adj,      &
                               num_st_levels_input , num_sm_levels_input , &
                               num_st_levels_alloc , num_sm_levels_alloc , &
                               ids , ide , jds , jde , kds , kde , &
@@ -2057,6 +2057,10 @@ cycle
 
       END IF
 
+   IF(flag_sm_adj == 1) then
+       write(message, FMT='(A)') ' Soil moisture adjustment from Noah to RUC is ON'
+       CALL wrf_message ( message )
+!-- perform soil moisture adjustmen when flag_sm_adj == 1
       if( flag_soil_levels .ne. 1) then
            write(message, FMT='(A)') ' from Noah to RUC - compute RUC bucket'
            CALL wrf_message ( message )
@@ -2114,6 +2118,7 @@ cycle
       END DO
 
       endif ! flag_soil_levels
+   ENDIF ! flag_sm_adj
 
       !  Over water, put in reasonable values for soil temperature and moisture.  These won't be
       !  used, but they will make a more continuous plot.

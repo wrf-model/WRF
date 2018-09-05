@@ -34,7 +34,7 @@ subroutine da_radiance_init(iv,ob)
  integer             :: iunit
  character(len=filename_len)  :: filename
  character(len=20)   :: cdum
- real                :: error_cld
+ real                :: error_cld_y, error_cld_x
 
 ! local variables for tuning error factor
 !----------------------------------------
@@ -173,10 +173,12 @@ subroutine da_radiance_init(iv,ob)
    allocate ( satinfo(n) % ichan(nchanl(n)) )
    allocate ( satinfo(n) % iuse (nchanl(n)) )
    allocate ( satinfo(n) % error(nchanl(n)) )
-   allocate ( satinfo(n) % error_cld(nchanl(n)) )
+   allocate ( satinfo(n) % error_cld_y(nchanl(n)) )
+   allocate ( satinfo(n) % error_cld_x(nchanl(n)) )
    allocate ( satinfo(n) % polar(nchanl(n)) )
 
-   satinfo(n) % error_cld(:) = 500.0 !initialize
+   satinfo(n) % error_cld_y(:) = 500.0 !initialize
+   satinfo(n) % error_cld_x(:) = 5.0 !initialize
 
    read(iunit,*)
    do j = 1, nchanl(n)
@@ -202,10 +204,13 @@ subroutine da_radiance_init(iv,ob)
                               idum, &
                satinfo(n)%error(j), &
                satinfo(n)%polar(j), &
-               error_cld
-         if ( error_cld > 0.0 ) then
-            satinfo(n)%error_cld(j) = error_cld
-         end if
+                       error_cld_y, &
+                       error_cld_x
+         if ( error_cld_y > 0.0 ) &
+            satinfo(n)%error_cld_y(j) = error_cld_y
+         if ( error_cld_x > 0.0 ) &
+            satinfo(n)%error_cld_x(j) = error_cld_x
+
       end if
      iv%instid(n)%ichan(j) = satinfo(n)%ichan(j)
      ob%instid(n)%ichan(j) = satinfo(n)%ichan(j)

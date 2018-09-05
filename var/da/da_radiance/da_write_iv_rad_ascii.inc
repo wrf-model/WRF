@@ -18,7 +18,7 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
    character(len=filename_len)  :: filename
    character(len=7)   :: surftype
    integer            :: ndomain
-   logical            :: amsr2
+   logical            :: amsr2, abi
 
    real, allocatable :: dtransmt(:,:), transmt_jac(:,:), transmt(:,:), lod(:,:), lod_jac(:,:)
 
@@ -49,6 +49,7 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
       end if
 
       amsr2 = index(iv%instid(i)%rttovid_string,'amsr2') > 0
+      abi   = index(instid(iinst),'abi') > 0
 
       write(unit=filename, fmt='(i2.2,a,i4.4)') it,'_inv_'//trim(iv%instid(i)%rttovid_string)//'.', myproc
 
@@ -147,6 +148,12 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
             write(unit=innov_rad_unit,fmt='(10f11.2)') iv%instid(i)%tb_error(:,n)
             write(unit=innov_rad_unit,fmt='(a)') 'QC   : '
             write(unit=innov_rad_unit,fmt='(10i11)') iv%instid(i)%tb_qc(:,n)
+            if ( abi ) then ! write out ca_mean, tb_xb_clr
+               write(unit=innov_rad_unit,fmt='(a)') 'CA   : '
+               write(unit=innov_rad_unit,fmt='(10f11.2)') iv%instid(i)%ca_mean(:,n)
+               write(unit=innov_rad_unit,fmt='(a)') 'BGCLR: '
+               write(unit=innov_rad_unit,fmt='(10f11.2)') iv%instid(i)%tb_xb_clr(:,n)
+            end if
 
             if (write_profile) then
                nlevelss  = iv%instid(i)%nlevels

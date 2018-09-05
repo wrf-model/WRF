@@ -120,11 +120,11 @@ subroutine da_qc_amsr2 (it, i, nchan, ob, iv)
          do k = 1, nchan
             if (c37_mean.lt.0.05) then
                iv%instid(i)%tb_error(k,n)= satinfo(i)%error_std(k)
-            else if (c37_mean.ge.0.05.and.c37_mean.lt.0.5) then
+            else if (c37_mean.ge.0.05.and.c37_mean.lt.satinfo(i)%error_cld_x(k)) then
                iv%instid(i)%tb_error(k,n)= satinfo(i)%error_std(k)+ &
-                  (c37_mean-0.05)*(satinfo(i)%error_cld(k)-satinfo(i)%error_std(k))/(0.5-0.05)
+                  (c37_mean-0.05)*(satinfo(i)%error_cld_y(k)-satinfo(i)%error_std(k))/(satinfo(i)%error_cld_x(k)-0.05)
             else
-               iv%instid(i)%tb_error(k,n)= satinfo(i)%error_cld(k)
+               iv%instid(i)%tb_error(k,n)= satinfo(i)%error_cld_y(k)
             end if
          end do ! nchan
 

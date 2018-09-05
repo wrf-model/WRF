@@ -521,6 +521,7 @@ module da_define_structures
       integer, pointer     :: scanline(:)
       integer, pointer     :: cloud_flag(:,:)
       integer, pointer     :: rain_flag(:)
+      real,    pointer     :: ca_mean(:,:)
       real,    pointer     :: satzen(:) 
       real,    pointer     :: satazi(:) 
       real,    pointer     :: solzen(:) 

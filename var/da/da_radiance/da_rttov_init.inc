@@ -57,7 +57,6 @@ subroutine da_rttov_init(iv,ob,nsensor,nchan)
    allocate (sensor(3,nsensor))
    allocate (coefs_channels(mxchn,nsensor))
    if ( rttov_emis_atlas_ir > 0 .or. rttov_emis_atlas_mw > 0 ) then
-      allocate (atlas(nsensor))
       allocate (atlas_type(nsensor))
       allocate (atlas_id(nsensor))
    end if

@@ -634,7 +634,7 @@ module_cu_gf_wrfdrv.o: \
 		module_cu_gf_deep.o \
 		module_cu_gf_sh.o
 
-module_cu_gf_gfdrvr.o: \
+module_cu_gfdrvr.o: \
 		module_cu_gf_deep.o \
 		module_cu_gf_sh.o
 

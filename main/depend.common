@@ -645,7 +645,7 @@ module_cumulus_driver.o: \
 		module_cu_kf.o \
 		module_cu_g3.o \
 		module_cu_gf_wrfdrv.o \
-		module_cu_gf_gfdrvr.o \
+		module_cu_gfdrvr.o \
 		module_cu_kfeta.o \
 		$(PHYS_CU) \
 		module_cu_bmj.o \

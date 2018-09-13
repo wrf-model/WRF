@@ -349,37 +349,6 @@ else
        setenv CRTM_SRC " "
        setenv CRTM 0
     endif
-    set RTTOV = ( `grep "^RTTOVPATH" configure.wrf | cut -d"=" -f2-` )
-    if ( $RTTOV == "" ) then
-       setenv RTTOV_LIB " "
-       setenv RTTOV_SRC " "
-       unsetenv RTTOV
-    else
-       echo "  "
-       echo "Compiling with RTTOV libraries in:"
-       echo $RTTOV
-       echo "  "
-       if ( ! $?BUFR ) then
-          echo "  "
-          echo "BUFR library is needed for radiance data ingest."
-          echo "setting BUFR=1"
-          echo "  "
-          setenv BUFR 1
-       endif
-       if ( -e ${RTTOV}/lib/librttov11.1.0_main.a ) then
-          setenv RTTOV_LIB "-L${RTTOV}/lib -lrttov11.1.0_coef_io -lrttov11.1.0_emis_atlas -lrttov11.1.0_main"
-       else if ( -e ${RTTOV}/lib/librttov11.2.0_main.a ) then
-          setenv RTTOV_LIB "-L${RTTOV}/lib -lrttov11.2.0_coef_io -lrttov11.2.0_emis_atlas -lrttov11.2.0_main"
-       else if ( -e ${RTTOV}/lib/librttov11_main.a ) then
-          setenv RTTOV_LIB "-L${RTTOV}/lib -lrttov11_coef_io -lrttov11_emis_atlas -lrttov11_main"
-       else
-          echo "Can not find a compatible RTTOV library! Please ensure that your RTTOV build was successful,"
-          echo "your 'RTTOV' environment variable is set correctly, and you are using a supported version of RTTOV."
-          echo "Currently supported versions are 11.1, 11.2, and 11.3"
-          exit 1
-       endif
-       setenv RTTOV_SRC "-I${RTTOV}/include -I${RTTOV}/mod"
-    endif
     set hdf5path = ( `grep "^HDF5PATH" configure.wrf | cut -d"=" -f2-` )
     if ( $hdf5path == "" ) then
        setenv HDF5_INC ""
@@ -392,6 +361,42 @@ else
        setenv HDF5_INC "-I${hdf5path}/include"
        setenv HDF5 1
     endif
+    set RTTOV = ( `grep "^RTTOVPATH" configure.wrf | cut -d"=" -f2-` )
+    if ( $RTTOV == "" ) then
+       setenv RTTOV_LIB " "
+       setenv RTTOV_SRC " "
+       unsetenv RTTOV
+    else
+       if ( $hdf5path == "" ) then
+          echo "As of version 12.1 of RTTOV, WRFDA requires HDF5 in order utilize the RTTOV library."
+          echo "RTTOV emissivity atlas files are now provided only in HDF5 format."
+          echo "Please supply an HDF5 path prior to configure or unset RTTOV."
+          exit 1
+       else
+          echo "  "
+          echo "Compiling with RTTOV libraries in:"
+          echo $RTTOV
+          echo "  "
+          if ( ! $?BUFR ) then
+             echo "  "
+             echo "BUFR library is needed for radiance data ingest."
+             echo "setting BUFR=1"
+             echo "  "
+             setenv BUFR 1
+          endif
+          if ( -e ${RTTOV}/lib/librttov12_main.a ) then
+             setenv RTTOV_LIB "-L${hdf5path}/lib -lhdf5hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 -L${RTTOV}/lib -lrttov12_coef_io -lrttov12_emis_atlas -lrttov12_main -lrttov12_hdf"
+          else
+             echo "Can not find a compatible RTTOV library! Please ensure that your RTTOV build was successful,"
+             echo "your 'RTTOV' environment variable is set correctly, and you are using a supported version of RTTOV."
+             echo "Current supported version(s): 12.1"
+
+             exit 1
+          endif
+          setenv RTTOV_SRC "-I${RTTOV}/include -I${RTTOV}/mod"
+       endif
+    endif
+
     if ( $?CLOUD_CV ) then
        setenv CLOUD_CV_CPP "-DCLOUD_CV"
     else

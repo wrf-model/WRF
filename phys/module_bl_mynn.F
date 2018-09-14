@@ -73,7 +73,36 @@
 
 MODULE module_bl_mynn
 
-!For WRF:
+#if defined(mpas)
+ USE mpas_atmphys_constants, only: &
+          karman,              &
+          g => gravity,        &
+          p1000mb => P0,       &
+          cp,                  &
+          r_d,                 &
+          r_v,                 &
+          rvovrd => rvord,     &
+          rcp,                 &
+          xlv,                 &  
+          xlf,                 &
+          xls,                 &
+          svp1,                &
+          svp2,                &
+          svp3,                &
+          svpt0,               &
+          ep_1,                &
+          ep_2,                &
+          cice,                &
+          cliq,                &
+          cpv      
+ USE error_function, only: erf
+
+ implicit none
+ private
+ public:: tv0,mym_condensation,mynn_bl_driver,p608,ev,rd, &
+              esat_blend,xl_blend,qsat_blend 
+
+#else
   USE module_model_constants, only: &
        &karman, g, p1000mb, &
        &cp, r_d, r_v, rcp, xlv, xlf, xls, &
@@ -86,6 +115,8 @@ MODULE module_bl_mynn
 !-------------------------------------------------------------------
   IMPLICIT NONE
 !-------------------------------------------------------------------
+#endif
+
 !For non-WRF
 !   REAL    , PARAMETER :: karman       = 0.4
 !   REAL    , PARAMETER :: g            = 9.81
@@ -129,7 +160,7 @@ MODULE module_bl_mynn
   REAL, PARAMETER :: tv0=p608*tref, tv1=(1.+p608)*tref, gtr=g/tref
 
 ! Closure constants
-  REAL, PARAMETER :: &
+  REAL, PARAMETER, PUBLIC :: &
        &vk  = karman, &
        &pr  =  0.74,  &
        &g1  =  0.235, &  ! NN2009 = 0.235
@@ -246,8 +277,11 @@ MODULE module_bl_mynn
 !JOE & JAYMES- end
 
 
-
+#if defined(mpas)
+  INTEGER :: mynn_level=2
+#else
   INTEGER :: mynn_level
+#endif
 
   CHARACTER*128 :: mynn_message
 
@@ -4424,6 +4458,7 @@ ENDIF
 
   END SUBROUTINE mynn_bl_driver
 
+#if defined(wrfmodel)
 ! ==================================================================
   SUBROUTINE mynn_bl_init_driver(                   &
        &RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,          &
@@ -4484,6 +4519,7 @@ ENDIF
 
   END SUBROUTINE mynn_bl_init_driver
 
+#endif
 ! ==================================================================
 
   SUBROUTINE GET_PBLH(KTS,KTE,zi,thetav1D,qke1D,zw1D,dz1D,landsea,kzi)

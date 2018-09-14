@@ -50,15 +50,27 @@ MODULE module_sf_mynn
 !NOTE: This code was primarily tested in combination with the RUC LSM.
 !      Performance with the Noah (or other) LSM is relatively unknown.
 !-------------------------------------------------------------------
-!For WRF
+ USE module_sf_sfclay, ONLY: sfclayinit
+ USE module_bl_mynn,   only: tv0, b1, b2, p608, ev, rd, & !, mym_condensation
+       &esat_blend, xl_blend, qsat_blend
+
+#if defined(mpas)
+ USE mpas_atmphys_constants,only: p1000mb => P0,cp,xlv,ep_2,cpv,g =>gravity,r_v,rcp
+
+ implicit none
+ private
+ public:: mynn_sf_init_driver, &
+          sfclay_mynn 
+
+#else
   USE module_model_constants, only: &
        &g, p1000mb, cp, xlv, ep_2, r_d, r_v, rcp, cpv 
 
-  USE module_bl_mynn,   only: tv0, b1, b2, p608, ev, rd, & !, mym_condensation
-       &esat_blend, xl_blend, qsat_blend
 !-------------------------------------------------------------------
   IMPLICIT NONE
 !-------------------------------------------------------------------
+#endif
+
 !For non-WRF
 !   REAL    , PARAMETER :: g            = 9.81
 !   REAL    , PARAMETER :: r_d          = 287.
@@ -111,7 +123,9 @@ CONTAINS
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
                      ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,          &
-                     bl_mynn_cloudpdf)
+                     bl_mynn_cloudpdf,                             &
+                     dxCell                                        &
+                         )
 !-------------------------------------------------------------------
       IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -258,6 +272,7 @@ CONTAINS
                                                            PSFCPA ,&
                                                             SNOWH
 
+      real,intent(in),dimension(ims:ime,jms:jme),optional:: dxCell
 
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                 INTENT(OUT  )               ::            U10,V10, &
@@ -438,7 +453,9 @@ CONTAINS
                 its,ite, jts,jte, kts,kte                          &
                 ,isftcflx,iz0tlnd,                                 &
                 USTM(ims,j),CK(ims,j),CKA(ims,j),                  &
-                CD(ims,j),CDA(ims,j)                               &
+                CD(ims,j),CDA(ims,j),                              &
+                dxCell(ims,j)                                      &
+
                                                                    )
 
       ENDDO
@@ -465,7 +482,8 @@ CONTAINS
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte                     &
                      ,isftcflx, iz0tlnd,                           &
-                     ustm,ck,cka,cd,cda                            &
+                     ustm,ck,cka,cd,cda,                           &
+                     dxCell                                        &
                      )
 
 !-------------------------------------------------------------------
@@ -576,6 +594,9 @@ CONTAINS
       REAL    ::  FLUXC,VSGD
       REAL    ::  restar,VISC,DQG,OLDUST,OLDTST
       REAL, PARAMETER :: psilim = -10.  ! ONLY AFFECTS z/L > 2.0
+
+      real,intent(in),dimension(ims:ime),optional:: dxCell
+
 !-------------------------------------------------------------------
 
       DO I=its,ite
@@ -670,7 +691,13 @@ CONTAINS
          ! Mahrt and Sun low-res correction
          ! (for 13 km ~ 0.37 m/s; for 3 km == 0 m/s)
          !--------------------------------------------------------
-         VSGD = 0.32 * (max(dx/5000.-1.,0.))**.33
+!MPAS specific (Laura D. Fowler): We take into accound the actual size of individual
+!grid-boxes:
+        if(present(dxCell)) then
+           VSGD = 0.32 * (max(dxCell(i)/5000.-1.,0.))**.33
+         else
+           VSGD = 0.32 * (max(dx/5000.-1.,0.))**.33
+         endif
          WSPD(I)=SQRT(WSPD(I)*WSPD(I)+WSTAR(I)*WSTAR(I)+vsgd*vsgd)
          WSPD(I)=MAX(WSPD(I),wmin)
 

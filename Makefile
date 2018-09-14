@@ -137,7 +137,7 @@ all_wrfvar :
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" ext
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir
 	if [ $(CRTM) -ne 0 ] ; then \
-	  (cd var/external/crtm_2.2.3; $(MAKE) $(J)) ; \
+	  (cd var/external/crtm_2.3.0; $(MAKE) $(J)) ; \
 	fi
 	if [ $(BUFR) ] ; then \
 	  (cd var/external/bufr;  \

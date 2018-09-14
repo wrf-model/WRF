@@ -335,8 +335,8 @@ else
           setenv BUFR 1
        endif
        setenv CRTM_CPP "-DCRTM"
-       setenv CRTM_LIB "-L../external/crtm_2.2.3/libsrc -lCRTM"
-       setenv CRTM_SRC "-I../external/crtm_2.2.3/libsrc"
+       setenv CRTM_LIB "-L../external/crtm_2.3.0/libsrc -lCRTM"
+       setenv CRTM_SRC "-I../external/crtm_2.3.0/libsrc"
        #setenv SFC_CRTM `grep '^SFC' configure.wrf | awk '{print $3}' | sed -e 's/\// /g' | awk '{print $NF}'`
        #setenv ABI_CRTM `grep '^SFC' configure.wrf | sed -n 's/.*\(\-m[0-9]\{2\}\).*/\1/p'`
        setenv CRTM 1

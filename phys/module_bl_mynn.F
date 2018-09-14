@@ -73,7 +73,36 @@
 
 MODULE module_bl_mynn
 
-!For WRF:
+#if defined(mpas)
+ USE mpas_atmphys_constants, only: &
+          karman,              &
+          g => gravity,        &
+          p1000mb => P0,       &
+          cp,                  &
+          r_d,                 &
+          r_v,                 &
+          rvovrd => rvord,     &
+          rcp,                 &
+          xlv,                 &  
+          xlf,                 &
+          xls,                 &
+          svp1,                &
+          svp2,                &
+          svp3,                &
+          svpt0,               &
+          ep_1,                &
+          ep_2,                &
+          cice,                &
+          cliq,                &
+          cpv      
+ USE error_function, only: erf
+
+ implicit none
+ private
+ public:: tv0,mym_condensation,mynn_bl_driver,p608,ev,rd, &
+              esat_blend,xl_blend,qsat_blend 
+
+#else
   USE module_model_constants, only: &
        &karman, g, p1000mb, &
        &cp, r_d, r_v, rcp, xlv, xlf, xls, &
@@ -86,6 +115,8 @@ MODULE module_bl_mynn
 !-------------------------------------------------------------------
   IMPLICIT NONE
 !-------------------------------------------------------------------
+#endif
+
 !For non-WRF
 !   REAL    , PARAMETER :: karman       = 0.4
 !   REAL    , PARAMETER :: g            = 9.81
@@ -129,7 +160,7 @@ MODULE module_bl_mynn
   REAL, PARAMETER :: tv0=p608*tref, tv1=(1.+p608)*tref, gtr=g/tref
 
 ! Closure constants
-  REAL, PARAMETER :: &
+  REAL, PARAMETER, PUBLIC :: &
        &vk  = karman, &
        &pr  =  0.74,  &
        &g1  =  0.235, &  ! NN2009 = 0.235
@@ -246,8 +277,11 @@ MODULE module_bl_mynn
 !JOE & JAYMES- end
 
 
-
+#if defined(mpas)
+  INTEGER :: mynn_level=2
+#else
   INTEGER :: mynn_level
+#endif
 
   CHARACTER*128 :: mynn_message
 
@@ -2681,7 +2715,9 @@ CONTAINS
        &s_awu,s_awv,                       &
        &FLAG_QI,FLAG_QNI,FLAG_QC,FLAG_QNC, &
        &cldfra_bl1d,                       &
+#if defined(wrfmodel)
        &ztop_shallow,ktop_shallow,         &
+#endif
        &bl_mynn_cloudmix,                  &
        &bl_mynn_mixqt,                     &
        &bl_mynn_edmf,                      &
@@ -2716,9 +2752,11 @@ CONTAINS
          &dfm,dfh
     REAL, DIMENSION(kts:kte), INTENT(inout) :: du,dv,dth,dqv,dqc,dqi,&
          &dqni !,dqnc
-    REAL, INTENT(IN) :: delt,ust,flt,flq,flqv,flqc,wspd,uoce,voce,qcg,&
-         ztop_shallow
+    REAL, INTENT(IN) :: delt,ust,flt,flq,flqv,flqc,wspd,uoce,voce,qcg
+#if defined(wrfmodel)
+    REAL, INTENT(IN):: ztop_shallow
     INTEGER, INTENT(IN) :: ktop_shallow
+#endif
 
 !    REAL, INTENT(IN) :: delt,ust,flt,flq,qcg,&
 !         &gradu_top,gradv_top,gradth_top,gradqv_top
@@ -3544,11 +3582,16 @@ ENDIF
     
     REAL, INTENT(in) :: delt,dx
     REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(in) :: dz,&
-         &u,v,w,th,qv,p,exner,rho,T3D
+         &u,v,th,qv,p,exner,rho
+    REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), OPTIONAL, INTENT(in) :: &
+         &w,T3D
     REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), OPTIONAL, INTENT(in)::&
          &qc,qi,qni,qnc
     REAL, DIMENSION(IMS:IME,JMS:JME), INTENT(in) :: xland,ust,&
-         &ch,rmol,ts,qsfc,qcg,ps,hfx,qfx, wspd,uoce,voce, vdfg,znt
+         &ch,rmol,ts,qsfc,qcg,ps,hfx,qfx, wspd,uoce,voce, vdfg
+
+    REAL, DIMENSION(IMS:IME,JMS:JME), OPTIONAL, INTENT(in) :: &
+         &znt
 
     REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(inout) :: &
          &Qke,Tsq,Qsq,Cov, &
@@ -3557,7 +3600,10 @@ ENDIF
 
     REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(inout) :: &
          &RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,RQCBLTEN,&
-         &RQIBLTEN,RQNIBLTEN,RTHRATEN !,RQNCBLTEN
+         &RQIBLTEN,RQNIBLTEN !,RQNCBLTEN
+
+    REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), OPTIONAL, INTENT(inout) :: &
+         &RTHRATEN
 
     REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(out) :: &
          &exch_h,exch_m
@@ -3572,9 +3618,12 @@ ENDIF
          &Psig_bl,Psig_shcu
 
     INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: & 
-         &KPBL,nupdraft,ktop_shallow
+         &KPBL
+ 
+    INTEGER,DIMENSION(IMS:IME,JMS:JME),OPTIONAL,INTENT(INOUT) :: &
+         &ktop_shallow,nupdraft
 
-    REAL, DIMENSION(IMS:IME,JMS:JME), INTENT(OUT) :: &
+    REAL, DIMENSION(IMS:IME,JMS:JME), OPTIONAL,INTENT(OUT) :: &
          &maxmf
 
     REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(inout) :: &
@@ -3588,8 +3637,9 @@ ENDIF
 
     REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME) :: K_q,Sh3D
 
-    REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), INTENT(inout) :: &
+    REAL, DIMENSION(IMS:IME,KMS:KME,JMS:JME), OPTIONAL, INTENT(inout) :: &
          &qc_bl,cldfra_bl
+
     REAL, DIMENSION(KTS:KTE) :: qc_bl1D,cldfra_bl1D,&
                             qc_bl1D_old,cldfra_bl1D_old
 
@@ -3710,9 +3760,11 @@ ENDIF
                 dz1(k)=dz(i,k,j)
                 u1(k) = u(i,k,j)
                 v1(k) = v(i,k,j)
+#if defined(wrfmodel)
                 w1(k) = w(i,k,j)
-                th1(k)=th(i,k,j)
                 tk1(k)=T3D(i,k,j)
+#endif
+                th1(k)=th(i,k,j)
                 rho1(k)=rho(i,k,j)
                 sqc(k)=qc(i,k,j)/(1.+qc(i,k,j))
                 sqv(k)=qv(i,k,j)/(1.+qv(i,k,j))
@@ -3837,9 +3889,11 @@ ENDIF
              dz1(k)= dz(i,k,j)
              u1(k) = u(i,k,j)
              v1(k) = v(i,k,j)
+#if defined(wrfmodel)
              w1(k) = w(i,k,j)
-             th1(k)= th(i,k,j)
              tk1(k)=T3D(i,k,j)
+#endif
+             th1(k)= th(i,k,j)
              rho1(k)=rho(i,k,j)
              qv1(k)= qv(i,k,j)
              qc1(k)= qc(i,k,j)
@@ -4230,7 +4284,9 @@ ENDIF
                &s_awqv1,s_awqc1,s_awu1,s_awv1,   &
                &FLAG_QI,FLAG_QNI,FLAG_QC,FLAG_QNC,&
                &cldfra_bl1d,                     &
+#if defined(wrfmodel)
                &ztop_shallow,ktop_shallow(i,j),  &
+#endif
                &bl_mynn_cloudmix,                &
                &bl_mynn_mixqt,                   &
                &bl_mynn_edmf,                    &
@@ -4424,6 +4480,7 @@ ENDIF
 
   END SUBROUTINE mynn_bl_driver
 
+#if defined(wrfmodel)
 ! ==================================================================
   SUBROUTINE mynn_bl_init_driver(                   &
        &RUBLTEN,RVBLTEN,RTHBLTEN,RQVBLTEN,          &
@@ -4484,6 +4541,7 @@ ENDIF
 
   END SUBROUTINE mynn_bl_init_driver
 
+#endif
 ! ==================================================================
 
   SUBROUTINE GET_PBLH(KTS,KTE,zi,thetav1D,qke1D,zw1D,dz1D,landsea,kzi)

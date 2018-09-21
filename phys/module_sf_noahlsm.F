@@ -322,7 +322,7 @@ CONTAINS
 
       REAL, INTENT(IN)   :: SHDMIN,SHDMAX,DT,DQSDT2,LWDN,PRCP,PRCPRAIN,     &
                             Q2,Q2SAT,SFCPRS,SFCSPD,SFCTMP, SNOALB,          &
-                            SOLDN,SOLNET,TBOT,TH2,ZLVL,                            &
+                            SOLDN,SOLNET,TBOT,TH2,ZLVL,                     &
                             FFROZP,AOASIS
       REAL, INTENT(OUT)  :: EMBRD
       REAL, INTENT(OUT)  :: ALBEDO

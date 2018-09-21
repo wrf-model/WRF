@@ -1,4 +1,13 @@
 module module_sf_noah_seaice_drv
+#if defined(mpas)
+use mpas_atmphys_utilities, only: physics_message,physics_error_fatal
+#define FATAL_ERROR(M) call physics_error_fatal( M )
+#define WRITE_MESSAGE(M) call physics_message( M )
+#else
+use module_wrf_error
+#define FATAL_ERROR(M) call wrf_error_fatal( M )
+#define WRITE_MESSAGE(M) call wrf_message( M )
+#endif
   use module_sf_noah_seaice
   implicit none
 contains
@@ -16,10 +25,12 @@ contains
        &                  IDS, IDE, JDS, JDE, KDS, KDE,                                 &
        &                  IMS, IME, JMS, JME, KMS, KME,                                 &
        &                  ITS, ITE, JTS, JTE, KTS, KTE  )
+#if defined(wrfmodel)
 #if (NMM_CORE != 1)
     USE module_state_description, ONLY : NOAHUCMSCHEME
     USE module_state_description, ONLY : BEPSCHEME
     USE module_state_description, ONLY : BEP_BEMSCHEME
+#endif
 #endif
     implicit none
 
@@ -113,7 +124,7 @@ contains
     REAL,    OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme )  , &
          &   INTENT (INOUT)   ::                        B_Q_BEP, &
          &                                              B_T_BEP
-    REAL,    DIMENSION( ims:ime, kms:kme, jms:jme )            , &
+    REAL,    OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme )  , &
          &   INTENT (IN)      ::                            RHO
 
     INTEGER :: I
@@ -206,7 +217,7 @@ contains
           SELECT CASE ( SEAICE_THICKNESS_OPT )
           CASE DEFAULT
               WRITE(message,'("Namelist value for SEAICE_THICKNESS_OPT not recognized: ",I6)') SEAICE_THICKNESS_OPT
-              CALL wrf_error_fatal(message)
+              FATAL_ERROR(message)
           CASE (0)
               ! Use uniform sea-ice thickness.
               SITHICK = SEAICE_THICKNESS_DEFAULT
@@ -214,10 +225,10 @@ contains
               ! Use the sea-ice as read in from the input files.
               ! Limit the to between 0.10 and 10.0 m.
               IF ( ICEDEPTH(I,J) < -1.E6 ) THEN
-                  call wrf_message("Field ICEDEPTH not found in input files.")
-                  call wrf_message(".... Namelist SEAICE_THICKNESS_OPT=1 requires ICEDEPTH field.")
-                  call wrf_message(".... Try namelist option SEAICE_THICKNESS_OPT=0.")
-                  call wrf_error_fatal("SEAICE_THICKNESS_OPT")
+                  WRITE_MESSAGE("Field ICEDEPTH not found in input files.")
+                  WRITE_MESSAGE(".... Namelist SEAICE_THICKNESS_OPT=1 requires ICEDEPTH field.")
+                  WRITE_MESSAGE(".... Try namelist option SEAICE_THICKNESS_OPT=0.")
+                  FATAL_ERROR("SEAICE_THICKNESS_OPT")
               ENDIF
               SITHICK = MIN ( MAX ( 0.10 , ICEDEPTH(I,J) ) , 10.0 )
               ICEDEPTH(I,J) = SITHICK
@@ -227,7 +238,7 @@ contains
           T1     = TSK(I,J)
           IF ( SEAICE_ALBEDO_OPT == 2 ) THEN
               IF ( ALBSI(I,J) < -1.E6 ) THEN
-                  call wrf_error_fatal("Field ALBSI not found in input.  Field ALBSI is required if SEAICE_ALBEDO_OPT=2")
+                  FATAL_ERROR("Field ALBSI not found in input.  Field ALBSI is required if SEAICE_ALBEDO_OPT=2")
               ENDIF
               SNOALB = ALBSI(I,J)
               ALBEDO(I,J) = ALBSI(I,J)
@@ -274,7 +285,7 @@ contains
           CASE DEFAULT
               
               WRITE(message,'("Namelist value for SEAICE_SNOWDEPTH_OPT not recognized: ",I6)') SEAICE_SNOWDEPTH_OPT
-              CALL wrf_error_fatal(message)
+              FATAL_ERROR(message)
 
           CASE ( 0 )
 
@@ -468,6 +479,7 @@ contains
                &         - SHEAT + SSOIL - ETA &
                &         - ( EMISSI * STBOLT * (T1**4) ) &
                &         - FLX1 - FLX2 - FLX3
+#if defined(wrfmodel)
 #if (NMM_CORE != 1)
           IF ( ( SF_URBAN_PHYSICS == NOAHUCMSCHEME ) .OR. &
                (SF_URBAN_PHYSICS == BEPSCHEME )      .OR. &
@@ -479,6 +491,7 @@ contains
                 B_Q_BEP(I,1,J)=qfx(i,j)/dz8w(i,1,j)/rho(i,1,j)
              endif
           ENDIF
+#endif
 #endif
 
        enddo SEAICE_ILOOP

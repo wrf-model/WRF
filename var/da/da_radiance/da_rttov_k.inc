@@ -24,7 +24,7 @@ subroutine da_rttov_k(inst, nchanl, nprofiles, nlevels, &
   
    ! RTTOV input parameters
    type (rttov_chanprof), allocatable :: chanprof(:)
-   type (profile_type),   allocatable :: profiles(:), profiles_k(:)
+   type (rttov_profile),   allocatable :: profiles(:), profiles_k(:)
    logical, allocatable               :: calcemis(:)
 
    ! RTTOV out parameters
@@ -32,8 +32,8 @@ subroutine da_rttov_k(inst, nchanl, nprofiles, nlevels, &
 
    ! RTTOV inout parameters
    type (rttov_emissivity), allocatable :: emissivity_k(:)
-   type (radiance_type)               :: radiance, radiance_k
-   type (transmission_type)           :: transmission, transmission_k
+   type (rttov_radiance)               :: radiance, radiance_k
+   type (rttov_transmission)           :: transmission, transmission_k
 
    call da_trace_entry("da_rttov_k")
 
@@ -96,7 +96,7 @@ subroutine da_rttov_k(inst, nchanl, nprofiles, nlevels, &
          profiles(n) % cloud(:,:)      = 0.0
          profiles(n) % cfrac(:)        = 0.0
          profiles(n) % idg             = 1
-         profiles(n) % ish             = 1
+         profiles(n) % ice_scheme      = 1
       end if
 
       profiles(n)% skin % surftype   = aux_vars(n) % surftype
@@ -110,7 +110,8 @@ subroutine da_rttov_k(inst, nchanl, nprofiles, nlevels, &
 
       ! for microwave channels, land/sea-ce emissivity is computed
       ! from coefs in prof%skin%fastem, if calcemis = True
-      if ( coefs(inst)%coef%id_sensor == sensor_id_mw ) then
+      if ( coefs(inst)%coef%id_sensor == sensor_id_mw .or. &
+           coefs(inst)%coef%id_sensor == sensor_id_po ) then
          if ( profiles(n) % skin % surftype == 2 ) then
             profiles(n) % skin % fastem (1) = 2.2
             profiles(n) % skin % fastem (2) = 3.7
@@ -167,7 +168,7 @@ subroutine da_rttov_k(inst, nchanl, nprofiles, nlevels, &
       & errorstatus,     &
       & nchanprof,       &
       & radiance,        &
-      & nlevels-1,       &
+      & nlevels,         &
       & asw,             &
       & init = .true. )
    if ( errorstatus /= errorstatus_success ) then
@@ -180,7 +181,7 @@ subroutine da_rttov_k(inst, nchanl, nprofiles, nlevels, &
       & errorstatus,     &
       & nchanprof,       &
       & radiance_k,      &
-      & nlevels-1,       &
+      & nlevels,         &
       & asw,             &
       & init = .true. )
    if ( errorstatus /= errorstatus_success ) then
@@ -193,7 +194,7 @@ subroutine da_rttov_k(inst, nchanl, nprofiles, nlevels, &
    call rttov_alloc_transmission( &
       & errorstatus,              &
       & transmission,             &
-      & nlevels-1,                &
+      & nlevels,                  &
       & nchanprof,                &
       & asw,                      &
       & init = .true. )
@@ -206,7 +207,7 @@ subroutine da_rttov_k(inst, nchanl, nprofiles, nlevels, &
    call rttov_alloc_transmission( &
       & errorstatus,              &
       & transmission_k,           &
-      & nlevels-1,                &
+      & nlevels,                  &
       & nchanprof,                &
       & asw,                      &
       & init = .true. )
@@ -290,24 +291,24 @@ subroutine da_rttov_k(inst, nchanl, nprofiles, nlevels, &
 
    asw = 0 ! deallocation
    ! deallocate radiance arrays
-   call rttov_alloc_rad (errorstatus,nchanprof,radiance,nlevels-1,asw)
+   call rttov_alloc_rad (errorstatus,nchanprof,radiance,nlevels,asw)
    if ( errorstatus /= errorstatus_success ) then
       call da_error(__FILE__,__LINE__, &
         (/"radiance deallocation error"/))
    end if
-   call rttov_alloc_rad (errorstatus,nchanprof,radiance_k,nlevels-1,asw)
+   call rttov_alloc_rad (errorstatus,nchanprof,radiance_k,nlevels,asw)
    if ( errorstatus /= errorstatus_success ) then
       call da_error(__FILE__,__LINE__, &
         (/"radiance K deallocation error"/))
    end if
 
    ! deallocate transmission arrays
-   call rttov_alloc_transmission (errorstatus,transmission,nlevels-1,nchanprof,asw)
+   call rttov_alloc_transmission (errorstatus,transmission,nlevels,nchanprof,asw)
    if ( errorstatus /= errorstatus_success ) then
       call da_error(__FILE__,__LINE__, &
         (/"transmission deallocation error"/))
    end if
-   call rttov_alloc_transmission (errorstatus,transmission_k,nlevels-1,nchanprof,asw)
+   call rttov_alloc_transmission (errorstatus,transmission_k,nlevels,nchanprof,asw)
    if ( errorstatus /= errorstatus_success ) then
       call da_error(__FILE__,__LINE__, &
         (/"transmission K deallocation error"/))

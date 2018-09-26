@@ -222,11 +222,21 @@ subroutine da_get_var_diagnostics(it, iv, j)
          write(unit=stdout,fmt='(a,f15.5)') '   Final J / total num_obs     = ', j % total / &
                                                           real(num_stats_tot)
       if (cv_options /= 3) then
-        write(unit=stdout,fmt='(a,(5f15.5))') '   Jb factor used(1)           = ', var_scaling1(it)
-        write(unit=stdout,fmt='(a,(5f15.5))') '   Jb factor used(2)           = ', var_scaling2(it)
-        write(unit=stdout,fmt='(a,(5f15.5))') '   Jb factor used(3)           = ', var_scaling3(it)
-        write(unit=stdout,fmt='(a,(5f15.5))') '   Jb factor used(4)           = ', var_scaling4(it)
-        write(unit=stdout,fmt='(a,(5f15.5))') '   Jb factor used(5)           = ', var_scaling5(it)
+        write(unit=stdout,fmt='(a,(5f15.5))') '   var_scaling used(1)         = ', var_scaling1(it)
+        write(unit=stdout,fmt='(a,(5f15.5))') '   var_scaling used(2)         = ', var_scaling2(it)
+        write(unit=stdout,fmt='(a,(5f15.5))') '   var_scaling used(3)         = ', var_scaling3(it)
+        write(unit=stdout,fmt='(a,(5f15.5))') '   var_scaling used(4)         = ', var_scaling4(it)
+        write(unit=stdout,fmt='(a,(5f15.5))') '   var_scaling used(5)         = ', var_scaling5(it)
+        if ( cloud_cv_options >= 2 ) then
+           write(unit=stdout,fmt='(a,(5f15.5))') '   var_scaling used(6)         = ', var_scaling6(it)
+           write(unit=stdout,fmt='(a,(5f15.5))') '   var_scaling used(7)         = ', var_scaling7(it)
+           write(unit=stdout,fmt='(a,(5f15.5))') '   var_scaling used(8)         = ', var_scaling8(it)
+           write(unit=stdout,fmt='(a,(5f15.5))') '   var_scaling used(9)         = ', var_scaling9(it)
+           write(unit=stdout,fmt='(a,(5f15.5))') '   var_scaling used(10)        = ', var_scaling10(it)
+        end if
+        if ( use_cv_w ) then
+           write(unit=stdout,fmt='(a,(5f15.5))') '   var_scaling used(11)        = ', var_scaling11(it)
+        end if
       endif
 
       write(unit=stdout,fmt='(a, f15.5)') '   Jb factor used              = ', jb_factor

@@ -9,7 +9,7 @@ module da_satem
       max_error_p,max_error_q, check_max_iv_unit,check_max_iv,  &
       max_stheight_diff,missing_data,max_error_bq,max_error_slp, &
       max_error_bt, max_error_buv, satem,max_error_thickness, above_model_lid,&
-      ob_vars,qcstat_conv_unit
+      ob_vars,qcstat_conv_unit, write_rej_obs_conv
 
    use da_define_structures, only : maxmin_type, iv_type, y_type, jo_type, &
       bad_data_type, x_type, number_type, bad_data_type, &

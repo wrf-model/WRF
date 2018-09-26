@@ -34,8 +34,10 @@ subroutine da_check_max_iv_synop(iv,ob, it, num_qcstat_conv)
                        num_qcstat_conv(1,synop,1,1) = num_qcstat_conv(1,synop,1,1) + 1
                        if(failed) then
                           num_qcstat_conv(2,synop,1,1) = num_qcstat_conv(2,synop,1,1) + 1
+                          if ( write_rej_obs_conv ) then
                           write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
                           'synop',ob_vars(1),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
+                          end if
                        end if
                    end if
                end if
@@ -47,8 +49,10 @@ subroutine da_check_max_iv_synop(iv,ob, it, num_qcstat_conv)
                        num_qcstat_conv(1,synop,2,1) = num_qcstat_conv(1,synop,2,1) + 1
                        if(failed)then
                           num_qcstat_conv(2,synop,2,1) = num_qcstat_conv(2,synop,2,1) + 1
+                          if ( write_rej_obs_conv ) then
                           write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
                           'synop',ob_vars(2),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
+                          end if
                        end if
                    end if
                end if
@@ -60,8 +64,10 @@ subroutine da_check_max_iv_synop(iv,ob, it, num_qcstat_conv)
                        num_qcstat_conv(1,synop,1,1) = num_qcstat_conv(1,synop,1,1) + 1
                        if(failed) then
                           num_qcstat_conv(2,synop,1,1) = num_qcstat_conv(2,synop,1,1) + 1
+                          if ( write_rej_obs_conv ) then
                           write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
                           'synop',ob_vars(1),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
+                          end if
                        end if
                    end if
                end if
@@ -73,8 +79,10 @@ subroutine da_check_max_iv_synop(iv,ob, it, num_qcstat_conv)
                        num_qcstat_conv(1,synop,2,1) = num_qcstat_conv(1,synop,2,1) + 1
                        if(failed)then
                           num_qcstat_conv(2,synop,2,1) = num_qcstat_conv(2,synop,2,1) + 1
+                          if ( write_rej_obs_conv ) then
                           write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
                           'synop',ob_vars(2),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
+                          end if
                        end if
                    end if
                end if
@@ -110,11 +118,15 @@ subroutine da_check_max_iv_synop(iv,ob, it, num_qcstat_conv)
 
                 if(failed1 .or. failed2) then
                    num_qcstat_conv(2,synop,1,1) = num_qcstat_conv(2,synop,1,1) + 1
+                   if ( write_rej_obs_conv ) then
                    write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
                          'synop',ob_vars(1),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
+                   end if
                    num_qcstat_conv(2,synop,2,1) = num_qcstat_conv(2,synop,2,1) + 1
+                   if ( write_rej_obs_conv ) then
                    write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
                          'synop',ob_vars(2),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
+                   end if
                 endif
              endif
 
@@ -144,8 +156,10 @@ subroutine da_check_max_iv_synop(iv,ob, it, num_qcstat_conv)
       num_qcstat_conv(1,synop,3,1)= num_qcstat_conv(1,synop,3,1) + 1
       if(failed) then
       num_qcstat_conv(2,synop,3,1)= num_qcstat_conv(2,synop,3,1) + 1
+      if ( write_rej_obs_conv ) then
       write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
            'synop',ob_vars(3),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
+      end if
       end if
       end if
       end if
@@ -157,8 +171,10 @@ subroutine da_check_max_iv_synop(iv,ob, it, num_qcstat_conv)
       num_qcstat_conv(1,synop,5,1)= num_qcstat_conv(1,synop,5,1) + 1
       if(failed) then
       num_qcstat_conv(2,synop,5,1)= num_qcstat_conv(2,synop,5,1) + 1
+      if ( write_rej_obs_conv ) then
       write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
            'synop',ob_vars(5),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
+      end if
       end if
       end if
       end if
@@ -176,8 +192,10 @@ subroutine da_check_max_iv_synop(iv,ob, it, num_qcstat_conv)
       num_qcstat_conv(1,synop,4,1)= num_qcstat_conv(1,synop,4,1) + 1
       if(failed) then
       num_qcstat_conv(2,synop,4,1)= num_qcstat_conv(2,synop,4,1) + 1
+      if ( write_rej_obs_conv ) then
       write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
            'synop',ob_vars(4),iv%info(synop)%lat(1,n),iv%info(synop)%lon(1,n),0.01*ob%synop(n)%p
+      end if
       end if
       end if
       end if 

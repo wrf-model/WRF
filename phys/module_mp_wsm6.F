@@ -1,5 +1,4 @@
 #if ( (defined(wrfmodel) ) && ( RWORDSIZE == 4 ) ) || ( ( defined(mpas) ) && defined(SINGLE_PRECISION) )
-!kkw test
 #  define VREC vsrec
 #  define VSQRT vssqrt
 #else

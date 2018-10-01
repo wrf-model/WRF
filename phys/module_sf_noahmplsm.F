@@ -4284,6 +4284,7 @@ ENDIF   ! CROPTYPE == 0
 
        TMPRB  = CWPC*50. / (1. - EXP(-CWPC/2.))
        RB     = TMPRB * SQRT(parameters%DLEAF/UC)
+       RB     = MAX(RB,100.0)
 !       RB = 200
 
   END SUBROUTINE RAGRB

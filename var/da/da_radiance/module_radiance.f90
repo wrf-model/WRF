@@ -144,7 +144,7 @@ module module_radiance
    type (rttov_coefs), allocatable   :: coefs(:)     ! coefficients structure
    type (rttov_options), allocatable :: opts(:)      ! options structure
    type (rttov_opts_rt_ir), allocatable :: opts_rt_ir(:) ! options structure
-   type (rttov_emis_atlas_data), allocatable :: atlas(:)
+   type (rttov_emis_atlas_data) :: atlas
    integer(jpim), allocatable :: atlas_type(:), atlas_id(:)
 #endif
 

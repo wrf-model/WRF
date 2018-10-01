@@ -240,7 +240,7 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
             opts(inst),                                    & ! in
             grid%start_month,                              & ! in
             atlas_type(inst),                              & ! in
-            atlas(inst),                                   & ! inout
+            atlas,                                         & ! inout
             atlas_id(inst),                                & ! in, optional
             path = trim(atlas_path),                       & ! in, optional
             coefs = coefs(inst))                             ! in
@@ -276,7 +276,7 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
             chanprof,                           & ! in
             profiles,                           & ! in
             coefs(inst),                        & ! in
-            atlas(inst),                        &! in
+            atlas,                              &! in
             emissivity=emissivity(:)%emis_in )    ! out
          if ( errorstatus /= errorstatus_success ) then
             call da_error(__FILE__,__LINE__, &
@@ -406,7 +406,7 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
       deallocate (emissivity)
 
       if ( rttov_emis_atlas_ir > 0 .or. rttov_emis_atlas_mw > 0 ) then
-         call rttov_deallocate_emis_atlas(atlas(inst))
+         call rttov_deallocate_emis_atlas(atlas)
       end if
 
    end do        ! end loop for sensor

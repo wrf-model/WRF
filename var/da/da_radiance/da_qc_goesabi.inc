@@ -157,15 +157,15 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
                cld_impact(n,1) = tb_xb(k,n)
                cld_impact(n,2) = tb_xb_clr(k,n) - tb_xb(k,n)
 !JJGDEBUG
-               if (print_cld_debug) write(*,'(A,2I8,2F12.4)') 'PIXEL_DEBUG97: ', n, k, &
+               if (print_cld_debug) write(*,'(A,2I8,2F12.4)') 'PIXEL_DEBUG91: ', n, k, &
                   cld_impact(n,1:2)
 !JJGDEBUG
 
             end do
 
             ! JJG: This is a very rough estimate of BTlim for now
-            where ( cld_impact(n,2) .ge. 0.1 ) 
-               cld_impact(n,1) = missing_r
+            where ( cld_impact(:,2) .ge. 0.1 ) 
+               cld_impact(:,1) = missing_r
             end where
             BTlim(k) = minval(cld_impact(:,1), cld_impact(:,1).gt.missing_r)
 
@@ -173,7 +173,7 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
             ! find median tb_xb at difference of 0.1 (how??)
 
 !JJGDEBUG
-            if (print_cld_debug) write(*,'(A,I8,F12.4)') 'PIXEL_DEBUG98: ', k, &
+            if (print_cld_debug) write(*,'(A,I8,F12.4)') 'PIXEL_DEBUG92: ', k, &
                BTlim(k)
 !JJGDEBUG
 
@@ -263,21 +263,18 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
 
 !JJGDEBUG
 !         print_cld_debug = iv%instid(i)%info%proc_domain(1,n)
-         if (print_cld_debug) write(*,'(A,I8,F12.4)') 'PIXEL_DEBUG1: ', n, &
+         if (print_cld_debug) write(*,'(A,I8,*(2x,F10.4:))') 'PIXEL_DEBUG1: ', n, &
             tb_inv(:,n)
-         if (print_cld_debug) write(*,'(A,I8,F12.4)') 'PIXEL_DEBUG2: ', n, &
+         if (print_cld_debug) write(*,'(A,I8,*(2x,F10.4:))') 'PIXEL_DEBUG2: ', n, &
             tb_xb(:,n)
-         if (print_cld_debug) write(*,'(A,I8,F12.4)') 'PIXEL_DEBUG3: ', n, &
+         if (print_cld_debug) write(*,'(A,I8,*(2x,F10.4:))') 'PIXEL_DEBUG3: ', n, &
             tb_ob(:,n)
          if (crtm_cloud ) then
-            if (print_cld_debug) write(*,'(A,I8,F12.4)') 'PIXEL_DEBUG2: ', n, &
+            if (print_cld_debug) write(*,'(A,I8,*(2x,F10.4:))') 'PIXEL_DEBUG4: ', n, &
                tb_xb_clr(:,n)
          end if
 
-!         if (print_cld_debug) write(*,'(A,3I8)')       'PIXEL_DEBUG4: n, n1, n2 = ', &
-!            n, iv%instid(i)%info%n1, iv%instid(i)%info%n2
-!         if (print_cld_debug) write(*,'(A)') 'PIXEL_DEBUG5: n, lat, lon, satzen, satazi, solzen, solazi, tropt, terrain, date = '
-         if (print_cld_debug) write(*,'(A,I8,8F12.4,A)') 'PIXEL_DEBUG6: ', n, &
+         if (print_cld_debug) write(*,'(A,I8,8F12.4,A)') 'PIXEL_DEBUG5: ', n, &
             iv%instid(i)%info%lat(1,n), iv%instid(i)%info%lon(1,n), &
             iv%instid(i)%satzen(n), iv%instid(i)%satazi(n), &
             iv%instid(i)%solzen(n), iv%instid(i)%solazi(n), &
@@ -475,7 +472,7 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
                tb_qc_clddet = qc_bad
                if (iv%instid(i)%info%proc_domain(1,n)) then
                   nrej_clddet(:,itest) = nrej_clddet(:,itest) + 1
-                  write(*,"(A,F14.6,A,I4,2D12.4)") trim(crit_name), crit_clddet, " isflg", isflg, lat,lon
+                  write(*,"(A,F14.6,A,I4,2D12.4)") trim(crit_names_clddet(itest)), crit_clddet, " isflg", isflg, iv%instid(i)%info%lat(1,n), iv%instid(i)%info%lon(1,n)
                end if
 
                clddet_tests(itest) = 1
@@ -484,7 +481,7 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
          if (.not. crtm_cloud ) tb_qc = tb_qc_clddet
 
 !JJGDEBUG
-         if (print_cld_debug) write(*,'(A,I8,10I4)') 'PIXEL_DEBUG9: ', n, clddet_tests
+         if (print_cld_debug) write(*,'(A,I8,*(2x,I1:))') 'PIXEL_DEBUG6: ', n, clddet_tests
 !JJGDEBUG
       end if abi_clddet
 
@@ -513,7 +510,7 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
 ! -------------------------------
 
 !JJGDEBUG
-            if (print_cld_debug) write(*,'(A,2I8,2F12.4)') 'PIXEL_DEBUG99: ', n, k, &
+            if (print_cld_debug) write(*,'(A,2I8,2F12.4)') 'PIXEL_DEBUG93: ', n, k, &
                ca_mean(k,n)
 !JJGDEBUG
 

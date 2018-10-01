@@ -196,7 +196,7 @@ subroutine da_radiance_init(iv,ob)
       if ( len_trim(cdum) > 0 .and. index(cdum,'-') == 0 ) then
          ! read the line again to get error_cld when it is available
          backspace(iunit)
-         read(iunit,'(1x,5i5,2e18.10,f10.5)')  &
+         read(iunit,'(1x,5i5,2e18.10,2f10.5)')  &
                      wmo_sensor_id, &
                satinfo(n)%ichan(j), &
                        sensor_type, &

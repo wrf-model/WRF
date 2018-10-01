@@ -49,7 +49,7 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
       end if
 
       amsr2 = index(iv%instid(i)%rttovid_string,'amsr2') > 0
-      abi   = index(instid(iinst),'abi') > 0
+      abi   = index(iv%instid(i)%rttovid_string,'abi') > 0
 
       write(unit=filename, fmt='(i2.2,a,i4.4)') it,'_inv_'//trim(iv%instid(i)%rttovid_string)//'.', myproc
 

@@ -245,8 +245,8 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
       calc_tb_clr = .false.
       if ( crtm_cloud .and. ( &
-                trim( crtm_sensor_name(rtminit_sensor(inst))) == 'amsr2'
-         .OR.   trim( crtm_sensor_name(rtminit_sensor(inst))) == 'abi'
+                trim( crtm_sensor_name(rtminit_sensor(inst))) == 'amsr2' &
+         .OR.   trim( crtm_sensor_name(rtminit_sensor(inst))) == 'abi' &
          ) ) then
 !         .OR. ( trim( crtm_sensor_name(rtminit_sensor(inst))) == 'abi' .and. calc_ir_btlim ) &
 

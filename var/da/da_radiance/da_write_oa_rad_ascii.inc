@@ -40,7 +40,7 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
       if (ndomain < 1) cycle
 
       amsr2 = index(iv%instid(i)%rttovid_string,'amsr2') > 0
-      abi   = index(instid(iinst),'abi') > 0
+      abi   = index(iv%instid(i)%rttovid_string,'abi') > 0
 
       write(unit=filename, fmt='(i2.2,a,i4.4)') it,'_oma_'//trim(iv%instid(i)%rttovid_string)//'.', myproc
 

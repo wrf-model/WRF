@@ -1,5 +1,6 @@
-WRF Model Version 4.0 (June 8, 2018)
-http://wrf-model.org/users/users.php
+WRF Model Version 4.0.1 (October 2, 2018)
+
+http://www2.mmm.ucar.edu/wrf/users/
 
 ------------------------
 WRF PUBLIC DOMAIN NOTICE
@@ -39,6 +40,12 @@ doc/README.irr_diag
 doc/README.rsl_output
 doc/README.windturbine
 doc/README_test_cases
+
+V4.0.1 Release Notes (10/2/2018):
+-------------------
+
+- For more information on the WRF V4.0.1 release, visit the WRF GitHub Release Page:
+  https://github.com/wrf-model/WRF/releases
 
 V4.0 Release Notes (6/8/2018):
 -------------------
@@ -299,7 +306,7 @@ WRF update history:
 How to compile and run?
 -----------------------
 
-- In WRFV3 directory, type 'configure' - this will create a configure.wrf
+- In WRF directory, type 'configure' - this will create a configure.wrf
   file that has appropriate compile options for the supported computers.
 
   Note: WRF requires netCDF library. If your netCDF library is installed in

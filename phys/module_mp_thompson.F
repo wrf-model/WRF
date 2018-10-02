@@ -1618,7 +1618,7 @@
             ni(k) = MAX(R2, ni1d(k)*rho(k))
             if (ni(k).le. R2) then
                lami = cie(2)/25.E-6
-               ni(k) = MIN(499.D3, cig(1)*oig2*ri(k)/am_i*lami**bm_i)
+               ni(k) = MIN(9999.D3, cig(1)*oig2*ri(k)/am_i*lami**bm_i)
             endif
             L_qi(k) = .true.
             lami = (am_i*cig(2)*oig1*ni(k)/ri(k))**obmi
@@ -1626,7 +1626,7 @@
             xDi = (bm_i + mu_i + 1.) * ilami
             if (xDi.lt. 5.E-6) then
              lami = cie(2)/5.E-6
-             ni(k) = MIN(499.D3, cig(1)*oig2*ri(k)/am_i*lami**bm_i)
+             ni(k) = MIN(9999.D3, cig(1)*oig2*ri(k)/am_i*lami**bm_i)
             elseif (xDi.gt. 300.E-6) then
              lami = cie(2)/300.E-6
              ni(k) = cig(1)*oig2*ri(k)/am_i*lami**bm_i
@@ -2667,7 +2667,7 @@
            xDi = (bm_i + mu_i + 1.) * ilami
            if (xDi.lt. 5.E-6) then
             lami = cie(2)/5.E-6
-            xni = MIN(499.D3, cig(1)*oig2*xri/am_i*lami**bm_i)
+            xni = MIN(9999.D3, cig(1)*oig2*xri/am_i*lami**bm_i)
             niten(k) = (xni-ni1d(k)*rho(k))*odts*orho
            elseif (xDi.gt. 300.E-6) then
             lami = cie(2)/300.E-6
@@ -2678,8 +2678,8 @@
           niten(k) = -ni1d(k)*odts
          endif
          xni=MAX(0.,(ni1d(k) + niten(k)*dtsave)*rho(k))
-         if (xni.gt.499.E3) &
-                niten(k) = (499.E3-ni1d(k)*rho(k))*odts*orho
+         if (xni.gt.9999.E3) &
+                niten(k) = (9999.E3-ni1d(k)*rho(k))*odts*orho
 
 !..Rain tendency
          qrten(k) = qrten(k) + (prr_wau(k) + prr_rcw(k) &
@@ -2691,7 +2691,7 @@
 !..Rain number tendency
          nrten(k) = nrten(k) + (pnr_wau(k) + pnr_sml(k) + pnr_gml(k)    &
                       - (pnr_rfz(k) + pnr_rcr(k) + pnr_rcg(k)           &
-                      + pnr_rcs(k) + pnr_rci(k)) )                      &
+                      + pnr_rcs(k) + pnr_rci(k) + pni_rfz(k)) )         &
                       * orho
 
 !..Rain mass/number balance; keep median volume diameter between
@@ -3033,6 +3033,7 @@
           nwfaten(k) = nwfaten(k) - pnc_wcd(k)
           tten(k) = tten(k) + lvap(k)*ocp(k)*prw_vcd(k)*(1-IFDRY)
           rc(k) = MAX(R1, (qc1d(k) + DT*qcten(k))*rho(k))
+          if (rc(k).eq.R1) L_qc(k) = .false.
           nc(k) = MAX(2., MIN((nc1d(k)+ncten(k)*DT)*rho(k), Nt_c_max))
           if (.NOT. is_aerosol_aware) nc(k) = Nt_c
           qv(k) = MAX(1.E-10, qv1d(k) + DT*qvten(k))
@@ -3154,6 +3155,8 @@
          vtck(k) = 0.
          vtnck(k) = 0.
       enddo
+
+      if (ANY(L_qr .eqv. .true.)) then
       do k = kte, kts, -1
          vtr = 0.
          rhof(k) = SQRT(RHO_NOT/rho(k))
@@ -3184,9 +3187,11 @@
       enddo
       if (ksed1(1) .eq. kte) ksed1(1) = kte-1
       if (nstep .gt. 0) onstep(1) = 1./REAL(nstep)
+      endif
 
 !+---+-----------------------------------------------------------------+
 
+      if (ANY(L_qc .eqv. .true.)) then
       hgt_agl = 0.
       do k = kts, kte-1
          if (rc(k) .gt. R2) ksed1(5) = k
@@ -3207,11 +3212,13 @@
           vtnck(k) = vtc
          endif
       enddo
+      endif
 
 !+---+-----------------------------------------------------------------+
 
       if (.not. iiwarm) then
 
+       if (ANY(L_qi .eqv. .true.)) then
        nstep = 0
        do k = kte, kts, -1
           vti = 0.
@@ -3239,9 +3246,11 @@
        enddo
        if (ksed1(2) .eq. kte) ksed1(2) = kte-1
        if (nstep .gt. 0) onstep(2) = 1./REAL(nstep)
+       endif
 
 !+---+-----------------------------------------------------------------+
 
+       if (ANY(L_qs .eqv. .true.)) then
        nstep = 0
        do k = kte, kts, -1
           vts = 0.
@@ -3276,9 +3285,11 @@
        enddo
        if (ksed1(3) .eq. kte) ksed1(3) = kte-1
        if (nstep .gt. 0) onstep(3) = 1./REAL(nstep)
+       endif
 
 !+---+-----------------------------------------------------------------+
 
+       if (ANY(L_qg .eqv. .true.)) then
        nstep = 0
        do k = kte, kts, -1
           vtg = 0.
@@ -3302,18 +3313,16 @@
        enddo
        if (ksed1(4) .eq. kte) ksed1(4) = kte-1
        if (nstep .gt. 0) onstep(4) = 1./REAL(nstep)
+       endif
       endif
 
 !+---+-----------------------------------------------------------------+
 !..Sedimentation of mixing ratio is the integral of v(D)*m(D)*N(D)*dD,
 !.. whereas neglect m(D) term for number concentration.  Therefore,
 !.. cloud ice has proper differential sedimentation.
-!.. New in v3.0+ is computing separate for rain, ice, snow, and
-!.. graupel species thus making code faster with credit to J. Schmidt.
-!.. Bug fix, 2013Nov01 to tendencies using rho(k+1) correction thanks to
-!.. Eric Skyllingstad.
 !+---+-----------------------------------------------------------------+
 
+      if (ANY(L_qr .eqv. .true.)) then
       nstep = NINT(1./onstep(1))
       do n = 1, nstep
          do k = kte, kts, -1
@@ -3340,12 +3349,14 @@
                                            *odzq*DT*onstep(1))
          enddo
 
-         if (rr(kts).gt.R1*10.) &
+         if (rr(kts).gt.R1*1000.) &
          pptrain = pptrain + sed_r(kts)*DT*onstep(1)
       enddo
+      endif
 
 !+---+-----------------------------------------------------------------+
 
+      if (ANY(L_qc .eqv. .true.)) then
       do k = kte, kts, -1
          sed_c(k) = vtck(k)*rc(k)
          sed_n(k) = vtnck(k)*nc(k)
@@ -3358,9 +3369,11 @@
          rc(k) = MAX(R1, rc(k) + (sed_c(k+1)-sed_c(k)) *odzq*DT)
          nc(k) = MAX(10., nc(k) + (sed_n(k+1)-sed_n(k)) *odzq*DT)
       enddo
+      endif
 
 !+---+-----------------------------------------------------------------+
 
+      if (ANY(L_qi .eqv. .true.)) then
       nstep = NINT(1./onstep(2))
       do n = 1, nstep
          do k = kte, kts, -1
@@ -3387,12 +3400,14 @@
                                            *odzq*DT*onstep(2))
          enddo
 
-         if (ri(kts).gt.R1*10.) &
+         if (ri(kts).gt.R1*1000.) &
          pptice = pptice + sed_i(kts)*DT*onstep(2)
       enddo
+      endif
 
 !+---+-----------------------------------------------------------------+
 
+      if (ANY(L_qs .eqv. .true.)) then
       nstep = NINT(1./onstep(3))
       do n = 1, nstep
          do k = kte, kts, -1
@@ -3412,12 +3427,14 @@
                                            *odzq*DT*onstep(3))
          enddo
 
-         if (rs(kts).gt.R1*10.) &
+         if (rs(kts).gt.R1*1000.) &
          pptsnow = pptsnow + sed_s(kts)*DT*onstep(3)
       enddo
+      endif
 
 !+---+-----------------------------------------------------------------+
 
+      if (ANY(L_qg .eqv. .true.)) then
       nstep = NINT(1./onstep(4))
       do n = 1, nstep
          do k = kte, kts, -1
@@ -3437,9 +3454,10 @@
                                            *odzq*DT*onstep(4))
          enddo
 
-         if (rg(kts).gt.R1*10.) &
+         if (rg(kts).gt.R1*1000.) &
          pptgraul = pptgraul + sed_g(kts)*DT*onstep(4)
       enddo
+      endif
 
 !+---+-----------------------------------------------------------------+
 !.. Instantly melt any cloud ice into cloud water if above 0C and
@@ -3477,9 +3495,9 @@
          qv1d(k) = MAX(1.E-10, qv1d(k) + qvten(k)*DT)
          qc1d(k) = qc1d(k) + qcten(k)*DT
          nc1d(k) = MAX(2./rho(k), MIN(nc1d(k) + ncten(k)*DT, Nt_c_max))
-         nwfa1d(k) = MAX(11.1E6/rho(k), MIN(9999.E6/rho(k),             &
+         nwfa1d(k) = MAX(11.1E6, MIN(9999.E6,                           &
                        (nwfa1d(k)+nwfaten(k)*DT)))
-         nifa1d(k) = MAX(naIN1*0.01, MIN(9999.E6/rho(k),                &
+         nifa1d(k) = MAX(naIN1*0.01, MIN(9999.E6,                       &
                        (nifa1d(k)+nifaten(k)*DT)))
 
          if (qc1d(k) .le. R1) then
@@ -3513,7 +3531,7 @@
             lami = cie(2)/300.E-6
            endif
            ni1d(k) = MIN(cig(1)*oig2*qi1d(k)/am_i*lami**bm_i,           &
-                         499.D3/rho(k))
+                         9999.D3/rho(k))
          endif
          qr1d(k) = qr1d(k) + qrten(k)*DT
          nr1d(k) = MAX(R2/rho(k), nr1d(k) + nrten(k)*DT)
@@ -3592,11 +3610,6 @@
               IF( force_read_thompson ) THEN
                 CALL wrf_error_fatal("Error opening qr_acr_qg.dat. Aborting because force_read_thompson is .true.")
               ENDIF
-            ENDIF
-         ELSE
-            INQUIRE(63,opened=lopen)
-            IF (lopen) THEN
-              CLOSE(63)
             ENDIF
           ENDIF
         ELSE
@@ -4070,11 +4083,6 @@
               IF( force_read_thompson ) THEN
                 CALL wrf_error_fatal("Error opening freezeH2O.dat. Aborting because force_read_thompson is .true.")
               ENDIF
-            ENDIF
-          ELSE
-            INQUIRE(63,opened=lopen)
-            IF (lopen) THEN
-              CLOSE(63)
             ENDIF
           ENDIF
         ELSE
@@ -4926,7 +4934,7 @@
 !        mux = hx*p_alpha*n_in*rho
 !        xni = mux*((6700.*nifa)-200.)/((6700.*5.E5)-200.)
 !     elseif (satw.ge.0.985 .and. tempc.gt.HGFR-273.15) then
-         nifa_cc = nifa*RHO_NOT0*1.E-6/rho
+         nifa_cc = MAX(0.5, nifa*RHO_NOT0*1.E-6/rho)
 !        xni  = 3.*nifa_cc**(1.25)*exp((0.46*(-tempc))-11.6)              !  [DeMott, 2015]
          xni = (5.94e-5*(-tempc)**3.33)                                 & !  [DeMott, 2010]
                     * (nifa_cc**((-0.0264*(tempc))+0.0033))
@@ -5215,6 +5223,7 @@
 !+---+-----------------------------------------------------------------+
 !..Calculate y-intercept, slope, and useful moments for snow.
 !+---+-----------------------------------------------------------------+
+      if (ANY(L_qs .eqv. .true.)) then
       do k = kts, kte
          tc0 = MIN(-0.1, temp(k)-273.15)
          smob(k) = rs(k)*oams
@@ -5264,11 +5273,13 @@
      &        + sb(9)*tc0*tc0*tc0 + sb(10)*cse(3)*cse(3)*cse(3)
          smoz(k) = a_ * smo2(k)**b_
       enddo
+      endif
 
 !+---+-----------------------------------------------------------------+
 !..Calculate y-intercept, slope values for graupel.
 !+---+-----------------------------------------------------------------+
 
+      if (ANY(L_qg .eqv. .true.)) then
       N0_min = gonv_max
       k_0 = kts
       do k = kte, kts, -1
@@ -5291,6 +5302,7 @@
          ilamg(k) = 1./lamg
          N0_g(k) = N0_exp/(cgg(2)*lam_exp) * lamg**cge(2)
       enddo
+      endif
 
 !+---+-----------------------------------------------------------------+
 !..Locate K-level of start of melting (k_0 is level above).

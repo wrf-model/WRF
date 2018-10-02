@@ -979,7 +979,7 @@ CONTAINS
              RB                            = MAX(RB, 0.0)
 ! New Calculation of total Canopy/Stomatal Conductance Based on Bonan et al. (2011) 
 ! -- Inverse of Canopy Resistance (below)
-             IF(RSSUN .le. 0.0 .and. RSSHA .le. 0.0) THEN
+             IF(RSSUN .le. 0.0 .or. RSSHA .le. 0.0 .or. LAISUN .eq. 0.0 .or. LAISHA .eq. 0.0) THEN
                 RS    (I,J)                = 0.0
              ELSE
                 RS    (I,J)                = ((1.0/(RSSUN+RB)*LAISUN) + ((1.0/(RSSHA+RB))*LAISHA))

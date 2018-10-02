@@ -1600,7 +1600,7 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
 	      
               BEXP   =   BEXP_TABLE(ISLTYP(I,J))
               SMCMAX = SMCMAX_TABLE(ISLTYP(I,J))
-              PSISAT = -1.0*PSISAT_TABLE(ISLTYP(I,J))
+              PSISAT = PSISAT_TABLE(ISLTYP(I,J))
 
               DO NS=1, NSOIL
 	        IF ( SMOIS(I,NS,J) > SMCMAX )  SMOIS(I,NS,J) = SMCMAX

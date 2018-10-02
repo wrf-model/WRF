@@ -4284,6 +4284,7 @@ ENDIF   ! CROPTYPE == 0
 
        TMPRB  = CWPC*50. / (1. - EXP(-CWPC/2.))
        RB     = TMPRB * SQRT(parameters%DLEAF/UC)
+       RB     = MAX(RB,100.0)
 !       RB = 200
 
   END SUBROUTINE RAGRB
@@ -6809,38 +6810,21 @@ ENDIF   ! CROPTYPE == 0
 
 ! Porosity and partial volume
 
-   !KWM Looks to me like loop index / IF test can be simplified.
-
-   DO J = -NSNOW+1, 0
-      IF (J >= ISNOW+1) THEN
-         VOL_ICE(J)      = MIN(1., SNICE(J)/(DZSNSO(J)*DENICE))
-         EPORE(J)        = 1. - VOL_ICE(J)
-         VOL_LIQ(J)      = MIN(EPORE(J),SNLIQ(J)/(DZSNSO(J)*DENH2O))
-      END IF
+   DO J = ISNOW+1, 0
+     VOL_ICE(J)      = MIN(1., SNICE(J)/(DZSNSO(J)*DENICE))
+     EPORE(J)        = 1. - VOL_ICE(J)
    END DO
 
    QIN = 0.
    QOUT = 0.
 
-   !KWM Looks to me like loop index / IF test can be simplified.
-
-   DO J = -NSNOW+1, 0
-      IF (J >= ISNOW+1) THEN
-         SNLIQ(J) = SNLIQ(J) + QIN
-         IF (J <= -1) THEN
-            IF (EPORE(J) < 0.05 .OR. EPORE(J+1) < 0.05) THEN
-               QOUT = 0.
-            ELSE
-               QOUT = MAX(0.,(VOL_LIQ(J)-parameters%SSI*EPORE(J))*DZSNSO(J))
-               QOUT = MIN(QOUT,(1.-VOL_ICE(J+1)-VOL_LIQ(J+1))*DZSNSO(J+1))
-            END IF
-         ELSE
-            QOUT = MAX(0.,(VOL_LIQ(J) - parameters%SSI*EPORE(J))*DZSNSO(J))
-         END IF
-         QOUT = QOUT*1000.
-         SNLIQ(J) = SNLIQ(J) - QOUT
-         QIN = QOUT
-      END IF
+   DO J = ISNOW+1, 0
+     SNLIQ(J) = SNLIQ(J) + QIN
+     VOL_LIQ(J) = SNLIQ(J)/(DZSNSO(J)*DENH2O)
+     QOUT = MAX(0.,(VOL_LIQ(J)-parameters%SSI*EPORE(J))*DZSNSO(J))
+     QOUT = QOUT*DENH2O
+     SNLIQ(J) = SNLIQ(J) - QOUT
+     QIN = QOUT
    END DO
 
 ! Liquid water from snow bottom to soil
@@ -7153,7 +7137,7 @@ ENDIF   ! CROPTYPE == 0
 
    WD1 = 0.
    DO K = 1,NSOIL
-     WD1 = WD1 + (parameters%SMCMAX(K)-SH2O(K)) * DZSNSO(K) ! [m]
+     WD1 = WD1 + (parameters%SMCMAX(1)-SH2O(K)) * DZSNSO(K) ! [m]
    ENDDO
 
    DZFINE = 3.0 * (-ZSOIL(NSOIL)) / NFINE  
@@ -7165,8 +7149,8 @@ ENDIF   ! CROPTYPE == 0
 
    WD2 = 0.
    DO K = 1,NFINE
-     TEMP  = 1. + (ZWT-ZFINE(K))/parameters%PSISAT(K)
-     WD2   = WD2 + parameters%SMCMAX(K)*(1.-TEMP**(-1./parameters%BEXP(K)))*DZFINE
+     TEMP  = 1. + (ZWT-ZFINE(K))/parameters%PSISAT(1)
+     WD2   = WD2 + parameters%SMCMAX(1)*(1.-TEMP**(-1./parameters%BEXP(1)))*DZFINE
      IF(ABS(WD2-WD1).LE.0.01) THEN
         ZWT = ZFINE(K)
         EXIT

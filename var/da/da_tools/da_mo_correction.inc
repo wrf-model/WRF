@@ -176,7 +176,7 @@ function da_mo_correction (ho, po, to, qo, &
       if (hll > 1.5) then
          if (zint < 0.2) then
             correc = 1.000 + 0.320 * zint ** 0.200
-         else if (zint < 0.0) then
+         else if (zint >= 0.2) then
             correc = 1.169 + 0.315 * zint
          end if
 

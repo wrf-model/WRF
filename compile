@@ -81,6 +81,9 @@ foreach a ( $argv )
     set prev_was_j = true
   else if ( "$prev_was_j" == "true" ) then
     set prev_was_j = false
+  else if   ( "$a" ==  "emi_conv" ) then
+    set arglist = ( $arglist $a )
+    set ZAP = ( chem/convert_emiss.exe )
   else
     echo "This option is not recognized: $a"
     exit ( 1 )

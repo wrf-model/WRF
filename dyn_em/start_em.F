@@ -773,13 +773,21 @@
     DO i=its,min(ite,ide-1)
 #if ( WRFPLUS == 1 )
        IF ( .NOT. config_flags%var4d_run ) THEN
-          qvf = 1.+rvovrd*moist(i,k,j,P_QV)
+          IF ( config_flags%use_theta_m == 0 ) THEN
+             qvf = 1.+rvovrd*moist(i,k,j,P_QV)
+          ELSE
+             qvf = 1
+          END IF
           grid%p(i,k,j)=p1000mb*( (r_d*(t0+grid%t_1(i,k,j))*qvf)/                     &
                      (p1000mb*(grid%al(i,k,j)+grid%alb(i,k,j))) )**cpovcv  &
                      -grid%pb(i,k,j)
        END IF
 #else
-       qvf = 1.+rvovrd*moist(i,k,j,P_QV)
+       IF ( config_flags%use_theta_m == 0 ) THEN
+          qvf = 1.+rvovrd*moist(i,k,j,P_QV)
+       ELSE
+          qvf = 1
+       END IF
        grid%p(i,k,j)=p1000mb*( (r_d*(t0+grid%t_1(i,k,j))*qvf)/                     &
                   (p1000mb*(grid%al(i,k,j)+grid%alb(i,k,j))) )**cpovcv  &
                   -grid%pb(i,k,j)

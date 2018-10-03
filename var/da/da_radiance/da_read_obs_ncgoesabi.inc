@@ -60,7 +60,6 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
 
    ! Masks for data reduction
-!!!   logical :: include_local, load_balance
    logical :: earthmask, zenmask
    logical, allocatable         :: &
       earthmask_1d(:)    , &
@@ -141,6 +140,8 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
       real*8, allocatable              :: fgat_time_abs_diff(:,:) ! seconds
       real*8, allocatable              :: min_time_diff(:,:) ! seconds
       integer, allocatable             :: nfiles_used(:) 
+      logical                          :: meta_initialized = .false.
+      logical                          :: grid_initialized = .false.
       integer                          :: ny_global, nx_global, yoff_fd, xoff_fd
       integer                          :: ys_local, xs_local
       integer                          :: ye_local, xe_local
@@ -568,7 +569,7 @@ write(stdout,*) trim(command)
          fname_short = trim(this_view % filename(first_file))
          fname = trim(this_view % fpath)//trim(fname_short)
 
-         if ( ipass.eq.1 .and. sum(this_view % nfiles_used(:)).eq.0 ) then
+         if ( .not.this_view % meta_initialized ) then
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             !! Get ABI metadata (first pass for FD, CONUS, MESO)
             ! Only ny_global and nx_global need to be read for all views, but this is a cheap subroutine
@@ -576,6 +577,8 @@ write(stdout,*) trim(command)
 
             write(unit=stdout,fmt='(A)') &
                '          Reading abi metadata...'
+
+            this_view % meta_initialized = .true.
 
             call get_abil1b_metadata( &
                fname, this_view % ny_global, this_view % nx_global, &
@@ -609,12 +612,13 @@ write(stdout,*) trim(command)
          !!  + CONUS or FD and first matching fgat
          !!  + MESO and any fgat (extent changes in time)
          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-         DoGridGen: if (  this_view % moving .or. &
-                        ( ipass.eq.1 .and. sum(this_view % nfiles_used(:)).eq.0 ) ) then
+         DoGridGen: if (  this_view % moving .or. .not.this_view % grid_initialized ) then
 
             ! Read grid from file, convert to lat, lon, satzen, satazi
             write(unit=stdout,fmt='(2A)') &
                '          Establishing abi grid info...'
+
+            this_view % grid_initialized = .true.
 
             !========================================================
             ! Establish GOES metadata for this view and ifgat
@@ -641,20 +645,15 @@ write(stdout,*) trim(command)
             ! Create a local array subset of observation location
             !  quantities across processors.
             !===========================================================
-!!!               load_balance = any(iview.eq.(/1,2/))
-!!!               if (load_balance) then
-!               nrad_local = ny_global * nx_global / num_procs + 1
-               nrad_local = ny_global * nx_global / (num_procs-1)
-!!!               else
-!!!                  nrad_local = this_view % ny_grid(iproc+1) * this_view % nx_grid(iproc+1)
-!!!               end if
-
+            nrad_local = ny_global * nx_global / (num_procs-1)
             allocate( yy_1d (nrad_local) )
             allocate( xx_1d (nrad_local) )
             allocate( iy_1d (nrad_local) )
             allocate( ix_1d (nrad_local) )
 
             n = 0 ; icount = 0
+
+!JJG: Not convinced that these subgrids are needed.  Might be able to loop over global X/Y instead. This solution may be overly complex.  mod test for load balancing is still needed!
             ! This loop over subgrids and the selective logic 
             !  below for myproc balances the processor loads  
             !  when some imager pixels are off-earth or outside
@@ -666,16 +665,9 @@ write(stdout,*) trim(command)
                this_view % ys_local = this_view % ys_grid(subgrid)
                this_view % xs_local = this_view % xs_grid(subgrid)
 
-!!!                 !This version of include_local produces unbalanced loads between processors
-!!!                  include_local = ( subgrid-1 .eq. myproc )
-
                do ixl = 1, nx_local
                   do iyl = 1, ny_local
-!!!                        !This version of include_local produces balanced loads between processors
-!!!                        if (load_balance) &
-!!!                           include_local = ( mod( n, num_procs ) .eq. myproc )
-!!!                        if ( include_local ) then
-
+                     !This mod test produces balanced loads between processors
                      if ( mod( n, num_procs ) .eq. myproc ) then
                         icount = icount + 1
 
@@ -690,6 +682,21 @@ write(stdout,*) trim(command)
                   end do
                end do
             end do
+
+!            !This may work as a simplified replacement for the code above, not sure if loads will be balanced
+!            do ix = 1, nx_global
+!               do iy = 1, ny_global
+!                  !This mod test produces balanced loads between processors
+!                  if ( mod( n, num_procs ) .eq. myproc ) then
+!                     icount = icount + 1
+!                     yy_1d ( icount ) = yy_abi( iy )
+!                     xx_1d ( icount ) = xx_abi( ix )
+!                     iy_1d ( icount ) = iy
+!                     ix_1d ( icount ) = ix
+!                  end if
+!                  n = n + 1
+!               end do
+!            end do
 
             nrad_local = icount
 
@@ -1228,9 +1235,9 @@ write(stdout,*) trim(command)
                   ! Only use locations where this view is nearest to this fgat time
                   ! - only available when FD data present for any fgat time
                   if (  use_view_mask ) then
-                     if ( count( view_mask ( this_view % ys_p_fd:this_view % ye_p_fd, &
-                                             this_view % xs_p_fd:this_view % xe_p_fd, &
-                                             iview, ichan, ifgat ) ) .eq. 0 ) then
+                     if ( .not.any( view_mask ( this_view % ys_p_fd:this_view % ye_p_fd, &
+                                                this_view % xs_p_fd:this_view % xe_p_fd, &
+                                                iview, ichan, ifgat ) ) ) then
                         deallocate(allmask_p, readmask_p)
 
                         write(unit=stdout,fmt='(3A,I0)') &
@@ -2386,41 +2393,10 @@ subroutine split_grid( ny_global, nx_global, &
          mm = mm - 1
       end do
 
-! Depracated
-!      if (redist) then
-!         fact = 4
-!         !Redistribute grid from middle to edges to balance load 
-!         !  of calls to da_llxy in get_abil1b_grid
-!         do i = 1, 2
-!            if (mod(ntasks,2).eq.1) then
-!               ii = ntasks/2+1
-!               mm = nvec(ii) / fact
-!               mm = mm/2
-!               nvec(ii)   = nvec(ii)   - 2*mm
-!               nvec(ii-1) = nvec(ii-1) + mm
-!               nvec(ii+1) = nvec(ii+1) + mm
-!            else
-!               ii = ntasks/2
-!            end if
-!            do j = ntasks/2, 2, -1
-!               mm = nvec(j) / fact
-!               nvec(j)   = nvec(j)   - mm
-!               nvec(j-1) = nvec(j-1) + mm
-!            end do
-!            do j = ii+1, ntasks-1
-!               mm = nvec(j) / fact
-!               nvec(j)   = nvec(j)   - mm
-!               nvec(j+1) = nvec(j+1) + mm
-!            end do
-!         end do
-!      end if
-
       svec(1) = 1
       do j = 1, ntasks
-!         if (j .eq. 1) evec(1) = nvec(1) !NOT NECESSARY
          if (j .lt. ntasks) then
             svec(j+1) = svec(j) + nvec(j)
-!            evec(j+1) = evec(j) + nvec(j+1) !NOT NECESSARY
          end if
       end do
    end do
@@ -2435,14 +2411,6 @@ subroutine split_grid( ny_global, nx_global, &
       xs_grid(iproc) = xs_vec(i)
    end do
    end do
-
-!   j = myproc / ntasks_x + 1
-!   ny_local = ny_grid(j)
-!   ys_local = ys_grid(j)
-!
-!   i = mod(myproc, ntasks_x) + 1
-!   nx_local = nx_grid(i)
-!   xs_local = xs_grid(i)
 
 end subroutine split_grid
 #endif

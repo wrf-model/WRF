@@ -4616,6 +4616,228 @@ END MODULE module_interp_info
      endif
    end subroutine DownNear
 
+   subroutine DownNearMask      (cfld,                                 &  ! CD field
+        cids, cide, ckds, ckde, cjds, cjde,   &
+        cims, cime, ckms, ckme, cjms, cjme,   &
+        cits, cite, ckts, ckte, cjts, cjte,   &
+        nfld,                                 &  ! ND field
+        nids, nide, nkds, nkde, njds, njde,   &
+        nims, nime, nkms, nkme, njms, njme,   &
+        nits, nite, nkts, nkte, njts, njte,   &
+        shw,                                  &  ! stencil half width for interp
+        imask,                                &  ! interpolation mask
+        xstag, ystag,                         &  ! staggering of field
+        ipos, jpos,                           &  ! Position of lower left of nest in CD
+        nri, nrj,                             &  ! nest ratios
+        clu, nlu, cflag, nflag)
+     use module_interp_store
+     use module_interp_nmm, only: c2n_nearmask2d,c2n_nearmask3d
+     implicit none
+     LOGICAL,INTENT(IN) :: xstag, ystag
+     INTEGER,INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+          cims, cime, ckms, ckme, cjms, cjme,   &
+          cits, cite, ckts, ckte, cjts, cjte,   &
+          nids, nide, nkds, nkde, njds, njde,   &
+          nims, nime, nkms, nkme, njms, njme,   &
+          nits, nite, nkts, nkte, njts, njte,   &
+          shw,ipos,jpos,nri,nrj,cflag,nflag
+
+     INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IMASK
+     REAL,DIMENSION(cims:cime,cjms:cjme,ckms:ckme),   INTENT(IN)           :: CFLD
+     REAL,DIMENSION(nims:nime,njms:njme,nkms:nkme),   INTENT(INOUT)        :: nfld
+
+     REAL,DIMENSION(cims:cime,cjms:cjme),INTENT(IN)           :: clu
+     REAL,DIMENSION(nims:nime,njms:njme),INTENT(IN)           :: nlu
+
+     REAL                     :: defvalyes, defvalno
+
+     defvalyes=-999.99
+     defvalno=-999.99
+
+     if(nkts==nkte) then
+        call c2n_nearmask2d(hnear_i,hnear_j,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,  &
+             cfld,nfld,imask,                &
+             clu,nlu,cflag,nflag,defvalyes,defvalno,           &
+             cims, cime, cjms, cjme,   &
+             nids, nide, njds, njde,   &
+             nims, nime, njms, njme,   &
+             nits, nite, njts, njte, .true.)
+     else
+        call c2n_nearmask3d(hnear_i,hnear_j,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,  &
+             cfld,nfld,imask,                &
+             clu,nlu,cflag,nflag,defvalyes,defvalno,           &
+             cims, cime, cjms, cjme, ckms, ckme,   &
+             nids, nide, njds, njde, nkds, nkde,   &
+             nims, nime, njms, njme, nkms, nkme,   &
+             nits, nite, njts, njte, nkts, nkte, .true.)
+     endif
+   end subroutine DownNearMask
+
+   subroutine DownNearMaskDef      (cfld,                                 &  ! CD field
+        cids, cide, ckds, ckde, cjds, cjde,   &
+        cims, cime, ckms, ckme, cjms, cjme,   &
+        cits, cite, ckts, ckte, cjts, cjte,   &
+        nfld,                                 &  ! ND field
+        nids, nide, nkds, nkde, njds, njde,   &
+        nims, nime, nkms, nkme, njms, njme,   &
+        nits, nite, nkts, nkte, njts, njte,   &
+        shw,                                  &  ! stencil half width for interp
+        imask,                                &  ! interpolation mask
+        xstag, ystag,                         &  ! staggering of field
+        ipos, jpos,                           &  ! Position of lower left of nest in CD
+        nri, nrj,                             &  ! nest ratios
+        clu, nlu, cflag, nflag,               &
+        defvalyesopt, defvalnoopt)
+     use module_interp_store
+     use module_interp_nmm, only: c2n_nearmask2d,c2n_nearmask3d
+     implicit none
+     LOGICAL,INTENT(IN) :: xstag, ystag
+     INTEGER,INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+          cims, cime, ckms, ckme, cjms, cjme,   &
+          cits, cite, ckts, ckte, cjts, cjte,   &
+          nids, nide, nkds, nkde, njds, njde,   &
+          nims, nime, nkms, nkme, njms, njme,   &
+          nits, nite, nkts, nkte, njts, njte,   &
+          shw,ipos,jpos,nri,nrj,cflag,nflag
+
+     INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IMASK
+     REAL,DIMENSION(cims:cime,cjms:cjme,ckms:ckme),   INTENT(IN)           :: CFLD
+     REAL,DIMENSION(nims:nime,njms:njme,nkms:nkme),   INTENT(INOUT)        :: nfld
+
+     REAL,DIMENSION(cims:cime,cjms:cjme),INTENT(IN)           :: clu
+     REAL,DIMENSION(nims:nime,njms:njme),INTENT(IN)           :: nlu
+     REAL,INTENT(IN)          :: defvalyesopt, defvalnoopt
+
+     REAL                     :: defvalyes, defvalno
+
+     defvalyes=defvalyesopt
+     defvalno=defvalnoopt
+
+     if(nkts==nkte) then
+        call c2n_nearmask2d(hnear_i,hnear_j,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,  &
+             cfld,nfld,imask,                &
+             clu,nlu,cflag,nflag,defvalyes,defvalno,           &
+             cims, cime, cjms, cjme,   &
+             nids, nide, njds, njde,   &
+             nims, nime, njms, njme,   &
+             nits, nite, njts, njte, .true.)
+     else
+        call c2n_nearmask3d(hnear_i,hnear_j,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,  &
+             cfld,nfld,imask,                &
+             clu,nlu,cflag,nflag,defvalyes,defvalno,           &
+             cims, cime, cjms, cjme, ckms, ckme,   &
+             nids, nide, njds, njde, nkds, nkde,   &
+             nims, nime, njms, njme, nkms, nkme,   &
+             nits, nite, njts, njte, nkts, nkte, .true.)
+     endif
+   end subroutine DownNearMaskDef
+
+   subroutine DownNearMaskIKJ      (cfld,                                 &  ! CD field
+        cids, cide, ckds, ckde, cjds, cjde,   &
+        cims, cime, ckms, ckme, cjms, cjme,   &
+        cits, cite, ckts, ckte, cjts, cjte,   &
+        nfld,                                 &  ! ND field
+        nids, nide, nkds, nkde, njds, njde,   &
+        nims, nime, nkms, nkme, njms, njme,   &
+        nits, nite, nkts, nkte, njts, njte,   &
+        shw,                                  &  ! stencil half width for interp
+        imask,                                &  ! interpolation mask
+        xstag, ystag,                         &  ! staggering of field
+        ipos, jpos,                           &  ! Position of lower left of nest in CD
+        nri, nrj,                             &  ! nest ratios
+        clu, nlu, cflag, nflag)
+     use module_interp_store
+     use module_interp_nmm, only: c2n_nearmask3dikj
+     implicit none
+     LOGICAL,INTENT(IN) :: xstag, ystag
+     INTEGER,INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+          cims, cime, ckms, ckme, cjms, cjme,   &
+          cits, cite, ckts, ckte, cjts, cjte,   &
+          nids, nide, nkds, nkde, njds, njde,   &
+          nims, nime, nkms, nkme, njms, njme,   &
+          nits, nite, nkts, nkte, njts, njte,   &
+          shw,ipos,jpos,nri,nrj,cflag,nflag
+
+     INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IMASK
+     REAL,DIMENSION(cims:cime,ckms:ckme,cjms:cjme),   INTENT(IN)           :: CFLD
+     REAL,DIMENSION(nims:nime,nkms:nkme,njms:njme),   INTENT(INOUT)        :: nfld
+
+     REAL,DIMENSION(cims:cime,cjms:cjme),INTENT(IN)           :: clu
+     REAL,DIMENSION(nims:nime,njms:njme),INTENT(IN)           :: nlu
+
+     REAL                     :: defvalyes, defvalno
+
+     defvalyes=-999.99
+     defvalno=-999.99
+
+     if(nkts==nkte) then
+        call wrf_error_fatal('IJ interpolation of an IKJ variable is not supported and makes no sense anyway. Use DownNearMask instead.')
+
+     else
+        call c2n_nearmask3dikj(hnear_i,hnear_j,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,  &
+             cfld,nfld,imask,                &
+             clu,nlu,cflag,nflag,defvalyes,defvalno,          &
+             cims, cime, cjms, cjme, ckms, ckme,   &
+             nids, nide, njds, njde, nkds, nkde,   &
+             nims, nime, njms, njme, nkms, nkme,   &
+             nits, nite, njts, njte, nkts, nkte, .true.)
+     endif
+   end subroutine DownNearMaskIKJ
+
+   subroutine DownNearMaskDefIKJ      (cfld,                                 &  ! CD field
+        cids, cide, ckds, ckde, cjds, cjde,   &
+        cims, cime, ckms, ckme, cjms, cjme,   &
+        cits, cite, ckts, ckte, cjts, cjte,   &
+        nfld,                                 &  ! ND field
+        nids, nide, nkds, nkde, njds, njde,   &
+        nims, nime, nkms, nkme, njms, njme,   &
+        nits, nite, nkts, nkte, njts, njte,   &
+        shw,                                  &  ! stencil half width for interp
+        imask,                                &  ! interpolation mask
+        xstag, ystag,                         &  ! staggering of field
+        ipos, jpos,                           &  ! Position of lower left of nest in CD
+        nri, nrj,                             &  ! nest ratios
+        clu, nlu, cflag, nflag,               &
+        defvalyesopt, defvalnoopt)
+     use module_interp_store
+     use module_interp_nmm, only: c2n_nearmask3dikj
+     implicit none
+     LOGICAL,INTENT(IN) :: xstag, ystag
+     INTEGER,INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+          cims, cime, ckms, ckme, cjms, cjme,   &
+          cits, cite, ckts, ckte, cjts, cjte,   &
+          nids, nide, nkds, nkde, njds, njde,   &
+          nims, nime, nkms, nkme, njms, njme,   &
+          nits, nite, nkts, nkte, njts, njte,   &
+          shw,ipos,jpos,nri,nrj,cflag,nflag
+
+     INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IMASK
+     REAL,DIMENSION(cims:cime,ckms:ckme,cjms:cjme),   INTENT(IN)           :: CFLD
+     REAL,DIMENSION(nims:nime,nkms:nkme,njms:njme),   INTENT(INOUT)        :: nfld
+
+     REAL,DIMENSION(cims:cime,cjms:cjme),INTENT(IN)           :: clu
+     REAL,DIMENSION(nims:nime,njms:njme),INTENT(IN)           :: nlu
+     REAL,INTENT(IN)          :: defvalyesopt, defvalnoopt
+
+     REAL                     :: defvalyes, defvalno
+
+     defvalyes=defvalyesopt
+     defvalno=defvalnoopt
+
+     if(nkts==nkte) then
+        call wrf_error_fatal('IJ interpolation of an IKJ variable is not supported and makes no sense anyway. Use DownNearMask instead.')
+
+     else
+        call c2n_nearmask3dikj(hnear_i,hnear_j,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,  &
+             cfld,nfld,imask,                &
+             clu,nlu,cflag,nflag,defvalyes,defvalno,          &
+             cims, cime, cjms, cjme, ckms, ckme,   &
+             nids, nide, njds, njde, nkds, nkde,   &
+             nims, nime, njms, njme, nkms, nkme,   &
+             nits, nite, njts, njte, nkts, nkte, .true.)
+     endif
+   end subroutine DownNearMaskDefIKJ
+
    subroutine DownNearIKJ   (cfld,                                 &  ! CD field
         cids, cide, ckds, ckde, cjds, cjde,   &
         cims, cime, ckms, ckme, cjms, cjme,   &
@@ -4736,6 +4958,110 @@ END MODULE module_interp_info
           nims, nime, njms, njme,   &
           nits, nite, njts, njte)
    end subroutine DownINear
+
+   subroutine DownINearMask      (cfld,                                 &  ! CD field
+        cids, cide, ckds, ckde, cjds, cjde,   &
+        cims, cime, ckms, ckme, cjms, cjme,   &
+        cits, cite, ckts, ckte, cjts, cjte,   &
+        nfld,                                 &  ! ND field
+        nids, nide, nkds, nkde, njds, njde,   &
+        nims, nime, nkms, nkme, njms, njme,   &
+        nits, nite, nkts, nkte, njts, njte,   &
+        shw,                                  &  ! stencil half width for interp
+        imask,                                &  ! interpolation mask
+        xstag, ystag,                         &  ! staggering of field
+        ipos, jpos,                           &  ! Position of lower left of nest in CD
+        nri, nrj,                             &  ! nest ratios
+        clu, nlu, cflag, nflag)
+     use module_interp_store
+     use module_interp_nmm, only: c2n_inearmask2d
+     implicit none
+     LOGICAL,INTENT(IN) :: xstag, ystag
+     INTEGER,INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+          cims, cime, ckms, ckme, cjms, cjme,   &
+          cits, cite, ckts, ckte, cjts, cjte,   &
+          nids, nide, nkds, nkde, njds, njde,   &
+          nims, nime, nkms, nkme, njms, njme,   &
+          nits, nite, nkts, nkte, njts, njte,   &
+          shw,ipos,jpos,nri,nrj,cflag,nflag
+
+     INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IMASK
+     INTEGER,DIMENSION(cims:cime,cjms:cjme,ckms:ckme),   INTENT(IN)        :: CFLD
+     INTEGER,DIMENSION(nims:nime,njms:njme,nkms:nkme),   INTENT(INOUT)     :: nfld
+
+     REAL,DIMENSION(cims:cime,cjms:cjme),INTENT(IN)           :: clu
+     REAL,DIMENSION(nims:nime,njms:njme),INTENT(IN)           :: nlu
+
+     INTEGER                     :: defvalyes, defvalno
+
+     defvalyes=-999
+     defvalno=-999
+
+     if(nkts==nkte) then
+        call c2n_inearmask2d(hnear_i,hnear_j,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,  &
+             cfld,nfld,imask,                &
+             clu,nlu,cflag,nflag,defvalyes,defvalno,           &
+             cims, cime, cjms, cjme,   &
+             nids, nide, njds, njde,   &
+             nims, nime, njms, njme,   &
+             nits, nite, njts, njte, .true.)
+     else
+        call wrf_error_fatal('3D integer nearest neighbor interpolation is not implemented.')
+     endif
+   end subroutine DownINearMask
+
+   subroutine DownINearMaskDef      (cfld,                                 &  ! CD field
+        cids, cide, ckds, ckde, cjds, cjde,   &
+        cims, cime, ckms, ckme, cjms, cjme,   &
+        cits, cite, ckts, ckte, cjts, cjte,   &
+        nfld,                                 &  ! ND field
+        nids, nide, nkds, nkde, njds, njde,   &
+        nims, nime, nkms, nkme, njms, njme,   &
+        nits, nite, nkts, nkte, njts, njte,   &
+        shw,                                  &  ! stencil half width for interp
+        imask,                                &  ! interpolation mask
+        xstag, ystag,                         &  ! staggering of field
+        ipos, jpos,                           &  ! Position of lower left of nest in CD
+        nri, nrj,                             &  ! nest ratios
+        clu, nlu, cflag, nflag,               &
+        defvalyesopt,defvalnoopt)
+     use module_interp_store
+     use module_interp_nmm, only: c2n_inearmask2d
+     implicit none
+     LOGICAL,INTENT(IN) :: xstag, ystag
+     INTEGER,INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+          cims, cime, ckms, ckme, cjms, cjme,   &
+          cits, cite, ckts, ckte, cjts, cjte,   &
+          nids, nide, nkds, nkde, njds, njde,   &
+          nims, nime, nkms, nkme, njms, njme,   &
+          nits, nite, nkts, nkte, njts, njte,   &
+          shw,ipos,jpos,nri,nrj,cflag,nflag
+
+     INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IMASK
+     INTEGER,DIMENSION(cims:cime,cjms:cjme,ckms:ckme),   INTENT(IN)        :: CFLD
+     INTEGER,DIMENSION(nims:nime,njms:njme,nkms:nkme),   INTENT(INOUT)     :: nfld
+
+     REAL,DIMENSION(cims:cime,cjms:cjme),INTENT(IN)           :: clu
+     REAL,DIMENSION(nims:nime,njms:njme),INTENT(IN)           :: nlu
+     INTEGER,INTENT(IN)          :: defvalyesopt, defvalnoopt
+
+     INTEGER                     :: defvalyes, defvalno
+
+     defvalyes=defvalyesopt
+     defvalno=defvalnoopt
+
+     if(nkts==nkte) then
+        call c2n_inearmask2d(hnear_i,hnear_j,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,  &
+             cfld,nfld,imask,                &
+             clu,nlu,cflag,nflag,defvalyes,defvalno,           &
+             cims, cime, cjms, cjme,   &
+             nids, nide, njds, njde,   &
+             nims, nime, njms, njme,   &
+             nits, nite, njts, njte, .true.)
+     else
+        call wrf_error_fatal('3D integer nearest neighbor interpolation is not implemented.')
+     endif
+   end subroutine DownINearMaskDef
 
    subroutine UpINear        (cfld,                                 &  ! CD field
         cids, cide, ckds, ckde, cjds, cjde,   &
@@ -5120,6 +5446,226 @@ END MODULE module_interp_info
              nits, nite, njts, njte, nkts, nkte, .true.)
      endif
    end subroutine DownCopy
+
+   subroutine DownCopyMask      (cfld,                                 &  ! CD field
+        cids, cide, ckds, ckde, cjds, cjde,   &
+        cims, cime, ckms, ckme, cjms, cjme,   &
+        cits, cite, ckts, ckte, cjts, cjte,   &
+        nfld,                                 &  ! ND field
+        nids, nide, nkds, nkde, njds, njde,   &
+        nims, nime, nkms, nkme, njms, njme,   &
+        nits, nite, nkts, nkte, njts, njte,   &
+        shw,                                  &  ! stencil half width for interp
+        imask,                                &  ! interpolation mask
+        xstag, ystag,                         &  ! staggering of field
+        ipos, jpos,                           &  ! Position of lower left of nest in CD
+        nri, nrj,                             &  ! nest ratios
+        clu, nlu, cflag, nflag)
+     use module_interp_store
+     use module_interp_nmm, only: c2n_copymask3d, c2n_copymask2d
+     implicit none
+     LOGICAL,INTENT(IN) :: xstag, ystag
+     INTEGER,INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+          cims, cime, ckms, ckme, cjms, cjme,   &
+          cits, cite, ckts, ckte, cjts, cjte,   &
+          nids, nide, nkds, nkde, njds, njde,   &
+          nims, nime, nkms, nkme, njms, njme,   &
+          nits, nite, nkts, nkte, njts, njte,   &
+          shw,ipos,jpos,nri,nrj,cflag,nflag
+
+     INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IMASK
+     REAL,DIMENSION(cims:cime,cjms:cjme,ckms:ckme),   INTENT(IN)           :: CFLD
+     REAL,DIMENSION(nims:nime,njms:njme,nkms:nkme),   INTENT(INOUT)          :: nfld
+
+     REAL,DIMENSION(cims:cime,cjms:cjme),INTENT(IN)           :: clu
+     REAL,DIMENSION(nims:nime,njms:njme),INTENT(IN)           :: nlu
+
+     REAL                     :: defvalyes, defvalno
+
+     defvalyes=-999.99
+     defvalno=-999.99
+
+     if(nkts==nkte) then
+        call c2n_copymask2d(IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,  &
+             cfld,nfld,imask,                &
+             clu,nlu,cflag,nflag,defvalyes,defvalno,           &
+             cims, cime, cjms, cjme,   &
+             nids, nide, njds, njde,   &
+             nims, nime, njms, njme,   &
+             nits, nite, njts, njte, .true.)
+     else
+        call c2n_copymask3d(IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,  &
+             cfld,nfld,imask,                &
+             clu,nlu,cflag,nflag,defvalyes,defvalno,           &
+             cims, cime, cjms, cjme, ckms, ckme,   &
+             nids, nide, njds, njde, nkds, nkde,   &
+             nims, nime, njms, njme, nkms, nkme,   &
+             nits, nite, njts, njte, nkts, nkte, .true.)
+     endif
+   end subroutine DownCopyMask
+
+   subroutine DownCopyMaskDef      (cfld,                                 &  ! CD field
+        cids, cide, ckds, ckde, cjds, cjde,   &
+        cims, cime, ckms, ckme, cjms, cjme,   &
+        cits, cite, ckts, ckte, cjts, cjte,   &
+        nfld,                                 &  ! ND field
+        nids, nide, nkds, nkde, njds, njde,   &
+        nims, nime, nkms, nkme, njms, njme,   &
+        nits, nite, nkts, nkte, njts, njte,   &
+        shw,                                  &  ! stencil half width for interp
+        imask,                                &  ! interpolation mask
+        xstag, ystag,                         &  ! staggering of field
+        ipos, jpos,                           &  ! Position of lower left of nest in CD
+        nri, nrj,                             &  ! nest ratios
+        clu, nlu, cflag, nflag,               &
+        defvalyesopt,defvalnoopt)
+     use module_interp_store
+     use module_interp_nmm, only: c2n_copymask3d, c2n_copymask2d
+     implicit none
+     LOGICAL,INTENT(IN) :: xstag, ystag
+     INTEGER,INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+          cims, cime, ckms, ckme, cjms, cjme,   &
+          cits, cite, ckts, ckte, cjts, cjte,   &
+          nids, nide, nkds, nkde, njds, njde,   &
+          nims, nime, nkms, nkme, njms, njme,   &
+          nits, nite, nkts, nkte, njts, njte,   &
+          shw,ipos,jpos,nri,nrj,cflag,nflag
+
+     INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IMASK
+     REAL,DIMENSION(cims:cime,cjms:cjme,ckms:ckme),   INTENT(IN)           :: CFLD
+     REAL,DIMENSION(nims:nime,njms:njme,nkms:nkme),   INTENT(INOUT)          :: nfld
+
+     REAL,DIMENSION(cims:cime,cjms:cjme),INTENT(IN)           :: clu
+     REAL,DIMENSION(nims:nime,njms:njme),INTENT(IN)           :: nlu
+     REAL,INTENT(IN)          :: defvalyesopt, defvalnoopt
+
+     REAL                     :: defvalyes, defvalno
+
+     defvalyes=defvalyesopt
+     defvalno=defvalnoopt
+
+     if(nkts==nkte) then
+        call c2n_copymask2d(IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,  &
+             cfld,nfld,imask,                &
+             clu,nlu,cflag,nflag,defvalyes,defvalno,           &
+             cims, cime, cjms, cjme,   &
+             nids, nide, njds, njde,   &
+             nims, nime, njms, njme,   &
+             nits, nite, njts, njte, .true.)
+     else
+        call c2n_copymask3d(IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,  &
+             cfld,nfld,imask,                &
+             clu,nlu,cflag,nflag,defvalyes,defvalno,           &
+             cims, cime, cjms, cjme, ckms, ckme,   &
+             nids, nide, njds, njde, nkds, nkde,   &
+             nims, nime, njms, njme, nkms, nkme,   &
+             nits, nite, njts, njte, nkts, nkte, .true.)
+     endif
+   end subroutine DownCopyMaskDef
+
+   subroutine DownCopyMaskIKJ      (cfld,                                 &  ! CD field
+        cids, cide, ckds, ckde, cjds, cjde,   &
+        cims, cime, ckms, ckme, cjms, cjme,   &
+        cits, cite, ckts, ckte, cjts, cjte,   &
+        nfld,                                 &  ! ND field
+        nids, nide, nkds, nkde, njds, njde,   &
+        nims, nime, nkms, nkme, njms, njme,   &
+        nits, nite, nkts, nkte, njts, njte,   &
+        shw,                                  &  ! stencil half width for interp
+        imask,                                &  ! interpolation mask
+        xstag, ystag,                         &  ! staggering of field
+        ipos, jpos,                           &  ! Position of lower left of nest in CD
+        nri, nrj,                             &  ! nest ratios
+        clu, nlu, cflag, nflag)
+     use module_interp_store
+     use module_interp_nmm, only: c2n_copymask3dikj
+     implicit none
+     LOGICAL,INTENT(IN) :: xstag, ystag
+     INTEGER,INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+          cims, cime, ckms, ckme, cjms, cjme,   &
+          cits, cite, ckts, ckte, cjts, cjte,   &
+          nids, nide, nkds, nkde, njds, njde,   &
+          nims, nime, nkms, nkme, njms, njme,   &
+          nits, nite, nkts, nkte, njts, njte,   &
+          shw,ipos,jpos,nri,nrj,cflag,nflag
+
+     INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IMASK
+     REAL,DIMENSION(cims:cime,ckms:ckme,cjms:cjme),   INTENT(IN)           :: CFLD
+     REAL,DIMENSION(nims:nime,nkms:nkme,njms:njme),   INTENT(INOUT)          :: nfld
+
+     REAL,DIMENSION(cims:cime,cjms:cjme),INTENT(IN)           :: clu
+     REAL,DIMENSION(nims:nime,njms:njme),INTENT(IN)           :: nlu
+
+     REAL                     :: defvalyes, defvalno
+
+     defvalyes=-999.99
+     defvalno=-999.99
+
+     if(nkts==nkte) then
+        call wrf_error_fatal('IJ interpolation of an IKJ variable is not supported and makes no sense anyway. Use DownCopyMask instead.')
+     else
+        call c2n_copymask3dikj(IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,  &
+             cfld,nfld,imask,                &
+             clu,nlu,cflag,nflag,defvalyes,defvalno,           &
+             cims, cime, cjms, cjme, ckms, ckme,   &
+             nids, nide, njds, njde, nkds, nkde,   &
+             nims, nime, njms, njme, nkms, nkme,   &
+             nits, nite, njts, njte, nkts, nkte, .true.)
+     endif
+   end subroutine DownCopyMaskIKJ
+
+   subroutine DownCopyMaskDefIKJ      (cfld,                                 &  ! CD field
+        cids, cide, ckds, ckde, cjds, cjde,   &
+        cims, cime, ckms, ckme, cjms, cjme,   &
+        cits, cite, ckts, ckte, cjts, cjte,   &
+        nfld,                                 &  ! ND field
+        nids, nide, nkds, nkde, njds, njde,   &
+        nims, nime, nkms, nkme, njms, njme,   &
+        nits, nite, nkts, nkte, njts, njte,   &
+        shw,                                  &  ! stencil half width for interp
+        imask,                                &  ! interpolation mask
+        xstag, ystag,                         &  ! staggering of field
+        ipos, jpos,                           &  ! Position of lower left of nest in CD
+        nri, nrj,                             &  ! nest ratios
+        clu, nlu, cflag, nflag,               &
+        defvalyesopt,defvalnoopt)
+     use module_interp_store
+     use module_interp_nmm, only: c2n_copymask3dikj
+     implicit none
+     LOGICAL,INTENT(IN) :: xstag, ystag
+     INTEGER,INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+          cims, cime, ckms, ckme, cjms, cjme,   &
+          cits, cite, ckts, ckte, cjts, cjte,   &
+          nids, nide, nkds, nkde, njds, njde,   &
+          nims, nime, nkms, nkme, njms, njme,   &
+          nits, nite, nkts, nkte, njts, njte,   &
+          shw,ipos,jpos,nri,nrj,cflag,nflag
+
+     INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IMASK
+     REAL,DIMENSION(cims:cime,ckms:ckme,cjms:cjme),   INTENT(IN)           :: CFLD
+     REAL,DIMENSION(nims:nime,nkms:nkme,njms:njme),   INTENT(INOUT)          :: nfld
+
+     REAL,DIMENSION(cims:cime,cjms:cjme),INTENT(IN)           :: clu
+     REAL,DIMENSION(nims:nime,njms:njme),INTENT(IN)           :: nlu
+     REAL,INTENT(IN)          :: defvalyesopt, defvalnoopt
+
+     REAL                     :: defvalyes, defvalno
+
+     defvalyes=defvalyesopt
+     defvalno=defvalnoopt
+
+     if(nkts==nkte) then
+        call wrf_error_fatal('IJ interpolation of an IKJ variable is not supported and makes no sense anyway. Use DownCopyMask instead.')
+     else
+        call c2n_copymask3dikj(IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,  &
+             cfld,nfld,imask,                &
+             clu,nlu,cflag,nflag,defvalyes,defvalno,           &
+             cims, cime, cjms, cjme, ckms, ckme,   &
+             nids, nide, njds, njde, nkds, nkde,   &
+             nims, nime, njms, njme, nkms, nkme,   &
+             nits, nite, njts, njte, nkts, nkte, .true.)
+     endif
+   end subroutine DownCopyMaskDefIKJ
 
    subroutine UpVel   (cfld,                                 &  ! CD field
         cids, cide, ckds, ckde, cjds, cjde,   &

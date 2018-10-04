@@ -81,7 +81,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
    !! Iterates
    integer                      :: ichan, ifile, iview, ifgat, ipass, ioff, &
-                                   jchan, jfile, jview, icount, &
+                                   jchan, jfile, jview, icount, io_stat, &
                                    n, i, j, iy, ix, jy, jx, iyl, ixl, iyfd, ixfd, iproc, subgrid
 
    !! Satellite variables
@@ -277,7 +277,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    view_att(3) % name = 'MESO1'
    view_att(4) % name = 'MESO2'
 
-   view_att(1) % fpath = './goes-fd/'
+   view_att(1) % fpath = './goes-fdisk/'
    view_att(2) % fpath = './goes-conus/'
    view_att(3) % fpath = './goes-meso/'
    view_att(4) % fpath = './goes-meso/'
@@ -360,13 +360,30 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 write(stdout,*) trim(command)
             call execute_command_line (trim(command))
 
-            write(command,fmt='(4A)') "cat ",trim(list_file)," | wc -l > ",trim(count_file)
-write(stdout,*) trim(command)
-            call execute_command_line (trim(command))
-
-            open(unit=file_unit,file=trim(count_file))
-            read(file_unit,*) this_view % nfiles
+            icount = 0
+            io_stat = -1
+            do while (io_stat .ne. 0) 
+               open(unit=file_unit,file=trim(list_file), iostat = io_stat)
+               icount = icount + 1
+               if (icount .gt. 1000) exit
+            end do
+            this_view % nfiles = 0
+            do
+               read(file_unit, fmt=*, iostat = io_stat)
+!               if ( io_stat .lt. 0 ) exit
+!               if ( io_stat .gt. 0 ) do something else
+               if ( io_stat .ne. 0 ) exit
+               this_view % nfiles = this_view % nfiles + 1
+            end do
             close(file_unit)
+
+!            write(command,fmt='(4A)') "cat ",trim(list_file)," | wc -l > ",trim(count_file)
+!write(stdout,*) trim(command)
+!            call execute_command_line (trim(command))
+!
+!            open(unit=file_unit,file=trim(count_file))
+!            read(file_unit,*) this_view % nfiles
+!            close(file_unit)
             i_dummy = this_view % nfiles
          end if
 #ifdef DM_PARALLEL

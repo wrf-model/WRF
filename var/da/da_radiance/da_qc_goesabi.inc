@@ -39,8 +39,9 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
    logical           :: print_cld_debug
 
    !! Additional variables used by Harnish, Weissmann, & Perianez (2016)
-   real              :: BTlim(nchan)
-   real, allocatable :: cld_impact(:,:)
+   real              :: BTlim(nchan), BTlim_temp
+   real, allocatable :: cld_impact(:,:), cld_impact_global(:,:), weights_global(:)
+   integer           :: buf_i, buf_f, nbuf, nlocal, nglobal, iproc
    real, parameter   :: camin = 0.0
 
    !! Additional variables used by Zhuge and Zou (2017)
@@ -82,6 +83,7 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
 
    if (trace_use) call da_trace_entry("da_qc_goesabi")
 
+!!   if (iv%instid(i)%num_rad .le. 0) return
 
    ! These values can change as SRF (spectral response function) is updated
    ! It is recommended to acquire these from L1B files, not copy them from GOES R PUG L1b Vol. 3
@@ -142,8 +144,6 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
    tb_ob => ob%instid(i)%tb
    tb_xb => iv%instid(i)%tb_xb
    tb_inv => iv%instid(i)%tb_inv
-   ca_mean => iv%instid(i)%ca_mean
-   ca_mean = missing_r
 
    print_cld_debug = .true.
 
@@ -152,33 +152,98 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
 
 !      if (calc_ir_btlim) then
          allocate ( cld_impact (iv%instid(i)%info%n1:iv%instid(i)%info%n2, 1:2) )
+         cld_impact = missing_r
+         BTlim = missing_r
+         nlocal = iv%instid(i)%info%n2 - iv%instid(i)%info%n1 + 1
+#ifdef DM_PARALLEL
+         call mpi_allreduce( nlocal, nglobal, 1, mpi_integer, mpi_sum, comm, ierr )
+#else
+         nglobal = nlocal
+#endif
+         allocate(cld_impact_global(nglobal, 1:2))
+         allocate(weights_global(nglobal))
+
          do k = 1, nchan
             do n= iv%instid(i)%info%n1,iv%instid(i)%info%n2
-               cld_impact(n,1) = tb_xb(k,n)
-               cld_impact(n,2) = tb_xb_clr(k,n) - tb_xb(k,n)
+               if ( .true. &
+                     .and. tb_inv( k, n ) .gt. missing_r &
+                     .and. tb_ob(  k, n ) .gt. 0. &
+                     .and. tb_xb(  k, n ) .gt. 0. &
+                     ) then
+
+                  cld_impact(n,1) = tb_xb(k,n)
+                  cld_impact(n,2) = tb_xb_clr(k,n) - tb_xb(k,n)
 !JJGDEBUG
-               if (print_cld_debug) write(*,'(A,2I8,2F12.4)') 'PIXEL_DEBUG91: ', n, k, &
-                  cld_impact(n,1:2)
+                  if (print_cld_debug) write(stdout,'(A,2I8,2F16.8,6(2x,A))') 'PIXEL_DEBUG91: ', n, k, &
+                     cld_impact(n,1:2), &
+                     iv%instid(i)%info%date_char(n)(1:4), &
+                     iv%instid(i)%info%date_char(n)(6:7), &
+                     iv%instid(i)%info%date_char(n)(9:10), &
+                     iv%instid(i)%info%date_char(n)(12:13), &
+                     iv%instid(i)%info%date_char(n)(15:16), &
+                     iv%instid(i)%info%date_char(n)(18:19)
+!                     iv%instid(i)%info%date_char(n)
+
 !JJGDEBUG
+               end if
 
             end do
 
+            buf_f = 0
+            ProcLoop: do iproc = 0, num_procs-1
+               nbuf = nlocal
+#ifdef DM_PARALLEL
+               call mpi_bcast(nbuf, 1, mpi_integer, iproc, comm, ierr )
+#endif
+               if (nbuf .eq. 0) cycle
+               buf_i = buf_f + 1
+               buf_f = buf_i + nbuf - 1
+
+               if (iproc .eq. myproc) then
+                  cld_impact_global(buf_i:buf_f,:) = cld_impact(:,:)
+               else
+                  cld_impact_global(buf_i:buf_f,:) = missing_r
+               end if
+               call mpi_bcast(cld_impact_global(buf_i:buf_f,:), nbuf * 2, true_mpi_real, iproc, comm, ierr )
+            end do ProcLoop
+
+
             ! JJG: This is a very rough estimate of BTlim for now
-            where ( cld_impact(:,2) .ge. 0.1 ) 
-               cld_impact(:,1) = missing_r
+!            where ( cld_impact_global(:,2) .ge. 0.1 ) !Really need to do this offline with stats from multiple days...
+            where ( cld_impact_global(:,2) .le. 0.00001 .or. cld_impact_global(:,2) .ge. 0.2 ) 
+               cld_impact_global(:,1) = missing_r
             end where
-            BTlim(k) = minval(cld_impact(:,1), cld_impact(:,1).gt.missing_r)
+
+!            BTlim_temp = sum(cld_impact_global(:,1), cld_impact_global(:,1).gt.missing_r) / &
+!                         count(cld_impact_global(:,1).gt.missing_r)
+
+            where ( cld_impact_global(:,1).gt.missing_r )
+               weights_global = 1. - abs(cld_impact_global(:,2) - 0.1)
+            elsewhere
+               weights_global = missing_r
+            end where
+            BTlim_temp = sum(cld_impact_global(:,1) * weights_global, cld_impact_global(:,1).gt.missing_r) / &
+                         sum(weights_global, cld_impact_global(:,1).gt.missing_r)
+
+!            BTlim_temp = minval(cld_impact_global(:,1), cld_impact_global(:,1).gt.missing_r)
+            if ( BTlim_temp.eq.BTlim_temp ) then
+               if ( BTlim_temp .gt. 0 ) BTlim(k) = BTlim_temp
+            end if
+!Really need to do this offline with stats from multiple days...BTlim will be a lookup table across channels.
 
             !Alternatively could sort cld_impact by clr-cld difference, then
             ! find median tb_xb at difference of 0.1 (how??)
 
 !JJGDEBUG
-            if (print_cld_debug) write(*,'(A,I8,F12.4)') 'PIXEL_DEBUG92: ', k, &
+            if (print_cld_debug) write(stdout,'(A,I8,F12.4)') 'PIXEL_DEBUG92: ', k, &
                BTlim(k)
 !JJGDEBUG
 
          end do
          deallocate ( cld_impact )
+         deallocate ( cld_impact_global )
+         deallocate ( weights_global )
+
 !      else
 !         BTlim = 240.
 !      end if
@@ -250,7 +315,11 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
          end if
       end if
 
-      abi_clddet: if ( use_clddet_zz .and. all(tb_inv((/1,8,9/),n).gt.missing_r) ) then
+      abi_clddet: if ( use_clddet_zz &
+                     .and. all(tb_inv( (/ch7,ch14,ch15/), n ) .gt. missing_r) &
+                     .and. all(tb_ob(  (/ch7,ch14,ch15/), n ) .gt. missing_r) &
+                     .and. all(tb_xb(  (/ch7,ch14,ch15/), n ) .gt. missing_r) &
+                     ) then
          !!===============================================================================
          !!===============================================================================
          !!
@@ -263,18 +332,18 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
 
 !JJGDEBUG
 !         print_cld_debug = iv%instid(i)%info%proc_domain(1,n)
-         if (print_cld_debug) write(*,'(A,I8,*(2x,F10.4:))') 'PIXEL_DEBUG1: ', n, &
+         if (print_cld_debug) write(stdout,'(A,I8,*(2x,F10.4:))') 'PIXEL_DEBUG1: ', n, &
             tb_inv(:,n)
-         if (print_cld_debug) write(*,'(A,I8,*(2x,F10.4:))') 'PIXEL_DEBUG2: ', n, &
+         if (print_cld_debug) write(stdout,'(A,I8,*(2x,F10.4:))') 'PIXEL_DEBUG2: ', n, &
             tb_xb(:,n)
-         if (print_cld_debug) write(*,'(A,I8,*(2x,F10.4:))') 'PIXEL_DEBUG3: ', n, &
+         if (print_cld_debug) write(stdout,'(A,I8,*(2x,F10.4:))') 'PIXEL_DEBUG3: ', n, &
             tb_ob(:,n)
          if (crtm_cloud ) then
-            if (print_cld_debug) write(*,'(A,I8,*(2x,F10.4:))') 'PIXEL_DEBUG4: ', n, &
+            if (print_cld_debug) write(stdout,'(A,I8,*(2x,F10.4:))') 'PIXEL_DEBUG4: ', n, &
                tb_xb_clr(:,n)
          end if
 
-         if (print_cld_debug) write(*,'(A,I8,8F12.4,A)') 'PIXEL_DEBUG5: ', n, &
+         if (print_cld_debug) write(stdout,'(A,I8,8F12.4,2x,A)') 'PIXEL_DEBUG5: ', n, &
             iv%instid(i)%info%lat(1,n), iv%instid(i)%info%lon(1,n), &
             iv%instid(i)%satzen(n), iv%instid(i)%satazi(n), &
             iv%instid(i)%solzen(n), iv%instid(i)%solazi(n), &
@@ -442,11 +511,14 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
                      offset_clddet = 1 ! night time
 
                   if (tb_ob(ch7,n) .gt. 0. .and. tb_ob(ch15,n) .gt. 0.) &
+! using ob without VarBC
+! -------------------------------
                        crit_clddet = tb_ob(ch7,n) - tb_ob(ch15,n)  
-! above using ob without VarBC
+
+! using ob with VarBC
+! -------------------------------
 !                       crit_clddet = tb_inv(ch7,n) + tb_xb(ch7,n) - & 
 !                             (tb_inv(ch15,n) + tb_xb(ch15,n))
-! above using ob with VarBC
 
                case (10)
                   !--------------------------------------------------------------------------
@@ -472,7 +544,7 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
                tb_qc_clddet = qc_bad
                if (iv%instid(i)%info%proc_domain(1,n)) then
                   nrej_clddet(:,itest) = nrej_clddet(:,itest) + 1
-                  write(*,"(A,F14.6,A,I4,2D12.4)") trim(crit_names_clddet(itest)), crit_clddet, " isflg", isflg, iv%instid(i)%info%lat(1,n), iv%instid(i)%info%lon(1,n)
+                  write(stdout,"(A,F14.6,A,I4,2D12.4)") trim(crit_names_clddet(itest)), crit_clddet, " isflg", isflg, iv%instid(i)%info%lat(1,n), iv%instid(i)%info%lon(1,n)
                end if
 
                clddet_tests(itest) = 1
@@ -481,7 +553,7 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
          if (.not. crtm_cloud ) tb_qc = tb_qc_clddet
 
 !JJGDEBUG
-         if (print_cld_debug) write(*,'(A,I8,*(2x,I1:))') 'PIXEL_DEBUG6: ', n, clddet_tests
+         if (print_cld_debug) write(stdout,'(A,I8,*(2x,I1:))') 'PIXEL_DEBUG6: ', n, clddet_tests
 !JJGDEBUG
       end if abi_clddet
 
@@ -498,19 +570,28 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
          end do ! nchan
       else !crtm_cloud
          ! calculate ca_mean
+         ca_mean => iv%instid(i)%ca_mean
+         ca_mean = missing_r
          do k = 1, nchan
-!            ca_mean(k,n) = 0.5 * ( max( 0., BTlim(k) - tb_xb(k,n) ) + &
-!                                   max( 0., BTlim(k) - tb_ob(k,n) ) )
-! above using ob without VarBC 
-! -------------------------------
+            if ( .true. &
+                  .and. tb_inv( k, n ) .gt. missing_r &
+                  .and. tb_ob(  k, n ) .gt. 0. &
+                  .and. tb_xb(  k, n ) .gt. 0. &
+                  .and. BTlim(k) .gt. 0. &
+                  ) then
 
-            ca_mean(k,n) = 0.5 * ( max( 0., BTlim(k) - tb_xb(k,n) ) + &
-                                   max( 0., BTlim(k) - (tb_inv(k,n) + tb_xb(k,n)) ) )
+! using ob without VarBC 
+! -------------------------------
+!               ca_mean(k,n) = 0.5 * ( max( 0., BTlim(k) - tb_xb(k,n) ) + &
+!                                      max( 0., BTlim(k) - tb_ob(k,n) ) )
+
 ! above using ob with VarBC 
 ! -------------------------------
-
+               ca_mean(k,n) = 0.5 * ( max( 0., BTlim(k) - tb_xb(k,n) ) + &
+                                      max( 0., BTlim(k) - (tb_inv(k,n) + tb_xb(k,n)) ) )
+            end if
 !JJGDEBUG
-            if (print_cld_debug) write(*,'(A,2I8,2F12.4)') 'PIXEL_DEBUG93: ', n, k, &
+            if (print_cld_debug) write(stdout,'(A,2I8,2F16.8)') 'PIXEL_DEBUG93: ', n, k, &
                ca_mean(k,n)
 !JJGDEBUG
 
@@ -518,7 +599,7 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
 
          ! symmetric error model, Harnish, Weissmann, & Perianez (2016)
          do k = 1, nchan
-            if ( ca_mean(k,n) .lt. camin ) then
+            if ( ca_mean(k,n).lt.camin .and. ca_mean(k,n).gt.missing_r ) then
                iv%instid(i)%tb_error(k,n) = satinfo(i)%error_std(k)
             else if ( ca_mean(k,n) .lt. satinfo(i)%error_cld_x(k) ) then
                iv%instid(i)%tb_error(k,n) = satinfo(i)%error_std(k) + &

@@ -90,13 +90,15 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    integer, parameter           :: platform_id  = 4   ! GOES series
    integer, parameter           :: sensor_id    = 44  ! ABI
    integer, parameter           :: channel_list(nchan) = (/7,8,9,10,11,12,13,14,15,16/) !List of all available channels
+!   integer, parameter           :: channel_index(channel_list(1):channel_list(nchan)) = (/1,2,3,4,5,6,7,8,9,10/) !List of all available channels
+
    integer, parameter           :: nviews=4
    integer(i_kind)              :: inst
    character(len=14), parameter :: INST_PREFIX  = 'OR_ABI-L1b-Rad'
 
    !! File reading variables
-   character(len=1000)          :: fname, fname_short, command
-   character(len=50)            :: list_file, count_file
+   character(len=1000)          :: fname, command !, fname_short
+   character(len=50)            :: list_file
    integer                      :: file_unit
 
    type date_type
@@ -175,7 +177,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    !! WRFDA channel and satellite_id select
    !! These should be inputs to the subroutine or global variables in WRFDA
    !Could populate using .info file.  Would reduce number of files to read...
-   integer, dimension(10)              :: channel_select = (/7, 8, 9, 10, 11, 12, 13, 14, 15, 16/)
+!   integer, dimension(10)              :: channel_select = (/7, 8, 9, 10, 11, 12, 13, 14, 15, 16/)
 
    ! Global WRFDA obs timing info
    character(len=19)                   :: fgat_times_c(num_fgat_time)
@@ -277,10 +279,10 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    view_att(3) % name = 'MESO1'
    view_att(4) % name = 'MESO2'
 
-   view_att(1) % fpath = './goes-fdisk/'
-   view_att(2) % fpath = './goes-conus/'
-   view_att(3) % fpath = './goes-meso/'
-   view_att(4) % fpath = './goes-meso/'
+   view_att(1) % fpath = "./goes-fdisk*/"
+   view_att(2) % fpath = "./goes-conus*/"
+   view_att(3) % fpath = "./goes-meso*/"
+   view_att(4) % fpath = "./goes-meso*/"
 
    ! (default) Full Disk and CONUS are fixed while MESO 1 & 2 can move within an assimilation window
    view_att(1) % moving = .false.
@@ -346,19 +348,20 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
          ! Query fpath for files that begin with INST_PREFIX, name, and for this satellite_id
          fname = trim(INST_PREFIX)//trim(this_view % name_short)
-         list_file = 'INST'//trim(this_view % name_short)
-         count_file = 'num_INST'//trim(this_view % name_short)
+         list_file    = 'INST'//trim(this_view % name_short)
 
          call da_get_unit(file_unit)
 
          if (rootproc) then
             write(command,fmt='(5A,I2.2,2A)')&
                     "find ",trim(this_view % fpath), &
-                    " -type f -name '",trim(fname), &
+                    " \( -type l -o -type f \) -name '",trim(fname), &
                     "*G",satellite_id, &
                     "*' -printf '%P\n' > ",trim(list_file)
-write(stdout,*) trim(command)
-            call execute_command_line (trim(command))
+!                    "*' > ",trim(list_file)
+
+write(stdout,fmt='(A)') adjustl(trim(command))
+            call execute_command_line (adjustl(trim(command)))
 
             icount = 0
             io_stat = -1
@@ -370,20 +373,11 @@ write(stdout,*) trim(command)
             this_view % nfiles = 0
             do
                read(file_unit, fmt=*, iostat = io_stat)
-!               if ( io_stat .lt. 0 ) exit
-!               if ( io_stat .gt. 0 ) do something else
                if ( io_stat .ne. 0 ) exit
                this_view % nfiles = this_view % nfiles + 1
             end do
             close(file_unit)
 
-!            write(command,fmt='(4A)') "cat ",trim(list_file)," | wc -l > ",trim(count_file)
-!write(stdout,*) trim(command)
-!            call execute_command_line (trim(command))
-!
-!            open(unit=file_unit,file=trim(count_file))
-!            read(file_unit,*) this_view % nfiles
-!            close(file_unit)
             i_dummy = this_view % nfiles
          end if
 #ifdef DM_PARALLEL
@@ -434,11 +428,17 @@ write(stdout,*) trim(command)
 
          do ifile = 1, this_view % nfiles
 
+
+            !Grab the filename (without path) using INST_PREFIX
+            fname = trim(this_view % filename(ifile))
+            ioff = index(fname, trim(INST_PREFIX))
+!!            this_view % filepath(ifile) = fname(1:ioff-1)
+            fname = trim(fname(ioff:len(adjustl(trim(fname)))))
+!!            this_view % filename(ifile) = trim(fname)
+
             ioff = 0
             if (iview.eq.3 .or. iview.eq.4) ioff=1
             ioff = ioff+19
-            fname = trim(this_view % filename(ifile))
-
             read(fname(1+ioff:2+ioff),fmt='(I2.2)') this_view % filechan(ifile)
 
 !!!            !! The channel could instead be read from band_id in each file, but
@@ -449,10 +449,9 @@ write(stdout,*) trim(command)
 !!!            ierr=nf_close(ncid)
 
             ! Check if channel is selected
-            if ( .not.any(this_view % filechan(ifile) .eq. channel_select) .or. &
-                 .not.any(this_view % filechan(ifile) .eq. channel_list) ) then
+!            if ( .not.any(this_view % filechan(ifile) .eq. channel_select) .or. &
+            if ( .not.any(this_view % filechan(ifile) .eq. channel_list) ) then
 !!!               ierr=nf_close(ncid)
-!!!               this_view % file_fgat_match(ifile,:) = .false.
                cycle
             end if
 
@@ -464,8 +463,12 @@ write(stdout,*) trim(command)
             read(fname(8+ioff:9+ioff),fmt='(I2.2)') hr
             read(fname(10+ioff:11+ioff),fmt='(I2.2)') mn
             read(fname(12+ioff:13+ioff),fmt='(I2.2)') sc
+            obs_time = real(sc,8)/60.D0 / 2.D0
+
             call jday2cal(jdy, yr, mt, dy)
             call da_get_julian_time(yr,mt,dy,hr,mn,timbdy(1))
+
+            this_view % filedate(ifile) % jdy = jdy
 
             !obs END time
             ioff = ioff + 16
@@ -474,11 +477,12 @@ write(stdout,*) trim(command)
             read(fname(8+ioff:9+ioff),fmt='(I2.2)') hr
             read(fname(10+ioff:11+ioff),fmt='(I2.2)') mn
             read(fname(12+ioff:13+ioff),fmt='(I2.2)') sc
+            obs_time = obs_time + real(sc,8)/60.D0 / 2.D0
+
             call jday2cal(jdy, yr, mt, dy)
             call da_get_julian_time(yr,mt,dy,hr,mn,timbdy(2))
 
-            obs_time=(timbdy(1) + timbdy(2)) / 2.D0
-            obs_time = obs_time + real(sc,8)/60.D0
+            obs_time = obs_time + (timbdy(1) + timbdy(2)) / 2.D0
 
 !! The time it takes to read time_bounds from each file is not insignificant.  Above method is much faster.
 !            !! Determine central date of this file for obs binning
@@ -497,9 +501,10 @@ write(stdout,*) trim(command)
             this_view % filedate(ifile) % hr = hr
             this_view % filedate(ifile) % mn = mn
             this_view % filedate(ifile) % sc = sc
-            this_view % filedate(ifile) % jdy = jdy
             this_view % filedate(ifile) % obs_time = obs_time
 
+
+!JJG: Note that this test being limited by time_slots prevents the use of data before/after the first/last time of the window even if the observations outside the window were recorded at times nearer to those bounds than data contained within the window.
             if ( obs_time < time_slots(0) * 60.D0 .or.  &
                obs_time >= time_slots(num_fgat_time) * 60.D0 ) then
                cycle
@@ -541,9 +546,9 @@ write(stdout,*) trim(command)
 
       this_view % nfiles_used = 0
 
-      do ifgat = 1, num_fgat_time
+      fgat_loop: do ifgat = 1, num_fgat_time
          if (count(this_view % file_fgat_match(:, ifgat)) .lt. 1) then
-            cycle
+            cycle fgat_loop
          end if
 
          if ( ipass .eq. 1 .and. count(this_view % file_fgat_match(:, ifgat)).gt.1 ) then
@@ -564,7 +569,7 @@ write(stdout,*) trim(command)
             first_file = ifile
             exit
          end do
-         if (first_file .eq. 0) cycle
+         if (first_file .eq. 0) cycle fgat_loop
 
          if ( sum(this_view % nfiles_used(:)).eq.0) &
             write(unit=stdout,fmt='(A,I0,2A)') &
@@ -583,8 +588,8 @@ write(stdout,*) trim(command)
             fmt='(A,I4.4,A,I2.2,A,I2.2,A,I2.2,A,I2.2,A,I2.2)')  &
             '          data time: ',yr, '-', mt, '-', dy, '_', hr, ':', mn, ':', sc
 
-         fname_short = trim(this_view % filename(first_file))
-         fname = trim(this_view % fpath)//trim(fname_short)
+         fname = trim(this_view % filename(first_file))
+!         fname = trim(this_view % fpath)//trim(fname_short)
 
          if ( .not.this_view % meta_initialized ) then
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1289,19 +1294,46 @@ write(stdout,*) trim(command)
                   TEMPIR_ifile = -1
                   if ( use_clddet_zz .and. channel_list(ichan).eq.14 ) then
                      ! Require earlier file to be withn 1/2 of TEMPIR_delay_minutes
-                     TEMPIR_min_time_diff = 0.5 * TEMPIR_delay_minutes
+                     TEMPIR_min_time_diff = TEMPIR_delay_minutes
+!write(unit=stdout,fmt='(A,F14.2)') &
+!                     '    ref_time (min): ', this_view % filedate(ifile) % obs_time / 60.D0 - TEMPIR_delay_minutes
                      do jfile = 1, this_view % nfiles
-                        if ( this_view % filechan(jfile) .ne. channel_list(ichan) ) cycle
+                        if ( this_view % filechan(jfile) .ne. channel_list(ichan) .or. &
+                             jfile .eq. ifile ) cycle
 
                         TEMPIR_time_abs_diff = &
                             abs( this_view % filedate(jfile) % obs_time / 60.D0 - &
                                 (this_view % filedate(ifile) % obs_time / 60.D0 - TEMPIR_delay_minutes) )
+
+!                        yr = this_view % filedate(jfile) % yr
+!                        mt = this_view % filedate(jfile) % mt
+!                        dy = this_view % filedate(jfile) % dy
+!                        hr = this_view % filedate(jfile) % hr
+!                        mn = this_view % filedate(jfile) % mn
+!                        sc = this_view % filedate(jfile) % sc
+!                        write(unit=stdout, &
+!                           fmt='(A,I4.4,A,I2.2,A,I2.2,A,I2.2,A,I2.2,A,I2.2)')  &
+!                           '          this_time: ',yr, '-', mt, '-', dy, '_', hr, ':', mn, ':', sc
+!
+!write(unit=stdout,fmt='(A,F14.2)') &
+!                           '    this_time (min): ', this_view % filedate(jfile) % obs_time / 60.D0
+!
+!                        write(unit=stdout,fmt='(A,F7.2,A)') &
+!                           '          TEMPIR: time difference - ',TEMPIR_time_abs_diff,' minutes'
 
                         if ( TEMPIR_time_abs_diff .lt. TEMPIR_min_time_diff ) then
                            TEMPIR_ifile = jfile
                            TEMPIR_min_time_diff = TEMPIR_time_abs_diff
                         end if
                      end do
+                     if ( TEMPIR_min_time_diff .gt. 0.5 * TEMPIR_delay_minutes ) then
+                        write(unit=stdout,fmt='(A,F7.2,A)') &
+                           '          TEMPIR: minimum time difference is too large - ',TEMPIR_min_time_diff,' minutes'
+                        TEMPIR_ifile = -1
+                     else
+                        write(unit=stdout,fmt='(A,F7.2,A)') &
+                           '          TEMPIR: minimum time difference is accetable - ',TEMPIR_min_time_diff,' minutes'
+                     end if
                   end if
 
                   ! Allocate and read bt for this patch and current time
@@ -1315,8 +1347,8 @@ write(stdout,*) trim(command)
                         this_view % xs_local:this_view % xe_local, 1 ) )
                   end if
 
-                  fname_short = trim(this_view % filename(ifile))
-                  fname = trim(this_view % fpath)//trim(fname_short)
+                  fname = trim(this_view % filename(ifile))
+!                  fname = trim(this_view % fpath)//trim(fname_short)
                   call get_abil1b_bt( fname, &
                                       this_view % ys_local, this_view % ye_local, &
                                       this_view % xs_local, this_view % xe_local, &
@@ -1331,8 +1363,8 @@ write(stdout,*) trim(command)
                   !allmask_p = (allmask_p .and. readmask_p)
 
                   if ( TEMPIR_ifile.gt.0 ) then
-                     fname_short = trim(this_view % filename(TEMPIR_ifile))
-                     fname = trim(this_view % fpath)//trim(fname_short)
+                     fname = trim(this_view % filename(TEMPIR_ifile))
+!                     fname = trim(this_view % fpath)//trim(fname_short)
                      call get_abil1b_bt( fname, &
                                          this_view % ys_local, this_view % ye_local, &
                                          this_view % xs_local, this_view % xe_local, &
@@ -1463,59 +1495,71 @@ write(stdout,*) trim(command)
                         p % ifgat                 = ifgat
                      end if
 
-                     ! Transfer BT from all files
+                     ! Exctract this BT value for each channel
                      p % tb_inv(ichan)         = bt_p( iy, ix, 1 )
 
-                     ! Extract values from cloud QC buffer
+
+                     ! Preprocessing for Cloud Mask (da_qc_goesabi.inc) including
+                     !  extracting Tb values from cloud QC buffer
                      if (.not. associated(p % cld_qc)) then
                         allocate( p % cld_qc )
                         allocate( p % cld_qc % tb_stddev_3x3(nchan) )
                      end if
 
                      tbuf = 1
-                     if (cld_qc_buffer.ge.tbuf) then
+                     if (cld_qc_buffer.ge.tbuf .and. p % tb_inv(ichan).gt.missing_r) then
 
                         nkeep = count ( bt_p ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 ) .gt. missing_r )
-                        allocate( tb_temp ( nkeep, 1 ) )
-                        tb_temp(:,1) = pack( bt_p ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 ), &
-                                             bt_p ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 ) .gt. missing_r)
-                        mu  = sum( tb_temp(:,1) ) / real(nkeep,r_double)
-                        sigma = sqrt( sum( (tb_temp(:,1) - mu)**2 ) / real(nkeep,r_double) )
-                        deallocate( tb_temp )
+                        if (nkeep .gt. 0) then
+                           allocate( tb_temp ( nkeep, 1 ) )
+                           tb_temp(:,1) = pack( bt_p ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 ), &
+                                                bt_p ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 ) .gt. missing_r)
+                           mu  = sum( tb_temp(:,1) ) / real(nkeep,r_double)
+                           sigma = sqrt( sum( (tb_temp(:,1) - mu)**2 ) / real(nkeep,r_double) )
+                           deallocate( tb_temp )
 
-                        p % cld_qc % tb_stddev_3x3(ichan) = sigma
-
+                           p % cld_qc % tb_stddev_3x3(ichan) = sigma
+                        else
+                           p % cld_qc % tb_stddev_3x3(ichan) = missing_r
+                        end if
                         if (channel_list(ichan).eq.14) then
 
                            if ( allocated(terrain_hgt) ) then
                               ! Determine sigma_z of terrain height across these pixels
-                              nkeep = count ( terrain_hgt ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf ) .gt. missing_r )
-                              allocate( tb_temp ( nkeep, 1 ) )
-                              tb_temp(:,1) = pack( terrain_hgt ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf ), &
-                                            terrain_hgt ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf ) .gt. missing_r)
-                              mu = sum( tb_temp(:,1) ) / real(nkeep,r_double)
-                              sigma = sqrt( sum( (tb_temp(:,1) - mu)**2 ) / real(nkeep,r_double) )
-                              deallocate( tb_temp )
-
                               p % cld_qc % terr_hgt = terrain_hgt( iy, ix )
                               p % info % elv = p % cld_qc % terr_hgt
 
-                              ! Values for RTCT cloud QC
-                              ! - channel 14 and sigma_z (std. dev. of terrain height in km)
-                              !   w/ landmask and lapse rate of 7 K km^-1
+                              nkeep = count ( terrain_hgt ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf ) .gt. missing_r )
+                              if (nkeep .gt. 0) then
+                                 allocate( tb_temp ( nkeep, 1 ) )
+                                 tb_temp(:,1) = pack( terrain_hgt ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf ), &
+                                               terrain_hgt ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf ) .gt. missing_r)
+                                 mu = sum( tb_temp(:,1) ) / real(nkeep,r_double)
+                                 sigma = sqrt( sum( (tb_temp(:,1) - mu)**2 ) / real(nkeep,r_double) )
+                                 deallocate( tb_temp )
 
-                              temp_max = 0.
-                              do jy = iy-tbuf, iy+tbuf
-                              do jx = ix-tbuf, ix+tbuf
-                                 if ( bt_p( jy, jx, 1) .gt. 0. ) &
-                                    temp_max = max(temp_max,bt_p( jy, jx, 1 ) )
-                              end do
-                              end do
+                                 ! Values for RTCT cloud QC
+                                 ! - channel 14 and sigma_z (std. dev. of terrain height in km)
+                                 !   w/ landmask and lapse rate of 7 K km^-1
 
-                              ! Store RTCT and diagnostic terrain height
-                              p % cld_qc % RTCT = temp_max - p % tb_inv(ichan) - &
-                                                  3.0_r_double * 0.007_r_double * sigma
+                                 temp_max = 0.
+                                 do jy = iy-tbuf, iy+tbuf
+                                 do jx = ix-tbuf, ix+tbuf
+                                    if ( bt_p( jy, jx, 1) .gt. 0. ) &
+                                       temp_max = max(temp_max,bt_p( jy, jx, 1 ) )
+                                 end do
+                                 end do
 
+                                 if (temp_max .gt. missing_r) then
+                                    ! Store RTCT
+                                    p % cld_qc % RTCT = temp_max - p % tb_inv(ichan) - &
+                                                        3.0_r_double * 0.007_r_double * sigma
+                                 else
+                                    p % cld_qc % RTCT = missing_r
+                                 end if
+                              else
+                                 p % cld_qc % RTCT = missing_r
+                              end if
                            else
                               p % cld_qc % RTCT = missing_r
                               p % cld_qc % terr_hgt = missing_r
@@ -1533,7 +1577,7 @@ write(stdout,*) trim(command)
                      ! Values for RFMFT cloud QC
                      ! - channels 14 and 15
                      tbuf = 10
-                     if (cld_qc_buffer.ge.tbuf) then
+                     if (cld_qc_buffer.ge.tbuf .and. p % tb_inv(ichan).gt.missing_r) then
                         if (channel_list(ichan).eq.14) then
                            !Determine Neighboring Warm Center (NWC) for this pixel
                            temp_max = 0.
@@ -1551,28 +1595,28 @@ write(stdout,*) trim(command)
                            p % cld_qc % RFMFT = &
                                        p % tb_inv(ichan) - temp_max
                         end if
-                        if (channel_list(ichan).eq.15) then
+                        if (channel_list(ichan).eq.15 .and. all(p % cld_qc % RFMFT_ij.gt.0)) then
                            temp_max = bt_p ( p % cld_qc % RFMFT_ij(1), &
                                              p % cld_qc % RFMFT_ij(2), 1 )
                            p % cld_qc % RFMFT = abs( p % cld_qc % RFMFT + &
                                        temp_max  - p % tb_inv(ichan) )
                         end if
                      else
-                        if (channel_list(ichan).eq.15) then
-                           p % cld_qc % RFMFT = missing_r
-                           p % cld_qc % RFMFT_ij = -1
+                        if ( any( channel_list(ichan).eq.(/14,15/) ) ) then
+                            p % cld_qc % RFMFT = missing_r
+                            p % cld_qc % RFMFT_ij = -1
                         end if
                      end if
 
                      ! Values for CIRH2O cloud QC
                      !  - channels 10 and 14 for Pearson correlation coefficient of CIRH2O test
                      tbuf = 2
-                     if (cld_qc_buffer.ge.tbuf) then
+                     if (cld_qc_buffer.ge.tbuf .and. p % tb_inv(ichan).gt.missing_r) then
                         if (channel_list(ichan).eq.10) then
                            allocate( p % cld_qc % CIRH2O ( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 2 ) )
                            p % cld_qc % CIRH2O(:,:,1) = bt_p( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 )
                         end if
-                        if (channel_list(ichan).eq.14) then
+                        if (channel_list(ichan).eq.14 .and. size(p % cld_qc % CIRH2O).gt.1) then
                            p % cld_qc % CIRH2O(:,:,2) = bt_p( iy-tbuf:iy+tbuf, ix-tbuf:ix+tbuf, 1 )
                            nkeep = 0
                            do jy = iy-tbuf, iy+tbuf
@@ -1605,7 +1649,8 @@ write(stdout,*) trim(command)
                            p % cld_qc % CIRH2O (1,1,1) = pearson
                         end if
                      else
-                        if (channel_list(ichan).eq.14) then
+                        if ( any( channel_list(ichan).eq.(/10,14/) ) ) then
+                           if ( allocated( p % cld_qc % CIRH2O ) ) deallocate( p % cld_qc % CIRH2O)
                            allocate( p % cld_qc % CIRH2O (1,1,1))
                            p % cld_qc % CIRH2O = missing_r
                         end if
@@ -1613,17 +1658,13 @@ write(stdout,*) trim(command)
 
                      ! Values for TEMPIR cloud QC
                      ! - channel 14
-                     if ( use_clddet_zz ) then
-                        if ( TEMPIR_ifile.gt.0 ) then
-                           if ( bt_p( iy, ix, 2 ) .lt. 330. ) then
+                     if ( use_clddet_zz .and. (channel_list(ichan).eq.14) ) then
+                        p % cld_qc % TEMPIR = missing_r
+                        if ( TEMPIR_ifile.gt.0 .and. &
+                             p % tb_inv(ichan).gt.missing_r ) then
+                           if ( bt_p( iy, ix, 2 ).lt.330. ) &
                               p % cld_qc % TEMPIR = bt_p( iy, ix, 2 ) - bt_p( iy, ix, 1 )
-                           else
-                              p % cld_qc % TEMPIR = missing_r
-                           end if
                         end if
-                     else
-                        if (channel_list(ichan).eq.14) &
-                           p % cld_qc % TEMPIR = missing_r
                      end if
 
                      if (first_chan) &
@@ -1649,7 +1690,7 @@ write(stdout,*) trim(command)
          call mpi_barrier(comm, ierr)
 #endif
 
-      end do ! end fgat loop
+      end do fgat_loop ! end fgat loop
 
       if ( (this_view % moving .or. ipass.eq.npass) .and. this_view%nrad_on_patch.gt.0 ) then
          ! Deallocate location info
@@ -1681,10 +1722,10 @@ write(stdout,*) trim(command)
       deallocate ( this_view % fgat_time_abs_diff )
       deallocate ( this_view % min_time_diff )
       deallocate ( this_view % nfiles_used )
-      deallocate ( this_view % ny_grid )
-      deallocate ( this_view % nx_grid )
-      deallocate ( this_view % ys_grid )
-      deallocate ( this_view % xs_grid )
+      if ( allocated( this_view % ny_grid ) ) deallocate ( this_view % ny_grid )
+      if ( allocated( this_view % nx_grid ) ) deallocate ( this_view % nx_grid )
+      if ( allocated( this_view % ys_grid ) ) deallocate ( this_view % ys_grid )
+      if ( allocated( this_view % xs_grid ) ) deallocate ( this_view % xs_grid )
    end do
    deallocate(view_att)
 

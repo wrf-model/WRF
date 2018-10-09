@@ -380,12 +380,12 @@ ntime_loop: do itime = 1, ntime
             read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) tb_err(:,ipixel)
             read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! QC
             read(unit=iunit(iproc),fmt='(10i11)',iostat=ios  ) tb_qc(:,ipixel)
-            read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf
-            if ( abi ) then ! read ca_mean, tb_bak_clr
-               read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! CA
+            read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! CA or INFO or level
+            if ( abi .and. buf(1:2) == "CA" ) then ! read ca_mean, tb_bak_clr for abi
                read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) ca_mean(:,ipixel)
-               read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! BGCLR
+               read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! BGCLR
                read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) tb_bak_clr(:,ipixel)
+               read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! INFO or level
             end if
             if ( buf(1:4) == "INFO" ) then
                backspace(iunit(iproc))

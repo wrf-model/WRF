@@ -24,12 +24,16 @@ module da_radiance1
       use_pseudo_rad, pi, t_triple, crtm_cloud, DT_cloud_model,write_jacobian, &
       use_crtm_kmatrix,use_clddet_mmr, use_clddet_zz, use_satcv, cv_size_domain, &
       cv_size_domain_js, calc_weightfunc, use_clddet_ecmwf, deg_to_rad, rad_to_deg, &
-      calc_ir_btlim
+      calc_ir_btlim, comm, ierr
    use da_define_structures, only : info_type,model_loc_type,maxmin_type, &
       iv_type, y_type, jo_type,bad_data_type,bad_data_type,number_type, &
       be_type, cld_qc_type
    use module_dm, only : wrf_dm_sum_real, wrf_dm_sum_integer
-   use da_par_util, only : da_proc_stats_combine
+#ifdef DM_PARALLEL
+   use da_par_util, only :  da_proc_stats_combine, true_mpi_real
+#else
+   use da_par_util, only :  da_proc_stats_combine
+#endif
    use da_par_util1, only : da_proc_sum_int,da_proc_sum_ints
    use da_reporting, only : da_error, message
    use da_statistics, only : da_stats_calculate
@@ -44,7 +48,11 @@ module da_radiance1
 #endif
 
    implicit none
-  
+
+#ifdef DM_PARALLEL
+   include 'mpif.h'
+#endif
+
    type datalink_type
 
       type (info_type)        :: info

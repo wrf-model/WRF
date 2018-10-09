@@ -1293,13 +1293,14 @@ write(stdout,*) trim(command)
                      do jfile = 1, this_view % nfiles
                         if ( this_view % filechan(jfile) .ne. channel_list(ichan) ) cycle
 
-                        obs_time = this_view % filedate(jfile) % obs_time
-
                         TEMPIR_time_abs_diff = &
                             abs( this_view % filedate(jfile) % obs_time / 60.D0 - &
                                 (this_view % filedate(ifile) % obs_time / 60.D0 - TEMPIR_delay_minutes) )
 
-                        if ( TEMPIR_time_abs_diff .lt. TEMPIR_min_time_diff ) TEMPIR_ifile = jfile
+                        if ( TEMPIR_time_abs_diff .lt. TEMPIR_min_time_diff ) then
+                           TEMPIR_ifile = jfile
+                           TEMPIR_min_time_diff = TEMPIR_time_abs_diff
+                        end if
                      end do
                   end if
 
@@ -1321,7 +1322,13 @@ write(stdout,*) trim(command)
                                       this_view % xs_local, this_view % xe_local, &
                                       readmask_p, bt_p(:,:,1), inst, ichan )
 
-                  allmask_p = (allmask_p .and. readmask_p)
+                  !JJG: It is possible for readmask_p to differ across channels.
+                  ! readmask_p needs to be incorporated, but presently causes error between channel reading 
+                  ! when lining up channels to identical members of linked p list.  
+                  ! Fixing this will require moving away from linked list including the readmask_p quality 
+                  ! flag in the datalink_type.
+                  ! Presently readmask_p is used internally within get_abil1b_bt to set bt_p=missing_r (works fine)
+                  !allmask_p = (allmask_p .and. readmask_p)
 
                   if ( TEMPIR_ifile.gt.0 ) then
                      fname_short = trim(this_view % filename(TEMPIR_ifile))
@@ -1330,6 +1337,16 @@ write(stdout,*) trim(command)
                                          this_view % ys_local, this_view % ye_local, &
                                          this_view % xs_local, this_view % xe_local, &
                                          readmask_p, bt_p(:,:,2), inst, ichan )
+
+                     yr = this_view % filedate(TEMPIR_ifile) % yr
+                     mt = this_view % filedate(TEMPIR_ifile) % mt
+                     dy = this_view % filedate(TEMPIR_ifile) % dy
+                     hr = this_view % filedate(TEMPIR_ifile) % hr
+                     mn = this_view % filedate(TEMPIR_ifile) % mn
+                     sc = this_view % filedate(TEMPIR_ifile) % sc
+                     write(unit=stdout, &
+                        fmt='(A,I4.4,A,I2.2,A,I2.2,A,I2.2,A,I2.2,A,I2.2)')  &
+                        '          TEMPIR time: ',yr, '-', mt, '-', dy, '_', hr, ':', mn, ':', sc
                   end if
 
                   first_chan = (this_view % nfiles_used(ifgat).eq.1)

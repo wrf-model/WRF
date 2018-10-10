@@ -977,6 +977,7 @@ CONTAINS
 #endif
 
           IF (rdlai2d) THEN
+             if(lai(i,j).eq.0.0) lai(i,j) = 0.01 
              xlai = lai(i,j)
           endif
 

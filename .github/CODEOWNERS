@@ -34,15 +34,15 @@
 #	Dynamics
 
 /dyn_em/				@wrf-model/arw_dev_team	
-/dyn_nmm/				@wrf-model/nmm_dev_team	
+/dyn_nmm/				@wrf-model/hwrf_dev_team	
 
 #	Registry
 
 /Registry/				@wrf-model/infrastructure
 
-/Registry/Registry.NMM			@wrf-model/nmm_dev_team
-/Registry/registry.tracker		@wrf-model/nmm_dev_team
-/Registry/registry.tornado		@wrf-model/nmm_dev_team
+/Registry/Registry.NMM			@wrf-model/hwrf_dev_team
+/Registry/registry.tracker		@wrf-model/hwrf_dev_team
+/Registry/registry.tornado		@wrf-model/hwrf_dev_team
 
 /Registry/Registry.EM_CHEM		@wrf-model/chem
 /Registry/registry.chem			@wrf-model/chem
@@ -56,12 +56,12 @@
 #	Test directories
 
 /test/em_*				@wrf-model/arw_dev_team
-/test/nmm_*				@wrf-model/nmm_dev_team
+/test/nmm_*				@wrf-model/hwrf_dev_team
 /test/em_fire				@wrf-model/fire
 
 #	Executable directory
 
-/main/					@wrf-model/arw_dev_team @wrf-model/nmm_dev_team @wrf-model/infrastructure
+/main/					@wrf-model/arw_dev_team @wrf-model/hwrf_dev_team @wrf-model/infrastructure
 
 #	Externals directory structure
 

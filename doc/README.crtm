@@ -2,7 +2,7 @@
 CRTM Coefficients
 *******************
 
-These coefficient files are binary and cannot be tracked by git and are placed on the WRFDA website for download (http://www2.mmm.ucar.edu/wrf/users/wrfda/download/crtm_coeffs.html) from the WRFDA release v4.0. A copy is also available under ~wrfhelp on the NCAR cheyenne supercomputer (for internal use). 
+These coefficient files are binary and cannot be tracked by git and are placed on the WRFDA website for download (http://www2.mmm.ucar.edu/wrf/users/wrfda/download/crtm_coeffs.html) starting from the WRFDA release v4.0. A copy is also available under ~wrfhelp on the NCAR cheyenne supercomputer (for internal use). 
 
 WRF Version History
 

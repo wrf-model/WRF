@@ -357,8 +357,8 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                     "find ",trim(this_view % fpath), &
                     " \( -type l -o -type f \) -name '",trim(fname), &
                     "*G",satellite_id, &
-                    "*' -printf '%P\n' > ",trim(list_file)
-!                    "*' > ",trim(list_file)
+                    "*' > ",trim(list_file)
+!                    "*' -printf '%P\n' > ",trim(list_file)
 
 write(stdout,fmt='(A)') adjustl(trim(command))
             call execute_command_line (adjustl(trim(command)))

@@ -15,6 +15,7 @@ CONTAINS
               ,HTOP   ,HBOTR  ,HTOPR   &
               ,ICLOUD                  &
               ,cldovrlp                 & ! J. Henderson AER: cldovrlp namelist value
+              ,idcor                    & ! J. Henderson AER: decorrelation length type
               ,ITIMESTEP,JULDAY, JULIAN &
               ,JULYR  ,LW_PHYSICS       &
               ,NCFRCV ,NCFRST ,NPHS     &
@@ -378,6 +379,7 @@ CONTAINS
 
    INTEGER,      INTENT(IN   )    ::   STEPRA,ICLOUD,ra_call_offset 
    INTEGER,      INTENT(IN   )    ::   cldovrlp                  ! J. Henderson AER: cldovrlp namelist value
+   INTEGER,      INTENT(IN   )    ::   idcor                     ! J. Henderson AER: decorrelation length type
    INTEGER,      INTENT(IN   )    ::   alevsiz, no_src_types
    INTEGER,      INTENT(IN   )    ::   levsiz, n_ozmixm
    INTEGER,      INTENT(IN   )    ::   paerlev, n_aerosolc, cam_abs_dim1, cam_abs_dim2
@@ -1566,6 +1568,7 @@ CONTAINS
                 CALL wrf_error_fatal ( 'arguments not present for calling cam radiation' )
              ENDIF
 
+             
         CASE (RRTMG_LWSCHEME)
              CALL wrf_debug (100, 'CALL rrtmg_lw')
              CALL RRTMG_LWRAD(                                      &
@@ -1581,6 +1584,7 @@ CONTAINS
                   T8W=t8w,RHO3D=rho,R=R_d,G=G,                      &
                   ICLOUD=icloud,WARM_RAIN=warm_rain,CLDFRA3D=CLDFRA,&
                   cldovrlp=cldovrlp,                                & ! J. Henderson AER: cldovrlp namelist value
+                  idcor=idcor,XLAT=XLAT,                            & ! J. Henderson AER: decorrelation length type and decorrelation length type
 #if (EM_CORE == 1)
                   LRADIUS=lradius, IRADIUS=iradius,                 &
 #endif
@@ -2008,6 +2012,7 @@ CONTAINS
 !                    CLDFRA_KF3D=cldfra_KF,QC_KF3D=qc_KF,QI_KF3D=qi_KF,&
                      ICLOUD=icloud,WARM_RAIN=warm_rain,                &
                      cldovrlp=cldovrlp,                                & ! J. Henderson AER: cldovrlp namelist value
+                     idcor=idcor,                                      & ! J. Henderson AER: decorrelation length type
                      F_ICE_PHY=F_ICE_PHY,F_RAIN_PHY=F_RAIN_PHY,        &
                      XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
                      QV3D=qv,QC3D=qc,QR3D=qr,                          &

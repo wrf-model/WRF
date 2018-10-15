@@ -2071,7 +2071,7 @@ contains
 
       use parkind, only : im => kind_im, rb => kind_rb
       use parrrtm, only : nbndlw, ngptlw
-      use rrlw_con, only: grav
+      use rrlw_con, only: grav, pi
       use rrlw_wvn, only: ngb
       use rrlw_vsn
 
@@ -2085,11 +2085,13 @@ contains
 !------------------------------------------------------------------
 ! Public subroutines
 !------------------------------------------------------------------
-! mji - Add height needed for exponential and exponential-random cloud overlap methods (icld=4 and 5, respectively)
-!      subroutine mcica_subcol_lw(iplon, ncol, nlay, icld, permuteseed, irng, play, &
-      subroutine mcica_subcol_lw(iplon, ncol, nlay, icld, permuteseed, irng, play, hgt, &
-                       cldfrac, ciwp, clwp, cswp, rei, rel, res, tauc, cldfmcl, &
-                       ciwpmcl, clwpmcl, cswpmcl, reicmcl, relqmcl, resnmcl, taucmcl)
+! mji - Add height needed for exponential and exponential-random cloud overlap methods 
+!       (icld=4 and 5, respectively) along with idcor, juldat and lat used to specify
+!       the decorrelation length for these methods
+      subroutine mcica_subcol_lw(iplon, ncol, nlay, icld, permuteseed, irng, play, &
+                       cldfrac, ciwp, clwp, cswp, rei, rel, res, tauc, &
+                       hgt, idcor, juldat, lat, &
+                       cldfmcl, ciwpmcl, clwpmcl, cswpmcl, reicmcl, relqmcl, resnmcl, taucmcl)
 
 ! ----- Input -----
 ! Control
@@ -2109,7 +2111,6 @@ contains
       real(kind=rb), intent(in) :: play(:,:)          ! layer pressures (mb) 
                                                       !    Dimensions: (ncol,nlay)
 
-! mji - Add height
       real(kind=rb), intent(in) :: hgt(:,:)           ! layer height (m)
                                                       !    Dimensions: (ncol,nlay)
 
@@ -2134,6 +2135,10 @@ contains
                                                       !    Dimensions: (ncol,nlay)
       real(kind=rb), intent(in) :: res(:,:)           ! snow particle size
                                                       !    Dimensions: (ncol,nlay)
+! MJI
+      integer(kind=im), intent(in) :: idcor           ! Decorrelation length type
+      integer(kind=im), intent(in) :: juldat          ! Julian date (day of year, 1-365)
+      real(kind=rb), intent(in) :: lat                ! latitude (degrees, -90 to 90)
 
 ! ----- Output -----
 ! Atmosphere/clouds - cldprmc [mcica]
@@ -2169,6 +2174,15 @@ contains
 !      real(kind=rb) :: qi(ncol, nlay)                ! ice water (specific humidity)
 !      real(kind=rb) :: ql(ncol, nlay)                ! liq water (specific humidity)
 
+! MJI - For latitude dependent decorrelation length
+       real(kind=rb), parameter :: am1 = 1.4315_rb
+       real(kind=rb), parameter :: am2 = 2.1219_rb
+       real(kind=rb), parameter :: am4 = -25.584_rb
+       real(kind=rb), parameter :: amr = 7._rb
+       real(kind=rb) :: am3
+       real(kind=rb) :: decorr_len(ncol)              ! decorrelation length (meters)
+       real(kind=rb), parameter :: Zo_default = 2000._rb  ! default constant decorrelation length (m) 
+
 
 ! Return if clear sky
       if (icld.eq.0) return
@@ -2199,19 +2213,35 @@ contains
 !         ql(ilev) = (clwp(ilev) * grav) / (pdel(ilev) * 1000._rb)
 !      enddo
 
+! MJI - Latitude and day of year dependent decorrelation length
+      if (idcor .eq. 1) then 
+! Derive decorrelation length based on day of year and latitude (from NASA GMAO method)
+! Result is in meters
+         if (juldat .gt. 181) then
+            am3 = -4._rb * amr / 365._rb * (juldat-272)
+         else
+            am3 = 4._rb * amr / 365._rb * (juldat-91)
+         endif
+! Latitude in radians, decorrelation length in meters
+!         decorr_len(:) = ( am1 + am2 * exp(-(lat*180._rb/pi - am3)**2 / (am4*am4)) ) * 1.e3_rb
+! Latitude in degrees, decorrelation length in meters
+         decorr_len(:) = ( am1 + am2 * exp(-(lat - am3)**2 / (am4*am4)) ) * 1.e3_rb
+      else
+! Spatially and temporally constant decorrelation length
+         decorr_len(:) = Zo_default
+      endif
+
 !  Generate the stochastic subcolumns of cloud optical properties for the longwave;
-! mji - Add height
-!      call generate_stochastic_clouds (ncol, nlay, nsubclw, icld, irng, pmid, cldfrac, clwp, ciwp, cswp, tauc, &
-      call generate_stochastic_clouds (ncol, nlay, nsubclw, icld, irng, pmid, hgt, cldfrac, clwp, ciwp, cswp, tauc, &
+      call generate_stochastic_clouds (ncol, nlay, nsubclw, icld, irng, pmid, cldfrac, clwp, ciwp, cswp, tauc, &
+                               hgt, decorr_len, &
                                cldfmcl, clwpmcl, ciwpmcl, cswpmcl, taucmcl, permuteseed)
 
       end subroutine mcica_subcol_lw
 
 
 !-------------------------------------------------------------------------------------------------
-! mji - Add height
-!      subroutine generate_stochastic_clouds(ncol, nlay, nsubcol, icld, irng, pmid, cld, clwp, ciwp, cswp, tauc, &
-      subroutine generate_stochastic_clouds(ncol, nlay, nsubcol, icld, irng, pmid, hgt, cld, clwp, ciwp, cswp, tauc, &
+      subroutine generate_stochastic_clouds(ncol, nlay, nsubcol, icld, irng, pmid, cld, clwp, ciwp, cswp, tauc, &
+                                   hgt, decorr_len, &
                                    cld_stoch, clwp_stoch, ciwp_stoch, cswp_stoch, tauc_stoch, changeSeed) 
 !-------------------------------------------------------------------------------------------------
 
@@ -2292,7 +2322,6 @@ contains
 ! Column state (cloud fraction, cloud water, cloud ice) + variables needed to read physics state 
       real(kind=rb), intent(in) :: pmid(:,:)          ! layer pressure (Pa)
                                                       !    Dimensions: (ncol,nlay)
-! mji - Add height
       real(kind=rb), intent(in) :: hgt(:,:)           ! layer height (m)
                                                       !    Dimensions: (ncol,nlay)
       real(kind=rb), intent(in) :: cld(:,:)           ! cloud fraction 
@@ -2311,6 +2340,8 @@ contains
 !      real(kind=rb), intent(in) :: asmc(:,:,:)       ! in-cloud asymmetry parameter
                                                       !    Dimensions: (nbndlw,ncol,nlay)
                                                       !   inactive - for future expansion
+      real(kind=rb), intent(in) :: decorr_len(:)      ! decorrelation length (meters)
+                                                      !    Dimensions: (ncol)
 
       real(kind=rb), intent(out) :: cld_stoch(:,:,:)  ! subcolumn cloud fraction 
                                                       !    Dimensions: (ngptlw,ncol,nlay)
@@ -2340,11 +2371,11 @@ contains
 !      real(kind=rb) :: mean_ssac_stoch(ncol, nlay)   ! cloud single scattering albedo
 !      real(kind=rb) :: mean_asmc_stoch(ncol, nlay)   ! cloud asymmetry parameter
 
-! Set overlap
+! MJI - Set overlap
       integer(kind=im) :: overlap                     ! 1 = random overlap, 2 = maximum-random,
                                                       ! 3 = maximum overlap, 4 = exponential,
                                                       ! 5 = exponential-random
-      real(kind=rb), parameter  :: Zo = 2500._rb      ! length scale (m) 
+      real(kind=rb)                   :: Zo_inv(ncol) ! inverse of decorrelation length scale (m) 
       real(kind=rb), dimension(ncol,nlay) :: alpha    ! overlap parameter
 
 ! Constants (min value for cloud fraction and cloud water and ice)
@@ -2369,8 +2400,9 @@ contains
 ! Check that irng is in bounds; if not, set to default
       if (irng .ne. 0) irng = 1
 
-! Pass input cloud overlap setting to local variable
+! MJI - Pass input cloud overlap setting to local variable
       overlap = icld
+      Zo_inv(:) = 1._rb / decorr_len(:)
 
 ! Ensure that cloud fractions are in bounds 
       do ilev = 1, nlay
@@ -2492,9 +2524,10 @@ contains
              enddo
          endif
 
-! mji - Activate exponential cloud overlap option
          case(4)
-            ! Exponential overlap: weighting between maximum and random overlap increases with the distance.
+            ! Exponential overlap: transition from maximum to random cloud overlap increases 
+            ! exponentially with layer thickness and distance through layers
+            !
             ! The random numbers for exponential overlap verify:
             ! j=1   RAN(j)=RND1
             ! j>1   if RND1 < alpha(j,j-1) => RAN(j) = RAN(j-1)
@@ -2506,7 +2539,7 @@ contains
             do i = 1, ncol
                alpha(i, 1) = 0._rb
                do ilev = 2,nlay
-                  alpha(i, ilev) = exp( -( hgt (i, ilev) -  hgt (i, ilev-1)) / Zo)
+                  alpha(i, ilev) = exp( -(hgt(i,ilev) - hgt(i,ilev-1)) * Zo_inv(i))
                enddo
             enddo
 
@@ -2540,10 +2573,59 @@ contains
                end where
             end do
 
-! mji - Activate exponential-random cloud overlap option
+! MJI
          case(5)
-            ! Exponential-random overlap:
-            call wrf_error_fatal("Cloud Overlap case 5: ER has not yet been implemented. Stopping...") 
+       ! Exponential_Random overlap: transition from maximum to random cloud overlap increases 
+       ! exponentially with layer thickness and with distance through adjacent cloudy layers. 
+       ! Non-adjacent blocks of clouds are treated randomly, and each block begins a new 
+       ! exponential transition from maximum to random. 
+       !
+
+       ! compute alpha: bottom to top
+       ! - set alpha to 0 in bottom layer (no layer below for correlation)
+       do i = 1, ncol
+          alpha(i, 1) = 0._rb
+          do ilev = 2,nlay
+             alpha(i, ilev) = exp( -(hgt(i,ilev) - hgt(i,ilev-1) ) * Zo_inv(i))
+          ! Decorrelate layers when clear layer follows a cloudy layer to enforce
+          ! random correlation between non-adjacent cloudy layers
+             if (cldf(i,ilev) .eq. 0.0_rb .and. cldf(i,ilev-1) .gt. 0.0_rb) then 
+                alpha(i,ilev) = 0.0_rb
+             endif
+          end do
+       end do
+       
+       ! generate 2 streams of random numbers
+       ! CDF2 is used to select which sub-columns are vertically correlated relative to alpha
+       ! CDF  is used to select which sub-columns are treated as cloudy relative to cloud fraction
+       if (irng.eq.0) then 
+          do isubcol = 1,nsubcol
+             do ilev = 1,nlay
+                call kissvec(seed1, seed2, seed3, seed4, rand_num)
+                CDF(isubcol, :, ilev) = rand_num
+                call kissvec(seed1, seed2, seed3, seed4, rand_num)
+                CDF2(isubcol, :, ilev) = rand_num
+             end do
+          end do
+       elseif (irng.eq.1) then
+          do isubcol = 1, nsubcol
+             do i = 1, ncol
+                do ilev = 1,nlay
+                   rand_num_mt = getRandomReal(randomNumbers)
+                   CDF(isubcol,i,ilev) = rand_num_mt
+                   rand_num_mt = getRandomReal(randomNumbers)
+                   CDF2(isubcol,i,ilev) = rand_num_mt
+                enddo
+             enddo
+          enddo
+       endif
+
+       ! generate vertical correlations in random number arrays - bottom to top
+       do ilev = 2,nlay
+          where (CDF2(:, :, ilev) < spread(alpha (:,ilev), dim=1, nCopies=nsubcol) )
+             CDF(:,:,ilev) = CDF(:,:,ilev-1) 
+          end where
+       end do
 
       end select
 
@@ -11457,6 +11539,7 @@ CONTAINS
                        dz8w, tsk, t3d, t8w, rho3d, r, g,          &
                        icloud, warm_rain, cldfra3d,               &
                        cldovrlp,                                  & ! J. Henderson AER: cldovrlp namelist value
+                       idcor, xlat,                               & ! MJI
                        lradius,iradius,                           & 
                        is_cammgmp_used,                           & 
                        f_ice_phy, f_rain_phy,                     &
@@ -11633,9 +11716,17 @@ CONTAINS
                                                             nlay, &
                                                             icld, &
                                                         cldovrlp, & ! J. Henderson AER
+                                                           idcor, & ! MJI  (decorrelation length flag for cldovrlp=4 or 5)
+                                                                    !       0 = constant decorrelation length, 2500 m)
+                                                                    !       1 = latitude-varying decorrelation length)
+                                                          juldat, & ! MJI  (julian date for cldovrlp=4 or 5)
                                                          inflglw, &
                                                         iceflglw, &
                                                         liqflglw
+! Latitude 
+    real, dimension( ims:ime,jms:jme ), intent(in) ::       xlat     ! MJI  (latitude for cldovrlp=4 or 5)
+    real                                           ::        lat
+
 ! Dimension with extra layer from model top to TOA
     real, dimension( 1, kts:nlayers+1 )  ::                 plev, &
                                                             tlev
@@ -12055,6 +12146,8 @@ CONTAINS
 !         icld = 4
 ! mji - Exponential-random cloud overlap
 !         icld = 5
+! mji - set julian date
+         juldat = julian
 ! Select cloud liquid and ice optics parameterization options
 ! For passing in cloud optical properties directly:
 !         icld = 2
@@ -12574,10 +12667,11 @@ CONTAINS
 
 ! Sub-column generator for McICA
 ! mji - Add layer height needed for exponential (icld=4) and exponential-random (icld=5) overlap options
-!         call mcica_subcol_lw(iplon, ncol, nlay, icld, permuteseed, irng, play, &
-         call mcica_subcol_lw(iplon, ncol, nlay, icld, permuteseed, irng, play, hgt, &
-                       cldfrac, ciwpth, clwpth, cswpth, rei, rel, res, taucld, cldfmcl, &
-                       ciwpmcl, clwpmcl, cswpmcl, reicmcl, relqmcl, resnmcl, taucmcl)
+         lat=xlat(i,j) !retrieve scalar latitude for column calculation
+         call mcica_subcol_lw(iplon, ncol, nlay, icld, permuteseed, irng, play, &
+                       cldfrac, ciwpth, clwpth, cswpth, rei, rel, res, taucld, &
+                       hgt, idcor, juldat, lat, &
+                       cldfmcl, ciwpmcl, clwpmcl, cswpmcl, reicmcl, relqmcl, resnmcl, taucmcl)
 
 !--------------------------------------------------------------------------
 ! Aerosol optical depth, single scattering albedo and asymmetry parameter -czhao 03/2010

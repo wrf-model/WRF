@@ -1646,6 +1646,17 @@
      END IF
 
 !-----------------------------------------------------------------------
+!  Ensure that RRTMG idcor namelist value lies between 0 and 1
+!  J. Henderson AER
+!-----------------------------------------------------------------------
+
+     IF ( model_config_rec%idcor .lt. 0 .OR. model_config_rec%idcor .gt. 1) THEN
+         wrf_err_message = '--- ERROR: idcor value must be between 0 and 1'
+         CALL wrf_message( wrf_err_message )
+         count_fatal_error = count_fatal_error + 1
+     END IF
+
+!-----------------------------------------------------------------------
 !  MUST BE AFTER ALL OF THE PHYSICS CHECKS.
 !-----------------------------------------------------------------------
 

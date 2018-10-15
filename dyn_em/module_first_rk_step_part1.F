@@ -249,6 +249,7 @@ BENCH_START(rad_driver_tim)
      &        ,HTOP=grid%htop          ,HBOTR=grid%hbotr        ,HTOPR=grid%htopr    &
      &        ,ICLOUD=config_flags%icloud                                            &
      &        ,cldovrlp=config_flags%cldovrlp                                        & ! J. Henderson AER: cldovrlp namelist value
+     &        ,idcor=config_flags%idcor                                              & ! J. Henderson AER: idcor namelist value
      &        ,ITIMESTEP=grid%itimestep,JULDAY=grid%julday      , JULIAN=grid%julian &
      &        ,JULYR=grid%julyr        ,LW_PHYSICS=config_flags%ra_lw_physics        &
      &        ,NCFRCV=grid%ncfrcv      ,NCFRST=grid%ncfrst      ,NPHS=1              &

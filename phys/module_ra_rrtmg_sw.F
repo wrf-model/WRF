@@ -1489,7 +1489,7 @@
        real(kind=rb), parameter :: amr = 7._rb
        real(kind=rb) :: am3
        real(kind=rb) :: decorr_len(ncol)              ! decorrelation length (meters)
-       real(kind=rb), parameter :: Zo_default = 2000._rb  ! default constant decorrelation length (m) 
+       real(kind=rb), parameter :: Zo_default = 2500._rb  ! default constant decorrelation length (m) 
 
 
 ! Return if clear sky

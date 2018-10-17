@@ -3719,9 +3719,7 @@ END subroutine optical_prep_modal_soa_vbs
 !      WRITE(*,*)'         ','       ',(dlo_sectm(n),n=1,nbin_o)
 !      WRITE(*,*)'         ','       ',(dhi_sectm(n),n=1,nbin_o)
         dustfrc_goc8bin=0.
-        !dlogoc=0.46*2.E-6 ! Begin lower dust bin, makes upper limit diam 20 micron diameter 
        do m =1, ndust  ! loop over dust size bins
-       !dhigoc = 2.*2.*reff_dust(m)-dlogoc ! hi diameter limit (m)  ! A. Ukhov
         dlogoc = ra_dust(m)*2.E-6  ! low diameter limit (m)
         dhigoc = rb_dust(m)*2.E-6  ! hi diameter limit (m)
         do n = 1, nbin_o
@@ -3729,7 +3727,6 @@ END subroutine optical_prep_modal_soa_vbs
                              max(dlogoc,DBLE(dlo_sectm(n))) )/(dhigoc-dlogoc)
        end do
 !      WRITE(*,*)m,dlogoc,dhigoc,(dustfrc_goc8bin(m,n),n=1,nbin_o)
-       !dlogoc=dhigoc
        end do
         kcall=kcall+1
 !       ISTOP=1

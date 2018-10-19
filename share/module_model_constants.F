@@ -20,7 +20,7 @@
    REAL    , PARAMETER :: r_d          = 287.04     ! gas constant for dry air (J deg^-1 kg^-1)
    REAL    , PARAMETER :: cp           = 1004.6     ! Specific heat of dry air at constant pressure (J deg^-1 kg^-1)
 #else
-   REAL    , PARAMETER :: r_d          = 287.       ! gas constant (J deg^-1 kg^-1)
+   REAL    , PARAMETER :: r_d          = 287.       ! gas constant of dry air (J deg^-1 kg^-1)
    REAL    , PARAMETER :: cp           = 7.*r_d/2.  ! 
 #endif
 

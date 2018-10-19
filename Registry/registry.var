@@ -451,6 +451,7 @@ rconfig   integer   num_pseudo              namelist,wrfvar15  1  0        - "nu
 rconfig   real      pseudo_x                namelist,wrfvar15  1  1.0      - "pseudo_x"                ""  ""   
 rconfig   real      pseudo_y                namelist,wrfvar15  1  1.0      - "pseudo_y"                ""  ""   
 rconfig   real      pseudo_z                namelist,wrfvar15  1  1.0      - "pseudo_z"                ""  ""   
+rconfig   integer   pseudo_time             namelist,wrfvar15  1  1        - "pseudo_time"             "time slot of pseudo ob for 4DVAR"  ""
 rconfig   real      pseudo_val              namelist,wrfvar15  1  1.0      - "pseudo_val"              ""  ""   
 rconfig   real      pseudo_err              namelist,wrfvar15  1  1.0      - "pseudo_err"              ""  ""   
 rconfig   real      pseudo_elv              namelist,wrfvar15  1  -999.99  - "pseudo_elv"              "pseudo ob elevation, used by pseudo tpw/ztd"  "m"

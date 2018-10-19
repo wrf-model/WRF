@@ -57,7 +57,7 @@ module da_minimisation
       write_detail_grad_fn, pseudo_uvtpq, lanczos_ep_filename, use_divc, divc_factor, &
       cloud_cv_options, use_cv_w, var_scaling6, var_scaling7, var_scaling8, var_scaling9, &
       var_scaling10, var_scaling11, &
-      write_gts_omb_oma, write_unpert_obs, write_rej_obs_conv
+      write_gts_omb_oma, write_unpert_obs, write_rej_obs_conv, pseudo_time
    use da_define_structures, only : iv_type, y_type,  j_type, be_type, &
       xbx_type, jo_type, da_allocate_y,da_zero_x,da_zero_y,da_deallocate_y, &
       da_zero_vp_type, qhat_type

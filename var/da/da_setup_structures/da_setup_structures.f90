@@ -54,7 +54,7 @@ module da_setup_structures
       use_simulated_rad, use_pseudo_rad, pseudo_rad_platid, pseudo_rad_satid, &
       pseudo_rad_senid, rtminit_nsensor, rtminit_platform, rtminit_satid, &
       rtminit_sensor, thinning, qc_rad, var4d, & 
-      num_pseudo,pseudo_x, pseudo_y, pseudo_z, pseudo_var,pseudo_val, pseudo_err,&
+      num_pseudo,pseudo_x, pseudo_y, pseudo_z, pseudo_var,pseudo_val, pseudo_err, pseudo_time, &
       fg_format, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
       fg_format_wrf_arw_global, fg_format_kma_global, deg_to_rad, rad_to_deg, &
       sonde_sfc, missing_data, missing_r, qc_good, thin_mesh_conv, time_slots, ifgat_ana, &

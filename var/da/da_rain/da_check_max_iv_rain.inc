@@ -31,8 +31,10 @@ subroutine da_check_max_iv_rain(iv,ob, it, num_qcstat_conv)
             num_qcstat_conv(1,rain,10,1)= num_qcstat_conv(1,rain,10,1) + 1
             if (failed) then
                num_qcstat_conv(2,rain,10,1)= num_qcstat_conv(2,rain,10,1) + 1
+               if ( write_rej_obs_conv ) then
                write(qcstat_conv_unit,'(2x,a10,2x,a4,2f12.2,a12)')&
                   'Rainfall','Rain',iv%info(rain)%lat(1,n),iv%info(rain)%lon(1,n),'-8888.88'   
+               end if
             end if
          end if
       end if

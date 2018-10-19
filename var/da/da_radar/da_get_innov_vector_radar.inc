@@ -310,6 +310,10 @@ END IF
                            .and. (iv % radar(n) % rf(k) % qc >= obs_qc_pointer)
 
             if (use_radar_rv) then
+               !set qc to missing_data for rv of -999.99 (radar_non_precip_rf)
+               if ( abs(ob%radar(n)%rv(k) - radar_non_precip_rf) < 0.1 ) then
+                   iv % radar(n) % rv(k) % qc = missing_data
+               end if
                if (abs(iv % radar(n) % rv(k) % qc - missing_data) > 1) then
                   if (abs(ob % radar(n) % rv(k) - missing_r) > 1.0 .AND. &
                        iv % radar(n) % rv(k) % qc >= obs_qc_pointer) then

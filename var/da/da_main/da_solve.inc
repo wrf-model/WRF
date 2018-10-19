@@ -858,7 +858,7 @@
 
       ! [8.7.1] Write Ascii radar OMB and OMA file
 
-      if (use_radarobs) then
+      if ( use_radarobs .and. write_oa_radar_ascii ) then
          call da_write_oa_radar_ascii (ob,iv,re,it)
       end if
 

@@ -115,7 +115,6 @@ MODULE module_wps_io_arw
 
       CHARACTER (LEN=256) , PRIVATE :: a_message
 
-
 CONTAINS
 
    SUBROUTINE read_wps ( grid, filename, file_date_string, num_metgrid_levels )
@@ -131,6 +130,7 @@ CONTAINS
       CHARACTER (LEN=132)              :: VarName
       CHARACTER (LEN=150)             :: chartemp
       CHARACTER (*) , INTENT(IN) :: filename
+      CHARACTER (LEN=256)  :: mminlu_temp
 
       INTEGER :: ids,ide,jds,jde,kds,kde           &
                 ,ims,ime,jms,jme,kms,kme           &
@@ -357,17 +357,18 @@ CONTAINS
         CALL nl_set_isice (grid%id, igarb2 )
 
       IF ( igarb .eq. 16 .and. igarb2 .eq. 24 ) THEN
-      CALL nl_set_mminlu ( grid%id, 'USGS')
+      mminlu_temp(1:4) = 'USGS'
+      CALL nl_set_mminlu (grid%id, mminlu_temp)
       ENDIF
 
       IF ( igarb .eq. 17 .and. igarb2 .eq. 15 ) THEN
-! ambiguous
-      CALL nl_set_mminlu ( grid%id, 'MODIFIED_IGBP_MODIS_NOAH')
-!      CALL nl_set_mminlu ( grid%id, 'MODIS')
+      mminlu_temp(1:24) = 'MODIFIED_IGBP_MODIS_NOAH'
+      CALL nl_set_mminlu ( grid%id, mminlu_temp)
       ENDIF
 
       IF ( igarb .eq. 15 .and. igarb2 .eq. 16 ) THEN
-      CALL nl_set_mminlu ( grid%id, 'SiB')
+      mminlu_temp(1:3) = 'SiB'
+      CALL nl_set_mminlu (grid%id, mminlu_temp)
       ENDIF
 
       VarName='FLAG_SNOWH'

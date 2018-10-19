@@ -30,6 +30,7 @@ MODULE module_initialize_ideal
 #endif
 
 
+
 CONTAINS
 
 
@@ -111,7 +112,7 @@ CONTAINS
 
    LOGICAL :: moisture_init
    LOGICAL :: stretch_grid, dry_sounding
-   character (len=256) :: mminlu2
+   CHARACTER (len=256) :: mminlu_temp 
 
    REAL    :: xa1, xal1,pii,hm1  !  data for intercomparison setup from dale
 !  space for initial jet in b_wave
@@ -308,7 +309,8 @@ CONTAINS
 
    CASE(hill2d_x, quarter_ss, squall2d_x, squall2d_y, grav2d_x)
 
-    CALL nl_set_mminlu(1,'    ')
+    mminlu_temp(1:10) = 'never_used'
+    CALL nl_set_mminlu(1, mminlu_temp)
     CALL nl_set_iswater(1,0)
     CALL nl_set_cen_lat(1,40.)
     CALL nl_set_cen_lon(1,-105.)
@@ -343,7 +345,8 @@ CONTAINS
 
    CASE(b_wave)
 
-    CALL nl_set_mminlu(1,'    ')
+    mminlu_temp(1:10) = 'never_used'
+    CALL nl_set_mminlu(1, mminlu_temp)
     CALL nl_set_iswater(1,0)
     CALL nl_set_cen_lat(1,40.)
     CALL nl_set_cen_lon(1,-105.)
@@ -377,10 +380,9 @@ CONTAINS
    END DO
 
    CASE(convrad)
-    mminlu2 = ' '
-    mminlu2(1:4) = 'USGS'
-    CALL nl_set_mminlu(1, mminlu2)
-!   CALL nl_set_mminlu(1, 'USGS')
+
+    mminlu_temp(1:10) = 'never_used'
+    CALL nl_set_mminlu(1, mminlu_temp)
     CALL nl_set_iswater(1,16)
     CALL nl_set_isice(1,3)
     CALL nl_set_cen_lat(1,20.)
@@ -469,10 +471,8 @@ CONTAINS
                                    its,ite, jts,jte, kts,kte )
    CASE(seabreeze2d_x)
 
-    mminlu2 = ' '
-    mminlu2(1:4) = 'USGS'
-    CALL nl_set_mminlu(1, mminlu2)
-!   CALL nl_set_mminlu(1, 'USGS')
+    mminlu_temp(1:10) = 'never_used'
+    CALL nl_set_mminlu(1, mminlu_temp)
     CALL nl_set_iswater(1,16)
     CALL nl_set_isice(1,3)
     CALL nl_set_cen_lat(1,20.)
@@ -566,7 +566,8 @@ CONTAINS
 
    CASE (les)
 
-    CALL nl_set_mminlu(1, '    ')
+    mminlu_temp(1:10) = 'never_used'
+    CALL nl_set_mminlu(1, mminlu_temp)
     CALL nl_set_iswater(1,0)
     CALL nl_set_cen_lat(1,40.)
     CALL nl_set_cen_lon(1,-105.)

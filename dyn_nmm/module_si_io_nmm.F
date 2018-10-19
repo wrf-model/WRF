@@ -133,6 +133,7 @@ MODULE module_si_io_nmm
       INTEGER, PARAMETER          :: max_fg_variables = 200
       INTEGER, PARAMETER          :: max_vertical_levels = 2000
 
+
 !   This module defines the items needed for the WRF metadata
 !   which is broken up into three levels:  
 !      Global metadata:  Those things which apply to the
@@ -261,6 +262,7 @@ CONTAINS
 
       CHARACTER (LEN= 8) :: dummy_char
       CHARACTER (LEN=256) :: dummy_char_256
+      CHARACTER (LEN=256) :: mminlu_temp
 
       INTEGER :: ok , map_proj , ok_open
       REAL :: pt
@@ -611,7 +613,8 @@ CONTAINS
 !      write(0,*) 'global_meta%lu_source: ', global_meta%lu_source
 !      write(0,*) 'global_meta%lu_water: ', global_meta%lu_water
       IF      ( global_meta%si_version .EQ. 1 ) THEN
-         CALL nl_set_mminlu (grid%id, 'USGS' )
+         mminlu_temp(1:4) = 'USGS'
+         CALL nl_set_mminlu (grid%id, mminlu_temp)
          CALL nl_set_iswater (grid%id, 16 )
       ELSE IF ( global_meta%si_version .EQ. 2 ) THEN
          CALL nl_set_mminlu ( grid%id, global_meta%lu_source )

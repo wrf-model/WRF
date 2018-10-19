@@ -82,6 +82,7 @@ CONTAINS
    REAL :: thtmp, ptmp, temp(3), cof1, cof2
 
    INTEGER :: icm,jcm
+   CHARACTER (LEN=256) :: mminlu_temp 
 
    SELECT CASE ( model_data_order )
          CASE ( DATA_ORDER_ZXY )
@@ -225,7 +226,8 @@ CONTAINS
    !WRITE(*,*) ''
    !WRITE(*,'(A,1PG14.6,A,1PG14.6)') ' For the namelist: dx =',grid%dx,', dy =',grid%dy
 
-   CALL nl_set_mminlu(1,'    ')
+   mminlu_temp(1:10) = 'never_used'
+   CALL nl_set_mminlu(1, mminlu_temp)
    grid%iswater = 0
    grid%cen_lat = 0.
    grid%cen_lon = 0.

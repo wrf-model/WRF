@@ -71,13 +71,13 @@
    REAL    , PARAMETER :: DEGRAD       = piconst/180.                   ! radians per degree
    REAL    , PARAMETER :: DPD          = 360./365.
 
-   REAL    , PARAMETER ::  SVP1=0.6112      ! constant for saturation vapor pressure (dimensionless)
-   REAL    , PARAMETER ::  SVP2=17.67       ! constant for saturation vapor pressure (dimensionless)
-   REAL    , PARAMETER ::  SVP3=29.65       ! constant for saturation vapor pressure (K)
-   REAL    , PARAMETER ::  SVPT0=273.15     ! constant for saturation vapor pressure (K)
+   REAL    , PARAMETER ::  SVP1=0.6112      ! constant for saturation vapor pressure calculation (dimensionless)
+   REAL    , PARAMETER ::  SVP2=17.67       ! constant for saturation vapor pressure calculation (dimensionless)
+   REAL    , PARAMETER ::  SVP3=29.65       ! constant for saturation vapor pressure calculation (K)
+   REAL    , PARAMETER ::  SVPT0=273.15     ! constant for saturation vapor pressure calculation (K)
    REAL    , PARAMETER ::  EP_1=R_v/R_d-1.  !  constant for virtual temperature (r_v/r_d - 1) (dimensionless)
    REAL    , PARAMETER ::  EP_2=R_d/R_v     ! constant for specific humidity calculation (dimensionless)
-   REAL    , PARAMETER ::  KARMAN=0.4               ! Karman constant
+   REAL    , PARAMETER ::  KARMAN=0.4               ! von Karman constant
    REAL    , PARAMETER ::  EOMEG=7.2921E-5          ! angular velocity of rotation (rad^-1)
    REAL    , PARAMETER ::  STBOLT=5.67051E-8        ! Stefan-Boltzmann constant (W m^-2 deg^-4) 
 

@@ -33,7 +33,6 @@
 /phys/module_ra_rrtmg_lw.F		@wrf-model/shared_physics
 /phys/module_ra_rrtmg_sw.F		@wrf-model/shared_physics
 /phys/module_bl_ysu.F 			@wrf-model/shared_physics
-/phys/module_mp_wsm6.F			@wrf-model/shared_physics
 /phys/module_sf_sfclay.F		@wrf-model/shared_physics
 /phys/module_sf_noah_seaice.F		@wrf-model/shared_physics
 /phys/module_sf_noah_seaice_drv.F	@wrf-model/shared_physics

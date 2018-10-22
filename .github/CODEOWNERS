@@ -26,6 +26,21 @@
 
 /phys/module_mp_thompson.F		@gthompsnWRF @wrf-model/physics
 
+#	Shared Physics Between MPAS and WRF
+
+/phys/module_mp_wsm6.F			@wrf-model/shared_physics
+/phys/module_cu_ntiedtke.F		@wrf-model/shared_physics
+/phys/module_ra_rrtmg_lw.F		@wrf-model/shared_physics
+/phys/module_ra_rrtmg_sw.F		@wrf-model/shared_physics
+/phys/module_bl_ysu.F 			@wrf-model/shared_physics
+/phys/module_mp_wsm6.F			@wrf-model/shared_physics
+/phys/module_sf_sfclay.F		@wrf-model/shared_physics
+/phys/module_sf_noah_seaice.F		@wrf-model/shared_physics
+/phys/module_sf_noah_seaice_drv.F	@wrf-model/shared_physics
+/phys/module_sf_noahdrv.F		@wrf-model/shared_physics
+/phys/module_sf_noahlsm.F		@wrf-model/shared_physics
+/phys/module_sf_noahlsm_glacial_only.F	@wrf-model/shared_physics
+
 #	Data Assimilation
 
 /wrftladj/				@wrf-model/da
@@ -33,16 +48,16 @@
 
 #	Dynamics
 
-/dyn_em/				@wrf-model/arw_dev_team	
-/dyn_nmm/				@wrf-model/hwrf_dev_team	
+/dyn_em/				@wrf-model/arw_dev
+/dyn_nmm/				@wrf-model/hwrf_dev
 
 #	Registry
 
 /Registry/				@wrf-model/infrastructure
 
-/Registry/Registry.NMM			@wrf-model/hwrf_dev_team
-/Registry/registry.tracker		@wrf-model/hwrf_dev_team
-/Registry/registry.tornado		@wrf-model/hwrf_dev_team
+/Registry/Registry.NMM			@wrf-model/hwrf_dev
+/Registry/registry.tracker		@wrf-model/hwrf_dev
+/Registry/registry.tornado		@wrf-model/hwrf_dev
 
 /Registry/Registry.EM_CHEM		@wrf-model/chem
 /Registry/registry.chem			@wrf-model/chem
@@ -55,13 +70,13 @@
 
 #	Test directories
 
-/test/em_*				@wrf-model/arw_dev_team
-/test/nmm_*				@wrf-model/hwrf_dev_team
+/test/em_*				@wrf-model/arw_dev
+/test/nmm_*				@wrf-model/hwrf_dev
 /test/em_fire				@wrf-model/fire
 
 #	Executable directory
 
-/main/					@wrf-model/arw_dev_team @wrf-model/hwrf_dev_team @wrf-model/infrastructure
+/main/					@wrf-model/arw_dev @wrf-model/hwrf_dev @wrf-model/infrastructure
 
 #	Externals directory structure
 

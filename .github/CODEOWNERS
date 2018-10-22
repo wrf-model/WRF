@@ -71,7 +71,7 @@
 
 /test/em_*				@wrf-model/arw_dev
 /test/nmm_*				@wrf-model/hwrf_dev
-/test/em_fire				@wrf-model/fire
+/test/em_fire/				@wrf-model/fire
 
 #	Executable directory
 

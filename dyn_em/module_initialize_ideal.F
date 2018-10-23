@@ -381,7 +381,7 @@ CONTAINS
 
    CASE(convrad)
 
-    mminlu_temp(1:10) = 'never_used'
+    mminlu_temp(1:10) = 'USGS'
     CALL nl_set_mminlu(1, mminlu_temp)
     CALL nl_set_iswater(1,16)
     CALL nl_set_isice(1,3)
@@ -471,7 +471,7 @@ CONTAINS
                                    its,ite, jts,jte, kts,kte )
    CASE(seabreeze2d_x)
 
-    mminlu_temp(1:10) = 'never_used'
+    mminlu_temp(1:10) = 'USGS'
     CALL nl_set_mminlu(1, mminlu_temp)
     CALL nl_set_iswater(1,16)
     CALL nl_set_isice(1,3)

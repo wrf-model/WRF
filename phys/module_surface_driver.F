@@ -308,6 +308,8 @@ CONTAINS
                                        ,SFCLAYREVSCHEME           &
                                        ,MYJSFCSCHEME              &
                                        ,QNSESFCSCHEME             &
+                                       ,MYJPBLSCHEME              &
+                                       ,QNSEPBLSCHEME             &
                                        ,GFSSFCSCHEME              &
                                        ,PXSFCSCHEME               &
                                        ,NOAHMPSCHEME              &

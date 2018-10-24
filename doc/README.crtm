@@ -1,0 +1,64 @@
+*******************
+CRTM Coefficients
+*******************
+
+These coefficient files are binary and cannot be tracked by git and are placed on the WRFDA website for download (http://www2.mmm.ucar.edu/wrf/users/wrfda/download/crtm_coeffs.html) starting from the WRFDA release v4.0. A copy is also available under ~wrfhelp on the NCAR cheyenne supercomputer (for internal use). 
+
+WRF Version History
+
+...soon to come in v4.1
+As of major release v4.1 of WRFDA, CRTM v2.3 and associated coefficients are used.  
+
+v4.0 to v4.0.x
+As of major release v4.0 of WRFDA, CRTM v2.2.3 and associated coefficients are used. 
+
+For those wishing to use instruments not contained in the NCAR versions of the coefficients above, the full set of CRTM coefficient files can be downloaded from the official CRTM ftp site http://ftp.emc.ncep.noaa.gov/jcsda/CRTM/.  They can be processed into an appropriate directory structure for WRFDA using the following extraction script:
+
+---------------------------------------------------------------------------------
+#!/bin/bash
+
+cd WRFDA/var/run #Match your local directory structure
+
+rm crtm_coeffs
+mkdir crtm_coeffs
+cd crtm_coeffs
+
+CRTMDIR='parent/directory/CRTM/REL-2.2.3' #Match your local directory structure
+ENDIAN='Big_Endian'
+INST=( \
+'abi_g16' 'abi_gr' 'ahi_himawari8' \
+'airs281_aqua' \
+'amsr2_gcom-w1' 'amsre_aqua' \
+'amsua_aqua' 'amsua_metop-a' 'amsua_metop-b' 'amsua_metop-c' \
+'amsua_n15' 'amsua_n16' 'amsua_n17' 'amsua_n18' 'amsua_n19' \
+'amsub_n15' 'amsub_n16' 'amsub_n17' \
+'atms_npp' \
+'hirs2_n06' 'hirs2_n07' 'hirs2_n08' 'hirs2_n09' 'hirs2_n10' 'hirs2_n11' 'hirs2_n12' 'hirs2_n14' \
+'hirs2_tirosn' 'hirs3_n15' 'hirs3_n16' 'hirs3_n17' \
+'hirs4_metop-a' 'hirs4_metop-b' 'hirs4_n18' 'hirs4_n19' \
+'hsb_aqua' \
+'iasi616_metop-a' 'iasi616_metop-b' \
+'imgr_g13' 'imgr_g14' 'imgr_g15' \
+'mhs_metop-a' 'mhs_metop-b' 'mhs_metop-c' \
+'mhs_n18' 'mhs_n19' \
+'mwhs_fy3a' 'mwhs_fy3b' \
+'mwts_fy3a' 'mwts_fy3b' \
+'seviri_m08' 'seviri_m09' 'seviri_m10' \
+'ssmis_f16' 'ssmis_f17' 'ssmis_f18' 'ssmis_f19' 'ssmis_f20' \
+)
+
+mkdir ODPS
+for instrument in ${INST[@]}
+do
+   cp $CRTMDIR/fix/SpcCoeff/$ENDIAN/$instrument".Spc"* ./
+   cp $CRTMDIR/fix/TauCoeff/ODPS/$ENDIAN/$instrument".Tau"* ./ODPS/
+done
+ln -sf ODPS/* ./
+cp $CRTMDIR/fix/AerosolCoeff/$ENDIAN/* ./
+cp $CRTMDIR/fix/CloudCoeff/$ENDIAN/* ./
+cp $CRTMDIR/fix/EmisCoeff/*/$ENDIAN/* ./
+cp $CRTMDIR/fix/EmisCoeff/*/SEcategory/$ENDIAN/* ./
+---------------------------------------------------------------------------------
+
+Note: Custom instruments can be added to INST as they are needed.  Please consider submitting source code for new instruments back to the wrf-model github repository.
+

@@ -371,10 +371,19 @@ else
        endif
        if ( -e ${RTTOV}/lib/librttov11.1.0_main.a ) then
           setenv RTTOV_LIB "-L${RTTOV}/lib -lrttov11.1.0_coef_io -lrttov11.1.0_emis_atlas -lrttov11.1.0_main"
+          if ( -e ${RTTOV}/lib/librttov11.1.0_hdf.a ) then
+             setenv RTTOV_LIB "${RTTOV_LIB} -lrttov11.1.0_hdf"
+          endif
        else if ( -e ${RTTOV}/lib/librttov11.2.0_main.a ) then
           setenv RTTOV_LIB "-L${RTTOV}/lib -lrttov11.2.0_coef_io -lrttov11.2.0_emis_atlas -lrttov11.2.0_main"
+          if ( -e ${RTTOV}/lib/librttov11.2.0_hdf.a ) then
+             setenv RTTOV_LIB "${RTTOV_LIB} -lrttov11.2.0_hdf"
+          endif
        else if ( -e ${RTTOV}/lib/librttov11_main.a ) then
           setenv RTTOV_LIB "-L${RTTOV}/lib -lrttov11_coef_io -lrttov11_emis_atlas -lrttov11_main"
+          if ( -e ${RTTOV}/lib/librttov11_hdf.a ) then
+             setenv RTTOV_LIB "${RTTOV_LIB} -lrttov11_hdf"
+          endif
        else
           echo "Can not find a compatible RTTOV library! Please ensure that your RTTOV build was successful,"
           echo "your 'RTTOV' environment variable is set correctly, and you are using a supported version of RTTOV."

@@ -3532,6 +3532,8 @@ END subroutine optical_prep_modal_soa_vbs
 ! 10/16/18 - A. Ukhov, bug fix: dust particles having radii in the range 0.1-0.46 microns
 ! were not accounted in the calculation of the mass redistribution between the GOCART and 
 ! MOZAIC grids.
+! 10/24/18 - A. Ukhov, bug fix: mass redistribution between GOCART dust/sea salt and 
+! MOZAIC bins should be computed using interpolation over the logarithmic axis.
 
 ! This subroutine computes volume-averaged refractive index and wet radius needed
 ! by the mie calculations. Aerosol number is also passed into the mie calculations
@@ -3709,8 +3711,9 @@ END subroutine optical_prep_modal_soa_vbs
        dlogoc = ra(m)*2.E-6  ! low diameter limit (m)
        dhigoc = rb(m)*2.E-6  ! hi diameter limit (m)
         do n = 1, nbin_o
-        seasfrc_goc8bin(m,n)=max(DBLE(0.),min(DBLE(dhi_sectm(n)),dhigoc)- &
-                             max(dlogoc,DBLE(dlo_sectm(n))) )/(dhigoc-dlogoc)
+        seasfrc_goc8bin(m,n)=max(DBLE(0.),min(DBLE(log(dhi_sectm(n))),log(dhigoc))- &
+                             max(log(dlogoc),DBLE(log(dlo_sectm(n)))) )/(log(dhigoc)-log(dlogoc))
+
        end do
 !      WRITE(*,*)m,dlogoc,dhigoc,(seasfrc_goc8bin(m,n),n=1,nbin_o)
        end do
@@ -3723,8 +3726,9 @@ END subroutine optical_prep_modal_soa_vbs
         dlogoc = ra_dust(m)*2.E-6  ! low diameter limit (m)
         dhigoc = rb_dust(m)*2.E-6  ! hi diameter limit (m)
         do n = 1, nbin_o
-        dustfrc_goc8bin(m,n)=max(DBLE(0.),min(DBLE(dhi_sectm(n)),dhigoc)- &
-                             max(dlogoc,DBLE(dlo_sectm(n))) )/(dhigoc-dlogoc)
+        dustfrc_goc8bin(m,n)=max(DBLE(0.),min(DBLE(log(dhi_sectm(n))),log(dhigoc))- &
+                             max(log(dlogoc),DBLE(log(dlo_sectm(n)))) )/(log(dhigoc)-log(dlogoc))
+
        end do
 !      WRITE(*,*)m,dlogoc,dhigoc,(dustfrc_goc8bin(m,n),n=1,nbin_o)
        end do

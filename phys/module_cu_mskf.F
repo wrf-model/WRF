@@ -5062,8 +5062,8 @@ updraft:    DO NK=K,KL-1
                Itest = 0
                 if(Itest.eq.1) then
 
-               write(121,*),'k,nk, kq,jk,su,quuE3,muu,duu,cmel,zfu,pru,tee, &
-               qeeE3,zmqliqE4,zmqiceE4,rprd,wump,euu,ncmp,nimp,sprd,frz'
+               write(121,*) 'k,nk, kq,jk,su,quuE3,muu,duu,cmel,zfu,pru,tee,&
+              &qeeE3,zmqliqE4,zmqiceE4,rprd,wump,euu,ncmp,nimp,sprd,frz'
                do kq=K,NK
                JK = KTE-KQ+1
                write (121,2021) k,nk,kq,jk,su(1,jk),quu(1,jk)*1000,muu(1,jk),duu(1,jk),cmel(1,jk)

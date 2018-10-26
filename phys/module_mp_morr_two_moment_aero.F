@@ -122,12 +122,13 @@ MODULE MODULE_MP_MORR_TWO_MOMENT_AERO
 
    REAL, PARAMETER :: PI = 3.1415926535897932384626434
    REAL, PARAMETER :: xxx = 0.9189385332046727417803297
+   REAL, PARAMETER :: real_tiny = TINY(1.0)
 
    PUBLIC  ::  MP_MORR_TWO_MOMENT_AERO
    PUBLIC  ::  POLYSVP
 
    PRIVATE :: GAMMA, DERF1
-   PRIVATE :: PI, xxx
+   PRIVATE :: PI, xxx, real_tiny
    PRIVATE :: MORR_TWO_MOMENT_MICRO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -5703,7 +5704,7 @@ END SUBROUTINE MP_MORR_TWO_MOMENT_AERO
       do m=1,nmode
 !         internal mixture of aerosols
           volc(m)=maero(m)/(rhodry(m)) ! only if variable size dist
-         if(volc(m).gt.1.e-39.and.naero(m).gt.1.e-39)then
+         if(volc(m).gt.real_tiny.and.naero(m).gt.real_tiny)then
             etafactor2(m)=1./(naero(m)*beta*sqrtg)  !fixed or variable size dist
 !            number mode radius (m)
             amcubeloc(m)=(3.*volc(m)/(4.*pi*exp45logsig_pamdm(m)*naero(m)))  !only if variable size dist

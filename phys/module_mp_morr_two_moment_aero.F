@@ -282,7 +282,8 @@ MODULE MODULE_MP_MORR_TWO_MOMENT_AERO
       real, private:: alog2_pamdm,alog3_pamdm,alogaten_pamdm,surften_pamdm
 
       real, private:: f1_pamdm(naer_cu),f2_pamdm(naer_cu) ! abdul-razzak functions of width
-      real, private:: third_pamdm, sat_pamdm
+      real, private:: third_pamdm
+      integer, private:: sat_pamdm
       real, private:: sq2_pamdm, arg_pamdm
       integer, parameter:: psat_pamdm=7 ! number of supersaturations to calc ccn concentration
       real, private:: super_pamdm(psat_pamdm)

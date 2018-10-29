@@ -6,8 +6,6 @@ rconfig   integer    io_form_auxinput12  namelist,time_control   1  2
 
 
 state    real    CLDFRA2         ikj    misc        1         -      h        "CLDFRA2"             "CLOUD FRACTION"
-state    real    RAINPROD        ikj    misc        1         -      h        "RAINPROD"            "TOTAL RAIN PRODUCTION RATE"       "s-1"
-state    real    EVAPPROD        ikj    misc        1         -      h        "EVAPPROD"            "RAIN EVAPORATION RATE"            "s-1"
 state    real    QV_B4MP         ikj    misc        1         -      -        "QV_B4MP"             "WATER VAPOR BEFORE MICROPHYSICS"  "kg kg-1"
 state    real    QC_B4MP         ikj    misc        1         -      -        "QC_B4MP"             "CLOUD WATER BEFORE MICROPHYSICS"  "kg kg-1"
 state    real    QI_B4MP         ikj    misc        1         -      -        "QI_B4MP"             "CLOUD ICE BEFORE MICROPHYSICS"    "kg kg-1"
@@ -42,6 +40,12 @@ state   integer last_chem_time_second    -  misc    -         -      r       "la
 #
 state   integer emissframes      -          -          -         -      -       "emissframes"           ""         ""
 state   integer fireemissframes  -        -          -        -        -      "fireemissframes"       ""         ""
+#
+# Rain, evaporation rates
+#
+state   real     -              ikjf     wetscav_frcing        -         -      -        -                     "Rain,evap rates"                  "s-1"
+state    real    RAINPROD       ikjf     wetscav_frcing        1         -      h        "RAINPROD"            "TOTAL RAIN PRODUCTION RATE"       "s-1"
+state    real    EVAPPROD       ikjf     wetscav_frcing        1         -      h        "EVAPPROD"            "RAIN EVAPORATION RATE"            "s-1"
 #
 # Anthropogenic emissions
 #
@@ -4141,6 +4145,9 @@ package   usechemdiag    chemdiag==1         -                conv_ct:conv_co,co
 
 # package for aerosol srf area diagnostic
 package   has_aero_srf_area_diag    aero_srf_area_diag==1         -                aero_srf_area:sulf_srf_area,oc_srf_area,bc_srf_area
+#
+# package for wetscavenging
+package   wetscav_pl                wetscav_onoff==1              -                wetscav_frcing:rainprod,evapprod
 
 # Lightning NOx tracers
 state   real    lnox_total   ikjf    tracer        1         -     i8rhusdf=(bdy_interp:dt)    "lnox_total"      "Total LNOx tracer"          "ppmv"

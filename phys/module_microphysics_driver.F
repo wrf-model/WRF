@@ -846,6 +846,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      GRAUPELNCV=GRAUPELNCV,              &
                      SR=SR,                              &
 #if ( WRF_CHEM == 1 )
+                     WETSCAV_ON = config_flags%wetscav_onoff == 1, &
                      RAINPROD=rainprod,                  &
                      EVAPPROD=evapprod,                  &
 #endif
@@ -904,6 +905,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      GRAUPELNCV=GRAUPELNCV,              &
                      SR=SR,                              &
 #if ( WRF_CHEM == 1 )
+                     WETSCAV_ON = config_flags%wetscav_onoff == 1, &
                      RAINPROD=rainprod,                  &
                      EVAPPROD=evapprod,                  &
 #endif
@@ -1083,7 +1085,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
                  ,QLSINK=qlsink                                     & ! jdf for wrf-chem
 #if ( WRF_CHEM == 1 )
-                 ,EVAPPROD=evapprod,RAINPROD=rainprod               &
+                 ,WETSCAV_ON = config_flags%wetscav_onoff == 1 &
+                 ,EVAPPROD=evapprod,RAINPROD=rainprod          &
 #endif
                  ,PRECR=precr,PRECI=preci,PRECS=precs,PRECG=precg   & ! jdf for wrf-chem
                                                                     )
@@ -1313,7 +1316,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,CU_UAF=CU_UAF                          & ! TWG add
                  ,QLSINK=qlsink                                     & ! jdf for wrf-chem
 #if ( WRF_CHEM == 1 )
-                 ,EVAPPROD=evapprod,RAINPROD=rainprod               &
+                 ,WETSCAV_ON = config_flags%wetscav_onoff == 1 &
+                 ,EVAPPROD=evapprod,RAINPROD=rainprod          &
 #endif
                  ,PRECR=precr,PRECI=preci,PRECS=precs,PRECG=precg   & ! jdf for wrf-chem
                                                                     )
@@ -1591,6 +1595,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      SR=SR,                              &
                      dbz      = refl_10cm,               &
 #if ( WRF_CHEM == 1 )
+                    WETSCAV_ON = config_flags%wetscav_onoff == 1, &
                     EVAPPROD=evapprod,RAINPROD=rainprod, &
 #endif
                      nssl_progn=nssl_progn,              &
@@ -1666,6 +1671,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      SR=SR,                              &
                      dbz      = refl_10cm,               &
 #if ( WRF_CHEM == 1 )
+                    WETSCAV_ON = config_flags%wetscav_onoff == 1, &
                     EVAPPROD=evapprod,RAINPROD=rainprod, &
 #endif
                      nssl_progn=nssl_progn,              &
@@ -1748,6 +1754,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      SR=SR,                              &
                      dbz      = refl_10cm,               &
 #if ( WRF_CHEM == 1 )
+                     WETSCAV_ON = config_flags%wetscav_onoff == 1, &
                      EVAPPROD=evapprod,RAINPROD=rainprod,&
 #endif
                      nssl_progn=nssl_progn,              &
@@ -2015,6 +2022,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
 #ifdef WRF_CHEM
+                 ,WETSCAV_ON = config_flags%wetscav_onoff == 1      &
                  ,EVAPPROD=evapprod,RAINPROD=rainprod               &
 #endif
                                                                     )

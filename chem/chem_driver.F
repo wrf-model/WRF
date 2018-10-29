@@ -1606,7 +1606,8 @@ if ( cam_mam_aerosols ) &
               rri,t_phy,moist,p8w,t8w,                                                &
               grid%dx, grid%dy,                                                       &
               p_phy,chem,rho,grid%cldfra,grid%cldfra2,                                &
-              grid%rainprod,grid%evapprod,grid%hno3_col_mdel,                         &
+              wetscav_frcing(ims,kms,jms,p_rainprod),wetscav_frcing(ims,kms,jms,p_evapprod), &
+              grid%hno3_col_mdel,                                                     &
               grid%qlsink,grid%precr,grid%preci,grid%precs,grid%precg,                &
               grid%wdflx, &
               gas_aqfrac, numgas_mam,dz8w,                                            &

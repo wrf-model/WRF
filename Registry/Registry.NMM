@@ -1717,10 +1717,6 @@ rconfig   integer maxpatch                namelist,physics      1            10 
 #key      package       associated                package          associated 4d scalars
 #         name          namelist choice           state vars
 
-#### 9. Edit the Registry file to set up '5' as the value of the
-**** namelist variable dyn_opt that means to select our exp dyncore.
-package   dyn_exp       dyn_opt==5                   -             -
-
 package   passivec1     chem_opt==0                  -
 package   passiveqv     mp_physics==0                -             moist:qv
 package   kesslerscheme mp_physics==1                -             moist:qv,qc,qr

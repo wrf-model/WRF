@@ -30,7 +30,7 @@ io_int.f: io_int.F90 module_internal_header_util.o
 	fi
 
 io_int.o: io_int.f ../../inc/intio_tags.h
-	$(FC) $(FCFLAGS) -I../../inc -I../ioapi_share -o $@ -c $*.f
+	$(FC) $(FCFLAGS) -I../../inc -I../../frame -I../ioapi_share -o $@ -c $*.f
 
 io_int_idx_tags.h: ../../inc/intio_tags.h
 	awk '{print "#define", toupper($$4), $$6}' < ../../inc/intio_tags.h > $@
@@ -59,7 +59,7 @@ module_internal_header_util.f: ../../frame/module_internal_header_util.F
 	$(RM) mod_int_hdr_util.b
 
 module_internal_header_util.o: module_internal_header_util.f
-	$(FC) $(FCFLAGS) -o $@ -c $*.f
+	$(FC) $(FCFLAGS) -I../../frame -o $@ -c $*.f
 
 diffwrf.f: diffwrf.F90 io_int.o
 	if [ `echo "$(FC)" | awk '{print $$1}'` = "gfortran" ] ; then \
@@ -74,7 +74,7 @@ diffwrf.f: diffwrf.F90 io_int.o
 
 diffwrf: diffwrf.f $(WRF_MOD) $(ESMF_MOD_DEPENDENCE) $(LIB)
 	if [ -f ../../frame/pack_utils.o -a -f ../../frame/clog.o ] ; then \
-	  $(FC) $(FCFLAGS) $(LDFLAGS) -I../ioapi_share -o diffwrf $@.f \
+	  $(FC) $(FCFLAGS) $(LDFLAGS) -I../../frame -I../ioapi_share -o diffwrf $@.f \
 		$(WRF_MOD) $(ESMF_IO_LIB_EXT) $(LIB) ; \
 	fi
 

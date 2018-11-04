@@ -11,7 +11,7 @@ CODE    = ext_pnc_get_dom_ti.code \
 	  transpose.code 
 FFLAGS  = $(FCFLAGS) -I$(NETCDFPATH)/include -I../ioapi_share
 LIBS    = -L$(NETCDFPATH)/lib -lpnetcdf
-CPP1    = $(CPP) -P $(TRADFLAG)
+CPP1    = $(CPP) $(TRADFLAG)
 M4      = m4 -Uinclude -Uindex -Ulen
 AR      = ar
 

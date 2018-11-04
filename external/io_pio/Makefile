@@ -26,7 +26,7 @@ OBJS    = wrf_data_pio.o pio_routines.o wrf_io.o field_routines.o read_bdy_routi
 PIOPATH = /glade/p/work/huangwei/lib/intel
 FFLAGS  = $(FCFLAGS) -I. -I$(PIOPATH)/include -I../ioapi_share -I../../frame -I../esmf_time_f90
 LIBS    = -L$(PIOPATH)/lib -lpio
-CPP1    = $(CPP) -P $(TRADFLAG) -DINTSPECIAL
+CPP1    = $(CPP) $(TRADFLAG) -DINTSPECIAL
 M4      = m4 -Uinclude -Uindex -Ulen
 AR      = ar
 

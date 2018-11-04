@@ -188,8 +188,9 @@ wrfio_esmf :
 	$(RM) $@
 	sed -e "s/^\!.*'.*//" -e "s/^ *\!.*'.*//" $*.F > $*.G
 	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.G  > $*.bb
-	$(SED_FTN) $*.bb | $(CPP) $(TRADFLAG) > $*.f90
-	$(RM) $*.G $*.bb
+	$(SED_FTN) $*.bb > $*.b 
+	$(CPP) $(TRADFLAG) $*.b > $*.f90
+	$(RM) $*.G $*.bb $*.b
 	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
           echo COMPILING $*.F for 4DVAR ; \
           $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f90 > $*.f90.tmp ; \

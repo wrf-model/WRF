@@ -1,4 +1,4 @@
-WRF Model Version 4.0.1 (October 2, 2018)
+WRF Model Version 4.0.2 (November 9, 2018)
 
 http://www2.mmm.ucar.edu/wrf/users/
 
@@ -41,18 +41,11 @@ doc/README.rsl_output
 doc/README.windturbine
 doc/README_test_cases
 
-V4.0.1 Release Notes (10/2/2018):
--------------------
-
-- For more information on the WRF V4.0.1 release, visit the WRF GitHub Release Page:
+- Beginning with version 4.0, for more information on the releases, visit 
+  the WRF GitHub Release Page:
   https://github.com/wrf-model/WRF/releases
 
-V4.0 Release Notes (6/8/2018):
--------------------
 
-- For more information on WRF V4.0 release, visit WRF User's home pages
-  http://www2.mmm.ucar.edu/wrf/users/, and
-  http://www.dtcenter.org/wrf-nmm/users/, and read the online User's Guide.
 
 V3.9.1.1 Release Notes (8/28/17):
 -------------------

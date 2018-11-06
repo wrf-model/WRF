@@ -17,6 +17,11 @@
 /arch/					@wrf-model/infrastructure
 /tools/					@wrf-model/infrastructure
 
+#	Common directories
+
+/share/					@wrf-model/infrastructure
+/frame/					@wrf-model/infrastructure
+
 #	Chemistry
 /chem/					@wrf-model/chem
 

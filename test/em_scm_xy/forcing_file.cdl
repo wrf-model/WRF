@@ -180,7 +180,7 @@ variables:
 		TAU_Y_TEND:stagger = "" ;
 
 // global attributes:
-		:TITLE = "AUXILIARY FORCING FOR SCM" ;
+		:TITLE = "AUXILIARY FORCING FOR SCM V4." ;
 		:START_DATE = "1999-10-22_19:00:00" ;
 		:SIMULATION_START_DATE = "1999-10-22_19:00:00" ;
 		:DX = 4000.f ;

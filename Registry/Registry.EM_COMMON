@@ -172,7 +172,7 @@ state    real   umaxw          ij       dyn_em      1        X     i1  "UMAXW"  
 state    real   utrop          ij       dyn_em      1        X     i1  "UTROP"      "U-component of the tropopause wind" "m s-1"
 state    real   vmaxw          ij       dyn_em      1        Y     i1  "VMAXW"      "V-component of the max wind speed"  "m s-1"
 state    real   vtrop          ij       dyn_em      1        Y     i1  "VTROP"      "V-component of the tropopause wind" "m s-1"
-state    real   erod           ij.      misc        1        -     i012rh "EROD" "fraction of erodible surface in each grid cell (0-1)"       "none"
+state    real   erod           ij.      misc        1        -     i012r  "EROD" "fraction of erodible surface in each grid cell (0-1)"       "none"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
 #                                               
@@ -233,7 +233,7 @@ i1       real   ph_save        ikj     dyn_em      1         Z
 # Potential Temperature
 state    real   th_phy_m_t0    ikj      dyn_em      1         -     ih  "t"      "perturbation potential temperature theta-t0" "K"
 state    real   t              ikjb     dyn_em      2         -     \
-       i0rhusdf=(bdy_interp:dt)   "moist_theta-T0"      "perturbation moist potential temperature (1+Rv/Rd Qv)*(theta-t0)" "K"
+       i0rhusdf=(bdy_interp:dt)   "thm"      "either 1) pert moist pot temp=(1+Rv/Rd Qv)*(theta)-T0, or 2) pert dry pot temp=theta-T0; based on use_theta_m setting" "K"
 
 state    real   t_init         ikj     dyn_em      1         -      ird       "t_init" "initial potential temperature" "K"
 i1       real   t_tend         ikj     dyn_em      1         -  
@@ -658,7 +658,6 @@ state   real   slp_azi             ij    misc          1     -     rdu     "SLP_
 state   real   shdmax              ij    misc          1     -     i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)   "SHDMAX"        "ANNUAL MAX VEG FRACTION" ""
 state   real   shdmin              ij    misc          1     -     i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)   "SHDMIN"        "ANNUAL MIN VEG FRACTION" ""
 state   real   snoalb              ij    misc          1     -     i012rh  "SNOALB"        "ANNUAL MAX SNOW ALBEDO IN FRACTION" ""
-state   real   slopecat            ij    misc          1     -     i12     "SLOPECAT"      "SLOPE CATEGORY"  ""
 state   real   toposoil            ij    misc          1     -     i12     "SOILHGT"       "ELEVATION OF LSM DATA"  "m"
 state   real   landusef            iuj   misc          1     Z     i012rdu   "LANDUSEF"      "LANDUSE FRACTION BY CATEGORY"  ""
 state   real   soilctop            isj   misc          1     Z     i012rdu   "SOILCTOP"      "SOIL CAT FRACTION (TOP)"  ""
@@ -802,6 +801,7 @@ state    real  dfi_SMFR3D      ilj   misc        1         Z     r    "SMFR3D_df
 state    real  dfi_KEEPFR3DFLAG ilj  misc        1         Z     r    "KEEPFR3DFLAG_dfi"     "FLAG - 1. FROZEN SOIL YES, 0 - NO"             ""
 
 # urban state variables
+state    real   TSK_RURAL        ij     misc        1         -     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "TSK_RURAL"   "TSK for rural fraction" "K"
 state    real   TR_URB2D         ij     misc        1         -     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "TR_URB"              "URBAN ROOF SKIN TEMPERATURE"        "K"
 state    real   TGR_URB2D        ij     misc        1         -     rd=(interp_mask_land_field:lu_index)u=(copy_fcnm)        "TGR_URB"             "URBAN GREEN ROOF SKIN TEMPERATURE"  "K"
 state    real   TB_URB2D         ij     misc        1         -     rd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)     "TB_URB"              "URBAN WALL SKIN TEMPERATURE"        "K" 
@@ -1063,7 +1063,7 @@ state    real   acfrcv           ij     misc        1         -      -
 state integer   ncfrcv           ij     misc        1         -      -
 
 # new rad variables
-state    real   o3rad           ikj     misc        1         -      irh       "o3rad"    "RADIATION 3D OZONE" "ppmv"
+state    real   o3rad           ikj     misc        1         -      rdf=(p2c)      "o3rad"    "RADIATION 3D OZONE" "ppmv"
 
 # incoming optical depth derived from aerosol data
 state  real   aerodm    i{lsa}jm{ty}    misc        1    -   -     -
@@ -1236,6 +1236,8 @@ state logical just_read_boundary   -      misc      -         -     r    "we_jus
 state   real    mf_fft         -       misc         -         -     r        "mf_fft"                "Mass point map factor at equatorward FFT filter location"  ""
 state   real    p_top          -       misc         -         -     irh       "p_top"                "PRESSURE TOP OF THE MODEL"  "Pa"
 state logical got_var_sso	-	misc	    -	      -     i02r  "got_var_sso"		     "whether VAR_SSO was included in WPS output (beginning V3.4)" ""
+state logical v4_metgrid 	-	misc	    -	      -     -     "v4_metgrid"		     "for real, T/F: identify if this is v4 metgrid data" ""
+
 
 #BSINGH - Adding all these variables for CuP scheme[any var before t00]
 state   real    lat_ll_t       -       dyn_em       -         -     ir       "lat_ll_t"              "latitude lower left, temp point" "degrees"
@@ -1441,7 +1443,7 @@ state    real  diffuse_frac     ij      misc        1         -      rd       "D
 state   real    swddir       ij     misc         1         -     rd     "SWDDIR"     "Shortwave surface downward direct irradiance" "W m-2" ""
 state   real    swddirc      ij     misc         1         -     rd     "SWDDIRC"    "Clear-sky Shortwave surface downward direct irradiance" "W m-2" ""
 state   real    swddni       ij     misc         1         -     rd     "SWDDNI"     "Shortwave surface downward direct normal irradiance" "W m-2" ""
-state   real    swddnic      ij     misc         1         -     rd     "SWDDNIC"    "Clear-sky Shortwave surface downward direct normal irradiance" "W m-2" "
+state   real    swddnic      ij     misc         1         -     rd     "SWDDNIC"    "Clear-sky Shortwave surface downward direct normal irradiance" "W m-2" ""
 state   real    swddif       ij     misc         1         -     rd     "SWDDIF"     "Shortwave surface downward diffuse irradiance" "W m-2" ""
 state   real    Gx           ij     misc         1         -     rd     "Gx" "" ""
 state   real    Bx           ij     misc         1         -     rd     "Bx" "" ""
@@ -1910,6 +1912,7 @@ rconfig   logical cycling                 namelist,time_control         1       
 rconfig   integer output_diagnostics      namelist,time_control         1              0
 rconfig   integer nwp_diagnostics         namelist,time_control         1              0
 rconfig   logical output_ready_flag       namelist,time_control         1             .false. -    "drop a flag called wrfoutReady_d<domain>_<date> after history write" "" ""
+rconfig   logical force_use_old_data      namelist,time_control         1             .false. -    "T=use v3 input data, F=only use v4 data" "" ""
 
 pioprocs, piostart, piostride, pioshift
 # PIO namelist
@@ -2467,7 +2470,7 @@ rconfig   real    diff_6th_factor         namelist,dynamics     max_domains    0
 rconfig   integer diff_6th_opt            namelist,dynamics     max_domains    0      irh   "diff_6th_opt" "switch for 6th-order numerical diffusion"
 rconfig   integer diff_6th_slopeopt       namelist,dynamics     max_domains    0      irh   "diff_6th_slopeopt" "switch for 6th-order numerical diffusion - terrain-slope tapering"
 rconfig   real    diff_6th_thresh         namelist,dynamics     max_domains    0.10    ih    "diff_6th_thresh" "slope threshold (m/m) that turns off 6th order diff is steep terrain"
-rconfig   integer use_theta_m             namelist,dynamics	1              0       rh    "use_theta_m" "theta_m = theta (1 + 1.61 Qv); 0-no, 1=yes"     ""
+rconfig   integer use_theta_m             namelist,dynamics	1              1       rh    "use_theta_m" "theta_m = theta (1 + 1.61 Qv); 0-no, 1=yes"     ""
 rconfig   integer use_q_diabatic          namelist,dynamics     1              0       rh    "use_q_diabatic" "account for q diabatic terms in advection "     ""
 rconfig   real    c_s                     namelist,dynamics     max_domains    0.25    h    "c_s"         "Smagorinsky coeff"      ""
 rconfig   real    c_k                     namelist,dynamics     max_domains    0.15    h    "c_k"         "TKE coeff"      ""
@@ -2714,9 +2717,10 @@ package   idealscmsfcscheme  sf_sfclay_physics==89       -             -
 package   sfclayscheme       sf_sfclay_physics==91       -             -
 
 package   noahucmscheme  sf_urban_physics==1         -             state:trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,mh_urb2d,stdh_urb2d,lf_urb2d,lp_urb2d,hgt_urb2d,lb_urb2d,tgr_urb2d,cmcr_urb2d,drelr_urb2d,drelb_urb2d,drelg_urb2d,flxhumr_urb2d,flxhumb_urb2d,flxhumg_urb2d,tgrl_urb3d,smr_urb3d,cmgr_sfcdif,chgr_sfcdif,trl_urb3d,tgl_urb3d,tbl_urb3d
-package   bepscheme      sf_urban_physics==2         -             state:a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,hi_urb2d,lp_urb2d,hgt_urb2d,lb_urb2d,trl_urb3d,tgl_urb3d,tbl_urb3d
-package   bep_bemscheme  sf_urban_physics==3         -             state:a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,tlev_urb3d,qlev_urb3d,tw1lev_urb3d,tw2lev_urb3d,tglev_urb3d,tflev_urb3d,sf_ac_urb3d,lf_ac_urb3d,cm_ac_urb3d,sfvent_urb3d,lfvent_urb3d,sfwin1_urb3d,sfwin2_urb3d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,hi_urb2d,lp_urb2d,hgt_urb2d,lb_urb2d,trl_urb3d,tgl_urb3d,tbl_urb3d
+package   bepscheme      sf_urban_physics==2         -             state:a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,hi_urb2d,lp_urb2d,hgt_urb2d,lb_urb2d,trl_urb3d,tgl_urb3d,tbl_urb3d,tsk_rural
+package   bep_bemscheme  sf_urban_physics==3         -             state:a_u_bep,a_v_bep,a_t_bep,a_q_bep,a_e_bep,b_u_bep,b_v_bep,b_t_bep,b_q_bep,b_e_bep,dlg_bep,dl_u_bep,sf_bep,vl_bep,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,tlev_urb3d,qlev_urb3d,tw1lev_urb3d,tw2lev_urb3d,tglev_urb3d,tflev_urb3d,sf_ac_urb3d,lf_ac_urb3d,cm_ac_urb3d,sfvent_urb3d,lfvent_urb3d,sfwin1_urb3d,sfwin2_urb3d,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d,hi_urb2d,lp_urb2d,hgt_urb2d,lb_urb2d,trl_urb3d,tgl_urb3d,tbl_urb3d,tsk_rural
 
+package   nolsmscheme    sf_surface_physics==0       -             -
 package   slabscheme     sf_surface_physics==1       -             -
 package   lsmscheme      sf_surface_physics==2       -             state:flx4,fvb,fbur,fgsn,smcrel,xlaidyn
 package   ruclsmscheme   sf_surface_physics==3       -             state:smfr3d,keepfr3dflag,soilt1,rhosnf,snowfallac,precipfr,acrunoff
@@ -2784,6 +2788,7 @@ package   noshcuscheme    shcu_physics==0            -             -
 package   g3shcuscheme    shcu_physics==1            -             -
 package   camuwshcuscheme shcu_physics==2            -             state:shfrc3d,dlf,dlf2,cmfmc,cmfmc2,qtflx_cu,slflx_cu,uflx_cu,vflx_cu,qtten_cu,slten_cu,uten_cu,vten_cu,qvten_cu,qlten_cu,qiten_cu,cbmf_cu,ufrcinvbase_cu,ufrclcl_cu,winvbase_cu,wlcl_cu,plcl_cu,pinv_cu,plfc_cu,pbup_cu,ppen_cu,qtsrc_cu,thlsrc_cu,thvlsrc_cu,emkfbup_cu,cin_cu,cinlcl_cu,cbmflimit_cu,tkeavg_cu,zinv_cu,rcwp_cu,rlwp_cu,riwp_cu,tophgt_cu,wu_cu,ufrc_cu,qtu_cu,thlu_cu,thvu_cu,uu_cu,vu_cu,qtu_emf_cu,thlu_emf_cu,uu_emf_cu,vu_emf_cu,umf_cu,uemf_cu,qcu_cu,qlu_cu,qiu_cu,cufrc_cu,fer_cu,fdr_cu,dwten_cu,diten_cu,qrten_cu,qsten_cu,flxrain_cu,flxsnow_cu,ntraprd_cu,ntsnprd_cu,excessu_cu,excessu0_cu,xc_cu,aquad_cu,bquad_cu,cquad_cu,bogbot_cu,bogtop_cu,exit_uwcu_cu,exit_conden_cu,exit_klclmkx_cu,exit_klfcmkx_cu,exit_ufrc_cu,exit_wtw_cu,exit_drycore_cu,exit_wu_cu,exit_cufliter_cu,exit_kinv1_cu,exit_rei_cu,limit_shcu_cu,limit_negcon_cu,limit_ufrc_cu,limit_ppen_cu,limit_emf_cu,limit_cinlcl_cu,limit_cin_cu,limit_cbmf_cu,limit_rei_cu,ind_delcin_cu,evapcsh,cmfsl,cmflq,cldfrash,cush,icwmrsh,snowsh,rprdsh,rliq2,rliq
 package   grimsshcuscheme shcu_physics==3            -             -
+package   nscvshcuscheme  shcu_physics==4            -             -
 
 package   no_shcu_used    shcu_used==0               -             -
 package   any_shcu_used   shcu_used==1               -             state:rushten,rvshten,rthshten,rqvshten,rqrshten,rqcshten,rqsshten,rqishten,rqgshten,rqcnshten,rqinshten

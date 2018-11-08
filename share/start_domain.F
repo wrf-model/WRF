@@ -76,13 +76,6 @@ SUBROUTINE start_domain ( grid , allowed_to_read )
 !
                          )
 #endif
-#if (COAMPS_CORE == 1)
-   CALL start_domain_coamps( grid, allowed_to_read   &
-!
-# include "actual_new_args.inc"
-!
-                         )
-#endif
 
 #if (DA_CORE != 1)
    CALL calc_ts_locations( grid )

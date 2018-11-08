@@ -167,6 +167,10 @@ integer::oops1,oops2
       INTEGER :: j_save
 
       LOGICAL :: wif_upside_down = .FALSE.
+      
+      !  Test on consistency between namelist settings and the available data from geogrid.
+
+      INTEGER :: geogrid_flag_error
 
       !  Dimension information stored in grid data structure.
 
@@ -182,6 +186,61 @@ integer::oops1,oops2
       its = ips ; ite = ipe ; jts = jps ; jte = jpe ; kts = kps ; kte = kpe
 
       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+
+      !  Check flags from geogrid and the various model settings for any inconsistency.
+      !  The optional data from geogrid mostly started with the v4.0 release. Older 
+      !  WPS data could have the required fields. Assume users know what they are 
+      !  doing when they bring old data into the newer real program ...
+
+      IF ( grid%v4_metgrid ) THEN
+
+         geogrid_flag_error = 0
+
+         IF ( ( config_flags%topo_wind          .EQ. 1          ) .AND. ( flag_var_sso    .EQ. 0 ) ) THEN
+            CALL wrf_message ( '----- ERROR: topo_wind          = 1 AND flag_var_sso    = 0 ' )
+            geogrid_flag_error = geogrid_flag_error + 1
+         END IF
+
+         IF ( ( config_flags%sf_lake_physics    .EQ. 1           ) .AND. ( flag_lake_depth .EQ. 0 ) ) THEN
+            CALL wrf_message ( '----- ERROR: sf_lake_physics    = 1 AND flag_lake_depth = 0 ' )
+            geogrid_flag_error = geogrid_flag_error + 1
+         END IF
+
+         IF ( ( config_flags%sf_surface_physics .EQ. pxlsmscheme  ) .AND. ( flag_imperv    .EQ. 0 ) ) THEN
+            CALL wrf_message ( '----- ERROR: sf_surface_physics = 7 AND flag_imperv     = 0 ' )
+            geogrid_flag_error = geogrid_flag_error + 1
+         END IF
+
+         IF ( ( config_flags%sf_surface_physics .EQ. pxlsmscheme  ) .AND. ( flag_canfra    .EQ. 0 ) ) THEN
+            CALL wrf_message ( '----- ERROR: sf_surface_physics = 7 AND flag_canfra     = 0 ' )
+            geogrid_flag_error = geogrid_flag_error + 1
+         END IF
+
+         IF ( ( config_flags%mp_physics         .EQ. thompsonaero ) .AND. &
+              ( config_flags%dust_emis          .EQ. 1            ) .AND. ( flag_erod      .EQ. 0 ) ) THEN
+            CALL wrf_message ( '----- ERROR: mp=28 AND dust_emis= 1 AND flag_erod       = 0 ' )
+            geogrid_flag_error = geogrid_flag_error + 1
+         END IF
+
+         IF ( ( config_flags%mp_physics         .EQ. thompsonaero ) .AND. &
+              ( config_flags%dust_emis          .EQ. 1            ) .AND. ( flag_clayfrac  .EQ. 0 ) ) THEN
+            CALL wrf_message ( '----- ERROR: mp=28 AND dust_emis= 1 AND flag_clayfrac   = 0 ' )
+            geogrid_flag_error = geogrid_flag_error + 1
+         END IF
+
+         IF ( ( config_flags%mp_physics         .EQ. thompsonaero ) .AND. &
+              ( config_flags%dust_emis          .EQ. 1            ) .AND. ( flag_sandfrac  .EQ. 0 ) ) THEN
+            CALL wrf_message ( '----- ERROR: mp=28 AND dust_emis= 1 AND flag_sandfrac   = 0 ' )
+            geogrid_flag_error = geogrid_flag_error + 1
+         END IF
+        
+         IF ( geogrid_flag_error .GT. 0 ) THEN
+            CALL wrf_error_fatal ('Either modify the namelist settings, or rebuild the geogrid/metgrid data' )
+         END IF
+
+         !  Geogrid flags that are not yet used: FLAG_FRC_URB2D FLAG_LAI12M FLAG_URB_PARAM
+   
+      END IF
 
       !  Would the user prefer to forego the use of the level of max winds, or the
       !  tropopause level data?  This is an option the user may select.  While the
@@ -4678,8 +4737,13 @@ endif
             qvf1 = qvf1*qvf2
             grid%p(i,kk,j) = - 0.5*((grid%c1f(k)*grid%Mu_2(i,j))+qvf1*(grid%c1f(k)*grid%Mub(i,j)+grid%c2f(k)))/grid%rdnw(kk)/qvf2
             qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
-            grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf* &
-                                 (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
+            IF ( config_flags%use_theta_m .EQ. 1 ) THEN
+               grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)* &
+                                  (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
+            ELSE 
+               grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf* &
+                                  (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
+            END IF
             grid%al(i,kk,j) = grid%alt(i,kk,j) - grid%alb(i,kk,j)
             grid%p_hyd(i,kk,j) = grid%p(i,kk,j) + grid%pb(i,kk,j)
             !  Now, integrate down the column to compute the pressure perturbation, and diagnose the two
@@ -4691,8 +4755,13 @@ endif
                qvf1 = qvf1*qvf2
                grid%p(i,kk,j) = grid%p(i,kk+1,j) - ((grid%c1f(k)*grid%Mu_2(i,j)) + qvf1*(grid%c1f(k)*grid%Mub(i,j)+grid%c2f(k)))/qvf2/grid%rdn(kk+1)
                qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
-               grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf* &
-                           (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
+               IF ( config_flags%use_theta_m .EQ. 1 ) THEN
+                  grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)* &
+                                     (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
+               ELSE
+                  grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf* &
+                                     (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
+               END IF
                grid%al(i,kk,j) = grid%alt(i,kk,j) - grid%alb(i,kk,j)
                grid%p_hyd(i,kk,j) = grid%p(i,kk,j) + grid%pb(i,kk,j)
             END DO

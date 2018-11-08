@@ -781,6 +781,8 @@ contains
 
 ! compute carbon budgets (carbon storages and co2 & bvoc fluxes)
 
+   crop_active = .false.
+   dveg_active = .false.
    IF (DVEG == 2 .OR. DVEG == 5 .OR. DVEG == 6) dveg_active = .true.
    IF (OPT_CROP > 0 .and. CROPTYPE > 0) THEN
      crop_active = .true.
@@ -1026,6 +1028,8 @@ contains
   REAL                                   :: T       !current month (1.00, ..., 12.00)
 ! --------------------------------------------------------------------------------------------------
 
+IF (CROPTYPE == 0) THEN
+
   IF ( DVEG == 1 .or. DVEG == 3 .or. DVEG == 4 ) THEN
 
      IF (LAT >= 0.) THEN
@@ -1053,14 +1057,16 @@ contains
     IF (LAI < 0.05) SAI = 0.0  ! if LAI below minimum, make sure SAI = 0
   ENDIF
 
-  IF (SAI < 0.05 .and. CROPTYPE == 0) SAI = 0.0                    ! MB: SAI CHECK, change to 0.05 v3.6
-  IF ((LAI < 0.05 .OR. SAI == 0.0) .and. CROPTYPE == 0) LAI = 0.0  ! MB: LAI CHECK
+  IF (SAI < 0.05) SAI = 0.0                    ! MB: SAI CHECK, change to 0.05 v3.6
+  IF (LAI < 0.05 .OR. SAI == 0.0) LAI = 0.0  ! MB: LAI CHECK
 
   IF ( ( VEGTYP == parameters%iswater ) .OR. ( VEGTYP == parameters%ISBARREN ) .OR. &
        ( VEGTYP == parameters%ISICE   ) .or. ( parameters%urban_flag ) ) THEN
      LAI  = 0.
      SAI  = 0.
   ENDIF
+
+ENDIF   ! CROPTYPE == 0
 
 !buried by snow
 
@@ -1076,6 +1082,8 @@ contains
      ESAI =  SAI*(1.-FB)
      IF (ESAI < 0.05 .and. CROPTYPE == 0) ESAI = 0.0                   ! MB: ESAI CHECK, change to 0.05 v3.6
      IF ((ELAI < 0.05 .OR. ESAI == 0.0) .and. CROPTYPE == 0) ELAI = 0.0  ! MB: LAI CHECK
+
+! set growing season flag
 
      IF ((TV .GT. parameters%TMIN .and. CROPTYPE == 0).or.(PGS > 2 .and. PGS < 7 .and. CROPTYPE > 0)) THEN
          IGS = 1.
@@ -4276,6 +4284,7 @@ contains
 
        TMPRB  = CWPC*50. / (1. - EXP(-CWPC/2.))
        RB     = TMPRB * SQRT(parameters%DLEAF/UC)
+       RB     = MAX(RB,100.0)
 !       RB = 200
 
   END SUBROUTINE RAGRB
@@ -6801,38 +6810,21 @@ contains
 
 ! Porosity and partial volume
 
-   !KWM Looks to me like loop index / IF test can be simplified.
-
-   DO J = -NSNOW+1, 0
-      IF (J >= ISNOW+1) THEN
-         VOL_ICE(J)      = MIN(1., SNICE(J)/(DZSNSO(J)*DENICE))
-         EPORE(J)        = 1. - VOL_ICE(J)
-         VOL_LIQ(J)      = MIN(EPORE(J),SNLIQ(J)/(DZSNSO(J)*DENH2O))
-      END IF
+   DO J = ISNOW+1, 0
+     VOL_ICE(J)      = MIN(1., SNICE(J)/(DZSNSO(J)*DENICE))
+     EPORE(J)        = 1. - VOL_ICE(J)
    END DO
 
    QIN = 0.
    QOUT = 0.
 
-   !KWM Looks to me like loop index / IF test can be simplified.
-
-   DO J = -NSNOW+1, 0
-      IF (J >= ISNOW+1) THEN
-         SNLIQ(J) = SNLIQ(J) + QIN
-         IF (J <= -1) THEN
-            IF (EPORE(J) < 0.05 .OR. EPORE(J+1) < 0.05) THEN
-               QOUT = 0.
-            ELSE
-               QOUT = MAX(0.,(VOL_LIQ(J)-parameters%SSI*EPORE(J))*DZSNSO(J))
-               QOUT = MIN(QOUT,(1.-VOL_ICE(J+1)-VOL_LIQ(J+1))*DZSNSO(J+1))
-            END IF
-         ELSE
-            QOUT = MAX(0.,(VOL_LIQ(J) - parameters%SSI*EPORE(J))*DZSNSO(J))
-         END IF
-         QOUT = QOUT*1000.
-         SNLIQ(J) = SNLIQ(J) - QOUT
-         QIN = QOUT
-      END IF
+   DO J = ISNOW+1, 0
+     SNLIQ(J) = SNLIQ(J) + QIN
+     VOL_LIQ(J) = SNLIQ(J)/(DZSNSO(J)*DENH2O)
+     QOUT = MAX(0.,(VOL_LIQ(J)-parameters%SSI*EPORE(J))*DZSNSO(J))
+     QOUT = QOUT*DENH2O
+     SNLIQ(J) = SNLIQ(J) - QOUT
+     QIN = QOUT
    END DO
 
 ! Liquid water from snow bottom to soil
@@ -7145,7 +7137,7 @@ contains
 
    WD1 = 0.
    DO K = 1,NSOIL
-     WD1 = WD1 + (parameters%SMCMAX(K)-SH2O(K)) * DZSNSO(K) ! [m]
+     WD1 = WD1 + (parameters%SMCMAX(1)-SH2O(K)) * DZSNSO(K) ! [m]
    ENDDO
 
    DZFINE = 3.0 * (-ZSOIL(NSOIL)) / NFINE  
@@ -7157,8 +7149,8 @@ contains
 
    WD2 = 0.
    DO K = 1,NFINE
-     TEMP  = 1. + (ZWT-ZFINE(K))/parameters%PSISAT(K)
-     WD2   = WD2 + parameters%SMCMAX(K)*(1.-TEMP**(-1./parameters%BEXP(K)))*DZFINE
+     TEMP  = 1. + (ZWT-ZFINE(K))/parameters%PSISAT(1)
+     WD2   = WD2 + parameters%SMCMAX(1)*(1.-TEMP**(-1./parameters%BEXP(1)))*DZFINE
      IF(ABS(WD2-WD1).LE.0.01) THEN
         ZWT = ZFINE(K)
         EXIT
@@ -8780,9 +8772,9 @@ END SUBROUTINE CO2FLUX_CROP
       TDIFF = TC - parameters%GDDTBASE
     END IF
 
-    GDD     = (GDD + TDIFF) * IPA * IHA
+    GDD     = (GDD + TDIFF * DT / 86400.0) * IPA * IHA
 
-    GDDDAY  = GDD / (86400.0 / DT)
+    GDDDAY  = GDD
 
    ! Decide corn growth stage, based on Hybrid-Maize 
    !   PGS = 1 : Before planting

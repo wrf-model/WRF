@@ -41,16 +41,12 @@ DA_CONVERTOR_MODULES = $(DA_CONVERTOR_MOD_DIR) $(INCLUDE_MODULES)
 
 #### 3.d.   add macros to specify the modules for this core
 
-#EXP_MODULE_DIR = -I../dyn_exp
-#EXP_MODULES =  $(EXP_MODULE_DIR)
-
 NMM_MODULE_DIR = -I../dyn_nmm
 NMM_MODULES =  $(NMM_MODULE_DIR)
 
 ALL_MODULES =                           \
                $(EM_MODULE_DIR)         \
                $(NMM_MODULES)           \
-               $(EXP_MODULES)           \
                $(INCLUDE_MODULES)
 
 configcheck:
@@ -109,7 +105,6 @@ wrf : framework_only
 	if [ $(WRF_CHEM) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" chemics ; fi
 	if [ $(WRF_EM_CORE) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" em_core ; fi
 	if [ $(WRF_NMM_CORE) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" nmm_core ; fi
-	if [ $(WRF_EXP_CORE) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" exp_core ; fi
 	if [ $(WRF_HYDRO) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" wrf_hydro ; fi
 	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf )
 	( cd run ; /bin/rm -f wrf.exe ; ln -s ../main/wrf.exe . )
@@ -133,12 +128,8 @@ wrfplus : configcheck
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" physics_plus
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" em_core
 	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" wrftlmadj
-	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf )
-	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=real em_real )
+	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrfplus )
 	( cd run ; /bin/rm -f *.exe ; ln -s ../main/*.exe . )
-	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
-	  ( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_SST_ESMF ) ; \
-	fi
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
 
@@ -172,16 +163,6 @@ gen_be :
 	@echo "build completed:" `date`
 
 
-### 3.a.  rules to build the framework and then the experimental core
-
-exp_wrf : configcheck
-	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" ext
-	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" toolsdir
-	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" framework
-	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" shared
-	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=exp exp_wrf )
-
-
 nmm_wrf : wrf
 
 
@@ -201,8 +182,25 @@ em_fire : wrf
 		/bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; fi ; \
 		/bin/rm -f namelist.input ; cp ../test/em_fire/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_fire/input_sounding . )
+	@echo " "
+	@echo "=========================================================================="
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
+	@if test -e main/wrf.exe -a -e main/ideal.exe ; then \
+		echo " " ; \
+		echo "--->                  Executables successfully built                  <---" ; \
+		echo " " ; \
+		ls -l main/*.exe ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	else \
+		echo " " ; \
+		echo "---> Problems building executables, look for errors in the build log  <---" ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	fi
 
 em_quarter_ss : wrf
 	@/bin/rm -f ideal.exe > /dev/null 2>&1
@@ -1060,14 +1058,6 @@ fortran_2003_fflush_test:
 fortran_2008_gamma_test:
 	@cd tools ; /bin/rm -f fortran_2008_gamma_test.{exe,o} ; $(SFC) -o fortran_2008_gamma_test.exe fortran_2008_gamma_test.F ; cd ..
 
-### 3.b.  sub-rule to build the experimental core
-
-# uncomment the two lines after exp_core for EXP
-exp_core :
-	@ echo '--------------------------------------'
-	( cd dyn_exp ; $(MAKE) )
-
-# uncomment the two lines after nmm_core for NMM
 nmm_core :
 	@ echo '--------------------------------------'
 	if [ "`echo $(J) | sed -e 's/-j//g' -e 's/ \+//g'`" -gt "16" ] ; then \

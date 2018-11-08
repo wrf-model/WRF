@@ -12,6 +12,9 @@ subroutine da_scale_background_errors ( be, it )
    integer  :: i, ix, jy, kz, v1_mz, v2_mz, v3_mz, v4_mz, v5_mz
    real     :: ds
 
+   real*8, allocatable, dimension(:) :: rf_len6, rf_len7, rf_len8, &
+                                        rf_len9, rf_len10, rf_len11
+
    if ( jb_factor <= 0.0 ) return
 !
 ! Rewind the unit:
@@ -105,6 +108,40 @@ subroutine da_scale_background_errors ( be, it )
     deallocate ( rf_len4 )
     deallocate ( v5_val )
     deallocate ( rf_len5 )
-!
+
+    if ( cloud_cv_options >= 2 ) then
+       allocate ( rf_len6(1:kz) )
+       allocate ( rf_len7(1:kz) )
+       allocate ( rf_len8(1:kz) )
+       allocate ( rf_len9(1:kz) )
+       allocate ( rf_len10(1:kz) )
+       read (be_rf_unit) be%v6%val, be%v7%val, be%v8%val, &
+                         be%v9%val, be%v10%val
+       read (be_rf_unit) rf_len6, rf_len7, rf_len8, rf_len9, rf_len10
+       call da_rescale_background_errors( var_scaling6(it), len_scaling6(it), &
+                                          ds, rf_len6, be % v6 )
+       call da_rescale_background_errors( var_scaling7(it), len_scaling7(it), &
+                                          ds, rf_len7, be % v7 )
+       call da_rescale_background_errors( var_scaling8(it), len_scaling8(it), &
+                                          ds, rf_len8, be % v8 )
+       call da_rescale_background_errors( var_scaling9(it), len_scaling9(it), &
+                                          ds, rf_len9, be % v9 )
+       call da_rescale_background_errors( var_scaling10(it), len_scaling10(it), &
+                                          ds, rf_len10, be % v10)
+       deallocate ( rf_len6 )
+       deallocate ( rf_len7 )
+       deallocate ( rf_len8 )
+       deallocate ( rf_len9 )
+       deallocate ( rf_len10 )
+    end if
+    if ( use_cv_w ) then
+       allocate ( rf_len11(1:kz) )
+       read (be_rf_unit) be%v11%val
+       read (be_rf_unit) rf_len11
+       call da_rescale_background_errors( var_scaling11(it), len_scaling11(it), &
+                                          ds, rf_len11, be % v11)
+       deallocate ( rf_len11 )
+    end if
+
 end subroutine da_scale_background_errors
 

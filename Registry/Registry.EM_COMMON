@@ -1063,7 +1063,7 @@ state    real   acfrcv           ij     misc        1         -      -
 state integer   ncfrcv           ij     misc        1         -      -
 
 # new rad variables
-state    real   o3rad           ikj     misc        1         -      r         "o3rad"    "RADIATION 3D OZONE" "ppmv"
+state    real   o3rad           ikj     misc        1         -      rdf=(p2c)      "o3rad"    "RADIATION 3D OZONE" "ppmv"
 
 # incoming optical depth derived from aerosol data
 state  real   aerodm    i{lsa}jm{ty}    misc        1    -   -     -
@@ -1236,6 +1236,8 @@ state logical just_read_boundary   -      misc      -         -     r    "we_jus
 state   real    mf_fft         -       misc         -         -     r        "mf_fft"                "Mass point map factor at equatorward FFT filter location"  ""
 state   real    p_top          -       misc         -         -     irh       "p_top"                "PRESSURE TOP OF THE MODEL"  "Pa"
 state logical got_var_sso	-	misc	    -	      -     i02r  "got_var_sso"		     "whether VAR_SSO was included in WPS output (beginning V3.4)" ""
+state logical v4_metgrid 	-	misc	    -	      -     -     "v4_metgrid"		     "for real, T/F: identify if this is v4 metgrid data" ""
+
 
 #BSINGH - Adding all these variables for CuP scheme[any var before t00]
 state   real    lat_ll_t       -       dyn_em       -         -     ir       "lat_ll_t"              "latitude lower left, temp point" "degrees"
@@ -2468,7 +2470,7 @@ rconfig   real    diff_6th_factor         namelist,dynamics     max_domains    0
 rconfig   integer diff_6th_opt            namelist,dynamics     max_domains    0      irh   "diff_6th_opt" "switch for 6th-order numerical diffusion"
 rconfig   integer diff_6th_slopeopt       namelist,dynamics     max_domains    0      irh   "diff_6th_slopeopt" "switch for 6th-order numerical diffusion - terrain-slope tapering"
 rconfig   real    diff_6th_thresh         namelist,dynamics     max_domains    0.10    ih    "diff_6th_thresh" "slope threshold (m/m) that turns off 6th order diff is steep terrain"
-rconfig   integer use_theta_m             namelist,dynamics	1              0       rh    "use_theta_m" "theta_m = theta (1 + 1.61 Qv); 0-no, 1=yes"     ""
+rconfig   integer use_theta_m             namelist,dynamics	1              1       rh    "use_theta_m" "theta_m = theta (1 + 1.61 Qv); 0-no, 1=yes"     ""
 rconfig   integer use_q_diabatic          namelist,dynamics     1              0       rh    "use_q_diabatic" "account for q diabatic terms in advection "     ""
 rconfig   real    c_s                     namelist,dynamics     max_domains    0.25    h    "c_s"         "Smagorinsky coeff"      ""
 rconfig   real    c_k                     namelist,dynamics     max_domains    0.15    h    "c_k"         "TKE coeff"      ""

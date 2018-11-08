@@ -8,9 +8,16 @@ SOURCE: Either "developer's name (affiliation)" .XOR. "internal" for a WRF Dev c
 
 DESCRIPTION OF CHANGES: One or more paragraphs describing problem, solution, and required changes.
 
+ISSUE: For use when this PR closes an issue. For issue number 123
+```
+Fixes #123
+
+
 LIST OF MODIFIED FILES: list of changed files (use `git diff --name-status master` to get formatted list)
 
 TESTS CONDUCTED: Explicitly state if a WTF and or other tests were run, or are pending. For more complicated changes please be explicit!
+
+RELEASE NOTE: Optional, as appropriate. Delete if not used. Included only once for new features requiring several merge cycles. Changes to default behavior are also note worthy.
 
 ------------------------------------------------------------------
 

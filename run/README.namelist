@@ -824,6 +824,10 @@ Namelist variables for controlling the adaptive time step option:
                                      = 2: aerosol interaction with both MSKF and Morrison
  aercu_fct                           factor to multiply with aerosol amount
                                      = 1.: default value
+ no_src_types_cu                     = 1        ; number of aerosol species in global aerosol data: 10 for CESM input,
+                                                ; set automatically
+ alevsiz_cu                          = 1        ; number of levels in global aerosol data: 30 for CESM input,
+                                                ; set automatically
 
  ncnvc (max_dom)                     = FOR NMM: number of fundamental timesteps between
                                                 calls to convection; the value is set in Registry.NMM
@@ -907,15 +911,13 @@ Namelist variables for controlling the adaptive time step option:
                                                 ; namelists in &time_control: auxinput4_interval, auxinput4_end_h,
                                                 ; auxinput4_inname = "wrflowinp_d<domain>", 
                                                 ; and in V3.2 io_form_auxinput4
- usemonalb                           = .true.   ; use monthly albedo map instead of table value
-                                                ; (must be used for NMM and recommended for sst_update=1)
+ usemonalb                           = .false.  ; use monthly albedo map instead of table value
+                                                ; (must be set to true for NMM, and recommended for sst_update=1)
  rdmaxalb                            = .true.   ; use snow albedo from geogrid; false means using values from table
  rdlai2d                             = .false.  ; use LAI from input; false means using values from table
                                                   if sst_update=1, LAI will also be in wrflowinp file
  dust_emis                           = 0        ; Enable (0=no, 1=yes) surface dust emission scheme to enter mp_physics=28 QNIFA (ice-friendly aerosol variable)
  erosion_dim                         = 3        ; In conjunction with dust_emis=1, this value can only be set equal to 3 (erodibility information)
- no_src_types_cu                     = 1        ; number of aerosol species in global aerosol data
- alevsiz_cu                          = 1        ; number of levels in global aerosol data
  bucket_mm                           = -1.      ; bucket reset value for water accumulations (value in mm, -1.=inactive)
  bucket_J                            = -1.      ; bucket reset value for energy accumulations (value in J, -1.=inactive)
  tmn_update                          = 0        ; update deep soil temperature (1, yes; 0, no)
@@ -1136,48 +1138,53 @@ Options for use with the Noah-MP Land Surface Model:
                                                 ;    2 = On  (LAI predicted;  FVEG calculated)
                                                 ;    3 = Off (LAI from table; FVEG calculated)
                                                 ;    4 = Off (LAI from table; FVEG = maximum veg. fraction)
-                         			;    5 = On  (LAI predicted;  FVEG = maximum veg. fraction)
+                                                ;    5 = On  (LAI predicted;  FVEG = maximum veg. fraction)
                                                 ;    6 = On  (use FVEG = SHDFAC from input)
                                                 ;    7 = Off (use input LAI; use FVEG = SHDFAC from input)
                                                 ;    8 = Off (use input LAI; calculate FVEG)
                                                 ;    9 = Off (use input LAI; use maximum vegetation fraction)
-                                                ;   10 = crop model on (use maximum vegetation fraction)
  opt_crs                            = 1,        ; Noah-MP Stomatal Resistance option:
-                                                ;    1 = Ball-Berry; 2 = Jarvis
+                                                ;    1 = Ball-Berry
+                                                ;    2 = Jarvis
  opt_sfc                            = 1         ; Noah-MP surface layer drag coefficient calculation
-                                                ;    1 = Monin-Obukhov; 2 = original Noah (Chen97);
-                                                ;    3 = MYJ consistent; 4 = YSU consistent.
-                                                ;    options 3 and 4 removed in 3.7
+                                                ;    1 = Monin-Obukhov
+                                                ;    2 = original Noah (Chen97)
  opt_btr                            = 1,        ; Noah-MP Soil Moisture Factor for Stomatal Resistance
-                                                ;    1 = Noah; 2 = CLM; 3 = SSiB
+                                                ;    1 = Noah
+                                                ;    2 = CLM
+                                                ;    3 = SSiB
  opt_run                            = 3,        ; Noah-MP Runoff and Groundwater option
                                                 ;    1 = TOPMODEL with groundwater
                                                 ;    2 = TOPMODEL with equilibrium water table
                                                 ;    3 = original surface and subsurface runoff (free drainage) - default
                                                 ;    4 = BATS surface and subsurface runoff (free drainage)
+                                                ;    5 = Miguez-Macho & Fan groundwater scheme (Miguez-Macho et al. 2007 JGR; Fan et al. 2007 JGR)
+                                                ;          geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
  opt_frz                            = 1,        ; Noah-MP Supercooled Liquid Water option
-                                                ;    1 = No iteration; 2 = Koren's iteration
+                                                ;    1 = No iteration
+                                                ;    2 = Koren's iteration
  opt_inf                            = 1,        ; Noah-MP Soil Permeability option
-                                                ;    1 = Linear effects, more permeable;
+                                                ;    1 = Linear effects, more permeable
                                                 ;    2 = Non-linear effects, less permeable
  opt_rad                            = 3,        ; Noah-MP Radiative Transfer option
-                                                ;    1 = Modified two-stream;
+                                                ;    1 = Modified two-stream (known to cause problems when vegetation fraction is small)
                                                 ;    2 = Two-stream applied to grid-cell
                                                 ;    3 = Two-stream applied to vegetated fraction
  opt_alb                            = 2,        ; Noah-MP Ground Surface Albedo option
-                                                ;    1 = BATS; 2 = CLASS
+                                                ;    1 = BATS
+                                                ;    2 = CLASS
  opt_snf                            = 1,        ; Noah-MP Precipitation Partitioning between snow and rain
                                                 ;    1 = Jordan (1991)
                                                 ;    2 = BATS:  Snow when SFCTMP < TFRZ+2.2
                                                 ;    3 = Snow when SFCTMP < TFRZ
-						;    4 = Use WRF precipitation partitioning
+                                                ;    4 = Use WRF precipitation partitioning
  opt_tbot                           = 2,        ; Noah-MP Soil Temperature Lower Boundary Condition
                                                 ;    1 = Zero heat flux
                                                 ;    2 = TBOT at 8 m from input file
  opt_stc                            = 1,        ; Noah-MP Snow/Soil temperature time scheme
                                                 ;    1 = semi-implicit
                                                 ;    2 = full-implicit
-						;    3 = semi-implicit where Ts uses snow cover fraction
+                                                ;    3 = semi-implicit where Ts uses snow cover fraction
  opt_gla                            = 1,        ; Noah-MP glacier treatment option (new in 3.8)
                                                 ;    1 = includes phase change
                                                 ;    2 = slab ice (Noah)
@@ -1185,20 +1192,21 @@ Options for use with the Noah-MP Land Surface Model:
                                                 ;    1 -> Sakaguchi and Zeng, 2009
                                                 ;    2 -> Sellers (1992)
                                                 ;    3 -> adjusted Sellers to decrease RSURF for wet soil
-                                                ;    4 -> option 1 for non-snow; rsurf = rsurf_snow for snow (set in MPTABLE); AD v3.8
+                                                ;    4 -> option 1 for non-snow; rsurf = rsurf_snow for snow (set in MPTABLE)
  opt_soil                           = 1,        ; Noah-MP options for defining soil properties
+                                                ;          geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
                                                 ;    1 -> use input dominant soil texture
-		                                ;    2 -> use input soil texture that varies with depth
+                                                ;    2 -> use input soil texture that varies with depth
                                                 ;    3 -> use soil composition (sand, clay, orgm) and pedotransfer functions (OPT_PEDO)
-		                                ;    4 -> use input soil properties (BEXP_3D, SMCMAX_3D, etc.)
-
+                                                ;    4 -> use input soil properties (BEXP_3D, SMCMAX_3D, etc.) (not valid in WRF)
  opt_pedo                           = 1,        ; Noah-MP options for pedotransfer functions (used when OPT_SOIL = 3)
+                                                ;          geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
                                                 ;    1 -> Saxton and Rawls (2006)
-
  opt_crop                           = 0,        ; options for crop model
+                                                ;          geogrid must have been run with GEOGRID.TBL.ARW.noahmp, use with caution
                                                 ;    0 -> No crop model, will run default dynamic vegetation
                                                 ;    1 -> Liu, et al. 2016
-		                                ;    2 -> Gecros (Genotype-by-Environment interaction on CROp growth Simulator) Yin and van Laar, 2005
+                                                ;    2 -> Gecros (Genotype-by-Environment interaction on CROp growth Simulator) Yin and van Laar, 2005
  /
 
  &fdda
@@ -1393,7 +1401,7 @@ The following are for observation nudging:
                                                       not for real-data cases)
                                                   3 = with w-Rayleigh damping (dampcoef inverse time scale [1/s] e.g. .2; 
                                                       for real-data cases)
- use_theta_m                         = 0        ; 1: use theta_m=theta(1+1.61Qv)
+ use_theta_m                         = 1        ; 1: use theta_m=theta(1+1.61Qv)
                                                   0: use dry theta in dynamics
  use_q_diabatic                      = 0        ; whether to include QV and QC tendencies in advection (new in 3.7)
                                                   0 = default, old behavior

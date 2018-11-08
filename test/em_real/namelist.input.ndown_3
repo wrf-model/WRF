@@ -45,7 +45,7 @@
  e_sn                                =        31,    91,
  e_vert                              = 33,    33,    33,
  p_top_requested                     = 5000,
- num_metgrid_levels                  = 27,
+ num_metgrid_levels                  = 32,
  num_metgrid_soil_levels             = 4,
  dx                                  =        10000,  3333.33,
  dy                                  =        10000,  3333.33,
@@ -94,7 +94,7 @@
  diff_6th_opt                        = 0,      0,      0,
  diff_6th_factor                     = 0.12,   0.12,   0.12,
  base_temp                           = 290.
- damp_opt                            = 0,
+ damp_opt                            = 3,
  zdamp                               = 5000.,  5000.,  5000.,
  dampcoef                            = 0.2,    0.2,    0.2
  khdif                               = 0,      0,      0,

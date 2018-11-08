@@ -54,7 +54,9 @@ module da_minimisation
       use_satcv, sensitivity_option, print_detail_outerloop, adj_sens, filename_len, &
       ims, ime, jms, jme, kms, kme, ips, ipe, jps, jpe, kps, kpe, fgat_rain_flags, var4d_bin_rain, freeze_varbc, &
       use_wpec, wpec_factor, use_4denvar, anal_type_hybrid_dual_res, alphacv_method, alphacv_method_xa, &
-      write_detail_grad_fn, pseudo_uvtpq, lanczos_ep_filename, use_divc, divc_factor
+      write_detail_grad_fn, pseudo_uvtpq, lanczos_ep_filename, use_divc, divc_factor, &
+      cloud_cv_options, use_cv_w, var_scaling6, var_scaling7, var_scaling8, var_scaling9, &
+      var_scaling10, var_scaling11
    use da_define_structures, only : iv_type, y_type,  j_type, be_type, &
       xbx_type, jo_type, da_allocate_y,da_zero_x,da_zero_y,da_deallocate_y, &
       da_zero_vp_type, qhat_type

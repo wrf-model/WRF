@@ -182,8 +182,25 @@ em_fire : wrf
 		/bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; fi ; \
 		/bin/rm -f namelist.input ; cp ../test/em_fire/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_fire/input_sounding . )
+	@echo " "
+	@echo "=========================================================================="
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
+	@if test -e main/wrf.exe -a -e main/ideal.exe ; then \
+		echo " " ; \
+		echo "--->                  Executables successfully built                  <---" ; \
+		echo " " ; \
+		ls -l main/*.exe ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	else \
+		echo " " ; \
+		echo "---> Problems building executables, look for errors in the build log  <---" ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	fi
 
 em_quarter_ss : wrf
 	@/bin/rm -f ideal.exe > /dev/null 2>&1

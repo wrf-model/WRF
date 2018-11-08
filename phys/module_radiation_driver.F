@@ -1119,9 +1119,7 @@ CONTAINS
         GLON(I,J)=XLONG(I,J)*DEGRAD
      ENDDO
      ENDDO
-
-! bug found here (Toshi) RTHRATEN vertical k level is from kms to kme, but
-! k loop does from kts to kte + 1, which will cause bounds errors. 
+ 
      DO j=jts,jte
      DO k=kts,kte+1
      DO i=its,ite

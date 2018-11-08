@@ -48,8 +48,10 @@ CONTAINS
                          z_at_q, inv_dens, qnwfa2d, scalar, num_sc,  & ! G. Thompson
                          re_cloud, re_ice, re_snow,              & ! G. Thompson
                          has_reqc, has_reqi, has_reqs,           & ! G. Thompson
-                         re_cloud_gsfc, re_ice_gsfc, re_snow_gsfc,    & ! Goddard
-                         re_graupel_gsfc, re_hail_gsfc, re_rain_gsfc, & ! Goddard
+                         re_cloud_gsfc, re_ice_gsfc,             & 
+			 re_snow_gsfc,                           & ! Goddard
+                         re_graupel_gsfc, re_hail_gsfc,          &
+			 re_rain_gsfc,                           & ! Goddard
                          NCA,swrad_scat,                         &
                          CLDEFI,LOWLYR,                          &
                          MASS_FLUX,                              &
@@ -751,7 +753,7 @@ CONTAINS
 
 
    INTEGER :: i, j, k, itf, jtf, ktf, n
-   integer myproc
+   INTEGER :: myproc
 
 !-------------------------------------------------
 ! Noah-mosaic related variables are added to declaration  (danli)

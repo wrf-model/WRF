@@ -117,7 +117,7 @@ CONTAINS
                                                                            p8w     , &
                                                                            t8w
 
-      !  Time (s) since the beginning of the restart.
+      !  Time (s) since the beginning of the simulation, restart.
 
       REAL(8) :: curr_secs
       REAL :: curr_secs2

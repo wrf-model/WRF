@@ -2053,11 +2053,13 @@ if(config_flags%ifire.eq.2)then
    CALL wrf_debug ( 100 , 'start_domain_em: After call to fire_driver_em_init' )
 endif
 
+#if ( WRFPLUS != 1 )
 if( grid%traj_opt /= no_trajectory ) then
      call trajectory_init( grid, config_flags, &
                            ims,ime, jms,jme, kms,kme )
      CALL wrf_debug ( 100 , 'start_domain_em: After call to trajectory_init' )
 endif
+#endif
 
 
      CALL wrf_debug ( 100 , 'start_domain_em: Returning' )

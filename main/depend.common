@@ -318,7 +318,6 @@ module_gfs_funcphys.o: module_gfs_machine.o \
 module_cu_sas.o: module_gfs_machine.o \
 		 module_gfs_funcphys.o \
 		 module_gfs_physcons.o
-
 module_cu_scalesas.o: module_gfs_machine.o \
 		module_gfs_funcphys.o \
 		module_gfs_physcons.o

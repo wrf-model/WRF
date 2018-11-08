@@ -516,7 +516,12 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
    REAL, INTENT(INOUT),  DIMENSION(ims:ime, kms:kme, jms:jme ) ::     &
                                      F_ICE_PHY,F_RAIN_PHY,F_RIMEF_PHY
+!!$#if ( WRF_CHEM == 1 )
+!  REAL, INTENT(OUT), DIMENSION(ims:ime, kms:kme, jms:jme ) ::     &
    REAL, OPTIONAL, INTENT(OUT), DIMENSION(ims:ime, kms:kme, jms:jme ) ::     &
+!!$#else
+!!$  REAL, DIMENSION(ims:ime, kms:kme, jms:jme ) ::     &
+!!$#endif
          qlsink, & ! cloud water sink (/s)
          precr, & ! rain precipitation rate at all levels (kg/m2/s)
          preci, & ! ice precipitation rate at all levels (kg/m2/s)

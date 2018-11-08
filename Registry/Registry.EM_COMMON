@@ -506,6 +506,12 @@ state    real   qnifa2d          ij     misc        1         -     i014rhdu "QN
 state    real   re_cloud         ikj    misc        1         -     r        "RE_CLOUD"       "Effective radius cloud water"  "m"
 state    real   re_ice           ikj    misc        1         -     r        "RE_ICE"         "Effective radius cloud ice"    "m"
 state    real   re_snow          ikj    misc        1         -     r        "RE_SNOW"        "Effective radius snow"         "m"
+state    real   re_cloud_gsfc    ikj    misc        1         -     rh       "RE_CLOUD_GSFC"  "Cloud Water effective radius"      "micron"
+state    real   re_rain_gsfc     ikj    misc        1         -     rh       "RE_RAIN_GSFC"   "Rain Water effective radius"       "micron"
+state    real   re_ice_gsfc      ikj    misc        1         -     rh       "RE_ICE_GSFC"    "Cloud Ice effective radius"        "micron"
+state    real   re_snow_gsfc     ikj    misc        1         -     rh       "RE_SNOW_GSFC"   "Snow effective radius"             "micron"
+state    real   re_graupel_gsfc  ikj    misc        1         -     rh       "RE_GRAUPEL_GSFC"  "Graupel Water effective radius"  "micron"
+state    real   re_hail_gsfc     ikj    misc        1         -     rh       "RE_HAIL_GSFC"   "Hail Water effective radius"       "micron"
 state    real   dfi_re_cloud     ikj    misc        1         -     -        "DFI_RE_CLOUD"   "DFI Effective radius cloud water"  "m"
 state    real   dfi_re_ice       ikj    misc        1         -     -        "DFI_RE_ICE"     "DFI Effective radius cloud ice"    "m"
 state    real   dfi_re_snow      ikj    misc        1         -     -        "DFI_RE_SNOW"    "DFI Effective radius snow"         "m"
@@ -1283,6 +1289,31 @@ state   real    p_strat        -       misc         -         -     i02rh     "p
 state   real    max_msftx      -       misc         -         -      rh       "max_mstfx"             "Max map factor in domain"  ""
 state   real    max_msfty      -       misc         -         -      rh       "max_mstfy"             "Max map factor in domain"  ""
 
+# NUWRF:  State variables for Goddard microphysics
+state   real    phys_tot       ikj      misc        1         -     h         "PHYS_TOT"              "TOTAL LATENT HEATING RATE"                       "K s-1"
+state   real    physc          ikj      misc        1         -     -         "PHYSC"                 "LATENT HEATING RATE DUE TO CONDENSATION"         "K s-1"
+state   real    physe          ikj      misc        1         -     -         "PHYSE"                 "LATENT HEATING RATE DUE TO EVAPORATION"          "K s-1"
+state   real    physd          ikj      misc        1         -     -         "PHYSD"                 "LATENT HEATING RATE DUE TO DEPOSITION"           "K s-1"
+state   real    physs          ikj      misc        1         -     -         "PHYSS"                 "LATENT HEATING RATE DUE TO SUBLIMATION"          "K s-1"
+state   real    physm          ikj      misc        1         -     -         "PHYSM"                 "LATENT HEATING RATE DUE TO MELTING"              "K s-1"
+state   real    physf          ikj      misc        1         -     -         "PHYSF"                 "LATENT HEATING RATE DUE TO FREEZING"             "K s-1"
+# NUWRF EMK
+state   real    acphys_tot       ikj      misc        1         -     r       "ACPHYS_TOT"            "ACCUMULATED TOTAL LATENT HEATING"                "K"
+state   real    acphysc          ikj      misc        1         -     r       "ACPHYSC"               "ACCUMULATED LATENT HEATING DUE TO CONDENSATION"  "K"
+state   real    acphyse          ikj      misc        1         -     r       "ACPHYSE"               "ACCUMULATED LATENT HEATING DUE TO EVAPORATION"   "K"
+state   real    acphysd          ikj      misc        1         -     r       "ACPHYSD"               "ACCUMULATED LATENT HEATING DUE TO DEPOSITION"    "K"
+state   real    acphyss          ikj      misc        1         -     r       "ACPHYSS"               "ACCUMULATED LATENT HEATING DUE TO SUBLIMATION"   "K"
+state   real    acphysm          ikj      misc        1         -     r       "ACPHYSM"               "ACCUMULATED LATENT HEATING DUE TO MELTING"       "K"
+state   real    acphysf          ikj      misc        1         -     r       "ACPHYSF"               "ACCUMULATED LATENT HEATING DUE TO FREEZING"      "K"
+
+#state   real    dbz            ikj      misc        1         -     -         "DBZ"                   "RADAR REFLECTIVITIES"             "dbz"
+# NUWRF...4ICE output
+state   real    preci3d       ikj      misc        1         -     -       "PRECI3D"                   "Sedimentation Fluxes for cloud ice"             "KG/M^2/S"
+state   real    precs3d       ikj      misc        1         -     -       "PRECS3D"                   "Sedimentation Fluxes for snow"                  "KG/M^2/S"
+state   real    precg3d       ikj      misc        1         -     -       "PRECG3D"                   "Sedimentation Fluxes for graupel"               "KG/M^2/S"
+state   real    prech3d       ikj      misc        1         -     -       "PRECH3D"                   "Sedimentation Fluxes for hail"               "KG/M^2/S"
+state   real    precr3d       ikj      misc        1         -     -       "PRECR3D"                   "Sedimentation Fluxes for rain"                  "KG/M^2/S"
+
 # State variables for Goddard LW and SW radiation
 state    real  TLWDN           ij      misc        1         -      h         "TLWDN"                 "TOA LW downwelling flux"           "W m-2"
 state    real  TLWUP           ij      misc        1         -      h         "TLWUP"                 "TOA LW upwelling flux"             "W m-2"
@@ -1292,7 +1323,12 @@ state    real  TSWDN           ij      misc        1         -      h         "T
 state    real  TSWUP           ij      misc        1         -      h         "TSWUP"                 "TOA SW upwelling flux"             "W m-2"
 state    real  SSWDN           ij      misc        1         -      h         "SSWDN"                 "Surface SW downwelling flux"       "W m-2"
 state    real  SSWUP           ij      misc        1         -      h         "SSWUP"                 "Surface SW upwelling flux"         "W m-2"
-                                                
+
+#goddardrad
+state    real  COD2D_OUT       ij      misc        1         -      h         "COD2D_OUT"           "Column Cloud Optical Depth"   " "
+state    real  CTOP2D_OUT      ij      misc        1         -      h         "CTOP2D_OUT"          "Cloud-Top Pressure"          "mb"
+                
+                                
 # Other physics variables
 
 state    real  RUSHTEN         ikj      misc        1         -      r        "RUSHTEN"               "X WIND TENDENCY DUE TO SHALLOW CUMULUS SCHEME"   "m s-2"
@@ -2630,7 +2666,7 @@ package   wsm5scheme      mp_physics==4                -             moist:qv,qc
 package   fer_mp_hires    mp_physics==5                -             moist:qv,qc,qr,qi;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 package   fer_mp_hires_advect  mp_physics==15          -             moist:qv,qc,qr,qi;scalar:qrimef
 package   wsm6scheme      mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg;state:re_cloud,re_ice,re_snow
-package   gsfcgcescheme   mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
+package   gsfcgcescheme   mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg;state:phys_tot,physc,physe,physd,physs,physm,physf,acphys_tot,acphysc,acphyse,acphysd,acphyss,acphysm,acphysf,preci3d,precs3d,precg3d,precr3d
 package   thompson        mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow
 package   milbrandt2mom   mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
 package   morr_two_moment mp_physics==10               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng;state:rqrcuten,rqscuten,rqicuten
@@ -2645,6 +2681,8 @@ package   nssl_1mom       mp_physics==19               -             moist:qv,qc
 package   nssl_1momlfo    mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
 package   nssl_2momg      mp_physics==22               -             moist:qv,qc,qr,qi,qs,qg;scalar:qndrop,qnr,qni,qns,qng,qvolg;state:re_cloud,re_ice,re_snow
 package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow,qnwfa2d,qnifa2d,taod5503d,taod5502d
+package   nuwrf3icescheme mp_physics==55             -               moist:qv,qc,qr,qi,qs,qg
+package   nuwrf4icescheme mp_physics==56             -               moist:qv,qc,qr,qi,qs,qg,qh
 package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi;scalar:qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi;scalar:qnc,qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   p3_2category    mp_physics==52               -             moist:qv,qc,qr,qi,qi2;scalar:qnc,qni,qnr,qir,qib,qni2,qir2,qib2;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,vmi3d_2,rhopo3d_2,di3d_2,refl_10cm,th_old,qv_old

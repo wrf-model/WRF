@@ -48,6 +48,8 @@ CONTAINS
                          z_at_q, inv_dens, qnwfa2d, scalar, num_sc,  & ! G. Thompson
                          re_cloud, re_ice, re_snow,              & ! G. Thompson
                          has_reqc, has_reqi, has_reqs,           & ! G. Thompson
+                         re_cloud_gsfc, re_ice_gsfc, re_snow_gsfc,    & ! Goddard
+                         re_graupel_gsfc, re_hail_gsfc, re_rain_gsfc, & ! Goddard
                          NCA,swrad_scat,                         &
                          CLDEFI,LOWLYR,                          &
                          MASS_FLUX,                              &
@@ -348,6 +350,8 @@ CONTAINS
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: re_cloud, &
              re_ice, re_snow
    INTEGER, INTENT(INOUT):: has_reqc, has_reqi, has_reqs
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: re_cloud_gsfc, &
+             re_ice_gsfc, re_snow_gsfc, re_graupel_gsfc, re_hail_gsfc, re_rain_gsfc
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &!BSINGH(PNNL)- should be declared inout
              RTHRATEN, RTHRATENLW, RTHRATENSW, CLDFRA
@@ -747,7 +751,7 @@ CONTAINS
 
 
    INTEGER :: i, j, k, itf, jtf, ktf, n
-integer myproc
+   integer myproc
 
 !-------------------------------------------------
 ! Noah-mosaic related variables are added to declaration  (danli)
@@ -1450,6 +1454,30 @@ integer myproc
                   its, ite, jts, jte, kts, kte                  )
 
 #endif
+#if ( WRF_CHEM == 1)
+   if ((config_flags%chem_opt == gocart_simple .or. &
+        config_flags%chem_opt == gocartracm_kpp .or. &
+        config_flags%chem_opt == 302 .or. &
+        config_flags%chem_opt == gocartradm2) .and. &
+        config_flags%gsfcgce_gocart_coupling == 1) then
+      CALL wrf_debug(200 , 'phy_init: Before call to makelut_ccn_icn')
+      call makelut_ccn_icn
+   end if
+#endif
+
+!JJS initialize cloud droplet effective radius
+    do j=jts,jtf
+       do k=kts,ktf
+          do i=its,itf
+             re_cloud_gsfc(i,k,j) = 0.
+             re_rain_gsfc(i,k,j) = 0.
+             re_snow_gsfc(i,k,j) = 0.
+             re_ice_gsfc(i,k,j) = 0.
+             re_graupel_gsfc(i,k,j) = 0.
+             re_hail_gsfc(i,k,j) = 0.
+          end do
+       end do
+     end do
 
    END SUBROUTINE phy_init
 
@@ -1704,7 +1732,6 @@ integer myproc
       CLOSE (landuse_unit)
     endif
     CALL wrf_debug( 100 , 'returning from of landuse_init' )
-
 ! restore LU variables from state
     curs = 1
     DO cats = 1, max_cats
@@ -1765,6 +1792,7 @@ integer myproc
    USE module_ra_sw        , ONLY : swinit
    USE module_ra_gsfcsw    , ONLY : gsfc_swinit
    USE module_ra_gfdleta   , ONLY : gfdletainit
+   USE module_ra_goddard   , ONLY : init_goddardrad
 #if(NMM_CORE==1)
    USE module_ra_hwrf      , ONLY : hwrfrainit
 #endif
@@ -1919,6 +1947,15 @@ integer myproc
 
    lwrad_select: SELECT CASE(config_flags%ra_lw_physics)
 
+!goddardrad
+        CASE (goddardlwscheme)
+             CALL init_goddardrad(                          &
+                           allowed_to_read ,                &
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           its, ite, jts, jte, kts, kte     )
+
+              
         CASE (RRTMSCHEME)
              CALL rrtminit(                                 &
                            p_top, allowed_to_read ,         &
@@ -2026,6 +2063,13 @@ integer myproc
 !-- initialize short wave radiation scheme
 
    swrad_select: SELECT CASE(config_flags%ra_sw_physics)
+
+        CASE (goddardswscheme)
+             CALL init_goddardrad(                          &
+                           allowed_to_read ,                &
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           its, ite, jts, jte, kts, kte     )
 
         CASE (SWRADSCHEME)
              CALL swinit(                                  &

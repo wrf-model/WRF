@@ -791,7 +791,6 @@
        grid%p(i,k,j)=p1000mb*( (r_d*(t0+grid%t_1(i,k,j))*qvf)/                     &
                   (p1000mb*(grid%al(i,k,j)+grid%alb(i,k,j))) )**cpovcv  &
                   -grid%pb(i,k,j)
-#endif
        grid%p_hyd(i,k,j) = grid%p(i,k,j) + grid%pb(i,k,j)
        grid%alt(i,k,j) = grid%al(i,k,j) + grid%alb(i,k,j)
     ENDDO
@@ -992,6 +991,9 @@ endif
                       z_at_q, grid%alt, grid%qnwfa2d, scalar(ims,kms,jms,1), num_scalar,         & ! G. Thompson
                       grid%re_cloud, grid%re_ice, grid%re_snow,         & ! G. Thompson
                       grid%has_reqc, grid%has_reqi, grid%has_reqs,      & ! G. Thompson
+                      grid%re_cloud_gsfc, grid%re_ice_gsfc,             & ! Goddard
+                      grid%re_snow_gsfc, grid%re_graupel_gsfc,          & ! Goddard
+                      grid%re_hail_gsfc, grid%re_rain_gsfc,             & ! Goddard
                       grid%nca,grid%swrad_scat,                    &
                       grid%cldefi,grid%lowlyr,                          &
                       grid%mass_flux,                              &
@@ -1416,13 +1418,6 @@ endif
       IF ( ( ABS(w_max) .LT. 1.E-6 ) .AND. &
            ( ABS(w_min) .LT. 1.E-6 ) ) THEN
          w_needs_to_be_set = .TRUE.
-         ! Force use_input_w to false, if there is no input w
-#if ( WRFPLUS == 1 )
-         IF ( config_flags%use_input_w ) THEN
-            config_flags%use_input_w = .FALSE.
-            CALL nl_set_use_input_w (grid%id, .FALSE.)
-         ENDIF
-#endif
       ELSE
          IF ( config_flags%use_input_w ) THEN
             w_needs_to_be_set = .FALSE.
@@ -1721,6 +1716,7 @@ endif
 
          CALL chem_init (grid%id,chem,emis_ant,scalar,grid%dt,grid%bioemdt,grid%photdt,     &
                          grid%chemdt,                                       &
+                         grid%casafxdt, grid%stepcasa,                                      &           !add by Z. Tao
                          grid%stepbioe,grid%stepphot,grid%stepchem,grid%stepfirepl,      &
                          grid%plumerisefire_frq,z_at_w,grid%xlat,grid%xlong,g,           &
                          grid%aerwrf,config_flags,grid,            &
@@ -2049,13 +2045,11 @@ if(config_flags%ifire.eq.2)then
    CALL wrf_debug ( 100 , 'start_domain_em: After call to fire_driver_em_init' )
 endif
 
-#if ( WRFPLUS != 1 )
 if( grid%traj_opt /= no_trajectory ) then
      call trajectory_init( grid, config_flags, &
                            ims,ime, jms,jme, kms,kme )
      CALL wrf_debug ( 100 , 'start_domain_em: After call to trajectory_init' )
 endif
-#endif
 
 
      CALL wrf_debug ( 100 , 'start_domain_em: Returning' )

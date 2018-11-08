@@ -43,7 +43,7 @@ module da_obs_io
    use da_par_util1, only : da_proc_sum_int
    use da_physics, only : da_tp_to_qs
    use da_reporting, only : da_warning, message, da_error
-   use da_tools, only : da_llxy, da_get_julian_time, da_geo2msl1, da_msl2geo1
+   use da_tools, only : da_llxy, da_llxy_1d, da_get_julian_time, da_geo2msl1, da_msl2geo1
    use da_tools_serial, only : da_free_unit, da_get_unit, da_advance_time
    use da_tracing, only : da_trace_entry, da_trace_exit
 

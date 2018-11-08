@@ -2,8 +2,8 @@ subroutine da_llxy_1d ( infos, locs, outside, outside_all, do_xy, do_outside)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
-   !    Updated for Analysis on Arakawa-C grid
-   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
+   !    Author: JJ Guerrette,  MMM/NCAR,  Date: 05/23/2018
+   !    Modified from da_llxy, including child subroutines
    !-----------------------------------------------------------------------
 
    ! This routine converts (lat, lon) into (x,y) coordinates

@@ -1734,6 +1734,7 @@ CONTAINS
       CLOSE (landuse_unit)
     endif
     CALL wrf_debug( 100 , 'returning from of landuse_init' )
+    
 ! restore LU variables from state
     curs = 1
     DO cats = 1, max_cats

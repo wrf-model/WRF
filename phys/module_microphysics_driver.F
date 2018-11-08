@@ -369,7 +369,6 @@ SUBROUTINE microphysics_driver(                                          &
 !-- diagflag      Logical to tell us when to produce diagnostics for history or restart
 !
 !======================================================================
-
   INTEGER,parameter :: iunit=6
   INTEGER :: mpi_error_code=1
 

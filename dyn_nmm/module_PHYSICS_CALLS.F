@@ -1474,6 +1474,7 @@
      &          ,FM=FM,FHH=FH,ZOL=ZOL                                   &
      &          ,PSFC=PSFC_OUT,EMISS=EPSR,EMBCK=EMBCK                   &
      &          ,SF_SFCLAY_PHYSICS=CONFIG_FLAGS%SF_SFCLAY_PHYSICS       &
+     &          ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics             &
      &          ,SF_SURFACE_PHYSICS=CONFIG_FLAGS%SF_SURFACE_PHYSICS     &
      &          ,RA_LW_PHYSICS=CONFIG_FLAGS%RA_LW_PHYSICS               &
      &          ,RA_SW_PHYSICS=CONFIG_FLAGS%RA_SW_PHYSICS               &

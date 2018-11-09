@@ -3138,8 +3138,8 @@ CONTAINS
        allocate(seed(1:seed_size))           ! Allocate according to returned size
 
        seed=0
-       seed(2)=j
-       seed(3)=ktau
+       if(seed_size .ge. 2) seed(2)=j
+       if(seed_size .ge. 3) seed(3)=ktau
        nens=0
        irandom=1
        if(high_resolution.eq.1)irandom=0

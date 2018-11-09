@@ -231,7 +231,7 @@ i1       real   ph_tendf       ikj     dyn_em      1         Z
 i1       real   ph_save        ikj     dyn_em      1         Z 
 
 # Potential Temperature
-state    real   th_phy_m_t0    ikj      dyn_em      1         -     ih  "t"      "perturbation potential temperature theta-t0" "K"
+state    real   th_phy_m_t0    ikj      dyn_em      1         -     ihd "t"      "perturbation potential temperature theta-t0" "K"
 state    real   t              ikjb     dyn_em      2         -     \
        i0rhusdf=(bdy_interp:dt)   "thm"      "either 1) pert moist pot temp=(1+Rv/Rd Qv)*(theta)-T0, or 2) pert dry pot temp=theta-T0; based on use_theta_m setting" "K"
 
@@ -2424,7 +2424,7 @@ rconfig   real    scm_force_dx            namelist,scm  1       4000.       rh  
 rconfig   integer num_force_layers        namelist,scm  1       8           rh   "num_force_layers"     "Number of SCM forcing layers" ""
 rconfig   integer scm_lu_index            namelist,scm  1       2           rh   "scm_lu_index"         "SCM landuse index" ""
 rconfig   integer scm_isltyp              namelist,scm  1       4           rh   "scm_isltyp"           "SCM soil category" ""
-rconfig   real    scm_vegfra              namelist,scm  1       0.5         rh   "scm_vegfra"           "SCM vegetation fraction" ""
+rconfig   real    scm_vegfra              namelist,scm  1       50.         rh   "scm_vegfra"           "SCM vegetation fraction" ""
 rconfig   real    scm_canwat              namelist,scm  1       0.0         rh   "scm_canwat"           "SCM canopy water" "kg m-2"
 rconfig   real    scm_lat                 namelist,scm  1        36.605     rh   "scm_lat"              "SCM latitude" "degrees"
 rconfig   real    scm_lon                 namelist,scm  1       -97.485     rh   "scm_lon"              "SCM longitude" "degrees"

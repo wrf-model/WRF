@@ -3529,7 +3529,12 @@ END subroutine optical_prep_modal_soa_vbs
 ! SAM 7/18/09 - Modal parameters for OC1 (hydrophobic) OC2 (hydrophylic), BC1,BC2,
 ! and sulfate - just use dginia (meters) and sginia from module_data_sorgam.
 ! Not using accumulation mode from d'Almedia 1991 Table 7.1 and 7.2 global model
-!
+! 10/16/18 - A. Ukhov, bug fix: dust particles having radii in the range 0.1-0.46 microns
+! were not accounted in the calculation of the mass redistribution between the GOCART and 
+! MOZAIC grids.
+! 10/24/18 - A. Ukhov, bug fix: mass redistribution between GOCART dust/sea salt and 
+! MOZAIC bins should be computed using interpolation over the logarithmic axis.
+
 ! This subroutine computes volume-averaged refractive index and wet radius needed
 ! by the mie calculations. Aerosol number is also passed into the mie calculations
 ! in terms of other units.
@@ -3553,7 +3558,7 @@ END subroutine optical_prep_modal_soa_vbs
 ! real*8, DIMENSION (4), PARAMETER :: rb(4)=(/5.d-1,1.5d0,5.d0,1.d1/)
 ! real*8, DIMENSION (4), PARAMETER :: den_seas(4)=(/2.2d3,2.2d3,2.2d3,2.2d3/)
 ! real*8, DIMENSION (4), PARAMETER :: reff_seas(4)=(/0.30D-6,1.00D-6,3.25D-6,7.50D-6/)
-   USE module_data_gocart_dust, only:  ndust, reff_dust, den_dust
+   USE module_data_gocart_dust, only:  ndust, reff_dust, den_dust,ra_dust,rb_dust
 !  real*8, DIMENSION (5), PARAMETER :: den_dust(5)=(/2500.,2650.,2650.,2650.,2650./)
 !  real*8, DIMENSION (5), PARAMETER :: reff_dust(5)=(/0.73D-6,1.4D-6,2.4D-6,4.5D-6,8.0D-6/)
 
@@ -3706,8 +3711,9 @@ END subroutine optical_prep_modal_soa_vbs
        dlogoc = ra(m)*2.E-6  ! low diameter limit (m)
        dhigoc = rb(m)*2.E-6  ! hi diameter limit (m)
         do n = 1, nbin_o
-        seasfrc_goc8bin(m,n)=max(DBLE(0.),min(DBLE(dhi_sectm(n)),dhigoc)- &
-                             max(dlogoc,DBLE(dlo_sectm(n))) )/(dhigoc-dlogoc)
+        seasfrc_goc8bin(m,n)=max(DBLE(0.),min(DBLE(log(dhi_sectm(n))),log(dhigoc))- &
+                             max(log(dlogoc),DBLE(log(dlo_sectm(n)))) )/(log(dhigoc)-log(dlogoc))
+
        end do
 !      WRITE(*,*)m,dlogoc,dhigoc,(seasfrc_goc8bin(m,n),n=1,nbin_o)
        end do
@@ -3716,15 +3722,15 @@ END subroutine optical_prep_modal_soa_vbs
 !      WRITE(*,*)'         ','       ',(dlo_sectm(n),n=1,nbin_o)
 !      WRITE(*,*)'         ','       ',(dhi_sectm(n),n=1,nbin_o)
         dustfrc_goc8bin=0.
-        dlogoc=0.46*2.E-6 ! Begin lower dust bin, makes upper limit diam 20 micron diameter 
        do m =1, ndust  ! loop over dust size bins
-       dhigoc = 2.*2.*reff_dust(m)-dlogoc ! hi diameter limit (m)
+        dlogoc = ra_dust(m)*2.E-6  ! low diameter limit (m)
+        dhigoc = rb_dust(m)*2.E-6  ! hi diameter limit (m)
         do n = 1, nbin_o
-        dustfrc_goc8bin(m,n)=max(DBLE(0.),min(DBLE(dhi_sectm(n)),dhigoc)- &
-                             max(dlogoc,DBLE(dlo_sectm(n))) )/(dhigoc-dlogoc)
+        dustfrc_goc8bin(m,n)=max(DBLE(0.),min(DBLE(log(dhi_sectm(n))),log(dhigoc))- &
+                             max(log(dlogoc),DBLE(log(dlo_sectm(n)))) )/(log(dhigoc)-log(dlogoc))
+
        end do
 !      WRITE(*,*)m,dlogoc,dhigoc,(dustfrc_goc8bin(m,n),n=1,nbin_o)
-       dlogoc=dhigoc
        end do
         kcall=kcall+1
 !       ISTOP=1

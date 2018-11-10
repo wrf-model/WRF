@@ -514,6 +514,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 30, HUJI (Hebrew University of Jerusalem, Israel) spectral bin microphysics,
                                            fast version
                                      = 32, HUJI spectral bin microphysics, full version
+                                     = 40, Morrison (2 moments) with consideration of CESM-NCSU RCP4.5 climatological aerosol 
                                      = 50, P3 1-category
                                      = 51, P3 1-category plus double-moment cloud water
                                      = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version

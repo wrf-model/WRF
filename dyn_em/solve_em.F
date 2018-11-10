@@ -3548,7 +3548,7 @@ BENCH_START(moist_physics_prep_tim)
                                    its, ite, jts, jte,               &
                                    k_start    , k_end               )
 
-       IF (config_flags%dust_emis.eq.1 .AND. config_flags%mp_physics.eq.28)  then
+       IF (config_flags%dust_emis.eq.1 .AND. config_flags%mp_physics.eq.thompsonaero)  then
          CALL wrf_debug ( 200 , ' call bulk_dust_emis' )
          CALL bulk_dust_emis (grid%itimestep,dtm,config_flags%num_soil_layers  &
                ,grid%u_phy,grid%v_phy,grid%rho,grid%alt                        &

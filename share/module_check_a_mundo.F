@@ -1838,6 +1838,26 @@
       IF ( oops .GT. 0 ) THEN
          count_fatal_error = count_fatal_error + 1
       END IF
+
+
+!-----------------------------------------------------------------------
+! Did the user ask for too many total MPI tasks.
+!-----------------------------------------------------------------------
+
+      oops = 0
+      IF ( model_config_rec % nproc_x * model_config_rec % nproc_y .GT. 10000 ) THEN
+# if ( LARGE_NUM_CORES == 1 )
+         !  No troubles at all
+# else
+         !  Troubles
+         wrf_err_message = '--- ERROR: Rebuild the code with the env variable LARGE_NUM_CORES set to 1'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         oops = 1
+# endif
+      END IF
+      IF ( oops .GT. 0 ) THEN
+         count_fatal_error = count_fatal_error + 1
+      END IF
 #endif
 
 

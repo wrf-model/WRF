@@ -143,7 +143,7 @@ contains
     !        ims,ime, jms,jme, kms,kme, &
     !        ips,ipe, jps,jpe, kps,kpe)
 
-    assert(nf_create(trim(filename),NF_64BIT_OFFSET,fid))
+    assert(nf_create(trim(filename),NF_64BIT_DATA,fid))
     assert(nf_def_dim(fid,'i',ide-ids+1,dimi))
     assert(nf_def_dim(fid,'j',jde-jds+1,dimj))
     assert(nf_def_dim(fid,'k',kde-kds+1,dimk))

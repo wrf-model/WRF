@@ -53,6 +53,7 @@ $sw_terrain_and_landuse = "";
 $sw_tfl = "" ;
 $sw_cfl = "" ;
 $sw_config_line = "" ;
+$sw_large_num_cores = "" ;
 while ( substr( $ARGV[0], 0, 1 ) eq "-" )
  {
   if ( substr( $ARGV[0], 1, 5 ) eq "perl=" )
@@ -262,6 +263,7 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
      }
    }
 
+
 # When compiling DA and WRFPLUS code, we need to always use 8-byte reals.
  if ( $ENV{WRF_DA_CORE} eq "1" || $sw_da_core eq "-DDA_CORE=1" )
    {
@@ -301,6 +303,11 @@ while ( substr( $ARGV[0], 0, 1 ) eq "-" )
    }
 
  $sw_rwordsize = "8" if ( $sw_wrfplus_core eq "-DWRFPLUS=1" );
+
+     if ( $ENV{LARGE_NUM_CORES} )
+       {
+       $sw_large_num_cores = "-DLARGE_NUM_CORES";
+       }
 
 # A separately-installed ESMF library is required to build the ESMF 
 # implementation of WRF IOAPI in external/io_esmf.  This is needed 
@@ -466,6 +473,7 @@ while ( <CONFIGURE_DEFAULTS> )
     $_ =~ s/CONFIGURE_RTTOV_PATH/$sw_rttov_path/g ;
     $_ =~ s/CONFIGURE_CLOUDCV_FLAG/$sw_cloudcv_flag/g ;
     $_ =~ s/CONFIGURE_WAVELET_FLAG/$sw_wavelet_flag/g ;
+    $_ =~ s/CONFIGURE_LARGE_NUM_CORES_FLAG/$sw_large_num_cores/g ;
     if ( $sw_ifort_r8 ) {
       $_ =~ s/^PROMOTION.*=/PROMOTION       =       -r8 /g ;
     }

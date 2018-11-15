@@ -1257,7 +1257,10 @@ SUBROUTINE ext_pnc_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
 !     if(newFileName(i:i) == '-') newFileName(i:i) = '_'
      if(newFileName(i:i) == ':') newFileName(i:i) = '_'
   enddo
-  stat = NFMPI_CREATE(Comm, newFileName, IOR(NF_CLOBBER, NF_64BIT_OFFSET), info, DH%NCID)
+! Thomas changed to NF_64BIT_DATA for CDF5 standard!!!                                                                              
+  stat = NFMPI_CREATE(Comm, newFileName, IOR(NF_CLOBBER, NF_64BIT_DATA), info, DH%NCID)
+!  stat = NFMPI_CREATE(Comm, newFileName, IOR(NF_CLOBBER, NF_64BIT_OFFSET), info, DH%NCID)
+!end Thomas CDF5                                    
 ! stat = NFMPI_CREATE(Comm, newFileName, NF_64BIT_OFFSET, info, DH%NCID)
   call mpi_info_free( info, ierr)
 #else
@@ -1267,7 +1270,10 @@ SUBROUTINE ext_pnc_open_for_write_begin(FileName,Comm,IOComm,SysDepInfo,DataHand
   call mpi_info_create( info, ierr )
 !  call mpi_info_set(info,'cd_buffer_size','4194304',ierr)
   call mpi_info_set(info,'cd_buffer_size','8388608',ierr)
-  stat = NFMPI_CREATE(Comm, FileName, IOR(NF_CLOBBER, NF_64BIT_OFFSET), info, DH%NCID)
+!Thomas CDF5                                                                                                                        
+  stat = NFMPI_CREATE(Comm, FileName, IOR(NF_CLOBBER, NF_64BIT_DATA), info, DH%NCID)
+!  stat = NFMPI_CREATE(Comm, FileName, IOR(NF_CLOBBER, NF_64BIT_OFFSET), info, DH%NCID)
+! end Thomas CDF5
   call mpi_info_free( info, ierr)
 !
 !!!!!!!!!!!!!!! 

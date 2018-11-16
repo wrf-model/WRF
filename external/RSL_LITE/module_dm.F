@@ -2372,6 +2372,8 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
    END DO
 
 #endif
+    DEALLOCATE (IDISPLACEMENT)
+    DEALLOCATE (ICOUNT)
    END SUBROUTINE get_full_obs_vector
 
 

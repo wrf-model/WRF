@@ -16,4 +16,3 @@
 configure.wrf*
 *.backup
 *.f90
-build.log

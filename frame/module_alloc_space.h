@@ -53,6 +53,8 @@
       INTEGER ierr
 
       INTEGER                              :: loop
+      INTEGER                              :: nba ! number of bytes allocated per variable
+      CHARACTER(LEN=256)                   :: message_string
 
    ! Local data
 

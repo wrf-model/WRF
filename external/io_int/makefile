@@ -30,7 +30,7 @@ io_int.f: io_int.F90 module_internal_header_util.o
 	fi
 
 io_int.o: io_int.f ../../inc/intio_tags.h
-	$(FC) $(FCFLAGS) -I../../inc -I../../frame -I../ioapi_share -o $@ -c $*.f
+	$(FC) $(FCFLAGS) -I../../inc -I../ioapi_share -o $@ -c $*.f
 
 io_int_idx_tags.h: ../../inc/intio_tags.h
 	awk '{print "#define", toupper($$4), $$6}' < ../../inc/intio_tags.h > $@

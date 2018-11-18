@@ -71,7 +71,7 @@ CONTAINS
      &          ,bgapxy   ,wgapxy    ,tgvxy     ,tgbxy     ,chvxy     ,chbxy        &    
      &          ,shgxy    ,shcxy     ,shbxy     ,evgxy     ,evbxy     ,ghvxy        &
      &          ,ghbxy    ,irgxy     ,ircxy     ,irbxy     ,trxy      ,evcxy        &
-     &          ,chleafxy ,chucxy    ,chv2xy    ,chb2xy    ,chstarxy                &                      
+     &          ,chleafxy ,chucxy    ,chv2xy    ,chb2xy    ,chstarxy, real_co2_content_noahmp & !Thomas CO2 2018  &                      
            ! Noah-MP ground water
      &          ,smcwtdxy ,rechxy   ,deeprechxy,fdepthxy,areaxy   ,rivercondxy, riverbedxy &
      &          ,eqzwt    ,pexpxy   ,qrfxy    ,qspringxy,qslatxy  ,qrfsxy   ,qspringsxy &
@@ -844,13 +844,14 @@ CONTAINS
    REAL, DIMENSION( ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::   SH2O
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   SHDMAX
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN )::   SHDMIN
-   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT )::   Z0
-
+   REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT )::   Z0 
+   
 !  NoahMP specific fields
 
    INTEGER, OPTIONAL, INTENT(IN) ::    idveg, iopt_crs, iopt_btr, iopt_run, iopt_sfc , iopt_frz, &
                                     iopt_inf, iopt_rad, iopt_alb, iopt_snf, iopt_tbot, iopt_stc, &
 				    iopt_gla, iopt_rsf, iopt_soil,iopt_pedo,iopt_crop
+   REAL, OPTIONAL, INTENT(IN) :: real_co2_content_noahmp
    REAL,    OPTIONAL, DIMENSION(ims:ime ,8, jms:jme), INTENT(IN) :: SOILCOMP
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme)  , INTENT(IN) :: SOILCL1,SOILCL2,SOILCL3,SOILCL4
 
@@ -2999,7 +3000,7 @@ CONTAINS
 #endif
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
-                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,        &
+                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,real_co2_content_noahmp,  & ! Thomas CO2 2018  
 ! variables below are optional
                 MP_RAINC =  RAINCV, MP_RAINNC =    RAINNCV, MP_SHCV = RAINSHV,&
 		MP_SNOW  = SNOWNCV, MP_GRAUP  = GRAUPELNCV, MP_HAIL = HAILNCV )

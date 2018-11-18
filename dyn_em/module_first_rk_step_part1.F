@@ -405,7 +405,7 @@ BENCH_START(rad_driver_tim)
      &         ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS        &
      &         ,EFCG=grid%EFCG,EFCS=grid%EFCS,EFIG=grid%EFIG &
      &         ,EFIS=grid%EFIS,EFSG=grid%EFSG,aercu_opt=config_flags%aercu_opt & 
-     &         ,EFSS=grid%EFSS,QS_CU=grid%QS_CU)
+     &         ,EFSS=grid%EFSS,QS_CU=grid%QS_CU,CO2_CONTENT=config_flags%co2_content) !Thomas CO2 10/12/2018
 
 BENCH_END(rad_driver_tim)
 
@@ -756,6 +756,7 @@ BENCH_START(surf_driver_tim)
      &        ,   irbxy=grid%irbxy    ,    trxy=grid%trxy    ,   evcxy=grid%evcxy    &
      &        ,chleafxy=grid%chleafxy ,  chucxy=grid%chucxy                          &                       
      &        ,  chv2xy=grid%chv2xy   ,  chb2xy=grid%chb2xy , chstarxy=grid%chstarxy &                       
+     &        , real_co2_content_noahmp=config_flags%co2_content_noahmp              & ! Thomas CO2
            !Optional hydro variables in NOAHMP
      &        ,smcwtdxy=grid%smcwtdxy ,rechxy=grid%rechxy ,deeprechxy=grid%deeprechxy &
      &        ,fdepthxy=grid%fdepthxy, areaxy=grid%areaxy, rivercondxy=grid%rivercondxy  &

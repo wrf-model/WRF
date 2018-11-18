@@ -2232,6 +2232,7 @@ rconfig   integer alevsiz_cu              namelist,physics      1             1 
 rconfig   integer aercu_opt               namelist,physics      1             0       -      "aercu_opt"    "aerosol input option for multiscale KF"      ""
 rconfig   real    aercu_fct               namelist,physics      1             1.0     -      "aercu_fct"    "aerosol multiplication factor"               ""
 rconfig   integer aercu_used              derived               1             0       -      "aercu_used"   "derived nml for packaging"      ""
+rconfig   real    co2_content             namelist,physics      1             395.E-06 irh   "co2_content"  "CO2 content in RRTMG"      "ppm"
 
 #BSINGH - added shallowcu_forced_ra, numBins, thBinSize, rBinSize, minDeepFreq, minShallowFreq, shcu_aerosols_opt for CuP scheme
 
@@ -2316,6 +2317,7 @@ rconfig   integer opt_soil    namelist,noah_mp      1           1         h    "
 rconfig   integer opt_pedo    namelist,noah_mp      1           1         h    "opt_pedo" "pedo_transfer function option"   ""
 rconfig   integer opt_crop    namelist,noah_mp      1           0         h    "opt_crop" "crop model option"   ""
 rconfig   real    WTDDT               namelist,physics         max_domains     30.      h     "wtddt"    "minutes between calls to lateral hydro"  ""
+rconfig   real    co2_content_noahmp namelist,noah_mp      1           395.E-06  h    "co2_content_noahmp" "co2 content for NOAHMP"   ""
 
 # For WRF Hydro
 rconfig   integer wrf_hydro               derived              1     0      h     "wrf_hydro"   "descrip"  "unit"

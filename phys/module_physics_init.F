@@ -744,7 +744,7 @@ CONTAINS
    INTEGER :: iopt_run
    INTEGER :: aercu_opt !PSH/TWG 
    REAL    :: aercu_fct !PSH/TWG 
-
+   REAL :: CO2_content ! Thomas 2018
 
    INTEGER :: i, j, k, itf, jtf, ktf, n
 integer myproc
@@ -782,6 +782,7 @@ integer myproc
 
    aercu_opt=config_flags%aercu_opt !PSH/TWG 06/10/16
    aercu_fct=config_flags%aercu_fct !PSH/TWG 06/10/16
+   co2_content = config_flags%co2_content
    sf_urban_physics=config_flags%sf_urban_physics
    usemonalb=config_flags%usemonalb
    rdmaxalb=config_flags%rdmaxalb

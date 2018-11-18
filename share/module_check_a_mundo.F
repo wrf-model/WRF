@@ -673,6 +673,18 @@
             model_config_rec%icloud = 1
          END IF
       ENDDO
+
+!-------------------------------------------------------------------
+!check if co2_content for RRTMG and CO2_content for NOAH-MP are the same
+!-------------------------------------------------------------------
+oops=0
+  IF ( model_config_rec%co2_content .ne. model_config_rec%co2_content_noahmp) THEN
+              wrf_err_message = '--- NOTE: CO2 content for RRTMG and NOAH-MP not the same, resetting to RRTMG value'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         model_config_rec%co2_content_noahmp = model_config_rec%co2_content
+  ENDIF
+!end Thomas
+
 !-----------------------------------------------------------------------
 ! aercu_opt = 1 (CESM-aerosal) only works with MSKF, special Morrison
 !-----------------------------------------------------------------------

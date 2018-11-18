@@ -9935,7 +9935,7 @@ CONTAINS
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
                        swddir, swddni, swddif,                    & ! jararias 2013/08
                        swdownc, swddnic, swddirc,                 & ! PAJ
-                       xcoszen,julian                             & ! jararias 2013/08
+                       xcoszen,julian,co2_content                 & ! jararias 2013/08
                                                                   )
 !------------------------------------------------------------------
    IMPLICIT NONE
@@ -9949,6 +9949,7 @@ CONTAINS
 
    INTEGER, INTENT(IN )      ::        ICLOUD
    INTEGER, INTENT(IN )      ::        MP_PHYSICS
+   REAL , INTENT (IN) :: co2_content ! Thomas CO2 2018
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          INTENT(IN   ) ::                                   dz8w, &
@@ -10212,7 +10213,7 @@ CONTAINS
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
 ! carbon dioxide (379 ppmv)
     real :: co2
-    data co2 / 379.e-6 / 
+    data co2 / 395.e-6 /
 ! methane (1774 ppbv)
     real :: ch4
     data ch4 / 1774.e-9 / 
@@ -10282,6 +10283,9 @@ CONTAINS
 
     REAL :: da, eot ! jararias, 14/08/2013
 
+  !Thomas 2018 for CO2
+   co2 = co2_content
+  ! end Thomas
 !------------------------------------------------------------------
 #if ( WRF_CHEM == 1 )
       IF ( aer_ra_feedback == 1) then

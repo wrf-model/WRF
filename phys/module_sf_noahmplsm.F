@@ -152,6 +152,7 @@ MODULE MODULE_SF_NOAHMPLSM
                       !   1 -> Liu, et al. 2016
 		      !   2 -> Gecros (Genotype-by-Environment interaction on CROp growth Simulator) Yin and van Laar, 2005
 
+  REAL :: CO2_CONTENT_NOAHMP ! CO2 content for NOAHMP
 !------------------------------------------------------------------------------------------!
 ! Physical Constants:                                                                      !
 !------------------------------------------------------------------------------------------!
@@ -9045,7 +9046,7 @@ END SUBROUTINE EMERG
 
   subroutine noahmp_options(idveg     ,iopt_crs  ,iopt_btr  ,iopt_run  ,iopt_sfc  ,iopt_frz , & 
                              iopt_inf  ,iopt_rad  ,iopt_alb  ,iopt_snf  ,iopt_tbot, iopt_stc, &
-			     iopt_rsf , iopt_soil, iopt_pedo, iopt_crop )
+			     iopt_rsf , iopt_soil, iopt_pedo, iopt_crop, real_co2_content_noahmp )
 
   implicit none
 
@@ -9067,7 +9068,7 @@ END SUBROUTINE EMERG
   INTEGER,  INTENT(IN) :: iopt_soil !soil parameters set-up option
   INTEGER,  INTENT(IN) :: iopt_pedo !pedo-transfer function
   INTEGER,  INTENT(IN) :: iopt_crop !crop model option (0->none; 1->Liu et al.; 2->Gecros)
-
+  REAL,  INTENT(IN) :: real_co2_content_noahmp   !Thomas CO2 2018
 ! -------------------------------------------------------------------------------------------------
 
   dveg = idveg
@@ -9087,6 +9088,7 @@ END SUBROUTINE EMERG
   opt_soil = iopt_soil
   opt_pedo = iopt_pedo
   opt_crop = iopt_crop
+  co2_content_noahmp = real_co2_content_noahmp
   
   end subroutine noahmp_options
  

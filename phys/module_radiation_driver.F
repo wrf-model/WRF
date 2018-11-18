@@ -151,7 +151,7 @@ CONTAINS
               ,taod5502d, taod5503d                                       & !  Trude
               ,mp_physics                                                 &
               ,EFCG,EFCS,EFIG,EFIS,EFSG,aercu_opt                         &
-              ,EFSS,QS_CU                                                 &
+              ,EFSS,QS_CU,CO2_CONTENT                                     & ! Thomas CO2 10/12/2018
                                                                           )
 
 
@@ -773,7 +773,7 @@ CONTAINS
      INTEGER, PARAMETER:: taer_angexp_opt = 3                            !  input option for aerosol Angstrom exponent
      INTEGER, PARAMETER:: taer_ssa_opt = 3                               !  input option for aerosol ssa
      INTEGER, PARAMETER:: taer_asy_opt = 3                               !  input option for aerosol asy
-
+     REAL, INTENT(in) :: co2_content !Thomas CO2 2018
 
 #if ( HWRF == 1 )
    CHARACTER(len=255) :: wrf_err_message
@@ -1697,7 +1697,7 @@ CONTAINS
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
                   LWUPFLX=LWUPFLX,LWUPFLXC=LWUPFLXC,                &
                   LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC,                &
-                  mp_physics=mp_physics                             )
+                  mp_physics=mp_physics,CO2_CONTENT=CO2_CONTENT     ) !Thomas CO2 2018/10/18
 
         CASE (RRTMK_LWSCHEME)
 
@@ -2161,7 +2161,7 @@ CONTAINS
                      asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11
                      swddir=swddir,swddni=swddni,swddif=swddif,         & ! jararias 2013/08/10
                      swdownc=swdownc, swddnic=swddnic, swddirc=swddirc, & ! PAJ
-                     xcoszen=coszen,julian=julian,mp_physics=mp_physics ) ! jararias 2013/08/14
+                     xcoszen=coszen,julian=julian,mp_physics=mp_physics, co2_content=co2_content ) ! jararias 2013/08/14
 
              DO j=jts,jte
              DO k=kts,kte

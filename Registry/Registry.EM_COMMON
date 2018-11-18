@@ -397,6 +397,8 @@ state    real   Q2               ij     misc        1         -     irh01{22}{23
 state    real   T2               ij     misc        1         -     i01rh01{22}{23}du  "T2"                   "TEMP at 2 M"       "K"
 state    real   TH2              ij     misc        1         -     irhdu     "TH2"                  "POT TEMP at 2 M"   "K"
 state    real   PSFC             ij     misc        1         -     i01rhdu   "PSFC"                 "SFC PRESSURE"      "Pa"
+# new diag
+state    real   PMSL_DIAG             ij     misc        1         -     rh   "PMSL_DIAG"                 "SEA LEVEL PRESSURE"      "hPa"
 
 # these next 2 are for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
 # with wave model, only if compiled with -DMCELIO, JM 2003/05/29
@@ -1432,7 +1434,10 @@ state    real  CLDFRA_OLD      ikj      misc        1         -      r        "C
 state    real  CLDFRA_BL       ikj      misc        1         -      -        "CLDFRA_BL"             "CLOUD FRACTION pbl"                                   ""
 state    real  CLDT             ij      misc        1         -      -        "CFRACT"                "TOTAL CLOUD FRACTION"                                 ""
 #state    real  CLDL             ij      misc        1         -      -        "CFRACL"                "LOW CLOUD FRACTION (ETA GREATER THAN 0.69)"           ""
-#state    real  LWP              ij      misc        1         -      -        "LWP"                   "LIQUID CLOUD WATER PATH"                              "kg m-2"
+#Thomas
+state    real  PWAT             ij      misc        1         -      rh       "PWAT"                  "INTEGRATED WATER VAPOR"         "kg m-2"
+state    real  LWP              ij      misc        1         -      rh        "LWP"                   "LIQUID CLOUD WATER PATH"                              "kg m-2"
+# end Thomas
 state    real  SWDOWN           ij      misc        1         -      rhd      "SWDOWN"                "DOWNWARD SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
 state    real  SWDOWNC          ij      misc        1         -      -        "SWDOWNC"               "DOWNWARD CLEAR-SKY SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
 state    real  GSW              ij      misc        1         -      rd       "GSW"                   "NET SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      

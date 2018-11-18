@@ -75,7 +75,7 @@ state    real   AFWA_CAPE_MU     ij     misc        1         -      rh02       
 state    real   AFWA_CIN_MU      ij     misc        1         -      rh02       "AFWA_CIN_MU"     "AFWA Diagnostic: Most unstable CIN 0-180mb"    "J kg-1"
 state    real   AFWA_ZLFC        ij     misc        1         -      rh02       "AFWA_ZLFC"       "AFWA Diagnostic: Level of Free Convection"     "m"
 state    real   AFWA_PLFC        ij     misc        1         -      rh02       "AFWA_PLFC"       "AFWA Diagnostic: Pressure of LFC"              "Pa"
-state    real   AFWA_LIDX        ij     misc        1         -      rh02       "AFWA_LIDX"       "AFWA Diagnostic: Surface Lifted Index"         "K"
+state    real   AFWA_LIDX        ij     misc        1         -      rh02       "AFWA_LIDX"       "AFWA Diagnostic: Surface Lifted Index"         "deg C"
 state    real   AFWA_PWAT        ij     misc        1         -      rh02       "AFWA_PWAT"       "AFWA Diagnostic: Precipitable Water"           "kg m-2"
 state    real   MIDRH_MIN        ij     misc        1         -      -          "MIDRH_MIN"       "Min Mid-level relative humidity"               "%"
 state    real   MIDRH_MIN_OLD    ij     misc        1         -      r          "MIDRH_MIN_OLD"   "Previous Min Mid-level relative humidity"      "%"

@@ -561,8 +561,9 @@ CONTAINS
 
             ! Add 273.15 to lifted index per some standard I don't understand
             ! ---------------------------------------------------------------
+            ! lifted indes is defined in (K) so 273.15 should not be added
             IF ( grid % afwa_lidx ( i, j ) .ne. 999. ) THEN
-              grid % afwa_lidx ( i, j ) = grid % afwa_lidx ( i, j ) + 273.15
+              grid % afwa_lidx ( i, j ) = grid % afwa_lidx ( i, j ) ! + 273.15
             ENDIF
  
             ! Calculate buoyancy again for most unstable layer

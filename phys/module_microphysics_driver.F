@@ -107,7 +107,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,aerocu,aercu_fct,no_src_types_cu                  &
                       ,PBL,EFCG,EFIG,EFSG,WACT,CCN1_GS,CCN2_GS           &
                       ,CCN3_GS,CCN4_GS,CCN5_GS,CCN6_GS,CCN7_GS           &
-                      ,NR_CU,QR_CU,NS_CU,QS_CU,CU_UAF,mskf_refl_10cm     &
+                      ,NR_CU,QR_CU,NS_CU,QS_CU,CU_UAF,mskf_refl_10cm, pwat, lwp     &
 # endif
                                                                          )
 
@@ -569,6 +569,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) ::  & ! G. Thompson
                  re_cloud, re_ice, re_snow
    INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
+! new vars for LWP and PWAT diagnostics
+  REAL , DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT) :: lwp
+  REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: PWAT ! Thomas
 
   INTEGER,           INTENT(IN   )    :: aercu_opt
 # if (EM_CORE == 1)
@@ -744,6 +747,12 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              "SETTINGS ERROR: Prognostic cloud droplet number can only be used with the mp_physics=LINSCHEME or MORRISON or NSSL_2MOM.")
        END IF
        END IF
+
+  !Thomas
+  ! Zero out pwat and lwp before calculation
+  pwat(its:ite,jts:jte)  = 0.
+  lwp(its:ite,jts:jte)  = 0.
+  !print*,pwat(its:ite,jts:jte)
 
      micro_select: SELECT CASE(mp_physics)
 
@@ -2330,6 +2339,18 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
          CALL wrf_error_fatal ( wrf_err_message )
 
       END SELECT micro_select
+
+  !Thomas for pwat and lwp
+    DO j = jts,jte
+      DO i = its,ite
+       pwat(i,j) = 0.0
+       lwp(i,j) = 0.0
+         DO k = kts,kte
+        pwat(i,j) = pwat(i,j) + qv_curr(i,k,j)*dz8w(i,k,j)* rho(i,k,j)
+        lwp(i,j) = lwp(i,j) + qc_curr(i,k,j)*dz8w(i,k,j)* rho(i,k,j)
+        ENDDO
+       ENDDO
+    ENDDO
 
    ENDDO
    !$OMP END PARALLEL DO

@@ -174,10 +174,11 @@ SUBROUTINE solve_em ( grid , config_flags  &
 ! variables for flux-averaging code 20091223
    CHARACTER*256                              :: message, message2, message3
    REAL                                       :: old_dt
-   TYPE(WRFU_Time)                            :: temp_time, CurrTime, restart_time
+   TYPE(WRFU_Time)                            :: temp_time, CurrTime, restart_time, hist_time,Starttime !Thomas
    INTEGER, PARAMETER                         :: precision = 100
    INTEGER                                    :: num, den
-   TYPE(WRFU_TimeInterval)                    :: dtInterval, intervaltime,restartinterval
+   TYPE(WRFU_TimeInterval)                    :: dtInterval, intervaltime,restartinterval, histint, dtint! Thomas
+   CHARACTER*256 :: timestr  ! Thomas
 
 ! Define benchmarking timers if -DBENCH is compiled
 #include "bench_solve_em_def.h"
@@ -3759,7 +3760,8 @@ BENCH_START(micro_driver_tim)
       &        ,WACT=grid%WACT,CCN1_GS=grid%CCN1_GS,CCN2_GS=grid%CCN2_GS,CCN3_GS=grid%CCN3_GS  &
       &        ,CCN4_GS=grid%CCN4_GS,CCN5_GS=grid%CCN5_GS,CCN6_GS=grid%CCN6_GS &
       &        ,CCN7_GS=grid%CCN7_GS,NR_CU=grid%NR_CU,QR_CU=grid%QR_CU,NS_CU=grid%NS_CU &
-      &        ,QS_CU=grid%QS_CU,CU_UAF=grid%CU_UAF,mskf_refl_10cm=grid%mskf_refl_10cm)
+      &        ,QS_CU=grid%QS_CU,CU_UAF=grid%CU_UAF,mskf_refl_10cm=grid%mskf_refl_10cm, & 
+      &        pwat=grid%pwat, lwp=grid%lwp)
                                                                           
 BENCH_END(micro_driver_tim)
 
@@ -4537,6 +4539,31 @@ BENCH_END(bc_2d_tim)
                             ipsy, ipey, jpsy, jpey, kpsy, kpey   )
 
 
+!Thomas compute mean sea level pressure
+! Get domain clock
+    ! ----------------
+ CALL WRFU_ALARMGET( grid%alarms( HISTORY_ALARM ), prevringtime=hist_time, &
+         ringinterval=histint)
+   ! Get domain clock
+    ! ----------------
+    CALL domain_clock_get ( grid, current_time=CurrTime, &
+         simulationStartTime=StartTime, &            
+         current_timestr=timestr, time_step=dtint )
+!Thomas
+! IF(currtime .ge. hist_time + histint - dtint) THEN
+ DO j = jps, jpe
+ DO i = ips, ipe
+ grid%pmsl_diag(i,j) = 0.
+ CALL MSLP ( grid % ht ( i, j )           & 
+                                              , grid % psfc ( i, j )         &
+                                              , grid % z ( i, kms, j )       & 
+                                              , moist(i,kms,j,P_QV)          &  
+                                              , grid % t_phy ( i, kms, j ) &
+                                              , grid % pmsl_diag(i,j))
+ ENDDO
+ ENDDO
+!ENDIF
+! end Thomas
 
 #ifdef DM_PARALLEL
 !-----------------------------------------------------------------------
@@ -4632,3 +4659,60 @@ BENCH_END(bc_2d_tim)
    RETURN
 
 END SUBROUTINE solve_em
+
+! diagnostics routines borrowed from AFWA module
+!Thomas
+  Subroutine MSLP ( zsfc, psfc, zlev1, qlev1, tlev1,pmsl )
+
+      implicit none
+     
+     
+!     DECLARE VARIABLES
+
+      REAL,    INTENT ( IN )  :: zsfc         !~ Surface height ( m )
+      REAL,    INTENT ( IN )  :: psfc         !~ Surface height ( m )
+      REAL,    INTENT ( IN )  :: zlev1        !~ Level 1 height ( m )
+      REAL,    INTENT ( IN )  :: qlev1        !~ Level 1 mixing ratio ( kg/kg )
+      REAL,    INTENT ( IN )  :: tlev1        !~ Level 1 temperature ( K )
+!Thomas 
+      REAL,     INTENT (OUT) :: pmsl
+      real,PARAMETER :: G=9.81
+      real,PARAMETER :: GI=1./G
+      real,PARAMETER :: RD=287.0
+      real,PARAMETER :: ZSL=0.0
+      real,PARAMETER :: TAUCR=RD*GI*290.66,CONST=0.005*G/RD
+      real,PARAMETER :: GORD=G/RD,DP=60.E2
+      real,PARAMETER :: GAMMA=6.5E-3
+
+      real TVRT,TVRSFC,TAUSFC,TVRSL,TAUSL,TAUAVG
+!    
+!**********************************************************************
+!     START NGMSLP HERE.
+!
+         pmsl = PSFC
+!
+!        COMPUTE LAYER TAU (VIRTUAL TEMP*RD/G).
+         TVRT = TLEV1*(1.0+0.608*QLEV1)
+         !TAU  = TVRT*RD*GI
+!    
+!        COMPUTE TAU AT THE GROUND (Z=ZSFC) AND SEA LEVEL (Z=0)
+!        ASSUMING A CONSTANT LAPSE RATE OF GAMMA=6.5DEG/KM.
+         TVRSFC = TVRT + (ZLEV1 - ZSFC)*GAMMA
+         TAUSFC = TVRSFC*RD*GI
+         TVRSL  = TVRT + (ZLEV1 - ZSL)*GAMMA
+         TAUSL  = TVRSL*RD*GI
+!    
+!        IF NEED BE APPLY SHEULL CORRECTION.
+         IF ((TAUSL.GT.TAUCR).AND.(TAUSFC.LE.TAUCR)) THEN
+            TAUSL=TAUCR
+         ELSEIF ((TAUSL.GT.TAUCR).AND.(TAUSFC.GT.TAUCR)) THEN
+            TAUSL = TAUCR-CONST*(TAUSFC-TAUCR)**2
+         ENDIF
+!    
+!        COMPUTE MEAN TAU.
+         TAUAVG = 0.5*(TAUSL+TAUSFC)
+!    
+!        COMPUTE SEA LEVEL PRESSURE.
+         pmsl = (PSFC*EXP(ZSFC/TAUAVG))/100.
+
+  END subroutine MSLP

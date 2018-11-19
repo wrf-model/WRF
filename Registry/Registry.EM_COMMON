@@ -689,6 +689,10 @@ state    real   ts_tslb         ?!       misc      -         -      -        "TS
 state    real   ts_clw          ?!       misc      -         -      -        "TS_CLW"         "Column integrated cloud water"
 state    real   ts_rainc        ?!       misc      -         -      -        "TS_RAINC"       "Cumulus precip"
 state    real   ts_rainnc       ?!       misc      -         -      -        "TS_RAINNC"      "Grid-scale precip"
+state    real   ts_swddir       ?!       misc      -         -      -        "TS_SWDDIR"      "Shortwave direct irradiance"
+state    real   ts_swddni       ?!       misc      -         -      -        "TS_SWDDNI"      "Shortwave direct normal irradiance"
+state    real   ts_swddif       ?!       misc      -         -      -        "TS_SWDDIF"      "Shortwave diffuse irradiance"
+state    real   ts_swdown       ?!       misc      -         -      -        "TS_SWDOWN"      "Shortwave irradiance at the surface"
 
 # Time series of vertical profile of U, V, GHT, THETA and QVAPOR
 state    real   ts_u_profile   ?!k       misc      -         -      -        "TS_U_PROFILE"   "Wind u-Component, earth relative, vertical profile"
@@ -2867,7 +2871,7 @@ package   icedepth_one   seaice_thickness_opt==1     -             state:icedept
 
 #Time series options for text output
 package   notseries   process_time_series==0                 -             -
-package   tseries     process_time_series==1                 -             state:ts_hour,ts_u,ts_v,ts_q,ts_t,ts_psfc,ts_glw,ts_gsw,ts_hfx,ts_lh,ts_tsk,ts_tslb,ts_clw,ts_rainc,ts_rainnc,ts_u_profile,ts_v_profile,ts_gph_profile,ts_th_profile
+package   tseries     process_time_series==1                 -             state:ts_hour,ts_u,ts_v,ts_q,ts_t,ts_psfc,ts_glw,ts_gsw,ts_hfx,ts_lh,ts_tsk,ts_tslb,ts_clw,ts_rainc,ts_rainnc,ts_u_profile,ts_v_profile,ts_gph_profile,ts_th_profile,ts_swddir,ts_swddni,ts_swddif,ts_swdown
 
 # WRF-HAILCAST
 state    real   HAILCAST_DHAIL1   ij     misc        1         -      r          "HAILCAST_DHAIL1"     "WRF-HAILCAST Hail Diameter, 1st rank order"     "mm"

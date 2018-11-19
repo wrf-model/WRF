@@ -9949,7 +9949,7 @@ CONTAINS
 
    INTEGER, INTENT(IN )      ::        ICLOUD
    INTEGER, INTENT(IN )      ::        MP_PHYSICS
-   REAL , INTENT (IN) :: co2_content ! Thomas CO2 2018
+   REAL , INTENT (IN) :: co2_content 
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          INTENT(IN   ) ::                                   dz8w, &
@@ -10283,9 +10283,8 @@ CONTAINS
 
     REAL :: da, eot ! jararias, 14/08/2013
 
-  !Thomas 2018 for CO2
    co2 = co2_content
-  ! end Thomas
+
 !------------------------------------------------------------------
 #if ( WRF_CHEM == 1 )
       IF ( aer_ra_feedback == 1) then

@@ -10182,7 +10182,7 @@ contains
                        qv3d, qc3d, qr3d, qi3d, qs3d, qg3d,                     &
 !sh
                        o3input, o33d,                                          &
-                       aer_opt, aerod, no_src,                                 &
+                       aer_opt, aerod, no_src,co2_content,                     &
 !sh        
                        ids,ide, jds,jde, kds,kde,                              &
                        ims,ime, jms,jme, kms,kme,                              &
@@ -10323,6 +10323,9 @@ contains
    integer                              :: dyofyr
 
 
+! for user defined CO2 content
+   REAL , INTENT (IN) :: co2_content 
+
 !
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
 ! carbon dioxide (379 ppmv)
@@ -10394,6 +10397,9 @@ contains
    real :: xt24, tloctm, hrang, xxlat
    integer :: i, j, k, na
    logical :: predicate
+
+
+  co2=co2_content
 
 !-------------------------------------------------------------------------------
 !

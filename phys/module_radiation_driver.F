@@ -151,7 +151,7 @@ CONTAINS
               ,taod5502d, taod5503d                                       & !  Trude
               ,mp_physics                                                 &
               ,EFCG,EFCS,EFIG,EFIS,EFSG,aercu_opt                         &
-              ,EFSS,QS_CU,CO2_CONTENT                                     & ! Thomas CO2 10/12/2018
+              ,EFSS,QS_CU,CO2_CONTENT                                     & 
                                                                           )
 
 
@@ -773,7 +773,7 @@ CONTAINS
      INTEGER, PARAMETER:: taer_angexp_opt = 3                            !  input option for aerosol Angstrom exponent
      INTEGER, PARAMETER:: taer_ssa_opt = 3                               !  input option for aerosol ssa
      INTEGER, PARAMETER:: taer_asy_opt = 3                               !  input option for aerosol asy
-     REAL, INTENT(in) :: co2_content !Thomas CO2 2018
+     REAL, INTENT(in) :: co2_content 
 
 #if ( HWRF == 1 )
    CHARACTER(len=255) :: wrf_err_message
@@ -1477,7 +1477,7 @@ CONTAINS
                  ,F_QI=F_QI,F_QS=F_QS,F_QG=F_QG                     &
                  ,ICLOUD=icloud,WARM_RAIN=warm_rain                 &
 !ccc Added for time-varying trace gases.
-                 ,YR=YR,JULIAN=JULIAN                               &
+                 ,YR=YR,JULIAN=JULIAN,CO2_CONTENT=CO2_CONTENT       &
 !ccc
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &     
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
@@ -1519,7 +1519,7 @@ CONTAINS
                     ,tauaer3d_sw=tauaer_sw                             & ! jararias, 2013/11
                     ,ssaaer3d_sw=ssaaer_sw                             & ! jararias, 2013/11
                     ,asyaer3d_sw=asyaer_sw                             & ! jararias, 2012/11
-                                                                       )
+                    ,co2_content=co2_content                           )
 
         CASE (GFDLLWSCHEME)
 
@@ -1697,7 +1697,7 @@ CONTAINS
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
                   LWUPFLX=LWUPFLX,LWUPFLXC=LWUPFLXC,                &
                   LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC,                &
-                  mp_physics=mp_physics,CO2_CONTENT=CO2_CONTENT     ) !Thomas CO2 2018/10/18
+                  mp_physics=mp_physics,CO2_CONTENT=CO2_CONTENT     ) 
 
         CASE (RRTMK_LWSCHEME)
 
@@ -1719,7 +1719,7 @@ CONTAINS
                            f_qs, f_qg,                              &
                            qv, qc, qr, qi, qs, qg,                  &
                            o3input, o3rad,                          &
-                           aer_opt, aerod, no_src_types,            &
+                           aer_opt, aerod, no_src_types,co2_content,&
                            ids,ide, jds,jde, kds,kde,               &
                            ims,ime, jms,jme, kms,kme,               &
                            its,ite, jts,jte, kts,kte)
@@ -1774,7 +1774,7 @@ CONTAINS
 #endif
                   QNDROP3D=qndrop,F_QNDROP=f_qndrop,                &
 !ccc Added for time-varying trace gases.
-                  YR=YR,JULIAN=JULIAN,                              &
+                  YR=YR,JULIAN=JULIAN,CO2_CONTENT=CO2_CONTENT,      &
 !ccc
                   IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde,&
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
@@ -2035,7 +2035,7 @@ CONTAINS
                     ,ssaaer3d_sw=ssaaer_sw                             & ! jararias, 2013/11
                     ,asyaer3d_sw=asyaer_sw                             & ! jararias, 2012/11
                     ,aer_opt=aer_opt                                   &
-                                                                       )
+                    ,co2_content=co2_content                           )
 
         CASE (CAMSWSCHEME)
              CALL wrf_debug(100, 'CALL camrad sw')
@@ -2161,7 +2161,8 @@ CONTAINS
                      asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11
                      swddir=swddir,swddni=swddni,swddif=swddif,         & ! jararias 2013/08/10
                      swdownc=swdownc, swddnic=swddnic, swddirc=swddirc, & ! PAJ
-                     xcoszen=coszen,julian=julian,mp_physics=mp_physics, co2_content=co2_content ) ! jararias 2013/08/14
+                     xcoszen=coszen,julian=julian,mp_physics=mp_physics,&
+                     co2_content=co2_content ) ! jararias 2013/08/14
 
              DO j=jts,jte
              DO k=kts,kte
@@ -2242,7 +2243,7 @@ CONTAINS
                      asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11
                      swddir=swddir,swddni=swddni,swddif=swddif,         & ! jararias 2013/08/10
                      swdownc=swdownc, swddnic=swddnic, swddirc=swddirc, & ! PAJ
-                     xcoszen=coszen,julian=julian                       ) ! jararias 2013/08/14
+                     xcoszen=coszen,julian=julian,co2_content=co2_content) ! jararias 2013/08/14
 
              DO j=jts,jte
              DO k=kts,kte

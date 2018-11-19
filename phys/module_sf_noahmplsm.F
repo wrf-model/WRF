@@ -9068,7 +9068,7 @@ END SUBROUTINE EMERG
   INTEGER,  INTENT(IN) :: iopt_soil !soil parameters set-up option
   INTEGER,  INTENT(IN) :: iopt_pedo !pedo-transfer function
   INTEGER,  INTENT(IN) :: iopt_crop !crop model option (0->none; 1->Liu et al.; 2->Gecros)
-  REAL,  INTENT(IN) :: real_co2_content_noahmp   !Thomas CO2 2018
+  REAL,  INTENT(IN) :: real_co2_content_noahmp   ! namelist controlled co2
 ! -------------------------------------------------------------------------------------------------
 
   dveg = idveg

@@ -101,7 +101,7 @@ CONTAINS
     INTEGER,                                         INTENT(IN   ) ::  IOPT_SOIL ! soil configuration option
     INTEGER,                                         INTENT(IN   ) ::  IOPT_PEDO ! soil pedotransfer function option
     INTEGER,                                         INTENT(IN   ) ::  IOPT_CROP ! crop model option (0->none; 1->Liu et al.; 2->Gecros)
-    REAL   ,                                         INTENT(IN   ) ::  real_CO2_CONTENT_NOAHMP ! ! Thomas CO2 from namelist 2018
+    REAL   ,                                         INTENT(IN   ) ::  real_CO2_CONTENT_NOAHMP 
     INTEGER,                                         INTENT(IN   ) ::  IZ0TLND   ! option of Chen adjustment of Czil (not used)
     INTEGER,                                         INTENT(IN   ) ::  sf_urban_physics   ! urban physics option
     REAL,    DIMENSION( ims:ime,       8, jms:jme ), INTENT(IN   ) ::  SOILCOMP  ! soil sand and clay percentage
@@ -743,10 +743,9 @@ CONTAINS
        FICEOLD = 0.0
        FICEOLD(ISNOW+1:0) = SNICEXY(I,ISNOW+1:0,J) &  ! snow ice fraction  
            /(SNICEXY(I,ISNOW+1:0,J)+SNLIQXY(I,ISNOW+1:0,J))
-!Thomas CO2 2018
-! PRINT*, "CO2 content in NOAH-MP ",co2_content_noahmp
-        CO2PP = co2_content_noahmp* P_ML
-! End Thomas
+
+       CO2PP = co2_content_noahmp* P_ML
+
        O2PP   = O2_TABLE  * P_ML                      ! partial pressure  o2 [Pa]
        FOLN   = 1.0                                   ! for now, set to nitrogen saturation
        QC     = undefined_value                       ! test dummy value

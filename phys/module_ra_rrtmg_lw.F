@@ -11486,7 +11486,7 @@ CONTAINS
                        ids,ide, jds,jde, kds,kde,                 & 
                        ims,ime, jms,jme, kms,kme,                 &
                        its,ite, jts,jte, kts,kte,                 &
-                       lwupflx, lwupflxc, lwdnflx, lwdnflxc,co2_content& ! Thomas CO2 2018
+                       lwupflx, lwupflxc, lwdnflx, lwdnflxc,co2_content& 
                                                                   )
 !------------------------------------------------------------------
 !ccc To use clWRF time varying trace gases
@@ -11503,7 +11503,7 @@ CONTAINS
 
    INTEGER, INTENT(IN )      ::        ICLOUD
    INTEGER, INTENT(IN )      ::        MP_PHYSICS
-   REAL , INTENT (IN) :: co2_content ! Thomas CO2 2018
+   REAL , INTENT (IN) :: co2_content 
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          INTENT(IN   ) ::                                   dz8w, &
@@ -11824,9 +11824,9 @@ CONTAINS
                   266.13,263.96,261.54,258.93,256.15,253.23,      &
                   249.89,246.67,243.48,240.25,236.66,233.86/    
 !------------------------------------------------------------------
-!Thomas 2018 for CO2
+
  co2 = co2_content
-! end Thomas
+
 
 #if ( WRF_CHEM == 1 )
       IF ( aer_ra_feedback == 1) then

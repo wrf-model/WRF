@@ -679,7 +679,7 @@
 !-------------------------------------------------------------------
 oops=0
   IF ( model_config_rec%co2_content .ne. model_config_rec%co2_content_noahmp) THEN
-              wrf_err_message = '--- NOTE: CO2 content for RRTMG and NOAH-MP not the same, resetting to RRTMG value'
+              wrf_err_message = '--- NOTE: CO2 content for RRTMG and NOAH-MP not the same'
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
 !         model_config_rec%co2_content_noahmp = model_config_rec%co2_content
   ENDIF

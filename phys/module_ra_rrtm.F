@@ -1741,7 +1741,7 @@ CONTAINS
                        ,qi3d,qs3d,qg3d,cldfra3d                   &
                        ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg             &
 !ccc Added for time-varying trace gases.
-                       ,yr, julian                                )
+                       ,yr, julian,co2_content                    )
 !ccc
 !------------------------------------------------------------------
 !ccc
@@ -1831,6 +1831,10 @@ CONTAINS
 ! p_top for vertical nesting
     REAL, INTENT(IN   ) :: p_top
 
+! for user defined CO2 content
+   REAL , INTENT (IN) :: co2_content 
+
+
 !------------------------------------------------------------------
 
     IF ( p_top .GT. 0 ) THEN ! flag value for NMM = -1
@@ -1855,7 +1859,7 @@ CONTAINS
 !  n2ovmr = 0.
 !  ch4vmr = 0.
 ! values updated to RRTMG in V3.5
-   co2vmr = 379.e-6
+   co2vmr = co2_content
    n2ovmr = 319.e-9
    ch4vmr = 1774.e-9
 #endif

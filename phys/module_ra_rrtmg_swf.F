@@ -11251,7 +11251,7 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
                        swddir, swddni, swddif,                    & ! jararias 2013/08
                        swdownc, swddnic, swddirc,                 & ! PAJ
-                       xcoszen,julian                             & ! jararias 2013/08
+                       xcoszen,julian,co2_content                 & ! jararias 2013/08
                                                                   )
 !------------------------------------------------------------------
       IMPLICIT NONE
@@ -11516,6 +11516,9 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
     integer:: idx_rei
     real:: corr
 
+! for user defined CO2 content
+   REAL , INTENT (IN) :: co2_content 
+
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
 ! carbon dioxide (379 ppmv)
     real :: co2
@@ -11597,6 +11600,8 @@ write(0,*)'pfu ',shape( pfu)          ! upwelling flux (W/m2)
 
 ! mji - write
 !    REAL, DIMENSION( ims:ime, jms:jme ) ::         SWDB, SWUT
+
+ co2=co2_content
 
 !------------------------------------------------------------------
 #if ( WRF_CHEM == 1 )

@@ -176,7 +176,7 @@ contains
                    ,swddir,swddni,swddif                          & ! jararias 2013/08
                    ,coszen,julian                                 & ! jararias 2013/08
                    ,aer_opt                                       &
-                                                                  )
+                   ,co2_content                                   )
    implicit none
 
 !------- I / O variables ----------------------------------------------
@@ -360,6 +360,9 @@ contains
    real(Kind=fp_kind)    :: fac,x
    real(Kind=fp_kind)    :: xt24,tloctm,hrang,xxlat
    real, intent(in)    :: center_lat                ! center of latitude
+
+! for user defined CO2 content
+   REAL , INTENT (IN) :: co2_content 
 
 !urban
 !   real, optional, dimension( ims:ime, jms:jme ), intent(out)  :: cosz_urb2d !urban

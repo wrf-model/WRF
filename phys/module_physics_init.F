@@ -744,7 +744,7 @@ CONTAINS
    INTEGER :: iopt_run
    INTEGER :: aercu_opt !PSH/TWG 
    REAL    :: aercu_fct !PSH/TWG 
-   REAL :: CO2_content ! Thomas 2018
+   REAL :: CO2_content 
 
    INTEGER :: i, j, k, itf, jtf, ktf, n
 integer myproc

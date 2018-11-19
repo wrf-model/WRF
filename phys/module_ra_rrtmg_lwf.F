@@ -15272,7 +15272,7 @@ integer,external :: omp_get_thread_num
                        progn,                                     & !czhao
                        qndrop3d,f_qndrop,                         & !czhao
 !ccc added for time varying gases.
-                       yr,julian,                                 &
+                       yr,julian,co2_content,                     &
 !ccc
                        ids,ide, jds,jde, kds,kde,                 & 
                        ims,ime, jms,jme, kms,kme,                 &
@@ -15483,6 +15483,9 @@ integer,external :: omp_get_thread_num
                                                               dz
     real:: snow_mass_factor
 
+! for user defined CO2 content
+   REAL , INTENT (IN) :: co2_content 
+
 !..We can use message interface regardless of what options are running,
 !.. so let us ask for it here.
       CHARACTER(LEN=256)                           :: message
@@ -15608,6 +15611,9 @@ integer,external :: omp_get_thread_num
                   266.13,263.96,261.54,258.93,256.15,253.23,      &
                   249.89,246.67,243.48,240.25,236.66,233.86/    
 !------------------------------------------------------------------
+
+ co2= co2_content
+
 #if ( WRF_CHEM == 1 )
       IF ( aer_ra_feedback == 1) then
       IF ( .NOT. &

@@ -107,7 +107,8 @@ SUBROUTINE microphysics_driver(                                          &
                       ,aerocu,aercu_fct,no_src_types_cu                  &
                       ,PBL,EFCG,EFIG,EFSG,WACT,CCN1_GS,CCN2_GS           &
                       ,CCN3_GS,CCN4_GS,CCN5_GS,CCN6_GS,CCN7_GS           &
-                      ,NR_CU,QR_CU,NS_CU,QS_CU,CU_UAF,mskf_refl_10cm, pwat, lwp     &
+                      ,NR_CU,QR_CU,NS_CU,QS_CU,CU_UAF,MSKF_REFL_10CM     &
+                      ,PWAT,LWP                                          &
 # endif
                                                                          )
 

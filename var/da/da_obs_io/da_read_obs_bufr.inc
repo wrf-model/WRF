@@ -89,12 +89,13 @@ subroutine da_read_obs_bufr (iv)
        integer                               :: nlevels_BUFR
        integer                               :: kx_BUFR
        real                                  :: pco_BUFR(8,255)
+       logical                               :: outside
        type(datalink_BUFR), pointer :: next
    end type datalink_BUFR
 
    type(datalink_BUFR),pointer  :: head=>null(), plink=>null()
 
-   integer :: num_subset, isubset
+   integer :: isubset
    type (info_type), allocatable           :: info_1d(:)
    type (model_loc_type), allocatable      :: loc_1d(:)
    logical, allocatable                    :: outside_1d(:), outside_all_1d(:)
@@ -211,9 +212,11 @@ bufrfile:  do ibufr=1,numbufr
    oestr='POE QOE TOE NUL WOE NUL PWE NUL' ! observation error
    pcstr='PPC QPC TPC ZPC WPC NUL PWP NUL' ! program code
 
-!  2.1 read data
-!  Initialize outside_all_1d array for all subsets simultaneously (vectorizes up llxy call)
-!-------------------------------------------------------------- 
+
+!  2.1.1 Initialize 1d arrays (loc, outside, outside_all) from da_llxy_1d 
+!   (single vectorized call is much faster than >10^5 calls to subroutine)
+!-------------------------------------------------------------------------
+
    call openbf(iunit,'IN',iunit)
    call datelen(10)
 
@@ -229,27 +232,27 @@ bufrfile:  do ibufr=1,numbufr
    !rewind(iunit)
 
    write(unit=message(1),fmt='(a,i10)') 'BUFR file date is: ', idate
-!   write(unit=message(2),fmt='(a)') 'Step 1: Parsing file for num_subsets'
-!   call da_message(message(1:2))
 
-   num_subset = 0
-   subsets0: do
-      num_subset = num_subset + 1 !increment num_subset for every call to readns
 
+!  2.1.1 Parse file for number of subsets
+!--------------------------------------------------------------
+
+   isubset = 0
+   do while (iret == 0)
+      isubset = isubset + 1 !increment isubset for every call to readns
       call readns(iunit,subset,idate,iret)  ! read in the next subset
-      if ( iret /= 0 ) then 
-         write(unit=message(1),fmt='(A,I3,A,I3)') & 
-            "return code from readns",iret,       &
-            "reach the end of PREPBUFR obs unit",iunit
-         !call da_warning(__FILE__,__LINE__,message(1:1))
-         exit subsets0
-      end if
-   end do subsets0
+   end do
    call closbf(iunit)
    close(iunit)
 
-!   write(unit=message(1),fmt='(a,I10)') 'Step 2: Parsing subsets for lat, lon; num_subset = ', num_subset
-!   call da_message(message(1:1))
+   allocate ( info_1d        (isubset) )
+   allocate ( loc_1d         (isubset) )
+   allocate ( outside_1d     (isubset) )
+   allocate ( outside_all_1d (isubset) )
+
+
+!  2.2.1 Parse subsets for lat, lon + other info variables
+!--------------------------------------------------------------
 
    open(unit   = iunit, FILE   = trim(filename), &
       iostat =  iost, form = 'unformatted', STATUS = 'OLD')
@@ -268,41 +271,36 @@ bufrfile:  do ibufr=1,numbufr
    !rewind(iunit)
 
    isubset = 0
-
-   allocate ( info_1d        (num_subset) )
-   allocate ( loc_1d         (num_subset) )
-   allocate ( outside_1d     (num_subset) )
-   allocate ( outside_all_1d (num_subset) )
-
-   subsets: do
+   do while (iret == 0 )
       isubset = isubset + 1 !increment isubset for every call to readns
 
       call ufbint(iunit,hdr,7,1,iret2,hdstr)
 
       r8sid = hdr(1)
+      info_1d (isubset) % name(1:8)  = subset
+      info_1d (isubset) % name(9:40) = '                                '
       info_1d (isubset) % id(1:5)    = csid(1:5)
       info_1d (isubset) % id(6:40)   = '                                   '
+      info_1d (isubset) % dhr        = hdr(4)    ! difference in hour
+      info_1d (isubset) % elv        = hdr(6)
       info_1d (isubset) % lon        = hdr(2)
       info_1d (isubset) % lat        = hdr(3)
 
       call readns(iunit,subset,idate,iret)  ! read in the next subset
-      if ( iret /= 0 ) then 
-         write(unit=message(1),fmt='(A,I3,A,I3)') & 
-            "return code from readns",iret,       &
-            "reach the end of PREPBUFR obs unit",iunit
-         !call da_warning(__FILE__,__LINE__,message(1:1))
-         exit subsets
-      end if
-   end do subsets
+   end do
+   call closbf(iunit)
+   close(iunit)
 
    ! blacklisted stations should be handled through an external table.
    ! For now, temporary fix is implemented here for known incorrect 
    ! station info in NCEP PREPBUFR file
    where ( (info_1d % id(1:4)) == 'BGQQ' )
+      info_1d % elv = 19
       info_1d % lon = -69.21
       info_1d % lat = 77.46
    end where
    where ( (info_1d % id(1:4)) == 'UWKE' )
+      info_1d % elv = 194
       info_1d % lon = 52.09
       info_1d % lat = 55.56
    end where
@@ -313,20 +311,35 @@ bufrfile:  do ibufr=1,numbufr
    where ( info_1d (:) % lat >  89.95 ) info_1d (:) % lat =  89.95
 
 
-!   write(unit=message(1),fmt='(a)') 'Step 3: Determining outside_1d, outside_all_1d'
-!   call da_message(message(1:1))
+!  2.1.3 Determine loc_1d, outside_1d, outside_all_1d
+!--------------------------------------------------------------
 
    !JJG, NOTE: This llxy work/memory could also be divided amongst processors by assigning a subgroup of the subsets to each process.
    !  Ultimately all subsets that are .not.outside_all need to have outside_1d and loc_1d values populated on 
-   !  all processors. This procedure is shown in da_read_obs_ncgoesabi with two calls to da_llxy_1d and 
+   !  each processor. This procedure is shown in da_read_obs_ncgoesabi with two calls to da_llxy_1d and 
    !  communications in between those two calls.
 
    call da_llxy_1d (info_1d, loc_1d, outside_1d, outside_all_1d)
 
-   call closbf(iunit)
-   close(iunit)
+
+!  2.2 Read domain-specific data
+!--------------------------------------------------------------
+
    open(unit   = iunit, FILE   = trim(filename), &
       iostat =  iost, form = 'unformatted', STATUS = 'OLD')
+   call openbf(iunit,'IN',iunit)
+   call datelen(10)
+
+   call readns(iunit,subset,idate,iret)  ! read in the next subset
+   if ( iret /= 0 ) then
+      write(unit=message(1),fmt='(A,I5,A)') &
+         "Error",iret," reading PREPBUFR obs file "//trim(filename)
+      call da_warning(__FILE__,__LINE__,message(1:1))
+      call closbf(iunit)
+      if (trace_use) call da_trace_exit("da_read_obs_bufr")
+      return
+   end if
+   !rewind(iunit)
 
    ! open observation error table if provided.
    call da_get_unit(junit)
@@ -351,27 +364,6 @@ bufrfile:  do ibufr=1,numbufr
          end do
       end do read_loop
    end if
-
-!   write(unit=message(1),fmt='(a)') 'Step 4: Reading domain-specific data'
-!   call da_message(message(1:1))
-
-   call openbf(iunit,'IN',iunit)
-   call datelen(10)
-
-   call readns(iunit,subset,idate,iret)  ! read in the next subset
-   if ( iret /= 0 ) then
-      write(unit=message(1),fmt='(A,I5,A)') &
-         "Error",iret," reading PREPBUFR obs file "//trim(filename)
-      call da_warning(__FILE__,__LINE__,message(1:1))
-      call closbf(iunit)
-      if (trace_use) call da_trace_exit("da_read_obs_bufr")
-      return
-   end if
-   !rewind(iunit)
-
-!  2.1 read data
-!  scan reports first
-!--------------------------------------------------------------
   
    match        = .false.
    end_of_file  = .false.
@@ -383,8 +375,6 @@ bufrfile:  do ibufr=1,numbufr
 
       if ( match .or. outside_all .or. outside_time ) then
          call readns(iunit,subset,idate,iret)  ! read in the next subset
-         isubset = isubset + 1 !increment isubset for every call to readns
-
          if ( iret /= 0 ) then 
             write(unit=message(1),fmt='(A,I3,A,I3)') & 
                "return code from readns",iret,       &
@@ -392,9 +382,13 @@ bufrfile:  do ibufr=1,numbufr
             !call da_warning(__FILE__,__LINE__,message(1:1))
             exit reports
          end if
+
+         isubset = isubset + 1 !increment isubset for every call to readns
       end if
 
       num_report = num_report+1
+
+      platform % info = info_1d(isubset)
 
       outside_all = outside_all_1d(isubset)
       if (outside_all) then
@@ -415,46 +409,13 @@ bufrfile:  do ibufr=1,numbufr
       call ufbint(iunit,obs,8,255,nlevels,obstr)
       
       r8sid = hdr(1)
-      platform % info % name(1:8)  = subset
-      platform % info % name(9:40) = '                                '
-      platform % info % id(1:5)    = csid(1:5)
-      platform % info % id(6:40)   = '                                   '
-      platform % info % dhr        = hdr(4)    ! difference in hour
-      platform % info % elv        = hdr(6)
-      platform % info % lon        = hdr(2)
-      platform % info % lat        = hdr(3)
-
-      ! blacklisted stations should be handled through an external table.
-      ! For now, temporary fix is implemented here for known incorrect 
-      ! station info in NCEP PREPBUFR file
-      if ( trim(platform%info%id) == 'BGQQ' ) then
-         platform%info%elv = 19
-         platform%info%lon = -69.21
-         platform%info%lat = 77.46
-      end if
-      if ( trim(platform%info%id) == 'UWKE' ) then
-         platform%info%elv = 194
-         platform%info%lon = 52.09
-         platform%info%lat = 55.56
-      end if
-
-      ! Put a check on Lon and Lat
-      if ( platform%info%lon >= 180.0 ) platform%info%lon = platform%info%lon - 360.0
-      ! Fix funny wind direction at Poles
-      !if (platform%info%lat < -89.9999 .or. platform%info%lat > 89.9999) then
-      !   platform%info%lon = 0.0
-      !end if
-      platform%info%lat = max(platform%info%lat, -89.95)
-      platform%info%lat = min(platform%info%lat,  89.95)
 
       ! Restrict to a range of reports, useful for debugging
-
       if (num_report < report_start) cycle reports
       if (num_report > report_end)  exit reports
 
       outside       = outside_1d(isubset)
       platform%loc  = loc_1d(isubset)
-      !platform%info = info_1d(isubset)
 
       ! check date
       write(cdate,'(i10)') idate
@@ -967,6 +928,7 @@ bufrfile:  do ibufr=1,numbufr
       plink%kx_BUFR=kx
       plink%t29_BUFR=t29
       plink%pco_BUFR=pco
+      plink%outside = outside
 
       num_p=num_p+1
 
@@ -1266,7 +1228,8 @@ bufrfile:  do ibufr=1,numbufr
       plink%kx_BUFR=kx
       plink%t29_BUFR=t29
       plink%pco_BUFR=pco
-      
+      plink%outside = outside
+     
       num_p=num_p+1
          end do dup_loop
        end if !3dvar and 4dvar
@@ -1292,6 +1255,7 @@ end do bufrfile
 !--------------------------------------------------------------
 
  if (num_fgat_time > 1 ) then
+
     do kk=1,num_fgat_time
       if ( thin_conv ) then
          do n = 1, num_ob_indexes
@@ -1315,6 +1279,7 @@ end do bufrfile
       if (dlon_earth >= 360.0) dlon_earth = dlon_earth - 360.0
       dlat_earth = dlat_earth * deg2rad
       dlon_earth = dlon_earth * deg2rad
+      outside = plink%outside
 
  ! Loop over duplicating obs for global
       ndup = 1
@@ -1711,7 +1676,7 @@ end if
       if (dlon_earth >= 360.0) dlon_earth = dlon_earth - 360.0
       dlat_earth = dlat_earth * deg2rad
       dlon_earth = dlon_earth * deg2rad
-
+      outside = plink%outside
       ndup = 1
       if (global .and. &
          (plink%platform_BUFR%loc%i < ids .or. plink%platform_BUFR%loc%i >= ide)) ndup= 2

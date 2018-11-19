@@ -49,6 +49,7 @@ MODULES = \
 	module_bl_mfshconvpbl.o \
 	module_shcu_camuwshcu_driver.o \
 	module_shcu_camuwshcu.o \
+	module_shcu_deng.o          \
 	module_shcu_grims.o \
 	module_shcu_nscv.o \
 	module_cu_camzm_driver.o \

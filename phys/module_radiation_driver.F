@@ -150,6 +150,13 @@ CONTAINS
               ,aer_asy_opt, aer_asy_val                                   &
               ,aod5502d, angexp2d, aerssa2d, aerasy2d                     &
               ,aod5503d                                                   &
+!
+! PSU-DENG
+!
+              ,cw_rad, shcu_physics                      &
+!
+! END PSU-DENG
+!
               ,taod5502d, taod5503d                                       & !  Trude
               ,mp_physics                                                 &
               ,EFCG,EFCS,EFIG,EFIS,EFSG,aercu_opt                         &
@@ -461,6 +468,17 @@ CONTAINS
                                                                t, &
                                                              t8w, &
                                                              rho
+
+!
+! PSU-DENG
+!
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+         OPTIONAL,                                                &
+         INTENT(IN   )  ::                       cw_rad
+   INTEGER,                       INTENT(IN) ::  shcu_physics
+!
+! END PSU-DENG
+!
 
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL,        &
         INTENT(IN)     ::                            EFCG,       & 
@@ -1462,6 +1480,31 @@ CONTAINS
            ENDDO
         end if
      endif
+
+!
+! PSU-DENG
+!
+     IF( shcu_physics == 5 ) THEN
+        DO j=jts,jte
+        DO k=kts,kte
+        DO i=its,ite
+           cldfra(I,K,J) = max(cldfra_sh(I,K,J), cldfra(I,K,J))
+           qc_save(I,K,J)=qc(I,K,J)
+           qc(I,K,J)=cw_rad(I,K,J)+qc(I,K,J)
+!           cw_rad_total(I,K,J) = cw_rad(I,K,J)  ! should be qc=cw_rad+qc
+!          ca_rad_total(I,K,J) = 0.0    ! no clouds for radiation
+!          cw_rad_total(I,K,J) = 0.0
+!          ca_rad_total(I,K,J) = CLDFRA(I,K,J)   ! no partial clouds for
+!          radiation
+!          cw_rad_total(I,K,J) = QC(I,K,J)
+        ENDDO
+        ENDDO
+        ENDDO
+     ENDIF
+!
+! PSU-DENG
+!
+
         
 
      lwrad_select: SELECT CASE(lw_physics)

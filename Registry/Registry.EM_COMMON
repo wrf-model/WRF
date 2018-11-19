@@ -693,6 +693,10 @@ state    real   ts_swddir       ?!       misc      -         -      -        "TS
 state    real   ts_swddni       ?!       misc      -         -      -        "TS_SWDDNI"      "Shortwave direct normal irradiance"
 state    real   ts_swddif       ?!       misc      -         -      -        "TS_SWDDIF"      "Shortwave diffuse irradiance"
 state    real   ts_swdown       ?!       misc      -         -      -        "TS_SWDOWN"      "Shortwave irradiance at the surface"
+state    real   ts_swddir2      ?!       misc      -         -      -        "TS_SWDDIR2"     "Shortwave direct irradiance. FARMS"
+state    real   ts_swddni2      ?!       misc      -         -      -        "TS_SWDDNI2"     "Shortwave direct normal irradiance. FARMS"
+state    real   ts_swddif2      ?!       misc      -         -      -        "TS_SWDDIF2"     "Shortwave diffuse irradiance. FARMS"
+state    real   ts_swdown2      ?!       misc      -         -      -        "TS_SWDOWN2"     "Shortwave irradiance at the surface. FARMS"
 
 # Time series of vertical profile of U, V, GHT, THETA and QVAPOR
 state    real   ts_u_profile   ?!k       misc      -         -      -        "TS_U_PROFILE"   "Wind u-Component, earth relative, vertical profile"
@@ -1438,6 +1442,7 @@ state    real  CLDT             ij      misc        1         -      -        "C
 #state    real  CLDL             ij      misc        1         -      -        "CFRACL"                "LOW CLOUD FRACTION (ETA GREATER THAN 0.69)"           ""
 #state    real  LWP              ij      misc        1         -      -        "LWP"                   "LIQUID CLOUD WATER PATH"                              "kg m-2"
 state    real  SWDOWN           ij      misc        1         -      rhd      "SWDOWN"                "DOWNWARD SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
+state    real  SWDOWN2          ij      misc        1         -      rhd      "SWDOWN2"               "DOWNWARD SHORT WAVE FLUX AT GROUND SURFACE FROM FARMS"   "W m-2"      
 state    real  SWDOWNC          ij      misc        1         -      -        "SWDOWNC"               "DOWNWARD CLEAR-SKY SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
 state    real  GSW              ij      misc        1         -      rd       "GSW"                   "NET SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
 state    real  GLW              ij      misc        1         -      rhd      "GLW"                   "DOWNWARD LONG WAVE FLUX AT GROUND SURFACE"            "W m-2"      
@@ -1445,10 +1450,13 @@ state    real  SWNORM           ij      misc        1         -      rhd      "S
 state    real  diffuse_frac     ij      misc        1         -      rd       "DIFFUSE_FRAC"          "DIFFUSE FRACTION OF SURFACE SHORTWAVE IRRADIANCE"       ""
 # WRF-Solar
 state   real    swddir       ij     misc         1         -     rd     "SWDDIR"     "Shortwave surface downward direct irradiance" "W m-2" ""
+state   real    swddir2      ij     misc         1         -     rd     "SWDDIR2"    "Shortwave surface downward direct irradiance from FARMS" "W m-2" ""
 state   real    swddirc      ij     misc         1         -     rd     "SWDDIRC"    "Clear-sky Shortwave surface downward direct irradiance" "W m-2" ""
 state   real    swddni       ij     misc         1         -     rd     "SWDDNI"     "Shortwave surface downward direct normal irradiance" "W m-2" ""
+state   real    swddni2      ij     misc         1         -     rd     "SWDDNI2"    "Shortwave surface downward direct normal irradiance from FARMS" "W m-2" ""
 state   real    swddnic      ij     misc         1         -     rd     "SWDDNIC"    "Clear-sky Shortwave surface downward direct normal irradiance" "W m-2" ""
 state   real    swddif       ij     misc         1         -     rd     "SWDDIF"     "Shortwave surface downward diffuse irradiance" "W m-2" ""
+state   real    swddif2      ij     misc         1         -     rd     "SWDDIF2"    "Shortwave surface downward diffuse irradiance from FARMS" "W m-2" ""
 state   real    Gx           ij     misc         1         -     rd     "Gx" "" ""
 state   real    Bx           ij     misc         1         -     rd     "Bx" "" ""
 state   real    gg           ij     misc         1         -     rd     "gg" "" ""
@@ -2871,7 +2879,7 @@ package   icedepth_one   seaice_thickness_opt==1     -             state:icedept
 
 #Time series options for text output
 package   notseries   process_time_series==0                 -             -
-package   tseries     process_time_series==1                 -             state:ts_hour,ts_u,ts_v,ts_q,ts_t,ts_psfc,ts_glw,ts_gsw,ts_hfx,ts_lh,ts_tsk,ts_tslb,ts_clw,ts_rainc,ts_rainnc,ts_u_profile,ts_v_profile,ts_gph_profile,ts_th_profile,ts_swddir,ts_swddni,ts_swddif,ts_swdown
+package   tseries     process_time_series==1                 -             state:ts_hour,ts_u,ts_v,ts_q,ts_t,ts_psfc,ts_glw,ts_gsw,ts_hfx,ts_lh,ts_tsk,ts_tslb,ts_clw,ts_rainc,ts_rainnc,ts_u_profile,ts_v_profile,ts_gph_profile,ts_th_profile,ts_swddir,ts_swddni,ts_swddif,ts_swdown,ts_swddir2,ts_swddni2,ts_swddif2,ts_swdown2
 
 # WRF-HAILCAST
 state    real   HAILCAST_DHAIL1   ij     misc        1         -      r          "HAILCAST_DHAIL1"     "WRF-HAILCAST Hail Diameter, 1st rank order"     "mm"

@@ -59,7 +59,7 @@ module_internal_header_util.f: ../../frame/module_internal_header_util.F
 	$(RM) mod_int_hdr_util.b
 
 module_internal_header_util.o: module_internal_header_util.f
-	$(FC) $(FCFLAGS)  -o $@ -c $*.f
+	$(FC) $(FCFLAGS) -o $@ -c $*.f
 
 diffwrf.f: diffwrf.F90 io_int.o
 	if [ `echo "$(FC)" | awk '{print $$1}'` = "gfortran" ] ; then \

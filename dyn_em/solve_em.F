@@ -174,11 +174,11 @@ SUBROUTINE solve_em ( grid , config_flags  &
 ! variables for flux-averaging code 20091223
    CHARACTER*256                              :: message, message2, message3
    REAL                                       :: old_dt
-   TYPE(WRFU_Time)                            :: temp_time, CurrTime, restart_time, hist_time,Starttime !Thomas
+   TYPE(WRFU_Time)                            :: temp_time, CurrTime, restart_time, hist_time,Starttime
    INTEGER, PARAMETER                         :: precision = 100
    INTEGER                                    :: num, den
-   TYPE(WRFU_TimeInterval)                    :: dtInterval, intervaltime,restartinterval, histint, dtint! Thomas
-   CHARACTER*256 :: timestr  ! Thomas
+   TYPE(WRFU_TimeInterval)                    :: dtInterval, intervaltime,restartinterval, histint, dtint
+   CHARACTER*256 :: timestr 
 
 ! Define benchmarking timers if -DBENCH is compiled
 #include "bench_solve_em_def.h"
@@ -4539,17 +4539,16 @@ BENCH_END(bc_2d_tim)
                             ipsy, ipey, jpsy, jpey, kpsy, kpey   )
 
 
-!Thomas compute mean sea level pressure
 ! Get domain clock
     ! ----------------
- CALL WRFU_ALARMGET( grid%alarms( HISTORY_ALARM ), prevringtime=hist_time, &
+     CALL WRFU_ALARMGET( grid%alarms( HISTORY_ALARM ), prevringtime=hist_time, &
          ringinterval=histint)
-   ! Get domain clock
+    ! Get domain clock
     ! ----------------
     CALL domain_clock_get ( grid, current_time=CurrTime, &
          simulationStartTime=StartTime, &            
          current_timestr=timestr, time_step=dtint )
-!Thomas
+
 ! IF(currtime .ge. hist_time + histint - dtint) THEN
  DO j = jps, jpe
  DO i = ips, ipe
@@ -4563,7 +4562,6 @@ BENCH_END(bc_2d_tim)
  ENDDO
  ENDDO
 !ENDIF
-! end Thomas
 
 #ifdef DM_PARALLEL
 !-----------------------------------------------------------------------
@@ -4661,7 +4659,6 @@ BENCH_END(bc_2d_tim)
 END SUBROUTINE solve_em
 
 ! diagnostics routines borrowed from AFWA module
-!Thomas
   Subroutine MSLP ( zsfc, psfc, zlev1, qlev1, tlev1,pmsl )
 
       implicit none
@@ -4674,7 +4671,6 @@ END SUBROUTINE solve_em
       REAL,    INTENT ( IN )  :: zlev1        !~ Level 1 height ( m )
       REAL,    INTENT ( IN )  :: qlev1        !~ Level 1 mixing ratio ( kg/kg )
       REAL,    INTENT ( IN )  :: tlev1        !~ Level 1 temperature ( K )
-!Thomas 
       REAL,     INTENT (OUT) :: pmsl
       real,PARAMETER :: G=9.81
       real,PARAMETER :: GI=1./G

@@ -1434,10 +1434,8 @@ state    real  CLDFRA_OLD      ikj      misc        1         -      r        "C
 state    real  CLDFRA_BL       ikj      misc        1         -      -        "CLDFRA_BL"             "CLOUD FRACTION pbl"                                   ""
 state    real  CLDT             ij      misc        1         -      -        "CFRACT"                "TOTAL CLOUD FRACTION"                                 ""
 #state    real  CLDL             ij      misc        1         -      -        "CFRACL"                "LOW CLOUD FRACTION (ETA GREATER THAN 0.69)"           ""
-#Thomas
 state    real  PWAT             ij      misc        1         -      rh       "PWAT"                  "INTEGRATED WATER VAPOR"         "kg m-2"
 state    real  LWP              ij      misc        1         -      rh        "LWP"                   "LIQUID CLOUD WATER PATH"                              "kg m-2"
-# end Thomas
 state    real  SWDOWN           ij      misc        1         -      rhd      "SWDOWN"                "DOWNWARD SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
 state    real  SWDOWNC          ij      misc        1         -      -        "SWDOWNC"               "DOWNWARD CLEAR-SKY SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
 state    real  GSW              ij      misc        1         -      rd       "GSW"                   "NET SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      

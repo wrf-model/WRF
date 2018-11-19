@@ -571,7 +571,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
 ! new vars for LWP and PWAT diagnostics
   REAL , DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT) :: lwp
-  REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: PWAT ! Thomas
+  REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: PWAT
 
   INTEGER,           INTENT(IN   )    :: aercu_opt
 # if (EM_CORE == 1)
@@ -748,7 +748,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
        END IF
        END IF
 
-  !Thomas
   ! Zero out pwat and lwp before calculation
   pwat(its:ite,jts:jte)  = 0.
   lwp(its:ite,jts:jte)  = 0.
@@ -2340,7 +2339,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
       END SELECT micro_select
 
-  !Thomas for pwat and lwp
     DO j = jts,jte
       DO i = its,ite
        pwat(i,j) = 0.0

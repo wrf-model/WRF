@@ -570,9 +570,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) ::  & ! G. Thompson
                  re_cloud, re_ice, re_snow
    INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
-! new vars for LWP and PWAT diagnostics
-  REAL , DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT) :: lwp
-  REAL, DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: PWAT
+
+  REAL , DIMENSION( ims:ime , jms:jme ), OPTIONAL,  INTENT(INOUT) :: LWP
+  REAL, DIMENSION(ims:ime,jms:jme), OPTIONAL, INTENT(INOUT) :: PWAT
 
   INTEGER,           INTENT(IN   )    :: aercu_opt
 # if (EM_CORE == 1)
@@ -602,7 +602,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(OUT) :: mskf_refl_10cm
 # endif
 
-!  REAL , DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT) :: lwp
 
 ! LOCAL  VAR
 
@@ -750,9 +749,12 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
        END IF
 
   ! Zero out pwat and lwp before calculation
+  IF(PRESENT (pwat) ) THEN
   pwat(its:ite,jts:jte)  = 0.
+  ENDIF
+  IF (PRESENT (lwp))THEN
   lwp(its:ite,jts:jte)  = 0.
-  !print*,pwat(its:ite,jts:jte)
+  ENDIF
 
      micro_select: SELECT CASE(mp_physics)
 
@@ -2340,16 +2342,27 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
       END SELECT micro_select
 
-    DO j = jts,jte
-      DO i = its,ite
-       pwat(i,j) = 0.0
-       lwp(i,j) = 0.0
+    IF(PRESENT(pwat)) THEN
+     DO j = jts,jte
+       DO i = its,ite
+        pwat(i,j) = 0.0
          DO k = kts,kte
-        pwat(i,j) = pwat(i,j) + qv_curr(i,k,j)*dz8w(i,k,j)* rho(i,k,j)
-        lwp(i,j) = lwp(i,j) + qc_curr(i,k,j)*dz8w(i,k,j)* rho(i,k,j)
+          pwat(i,j) = pwat(i,j) + qv_curr(i,k,j)*dz8w(i,k,j)* rho(i,k,j)
+         ENDDO
         ENDDO
-       ENDDO
-    ENDDO
+     ENDDO
+    ENDIF 
+
+    IF(PRESENT(lwp)) THEN
+     DO j = jts,jte
+       DO i = its,ite
+        lwp(i,j) = 0.0
+         DO k = kts,kte
+          lwp(i,j) = lwp(i,j) + qc_curr(i,k,j)*dz8w(i,k,j)* rho(i,k,j)
+         ENDDO
+        ENDDO
+     ENDDO
+    ENDIF
 
    ENDDO
    !$OMP END PARALLEL DO

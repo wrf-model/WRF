@@ -2371,9 +2371,9 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
      ERRF(10,IFULL_BUFFER(N)) = FULL_BUFFER(N)
    END DO
 
-#endif
     DEALLOCATE (IDISPLACEMENT)
     DEALLOCATE (ICOUNT)
+#endif
    END SUBROUTINE get_full_obs_vector
 
 

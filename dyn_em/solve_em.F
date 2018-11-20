@@ -174,11 +174,10 @@ SUBROUTINE solve_em ( grid , config_flags  &
 ! variables for flux-averaging code 20091223
    CHARACTER*256                              :: message, message2, message3
    REAL                                       :: old_dt
-   TYPE(WRFU_Time)                            :: temp_time, CurrTime, restart_time, hist_time,Starttime
+   TYPE(WRFU_Time)                            :: temp_time, CurrTime, restart_time
    INTEGER, PARAMETER                         :: precision = 100
    INTEGER                                    :: num, den
-   TYPE(WRFU_TimeInterval)                    :: dtInterval, intervaltime,restartinterval, histint, dtint
-   CHARACTER*256 :: timestr 
+   TYPE(WRFU_TimeInterval)                    :: dtInterval, intervaltime,restartinterval
 
 ! Define benchmarking timers if -DBENCH is compiled
 #include "bench_solve_em_def.h"
@@ -4539,30 +4538,6 @@ BENCH_END(bc_2d_tim)
                             ipsy, ipey, jpsy, jpey, kpsy, kpey   )
 
 
-! Get domain clock
-    ! ----------------
-     CALL WRFU_ALARMGET( grid%alarms( HISTORY_ALARM ), prevringtime=hist_time, &
-         ringinterval=histint)
-    ! Get domain clock
-    ! ----------------
-    CALL domain_clock_get ( grid, current_time=CurrTime, &
-         simulationStartTime=StartTime, &            
-         current_timestr=timestr, time_step=dtint )
-
-! IF(currtime .ge. hist_time + histint - dtint) THEN
- DO j = jps, jpe
- DO i = ips, ipe
- grid%pmsl_diag(i,j) = 0.
- CALL MSLP ( grid % ht ( i, j )           & 
-                                              , grid % psfc ( i, j )         &
-                                              , grid % z ( i, kms, j )       & 
-                                              , moist(i,kms,j,P_QV)          &  
-                                              , grid % t_phy ( i, kms, j ) &
-                                              , grid % pmsl_diag(i,j))
- ENDDO
- ENDDO
-!ENDIF
-
 #ifdef DM_PARALLEL
 !-----------------------------------------------------------------------
 ! see above
@@ -4657,58 +4632,3 @@ BENCH_END(bc_2d_tim)
    RETURN
 
 END SUBROUTINE solve_em
-
-! diagnostics routines borrowed from AFWA module
-  Subroutine MSLP ( zsfc, psfc, zlev1, qlev1, tlev1,pmsl )
-
-      implicit none
-     
-     
-!     DECLARE VARIABLES
-
-      REAL,    INTENT ( IN )  :: zsfc         !~ Surface height ( m )
-      REAL,    INTENT ( IN )  :: psfc         !~ Surface height ( m )
-      REAL,    INTENT ( IN )  :: zlev1        !~ Level 1 height ( m )
-      REAL,    INTENT ( IN )  :: qlev1        !~ Level 1 mixing ratio ( kg/kg )
-      REAL,    INTENT ( IN )  :: tlev1        !~ Level 1 temperature ( K )
-      REAL,     INTENT (OUT) :: pmsl
-      real,PARAMETER :: G=9.81
-      real,PARAMETER :: GI=1./G
-      real,PARAMETER :: RD=287.0
-      real,PARAMETER :: ZSL=0.0
-      real,PARAMETER :: TAUCR=RD*GI*290.66,CONST=0.005*G/RD
-      real,PARAMETER :: GORD=G/RD,DP=60.E2
-      real,PARAMETER :: GAMMA=6.5E-3
-
-      real TVRT,TVRSFC,TAUSFC,TVRSL,TAUSL,TAUAVG
-!    
-!**********************************************************************
-!     START NGMSLP HERE.
-!
-         pmsl = PSFC
-!
-!        COMPUTE LAYER TAU (VIRTUAL TEMP*RD/G).
-         TVRT = TLEV1*(1.0+0.608*QLEV1)
-         !TAU  = TVRT*RD*GI
-!    
-!        COMPUTE TAU AT THE GROUND (Z=ZSFC) AND SEA LEVEL (Z=0)
-!        ASSUMING A CONSTANT LAPSE RATE OF GAMMA=6.5DEG/KM.
-         TVRSFC = TVRT + (ZLEV1 - ZSFC)*GAMMA
-         TAUSFC = TVRSFC*RD*GI
-         TVRSL  = TVRT + (ZLEV1 - ZSL)*GAMMA
-         TAUSL  = TVRSL*RD*GI
-!    
-!        IF NEED BE APPLY SHEULL CORRECTION.
-         IF ((TAUSL.GT.TAUCR).AND.(TAUSFC.LE.TAUCR)) THEN
-            TAUSL=TAUCR
-         ELSEIF ((TAUSL.GT.TAUCR).AND.(TAUSFC.GT.TAUCR)) THEN
-            TAUSL = TAUCR-CONST*(TAUSFC-TAUCR)**2
-         ENDIF
-!    
-!        COMPUTE MEAN TAU.
-         TAUAVG = 0.5*(TAUSL+TAUSFC)
-!    
-!        COMPUTE SEA LEVEL PRESSURE.
-         pmsl = (PSFC*EXP(ZSFC/TAUAVG))/100.
-
-  END subroutine MSLP

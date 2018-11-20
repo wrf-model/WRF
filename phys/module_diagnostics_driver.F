@@ -11,6 +11,62 @@ MODULE module_diagnostics_driver
 
 CONTAINS
 
+! subroutine borrowed from AFWA to calculate Sea level pressure
+! independently from AFWA module
+  Subroutine MSLP ( zsfc, psfc, zlev1, qlev1, tlev1,pmsl )
+
+      implicit none
+     
+     
+!     DECLARE VARIABLES
+
+      REAL,    INTENT ( IN )  :: zsfc         !~ Surface height ( m )
+      REAL,    INTENT ( IN )  :: psfc         !~ Surface height ( m )
+      REAL,    INTENT ( IN )  :: zlev1        !~ Level 1 height ( m )
+      REAL,    INTENT ( IN )  :: qlev1        !~ Level 1 mixing ratio ( kg/kg )
+      REAL,    INTENT ( IN )  :: tlev1        !~ Level 1 temperature ( K )
+      REAL,     INTENT (OUT) :: pmsl
+      real,PARAMETER :: G=9.81
+      real,PARAMETER :: GI=1./G
+      real,PARAMETER :: RD=287.0
+      real,PARAMETER :: ZSL=0.0
+      real,PARAMETER :: TAUCR=RD*GI*290.66,CONST=0.005*G/RD
+      real,PARAMETER :: GORD=G/RD,DP=60.E2
+      real,PARAMETER :: GAMMA=6.5E-3
+
+      real TVRT,TVRSFC,TAUSFC,TVRSL,TAUSL,TAUAVG
+!    
+!**********************************************************************
+!     START NGMSLP HERE.
+!
+         pmsl = PSFC
+!
+!        COMPUTE LAYER TAU (VIRTUAL TEMP*RD/G).
+         TVRT = TLEV1*(1.0+0.608*QLEV1)
+         !TAU  = TVRT*RD*GI
+!    
+!        COMPUTE TAU AT THE GROUND (Z=ZSFC) AND SEA LEVEL (Z=0)
+!        ASSUMING A CONSTANT LAPSE RATE OF GAMMA=6.5DEG/KM.
+         TVRSFC = TVRT + (ZLEV1 - ZSFC)*GAMMA
+         TAUSFC = TVRSFC*RD*GI
+         TVRSL  = TVRT + (ZLEV1 - ZSL)*GAMMA
+         TAUSL  = TVRSL*RD*GI
+!    
+!        IF NEED BE APPLY SHEULL CORRECTION.
+         IF ((TAUSL.GT.TAUCR).AND.(TAUSFC.LE.TAUCR)) THEN
+            TAUSL=TAUCR
+         ELSEIF ((TAUSL.GT.TAUCR).AND.(TAUSFC.GT.TAUCR)) THEN
+            TAUSL = TAUCR-CONST*(TAUSFC-TAUCR)**2
+         ENDIF
+!    
+!        COMPUTE MEAN TAU.
+         TAUAVG = 0.5*(TAUSL+TAUSFC)
+!    
+!        COMPUTE SEA LEVEL PRESSURE.
+         pmsl = (PSFC*EXP(ZSFC/TAUAVG))/100.
+
+  END subroutine MSLP
+
    !  This subroutine is the driver for the diagnostics packages.
 
 
@@ -154,6 +210,8 @@ CONTAINS
                               imsy,imey,jmsy,jmey,kmsy,kmey,    &
                               ipsy,ipey,jpsy,jpey,kpsy,kpey
 
+      INTEGER :: i,j
+
 
       !=============================================================
       !  Local Variables
@@ -261,6 +319,19 @@ CONTAINS
         END DO
         !$OMP END PARALLEL DO
       END IF HAILCAST
+
+! sea level pressure diagnostics
+  DO j = jms, jme
+  DO i = ims, ime
+  grid%pmsl_diag(i,j) = 0.
+  CALL MSLP ( grid % ht ( i, j )           & 
+                                               , grid % psfc ( i, j )         &
+                                              , grid % z ( i, kms, j )       & 
+                                              , moist(i,kms,j,P_QV)          &  
+                                              , grid % t_phy ( i, kms, j ) &
+                                              , grid % pmsl_diag(i,j))
+  ENDDO
+  ENDDO
 
       TRADITIONAL_FIELDS: IF ( config_flags%diag_nwp2 == do_trad_fields ) THEN 
          !$OMP PARALLEL DO   &
@@ -1173,8 +1244,6 @@ CONTAINS
            ,NUM_TILES=grid%num_tiles                                          &
                                                                    )
       END IF RASM_DIAGS_DIURNAL
-
-
 
 
    END SUBROUTINE diagnostics_driver

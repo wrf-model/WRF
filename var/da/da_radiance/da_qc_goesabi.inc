@@ -145,7 +145,9 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
    tb_xb => iv%instid(i)%tb_xb
    tb_inv => iv%instid(i)%tb_inv
 
-   print_cld_debug = .true.
+!   print_cld_debug = .true.
+   print_cld_debug = .false.
+
 
    if ( crtm_cloud ) then
       tb_xb_clr => iv%instid(i)%tb_xb_clr

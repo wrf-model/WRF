@@ -120,6 +120,11 @@ subroutine da_read_obs_bufrseviri (obstype,iv,infile)
   real(r_kind),parameter:: tbmax  = 550._r_kind
   real(r_kind),parameter:: earth_radius = 6371000._r_kind
 
+  integer :: idom, irads
+  type(info_type), allocatable      :: info_1d(:)
+  type(model_loc_type), allocatable :: loc_1d(:)
+  logical, allocatable              :: outside_1d(:), outside_all_1d(:)
+
   ilath=8                      ! the position of latitude in the header
   ilonh=9                      ! the position of longitude in the header
   ilzah=10                     ! satellite zenith angle
@@ -191,6 +196,16 @@ subroutine da_read_obs_bufrseviri (obstype,iv,infile)
 
    ! dont change, WRFDA uses specified units to read radiance data
    lnbufr = 92 
+
+   if ( ibufr == 1 ) then
+      allocate (head)
+      nullify  ( head % next )
+      p => head
+   end if
+ 
+   ! Loop over 3 stages of the vectorized domain test (da_llxy_1d)
+   domtest: do idom = 1, 3
+
    open(unit=lnbufr,file=trim(filename),form='unformatted', &
       iostat = iost, status = 'old' ) !,convert='little_endian')
    if (iost /= 0) then
@@ -255,37 +270,33 @@ subroutine da_read_obs_bufrseviri (obstype,iv,infile)
   allocate(hdr(nhdr))
 
 
+  if (idom .eq. 1) then
+     iy=0
+     im=0
+     idd=0
+     ihh=0
 
-   iy=0
-   im=0
-   idd=0
-   ihh=0
-
-   sensorindex=1  
-   write(unit=date,fmt='( i10)') idate
-   read(unit=date,fmt='(i4,3i2)') iy,im,idd,ihh
-   write(unit=stdout,fmt='(a,4i4,2x,a)') &
-      'Bufr file date is ',iy,im,idd,ihh,trim(infile)
+     sensorindex=1  
+     write(unit=date,fmt='( i10)') idate
+     read(unit=date,fmt='(i4,3i2)') iy,im,idd,ihh
+     write(unit=stdout,fmt='(a,4i4,2x,a)') &
+        'Bufr file date is ',iy,im,idd,ihh,trim(infile)
+  end if
 
    ! 2.0 Loop to read bufr file and assign information to a sequential structure
    !-------------------------------------------------------------------------
 
    ! Allocate arrays to hold data
    nele=nreal+nchan
-   allocate(data_all(nele))
-   if ( ibufr == 1 ) then
-      allocate (head)
-      nullify  ( head % next )
-      p => head
-   end if
-  
+   allocate(data_all(nele)) 
 
 ! Big loop to read data file
-
+  irads = 0
   do while(ireadmg(lnbufr,subset,idate)>=0)  
 
      read_loop: do while (ireadsb(lnbufr)==0)
-         num_seviri_file = num_seviri_file + 1	 
+        irads = irads + 1
+        if (idom .eq. 1) cycle read_loop
 
     ! Read SEVIRI information
          call ufbint(lnbufr,hdr,nhdr,1,iret,hdrsevi)				
@@ -337,8 +348,18 @@ subroutine da_read_obs_bufrseviri (obstype,iv,infile)
         if(allchnmiss) cycle read_loop
 
         ! Check observing position
-         info%lat  =  hdr(ilath)           ! latitude
-         info%lon  =  hdr(ilonh)           ! longitude
+         if (idom .eq. 2) then
+            info_1d(irads) % lat  =  hdr(ilath)           ! latitude
+            info_1d(irads) % lon  =  hdr(ilonh)           ! longitude
+
+            cycle read_loop
+         end if
+
+         info         = info_1d (irads)
+         loc          = loc_1d (irads)
+         outside      = outside_1d (irads)
+         outside_all  = outside_all_1d (irads)
+
          if( abs(info%lat) > R90  .or. abs(info%lon) > R360 .or. &
          (abs(info%lat) == R90 .and. info%lon /= ZERO) )then
          write(unit=stdout,fmt=*) &
@@ -459,12 +480,35 @@ subroutine da_read_obs_bufrseviri (obstype,iv,infile)
      end do read_loop
   end do
   call closbf(lnbufr)
+  close(lnbufr)
 
   !Deallocate temporary arrays for next bufrfile do loop
   deallocate(datasev1)
   deallocate(datasev2)
   deallocate(hdr)
   deallocate(data_all)
+
+  if (idom .eq. 1) then
+     allocate ( info_1d        (irads) )
+     allocate ( loc_1d         (irads) )
+     allocate ( outside_1d     (irads) )
+     allocate ( outside_all_1d (irads) )
+  end if
+  if (idom .eq. 2) then
+     call da_llxy_1d (info_1d(1:irads), loc_1d(1:irads), outside_1d(1:irads), outside_all_1d(1:irads))
+  end if
+  if (idom .eq. 3) then
+     deallocate ( info_1d        )
+     deallocate ( loc_1d         )
+     deallocate ( outside_1d     )
+     deallocate ( outside_all_1d )
+
+  end if
+
+  end do domtest
+
+  num_seviri_file = num_seviri_file + irads
+
 end do bufrfile
 
    if (thinning .and. num_seviri_global > 0 ) then
@@ -619,8 +663,8 @@ end do bufrfile
    deallocate (nread)
    deallocate (ptotal)
 
-   call closbf(lnbufr)
-   close(lnbufr)
+!   call closbf(lnbufr)
+!   close(lnbufr)
 
    call da_free_unit(lnbufr)
 

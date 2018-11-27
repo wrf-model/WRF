@@ -2,6 +2,7 @@ SUBROUTINE wrf_tsin ( grid , ierr )
 
     USE module_domain
     USE module_utility
+    USE module_configure, ONLY : model_config_rec, grid_config_rec_type, model_to_grid_config_rec
 
     IMPLICIT NONE
 
@@ -9,6 +10,7 @@ SUBROUTINE wrf_tsin ( grid , ierr )
 #include "wrf_status_codes.h"
 
     TYPE(domain), INTENT(INOUT) :: grid
+    TYPE (grid_config_rec_type) :: config_flags
     INTEGER, INTENT(INOUT) :: ierr
 
     LOGICAL, EXTERNAL :: wrf_dm_on_monitor
@@ -18,13 +20,14 @@ SUBROUTINE wrf_tsin ( grid , ierr )
     INTEGER :: istatus, iunit
     LOGICAL :: exists
     CHARACTER (LEN=256) :: errmess
+    CHARACTER (LEN=256) :: JorLat,IorLon
 
     ierr = 0
 
 #if ((EM_CORE == 1) && (DA_CORE != 1))
     IF ( grid%dfi_opt == DFI_NODFI .OR. (grid%dfi_opt /= DFI_NODFI .AND. grid%dfi_stage == DFI_SETUP) ) THEN
 #endif
-
+    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags ) 
        grid%ntsloc = 0
        grid%have_calculated_tslocs = .FALSE.
    
@@ -46,17 +49,35 @@ SUBROUTINE wrf_tsin ( grid , ierr )
    
              IF (istatus == 0) THEN
    
-                ! Ignore first three lines, which constitute a header
+                ! The header will be parsed to see if lat/lon or i/j is given...
                 READ(UNIT=iunit, FMT='(1X)')
+                READ(UNIT=iunit, FMT='(32X,A7,2X,A7)') JorLat, IorLon
                 READ(UNIT=iunit, FMT='(1X)')
-                READ(UNIT=iunit, FMT='(1X)')
+                grid%tslist_ij = .false.
+                ! If the header contains "LAT" and "LON" then it will expect
+                !... lat/lon coords in the file
+                ! If the header has "J" and "I", then i,j will be used.
+                if(index(JorLat,'LAT').ne.0 .and. index(IorLon,'LON').ne.0) then
+                    grid%tslist_ij = .false.
+                elseif(index(JorLat,'J').ne.0 .and. index(IorLon,'I').ne.0) then
+                    grid%tslist_ij = .true.
+                endif
+
+
+
    
                 ! Read in time series locations
                 istatus = 0
                 DO WHILE (istatus == 0)
-                   READ(UNIT=iunit, FMT='(A25,1X,A5,1X,F7.3,1X,F8.3)', IOSTAT=istatus)            &
-                        grid%desctsloc(grid%ntsloc+1), grid%nametsloc(grid%ntsloc+1), &
-                        grid%lattsloc(grid%ntsloc+1), grid%lontsloc(grid%ntsloc+1)
+                   IF (config_flags%map_proj == 0 .OR. grid%tslist_ij) THEN !ideal run will only use i,j
+                       READ(UNIT=iunit, FMT='(A25,1X,A5,1X,I9,1X,I10)', IOSTAT=istatus)            &
+                       grid%desctsloc(grid%ntsloc+1), grid%nametsloc(grid%ntsloc+1), &
+                       grid%itsloc(grid%ntsloc+1), grid%jtsloc(grid%ntsloc+1)
+                   ELSE
+                       READ(UNIT=iunit, FMT='(A25,1X,A5,1X,F7.3,1X,F8.3)', IOSTAT=istatus)            &
+                       grid%desctsloc(grid%ntsloc+1), grid%nametsloc(grid%ntsloc+1), &
+                       grid%lattsloc(grid%ntsloc+1), grid%lontsloc(grid%ntsloc+1)
+                   END IF
                    IF (istatus == 0) grid%ntsloc = grid%ntsloc + 1
                    IF (istatus > 0) THEN
                       WRITE(errmess, FMT='(I4)') grid%ntsloc + 3   ! Three extra for the header of the file

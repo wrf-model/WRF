@@ -1108,7 +1108,7 @@ cycle
       !    -----------------------------------  \/   dzs(3) = 0.04 m
 
       IF ( num_soil_layers .NE. 5 ) THEN
-         PRINT '(A)','Usually, the 5-layer diffusion uses 5 layers.  Change this in the namelist.'
+         PRINT '(A)','The SLAB thermal diffusion LSM uses 5 layers.  Set num_soil_layers=5 in the namelist (&physics).'
          CALL wrf_error_fatal ( '5-layer_diffusion_uses_5_layers' )
       END IF
 
@@ -1135,7 +1135,7 @@ cycle
       dzs = (/ 0.1 , 0.3 , 0.6 , 1.0 /)
 
       IF ( num_soil_layers .NE. 4 ) THEN
-         PRINT '(A)','Usually, the LSM uses 4 layers.  Change this in the namelist.'
+         PRINT '(A)','The Noah and NoahMP LSMs use 4 layers.  Set num_soil_layers=4 in the namelist (&physics).'
          CALL wrf_error_fatal ( 'LSM_uses_4_layers' )
       END IF
 
@@ -1184,7 +1184,7 @@ cycle
       dzs(num_soil_layers) = zs2(num_soil_layers) - zs2(num_soil_layers-1)
 
       IF ( num_soil_layers .EQ. 4 .OR. num_soil_layers .EQ. 5 ) THEN
-         write (message, FMT='(A)') 'The RUC LSM uses 6, 9 or more levels.  Change this in the namelist.'
+         write (message, FMT='(A)') 'The RUC LSM uses 6, 9 or more levels.  Set num_soil_layers in the namelist (&physics).'
          CALL wrf_error_fatal ( message )
       END IF
 
@@ -1254,7 +1254,7 @@ cycle
       dzs = (/ 0.01 , 0.99 /)
 
       IF ( num_soil_layers .NE. 2 ) THEN
-         PRINT '(A)','Usually, the PX LSM uses 2 layers.  Change this in the namelist.'
+         PRINT '(A)','The PX LSM uses 2 layers.  Set num_soil_layers=2 in the namelist (&physics).'
          CALL wrf_error_fatal ( 'PXLSM_uses_2_layers' )
       END IF
 
@@ -3926,7 +3926,7 @@ cycle
       !    -----------------------------------  \/   dzs(3) = 0.04 m
 
       IF ( num_soil_layers .NE. 5 ) THEN
-         write(message,FMT= '(A)') 'Usually, the 5-layer diffusion uses 5 layers.  Change this in the namelist.'
+         write(message,FMT= '(A)') 'The SLAB thermal diffusion PBL uses 5 layers.  Set num_soil_layers=5 in the namelist (&physics).'
          CALL wrf_error_fatal ( message )
       END IF
 
@@ -3955,7 +3955,7 @@ cycle
       dzs = (/ 0.1 , 0.3 , 0.6 , 1.0 /)
 
       IF ( num_soil_layers .NE. 4 ) THEN
-         write(message,FMT='(A)') 'Usually, the LSM uses 4 layers.  Change this in the namelist.'
+         write(message,FMT='(A)') 'The Noah and NoahMP LSMs use 4 layers.  Set num_soil_layers=4 in the namelist (&physics).'
          CALL wrf_error_fatal ( message )
       END IF
 
@@ -3995,7 +3995,7 @@ cycle
      ENDIF
 
       IF ( num_soil_layers .EQ. 4 .OR. num_soil_layers .EQ. 5 ) THEN
-         WRITE(message,FMT= '(A)')'Usually, the RUC LSM uses 6, 9 or more levels.  Change this in the namelist.'
+         WRITE(message,FMT= '(A)')'The RUC LSM uses 6, 9 or more levels.  Set num_soil_layers appropriately in the namelist (&physics).'
          CALL wrf_error_fatal ( message )
       END IF
 

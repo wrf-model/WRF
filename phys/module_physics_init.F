@@ -880,8 +880,9 @@ integer myproc
 !jm   CALL nl_get_mminlu( 1, mminlu_loc )
    CALL nl_get_mminlu( id, mminlu_loc )
 #if (NMM_CORE == 1 && HWRF == 1 )
-   IF ( trim(mminlu_loc) .eq. "" ) THEN
+   IF ( ( trim(mminlu_loc) .eq. "" ) .OR. (config_flags%sf_surface_physics .EQ. nolsmscheme) ) THEN
      CALL wrf_message('WARNING:   MMINLU NOT SET, USING USGS')
+module_surface_driver.F:                     ra_sw_physics, mminlu                                        &
      MMINLU_LOC = 'USGS'
    ENDIF
 #endif
@@ -1006,7 +1007,7 @@ integer myproc
    DO j=jts,jtf
    DO i=its,itf
      IF(XLAND(i,j) .LT. 1.5)THEN
-       IF(mminlu_loc .EQ. '    ') ALBBCK(i,j)=ALBLND
+       IF( (mminlu_loc .EQ. '    ') .OR. (config_flags%sf_surface_physics .EQ. nolsmscheme) ) ALBBCK(i,j)=ALBLND
        EMBCK(i,j)=0.85
        ALBEDO(i,j)=ALBBCK(i,j)
        EMISS(i,j)=EMBCK(i,j)
@@ -1017,7 +1018,7 @@ integer myproc
 #endif
        MAVAIL(i,j)=XMAVA
      ELSE
-       IF(mminlu_loc .EQ. '    ') ALBBCK(i,j)=0.08
+       IF( (mminlu_loc .EQ. '    ') .OR. (config_flags%sf_surface_physics .EQ. nolsmscheme) ) ALBBCK(i,j)=0.08
        ALBEDO(i,j)=ALBBCK(i,j)
        EMBCK(i,j)=0.98
        EMISS(i,j)=EMBCK(i,j)
@@ -1087,7 +1088,7 @@ integer myproc
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to landuse_init' )
 
-   IF(mminlu_loc .ne. '    ')THEN
+   IF( (mminlu_loc .ne. '    ') .AND. (config_flags%sf_surface_physics .NE. nolsmscheme) ) THEN
 !-- initialize surface properties
 
      CALL landuse_init(lu_index, snowc, albedo, albbck, snoalb, mavail, emiss, embck, &

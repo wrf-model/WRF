@@ -618,7 +618,7 @@
                 ( ( mminlu(1:1) .GE. "a" ) .AND. ( mminlu(1:1) .LE. "z" ) ) .OR. &
                 ( ( mminlu(1:1) .GE. "0" ) .AND. ( mminlu(1:1) .LE. "9" ) ) ) THEN
          ! no-op, the mminlu field is probably OK
-      ELSE IF ( mminlu(1:1) .EQ. " " ) THEN
+      ELSE IF ( ( mminlu(1:1) .EQ. " " ) .OR. (config_flags%sf_surface_physics .EQ. nolsmscheme) ) THEN
          mminlu = " "
       ELSE
          mminlu = " "

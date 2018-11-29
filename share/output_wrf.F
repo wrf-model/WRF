@@ -935,7 +935,7 @@ endif
       MMINLU='USGS'
     ENDIF
 
-    IF(MMINLU(1:1) .EQ. " ")THEN
+    IF( (MMINLU(1:1) .EQ. " ") .OR. (config_flags%sf_surface_physics .EQ. nolsmscheme) )THEN
        CALL wrf_put_dom_ti_char ( fid , 'MMINLU',  "    "       , ierr )
     ELSE
        CALL wrf_put_dom_ti_char ( fid , 'MMINLU',  TRIM(mminlu) , ierr )

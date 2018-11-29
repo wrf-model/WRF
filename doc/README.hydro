@@ -31,7 +31,7 @@ setenv NETCDF_LIB   "$path/netcdf/lib"
 
 "NETCDF_INC" and "NETCDF_LIB" are defined for the WRF-Hydro only and can be different from those 
 set for the WRF model. WRF-Hydro has two netcdf libraries for Fortran and C respectively: 
-libnetcdff and ibnetcdf. If the user's netcdf library combined them together (only has one), 
+libnetcdff and libnetcdf. If the user's netcdf library combined them together (only has one), 
 the user will need to manually change this part in order to successfully compile WRF-Hydro. 
 See the section below on porting about how to change this.
 
@@ -64,9 +64,10 @@ offline or `uncoupled' capacity prior to running the coupled modeling system.
 
 3. Porting
 
-The WRF-Hydro does not presently support OPENMP. The default support platform is Linux 
-with the PGI compiler, IBM AIX with the xlf fortran compiler, and Linux with the GFORTRAN 
-(sequential) compiler. However, WRF-Hydro is fairly easy to port to other systems.  
+The WRF-Hydro does not presently support OpenMP. The default support platform is Linux 
+with the Intel Fortran compiler, PGI Fortran compiler, or GNU Fortran compiler. However, WRF-Hydro
+should be fairly easy to port to other systems.  
+
 The basic steps to do so are as follows:
 
 1) Edit "hydro/configure", and add "exit(0);" to the second line so that "configure" will not be executed.

@@ -1,0 +1,8 @@
+&okmeso
+  ldasout_dir     = "/scholar2/kmanning/VERY_TEMPORARY_HRLDAS/Run_3.2"
+  okmeso_soil_dir = "/scholar/kmanning/more_hrldas/OKMESO/SoilMoisture"
+  okmeso_met_dir  = "/scholar/kmanning/more_hrldas/OKMESO/MetVariables"
+
+  statistics_startdate = "2002060100"
+  statistics_enddate   = "2002063000"
+/

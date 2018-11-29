@@ -1,0 +1,234 @@
+001 | Pressure                                                                   | Pa                | PRES
+002 | Pressure reduced to MSL                                                    | Pa                | PRMSL
+003 | Pressure tendency                                                          | Pa s{-1}          | PTEND
+005 | ICAO Standard Atmosphere Reference Hgt                                     | m                 | ICAHT
+006 | Geopotential                                                               | m{2} s{-2}        | GP
+007 | Geopotential height                                                        | gpm               | HGT
+008 | Geometric height                                                           | m                 | DIST
+009 | Standard deviation of height                                               | m                 | HSTDV
+010 | Total ozone                                                                | Dobson            | TOZNE
+011 | Temperature                                                                | K                 | TMP
+012 | Virtual temperature                                                        | K                 | VTMP
+013 | Potential temperature                                                      | K                 | POT
+014 | Pseudo-adiabatic potential temperature or equivalent potential temperature | K                 | EPOT
+015 | Maximum temperature                                                        | K                 | T MAX
+016 | Minimum temperature                                                        | K                 | T MIN
+017 | Dew point temperature                                                      | K                 | DPT
+018 | Dew point depression (or deficit)                                          | K                 | DEPR
+019 | Lapse rate                                                                 | K m{-1}           | LAPR
+020 | Visibility                                                                 | m                 | VIS
+021 | Radar Spectra (1)                                                          | -                 | RDSP1
+022 | Radar Spectra (2)                                                          | -                 | RDSP2
+023 | Radar Spectra (3)                                                          | -                 | RDSP3
+024 | Parcel lifted index (to 500 hPa)                                           | K                 | PLI
+025 | Temperature anomaly                                                        | K                 | TMP A
+026 | Pressure anomaly                                                           | Pa                | PRESA
+027 | Geopotential height anomaly                                                | gpm               | GP A
+028 | Wave Spectra (1)                                                           | -                 | WVSP1
+029 | Wave Spectra (2)                                                           | -                 | WVSP2
+030 | Wave Spectra (3)                                                           | -                 | WVSP3
+031 | Wind direction (from which blowing)                                        | deg true          | WDIR
+032 | Wind speed                                                                 | m s{-1}           | WIND
+033 | u-component of wind                                                        | m s{-1}           | U GRD
+034 | v-component of wind                                                        | m s{-1}           | V GRD
+035 | Stream function                                                            | m{2} s{-1}        | STRM
+036 | Velocity potential                                                         | m{2} s{-1}        | V POT
+037 | Montgomery stream function                                                 | m{2} s{-2}        | MNTSF
+038 | Sigma coord. vertical velocity                                             | s{-1}             | SGCVV
+039 | Pressure Vertical velocity                                                 | Pa s{-1}          | V VEL
+040 | Geometric Vertical velocity                                                | m s{-1}           | DZDT
+041 | Absolute vorticity                                                         | s{-1}             | ABS V
+042 | Absolute divergence                                                        | s{-1}             | ABS D
+043 | Relative vorticity                                                         | s{-1}             | REL V
+044 | Relative divergence                                                        | s{-1}             | REL D
+045 | Vertical u-component shear                                                 | s{-1}             | VUCSH
+046 | Vertical v-component shear                                                 | s{-1}             | VVCSH
+047 | Direction of current                                                       | deg true          | DIR C
+048 | Speed of current                                                           | m s{-1}           | SP C
+049 | u-component of current                                                     | m s{-1}           | UOGRD
+050 | v-component of current                                                     | m s{-1}           | VOGRD
+051 | Specific humidity                                                          | kg kg{-1}         | SPF H
+052 | Relative humidity                                                          | %                 | R H
+053 | Humidity mixing ratio                                                      | kg kg{-1}         | MIXR
+054 | Precipitable water                                                         | kg m{-2}          | P WAT
+055 | Vapor pressure                                                             | Pa                | VAPP
+056 | Saturation deficit                                                         | Pa                | SAT D
+057 | Evaporation                                                                | kg m{-2}          | EVP
+058 | Cloud Ice                                                                  | kg m{-2}          | C ICE
+059 | Precipitation rate                                                         | kg m{-2} s{-1}    | PRATE
+060 | Thunderstorm probability                                                   | %                 | TSTM
+061 | Total precipitation                                                        | kg m{-2}          | A PCP
+062 | Large scale precipitation (non-conv.)                                      | kg m{-2}          | NCPCP
+063 | Convective precipitation                                                   | kg m{-2}          | ACPCP
+064 | Snowfall rate water equivalent                                             | kg m{-2} s{-1}    | SRWEQ
+065 | Water equiv. of accum. snow depth                                          | kg m{-2}          | WEASD
+066 | Snow depth                                                                 | m                 | SNO D
+067 | Mixed layer depth                                                          | m                 | MIXHT
+068 | Transient thermocline depth                                                | m                 | TTHDP
+069 | Main thermocline depth                                                     | m                 | MTHD
+070 | Main thermocline anomaly                                                   | m                 | MTH A
+071 | Total cloud cover                                                          | %                 | T CDC
+072 | Convective cloud cover                                                     | %                 | CDCON
+073 | Low cloud cover                                                            | %                 | L CDC
+074 | Medium cloud cover                                                         | %                 | M CDC
+075 | High cloud cover                                                           | %                 | H CDC
+076 | Cloud water                                                                | kg m{-2}          | C WAT
+077 | Best lifted index (to 500 hPa)                                             | K                 | BLI
+078 | Convective snow                                                            | kg m{-2}          | SNO C
+079 | Large scale snow                                                           | kg m{-2}          | SNO L
+080 | Water Temperature                                                          | K                 | WTMP
+081 | Land-sea mask(land=1;sea=0)                                                | fraction          | LAND
+082 | Deviation of sea level from mean                                           | m                 | DSL M
+083 | Surface roughness                                                          | m                 | SFC R
+084 | Albedo                                                                     | %                 | ALBDO
+085 | Soil temperature                                                           | K                 | TSOIL
+086 | Soil moisture content                                                      | kg m{-2}          | SOIL M
+087 | Vegetation                                                                 | %                 | VEG
+088 | Salinity                                                                   | kg kg{-1}         | SALTY
+089 | Density                                                                    | kg m{-3}          | DEN
+090 | Water runoff                                                               | kg m{-2}          | WATR
+091 | Ice concentration (ice=1;no ice=0)                                         | fraction          | ICE C
+092 | Ice thickness                                                              | m                 | ICETK
+093 | Direction of ice drift                                                     | deg. true         | DICED
+094 | Speed of ice drift                                                         | m s{-1}           | SICED
+095 | u-component of ice drift                                                   | m s{-1}           | U ICE
+096 | v-component of ice drift                                                   | m s{-1}           | V ICE
+097 | Ice growth rate                                                            | m s{-1}           | ICE G
+098 | Ice divergence                                                             | s{-1}             | ICE D
+099 | Snow melt                                                                  | kg m{-2}          | SNO M
+100 | Significant height of combined wind waves and swell                        | m                 | HTSGW
+101 | Direction of wind waves (from which)                                       | deg true          | WVDIR
+102 | Significant height of wind waves                                           | m                 | WVHGT
+103 | Mean period of wind waves                                                  | s                 | WVPER
+104 | Direction of swell waves                                                   | deg true          | SWDIR
+105 | Significant height of swell waves                                          | m                 | SWELL
+106 | Mean period of swell waves                                                 | s                 | SWPER
+107 | Primary wave direction                                                     | deg true          | DIRPW
+108 | Primary wave mean period                                                   | s                 | PERPW
+109 | Secondary wave direction                                                   | deg true          | DIRSW
+110 | Secondary wave mean period                                                 | s                 | PERSW
+111 | Net short-wave radiation (surface)                                         | W m{-2}           | NSWRS
+112 | Net long wave radiation (surface)                                          | W m{-2}           | NLWRS
+113 | Net short-wave radiation (top of atmos.)                                   | W m{-2}           | NSWRT
+114 | Net long wave radiation (top of atmos.)                                    | W m{-2}           | NLWRT
+115 | Long wave radiation                                                        | W m{-2}           | LWAVR
+116 | Short wave radiation                                                       | W m{-2}           | SWAVR
+117 | Global radiation                                                           | W m{-2}           | G RAD
+118 | Brightness temperature                                                     | K                 | BRTMP
+119 | Long-wave radiation                                                        | W/srm{2}          | LWRAD
+120 | Short-wave radiation                                                       | W/srm{2}          | SWRAD
+121 | Latent heat net flux                                                       | W m{-2}           | LHTFL
+122 | Sensible heat net flux                                                     | W m{-2}           | SHTFL
+123 | Boundary layer dissipation                                                 | W m{-2}           | BLYDP
+124 | Momentum flux, u component                                                 | N m{-2}           | U FLX
+125 | Momentum flux, v component                                                 | N m{-2}           | V FLX
+126 | Wind mixing energy                                                         | J                 | WMIXE
+127 | Image data                                                                 | -                 | IMG D
+128 | Mean Sea Level Pressure (Standard Atmosphere Reduction)                    | Pa                | MSLSA
+129 | Mean Sea Level Pressure (MAPS System Reduction)                            | Pa                | MSLMA
+130 | Mean Sea Level Pressure (ETA Model Reduction)                              | Pa                | MSLET
+131 | Surface lifted index                                                       | K                 | LFT X
+132 | Best (4 layer) lifted index                                                | K                 | 4LFTX
+133 | K index                                                                    | K                 | K X
+134 | Sweat index                                                                | K                 | S X
+135 | Horizontal moisture divergence                                             | kg kg{-1} s{-1}   | MCONV
+136 | Vertical speed shear                                                       | 1 s{-1}           | VW SH
+137 | 3-hr pressure tendency (Std. Atmos. Reduction)                             | Pa s{-1}          | TSLSA
+138 | Brunt-Vaisala frequency (squared)                                          | s{-2}             | BVF 2
+139 | Potential vorticity (density weighted)                                     | s{-1} m{-1}       | PV MW
+140 | Categorical rain  (yes=1; no=0)                                            | non-dim           | CRAIN
+141 | Categorical freezing rain  (yes=1; no=0)                                   | non-dim           | CFRZR
+142 | Categorical ice pellets  (yes=1; no=0)                                     | non-dim           | CICEP
+143 | Categorical snow  (yes=1; no=0)                                            | non-dim           | CSNOW
+144 | Volumetric soil moisture content                                           | fraction          | SOILW
+145 | Potential evaporation rate                                                 | W m{-2}           | PEVPR
+146 | Cloud workfunction                                                         | J kg{-1}          | CWORK
+147 | Zonal flux of gravity wave stress                                          | N m{-2}           | U-GWD
+148 | Meridional flux of gravity wave stress                                     | N m{-2}           | V-GWD
+149 | Potential vorticity                                                        | m{2} s{-1} kg{-1} | PV
+150 | Covariance between meridional and zonal components of the wind             | m{2} s{-2}        | COVMZ
+151 | Covariance between temperature and zonal component of the wind             | K m s{-1}         | COVTZ
+152 | Covariance between temperature and meridional component of the wind        | K m s{-1}         | COVTM
+153 | Cloud water                                                                | kg kg{-1}         | CLWMR
+154 | Ozone mixing ratio                                                         | kg kg{-1}         | O3MR
+155 | Ground Heat Flux                                                           | W m{-2}           | GFLUX
+156 | Convective inhibition                                                      | J kg{-1}          | CIN
+157 | Convective Available Potential Energy                                      | J kg{-1}          | CAPE
+158 | Turbulent Kinetic Energy                                                   | J kg{-1}          | TKE
+159 | Condensation pressure of parcel lifted from indicated surface              | Pa                | CONDP
+160 | Clear Sky Upward Solar Flux                                                | W m{-2}           | CSUSF
+161 | Clear Sky Downward Solar Flux                                              | W m{-2}           | CSDSF
+162 | Clear Sky upward long wave flux                                            | W m{-2}           | CSULF
+163 | Clear Sky downward long wave flux                                          | W m{-2}           | CSDLF
+164 | Cloud forcing net solar flux                                               | W m{-2}           | CFNSF
+165 | Cloud forcing net long wave flux                                           | W m{-2}           | CFNLF
+166 | Visible beam downward solar flux                                           | W m{-2}           | VBDSF
+167 | Visible diffuse downward solar flux                                        | W m{-2}           | VDDSF
+168 | Near IR beam downward solar flux                                           | W m{-2}           | NBDSF
+169 | Near IR diffuse downward solar flux                                        | W m{-2}           | NDDSF
+172 | Momentum flux                                                              | N m{-2}           | M FLX
+173 | Mass point model surface                                                   | non-dim           | LMH
+174 | Velocity point model surface                                               | non-dim           | LMV
+175 | Model layer number (from bottom up)                                        | non-dim           | MLYNO
+176 | latitude (-90 to +90)                                                      | deg               | NLAT
+177 | east longitude (0-360)                                                     | deg               | ELON
+181 | x-gradient of log pressure                                                 | m{-1}             | LPS X
+182 | y-gradient of log pressure                                                 | m{-1}             | LPS Y
+183 | x-gradient of height                                                       | m m{-1}           | HGT X
+184 | y-gradient of height                                                       | m m{-1}           | HGT Y
+189 | Virtual potential temperature                                              | K                 | VPTMP
+190 | Storm relative helicity                                                    | m{2} s{-2}        | HLCY
+191 | Probability from ensemble                                                  | numeric           | PROB
+192 | Probability from ensemble normalized with respect to climate expectancy    | numeric           | PROBN
+193 | Probability of precipitation                                               | %                 | POP
+194 | Probability of frozen precipitation                                        | %                 | CPOFP
+195 | Probability of freezing precipitation                                      | %                 | CPOZP
+196 | u-component of storm motion                                                | m s{-1}           | USTM
+197 | v-component of storm motion                                                | m s{-1}           | VSTM
+201 | Ice-free water surface                                                     | %                 | ICWAT
+204 | downward short wave rad. flux                                              | W m{-2}           | DSWRF
+205 | downward long wave rad. flux                                               | W m{-2}           | DLWRF
+206 | Ultra violet index (1 hour integration centered at solar noon)             | J m{-2}           | UVI
+207 | Moisture availability                                                      | %                 | MSTAV
+208 | Exchange coefficient                                                       | kg m{-3} m s{-1}  | SFEXC
+209 | No. of mixed layers next to surface                                        | integer           | MIXLY
+211 | upward short wave rad. flux                                                | W m{-2}           | USWRF
+212 | upward long wave rad. flux                                                 | W m{-2}           | ULWRF
+213 | Amount of non-convective cloud                                             | %                 | CDLYR
+214 | Convective Precipitation rate                                              | kg m{-2} s{-1}    | CPRAT
+215 | Temperature tendency by all physics                                        | K s{-1}           | TTDIA
+216 | Temperature tendency by all radiation                                      | K s{-1}           | TTRAD
+217 | Temperature tendency by non-radiation physics                              | K s{-1}           | TTPHY
+218 | precip.index(0.0-1.00)(see note)                                           | fraction          | PREIX
+219 | Std. dev. of IR T over 1x1 deg area                                        | K                 | TSD1D
+220 | Natural log of surface pressure                                            | ln(kPa)           | NLGSP
+221 | Planetary boundary layer height                                            | m                 | HPBL
+222 | 5-wave geopotential height                                                 | gpm               | 5WAVH
+223 | Plant canopy surface water                                                 | kg m{-2}          | C WAT
+226 | Blackadar's mixing length scale                                            | m                 | BMIXL
+227 | Asymptotic mixing length scale                                             | m                 | AMIXL
+228 | Potential evaporation                                                      | kg m{-2}          | PEVAP
+229 | Snow phase-change heat flux                                                | W m{-2}           | SNOHF
+231 | Convective cloud mass flux                                                 | Pa s{-1}          | MFLUX
+232 | Downward total radiation flux                                              | W m{-2}           | DTRF
+233 | Upward total radiation flux                                                | W m{-2}           | UTRF
+234 | Baseflow-groundwater runoff                                                | kg m{-2}          | BGRUN
+235 | Storm surface runoff                                                       | kg m{-2}          | SSRUN
+237 | Total ozone                                                                | Kg m{-2}          | 03TOT
+238 | Snow cover                                                                 | percent           | SNO C
+239 | Snow temperature                                                           | K                 | SNO T
+241 | Large scale condensat. heat rate                                           | K s{-1}           | LRGHR
+242 | Deep convective heating rate                                               | K s{-1}           | CNVHR
+243 | Deep convective moistening rate                                            | kg kg{-1} s{-1}   | CNVMR
+244 | Shallow convective heating rate                                            | K s{-1}           | SHAHR
+245 | Shallow convective moistening rate                                         | kg kg{-1} s{-1}   | SHAMR
+246 | Vertical diffusion heating rate                                            | K s{-1}           | VDFHR
+247 | Vertical diffusion zonal acceleration                                      | m s{-2}           | VDFUA
+248 | Vertical diffusion meridional accel                                        | m s{-2}           | VDFVA
+249 | Vertical diffusion moistening rate                                         | kg kg{-1} s{-1}   | VDFMR
+250 | Solar radiative heating rate                                               | K s{-1}           | SWHR
+251 | long wave radiative heating rate                                           | K s{-1}           | LWHR
+252 | Drag coefficient                                                           | non-dim           | CD
+253 | Friction velocity                                                          | m s{-1}           | FRICV
+254 | Richardson number                                                          | non-dim           | RI
+255 | Missing                                                                    | missing           | missing

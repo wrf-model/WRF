@@ -1,0 +1,8 @@
+!Header lines with ! comment are allowed. 
+!Remaining lines are comma separated values
+!Only two columns are used, additional are ignored but might be helpful to you.
+!frxst_pts(as in Fulldom.*.nc), gageId (as in timeslice files), ignored....
+1,06730200,BOULDER_CREEK_AT_NORTH_75TH_ST._NEAR_BOULDER_CO
+2,06730160,FOURMILE_CANYON_CREEK_NEAR_SUNSHINE_CO
+3,06727410,FOURMILE_CREEK_AT_LOGAN_MILL_ROAD_NEAR_CRISMAN_CO
+4,06727500,FOURMILE_CREEK_AT_ORODELL_CO

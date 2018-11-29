@@ -1,0 +1,136 @@
+&files
+
+ STARTDATE        = "2001-01-01_00"
+ ENDDATE          = "2002-07-01_00"
+ DataDir          = "/d2/hrldas/raw"
+ 
+ RAINFALL_INTERP  = 0
+
+ geo_em_flnm      = "/home/kmanning/grids/geo_em.d01.nc"
+ wrfinput_flnm    = "/home/kmanning/grids/wrfinput_d01"
+
+ Zfile_template     = "/d2/kmanning/hrldas_rawdata/ETA_SFC_ELEVATION.GRIB"
+
+ Tfile_template     = "<DataDir>/NDAS/<init+12>/NDAS.T.<date>.grb",
+                      "<DataDir>/NAM/<init-12>/NAM.T.<date>.grb",
+                      "<DataDir>/NAM/<init-24>/NAM.T.<date>.grb",
+                      "<DataDir>/NAM/<init-36>/NAM.T.<date>.grb",
+
+ Ufile_template     = "<DataDir>/NDAS/<init+12>/NDAS.U.<date>.grb",
+                      "<DataDir>/NAM/<init-12>/NAM.U.<date>.grb",
+                      "<DataDir>/NAM/<init-24>/NAM.U.<date>.grb",
+                      "<DataDir>/NAM/<init-36>/NAM.U.<date>.grb",
+
+ Vfile_template     = "<DataDir>/NDAS/<init+12>/NDAS.V.<date>.grb",
+                      "<DataDir>/NAM/<init-12>/NAM.V.<date>.grb",
+                      "<DataDir>/NAM/<init-24>/NAM.V.<date>.grb",
+                      "<DataDir>/NAM/<init-36>/NAM.V.<date>.grb",
+                      
+ Pfile_template     = "<DataDir>/NDAS/<init+12>/NDAS.P.<date>.grb",
+                      "<DataDir>/NAM/<init-12>/NAM.P.<date>.grb",
+                      "<DataDir>/NAM/<init-24>/NAM.P.<date>.grb",
+                      "<DataDir>/NAM/<init-36>/NAM.P.<date>.grb",
+	              
+ Qfile_template     = "<DataDir>/NDAS/<init+12>/NDAS.Q.<date>.grb",
+                      "<DataDir>/NAM/<init-12>/NAM.Q.<date>.grb",
+                      "<DataDir>/NAM/<init-24>/NAM.Q.<date>.grb",
+                      "<DataDir>/NAM/<init-36>/NAM.Q.<date>.grb",
+
+ LWfile_template    = "<DataDir>/NAM/<init-12>/NAM.LW.<date>.grb",
+	              "<DataDir>/NAM/<init-24>/NAM.LW.<date>.grb",
+	              "<DataDir>/NAM/<init-36>/NAM.LW.<date>.grb",
+
+ WEASDfile_template = "<DataDir>/NAM/<init-12>/NAM.WEASD.<date>.grb",
+                      "<DataDir>/NAM/<init-24>/NAM.WEASD.<date>.grb",
+                      "<DataDir>/NAM/<init-36>/NAM.WEASD.<date>.grb",
+
+ CANWTfile_template = "<DataDir>/NAM/<init-12>/NAM.CANWAT.<date>.grb",
+                      "<DataDir>/NAM/<init-24>/NAM.CANWAT.<date>.grb",
+                      "<DataDir>/NAM/<init-36>/NAM.CANWAT.<date>.grb",
+
+ LANDSfile_template = "<DataDir>/NAM/<init-12>/NAM.LANDSEA.<date>.grb",
+                      "<DataDir>/NAM/<init-24>/NAM.LANDSEA.<date>.grb",
+                      "<DataDir>/NAM/<init-36>/NAM.LANDSEA.<date>.grb",
+
+ SKINTfile_template = "<DataDir>/NAM/<init-12>/NAM.SKINTEMP.<date>.grb",
+                      "<DataDir>/NAM/<init-24>/NAM.SKINTEMP.<date>.grb",
+                      "<DataDir>/NAM/<init-36>/NAM.SKINTEMP.<date>.grb",
+
+ STfile_template    = "<DataDir>/NDAS/<init+12>/NDAS.SOIL_T_000-010.<date>.grb",
+                      "<DataDir>/NDAS/<init+12>/NDAS.SOIL_T_010-040.<date>.grb",
+                      "<DataDir>/NDAS/<init+12>/NDAS.SOIL_T_040-100.<date>.grb",
+                      "<DataDir>/NDAS/<init+12>/NDAS.SOIL_T_100-200.<date>.grb",
+                      "<DataDir>/NAM/<init-12>/NAM.SOIL_T_000-010.<date>.grb",
+                      "<DataDir>/NAM/<init-12>/NAM.SOIL_T_010-040.<date>.grb",
+                      "<DataDir>/NAM/<init-12>/NAM.SOIL_T_040-100.<date>.grb",
+                      "<DataDir>/NAM/<init-12>/NAM.SOIL_T_100-200.<date>.grb",
+                      "<DataDir>/NAM/<init-24>/NAM.SOIL_T_000-010.<date>.grb",
+                      "<DataDir>/NAM/<init-24>/NAM.SOIL_T_010-040.<date>.grb",
+                      "<DataDir>/NAM/<init-24>/NAM.SOIL_T_040-100.<date>.grb",
+                      "<DataDir>/NAM/<init-24>/NAM.SOIL_T_100-200.<date>.grb",
+                      "<DataDir>/NAM/<init-36>/NAM.SOIL_T_000-010.<date>.grb",
+                      "<DataDir>/NAM/<init-36>/NAM.SOIL_T_010-040.<date>.grb",
+                      "<DataDir>/NAM/<init-36>/NAM.SOIL_T_040-100.<date>.grb",
+                      "<DataDir>/NAM/<init-36>/NAM.SOIL_T_100-200.<date>.grb",
+
+ SMfile_template    = "<DataDir>/NDAS/<init+12>/NDAS.SOIL_M_000-010.<date>.grb",
+                      "<DataDir>/NDAS/<init+12>/NDAS.SOIL_M_010-040.<date>.grb",
+                      "<DataDir>/NDAS/<init+12>/NDAS.SOIL_M_040-100.<date>.grb",
+                      "<DataDir>/NDAS/<init+12>/NDAS.SOIL_M_100-200.<date>.grb",
+                      "<DataDir>/NAM/<init-12>/NAM.SOIL_M_000-010.<date>.grb",
+                      "<DataDir>/NAM/<init-12>/NAM.SOIL_M_010-040.<date>.grb",
+                      "<DataDir>/NAM/<init-12>/NAM.SOIL_M_040-100.<date>.grb",
+                      "<DataDir>/NAM/<init-12>/NAM.SOIL_M_100-200.<date>.grb",
+                      "<DataDir>/NAM/<init-24>/NAM.SOIL_M_000-010.<date>.grb",
+                      "<DataDir>/NAM/<init-24>/NAM.SOIL_M_010-040.<date>.grb",
+                      "<DataDir>/NAM/<init-24>/NAM.SOIL_M_040-100.<date>.grb",
+                      "<DataDir>/NAM/<init-24>/NAM.SOIL_M_100-200.<date>.grb",
+                      "<DataDir>/NAM/<init-36>/NAM.SOIL_M_000-010.<date>.grb",
+                      "<DataDir>/NAM/<init-36>/NAM.SOIL_M_010-040.<date>.grb",
+                      "<DataDir>/NAM/<init-36>/NAM.SOIL_M_040-100.<date>.grb",
+                      "<DataDir>/NAM/<init-36>/NAM.SOIL_M_100-200.<date>.grb",
+
+ SWfile_primary     = "<DataDir>/SRB/<YYYY><MM><DD>/SW.<date>.grb",
+
+ SWfile_secondary   = "<DataDir>/NAM/<init-12>/NAM.SW.<date>.grb",
+                      "<DataDir>/NAM/<init-24>/NAM.SW.<date>.grb",
+                      "<DataDir>/NAM/<init-36>/NAM.SW.<date>.grb",
+
+ PCPfile_primary    = "<DataDir>/ST4/<YYYY><MM><DD>/ST4.<date>.grb",
+
+ PCPfile_secondary  = "<DataDir>/NAM/<init-12>/NAM.PCP.<date>.grb",
+                      "<DataDir>/NAM/<init-24>/NAM.PCP.<date>.grb",
+                      "<DataDir>/NAM/<init-36>/NAM.PCP.<date>.grb",
+
+/
+
+<VTABLE>
+-----+------+------+------+----------+-----------+-----------------------------------------+-----------------------+
+GRIB1| Level| From |  To  |          |           |                                         |GRIB2|GRIB2|GRIB2|GRIB2|
+Param| Type |Level1|Level2| Name     | Units     | Description                             |Discp|Catgy|Param|Level|
+-----+------+------+------+----------+-----------+-----------------------------------------+-----------------------+
+  11 | 105  |   2  |      | T2D      | K         | Temperature       at 2 m                |  0  |  0  |  0  | 103 |
+  51 | 105  |   2  |      | Q2D      | kg kg{-1} | Specific Humidity at 2 m                |  0  |  1  |  0  | 103 |
+  33 | 105  |  10  |      | U2D      | m s-1     | U                 at 10 m               |  0  |  2  |  2  | 103 |
+  34 | 105  |  10  |      | V2D      | m s-1     | V                 at 10 m               |  0  |  2  |  3  | 103 |
+   1 |   1  |   0  |      | PSFC     | Pa        | Surface Pressure                        |  0  |  3  |  0  |   1 |
+ 144 | 112  |   0  |  10  | SMOIS_1  | kg m-3    | Soil Moist 0-10 cm below grn layer (Up) |  2  |  0  | 192 | 106 |
+ 144 | 112  |  10  |  40  | SMOIS_2  | kg m-3    | Soil Moist 10-40 cm below grn layer     |  2  |  0  | 192 | 106 |
+ 144 | 112  |  40  | 100  | SMOIS_3  | kg m-3    | Soil Moist 40-100 cm below grn layer    |  2  |  0  | 192 | 106 |
+ 144 | 112  | 100  | 200  | SMOIS_4  | kg m-3    | Soil Moist 100-200 cm below gr layer    |  2  |  0  | 192 | 106 |
+  85 | 112  |   0  |  10  | STEMP_1  | K         | T 0-10 cm below ground layer (Upper)    |  2  |  0  |  2  | 106 |
+  85 | 112  |  10  |  40  | STEMP_2  | K         | T 10-40 cm below ground layer (Upper)   |  2  |  0  |  2  | 106 |
+  85 | 112  |  40  | 100  | STEMP_3  | K         | T 40-100 cm below ground layer (Upper)  |  2  |  0  |  2  | 106 |
+  85 | 112  | 100  | 200  | STEMP_4  | K         | T 100-200 cm below ground layer (Bottom)|  2  |  0  |  2  | 106 |
+  91 |   1  |   0  |      | SEAICE   | proprtn   | Ice flag                                | 10  |  2  |  0  |   1 |
+  81 |   1  |   0  |      | LANDSEA  | proprtn   | Land/Sea flag (1=land,0=sea in NAM)     |  2  |  0  |  0  |   1 |
+  11 |   1  |   0  |      | SKINTEMP | K         | Skin temperature (can use for SST also) |  0  |  0  |  0  |   1 |
+  61 |   1  |   0  |      | RAINFALL | kg m-2    | Accumulated precipitation               |  0  |  1  |  8  |   1 |
+  65 |   1  |   0  |      | WEASD    | kg m-2    | Water equivalent snow depth             |  0  |  1  | 13  |   1 |
+ 223 |   1  |   0  |      | CANWAT   | kg m-2    | Plant Canopy Surface Water              |  2  |  0  | 196 |   1 |
+ 204 |   1  |   0  |      | SW       | W m-2     | Downward short-wave radiation flux      |  0  |  4  | 192 |   1 |
+ 205 |   1  |   0  |      | LW       | W m-2     | Downward long-wave radiation flux       |  0  |  5  | 192 |   1 |
+   7 |   1  |   0  |      | TERRAIN  | m         | Terrain field of source analysis        |  2  |  0  |  7  |   1 |
+   7 |   1  |   0  |      | TERRAIN  | m         | Source model terrain elevation          |  0  |  3  |  5  |   1 |
+-----+------+------+------+----------+-----------+-----------------------------------------+-----------------------+
+</VTABLE>

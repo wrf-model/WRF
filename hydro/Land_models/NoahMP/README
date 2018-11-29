@@ -1,0 +1,51 @@
+
+HRLDAS v3.7 Release Notes
+============================
+
+New capabilities:
+
+1. A parallel capability has been added by Wei Yu (weiyu@ncar.edu) to support mpi only.
+
+ To compile with parallel version
+  edit the file 'user_build_options'
+  uncommment the compiler section with MPI (available for pgf90 and ifort compilers)
+
+ To compile with sequential version
+  edit the file 'user_build_options'
+  uncommment the compiler section without MPI
+
+
+2. System setup and execution now requires only a WRF/WPS geo_em file. Dependence on the wrfinput file has been removed.
+
+
+3. As part of #2, initialization no longer occurs in the first forcing file, but in the file listed in the namelist as:
+    HRLDAS_SETUP_FILE = ""
+
+   The initialization fields are:
+     SNOW,CANWAT,TSK,TSLB,SMOIS
+   
+   This file also contains the static grid/domain information:
+     XLAT,XLONG,TMN,HGT,SEAICE,MAPFAC_MX,MAPFAC_MY,SHDMAX,SHDMIN,XLAND,IVGTYP,ISLTYP,DZS,ZS
+
+   This file can also contains some optional fields:
+     LAI
+     
+   NOTE: a WRF input file can be used as a HRLDAS_SETUP_FILE
+
+4. The timing structure has changed:
+
+   - The initial conditions are the states at START time. 
+   - First forcing file used is START time + FORCING_TIMESTEP 
+   - First integration is START time + NOAH_TIMESTEP 
+   - First output file is now START time + OUTPUT_TIMESTEP     
+   - RESTART file states are consistent with OUTPUT file states with the same time stamp
+
+
+5. Instructions for using GLDAS and NLDAS as forcing has been provided in addition to the NARR instructions (see /docs)
+     Also, a NCL script has been included for preparing single- or multi-point forcing
+     
+
+6. Initial LAI (if present in the HRLDAS_SETUP_FILE) will be used to initialize the leaf and stem carbon pools
+
+
+7. Removed dependence on external GRIB tables for forcing creation; now in namelist only

@@ -1,0 +1,157 @@
+#=============================================================================================
+#  Options for Linux with Intel Fortran -- Serial
+#=============================================================================================
+
+# COMPILERF90	=	ifort
+# FREESOURCE	=	-free
+# F90FLAGS	=	-convert big_endian # -g -O0 -check all,noshape,nopointer,noarg_temp_created -mp -fpe0
+# MODFLAG		=	-I
+# LDFLAGS		=
+# CPP		=	cpp
+# CPPFLAGS	=	-C -P -traditional # -D_HRLDAS_URBAN_
+# LIBS		=
+# LIBJASPER	=	-ljpeg -L/scholar/kmanning/jasper/lib -ljasper
+# INCJASPER	=	-I/scholar/kmanning/jasper/include
+# NETCDFMOD	=	-I/scholar/kmanning/netcdf-3.6.3-ifort/include
+# NETCDFLIB	=	-L/scholar/kmanning/netcdf-3.6.3-ifort/lib -lnetcdf
+# BZIP2		=	YES
+# BZIP2_INCLUDE	=	-I/usr/include
+# BZIP2_LIB	=	-L/usr/lib -lbz2
+# RM		=	rm -f
+# CC		=	cc
+
+#=============================================================================================
+#  Options for Linux with g95 -- Serial
+#=============================================================================================
+
+# COMPILERF90	=	g95
+# FREESOURCE	=	-ffree-form  -ffree-line-length-huge
+# F90FLAGS	=	-fendian=big -fno-second-underscore # -g -fbounds-check -O0
+# MODFLAG		=	-I
+# LDFLAGS		=
+# CPP		=	cpp
+# CPPFLAGS	=	-C -P -traditional # -D_HRLDAS_URBAN_
+# LIBS		=
+# LIBJASPER	=	-ljpeg -L/scholar/kmanning/jasper/lib -ljasper
+# INCJASPER	=	-I/scholar/kmanning/jasper/include
+# NETCDFMOD	=	-I/scholar/kmanning/netcdf-3.6.3-g95/include
+# NETCDFLIB	=	-L/scholar/kmanning/netcdf-3.6.3-g95/lib -lnetcdf
+# BZIP2		=	YES
+# BZIP2_LIB	=	-lbz2
+# BZIP2_INCLUDE	=	-I/usr/include
+# RM		=	rm -f
+# CC		=	cc
+
+#=============================================================================================
+#  Options for Linux with gfortran -- Serial
+#=============================================================================================
+
+# COMPILERF90	=	gfortran
+# FREESOURCE	=	-ffree-form  -ffree-line-length-none
+# F90FLAGS	=	-fconvert=big-endian # -g
+# MODFLAG		=	-I
+# LDFLAGS		=
+# CPP		=	cpp
+# CPPFLAGS	=	-C -P -traditional -D_GFORTRAN_ # -D_HRLDAS_URBAN_
+# LIBS		=
+# LIBJASPER	=	-ljpeg -L/scholar/kmanning/jasper/lib -ljasper
+# INCJASPER	=	-I/scholar/kmanning/jasper/include
+# NETCDFMOD	=	-I/scholar/kmanning/netcdf-3.6.3-gfortran/include
+# NETCDFLIB	=	-L/scholar/kmanning/netcdf-3.6.3-gfortran/lib -lnetcdf
+# BZIP2		=	YES
+# BZIP2_LIB	=	-lbz2
+# BZIP2_INCLUDE	=	-I/usr/include
+# RM		=	rm -f
+# CC		=	cc
+
+#=============================================================================================
+#  Options for Linux with pgf90 -- Serial
+#=============================================================================================
+
+#COMPILERF90	=	mpif90
+#CPPFLAGS	=	-C -P -traditional -DMPP_LAND # -D_HRLDAS_URBAN_ 
+COMPILERF90	=	pgf90 
+CPPFLAGS	=	-C -P -traditional # -D_HRLDAS_URBAN_ 
+FREESOURCE	=	-Mfree
+F90FLAGS	=	-byteswapio # -g -C
+MODFLAG		=	-I
+LDFLAGS		=
+CPP		=	cpp
+LIBS		=
+LIBJASPER	=	-ljpeg -L/scholar/kmanning/jasper/lib -ljasper
+INCJASPER	=	-I/scholar/kmanning/jasper/include
+NETCDFMOD	=	-I$(HOME)/netcdf/include
+NETCDFLIB	=	-L$(HOME)/netcdf/lib -lnetcdf
+BZIP2		=	YES
+BZIP2_LIB	=	-lbz2
+BZIP2_INCLUDE	=	-I/usr/include
+RM		=	rm -f
+CC		=	cc
+
+#=============================================================================================
+#  Options for Linux with pgf90 -- Parallel
+#=============================================================================================
+
+# COMPILERF90	=	mpif90 -f90=pgf90
+# FREESOURCE	=	-Mfree
+# F90FLAGS	=	-byteswapio # -g -C
+# MODFLAG		=	-I
+# LDFLAGS		=
+# CPP		=	cpp
+# CPPFLAGS	=	-C -P -traditional -D_PARALLEL_ # -D_HRLDAS_URBAN_ 
+# LIBS		=
+# LIBJASPER	=	-ljpeg -L/scholar/kmanning/jasper/lib -ljasper
+# INCJASPER	=	-I/scholar/kmanning/jasper/include
+# NETCDFMOD	=	-I/scholar/kmanning/netcdf-4.1.1-parallel-pgf90/include
+# NETCDFLIB	=	-L/scholar/kmanning/netcdf-4.1.1-parallel-pgf90/lib -lnetcdf -lcurl
+# HDF5LIB		=       -L/scholar/kmanning/HDF5/lib -lhdf5_hl -lhdf5 -lz
+# BZIP2		=	YES
+# BZIP2_LIB	=	-lbz2
+# BZIP2_INCLUDE	=	-I/usr/include
+# RM		=	rm -f
+# CC		=	cc
+
+#=============================================================================================
+#  Options for IBM -- Serial
+#=============================================================================================
+
+# COMPILERF90	=	xlf
+# FREESOURCE	=	-qfree=f90
+# F90FLAGS	=	-g
+# MODFLAG		=	-I
+# LDFLAGS		=
+# CPP	=	cpp
+# CPPFLAGS	=	-C -P -traditional # -D_HRLDAS_URBAN_
+# LIBS		=
+# INCJASPER	=	-I/contrib/jasper/include
+# LIBJASPER	=	-ljpeg -L/contrib/jasper/lib -ljasper
+# NETCDFMOD	=	-I/usr/local/include
+# NETCDFLIB	=	-L/usr/local/lib -lnetcdf
+# BZIP2		=	YES
+# BZIP2_LIB	=	-L/contrib/bzip2/lib -lbz2
+# BZIP2_INCLUDE	=	-I/contrib/bzip2/include
+# RM		=	rm -f
+# CC		=	xlC
+
+#=============================================================================================
+#  Options for IBM -- Parallel
+#=============================================================================================
+
+# COMPILERF90	=	mpxlf90_r
+# FREESOURCE	=	-qfree=f90
+# F90FLAGS	=	-g
+# MODFLAG		=	-I
+# LDFLAGS		=
+# CPP		=	cpp
+# CPPFLAGS	=	-C -P -traditional -D_PARALLEL_ # -D_HRLDAS_URBAN_
+# LIBS		=
+# INCJASPER	=	-I/contrib/jasper/include
+# LIBJASPER	=	-ljpeg -L/contrib/jasper/lib -ljasper
+# NETCDFMOD	=	-I/contrib/netcdf-4.1.1-mpi/include
+# NETCDFLIB	=	-L/contrib/netcdf-4.1.1-mpi/lib -lnetcdf
+# HDF5LIB		=	-L/contrib/hdf5-1.8.4-patch1-mpi/lib -lhdf5_hl -lhdf5 -lz -lgpfs
+# BZIP2		=	NO
+# BZIP2_LIB	=
+# BZIP2_INCLUDE	=
+# RM		=	rm -f
+# CC		=	cc_r

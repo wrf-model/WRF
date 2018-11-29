@@ -1,0 +1,706 @@
+2007-06-05:
+   * Utility_programs/gribextract.c
+       - Print warnings to stderr (not stdout).
+
+2007-06-06
+   * Utility_programs/hrldas_extract_point.F
+       - New program to print out data at a given point
+   * Utility_programs/Makefile
+       - Added a basic make capability for all the utility programs
+
+2007-06-07
+   * HRLDAS_COLLECT_DATA/consolidate_grib.F
+   * HRLDAS_COLLECT_DATA/lib/rif_module.F
+       - Code clean-up
+       - Passed information regarding soil layers of GRIB data to
+         the NetCDF LDASIN file.
+
+2007-06-08
+   * HRLDAS_COLLECT_DATA:
+       - Code clean-up:  removed dead code; removed dead source
+         code files; removed duplicate subroutines; consistent use 
+         of error_handler routine for NetCDF error flags;  removed 
+         references to wrfsi static files (replaced with references 
+         to geo_em files where appropriate).
+
+2007-06-11
+   * HRLDAS_COLLECT_DATA:
+
+       - Modified consolidate_grib to fill in the VEGFRA field over
+         water points with a smooth extrapolation.  This will allow
+         use of LDASIN files generated with either USGS or MODIS
+         land-use fields to be used in an HRLDAS job using either USGS
+         or MODIS land-use fields, with only minor differences at
+         points where one dataset has water and the other has land.
+
+         This also involves reading the ISWATER flag so
+         consolidate_grib knows where the water is.
+
+2007-06-14
+   * IO_code/Noah_hrldas_driver.F
+       - Corrected a problem adjusting LW radiation by emissivity,
+         which was being performed before emissivity was calculated.
+
+   * IO_code/Noah_hrldas_driver.F
+       - In the case of UCM, reset vegtyp before the call to HRLDAS,
+         so that REDPRM does not get confused by the additional urban 
+         categories.  This is already done before SFLX, but we need
+         to do it before REDPRM as well.
+
+   * IO_code/Noah_hrldas_driver.F IO_code/module_hrldas_netcdf_io.F
+       - Restart files now written in NetCDF format.   The code for
+         reading (not writing) the old-formatted files is still there,
+         just not activated (it's ifdef'd out).  If somebody really 
+         wants to try to read the old files, they can try activating
+         the old code, but I don't want to support this.
+
+       - Added an error-handler routine for the NetCDF error flags.
+         Not used consistently yet, but it's a start.
+
+   * Run/MODI.TBL 
+
+     - Added commas to one of the columns that was missing commas.  No
+       functionality changes, but now consistent with the rest of the 
+       table.
+
+     - Modified the Wooded Tundra and Mixed Tundra LAI values.  What was
+       originally in the MODI.TBL was a random guess, but I found some
+       data tables from Max Planck Institute reports and a FUMAPEX
+       report, which were pretty consistent with one another.  "Wooded
+       Tundra" and "Barren Tundra" were in those tables.  I changed
+       the wooded tundra values to be similar to those reports, and
+       mixed tundra to be about halfway between the reported barren
+       tundra and wooded tundra values.
+
+       Those are the only categories that I've had the chance to
+       find numbers based on something other than a guess.
+
+       These tables continue to be provisionary, until we can come
+       to some consensus as to reasonable values for all categories.
+       
+2007-06-15
+   * Utility_programs/hrldas_extract_point.F
+       - Corrected the no-data flag for longitude input from -1.25 to -1.E25.
+       - Slightly saner printout
+
+2007-06-20
+   * HRLDAS_COLLECT_DATA/consolidate_grib.F
+   * HRLDAS_COLLECT_DATA/module_geo_em.F 
+   * HRLDAS_COLLECT_DATA/module_wrfinputfile.F 
+   * HRLDAS_COLLECT_DATA/read_wrfinput.F 
+
+      - Check for consistency in landuse dataset (USGS or MODIS) between
+        geo_em files and wrfinput files, in program consolidate_grib.
+
+   * HRLDAS_COLLECT_DATA/consolidate_grib.F
+   * IO_code/module_hrldas_netcdf_io.F
+   * IO_code/Noah_hrldas_driver.F
+
+      - Make a global attribute "TITLE" in all our NetCDF files so that
+        in the future we can check on version consistency between
+        consolidate_grib.exe and Noah_hrldas_beta and restarts.
+
+        All I have to do is remember to update the version identifiers
+        at the appropriate release time.
+
+2007-06-21
+   * HRLDAS_COLLECT_DATA/consolidate_grib.F
+   * IO_code/Noah_hrldas_driver.F
+   * IO_code/module_hrldas_netcdf_io.F
+
+      - added MMINLU attribute to all NetCDF output files, 
+        presently for the user's edification, but eventually
+        we can make consistency checks as necessary.
+
+      - Pull the version number out of LDASIN files.
+
+      - A little cleanup (using error_handler routine) for module_hrldas_netcdf_io.F
+
+2007-06-22
+
+   * Shifted over to a subversion (SVN) repository.
+
+2007-07-06
+
+   * IO_code/module_hrldas_netcdf_io.F
+       - Read the right variable names on restart with urban option.
+
+   * IO_code/Noah_hrldas_driver.F
+   * HRLDAS_COLLECT_DATA/consolidate_grib.F
+      - Identify output files as coming from version "v20070706".
+
+2007-07-12
+
+  * IO_code/module_hrldas_netcdf_io.F
+       - There was a problem with RESTART files created for Urban Canopy Model
+         jobs.  One of the fields was not being written out, and a few other
+         2-d fields were identified as 3-d fields.  Correct this, and put in 
+         some version checks to prevent users from trying to use old, wrong
+         RESTART files.
+
+   * IO_code/Noah_hrldas_driver.F, HRLDAS_COLLECT_DATA/consolidate_grib.F
+      - Identify output files as coming from version "v20070712".
+
+
+2007-07-13
+
+  * IO_code/module_hrldas_netcdf_io.F
+       - Purely a cosmetic change.  Use a dummy array when converting CMC from
+         m to mm upon output.  This was motivated to clear warning messages 
+         from the ifort-compiled code.  Again, no change in results, purely 
+         cosmetic.
+
+  * IO_code/Noah_hrldas_driver.F
+       - Pass ISURBAN into subroutine urban_var_init, so that the reference to 
+         hard-coded urban category 1 can be replaced by reference to ISURBAN.
+
+  * Noah/module_sf_urban.F
+       - Add ISURBAN to the argument list of urban_var_init.  Changed a hard-coded
+         reference to urban category 1 to ISURBAN.
+
+   * IO_code/Noah_hrldas_driver.F, HRLDAS_COLLECT_DATA/consolidate_grib.F
+      - Identify code and output files as version "v20070713".
+
+2007-07-13 (b)
+
+   * IO_code/Noah_hrldas_driver.F
+        - Change the printout if the default output point happens to be over 
+          water.  In this situation, do not try to print out a sample soil 
+          temperature value
+
+2007-07-24
+
+   *  Utility_programs/modify_wrfinput.F
+   	- Changed Roof, Wall and Road temperatures (TR, TB, TG)
+	  consistent with the WRF Registry.EM.
+
+
+2007-08-17
+   * HRLDAS_COLLECT_DATA/module_geo_em.F
+        - Slightly more informative and consistent error messages 
+          for NetCDF attribute reads.
+
+2007-08-23
+   * HRLDAS_COLLECT_DATA/lib/gribcode.F
+        - Change some print statements to write statements
+        - Prevent a call to gbytes requesting 0 bytes of data.
+
+   * IO_code/Noah_hrldas_driver.F IO_code/module_hrldas_netcdf_io.F
+     Noah/module_sf_noahlsm.F Utility_routines/module_Noahlsm_utility.F
+        - HRLDAS using first (pre-)release of "unified" noahlsm.
+
+2007-09-13
+   * HRLDAS_COLLECT_DATA/consolidate_grib.F
+        - Added a nearest-neighbor interpolation for precip (subroutine call 
+          commented out for now, but available for single point usage).
+
+2007-09-13
+   * IO_code/Noah_hrldas_driver.F
+        - Commented out some code that has no effect.
+
+...
+And lots of changes thereafter.  See svn logs for details.
+...
+
+2008-03-21
+   * Noah/module_sf_noahlsm.F
+        - Updated to latest module_sf_noahlsm.F, which takes a background 
+	  emissivity value and applies snow-cover effects to compute an
+          emissivity value.
+   * IO_code/Noah_hrldas_driver.F
+        - Use the latest module_sf_noahlsm.F code, which takes a background 
+	  emissivity value and applies snow-cover effects to compute an
+          emissivity value.
+
+2008-03-21.b
+   * Noah/module_sf_noahlsm.F
+        - Added code (from NCEP) to alleviate the 2 delta-t problem
+          we've seen with shallow layers when we get heavy precipitation 
+          and wet soil layers.  This is currently dangerously broken code, 
+          as it basically hard-wires table lookup values based on magic 
+          values for SMCMAX.  But it's what we've got at the moment.
+
+2008-03-25
+   * Noah/module_sf_noahlsm.F
+        - Test the Carlson-Boland exchange coefficient calculations from
+          Mukul and Jimy
+
+
+2008-04-10
+   * Noah/module_sf_noahlsm.F
+        - Slight change to the Carlson-Boland calculation introduced
+          on 2008-03-25
+
+2008-04-23
+   * HRLDAS_COLLECT_DATA/consolidate_grib.F
+        - The new PGF compilers had a problem with some statements (a 
+          minval and a maxval).  Found an easy workaround.
+
+2008-04-25:
+   * Noah/module_sf_noahlsm.F
+        - Modified a hard-coded dimension [GX(7)] in module_sf_noahlsm.F 
+          to be more general [GX(NSOIL)].  Eventually, this (or a similar)
+          change should go into "official" Noah LSM.
+
+2008-04-25:
+   * IO_code/Noah_hrldas_driver.F
+   * IO_code/module_hrldas_netcdf_io.F
+   * Run/namelist.hrldas
+         - Introduced the option for timesteps at higher frequency than the
+           forcing data are available.  Temporal interpolation is performed
+           between the available forcing files.  Many changes involved:
+             - Complete overhaul of subroutine READFORC_HRLDAS
+             - Several new subroutines in module_hrldas_netcdf_io.F
+             - Namelist changes -- NOAH_TIMESTEP, FORCING_TIMESTEP, and
+               OUTPUT_TIMESTEP
+             - History filename name changes necessary, because we may have
+               output frequencies greater than one hour
+
+2008-04-25:
+   * Run/namelist.hrldas
+          - Namelist cleanup:  Removed unused "Z" from the namelist
+   * IO_code/Noah_hrldas_driver.F
+   * IO_code/module_hrldas_netcdf_io.F
+          - Namelist cleanup
+          - Added some error messages for namelist problems
+          - Check namelist settings for sane values
+          - Set some default values for some namelist variables
+   * Run/README.namelist
+          - Added this text file, some documentation for people wondering
+            about the namelist options.
+
+2008-04-25:
+   * Run/USGS.TBL
+           - Modified some of the MIN/MAX LAI values, making some better 
+             guesses, from some suggested values from NCEP.
+
+2008-04-25:
+   * HRLDAS_USERS_GUIDE.pdf
+	   - Added this file, some documentation for users.
+
+2008-05-07:
+   * Noah/module_sf_noahlsm.F
+           - The experimental code (NCEP's FAC2MIT, and our test of a
+             C/B formulation) are now deactivated by default for
+             HRLDAS.  The code is still there (and can be activated by
+             #defines if a user really wants to try).
+
+   * HRLDAS_COLLECT_DATA/run
+           - Removed files "collect_data.csh" and "namelist.template",
+             which were set up for special circumstances, but now 
+             merely serve to confuse people.
+
+   * HRLDAS_COLLECT_DATA/run/README.namelist
+           - Added some text documentation for the 
+             consolidate_grib.exe namelist.input file.
+
+   * HRLDAS_COLLECT_DATA/run/namelist.example.simple
+   * HRLDAS_COLLECT_DATA/run/namelist.example.complex
+           - Added a couple of example namelist files for 
+             the consolidate_grib.exe program.
+
+2008-07-02
+   * HRLDAS_COLLECT_DATA/lib/module_grib1.F
+           - Allocatable array IX in GRIB1_SGUP_NOBITMAP was causing some 
+             problems on the IBM.  The IBM wanted us to make sure it 
+             was deallocated.  But I've changed the array to be a 
+             variable-length dummy array, to avoid the explicit 
+             allocate/deallocate statements for IX.
+             
+   * HRLDAS_COLLECT_DATA/lib/decode_jpeg2000.c
+           - The IBM had a problem with the Jasper library routine 
+             jas_image_decode.  Changed things to use Jasper library routine 
+             jpc_decode (and use jas_image_readcmpt instead of 
+             jas_image_readcmpt2) to get things working on the IBM.
+
+   * user_build_options
+           - Removed the "traditional" option for the IBM CPP compiler.
+           - Changed the default, sample library and include file
+             directory names. 
+
+2008-08-21
+
+   * Run/Noah_hrldas_driver.F
+           - In computing SOLNET for input to SFLX, use the albedo as 
+             remembered from the previous timestep.
+           - Get rid of the "ALBED" variable, no longer used.
+           - Do not set "ALBEDO" in Noah_hrldas_driver, because it
+             gets set in SFLX.
+           - Update the version string
+
+   * HRLDAS_COLLECT_DATA/consolidate_grib.F
+           - Update the version string
+
+   * Noah/module_sf_noahlsm.F
+           - Update the code to be consistent with the new 
+             WRF release WRFV3.0.1.  The only change of any
+             impact is to set ETP if (ETA==0).
+2008-08-22
+
+   * Noah/module_sf_urban.F
+           - Update to WRFV3.0.1 version (just a couple of comment corrections).
+
+2009-04-30
+
+   - Updating to version 3.1 (consistent with WRF release)
+
+      Noah LSM version 3.1 has a number of changes as compared to version 3.0.       
+      Changes include:                                                               
+                                                                                     
+      -------------------------------------------------------------------------------
+      Capability to use MODIS land-use dataset for vegetation categories.  This      
+      entailed many changes to make the land-use dataset flexible throughout WRF.    
+          * Added "NATURAL" category to VEGPARM.TBL, for the land-use category       
+            to use for the non-urban parts of urban points.  Previously hard-coded as
+            category 10 in the Noah driver.                                          
+          * String length for strings describing land-use data sets and soil-category
+            data sets has been increased from 4 characters to 256 characters.  This  
+            allows for more descriptive names for land-use and soil-category data    
+            sets.                                                                    
+          * The ISURBAN argument has been added to SFLX.  ISURBAN holds the index    
+            number for the land-use category corresponding to urban points.  All     
+            checks on the hard-coded USGS urban category 1 have been changed to      
+            test on the value of ISURBAN.  ISURBAN now gets passed around to several 
+            subroutines below SFLX.                                                  
+      -------------------------------------------------------------------------------
+      -------------------------------------------------------------------------------
+      Snow albedo treatment following Livneh.  This is a major modification to       
+      subroutine ALCALC.                                                             
+         * New argument to SFLX:  SNOTIME1 holds the age of the snow on the ground,  
+           in seconds. (In-code documentation still needed for this.)                
+         * Albedo over snow now depends on the age of the snow on the ground.  Ground
+           covered with new, fresh snow may have a high albedo; as the snow ages, the
+           albedo is reduced.                                                        
+      -------------------------------------------------------------------------------
+      -------------------------------------------------------------------------------
+      Option for 2d LAI map to be used in Noah ....                                  
+         * New argument to SFLX:  RDLAI2D                                            
+      -------------------------------------------------------------------------------
+      -------------------------------------------------------------------------------
+      File "urban_param.tbl" has been renamed to "URBPARM.TBL", to be consistent with
+      the rest of the tables.                                                        
+      -------------------------------------------------------------------------------
+      -------------------------------------------------------------------------------
+      BUGFIX:  In subroutine SRT, infiltration calculation takes into account the    
+      time step in setting INFMAX = MIN (INFMAX,PX/DT).  Older code did not have the 
+      "/DX" term.                                                                    
+      -------------------------------------------------------------------------------
+      -------------------------------------------------------------------------------
+      Glacial Ice ....  Some fairly significant changes to the treatment, here.      
+         * The meaning of the ICE flag variable in SFLX has been changed.  Now,      
+           the settings are ICE=1 for a sea-ice point, and ICE=-1 for a glacial land 
+           point, and ICE=0 for a non-glacial land point.                            
+         * Glacial land points and sea-ice points have smil moisture set to 1.0.     
+           (Both total and liquid values.  Should liquid part be set to 0.0?)        
+         * At glacial land points and seaice points, snow density is set to 0.2      
+           for cold permanent ice or new dry snow.                                   
+         * snow-cover fraction is unlimited over glacial land points.                
+         * Albedo of sea-ice is hard-coded to 0.80; emissivity is hard-coded to      
+           0.98.  This is probably not good.  In reality, the Arctic and the         
+           Antarctic behave quite differently, and each has its own annual trend.    
+         * Thermal conductivity over sea ice or glacial land points is set to the    
+           snow conductivity value.                                                  
+         * Subroutine HRTICE is modified to manage subsurface temperature tendency   
+           for both sea ice and glacial land points.  Diffusivities and heat         
+           capacities are ajusted depending on whether its a glacial point or a      
+           sea-ice point.                                                            
+         * Call to SMFLX is skipped for sea-ice points or glacial land points.       
+      -------------------------------------------------------------------------------
+      -------------------------------------------------------------------------------
+      Subroutine SNOPAC:  Potential evapotranspiration (ETP) depends on Richardson   
+      Number (RIBB) -- to handle stable regimes a little better.                     
+         * New argument to SFXL:  RIBB (In-code documentation still needed for this) 
+      -------------------------------------------------------------------------------
+      -------------------------------------------------------------------------------
+      Background (i.e., snow-free) albedo, background emissivity, background         
+      roughness-length, and Leaf Area Index are computed in SFLX, by scaling between 
+      climatological minimum and maximum values based on land-use category (new      
+      VEGPARM.TBL), according to where an instantaneous green vegetation fraction    
+      falls between a climatological minimum and maximum for GVF.  Values for        
+      background emissivity (EMBRD), Leaf-area index (XLAI), background albedo (ALB),
+      and background roughness length (Z0BRD) are computed in SFLX just after the    
+      call to REDPRM.                                                                
+         * USEMONALB now has to be passed into SFLX.                                 
+         * New arrays defined:  LAIMINTBL, LAIMAXTBL;  Remove LAITBL.                
+         * New arrays defined:  ALBEDOMINTBL, ALBEDOMAXTBL; remove ALBTBL.           
+         * New arrays defined:  Z0MINTBL, Z0MAXTBL; remove Z0TBL                     
+         * New arrays defined:  EMISSMINTBL, EMISSMAXTBL                             
+         * Subroutine REDPRM now returns LAIMIN, LAIMAX, ALBEDOMIN, ALBEDOMAX,       
+           EMISSMIN, EMISSMAX, Z0MIN, Z0MAX, EMISSMIN, EMISSMAX.  Removed from REDPRM
+           are Z0BRD, XLAI, and ALB.                                                 
+         * The scaling is not applied for albedo if namelist option USEMONALB is set 
+           to .true.                                                                 
+         * The scaling is not applied for LAI if namelist option RDLAI2D is set to   
+           .true.                                                                    
+      -------------------------------------------------------------------------------
+      -------------------------------------------------------------------------------
+      Subroutine SFLX:  If the surface is largely snow covered (more than 97%), use  
+      the snow diffusivity. (BPRC)                                                   
+      -------------------------------------------------------------------------------
+      -------------------------------------------------------------------------------
+      Subroutine PENMAN:                                                             
+      Scale latent heat used between snow-covered (latent heat of sublimation) and   
+      snow-free (latent heat of vaporization) regions.  For glacial land or sea ice  
+      regions, use latent heat of vaporization if Skin temperature T1 is greater than
+      freezing                                                                       
+      -------------------------------------------------------------------------------
+      -------------------------------------------------------------------------------
+      BUGFIX:  The code to determine whether the soil-moisture tendency will be      
+      solved with the single-step or the two-step process had some wrong unit        
+      conversions which meant that the two-step process would be used only in        
+      extremely heavy rainfall situations.  New code corrects this.  Also adds the   
+      (FAC2 > FLIMIT) test.                                                          
+         * Subroutine FAC2MIT added, making FLIMIT dependent on hard-coded SMCMAX    
+           values.  If SOILPARM.TBL is changed, this will break FAC2MIT.             
+      -------------------------------------------------------------------------------
+      -------------------------------------------------------------------------------
+      Limit the depth of the snow layer in computing soil heat flux (BPRC)           
+      -------------------------------------------------------------------------------
+      -------------------------------------------------------------------------------
+      Over sea-ice points and glacial land points, limit the depth of the snow layer 
+      in computing soil heat flux (BPRC)                                             
+      -------------------------------------------------------------------------------
+      -------------------------------------------------------------------------------
+      Test on some trace value of snow, instead of zero value, for computing snow    
+      density.  This may prevent some crazy values caused by a division by something 
+      near to zero. (BPRC) (SNEQV)                                                   
+      -------------------------------------------------------------------------------
+      -------------------------------------------------------------------------------
+      Subroutine WDFCND:  Computation of FACTR1 modified, and the maximum value for  
+      FACTR1 is limited:  FACTR1 cannot exceed FACTR2.                               
+                --- What are FACTR1 and FACTR2?                                      
+                --- What's a good generic way do describe this change?               
+      -------------------------------------------------------------------------------
+      -------------------------------------------------------------------------------
+      Runoff updated over non-glacial land points. (RUNOFF3,RUNOFF2 setting in SFLX?)
+      Over glacial land or sea ice, runoff goes directly to surface runoff RUNOFF1.  
+      -------------------------------------------------------------------------------
+      -------------------------------------------------------------------------------
+      Adjustment in NOPAC of ETA setting if ETP <= 0.                                
+      -------------------------------------------------------------------------------
+      -------------------------------------------------------------------------------
+      The "LOCAL" variable (for REDPRM settings) no longer used.                     
+      -------------------------------------------------------------------------------
+      -------------------------------------------------------------------------------
+      FLX3 initialized to zero in the case of shallow snow which sublimates.         
+      -------------------------------------------------------------------------------
+      -------------------------------------------------------------------------------
+      Subroutine TRANSP:  Dimension for GX no longer hard-coded.                     
+      -------------------------------------------------------------------------------
+
+2010-05-12
+
+     - Updating to version 3.2 (consistent with WRF release)
+
+     -------------------------------------------------------------------------------
+     -------------------------------------------------------------------------------
+     Changes to HRLDAS_COLLECT_DATA:
+
+        * The namelist file name may (optionally) be specified on the
+          command-line to consolidate_grib.exe, rather than always be
+          assumed to be "namelist.input".
+
+        * The namelist option "full_ic_frq" takes on a new meaning if the
+          user sets the value to -1: The full initial conditions will never
+          be computed.
+
+        * A limit to the solar zenith angle is applied, in an attempt to
+          prevent the subroutine RESCALE_SW_TIME_OFFSET from producing
+          bizarrely high values.
+
+        * A namelist option (logical RESCALE_SHORTWAVE) to turn on and off
+          the subroutine RESCALE_SW_TIME_OFFSET has been introduced.
+
+        * Transitioned to the WRF module_llxy.F map routines.  This allows
+          for a greater variety of map projections, and makes for greater
+          consistency between WRF and HRLDAS map computations.
+
+     -------------------------------------------------------------------------------
+     -------------------------------------------------------------------------------
+
+     Changes to Noah_hrldas_beta:
+
+        * Parallelized:
+
+              - Uses MPICH.
+
+              - Needs to be activated at compile time, in the
+                user_build_options file.
+
+              - Requires NetCDF4 and HDF5 libraries (and dependencies
+                of these libraries) built with the parallel
+                capabilities.  See documentation for these libraries
+                for details: http://www.unidata.ucar.edu/software/netcdf
+                and http://www.hdfgroup.org/HDF5
+
+              - Files are not compatible with pre-NetCDF4 programs and
+                utilities.
+  
+        * Introduce an updated SFCDIF routine, with namelist option SFCDIF_OPTION
+
+              - The routine SFCDIF_OFF had diverged from what was
+                currently being used in WRF.  We went back to WRF,
+                pulled out the MYJSFC SFCDIF subroutine, and adapted
+                this back to HRLDAS.  This routine is now available as
+                subroutine SFCDIF_MYJ, and may be activated by
+                namelist option SFCDIF_OPTION=1.  The original
+                SFCDIF_OFF is still available, selected with
+                SFCDIF_OPTION=0.
+
+        * CZIL choices, with namelist option IZ0TLND
+
+              - New namelist option IZ0TLND.  With IZ0TLND=0, CZIL is a
+                constant, set from the GENPARM.TBL.  With IZ0TLND=1, CZIL
+                is set as a function of the vegetation category's
+                roughness length.
+
+
+        * Specify restart files by name, rather than by date.  This allows
+          for different file names, and for the full path name to be
+          specified in the namelist.  The string "<LATEST>" in the requested
+          restart file name will be replaced by the date (YYYYMMDDHH)
+          of the latest available restart file matching the rest of
+          the specified file name.
+
+        * Add OUTDIR namelist option, to direct output (including restart
+          files) the specified directory
+
+        * Add namelist option UPDATE_SNOW_FROM_FORCING to control
+          whether snow is updated from the forcing files during
+          integration.
+
+        * Overhaul of output procedures, allows for easier tuning by
+          the user.  Adding or removing variables from the output
+          files is now simply a matter of adding or removing a small
+          subroutine call for each variable.
+
+        * Added the energy budget residual calculation.  Output as 2d
+          array NOAHRES.
+
+        * Correct frequency for creating the restart files.
+
+     -------------------------------------------------------------------------------
+     -------------------------------------------------------------------------------
+
+     Changes to Noah LSM version 3.2 since version 3.1
+
+        * Z0 for snow cover
+
+            - Roughness length Z0 over snow-covered surfaces has been modified
+              (subroutine SNOWZ0) to account for the accumulation of snow
+              burying the surface features which contribute to roughness.
+
+              An "effective" roughness length for the snow-covered surface is
+              computed, Z0EFF.  For deep snow, Z0EFF is set to 0.001 (deep snow
+              covering the roughness features of the surface).  For shallower
+              snow, Z0EFF is set to the snow-free roughness length, Z0BRD,
+              reduced by SNOWH/7.
+
+              To account for fractional snow cover, the final Z0 term is
+              computed as a weighted average between the snow-free Z0BRD value
+              and the effective snow albedo, Z0EFF.
+
+        * LVCOEF:
+
+            - The surface albedo in the presence of snowcover (subroutine
+              ALCALC) is computed following Livneh.  In version 3.2, this has
+              been implemented with a user-definable coefficient, LVCOEF, set
+              in file GENPARM.TBL.  LVCOEF should range between zero and one.
+
+              The Livneh scheme boosts the snow albedo toward 85%, then reduces
+              it according to the age of the snow.  LVCOEF controls how much
+              the albedo is boosted toward 85%.  A default value LVCOEF=0.5
+              will have the same results as in version 3.1, i.e., an average of
+              the input SNOALB (which tends to range from around 50% to around
+              75%) and 85%.  Values lower than 0.5 will tune this more toward
+              the incoming SNOALB (and ultimately lower albedos).  Values
+              greater than 0.5 will tune this more toward 85% (and ultimately
+              higher albedos).
+
+        * SMAV:
+
+            - SMAV: Soil moisture availability at each soil layer, computed as a
+              fraction between the wilting point SMCWLT (SMAV=0.0) and
+              saturation soil moisture SMCMAX (SMAV=1.0).  No effect on model
+              results.  Diagnostic field output in WRF as "SMCREL: Relative soil
+              moisture".
+
+        * FLX1:
+
+            - The FLX1 term needs to account for the exchange of heat required
+              to change the temperature of falling precipitation from air
+              temperature to skin temperature.  This exchange is considered in
+              computing fluxes and skin temperature, but for rain events, was
+              not included in the budget term FLX1.  So the energy budget would
+              show large residual values for rain events.  This correction has
+              no effect on the model integration, but will make the budget
+              calculations which use FLX1 more accurate.
+
+        * DTOT:
+
+            - Polar modification: over sea/land ice points, DTOT is limited so
+              as not to effectively shut off heat exchange between soil (i.e.,
+              ice) layers and the surface.  In SNOPAC, this limit was applied
+              regardless of surface type (ice or land).  In Version 3.2, this
+              has been corrected to apply only to sea/land ice points.  Could
+              have some effect on results in areas of deep snow.
+
+        * RC:
+
+            - Canopy Resistance, RC, normally set in the call to subroutine
+              CANRES, is set to zero if CANRES is not called because SHDFAC is
+              0.  This change should have no effect on model integration, but
+              since RC is an output variable, this change insures that the field
+              is initialized where there is no vegetation.
+
+     -------------------------------------------------------------------------------
+     -------------------------------------------------------------------------------
+
+     Changes to Single-Layer Urban Canopy Model for version 3.2
+
+        * Revised URBPARM.TBL:
+
+            - Specification of the morphology of the urban canyon is
+              recast in more physically and geometrically meaningful
+              terms.
+
+        * Replaced subroutine MOS with SFCDIF_URB, derived from the
+          WRF SFCDIF routine.  This entails 4 more 2d arrays for 
+	  CMR, CHR, CMS, CHS, which are updated during integration.
+
+        * Use Akanda approach for ZT.  Adds a coefficient, AKANDA_URBAN,
+          to URBPARM.TBL
+
+        * Other changes (arrays, URBPARM.TBL entries) related to
+          compatibility with other Urban Canopy Models available in
+          WRF, but not directly relavant to the Single-Layer UCM used
+          in HRLDAS.
+
+     -------------------------------------------------------------------------------
+     -------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+2011-04-25
+-------------------------------------------------------------------------------
+
+   * module_sf_noahlsm.F
+
+       - Apply DF1 conductivity change only for permanent land ice, 
+         not for both land ice and sea ice.
+
+       - SHDFAC becomes INTENT (INOUT) in subroutine REDPRM, because
+         some compilers can be very disturbed if an INTENT(OUT) variable
+         is not necessarily set in the subroutine.
+
+   * module_model_constants.F
+
+       - update source code to match WRFv3.3 release.
+
+   * Noah_hrldas_driver.F, module_sfcdif_wrf.F, namelist.hrldas
+
+       - Allow for different levels of wind and temperature forcing.
+
+   * module_grib1.F
+
+       - Recognize Time Range Indicator 10, and handle the field
+         encoded in two bytes.

@@ -1,0 +1,88 @@
+
+&file_info
+  ldasout_flnm_template = "/d5/kmanning/WORKDIR/Run/<yyyymmddhh>.LDASOUT_DOMAIN1"
+  plot_startdate = "2002060100"
+  plot_enddate   = "2002062000"
+  plot_interval  = 1
+/
+
+&plot_info
+  ts_lat = 38.32
+  ts_lon = -98.75
+  fldname = "SOIL_M", soil_level = 1
+  y_minimum = 0.0
+  y_maximum = 0.4
+  y_interval = 0.125
+  color="cyan"
+  callframe = .FALSE.
+/
+
+&plot_info
+  fldname = "SOIL_M", soil_level = 2
+  y_minimum = 0.0
+  y_maximum = 0.4
+  y_interval = 0.125
+  color="green"
+  callframe = .FALSE.
+/ 
+
+&plot_info
+  fldname = "SOIL_M", soil_level = 3
+  y_minimum = 0.0
+  y_maximum = 0.4
+  y_interval = 0.125
+  color="blue"
+  callframe = .FALSE.
+/ 
+
+&plot_info
+  fldname = "SOIL_M", soil_level = 4
+  y_minimum = 0.0
+  y_maximum = 0.4
+  y_interval = 0.125
+  color="red2"
+  callframe = .TRUE.
+/ 
+
+&plot_info
+  fldname = "SOIL_T", soil_level = 1
+  y_minimum = 260.0
+  y_maximum = 310.0
+  y_interval = 5.0
+  color="magenta"
+  callframe = .FALSE.
+/ 
+
+&plot_info
+  fldname = "SOIL_T", soil_level = 2
+  y_minimum = 260.0
+  y_maximum = 310.0
+  y_interval = 5.0
+  color="#FF0000"
+  callframe = .FALSE.
+/ 
+&plot_info
+  fldname = "SOIL_T", soil_level = 3
+  y_minimum = 260.0
+  y_maximum = 310.0
+  y_interval = 5.0
+  color="#AA0000"
+  callframe = .FALSE.
+/ 
+&plot_info
+  fldname = "SOIL_T", soil_level = 4
+  y_minimum = 260.0
+  y_maximum = 310.0
+  y_interval = 5.0
+  color="#00AA00"
+  callframe = .TRUE.
+/ 
+
+&plot_info
+  fldname = "GRDFLX", 
+  y_minimum = -100.0
+  y_maximum = 600.0
+  y_interval = 25.0
+  color="blue"
+  callframe = .TRUE.
+/ 

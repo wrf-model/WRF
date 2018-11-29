@@ -1,0 +1,115 @@
+
+&file_info
+  ldasout_flnm_template = "/wig/kmanning/more_hrldas/grib2/redesign/STEP/resetNO/<yyyymmddhh>.LDASIN_DOMAIN1"
+  plot_startdate = "2002052000"
+  plot_enddate   = "2002052306"
+  plot_interval  = 1
+/
+
+&plot_info
+  info = "IHOP Station 1"
+  ts_lat = 36.4728
+  ts_lon = -100.6179
+  fldname = "SWDOWN", soil_level = 1
+  y_minimum = 0.0
+  y_maximum = 0.4
+  y_interval = 0.125
+  color="cyan"
+  callframe = .FALSE.
+/
+
+&plot_info
+  info = "IHOP Station 2"
+  ts_lat = 36.6221
+  ts_lon = -100.6270
+  fldname = "SWDOWN", soil_level = 1
+  y_minimum = 0.0
+  y_maximum = 0.4
+  y_interval = 0.125
+  color="cyan"
+  callframe = .FALSE.
+/
+
+&plot_info
+  info = "IHOP Station 3"
+  ts_lat = 36.8610
+  ts_lon = -100.5945
+  fldname = "SWDOWN", soil_level = 1
+  y_minimum = 0.0
+  y_maximum = 0.4
+  y_interval = 0.125
+  color="cyan"
+  callframe = .FALSE.
+/
+
+&plot_info
+  info = "IHOP Station 4"
+  ts_lat = 37.3579
+  ts_lon = -98.2446
+  fldname = "SWDOWN", soil_level = 1
+  y_minimum = 0.0
+  y_maximum = 0.4
+  y_interval = 0.125
+  color="cyan"
+  callframe = .FALSE.
+/
+
+&plot_info
+  info = "IHOP Station 5"
+  ts_lat = 37.3781
+  ts_lon = -98.1636
+  fldname = "SWDOWN", soil_level = 1
+  y_minimum = 0.0
+  y_maximum = 0.4
+  y_interval = 0.125
+  color="cyan"
+  callframe = .FALSE.
+/
+
+&plot_info
+  info = "IHOP Station 6"
+  ts_lat = 37.3545
+  ts_lon = -97.6533
+  fldname = "SWDOWN", soil_level = 1
+  y_minimum = 0.0
+  y_maximum = 0.4
+  y_interval = 0.125
+  color="cyan"
+  callframe = .FALSE.
+/
+
+&plot_info
+  info = "IHOP Station 7"
+  ts_lat = 37.3132
+  ts_lon = -96.9387
+  fldname = "SWDOWN", soil_level = 1
+  y_minimum = 0.0
+  y_maximum = 0.4
+  y_interval = 0.125
+  color="cyan"
+  callframe = .FALSE.
+/
+
+&plot_info
+  info = "IHOP Station 8"
+  ts_lat = 37.4070
+  ts_lon = -96.7656
+  fldname = "SWDOWN", soil_level = 1
+  y_minimum = 0.0
+  y_maximum = 0.4
+  y_interval = 0.125
+  color="cyan"
+  callframe = .FALSE.
+/
+
+&plot_info
+  info = "IHOP Station 9"
+  ts_lat = 37.4103
+  ts_lon = -96.5671
+  fldname = "SWDOWN", soil_level = 1
+  y_minimum = 0.0
+  y_maximum = 0.4
+  y_interval = 0.125
+  color="cyan"
+  callframe = .FALSE.
+/

@@ -1,0 +1,12 @@
+
+# flag from HRLDAS
+COMPILERF90 = $(COMPILER90)
+FREESOURCE      =
+MODFLAG               =       -I
+LIBJASPER       =       -ljpeg -L/scholar/kmanning/jasper/lib -ljasper
+INCJASPER       =       -I/scholar/kmanning/jasper/include
+NETCDFMOD       =       -I $(NETCDFINC)
+BZIP2           =       YES
+BZIP2_LIB       =       -lbz2
+BZIP2_INCLUDE   =       -I/usr/include
+CC              =       cc

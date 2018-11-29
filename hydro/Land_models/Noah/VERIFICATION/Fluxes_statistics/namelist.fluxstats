@@ -1,0 +1,9 @@
+&fluxstats
+
+fluxobs_directory = "/scholar/kmanning/LSM_STEP/IHOP_obs/LE_corrected_from_SEB"
+
+ldasout_directory = "/scholar2/kmanning/VERY_TEMPORARY_HRLDAS/Run_3.2"
+ldasout_directory = "/scholar/kmanning/more_hrldas/hrldas-v3.1/Run"
+
+
+/

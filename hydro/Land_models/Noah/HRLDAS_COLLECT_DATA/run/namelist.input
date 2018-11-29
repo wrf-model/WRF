@@ -1,0 +1,92 @@
+&files
+ STARTDATE        = "2001-08-01_00"
+ ENDDATE          = "2001-09-01_00"
+ DataDir          = "/scholar/kmanning/more_hrldas/data"
+ FULL_IC_FRQ      = 0
+ RAINFALL_INTERP  = 0
+ RESCALE_SHORTWAVE = .FALSE.
+
+! geo_em_flnm      = "/scholar/kmanning/more_hrldas/grib2/redesign/STEP/geo_em.d01.nc"
+! wrfinput_flnm    = "/scholar/kmanning/more_hrldas/grib2/redesign/STEP/wrfinput_d01"
+
+! geo_em_flnm      = "/scholar/kmanning/more_hrldas/HRLDAS/HRLDAS_COLLECT_DATA/run/combined.minimal"
+! wrfinput_flnm    = "/scholar/kmanning/more_hrldas/HRLDAS/HRLDAS_COLLECT_DATA/run/combined.minimal"
+
+! geo_em_flnm      = "/scholar/kmanning/more_hrldas/devel-3.2/wps_merc/geo_em.d01.nc"
+! wrfinput_flnm    = "/scholar/kmanning/more_hrldas/devel-3.2/wps_merc/wrfinput_d01"
+
+! geo_em_flnm      = "/scholar/kmanning/more_hrldas/devel-3.2/wps_ps/geo_em.d01.nc"
+! wrfinput_flnm    = "/scholar/kmanning/more_hrldas/devel-3.2/wps_ps/wrfinput_d01"
+
+! geo_em_flnm      = "/scholar/kmanning/more_hrldas/devel-3.2/wps_lambert/geo_em.d01.nc"
+! wrfinput_flnm    = "/scholar/kmanning/more_hrldas/devel-3.2/wps_lambert/wrfinput_d01"
+
+ geo_em_flnm      = "/scholar/kmanning/more_hrldas/devel-3.2/wps_latlon/geo_em.d01.nc"
+ wrfinput_flnm    = "/scholar/kmanning/more_hrldas/devel-3.2/wps_latlon/wrfinput_d01"
+
+! geo_em_flnm      = "/scholar/kmanning/more_hrldas/devel-3.2/wps_latlon2/geo_em.d01.nc"
+! wrfinput_flnm    = "/scholar/kmanning/more_hrldas/devel-3.2/wps_latlon2/wrfinput_d01"
+
+ Zfile_template     = "<DataDir>/ETA_SFC_ELEVATION.GRIB"
+
+ Tfile_template     = "<DataDir>/<YYYY>/<MM>/<DD>/EDAS.SFanal.T.<date>"
+ Ufile_template     = "<DataDir>/<YYYY>/<MM>/<DD>/EDAS.SFanal.U.<date>",
+ Vfile_template     = "<DataDir>/<YYYY>/<MM>/<DD>/EDAS.SFanal.V.<date>",
+ Pfile_template     = "<DataDir>/<YYYY>/<MM>/<DD>/EDAS.SFanal.P.<date>",
+ Qfile_template     = "<DataDir>/<YYYY>/<MM>/<DD>/EDAS.SFanal.Q.<date>",
+ LWfile_template    = "<DataDir>/<YYYY>/<MM>/<DD>/EDAS.SFfcst.LW.<date>",
+ WEASDfile_template = "<DataDir>/<YYYY>/<MM>/<DD>/EDAS.SFanal.WEASD.<date>",
+ CANWTfile_template = "<DataDir>/<YYYY>/<MM>/<DD>/EDAS.SFanal.CANWAT.<date>",
+ LANDSfile_template = "<DataDir>/<YYYY>/<MM>/<DD>/EDAS.SFanal.LANDSEA.<date>",
+ SKINTfile_template = "<DataDir>/<YYYY>/<MM>/<DD>/EDAS.SFanal.SKINTEMP.<date>",
+
+ STfile_template    = "<DataDir>/<YYYY>/<MM>/<DD>/EDAS.SFanal.SOIL_T_000-010.<date>",
+                      "<DataDir>/<YYYY>/<MM>/<DD>/EDAS.SFanal.SOIL_T_010-040.<date>",
+                      "<DataDir>/<YYYY>/<MM>/<DD>/EDAS.SFanal.SOIL_T_040-100.<date>",
+                      "<DataDir>/<YYYY>/<MM>/<DD>/EDAS.SFanal.SOIL_T_100-200.<date>",
+
+ SMfile_template    = "<DataDir>/<YYYY>/<MM>/<DD>/EDAS.SFanal.SOIL_M_000-010.<date>",
+                      "<DataDir>/<YYYY>/<MM>/<DD>/EDAS.SFanal.SOIL_M_010-040.<date>",
+                      "<DataDir>/<YYYY>/<MM>/<DD>/EDAS.SFanal.SOIL_M_040-100.<date>",
+                      "<DataDir>/<YYYY>/<MM>/<DD>/EDAS.SFanal.SOIL_M_100-200.<date>",
+
+ SWfile_primary     = "<DataDir>/SRB_restamped/SW.<date>30.grb",
+
+ SWfile_secondary   = "<DataDir>/<YYYY>/<MM>/<DD>/EDAS.SFfcst.SW.<date>",
+
+ PCPfile_primary    = "<DataDir>/<YYYY>/<MM>/<DD>/ST4.<date>.01h"
+ ! PCPfile_primary  = "<DataDir>/<YYYY>/<MM>/<DD>/EDAS.SFfcst.PCP.<date>",
+
+ PCPfile_secondary  = "<DataDir>/<YYYY>/<MM>/<DD>/EDAS.SFfcst.PCP.<date>",
+/
+
+<VTABLE>
+-----+------+------+------+----------+-----------+-----------------------------------------+-----------------------+
+GRIB1| Level| From |  To  |          |           |                                         |GRIB2|GRIB2|GRIB2|GRIB2|
+Param| Type |Level1|Level2| Name     | Units     | Description                             |Discp|Catgy|Param|Level|
+-----+------+------+------+----------+-----------+-----------------------------------------+-----------------------+
+  11 | 105  |   2  |      | T2D      | K         | Temperature       at 2 m                |  0  |  0  |  0  | 103 |
+  51 | 105  |   2  |      | Q2D      | kg kg{-1} | Specific Humidity at 2 m                |  0  |  1  |  0  | 103 |
+  33 | 105  |  10  |      | U2D      | m s-1     | U                 at 10 m               |  0  |  2  |  2  | 103 |
+  34 | 105  |  10  |      | V2D      | m s-1     | V                 at 10 m               |  0  |  2  |  3  | 103 |
+   1 |   1  |   0  |      | PSFC     | Pa        | Surface Pressure                        |  0  |  3  |  0  |   1 |
+ 144 | 112  |   0  |  10  | SMOIS_1  | kg m-3    | Soil Moist 0-10 cm below grn layer (Up) |  2  |  0  | 192 | 106 |
+ 144 | 112  |  10  |  40  | SMOIS_2  | kg m-3    | Soil Moist 10-40 cm below grn layer     |  2  |  0  | 192 | 106 |
+ 144 | 112  |  40  | 100  | SMOIS_3  | kg m-3    | Soil Moist 40-100 cm below grn layer    |  2  |  0  | 192 | 106 |
+ 144 | 112  | 100  | 200  | SMOIS_4  | kg m-3    | Soil Moist 100-200 cm below gr layer    |  2  |  0  | 192 | 106 |
+  85 | 112  |   0  |  10  | STEMP_1  | K         | T 0-10 cm below ground layer (Upper)    |  2  |  0  |  2  | 106 |
+  85 | 112  |  10  |  40  | STEMP_2  | K         | T 10-40 cm below ground layer (Upper)   |  2  |  0  |  2  | 106 |
+  85 | 112  |  40  | 100  | STEMP_3  | K         | T 40-100 cm below ground layer (Upper)  |  2  |  0  |  2  | 106 |
+  85 | 112  | 100  | 200  | STEMP_4  | K         | T 100-200 cm below ground layer (Bottom)|  2  |  0  |  2  | 106 |
+  91 |   1  |   0  |      | SEAICE   | proprtn   | Ice flag                                | 10  |  2  |  0  |   1 |
+  81 |   1  |   0  |      | LANDSEA  | proprtn   | Land/Sea flag (1=land,0=sea in NAM)     |  2  |  0  |  0  |   1 |
+   7 |   1  |   0  |      | TERRAIN  | m         | Terrain field of source analysis        |  2  |  0  |  7  |   1 |
+  11 |   1  |   0  |      | SKINTEMP | K         | Skin temperature (can use for SST also) |  0  |  0  |  0  |   1 |
+  61 |   1  |   0  |      | RAINRATE | kg m-2    | Accumulated precipitation               |  0  |  1  |  8  |   1 |
+  65 |   1  |   0  |      | WEASD    | kg m-2    | Water equivalent snow depth             |  0  |  1  | 13  |   1 |
+ 223 |   1  |   0  |      | CANWAT   | kg m-2    | Plant Canopy Surface Water              |  2  |  0  | 196 |   1 |
+ 204 |   1  |   0  |      | SWDOWN   | W m-2     | Downward short-wave radiation flux      |  0  |  4  | 192 |   1 |
+ 205 |   1  |   0  |      | LWDOWN   | W m-2     | Downward long-wave radiation flux       |  0  |  5  | 192 |   1 |
+ 999 | 999  |   0  |      | TERRAIN  | m         | Source model terrain elevation          |  0  |  3  |  5  |   1 |
+-----+------+------+------+----------+-----------+-----------------------------------------+-----------------------+
+</VTABLE>

@@ -1,0 +1,16 @@
+<<<<<<< HEAD
+bde2fa368be5a8013cf890b5f0572fef22329bbb
+Author: Michael Barlage <barlage@ucar.edu>
+Date:   Fri Oct 21 10:07:26 2016 -0600
+=======
+dist_params_omp
+commit b4512d40d44913b0cbf0c9c2f016571525de238b
+Author: Wei Yu <weiyu@ucar.edu>
+Date:   Wed Jan 20 14:01:29 2016 -0700
+>>>>>>> 4893aa9c026b40a44ec14148a0d659ddfab7f814
+
+commit 2162e6bfb88f6a7397f8f6ae1da9739b5c74e854
+Author: Michael Barlage <barlage@ucar.edu>
+Date:   Fri Sep 30 14:33:58 2016 -0600
+
+

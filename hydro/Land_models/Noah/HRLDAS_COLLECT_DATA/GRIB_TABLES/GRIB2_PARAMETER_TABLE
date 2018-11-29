@@ -1,0 +1,537 @@
+############################################################################################
++ 0 + 0 + Temperature
+############################################################################################
+  0 | Temperature                           | K
+  1 | Virtual temperature                   | K
+  2 | Potential temperature                 | K
+  3 | Equivalent potential temperature      | K
+  4 | Maximum temperature                   | K   (Deprecated)
+  5 | Minimum temperature                   | K   (Deprecated)
+  6 | Dew point temperature                 | K
+  7 | Dew point depression (or deficit)     | K
+  8 | Lapse rate                            | K m{-1}
+  9 | Temperature anomaly                   | K
+ 10 | Latent heat net flux                  | W m{-2}
+ 11 | Sensible heat net flux                | W m{-2}
+ 12 | Heat index                            | K
+ 13 | Wind chill factor                     | K
+ 14 | Minumum dew point depression          | K   (Deprecated)
+ 15 | Virtual potential temperature         | K
+ 16 | Snow phase change heat flux           | W m{-2}
+ 17 | Skin temperature                      | K
+255 | Missing                               | Missing
+############################################################################################
++ 0 + 1 + Moisture
+############################################################################################
+  0 | Specific humidity                                          | kg kg{-1}
+  1 | Relative humidity                                          | %
+  2 | Humidity mixing ratio                                      | kg kg{-1}
+  3 | Precipitable water                                         | kg m{-2}
+  4 | Vapor pressure                                             | Pa
+  5 | Saturation deficit                                         | Pa
+  6 | Evaporation                                                | kg m{-2}
+  7 | Precipitation rate  (Deprecated)                           | kg m{-2} s{-1}
+  8 | Total precipitation (Deprecated)                           | kg m{-2}
+  9 | Large scale precipitation (non-convective) (Deprecated)    | kg m{-2}
+ 10 | Convective precipitation (Deprecated)                      | kg m{-2}
+ 11 | Snow depth                                                 | m
+ 12 | Snowfall rate water equivalent (Deprecated)                | kg m{-2} s{-1}
+ 13 | Water equivalent of accumulated snow depth (Deprecated)    | kg m{-2}
+ 14 | Convective snow (Deprecated)                               | kg m{-2}
+ 15 | Large scale snow (Deprecated)                              | kg m{-2}
+ 16 | Snow melt                                                  | kg m{-2}
+ 17 | Snow age                                                   | day
+ 18 | Absolute humidity                                          | kg m{-3}
+ 19 | Precipitation type                                         | Code Table 4.201
+ 20 | Integrated liquid water                                    | kg m{-2}
+ 21 | Condensate                                                 | kg kg{-1}
+ 22 | Cloud mixing ratio                                         | kg kg{-1}
+ 23 | Ice water mixing ratio                                     | kg kg{-1}
+ 24 | Rain mixing ratio                                          | kg kg{-1}
+ 25 | Snow mixing ratio                                          | kg kg{-1}
+ 26 | Horizontal moisture convergence                            | kg kg{-1} s{-1}
+ 27 | Maximum relative humidity (Deprecated)                     | %
+ 28 | Maximum absolute humidity (Deprecated)                     | kg m{-3}
+ 29 | Total snowfall (Deprecated)                                | m
+ 30 | Precipitable water category                                | Code Table 4.202
+ 31 | Hail                                                       | m
+ 32 | Graupel (snow pellets)                                     | kg kg{-1}
+ 33 | Categorical rain                                           | Code Table 4.222
+ 34 | Categorical freezing rain                                  | Code Table 4.222
+ 35 | Categorical ice pellets                                    | Code Table 4.222
+ 36 | Categorical snow                                           | Code Table 4.222
+ 37 | Convective precipitation rate                              | kg m{-2} s{-1}
+ 38 | Horizontal moisture divergence                             | kg kg{-1} s{-1}
+ 39 | Percent frozen precipitation                               | %
+ 40 | Potential evaporation                                      | kg m{-2}
+ 41 | Potential evaporation rate                                 | W m{-2}
+ 42 | Snow cover                                                 | %
+ 43 | Rain fraction of total cloud water                         | Proportion
+ 44 | Rime factor                                                | Numeric
+ 45 | Total column integrated rain                               | kg m{-2}
+ 46 | Total column integrated snow                               | kg m{-2}
+ 47 | Large scale water precipitation (non-convective)           | kg m{-2}
+ 48 | Convective water precipitation                             | kg m{-2}
+ 49 | Total water precipitation                                  | kg m{-2}
+ 50 | Total snow precipitation                                   | kg m{-2}
+ 51 | Total column water    (vapour + cloud water/ice)           | kg m{-2}
+ 52 | Total precipitation rate                                   | kg m{-2} s{-1}
+ 53 | Total snowfall rate water equivalent                       | kg m{-2} s{-1}
+ 54 | Large scale precipitation rate                             | kg m{-2} s{-1}
+ 55 | Convective snowfall rate water equivalent                  | kg m{-2} s{-1}
+ 56 | Large scale snowfall rate water equivalent                 | kg m{-2} s{-1}
+ 57 | Total snowfall rate                                        | m s{-1}
+ 58 | Convective snowfall rate                                   | m s{-1}
+ 59 | Large scale snowfall rate                                  | m s{-1}
+ 60 | Snow depth water equivalent                                | kg m{-2}
+ 61 | Snow density                                               | kg m{-3}
+ 62 | Snow evaporation                                           | kg m{-2}
+ 64 | Total column integrated water vapour                       | kg m{-2}
+ 65 | Rain precipitation rate                                    | kg m{-2} s{-1}
+ 66 | Snow precipitation rate                                    | kg m{-2} s{-1}
+ 67 | Freezing rain precipitation rate                           | kg m{-2} s{-1}
+ 68 | Ice pellets precipitation rate                             | kg m{-2} s{-1}
+192 | Categorical rain                                           | Code Table 4.222
+193 | Categorical freezing rain                                  | Code Table 4.222
+194 | Categorical ice pellets                                    | ???????
+195 | Categorical snow                                           | Code Table 4.222
+196 | Convective precipitation rate                              | kg m{-2} s{-1}
+200 | Potential Evaporation Rate                                 | W m{-2}
+201 | Snow Cover                                                 | %
+202 | Rain Fraction of Total Liquid Water                        | Proportion
+203 | Rime Factor                                                | Numeric
+204 | Total Column Integrated Rain                               | kg m{-2}
+205 | Total column integrated snow                               | kg m{-2}
+209 | Total column-integrated supercooled liquid water           | kg m{-2}
+210 | Total column-integrated melting ice                        | kg m{-2}
+255 | Missing                                                    | Missing
+############################################################################################
++ 0 + 2 + Momentum
+############################################################################################
+  0 | Wind direction (from which blowing)                        | deg true
+  1 | Wind speed                                                 | m s{-1}
+  2 | u-component of wind                                        | m s{-1}
+  3 | v-component of wind                                        | m s{-1}
+  4 | Stream function                                            | m2 s{-1}
+  5 | Velocity potential                                         | m2 s{-1}
+  6 | Montgomery stream function                                 | m2 s{-2}
+  7 | Sigma coordinate vertical velocity                         | s{-1}
+  8 | Vertical velocity (pressure)                               | Pa s{-1}
+  9 | Vertical velocity (geometric)                              | m s{-1}
+ 10 | Absolute vorticity                                         | s{-1}
+ 11 | Absolute divergence                                        | s{-1}
+ 12 | Relative vorticity                                         | s{-1}
+ 13 | Relative divergence                                        | s{-1}
+ 14 | Potential vorticity                                        | K m2 kg{-1} s{-1}
+ 15 | Vertical u-component shear                                 | s{-1}
+ 16 | Vertical v-component shear                                 | s{-1}
+ 17 | Momentum flux, u component                                 | N m{-2}
+ 18 | Momentum flux, v component                                 | N m{-2}
+ 19 | Wind mixing energy                                         | J
+ 20 | Boundary layer dissipation                                 | W m{-2}
+ 21 | Maximum wind speed (deprecated)                            | m s{-1}
+ 22 | Wind speed (gust)                                          | m s{-1}
+ 23 | u-component of wind (gust)                                 | m s{-1}
+ 24 | v-component of wind (gust)                                 | m s{-1}
+ 25 | Vertical speed shear                                       | s{-1}
+ 26 | Horizontal momentum flux                                   | N m{-2}
+ 27 | U-component storm motion                                   | m s{-1}
+ 28 | V-component storm motion                                   | m s{-1}
+ 29 | Drag coefficient                                           | Numeric
+ 30 | Frictional velocity                                        | m s{-1}
+192 | Vertical speed shear                                       | s{-1}
+194 | U-Component Storm Motion                                   | m s{-1}
+195 | V-Component Storm Motion                                   | m s{-1}
+197 | Frictional Velocity                                        | m s{-1}
+255 | Missing                                                    | Missing
+############################################################################################
++ 0 + 3 + Mass
+############################################################################################
+  0 | Pressure                                                   | Pa
+  1 | Pressure reduced to MSL                                    | Pa
+  2 | Pressure tendency                                          | Pa s{-1}
+  3 | ICAO Standard Atmosphere Reference Height                  | m
+  4 | Geopotential                                               | m2 s{-2}
+  5 | Geopotential height                                        | gpm
+  6 | Geometric height                                           | m
+  7 | Standard deviation of height                               | m
+  8 | Pressure anomaly                                           | Pa
+  9 | Geopotential height anomaly                                | gpm
+ 10 | Density                                                    | kg m{-3}
+ 11 | Altimeter setting                                          | Pa
+ 12 | Thickness                                                  | m
+ 13 | Pressure altitude                                          | m
+ 14 | Density altitude                                           | m
+ 15 | 5-wave geopotential height                                 | gpm
+ 16 | Zonal flux of gravity wave stress                          | N m{-2}
+ 17 | Meridional flux of gravity wave stress                     | N m{-2}
+ 18 | Planetary boundary layer height                            | m
+ 19 | 5-wave geopotential height anomaly                         | gpm
+ 20 | Standard deviation of sub-grid scale orography             | m
+ 21 | Angle of sub-gridscale orography                           | rad
+ 22 | Slope of sub-gridscale orography                           | Numeric
+ 23 | Gravity wave dissipation                                   | W m{-2}
+ 24 | Anisotropy of sub-gridscale orography                      | Numeric
+192 | MSLP ( Eta Reduction)                                      | Pa
+193 | 5-Wave Geopotential Height                                 | gpm
+194 | Zonal Flux of Gravity Wave Stress                          | N m{-2}
+195 | Meridional Flux of Gravity Wave Stress                     | N m{-2}
+196 | Planetary Boundary Layer Height                            | m
+197 | 5-Wave Geopotential Height Anomaly                         | gpm
+200 | Pressure of level from which parcel was lifted             | Pa
+255 | Missing                                                    | Missing
+############################################################################################
++ 0 + 4 + Short-wave Radiation
+############################################################################################
+  0 | Net short-wave radiation flux (surface) (Deprecated)             | W m{-2}
+  1 | Net short-wave radiation flux (top of atmosphere) (Deprecated)   | W m{-2}
+  2 | Short wave radiation flux (Deprecated)                           | W m{-2}
+  3 | Global radiation flux                                            | W m{-2}
+  4 | Brightness temperature                                           | K
+  5 | Radiance (with respect to wave number)                           | W m{-1} sr{-1}
+  6 | Radiance (with respect to wave length)                           | W m{-3} sr{-1}
+  7 | Downward short-wave radiation flux                               | W m{-2}
+  8 | Upward short-wave radiation flux                                 | W m{-2}
+  9 | Net short wave radiation flux                                    | W m{-2}
+ 10 | Photosynthetically active radiation                              | W m{-2}
+ 11 | Net short-wave radiation flux, clear sky                         | W m{-2}
+ 12 | Downward UV radiation                                            | W m{-2}
+ 50 | UV index (under clear sky)                                       | Numeric
+ 51 | UV index                                                         | Numeric
+192 | Downward short-wave radiation flux                               | W m{-2}
+193 | Upward short-wave radiation flux                                 | W m{-2}
+255 | Missing                                                          | Missing
+############################################################################################
++ 0 + 5 + Long-wave Radiation
+############################################################################################
+  0 | Net long wave radiation flux (surface) (Deprecated)               | W m{-2}
+  1 | Net long wave radiation flux (top of atmosphere) (Deprecated)     | W m{-2}
+  2 | Long wave radiation flux (Deprecated)                             | W m{-2}
+  3 | Downward long-wave radiation flux                                 | W m{-2}
+  4 | Upward long-wave radiation flux                                   | W m{-2}
+  5 | Net long wave radiation flux                                      | W m{-2}
+  6 | Net long-wave radiation flux, clear sky                           | W m{-2}
+192 | Downward long-wave radiation flux                                 | W m{-2}
+193 | Upward long-wave radiation flux                                   | W m{-2}
+255 | Missing                                                           | Missing
+############################################################################################
++ 0 + 6 + Cloud
+############################################################################################
+ 0 | Cloud Ice                                                         | kg m{-2}
+ 1 | Total cloud cover                                                 | %
+ 2 | Convective cloud cover                                            | %
+ 3 | Low cloud cover (Deprecated)                                      | %
+ 4 | Medium cloud cover (Deprecated)                                   | %
+ 5 | High cloud cover (Deprecated) | %
+ 6 | Cloud water | kg m{-2}
+ 7 | Cloud amount | %
+ 8 | Cloud type | code table (4.203)
+ 9 | Thunderstorm maximum tops | m
+10 | Thunderstorm coverage | code table (4.204)
+11 | Cloud base | m
+12 | Cloud top | m
+13 | Ceiling | m
+14 | Non-convective cloud cover | %
+15 | Cloud work function | J kg{-1}
+16 | Convective cloud efficiency | Proportion
+17 | Total condensate | kg kg{-1}
+18 | Total column-integrated cloud water | kg m{-2}
+19 | Total column-integrated cloud ice | kg m{-2}
+20 | Total column-integrated condensate | kg m{-2}
+21 | Ice fraction of total condensate | Proportion
+22 | Cloud cover | %
+23 | Cloud ice mixing ratio | kg kg{-1}
+24 | Sunshine | Numeric
+193 | Cloud Work Function | J kg{-1}
+194 | Convective Cloud Efficiency | Proportion
+196 | Total column-integrated cloud water | kg m{-2}
+197 | Total Column-Integrated Cloud Ice | kg m{-2}
+198 | Total Column-Integrated Condensate | kg m{-2}
+255 | Missing | Missing
+############################################################################################
++ 0 + 7 + Thermodynamic Stability Indices
+############################################################################################
+ 0 | Parcel lifted index (to 500 hPa) | K
+ 1 | Best lifted index (to 500 hPa) | K
+ 2 | K index | K
+ 3 | KO index | K
+ 4 | Total totals index | K
+ 5 | Sweat index | Numeric
+ 6 | Convective available potential energy | J kg{-1}
+ 7 | Convective inhibition | J kg{-1}
+ 8 | Storm relative helicity | J kg{-1}
+ 9 | Energy helicity index | Numeric
+10 | Surface lifted index | K
+11 | Best (4-layer) lifted index | K
+12 | Richardson number | Numeric
+192 | Surface Lifted Index | ???????
+193 | Best (4 layer) Lifted Index | ???????
+255 | Missing | Missing
+############################################################################################
++ 0 + 13 + Aerosols
+############################################################################################
+ 0 | Aerosol type | code table (4.205)
+255 | Missing | Missing
+############################################################################################
++ 0 + 14 + Trace Gases
+############################################################################################
+ 0 | Total ozone | Dobson
+ 1 | Ozone mixing ratio | kg kg{-1}
+ 2 | Total column integrated ozone | Dobson
+192 | Ozone Mixing Ratio | kg kg{-1}
+255 | Missing | Missing
+############################################################################################
++ 0 + 15 + Radar
+############################################################################################
+ 0 | Base spectrum width | m s{-1}
+ 1 | Base reflectivity | dB
+ 2 | Base radial velocity | m s{-1}
+ 3 | Vertically-integrated liquid | kg m{-1}
+ 4 | Layer-maximum base reflectivity | dB
+ 5 | Precipitation | kg m{-2}
+ 6 | Radar spectra (1) | -
+ 7 | Radar spectra (2) | -
+ 8 | Radar spectra (3) | -
+255 | Missing | Missing
+############################################################################################
++ 0 + 16 + Category?
+############################################################################################
+195 | Derived radar reflectivity | dB
+196 | Maximum/Composite radar reflectivity | dB
+############################################################################################
++ 0 + 18 + Nuclear/radiology
+############################################################################################
+ 0 | Air concentration of Caesium 137  | Bq m{-3}
+ 1 | Air concentration of Iodine 131  | Bq m{-3}
+ 2 | Air concentration of radioactive pollutant | Bq m{-3}
+ 3 | Ground deposition of Caesium 137 | Bq m{-2}
+ 4 | Ground deposition of Iodine 131 | Bq m{-2}
+ 5 | Ground deposition of radioactive pollutant | Bq m{-2}
+ 6 | Time-integrated air concentration of caesium pollutant (Deprecated) | Bq s m{-3}
+ 7 | Time-integrated air concentration of iodine pollutant (Deprecated) | Bq s m{-3}
+ 8 | Time-integrated air concentration of radioactive pollutant (Deprecated) | Bq s m{-3}
+255 | Missing | Missing
+############################################################################################
++ 0 + 19 + Physical atmospheric properties
+############################################################################################
+ 0 | Visibility | m
+ 1 | Albedo | %
+ 2 | Thunderstorm probability | %
+ 3 | mixed layer depth | m
+ 4 | Volcanic ash | code table (4.206)
+ 5 | Icing top | m
+ 6 | Icing base | m
+ 7 | Icing | code table (4.207)
+ 8 | Turbulence top | m
+ 9 | Turbulence base | m
+10 | Turbulence | code table (4.208)
+11 | Turbulent kinetic energy | J kg{-1}
+12 | Planetary boundary layer regime | code table (4.209)
+13 | Contrail intensity | code table (4.210)
+14 | Contrail engine type | code table (4.211)
+15 | Contrail top | m
+16 | Contrail base | m
+17 | Maximum snow albedo (Deprecated) | %
+18 | Snow free albedo | %
+19 | Snow albedo | %
+192 | Maximum snow albedo | %
+193 | Snow free albedo | %
+255 | Missing | Missing
+############################################################################################
++ 0 + 190 + CCITT IA5 string
+############################################################################################
+ 0 | Arbitrary text string | CCITTIA5
+255          | Missing | Missing
+############################################################################################
++ 0 + 191 + Miscellaneous
+############################################################################################
+ 0 | Seconds prior to initial reference time (defined in Section 1) | s
+255          | Missing | Missing
+############################################################################################
++ 1 + 0 + Hydrology basic products
+############################################################################################
+ 0 | Flash flood guidance | kg m{-2}
+ 1 | Flash flood runoff | kg m{-2}
+ 2 | Remotely sensed snow cover | (code table 4.215)
+ 3 | Elevation of snow covered terrain | (code table 4.216)
+ 4 | Snow water equivalent percent of normal | %
+ 5 | Baseflow-groundwater runoff | kg m{-2}
+ 6 | Storm surface runoff | kg m{-2}
+192 | Baseflow-Groundwater Runoff | kg m{-2}
+193 | Storm surface runoff | kg m{-2}
+255 | Missing | Missing
+############################################################################################
++ 1 + 1 + Hydrology probabilities
+############################################################################################
+ 0 | Conditional percent precipitation amount fractile for an overall period | kg m{-2}
+ 1 | Percent precipitation in a sub-period of an overall period | %
+ 2 | Probability of 0.01 inch of precipitation (POP) | %
+193 | Probability of Frozen Precipitation | %
+255 | Missing | Missing
+############################################################################################
++ 2 + 0 + Vegetation/Biomass
+############################################################################################
+ 0 | Land cover (1=land, 0=sea) | Proportion
+ 1 | Surface roughness | m
+ 2 | Soil temperature | K
+ 3 | Soil moisture content (Deprecated) | kg m{-2}
+ 4 | Vegetation | %
+ 5 | Water runoff | kg m{-2}
+ 6 | Evapotranspiration | kg {-2} s{-1}
+ 7 | Model terrain height | m
+ 8 | Land use | code table (4.212)
+ 9 | Volumetric soil moisture content (Deprecated) (Deprecated) | Proportion
+10 | Ground heat flux (Deprecated) | W m{-2}
+11 | Moisture availability | %
+12 | Exchange coefficient | kg m{-2} s{-1}
+13 | Plant canopy surface water | kg m{-2}
+14 | Blackadar's mixing length scale | m
+15 | Canopy conductance | m s{-1}
+16 | Minimal stomatal resistance | s m{-1}
+17 | Wilting point (Deprecated) | Proportion
+18 | Solar parameter in canopy conductance | Proportion
+19 | Temperature parameter in canopy conductance | Proportion
+20 | Soil moisture parameter in canopy conductance | Proportion
+21 | Humidity parameter in canopy conductance | Proportion
+22 | Soil moisture | kg m{-3}
+23 | Column-integrated soil water | kg m{-2}
+24 | Heat flux | W m{-2}
+25 | Volumetric soil moisture | m3 m{-3}
+26 | Wilting point | kg m{-3}
+27 | Volumetric wilting point | m3 m{-3}
+192 | Volumetric Soil Moisture Content | Proportion
+193 | Ground Heat Flux | W m{-2}
+194 | Moisture Availability | ???????
+195 | Exchange Coefficient | kg m{-2} s{-1}
+196 | Plant Canopy Surface Water | kg m{-2}
+197 | Blackadar's Mixing Length Scale | m
+198 | Vegetation Type | ???????
+199 | Canopy Conductance | m s{-1}
+200 | Minimal Stomatal Resistance | s m{-1}
+201 | Wilting Point | Proportion
+202 | Solar parameter in canopy conductance | Proportion
+203 | Temperature parameter in canopy conductance | Proportion
+204 | Humidity parameter in canopy conductance | Proportion
+205 | Soil moisture parameter in canopy conductance | Proportion
+206 | Rate of water dropping from canopy to ground | kg m{-2} s{-1}
+207 | Ice-free water surface | ???????
+255 | Missing | Missing
+############################################################################################
++ 2 + 3 + Soil Products
+############################################################################################
+ 0 | Soil type | code table (4.213)
+ 1 | Upper layer soil temperature (Deprecated) | K
+ 2 | Upper layer soil moisture (Deprecated) | kg m{-3}
+ 3 | Lower layer soil moisture (Deprecated) | kg m{-3}
+ 4 | Bottom layer soil temperature (Deprecated) | K
+ 5 | Liquid volumetric soil moisture (non-frozen) (Deprecated) | Proportion
+ 6 | Number of soil layers in root zone | Numeric
+ 7 | Transpiration stress-onset (soil moisture) (Deprecated)  | Proportion
+ 8 | Direct evaporation cease (soil moisture) (Deprecated)  | Proportion
+ 9 | Soil porosity (Deprecated) (Deprecated) | Proportion
+10 | Liquid volumetric soil moisture (non-frozen) | m{3} m{-3}
+11 | Volumetric transpiration stress-onset (soil moisture) | m{3} m{-3}
+12 | Transpiration stress-onset (soil moisture) | kg m{-3}
+13 | Volumetric direct evaporation cease (soil moisture) | m{3} m{-3}
+14 | Direct evaporation cease (soil moisture) | kg m{-3}
+15 | Soil porosity | m3 m{-3}
+16 | Volumetric saturation of soil moisture | m{3} m{-3}
+17 | Saturation of soil moisture | kg m{-3}
+192 | Liquid Volumetric Soil Moisture | m{3} m{-3}
+193 | Number of Soil Layers in Root Zone | Numeric
+194 | Surface Slope Type | ???????
+195 | Transpiration Stress-onset (soil moisture) | Proportion
+196 | Direct Evaporation Cease (soil moisture) | Proportion
+197 | Soil Porosity | Proportion
+255 | Missing | Missing
+############################################################################################
++ 3 + 0 + Image format products
+############################################################################################
+ 0 | Scaled radiance | Numeric
+ 1 | Scaled albedo | Numeric
+ 2 | Scaled brightness temperature | Numeric
+ 3 | Scaled precipitable water | Numeric
+ 4 | Scaled lifted index | Numeric
+ 5 | Scaled cloud top pressure | Numeric
+ 6 | Scaled skin temperature | Numeric
+ 7 | Cloud mask | Code table 4.217
+ 8 | Pixel scene type | Code table 4.218
+ 9 | Fire detection indicator | Code table 4.223
+255 | Missing | Missing
+############################################################################################
++ 3 + 1 + Quantitative products
+############################################################################################
+ 0 | Estimated precipitation | kg m{-2}
+ 1 | Instantaneous rain rate | kg m{-2} s{-1}
+ 2 | Cloud top height | m
+ 3 | Cloud top height quality indicator | Code table 4.219
+ 4 | Estimated u component of wind | m s{-1}
+ 5 | Estimated v component of wind | m s{-1}
+ 6 | Number of pixels used | Numeric
+ 7 | Solar zenith angle | Degree
+ 8 | Relative azimuth angle | Degree
+ 9 | Reflectance in 0.6 micron channel | %
+10 | Reflectance in 0.8 micron channel | %
+11 | Reflectance in 1.6 micron channel | %
+12 | Reflectance in 3.9 micron channel | %
+13 | Atmospheric divergence | s{-1}
+255 | Missing | Missing
+############################################################################################
++ 10 + 0 + Waves
+############################################################################################
+ 0 | Wave spectra (1) | -
+ 1 | Wave spectra (2) | -
+ 2 | Wave spectra (3) | -
+ 3 | Significant height of combined wind waves and swell | m
+ 4 | Direction of wind waves | Degree true
+ 5 | Significant height of wind waves | m
+ 6 | Mean period of wind waves | s
+ 7 | Direction of swell waves | Degree true
+ 8 | Significant height of swell waves | m
+ 9 | Mean period of swell waves | s
+10 | Primary wave direction | Degree true
+11 | Primary wave mean period | s
+12 | Secondary wave direction | Degree true
+13 | Secondary wave mean period | s
+255 | Missing | Missing
+############################################################################################
++ 10 + 1 + Currents
+############################################################################################
+ 0 | Current direction | Degree true
+ 1 | Current speed | m s{-1}
+ 2 | u-component of current | m s{-1}
+ 3 | v-component of current | m s{-1}
+255 | Missing | Missing
+############################################################################################
++ 10 + 2 + Ice
+############################################################################################
+ 0 | Ice cover | Proportion
+ 1 | Ice thickness | m
+ 2 | Direction of ice drift | Degree true
+ 3 | Speed of ice drift | m s{-1}
+ 4 | u-component of ice drift | m s{-1}
+ 5 | v-component of ice drift | m s{-1}
+ 6 | Ice growth rate | m s{-1}
+ 7 | Ice divergence | s{-1}
+ 8 | Ice temperature | K
+255 | Missing | Missing
+############################################################################################
++ 10 + 3 + Surface Properties
+############################################################################################
+ 0 | Water temperature | K
+ 1 | Deviation of sea level from mean | m
+255 | Missing | Missing
+############################################################################################
++ 10 + 4 + Sub-surface Properties
+############################################################################################
+ 0 | Main thermocline depth | m
+ 1 | Main thermocline anomaly | m
+ 2 | Transient thermocline depth | m
+ 3 | Salinity | kg kg{-1}
+255 | Missing | Missing
+############################################################################################
++ 10 + 191 + Miscellaneous
+############################################################################################
+ 0 | Seconds prior to initial reference time (defined in Section 1) | s
+255          | Missing | Missing
+############################################################################################

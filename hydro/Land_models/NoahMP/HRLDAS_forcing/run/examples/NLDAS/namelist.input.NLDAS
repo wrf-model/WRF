@@ -1,0 +1,74 @@
+&files
+ STARTDATE          = "2010-01-01_00"
+ ENDDATE            = "2010-01-03_00"
+ DataDir            = "/d1/barlage/data/NLDAS/extracted"
+ OutputDir          = "/d1/barlage/data/NLDAS/LDASIN/"
+ FULL_IC_FRQ        = 0
+ RAINFALL_INTERP    = 0
+ RESCALE_SHORTWAVE  = .FALSE.
+ UPDATE_SNOW        = .FALSE.
+ FORCING_HEIGHT_2D  = .FALSE.
+ TRUNCATE_SW        = .FALSE.
+ EXPAND_LOOP        = 1
+ INIT_LAI           = .TRUE.
+ VARY_LAI           = .TRUE.
+ MASK_WATER         = .TRUE.
+
+ geo_em_flnm        = "/d1/barlage/data/mptest/geo_em.d01.nc"
+
+ Zfile_template     = "examples/NLDAS/NLDAS_ELEVATION.grb"
+
+ Tfile_template     = "<DataDir>/TMP/NLDAS_TMP.<date>.grb"
+ Ufile_template     = "<DataDir>/UGRD/NLDAS_UGRD.<date>.grb",
+ Vfile_template     = "<DataDir>/VGRD/NLDAS_VGRD.<date>.grb",
+ Pfile_template     = "<DataDir>/PRES/NLDAS_PRES.<date>.grb",
+ Qfile_template     = "<DataDir>/SPFH/NLDAS_SPFH.<date>.grb",
+ LWfile_template    = "<DataDir>/DLWRF/NLDAS_DLWRF.<date>.grb",
+ SWfile_primary     = "<DataDir>/DSWRF/NLDAS_DSWRF.<date>.grb",
+ SWfile_secondary   = "<DataDir>/DSWRF/NLDAS_DSWRF.<date>.grb",
+ PCPfile_primary    = "<DataDir>/APCP/NLDAS_APCP.<date>.grb"
+ PCPfile_secondary  = "<DataDir>/APCP/NLDAS_APCP.<date>.grb",
+
+ WEASDfile_template = "<DataDir>/INIT/NLDAS_WEASD.<date>.grb",
+ CANWTfile_template = "<DataDir>/INIT/NLDAS_CNWAT.<date>.grb",
+ SKINTfile_template = "<DataDir>/INIT/NLDAS_AVSFT.<date>.grb",
+
+ STfile_template    = "<DataDir>/INIT/NLDAS_TSOIL_000-010.<date>.grb",
+                      "<DataDir>/INIT/NLDAS_TSOIL_010-040.<date>.grb",
+                      "<DataDir>/INIT/NLDAS_TSOIL_040-100.<date>.grb",
+                      "<DataDir>/INIT/NLDAS_TSOIL_100-200.<date>.grb",
+
+ SMfile_template    = "<DataDir>/INIT/NLDAS_SOILM_000-010.<date>.grb",
+                      "<DataDir>/INIT/NLDAS_SOILM_010-040.<date>.grb",
+                      "<DataDir>/INIT/NLDAS_SOILM_040-100.<date>.grb",
+                      "<DataDir>/INIT/NLDAS_SOILM_100-200.<date>.grb",
+
+/
+
+<VTABLE>
+-----+------+------+------+----------+-----------+-----------------------------------------+-----------------------+
+GRIB1| Level| From |  To  |          |           |                                         |GRIB2|GRIB2|GRIB2|GRIB2|
+Param| Type |Level1|Level2| Name     | Units     | Description                             |Discp|Catgy|Param|Level|
+-----+------+------+------+----------+-----------+-----------------------------------------+-----------------------+
+  11 | 105  |   2  |      | T2D      | K         | Temperature       at 2 m                |  0  |  0  |  0  | 103 |
+  51 | 105  |   2  |      | Q2D      | kg/kg     | Specific Humidity at 2 m                |  0  |  1  |  0  | 103 |
+  33 | 105  |  10  |      | U2D      | m/s       | U                 at 10 m               |  0  |  2  |  2  | 103 |
+  34 | 105  |  10  |      | V2D      | m/s       | V                 at 10 m               |  0  |  2  |  3  | 103 |
+   1 |   1  |   0  |      | PSFC     | Pa        | Surface Pressure                        |  0  |  3  |  0  |   1 |
+  61 |   1  |   0  |      | RAINRATE | kg/m^2    | Accumulated precipitation               |  0  |  1  |  8  |   1 |
+ 204 |   1  |   0  |      | SWDOWN   | W/m^2     | Downward short-wave radiation flux      |  0  |  4  | 192 |   1 |
+ 205 |   1  |   0  |      | LWDOWN   | W/m^2     | Downward long-wave radiation flux       |  0  |  5  | 192 |   1 |
+   7 |   1  |   0  |      | TERRAIN  | m         | Terrain field of source analysis        |  2  |  0  |  7  |   1 |
+ 148 |   1  |   0  |      | TSK      | K         | Skin temperature                        |  0  |  0  |  0  |   1 |
+  65 |   1  |   0  |      | SNOW     | kg/m^2    | Water equivalent snow depth             |  0  |  1  | 13  |   1 |
+ 223 |   1  |   0  |      | CANWAT   | kg/m^2    | Plant Canopy Surface Water              |  2  |  0  | 196 |   1 |
+  86 | 112  |   0  |  10  | SMOIS_1  | kg/m^2    | Soil Moist 0-10 cm below grn layer (Up) |  2  |  0  | 192 | 106 |
+  86 | 112  |  10  |  40  | SMOIS_2  | kg/m^2    | Soil Moist 10-40 cm below grn layer     |  2  |  0  | 192 | 106 |
+  86 | 112  |  40  | 100  | SMOIS_3  | kg/m^2    | Soil Moist 40-100 cm below grn layer    |  2  |  0  | 192 | 106 |
+  86 | 112  | 100  | 200  | SMOIS_4  | kg/m^2    | Soil Moist 100-200 cm below gr layer    |  2  |  0  | 192 | 106 |
+  85 | 112  |   0  |  10  | STEMP_1  | K         | T 0-10 cm below ground layer (Upper)    |  2  |  0  |  2  | 106 |
+  85 | 112  |  10  |  40  | STEMP_2  | K         | T 10-40 cm below ground layer (Upper)   |  2  |  0  |  2  | 106 |
+  85 | 112  |  40  | 100  | STEMP_3  | K         | T 40-100 cm below ground layer (Upper)  |  2  |  0  |  2  | 106 |
+  85 | 112  | 100  | 200  | STEMP_4  | K         | T 100-200 cm below ground layer (Bottom)|  2  |  0  |  2  | 106 |
+-----+------+------+------+----------+-----------+-----------------------------------------+-----------------------+
+</VTABLE>

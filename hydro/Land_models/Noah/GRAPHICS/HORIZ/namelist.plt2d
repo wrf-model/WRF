@@ -1,0 +1,290 @@
+#
+# Possible values for plot_type:
+#
+#      plot_type = "contour"  :: Plain contour plot
+#      plot_type = "confill"  :: color-filled contour plot   (Very slow for large grids)
+#      plot_type = "fillcell" :: color-filled grid-cells     (Recommended for large grids)
+#
+# Color specification
+#      For the color table, colors listed in the file "/usr/lib/X11/rgb.txt" may be used.
+#      In addition, colors may be specified as triplets of hexidecimal two-digit values 
+#      of red, green, and blue:  "0x<rr><gg><bb>" or "#<rr><gg><bb>"
+#       e.g.: "#A405BF" or "0xFF00BB"
+#
+
+
+
+&file_info
+!  ldasout_flnm_template = "/mmmtmp/kmanning/RunNoSat/<yyyymmddhh>.LDASOUT_DOMAIN1"
+!  diff_flnm_template    = "/mmmtmp/kmanning/RunNoSat/<yyyymmddhh>.LDASOUT_DOMAIN1"
+!  ldasout_flnm_template = "/scholar2/kmanning/VERY_TEMPORARY_HRLDAS/Run_3.2/<yyyymmddhh>.LDASOUT_DOMAIN1"
+!  diff_flnm_template    = "/scholar/kmanning/more_hrldas/hrldas-v3.1/Run/<yyyymmddhh>.LDASOUT_DOMAIN1"
+!  ldasout_flnm_template  = "/scholar/kmanning/more_hrldas/hrldas-v3.1/Run/<yyyymmddhh>.LDASOUT_DOMAIN1"
+!  ldasout_flnm_template = "/scholar2/kmanning/VERY_TEMPORARY_HRLDAS/Run_3.2/m01.avg.h<hh>.nc"
+!  diff_flnm_template = "/scholar/kmanning/more_hrldas/hrldas-v3.1/Run/m01.avg.h<hh>.nc"
+! ldasout_flnm_template = "/scholar2/kmanning/VERY_TEMPORARY_HRLDAS/Run_3.2/m01.avg.h<hh>.nc"
+! ldasout_flnm_template = "/scholar/kmanning/more_hrldas/hrldas-v3.1/Run/m01.avg.h<hh>.nc"
+
+!  ldasout_flnm_template = "/scholar/kmanning/more_hrldas/devel-3.2/Run/smallgrid_Jun_avg_hr<hh>.nc"
+!  diff_flnm_template =   "/scholar/kmanning/more_hrldas/hrldas-v3.1/Run/smallgrid_Jun_avg_hr<hh>.nc"
+
+!  ldasout_flnm_template =    "/scholar/kmanning/more_hrldas/devel-3.2/Run/reference_parallel_bugfix-dtot/avg_200201_<hh>Z.nc"
+!  diff_flnm_template = "/scholar/kmanning/more_hrldas/devel-3.2/Run/reference_parallel/avg_200201_<hh>Z.nc"
+
+!  ldasout_flnm_template = "/scholar/kmanning/more_hrldas/devel-3.2/Run/reference_parallel_bugfix-dtot_z0snow_sfcdif1/avg_200206_<hh>Z.nc"
+!  diff_flnm_template    = "/scholar/kmanning/more_hrldas/devel-3.2/Run/reference_parallel_bugfix-dtot_z0snow/avg_200206_<hh>Z.nc"
+
+!   ldasout_flnm_template = "/scholar/kmanning/more_hrldas/devel-3.2/Run/reference_parallel_bugfix-dtot_z0snow_sfcdif1_iz0tlnd1/avg_200206_<hh>Z.nc"
+!   diff_flnm_template    = "/scholar/kmanning/more_hrldas/devel-3.2/Run/reference_parallel_bugfix-dtot_z0snow_sfcdif1/avg_200206_<hh>Z.nc"
+
+  ldasout_flnm_template = "/scholar/kmanning/more_hrldas/devel-3.2/Run/reference_parallel_bugfix-dtot_z0snow_sfcdif1/avg_200206_<hh>Z.nc"
+  diff_flnm_template    = "/scholar/kmanning/more_hrldas/devel-3.2/Run/reference_parallel_bugfix-dtot_z0snow/avg_200206_<hh>Z.nc"
+  
+  plot_startdate = "2002060100"
+  plot_enddate   = "2002060121"
+  plot_interval  = 3
+/
+
+! &plot_info
+  fldname = "SNODEP", 
+  plot_type = "fillcell"  
+  contour_minimum = 0.0
+  contour_maximum = 0.5
+  contour_interval = 0.02
+  color_table="0,white,0.1,brown,0.2,green,0.3,blue,0.4,red,0.5,magenta"
+/ 
+
+! &plot_info
+   fldname = "HFX", 
+   plot_type = "fillcell"  
+   contour_minimum = -250.0
+   contour_maximum = 600.0
+   contour_interval = 10.0
+   color_table="-250,blue,-10,white,10,white,200,0xDD0022,600,magenta"
+ / 
+
+! &plot_info
+   fldname = "QFX", 
+   plot_type = "fillcell"  
+   contour_minimum = -250.0
+   contour_maximum = 600.0
+   contour_interval = 10.0
+   color_table="-250,blue,-10,white,10,white,200,0xDD0022,600,magenta"
+ / 
+
+! &plot_info
+   fldname = "GRDFLX", 
+   plot_type = "fillcell"  
+   contour_minimum = -250.0
+   contour_maximum = 600.0
+   contour_interval = 10.0
+   color_table="-250,blue,-10,white,10,white,200,0xDD0022,600,magenta"
+ / 
+
+&plot_info
+   fldname = "HFX", 
+   plot_type = "fillcell"  
+   contour_minimum = -20.0
+   contour_maximum =  20.0
+   contour_interval = 0.5
+   color_table="-20.0,blue,-10.0,green,-0.5,white,0.5,white,10.0,0xDD0022,20.0,magenta"
+ / 
+
+&plot_info
+   fldname = "QFX", 
+   plot_type = "fillcell"  
+ / 
+
+&plot_info
+   fldname = "GRDFLX", 
+   plot_type = "fillcell"  
+   contour_minimum = -10.0
+   contour_maximum =  10.0
+   contour_interval = 0.25
+   color_table="-10,blue,-50,green,-0.25,white,0.25,white,5,0xDD0022,10,magenta"
+ / 
+
+! &plot_info
+   fldname = "VEGFRA", 
+   plot_type = "fillcell"  
+   contour_minimum = 0.0
+   contour_maximum = 1.0
+   contour_interval = 0.01
+   color_table="0.0,white,0.33,brown,0.66,yellow,1.0,green4"
+ / 
+
+! &plot_info
+   fldname = "XLAI", 
+   plot_type = "fillcell"  
+   contour_minimum = 0.0
+   contour_maximum = 6.0
+   contour_interval = 0.06
+   color_table="0,white,2.0,brown,4.0,yellow,6.0,green4"
+ / 
+
+! &plot_info
+  fldname = "SOIL_T", soil_level = 1
+  plot_type = "fillcell"  
+  contour_minimum = 255.0
+  contour_maximum = 305.0
+  contour_interval = 0.25
+  color_table="255,magenta,260,cyan,267.5,#0000AA,275,white,282.5,#CC8899,290,green,297.5,red,305,magenta"
+/ 
+
+! &plot_info
+  fldname = "SOIL_T", soil_level = 2
+  plot_type = "fillcell"  
+  contour_minimum = 260.0
+  contour_maximum = 305.0
+  contour_interval = 0.25
+  color_table="260,cyan,267.5,#0000AA,275,white,282.5,#CC8899,290,green,297.5,red,305,magenta"
+/ 
+
+! &plot_info
+  fldname = "SOIL_T", soil_level = 3
+  plot_type = "fillcell"  
+  contour_minimum = 260.0
+  contour_maximum = 305.0
+  contour_interval = 0.25
+  color_table="260,cyan,267.5,#0000AA,275,white,282.5,#CC8899,290,green,297.5,red,305,magenta"
+/ 
+
+! &plot_info
+  fldname = "SOIL_T", soil_level = 4
+  plot_type = "fillcell"  
+  contour_minimum = 260.0
+  contour_maximum = 305.0
+  contour_interval = 0.25
+  color_table="260,cyan,267.5,#0000AA,275,white,282.5,#CC8899,290,green,297.5,red,305,magenta"
+  !color_table="270,cyan,277.5,#0000AA,285,white,292.5,#CC8899,300,green,307.5,red,315,magenta"
+/ 
+
+&plot_info
+  fldname = "SOIL_T", soil_level = 1
+  plot_type = "fillcell"  
+  contour_minimum = -2.0
+  contour_maximum = 2.0
+  contour_interval = 0.05
+  color_table="-2,blue,-1,green,-0.05,white,0.05,white,1,0xCC8899,2,red"
+/ 
+
+! &plot_info
+  fldname = "SOIL_T", soil_level = 1
+  plot_type = "fillcell"  
+  contour_minimum = -6.0
+  contour_maximum = 6.0
+  contour_interval = 0.5
+  color_table="-6,blue,-3,green,-0.5,white,0.5,white,3,0xCC8899,6,red"
+/ 
+
+! &plot_info
+  fldname = "SOIL_T", soil_level = 2
+  plot_type = "fillcell"  
+  contour_minimum = -12.0
+  contour_maximum = 12.0
+  contour_interval = 0.5
+  color_table="-12,blue,-6,green,-0.5,white,0.5,white,6,0xCC8899,12,red"
+/
+
+! &plot_info
+  fldname = "SOIL_T", soil_level = 3
+  plot_type = "fillcell"  
+  contour_minimum = -10.0
+  contour_maximum = 10.0
+  contour_interval = 0.5
+  color_table="-10,blue,-5,green,-0.5,white,0.5,white,5,0xCC8899,10,red"
+/
+
+! &plot_info
+  fldname = "SOIL_T", soil_level = 4
+  plot_type = "fillcell"  
+  contour_minimum = -8.0
+  contour_maximum = 8.0
+  contour_interval = 0.25
+  color_table="-8,blue,-4,green,-0.25,white,0.25,white,4,0xCC8899,8,red"
+/ 
+
+
+! &plot_info
+  fldname = "SOIL_T", soil_level = 1
+  plot_type = "fillcell"  
+  contour_minimum = -5.0
+  contour_maximum = 5.0
+  contour_interval = 0.20
+  color_table="-5,blue,-2,green,-0.2,white,0.2,white,2,0xCC8899,5,red"
+/ 
+
+&plot_info
+  fldname = "SOIL_T", soil_level = 2
+  plot_type = "fillcell"  
+/
+
+&plot_info
+  fldname = "SOIL_T", soil_level = 3
+  plot_type = "fillcell"  
+/
+
+&plot_info
+  fldname = "SOIL_T", soil_level = 4
+  plot_type = "fillcell"  
+/ 
+
+! &plot_info
+  fldname = "SOIL_M", soil_level=1,
+  plot_type = "fillcell"  
+  contour_minimum = 0.0
+  contour_maximum = 0.4
+  contour_interval = 0.00625
+  color_table="0.00,white,0.10,brown,0.20,yellow,0.30,green,0.40,blue"
+/
+
+! &plot_info
+  fldname = "SOIL_M", soil_level=2,
+  plot_type = "fillcell"  
+  contour_minimum = 0.0
+  contour_maximum = 0.4
+  contour_interval = 0.00625
+  color_table="0.00,white,0.10,brown,0.20,yellow,0.30,green,0.40,blue"
+/
+
+! &plot_info
+  fldname = "SOIL_M", soil_level=3,
+  plot_type = "fillcell"  
+  contour_minimum = 0.0
+  contour_maximum = 0.4
+  contour_interval = 0.00625
+  color_table="0.00,white,0.10,brown,0.20,yellow,0.30,green,0.40,blue"
+/
+
+! &plot_info
+  fldname = "SOIL_M", soil_level=4,
+  plot_type = "fillcell"  
+  contour_minimum = 0.0
+  contour_maximum = 0.4
+  contour_interval = 0.00625
+  color_table="0.00,white,0.10,brown,0.20,yellow,0.30,green,0.40,blue"
+/
+
+&plot_info
+  fldname = "SOIL_M", soil_level=1,
+  plot_type = "fillcell"  
+  contour_minimum = -0.1
+  contour_maximum = 0.1
+  contour_interval = 0.005
+  color_table="-0.1,brown,-0.05,yellow2,-0.005,white,0.005,white,0.05,green,0.1,blue"
+/
+
+&plot_info
+  fldname = "SOIL_M", soil_level=2,
+  plot_type = "fillcell"  
+/
+
+&plot_info
+  fldname = "SOIL_M", soil_level=3,
+  plot_type = "fillcell"  
+/
+
+&plot_info
+  fldname = "SOIL_M", soil_level=4,
+  plot_type = "fillcell"  
+/

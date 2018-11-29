@@ -1,0 +1,5 @@
+&vectorize_namelist
+ full_geo_em = "../../wps_lambert/geo_em.d01.nc"
+ vector_directory = "./vector/"
+ keep_lu_list = 1,2,3,4,8,12,
+/

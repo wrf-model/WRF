@@ -1,0 +1,311 @@
+Some brief notes on the namelist.input file.  For full details (e.g.,
+file name template replacement strings, file formats, etc.) see the
+Users' Guide (HRLDAS_USERS_GUIDE.PDF).
+
+STARTDATE
+
+    The starting date (GMT) for your HRLDAS integration, expressed as
+    a character string in the form "YYYY-MM-DD_HH".  You should probably
+    start on a 00 GMT hour.
+
+    Type:     character string
+    Default:  No valid default value
+    Example:  STARTDATE = "2001-01-01_00"
+
+ENDDATE
+
+    The ending date (GMT) for your HRLDAS integration, expressed as
+    a character string in the form "YYYY-MM-DD_HH".
+
+    Type:     character string
+    Default:  No valid default value
+    Example:  ENDDATE = "2002-07-01_00"
+
+DATADIR
+
+    A top-level directory under which the original GRIB datasets are
+    organized.  The string defined here may be used in building file
+    names from the templates defined below.  Where the file name
+    templates include the string "<DataDir>", that string will be
+    replace by the value set for namelist variable DATADIR.
+
+    Type:     character string
+    Default:  No valid default value
+    Example:  DATADIR = "/data1/user2/datasets"
+
+RAINFALL_INTERP
+
+    Specifies the option for remapping the precipitation field from
+    the source map to the HRLDAS map.  Options are:
+
+       0: Assign precipitation values on the HRLDAS map from the
+          nearest neighbor on the source map.
+       1: Subdivide the source grid cell into some number of smaller
+          cells, and allocate precipitation from the source grid to
+          the destination grid based on accumulating values from the
+          subcells which fall into the destination grid cell.
+
+    Option 0 may be appropriate, and may save much processing time,
+    for situations in which the HRLDAS grid cells are somewhat smaller
+    than the source grid cells.
+
+    Type:     integer
+    Default:  1 (expensive remapping by subdivision)
+    Example:  RAINFALL_INTERP = 1
+
+FULL_IC_FRQ
+
+    Specifies the interval (in hours) to create full initial
+    conditions for HRLDAS input files.  Special value of -1 means to never
+    create full initial conditions.
+
+    Type:     integer
+    Default:  0 (to create full initial conditions at the starting time only)
+    Example:  FULL_IC_FRQ = 24
+
+RESCALE_SHORTWAVE
+
+    Specifies whether the program will attempt to correct a half-hour time offset
+    that has been noted in the GCIP shortwave radiation analyses.  Set this to 
+    .FALSE. if the time offset does not exist, or if you are using a different
+    source of shortwave radiation analyses.
+
+    Type:     logical
+    Default:  .FALSE. (do not apply offset)
+    Example:  RESCALE_SHORTWAVE = .FALSE. 
+
+GEO_EM_FLNM
+
+    Specifies the full path name to the file defining the setup of the
+    HRLDAS grid.  This will be a "geo_em_d##.nc" file as created by
+    the WPS program geogrid. Enterprising users might create their own 
+    substitute files.
+
+    Type:     character string
+    Default:  No valid default value
+    Example:  GEO_EM_FLNM = "/data1/user2/grids/geo_em.d01.nc"
+
+WRFINPUT_FLNM
+
+    Specifies the full path name to a wrfinput file created as in
+    preparation for running the WRF model.  Enterprising users might
+    create their own substitute files.
+
+    Type:     character string
+    Default:  No valid default value
+    Example:  WRFINPUT_FLNM = "/data1/user2/grids/wrfinput_d01"
+
+ZFILE_TEMPLATE
+
+    A file name template for building the full path name of the GRIB
+    file which contains the model elevation field associated with the
+    source temperature data.
+
+    Type:     character string
+    Default:  No valid default value
+    Example:  ZFILE_TEMPLATE = "<DataDir>/<YYYY>/<MM>/<DD>/SFC_ELEVATION.GRIB"
+
+TFILE_TEMPLATE
+
+    A file name template for building the full path name of the GRIB
+    file which contains the near-surface air temperature field.  Multiple
+    templates may be defined; the file that gets used will be from the
+    first template which resolves to an existing filename.
+
+    Type:     character string
+    Default:  No valid default value
+    Example:  TFILE_TEMPLATE = "<DataDir>/<YYYY>/<MM>/<DD>/T.<date>"
+
+UFILE_TEMPLATE
+
+    A file name template for building the full path name of the GRIB
+    file which contains the near-surface u-component of the horizontal
+    wind field.  Multiple templates may be defined; the file that gets
+    used will be from the first template which resolves to an existing
+    filename.
+
+    Type:     character string
+    Default:  No valid default value
+    Example:  UFILE_TEMPLATE = "<DataDir>/<YYYY>/<MM>/<DD>/U.<date>",
+
+VFILE_TEMPLATE
+
+    A file name template for building the full path name of the GRIB
+    file which contains the near-surface v-component of the horizontal
+    wind field.  Multiple templates may be defined; the file that gets
+    used will be from the first template which resolves to an existing
+    filename.
+
+    Type:     character string
+    Default:  No valid default value
+    Example:  VFILE_TEMPLATE = "<DataDir>/<YYYY>/<MM>/<DD>/V.<date>",
+
+PFILE_TEMPLATE
+
+    A file name template for building the full path name of the GRIB
+    file which contains the surface pressure field.  Multiple
+    templates may be defined; the file that gets used will be from the
+    first template which resolves to an existing filename.
+
+    Type:     character string
+    Default:  No valid default value
+    Example:  PFILE_TEMPLATE = "<DataDir>/<YYYY>/<MM>/<DD>/PSFC.<date>",
+
+QFILE_TEMPLATE
+
+    A file name template for building the full path name of the GRIB
+    file which contains the near-surface specific humidity field.
+    Multiple templates may be defined; the file that gets used will be
+    from the first template which resolves to an existing filename.
+
+    Type:     character string
+    Default:  No valid default value
+    Example:  QFILE_TEMPLATE = "<DataDir>/<YYYY>/<MM>/<DD>/Q.<date>",
+
+LWFILE_TEMPLATE
+
+    A file name template for building the full path name of the GRIB
+    file which contains the downwelling long-wave radiation field.
+    Multiple templates may be defined; the file that gets used will be
+    from the first template which resolves to an existing filename.
+
+    Type:     character string
+    Default:  No valid default value
+    Example:  LWFILE_TEMPLATE = "<DataDir>/<YYYY>/<MM>/<DD>/LW.<date>",
+
+SWFILE_PRIMARY
+
+    A file name template for building the full path name of the GRIB
+    file which contains the downwelling short-wave radiation field that
+    the user prefers to use.  Multiple templates may be defined; the
+    file that gets used will be from the first template which resolves
+    to an existing filename.
+
+    Type:     character string
+    Default:  No valid default value
+    Example:  SWFILE_PRIMARY = "<DataDir>/<YYYY>/<MM>/<DD>/SW_analysis.<date>",
+
+SWFILE_SECONDARY
+
+    A file name template for building the full path name of the GRIB 
+    file which contains the downwelling short-wave radiation field
+    that will be used to fill in missing values from the file specified
+    by SWFILE_PRIMARY.  Multiple templates may be defined; the file
+    that gets used will be from the first template which resolves to
+    an existing filename.
+
+    Type:     character string
+    Default:  No valid default value
+    Example:  SWFILE_SECONDARY = "<DataDir>/<YYYY>/<MM>/<DD>/SW_forecast.<date>",
+
+PCPFILE_PRIMARY
+
+    A file name template for building the full path name of the GRIB
+    file which contains the precipitation field that the user prefers
+    to use.  Multiple templates may be defined; the file that gets
+    used will be from the first template which resolves to an existing
+    filename.
+
+    Type:     character string
+    Default:  No valid default value
+    Example:  PCPFILE_PRIMARY = "<DataDir>/<YYYY>/<MM>/<DD>/PCP_analysis.<date>",
+
+PCPFILE_SECONDARY
+
+    A file name template for building the full path name of the GRIB 
+    file which contains the precipitation field that will be used to
+    fill in missing values from the file specified by PCPFILE_PRIMARY.
+    Multiple templates may be defined; the file that gets used will be
+    from the first template which resolves to an existing filename.
+
+    Type:     character string
+    Default:  No valid default value
+    Example:  PCPFILE_SECONDARY = "<DataDir>/<YYYY>/<MM>/<DD>/PCP_forecast.<date>",
+
+WEASDFILE_TEMPLATE
+
+    A file name template for building the full path name of the GRIB
+    file which contains the water-equivalent accumulated snow depth
+    field.  Multiple templates may be defined; the file that gets used
+    will be from the first template which resolves to an existing
+    filename.
+
+    Type:     character string
+    Default:  No valid default value
+    Example:  WEASDFILE_TEMPLATE = "<DataDir>/<YYYY>/<MM>/<DD>/WEASD.<date>",
+
+CANWATFILE_TEMPLATE
+
+    A file name template for building the full path name of the GRIB
+    file which contains the canopy-water field.  Multiple templates
+    may be defined; the file that gets used will be from the first
+    template which resolves to an existing filename.
+
+    Type:     character string
+    Default:  No valid default value
+    Example:  CANWATFILE_TEMPLATE = "<DataDir>/<YYYY>/<MM>/<DD>/CANWAT.<date>",
+
+LANDSFILE_TEMPLATE
+
+    A file name template for building the full path name of the GRIB
+    file which contains the land/sea mask of the source data.
+    Multiple templates may be defined; the file that gets used will be
+    from the first template which resolves to an existing filename.
+
+    Type:     character string
+    Default:  No valid default value
+    Example:  LANDSFILE_TEMPLATE = "<DataDir>/<YYYY>/<MM>/<DD>/LANDSEA.<date>",
+
+SKINTFILE_TEMPLATE
+
+    A file name template for building the full path name of the GRIB
+    file which contains the skin temperature field.  Multiple
+    templates may be defined; the file that gets used will be
+    from the first template which resolves to an existing filename.
+
+    Type:     character string
+    Default:  No valid default value
+    Example:  SKINTFILE_TEMPLATE = "<DataDir>/<YYYY>/<MM>/<DD>/SKINT.<date>",
+
+STFILE_TEMPLATES
+
+    File name templates for building the full path names of the GRIB
+    files which contain the soil temperature fields at various levels.
+    Multiple templates must be defined, for specifying fields for
+    the various soil levels.  Multiple groups of levels may be
+    defined, the files that get used will be from the first templates
+    which resolves to existing filenames.
+
+    Type:     character string
+    Default:  No valid default value
+    Example:  STFILE_TEMPLATE = "<DataDir>/<YYYY>/<MM>/<DD>/SOIL_T_000-010.<date>",
+                                "<DataDir>/<YYYY>/<MM>/<DD>/SOIL_T_010-040.<date>",
+                                "<DataDir>/<YYYY>/<MM>/<DD>/SOIL_T_040-100.<date>",
+                                "<DataDir>/<YYYY>/<MM>/<DD>/SOIL_T_100-200.<date>",
+
+SMFILE_TEMPLATES
+
+    File name templates for building the full path names of the GRIB
+    files which contain the soil moisture fields at various levels.
+    Multiple templates must be defined, for specifying fields for
+    the various soil levels.  Multiple groups of levels may be
+    defined, the files that get used will be from the first templates
+    which resolves to existing filenames.
+
+    Type:     character string
+    Default:  No valid default value
+    Example:  SMFILE_TEMPLATE = "<DataDir>/<YYYY>/<MM>/<DD>/SOIL_M_000-010.<date>",
+                                "<DataDir>/<YYYY>/<MM>/<DD>/SOIL_M_010-040.<date>",
+                                "<DataDir>/<YYYY>/<MM>/<DD>/SOIL_M_040-100.<date>",
+	                        "<DataDir>/<YYYY>/<MM>/<DD>/SOIL_M_100-200.<date>",
+
+<VTABLE>
+
+    This tag begins Variable table in the style of the WPS program
+    ungrib VTables. This portion of the file is not part of the
+    Fortran namelist (which ends with the "/" character).  The VTable
+    is a mapping of GRIB (Edition 1 or Edition 2) code numbers to
+    variable names as recognized in the HRLDAS code.  Users may need
+    to modify the VTable if the GRIB code numbers from their source
+    data sets differ from those defined in this portion of the
+    namelist file.

@@ -1,0 +1,13 @@
+Procedure is basically:
+
+1. vectorize_geo_em.f90 (not really necessary if you already have the
+LDASIN files, but I did it anyway)
+2. vectorize_wrfinput.f90
+3. compile the ldasin*.f90 files; the expectation is they will be named
+vectorize_ldasin_init, vectorize_ldasin_00Z, vectorize_ldasin_non00Z
+4. change year and Julian day range you want to do in the perl script
+5. run perl script
+6. run vectorize_ldasin_init (creates the initialization file)
+7. check_wrfinput.ncl : will compare vector version of the geo_em,
+wrfinput, and ldasin files to the 2D files
+8. check_test.ncl : will compare a 24hr simulation between vector and 2D

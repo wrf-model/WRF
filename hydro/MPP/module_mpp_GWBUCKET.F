@@ -21,6 +21,7 @@
 !   This is used as a coupler with the WRF model.
 MODULE MODULE_mpp_GWBUCKET
 
+  use MODULE_CPL_LAND, only: HYDRO_COMM_WORLD
   use module_mpp_land, only:  io_id, my_id, mpp_status, mpp_land_max_int1, numprocs, &
                  mpp_land_bcast_real, sum_real8,  mpp_land_sync
   implicit none
@@ -56,7 +57,7 @@ MODULE MODULE_mpp_GWBUCKET
      if(my_id .ne. IO_id) then
           tag = 66 
           call mpi_send(numbasns,1,MPI_INTEGER, IO_id,     &
-                tag,MPI_COMM_WORLD,ierr)
+                tag,HYDRO_COMM_WORLD,ierr)
      else
           do i = 0, numprocs - 1
               if(i .eq. IO_id) then
@@ -64,7 +65,7 @@ MODULE MODULE_mpp_GWBUCKET
               else
                  tag = 66
                  call mpi_recv(rcv,1,&
-                     MPI_INTEGER,i,tag,MPI_COMM_WORLD,mpp_status,ierr)
+                     MPI_INTEGER,i,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
 
                  sizeInd(i+1) = rcv
               end if
@@ -100,10 +101,10 @@ MODULE MODULE_mpp_GWBUCKET
         if(numbasns .gt. 0) then
           tag = 62
           call mpi_send(inV,numbasns,MPI_REAL, IO_id,     &
-                tag,MPI_COMM_WORLD,ierr)
+                tag,HYDRO_COMM_WORLD,ierr)
           tag2 = 63
           call mpi_send(ind,numbasns,MPI_INTEGER, IO_id,     &
-                tag2,MPI_COMM_WORLD,ierr)
+                tag2,HYDRO_COMM_WORLD,ierr)
         endif
       else
 
@@ -116,10 +117,10 @@ MODULE MODULE_mpp_GWBUCKET
                if(sizeInd(i+1) .gt. 0) then
                   tag = 62
                   call mpi_recv(vbuff(1:sizeInd(i+1)),sizeInd(i+1),&
-                      MPI_REAL,i,tag,MPI_COMM_WORLD,mpp_status,ierr)
+                      MPI_REAL,i,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
                   tag2 = 63
                   call mpi_recv(ibuff(1:sizeInd(i+1)),sizeInd(i+1),&
-                      MPI_INTEGER,i,tag2,MPI_COMM_WORLD,mpp_status,ierr)
+                      MPI_INTEGER,i,tag2,HYDRO_COMM_WORLD,mpp_status,ierr)
    
                   do k = 1, sizeInd(i+1)
                      outV(ibuff(k)) = vbuff(k) 
@@ -159,10 +160,10 @@ MODULE MODULE_mpp_GWBUCKET
          if(numbasns .gt. 0) then
            tag = 62
            call mpi_send(inV,numbasns,MPI_INTEGER, IO_id,     &
-                 tag,MPI_COMM_WORLD,ierr)
+                 tag,HYDRO_COMM_WORLD,ierr)
            tag2 = 63
            call mpi_send(ind,numbasns,MPI_INTEGER, IO_id,     &
-                 tag2,MPI_COMM_WORLD,ierr)
+                 tag2,HYDRO_COMM_WORLD,ierr)
          endif
        else
  
@@ -175,10 +176,10 @@ MODULE MODULE_mpp_GWBUCKET
                 if(sizeInd(i+1) .gt. 0) then
                    tag = 62
                    call mpi_recv(vbuff(1:sizeInd(i+1)),sizeInd(i+1),&
-                       MPI_INTEGER,i,tag,MPI_COMM_WORLD,mpp_status,ierr)
+                       MPI_INTEGER,i,tag,HYDRO_COMM_WORLD,mpp_status,ierr)
                    tag2 = 63
                    call mpi_recv(ibuff(1:sizeInd(i+1)),sizeInd(i+1),&
-                       MPI_INTEGER,i,tag2,MPI_COMM_WORLD,mpp_status,ierr)
+                       MPI_INTEGER,i,tag2,HYDRO_COMM_WORLD,mpp_status,ierr)
     
                    do k = 1, sizeInd(i+1)
                       outV(ibuff(k)) = vbuff(k) 

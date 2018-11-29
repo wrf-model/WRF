@@ -4,6 +4,8 @@ MODULE MODULE_GOCART_SETTLING
 ! KYKang, MKlose, CLWu various changes 
 ! YShao [2011/09/30] complete update
 !
+! 11/29/18 - A. Ukhov, bug fix: dust (and sea salt) mass balance was
+! violated in the "settling" routine 
 
 CONTAINS
 

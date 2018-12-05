@@ -317,7 +317,7 @@ rconfig   logical   trace_use_dull          namelist,wrfvar9  1  .false.    - "t
 rconfig   logical   trace_memory            namelist,wrfvar9  1  .true.    - "trace_memory"            ""  ""
 rconfig   logical   trace_all_pes           namelist,wrfvar9  1  .false.   - "trace_all_pes"           ""  ""
 rconfig   logical   trace_csv               namelist,wrfvar9  1  .true.    - "trace_csv"               ""  ""
-rconfig   logical   use_html                namelist,wrfvar9  1  .true.    - "use_html"                ""  ""
+rconfig   logical   use_html                namelist,wrfvar9  1  .false.   - "use_html"                ""  ""
 rconfig   logical   warnings_are_fatal      namelist,wrfvar9  1  .false.   - "warnings_are_fatal"      ""  ""
 rconfig   logical   test_transforms         namelist,wrfvar10  1  .false.  - "test_transforms"         ""  ""  
 rconfig   logical   test_gradient           namelist,wrfvar10  1  .false.  - "test_gradient"           ""  ""  

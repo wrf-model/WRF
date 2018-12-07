@@ -55,6 +55,11 @@
 /dyn_em/				@wrf-model/arw_dev
 /dyn_nmm/				@wrf-model/hwrf_dev
 
+#       WRF-Hydro
+
+/hydro/                                 @wrf-model/hydro
+/doc/README.hydro                       @wrf-model/hydro
+
 #	Registry
 
 /Registry/				@wrf-model/infrastructure

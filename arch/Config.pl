@@ -526,7 +526,7 @@ while ( <CONFIGURE_DEFAULTS> )
 
       { $_ =~ s/CONFIGURE_WRFIO_PHDF5/wrfio_phdf5/g ;
 	$_ =~ s:CONFIGURE_PHDF5_FLAG:-DPHDF5: ;
-	$_ =~ s:CONFIGURE_PHDF5_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_phdf5 -lwrfio_phdf5 -L$sw_phdf5_path/lib -lhdf5_fortran -lhdf5 -lm -lz -L$sw_phdf5_path/lib -lsz: ;
+	$_ =~ s:CONFIGURE_PHDF5_LIB_PATH:-L\$\(WRF_SRC_ROOT_DIR\)/external/io_phdf5 -lwrfio_phdf5 -L$sw_phdf5_path/lib -lhdf5_hl -lhdf5 -lm -lz -L$sw_phdf5_path/lib -lsz: ;
 	 }
     else                   
       { $_ =~ s/CONFIGURE_WRFIO_PHDF5//g ;

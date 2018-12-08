@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <strings.h>
+#include <ctype.h>
 
 int  nChmOpts = 0;
 char rxt_tbl[5][1000][128];
@@ -71,6 +72,7 @@ int AppendReg( char *chem_opt, int ndx )
 
    if( fp_reg == NULL ) {
      fprintf(stderr,"Can not open registry.irr_diag for writing\n");
+     fclose(fp_eqn);
      return(-2);
    }
    strcpy( buffer,"\"Integrated Reaction Rate\"  \"\"");
@@ -275,7 +277,7 @@ int irr_diag_scalar_indices( char *dirname )
    fprintf( fp_inc,line );
    fprintf( fp_inc," \n");
 
-   for( i = 0; i < nChmOpts,rxt_cnt[i] > 0; i++ ) {
+   for( i = 0; /*i < nChmOpts &&*/ rxt_cnt[i] > 0; i++ ) {
      for( j = 0; j < rxt_cnt[i]; j++ ) {
        sprintf( line,"     rxtsym(%d,%d) = '%s'\n",j+1,i+1,rxt_tbl[i][j]);
        fprintf( fp_inc,"%s",line);

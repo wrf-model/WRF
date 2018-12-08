@@ -1,9 +1,10 @@
 .SUFFIXES: .c .o
 
-CC_TOOLS = cc
+CC_TOOLS = $(CC)
 CFLAGS = $(CC_TOOLS_CFLAGS) #-ansi
 LDFLAGS =
-DEBUG = -g 
+DEBUG = -g3 -ggdb3 -Og -fvar-tracking -fvar-tracking-assignments -gcolumn-info -fbounds-check -fstack-protector-all -fstack-protector-strong -fstack-check
+WARNING = -Wall -Wextra -Werror -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-sign-compare -Wno-format-truncation
 OBJ = registry.o my_strtok.o reg_parse.o data.o type.o misc.o \
       gen_defs.o gen_allocs.o gen_mod_state_descr.o gen_scalar_indices.o \
       gen_args.o gen_config.o sym.o symtab_gen.o gen_irr_diag.o \
@@ -29,21 +30,22 @@ gen_comms.c : gen_comms.stub
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
 
-data.o: registry.h protos.h data.h
-gen_allocs.o: protos.h registry.h data.h
-gen_args.o: protos.h registry.h data.h
-gen_scalar_derefs.o: protos.h registry.h data.h
-gen_config.o: protos.h registry.h data.h
-gen_defs.o: protos.h registry.h data.h
-gen_mod_state_descr.o: protos.h registry.h data.h
-gen_model_data_ord.o: protos.h registry.h data.h
-gen_scalar_indices.o: protos.h registry.h data.h
-gen_wrf_io.o: protos.h registry.h data.h
-misc.o: protos.h registry.h data.h
-my_strtok.o: registry.h protos.h data.h
-reg_parse.o: registry.h protos.h data.h
-registry.o: protos.h registry.h data.h
+data.o: registry.h protos.h data.h ../inc/streams.h
+gen_allocs.o: protos.h registry.h data.h ../inc/streams.h sym.h
+gen_args.o: protos.h registry.h data.h ../inc/streams.h
+gen_config.o: protos.h registry.h data.h ../inc/streams.h sym.h
+gen_defs.o: protos.h registry.h data.h ../inc/streams.h
+gen_interp.o: protos.h registry.h data.h ../inc/streams.h
+gen_mod_state_descr.o: protos.h registry.h data.h ../inc/streams.h
+gen_model_data_ord.o: protos.h registry.h data.h ../inc/streams.h
+gen_scalar_derefs.o: protos.h registry.h data.h ../inc/streams.h
+gen_scalar_indices.o: protos.h registry.h data.h ../inc/streams.h
+gen_streams.o: protos.h registry.h data.h ../inc/streams.h sym.h
+gen_wrf_io.o: protos.h registry.h data.h ../inc/streams.h sym.h
+misc.o: protos.h registry.h data.h ../inc/streams.h
+my_strtok.o: registry.h protos.h data.h ../inc/streams.h
+reg_parse.o: registry.h protos.h data.h ../inc/streams.h sym.h
+registry.o: protos.h registry.h data.h ../inc/streams.h sym.h
+set_dim_strs.o: protos.h registry.h data.h ../inc/streams.h sym.h
 sym.o: sym.h
-type.o: registry.h protos.h data.h
-gen_interp.o: registry.h protos.h data.h
-gen_streams.o: registry.h protos.h data.h
+type.o: registry.h protos.h data.h ../inc/streams.h

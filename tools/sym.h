@@ -55,6 +55,7 @@
 ***************************************************************************/
 #ifndef SYM_H
 #define SYM_H
+#include <stdlib.h>
 
 /* file: sym.h
 
@@ -91,5 +92,8 @@ struct sym_node
 
 sym_nodeptr sym_add() ;
 sym_nodeptr sym_get() ;
+int sym_forget();
+int create_ht( char *** p ) ;
+
 
 #endif

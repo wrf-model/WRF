@@ -18,7 +18,7 @@ set_dim_strs_x ( node_t *node , char ddim[3][2][NAMELEN], char mdim[3][2][NAMELE
 {
   int i, j, ii ;
   node_t *p ;
-  char d, d1 ;
+  char d = '\0', d1 = '\0' ;
   char * stag ;
   char r1[NAMELEN] ;
 

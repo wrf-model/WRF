@@ -91,15 +91,16 @@ int
 pre_parse( char * dir, FILE * infile, FILE * outfile )
 {
   /* Decreased size for SOA from 8192 to 8000--double check if necessary, Manish Shrivastava 2010 */
-  char inln[8000], parseline[8000], parseline_save[8000] ;
+  char inln[8000], parseline[8000] = {'\0'}, parseline_save[8000] ;
   int found ; 
   char *p, *q ;
   char *tokens[MAXTOKENS], *toktmp[MAXTOKENS], newdims[NAMELEN_LONG], newdims4d[NAMELEN_LONG],newname[NAMELEN_LONG] ;
-  int i, ii, len_of_tok ;
+  unsigned int i, ii;
+  ssize_t len_of_tok = 0;
   char x, xstr[NAMELEN_LONG] ;
-  int is4d, wantstend, wantsbdy ;
-  int ifdef_stack_ptr = 0 ;
-  int ifdef_stack[100] ;
+  unsigned char is4d = 0, wantstend = 0, wantsbdy = 0 ;
+  signed char ifdef_stack_ptr = 0 ;
+  int ifdef_stack[100] = {1} ;
   int inquote, retval ;
 
   ifdef_stack[0] = 1 ;
@@ -139,7 +140,13 @@ pre_parse( char * dir, FILE * infile, FILE * outfile )
       p += 5 ; for ( ; ( *p == ' ' || *p == '	' ) && *p != '\0' ; p++ ) ;
       strncpy(value, p, 31 ) ; value[31] = '\0' ;
       if ( (p=index(value,'\n')) != NULL ) *p = '\0' ;
-      if ( (p=index(value,' ')) != NULL ) *p = '\0' ; if ( (p=index(value,'	')) != NULL ) *p = '\0' ; 
+      /* I have no clue what the next line was trying to say */
+      if ( (p=index(value,' ')) != NULL ) {
+	*p = '\0' ;
+      }
+      if ( (p=index(value,'	')) != NULL ) {
+	*p = '\0' ;
+      }
       ifdef_stack_ptr++ ;
       ifdef_stack[ifdef_stack_ptr] = ( sym_get(value) != NULL && ifdef_stack[ifdef_stack_ptr-1] ) ;
       if ( ifdef_stack_ptr >= 100 ) { fprintf(stderr,"Registry fatal: too many nested ifdefs\n") ; exit(1) ; }
@@ -150,7 +157,13 @@ pre_parse( char * dir, FILE * infile, FILE * outfile )
       p += 6 ; for ( ; ( *p == ' ' || *p == '	' ) && *p != '\0' ; p++ ) ;
       strncpy(value, p, 31 ) ; value[31] = '\0' ;
       if ( (p=index(value,'\n')) != NULL ) *p = '\0' ;
-      if ( (p=index(value,' ')) != NULL ) *p = '\0' ; if ( (p=index(value,'	')) != NULL ) *p = '\0' ; 
+      /* I have no idea what the next line was trying to accomplish */
+      if ( (p=index(value,' ')) != NULL ) {
+	*p = '\0' ;
+      }
+      if ( (p=index(value,'	')) != NULL ) {
+	*p = '\0' ;
+      }
       ifdef_stack_ptr++ ;
       ifdef_stack[ifdef_stack_ptr] = ( sym_get(value) == NULL && ifdef_stack[ifdef_stack_ptr-1] ) ;
       if ( ifdef_stack_ptr >= 100 ) { fprintf(stderr,"Registry fatal: too many nested ifdefs\n") ; exit(1) ; }
@@ -166,7 +179,13 @@ pre_parse( char * dir, FILE * infile, FILE * outfile )
       p += 6 ; for ( ; ( *p == ' ' || *p == '	' ) && *p != '\0' ; p++ ) ;
       strncpy(value, p, 31 ) ; value[31] = '\0' ;
       if ( (p=index(value,'\n')) != NULL ) *p = '\0' ;
-      if ( (p=index(value,' ')) != NULL ) *p = '\0' ; if ( (p=index(value,'	')) != NULL ) *p = '\0' ; 
+      /* Another instance of this distinctly odd pattern */
+      if ( (p=index(value,' ')) != NULL ) {
+	*p = '\0' ;
+      }
+      if ( (p=index(value,'	')) != NULL ) {
+	*p = '\0' ;
+      }
       sym_add( value ) ;
       continue ;
     }
@@ -236,7 +255,7 @@ pre_parse( char * dir, FILE * infile, FILE * outfile )
           }
           sprintf(xstr,"%c",x) ;
           if ( x != 'b' || inbrace ) strcat ( newdims , xstr ) ;
-          if ( x != 'f' && x != 't' || inbrace ) strcat( newdims4d , xstr ) ;
+          if ( (x != 'f' && x != 't') || inbrace ) strcat( newdims4d , xstr ) ;
 
         }
         if ( wantsbdy ) {
@@ -305,7 +324,8 @@ reg_parse( FILE * infile )
   char inln[7000], parseline[7000] ;
   char *p, *q ;
   char *tokens[MAXTOKENS], *toktmp[MAXTOKENS] ; 
-  int i, ii, idim ;
+  unsigned int i, ii;
+  int idim ;
   int defining_state_field, defining_rconfig_field, defining_i1_field ;
 
   parseline[0] = '\0' ;
@@ -477,7 +497,7 @@ reg_parse( FILE * infile )
 	char prev = '\0' ;
 	char x ;
         char tmp[NAMELEN], tmp1[NAMELEN], tmp2[NAMELEN] ;
-	int len_of_tok ;
+	ssize_t len_of_tok = 0 ;
         char fcn_name[2048], aux_fields[2048] ;
 
         strcpy(tmp,tokens[FIELD_IO]) ;
@@ -508,7 +528,7 @@ reg_parse( FILE * infile )
                 if (( pp = index(tmp2,'}') ) != NULL ) {
                   *pp = '\0' ;
                   unitid = atoi(tmp2) ;  /* JM 20100416 */
-                  if ( unitid >= 0  || unitid < MAX_STREAMS && stream + unitid < MAX_HISTORY ) {
+                  if ( unitid >= 0  || (unitid < MAX_STREAMS && stream + unitid < MAX_HISTORY) ) {
                     set_mask( mask , stream + unitid   ) ;
                   }
                   p = p + strlen(tmp2) + 1 ;
@@ -535,7 +555,7 @@ reg_parse( FILE * infile )
               *pp = '\0' ;
               iii = pp - (tmp + i + 1) ;
               unitid = atoi(tmp+i+1) ;  /* JM 20091102 */
-              if ( unitid >= 0  || unitid < MAX_STREAMS  && unitid < MAX_HISTORY ) {
+              if ( unitid >= 0  || (unitid < MAX_STREAMS  && unitid < MAX_HISTORY) ) {
                 if        ( prev == 'i' ) {
                   set_mask( field_struct->io_mask , unitid + MAX_HISTORY  ) ;
                 } else if ( prev == 'h' ) {
@@ -1057,7 +1077,7 @@ check_dimspecs()
 		  p->assoc_nl_var_s,p->name ) ;
 	  return(1) ;
         }
-        if ( ! q->node_kind & RCONFIG )
+        if ( ! (q->node_kind & RCONFIG) )
         {
 	  fprintf(stderr,"WARNING: no namelist variable %s defined for dimension %s\n",
 		  p->assoc_nl_var_s,p->name ) ;
@@ -1082,7 +1102,7 @@ check_dimspecs()
 		p->assoc_nl_var_e,p->name ) ;
 	return(1) ;
       }
-      if ( ! q->node_kind & RCONFIG )
+      if ( ! (q->node_kind & RCONFIG) )
       {
 	fprintf(stderr,"WARNING: no namelist variable %s defined for dimension %s\n",
 		p->assoc_nl_var_e,p->name ) ;

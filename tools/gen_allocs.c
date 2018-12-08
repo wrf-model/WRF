@@ -80,13 +80,13 @@ int
 gen_alloc2 ( FILE * fp , char * structname , char * structname2 , node_t * node, int *j, int *iguy, int *fraction, int numguys, int frac, int sw ) /* 1 = allocate, 2 = just count */
 {
   node_t * p ;
-  int tag ;
+  int tag = 0 ;
   char post[NAMELEN], post_for_count[NAMELEN] ;
   char fname[NAMELEN], dname[NAMELEN], dname_tmp[NAMELEN] ;
-  char x[NAMELEN] ;
-  char x2[NAMELEN], fname2[NAMELEN] ;
-  char dimname[3][NAMELEN] ;
-  char tchar ;
+  char x[NAMELEN + 4] ;
+  char x2[NAMELEN + 2], fname2[NAMELEN] ;
+  char dimname[3][NAMELEN + 12] ;
+  char tchar = '\0';
   unsigned int *io_mask ;
   int nd ;
   int restart ;
@@ -607,7 +607,7 @@ gen_dealloc2 ( FILE * fp , char * structname , node_t * node )
   int tag ;
   char post[NAMELEN] ;
   char fname[NAMELEN] ;
-  char x[NAMELEN] ;
+  char x[NAMELEN + 4] ;
 
   if ( node == NULL ) return(1) ;
 

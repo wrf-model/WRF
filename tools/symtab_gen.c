@@ -36,8 +36,14 @@ For a sample main or calling program see the end of this file.
 #ifndef _WIN32
 # include <strings.h>
 #endif
+#include <stdlib.h>
 
 #define HASHSIZE 1024
+
+#include "sym.h"
+int sym_forget();
+int create_ht( char *** p ) ;
+int hash(char * name);
 
 /*  commented out 2-29-90
 static char * symtab[HASHSIZE] ;	
@@ -46,7 +52,7 @@ static char * symtab[HASHSIZE] ;
 void * malloc() ;
 void * calloc() ;
 
-char * symget(name,newnode,nodename,nodenext,symtab,flag)
+sym_nodeptr symget(name,newnode,nodename,nodenext,symtab,flag)
 char *name ;
 char *(*newnode)(), **(*nodename)(), **(*nodenext)() ;
 char *symtab[] ;
@@ -91,7 +97,7 @@ int flag ;		/* 1 is create if not there, 0 return NULL if not there */
       }
     }
 
-    return(p) ;
+    return ((sym_nodeptr) p) ;
 }
 
 int

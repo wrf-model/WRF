@@ -1,16 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #ifdef _WIN32
+#define rindex(X,Y) strrchr(X,Y)
+#define index(X,Y) strchr(X,Y)
+#endif
 # include <io.h>
-# define rindex(X,Y) strrchr(X,Y)
-# define index(X,Y) strchr(X,Y)
-#else
 # include <sys/time.h>
 # include <sys/resource.h>
 # include <unistd.h>
 # include <string.h>
 # include <strings.h>
-#endif
 
 #define DEFINE_GLOBALS
 #include "protos.h"
@@ -20,7 +19,7 @@
 
 /* SamT: bug fix: main returns int */
 int
-main( int argc, char *argv[], char *env[] )
+main( int argc, char *argv[] )
 {
   char fname_in[NAMELEN], dir[NAMELEN], fname_tmp[NAMELEN], command[NAMELEN] ;
   char fname_wrk[NAMELEN] ;
@@ -34,7 +33,7 @@ main( int argc, char *argv[], char *env[] )
 #endif
 
   mypid = (int) getpid() ;
-  strcpy( thiscom, argv[0] ) ;
+  strncpy( thiscom, argv[0], 4 * NAMELEN - 1) ;
   argv++ ;
 
   sw_deref_kludge           = 0 ;

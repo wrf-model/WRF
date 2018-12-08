@@ -150,6 +150,7 @@ sym_nodeptr x ;
 int
 sym_forget() 
 {
+  /* for (int i = 0; i < SIZEOF_SYMTAB; i++); free(symtab[i]); free(symtab); */
   create_ht( &symtab ) ;
   if (symtab == NULL)
   {

@@ -8,7 +8,7 @@ main()
   FILE *fp ;
   long long y ;
   int retval ;
-  int result1 ;
+  int result1 = 0 ;
 #ifdef TEST_FSEEKO
   off_t x ;
   off_t result2 ;

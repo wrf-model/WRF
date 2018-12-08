@@ -1367,6 +1367,214 @@ RANLIB          =      ranlib
 RLFLAGS		=	
 CC_TOOLS        =      gcc
 
+###########################################################
+#ARCH    Linux KNL x86_64 ppc64le i486 i586 i686 #serial smpar dmpar dm+sm
+#
+DESCRIPTION     =       INTEL ($SFC/$SCC): KNL MIC
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -openmp -fpp -auto
+OMPCC           =       # -openmp -fpp -auto
+SFC             =       ifort
+SCC             =       icc
+CCOMP           =       icc
+DM_FC           =       mpif90 -f90=$(SFC)
+DM_CC           =       mpicc -cc=$(SCC)
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -real-size `expr 8 \* $(RWORDSIZE)` -i4
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_FUNC -DWRF_USE_CLM
+CFLAGS_LOCAL    =       -w -O3 -ip -xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -no-multibyte-chars -xMIC-AVX512
+LDFLAGS_LOCAL   =       -ip -xHost -fp-model fast=2 -no-prec-div -no-prec-sqrt -ftz -align all -fno-alias -fno-common -xMIC-AVX512
+CPLUSPLUSLIB    =       
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM         =       -O3
+FCREDUCEDOPT	=       $(FCOPTIM)
+FCNOOPT		=       -O0 -fno-inline -no-ip
+FCDEBUG         =       # -g $(FCNOOPT) -traceback # -fpe0 -check noarg_temp_created,bounds,format,output_conversion,pointers,uninit -ftrapuv -unroll0 -u
+FORMAT_FIXED    =       -FI
+FORMAT_FREE     =       -FR
+FCSUFFIX        =
+BYTESWAPIO      =       -convert big_endian
+RECORDLENGTH    =       -assume byterecl
+FCBASEOPTS_NO_G =       -ip -fp-model precise -w -ftz -align all -fno-alias $(FORMAT_FREE) $(BYTESWAPIO) -xHost -fp-model fast=2 -no-heap-arrays -no-prec-div -no-prec-sqrt -fno-common -xMIC-AVX512
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG =     
+TRADFLAG        =      CONFIGURE_TRADFLAG
+CPP             =      /lib/cpp CONFIGURE_CPPFLAGS
+AR              =      ar
+ARFLAGS         =      ru
+M4              =      m4
+RANLIB          =      ranlib
+RLFLAGS		=	
+CC_TOOLS        =      $(SCC) 
+
+###########################################################
+#ARCH    Cygwin i686 x86_64, gfortran compiler with gcc  #serial smpar dmpar dm+sm
+#
+DESCRIPTION     =       GNU ($SFC/$SCC)
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -fopenmp
+OMPCC           =       # -fopenmp
+SFC             =       gfortran
+SCC             =       gcc
+CCOMP           =       gcc
+DM_FC           =       mpif90 -f90=$(SFC)
+DM_CC           =       mpicc -cc=$(SCC)
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       #-fdefault-real-8
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM -D_WIN32
+CFLAGS_LOCAL    =       -w -O3 -c
+LDFLAGS_LOCAL   =       
+CPLUSPLUSLIB    =       
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM         =       -O2 -ftree-vectorize -funroll-loops
+FCREDUCEDOPT	=       $(FCOPTIM)
+FCNOOPT		=       -O0
+FCDEBUG         =       # -g $(FCNOOPT) # -ggdb -fbacktrace
+FORMAT_FIXED    =       -ffixed-form
+FORMAT_FREE     =       -ffree-form -ffree-line-length-none
+FCSUFFIX        =       
+BYTESWAPIO      =       -fconvert=big-endian -frecord-marker=4
+FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG =     
+TRADFLAG        =      -traditional
+CPP             =      /lib/cpp -P
+AR              =      ar
+ARFLAGS         =      ru
+M4              =      m4 -G
+RANLIB          =      ranlib
+RLFLAGS		=	
+CC_TOOLS        =      $(SCC)
+
+LIB_EXTERNAL    = \
+                     $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a CONFIGURE_NETCDF_PATH/lib/libnetcdf.dll.a \
+		     -L CONFIGURE_NETCDF_PATH -lnetcdff -lnetcdf -lnetcdf -tirpc -lhdf5_hl -lhdf5 -lm -lz \
+                     $(WRF_SRC_ROOT_DIR)/external/wavelet/libWavelet.a $(WRF_SRC_ROOT_DIR)/external/wavelet/lib_wavelet.a \
+		     $(WRF_SRC_ROOT_DIR)/external/io_grib2/libio_grib2.a
+ESMF_IO_LIB     =    $(WRF_SRC_ROOT_DIR)/external/esmf_time_f90/libesmf_time.a
+LIB_BUNDLED     = \
+                     $(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5/libfftpack.a \
+                     $(WRF_SRC_ROOT_DIR)/external/io_grib1/libio_grib1.a \
+		     $(WRF_SRC_ROOT_DIR)/external/io_grib2/libio_grib2.a \
+                     $(WRF_SRC_ROOT_DIR)/external/io_grib_share/libio_grib_share.a \
+                     $(WRF_SRC_ROOT_DIR)/external/io_int/libwrfio_int.a \
+                     $(ESMF_IO_LIB) \
+                     CONFIGURE_COMMS_LIB \
+                     $(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o \
+                     $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o
+
+###########################################################
+#ARCH    Mingw64 i686 x86_64, gfortran compiler with gcc  #serial smpar dmpar dm+sm
+#
+DESCRIPTION     =       GNU ($SFC/$SCC)
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -fopenmp
+OMPCC           =       # -fopenmp
+SFC             =       gfortran
+SCC             =       gcc
+CCOMP           =       gcc
+DM_FC           =       mpif90 -f90=$(SFC)
+DM_CC           =       mpicc -cc=$(SCC)
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       #-fdefault-real-8
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
+CFLAGS_LOCAL    =       -w -O3 -c
+LDFLAGS_LOCAL   =       
+CPLUSPLUSLIB    =       
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM         =       -O2 -ftree-vectorize -funroll-loops
+FCREDUCEDOPT	=       $(FCOPTIM)
+FCNOOPT		=       -O0
+FCDEBUG         =       # -g $(FCNOOPT) # -ggdb -fbacktrace
+FORMAT_FIXED    =       -ffixed-form
+FORMAT_FREE     =       -ffree-form -ffree-line-length-none
+FCSUFFIX        =       
+BYTESWAPIO      =       -fconvert=big-endian -frecord-marker=4
+FCBASEOPTS_NO_G =       -w $(FORMAT_FREE) $(BYTESWAPIO)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG =     
+TRADFLAG        =      -traditional
+CPP             =      /lib/cpp -P
+AR              =      ar
+ARFLAGS         =      ru
+M4              =      m4 -G
+RANLIB          =      ranlib
+RLFLAGS		=	
+CC_TOOLS        =      $(SCC)
+
+LIB_EXTERNAL    = \
+                     $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a CONFIGURE_NETCDF_PATH/lib/libnetcdf.dll.a \
+		     -L CONFIGURE_NETCDF_PATH -lnetcdff -lnetcdf -lnetcdf -lhdf5_hl -lhdf5 -lm -lz \
+                     $(WRF_SRC_ROOT_DIR)/external/wavelet/libWavelet.a $(WRF_SRC_ROOT_DIR)/external/wavelet/lib_wavelet.a \
+		     $(WRF_SRC_ROOT_DIR)/external/io_grib2/libio_grib2.a
+ESMF_IO_LIB     =    $(WRF_SRC_ROOT_DIR)/external/esmf_time_f90/libesmf_time.a
+LIB_BUNDLED     = \
+                     $(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5/libfftpack.a \
+                     $(WRF_SRC_ROOT_DIR)/external/io_grib1/libio_grib1.a \
+		     $(WRF_SRC_ROOT_DIR)/external/io_grib2/libio_grib2.a \
+                     $(WRF_SRC_ROOT_DIR)/external/io_grib_share/libio_grib_share.a \
+                     $(WRF_SRC_ROOT_DIR)/external/io_int/libwrfio_int.a \
+                     $(ESMF_IO_LIB) \
+                     CONFIGURE_COMMS_LIB \
+                     $(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o \
+                     $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o
+
+#insert new stanza here
+
+###########################################################
+#ARCH    Fujitsu FX10/FX100 Linux x86_64 SPARC64IXfx/SPARC64Xlfx, mpifrtpx and mpifccpx compilers #serial smpar dmpar dm+sm
+#
+DESCRIPTION     =       FUJITSU ($SFC/$SCC): FX10/FX100 SPARC64 IXfx/Xlfx
+DMPARALLEL      =       # 1
+OMPCPP          =       # -D_OPENMP
+OMP             =       # -Kopenmp
+OMPCC           =       # -Kopenmp
+SFC             =       frtpx
+SCC             =       fccpx
+CCOMP           =       fccpx
+DM_FC           =       mpifrtpx
+DM_CC           =       mpifccpx -DMPI2_THREAD_SUPPORT # -DMPI2_SUPPORT
+FC              =       CONFIGURE_FC
+CC              =       CONFIGURE_CC
+LD              =       $(FC)
+RWORDSIZE       =       CONFIGURE_RWORDSIZE
+PROMOTION       =       -CcdRR$(RWORDSIZE)
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
+CFLAGS_LOCAL    =       -Kfast -Xg -DSUN
+LDFLAGS_LOCAL   =
+CPLUSPLUSLIB    =
+ESMF_LDFLAG     =       $(CPLUSPLUSLIB)
+FCOPTIM         =       -Kfast
+FCREDUCEDOPT    =       $(FCOPTIM)
+FCNOOPT         =       -O0
+FCDEBUG         =       # -g $(FCNOOPT)
+FORMAT_FIXED    =       -Fixed
+FORMAT_FREE     =       -Free
+FCSUFFIX        =
+BYTESWAPIO      =
+FCBASEOPTS_NO_G =       -Kautoobjstack,ocl -fw $(FORMAT_FREE) $(BYTESWAPIO) $(OMP)
+FCBASEOPTS      =       $(FCBASEOPTS_NO_G) $(FCDEBUG)
+MODULE_SRCH_FLAG =
+TRADFLAG        =      -traditional
+CPP             =      /lib/cpp -P
+AR              =      ar
+ARFLAGS         =      ru
+M4              =      m4
+RANLIB          =      ranlib
+RLFLAGS         =
+CC_TOOLS        =      /usr/bin/gcc -Wall
 
 ###########################################################
 #ARCH    Linux ppc64 BG /L blxlf compiler with blxlc # dmpar

@@ -91,7 +91,7 @@ dimension_with_ranges( char * refarg , char * pre ,
   int i ;
   char tx[NAMELEN] ;
   char r[NAMELEN],s[NAMELEN],four_d[NAMELEN] ;
-  int   bdex, xdex, ydex, zdex ;
+  int   bdex = 0, xdex, ydex, zdex ;
   node_t *xdim, *ydim, *zdim ;
   char *pp ;
   if ( p == NULL ) return("") ;
@@ -182,7 +182,7 @@ index_with_firstelem( char * pre , char * dref , int bdy ,  /* as defined in dat
   char tx[NAMELEN] ;
   char tmp2[NAMELEN] ;
   /* SamT: bug fix: zdex is used but never set */
-  int  bdex, xdex, ydex, zdex=-999 ;
+  int  bdex = 0, xdex, ydex, zdex=-999 ;
   node_t *xdim, *ydim, *zdim ;
   char r[NAMELEN] ;
 
@@ -260,7 +260,7 @@ int
 get_elem ( char * structname , char * nlstructname , char * tx , int i , node_t * p , int first_last )
 {
    char dref[NAMELEN], nlstruct[NAMELEN] ;
-   char d, d1 ;
+   char d, d1 = '\0' ;
 
    if ( structname == NULL ) { strcpy( dref, "" ) ;}
    else                      { strcpy( dref, structname ) ; }
@@ -300,13 +300,15 @@ get_elem ( char * structname , char * nlstructname , char * tx , int i , node_t 
          }
          break ;
        case (NAMELIST) :
-         if ( first_last == 0 ) { if ( !strcmp( p->dims[i]->assoc_nl_var_s , "1" ) ) {
-                                    sprintf(tx,"%s",p->dims[i]->assoc_nl_var_s) ;
-                                  } else {
-                                    sprintf(tx,"%s%s%s",nlstructname,structname,p->dims[i]->assoc_nl_var_s) ; 
-                                  }
-                                }
-         else                   { sprintf(tx,"%s%s%s",nlstructname,structname,p->dims[i]->assoc_nl_var_e) ; }
+         if ( first_last == 0 ) {
+	   if ( !strcmp( p->dims[i]->assoc_nl_var_s , "1" ) ) {
+	     snprintf(tx, NAMELEN,"%s",p->dims[i]->assoc_nl_var_s) ;
+	   } else {
+	     snprintf(tx,NAMELEN, "%s%s%s",nlstructname,structname,p->dims[i]->assoc_nl_var_s) ;
+	   }
+	 } else {
+	   snprintf(tx, NAMELEN, "%s%s%s",nlstructname,structname,p->dims[i]->assoc_nl_var_e) ;
+	 }
          break ;
        case (CONSTANT) :
          if ( first_last == 0 ) { sprintf(tx,"%d",p->dims[i]->coord_start) ; }
@@ -561,7 +563,7 @@ array_size_expression ( char * refarg , char * pre ,
   int i ;
   char tx[NAMELEN] ;
   char r[NAMELEN],s[NAMELEN],four_d[NAMELEN] ;
-  int   bdex, xdex, ydex, zdex ;
+  int   bdex = 0, xdex, ydex, zdex ;
   node_t *xdim, *ydim, *zdim ;
   char *pp ;
   if ( p == NULL ) return("") ;

@@ -1032,6 +1032,7 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
                    ,gsfcrad_gocart_coupling                       &
 #endif
                     )
+ use, intrinsic :: ieee_arithmetic
  implicit none
 !----------------------------------------------------------------------
 !
@@ -2085,7 +2086,7 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
          tten1d(ic,kt) = - fac * (flx(ic,kt-1) - flx(ic,kt)) / (p8w1d(ic,kt-1)-p8w1d(ic,kt))
 
          ! check error
-         if( ISNAN( tten1d(ic,kt) ) ) then
+         if( ieee_is_nan( tten1d(ic,kt) ) ) then
             print*,'MSG goddardrad SW: Found NaN in tten1d(k)',i,j,kt
             print*,'p8w1d',p8w1d(ic,:)
             print*,'t1d',t1d(ic,:)
@@ -2311,7 +2312,7 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
         i = ii+ic -1
         tten1d(ic,kt) = - fac * (flx(ic,kt-1) - flx(ic,kt)) / (p8w1d(ic,kt-1)-p8w1d(ic,kt))
 
-        if( ISNAN( tten1d(ic,kt) ) ) then
+        if( ieee_is_nan( tten1d(ic,kt) ) ) then
             print*,'MSG goddardrad LW: Found NaN in tten1d(k)',i,j,kt
             print*,'tsfc',tsfc(ic)
             print*,'tskin',tskin(ic)
@@ -12389,6 +12390,7 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
 !GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
  subroutine check_reff(spc,q,re,i,j,k)
+ use, intrinsic :: ieee_arithmetic
  implicit none
  character(len=*) :: spc  !species 
  real,intent(inout) :: q !mass concentration [g/m2]
@@ -12399,7 +12401,7 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
 !
 ! Check NaN
 !
- if( isnan(re) ) then
+ if( ieee_is_nan(re) ) then
   print*,'MSG check_reff: Warning '//trim(spc)//' re is NaN at (i,j,k)=',i,j,k
   re = 0.e0
  endif

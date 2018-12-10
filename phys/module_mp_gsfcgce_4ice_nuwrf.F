@@ -4954,6 +4954,7 @@ CONTAINS
 ! Calculate cloud droplet effective radius
    real function eff_rad(lambda)
 
+      use, intrinsic :: ieee_arithmetic
       implicit none
 
 !---------------------------------------------------------------------------------------------------
@@ -4970,7 +4971,7 @@ CONTAINS
 !
 ! for no particles.
 !
-       if ( lambda <= 0.e0  .or. isnan(lambda) ) then
+       if ( lambda <= 0.e0  .or. ieee_is_nan(lambda) ) then
           eff_rad = 0.e0
           return
        endif

@@ -8845,6 +8845,7 @@
 !GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
  subroutine mass2icn(p_air,t_air,aero,icn_out,ii,jj,kk)
+ use, intrinsic :: ieee_arithmetic
  implicit none
 !------------------------------------------------------------------------
 ! Comments: Convert GOCART aerosol mass concentrations into IN number conc 
@@ -8934,7 +8935,7 @@
             print*, 'icn_std, t_std, p_std, p_air, t_air =', icn_std, t_std, p_std, p_air, t_air
             print*, 'aero = ', aero
          endif
-         if( ISNAN( icn_estimate ) ) then
+         if( ieee_is_nan( icn_estimate ) ) then
             print*, 'NAN in mass2icn, i,j,k, icn_estimate = ', ii, jj, kk, icn_estimate
             print*, 'icn_std, t_std, p_std, p_air, t_air =', icn_std, t_std, p_std, p_air, t_air
             print*, 'aero = ', aero

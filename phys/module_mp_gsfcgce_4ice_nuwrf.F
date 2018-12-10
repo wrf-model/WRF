@@ -2432,7 +2432,9 @@ CONTAINS
              acphysm(i,k)=0.
        ENDDO
        enddo !k
+      if ( wrf_dm_on_monitor() .and. i.eq.its .and. j.eq.jts ) then
        write(6, *) '    latent heating variables have been initialized to 0. at timestep = ', itimestep
+      endif
    endif
 
 !JJS  convert from mks to cgs, and move from WRF grid to GCE grid
@@ -2530,7 +2532,8 @@ CONTAINS
 
       thresh_evap = -39.974 * exp(-1.194 * dx/1000.)
 
-      if ( wrf_dm_on_monitor() .and. itimestep.eq.1 ) then
+      if ( wrf_dm_on_monitor() .and. itimestep.eq.1 .and. &
+           i.eq.its .and. j.eq.jts ) then
          print *,'GSFCGCE 4ice scheme inside satice improve=',improve
          print *,'dx, thresh_evap = ', dx, thresh_evap  
          print *,'no reduce suprious evaporation adjustment'

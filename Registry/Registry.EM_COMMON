@@ -2666,7 +2666,8 @@ package   wsm5scheme      mp_physics==4                -             moist:qv,qc
 package   fer_mp_hires    mp_physics==5                -             moist:qv,qc,qr,qi;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 package   fer_mp_hires_advect  mp_physics==15          -             moist:qv,qc,qr,qi;scalar:qrimef
 package   wsm6scheme      mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg;state:re_cloud,re_ice,re_snow
-package   gsfcgcescheme   mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg;state:phys_tot,physc,physe,physd,physs,physm,physf,acphys_tot,acphysc,acphyse,acphysd,acphyss,acphysm,acphysf,preci3d,precs3d,precg3d,precr3d
+#package   gsfcgcescheme   mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg;state:phys_tot,physc,physe,physd,physs,physm,physf,acphys_tot,acphysc,acphyse,acphysd,acphyss,acphysm,acphysf,preci3d,precs3d,precg3d,precr3d
+package   gsfcgcescheme   mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
 package   thompson        mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow
 package   milbrandt2mom   mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
 package   morr_two_moment mp_physics==10               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng;state:rqrcuten,rqscuten,rqicuten
@@ -2681,8 +2682,6 @@ package   nssl_1mom       mp_physics==19               -             moist:qv,qc
 package   nssl_1momlfo    mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
 package   nssl_2momg      mp_physics==22               -             moist:qv,qc,qr,qi,qs,qg;scalar:qndrop,qnr,qni,qns,qng,qvolg;state:re_cloud,re_ice,re_snow
 package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow,qnwfa2d,qnifa2d,taod5503d,taod5502d
-#DAVE
-#re_cloud_gsfc,re_rain_gsfc,re_ice_gsfc,re_snow_gsfc,re_graupel_gsfc,re_hail_gsfc
 package   nuwrf3icescheme mp_physics==55             -               moist:qv,qc,qr,qi,qs,qg;state:phys_tot,physc,physe,physd,physs,physm,physf,acphys_tot,acphysc,acphyse,acphysd,acphyss,acphysm,acphysf,preci3d,precs3d,precg3d,precr3d,re_cloud_gsfc,re_rain_gsfc,re_ice_gsfc,re_snow_gsfc,re_graupel_gsfc,re_hail_gsfc
 package   nuwrf4icescheme mp_physics==56             -               moist:qv,qc,qr,qi,qs,qg,qh;state:phys_tot,physc,physe,physd,physs,physm,physf,acphys_tot,acphysc,acphys     e,acphysd,acphyss,acphysm,acphysf,preci3d,precs3d,precg3d,precr3d,re_cloud_gsfc,re_rain_gsfc,re_ice_gsfc,re_snow_gsfc,re_graupel_gsfc,re_hail_gsfc
 package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi;scalar:qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
@@ -2731,7 +2730,7 @@ package   camlwscheme      ra_lw_physics==3          -             ozmixm:mth01,
 package   rrtmg_lwscheme   ra_lw_physics==4          -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,o3rad
 package   rrtmk_lwscheme   ra_lw_physics==14          -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,o3rad
 package   rrtmg_lwscheme_fast  ra_lw_physics==24     -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,o3rad
-package   goddardlwscheme  ra_lw_physics==5          -             state:tlwdn,tlwup,slwdn,slwup,taucldc,taucldi
+package   goddardlwscheme  ra_lw_physics==5          -             state:tlwdn,tlwup,slwdn,slwup,taucldc,taucldi,re_cloud_gsfc,re_rain_gsfc,re_ice_gsfc,re_snow_gsfc,re_graupel_gsfc,re_hail_gsfc,cod2d_out,ctop2d_out
 package   flglwscheme      ra_lw_physics==7          -             -
 package   heldsuarez       ra_lw_physics==31         -             -
 package   gfdllwscheme     ra_lw_physics==99         -             -
@@ -2742,7 +2741,7 @@ package   camswscheme     ra_sw_physics==3           -             ozmixm:mth01,
 package   rrtmg_swscheme  ra_sw_physics==4           -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,o3rad;aerod:ocarbon,seasalt,dust,bcarbon,sulfate,upperaer
 package   rrtmk_swscheme  ra_sw_physics==14           -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,o3rad;aerod:ocarbon,seasalt,dust,bcarbon,sulfate,upperaer
 package   rrtmg_swscheme_fast  ra_sw_physics==24     -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,o3rad;aerod:ocarbon,seasalt,dust,bcarbon,sulfate,upperaer
-package   goddardswscheme ra_sw_physics==5           -             state:tswdn,tswup,sswdn,sswup,taucldc,taucldi
+package   goddardswscheme ra_sw_physics==5           -             state:tswdn,tswup,sswdn,sswup,taucldc,taucldi,re_cloud_gsfc,re_rain_gsfc,re_ice_gsfc,re_snow_gsfc,re_g     raupel_gsfc,re_hail_gsfc,cod2d_out,ctop2d_out
 package   flgswscheme     ra_sw_physics==7           -             -
 package   gfdlswscheme    ra_sw_physics==99          -             -
 

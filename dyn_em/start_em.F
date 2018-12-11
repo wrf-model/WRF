@@ -1724,7 +1724,6 @@ endif
 
          CALL chem_init (grid%id,chem,emis_ant,scalar,grid%dt,grid%bioemdt,grid%photdt,     &
                          grid%chemdt,                                       &
-                         grid%casafxdt, grid%stepcasa,                                      &           !add by Z. Tao
                          grid%stepbioe,grid%stepphot,grid%stepchem,grid%stepfirepl,      &
                          grid%plumerisefire_frq,z_at_w,grid%xlat,grid%xlong,g,           &
                          grid%aerwrf,config_flags,grid,            &

@@ -1323,10 +1323,8 @@ state    real  TSWDN           ij      misc        1         -      h         "T
 state    real  TSWUP           ij      misc        1         -      h         "TSWUP"                 "TOA SW upwelling flux"             "W m-2"
 state    real  SSWDN           ij      misc        1         -      h         "SSWDN"                 "Surface SW downwelling flux"       "W m-2"
 state    real  SSWUP           ij      misc        1         -      h         "SSWUP"                 "Surface SW upwelling flux"         "W m-2"
-
-#goddardrad
-state    real  COD2D_OUT       ij      misc        1         -      h         "COD2D_OUT"           "Column Cloud Optical Depth"   " "
-state    real  CTOP2D_OUT      ij      misc        1         -      h         "CTOP2D_OUT"          "Cloud-Top Pressure"          "mb"
+state    real  COD2D_OUT       ij      misc        1         -      h         "COD2D_OUT"             "Column Cloud Optical Depth"        " "
+state    real  CTOP2D_OUT      ij      misc        1         -      h         "CTOP2D_OUT"            "Cloud-Top Pressure"                "mb"
                 
                                 
 # Other physics variables

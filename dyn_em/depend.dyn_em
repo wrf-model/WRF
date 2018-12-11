@@ -190,7 +190,6 @@ module_initialize_scm_xy.o : \
 		../share/module_bc.o \
 		module_init_utilities.o
 
-# NUWRF...Added support for LIS processing
 module_initialize_real.o :  \
 		nest_init_utils.o	\
 		module_polarfft.o \
@@ -204,9 +203,7 @@ module_initialize_real.o :  \
 		../share/module_model_constants.o \
 		../share/module_bc.o \
 		../share/module_soil_pre.o \
-		../share/module_optional_input.o \
-		ReconcileWithLis7_mod.o \
-		NetcdfUtils_mod.o
+		../share/module_optional_input.o
 
 module_initialize_squall2d_x.o : \
 		../frame/module_domain.o \
@@ -254,7 +251,6 @@ start_em.o:     module_bc_em.o \
                 ../phys/module_fr_fire_driver_wrf.o \
 		$(CF)
 
-# NUWRF Added module_checkerror
 solve_em.o:     module_small_step_em.o \
 		module_em.o            \
 		module_solvedebug_em.o \
@@ -331,18 +327,6 @@ adapt_timestep_em.o: \
 
 #		../chem/module_chem_utilities.o \
 # 		../chem/module_input_chem_data.o
-
-# NUWRF                                                                          
-ReconcileWithLis7_mod.o: \
-               ../frame/module_domain.o \
-               ../frame/module_domain_type.o \
-               ../frame/module_wrf_error.o \
-               ../share/module_soil_pre.o \
-               ../share/module_date_time.o \
-               NetcdfUtils_mod.o                                                  
-
-NetcdfUtils_mod.o: \
-               ../frame/module_wrf_error.o
 
 # End of DEPENDENCIES for dyn_em
 

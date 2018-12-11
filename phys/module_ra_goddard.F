@@ -115,7 +115,6 @@
 !
 !---------------------------------------------------------------------------------------------------------
  module module_ra_goddard
- use netcdf
  use module_wrf_error
  use module_checkerror
 #if (WRF_CHEM == 1)

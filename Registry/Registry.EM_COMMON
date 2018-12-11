@@ -1239,6 +1239,10 @@ state   real    v_frame        -       misc         1         -     ir        "v
 # from the metadata?  Otherwise it's a field?
 state logical just_read_auxinput4  -      misc      -         -     r    "we_just_read_sst"          "1=AUXINPUT4 ALARM RINGING, 0=NO AUXINPUT4 ALARM"  "-"
 state logical just_read_boundary   -      misc      -         -     r    "we_just_d01_LBC"           "1=BOUNDARY  ALARM RINGING, 0=NO BOUNDARY  ALARM"  "-"
+state   real    mf_fft         -       misc         -         -     r        "mf_fft"                "Mass point map factor at equatorward FFT filter location"  ""
+state   real    p_top          -       misc         -         -     irh       "p_top"                "PRESSURE TOP OF THE MODEL"  "Pa"
+state logical got_var_sso	-	misc	    -	      -     i02r  "got_var_sso"		     "whether VAR_SSO was included in WPS output (beginning V3.4)" ""
+state logical v4_metgrid 	-	misc	    -	      -     -     "v4_metgrid"		     "for real, T/F: identify if this is v4 metgrid data" ""
 
 
 #BSINGH - Adding all these variables for CuP scheme[any var before t00]
@@ -1275,10 +1279,6 @@ state   real    lon_ul_d       -       dyn_em       -         -     ir       "lo
 state   real    lon_ur_d       -       dyn_em       -         -     ir       "lon_ur_d"              "longitude up right, massless point" "degrees"
 state   real    lon_lr_d       -       dyn_em       -         -     ir       "lon_lr_d"              "longitude lower right, massless point" "degrees"
 #BSINGH -ENDS
-state   real    mf_fft         -       misc         -         -     r        "mf_fft"                "Mass point map factor at equatorward FFT filter location"  ""
-state   real    p_top          -       misc         -         -     irh       "p_top"                "PRESSURE TOP OF THE MODEL"  "Pa"
-state logical got_var_sso	-	misc	    -	      -     i02r  "got_var_sso"		     "whether VAR_SSO was included in WPS output (beginning V3.4)" ""
-state logical v4_metgrid 	-	misc	    -	      -     -     "v4_metgrid"		     "for real, T/F: identify if this is v4 metgrid data" ""
 
 state   real    t00            -       misc         -         -     i02rh     "t00"                   "BASE STATE TEMPERATURE   "  "K"
 state   real    p00            -       misc         -         -     i02rh     "p00"                   "BASE STATE PRESURE"         "Pa"

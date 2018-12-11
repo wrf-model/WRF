@@ -49,9 +49,9 @@ CONTAINS
                          re_cloud, re_ice, re_snow,              & ! G. Thompson
                          has_reqc, has_reqi, has_reqs,           & ! G. Thompson
                          re_cloud_gsfc, re_ice_gsfc,             & 
-			 re_snow_gsfc,                           & ! Goddard
+                         re_snow_gsfc,                           & ! Goddard
                          re_graupel_gsfc, re_hail_gsfc,          &
-			 re_rain_gsfc,                           & ! Goddard
+                         re_rain_gsfc,                           & ! Goddard
                          NCA,swrad_scat,                         &
                          CLDEFI,LOWLYR,                          &
                          MASS_FLUX,                              &
@@ -1734,7 +1734,7 @@ CONTAINS
       CLOSE (landuse_unit)
     endif
     CALL wrf_debug( 100 , 'returning from of landuse_init' )
-    
+
 ! restore LU variables from state
     curs = 1
     DO cats = 1, max_cats
@@ -1950,7 +1950,6 @@ CONTAINS
 
    lwrad_select: SELECT CASE(config_flags%ra_lw_physics)
 
-!goddardrad
         CASE (goddardlwscheme)
              CALL init_goddardrad(                          &
                            allowed_to_read ,                &

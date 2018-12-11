@@ -321,7 +321,6 @@ BENCH_START(rad_driver_tim)
      &        ,kts=k_start, kte=min(k_end,kde-1)                          &
      &        ,num_tiles=grid%num_tiles                                   &
             ! Optional
-!NU-WRF
 !JJS 20101020 vvvvv
 #if ( WRF_CHEM == 1)
      &        , CHEM=chem                                                 &

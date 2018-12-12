@@ -13,7 +13,7 @@ subroutine da_get_var_diagnostics(it, iv, j)
    integer                      :: num_stats_tot
    integer                      :: i,k
    real                         :: jo_radiance
-   real                         :: temp(78)
+   real                         :: temp(79)
 
    if (trace_use) call da_trace_entry("da_get_var_diagnostics")
 
@@ -101,6 +101,8 @@ subroutine da_get_var_diagnostics(it, iv, j)
    temp(75) = j % jo % tamdar_sfc_p
    temp(76) = j % jo % tamdar_sfc_q
    temp(77) = j % jo % rain_r
+   !temp(78) is j % jo % airep_q listed up with other airep variables
+   temp(79) = j % jo % gpseph_eph
 
    call da_proc_sum_real(temp(:))
 
@@ -184,6 +186,7 @@ subroutine da_get_var_diagnostics(it, iv, j)
    j % jo % tamdar_sfc_p    = temp(75)
    j % jo % tamdar_sfc_q    = temp(76)
    j % jo % rain_r          = temp(77)
+   j % jo % gpseph_eph      = temp(79)
 
    if (use_rad) then
       jo_radiance = 0.0
@@ -214,15 +217,26 @@ subroutine da_get_var_diagnostics(it, iv, j)
       write(unit=stdout,fmt='(a,f15.5)') '   Final value of Je           = ', j % je
       write(unit=stdout,fmt='(a,f15.5)') '   Final value of Jp           = ', j % jp
       write(unit=stdout,fmt='(a,f15.5)') '   Final value of Jl           = ', j % jl
+      write(unit=stdout,fmt='(a,f15.5)') '   Final value of Jm           = ', j % jm
       if (num_stats_tot > 0) &
          write(unit=stdout,fmt='(a,f15.5)') '   Final J / total num_obs     = ', j % total / &
                                                           real(num_stats_tot)
       if (cv_options /= 3) then
-        write(unit=stdout,fmt='(a,(5f15.5))') '   Jb factor used(1)           = ', var_scaling1(it)
-        write(unit=stdout,fmt='(a,(5f15.5))') '   Jb factor used(2)           = ', var_scaling2(it)
-        write(unit=stdout,fmt='(a,(5f15.5))') '   Jb factor used(3)           = ', var_scaling3(it)
-        write(unit=stdout,fmt='(a,(5f15.5))') '   Jb factor used(4)           = ', var_scaling4(it)
-        write(unit=stdout,fmt='(a,(5f15.5))') '   Jb factor used(5)           = ', var_scaling5(it)
+        write(unit=stdout,fmt='(a,(5f15.5))') '   var_scaling used(1)         = ', var_scaling1(it)
+        write(unit=stdout,fmt='(a,(5f15.5))') '   var_scaling used(2)         = ', var_scaling2(it)
+        write(unit=stdout,fmt='(a,(5f15.5))') '   var_scaling used(3)         = ', var_scaling3(it)
+        write(unit=stdout,fmt='(a,(5f15.5))') '   var_scaling used(4)         = ', var_scaling4(it)
+        write(unit=stdout,fmt='(a,(5f15.5))') '   var_scaling used(5)         = ', var_scaling5(it)
+        if ( cloud_cv_options >= 2 ) then
+           write(unit=stdout,fmt='(a,(5f15.5))') '   var_scaling used(6)         = ', var_scaling6(it)
+           write(unit=stdout,fmt='(a,(5f15.5))') '   var_scaling used(7)         = ', var_scaling7(it)
+           write(unit=stdout,fmt='(a,(5f15.5))') '   var_scaling used(8)         = ', var_scaling8(it)
+           write(unit=stdout,fmt='(a,(5f15.5))') '   var_scaling used(9)         = ', var_scaling9(it)
+           write(unit=stdout,fmt='(a,(5f15.5))') '   var_scaling used(10)        = ', var_scaling10(it)
+        end if
+        if ( use_cv_w ) then
+           write(unit=stdout,fmt='(a,(5f15.5))') '   var_scaling used(11)        = ', var_scaling11(it)
+        end if
       endif
 
       write(unit=stdout,fmt='(a, f15.5)') '   Jb factor used              = ', jb_factor
@@ -301,6 +315,13 @@ subroutine da_get_var_diagnostics(it, iv, j)
          write(unit=jo_unit,fmt='(a30,2i8,10f15.5)')'    gpsref obs, Jo(actual)  = ', &
                                iv%info(gpsref)%ntotal, iv%nstats(gpsref), &
                                j % jo % gpsref_ref, iv % gpsref_ef_ref, &
+                               0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0
+      end if
+
+      if (iv%info(gpseph)%ntotal > 0) then
+         write(unit=jo_unit,fmt='(a30,2i8,10f15.5)')'    gpseph obs, Jo(actual)  = ', &
+                               iv%info(gpseph)%ntotal, iv%nstats(gpseph), &
+                               j % jo % gpseph_eph, iv % gpseph_ef_eph, &
                                0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0
       end if
 

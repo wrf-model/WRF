@@ -36,7 +36,7 @@ CONTAINS
          ebio_c10h16,ebio_tol,ebio_bigalk,ebio_ch3oh,ebio_acet,            &
          ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,              &
          ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,ebio_so2,     &
-         ebio_dms,                                                         &
+         ebio_dms,ebio_hcn,                                                &
          ebio_alk3, ebio_alk4, ebio_alk5, ebio_ole1, ebio_ole2,            &    
          ebio_aro1, ebio_aro2, ebio_ccho, ebio_meoh,                       &    
          ebio_ethene, ebio_hcooh, ebio_terp, ebio_bald,                    &    
@@ -238,7 +238,7 @@ CONTAINS
                ebio_c10h16,ebio_tol,ebio_bigalk, ebio_ch3oh,ebio_acet, &
                ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,    &
                ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,    &
-               ebio_so2,ebio_dms, ebio_co2oce ,                        &
+               ebio_so2,ebio_dms, ebio_co2oce , ebio_hcn,              &
                ebio_alk3, ebio_alk4, ebio_alk5, ebio_ole1, ebio_ole2,  &    
                ebio_aro1, ebio_aro2, ebio_ccho, ebio_meoh,             &    
                ebio_ethene, ebio_hcooh, ebio_terp, ebio_bald,          &    
@@ -528,7 +528,7 @@ CONTAINS
          endif ! julday.ge.begday .and. julday.le.endday
 
       volc_select:  SELECT CASE(config_flags%chem_opt)
-      CASE (GOCART_SIMPLE,MOZCART_KPP,GOCARTRADM2,GOCARTRACM_KPP)
+      CASE (GOCART_SIMPLE,MOZCART_KPP,T1_MOZCART_KPP,GOCARTRADM2,GOCARTRACM_KPP)
         CALL wrf_debug(15,'Adding volcanic emissions')
                   do k=kts,kte
                     conv = 4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
@@ -620,6 +620,7 @@ CONTAINS
 !--------------------------------------------------------------------------------------
       do_plumerisefire = .false.
       IF ( config_flags%biomass_burn_opt == BIOMASSB_MOZC .OR. &
+           config_flags%biomass_burn_opt == BIOMASSB_T1_MOZCART  .OR. &
            config_flags%biomass_burn_opt == BIOMASSB_MOZ  .OR. &
            config_flags%biomass_burn_opt == BIOMASSB_GHG  .OR. &
            config_flags%biomass_burn_opt == BIOMASSB ) then
@@ -774,7 +775,7 @@ CONTAINS
 !!! ***********   FIRE AND CHEM ****************************************
 !
     fire_select:  SELECT CASE(config_flags%biomass_burn_opt)
-     CASE (BIOMASSB,BIOMASSB_MOZC,BIOMASSB_MOZ,BIOMASSB_GHG)
+     CASE (BIOMASSB,BIOMASSB_MOZC,BIOMASSB_MOZ,BIOMASSB_T1_MOZCART,BIOMASSB_GHG)
 !      if( do_plumerisefire )then
 !         CALL wrf_debug(15,'fire emissions: calling biomassb')
 !         write(0,*)ktau,stepfirepl
@@ -820,7 +821,7 @@ CONTAINS
             CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
                   RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ,RACMSORG_AQCHEM_KPP,        &
                   RACM_ESRLSORG_AQCHEM_KPP, RACMSORG_KPP,RACM_ESRLSORG_KPP, RACM_SOA_VBS_KPP, &
-                  RACM_SOA_VBS_AQCHEM_KPP,CBM4_KPP, NMHC9_KPP, GOCARTRACM_KPP,GOCARTRADM2)
+                  RACM_SOA_VBS_AQCHEM_KPP, RACM_SOA_VBS_HET_KPP, CBM4_KPP, NMHC9_KPP, GOCARTRACM_KPP,GOCARTRADM2)
             CASE DEFAULT 
                CALL wrf_error_fatal( &
                   "emissions_driver: beis3.1.4 biogenic emis. implemented for RADM2 & RACM only")
@@ -863,7 +864,7 @@ CONTAINS
                ebio_c10h16,ebio_tol,ebio_bigalk, ebio_ch3oh,ebio_acet,         &
                ebio_nh3,ebio_no2,ebio_c2h5oh,ebio_ch3cooh,ebio_mek,            &
                ebio_bigene,ebio_c2h6,ebio_c2h4,ebio_c3h6,ebio_c3h8,ebio_so2,   &
-               ebio_dms,                                                       &
+               ebio_dms,ebio_hcn,                                              &
                ebio_c5h8,ebio_apinene,ebio_bpinene,ebio_toluene,       &
                ebio_ch3cho,ebio_ch3co2h,ebio_tbut2ene,ebio_c2h5cho,    &
                ebio_nc4h10, &
@@ -891,8 +892,8 @@ CONTAINS
     gas_addemiss_select: SELECT CASE(config_flags%chem_opt)
     CASE (RADM2, RADM2_KPP, RADM2SORG, RADM2SORG_AQ, RADM2SORG_AQCHEM, RADM2SORG_KPP, &
           RACM_KPP, RACMPM_KPP, RACM_MIM_KPP, RACMSORG_AQ, RACMSORG_AQCHEM_KPP, RACM_ESRLSORG_AQCHEM_KPP, RACMSORG_KPP, &
-          RACM_SOA_VBS_KPP, RACM_SOA_VBS_AQCHEM_KPP, RACM_ESRLSORG_KPP, MOZART_KPP, MOZCART_KPP, &
-          MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP, &
+          RACM_SOA_VBS_KPP, RACM_SOA_VBS_AQCHEM_KPP, RACM_SOA_VBS_HET_KPP, RACM_ESRLSORG_KPP, MOZART_KPP, MOZCART_KPP,  &
+          T1_MOZCART_KPP, MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP, &
           CRIMECH_KPP, CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP )
        IF(config_flags%emiss_inpt_opt /= 3 ) then
        IF(config_flags%kemit .GT. kte-ksub) THEN
@@ -1184,7 +1185,8 @@ CONTAINS
             ims,ime, jms,jme, kms,kme,                                  &
             its,ite, jts,jte, kts,kte                                   )
       
-    CASE (SAPRC99_MOSAIC_4BIN_VBS2_KPP, SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP) !FIX FOR SAPRC07A!BSINGH(12/11/2013): Added SAPRC 8 bin  
+    CASE (SAPRC99_MOSAIC_4BIN_VBS2_KPP, SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP, &
+         SAPRC99_MOSAIC_8BIN_VBS2_KPP) !FIX FOR SAPRC07A!BSINGH(12/11/2013): Added SAPRC 8 bin  
      if(config_flags%emiss_opt == 13 ) then
        do j=jts,jte
           do i=its,ite
@@ -1491,7 +1493,7 @@ CONTAINS
             its,ite, jts,jte, kts,kte                                   )
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
+    CASE (RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP,RACM_SOA_VBS_HET_KPP)
        call wrf_debug(15,'emissions_driver calling soa_vbs_addemiss')
        call soa_vbs_addemiss( id, dtstep, u10, v10, alt, dz8w, xland, chem,  &
             ebu,                                                        &
@@ -1513,7 +1515,8 @@ CONTAINS
           CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN, & 
           CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ,SAPRC99_MOSAIC_4BIN_VBS2_KPP,&
           MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP, &
-          CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP   )
+          CRI_MOSAIC_8BIN_AQ_KPP, CRI_MOSAIC_4BIN_AQ_KPP,SAPRC99_MOSAIC_8BIN_VBS2_AQ_KPP, &
+          SAPRC99_MOSAIC_8BIN_VBS2_KPP   )
        call wrf_debug(15,'emissions_driver calling mosaic_addemiss')
        call mosaic_addemiss( id, dtstep, u10, v10, alt, dz8w, xland,     &
             config_flags, chem, slai, ust, smois, ivgtyp, isltyp,        &
@@ -1546,7 +1549,7 @@ CONTAINS
 ! Lightning NO emission
     CALL lightning_nox_driver ( &
           ! Frequently used prognostics
-            itimestep=ktau, dt=dtstep, dx=dx, dy=dx,                &
+            curr_secs=curr_secs, dt=dtstep, dx=dx, dy=dx,             &
             xlat=xlat, xlon=xlong, xland=xland, ht=ht,                &
             t_phy=t_phy, p_phy=p_phy, rho=rho_phy, u=u_phy, v=v_phy, w=vvel,        &
             z=z, moist=moist,                         &

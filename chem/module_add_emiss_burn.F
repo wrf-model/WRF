@@ -43,6 +43,8 @@ CONTAINS
     real :: time,conv_rho
     integer :: iweek,idays
     real :: tign,timeq,r_q,r_antro
+    REAL :: conv_rho_gas(its:ite)
+    REAL :: conv_rho_aer(its:ite)
     real, dimension(7) :: week_CYCLE
     !                     dia da semana:  DOM   SEG   TER   QUA   QUI   SEX   SAB
     !                            iweek=   1     2     3     4     5     6     7
@@ -160,8 +162,8 @@ CONTAINS
         enddo
         enddo
         enddo
-      CASE (RADM2SORG,RACMSORG_KPP, RADM2SORG_KPP, RACM_ESRLSORG_KPP, RACM_SOA_VBS_KPP, RACM_SOA_VBS_AQCHEM_KPP, &
-            RADM2SORG_AQ, RADM2SORG_AQCHEM, RACMSORG_AQ, RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP)
+      CASE (RADM2SORG,RACMSORG_KPP, RADM2SORG_KPP,RACM_ESRLSORG_KPP,RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP,RACM_SOA_VBS_HET_KPP, &
+            RADM2SORG_AQ, RADM2SORG_AQCHEM,RACMSORG_AQ,RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP)
           do j=jts,jte
           do i=its,ite
            do k=kts,kte
@@ -329,8 +331,9 @@ CONTAINS
         enddo
         enddo
         enddo
-      CASE (MOZART_KPP,MOZCART_KPP,MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP )
-        if( biomass_burn_opt == BIOMASSB_MOZC .or. biomass_burn_opt == BIOMASSB_MOZ ) then
+      CASE (MOZART_KPP,MOZCART_KPP,T1_MOZCART_KPP,MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP )
+        if( biomass_burn_opt == BIOMASSB_MOZC .or. biomass_burn_opt == BIOMASSB_MOZ &
+                                              .or. biomass_burn_opt == BIOMASSB_T1_MOZCART ) then
           do j=jts,jte
             do k=kts,kte
               do i=its,ite
@@ -353,46 +356,64 @@ CONTAINS
                 chem(i,k,j,p_mvk)  = chem(i,k,j,p_mvk) +ebu(i,k,j,p_ebu_mvk)*conv_rho
                 chem(i,k,j,p_acet)  = chem(i,k,j,p_acet) + ebu(i,k,j,p_ebu_ch3coch3)*conv_rho
                 chem(i,k,j,p_ch3oh) = chem(i,k,j,p_ch3oh) + ebu(i,k,j,p_ebu_ch3oh)*conv_rho
+                chem(i,k,j,p_ch3cooh) = chem(i,k,j,p_ch3cooh) + ebu(i,k,j,p_ebu_ch3cooh)*conv_rho
                 chem(i,k,j,p_mek)  = chem(i,k,j,p_mek) + ebu(i,k,j,p_ebu_mek)*conv_rho
                 chem(i,k,j,p_so2)  =  chem(i,k,j,p_so2) +ebu(i,k,j,p_ebu_so2)*conv_rho
                 chem(i,k,j,p_tol)  = chem(i,k,j,p_tol) +ebu(i,k,j,p_ebu_toluene)*conv_rho
                 chem(i,k,j,p_nh3)  = chem(i,k,j,p_nh3) + ebu(i,k,j,p_ebu_nh3)*conv_rho
                 chem(i,k,j,p_open) = chem(i,k,j,p_open) + ebu(i,k,j,p_ebu_open)*conv_rho
-                chem(i,k,j,p_c10h16) = chem(i,k,j,p_c10h16) + ebu(i,k,j,p_ebu_c10h16)*conv_rho
                 chem(i,k,j,p_cres)   = chem(i,k,j,p_cres) + ebu(i,k,j,p_ebu_cres)*conv_rho
                 chem(i,k,j,p_glyald) = chem(i,k,j,p_glyald) + ebu(i,k,j,p_ebu_glyald)*conv_rho
                 chem(i,k,j,p_gly)    = chem(i,k,j,p_gly) + ebu(i,k,j,p_ebu_gly)*conv_rho
+                chem(i,k,j,p_mgly)   = chem(i,k,j,p_mgly) + ebu(i,k,j,p_ebu_mgly)*conv_rho
+                chem(i,k,j,p_dms)    = chem(i,k,j,p_dms) + ebu(i,k,j,p_ebu_dms)*conv_rho
               enddo
             enddo
           enddo
 ! Adding simple SOA scheme emissions from biomass burning.
 ! WARNING: do not provide e_co_bb in wrfchemi* files if you use
 ! the online plume rise - you would be double counting emissions!
-          IF (chem_opt .EQ. MOZART_MOSAIC_4BIN_KPP .OR. &
-              chem_opt .EQ. MOZART_MOSAIC_4BIN_AQ_KPP) THEN
+          IF( (biomass_burn_opt == BIOMASSB_MOZC .or. biomass_burn_opt == BIOMASSB_MOZ) .and. chem_opt == MOZCART_KPP ) THEN
             do j=jts,jte
               do k=kts,kte
-                do i=its,ite
-                  conv_rho = (r_q*4.828e-4*dtstep)/(rho_phy(i,k,j)*dz8w(i,k,j)*60.)
-                  chem(i,k,j,p_vocbb) = chem(i,k,j,p_vocbb) + ebu(i,k,j,p_ebu_co)*conv_rho*0.04*28./250.
-                enddo
+                conv_rho_gas(its:ite) = (r_q*4.828e-4*dtstep)/(rho_phy(its:ite,k,j)*dz8w(its:ite,k,j)*60.)
+                chem(its:ite,k,j,p_c10h16) = chem(its:ite,k,j,p_c10h16) + ebu(its:ite,k,j,p_ebu_c10h16)*conv_rho_gas(its:ite)
               enddo
             enddo
           ENDIF
-
-          if( biomass_burn_opt == BIOMASSB_MOZC ) then
+          IF( chem_opt == T1_MOZCART_KPP .and. biomass_burn_opt == BIOMASSB_T1_MOZCART ) THEN
             do j=jts,jte
               do k=kts,kte
-                do i=its,ite
-                  conv_rho = (r_q*dtstep)/(rho_phy(i,k,j)*dz8w(i,k,j))
-                  chem(i,k,j,p_oc1) = chem(i,k,j,p_oc1) + conv_rho*ebu(i,k,j,p_ebu_oc)
-                  chem(i,k,j,p_bc1) = chem(i,k,j,p_bc1) + conv_rho*ebu(i,k,j,p_ebu_bc)
-                  chem(i,k,j,p_p10) = chem(i,k,j,p_p10) + conv_rho*ebu(i,k,j,p_ebu_pm10)
-                  chem(i,k,j,p_p25) = chem(i,k,j,p_p25) + conv_rho*ebu(i,k,j,p_ebu_pm25)
-                enddo
+                conv_rho_gas(its:ite) = (r_q*4.828e-4*dtstep)/(rho_phy(its:ite,k,j)*dz8w(its:ite,k,j)*60.)
+                chem(its:ite,k,j,p_apin)  = chem(its:ite,k,j,p_apin) + ebu(its:ite,k,j,p_ebu_apin)*conv_rho_gas(its:ite)
+                chem(its:ite,k,j,p_benzene)  = chem(its:ite,k,j,p_benzene) + ebu(its:ite,k,j,p_ebu_benzene)*conv_rho_gas(its:ite)
+                chem(its:ite,k,j,p_ch3cn) = chem(its:ite,k,j,p_ch3cn) + ebu(its:ite,k,j,p_ebu_ch3cn)*conv_rho_gas(its:ite)
+                chem(its:ite,k,j,p_hcn)   = chem(its:ite,k,j,p_hcn) + ebu(its:ite,k,j,p_ebu_hcn)*conv_rho_gas(its:ite)
+                chem(its:ite,k,j,p_hcooh) = chem(its:ite,k,j,p_hcooh) + ebu(its:ite,k,j,p_ebu_hcooh)*conv_rho_gas(its:ite)
+                chem(its:ite,k,j,p_c2h2)  = chem(its:ite,k,j,p_c2h2) + ebu(its:ite,k,j,p_ebu_c2h2)*conv_rho_gas(its:ite)
+                chem(its:ite,k,j,p_xylenes)  = chem(its:ite,k,j,p_xylenes) + ebu(its:ite,k,j,p_ebu_xylenes)*conv_rho_gas(its:ite)
               enddo
             enddo
-          endif
+          ELSEIF (chem_opt == MOZART_MOSAIC_4BIN_KPP .OR. chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) THEN
+            do j=jts,jte
+              do k=kts,kte
+                conv_rho_gas(its:ite) = (r_q*4.828e-4*dtstep)/(rho_phy(its:ite,k,j)*dz8w(its:ite,k,j)*60.)*.04*28./250.
+                chem(its:ite,k,j,p_vocbb) = chem(its:ite,k,j,p_vocbb) + ebu(its:ite,k,j,p_ebu_co)*conv_rho_gas(its:ite)
+              enddo
+            enddo
+          ENDIF
+          IF( (biomass_burn_opt == BIOMASSB_MOZC .and. chem_opt == MOZCART_KPP) .or.  &
+              (biomass_burn_opt == BIOMASSB_T1_MOZCART .and. chem_opt == T1_MOZCART_KPP) ) THEN
+            do j=jts,jte
+              do k=kts,kte
+                conv_rho_aer(its:ite) = (r_q*dtstep)/(rho_phy(its:ite,k,j)*dz8w(its:ite,k,j))
+                chem(its:ite,k,j,p_oc1) = chem(its:ite,k,j,p_oc1) + conv_rho_aer(its:ite)*ebu(its:ite,k,j,p_ebu_oc)
+                chem(its:ite,k,j,p_bc1) = chem(its:ite,k,j,p_bc1) + conv_rho_aer(its:ite)*ebu(its:ite,k,j,p_ebu_bc)
+                chem(its:ite,k,j,p_p10) = chem(its:ite,k,j,p_p10) + conv_rho_aer(its:ite)*ebu(its:ite,k,j,p_ebu_pm10)
+                chem(its:ite,k,j,p_p25) = chem(its:ite,k,j,p_p25) + conv_rho_aer(its:ite)*ebu(its:ite,k,j,p_ebu_pm25)
+              enddo
+            enddo
+          ENDIF
         endif
       CASE (CHEM_TRACE2)
           do j=jts,jte

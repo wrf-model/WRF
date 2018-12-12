@@ -41,7 +41,13 @@ MODULES =                                 \
         module_data_cmu_bulkaqchem.o      \
         module_data_gocartchem.o          \
         module_data_gocart_seas.o         \
+        module_data_mosaic_kind.o         \
+        module_data_mosaic_constants.o    \
+        module_data_mosaic_aero.o         \
+        module_data_mosaic_main.o         \
         module_data_mosaic_asect.o        \
+        module_data_mosaic_asecthp.o      \
+        module_data_mosaic_boxmod.o       \
         module_data_mosaic_other.o        \
         module_data_mosaic_therm.o        \
         module_data_radm2.o               \
@@ -55,6 +61,7 @@ MODULES =                                 \
         module_gocart_drydep.o            \
         module_gocart_settling.o          \
         module_gocart_so2so4.o            \
+        module_HLaw.o                     \
         module_input_tracer_data.o        \
         module_interpolate.o              \
         module_mosaic_csuesat.o           \
@@ -82,8 +89,23 @@ MODULES =                                 \
         module_data_uoc_wd.o              \
         module_mosaic_addemiss.o          \
         module_mosaic_initmixrats.o       \
+        module_mosaic_support.o           \
+        module_mosaic_init_aerpar.o       \
+        module_mosaic_ext.o               \
+        module_mosaic_astem.o             \
+        module_mosaic_lsode.o             \
+        module_mosaic_box_aerchem.o       \
+        module_mosaic_aerchem_intr.o      \
+        module_mosaic_coag1d.o            \
+        module_mosaic_coag3d.o            \
+        module_mosaic_movesect1d.o        \
+        module_mosaic_movesect3d.o        \
+        module_mosaic_newnucb.o           \
+        module_mosaic_sect_intr.o         \
+        module_mosaic_aerdynam_intr.o     \
         module_mosaic_movesect.o          \
         module_mosaic_newnuc.o            \
+        module_mosaic_soa_vbs.o           \
         module_cbmz_lsodes_solver.o       \
         module_cbmz_rodas3_solver.o       \
         module_cmu_bulkaqchem.o           \
@@ -127,6 +149,9 @@ MODULES =                                 \
 	module_lightning_nox_ott.o        \
 	module_lightning_nox_decaria.o    \
         module_mixactivate_wrappers.o     \
+        module_mosaic_init_aerpar.o       \
+        module_mosaic2_driver.o           \
+        module_mosaic_sumpm.o             \
         module_mosaic_driver.o            \
         module_optical_averaging.o        \
         module_plumerise1.o               \
@@ -166,7 +191,10 @@ MODULES =                                 \
         module_cam_mam_gas_wetdep_driver.o \
         module_cam_mam_mo_sethet.o         \
         module_phot_fastj.o               \
-	module_chem_cup.o
+	module_chem_cup.o      \
+        module_isocom.o                   \
+        module_isofwd.o                   \
+        module_isorev.o
 
 OBJS    =                           \
 	chemics_init.o              \

@@ -18,8 +18,8 @@ module da_radiance
       init_constants_derived, &
       rttov_platform_name, rttov_inst_name, crtm_sensor_name  ! names used by both RTTOV and CRTM
 #ifdef RTTOV
-   use module_radiance, only : coefs, rttov_coefs, profile_type, radiance_type, &
-      transmission_type,errorstatus_success,gas_id_watervapour,rttov_emissivity
+   use module_radiance, only : coefs, rttov_coefs, rttov_profile, rttov_radiance, &
+      rttov_transmission,errorstatus_success,gas_id_watervapour,rttov_emissivity
 #endif
 #ifdef CRTM
    use module_radiance, only : crtm_channelinfo_type, crtm_platform_name, crtm_init, &
@@ -57,7 +57,8 @@ module da_radiance
       pseudo_rad_err, use_simulated_rad,use_rttov_kmatrix, use_crtm_kmatrix , &
       use_rad,crtm_cloud, DT_cloud_model, global, use_varbc, freeze_varbc, &
       airs_warmest_fov, time_slots, interp_option, ids, ide, jds, jde, &
-      ips, ipe, jps, jpe, simulated_rad_ngrid, obs_qc_pointer, use_blacklist_rad, use_satcv
+      ips, ipe, jps, jpe, simulated_rad_ngrid, obs_qc_pointer, use_blacklist_rad, use_satcv, &
+      use_goesimgobs, pi, earth_radius, satellite_height
  
 #ifdef CRTM
    use da_crtm, only : da_crtm_init, da_get_innov_vector_crtm
@@ -100,6 +101,8 @@ module da_radiance
                             
    implicit none
 
+   include 'netcdf.inc'
+
 #ifdef DM_PARALLEL
    include 'mpif.h'
 #endif
@@ -122,6 +125,8 @@ contains
 #include "da_read_obs_hdf5ahi.inc"
 #include "da_read_obs_netcdf4ahi_geocat.inc"
 #include "da_read_obs_netcdf4ahi_jaxa.inc"
+#include "da_read_obs_ncgoesimg.inc"
+#include "da_get_satzen.inc"
 #include "da_allocate_rad_iv.inc"
 #include "da_initialize_rad_iv.inc"
 #include "da_read_kma1dvar.inc"

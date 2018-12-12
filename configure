@@ -7,8 +7,6 @@ thiscmd=$0
 FORTRAN_COMPILER_TIMER=""
 opt_level="-f"
 rword="-r4"
-vnest="NOVN"
-hyb="NOHYB"
 print_usage=""
 chemistry=""
 wrf_core=""
@@ -22,12 +20,10 @@ while [ $# -ge 1 ]; do
       -f) opt_level="-f" ;;
       -h) print_usage="yes" ;;
       -help) print_usage="yes" ;;
-      -hyb) hyb="HYB" ;;
       -os) shift ; WRF_OS=$1 ;;
       -mach) shift ; WRF_MACH=$1 ;;
       -r8) rword="-r8" ;;
       -time) shift ; FORTRAN_COMPILER_TIMER=$1 ;;
-      -vn)  vnest="VN" ;;
       chem) WRF_CHEM=1  ;;
       kpp) WRF_KPP=1  ;;
       radardfi) WRF_DFI_RADAR=1  ;;
@@ -36,10 +32,11 @@ while [ $# -ge 1 ]; do
       arw) wrf_core=EM_CORE  ;;
       nmm) wrf_core=NMM_CORE  ;;
       coamps) wrf_core=COAMPS_CORE  ;;
-      exp) wrf_core=EXP_CORE  ;;
       titan) WRF_TITAN=1 ; break ;;
       mars) WRF_MARS=1 ; break ;;
       venus) WRF_VENUS=1 ; break ;;
+      wrfplus) wrf_core=WRF_PLUS_CORE ; break ;;
+      *) echo "This option is not recognized: $1" ; exit 2 ;;
     esac
     shift
 done
@@ -50,7 +47,6 @@ if [ -n "$print_usage" ] ; then
   echo '-d    build with debugging information and no optimization'
   echo '-D    build with -d AND floating traps, traceback, uninitialized variables'
   echo '-r8   build with 8 byte reals'
-  echo '-hyb  build with hybrid vertical coordinate (HVC) for ARW only'
   echo '-help print this message'
   echo '*****************************************************************************'
   echo ' '
@@ -163,135 +159,24 @@ if test -n "$PERL" ; then
     
 fi
 
-# Look for netcdf
-if test -z "$NETCDF" ; then
-  for p in /usr/local/netcdf
-  do
-    if test -d $p ; then
-      NETCDF=$p
-      break
-    fi
-  done
-fi
 if  test -z "$NETCDF"  ; then
- 
-  if [ `hostname | cut -c 1-2` = "bs" -o \
-       `hostname | cut -c 1-2` = "bd" -o \
-       `hostname` = "tempest" -o `hostname` = "ute" ] ; then
-    echo 'Compiling on an NCAR system with weird paths to NetCDF'
-    echo 'Setting up a local NetCDF directory with symlinks'
-    if ( test -d ./netcdf_links ) ; then
-      echo 'A directory ./netcdf_links already exists. Continuing.'
-    else
-      mkdir ./netcdf_links
-      if [ -z "$OBJECT_MODE" ] ; then
-         OBJECT_MODE=32 
-         export OBJECT_MODE
-      fi
-      if [ $OBJECT_MODE -ne 64 -a \( `hostname | cut -c 1-2` = "bd" -o `hostname | cut -c 1-2` = "bs" \) ] ; then
-        ( cd ./netcdf_links ; ln -s /usr/local/lib32/r4i4 ./lib ; \
-                              ln -s /usr/local/include ./include )
-      else
-        ( cd ./netcdf_links ; ln -s /usr/local/lib64/r4i4 ./lib ; \
-                              ln -s /usr/local/include ./include )
-      fi
-    fi
-    NETCDF=`pwd`/netcdf_links
-    export NETCDF
-
-
-  else
-    bedone=""
-    if [ -d ./netcdf_links ] ; then
-      echo '** There is an existing ./netcdf_links file. Should I use? [y]'
-      read resp
-      if [ "$resp" = "y" ] ; then
-        NETCDF=`pwd`/netcdf_links
-        bedone="yes"
-      else
-        echo 'Removing existing ./netcdf_links directory'
-        /bin/rm -fr ./netcdf_links
-      fi
-    else
-      echo '** WARNING: No path to NETCDF and environment variable NETCDF not set.'
-      echo '** would you like me to try to fix? [y]'
-    fi
-    netcdfipath=""
-    netcdflpath=""
-    while [ -z "$bedone" ] ; do 
-      read resp
-      if [ "$resp" = "y" -o -z "$resp" ]  ; then
-        if [ -d ./netcdf_links ] ; then
-          echo 'There is already a ./netcdf_links directory. Okay to use links'
-          echo 'in this directory for NetCDF include and lib dirs? [y]'
-          read resp
-          if [ "$resp" = "y" ] ; then
-            NETCDF=`pwd`/netcdf_links
-            export NETCDF
-            bedone="yes"
-            continue
-          fi
-        fi
-        if [ -z "$netcdfipath" ] ; then
-          echo 'Enter full path to NetCDF include directory on your system'
-          read resp
-          if [ ! -d "$resp" ] ; then
-            echo "invalid path: $resp. Try again? [y]" ; continue
-          fi
-          netcdfipath=$resp
-        fi
-        if  [ -z "$netcdflpath" ] ; then
-          echo 'Enter full path to NetCDF library directory on your system'
-          read resp
-          if [ ! -d "$resp" ] ; then
-            echo "invalid path: $resp. Try again? [y]" ; continue
-          fi
-          netcdflpath=$resp
-        fi
-
-        if [ -n "$netcdflpath" -a -n "$netcdfipath" ] ; then
-          if [ -d ./netcdf_links ] ; then
-            echo 'Existing ./netcdf_links directory. Okay to remove. [y]'
-            read resp
-            if [ "$resp" = "y" ]  ; then
-              /bin/rm -fr ./netcdf_links
-            fi
-          fi
-          mkdir ./netcdf_links
-          cd ./netcdf_links 
-            ln -s "$netcdfipath" include
-            ln -s "$netcdflpath" lib
-          cd ..
-          echo created new ./netcdf_links directory
-          /bin/ls -lF ./netcdf_links
-          NETCDF=`pwd`/netcdf_links
-          export NETCDF
-          bedone="yes"
-        fi
-      else
-        bedone="yes"
-      fi
-    done
-  fi
+  echo ' '
+  echo '*****************************************************************************'
+  echo 'No environment variable NETCDF set.'
+  echo 'Stopping'
+  echo '*****************************************************************************'
+  echo ' '
+  exit 5
 fi
 
-if test -z "$PDHF5" ; then 
-  if [ `hostname | cut -c 1-2` = "bb" -o `hostname | cut -c 1-2` = "bf" -o `hostname | cut -c 1-2` = "bs" -o \
-       `hostname` = "dataproc" -o `hostname` = "ute" ] ; then
-      if [ -d ~michalak/hdf5pbin ] ; then
-        PHDF5=~michalak/hdf5pbin
-        export PHDF5
-      fi
-      if [ "$OBJECT_MODE" -eq 64 ] ; then
-            if [ -d ~michalak/hdf5pbin-64 ] ; then
-              PHDF5=~michalak/hdf5pbin-64
-              export PHDF5
-            fi
-      fi
-  fi
+if  test -z "$NETCDF_classic"  ; then
+  export NETCDF4=1
+else
+  unset NETCDF4
 fi
 
-USENETCDFF=""  # see below
+USENETCDFF=""
+USENETCDF=""
 if [ -n "$NETCDF" ] ; then
   echo "Will use NETCDF in dir: $NETCDF"
 # Oh UNIDATA, why make it so hard ...
@@ -305,8 +190,49 @@ if [ -n "$NETCDF" ] ; then
   else
     USENETCDF=" "
   fi
+  export USENETCDF=$USENETCDF
+  export USENETCDFF=$USENETCDFF
 else
-  echo "Will configure for use without NetCDF"
+  echo ' '
+  echo '*****************************************************************************'
+  echo 'No environment variable NETCDF set.'
+  echo 'Stopping'
+  echo '*****************************************************************************'
+  echo ' '
+  exit 6
+fi
+
+# If the user asked for classic netcdf, acquiesce to the request.
+
+if [ "`uname`" = "Linux" ] ; then
+  ans="`whereis nf-config`"
+elif [ "`uname`" = "Darwin" ] ; then
+  ans="`which nf-config`"
+else
+  ans=""
+# echo "Add in your architecture's uname and the command to find executables in the path"
+# exit 1
+fi
+if [ "$ans" = "nf-config:" -o "$ans" = "" ] ; then
+    export NETCDF_classic=1
+    unset NETCDF4
+else
+  if [ -n "$NETCDF_classic" ] ; then
+    if [ $NETCDF_classic -eq 1 ] ; then
+      unset  NETCDF4
+    else
+      unset  NETCDF_classic
+      export NETCDF4=1
+    fi
+  else
+    if [ "`nf-config --has-nc4`" = "yes" ] ; then
+      unset  NETCDF_classic
+      export NETCDF4=1
+    else
+      export NETCDF_classic=1
+      unset  NETCDF4
+    fi
+  fi
 fi
 
 if [ -z "$HDF5_PATH" ] ; then HDF5_PATH=''; fi
@@ -416,26 +342,10 @@ if [ "$wrf_core" = "DA_CORE" -o "$wrf_core" = "4D_DA_CORE" ] ; then
   fi
 fi
 
-# For the hybrid build, stay away from NMM and DA; Vertical nesting is 
-# a problem for ARW
+# Set the "traditional" flag and the "cpp" flags
 
-if [ -n "$WRF_NMM_CORE" -a "$WRF_NMM_CORE" = "1" ] ; then
-  TFL="-traditional-cpp"
-  CFL="-P -nostdinc"
-elif [ "$wrf_core" = "DA_CORE" -o "$wrf_core" = "4D_DA_CORE" ] ; then
-  TFL="-traditional-cpp"
-  CFL="-P -nostdinc"
-elif [ "$vnest" = "VN" ] ; then
-  TFL="-traditional-cpp"
-  CFL="-P -nostdinc"
-elif [ "$hyb" = "NOHYB" ] ; then
-  TFL="-traditional-cpp"
-  CFL="-P -nostdinc"
-else
-  TFL=" "
-  CFL="-P -C -nostdinc"
-  compileflags="${compileflags}!-DHYBRID_COORD=1"
-fi
+TFL="-traditional-cpp"
+CFL="-P -nostdinc"
 
 if [ "$wrf_core" = "4D_DA_CORE" ]; then
    if [ -n "$WRFPLUS_DIR" ] ; then
@@ -505,7 +415,7 @@ if [ "$os" = "AIX" ] ; then
 fi
 
 # compile options that come from the environment, such as chemistry
-# the "!" is removed by Config_new.pl
+# the "!" is removed by Config.pl
 if [ -n "$WRF_HYDRO" ] ; then
   if [ $WRF_HYDRO = 1 ] ; then
       echo building WRF-HYDRO 
@@ -515,7 +425,7 @@ if [ -n "$WRF_HYDRO" ] ; then
 fi
 
 # compile options that come from the environment, such as chemistry
-# the "!" is removed by Config_new.pl
+# the "!" is removed by Config.pl
 if [ -n "$WRF_MARS" ] ; then
   if [ $WRF_MARS = 1 ] ; then
     echo building WRF for Mars
@@ -596,6 +506,14 @@ else
   compileflags="${compileflags} "
 fi
 
+if [ -n "$WRFPLUS" ] ; then
+  if [ $WRFPLUS = 1 ] ; then
+    echo building WRF for TL and AD
+    compileflags="!-DWRFPLUS"
+    echo $compileflags
+  fi
+fi
+
 if [ -n "$WRF_NMM_CORE" -a -n "$WRF_CHEM" ]; then
   if [ $WRF_NMM_CORE = 1  -a  $WRF_CHEM = 1 ]; then
     echo
@@ -628,9 +546,9 @@ fi
 
 # Found perl, so proceed with configuration
 if test -n "$PERL" ; then
-   srch=`grep -i "^#ARCH.*$os" arch/configure_new.defaults | grep -i "$mach"`
+   srch=`grep -i "^#ARCH.*$os" arch/configure.defaults | grep -i "$mach"`
    if [ -n "$srch" ] ; then
-     $PERL arch/Config_new.pl -dmparallel=$COMMLIB -ompparallel=$OMP -perl=$PERL \
+     $PERL arch/Config.pl -dmparallel=$COMMLIB -ompparallel=$OMP -perl=$PERL \
           -netcdf=$NETCDF -pnetcdf=$PNETCDF -hdf5=$HDF5 -phdf5=$PHDF5 -os=$os -mach=$mach -ldflags=$ldflags \
           -compileflags=$compileflags -opt_level=$opt_level -USENETCDFF=$USENETCDFF -USENETCDF=$USENETCDF \
           -time=$FORTRAN_COMPILER_TIMER -tfl="$TFL" -cfl="$CFL" -config_line="$config_line" \
@@ -660,49 +578,16 @@ if test -n "$PERL" ; then
        /bin/mv configure.wrf.edit configure.wrf
      fi
    else
-     WRF_OS=$os ; export WRF_OS
-     WRF_MACH=$mach ; export WRF_MACH
-     echo '*** Configuration not found in configure_new.defaults; checking configure_old.defaults ***'
-
-     # see if we still have an old setting laying around from v2
-     if [ "$opt_level" = "-d" ] ; then
-       arch/config_old $opt_level 
-     else
-       arch/config_old
-     fi
-
+     echo '*********************************************************'
+     echo '***              ERROR ERROR ERROR ERROR              ***'
+     echo '***                                                   ***'
+     echo '*** Configuration not found in configure.defaults     ***'
+     echo '*********************************************************'
+     exit 2
    fi
 fi
 
-# new feb 2005.  test whether MPI-2
 if test -f configure.wrf ; then
-  grep 'DMPARALLEL *= *1' configure.wrf > /dev/null
-  if [ $? = 0 ] ; then
-    echo testing for MPI_Comm_f2c and MPI_Comm_c2f 
-    /bin/rm -f tools/mpi2_test
-    ( make mpi2_test 2> /dev/null ) 1> /dev/null
-    if test -e tools/mpi2_test.o ; then
-      echo "  " MPI_Comm_f2c and MPI_Comm_c2f are supported
-      sed '/^DM_CC.*=/s/$/ -DMPI2_SUPPORT/' configure.wrf > xx$$ ; /bin/mv xx$$ configure.wrf
-      if [ `hostname | cut -c 1-2` = "be" ] ; then
-         sed '/^ARCH_LOCAL.*=/s/$/ -DUSE_MPI_IN_PLACE/' configure.wrf > xx$$ ; /bin/mv xx$$ configure.wrf
-      fi
-    else
-      echo "  " MPI_Comm_f2c and MPI_Comm_c2f are not supported
-    fi
-    grep 'OMPCPP *= *-D_OPENMP' configure.wrf > /dev/null
-    if [ $? = 0 ] ; then
-      echo testing for MPI_Init_thread
-      /bin/rm -f tools/mpi2_thread_test
-      ( make mpi2_thread_test 2> /dev/null ) 1> /dev/null
-      if test -e tools/mpi2_thread_test.o ; then
-        echo "  " MPI_Init_thread is supported
-        sed '/^DM_CC.*=/s/$/ -DMPI2_THREAD_SUPPORT/' configure.wrf > xx$$ ; /bin/mv xx$$ configure.wrf
-      else 
-        echo "  " MPI_Init_thread is not supported
-      fi
-    fi
-  fi
 # new dec 2005.  test what fseek is supported (needed for share/landread.c to work correctly)
   echo testing for fseeko and fseeko64
   /bin/rm -f tools/fseeko_test tools/fseeko64_test
@@ -742,18 +627,13 @@ echo "------------------------------------------------------------------------"
 echo "Settings listed above are written to configure.wrf."
 echo "If you wish to change settings, please edit that file."
 echo "If you wish to change the default options, edit the file:"
-echo "     arch/configure_new.defaults"
+echo "     arch/configure.defaults"
 
 if test -n "$NETCDF" ; then
   if [ ! -f $NETCDF/include/netcdf.inc ] ; then
     echo
     echo "Error : Not found $NETCDF/include/netcdf.inc"
     echo "        Please check this installation of NetCDF and re-run this configure script"
-    echo
-    if test -n "$NETCDF4" ; then
-        echo "If on the NCAR Supercomputers, cp 'configure.nc4' to 'configure' and re-run script"
-        echo
-    fi
     exit -1
   fi
   grep nf_format_64bit $NETCDF/include/netcdf.inc > /dev/null
@@ -767,11 +647,21 @@ if test -n "$NETCDF" ; then
 fi
 echo "  "
 
-if [ "$wrf_core" = "DA_CORE" -o "$wrf_core" = "4D_DA_CORE" ]; then
+if [ "$wrf_core" = "DA_CORE" -o "$wrf_core" = "WRF_PLUS_CORE" -o "$wrf_core" = "4D_DA_CORE" ]; then
   if [ "`grep '^SFC' configure.wrf | grep -i 'gfortran'`" != "" -o "`grep '^SFC' configure.wrf | grep -i 'frtpx'`" != "" ]; then
-    echo "WRFDA using gfortran/frtpx needs realsize=8"
+    echo "WRFDA/WRFPLUS using gfortran/frtpx needs realsize=8"
     sed -e '/^PROMOTION.*=/s/#//' configure.wrf > configure.wrf.edit
     /bin/mv configure.wrf.edit configure.wrf
+  fi
+fi
+
+if [ -n "$WRFPLUS" ] ; then
+  if [ $WRFPLUS = 1 ] ; then
+    if [ `grep '^SFC' configure.wrf | cut -d= -f2` = "gfortran" ]; then
+      echo "WRFPLUS using gfortran needs realsize=8"
+      sed -e '/^PROMOTION.*=/s/#//' configure.wrf > configure.wrf.edit
+      /bin/mv configure.wrf.edit configure.wrf
+    fi
   fi
 fi
 
@@ -1104,23 +994,33 @@ if [ -n "$NETCDF4" ] ; then
     fi
     if [ $retval -ne 0  ] ; then
       echo "************************** W A R N I N G ************************************"
-      echo "NETCDF4 IO features are enabled, but this installation of NetCDF             "
+      echo "NETCDF4 IO features are requested, but this installation of NetCDF           "
       echo "  $NETCDF"
-      echo "sounds like DO NOT support these IO features.                                "
+      echo "DOES NOT support these IO features.                                          "
       echo
       echo "Please make sure NETCDF version is 4.1.3 or later and was built with         "
       echo "--enable-netcdf4                                                             "
       echo
-      echo "OR unset NETCDF4 variable                                                    "
-      echo "   bash/ksh : unset    NETCDF4                                               "
-      echo "        csh : unsetenv NETCDF4                                               " 
+      echo "OR set NETCDF_classic variable                                               "
+      echo "   bash/ksh : export NETCDF_classic=1
+      echo "        csh : setenv NETCDF_classic 1
       echo 
       echo "Then re-run this configure script                                            "
       echo
-      echo "!!! configure.wrf WAS REMOVED !!!"
+      echo "!!! configure.wrf has been REMOVED !!!"
       echo
       echo "*****************************************************************************"
       rm -f configure.wrf
+    else
+      echo "*****************************************************************************"
+      echo "This build of WRF will use NETCDF4 with HDF5 compression"
+      echo "*****************************************************************************"
+      echo " "
     fi
   fi
+else
+  echo "*****************************************************************************"
+  echo "This build of WRF will use classic (non-compressed) NETCDF format"
+  echo "*****************************************************************************"
+  echo " "
 fi

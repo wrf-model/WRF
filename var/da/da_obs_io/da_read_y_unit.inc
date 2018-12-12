@@ -40,8 +40,8 @@ subroutine da_read_y_unit(filename,unit_out,num,obs_type_in, nc)
         (index(iv_type,'dmsp') > 0) .or. (index(iv_type,'metop') > 0) .or. &
         (index(iv_type,'tiros') > 0) .or. (index(iv_type,'msg') > 0) .or. &
         (index(iv_type,'jpss') > 0)  .or. (index(iv_type,'gcom-w') >0) .or. &
-		(index(iv_type,'himawari') >0)) then
-		
+        (index(iv_type,'goes') > 0) .or. (index(iv_type,'himawari') >0) ) then
+
       do n = 1, num_obs
          if (if_write) num = num + 1
          read(unit_in,'(2i8,e15.7)')n1, n2, fld_rad

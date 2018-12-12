@@ -15,8 +15,10 @@ VARBC.in
 be.dat.cv3
   Background error covariance file for cv_options=3.
 
-crtm_coeffs_2.2.3
-   only a subset of coefficient files are included in the crtm_coeffs_2.2.3 directory.
+crtm_coeffs
+   This folder shall be linked to the directory of CRTM coefficients files.
+   A subset of coefficient files can be downloaded from 
+   http://www2.mmm.ucar.edu/wrf/users/wrfda/download/crtm_coeffs.html.
    The full set of coefficient files can be downloaded from
    ftp://ftp.emc.ncep.noaa.gov/jcsda/CRTM/REL-2.2.3/crtm_v2.2.3.tar.gz
    Some CRTM algorithms (Multiple transmittance algorithm, infrared sea surface 

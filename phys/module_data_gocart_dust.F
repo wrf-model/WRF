@@ -29,6 +29,11 @@ Module module_data_gocart_dust
 ! real*8, DIMENSION (ndust), PARAMETER :: lo_dust=(/0.1D-6,1.0D-6,1.8D-6,3.0D-6,6.0D-6/)
 ! real*8, DIMENSION (ndust), PARAMETER :: up_dust=(/1.0D-6,1.8D-6,3.0D-6,6.0D-6,10.0D-6/)
 
+  !GOCART bins radii ranges
+  real*8, DIMENSION (5), PARAMETER :: ra_dust(5)=(/1.d-1,1.0d0,1.8d0,3.0d0,6.0d0/)
+  real*8, DIMENSION (5), PARAMETER :: rb_dust(5)=(/1.0d0,1.8d0,3.0d0,6.0d0,10.0d0/)
+
+
 END Module module_data_gocart_dust
 
 

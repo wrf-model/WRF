@@ -26,7 +26,6 @@
  auxinput3_inname                    = "force_ideal.nc"
  auxinput3_interval_h                = 59
  io_form_auxinput3                   = 2
- debug_level                         = 0
  /
 
  &domains
@@ -51,7 +50,7 @@
  num_force_layers                    = 8
  scm_lu_index                        = 2
  scm_isltyp                          = 4
- scm_vegfra                          = 0.5
+ scm_vegfra                          = 50. 
  scm_lat                             = 37.600
  scm_lon                             = -96.700
  scm_th_adv                          = .false.
@@ -71,10 +70,10 @@
  bldt                                = 0,
  cu_physics                          = 0,
  cudt                                = 0,
- num_soil_layers                     = 4,
  /
 
  &dynamics
+ hybrid_opt                          = 0, 
  rk_ord                              = 3,
  diff_opt                            = 2,      2,      2,
  km_opt                              = 2,      2,      2,

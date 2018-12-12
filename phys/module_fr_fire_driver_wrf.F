@@ -38,7 +38,7 @@ subroutine fire_driver_em_init (grid , config_flags               &
     ! dummies
 
     real,dimension(1,1,1)::rho,z_at_w,dz8w
-
+    
     call message('fire_driver_em_init: FIRE initialization start')
 
     ! get fire mesh dimensions
@@ -110,7 +110,9 @@ subroutine fire_driver_em_step (grid , config_flags               &
             ,ifds,ifde, jfds,jfde                                   &
             ,ifms,ifme, jfms,jfme                                   &
             ,ifps,ifpe, jfps,jfpe                                   &
-            ) 
+            ,rho,z_at_w,dz8w                                        &
+            )
+ 
 
     ! --- add heat and moisture fluxes to tendency variables by postulated decay
     do ij=1,grid%num_tiles

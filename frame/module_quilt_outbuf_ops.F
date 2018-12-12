@@ -162,7 +162,7 @@ CONTAINS
     END IF
 
     WRITE(mess,"('write_outbuf_pnc: table has ', I3,' entries')") num_entries
-    CALL wrf_message(mess)
+    CALL wrf_debug ( 200, TRIM( mess ) )
 
     DO ii = 1, num_entries
 
@@ -170,7 +170,7 @@ CONTAINS
                     TRIM(outpatch_table(ii)%DateStr)," ",                    &
                     TRIM(outpatch_table(ii)%VarName)," ",                    &
                     TRIM(outpatch_table(ii)%MemoryOrder)
-      CALL wrf_message(mess)
+      CALL wrf_debug ( 200, TRIM( mess ) )
 
       SELECT CASE ( io_form_arg )
 
@@ -228,9 +228,9 @@ CONTAINS
                 icnt = icnt + 1
 
                 WRITE (mess, "('Calling write for patch: ',I3, ' Start = ',3I4)") ipatch, outpatch_table(ii)%PatchList(ipatch)%PatchStart(1:3)
-                CALL wrf_message(mess)
+                CALL wrf_debug ( 200, TRIM( mess ) )
                 WRITE (mess,"(29x,'End = ',3I4)") outpatch_table(ii)%PatchList(ipatch)%PatchEnd(1:3)
-                CALL wrf_message(mess)
+                CALL wrf_debug ( 200, TRIM( mess ) )
 
                 CALL ext_pnc_write_field ( DataHandle ,                          &
                                  TRIM(outpatch_table(ii)%DateStr),               &
@@ -1065,7 +1065,7 @@ integer i,j
     END DO
 
     WRITE(mess,*) "--------------------------"
-    CALL wrf_message(mess)
+    CALL wrf_debug ( 200, TRIM( mess ) )
 
     ! Record how many patches we're left with
     outpatch_table(ibuf)%nPatch = npatches
@@ -1305,13 +1305,13 @@ END MODULE module_quilt_outbuf_ops
       ii = num_entries
 
       WRITE(mess,*)'Adding field entry no. ',num_entries
-      CALL wrf_message(mess)
+      CALL wrf_debug ( 200, TRIM( mess ) )
       WRITE(mess,*)'Variable = ',TRIM(VarName)
-      CALL wrf_message(mess)
+      CALL wrf_debug ( 200, TRIM( mess ) )
       WRITE(mess,*)'Domain start = ',DomainStart(:)
-      CALL wrf_message(mess)
+      CALL wrf_debug ( 200, TRIM( mess ) )
       WRITE(mess,*)'Domain end   = ',DomainEnd(:)
-      CALL wrf_message(mess)
+      CALL wrf_debug ( 200, TRIM( mess ) )
     ENDIF
 
     ! We only store > 1 patch if the field has two or more dimensions. Scalars
@@ -1362,7 +1362,7 @@ END MODULE module_quilt_outbuf_ops
                 PatchStart(1),PatchEnd(1), &
                 PatchStart(2),PatchEnd(2), &
                 PatchStart(3),PatchEnd(3)
-       CALL wrf_message(mess)
+       CALL wrf_debug ( 200, TRIM( mess ) )
 
        IF (  FieldType .EQ. WRF_FLOAT ) THEN
           DO n = 1,outpatch_table(ii)%PatchList(ipatch)%PatchExtent(3),1

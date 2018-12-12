@@ -188,9 +188,14 @@ subroutine da_get_innov_vector_synop( it,num_qcstat_conv, grid, ob, iv)
       if ( it == 1 .and. q_error_options == 2 ) then
          allocate (model_qs(iv%info(synop)%n1:iv%info(synop)%n2))
          do n=iv%info(synop)%n1,iv%info(synop)%n2
-            call da_tp_to_qs(model_t(1,n), model_p(1,n), es, model_qs(n))
-            rh_error = iv%synop(n)%q%error !q error is rh at this stage
-            iv%synop(n)%q%error = model_qs(n)*rh_error*0.01
+           if ( abs(ob%synop(n)%q-missing_r) > 1.0 ) then
+               call da_tp_to_qs(model_t(1,n), model_p(1,n), es, model_qs(n))
+               rh_error = iv%synop(n)%q%error !q error is rh at this stage
+               iv%synop(n)%q%error = model_qs(n)*rh_error*0.01
+           else
+               iv%synop(n)%q%error = missing_r
+               iv%synop(n)%q%qc    = missing_data
+           end if
          end do
          deallocate (model_qs)
       end if

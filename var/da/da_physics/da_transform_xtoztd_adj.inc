@@ -20,6 +20,7 @@ SUBROUTINE DA_Transform_XToZTD_Adj( grid )
    do i=its, ite
      wzd = grid%xa%ztd(i,j) * 1.e2
      hzd = grid%xa%ztd(i,j) * 1.e2
+     grid%xa%ztd(i,j) = 0.0
 !
       zf = (1.0 - zdk2*cos(2.0*grid%xb%lat(i,j)*radian) - zdk3*grid%xb%terr(i,j))
       grid%xa%psfc(i,j) = grid%xa%psfc(i,j) + zdk1 * hzd / zf
@@ -37,7 +38,9 @@ SUBROUTINE DA_Transform_XToZTD_Adj( grid )
 
         parta  = parta + term1 * const * wdk1
 
-        grid%xa%p(i,j,k) = grid%xa%p(i,j,k) + grid%xb%q(i,j,k)*parta/grid%xb%t(i,j,k)
+        if ( consider_xap4ztd ) then
+           grid%xa%p(i,j,k) = grid%xa%p(i,j,k) + grid%xb%q(i,j,k)*parta/grid%xb%t(i,j,k)
+        end if
         grid%xa%q(i,j,k) = grid%xa%q(i,j,k) + grid%xb%p(i,j,k)*parta/grid%xb%t(i,j,k)
         grid%xa%t(i,j,k) = grid%xa%t(i,j,k) - grid%xb%p(i,j,k)*grid%xb%q(i,j,k)*parta &
                                     / (grid%xb%t(i,j,k)*grid%xb%t(i,j,k))

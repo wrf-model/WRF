@@ -143,6 +143,7 @@
                               ph_hyac,                                 &
                               ph_cl2,ph_hocl,ph_fmcl,                  &
                               ivgtyp,                                  &
+                              ntuv_lev, ntuv_bin, ntuv_pht,            &
                               ph_radfld, ph_adjcoe, ph_prate,          &
                               wc_x, zref_x,                            &
                               tauaer1, tauaer2, tauaer3, tauaer4,      &    !rajesh
@@ -169,6 +170,7 @@
                                 ids,ide, jds,jde, kds,kde,       &
                                 ims,ime, jms,jme, kms,kme,       &
                                 its,ite, jts,jte, kts,kte
+      integer, intent(in   ) :: ntuv_lev, ntuv_bin, ntuv_pht
       integer, intent(in)    :: ivgtyp(ims:ime,jms:jme)                         
 
       real,     intent(in  ) :: dtstep, gmt
@@ -217,15 +219,15 @@
                              ph_n2o5,ph_mvk,ph_glyald,ph_hyac,         &
                              ph_cl2,ph_hocl,ph_fmcl
 
-      real, dimension( ims:ime, nref, jms:jme, nw-1 ),                 &
+      real, dimension( ims:ime, ntuv_lev, jms:jme, ntuv_bin ),         &
             intent(out  ) :: ph_radfld
-      real, dimension( ims:ime, nref, jms:jme, tuv_jmax ),             &
+      real, dimension( ims:ime, ntuv_lev, jms:jme, ntuv_pht ),         &
             intent(out  ) :: ph_adjcoe
-      real, dimension( ims:ime, nref, jms:jme, tuv_jmax ),             &
+      real, dimension( ims:ime, ntuv_lev, jms:jme, ntuv_pht ),         &
             intent(out  ) :: ph_prate
-      real, dimension(nw-1),             &
+      real, dimension(ntuv_bin),             &
             intent(out  ) :: wc_x
-      real, dimension(nref),             &
+      real, dimension(ntuv_lev),             &
             intent(out  ) :: zref_x
 
 !----------------------------------------------------
@@ -248,6 +250,7 @@
       real(dp)    :: o3top
       real(dp)    :: o2top
       real(dp)    :: atm_mass_den
+      logical     :: chm_is_mozart
 
 !----------------------------------------------------
 !     local arrays
@@ -274,13 +277,15 @@
       real(dp) :: adjcoe(nz,tuv_jmax)
       real(dp) :: prate0(nz,tuv_jmax)
 
+      chm_is_mozart = config_flags%chem_opt == MOZART_KPP .or. &
+                      config_flags%chem_opt == MOZCART_KPP .or. &
+                      config_flags%chem_opt == T1_MOZCART_KPP .or. &
+                      config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
+                      config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP
 !----------------------------------------------------
 !     set o3,o2 column densities at model top
 !----------------------------------------------------
-      if( config_flags%chem_opt == MOZART_KPP .or. &
-          config_flags%chem_opt == MOZCART_KPP .or. &
-          config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
-          config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
+      if( chm_is_mozart ) then
          p_jtop(its:ite,jts:jte) = Pa2hPa * p_phy(its:ite,kte,jts:jte)
          call p_interp( o2_exo_col, o3_exo_col, p_jtop, &
                         id, its, ite, jts, jte )
@@ -323,11 +328,7 @@
 !----------------------------------------------------
 !     set land use type
 !----------------------------------------------------
-        if( config_flags%chem_opt == MOZART_KPP .or. &
-            config_flags%chem_opt == MOZCART_KPP .or. &
-            config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
-            config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
-
+        if( chm_is_mozart ) then
 !++alma 2012-12-01 modis landuse from sw
 !          if( ivgtyp(i,j) /= 16 ) then
            if( luse2usgs( ivgtyp(i,j) ) /= 16 ) then
@@ -341,10 +342,7 @@
            lu = 1
         endif
 
-        if( config_flags%chem_opt == MOZART_KPP .or. &
-            config_flags%chem_opt == MOZCART_KPP .or. &
-            config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
-            config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
+        if( chm_is_mozart ) then
            o3top = o3_exo_col(i,j)
            o2top = o2_exo_col(i,j)
         endif
@@ -428,9 +426,11 @@ level_loop : &
 !             asal(kp1) = chem(i,k,j,p_seas)
              asal(kp1) = chem(i,k,j,p_seas) + chem(i,k,j,p_naaj) + chem(i,k,j,p_claj)
           elseif( config_flags%chem_opt == MOZART_KPP .or. &
-                  config_flags%chem_opt == MOZCART_KPP ) then
+                  config_flags%chem_opt == MOZCART_KPP .or. &
+                  config_flags%chem_opt == T1_MOZCART_KPP ) then
              aso4(kp1) = chem(i,k,j,p_sulf)*air(kp1)*real(mw_so4_aer,kind=dp)*kg_per_amu*1.e-9_dp
-            if( config_flags%chem_opt == MOZCART_KPP ) then
+            if( config_flags%chem_opt == MOZCART_KPP .or. &
+                config_flags%chem_opt == T1_MOZCART_KPP ) then
              atm_mass_den = rho_phy(i,k,j)
              acb1(kp1) = chem(i,k,j,p_bc1)*atm_mass_den
              acb2(kp1) = chem(i,k,j,p_bc2)*atm_mass_den
@@ -570,26 +570,23 @@ level_loop : &
           ph_n2o5(i,k,j)  = max( 0._dp,prate(k,pid_n2o5)*m2s )
         enddo
 
-        do m = 1,nw-1
-          do k = 1,nz
+        do m = 1,min(nw-1,ntuv_bin)
+          do k = 1,min(nz,ntuv_lev)
             ph_radfld(i,k,j,m) = radfld(k,m)
           end do
         end do
 
-        do m = 1,tuv_jmax
-          do k = 1,nz
+        do m = 1,min(ntuv_pht,tuv_jmax)
+          do k = 1,min(nz,ntuv_lev)
             ph_adjcoe(i,k,j,m) = adjcoe(k,m)
             ph_prate (i,k,j,m) = prate0(k,m)
           end do
         end do
 
-        wc_x(1:nw-1) = wc(1:nw-1)
-        zref_x(1:nref) = zref(1:nref)
+        wc_x(1:min(ntuv_bin,nw-1)) = wc(1:min(ntuv_bin,nw-1))
+        zref_x(1:min(nz,ntuv_lev)) = zref(1:min(nz,ntuv_lev))
 
-        if( config_flags%chem_opt == MOZART_KPP .or. &
-            config_flags%chem_opt == MOZCART_KPP .or. &
-            config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
-            config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
+        if( chm_is_mozart ) then
           do k = kts, kte
             ph_n2o(i,k,j)  = max( 0._dp,prate(k,pid_n2o)*m2s )
             ph_n2o5(i,k,j) = max( 0._dp,prate(k,pid_n2o5)*m2s )
@@ -623,6 +620,7 @@ level_loop : &
 !---------------------------------------------------------------------
 
       use module_state_description, only : mozart_kpp, mozcart_kpp, &
+                                           t1_mozcart_kpp,&
                                            mozart_mosaic_4bin_kpp,&
                                            mozart_mosaic_4bin_aq_kpp
       use module_ftuv_subs, only         : aer_init
@@ -671,6 +669,7 @@ include 'netcdf.inc'
 #else
       if( config_flags%chem_opt == MOZART_KPP .or. &
           config_flags%chem_opt == MOZCART_KPP .or. &
+          config_flags%chem_opt == T1_MOZCART_KPP .or. &
           config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
           config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
          call wrf_message( 'ftuv_init: mozart,mozcart,mozart_mosaic_* chem option requires netcdf' )
@@ -690,6 +689,7 @@ include 'netcdf.inc'
 is_mozart : &
       if( config_flags%chem_opt == MOZART_KPP .or. &
           config_flags%chem_opt == MOZCART_KPP .or. &
+          config_flags%chem_opt == T1_MOZCART_KPP .or. &
           config_flags%chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
           config_flags%chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP ) then
 !---------------------------------------------------------------------
@@ -900,6 +900,7 @@ include 'netcdf.inc'
       use module_wave_data, only : nw, wl, wave_data_inti
       use module_ftuv_subs, only : nwint, wlint, schu_inti, inter_inti
       use module_state_description, only : mozart_kpp, mozcart_kpp, &
+                                           t1_mozcart_kpp,&
                                            mozart_mosaic_4bin_kpp,&
                                            mozart_mosaic_4bin_aq_kpp
 
@@ -920,6 +921,7 @@ include 'netcdf.inc'
 
       if( chem_opt /= MOZART_KPP .and. &
           chem_opt /= MOZCART_KPP .and. &
+          chem_opt /= T1_MOZCART_KPP .and. &
           chem_opt /= MOZART_MOSAIC_4BIN_KPP .and. &
           chem_opt /= MOZART_MOSAIC_4BIN_AQ_KPP ) then
 !---------------------------------------------------------------------
@@ -987,6 +989,7 @@ include 'netcdf.inc'
 !---------------------------------------------------------------------
       if( chem_opt == MOZART_KPP .or. &
           chem_opt == MOZCART_KPP .or. &
+          chem_opt == T1_MOZCART_KPP .or. &
           chem_opt == MOZART_MOSAIC_4BIN_KPP .or. &
           chem_opt == MOZART_MOSAIC_4BIN_AQ_KPP) then
          albedo(1:17,2) = (/ 0.0747_dp, 0.0755_dp, 0.0767_dp, 0.0783_dp, 0.0802_dp,   &

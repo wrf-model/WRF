@@ -45,6 +45,7 @@ subroutine da_write_diagnostics(it, grid,num_qcstat_conv, ob, iv, re, y, j)
    if (iv%info(ships)%ntotal    > 0) call da_oi_stats_ships    (stats_unit, iv, ob)
    if (iv%info(gpspw)%ntotal    > 0) call da_oi_stats_gpspw    (stats_unit, iv)
    if (iv%info(gpsref)%ntotal   > 0) call da_oi_stats_gpsref   (stats_unit, iv)
+   if (iv%info(gpseph)%ntotal   > 0) call da_oi_stats_gpseph   (stats_unit, iv)
    if (iv%info(ssmi_tb)%ntotal  > 0) call da_oi_stats_ssmi_tb  (stats_unit, iv)
    if (iv%info(ssmi_rv)%ntotal  > 0) call da_oi_stats_ssmi_rv  (stats_unit, iv)
    if (iv%info(satem)%ntotal    > 0) call da_oi_stats_satem    (stats_unit, iv)
@@ -83,6 +84,7 @@ if (.not. anal_type_verify) then
    if (iv%info(ships)%ntotal    > 0) call da_ao_stats_ships    (stats_unit, iv, re, ob)
    if (iv%info(gpspw)%ntotal    > 0) call da_ao_stats_gpspw    (stats_unit, iv, re)
    if (iv%info(gpsref)%ntotal   > 0) call da_ao_stats_gpsref   (stats_unit, iv, re)
+   if (iv%info(gpseph)%ntotal   > 0) call da_ao_stats_gpseph   (stats_unit, iv, re)
    if (iv%info(ssmi_tb)%ntotal  > 0) call da_ao_stats_ssmi_tb  (stats_unit, iv, re)
    if (iv%info(ssmi_rv)%ntotal  > 0) call da_ao_stats_ssmi_rv  (stats_unit, iv, re)
    if (iv%info(satem)%ntotal    > 0) call da_ao_stats_satem    (stats_unit, iv, re)
@@ -129,20 +131,28 @@ end if
    !  [5.0] Write observation data (O, O-B, O-A, y=hx'):
    !------------------------------------------------------------------------------
 
-   call da_write_obs(it, ob, iv, re)
+   if ( write_gts_omb_oma ) then
+      call da_write_obs(it, ob, iv, re)
+   end if
 
    ! Write ETKF observation files if required (note - 1PE only at present):
    if (anal_type_verify) then
       call da_write_obs_etkf(ob, iv, re)
    end if
 
-   call da_final_write_obs(it, iv)
+   if ( write_gts_omb_oma ) then
+      call da_final_write_obs(it, iv)
+   end if
 
 if (.not. anal_type_verify) then
-   call da_write_y(iv, y)
+   if ( write_unpert_obs ) then
+      call da_write_y(iv, y)
+   end if
 
-   call da_final_write_y(iv)
-  
+   if ( write_unpert_obs ) then
+      call da_final_write_y(iv)
+   end if
+
    call da_print_qcstat(it, iv, num_qcstat_conv)
 end if
 

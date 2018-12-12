@@ -2,9 +2,18 @@
 #	Dry surface pressure = Pds
 #	Model top pressure = Pt
 #	Mass in column, Pc = Pds - Pt
+#	1d column weighting term, B: BF is full levels, BH is half levels
 
 #	Total dry pressure
 #	Pd = BF ( Pds - Pt ) + ( eta - BF ) ( P0 - Pt ) + Pt
+
+#	Note that when B (full levels, BF) is identically eta (full levels, ZNW),
+#	the dry pressure, Pd = the terrain following coordinate.
+#	Pd = eta ( Pds - Pt ) + Pt
+
+#	Note that when B (full levels, BF) is zero,
+#	the dry pressure, Pd = isobaric.
+#	Pd = eta ( P0 - Pt ) + Pt
 
 #	Hybrid coordinate: mu is still d(Pd)/d(eta)
 #	new MUT = d Pd / d eta = d BF / d eta * ( Pcb + Pc ) + ( 1 - d BF / d eta ) * ( P0 - Pt )
@@ -31,11 +40,9 @@
 
 #<Table> <Type>   <Sym>         <Dims>   <Use>           <NumTLev> <Stagger>        <IO>            <DNAME>                        <DESCRIP>                            <UNITS>
 
-state    real      bf              k     misc                1         Z     i02rh0{22}{23}{24}      "BF"        "full levels, bf=0 => isobaric; bf=znw => sigma"     "Dimensionless"
 state    real      c1h             k     misc                1         -     i02rh0{22}{23}{24}      "C1H"       "half levels, c1h = d bf / d eta, using znw"         "Dimensionless"
 state    real      c2h             k     misc                1         -     i02rh0{22}{23}{24}      "C2H"       "half levels, c2h = (1-c1h)*(p0-pt)"                 "Pa"
 
-state    real      bh              k     misc                1         -     i02rh0{22}{23}{24}      "BH"        "half levels, bh=0 => isobaric; bh=znu => sigma"     "Dimensionless"
 state    real      c1f             k     misc                1         Z     i02rh0{22}{23}{24}      "C1F"       "full levels, c1f = d bf / d eta, using znu"         "Dimensionless"
 state    real      c2f             k     misc                1         Z     i02rh0{22}{23}{24}      "C2F"       "full levels, c2f = (1-c1f)*(p0-pt)"                 "Pa"
 
@@ -52,5 +59,5 @@ state    real      pc             ijb   dyn_em               2         -     irh
 
 
 #<Table> <Type>   <Sym>         <Nml>                    <NumEntry> <Default>                                                     <DESCRIP>                             <UNITS>
-rconfig  integer  hybrid_opt    namelist,dynamics            1          0     i0                  "HYBRID_OPT"   "0=Original WRF coordinate, 1=Terrain Following using hybrid formulation, 2=Klemp cubic form with etac"         "Flag"
+rconfig  integer  hybrid_opt    namelist,dynamics            1          2     i0                  "HYBRID_OPT"   "0=Original WRF coordinate, 1=Terrain Following using hybrid formulation, 2=Klemp cubic form with etac"         "Flag"
 rconfig  real     etac          namelist,dynamics            1         0.2    i0                  "ETAC"         "znw(k) < etac, eta surfaces are isobaric, 0.2 is a good default"          "Pa/Pa"

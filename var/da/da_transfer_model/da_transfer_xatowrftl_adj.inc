@@ -58,7 +58,7 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
    grid%a_rainc  = model_grid%a_rainc
    grid%a_raincv = model_grid%a_raincv
 
-   do i = PARAM_FIRST_SCALAR, num_moist
+   do i = PARAM_FIRST_SCALAR, num_a_moist
       call kj_swap_reverse (model_grid%a_moist(:,:,:,i), grid%a_moist(:,:,:,i), &
                     grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
    enddo
@@ -110,41 +110,6 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
 
    grid%a_w_2 = 0.0
 
-#ifdef VAR4D_MICROPHYSICS
-   ! New code needed once we introduce the microphysics to 4dvar in 2008
-   if (size(grid%moist,dim=4) >= 4) then
-      do k=kts,kte
-         do j=jts,jte
-            do i=its,ite
-               grid%xa%qcw(i,j,k)=grid%a_moist(i,j,k,p_qcw)
-               grid%xa%qrn(i,j,k)=grid%a_moist(i,j,k,p_qrn)
-            end do
-         end do
-      end do
-   end if
-
-   if (size(grid%moist,dim=4) >= 6) then
-      do k=kts,kte
-         do j=jts,jte
-            do i=its,ite
-               grid%xa%qci(i,j,k)=grid%a_moist(i,j,k,p_qci)
-               grid%xa%qsn(i,j,k)=grid%a_moist(i,j,k,p_qsn)
-            end do
-         end do
-      end do
-   end if
-
-   if (size(grid%moist,dim=4) >= 7) then
-      do k=kts,kte
-         do j=jts,jte
-            do i=its,ite
-               grid%xa%qgr(i,j,k)=grid%a_moist(i,j,k,p_qgr) 
-            end do
-         end do
-      end do
-   end if
-
-#endif
 #ifndef A2C
    !---------------------------------------------------------------------------
    ! [5.0] Adjoint of CONVERT FROM A-GRID TO C-GRID
@@ -331,15 +296,25 @@ subroutine da_transfer_xatowrftl_adj(grid, config_flags, filnam)
       end do
    end do
 
-   if (size(grid%a_moist,dim=4) >= 4) then
-      do k=kts,kte
-         do j=jts,jte
-            do i=its,ite
-             grid%xa%qcw(i,j,k)=grid%xa%qcw(i,j,k) + grid%a_moist(i,j,k,P_A_QC)
-             grid%xa%qrn(i,j,k)=grid%xa%qrn(i,j,k) + grid%a_moist(i,j,k,P_A_QR)
-            end do
-         end do
-      end do
+   if ( config_flags%mp_physics_ad == warmrain_ad ) then
+      if ( f_a_qc .and. cloud_cv_options >= 1 ) then
+         grid%xa%qcw(its:ite,jts:jte,kts:kte)=grid%a_moist(its:ite,jts:jte,kts:kte,p_a_qc)
+      end if
+      if ( f_a_qr .and. cloud_cv_options >= 1 ) then
+         grid%xa%qrn(its:ite,jts:jte,kts:kte)=grid%a_moist(its:ite,jts:jte,kts:kte,p_a_qr)
+      end if
+      !placeholder
+      !if ( config_flags%mp_physics_ad == icecld_ad ) then
+      !   if ( f_a_qi .and. cloud_cv_options >= 2 ) then
+      !      grid%xa%qci(its:ite,jts:jte,kts:kte)=grid%a_moist(its:ite,jts:jte,kts:kte,p_a_qi)
+      !   end if
+      !   if ( f_a_qs .and. cloud_cv_options >= 2 ) then
+      !      grid%xa%qsn(its:ite,jts:jte,kts:kte)=grid%a_moist(its:ite,jts:jte,kts:kte,p_a_qs)
+      !   end if
+      !   if ( f_a_qg .and. cloud_cv_options >= 2 ) then
+      !      grid%xa%qgr(its:ite,jts:jte,kts:kte)=grid%a_moist(its:ite,jts:jte,kts:kte,p_a_qg)
+      !   end if
+      !end if
    end if
 
    grid%a_moist = 0.0

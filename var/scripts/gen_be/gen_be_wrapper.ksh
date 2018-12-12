@@ -40,18 +40,19 @@ export NUM_LEVELS=27         # = bottom_top = e_vert - 1
 #export ALLOW_MISSING_DATES=.false.  # Set to true if you want GEN_BE to attempt to continue with gaps in data (missing dates)
 
 export BE_METHOD=NMC
-export FCST_RANGE=12
 #Example of changes required for "be_method=ENS":
 #export BE_METHOD=ENS
 #export NE=2 # 30
 
 export FC_DIR=/glade/p/work/wrfhelp/WRFDA_DATA/fc   # where wrf forecasts are
 export RUN_DIR=`pwd`/gen_be${BIN_TYPE}_cv${NL_CV_OPTIONS}
-export DOMAIN=01
-export FCST_RANGE1=24
-export FCST_RANGE2=12
-export INTERVAL=12
-export STRIDE=1
+export DOMAIN=01             # For nested domains, set to the appropriate domain number
+export FCST_RANGE1=24        # Longer forecast time for the NMC method (i.e. for 24-12 NMC, FCST_RANGE1=24, for 36-24 NMC, FCST_RANGE1=36)
+export FCST_RANGE2=12        # Shorter forecast time for the NMC method (i.e. for 24-12 NMC, FCST_RANGE2=12, for 36-24 NMC, FCST_RANGE2=24)
+export INTERVAL=12           # The interval between your forecast initial times
+export STRIDE=1              # STRIDE=1 calculates correlation for every model grid point.
+                             # STRIDE=2 calculates correlation every 2nd model gridpoint. 3 means every 3rd grid point, etc.
+export NOCOLONS=false        # Optional, for use if you set nocolons=true in your WRF namelists
 export USE_RFi=true		# use recursive filters?
 #[2] Run gen_be:
 if ${USE_RFi}; then

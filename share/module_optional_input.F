@@ -5,7 +5,8 @@ MODULE module_optional_input
 
    INTEGER :: flag_qv       , flag_qc       , flag_qr       , flag_qi       , flag_qs       , &
               flag_qg       , flag_qh       , &
-              flag_qni      , flag_qnr      , &
+              flag_qni      , flag_qnc      , flag_qnr      , &
+              flag_qns      , flag_qng      , flag_qnh      , &
               flag_qnwfa    , flag_qnifa    , &
               flag_sh       , flag_speccldl , flag_speccldf
 
@@ -28,8 +29,6 @@ MODULE module_optional_input
 
    INTEGER :: flag_ptheta
 
-   INTEGER :: flag_lake_depth
-
    INTEGER :: flag_excluded_middle
 
    INTEGER :: flag_um_soil
@@ -39,6 +38,9 @@ MODULE module_optional_input
               flag_hgttrop  , flag_ptrop    , flag_ttrop    , flag_utrop    , flag_vtrop
    INTEGER :: flag_pmaxwnn  , flag_ptropnn
    INTEGER :: flag_extra_levels
+
+   INTEGER :: flag_canfra   , flag_clayfrac   , flag_erod     , flag_frc_urb2d , flag_imperv , &
+              flag_lai12m   , flag_lake_depth , flag_sandfrac , flag_urb_param , flag_var_sso
 
    INTEGER                  :: num_soil_levels_input
    INTEGER                  :: num_st_levels_input , num_sm_levels_input , num_sw_levels_input
@@ -208,7 +210,8 @@ CONTAINS
                                  ids, ide, jds, jde, kds, kde, &
                                  ims, ime, jms, jme, kms, kme, &
                                  its, ite, jts, jte, kts, kte  )
-      CALL optional_lake       ( grid , fid , &
+
+      CALL optional_geogrid    ( grid , fid , &
                                  ids, ide, jds, jde, kds, kde, &
                                  ims, ime, jms, jme, kms, kme, &
                                  its, ite, jts, jte, kts, kte  )
@@ -315,7 +318,11 @@ USE module_io_domain
       flag_qg       = 0
       flag_qh       = 0
       flag_qni      = 0
+      flag_qnc      = 0
       flag_qnr      = 0
+      flag_qns      = 0
+      flag_qng      = 0
+      flag_qnh      = 0
       flag_qnwfa    = 0
       flag_qnifa    = 0
       flag_sh       = 0
@@ -362,10 +369,30 @@ USE module_io_domain
       IF ( ierr .EQ. 0 ) THEN
          flag_qni       = itmp
       END IF
+      flag_name(1:8) = 'QNC      '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qnc       = itmp
+      END IF
       flag_name(1:8) = 'QNR      '
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
       IF ( ierr .EQ. 0 ) THEN
          flag_qnr       = itmp
+      END IF
+      flag_name(1:8) = 'QNS      '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qns       = itmp
+      END IF
+      flag_name(1:8) = 'QNG      '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qng       = itmp
+      END IF
+      flag_name(1:8) = 'QNH      '
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
+      IF ( ierr .EQ. 0 ) THEN
+         flag_qnh       = itmp
       END IF
       flag_name(1:8) = 'QNWFA    '
       CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr )
@@ -611,10 +638,10 @@ USE module_io_domain
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-   SUBROUTINE optional_lake ( grid , fid , &
-                             ids, ide, jds, jde, kds, kde, &
-                             ims, ime, jms, jme, kms, kme, &
-                             its, ite, jts, jte, kts, kte  )
+   SUBROUTINE optional_geogrid ( grid , fid , &
+                                 ids, ide, jds, jde, kds, kde, &
+                                 ims, ime, jms, jme, kms, kme, &
+                                 its, ite, jts, jte, kts, kte  )
 
       USE module_io_wrf
       USE module_domain	, ONLY : domain
@@ -634,6 +661,72 @@ USE module_io_domain
 
       flag_name = '                                                                                '
 
+      flag_canfra          = 0 
+
+      flag_name(1:6)  = 'CANFRA'    
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_canfra          = itmp
+      END IF
+
+
+      flag_name = '                                                                                '
+
+      flag_clayfrac        = 0 
+
+      flag_name(1:8)  = 'CLAYFRAC'  
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_clayfrac        = itmp
+      END IF
+
+
+      flag_name = '                                                                                '
+
+      flag_erod            = 0 
+
+      flag_name(1:4)  = 'EROD'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_erod            = itmp
+      END IF
+
+
+      flag_name = '                                                                                '
+
+      flag_frc_urb2d       = 0 
+
+      flag_name(1:9)  = 'FRC_URB2D'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_frc_urb2d       = itmp
+      END IF
+
+
+      flag_name = '                                                                                '
+
+      flag_imperv          = 0 
+
+      flag_name(1:6)  = 'IMPERV'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_imperv          = itmp
+      END IF
+
+
+      flag_name = '                                                                                '
+
+      flag_lai12m          = 0 
+
+      flag_name(1:6)  = 'LAI12M'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_lai12m          = itmp
+      END IF
+
+
+      flag_name = '                                                                                '
+
       flag_lake_depth      = 0 
 
       flag_name(1:10) = 'LAKE_DEPTH'
@@ -641,8 +734,41 @@ USE module_io_domain
       IF ( ierr .EQ. 0 ) THEN
          flag_lake_depth      = itmp
       END IF
+
+
+      flag_name = '                                                                                '
+
+      flag_sandfrac        = 0 
+
+      flag_name(1:8)  = 'SANDFRAC'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_sandfrac        = itmp
+      END IF
+
+
+      flag_name = '                                                                                '
+
+      flag_urb_param       = 0 
+
+      flag_name(1:9)  = 'URB_PARAM' 
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_urb_param       = itmp
+      END IF
+
+
+      flag_name = '                                                                                '
+
+      flag_var_sso         = 0 
+
+      flag_name(1:7)  = 'VAR_SSO'
+      CALL wrf_get_dom_ti_integer ( fid, 'FLAG_' // flag_name, itmp, 1, icnt, ierr ) 
+      IF ( ierr .EQ. 0 ) THEN
+         flag_var_sso         = itmp
+      END IF
     
-   END SUBROUTINE optional_lake
+   END SUBROUTINE optional_geogrid
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

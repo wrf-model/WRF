@@ -30,18 +30,14 @@ subroutine da_oi_stats_radar (stats_unit, iv)
    stats%maximum%rrn = maxmin_type (missing_r, 0, 0)
    stats%maximum%rsn = maxmin_type (missing_r, 0, 0)
    stats%maximum%rgr = maxmin_type (missing_r, 0, 0)
-   stats%maximum%rcl = maxmin_type (missing_r, 0, 0)
-   stats%maximum%rci = maxmin_type (missing_r, 0, 0)
    stats%maximum%rqv = maxmin_type (missing_r, 0, 0)
 
    stats%minimum%rrn = maxmin_type(-missing_r, 0, 0)
    stats%minimum%rsn = maxmin_type(-missing_r, 0, 0)
    stats%minimum%rgr = maxmin_type(-missing_r, 0, 0)
-   stats%minimum%rcl = maxmin_type(-missing_r, 0, 0)
-   stats%minimum%rci = maxmin_type(-missing_r, 0, 0)
    stats%minimum%rqv = maxmin_type(-missing_r, 0, 0)
 
-   stats%average = residual_radar1_type(0.0, 0.0, 0.0, 0.0, 0.0,0.0,0.0,0.0)
+   stats%average = residual_radar1_type(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 
    stats%rms_err = stats%average
 

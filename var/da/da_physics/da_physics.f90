@@ -19,8 +19,9 @@ module da_physics
       trace_use, missing_r, maximum_rh, minimum_rh,cv_options_hum,coeff,l_over_rv, &
       es_gammakelvin, es_gammabeta, rd_over_rv1,t_kelvin, es_alpha, es_gamma, &
       es_beta, rd_over_rv, trace_use_frequent,gamma, print_detail_xa, stdout, &
-      cv_options_hum_specific_humidity, trace_use_dull, pi
-   use da_par_util, only : da_transpose_z2y, da_transpose_y2x, &
+      cv_options_hum_specific_humidity, trace_use_dull, pi, consider_xap4ztd, &
+      use_gpsephobs
+   use da_par_util, only : da_transpose_z2y, da_transpose_y2x, da_patch_to_global, &
       da_transpose_x2z, da_transpose_z2x, da_transpose_x2y, da_transpose_y2z
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_interpolation, only : da_interp_lin_2d, da_interp_lin_2d_adj
@@ -29,6 +30,7 @@ module da_physics
    use da_reporting, only : da_error, message
    use da_wrf_interfaces, only : wrf_debug
    use da_grid_definitions, only : da_ffdduv_model
+   use da_gpseph, only : global_xa_ref
 
    implicit none
 

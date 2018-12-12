@@ -76,6 +76,39 @@ subroutine da_wrfvar_init2
       call da_message(message(1:1))
    endif
 
+   if (max_dom > 1 .and. ( .not. anal_type_hybrid_dual_res) ) then
+      call da_error(__FILE__,__LINE__, (/'WRFDA does not handle nests (max_domain > 1)'/))
+   end if
+
+   if ( var4d ) then
+      model_config_rec%var4d_used = 1
+      !mp_physics_4dvar is used for allocating a_moist and g_moist variables
+      model_config_rec%mp_physics_4dvar = model_config_rec%mp_physics
+   end if
+
+   if ( adj_sens ) then
+      model_config_rec%adj_sens_used = 1
+   end if
+
+   if ( var4d ) then
+      model_config_rec%var4d_cloudcv = cloud_cv_options
+      if ( use_cv_w ) model_config_rec%var4d_w_cv = 1
+   end if
+   if ( use_cv_w ) then
+      model_config_rec%cv_w_used = 1
+   end if
+   if ( ensdim_alpha > 0 ) then
+      model_config_rec%ens_used = 1
+   end if
+   if ( alpha_hydrometeors ) then
+      model_config_rec%cloud_ens_used = 1
+   end if
+   if ( use_wpec ) then
+      model_config_rec%wpec_used = 1
+   end if
+   if ( use_4denvar .and. num_fgat_time > 1 ) then
+      model_config_rec%alloc_xa_static = 1
+   end if
 
    !<DESCRIPTION>
    ! Among the configuration variables read from the namelist is
@@ -93,12 +126,6 @@ subroutine da_wrfvar_init2
    call set_wrf_debug_level (debug_level)
 
    nullify(null_domain)
-
-
-!  if (max_dom > 1 ) then 
-   if (max_dom > 1 .and. ( .not. anal_type_hybrid_dual_res) ) then
-      call da_error(__FILE__,__LINE__, (/'WRFDA does not handle nests (max_domain > 1)'/))
-   end if
 
    !<DESCRIPTION>
    ! The top-most domain in the simulation is then allocated and configured

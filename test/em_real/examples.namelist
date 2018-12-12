@@ -278,7 +278,7 @@ Topographic shading (only effective when grid sizes are a few kilometers)
  topo_shading                        = 1,     1,     1,
  shadlen                             = 25000, 
 
-Setting threashold value for defining seaice if seaice is not in the input file:
+Setting threshold value for defining seaice if seaice is not in the input file:
 
  seaice_threshold                    = 271,
 
@@ -306,18 +306,18 @@ Switching off latent heating from a microphysics scheme (must also set cu_physic
  dampcoef                            = 0.2,    0.2,    0.2
 
 ** Using expanded boundary zone and exponential decay option (add or modify these in
-    namelist record &bdy_control):
+    namelist record &bdy_control). 
+    spec_zone is ALWAYS = 1 
+    relax_zone is ALWAYS = spec_bdy_width - spec_zone
 
  spec_bdy_width                      = 10,
- spec_zone                           = 1,
- relax_zone                          = 9,
- specified                           = .true., .false.,.false.,
+ specified                           = .true.,
  spec_exp                            = 0.33
 
 For a tropical channel configuration, set the following:
 
- specified                           = .true., .false.,.false.,
- periodic_x                          = .true., .false.,.false.,
+ specified                           = .true.,
+ periodic_x                          = .true.,
 
 ** using io quilting option to improve output efficiency for large domain runs
     (note that this is a separate namelist record):
@@ -327,10 +327,40 @@ For a tropical channel configuration, set the following:
  nio_groups = 1,
 
 ** for tc bogusing:
+   Helpful hints
+   1) The TC bogus *MUST* only be run with a single processor: serial 
+      (with or without a nest build option), or as a DM build with np=1.
+   2) Run the TC program for only the initial model time. Remember to copy 
+      your metgrid file to a safe location and then let the TC scheme 
+      generate the auxiliary files.
+   3) The TC program does not handle soil moisture or soil temperature 
+      correctly. After running the TC program, use an NCL script to put the 
+      modified fields back into the original metgrid file (remember that you
+      are keeping a pristine copy elsewhere). The modified fields to copy
+      are:  "RH", "TT", "UU", "VV", "GHT", "PRES", "PMSL", "PSFC".
+   4) The TC program runs quickly, only a few seconds. It is a good idea to 
+      process multiple runs, and vary the TC initialization. It would be 
+      reasonable to select the maximum wind speed (vmax_meters_per_second) 
+      from 30 to 60 by 5, select the radius of maximum winds ((m), rmax) = 
+      50000 to 200000 by 50000, and select a tuning parameter for the 
+      vortex (vmax_ratio) = 0.5 to 0.9 by 0.1. Look at the resulting 
+      bogus storms (sea level pressure, surface wind speeds, and 
+      overall storm size), and choose the best.  
+   5) Remember to also consider starting the TC program at a later or
+      earlier time during your parameter space exploration.
+   6) The bogus storm will organize better if the initialization of the
+      tropical storm is entirely over water, and if the storm is able to 
+      develop over water for several days.
+   7) After the metgrid file is finalized, and the real program is run,
+      use DFI in WRF. Removing and then introducing an entire bogus typhoon
+      is the definition of unbalanced. Running DFI for 2-3 hours back and forth
+      will be a benefit. For a successful implementation of a TC bogus storm in 
+      WRF, the storm should not oscillate in size, should not be radiating 
+      massive amounts of gravity waves, and should not rapidly weaken.
 
  &tc
  insert_bogus_storm                  = .true.,
- remove_storm                        = .true.,
+ remove_storm                        = .false.,
  num_storm                           = 1,
  latc_loc                            = 15.,
  lonc_loc                            = -90.,
@@ -608,4 +638,12 @@ To overwrite the cu_physics option for a second nest, set
  physics_suite                       = 'tropical'
  cu_physics                          = -1,    -1,     0,
  ...
+
+** New way to automatically choose levels (default auto_levels_opt=2)
+ max_dz                              = 1000.
+ auto_levels_opt                     = 2
+ dzbot                               = 50.
+ dzstretch_s                         = 1.3
+ dzstretch_u                         = 1.1
+
 

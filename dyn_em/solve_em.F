@@ -45,7 +45,8 @@ SUBROUTINE solve_em ( grid , config_flags  &
                  ,period_bdy_em_tracer2_sub,period_bdy_em_tracer_old_sub                   &
                  ,period_bdy_em_tracer_sub,period_em_da_sub,period_em_hydro_uv_sub         &
                  ,period_em_f_sub,period_em_g_sub                                          &
-                 ,halo_em_f_1_sub,halo_em_init_4_sub,halo_em_thetam_sub,period_em_thetam_sub
+                 ,halo_em_f_1_sub,halo_em_init_4_sub,halo_em_thetam_sub,period_em_thetam_sub &
+                 ,halo_em_d_pv_sub
 #endif
    USE module_utility
 ! Mediation layer modules
@@ -70,6 +71,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
    USE module_input_tracer
    USE module_chem_utilities
 #endif
+   USE module_dust_emis
    USE module_first_rk_step_part1
    USE module_first_rk_step_part2
    USE module_after_all_rk_steps
@@ -442,39 +444,37 @@ SUBROUTINE solve_em ( grid , config_flags  &
        !  towards the end of the RK loop.  For the first time in the RK loop, we need
        !  a reasonable value for moist_old.
 
-       IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
-         CALL initialize_moist_old ( moist_old(:,:,:,P_Qv),              &
-                            moist(:,:,:,P_Qv) ,                          &
-                            ids,ide, jds,jde, kds,kde,                   &
-                            ims,ime, jms,jme, kms,kme,                   &
-                            grid%i_start(ij), grid%i_end(ij),            &
-                            grid%j_start(ij), grid%j_end(ij),            &
-                            k_start, k_end                               )
-       END IF
+       CALL initialize_moist_old ( moist_old(:,:,:,P_Qv),              &
+                          moist(:,:,:,P_Qv) ,                          &
+                          ids,ide, jds,jde, kds,kde,                   &
+                          ims,ime, jms,jme, kms,kme,                   &
+                          grid%i_start(ij), grid%i_end(ij),            &
+                          grid%j_start(ij), grid%j_end(ij),            &
+                          k_start, k_end                               )
      ENDDO
      !$OMP END PARALLEL DO
 
-     !  Now that we might have initialized the moist_old values for P_Qv, fill
-     !  out some halos, etc.
-     IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
+     !  Now that we have initialized the moist_old values with P_Qv for
+     !  computing a moist t_tendf after rk_step part2, fill in the halo 
+     !  and period boundaries.
+
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 #  include "HALO_EM_MOIST_OLD_E_7.inc"
 #  include "PERIOD_BDY_EM_MOIST_OLD.inc"
 #endif
-       !$OMP PARALLEL DO   &
-       !$OMP PRIVATE ( ij )
-       DO ij = 1 , grid%num_tiles
-         im = P_Qv
-         CALL set_physical_bc3d( moist_old(ims,kms,jms,im), 'p', config_flags,  &
-                                 ids, ide, jds, jde, kds, kde,                  &
-                                 ims, ime, jms, jme, kms, kme,                  &
-                                 ips, ipe, jps, jpe, kps, kpe,                  &
-                                 grid%i_start(ij), grid%i_end(ij),              &
-                                 grid%j_start(ij), grid%j_end(ij),              &
-                                 k_start    , k_end                             )
-       END DO
-       !$OMP END PARALLEL DO
-     END IF
+     !$OMP PARALLEL DO   &
+     !$OMP PRIVATE ( ij )
+     DO ij = 1 , grid%num_tiles
+       im = P_Qv
+       CALL set_physical_bc3d( moist_old(ims,kms,jms,im), 'p', config_flags,  &
+                               ids, ide, jds, jde, kds, kde,                  &
+                               ims, ime, jms, jme, kms, kme,                  &
+                               ips, ipe, jps, jpe, kps, kpe,                  &
+                               grid%i_start(ij), grid%i_end(ij),              &
+                               grid%j_start(ij), grid%j_end(ij),              &
+                               k_start    , k_end                             )
+     END DO
+     !$OMP END PARALLEL DO
 
 !**********************************************************************
 !
@@ -704,6 +704,8 @@ BENCH_END(set_phys_bc_tim)
 
      rk_step_is_one : IF (rk_step == 1) THEN ! only need to initialize diffusion tendencies
 
+BENCH_START(calc_p_rho_tim)
+
 !<DESCRIPTION>
 !<pre>
 !(2) The non-timesplit physics begins with a call to "phy_prep"
@@ -735,7 +737,7 @@ BENCH_END(set_phys_bc_tim)
                              , tke_tend                         &
                              , config_flags%use_adaptive_time_step &
                              , curr_secs                        &
-                             , psim , psih , wspd , gz1oz0      &
+                             , psim , psih , gz1oz0             &
                              , chklowq                          &
                              , cu_act_flag , hol , th_phy       &
                              , pi_phy , p_phy , grid%t_phy      &
@@ -749,6 +751,7 @@ BENCH_END(set_phys_bc_tim)
                              , ipsy, ipey, jpsy, jpey, kpsy, kpey    &
                              , k_start , k_end                  &
                              , f_flux                           &
+                             , aerocu                           &
                             )
 
 #ifdef DM_PARALLEL
@@ -759,7 +762,7 @@ BENCH_END(set_phys_bc_tim)
 #endif
 
        CALL first_rk_step_part2 (    grid, config_flags         &
-                             , moist , moist_tend               &
+                             , moist , moist_old , moist_tend   &
                              , chem  , chem_tend                &
                              , tracer, tracer_tend              &
                              , scalar , scalar_tend             &
@@ -769,7 +772,7 @@ BENCH_END(set_phys_bc_tim)
                              , ph_tendf, mu_tendf               &
                              , tke_tend                         &
                              , adapt_step_flag , curr_secs      &
-                             , psim , psih , wspd , gz1oz0      &
+                             , psim , psih , gz1oz0             &
                              , chklowq                          &
                              , cu_act_flag , hol , th_phy       &
                              , pi_phy , p_phy , grid%t_phy      &
@@ -787,49 +790,6 @@ BENCH_END(set_phys_bc_tim)
                             )
 
      END IF rk_step_is_one
-
-!************************************************************************************************************************
-! LES_fix convert theta to theta_m: point 1  ! 28 January 2015
-
-     IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
-        CALL theta_to_thetam ( grid%t_1 , moist_old(ims,kms,jms,P_qv) ,  &
-                               t_tendf  , moist_tend(ims,kms,jms,P_qv) , &
-                               grid%t_2 , moist(ims,kms,jms,P_qv) ,      &
-                               grid%h_diabatic ,                         &
-                               grid%itimestep ,                          &
-                               rk_step ,                                 & 
-                               ids, ide, jds, jde, kds, kde ,            &
-                               ims, ime, jms, jme, kms, kme ,            &
-                               ips, ipe, jps, jpe, kps, kpe              )
-#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
-#      include "HALO_EM_THETAM.inc"
-#      include "PERIOD_EM_THETAM.inc"
-#endif
-        its=ips ; ite = ipe
-        jts=jps ; jte = jpe
-        CALL set_physical_bc3d( grid%h_diabatic, 'p', config_flags,      &
-                                ids, ide, jds, jde, kds, kde,     &
-                                ims, ime, jms, jme, kms, kme,     &
-                                ips, ipe, jps, jpe, kps, kpe,     &
-                                its, ite, jts, jte,               &
-                                k_start    , k_end                )
-        CALL set_physical_bc3d( grid%t_1, 'p', config_flags,      &
-                                ids, ide, jds, jde, kds, kde,     &
-                                ims, ime, jms, jme, kms, kme,     &
-                                ips, ipe, jps, jpe, kps, kpe,     &
-                                its, ite, jts, jte,               &
-                                k_start    , k_end                )
-        CALL set_physical_bc3d( grid%t_2, 'p', config_flags,      &
-                                ids, ide, jds, jde, kds, kde,     &
-                                ims, ime, jms, jme, kms, kme,     &
-                                ips, ipe, jps, jpe, kps, kpe,     &
-                                its, ite, jts, jte,               &
-                                k_start    , k_end                )
-     END IF
-
-!
-! end theta_m fix point 1
-!************************************************************************************************************************
 
 BENCH_START(rk_tend_tim)
      !$OMP PARALLEL DO   &
@@ -894,39 +854,6 @@ BENCH_START(relax_bdy_dry_tim)
      DO ij = 1 , grid%num_tiles
 
        IF ( (config_flags%specified .or. config_flags%nested) .and. ( rk_step == 1 ) ) THEN 
-
-!************************************************************************************************************************
-! LES_fix convert theta to theta_m: nested or specified LBC, only required on the first rk step
-
-         IF   ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
-           IF ( grid%grid_id .EQ. 1 ) THEN
-              time_duration_of_lbcs = grid%interval_seconds
-           ELSE
-              time_duration_of_lbcs = grid%parent_time_step_ratio * grid%dt
-           END IF
-           CALL theta_and_thetam_lbc_only (                                                   & 
-                                .TRUE.,                                                       &
-                                grid%mub,                                                     &
-                                grid%mu_bxs,grid%mu_bxe,grid%mu_bys,grid%mu_bye,              &
-                                grid%mu_btxs,grid%mu_btxe,grid%mu_btys,grid%mu_btye,          &
-                                grid%t_bxs,grid%t_bxe,grid%t_bys,grid%t_bye,                  &
-                                grid%t_btxs,grid%t_btxe,grid%t_btys,grid%t_btye,              &
-                                moist_bxs(jms,kms,1,P_Qv),moist_bxe(jms,kms,1,P_Qv),          &
-                                moist_bys(ims,kms,1,P_Qv),moist_bye(ims,kms,1,P_Qv),          &
-                                moist_btxs(jms,kms,1,P_Qv),moist_btxe(jms,kms,1,P_Qv),        &
-                                moist_btys(ims,kms,1,P_Qv),moist_btye(ims,kms,1,P_Qv),        &
-                                config_flags%spec_bdy_width,                                  &
-                                time_duration_of_lbcs,                                        &
-                                ids,ide, jds,jde, kds,kde,                                    &
-                                ims,ime, jms,jme, kms,kme,                                    &
-                                ips,ipe, jps,jpe, kps,kpe,                                    &
-                                grid%i_start(ij), grid%i_end(ij),                             &
-                                grid%j_start(ij), grid%j_end(ij),                             &
-                                k_start    , k_end                                            )
-         END IF
-
-! LES_fix convert theta to theta_m: nested or specified LBC
-!************************************************************************************************************************
 
          CALL relax_bdy_dry ( config_flags,                                &
                               grid%u_save, grid%v_save, ph_save, grid%t_save,             &
@@ -995,35 +922,6 @@ BENCH_START(relax_bdy_dry_tim)
                              grid%j_start(ij), grid%j_end(ij),                &
                              k_start, k_end                                  )
 
-!************************************************************************************************************************
-! LES_fix convert theta_m to theta: nested or specified LBC, and only in the last rk step
-! since we do not need the theta_m lateral boundaries any more.
-
-         IF   ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) .AND. ( rk_step == rk_order ) ) THEN
-           CALL theta_and_thetam_lbc_only (                                                   & 
-                                .FALSE.,                                                      &           
-                                grid%mub,                                                     &
-                                grid%mu_bxs,grid%mu_bxe,grid%mu_bys,grid%mu_bye,              &
-                                grid%mu_btxs,grid%mu_btxe,grid%mu_btys,grid%mu_btye,          &
-                                grid%t_bxs,grid%t_bxe,grid%t_bys,grid%t_bye,                  &
-                                grid%t_btxs,grid%t_btxe,grid%t_btys,grid%t_btye,              &
-                                moist_bxs(jms,kms,1,P_Qv),moist_bxe(jms,kms,1,P_Qv),          &
-                                moist_bys(ims,kms,1,P_Qv),moist_bye(ims,kms,1,P_Qv),          &
-                                moist_btxs(jms,kms,1,P_Qv),moist_btxe(jms,kms,1,P_Qv),        &
-                                moist_btys(ims,kms,1,P_Qv),moist_btye(ims,kms,1,P_Qv),        &
-                                config_flags%spec_bdy_width,                                  &
-                                time_duration_of_lbcs,                                        &
-                                ids,ide, jds,jde, kds,kde,                                    &
-                                ims,ime, jms,jme, kms,kme,                                    &
-                                ips,ipe, jps,jpe, kps,kpe,                                    &
-                                grid%i_start(ij), grid%i_end(ij),                             &
-                                grid%j_start(ij), grid%j_end(ij),                             &
-                                k_start    , k_end                                            )
-         END IF
-
-! LES_fix convert theta_m to theta: nested or specified LBC, and only in the last rk step
-! since we do not need the theta_m lateral boundaries any more.
-!************************************************************************************************************************
 
        ENDIF
 
@@ -2250,6 +2148,9 @@ BENCH_START(rk_scalar_tend_tim)
                            grid%kvdif, grid%xkhh,                            &
                            grid%diff_6th_opt, grid%diff_6th_factor,          &
                            config_flags%moist_adv_opt,                       &
+                           grid%phb, grid%ph_2,                              &
+                           config_flags%moist_mix2_off,                      &
+                           config_flags%moist_mix6_off,                      &
                            ids, ide, jds, jde, kds, kde,     &
                            ims, ime, jms, jme, kms, kme,     &
                            grid%i_start(ij), grid%i_end(ij), &
@@ -2415,6 +2316,9 @@ BENCH_START(tke_adv_tim)
                             grid%kvdif, grid%xkhh,                                 &
                             grid%diff_6th_opt, grid%diff_6th_factor,               &
                             config_flags%tke_adv_opt,                              &
+                            grid%phb, grid%ph_2,                                   &
+                            config_flags%tke_mix2_off,                             &
+                            config_flags%tke_mix6_off,                             &
                             ids, ide, jds, jde, kds, kde,     &
                             ims, ime, jms, jme, kms, kme,     &
                             grid%i_start(ij), grid%i_end(ij), &
@@ -2504,6 +2408,9 @@ BENCH_START(chem_adv_tim)
                               grid%khdif, grid%kvdif, grid%xkhh,                 &
                               grid%diff_6th_opt, grid%diff_6th_factor,           &
                               config_flags%chem_adv_opt,                         &
+                              grid%phb, grid%ph_2,                               &
+                              config_flags%chem_mix2_off,                        &
+                              config_flags%chem_mix6_off,                        &
                               ids, ide, jds, jde, kds, kde,                      &
                               ims, ime, jms, jme, kms, kme,                      &
                               grid%i_start(ij), grid%i_end(ij),                  &
@@ -2550,6 +2457,12 @@ BENCH_START(chem_adv_tim)
 
          ENDDO chem_tile_loop_1
          !$OMP END PARALLEL DO
+
+if ( config_flags%do_pvozone ) then
+#ifdef DM_PARALLEL
+#  include "HALO_EM_D_PV.inc"
+#endif
+end if
 
          !$OMP PARALLEL DO   &
          !$OMP PRIVATE ( ij, tenddec )
@@ -2609,14 +2522,17 @@ BENCH_START(chem_adv_tim)
                                      grid%have_bcs_chem,      &
                                      grid%ru_m, grid%rv_m, config_flags,grid%alt,       &
                                      grid%t_1,grid%pb,grid%p,t0,p1000mb,rcp,grid%ph_2,grid%phb,g, &
-                                     grid%spec_zone,ic,                  &
+                                     grid%spec_zone,ic,grid%julday,      &
                                      ids,ide, jds,jde, kds,kde,  & ! domain dims
                                      ims,ime, jms,jme, kms,kme,  & ! memory dims
                                      ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                                      grid%i_start(ij), grid%i_end(ij),   &
                                      grid%j_start(ij), grid%j_end(ij),   &
-                                     k_start, k_end                      )
-           ENDIF
+                                     k_start, k_end,                     &
+                                     grid%u_2,grid%v_2,grid%t_2,grid%znu,grid%msft, &
+                                     grid%msfu,grid%msfv,grid%f,grid%mub,grid%dx,grid%xlat,grid%pv)
+
+              ENDIF
          ENDDO chem_tile_loop_2
          !$OMP END PARALLEL DO
 
@@ -2652,7 +2568,10 @@ BENCH_START(tracer_adv_tim)
                               grid%rdx, grid%rdy, grid%rdn, grid%rdnw,           &
                               grid%khdif, grid%kvdif, grid%xkhh,                 &
                               grid%diff_6th_opt, grid%diff_6th_factor,           &
-                              config_flags%tracer_adv_opt,                         &
+                              config_flags%tracer_adv_opt,                       &
+                              grid%phb, grid%ph_2,                               &
+                              config_flags%tracer_mix2_off,                      &
+                              config_flags%tracer_mix6_off,                      &
                               ids, ide, jds, jde, kds, kde,                      &
                               ims, ime, jms, jme, kms, kme,                      &
                               grid%i_start(ij), grid%i_end(ij),                  &
@@ -2791,6 +2710,9 @@ BENCH_END(tracer_adv_tim)
                                  grid%khdif, grid%kvdif, grid%xkhh,               &
                                  grid%diff_6th_opt, grid%diff_6th_factor,         &
                                  config_flags%scalar_adv_opt,                     &
+                                 grid%phb, grid%ph_2,                             &
+                                 config_flags%scalar_mix2_off,                    &
+                                 config_flags%scalar_mix6_off,                    &
                                  ids, ide, jds, jde, kds, kde,     &
                                  ims, ime, jms, jme, kms, kme,     &
                                  grid%i_start(ij), grid%i_end(ij), &
@@ -2925,39 +2847,6 @@ BENCH_END(tracer_adv_tim)
 
      ENDIF other_scalar_advance
 
-!************************************************************************************************************************
-! LES_fix: convert theta_m back to theta, point 2 ! 28 January 2015
-
-
-     IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
-        CALL thetam_to_theta ( grid%t_1 , moist_old(ims,kms,jms,P_qv) ,  &
-                               grid%t_2 , moist(ims,kms,jms,P_qv) ,      &
-                               ids, ide, jds, jde, kds, kde ,            &
-                               ims, ime, jms, jme, kms, kme ,            &
-                               ips, ipe, jps, jpe, kps, kpe              )
-# ifdef DM_PARALLEL
-#       include "HALO_EM_THETAM.inc"
-#       include "PERIOD_EM_THETAM.inc"
-#endif
-        its=ips ; ite = ipe
-        jts=jps ; jte = jpe
-        CALL set_physical_bc3d( grid%t_1, 'p', config_flags,      &
-                                ids, ide, jds, jde, kds, kde,     &
-                                ims, ime, jms, jme, kms, kme,     &
-                                ips, ipe, jps, jpe, kps, kpe,     &
-                                its, ite, jts, jte,               &
-                                k_start    , k_end                )
-        CALL set_physical_bc3d( grid%t_2, 'p', config_flags,      &
-                                ids, ide, jds, jde, kds, kde,     &
-                                ims, ime, jms, jme, kms, kme,     &
-                                ips, ipe, jps, jpe, kps, kpe,     &
-                                its, ite, jts, jte,               &
-                                k_start    , k_end                )
-     END IF
-
-! end theta_m fix point 2
-!************************************************************************************************************************
-
  !  update the pressure and density at the new time level
 
      !$OMP PARALLEL DO   &
@@ -2966,17 +2855,17 @@ BENCH_END(tracer_adv_tim)
 
 BENCH_START(calc_p_rho_tim)
 
-       CALL calc_p_rho_phi( moist, num_3d_m, config_flags%hypsometric_opt,             &
-                            grid%al, grid%alb, grid%mu_2, grid%muts,              &
-                            grid%c1h, grid%c2h, grid%c3h, grid%c4h, grid%c3f, grid%c4f, &
-                            grid%ph_2, grid%phb, grid%p, grid%pb, grid%t_2,                 &
-                            p0, t0, grid%p_top, grid%znu, grid%znw, grid%dnw, grid%rdnw,           &
-                            grid%rdn, config_flags%non_hydrostatic,             &
-                            ids, ide, jds, jde, kds, kde,     &
-                            ims, ime, jms, jme, kms, kme,     &
-                            grid%i_start(ij), grid%i_end(ij), &
-                            grid%j_start(ij), grid%j_end(ij), &
-                            k_start    , k_end               )
+       CALL calc_p_rho_phi( moist, num_3d_m, config_flags%hypsometric_opt,                    &
+                            grid%al, grid%alb, grid%mu_2, grid%muts,                          &
+                            grid%c1h, grid%c2h, grid%c3h, grid%c4h, grid%c3f, grid%c4f,       &
+                            grid%ph_2, grid%phb, grid%p, grid%pb, grid%t_2,                   &
+                            p0, t0, grid%p_top, grid%znu, grid%znw, grid%dnw, grid%rdnw,      &
+                            grid%rdn, config_flags%non_hydrostatic,config_flags%use_theta_m,  &
+                            ids, ide, jds, jde, kds, kde,                                     &
+                            ims, ime, jms, jme, kms, kme,                                     &
+                            grid%i_start(ij), grid%i_end(ij),                                 &
+                            grid%j_start(ij), grid%j_end(ij),                                 &
+                            k_start    , k_end                                                )
 
 BENCH_END(calc_p_rho_tim)
 
@@ -3462,6 +3351,7 @@ BENCH_END(bc_end_tim)
    END DO Runge_Kutta_loop
 !  grid%dmudt=grid%mu_2 - grid%mu_1
 
+#if ( WRFPLUS != 1 )
    IF      ( config_flags%traj_opt .EQ. UM_TRAJECTORY ) THEN
 #ifdef DM_PARALLEL
 #    include "HALO_EM_F_1.inc"
@@ -3494,6 +3384,7 @@ BENCH_END(bc_end_tim)
         ENDDO
      !$OMP END PARALLEL DO
    ENDIF
+#endif
 !-----------------------------------------------------------
 
    IF (config_flags%do_avgflx_em .EQ. 1) THEN
@@ -3596,6 +3487,7 @@ BENCH_END(advance_ppt_tim)
                         grid%rthften,  grid%rqvften,                     &
                         grid%RUNDGDTEN, grid%RVNDGDTEN, grid%RTHNDGDTEN, &
                         grid%RPHNDGDTEN,grid%RQVNDGDTEN, grid%RMUNDGDTEN,&
+                        grid%t_2, th_phy, moist(ims,kms,jms,P_QV),       &
                         ids, ide, jds, jde, kds, kde,                    &
                         ims, ime, jms, jme, kms, kme,                    &
                         grid%i_start(ij), grid%i_end(ij),                &
@@ -3655,6 +3547,18 @@ BENCH_START(moist_physics_prep_tim)
                                    ims, ime, jms, jme, kms, kme,     &
                                    its, ite, jts, jte,               &
                                    k_start    , k_end               )
+
+       IF (config_flags%dust_emis.eq.1 .AND. config_flags%mp_physics.eq.thompsonaero)  then
+         CALL wrf_debug ( 200 , ' call bulk_dust_emis' )
+         CALL bulk_dust_emis (grid%itimestep,dtm,config_flags%num_soil_layers  &
+               ,grid%u_phy,grid%v_phy,grid%rho,grid%alt                        &
+               ,grid%u10,grid%v10,p8w,dz8w,grid%smois,grid%erod                &
+               ,grid%ivgtyp,grid%isltyp,grid%vegfra,grid%albbck,grid%xland     &
+               ,grid%dx, g, grid%qnifa2d, ids,ide, jds,jde, kds,kde            &
+               ,ims,ime, jms,jme, kms,kme                                      &
+               ,its,ite, jts,jte, k_start,k_end )
+       ENDIF
+
 BENCH_END(moist_physics_prep_tim)
      END DO scalar_tile_loop_1a
      !$OMP END PARALLEL DO
@@ -3701,6 +3605,9 @@ BENCH_START(micro_driver_tim)
       &        ,vmi3d=grid%vmi3d                                          & ! for P3
       &        ,di3d=grid%di3d                                            & ! for P3
       &        ,rhopo3d=grid%rhopo3d                                      & ! for P3
+      &        ,vmi3d_2=grid%vmi3d_2                                      & ! for P3
+      &        ,di3d_2=grid%di3d_2                                        & ! for P3
+      &        ,rhopo3d_2=grid%rhopo3d_2                                  & ! for P3
       &        ,WARM_RAIN=grid%warm_rain                                  &
       &        ,T8W=t8w                                                   &
       &        ,CLDFRA=grid%cldfra, EXCH_H=grid%exch_h &
@@ -3793,6 +3700,10 @@ BENCH_START(micro_driver_tim)
       &        , QNID_CURR=scalar(ims,kms,jms,P_QNID), F_QNID=F_QNID          &
       &        , QIR_CURR=scalar(ims,kms,jms,P_QIR), F_QIR=F_QIR          & ! for P3
       &        , QIB_CURR=scalar(ims,kms,jms,P_QIB), F_QIB=F_QIB          & ! for P3
+      &        , QI2_CURR=moist(ims,kms,jms,P_QI2), F_QI2=F_QI2           & ! for P3
+      &        , QNI2_CURR=scalar(ims,kms,jms,P_QNI2), F_QNI2=F_QNI2      & ! for P3
+      &        , QIR2_CURR=scalar(ims,kms,jms,P_QIR2), F_QIR2=F_QIR2      & ! for P3
+      &        , QIB2_CURR=scalar(ims,kms,jms,P_QIB2), F_QIB2=F_QIB2      & ! for P3
 !       &        , QZR_CURR=scalar(ims,kms,jms,P_QZR), F_QZR=F_QZR          & ! for milbrandt3mom
 !       &        , QZI_CURR=scalar(ims,kms,jms,P_QZI), F_QZI=F_QZI          & ! "
 !       &        , QZS_CURR=scalar(ims,kms,jms,P_QZS), F_QZS=F_QZS          & ! "
@@ -3811,7 +3722,7 @@ BENCH_START(micro_driver_tim)
       &        , RI_CURR=grid%rimi                                          &
       &        , re_cloud=grid%re_cloud, re_ice=grid%re_ice, re_snow=grid%re_snow & ! G. Thompson
       &        , has_reqc=grid%has_reqc, has_reqi=grid%has_reqi, has_reqs=grid%has_reqs & ! G. Thompson
-      &        , qnwfa2d=grid%qnwfa2d                                                   & ! G. Thompson
+      &        , qnwfa2d=grid%qnwfa2d, qnifa2d=grid%qnifa2d                             & ! G. Thompson
       &        , diagflag=diag_flag, do_radar_ref=config_flags%do_radar_ref &
       &        ,u=grid%u_phy,v=grid%v_phy &
       &        ,scalar=scalar,num_scalar=num_scalar                             &
@@ -3840,8 +3751,16 @@ BENCH_START(micro_driver_tim)
       &        ,height=grid%height                                         &
       &        ,tempc=grid%tempc                                         &
       &        ,ccn_conc=grid%ccn_conc                                   & ! RAS
-
-                                                                          )
+      &        ,aerocu=aerocu                                            &
+      &        ,aercu_fct=config_flags%aercu_fct                         &
+      &        ,aercu_opt=config_flags%aercu_opt                         &
+      &        ,no_src_types_cu=grid%no_src_types_cu                     &
+      &        ,PBL=grid%bl_pbl_physics,EFCG=grid%EFCG,EFIG=grid%EFIG,EFSG=grid%EFSG &
+      &        ,WACT=grid%WACT,CCN1_GS=grid%CCN1_GS,CCN2_GS=grid%CCN2_GS,CCN3_GS=grid%CCN3_GS  &
+      &        ,CCN4_GS=grid%CCN4_GS,CCN5_GS=grid%CCN5_GS,CCN6_GS=grid%CCN6_GS &
+      &        ,CCN7_GS=grid%CCN7_GS,NR_CU=grid%NR_CU,QR_CU=grid%QR_CU,NS_CU=grid%NS_CU &
+      &        ,QS_CU=grid%QS_CU,CU_UAF=grid%CU_UAF,mskf_refl_10cm=grid%mskf_refl_10cm)
+                                                                          
 BENCH_END(micro_driver_tim)
 
 #if 0
@@ -3934,22 +3853,35 @@ BENCH_START(moist_phys_end_tim)
                       its, ite, jts, jte,                               &
                       k_start    , k_end                                )
 
-       CALL moist_physics_finish_em( grid%t_2, grid%t_1, t0, grid%muts, th_phy,       &
-                                      grid%h_diabatic, dtm,                    &
-                                      moist(ims,kms,jms,P_QV),grid%qv_diabatic, &
-                                      moist(ims,kms,jms,P_QC),grid%qc_diabatic, &
-                                      config_flags,                            &
+       CALL moist_physics_finish_em( grid%t_2, grid%t_1, t0, grid%muts, th_phy,  &
+                                     grid%h_diabatic, dtm,                       &
+                                     moist(ims,kms,jms,P_QV),grid%qv_diabatic,   &
+                                     moist(ims,kms,jms,P_QC),grid%qc_diabatic,   &
+                                     grid%th_phy_m_t0,                           &
+                                     config_flags,                               &
 #if ( WRF_DFI_RADAR == 1 )
-                                      grid%dfi_tten_rad,grid%dfi_stage,        &
+                                     grid%dfi_tten_rad,grid%dfi_stage,           &
 #endif
-                                      ids, ide, jds, jde, kds, kde,     &
-                                      ims, ime, jms, jme, kms, kme,     &
-                                      its, ite, jts, jte,               &
-                                      k_start    , k_end               )
+                                     ids, ide, jds, jde, kds, kde,               &
+                                     ims, ime, jms, jme, kms, kme,               &
+                                     its, ite, jts, jte,                         &
+                                     k_start    , k_end                          )
 
      END DO
      !$OMP END PARALLEL DO
 
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+#       include "HALO_EM_THETAM.inc"
+#       include "PERIOD_EM_THETAM.inc"
+#endif
+        its=ips ; ite = ipe
+        jts=jps ; jte = jpe
+        CALL set_physical_bc3d( grid%h_diabatic, 'p', config_flags,      &
+                                ids, ide, jds, jde, kds, kde,     &
+                                ims, ime, jms, jme, kms, kme,     &
+                                ips, ipe, jps, jpe, kps, kpe,     &
+                                its, ite, jts, jte,               &
+                                k_start    , k_end                )
    ENDIF  ! microphysics test
 
 !-----------------------------------------------------------
@@ -4025,16 +3957,16 @@ BENCH_START(moist_phys_end_tim)
      jts = max(grid%j_start(ij),jds+sz)
      jte = min(grid%j_end(ij),jde-1-sz)
 
-     CALL calc_p_rho_phi( moist, num_3d_m, config_flags%hypsometric_opt,             &
-                          grid%al, grid%alb, grid%mu_2, grid%muts,              &
-                          grid%c1h, grid%c2h, grid%c3h, grid%c4h, grid%c3f, grid%c4f, &
-                          grid%ph_2, grid%phb, grid%p, grid%pb, grid%t_2,                 &
-                          p0, t0, grid%p_top, grid%znu, grid%znw, grid%dnw, grid%rdnw,           &
-                          grid%rdn, config_flags%non_hydrostatic,             &
-                          ids, ide, jds, jde, kds, kde,     &
-                          ims, ime, jms, jme, kms, kme,     &
-                          its, ite, jts, jte,               &
-                          k_start    , k_end               )
+     CALL calc_p_rho_phi( moist, num_3d_m, config_flags%hypsometric_opt,                    &
+                          grid%al, grid%alb, grid%mu_2, grid%muts,                          &
+                          grid%c1h, grid%c2h, grid%c3h, grid%c4h, grid%c3f, grid%c4f,       &
+                          grid%ph_2, grid%phb, grid%p, grid%pb, grid%t_2,                   &
+                          p0, t0, grid%p_top, grid%znu, grid%znw, grid%dnw, grid%rdnw,      &
+                          grid%rdn, config_flags%non_hydrostatic,config_flags%use_theta_m,  &
+                          ids, ide, jds, jde, kds, kde,                                     &
+                          ims, ime, jms, jme, kms, kme,                                     &
+                          its, ite, jts, jte,                                               &
+                          k_start    , k_end                                                )
 
    END DO scalar_tile_loop_1ba
    !$OMP END PARALLEL DO
@@ -4594,7 +4526,7 @@ BENCH_END(bc_2d_tim)
                             moist, chem, tracer, scalar,         &
                             th_phy, pi_phy, p_phy, rho_phy,      &   
                             p8w, t8w, dz8w,                      &
-                            curr_secs2,                          &
+                            REAL(curr_secs,8), curr_secs2,       &
                             diag_flag,                           &
                             ids,  ide,  jds,  jde,  kds,  kde,   &
                             ims,  ime,  jms,  jme,  kms,  kme,   &

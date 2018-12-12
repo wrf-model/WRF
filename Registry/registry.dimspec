@@ -70,6 +70,8 @@ dimspec    ls      2     namelist=levsiz                   z     levsiz
 dimspec    d       2     namelist=paerlev                  z     paerlev
 dimspec    lsa     2     namelist=alevsiz                  z     alevsiz
 dimspec    ty      -     namelist=no_src_types             c     no_src_types
+dimspec    lsc     2     namelist=alevsiz_cu               z     alevsiz_cu
+dimspec    tyc     -     namelist=no_src_types_cu          c     no_src_types_cu
 dimspec    ?       -     namelist=ts_buf_size              c     ts_buf_size
 dimspec    !       -     namelist=max_ts_locs              c     max_ts_locs
 dimspec    v       -     constant=1                        z     one
@@ -78,6 +80,11 @@ dimspec    lake_ssl  2   constant=15                       z     snow_and_soil_l
 dimspec    lake_intl 2   constant=16                       z     interface_levels
 dimspec    lake_sll  2   constant=10                       z     soil_levels_or_lake_levels
 dimspec    crop    2     constant=5                        z     crop_types
+dimspec    soilc   2     constant=8                        z     soil_composition_layers
+dimspec    gecros  2     constant=60                       z     gecros
+
+# Set up the dust erosion dimension irrespective of WRF-Chem, but namelist erosion_dim=3 mandatory when not using WRF-Chem  (gthompsn, 2017Jun23)
+dimspec    .       3     namelist=erosion_dim              z     dust_erosion_dimension
 
 # Dimensions required only for Chemistry
 
@@ -91,7 +98,6 @@ dimspec    dust    2     namelist=kfuture                  z     klevs_for_dust
 dimspec    ]       2     namelist=kfire                    z     klevs_for_fire
 dimspec    %       2     namelist=kdvel                    z     klevs_for_dvel
 dimspec    airc    2     namelist=kemit_aircraft           z     ac_emissions_zdim
-dimspec    .       3     namelist=erosion_dim              z     dust_erosion_dimension
 dimspec    ^       2     constant=46                       z     eightday_dimension
 
 # Dimensions for the GHG options

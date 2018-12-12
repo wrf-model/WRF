@@ -874,17 +874,6 @@ CONTAINS
         ENDDO
 
 
-    varName='SLOPECAT'
-    CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
-    CALL mpi_file_read_at(iunit,file_offset(index+1),     &
-                             dumdata,hor_size,mpi_real4,             &
-                             mpi_status_ignore, ierr)
-        DO J=JTS,min(JTE,JDE-1)
-         DO I=ITS,min(ITE,IDE-1)
-           grid%slopecat(I,J)=dumdata(I,J,1)
-         ENDDO
-        ENDDO
-
     varName='SNOALB'
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
@@ -1545,7 +1534,11 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
   integer memorystart(3),memoryend(3)
   integer patchstart(3),patchend(3)
   character(132) datestr,varname
+#if (WRFPLUS == 1)
+  real(r_double) dummy_field(1)
+#else
   real dummy_field(1)
+#endif
 !  real(r_single) dummy_field(1)
 !  integer dummy_field
 !  real dummy_field

@@ -61,7 +61,7 @@ subroutine da_transform_xtoxa_adj(grid, wpec_on)
 
    if (.not.test_transforms) then
       if (use_ssmt1obs .or. use_ssmt2obs .or. use_gpspwobs .or. use_gpsztdobs .or. &
-          use_ssmitbobs .or. use_ssmiretrievalobs .or. use_gpsrefobs) then
+          use_ssmitbobs .or. use_ssmiretrievalobs .or. use_gpsrefobs .or. use_gpsephobs) then
          if (use_ssmitbobs) call da_transform_xtotb_adj(grid)
          if (use_ssmt1obs .or. use_ssmt2obs .or. &
              use_ssmitbobs .or. use_ssmiretrievalobs) then
@@ -73,7 +73,7 @@ subroutine da_transform_xtoxa_adj(grid, wpec_on)
          end if
 
          ! GPS Refractivity:
-         if ( use_gpsrefObs .or. use_gpsztdObs) then 
+         if ( use_gpsrefObs .or. use_gpsephObs .or. use_gpsztdObs) then
             if (use_gpsztdObs) call da_transform_xtoztd_adj(grid)  
             call da_transform_XTogpsref_adj(grid)  
          endif 

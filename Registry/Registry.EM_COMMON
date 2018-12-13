@@ -893,6 +893,13 @@ state    real   T2OBS            ij     misc        1         -      r        "T
 state    real   Q2OBS            ij     misc        1         -      r        "Q2OBS"        "2-m mixing ratio from analysis "   "kg/kg"
 state    real   IMPERV           ij     misc        1         -      i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)      "IMPERV"       "Impervious surface fraction NLCD"  "percent"
 state    real   CANFRA           ij     misc        1         -      i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)      "CANFRA"       "Satellite canopy fraction"         "percent"
+state    real   LAI_PX           ij     misc        1         -      rh        "LAI_PX"       "LAI used for PX LSM"              "m2/m2"
+state    real   WWLT_PX          ij     misc        1         -      rh       "WWLT_PX"       "Soil wilting point for PX LSM"    "m3/m3"
+state    real   WFC_PX           ij     misc        1         -      rh       "WFC_PX"        "Soil field capacity for PX LSM"    "m3/m3"
+state    real   WSAT_PX          ij     misc        1         -      rh       "WSAT_PX"       "Soil saturation for PX LSM"    "m3/m3"
+state    real   CLAY_PX          ij     misc        1         -      rh       "CLAY_PX"       "Clay perent for PX LSM"    "fraction"
+state    real   CSAND_PX         ij     misc        1         -      rh       "CSAND_PX"      "Coarse sand perent for PX LSM"    "fraction"
+state    real   FMSAND_PX        ij     misc        1         -      rh       "FMSAND_PX"     "Fine-medium sand perent for PX LSM"    "fraction"
 
 # sfclay PBL variables
 i1      real   PSIM           ij     misc        1         -     -         "PSIM"                "SIMILARITY FUNCTION FOR MOMENTUM"     ""
@@ -2245,6 +2252,7 @@ rconfig   integer shcu_aerosols_opt       namelist,physics      max_domains    0
 
 rconfig   integer ICLOUD_CU               derived               max_domains   0        -     "ICLOUD_CU"                     ""      ""
 rconfig   integer pxlsm_smois_init        namelist,physics      max_domains   1       irh    "PXLSM_SMOIS_INIT"    "Soil moisture initialization option 0-From analysis 1-From MAVAIL"   ""
+rconfig   integer pxlsm_modis_veg         namelist,physics      max_domains   0       irh    "PXLSM_MODIS_VEG"     "If 1 use MODIS VEGFRA from wrflowinp updates, 1=yes"   ""
 rconfig   integer omlcall                 namelist,physics      1            0         h     "omlcall"     "temporary holder to allow checking for new name: oml_opt"
 rconfig   integer sf_ocean_physics        namelist,physics      1            0         h     "sf_ocean_physics"     "activate ocean model  0=no, 1=1d mixed layer, 2=3D PWP" ""
 rconfig   integer traj_opt                namelist,physics      1            0         h     "traj_opt"    "activate trajectory calculation  0=no, 1=on"   ""

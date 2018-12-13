@@ -53,6 +53,8 @@ CONTAINS
      &          ,landusef,soilctop,soilcbot,ra,rs,nlcat,nscat,vegf_px & ! PX-LSM
      &          ,snowncv, anal_interval, lai, imperv, canfra          & ! PX-LSM
      &          ,pxlsm_smois_init, pxlsm_soil_nudge                   & ! PX-LSM
+     &          ,pxlsm_modis_veg, lai_px, wwlt_px, wfc_px                           & ! PX-LSM
+     &          ,wsat_px, clay_px, csand_px, fmsand_px                              & ! PX-LSM
      &          ,idveg    ,iopt_crs  ,iopt_btr  ,iopt_run  ,iopt_sfc  ,iopt_frz     &
      &          ,iopt_inf ,iopt_rad  ,iopt_alb  ,iopt_snf  ,iopt_tbot ,iopt_stc     &
      &          ,iopt_gla ,iopt_rsf  ,iopt_soil ,iopt_pedo ,iopt_crop               &
@@ -524,6 +526,14 @@ CONTAINS
 !-- CANFRA       Canopy/Tree fraction                  ! P-X LSM
 !-- NLCAT        Number of landuse categories          ! P-X LSM
 !-- NSCAT        Number of soil categories             ! P-X LSM
+!-- pxlsm_modis_veg   Flag for using MODIS vegeation LAI and vegF (1 is yes)    ! P-X LSM
+!-- LAI_PX            Computed LAI for PX (m^2/m^2)                             ! P-X LSM
+!-- WWLT_PX           Computed soil wilting point for PX (m^3/m^3)              ! P-X LSM
+!-- WFC_PX            Computed soil field capacity for PX (m^3/m^3)             ! P-X LSM
+!-- WSAT_PX           Computed soil saturation for PX (m^3/m^3)                 ! P-X LSM
+!-- CLAY_PX           Aggregated soil clay fraction for PX (%)                  ! P-X LSM
+!-- CSAND_PX          Aggregated soil coarse sand fraction for PX (%)           ! P-X LSM
+!-- FMSAND_PX         Aggregated soil fine-medium sand fraction for PX (%)      ! P-X LSM
 !-- ch - drag coefficient for heat/moisture            ! MYNN LSM
 
 !
@@ -981,7 +991,9 @@ CONTAINS
 !
 !  PX LSM Surface Grid Analysis nudging
 !
-   INTEGER, OPTIONAL, INTENT(IN)    :: pxlsm_smois_init, pxlsm_soil_nudge, ANAL_INTERVAL
+   INTEGER, OPTIONAL, INTENT(IN)    :: pxlsm_smois_init, pxlsm_soil_nudge,  &
+                                       ANAL_INTERVAL, pxlsm_modis_veg
+
    REAL, DIMENSION( ims:ime, NLCAT, jms:jme ) , OPTIONAL, INTENT(INOUT)::   LANDUSEF
    REAL, DIMENSION( ims:ime, NSCAT, jms:jme ) , OPTIONAL, INTENT(INOUT)::   SOILCTOP, SOILCBOT
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT):: IMPERV, CANFRA
@@ -989,16 +1001,14 @@ CONTAINS
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT):: RA
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT):: RS
    REAL, DIMENSION( ims:ime, jms:jme ) , OPTIONAL, INTENT(INOUT):: LAI
-   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(OUT)::   T2OBS
-   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(OUT)::   Q2OBS
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(OUT)::   T2OBS,  Q2OBS, LAI_PX
+   REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(OUT)::  WWLT_PX, WFC_PX, WSAT_PX,    & 
+                                                                 CLAY_PX, CSAND_PX, FMSAND_PX                                       
 
-   REAL,       DIMENSION( ims:ime,  jms:jme ),                           &
-               OPTIONAL, INTENT(INOUT)    ::      t2_ndg_old,            &
-                                                  q2_ndg_old,            &
-                                                  t2_ndg_new,            &
-                                                  q2_ndg_new,            &
-                                                  sn_ndg_old,            &
-                                                  sn_ndg_new
+   REAL,       DIMENSION( ims:ime,  jms:jme ),                                     &
+               OPTIONAL, INTENT(INOUT)    ::  t2_ndg_old, t2_ndg_new, q2_ndg_old,  &
+                                              q2_ndg_new, sn_ndg_old, sn_ndg_new 
+
 !
 !
 ! Flags relating to the optional tendency arrays declared above
@@ -3448,6 +3458,8 @@ CONTAINS
                      t2_ndg_old,t2_ndg_new,q2_ndg_old,q2_ndg_new,    &
                      sn_ndg_old, sn_ndg_new, snow, snowh,snowncv,    &
                      t2obs, q2obs,pxlsm_smois_init,pxlsm_soil_nudge, &
+                     pxlsm_modis_veg, LAI_PX, WWLT_PX, WFC_PX,       &
+                     WSAT_PX, CLAY_PX, CSAND_PX, FMSAND_PX,          &
                      ids,ide, jds,jde, kds,kde,                      &
                      ims,ime, jms,jme, kms,kme,                      &
                      i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte)

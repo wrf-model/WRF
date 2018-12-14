@@ -8,9 +8,9 @@ library to link with the WRF model and called by the WRF model as a function. Th
 of WRF-Hydro within the WRF model is controlled by a macro definition that is specified 
 as an environment setting during the compiling process. When WRF-Hydro is not activated 
 within the environment setting before the WRF configuration process, the entire system 
-defaults to the standard WRF model. To compile WRF-Hydro system, user only needs to set 
-environment variable ("setenv WRF_HYDRO 1"), and then follow the standard WRF model 
-configure and compiling process.
+defaults to the standard WRF model. To compile the WRF-Hydro system, the user needs to set 
+the "WRF_HYDRO" environment variable to 1 and then follow the standard WRF model 
+configure and compile process.
 
 2) Environment settings
 The following environment variables need to be set before configuring and compiling the WRF-HYDRO model:
@@ -20,8 +20,7 @@ setenv WRF_HYDRO 1
 
 setenv HYDRO_D 1
 A "1" for HYDRO_D results in WRF-Hydro producing some run-time diagnostic information. 
-When HYDRO_D is set to "0 "or not defined, the diagnostic information will not be produced 
-during run-time. 
+When HYDRO_D is set to "0 "or not defined, the additional diagnostic information will not be produced. 
 
 You can explicitly set the "NETCDF_INC" and "NETCDF_LIB" environment variables or just set "NETCDF".  
 If you only set "NETCDF" environment variable, the default NETCDF_INC and NETCDF_LIB inside WRF-Hydro 
@@ -32,7 +31,7 @@ setenv NETCDF_LIB   "$path/netcdf/lib"
 
 "NETCDF_INC" and "NETCDF_LIB" are defined for the WRF-Hydro only and can be different from those 
 set for the WRF model. WRF-Hydro has two netcdf libraries for Fortran and C respectively: 
-libnetcdff and ibnetcdf. If the user's netcdf library combined them together (only has one), 
+libnetcdff and libnetcdf. If the user's netcdf library combined them together (only has one), 
 the user will need to manually change this part in order to successfully compile WRF-Hydro. 
 See the section below on porting about how to change this.
 
@@ -53,20 +52,22 @@ WRF-Hydro has an additional namelist called "hydro.namelist" as well as some add
 files (.TBL files) that are located under the "hydro/Run" directory. Users need to copy those 
 files to the directory where the "wrf.exe" is going to be executed. 
 
-For a WRF-Hydro cold start run (i.e. not from a restart file), the user needs to provide three 
-additional files that are specified in the "hydro.namelist": "GEO_STATIC_FLNM", "GEO_FINEGRID_FLNM" 
-and, depending on whether or not the baseflow-bucket model is activated, "gwbasmskfil".
+Depending upon the physics options selected for WRF-Hydro, a number of other domain and parameter
+files may be required. These are usually stored in a DOMAIN directory within the run directory. 
+For more information regarding these files consult the WRF-Hydro documentation.
 
-For running WRF-Hydro from restart file, the user needs to uncomment RESTART_FILE from 
+When running WRF-Hydro from restart file, the user needs to uncomment RESTART_FILE from 
 "hydro.namelist" by removing "!" and provide the exact name for the existing restart file 
-to be used.  Running from a restart condition is common when the land surface has been 
-`spun-up' by running WRF-Hydro in an offline or `uncoupled' capacity.
+to be used.  Running from a restart condition is common and an example of where this can be useful
+is when the land surface and other hydro components have been `spun-up' by running WRF-Hydro in an
+offline or `uncoupled' capacity prior to running the coupled modeling system.
 
 3. Porting
 
-The WRF-Hydro does not presently support OPENMP. The default support platform is Linux 
-with the PGI compiler, IBM AIX with the xlf fortran compiler, and Linux with the GFORTRAN 
-(sequential) compiler. However, WRF-Hydro is fairly easy to port to other systems.  
+The WRF-Hydro does not presently support OpenMP. The default support platform is Linux 
+with the Intel Fortran compiler, PGI Fortran compiler, or GNU Fortran compiler. However, WRF-Hydro
+should be fairly easy to port to other systems.  
+
 The basic steps to do so are as follows:
 
 1) Edit "hydro/configure", and add "exit(0);" to the second line so that "configure" will not be executed.

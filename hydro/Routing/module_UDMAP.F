@@ -311,10 +311,15 @@ contains
 
 
         if(LNUMRSL .gt. 0) then 
+
                allocate(LUDRSL(LNUMRSL))
                allocate( basns_area(LNUMRSL) )
         else
-               write(6,*) "Warning: no routing links found."
+! When MPI is performed,for every subdomain in each process, all the links 
+! are listed and if there is no link in the subdomain then it is calling 
+! cleanBuf (memory cleaning purposes), this used to print a warning 
+! that is not necessary for the user to see it, therefore it is been commented out here
+!               write(6,*) "Warning: no routing links found."
                call cleanBuf()
                return
         endif

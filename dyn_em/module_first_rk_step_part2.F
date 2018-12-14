@@ -911,7 +911,7 @@ BENCH_START(vert_diff_tim)
                                       tracer_tend, num_tracer,                     &
                                       grid%u_2, grid%v_2,                                  &
                                       grid%t_2,grid%u_base,grid%v_base,grid%t_base,grid%qv_base,          &
-                                      grid%tke_2, config_flags,              &
+                                      grid%tke_2, th_phy, config_flags,              &
                                       grid%defor13,grid%defor23,grid%defor33,                   &
                                       nba_mij, num_nba_mij,          & !JDM
                                       grid%div, moist, chem, scalar,tracer,         &

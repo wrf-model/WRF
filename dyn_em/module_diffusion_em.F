@@ -1637,7 +1637,7 @@ END SUBROUTINE cal_dampkm
       ELSE
         BN2(i,k,j) = g * ( (theta(i,k+1,j) - theta(i,k-1,j) ) /  &
                      theta(i,k,j) / tmpdz +  &
-                     1.61 * ( moist(i,k+1,j,P_QV) - moist(i,k-1,j,P_QV) ) / &
+                     0.61 * ( moist(i,k+1,j,P_QV) - moist(i,k-1,j,P_QV) ) / &
                      tmpdz -   &
                      ( tmp1(i,k+1,j) - tmp1(i,k-1,j) ) / tmpdz )
       ENDIF
@@ -1670,7 +1670,7 @@ END SUBROUTINE cal_dampkm
                     cf3 * moist(i,3,j,P_QV)
 !        BN2(i,k,j) = g * ( ( theta(i,k+1,j) - thetasfc ) /  &
 !                     theta(i,k,j) / tmpdz +  &
-!                     1.61 * ( moist(i,k+1,j,P_QV) - qvsfc ) /  &
+!                     0.61 * ( moist(i,k+1,j,P_QV) - qvsfc ) /  &
 !                     tmpdz -  &
 !                     ( tmp1(i,k+1,j) - tmp1sfc(i,j) ) / tmpdz  )
 !...... MARTA: change in computation of BN2 at the surface, WCS 040331
@@ -1678,7 +1678,7 @@ END SUBROUTINE cal_dampkm
         tmpdz= 1./rdzw(i,k,j) ! controlare come calcola rdzw
         BN2(i,k,j) = g * ( ( theta(i,k+1,j) - theta(i,k,j)) /  &
                      theta(i,k,j) / tmpdz +  &
-                     1.61 * ( moist(i,k+1,j,P_QV) - qvsfc ) /  &
+                     0.61 * ( moist(i,k+1,j,P_QV) - qvsfc ) /  &
                      tmpdz -  &
                      ( tmp1(i,k+1,j) - tmp1sfc(i,j) ) / tmpdz  )
 ! end of MARTA/WCS change
@@ -3418,6 +3418,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                                     tracer_tendf, n_tracer,                   &
                                     u_2, v_2,                                 &
                                     thp,u_base,v_base,t_base,qv_base,tke,     &
+                                    theta,                                    &
                                     config_flags,defor13,defor23,defor33,     &
                                     nba_mij, n_nba_mij,                       &
                                     div,                                      &
@@ -3488,6 +3489,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                                                                     xkhv, &
                                                                     xkmh, &
                                                                      tke, &
+                                                                   theta, &
                                                                      rdz, &
                                                                      u_2, &
                                                                      v_2, &
@@ -3701,6 +3703,10 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
        hfx(i,j)=heat_flux*cpm*rho(i,kts,j)         ! provided for output only
        rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
              -g*heat_flux*rho(i,kts,j)/dnw(kts)
+       if(config_flags%use_theta_m == 1)THEN
+         rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
+             -g*1.61*theta(i,kts,j)*qfx(i,j)/dnw(kts)
+       ENDIF
     ENDDO
     ENDDO
 
@@ -3712,6 +3718,10 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
        heat_flux = hfx(i,j)/cpm
        rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
             -g*heat_flux/dnw(kts)
+       if(config_flags%use_theta_m == 1)THEN
+         rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
+             -g*1.61*theta(i,kts,j)*qfx(i,j)/dnw(kts)
+       ENDIF
 
     ENDDO
     ENDDO

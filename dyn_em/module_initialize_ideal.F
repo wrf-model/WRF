@@ -30,7 +30,6 @@ MODULE module_initialize_ideal
 #endif
 
 
-
 CONTAINS
 
 

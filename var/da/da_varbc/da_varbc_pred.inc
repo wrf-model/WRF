@@ -31,6 +31,11 @@ subroutine da_varbc_pred(iv)
 
   if (trace_use) call da_trace_entry("da_varbc_pred")
 
+      seviri = trim(rttov_inst_name(rtminit_sensor(i))) == 'seviri'
+      imager = trim(rttov_inst_name(rtminit_sensor(i))) == 'imager'
+         ahi = trim(rttov_inst_name(rtminit_sensor(i))) == 'ahi'
+
+
   do inst = 1, iv%num_inst                                  ! loop for sensor
     npredmax = iv%instid(inst)%varbc_info%npredmax
     if (npredmax <= 0) cycle                                ! VarBC instr only
@@ -75,18 +80,15 @@ subroutine da_varbc_pred(iv)
       if (npredmax >= 5) iv%instid(inst)%varbc_info%pred(5,n) = pred_hk(4)
 		
       ! Scan predictors	
-      !if (varbc_scan == 1) then
-      ! Scan predictors: use scanpos for polar-orbiting sensors	
+      if (varbc_scan(inst) == 1) then ! use scanpos for polar-orbiting sensors
          if (npredmax >= 6) iv%instid(inst)%varbc_info%pred(6,n) = iv%instid(inst)%scanpos(n)
          if (npredmax >= 7) iv%instid(inst)%varbc_info%pred(7,n) = iv%instid(inst)%scanpos(n)**2
          if (npredmax >= 8) iv%instid(inst)%varbc_info%pred(8,n) = iv%instid(inst)%scanpos(n)**3
-      !end if	  
-      !if (varbc_scan == 2) then
-      ! Scan predictors: use satellite zenith angle for geostationary sensors, now turn them off in VARBC.in	
-      !   if (npredmax >= 6) iv%instid(inst)%varbc_info%pred(6,n) = iv%instid(inst)%satzen(n)
-      !   if (npredmax >= 7) iv%instid(inst)%varbc_info%pred(7,n) = iv%instid(inst)%satzen(n)**2
-      !   if (npredmax >= 8) iv%instid(inst)%varbc_info%pred(8,n) = iv%instid(inst)%satzen(n)**3	  
-      !end if 
+      else ! use satellite zenith angle for geostationary sensors, now turn them off in VARBC.in
+         if (npredmax >= 6) iv%instid(inst)%varbc_info%pred(6,n) = iv%instid(inst)%satzen(n)
+         if (npredmax >= 7) iv%instid(inst)%varbc_info%pred(7,n) = iv%instid(inst)%satzen(n)**2
+         if (npredmax >= 8) iv%instid(inst)%varbc_info%pred(8,n) = iv%instid(inst)%satzen(n)**3	  
+      end if 
 
     end do                       ! pixel loop   
   end do                         ! sensor loop

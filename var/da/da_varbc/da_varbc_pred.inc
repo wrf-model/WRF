@@ -31,11 +31,6 @@ subroutine da_varbc_pred(iv)
 
   if (trace_use) call da_trace_entry("da_varbc_pred")
 
-      seviri = trim(rttov_inst_name(rtminit_sensor(i))) == 'seviri'
-      imager = trim(rttov_inst_name(rtminit_sensor(i))) == 'imager'
-         ahi = trim(rttov_inst_name(rtminit_sensor(i))) == 'ahi'
-
-
   do inst = 1, iv%num_inst                                  ! loop for sensor
     npredmax = iv%instid(inst)%varbc_info%npredmax
     if (npredmax <= 0) cycle                                ! VarBC instr only

@@ -274,7 +274,7 @@ if ( tag == 1 )
                    array_size_expression("", "(", -1, t2, p, post_for_count, "model_config_rec%"),
                    tchar) ;
            fprintf(fp,"#if ( SHOW_ALL_VARS_USED == 1 )\n") ;
-           fprintf(fp,"  WRITE(message_string,fmt='(a,i8)') '%s: bytes = ',nba\n", fname) ;
+           fprintf(fp,"  WRITE(message_string,fmt='(a,i12)') '%s: bytes = ',nba\n", fname) ;
            fprintf(fp,"  CALL wrf_message(message_string)\n") ;
            fprintf(fp,"#endif\n") ;
          }

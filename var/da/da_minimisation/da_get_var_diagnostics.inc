@@ -479,7 +479,7 @@ subroutine da_get_var_diagnostics(it, iv, j)
          end do
       end do
    end if
- 
+
    if (trace_use) call da_trace_exit("da_get_var_diagnostics")
       
 end subroutine da_get_var_diagnostics

@@ -408,7 +408,6 @@ subroutine da_final_write_y(iv)
       end do
    end if
 
-   
    !------------------------------------------------------------------
    ! [19] writing Radiance data:
    !------------------------------------------------------------------
@@ -433,13 +432,12 @@ subroutine da_final_write_y(iv)
                num_obs = 0
                do kk = 0,num_procs-1
                   call da_read_y_unit(trim(filename(kk)),ounit,num_obs, &
-                     trim(ob_name),len(trim(ob_name)))  					 
+                     trim(ob_name),len(trim(ob_name)))    
                end do
             end if
          end do                                  ! end loop for Channel 
       end do                                   ! end loop for sensor
    end if
-
    !------------------------------------------------------------------
    ! [20] writing gpsref:
    !------------------------------------------------------------------

@@ -2,6 +2,7 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
 
    !---------------------------------------------------------------------------
    ! Purpose: perform quality control for ahi  data.
+   !  Method: Assume cloud flag coming from GEOCAT processing
    ! To be developed: built in cloud_detection method 
    !---------------------------------------------------------------------------
 
@@ -65,13 +66,13 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
       end if
 
       if ( isflg > 0 ) then         
-		 do k = 1, nchan                
-            if ( k /= 2 .and. k /= 3 .and. k /= 4 ) then
-               if (only_sea_rad) then
-				  iv%instid(i)%tb_qc(k,n)  = qc_bad
-			      nrej_land = nrej_land + 1
-			   end if
+         do k = 1, nchan                
+           !if ( k /= 2 .and. k /= 3 .and. k /= 4 ) then
+            if (only_sea_rad) then
+               iv%instid(i)%tb_qc(k,n)  = qc_bad
+                              nrej_land = nrej_land + 1
             end if
+           !end if
          end do         
       end if
 	  
@@ -79,7 +80,7 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
       !-----------------------------------------------------------------
       do k = 1, nchan
          if (satinfo(i)%iuse(k) .eq. -1) &
-               iv%instid(i)%tb_qc(k,n)  = qc_bad
+            iv%instid(i)%tb_qc(k,n)  = qc_bad
       end do
 
       !  4.0 check cloud
@@ -94,7 +95,7 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
                nrej_clw(k) = nrej_clw(k) + 1
          end if
 
-		 cloud_detection=.false.	
+         cloud_detection=.false.	
          if (cloud_detection) then
             if (iv%instid(i)%landsea_mask(n) == 0 ) then
                if (iv%instid(i)%tb_xb(3,n)-ob%instid(i)%tb(3,n)>3.5) then
@@ -110,7 +111,7 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
                end if
             end if
          else
-            if (iv%instid(i)%cloudflag(n) < 3) then ! only use abs clear pixel
+            if (iv%instid(i)%cloudflag(n) < 3) then ! only use confident clear pixels
                 iv%instid(i)%tb_qc(:,n) = qc_bad
                 if (iv%instid(i)%info%proc_domain(1,n)) &
                     nrej_eccloud(k) = nrej_eccloud(k) + 1
@@ -163,12 +164,11 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
 
       do k = 1, nchan
          ! relative departure check
-		 if (abs(iv%instid(i)%tb_inv(k,n)) > 3.0*iv%instid(i)%tb_error(k,n)) then
-		 	iv%instid(i)%tb_qc(k,n)  = qc_bad
-			if (iv%instid(i)%info%proc_domain(1,n)) &
-				nrej_omb_std(k) = nrej_omb_std(k) + 1
-		 end if
-
+           if (abs(iv%instid(i)%tb_inv(k,n)) > 3.0*iv%instid(i)%tb_error(k,n)) then
+               iv%instid(i)%tb_qc(k,n)  = qc_bad
+               if (iv%instid(i)%info%proc_domain(1,n)) &
+                   nrej_omb_std(k) = nrej_omb_std(k) + 1
+           end if
 
          ! final QC decsion
          if (iv%instid(i)%tb_qc(k,n) == qc_bad) then

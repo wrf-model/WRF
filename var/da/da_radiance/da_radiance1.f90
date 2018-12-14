@@ -60,8 +60,8 @@ module da_radiance1
       real               ::   smois, tslb, snowh, elevation,soiltyp,vegtyp,vegfra
       real               ::   clw
       integer            ::   isflg
-	  integer            ::   cloudflag
-	  
+      integer            ::   cloudflag
+
 !      real,    pointer   ::   tb_xb(:)
       real, pointer             :: tb_ob(:)
       real, pointer             :: tb_inv(:)
@@ -91,7 +91,7 @@ module da_radiance1
       real   ,  pointer  ::  ciw(:)   ! kg/kg
       real   ,  pointer  ::  rain(:)  ! kg/m2/s
       real   ,  pointer  ::  sp(:)    ! kg/m2/s
-	  integer   ,  pointer  ::  cloudflag(:)
+     integer ,  pointer  ::  cloudflag(:)
    end type con_cld_vars_type
 
    type aux_vars_type
@@ -178,8 +178,8 @@ module da_radiance1
       real,    pointer   :: rain(:)       ! rainfall rate in kg/m2/s
       real,    pointer   :: solidp(:)     ! solid precipitation rate in kg/m2/s
       real,    pointer   :: clw(:)        ! cloud liquid water (kg/kg)
-	  real,    pointer   :: ciw(:)        ! cloud ice water    (kg/kg)
-      integer,    pointer   :: cloudflag(:)        ! cloud ice water    (kg/kg)
+      real,    pointer   :: ciw(:)        ! cloud ice water    (kg/kg)
+      integer, pointer   :: cloudflag(:)  ! cloud flag
 
    end type rad_data_type
 

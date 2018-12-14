@@ -131,28 +131,23 @@ subroutine da_radiance_init(iv,ob)
    else if ( trim( crtm_sensor_name(rtminit_sensor(n))) == 'amsr2' ) then
       nchanl(n)  = 14
       nscan(n)   = 486
-<<<<<<< HEAD
    else if ( trim( crtm_sensor_name(rtminit_sensor(n))) == 'ahi' ) then
-   
      !open the ahi info file 
       open(unit=1990,file='ahi_info',status='old',iostat=iret)
       if(iret /= 0)then
-		  call da_error(__FILE__,__LINE__,(/"Read ahi_info error: no such file"/))
+         call da_error(__FILE__,__LINE__,(/"Read ahi_info error: no such file"/))
       end if	  
      !read ahi information
       read(1990,*)  
-	  read(1990,*) 
-	  read(1990,*) 
+      read(1990,*) 
+      read(1990,*) 
       read(1990,*) nscan(n) 
       close(1990)     
-	  write(*,*) nscan(n)   
+      write(*,*) nscan(n)   
       nchanl(n)  = 10
-      
-=======
    else if ( trim( crtm_sensor_name(rtminit_sensor(n))) == 'imgr' ) then
       nchanl(n)  = 4
       nscan(n)   = 60
->>>>>>> develop
    else
       write(unit=message(1),fmt='(A)') "Unrecognized instrument: "
       write(unit=message(2),fmt='(A,I4)') "rtminit_platform = ",rtminit_platform(n)

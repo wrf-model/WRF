@@ -19,8 +19,7 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
    real     :: rlonlat(4)
    ! crtm_cloud
    integer  :: n1,n2,k,its,ite,jts,jte,kts,kte,inst
-   ! ahi data added by wyb
-   integer  :: data_format,iret
+   integer  :: data_format, iret ! AHI radiance related
    
    if (trace_use) call da_trace_entry("da_setup_radiance_structures")
 
@@ -202,38 +201,36 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
 #endif
       end if
       if (use_ahiobs) then
-	  
-        !open the ahi info file 
          open(unit=1990,file='ahi_info',status='old',iostat=iret)
          if(iret /= 0)then
-			call da_error(__FILE__,__LINE__,(/"Read ahi_info error: no such file"/))
+             call da_error(__FILE__,__LINE__,(/"Read ahi_info error: no such file"/))
          end if	  
+
         !read ahi information
          read(1990,*)  
          read(1990,*) data_format  
          close(1990)
-		 
-		 if (data_format==1) then
+
+         if (data_format==1) then
 #if defined(HDF5)
-			write(unit=stdout,fmt='(a)') 'Reading AHI data from cma hdf5'
-			call da_read_obs_hdf5ahi (iv, 'L1AHITBR', 'L2AHICLP')
+            write(unit=stdout,fmt='(a)') 'Reading AHI data from cma hdf5'
+            call da_read_obs_hdf5ahi (iv, 'L1AHITBR', 'L2AHICLP')
 #else			
-			call da_error(__FILE__,__LINE__,(/"To read AHI data, WRFDA must be compiled with HDF5"/))
+            call da_error(__FILE__,__LINE__,(/"To read AHI data, WRFDA must be compiled with HDF5"/))
 #endif	
-		 end if
-		 if (data_format==2) then		 
-			write(unit=stdout,fmt='(a)') 'Reading AHI data from geocat NETCDF4'
-			call da_read_obs_netcdf4ahi_geocat (iv, 'L1AHITBR', 'L2AHICLP')
-		 end if
-		 if (data_format==3) then		 
-			write(unit=stdout,fmt='(a)') 'Reading AHI data from JAXA NETCDF4'
-			call da_read_obs_netcdf4ahi_jaxa (iv, 'L1AHITBR', 'L2AHICLP')
-		 end if		
-		 !if (data_format==4) then		 
-			!filename = 'ahi'
-			!call da_read_obs_bufrahi ('ahi   ',iv, filename)
-		 !end if	
-		 
+         end if
+         if (data_format==2) then		 
+            write(unit=stdout,fmt='(a)') 'Reading AHI data from geocat NETCDF4'
+            call da_read_obs_netcdf4ahi_geocat (iv, 'L1AHITBR', 'L2AHICLP')
+         end if
+         if (data_format==3) then		 
+            write(unit=stdout,fmt='(a)') 'Reading AHI data from JAXA NETCDF4'
+            call da_read_obs_netcdf4ahi_jaxa (iv, 'L1AHITBR', 'L2AHICLP')
+         end if		
+         !if (data_format==4) then		 
+            !filename = 'ahi'
+            !call da_read_obs_bufrahi ('ahi   ',iv, filename)
+         !end if	
       end if	  
       if (use_goesimgobs) then
          write(unit=stdout,fmt='(a)') 'Reading netcdf goes imager GVAR data'
@@ -264,19 +261,12 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
 
    if ( use_simulated_rad ) then
       write(unit=stdout,fmt='(a)') 'Reading simulated radiance'
- 
-
       call da_read_simulated_rad (iv)
- 
-
    end if
 
    if ( use_pseudo_rad ) then
       write(unit=stdout,fmt='(a)') 'Reading pseudo radiance from namelist'    
-  
       call da_read_pseudo_rad (iv)
-   
-
    end if
 
    if (use_kma1dvar) then
@@ -300,7 +290,6 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
    ! sorting obs into FGAT time bins
 
    call da_sort_rad(iv)
-
 
    !-----------------------------------------------------------------------------
    ! [3.0] create (smaller) ob structure:
@@ -335,7 +324,6 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
          end do
       end do
    endif
-
 
    if (trace_use) call da_trace_exit("da_setup_radiance_structures")
 

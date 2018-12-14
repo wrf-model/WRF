@@ -133,7 +133,6 @@ MODULE module_si_io_nmm
       INTEGER, PARAMETER          :: max_fg_variables = 200
       INTEGER, PARAMETER          :: max_vertical_levels = 2000
 
-
 !   This module defines the items needed for the WRF metadata
 !   which is broken up into three levels:  
 !      Global metadata:  Those things which apply to the

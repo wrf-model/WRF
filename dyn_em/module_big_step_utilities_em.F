@@ -6314,22 +6314,22 @@ END SUBROUTINE set_tend
       j_start = jts
       j_end   = MIN(jde-1,jte)
       IF ( config_flags%open_xs ) THEN
-      i_start = MAX(its,ids+3)
+        i_start = MAX(its,ids+3)
       END IF
       IF ( config_flags%open_ys ) THEN
-      j_start = MAX(jts,jds+3)
+        j_start = MAX(jts,jds+3)
       END IF
       IF ( config_flags%open_xe ) THEN
-      i_end   = MIN(ite,ide-3)
+        i_end   = MIN(ite,ide-3)
       END IF
       IF ( config_flags%open_ye ) THEN
-      j_end   = MIN(jte,jde-4)
+        j_end   = MIN(jte,jde-4)
       END IF
       IF ( specified ) THEN
-      i_start = MAX(its,ids+3)
-      i_end   = MIN(ite,ide-3)
-      j_start = MAX(jts,jds+3)
-      j_end   = MIN(jte,jde-4)
+        i_start = MAX(its,ids+3)
+        i_end   = MIN(ite,ide-3)
+        j_start = MAX(jts,jds+3)
+        j_end   = MIN(jte,jde-4)
       END IF
       k_start = kts
       k_end   = ktf
@@ -6341,22 +6341,22 @@ END SUBROUTINE set_tend
       j_start = jts
       j_end   = jte
       IF ( config_flags%open_xs ) THEN
-      i_start = MAX(its,ids+3)
+        i_start = MAX(its,ids+3)
       END IF
       IF ( config_flags%open_ys ) THEN
-      j_start = MAX(jts,jds+3)
+        j_start = MAX(jts,jds+3)
       END IF
       IF ( config_flags%open_xe ) THEN
-      i_end   = MIN(ite,ide-4)
+        i_end   = MIN(ite,ide-4)
       END IF
       IF ( config_flags%open_ye ) THEN
-      j_end   = MIN(jte,jde-3)
+        j_end   = MIN(jte,jde-3)
       END IF
       IF ( config_flags%open_xs .or. specified ) THEN
-      i_start = MAX(its,ids+3)
-      i_end   = MIN(ite,ide-4)
-      j_start = MAX(jts,jds+3)
-      j_end   = MIN(jte,jde-3)
+        i_start = MAX(its,ids+3)
+        i_end   = MIN(ite,ide-4)
+        j_start = MAX(jts,jds+3)
+        j_end   = MIN(jte,jde-3)
       END IF
       k_start = kts
       k_end   = ktf
@@ -6368,22 +6368,22 @@ END SUBROUTINE set_tend
       j_start = jts
       j_end   = MIN(jde-1,jte)
       IF ( config_flags%open_xs ) THEN
-      i_start = MAX(its,ids+3)
+        i_start = MAX(its,ids+3)
       END IF
       IF ( config_flags%open_ys ) THEN
-      j_start = MAX(jts,jds+3)
+        j_start = MAX(jts,jds+3)
       END IF
       IF ( config_flags%open_xe ) THEN
-      i_end   = MIN(ite,ide-4)
+        i_end   = MIN(ite,ide-4)
       END IF
       IF ( config_flags%open_ye ) THEN
-      j_end   = MIN(jte,jde-4)
+        j_end   = MIN(jte,jde-4)
       END IF
       IF ( specified ) THEN
-      i_start = MAX(its,ids+3)
-      i_end   = MIN(ide-4,ite)
-      j_start = MAX(jts,jds+3)
-      j_end   = MIN(jde-4,jte)
+        i_start = MAX(its,ids+3)
+        i_end   = MIN(ide-4,ite)
+        j_start = MAX(jts,jds+3)
+        j_end   = MIN(jde-4,jte)
       END IF
       k_start = kts+1
       k_end   = ktf
@@ -6395,22 +6395,22 @@ END SUBROUTINE set_tend
       j_start = jts
       j_end   = MIN(jde-1,jte)
       IF ( config_flags%open_xs ) THEN
-      i_start = MAX(its,ids+3)
+        i_start = MAX(its,ids+3)
       END IF
       IF ( config_flags%open_ys ) THEN
-      j_start = MAX(jts,jds+3)
+        j_start = MAX(jts,jds+3)
       END IF
       IF ( config_flags%open_xe ) THEN
-      i_end   = MIN(ite,ide-4)
+        i_end   = MIN(ite,ide-4)
       END IF
       IF ( config_flags%open_ye ) THEN
-      j_end   = MIN(jte,jde-4)
+        j_end   = MIN(jte,jde-4)
       END IF
       IF ( specified ) THEN
-      i_start = MAX(its,ids+3)
-      i_end   = MIN(ide-4,ite)
-      j_start = MAX(jts,jds+3)
-      j_end   = MIN(jde-4,jte)
+        i_start = MAX(its,ids+3)
+        i_end   = MIN(ide-4,ite)
+        j_start = MAX(jts,jds+3)
+        j_end   = MIN(jde-4,jte)
       END IF
       k_start = kts
       k_end   = ktf

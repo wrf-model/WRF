@@ -4,7 +4,9 @@ CC_TOOLS = $(CC)
 CFLAGS = $(CC_TOOLS_CFLAGS) #-ansi
 LDFLAGS =
 DEBUG = -g3 -ggdb3 -Og -fvar-tracking -fvar-tracking-assignments -gcolumn-info -fbounds-check -fstack-protector-all -fstack-protector-strong -fstack-check
-WARNING = -Wall -Wextra -Werror -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-sign-compare -Wno-format-truncation
+DEBUG = -Os -g
+WARNING = -Wall -Wextra -Werror
+GCC_WARNING = -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter -Wformat=2 -Wformat-truncation=2 -Wformat-overflow=2 -Wno-format-security -Wno-format-nonliteral -Wno-sign-compare
 OBJ = registry.o my_strtok.o reg_parse.o data.o type.o misc.o \
       gen_defs.o gen_allocs.o gen_mod_state_descr.o gen_scalar_indices.o \
       gen_args.o gen_config.o sym.o symtab_gen.o gen_irr_diag.o \
@@ -13,6 +15,7 @@ OBJ = registry.o my_strtok.o reg_parse.o data.o type.o misc.o \
 
 registry : $(OBJ) standard.exe
 	$(CC_TOOLS) -o registry $(DEBUG) $(LDFLAGS) $(OBJ)
+	if which peflags; then peflags --stack-reserve=33554432 registry; fi
 
 standard.exe : standard.o
 	$(CC_TOOLS) -o standard.exe $(DEBUG) $(LDFLAGS) standard.o

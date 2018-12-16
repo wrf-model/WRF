@@ -1,5 +1,10 @@
 #ifndef MAX_HISTORY
-# define MAX_HISTORY 12
+# define MAX_HISTORY ((unsigned char) 12)
+# if (MAX_HISTORY > 120)
+#  warning If changing MAX_HISTORY to be above 120, check uses, loop variables,
+#  warning and destination string buffers to ensure the types used are wide
+#  warning enough.  Enabling compiler warnings for format strings should help.
+# endif
 #endif
 #ifndef IWORDSIZE
 # define IWORDSIZE 4

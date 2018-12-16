@@ -84,6 +84,7 @@ int gen_scalar_indices ( char * dirname ) ;
 int gen_scalar_indices1 ( FILE * fp, FILE ** fp2 ) ;
 int gen_nest_interp ( char * dirname );
 int gen_nest_v_interp ( char * dirname );
+int gen_nest_interp2(FILE *fp, node_t *node, char *fourdname, int down_path, int use_nest_time_level);
 
 int gen_actual_args ( char * dirname ) ;
 int gen_actual_args_new ( char * dirname ) ;

@@ -21,11 +21,12 @@
 int
 main( int argc, char *argv[] )
 {
-  char fname_in[NAMELEN], dir[NAMELEN], fname_tmp[NAMELEN], command[NAMELEN] ;
-  char fname_wrk[NAMELEN] ;
+  char fname_in[NAMELEN] = {'\0'}, dir[NAMELEN] = {'\0'};
+  char fname_tmp[NAMELEN] = {'\0'}, command[NAMELEN] = {'\0'};
+  char fname_wrk[NAMELEN] = {'\0'};
   FILE * fp_in, *fp_tmp ;
-  char * thisprog  ;
-  char *env_val ;
+  char * thisprog = "";
+  char *env_val = "";
   int mypid ;
   int do_irr_diag ;
 #ifndef _WIN32

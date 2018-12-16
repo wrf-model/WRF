@@ -359,7 +359,7 @@ fprintf(fp,"                  ngrid%%i_parent_start, ngrid%%j_parent_start,     
 fprintf(fp,"                  ngrid%%parent_grid_ratio, ngrid%%parent_grid_ratio                &\n") ;
    
         {
-           char tmpstr[NAMELEN + 7], *p1 ;
+           char tmpstr[2 * NAMELEN + 8], *p1 ;
            node_t * nd, * pp  ;
            pp = NULL ;
            if ( p->node_kind & FOURD ) {
@@ -378,9 +378,9 @@ fprintf(fp,"                  ngrid%%parent_grid_ratio, ngrid%%parent_grid_ratio
 	     } else if ( down_path & FORCE_DOWN ) {
                /* by default, add the boundary and boundary tendency fields to the arg list */
                if ( ! (p->node_kind & FOURD) ) {
-                 snprintf( tmpstr , NAMELEN , "%s_b,%s_bt,", pp->name, pp->name )  ;
+                 snprintf( tmpstr , 2 * NAMELEN + 8, "%s_b,%s_bt,", pp->name, pp->name )  ;
                } else {
-                 snprintf( tmpstr , NAMELEN , "%s_b,%s_bt,", p->name, p->name )  ;
+                 snprintf( tmpstr , 2 * NAMELEN + 8, "%s_b,%s_bt,", p->name, p->name )  ;
                }
                strcat( tmpstr , pp->force_aux_fields ) ;
 	     } else if ( down_path & INTERP_DOWN ) {

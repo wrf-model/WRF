@@ -15,7 +15,7 @@
 char *
 dimension_with_colons( char * pre , char * tmp , node_t * p , char * post )
 {
-  int i ;
+  unsigned int i ;
   if ( p == NULL ) return("") ;
   if ( p->ndims <= 0 && ! p->boundary_array ) return("") ;
   strcpy(tmp,"") ;
@@ -42,7 +42,7 @@ dimension_with_colons( char * pre , char * tmp , node_t * p , char * post )
 char *
 dimension_with_ones( char * pre , char * tmp , node_t * p , char * post )
 {
-  int i ;
+  unsigned int i ;
   char r[NAMELEN],s[NAMELEN],four_d[NAMELEN] ;
   char *pp ;
   if ( p == NULL ) return("") ;
@@ -88,7 +88,7 @@ dimension_with_ranges( char * refarg , char * pre ,
 						   which a namelist supplied dimension
                                                    should be dereference from, or ""  */
 {
-  int i ;
+  unsigned int i ;
   char tx[NAMELEN] ;
   char r[NAMELEN],s[NAMELEN],four_d[NAMELEN] ;
   int   bdex = 0, xdex, ydex, zdex ;
@@ -178,8 +178,8 @@ char *
 index_with_firstelem( char * pre , char * dref , int bdy ,  /* as defined in data.h */
                       char * tmp , node_t * p , char * post )
 {
-  int i ;
-  char tx[NAMELEN] ;
+  unsigned int i ;
+  char tx[NAMELEN * 3] = {'\0'} ;
   char tmp2[NAMELEN] ;
   /* SamT: bug fix: zdex is used but never set */
   int  bdex = 0, xdex, ydex, zdex=-999 ;
@@ -288,26 +288,26 @@ get_elem ( char * structname , char * nlstructname , char * tx , int i , node_t 
            if ( p->dims[i]->subgrid ) 
            {
              if ( first_last == 0 ) { /*first*/
-               sprintf(tx,"(%ssm3%d%s-1)*%ssr_%c+1",dref,p->dims[i]->dim_order,ornt,dref,d1) ;
+               snprintf(tx, 3 * NAMELEN, "(%ssm3%d%s-1)*%ssr_%c+1",dref,p->dims[i]->dim_order,ornt,dref,d1) ;
              }else{                   /*last*/
-               sprintf(tx,"%sem3%d%s*%ssr_%c"      ,dref,p->dims[i]->dim_order,ornt,dref,d1) ;
+               snprintf(tx, 3 * NAMELEN, "%sem3%d%s*%ssr_%c"      ,dref,p->dims[i]->dim_order,ornt,dref,d1) ;
              }
            }
            else
            {
-             sprintf(tx,"%s%cm3%d%s",dref,first_last==0?'s':'e',p->dims[i]->dim_order,ornt) ;
+             snprintf(tx, 3 * NAMELEN, "%s%cm3%d%s",dref,first_last==0?'s':'e',p->dims[i]->dim_order,ornt) ;
            }
          }
          break ;
        case (NAMELIST) :
          if ( first_last == 0 ) {
 	   if ( !strcmp( p->dims[i]->assoc_nl_var_s , "1" ) ) {
-	     snprintf(tx, NAMELEN,"%s",p->dims[i]->assoc_nl_var_s) ;
+	     snprintf(tx, 3 * NAMELEN,"%s",p->dims[i]->assoc_nl_var_s) ;
 	   } else {
-	     snprintf(tx,NAMELEN, "%s%s%s",nlstructname,structname,p->dims[i]->assoc_nl_var_s) ;
+	     snprintf(tx, 3 * NAMELEN, "%s%s%s",nlstructname,structname,p->dims[i]->assoc_nl_var_s) ;
 	   }
 	 } else {
-	   snprintf(tx, NAMELEN, "%s%s%s",nlstructname,structname,p->dims[i]->assoc_nl_var_e) ;
+	   snprintf(tx, 3 * NAMELEN, "%s%s%s",nlstructname,structname,p->dims[i]->assoc_nl_var_e) ;
 	 }
          break ;
        case (CONSTANT) :
@@ -560,7 +560,7 @@ array_size_expression ( char * refarg , char * pre ,
 						   which a namelist supplied dimension
                                                    should be dereference from, or ""  */
 {
-  int i ;
+  unsigned int i ;
   char tx[NAMELEN] ;
   char r[NAMELEN],s[NAMELEN],four_d[NAMELEN] ;
   int   bdex = 0, xdex, ydex, zdex ;

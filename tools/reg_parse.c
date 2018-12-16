@@ -84,7 +84,7 @@
 #define COMM_USE           2
 #define COMM_DEFINE        3
 
-static int ntracers = 0 ;
+static unsigned int ntracers = 0 ;
 static char tracers[1000][100] ;
 
 int
@@ -274,7 +274,7 @@ pre_parse( char * dir, FILE * infile, FILE * outfile )
 	        if ( !strcmp( tokens[F_USE] , tracers[i] ) ) found = 1 ; 
               }
 	      if ( found == 0 ) {
-	        sprintf(tracers[ntracers],tokens[F_USE]) ;
+	        snprintf(tracers[ntracers], 100, tokens[F_USE]) ;
 	        ntracers++ ;
 
 /* add entries for _b and _bt arrays */
@@ -586,7 +586,8 @@ reg_parse( FILE * infile )
 
 	                       if ( tokens[FIELD_IO][i+1] == '=' ) 
 			       {
-				 int ii, jj, state ;
+				 unsigned int ii;
+				 int jj, state ;
 				 state = 0 ;
 				 jj = 0 ;
 				 for ( ii = i+3 ; ii < len_of_tok ; ii++ )

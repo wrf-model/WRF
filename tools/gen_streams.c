@@ -179,7 +179,7 @@ gen_io_domain_defs ( FILE * fp )
     for ( i = 0 ; i < 2*MAX_HISTORY ; i++ ) 
     {
       if ( i % MAX_HISTORY == 0 ) { aux = ""  ; streamno[0] = '\0' ; }
-      else                        { aux="aux" ; sprintf(streamno,"%d",i%MAX_HISTORY) ; }
+      else                        { aux="aux" ; sprintf(streamno,"%d",(signed char) i%MAX_HISTORY) ; }
       if ( i < MAX_HISTORY )      { streamtype = "input" ; }
       else                        { streamtype = ( i%MAX_HISTORY == 0 )?"history":"hist" ; }
 
@@ -207,7 +207,7 @@ gen_set_timekeeping_defs ( FILE *fp )
   for ( i = 0 ; i < 2*MAX_HISTORY ; i++ ) 
   {
     if ( i % MAX_HISTORY == 0 ) { aux = ""  ; streamno[0] = '\0' ; }
-    else                        { aux="aux" ; sprintf(streamno,"%d",i%MAX_HISTORY) ; }
+    else                        { aux="aux" ; sprintf(streamno,"%d",(signed char) i%MAX_HISTORY) ; }
     if ( i < MAX_HISTORY )      { streamtype = "input" ; }
     else                        { streamtype = ( i%MAX_HISTORY == 0 )?"history":"hist" ; }
 
@@ -241,7 +241,7 @@ gen_set_timekeeping_alarms ( FILE * fp )
   for ( i = 0 ; i < 2*MAX_HISTORY ; i++ )
   {
     if ( i % MAX_HISTORY == 0 ) { aux = ""  ; streamno[0] = '\0' ; }
-    else                        { aux="aux" ; sprintf(streamno,"%d",i%MAX_HISTORY) ; }
+    else                        { aux="aux" ; sprintf(streamno,"%d",(signed char) i%MAX_HISTORY) ; }
     if ( i < MAX_HISTORY )      { streamtype = "input" ; }
     else                        { streamtype = ( i%MAX_HISTORY == 0 )?"history":"hist" ; }
     if ( i == 0 ) continue ;  /* skip just input */
@@ -324,7 +324,7 @@ int
 gen_io_form_for_dataset ( FILE *fp )
 {
   char * aux , *streamtype , streamno[5]  ;
-  int i ;
+  unsigned char i ;
 
   fprintf(fp,"    IF      ( DataSet .eq. 'RESTART' ) THEN\n") ;
   fprintf(fp,"      CALL nl_get_io_form_restart( 1, io_form )\n") ;
@@ -352,7 +352,7 @@ int
 gen_io_form_for_stream ( FILE *fp )
 {
   char * aux , *streamtype , streamno[5]  ;
-  int i ;
+  unsigned char i ;
 
   fprintf(fp,"    IF      ( stream .eq. restart_only ) THEN\n") ;
   fprintf(fp,"      CALL nl_get_io_form_restart( 1, io_form )\n") ;

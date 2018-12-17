@@ -1997,8 +1997,8 @@ DEALLOCATE(z_at_q)
          DO j = jts, MIN(jte,jde-1)
             DO k = 1, kte-1
                DO i = its, MIN(ite,ide-1)
-                dz8w(i,k,j) = (grid%phb(i,k+1,j)+grid%ph_2(i,k+1,j))/g - (grid%phb(i,k,j)+grid%ph_2(i,k,j))/g
-                grid%rho(i,k,j) = 1./( grid%al(i,k,j)+grid%alb(i,k,j) ) 
+                  dz8w(i,k,j) = (grid%phb(i,k+1,j)+grid%ph_2(i,k+1,j))/g - (grid%phb(i,k,j)+grid%ph_2(i,k,j))/g
+                  grid%rho(i,k,j) = 1./( grid%al(i,k,j)+grid%alb(i,k,j) ) 
                END DO
             END DO
          END DO

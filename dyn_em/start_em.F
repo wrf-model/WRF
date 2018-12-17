@@ -1994,7 +1994,6 @@ DEALLOCATE(z_at_q)
    ENDIF
 
    IF ( config_flags%diag_nwp2 == DO_TRAD_FIELDS ) THEN
-
          DO j = jts, MIN(jte,jde-1)
             DO k = 1, kte-1
                DO i = its, MIN(ite,ide-1)

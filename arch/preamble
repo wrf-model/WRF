@@ -105,6 +105,19 @@ NETCDF4_DEP_LIB = $(DEP_LIB_PATH) $(HDF5) $(ZLIB) $(GPFS) $(CURL)
 
 LIBWRFLIB = libwrflib.a
 
+#NOWIN LIB_BUNDLED     = \
+#NOWIN                      $(WRF_SRC_ROOT_DIR)/external/fftpack/fftpack5/libfftpack.a \
+#NOWIN                      $(WRF_SRC_ROOT_DIR)/external/io_grib1/libio_grib1.a \
+#NOWIN                      $(WRF_SRC_ROOT_DIR)/external/io_grib_share/libio_grib_share.a \
+#NOWIN                      $(WRF_SRC_ROOT_DIR)/external/io_int/libwrfio_int.a \
+#NOWIN                      $(ESMF_IO_LIB) \
+#NOWIN                      CONFIGURE_COMMS_LIB \
+#NOWIN                      $(WRF_SRC_ROOT_DIR)/frame/module_internal_header_util.o \
+#NOWIN                      $(WRF_SRC_ROOT_DIR)/frame/pack_utils.o
+
+#NOWIN LIB_EXTERNAL    = \
+#NOWIN                      CONFIGURE_NETCDF_LIB_PATH CONFIGURE_PNETCDF_LIB_PATH CONFIGURE_GRIB2_LIB CONFIGURE_ATMOCN_LIB CONFIGURE_HDF5_LIB_PATH
+
 
 #### Architecture specific settings ####
 

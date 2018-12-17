@@ -1429,7 +1429,7 @@ CC              =       CONFIGURE_CC
 LD              =       $(FC)
 RWORDSIZE       =       CONFIGURE_RWORDSIZE
 PROMOTION       =       #-fdefault-real-8
-ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM -D_WIN32
+ARCH_LOCAL      =       -DNONSTANDARD_SYSTEM_SUBR  -DWRF_USE_CLM
 CFLAGS_LOCAL    =       -w -O3 -c
 LDFLAGS_LOCAL   =       
 CPLUSPLUSLIB    =       
@@ -1456,7 +1456,7 @@ CC_TOOLS        =      $(SCC)
 
 LIB_EXTERNAL    = \
                      $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a CONFIGURE_NETCDF_PATH/lib/libnetcdf.dll.a \
-		     -L CONFIGURE_NETCDF_PATH -lnetcdff -lnetcdf -lnetcdf -tirpc -lhdf5_hl -lhdf5 -lm -lz \
+		     -L CONFIGURE_NETCDF_PATH -lnetcdff -lnetcdf -lnetcdf -ltirpc -lhdf5_hl -lhdf5 -lm -lz \
                      $(WRF_SRC_ROOT_DIR)/external/wavelet/libWavelet.a $(WRF_SRC_ROOT_DIR)/external/wavelet/lib_wavelet.a \
 		     $(WRF_SRC_ROOT_DIR)/external/io_grib2/libio_grib2.a
 ESMF_IO_LIB     =    $(WRF_SRC_ROOT_DIR)/external/esmf_time_f90/libesmf_time.a
@@ -1764,7 +1764,7 @@ CC_TOOLS        =      $(SCC)
 ###########################################################
 #ARCH    CYGWIN_NT i686, PGI compiler on Windows # serial smpar dmpar dm+sm
 #
-DESCRIPTION     =       PGI ($SFC/$SCC): Windows
+DESCRIPTION     =       PGI ($SFC/$SCC): Windows native
 DMPARALLEL      =       # 1
 OMPCPP          =       # -D_OPENMP
 OMP             =       # -mp -Minfo=mp

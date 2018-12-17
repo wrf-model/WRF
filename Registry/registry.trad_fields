@@ -15,7 +15,7 @@ state    real   vmet          ikj   dyn_em    1  -   h1  "VMET"         "earth r
 state    real   speed         ikj   dyn_em    1  -   h1  "SPEED"        "horizontal wind speed"                    "m/s"
 state    real   dir           ikj   dyn_em    1  -   h1  "DIR"          "wind direction, 0=northly, 270=westerly"  "degrees"
 
-state    real   psfc2d          ij    dyn_em    1  -   h1  "SURFACEP"     "surface pressure"                          "Pa"
+state    real   psfc2d        ij    dyn_em    1  -   h1  "SURFACEP"     "surface pressure"                          "Pa"
 state    real   rain          ij    dyn_em    1  -   h1  "RAIN"         "total rainfall"                            "mm"
 state    real   liqrain       ij    dyn_em    1  -   h1  "LIQRAIN"      "total liquid rainfall"                     "mm"
 # LIQRAIN=RAIN-SNOWNC-GRAUPELNC-HAILNC

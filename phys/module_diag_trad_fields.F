@@ -62,7 +62,7 @@ CONTAINS
    
       !  Local variables
    
-      REAL,  DIMENSION(its:ite , kts:kte , jts:jte) :: ptot
+      REAL :: ptot
       REAL,  DIMENSION(its:ite , jts:jte) :: pscf
 
       REAL, PARAMETER :: eps = 0.622, t_kelvin = svpt0 , s1 = 243.5, s2 = svp2 , s3 = svp1*10., s4 = 611.0, s5 = 5418.12
@@ -124,16 +124,16 @@ CONTAINS
                !  Potential Temperature  
 
                IF ( use_theta_m .EQ. 1 ) THEN
-                  temperature(i,k,j) =  ( t(i,k,j) + t0 )  / ( 1. + (R_v/R_d) * qv(i,k,j) )
+                  potential_t(i,k,j) =  ( t(i,k,j) + t0 )  / ( 1. + (R_v/R_d) * qv(i,k,j) )
                ELSE
-                  temperature(i,k,j) =   t(i,k,j) + t0  
+                  potential_t(i,k,j) =   t(i,k,j) + t0  
                END IF
 
 
                !  Relative humidity
 
-                  ptot(i,k,j) = pb(i,k,j)+pp(i,k,j)
-                  rh(i,k,j) = calc_rh(ptot(i,k,j), temperature(i,k,j), qv(i,k,j)) 
+                  ptot      = pb(i,k,j)+pp(i,k,j)
+                  rh(i,k,j) = calc_rh(ptot, temperature(i,k,j), qv(i,k,j)) 
 
             END DO i_loop_h
          END DO k_loop_h

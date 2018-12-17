@@ -122,9 +122,7 @@
 
 !..Need to fill special height var for setting up initial condition.  G. Thompson
    REAL, ALLOCATABLE, DIMENSION(:,:,:) :: z_at_q
-#if (EM_CORE == 1)
    REAL, ALLOCATABLE, DIMENSION(:,:,:) :: dz8w   !mchen
-#endif
 
 !  CCN for MP=18 initializatio
    REAL :: ccn_max_val
@@ -145,9 +143,7 @@
 #if (WRF_CHEM != 1)
          ALLOCATE(CLDFRA_OLD(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; CLDFRA_OLD = 0.
 #endif
-#if (EM_CORE == 1)
          ALLOCATE(dz8w(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; dz8w = 0.
-#endif
 
    ALLOCATE(z_at_q(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; z_at_q = 0.
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
@@ -2036,7 +2032,7 @@ DEALLOCATE(z_at_q)
                ,cosa=grid%cosa                                      &
                !  Terrestrial data                
                ,rho=grid%rho                                        &
-               ,dz8w=dz8w                                      &
+               ,dz8w=dz8w                                           &
                ,ht=grid%ht                                          &
                !  Namelist info
                ,use_theta_m=config_flags%use_theta_m                &

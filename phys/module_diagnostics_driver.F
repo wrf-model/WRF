@@ -292,8 +292,9 @@ CONTAINS
                ,e=grid%e                                            &
                ,sina=grid%sina                                      &
                ,cosa=grid%cosa                                      &
+               !  Input model diagnostic vraiables 
                ,rho=grid%rho                                        &
-               ,dz8w=dz8w                                      &
+               ,dz8w=dz8w                                           &
                !  Terrestrial data                
                ,ht=grid%ht                                          &
                !  Namelist info
@@ -317,8 +318,8 @@ CONTAINS
                ,rain=grid%rain                                      &
                ,liqrain=grid%liqrain                                &
                ,tpw=grid%tpw                                        &
-               ,psfc2d=grid%psfc2d                                        &
-               ,potential_t=grid%potential_t                                    &
+               ,psfc2d=grid%psfc2d                                  &
+               ,potential_t=grid%potential_t                        &
                ,rh=grid%rh                                          &
                !  Various indexes for declarations, loop bounds
                ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde   &

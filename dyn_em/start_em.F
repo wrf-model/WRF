@@ -1994,16 +1994,15 @@ DEALLOCATE(z_at_q)
    ENDIF
 
    IF ( config_flags%diag_nwp2 == DO_TRAD_FIELDS ) THEN
-         DO j = jts, MIN(jte,jde-1)
-            DO k = 1, kte-1
-               DO i = its, MIN(ite,ide-1)
-                  dz8w(i,k,j) = (grid%phb(i,k+1,j)+grid%ph_2(i,k+1,j))/g - (grid%phb(i,k,j)+grid%ph_2(i,k,j))/g
-                  grid%rho(i,k,j) = 1./( grid%al(i,k,j)+grid%alb(i,k,j) ) 
-               END DO
+      CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: TRAD_FIELDS' )
+      DO j = jts, MIN(jte,jde-1)
+         DO k = 1, kte-1
+            DO i = its, MIN(ite,ide-1)
+               dz8w(i,k,j) = (grid%phb(i,k+1,j)+grid%ph_2(i,k+1,j))/g - (grid%phb(i,k,j)+grid%ph_2(i,k,j))/g
+               grid%rho(i,k,j) = 1./( grid%al(i,k,j)+grid%alb(i,k,j) ) 
             END DO
          END DO
-      CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: TRAD_FIELDS' )
-
+      END DO
       CALL trad_fields ( &
                !  Input data for computing
                U=grid%u_2                                           &

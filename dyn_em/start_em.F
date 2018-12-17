@@ -2052,11 +2052,11 @@ DEALLOCATE(z_at_q)
                ,speed=grid%speed                                    &
                ,dir=grid%dir                                        &
                ,psfc=grid%psfc                                      &
-               ,psfc2d=grid%psfc2d                                      &
+               ,psfc2d=grid%psfc2d                                  &
                ,rain=grid%rain                                      &
                ,liqrain=grid%liqrain                                &
                ,tpw=grid%tpw                                        &
-               ,potential_t=grid%potential_t                                    &
+               ,potential_t=grid%potential_t                        &
                ,rh=grid%rh                                          &
                !  Various indexes for declarations, loop bounds
                ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde   &

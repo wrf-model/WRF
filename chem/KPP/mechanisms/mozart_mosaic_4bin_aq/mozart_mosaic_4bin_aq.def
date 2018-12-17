@@ -109,6 +109,10 @@ REAL(KIND=dp) FUNCTION usr17a( rh, temp )
 END FUNCTION usr17a
 
 REAL(KIND=dp) FUNCTION usr23( temp, c_m )
+!------------------------------------------------------------------
+!   This reaction rate constant has been updated to be
+!   consistent with CAM-Chem (2018-10-19)
+!------------------------------------------------------------------
 
     REAL(KIND=dp), INTENT(IN) :: temp
     REAL(KIND=dp), INTENT(IN) :: c_m
@@ -116,7 +120,7 @@ REAL(KIND=dp) FUNCTION usr23( temp, c_m )
     REAL(KIND=dp) :: fc, k0
     REAL(KIND=dp) :: wrk
 
-    fc    = 3.e-11_dp * (300._dp/temp) ** 3.3_dp
+    fc    = 3.e-31_dp * (300._dp/temp) ** 3.3_dp
     wrk   = fc * c_m
     k0    = wrk / (1._dp + wrk/1.5e-12_dp)
     usr23 = k0 * .6_dp ** (1._dp/(1._dp + (log10( wrk/1.5e-12_dp ))**2._dp))

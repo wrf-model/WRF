@@ -439,7 +439,7 @@ CONTAINS
         DO j = jts , MIN(jde-1,jte)
            DO i = its , MIN(ide-1,ite)
               IF (grid%xland(i,j) .lt. 1.5) THEN
-                 grid%vegfra(i,j) = 0.5
+                 grid%vegfra(i,j) = 50.
                  grid%canwat(i,j) = 0.
                  grid%ivgtyp(i,j) = 18
                  grid%isltyp(i,j) = 8
@@ -534,7 +534,7 @@ CONTAINS
         DO j = jts , MIN(jde-1,jte)
            DO i = its , MIN(ide-1,ite)
               IF (grid%xland(i,j) .lt. 1.5) THEN
-                 grid%vegfra(i,j) = 0.5
+                 grid%vegfra(i,j) = 50.
                  grid%canwat(i,j) = 0.
                  grid%ivgtyp(i,j) = 18
                  grid%isltyp(i,j) = 8

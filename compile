@@ -101,6 +101,8 @@ if ( "$arglist" == "" ) then
 else
   unsetenv A2DCASE
   setenv A2DCASE `echo $arglist | grep 2d`
+  unsetenv A1DCASE
+  setenv A1DCASE `echo $arglist | grep scm`
 
   if ( ! (   $?WRF_EM_CORE  || $?WRF_NMM_CORE \
           ||  $?WRF_COAMPS_CORE || $?WRF_EXP_CORE \

@@ -82,6 +82,7 @@ subroutine da_read_obs_netcdf4ahi_geocat (iv, infile_tb, infile_clp)
    integer          :: vtype
    character(80)    :: vname
    logical          :: fexist,got_clp_file
+   integer          :: ahi_info_unit
    
 ! Allocatable arrays
    integer(i_kind),allocatable  :: ptotal(:)
@@ -177,18 +178,20 @@ subroutine da_read_obs_netcdf4ahi_geocat (iv, infile_tb, infile_clp)
  
  
   !open the data area info file 
-   open(unit=1990,file='ahi_info',status='old',iostat=iret)
+   call da_get_unit(ahi_info_unit)
+   open(unit=ahi_info_unit,file='ahi_info',status='old',iostat=iret)
    if(iret /= 0)then
        call da_warning(__FILE__,__LINE__,(/"area_info file read error"/))
    endif	  
   !read date information
-   read(1990,*) 
-   read(1990,*) 
-   read(1990,*) 
-   read(1990,*) 
-   read(1990,*) 
-   read(1990,*) lonstart,latstart,nlongitude,nlatitude 
-   close(1990)
+   read(ahi_info_unit,*) 
+   read(ahi_info_unit,*) 
+   read(ahi_info_unit,*) 
+   read(ahi_info_unit,*) 
+   read(ahi_info_unit,*) 
+   read(ahi_info_unit,*) lonstart,latstart,nlongitude,nlatitude 
+   close(ahi_info_unit)
+   call da_free_unit(ahi_info_unit)
    
    write(*,*) lonstart,latstart,nlongitude,nlatitude
 

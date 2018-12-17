@@ -20,6 +20,7 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
    ! crtm_cloud
    integer  :: n1,n2,k,its,ite,jts,jte,kts,kte,inst
    integer  :: data_format, iret ! AHI radiance related
+   integer  :: ahi_info_unit
    
    if (trace_use) call da_trace_entry("da_setup_radiance_structures")
 
@@ -201,15 +202,17 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
 #endif
       end if
       if (use_ahiobs) then
-         open(unit=1990,file='ahi_info',status='old',iostat=iret)
+         call da_get_unit(ahi_info_unit)
+         open(unit=ahi_info_unit,file='ahi_info',status='old',iostat=iret)
          if(iret /= 0)then
              call da_error(__FILE__,__LINE__,(/"Read ahi_info error: no such file"/))
          end if	  
 
         !read ahi information
-         read(1990,*)  
-         read(1990,*) data_format  
-         close(1990)
+         read(ahi_info_unit,*)  
+         read(ahi_info_unit,*) data_format  
+         close(ahi_info_unit)
+         call da_free_unit(ahi_info_unit)
 
          if (data_format==1) then
 #if defined(HDF5)

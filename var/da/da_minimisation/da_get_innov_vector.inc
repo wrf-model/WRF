@@ -174,11 +174,19 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 
       if ( multi_inc == 1 ) then
 
-          call da_write_iv_for_multi_inc(n, iv)
+         if ( multi_inc_io_opt == 1 ) then
+            call da_write_iv_for_multi_inc(n, iv)
+         else if ( multi_inc_io_opt == 2 ) then
+            call da_write_iv_for_multi_inc_opt2(n, iv)
+         end if
 
       elseif ( multi_inc == 2 ) then
 
-          call da_read_iv_for_multi_inc(n, iv)
+         if ( multi_inc_io_opt == 1 ) then
+            call da_read_iv_for_multi_inc(n, iv)
+         else if ( multi_inc_io_opt == 2 ) then
+            call da_read_iv_for_multi_inc_opt2(n, iv)
+         end if
 
       endif
 

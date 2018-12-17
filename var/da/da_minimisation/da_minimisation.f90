@@ -57,7 +57,8 @@ module da_minimisation
       write_detail_grad_fn, pseudo_uvtpq, lanczos_ep_filename, use_divc, divc_factor, &
       cloud_cv_options, use_cv_w, var_scaling6, var_scaling7, var_scaling8, var_scaling9, &
       var_scaling10, var_scaling11, &
-      write_gts_omb_oma, write_unpert_obs, write_rej_obs_conv, pseudo_time
+      write_gts_omb_oma, write_unpert_obs, write_rej_obs_conv, pseudo_time, &
+      multi_inc_io_opt
    use da_define_structures, only : iv_type, y_type,  j_type, be_type, &
       xbx_type, jo_type, da_allocate_y,da_zero_x,da_zero_y,da_deallocate_y, &
       da_zero_vp_type, qhat_type
@@ -79,7 +80,8 @@ module da_minimisation
       da_jo_and_grady_gpseph
    use da_obs_io, only : da_final_write_y, da_write_y, da_final_write_obs, &
       da_write_obs,da_write_obs_etkf,da_write_noise_to_ob, da_use_obs_errfac, &
-      da_write_iv_for_multi_inc, da_read_iv_for_multi_inc
+      da_write_iv_for_multi_inc, da_read_iv_for_multi_inc, &
+      da_write_iv_for_multi_inc_opt2, da_read_iv_for_multi_inc_opt2
    use da_metar, only : da_calculate_grady_metar, da_ao_stats_metar, &
       da_oi_stats_metar, da_get_innov_vector_metar, da_residual_metar, &
       da_jo_and_grady_metar

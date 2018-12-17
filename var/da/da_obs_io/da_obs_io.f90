@@ -32,7 +32,7 @@ module da_obs_io
       thin_conv, thin_conv_ascii, lsac_nh_step, lsac_nv_step, lsac_nv_start, lsac_print_details, &
       lsac_use_u, lsac_use_v, lsac_use_t, lsac_use_q, lsac_u_error, lsac_v_error, lsac_t_error, lsac_q_error, &
       gpsro_drift, max_gpseph_input, use_gpsephobs, gpseph, gpseph_loadbalance, kds, kde, kts, kte, &
-      use_radar_rhv, use_radar_rqv
+      use_radar_rhv, use_radar_rqv, use_radar_rf, use_radar_rv, multi_inc
 
    use da_define_structures, only : iv_type, multi_level_type, multi_level_type_BUFR, &
       radar_multi_level_type, y_type, field_type, each_level_type, &
@@ -82,7 +82,9 @@ contains
 #include "da_use_obs_errfac.inc"
 #include "da_write_obs.inc"
 #include "da_write_iv_for_multi_inc.inc"
+#include "da_write_iv_for_multi_inc_opt2.inc"
 #include "da_read_iv_for_multi_inc.inc"
+#include "da_read_iv_for_multi_inc_opt2.inc"
 #include "da_search_obs.inc"
 #include "da_write_obs_etkf.inc"
 #include "da_write_filtered_obs.inc"

@@ -14,9 +14,9 @@ CONTAINS
    SUBROUTINE trad_fields ( u,v,w,t,qv,zp,zb,pp,pb,p,pw,            &
                     msfux,msfuy,msfvx,msfvy,msftx,msfty,            &
                     f,e,sina,cosa,                                  &
-                    qc,rho,dz8w, ht,                            &
+                    qc,rho,dz8w, ht,                                &
                     use_theta_m,                                    &
-                    psfc,rainc,rainnc,snownc,graupelnc,hailnc,  &
+                    psfc,rainc,rainnc,snownc,graupelnc,hailnc,      &
                     sealevelp,                                      &
                     temperature,pressure,geoheight,                 &
                     umet,vmet,speed,dir,                            &

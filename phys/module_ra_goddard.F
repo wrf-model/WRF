@@ -886,7 +886,9 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
 !GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 !GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
+#if 0
  subroutine read_lut_aero_nc(mxband)
+ use netcdf
  implicit none
 !---------------------------------------------------------------------------------------------------
 ! Comments:  
@@ -1004,6 +1006,7 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
 
   end if
  end subroutine check
+#endif
 
 !GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 !GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 

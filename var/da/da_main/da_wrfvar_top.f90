@@ -55,7 +55,8 @@ module da_wrfvar_top
    use da_obs, only : da_transform_xtoy_adj 
    use da_obs_io, only : da_write_filtered_obs, da_write_obs, da_final_write_obs , &
                          da_write_obs_etkf, da_write_modified_filtered_obs
-   use da_par_util, only : da_system,da_copy_tile_dims,da_copy_dims
+   use da_par_util, only : da_system,da_copy_tile_dims,da_copy_dims, &
+                           da_vv_to_cv, da_cv_to_vv
    use da_physics, only : da_uvprho_to_w_lin
 #if defined (CRTM) || defined (RTTOV)
    use da_radiance, only : da_deallocate_radiance
@@ -65,7 +66,7 @@ module da_wrfvar_top
    use da_varbc, only : da_varbc_init,da_varbc_update
 #endif
    use da_reporting, only : message, da_warning, da_error, da_message
-   use da_setup_structures, only : da_setup_obs_structures, &
+   use da_setup_structures, only : da_setup_obs_structures, da_write_vp, &
       da_setup_background_errors,da_setup_flow_predictors, &
       da_setup_cv, da_scale_background_errors, da_scale_background_errors_cv3
    use da_setup_structures, only : da_setup_flow_predictors_para_read_opt1
@@ -75,7 +76,8 @@ module da_wrfvar_top
    use da_transfer_model, only : da_transfer_xatoanalysis,da_setup_firstguess, &
        da_transfer_wrftltoxa_adj
    use da_vtox_transforms, only : da_transform_vtox, da_transform_xtoxa, &
-      da_transform_xtoxa_adj, da_copy_xa, da_add_xa, da_transform_vpatox
+      da_transform_xtoxa_adj, da_copy_xa, da_add_xa, da_transform_vpatox, &
+      da_transform_vtox_inv
    use da_wrfvar_io, only : da_med_initialdata_input, da_update_firstguess
    use da_tools, only : da_set_randomcv, da_get_julian_time
 

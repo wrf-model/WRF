@@ -344,7 +344,6 @@ subroutine da_search_obs (ob_type_string, unit_in, num_obs, nth, iv, found_flag)
 
    do n = 1, num_obs
       read(unit_in,'(2i8,2E22.13)') n_dummy, levels, lat, lon
-
       if ( abs(iv%info(radar)%lat(1,nth) - lat ) < MIN_ERR     .and.  &
            abs(iv%info(radar)%lon(1,nth) - lon ) < MIN_ERR ) then
 
@@ -359,7 +358,9 @@ subroutine da_search_obs (ob_type_string, unit_in, num_obs, nth, iv, found_flag)
          if (trace_use) call da_trace_exit("da_search_obs")
          return
       else
-         read(unit_in,*)
+         do k = 1, levels
+           read(unit_in,*)
+         enddo
       endif
    enddo
    !found_flag = .false.

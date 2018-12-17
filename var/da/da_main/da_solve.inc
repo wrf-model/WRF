@@ -45,6 +45,8 @@
    type(x_type) :: shuffle
 
    real, allocatable :: grid_box_area(:,:), mapfac(:,:)
+   real, allocatable :: v1(:,:,:),v2(:,:,:),v3(:,:,:),v4(:,:,:),v5(:,:,:)
+   real, allocatable :: v6(:,:,:),v7(:,:,:),v8(:,:,:),v9(:,:,:),v10(:,:,:),v11(:,:,:)
    character (len=10)    :: variable_name
 
    integer :: iwin, num_subtwindow
@@ -53,8 +55,12 @@
    real,    external :: nest_loc_of_cg  ! from share/interp_fcn.F
    integer, external :: compute_CGLL    ! from share/interp_fcn.F
 
-   integer   :: cvt_unit, iost
-   character(len=8) :: cvtfile
+   integer   :: vp_unit, iost
+   character(len=13) :: vpfile ! vp_input.0001
+   integer   :: i1,i2,i3,i4,i5,i6
+   !integer   :: i11,i22,i33,i44,i55,i66
+   !integer   :: dim1, dim2, dim3
+   !integer   :: mz1, mz2, mz3, mz4, mz5
    logical :: ex
  
    if (trace_use) call da_trace_entry("da_solve")
@@ -499,6 +505,19 @@
        cv_size_domain_je = (ide_int - ids_int + 1) * (jde_int - jds_int + 1) * be % alpha % mz * be % ne
     endif
    
+    !write (*,*) "--------- Debug ---------------"
+    !write (*,*) "ids,ide,jds,jde,kds,kde= ", ids,ide,jds,jde,kds,kde
+    !write (*,*) "ips,ipe,jps,jpe,kps,kpe= ", ips,ipe,jps,jpe,kps,kpe
+    !write (*,*) "its,ite,jts,jte,kts,kte= ", its,ite,jts,jte,kts,kte
+    !write (*,*) "ims,ime,jms,jme,kms,kme= ", ims,ime,jms,jme,kms,kme
+    !write (*,*) "mz 1-5= ",be%v1%mz, be%v2%mz, be%v3%mz, be%v4%mz, be%v5%mz
+    !write (*,*) "be % cv % size_jb = ", be % cv % size_jb
+    !write (*,*) "be % cv % size_jp = ", be % cv % size_jp
+    !write (*,*) "be % cv % size_js = ", be % cv % size_js
+    !write (*,*) "be % cv % size_jl = ", be % cv % size_jl
+    !write (*,*) "be % cv % size_je = ", be % cv % size_je
+    !write (*,*) "--------- Debug ---------------"
+
    !---------------------------------------------------------------------------
    ! [5.2] Set up observation bias correction (VarBC):
    !---------------------------------------------------------------------------
@@ -549,35 +568,133 @@
 !        allocate (full_eignvec(cv_size))
 !      end if
 
-      if ( outer_loop_restart ) then
-         !call da_get_unit(cvt_unit)
-         cvt_unit=600
+! liuz: if multi_inc == 0: run normal 3D/4D-Var
+!------------------------------------------------------------------------
+      call da_initialize_cv (cv_size, cvt)
+      call da_zero_vp_type (grid%vp)
+      call da_zero_vp_type (grid%vv)
+
+      if ( multi_inc == 2 ) then
          if ( max_ext_its > 1 ) then
            max_ext_its=1
-           write(unit=message(1),fmt='(a)') "Re-set max_ext_its = 1 for outer_loop_restart"
+           write(unit=message(1),fmt='(a)') "Re-set max_ext_its = 1 for multi_inc==2"
            call da_message(message(1:1))
          end if
-         write(unit=cvtfile,fmt='(a,i4.4)') 'cvt_',myproc
-         inquire(file=trim(cvtfile), exist=ex)
+
+      ! read vp files for different PEs
+      !----------------------------------
+         write(unit=vpfile,fmt='(a,i4.4)') 'vp_input.',myproc
+         inquire(file=trim(vpfile), exist=ex)
          if ( ex ) then
-           open(unit=cvt_unit,file=trim(cvtfile),iostat=iost,form='UNFORMATTED',status='OLD')
+           call da_get_unit(vp_unit)
+           open(unit=vp_unit,file=trim(vpfile),iostat=iost,form='UNFORMATTED',status='OLD')
            if (iost /= 0) then
              write(unit=message(1),fmt='(A,I5,A)') &
-                "Error ",iost," opening cvt file "//trim(cvtfile)
+                "Error ",iost," opening vp file "//trim(vpfile)
              call da_error(__FILE__,__LINE__,message(1:1))
            end if
-           write(unit=message(1),fmt='(a)') 'Reading cvt from : '//trim(cvtfile) 
+           if ( use_interpolate_cvt ) then         ! works for CV3?, 3D RF
+               write(unit=message(1),fmt='(a)') 'Reading vv from : '//trim(vpfile) 
+           elseif ( use_inverse_squarerootb ) then ! works for CV5,6,7, vertical EOF
+               write(unit=message(1),fmt='(a)') 'Reading vp from : '//trim(vpfile)
+           end if 
            call da_message(message(1:1))
-           read(cvt_unit) cvt
-           close(cvt_unit)
+           !read(vp_unit) mz1, mz2, mz3, mz4, mz5
+           !print *, 'mz1-5=',mz1, mz2, mz3, mz4, mz5
+           read(vp_unit) i1, i2, i3, i4, i5, i6 ! read dimension of patch for current processor
+           !               i11, i22, i33, i44, i55, i66, &
+           !               dim1, dim2, dim3
+           !if ( i1 /= ips ) print *, "task=", myproc, "i1=",i1, "ips=",ips
+           !if ( i2 /= ipe ) print *, "task=", myproc, "i2=",i2, "ipe=",ipe
+           !if ( i3 /= jps ) print *, "task=", myproc, "i3=",i3, "jps=",jps
+           !if ( i4 /= jpe ) print *, "task=", myproc, "i4=",i4, "jpe=",jpe
+           !if ( i5 /= kps ) print *, "task=", myproc, "i5=",i5, "kps=",kps
+           !if ( i6 /= kpe ) print *, "task=", myproc, "i6=",i6, "kpe=",kpe
+           allocate( v1(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+           allocate( v2(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+           allocate( v3(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+           allocate( v4(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+           allocate( v5(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+           if ( cloud_cv_options >= 2 ) then
+             allocate( v6(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+             allocate( v7(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+             allocate( v8(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+             allocate( v9(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+             allocate( v10(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+           end if
+           if ( use_cv_w ) allocate( v11(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1) )
+
+           read(vp_unit) v1, v2, v3, v4, v5
+           if ( cloud_cv_options >= 2 ) read(vp_unit) v6, v7, v8, v9, v10
+           if ( use_cv_w ) read(vp_unit) v11
+
+           if ( use_interpolate_cvt ) then
+             grid%vv%v1(ips:ipe,jps:jpe,kps:kpe) = v1(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             grid%vv%v2(ips:ipe,jps:jpe,kps:kpe) = v2(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             grid%vv%v3(ips:ipe,jps:jpe,kps:kpe) = v3(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             grid%vv%v4(ips:ipe,jps:jpe,kps:kpe) = v4(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             grid%vv%v5(ips:ipe,jps:jpe,kps:kpe) = v5(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             if ( cloud_cv_options >= 2 ) then
+               grid%vv%v6(ips:ipe,jps:jpe,kps:kpe) = v6(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vv%v7(ips:ipe,jps:jpe,kps:kpe) = v7(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vv%v8(ips:ipe,jps:jpe,kps:kpe) = v8(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vv%v9(ips:ipe,jps:jpe,kps:kpe) = v9(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vv%v10(ips:ipe,jps:jpe,kps:kpe) = v10(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             end if
+             if ( use_cv_w ) then
+               grid%vv%v11(ips:ipe,jps:jpe,kps:kpe) = v11(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             end if
+             call da_vv_to_cv( grid%vv, grid%xp, be%cv_mz, be%ncv_mz, cv_size, cvt ) 
+           elseif ( use_inverse_squarerootb ) then
+             grid%vp%v1(ips:ipe,jps:jpe,kps:kpe) = v1(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             grid%vp%v2(ips:ipe,jps:jpe,kps:kpe) = v2(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             grid%vp%v3(ips:ipe,jps:jpe,kps:kpe) = v3(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             grid%vp%v4(ips:ipe,jps:jpe,kps:kpe) = v4(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             grid%vp%v5(ips:ipe,jps:jpe,kps:kpe) = v5(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             if ( cloud_cv_options >= 2 ) then
+               grid%vp%v6(ips:ipe,jps:jpe,kps:kpe) = v6(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vp%v7(ips:ipe,jps:jpe,kps:kpe) = v7(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vp%v8(ips:ipe,jps:jpe,kps:kpe) = v8(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vp%v9(ips:ipe,jps:jpe,kps:kpe) = v9(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+               grid%vp%v10(ips:ipe,jps:jpe,kps:kpe) = v10(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             end if
+             if ( use_cv_w ) then ! vertical stagging +1?
+               grid%vp%v11(ips:ipe,jps:jpe,kps:kpe) = v11(1:i2-i1+1, 1:i4-i3+1, 1:i6-i5+1)
+             end if
+             !call da_write_vp(grid,grid%vp,'vp_input.global ') ! to verify correctness
+             print '(/10X,"===> Use inverse transform of square-root B for outer-loop=",i2)', it
+             if ( cv_options == 3 ) then
+                write(unit=message(1),fmt='(A,I5,A)') &
+                   "Error: inverse U transform not for cv_options = 3"
+                call da_error(__FILE__,__LINE__,message(1:1))
+             end if
+             call da_transform_vtox_inv (grid,be%cv%size_jb,xbx,be,grid%ep,cvt(1:be%cv%size_jb),grid%vv,grid%vp)
+           end if
+
+           deallocate( v1 )
+           deallocate( v2 )
+           deallocate( v3 )
+           deallocate( v4 )
+           deallocate( v5 )
+           if ( cloud_cv_options >= 2 ) then
+             deallocate( v6 )
+             deallocate( v7 )
+             deallocate( v8 )
+             deallocate( v9 )
+             deallocate( v10 )
+           end if
+           if ( use_cv_w ) deallocate( v11 )
+
+           close(vp_unit)
+           call da_free_unit(vp_unit)
+
          else
-           write(unit=message(1),fmt='(a)') "cvt file '"//trim(cvtfile)//"' does not exists, initializing cvt."
+           write(unit=message(1),fmt='(a)') "vp files '"//trim(vpfile)//"' does not exists, initiallizing cvt."
            call da_message(message(1:1))
            call da_initialize_cv (cv_size, cvt)
          end if
-      else
-         call da_initialize_cv (cv_size, cvt)
       end if
+! liuz: -------------------------------------------
 
       call da_zero_vp_type (grid%vv)
       call da_zero_vp_type (grid%vp)
@@ -613,6 +730,24 @@
       endif
 
       call da_initialize_cv (cv_size, xhat)
+
+! liuz:----------------------
+! Apply inverse transform of squareroot(B) for full-resolution non-stop Var
+! from 2nd outer loop, this is to check correctness of inverse U transform
+! does not apply this setting for real world application
+!-----------------------------
+      if (multi_inc == 0 .and. it > 1 .and. use_inverse_squarerootb .and. cv_options /= 3) then
+         print '(/10X,"===> Use inverse transform of square-root B for outer-loop=",i2)', it
+         call da_transform_vtox_inv (grid,be%cv%size_jb,xbx,be,grid%ep,cvt(1:be%cv%size_jb),grid%vv,grid%vp)
+      endif
+
+! Reinitialize cvt=0 for full-resolution non-stop Var for each loop
+!------------------------------
+      if (multi_inc == 0 .and. it > 1 .and. use_interpolate_cvt) then
+         print '(/10X,"===> Reinitialize cvt as zeros for outer loop ",i2)', it
+         call da_initialize_cv (cv_size, cvt)
+      endif
+! liuz:------------------------
 
       ! [8.1] Calculate nonlinear model trajectory 
 
@@ -785,18 +920,9 @@
  
       ! Update outer-loop control variable
       cvt = cvt + xhat
-      if ( outer_loop_restart ) then
-        open(unit=cvt_unit,status='unknown',file=trim(cvtfile),iostat=iost,form='UNFORMATTED')
-        if (iost /= 0) then
-           write(unit=message(1),fmt='(A,I5,A)') &
-             "Error ",iost," opening cvt file "//trim(cvtfile)
-          call da_error(__FILE__,__LINE__,message(1:1))
-        end if
-        write(unit=message(1),fmt='(a)') 'Writing cvt to : '//trim(cvtfile) 
-        call da_message(message(1:1))
-        write(cvt_unit) cvt
-        close(cvt_unit)
-        !call da_free_unit(cvt_unit)
+      if ( multi_inc == 2 .and. use_interpolate_cvt ) then
+        call da_cv_to_vv( cv_size, cvt, be%cv_mz, be%ncv_mz, grid%vv )
+        call da_write_vp(grid,grid%vv,'vp_output.global') ! wrtie vv to vp file
       end if
       !------------------------------------------------------------------------
 
@@ -826,6 +952,13 @@
          call da_transform_vtox (grid,be%cv%size_jb,xbx,be,grid%ep,xhat(1:be%cv%size_jb),grid%vv,grid%vp)
          call da_transform_vpatox (grid,be,grid%ep,grid%vp)
       endif
+
+! liuz:------------------------
+      if (multi_inc == 2 .and. use_inverse_squarerootb) then
+         call da_write_vp(grid,grid%vp,'vp_output.global') ! write vp to vp file
+      end if
+! liuz:--------------------------
+
       call da_transform_xtoxa (grid)
 
       ! [8.6] Only when use_radarobs = .false. and calc_w_increment =.true.,

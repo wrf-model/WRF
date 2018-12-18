@@ -2167,6 +2167,18 @@ CONTAINS
 !   Using a Bulk Microphysics Scheme. J. Atmos. Sci., 71, 3583–3612.      c
 !   doi: http://dx.doi.org/10.1175/JAS-D-13-0330.1                        c
 !                                                                         c
+!   Lang, S., W.-K. Tao, J.-D. Chern, D. Wu, and X. Li, 2014:             c
+!   Benefits of a 4th ice class in the simulated radar reflectivities     c
+!   of convective systems using a bulk microphysics scheme.  J. Atmos.    c
+!   Sci., 71, 3583-3612. doi: http://dx.doi.org/10.1175/JAS-D-13-0330.1   c
+!                                                                         c
+!   Tao, W.-K., D. Wu, S. Lang, J.-D. Chern, C. Peters-Lidard,            c
+!   A. Fridlind, and T. Matsui (2016), High-resolution NU-WRF             c
+!   simulations of a deep convective-precipitation system during          c
+!   MC3E: Further improvements and comparisons between Goddard            c
+!   microphysics schemes and observations, J. Geophys. Res. Atmos.,       c
+!   121, 1278-1305, doi:10.1002/2015JD023986.                             c
+!                                                                         c
 !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 !
 !      COMPUTE ICE PHASE MICROPHYSICS AND SATURATION PROCESSES

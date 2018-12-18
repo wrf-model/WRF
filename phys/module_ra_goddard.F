@@ -96,6 +96,10 @@
 !
 !
 ! References (Application): 
+! Matsui, T., S. Q. Zhang, W.-K. Tao, S. Lang, C. Ichoku, and C. Peters-Lidard (2018), 
+!      Impact of Radiation Frequency, Precipitation Radiative Forcing, and Radiation Column Aggregation 
+!      on Convection-Permitting West African Monsoon Simulations, 
+!      Climate Dynamics, 1-21, https://doi.org/10.1007/s00382-018-4187-2
 ! Shi, J. J., T. Matsui, W.-K. Tao, C. Peters-Lidard, M. Chin1, Q. Tan, and E. Kemp (2014), 
 !      Implementation of an Aerosol-Cloud Microphysics-Radiation Coupling into the NASA Unified WRF:  
 !      Simulation Results for the 6-7 August 2006 AMMA Special Observing Period, Quarterly Journal 

@@ -1727,6 +1727,8 @@ package   fer_mp_hires  mp_physics==5                -             moist:qv,qc,q
 package   fer_mp_hires_advect  mp_physics==15        -             moist:qv,qc,qr,qi;scalar:qrimef
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg;state:re_cloud,re_ice,re_snow
 package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
+package   nuwrf3icescheme mp_physics==55             -             moist:qv,qc,qr,qi,qs,qg
+package   nuwrf4icescheme mp_physics==56             -             moist:qv,qc,qr,qi,qs,qg
 package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow
 package   thompsonaero  mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow
 package   milbrandt2mom mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh

@@ -198,11 +198,13 @@
 #endif
 
 !-----------------------------------------------------------------------
-! Check that NSSL microphysics is not allowed for WRF-NMM run
+! Check that some microphysics is not allowed for WRF-NMM run
 !-----------------------------------------------------------------------
 #if (NMM_CORE == 1) || (HWRF == 1)
       DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec % mp_physics(i) == nssl_2mom .OR. &
+         IF ( model_config_rec % mp_physics(i) == nuwrf3icescheme .OR. &
+              model_config_rec % mp_physics(i) == nuwrf4icescheme .OR. &
+              model_config_rec % mp_physics(i) == nssl_2mom .OR. &
               model_config_rec % mp_physics(i) == nssl_2momccn .OR. &
               model_config_rec % mp_physics(i) == nssl_1mom .OR. &
               model_config_rec % mp_physics(i) == nssl_1momlfo .OR. &

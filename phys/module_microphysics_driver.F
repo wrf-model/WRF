@@ -131,8 +131,7 @@ SUBROUTINE microphysics_driver(                                          &
                     ,WSM6SCHEME, ETAMPNEW, FER_MP_HIRES, etamp_HWRF,THOMPSON, THOMPSONAERO, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN, NSSL_2MOMG  &
                     ,NSSL_1MOM,NSSL_1MOMLFO, FER_MP_HIRES_ADVECT &
-                    ,NUWRF3ICESCHEME & ! NUWRF
-                    ,NUWRF4ICESCHEME & ! NUWRF
+                    ,NUWRF3ICESCHEME, NUWRF4ICESCHEME & 
                     ,MILBRANDT2MOM, P3_1CATEGORY, P3_1CATEGORY_NC  !, P3_2CATEGORY ,MILBRANDT3MOM 
 #else
    USE module_state_description, ONLY :                                  &
@@ -140,11 +139,11 @@ SUBROUTINE microphysics_driver(                                          &
                     ,WSM6SCHEME, ETAMPNEW, FER_MP_HIRES, THOMPSON, THOMPSONAERO, FAST_KHAIN_LYNN, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN, NSSL_2MOMG  &
                     ,NSSL_1MOM,NSSL_1MOMLFO, FER_MP_HIRES_ADVECT & ! ,NSSL_3MOM       &
-                    ,NUWRF3ICESCHEME & ! NUWRF                    
-                    ,NUWRF4ICESCHEME & ! NUWRF                    
+                    ,NUWRF3ICESCHEME, NUWRF4ICESCHEME &
                     ,MILBRANDT2MOM , CAMMGMPSCHEME,FULL_KHAIN_LYNN, P3_1CATEGORY, P3_1CATEGORY_NC, P3_2CATEGORY, MORR_TM_AERO !,MILBRANDT3MOM
 #if ( WRFPLUS == 1 )
    USE module_state_description, ONLY : LSCONDSCHEME, MKESSLERSCHEME
+#endif
 #endif
 #if ( WRF_CHEM == 1 )
 ! NUWRF
@@ -402,7 +401,7 @@ SUBROUTINE microphysics_driver(                                          &
                                                                    p
 !NUWRF JJS 20101021   vvvvv
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                    &
-         INTENT(INOUT) ::                                  phys_tot,  &
+         INTENT(INOUT), OPTIONAL ::                        phys_tot,  &
                                                            physc,     &
                                                            physe,     &
                                                            physd,     &
@@ -420,7 +419,7 @@ SUBROUTINE microphysics_driver(                                          &
 !NUWRF JJS 20101021   ^^^^^
 !NUWRF JJS 20140225  vvvvv
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
-        INTENT(INOUT) ::                               re_cloud_gsfc,   &
+        INTENT(INOUT), OPTIONAL ::                     re_cloud_gsfc,   &
                                                        re_rain_gsfc,    &
                                                        re_ice_gsfc,     &
                                                        re_snow_gsfc,    &

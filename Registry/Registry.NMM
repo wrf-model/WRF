@@ -1756,15 +1756,17 @@ package   wsm3scheme_dfi    mp_physics_dfi==3        -             dfi_moist:dfi
 package   wsm5scheme_dfi    mp_physics_dfi==4        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   fer_mp_hires_dfi  mp_physics_dfi==5        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs
 package   wsm6scheme_dfi    mp_physics_dfi==6        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
-package   gsfcgcescheme_dfi mp_physics_dfi==7        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
+package   nuwrf4icescheme_dfi mp_physics_dfi==7      -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
 package   thompson_dfi      mp_physics_dfi==8        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
-package   thompsonaero_dfi  mp_physics_dfi==28       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qnc,dfi_qnwfa,dfi_qnifa;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   milbrandt2mom_dfi mp_physics_dfi==9        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnc,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh
 package   morr_two_moment_dfi  mp_physics_dfi==10    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qns,dfi_qnr,dfi_qng
 package   sbu_ylinscheme_dfi    mp_physics==13           -         dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs
 package   wdm5scheme_dfi    mp_physics_dfi==14       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   wdm6scheme_dfi    mp_physics_dfi==16       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
+package   nuwrf3icescheme_dfi mp_physics_dfi==27     -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
+package   thompsonaero_dfi  mp_physics_dfi==28       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qnc,dfi_qnwfa,dfi_qnifa;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   etampnew_dfi      mp_physics_dfi==95       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs
+package   gsfcgcescheme_dfi mp_physics_dfi==97       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
 
 # package   noprogn       progn==0                     -             -
 # package   progndrop     progn==1                     -             scalar:qndrop;dfi_scalar:dfi_qndrop

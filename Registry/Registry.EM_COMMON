@@ -515,6 +515,12 @@ state    real   re_hail_gsfc     ikj    misc        1         -     rh       "RE
 state    real   dfi_re_cloud     ikj    misc        1         -     -        "DFI_RE_CLOUD"   "DFI Effective radius cloud water"  "m"
 state    real   dfi_re_ice       ikj    misc        1         -     -        "DFI_RE_ICE"     "DFI Effective radius cloud ice"    "m"
 state    real   dfi_re_snow      ikj    misc        1         -     -        "DFI_RE_SNOW"    "DFI Effective radius snow"         "m"
+state    real   dfi_re_cloud_gsfc   ikj    misc        1         -      -       "DFI_RE_CLOUD_GSFC"  "DFI Cloud Water effective radius"      "micron"
+state    real   dfi_re_rain_gsfc    ikj    misc        1         -      -       "DFI_RE_RAIN_GSFC"   "DFI Rain Water effective radius"       "micron"
+state    real   dfi_re_ice_gsfc     ikj    misc        1         -      -       "DFI_RE_ICE_GSFC"    "DFI Cloud Ice effective radius"        "micron"
+state    real   dfi_re_snow_gsfc    ikj    misc        1         -      -       "DFI_RE_SNOW_GSFC"   "DFI Snow effective radius"             "micron"
+state    real   dfi_re_graupel_gsfc ikj    misc        1         -      -       "DFI_RE_GRAUPEL_GSFC"  "DFI Graupel Water effective radius"  "micron"
+state    real   dfi_re_hail_gsfc    ikj    misc        1         -      -       "DFI_RE_HAIL_GSFC"   "DFI Hail Water effective radius"       "micron"
 state  integer  has_reqc          -     misc        1         -     r        "has_reqc"       "Flag for having effective radius cloud water"  ""
 state  integer  has_reqi          -     misc        1         -     r        "has_reqi"       "Flag for having effective radius cloud ice"  ""
 state  integer  has_reqs          -     misc        1         -     r        "has_reqs"       "Flag for having effective radius snow"  ""
@@ -2698,6 +2704,7 @@ package   wsm3scheme_dfi    mp_physics_dfi==3        -             dfi_moist:dfi
 package   wsm5scheme_dfi    mp_physics_dfi==4        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   fer_mp_hires_dfi  mp_physics_dfi==5        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qt
 package   wsm6scheme_dfi    mp_physics_dfi==6        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
+package   nuwrf4icescheme_dfi mp_physics_dfi==7      -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;state:dfi_re_cloud_gsfc,dfi_re_rain_gsfc,dfi_re_ice_gsfc,dfi_re_snow_gsfc,dfi_re_graupel_gsfc,dfi_re_hail_gsfc
 package   thompson_dfi      mp_physics_dfi==8        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   milbrandt2mom_dfi mp_physics_dfi==9        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnc,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh
 package   morr_two_moment_dfi  mp_physics_dfi==10    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qns,dfi_qnr,dfi_qng
@@ -2709,11 +2716,13 @@ package   nssl_2mom_dfi     mp_physics_dfi==17       -             dfi_moist:dfi
 package   nssl_2mom_dficcn  mp_physics_dfi==18       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qndrop,dfi_qnn,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh,dfi_qvolg;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   nssl_1mom_dfi     mp_physics_dfi==19       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qvolg
 package   nssl_1momlfo_dfi  mp_physics_dfi==21       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
+package   nuwrf3icescheme_dfi mp_physics_dfi==27     -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;state:dfi_re_cloud_gsfc,dfi_re_rain_gsfc,dfi_re_ice_gsfc,dfi_re_snow_gsfc,dfi_re_graupel_gsfc
 package   thompsonaero_dfi  mp_physics_dfi==28       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qnc,dfi_qnwfa,dfi_qnifa;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   p3_1category_dfi  mp_physics_dfi==50       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
 package   p3_1category_nc_dfi  mp_physics_dfi==51    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qnc,dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
 package   p3_2category_dfi  mp_physics_dfi==52    -                dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qi2;dfi_scalar:dfi_qnc,dfi_qni,dfi_qnr,dfi_qir,dfi_qib,dfi_qni2,dfi_qir2,dfi_qib2;state:dfi_re_cloud,dfi_re_ice
 package   etampnew_dfi      mp_physics_dfi==95       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs;dfi_scalar:dfi_qt
+package   gsfcgcescheme_dfi   mp_physics_dfi==97     -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
 
 package   noprogn       progn==0                     -             -
 package   progndrop     progn==1                     -             scalar:qndrop;dfi_scalar:dfi_qndrop;state:qndropsource
@@ -3239,18 +3248,4 @@ xpose XPOSE_SPECTRAL_NUDGING dyn_em dif_analysis,dif_xxx,dif_yyy
 
 package   no_fft_used    fft_used==0                  -             -
 package   any_fft_used   fft_used==1                  -             state:t_xxx,u_xxx,ru_xxx,v_xxx,rv_xxx,w_xxx,ww_xxx,ph_xxx,dum_yyy,fourd_xxx
-state    real   dfi_re_cloud_gsfc   ikj    misc        1         -      -       "DFI_RE_CLOUD_GSFC"  "DFI Cloud Water effective radius"      "micron"
-state    real   dfi_re_rain_gsfc    ikj    misc        1         -      -       "DFI_RE_RAIN_GSFC"   "DFI Rain Water effective radius"       "micron"
-state    real   dfi_re_ice_gsfc     ikj    misc        1         -      -       "DFI_RE_ICE_GSFC"    "DFI Cloud Ice effective radius"        "micron"
-state    real   dfi_re_snow_gsfc    ikj    misc        1         -      -       "DFI_RE_SNOW_GSFC"   "DFI Snow effective radius"             "micron"
-state    real   dfi_re_graupel_gsfc ikj    misc        1         -      -       "DFI_RE_GRAUPEL_GSFC"  "DFI Graupel Water effective radius"  "micron"
-state    real   dfi_re_hail_gsfc    ikj    misc        1         -      -       "DFI_RE_HAIL_GSFC"   "DFI Hail Water effective radius"       "micron"
-
-
-
-package   nuwrf4icescheme_dfi mp_physics_dfi==7              -               dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;state:dfi_re_cloud_gsfc,dfi_re_rain_gsfc,dfi_re_ice_gsfc,dfi_re_snow_gsfc,dfi_re_graupel_gsfc,dfi_re_hail_gsfc
-
-package   nuwrf3icescheme_dfi mp_physics_dfi==27             -               dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;state:dfi_re_cloud_gsfc,dfi_re_rain_gsfc,dfi_re_ice_gsfc,dfi_re_snow_gsfc,dfi_re_graupel_gsfc
-
-package   gsfcgcescheme_dfi   mp_physics_dfi==97               -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
 

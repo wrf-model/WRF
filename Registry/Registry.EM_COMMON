@@ -471,7 +471,7 @@ state   real    qv             ikjftb   moist       1         -     \
 state   real    qc             ikjftb   moist       1         -     \
   i0rhusdf=(bdy_interp:dt)   "QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
 state   real    qr             ikjftb   moist       1         -     \
-  i0rhusdf=(bdy_interp:dt)   "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
+  i01rhusdf=(bdy_interp:dt)  "QRAIN"            "Rain water mixing ratio"       "kg kg-1"
 state   real    qi             ikjftb   moist       1         -     \
   i0rhusdf=(bdy_interp:dt)   "QICE"             "Ice mixing ratio"              "kg kg-1"
 state   real    qi2             ikjftb   moist       1         -     \
@@ -689,6 +689,14 @@ state    real   ts_tslb         ?!       misc      -         -      -        "TS
 state    real   ts_clw          ?!       misc      -         -      -        "TS_CLW"         "Column integrated cloud water"
 state    real   ts_rainc        ?!       misc      -         -      -        "TS_RAINC"       "Cumulus precip"
 state    real   ts_rainnc       ?!       misc      -         -      -        "TS_RAINNC"      "Grid-scale precip"
+state    real   ts_swddir       ?!       misc      -         -      -        "TS_SWDDIR"      "Shortwave direct irradiance"
+state    real   ts_swddni       ?!       misc      -         -      -        "TS_SWDDNI"      "Shortwave direct normal irradiance"
+state    real   ts_swddif       ?!       misc      -         -      -        "TS_SWDDIF"      "Shortwave diffuse irradiance"
+state    real   ts_swdown       ?!       misc      -         -      -        "TS_SWDOWN"      "Shortwave irradiance at the surface"
+state    real   ts_swddir2      ?!       misc      -         -      -        "TS_SWDDIR2"     "Shortwave direct irradiance. FARMS"
+state    real   ts_swddni2      ?!       misc      -         -      -        "TS_SWDDNI2"     "Shortwave direct normal irradiance. FARMS"
+state    real   ts_swddif2      ?!       misc      -         -      -        "TS_SWDDIF2"     "Shortwave diffuse irradiance. FARMS"
+state    real   ts_swdown2      ?!       misc      -         -      -        "TS_SWDOWN2"     "Shortwave irradiance at the surface. FARMS"
 
 # Time series of vertical profile of U, V, GHT, THETA and QVAPOR
 state    real   ts_u_profile   ?!k       misc      -         -      -        "TS_U_PROFILE"   "Wind u-Component, earth relative, vertical profile"
@@ -1307,6 +1315,32 @@ state    real  RQGSHTEN        ikj      misc        1         -      r        "R
 state    real  RQCNSHTEN       ikj      misc        1         -      r        "RQCNSHTEN"             "Q_CN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"     "# kg-1 s-1"
 state    real  RQINSHTEN       ikj      misc        1         -      r        "RQINSHTEN"             "Q_IN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"     "# kg-1 s-1"
 
+# Deng Shallow Convection Parameterization
+state    real  RDCASHTEN       ikj      misc        1         -      r       "RDCASHTEN"             "DCA TENDENCY DUE TO DENG SHALLOW CUMULUS SCHEME"    "Pa s-1"
+state    real  RQCDCSHTEN      ikj      misc        1         -      r        "RQCDCSHTEN"            "DCQC TENDENCY DUE TO DENG SHALLOW CUMULUS SCHEME"   "kg kg-1 s-1"
+state    real  CLDAREAA        ikj      dyn_em      1         -      r        "CLDAREAA"              "CLOUD FRACTION FROM DENG SCHEME" ""
+state    real  CLDAREAB        ikj      dyn_em      1         -      r       "CLDAREAB"              "CLOUD FRACTION FROM DENG SCHEME" ""
+state    real  CA_RAD          ikj      dyn_em      1         -      r        "CA_RAD"                "CLOUD WATER CONTENT FROM DENG SCHEME FOR RADIATION" "kg kg-1"
+state    real  CW_RAD          ikj      dyn_em      1         -      r        "CW_RAD"                "CLOUD WATER CONTENT FROM DENG SCHEME FOR RADIATION" "kg kg-1"
+state    real  CLDLIQA         ikj      dyn_em      1         -      r        "CLDLIQA"               "CLOUD WATER CONTENT FROM DENG SCHEME" "kg kg-1"
+state    real  CLDLIQB         ikj      dyn_em      1         -      r       "CLDLIQB"               "CLOUD WATER CONTENT FROM DENG SCHEME" "kg kg-1"
+state    real  CLDDPTHB         ij      misc        1         -      r        "CLDDPTHB"              "CLOUD DEPTH FROM TAU-1"                "m"
+state    real  CLDTOPB          ij      misc        1         -      r        "CLDTOPB"               "CLOUD TOP FROM TAU-1"                "m"
+state    real  PBLMAX           ij      misc        1         -      r        "PBLMAX"                "MAXIMUM VALUE OF PBL DEPTH SINCE THE START OF THE MODEL RUN"                 "m"
+state    real  WUB             ikj      misc        1         -      r        "WUB"                   "UPDRAFT VERTICAL VELOCITY"                 "m s-1"
+state    real  RAINSHVB         ij      misc        1         -      r        "RAINSHVB"              "TIME-STEP SHCU PRECIPITATION FROM TAU-1"       "m s-1"
+state    real  CAPESAVE         ij      misc        1         -      r        "CAPESAVE"              "CAPE FROM TAU-1"       ""
+state    real  RADSAVE          ij      misc        1         -      r        "RADSAVE"               "CLOUD RADIUS FROM TAU-1"       "m"
+state    real  AINCKFSA        i{nsh}j  misc        1         -      r        "AINCKFSA"              "NUMBER OF CLOUDS FROM TAU-1"       ""
+state  integer LTOPB            ij      misc        1         -      r        "LTOPB"                 "LEVEL OF UPDRAFT TOP FROM TAU-1"       ""
+state  integer KDCLDTOP         ij      misc        1         -      r        "KDCLDTOP"              "LEVEL OF NBC TOP"                     ""
+state  integer KDCLDBAS         ij      misc        1         -      r        "KDCLDBAS"              "LEVEL OF NBC BASE"                    ""
+state    real  XTIME1           ij      misc        1         -      r        "XTIME1"                "TIME COUNTER AFTER RAIN"              "min."
+state    real  PBLHAVG          ij      misc        1         -      r        "PBLHAVG"               "TIME AVERAGE OF PBLH"                 "m"
+state    real   TKEAVG         ikj      misc        1         -      r        "TKEAVG"                "TIME AVERAGE OF TKE"                 "m2 s-2"
+# End Deng Shallow Convection Parameterization
+
+
 state    real  RUCUTEN         ikj      misc        1         -      r        "RUCUTEN"               "X WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "m s-2"
 state    real  RVCUTEN         ikj      misc        1         -      r        "RVCUTEN"               "Y WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "m s-2"
 state    real  RTHCUTEN        ikj      misc        1         -      r        "RTHCUTEN"              "THETA TENDENCY DUE TO CUMULUS SCHEME"     "K s-1"
@@ -1434,6 +1468,7 @@ state    real  CLDT             ij      misc        1         -      -        "C
 #state    real  CLDL             ij      misc        1         -      -        "CFRACL"                "LOW CLOUD FRACTION (ETA GREATER THAN 0.69)"           ""
 #state    real  LWP              ij      misc        1         -      -        "LWP"                   "LIQUID CLOUD WATER PATH"                              "kg m-2"
 state    real  SWDOWN           ij      misc        1         -      rhd      "SWDOWN"                "DOWNWARD SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
+state    real  SWDOWN2          ij      misc        1         -      rhd      "SWDOWN2"               "DOWNWARD SHORT WAVE FLUX AT GROUND SURFACE FROM FARMS"   "W m-2"      
 state    real  SWDOWNC          ij      misc        1         -      -        "SWDOWNC"               "DOWNWARD CLEAR-SKY SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
 state    real  GSW              ij      misc        1         -      rd       "GSW"                   "NET SHORT WAVE FLUX AT GROUND SURFACE"           "W m-2"      
 state    real  GLW              ij      misc        1         -      rhd      "GLW"                   "DOWNWARD LONG WAVE FLUX AT GROUND SURFACE"            "W m-2"      
@@ -1441,10 +1476,13 @@ state    real  SWNORM           ij      misc        1         -      rhd      "S
 state    real  diffuse_frac     ij      misc        1         -      rd       "DIFFUSE_FRAC"          "DIFFUSE FRACTION OF SURFACE SHORTWAVE IRRADIANCE"       ""
 # WRF-Solar
 state   real    swddir       ij     misc         1         -     rd     "SWDDIR"     "Shortwave surface downward direct irradiance" "W m-2" ""
+state   real    swddir2      ij     misc         1         -     rd     "SWDDIR2"    "Shortwave surface downward direct irradiance from FARMS" "W m-2" ""
 state   real    swddirc      ij     misc         1         -     rd     "SWDDIRC"    "Clear-sky Shortwave surface downward direct irradiance" "W m-2" ""
 state   real    swddni       ij     misc         1         -     rd     "SWDDNI"     "Shortwave surface downward direct normal irradiance" "W m-2" ""
+state   real    swddni2      ij     misc         1         -     rd     "SWDDNI2"    "Shortwave surface downward direct normal irradiance from FARMS" "W m-2" ""
 state   real    swddnic      ij     misc         1         -     rd     "SWDDNIC"    "Clear-sky Shortwave surface downward direct normal irradiance" "W m-2" ""
 state   real    swddif       ij     misc         1         -     rd     "SWDDIF"     "Shortwave surface downward diffuse irradiance" "W m-2" ""
+state   real    swddif2      ij     misc         1         -     rd     "SWDDIF2"    "Shortwave surface downward diffuse irradiance from FARMS" "W m-2" ""
 state   real    Gx           ij     misc         1         -     rd     "Gx" "" ""
 state   real    Bx           ij     misc         1         -     rd     "Bx" "" ""
 state   real    gg           ij     misc         1         -     rd     "gg" "" ""
@@ -2445,6 +2483,9 @@ rconfig   logical scm_force_wind_largescale namelist,scm  1     .false.     rh  
 rconfig   integer scm_force_skintemp      namelist,scm  1       0           rh   "scm_force_skin"       "SCM surface forcing by skin temperature 0=no 1=yes"      ""
 rconfig   integer scm_force_flux          namelist,scm  1       0           rh   "scm_force_flux"       "SCM surface forcing by surface fluxes 0=no 1=yes"      ""
 
+# PSU-DENG SHALLOW CU VARIABLES
+state     real  WSUBSID          k        misc          1       -           -    "WSUBSID"              "LARGE-SCALE SUBSIDENCE IN DENG SHCU SCHEME"    "m s-1"
+
 # Dynamics
 # dynamics option (see package definitions, below)
 rconfig   integer dyn_opt                 namelist,dynamics	1             2 
@@ -2790,6 +2831,14 @@ package   camuwshcuscheme shcu_physics==2            -             state:shfrc3d
 package   grimsshcuscheme shcu_physics==3            -             -
 package   nscvshcuscheme  shcu_physics==4            -             -
 
+#
+# PSU-DENG ShCu
+#
+package   dengshcuscheme   shcu_physics==5           -             state:RDCASHTEN,RQCDCSHTEN,CLDAREAA,CLDAREAB,CA_RAD,CW_RAD,CLDLIQA,CLDLIQB,CLDDPTHB,CLDTOPB,PBLMAX,WUB,RAINSHVB,CAPESAVE,RADSAVE,AINCKFSA,LTOPB,KDCLDTOP,KDCLDBAS,XTIME1,PBLHAVG,TKEAVG,W0AVG
+#
+# END PSU-DENG ShCu
+#
+
 package   no_shcu_used    shcu_used==0               -             -
 package   any_shcu_used   shcu_used==1               -             state:rushten,rvshten,rthshten,rqvshten,rqrshten,rqcshten,rqsshten,rqishten,rqgshten,rqcnshten,rqinshten
 
@@ -2867,7 +2916,7 @@ package   icedepth_one   seaice_thickness_opt==1     -             state:icedept
 
 #Time series options for text output
 package   notseries   process_time_series==0                 -             -
-package   tseries     process_time_series==1                 -             state:ts_hour,ts_u,ts_v,ts_q,ts_t,ts_psfc,ts_glw,ts_gsw,ts_hfx,ts_lh,ts_tsk,ts_tslb,ts_clw,ts_rainc,ts_rainnc,ts_u_profile,ts_v_profile,ts_gph_profile,ts_th_profile
+package   tseries     process_time_series==1                 -             state:ts_hour,ts_u,ts_v,ts_q,ts_t,ts_psfc,ts_glw,ts_gsw,ts_hfx,ts_lh,ts_tsk,ts_tslb,ts_clw,ts_rainc,ts_rainnc,ts_u_profile,ts_v_profile,ts_gph_profile,ts_th_profile,ts_swddir,ts_swddni,ts_swddif,ts_swdown,ts_swddir2,ts_swddni2,ts_swddif2,ts_swdown2
 
 # WRF-HAILCAST
 state    real   HAILCAST_DHAIL1   ij     misc        1         -      r          "HAILCAST_DHAIL1"     "WRF-HAILCAST Hail Diameter, 1st rank order"     "mm"

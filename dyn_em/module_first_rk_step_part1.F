@@ -306,6 +306,9 @@ BENCH_START(rad_driver_tim)
      &        ,CAM_ABS_FREQ_S=grid%cam_abs_freq_s                         &
      &        ,XTIME=grid%xtime                                                &
               ,CURR_SECS=curr_secs, ADAPT_STEP_FLAG=adapt_step_flag       &
+     &        ,mut=grid%mut,dnw=grid%dnw                                  & ! PAJ: FARMS coupling
+     &        ,swdown2=grid%swdown2, swddni2=grid%swddni2                 & ! PAJ: FARMS coupling
+     &        ,swddif2=grid%swddif2, swddir2=grid%swddir2                 & ! PAJ: FARMS coupling
 !BSINGH - For WRFCuP scheme
      &        ,CU_PHYSICS=config_flags%cu_physics                         & !CuP, wig 5-Oct-2006
      &        ,SHALLOWCU_FORCED_RA=config_flags%shallowcu_forced_ra       & !CuP, wig
@@ -402,6 +405,14 @@ BENCH_START(rad_driver_tim)
      &         ,shadowmask=grid%shadowmask,ht=grid%ht,dx=grid%dx,dy=grid%dy &           
      &         ,diffuse_frac=grid%diffuse_frac &           
      &         ,IS_CAMMGMP_USED = grid%is_CAMMGMP_used    &
+!
+! PSU-DENG
+!
+     &         ,cw_rad=grid%cw_rad                     &
+     &         ,shcu_physics=config_flags%shcu_physics                     &
+!
+! END PSU-DENG
+!
      &         ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS        &
      &         ,EFCG=grid%EFCG,EFCS=grid%EFCS,EFIG=grid%EFIG &
      &         ,EFIS=grid%EFIS,EFSG=grid%EFSG,aercu_opt=config_flags%aercu_opt & 
@@ -1332,6 +1343,32 @@ BENCH_START(shcu_driver_tim)
      &             ,HFX=grid%hfx, QFX=grid%qfx                            &
      &             ,MP_PHYSICS=config_flags%mp_physics                    &
      &             ,pgcon=config_flags%sas_pgcon                          &
+!
+! PSU-DENG
+!
+     &             ,RDCASHTEN=grid%RDCASHTEN, RQCDCSHTEN=grid%RQCDCSHTEN  &
+     !jkim: remove w &             ,w=grid%w_2, W0AVG=grid%W0AVG                          &
+     &             ,W0AVG=grid%W0AVG                                      &
+     &             ,clddpthb=grid%clddpthb, cldtopb=grid%cldtopb          &
+     &             ,cldareaa=grid%cldareaa, cldareab=grid%cldareab        &
+     &             ,cldliqa=grid%cldliqa, cldliqb=grid%cldliqb            &
+     &             ,cldfra_sh=grid%cldfra_sh,ca_rad=grid%ca_rad,  cw_rad=grid%cw_rad                &
+     &             ,wub=grid%wub, pblmax=grid%pblmax, xlong=grid%xlong    &
+     &             ,rainshvb=grid%rainshvb, capesave=grid%capesave        &
+     &             ,radsave=grid%radsave, ainckfsa=grid%ainckfsa          &
+     &             ,ltopb=grid%ltopb, kdcldtop=grid%kdcldtop              &
+     &             ,kdcldbas=grid%kdcldbas                                &
+     &             ,el_pbl=grid%el_pbl                                    &
+     &             ,rthratenlw=grid%rthratenlw, rthratensw=grid%rthratensw & !118
+     &             ,exch_h=grid%exch_h                                    &
+     &             ,dnw=grid%dnw, XTIME=grid%XTIME, XTIME1=grid%XTIME1    &
+     &             ,GMT=grid%gmt                                          &
+     &             ,qke=grid%qke                                          &
+     &             ,PBLHAVG=grid%PBLHAVG, TKEAVG=grid%TKEAVG              &
+     &             ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics            &
+!
+! END PSU-DENG
+!
      &                                                                    )
 
 #if (WRF_CHEM == 1)

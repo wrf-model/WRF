@@ -49,6 +49,7 @@ MODULES = \
 	module_bl_mfshconvpbl.o \
 	module_shcu_camuwshcu_driver.o \
 	module_shcu_camuwshcu.o \
+	module_shcu_deng.o          \
 	module_shcu_grims.o \
 	module_shcu_nscv.o \
 	module_cu_camzm_driver.o \
@@ -114,6 +115,7 @@ MODULES = \
 	module_ra_HWRF.o \
 	module_ra_hs.o  \
 	module_ra_aerosol.o  \
+	module_ra_farms.o  \
 	module_sf_sfclay.o \
 	module_sf_sfclayrev.o \
 	module_sf_gfs.o \

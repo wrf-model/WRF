@@ -398,6 +398,14 @@ SUBROUTINE calc_ts( grid )
          grid%ts_rainc(n,i)  = grid%rainc(ix,iy)
          grid%ts_rainnc(n,i) = grid%rainnc(ix,iy)
          grid%ts_tsk(n,i)  = grid%tsk(ix,iy)
+         grid%ts_swddir(n,i)  = grid%swddir(ix,iy)
+         grid%ts_swddni(n,i)  = grid%swddni(ix,iy)
+         grid%ts_swddif(n,i)  = grid%swddif(ix,iy)
+         grid%ts_swdown(n,i)  = grid%swdown(ix,iy)
+         grid%ts_swddir2(n,i)  = grid%swddir2(ix,iy)
+         grid%ts_swddni2(n,i)  = grid%swddni2(ix,iy)
+         grid%ts_swddif2(n,i)  = grid%swddif2(ix,iy)
+         grid%ts_swdown2(n,i)  = grid%swdown2(ix,iy)
 #else
          grid%ts_tsk(n,i)  = grid%nmm_tsk(ix,iy)
 #endif
@@ -427,6 +435,14 @@ SUBROUTINE calc_ts( grid )
          grid%ts_clw(n,i)  = 1.E30
          grid%ts_rainc(n,i)  = 1.E30
          grid%ts_rainnc(n,i) = 1.E30
+         grid%ts_swddir(n,i)  = 1.E30
+         grid%ts_swddni(n,i)  = 1.E30
+         grid%ts_swddif(n,i)  = 1.E30
+         grid%ts_swdown(n,i)  = 1.E30
+         grid%ts_swddir2(n,i)  = 1.E30
+         grid%ts_swddni2(n,i)  = 1.E30
+         grid%ts_swddif2(n,i)  = 1.E30
+         grid%ts_swdown2(n,i)  = 1.E30
 #endif
          grid%ts_tsk(n,i)  = 1.E30
          grid%ts_tslb(n,i) = 1.E30
@@ -539,6 +555,31 @@ SUBROUTINE write_ts( grid )
 
    ts_buf(:,:) = grid%ts_rainnc(:,:)
    CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_rainnc(:,:),grid%ts_buf_size*grid%max_ts_locs)
+
+   ts_buf(:,:) = grid%ts_swddir(:,:)
+   CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_swddir(:,:),grid%ts_buf_size*grid%max_ts_locs)
+
+   ts_buf(:,:) = grid%ts_swddni(:,:)
+   CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_swddni(:,:),grid%ts_buf_size*grid%max_ts_locs)
+
+   ts_buf(:,:) = grid%ts_swddif(:,:)
+   CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_swddif(:,:),grid%ts_buf_size*grid%max_ts_locs)
+
+   ts_buf(:,:) = grid%ts_swdown(:,:)
+   CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_swdown(:,:),grid%ts_buf_size*grid%max_ts_locs)
+
+   ts_buf(:,:) = grid%ts_swddir2(:,:)
+   CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_swddir2(:,:),grid%ts_buf_size*grid%max_ts_locs)
+
+   ts_buf(:,:) = grid%ts_swddni2(:,:)
+   CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_swddni2(:,:),grid%ts_buf_size*grid%max_ts_locs)
+
+   ts_buf(:,:) = grid%ts_swddif2(:,:)
+   CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_swddif2(:,:),grid%ts_buf_size*grid%max_ts_locs)
+
+   ts_buf(:,:) = grid%ts_swdown2(:,:)
+   CALL wrf_dm_min_reals(ts_buf(:,:),grid%ts_swdown2(:,:),grid%ts_buf_size*grid%max_ts_locs)
+
 #endif
 
    ts_buf(:,:) = grid%ts_tsk(:,:)
@@ -567,7 +608,7 @@ SUBROUTINE write_ts( grid )
          DO n=1,grid%next_ts_time - 1
 
 #if (EM_CORE == 1)
-            WRITE(UNIT=iunit,FMT='(i2,f13.6,i5,i5,i5,1x,14(f13.5,1x))')  &
+            WRITE(UNIT=iunit,FMT='(i2,f13.6,i5,i5,i5,1x,22(f13.5,1x))')  &
                               grid%id, grid%ts_hour(n,i),                &
                               grid%id_tsloc(i), ix, iy,                  &
                               grid%ts_t(n,i),                            &
@@ -583,7 +624,15 @@ SUBROUTINE write_ts( grid )
                               grid%ts_tslb(n,i),                         &
                               grid%ts_rainc(n,i),                        &
                               grid%ts_rainnc(n,i),                       &
-                              grid%ts_clw(n,i)
+                              grid%ts_clw(n,i),                          &
+                              grid%ts_swddir(n,i),                       &
+                              grid%ts_swddni(n,i),                       &
+                              grid%ts_swddif(n,i),                       &
+                              grid%ts_swdown(n,i),                       &
+                              grid%ts_swddir2(n,i),                      &
+                              grid%ts_swddni2(n,i),                      &
+                              grid%ts_swddif2(n,i),                      &
+                              grid%ts_swdown2(n,i)
 #else
             WRITE(UNIT=iunit,FMT='(i2,f13.6,i5,i5,i5,1x,7(f13.5,1x))')   &
                               grid%id, grid%ts_hour(n,i),                &

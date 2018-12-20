@@ -920,23 +920,18 @@ module_ra_aerosol.o :\
 	../frame/module_wrf_error.o
 
 module_gocart_coupling.o:
-	$(RM) $@
-	$(SED_FTN) $*.F > $*.b
-	$(CPP) -I../inc $(CPPFLAGS) $*.b  > $*.f90
-	$(RM) $*.b
-	$(FC) -c $(FCFLAGS) $(MODULE_DIRS) $(INCLUDE_MODULES) \
-                 $(PROMOTION) $(FCSUFFIX) $*.f90                 
-
 
 module_ra_goddard.o : ../frame/module_wrf_error.o \
                             module_gocart_coupling.o \
                             module_checkerror.o
 
 module_mp_gsfcgce_3ice_nuwrf.o : ../frame/module_wrf_error.o \
+                            module_gocart_coupling.o \
                             module_checkerror.o \
                             module_mp_radar.o
 
 module_mp_gsfcgce_4ice_nuwrf.o : ../frame/module_wrf_error.o \
+                            module_gocart_coupling.o \
                             module_checkerror.o \
                             module_mp_radar.o
 

@@ -8929,14 +8929,13 @@
 !
  icn_estimate = icn_std * (p_air*t_std) / (p_std*t_air)  ! [#/std L] --> [#/L]
 
-         result = fp_class( icn_estimate )
-         if( result.eq.2 .or. result.eq.3 ) then
-            print*, 'INF in mass2icn, i,j,k, icn_estimate, result = ', ii, jj, kk, icn_estimate, result
+         if( ieee_is_nan( icn_estimate ) ) then
+            print*, 'NAN in mass2icn, i,j,k, icn_estimate = ', ii, jj, kk, icn_estimate
             print*, 'icn_std, t_std, p_std, p_air, t_air =', icn_std, t_std, p_std, p_air, t_air
             print*, 'aero = ', aero
          endif
-         if( ieee_is_nan( icn_estimate ) ) then
-            print*, 'NAN in mass2icn, i,j,k, icn_estimate = ', ii, jj, kk, icn_estimate
+         if( .NOT. ieee_is_finite( icn_estimate ) ) then
+            print*, 'INF in mass2icn, i,j,k, icn_estimate = ', ii, jj, kk, icn_estimate
             print*, 'icn_std, t_std, p_std, p_air, t_air =', icn_std, t_std, p_std, p_air, t_air
             print*, 'aero = ', aero
          endif
@@ -9987,6 +9986,12 @@
 !GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 !GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
 
+ end module module_gocart_coupling
+#else
+ module module_gocart_coupling
+ contains
+ subroutine dummy
+ end subroutine dummy
  end module module_gocart_coupling
 
 #endif

@@ -245,7 +245,8 @@ CONTAINS
    USE module_wrf_error
    use module_sf_lake, only : nlevsoil,nlevsnow,nlevlake
 #if ( WRF_CHEM == 1 )
-   USE module_cam_support,         ONLY : cam_mam_aerosols
+   USE module_gocart_coupling, ONLY : makelut_ccn_icn
+   USE module_cam_support,     ONLY : cam_mam_aerosols
 #endif
    USE module_wind_fitch
    IMPLICIT NONE

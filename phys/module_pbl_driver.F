@@ -1174,7 +1174,6 @@ CONTAINS
               ,FLAG_QI=flag_qi                                      &
               ,CP=cp,G=g,ROVCP=rcp,RD=r_D,ROVG=rovg                 &
               ,DZ8W=dz8w,XLV=XLV,RV=r_v,PSFC=PSFC                   &
-              ,ZNU=znu,ZNW=znw,P_TOP=p_top                          &
               ,ZNT=znt,UST=ust,HPBL=pblh                            &
               ,PSIM=fm,PSIH=fhh,XLAND=xland                         &
               ,HFX=hfx,QFX=qfx                                      &
@@ -1185,7 +1184,7 @@ CONTAINS
               ,YSU_TOPDOWN_PBLMIX=ysu_topdown_pblmix                &
               ,WSPD=wspd,BR=br,DT=dtbl,KPBL2D=kpbl                  &
               ,EP1=ep_1,EP2=ep_2,KARMAN=karman                      &
-              ,EXCH_H=exch_h,REGIME=regime                          &
+              ,EXCH_H=exch_h,EXCH_M=exch_m,REGIME=regime            &
               ,RTHRATEN=RTHRATEN                                    &
 ! for grims shallow convection with ysupbl
               ,WSTAR=wstar,DELTA=delta                              &

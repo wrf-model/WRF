@@ -594,7 +594,7 @@ print *,'WATER CHANGE = ',change_water
                                 landmask , sst , ht, toposoil, &
                                 st_input , sm_input , sw_input , &
                                 st_levels_input , sm_levels_input , sw_levels_input , &
-                                zs , dzs , tslb , smois , sh2o , &
+                                zs , dzs , flag_sm_adj, tslb , smois , sh2o , &
                                 flag_sst , flag_tavgsfc, flag_soilhgt, &
                                 flag_soil_layers, flag_soil_levels, &
                                 ids , ide , jds , jde , kds , kde , &
@@ -613,7 +613,7 @@ print *,'WATER CHANGE = ',change_water
                               num_st_levels_input , num_sm_levels_input , num_sw_levels_input , &
                               num_st_levels_alloc , num_sm_levels_alloc , num_sw_levels_alloc
 
-      INTEGER , INTENT(IN) :: flag_sst, flag_tavgsfc
+      INTEGER , INTENT(IN) :: flag_sst, flag_tavgsfc, flag_sm_adj
       INTEGER , INTENT(IN) :: flag_soil_layers, flag_soil_levels, flag_soilhgt
 
       REAL , DIMENSION(ims:ime,jms:jme) , INTENT(IN) :: landmask , sst
@@ -816,7 +816,7 @@ print *,'WATER CHANGE = ',change_water
          CALL init_soil_depth_3 ( zs , dzs , num_soil_layers )
          CALL init_soil_3_real ( tsk , tmn , smois , tslb , &
                                  st_input , sm_input , landmask , sst , &
-                                 zs , dzs , &
+                                 zs , dzs , flag_sm_adj,    &
                                  st_levels_input , sm_levels_input , &
                                  num_soil_layers , num_st_levels_input , num_sm_levels_input , &
                                  num_st_levels_alloc , num_sm_levels_alloc , &
@@ -1108,7 +1108,7 @@ cycle
       !    -----------------------------------  \/   dzs(3) = 0.04 m
 
       IF ( num_soil_layers .NE. 5 ) THEN
-         PRINT '(A)','Usually, the 5-layer diffusion uses 5 layers.  Change this in the namelist.'
+         PRINT '(A)','The SLAB thermal diffusion LSM uses 5 layers.  Set num_soil_layers=5 in the namelist (&physics).'
          CALL wrf_error_fatal ( '5-layer_diffusion_uses_5_layers' )
       END IF
 
@@ -1135,7 +1135,7 @@ cycle
       dzs = (/ 0.1 , 0.3 , 0.6 , 1.0 /)
 
       IF ( num_soil_layers .NE. 4 ) THEN
-         PRINT '(A)','Usually, the LSM uses 4 layers.  Change this in the namelist.'
+         PRINT '(A)','The Noah and NoahMP LSMs use 4 layers.  Set num_soil_layers=4 in the namelist (&physics).'
          CALL wrf_error_fatal ( 'LSM_uses_4_layers' )
       END IF
 
@@ -1184,7 +1184,7 @@ cycle
       dzs(num_soil_layers) = zs2(num_soil_layers) - zs2(num_soil_layers-1)
 
       IF ( num_soil_layers .EQ. 4 .OR. num_soil_layers .EQ. 5 ) THEN
-         write (message, FMT='(A)') 'The RUC LSM uses 6, 9 or more levels.  Change this in the namelist.'
+         write (message, FMT='(A)') 'The RUC LSM uses 6, 9 or more levels.  Set num_soil_layers in the namelist (&physics).'
          CALL wrf_error_fatal ( message )
       END IF
 
@@ -1254,7 +1254,7 @@ cycle
       dzs = (/ 0.01 , 0.99 /)
 
       IF ( num_soil_layers .NE. 2 ) THEN
-         PRINT '(A)','Usually, the PX LSM uses 2 layers.  Change this in the namelist.'
+         PRINT '(A)','The PX LSM uses 2 layers.  Set num_soil_layers=2 in the namelist (&physics).'
          CALL wrf_error_fatal ( 'PXLSM_uses_2_layers' )
       END IF
 
@@ -1811,20 +1811,20 @@ cycle
 
    END SUBROUTINE init_soil_2_ideal
 
-   SUBROUTINE init_soil_3_real ( tsk , tmn , smois , tslb , &
+   SUBROUTINE init_soil_3_real ( tsk , tmn , smois , tslb ,           &
                                  st_input , sm_input , landmask, sst, &
-                                 zs , dzs , &
-                                 st_levels_input , sm_levels_input , &
-                                 num_soil_layers , num_st_levels_input , num_sm_levels_input ,  &
+                                 zs , dzs , flag_sm_adj,              &
+                                 st_levels_input , sm_levels_input ,  &
+                                 num_soil_layers , num_st_levels_input , num_sm_levels_input , &
                                  num_st_levels_alloc , num_sm_levels_alloc , &
                                  flag_sst , flag_soil_layers , flag_soil_levels , &
-                                 ids , ide , jds , jde , kds , kde , &
-                                 ims , ime , jms , jme , kms , kme , &
+                                 ids , ide , jds , jde , kds , kde ,  &
+                                 ims , ime , jms , jme , kms , kme ,  &
                                  its , ite , jts , jte , kts , kte )
 
       IMPLICIT NONE
 
-      INTEGER , INTENT(IN) :: num_soil_layers , &
+      INTEGER , INTENT(IN) :: num_soil_layers , flag_sm_adj,      &
                               num_st_levels_input , num_sm_levels_input , &
                               num_st_levels_alloc , num_sm_levels_alloc , &
                               ids , ide , jds , jde , kds , kde , &
@@ -2057,6 +2057,10 @@ cycle
 
       END IF
 
+   IF(flag_sm_adj == 1) then
+       write(message, FMT='(A)') ' Soil moisture adjustment from Noah to RUC is ON'
+       CALL wrf_message ( message )
+!-- perform soil moisture adjustmen when flag_sm_adj == 1
       if( flag_soil_levels .ne. 1) then
            write(message, FMT='(A)') ' from Noah to RUC - compute RUC bucket'
            CALL wrf_message ( message )
@@ -2114,6 +2118,7 @@ cycle
       END DO
 
       endif ! flag_soil_levels
+   ENDIF ! flag_sm_adj
 
       !  Over water, put in reasonable values for soil temperature and moisture.  These won't be
       !  used, but they will make a more continuous plot.
@@ -3926,7 +3931,7 @@ cycle
       !    -----------------------------------  \/   dzs(3) = 0.04 m
 
       IF ( num_soil_layers .NE. 5 ) THEN
-         write(message,FMT= '(A)') 'Usually, the 5-layer diffusion uses 5 layers.  Change this in the namelist.'
+         write(message,FMT= '(A)') 'The SLAB thermal diffusion PBL uses 5 layers.  Set num_soil_layers=5 in the namelist (&physics).'
          CALL wrf_error_fatal ( message )
       END IF
 
@@ -3955,7 +3960,7 @@ cycle
       dzs = (/ 0.1 , 0.3 , 0.6 , 1.0 /)
 
       IF ( num_soil_layers .NE. 4 ) THEN
-         write(message,FMT='(A)') 'Usually, the LSM uses 4 layers.  Change this in the namelist.'
+         write(message,FMT='(A)') 'The Noah and NoahMP LSMs use 4 layers.  Set num_soil_layers=4 in the namelist (&physics).'
          CALL wrf_error_fatal ( message )
       END IF
 
@@ -3995,7 +4000,7 @@ cycle
      ENDIF
 
       IF ( num_soil_layers .EQ. 4 .OR. num_soil_layers .EQ. 5 ) THEN
-         WRITE(message,FMT= '(A)')'Usually, the RUC LSM uses 6, 9 or more levels.  Change this in the namelist.'
+         WRITE(message,FMT= '(A)')'The RUC LSM uses 6, 9 or more levels.  Set num_soil_layers appropriately in the namelist (&physics).'
          CALL wrf_error_fatal ( message )
       END IF
 

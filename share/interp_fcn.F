@@ -4616,6 +4616,68 @@ END MODULE module_interp_info
      endif
    end subroutine DownNear
 
+   subroutine ForceNearMaskSST      (cfld,                                 &  ! CD field
+        cids, cide, ckds, ckde, cjds, cjde,   &
+        cims, cime, ckms, ckme, cjms, cjme,   &
+        cits, cite, ckts, ckte, cjts, cjte,   &
+        nfld,                                 &  ! ND field
+        nids, nide, nkds, nkde, njds, njde,   &
+        nims, nime, nkms, nkme, njms, njme,   &
+        nits, nite, nkts, nkte, njts, njte,   &
+        shw,                                  &  ! stencil half width for interp
+        imask,                                &  ! interpolation mask
+        xstag, ystag,                         &  ! staggering of field
+        ipos, jpos,                           &  ! Position of lower left of nest in CD
+        nri, nrj,                             &  ! nest ratios
+        clu, nlu, cflag, nflag,               &
+        cactivate, nactivate)
+     use module_interp_store
+     use module_interp_nmm, only: c2n_nearmask2d,c2n_nearmask3d
+     implicit none
+     LOGICAL,INTENT(IN) :: xstag, ystag
+     INTEGER,INTENT(IN) :: cids, cide, ckds, ckde, cjds, cjde,   &
+          cims, cime, ckms, ckme, cjms, cjme,   &
+          cits, cite, ckts, ckte, cjts, cjte,   &
+          nids, nide, nkds, nkde, njds, njde,   &
+          nims, nime, nkms, nkme, njms, njme,   &
+          nits, nite, nkts, nkte, njts, njte,   &
+          shw,ipos,jpos,nri,nrj,cflag,nflag
+
+     INTEGER,DIMENSION(nims:nime,njms:njme),          INTENT(IN)           :: IMASK
+     REAL,DIMENSION(cims:cime,cjms:cjme,ckms:ckme),   INTENT(IN)           :: CFLD
+     REAL,DIMENSION(nims:nime,njms:njme,nkms:nkme),   INTENT(INOUT)        :: nfld
+
+     REAL,DIMENSION(cims:cime,cjms:cjme),INTENT(IN)           :: clu
+     REAL,DIMENSION(nims:nime,njms:njme),INTENT(IN)           :: nlu
+
+     INTEGER, INTENT(IN), DIMENSION(*) :: cactivate, nactivate
+
+     REAL                     :: defvalyes, defvalno
+
+     defvalyes=-999.99
+     defvalno=-999.99
+
+     if(nactivate(1)/=1) return
+
+     if(nkts==nkte) then
+        call c2n_nearmask2d(hnear_i,hnear_j,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,  &
+             cfld,nfld,imask,                &
+             clu,nlu,cflag,nflag,defvalyes,defvalno,           &
+             cims, cime, cjms, cjme,   &
+             nids, nide, njds, njde,   &
+             nims, nime, njms, njme,   &
+             nits, nite, njts, njte, .true.)
+     else
+        call c2n_nearmask3d(hnear_i,hnear_j,IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,  &
+             cfld,nfld,imask,                &
+             clu,nlu,cflag,nflag,defvalyes,defvalno,           &
+             cims, cime, cjms, cjme, ckms, ckme,   &
+             nids, nide, njds, njde, nkds, nkde,   &
+             nims, nime, njms, njme, nkms, nkme,   &
+             nits, nite, njts, njte, nkts, nkte, .true.)
+     endif
+   end subroutine ForceNearMaskSST
+
    subroutine DownNearMask      (cfld,                                 &  ! CD field
         cids, cide, ckds, ckde, cjds, cjde,   &
         cims, cime, ckms, ckme, cjms, cjme,   &

@@ -2891,8 +2891,9 @@ integer::oops1,oops2
                                   grid%landmask , grid%sst , grid%ht, grid%toposoil, &
                                   st_input , sm_input , sw_input , &
                                   st_levels_input , sm_levels_input , sw_levels_input , &
-                                  grid%zs , grid%dzs , grid%tslb , grid%smois , grid%sh2o , &
-                                  flag_sst , flag_tavgsfc, flag_soilhgt,&
+                                  grid%zs , grid%dzs , model_config_rec%flag_sm_adj , &
+                                  grid%tslb , grid%smois , grid%sh2o , &
+                                  flag_sst , flag_tavgsfc, flag_soilhgt, &
                                   flag_soil_layers, flag_soil_levels, &
                                   ids , ide , jds , jde , kds , kde , &
                                   ims , ime , jms , jme , kms , kme , &
@@ -3003,7 +3004,7 @@ integer::oops1,oops2
             DO i = its , MIN(ide-1,ite)
               IF ( MMINLU == 'NLCD40' .OR. MMINLU == 'MODIFIED_IGBP_MODIS_NOAH') THEN
                   IF ( grid%FRC_URB2D(i,j) .GE. 0.5 .AND.  &
-                      (grid%ivgtyp(i,j).NE.13 .OR. grid%ivgtyp(i,j).NE.24 .OR. grid%ivgtyp(i,j).NE.25 .OR. grid%ivgtyp(i,j).NE.26)) grid%ivgtyp(i,j)=13
+                      (grid%ivgtyp(i,j).NE.13 .AND. grid%ivgtyp(i,j).NE.24 .AND. grid%ivgtyp(i,j).NE.25 .AND. grid%ivgtyp(i,j).NE.26)) grid%ivgtyp(i,j)=13
               ELSE IF ( MMINLU == "USGS" ) THEN
                   IF ( grid%FRC_URB2D(i,j) .GE. 0.5 .AND.  &
                        grid%ivgtyp(i,j).NE.1 ) grid%ivgtyp(i,j)=1

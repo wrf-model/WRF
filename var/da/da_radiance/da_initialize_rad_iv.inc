@@ -72,6 +72,10 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
    if ( index(iv%instid(i)%rttovid_string, 'amsr2') > 0 ) then
       iv%instid(i)%clw(n)       = p%clw
    end if
+   if ( index(iv%instid(i)%rttovid_string, 'ahi') > 0 ) then
+      iv%instid(i)%cloudflag(n) = p%cloudflag
+   end if 
+   iv%instid(i)%cloud_flag(:,n) = qc_good  ! no cloud   
    iv%instid(i)%ps(n)           = 0.0
    iv%instid(i)%tb_xb(:,n)      = 0.0
    if ( crtm_cloud ) then

@@ -393,14 +393,14 @@ SUBROUTINE microphysics_driver(                                          &
  REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
       INTENT(IN), OPTIONAL ::                                                   &
                                                                  dlf, &    !Detraining cloud water tendendcy
-                                                                dlf2, &    !dq/dt due to export of cloud water into environment by shallow convection(kg/kg/s)
+                                                                dlf2, &    !dq/dt due to export of cloud water into env by shal conv (kg/kg/s)
                                                                t_phy, &    !Temprature at the mid points (K)
                                                                p_hyd, &    !Hydrostatic pressure(Pa)
                                                              p8w_hyd, &    !Hydrostatic Pressure at level interface (Pa)
                                                               z_at_w, &    !Height above sea level at layer interfaces (m) 
                                                              tke_pbl, &    !Turbulence kinetic energy
                                                           turbtype3d, &    !Turbulent interface types [ no unit ]
-                                                              smaw3d, &    !Normalized Galperin instability function for momentum  ( 0<= <=4.964 and 1 at neutral ) [no units]
+                                                              smaw3d, &    !Normalized Galperin instability function for momentum [no units]
                                                                  alt, &    !inverse density(m3/kg)
                                                            icwmrsh3d, &    !Shallow cumulus in-cloud water mixing ratio (kg/m2)
                                                            icwmrdp3d, &    !Deep Convection in-cloud water mixing ratio (kg/m2)

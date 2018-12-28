@@ -94,8 +94,8 @@ package tracer_option_2 ntracers==4 - szj:szj1,szj2,szj3,szj4;s1z:s1z1,s1z2,s1z3
 # It is reauired that LU_INDEX appears before any variable that is
 # interpolated with a mask, as lu_index supplies that mask.
 #
-state    real  LU_INDEX         ij      misc        1         f     irhd=(NoInterp)     "LU_INDEX"             "LAND USE CATEGORY"         ""
-state    real  LU_MASK          ij      misc        1         f     i3hd=(NoInterp)     "LU_MASK"              "0 land 1 water"         ""
+state    real  LU_INDEX         ij      misc        1         f     irhd=(NoInterp)u=(NoInterp)f=(NoInterp)     "LU_INDEX"             "LAND USE CATEGORY"         ""
+state    real  LU_MASK          ij      misc        1         f     i3hd=(NoInterp)u=(NoInterp)f=(NoInterp)     "LU_MASK"              "0 land 1 water"         ""
 ################################################################################
 ################################################################################
 

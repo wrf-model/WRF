@@ -5526,6 +5526,11 @@ ENDIF   ! CROPTYPE == 0
             STC(J) = STC(J) + FACT(J)*HEATR
             IF (J <= 0) THEN                             ! snow
                IF (MLIQ(J)*MICE(J)>0.) STC(J) = TFRZ
+               IF (MICE(J) == 0.) THEN         ! BARLAGE
+                  STC(J) = TFRZ                ! BARLAGE
+                  HM(J+1) = HM(J+1) + HEATR    ! BARLAGE
+                  XM(J+1) = HM(J+1)*DT/HFUS    ! BARLAGE
+               ENDIF 
             END IF
          ENDIF
 

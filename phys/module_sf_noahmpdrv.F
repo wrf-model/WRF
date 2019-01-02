@@ -375,6 +375,8 @@ CONTAINS
     REAL                                :: SAG          ! solar rad absorbed by ground (w/m2)
     REAL                                :: RSSUN        ! sunlit leaf stomatal resistance (s/m)
     REAL                                :: RSSHA        ! shaded leaf stomatal resistance (s/m)
+    REAL, DIMENSION(1:2)                :: ALBSND       ! snow albedo (direct)
+    REAL, DIMENSION(1:2)                :: ALBSNI       ! snow albedo (diffuse)
     REAL                                :: RB           ! leaf boundary layer resistance (s/m)
     REAL                                :: LAISUN       ! sunlit leaf area index (m2/m2)
     REAL                                :: LAISHA       ! shaded leaf area index (m2/m2)
@@ -870,6 +872,7 @@ CONTAINS
             RUNSF   , RUNSB   , APAR    , PSN     , SAV     , SAG     , & ! OUT : 
             FSNO    , NEE     , GPP     , NPP     , FVEGMP  , SALB    , & ! OUT : 
             QSNBOT  , PONDING , PONDING1, PONDING2, RSSUN   , RSSHA   , & ! OUT : 
+            ALBSND  , ALBSNI  ,                                         & ! OUT :
             BGAP    , WGAP    , CHV     , CHB     , EMISSI  ,           & ! OUT : 
             SHG     , SHC     , SHB     , EVG     , EVB     , GHV     , & ! OUT :
 	    GHB     , IRG     , IRC     , IRB     , TR      , EVC     , & ! OUT :

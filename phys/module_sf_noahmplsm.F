@@ -292,6 +292,17 @@ MODULE MODULE_SF_NOAHMPLSM
      REAL :: Z0SNO        !snow surface roughness length (m) (0.002)
      REAL :: SSI          !liquid water holding capacity for snowpack (m3/m3)
      REAL :: SWEMX        !new snow mass to fully cover old snow (mm)
+     REAL :: TAU0         !tau0 from Yang97 eqn. 10a
+     REAL :: GRAIN_GROWTH !growth from vapor diffusion Yang97 eqn. 10b
+     REAL :: EXTRA_GROWTH !extra growth near freezing Yang97 eqn. 10c
+     REAL :: DIRT_SOOT    !dirt and soot term Yang97 eqn. 10d
+     REAL :: BATS_COSZ    !zenith angle snow albedo adjustment; b in Yang97 eqn. 15
+     REAL :: BATS_VIS_NEW !new snow visible albedo
+     REAL :: BATS_NIR_NEW !new snow NIR albedo
+     REAL :: BATS_VIS_AGE !age factor for diffuse visible snow albedo Yang97 eqn. 17
+     REAL :: BATS_NIR_AGE !age factor for diffuse NIR snow albedo Yang97 eqn. 18
+     REAL :: BATS_VIS_DIR !cosz factor for direct visible snow albedo Yang97 eqn. 15
+     REAL :: BATS_NIR_DIR !cosz factor for direct NIR snow albedo Yang97 eqn. 16
      REAL :: RSURF_SNOW   !surface resistance for snow(s/m)
 
 !------------------------------------------------------------------------------------------!
@@ -396,6 +407,7 @@ contains
                    RUNSRF  , RUNSUB  , APAR    , PSN     , SAV     , SAG     , & ! OUT :
                    FSNO    , NEE     , GPP     , NPP     , FVEG    , ALBEDO  , & ! OUT :
                    QSNBOT  , PONDING , PONDING1, PONDING2, RSSUN   , RSSHA   , & ! OUT :
+		   ALBSND  , ALBSNI  ,                                         & ! OUT :
                    BGAP    , WGAP    , CHV     , CHB     , EMISSI  ,           & ! OUT :
 		   SHG     , SHC     , SHB     , EVG     , EVB     , GHV     , & ! OUT :
 		   GHB     , IRG     , IRC     , IRB     , TR      , EVC     , & ! OUT :
@@ -537,6 +549,8 @@ contains
   REAL, INTENT(OUT) :: RSSHA        !shaded leaf stomatal resistance (s/m)
   REAL, INTENT(OUT) :: BGAP
   REAL, INTENT(OUT) :: WGAP
+  REAL, DIMENSION(1:2)              , INTENT(OUT)   :: ALBSND   !snow albedo (direct)
+  REAL, DIMENSION(1:2)              , INTENT(OUT)   :: ALBSNI   !snow albedo (diffuse)
   REAL, INTENT(OUT) :: TGV
   REAL, INTENT(OUT) :: TGB
   REAL              :: Q1
@@ -763,7 +777,7 @@ contains
 !jref:start
                  QC     ,QSFC   ,PSFC   , & !in 
                  T2MV   ,T2MB  ,FSRV   , &
-                 FSRG   ,RSSUN   ,RSSHA ,BGAP   ,WGAP, TGV,TGB,&
+                 FSRG   ,RSSUN   ,RSSHA ,ALBSND  ,ALBSNI, BGAP   ,WGAP,TGV,TGB,&
                  Q1     ,Q2V    ,Q2B    ,Q2E    ,CHV   ,CHB     , & !out
                  EMISSI ,PAH    ,                                 &
 		 SHG,SHC,SHB,EVG,EVB,GHV,GHB,IRG,IRC,IRB,TR,EVC,CHLEAF,CHUC,CHV2,CHB2,&
@@ -1515,7 +1529,7 @@ ENDIF   ! CROPTYPE == 0
 !jref:start
                      QC     ,QSFC   ,PSFC   , & !in 
                      T2MV   ,T2MB   ,FSRV   , &
-                     FSRG   ,RSSUN  ,RSSHA  ,BGAP   ,WGAP,TGV,TGB,&
+                     FSRG   ,RSSUN  ,RSSHA  ,ALBSND  ,ALBSNI,BGAP   ,WGAP,TGV,TGB,&
                      Q1     ,Q2V    ,Q2B    ,Q2E    ,CHV  ,CHB, EMISSI,PAH  ,&
 		     SHG,SHC,SHB,EVG,EVB,GHV,GHB,IRG,IRC,IRB,TR,EVC,CHLEAF,CHUC,CHV2,CHB2, &
                      JULIAN, SWDOWN, PRCP, FB, GECROS1D )        
@@ -1655,6 +1669,8 @@ ENDIF   ! CROPTYPE == 0
   REAL                              , INTENT(OUT)   :: T2MB   !2-m air temperature over bare ground part [k]
   REAL                              , INTENT(OUT)   :: BGAP
   REAL                              , INTENT(OUT)   :: WGAP
+  REAL, DIMENSION(1:2)              , INTENT(OUT)   :: ALBSND   !snow albedo (direct)
+  REAL, DIMENSION(1:2)              , INTENT(OUT)   :: ALBSNI   !snow albedo (diffuse)
 !jref:end
 
 ! input & output
@@ -1867,7 +1883,7 @@ ENDIF   ! CROPTYPE == 0
                    ALBOLD  ,TAUSS   ,                            & !inout
                    FSUN    ,LAISUN  ,LAISHA  ,PARSUN  ,PARSHA  , & !out
                    SAV     ,SAG     ,FSR     ,FSA     ,FSRV    , & 
-                   FSRG    ,BGAP    ,WGAP    )            !out
+                   FSRG    ,ALBSND  ,ALBSNI  ,BGAP    ,WGAP     )  !out
 
 ! vegetation and ground emissivity
 
@@ -2410,7 +2426,7 @@ ENDIF   ! CROPTYPE == 0
                         ALBOLD  ,TAUSS   ,                            & !inout
                         FSUN    ,LAISUN  ,LAISHA  ,PARSUN  ,PARSHA  , & !out
                         SAV     ,SAG     ,FSR     ,FSA     ,FSRV    , &
-                        FSRG    ,BGAP    ,WGAP)            !out
+                        FSRG    ,ALBSND  ,ALBSNI  ,BGAP    ,WGAP    )   !out
 ! --------------------------------------------------------------------------------------------------
   IMPLICIT NONE
 ! --------------------------------------------------------------------------------------------------
@@ -2460,6 +2476,8 @@ ENDIF   ! CROPTYPE == 0
   REAL, INTENT(OUT)                    :: FSRG    !ground reflected solar radiation (w/m2)
   REAL, INTENT(OUT)                    :: BGAP
   REAL, INTENT(OUT)                    :: WGAP
+  REAL, DIMENSION(1:2), INTENT(OUT)    :: ALBSND   !snow albedo (direct)
+  REAL, DIMENSION(1:2), INTENT(OUT)    :: ALBSNI   !snow albedo (diffuse)
 !jref:end  
 
 ! local
@@ -2499,7 +2517,7 @@ ENDIF   ! CROPTYPE == 0
                 ALBGRD ,ALBGRI ,ALBD   ,ALBI   ,FABD   , & !out
                 FABI   ,FTDD   ,FTID   ,FTII   ,FSUN   , & !)   !out
                 FREVI  ,FREVD   ,FREGD ,FREGI  ,BGAP   , & !inout
-                WGAP)
+                WGAP   ,ALBSND ,ALBSNI )
 
 ! surface radiation
 
@@ -2535,7 +2553,7 @@ ENDIF   ! CROPTYPE == 0
                      ALBGRD ,ALBGRI ,ALBD   ,ALBI   ,FABD   , & !out
                      FABI   ,FTDD   ,FTID   ,FTII   ,FSUN   , & !out
                      FREVI  ,FREVD  ,FREGD  ,FREGI  ,BGAP   , & !out
-                     WGAP)
+                     WGAP   ,ALBSND ,ALBSNI )
 
 ! --------------------------------------------------------------------------------------------------
 ! surface albedos. also fluxes (per unit incoming direct and diffuse
@@ -2608,8 +2626,8 @@ ENDIF   ! CROPTYPE == 0
   REAL, DIMENSION(1:2) :: RHO      !leaf/stem reflectance weighted by fraction LAI and SAI
   REAL, DIMENSION(1:2) :: TAU      !leaf/stem transmittance weighted by fraction LAI and SAI
   REAL, DIMENSION(1:2) :: FTDI     !down direct flux below veg per unit dif flux = 0
-  REAL, DIMENSION(1:2) :: ALBSND   !snow albedo (direct)
-  REAL, DIMENSION(1:2) :: ALBSNI   !snow albedo (diffuse)
+  REAL, DIMENSION(1:2), INTENT(OUT) :: ALBSND   !snow albedo (direct)
+  REAL, DIMENSION(1:2), INTENT(OUT) :: ALBSNI   !snow albedo (diffuse)
 
   REAL                 :: VAI      !ELAI+ESAI
   REAL                 :: GDIR     !average projected leaf/stem area in solar direction
@@ -2629,6 +2647,8 @@ ENDIF   ! CROPTYPE == 0
     ALBI(IB) = 0.
     ALBGRD(IB) = 0.
     ALBGRI(IB) = 0.
+    ALBSND(IB) = 0.
+    ALBSNI(IB) = 0.
     FABD(IB) = 0.
     FABI(IB) = 0.
     FTDD(IB) = 0.
@@ -2866,14 +2886,12 @@ ENDIF   ! CROPTYPE == 0
 
    IF(SNEQV.LE.0.0) THEN
           TAUSS = 0.
-   ELSE IF (SNEQV.GT.800.) THEN
-          TAUSS = 0.
    ELSE
-          DELA0 = 1.E-6*DT
-          ARG   = 5.E3*(1./TFRZ-1./TG)
+          DELA0 = DT/parameters%TAU0
+          ARG   = parameters%GRAIN_GROWTH*(1./TFRZ-1./TG)
           AGE1  = EXP(ARG)
-          AGE2  = EXP(AMIN1(0.,10.*ARG))
-          AGE3  = 0.3
+          AGE2  = EXP(AMIN1(0.,parameters%EXTRA_GROWTH*ARG))
+          AGE3  = parameters%DIRT_SOOT
           TAGE  = AGE1+AGE2+AGE3
           DELA  = DELA0*TAGE
           DELS  = AMAX1(0.0,SNEQV-SNEQVO) / parameters%SWEMX
@@ -2914,8 +2932,8 @@ ENDIF   ! CROPTYPE == 0
   REAL :: SL2                  !2.*SL
   REAL :: SL1                  !1/SL
   REAL :: SL                   !adjustable parameter
-  REAL, PARAMETER :: C1 = 0.2  !default in BATS 
-  REAL, PARAMETER :: C2 = 0.5  !default in BATS
+!  REAL, PARAMETER :: C1 = 0.2  !default in BATS 
+!  REAL, PARAMETER :: C2 = 0.5  !default in BATS
 !  REAL, PARAMETER :: C1 = 0.2 * 2. ! double the default to match Sleepers River's
 !  REAL, PARAMETER :: C2 = 0.5 * 2. ! snow surface albedo (double aging effects)
 ! ---------------------------------------------------------------------------------------------
@@ -2926,17 +2944,17 @@ ENDIF   ! CROPTYPE == 0
 
 ! when cosz > 0
 
-        SL=2.0
+        SL=parameters%BATS_COSZ
         SL1=1./SL
         SL2=2.*SL
         CF1=((1.+SL1)/(1.+SL2*COSZ)-SL1)
         FZEN=AMAX1(CF1,0.)
 
-        ALBSNI(1)=0.95*(1.-C1*FAGE)         
-        ALBSNI(2)=0.65*(1.-C2*FAGE)        
+        ALBSNI(1)=parameters%BATS_VIS_NEW*(1.-parameters%BATS_VIS_AGE*FAGE)         
+        ALBSNI(2)=parameters%BATS_NIR_NEW*(1.-parameters%BATS_NIR_AGE*FAGE)        
 
-        ALBSND(1)=ALBSNI(1)+0.4*FZEN*(1.-ALBSNI(1))    !  vis direct
-        ALBSND(2)=ALBSNI(2)+0.4*FZEN*(1.-ALBSNI(2))    !  nir direct
+        ALBSND(1)=ALBSNI(1)+parameters%BATS_VIS_DIR*FZEN*(1.-ALBSNI(1))    !  vis direct
+        ALBSND(2)=ALBSNI(2)+parameters%BATS_VIS_DIR*FZEN*(1.-ALBSNI(2))    !  nir direct
 
   END SUBROUTINE SNOWALB_BATS
 
@@ -9236,6 +9254,17 @@ MODULE NOAHMP_TABLES
     REAL :: Z0SNO_TABLE    !snow surface roughness length (m) (0.002)
     REAL :: SSI_TABLE      !liquid water holding capacity for snowpack (m3/m3) (0.03)
     REAL :: SWEMX_TABLE    !new snow mass to fully cover old snow (mm)
+    REAL :: TAU0_TABLE          !tau0 from Yang97 eqn. 10a
+    REAL :: GRAIN_GROWTH_TABLE  !growth from vapor diffusion Yang97 eqn. 10b
+    REAL :: EXTRA_GROWTH_TABLE  !extra growth near freezing Yang97 eqn. 10c
+    REAL :: DIRT_SOOT_TABLE     !dirt and soot term Yang97 eqn. 10d
+    REAL :: BATS_COSZ_TABLE     !zenith angle snow albedo adjustment; b in Yang97 eqn. 15
+    REAL :: BATS_VIS_NEW_TABLE  !new snow visible albedo
+    REAL :: BATS_NIR_NEW_TABLE  !new snow NIR albedo
+    REAL :: BATS_VIS_AGE_TABLE  !age factor for diffuse visible snow albedo Yang97 eqn. 17
+    REAL :: BATS_NIR_AGE_TABLE  !age factor for diffuse NIR snow albedo Yang97 eqn. 18
+    REAL :: BATS_VIS_DIR_TABLE  !cosz factor for direct visible snow albedo Yang97 eqn. 15
+    REAL :: BATS_NIR_DIR_TABLE  !cosz factor for direct NIR snow albedo Yang97 eqn. 16
     REAL :: RSURF_SNOW_TABLE    !surface resistance for snow(s/m)
 
 ! MPTABLE.TBL crop parameters
@@ -9712,9 +9741,15 @@ CONTAINS
     implicit none
     integer :: ierr
 
-    REAL :: CO2,O2,TIMEAN,FSATMX,Z0SNO,SSI,SWEMX,RSURF_SNOW
+    REAL :: CO2,O2,TIMEAN,FSATMX,Z0SNO,SSI, &
+            SWEMX,TAU0,GRAIN_GROWTH,EXTRA_GROWTH,DIRT_SOOT,&
+	    BATS_COSZ,BATS_VIS_NEW,BATS_NIR_NEW,BATS_VIS_AGE,BATS_NIR_AGE,BATS_VIS_DIR,BATS_NIR_DIR,&
+	    RSURF_SNOW
 
-    NAMELIST / noahmp_global_parameters / CO2,O2,TIMEAN,FSATMX,Z0SNO,SSI,SWEMX,RSURF_SNOW
+    NAMELIST / noahmp_global_parameters / CO2,O2,TIMEAN,FSATMX,Z0SNO,SSI, &
+            SWEMX,TAU0,GRAIN_GROWTH,EXTRA_GROWTH,DIRT_SOOT,&
+	    BATS_COSZ,BATS_VIS_NEW,BATS_NIR_NEW,BATS_VIS_AGE,BATS_NIR_AGE,BATS_VIS_DIR,BATS_NIR_DIR,&
+	    RSURF_SNOW
 
 
     ! Initialize our variables to bad values, so that if the namelist read fails, we come to a screeching halt as soon as we try to use anything.
@@ -9725,6 +9760,17 @@ CONTAINS
      Z0SNO_TABLE     = -1.E36
        SSI_TABLE     = -1.E36
      SWEMX_TABLE     = -1.E36
+        TAU0_TABLE   = -1.E36
+GRAIN_GROWTH_TABLE   = -1.E36
+EXTRA_GROWTH_TABLE   = -1.E36
+   DIRT_SOOT_TABLE   = -1.E36
+   BATS_COSZ_TABLE   = -1.E36
+BATS_VIS_NEW_TABLE   = -1.E36
+BATS_NIR_NEW_TABLE   = -1.E36
+BATS_VIS_AGE_TABLE   = -1.E36
+BATS_NIR_AGE_TABLE   = -1.E36
+BATS_VIS_DIR_TABLE   = -1.E36
+BATS_NIR_DIR_TABLE   = -1.E36
 RSURF_SNOW_TABLE     = -1.E36
 
     open(15, file="MPTABLE.TBL", status='old', form='formatted', action='read', iostat=ierr)
@@ -9746,6 +9792,17 @@ RSURF_SNOW_TABLE     = -1.E36
      Z0SNO_TABLE     = Z0SNO
        SSI_TABLE     = SSI
      SWEMX_TABLE     = SWEMX
+        TAU0_TABLE   = TAU0
+GRAIN_GROWTH_TABLE   = GRAIN_GROWTH
+EXTRA_GROWTH_TABLE   = EXTRA_GROWTH
+   DIRT_SOOT_TABLE   = DIRT_SOOT
+   BATS_COSZ_TABLE   = BATS_COSZ
+BATS_VIS_NEW_TABLE   = BATS_VIS_NEW
+BATS_NIR_NEW_TABLE   = BATS_NIR_NEW
+BATS_VIS_AGE_TABLE   = BATS_VIS_AGE
+BATS_NIR_AGE_TABLE   = BATS_NIR_AGE
+BATS_VIS_DIR_TABLE   = BATS_VIS_DIR
+BATS_NIR_DIR_TABLE   = BATS_NIR_DIR
 RSURF_SNOW_TABLE     = RSURF_SNOW
 
   end subroutine read_mp_global_parameters

@@ -3002,7 +3002,7 @@ integer::oops1,oops2
          change_soilw = 0
          DO j = jts, MIN(jde-1,jte)
             DO i = its, MIN(ide-1,ite)
-!              IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
                   IF ( grid%landmask(i,j) .GT. 0.5 .AND. grid%isltyp(i,j) .EQ. grid%isoilwater ) THEN
                      grid%isltyp(i,j) = 8
                      change_soilw =  change_soilw + 1
@@ -3012,7 +3012,7 @@ integer::oops1,oops2
                      change_soil =  change_soil + 1
                      iforce =  iforce + 1
                   END IF
-!              END IF
+               END IF
             END DO
          END DO
          IF ( change_soilw .GT. 0 .OR. change_soil .GT. 0 ) THEN
@@ -3023,11 +3023,9 @@ integer::oops1,oops2
          END IF
 
       END IF
-      END IF
 
       !  Split NUDAPT  Urban Parameters
 
-      IF ( any_valid_points ) THEN
       IF ( ( config_flags%sf_urban_physics == 1 ) .OR. ( config_flags%sf_urban_physics == 2 ) .OR. ( config_flags%sf_urban_physics == 3 ) ) THEN
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)

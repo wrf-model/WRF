@@ -1213,6 +1213,7 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
    parameters%BATS_VIS_DIR = BATS_VIS_DIR_TABLE
    parameters%BATS_NIR_DIR = BATS_NIR_DIR_TABLE
    parameters%RSURF_SNOW =  RSURF_SNOW_TABLE
+   parameters%RSURF_EXP  =   RSURF_EXP_TABLE
 
 ! ----------------------------------------------------------------------
 !  Transfer soil parameters

@@ -1201,6 +1201,17 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
    parameters%Z0SNO      =       Z0SNO_TABLE
    parameters%SSI        =         SSI_TABLE
    parameters%SWEMX      =       SWEMX_TABLE
+   parameters%TAU0         =      TAU0_TABLE
+   parameters%GRAIN_GROWTH = GRAIN_GROWTH_TABLE
+   parameters%EXTRA_GROWTH = EXTRA_GROWTH_TABLE
+   parameters%DIRT_SOOT    =    DIRT_SOOT_TABLE
+   parameters%BATS_COSZ    =    BATS_COSZ_TABLE
+   parameters%BATS_VIS_NEW = BATS_VIS_NEW_TABLE
+   parameters%BATS_NIR_NEW = BATS_NIR_NEW_TABLE
+   parameters%BATS_VIS_AGE = BATS_VIS_AGE_TABLE
+   parameters%BATS_NIR_AGE = BATS_NIR_AGE_TABLE
+   parameters%BATS_VIS_DIR = BATS_VIS_DIR_TABLE
+   parameters%BATS_NIR_DIR = BATS_NIR_DIR_TABLE
    parameters%RSURF_SNOW =  RSURF_SNOW_TABLE
 
 ! ----------------------------------------------------------------------

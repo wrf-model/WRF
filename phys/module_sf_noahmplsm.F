@@ -6154,9 +6154,9 @@ ENDIF   ! CROPTYPE == 0
 
 !to obtain equilibrium state of snow in glacier region
        
-   IF(SNEQV > 2000.) THEN   ! 2000 mm -> maximum water depth
+   IF(SNEQV > 5000.) THEN   ! 5000 mm -> maximum water depth
       BDSNOW      = SNICE(0) / DZSNSO(0)
-      SNOFLOW     = (SNEQV - 2000.)
+      SNOFLOW     = (SNEQV - 5000.)
       SNICE(0)    = SNICE(0)  - SNOFLOW 
       DZSNSO(0)   = DZSNSO(0) - SNOFLOW/BDSNOW
       SNOFLOW     = SNOFLOW / DT

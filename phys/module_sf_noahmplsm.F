@@ -3585,9 +3585,9 @@ ENDIF   ! CROPTYPE == 0
 
 ! convert grid-cell LAI to the fractional vegetated area (FVEG)
 
-        VAIE    = MIN(6.,VAI    / FVEG)
-        LAISUNE = MIN(6.,LAISUN / FVEG)
-        LAISHAE = MIN(6.,LAISHA / FVEG)
+        VAIE    = MIN(6.,VAI   )
+        LAISUNE = MIN(6.,LAISUN)
+        LAISHAE = MIN(6.,LAISHA)
 
 ! saturation vapor pressure at ground temperature
 

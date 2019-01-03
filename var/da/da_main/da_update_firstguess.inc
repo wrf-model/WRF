@@ -596,6 +596,8 @@ subroutine da_update_firstguess(grid, out_filename)
            start_index,end_index1, WrfType, ierr    )
 
       if (grid%use_theta_m == 1) then ! convert dry theta perturbation to moist one
+         write(unit=message(1),fmt='(A, I2)') 'convert T to THM when use_theta_m = ', grid%use_theta_m
+         call da_message(message(1:1))
          do k= 1,nsig_regional
             do j= 1,nlat_regional
                do i= 1,nlon_regional
@@ -607,9 +609,9 @@ subroutine da_update_firstguess(grid, out_filename)
          write(unit=message(1),fmt='(A, I2)') 'convert T to THM when use_theta_m = ', grid%use_theta_m
       else  ! THM = T when use_theta_m = 0
          write(unit=message(1),fmt='(A, I2)') 'THM = T when use_theta_m = ', grid%use_theta_m
+         call da_message(message(1:1))
       end if
 
-      call da_message(message(1:1)) 
       call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),         &
                               field3,WRF_REAL,0,0,0,ordering,       &
                               staggering, dimnames ,                &

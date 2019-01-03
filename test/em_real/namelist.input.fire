@@ -118,12 +118,12 @@
 !
 ! ignition
  fire_num_ignitions = 3,        ! integer, only the first fire_num_ignition used, up to 5 allowed
- fire_ignition_start_long1=-107.293664, ! start points of ignition lines, longitude 
+ fire_ignition_start_lon1=-107.293664, ! start points of ignition lines, longitude 
  fire_ignition_start_lat1 =  39.698696, ! start points of ignition lines,latitude 
- fire_ignition_end_long1 = -107.293664, ! end points of ignition lines
+ fire_ignition_end_lon1 = -107.293664, ! end points of ignition lines
  fire_ignition_end_lat1 =    39.710990, ! end points of ignition lines
  fire_ignition_radius1 =    18, ! all within this radius (m) will ignite, > fire mesh step
- fire_ignition_time1  =      2, ! sec for ignition from the start
+ fire_ignition_start_time1  =      2, ! sec for ignition from the start
  fire_ignition_start_long2=-107.287954, ! start points of ignition lines, 
  fire_ignition_start_lat2 =  39.698696, ! start points of ignition lines, 
  fire_ignition_end_long2 = -107.287954,! end points of ignition lines, 

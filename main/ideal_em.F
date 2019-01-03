@@ -6,6 +6,7 @@ PROGRAM ideal
    USE module_domain , ONLY : domain
    USE module_initialize_ideal
    USE module_configure , ONLY : grid_config_rec_type
+   USE module_check_a_mundo
 
    USE module_timing
    USE module_wrf_error
@@ -93,6 +94,8 @@ PROGRAM ideal
    CALL set_wrf_debug_level ( debug_level )
 
    CALL  wrf_message ( program_name )
+   CALL  set_physics_rconfigs
+   CALL  check_nml_consistency
 
 
    ! allocated and configure the mother domain

@@ -14,6 +14,7 @@ subroutine da_random_seed
    integer, allocatable :: seed_array(:)
 
    integer              :: myproc,ierr,i
+   character(len=32)    :: fmtstring
 
    if (trace_use) call da_trace_entry("da_random_seed")
 
@@ -28,6 +29,8 @@ subroutine da_random_seed
 #endif
 
    call random_seed(size=seed_size)              ! Get size of seed array.
+   write(unit=message(1),fmt='(a,i6)') 'Size of the random_seed array is ', seed_size
+   call da_message(message(1:1))
    allocate(seed_array(1:seed_size))
    seed_array(1:seed_size) = 1
 
@@ -77,7 +80,8 @@ subroutine da_random_seed
    else                                 ! Random seed set "randomly"
       call random_seed
       call random_seed(get=seed_array(1:seed_size))
-      write(unit=message(1),fmt='(a,10i16)') 'Random number seed array = ', seed_array
+      write(fmtstring, '(a,i3,a)') '(a27,', seed_size, '(i16))'
+      write(unit=message(1),fmt=trim(fmtstring)) 'Random number seed array = ', (seed_array(i), i=1, seed_size)
       call da_message(message(1:1))
    end if
    

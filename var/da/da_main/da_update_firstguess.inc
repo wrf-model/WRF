@@ -16,7 +16,8 @@ subroutine da_update_firstguess(grid, out_filename)
 !    grid%w_2
 !    grid%mu_2
 !    grid%ph_2
-!    grid%t_2
+!    grid%t_2 (dry potential temperature pertubation)
+!    THM      (moist potential temperature pertubation)
 !    grid%moist
 !    grid%p
 !    grid%psfc
@@ -26,10 +27,11 @@ subroutine da_update_firstguess(grid, out_filename)
 
   use module_domain, only : get_ijk_from_grid, program_name
   use da_control,    only : use_radarobs, use_rad, crtm_cloud, &
-                            use_radar_rhv, use_radar_rqv    
+                            use_radar_rhv, use_radar_rqv
   use module_state_description, only : p_qv, p_qc, p_qr, p_qi, &
                                        p_qs, p_qg, &
                                        f_qc, f_qr, f_qi, f_qs, f_qg
+  use module_model_constants, only: R_d, R_v, T0
 
   implicit none
 
@@ -70,6 +72,7 @@ subroutine da_update_firstguess(grid, out_filename)
   integer :: julyr, julday
   real    :: gmt
   real*4  :: gmt4
+  real    :: qvf
 
   wrf_real=104
   end_index1=0
@@ -585,17 +588,35 @@ subroutine da_update_firstguess(grid, out_filename)
                              start_index,end_index1,               & !pat
                              ierr                                 )
 
-! Update moist potential temperature: for now, it is identical to T with use_theta_m=0.
-     rmse_var='THM'
-     call ext_ncd_get_var_info (dh1,trim(rmse_var),ndim1,ordering,staggering, &
-          start_index,end_index1, WrfType, ierr    )
-     call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),         &
-                             field3,WRF_REAL,0,0,0,ordering,       &
-                             staggering, dimnames ,                &
-                             start_index,end_index1,               & !dom
-                             start_index,end_index1,               & !mem
-                             start_index,end_index1,               & !pat
-                             ierr                                 )
+!
+! Update moist potential temperature perturbation THM
+!
+      rmse_var='THM'
+      call ext_ncd_get_var_info (dh1,trim(rmse_var),ndim1,ordering,staggering, &
+           start_index,end_index1, WrfType, ierr    )
+
+      if (grid%use_theta_m == 1) then ! convert dry theta perturbation to moist one
+         do k= 1,nsig_regional
+            do j= 1,nlat_regional
+               do i= 1,nlon_regional
+                 qvf = 1.+(R_v/R_d)*grid%moist(i,j,k,p_qv)
+                 field3(i,j,k)=(field3(i,j,k)+T0)*qvf - T0
+               end do
+            end do
+         end do
+         write(unit=message(1),fmt='(A, I2)') 'convert T to THM when use_theta_m = ', grid%use_theta_m
+      else  ! THM = T when use_theta_m = 0
+         write(unit=message(1),fmt='(A, I2)') 'THM = T when use_theta_m = ', grid%use_theta_m
+      end if
+
+      call da_message(message(1:1)) 
+      call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),         &
+                              field3,WRF_REAL,0,0,0,ordering,       &
+                              staggering, dimnames ,                &
+                              start_index,end_index1,               & !dom
+                              start_index,end_index1,               & !mem
+                              start_index,end_index1,               & !pat
+                              ierr                                 )
 
   end if  
   

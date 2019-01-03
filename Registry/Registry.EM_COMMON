@@ -2178,6 +2178,7 @@ rconfig   integer mosaic_cat              namelist,physics	1             3      
 rconfig   integer mosaic_cat_soil         derived         	1            12       rh     "mosaic_cat_soil"          "should be the number of soil layers times the mosaic_cat"      ""  
 rconfig   integer mosaic_lu               namelist,physics      1             0       irh    "mosaic_lu"             ""      ""
 rconfig   integer mosaic_soil             namelist,physics      1             0       irh    "mosaic_soil"           ""      ""
+rconfig   integer flag_sm_adj             namelist,physics      1             0       irh    "flag_sm_adj" "1-adjustment, 0-no soil moisture adjustment in RUC soil moisture initialization from Noah LSM"      ""
 rconfig   integer maxiens                 namelist,physics	1             1       irh    "maxiens"                    ""      ""
 rconfig   integer maxens                  namelist,physics	1             3       irh    "maxens"                    ""      ""
 rconfig   integer maxens2                 namelist,physics	1             3       irh    "maxens2"                    ""      ""

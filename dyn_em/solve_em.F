@@ -299,6 +299,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
    if ( Is_alarm_tstep(grid%domain_clock, grid%alarms(HISTORY_ALARM)) ) then
       diag_flag = .true.
    endif
+   IF (config_flags%nwp_diagnostics == 1) diag_flag = .true.
 
    grid%itimestep = grid%itimestep + 1
    grid%dtbc = grid%dtbc + grid%dt

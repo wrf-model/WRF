@@ -16,8 +16,8 @@ subroutine da_update_firstguess(grid, out_filename)
 !    grid%w_2
 !    grid%mu_2
 !    grid%ph_2
-!    grid%t_2 (dry potential temperature pertubation)
-!    THM      (moist potential temperature pertubation)
+!    grid%t_2 (dry potential temperature perturbation)
+!    THM      (moist potential temperature perturbation)
 !    grid%moist
 !    grid%p
 !    grid%psfc

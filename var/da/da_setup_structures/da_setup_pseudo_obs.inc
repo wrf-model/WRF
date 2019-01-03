@@ -31,11 +31,17 @@ subroutine da_setup_pseudo_obs(grid, iv, ob)
       ob%nlocal(pseudo)               = 0
       iv%info(pseudo)%nlocal          = 0
       iv%info(pseudo)%ntotal          = 0
-      iv%info(pseudo)%plocal(iv%time) = 0
-      iv%info(pseudo)%ptotal(iv%time) = 0
+      iv%info(pseudo)%plocal(:)       = 0
+      iv%info(pseudo)%ptotal(:)       = 0
    end if
 
-   iv%time = 1
+   if ( var4d ) then
+      ! make sure pseudo_time is within valid range
+      pseudo_time = min(num_fgat_time,max(1,pseudo_time))
+      iv%time = pseudo_time
+   else
+      iv%time = 1
+   end if
 
    ! Find out if pseudo ob is local
    outside = .false.
@@ -50,18 +56,18 @@ subroutine da_setup_pseudo_obs(grid, iv, ob)
 
    ! setup gpsref structure
    if ( pseudo_ref ) then
-      iv%info(gpsref)%ptotal(1) = num_pseudo
+      iv%info(gpsref)%ptotal(0:iv%time-1)           = 0
+      iv%info(gpsref)%ptotal(iv%time:max_fgat_time) = num_pseudo
       iv%info(gpsref)%ntotal    = num_pseudo
       if (outside) then
          ob%nlocal(gpsref)               = 0
          iv%info(gpsref)%nlocal          = 0
-         iv%info(gpsref)%plocal(iv%time) = 0
+         iv%info(gpsref)%plocal(:)       = 0
       else
          ob%nlocal(gpsref)         = num_pseudo
          iv%info(gpsref)%nlocal    = num_pseudo
-         iv%info(gpsref)%plocal(1) = num_pseudo
-         iv%info(gpsref)%n1        = 1
-         iv%info(gpsref)%n2        = 1
+         iv%info(gpsref)%plocal(0:iv%time-1)           = 0
+         iv%info(gpsref)%plocal(iv%time:max_fgat_time) = num_pseudo
          iv%info(gpsref)%max_lev   = 1
          allocate(iv%gpsref(1:iv%info(gpsref)%nlocal))
          call da_allocate_obs_info(iv, gpsref)
@@ -98,18 +104,18 @@ subroutine da_setup_pseudo_obs(grid, iv, ob)
 
    ! setup gpspw structure
    if ( pseudo_tpw .or. pseudo_ztd ) then
-      iv%info(gpspw)%ptotal(1) = num_pseudo
+      iv%info(gpspw)%ptotal(0:iv%time-1)           = 0
+      iv%info(gpspw)%ptotal(iv%time:max_fgat_time) = num_pseudo
       iv%info(gpspw)%ntotal    = num_pseudo
       if (outside) then
          ob%nlocal(gpspw)               = 0
          iv%info(gpspw)%nlocal          = 0
-         iv%info(gpspw)%plocal(iv%time) = 0
+         iv%info(gpspw)%plocal(:)       = 0
       else
          ob%nlocal(gpspw)         = num_pseudo
          iv%info(gpspw)%nlocal    = num_pseudo
-         iv%info(gpspw)%plocal(1) = num_pseudo
-         iv%info(gpspw)%n1        = 1
-         iv%info(gpspw)%n2        = 1
+         iv%info(gpspw)%plocal(0:iv%time-1)           = 0
+         iv%info(gpspw)%plocal(iv%time:max_fgat_time) = num_pseudo
          allocate(iv%gpspw(1:iv%info(gpspw)%nlocal))
          call da_allocate_obs_info(iv, gpspw)
          iv%info(gpspw)%proc_domain(:,:) = .true.
@@ -151,15 +157,17 @@ subroutine da_setup_pseudo_obs(grid, iv, ob)
 
    if ( pseudo_uvtpq ) then
       iv%info(pseudo)%ntotal          = num_pseudo
-      iv%info(pseudo)%ptotal(iv%time) = num_pseudo
+      iv%info(pseudo)%ptotal(0:iv%time-1)           = 0
+      iv%info(pseudo)%ptotal(iv%time:max_fgat_time) = num_pseudo
       if (outside) then
          ob%nlocal(pseudo)               = 0
          iv%info(pseudo)%nlocal          = 0
-         iv%info(pseudo)%plocal(iv%time) = 0
+         iv%info(pseudo)%plocal(:)       = 0
       else
          ob%nlocal(pseudo)               = num_pseudo
          iv%info(pseudo)%nlocal          = num_pseudo
-         iv%info(pseudo)%plocal(iv%time) = num_pseudo
+         iv%info(pseudo)%plocal(0:iv%time-1)           = 0
+         iv%info(pseudo)%plocal(iv%time:max_fgat_time) = num_pseudo
          iv%info(pseudo)%max_lev         = 1
          allocate (iv%pseudo(1:iv%info(pseudo)%nlocal))
          call da_allocate_obs_info(iv, pseudo)

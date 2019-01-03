@@ -977,6 +977,7 @@ CONTAINS
 #endif
 
           IF (rdlai2d) THEN
+             IF (SHDFAC > 0.0 .AND. LAI(I,J) <= 0.0) LAI(I,J) = 0.01
              xlai = lai(i,j)
           endif
 
@@ -3305,6 +3306,7 @@ SUBROUTINE lsm_mosaic(DZ8W,QV3D,P8W3D,T3D,TSK,                      &
 #endif
       
                 IF (rdlai2d) THEN
+                   IF (SHDFAC > 0.0 .AND. LAI(I,J) <= 0.0) LAI(I,J) = 0.01
                    xlai = lai(i,j)
                 endif
       

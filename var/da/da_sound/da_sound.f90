@@ -10,7 +10,7 @@ module da_sound
       kms,kme,kts,kte,sfc_assi_options_1,sfc_assi_options_2, num_procs, comm, &
       trace_use_dull, sound, sonde_sfc, position_lev_dependant, max_ext_its,qcstat_conv_unit,ob_vars, &
       convert_fd2uv,convert_uv2fd,max_error_spd,max_error_dir,max_omb_spd,max_omb_dir,pi,qc_rej_both, &
-      wind_sd_sound, wind_stats_sd
+      wind_sd_sound, wind_stats_sd, write_rej_obs_conv
    use da_grid_definitions, only : da_ffdduv,da_ffdduv_model, da_ffdduv_diagnose
 
 #ifdef DM_PARALLEL

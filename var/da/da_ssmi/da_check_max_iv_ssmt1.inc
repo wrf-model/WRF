@@ -35,8 +35,10 @@ subroutine da_check_max_iv_ssmt1(iv, it, num_qcstat_conv)
          num_qcstat_conv(1,ssmt1,3,ipr) = num_qcstat_conv(1,ssmt1,3,ipr) + 1
         if(failed) then
         num_qcstat_conv(2,ssmt1,3,ipr) = num_qcstat_conv(2,ssmt1,3,ipr) + 1
+        if ( write_rej_obs_conv ) then
         write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
         'ssmt1',ob_vars(3),iv%info(ssmt1)%lat(k,n),iv%info(ssmt1)%lon(k,n),0.01*iv%ssmt1(n)%p(k)
+        endif
         endif
         endif
         endif

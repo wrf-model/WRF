@@ -24,15 +24,15 @@ subroutine da_rttov_direct(inst, nchanl, nprofiles, nlevels, &
   
    ! RTTOV input parameters
    type (rttov_chanprof), allocatable :: chanprof(:)
-   type (profile_type),   allocatable :: profiles(:) 
+   type (rttov_profile),   allocatable :: profiles(:) 
    logical, allocatable               :: calcemis(:)
 
    ! RTTOV out parameters
    integer             :: errorstatus
 
    ! RTTOV inout parameters
-   type (radiance_type)     :: radiance
-   type (transmission_type) :: transmission
+   type (rttov_radiance)     :: radiance
+   type (rttov_transmission) :: transmission
 
    call da_trace_entry("da_rttov_direct")
 
@@ -79,7 +79,7 @@ subroutine da_rttov_direct(inst, nchanl, nprofiles, nlevels, &
          profiles(n) % cloud(:,:)      = 0.0
          profiles(n) % cfrac(:)        = 0.0
          profiles(n) % idg             = 1
-         profiles(n) % ish             = 1
+         profiles(n) % ice_scheme      = 1
       end if
 
       profiles(n)% skin % surftype   = aux_vars(n) % surftype
@@ -93,7 +93,8 @@ subroutine da_rttov_direct(inst, nchanl, nprofiles, nlevels, &
 
       ! for microwave channels, land/sea-ce emissivity is computed
       ! from coefs in prof%skin%fastem, if calcemis = True
-      if ( coefs(inst)%coef%id_sensor == sensor_id_mw ) then
+      if ( coefs(inst)%coef%id_sensor == sensor_id_mw .or. &
+           coefs(inst)%coef%id_sensor == sensor_id_po ) then
          if ( profiles(n) % skin % surftype == 2 ) then  ! sea-ice
             profiles(n) % skin % fastem (1) = 2.2
             profiles(n) % skin % fastem (2) = 3.7
@@ -143,7 +144,7 @@ subroutine da_rttov_direct(inst, nchanl, nprofiles, nlevels, &
       & errorstatus,     &
       & nchanprof,       &
       & radiance,        &
-      & nlevels-1,       &
+      & nlevels,         &
       & asw,             &
       & init = .true. )
    if ( errorstatus /= errorstatus_success ) then
@@ -162,7 +163,7 @@ subroutine da_rttov_direct(inst, nchanl, nprofiles, nlevels, &
    call rttov_alloc_transmission( &
       & errorstatus,              &
       & transmission,             &
-      & nlevels-1,                &
+      & nlevels,                  &
       & nchanprof,                &
       & asw,                      &
       & init = .true. )
@@ -226,14 +227,14 @@ subroutine da_rttov_direct(inst, nchanl, nprofiles, nlevels, &
    deallocate (chanprof)
 
    asw = 0 ! deallocate radiance arrays
-   call rttov_alloc_rad (errorstatus,nchanprof,radiance,nlevels-1,asw)
+   call rttov_alloc_rad (errorstatus,nchanprof,radiance,nlevels,asw)
    if ( errorstatus /= errorstatus_success ) then
       call da_error(__FILE__,__LINE__, &
         (/"radiance deallocation error"/))
    end if
 
    asw = 0 ! deallocate transmission arrays
-   call rttov_alloc_transmission (errorstatus,transmission,nlevels-1,nchanprof,asw)
+   call rttov_alloc_transmission (errorstatus,transmission,nlevels,nchanprof,asw)
    if ( errorstatus /= errorstatus_success ) then
       call da_error(__FILE__,__LINE__, &
         (/"transmission deallocation error"/))

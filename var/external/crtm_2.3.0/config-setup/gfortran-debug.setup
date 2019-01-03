@@ -1,0 +1,22 @@
+#!/bin/sh
+#-------------------------------------------------------------------------------#
+# DEBUG build settings for Linux gfortran compiler
+#-------------------------------------------------------------------------------#
+
+export FC="gfortran"
+
+export FCFLAGS="\
+-fbounds-check \
+-fimplicit-none \
+-ffpe-trap=overflow,zero,invalid \
+-ffree-form \
+-fno-second-underscore \
+-frecord-marker=4 \
+-ggdb \
+-Wall \
+-Wconversion \
+-std=f2008"
+
+export LDFLAGS=""
+
+export LIBS=""

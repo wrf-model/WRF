@@ -135,8 +135,14 @@
   private  !-> privatize all variables in this module excepting public parameter (subroutine) below. 
   public :: init_goddardrad, goddardrad  !only this subroutine can be called from other module
 
-! integer,parameter :: fp_kind = SELECTED_REAL_KIND( 6, 37)  !single precision precision kind
+#if (RWORDSIZE == 4)
+ integer,parameter :: fp_kind = SELECTED_REAL_KIND( 6, 37)  !single precision precision kind
+#elif (RWORDSIZE == 8)
  integer,parameter :: fp_kind = SELECTED_REAL_KIND(15,307)  !double precision precision kind
+#else
+ integer,parameter :: fp_kind = KIND(1.0)                   !native real
+#endif
+
 
 !
 ! If one, this logical parameter allow to check anomalous value of input parameters.
@@ -2064,12 +2070,21 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
       ENDDO
 
 
+#if (RWORDSIZE == 4)
       call swrad ( np=dk_half, icb=icb, ict=ict, fcld=dble(fcld1d), &
                    pl=dble(p8w1d), ta=dble(t1d), wa=dble(sh1d), oa=dble(o31d), &
                    taucl=dble(taucl_sw), ssacl=dble(ssacl_sw), asycl=dble(asycl_sw), &
                    taual=dble(taual_sw), ssaal=dble(ssaal_sw), asyal=dble(asyal_sw), &
                    cosz=dble(cosz), rsuvbm=dble(rsuvbm), rsuvdf=dble(rsuvdf), rsirbm=dble(rsirbm), rsirdf=dble(rsirdf),&
                    flx_out=flx, flxd_out=flxd,flxu_out=flxu, flxd_surf = flxd_surf, lmask=lmask, irestrict=min(CHUNK,ite-ii+1) )
+#elif (RWORDSIZE == 8)
+      call swrad ( np=dk_half, icb=icb, ict=ict, fcld=fcld1d, &
+                   pl=p8w1d, ta=t1d, wa=sh1d, oa=o31d, &
+                   taucl=taucl_sw, ssacl=ssacl_sw, asycl=asycl_sw, &
+                   taual=taual_sw, ssaal=ssaal_sw, asyal=asyal_sw, &
+                   cosz=cosz, rsuvbm=rsuvbm, rsuvdf=rsuvdf, rsirbm=rsirbm, rsirdf=rsirdf,&
+                   flx_out=flx, flxd_out=flxd,flxu_out=flxu, flxd_surf = flxd_surf, lmask=lmask, irestrict=min(CHUNK,ite-ii+1) )
+#endif
 
 !
 ! convert the units of flx from flux fraction to W/m2 (full level)
@@ -2303,12 +2318,21 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
 ! 1-dimension driver of longwave radiative transfer scheme
 !
 
+#if (RWORDSIZE == 4)
        call lwrad ( np=dk_half, tb=dble(tsfc), ts=dble(tskin), ict=ict, icb=icb,&
                     pl=dble(p8w1d), ta=dble(t1d), wa=dble(sh1d), oa=dble(o31d), &
                     emiss=dble(emis1d), fcld=dble(fcld1d), &
                     taucl=dble(taucl_lw), ssacl=dble(ssacl_lw), asycl=dble(asycl_lw),  &
                     taual=dble(taual_lw), ssaal=dble(ssaal_lw), asyal=dble(asyal_lw),  &
                     flx_out=flx, acflxd_out=flxd, acflxu_out=flxu, irestrict=min(CHUNK,ite-ii+1) )
+#elif (RWORDSIZE == 8)
+       call lwrad ( np=dk_half, tb=tsfc, ts=tskin, ict=ict, icb=icb,&
+                    pl=p8w1d, ta=t1d, wa=sh1d, oa=o31d, &
+                    emiss=emis1d, fcld=fcld1d, &
+                    taucl=taucl_lw, ssacl=ssacl_lw, asycl=asycl_lw,  &
+                    taual=taual_lw, ssaal=ssaal_lw, asyal=asyal_lw,  &
+                    flx_out=flx, acflxd_out=flxd, acflxu_out=flxu, irestrict=min(CHUNK,ite-ii+1) )
+#endif
 
 !
 ! calculate heating rate (deg/sec)

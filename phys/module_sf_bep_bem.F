@@ -289,6 +289,8 @@ MODULE module_sf_bep_bem
       real z_u(nz_um)         ! Height of the urban grid levels
 !FS
       real cop_u(nurbm)
+      real bldac_frc_u(nurbm)
+      real cooled_frc_u(nurbm)
       real pwin_u(nurbm)
       real beta_u(nurbm)
       integer sw_cond_u(nurbm)
@@ -389,6 +391,7 @@ MODULE module_sf_bep_bem
            albg_u,albw_u,albr_u,emg_u,emw_u,emr_u,                       &
            z0g_u,z0r_u, nd_u,strd_u,drst_u,ws_u,bs_u,h_b,d_b,ss_u,pb_u,  &
            nz_u,z_u,albwin_u,emwind_u,cop_u,pwin_u,beta_u,sw_cond_u,     &
+           bldac_frc_u,cooled_frc_u,                                     &
            time_on_u,time_off_u,targtemp_u,gaptemp_u,targhum_u,gaphum_u, &
            perflo_u,hsesf_u,hsequip 
 
@@ -593,6 +596,7 @@ MODULE module_sf_bep_bem
                 twini_u,trini_u,tgini_u,albg_u,albw_u,albr_u,albwin_u,emg_u,emw_u,&
                 emr_u,emwind_u,z0g_u,z0r_u,nd_u,strd_u,drst_u,ws_u,bs_u,h_b,d_b,  &
                 cop_u,pwin_u,beta_u,sw_cond_u,time_on_u,time_off_u,targtemp_u,    &
+                bldac_frc_u,cooled_frc_u,                                         &
                 gaptemp_u,targhum_u,gaphum_u,perflo_u,hsesf_u,hsequip)
 
 !Initialisation of the urban parameters and calculation of the view factor
@@ -897,6 +901,7 @@ MODULE module_sf_bep_bem
          meso_urb=(1./4.)*FRC_URB2D(ix,iy)/((bs_urb(1,iurb)+ws_urb(1,iurb))*bs_urb(2,iurb))+ &
                   (1./4.)*FRC_URB2D(ix,iy)/((bs_urb(2,iurb)+ws_urb(2,iurb))*bs_urb(1,iurb))
 
+         meso_urb= meso_urb*bldac_frc_u(iurb)*cooled_frc_u(iurb)   !! adjust for fraction AC
          
          ibui=0
          nlev=0
@@ -4032,6 +4037,7 @@ MODULE module_sf_bep_bem
         twini_u,trini_u,tgini_u,albg_u,albw_u,albr_u,albwin_u,emg_u,emw_u,&
         emr_u,emwind_u,z0g_u,z0r_u,nd_u,strd_u,drst_u,ws_u,bs_u,h_b,d_b,  &
         cop_u,pwin_u,beta_u,sw_cond_u,time_on_u,time_off_u,targtemp_u,    &
+        bldac_frc_u,cooled_frc_u,                                         &
         gaptemp_u, targhum_u,gaphum_u,perflo_u,hsesf_u,hsequip)
 
 ! initialization routine, where the variables from the table are read
@@ -4077,6 +4083,8 @@ MODULE module_sf_bep_bem
       integer i,iu
       integer nurb ! number of urban classes used
       real, intent(out) :: cop_u(nurbm)
+      real, intent(out) :: bldac_frc_u(nurbm)
+      real, intent(out) :: cooled_frc_u(nurbm)
       real, intent(out) :: pwin_u(nurbm)
       real, intent(out) :: beta_u(nurbm)
       integer, intent(out) :: sw_cond_u(nurbm)
@@ -4124,6 +4132,8 @@ MODULE module_sf_bep_bem
        nd_u=NUMDIR_TBL
 !FS
        cop_u = cop_tbl
+       bldac_frc_u = bldac_frc_tbl
+       cooled_frc_u = cooled_frc_tbl
        pwin_u = pwin_tbl
        beta_u = beta_tbl
        sw_cond_u = sw_cond_tbl

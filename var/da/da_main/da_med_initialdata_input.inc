@@ -176,7 +176,7 @@ subroutine da_med_initialdata_input (grid, config_flags, filename, in_date)
       end if
    end if
 
-   write(unit=message(1),fmt='(A,I2)') 'use_theta_m = ', grid%hybrid_opt
+   write(unit=message(1),fmt='(A,I2)') 'use_theta_m = ', grid%use_theta_m
    call da_message(message(1:1))
 
 

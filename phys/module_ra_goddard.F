@@ -135,13 +135,8 @@
   private  !-> privatize all variables in this module excepting public parameter (subroutine) below. 
   public :: init_goddardrad, goddardrad  !only this subroutine can be called from other module
 
-#if (RWORDSIZE == 4)
- integer,parameter :: fp_kind = SELECTED_REAL_KIND( 6, 37)  !single precision precision kind
-#elif (RWORDSIZE == 8)
+!integer,parameter :: fp_kind = SELECTED_REAL_KIND( 6, 37)  !single precision precision kind
  integer,parameter :: fp_kind = SELECTED_REAL_KIND(15,307)  !double precision precision kind
-#else
- integer,parameter :: fp_kind = KIND(1.0)                   !native real
-#endif
 
 
 !

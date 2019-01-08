@@ -39,7 +39,7 @@ CONFIG_BUF_LEN	=	65536
 
 #### Size of bitmasks (in 4byte integers) of stream masks for WRF I/O
 
-MAX_HISTORY = 35
+MAX_HISTORY = 25
 
 IWORDSIZE = 4
 DWORDSIZE = 8

@@ -1166,8 +1166,6 @@ endif
                       ,grid%massflux_EDKF, grid%entr_EDKF, grid%detr_EDKF                &
                       ,grid%thl_up,grid%thv_up,grid%rt_up                                &
                       ,grid%rv_up,grid%rc_up,grid%u_up,grid%v_up,grid%frac_up            &
-!
-! PSU-DENG
                       ,grid%RDCASHTEN, grid%RQCDCSHTEN                                   &
                       ,grid%cldareaa, grid%cldareab, grid%cldliqa, grid%cldliqb          &
                       ,grid%ca_rad, grid%cw_rad                                          &
@@ -1175,7 +1173,6 @@ endif
                       ,grid%capesave, grid%ainckfsa, grid%radsave                        &
                       ,grid%rainsh, grid%rainshvb, grid%kdcldtop, grid%kdcldbas          &
                       ,grid%xtime1, grid%PBLHAVG, grid%TKEAVG                            &
-! END PSU-DENG
                       ,grid%ccn_conc                                          & ! RAS
                       ,grid%QKE                                               &!JOE-for mynn
                       ,grid%landusef,grid%landusef2,grid%mosaic_cat_index                            & ! danli mosaic

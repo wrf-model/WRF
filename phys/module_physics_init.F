@@ -212,9 +212,6 @@ CONTAINS
                          ,massflux_EDKF, entr_EDKF, detr_EDKF  & ! Optional for qnse
                          ,thl_up, thv_up, rt_up                & ! Optional for qnse
                          ,rv_up, rc_up, u_up, v_up, frac_up    & ! Optional for qnse
-!
-! PSU-DENG
-!
                          ,RDCASHTEN, RQCDCSHTEN                 &
                          ,cldareaa, cldareab, cldliqa, cldliqb  &
                          ,ca_rad, cw_rad                        &
@@ -222,8 +219,6 @@ CONTAINS
                          ,capesave, ainckfsa, radsave           &
                          ,rainsh, rainshvb, kdcldtop, kdcldbas  & 
                          ,xtime1, PBLHAVG, TKEAVG               &
-!
-! END PSU-DENG
                          ,ccn_conc                             & ! RAS
                          ,QKE                                  & !for MYNN
                          ,landusef,landusef2,mosaic_cat_index                                                 & ! danli mosaic
@@ -734,9 +729,6 @@ CONTAINS
    REAL,OPTIONAL, DIMENSION( ims:ime , jms:jme ) , &
           INTENT(OUT) ::    wm_temf
 
-!
-!  Deng Shallow Cu variables
-!
    REAL, DIMENSION( ims:ime , jms:jme ) , &
           INTENT(  OUT) ::    pblmax, clddpthb, cldtopb, rainsh, rainshvb, &
                               capesave, radsave, xtime1, PBLHAVG
@@ -754,9 +746,6 @@ CONTAINS
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) :: &
              RDCASHTEN, RQCDCSHTEN
-!
-!  End of Deng Shallow Cu variables
-!
 
 ! Local data
 
@@ -1385,9 +1374,6 @@ integer myproc
                 RQSSHTEN,RQISHTEN,RQGSHTEN,                     &
                 NCA,RAINC,RAINCV,config_flags,restart,          &
                 allowed_to_read, start_of_simulation,           &
-!
-! PSU-DENG
-!
                 RDCASHTEN, RQCDCSHTEN, W0AVG          &
                ,cldareaa, cldareab, cldliqa, cldliqb  &
                ,ca_rad, cw_rad                  &
@@ -1395,9 +1381,6 @@ integer myproc
                ,capesave, ainckfsa, radsave           &
                ,rainsh, rainshvb, kdcldtop, kdcldbas          &
                 ,xtime1, PBLHAVG, TKEAVG,             &
-!
-! END PSU-DENG
-!
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte                    )
@@ -3733,9 +3716,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       RQSSHTEN,RQISHTEN,RQGSHTEN,                  &
                       NCA,RAINC,RAINCV,config_flags,restart,       &
                       allowed_to_read, start_of_simulation,        &
-!
-! PSU-DENG
-!
                       RDCASHTEN, RQCDCSHTEN, W0AVG,                &
                       cldareaa, cldareab, cldliqa,  cldliqb,       &
                       ca_rad, cw_rad,                              &
@@ -3743,9 +3723,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       capesave, ainckfsa, radsave,                 &
                       rainsh, rainshvb, kdcldtop, kdcldbas, xtime1,&
                       PBLHAVG, TKEAVG,                             &
-!
-! END PSU-DENG
-!
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
                       its, ite, jts, jte, kts, kte                 )
@@ -3753,13 +3730,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE uwshcu,        ONLY: init_uwshcu
    USE module_shcu_grims, ONLY: grimsinit
    USE module_shcu_nscv , ONLY: nscvinit
-!
-! PSU-DENG
-!
    USE module_shcu_deng , ONLY: deng_shcu_init
-!
-! END PSU-DENG
-!
    USE physconst,     ONLY: cpair, gravit, latice, latvap, mwdry, mwh2o, &
                             rair, zvir
    USE shr_kind_mod,  ONLY: r8 => shr_kind_r8
@@ -3788,9 +3759,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
    REAL ,   DIMENSION( ims:ime , jms:jme ), INTENT(INOUT):: NCA
 
-!
-!  PSU-DENG Shallow Cu variables
-!
    REAL, DIMENSION( ims:ime , jms:jme ) , &
           INTENT(  OUT) ::    pblmax, clddpthb, cldtopb, rainsh, rainshvb, &
                               capesave, radsave, xtime1, PBLHAVG
@@ -3808,9 +3776,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: &
              RDCASHTEN, RQCDCSHTEN
-!
-!  End PSU-DENG Shallow Cu variables
-!
 
 ! LOCAL VAR
 
@@ -3870,9 +3835,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
            ims, ime, jms, jme, kms, kme,                             &
            its, ite, jts, jte, kts, kte                              )
 
-!
-!  PSU-DENG
-!
    CASE (DENGSHCUSCHEME)
       CALL deng_shcu_init(RTHSHTEN,RQVSHTEN,RQCSHTEN,RQRSHTEN,      &
                      RUSHTEN,RVSHTEN,RDCASHTEN,RQCDCSHTEN,W0AVG,    &
@@ -3887,9 +3849,6 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      ids, ide, jds, jde, kds, kde,                  &
                      ims, ime, jms, jme, kms, kme,                  &
                      its, ite, jts, jte, kts, kte                   )
-!
-!  END PSU-DENG
-!
  
    CASE DEFAULT
 

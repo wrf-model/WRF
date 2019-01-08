@@ -1679,9 +1679,6 @@ SUBROUTINE phy_shcu_ten(config_flags,rk_step,n_moist,n_scalar,   &
                 ims, ime, jms, jme, kms, kme,                    &
                 its, ite, jts, jte, kts, kte                     )
 
-!
-! PSU DENG
-!
   CASE (DENGSHCUSCHEME)
         CALL add_a2c_u(ru_tendf,RUSHTEN,config_flags,            &
                 ids,ide, jds, jde, kds, kde,                     &

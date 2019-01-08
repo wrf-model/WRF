@@ -402,14 +402,8 @@ BENCH_START(rad_driver_tim)
      &         ,shadowmask=grid%shadowmask,ht=grid%ht,dx=grid%dx,dy=grid%dy &           
      &         ,diffuse_frac=grid%diffuse_frac &           
      &         ,IS_CAMMGMP_USED = grid%is_CAMMGMP_used    &
-!
-! PSU-DENG
-!
      &         ,cw_rad=grid%cw_rad                     &
      &         ,shcu_physics=config_flags%shcu_physics                     &
-!
-! END PSU-DENG
-!
      &         ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS        &
      &         ,EFCG=grid%EFCG,EFCS=grid%EFCS,EFIG=grid%EFIG &
      &         ,EFIS=grid%EFIS,EFSG=grid%EFSG,aercu_opt=config_flags%aercu_opt & 
@@ -1340,11 +1334,7 @@ BENCH_START(shcu_driver_tim)
      &             ,HFX=grid%hfx, QFX=grid%qfx                            &
      &             ,MP_PHYSICS=config_flags%mp_physics                    &
      &             ,pgcon=config_flags%sas_pgcon                          &
-!
-! PSU-DENG
-!
-     &             ,RDCASHTEN=grid%RDCASHTEN, RQCDCSHTEN=grid%RQCDCSHTEN  &
-     !jkim: remove w &             ,w=grid%w_2, W0AVG=grid%W0AVG                          &
+     &             ,RDCASHTEN=grid%RDCASHTEN, RQCDCSHTEN=grid%RQCDCSHTEN  & ! Deng sh
      &             ,W0AVG=grid%W0AVG                                      &
      &             ,clddpthb=grid%clddpthb, cldtopb=grid%cldtopb          &
      &             ,cldareaa=grid%cldareaa, cldareab=grid%cldareab        &
@@ -1363,9 +1353,6 @@ BENCH_START(shcu_driver_tim)
      &             ,qke=grid%qke                                          &
      &             ,PBLHAVG=grid%PBLHAVG, TKEAVG=grid%TKEAVG              &
      &             ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics            &
-!
-! END PSU-DENG
-!
      &                                                                    )
 
 #if (WRF_CHEM == 1)

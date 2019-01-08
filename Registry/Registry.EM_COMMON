@@ -1308,14 +1308,14 @@ state    real  RQCNSHTEN       ikj      misc        1         -      r        "R
 state    real  RQINSHTEN       ikj      misc        1         -      r        "RQINSHTEN"             "Q_IN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"     "# kg-1 s-1"
 
 # Deng Shallow Convection Parameterization
-state    real  RDCASHTEN       ikj      misc        1         -      r       "RDCASHTEN"             "DCA TENDENCY DUE TO DENG SHALLOW CUMULUS SCHEME"    "Pa s-1"
+state    real  RDCASHTEN       ikj      misc        1         -      r        "RDCASHTEN"             "DCA TENDENCY DUE TO DENG SHALLOW CUMULUS SCHEME"    "Pa s-1"
 state    real  RQCDCSHTEN      ikj      misc        1         -      r        "RQCDCSHTEN"            "DCQC TENDENCY DUE TO DENG SHALLOW CUMULUS SCHEME"   "kg kg-1 s-1"
 state    real  CLDAREAA        ikj      dyn_em      1         -      r        "CLDAREAA"              "CLOUD FRACTION FROM DENG SCHEME" ""
-state    real  CLDAREAB        ikj      dyn_em      1         -      r       "CLDAREAB"              "CLOUD FRACTION FROM DENG SCHEME" ""
+state    real  CLDAREAB        ikj      dyn_em      1         -      r        "CLDAREAB"              "CLOUD FRACTION FROM DENG SCHEME" ""
 state    real  CA_RAD          ikj      dyn_em      1         -      r        "CA_RAD"                "CLOUD WATER CONTENT FROM DENG SCHEME FOR RADIATION" "kg kg-1"
 state    real  CW_RAD          ikj      dyn_em      1         -      r        "CW_RAD"                "CLOUD WATER CONTENT FROM DENG SCHEME FOR RADIATION" "kg kg-1"
 state    real  CLDLIQA         ikj      dyn_em      1         -      r        "CLDLIQA"               "CLOUD WATER CONTENT FROM DENG SCHEME" "kg kg-1"
-state    real  CLDLIQB         ikj      dyn_em      1         -      r       "CLDLIQB"               "CLOUD WATER CONTENT FROM DENG SCHEME" "kg kg-1"
+state    real  CLDLIQB         ikj      dyn_em      1         -      r        "CLDLIQB"               "CLOUD WATER CONTENT FROM DENG SCHEME" "kg kg-1"
 state    real  CLDDPTHB         ij      misc        1         -      r        "CLDDPTHB"              "CLOUD DEPTH FROM TAU-1"                "m"
 state    real  CLDTOPB          ij      misc        1         -      r        "CLDTOPB"               "CLOUD TOP FROM TAU-1"                "m"
 state    real  PBLMAX           ij      misc        1         -      r        "PBLMAX"                "MAXIMUM VALUE OF PBL DEPTH SINCE THE START OF THE MODEL RUN"                 "m"
@@ -1329,7 +1329,8 @@ state  integer KDCLDTOP         ij      misc        1         -      r        "K
 state  integer KDCLDBAS         ij      misc        1         -      r        "KDCLDBAS"              "LEVEL OF NBC BASE"                    ""
 state    real  XTIME1           ij      misc        1         -      r        "XTIME1"                "TIME COUNTER AFTER RAIN"              "min."
 state    real  PBLHAVG          ij      misc        1         -      r        "PBLHAVG"               "TIME AVERAGE OF PBLH"                 "m"
-state    real   TKEAVG         ikj      misc        1         -      r        "TKEAVG"                "TIME AVERAGE OF TKE"                 "m2 s-2"
+state    real  TKEAVG          ikj      misc        1         -      r        "TKEAVG"                "TIME AVERAGE OF TKE"                 "m2 s-2"
+state    real  WSUBSID          k       misc        1         -      -        "WSUBSID"               "LARGE-SCALE SUBSIDENCE IN DENG SHCU SCHEME"    "m s-1"
 # End Deng Shallow Convection Parameterization
 
 
@@ -2471,9 +2472,6 @@ rconfig   logical scm_force_wind_largescale namelist,scm  1     .false.     rh  
 rconfig   integer scm_force_skintemp      namelist,scm  1       0           rh   "scm_force_skin"       "SCM surface forcing by skin temperature 0=no 1=yes"      ""
 rconfig   integer scm_force_flux          namelist,scm  1       0           rh   "scm_force_flux"       "SCM surface forcing by surface fluxes 0=no 1=yes"      ""
 
-# PSU-DENG SHALLOW CU VARIABLES
-state     real  WSUBSID          k        misc          1       -           -    "WSUBSID"              "LARGE-SCALE SUBSIDENCE IN DENG SHCU SCHEME"    "m s-1"
-
 # Dynamics
 # dynamics option (see package definitions, below)
 rconfig   integer dyn_opt                 namelist,dynamics	1             2 
@@ -2818,14 +2816,7 @@ package   g3shcuscheme    shcu_physics==1            -             -
 package   camuwshcuscheme shcu_physics==2            -             state:shfrc3d,dlf,dlf2,cmfmc,cmfmc2,qtflx_cu,slflx_cu,uflx_cu,vflx_cu,qtten_cu,slten_cu,uten_cu,vten_cu,qvten_cu,qlten_cu,qiten_cu,cbmf_cu,ufrcinvbase_cu,ufrclcl_cu,winvbase_cu,wlcl_cu,plcl_cu,pinv_cu,plfc_cu,pbup_cu,ppen_cu,qtsrc_cu,thlsrc_cu,thvlsrc_cu,emkfbup_cu,cin_cu,cinlcl_cu,cbmflimit_cu,tkeavg_cu,zinv_cu,rcwp_cu,rlwp_cu,riwp_cu,tophgt_cu,wu_cu,ufrc_cu,qtu_cu,thlu_cu,thvu_cu,uu_cu,vu_cu,qtu_emf_cu,thlu_emf_cu,uu_emf_cu,vu_emf_cu,umf_cu,uemf_cu,qcu_cu,qlu_cu,qiu_cu,cufrc_cu,fer_cu,fdr_cu,dwten_cu,diten_cu,qrten_cu,qsten_cu,flxrain_cu,flxsnow_cu,ntraprd_cu,ntsnprd_cu,excessu_cu,excessu0_cu,xc_cu,aquad_cu,bquad_cu,cquad_cu,bogbot_cu,bogtop_cu,exit_uwcu_cu,exit_conden_cu,exit_klclmkx_cu,exit_klfcmkx_cu,exit_ufrc_cu,exit_wtw_cu,exit_drycore_cu,exit_wu_cu,exit_cufliter_cu,exit_kinv1_cu,exit_rei_cu,limit_shcu_cu,limit_negcon_cu,limit_ufrc_cu,limit_ppen_cu,limit_emf_cu,limit_cinlcl_cu,limit_cin_cu,limit_cbmf_cu,limit_rei_cu,ind_delcin_cu,evapcsh,cmfsl,cmflq,cldfrash,cush,icwmrsh,snowsh,rprdsh,rliq2,rliq
 package   grimsshcuscheme shcu_physics==3            -             -
 package   nscvshcuscheme  shcu_physics==4            -             -
-
-#
-# PSU-DENG ShCu
-#
-package   dengshcuscheme   shcu_physics==5           -             state:RDCASHTEN,RQCDCSHTEN,CLDAREAA,CLDAREAB,CA_RAD,CW_RAD,CLDLIQA,CLDLIQB,CLDDPTHB,CLDTOPB,PBLMAX,WUB,RAINSHVB,CAPESAVE,RADSAVE,AINCKFSA,LTOPB,KDCLDTOP,KDCLDBAS,XTIME1,PBLHAVG,TKEAVG,W0AVG
-#
-# END PSU-DENG ShCu
-#
+package   dengshcuscheme  shcu_physics==5            -             state:RDCASHTEN,RQCDCSHTEN,CLDAREAA,CLDAREAB,CA_RAD,CW_RAD,CLDLIQA,CLDLIQB,CLDDPTHB,CLDTOPB,PBLMAX,WUB,RAINSHVB,CAPESAVE,RADSAVE,AINCKFSA,LTOPB,KDCLDTOP,KDCLDBAS,XTIME1,PBLHAVG,TKEAVG,W0AVG
 
 package   no_shcu_used    shcu_used==0               -             -
 package   any_shcu_used   shcu_used==1               -             state:rushten,rvshten,rthshten,rqvshten,rqrshten,rqcshten,rqsshten,rqishten,rqgshten,rqcnshten,rqinshten

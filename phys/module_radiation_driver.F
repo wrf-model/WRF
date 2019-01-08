@@ -148,13 +148,7 @@ CONTAINS
               ,aer_asy_opt, aer_asy_val                                   &
               ,aod5502d, angexp2d, aerssa2d, aerasy2d                     &
               ,aod5503d                                                   &
-!
-! PSU-DENG
-!
               ,cw_rad, shcu_physics                      &
-!
-! END PSU-DENG
-!
               ,taod5502d, taod5503d                                       & !  Trude
               ,mp_physics                                                 &
               ,EFCG,EFCS,EFIG,EFIS,EFSG,aercu_opt                         &
@@ -460,16 +454,10 @@ CONTAINS
                                                              t8w, &
                                                              rho
 
-!
-! PSU-DENG
-!
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
          INTENT(IN   )  ::                       cw_rad
    INTEGER,                       INTENT(IN) ::  shcu_physics
-!
-! END PSU-DENG
-!
 
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL,        &
         INTENT(IN)     ::                            EFCG,       & 
@@ -1469,9 +1457,6 @@ CONTAINS
         end if
      endif
 
-!
-! PSU-DENG
-!
      IF( shcu_physics == 5 ) THEN
         DO j=jts,jte
         DO k=kts,kte
@@ -1489,9 +1474,6 @@ CONTAINS
         ENDDO
         ENDDO
      ENDIF
-!
-! PSU-DENG
-!
 
         
 

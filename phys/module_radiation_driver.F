@@ -457,7 +457,7 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
          INTENT(IN   )  ::                       cw_rad
-   INTEGER,                       INTENT(IN) ::  shcu_physics
+   INTEGER, OPTIONAL,                INTENT(IN) ::  shcu_physics
 
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL,        &
         INTENT(IN)     ::                            EFCG,       & 
@@ -1457,6 +1457,7 @@ CONTAINS
         end if
      endif
 
+#if (EM_CORE==1)
      IF( shcu_physics == 5 ) THEN
         DO j=jts,jte
         DO k=kts,kte
@@ -1474,6 +1475,7 @@ CONTAINS
         ENDDO
         ENDDO
      ENDIF
+#endif
 
         
 

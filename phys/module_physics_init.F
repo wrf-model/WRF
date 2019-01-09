@@ -3759,22 +3759,22 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
    REAL ,   DIMENSION( ims:ime , jms:jme ), INTENT(INOUT):: NCA
 
-   REAL, DIMENSION( ims:ime , jms:jme ) , &
+   REAL, OPTIONAL, DIMENSION( ims:ime , jms:jme ) , &
           INTENT(  OUT) ::    pblmax, clddpthb, cldtopb, rainsh, rainshvb, &
                               capesave, radsave, xtime1, PBLHAVG
 
-   REAL, DIMENSION( ims:ime , 1:100, jms:jme ) , &
+   REAL, OPTIONAL, DIMENSION( ims:ime , 1:100, jms:jme ) , &
           INTENT(  OUT) ::    ainckfsa
 
-   INTEGER, DIMENSION( ims:ime , jms:jme ) , &
+   INTEGER, OPTIONAL, DIMENSION( ims:ime , jms:jme ) , &
           INTENT(  OUT) ::    kdcldtop, kdcldbas, ltopb
 
-   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , &
+   REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , &
           INTENT(  OUT) ::    wub, cldareaa,  cldareab,                &
                                    cldliqa,   cldliqb,  W0AVG, TKEAVG, &
                                    ca_rad, cw_rad
 
-   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: &
+   REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: &
              RDCASHTEN, RQCDCSHTEN
 
 ! LOCAL VAR

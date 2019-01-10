@@ -1472,20 +1472,27 @@ CONTAINS
    end if
 #endif
 
-!JJS initialize cloud droplet effective radius
+!  Initialize cloud droplet effective radius for Goddard MP and Radiation
+!  Must be (Goddard LW and SW) AND must be (Goddard 3ice OR 4ice)
 #if ( EM_CORE == 1 )
-    do j=jts,jtf
-       do k=kts,ktf
-          do i=its,itf
-             re_cloud_gsfc(i,k,j) = 0.
-             re_rain_gsfc(i,k,j) = 0.
-             re_snow_gsfc(i,k,j) = 0.
-             re_ice_gsfc(i,k,j) = 0.
-             re_graupel_gsfc(i,k,j) = 0.
-             re_hail_gsfc(i,k,j) = 0.
-          end do
-       end do
-     end do
+    
+   if ( ( ( config_flags%ra_lw_physics .EQ. GODDARDLWSCHEME )   .AND. &
+          ( config_flags%ra_sw_physics .EQ. GODDARDSWSCHEME ) ) .AND. &
+        ( ( config_flags%mp_physics    .EQ. NUWRF3ICESCHEME )   .OR.  &
+          ( config_flags%mp_physics    .EQ. NUWRF4ICESCHEME ) ) ) THEN
+      do j=jts,jtf
+         do k=kts,ktf
+            do i=its,itf
+               re_cloud_gsfc(i,k,j)   = 0.
+               re_rain_gsfc(i,k,j)    = 0.
+               re_snow_gsfc(i,k,j)    = 0.
+               re_ice_gsfc(i,k,j)     = 0.
+               re_graupel_gsfc(i,k,j) = 0.
+               re_hail_gsfc(i,k,j)    = 0.
+            end do
+         end do
+      end do
+   end if
 #endif
 
    END SUBROUTINE phy_init

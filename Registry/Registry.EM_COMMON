@@ -905,6 +905,13 @@ state    real   T2OBS            ij     misc        1         -      r        "T
 state    real   Q2OBS            ij     misc        1         -      r        "Q2OBS"        "2-m mixing ratio from analysis "   "kg/kg"
 state    real   IMPERV           ij     misc        1         -      i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)      "IMPERV"       "Impervious surface fraction NLCD"  "percent"
 state    real   CANFRA           ij     misc        1         -      i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)      "CANFRA"       "Satellite canopy fraction"         "percent"
+state    real   LAI_PX           ij     misc        1         -      rh        "LAI_PX"       "LAI used for PX LSM"              "m2/m2"
+state    real   WWLT_PX          ij     misc        1         -      rh       "WWLT_PX"       "Soil wilting point for PX LSM"    "m3/m3"
+state    real   WFC_PX           ij     misc        1         -      rh       "WFC_PX"        "Soil field capacity for PX LSM"    "m3/m3"
+state    real   WSAT_PX          ij     misc        1         -      rh       "WSAT_PX"       "Soil saturation for PX LSM"    "m3/m3"
+state    real   CLAY_PX          ij     misc        1         -      rh       "CLAY_PX"       "Clay perent for PX LSM"    "fraction"
+state    real   CSAND_PX         ij     misc        1         -      rh       "CSAND_PX"      "Coarse sand perent for PX LSM"    "fraction"
+state    real   FMSAND_PX        ij     misc        1         -      rh       "FMSAND_PX"     "Fine-medium sand perent for PX LSM"    "fraction"
 
 # sfclay PBL variables
 i1      real   PSIM           ij     misc        1         -     -         "PSIM"                "SIMILARITY FUNCTION FOR MOMENTUM"     ""
@@ -2286,6 +2293,7 @@ rconfig   integer shcu_aerosols_opt       namelist,physics      max_domains    0
 
 rconfig   integer ICLOUD_CU               derived               max_domains   0        -     "ICLOUD_CU"                     ""      ""
 rconfig   integer pxlsm_smois_init        namelist,physics      max_domains   1       irh    "PXLSM_SMOIS_INIT"    "Soil moisture initialization option 0-From analysis 1-From MAVAIL"   ""
+rconfig   integer pxlsm_modis_veg         namelist,physics      max_domains   0       irh    "PXLSM_MODIS_VEG"     "If 1 use MODIS VEGFRA from wrflowinp updates, 1=yes"   ""
 rconfig   integer omlcall                 namelist,physics      1            0         h     "omlcall"     "temporary holder to allow checking for new name: oml_opt"
 rconfig   integer sf_ocean_physics        namelist,physics      1            0         h     "sf_ocean_physics"     "activate ocean model  0=no, 1=1d mixed layer, 2=3D PWP" ""
 rconfig   integer traj_opt                namelist,physics      1            0         h     "traj_opt"    "activate trajectory calculation  0=no, 1=on"   ""
@@ -2771,7 +2779,7 @@ package   lsmscheme      sf_surface_physics==2       -             state:flx4,fv
 package   ruclsmscheme   sf_surface_physics==3       -             state:smfr3d,keepfr3dflag,soilt1,rhosnf,snowfallac,precipfr,acrunoff
 package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,rechclim,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy,soilcomp,soilcl1,soilcl2,soilcl3,soilcl4
 package   clmscheme      sf_surface_physics==5       -             state:numc,nump,sabv,sabg,lwup,lhsoi,lhveg,lhtran,snl,snowdp,wtc,wtp,h2osno,t_grnd,t_veg,h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm,t_ref2m,h2osoi_liq_s1,h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,h2osoi_ice_s1,h2osoi_ice_s2,h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,t_soisno4,t_soisno5,t_soisno6,t_soisno7,t_soisno8,t_soisno9,t_soisno10,dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,h2osoi_vol7,h2osoi_vol8,h2osoi_vol9,h2osoi_vol10,albedosubgrid,lhsubgrid,hfxsubgrid,lwupsubgrid,q2subgrid,sabvsubgrid,sabgsubgrid,nrasubgrid,swupsubgrid
-package   pxlsmscheme    sf_surface_physics==7       -             state:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old,vegf_px,imperv,canfra
+package   pxlsmscheme    sf_surface_physics==7       -             state:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old,t2obs,q2obs,ra,rs,vegf_px,imperv,canfra,lai_px,wwlt_px,wfc_px,wsat_px,clay_px,csand_px,fmsand_px
 package   ssibscheme     sf_surface_physics==8       -             state:ssib_fm,ssib_fh,ssib_cm,ssibxdd,ssib_br,ssib_lhf,ssib_shf,ssib_ghf,ssib_egs,ssib_eci,ssib_ect,ssib_egi,ssib_egt,ssib_sdn,ssib_sup,ssib_ldn,ssib_lup,ssib_wat,ssib_shc,ssib_shg,ssib_lai,ssib_vcf,ssib_z00,ssib_veg,isnow,swe,snowden,snowdepth,tkair,dzo1,wo1,tssn1,tssno1,bwo1,bto1,cto1,fio1,flo1,bio1,blo1,ho1,dzo2,wo2,tssn2,tssno2,bwo2,bto2,cto2,fio2,flo2,bio2,blo2,ho2,dzo3,wo3,tssn3,tssno3,bwo3,bto3,cto3,fio3,flo3,bio3,blo3,ho3,dzo4,wo4,tssn4,tssno4,bwo4,bto4,cto4,fio4,flo4,bio4,blo4,ho4
 
 package   noahmpoptcrop2 opt_crop==2                 -             state:gecros_state

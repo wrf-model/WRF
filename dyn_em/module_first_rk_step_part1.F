@@ -731,6 +731,11 @@ BENCH_START(surf_driver_tim)
      &        ,q2_ndg_new=grid%q2_ndg_new                  &
      &        ,sn_ndg_old=grid%sn_ndg_old                  &
      &        ,sn_ndg_new=grid%sn_ndg_new                  &
+     &        ,pxlsm_modis_veg=config_flags%pxlsm_modis_veg                   &
+     &        ,LAI_PX=grid%lai_px                                             &
+     &        ,WWLT_PX=grid%wwlt_px, WFC_PX=grid%wfc_px                       &
+     &        ,WSAT_PX=grid%wsat_px, CLAY_PX=grid%clay_px                     &
+     &        ,CSAND_PX=grid%csand_px, FMSAND_PX=grid%fmsand_px               &
 ! for Noah-MP LSM
      &        ,idveg=config_flags%dveg,         iopt_crs=config_flags%opt_crs &
      &        ,iopt_btr=config_flags%opt_btr,   iopt_run=config_flags%opt_run &

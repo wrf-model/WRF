@@ -322,10 +322,26 @@ BENCH_START(rad_driver_tim)
      &        ,num_tiles=grid%num_tiles                                   &
             ! Optional
 !JJS 20101020 vvvvv
+#if ( WRF_CHEM == 1)
+     &        , CHEM=chem                                                 &
+     &        , AOD_OUT=grid%aod_out                                      &
+     &        , AOD2D_OUT=grid%aod2d_out                                  &  !goddardrad
+     &        , ATOP2D_OUT=grid%atop2d_out                                &  !goddardrad
+     &        , CHEM_OPT=config_flags%chem_opt                            &
+     &        , GSFCRAD_GOCART_COUPLING=config_flags%gsfcrad_gocart_coupling &
+#endif
      &        , TLWDN=grid%tlwdn, TLWUP=grid%tlwup                        & ! goddard schemes
      &        , SLWDN=grid%slwdn, SLWUP=grid%slwup                        & ! goddard schemes
      &        , TSWDN=grid%tswdn, TSWUP=grid%tswup                        & ! goddard schemes
      &        , SSWDN=grid%sswdn, SSWUP=grid%sswup                        & ! goddard schemes
+     &        , RE_CLOUD_GSFC=grid%re_cloud_gsfc                          & ! goddard schemes
+     &        , RE_RAIN_GSFC=grid%re_rain_gsfc                            & ! goddard schemes
+     &        , RE_ICE_GSFC=grid%re_ice_gsfc                              & ! goddard schemes
+     &        , RE_SNOW_GSFC=grid%re_snow_gsfc                            & ! goddard schemes
+     &        , RE_GRAUPEL_GSFC=grid%re_graupel_gsfc                      & ! goddard schemes
+     &        , RE_HAIL_GSFC=grid%re_hail_gsfc                            & ! goddard schemes
+     &        , COD2D_OUT=grid%cod2d_out                                  & ! goddardrad
+     &        , CTOP2D_OUT=grid%ctop2d_out                                & ! goddardrad
 !JJS 20101020 ^^^^^
 !ZCX+ cloud fraction for CLWRF
      &        , CLDT=grid%cldt, ZNU=grid%znu                              &
@@ -349,6 +365,7 @@ BENCH_START(rad_driver_tim)
      &        , QI2=moist(ims,kms,jms,P_QI2), F_QI2=F_QI2                 & ! for P3
      &        , QS=moist(ims,kms,jms,P_QS), F_QS=F_QS                     &
      &        , QG=moist(ims,kms,jms,P_QG), F_QG=F_QG                     &
+     &        , QH=moist(ims,kms,jms,P_QH), F_QH=F_QH                     & ! goddardrad
      &        , QNDROP=scalar(ims,kms,jms,P_QNDROP), F_QNDROP=F_QNDROP    &
      &        ,QNIFA=scalar(ims,kms,jms,P_QNIFA),F_QNIFA=F_QNIFA          & !Trude
      &        ,QNWFA=scalar(ims,kms,jms,P_QNWFA),F_QNWFA=F_QNWFA          & !Trude

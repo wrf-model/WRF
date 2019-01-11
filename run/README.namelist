@@ -479,9 +479,9 @@ Namelist variables for controlling the adaptive time step option:
                                      = 4, WSM 5-class scheme
                                      = 5, Ferrier (new Eta) microphysics, operational High-Resolution Window version
                                      = 6, WSM 6-class graupel scheme
-                                     = 7, Goddard GCE scheme (also uses gsfcgce_hail, gsfcgce_2ice)
-                                     = 8, Thompson scheme (new for V3.1)
-                                     = 9, Milbrandt-Yau 2-moment scheme (new for V3.2)
+                                     = 7, Goddard 4-ice scheme
+                                     = 8, Thompson scheme
+                                     = 9, Milbrandt-Yau 2-moment scheme
                                      = 10, Morrison (2 moments)
                                      = 11, CAM 5.1 microphysics
                                      = 13, SBU_YLIN scheme
@@ -490,7 +490,8 @@ Namelist variables for controlling the adaptive time step option:
                                      = 17, NSSL 2-moment 4-ice scheme (steady background CCN)
                                      = 18, NSSL 2-moment 4-ice scheme with predicted CCN (better for idealized than real cases)
                                            to set a global CCN value, use
-                                           nssl_cccn  = 0.7e9   ; CCN for NSSL scheme (18). Also sets same value to ccn_conc for mp_physics=18
+                                           nssl_cccn  = 0.7e9   ; CCN for NSSL scheme (18). 
+                                           Also sets same value to ccn_conc for mp_physics=18
                                      = 19, NSSL 1-moment (7 class: qv,qc,qr,qi,qs,qg,qh; predicts graupel density)
                                      = 21, NSSL 1-moment, (6-class), very similar to Gilmore et al. 2004
                                            Can set intercepts and particle densities in physics namelist, e.g., nssl_cnor
@@ -506,6 +507,7 @@ Namelist variables for controlling the adaptive time step option:
                                        nssl_rho_qh  = 500.  ! graupel density
                                        nssl_rho_qhl = 900.  ! hail density
                                        nssl_rho_qs  = 100.  ! snow density
+                                     = 27, Goddard 3-ice scheme
                                      = 28, aerosol-aware Thompson scheme with water- and ice-friendly aerosol climatology 
                                            (new for V3.6)
                                        This option has two climatological aerosol input options:
@@ -518,6 +520,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 50, P3 1-category
                                      = 51, P3 1-category plus double-moment cloud water
                                      = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version
+                                     = 97, Goddard GCE scheme (also uses gsfcgce_hail, gsfcgce_2ice)
 
  For non-zero mp_physics options, to keep Qv .GE. 0, and to set the other moisture
  fields .LT. a critical value to zero

@@ -47,9 +47,27 @@
      IF ( grid%dfi_savehydmeteors .EQ. 0 ) then  
        grid%dfi_moist(:,:,:,:)  = grid%dfi_moist(:,:,:,:)  + grid%moist(:,:,:,:)  * hn
        grid%dfi_scalar(:,:,:,:) = grid%dfi_scalar(:,:,:,:) + grid%scalar(:,:,:,:) * hn
-       grid%dfi_re_cloud(:,:,:) = grid%dfi_re_cloud(:,:,:) + grid%re_cloud(:,:,:) * hn
-       grid%dfi_re_ice(:,:,:)   = grid%dfi_re_ice(:,:,:)   + grid%re_ice(:,:,:)   * hn
-       grid%dfi_re_snow(:,:,:)  = grid%dfi_re_snow(:,:,:)  + grid%re_snow(:,:,:)  * hn
+       IF ( ( grid%mp_physics_dfi .NE. NUWRF3ICESCHEME_DFI ) .AND. &
+            ( grid%mp_physics_dfi .NE. NUWRF4ICESCHEME_DFI ) ) THEN
+          grid%dfi_re_cloud(:,:,:)        = grid%dfi_re_cloud(:,:,:)        + grid%re_cloud(:,:,:)        * hn
+          grid%dfi_re_ice(:,:,:)          = grid%dfi_re_ice(:,:,:)          + grid%re_ice(:,:,:)          * hn
+          grid%dfi_re_snow(:,:,:)         = grid%dfi_re_snow(:,:,:)         + grid%re_snow(:,:,:)         * hn
+#if (EM_CORE == 1)
+       ELSE IF ( grid%mp_physics_dfi .EQ. NUWRF3ICESCHEME_DFI ) THEN
+          grid%dfi_re_cloud_gsfc(:,:,:)   = grid%dfi_re_cloud_gsfc(:,:,:)   + grid%re_cloud_gsfc(:,:,:)   * hn
+          grid%dfi_re_rain_gsfc(:,:,:)    = grid%dfi_re_rain_gsfc(:,:,:)    + grid%re_rain_gsfc(:,:,:)    * hn
+          grid%dfi_re_ice_gsfc(:,:,:)     = grid%dfi_re_ice_gsfc(:,:,:)     + grid%re_ice_gsfc(:,:,:)     * hn
+          grid%dfi_re_snow_gsfc(:,:,:)    = grid%dfi_re_snow_gsfc(:,:,:)    + grid%re_snow_gsfc(:,:,:)    * hn
+          grid%dfi_re_graupel_gsfc(:,:,:) = grid%dfi_re_graupel_gsfc(:,:,:) + grid%re_graupel_gsfc(:,:,:) * hn
+       ELSE IF ( grid%mp_physics_dfi .EQ. NUWRF4ICESCHEME_DFI ) THEN
+          grid%dfi_re_cloud_gsfc(:,:,:)   = grid%dfi_re_cloud_gsfc(:,:,:)   + grid%re_cloud_gsfc(:,:,:)   * hn
+          grid%dfi_re_rain_gsfc(:,:,:)    = grid%dfi_re_rain_gsfc(:,:,:)    + grid%re_rain_gsfc(:,:,:)    * hn
+          grid%dfi_re_ice_gsfc(:,:,:)     = grid%dfi_re_ice_gsfc(:,:,:)     + grid%re_ice_gsfc(:,:,:)     * hn
+          grid%dfi_re_snow_gsfc(:,:,:)    = grid%dfi_re_snow_gsfc(:,:,:)    + grid%re_snow_gsfc(:,:,:)    * hn
+          grid%dfi_re_graupel_gsfc(:,:,:) = grid%dfi_re_graupel_gsfc(:,:,:) + grid%re_graupel_gsfc(:,:,:) * hn
+          grid%dfi_re_hail_gsfc(:,:,:)    = grid%dfi_re_hail_gsfc(:,:,:)    + grid%re_hail_gsfc(:,:,:)    * hn
+#endif
+       ENDIF
      ELSE
        grid%dfi_moist(:,:,:,P_QV) = grid%dfi_moist(:,:,:,P_QV) + grid%moist(:,:,:,P_QV) * hn
      ENDIF
@@ -685,9 +703,27 @@
 !    print *,'Normal DFI'
       grid%moist(:,:,:,:)  = max(0.,grid%dfi_moist(:,:,:,:)  / grid%hcoeff_tot)
       grid%scalar(:,:,:,:) = max(0.,grid%dfi_scalar(:,:,:,:) / grid%hcoeff_tot)
-      grid%re_cloud(:,:,:) = max(0.,grid%dfi_re_cloud(:,:,:) / grid%hcoeff_tot)
-      grid%re_ice(:,:,:)   = max(0.,grid%dfi_re_ice(:,:,:)   / grid%hcoeff_tot)
-      grid%re_snow(:,:,:)  = max(0.,grid%dfi_re_snow(:,:,:)  / grid%hcoeff_tot)
+      IF ( ( grid%mp_physics_dfi .NE. NUWRF3ICESCHEME_DFI ) .AND. &
+           ( grid%mp_physics_dfi .NE. NUWRF4ICESCHEME_DFI ) ) THEN
+         grid%re_cloud(:,:,:)        = max(0.,grid%dfi_re_cloud(:,:,:)        / grid%hcoeff_tot)
+         grid%re_ice(:,:,:)          = max(0.,grid%dfi_re_ice(:,:,:)          / grid%hcoeff_tot)
+         grid%re_snow(:,:,:)         = max(0.,grid%dfi_re_snow(:,:,:)         / grid%hcoeff_tot)
+#if (EM_CORE == 1)
+      ELSE IF ( grid%mp_physics_dfi .EQ. NUWRF3ICESCHEME_DFI ) THEN
+         grid%re_cloud_gsfc(:,:,:)   = max(0.,grid%dfi_re_cloud_gsfc(:,:,:)   / grid%hcoeff_tot)
+         grid%re_rain_gsfc(:,:,:)    = max(0.,grid%dfi_re_rain_gsfc(:,:,:)    / grid%hcoeff_tot)
+         grid%re_ice_gsfc(:,:,:)     = max(0.,grid%dfi_re_ice_gsfc(:,:,:)     / grid%hcoeff_tot)
+         grid%re_snow_gsfc(:,:,:)    = max(0.,grid%dfi_re_snow_gsfc(:,:,:)    / grid%hcoeff_tot)
+         grid%re_graupel_gsfc(:,:,:) = max(0.,grid%dfi_re_graupel_gsfc(:,:,:) / grid%hcoeff_tot)
+      ELSE IF ( grid%mp_physics_dfi .EQ. NUWRF4ICESCHEME_DFI ) THEN
+         grid%re_cloud_gsfc(:,:,:)   = max(0.,grid%dfi_re_cloud_gsfc(:,:,:)   / grid%hcoeff_tot)
+         grid%re_rain_gsfc(:,:,:)    = max(0.,grid%dfi_re_rain_gsfc(:,:,:)    / grid%hcoeff_tot)
+         grid%re_ice_gsfc(:,:,:)     = max(0.,grid%dfi_re_ice_gsfc(:,:,:)     / grid%hcoeff_tot)
+         grid%re_snow_gsfc(:,:,:)    = max(0.,grid%dfi_re_snow_gsfc(:,:,:)    / grid%hcoeff_tot)
+         grid%re_graupel_gsfc(:,:,:) = max(0.,grid%dfi_re_graupel_gsfc(:,:,:) / grid%hcoeff_tot)
+         grid%re_hail_gsfc(:,:,:)    = max(0.,grid%dfi_re_hail_gsfc(:,:,:)    / grid%hcoeff_tot)
+#endif
+      ENDIF
     ELSE
 !    print *,'In dfi_array_reset, QV comp, dfi_save_hydrometeors=1'
       grid%moist(:,:,:,P_QV)  = max(0.,grid%dfi_moist(:,:,:,P_QV)  / grid%hcoeff_tot)
@@ -952,9 +988,27 @@ call wrf_message(mess)
 !    print *,'normal DFI'
       grid%dfi_moist(:,:,:,:)  = 0.
       grid%dfi_scalar(:,:,:,:) = 0.
-      grid%dfi_re_cloud(:,:,:) = 0.
-      grid%dfi_re_ice(:,:,:)   = 0.
-      grid%dfi_re_snow(:,:,:)  = 0.
+      IF ( ( grid%mp_physics_dfi .NE. NUWRF3ICESCHEME_DFI ) .AND. &
+           ( grid%mp_physics_dfi .NE. NUWRF4ICESCHEME_DFI ) ) THEN
+         grid%re_cloud(:,:,:)        = 0.
+         grid%re_ice(:,:,:)          = 0.
+         grid%re_snow(:,:,:)         = 0.
+#if (EM_CORE == 1)
+      ELSE IF ( grid%mp_physics_dfi .EQ. NUWRF3ICESCHEME_DFI ) THEN
+         grid%re_cloud_gsfc(:,:,:)   = 0.
+         grid%re_rain_gsfc(:,:,:)    = 0.
+         grid%re_ice_gsfc(:,:,:)     = 0.
+         grid%re_snow_gsfc(:,:,:)    = 0.
+         grid%re_graupel_gsfc(:,:,:) = 0.
+      ELSE IF ( grid%mp_physics_dfi .EQ. NUWRF4ICESCHEME_DFI ) THEN
+         grid%re_cloud_gsfc(:,:,:)   = 0.
+         grid%re_rain_gsfc(:,:,:)    = 0.
+         grid%re_ice_gsfc(:,:,:)     = 0.
+         grid%re_snow_gsfc(:,:,:)    = 0.
+         grid%re_graupel_gsfc(:,:,:) = 0.
+         grid%re_hail_gsfc(:,:,:)    = 0.
+#endif
+      ENDIF
     ELSE
 !    print *,'In dfi_clear_accumulation, clear dfi_QV - dfi_savehydmeteors=1'
       grid%dfi_moist(:,:,:,P_QV) = 0.

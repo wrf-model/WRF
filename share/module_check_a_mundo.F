@@ -197,12 +197,35 @@
 
 #endif
 
+#if (EM_CORE == 1)
 !-----------------------------------------------------------------------
-! Check that NSSL microphysics is not allowed for WRF-NMM run
+! There is a binary file for Goddard radiation. It is single precision.
+!-----------------------------------------------------------------------
+# if ( defined(PROMOTE_FLOAT) || ( RWORDSIZE == DWORDSIZE ) )
+      god_r8 : DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec % ra_lw_physics(i) == goddardlwscheme ) .OR. &
+              ( model_config_rec % ra_sw_physics(i) == goddardswscheme ) ) THEN
+            wrf_err_message = '--- ERROR: Goddard radiation scheme cannot run with real*8 floats'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- Fix ra_lw_physics and ra_sw_physics in namelist.input '
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
+            EXIT god_r8
+         END IF
+      ENDDO god_r8
+
+# endif
+#endif
+
+
+!-----------------------------------------------------------------------
+! Check that some microphysics is not allowed for WRF-NMM run
 !-----------------------------------------------------------------------
 #if (NMM_CORE == 1) || (HWRF == 1)
       DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec % mp_physics(i) == nssl_2mom .OR. &
+         IF ( model_config_rec % mp_physics(i) == nuwrf3icescheme .OR. &
+              model_config_rec % mp_physics(i) == nuwrf4icescheme .OR. &
+              model_config_rec % mp_physics(i) == nssl_2mom .OR. &
               model_config_rec % mp_physics(i) == nssl_2momccn .OR. &
               model_config_rec % mp_physics(i) == nssl_1mom .OR. &
               model_config_rec % mp_physics(i) == nssl_1momlfo .OR. &

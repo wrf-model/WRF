@@ -299,6 +299,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
    if ( Is_alarm_tstep(grid%domain_clock, grid%alarms(HISTORY_ALARM)) ) then
       diag_flag = .true.
    endif
+   IF (config_flags%nwp_diagnostics == 1) diag_flag = .true.
 
    grid%itimestep = grid%itimestep + 1
    grid%dtbc = grid%dtbc + grid%dt
@@ -3716,6 +3717,36 @@ BENCH_START(micro_driver_tim)
       &        , qicuten=grid%rqicuten, qccuten=grid%rqccuten             &
       &        , HAIL=config_flags%gsfcgce_hail                           & ! for gsfcgce
       &        , ICE2=config_flags%gsfcgce_2ice                           & ! for gsfcgce
+      &        , PHYS_TOT=grid%phys_tot                                   & ! for gsfcgce
+      &        , PHYSC=grid%physc                                         & ! for gsfcgce
+      &        , PHYSE=grid%physe                                         & ! for gsfcgce
+      &        , PHYSD=grid%physd                                         & ! for gsfcgce
+      &        , PHYSS=grid%physs                                         & ! for gsfcgce
+      &        , PHYSM=grid%physm                                         & ! for gsfcgce
+      &        , PHYSF=grid%physf                                         & ! for gsfcgce
+
+      &        , ACPHYS_TOT=grid%acphys_tot                               & ! for gsfcgce
+      &        , ACPHYSC=grid%acphysc                                     & ! for gsfcgce
+      &        , ACPHYSE=grid%acphyse                                     & ! for gsfcgce
+      &        , ACPHYSD=grid%acphysd                                     & ! for gsfcgce
+      &        , ACPHYSS=grid%acphyss                                     & ! for gsfcgce
+      &        , ACPHYSM=grid%acphysm                                     & ! for gsfcgce
+      &        , ACPHYSF=grid%acphysf                                     & ! for gsfcgce
+
+      &        , RE_CLOUD_GSFC=grid%re_cloud_gsfc                         & ! for gsfcgce
+      &        , RE_RAIN_GSFC=grid%re_rain_gsfc                           & ! for gsfcgce
+      &        , RE_ICE_GSFC=grid%re_ice_gsfc                             & ! for gsfcgce
+      &        , RE_SNOW_GSFC=grid%re_snow_gsfc                           & ! for gsfcgce
+      &        , RE_GRAUPEL_GSFC=grid%re_graupel_gsfc                     & ! for gsfcgce
+      &        , RE_HAIL_GSFC=grid%re_hail_gsfc                           & ! for gsfcgce
+      &        , PRECR3D=grid%precr3d, PRECI3D=grid%preci3d, PRECS3D=grid%precs3d  &
+      &        , PRECG3D=grid%precg3d, PRECH3D=grid%prech3d               &
+#if ( WRF_CHEM == 1)
+      &        , GSFCGCE_GOCART_COUPLING=config_flags%gsfcgce_gocart_coupling &
+      &        , ICN_DIAG=grid%icn_diag                                   & ! inline gocart
+      &        , NC_DIAG=grid%nc_diag                                     & ! inline gocart
+#endif
+!NUWRF JJS 20110525 ^^^^^
 !     &        , ccntype=config_flags%milbrandt_ccntype                   & ! for milbrandt (2mom)
 ! YLIN
 ! RI_CURR INPUT

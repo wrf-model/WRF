@@ -2199,7 +2199,14 @@
          CALL wrf_debug ( 1, wrf_err_message )
 
       END IF
-      
+
+!-----------------------------------------------------------------------
+! If a user sets nwp_diagnostics = 1, then radar reflectivity computation
+! needs to happen
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec % nwp_diagnostics == 1 ) model_config_rec % do_radar_ref = 1     
+
 !-----------------------------------------------------------------------
 ! If a user requested to compute the radar reflectivity .OR. if this is
 ! one of the schemes that ALWAYS computes the radar reflectivity, then

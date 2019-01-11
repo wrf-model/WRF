@@ -329,7 +329,19 @@
   SSI    = 0.03         !liquid water holding capacity for snowpack (m3/m3) (0.03)
   SWEMX  = 1.00         !new snow mass to fully cover old snow (mm)
                         !equivalent to 10mm depth (density = 100 kg/m3)
+  TAU0          = 1.e6  !tau0 from Yang97 eqn. 10a
+  GRAIN_GROWTH  = 5000. !growth from vapor diffusion Yang97 eqn. 10b
+  EXTRA_GROWTH  = 10.   !extra growth near freezing Yang97 eqn. 10c
+  DIRT_SOOT     = 0.3   !dirt and soot term Yang97 eqn. 10d
+  BATS_COSZ     = 2.0   !zenith angle snow albedo adjustment; b in Yang97 eqn. 15
+  BATS_VIS_NEW  = 0.95  !new snow visible albedo
+  BATS_NIR_NEW  = 0.65  !new snow NIR albedo
+  BATS_VIS_AGE  = 0.2   !age factor for diffuse visible snow albedo Yang97 eqn. 17
+  BATS_NIR_AGE  = 0.5   !age factor for diffuse NIR snow albedo Yang97 eqn. 18
+  BATS_VIS_DIR  = 0.4   !cosz factor for direct visible snow albedo Yang97 eqn. 15
+  BATS_NIR_DIR  = 0.4   !cosz factor for direct NIR snow albedo Yang97 eqn. 16
   RSURF_SNOW = 50.0     !surface resistence for snow [s/m]
+  RSURF_EXP = 5.0       !exponent in the shape parameter for soil resistance option 1
 
 /
 

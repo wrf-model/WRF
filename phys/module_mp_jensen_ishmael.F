@@ -56,7 +56,7 @@ contains
   subroutine jensen_ishmael_init
     implicit none
     
-    integer :: i1, i2, i3, i4, count
+    integer :: i1, i2, i3, i4
   !.. Be careful when using a moving nest or any instance
   !.. where micro_init is called frequently as this may
   !.. slow down the code. 
@@ -65,12 +65,12 @@ contains
     if(.not.allocated(itab)) then 
        allocate(itab(51,51,51,11,2))
 
-       open(20, FILE='ishmael-qi-qc.dat')
+       open(20, FILE='ishmael-qi-qc.bin', FORM='unformatted')
        do i1 = 1,51
           do i2 = 1,51
              do i3 = 1,51
                 do i4 = 1,11
-                   read(20, *) itab(i1,i2,i3,i4,1), &
+                   read(20) itab(i1,i2,i3,i4,1), &
                         itab(i1,i2,i3,i4,2)
                 enddo
              enddo
@@ -84,29 +84,17 @@ contains
     if(.not.allocated(itabr)) then
        allocate(itabr(51,51,51,11,6))
 
-       count = 0
-       open(30, FILE='ishmael-qi-qr_1.dat')
-       open(50, FILE='ishmael-qi-qr_2.dat')
+       open(30, FILE='ishmael-qi-qr.bin', FORM='unformatted')
        do i1 = 1,51
           do i2 = 1,51
              do i3 = 1,51
                 do i4 = 1,11
-                   count = count + 1
-                   if(count.le.729581) then
-                      read(30, *) itabr(i1,i2,i3,i4,1), &
-                           itabr(i1,i2,i3,i4,2), &
-                           itabr(i1,i2,i3,i4,3), &
-                           itabr(i1,i2,i3,i4,4), &
-                           itabr(i1,i2,i3,i4,5), &
-                           itabr(i1,i2,i3,i4,6)
-                   else
-                      read(50, *) itabr(i1,i2,i3,i4,1), &
-                           itabr(i1,i2,i3,i4,2), &
-                           itabr(i1,i2,i3,i4,3), &
-                           itabr(i1,i2,i3,i4,4), &
-                           itabr(i1,i2,i3,i4,5), &
-                           itabr(i1,i2,i3,i4,6)
-                   endif
+                   read(30) itabr(i1,i2,i3,i4,1), &
+                        itabr(i1,i2,i3,i4,2), &
+                        itabr(i1,i2,i3,i4,3), &
+                        itabr(i1,i2,i3,i4,4), &
+                        itabr(i1,i2,i3,i4,5), &
+                        itabr(i1,i2,i3,i4,6)
                 enddo
              enddo
           enddo
@@ -119,9 +107,9 @@ contains
     if(.not.allocated(gamma_tab)) then
        allocate(gamma_tab(505001))
 
-       open(40, FILE='ishmael-gamma-tab.dat')
+       open(40, FILE='ishmael-gamma-tab.bin', FORM='unformatted')
        do i1 = 1,505001
-          read(40, *) gamma_tab(i1)
+          read(40) gamma_tab(i1)
        enddo
        close(40)
        print*, 'Jensen_ISHMAEL lookup table 3 of 3'

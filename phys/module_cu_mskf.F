@@ -5564,7 +5564,7 @@ updraft:    DO NK=K,KL-1
  
          NIC=NINT(TIMEC/DT)
          TIMEC=FLOAT(NIC)*DT
-         TIMEC=AMIN1(TIMEC,86400)  !JRJ Ramboll: cap convective time scale at 24 hrs
+         TIMEC=MIN(TIMEC,86400.)  !JRJ Ramboll: cap convective time scale at 24 hrs
 !     
 !...COMPUTE WIND SHEAR AND PRECIPITATION EFFICIENCY.
 !     

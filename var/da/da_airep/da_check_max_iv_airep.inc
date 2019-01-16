@@ -34,8 +34,10 @@ subroutine da_check_max_iv_airep(iv, it, num_qcstat_conv)
                        num_qcstat_conv(1,airep,1,ipr) = num_qcstat_conv(1,airep,1,ipr) + 1
                        if(failed) then
                           num_qcstat_conv(2,airep,1,ipr) = num_qcstat_conv(2,airep,1,ipr) + 1
+                          if ( write_rej_obs_conv ) then
                           write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
                           'airep',ob_vars(1),iv%info(airep)%lat(k,n),iv%info(airep)%lon(k,n),0.01*iv%airep(n)%p(k)
+                          end if
                        end if
                    end if
                 end if
@@ -47,8 +49,10 @@ subroutine da_check_max_iv_airep(iv, it, num_qcstat_conv)
                         num_qcstat_conv(1,airep,2,ipr) = num_qcstat_conv(1,airep,2,ipr) + 1
                         if(failed)then
                            num_qcstat_conv(2,airep,2,ipr) = num_qcstat_conv(2,airep,2,ipr) + 1
+                           if ( write_rej_obs_conv ) then
                            write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
                            'airep',ob_vars(2),iv%info(airep)%lat(k,n),iv%info(airep)%lon(k,n),0.01*iv%airep(n)%p(k)
+                           end if
                         end if
                     end if
                 end if
@@ -62,8 +66,10 @@ subroutine da_check_max_iv_airep(iv, it, num_qcstat_conv)
                         num_qcstat_conv(1,airep,1,ipr) = num_qcstat_conv(1,airep,1,ipr) + 1
                         if(failed) then
                            num_qcstat_conv(2,airep,1,ipr) = num_qcstat_conv(2,airep,1,ipr) + 1
+                           if ( write_rej_obs_conv ) then
                            write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
                            'airep',ob_vars(1),iv%info(airep)%lat(k,n),iv%info(airep)%lon(k,n),0.01*iv%airep(n)%p(k)
+                           end if
                         end if
                     end if
                 end if
@@ -75,8 +81,10 @@ subroutine da_check_max_iv_airep(iv, it, num_qcstat_conv)
                         num_qcstat_conv(1,airep,2,ipr) = num_qcstat_conv(1,airep,2,ipr) + 1
                         if(failed)then
                            num_qcstat_conv(2,airep,2,ipr) = num_qcstat_conv(2,airep,2,ipr) + 1
+                           if ( write_rej_obs_conv ) then
                            write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
                            'airep',ob_vars(2),iv%info(airep)%lat(k,n),iv%info(airep)%lon(k,n),0.01*iv%airep(n)%p(k)
+                           end if
                         end if
                     end if
                  end if
@@ -114,11 +122,15 @@ subroutine da_check_max_iv_airep(iv, it, num_qcstat_conv)
 
                  if(failed1 .or. failed2) then
                     num_qcstat_conv(2,airep,1,ipr) = num_qcstat_conv(2,airep,1,ipr) + 1
+                    if ( write_rej_obs_conv ) then
                     write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
                           'airep',ob_vars(1),iv%info(airep)%lat(k,n),iv%info(airep)%lon(k,n),0.01*iv%airep(n)%p(k)
+                    end if
                     num_qcstat_conv(2,airep,2,ipr) = num_qcstat_conv(2,airep,2,ipr) + 1
+                    if ( write_rej_obs_conv ) then
                     write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
                           'airep',ob_vars(2),iv%info(airep)%lat(k,n),iv%info(airep)%lon(k,n),0.01*iv%airep(n)%p(k)
+                    end if
                  endif
              endif
 
@@ -147,8 +159,10 @@ subroutine da_check_max_iv_airep(iv, it, num_qcstat_conv)
          num_qcstat_conv(1,airep,3,ipr) = num_qcstat_conv(1,airep,3,ipr) + 1
          if(failed) then
           num_qcstat_conv(2,airep,3,ipr) = num_qcstat_conv(2,airep,3,ipr) + 1
+           if ( write_rej_obs_conv ) then
            write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
            'airep',ob_vars(3),iv%info(airep)%lat(k,n),iv%info(airep)%lon(k,n),0.01*iv%airep(n)%p(k)
+           end if
          end if
         end if
         end if
@@ -166,8 +180,10 @@ subroutine da_check_max_iv_airep(iv, it, num_qcstat_conv)
            num_qcstat_conv(1,airep,4,ipr) = num_qcstat_conv(1,airep,4,ipr) + 1
            if(failed) then
            num_qcstat_conv(2,airep,4,ipr) = num_qcstat_conv(2,airep,4,ipr) + 1
+           if ( write_rej_obs_conv ) then
            write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
            'airep',ob_vars(4),iv%info(airep)%lat(k,n),iv%info(airep)%lon(k,n),0.01*iv%airep(n)%p(k)
+           end if
            end if
         end if
         end if

@@ -18,8 +18,8 @@ module da_radiance
       init_constants_derived, &
       rttov_platform_name, rttov_inst_name, crtm_sensor_name  ! names used by both RTTOV and CRTM
 #ifdef RTTOV
-   use module_radiance, only : coefs, rttov_coefs, profile_type, radiance_type, &
-      transmission_type,errorstatus_success,gas_id_watervapour,rttov_emissivity
+   use module_radiance, only : coefs, rttov_coefs, rttov_profile, rttov_radiance, &
+      rttov_transmission,errorstatus_success,gas_id_watervapour,rttov_emissivity
 #endif
 #ifdef CRTM
    use module_radiance, only : crtm_channelinfo_type, crtm_platform_name, crtm_init, &
@@ -46,7 +46,7 @@ module da_radiance
       tovs_min_transfer,use_error_factor_rad,num_fgat_time,stdout,trace_use, &
       qc_good, qc_bad,myproc,biascorr,thinning,thinning_mesh, &
       rad_monitoring, monitor_on, kts, kte, kms, kme, calc_weightfunc, &
-      use_mwtsobs, use_mwhsobs, use_atmsobs, use_amsr2obs, &
+      use_mwtsobs, use_mwhsobs, use_atmsobs, use_amsr2obs, use_ahiobs, &
       use_hirs4obs, use_mhsobs,bufr_year, bufr_month,bufr_day,bufr_hour, &
       bufr_minute, bufr_second,bufr_solzen, bufr_station_height, &
       bufr_landsea_mask,bufr_solazi,tovs_end, max_tovs_input, bufr_satzen, nchan_mhs, &
@@ -122,6 +122,9 @@ contains
 #include "da_read_obs_bufriasi.inc"
 #include "da_read_obs_bufrseviri.inc"
 #include "da_read_obs_hdf5amsr2.inc"
+#include "da_read_obs_hdf5ahi.inc"
+#include "da_read_obs_netcdf4ahi_geocat.inc"
+#include "da_read_obs_netcdf4ahi_jaxa.inc"
 #include "da_read_obs_ncgoesimg.inc"
 #include "da_get_satzen.inc"
 #include "da_allocate_rad_iv.inc"

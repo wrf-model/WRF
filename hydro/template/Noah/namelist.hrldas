@@ -1,0 +1,51 @@
+&NOAHLSM_OFFLINE
+
+ HRLDAS_CONSTANTS_FILE = "wrfinput_d01"
+ INDIR  = "./FORCING"
+ OUTDIR = "."
+
+ START_YEAR   = 2013
+ START_MONTH  = 09
+ START_DAY    = 11
+ START_HOUR   = 00
+ START_MIN    = 00
+
+ RESTART_FILENAME_REQUESTED  = 'RESTART.2013091100_DOMAIN1'
+
+ ! Specification of simulation length in days OR hours
+ KDAY = 1440
+ ! KHOUR = 1
+
+ ! Timesteps in units of seconds
+ FORCING_TIMESTEP =  3600
+ NOAH_TIMESTEP    =    60
+ OUTPUT_TIMESTEP  =  3600
+
+ ! Land surface model restart file write frequency
+ RESTART_FREQUENCY_HOURS = 6 
+
+ ! Split output after split_output_count output times.
+ SPLIT_OUTPUT_COUNT = 1
+
+ ! Soil layer specification
+ NSOIL=4
+ ZSOIL(1) = -0.10
+ ZSOIL(2) = -0.40
+ ZSOIL(3) = -1.00
+ ZSOIL(4) = -2.00
+
+ ! Forcing data measurement heights
+ ZLVL = 2.0       ! for temp and humidity
+ ZLVL_WIND = 10.0 ! for wind variables
+
+ IZ0TLND = 0
+ SFCDIF_OPTION = 0
+ UPDATE_SNOW_FROM_FORCING = .FALSE.
+
+ ! Specification of forcing data:  1=HRLDAS-hr format, 2=HRLDAS-min format,
+ !                                 3=WRF, 4=Idealized, 5=Ideal w/ Spec.Precip.,
+ !                                 6=HRLDAS-hr format w/ Spec. Precip,
+ !                                 7=WRF w/Spec. Precip
+ FORC_TYP = 3
+
+/

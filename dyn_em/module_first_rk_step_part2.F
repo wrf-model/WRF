@@ -731,11 +731,11 @@ BENCH_END(update_phy_ten_tim)
       IF (grid%sppt_on==1) then
           !$OMP PARALLEL DO   &
           !$OMP PRIVATE ( ij )
-          ! JB comment:  P_QV is in moist_tend(ims,kms,jms,2)
           DO ij = 1 , grid%num_tiles
                  call perturb_physics_tend(grid%gridpt_stddev_sppt,          &
                         grid%stddev_cutoff_sppt,grid%rstoch,                 &
-                        ru_tendf,rv_tendf,t_tendf,moist_tend(ims,kms,jms,2), &
+                        ru_tendf,rv_tendf,t_tendf,                           &
+                        moist_tend(ims,kms,jms,p_qv),                        &
                         ids, ide, jds, jde, kds, kde,                        &
                         ims, ime, jms, jme, kms, kme,                        &
                         grid%i_start(ij), grid%i_end(ij),                    &
@@ -911,7 +911,7 @@ BENCH_START(vert_diff_tim)
                                       tracer_tend, num_tracer,                     &
                                       grid%u_2, grid%v_2,                                  &
                                       grid%t_2,grid%u_base,grid%v_base,grid%t_base,grid%qv_base,          &
-                                      grid%tke_2, config_flags,              &
+                                      grid%tke_2, th_phy, config_flags,              &
                                       grid%defor13,grid%defor23,grid%defor33,                   &
                                       nba_mij, num_nba_mij,          & !JDM
                                       grid%div, moist, chem, scalar,tracer,         &

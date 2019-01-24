@@ -50,7 +50,7 @@
  num_force_layers                    = 8
  scm_lu_index                        = 2
  scm_isltyp                          = 4
- scm_vegfra                          = 0.5
+ scm_vegfra                          = 50. 
  scm_lat                             = 37.600
  scm_lon                             = -96.700
  scm_th_adv                          = .false.

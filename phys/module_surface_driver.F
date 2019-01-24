@@ -48,6 +48,7 @@ CONTAINS
      &          ,flqc,flhc,psfc,sst,sst_input,sstsk,dtw,sst_update,sst_skin     &
      &          ,scm_force_skintemp,scm_force_flux,t2,emiss           &
      &          ,sf_sfclay_physics,sf_surface_physics,ra_lw_physics   & 
+     &          ,bl_pbl_physics                                       &
      &          ,mosaic_lu,mosaic_soil                                &
      &          ,landusef,soilctop,soilcbot,ra,rs,nlcat,nscat,vegf_px & ! PX-LSM
      &          ,snowncv, anal_interval, lai, imperv, canfra          & ! PX-LSM
@@ -286,6 +287,8 @@ CONTAINS
                                        ,SFCLAYREVSCHEME           &
                                        ,MYJSFCSCHEME              &
                                        ,QNSESFCSCHEME             &
+                                       ,MYJPBLSCHEME              &
+                                       ,QNSEPBLSCHEME             &
                                        ,GFSSFCSCHEME              &
                                        ,PXSFCSCHEME               &
                                        ,NOAHMPSCHEME              &
@@ -305,6 +308,8 @@ CONTAINS
                                        ,SFCLAYREVSCHEME           &
                                        ,MYJSFCSCHEME              &
                                        ,QNSESFCSCHEME             &
+                                       ,MYJPBLSCHEME              &
+                                       ,QNSEPBLSCHEME             &
                                        ,GFSSFCSCHEME              &
                                        ,PXSFCSCHEME               &
                                        ,NOAHMPSCHEME              &
@@ -577,7 +582,7 @@ CONTAINS
 
    INTEGER, INTENT(IN) :: sf_sfclay_physics, sf_surface_physics,      &
                           sf_urban_physics,ra_lw_physics,sst_update,  &
-                          ra_sw_physics                    
+                          ra_sw_physics, bl_pbl_physics
    INTEGER, INTENT(IN),OPTIONAL :: sst_skin, tmn_update,              &
                                    scm_force_skintemp, scm_force_flux 
 
@@ -1151,7 +1156,7 @@ CONTAINS
 !
    INTEGER :: i,J,K,NK,jj,ij
    INTEGER :: gfdl_ntsflg
-   LOGICAL :: radiation, myj, frpcpn, isisfc
+   LOGICAL :: radiation, myj, myjpbl, frpcpn, isisfc
    LOGICAL, INTENT(in), OPTIONAL :: rdlai2d
    LOGICAL, INTENT(in), OPTIONAL :: usemonalb
    REAL    :: total_depth,mid_point_depth
@@ -1731,6 +1736,10 @@ CONTAINS
   frpcpn = .false.
   myj    = ((sf_sfclay_physics .EQ. MYJSFCSCHEME) .OR. &
             (sf_sfclay_physics .EQ. QNSESFCSCHEME) )
+
+  myjpbl = ((bl_pbl_physics .EQ. MYJPBLSCHEME) .OR. &
+            (bl_pbl_physics .EQ. QNSEPBLSCHEME) )
+
   isisfc = ( FRACTIONAL_SEAICE .EQ. 1  .AND. (          &
             (sf_sfclay_physics .EQ. SFCLAYSCHEME ) .OR. &
             (sf_sfclay_physics .EQ. SFCLAYREVSCHEME ) .OR. &
@@ -3322,7 +3331,7 @@ CONTAINS
                 sfcrunoff,udrunoff,acrunoff,sfcexc,             &
                 sfcevp,grdflx,snowfallac,acsnow,acsnom,         &
                 smfr3d,keepfr3dflag,                            &
-                myj,shdmin,shdmax,rdlai2d,                      &
+                myjpbl,shdmin,shdmax,rdlai2d,                   &
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )

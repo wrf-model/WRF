@@ -52,7 +52,7 @@
 
       LOGICAL :: exists, vnest
       LOGICAL , EXTERNAL :: wrf_dm_on_monitor
-      INTEGER :: i, j, oops, d1_value
+      INTEGER :: i, j, oops, d1_value, EDMFMAX, SCHUMAX
       LOGICAL :: km_opt_already_done , diff_opt_already_done
       INTEGER :: count_opt
       LOGICAL :: lon_extent_is_global , lat_extent_is_global
@@ -994,18 +994,18 @@
 !-----------------------------------------------------------------------
 
       oops = 0
-      DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec%bl_mynn_edmf(i) .EQ. MYNN_STEM_EDMF .OR. &
-              model_config_rec%bl_mynn_edmf(i) .EQ. MYNN_TEMF_EDMF) THEN
-               model_config_rec%shcu_physics(i) = 0  ! maxdom
-               model_config_rec%ishallow = 0         ! not maxdom
-               oops = oops + 1
+      EDMFMAX = MAXVAL(model_config_rec%bl_mynn_edmf(1:model_config_rec%max_dom))
+      SCHUMAX = MAXVAL(model_config_rec%shcu_physics(1:model_config_rec%max_dom))
+         IF ( ( ( EDMFMAX .GT. 0 ) .AND. ( SCHUMAX .GT. 0 ) ) .OR. &
+              ( ( EDMFMAX .GT. 0 ) .AND. ( model_config_rec%ishallow .GT. 0 ) ) ) THEN
+            wrf_err_message = '--- ERROR: bl_mynn_edmf > 0 requires both shcu_physics=0 & ishallow=0' 
+            CALL wrf_message(wrf_err_message)
+            wrf_err_message = 'when using MYNN PBL, by default bl_mynn_edmf is turned on'
+            CALL wrf_message(wrf_err_message)
+            wrf_err_message = 'Modify namelist.input so that shcu_physics nor ishallow is used when bl_mynn_edmf is turned on'
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
          END IF
-      ENDDO      ! Loop over domains
-      IF ( oops .GT. 0 ) THEN
-         wrf_err_message = 'bl_mynn_edmf > 0 requires both shcu_physics=0 & ishallow=0'
-         CALL wrf_debug ( 1, wrf_err_message )
-      END IF
 
 !-----------------------------------------------------------------------
 !  We need to know if any of the cumulus schemes are active. This
@@ -1722,9 +1722,9 @@
 #if (EM_CORE == 1 && WRFPLUS == 1 )
       IF ( ( model_config_rec%jcdfi_use ).AND. &
            ( model_config_rec%jcdfi_diag .NE. 1 ) ) THEN
-         wrf_err_message = '--- ERROR: If jcdfi_use = 1, then jcdfi_io must also = 1 for that domain '
+         wrf_err_message = '--- ERROR: If jcdfi_use = 1, then jcdfi_diag must also = 1 '
          CALL wrf_message ( wrf_err_message )
-         wrf_err_message = '--- Change jcdfi_io in namelist.input '
+         wrf_err_message = '--- Change jcdfi_diag in namelist.input '
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          count_fatal_error = count_fatal_error + 1
       END IF

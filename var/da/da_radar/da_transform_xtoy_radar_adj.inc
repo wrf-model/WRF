@@ -59,13 +59,15 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
    allocate (model_qsn(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_qgr(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_qv(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
-   allocate (model_qvb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_t(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
-   allocate (model_tb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
 
-   !basic states
-   call da_interp_lin_3d (grid%xb%t,   iv%info(radar), model_tb)
-   call da_interp_lin_3d (grid%xb%q,   iv%info(radar), model_qvb)
+   if ( use_radar_rqv ) then
+      !basic states
+      allocate (model_qvb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
+      allocate (model_tb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
+      call da_interp_lin_3d (grid%xb%t,   iv%info(radar), model_tb)
+      call da_interp_lin_3d (grid%xb%q,   iv%info(radar), model_qvb)
+   end if
 
    ! Needed
    model_u = 0.0
@@ -173,12 +175,14 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
    deallocate (model_qrnb)
    deallocate (model_ps)
    deallocate (model_qv)
-   deallocate (model_qvb)
    deallocate (model_t)
-   deallocate (model_tb)
    deallocate (model_qsn)
    deallocate (model_qgr)
    deallocate (model_rho)
+   if ( use_radar_rqv ) then
+      deallocate (model_qvb)
+      deallocate (model_tb)
+   end if
 
    if (trace_use) call da_trace_exit("da_transform_xtoy_radar_adj")
 

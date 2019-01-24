@@ -21,12 +21,6 @@ SUBROUTINE solve_interface ( grid )
 #if (NMM_CORE == 1)
 # include  "solve_nmm.int"
 #endif
-#if (COAMPS_CORE == 1)
-# include  "solve_coamps.int"
-#endif
-#if (EXP_CORE == 1)
-# include  "solve_exp.int"
-#endif
    END INTERFACE
 
    TYPE(domain) , INTENT(INOUT)  :: grid
@@ -50,7 +44,7 @@ SUBROUTINE solve_interface ( grid )
    ELSE IF ( config_flags%dyn_opt == dyn_em_ad ) THEN
       CALL solve_em_ad  ( grid , config_flags  &
 !
-# include <actual_new_args.inc>
+# include "actual_new_args.inc"
 !
                )
    ELSE
@@ -102,23 +96,6 @@ SUBROUTINE solve_interface ( grid )
                )
    ENDIF
 # endif
-#endif
-#if (COAMPS_CORE == 1)
-   CALL solve_coamps  ( grid , config_flags   &
-!
-# include "actual_new_args.inc"
-!
-               )
-#endif
-
-! ###### 4. Edit share/solve_interface.F to add call to experimental core
-
-#if (EXP_CORE == 1)
-   CALL solve_exp  ( grid              &
-!
-# include "exp_actual_args.inc"
-!
-               )
 #endif
 
 END SUBROUTINE solve_interface

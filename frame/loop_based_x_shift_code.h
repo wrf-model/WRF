@@ -64,21 +64,33 @@
             IF (      p%MemoryOrder(1:1) .EQ. 'X' .AND.  p%MemoryOrder(3:3) .EQ.  'Y' ) THEN
               IF      ( p%Type .EQ. 'r' ) THEN
                 IF ( SIZE(p%rfield_4d,1)*SIZE(p%rfield_4d,3) .GT. 1 ) THEN
-                  DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
-                    p%rfield_4d(ips:ipf,:,jms:jme,itrace) = p%rfield_4d(ips+px:ipf+px,:,jms:jme,itrace)
-                  ENDDO
+                  IF ( p%scalar_array ) THEN
+                    DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
+                      p%rfield_4d(ips:ipf,:,jms:jme,itrace) = p%rfield_4d(ips+px:ipf+px,:,jms:jme,itrace)
+                    ENDDO
+                  ELSE
+                    p%rfield_4d(ips:ipf,:,jms:jme,:) = p%rfield_4d(ips+px:ipf+px,:,jms:jme,:)
+                  ENDIF
                 ENDIF
               ELSE IF ( p%Type .EQ. 'd' ) THEN
                 IF ( SIZE(p%dfield_4d,1)*SIZE(p%dfield_4d,3) .GT. 1 ) THEN
-                  DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
-                    p%dfield_4d(ips:ipf,:,jms:jme,itrace) = p%dfield_4d(ips+px:ipf+px,:,jms:jme,itrace)
-                  ENDDO
+                  IF ( p%scalar_array ) THEN
+                    DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
+                      p%dfield_4d(ips:ipf,:,jms:jme,itrace) = p%dfield_4d(ips+px:ipf+px,:,jms:jme,itrace)
+                    ENDDO
+                  ELSE
+                    p%dfield_4d(ips:ipf,:,jms:jme,:) = p%dfield_4d(ips+px:ipf+px,:,jms:jme,:)
+                  ENDIF
                 ENDIF
               ELSE IF ( p%Type .EQ. 'i' ) THEN
                 IF ( SIZE(p%ifield_4d,1)*SIZE(p%ifield_4d,3) .GT. 1 ) THEN
-                  DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
-                    p%ifield_4d(ips:ipf,:,jms:jme,itrace) = p%ifield_4d(ips+px:ipf+px,:,jms:jme,itrace)
-                  ENDDO
+                  IF ( p%scalar_array ) THEN
+                    DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
+                      p%ifield_4d(ips:ipf,:,jms:jme,itrace) = p%ifield_4d(ips+px:ipf+px,:,jms:jme,itrace)
+                    ENDDO
+                  ELSE
+                    p%ifield_4d(ips:ipf,:,jms:jme,:) = p%ifield_4d(ips+px:ipf+px,:,jms:jme,:)
+                  ENDIF
                 ENDIF
               ELSE IF ( p%Type .EQ. 'l' ) THEN
                 CALL wrf_error_fatal( '4D logical arrays cannot be shifted for moving nests' )
@@ -86,21 +98,33 @@
             ELSE IF (  p%MemoryOrder(1:2) .EQ. 'XY' ) THEN
               IF      ( p%Type .EQ. 'r' ) THEN
                 IF ( SIZE(p%rfield_4d,1)*SIZE(p%rfield_4d,2) .GT. 1 ) THEN
-                  DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
-                    p%rfield_4d(ips:ipf,jms:jme,:,itrace) = p%rfield_4d(ips+px:ipf+px,jms:jme,:,itrace)
-                  ENDDO
+                  IF ( p%scalar_array ) THEN
+                    DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
+                      p%rfield_4d(ips:ipf,jms:jme,:,itrace) = p%rfield_4d(ips+px:ipf+px,jms:jme,:,itrace)
+                    ENDDO
+                  ELSE
+                    p%rfield_4d(ips:ipf,jms:jme,:,:) = p%rfield_4d(ips+px:ipf+px,jms:jme,:,:)
+                  ENDIF
                 ENDIF
               ELSE IF ( p%Type .EQ. 'd' ) THEN
                 IF ( SIZE(p%dfield_4d,1)*SIZE(p%dfield_4d,2) .GT. 1 ) THEN
-                  DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
-                    p%dfield_4d(ips:ipf,jms:jme,:,itrace) = p%dfield_4d(ips+px:ipf+px,jms:jme,:,itrace)
-                  ENDDO
+                  IF ( p%scalar_array ) THEN
+                    DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
+                      p%dfield_4d(ips:ipf,jms:jme,:,itrace) = p%dfield_4d(ips+px:ipf+px,jms:jme,:,itrace)
+                    ENDDO
+                  ELSE
+                    p%dfield_4d(ips:ipf,jms:jme,:,:) = p%dfield_4d(ips+px:ipf+px,jms:jme,:,:)
+                  ENDIF
                 ENDIF
               ELSE IF ( p%Type .EQ. 'i' ) THEN
                 IF ( SIZE(p%ifield_4d,1)*SIZE(p%ifield_4d,2) .GT. 1 ) THEN
-                  DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
-                    p%ifield_4d(ips:ipf,jms:jme,:,itrace) = p%ifield_4d(ips+px:ipf+px,jms:jme,:,itrace)
-                  ENDDO
+                  IF ( p%scalar_array ) THEN
+                    DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
+                      p%ifield_4d(ips:ipf,jms:jme,:,itrace) = p%ifield_4d(ips+px:ipf+px,jms:jme,:,itrace)
+                    ENDDO
+                  ELSE
+                    p%ifield_4d(ips:ipf,jms:jme,:,:) = p%ifield_4d(ips+px:ipf+px,jms:jme,:,:)
+                  ENDIF
                 ENDIF
               ELSE IF ( p%Type .EQ. 'l' ) THEN
                 CALL wrf_error_fatal( '4D logical arrays cannot be shifted for moving nests' )

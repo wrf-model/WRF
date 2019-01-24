@@ -1,5 +1,5 @@
-Description of WRFDA namelist variables
------------------------------------------
+Description of WRFDA namelist variables, defined in Registry/registry.var
+--------------------------------------------------------------------------------
 
  Note: variables followed by (...) indicate that this variable can or needs to
        be defined for more than 1 value.
@@ -14,6 +14,9 @@ Description of WRFDA namelist variables
                                     ;         PBLH, HFX, QFX, and REGIME are not available in the first guess,
                                     ;         there will be large inconsistency between WRFDA and WRF
                                     ;         T2/Q2/U10/V10/TH2
+  use_wrf_sfcinfo         = .true.  ;
+  use_background_errors   = .true.  ;
+  write_iv_gpsztd         = .false. ; .true.: write out ztd innov information
   write_increments        = .false. ; .true.: write out a binary analysis_increment file
   var4d                   = .false. ; .true.: 4D-VAR
   var4d_bin               = 3600    ; second, Observation sub-window bin legnth for 4D-Var
@@ -23,12 +26,15 @@ Description of WRFDA namelist variables
      ; print_detail_xxx: output extra (sometimes can be too many) diagnostics for debugging.
      ; not recommended to turn them on for production runs.
   print_detail_radar      = .false.
+  print_detail_rain       = .false.
+  print_detail_rad        = .false.
   print_detail_xa         = .false.
   print_detail_xb         = .false.
   print_detail_obs        = .false.
   print_detail_map        = .false.
   print_detail_grad       = .false. ; .true.: to print out detailed gradient of each observation type at
                                     ;         the first and final iterations.
+  print_detail_outerloop  = .false. ; .true.: to write out wrfvar_output file at different outer loops
   check_max_iv_print      = .true.  ; obsolete (only used by Radar)
 /
 &wrfvar2
@@ -39,13 +45,31 @@ Description of WRFDA namelist variables
                                     ;         diagnosed based on the increments of other fields.
                                     ;         If use_radarobs=.true., the w increments are always
                                     ;         calculated.
+  dt_cloud_model          = .false. ; 
+
   wind_sd                 = .false. ; .true.: wind values which are reported as speed/direction will be assimilated as such
                                     ; .false.: default behavior: all wind obs are converted to u/v prior to assimilation
+  wind_sd_buoy            = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_synop           = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_ships           = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_metar           = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_sound           = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_pilot           = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_airep           = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_qscat           = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_tamdar          = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_geoamv          = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_mtgirs          = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_polaramv        = .false. ; -  "obs. types employing wind_sd"
+  wind_sd_profiler        = .false. ; -  "obs. types employing wind_sd"
+  wind_stats_sd           = .false. ; -  "statistics output as sd" ""  ""
+
   qc_rej_both             = .false  ; .true.: if either u or v (spd or dir) do not pass quality control, both obs are rejected
                                     ; .false.: default behavior: qc on wind obs is handled individually
 /
 &wrfvar3
   fg_format               = 1       ; 1: fg_format_wrf_arw_regional (default)
+                                    ; 2: wrf-nmm format             (untested)
                                     ; 3: fg_format_wrf_arw_global   (untested)
                                     ; 4: fg_format_kma_global       (untested)
   ob_format               = 2       ; 1: ob_format_bufr (NCEP PREPBUFR), read in data from ob.bufr
@@ -62,7 +86,7 @@ Description of WRFDA namelist variables
                                               ; data are "thinned" within thinning routine, however, 
                                               ; thin_conv can be set to .false. for debugging purpose.
   thin_conv_ascii                   = .false. ; .true.: thinning for ob_format=2 (ASCII) observations 
-  thin_mesh_conv (max_instruments)  = 20.0    ; km, size of thinning mesh boxes for conventional (non-radiation) 
+  thin_mesh_conv (max_instruments)  = 20.0    ; km, size of thinning mesh boxes for conventional (non-radiance) 
                                               ; observations. Each observation type can set its thinning mesh and 
                                               ; the index/order follows the definition in 
                                               ; WRFDA/var/da/da_control/da_control.f90
@@ -81,7 +105,11 @@ Description of WRFDA namelist variables
   use_profilerobs         = .true.
   use_satemobs            = .true.
   use_gpspwobs            = .true.
-  use_gpsrefobs           = .true.
+  use_gpsztdobs           = .false.  ; .true.: Assimilate GPS Zenith Total Delay data
+  use_gpsrefobs           = .true.   ; Assimilate GPSRO in refractivity quantity
+  use_gpsephobs           = .false.  ; .true.: new in V4.0 for applying non-local Excess PHase operator.
+  top_km_gpsro            = 30.0     ; control the rejection of higher observations
+  bot_km_gpsro            = 0.0      ; control the rejection of lower observations
   use_qscatobs            = .true.
   use_radarobs            = .false.  ; .true.: Assimilate radar data; see User's Guide for more information
   use_radar_rv            = .false.  ; Assimilate radar velocity observations
@@ -89,8 +117,8 @@ Description of WRFDA namelist variables
   use_radar_rhv           = .false.  ; Assimilate retrieved hydrometeors (qr, qs, qg) from radar reflectivity
   use_radar_rqv           = .false.  ; Assimilate estimated humidity (qv) from radar reflectivity
   use_rainobs             = .false.  ; .true.: Assimilate precipitation data; see User's Guide for more information
-  thin_rainobs            = .true.  ; perform thinning on preciptation data
-  use_airsretobs          = .true.
+  thin_rainobs            = .true.   ; perform thinning on preciptation data
+  use_airsretobs          = .true.   ; Assimilate retrieved T/Q profiles from AIRS instrument
      ; the satellite radiance use_xxxobs variables below only control whether
      ; WRFDA will read in the corresponding xxxx.bufr file; they do not control
      ; if the data will be assimilated or not.
@@ -111,6 +139,7 @@ Description of WRFDA namelist variables
   use_seviriobs           = .false.  ; .true.: to read in data from seviri.bufr
   use_amsr2obs            = .false.  ; .true.: to read in AMSR2 data. The file names depend on the data type;
                                      ;         see the User's Guide for more details
+  use_goesimgobs          = .false.  ;
   use_obs_errfac          = .false.  ; .true.: apply obs error tuning factors if errfac.dat is available
                                      ; for conventional data only
 /
@@ -125,15 +154,16 @@ Description of WRFDA namelist variables
   max_error_uv            = 5.0      ; maximum check_max_iv error check factor for u and v
   max_error_pw            = 5.0      ; maximum check_max_iv error check factor for precipitable water
   max_error_ref           = 5.0      ; maximum check_max_iv error check factor for gps refractivity
+  max_error_eph           = 5.0      ;
   max_error_q             = 5.0      ; maximum check_max_iv error check factor for specific humidity
   max_error_p             = 5.0      ; maximum check_max_iv error check factor for pressure
   max_error_thickness     = 5.0      ; maximum check_max_iv error check factor for thickness
   max_error_rv            = 5.0      ; maximum check_max_iv error check factor for radar radial velocity
   max_error_rf            = 5.0      ; maximum check_max_iv error check factor for radar reflectivity
   max_error_rain          = 5.0      ; maximum check_max_iv error check factor for precipitation 
-  max_omb_spd             = 14.0     ; Max absolute value of innovation for wind speed obs in m/s; if 
+  max_omb_spd             = 100.0    ; Max absolute value of innovation for wind speed obs in m/s; if 
                                      ; innov. is greater than this value it will be set to zero
-  max_omb_dir             = 135.0    ; Max absolute value of innovation for wind direction obs in degrees; 
+  max_omb_dir             = 1000.0   ; Max absolute value of innovation for wind direction obs in degrees; 
                                      ; if innov. is greater than this value it will be set to zero
   max_error_spd           = 5.0      ; maximum check_max_iv error check factor for wind speed
   max_error_dir           = 5.0      ; maximum check_max_iv error check factor for wind direction
@@ -143,7 +173,7 @@ Description of WRFDA namelist variables
 /
 &wrfvar6   ; for minimization options
   max_ext_its                  = 1         ; number of outer loops
-  ntmax (max_outer_iterations) = 200       ; maximum number of iterations in inner loop 
+  ntmax (max_outer_iterations) = 75        ; maximum number of iterations in inner loop 
                                            ; (used dimension: max_ext_its)
   eps (max_outer_iterations)   = 0.01      ; minimization convergence criterion (used dimension: max_ext_its)
                                            ; minimization stops when the norm of the gradient of the cost 
@@ -194,12 +224,24 @@ Description of WRFDA namelist variables
   var_scaling5 (max_outer_iterations)  = 1.0   ; tuning factor of background error covariance for control variable 5.
                                                ; control variable 5 is unbalanced surface pressure for cv_options=5 and 6.
                                                ; control variable 5 is surface pressure for cv_options=7.
+  var_scaling6 (max_outer_iterations)  = 1.0   ; cloud liquid water
+  var_scaling6 (max_outer_iterations)  = 1.0   ; rain water
+  var_scaling6 (max_outer_iterations)  = 1.0   ; ice water
+  var_scaling6 (max_outer_iterations)  = 1.0   ; snow
+  var_scaling6 (max_outer_iterations)  = 1.0   ; grauple
+  var_scaling6 (max_outer_iterations)  = 1.0   ; vertical velocity
   ; see the above description about the meaning of control variables 1-5.
   len_scaling1 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 1.
   len_scaling2 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 2.
   len_scaling3 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 3.
   len_scaling4 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 4.
   len_scaling5 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 5.
+  len_scaling6 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 6.
+  len_scaling7 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 7.
+  len_scaling8 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 8.
+  len_scaling9 (max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 9.
+  len_scaling10(max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 10.
+  len_scaling11(max_outer_iterations)  = 1.0   ; tuning factor of scale-length for control variable 11.
   je_factor               = 1.0       ; ensemble covariance weighting factor
   cloud_cv_options        = 0         ; 0: no cloud control variables
                                       ; 1: Total water (qt) is the moist/cloud control variable.
@@ -269,6 +311,8 @@ Description of WRFDA namelist variables
                                     ;    similarity theory in PBL. Innovations are computed based 
                                     ;    on 10-m wind, 2-m temperature and 2-m moisture. 
   max_stheight_diff       = 100.0   ; threshold in meters. See sfc_assi_options=1.
+  max_stheight_diff_ztd   = 1000.0  ; threshold in meters. For ZTD, stations whose |Zdiff|>max_stHeight_diff_ztd will not be assimilated
+  consider_xap4ztd        = .true.  ; whether or not including xa%p in TL/AD of xtoztd operator
   obs_err_inflate         = .false. ; .true.: inflate obs error by exp(|Zdiff|/stn_ht_diff_scale) for
                                     ; SYNOP t, p, q with sfc_assi_options=1 only.
                                     ; Zdiff is the height difference between model and station that is
@@ -301,9 +345,27 @@ Description of WRFDA namelist variables
 &wrfvar12
   use_wpec                = .false. ; true: enables the WPEC dynamic constraint term
   wpec_factor             = 0.001   ; WPEC dynamic constraint weighting factor (1/gamma)
-  balance_type            = 3       ; 1 = geostrophic term
-                                    ; 2 = cyclostrophic term
-                                    ; 3 = geostrophic + cyclostrophic terms (default; recommended)
+  balance_type            = 3       ; for use_wpec=true
+                                    ;   1 = geostrophic term
+                                    ;   2 = cyclostrophic term
+                                    ;   3 = geostrophic + cyclostrophic terms (default; recommended)
+
+  use_divc                = .false. ; switch for divergence constraint
+  divc_factor             = 1000.   ;  
+
+  use_lsac                = .false. ; switch for large scale analysis constraint
+  lsac_nh_step            =  1      ; increment step in grid points in the horizontal direction
+  lsac_nv_step            =  1      ; increment step in grid points in the vertical direction
+  lsac_nv_start           =  1      ; index of starting grid point in the vertical direction
+  lsac_use_u              =  .true. ; switch for large scale u analysis constraint
+  lsac_use_v              =  .true. ; switch for large scale v analysis constraint
+  lsac_use_t              =  .true. ; switch for large scale t analysis constraint
+  lsac_use_q              =  .true. ; switch for large scale q analysis constraint
+  lsac_u_error            =  2.5    ; m/s
+  lsac_v_error            =  2.5    ; m/s
+  lsac_t_error            =  2.0    ; degree C
+  lsac_q_error            =  0.002  ; kg/kg
+  lsac_print_details      =  .false.; switch for printout
 /
 &wrfvar13
   max_vert_var1           = 99.0   ; specify the maximum truncation value (in percentage)
@@ -320,6 +382,13 @@ Description of WRFDA namelist variables
                                    ; in eigenvector decomposition
   max_vert_var5           = 99.0   ; for unbalanced surface pressure, it should be a non-zero
                                    ; positive number.
+  max_vert_var6           = 99.0
+  max_vert_var7           = 99.0
+  max_vert_var8           = 99.0
+  max_vert_var9           = 99.0
+  max_vert_var10          = 99.0
+  max_vert_var11          = 99.0
+
                                    ; set max_vert_var5=0.0 only for offline VarBC applications.
   psi_chi_factor          = 1.0    ; Contribution of stream function in defining balanced part of velocity potential. For cv_options=6 only.
   psi_t_factor            = 1.0    ; Contribution of stream function in defining balanced part of temperature. For cv_options=6 only.
@@ -351,7 +420,7 @@ Description of WRFDA namelist variables
   write_iv_rad_ascii                  = .false.  ; .true.: output radiance Observation minus Background files, 
                                                  ;         which are in ASCII format and separated by 
                                                  ;         sensors and processors.
-  write_oa_rad_ascii                  = .false.  ; .true.: output radiance Observation minus Analysis files 
+  write_oa_rad_ascii                  = .true.   ; .true.: output radiance Observation minus Analysis files 
                                                  ;         (including also O minus B), which are in ASCII format
                                                  ;          and separated by sensors and processors.
   use_error_factor_rad                = .false.  ; .true.: use a radiance error tuning factor file 
@@ -363,7 +432,7 @@ Description of WRFDA namelist variables
                                                  ;         1: RTTOV (WRFDA must be compiled with RTTOV)
                                                  ;         2: CRTM  (WRFDA must be compiled with CRTM)
   only_sea_rad                        = .false.  ; .true.: assimilate radiance over water only
-  use_varbc                           = .false.  ; .true.: perform Variational Bias Correction.
+  use_varbc                           = .true.   ; .true.: perform Variational Bias Correction.
                                                  ;         An ASCII parameter file "VARBC.in" is required.
                                                  ;         (a template is provided with the source code)
   freeze_varbc                        = .false.  ; .true: together with use_varbc=.false., keep the VarBC
@@ -372,6 +441,7 @@ Description of WRFDA namelist variables
                                                  ;        innovations, but it is not updated during the
                                                  ;        minimization.
   varbc_factor                        = 1.0      ; for scaling the VarBC preconditioning
+  varbc_nbgerr                        = 5000     ;
   varbc_nobsmin                       = 10       ; defines the minimum number of observations required for 
                                                  ; the computation of the predictor statistics during the 
                                                  ; first assimilation cycle. If there are not enough data 
@@ -399,6 +469,7 @@ Description of WRFDA namelist variables
                                                  ;         var/da/da_radiance/da_blacklist_rad.inc.
                                                  ; .false.: users need to specify proper channel selections
                                                  ;          in the radiance_info files.
+ calc_weightfunc                      = .false.  ; 
 /
 &wrfvar15   ; needs to be set together with &wrfvar19
   num_pseudo              = 0          ; set the number of pseudo ob, either 0 or 1 (single ob)
@@ -421,6 +492,14 @@ Description of WRFDA namelist variables
                                        ; 2: alpha_corr_type_soar
                                        ; 3: alpha_corr_type_gaussian (default)
   alpha_corr_scale        = 200.0      ; km, 
+  ep_para_read            = 0          ; how ensemble perturbations are read. 0: serial read; 1: parallel read
+  rden_bin                = 1          ; number of bins/batches to read ensemble perturbations in parallel
+  alpha_std_dev           = 1.0        ;
+  alpha_vertloc           = .false.    ; switch for vertical localization
+  alpha_hydrometeors      = .false.    ; switch for cloud alpha control variables
+  hybrid_dual_res         = .false.    ; swithc for dual-resolution hybrid
+  dual_res_upscale_opt    = 3          ;
+  use_4denvar             = .false.    ; switch for activating 4D-Ensemble-Var" 
 /
 &wrfvar17
   analysis_type           = "3D-VAR"   ; "3D-VAR": 3D-VAR mode (default)
@@ -485,9 +564,14 @@ Description of WRFDA namelist variables
   radar_rqv_h_lbound      = -999.0    ; height (m) lower bound for rqv
   radar_rqv_h_ubound      = -999.0    ; height (m) upper bound for rqv
 /
+&obs_opt
+  gpsro_drift             = 1         ; horizontal drifting for GPSRO.  0=no drift, 1=drift
+  gpseph_opt              = 1         ; 0: local operator variant, 1: non-local
+  gpseph_loadbalance      = .true.    ;
+/
 &perturbation   ; settings related to the 4D-Var penalty term option, which controls the
                 ; high-frequency gravity waves using a digital filter.
-  jcdfi_use               = .true.   ; .true.: include JcDF term in the cost function
+  jcdfi_use               = .false.  ; .true.: include JcDF term in the cost function
                                      ; .false.: ignore JcDF term in the cost function
   jcdfi_diag              = 1        ; 0: no diagnostic information for JcDF term in J
                                      ; 1: print diagnostic information for JcDF term in J
@@ -497,4 +581,5 @@ Description of WRFDA namelist variables
   trajectory_io           = .true.   ; .true.: use memory I/O in 4D-Var for data exchange
                                      ; .false.: use disk I/O in 4D-Var for data exchange
   var4d_detail_out	  = .false.  ; .true.: output extra diagnostics for debugging 4D-Var
+  var4d_run               = .true.   ; true: exlcude the P calculation in start_em
 /

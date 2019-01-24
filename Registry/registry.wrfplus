@@ -1,0 +1,832 @@
+#
+# ----------------------------------------
+#  begin wrfplus variables and configuration
+# ----------------------------------------
+######
+#
+# Variables that are set at run-time to control configuration  (namelist-settable)
+#
+#<Table>  <Type>  <Sym>                   <How set>          <Nentries>   <Default>
+#
+# Perturbation model control
+rconfig   logical trajectory_io         namelist,perturbation          1      .true. -    "false: disk IO; true: memory IO"  ""      ""
+rconfig   logical check_u               namelist,perturbation          1      .true. -    "AD/TL check U"             ""      ""
+rconfig   logical check_v               namelist,perturbation          1      .true. -    "AD/TL check V"             ""      ""
+rconfig   logical check_w               namelist,perturbation          1      .true. -    "AD/TL check W"             ""      ""
+rconfig   logical check_ph              namelist,perturbation          1      .true. -    "AD/TL check PH"            ""      ""
+rconfig   logical check_t               namelist,perturbation          1      .true. -    "AD/TL check T"             ""      ""
+rconfig   logical check_mu              namelist,perturbation          1      .true. -    "AD/TL check MU"            ""      ""
+rconfig   logical check_moist           namelist,perturbation          1      .true. -    "AD/TL check MOIST"         ""      ""
+rconfig   logical check_tracer          namelist,perturbation          1      .true. -    "AD/TL check TRACER"        ""      ""
+rconfig   logical check_TL              namelist,perturbation          1      .true. -    "TL check"                  ""      ""
+rconfig   logical check_AD              namelist,perturbation          1      .true. -    "AD check"                  ""      ""
+rconfig   logical var4d_run             namelist,perturbation          1      .false.  -   "true: exlcude the P calculation in start_em"   ""  ""
+rconfig   real    nl_pert               namelist,perturbation          1         0.1 -    "nl_pert"    "nonlinear perturbation for TL check"      ""
+rconfig   integer max_numer             namelist,perturbation          1           1 -    "max_numer"    ""      ""
+rconfig   integer max_denom             namelist,perturbation          1           1 -    "max_denom"    ""      ""
+rconfig   integer numer_vars            namelist,perturbation          max_sens    1 -    "numer_vars"    ""      ""
+rconfig   integer denom_vars            namelist,perturbation          max_sens    1 -    "denom_vars"    ""      ""
+rconfig   integer scenario_type         namelist,perturbation          1           1 -    "scenario_type"    ""      ""
+
+rconfig   logical tl_standalone         namelist,perturbation          1      .false. -   "Run TLM standalone"                  ""      ""
+rconfig   logical jcdfi_use             namelist,perturbation          1     .false. -    "jcdfi_use"   "JcDFI on/off"      ""
+rconfig   integer jcdfi_diag            namelist,perturbation          1           1 -    "jcdfi_diag"  "JcDFI diag. on/off"      ""
+rconfig   real    jcdfi_penalty         namelist,perturbation          1          1. -    "jcdfi_penalty"    "Penalty parameter for JcDF"      ""
+rconfig   logical enable_identity       namelist,perturbation          1      .false. -   "enable identity AD/TL model"                         ""      ""
+rconfig   logical var4d_detail_out      namelist,perturbation          1      .false. -   "true:output perturbation, gradient to disk"                         ""      ""
+
+rconfig   integer mp_physics_ad         namelist,physics     max_domains   99       rh    "mp_physics_ad"            ""      ""
+
+#
+######
+# Variables for Eulerian mass coordinate dynamics
+#
+# Velocities
+#
+# U Vel
+state    real   a_u              ikjb     dyn_em      2         X     \
+     i0rhusdf=(bdy_interp:dt)       "A_U"                      "x-wind component"   "m s-1"
+state    real   a_ru             ikj     dyn_em      1         X      -        "A_MU_U"        "mu-coupled u"   "Pa m s-1"
+state    real   a_ru_m           ikj     dyn_em      1         X      -        "a_ru_m"        ""   ""
+state    real   a_ru_tend        ikj     dyn_em      1         X      -        "a_ru_tend"        ""   ""
+i1       real   a_ru_tendf       ikj     dyn_em      1         X
+state    real   a_u_save         ikj     dyn_em      1         X      -        "a_u_save"
+ 
+state    real   g_u              ikjb     dyn_em      2         X     \
+     i0rhusdf=(bdy_interp:dt)       "G_U"                      "x-wind component"   "m s-1"
+state    real   g_ru             ikj     dyn_em      1         X      -        "G_MU_U"        "mu-coupled u"   "Pa m s-1"
+state    real   g_ru_m           ikj     dyn_em      1         X      -        "g_ru_m"        ""   ""
+state    real   g_ru_tend        ikj     dyn_em      1         X      -        "g_ru_tend"        ""   ""
+i1       real   g_ru_tendf       ikj     dyn_em      1         X
+state    real   g_u_save         ikj     dyn_em      1         X      -        "g_u_save"
+
+# V Vel
+state    real   a_v              ikjb     dyn_em      2         Y     \
+     i0rhusdf=(bdy_interp:dt)        "A_V"                     "y-wind component"   "m s-1"
+state    real   a_rv             ikj     dyn_em      1         Y      -        "A_MU_V"        "mu-coupled v"   "Pa m s-1"
+state    real   a_rv_m           ikj     dyn_em      1         Y      -        "a_rv_m"
+state    real   a_rv_tend        ikj     dyn_em      1         Y      -        "a_rv_tend"
+i1       real   a_rv_tendf       ikj     dyn_em      1         Y
+state    real   a_v_save         ikj     dyn_em      1         Y      -        "a_v_save"
+ 
+state    real   g_v              ikjb     dyn_em      2         Y     \
+     i0rhusdf=(bdy_interp:dt)        "G_V"                     "y-wind component"   "m s-1"
+state    real   g_rv             ikj     dyn_em      1         Y      -        "G_MU_V"        "mu-coupled v"   "Pa m s-1"
+state    real   g_rv_m           ikj     dyn_em      1         Y      -        "g_rv_m"
+state    real   g_rv_tend        ikj     dyn_em      1         Y      -        "g_rv_tend"
+i1       real   g_rv_tendf       ikj     dyn_em      1         Y
+state    real   g_v_save         ikj     dyn_em      1         Y      -        "g_v_save"
+
+# Vertical Vel
+state    real   a_w              ikjb     dyn_em      2         Z     \
+        irhusdf=(bdy_interp:dt)  "a_w"                          "z-wind component"   "m s-1"
+state    real   a_ww             ikj     dyn_em      1         Z      r         "a_ww"   "mu-coupled eta-dot"    "Pa s-1"
+state    real   a_rw             ikj     dyn_em      1         Z      -         "a_rw"   "mu-coupled w"          "Pa m s-1"
+i1       real   a_ww1            ikj     dyn_em      1         Z
+state    real   a_ww_m           ikj     dyn_em      1         Z      r         "a_ww_m"   "time-avg mu-coupled eta-dot"    "Pa s-1"
+i1       real   a_wwp            ikj     dyn_em      1         Z
+i1       real   a_rw_tend        ikj     dyn_em      1         Z
+i1       real   a_rw_tendf       ikj     dyn_em      1         Z
+i1       real   a_w_save         ikj     dyn_em      1         Z
+
+state    real   g_w              ikjb     dyn_em      2         Z     \
+        i0rhusdf=(bdy_interp:dt)  "g_w"                          "z-wind component"   "m s-1"
+state    real   g_ww             ikj     dyn_em      1         Z      r         "g_ww"   "mu-coupled eta-dot"    "Pa s-1"
+state    real   g_rw             ikj     dyn_em      1         Z      -         "g_rw"   "mu-coupled w"          "Pa m s-1"
+i1       real   g_ww1            ikj     dyn_em      1         Z
+state    real   g_ww_m           ikj     dyn_em      1         Z      r         "g_ww_m"   "time-avg mu-coupled eta-dot"    "Pa s-1"
+i1       real   g_wwp            ikj     dyn_em      1         Z
+i1       real   g_rw_tend        ikj     dyn_em      1         Z
+i1       real   g_rw_tendf       ikj     dyn_em      1         Z
+i1       real   g_w_save         ikj     dyn_em      1         Z
+
+# Geopotential
+state    real   a_ph             ikjb     dyn_em      2         Z     \
+       irhusdf=(bdy_interp:dt)   "a_ph"   "perturbation geopotential"  "m2 s-2"
+state    real   a_php            ikj     dyn_em      1         -      r     "a_php"  "geopotential"             "m2 s-2"
+i1       real   a_ph_tend        ikj     dyn_em      1         Z
+i1       real   a_ph_tendf       ikj     dyn_em      1         Z
+i1       real   a_ph_save        ikj     dyn_em      1         Z
+
+state    real   g_ph             ikjb     dyn_em      2         Z     \
+       i0rhusdf=(bdy_interp:dt)   "g_ph"   "perturbation geopotential"  "m2 s-2"
+state    real   g_php            ikj     dyn_em      1         -      r     "g_php"  "geopotential"             "m2 s-2"
+i1       real   g_ph_tend        ikj     dyn_em      1         Z
+i1       real   g_ph_tendf       ikj     dyn_em      1         Z
+i1       real   g_ph_save        ikj     dyn_em      1         Z
+
+# Potential Temperature
+state    real   a_t              ikjb     dyn_em      2         -     \
+       i0rhusdf=(bdy_interp:dt)   "a_t"      "perturbation potential temperature (theta-t0)" "K"
+
+i1       real   a_t_tend         ikj     dyn_em      1         -
+i1       real   a_t_tendf        ikj     dyn_em      1         -
+state    real   a_tp             ikj     dyn_em      2         -
+i1       real   a_t_2save        ikj     dyn_em      1         -
+state    real   a_t_save         ikj     dyn_em      1         -               "a_t_save"
+
+state    real   g_t              ikjb     dyn_em      2         -     \
+       i0rhusdf=(bdy_interp:dt)   "g_t"      "perturbation potential temperature (theta-t0)" "K"
+
+i1       real   g_t_tend         ikj     dyn_em      1         -
+i1       real   g_t_tendf        ikj     dyn_em      1         -
+state    real   g_tp             ikj     dyn_em      2         -
+i1       real   g_t_2save        ikj     dyn_em      1         -
+state    real   g_t_save         ikj     dyn_em      1         -               "g_t_save"
+
+# Mass
+state    real   a_mu              ijb     dyn_em      2         -     \
+     irhusdf=(bdy_interp:dt)   "a_mu"  "perturbation dry air mass in column" "Pa"
+state    real   a_mudf            ij     dyn_em      1         -      -           "a_mudf" "" ""
+state    real   a_muu             ij     dyn_em      1          -                 "a_muu"
+state    real   a_muus            ij     dyn_em      1          -                 "a_muus"
+state    real   a_muv             ij     dyn_em      1          -                 "a_muv"
+state    real   a_muvs            ij     dyn_em      1          -                 "a_muvs"
+state    real   a_mut             ij     dyn_em      1          -                 "a_mut"
+state    real   a_muts            ij     dyn_em      1          -                 "a_muts"
+i1       real   a_muave           ij     dyn_em      1          -
+i1       real   a_mu_save         ij     dyn_em      1          -
+i1       real   a_mu_tend         ij     dyn_em      1          -
+i1       real   a_mu_tendf        ij     dyn_em      1          -
+
+state    real   g_mu              ijb     dyn_em      2         -     \
+     i0rhusdf=(bdy_interp:dt)   "g_mu"  "perturbation dry air mass in column" "Pa"
+state    real   g_mudf            ij     dyn_em      1         -      -           "g_mudf" "" ""
+state    real   g_muu             ij     dyn_em      1          -                 "g_muu"
+state    real   g_muus            ij     dyn_em      1          -                 "g_muus"
+state    real   g_muv             ij     dyn_em      1          -                 "g_muv"
+state    real   g_muvs            ij     dyn_em      1          -                 "g_muvs"
+state    real   g_mut             ij     dyn_em      1          -                 "g_mut"
+state    real   g_muts            ij     dyn_em      1          -                 "g_muts"
+i1       real   g_muave           ij     dyn_em      1          -
+i1       real   g_mu_save         ij     dyn_em      1          -
+i1       real   g_mu_tend         ij     dyn_em      1          -
+i1       real   g_mu_tendf        ij     dyn_em      1          -
+
+# TKE
+state    real   g_tke            ikj     dyn_em      2         -       r        "g_tke"          "TURBULENCE KINETIC ENERGY"     "m2 s-2"
+state    real   a_tke            ikj     dyn_em      2         -       r        "a_tke"          "TURBULENCE KINETIC ENERGY"     "m2 s-2"
+i1       real   g_tke_tend       ikj     dyn_em      1         -      
+i1       real   a_tke_tend       ikj     dyn_em      1         -      
+
+state    real   g_sr             ij      dyn_em      1         -      irh         "g_sr" "fraction of frozen precipitation"
+state    real   a_sr             ij      dyn_em      1         -      irh         "a_sr" "fraction of frozen precipitation"
+state    real   g_rainnc         ij      misc        1         -      rhdu     "G_RAINNC"                "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"
+state    real   a_rainnc         ij      misc        1         -      rhdu     "A_RAINNC"                "ACCUMULATED TOTAL GRID SCALE PRECIPITATION"              "mm"
+state    real   g_rainncv        ij      misc        1         -      r        "G_RAINNCV"               "TIME-STEP NONCONVECTIVE PRECIPITATION"                   "mm"
+state    real   a_rainncv        ij      misc        1         -      r        "A_RAINNCV"               "TIME-STEP NONCONVECTIVE PRECIPITATION"                   "mm"
+state    real   g_PRATEC         ij      misc        1         -      r        "G_PRATEC"                "PRECIP RATE FROM CUMULUS SCHEME"                         "mm s-1"
+state    real   a_PRATEC         ij      misc        1         -      r        "A_PRATEC"                "PRECIP RATE FROM CUMULUS SCHEME"                         "mm s-1"
+state    real   g_PRATESH        ij      misc        1         -      r        "G_PRATESH"               "PRECIP RATE FROM SHALLOW CUMULUS SCHEME"                 "mm s-1"
+state    real   a_PRATESH        ij      misc        1         -      r        "A_PRATESH"               "PRECIP RATE FROM SHALLOW CUMULUS SCHEME"                 "mm s-1"
+state    real   g_RAINC          ij      misc        1         -      rhdu     "G_RAINC"                 "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"
+state    real   a_RAINC          ij      misc        1         -      rhdu     "A_RAINC"                 "ACCUMULATED TOTAL CUMULUS PRECIPITATION"                 "mm"
+state    real   g_RAINCV         ij      misc        1         -      r        "G_RAINCV"                "TIME-STEP CUMULUS PRECIPITATION"                         "mm"
+state    real   a_RAINCV         ij      misc        1         -      r        "A_RAINCV"                "TIME-STEP CUMULUS PRECIPITATION"                         "mm"
+state    real   g_RAINSH         ij      misc        1         -      rhdu     "G_RAINSH"                "ACCUMULATED SHALLOW CUMULUS PRECIPITATION"               "mm"
+state    real   a_RAINSH         ij      misc        1         -      rhdu     "A_RAINSH"                "ACCUMULATED SHALLOW CUMULUS PRECIPITATION"               "mm"
+state    real   g_NCA            ij      misc        1         -      r        "G_NCA"                   "COUNTER OF THE CLOUD RELAXATION TIME IN KF CUMULUS SCHEME"    ""
+state    real   a_NCA            ij      misc        1         -      r        "A_NCA"                   "COUNTER OF THE CLOUD RELAXATION TIME IN KF CUMULUS SCHEME"    ""
+state    real   g_W0AVG         ikj      misc        1         -      r        "G_W0AVG"                 "AVERAGE VERTICAL VELOCITY FOR KF CUMULUS SCHEME"         "m s-1"
+state    real   a_W0AVG         ikj      misc        1         -      r        "A_W0AVG"                 "AVERAGE VERTICAL VELOCITY FOR KF CUMULUS SCHEME"         "m s-1"
+state    real   g_SNOWNC         ij      misc        1         -      rhdu     "G_SNOWNC"                "ACCUMULATED TOTAL GRID SCALE SNOW AND ICE"               "mm"
+state    real   a_SNOWNC         ij      misc        1         -      rhdu     "A_SNOWNC"                "ACCUMULATED TOTAL GRID SCALE SNOW AND ICE"               "mm"
+state    real   g_SNOWNCV          ij      misc      1         -      r        "SNOWNCV"               "TIME-STEP NONCONVECTIVE SNOW AND ICE"                    "mm"
+state    real   a_SNOWNCV          ij      misc      1         -      r        "SNOWNCV"               "TIME-STEP NONCONVECTIVE SNOW AND ICE"                    "mm"
+state    real   g_GRAUPELNC      ij      misc        1         -      rhdu     "G_GRAUPELNC"             "ACCUMULATED TOTAL GRID SCALE GRAUPEL"                    "mm"
+state    real   a_GRAUPELNC      ij      misc        1         -      rhdu     "A_GRAUPELNC"             "ACCUMULATED TOTAL GRID SCALE GRAUPEL"                    "mm"
+state    real   g_GRAUPELNCV       ij      misc      1         -      r        "GRAUPELNCV"            "TIME-STEP NONCONVECTIVE GRAUPEL"                         "mm"
+state    real   a_GRAUPELNCV       ij      misc      1         -      r        "GRAUPELNCV"            "TIME-STEP NONCONVECTIVE GRAUPEL"                         "mm"
+
+# Pressure and Density
+state    real   a_p              ikj     dyn_em      1         -      irh       "a_p"           "perturbation pressure"         "Pa"
+state    real   a_al             ikj     dyn_em      1         -      r         "a_al"          "inverse perturbation density"  "m3 kg-1"
+state    real   a_alt            ikj     dyn_em      1         -      r         "a_alt"         "inverse density"               "m3 kg-1"
+
+state    real   g_p              ikj     dyn_em      1         -      irh       "g_p"           "perturbation pressure"         "Pa"
+state    real   g_al             ikj     dyn_em      1         -      r         "g_al"          "inverse perturbation density"  "m3 kg-1"
+state    real   g_alt            ikj     dyn_em      1         -      r         "g_alt"         "inverse density"               "m3 kg-1"
+
+#
+# Other dyn
+#
+i1       real   a_advect_tend    ikj     dyn_em      1         -
+i1       real   a_alpha          ikj     dyn_em      1         -
+i1       real   a_a              ikj     dyn_em      1         -
+i1       real   a_gamma          ikj     dyn_em      1         -
+i1       real   a_c2a            ikj     dyn_em      1         -     -
+state    real   a_rho            ikj     dyn_em      1         -     r      "a_RHO"              "DENSITY"         "Kg m-3"
+i1       real   a_phm            ikj     dyn_em      1         -     -
+i1       real   a_cqu            ikj     dyn_em      1         -     -
+i1       real   a_cqv            ikj     dyn_em      1         -     -
+i1       real   a_cqw            ikj     dyn_em      1         -     -
+i1       real   a_pm1            ikj     dyn_em      1         -     -
+state    real   a_z              ikj     dyn_em      1         -     -         " " " " " "
+state    real   a_z_at_w         ikj     dyn_em      1         Z
+
+i1       real   g_advect_tend    ikj     dyn_em      1         -
+i1       real   g_alpha          ikj     dyn_em      1         -
+i1       real   g_a              ikj     dyn_em      1         -
+i1       real   g_gamma          ikj     dyn_em      1         -
+i1       real   g_c2a            ikj     dyn_em      1         -     -
+state    real   g_rho            ikj     dyn_em      1         -     r      "g_RHO"              "DENSITY"         "Kg m-3"
+i1       real   g_phm            ikj     dyn_em      1         -     -
+i1       real   g_cqu            ikj     dyn_em      1         -     -
+i1       real   g_cqv            ikj     dyn_em      1         -     -
+i1       real   g_cqw            ikj     dyn_em      1         -     -
+i1       real   g_pm1            ikj     dyn_em      1         -     -
+state    real   g_z              ikj     dyn_em      1         -     -         " " " " " "
+state    real   g_z_at_w         ikj     dyn_em      1         Z
+
+state   real  g_defor11          ikj      misc        1         -     r         "g_defor11"               "DEFORMATION 11"              "s-1"      
+state   real  g_defor22          ikj      misc        1         -     r         "g_defor22"               "DEFORMATION 22"              "s-1"      
+state   real  g_defor12          ikj      misc        1         -     r         "g_defor12"               "DEFORMATION 12"              "s-1"      
+state   real  g_defor33          ikj      misc        1         z     r         "g_defor33"               "DEFORMATION 33"              "s-1"      
+state   real  g_defor13          ikj      misc        1         z     r         "g_defor13"               "DEFORMATION 13"              "s-1"      
+state   real  g_defor23          ikj      misc        1         z     r         "g_defor23"               "DEFORMATION 23"              "s-1"      
+state   real   g_xkmv            ikj      misc        1         -     r         "g_xkmv"                  "VERTICAL EDDY VISCOSITY"     "m2 s-1"      
+state   real   g_xkmh            ikj      misc        1         -     r         "g_xkmh"                  "HORIZONTAL EDDY VISCOSITY"   "m2 s-1"      
+state   real   g_xkhv            ikj      misc        1         -     r         "g_xkhv"                  "VERTICAL EDDY DIFFUSIVITY OF HEAT"                               "m2 s-1"      
+state   real   g_xkhh            ikj      misc        1         -     r         "g_xkhh"                  "HORIZONTAL EDDY DIFFUSIVITY OF HEAT"                             "m2 s-1"      
+state   real    g_div            ikj      misc        1         -     r         "g_div"                   "DIVERGENCE"                                                      "s-1"
+state   real    g_BN2            ikj      misc        1         -     r         "g_BN2"                   "BRUNT-VAISALA FREQUENCY"                                         "s-2"
+state    real   g_zx             ikj     dyn_em      1         XZ     -         " "  " "  " "    
+state    real   g_zy             ikj     dyn_em      1         YZ     -         " "  " "  " "   
+state    real   g_rdz            ikj     dyn_em      1         Z      -         " "  " "  " "   
+state    real   g_rdzw           ikj     dyn_em      1         Z       -        " "  " "  " "   
+state    real  g_HFX              ij      misc        1         -      rh       "g_HFX"                   "UPWARD HEAT FLUX AT THE SURFACE"              "W m-2"      
+state    real  g_QFX              ij      misc        1         -      rh       "g_QFX"                   "UPWARD MOISTURE FLUX AT THE SURFACE"          "kg m-2 s-1"      
+state    real  g_RTHRATEN        ikj      misc        1         -      rd       "g_RTHRATEN"              "COUPLED THETA TENDENCY DUE TO RADIATION"              "Pa K s-1"
+state    real  g_RQCBLTEN        ikj      misc        1         -      r        "g_RQCBLTEN"              "COUPLED Q_C TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"
+state    real  g_RQIBLTEN        ikj      misc        1         -      r        "g_RQIBLTEN"              "COUPLED Q_I TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"
+state    real  g_RTHCUTEN        ikj      misc        1         -      r        "g_RTHCUTEN"              "COUPLED THETA TENDENCY DUE TO CUMULUS SCHEME"     "Pa K s-1"
+state    real  g_RQVCUTEN        ikj      misc        1         -      r        "g_RQVCUTEN"              "COUPLED Q_V TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+state    real  g_RQRCUTEN        ikj      misc        1         -      r        "g_RQRCUTEN"              "COUPLED Q_R TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+state    real  g_RQCCUTEN        ikj      misc        1         -      r        "g_RQCCUTEN"              "COUPLED Q_C TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+state    real  g_RQSCUTEN        ikj      misc        1         -      r        "g_RQSCUTEN"              "COUPLED Q_S TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+state    real  g_RQICUTEN        ikj      misc        1         -      r        "g_RQICUTEN"              "COUPLED Q_I TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+state    real  g_RQCNCUTEN       ikj      misc        1         -      r        "g_RQCNCUTEN"             "COUPLED Q_CN TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+state    real  g_RQINCUTEN       ikj      misc        1         -      r        "g_RQINCUTEN"             "COUPLED Q_IN TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+state    real  g_RTHSHTEN        ikj      misc        1         -      r        "g_RTHSHTEN"              "COUPLED THETA TENDENCY DUE TO SHALLOW CUMULUS SCHEME"    "Pa K s-1"
+state    real  g_RQVSHTEN        ikj      misc        1         -      r        "g_RQVSHTEN"              "COUPLED Q_V TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+state    real  g_RQRSHTEN        ikj      misc        1         -      r        "g_RQRSHTEN"              "COUPLED Q_R TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+state    real  g_RQCSHTEN        ikj      misc        1         -      r        "g_RQCSHTEN"              "COUPLED Q_C TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+state    real  g_RQSSHTEN        ikj      misc        1         -      r        "g_RQSSHTEN"              "COUPLED Q_S TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+state    real  g_RQISHTEN        ikj      misc        1         -      r        "g_RQISHTEN"              "COUPLED Q_I TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+state    real  g_RQGSHTEN        ikj      misc        1         -      r        "g_RQGSHTEN"              "COUPLED Q_G TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+state    real  g_RQCNSHTEN       ikj      misc        1         -      r        "g_RQCNSHTEN"             "COUPLED Q_CN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"     "Pa kg kg-1 s-1"
+state    real  g_RQINSHTEN       ikj      misc        1         -      r        "g_RQINSHTEN"             "COUPLED Q_IN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"     "Pa kg kg-1 s-1"
+state    real  g_RTHFTEN         ikj      misc        1         -      r        "a_RTHFTEN"               "TEMPERATURE TENDENCY USED IN GRELL CUMULUS SCHEME"  "K s-1"
+state    real  g_RQVFTEN         ikj      misc        1         -      r        "g_RQVFTEN"               "MOISTURE TENDENCY USED IN GRELL CUMULUS SCHEME"     "kg s-1"
+state    real  g_RUNDGDTEN       ikj      misc        1         X      r        "g_RUNDGDTEN"               "COUPLED X WIND TENDENCY DUE TO FDDA GRID NUDGING"  "Pa m s-2"
+state    real  g_RVNDGDTEN       ikj      misc        1         Y      r        "g_RVNDGDTEN"               "COUPLED Y WIND TENDENCY DUE TO FDDA GRID NUDGING"  "Pa m s-2"
+state    real  g_RTHNDGDTEN      ikj      misc        1         -      r        "g_RTHNDGDTEN"              "COUPLED THETA TENDENCY DUE TO FDDA GRID NUDGING"   "Pa K s-1"
+state    real  g_RPHNDGDTEN      ikj      misc        1         -      r        "g_RPHNDGDTEN"              "COUPLED GEOPOTENTIAL TENDENCY DUE TO FDDA GRID NUDGING"   "Pa m2 s-3"
+state    real  g_RQVNDGDTEN      ikj      misc        1         -      r        "g_RQVNDGDTEN"              "COUPLED Q_V TENDENCY DUE TO FDDA GRID NUDGING"     "Pa kg kg-1 s-1"
+state    real  g_RUSHTEN         ikj      misc        1         -      r        "g_RUSHTEN"               "COUPLED X WIND TENDENCY DUE TO SHALLOW CUMULUS SCHEME"   "Pa m s-2"
+state    real  g_RVSHTEN         ikj      misc        1         -      r        "g_RVSHTEN"               "COUPLED Y WIND TENDENCY DUE TO SHALLOW CUMULUS SCHEME"   "Pa m s-2"
+state    real  g_RUCUTEN         ikj      misc        1         -      r        "g_RUCUTEN"               "COUPLED X WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "Pa m s-2"
+state    real  g_RVCUTEN         ikj      misc        1         -      r        "g_RVCUTEN"               "COUPLED Y WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "Pa m s-2"
+state    real  g_RUBLTEN         ikj      misc        1         -      r        "g_RUBLTEN"               "COUPLED X WIND TENDENCY DUE TO PBL PARAMETERIZATION"  "Pa m s-2"
+state    real  g_RVBLTEN         ikj      misc        1         -      r        "g_RVBLTEN"               "COUPLED Y WIND TENDENCY DUE TO PBL PARAMETERIZATION"  "Pa m s-2"
+state    real  g_RTHBLTEN        ikj      misc        1         -      r        "g_RTHBLTEN"              "COUPLED THETA TENDENCY DUE TO PBL PARAMETERIZATION"   "Pa K s-1"
+state    real  g_RQVBLTEN        ikj      misc        1         -      r        "g_RQVBLTEN"              "COUPLED Q_V TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"
+state    real  g_UST              ij      misc        1         -      rh       "g_UST"                   "U* IN SIMILARITY THEORY"                      "m s-1"
+state    real  g_USTM             ij      misc        1         -      r        "g_USTM"                  "U* IN SIMILARITY THEORY WITHOUT VCONV"        "m s-1"
+# hydrostatic pressure vars
+state    real   g_p_hyd           ikj     dyn_em      1         -      irh       "g_p_hyd"       "hydrostatic pressure"         "Pa"
+state    real   g_p_hyd_w         ikj     dyn_em      1         Z       r        "g_p_hyd_w"     "hydrostatic pressure at full levels"         "Pa"
+
+
+state   real  a_defor11          ikj      misc        1         -     r         "a_defor11"               "DEFORMATION 11"              "s-1"      
+state   real  a_defor22          ikj      misc        1         -     r         "a_defor22"               "DEFORMATION 22"              "s-1"      
+state   real  a_defor12          ikj      misc        1         -     r         "a_defor12"               "DEFORMATION 12"              "s-1"      
+state   real  a_defor33          ikj      misc        1         z     r         "a_defor33"               "DEFORMATION 33"              "s-1"      
+state   real  a_defor13          ikj      misc        1         z     r         "a_defor13"               "DEFORMATION 13"              "s-1"      
+state   real  a_defor23          ikj      misc        1         z     r         "a_defor23"               "DEFORMATION 23"              "s-1"      
+state   real   a_xkmv            ikj      misc        1         -     r         "a_xkmv"                  "VERTICAL EDDY VISCOSITY"     "m2 s-1"      
+state   real   a_xkmh            ikj      misc        1         -     r         "a_xkmh"                  "HORIZONTAL EDDY VISCOSITY"   "m2 s-1"      
+state   real   a_xkhv            ikj      misc        1         -     r         "a_xkhv"                  "VERTICAL EDDY DIFFUSIVITY OF HEAT"                               "m2 s-1"      
+state   real   a_xkhh            ikj      misc        1         -     r         "a_xkhh"                  "HORIZONTAL EDDY DIFFUSIVITY OF HEAT"                             "m2 s-1"      
+state   real    a_div            ikj      misc        1         -     r         "a_div"                   "DIVERGENCE"                                                      "s-1"
+state   real    a_BN2            ikj      misc        1         -     r         "a_BN2"                   "BRUNT-VAISALA FREQUENCY"                                         "s-2"
+state    real   a_zx             ikj     dyn_em      1         XZ     -         " "  " "  " "    
+state    real   a_zy             ikj     dyn_em      1         YZ     -         " "  " "  " "   
+state    real   a_rdz            ikj     dyn_em      1         Z      -         " "  " "  " "   
+state    real   a_rdzw           ikj     dyn_em      1         Z       -        " "  " "  " "   
+state    real  a_HFX              ij      misc        1         -      rh       "a_HFX"                   "UPWARD HEAT FLUX AT THE SURFACE"              "W m-2"      
+state    real  a_QFX              ij      misc        1         -      rh       "a_QFX"                   "UPWARD MOISTURE FLUX AT THE SURFACE"          "kg m-2 s-1"      
+state    real  a_RTHRATEN        ikj      misc        1         -      rd       "a_RTHRATEN"              "COUPLED THETA TENDENCY DUE TO RADIATION"              "Pa K s-1"
+state    real  a_RQCBLTEN        ikj      misc        1         -      r        "a_RQCBLTEN"              "COUPLED Q_C TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"
+state    real  a_RQIBLTEN        ikj      misc        1         -      r        "a_RQIBLTEN"              "COUPLED Q_I TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"
+state    real  a_RTHCUTEN        ikj      misc        1         -      r        "a_RTHCUTEN"              "COUPLED THETA TENDENCY DUE TO CUMULUS SCHEME"     "Pa K s-1"
+state    real  a_RQVCUTEN        ikj      misc        1         -      r        "a_RQVCUTEN"              "COUPLED Q_V TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+state    real  a_RQRCUTEN        ikj      misc        1         -      r        "a_RQRCUTEN"              "COUPLED Q_R TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+state    real  a_RQCCUTEN        ikj      misc        1         -      r        "a_RQCCUTEN"              "COUPLED Q_C TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+state    real  a_RQSCUTEN        ikj      misc        1         -      r        "a_RQSCUTEN"              "COUPLED Q_S TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+state    real  a_RQICUTEN        ikj      misc        1         -      r        "a_RQICUTEN"              "COUPLED Q_I TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+state    real  a_RQCNCUTEN       ikj      misc        1         -      r        "a_RQCNCUTEN"             "COUPLED Q_CN TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+state    real  a_RQINCUTEN       ikj      misc        1         -      r        "a_RQINCUTEN"             "COUPLED Q_IN TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+state    real  a_RTHSHTEN        ikj      misc        1         -      r        "a_RTHSHTEN"              "COUPLED THETA TENDENCY DUE TO SHALLOW CUMULUS SCHEME"    "Pa K s-1"
+state    real  a_RQVSHTEN        ikj      misc        1         -      r        "a_RQVSHTEN"              "COUPLED Q_V TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+state    real  a_RQRSHTEN        ikj      misc        1         -      r        "a_RQRSHTEN"              "COUPLED Q_R TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+state    real  a_RQCSHTEN        ikj      misc        1         -      r        "a_RQCSHTEN"              "COUPLED Q_C TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+state    real  a_RQSSHTEN        ikj      misc        1         -      r        "a_RQSSHTEN"              "COUPLED Q_S TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+state    real  a_RQISHTEN        ikj      misc        1         -      r        "a_RQISHTEN"              "COUPLED Q_I TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+state    real  a_RQGSHTEN        ikj      misc        1         -      r        "a_RQGSHTEN"              "COUPLED Q_G TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+state    real  a_RQCNSHTEN       ikj      misc        1         -      r        "a_RQCNSHTEN"             "COUPLED Q_CN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"     "Pa kg kg-1 s-1"
+state    real  a_RQINSHTEN       ikj      misc        1         -      r        "a_RQINSHTEN"             "COUPLED Q_IN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"     "Pa kg kg-1 s-1"
+state    real  a_RTHFTEN         ikj      misc        1         -      r        "a_RTHFTEN"               "TEMPERATURE TENDENCY USED IN GRELL CUMULUS SCHEME"  "K s-1"
+state    real  a_RQVFTEN         ikj      misc        1         -      r        "a_RQVFTEN"               "MOISTURE TENDENCY USED IN GRELL CUMULUS SCHEME"     "kg s-1"
+state    real  a_RUNDGDTEN       ikj      misc        1         X      r        "a_RUNDGDTEN"               "COUPLED X WIND TENDENCY DUE TO FDDA GRID NUDGING"  "Pa m s-2"
+state    real  a_RVNDGDTEN       ikj      misc        1         Y      r        "a_RVNDGDTEN"               "COUPLED Y WIND TENDENCY DUE TO FDDA GRID NUDGING"  "Pa m s-2"
+state    real  a_RTHNDGDTEN      ikj      misc        1         -      r        "a_RTHNDGDTEN"              "COUPLED THETA TENDENCY DUE TO FDDA GRID NUDGING"   "Pa K s-1"
+state    real  a_RPHNDGDTEN      ikj      misc        1         -      r        "a_RPHNDGDTEN"              "COUPLED GEOPOTENTIAL TENDENCY DUE TO FDDA GRID NUDGING"   "Pa m2 s-3"
+state    real  a_RQVNDGDTEN      ikj      misc        1         -      r        "a_RQVNDGDTEN"              "COUPLED Q_V TENDENCY DUE TO FDDA GRID NUDGING"     "Pa kg kg-1 s-1"
+state    real  a_RUSHTEN         ikj      misc        1         -      r        "a_RUSHTEN"               "COUPLED X WIND TENDENCY DUE TO SHALLOW CUMULUS SCHEME"   "Pa m s-2"
+state    real  a_RVSHTEN         ikj      misc        1         -      r        "a_RVSHTEN"               "COUPLED Y WIND TENDENCY DUE TO SHALLOW CUMULUS SCHEME"   "Pa m s-2"
+state    real  a_RUCUTEN         ikj      misc        1         -      r        "a_RUCUTEN"               "COUPLED X WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "Pa m s-2"
+state    real  a_RVCUTEN         ikj      misc        1         -      r        "a_RVCUTEN"               "COUPLED Y WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "Pa m s-2"
+state    real  a_RUBLTEN         ikj      misc        1         -      r        "a_RUBLTEN"               "COUPLED X WIND TENDENCY DUE TO PBL PARAMETERIZATION"  "Pa m s-2"
+state    real  a_RVBLTEN         ikj      misc        1         -      r        "a_RVBLTEN"               "COUPLED Y WIND TENDENCY DUE TO PBL PARAMETERIZATION"  "Pa m s-2"
+state    real  a_RTHBLTEN        ikj      misc        1         -      r        "a_RTHBLTEN"              "COUPLED THETA TENDENCY DUE TO PBL PARAMETERIZATION"   "Pa K s-1"
+state    real  a_RQVBLTEN        ikj      misc        1         -      r        "a_RQVBLTEN"              "COUPLED Q_V TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"
+state    real  a_UST              ij      misc        1         -      rh       "a_UST"                   "U* IN SIMILARITY THEORY"                      "m s-1"
+state    real  a_USTM             ij      misc        1         -      r        "a_USTM"                  "U* IN SIMILARITY THEORY WITHOUT VCONV"        "m s-1"
+# hydrostatic pressure vars
+state    real   a_p_hyd           ikj     dyn_em      1         -      irh       "a_p_hyd"       "hydrostatic pressure"         "Pa"
+state    real   a_p_hyd_w         ikj     dyn_em      1         Z       r        "a_p_hyd_w"     "hydrostatic pressure at full levels"         "Pa"
+
+
+state	real	-	ikjf	g_nba_mij		1       -       -       -
+state   real    g_m11     ikjf    g_nba_mij		1       -	h	"g_m11"   	"11 component of NBA subgrid stress tensor"     "m2 s-2"
+state   real    g_m22     ikjf    g_nba_mij		1       -       h       "g_m22"   	"22 component of NBA subgrid stress tensor"     "m2 s-2"
+state   real    g_m33     ikjf    g_nba_mij		1       -       h       "g_m33"   	"33 component of NBA subgrid stress tensor"     "m2 s-2"
+state   real    g_m12     ikjf    g_nba_mij		1       -       h       "g_m12"   	"12 component of NBA subgrid stress tensor"     "m2 s-2"
+state   real    g_m13     ikjf    g_nba_mij		1       -       h       "g_m13"   	"13 component of NBA subgrid stress tensor"     "m2 s-2"
+state   real    g_m23     ikjf    g_nba_mij		1       -       h       "g_m23"  		"23 component of NBA subgrid stress tensor"     "m2 s-2"
+
+state   real    -       ikjf    g_nba_rij		1       -       -       -	
+state   real    g_r12     ikjf    g_nba_rij		1       -       -       "g_r12"   	"12 component of rotation tensor"               "s-1"
+state   real    g_r13     ikjf    g_nba_rij		1       -       -       "g_r13"   	"13 component of rotation tensor"               "s-1"
+state   real    g_r23     ikjf    g_nba_rij		1       -       -       "g_r23"   	"23 component of rotation tensor"               "s-1"
+state   real    g_smnsmn  ikjf    g_nba_rij		1       -       -       "g_smnsmn"   	"Smn*Smn"               			"s-2"
+
+state	real	-	ikjf	a_nba_mij		1       -       -       -
+state   real    a_m11     ikjf    a_nba_mij		1       -	h	"a_m11"   	"11 component of NBA subgrid stress tensor"     "m2 s-2"
+state   real    a_m22     ikjf    a_nba_mij		1       -       h       "a_m22"   	"22 component of NBA subgrid stress tensor"     "m2 s-2"
+state   real    a_m33     ikjf    a_nba_mij		1       -       h       "a_m33"   	"33 component of NBA subgrid stress tensor"     "m2 s-2"
+state   real    a_m12     ikjf    a_nba_mij		1       -       h       "a_m12"   	"12 component of NBA subgrid stress tensor"     "m2 s-2"
+state   real    a_m13     ikjf    a_nba_mij		1       -       h       "a_m13"   	"13 component of NBA subgrid stress tensor"     "m2 s-2"
+state   real    a_m23     ikjf    a_nba_mij		1       -       h       "a_m23"  		"23 component of NBA subgrid stress tensor"     "m2 s-2"
+
+state   real    -       ikjf    a_nba_rij		1       -       -       -	
+state   real    a_r12     ikjf    a_nba_rij		1       -       -       "a_r12"   	"12 component of rotation tensor"               "s-1"
+state   real    a_r13     ikjf    a_nba_rij		1       -       -       "a_r13"   	"13 component of rotation tensor"               "s-1"
+state   real    a_r23     ikjf    a_nba_rij		1       -       -       "a_r23"   	"23 component of rotation tensor"               "s-1"
+state   real    a_smnsmn  ikjf    a_nba_rij		1       -       -       "a_smnsmn"   	"Smn*Smn"               			"s-2"
+
+
+# State variables for landuse_init, Must be declared state because they are read in and needed for restarts. Had been SAVE vars in
+# landuse_init (phys/module_physics_init.F)
+
+i1       real  a_th_phy          ikj      misc        1         -
+i1       real  a_pi_phy          ikj      misc        1         -
+i1       real  a_p_phy           ikj      misc        1         -
+state    real  a_t_phy           ikj      misc        1         -       r      "a_T_PHY"                        "Temperature"         "K"           
+state    real  a_u_phy           ikj      misc        1         -       r      "a_U_PHY"                        "x-wind component at mass point"         "m s-1"
+state    real  a_v_phy           ikj      misc        1         -       r      "a_V_PHY"                        "y-wind component at mass point"         "m s-1"
+i1       real  a_dz8w            ikj      misc        1         Z
+i1       real  a_p8w             ikj      misc        1         Z
+i1       real  a_t8w             ikj      misc        1         Z
+i1       real  a_rho_phy         ikj      misc        1         -
+
+i1       real  g_th_phy          ikj      misc        1         -
+i1       real  g_pi_phy          ikj      misc        1         -
+i1       real  g_p_phy           ikj      misc        1         -
+state    real  g_t_phy           ikj      misc        1         -       r      "g_T_PHY"                        "Temperature"         "K"           
+state    real  g_u_phy           ikj      misc        1         -       r      "g_U_PHY"                        "x-wind component at mass point"         "m s-1"
+state    real  g_v_phy           ikj      misc        1         -       r      "g_V_PHY"                        "y-wind component at mass point"         "m s-1"
+i1       real  g_dz8w            ikj      misc        1         Z
+i1       real  g_p8w             ikj      misc        1         Z
+i1       real  g_t8w             ikj      misc        1         Z
+i1       real  g_rho_phy         ikj      misc        1         -
+
+# Additional for gravity wave drag
+state   real   g_DTAUX3D         ikj     misc        1         -     rh        "g_DTAUX3D"               "LOCAL U GWDO STRESS"   "m s-1"
+state   real   g_DTAUY3D         ikj     misc        1         -     rh        "g_DTAUY3D"               "LOCAL V GWDO STRESS"   "m s-1"
+state   real   g_DUSFCG           ij     misc        1         -     rh        "g_DUSFCG"                "COLUMN-INTEGRATED U GWDO STRESS"   "Pa m s-1"
+state   real   g_DVSFCG           ij     misc        1         -     rh        "g_DVSFCG"                "COLUMN-INTEGRATED V GWDO STRESS"   "Pa m s-1"
+
+state   real   a_DTAUX3D         ikj     misc        1         -     rh        "a_DTAUX3D"               "LOCAL U GWDO STRESS"   "m s-1"
+state   real   a_DTAUY3D         ikj     misc        1         -     rh        "a_DTAUY3D"               "LOCAL V GWDO STRESS"   "m s-1"
+state   real   a_DUSFCG           ij     misc        1         -     rh        "a_DUSFCG"                "COLUMN-INTEGRATED U GWDO STRESS"   "Pa m s-1"
+state   real   a_DVSFCG           ij     misc        1         -     rh        "a_DVSFCG"                "COLUMN-INTEGRATED V GWDO STRESS"   "Pa m s-1"
+
+# g_h_diabatic and a_h_diabatic (Added by Ning Pan, 2010-07-10) 
+state   real    g_h_diabatic     ikj     misc         1        -      rdu      "g_h_diabatic"            "PREVIOUS TIMESTEP CONDENSATIONAL HEATING"         "K s-1"      
+state   real    a_h_diabatic     ikj     misc         1        -      rdu      "a_h_diabatic"            "PREVIOUS TIMESTEP CONDENSATIONAL HEATING"         "K s-1"      
+state   real    g_qv_diabatic    ikj     misc         1        -      rdu      "g_qv_diabatic"           "MICROPHYSICS QV TENDENCY"            "g g-1 s-1"
+state   real    a_qv_diabatic    ikj     misc         1        -      rdu      "a_qv_diabatic"           "MICROPHYSICS QV TENDENCY"            "g g-1 s-1"
+state   real    g_qc_diabatic    ikj     misc         1        -      rdu      "g_qc_diabatic"           "MICROPHYSICS QC TENDENCY"            "g g-1 s-1"
+state   real    a_qc_diabatic    ikj     misc         1        -      rdu      "a_qc_diabatic"           "MICROPHYSICS QC TENDENCY"            "g g-1 s-1"
+
+# Arrays for Specified LBCs  (lbc arrays REMOVED; Boundary arrays are now specified with the state array; see above, 20050413 JM )
+
+state    real   a_fcx            w         misc     -         -      ir       "a_fcx"                  "RELAXATION TERM FOR BOUNDARY ZONE"         ""
+state    real   a_gcx            w         misc     -         -      ir       "a_gcx"                  "2ND RELAXATION TERM FOR BOUNDARY ZONE"         ""
+state    real   a_dtbc            -        misc     -         -      ir       "a_dtbc"                 "TIME SINCE BOUNDARY READ"         ""
+
+state    real   g_fcx            w         misc     -         -      ir       "g_fcx"                  "RELAXATION TERM FOR BOUNDARY ZONE"         ""
+state    real   g_gcx            w         misc     -         -      ir       "g_gcx"                  "2ND RELAXATION TERM FOR BOUNDARY ZONE"         ""
+state    real   g_dtbc            -        misc     -         -      ir       "g_dtbc"                 "TIME SINCE BOUNDARY READ"         ""
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Scalar (4D) arrays
+
+# Moist Scalars
+#  
+# The first line ensures that there will be identifiers named g(a)_moist and
+# g(a)_moist_tend even if there are not any moist scalars (so the essentially
+# dry code will still link properly)
+#
+
+state   real    -              ikjftb   a_moist       1         -     -    -
+state   real    a_qv             ikjftb   a_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "A_QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
+state   real    a_qc             ikjftb   a_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "A_QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
+state   real    a_qr             ikjftb   a_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "A_QRAIN"            "Rain water mixing ratio"       "kg kg-1"
+state   real    a_qi             ikjftb   a_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "A_QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    a_qi2            ikjftb   a_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "A_QICE2"            "Ice mixing ratio cat 2"        "kg kg-1"
+state   real    a_qs             ikjftb   a_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "A_QSNOW"            "Snow mixing ratio"             "kg kg-1"
+state   real    a_qg             ikjftb   a_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "A_QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
+state   real    a_qh             ikjftb   a_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "A_QHAIL"            "Hail mixing ratio"             "kg kg-1"
+
+state   real    -              ikjftb   g_moist       1         -     -    -
+state   real    g_qv             ikjftb   g_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "G_QVAPOR"           "Water vapor mixing ratio"      "kg kg-1"
+state   real    g_qc             ikjftb   g_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "G_QCLOUD"           "Cloud water mixing ratio"      "kg kg-1"
+state   real    g_qr             ikjftb   g_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "G_QRAIN"            "Rain water mixing ratio"       "kg kg-1"
+state   real    g_qi             ikjftb   g_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "G_QICE"             "Ice mixing ratio"              "kg kg-1"
+state   real    g_qi2            ikjftb   g_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "G_QICE2"            "Ice mixing ratio cat 2"        "kg kg-1"
+state   real    g_qs             ikjftb   g_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "G_QSNOW"            "Snow mixing ratio"             "kg kg-1"
+state   real    g_qg             ikjftb   g_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "G_QGRAUP"           "Graupel mixing ratio"          "kg kg-1"
+state   real    g_qh             ikjftb   g_moist       1         -     \
+   i0rhusdf=(bdy_interp:dt)  "G_QHAIL"            "Hail mixing ratio"             "kg kg-1"
+
+# JC_DFI variables
+state   real   jcdfi_u           ikj   misc        1         -     -    "U_JCDFI"               "u accumulation array"          "   "
+state   real   jcdfi_v           ikj   misc        1         -     -    "V_JCDFI"               "v accumulation array"          "   "
+state   real   jcdfi_t           ikj   misc        1         -     -    "T_JCDFI"               "t accumulation array"          "   "
+state   real   jcdfi_p           ikj   misc        1         -     -    "P_JCDFI"               "p accumulation array"          "Pa"
+
+# Other Scalars
+state   real    -              ikjftb  a_scalar      1         -     -   -
+state   real    a_qndrop         ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_QNDROP"        "Droplet number mixing ratio"        "# kg-1"
+state   real    a_qni            ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_QNICE"         "Ice Number concentration" "# kg-1"
+state   real    a_qt             ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_CWM"           "Total condensate mixing ratio"      "kg kg-1"
+state   real    a_qns            ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_QNSNOW"         "Snow Number concentration"   "# kg(-1)"
+state   real    a_qnr            ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_QNRAIN"        "Rain Number concentration"   "# kg(-1)"
+state   real    a_qng            ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_QNGRAUPEL"     "Graupel Number concentration" "# kg(-1)"
+state   real    a_qnh            ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_QNHAIL"        "Hail Number concentration" "# kg(-1)"
+state   real    a_qnn            ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_QNCCN"         "CCN Number concentration" "# kg(-1)"
+state   real    a_qnc            ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_QNCLOUD"       "cloud water Number concentration" "# kg(-1)"
+state   real    a_qnwfa          ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_QNWFA"         "water-friendly aerosol number con" "# kg(-1)"
+state   real    a_qnifa          ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_QNIFA"         "ice-friendly aerosol number con"   "# kg(-1)"
+state   real    a_qvolg          ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_QVGRAUPEL"     "Graupel Particle Volume" "m(3) kg(-1)"
+state   real    a_qvolh          ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_QVHAIL"        "Hail Particle Volume" "m(3) kg(-1)"
+state   real    a_qrimef         ikjftb  a_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "A_QRIMEF"        "rime factor * qi" "kg kg-1"
+
+state   real    -              ikjftb  g_scalar      1         -     -   -
+state   real    g_qndrop         ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_QNDROP"        "Droplet number mixing ratio"        "# kg-1"
+state   real    g_qni            ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_QNICE"         "Ice Number concentration" "# kg-1"
+state   real    g_qt             ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_CWM"           "Total condensate mixing ratio"      "kg kg-1"
+state   real    g_qns            ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_QNSNOW"         "Snow Number concentration"   "# kg(-1)"
+state   real    g_qnr            ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_QNRAIN"        "Rain Number concentration"   "# kg(-1)"
+state   real    g_qng            ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_QNGRAUPEL"     "Graupel Number concentration" "# kg(-1)"
+state   real    g_qnh            ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_QNHAIL"        "Hail Number concentration" "# kg(-1)"
+state   real    g_qnn            ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_QNCCN"         "CCN Number concentration" "# kg(-1)"
+state   real    g_qnc            ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_QNCLOUD"       "cloud water Number concentration" "# kg(-1)"
+state   real    g_qnwfa          ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_QNWFA"         "water-friendly aerosol number con" "# kg(-1)"
+state   real    g_qnifa          ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_QNIFA"         "ice-friendly aerosol number con"   "# kg(-1)"
+state   real    g_qvolg          ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_QVGRAUPEL"     "Graupel Particle Volume" "m(3) kg(-1)"
+state   real    g_qvolh          ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_QVHAIL"        "Hail Particle Volume" "m(3) kg(-1)"
+state   real    g_qrimef         ikjftb  g_scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "G_QRIMEF"        "rime factor * qi" "kg kg-1"
+
+# Placeholder for decoupled advective tendency diagnostics for non-chem
+state   real  -               ikjf      g_advh_t      1         -     -         -
+state   real  g_advh_qv       ikjf      g_advh_t      1         -     -         "g_advh_qv"    "ACCUMULATED HORIZONTAL TENDENCY FOR WATER VAPOR"        "kg kg-1"
+
+state   real  -               ikjf      g_advz_t      1         -     -         -
+state   real  g_advz_qv       ikjf      g_advz_t      1         -     -         "g_advz_qv"    "ACCUMULATED VERTICAL TENDENCY FOR WATER VAPOR"          "kg kg-1"
+
+state   real  -               ikjf      a_advh_t      1         -     -         -
+state   real  a_advh_qv       ikjf      a_advh_t      1         -     -         "a_advh_qv"    "ACCUMULATED HORIZONTAL TENDENCY FOR WATER VAPOR"        "kg kg-1"
+
+state   real  -               ikjf      a_advz_t      1         -     -         -
+state   real  a_advz_qv       ikjf      a_advz_t      1         -     -         "a_advz_qv"    "ACCUMULATED VERTICAL TENDENCY FOR WATER VAPOR"          "kg kg-1"
+
+# gfdl (eta) radiation State Variables
+state    real    g_HTOP            ij     misc        1         -      r        "g_HTOP"                 "TOP OF CONVECTION LEVEL"         ""
+state    real    a_HTOP            ij     misc        1         -      r        "a_HTOP"                 "TOP OF CONVECTION LEVEL"         ""
+state    real    g_HBOT            ij     misc        1         -      r        "g_HBOT"                 "BOT OF CONVECTION LEVEL"         ""
+state    real    a_HBOT            ij     misc        1         -      r        "a_HBOT"                 "BOT OF CONVECTION LEVEL"         ""
+state    real    g_CUTOP           ij     misc        1         -      r        "g_CUTOP"                "TOP OF CONVECTION LEVEL FROM CUMULUS PAR"    ""
+state    real    a_CUTOP           ij     misc        1         -      r        "a_CUTOP"                "TOP OF CONVECTION LEVEL FROM CUMULUS PAR"    ""
+state    real    g_CUBOT           ij     misc        1         -      r        "g_CUBOT"                "BOT OF CONVECTION LEVEL FROM CUMULUS PAR"    ""
+state    real    a_CUBOT           ij     misc        1         -      r        "a_CUBOT"                "BOT OF CONVECTION LEVEL FROM CUMULUS PAR"    ""
+state    REAL    g_CUPPT           ij     misc        1         -      r        "g_CUPPT"                "ACCUMULATED CONVECTIVE RAIN SINC LAST CALL TO THE RADIATION"         ""
+state    REAL    a_CUPPT           ij     misc        1         -      r        "a_CUPPT"                "ACCUMULATED CONVECTIVE RAIN SINC LAST CALL TO THE RADIATION"         ""
+
+# MYNN PBL variables
+state   real   g_qke_adv        ikjftb  g_scalar      1         -      i0rusdf=(bdy_interp:dt) "g_qke_adv"       "twice TKE from MYNN"      "m2 s-2"
+state   real   a_qke_adv        ikjftb  a_scalar      1         -      i0rusdf=(bdy_interp:dt) "a_qke_adv"       "twice TKE from MYNN"      "m2 s-2"
+
+# Chem Scalars
+state   real    -              ikjftb   g_chem        1         -     -    -
+state   real    -              ikjftb   a_chem        1         -     -    -
+#
+# Tracer Scalars: If you want full resolved and non-resolved dispersion, compile WRF-Chem
+#
+state   real    -          ikjftb  g_tracer        1         -     -    -
+state   real    g_tr17_1     ikjftb  g_tracer        1         -     irh    "g_tr17_1"         "g_tr17_1"          -
+state   real    g_tr17_2     ikjftb  g_tracer        1         -     irh    "g_tr17_2"         "g_tr17_2"          -
+state   real    g_tr17_3     ikjftb  g_tracer        1         -     irh    "g_tr17_3"         "g_tr17_3"          -
+state   real    g_tr17_4     ikjftb  g_tracer        1         -     irh    "g_tr17_4"         "g_tr17_4"          -
+state   real    g_tr17_5     ikjftb  g_tracer        1         -     irh    "g_tr17_5"         "g_tr17_5"          -
+state   real    g_tr17_6     ikjftb  g_tracer        1         -     irh    "g_tr17_6"         "g_tr17_6"          -
+state   real    g_tr17_7     ikjftb  g_tracer        1         -     irh    "g_tr17_7"         "g_tr17_7"          -
+state   real    g_tr17_8     ikjftb  g_tracer        1         -     irh    "g_tr17_8"         "g_tr17_8"
+
+state   real    -          ikjftb  a_tracer        1         -     -    -
+state   real    a_tr17_1     ikjftb  a_tracer        1         -     irh    "a_tr17_1"         "a_tr17_1"          -
+state   real    a_tr17_2     ikjftb  a_tracer        1         -     irh    "a_tr17_2"         "a_tr17_2"          -
+state   real    a_tr17_3     ikjftb  a_tracer        1         -     irh    "a_tr17_3"         "a_tr17_3"          -
+state   real    a_tr17_4     ikjftb  a_tracer        1         -     irh    "a_tr17_4"         "a_tr17_4"          -
+state   real    a_tr17_5     ikjftb  a_tracer        1         -     irh    "a_tr17_5"         "a_tr17_5"          -
+state   real    a_tr17_6     ikjftb  a_tracer        1         -     irh    "a_tr17_6"         "a_tr17_6"          -
+state   real    a_tr17_7     ikjftb  a_tracer        1         -     irh    "a_tr17_7"         "a_tr17_7"          -
+state   real    a_tr17_8     ikjftb  a_tracer        1         -     irh    "a_tr17_8"         "a_tr17_8"
+
+state    real    g_th_old         ikj   misc        1         -    i01rusd    "g_TH_OLD"        "Old Value of Th"   "K"
+state    real    g_qv_old         ikj   misc        1         -    i01rusd    "g_QV_OLD"        "Old Value of qv"   "kg kg^-1"
+state    real    a_th_old         ikj   misc        1         -    i01rusd    "a_TH_OLD"        "Old Value of Th"   "K"
+state    real    a_qv_old         ikj   misc        1         -    i01rusd    "a_QV_OLD"        "Old Value of qv"   "kg kg^-1"
+#
+#---------------------------------------------------------------------------------------------------------------------------------------
+# Package Declarations
+#
+
+#key      package       associated                package          associated 4d scalars
+#         name          namelist choice           state vars
+
+package   dyn_em        dyn_opt==2                   -             -
+package   dyn_em_check  dyn_opt==102                 -             -
+package   dyn_em_tl     dyn_opt==202                 -             -
+package   dyn_em_ad     dyn_opt==302                 -             -
+
+package   jcdfi_off     jcdfi_diag==0                  -             -
+package   jcdfi_on      jcdfi_diag==1                  -             state:jcdfi_u,jcdfi_v,jcdfi_t,jcdfi_p
+
+package   lscondscheme   mp_physics==98              -             moist:qv
+package   mkesslerscheme mp_physics==99              -             moist:qv,qc,qr
+package   surfdragscheme bl_pbl_physics==98          -             -
+package   ducuscheme     cu_physics==98              -             -
+
+halo      HALO_EM_PHYS_A_BL_SURF  dyn_em 4:xland
+
+## communications                                               
+
+### 8. Edit the Registry file and create a halo-exchange for x_1.
+
+halo_nta      HALO_EM_INIT_1 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,ph_1,ph_2
+halo_nta      HALO_EM_INIT_2 dyn_em 48:t_1,t_2,mu_1,mu_2,tke_1,tke_2,ww
+halo_nta      HALO_EM_INIT_3 dyn_em 48:php,p,al,alt
+halo_nta      HALO_EM_INIT_4 dyn_em 48:h_diabatic,qv_diabatic,qc_diabatic
+halo_nta      HALO_EM_INIT_5 dyn_em 48:moist,scalar,tracer
+halo_nta      HALO_EM_A dyn_em  8:ru,rv,rw,ww,php,alt,al,p,muu,muv,mut
+halo_nta      HALO_EM_B dyn_em 4:ph_2,al,p,t_1,t_save,u_save,v_save,mu_1,mu_2,mudf,php,alt
+halo_nta      HALO_EM_C dyn_em    4:u_2,v_2
+halo_nta      HALO_EM_C2 dyn_em    4:ph_2,al,p,mu_2,muts,mudf
+halo_nta      HALO_EM_D dyn_em    24:ru_m,rv_m,ww_m,mut,muts
+halo_nta      HALO_EM_D2_3 dyn_em 24:u_2,v_2,w_2,t_2,ph_2;24:moist,chem,tracer,scalar;4:mu_2,al
+halo_nta      HALO_EM_D2_5 dyn_em 48:u_2,v_2,w_2,t_2,ph_2;24:moist,chem,tracer,scalar;4:mu_2,al
+halo_nta      HALO_EM_D3_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist,chem,tracer,scalar;4:mu_1,mu_2
+halo_nta      HALO_EM_D3_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,moist,chem,tracer,scalar;4:mu_1,mu_2
+halo_nta      HALO_EM_E_3 dyn_em 24:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,;4:mu_1,mu_2
+halo_nta      HALO_EM_E_5 dyn_em 48:u_1,u_2,v_1,v_2,w_1,w_2,t_1,t_2,ph_1,ph_2,tke_1,tke_2,;4:mu_1,mu_2
+halo_nta      HALO_EM_SBM dyn_em 8:p_phy,pi_phy,dz8w,th_phy,rho,qv_old,th_old,u_phy,v_phy
+halo_nta      HALO_EM_HYDRO_UV   dyn_em 8:u_2,v_2
+halo_nta      HALO_EM_MOIST_E_3 dyn_em 24:moist
+halo_nta      HALO_EM_MOIST_E_5 dyn_em 48:moist
+halo_nta      HALO_EM_MOIST_E_7 dyn_em 80:moist
+halo_nta      HALO_EM_MOIST_OLD_E_5 dyn_em 48:moist_old
+halo_nta      HALO_EM_MOIST_OLD_E_7 dyn_em 80:moist_old
+halo_nta      HALO_EM_TKE_C dyn_em 8:u_2,v_2,z,zx,zy,rdz,rdzw,ustm,ust
+halo_nta      HALO_EM_TKE_D dyn_em 8:defor11,defor22,defor33,defor12,defor13,defor23,div
+halo_nta      HALO_EM_TKE_E dyn_em 8:xkmv,xkmh,xkhv,xkhh,BN2,moist,rho
+halo_nta      HALO_EM_TKE_3 dyn_em   24:tke_1,tke_2
+halo_nta      HALO_EM_TKE_5 dyn_em   48:tke_1,tke_2
+halo_nta      HALO_EM_TKE_7 dyn_em   80:tke_1,tke_2
+halo_nta      HALO_EM_TKE_OLD_E_5 dyn_em   48:tke_1
+halo_nta      HALO_EM_TKE_OLD_E_7 dyn_em   80:tke_1
+halo_nta      HALO_EM_TKE_ADVECT_3 dyn_em 24:tke_2
+halo_nta      HALO_EM_TKE_ADVECT_5 dyn_em 48:tke_2
+halo_nta      HALO_EM_PHYS_A  dyn_em 4:u_2,v_2
+halo_nta      HALO_EM_PHYS_PBL dyn_em        4:rublten,rvblten
+halo_nta      HALO_EM_PHYS_DIFFUSION dyn_em  4:defor11,defor22,defor12,defor13,defor23,div,xkmv,xkmh,xkhv,xkhh,tke_1,tke_2
+halo_nta      HALO_EM_BDY  dyn_em 4:u_1,v_1,ph_1,mu_1,t_1,tke_1
+halo_nta      HALO_EM_E  dyn_em 4:mu_1
+halo_nta      HALO_EM_TRACER_E_3 dyn_em 24:tracer
+halo_nta      HALO_EM_TRACER_E_5 dyn_em 48:tracer
+halo_nta      HALO_EM_TRACER_E_7 dyn_em 80:tracer
+halo_nta      HALO_EM_TRACER_OLD_E_5 dyn_em 48:tracer_old
+halo_nta      HALO_EM_TRACER_OLD_E_7 dyn_em 80:tracer_old
+halo          HALO_GSI_EM_E          dyn_em 4:mu_2,mub
+halo          HALO_GSI_EM_E_TL       dyn_em 4:g_mu_2,mu_2,mub
+halo          HALO_GSI_EM_BDY        dyn_em 4:a_u_1,a_v_1,a_ph_1,a_mu_1,a_t_1,a_w_1
+
+#halo      HALO_EM_MU_AD dyn_em  4:a_muu,a_muv,a_mu_2,a_ru,a_rv
+#halo      HALO_EM_SAVE_AD dyn_em  4:a_ph_save,a_t_save,a_u_save,a_v_save
+
+##
+# BEGIN XTRAJ_TYPE DEFINITION:
+#      <Table>  <Type>  <Sym>                <Dims>   <Use>   <NumTLev> <Stagger> <IO>     <DNAME>             <DESCRIP>     <UNITS>
+#typedef ad_forcing_type real    a_u_2                  ikj      -         1        X       -
+#typedef ad_forcing_type real    a_v_2                  ikj      -         1        Y       -
+#typedef ad_forcing_type real    a_w_2                  ikj      -         1        Z       -
+#typedef ad_forcing_type real    a_ph_2                 ikj      -         1        Z       -
+#typedef ad_forcing_type real    a_t_2                  ikj      -         1        -       -
+#typedef ad_forcing_type real    a_mu_2                 ij       -         1        -       -
+#typedef ad_forcing_type real    a_qv                   ikj      -         1        -       -
+#typedef ad_forcing_type real    a_qc                   ikj      -         1        -       -
+#typedef ad_forcing_type real    a_qr                   ikj      -         1        -       -
+#typedef ad_forcing_type real    a_qi                   ikj      -         1        -       -
+#typedef ad_forcing_type real    a_qs                   ikj      -         1        -       -
+#typedef ad_forcing_type real    a_qg                   ikj      -         1        -       -
+#typedef ad_forcing_type real    a_qh                   ikj      -         1        -       -
+
+
+#typedef xtraj_type real    lu_index               ij       -         1        -       -
+#typedef xtraj_type real    znu                    k        -         1        -       -
+#typedef xtraj_type real    znw                    k        -         1        Z       -
+#typedef xtraj_type real    zs                     l        -         -        Z       -
+#typedef xtraj_type real    dzs                    l        -         -        Z       -
+#typedef xtraj_type real    u_2                    ikj      -         1        X       -
+#typedef xtraj_type real    v_2                    ikj      -         1        Y       -
+#typedef xtraj_type real    w_2                    ikj      -         1        Z       -
+#typedef xtraj_type real    ph_2                   ikj      -         1        Z       -
+#typedef xtraj_type real    phb                    ikj      -         1        Z       -
+#typedef xtraj_type real    t_2                    ikj      -         1        -       -
+#typedef xtraj_type real    mu_2                   ij       -         1        -       -
+#typedef xtraj_type real    mub                    ij       -         1        -       -
+#typedef xtraj_type real    p                      ikj      -         1        -       -
+#typedef xtraj_type real    al                     ikj      -         1        -       -
+#typedef xtraj_type real    alt                    ikj      -         1        -       -
+#typedef xtraj_type real    alb                    ikj      -         1        -       -
+#typedef xtraj_type real    pb                     ikj      -         1        -       -
+#typedef xtraj_type real    fnm                    k        -         1        -       -
+#typedef xtraj_type real    fnp                    k        -         1        -       -
+#typedef xtraj_type real    rdnw                   k        -         1        -       -
+#typedef xtraj_type real    rdn                    k        -         1        -       -
+#typedef xtraj_type real    dnw                    k        -         1        -       -
+#typedef xtraj_type real    dn                     k        -         1        -       -
+#typedef xtraj_type real    cfn                    -        -         -        -       -
+#typedef xtraj_type real    cfn1                   -        -         -        -       -
+#typedef xtraj_type real    q2                     ij       -         1        -       -
+#typedef xtraj_type real    t2                     ij       -         1        -       -
+#typedef xtraj_type real    psfc                   ij       -         1        -       -
+#typedef xtraj_type real    th2                    ij       -         1        -       -
+#typedef xtraj_type real    u10                    ij       -         1        -       -
+#typedef xtraj_type real    v10                    ij       -         1        -       -
+#typedef xtraj_type real    rdx                    -        -         -        -       -
+#typedef xtraj_type real    rdy                    -        -         -        -       -
+#typedef xtraj_type real    dts                    -        -         -        -       -
+#typedef xtraj_type real    dtseps                 -        -         -        -       -
+#typedef xtraj_type real    resm                   -        -         -        -       -
+#typedef xtraj_type real    zetatop                -        -         -        -       -
+#typedef xtraj_type real    cf1                    -        -         -        -       -
+#typedef xtraj_type real    cf2                    -        -         -        -       -
+#typedef xtraj_type real    cf3                    -        -         -        -       -
+#typedef xtraj_type real    fcx                    w        -         -        -       -
+#typedef xtraj_type real    gcx                    w        -         -        -       -
+#typedef xtraj_type real    dtbc                   -        -         -        -       -
+#typedef xtraj_type real    landmask               ij       -         1        -       -
+#typedef xtraj_type real    tslb                   ilj      -         1        Z       -
+#typedef xtraj_type real    smois                  ilj      -         1        Z       -
+#typedef xtraj_type real    sh2o                   ilj      -         1        Z       -
+#typedef xtraj_type real    smcrel                 ilj      -         1        Z       -
+#typedef xtraj_type real    xice                   ij       -         1        -       -
+#typedef xtraj_type real    ivgtyp                 ij       -         1        -       -
+#typedef xtraj_type real    isltyp                 ij       -         1        -       -
+#typedef xtraj_type real    vegfra                 ij       -         1        -       -
+#typedef xtraj_type real    snow                   ij       -         1        -       -
+#typedef xtraj_type real    snowc                  ij       -         1        -       -
+#typedef xtraj_type real    snowh                  ij       -         1        -       -
+#typedef xtraj_type real    canwat                 ij       -         1        -       -
+#typedef xtraj_type real    sst                    ij       -         1        -       -
+#typedef xtraj_type real    msft                   ij       -         1        -       -
+#typedef xtraj_type real    msfu                   ij       -         1        X       -
+#typedef xtraj_type real    msfv                   ij       -         1        Y       -
+#typedef xtraj_type real    f                      ij       -         1        -       -
+#typedef xtraj_type real    e                      ij       -         1        -       -
+#typedef xtraj_type real    sina                   ij       -         1        -       -
+#typedef xtraj_type real    cosa                   ij       -         1        -       -
+#typedef xtraj_type real    ht                     ij       -         1        -       -
+#typedef xtraj_type real    tsk                    ij       -         1        -       -
+#typedef xtraj_type real    xlat                   ij       -         1        -       -
+#typedef xtraj_type real    xlong                  ij       -         1        -       -
+#typedef xtraj_type real    albbck                 ij       -         1        -       -
+#typedef xtraj_type real    tmn                    ij       -         1        -       -
+#typedef xtraj_type real    xland                  ij       -         1        -       -
+#typedef xtraj_type real    znt                    ij       -         1        -       -
+#typedef xtraj_type real    qv                     ikj      -         1        -       -
+#typedef xtraj_type real    qc                     ikj      -         1        -       -
+#typedef xtraj_type real    qr                     ikj      -         1        -       -
+#typedef xtraj_type real    qi                     ikj      -         1        -       -
+#typedef xtraj_type real    qs                     ikj      -         1        -       -
+#typedef xtraj_type real    qg                     ikj      -         1        -       -
+#typedef xtraj_type real    qh                     ikj      -         1        -       -
+# BEGIN XTRAJ_TYPE DEFINITION:
+
+#Set state
+#state xtraj_type xtraj - -
+#state ad_forcing_type ad_forcing - -
+
+rconfig   integer mp_physics_plus   derived   max_domains   0    -   "mp_physics_plus"   ""   "allocate a_ and g_ moist variables for selected microphysics package"
+package   passiveqv_plus        mp_physics_plus==0      -          g_moist:g_qv;a_moist:a_qv
+package   kessler_plus          mp_physics_plus==1      -          g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
+package   lins_plus             mp_physics_plus==2      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr
+package   wsm3_plus             mp_physics_plus==3      -          g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
+package   wsm5_plus             mp_physics_plus==4      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
+package   fer_mp_hi_plus        mp_physics_plus==5      -          g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
+package   fer_mp_hi_advect_plus mp_physics_plus==15     -          g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
+package   wsm6_plus             mp_physics_plus==6      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   gsfcgce_plus          mp_physics_plus==7      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   thompson_plus         mp_physics_plus==8      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   milbrandt2mom_plus    mp_physics_plus==9      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
+package   morr_two_mom_plus     mp_physics_plus==10     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   cammgmp_plus          mp_physics_plus==11     -          g_moist:g_qv,g_qc,g_qi,g_qr,g_qs;a_moist:a_qv,a_qc,a_qi,a_qr,a_qs
+package   sbu_ylin_plus         mp_physics_plus==13     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
+package   wdm5_plus             mp_physics_plus==14     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs
+package   wdm6_plus             mp_physics_plus==16     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   nssl_2mom_plus        mp_physics_plus==17     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
+package   nssl_2momccn_plus     mp_physics_plus==18     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
+package   nssl_1mom_plus        mp_physics_plus==19     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg,g_qh;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg,a_qh
+package   nssl_1momlfo_plus     mp_physics_plus==21     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   nssl_2momg_plus       mp_physics_plus==22     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   thompsonaero_plus     mp_physics_plus==28     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   p3_1category_plus     mp_physics_plus==50     -          g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
+package   p3_1category_nc_plus  mp_physics_plus==51     -          g_moist:g_qv,g_qc,g_qr,g_qi;a_moist:a_qv,a_qc,a_qr,a_qi
+package   p3_2category_4dvar    mp_physics_plus==52     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qi2;a_moist:a_qv,a_qc,a_qr,a_qi,a_qi2
+package   morr_tm_aero_4dvar    mp_physics_plus==40     -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr,a_qi,a_qs,a_qg
+package   etampnew_plus         mp_physics_plus==95     -          g_moist:g_qv,g_qc,g_qr,g_qs;a_moist:a_qv,a_qc,a_qr,a_qs
+package   lscond_plus           mp_physics_plus==98     -          g_moist:g_qv;a_moist:a_qv
+package   mkessler_plus         mp_physics_plus==99     -          g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
+
+rconfig   integer cu_used_plus    derived               1          0       -     "cu_used_plus"   "turn on if any cumulus scheme is used"
+rconfig   integer shcu_used_plus  derived               1          0       -     "shcu_used_plus" "turn on if any shallow cumulus scheme is used"
+package   no_cu_used_plus       cu_used_plus==0         -          -
+package   any_cu_used_plus      cu_used_plus==1         -          state:g_rucuten,g_rvcuten,g_rthcuten,g_rqvcuten,g_rqrcuten,g_rqccuten,g_rqscuten,g_rqicuten,g_rqcncuten,g_rqincuten,a_rucuten,a_rvcuten,a_rthcuten,a_rqvcuten,a_rqrcuten,a_rqccuten,a_rqscuten,a_rqicuten,a_rqcncuten,a_rqincuten
+package   no_shcu_used_plus    shcu_used_plus==0        -          -
+package   any_shcu_used_plus   shcu_used_plus==1        -          state:g_rushten,g_rvshten,g_rthshten,g_rqvshten,g_rqrshten,g_rqcshten,g_rqsshten,g_rqishten,g_rqgshten,g_rqcnshten,g_rqinshten,a_rushten,a_rvshten,a_rthshten,a_rqvshten,a_rqrshten,a_rqcshten,a_rqsshten,a_rqishten,a_rqgshten,a_rqcnshten,a_rqinshten

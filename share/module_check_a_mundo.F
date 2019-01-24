@@ -52,7 +52,7 @@
 
       LOGICAL :: exists, vnest
       LOGICAL , EXTERNAL :: wrf_dm_on_monitor
-      INTEGER :: i, j, oops, d1_value
+      INTEGER :: i, j, oops, d1_value, EDMFMAX, SCHUMAX
       LOGICAL :: km_opt_already_done , diff_opt_already_done
       INTEGER :: count_opt
       LOGICAL :: lon_extent_is_global , lat_extent_is_global
@@ -96,29 +96,41 @@
 
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
-! There are restrictions for the use_theta_m option:
-! 1. The option to include moist theta in the WRF solver only works with a single domain.
-! 2. The option may not be used in conjunction with damp_opt=2.
-! 3. The option may not be used with rad_nudge.
+! LBC: Always the case, nested setup up: F, T, T, T
 !-----------------------------------------------------------------------
+   model_config_rec%nested(1)    = .FALSE.
+   DO i=2,model_config_rec%max_dom
+      model_config_rec%nested(i) = .TRUE.
+   END DO 
 
-      IF ( ( model_config_rec % use_theta_m .EQ. 1 ) .AND. &
-           ( model_config_rec % damp_opt    .EQ. 2 ) ) THEN
-         CALL wrf_message ( "The use_theta_m option may not be paired with damp_opt=2." )
-         wrf_err_message = '--- ERROR: Either turn off use_theta_m, or select a different damp_opt option'
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         count_fatal_error = count_fatal_error + 1
-      END IF
+!-----------------------------------------------------------------------
+! LBC: Always the case, nested domain BCs are always false.
+!-----------------------------------------------------------------------
+   DO i=2,model_config_rec%max_dom
+      model_config_rec%periodic_x(i)   = .FALSE.
+      model_config_rec%symmetric_xs(i) = .FALSE.
+      model_config_rec%symmetric_xe(i) = .FALSE.
+      model_config_rec%open_xs(i)      = .FALSE.
+      model_config_rec%open_xe(i)      = .FALSE.
+      model_config_rec%periodic_y(i)   = .FALSE.
+      model_config_rec%symmetric_ys(i) = .FALSE.
+      model_config_rec%symmetric_ye(i) = .FALSE.
+      model_config_rec%open_ys(i)      = .FALSE.
+      model_config_rec%open_ye(i)      = .FALSE.
+      model_config_rec%polar(i)        = .FALSE.
+      model_config_rec%specified(i)    = .FALSE.
+   END DO 
 
-      IF ( ( model_config_rec % use_theta_m .EQ. 1 ) .AND. &
-           ( model_config_rec % rad_nudge   .EQ. 1 ) ) THEN
-         CALL wrf_message ( "The use_theta_m option may not be paired with rad_nudge=1." )
-         wrf_err_message = '--- ERROR: Either turn off use_theta_m, or turn off the rad_nudge option'
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         count_fatal_error = count_fatal_error + 1
-      END IF
+!-----------------------------------------------------------------------
+! LBC: spec_bdy_width = spec_zone + relax_zone
+!-----------------------------------------------------------------------
+   IF ( model_config_rec%specified(1) ) THEN
+      model_config_rec%spec_zone = 1
+      model_config_rec%relax_zone = model_config_rec%spec_bdy_width - model_config_rec%spec_zone
+   END IF
+#endif
 
-
+#if (EM_CORE == 1)
 !-----------------------------------------------------------------------
 ! Check that all values of diff_opt and km_opt are filled in.  A flag
 ! value of "-1" from the nml file means that this column (domain) is not
@@ -134,16 +146,20 @@
          IF ( model_config_rec % km_opt(i) .EQ. -1 ) THEN
             model_config_rec % km_opt(i) = model_config_rec % km_opt(1)
             IF ( .NOT. km_opt_already_done ) THEN
-               CALL wrf_message ( "Setting blank km_opt entries to domain #1 values.")
-               CALL wrf_message ( " --> The km_opt entry in the namelist.input is now max_domains." )
+               wrf_err_message = 'Setting blank km_opt entries to domain #1 values.'
+               CALL wrf_debug ( 1, wrf_err_message )
+               wrf_err_message = ' --> The km_opt entry in the namelist.input is now max_domains.'
+               CALL wrf_debug ( 1, wrf_err_message )
             END IF
             km_opt_already_done = .TRUE.
          END IF
          IF ( model_config_rec % diff_opt(i) .EQ. -1 ) THEN
             model_config_rec % diff_opt(i) = model_config_rec % diff_opt(1)
             IF ( .NOT. diff_opt_already_done ) THEN
-               CALL wrf_message ( "Setting blank diff_opt entries to domain #1 values.")
-               CALL wrf_message ( " --> The diff_opt entry in the namelist.input is now max_domains." )
+               wrf_err_message = 'Setting blank diff_opt entries to domain #1 values.'
+               CALL wrf_debug ( 1, wrf_err_message )
+               wrf_err_message = ' --> The diff_opt entry in the namelist.input is now max_domains.'
+               CALL wrf_debug ( 1, wrf_err_message )
             END IF
             diff_opt_already_done = .TRUE.
          END IF
@@ -162,6 +178,22 @@
          count_fatal_error = count_fatal_error + 1
       END IF
 
+!-----------------------------------------------------------------------
+! Check that mosiac option cannot turn on when sf_urban_physics = 2 and 3
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % sf_surface_mosaic .EQ. 1 .AND. &
+              (model_config_rec % sf_urban_physics(i) .EQ. 2 .OR. &
+               model_config_rec % sf_urban_physics(i) .EQ. 3 ) ) THEN
+            wrf_err_message = '--- ERROR: mosaic option cannot work with urban options 2 and 3 '
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- ERROR: Fix sf_surface_mosaic and sf_urban_physics in namelist.input.'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- ERROR: Either: use Noah LSM without the mosaic option, OR change the urban option to 1 '
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+         END IF
+      ENDDO
 
 #endif
 
@@ -224,9 +256,9 @@
          IF ( model_config_rec % mp_physics(i)     .NE. &
               model_config_rec % mp_physics(1) ) THEN
             wrf_err_message = '--- NOTE: mp_physics must be equal for all domains '
-            CALL wrf_message ( wrf_err_message )
+            CALL wrf_debug ( 1, wrf_err_message )
             wrf_err_message = '--- NOTE:     ----> Setting all mp_physics entries to value defined in the inner most domain'
-            CALL wrf_message ( TRIM( wrf_err_message ) )
+            CALL wrf_debug ( 1, wrf_err_message )
          END IF
       ENDDO
       d1_value = model_config_rec%mp_physics(model_config_rec % max_dom)
@@ -333,9 +365,9 @@
       IF ( ( model_config_rec%fractional_seaice .EQ. 0 ).AND. &
               ( model_config_rec%tice2tsk_if2cold ) ) THEN
             wrf_err_message = '--- WARNING: You set tice2tsk_if2cold = .true.,  but fractional_seaice = 0'
-            CALL wrf_message ( wrf_err_message )
+            CALL wrf_debug ( 1, wrf_err_message )
             wrf_err_message = '--- WARNING: tice2tsk_if2cold will have no effect on results.'
-            CALL wrf_message ( wrf_err_message )
+            CALL wrf_debug ( 1, wrf_err_message )
       END IF
 
 !-----------------------------------------------------------------------
@@ -359,7 +391,8 @@
 ! Check that if num_metgrid_levels < 20, lagrange_order should be 1
 !-----------------------------------------------------------------------
             IF  ( model_config_rec%num_metgrid_levels .LE. 20 ) THEN
-            CALL wrf_message ( 'Linear vertical interpolation is recommended with input vertical resolution this coarse, changing lagrange_order to 1' )
+            wrf_err_message = 'Linear vertical interpolation is recommended with input vertical resolution this coarse, changing lagrange_order to 1' 
+            CALL wrf_debug ( 1, wrf_err_message )
             model_config_rec%lagrange_order = 1
             END IF
 
@@ -370,10 +403,10 @@
       d1_value = model_config_rec%sf_urban_physics(1)
       DO i = 2, model_config_rec % max_dom
          IF ( model_config_rec%sf_urban_physics(i) /= d1_value ) THEN
-            WRITE(wrf_err_message, * ) '--- NOTE:   sf_urban_physics option must be identical in each domain'
-            CALL wrf_message ( TRIM ( wrf_err_message ) )
-            WRITE(wrf_err_message, * ) '--- NOTE:   ----> Resetting namelist values to that defined on the inner most domain'
-            CALL wrf_message ( TRIM ( wrf_err_message ) )
+            wrf_err_message = '--- NOTE:   sf_urban_physics option must be identical in each domain'
+            CALL wrf_debug ( 1, wrf_err_message )
+            wrf_err_message = '--- NOTE:   ----> Resetting namelist values to that defined on the inner most domain'
+            CALL wrf_debug ( 1, wrf_err_message )
          ENDIF
       END DO
       d1_value = model_config_rec%sf_urban_physics(model_config_rec % max_dom)
@@ -421,6 +454,18 @@
          END IF
       END DO
 #endif
+
+!-----------------------------------------------------------------------
+!           Check that NSAS shallow convection is not allowed to turn on simultaneously with NSAS
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%shcu_physics(i) == nscvshcuscheme .AND. model_config_rec%cu_physics(i) == nsasscheme) THEN
+            WRITE(wrf_err_message, '(" --- ERROR: NSCV shallow convection scheme is already included in NSAS ")')
+            CALL wrf_message ( TRIM ( wrf_err_message ) )
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+         END IF
+      END DO
 
 #if (EM_CORE == 1)
 
@@ -485,21 +530,21 @@
            model_config_rec % skebs_vertstruc=1       ! parameter stoch_vertstruc_opt is being replaced with skebs_vertstruc
                                                       ! stoch_vertstruc_opt is obsolete starting with V3.7
            wrf_err_message = '--- WARNING: the namelist parameter "stoch_vertstruc_opt" is obsolete.'
-           CALL wrf_message ( wrf_err_message )
+               CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
            wrf_err_message = '             Please replace with namelist parameter "skebs_vertstruc" in V3.7 and later versions.'
-           CALL wrf_message ( wrf_err_message )
+               CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
          endif
    ENDDO
 
    DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec % stoch_force_opt(i) ==1 )  then
+         IF ( model_config_rec % stoch_force_opt(i) ==1 )  THEN
            model_config_rec % skebs(i)=1    ! parameter stoch_forc_opt is being replaced with skebs;
                                             ! stoch_vertstruc_opt is obsolete starting with V3.7
            wrf_err_message = '--- WARNING: the namelist parameter "stoch_force_opt" is obsolete.'
-           CALL wrf_message ( wrf_err_message )
+               CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
            wrf_err_message = '             Please replace with namelist parameter "skebs" in V3.7 and later versions.'
-           CALL wrf_message ( wrf_err_message )
-         endif
+               CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
+         ENDIF
    ENDDO
    DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec % skebs(i) .ne. 0)  then
@@ -528,10 +573,10 @@
 !--------------------------------------------------------------------------------
    IF ( model_config_rec % perturb_bdy .EQ. 1 ) then
         model_config_rec % skebs_on=1
-      wrf_err_message = '--- WARNING: perturb_bdy=1 option uses SKEBS pattern and may'
-      CALL wrf_message ( wrf_err_message )
-      wrf_err_message = '             increase computation time.'
-      CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- WARNING: perturb_bdy=1 option uses SKEBS pattern and may'
+         CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
+         wrf_err_message = '             increase computation time.'
+         CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
    ENDIF
 
 !--------------------------------------------------------------------------------
@@ -549,11 +594,11 @@
          count_fatal_error = count_fatal_error + 1
 #endif
 
-      model_config_rec % rand_perturb_on=1
-      wrf_err_message = '--- WARNING: perturb_chem_bdy=1 option uses RAND pattern and may'
-      CALL wrf_message ( wrf_err_message )
-      wrf_err_message = '             increase computation time.'
-      CALL wrf_message ( wrf_err_message )
+!NOTE      model_config_rec % rand_perturb_on=1
+         wrf_err_message = '--- WARNING: perturb_chem_bdy=1 option uses RAND pattern and may'
+         CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
+         wrf_err_message = '             increase computation time.'
+         CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
 
 #if (WRF_CHEM == 1)
       IF ( .NOT. model_config_rec % have_bcs_chem(1) ) THEN
@@ -572,9 +617,8 @@
 !----------------------------------------------------------------------------
    IF ( ( model_config_rec%traj_opt .EQ. 0 ) .AND. &
         ( model_config_rec%num_traj .NE. 0 ) ) THEN
-         WRITE (wrf_err_message, FMT='(A,A)') '--- WARNING: traj_opt is zero, but ', &
-                'num_traj is not zero; setting num_traj to zero.'
-         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- WARNING: traj_opt is zero, but num_traj is not zero; setting num_traj to zero.'
+         CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
          model_config_rec%num_traj = 0
    END IF
 
@@ -595,9 +639,8 @@
 !-----------------------------------------------------------------------
       IF ( model_config_rec%hypsometric_opt .EQ. 2 &
            .AND. model_config_rec%adjust_heights ) THEN
-           WRITE (wrf_err_message, FMT='(A,A)') '--- NOTE: hypsometric_opt is 2, ', &
-                  'setting adjust_heights = F'
-            CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- NOTE: hypsometric_opt is 2, setting adjust_heights = F'
+         CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
             model_config_rec%adjust_heights = .false.
       ENDIF
 #endif
@@ -624,13 +667,49 @@
 
       DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec%cu_physics(i) .EQ. MSKFSCHEME ) THEN
-            WRITE (wrf_err_message, FMT='(A,A)') '--- NOTE: cu_physics is 11, ', &
-                  'setting icloud = 1 and cu_rad_feedback = T'
-            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- NOTE: cu_physics is 11, setting icloud = 1 and cu_rad_feedback = T'
+            CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
             model_config_rec%cu_rad_feedback(i) = .true.
             model_config_rec%icloud = 1
          END IF
       ENDDO
+!-----------------------------------------------------------------------
+! aercu_opt = 1 (CESM-aerosal) only works with MSKF, special Morrison
+!-----------------------------------------------------------------------
+
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%aercu_opt .GT. 0 .AND.       &
+              ( model_config_rec%cu_physics(i) .NE. MSKFSCHEME .OR. &
+              model_config_rec%mp_physics(i) .NE. MORR_TM_AERO ) ) THEN
+              oops = oops + 1
+         END IF
+      ENDDO
+
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- ERROR: aercu_opt requires cu_physics = 11, and mp_physics = 40 '
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- Fix these options in namelist.input if you would like to use aercu_opt'
+         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+
+!-----------------------------------------------------------------------
+! Set the namelist parameters for the aercu_opt > 0
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec % aercu_opt .GT. 0 ) THEN
+         model_config_rec % alevsiz_cu = 30
+         model_config_rec % no_src_types_cu = 10
+         DO i = 1, model_config_rec % max_dom
+            model_config_rec % scalar_pblmix(i) = 1
+         END DO
+
+         wrf_err_message = '--- NOTE: aercu_opt is in use, setting:  ' // &
+                           'alevsiz_cu=30, no_src_types_cu=10, scalar_pblmix = 1'
+         CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
+
+      END IF
 
 #endif
 
@@ -642,9 +721,9 @@
       IF ( model_config_rec%sst_update .EQ. 0 ) THEN
          model_config_rec%io_form_auxinput4 = 0
          DO i = 1, model_config_rec % max_dom
-            WRITE (wrf_err_message, FMT='(A,A)') '--- NOTE: sst_update is 0, ', &
+            wrf_err_message = '--- NOTE: sst_update is 0, ' // &
                   'setting io_form_auxinput4 = 0 and auxinput4_interval = 0 for all domains'
-            CALL wrf_message ( wrf_err_message )
+            CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
             model_config_rec%auxinput4_interval(i)   = 0
             model_config_rec%auxinput4_interval_y(i) = 0
             model_config_rec%auxinput4_interval_d(i) = 0
@@ -737,7 +816,7 @@
          IF ( model_config_rec%grid_fdda(i) .EQ. 0 ) THEN
             WRITE (wrf_err_message, FMT='(A,I6,A)') '--- NOTE: grid_fdda is 0 for domain ', &
                          i, ', setting gfdda interval and ending time to 0 for that domain.'
-            CALL wrf_message ( wrf_err_message )
+            CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
 
             model_config_rec%gfdda_end_y(i) = 0
             model_config_rec%gfdda_end_d(i) = 0
@@ -757,7 +836,7 @@
             WRITE (wrf_err_message, FMT='(A,I6,A)') &
                          '--- NOTE: both grid_sfdda and pxlsm_soil_nudge are 0 for domain ', &
                          i, ', setting sgfdda interval and ending time to 0 for that domain.'
-            CALL wrf_message ( wrf_err_message )
+            CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
 
             model_config_rec%sgfdda_end_y(i) = 0
             model_config_rec%sgfdda_end_d(i) = 0
@@ -775,7 +854,7 @@
          IF ( model_config_rec%obs_nudge_opt(i) .EQ. 0 ) THEN
             WRITE (wrf_err_message, FMT='(A,I6,A)') '--- NOTE: obs_nudge_opt is 0 for domain ', &
                          i, ', setting obs nudging interval and ending time to 0 for that domain.'
-            CALL wrf_message ( wrf_err_message )
+            CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
 
             model_config_rec%fdda_end(i) = 0
             model_config_rec%auxinput11_interval(i)   = 0
@@ -815,8 +894,10 @@
          IF ( model_config_rec%rinblw(i) .EQ. -1 ) THEN
             model_config_rec%rinblw(i) = model_config_rec % rinblw(1)
             IF ( .NOT. rinblw_already_done ) THEN
-               CALL wrf_message ( "Setting blank rinblw entries to domain #1 values.")
-               CALL wrf_message ( " --> The rinblw entry in the namelist.input is now max_domains." )
+               wrf_err_message = 'Setting blank rinblw entries to domain #1 values.'
+               CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
+               wrf_err_message = ' --> The rinblw entry in the namelist.input is now max_domains.'
+               CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
             END IF
             rinblw_already_done = .TRUE.
          END IF
@@ -838,7 +919,8 @@
 !------------------------------------------------------------------------
     DO i = 1, model_config_rec%max_dom
      IF (model_config_rec%fasdas(i) .EQ. 1 ) THEN
-         CALL wrf_message ( "FASDAS is active. Mixed Layer fdda is inactive")
+        wrf_err_message = 'FASDAS is active. Mixed Layer fdda is inactive'
+        CALL wrf_debug ( 1, TRIM( wrf_err_message ) )
      END IF
 
 !------------------------------------------------------------------------
@@ -869,7 +951,7 @@
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
          wrf_err_message = '--- NOTE: bl_pbl_physics /= 4, implies mfshconv must be 0, resetting'
-         CALL wrf_message ( wrf_err_message )
+         CALL wrf_debug ( 1, wrf_err_message )
       END IF
 
 !-----------------------------------------------------------------------
@@ -880,6 +962,7 @@
       DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec%shcu_physics(i) .EQ. GRIMSSHCUSCHEME ) THEN
             IF ( (model_config_rec%bl_pbl_physics(i) .EQ. YSUSCHEME) .OR. &
+                 (model_config_rec%bl_pbl_physics(i) .EQ. SHINHONGSCHEME) .OR. &
                  (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2) .OR. &
                  (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3) ) THEN
                !NO PROBLEM
@@ -890,27 +973,39 @@
          END IF
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
-         wrf_err_message = '--- NOTE: bl_pbl_physics /= 1,5,6 implies shcu_physics cannot be 3, resetting'
-         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- NOTE: bl_pbl_physics /= 1,5,6,11 implies shcu_physics cannot be 3, resetting'
+         CALL wrf_debug ( 1, wrf_err_message )
       END IF
+
+!-----------------------------------------------------------------------
+! If MYNN PBL is not used, set bl_mynn_edmf = 0 so that shallow convection
+! options can be set and we don't get additional output
+!-----------------------------------------------------------------------
+
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME2 ) .AND. &
+              ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME3 ) ) THEN
+              model_config_rec % bl_mynn_edmf(i) = 0
+         END IF
+      ENDDO
 
 !-----------------------------------------------------------------------
 !  bl_mynn_edmf > 0 over-rules both shcu_physics & ishallow
 !-----------------------------------------------------------------------
 
       oops = 0
-      DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec%bl_mynn_edmf(i) .EQ. MYNN_STEM_EDMF .OR. &
-              model_config_rec%bl_mynn_edmf(i) .EQ. MYNN_TEMF_EDMF) THEN
-               model_config_rec%shcu_physics(i) = 0  ! maxdom
-               model_config_rec%ishallow = 0         ! not maxdom
-               oops = oops + 1
+      EDMFMAX = MAXVAL(model_config_rec%bl_mynn_edmf(1:model_config_rec%max_dom))
+      SCHUMAX = MAXVAL(model_config_rec%shcu_physics(1:model_config_rec%max_dom))
+         IF ( ( ( EDMFMAX .GT. 0 ) .AND. ( SCHUMAX .GT. 0 ) ) .OR. &
+              ( ( EDMFMAX .GT. 0 ) .AND. ( model_config_rec%ishallow .GT. 0 ) ) ) THEN
+            wrf_err_message = '--- ERROR: bl_mynn_edmf > 0 requires both shcu_physics=0 & ishallow=0' 
+            CALL wrf_message(wrf_err_message)
+            wrf_err_message = 'when using MYNN PBL, by default bl_mynn_edmf is turned on'
+            CALL wrf_message(wrf_err_message)
+            wrf_err_message = 'Modify namelist.input so that shcu_physics nor ishallow is used when bl_mynn_edmf is turned on'
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
          END IF
-      ENDDO      ! Loop over domains
-      IF ( oops .GT. 0 ) THEN
-         wrf_err_message = 'bl_mynn_edmf > 0 requires both shcu_physics=0 & ishallow=0'
-         CALL wrf_message ( wrf_err_message )
-      END IF
 
 !-----------------------------------------------------------------------
 !  We need to know if any of the cumulus schemes are active. This
@@ -954,7 +1049,7 @@
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
          wrf_err_message = 'Need MYNN PBL for icloud_bl = 1, resetting to 0'
-         CALL wrf_message ( wrf_err_message )
+         CALL wrf_debug ( 1, wrf_err_message )
       END IF
 
 !-----------------------------------------------------------------------
@@ -1164,16 +1259,15 @@
       END IF
 
 !-----------------------------------------------------------------------
-! If hailcast_opt = 1, horizontal grid spacing must be 4 km or finer.
+! If hailcast_opt = 1 for any domain, convective parameterization must be off for that domain.           
 !-----------------------------------------------------------------------
+
       DO i = 1, model_config_rec % max_dom
          IF ( ( model_config_rec%hailcast_opt(i) .NE. 0 ) .AND. &
-              ( model_config_rec%dx(i) .GT. 4000 ) ) THEN
-            wrf_err_message = '--- WARNING:  hailcast_opt requires a grid-spacing of 4 km or finer.'
-            CALL wrf_message ( wrf_err_message )
-            wrf_err_message = '---          hailcast_opt is now 0.'
-            CALL wrf_message ( wrf_err_message )
-            model_config_rec%hailcast_opt(i) = 0
+              (model_config_rec%cu_physics(i) .NE. 0) ) THEN
+              wrf_err_message = '--- hailcast_opt and cu_physics cannot both be turned on for the same domain. You must turn one of them off (=0).'
+              CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+              count_fatal_error = count_fatal_error + 1
          ENDIF
       ENDDO
 
@@ -1203,14 +1297,15 @@
               ( model_config_rec%cu_physics(1) .EQ. SCALESASSCHEME) .OR. &
               ( model_config_rec%cu_physics(1) .EQ. SASSCHEME     ) .OR. &
               ( model_config_rec%cu_physics(1) .EQ. OSASSCHEME    ) .OR. &
+              ( model_config_rec%cu_physics(1) .EQ. KSASSCHEME    ) .OR. &
               ( model_config_rec%cu_physics(1) .EQ. NSASSCHEME    ) .OR. &
               ( model_config_rec%cu_physics(1) .EQ. TIEDTKESCHEME ) ) THEN
             wrf_err_message = '--- WARNING: If use_adaptive_time_step, must use cudt=0 for the following CU schemes:'
-            CALL wrf_message ( wrf_err_message )
+            CALL wrf_debug ( 1, wrf_err_message )
             wrf_err_message = '---          BMJ, all SAS, Tiedtke'
-            CALL wrf_message ( wrf_err_message )
+            CALL wrf_debug ( 1, wrf_err_message )
             wrf_err_message = '---          CUDT=0 has been done for you.'
-            CALL wrf_message ( wrf_err_message )
+            CALL wrf_debug ( 1, wrf_err_message )
             DO i = 1, model_config_rec % max_dom
                model_config_rec%cudt(i) = 0
             END DO
@@ -1246,7 +1341,7 @@
                  ( model_config_rec%cu_physics(1) .EQ. G3SCHEME     ) .OR. &
                  ( model_config_rec%cu_physics(1) .EQ. GDSCHEME     ) ) THEN
                wrf_err_message = '--- WARNING: Turning on cu_rad_feedback also requires setting cu_diag== 1'
-               CALL wrf_message ( wrf_err_message )
+               CALL wrf_debug ( 1, wrf_err_message )
                model_config_rec%cu_diag(i) = 1
             ELSE
                model_config_rec%cu_diag(i) = 0
@@ -1418,7 +1513,7 @@
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
          wrf_err_message = '--- NOTE: mp_physics == 28, already has gravitational fog settling; resetting grav_settling to 0'
-         CALL wrf_message ( wrf_err_message )
+         CALL wrf_debug ( 1, wrf_err_message )
       END IF
 
 !-----------------------------------------------------------------------
@@ -1435,9 +1530,9 @@
       ENDDO      ! Loop over domains
       IF ( oops .GT. 0 ) THEN
          wrf_err_message = '--- WARNING: For mp_physics == 28 and use_aero_icbc is true, recommend to turn on scalar_pblmix'
-         CALL wrf_message ( wrf_err_message )
+         CALL wrf_debug ( 1, wrf_err_message )
          wrf_err_message = 'resetting scalar_pblmix = 1'
-         CALL wrf_message ( wrf_err_message )
+         CALL wrf_debug ( 1, wrf_err_message )
       END IF
 
 !-----------------------------------------------------------------------
@@ -1462,8 +1557,8 @@
 !-----------------------------------------------------------------------
      DO i=1,model_config_rec%max_dom
        IF ((model_config_rec%vert_refine_method(i) .NE. 0) .AND. (model_config_rec%vert_refine_fact .NE. 1)) THEN
-         write(wrf_err_message,'(A)') '--- ERROR: vert_refine_fact is ndown specific and cannot be used with vert_refine_method, and vice versa.'
-         CALL wrf_message( wrf_err_message )
+         wrf_err_message = '--- ERROR: vert_refine_fact is ndown specific and cannot be used with vert_refine_method, and vice versa.'
+         CALL wrf_debug ( 1, wrf_err_message )
        ENDIF
      ENDDO
 
@@ -1608,17 +1703,17 @@
          IF ( ( .NOT. model_config_rec % use_surface )  .AND. &
               ( model_config_rec % force_sfc_in_vinterp .GT. 0 ) ) THEN
             wrf_err_message = '--- NOTE: Inconsistent vertical interpolation settings in program real.'
-            CALL wrf_message ( wrf_err_message )
+            CALL wrf_debug ( 1, wrf_err_message )
             wrf_err_message = '--- NOTE: With use_surface=F, automatically setting force_sfc_in_vinterp=0.'
-            CALL wrf_message ( wrf_err_message )
+            CALL wrf_debug ( 1, wrf_err_message )
             model_config_rec % force_sfc_in_vinterp = 0
          END IF
          IF ( ( .NOT. model_config_rec % use_surface )  .AND. &
               ( model_config_rec % lowest_lev_from_sfc ) ) THEN
             wrf_err_message = '--- NOTE: Inconsistent vertical interpolation settings in program real.'
-            CALL wrf_message ( wrf_err_message )
+            CALL wrf_debug ( 1, wrf_err_message )
             wrf_err_message = '--- NOTE: With use_surface=F, automatically setting lowest_lev_from_sfc=F.'
-            CALL wrf_message ( wrf_err_message )
+            CALL wrf_debug ( 1, wrf_err_message )
             model_config_rec % lowest_lev_from_sfc = .FALSE.
          END IF
       END IF
@@ -1627,10 +1722,43 @@
 #if (EM_CORE == 1 && WRFPLUS == 1 )
       IF ( ( model_config_rec%jcdfi_use ).AND. &
            ( model_config_rec%jcdfi_diag .NE. 1 ) ) THEN
-         wrf_err_message = '--- ERROR: If jcdfi_use = 1, then jcdfi_io must also = 1 for that domain '
+         wrf_err_message = '--- ERROR: If jcdfi_use = 1, then jcdfi_diag must also = 1 '
          CALL wrf_message ( wrf_err_message )
-         wrf_err_message = '--- Change jcdfi_io in namelist.input '
+         wrf_err_message = '--- Change jcdfi_diag in namelist.input '
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+         count_fatal_error = count_fatal_error + 1
+      END IF
+      ! derived namelist for packaged a_/g_ variables
+      model_config_rec%mp_physics_plus = 0
+      DO i = 1, model_config_rec % max_dom
+         model_config_rec%mp_physics_plus(i) = model_config_rec%mp_physics(i)
+      ENDDO
+      model_config_rec%cu_used_plus = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%cu_physics(i) .NE. NOCUSCHEME ) THEN
+            model_config_rec%cu_used_plus = 1
+         END IF
+      ENDDO
+      model_config_rec%shcu_used_plus = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec%shcu_physics(i) .NE. NOSHCUSCHEME ) THEN
+            model_config_rec%shcu_used_plus = 1
+         END IF
+      ENDDO
+#endif
+
+!-----------------------------------------------------------------------
+!  If the RRTMG FAST schemes are requested, check that the code with
+!  built to use them.
+!-----------------------------------------------------------------------
+
+#if( BUILD_RRTMG_FAST != 1)
+      IF ( ( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME_FAST )  .OR. &
+           ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME_FAST )  ) THEN
+         wrf_err_message = '--- ERROR: RRTMG FAST schemes must be built with a default compile-time flag'
+         CALL wrf_message ( wrf_err_message )
+         wrf_err_message = '--- ERROR: Run ./clean -a, ./configure, ./compile scripts again'
+         CALL wrf_message ( wrf_err_message )
          count_fatal_error = count_fatal_error + 1
       END IF
 #endif
@@ -1642,16 +1770,18 @@
 
       IF ( ( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME )  .OR. &
            ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME )  .OR. &
+           ( model_config_rec % ra_lw_physics(1) .EQ. RRTMK_LWSCHEME )  .OR. &
+           ( model_config_rec % ra_lw_physics(1) .EQ. RRTMK_SWSCHEME )  .OR. &
            ( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME_FAST )  .OR. &
            ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME_FAST )  ) THEN
          wrf_err_message = '--- NOTE: RRTMG radiation is used, namelist ' // &
                            'value for o3input (ozone input) is used '
-!        CALL wrf_message ( wrf_err_message )
+         CALL wrf_debug ( 1, wrf_err_message )
       ELSE
          model_config_rec % o3input = 0
          wrf_err_message = '--- NOTE: RRTMG radiation is not used, setting:  ' // &
                            'o3input=0 to avoid data pre-processing'
-         CALL wrf_message ( wrf_err_message )
+         CALL wrf_debug ( 1, wrf_err_message )
       END IF
 
 #if (WRF_CHEM == 1 && WRF_KPP == 1 )
@@ -1770,6 +1900,13 @@
       CHARACTER (LEN=256) :: physics_suite_lowercase
       CHARACTER (LEN=32) :: formatstring
 
+      !
+      ! Initialize the debug level so that it can be used in the namelist testing.
+      ! wrf_debug_level is a global value in module_wrf_error.
+      !
+
+      wrf_debug_level = model_config_rec%debug_level
+
       max_dom = model_config_rec % max_dom
 
       !
@@ -1803,10 +1940,14 @@
       ! If physics suite is 'none', we can return early
       !
       IF ( trim(physics_suite_lowercase) == 'none' ) THEN
-         CALL wrf_message ('*************************************')
-         CALL wrf_message ('No physics suite selected.')
-         CALL wrf_message ('Physics options will be used directly from the namelist.')
-         CALL wrf_message ('*************************************')
+         wrf_err_message = '*************************************'
+         call wrf_debug ( 1, wrf_err_message )
+         wrf_err_message = 'No physics suite selected.'
+         call wrf_debug ( 1, wrf_err_message )
+         wrf_err_message = 'Physics options will be used directly from the namelist.'
+         call wrf_debug ( 1, wrf_err_message )
+         wrf_err_message = '*************************************'
+         call wrf_debug ( 1, wrf_err_message )
          RETURN
       END IF
 
@@ -1970,7 +2111,7 @@
 
          wrf_err_message = '--- NOTE: Noah-mosaic is in use, setting:  ' // &
                            'mosaic_cat_soil = mosaic_cat * num_soil_layers'
-         CALL wrf_message ( wrf_err_message )
+         CALL wrf_debug ( 1, wrf_err_message )
 
       END IF     
       
@@ -1984,6 +2125,16 @@
       IF ( ( model_config_rec % polar(1) ) .AND. &
            ( model_config_rec % fft_filter_lat .LT. 90. ) ) THEN
          model_config_rec % fft_used = 1
+      END IF
+
+!-----------------------------------------------------------------------
+! Need to know if this run has aercu_opt set to either 1 or 2,
+! so that we can set a derived namelist for packaging arrays.
+!-----------------------------------------------------------------------
+
+      model_config_rec % aercu_used = 0
+      IF ( model_config_rec %aercu_opt .GT. 0 ) THEN
+         model_config_rec % aercu_used = 1
       END IF
 
 !-----------------------------------------------------------------------
@@ -2022,7 +2173,7 @@
 
          wrf_err_message = '--- NOTE: CAM radiation is in use, setting:  ' // &
                            'paerlev=29, levsiz=59, cam_abs_dim1=4, cam_abs_dim2=e_vert'
-         CALL wrf_message ( wrf_err_message )
+         CALL wrf_debug ( 1, wrf_err_message )
 
       END IF
       
@@ -2047,19 +2198,37 @@
       ENDDO
 
 !-----------------------------------------------------------------------
-! Set the namelist parameters for the RRTMG radiation scheme if either
-! ra_lw_physics = RRTMG_LWSCHEME or ra_sw_physics = RRTMG_SWSCHEME.
+! If MYNN PBL is not used, set bl_mynn_edmf = 0 so that we don't get 
+! additional output 
 !-----------------------------------------------------------------------
 
-      IF (( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME ) .OR. &
-          ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME )) THEN
+#if (EM_CORE == 1)
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME2 ) .AND. &
+              ( model_config_rec % bl_pbl_physics(i) .NE. MYNNPBLSCHEME3 ) ) THEN
+            model_config_rec % bl_mynn_edmf = 0
+         END IF
+      ENDDO
+#endif
+
+!-----------------------------------------------------------------------
+! Set the namelist parameters for the RRTMG radiation scheme if either
+! ra_lw_physics or ra_sw_physics is set to one of the RRTMG schemes.
+!-----------------------------------------------------------------------
+
+      IF (( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME      ) .OR. &
+          ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME      ) .OR. &
+          ( model_config_rec % ra_lw_physics(1) .EQ. RRTMK_LWSCHEME      ) .OR. &
+          ( model_config_rec % ra_sw_physics(1) .EQ. RRTMK_SWSCHEME      ) .OR. &
+          ( model_config_rec % ra_lw_physics(1) .EQ. RRTMG_LWSCHEME_FAST ) .OR. &
+          ( model_config_rec % ra_sw_physics(1) .EQ. RRTMG_SWSCHEME_FAST )) THEN
          model_config_rec % levsiz = 59
          model_config_rec % alevsiz = 12
          model_config_rec % no_src_types = 6
 
-         wrf_err_message = '--- NOTE: RRTMG radiation is in use, setting:  ' // &
+         wrf_err_message = '--- NOTE: One of the RRTMG radiation schemes is in use, setting:  ' // &
                            'levsiz=59, alevsiz=12, no_src_types=6'
-         CALL wrf_message ( wrf_err_message )
+         CALL wrf_debug ( 1, wrf_err_message )
 
       END IF
 
@@ -2068,47 +2237,43 @@
 ! sf_surface_physics
 !-----------------------------------------------------------------------
 
-      IF ( model_config_rec % sf_surface_physics(1) .EQ. 0           ) &
-           model_config_rec % num_soil_layers = 5
-      IF ( model_config_rec % sf_surface_physics(1) .EQ. SLABSCHEME  ) &
-           model_config_rec % num_soil_layers = 5
-      IF ( model_config_rec % sf_surface_physics(1) .EQ. LSMSCHEME   ) &
-           model_config_rec % num_soil_layers = 4
-      IF ( model_config_rec % sf_surface_physics(1) .EQ. NOAHMPSCHEME   ) &
-           model_config_rec % num_soil_layers = 4
-      IF ( model_config_rec % sf_surface_physics(1) .EQ. RUCLSMSCHEME .AND. &
-           (model_config_rec % num_soil_layers .NE. 6 .AND. model_config_rec % num_soil_layers .NE. 9) ) &
-           model_config_rec % num_soil_layers = 6
-      IF ( model_config_rec % sf_surface_physics(1) .EQ. PXLSMSCHEME ) &
-           model_config_rec % num_soil_layers = 2
-      IF ( model_config_rec % sf_surface_physics(1) .EQ. CLMSCHEME ) &
-           model_config_rec % num_soil_layers = 10
-      IF ( model_config_rec % sf_surface_physics(1) .EQ. 88          ) &
-           model_config_rec % num_soil_layers = 4
+#if ((EM_CORE == 1) || (NMM_CORE == 1))
+      IF      (   model_config_rec % sf_surface_physics(1) .EQ. NOLSMSCHEME  ) THEN
+         model_config_rec % num_soil_layers = 5
+      ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. SLABSCHEME   ) THEN
+         model_config_rec % num_soil_layers = 5
+      ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. LSMSCHEME    ) THEN
+         model_config_rec % num_soil_layers = 4
+      ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. NOAHMPSCHEME ) THEN
+         model_config_rec % num_soil_layers = 4
+      ELSE IF ( ( model_config_rec % sf_surface_physics(1) .EQ. RUCLSMSCHEME ) .AND. &
+                ( model_config_rec % num_soil_layers .EQ. 6 ) ) THEN
+         model_config_rec % num_soil_layers = 6
+      ELSE IF ( ( model_config_rec % sf_surface_physics(1) .EQ. RUCLSMSCHEME ) .AND. &
+                ( model_config_rec % num_soil_layers .EQ. 9 ) ) THEN
+         model_config_rec % num_soil_layers = 9
+      ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. RUCLSMSCHEME ) THEN
+         model_config_rec % num_soil_layers = 6
+      ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. PXLSMSCHEME  ) THEN
+         model_config_rec % num_soil_layers = 2
+      ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. CLMSCHEME    ) THEN
+         model_config_rec % num_soil_layers = 10
+      ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. SSIBSCHEME   ) THEN
+         model_config_rec % num_soil_layers = 3
+#if (NMM_CORE == 1)
+      ELSE IF (   model_config_rec % sf_surface_physics(1) .EQ. GFDLSLAB     ) THEN
+         model_config_rec % num_soil_layers = 4
+#endif
+      ELSE
+         CALL wrf_debug       ( 0 , '--- ERROR: Unknown sf_surface_physics has no associated number of soil levels' )
+         WRITE (wrf_err_message, FMT='(A,I6)') '--- ERROR: sf_surface_physics = ' , model_config_rec % sf_surface_physics(1)
+         CALL wrf_error_fatal ( TRIM(wrf_err_message) )
+      END IF 
+#endif
 
       WRITE (wrf_err_message, FMT='(A,I6)') '--- NOTE: num_soil_layers has been set to ', &
                                              model_config_rec % num_soil_layers
-      CALL wrf_message ( wrf_err_message )
-
-!-----------------------------------------------------------------------
-!  The P3 MP schemes must be used with the RRTMG radiation schemes.
-!-----------------------------------------------------------------------
-
-      DO i = 1, model_config_rec % max_dom
-         IF ( ( model_config_rec % mp_physics(i) .EQ. P3_1CATEGORY    )   .OR.  &
-              ( model_config_rec % mp_physics(i) .EQ. P3_1CATEGORY_NC ) ) THEN
-
-            IF ( ( ( model_config_rec % ra_lw_physics(i) .EQ. RRTMG_LWSCHEME      )   .OR.   &
-                   ( model_config_rec % ra_lw_physics(i) .EQ. RRTMG_LWSCHEME_FAST ) ) .AND.  &
-                 ( ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME      )   .OR.   &
-                   ( model_config_rec % ra_sw_physics(i) .EQ. RRTMG_SWSCHEME_FAST ) ) ) THEN
-               !  No op, everything is fine. This is just easier logic to understand
-            ELSE
-               wrf_err_message = '--- ERROR: P3 MP (mp_physics=50 or 51) requires using RRTMG LW and SW schemes.'
-               CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
-            END IF
-         END IF
-      END DO
+      CALL wrf_debug ( 1, wrf_err_message )
 
    END SUBROUTINE set_physics_rconfigs
 

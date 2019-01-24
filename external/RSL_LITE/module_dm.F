@@ -1298,7 +1298,6 @@ CONTAINS
    REAL FUNCTION wrf_dm_max_int ( inval )
       IMPLICIT NONE
 #ifndef STUBMPI
-      INCLUDE 'mpif.h'
       INTEGER, intent(in) :: inval
       INTEGER :: ierr, retval
       CALL mpi_allreduce ( inval, retval , 1, MPI_INTEGER, MPI_MAX, local_communicator, ierr )
@@ -2214,8 +2213,8 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
     INTEGER N_BUFFER(NIOBF)
     REAL FULL_BUFFER(NIOBF)
     INTEGER IFULL_BUFFER(NIOBF)
-    INTEGER IDISPLACEMENT(1024)   ! HARD CODED MAX NUMBER OF PROCESSORS
-    INTEGER ICOUNT(1024)          ! HARD CODED MAX NUMBER OF PROCESSORS
+    INTEGER, ALLOCATABLE , DIMENSION(:) ::  IDISPLACEMENT
+    INTEGER, ALLOCATABLE , DIMENSION(:) ::  ICOUNT
 
     INTEGER :: MPI_COMM_COMP      ! MPI group communicator
     INTEGER :: NPROCS             ! Number of processors
@@ -2226,6 +2225,8 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
 
 ! Get rank of monitor processor and broadcast to others.
     CALL MPI_COMM_SIZE( MPI_COMM_COMP, NPROCS, IERR )
+    ALLOCATE (IDISPLACEMENT(NPROCS))
+    ALLOCATE (ICOUNT(NPROCS))
 
 ! DO THE U FIELD
    NLOCAL_DOT = 0
@@ -2370,6 +2371,8 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
      ERRF(10,IFULL_BUFFER(N)) = FULL_BUFFER(N)
    END DO
 
+    DEALLOCATE (IDISPLACEMENT)
+    DEALLOCATE (ICOUNT)
 #endif
    END SUBROUTINE get_full_obs_vector
 

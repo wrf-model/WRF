@@ -167,6 +167,10 @@ integer::oops1,oops2
       INTEGER :: j_save
 
       LOGICAL :: wif_upside_down = .FALSE.
+      
+      !  Test on consistency between namelist settings and the available data from geogrid.
+
+      INTEGER :: geogrid_flag_error
 
       !  Dimension information stored in grid data structure.
 
@@ -182,6 +186,61 @@ integer::oops1,oops2
       its = ips ; ite = ipe ; jts = jps ; jte = jpe ; kts = kps ; kte = kpe
 
       CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
+
+      !  Check flags from geogrid and the various model settings for any inconsistency.
+      !  The optional data from geogrid mostly started with the v4.0 release. Older 
+      !  WPS data could have the required fields. Assume users know what they are 
+      !  doing when they bring old data into the newer real program ...
+
+      IF ( grid%v4_metgrid ) THEN
+
+         geogrid_flag_error = 0
+
+         IF ( ( config_flags%topo_wind          .EQ. 1          ) .AND. ( flag_var_sso    .EQ. 0 ) ) THEN
+            CALL wrf_message ( '----- ERROR: topo_wind          = 1 AND flag_var_sso    = 0 ' )
+            geogrid_flag_error = geogrid_flag_error + 1
+         END IF
+
+         IF ( ( config_flags%sf_lake_physics    .EQ. 1           ) .AND. ( flag_lake_depth .EQ. 0 ) ) THEN
+            CALL wrf_message ( '----- ERROR: sf_lake_physics    = 1 AND flag_lake_depth = 0 ' )
+            geogrid_flag_error = geogrid_flag_error + 1
+         END IF
+
+         IF ( ( config_flags%sf_surface_physics .EQ. pxlsmscheme  ) .AND. ( flag_imperv    .EQ. 0 ) ) THEN
+            CALL wrf_message ( '----- ERROR: sf_surface_physics = 7 AND flag_imperv     = 0 ' )
+            geogrid_flag_error = geogrid_flag_error + 1
+         END IF
+
+         IF ( ( config_flags%sf_surface_physics .EQ. pxlsmscheme  ) .AND. ( flag_canfra    .EQ. 0 ) ) THEN
+            CALL wrf_message ( '----- ERROR: sf_surface_physics = 7 AND flag_canfra     = 0 ' )
+            geogrid_flag_error = geogrid_flag_error + 1
+         END IF
+
+         IF ( ( config_flags%mp_physics         .EQ. thompsonaero ) .AND. &
+              ( config_flags%dust_emis          .EQ. 1            ) .AND. ( flag_erod      .EQ. 0 ) ) THEN
+            CALL wrf_message ( '----- ERROR: mp=28 AND dust_emis= 1 AND flag_erod       = 0 ' )
+            geogrid_flag_error = geogrid_flag_error + 1
+         END IF
+
+         IF ( ( config_flags%mp_physics         .EQ. thompsonaero ) .AND. &
+              ( config_flags%dust_emis          .EQ. 1            ) .AND. ( flag_clayfrac  .EQ. 0 ) ) THEN
+            CALL wrf_message ( '----- ERROR: mp=28 AND dust_emis= 1 AND flag_clayfrac   = 0 ' )
+            geogrid_flag_error = geogrid_flag_error + 1
+         END IF
+
+         IF ( ( config_flags%mp_physics         .EQ. thompsonaero ) .AND. &
+              ( config_flags%dust_emis          .EQ. 1            ) .AND. ( flag_sandfrac  .EQ. 0 ) ) THEN
+            CALL wrf_message ( '----- ERROR: mp=28 AND dust_emis= 1 AND flag_sandfrac   = 0 ' )
+            geogrid_flag_error = geogrid_flag_error + 1
+         END IF
+        
+         IF ( geogrid_flag_error .GT. 0 ) THEN
+            CALL wrf_error_fatal ('Either modify the namelist settings, or rebuild the geogrid/metgrid data' )
+         END IF
+
+         !  Geogrid flags that are not yet used: FLAG_FRC_URB2D FLAG_LAI12M FLAG_URB_PARAM
+   
+      END IF
 
       !  Would the user prefer to forego the use of the level of max winds, or the
       !  tropopause level data?  This is an option the user may select.  While the
@@ -2942,11 +3001,18 @@ integer::oops1,oops2
       IF ( ( config_flags%sf_urban_physics == 1 ) .OR. ( config_flags%sf_urban_physics == 2 ) .OR. ( config_flags%sf_urban_physics == 3 ) ) THEN
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
+              IF ( MMINLU == 'NLCD40' .OR. MMINLU == 'MODIFIED_IGBP_MODIS_NOAH') THEN
+                  IF ( grid%FRC_URB2D(i,j) .GE. 0.5 .AND.  &
+                      (grid%ivgtyp(i,j).NE.13 .AND. grid%ivgtyp(i,j).NE.24 .AND. grid%ivgtyp(i,j).NE.25 .AND. grid%ivgtyp(i,j).NE.26)) grid%ivgtyp(i,j)=13
+              ELSE IF ( MMINLU == "USGS" ) THEN
+                  IF ( grid%FRC_URB2D(i,j) .GE. 0.5 .AND.  &
+                       grid%ivgtyp(i,j).NE.1 ) grid%ivgtyp(i,j)=1
+              ENDIF
 
-              IF ( MMINLU == 'NLCD40') THEN
-                   IF (grid%ivgtyp(i,j) == 24 .or. grid%ivgtyp(i,j) == 25 .or. grid%ivgtyp(i,j) == 26) &
-                   grid%FRC_URB2D(i,j) = (grid%FRC_URB3D(i,24,j)*0.5+grid%FRC_URB3D(i,25,j)*0.9+grid%FRC_URB3D(i,26,j)*0.95)/100.
-                   IF (grid%ivgtyp(i,j) == 13 ) grid%FRC_URB2D(i,j) = 0.9
+              IF ( grid%FRC_URB2D(i,j) == 0. ) THEN
+                 IF ( (MMINLU == 'NLCD40' .OR. MMINLU == 'MODIFIED_IGBP_MODIS_NOAH') .AND. &
+                   (grid%ivgtyp(i,j)==24 .OR. grid%ivgtyp(i,j)==25 .OR. grid%ivgtyp(i,j)==26 .OR. grid%ivgtyp(i,j)==13) ) grid%FRC_URB2D(i,j) = 0.9
+                 IF ( MMINLU == 'USGS' .AND. grid%ivgtyp(i,j)==1 ) grid%FRC_URB2D(i,j) = 0.9
               ENDIF
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE 
                grid%LP_URB2D(i,j)  = grid%URB_PARAM(i,91,j)
@@ -4394,6 +4460,33 @@ endif
       grid%got_var_sso = wrf_dm_lor_logical ( grid%got_var_sso )
 #endif
 
+      !  Save the dry perturbation potential temperature.
+
+      DO j = jts, min(jde-1,jte)
+         DO k = kts, kte
+            DO i = its, min(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
+               grid%th_phy_m_t0(i,k,j) = grid%t_2(i,k,j)
+            END DO
+         END DO
+      END DO
+
+      !  Turn dry potential temperature into moist potential temperature
+      !  at the very end of this routine, just before the halo communications.
+      !  This field will be in the model IC and and used to construct the 
+      !  BC file.
+
+      IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
+         DO j = jts, min(jde-1,jte)
+            DO k = kts, kte
+               DO i = its, min(ide,ite)
+                  IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
+                  grid%t_2(i,k,j) = ( grid%t_2(i,k,j) + T0 ) * (1. + (R_v/R_d) * moist(i,k,j,P_QV)) - T0
+               END DO
+            END DO
+         END DO
+      END IF
+
 #ifdef DM_PARALLEL
 # include "HALO_EM_INIT_1.inc"
 # include "HALO_EM_INIT_2.inc"
@@ -4644,8 +4737,13 @@ endif
             qvf1 = qvf1*qvf2
             grid%p(i,kk,j) = - 0.5*((grid%c1f(k)*grid%Mu_2(i,j))+qvf1*(grid%c1f(k)*grid%Mub(i,j)+grid%c2f(k)))/grid%rdnw(kk)/qvf2
             qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
-            grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf* &
-                                 (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
+            IF ( config_flags%use_theta_m .EQ. 1 ) THEN
+               grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)* &
+                                  (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
+            ELSE 
+               grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf* &
+                                  (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
+            END IF
             grid%al(i,kk,j) = grid%alt(i,kk,j) - grid%alb(i,kk,j)
             grid%p_hyd(i,kk,j) = grid%p(i,kk,j) + grid%pb(i,kk,j)
             !  Now, integrate down the column to compute the pressure perturbation, and diagnose the two
@@ -4657,8 +4755,13 @@ endif
                qvf1 = qvf1*qvf2
                grid%p(i,kk,j) = grid%p(i,kk+1,j) - ((grid%c1f(k)*grid%Mu_2(i,j)) + qvf1*(grid%c1f(k)*grid%Mub(i,j)+grid%c2f(k)))/qvf2/grid%rdn(kk+1)
                qvf = 1. + rvovrd*moist(i,kk,j,P_QV)
-               grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf* &
-                           (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
+               IF ( config_flags%use_theta_m .EQ. 1 ) THEN
+                  grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)* &
+                                     (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
+               ELSE
+                  grid%alt(i,kk,j) = (r_d/p1000mb)*(grid%t_2(i,kk,j)+t0)*qvf* &
+                                     (((grid%p(i,kk,j)+grid%pb(i,kk,j))/p1000mb)**cvpm)
+               END IF
                grid%al(i,kk,j) = grid%alt(i,kk,j) - grid%alb(i,kk,j)
                grid%p_hyd(i,kk,j) = grid%p(i,kk,j) + grid%pb(i,kk,j)
             END DO
@@ -7358,7 +7461,7 @@ end do
     print *,1,dz,zup(1),eta(1)
     isave=1
     do i=1,nlev-1
-        a=dzstretch_u+(dzstretch_s-dzstretch_u)*max((zscale-zup(i))/zscale, 0.)
+        a=dzstretch_u+(dzstretch_s-dzstretch_u)*max((dzmax*0.5-dz)/(dzmax*0.5), 0.)
         dz=a*dz
         dztest=(ztop-zup(isave))/(nlev-isave)
         if(dztest.lt.dz)exit

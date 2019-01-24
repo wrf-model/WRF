@@ -2561,8 +2561,7 @@ ENDIF
                IF (HGT_URB2D(I,J)>0.) THEN
                   CONTINUE
                ELSE
-                  WRITE(mesg,*) 'USING DEFAULT URBAN MORPHOLOGY'
-                  call wrf_message(mesg)
+                  CALL wrf_debug(100, 'USING DEFAULT URBAN MORPHOLOGY')
                   LP_URB2D(I,J)=0.
                   LB_URB2D(I,J)=0.
                   HGT_URB2D(I,J)=0.
@@ -2596,8 +2595,7 @@ ENDIF
                IF (HGT_URB2D(I,J)>0.) THEN
                   CONTINUE
                ELSE
-                  WRITE(mesg,*) 'USING DEFAULT URBAN MORPHOLOGY'
-                  call wrf_message(mesg)
+                  CALL wrf_debug(100, 'USING DEFAULT URBAN MORPHOLOGY')
                   LP_URB2D(I,J)=0.
                   LB_URB2D(I,J)=0.
                   HGT_URB2D(I,J)=0.
@@ -2631,8 +2629,7 @@ ENDIF
               IF (HGT_URB2D(I,J)>0.) THEN
                   CONTINUE
                ELSE
-                  WRITE(mesg,*) 'USING DEFAULT URBAN MORPHOLOGY'
-                  call wrf_message(mesg)
+                  CALL wrf_debug(100, 'USING DEFAULT URBAN MORPHOLOGY')
                   LP_URB2D(I,J)=0.
                   LB_URB2D(I,J)=0.
                   HGT_URB2D(I,J)=0.
@@ -2666,8 +2663,7 @@ ENDIF
               IF (HGT_URB2D(I,J)>0.) THEN
                   CONTINUE
                ELSE
-                  WRITE(mesg,*) 'USING DEFAULT URBAN MORPHOLOGY'
-                  call wrf_message(mesg)
+                  CALL wrf_debug(100, 'USING DEFAULT URBAN MORPHOLOGY')
                   LP_URB2D(I,J)=0.
                   LB_URB2D(I,J)=0.
                   HGT_URB2D(I,J)=0.

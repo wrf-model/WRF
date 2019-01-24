@@ -76,7 +76,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,rainprod, evapprod                                &
                       ,qv_b4mp, qc_b4mp, qi_b4mp, qs_b4mp                &
 #endif
-                      ,qnwfa2d                                           & ! for water/ice-friendly aerosols
+                      ,qnwfa2d, qnifa2d                                  & ! for water/ice-friendly aerosols
                       ,refl_10cm                                         & ! HM, 9/22/09, add for refl
                       ,vmi3d                                             & ! for P3 
                       ,di3d                                              & ! for P3 
@@ -102,7 +102,15 @@ SUBROUTINE microphysics_driver(                                          &
                       ,QV_OLD                                            &
                       ,xlat,xlong,ivgtyp                                 &
                       ,qrimef_curr,f_qrimef                              &
-                                                   )
+                      ,aercu_opt                                         &
+# if( EM_CORE==1 )
+                      ,aerocu,aercu_fct,no_src_types_cu                  &
+                      ,PBL,EFCG,EFIG,EFSG,WACT,CCN1_GS,CCN2_GS           &
+                      ,CCN3_GS,CCN4_GS,CCN5_GS,CCN6_GS,CCN7_GS           &
+                      ,NR_CU,QR_CU,NS_CU,QS_CU,CU_UAF,mskf_refl_10cm     &
+# endif
+                                                                         )
+
 ! Framework
 #if(NMM_CORE==1)
    USE module_state_description, ONLY :                                  &
@@ -117,7 +125,7 @@ SUBROUTINE microphysics_driver(                                          &
                     ,WSM6SCHEME, ETAMPNEW, FER_MP_HIRES, THOMPSON, THOMPSONAERO, FAST_KHAIN_LYNN, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN, NSSL_2MOMG  &
                     ,NSSL_1MOM,NSSL_1MOMLFO, FER_MP_HIRES_ADVECT & ! ,NSSL_3MOM       &
-                    ,MILBRANDT2MOM , CAMMGMPSCHEME,FULL_KHAIN_LYNN, P3_1CATEGORY, P3_1CATEGORY_NC, P3_2CATEGORY !,MILBRANDT3MOM
+                    ,MILBRANDT2MOM , CAMMGMPSCHEME,FULL_KHAIN_LYNN, P3_1CATEGORY, P3_1CATEGORY_NC, P3_2CATEGORY, MORR_TM_AERO !,MILBRANDT3MOM
 #if ( WRFPLUS == 1 )
    USE module_state_description, ONLY : LSCONDSCHEME, MKESSLERSCHEME
 #endif
@@ -158,6 +166,9 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_gsfcgce
    USE module_mp_morr_two_moment
    USE module_mp_p3
+# if (EM_CORE == 1)
+   USE module_mp_morr_two_moment_aero
+# endif
    USE module_mp_wdm5
    USE module_mp_wdm6
    USE module_mp_milbrandt2mom
@@ -382,14 +393,14 @@ SUBROUTINE microphysics_driver(                                          &
  REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
       INTENT(IN), OPTIONAL ::                                                   &
                                                                  dlf, &    !Detraining cloud water tendendcy
-                                                                dlf2, &    !dq/dt due to export of cloud water into environment by shallow convection(kg/kg/s)
+                                                                dlf2, &    !dq/dt due to export of cloud water into env by shal conv (kg/kg/s)
                                                                t_phy, &    !Temprature at the mid points (K)
                                                                p_hyd, &    !Hydrostatic pressure(Pa)
                                                              p8w_hyd, &    !Hydrostatic Pressure at level interface (Pa)
                                                               z_at_w, &    !Height above sea level at layer interfaces (m) 
                                                              tke_pbl, &    !Turbulence kinetic energy
                                                           turbtype3d, &    !Turbulent interface types [ no unit ]
-                                                              smaw3d, &    !Normalized Galperin instability function for momentum  ( 0<= <=4.964 and 1 at neutral ) [no units]
+                                                              smaw3d, &    !Normalized Galperin instability function for momentum [no units]
                                                                  alt, &    !inverse density(m3/kg)
                                                            icwmrsh3d, &    !Shallow cumulus in-cloud water mixing ratio (kg/m2)
                                                            icwmrdp3d, &    !Deep Convection in-cloud water mixing ratio (kg/m2)
@@ -426,6 +437,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                                                             lradius, &    !Old Cloud fraction for CAMMGMP microphysics only
                                                             iradius, &    !Old Cloud fraction for CAMMGMP microphysics only                                                            
                                                         cldfra_conv 
+
+
+
 #if ( WRF_CHEM == 1 )
 REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
       INTENT(INOUT), OPTIONAL ::                                                 &
@@ -469,7 +483,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
    LOGICAL,  OPTIONAL,   INTENT(IN   )    :: channel_switch
    REAL, OPTIONAL,  INTENT(INOUT   ) :: naer  ! aerosol number concentration (/kg)
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) , OPTIONAL :: qnwfa2d      ! Added by G. Thompson
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) , OPTIONAL :: qnwfa2d, qnifa2d
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
          INTENT(INOUT ) ::                                        &
@@ -492,8 +506,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,kext_ft_qs,kext_ft_qg                           &
                  ,qnwfa_curr,qnifa_curr                           & ! Added by G. Thompson
                  ,qvolg_curr,qvolh_curr, qrimef_curr
-
-
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
@@ -557,6 +569,35 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) ::  & ! G. Thompson
                  re_cloud, re_ice, re_snow
    INTEGER, INTENT(IN):: has_reqc, has_reqi, has_reqs
+
+  INTEGER,           INTENT(IN   )    :: aercu_opt
+# if (EM_CORE == 1)
+  INTEGER, OPTIONAL, INTENT(IN   )    :: PBL
+  INTEGER,           INTENT(IN   )    :: no_src_types_cu
+  REAL,              INTENT(IN   )    :: aercu_fct
+  REAL,    OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme, no_src_types_cu), INTENT(INOUT) & 
+                                      :: aerocu
+  REAL,    OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT) &
+                                      :: EFCG,           &
+                                         EFIG,           &
+                                         EFSG,           &
+                                         WACT,           &
+                                         CCN1_GS,        &
+                                         CCN2_GS,        &
+                                         CCN3_GS,        &
+                                         CCN4_GS,        &
+                                         CCN5_GS,        &
+                                         CCN6_GS,        &
+                                         CCN7_GS,        &
+                                         NR_CU,          &
+                                         QR_CU,          &
+                                         NS_CU,          &
+                                         QS_CU
+   REAL,   OPTIONAL, DIMENSION( ims:ime, jms:jme), INTENT(INOUT) &
+                                      :: CU_UAF
+   REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(OUT) :: mskf_refl_10cm
+# endif
+
 !  REAL , DIMENSION( ims:ime , jms:jme ), OPTIONAL, INTENT(INOUT) :: lwp
 
 ! LOCAL  VAR
@@ -766,6 +807,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                   PRESENT( QNR_CURR) .AND. PRESENT ( QNI_CURR)   .AND.  &
                   PRESENT( QNC_CURR) .AND. PRESENT ( QNWFA_CURR) .AND.  &
                   PRESENT( QNIFA_CURR).AND.PRESENT ( QNWFA2D)    .AND.  &
+                  PRESENT( QNIFA2D)                              .AND.  &
                   PRESENT( SNOWNC)   .AND. PRESENT ( SNOWNCV)    .AND.  &
                   PRESENT( GRAUPELNC).AND. PRESENT ( GRAUPELNCV) .AND.  &
                   PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) ) THEN
@@ -788,6 +830,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                      NWFA=qnwfa_curr,                    &
                      NIFA=qnifa_curr,                    &
                      NWFA2D=qnwfa2d,                     &
+                     NIFA2D=qnifa2d,                     &
                      TH=th,                              &
                      PII=pi_phy,                         &
                      P=p,                                &
@@ -1199,6 +1242,80 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,diag_vmi2_3d=vmi3d_2                                       &
                  ,diag_di2_3d=di3d_2                                         &
                  ,diag_rhopo2_3d=rhopo3d_2                                   &
+                                                                    )
+#endif
+
+
+# if (EM_CORE == 1)
+    CASE (MORR_TM_AERO)
+         CALL wrf_debug(100, 'microphysics_driver: calling morrison two moment')
+         CALL mp_morr_two_moment_aero(                            &
+                     ITIMESTEP=itimestep,                &  !*
+                     TH=th,                              &  !*
+                     QV=qv_curr,                         &  !*
+                     QC=qc_curr,                         &  !*
+                     QR=qr_curr,                         &  !*
+                     QI=qi_curr,                         &  !*
+                     QS=qs_curr,                         &  !*
+                     QG=qg_curr,                         &  !*
+                     NI=qni_curr,                        &  !*
+                     NS=qns_curr,                        &  !* ! VVT
+                     NR=qnr_curr,                        &  !* ! VVT
+                     NG=qng_curr,                        &  !* ! VVT
+                     NC=qnc_curr,                        &  ! TWG/amy added nc
+                     KZH=exch_h,                         &  ! TWG/amy add
+                     RHO=rho,                            &  !*
+                     PII=pi_phy,                         &  !*
+                     P=p,                                &  !*
+                     DT_IN=dt,                           &  !*
+                     DZ=dz8w,                            &  !* !hm
+                     HT=ht,                              &  !*
+                     W=w                                 &  !*
+                    ,RAINNC=RAINNC                       &  !*
+                    ,RAINNCV=RAINNCV                     &  !*
+                    ,SNOWNC=SNOWNC                       &  !*
+                    ,SNOWNCV=SNOWNCV                     &  !*
+                    ,GRAUPELNC=GRAUPELNC                 &  !*
+                    ,GRAUPELNCV=GRAUPELNCV               &  !*
+                    ,SR=SR                               &  !* !hm
+                    ,REFL_10CM=refl_10cm                 &  ! added for radar reflectivity
+                    ,MSKF_REFL_10CM=MSKF_REFL_10CM       &  ! addef for radar reflectivity TWG 2017
+                    ,diagflag=diagflag                   &  ! added for radar reflectivity
+                    ,do_radar_ref=do_radar_ref           &  ! added for radar reflectivity
+                    ,qrcuten=qrcuten                     &  ! hm
+                    ,qscuten=qscuten                     &  ! hm
+                    ,qicuten=qicuten                     &  ! hm
+                    ,F_QNDROP=f_qndrop                   &  ! hm for wrf-chem
+                 ,QNDROP=qndrop_curr                     &  ! hm for wrf-chem
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
+                 ,PBL=PBL                                & ! TWG/amy add
+                 ,aerocu=aerocu                          & ! TWG add
+                 ,aercu_opt=aercu_opt                    & ! TWG add
+                 ,aercu_fct=aercu_fct                    & ! TWG add
+                 ,no_src_types_cu=no_src_types_cu        & ! TWG add
+                 ,EFCG=EFCG                              & ! TWG add
+                 ,EFIG=EFIG                              & ! TWG add
+                 ,EFSG=EFSG                              & ! TWG add
+                 ,WACT=WACT                              & ! TWG add
+                 ,CCN1_GS=CCN1_GS                        & ! TWG add
+                 ,CCN2_GS=CCN2_GS                        & ! TWG add
+                 ,CCN3_GS=CCN3_GS                        & ! TWG add
+                 ,CCN4_GS=CCN4_GS                        & ! TWG add
+                 ,CCN5_GS=CCN5_GS                        & ! TWG add
+                 ,CCN6_GS=CCN6_GS                        & ! TWG add
+                 ,CCN7_GS=CCN7_GS                        & ! TWG add
+                 ,NR_CU=NR_CU                            & ! TWG add
+                 ,QR_CU=QR_CU                            & ! TWG add
+                 ,NS_CU=NS_CU                            & ! TWG add
+                 ,QS_CU=QS_CU                            & ! TWG add
+                 ,CU_UAF=CU_UAF                          & ! TWG add
+                 ,QLSINK=qlsink                                     & ! jdf for wrf-chem
+#if ( WRF_CHEM == 1 )
+                 ,EVAPPROD=evapprod,RAINPROD=rainprod               &
+#endif
+                 ,PRECR=precr,PRECI=preci,PRECS=precs,PRECG=precg   & ! jdf for wrf-chem
                                                                     )
 #endif
 
@@ -1976,6 +2093,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,XLS=xls, XLV0=xlv, XLF0=xlf                       &
                  ,DEN0=rhoair0, DENR=rhowater                       &
                  ,CLIQ=cliq,CICE=cice,PSAT=psat                     &
+                 ,xland=xland                                       &  ! land mask, 1: land, 2: water
                  ,RAIN=rainnc ,RAINNCV=rainncv                      &
                  ,SNOW=snownc ,SNOWNCV=snowncv                      &
                  ,SR=sr                                             &

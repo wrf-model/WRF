@@ -78,6 +78,7 @@ module_integrate.o: \
 		module_state_description.o \
 		module_nesting.o \
 		module_configure.o \
+		$(LLIST) \
 		module_cpl.o \
                 module_dm.o \
 		$(ESMF_MOD_DEPENDENCE)
@@ -303,7 +304,11 @@ module_cu_kfeta.o: ../frame/module_wrf_error.o
 
 module_cu_gd.o:
 
+module_cu_ksas.o:
+ 
 module_cu_nsas.o:
+
+module_cu_du.o:  ../frame/module_wrf_error.o
 
 module_gfs_physcons.o: module_gfs_machine.o
 
@@ -454,11 +459,13 @@ module_sf_noahmpdrv.o: module_sf_noahmplsm.o \
 			module_data_gocart_dust.o \
 			module_sf_noahmp_glacier.o \
 			module_sf_noahmp_groundwater.o \
+			module_sf_gecros.o \
 			../share/module_model_constants.o
 
 module_sf_noahlsm_glacial_only.o: module_sf_noahlsm.o module_sf_noahmplsm.o
 
 module_sf_noahmplsm.o:	../share/module_model_constants.o \
+			module_sf_gecros.o \
 			module_sf_myjsfc.o
 
 module_sf_noahmp_groundwater.o:	module_sf_noahmplsm.o
@@ -475,15 +482,21 @@ module_sf_pxlsm.o: ../share/module_model_constants.o module_sf_pxlsm_data.o
 
 module_ra_rrtmg_sw.o: module_ra_rrtmg_lw.o
 module_ra_rrtmg_swf.o: module_ra_rrtmg_lwf.o
+module_ra_rrtmg_swk.o: module_ra_rrtmg_lwk.o module_ra_effective_radius.o
 
 module_ra_rrtmg_lw.o: ../share/module_model_constants.o \
 		 module_ra_clWRF_support.o 
 module_ra_rrtmg_lwf.o: ../share/module_model_constants.o \
 		 module_ra_clWRF_support.o 
+module_ra_rrtmg_lwk.o: ../share/module_model_constants.o \
+                 module_ra_clWRF_support.o
+
+
 
 module_physics_addtendc.o: \
 		module_cu_kf.o			\
 		module_cu_kfeta.o		\
+		$(PHYS_CU) \
 		../frame/module_state_description.o \
 		../frame/module_configure.o
 
@@ -494,7 +507,10 @@ module_physics_init.o : \
 		module_ra_rrtmg_swf.o		\
 		module_ra_rrtmg_lw.o		\
 		module_ra_rrtmg_sw.o		\
+                module_ra_rrtmg_lwk.o            \
+                module_ra_rrtmg_swk.o            \
 		module_ra_cam.o		\
+		$(PHYS_CU) $(PHYS_BL) \
 		module_ra_cam_support.o		\
 		module_ra_sw.o			\
 		module_ra_gsfcsw.o		\
@@ -541,6 +557,7 @@ module_physics_init.o : \
 		module_cu_mskf.o		\
 		module_cu_bmj.o			\
 		module_cu_gd.o			\
+		module_cu_ksas.o		\
 		module_cu_nsas.o		\
 		module_cu_sas.o			\
 		module_cu_scalesas.o            \
@@ -584,12 +601,14 @@ module_physics_init.o : \
 module_microphysics_driver.o: \
 		module_mixactivate.o \
 		module_mp_kessler.o  module_mp_sbu_ylin.o module_mp_lin.o \
+		$(PHYS_MP) \
 		module_mp_wsm3.o module_mp_wsm5.o \
 		module_mp_wsm6.o module_mp_etanew.o \
 		module_mp_fer_hires.o module_mp_HWRF.o  \
 		module_mp_thompson.o            \
 		module_mp_gsfcgce.o 		\
                 module_mp_morr_two_moment.o     \
+                module_mp_morr_two_moment_aero.o     \
                 module_mp_milbrandt2mom.o     \
                 module_mp_nssl_2mom.o         \
 		module_mp_wdm5.o module_mp_wdm6.o \
@@ -615,8 +634,10 @@ module_cumulus_driver.o: \
 		module_cu_g3.o \
 		module_cu_gf_wrfdrv.o \
 		module_cu_kfeta.o \
+		$(PHYS_CU) \
 		module_cu_bmj.o \
 		module_cu_gd.o \
+		module_cu_ksas.o \
 		module_cu_nsas.o \
 		module_cu_sas.o \
 		module_cu_scalesas.o \
@@ -624,6 +645,7 @@ module_cumulus_driver.o: \
 		module_cu_camzm_driver.o \
 		module_cu_tiedtke.o \
 		module_cu_ntiedtke.o \
+		module_cu_mskf.o \
 		module_cu_kfcup.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
@@ -649,6 +671,7 @@ module_pbl_driver.o:  \
 		module_bl_gwdo.o \
 		module_bl_temf.o \
 		module_bl_mfshconvpbl.o \
+		$(PHYS_BL) \
 		module_wind_fitch.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
@@ -667,6 +690,8 @@ module_radiation_driver.o: \
 		module_ra_rrtmg_sw.o \
 		module_ra_rrtmg_lwf.o \
 		module_ra_rrtmg_swf.o \
+                module_ra_rrtmg_lwk.o \
+                module_ra_rrtmg_swk.o \
 		module_ra_cam.o \
 		module_ra_gfdleta.o \
 		module_ra_HWRF.o \
@@ -732,6 +757,7 @@ module_diagnostics_driver.o: \
 		module_diag_afwa.o 			\
 		module_diag_hailcast.o 			\
                 module_diag_rasm.o                      \
+                module_diag_trad_fields.o               \
 		../frame/module_comm_dm.o		\
 		../frame/module_state_description.o 	\
 		../frame/module_domain.o 		\
@@ -753,6 +779,7 @@ module_diag_zld.o: \
 		../share/module_model_constants.o
 
 module_diag_afwa.o: \
+		module_diag_trad_fields.o		\
 		../frame/module_domain.o 		\
 		../frame/module_dm.o 			\
 		../frame/module_state_description.o 	\
@@ -772,6 +799,10 @@ module_diag_hailcast.o: \
 
 module_diag_rasm.o: \
                 module_cam_shr_const_mod.o
+
+module_diag_trad_fields.o: \
+		module_diag_functions.o			\
+		../share/module_model_constants.o
 
 module_diag_refl.o: \
 		../frame/module_dm.o			\
@@ -800,9 +831,14 @@ module_sf_lake.o : \
 module_fr_fire_driver.o: \
 		../share/module_model_constants.o  \
                 ../frame/module_comm_dm.o \
+		../frame/module_domain.o \
+	        ../frame/module_configure.o \
+	        ../frame/module_dm.o \
 		module_fr_fire_phys.o \
 		module_fr_fire_model.o \
-		module_fr_fire_util.o 
+		module_fr_fire_util.o \
+		module_fr_fire_core.o \
+		module_fr_fire_atm.o 
 
 module_fr_fire_driver_wrf.o: \
 		../share/module_model_constants.o  \
@@ -994,6 +1030,7 @@ mediation_integrate.o: ../frame/module_domain.o ../frame/module_configure.o \
 			$(ESMF_MOD_DEPENDENCE) \
 			module_date_time.o module_bc_time_utilities.o \
 			module_compute_geop.o                         \
+			$(PERTMOD) \
 			module_io_domain.o
 
 

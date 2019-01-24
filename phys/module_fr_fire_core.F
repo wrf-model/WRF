@@ -1303,7 +1303,7 @@ implicit none
 !*** Reference: D. Munoz-Esparza, B. Kosovic, P. Jimenez, J. Coen: "An accurate      ***!
 !*** fire-spread algorithm in the Weather Research and Forecasting model using the   ***!
 !*** level-set method", Journal of Advances in Modeling Earth Systems, 2018          ***!
-!*** doi:AAA
+!*** https://doi.org/10.1002/2017MS001108                                            ***!
 !***************************************************************************************!
 
 !*** description
@@ -1539,7 +1539,7 @@ implicit none
 !*** Reference: D. Munoz-Esparza, B. Kosovic, P. Jimenez, J. Coen: "An accurate    ***!
 !*** fire-spread algorithm in the Weather Research and Forecasting model using the ***!
 !*** level-set method", Journal of Advances in Modeling Earth Systems, 2018        ***!
-!*** doi:AAA
+!*** https://doi.org/10.1002/2017MS001108                                          ***!
 !*************************************************************************************!
 
 !*** purpose: reinitialize the level-set function
@@ -1681,7 +1681,7 @@ subroutine advance_ls_reinit(ifms,ifme,jfms,jfme, &
 ! Reference: D. Munoz-Esparza, B. Kosovic, P. Jimenez, J. Coen: "An accurate   
 ! fire-spread algorithm in the Weather Research and Forecasting model using the 
 ! level-set method", Journal of Advances in Modeling Earth Systems, 2018      
-! doi:AAA
+! https://doi.org/10.1002/2017MS001108
 
 
 implicit none

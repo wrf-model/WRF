@@ -241,7 +241,7 @@
           ims,ime, jms,jme, kms,kme,                                   &
           its,ite, jts,jte, kts,kte                                    )
 !!! TUCCELLA
-   CASE (RACM_SOA_VBS_KPP, RACM_SOA_VBS_AQCHEM_KPP)
+   CASE (RACM_SOA_VBS_KPP, RACM_SOA_VBS_AQCHEM_KPP,RACM_SOA_VBS_HET_KPP)
      call optical_prep_modal_soa_vbs(nbin_o, chem, alt,                &
 !         h2oai, h2oaj, refindx, radius_wet, number_bin,               &
 !         radius_core, refindx_core, refindx_shell,                    &
@@ -1455,8 +1455,8 @@
 !jdfcz           (mass_naj/dens_na)+(mass_clj/dens_cl) +    &  
 !jdfcz           (mass_dustj/dens_dust)
         vol_ac = (mass_antha/dens_oin)+ &
-                 (mass_seas*(22.9897/58.4428)/dens_na)+ &
-                 (mass_seas*(35.4270/58.4428)/dens_cl)+ &
+                 (mass_seas*(22.9898/58.4428)/dens_na)+ &
+                 (mass_seas*(35.4530/58.4428)/dens_cl)+ &
                  (mass_soil/dens_dust)
 !
 ! Now divide mass into sections which is done by sect02:
@@ -1500,9 +1500,9 @@
                      mass_ba1j+mass_ba2j+mass_ba3j+mass_ba4j)*xmas_sectj(isize)
           mass_bc  = mass_bci*xmas_secti(isize) + mass_bcj*xmas_sectj(isize)
           mass_na  = mass_nai*xmas_secti(isize) + mass_naj*xmas_sectj(isize)+ &
-                     mass_seas*xmas_sectc(isize)*(22.9897/58.4428)
+                     mass_seas*xmas_sectc(isize)*(22.9898/58.4428)
           mass_cl  = mass_cli*xmas_secti(isize) + mass_clj*xmas_sectj(isize)+ &
-                     mass_seas*xmas_sectc(isize)*(35.4270/58.4428)
+                     mass_seas*xmas_sectc(isize)*(35.4530/58.4428)
           mass_h2o = mass_h2oi*xmas_secti(isize) + mass_h2oj*xmas_sectj(isize)
 !         mass_h2o = 0.0 ! testing purposes only
           vol_so4 = mass_so4 / dens_so4
@@ -2173,8 +2173,8 @@ if (l .ge. p1st)  mass_asoa2j= chem(i,k,j,l)*conv1a
 !jdfcz           (mass_naj/dens_na)+(mass_clj/dens_cl) +    &  
 !jdfcz           (mass_dustj/dens_dust)
         vol_ac = (mass_antha/dens_oin)+ &
-                 (mass_seas*(22.9897/58.4428)/dens_na)+ &
-                 (mass_seas*(35.4270/58.4428)/dens_cl)+ &
+                 (mass_seas*(22.9898/58.4428)/dens_na)+ &
+                 (mass_seas*(35.4530/58.4428)/dens_cl)+ &
                  (mass_soil/dens_dust)
 !
 ! Now divide mass into sections which is done by sect02:
@@ -2222,9 +2222,9 @@ if (l .ge. p1st)  mass_asoa2j= chem(i,k,j,l)*conv1a
           mass_oc  = mass_oci*xmas_secti(isize) + mass_ocj*xmas_sectj(isize)
           mass_bc  = mass_bci*xmas_secti(isize) + mass_bcj*xmas_sectj(isize)
           mass_na  = mass_nai*xmas_secti(isize) + mass_naj*xmas_sectj(isize)+ &
-                     mass_seas*xmas_sectc(isize)*(22.9897/58.4428)
+                     mass_seas*xmas_sectc(isize)*(22.9898/58.4428)
           mass_cl  = mass_cli*xmas_secti(isize) + mass_clj*xmas_sectj(isize)+ &
-                     mass_seas*xmas_sectc(isize)*(35.4270/58.4428)
+                     mass_seas*xmas_sectc(isize)*(35.4530/58.4428)
           mass_h2o = mass_h2oi*xmas_secti(isize) + mass_h2oj*xmas_sectj(isize)
 !         mass_h2o = 0.0 ! testing purposes only
           vol_so4 = mass_so4 / dens_so4
@@ -2829,8 +2829,8 @@ END subroutine optical_prep_modal_soa_vbs
 !jdfcz           (mass_naj/dens_na)+(mass_clj/dens_cl) +    &
 !jdfcz           (mass_dustj/dens_dust)
         vol_ac = (mass_antha/dens_oin)+ &
-                 (mass_seas*(22.9897/58.4428)/dens_na)+ &
-                 (mass_seas*(35.4270/58.4428)/dens_cl)+ &
+                 (mass_seas*(22.9898/58.4428)/dens_na)+ &
+                 (mass_seas*(35.4530/58.4428)/dens_cl)+ &
                  (mass_soil/dens_dust)
 
 !
@@ -2875,9 +2875,9 @@ END subroutine optical_prep_modal_soa_vbs
                      mass_ba1j+mass_ba2j+mass_ba3j+mass_ba4j)*xmas_sectj(isize)
           mass_bc  = mass_bci*xmas_secti(isize) + mass_bcj*xmas_sectj(isize)
           mass_na  = mass_nai*xmas_secti(isize) + mass_naj*xmas_sectj(isize)+ &
-                     mass_seas*xmas_sectc(isize)*(22.9897/58.4428)
+                     mass_seas*xmas_sectc(isize)*(22.9898/58.4428)
           mass_cl  = mass_cli*xmas_secti(isize) + mass_clj*xmas_sectj(isize)+ &
-                     mass_seas*xmas_sectc(isize)*(35.4270/58.4428)
+                     mass_seas*xmas_sectc(isize)*(35.4530/58.4428)
           mass_h2o = mass_h2oi*xmas_secti(isize) + mass_h2oj*xmas_sectj(isize)
 !         mass_h2o = 0.0 ! testing purposes only
           vol_so4 = mass_so4 / dens_so4
@@ -3529,7 +3529,12 @@ END subroutine optical_prep_modal_soa_vbs
 ! SAM 7/18/09 - Modal parameters for OC1 (hydrophobic) OC2 (hydrophylic), BC1,BC2,
 ! and sulfate - just use dginia (meters) and sginia from module_data_sorgam.
 ! Not using accumulation mode from d'Almedia 1991 Table 7.1 and 7.2 global model
-!
+! 10/16/18 - A. Ukhov, bug fix: dust particles having radii in the range 0.1-0.46 microns
+! were not accounted in the calculation of the mass redistribution between the GOCART and 
+! MOZAIC grids.
+! 10/24/18 - A. Ukhov, bug fix: mass redistribution between GOCART dust/sea salt and 
+! MOZAIC bins should be computed using interpolation over the logarithmic axis.
+
 ! This subroutine computes volume-averaged refractive index and wet radius needed
 ! by the mie calculations. Aerosol number is also passed into the mie calculations
 ! in terms of other units.
@@ -3553,7 +3558,7 @@ END subroutine optical_prep_modal_soa_vbs
 ! real*8, DIMENSION (4), PARAMETER :: rb(4)=(/5.d-1,1.5d0,5.d0,1.d1/)
 ! real*8, DIMENSION (4), PARAMETER :: den_seas(4)=(/2.2d3,2.2d3,2.2d3,2.2d3/)
 ! real*8, DIMENSION (4), PARAMETER :: reff_seas(4)=(/0.30D-6,1.00D-6,3.25D-6,7.50D-6/)
-   USE module_data_gocart_dust, only:  ndust, reff_dust, den_dust
+   USE module_data_gocart_dust, only:  ndust, reff_dust, den_dust,ra_dust,rb_dust
 !  real*8, DIMENSION (5), PARAMETER :: den_dust(5)=(/2500.,2650.,2650.,2650.,2650./)
 !  real*8, DIMENSION (5), PARAMETER :: reff_dust(5)=(/0.73D-6,1.4D-6,2.4D-6,4.5D-6,8.0D-6/)
 
@@ -3706,8 +3711,9 @@ END subroutine optical_prep_modal_soa_vbs
        dlogoc = ra(m)*2.E-6  ! low diameter limit (m)
        dhigoc = rb(m)*2.E-6  ! hi diameter limit (m)
         do n = 1, nbin_o
-        seasfrc_goc8bin(m,n)=max(DBLE(0.),min(DBLE(dhi_sectm(n)),dhigoc)- &
-                             max(dlogoc,DBLE(dlo_sectm(n))) )/(dhigoc-dlogoc)
+        seasfrc_goc8bin(m,n)=max(DBLE(0.),min(DBLE(log(dhi_sectm(n))),log(dhigoc))- &
+                             max(log(dlogoc),DBLE(log(dlo_sectm(n)))) )/(log(dhigoc)-log(dlogoc))
+
        end do
 !      WRITE(*,*)m,dlogoc,dhigoc,(seasfrc_goc8bin(m,n),n=1,nbin_o)
        end do
@@ -3716,15 +3722,15 @@ END subroutine optical_prep_modal_soa_vbs
 !      WRITE(*,*)'         ','       ',(dlo_sectm(n),n=1,nbin_o)
 !      WRITE(*,*)'         ','       ',(dhi_sectm(n),n=1,nbin_o)
         dustfrc_goc8bin=0.
-        dlogoc=0.46*2.E-6 ! Begin lower dust bin, makes upper limit diam 20 micron diameter 
        do m =1, ndust  ! loop over dust size bins
-       dhigoc = 2.*2.*reff_dust(m)-dlogoc ! hi diameter limit (m)
+        dlogoc = ra_dust(m)*2.E-6  ! low diameter limit (m)
+        dhigoc = rb_dust(m)*2.E-6  ! hi diameter limit (m)
         do n = 1, nbin_o
-        dustfrc_goc8bin(m,n)=max(DBLE(0.),min(DBLE(dhi_sectm(n)),dhigoc)- &
-                             max(dlogoc,DBLE(dlo_sectm(n))) )/(dhigoc-dlogoc)
+        dustfrc_goc8bin(m,n)=max(DBLE(0.),min(DBLE(log(dhi_sectm(n))),log(dhigoc))- &
+                             max(log(dlogoc),DBLE(log(dlo_sectm(n)))) )/(log(dhigoc)-log(dlogoc))
+
        end do
 !      WRITE(*,*)m,dlogoc,dhigoc,(dustfrc_goc8bin(m,n),n=1,nbin_o)
-       dlogoc=dhigoc
        end do
         kcall=kcall+1
 !       ISTOP=1
@@ -3995,8 +4001,8 @@ END subroutine optical_prep_modal_soa_vbs
        n = n+1
         mass_soil=mass_soil+dustfrc_goc8bin(n,isize)*chem(i,k,j,m)
        end do
-       mass_cl=mass_seas*conv1a*22.9897/58.4428
-       mass_na=mass_seas*conv1a*35.4270/58.4428
+       mass_cl=mass_seas*conv1a*35.4530/58.4428
+       mass_na=mass_seas*conv1a*22.9898/58.4428
        mass_soil=mass_soil*conv1a
 !         mass_h2o = 0.0 ! testing purposes only
           vol_so4 = mass_so4 / dens_so4

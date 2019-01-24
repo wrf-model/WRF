@@ -31,6 +31,7 @@ MODULES = \
 	module_data_cam_mam_aero.o \
 	module_data_cam_mam_asect.o \
 	module_cam_infnan.o \
+	$(PHYS_PLUS) \
 	module_bl_ysu.o \
 	module_bl_shinhong.o \
 	module_bl_mrf.o \
@@ -49,6 +50,7 @@ MODULES = \
 	module_shcu_camuwshcu_driver.o \
 	module_shcu_camuwshcu.o \
 	module_shcu_grims.o \
+	module_shcu_nscv.o \
 	module_cu_camzm_driver.o \
 	module_cu_camzm.o \
 	module_bl_temf.o \
@@ -64,6 +66,7 @@ MODULES = \
 	module_cu_gf_wrfdrv.o \
 	module_cu_gf_deep.o \
 	module_cu_gf_sh.o \
+	module_cu_ksas.o \
 	module_cu_nsas.o \
 	module_cu_sas.o \
 	module_cu_scalesas.o \
@@ -86,6 +89,7 @@ MODULES = \
 	module_mp_gsfcgce.o \
 	module_mp_morr_two_moment.o \
         module_mp_p3.o \
+        module_mp_morr_two_moment_aero.o \
 	module_mp_milbrandt2mom.o \
 	module_mp_nssl_2mom.o \
 	module_mp_wdm5.o \
@@ -95,11 +99,14 @@ MODULES = \
 	module_ra_clWRF_support.o  \
 	module_ra_gsfcsw.o \
 	module_ra_goddard.o \
+        module_ra_effective_radius.o \
 	module_ra_rrtm.o  \
 	module_ra_rrtmg_lw.o  \
 	module_ra_rrtmg_sw.o  \
 	module_ra_rrtmg_lwf.o  \
 	module_ra_rrtmg_swf.o  \
+        module_ra_rrtmg_lwk.o  \
+        module_ra_rrtmg_swk.o  \
         module_ra_cam_support.o \
         module_ra_cam.o \
 	module_ra_gfdleta.o \
@@ -121,6 +128,7 @@ MODULES = \
 	module_sf_noah_seaice_drv.o \
 	module_sf_noahlsm_glacial_only.o \
         module_sf_noahmp_groundwater.o \
+        module_sf_gecros.o \
 	module_sf_noahmpdrv.o \
 	module_sf_noahmplsm.o \
 	module_sf_noahmp_glacier.o \
@@ -155,6 +163,7 @@ MODULES = \
 	module_progtm.o \
 	module_pbl_driver.o \
 	module_data_gocart_dust.o \
+        module_dust_emis.o \
 	module_cumulus_driver.o \
 	module_shallowcu_driver.o \
 	module_microphysics_driver.o \
@@ -172,7 +181,7 @@ MODULES = \
         module_fddaobs_rtfdda.o \
 	module_fddaobs_driver.o \
 	module_wind_fitch.o \
-        module_sf_lake.o \
+	module_sf_lake.o \
 	module_diagnostics_driver.o
 
 FIRE_MODULES = \
@@ -187,11 +196,13 @@ FIRE_MODULES = \
 DIAGNOSTIC_MODULES_EM = \
 	module_diag_afwa.o \
 	module_diag_cl.o \
+	module_diag_functions.o \
         module_diag_hailcast.o \
 	module_diag_misc.o \
         module_diag_rasm.o \
 	module_diag_pld.o \
-	module_diag_zld.o
+	module_diag_zld.o \
+	module_diag_trad_fields.o
   
 DIAGNOSTIC_MODULES_NMM = \
 	module_diag_refl.o

@@ -54,7 +54,7 @@ MODULE module_wrf_top
    IMPLICIT NONE
 
 #if ( WRFPLUS == 1 )
-#include <wrf_io_flags.h>
+#include "wrf_io_flags.h"
 #endif
 
    REAL    :: time
@@ -216,9 +216,9 @@ CONTAINS
    CALL initial_config
 #endif
 
+   CALL setup_physics_suite
    CALL set_derived_rconfigs
    CALL check_nml_consistency
-   CALL setup_physics_suite
    CALL set_physics_rconfigs
 
 #ifdef _ACCEL
@@ -872,13 +872,14 @@ IF ( config_flags%check_TL .or. config_flags%check_AD ) THEN
    CALL allocate_grid ( )
 
    !$OMP PARALLEL DO    &
-   !$OMP DEFAULT (SHARED) PRIVATE ( ij ) &           
+   !$OMP DEFAULT (SHARED) PRIVATE ( ij )           
    DO ij = 1 , head_grid%num_tiles
       CALL copy_grid_to_s ( head_grid , &
                             head_grid%i_start(ij), head_grid%i_end(ij),                &
                             head_grid%j_start(ij), head_grid%j_end(ij)                 )
    ENDDO
-
+   !$OMP END PARALLEL DO
+   
    CALL       wrf_message ( "wrf: calling nonlinear integrate" )
    model_config_rec%dyn_opt = dyn_em
 

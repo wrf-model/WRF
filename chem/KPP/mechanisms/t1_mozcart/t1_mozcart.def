@@ -459,6 +459,10 @@ END FUNCTION usr_N2O5_M
 REAL(KIND=dp) FUNCTION usr_SO2_OH( temp, c_m )
 ! for cesm-consistent reaction labels, equivalent to usr23
 ! SO2 + OH -> SO4
+!------------------------------------------------------------------
+!   This reaction rate constant has been updated to be
+!   consistent with CAM-Chem (2018-10-19)
+!------------------------------------------------------------------
 
     REAL(KIND=dp), INTENT(IN) :: temp
     REAL(KIND=dp), INTENT(IN) :: c_m
@@ -466,7 +470,7 @@ REAL(KIND=dp) FUNCTION usr_SO2_OH( temp, c_m )
     REAL(KIND=dp) :: fc, k0
     REAL(KIND=dp) :: wrk
 
-    fc    = 3.e-11_dp * (300._dp/temp) ** 3.3_dp
+    fc    = 3.e-31_dp * (300._dp/temp) ** 3.3_dp
     wrk   = fc * c_m
     k0    = wrk / (1._dp + wrk/1.5e-12_dp)
     usr_SO2_OH = k0 * .6_dp ** (1._dp/(1._dp + &

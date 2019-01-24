@@ -24,7 +24,6 @@
  io_form_restart                     = 2
  io_form_input                       = 2
  io_form_boundary                    = 2
- debug_level                         = 0
  /
 
  &domains
@@ -64,13 +63,13 @@
  cudt                                = 0,     0,     0,
  isfflx                              = 1,
  ideal_xland                         = 2,
- num_soil_layers                     = 5,
  /
 
  &fdda
  /
 
  &dynamics
+ hybrid_opt                          = 0, 
  rk_ord                              = 3,
  diff_opt                            = 2,      2,      2,
  km_opt                              = 2,      2,      2,
@@ -99,17 +98,16 @@
  /
 
  &bdy_control
- periodic_x                          = .true., .false.,.false.,
- symmetric_xs                        = .false.,.false.,.false.,
- symmetric_xe                        = .false.,.false.,.false.,
- open_xs                             = .false.,.false.,.false.,
- open_xe                             = .false.,.false.,.false.,
- periodic_y                          = .true., .false.,.false.,
- symmetric_ys                        = .false.,.false.,.false.,
- symmetric_ye                        = .false.,.false.,.false.,
- open_ys                             = .false.,.false.,.false.,
- open_ye                             = .false.,.false.,.false.,
- nested                              = .false., .true., .true.,
+ periodic_x                          = .true., 
+ symmetric_xs                        = .false.,
+ symmetric_xe                        = .false.,
+ open_xs                             = .false.,
+ open_xe                             = .false.,
+ periodic_y                          = .true., 
+ symmetric_ys                        = .false.,
+ symmetric_ye                        = .false.,
+ open_ys                             = .false.,
+ open_ye                             = .false.,
  /
 
  &grib2
@@ -119,3 +117,8 @@
  nio_tasks_per_group = 0,
  nio_groups = 1,
  /
+
+ &ideal
+ ideal_case = 9
+ /
+

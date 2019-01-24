@@ -65,7 +65,8 @@ CONTAINS
       WSM6SCHEME, ETAMPNEW, THOMPSON, THOMPSONAERO,                     &
       MORR_TWO_MOMENT, GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME,           &
       NSSL_2MOM, NSSL_2MOMG, NSSL_2MOMCCN, NSSL_1MOM, NSSL_1MOMLFO,                 &
-      MILBRANDT2MOM , CAMMGMPSCHEME, FAST_KHAIN_LYNN, FULL_KHAIN_LYNN    !,MILBRANDT3MOM, NSSL_3MOM
+      MILBRANDT2MOM , CAMMGMPSCHEME, FAST_KHAIN_LYNN, FULL_KHAIN_LYNN,  &
+      MORR_TM_AERO  !TWG 2017  !,MILBRANDT3MOM, NSSL_3MOM
 
    IMPLICIT NONE
 !======================================================================
@@ -250,14 +251,14 @@ CONTAINS
 
       DOUBLE PRECISION:: hail_max
       REAL:: hail_max_sp
-      DOUBLE PRECISION, PARAMETER:: thresh_conc = 0.001d0                  ! number conc. of graupel/hail per cubic meter
+      DOUBLE PRECISION, PARAMETER:: thresh_conc = 0.0005d0                 ! number conc. of graupel/hail per cubic meter
       LOGICAL:: scheme_has_graupel
       INTEGER, PARAMETER:: ngbins=50
       DOUBLE PRECISION, DIMENSION(ngbins+1):: xxDx
       DOUBLE PRECISION, DIMENSION(ngbins):: xxDg, xdtg
       REAL:: xrho_g, xam_g, xbm_g, xmu_g
       REAL, DIMENSION(3):: cge, cgg
-      DOUBLE PRECISION:: f_d, sum_ng, lamg, ilamg, N0_g, lam_exp, N0exp
+      DOUBLE PRECISION:: f_d, sum_ng, sum_t, lamg, ilamg, N0_g, lam_exp, N0exp
       DOUBLE PRECISION:: lamr, N0min
       REAL:: mvd_r, xslw1, ygra1, zans1
       INTEGER:: ng, n
@@ -805,56 +806,28 @@ CONTAINS
      CASE (THOMPSON, THOMPSONAERO)
 
        scheme_has_graupel = .true.
-
-!  !$OMP PARALLEL DO   &
-!  !$OMP PRIVATE ( ij )
-      DO ij = 1 , num_tiles
-       DO j=j_start(ij),j_end(ij)
-       DO k=kms,kme-1
-       DO i=i_start(ij),i_end(ij)
-          temp_qr(i,k,j) = MAX(1.E-10, qr_curr(i,k,j)*rho(i,k,j))
-          temp_nr(i,k,j) = MAX(1.E-8, nr_curr(i,k,j)*rho(i,k,j))
-       ENDDO
-       ENDDO
-       ENDDO
-      ENDDO
-!  !$OMP END PARALLEL DO
-
-       ! Technically, the equation below for lambda-r should have constants
-       ! for the rain mass-diameter relation and mu, but these are currently
-       ! the same as graupel, so we are cheating to avoid passing more
-       ! constants from mp_thompson.
+       xmu_g = 1.
+       cge(1) = xbm_g + 1.
+       cge(2) = xmu_g + 1.
+       cge(3) = xbm_g + xmu_g + 1.
+       do n = 1, 3
+          cgg(n) = WGAMMA(cge(n))
+       enddo
 
 !  !$OMP PARALLEL DO   &
 !  !$OMP PRIVATE ( ij )
       DO ij = 1 , num_tiles
        DO j=j_start(ij),j_end(ij)
        DO i=i_start(ij),i_end(ij)
-        N0min = 1.E6
         DO k=kme-1, kms, -1
          if (temp_qg(i,k,j) .LT. 1.E-6) CYCLE
-         lamr = (1000.0*3.1415926536/6.0*cgg(3)/cgg(2)*temp_nr(i,k,j)/temp_qr(i,k,j))**(1./3.)
-         mvd_r = 3.672 / lamr   ! Technically this should have (+mu_r)
-         mvd_r = MAX(100.E-6, MIN(mvd_r, 2.5E-3))
-         if (temp(i,k,j).lt.270.65 .and. mvd_r.gt.100.E-6) then
-            xslw1 = 4.01 + alog10(mvd_r)
-         else
-            xslw1 = 0.01
-         endif
-         ygra1 = 4.31 + alog10(max(5.E-5, temp_qg(i,k,j)))
-         zans1 = 3.1 + (100./(300.*xslw1*ygra1/(10./xslw1+1.+0.25*ygra1)+30.+10.*ygra1))
-         N0exp = 10.**(zans1)
-         N0exp = MAX(DBLE(1.E4), MIN(N0exp, DBLE(1.E6)))
-         N0min = MIN(N0exp, N0min)
-         N0exp = N0min
+         zans1 = (2.5 + 2./7. * (ALOG10(temp_qg(i,k,j))+7.))
+         zans1 = MAX(2., MIN(zans1, 7.))
+         N0exp = 10.**zans1
          lam_exp = (N0exp*xam_g*cgg(1)/temp_qg(i,k,j))**(1./cge(1))
          lamg = lam_exp * (cgg(3)/cgg(2)/cgg(1))**(1./xbm_g)
          N0_g = N0exp/(cgg(2)*lam_exp) * lamg**cge(2)
          temp_ng(i,k,j) = N0_g*cgg(2)*lamg**(-cge(2))
-         if (N0exp .ge. 1.E4 .AND. N0exp.le.1.E5) then
-         WRITE(outstring,*) 'GT-Debug, ', N0exp, temp_qr(i,k,j)*1000., temp_ng(i,k,j)
-         CALL wrf_debug (850, TRIM(outstring))
-         endif
         ENDDO
        ENDDO
        ENDDO
@@ -866,7 +839,7 @@ CONTAINS
 !      scheme_has_graupel = .true.
 !      either Hugh or Jason need to implement.
 
-     CASE (MORR_TWO_MOMENT)
+     CASE (MORR_TWO_MOMENT, MORR_TM_AERO)
        scheme_has_graupel = .true.
        xrho_g = 400.
        if (mpuse_hail .eq. 1) xrho_g = 900.
@@ -969,17 +942,20 @@ CONTAINS
            lamg = (xam_g*cgg(3)/cgg(2)*temp_ng(i,k,j)/temp_qg(i,k,j))**(1./xbm_g)
            N0_g = temp_ng(i,k,j)/cgg(2)*lamg**cge(2)
            sum_ng = 0.0d0
+           sum_t  = 0.0d0
            do ng = ngbins, 1, -1
               f_d = N0_g*xxDg(ng)**xmu_g * DEXP(-lamg*xxDg(ng))*xdtg(ng)
               sum_ng = sum_ng + f_d
               if (sum_ng .gt. thresh_conc) then
                  exit
               endif
+              sum_t = sum_ng
            enddo
            if (ng .ge. ngbins) then
               hail_max = xxDg(ngbins)
            elseif (xxDg(ng+1) .gt. 1.E-3) then
-              hail_max = xxDg(ng+1)
+              hail_max = xxDg(ng) - (sum_ng-thresh_conc)/(sum_ng-sum_t) &
+     &                              * (xxDg(ng)-xxDg(ng+1))
            else
               hail_max = 1.E-4
            endif

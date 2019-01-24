@@ -26,6 +26,7 @@
    USE module_comm_dm
    USE module_llxy, ONLY : proj_cassini
    USE module_physics_init
+   USE module_sf_noahmpdrv, ONLY : groundwater_init
    USE module_lightning_driver, ONLY : lightning_init
    USE module_fr_fire_driver_wrf, ONLY : fire_driver_em_init
    USE module_stoch, ONLY : setup_rand_perturb, rand_seed, update_stoch, initialize_stoch
@@ -39,6 +40,7 @@
 #endif
    USE module_diag_pld, ONLY : pld
    USE module_diag_zld, ONLY : zld
+   USE module_trad_fields, ONLY : trad_fields
 
 !!debug
 !USE module_compute_geop
@@ -142,36 +144,6 @@
 #endif
    ALLOCATE(z_at_q(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; z_at_q = 0.
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-
-   !  If the rotation angle is too large, the GWD option does not do well with the assumed U and V
-   !  being close to earth relative.
-
-   IF ( ( grid%id .EQ. 1 ) .AND. ( config_flags%gwd_opt .EQ. 1 ) ) THEN
-      max_rot_angle = ASIN(ABS(grid%sina(its,jts)))/DEGRAD
-      DO j=jts,MIN(jde-1,jte)
-         DO i=its,MIN(ide-1,ite)
-            max_rot_angle = MAX ( max_rot_angle , ASIN(ABS(grid%sina(i,j)))/DEGRAD )
-         END DO
-      END DO
-#if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
-      max_rot_angle = wrf_dm_max_real ( max_rot_angle )
-#endif
-      IF ( max_rot_angle .GT. ABS(config_flags%max_rot_angle_gwd) ) THEN
-         WRITE ( a_message , FMT='(A,F5.2)' ) 'Max projection rotation angle for domain 1 = ',max_rot_angle
-         CALL wrf_message ( a_message )
-         WRITE ( a_message , FMT='(A)'      ) 'This projection may not be appropriate for using the gravity wave drag option.'
-         CALL wrf_message ( a_message )
-         WRITE ( a_message , FMT='(A)'      ) 'In namelist.input make one of the two following changes:'
-         CALL wrf_message ( a_message )
-         WRITE ( a_message , FMT='(A)'      ) ' 1) gwd_opt = 0 '
-         CALL wrf_message ( a_message )
-         WRITE ( a_message , FMT='(A,F5.2)' ) ' 2) max_rot_angle_gwd > ',max_rot_angle
-         CALL wrf_message ( a_message )
-         WRITE ( a_message , FMT='(A)'      ) '--- ERROR: gwd_opt does not work with this domain'
-         CALL wrf_error_fatal ( a_message )
-      END IF
-   END IF
-
 
    IF ( ( MOD (ide-ids,config_flags%parent_grid_ratio) .NE. 0 ) .OR. &
         ( MOD (jde-jds,config_flags%parent_grid_ratio) .NE. 0 ) ) THEN
@@ -545,12 +517,12 @@
       !  the half eta levels and the base-profile surface pressure.  Compute 1/rho
       !  from equation of state.  The potential temperature is a perturbation from t0.
 
-      DO k = 1, kte
-         IF ( grid%c1f(1) .NE. 1. ) THEN
-            CALL wrf_debug ( 0 , '---- WARNING : Maybe old non-HVC input, setting default 1d array values for TF' )
-            IF ( grid%hybrid_opt .NE. 0 ) THEN
-               CALL wrf_error_fatal ( '---- Error : Cannot use old input and try to use hybrid vertical coordinate option' )
-            END IF
+      IF ( grid%c1f(1) .NE. 1. ) THEN
+         CALL wrf_debug ( 0 , '---- WARNING : Maybe old non-HVC input, setting default 1d array values for TF' )
+         IF ( grid%hybrid_opt .NE. 0 ) THEN
+            CALL wrf_error_fatal ( '---- Error : Cannot use old input and try to use hybrid vertical coordinate option' )
+         END IF
+         DO k = 1, kte
             grid%c1f(k) = 1.
             grid%c2f(k) = 0.
             grid%c3f(k) = grid%znw(k)
@@ -559,8 +531,27 @@
             grid%c2h(k) = 0.
             grid%c3h(k) = grid%znu(k)
             grid%c4h(k) = 0.
+         END DO
+      END IF
+
+      !  With newer versions of WRF, the grid%t_2 field might come in as "zero"
+      !  from an older data set. Yikes, but it can be corrected unless the user
+      !  has requested moist theta.
+
+      IF ( grid%t_2(its,kte-1,jts) .EQ. 0. ) THEN
+         CALL wrf_debug ( 0 , '---- WARNING : Older v3 input data detected' )
+         IF ( grid%use_theta_m .NE. 0 ) THEN
+            CALL wrf_error_fatal ( '---- Error : Cannot use moist theta option with old data' )
          END IF
-      END DO
+         DO j = jts, MIN(jte,jde-1)
+            DO k = 1, kte-1
+               DO i = its, MIN(ite,ide-1)
+                  grid%t_2(i,k,j) = grid%th_phy_m_t0(i,k,j)
+               END DO
+            END DO
+         END DO
+      END IF
+
       DO j = jts, MIN(jte,jde-1)
          DO i = its, MIN(ite,ide-1)
             !  Base state pressure is a function of eta level and terrain, only, plus
@@ -782,13 +773,21 @@
     DO i=its,min(ite,ide-1)
 #if ( WRFPLUS == 1 )
        IF ( .NOT. config_flags%var4d_run ) THEN
-          qvf = 1.+rvovrd*moist(i,k,j,P_QV)
+          IF ( config_flags%use_theta_m == 0 ) THEN
+             qvf = 1.+rvovrd*moist(i,k,j,P_QV)
+          ELSE
+             qvf = 1
+          END IF
           grid%p(i,k,j)=p1000mb*( (r_d*(t0+grid%t_1(i,k,j))*qvf)/                     &
                      (p1000mb*(grid%al(i,k,j)+grid%alb(i,k,j))) )**cpovcv  &
                      -grid%pb(i,k,j)
        END IF
 #else
-       qvf = 1.+rvovrd*moist(i,k,j,P_QV)
+       IF ( config_flags%use_theta_m == 0 ) THEN
+          qvf = 1.+rvovrd*moist(i,k,j,P_QV)
+       ELSE
+          qvf = 1
+       END IF
        grid%p(i,k,j)=p1000mb*( (r_d*(t0+grid%t_1(i,k,j))*qvf)/                     &
                   (p1000mb*(grid%al(i,k,j)+grid%alb(i,k,j))) )**cpovcv  &
                   -grid%pb(i,k,j)
@@ -1053,6 +1052,8 @@ endif
                       grid%STMASSXY, grid%WOODXY, grid%STBLCPXY, grid%FASTCPXY,                 &   ! Optional Noah-MP
                       grid%GRAINXY, grid%GDDXY,                                                 &   ! Optional Noah-MP
                       grid%CROPTYPE, grid%CROPCAT,                                                 &   ! Optional Noah-MP
+                      config_flags%opt_crop,                                                    &
+                      grid%gecros_state,                                                        &   ! Optional gecros crop
                       grid%XSAIXY,grid%LAI,                                                     &   ! Optional Noah-MP
                       grid%T2MVXY, grid%T2MBXY, grid%CHSTARXY,                                  &   ! Optional Noah-MP
                       grid%SMOISEQ  ,grid%SMCWTDXY ,grid%RECHXY, grid%DEEPRECHXY, grid%AREAXY,  & ! Optional Noah-MP
@@ -1181,8 +1182,31 @@ endif
                       ,grid%G_URB2D_mosaic,grid%RN_URB2D_mosaic                                      & ! danli mosaic
                       ,grid%TS_URB2D_mosaic                                                          & ! danli mosaic
                       ,grid%TS_RUL2D_mosaic                                                          & ! danli mosaic
+                      ,grid%QR_CU, grid%QS_CU                                                        &
+                      ,grid%NC_CU, grid%NI_CU, grid%NR_CU, grid%NS_CU,grid%CCN_CU                    &
+                      ,grid%alevsiz_cu,grid%num_months,grid%no_src_types_cu,grid%aeromcu             &
+                      ,grid%aeropcu,grid%EFCG,grid%EFCS,grid%EFIG,grid%EFIS,grid%EFSG,grid%EFSS      &
                       )
        ENDDO ! loop of tiles for phy_init
+
+       if(.not.grid%restart) then
+
+         if(config_flags%sf_surface_physics .eq. NOAHMPSCHEME .and. config_flags%opt_run .eq. 5) then
+              call groundwater_init ( grid ,                                                            &
+                 config_flags%num_soil_layers, grid%dzs, grid%isltyp, grid%ivgtyp, config_flags%wtddt , &
+                 grid%fdepthxy   , grid%ht     , grid%riverbedxy, grid%eqzwt     ,                      &
+                 grid%rivercondxy, grid%pexpxy , grid%areaxy    , grid%zwtxy     ,                      &
+                 grid%smois      , grid%sh2o   , grid%smoiseq   , grid%smcwtdxy  , grid%deeprechxy,     &
+                 grid%rechxy     , grid%qslatxy, grid%qrfsxy    , grid%qspringsxy,                      &
+                 grid%rechclim   ,                                                                      &
+                 ids,ide, jds,jde, kds,kde,                                                             &
+                 ims,ime, jms,jme, kms,kme,                                                             &
+                 ips,ipe, jps,jpe, kps,kpe,                                                             &
+                 its,ite, jts,jte, kts,kte )
+         endif
+
+       endif
+
     ENDIF   ! no phy_init for the backwards part of the DFI
 
    CALL wrf_debug ( 100 , 'start_domain_em: After call to phy_init' )
@@ -1629,6 +1653,7 @@ endif
 
    ENDIF
 
+
 ! Some initializations for the simple ccn field.
 
    IF ( f_qnn ) THEN
@@ -1964,6 +1989,52 @@ DEALLOCATE(z_at_q)
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde    &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme    &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte    )
+   ENDIF
+
+   IF ( config_flags%diag_nwp2 == DO_TRAD_FIELDS ) THEN
+      CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: TRAD_FIELDS' )
+      CALL trad_fields ( &
+               !  Input data for computing
+               U=grid%u_2                                           &
+               ,V=grid%v_2                                          &
+               ,W=grid%w_2                                          &
+               ,t=grid%t_2                                          &
+               ,qv=moist(:,:,:,P_QV)                                &
+               ,zp=grid%ph_2                                        &
+               ,zb=grid%phb                                         &
+               ,pp=grid%p                                           &
+               ,pb=grid%pb                                          &
+               ,p=grid%p_hyd                                        &
+               ,pw=grid%p_hyd_w                                     &
+               !  Map factors, coriolis for diags
+               ,msfux=grid%msfux                                    &
+               ,msfuy=grid%msfuy                                    &
+               ,msfvx=grid%msfvx                                    &
+               ,msfvy=grid%msfvy                                    &
+               ,msftx=grid%msftx                                    &
+               ,msfty=grid%msfty                                    &
+               ,f=grid%f                                            &
+               ,e=grid%e                                            &
+               ,sina=grid%sina                                      &
+               ,cosa=grid%cosa                                      &
+               !  Terrestrial data                
+               ,ht=grid%ht                                          &
+               !  Namelist info
+               ,use_theta_m=config_flags%use_theta_m                &
+               !  The diagnostic output variables
+               ,sealevelp=grid%sealevelp                            &
+               ,temperature=grid%temperature                        &
+               ,pressure=grid%pressure                              &
+               ,geoheight=grid%geoheight                            &
+               ,umet=grid%umet                                      &
+               ,vmet=grid%vmet                                      &
+               ,speed=grid%speed                                    &
+               ,dir=grid%dir                                        &
+               !  Various indexes for declarations, loop bounds
+               ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde   &
+               ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme   &
+               ,IPS=ips,IPE=ipe, JPS=jps,JPE=jpe, KPS=kps,KPE=kpe   &
+               ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte   )
    ENDIF
 
 

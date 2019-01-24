@@ -11,6 +11,19 @@ CHEM_FILES =	../chem/module_aerosols_sorgam.o \
 		../chem/module_aerosols_soa_vbs.o
 CHEM_FILES2 =	../chem/module_data_mosaic_asect.o
 
+# these files are needed to compile 'phys' in wrfplus mode
+MODS4 = ../wrftladj/module_mp_mkessler.o ../wrftladj/module_mp_nconvp.o \
+	../wrftladj/module_bl_surface_drag.o ../wrftladj/module_cu_du.o
+MODMP = ../wrftladj/module_mp_mkessler.o ../wrftladj/module_mp_nconvp.o
+MODBL = ../wrftladj/module_bl_surface_drag.o
+MODCU = ../wrftladj/module_cu_du.o
+
+# this file is needed to compile module_integrate.F and module_cpl.F under frame in wrfplus mode
+MODLL = ../wrftladj/module_linked_list2.o ../share/module_model_constants.o
+
+# these 2 file are needed to compile mediation_integrate.F under share in wrfplus mode
+MODPT = ../dyn_em/module_bc_em.o ../wrftladj/mediation_pertmod_io.o
+
 deflt :
 		@ echo Please compile the code using ./compile
 
@@ -28,16 +41,12 @@ DA_CONVERTOR_MODULES = $(DA_CONVERTOR_MOD_DIR) $(INCLUDE_MODULES)
 
 #### 3.d.   add macros to specify the modules for this core
 
-#EXP_MODULE_DIR = -I../dyn_exp
-#EXP_MODULES =  $(EXP_MODULE_DIR)
-
 NMM_MODULE_DIR = -I../dyn_nmm
 NMM_MODULES =  $(NMM_MODULE_DIR)
 
 ALL_MODULES =                           \
                $(EM_MODULE_DIR)         \
                $(NMM_MODULES)           \
-               $(EXP_MODULES)           \
                $(INCLUDE_MODULES)
 
 configcheck:
@@ -82,6 +91,16 @@ configcheck:
 	 echo "------------------------------------------------------------------------------" ; \
          exit 2 ; \
 	fi
+	@if [ "$(A1DCASE)" -a "$(DMPARALLEL)" ] ; then \
+	 echo "------------------------------------------------------------------------------" ; \
+	 echo "WRF CONFIGURATION ERROR                                                       " ; \
+	 echo "The $(A1DCASE) case requires a build for only single domain.                  " ; \
+	 echo "The $(A1DCASE) case cannot be used on distributed memory parallel systems.    " ; \
+	 echo "Only 3D WRF cases will run with the options that you selected.                " ; \
+	 echo "Please choose a different case, or rerun configure and choose a different set of options."  ; \
+	 echo "------------------------------------------------------------------------------" ; \
+         exit 21 ; \
+	fi
  
 
 framework_only : configcheck
@@ -96,13 +115,31 @@ wrf : framework_only
 	if [ $(WRF_CHEM) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" chemics ; fi
 	if [ $(WRF_EM_CORE) -eq 1 ]    ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" em_core ; fi
 	if [ $(WRF_NMM_CORE) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" nmm_core ; fi
-	if [ $(WRF_EXP_CORE) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" exp_core ; fi
 	if [ $(WRF_HYDRO) -eq 1 ]   ; then $(MAKE) MODULE_DIRS="$(ALL_MODULES)" wrf_hydro ; fi
 	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf )
 	( cd run ; /bin/rm -f wrf.exe ; ln -s ../main/wrf.exe . )
 	if [ $(ESMF_COUPLING) -eq 1 ] ; then \
 	  ( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrf_SST_ESMF ) ; \
 	fi
+	@echo "build started:   $(START_OF_COMPILE)"
+	@echo "build completed:" `date`
+
+wrfplus : configcheck
+	@/bin/rm -f real.exe  > /dev/null 2>&1
+	@/bin/rm -f tc.exe    > /dev/null 2>&1
+	@/bin/rm -f ndown.exe > /dev/null 2>&1
+	@/bin/rm -f wrf.exe   > /dev/null 2>&1
+	@ echo '--------------------------------------'
+	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" ext
+	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" toolsdir
+	/bin/rm -f main/libwrflib.a main/libwrflib.lib
+	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" framework_plus
+	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" shared
+	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" physics_plus
+	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" em_core
+	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" wrftlmadj
+	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em em_wrfplus )
+	( cd run ; /bin/rm -f *.exe ; ln -s ../main/*.exe . )
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
 
@@ -136,16 +173,6 @@ gen_be :
 	@echo "build completed:" `date`
 
 
-### 3.a.  rules to build the framework and then the experimental core
-
-exp_wrf : configcheck
-	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" ext
-	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" toolsdir
-	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" framework
-	$(MAKE) MODULE_DIRS="$(ALL_MODULES)" shared
-	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=exp exp_wrf )
-
-
 nmm_wrf : wrf
 
 
@@ -165,14 +192,31 @@ em_fire : wrf
 		/bin/cp -f namelist.input namelist.input.backup.`date +%Y-%m-%d_%H_%M_%S` ; fi ; \
 		/bin/rm -f namelist.input ; cp ../test/em_fire/namelist.input . )
 	( cd run ; /bin/rm -f input_sounding ; ln -s ../test/em_fire/input_sounding . )
+	@echo " "
+	@echo "=========================================================================="
 	@echo "build started:   $(START_OF_COMPILE)"
 	@echo "build completed:" `date`
+	@if test -e main/wrf.exe -a -e main/ideal.exe ; then \
+		echo " " ; \
+		echo "--->                  Executables successfully built                  <---" ; \
+		echo " " ; \
+		ls -l main/*.exe ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	else \
+		echo " " ; \
+		echo "---> Problems building executables, look for errors in the build log  <---" ; \
+		echo " " ; \
+		echo "==========================================================================" ; \
+		echo " " ; \
+	fi
 
 em_quarter_ss : wrf
 	@/bin/rm -f ideal.exe > /dev/null 2>&1
 	@/bin/rm -f wrf.exe   > /dev/null 2>&1
 	@ echo '--------------------------------------'
-	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=quarter_ss em_ideal )
+	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=ideal em_ideal )
 	( cd test/em_quarter_ss ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_quarter_ss ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_quarter_ss ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
@@ -215,7 +259,7 @@ em_squall2d_x : wrf
 	@/bin/rm -f ideal.exe > /dev/null 2>&1
 	@/bin/rm -f wrf.exe   > /dev/null 2>&1
 	@ echo '--------------------------------------'
-	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=squall2d_x em_ideal )
+	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=ideal em_ideal )
 	( cd test/em_squall2d_x ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_squall2d_x ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_squall2d_x ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
@@ -250,7 +294,7 @@ em_squall2d_y : wrf
 	@/bin/rm -f ideal.exe > /dev/null 2>&1
 	@/bin/rm -f wrf.exe   > /dev/null 2>&1
 	@ echo '--------------------------------------'
-	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=squall2d_y em_ideal )
+	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=ideal em_ideal )
 	( cd test/em_squall2d_y ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_squall2d_y ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_squall2d_y ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
@@ -283,7 +327,7 @@ em_b_wave : wrf
 	@/bin/rm -f ideal.exe > /dev/null 2>&1
 	@/bin/rm -f wrf.exe   > /dev/null 2>&1
 	@ echo '--------------------------------------'
-	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=b_wave em_ideal )
+	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=ideal em_ideal )
 	( cd test/em_b_wave ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_b_wave ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_b_wave ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
@@ -316,7 +360,7 @@ em_les : wrf
 	@/bin/rm -f ideal.exe > /dev/null 2>&1
 	@/bin/rm -f wrf.exe   > /dev/null 2>&1
 	@ echo '--------------------------------------'
-	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=les em_ideal )
+	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=ideal em_ideal )
 	( cd test/em_les ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_les ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_les ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
@@ -349,7 +393,7 @@ em_seabreeze2d_x : wrf
 	@/bin/rm -f ideal.exe > /dev/null 2>&1
 	@/bin/rm -f wrf.exe   > /dev/null 2>&1
 	@ echo '--------------------------------------'
-	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=seabreeze2d_x em_ideal )
+	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=ideal em_ideal )
 	( cd test/em_seabreeze2d_x ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_seabreeze2d_x ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_seabreeze2d_x ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
@@ -380,7 +424,7 @@ em_seabreeze2d_x : wrf
 
 em_convrad : wrf
 	@ echo '--------------------------------------'
-	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=convrad em_ideal )
+	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=ideal em_ideal )
 	( cd test/em_convrad ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_convrad ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_convrad ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
@@ -628,7 +672,7 @@ em_hill2d_x : wrf
 	@/bin/rm -f ideal.exe > /dev/null 2>&1
 	@/bin/rm -f wrf.exe   > /dev/null 2>&1
 	@ echo '--------------------------------------'
-	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=hill2d_x em_ideal )
+	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=ideal em_ideal )
 	( cd test/em_hill2d_x ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_hill2d_x ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_hill2d_x ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
@@ -661,7 +705,7 @@ em_grav2d_x : wrf
 	@/bin/rm -f ideal.exe > /dev/null 2>&1
 	@/bin/rm -f wrf.exe   > /dev/null 2>&1
 	@ echo '--------------------------------------'
-	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=grav2d_x em_ideal )
+	( cd main ; $(MAKE) RLFLAGS="$(RLFLAGS)" MODULE_DIRS="$(ALL_MODULES)" SOLVER=em IDEAL_CASE=ideal em_ideal )
 	( cd test/em_grav2d_x ; /bin/rm -f wrf.exe ; ln -s ../../main/wrf.exe . )
 	( cd test/em_grav2d_x ; /bin/rm -f ideal.exe ; ln -s ../../main/ideal.exe . )
 	( cd test/em_grav2d_x ; /bin/rm -f README.namelist ; ln -s ../../run/README.namelist . )
@@ -862,16 +906,20 @@ io :
 
 ext :
 	@ echo '--------------------------------------'
-	( cd frame ; $(MAKE) externals )
+	if [ $(WRF_PLUS_CORE) -eq 0 ] ; then \
+	  ( cd frame ; $(MAKE) externals ) ; \
+	else \
+	  ( cd frame ; $(MAKE) PLUSFLAG="-DWRFPLUS=1" externals ) ; \
+	fi
 
 framework :
 	@ echo '--------------------------------------'
-	( cd frame ; $(MAKE) $(J) framework; \
+	( cd frame ; $(MAKE) $(J) LLIST="$(LINKLIST)" framework ; \
           cd ../external/io_netcdf ; \
           $(MAKE) NETCDFPATH="$(NETCDFPATH)" \
                FC="$(FC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
                CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
-	       LIB_LOCAL="$(LIB_LOCAL)" \
+               LIB_LOCAL="$(LIB_LOCAL)" \
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf; \
           cd ../io_netcdf ; \
           $(MAKE) NETCDFPATH="$(NETCDFPATH)" \
@@ -893,12 +941,49 @@ framework :
                ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf ; \
           cd ../../frame )
 
+framework_plus :
+	@ echo '--------------------------------------'
+	( cd frame ; $(MAKE) $(J) LLIST="$(MODLL)" framework ; \
+          cd ../external/io_netcdf ; \
+          $(MAKE) NETCDFPATH="$(NETCDFPATH)" \
+               FC="$(FC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
+               CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+               LIB_LOCAL="$(LIB_LOCAL)" \
+               ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf; \
+          cd ../io_netcdf ; \
+          $(MAKE) NETCDFPATH="$(NETCDFPATH)" \
+               FC="$(SFC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
+               CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+               LIB_LOCAL="$(LIB_LOCAL)" \
+               ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR"; \
+          cd ../io_pio ; \
+          echo SKIPPING PIO BUILD $(MAKE) NETCDFPATH="$(PNETCDFPATH)" \
+               FC="$(SFC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" RANLIB="$(RANLIB)" \
+               CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+               LIB_LOCAL="$(LIB_LOCAL)" \
+               ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR"; \
+          cd ../io_int ; \
+          $(MAKE) SFC="$(SFC) $(FCBASEOPTS)" \
+               FC="$(SFC) $(FCBASEOPTS) $(PROMOTION) $(FCDEBUG) $(OMP)" \
+               RANLIB="$(RANLIB)" CPP="$(CPP) $(ARCH_LOCAL)" DM_FC="$(DM_FC) $(FCBASEOPTS)"\
+               TRADFLAG="$(TRADFLAG)" ESMF_IO_LIB_EXT="$(ESMF_IO_LIB_EXT)" \
+               ESMF_MOD_DEPENDENCE="$(ESMF_MOD_DEPENDENCE)" AR="INTERNAL_BUILD_ERROR_SHOULD_NOT_NEED_AR" diffwrf ; \
+          cd ../../frame )
+
 shared :
 	@ echo '--------------------------------------'
 	if [ "`echo $(J) | sed -e 's/-j//g' -e 's/ \+//g'`" -gt "6" ] ; then \
-	  ( cd share ; $(MAKE) -j 6 ) ;  \
+	  if [ $(WRF_PLUS_CORE) -eq 0 ]   ; then \
+	   ( cd share ; $(MAKE) -j 6 PERTMOD=" " ) ;  \
+	  else \
+	   ( cd share ; $(MAKE) -j 6 PERTMOD="$(MODPT)" ) ;  \
+	  fi \
 	else \
-	  ( cd share ; $(MAKE) $(J) ) ;  \
+	  if [ $(WRF_PLUS_CORE) -eq 0 ]   ; then \
+	   ( cd share ; $(MAKE) $(J) PERTMOD=" " ) ;  \
+	  else \
+	   ( cd share ; $(MAKE) $(J) PERTMOD="$(MODPT)" ) ;  \
+	  fi \
 	fi
 
 wrf_hydro :
@@ -926,6 +1011,17 @@ physics :
 		( cd phys ; $(MAKE) CF2="$(CHEM_FILES2)" ) ; \
 	fi
 
+physics_plus :
+	if [ $(WRF_PLUS_CORE) -eq 0 ] ; then \
+	   ( cd phys ; $(MAKE) PHYS_PLUS=" " PHYS_MP=" " PHYS_BL=" " PHYS_CU=" " ) ; \
+	else \
+	   ( cd phys ; $(MAKE) PHYS_PLUS="$(MODS4)" PHYS_MP="$(MODMP)" PHYS_BL="$(MODBL)" PHYS_CU="$(MODCU)" ) ; \
+	fi
+
+wrftlmadj :
+	@ echo '--------------------------------------'
+	( cd wrftladj ; $(MAKE) $(J) wrftladj )
+
 em_core :
 	@ echo '--------------------------------------'
 	if [ $(WRF_CHEM) -eq 0 ] ; then \
@@ -950,7 +1046,7 @@ fseek_test :
 
 # rule used by configure to test if this will compile with netcdf4
 nc4_test:
-	@cd tools ; /bin/rm -f nc4_test.{exe,nc,o} ; $(SCC) -o nc4_test.exe nc4_test.c -I$(NETCDF)/include -L$(NETCDF)/lib -lnetcdf $(NETCDF4_DEP_LIB) ; cd ..
+	@cd tools ; /bin/rm -f nc4_test.{exe,nc,o} ; $(SCC) -o nc4_test.exe nc4_test.c -I$(NETCDF)/include -L$(NETCDF)/lib $(USENETCDF) ; cd ..
 
 # rule used by configure to test if Fortran 2003 IEEE signaling is available
 fortran_2003_ieee_test:
@@ -972,14 +1068,6 @@ fortran_2003_fflush_test:
 fortran_2008_gamma_test:
 	@cd tools ; /bin/rm -f fortran_2008_gamma_test.{exe,o} ; $(SFC) -o fortran_2008_gamma_test.exe fortran_2008_gamma_test.F ; cd ..
 
-### 3.b.  sub-rule to build the experimental core
-
-# uncomment the two lines after exp_core for EXP
-exp_core :
-	@ echo '--------------------------------------'
-	( cd dyn_exp ; $(MAKE) )
-
-# uncomment the two lines after nmm_core for NMM
 nmm_core :
 	@ echo '--------------------------------------'
 	if [ "`echo $(J) | sed -e 's/-j//g' -e 's/ \+//g'`" -gt "16" ] ; then \
@@ -990,7 +1078,11 @@ nmm_core :
 
 toolsdir :
 	@ echo '--------------------------------------'
-	( cd tools ; $(MAKE) CC_TOOLS_CFLAGS="$(CC_TOOLS_CFLAGS)" CC_TOOLS="$(CC_TOOLS) -DIWORDSIZE=$(IWORDSIZE) -DMAX_HISTORY=$(MAX_HISTORY)" )
+	if [ $(WRF_PLUS_CORE) -eq 0 ] ; then \
+	  ( cd tools ; $(MAKE) CC_TOOLS_CFLAGS="$(CC_TOOLS_CFLAGS)" CC_TOOLS="$(CC_TOOLS) -DIWORDSIZE=$(IWORDSIZE) -DMAX_HISTORY=$(MAX_HISTORY)" ) ; \
+	else \
+	  ( cd tools ; $(MAKE) CC_TOOLS_CFLAGS="$(CC_TOOLS_CFLAGS)" CC_TOOLS="$(CC_TOOLS) -DIWORDSIZE=$(IWORDSIZE) -DMAX_HISTORY=$(MAX_HISTORY) -DWRFPLUS=1" ) ; \
+	fi
 
 
 #	( cd tools ; $(MAKE) CC_TOOLS="$(CC_TOOLS) -DIO_MASK_SIZE=$(IO_MASK_SIZE)" )

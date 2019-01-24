@@ -1,5 +1,6 @@
-WRF Model Version 3.9.1.1 (August 28, 2017)
-http://wrf-model.org/users/users.php
+WRF Model Version 4.0.3 (December 18, 2018)
+
+http://www2.mmm.ucar.edu/wrf/users/
 
 ------------------------
 WRF PUBLIC DOMAIN NOTICE
@@ -24,8 +25,27 @@ infringement actions.
 
 
 ======================================
-This is the main directory for the WRF Version 3 source code release.
+This is the main directory for the WRF Version 4 source code release.
 ======================================
+
+Other README files are located in the WRF/doc directory:
+doc/README.DA
+doc/README.NMM
+doc/README.SSIB
+doc/README.WRFPLUS
+doc/README.hybrid_vert_coord
+doc/README.hydro
+doc/README.io_config
+doc/README.irr_diag
+doc/README.rsl_output
+doc/README.windturbine
+doc/README_test_cases
+
+- Beginning with version 4.0, for more information on the releases, visit 
+  the WRF GitHub Release Page:
+  https://github.com/wrf-model/WRF/releases
+
+
 
 V3.9.1.1 Release Notes (8/28/17):
 -------------------
@@ -272,13 +292,14 @@ WRF update history:
 - V3.9: Apr 17, 2017
 - V3.9.1: Aug 17, 2017
 - V3.9.1.1: Aug 28, 2017
+- V4.0: June 8, 2018
 
 ======================================
 
 How to compile and run?
 -----------------------
 
-- In WRFV3 directory, type 'configure' - this will create a configure.wrf
+- In WRF directory, type 'configure' - this will create a configure.wrf
   file that has appropriate compile options for the supported computers.
 
   Note: WRF requires netCDF library. If your netCDF library is installed in
@@ -358,7 +379,7 @@ How to compile and run?
 
 ======================================
 
-What is in WRF V3?
+What is in WRF V4?
 
 - Advanced Research WRF (ARW) solver: Eulerian mass, hydrostatic and non-hydrostatic
   * Arakawa C-grid staggering
@@ -392,7 +413,7 @@ What is in WRF V3?
   * microphysics (Kessler/ WRF Single Moment 3, 5 and 6 classes / Lin et al./ Mibrandt 2-moment /
     Eta Ferrier / Thompson / Goddard / 2-moment Morrison / WRF Double Moment 5 and 6 classes /
     SBU-Lin 5-classes / NSSL 2-moment and 1-moment / CAM 5.1 ) / Thompson aerosol-aware /
-    HUJI full and fast SBM / P3
+    HUJI full and fast SBM / P3 / 2-moment Morrison with CESM aerosol
   * cumulus parameterization (Kain-Fritsch with shallow convection / 
     Betts-Miller-Janjic / Grell-Devenyi ensemble / Grell 3D (with shallow convection option) /
     Grell-Freitas ensemble /

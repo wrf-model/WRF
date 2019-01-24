@@ -2428,7 +2428,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                    ims, ime, jms, jme, kms, kme,           &
                                    its, ite, jts, jte, kts, kte           )
 
-    IF (km_opt .eq. 2)                                                     &
+    IF ( (km_opt .eq. 2) .and. (.not.config_flags%tke_mix2_off) )          &
     CALL horizontal_diffusion_s  ( tke_tendf(ims,kms,jms),                 &
                                    config_flags,                           &
                                    tke(ims,kms,jms),                       &
@@ -2441,7 +2441,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                    ims, ime, jms, jme, kms, kme,           &
                                    its, ite, jts, jte, kts, kte           )
 
-    IF (n_moist .ge. PARAM_FIRST_SCALAR) THEN
+    IF ((n_moist .ge. PARAM_FIRST_SCALAR) .and. (.not.config_flags%moist_mix2_off)) THEN
 
       moist_loop: do im = PARAM_FIRST_SCALAR, n_moist
 
@@ -2461,7 +2461,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
 
     ENDIF
 
-    IF (n_chem .ge. PARAM_FIRST_SCALAR) THEN
+    IF ((n_chem .ge. PARAM_FIRST_SCALAR) .and. (.not.config_flags%chem_mix2_off)) THEN
 
       chem_loop: do ic = PARAM_FIRST_SCALAR, n_chem
 
@@ -2481,7 +2481,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
 
     ENDIF
 
-    IF (n_tracer .ge. PARAM_FIRST_SCALAR) THEN
+    IF ((n_tracer .ge. PARAM_FIRST_SCALAR) .and. (.not.config_flags%tracer_mix2_off)) THEN
 
       tracer_loop: do ic = PARAM_FIRST_SCALAR, n_tracer
 
@@ -2500,7 +2500,7 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
       ENDDO tracer_loop
 
     ENDIF
-    IF (n_scalar .ge. PARAM_FIRST_SCALAR) THEN
+    IF ((n_scalar .ge. PARAM_FIRST_SCALAR) .and. (.not.config_flags%scalar_mix2_off)) THEN
 
       scalar_loop: do is = PARAM_FIRST_SCALAR, n_scalar
 
@@ -3418,6 +3418,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                                     tracer_tendf, n_tracer,                   &
                                     u_2, v_2,                                 &
                                     thp,u_base,v_base,t_base,qv_base,tke,     &
+                                    theta,                                    &
                                     config_flags,defor13,defor23,defor33,     &
                                     nba_mij, n_nba_mij,                       &
                                     div,                                      &
@@ -3488,6 +3489,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                                                                     xkhv, &
                                                                     xkmh, &
                                                                      tke, &
+                                                                   theta, &
                                                                      rdz, &
                                                                      u_2, &
                                                                      v_2, &
@@ -3701,6 +3703,10 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
        hfx(i,j)=heat_flux*cpm*rho(i,kts,j)         ! provided for output only
        rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
              -g*heat_flux*rho(i,kts,j)/dnw(kts)
+       if(config_flags%use_theta_m == 1)THEN
+         rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
+             -g*1.61*theta(i,kts,j)*qfx(i,j)/dnw(kts)
+       ENDIF
     ENDDO
     ENDDO
 
@@ -3712,6 +3718,10 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
        heat_flux = hfx(i,j)/cpm
        rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
             -g*heat_flux/dnw(kts)
+       if(config_flags%use_theta_m == 1)THEN
+         rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
+             -g*1.61*theta(i,kts,j)*qfx(i,j)/dnw(kts)
+       ENDIF
 
     ENDDO
     ENDDO

@@ -4,7 +4,7 @@ CC_TOOLS = $(CC)
 CFLAGS = $(CC_TOOLS_CFLAGS) #-ansi
 LDFLAGS =
 DEBUG = -g3 -ggdb3 -Og -fvar-tracking -fvar-tracking-assignments -gcolumn-info -fbounds-check -fstack-protector-all -fstack-protector-strong -fstack-check
-DEBUG = -Os -g
+DEBUG = -Os -g -fuse-linker-plugin -flto=3
 WARNING = -Wall -Wextra -Werror
 GCC_WARNING = -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter -Wformat=2 -Wformat-truncation=2 -Wformat-overflow=2 -Wno-format-security -Wno-format-nonliteral -Wno-sign-compare
 OBJ = registry.o my_strtok.o reg_parse.o data.o type.o misc.o \
@@ -12,6 +12,7 @@ OBJ = registry.o my_strtok.o reg_parse.o data.o type.o misc.o \
       gen_args.o gen_config.o sym.o symtab_gen.o gen_irr_diag.o \
       gen_model_data_ord.o gen_interp.o gen_comms.o gen_scalar_derefs.o set_dim_strs.o gen_wrf_io.o\
       gen_streams.o
+DEBUG += $(WARNING) $(GCC_WARNING)
 
 registry : $(OBJ) standard.exe
 	$(CC_TOOLS) -o registry $(DEBUG) $(LDFLAGS) $(OBJ)

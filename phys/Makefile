@@ -81,6 +81,7 @@ MODULES = \
 	module_mp_wsm3.o \
 	module_mp_wsm5.o \
 	module_mp_wsm6.o \
+	module_mp_wsm7.o \
 	module_mp_etanew.o \
 	module_mp_fer_hires.o \
 	module_mp_HWRF.o \

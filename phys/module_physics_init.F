@@ -837,10 +837,11 @@ CONTAINS
          .or. config_flags%mp_physics  .eq. NSSL_2MOM .or.       &
          config_flags%mp_physics  .eq. NSSL_2MOMG .or.      &
          config_flags%mp_physics  .eq. NSSL_2MOMCCN .or.        &
-         config_flags%mp_physics  .eq. WSM3SCHEME .or.      & ! syb+
-         config_flags%mp_physics  .eq. WSM5SCHEME .or.      & ! syb+
-         config_flags%mp_physics  .eq. WSM6SCHEME .or.      & ! syb+
-         config_flags%mp_physics  .eq. WDM5SCHEME .or.      & ! syb+
+         config_flags%mp_physics  .eq. WSM3SCHEME .or.      &
+         config_flags%mp_physics  .eq. WSM5SCHEME .or.      &
+         config_flags%mp_physics  .eq. WSM6SCHEME .or.      &
+         config_flags%mp_physics  .eq. WSM7SCHEME .or.      &
+         config_flags%mp_physics  .eq. WDM5SCHEME .or.      &
          config_flags%mp_physics  .eq. WDM6SCHEME .or.      &
          config_flags%mp_physics  .eq. P3_1CATEGORY .or.    &
          config_flags%mp_physics  .eq. P3_1CATEGORY_NC .or. &
@@ -3867,6 +3868,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_mp_wsm3
    USE module_mp_wsm5
    USE module_mp_wsm6
+   USE module_mp_wsm7
    USE module_mp_etanew
    USE module_mp_fer_hires
 #if (NMM_CORE == 1)
@@ -3982,6 +3984,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
           CALL wsm5init(rhoair0,rhowater,rhosnow,cliq,cpv, allowed_to_read )
      CASE (WSM6SCHEME)
           CALL wsm6init(rhoair0,rhowater,rhosnow,cliq,cpv, config_flags%hail_opt,allowed_to_read )
+     CASE (WSM7SCHEME)
+          CALL wsm7init(rhoair0,rhowater,rhosnow,cliq,cpv, allowed_to_read )
      CASE (ETAMPNEW)
          adv_moist_cond = .false.
          CALL etanewinit (MPDT,DT,DX,DY,LOWLYR,restart,           &

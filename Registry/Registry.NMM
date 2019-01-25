@@ -1739,6 +1739,7 @@ package   nssl_2momccn  mp_physics==18                -            moist:qv,qc,q
 package   nssl_1mom     mp_physics==19               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qvolg
 package   nssl_1momlfo  mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
 package   nssl_2momg    mp_physics==22                -            moist:qv,qc,qr,qi,qs,qg;scalar:qndrop,qnr,qni,qns,qng,qvolg;state:re_cloud,re_ice,re_snow
+package   wsm7scheme    mp_physics==24               -             moist:qv,qc,qr,qi,qs,qg,qh;state:re_cloud,re_ice,re_snow
 package   nuwrf3icescheme mp_physics==27             -             moist:qv,qc,qr,qi,qs,qg
 package   p3_1category    mp_physics==50               -             moist:qv
 package   p3_1category_nc mp_physics==51               -             moist:qv
@@ -1763,6 +1764,7 @@ package   morr_two_moment_dfi  mp_physics_dfi==10    -             dfi_moist:dfi
 package   sbu_ylinscheme_dfi    mp_physics==13           -         dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs
 package   wdm5scheme_dfi    mp_physics_dfi==14       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   wdm6scheme_dfi    mp_physics_dfi==16       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
+package   wsm7scheme_dfi    mp_physics_dfi==24       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   nuwrf3icescheme_dfi mp_physics_dfi==27     -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
 package   thompsonaero_dfi  mp_physics_dfi==28       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qnc,dfi_qnwfa,dfi_qnifa;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   etampnew_dfi      mp_physics_dfi==95       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs

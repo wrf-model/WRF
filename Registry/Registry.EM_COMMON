@@ -345,7 +345,7 @@ state    real   alb            ikj     dyn_em      1         -      irdus     "a
 state    real   zx             ikj     dyn_em      1         XZ     -         " "  " "  " "    
 state    real   zy             ikj     dyn_em      1         YZ     -         " "  " "  " "   
 state    real   rdz            ikj     dyn_em      1         Z      -         " "  " "  " "   
-state    real   rdzw           ikj     dyn_em      1         Z       -        " "  " "  " "   
+state    real   rdzw           ikj     dyn_em      1         Z      -         " "  " "  " "   
 state    real   pb             ikj     dyn_em      1         -      irhdus    "pb"          "BASE STATE PRESSURE "          "Pa"
 
 #                                               

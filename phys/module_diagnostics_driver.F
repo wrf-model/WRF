@@ -295,16 +295,16 @@ CONTAINS
                !  Input model diagnostic vraiables 
                ,rho=grid%rho                                        &
                ,dz8w=dz8w                                           &
-               !  Terrestrial data                
-               ,ht=grid%ht                                          &
-               !  Namelist info
-               ,use_theta_m=config_flags%use_theta_m                &
                ,qc=moist(:,:,:,P_QC)                                &
                ,rainc=grid%rainc                                    &
                ,rainnc=grid%rainnc                                  &
                ,snownc=grid%snownc                                  &
                ,graupelnc=grid%graupelnc                            &
                ,hailnc=grid%hailnc                                  & 
+               !  Terrestrial data                
+               ,ht=grid%ht                                          &
+               !  Namelist info
+               ,use_theta_m=config_flags%use_theta_m                &
                !  The diagnostic output variables
                ,sealevelp=grid%sealevelp                            &
                ,temperature=grid%temperature                        &

@@ -1412,7 +1412,7 @@ RLFLAGS		=
 CC_TOOLS        =      $(SCC) 
 
 ###########################################################
-#ARCH    Cygwin i686 x86_64, gfortran compiler with gcc  #serial smpar dmpar dm+sm
+#ARCH    CYGWIN_NT i686 x86_64, gfortran compiler with gcc  #serial smpar dmpar dm+sm
 #
 DESCRIPTION     =       GNU ($SFC/$SCC)
 DMPARALLEL      =       # 1

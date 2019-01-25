@@ -276,7 +276,8 @@ solve_em.o:     module_small_step_em.o \
 		../share/module_bc.o \
 		../phys/module_microphysics_driver.o \
 		../phys/module_microphysics_zero_out.o \
-		../phys/module_physics_addtendc.o
+		../phys/module_physics_addtendc.o \
+		../phys/module_checkerror.o
 
 module_convtrans_prep.o : 
 

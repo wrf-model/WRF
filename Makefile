@@ -147,7 +147,7 @@ all_wrfvar :
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" ext
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir
 	if [ $(CRTM) -ne 0 ] ; then \
-	  (cd var/external/crtm_2.2.3; $(MAKE) $(J)) ; \
+	  (cd var/external/crtm_2.3.0; $(MAKE) $(J)) ; \
 	fi
 	if [ $(BUFR) ] ; then \
 	  (cd var/external/bufr;  \
@@ -556,8 +556,9 @@ em_real : wrf
                ln -sf ../../run/aerosol_lon.formatted . ;              \
                ln -sf ../../run/aerosol_plev.formatted . ;             \
                ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
-               ln -sf ../../run/p3_lookup_table_1.dat-v2.8.2 . ;              \
-               ln -sf ../../run/p3_lookup_table_2.dat-v2.8.2 . ;              \
+               ln -sf ../../run/p3_lookup_table_1.dat-v2.8.2 . ;       \
+               ln -sf ../../run/p3_lookup_table_2.dat-v2.8.2 . ;       \
+               ln -sf ../../run/BROADBAND_CLOUD_GODDARD.bin . ;        \
                if [ $(RWORDSIZE) -eq 8 ] ; then                        \
                   ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;   \
                   ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
@@ -623,6 +624,7 @@ em_real : wrf
              ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
              ln -sf ../../run/p3_lookup_table_1.dat-v2.8.2 . ;                   \
              ln -sf ../../run/p3_lookup_table_2.dat-v2.8.2 . ;                   \
+             ln -sf ../../run/BROADBAND_CLOUD_GODDARD.bin . ;        \
              if [ $(RWORDSIZE) -eq 8 ] ; then                       \
                 ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
                 ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \

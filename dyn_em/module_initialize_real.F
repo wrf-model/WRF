@@ -165,6 +165,7 @@ integer::oops1,oops2
       LOGICAL :: vnest !T if using vertical nesting with vet_refine_method=2, otherwise F
 
       INTEGER :: j_save
+      INTEGER :: change_soil, change_soilw, iforce
 
       LOGICAL :: wif_upside_down = .FALSE.
       
@@ -2891,8 +2892,9 @@ integer::oops1,oops2
                                   grid%landmask , grid%sst , grid%ht, grid%toposoil, &
                                   st_input , sm_input , sw_input , &
                                   st_levels_input , sm_levels_input , sw_levels_input , &
-                                  grid%zs , grid%dzs , grid%tslb , grid%smois , grid%sh2o , &
-                                  flag_sst , flag_tavgsfc, flag_soilhgt,&
+                                  grid%zs , grid%dzs , model_config_rec%flag_sm_adj , &
+                                  grid%tslb , grid%smois , grid%sh2o , &
+                                  flag_sst , flag_tavgsfc, flag_soilhgt, &
                                   flag_soil_layers, flag_soil_levels, &
                                   ids , ide , jds , jde , kds , kde , &
                                   ims , ime , jms , jme , kms , kme , &
@@ -2992,6 +2994,32 @@ integer::oops1,oops2
             WRITE ( a_message , * ) 'You have set surface_input_source = 3,'//&
                                     ' but your geogrid data does not have valid dominant land use data.'
             CALL wrf_error_fatal ( a_message )
+         END IF
+
+         !  Need to match isltyp to landmask
+
+         iforce = 0
+         change_soil = 0
+         change_soilw = 0
+         DO j = jts, MIN(jde-1,jte)
+            DO i = its, MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
+               IF ( grid%landmask(i,j) .GT. 0.5 .AND. grid%isltyp(i,j) .EQ. grid%isoilwater ) THEN
+                  grid%isltyp(i,j) = 8
+                  change_soilw =  change_soilw + 1
+                  iforce =  iforce + 1
+               ELSE IF ( grid%landmask(i,j) .LT. 0.5 .AND. grid%isltyp(i,j) .NE. grid%isoilwater ) THEN
+                  grid%isltyp(i,j) = grid%isoilwater
+                  change_soil =  change_soil + 1
+                  iforce =  iforce + 1
+               END IF
+            END DO
+         END DO
+         IF ( change_soilw .GT. 0 .OR. change_soil .GT. 0 ) THEN
+            WRITE(a_message,FMT='(A,I4,A,I6)' ) &
+                  'forcing artificial silty clay loam at ',iforce,' points, out of ',&
+                  (MIN(ide-1,ite)-its+1)*(MIN(jde-1,jte)-jts+1)
+                  CALL wrf_debug(0,a_message)
          END IF
 
       END IF

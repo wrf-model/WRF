@@ -179,7 +179,7 @@ Contains
     integer, dimension(ix,jx) :: vegtyp_inv, soiltyp_inv,xdum_int
     integer flag ! flag = 1 from wrfsi, flag =2 from WPS.
     CHARACTER(len=256)       :: var_name
-
+    integer :: istmp, iswater, isoilwater, isother
 
     ! Open the NetCDF file.
     ierr = nf_open(geo_static_flnm, NF_NOWRITE, ncid)
@@ -256,7 +256,15 @@ Contains
 
     endif
 
-
+! Default values based on USGS
+iswater = 16
+isoilwater = 14
+isother = 28 ! what is this??
+  
+ierr = NF_GET_ATT_INT(ncid, NF_GLOBAL, 'ISWATER', istmp)
+if (ierr .eq. NF_NOERR) iswater = istmp
+ierr = NF_GET_ATT_INT(ncid, NF_GLOBAL, 'ISOILWATER', istmp)
+if (ierr .eq. NF_NOERR) isoilwater = istmp
 
     ! Close the NetCDF file
     ierr = nf_close(ncid)
@@ -265,12 +273,14 @@ Contains
        call hydro_stop("In readland_hrldas() - NF_CLOSE problem")
     endif
 
+ write(6, *) "readland_hrldas: ISWATER ISOILWATER", iswater, isoilwater
+
     ! Make sure vegtyp and soltyp are consistent when it comes to water points,
     ! by setting soil category to water when vegetation category is water, and
     ! vice-versa.
-    where (vegtyp == 28) vegtyp = 16
-    where (vegtyp == 16) soltyp = 14
-    where (soltyp == 14) vegtyp = 16
+    where (vegtyp == isother) vegtyp = iswater
+    where (vegtyp == iswater) soltyp = isoilwater
+    where (soltyp == isoilwater) vegtyp = iswater
 
 !DJG test for deep gw function...
 !    where (soltyp <> 14) soltyp = 1
@@ -2230,485 +2240,485 @@ Contains
   end subroutine geth_newdate
 
 
- subroutine read_hydro_forcing_mpp1( &
-       indir,olddate,hgrid, &
-       ix,jx,forc_typ,snow_assim,  & 
-       T2,q2x,u,v,pres,xlong,short,prcp1,&
-       lai,fpar,snodep,dt,k,prcp_old)
+subroutine read_hydro_forcing_mpp1( &
+     indir,olddate,hgrid, &
+     ix,jx,forc_typ,snow_assim,  & 
+     T2,q2x,u,v,pres,xlong,short,prcp1,&
+     lai,fpar,snodep,dt,k,prcp_old)
 ! This subrouting is going to read different forcing.
-   implicit none
-   ! in variable
-   character(len=*) :: olddate,hgrid,indir
-   character(len=256) :: filename
-   integer :: ix,jx,forc_typ,k,snow_assim  ! k is time loop
-   real,dimension(ix,jx):: T2,q2x,u,v,pres,xlong,short,prcp1,&
-          prcpnew,weasd,snodep,prcp0,prcp2,prcp_old
-   real ::  dt, wrf_dt
-   ! tmp variable
-   character(len=256) :: inflnm, inflnm2, product
-   integer  :: i,j,mmflag,ierr_flg
-   real,dimension(ix,jx):: lai,fpar
-   character(len=4) nwxst_t
-   logical :: fexist
+implicit none
+! in variable
+character(len=*) :: olddate,hgrid,indir
+character(len=256) :: filename
+integer :: ix,jx,forc_typ,k,snow_assim  ! k is time loop
+real,dimension(ix,jx):: T2,q2x,u,v,pres,xlong,short,prcp1,&
+     prcpnew,weasd,snodep,prcp0,prcp2,prcp_old
+real ::  dt, wrf_dt
+! tmp variable
+character(len=256) :: inflnm, inflnm2, product
+integer  :: i,j,mmflag,ierr_flg
+real,dimension(ix,jx):: lai,fpar
+character(len=4) nwxst_t
+logical :: fexist
 
-        inflnm = trim(indir)//"/"//&
-             olddate(1:4)//olddate(6:7)//olddate(9:10)//olddate(12:13)//&
-             ".LDASIN_DOMAIN"//hgrid
+inflnm = trim(indir)//"/"//&
+         olddate(1:4)//olddate(6:7)//olddate(9:10)//olddate(12:13)//&
+         ".LDASIN_DOMAIN"//hgrid
 
 !!!DJG... Call READFORC_(variable) Subroutine for forcing data...
 !!!DJG HRLDAS Format Forcing with hour format filename (NOTE: precip must be in mm/s!!!)
-   if(FORC_TYP.eq.1) then
-!!Create forcing data filename...
-        call geth_newdate(out_date,olddate,nint(dt))
-        inflnm = trim(indir)//"/"//&
-             out_date(1:4)//out_date(6:7)//out_date(9:10)//out_date(12:13)//&
-             ".LDASIN_DOMAIN"//hgrid
 
-        inquire (file=trim(inflnm), exist=fexist)
 
+!!! FORC_TYPE 1 ============================================================================
+if(FORC_TYP.eq.1) then
+   !!Create forcing data filename...
+   call geth_newdate(out_date,olddate,nint(dt))
+   inflnm = trim(indir)//"/"//&
+        out_date(1:4)//out_date(6:7)//out_date(9:10)//out_date(12:13)//&
+        ".LDASIN_DOMAIN"//hgrid
+   
+   inquire (file=trim(inflnm), exist=fexist)
+   
 #ifdef MPP_LAND
-        call mpp_land_bcast_logical(fexist)
+   call mpp_land_bcast_logical(fexist)
 #endif
-        if ( .not. fexist ) then
-           print*, "no forcing data found", inflnm
-           call hydro_stop("In read_hydro_forcing_mpp1() - no forcing data found")
-        endif
+   if ( .not. fexist ) then
+      print*, "no forcing data found", inflnm
+      call hydro_stop("In read_hydro_forcing_mpp1() - no forcing data found")
+   endif
 
 #ifdef HYDRO_D
-          print*, "read forcing data at ", OLDDATE,  trim(inflnm)
+   print*, "read forcing data at ", OLDDATE,  trim(inflnm)
 #endif
-      CALL READFORC_HRLDAS_mpp(inflnm,IX,JX,OLDDATE,T2,Q2X,U,V,   &
-          PRES,XLONG,SHORT,PRCP1,LAI,FPAR)
-
-       where(PRCP1 .lt. 0) PRCP1= 0  ! set minimum to be 0
-       where(PRCP1 .gt. 0.138889) PRCP1= 0.138889 ! set maximum to be 500 mm/h
-
-   end if
-
-
+   call READFORC_HRLDAS_mpp(inflnm,IX,JX,OLDDATE,T2,Q2X,U,V,   &
+        PRES,XLONG,SHORT,PRCP1,LAI,FPAR)
+   
+   where(PRCP1 .lt. 0) PRCP1= 0  ! set minimum to be 0
+   where(PRCP1 .gt. 0.138889) PRCP1= 0.138889 ! set maximum to be 500 mm/h
+   
+end if
 
 
+!!! FORC_TYPE 2 ============================================================================
 !!!DJG HRLDAS Forcing with minute format filename (NOTE: precip must be in mm/s!!!)
-   if(FORC_TYP.eq.2) then
+if(FORC_TYP.eq.2) then
+
 !!Create forcing data filename...
-        call geth_newdate(out_date,olddate,nint(dt))
-        inflnm = trim(indir)//"/"//&
-             out_date(1:4)//out_date(6:7)//out_date(9:10)//out_date(12:13)//&
-             out_date(15:16)//".LDASIN_DOMAIN"//hgrid
-        inquire (file=trim(inflnm), exist=fexist)
+   call geth_newdate(out_date,olddate,nint(dt))
+   inflnm = trim(indir)//"/"//&
+        out_date(1:4)//out_date(6:7)//out_date(9:10)//out_date(12:13)//&
+        out_date(15:16)//".LDASIN_DOMAIN"//hgrid
+   inquire (file=trim(inflnm), exist=fexist)
 #ifdef MPP_LAND
-        call mpp_land_bcast_logical(fexist)
+   call mpp_land_bcast_logical(fexist)
 #endif
-        if ( .not. fexist ) then
-           print*, "no forcing data found", inflnm
-           call hydro_stop("In read_hydro_forcing_mpp1() - no forcing data found")
-        endif
-      CALL READFORC_HRLDAS_mpp(inflnm,IX,JX,OLDDATE,T2,Q2X,U,V,   &
-          PRES,XLONG,SHORT,PRCP1,LAI,FPAR)
+   if ( .not. fexist ) then
+      print*, "no forcing data found", inflnm
+      call hydro_stop("In read_hydro_forcing_mpp1() - no forcing data found")
+   endif
+   call READFORC_HRLDAS_mpp(inflnm,IX,JX,OLDDATE,T2,Q2X,U,V,   &
+        PRES,XLONG,SHORT,PRCP1,LAI,FPAR)
+   
+   where(PRCP1 .lt. 0) PRCP1= 0  ! set minimum to be 0
+   where(PRCP1 .gt. 0.138889) PRCP1= 0.138889 ! set maximum to be 500 mm/h
 
-       where(PRCP1 .lt. 0) PRCP1= 0  ! set minimum to be 0
-       where(PRCP1 .gt. 0.138889) PRCP1= 0.138889 ! set maximum to be 500 mm/h
-   end if
-
-
-
+end if
 
 
+!!! FORC_TYPE 3 ============================================================================
 !!!DJG WRF Output File Direct Ingest Forcing...
-     if(FORC_TYP.eq.3) then
-!!Create forcing data filename...
-        inflnm = trim(indir)//"/"//&
-             "wrfout_d0"//hgrid//"_"//&
-             olddate(1:4)//"-"//olddate(6:7)//"-"//olddate(9:10)//&
-             "_"//olddate(12:13)//":00:00"
-
-        inquire (file=trim(inflnm), exist=fexist)
+if(FORC_TYP.eq.3) then
+   !!Create forcing data filename...
+   inflnm = trim(indir)//"/"//&
+        "wrfout_d0"//hgrid//"_"//&
+        olddate(1:4)//"-"//olddate(6:7)//"-"//olddate(9:10)//&
+        "_"//olddate(12:13)//":00:00"
+   
+   inquire (file=trim(inflnm), exist=fexist)
 #ifdef MPP_LAND
-        call mpp_land_bcast_logical(fexist)
+   call mpp_land_bcast_logical(fexist)
 #endif
-        if ( .not. fexist ) then
-           print*, "no forcing data found", inflnm
-           call hydro_stop("read_hydro_forcing_seq")
-        endif
-
-        do i_forcing = 1, int(24*3600/dt)
-           wrf_dt = i_forcing*dt
-           call geth_newdate(out_date,olddate,nint(wrf_dt))
-           inflnm2 = trim(indir)//"/"//&
-             "wrfout_d0"//hgrid//"_"//&
-             out_date(1:4)//"-"//out_date(6:7)//"-"//out_date(9:10)//&
-             "_"//out_date(12:13)//":00:00"
-           inquire (file=trim(inflnm2), exist=fexist)
+   if ( .not. fexist ) then
+      print*, "no forcing data found", inflnm
+      call hydro_stop("read_hydro_forcing_seq")
+   endif
+   
+   do i_forcing = 1, int(24*3600/dt)
+      wrf_dt = i_forcing*dt
+      call geth_newdate(out_date,olddate,nint(wrf_dt))
+      inflnm2 = trim(indir)//"/"//&
+           "wrfout_d0"//hgrid//"_"//&
+           out_date(1:4)//"-"//out_date(6:7)//"-"//out_date(9:10)//&
+           "_"//out_date(12:13)//":00:00"
+      inquire (file=trim(inflnm2), exist=fexist)
 #ifdef MPP_LAND
-        call mpp_land_bcast_logical(fexist)
+      call mpp_land_bcast_logical(fexist)
 #endif
-           if (fexist ) goto 991
-        end do
-991     continue
-
-        if(.not. fexist) then
-           write(6,*) "Error: could not find file ",trim(inflnm2)
-           call hydro_stop("In read_hydro_forcing_mpp1() - could not find WRF forcing file")
-        endif
+      if (fexist ) goto 991
+   end do
+991 continue
+   
+   if(.not. fexist) then
+      write(6,*) "Error: could not find file ",trim(inflnm2)
+      call hydro_stop("In read_hydro_forcing_mpp1() - could not find WRF forcing file")
+   endif
 #ifdef HYDRO_D
-           print*, "read WRF forcing data: ", trim(inflnm)
-           print*, "read WRF forcing data: ", trim(inflnm2)
+   print*, "read WRF forcing data: ", trim(inflnm)
+   print*, "read WRF forcing data: ", trim(inflnm2)
 #endif
+   
+   
+   call READFORC_WRF_mpp(inflnm2,IX,JX,OLDDATE,T2,Q2X,U,V,   &
+        PRES,XLONG,SHORT,PRCPnew,lai,fpar)
+   call READFORC_WRF_mpp(inflnm,IX,JX,OLDDATE,T2,Q2X,U,V,   &
+        PRES,XLONG,SHORT,prcp0,lai,fpar)
+   PRCP1=(PRCPnew-prcp0)/wrf_dt   !Adjustment to convert accum to rate...(mm/s)
+   
+end if
 
 
-       CALL READFORC_WRF_mpp(inflnm2,IX,JX,OLDDATE,T2,Q2X,U,V,   &
-          PRES,XLONG,SHORT,PRCPnew,lai,fpar)
-       CALL READFORC_WRF_mpp(inflnm,IX,JX,OLDDATE,T2,Q2X,U,V,   &
-          PRES,XLONG,SHORT,prcp0,lai,fpar)
-        PRCP1=(PRCPnew-prcp0)/wrf_dt   !Adjustment to convert accum to rate...(mm/s)
-
-     end if
-
-
-
-
-
+!!! FORC_TYPE4 ============================================================================
 !!!DJG CONSTant, idealized forcing...
-     if(FORC_TYP.eq.4) then
-! Impose a fixed diurnal cycle...
-! assumes model timestep is 1 hr
-! assumes K=1 is 12z (Ks or ~ sunrise)
-! First Precip...
-!       IF (K.GE.1 .and. K.LE.2) THEN
-       IF (K.EQ.1) THEN
-        PRCP1 =25.4/3600.0      !units mm/s  (Simulates 1"/hr for first time step...)
-       ELSEIF (K.GT.1) THEN
-         PRCP1 = 0.
-       END IF
-! Other Met. Vars...
-       T2=290.0 + 3.0*(cos((2*3.1416*K/24.0)-12.0*2*3.1416/24.0))
-       Q2X = 0.01
-       U = 1.0
-       V = 1.0
-       PRES = 100000.0
-       XLONG=400.0 + 25.0*(cos((2*3.1416*K/24.0)-12.0*2*3.1416/24.0))
-       SHORT=450.0 + 450.0*(cos((2*3.1416*K/24.0)-12.0*2*3.1416/24.0))
-    end if
+if(FORC_TYP.eq.4) then
+   ! Impose a fixed diurnal cycle...
+   ! assumes model timestep is 1 hr
+   ! assumes K=1 is 12z (Ks or ~ sunrise)
+   ! First Precip...
+   !       IF (K.GE.1 .and. K.LE.2) THEN
+   if (K.eq.1) then
+      PRCP1 =25.4/3600.0      !units mm/s  (Simulates 1"/hr for first time step...)
+   elseif (K.gt.1) then
+      PRCP1 = 0.
+   end if
+   ! Other Met. Vars...
+   T2=290.0 + 3.0*(cos((2*3.1416*K/24.0)-12.0*2*3.1416/24.0))
+   Q2X = 0.01
+   U = 1.0
+   V = 1.0
+   PRES = 100000.0
+   XLONG=400.0 + 25.0*(cos((2*3.1416*K/24.0)-12.0*2*3.1416/24.0))
+   SHORT=450.0 + 450.0*(cos((2*3.1416*K/24.0)-12.0*2*3.1416/24.0))
+end if
 
 
-
-
-
+!!! FORC_TYPE 5 ============================================================================
 !!!DJG  Idealized Met. w/ Specified Precip. Forcing Data...(Note: input precip units here are in 'mm/hr')
 !   This option uses hard-wired met forcing EXCEPT precipitation which is read in
 !   from a single, separate input file called 'YYYYMMDDHHMM.PRECIP_FORCING.nc'
 !
-    if(FORC_TYP.eq.5) then
-! Standard Met. Vars...
-       T2=290.0 + 3.0*(cos((2*3.1416*K/24.0)-12.0*2*3.1416/24.0))
-       Q2X = 0.01
-       U = 1.0
-       V = 1.0
-       PRES = 100000.0
-       XLONG=400.0 + 25.0*(cos((2*3.1416*K/24.0)-12.0*2*3.1416/24.0))
-       SHORT=450.0 + 450.0*(cos((2*3.1416*K/24.0)-12.0*2*3.1416/24.0))
-
-!Get specified precip....
+if(FORC_TYP.eq.5) then
+   ! Standard Met. Vars...
+   T2=290.0 + 3.0*(cos((2*3.1416*K/24.0)-12.0*2*3.1416/24.0))
+   Q2X = 0.01
+   U = 1.0
+   V = 1.0
+   PRES = 100000.0
+   XLONG=400.0 + 25.0*(cos((2*3.1416*K/24.0)-12.0*2*3.1416/24.0))
+   SHORT=450.0 + 450.0*(cos((2*3.1416*K/24.0)-12.0*2*3.1416/24.0))
+   
+   !Get specified precip....
 !!!VIP, dimensions of grid are currently hardwired in input subroutine!!!
-!       product = "trmm"
-!       inflnm = trim(indir)//"/"//"sat_domain1.nc"
-!!Create forcing data filename...
-        inflnm = trim(indir)//"/"//&
-                olddate(1:4)//olddate(6:7)//olddate(9:10)//olddate(12:13)//&
-                olddate(15:16)//".PRECIP_FORCING.nc"
-        inquire (file=trim(inflnm), exist=fexist)
+   !       product = "trmm"
+   !       inflnm = trim(indir)//"/"//"sat_domain1.nc"
+   !!Create forcing data filename...
+   inflnm = trim(indir)//"/"//&
+        olddate(1:4)//olddate(6:7)//olddate(9:10)//olddate(12:13)//&
+        olddate(15:16)//".PRECIP_FORCING.nc"
+   inquire (file=trim(inflnm), exist=fexist)
 #ifdef MPP_LAND
-        call mpp_land_bcast_logical(fexist)
+   call mpp_land_bcast_logical(fexist)
 #endif
-        if ( .not. fexist ) then
-           print*, "no specified precipitation data found", inflnm
-           call hydro_stop("In read_hydro_forcing_mpp1() - no specified precipitation data found")
-        endif
-
-       PRCP1 = 0.
-       PRCP_old = PRCP1
-
+   if ( .not. fexist ) then
+      print*, "no specified precipitation data found", inflnm
+      call hydro_stop("In read_hydro_forcing_mpp1() - no specified precipitation data found")
+   endif
+   
+   PRCP1 = 0.
+   PRCP_old = PRCP1
+   
 #ifdef HYDRO_D
-      print *, "Opening supplemental precipitation forcing file...",inflnm
+   print *, "Opening supplemental precipitation forcing file...",inflnm
 #endif
-       CALL READFORC_MDV_mpp(inflnm,IX,JX,   &
-          PRCP2,mmflag,ierr_flg)
-
-!If radar or spec. data is ok use if not, skip to original NARR data...
-      IF (ierr_flg.eq.0) then   ! use spec. precip
-!Convert units if necessary
-        IF (mmflag.eq.0) then    !Convert pcp grid to units of mm/s...
-           PRCP1=PRCP2/DT     !convert from mm to mm/s
+   call READFORC_MDV_mpp(inflnm,IX,JX,   &
+        PRCP2,mmflag,ierr_flg)
+   
+   !If radar or spec. data is ok use if not, skip to original NARR data...
+   if (ierr_flg.eq.0) then   ! use spec. precip
+      !Convert units if necessary
+      if (mmflag.eq.0) then    !Convert pcp grid to units of mm/s...
+         PRCP1=PRCP2/DT     !convert from mm to mm/s
 #ifdef HYDRO_D
-           print*, "Supplemental pcp is accumulated pcp/dt. "  
+         print*, "Supplemental pcp is accumulated pcp/dt. "  
 #endif
-        else
-           PRCP1=PRCP2   !assumes PRCP2 is in mm/s 
+      else
+         PRCP1=PRCP2   !assumes PRCP2 is in mm/s 
 #ifdef HYDRO_D
-           print*, "Supplemental pcp is rate. "  
+         print*, "Supplemental pcp is rate. "  
 #endif
-        END IF  ! Endif mmflag
-      ELSE   ! either stop or default to original forcing data...
+      end if  ! Endif mmflag
+   else   ! either stop or default to original forcing data...
 #ifdef HYDRO_D
-        print *,"Current RADAR precip data not found !!! Using previous available file..."
+      print *,"Current RADAR precip data not found !!! Using previous available file..."
 #endif
-        PRCP1 = PRCP_old
-      END IF  ! Endif ierr_flg
-
-! Loop through data to screen for plausible values
-       do i=1,ix
-         do j=1,jx
-           if (PRCP1(i,j).lt.0.) PRCP1(i,j)= PRCP_old(i,j)
-           if (PRCP1(i,j).gt.0.138889) PRCP1(i,j)=0.138889  !set max pcp intens = 500 mm/h
-         end do
-       end do
-
-    end if
-
-
+      PRCP1 = PRCP_old
+   end if  ! Endif ierr_flg
+   
+   ! Loop through data to screen for plausible values
+   do i=1,ix
+      do j=1,jx
+         if (PRCP1(i,j).lt.0.) PRCP1(i,j)= PRCP_old(i,j)
+         if (PRCP1(i,j).gt.0.138889) PRCP1(i,j)=0.138889  !set max pcp intens = 500 mm/h
+      end do
+   end do
+   
+end if
 
 
-
+!!! FORC_TYPE 6 ============================================================================
 !!!DJG HRLDAS Forcing with hourly format filename with specified precipitation forcing...
 !   This option uses HRLDAS-formatted met forcing EXCEPT precipitation which is read in
 !   from a single, separate input file called 'YYYYMMDDHHMM.PRECIP_FORCING.nc'
 
-   if(FORC_TYP.eq.6) then
-
-!!Create forcing data filename...
-
+if(FORC_TYP.eq.6) then
+   
+   !!Create forcing data filename...
+   
 #ifdef MPP_LAND
    if(my_id .eq. io_id) then
 #endif
-     do i_forcing = 1, nint(3600*12/dt)
-        call geth_newdate(out_date,olddate,nint(dt*i_forcing))
-        inflnm = trim(indir)//"/"//&
-             out_date(1:4)//out_date(6:7)//out_date(9:10)//out_date(12:13)//&
-             ".LDASIN_DOMAIN"//hgrid
-
-        inquire (file=trim(inflnm), exist=fexist)
-        if(fexist) goto 101
-     enddo
-101  continue
-#ifdef MPP_LAND
-   endif
-        call mpp_land_bcast_logical(fexist)
-#endif
-
-        if ( .not. fexist ) then
-#ifdef MPP_LAND
-   if(my_id .eq. io_id) then
-#endif
-     do i_forcing = 1, nint(3600*12/dt)
-           call geth_newdate(out_date,olddate,nint(dt*i_forcing))
-           inflnm = trim(indir)//"/"//&
+      do i_forcing = 1, nint(3600*12/dt)
+         call geth_newdate(out_date,olddate,nint(dt*i_forcing))
+         inflnm = trim(indir)//"/"//&
               out_date(1:4)//out_date(6:7)//out_date(9:10)//out_date(12:13)//&
-              out_date(15:16)//".LDASIN_DOMAIN"//hgrid
-           inquire (file=trim(inflnm), exist=fexist)
-        if(fexist) goto 102
-     end do
-102 continue 
+              ".LDASIN_DOMAIN"//hgrid
+         
+         inquire (file=trim(inflnm), exist=fexist)
+         if(fexist) goto 101
+      enddo
+101   continue
 #ifdef MPP_LAND
    endif
-        call mpp_land_bcast_logical(fexist)
+   call mpp_land_bcast_logical(fexist)
 #endif
-        endif
-
-
-        if ( .not. fexist ) then
-#ifdef HYDRO_D
-           print*, "no ATM forcing data found at this time", inflnm
-#endif
-        else
-#ifdef HYDRO_D
-           print*, "reading forcing data at this time", inflnm
-#endif
-           
-           CALL READFORC_HRLDAS_mpp(inflnm,IX,JX,OLDDATE,T2,Q2X,U,V,   &
-                PRES,XLONG,SHORT,PRCP1,LAI,FPAR)
-           PRCP_old = PRCP1  ! This assigns new precip to last precip as a fallback for missing data...
-        endif
-
-
-!Get specified precip....
-!!!VIP, dimensions of grid are currently hardwired in input subroutine!!!
-!!Create forcing data filename...
-        call geth_newdate(out_date,olddate,nint(dt))
-        inflnm = trim(indir)//"/"//&
-                 out_date(1:4)//out_date(6:7)//out_date(9:10)//out_date(12:13)//&
-                 out_date(15:16)//".PRECIP_FORCING.nc"
-        inquire (file=trim(inflnm), exist=fexist)
+   
+   if ( .not. fexist ) then
 #ifdef MPP_LAND
-        call mpp_land_bcast_logical(fexist)
+      if(my_id .eq. io_id) then
 #endif
-#ifdef HYDRO_D
-    if(my_id .eq. io_id) then
-        if(fexist) then 
-            print*, "using specified pcp forcing: ",trim(inflnm)
-        else
-            print*, "no specified pcp forcing: ",trim(inflnm)
-        endif
-    endif
-#endif
-        if ( .not. fexist ) then
-           prcp1 = PRCP_old ! for missing pcp data use analysis/model input 
-        else
-           CALL READFORC_MDV_mpp(inflnm,IX,JX,   &
-              PRCP2,mmflag,ierr_flg)
-!If radar or spec. data is ok use if not, skip to original NARR data...
-           if(ierr_flg .ne. 0) then
-#ifdef HYDRO_D
-               print*, "WARNING: pcp reading problem: ", trim(inflnm)
-#endif
-               PRCP1=PRCP_old
-           else
-               PRCP1=PRCP2   !assumes PRCP2 is in mm/s
-               IF (mmflag.eq.0) then    !Convert pcp grid to units of mm/s...
-                PRCP1=PRCP2/DT     !convert from mm to mm/s
-               END IF  ! Endif mmflag
-#ifdef HYDRO_D
-    if(my_id .eq. io_id) then
-               print*, "replace pcp successfully! ",trim(inflnm)
-    endif
-#endif
-           endif
-        endif
-
-
-! Loop through data to screen for plausible values
-       where(PRCP1 .lt. 0) PRCP1=PRCP_old
-       where(PRCP1 .gt. 10 ) PRCP1= PRCP_old 
-       do i=1,ix
-         do j=1,jx
-           if (PRCP1(i,j).lt.0.) PRCP1(i,j)=0.0
-           if (PRCP1(i,j).gt.0.138889) PRCP1(i,j)=0.138889  !set max pcp intens = 500 mm/h
+         do i_forcing = 1, nint(3600*12/dt)
+            call geth_newdate(out_date,olddate,nint(dt*i_forcing))
+            inflnm = trim(indir)//"/"//&
+                 out_date(1:4)//out_date(6:7)//out_date(9:10)//out_date(12:13)//&
+                 out_date(15:16)//".LDASIN_DOMAIN"//hgrid
+            inquire (file=trim(inflnm), exist=fexist)
+            if(fexist) goto 102
          end do
-       end do
-!       write(80,*) prcp1
+102      continue 
+#ifdef MPP_LAND
+      endif
+      call mpp_land_bcast_logical(fexist)
+#endif
+   endif
+   
+   
+   if ( .not. fexist ) then
+#ifdef HYDRO_D
+      print*, "no ATM forcing data found at this time", inflnm
+#endif
+   else
+#ifdef HYDRO_D
+      print*, "reading forcing data at this time", inflnm
+#endif
+      
+      call READFORC_HRLDAS_mpp(inflnm,IX,JX,OLDDATE,T2,Q2X,U,V,   &
+           PRES,XLONG,SHORT,PRCP1,LAI,FPAR)
+      PRCP_old = PRCP1  ! This assigns new precip to last precip as a fallback for missing data...
+   endif
+   
+   
+   !Get specified precip....
+   !VIP, dimensions of grid are currently hardwired in input subroutine!!!
+   !!Create forcing data filename...
+   call geth_newdate(out_date,olddate,nint(dt))
+   inflnm = trim(indir)//"/"//&
+        out_date(1:4)//out_date(6:7)//out_date(9:10)//out_date(12:13)//&
+        out_date(15:16)//".PRECIP_FORCING.nc"
+   inquire (file=trim(inflnm), exist=fexist)
+#ifdef MPP_LAND
+   call mpp_land_bcast_logical(fexist)
+#endif
+#ifdef HYDRO_D
+   if(my_id .eq. io_id) then
+      if(fexist) then 
+         print*, "using specified pcp forcing: ",trim(inflnm)
+      else
+         print*, "no specified pcp forcing: ",trim(inflnm)
+      endif
+   endif
+#endif
+   if ( .not. fexist ) then
+      prcp1 = PRCP_old ! for missing pcp data use analysis/model input 
+   else
+      call READFORC_MDV_mpp(inflnm,IX,JX,   &
+           PRCP2,mmflag,ierr_flg)
+      !If radar or spec. data is ok use if not, skip to original NARR data...
+      if(ierr_flg .ne. 0) then
+#ifdef HYDRO_D
+         print*, "WARNING: pcp reading problem: ", trim(inflnm)
+#endif
+         PRCP1=PRCP_old
+      else
+         PRCP1=PRCP2   !assumes PRCP2 is in mm/s
+         if (mmflag.eq.0) then    !Convert pcp grid to units of mm/s...
+            PRCP1=PRCP2/DT     !convert from mm to mm/s
+         end if  ! Endif mmflag
+#ifdef HYDRO_D
+         if(my_id .eq. io_id) then
+            print*, "replace pcp successfully! ",trim(inflnm)
+         endif
+#endif
+      endif
+   endif
+   
+   
+   ! Loop through data to screen for plausible values
+   where(PRCP1 .lt. 0) PRCP1=PRCP_old
+   where(PRCP1 .gt. 10 ) PRCP1= PRCP_old 
+   do i=1,ix
+      do j=1,jx
+         if (PRCP1(i,j).lt.0.) PRCP1(i,j)=0.0
+         if (PRCP1(i,j).gt.0.138889) PRCP1(i,j)=0.138889  !set max pcp intens = 500 mm/h
+      end do
+   end do
+   !       write(80,*) prcp1
+   
+end if
 
-   end if
 
-
+!!! FORC_TYPE 7 ============================================================================
 !!!! FORC_TYP 7: uses WRF forcing data plus additional pcp forcing.
 
-   if(FORC_TYP.eq.7) then
-
-!!Create forcing data filename...
-        inflnm = trim(indir)//"/"//&
-             "wrfout_d0"//hgrid//"_"//&
-             olddate(1:4)//"-"//olddate(6:7)//"-"//olddate(9:10)//&
-             "_"//olddate(12:13)//":00:00"
-
-        inquire (file=trim(inflnm), exist=fexist)
+if(FORC_TYP.eq.7) then
+   
+   !!Create forcing data filename...
+   inflnm = trim(indir)//"/"//&
+        "wrfout_d0"//hgrid//"_"//&
+        olddate(1:4)//"-"//olddate(6:7)//"-"//olddate(9:10)//&
+        "_"//olddate(12:13)//":00:00"
+   
+   inquire (file=trim(inflnm), exist=fexist)
 #ifdef MPP_LAND
-        call mpp_land_bcast_logical(fexist)
+   call mpp_land_bcast_logical(fexist)
 #endif
-
-
-        if ( .not. fexist ) then
+   
+   
+   if ( .not. fexist ) then
 #ifdef HYDRO_D
-           print*, "no forcing data found", inflnm
+      print*, "no forcing data found", inflnm
 #endif
-        else
-           do i_forcing = 1, int(24*3600/dt)
-              wrf_dt = i_forcing*dt
-              call geth_newdate(out_date,olddate,nint(wrf_dt))
-              inflnm2 = trim(indir)//"/"//&
-                "wrfout_d0"//hgrid//"_"//&
-                out_date(1:4)//"-"//out_date(6:7)//"-"//out_date(9:10)//&
-                "_"//out_date(12:13)//":00:00"
-              inquire (file=trim(inflnm2), exist=fexist)
+   else
+      do i_forcing = 1, int(24*3600/dt)
+         wrf_dt = i_forcing*dt
+         call geth_newdate(out_date,olddate,nint(wrf_dt))
+         inflnm2 = trim(indir)//"/"//&
+              "wrfout_d0"//hgrid//"_"//&
+              out_date(1:4)//"-"//out_date(6:7)//"-"//out_date(9:10)//&
+              "_"//out_date(12:13)//":00:00"
+         inquire (file=trim(inflnm2), exist=fexist)
 #ifdef MPP_LAND
-        call mpp_land_bcast_logical(fexist)
+         call mpp_land_bcast_logical(fexist)
 #endif
-              if (fexist ) goto 992
-           end do
-992        continue
-
+         if (fexist ) goto 992
+      end do
+992   continue
+      
 #ifdef HYDRO_D
-           print*, "read WRF forcing data: ", trim(inflnm)
-           print*, "read WRF forcing data: ", trim(inflnm2)
+      print*, "read WRF forcing data: ", trim(inflnm)
+      print*, "read WRF forcing data: ", trim(inflnm2)
 #endif
-           CALL READFORC_WRF_mpp(inflnm2,IX,JX,OLDDATE,T2,Q2X,U,V,   &
-                   PRES,XLONG,SHORT,PRCPnew,lai,fpar)
-           CALL READFORC_WRF_mpp(inflnm,IX,JX,OLDDATE,T2,Q2X,U,V,   &
-                   PRES,XLONG,SHORT,prcp0,lai,fpar)
-           PRCP1=(PRCPnew-prcp0)/wrf_dt   !Adjustment to convert accum to rate...(mm/s)
-           PRCP_old = PRCP1
-        endif
-
-!Get specified precip....
-!!!VIP, dimensions of grid are currently hardwired in input subroutine!!!
-!!Create forcing data filename...
-        inflnm = trim(indir)//"/"//&
-                 olddate(1:4)//olddate(6:7)//olddate(9:10)//olddate(12:13)//&
-                 olddate(15:16)//".PRECIP_FORCING.nc"
-        inquire (file=trim(inflnm), exist=fexist)
+      call READFORC_WRF_mpp(inflnm2,IX,JX,OLDDATE,T2,Q2X,U,V,   &
+           PRES,XLONG,SHORT,PRCPnew,lai,fpar)
+      call READFORC_WRF_mpp(inflnm,IX,JX,OLDDATE,T2,Q2X,U,V,   &
+           PRES,XLONG,SHORT,prcp0,lai,fpar)
+      PRCP1=(PRCPnew-prcp0)/wrf_dt   !Adjustment to convert accum to rate...(mm/s)
+      PRCP_old = PRCP1
+   endif
+   
+   !Get specified precip....
+   !VIP, dimensions of grid are currently hardwired in input subroutine!!!
+   !!Create forcing data filename...
+   inflnm = trim(indir)//"/"//&
+        olddate(1:4)//olddate(6:7)//olddate(9:10)//olddate(12:13)//&
+        olddate(15:16)//".PRECIP_FORCING.nc"
+   inquire (file=trim(inflnm), exist=fexist)
 #ifdef MPP_LAND
-        call mpp_land_bcast_logical(fexist)
+   call mpp_land_bcast_logical(fexist)
 #endif
 #ifdef HYDRO_D
-        if(fexist) then
-            print*, "using specified pcp forcing: ",trim(inflnm)
-        else
-            print*, "no specified pcp forcing: ",trim(inflnm)
-        endif
+   if(fexist) then
+      print*, "using specified pcp forcing: ",trim(inflnm)
+   else
+      print*, "no specified pcp forcing: ",trim(inflnm)
+   endif
 #endif
-        if ( .not. fexist ) then
-           prcp1 = PRCP_old ! for missing pcp data use analysis/model input 
-        else
-           CALL READFORC_MDV_mpp(inflnm,IX,JX,   &
-              PRCP2,mmflag,ierr_flg)
-!If radar or spec. data is ok use if not, skip to original NARR data...
-           if(ierr_flg .ne. 0) then
+   if ( .not. fexist ) then
+      prcp1 = PRCP_old ! for missing pcp data use analysis/model input 
+   else
+      call READFORC_MDV_mpp(inflnm,IX,JX,   &
+           PRCP2,mmflag,ierr_flg)
+      !If radar or spec. data is ok use if not, skip to original NARR data...
+      if(ierr_flg .ne. 0) then
 #ifdef HYDRO_D
-               print*, "WARNING: pcp reading problem: ", trim(inflnm)
+         print*, "WARNING: pcp reading problem: ", trim(inflnm)
 #endif
-               PRCP1=PRCP_old
-           else
-               PRCP1=PRCP2   !assumes PRCP2 is in mm/s
-               IF (mmflag.eq.0) then    !Convert pcp grid to units of mm/s...
-                 write(6,*) "using supplemental pcp time interval ", DT
-                PRCP1=PRCP2/DT     !convert from mm to mm/s
-               else
-                 write(6,*) "using supplemental pcp rates "
-               END IF  ! Endif mmflag
+         PRCP1=PRCP_old
+      else
+         PRCP1=PRCP2   !assumes PRCP2 is in mm/s
+         if (mmflag.eq.0) then    !Convert pcp grid to units of mm/s...
+            write(6,*) "using supplemental pcp time interval ", DT
+            PRCP1=PRCP2/DT     !convert from mm to mm/s
+         else
+            write(6,*) "using supplemental pcp rates "
+         end if  ! Endif mmflag
 #ifdef HYDRO_D
-               print*, "replace pcp successfully! ",trim(inflnm)
+         print*, "replace pcp successfully! ",trim(inflnm)
 #endif
-           endif
-        endif
+      endif
+   endif
+   
+   
+   ! Loop through data to screen for plausible values
+   where(PRCP1 .lt. 0) PRCP1=PRCP_old
+   where(PRCP1 .gt. 10 ) PRCP1= PRCP_old ! set maximum to be 500 mm/h
+   where(PRCP1 .gt. 0.138889) PRCP1= 0.138889 ! set maximum to be 500 mm/h
+end if
 
 
-! Loop through data to screen for plausible values
-       where(PRCP1 .lt. 0) PRCP1=PRCP_old
-       where(PRCP1 .gt. 10 ) PRCP1= PRCP_old ! set maximum to be 500 mm/h
-       where(PRCP1 .gt. 0.138889) PRCP1= 0.138889 ! set maximum to be 500 mm/h
-   end if
 
 !!!!DJG Check for snow data assimilation...
-
-   if (SNOW_ASSIM .eq. 1) then
-
-! Every 24 hours, update the snow field from analyses.
-     if(forc_typ .ne. 3 .or. forc_typ .ne. 6) then
-         if ( OLDDATE(12:13) == "00") then
-            CALL READSNOW_FORC_mpp(inflnm,IX,JX,WEASD,SNODEP)
-         endif
-     else
-        CALL READSNOW_FORC_mpp(inflnm,IX,JX,WEASD,SNODEP)
-     endif
-
-   end if
+if (SNOW_ASSIM .eq. 1) then
+   
+   ! Every 24 hours, update the snow field from analyses.
+   if(forc_typ .ne. 3 .or. forc_typ .ne. 6) then
+      if ( OLDDATE(12:13) == "00") then
+         call READSNOW_FORC_mpp(inflnm,IX,JX,WEASD,SNODEP)
+      endif
+   else
+      call READSNOW_FORC_mpp(inflnm,IX,JX,WEASD,SNODEP)
+   endif
+   
+end if
 
 #ifdef PRECIP_DOUBLE
 #ifdef HYDRO_D
-   print*,'PRECIP DOUBLE'
+print*,'PRECIP DOUBLE'
 #endif
-   PRCP1 = PRCP1 * 2.0
+PRCP1 = PRCP1 * 2.0
 #endif 
 
- end subroutine read_hydro_forcing_mpp1
+end subroutine read_hydro_forcing_mpp1
+
+
 
   subroutine READFORC_HRLDAS_mpp(flnm,ix,jx,target_date, t,q,u,v,p,lw,sw,pcp,lai,fpar)
     implicit none
@@ -2748,6 +2758,7 @@ Contains
        write(*,'("READFORC Problem opening netcdf file: ''", A, "''")') trim(flnm)
        call hydro_stop("In READFORC_HRLDAS_mpp() - Problem opening netcdf file")
     endif
+
 
     if(my_id .eq. io_id ) call get_2d_netcdf("T2D", ncid,buf2, units, global_nx, global_ny, .TRUE., ierr)
     call decompose_data_real (buf2,t)

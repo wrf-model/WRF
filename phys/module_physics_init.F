@@ -48,6 +48,12 @@ CONTAINS
                          z_at_q, inv_dens, qnwfa2d, scalar, num_sc,  & ! G. Thompson
                          re_cloud, re_ice, re_snow,              & ! G. Thompson
                          has_reqc, has_reqi, has_reqs,           & ! G. Thompson
+#if ( EM_CORE == 1 )
+                         re_cloud_gsfc, re_ice_gsfc,             & 
+                         re_snow_gsfc,                           & ! Goddard
+                         re_graupel_gsfc, re_hail_gsfc,          &
+                         re_rain_gsfc,                           & ! Goddard
+#endif
                          NCA,swrad_scat,                         &
                          CLDEFI,LOWLYR,                          &
                          MASS_FLUX,                              &
@@ -239,7 +245,8 @@ CONTAINS
    USE module_wrf_error
    use module_sf_lake, only : nlevsoil,nlevsnow,nlevlake
 #if ( WRF_CHEM == 1 )
-   USE module_cam_support,         ONLY : cam_mam_aerosols
+   USE module_gocart_coupling, ONLY : makelut_ccn_icn
+   USE module_cam_support,     ONLY : cam_mam_aerosols
 #endif
    USE module_wind_fitch
    IMPLICIT NONE
@@ -348,6 +355,10 @@ CONTAINS
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: re_cloud, &
              re_ice, re_snow
    INTEGER, INTENT(INOUT):: has_reqc, has_reqi, has_reqs
+#if ( EM_CORE == 1 )
+   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: re_cloud_gsfc, &
+             re_ice_gsfc, re_snow_gsfc, re_graupel_gsfc, re_hail_gsfc, re_rain_gsfc
+#endif
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &!BSINGH(PNNL)- should be declared inout
              RTHRATEN, RTHRATENLW, RTHRATENSW, CLDFRA
@@ -747,7 +758,7 @@ CONTAINS
 
 
    INTEGER :: i, j, k, itf, jtf, ktf, n
-integer myproc
+   INTEGER :: myproc
 
 !-------------------------------------------------
 ! Noah-mosaic related variables are added to declaration  (danli)
@@ -822,15 +833,17 @@ integer myproc
 #endif
          (config_flags%ra_sw_physics .eq. RRTMK_SWSCHEME ) ) .and. &
         (config_flags%mp_physics  .eq. THOMPSON .or.        &
-         config_flags%mp_physics  .eq. THOMPSONAERO         &
-         .or. config_flags%mp_physics  .eq. NSSL_2MOM .or.       &
+         config_flags%mp_physics  .eq. THOMPSONAERO .or.    &
+         config_flags%mp_physics  .eq. NSSL_2MOM .or.       &
          config_flags%mp_physics  .eq. NSSL_2MOMG .or.      &
-         config_flags%mp_physics  .eq. NSSL_2MOMCCN .or.        &
-         config_flags%mp_physics  .eq. WSM3SCHEME .or.      & ! syb+
-         config_flags%mp_physics  .eq. WSM5SCHEME .or.      & ! syb+
-         config_flags%mp_physics  .eq. WSM6SCHEME .or.      & ! syb+
-         config_flags%mp_physics  .eq. WDM5SCHEME .or.      & ! syb+
+         config_flags%mp_physics  .eq. NSSL_2MOMCCN .or.    &
+         config_flags%mp_physics  .eq. WSM3SCHEME .or.      &
+         config_flags%mp_physics  .eq. WSM5SCHEME .or.      &
+         config_flags%mp_physics  .eq. WSM6SCHEME .or.      &
+         config_flags%mp_physics  .eq. WSM7SCHEME .or.      &
+         config_flags%mp_physics  .eq. WDM5SCHEME .or.      &
          config_flags%mp_physics  .eq. WDM6SCHEME .or.      &
+         config_flags%mp_physics  .eq. WDM7SCHEME .or.      &
          config_flags%mp_physics  .eq. P3_1CATEGORY .or.    &
          config_flags%mp_physics  .eq. P3_1CATEGORY_NC .or. &
          config_flags%mp_physics  .eq. P3_2CATEGORY    ) ) then    ! P3
@@ -1450,6 +1463,39 @@ integer myproc
                   its, ite, jts, jte, kts, kte                  )
 
 #endif
+#if ( WRF_CHEM == 1)
+   if ((config_flags%chem_opt == gocart_simple .or. &
+        config_flags%chem_opt == gocartracm_kpp .or. &
+        config_flags%chem_opt == 302 .or. &
+        config_flags%chem_opt == gocartradm2) .and. &
+        config_flags%gsfcgce_gocart_coupling == 1) then
+      CALL wrf_debug(200 , 'phy_init: Before call to makelut_ccn_icn')
+      call makelut_ccn_icn
+   end if
+#endif
+
+!  Initialize cloud droplet effective radius for Goddard MP and Radiation
+!  Must be (Goddard LW and SW) AND must be (Goddard 3ice OR 4ice)
+#if ( EM_CORE == 1 )
+    
+   if ( ( ( config_flags%ra_lw_physics .EQ. GODDARDLWSCHEME )   .AND. &
+          ( config_flags%ra_sw_physics .EQ. GODDARDSWSCHEME ) ) .AND. &
+        ( ( config_flags%mp_physics    .EQ. NUWRF3ICESCHEME )   .OR.  &
+          ( config_flags%mp_physics    .EQ. NUWRF4ICESCHEME ) ) ) THEN
+      do j=jts,jtf
+         do k=kts,ktf
+            do i=its,itf
+               re_cloud_gsfc(i,k,j)   = 0.
+               re_rain_gsfc(i,k,j)    = 0.
+               re_snow_gsfc(i,k,j)    = 0.
+               re_ice_gsfc(i,k,j)     = 0.
+               re_graupel_gsfc(i,k,j) = 0.
+               re_hail_gsfc(i,k,j)    = 0.
+            end do
+         end do
+      end do
+   end if
+#endif
 
    END SUBROUTINE phy_init
 
@@ -1765,6 +1811,7 @@ integer myproc
    USE module_ra_sw        , ONLY : swinit
    USE module_ra_gsfcsw    , ONLY : gsfc_swinit
    USE module_ra_gfdleta   , ONLY : gfdletainit
+   USE module_ra_goddard   , ONLY : init_goddardrad
 #if(NMM_CORE==1)
    USE module_ra_hwrf      , ONLY : hwrfrainit
 #endif
@@ -1919,6 +1966,14 @@ integer myproc
 
    lwrad_select: SELECT CASE(config_flags%ra_lw_physics)
 
+        CASE (goddardlwscheme)
+             CALL init_goddardrad(                          &
+                           allowed_to_read ,                &
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           its, ite, jts, jte, kts, kte     )
+
+              
         CASE (RRTMSCHEME)
              CALL rrtminit(                                 &
                            p_top, allowed_to_read ,         &
@@ -2026,6 +2081,13 @@ integer myproc
 !-- initialize short wave radiation scheme
 
    swrad_select: SELECT CASE(config_flags%ra_sw_physics)
+
+        CASE (goddardswscheme)
+             CALL init_goddardrad(                          &
+                           allowed_to_read ,                &
+                           ids, ide, jds, jde, kds, kde,    &
+                           ims, ime, jms, jme, kms, kme,    &
+                           its, ite, jts, jte, kts, kte     )
 
         CASE (SWRADSCHEME)
              CALL swinit(                                  &
@@ -3807,6 +3869,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_mp_wsm3
    USE module_mp_wsm5
    USE module_mp_wsm6
+   USE module_mp_wsm7
    USE module_mp_etanew
    USE module_mp_fer_hires
 #if (NMM_CORE == 1)
@@ -3821,6 +3884,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 !  USE module_mp_milbrandt3mom
    USE module_mp_wdm5
    USE module_mp_wdm6
+   USE module_mp_wdm7
    USE module_mp_nssl_2mom
 #if (EM_CORE==1)
    USE module_mp_cammgmp_driver, ONLY:CAMMGMP_INIT !CAM5's microphysics
@@ -3922,6 +3986,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
           CALL wsm5init(rhoair0,rhowater,rhosnow,cliq,cpv, allowed_to_read )
      CASE (WSM6SCHEME)
           CALL wsm6init(rhoair0,rhowater,rhosnow,cliq,cpv, config_flags%hail_opt,allowed_to_read )
+     CASE (WSM7SCHEME)
+          CALL wsm7init(rhoair0,rhowater,rhosnow,cliq,cpv, allowed_to_read )
      CASE (ETAMPNEW)
          adv_moist_cond = .false.
          CALL etanewinit (MPDT,DT,DX,DY,LOWLYR,restart,           &
@@ -3990,6 +4056,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      CASE (WDM6SCHEME)
           CALL wdm6init(rhoair0,rhowater,rhosnow,cliq,cpv,ccn_conc, &
                         config_flags%hail_opt, allowed_to_read )
+     CASE (WDM7SCHEME)
+          CALL wdm7init(rhoair0,rhowater,rhosnow,cliq,cpv,ccn_conc, allowed_to_read )
 #if (EM_CORE==1)
     CASE (FULL_KHAIN_LYNN)
      IF(start_of_simulation.or.restart)THEN

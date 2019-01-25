@@ -10,19 +10,35 @@ if($#ARGV ne 1) {
 
          print("Configure option for Hydro : $x  $paropt \n");  
           if($x =~ "pgi") {
-              if($paropt eq 'serial') { system("./configure 1");}
-              else {system("./configure 2");}
+              if($paropt eq 'serial') { 
+                 # system("./configure 1");
+                 print "Error : option not defined in WRF-Hyro. \n";
+                 exit(1);
+              }
+              else {system("./configure 1"); exit(0);}
           }
           if($x =~ "aix") {
+              print "Error : option not defined. \n";
+              exit(1);
               if($paropt eq 'serial') { system("./configure 3");}
               else {system("./configure 4");}
           }
           if($x =~ "gfortran") {
-              if($paropt eq 'serial') { system("./configure 5");}
-              else {system("./configure 6");}
+              if($paropt eq 'serial') { 
+                 # system("./configure 5");
+                 print "Error : option not defined in WRF-Hyro. \n";
+                 exit(1);
+              }
+              else {system("./configure 2"); exit(0);}
           }
           if($x =~ "ifort") {
-              if($paropt eq 'serial') { system("./configure 7");}
-              else {system("./configure 8");}
+              if($paropt eq 'serial') { 
+                   #system("./configure 7");
+                 print "Error : option not defined. \n";
+                 exit(1);
+              }
+              else {system("./configure 3"); exit(0);}
           }
+                 print "Error : option not defined. \n";
+                 exit(1);
 

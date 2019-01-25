@@ -167,7 +167,7 @@ PUBLIC:: fire_wind_height,fcz0,fcwh,have_fuel_cats,nfuelcats,no_fuel_cat,windrf,
    REAL   , DIMENSION( mfuelcats ), save :: windrf,weight,fgi,fci,fci_d,fct,fcbr, &
                                             fueldepthm,fueldens,fuelmce,   &
                                             savr,st,se
-   REAL ,   DIMENSION((mfuelcats,max_moisture_classes) fmc_gw ! fuel moisture class weights
+   REAL ,   DIMENSION((mfuelcats,max_moisture_classes), save :: fmc_gw ! fuel moisture class weights
    DATA windrf /0.36, 0.36, 0.44,  0.55,  0.42,  0.44,  0.44, &     
                 0.36, 0.36, 0.36,  0.36,  0.43,  0.46,  1e-7, zf*0 /
    DATA fgi / 0.166, 0.896, 0.674, 3.591, 0.784, 1.344, 1.091, &

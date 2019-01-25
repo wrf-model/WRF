@@ -270,6 +270,13 @@ if ( tag == 1 )
 	   fprintf(fp,"  num_bytes_allocated = num_bytes_allocated + &\n(%s) * %cWORDSIZE\n",
                    array_size_expression("", "(", -1, t2, p, post_for_count, "model_config_rec%"),
                    tchar) ;
+	   fprintf(fp,"  nba = &\n(%s) * %cWORDSIZE\n",
+                   array_size_expression("", "(", -1, t2, p, post_for_count, "model_config_rec%"),
+                   tchar) ;
+           fprintf(fp,"#if ( SHOW_ALL_VARS_USED == 1 )\n") ;
+           fprintf(fp,"  WRITE(message_string,fmt='(a,i12)') '%s: bytes = ',nba\n", fname) ;
+           fprintf(fp,"  CALL wrf_message(message_string)\n") ;
+           fprintf(fp,"#endif\n") ;
          }
 	 if ( sw == 1 ) {
            fprintf(fp, "  ALLOCATE(%s%s%s,STAT=ierr)\n  if (ierr.ne.0) then\n    CALL wrf_error_fatal ( &\n    'frame/module_domain.f: Failed to allocate %s%s%s. ')\n  endif\n",

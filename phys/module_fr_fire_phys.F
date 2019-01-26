@@ -558,6 +558,7 @@ logical, external:: wrf_dm_on_monitor
 #endif
 !*** local
 integer:: i,j,k,ii,iounit
+integer:: kk
 character(len=128):: msg
 !*** executable
 
@@ -1067,7 +1068,7 @@ do j=jfts,jfte
         rtemp2 = savr(k)**1.5
         gammax = rtemp2/(495. + 0.0594*rtemp2)              ! maximum rxn vel, 1/min
         a = 1./(4.774 * savr(k)**0.1 - 7.27)   ! coef for optimum rxn vel
-        ratio = betafl/betaop
+        ratio = fp.betafl(i,j)/betaop
         gamma = gammax *(ratio**a) *exp(a*(1.-ratio)) !optimum rxn vel, 1/min
 
         wn = fuelload/(1 + st(k))       ! net fuel loading, lb/ft^2

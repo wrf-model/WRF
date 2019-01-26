@@ -8,6 +8,10 @@ PRIVATE
 
 ! subroutines and functions 
 PUBLIC:: init_fuel_cats,fire_ros,heat_fluxes,set_nfuel_cat,set_fire_params,write_fuels_m
+PUBLIC:: fuel_moisture,advance_moisture
+
+! variables
+PUBLIC:: moisture_classes
 
 PUBLIC::fire_params
 
@@ -26,17 +30,6 @@ end type fire_params
 
 ! use as
 ! type(fire_params)::fp
-! subroutines and functions 
-PUBLIC:: init_fuel_cats,fire_ros,heat_fluxes,set_nfuel_cat,set_fire_params, &
-write_fuels_m,fire_risk,fire_intensity,fuel_moisture,advance_moisture
-
-! types
-public:: fire_params
-
-! variables
-PUBLIC:: fire_wind_height,fcz0,fcwh,have_fuel_cats,nfuelcats,no_fuel_cat,windrf,moisture_classes
-! NOTE: fcwh and fcz0 are called fwh and fz0 in read/write statements
-
 
 ! moisture behavior, see Mandel et al EGU 2012
 
@@ -47,7 +40,6 @@ PUBLIC:: fire_wind_height,fcz0,fcwh,have_fuel_cats,nfuelcats,no_fuel_cat,windrf,
 !  4. add dfault 
 
 !*** dimensions
-   INTEGER, PARAMETER :: mfuelcats = 30     ! max number of fuel categories 
   integer, parameter::max_moisture_classes=5
 !***
 

@@ -40,7 +40,8 @@ end type fire_params
 !  4. add dfault 
 
 !*** dimensions
-  integer, parameter::max_moisture_classes=5
+  INTEGER, PARAMETER :: mfuelcats = 30     ! allowable number of fuel categories 
+  INTEGER, PARAMETER ::max_moisture_classes=5
 !***
 
   integer, parameter::zm=max_moisture_classes - 3
@@ -151,7 +152,6 @@ end type fire_params
 ! fuel categorytables
    INTEGER, PARAMETER :: nf=14              ! number of fuel categories in data stmts
    INTEGER, SAVE      :: nfuelcats = 13     ! number of fuel categories that are specified
-   INTEGER, PARAMETER :: mfuelcats = 30     ! allowable number of fuel categories 
    INTEGER, PARAMETER :: zf = mfuelcats-nf  ! number of zero fillers in data stmt 
    INTEGER, SAVE      :: no_fuel_cat = 14   ! special category outside of 1:nfuelcats
    CHARACTER (len=80), DIMENSION(mfuelcats ), save :: fuel_name
@@ -185,8 +185,6 @@ end type fire_params
             60., 120., 180., 180., 180., 180. , 60. , zf*0.   /
    DATA ichap / 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 , zf*0/ 
 ! =========================================================================
-
-  logical, save :: have_fuel_cats=.false.
 
 contains
 
@@ -566,7 +564,7 @@ character(len=128):: msg
 ! read 
 namelist /fuel_scalars/ cmbcnst,hfgl,fuelmc_g,fuelmc_c,nfuelcats,no_fuel_cat
 namelist /fuel_categories/ fuel_name,windrf,fgi,fueldepthm,savr, &
-    fuelmce,fueldens,st,se,weight,fci_d,fct,ichap,fwh,fz0,ffw,adjr0,adjrw,adjrs,fmc_gw01,fmc_gw02,fmc_gw03,fmc_gw04,fmc_gw05
+    fuelmce,fueldens,st,se,weight,fci_d,fct,ichap,fmc_gw01,fmc_gw02,fmc_gw03,fmc_gw04,fmc_gw05
 
 namelist /moisture/ moisture_classes,drying_lag,wetting_lag,saturation_moisture,saturation_rain,rain_threshold, &
     drying_model,wetting_model, moisture_class_name,fmc_gc_initialization
@@ -579,11 +577,7 @@ namelist /moisture/ moisture_classes,drying_lag,wetting_lag,saturation_moisture,
 
 IF ( wrf_dm_on_monitor() ) THEN
     ! we are the master task
-    
-    ! copy in defaults
-    fwh=fcwh
-    fz0=fcz0
-    
+
     ! read the file
     iounit=open_text_file('namelist.fire','read')
     read(iounit,fuel_scalars)
@@ -763,7 +757,6 @@ if(init_fuel_moisture)then
     call message('**********************************************************')
     call message(' ')
 endif
-have_fuel_cats=.true.
 
 ! and print to file
 IF ( wrf_dm_on_monitor() ) THEN

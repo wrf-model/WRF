@@ -36,7 +36,7 @@ public fire_driver_em,use_atm_vars
 
 logical:: use_atm_vars=.true.   !  interpolate wind from atm mesh and average output fluxes back
 
-logical:: moisture_run, moisture_interp, fire_run  ! which kind of model to run overall
+logical:: fmoist_run, fmoist_interp, fire_run  ! which kind of model to run overall
 
 contains
 
@@ -133,8 +133,9 @@ halo_fire_phb_sub, halo_fire_z0_sub, halo_fire_lfn_sub
     ! **** moisture model
 
     ! decide what to run - moisture, interpolation, or fire model itself
-    moisture_run    = config_flags%fmoist_run
-    moisture_interp = config_flags%fmoist_interp 
+    fmoist_run    = config_flags%fmoist_run
+    fmoist_interp = config_flags%fmoist_interp 
+    if(fire_fmc_read.ne.0.and.fmoist_run)call crash('fmoist_run=T requires fire_fmc_read=0')
     fire_run = .not. config_flags%fmoist_only
 
     !decide what to run
@@ -145,7 +146,7 @@ halo_fire_phb_sub, halo_fire_z0_sub, halo_fire_lfn_sub
     
     
     
-    if(moisture_run)then
+    if(fmoist_run)then
         if(moisture_initializing)then
             if(fire_ifun_end>2)call crash('initialization must be run separately')
             grid%fmoist_lasttime=moisture_time ! initialize the last time the model has run to start of run
@@ -177,13 +178,13 @@ halo_fire_phb_sub, halo_fire_z0_sub, halo_fire_lfn_sub
                     write(msg,'(a,f12.2,a,f12.2,a)')'moisture time step is ',dt_moisture,'s next run at ',grid%fmoist_nexttime,'s'
                     call message(msg)
                 endif
-                if(moisture_interp)then
+                if(fmoist_interp)then
                     call message('moisture interpolation to fuels will run because moisture model does')
                     run_fuel_moisture=.true.
                 endif
             endif
         endif
-    elseif(itimestep.eq.1.and.moisture_interp)then
+    elseif(itimestep.eq.1.and.fmoist_interp)then
             call message('initializing, moisture interpolation to fuels will run from input data')
             run_fuel_moisture=.true.
     endif
@@ -516,6 +517,18 @@ real, intent(out), dimension(ifms:ifme, jfms:jfme):: &  ! redundant arrays, for 
     fcanhfx,                                      &  ! heat flux from crown fire (W/m^2) 
     fcanqfx,                                      &   ! moisture flux from crown fire (W/m^2) 
     ros                                             ! fire rate of spread (m/s)
+    
+! moisture model arguments
+logical, intent(in)::run_advance_moisture,run_fuel_moisture
+real, intent(in)::dt_moisture
+real, intent(in), dimension(ims:ime,jms:jme):: t2, q2, psfc, rainc, rainnc
+real, intent(inout), dimension(ims:ime,jms:jme):: t2_old, q2_old, psfc_old, rain_old 
+real, intent(out),dimension(ims:ime,jms:jme):: rh_fire
+real, intent(inout), dimension(ims:ime,nfmc,jms:jme):: fmc_gc
+real, intent(out), dimension(ims:ime,nfmc,jms:jme):: fmc_equi,fmc_lag
+real, intent(inout), dimension(ifms:ifme,jfms:jfme):: fmc_g
+
+
 
 !  ***** data (constant in time) *****
 
@@ -577,7 +590,8 @@ call check_mesh_2dim(ifps,ifpe,jfps,jfpe,ifds,ifde,jfds,jfde) ! check if fire pa
 !$OMP SINGLE
 ! init rest of fuel tables with derived constants
 if(ifun.eq.1) then
-   call init_fuel_cats  ! common for all threads
+   ! properties of fuel categories and moisture classes from namelist.fire
+   call init_fuel_cats(fmoist_run .or. fmoist_interp) ! common for all threads
 endif
 !$OMP END SINGLE
 
@@ -585,6 +599,10 @@ endif
 pid=0
 if(fire_print_file.gt.0)then
     if(itimestep.le.fire_print_file.or.mod(itimestep,fire_print_file).eq.0)pid=itimestep ! print 1-fire_print_file then every fire_print_file-th
+endif
+
+if(ifun.eq.1)then
+         call init_fuel_cats(fmoist_run .or. fmoist_interp) ! properties of fuel categories and moisture classes from namelist.fire
 endif
 
 if(ifun.eq.3)then
@@ -701,7 +719,7 @@ do ij=1,num_tiles
 !!$OMP END CRITICAL(FIRE_DRIVER_CRIT)
 !        endif
 
-        if(ignition%longlat .eq.0)then
+        if(ignition_longlat .eq.0)then
             ! set ideal fire mesh coordinates - used for ignition only
             ! do not forget to set unit_fxlong, unit_fxlat outside of parallel loop
 
@@ -901,7 +919,7 @@ do ij=1,num_tiles
        endif
 
     endif ! ifun=6
-
+  endif ! fire_run
 enddo ! tiles
 !$OMP END PARALLEL DO
 

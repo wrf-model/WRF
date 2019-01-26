@@ -259,7 +259,7 @@ do k=1,moisture_classes
     call print_2d_stats(ibs,ibe,jbs,jbe,its-1,ite+1,jts-1,jte+1,fmc_k,'fuel_moisture: fmc_k')
 
     ! interpolate moisture contents in the class k to the fire mesh
-    call interpolate_z2fire(id,0,        & ! for debug output, <= 0 no output
+    call interpolate_z2fire(id,        & ! for debug output, <= 0 no output
     ids,ide,jds,jde,                     & ! atm grid dimensions
     its-1,ite+1,jts-1,jte+1,             & ! memory dimensions
     ips,ipe,jps,jpe,                     &
@@ -269,7 +269,7 @@ do k=1,moisture_classes
     ifts,ifte,  jfts,jfte,               &
     ir,jr,                               & ! atm/fire grid ratio
     fmc_k,                               & ! atm grid arrays in
-    fmc_f)                                 ! fire grid arrays out
+    fmc_f,0)                                 ! fire grid arrays out
 
     call print_2d_stats(ifts,ifte,jfts,jfte,ifts,ifte,jfts,jfte,fmc_f,'fuel_moisture: fmc_f')
 

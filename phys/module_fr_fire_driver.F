@@ -87,6 +87,7 @@ halo_fire_phb_sub, halo_fire_z0_sub, halo_fire_lfn_sub
     character(len=128)msg
     real:: unit_fxlong ,unit_fxlat
     type(fire_params)::fp
+    real:: time_start, dt
     real:: moisture_time
     logical:: run_advance_moisture,run_fuel_moisture, moisture_initializing
     real::    dt_moisture
@@ -125,6 +126,10 @@ halo_fire_phb_sub, halo_fire_z0_sub, halo_fire_lfn_sub
     itimestep=grid%itimestep
     restart=config_flags%restart
 
+    ! time - assume dt does not change
+    dt = grid%dt
+    time_start = itimestep * dt
+
     ! **** moisture model
 
     ! decide what to run - moisture, interpolation, or fire model itself
@@ -133,7 +138,7 @@ halo_fire_phb_sub, halo_fire_z0_sub, halo_fire_lfn_sub
     fire_run = .not. config_flags%fmoist_only
 
     !decide what to run
-    moisture_time = time_step_start
+    moisture_time = time_start
     run_advance_moisture = .false. ! default
     run_fuel_moisture = .false. ! default
     moisture_initializing = fire_ifun_start < 3
@@ -260,7 +265,8 @@ halo_fire_phb_sub, halo_fire_z0_sub, halo_fire_lfn_sub
             ir,jr,                                      & ! atm/fire grid ratio
             grid%num_tiles,                             & ! atm grid tiling
             grid%i_start,min(grid%i_end,ide-1),                    &
-            grid%j_start,min(grid%j_end,jde-1),                    &                 
+            grid%j_start,min(grid%j_end,jde-1),                    &
+            time_start,                                 &
             itimestep,restart,config_flags%fire_fuel_read,config_flags%fire_fuel_cat, &  ! in scalars
             grid%dt,grid%dx,grid%dy,                    &
             grid%u_frame,grid%v_frame,                  &
@@ -363,6 +369,7 @@ subroutine fire_driver_phys (ifun,need_lfn_update,    &
     ifps, ifpe, jfps, jfpe,                       & ! fire patch in - will use smaller
     ir,jr,                                        & ! atm/fire grid ratio
     num_tiles,i_start,i_end,j_start,j_end,        & ! atm grid tiling
+    time_start,                                   & ! start of the timestep
     itimestep,restart,ifuelread,nfuel_cat0,dt,dx,dy,      & ! in scalars
     u_frame,v_frame,                              &
     unit_fxlong,unit_fxlat,                       & ! fxlong, fxlat units in m  
@@ -452,6 +459,7 @@ logical, intent(out)::need_lfn_update
 integer,dimension(num_tiles),intent(in) :: i_start,i_end,j_start,j_end  ! atm grid tiling
 
 real, intent(in):: &
+    time_start,                                   & ! start of this time step from the beginning of the simulation
     dt,                                           & ! time step
     dx,dy,                                        & ! atm grid step
     u_frame,v_frame,                              & ! velocity offset
@@ -517,7 +525,7 @@ real, intent(out), dimension(ifms:ifme, jfms:jfme)::fuel_time   ! fire params ar
 type(fire_params),intent(inout)::fp
     
 !*** local
-real :: dxf,dyf,time_start,latm, s
+real :: dxf,dyf,latm, s
 integer :: its,ite,jts,jte,kts,kte, &            ! tile
     ij,i,j,k,id,pid,ipe1,jpe1,ite1,jte1, &
     ifts,ifte,jfts,jfte                          ! fire tile
@@ -530,9 +538,6 @@ integer::ignitions_done,ignited_patch(num_ignitions),idex,jdex
   logical :: fire_is_real_perim
 
 !*** executable
-
-! time - assume dt does not change
-time_start = itimestep * dt
 
 ! fire mesh step
 dxf=dx/ir

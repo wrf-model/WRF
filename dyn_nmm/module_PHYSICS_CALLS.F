@@ -2824,9 +2824,11 @@
 
 
       CALL SET_TILES(GRID,IDS+1,IDE-1,JDS+2,JDE-2,ITS,ITE,JTS,JTE)
+#if HWRF==1
       CALL nl_get_pert_sas(1,pert_sas)
       CALL nl_get_ens_random_seed(1,ens_random_seed)
       CALL nl_get_ens_sasamp(1,ens_sasamp)
+#endif
 
 #if (NMM_CORE==1)
 !$omp parallel do                                                       &

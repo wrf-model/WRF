@@ -243,7 +243,10 @@
       integer :: i_v=49,j_v=475,n_v=07
       integer :: num_aerosolc
       real :: cen_lat,cen_lon,dtphs   ! GWD
-      integer :: num_urban_layers,num_urban_hi
+      integer :: num_urban_hi, &
+                 num_urban_ndm,urban_map_zrd,urban_map_zwd,urban_map_gd,  &
+                 urban_map_zd ,urban_map_zdf,urban_map_bd ,urban_map_wd,  &
+                 urban_map_gbd,urban_map_fbd
 !Rogers GMT
       INTEGER :: hr, mn, sec, ms, rc
       TYPE(WRFU_Time) :: currentTime
@@ -2171,7 +2174,10 @@
      &             ,IDS, IDE, JDS, JDE, KDS, KDE                        &
      &             ,IMS, IME, JMS, JME, KMS, KME                        &
      &             ,ITS, ITE, JTS, JTE, KTS, KTE                        &
-     &             ,NUM_URBAN_LAYERS,NUM_URBAN_HI                       &
+     &             ,num_urban_ndm,urban_map_zrd,urban_map_zwd,urban_map_gd  &
+     &             ,urban_map_zd ,urban_map_zdf,urban_map_bd ,urban_map_wd  &
+     &             ,urban_map_gbd,urban_map_fbd                             &
+     &             ,NUM_URBAN_HI                                            &
      &             ,GRID%RAINCV_A,GRID%RAINCV_B                         &
      &               ,ISNOWXY=grid%ISNOWXY, ZSNSOXY=grid%ZSNSOXY, TSNOXY=grid%TSNOXY,    & ! Optional Noah-MP
      &                SNICEXY=grid%SNICEXY, SNLIQXY=grid%SNLIQXY, TVXY=grid%TVXY,        & ! Optional Noah-MP

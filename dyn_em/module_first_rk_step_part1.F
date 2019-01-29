@@ -645,7 +645,16 @@ BENCH_START(surf_driver_tim)
      &        ,UTYPE_URB2D=grid%utype_urb2d                               & !H urban
          ! Optional urban for BEP scheme
      &        ,SF_URBAN_PHYSICS=config_flags%sf_urban_physics             &
-     &        ,NUM_URBAN_LAYERS=config_flags%num_urban_layers             & !multi-layer urban
+     &        ,num_urban_ndm = config_flags%num_urban_ndm                 & !multi-layer urban
+     &        ,urban_map_zrd = config_flags%urban_map_zrd                 & !multi-layer urban
+     &        ,urban_map_zwd = config_flags%urban_map_zwd                 & !multi-layer urban
+     &        ,urban_map_gd  = config_flags%urban_map_gd                  & !multi-layer urban
+     &        ,urban_map_zd  = config_flags%urban_map_zd                  & !multi-layer urban
+     &        ,urban_map_zdf = config_flags%urban_map_zdf                 & !multi-layer urban
+     &        ,urban_map_bd  = config_flags%urban_map_bd                  & !multi-layer urban
+     &        ,urban_map_wd  = config_flags%urban_map_wd                  & !multi-layer urban
+     &        ,urban_map_gbd = config_flags%urban_map_gbd                 & !multi-layer urban
+     &        ,urban_map_fbd = config_flags%urban_map_fbd                 & !multi-layer urban
      &        ,NUM_URBAN_HI=config_flags%num_urban_hi                     & !multi-layer urban
      &        ,TSK_RURAL=grid%tsk_rural                                   & !multi-layer urban
      &        ,TRB_URB4D=grid%trb_urb4d,TW1_URB4D=grid%tw1_urb4d          & !multi-layer urban

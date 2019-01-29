@@ -20,7 +20,7 @@ CONTAINS
                     sealevelp,                                      &
                     temperature,pressure,geoheight,                 &
                     umet,vmet,speed,dir,                            &
-                    psfc2d, rain, liqrain, tpw,potential_t, rh,     &
+                    rain, liqrain, tpw,potential_t, rh,     &
                     ids,ide, jds,jde, kds,kde,                      &
                     ims,ime, jms,jme, kms,kme,                      &
                     ips,ipe, jps,jpe, kps,kpe,                      &
@@ -58,12 +58,10 @@ CONTAINS
                                                                           rh          , &
                                                                           dir
       REAL   , INTENT(  OUT) ,  DIMENSION(ims:ime , jms:jme)           :: sealevelp, rain, liqrain,tpw
-      REAL   , INTENT(  OUT) ,  DIMENSION(ims:ime , jms:jme)           :: psfc2d
    
       !  Local variables
    
       REAL :: ptot
-      REAL,  DIMENSION(its:ite , jts:jte) :: pscf
 
       REAL, PARAMETER :: eps = 0.622, t_kelvin = svpt0 , s1 = 243.5, s2 = svp2 , s3 = svp1*10., s4 = 611.0, s5 = 5418.12
       REAL, PARAMETER :: zshul=75., tvshul=290.66
@@ -175,7 +173,6 @@ CONTAINS
 
                ! Surface Pressure
 
-               psfc2d(i,j) =   psfc(i,j) 
  
          END DO i_loop_2
       END DO j_loop_2

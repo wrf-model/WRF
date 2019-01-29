@@ -318,7 +318,6 @@ CONTAINS
                ,rain=grid%rain                                      &
                ,liqrain=grid%liqrain                                &
                ,tpw=grid%tpw                                        &
-               ,psfc2d=grid%psfc2d                                  &
                ,potential_t=grid%potential_t                        &
                ,rh=grid%rh                                          &
                !  Various indexes for declarations, loop bounds

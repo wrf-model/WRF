@@ -2049,7 +2049,6 @@ DEALLOCATE(z_at_q)
                ,speed=grid%speed                                    &
                ,dir=grid%dir                                        &
                ,psfc=grid%psfc                                      &
-               ,psfc2d=grid%psfc2d                                  &
                ,rain=grid%rain                                      &
                ,liqrain=grid%liqrain                                &
                ,tpw=grid%tpw                                        &

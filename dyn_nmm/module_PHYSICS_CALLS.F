@@ -1481,7 +1481,16 @@
      &          ,LAI=GRID%LAI,IZ0TLND=CONFIG_FLAGS%IZ0TLND              &
      &          ,SF_URBAN_PHYSICS=SF_URBAN_PHYSICS                      &
 !     &          ,GMT=GMT,XLAT=XLAT,XLONG=XLONG,JULDAY=JULDAY            &
-     &          ,NUM_URBAN_LAYERS=NUM_URBAN_LAYERS                      &
+     &          ,num_urban_ndm = config_flags%num_urban_ndm             & !multi-layer urban
+     &          ,urban_map_zrd = config_flags%urban_map_zrd             & !multi-layer urban
+     &          ,urban_map_zwd = config_flags%urban_map_zwd             & !multi-layer urban
+     &          ,urban_map_gd  = config_flags%urban_map_gd              & !multi-layer urban
+     &          ,urban_map_zd  = config_flags%urban_map_zd              & !multi-layer urban
+     &          ,urban_map_zdf = config_flags%urban_map_zdf             & !multi-layer urban
+     &          ,urban_map_bd  = config_flags%urban_map_bd              & !multi-layer urban
+     &          ,urban_map_wd  = config_flags%urban_map_wd              & !multi-layer urban
+     &          ,urban_map_gbd = config_flags%urban_map_gbd             & !multi-layer urban
+     &          ,urban_map_fbd = config_flags%urban_map_fbd             & !multi-layer urban
      &          ,NUM_URBAN_HI=config_flags%num_urban_hi                 & !multi-layer urban
      &          ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE        &
      &          ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME        &

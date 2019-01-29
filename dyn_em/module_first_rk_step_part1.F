@@ -952,8 +952,8 @@ BENCH_START(pbl_driver_tim)
      &        ,QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI                 &
      &        ,QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS                 &
      &        ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG                 &
-     &        ,QNIFA_CURR=scalar(ims,kms,jms,P_QNIFA),F_QNIFA=F_QNIFA          &
-     &        ,QNWFA_CURR=scalar(ims,kms,jms,P_QNWFA),F_QNWFA=F_QNWFA          &
+     &        ,QNIFA_CURR=scalar(ims,kms,jms,P_QNIFA),F_QNIFA=F_QNIFA     &
+     &        ,QNWFA_CURR=scalar(ims,kms,jms,P_QNWFA),F_QNWFA=F_QNWFA     &
      &        ,HOL=HOL, MOL=grid%mol, REGIME=grid%REGIME                  &
 !mynn mp@
      &        ,QKE=grid%qke, Sh3d=grid%sh3d                               &

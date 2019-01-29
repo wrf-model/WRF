@@ -80,7 +80,10 @@ MODULE module_sf_bep_bem
                       th_phy,rho,p_phy,swdown,glw,                                 &
                       gmt,julday,xlong,xlat,                                       &
                       declin_urb,cosz_urb2d,omg_urb2d,                             &
-                      num_urban_layers,num_urban_hi,                               &
+                      num_urban_ndm,  urban_map_zrd,  urban_map_zwd, urban_map_gd, &
+                       urban_map_zd,  urban_map_zdf,   urban_map_bd, urban_map_wd, &
+                      urban_map_gbd,  urban_map_fbd,                               &
+                       num_urban_hi,                                               &
                       trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,                     &
                       tlev_urb3d,qlev_urb3d,tw1lev_urb3d,tw2lev_urb3d,             &
                       tglev_urb3d,tflev_urb3d,sf_ac_urb3d,lf_ac_urb3d,             &
@@ -127,32 +130,41 @@ MODULE module_sf_bep_bem
    REAL, INTENT(IN) :: DECLIN_URB
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: COSZ_URB2D
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: OMG_URB2D
-   INTEGER, INTENT(IN  ) :: num_urban_layers
+   INTEGER, INTENT(IN  ) :: num_urban_ndm
+   INTEGER, INTENT(IN  ) :: urban_map_zrd
+   INTEGER, INTENT(IN  ) :: urban_map_zwd
+   INTEGER, INTENT(IN  ) :: urban_map_gd
+   INTEGER, INTENT(IN  ) :: urban_map_zd
+   INTEGER, INTENT(IN  ) :: urban_map_zdf
+   INTEGER, INTENT(IN  ) :: urban_map_bd
+   INTEGER, INTENT(IN  ) :: urban_map_wd
+   INTEGER, INTENT(IN  ) :: urban_map_gbd
+   INTEGER, INTENT(IN  ) :: urban_map_fbd
    INTEGER, INTENT(IN  ) :: num_urban_hi
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: trb_urb4d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw1_urb4d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw2_urb4d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tgb_urb4d
+   REAL, DIMENSION( ims:ime, 1:urban_map_zrd, jms:jme ), INTENT(INOUT) :: trb_urb4d
+   REAL, DIMENSION( ims:ime, 1:urban_map_zwd, jms:jme ), INTENT(INOUT) :: tw1_urb4d
+   REAL, DIMENSION( ims:ime, 1:urban_map_zwd, jms:jme ), INTENT(INOUT) :: tw2_urb4d
+   REAL, DIMENSION( ims:ime, 1:urban_map_gd , jms:jme ), INTENT(INOUT) :: tgb_urb4d
 !New variables used for BEM
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ):: qv_phy
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tlev_urb3d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: qlev_urb3d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw1lev_urb3d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw2lev_urb3d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tglev_urb3d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tflev_urb3d
+   REAL, DIMENSION( ims:ime, 1:urban_map_bd , jms:jme ), INTENT(INOUT) :: tlev_urb3d
+   REAL, DIMENSION( ims:ime, 1:urban_map_bd , jms:jme ), INTENT(INOUT) :: qlev_urb3d
+   REAL, DIMENSION( ims:ime, 1:urban_map_wd , jms:jme ), INTENT(INOUT) :: tw1lev_urb3d
+   REAL, DIMENSION( ims:ime, 1:urban_map_wd , jms:jme ), INTENT(INOUT) :: tw2lev_urb3d
+   REAL, DIMENSION( ims:ime, 1:urban_map_gbd, jms:jme ), INTENT(INOUT) :: tglev_urb3d
+   REAL, DIMENSION( ims:ime, 1:urban_map_fbd, jms:jme ), INTENT(INOUT) :: tflev_urb3d
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: lf_ac_urb3d
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: sf_ac_urb3d
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: cm_ac_urb3d
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: sfvent_urb3d
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: lfvent_urb3d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfwin1_urb3d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfwin2_urb3d
+   REAL, DIMENSION( ims:ime, 1:urban_map_wd , jms:jme ), INTENT(INOUT) :: sfwin1_urb3d
+   REAL, DIMENSION( ims:ime, 1:urban_map_wd , jms:jme ), INTENT(INOUT) :: sfwin2_urb3d
 !End variables
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfw1_urb3d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfw2_urb3d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfr_urb3d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfg_urb3d
+   REAL, DIMENSION( ims:ime, 1:urban_map_zd , jms:jme ), INTENT(INOUT) :: sfw1_urb3d
+   REAL, DIMENSION( ims:ime, 1:urban_map_zd , jms:jme ), INTENT(INOUT) :: sfw2_urb3d
+   REAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ), INTENT(INOUT) :: sfr_urb3d
+   REAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ), INTENT(INOUT) :: sfg_urb3d
    REAL, DIMENSION( ims:ime, 1:num_urban_hi, jms:jme ), INTENT(IN) :: hi_urb2d
    REAL, DIMENSION( ims:ime,jms:jme), INTENT(IN) :: lp_urb2d
    REAL, DIMENSION( ims:ime,jms:jme), INTENT(IN) :: lb_urb2d
@@ -409,30 +421,30 @@ MODULE module_sf_bep_bem
 !
 !prepare the arrays to collapse indexes
 
-      if(num_urban_layers.lt.nbui_max*nz_um*ndm*max(nwr_u,ng_u))then
-        write(*,*)'num_urban_layers too small, please increase to at least ', nbui_max*nz_um*ndm*max(nwr_u,ng_u)
+      if(urban_map_zwd.lt.nbui_max*nz_um*ndm*max(nwr_u,ng_u))then
+        write(*,*)'urban_map_zwd too small, please increase to at least ', nbui_max*nz_um*ndm*max(nwr_u,ng_u)
         stop
       endif
 !
 !New conditions for BEM
 !
-      if(num_urban_layers.lt.nbui_max*nz_um)then !limit for indoor temperature and indoor humidity
-        write(*,*)'num_urban_layers too small, please increase to at least ', nbui_max*nz_um
+      if(urban_map_bd.lt.nbui_max*nz_um)then !limit for indoor temperature and indoor humidity
+        write(*,*)'urban_map_bd too small, please increase to at least ', nbui_max*nz_um
         stop
       endif
 
-      if(num_urban_layers.lt.nbui_max*nz_um*ndm)then !limit for window temperature
-        write(*,*)'num_urban_layers too small, please increase to at least ', nbui_max*nz_um*ndm
+      if(urban_map_wd.lt.nbui_max*nz_um*ndm)then !limit for window temperature
+        write(*,*)'urban_map_wd too small, please increase to at least ', nbui_max*nz_um*ndm
         stop
       endif
 
-      if(num_urban_layers.lt.nbui_max*ndm*ngb_u)then !limit for ground temperature below a building
-        write(*,*)'num_urban_layers too small, please increase to at least ', nbui_max*ndm*ngb_u
+      if(urban_map_gbd.lt.nbui_max*ndm*ngb_u)then !limit for ground temperature below a building
+        write(*,*)'urban_map_gbd too small, please increase to at least ', nbui_max*ndm*ngb_u
         stop
       endif
 
-      if(num_urban_layers.lt.(nz_um-1)*nbui_max*ndm*nf_u)then !limit for floor temperature 
-        write(*,*)'num_urban_layers too small, please increase to at least ', nbui_max*ndm*nf_u*(nz_um-1),num_urban_layers
+      if(urban_map_fbd.lt.(nz_um-1)*nbui_max*ndm*nf_u)then !limit for floor temperature 
+        write(*,*)'urban_map_fbd too small, please increase to at least ', nbui_max*ndm*nf_u*(nz_um-1)
         stop
       endif
 
@@ -4140,7 +4152,7 @@ MODULE module_sf_bep_bem
        do iu=1,icate
               if(ndm.lt.nd_u(iu))then
                 write(*,*)'ndm too small in module_sf_bep_bem, please increase to at least ', nd_u(iu)
-                write(*,*)'remember also that num_urban_layers should be equal or greater than nz_um*ndm*nwr-u!'
+                write(*,*)'remember also that urban_map_zrd should be equal or greater than nz_um*ndm*nwr-u!'
                 stop
               endif
          do i=1,nd_u(iu)
@@ -4152,7 +4164,7 @@ MODULE module_sf_bep_bem
        do iu=1,ICATE
           if(nz_um.lt.numhgt_tbl(iu)+3)then
               write(*,*)'nz_um too small in module_sf_bep, please increase to at least ',numhgt_tbl(iu)+3
-              write(*,*)'remember also that num_urban_layers should be equal or greater than nz_um*ndm*nwr-u!'
+              write(*,*)'remember also that urban_map_zrd should be equal or greater than nz_um*ndm*nwr-u!'
               stop
           endif
          do i=1,NUMHGT_TBL(iu)

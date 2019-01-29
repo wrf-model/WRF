@@ -2129,6 +2129,41 @@
 
 
 !-----------------------------------------------------------------------
+! Set the namelist urban dimensions if sf_urban_physics > 0  
+!-----------------------------------------------------------------------
+
+      IF ( any(model_config_rec%sf_urban_physics > 0 ) ) THEN
+      
+         model_config_rec%urban_map_zrd = model_config_rec%num_urban_ndm * &
+                                          model_config_rec%num_urban_nwr * &
+                                          model_config_rec%num_urban_nz
+         model_config_rec%urban_map_zwd = model_config_rec%num_urban_ndm * &
+                                          model_config_rec%num_urban_nwr * &
+                                          model_config_rec%num_urban_nz  * &
+                                          model_config_rec%num_urban_nbui
+         model_config_rec%urban_map_gd  = model_config_rec%num_urban_ndm * &
+                                          model_config_rec%num_urban_ng
+         model_config_rec%urban_map_zd  = model_config_rec%num_urban_ndm * &
+                                          model_config_rec%num_urban_nz  * &
+                                          model_config_rec%num_urban_nbui
+         model_config_rec%urban_map_zdf = model_config_rec%num_urban_ndm * &
+                                          model_config_rec%num_urban_nz 
+         model_config_rec%urban_map_bd  = model_config_rec%num_urban_nz  * &
+                                          model_config_rec%num_urban_nbui
+         model_config_rec%urban_map_wd  = model_config_rec%num_urban_ndm * &
+                                          model_config_rec%num_urban_nz  * &
+                                          model_config_rec%num_urban_nbui
+         model_config_rec%urban_map_gbd = model_config_rec%num_urban_ndm * &
+                                          model_config_rec%num_urban_ngb * &
+                                          model_config_rec%num_urban_nbui
+         model_config_rec%urban_map_fbd = model_config_rec%num_urban_ndm       * &
+                                          (model_config_rec%num_urban_nz - 1)  * &
+                                          model_config_rec%num_urban_nf        * &
+                                          model_config_rec%num_urban_nbui
+
+      END IF     
+      
+!-----------------------------------------------------------------------
 ! Set the namelist mosaic_cat_soil parameter for the Noah-mosaic  scheme if sf_surface_mosaic == 1.  
 !-----------------------------------------------------------------------
 

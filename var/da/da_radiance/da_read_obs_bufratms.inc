@@ -345,6 +345,9 @@ bufrfile:  do ibufr=1,numbufr
    info_1d%lat = lat_save(1:nnum)
    info_1d%lon = lon_save(1:nnum)
 
+   deallocate(lat_save)
+   deallocate(lon_save)
+
    ! Determine loc_1d, outside_1d, outside_all_1d
    !---------------------------------------------------------------------------------
    call da_llxy_1d (info_1d, loc_1d, outside_1d, outside_all_1d)
@@ -700,8 +703,6 @@ bufrfile:  do ibufr=1,numbufr
    deallocate(Time_save)
    deallocate(BT_InOut_save)
    deallocate(Scanline_save)
-   deallocate(lat_save)
-   deallocate(lon_save)
    deallocate(satid_save)
    deallocate(obs_time_save)
    deallocate(satzen_save)

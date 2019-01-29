@@ -386,6 +386,7 @@ bufrfile:  do ibufr=1,numbufr
      if( abs(airsspot%clath) > R90  .or. &
           abs(airsspot%clonh) > R360 .or. &
           (abs(airsspot%clath) == R90 .and. airsspot%clonh /= ZERO) )then
+        irads = irads - 1
         cycle loop_obspoints
      end if
 

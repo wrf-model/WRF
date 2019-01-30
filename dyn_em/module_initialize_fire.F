@@ -29,7 +29,6 @@ MODULE module_initialize_ideal
 #endif
    USE module_fr_fire_util, ONLY: continue_at_boundary,crash,read_array_2d_real, &
      read_array_2d_integer,interpolate_2d,set_ideal_coord
-   USE module_fr_fire_driver, ONLY: set_flags
 
 CONTAINS
 
@@ -245,8 +244,6 @@ CONTAINS
 
 ! ***** fire
       write(6,*) '*************************************'
-
-      call set_flags(config_flags)
 
 !AK/ak surface initialization latitude, longitude, landuse index from from LANDUSE.TBL skin temperature and soil temperature
    IF (sfc_init) THEN

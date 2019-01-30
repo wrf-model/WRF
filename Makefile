@@ -562,7 +562,6 @@ em_real : wrf
                ln -sf ../../run/ishmael-qi-qc.bin . ;             \
                ln -sf ../../run/ishmael-qi-qr.bin . ;             \
                ln -sf ../../run/BROADBAND_CLOUD_GODDARD.bin . ;        \
-
                if [ $(RWORDSIZE) -eq 8 ] ; then                        \
                   ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;   \
                   ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \

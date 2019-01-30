@@ -2187,12 +2187,12 @@ rconfig   integer     bl_mynn_tkebudget   namelist,physics      max_domains    0
 rconfig   integer     ysu_topdown_pblmix  namelist,physics      1              0       rh       "ysu_topdown_pblmix"            ""      ""
 rconfig   integer     shinhong_tke_diag   namelist,physics      max_domains    0       rh       "shinhong_tke_diag"             ""      ""
 rconfig   logical     bl_mynn_tkeadvect   namelist,physics      max_domains    .false.  rh      "bl_mynn_tkeadvect"             ""      ""
-rconfig   integer     bl_mynn_cloudpdf    namelist,physics      1              2       irh      "bl_mynn_cloudpdf"              ""      ""
-rconfig   integer     bl_mynn_mixlength   namelist,physics      1              2       irh      "bl_mynn_mixlength"             "0:original,1:RAP/HRRR,2:new blending&cloud mix length" ""
+rconfig   integer     bl_mynn_cloudpdf    namelist,physics      1              2       irh      "bl_mynn_cloudpdf"              "0:original, 1:Kuwano, 2:Chaboreau-Bechtold"            ""
+rconfig   integer     bl_mynn_mixlength   namelist,physics      1              1       irh      "bl_mynn_mixlength"             "0:original,1:RAP/HRRR,2:new blending&cloud mix length" ""
 rconfig   integer     bl_mynn_edmf        namelist,physics      max_domains    1       irh      "bl_mynn_edmf"                  "0:off,1:activate mass-flux in mynn"                    ""
-rconfig   integer     bl_mynn_edmf_mom    namelist,physics      max_domains    0       irh      "bl_mynn_edmf_mom"              "0:off,1:activate mass-flux transport of momentum"      ""
+rconfig   integer     bl_mynn_edmf_mom    namelist,physics      max_domains    1       irh      "bl_mynn_edmf_mom"              "0:off,1:activate mass-flux transport of momentum"      ""
 rconfig   integer     bl_mynn_edmf_tke    namelist,physics      max_domains    0       irh      "bl_mynn_edmf_tke"              "0:off,1:activate mass-flux transport of tke"           ""
-rconfig   integer     bl_mynn_edmf_part   namelist,physics      max_domains    0       irh      "bl_mynn_edmf_part"             "0:off,1:activate areal partitioning of ed and mf"      ""
+rconfig   integer     bl_mynn_mixscalars  namelist,physics      max_domains    0       irh      "bl_mynn_mixscalars"            "0:off,1:activate mixing of scalars (qnx, qnxfa) in MYNN"      ""
 rconfig   integer     bl_mynn_cloudmix    namelist,physics      max_domains    1       irh      "bl_mynn_cloudmix"              "0:off,1:activate mixing of all cloud species"          ""
 rconfig   integer     bl_mynn_mixqt       namelist,physics      max_domains    0       irh      "bl_mynn_mixqt"                 "0:mix moisture species separate,1: mix total water"    ""
 rconfig   integer     icloud_bl           namelist,physics      1              1       irh      "icloud_bl"                     "0:no subgrid cloud-radiation coupling,1:activated"     ""
@@ -2823,8 +2823,7 @@ package   gbmpblscheme   bl_pbl_physics==12          -             state:exch_tk
 package   mrfscheme      bl_pbl_physics==99          -             -
 
 package   mynn_tkebudget bl_mynn_tkebudget==1        -             state:qSHEAR,qBUOY,qDISS,qWT,dqke
-package   mynn_stem_edmf bl_mynn_edmf==1            -              state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,ktop_shallow,maxmf,nupdraft
-package   mynn_temf_edmf bl_mynn_edmf==2            -              state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc
+package   mynn_dmp_edmf  bl_mynn_edmf==1            -              state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,ktop_shallow,maxmf,nupdraft
 package   pbl_cloud      icloud_bl==1                -             state:cldfra_bl,qc_bl
 
 # dfi

@@ -1547,7 +1547,7 @@
       END IF
 
 !-----------------------------------------------------------------------
-!  scalar_pblmix = 1 should be turned on for mp_physics=28.
+!  scalar_pblmix = 1 should be turned on for mp_physics=28. But can be off for MYNN (when bl_mynn_mixscalars = 1)
 !-----------------------------------------------------------------------
       oops = 0
       DO i = 1, model_config_rec % max_dom
@@ -1563,6 +1563,22 @@
          CALL wrf_debug ( 1, wrf_err_message )
          wrf_err_message = 'resetting scalar_pblmix = 1'
          CALL wrf_debug ( 1, wrf_err_message )
+      END IF
+
+      !NOW CHECK FOR MYNN
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ((model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2) .OR. &
+             (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3) ) THEN
+            IF ( model_config_rec%bl_mynn_mixscalars(i) .EQ. 1 ) THEN
+                model_config_rec%scalar_pblmix(i) = 0
+                oops = oops + 1
+            END IF
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- WARNING: MYNN is set to mix scalars, turning off scalar_pblmix'
+         CALL wrf_message ( wrf_err_message )
       END IF
 
 !-----------------------------------------------------------------------

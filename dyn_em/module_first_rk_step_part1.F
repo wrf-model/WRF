@@ -983,6 +983,8 @@ BENCH_START(pbl_driver_tim)
      &        ,QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI                 &
      &        ,QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS                 &
      &        ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG                 &
+     &        ,QNIFA_CURR=scalar(ims,kms,jms,P_QNIFA),F_QNIFA=F_QNIFA     &
+     &        ,QNWFA_CURR=scalar(ims,kms,jms,P_QNWFA),F_QNWFA=F_QNWFA     &
      &        ,HOL=HOL, MOL=grid%mol, REGIME=grid%REGIME                  &
 !mynn mp@
      &        ,QKE=grid%qke, Sh3d=grid%sh3d                               &
@@ -999,7 +1001,7 @@ BENCH_START(pbl_driver_tim)
      &        ,bl_mynn_edmf=config_flags%bl_mynn_edmf                     &
      &        ,bl_mynn_edmf_mom=config_flags%bl_mynn_edmf_mom             &
      &        ,bl_mynn_edmf_tke=config_flags%bl_mynn_edmf_tke             &
-     &        ,bl_mynn_edmf_part=config_flags%bl_mynn_edmf_part           &
+     &        ,bl_mynn_mixscalars=config_flags%bl_mynn_mixscalars         &
      &        ,bl_mynn_cloudmix=config_flags%bl_mynn_cloudmix             &
      &        ,bl_mynn_mixqt=config_flags%bl_mynn_mixqt                   &
      &        ,edmf_a=grid%edmf_a,edmf_w=grid%edmf_w                      &

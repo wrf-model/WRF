@@ -3068,34 +3068,6 @@ integer::oops1,oops2
                grid%MH_URB2D(i,j)  = grid%URB_PARAM(i,92,j)
                grid%STDH_URB2D(i,j)  = grid%URB_PARAM(i,93,j)
             ENDIF
-            grid%H2W_URB2D(i,j)  = grid%URB_PARAM(i,101,j)
-            grid%Z0S_URB2D(i,j)  = grid%URB_PARAM(i,103,j)
-            grid%ZDS_URB2D(i,j)  = grid%URB_PARAM(i,104,j)
-            grid%ZDM_URB2D(i,j)  = grid%URB_PARAM(i,117,j)
-            IF(grid%URB_PARAM(i,100,j).eq.0)THEN
-               grid%CAR_URB2D(i,j) = 1.0
-            ELSE
-               grid%CAR_URB2D(i,j) = grid%URB_PARAM(i,100,j)
-            END IF
-            IF(grid%URB_PARAM(i,102,j).eq.0)THEN
-               grid%SVF_URB2D(i,j) = 1.0
-            ELSE
-               grid%SVF_URB2D(i,j) = grid%URB_PARAM(i,102,j)
-            END IF
-         END DO
-      END DO
-
-      DO j = jts , MIN(jde-1,jte)
-         DO i = its , MIN(ide-1,ite)
-            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
-            DO k = 1, 15
-               grid%FAD0_URB2D(i,k,j)  = grid%URB_PARAM(i,k,j)
-               grid%FAD135_URB2D(i,k,j)  = grid%URB_PARAM(i,k+15,j)
-               grid%FAD45_URB2D(i,k,j)  = grid%URB_PARAM(i,k+30,j)
-               grid%FAD90_URB2D(i,k,j)  = grid%URB_PARAM(i,k+45,j)
-               grid%PAD_URB2D(i,k,j)  = grid%URB_PARAM(i,k+60,j)
-               grid%RAD_URB2D(i,k,j)  = grid%URB_PARAM(i,k+75,j)
-            END DO
          END DO
       END DO
 
@@ -3106,22 +3078,7 @@ integer::oops1,oops2
                IF ( config_flags%sf_urban_physics==1 ) THEN
                   grid%LF_URB2D(i,k,j)  = grid%URB_PARAM(i,k+95,j)
                ENDIF
-               grid%Z0M_URB2D(i,k,j)  = grid%URB_PARAM(i,k+112,j)
             END DO
-         END DO
-      END DO
-
-      DO  j = jts , MIN(jde-1,jte)
-         DO i = its , MIN(ide-1,ite)
-            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
-            grid%Z0R_URB2D(i,1,j)  = grid%URB_PARAM(i,105,j)
-            grid%Z0R_URB2D(i,2,j)  = grid%URB_PARAM(i,107,j)
-            grid%Z0R_URB2D(i,3,j)  = grid%URB_PARAM(i,109,j)
-            grid%Z0R_URB2D(i,4,j)  = grid%URB_PARAM(i,111,j)
-            grid%ZDR_URB2D(i,1,j)  = grid%URB_PARAM(i,106,j)
-            grid%ZDR_URB2D(i,2,j)  = grid%URB_PARAM(i,108,j)
-            grid%ZDR_URB2D(i,3,j)  = grid%URB_PARAM(i,110,j)
-            grid%ZDR_URB2D(i,4,j)  = grid%URB_PARAM(i,112,j)
          END DO
       END DO
 

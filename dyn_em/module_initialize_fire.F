@@ -28,7 +28,8 @@ MODULE module_initialize_ideal
    USE module_dm
 #endif
    USE module_fr_fire_util, ONLY: continue_at_boundary,crash,read_array_2d_real, &
-     read_array_2d_integer,interpolate_2d,set_ideal_coord 
+     read_array_2d_integer,interpolate_2d,set_ideal_coord
+   USE module_fr_fire_driver, ONLY: set_flags
 
 CONTAINS
 
@@ -120,11 +121,13 @@ CONTAINS
              ifts,ifte, kfts,kfte, jfts,jfte
 
    REAL :: mtn_ht, mtn_max, mtn_x, mtn_y, mtn_z, grad_max
+   REAL :: tign_max,tign_min
    REAL :: mtn_axs, mtn_ays, mtn_axe, mtn_aye
    REAL :: mtn_fxs, mtn_fys, mtn_fxe, mtn_fye
    REAL :: mtn_xs, mtn_ys, mtn_xe, mtn_ye
    REAL :: fdx,fdy ! fire mesh step
    INTEGER:: ir,jr ! refinement factors
+   REAL :: minhfx,maxhfx,totheat
 
    logical have_fire_ht,have_fire_grad,have_atm_grad
 
@@ -240,8 +243,12 @@ CONTAINS
       END DO
     END DO     
 
+! ***** fire
+      write(6,*) '*************************************'
+
+      call set_flags(config_flags)
+
 !AK/ak surface initialization latitude, longitude, landuse index from from LANDUSE.TBL skin temperature and soil temperature
-write(6,*) '*************************************'
    IF (sfc_init) THEN
     DO j = jts, jte
       DO i = its, ite
@@ -494,7 +501,8 @@ write(6,*) '*************************************'
        ifms,ifme, jfms,jfme,kfms,kfme,  & 
        ifts,ifte, jfts,jfte,kfts,kfte)
 
-  write (6,*)' ******** SFIRE ideal initialization ********'
+IF ((grid%sr_x > 0 .OR. grid%sr_y > 0) .AND. config_flags%ifire == 2) THEN
+  write (6,*)' ******** SFIRE ideal initialization start ********'
 
   ! fire grid step size
   fdx = grid%dx/grid%sr_x
@@ -520,6 +528,11 @@ write(6,*) '*************************************'
                 ifms,ifme,jfms,jfme,  &
                 ifts,ifte,jfts,jfte,  &
                 grid%fxlong,grid%fxlat          )
+  call set_ideal_coord( grid%dx,grid%dy, &
+                ids,ide,jds,jde,  &
+                ims,ime,jms,jme,  &
+                its,ite,jts,jte,  &
+                grid%xlong,grid%xlat          )
 
 ! set terrain height
 
@@ -529,8 +542,36 @@ write(6,*) '*************************************'
   ENDDO
   ENDDO
 
-  if(config_flags%fire_fuel_read.eq.2) &
+  if(config_flags%fire_fmc_read.eq.2) then
+          write(6,*)'Reading fuel moisture from file input_fmc_g'
+          call read_array_2d_real   ('input_fmc_g',grid%fmc_g,    ifds,ifde,jfds,jfde,ifms,ifme,jfms,jfme) 
+  endif
+
+
+  if(config_flags%fire_fuel_read.eq.2) then
+      write(6,*)'Reading fuel map from file input_fc'
       call read_array_2d_real('input_fc',grid%nfuel_cat,ifds,ifde,jfds,jfde,ifms,ifme,jfms,jfme) 
+  endif
+
+  if(config_flags%fire_hfx_given.eq.2) then
+      write(6,*)'Reading given heat flux from file input_hfx'
+      call read_array_2d_real('input_hfx',grid%fire_hfx,ifds,ifde,jfds,jfde,ifms,ifme,jfms,jfme) 
+      maxhfx=-huge(maxhfx)
+      minhfx=huge(minhfx)
+      totheat=0.
+      do j=jfds,jfde
+         do i=ifds,ifde
+             minhfx  = max(minhfx,grid%fire_hfx(i,j))
+             maxhfx  = max(maxhfx,grid%fire_hfx(i,j))
+             totheat = totheat + grid%fire_hfx(i,j)*fdx*fdy
+         enddo
+      enddo
+      write(6,*)'Given heat flux min ',minhfx,' max ',maxhfx,' W/m^2'
+      write(6,*)'Total heat ',totheat,' W'
+      if(minhfx<0.)call crash('Heat flux must be nonnegative number')
+  endif
+
+
 
 
   have_fire_grad=.false.
@@ -704,6 +745,30 @@ write(6,*) '*************************************'
     ENDDO
     write(6, *)' Max terrain height on the fire mesh       ',mtn_max
     write(6, *)' Max terrain gradient on the fire mesh     ',grad_max
+
+! JM read ignition time from file if we are replaying fire history up to the specified time
+   write(6,*)'fire_perimeter_time= ',config_flags%fire_perimeter_time,' fire_tign_in_time=',config_flags%fire_tign_in_time
+   if(config_flags%fire_perimeter_time > 0. .or. config_flags%fire_tign_in_time > 0.)then 
+       write(6,*)'Reading ignition times from file input_tign_g'
+       call read_array_2d_real('input_tign_g',grid%tign_g,ifds,ifde,jfds,jfde,ifms,ifme,jfms,jfme) 
+       tign_max = -huge(tign_max)
+       tign_min = huge(tign_min)
+       k=0
+       do j=jfds,jfde
+          do i=ifds,ifde
+             tign_max=max(tign_max,grid%tign_g(i,j))
+             tign_min=min(tign_min,grid%tign_g(i,j))
+             if(grid%tign_g(i,j) < config_flags%fire_perimeter_time) k=k+1
+          enddo
+       enddo
+       write(6,*)'min max ignition time given ',tign_min,tign_max
+       write(6,*)k,real(k)/((ifde-ifds+1)*(jfde-jfds+1)),'% cells ignited at time ', & 
+          max(config_flags%fire_perimeter_time,config_flags%fire_tign_in_time)
+   endif
+   write (6,*)' ******** SFIRE ideal initialization complete ********'
+else
+  write (6,*)' ******** SFIRE ideal initialization skipped ********'
+endif
   
 ! the rest of initialization dependent on the atmosphere grid terrain height set
 

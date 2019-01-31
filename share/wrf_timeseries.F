@@ -159,8 +159,6 @@ SUBROUTINE calc_ts_locations( grid )
                 ts_rx = grid%itsloc(k)  
                 ts_ry = grid%jtsloc(k)
             ELSE
-               ts_rx = grid%lattsloc(k)           ! NB: (x,y) = (lat,lon) rather than (x,y) = (lon,lat)
-               ts_ry = grid%lontsloc(k)
                CALL latlon_to_ij(ts_proj, grid%lattsloc(k), grid%lontsloc(k), ts_rx, ts_ry)
             END IF
             

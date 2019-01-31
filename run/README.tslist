@@ -20,7 +20,7 @@ If cell locations are to be used (such as for idealized cases), the i/j
 locations are to be specified as follows:
 
 #-----------------------------------------------#
-# 24 characters for name | pfx |   J   |    I   |
+# 24 characters for name | pfx |   I   |    J   |
 #-----------------------------------------------#
 tower0001                 t0001  10       10
 tower0002                 t0002  20       20

@@ -1465,12 +1465,6 @@ CONTAINS
            cldfra(I,K,J) = max(cldfra_sh(I,K,J), cldfra(I,K,J))
            qc_save(I,K,J)=qc(I,K,J)
            qc(I,K,J)=cw_rad(I,K,J)+qc(I,K,J)
-!           cw_rad_total(I,K,J) = cw_rad(I,K,J)  ! should be qc=cw_rad+qc
-!          ca_rad_total(I,K,J) = 0.0    ! no clouds for radiation
-!          cw_rad_total(I,K,J) = 0.0
-!          ca_rad_total(I,K,J) = CLDFRA(I,K,J)   ! no partial clouds for
-!          radiation
-!          cw_rad_total(I,K,J) = QC(I,K,J)
         ENDDO
         ENDDO
         ENDDO

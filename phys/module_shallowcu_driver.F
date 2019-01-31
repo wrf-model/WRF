@@ -52,9 +52,6 @@ CONTAINS
                      ,wstar,delta,kpbl,znu,raincv                   &
                  ! for nscv shallow convection
                      ,w,xland,hfx,qfx,mp_physics,pgcon              &
-!
-! PSU-DENG
-!
                      !jkim: ,RDCASHTEN, RQCDCSHTEN, w, W0AVG                 &
                      ,RDCASHTEN, RQCDCSHTEN, W0AVG                 &
                      ,clddpthb, cldtopb                               &
@@ -67,11 +64,7 @@ CONTAINS
                      ,el_pbl, rthratenlw, rthratensw, exch_h          &
                      ,dnw, xtime, xtime1, gmt                         &
                      ,qke,PBLHAVG, TKEAVG                             &
-            !         ,kth3d, bbls3d, tkeb                        &
                      ,bl_pbl_physics                                  &
-!
-! END PSU-DENG
-!
                                                                       )
 !----------------------------------------------------------------------
    USE module_model_constants
@@ -81,29 +74,14 @@ CONTAINS
 # endif
                                        , G3SHCUSCHEME     & 
                                        , GRIMSSHCUSCHEME  &
-!
-! PSU-DENG
-!
                                        , DENGSHCUSCHEME   &
-!
-! END PSU-DENG
-!
                                        , NSCVSHCUSCHEME 
 ! *** add new modules of schemes here
 
    USE module_shcu_camuwshcu_driver, ONLY : camuwshcu_driver
    USE module_shcu_grims           , ONLY : grims
    USE module_shcu_nscv            , ONLY : shcu_nscv
-!
-! PSU-DENG
-!
    USE module_shcu_deng, ONLY: deng_shcu_driver
-!
-! END PSU-DENG
-!
-! PAJ: to avoid conflict with CP.
-!   USE module_shcu_grims
-!   USE module_shcu_grims, ONLY : grims
 
    USE module_dm
    USE module_domain, ONLY: domain
@@ -312,14 +290,8 @@ CONTAINS
 
 
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN) ::           &
-!
-!  PSU-DENG
-!
 !                 MAVAIL,PBLH,ht
                          PBLH,ht
-!
-! END PSU-DENG
-!
 
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
           INTENT(INOUT) ::                               RAINSH  &
@@ -439,11 +411,6 @@ CONTAINS
    REAL, DIMENSION( ims:ime, 1:100, jms:jme ),                 &
                    INTENT(INOUT) ::                              &
                                  ainckfsa
- !mchen  REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
- !mchen        INTENT(IN ) ::                                          &
- !mchen                                                       kth3d,   &
- !mchen                                                       bbls3d,  &
- !mchen                                                       tkeb
 
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme )  :: tke_scr, kth_scr, bbls_scr
 !
@@ -606,24 +573,10 @@ CONTAINS
          CALL wrf_error_fatal('Lacking arguments for SHCU_NSCV in shallow cumulus driver')
       ENDIF
 
-!
-! PSU-DENG
-!
   CASE (DENGSHCUSCHEME)
       CALL wrf_debug(100,'in PSU-DENG Shallow Cu CPS')
 
 
-    !  IF( bl_pbl_physics == 11 ) THEN
-    !     DO j=jts,jte
-    !     DO i=its,ite
-    !     DO k=kts,kte
-    !        tke_scr(I,K,J) = tkeb(I,K+1,J)
-    !        kth_scr(I,K,J) = kth3d(I,K+1,J)
-    !        bbls_scr(I,K,J) = bbls3d(I,K,J)
-    !     ENDDO
-    !     ENDDO
-    !     ENDDO
-    !  ELSE IF ( bl_pbl_physics == 2 ) THEN   ! MYJ
      IF ( bl_pbl_physics == 2 ) THEN   ! MYJ
          DO j=jts,jte
          DO i=its,ite
@@ -660,8 +613,9 @@ CONTAINS
            ,CP=CP, R=R_d ,G=G                                            &
            ,SVP1=SVP1 ,SVP2=SVP2 ,SVP3=SVP3 ,SVPT0=SVPT0                 &
            ,ADAPT_STEP_FLAG=ADAPT_STEP_FLAG, DSIGMA=dnw                  &
-           ,XLONG=xlong, HT=ht, PBLH=pblh   &
-           ,U=u,V=v, w=w, TH=th ,T=t, QV=qv_curr, QC=qc_curr, QR=qr_curr, DZ8W=dz8w  &
+           ,XLONG=xlong, HT=ht, PBLH=pblh                                &
+           ,U=u,V=v, w=w, TH=th ,T=t                                     &
+           ,QV=qv_curr, QC=qc_curr, QR=qr_curr, DZ8W=dz8w                &
            ,PCPS=p, RHO=rho, Z_AT_W=z_at_w, PI=pi                        &
            ,TKE=tke_scr, kth=kth_scr, bbls=bbls_scr                      &
            ,ten_radl=rthratenlw, ten_rads=rthratensw                     &
@@ -674,14 +628,11 @@ CONTAINS
            ,W0AVG=W0AVG, TKEAVG=TKEAVG                                   &
            ,cldareaa=cldareaa, cldareab=cldareab                         &
            ,cldliqa=cldliqa, cldliqb=cldliqb                             &
-           ,cldfra_sh=cldfra_sh,ca_rad=ca_rad, cw_rad=cw_rad, wub=wub                        &
+           ,cldfra_sh=cldfra_sh,ca_rad=ca_rad, cw_rad=cw_rad, wub=wub    &
            ,RUSHTEN=rushten, RVSHTEN=rvshten, RTHSHTEN=rthshten          &
            ,RQVSHTEN=rqvshten, RQCSHTEN=rqcshten, RQRSHTEN=rqrshten      &
            ,RDCASHTEN=RDCASHTEN, RQCDCSHTEN=RQCDCSHTEN                   &
                                                                          )
-!
-! END PSU-DENG
-!
 
 
    CASE DEFAULT 

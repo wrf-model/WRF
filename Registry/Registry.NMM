@@ -460,8 +460,8 @@ state  real   AKMS_OUT  ij    dyn_nmm   1    -     rh023       "AKMS_OUT"  "Outp
 #
 # module_PHYS
 #
-state  real   cd_out    ij    dyn_nmm   1    -     rh0123d=(DownCopy)       "CD_OUT"  "sfc exch coeff for momentum"        "m2 s-1"
-state  real   ch_out    ij    dyn_nmm   1    -     rh0123d=(DownCopy)       "CH_OUT"  "sfc exch coeff for heat"            "m2 s-1"
+state  real   cd_out    ij    dyn_nmm   1    -     rh0123d=(DownCopy)       "CD10"  "sfc exch coeff for momentum at 10m"        "m2 s-1"
+state  real   ch_out    ij    dyn_nmm   1    -     rh0123d=(DownCopy)       "CH10"  "sfc exch coeff for heat at 10m"            "m2 s-1"
 
 state  real   albase    ij    dyn_nmm   1    -     i01rh023d=(DownCopy) "ALBASE"    "Base albedo"            ""
 state  real   albedo    ij    dyn_nmm   1    -     irh023      "ALBEDO"    "Dynamic albedo"         ""
@@ -1522,6 +1522,7 @@ rconfig   logical lcurr_sf                namelist,physics     max_domains    .f
 ifdef HWRF=1
 #added by Zhan Zhang for perturbings for SAS and PBL
 rconfig   integer ens_random_seed         namelist,physics     max_domains   -1       irh   "ens_random_seed"  "ensemble random number generator initial seed"
+rconfig   integer ensda_physics_pert      namelist,physics     max_domains    0       irh   "ensda_physics_pert"  "0: no stochastic phys pert., 1: yes"
 rconfig   logical pert_sas                namelist,physics      1        .false.      irh   "pert_sas"  "ensemble choice:F, no pert, T, pert SAS"
 rconfig   logical pert_pbl                namelist,physics      1        .false.      irh   "pert_pbl"  "ensemble choice:F, no pert, T, pert PBL"
 rconfig   logical pert_Cd                 namelist,physics      1        .false.      irh   "pert_Cd"  "ensemble choice:F, no pert, T, pert Cd"

@@ -1437,6 +1437,11 @@ CONTAINS
               ,coef_ric_l=coef_ric_l,coef_ric_s=coef_ric_s          &
               ,ALPHA=gfs_alpha                                      &
               ,xland=xland                                          &
+#if (HWRF==1)
+              ,pert_pbl=pert_pbl                                    &
+              ,ens_random_seed=ens_random_seed                      &
+              ,ens_pblamp=ens_pblamp                                &
+#endif
               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde      &
               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme      &
               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte      &

@@ -1058,6 +1058,11 @@
       CHARACTER(len=255) :: message
 #if HWRF==1
 !dbg integer :: kpblmin,kpblmax,lpblmin,lpblmax    !dbg
+      logical :: pert_pbl
+      logical :: pert_Cd
+      real    :: ens_Cdamp
+      real    :: ens_pblamp
+      integer :: ens_random_seed
 #endif
 !
 !
@@ -1650,6 +1655,8 @@
       CALL nl_get_var_ric(1, var_ric)
       CALL nl_get_coef_ric_s(1, coef_ric_s)
       CALL nl_get_coef_ric_l(1, coef_ric_l)
+      CALL nl_get_pert_pbl(1,pert_pbl)
+      CALL nl_get_ens_pblamp(1,ens_pblamp)
 !      write(0,*) 'var_ric & coef_ric_s l from namelist Kwon  ',var_ric,coef_ric_s,coef_ric_l
 #endif
 !
@@ -1715,9 +1722,9 @@
      &               ,DKU3D=DKU3D,DKT3D=DKT3D 
 #if HWRF==1
      &               ,coef_ric_l=coef_ric_l,coef_ric_s=coef_ric_s     &    !Kwon for Ric
-     &          ,pert_pbl=config_flags%pert_pbl                       &
-     &          ,ens_random_seed=config_flags%ens_random_seed         &
-     &          ,ens_pblamp=config_flags%ens_pblamp                   &
+     &          ,pert_pbl=pert_pbl                                    &
+     &          ,ens_random_seed=ens_random_seed                      &
+     &          ,ens_pblamp=ens_pblamp                                &
 #endif
      &               ,QV_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV &
      &               ,QC_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC &
@@ -2503,6 +2510,11 @@
       INTEGER                    :: IDT                
       REAL,   DIMENSION(2)       :: RND1 
 #endif
+#if HWRF==1
+      logical :: pert_sas
+      integer :: ens_random_seed
+      real    :: ens_sasamp
+#endif
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
@@ -2529,7 +2541,11 @@
          DO J=JMS,JME
          DO I=IMS,IME
            HTOP(I,J)=0.
+           HTOPD(I,J)=0.
+           HTOPS(I,J)=0.
            HBOT(I,J)=REAL(KTE+1)
+           HBOTD(I,J)=REAL(KTE+1)
+           HBOTS(I,J)=REAL(KTE+1)
            CUTOP(I,J)=0.
            CUBOT(I,J)=REAL(KTE+1)
            CUPPT(I,J)=0.
@@ -2656,6 +2672,25 @@
         ENDDO
       ENDDO
       ENDDO
+#if (NMM_CORE==1)
+!$omp parallel do                                                       &
+!$omp& private(i,j,k)
+        DO K=KTS,KTE
+        DO J=JTS,JTE
+        DO I=ITS,ITE
+           DUCUDT(i,j,k)=0.0
+           DVCUDT(i,j,k)=0.0
+           DTHCUDT(i,j,k)=0.0
+           DQVCUDT(i,j,k)=0.0
+           DQRCUDT(i,j,k)=0.0
+           DQCCUDT(i,j,k)=0.0
+           DQICUDT(i,j,k)=0.0
+           DQSCUDT(i,j,k)=0.0
+        ENDDO
+        ENDDO
+        ENDDO
+#endif
+
 !
 !-----------------------------------------------------------------------
 !
@@ -2789,6 +2824,12 @@
 
 
       CALL SET_TILES(GRID,IDS+1,IDE-1,JDS+2,JDE-2,ITS,ITE,JTS,JTE)
+#if HWRF==1
+      CALL nl_get_pert_sas(1,pert_sas)
+      CALL nl_get_ens_random_seed(1,ens_random_seed)
+      CALL nl_get_ens_sasamp(1,ens_sasamp)
+#endif
+
 #if (NMM_CORE==1)
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
@@ -2855,9 +2896,9 @@
      &                 ,RUCUTEN=DUCUDT, RVCUTEN=DVCUDT, MOMMIX=MOMMIX   &
                        ,store_rand=store_rand                           &
 #if (HWRF==1)
-     &                 ,pert_sas=config_flags%pert_sas                  &
-     &                 ,ens_random_seed=config_flags%ens_random_seed    &
-     &                 ,ens_sasamp=config_flags%ens_sasamp              &
+     &                 ,pert_sas=pert_sas                               &
+     &                 ,ens_random_seed=ens_random_seed                 &
+     &                 ,ens_sasamp=ens_sasamp                           &
 #endif
 #endif
      &                 ,SHALL=grid%shall                                &

@@ -20,7 +20,7 @@ CONTAINS
                     sealevelp,                                      &
                     temperature,pressure,geoheight,                 &
                     umet,vmet,speed,dir,                            &
-                    rain, liqrain, tpw,potential_t, rh,     &
+                    rain, liqrain, tpw,potential_t, rh,             &
                     ids,ide, jds,jde, kds,kde,                      &
                     ims,ime, jms,jme, kms,kme,                      &
                     ips,ipe, jps,jpe, kps,kpe,                      &

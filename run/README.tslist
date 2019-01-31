@@ -27,7 +27,7 @@ tower0002                 t0002  20       20
 tower0003                 t0003  30       30
 
 Given a tslist file, for each location inside a model domain (either coarse 
-or nested), below files are created:
+or nested), the following files are created:
 
 1. pfx*.dNN.TS containing the regular time series output of surface variables.
 2. pfx.dNN.UU containing a vertical profile of u wind component for each time step

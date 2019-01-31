@@ -449,6 +449,7 @@
      &                 ,SW_PHYSICS=CONFIG_FLAGS%RA_SW_PHYSICS           &
      &                 ,RADT=RADT,RA_CALL_OFFSET=GRID%RA_CALL_OFFSET    &
      &                 ,STEPRA=NRAD,ICLOUD=config_flags%ICLOUD          &
+     &                 ,cldovrlp=config_flags%cldovrlp                  & ! J. Henderson AER: cldovrlp namelist value
      &                 ,WARM_RAIN=WARM_RAIN                             &
      &                 ,SWDOWNC=TOTSWDNC,CLDFRA=CLFR                    &
      &                 ,SWUPT=SWUPT                                     &

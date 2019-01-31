@@ -1442,6 +1442,7 @@ rconfig   integer ISFFLX                  namelist,physics 	1             1     
 rconfig   integer ideal_xland             namelist,physics      1             1        rh    "IDEAL_XLAND"  "land=1(def), water=2, for ideal cases with no land-use"      ""
 rconfig   integer IFSNOW                  namelist,physics	1             1       irh    "IFSNOW"                        ""      ""
 rconfig   integer ICLOUD                  namelist,physics	1             1       irh    "ICLOUD"                        ""      ""
+rconfig   integer cldovrlp                namelist,physics      1             2       irh    "cldovrlp"                      "1=random, 2=maximum-random, 3=maximum, 4=exponential, 5=exponential-random"      ""
 rconfig   real    swrad_scat              namelist,physics      1             1       irh    "SWRAD_SCAT" "SCATTERING FACTOR IN SWRAD"      ""
 rconfig   integer surface_input_source    namelist,physics	1             1       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=hybrid (not yet implemented)"      ""
 rconfig   integer num_soil_layers         namelist,physics	1             5       irh    "num_soil_layers"               ""      ""

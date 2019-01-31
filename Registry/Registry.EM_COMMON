@@ -2194,6 +2194,7 @@ rconfig   real    GSMDT                   namelist,physics	max_domains    0     
 rconfig   integer ISFFLX                  namelist,physics 	1             1       irh    "ISFFLX"                        ""      ""
 rconfig   integer IFSNOW                  namelist,physics	1             1       irh    "IFSNOW"                        ""      ""
 rconfig   integer ICLOUD                  namelist,physics	1             1       irh    "ICLOUD"                        ""      ""
+rconfig   integer cldovrlp                namelist,physics      1             2       irh    "cldovrlp"                      "1=random, 2=maximum-random, 3=maximum, 4=exponential, 5=exponential-random"      ""
 rconfig   integer ideal_xland             namelist,physics	1             1        rh    "IDEAL_XLAND"  "land=1(def), water=2, for ideal cases with no land-use"      ""
 rconfig   real    swrad_scat              namelist,physics	1             1       irh    "SWRAD_SCAT" "SCATTERING FACTOR IN SWRAD"      ""
 rconfig   integer surface_input_source    namelist,physics	1             3       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=dominant cateogry from metgrid"      ""

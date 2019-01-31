@@ -171,9 +171,6 @@ CONTAINS
 
                tpw(i,j) = PWAT(kme-kms+1, qv(i,kms:kme,j), qc(i,kms:kme,j), dz8w(i,kms:kme,j), rho(i,kms:kme,j))  
 
-               ! Surface Pressure
-
- 
          END DO i_loop_2
       END DO j_loop_2
 

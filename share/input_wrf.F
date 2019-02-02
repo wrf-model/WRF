@@ -906,25 +906,25 @@
        !  Test to make sure that the input data is the right size: real into WRF.
 
        IF ( ide .NE. ide_compare ) THEN
-          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  I namelist e_we                         = ',ide
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist e_we                         = ',ide
           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  I input file WEST-EAST_GRID_DIMENSION   = ',ide_compare
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  input file WEST-EAST_GRID_DIMENSION   = ',ide_compare
           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
           CALL wrf_debug ( 0, "---- ERROR: Mismatch between namelist and input file dimensions" )
           count_fatal_error = count_fatal_error + 1
        ENDIF
        IF ( jde .NE. jde_compare ) THEN
-          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  J namelist e_sn                         = ',jde
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist e_sn                         = ',jde
           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  J input file SOUTH-NORTH_GRID_DIMENSION = ',jde_compare
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  input file SOUTH-NORTH_GRID_DIMENSION = ',jde_compare
           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
           CALL wrf_debug ( 0, "---- ERROR: Mismatch between namelist and input file dimensions" )
           count_fatal_error = count_fatal_error + 1
        ENDIF
        IF ( kde .NE. kde_compare ) THEN
-          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  K namelist e_vert                       = ',kde
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist e_vert                       = ',kde
           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  K input file BOTTOM-TOP_GRID_DIMENSION  = ',kde_compare
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  input file BOTTOM-TOP_GRID_DIMENSION  = ',kde_compare
           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
           CALL wrf_debug ( 0, "---- ERROR: Mismatch between namelist and input file dimensions" )
           count_fatal_error = count_fatal_error + 1
@@ -935,25 +935,25 @@
        !  Test to make sure that the input data is the right size: metgrid into real.
 
        IF ( ide                             .NE. ide_compare ) THEN
-          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  I namelist e_we                         = ',ide
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist e_we                         = ',ide
           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  I input file WEST-EAST_GRID_DIMENSION   = ',ide_compare
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  input file WEST-EAST_GRID_DIMENSION   = ',ide_compare
           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
           CALL wrf_debug ( 0, "---- ERROR: Mismatch between namelist and input file dimensions" )
           count_fatal_error = count_fatal_error + 1
        ENDIF
        IF ( jde                             .NE. jde_compare ) THEN
-          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  J namelist e_se                         = ',jde
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist e_se                         = ',jde
           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  J input file SOUTH-NORTH_GRID_DIMENSION = ',jde_compare
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  input file SOUTH-NORTH_GRID_DIMENSION = ',jde_compare
           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
           CALL wrf_debug ( 0, "---- ERROR: Mismatch between namelist and input file dimensions" )
           count_fatal_error = count_fatal_error + 1
        ENDIF
        IF ( config_flags%num_metgrid_levels .NE. kde_compare ) THEN
-          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  K namelist num_metgrid_levels           = ',config_flags%num_metgrid_levels
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist num_metgrid_levels           = ',config_flags%num_metgrid_levels
           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  K input file BOTTOM-TOP_GRID_DIMENSION  = ',kde_compare
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  input file BOTTOM-TOP_GRID_DIMENSION  = ',kde_compare
           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
           CALL wrf_debug ( 0, "---- ERROR: Mismatch between namelist and input file dimensions" )
           count_fatal_error = count_fatal_error + 1

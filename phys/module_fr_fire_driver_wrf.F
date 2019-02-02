@@ -48,7 +48,7 @@ subroutine fire_driver_em_init (grid , config_flags               &
                             ifps,ifpe, jfps,jfpe,kfps,kfpe) 
 
     call fire_driver_em ( grid , config_flags               & 
-            ,1,3,0                        & ! ifun start, end, test steps
+            ,1,2,0                        & ! ifun start, end, test steps
             ,ids,ide, kds,kde, jds,jde                              &
             ,ims,ime, kms,kme, jms,jme                              &
             ,ips,ipe, kps,kpe, jps,jpe                              &

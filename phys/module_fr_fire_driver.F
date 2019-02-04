@@ -831,12 +831,11 @@ do ij=1,num_tiles
             fp%vx,fp%vy,fz0)                                    ! fire grid arrays out
 
       endif
+
+    ! endif ! ifun
+    ! endif ! fire_run
      
-     endif ! ifun
-
-    endif ! fire_run
-
-    if(ifun.eq.4)then
+    elseif(ifun.eq.4)then
 
       ! interpolate and compute weighted average to get the fuel moisture
       !! print *,'ifun=4, run_fuel_moisture=',run_fuel_moisture
@@ -860,7 +859,9 @@ do ij=1,num_tiles
         call message('fuel_moisture end')
       endif ! run_fuel_moisture`
 
-    endif ! ifun
+     endif ! ifun
+
+    endif ! fire_run
 
 !   the following executes in any case
 

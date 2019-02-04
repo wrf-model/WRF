@@ -152,7 +152,7 @@
 ! moisture model
  fmoist_run = .true.,        ! yes do run the moisture model
  fmoist_interp = .true.,     ! yes do interpolate moisture to fuels
- fmoist_only = .true.,       ! skip the fire model and run moisture only
+ fmoist_only = .false.       ! skip the fire model and run moisture only
  fmoist_freq = 0,            ! frequency of run or 0 to run using the specified fmost_dt
  fmoist_dt = 10,             ! moisture model time step (s)
  fire_fmc_read = 0,

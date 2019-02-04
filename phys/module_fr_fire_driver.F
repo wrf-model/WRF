@@ -691,7 +691,7 @@ do ij=1,num_tiles
         
     if(fire_run)then
 
-    if(ifun.eq.1)then   ! set terrain
+     if(ifun.eq.1)then   ! set terrain
 
       if(restart)then
           
@@ -726,7 +726,8 @@ do ij=1,num_tiles
 
             ! DME: Next call added to fixe a bug when
             ! initializing a nested domain (before, fxlong & fxlat where not
-            ! assigned, therefore were zero and fire does not ignite)
+            ! assigned, they were supposed to be set by a mod in WPS 
+            ! but here we use standard WPS therefore were zero and fire does not ignite)
             call set_ideal_coord( dxf,dyf, &
                 ifds,ifde,jfds,jfde,  &
                 ifms,ifme,jfms,jfme,  &
@@ -830,12 +831,41 @@ do ij=1,num_tiles
             fp%vx,fp%vy,fz0)                                    ! fire grid arrays out
 
       endif
+     
+     endif ! ifun
 
-    endif
+    endif ! fire_run
+
+    if(ifun.eq.4)then
+
+      ! interpolate and compute weighted average to get the fuel moisture
+      !! print *,'ifun=4, run_fuel_moisture=',run_fuel_moisture
+      if(run_fuel_moisture)then
+        call message('fuel_moisture start')
+        call fuel_moisture(                &
+        id,                                     & ! for prints and maybe file names
+        nfmc,                                &
+        ids,ide, jds,jde,               & ! atm grid dimensions
+        ims,ime, jms,jme,           &
+        ips,ipe,jps,jpe,                &
+        its,ite,jts,jte,                     &
+        ifds, ifde, jfds, jfde,         & ! fire grid dimensions
+        ifms, ifme, jfms, jfme,     &
+        ifts,ifte,jfts,jfte,                 &
+        ir,jr,                                   & ! atm/fire grid ratio
+        nfuel_cat,                         & ! fuel data
+        fmc_gc,                             & ! moisture contents by class on atmospheric grid
+        fmc_g                                & ! weighted fuel moisture contents on fire grid
+        )
+        call message('fuel_moisture end')
+      endif ! run_fuel_moisture`
+
+    endif ! ifun
 
 !   the following executes in any case
 
-    call fire_model (id,ifun,restart,need_lfn_update,  &
+    if(fire_run)then
+      call fire_model (id,ifun,restart,need_lfn_update,  &
         num_ignitions,                          & ! switches
         ifuelread,nfuel_cat0,                   & ! initialize fuel categories
         ifds,ifde,jfds,jfde,                    & ! fire domain dims

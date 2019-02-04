@@ -68,7 +68,7 @@ subroutine interpolate_z2fire(id,                 & ! for debug output, <= 0 no 
     zsf,flag_z0)                                      ! fire grid arrays out
     
 implicit none
-!*** purpose: interpolate height
+!*** purpose: interpolate height or any other 2d variable defined at mesh cell centers
 
 !*** arguments
 integer, intent(in)::id,                          &

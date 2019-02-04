@@ -225,7 +225,7 @@ real,intent(out),dimension(ifms:ifme,jfms:jfme):: fmc_g ! fuel data
 
 !**** local
 real, dimension(its-1:ite+1,jts-1:jte+1):: fmc_k  ! copy of fmc_gc(:,k,:) 
-real, dimension(ifts:ifte,jfts:jfte):: fmc_f      ! interpolation of fmc_gc(:,k,:) to the fire grid 
+real, dimension(ifts-1:ifte+1,jfts-1:jfte+1):: fmc_f      ! interpolation of fmc_gc(:,k,:) to the fire grid 
 integer::i,j,k,n
 integer::ibs,ibe,jbs,jbe
 character(len=128)::msg
@@ -261,11 +261,11 @@ do k=1,moisture_classes
     ! interpolate moisture contents in the class k to the fire mesh
     call interpolate_z2fire(id,        & ! for debug output, <= 0 no output
     ids,ide,jds,jde,                     & ! atm grid dimensions
-    its-1,ite+1,jts-1,jte+1,             & ! memory dimensions
+    its-1,ite+1,jts-1,jte+1,             & ! memory dimensions of fmc_k
     ips,ipe,jps,jpe,                     &
     its,ite,jts,jte,                     &
     ifds, ifde, jfds, jfde,              & ! fire grid dimensions
-    ifts, ifte, jfts, jfte,              &
+    ifts-1,ifte+1,jfts-1,jfte+1,         & ! memory dimensions of fmc_f
     ifts,ifte,  jfts,jfte,               &
     ir,jr,                               & ! atm/fire grid ratio
     fmc_k,                               & ! atm grid arrays in

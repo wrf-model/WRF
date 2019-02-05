@@ -943,7 +943,7 @@
           count_fatal_error = count_fatal_error + 1
        ENDIF
        IF ( jde                             .NE. jde_compare ) THEN
-          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist e_se                         = ',jde
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist e_sn                         = ',jde
           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
           WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  input file SOUTH-NORTH_GRID_DIMENSION = ',jde_compare
           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )

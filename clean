@@ -14,7 +14,6 @@ end
 if ( -d var ) then
   ( cd var ; make clean )
 endif
-echo DAVE3
 
 ( cd tools/CodeBase ; make clean )
 

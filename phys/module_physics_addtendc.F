@@ -1715,9 +1715,6 @@ SUBROUTINE phy_shcu_ten(config_flags,rk_step,n_moist,n_scalar,   &
                 ids,ide, jds, jde, kds, kde,                     &
                 ims, ime, jms, jme, kms, kme,                    &
                 its, ite, jts, jte, kts, kte                     )
-!
-! END PSU DENG
-!
 
 
    CASE DEFAULT

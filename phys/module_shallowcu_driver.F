@@ -52,7 +52,6 @@ CONTAINS
                      ,wstar,delta,kpbl,znu,raincv                   &
                  ! for nscv shallow convection
                      ,w,xland,hfx,qfx,mp_physics,pgcon              &
-                     !jkim: ,RDCASHTEN, RQCDCSHTEN, w, W0AVG                 &
                      ,RDCASHTEN, RQCDCSHTEN, W0AVG                 &
                      ,clddpthb, cldtopb                               &
                      ,cldareaa, cldareab, cldliqa, cldliqb            &
@@ -375,7 +374,6 @@ CONTAINS
 !
    INTEGER,   INTENT(IN   ) ::           bl_pbl_physics
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
-                   !jkim: INTENT(IN   ) ::           w, qke
                    INTENT(IN   ) ::           qke
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &

@@ -271,7 +271,7 @@ do k=1,moisture_classes
     fmc_k,                               & ! atm grid arrays in
     fmc_f,0)                                 ! fire grid arrays out
 
-    call print_2d_stats(ifts,ifte,jfts,jfte,ifts,ifte,jfts,jfte,fmc_f,'fuel_moisture: fmc_f')
+    call print_2d_stats(ifts,ifte,jfts,jfte,ifts-1,ifte+1,jfts-1,jfte+1,fmc_f,'fuel_moisture: fmc_f')
 
     ! add moisture contents for class k to the fuel moisture
     do j=jfts,jfte

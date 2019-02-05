@@ -81,6 +81,7 @@ MODULES = \
 	module_mp_wsm3.o \
 	module_mp_wsm5.o \
 	module_mp_wsm6.o \
+	module_mp_wsm7.o \
 	module_mp_etanew.o \
 	module_mp_fer_hires.o \
 	module_mp_HWRF.o \
@@ -99,6 +100,7 @@ MODULES = \
 	module_mp_nssl_2mom.o \
 	module_mp_wdm5.o \
 	module_mp_wdm6.o \
+	module_mp_wdm7.o \
 	module_mp_cammgmp_driver.o \
 	module_ra_sw.o  \
 	module_ra_clWRF_support.o  \

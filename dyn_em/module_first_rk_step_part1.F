@@ -351,6 +351,7 @@ BENCH_START(rad_driver_tim)
      &        , CLDFRA_DP=grid%cldfra_dp                                  & ! ckay for subgrid cloud
      &        , CLDFRA_SH=grid%cldfra_sh                                  &
      &        , icloud_bl=config_flags%icloud_bl                          & !JOE: subgrid BL clouds
+     &        , cldovrlp=config_flags%cldovrlp                            & ! J. Henderson AER: cldovrlp namelist value
      &        , qc_bl=grid%qc_bl,cldfra_bl=grid%cldfra_bl                 & !JOE: subgrid bl clouds
      &        , re_cloud=grid%re_cloud, re_ice=grid%re_ice, re_snow=grid%re_snow & ! G. Thompson
      &        , has_reqc=grid%has_reqc, has_reqi=grid%has_reqi, has_reqs=grid%has_reqs & ! G. Thompson
@@ -646,7 +647,16 @@ BENCH_START(surf_driver_tim)
      &        ,UTYPE_URB2D=grid%utype_urb2d                               & !H urban
          ! Optional urban for BEP scheme
      &        ,SF_URBAN_PHYSICS=config_flags%sf_urban_physics             &
-     &        ,NUM_URBAN_LAYERS=config_flags%num_urban_layers             & !multi-layer urban
+     &        ,num_urban_ndm = config_flags%num_urban_ndm                 & !multi-layer urban
+     &        ,urban_map_zrd = config_flags%urban_map_zrd                 & !multi-layer urban
+     &        ,urban_map_zwd = config_flags%urban_map_zwd                 & !multi-layer urban
+     &        ,urban_map_gd  = config_flags%urban_map_gd                  & !multi-layer urban
+     &        ,urban_map_zd  = config_flags%urban_map_zd                  & !multi-layer urban
+     &        ,urban_map_zdf = config_flags%urban_map_zdf                 & !multi-layer urban
+     &        ,urban_map_bd  = config_flags%urban_map_bd                  & !multi-layer urban
+     &        ,urban_map_wd  = config_flags%urban_map_wd                  & !multi-layer urban
+     &        ,urban_map_gbd = config_flags%urban_map_gbd                 & !multi-layer urban
+     &        ,urban_map_fbd = config_flags%urban_map_fbd                 & !multi-layer urban
      &        ,NUM_URBAN_HI=config_flags%num_urban_hi                     & !multi-layer urban
      &        ,TSK_RURAL=grid%tsk_rural                                   & !multi-layer urban
      &        ,TRB_URB4D=grid%trb_urb4d,TW1_URB4D=grid%tw1_urb4d          & !multi-layer urban
@@ -975,6 +985,8 @@ BENCH_START(pbl_driver_tim)
      &        ,QI_CURR=moist(ims,kms,jms,P_QI), F_QI=F_QI                 &
      &        ,QS_CURR=moist(ims,kms,jms,P_QS), F_QS=F_QS                 &
      &        ,QG_CURR=moist(ims,kms,jms,P_QG), F_QG=F_QG                 &
+     &        ,QNIFA_CURR=scalar(ims,kms,jms,P_QNIFA),F_QNIFA=F_QNIFA     &
+     &        ,QNWFA_CURR=scalar(ims,kms,jms,P_QNWFA),F_QNWFA=F_QNWFA     &
      &        ,HOL=HOL, MOL=grid%mol, REGIME=grid%REGIME                  &
 !mynn mp@
      &        ,QKE=grid%qke, Sh3d=grid%sh3d                               &
@@ -991,7 +1003,7 @@ BENCH_START(pbl_driver_tim)
      &        ,bl_mynn_edmf=config_flags%bl_mynn_edmf                     &
      &        ,bl_mynn_edmf_mom=config_flags%bl_mynn_edmf_mom             &
      &        ,bl_mynn_edmf_tke=config_flags%bl_mynn_edmf_tke             &
-     &        ,bl_mynn_edmf_part=config_flags%bl_mynn_edmf_part           &
+     &        ,bl_mynn_mixscalars=config_flags%bl_mynn_mixscalars         &
      &        ,bl_mynn_cloudmix=config_flags%bl_mynn_cloudmix             &
      &        ,bl_mynn_mixqt=config_flags%bl_mynn_mixqt                   &
      &        ,edmf_a=grid%edmf_a,edmf_w=grid%edmf_w                      &

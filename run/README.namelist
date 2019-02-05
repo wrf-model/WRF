@@ -673,13 +673,22 @@ Namelist variables for controlling the adaptive time step option:
                                      = 8, Simplified Simple Biosphere Model (SSiB) 
                                           - can be used with Dudhia/RRTM, CAM or RRTMG radiation options
 
- sf_urban_physics(max_dom)           = 0, ! activate urban canopy model (in Noah LSM only)
+ sf_urban_physics(max_dom)           = 0, ! activate urban canopy model (in Noah and Noah-MP LSMs only)
                                      = 0: no
                                      = 1: Single-layer, UCM 
                                      = 2: Multi-layer, Building Environment Parameterization (BEP) scheme 
                                           (works only with MYJ and BouLac PBL)
                                      = 3: Multi-layer, Building Environment Model (BEM) scheme 
                                           (works only with MYJ and BouLac PBL)
+
+ num_urban_ndm                       = 1! (=  2 if BEP or BEM active) maximum number of street dimensions (ndm in BEP or BEM header)
+ num_urban_ng                        = 1! (= 10 if BEP or BEM active) number of grid levels in the ground (ng_u in BEP or BEM header)
+ num_urban_nwr                       = 1! (= 10 if BEP or BEM active) number of grid levels in the walls or roof (nwr_u in BEP or BEM header)
+ num_urban_nz                        = 1! (= 18 if BEP or BEM active) maximum number of vertical levels in the urban grid (nz_um in BEP or BEM header)
+ num_urban_ngb                       = 1! (= 10 if BEM active)        number of grid levels in the ground below building (ngb_u in BEM header)
+ num_urban_nf                        = 1! (= 10 if BEM active)        number of grid levels in the floors (nf_u in BEM header)
+ num_urban_nbui                      = 1! (= 15 if BEM active)        maximum number of types of buildings in an urban class (nbui_max in BEM header)
+
 
  bl_pbl_physics (max_dom)            boundary-layer option
                                      = 0, no boundary-layer 

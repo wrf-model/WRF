@@ -148,7 +148,7 @@ subroutine da_update_firstguess(grid, out_filename)
      nlat_regional=end_index1(2)
      nsig_regional=end_index1(3)
 
-!    write(6,*)' nlon,lat,sig_regional=',nlon_regional,nlat_regional,nsig_regional
+     write(6,*)' nlon,nlat,nsig_regional=',nlon_regional,nlat_regional,nsig_regional
      allocate(field2(nlon_regional,nlat_regional),field3(nlon_regional,nlat_regional,nsig_regional))
      allocate(field3u(nlon_regional+1,nlat_regional,nsig_regional))
      allocate(field3v(nlon_regional,nlat_regional+1,nsig_regional))
@@ -588,38 +588,6 @@ subroutine da_update_firstguess(grid, out_filename)
                              start_index,end_index1,               & !pat
                              ierr                                 )
 
-!
-! Update moist potential temperature perturbation THM
-!
-      rmse_var='THM'
-      call ext_ncd_get_var_info (dh1,trim(rmse_var),ndim1,ordering,staggering, &
-           start_index,end_index1, WrfType, ierr    )
-
-      if (grid%use_theta_m == 1) then ! convert dry theta perturbation to moist one
-         write(unit=message(1),fmt='(A, I2)') 'convert T to THM when use_theta_m = ', grid%use_theta_m
-         call da_message(message(1:1))
-         do k= 1,nsig_regional
-            do j= 1,nlat_regional
-               do i= 1,nlon_regional
-                 qvf = 1.+(R_v/R_d)*grid%moist(i,j,k,p_qv)
-                 field3(i,j,k)=(field3(i,j,k)+T0)*qvf - T0
-               end do
-            end do
-         end do
-         write(unit=message(1),fmt='(A, I2)') 'convert T to THM when use_theta_m = ', grid%use_theta_m
-      else  ! THM = T when use_theta_m = 0
-         write(unit=message(1),fmt='(A, I2)') 'THM = T when use_theta_m = ', grid%use_theta_m
-         call da_message(message(1:1))
-      end if
-
-      call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),         &
-                              field3,WRF_REAL,0,0,0,ordering,       &
-                              staggering, dimnames ,                &
-                              start_index,end_index1,               & !dom
-                              start_index,end_index1,               & !mem
-                              start_index,end_index1,               & !pat
-                              ierr                                 )
-
   end if  
   
 #ifdef DM_PARALLEL
@@ -627,7 +595,7 @@ subroutine da_update_firstguess(grid, out_filename)
 #endif
 
 !
-!  update QVAPOR
+!  collect QVAPOR from patches to a global array
 !
 #ifdef DM_PARALLEL
   if (rootproc) then
@@ -641,7 +609,48 @@ subroutine da_update_firstguess(grid, out_filename)
                                     ims, ime,            jms, jme,            kms, kme,   &
                                     ips, min(ipe,ide-1), jps, min(jpe,jde-1), kps, kpe-1  )
 #endif
-  if (rootproc) then 
+
+  if (rootproc) then
+!
+! Update THM (moist theta perturbation) before updating QVAPOR
+!
+      if (grid%use_theta_m == 1) then ! convert dry theta perturbation to moist one
+         write(unit=message(1),fmt='(A, I2)') 'convert T to THM when use_theta_m = ', grid%use_theta_m
+         call da_message(message(1:1))
+         do k= 1,nsig_regional
+            do j= 1,nlat_regional
+               do i= 1,nlon_regional
+#ifdef DM_PARALLEL
+                 qvf=1.+(R_v/R_d)*globbuf(i+(j-1)*(nlon_regional+1)+(k-1)*(nlon_regional+1)*(nlat_regional+1))
+#else
+                 qvf=1.+(R_v/R_d)*grid%moist(i,j,k,p_qv)
+#endif
+               ! field3 here is dry theta perturbation generated earlier
+                 field3(i,j,k)=(field3(i,j,k)+T0)*qvf - T0
+               end do
+            end do
+         end do
+      else  ! THM = T when use_theta_m = 0
+         write(unit=message(1),fmt='(A, I2)') 'THM = T when use_theta_m = ', grid%use_theta_m
+         call da_message(message(1:1))
+      end if
+
+      rmse_var='THM'
+      call ext_ncd_get_var_info (dh1,trim(rmse_var),ndim1,ordering,staggering, &
+           start_index,end_index1, WrfType, ierr    )
+
+      call ext_ncd_write_field(dh1,DateStr1,TRIM(rmse_var),         &
+                              field3,WRF_REAL,0,0,0,ordering,       &
+                              staggering, dimnames ,                &
+                              start_index,end_index1,               & !dom
+                              start_index,end_index1,               & !mem
+                              start_index,end_index1,               & !pat
+                              ierr                                 )
+
+
+!
+! Update QVAPOR
+!
      do k= 1,nsig_regional 
         do j= 1,nlat_regional 
            do i= 1,nlon_regional

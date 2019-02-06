@@ -16,13 +16,22 @@ subroutine da_update_firstguess(grid, out_filename)
 !    grid%w_2
 !    grid%mu_2
 !    grid%ph_2
-!    grid%t_2 (dry potential temperature perturbation)
-!    THM      (moist potential temperature perturbation)
+!    grid%t_2
 !    grid%moist
 !    grid%p
 !    grid%psfc
 !    grid%t2, grid%q2, grid%u10, grid%v10, grid%th2
 !
+! Note about dry and mosit theta perturbation:
+!-----------------------------------------------
+! In the WRF model, grid%t_2 is either moist or dry theta perturbation, 
+! depending on the use_theta_m switch. The grid%th_phy_m_t0 is always 
+! the dry theta perturbation. The T/THM name is a character string of 
+! the input/output field for the grid%t_2 variable.
+!
+! Inside of the DA Registry, grid%t_2 is always the dry theta perturbation.
+! We should be careful about referring to the internal field (such as grid%t_2)
+! and the string that is used to name the field in the input/output file.
 !---------------------------------------------------------------------------
 
   use module_domain, only : get_ijk_from_grid, program_name

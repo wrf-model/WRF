@@ -714,20 +714,6 @@ SUBROUTINE phy_bl_ten(config_flags,rk_step,n_moist,n_scalar,     &
                 ims, ime, jms, jme, kms, kme,                    &
                 its, ite, jts, jte, kts, kte                     )
 
-        if (P_QT .ge. PARAM_FIRST_SCALAR)                                         &
-           CALL add_a2a(scalar_tendf(ims,kms,jms,P_QT),RQNIBLTEN,&
-               config_flags,                                    &
-               ids,ide, jds, jde, kds, kde,                     &
-               ims, ime, jms, jme, kms, kme,                    &
-               its, ite, jts, jte, kts, kte                     )
-
-!        if (P_QT .ge. PARAM_FIRST_SCALAR)                                         &
-!           CALL add_a2a(scalar_tendf(ims,kms,jms,P_QT),RQNCBLTEN,&
-!                config_flags,                                    &
-!                ids,ide, jds, jde, kds, kde,                     &
-!                ims, ime, jms, jme, kms, kme,                    &
-!                its, ite, jts, jte, kts, kte                     )
-
        ELSE
 
         if (P_QC .ge. PARAM_FIRST_SCALAR)                                         &
@@ -743,20 +729,6 @@ SUBROUTINE phy_bl_ten(config_flags,rk_step,n_moist,n_scalar,     &
                 ids,ide, jds, jde, kds, kde,                     &
                 ims, ime, jms, jme, kms, kme,                    &
                 its, ite, jts, jte, kts, kte                     )
-
-        if (P_QNI .ge. PARAM_FIRST_SCALAR)                                         &
-           CALL add_a2a(scalar_tendf(ims,kms,jms,P_QNI),RQNIBLTEN,&
-                config_flags,                                    &
-                ids,ide, jds, jde, kds, kde,                     &
-                ims, ime, jms, jme, kms, kme,                    &
-                its, ite, jts, jte, kts, kte                     )
-
-!        if (P_QNC .ge. PARAM_FIRST_SCALAR)                                         &
-!           CALL add_a2a(scalar_tendf(ims,kms,jms,P_QNC),RQNCBLTEN,&
-!                config_flags,                                    &
-!                ids,ide, jds, jde, kds, kde,                     &
-!                ims, ime, jms, jme, kms, kme,                    &
-!                its, ite, jts, jte, kts, kte                     )
 
        ENDIF
 

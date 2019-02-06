@@ -22,6 +22,9 @@ CONTAINS
                   U10,V10,ZNT,                                    &
                   DKU3D,DKT3D,                                    & 
                   VAR_RIC,coef_ric_l,coef_ric_s,alpha,xland,        &
+#if (HWRF==1)
+                  pert_pbl, ens_random_seed, ens_pblamp,           &
+#endif
                   ids,ide, jds,jde, kds,kde,                       &
                   ims,ime, jms,jme, kms,kme,                       &
                   its,ite, jts,jte, kts,kte                        )
@@ -111,6 +114,11 @@ CONTAINS
                                         HEAT2D                               !ADDED BY KWON FOR SHALLOW CONV.
 
 
+#if (HWRF==1)
+      integer,intent(in) :: ens_random_seed
+      real,intent(in) :: ens_pblamp
+      logical,intent(in) :: pert_pbl
+#endif
 !wang
        REAL,  DIMENSION(ims:ime, jms:jme), INTENT(IN) ::              &
                                          U10,                         &
@@ -373,6 +381,9 @@ CONTAINS
      &   prsi,del,prsl,prslk,phii,phil,deltim,disheat,         &  
      &   dusfc,dvsfc,dtsfc,dqsfc,hpbl,hgamt,hgamq,dkt,dku,     &
      &   kinver,xkzm_m,xkzm_h,xkzm_s,lprnt,ipr,zol,            &
+#if (HWRF==1)
+         pert_pbl, ens_random_seed, ens_pblamp,             &
+#endif
      &   VAR_RIC,coef_ric_l,coef_ric_s,alpha,xland1)
 
 
@@ -537,6 +548,9 @@ CONTAINS
      &   prsi,del,prsl,prslk,phii,phil,delt,dspheat,                    &
      &   dusfc,dvsfc,dtsfc,dqsfc,hpbl,hgamt,hgamq,dkt,dku,              &
      &   kinver,xkzm_m,xkzm_h,xkzm_s,lprnt,ipr,zol,                     &
+#if (HWRF==1)
+           pert_pbl, ens_random_seed, ens_pblamp,             &
+#endif
      &   VAR_RIC,coef_ric_l,coef_ric_s,alpha,xland1)
 !
       USE MODULE_GFS_MACHINE, only : kind_phys
@@ -551,6 +565,11 @@ CONTAINS
       integer ipr
       integer ix, im, km, ntrac, ntcw, kpbl(im), kinver(im)
 !
+#if (HWRF==1)
+      integer,intent(in) :: ens_random_seed
+      real,intent(in) :: ens_pblamp
+      logical,intent(in) :: pert_pbl
+#endif
       real(kind=kind_phys) delt, xkzm_m, xkzm_h, xkzm_s
       real(kind=kind_phys) dv(im,km),     du(im,km),                 &
      &                     tau(im,km),    rtg(im,km,ntrac),          &
@@ -689,6 +708,43 @@ CONTAINS
 !     parameter (actei = 0.23)
       parameter (actei = 0.7)
 
+#if HWRF==1
+      real*8 :: ran1           !zhang
+      real :: rr
+      logical,save :: pert_pbl_local !zhang
+      integer,save :: ens_random_seed_local,env_pp_local!zhang
+      integer :: ensda_physics_pert !zhang
+      real,save :: ens_pblamp_local   !zhang
+      CHARACTER(len=3) :: env_memb,env_pp
+      data ens_random_seed_local/0/
+      data env_pp_local/0/
+      if ( ens_random_seed_local .eq. 0 ) then
+         CALL nl_get_ensda_physics_pert(1,ensda_physics_pert)
+         ens_random_seed_local=ens_random_seed
+         env_pp_local=ensda_physics_pert
+         pert_pbl_local=.false.
+         ens_pblamp_local=0.0
+! env_pp=1: do physics perturbations for ensda members, ens_random_seed must be 99
+         if ( env_pp_local .eq. 1 ) then
+            if ( ens_random_seed .ne. 99 ) then
+               pert_pbl_local=.true.
+               ens_pblamp_local=ens_pblamp
+            else
+! ens_random_seed=99 do physics perturbation for ensemble forecasts, env_pp must be zero
+               ens_random_seed_local=ens_random_seed
+               pert_pbl_local=pert_pbl
+               ens_pblamp_local=ens_pblamp
+            endif
+         else
+            ens_random_seed_local=ens_random_seed
+            pert_pbl_local=pert_pbl
+            ens_pblamp_local=ens_pblamp
+         endif
+       print*,"PBL==",ens_random_seed_local,pert_pbl_local,ens_pblamp_local,ensda_physics_pert
+!      print*, "zhang in pbl= one time ", pert_pbl_local,ens_random_seed_local, ens_pblamp_local
+      endif
+!      print*, "zhang in pbl=",pert_pbl_local, ens_random_seed_local, ens_pblamp_local
+#endif
 
 ! Weiguo Wang added, height-dependent ALPHA
 !       smax=0.148
@@ -1057,6 +1113,19 @@ CONTAINS
               rbint = (crb(i)-rbdn(i))/(rbup(i)-rbdn(i))
            endif
            hpbl(i) = zl(i,k-1) + rbint*(zl(i,k)-zl(i,k-1))
+#if (HWRF==1)
+!zhang adding PBL perturtion
+!zzz            if ( pert_pbl_local .and. ens_random_seed_local .gt. 0 ) then
+            if ( pert_pbl_local ) then
+!            print*, "zhang PBL ens_random_seed==", ens_random_seed,ens_random_seed_local
+            ens_random_seed_local=ran1(-ens_random_seed_local)*1000
+            rr=(2.0*ens_pblamp_local*ran1(-ens_random_seed_local)-ens_pblamp_local)
+!            print*, "zhang PBL aa", rr, ens_pblamp_local,ens_random_seed_local,HPBL(I)
+            HPBL(I) = HPBL(I)*(1.0+rr)
+!            print*, "zhang PBL bb", rr, ens_pblamp_local,ens_random_seed_local,HPBL(I)
+            endif
+#endif
+
            if(hpbl(i) < zi(i,kpbl(i))) kpbl(i) = kpbl(i) - 1
            if(kpbl(i) <= 1) then
               ublflg(i) = .false.

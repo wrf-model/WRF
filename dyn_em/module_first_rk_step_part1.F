@@ -1346,7 +1346,7 @@ BENCH_START(shcu_driver_tim)
      &             ,ltopb=grid%ltopb, kdcldtop=grid%kdcldtop              &
      &             ,kdcldbas=grid%kdcldbas                                &
      &             ,el_pbl=grid%el_pbl                                    &
-     &             ,rthratenlw=grid%rthratenlw, rthratensw=grid%rthratensw & !118
+     &             ,rthratenlw=grid%rthratenlw, rthratensw=grid%rthratensw & 
      &             ,exch_h=grid%exch_h                                    &
      &             ,dnw=grid%dnw, XTIME=grid%XTIME, XTIME1=grid%XTIME1    &
      &             ,GMT=grid%gmt                                          &

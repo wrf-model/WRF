@@ -1308,8 +1308,8 @@ state    real  RQCNSHTEN       ikj      misc        1         -      r        "R
 state    real  RQINSHTEN       ikj      misc        1         -      r        "RQINSHTEN"             "Q_IN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"     "# kg-1 s-1"
 
 # Deng Shallow Convection Parameterization
-state    real  RDCASHTEN       ikj      misc        1         -      r        "RDCASHTEN"             "DCA TENDENCY DUE TO DENG SHALLOW CUMULUS SCHEME"    "Pa s-1"
-state    real  RQCDCSHTEN      ikj      misc        1         -      r        "RQCDCSHTEN"            "DCQC TENDENCY DUE TO DENG SHALLOW CUMULUS SCHEME"   "kg kg-1 s-1"
+state    real  RDCASHTEN       ikj      misc        1         -      r        "RDCASHTEN"             "CLOUD FRACTION AREA TENDENCY DUE TO DENG SHALLOW CUMULUS SCHEME"    "Pa s-1"
+state    real  RQCDCSHTEN      ikj      misc        1         -      r        "RQCDCSHTEN"            "CLOUD LIQUID TENDENCY DUE TO DENG SHALLOW CUMULUS SCHEME"   "kg kg-1 s-1"
 state    real  CLDAREAA        ikj      dyn_em      1         -      r        "CLDAREAA"              "CLOUD FRACTION FROM DENG SCHEME" ""
 state    real  CLDAREAB        ikj      dyn_em      1         -      r        "CLDAREAB"              "CLOUD FRACTION FROM DENG SCHEME" ""
 state    real  CA_RAD          ikj      dyn_em      1         -      r        "CA_RAD"                "CLOUD WATER CONTENT FROM DENG SCHEME FOR RADIATION" "kg kg-1"

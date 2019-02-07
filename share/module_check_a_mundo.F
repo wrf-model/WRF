@@ -623,6 +623,119 @@
    END IF
 
 #elif( NMM_CORE == 1 )
+!-------------------------xiaohzhao----------------------------------------------
+!-----------------------------------------------------------------------
+! Check if any stochastic perturbation scheme is turned on in any domain,
+! if so, set derived variable sppt_on=1 and/or rand_perturb_on and/or skebs_on=1
+!-----------------------------------------------------------------------
+
+   DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % sppt(i) .ne. 0)  then
+           model_config_rec % sppt_on=1
+           IF (( model_config_rec%KMINFORCT .ne. 1) .or. (model_config_rec%KMAXFORCT .ne. 1000000) .or.   &
+               ( model_config_rec%LMINFORCT .ne. 1) .or. (model_config_rec%LMAXFORCT .ne. 1000000)) then
+               wrf_err_message = '--- Warning: the namelist parameter "kminforct" etc. are for SKEBS only'
+               CALL wrf_message ( wrf_err_message )
+               wrf_err_message = '             and should not be changed from their default value for SPPT'
+               CALL wrf_message ( wrf_err_message )
+               wrf_err_message = '--- ERROR: If you really want to modify "kminforct" etc.,  edit module_check a_mundo.'
+               CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+           endif
+         endif
+   ENDDO
+   DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % rand_perturb(i) .ne. 0)  then
+           model_config_rec % rand_perturb_on=1
+           IF (( model_config_rec%KMINFORCT .ne. 1) .or. (model_config_rec%KMAXFORCT .ne. 1000000) .or.   &
+               ( model_config_rec%LMINFORCT .ne. 1) .or. (model_config_rec%LMAXFORCT .ne. 1000000)) then
+               wrf_err_message = '--- Warning: the namelist parameter "kminforct" etc are for SKEBS only'
+               CALL wrf_message ( wrf_err_message )
+               wrf_err_message = '             and should not be changed from their default value for RAND_PERTURB'
+               CALL wrf_message ( wrf_err_message )
+               wrf_err_message = ' ABORT. If you really want to modify "kminforct" etc.,  edit module_check a_mundo.'
+               CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+           endif
+         endif
+   ENDDO
+   DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % stoch_vertstruc_opt(i) ==1 )  then
+           model_config_rec % skebs_vertstruc=1       ! parameter stoch_vertstruc_opt is being replaced with skebs_vertstruc
+                                                      ! stoch_vertstruc_opt is obsolete starting with V3.7
+           wrf_err_message = '--- WARNING: the namelist parameter "stoch_vertstruc_opt" is obsolete.'
+           CALL wrf_message ( wrf_err_message )
+           wrf_err_message = '             Please replace with namelist parameter "skebs_vertstruc" in V3.7 and later versions.'
+           CALL wrf_message ( wrf_err_message )
+         endif
+  ENDDO
+
+   DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % stoch_force_opt(i) ==1 )  then
+           model_config_rec % skebs(i)=1    ! parameter stoch_forc_opt is being replaced with skebs;
+                                            ! stoch_vertstruc_opt is obsolete starting with V3.7
+           wrf_err_message = '--- WARNING: the namelist parameter "stoch_force_opt" is obsolete.'
+           CALL wrf_message ( wrf_err_message )
+           wrf_err_message = '             Please replace with namelist parameter "skebs" in V3.7 and later versions.'
+           CALL wrf_message ( wrf_err_message )
+         endif
+   ENDDO
+   DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % skebs(i) .ne. 0)  then
+           model_config_rec % skebs_on=1
+         endif
+   ENDDO
+!-----------------------------------------------------------------------
+! Check if any stochastic perturbation scheme is turned on in any domain,
+! if so, set derived variable spp_on=1 
+!-----------------------------------------------------------------------
+
+   DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % spp_mp(i) .ne. 0)  then
+           model_config_rec % spp_on=1
+         endif
+   ENDDO
+!-----------------------------------------------------------------------
+! Check if any stochastic perturbation scheme is turned on in any domain,
+! if so, set derived variable isppt_on=1
+!-----------------------------------------------------------------------
+
+   DO i = 1, model_config_rec % max_dom
+         IF ((model_config_rec % isppt_mp(i) .ne. 0) .or.    &
+             ( model_config_rec % isppt_pbl(i) .ne. 0) .or.   &
+             ( model_config_rec % isppt_rad(i) .ne. 0) .or.   &
+             ( model_config_rec % isppt_conv(i) .ne. 0 ))  then
+               model_config_rec % isppt_on=1
+               model_config_rec % sppt_on=0
+         endif
+   ENDDO
+!-----------------------------------------------------------------------
+! Random fields are by default thin 3D arrays (:,1,:).
+! If random fields have vertical structures (stoch_vertstruc_opt .ne. 0)
+! make them full 3D array arrays
+!-----------------------------------------------------------------------
+   IF ( model_config_rec % skebs_vertstruc     .ne. 99 )  then
+      model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
+   ENDIF
+   IF ( model_config_rec % sppt_vertstruc      .ne. 99 )  then
+      model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
+   ENDIF
+   IF ( model_config_rec % rand_pert_vertstruc .ne. 99 )  then
+      model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
+   ENDIF
+   model_config_rec % num_stoch_levels = model_config_rec %e_vert(1)
+
+!--------------------------------------------------------------------------------
+! Check if boundary perturbations is turned on and set to '1' (perturb_bdy=1).
+! If so, make sure skebs_on is also turned on.
+!--------------------------------------------------------------------------------
+!   IF ( model_config_rec % perturb_bdy .EQ. 1 ) then
+!        model_config_rec % skebs_on=1
+!      wrf_err_message = '--- WARNING: perturb_bdy=1 option uses SKEBS pattern and may'
+!      CALL wrf_message ( wrf_err_message )
+!      wrf_err_message = '             increase computation time.'
+!      CALL wrf_message ( wrf_err_message )
+!   ENDIF
+!-------------------xiaohzhao------------------------------------------------
+
 !----------------------------------------------------------------------------
 ! If NMM core and trajectories are on then halt.
 !----------------------------------------------------------------------------

@@ -101,7 +101,7 @@
       USE MODULE_EXT_INTERNAL
 !
    USE module_tornado_genesis, only: init_tornado_genesis
-
+   USE MODULE_STOCH, ONLY : setup_rand_perturb, rand_seed, update_stoch!xiaohzhao
 !
 !----------------------------------------------------------------------
 !
@@ -133,6 +133,8 @@
   integer(kind=4) :: random_seed
   INTEGER :: parent_id, nestid, max_dom,one
   LOGICAL :: grid_allowed, nestless
+  LOGICAL :: first_trip_for_this_domain !xiaohzhao
+  REAL    :: DXKM,DYKM !xiaohzhao
 
       INTEGER :: IDS,IDE,JDS,JDE,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                                &
@@ -348,6 +350,180 @@
          grid%sbd0 = grid%sbd0var
 !#endif
       endif has_parent
+ ! Start of isppt -- xiaohzhao
+   IF ( grid%itimestep .EQ. 0 ) THEN
+      first_trip_for_this_domain = .TRUE.
+   ELSE
+      first_trip_for_this_domain = .FALSE.
+   END IF
+
+   IF ( .not. ( config_flags%restart .or. grid%moved ) ) THEN
+       grid%itimestep=0
+   ENDIF
+
+   IF ( config_flags%restart .or. grid%moved .or. config_flags%cycling) THEN
+       first_trip_for_this_domain = .TRUE.
+   ENDIF
+
+!   --- SETUP AND INITIALIZE STOCHASTIC PERTURBATION SCHEMES ---
+
+  IF ( first_trip_for_this_domain ) THEN
+     grid%did_stoch = .FALSE.
+   END IF
+
+   IF ((( grid%id == 1) .AND. (.NOT. grid%did_stoch)) .AND. &
+       (( grid%skebs_on== 1) .OR.( grid%sppt_on== 1) .OR. (grid%rand_perturb_on== 1) .OR. ( grid%spp_on== 1) .OR. &
+       ( grid%isppt_on== 1))) THEN
+
+     grid%did_stoch = .TRUE.
+     DXKM=grid%dx*0.01745329*6371200. ! numbers from module_initialize_real.F
+     DYKM=grid%dy*0.01745329*6371200.
+
+    IF (grid%sppt_on==1) then
+! Initialize SPPT (3)
+       if (.not.config_flags%restart) then ! set random number seed (else iseedarray is read in from restart files)
+         call rand_seed (config_flags, grid%ISEED_SPPT, grid%iseedarr_sppt, kms, kme)
+       endif
+     call SETUP_RAND_PERTURB('P',                                         &
+                       grid%sppt_vertstruc,config_flags%restart,          &
+                       grid%SPPT_AMP,                                     &
+                       grid%SPPTFORCC,grid%SPPTFORCS,grid%ALPH_SPPT,      &
+                       grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT,     &
+                       grid%KMINFORCT,grid%KMAXFORCT,                     &
+                       grid%LMINFORCT,grid%LMAXFORCT,                     &
+                       grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
+                       grid%time_step,DXKM,DYKM,                    &
+                       grid%gridpt_stddev_sppt,                           &
+                       grid%lengthscale_sppt,                             &
+                       grid%timescale_sppt,                               &
+                       grid%TOT_BACKSCAT_PSI,grid%ZTAU_PSI,               &
+                       grid%REXPONENT_PSI,                                &
+                       ids, ide, jds, jde, kds, kde,                      &
+                       ims, ime, jms, jme, kms, kme,                      &
+                       its, ite, jts, jte, kts, kte                       )
+    ENDIF
+  ! Initialize independent Stochastic Parametrization Peturbations (iSPPT) to MP
+  ! scheme
+     IF (grid%isppt_mp==1) then
+       if (.not.config_flags%restart) then ! set random number seed (else iseedarray is read in from restart files)
+         call rand_seed (config_flags, grid%iseed_isppt_mp,grid%iseedarr_isppt_mp, kms, kme)
+       endif
+     call SETUP_RAND_PERTURB('S',                                         &
+                       grid%vertstruc_isppt_mp,config_flags%restart,      &
+                       grid%SP_AMP_isppt_mp, grid%SPFORCC_isppt_mp,       &
+                       grid%SPFORCS_isppt_mp,grid%ALPH_isppt_mp,          &
+                       grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT,     &
+                       grid%KMINFORCT,grid%KMAXFORCT,                     &
+                       grid%LMINFORCT,grid%LMAXFORCT,                     &
+                       grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
+                       grid%time_step,DXKM,DYKM,                    &
+                       grid%gridpt_stddev_isppt_mp,                       &
+                       grid%lengthscale_isppt_mp,                         &
+                       grid%timescale_isppt_mp,                           &
+                       grid%TOT_BACKSCAT_PSI,grid%ZTAU_PSI,               &
+                       grid%REXPONENT_PSI,                                &
+                       ids, ide, jds, jde, kds, kde,                      &
+                       ims, ime, jms, jme, kms, kme,                      &
+                       its, ite, jts, jte, kts, kte                       )
+     ENDIF
+ ! Initialize independent Stochastic Parametrization Peturbations (iSPPT) to PBL
+ ! scheme
+     IF (grid%isppt_pbl==1) then
+       if (.not.config_flags%restart) then ! set random number seed (else iseedarray is read in from restart files)
+         call rand_seed (config_flags, grid%iseed_isppt_pbl,grid%iseedarr_isppt_pbl, kms, kme)
+       endif
+     call SETUP_RAND_PERTURB('Q',                                         &
+                       grid%vertstruc_isppt_pbl,config_flags%restart,     &
+                       grid%SP_AMP_isppt_pbl, grid%SPFORCC_isppt_pbl,     &
+                       grid%SPFORCS_isppt_pbl,grid%ALPH_isppt_pbl,        &
+                       grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT,     &
+                       grid%KMINFORCT,grid%KMAXFORCT,                     &
+                       grid%LMINFORCT,grid%LMAXFORCT,                     &
+                       grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
+                       grid%time_step,DXKM,DYKM,                    &
+                       grid%gridpt_stddev_isppt_pbl,                      &
+                       grid%lengthscale_isppt_pbl,                        &
+                       grid%timescale_isppt_pbl,                          &
+                       grid%TOT_BACKSCAT_PSI,grid%ZTAU_PSI,               &
+                       grid%REXPONENT_PSI,                                &
+                       ids, ide, jds, jde, kds, kde,                      &
+                       ims, ime, jms, jme, kms, kme,                      &
+                       its, ite, jts, jte, kts, kte                       )
+     ENDIF
+ ! Initialize independent Stochastic Parametrization Peturbations (iSPPT) to
+ ! Radiation scheme
+     IF (grid%isppt_rad==1) then
+       if (.not.config_flags%restart) then ! set random number seed (else iseedarray is read in from restart files)
+         call rand_seed (config_flags, grid%iseed_isppt_rad,grid%iseedarr_isppt_rad, kms, kme)
+       endif
+     call SETUP_RAND_PERTURB('O',                                         &
+                       grid%vertstruc_isppt_rad,config_flags%restart,     &
+                       grid%SP_AMP_isppt_rad, grid%SPFORCC_isppt_rad,     &
+                       grid%SPFORCS_isppt_rad,grid%ALPH_isppt_rad,   &
+                       grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT,     &
+                       grid%KMINFORCT,grid%KMAXFORCT,                     &
+                       grid%LMINFORCT,grid%LMAXFORCT,                     &
+                       grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
+                       grid%time_step,DXKM,DYKM,                    &
+                       grid%gridpt_stddev_isppt_rad,                      &
+                       grid%lengthscale_isppt_rad,                        &
+                       grid%timescale_isppt_rad,                          &
+                       grid%TOT_BACKSCAT_PSI,grid%ZTAU_PSI,               &
+                       grid%REXPONENT_PSI,                                &
+                       ids, ide, jds, jde, kds, kde,                      &
+                       ims, ime, jms, jme, kms, kme,                      &
+                       its, ite, jts, jte, kts, kte                       )
+     ENDIF
+ ! Initialize independent Stochastic Parametrization Peturbations (iSPPT) to
+ ! convection scheme
+    IF (grid%isppt_conv==1) then
+       if (.not.config_flags%restart) then ! set random number seed (else iseedarray is read in from restart files)
+         call rand_seed (config_flags,grid%iseed_isppt_conv,grid%iseedarr_isppt_conv, kms, kme)
+       endif
+     call SETUP_RAND_PERTURB('K',                                         &
+                       grid%vertstruc_isppt_conv,config_flags%restart,    &
+                       grid%SP_AMP_isppt_conv, grid%SPFORCC_isppt_conv,   &
+                       grid%SPFORCS_isppt_conv,grid%ALPH_isppt_conv,      &
+                       grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT,     &
+                       grid%KMINFORCT,grid%KMAXFORCT,                     &
+                       grid%LMINFORCT,grid%LMAXFORCT,                     &
+                       grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
+                       grid%time_step,DXKM,DYKM,                    &
+                       grid%gridpt_stddev_isppt_conv,                     &
+                       grid%lengthscale_isppt_conv,                       &
+                       grid%timescale_isppt_conv,                         &
+                       grid%TOT_BACKSCAT_PSI,grid%ZTAU_PSI,               &
+                       grid%REXPONENT_PSI,                                &
+                       ids, ide, jds, jde, kds, kde,                      &
+                       ims, ime, jms, jme, kms, kme,                      &
+                       its, ite, jts, jte, kts, kte                       )
+     ENDIF
+     ! Initialize Stochastic Parameter Peturbations (SPP) for MP scheme
+     IF (grid%spp_on==1) then
+     if (.not.config_flags%restart) then ! set random number seed (else  iseedarray is read in from restart files)
+         call rand_seed (config_flags, grid%iseed_spp_mp, grid%iseedarr_spp_mp , kms, kme)
+     endif
+     call SETUP_RAND_PERTURB('L',                                         &
+                       grid%vertstruc_spp_mp,config_flags%restart,    &
+                       grid%SP_AMP_spp_mp, grid%SPFORCC_spp_mp,   &
+                       grid%SPFORCS_spp_mp,grid%ALPH_spp_mp, &
+                       grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT,     &
+                       grid%KMINFORCT,grid%KMAXFORCT,                     &
+                       grid%LMINFORCT,grid%LMAXFORCT,                     &
+                       grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
+                       grid%time_step,DXKM,DYKM,                    &
+                       grid%gridpt_stddev_spp_mp,                     &
+                       grid%lengthscale_spp_mp,                       &
+                       grid%timescale_spp_mp,                         &
+                       grid%TOT_BACKSCAT_PSI,grid%ZTAU_PSI,               &
+                       grid%REXPONENT_PSI,                                &
+                       ids, ide, jds, jde, kds, kde,                      &
+                       ims, ime, jms, jme, kms, kme,                      &
+                       its, ite, jts, jte, kts, kte                       )
+     ENDIF
+  ENDIF ! End of sppt or rand_perturb
+! End of isppt -- xiaohzhao
+
       if(tempdx<1e-5 .or. tempdy<1e-5) then
          ! Should never reach here unless someone adds a bug to NMM.
          ! The meaning of grid%dx varies during nest initialization

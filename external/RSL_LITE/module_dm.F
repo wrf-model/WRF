@@ -1180,6 +1180,93 @@ CONTAINS
     IF ( ierr .NE. 0 ) THEN
        CALL tfp_message("<stdin>",__LINE__)
     END IF
+
+! transpose decomposition for NMM xiaohzhao
+! XzYy decomposition
+
+    kpsx = -1
+    j = jds ;
+    ierr = 0
+    DO k = kds, kde
+!       CALL task_for_point ( k, j, kds, kde, jds, jde, ntasks_x, ntasks_y, Px, Py, &
+       CALL task_for_point ( k, j, kds, kde, jds, jde-1, nest_pes_x(id), nest_pes_y(id), Px, Py, &
+                             minx, miny, ierr )
+       IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (e)')
+       IF ( Px .EQ. mytask_x ) THEN
+          kpex = k
+          IF ( kpsx .EQ. -1 ) kpsx = k
+       END IF
+    END DO
+    IF ( ierr .NE. 0 ) THEN
+       CALL tfp_message("<stdin>",__LINE__)
+    END IF
+
+! handle case where no levels are assigned to this process
+! no iterations.  Do same for I and J. Need to handle memory alloc below.
+    IF (kpsx .EQ. -1 ) THEN
+       kpex = -1
+       kpsx = 0
+    END IF
+   jpsx = -1
+    k = kds ;
+    ierr = 0
+    DO j = jds, jde-1
+!       CALL task_for_point ( k, j, kds, kde, jds, jde, ntasks_x, ntasks_y, Px, Py, &
+       CALL task_for_point ( k, j, kds, kde, jds, jde-1, nest_pes_x(id), nest_pes_y(id), Px, Py, &
+                             minx, miny, ierr )
+       IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (f)')
+       IF ( Py .EQ. mytask_y ) THEN
+          jpex = j
+          IF ( Py .EQ. nest_pes_y(id)-1 ) jpex = jpex + 1 !xiaohzhao
+          IF ( jpsx .EQ. -1 ) jpsx = j
+       END IF
+    END DO
+    IF ( ierr .NE. 0 ) THEN
+       CALL tfp_message("<stdin>",__LINE__)
+    END IF
+    IF (jpsx .EQ. -1 ) THEN
+       jpex = -1
+       jpsx = 0
+    END IF
+!begin: wig; 12-Mar-2008
+! This appears redundant with the conditionals above, but we get cases with only
+! one of the directions being set to "missing" when turning off extra processors.
+! This may break the handling of setting only one of nproc_x or nproc_y via the namelist.
+    IF (jpex .EQ. -1) THEN
+       ipex = -1
+       ipsx = 0
+       jpex = -1
+       jpsx = 0
+    END IF
+!end: wig; 12-Mar-2008
+! XzYx decomposition  (note, x grid dim is decomposed over Y processor dim)
+
+    kpsy = kpsx   ! same as above
+    kpey = kpex   ! same as above
+
+    ipsy = -1
+    k = kds ;
+    ierr = 0
+    DO i = ids, ide-1
+!       CALL task_for_point ( i, k, ids, ide, kds, kde, ntasks_y, ntasks_x, Py, Px, &
+       CALL task_for_point ( i, k, ids, ide-1, kds, kde, nest_pes_y(id), nest_pes_x(id), Py, Px, &
+                             miny, minx, ierr )
+       IF ( ierr .NE. 0 ) CALL wrf_error_fatal('error code returned by task_for_point in module_dm.F (g)')
+       IF ( Py .EQ. mytask_y ) THEN
+          ipey = i
+          IF ( Py .EQ. nest_pes_y(id)-1 ) ipey = ipey + 1 !xiaohzhao
+          IF ( ipsy .EQ. -1 ) ipsy = i
+       END IF
+    END DO
+    IF ( ierr .NE. 0 ) THEN
+       CALL tfp_message("<stdin>",__LINE__)
+    END IF
+    IF (ipsy .EQ. -1 ) THEN
+       ipey = -1
+       ipsy = 0
+    END IF
+! transpose decomposition for NMM xiaohzhao
+
 #endif
 
 ! extend the patch dimensions out shw along edges of domain

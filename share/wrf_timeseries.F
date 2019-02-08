@@ -154,10 +154,11 @@ SUBROUTINE calc_ts_locations( grid )
 
          ! Boolean if/else for ij and lat/lon that sets ts_rx(y) to either ij or lat/lon value from tslist
          DO k=1,grid%ntsloc
-            ! Can be ideal case or specified i,j in tslist
+            ! Ideal case (which has a cartesian coordinate) or specified (i,j) in tslist
             IF (config_flags%map_proj == 0 .OR. grid%tslist_ij) THEN 
-                ts_rx = grid%itsloc(k)  
-                ts_ry = grid%jtsloc(k)
+               ts_rx = grid%itsloc(k)  
+               ts_ry = grid%jtsloc(k)
+            ! Real-data case with input locations provided as (lat,lon)
             ELSE
                CALL latlon_to_ij(ts_proj, grid%lattsloc(k), grid%lontsloc(k), ts_rx, ts_ry)
             END IF

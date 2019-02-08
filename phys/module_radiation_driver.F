@@ -87,6 +87,7 @@ CONTAINS
               , QR, F_QR                     &
               , QI, F_QI                     &
               , QI2, F_QI2                   & ! for P3
+              , QI3, F_QI3                   & ! for Jensen ISHMAEL
               , QS, F_QS                     &
               , QG, F_QG                     &
               , QH, F_QH                     &  !goddardrad
@@ -765,13 +766,13 @@ CONTAINS
          OPTIONAL,                                                &
          INTENT(INOUT ) ::                                        &
                                                                pb &
-                               ,qv,qc,qr,qi,qs,qg,qh,qndrop,      &
-                                             qnifa,qnwfa,         & ! Trude
-                                                               qi2  ! for P3
+                                        ,qv,qc,qr,qi,qs,qg,qh,qndrop,      &
+                                                      qnifa,qnwfa,      & ! Trude
+                                                      qi2,qi3        ! for P3
 
    LOGICAL, OPTIONAL ::     f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qh,f_qndrop,&
                                                 f_qnifa,f_qnwfa,        &  ! trude
-                                                f_qi2            ! for P3
+                                                f_qi2,f_qi3            ! for P3
 !shbaek
    real, dimension ( ims:ime, kms:kme, jms:jme ), optional, intent(in) :: qnc_curr
    LOGICAL, OPTIONAL :: f_qnc
@@ -1247,6 +1248,17 @@ CONTAINS
           DO k=kts,kte
           DO i=its,ite
              qi(i,k,j) = qi(i,k,j) + qi2(i,k,j)
+          ENDDO
+          ENDDO
+          ENDDO
+     ENDIF
+
+! for Jensen ISHMAEL, add the third ice species
+     IF ( F_QI3) THEN
+          DO j=jts,jte
+          DO k=kts,kte
+          DO i=its,ite
+             qi(i,k,j) = qi(i,k,j) + qi3(i,k,j)
           ENDDO
           ENDDO
           ENDDO

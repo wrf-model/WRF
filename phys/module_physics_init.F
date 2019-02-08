@@ -886,6 +886,7 @@ CONTAINS
          config_flags%mp_physics  .eq. WSM7SCHEME .or.      &
          config_flags%mp_physics  .eq. WDM5SCHEME .or.      &
          config_flags%mp_physics  .eq. WDM6SCHEME .or.      &
+         config_flags%mp_physics  .eq. JENSEN_ISHMAEL .or.  &
          config_flags%mp_physics  .eq. WDM7SCHEME .or.      &
          config_flags%mp_physics  .eq. P3_1CATEGORY .or.    &
          config_flags%mp_physics  .eq. P3_1CATEGORY_NC .or. &
@@ -898,6 +899,7 @@ CONTAINS
 ! for P3, to ensure correct coupling with predicted effective radii
    if (config_flags%mp_physics .eq. P3_1CATEGORY .or.       &
        config_flags%mp_physics .eq. P3_1CATEGORY_NC .or.    &
+       config_flags%mp_physics .eq. JENSEN_ISHMAEL .or.    &
        config_flags%mp_physics .eq. P3_2CATEGORY      ) then
       has_reqs = 0
    end if
@@ -4018,6 +4020,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE module_mp_fast_sbm
    USE module_mp_morr_two_moment
    USE module_mp_p3
+   USE module_mp_jensen_ishmael
    USE module_mp_milbrandt2mom
 !  USE module_mp_milbrandt3mom
    USE module_mp_wdm5
@@ -4179,6 +4182,9 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
      CASE (MORR_TM_AERO)
          CALL morr_two_moment_init_aero( config_flags%morr_rimed_ice )
 #endif
+     CASE (JENSEN_ISHMAEL)
+        CALL jensen_ishmael_init()
+
      CASE (P3_1CATEGORY)
          CALL p3_init('.',1)
      CASE (P3_1CATEGORY_NC)

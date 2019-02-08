@@ -476,6 +476,8 @@ state   real    qi             ikjftb   moist       1         -     \
   i0rhusdf=(bdy_interp:dt)   "QICE"             "Ice mixing ratio"              "kg kg-1"
 state   real    qi2             ikjftb   moist       1         -     \
   i0rhusdf=(bdy_interp:dt)   "QICE2"             "Ice mixing ratio cat 2"              "kg kg-1"
+state   real    qi3             ikjftb   moist       1         -     \
+  i0rhusdf=(bdy_interp:dt)   "QICE3"             "Ice mixing ratio cat 3"              "kg kg-1"
 state   real    qs             ikjftb   moist       1         -     \
   i0rhusdf=(bdy_interp:dt)   "QSNOW"            "Snow mixing ratio"             "kg kg-1"
 state   real    qg             ikjftb   moist       1         -     \
@@ -493,6 +495,8 @@ state   real    dfi_qi         ikjftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QICE"         "Ice mixing ratio"              "kg kg-1"
 state   real    dfi_qi2         ikjftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QICE2"         "Ice mixing ratio cat 2"              "kg kg-1"
+state   real    dfi_qi3         ikjftb   dfi_moist       1         -     \
+   rusdf=(bdy_interp:dt)  "DFI_QICE3"         "Ice mixing ratio cat 3"              "kg kg-1"
 state   real    dfi_qs         ikjftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QSNOW"        "Snow mixing ratio"             "kg kg-1"
 state   real    dfi_qg         ikjftb   dfi_moist       1         -     \
@@ -533,6 +537,8 @@ state   real    qni            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QNICE"         "Ice Number concentration" "# kg-1"
 state   real    qni2            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QNICE2"         "Ice Number concentration cat 2" "# kg-1"
+state   real    qni3            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QNICE3"         "Ice Number concentration cat 3" "# kg-1"
 state   real    qt             ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "CWM"           "Total condensate mixing ratio"      "kg kg-1"
 state   real    qns            ikjftb  scalar      1         -     \
@@ -561,6 +567,18 @@ state   real    qir2            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QIR2"           "Rime ice mass-2 mixing ratio" "kg kg(-1)"
 state   real    qib2            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QIB2"           "Rime ice volume-2 mixing ratio" "m(3) kg(-1)"
+state   real    qvoli            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QVOLI"           "Ice volume-1 mixing ratio" "m(3) kg(-1)"
+state   real    qaoli            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QAOLI"           "Ice volume-1 times aspect ratio mixing ratio" "m(3) kg(-1)"
+state   real    qvoli2            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QVOLI2"           "Ice volume-2 mixing ratio" "m(3) kg(-1)"
+state   real    qaoli2            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QAOLI2"           "Ice volume-2 times aspect ratio mixing ratio" "m(3) kg(-1)"
+state   real    qvoli3            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QVOLI3"           "Ice volume-3 mixing ratio" "m(3) kg(-1)"
+state   real    qaoli3            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QAOLI3"           "Ice volume-3 times aspect ratio mixing ratio" "m(3) kg(-1)"
 
 state   real    -              ikjftb  dfi_scalar      1         -     -   -
 state   real    dfi_qndrop     ikjftb  dfi_scalar      1         -     \
@@ -569,6 +587,8 @@ state   real    dfi_qni        ikjftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNICE"     "DFI Ice Number concentration" "# kg-1"
 state   real    dfi_qni2        ikjftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNICE2"     "DFI Ice Number concentration cat 2" "# kg-1"
+state   real    dfi_qni3        ikjftb  dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)    "DFI_QNICE3"     "DFI Ice Number concentration cat 3" "# kg-1"
 state   real    dfi_qt         ikjftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_CWM"       "DFI Total condensate mixing ratio"      "kg kg-1"
 state   real    dfi_qns        ikjftb  dfi_scalar      1         -     \
@@ -595,6 +615,19 @@ state   real    dfi_qir2        ikjftb  dfi_scalar      1         -     \
    rhusdf=(bdy_interp:dt)    "DFI_QIR2"    "DFI Rime ice mass-2 mixing ratio" "kg kg(-1)"
 state   real    dfi_qib2        ikjftb  dfi_scalar      1         -     \
    rhusdf=(bdy_interp:dt)    "DFI_QIB2"    "DFI Rime ice volume-2 mixing ratio" "m(3) kg(-1)"
+state   real    dfi_qvoli        ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)    "DFI_QVOLI"    "DFI Ice volume-1 mixing ratio" "kg kg(-1)"
+state   real    dfi_qaoli        ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)    "DFI_QAOLI"    "DFI Ice volume-1 times aspect ratio mixing ratio" "kg kg(-1)"
+state   real    dfi_qvoli2        ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)    "DFI_QVOLI2"    "DFI Ice volume-2 mixing ratio" "kg kg(-1)"
+state   real    dfi_qaoli2        ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)    "DFI_QAOLI2"    "DFI Ice volume-2 times aspect ratio mixing ratio" "kg kg(-1)"
+state   real    dfi_qvoli3        ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)    "DFI_QVOLI3"    "DFI Ice volume-3 mixing ratio" "kg kg(-1)"
+state   real    dfi_qaoli3        ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)    "DFI_QAOLI3"    "DFI Ice volume-3 times aspect ratio mixing ratio" "kg kg(-1)"
+
 state   real    dfi_qke_adv   ikjftb  dfi_scalar      1         -      \
    rusdf=(bdy_interp:dt) "dfi_qke_adv"   "DFI twice TKE from MYNN"      "m2 s-2"
 
@@ -1401,9 +1434,19 @@ state    real    qv_old          ikj      misc        1         -      rusd     
 state    real    vmi3d          ikj     misc        1         -     hdu       "v_ice"                 "Mass-weighted ice fallspeed cat 1"  "m s-1"
 state    real    di3d           ikj     misc        1         -     hdu       "d_ice"                 "Mass-weighted mean ice size cat 1"  "m"
 state    real    rhopo3d        ikj     misc        1         -     hdu       "rho_ice"               "Mass-weighted mean ice density cat 1"  "kg m-3"
+state    real    phii3d        ikj     misc        1         -     hdu       "phi_ice"               "Number-weighted mean ice aspect ratio cat 1"  ""
 state    real    vmi3d_2          ikj     misc        1         -     hdu     "v_ice2"                 "Mass-weighted ice fallspeed cat 2"  "m s-1"
 state    real    di3d_2           ikj     misc        1         -     hdu     "d_ice2"                 "Mass-weighted mean ice size cat 2"  "m"
 state    real    rhopo3d_2        ikj     misc        1         -     hdu     "rho_ice2"               "Mass-weighted mean ice density cat 2"  "kg m-3"
+state    real    phii3d_2        ikj     misc        1         -     hdu       "phi_ice2"               "Number-weighted mean ice aspect ratio cat 2"  ""
+state    real    vmi3d_3          ikj     misc        1         -     hdu     "v_ice3"                 "Mass-weighted ice fallspeed cat 3"  "m s-1"
+state    real    di3d_3           ikj     misc        1         -     hdu     "d_ice3"                 "Mass-weighted mean ice size cat 3"  "m"
+state    real    rhopo3d_3        ikj     misc        1         -     hdu     "rho_ice3"               "Mass-weighted mean ice density cat 3"  "kg m-3"
+state    real    phii3d_3        ikj     misc        1         -     hdu       "phi_ice3"               "Number-weighted mean ice aspect ratio cat 3"  ""
+state    real    itype          ikj     misc        1         -     hdu       "ice_type"             "Diagnostic ice type cat 1 ISHMAEL microphysics"  ""
+state    real    itype_2          ikj     misc        1         -     hdu       "ice_type2"             "Diagnostic ice type cat 2 ISHMAEL microphysics"  ""
+state    real    itype_3          ikj     misc        1         -     hdu       "ice_type3"             "Diagnostic ice type cat 3 ISHMAEL microphysics"  ""
+
 # LIGHTNING NUDGING
 #state    real    ltg_dat        ij      misc        1         -      r         "ltg_dat"               "gridded lightning data"  "Flash per xkm x xkm per LAD_INT sec"
 # END LIGHTNING NUDGING
@@ -2731,8 +2774,10 @@ package   p3_1category    mp_physics==50               -             moist:qv,qc
 package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi;scalar:qnc,qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   p3_2category    mp_physics==52               -             moist:qv,qc,qr,qi,qi2;scalar:qnc,qni,qnr,qir,qib,qni2,qir2,qib2;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,vmi3d_2,rhopo3d_2,di3d_2,refl_10cm,th_old,qv_old
 package   morr_tm_aero    mp_physics==40               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnc,qni,qns,qnr,qng;state:rqrcuten,rqscuten,rqicuten,EFCG,EFIG,EFSG,WACT,CCN1_GS,CCN2_GS,CCN3_GS,CCN4_GS,CCN5_GS,CCN6_GS,CCN7_GS,re_cloud,re_ice,re_snow,mskf_refl_10cm
+package   jensen_ishmael  mp_physics==55               -             moist:qv,qc,qr,qi,qi2,qi3;scalar:qnr,qni,qvoli,qaoli,qni2,qvoli2,qaoli2,qni3,qvoli3,qaoli3;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,phii3d,itype,vmi3d_2,rhopo3d_2,di3d_2,phii3d_2,itype_2,vmi3d_3,rhopo3d_3,di3d_3,phii3d_3,itype_3,refl_10cm
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 package   gsfcgcescheme   mp_physics==97               -             moist:qv,qc,qr,qi,qs,qg
+
 
 package   radar_refl      compute_radar_ref==1         -             state:refl_10cm,refd_max
 endif
@@ -2764,6 +2809,7 @@ package   thompsonaero_dfi  mp_physics_dfi==28       -             dfi_moist:dfi
 package   p3_1category_dfi  mp_physics_dfi==50       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
 package   p3_1category_nc_dfi  mp_physics_dfi==51    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qnc,dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
 package   p3_2category_dfi  mp_physics_dfi==52    -                dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qi2;dfi_scalar:dfi_qnc,dfi_qni,dfi_qnr,dfi_qir,dfi_qib,dfi_qni2,dfi_qir2,dfi_qib2;state:dfi_re_cloud,dfi_re_ice
+package   jensen_ishmael_dfi  mp_physics_dfi==55         -         dfi_moist:qdfi_v,dfi_qc,dfi_qr,dfi_qi,dfi_qi2,dfi_qi3;dfi_scalar:dfi_qnr,dfi_qni,dfi_qvoli,dfi_qaoli,dfi_qni2,dfi_qvoli2,dfi_qaoli2,dfi_qni3,dfi_qvoli3,dfi_qaoli3;state:dfi_re_cloud,dfi_re_ice
 package   etampnew_dfi      mp_physics_dfi==95       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs;dfi_scalar:dfi_qt
 package   gsfcgcescheme_dfi   mp_physics_dfi==97     -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
 

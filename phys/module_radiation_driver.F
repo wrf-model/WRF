@@ -158,6 +158,7 @@ CONTAINS
               ,aer_asy_opt, aer_asy_val                                   &
               ,aod5502d, angexp2d, aerssa2d, aerasy2d                     &
               ,aod5503d                                                   &
+              ,cw_rad, shcu_physics                      &
               ,taod5502d, taod5503d                                       & !  Trude
               ,mp_physics                                                 &
               ,EFCG,EFCS,EFIG,EFIS,EFSG,aercu_opt                         &
@@ -483,6 +484,11 @@ CONTAINS
                                                                t, &
                                                              t8w, &
                                                              rho
+
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+         OPTIONAL,                                                &
+         INTENT(IN   )  ::                       cw_rad
+   INTEGER, OPTIONAL,                INTENT(IN) ::  shcu_physics
 
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL,        &
         INTENT(IN)     ::                            EFCG,       & 
@@ -1557,6 +1563,21 @@ CONTAINS
            ENDDO
         end if
      endif
+
+#if (EM_CORE==1)
+     IF( shcu_physics == 5 ) THEN
+        DO j=jts,jte
+        DO k=kts,kte
+        DO i=its,ite
+           cldfra(I,K,J) = max(cldfra_sh(I,K,J), cldfra(I,K,J))
+           qc_save(I,K,J)=qc(I,K,J)
+           qc(I,K,J)=cw_rad(I,K,J)+qc(I,K,J)
+        ENDDO
+        ENDDO
+        ENDDO
+     ENDIF
+#endif
+
         
 
      lwrad_select: SELECT CASE(lw_physics)

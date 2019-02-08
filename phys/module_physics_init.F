@@ -227,6 +227,13 @@ CONTAINS
                          ,massflux_EDKF, entr_EDKF, detr_EDKF  & ! Optional for qnse
                          ,thl_up, thv_up, rt_up                & ! Optional for qnse
                          ,rv_up, rc_up, u_up, v_up, frac_up    & ! Optional for qnse
+                         ,RDCASHTEN, RQCDCSHTEN                 &
+                         ,cldareaa, cldareab, cldliqa, cldliqb  &
+                         ,ca_rad, cw_rad                        &
+                         ,pblmax, wub, ltopb, clddpthb, cldtopb &
+                         ,capesave, ainckfsa, radsave           &
+                         ,rainsh, rainshvb, kdcldtop, kdcldbas  & 
+                         ,xtime1, PBLHAVG, TKEAVG               &
                          ,ccn_conc                             & ! RAS
                          ,QKE                                  & !for MYNN
                          ,landusef,landusef2,mosaic_cat_index                                                 & ! danli mosaic
@@ -750,6 +757,24 @@ CONTAINS
 ! WA 2/22/11
    REAL,OPTIONAL, DIMENSION( ims:ime , jms:jme ) , &
           INTENT(OUT) ::    wm_temf
+
+   REAL, OPTIONAL, DIMENSION( ims:ime , jms:jme ) , &
+          INTENT(  OUT) ::    pblmax, clddpthb, cldtopb, rainsh, rainshvb, &
+                              capesave, radsave, xtime1, PBLHAVG
+
+   REAL, OPTIONAL, DIMENSION( ims:ime , 1:100, jms:jme ) , &
+          INTENT(  OUT) ::    ainckfsa
+
+   INTEGER, OPTIONAL, DIMENSION( ims:ime , jms:jme ) , &
+          INTENT(  OUT) ::    kdcldtop, kdcldbas, ltopb
+
+   REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme , jms:jme ) ,                &
+          INTENT(  OUT) ::    wub, cldareaa,  cldareab,            &
+                                   cldliqa,   cldliqb,   TKEAVG,   &
+                                   ca_rad, cw_rad
+
+   REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) :: &
+             RDCASHTEN, RQCDCSHTEN
 
 ! Local data
 
@@ -1389,6 +1414,13 @@ CONTAINS
                 RQSSHTEN,RQISHTEN,RQGSHTEN,                     &
                 NCA,RAINC,RAINCV,config_flags,restart,          &
                 allowed_to_read, start_of_simulation,           &
+                RDCASHTEN, RQCDCSHTEN, W0AVG          &
+               ,cldareaa, cldareab, cldliqa, cldliqb  &
+               ,ca_rad, cw_rad                  &
+               ,pblmax, wub, ltopb, clddpthb, cldtopb &
+               ,capesave, ainckfsa, radsave           &
+               ,rainsh, rainshvb, kdcldtop, kdcldbas          &
+                ,xtime1, PBLHAVG, TKEAVG,             &
                 ids, ide, jds, jde, kds, kde,                   &
                 ims, ime, jms, jme, kms, kme,                   &
                 its, ite, jts, jte, kts, kte                    )
@@ -3809,6 +3841,13 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                       RQSSHTEN,RQISHTEN,RQGSHTEN,                  &
                       NCA,RAINC,RAINCV,config_flags,restart,       &
                       allowed_to_read, start_of_simulation,        &
+                      RDCASHTEN, RQCDCSHTEN, W0AVG,                &
+                      cldareaa, cldareab, cldliqa,  cldliqb,       &
+                      ca_rad, cw_rad,                              &
+                      pblmax, wub, ltopb, clddpthb, cldtopb,       &
+                      capesave, ainckfsa, radsave,                 &
+                      rainsh, rainshvb, kdcldtop, kdcldbas, xtime1,&
+                      PBLHAVG, TKEAVG,                             &
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
                       its, ite, jts, jte, kts, kte                 )
@@ -3816,6 +3855,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    USE uwshcu,        ONLY: init_uwshcu
    USE module_shcu_grims, ONLY: grimsinit
    USE module_shcu_nscv , ONLY: nscvinit
+   USE module_shcu_deng , ONLY: deng_shcu_init
    USE physconst,     ONLY: cpair, gravit, latice, latvap, mwdry, mwh2o, &
                             rair, zvir
    USE shr_kind_mod,  ONLY: r8 => shr_kind_r8
@@ -3843,6 +3883,24 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    REAL ,   DIMENSION( ims:ime , jms:jme ), INTENT(OUT):: RAINC, RAINCV
 
    REAL ,   DIMENSION( ims:ime , jms:jme ), INTENT(INOUT):: NCA
+
+   REAL, OPTIONAL, DIMENSION( ims:ime , jms:jme ) , &
+          INTENT(  OUT) ::    pblmax, clddpthb, cldtopb, rainsh, rainshvb, &
+                              capesave, radsave, xtime1, PBLHAVG
+
+   REAL, OPTIONAL, DIMENSION( ims:ime , 1:100, jms:jme ) , &
+          INTENT(  OUT) ::    ainckfsa
+
+   INTEGER, OPTIONAL, DIMENSION( ims:ime , jms:jme ) , &
+          INTENT(  OUT) ::    kdcldtop, kdcldbas, ltopb
+
+   REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , &
+          INTENT(  OUT) ::    wub, cldareaa,  cldareab,                &
+                                   cldliqa,   cldliqb,  W0AVG, TKEAVG, &
+                                   ca_rad, cw_rad
+
+   REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) :: &
+             RDCASHTEN, RQCDCSHTEN
 
 ! LOCAL VAR
 
@@ -3901,6 +3959,23 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
            ids, ide, jds, jde, kds, kde,                             &
            ims, ime, jms, jme, kms, kme,                             &
            its, ite, jts, jte, kts, kte                              )
+
+#if ( EM_CORE == 1 )
+   CASE (DENGSHCUSCHEME)
+      CALL deng_shcu_init(RTHSHTEN,RQVSHTEN,RQCSHTEN,RQRSHTEN,      &
+                     RUSHTEN,RVSHTEN,RDCASHTEN,RQCDCSHTEN,W0AVG,    &
+                     PBLHAVG, TKEAVG,                               &
+                     cldareaa, cldareab, cldliqa,  cldliqb,         &
+                     ca_rad, cw_rad,                          &
+                     wub, pblmax, ltopb, clddpthb, cldtopb,         &
+                     capesave, ainckfsa, radsave,                   &
+                     rainsh, rainshvb, kdcldtop, kdcldbas,                  &
+                     xtime1, restart,                               &
+                     SVP1,SVP2,SVP3,SVPT0,                          &
+                     ids, ide, jds, jde, kds, kde,                  &
+                     ims, ime, jms, jme, kms, kme,                  &
+                     its, ite, jts, jte, kts, kte                   )
+#endif
  
    CASE DEFAULT
 

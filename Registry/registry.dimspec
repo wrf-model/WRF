@@ -132,3 +132,7 @@ dimspec   ntraj    1     namelist=num_traj                 z     num_traj
 # Number of ocean levels
 dimspec    nocnl  2     namelist=ocean_levels              z     ocean_layer
 endif
+
+# Dimensions for PSU-DENG SCP
+dimspec    nsh     2     constant=100                      z     nsh
+

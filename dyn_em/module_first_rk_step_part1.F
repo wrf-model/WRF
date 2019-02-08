@@ -420,6 +420,8 @@ BENCH_START(rad_driver_tim)
      &         ,shadowmask=grid%shadowmask,ht=grid%ht,dx=grid%dx,dy=grid%dy &           
      &         ,diffuse_frac=grid%diffuse_frac &           
      &         ,IS_CAMMGMP_USED = grid%is_CAMMGMP_used    &
+     &         ,cw_rad=grid%cw_rad                     &
+     &         ,shcu_physics=config_flags%shcu_physics                     &
      &         ,MP_PHYSICS=CONFIG_FLAGS%MP_PHYSICS        &
      &         ,EFCG=grid%EFCG,EFCS=grid%EFCS,EFIG=grid%EFIG &
      &         ,EFIS=grid%EFIS,EFSG=grid%EFSG,aercu_opt=config_flags%aercu_opt & 
@@ -1366,6 +1368,25 @@ BENCH_START(shcu_driver_tim)
      &             ,HFX=grid%hfx, QFX=grid%qfx                            &
      &             ,MP_PHYSICS=config_flags%mp_physics                    &
      &             ,pgcon=config_flags%sas_pgcon                          &
+     &             ,RDCASHTEN=grid%RDCASHTEN, RQCDCSHTEN=grid%RQCDCSHTEN  & ! Deng sh
+     &             ,W0AVG=grid%W0AVG                                      &
+     &             ,clddpthb=grid%clddpthb, cldtopb=grid%cldtopb          &
+     &             ,cldareaa=grid%cldareaa, cldareab=grid%cldareab        &
+     &             ,cldliqa=grid%cldliqa, cldliqb=grid%cldliqb            &
+     &             ,cldfra_sh=grid%cldfra_sh,ca_rad=grid%ca_rad,  cw_rad=grid%cw_rad                &
+     &             ,wub=grid%wub, pblmax=grid%pblmax, xlong=grid%xlong    &
+     &             ,rainshvb=grid%rainshvb, capesave=grid%capesave        &
+     &             ,radsave=grid%radsave, ainckfsa=grid%ainckfsa          &
+     &             ,ltopb=grid%ltopb, kdcldtop=grid%kdcldtop              &
+     &             ,kdcldbas=grid%kdcldbas                                &
+     &             ,el_pbl=grid%el_pbl                                    &
+     &             ,rthratenlw=grid%rthratenlw, rthratensw=grid%rthratensw & 
+     &             ,exch_h=grid%exch_h                                    &
+     &             ,dnw=grid%dnw, XTIME=grid%XTIME, XTIME1=grid%XTIME1    &
+     &             ,GMT=grid%gmt                                          &
+     &             ,qke=grid%qke                                          &
+     &             ,PBLHAVG=grid%PBLHAVG, TKEAVG=grid%TKEAVG              &
+     &             ,BL_PBL_PHYSICS=config_flags%bl_pbl_physics            &
      &                                                                    )
 
 #if (WRF_CHEM == 1)

@@ -797,6 +797,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1, Grell 3D ensemble scheme (use with cu_physics=93 or 5) (PLACEHOLDER: SWITCH NOT YET IMPLEMENTED--use ishallow)
                                      = 2, Park and Bretherton shallow cumulus from CAM5 (CESM 1_0_1)
                                      = 3, GRIMS shallow cumulus from YSU group
+                                     = 5, Deng shallow cumulus from PSU and WRF-Solar
 
  ishallow                            = 0, !  = 1 turns on shallow convection, used with Grell 3D ensemble schemes (cu_physics = 3 or 5)
  clos_choice                         = 0, !  closure choice (place holder only)

@@ -1877,6 +1877,7 @@ package   g3shcuscheme   shcu_physics==1             -             -
 package   camuwshcuscheme shcu_physics==2            -             -
 package   grimsshcuscheme shcu_physics==3            -             -
 package   nscvshcuscheme  shcu_physics==4            -             -
+package   dengshcuscheme  shcu_physics==5            -             -
 
 package   dfi_setup      dfi_stage==0                -             -
 package   dfi_bck        dfi_stage==1                -             -

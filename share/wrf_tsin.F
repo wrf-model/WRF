@@ -3,6 +3,7 @@ SUBROUTINE wrf_tsin ( grid , ierr )
     USE module_domain
     USE module_utility
     USE module_configure, ONLY : model_config_rec, grid_config_rec_type, model_to_grid_config_rec
+    USE module_string_tools, ONLY : capitalize
 
     IMPLICIT NONE
 
@@ -20,7 +21,7 @@ SUBROUTINE wrf_tsin ( grid , ierr )
     INTEGER :: istatus, iunit
     LOGICAL :: exists
     CHARACTER (LEN=256) :: errmess
-    CHARACTER (LEN=256) :: JorLat,IorLon
+    CHARACTER (LEN=256) :: IorLat,JorLon
 
     ierr = 0
 
@@ -46,21 +47,25 @@ SUBROUTINE wrf_tsin ( grid , ierr )
 
              ! Input time series locations
              OPEN(UNIT=iunit, FILE='tslist', FORM='formatted', STATUS='old', IOSTAT=istatus)
-   
              IF (istatus == 0) THEN
    
                 ! The header will be parsed to see if lat/lon or i/j is given...
                 READ(UNIT=iunit, FMT='(1X)')
-                READ(UNIT=iunit, FMT='(32X,A7,2X,A7)') JorLat, IorLon
+                READ(UNIT=iunit, FMT='(32X,A7,2X,A7)') IorLat, JorLon
                 READ(UNIT=iunit, FMT='(1X)')
                 grid%tslist_ij = .false.
-                ! If the header contains "LAT" and "LON" then it will expect
-                !... lat/lon coords in the file
-                ! If the header has "J" and "I", then i,j will be used.
-                if(index(JorLat,'LAT').ne.0 .and. index(IorLon,'LON').ne.0) then
+                ! If the header contains "LAT" and "LON", 
+                !    then it will expect lat/lon coords in the file
+                ! If the header has "I" and "J", 
+                !    then it will expect grid index coords in the file
+                IorLat = capitalize(IorLat)
+                JorLon = capitalize(JorLon)
+                if(index(IorLat,'LAT').ne.0 .and. index(JorLon,'LON').ne.0) then
                     grid%tslist_ij = .false.
-                elseif(index(JorLat,'J').ne.0 .and. index(IorLon,'I').ne.0) then
+                elseif(index(IorLat,'I').ne.0 .and. index(JorLon,'J').ne.0) then
                     grid%tslist_ij = .true.
+                else
+                    CALL wrf_error_fatal('Error in wrf_tsin: Header line requires either LAT LON or I J')
                 endif
 
 

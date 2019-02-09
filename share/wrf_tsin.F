@@ -75,7 +75,7 @@ SUBROUTINE wrf_tsin ( grid , ierr )
                 istatus = 0
                 DO WHILE (istatus == 0)
                    IF (config_flags%map_proj == 0 .OR. grid%tslist_ij) THEN !ideal run will only use i,j
-                       READ(UNIT=iunit, FMT='(A25,1X,A5,1X,I9,1X,I10)', IOSTAT=istatus)            &
+                       READ(UNIT=iunit, FMT='(A25,1X,A5,1X,I7,1X,I8)', IOSTAT=istatus)            &
                        grid%desctsloc(grid%ntsloc+1), grid%nametsloc(grid%ntsloc+1), &
                        grid%itsloc(grid%ntsloc+1), grid%jtsloc(grid%ntsloc+1)
                    ELSE
@@ -85,9 +85,20 @@ SUBROUTINE wrf_tsin ( grid , ierr )
                    END IF
                    IF (istatus == 0) grid%ntsloc = grid%ntsloc + 1
                    IF (istatus > 0) THEN
-                      WRITE(errmess, FMT='(I4)') grid%ntsloc + 3   ! Three extra for the header of the file
+                      WRITE(errmess, FMT='(I4)') grid%ntsloc + 4   ! Three extra for the header of the file
+                                                                   ! One extra for the line we incorrectly read
                       CALL wrf_message('Error in tslist, line '//trim(errmess))
+                      CALL wrf_error_fatal('Error --- Maybe check that the header (I,J) vs (LAT,LON) matches the provided information')
                       EXIT    ! (technically unecessary, as we will exit the loop anyway)
+                   END IF
+                   IF ( ( grid%ntsloc == 1 ) .and. ( .NOT. grid%tslist_ij ) ) THEN
+                      IF ( ( ABS(grid%lattsloc(grid%ntsloc)) <= 0.1 ) .and. &
+                           ( ABS(grid%lontsloc(grid%ntsloc)) <= 0.1 ) ) THEN
+                         CALL wrf_message('WARNING ')
+                         CALL wrf_message('WARNING --- Maybe you have (I,J) locations for the (LAT,LON) values in tslist?')
+                         CALL wrf_message('WARNING --- Are you purposefully studying Null Island?')
+                         CALL wrf_message('WARNING ')
+                      END IF
                    END IF
                    IF ( grid%ntsloc >= grid%max_ts_locs ) THEN
                       IF ( istatus == 0 ) THEN                 ! Assume there were more lines in the file

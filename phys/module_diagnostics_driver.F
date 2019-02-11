@@ -1196,6 +1196,7 @@ CONTAINS
       USE module_domain, ONLY : domain
       USE module_configure, ONLY : grid_config_rec_type
       USE module_state_description, ONLY: num_moist, P_Qv
+      USE module_model_constants, ONLY: g, R_v, R_d, Cp, T0, RCP
 
       TYPE ( domain ), INTENT(INOUT) :: grid
 

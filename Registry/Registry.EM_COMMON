@@ -738,6 +738,7 @@ state    real   ts_rainnc       ?!       misc      -         -      -        "TS
 # Time series of vertical profile of U, V, GHT, THETA and QVAPOR
 state    real   ts_u_profile   ?!k       misc      -         -      -        "TS_U_PROFILE"   "Wind u-Component, earth relative, vertical profile"
 state    real   ts_v_profile   ?!k       misc      -         -      -        "TS_V_PROFILE"   "Wind v-Component, earth relative, vertical profile"
+state    real   ts_w_profile   ?!k       misc      -         -      -        "TS_W_PROFILE"   "Wind w-Component, earth relative, vertical profile"
 state    real   ts_gph_profile ?!k       misc      -         -      -        "TS_GPH_PROFILE" "Total geopotential height, vertical profile"
 state    real   ts_th_profile  ?!k       misc      -         -      -        "TS_TH_PROFILE"  "Total potential temperature, vertical profile"
 state    real   ts_qv_profile  ?!k       misc      -         -      -        "TS_QV_PROFILE"  "Water vapor mixing ratio, vertical profile"
@@ -2147,6 +2148,8 @@ rconfig   integer alloc_qndropsource      derived               1             0 
 rconfig   integer   num_moves       namelist,domains    1                0
 rconfig   integer   ts_buf_size     namelist,domains    1                200          -       "ts_buf_size"   "Size of time series buffer"
 rconfig   integer   max_ts_locs     namelist,domains    1                5            -       "max_ts_locs"   "Maximum number of time series locations"
+rconfig   logical   tslist_ij             derived       1              .false. rh  "tslist_ij"    "Use i,j locations in tslist"   ""
+rconfig   logical   tslist_unstagger_winds   namelist,domains    1              .false. rh  "tslist_unstagger_winds"    "interpolate u and v to cell centers"   ""
 rconfig   integer   vortex_interval  namelist,domains   max_domains      15  -  "" "" "minutes"
 rconfig   integer   max_vortex_speed namelist,domains   max_domains      40  -  "" "" "meters per second"
 rconfig   integer   corral_dist     namelist,domains    max_domains      8

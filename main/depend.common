@@ -992,6 +992,7 @@ wrf_fddaobs_in.o: \
 wrf_timeseries.o: wrf_tsin.o \
 		module_model_constants.o \
 		module_llxy.o \
+		module_string_tools.o \
 		../frame/module_domain.o \
 		../frame/module_configure.o \
 		../frame/module_dm.o

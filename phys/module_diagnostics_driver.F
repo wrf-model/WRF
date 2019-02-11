@@ -1229,6 +1229,14 @@ CONTAINS
                END  DO
             END  DO
          END  DO
+      ELSE
+         DO j = jps, MIN(jde-1, jpe)
+            DO k = kps, kde-1
+               DO i = ips, MIN(ide-1, ipe)
+                  grid%th_phy_m_t0(i,k,j) =  grid%t_2(i,k,j)
+               END  DO
+            END  DO
+         END  DO
       END IF
    END SUBROUTINE update_phys_fields
 

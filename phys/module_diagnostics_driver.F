@@ -1223,8 +1223,7 @@ CONTAINS
          DO j = jps, MIN(jde-1, jpe)
             DO k = kps, kde-1
                DO i = ips, MIN(ide-1, ipe)
-                  grid%th_phy_m_t0(i,k,j) = (grid%t_2(i,k,j)+T0) * &
-                                            (((grid%pb(i,k,j)+grid%p(i,k,j))/P1000mb)**RCP) / &
+                  grid%th_phy_m_t0(i,k,j) = (grid%t_2(i,k,j)+T0) / &
                                             (1.+(R_v/R_d)*moist(i,k,j,P_Qv)) - T0
                END  DO
             END  DO

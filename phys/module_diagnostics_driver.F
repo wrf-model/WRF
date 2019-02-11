@@ -901,7 +901,7 @@ CONTAINS
                        U=grid%u_2                                           &
                       ,V=grid%v_2                                           &
                       ,W=grid%w_2                                           &
-                      ,t=grid%t_2                                           &
+                      ,t=grid%th_phy_m_t0                                   &
                       ,qv=moist(:,:,:,P_QV)                                 &
                       ,zp=grid%ph_2                                         &
                       ,zb=grid%phb                                          &
@@ -972,7 +972,7 @@ CONTAINS
                        U=grid%u_2                                           &
                       ,V=grid%v_2                                           &
                       ,W=grid%w_2                                           &
-                      ,t=grid%t_2                                           &
+                      ,t=grid%th_phy_m_t0                                   &
                       ,qv=moist(:,:,:,P_QV)                                 &
                       ,zp=grid%ph_2                                         &
                       ,zb=grid%phb                                          &
@@ -1083,7 +1083,7 @@ CONTAINS
                        ,TSK=grid%tsk, TSK_MEAN=grid%tsk_mean                  &
                        ,PMSL_MEAN=grid%pmsl_mean                              &
                        ,T2=grid%t2, T2_MEAN=grid%t2_mean                      &
-                       ,T=grid%t_2, P=grid%p, PB=grid%pb                      &
+                       ,T=grid%th_phy_m_t0, P=grid%p, PB=grid%pb              &
                        ,MOIST=grid%moist(:,:,:,P_QV), HT=grid%ht              &
                        ,TH2=grid%th2, TH2_MEAN=grid%th2_mean                  &
                        ,Q2=grid%q2, Q2_MEAN=grid%q2_mean                      &
@@ -1136,7 +1136,8 @@ CONTAINS
            ,PSFC=grid%psfc, PSFC_DTMP=grid%psfc_dtmp                          &
            ,TSK=grid%tsk, TSK_DTMP=grid%tsk_dtmp                              &
            ,T2=grid%t2, T2_DTMP=grid%t2_dtmp                                  &
-           ,T=grid%t_2, P=grid%p, PB=grid%pb, MOIST=grid%moist(:,:,:,P_QV)    &
+           ,T=grid%th_phy_m_t0, P=grid%p, PB=grid%pb                          &
+           ,MOIST=grid%moist(:,:,:,P_QV)                                     &
            ,TH2=grid%th2, TH2_DTMP=grid%th2_dtmp                              &
            ,Q2=grid%q2, Q2_DTMP=grid%q2_dtmp                                  &
            ,U10=grid%u10, U10_DTMP=grid%u10_dtmp                              &

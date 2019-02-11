@@ -51,7 +51,7 @@ CONTAINS
 
       !  From where we preferably are pulling g, Cp, etc.
 
-      USE module_model_constants, ONLY: g
+      USE module_model_constants, ONLY: g, R_v, R_d, Cp, T0, RCP
 
       !  This gives us the type definition for grid (domain) and some clock information.
 
@@ -186,7 +186,13 @@ CONTAINS
       k_start = kps
       k_end   = kpe-1
 
+      !  There are some fields that were defined in the first RK loop for
+      !  physics and are now a time-step old.
 
+      CALL update_phys_fields ( grid, config_flags, moist,           &
+                                ids,  ide,  jds,  jde,  kds,  kde,   &
+                                ims,  ime,  jms,  jme,  kms,  kme,   &
+                                ips,  ipe,  jps,  jpe,  kps,  kpe    )
 
       !  Lightning flash rate diagnostic production.
 
@@ -1179,6 +1185,52 @@ CONTAINS
 
 
    END SUBROUTINE diagnostics_driver
+
+
+
+   SUBROUTINE update_phys_fields ( grid, config_flags, moist,           &
+                                   ids,  ide,  jds,  jde,  kds,  kde,   &
+                                   ims,  ime,  jms,  jme,  kms,  kme,   &
+                                   ips,  ipe,  jps,  jpe,  kps,  kpe    ) 
+
+      USE module_domain, ONLY : domain
+      USE module_configure, ONLY : grid_config_rec_type
+      USE module_state_description, ONLY: num_moist, P_Qv
+
+      TYPE ( domain ), INTENT(INOUT) :: grid
+
+      !  We are not changing any of the namelist settings.
+
+      TYPE ( grid_config_rec_type ), INTENT(IN) :: config_flags
+
+      !  The 4d arrays are input only, no mods to them.
+
+      REAL , DIMENSION(ims:ime,kms:kme,jms:jme,num_moist ) , INTENT(IN) :: moist
+
+      !  Domain indices - no change to these puppies.
+
+      INTEGER , INTENT(IN) :: ids, ide, jds, jde, kds, kde,     &
+                              ims, ime, jms, jme, kms, kme,     &
+                              ips, ipe, jps, jpe, kps, kpe
+
+      !  Local variables
+
+      INTEGER :: i, j, k 
+
+      !  Moist or dry theta
+
+      IF ( config_flags%use_theta_m .EQ. 1 ) THEN
+         DO j = jps, MIN(jde-1, jpe)
+            DO k = kps, kde-1
+               DO i = ips, MIN(ide-1, ipe)
+                  grid%th_phy_m_t0(i,k,j) = (grid%t_2(i,k,j)+T0) * &
+                                            (((grid%pb(i,k,j)+grid%p(i,k,j))/P1000mb)**RCP) / &
+                                            (1.+(R_v/R_d)*moist(i,k,j,P_Qv)) - T0
+               END  DO
+            END  DO
+         END  DO
+      END IF
+   END SUBROUTINE update_phys_fields
 
 END MODULE module_diagnostics_driver
 #endif

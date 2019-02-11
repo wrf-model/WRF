@@ -38,7 +38,7 @@ CONTAINS
       USE module_state_description, ONLY: num_moist, num_chem, num_tracer, num_scalar, &
                                           SKIP_PRESS_DIAGS, SKIP_Z_DIAGS,              &
                                           DO_TRAD_FIELDS,                              &
-                                          P_QG, P_QH, P_QV,                            &
+                                          P_QG, P_QH, P_QV, P_QC,                      &
                                           P_QNG, P_QH, P_QNH, P_QR, P_QNR,             &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME, &
                      WSM6SCHEME, ETAMPNEW, THOMPSON, THOMPSONAERO,                     &
@@ -292,6 +292,15 @@ CONTAINS
                ,e=grid%e                                            &
                ,sina=grid%sina                                      &
                ,cosa=grid%cosa                                      &
+               !  Input model diagnostic vraiables 
+               ,rho=grid%rho                                        &
+               ,dz8w=dz8w                                           &
+               ,qc=moist(:,:,:,P_QC)                                &
+               ,rainc=grid%rainc                                    &
+               ,rainnc=grid%rainnc                                  &
+               ,snownc=grid%snownc                                  &
+               ,graupelnc=grid%graupelnc                            &
+               ,hailnc=grid%hailnc                                  & 
                !  Terrestrial data                
                ,ht=grid%ht                                          &
                !  Namelist info
@@ -305,6 +314,12 @@ CONTAINS
                ,vmet=grid%vmet                                      &
                ,speed=grid%speed                                    &
                ,dir=grid%dir                                        &
+               ,psfc=grid%psfc                                      &
+               ,rain=grid%rain                                      &
+               ,liqrain=grid%liqrain                                &
+               ,tpw=grid%tpw                                        &
+               ,potential_t=grid%potential_t                        &
+               ,rh=grid%rh                                          &
                !  Various indexes for declarations, loop bounds
                ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde   &
                ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme   &

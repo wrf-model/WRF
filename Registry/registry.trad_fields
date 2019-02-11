@@ -15,7 +15,14 @@ state    real   vmet          ikj   dyn_em    1  -   h1  "VMET"         "earth r
 state    real   speed         ikj   dyn_em    1  -   h1  "SPEED"        "horizontal wind speed"                    "m/s"
 state    real   dir           ikj   dyn_em    1  -   h1  "DIR"          "wind direction, 0=northly, 270=westerly"  "degrees"
 
+state    real   rain          ij    dyn_em    1  -   h1  "RAIN"         "total rainfall"                            "mm"
+state    real   liqrain       ij    dyn_em    1  -   h1  "LIQRAIN"      "total liquid rainfall"                     "mm"
+# LIQRAIN=RAIN-SNOWNC-GRAUPELNC-HAILNC
+state    real   tpw           ij    dyn_em    1  -   h1  "TPW"          "total precipitable water"                  "mm"
+state    real   potential_t   ikj   dyn_em    1  -   h1  "potential_t"  "potential temperature"                     "K"
+state    real   rh            ikj   dyn_em    1  -   h1  "RH"           "relative humidity"                         "%"
+
 #  Package declarations
 
 package   skip_trad_fields   diag_nwp2==0  -   -
-package     do_trad_fields   diag_nwp2==1  -   state:sealevelp,temperature,pressure,geoheight,umet,vmet,speed,dir
+package     do_trad_fields   diag_nwp2==1  -   state:sealevelp,temperature,pressure,geoheight,umet,vmet,speed,dir,rain,liqrain,tpw,theta,rh

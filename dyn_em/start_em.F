@@ -122,6 +122,7 @@
 
 !..Need to fill special height var for setting up initial condition.  G. Thompson
    REAL, ALLOCATABLE, DIMENSION(:,:,:) :: z_at_q
+   REAL, ALLOCATABLE, DIMENSION(:,:,:) :: dz8w   !mchen
 
 !  CCN for MP=18 initializatio
    REAL :: ccn_max_val
@@ -142,6 +143,7 @@
 #if (WRF_CHEM != 1)
          ALLOCATE(CLDFRA_OLD(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; CLDFRA_OLD = 0.
 #endif
+   ALLOCATE(dz8w(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; dz8w = 0.
    ALLOCATE(z_at_q(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; z_at_q = 0.
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
@@ -2012,6 +2014,14 @@ DEALLOCATE(z_at_q)
 
    IF ( config_flags%diag_nwp2 == DO_TRAD_FIELDS ) THEN
       CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: TRAD_FIELDS' )
+      DO j = jts, MIN(jte,jde-1)
+         DO k = 1, kte-1
+            DO i = its, MIN(ite,ide-1)
+               dz8w(i,k,j) = (grid%phb(i,k+1,j)+grid%ph_2(i,k+1,j))/g - (grid%phb(i,k,j)+grid%ph_2(i,k,j))/g
+               grid%rho(i,k,j) = 1./( grid%al(i,k,j)+grid%alb(i,k,j) ) 
+            END DO
+         END DO
+      END DO
       CALL trad_fields ( &
                !  Input data for computing
                U=grid%u_2                                           &
@@ -2037,9 +2047,17 @@ DEALLOCATE(z_at_q)
                ,sina=grid%sina                                      &
                ,cosa=grid%cosa                                      &
                !  Terrestrial data                
+               ,rho=grid%rho                                        &
+               ,dz8w=dz8w                                           &
                ,ht=grid%ht                                          &
                !  Namelist info
                ,use_theta_m=config_flags%use_theta_m                &
+               ,qc=moist(:,:,:,P_QC)                                &
+               ,rainc=grid%rainc                                    &
+               ,rainnc=grid%rainnc                                  &
+               ,snownc=grid%snownc                                  &
+               ,graupelnc=grid%graupelnc                            &
+               ,hailnc=grid%hailnc                                  &
                !  The diagnostic output variables
                ,sealevelp=grid%sealevelp                            &
                ,temperature=grid%temperature                        &
@@ -2049,6 +2067,12 @@ DEALLOCATE(z_at_q)
                ,vmet=grid%vmet                                      &
                ,speed=grid%speed                                    &
                ,dir=grid%dir                                        &
+               ,psfc=grid%psfc                                      &
+               ,rain=grid%rain                                      &
+               ,liqrain=grid%liqrain                                &
+               ,tpw=grid%tpw                                        &
+               ,potential_t=grid%potential_t                        &
+               ,rh=grid%rh                                          &
                !  Various indexes for declarations, loop bounds
                ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde   &
                ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme   &

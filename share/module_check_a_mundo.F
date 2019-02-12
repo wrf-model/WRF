@@ -66,6 +66,7 @@
 !END FASDAS
 !
       INTEGER :: count_fatal_error
+      REAL :: dt_s, dx_km
 
 !-----------------------------------------------------------------------
 ! Set up the WRF Hydro namelist option to allow dynamic allocation of
@@ -1724,6 +1725,24 @@
            ( lon_extent_is_global .AND. lat_extent_is_global ) ) THEN
          CALL wrf_debug ( 0, '--- ERROR: Domain size is global, set &bdy_control polar=.TRUE.' )
          count_fatal_error = count_fatal_error + 1
+      END IF
+
+!-----------------------------------------------------------------------
+! Do a gross check on the time step for the most coarse grid (not for
+! adaptive time steps. If the value is significantly larger than 
+! stop immediately. Likely the user made a mistake.
+! If the rule of thumb is 6 DX = DT, then anything > 10 is flagged.
+! Only look at domain 1.
+!-----------------------------------------------------------------------
+      IF ( .NOT. model_config_rec % use_adaptive_time_step ) THEN
+         dt_s = REAL(model_config_rec % time_step) + &
+                REAL(model_config_rec % time_step_fract_num) / &
+                REAL(model_config_rec % time_step_fract_den)
+         dx_km = MIN ( model_config_rec % dx(1) ,  model_config_rec % dy(1) ) / 1000.
+         IF ( dt_s / dx_km > 10 )THEN
+            CALL wrf_debug ( 0, '--- ERROR: The time step is too large for this grid distance')
+            count_fatal_error = count_fatal_error + 1
+         END IF
       END IF
 
 !-----------------------------------------------------------------------

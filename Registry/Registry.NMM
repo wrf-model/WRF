@@ -1367,6 +1367,7 @@ rconfig   integer irand                   namelist,domains	1             0      
 rconfig   real    dt                      derived              max_domains    2.      h0123     "dt"        "TEMPORAL RESOLUTION"      "SECONDS"
 rconfig   integer   ts_buf_size     namelist,domains    1                200          -       "ts_buf_size"   "Size of time series buffer"
 rconfig   integer   max_ts_locs     namelist,domains    1                5            -       "max_ts_locs"   "Maximum number of time series locations"
+rconfig   logical   tslist_ij             derived       1              .false. rh  "tslist_ij"    "Use i,j locations in tslist"   ""
 rconfig   integer   num_moves       namelist,domains    1                0
 rconfig   integer   vortex_interval namelist,domains    max_domains      15  -  "" "" "minutes"
 rconfig   integer   corral_dist     namelist,domains    max_domains      8

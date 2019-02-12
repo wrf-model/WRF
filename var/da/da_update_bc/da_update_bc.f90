@@ -781,7 +781,7 @@ program da_update_bc
       case ('T', 'PH') ;
          var_pref=trim(var3d(n))
  
-         if ( use_theta_m > 0 .and. trim(var3d(n) == 'T' ) then
+         if ( use_theta_m > 0 .and. trim(var3d(n)) == 'T' ) then
            call da_get_var_3d_real_cdf( da_file, 'THM', &
               full3d, dims(1), dims(2), dims(3), 1, debug)
            if ( var4d_lbc ) &
@@ -1260,7 +1260,7 @@ program da_update_bc
       case ('T', 'PH') ;
          var_pref=trim(var3d(n))
  
-         if ( use_theta_m > 0 .and. trim(var3d(n) == 'T' ) then
+         if ( use_theta_m > 0 .and. trim(var3d(n)) == 'T' ) then
            call da_get_var_3d_real_cdf( da_file_02, 'THM', &
               full3d, dims(1), dims(2), dims(3), 1, debug)
          else

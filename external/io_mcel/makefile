@@ -27,7 +27,7 @@ timeconvert.o : timeconvert.c
 			$(FC) $(FFLAGS) $(INCL) -I../ioapi_share -c $*.f
 
 superclean:
-			/bin/rm -f *.f *.o libwrfio_mcel.a
+			@/bin/rm -f *.f *.o libwrfio_mcel.a
 
 # DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
 

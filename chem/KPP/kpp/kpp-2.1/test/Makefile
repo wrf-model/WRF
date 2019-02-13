@@ -90,12 +90,12 @@ mex:    $(ALLOBJ)
 	$(MEX) FC#$(FC) -fortran -O saprc99_mex_Hessian.f90 $(ALLOBJ)
 
 clean:
-	rm -f saprc99*.o saprc99*.mod \
+	@rm -f saprc99*.o saprc99*.mod \
 	saprc99*.dat saprc99.exe saprc99*.mexglx \
 	saprc99.map
 
 distclean:
-	rm -f saprc99*.o saprc99*.mod \
+	@rm -f saprc99*.o saprc99*.mod \
 	saprc99*.dat saprc99.exe saprc99.map \
 	saprc99*.f90 saprc99_*.mexglx
 

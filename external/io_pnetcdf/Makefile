@@ -37,5 +37,5 @@ field_routines.o:	field_routines.F90 wrf_io.o
 			$(FC) $(FFLAGS) -c field_routines.f
 
 superclean:
-			/bin/rm -f *.f *.o testWRFWrite testWRFRead \
+			@/bin/rm -f *.f *.o testWRFWrite testWRFRead \
 			*.mod libwrfio_pnf.a

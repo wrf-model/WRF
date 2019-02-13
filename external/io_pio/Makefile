@@ -66,5 +66,5 @@ read_bdy_routines.o:	read_bdy_routines.F90 wrf_data_pio.o pio_routines.o
 clean:	superclean
 
 superclean:
-			/bin/rm -f *.f *.o \
+			@/bin/rm -f *.f *.o \
 			*.mod libwrfio_pio.a

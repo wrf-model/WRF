@@ -22,6 +22,6 @@ library:$(OBJ)
 	$(FC) -c $(FFLAGS) $*.f
 
 clean:
-	rm -f $(OBJ) $(TARGET) irev.f wrdlen.f
+	@rm -f $(OBJ) $(TARGET) irev.f wrdlen.f
 
 superclean: clean

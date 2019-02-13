@@ -13,27 +13,31 @@ rm -f ../Makfile_org
 endif
 
 
+if ( -e if_required ) then
+rm if_required 
+endif
+touch if_required
 
 # remove automatically genereated files in chem directory
-rm -f ../*kpp*  
+rm -f ../*kpp* >>& if_required
 
 #kpp 
 set k_dirs = ( kpp/* )
 foreach kdir ( $k_dirs )
-echo $kdir
-( cd $kdir; touch Makefile.defs; make clean )
-( cd $kdir; touch Makefile.defs; rm -f  Makefile.defs )
+echo $kdir >> if_required
+( cd $kdir; touch Makefile.defs; make clean ) >>& if_required
+( cd $kdir; touch Makefile.defs; rm -f  Makefile.defs ) >>& if_required
 end
 
 # remove links in util/wkc
-( cd util/wkc; linker.csh unlink )
+( cd util/wkc; linker.csh unlink ) >>& if_required
 
 
 
 
 
 #coupler
-( cd util/wkc; make clean; make -f Makefile.tuv clean )
+( cd util/wkc; make clean; make -f Makefile.tuv clean ) >>& if_required
 
 
 
@@ -41,13 +45,13 @@ end
 set m_dirs = ( mechanisms/* )
 
 foreach mdir ( $m_dirs )
-echo $mdir
+echo $mdir >>& if_required
 
-( cd $mdir; /bin/rm -f *.f90 *.map Makefil* *~ core.* )
+( cd $mdir; /bin/rm -f *.f90 *.map Makefil* *~ core.* ) >>& if_required
 
 end
 
-rm -f ../../Registry_tmp.*_wk*
+rm -f ../../Registry_tmp.*_wk* >>& if_required
 
 #./documentation/latex/clean
 

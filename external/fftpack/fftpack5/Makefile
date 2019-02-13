@@ -29,6 +29,6 @@ library: $(OBJ)
 	$(RM) -f $*.f90
 
 clean:
-	rm -f $(OBJ) $(TARGET) *.obj
+	@rm -f $(OBJ) $(TARGET) *.obj
 
 superclean: clean

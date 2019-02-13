@@ -197,12 +197,35 @@
 
 #endif
 
+#if (EM_CORE == 1)
 !-----------------------------------------------------------------------
-! Check that NSSL microphysics is not allowed for WRF-NMM run
+! There is a binary file for Goddard radiation. It is single precision.
+!-----------------------------------------------------------------------
+# if ( defined(PROMOTE_FLOAT) || ( RWORDSIZE == DWORDSIZE ) )
+      god_r8 : DO i = 1, model_config_rec % max_dom
+         IF ( ( model_config_rec % ra_lw_physics(i) == goddardlwscheme ) .OR. &
+              ( model_config_rec % ra_sw_physics(i) == goddardswscheme ) ) THEN
+            wrf_err_message = '--- ERROR: Goddard radiation scheme cannot run with real*8 floats'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- Fix ra_lw_physics and ra_sw_physics in namelist.input '
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
+            EXIT god_r8
+         END IF
+      ENDDO god_r8
+
+# endif
+#endif
+
+
+!-----------------------------------------------------------------------
+! Check that some microphysics is not allowed for WRF-NMM run
 !-----------------------------------------------------------------------
 #if (NMM_CORE == 1) || (HWRF == 1)
       DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec % mp_physics(i) == nssl_2mom .OR. &
+         IF ( model_config_rec % mp_physics(i) == nuwrf3icescheme .OR. &
+              model_config_rec % mp_physics(i) == nuwrf4icescheme .OR. &
+              model_config_rec % mp_physics(i) == nssl_2mom .OR. &
               model_config_rec % mp_physics(i) == nssl_2momccn .OR. &
               model_config_rec % mp_physics(i) == nssl_1mom .OR. &
               model_config_rec % mp_physics(i) == nssl_1momlfo .OR. &
@@ -1259,6 +1282,13 @@
       END IF
 
 !-----------------------------------------------------------------------
+! If a user sets nwp_diagnostics = 1, then radar reflectivity computation
+! needs to happen
+!-----------------------------------------------------------------------
+
+      IF ( model_config_rec % nwp_diagnostics == 1 ) model_config_rec % do_radar_ref = 1
+
+!-----------------------------------------------------------------------
 ! If hailcast_opt = 1 for any domain, convective parameterization must be off for that domain.           
 !-----------------------------------------------------------------------
 
@@ -1517,7 +1547,7 @@
       END IF
 
 !-----------------------------------------------------------------------
-!  scalar_pblmix = 1 should be turned on for mp_physics=28.
+!  scalar_pblmix = 1 should be turned on for mp_physics=28. But can be off for MYNN (when bl_mynn_mixscalars = 1)
 !-----------------------------------------------------------------------
       oops = 0
       DO i = 1, model_config_rec % max_dom
@@ -1533,6 +1563,22 @@
          CALL wrf_debug ( 1, wrf_err_message )
          wrf_err_message = 'resetting scalar_pblmix = 1'
          CALL wrf_debug ( 1, wrf_err_message )
+      END IF
+
+      !NOW CHECK FOR MYNN
+      oops = 0
+      DO i = 1, model_config_rec % max_dom
+         IF ((model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME2) .OR. &
+             (model_config_rec%bl_pbl_physics(i) .EQ. MYNNPBLSCHEME3) ) THEN
+            IF ( model_config_rec%bl_mynn_mixscalars(i) .EQ. 1 ) THEN
+                model_config_rec%scalar_pblmix(i) = 0
+                oops = oops + 1
+            END IF
+         END IF
+      ENDDO      ! Loop over domains
+      IF ( oops .GT. 0 ) THEN
+         wrf_err_message = '--- WARNING: MYNN is set to mix scalars, turning off scalar_pblmix'
+         CALL wrf_message ( wrf_err_message )
       END IF
 
 !-----------------------------------------------------------------------
@@ -2099,6 +2145,41 @@
 
 
 !-----------------------------------------------------------------------
+! Set the namelist urban dimensions if sf_urban_physics > 0  
+!-----------------------------------------------------------------------
+
+      IF ( any(model_config_rec%sf_urban_physics > 0 ) ) THEN
+      
+         model_config_rec%urban_map_zrd = model_config_rec%num_urban_ndm * &
+                                          model_config_rec%num_urban_nwr * &
+                                          model_config_rec%num_urban_nz
+         model_config_rec%urban_map_zwd = model_config_rec%num_urban_ndm * &
+                                          model_config_rec%num_urban_nwr * &
+                                          model_config_rec%num_urban_nz  * &
+                                          model_config_rec%num_urban_nbui
+         model_config_rec%urban_map_gd  = model_config_rec%num_urban_ndm * &
+                                          model_config_rec%num_urban_ng
+         model_config_rec%urban_map_zd  = model_config_rec%num_urban_ndm * &
+                                          model_config_rec%num_urban_nz  * &
+                                          model_config_rec%num_urban_nbui
+         model_config_rec%urban_map_zdf = model_config_rec%num_urban_ndm * &
+                                          model_config_rec%num_urban_nz 
+         model_config_rec%urban_map_bd  = model_config_rec%num_urban_nz  * &
+                                          model_config_rec%num_urban_nbui
+         model_config_rec%urban_map_wd  = model_config_rec%num_urban_ndm * &
+                                          model_config_rec%num_urban_nz  * &
+                                          model_config_rec%num_urban_nbui
+         model_config_rec%urban_map_gbd = model_config_rec%num_urban_ndm * &
+                                          model_config_rec%num_urban_ngb * &
+                                          model_config_rec%num_urban_nbui
+         model_config_rec%urban_map_fbd = model_config_rec%num_urban_ndm       * &
+                                          (model_config_rec%num_urban_nz - 1)  * &
+                                          model_config_rec%num_urban_nf        * &
+                                          model_config_rec%num_urban_nbui
+
+      END IF     
+      
+!-----------------------------------------------------------------------
 ! Set the namelist mosaic_cat_soil parameter for the Noah-mosaic  scheme if sf_surface_mosaic == 1.  
 !-----------------------------------------------------------------------
 
@@ -2176,7 +2257,7 @@
          CALL wrf_debug ( 1, wrf_err_message )
 
       END IF
-      
+
 !-----------------------------------------------------------------------
 ! If a user requested to compute the radar reflectivity .OR. if this is
 ! one of the schemes that ALWAYS computes the radar reflectivity, then

@@ -102,10 +102,12 @@
             if ( index(iv%instid(i)%rttovid_string, 'amsr2') > 0 ) then
                deallocate (iv%instid(i)%clw)
             end if
+            if ( index(iv%instid(i)%rttovid_string, 'ahi') > 0 ) then
+               deallocate (iv%instid(i)%cloudflag)
+            end if
             if ( index(iv%instid(i)%rttovid_string, 'abi') > 0 ) then
                deallocate (iv%instid(i)%ca_mean)
             end if
-
             deallocate (iv%instid(i)%ps)
             deallocate (iv%instid(i)%tb_xb)
             if ( crtm_cloud ) then

@@ -80,6 +80,9 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
       if ( index(iv%instid(i)%rttovid_string, 'amsr2') > 0 ) then
          allocate (iv%instid(i)%clw(iv%instid(i)%num_rad))
       end if
+      if ( index(iv%instid(i)%rttovid_string, 'ahi') > 0 ) then
+         allocate (iv%instid(i)%cloudflag(iv%instid(i)%num_rad))
+      end if
       if ( index(iv%instid(i)%rttovid_string, 'abi') > 0 ) then
          allocate (iv%instid(i)%ca_mean(nchan,iv%instid(i)%num_rad))
       end if

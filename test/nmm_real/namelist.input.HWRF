@@ -106,11 +106,11 @@ eta_levels=1.0,.9919699,.9827400,.9710800,.9600599,.9462600,.9306099,.9129300,.8
  nphs                                = 2,6,6,
  ncnvc                               = 2,6,6,
 
- movemin                             = 3,6,18,
+ ntrack                             = 3,6,18,
 
-! IMPORTANT: dt*nphs*movemin for domain 2 and 3 must be 540 and 180, respectively
+! IMPORTANT: dt*nphs*ntrack for domain 2 and 3 must be 540 and 180, respectively
 !            AND the history output times (10800, 10800, 3600) must be
-!            divisible by dt*nphs*movemin for domains 1, 2 and 3
+!            divisible by dt*nphs*ntrack for domains 1, 2 and 3
 
  gfs_alpha                           = 0.7,0.7,0.7,
  sas_pgcon                           = 0.55,0.2,0.2,
@@ -141,7 +141,7 @@ poll_servers=.true.
  nio_groups                          = 4 /
 
  &logging
-  compute_slaves_silent=.true.
+  compute_tasks_silent=.true.
   io_servers_silent=.true.
   stderr_logging=1
  /

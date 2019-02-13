@@ -43,7 +43,7 @@ program da_update_bc
 
    ! for WRF hybrid coordinate
    integer           :: nlevf, nlevh
-   integer           :: hybrid_opt
+   integer           :: hybrid_opt, use_theta_m
    real, allocatable :: c1f(:), c2f(:), c1h(:), c2h(:)
 
    integer           :: ids, ide, jds, jde, kds, kde
@@ -273,6 +273,11 @@ program da_update_bc
       allocate ( c1h(nlevh) )
       allocate ( c2h(nlevh) )
    end if
+
+   ! initialize as use_theta_m = 0
+   use_theta_m = 0
+   call da_get_gl_att_int_cdf(da_file, 'USE_THETA_M', use_theta_m, debug, io_status)
+   write(stdout,*) 'use_theta_m = ', use_theta_m
 
    ! initialize as hybrid_opt = 0
    hybrid_opt = 0
@@ -776,11 +781,19 @@ program da_update_bc
       case ('T', 'PH') ;
          var_pref=trim(var3d(n))
  
-         call da_get_var_3d_real_cdf( da_file, trim(var3d(n)), &
-            full3d, dims(1), dims(2), dims(3), 1, debug)
-         if ( var4d_lbc ) &
-            call da_get_var_3d_real_cdf( da_file_02, trim(var3d(n)), &
-               full3d2, dims(1), dims(2), dims(3), 1, debug)
+         if ( use_theta_m > 0 .and. trim(var3d(n)) == 'T' ) then
+           call da_get_var_3d_real_cdf( da_file, 'THM', &
+              full3d, dims(1), dims(2), dims(3), 1, debug)
+           if ( var4d_lbc ) &
+              call da_get_var_3d_real_cdf( da_file_02, 'THM', &
+                 full3d2, dims(1), dims(2), dims(3), 1, debug)
+         else
+           call da_get_var_3d_real_cdf( da_file, trim(var3d(n)), &
+              full3d, dims(1), dims(2), dims(3), 1, debug)
+           if ( var4d_lbc ) &
+              call da_get_var_3d_real_cdf( da_file_02, trim(var3d(n)), &
+                 full3d2, dims(1), dims(2), dims(3), 1, debug)
+         end if
 
          if (debug) then
             write(unit=stdout, fmt='(3a,e20.12,4x)') &
@@ -1247,8 +1260,13 @@ program da_update_bc
       case ('T', 'PH') ;
          var_pref=trim(var3d(n))
  
-         call da_get_var_3d_real_cdf( da_file_02, trim(var3d(n)), &
-            full3d, dims(1), dims(2), dims(3), 1, debug)
+         if ( use_theta_m > 0 .and. trim(var3d(n)) == 'T' ) then
+           call da_get_var_3d_real_cdf( da_file_02, 'THM', &
+              full3d, dims(1), dims(2), dims(3), 1, debug)
+         else
+           call da_get_var_3d_real_cdf( da_file_02, trim(var3d(n)), &
+              full3d, dims(1), dims(2), dims(3), 1, debug)
+         end if
 
          if (debug) then
             write(unit=stdout, fmt='(3a,e20.12,4x)') &

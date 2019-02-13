@@ -1503,26 +1503,28 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
  endif
 
 ! Removing these OpenMP directives since this is already in a 
-! threaded region from the radiation driver. 
+! threaded region from the radiation driver for the WRF model.
 ! Perhaps other models use these, so we will keep them around.
-!!$OMP PARALLEL DO &
-!!$OMP PRIVATE ( ic, ii) &
-!!$OMP PRIVATE ( i,j,k,nk,ib,n,kt,km, i24h ) &
-!!$OMP PRIVATE ( cosz, rsuvbm, rsuvdf, rsirbm, rsirdf, tsfc, tskin, p400, p700 ) &
-!!$OMP PRIVATE ( ict, icb, p8w1d, t8w1d, flx, flxd, flxu ) &
-!!$OMP PRIVATE ( tten1d, sh1d, p1d, t1d, rho1d, dz1d, o31d, fcld1d ) &
-!!$OMP PRIVATE ( emis1d, q1d, re1d ) &
-!!$OMP PRIVATE ( taucl_sw, ssacl_sw, asycl_sw ) &
-!!$OMP PRIVATE ( taucl_lw, ssacl_lw, asycl_lw ) &
-!!$OMP PRIVATE ( taual_sw, ssaal_sw, asyal_sw ) &
-!!$OMP PRIVATE ( taual_lw, ssaal_lw, asyal_lw ) &
-!!$OMP PRIVATE ( flxd_surf ) &
-!!$OMP PRIVATE ( fac,xt24,tloctm,hrang,xxlat ) &
-!!$OMP PRIVATE ( ie,je,no_micro,lmask,mcdat_int ) &
+#if (NUWRF_GODDARD == 1)
+!$OMP PARALLEL DO &
+!$OMP PRIVATE ( ic, ii) &
+!$OMP PRIVATE ( i,j,k,nk,ib,n,kt,km, i24h ) &
+!$OMP PRIVATE ( cosz, rsuvbm, rsuvdf, rsirbm, rsirdf, tsfc, tskin, p400, p700 ) &
+!$OMP PRIVATE ( ict, icb, p8w1d, t8w1d, flx, flxd, flxu ) &
+!$OMP PRIVATE ( tten1d, sh1d, p1d, t1d, rho1d, dz1d, o31d, fcld1d ) &
+!$OMP PRIVATE ( emis1d, q1d, re1d ) &
+!$OMP PRIVATE ( taucl_sw, ssacl_sw, asycl_sw ) &
+!$OMP PRIVATE ( taucl_lw, ssacl_lw, asycl_lw ) &
+!$OMP PRIVATE ( taual_sw, ssaal_sw, asyal_sw ) &
+!$OMP PRIVATE ( taual_lw, ssaal_lw, asyal_lw ) &
+!$OMP PRIVATE ( flxd_surf ) &
+!$OMP PRIVATE ( fac,xt24,tloctm,hrang,xxlat ) &
+!$OMP PRIVATE ( ie,je,no_micro,lmask,mcdat_int ) &
 #if (WRF_CHEM == 1)
-!!$OMP PRIVATE ( aero1d ) &
+!$OMP PRIVATE ( aero1d ) &
 #endif
-!!$OMP SCHEDULE(dynamic,1)
+!$OMP SCHEDULE(dynamic,1)
+#endif
 
   DO ip = 1,((1+(ite-its+1)/CHUNK)*CHUNK)*(jte-jts+1),CHUNK ! *ij_skip
   j  = jts+(ip-1)/((1+(ite-its+1)/CHUNK)*CHUNK) ! *ij_skip

@@ -366,10 +366,6 @@ bufrfile:  do ibufr=1,numbufr
          ! rlat = bfr1bhdr(bufr_lat)
          ! rlon = bfr1bhdr(bufr_lat)
          ! if (rlon < 0.0) rlon = rlon+360.0
-!              info%lat = lat_save(nn)
-!              info%lon = lon_save(nn)
-
-!         call da_llxy (info, loc, outside, outside_all)
          info        = info_1d (nn)
          loc         = loc_1d (nn)
          outside     = outside_1d (nn)

@@ -368,7 +368,6 @@ subroutine da_read_obs_bufrseviri (obstype,iv,infile)
             cycle read_loop
          end if		 
 	 		 
-         call da_llxy (info, loc, outside, outside_all)	
          if (outside_all) cycle
 	     inst = 0	 
          do i = 1, rtminit_nsensor
@@ -502,7 +501,6 @@ subroutine da_read_obs_bufrseviri (obstype,iv,infile)
      deallocate ( loc_1d         )
      deallocate ( outside_1d     )
      deallocate ( outside_all_1d )
-
   end if
 
   end do domtest

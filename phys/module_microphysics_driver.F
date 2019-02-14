@@ -49,8 +49,11 @@ SUBROUTINE microphysics_driver(                                          &
                       ,qvolg_curr,qvolh_curr                             &
                       ,qir_curr,qib_curr                                 & ! for P3
                       ,qi2_curr,qni2_curr,qir2_curr,qib2_curr            & ! for P3
+                      ,qvoli_curr,qaoli_curr                             & ! for Jensen ISHMAEL
+                      ,qvoli2_curr,qaoli2_curr                           & ! for Jensen ISHMAEL
+                      ,qi3_curr,qni3_curr,qvoli3_curr,qaoli3_curr        & ! for Jensen ISHMAEL
                       ,effr_curr,ice_effr_curr,tot_effr_curr             &
-                       ,qic_effr_curr,qip_effr_curr,qid_effr_curr        &             
+                      ,qic_effr_curr,qip_effr_curr,qid_effr_curr         &             
                       ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop,f_qni      &
                       ,f_qns,f_qnr,f_qng,f_qnc,f_qnn,f_qh,f_qnh          &
                       ,            f_qzr,f_qzi,f_qzs,f_qzg,f_qzh         &
@@ -59,6 +62,9 @@ SUBROUTINE microphysics_driver(                                          &
                       ,f_qnic,f_qnip,f_qnid &
                       ,f_qir,f_qib                                       & ! for P3
                       ,f_qi2,f_qni2,f_qir2,f_qib2                        & ! for P3
+                      ,f_qvoli,f_qaoli                                   & ! for Jensen ISHMAEL
+                      ,f_qvoli2,f_qaoli2                                 & ! for Jensen ISHMAEL
+                      ,f_qi3,f_qni3,f_qvoli3,f_qaoli3                    & ! for Jensen ISHMAEL
                       ,f_effr,f_ice_effr,f_tot_effr                      &
                       ,f_qic_effr,f_qip_effr,f_qid_effr                  &                 
                       ,cu_used                                           &
@@ -94,9 +100,19 @@ SUBROUTINE microphysics_driver(                                          &
                       ,vmi3d                                             & ! for P3 
                       ,di3d                                              & ! for P3 
                       ,rhopo3d                                           & ! for P3 
+                      ,phii3d                                            & ! for Jensen ISHMAEL
                       ,vmi3d_2                                           & ! for P3 
                       ,di3d_2                                            & ! for P3 
                       ,rhopo3d_2                                         & ! for P3 
+                      ,phii3d_2                                          & ! for Jensen ISHMAEL
+                      ,vmi3d_3                                           & ! for Jensen ISHMAEL
+                      ,di3d_3                                            & ! for Jensen ISHMAEL
+                      ,rhopo3d_3                                         & ! for Jensen ISHMAEL
+                      ,phii3d_3                                          & ! for Jensen ISHMAEL
+                      ,itype                                             & ! for Jensen ISHMAEL
+                      ,itype_2                                           & ! for Jensen ISHMAEL
+                      ,itype_3                                           & ! for Jensen ISHMAEL
+
 ! YLIN
 ! Added the RI_CURR array to the call
                       ,ri_curr                                           &
@@ -133,7 +149,7 @@ SUBROUTINE microphysics_driver(                                          &
                     ,NSSL_1MOM,NSSL_1MOMLFO, FER_MP_HIRES_ADVECT &
                     ,WSM7SCHEME, WDM7SCHEME &
                     ,NUWRF3ICESCHEME, NUWRF4ICESCHEME & 
-                    ,MILBRANDT2MOM, P3_1CATEGORY, P3_1CATEGORY_NC  !, P3_2CATEGORY ,MILBRANDT3MOM 
+                    ,MILBRANDT2MOM, P3_1CATEGORY, P3_1CATEGORY_NC, JENSEN_ISHMAEL  !, P3_2CATEGORY ,MILBRANDT3MOM 
 #else
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
@@ -142,7 +158,7 @@ SUBROUTINE microphysics_driver(                                          &
                     ,NSSL_1MOM,NSSL_1MOMLFO, FER_MP_HIRES_ADVECT & ! ,NSSL_3MOM       &
                     ,WSM7SCHEME, WDM7SCHEME &
                     ,NUWRF3ICESCHEME, NUWRF4ICESCHEME &
-                    ,MILBRANDT2MOM , CAMMGMPSCHEME,FULL_KHAIN_LYNN, P3_1CATEGORY, P3_1CATEGORY_NC, P3_2CATEGORY, MORR_TM_AERO !,MILBRANDT3MOM
+                    ,MILBRANDT2MOM , CAMMGMPSCHEME,FULL_KHAIN_LYNN, P3_1CATEGORY, P3_1CATEGORY_NC, P3_2CATEGORY, MORR_TM_AERO, JENSEN_ISHMAEL !,MILBRANDT3MOM
 #if ( WRFPLUS == 1 )
    USE module_state_description, ONLY : LSCONDSCHEME, MKESSLERSCHEME
 #endif
@@ -197,6 +213,7 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_gsfcgce_4ice_nuwrf, only: gsfcgce_4ice_nuwrf
    USE module_mp_morr_two_moment
    USE module_mp_p3
+   USE module_mp_jensen_ishmael
 # if (EM_CORE == 1)
    USE module_mp_morr_two_moment_aero
 # endif
@@ -546,9 +563,13 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 ! Optional
 !
    REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(OUT) :: refl_10cm
-   REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(OUT) :: vmi3d,di3d,rhopo3d, & ! for P3
-                                                                         vmi3d_2,di3d_2,rhopo3d_2 ! for P3
-
+   REAL, OPTIONAL, DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(OUT) :: vmi3d,di3d,rhopo3d,    & ! for P3
+                                                                         vmi3d_2,di3d_2,rhopo3d_2,  & ! for P3
+                                                                         phii3d,         & ! for Jensen ISHMAEL
+                                                                         phii3d_2,       & ! for Jensen ISHMAEL
+                                                                         vmi3d_3,di3d_3,rhopo3d_3,  & ! for Jensen ISHMAEL
+                                                                         phii3d_3,       & ! for Jensen ISHMAEL
+                                                                         itype,itype_2,itype_3             ! for Jensen ISHMAEL
    LOGICAL,  OPTIONAL,   INTENT(IN   )    :: channel_switch
    REAL, OPTIONAL,  INTENT(INOUT   ) :: naer  ! aerosol number concentration (/kg)
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) , OPTIONAL :: qnwfa2d, qnifa2d
@@ -565,9 +586,12 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,qzr_curr,qzi_curr,qzs_curr,qzg_curr,qzh_curr    &
                  ,qir_curr,qib_curr                               & ! for P3
                  ,qi2_curr,qni2_curr,qir2_curr,qib2_curr          & ! for P3
+                 ,qvoli_curr,qaoli_curr                           & ! for Jensen ISHMAEL
+                 ,qvoli2_curr,qaoli2_curr                         & ! for Jensen ISHMAEL
+                 ,qi3_curr,qni3_curr,qvoli3_curr,qaoli3_curr      & ! for Jensen ISHMAEL
                  ,effr_curr,ice_effr_curr,tot_effr_curr           &
                  ,qic_effr_curr,qip_effr_curr,qid_effr_curr           &
-                  ,kext_ql,kext_qs,kext_qg          &
+                 ,kext_ql,kext_qs,kext_qg          &
                  ,kext_qh,kext_qa                       &
                  ,kext_qic,kext_qip,kext_qid,tempc,height      &
                  ,kext_ft_qic,kext_ft_qip,kext_ft_qid &
@@ -645,6 +669,9 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                        ,f_qrimef                                             &
                        ,f_qir,f_qib                                          & ! for P3
                        ,f_qi2,f_qni2,f_qir2,f_qib2                           & ! for P3
+                       ,f_qvoli,f_qaoli                                      & ! for Jensen ISHMAEL
+                       ,f_qvoli2,f_qaoli2                                    & ! for Jensen ISHMAEL
+                       ,f_qi3,f_qni3,f_qvoli3,f_qaoli3                       & ! for Jensen ISHMAEL
                        ,f_qnwfa, f_qnifa                         ! Added by G. Thompson
 
 
@@ -1147,6 +1174,67 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 #endif
 
 !
+     CASE (JENSEN_ISHMAEL)
+        CALL wrf_debug(100, 'microphysics_driver: jensen_ishmael ')
+        IF (PRESENT (QV_CURR) .AND. PRESENT (QC_CURR) .AND. &
+             PRESENT (QR_CURR) .AND. PRESENT (QNR_CURR) .AND. &
+             PRESENT (QI_CURR).AND. PRESENT (QNI_CURR) .AND. &
+             PRESENT (QVOLI_CURR) .AND. PRESENT (QAOLI_CURR) .AND. &
+             PRESENT (QI2_CURR).AND. PRESENT (QNI2_CURR) .AND. &
+             PRESENT (QVOLI2_CURR) .AND. PRESENT (QAOLI2_CURR) .AND. &
+             PRESENT (QI3_CURR).AND. PRESENT (QNI3_CURR) .AND. &
+             PRESENT (QVOLI3_CURR).AND. PRESENT (QAOLI3_CURR)) THEN
+             CALL mp_jensen_ishmael(             &
+             ITIMESTEP=itimestep,                &  !*                                                                         
+             DT_IN=dt,                           &  !*
+             P=p,                                &  !*                                                                         
+             DZ=dz8w,                            &  !* !
+             TH=th,                              &  !*                                                                         
+             QV=qv_curr,                         &  !*                                                                         
+             QC=qc_curr,                         &  !*                                                                         
+             QR=qr_curr,                         &  !*                                                                         
+             NR=qnr_curr,                        &  !* !
+             QI1=qi_curr,                        &  !*                                                                         
+             NI1=qni_curr,                       &  !*                                                                         
+             AI1=qvoli_curr,                     &  !*
+             CI1=qaoli_curr,                     &  !*
+             QI2=qi2_curr,                       &  !*                                                                         
+             NI2=qni2_curr,                      &  !*                                                                         
+             AI2=qvoli2_curr,                    &  !*
+             CI2=qaoli2_curr,                    &  !*
+             QI3=qi3_curr,                       &  !*                                                                         
+             NI3=qni3_curr,                      &  !*                                                                         
+             AI3=qvoli3_curr,                    &  !*
+             CI3=qaoli3_curr,                    &  !*
+             IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde, &
+             IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme, &
+             ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte, &
+             RAINNC=RAINNC,                      &
+             RAINNCV=RAINNCV,                    &
+             SNOWNC=SNOWNC,                      &
+             SNOWNCV=SNOWNCV,                    &
+             diag_effc3d=re_cloud,               &
+             diag_effi3d=re_ice,                 &
+             diag_dbz3d=refl_10cm,               &
+             diag_vmi3d_1=vmi3d,                 &
+             diag_di3d_1=di3d,                   &
+             diag_rhopo3d_1=rhopo3d,             &
+             diag_phii3d_1=phii3d,               &
+             diag_vmi3d_2=vmi3d_2,               &
+             diag_di3d_2=di3d_2,                 &
+             diag_rhopo3d_2=rhopo3d_2,           &
+             diag_phii3d_2=phii3d_2,             &
+             diag_vmi3d_3=vmi3d_3,               &
+             diag_di3d_3=di3d_3,                 &
+             diag_rhopo3d_3=rhopo3d_3,           &
+             diag_phii3d_3=phii3d_3,             &
+             diag_itype_1=itype,                 &
+             diag_itype_2=itype_2,               &
+             diag_itype_3=itype_3                &
+             )
+        ELSE
+           Call wrf_error_fatal( 'arguments not present for calling jensen_ishamel')
+        ENDIF
 
     CASE (MORR_TWO_MOMENT)
          CALL wrf_debug(100, 'microphysics_driver: calling morrison two moment')

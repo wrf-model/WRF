@@ -24,7 +24,9 @@ endif
 set ZAP = .foofoo
 set arglist=""
 set prev_was_j = false
+set count = 0
 foreach a ( $argv )
+  @ count ++
   if ( "$a" == "-h" ) then
     goto hlp
   else if ( "$a" == "all_wrfvar" || "$a" == "gen_be" ) then
@@ -76,8 +78,8 @@ foreach a ( $argv )
     set arglist = ( $arglist $a )
     set ZAP = ( main/wrf.exe )
   else if ( "$a" == "-j" ) then
-    shift argv
-    setenv J "-j $argv[1]"
+    @ JJ = $count + 1
+    setenv J "-j $argv[$JJ]"
     set prev_was_j = true
   else if ( "$prev_was_j" == "true" ) then
     set prev_was_j = false

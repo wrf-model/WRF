@@ -3662,6 +3662,7 @@ endif
                grid%t_init(i,k,j) = temp*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
                grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
             END DO
+            grid%php(i,kte,j) = grid%p_top
             !  Base state mu is defined as base state surface pressure minus grid%p_top
             grid%MUB(i,j) = p_surf - grid%p_top
             !  Dry surface pressure is defined as the following (this mu is from the input file

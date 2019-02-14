@@ -97,7 +97,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    character(len=14), parameter :: INST_PREFIX  = 'OR_ABI-L1b-Rad'
 
    !! File reading variables
-   character(len=1000)          :: fname, command !, fname_short
+   character(len=1000)          :: fname, command
    character(len=50)            :: list_file
    integer                      :: file_unit
 
@@ -589,7 +589,6 @@ write(stdout,fmt='(A)') adjustl(trim(command))
             '          data time: ',yr, '-', mt, '-', dy, '_', hr, ':', mn, ':', sc
 
          fname = trim(this_view % filename(first_file))
-!         fname = trim(this_view % fpath)//trim(fname_short)
 
          if ( .not.this_view % meta_initialized ) then
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -962,33 +961,11 @@ write(stdout,fmt='(A)') adjustl(trim(command))
                      pack(this_view % loc_1d % local    (1:nrad_local) % y, domainmask_1d )
                   buf_loc ( buf_i:buf_f ) % x = &
                      pack(this_view % loc_1d % local    (1:nrad_local) % x, domainmask_1d )
-!!!!
-!                  buf_loc ( buf_i:buf_f ) % j = &
-!                     pack(this_view % loc_1d % local    (1:nrad_local) % j, domainmask_1d )
-!                  buf_loc ( buf_i:buf_f ) % i = &
-!                     pack(this_view % loc_1d % local    (1:nrad_local) % i, domainmask_1d )
-!                  buf_loc ( buf_i:buf_f ) % dy = &
-!                     pack(this_view % loc_1d % local    (1:nrad_local) % dy, domainmask_1d )
-!                  buf_loc ( buf_i:buf_f ) % dx = &
-!                     pack(this_view % loc_1d % local    (1:nrad_local) % dx, domainmask_1d )
-!                  buf_loc ( buf_i:buf_f ) % dym = &
-!                     pack(this_view % loc_1d % local    (1:nrad_local) % dym, domainmask_1d )
-!                  buf_loc ( buf_i:buf_f ) % dxm = &
-!                     pack(this_view % loc_1d % local    (1:nrad_local) % dxm, domainmask_1d )
-!!!!
                else
                   buf_real(buf_i:buf_f,:)  = missing_r
                   buf_int(buf_i:buf_f,:)   = missing
-!!!!
 !                  buf_loc(buf_i:buf_f)%y   = missing_r
 !                  buf_loc(buf_i:buf_f)%x   = missing_r
-!                  buf_loc(buf_i:buf_f)%j   = missing
-!                  buf_loc(buf_i:buf_f)%i   = missing
-!                  buf_loc(buf_i:buf_f)%dy  = missing_r
-!                  buf_loc(buf_i:buf_f)%dx  = missing_r
-!                  buf_loc(buf_i:buf_f)%dym = missing_r
-!                  buf_loc(buf_i:buf_f)%dxm = missing_r
-!!!!
                end if
 #ifdef DM_PARALLEL
                !PERFORM COMMS
@@ -998,14 +975,6 @@ write(stdout,fmt='(A)') adjustl(trim(command))
                !Only x & y components of loc need to be communicated
                call mpi_bcast( buf_loc(buf_i:buf_f)%y, nbuf, true_mpi_real, iproc, comm, ierr )
                call mpi_bcast( buf_loc(buf_i:buf_f)%x, nbuf, true_mpi_real, iproc, comm, ierr )
-!!!!
-!               call mpi_bcast( buf_loc(buf_i:buf_f)%j, nbuf, mpi_integer, iproc, comm, ierr )
-!               call mpi_bcast( buf_loc(buf_i:buf_f)%i, nbuf, mpi_integer, iproc, comm, ierr )
-!               call mpi_bcast( buf_loc(buf_i:buf_f)%dy, nbuf, true_mpi_real, iproc, comm, ierr )
-!               call mpi_bcast( buf_loc(buf_i:buf_f)%dx, nbuf, true_mpi_real, iproc, comm, ierr )
-!               call mpi_bcast( buf_loc(buf_i:buf_f)%dym, nbuf, true_mpi_real, iproc, comm, ierr )
-!               call mpi_bcast( buf_loc(buf_i:buf_f)%dxm, nbuf, true_mpi_real, iproc, comm, ierr )
-!!!!
 #endif
             end do ProcLoop
             ! END SOLUTION 2
@@ -1033,7 +1002,6 @@ write(stdout,fmt='(A)') adjustl(trim(command))
             ! Populate remainder of loc and determine in/outside patch
             allocate ( patchmask_1d (this_view % nrad_on_domain) )
             allocate ( dummybool_2d (this_view % nrad_on_domain,1) )
-!            patchmask_1d = .false.
             call da_llxy_1d ( locs = buf_loc, outside = dummybool_2d(:,1), do_xy = .false. )
             patchmask_1d = .not.dummybool_2d(:,1)
             deallocate( dummybool_2d )
@@ -1305,22 +1273,6 @@ write(stdout,fmt='(A)') adjustl(trim(command))
                             abs( this_view % filedate(jfile) % obs_time / 60.D0 - &
                                 (this_view % filedate(ifile) % obs_time / 60.D0 - TEMPIR_delay_minutes) )
 
-!                        yr = this_view % filedate(jfile) % yr
-!                        mt = this_view % filedate(jfile) % mt
-!                        dy = this_view % filedate(jfile) % dy
-!                        hr = this_view % filedate(jfile) % hr
-!                        mn = this_view % filedate(jfile) % mn
-!                        sc = this_view % filedate(jfile) % sc
-!                        write(unit=stdout, &
-!                           fmt='(A,I4.4,A,I2.2,A,I2.2,A,I2.2,A,I2.2,A,I2.2)')  &
-!                           '          this_time: ',yr, '-', mt, '-', dy, '_', hr, ':', mn, ':', sc
-!
-!write(unit=stdout,fmt='(A,F14.2)') &
-!                           '    this_time (min): ', this_view % filedate(jfile) % obs_time / 60.D0
-!
-!                        write(unit=stdout,fmt='(A,F7.2,A)') &
-!                           '          TEMPIR: time difference - ',TEMPIR_time_abs_diff,' minutes'
-
                         if ( TEMPIR_time_abs_diff .lt. TEMPIR_min_time_diff ) then
                            TEMPIR_ifile = jfile
                            TEMPIR_min_time_diff = TEMPIR_time_abs_diff
@@ -1348,7 +1300,6 @@ write(stdout,fmt='(A)') adjustl(trim(command))
                   end if
 
                   fname = trim(this_view % filename(ifile))
-!                  fname = trim(this_view % fpath)//trim(fname_short)
                   call get_abil1b_bt( fname, &
                                       this_view % ys_local, this_view % ye_local, &
                                       this_view % xs_local, this_view % xe_local, &
@@ -1364,7 +1315,6 @@ write(stdout,fmt='(A)') adjustl(trim(command))
 
                   if ( TEMPIR_ifile.gt.0 ) then
                      fname = trim(this_view % filename(TEMPIR_ifile))
-!                     fname = trim(this_view % fpath)//trim(fname_short)
                      call get_abil1b_bt( fname, &
                                          this_view % ys_local, this_view % ye_local, &
                                          this_view % xs_local, this_view % xe_local, &
@@ -1730,7 +1680,6 @@ write(stdout,fmt='(A)') adjustl(trim(command))
    deallocate(view_att)
 
    if (tot_files_used .lt. 1) then
-!!      write(unit=message(1),fmt='(A,I2,3A)') "Either no L1B data found or no matching fgat windows for GOES-",satellite_id," ABI using prefix ",INST_PREFIX, " for this process rank.  This subdomain may have an unacceptable zenith angle or fall entirely outside the GOES viewing extent."
       write(unit=message(1),fmt=*) "Either no L1B data found or no matching fgat windows for GOES-",satellite_id," ABI using prefix ",INST_PREFIX, "for this process rank.  This subdomain may have an unacceptable zenith angle or fall entirely outside the GOES viewing extent."
 
 !      write(unit=message(1),fmt='(A)') "Either no L1B data found or no matching"
@@ -1744,7 +1693,7 @@ write(stdout,fmt='(A)') adjustl(trim(command))
    end if
 
 !------------------------------------------------------
-   ! NOTE: Remainder of this subroutine copied from da_read_obs_ncgoesimg.inc
+   ! NOTE: Remainder of this subroutine modified from da_read_obs_ncgoesimg.inc
 
    if (thinning .and. num_goesabi_global > 0 ) then
 #ifdef DM_PARALLEL
@@ -2061,12 +2010,6 @@ subroutine get_abil1b_grid2_1d( yy_abi, xx_abi, req, rpol, pph, nam, satellite_i
 
    call get_abil1b_latlon_1d ( yy_abi, xx_abi, lat, lon, req, rpol, hh, nam )
 
-!!!JJGDEBUG
-!   do n = lbound(yy_abi,1), ubound(yy_abi,1)
-!      call get_abil1b_latlon ( yy_abi(n), xx_abi(n), lat(n), lon(n), req, rpol, hh, nam )
-!   end do
-!!!JJGDEBUG
-
    where( lat.eq.missing_r .OR. lon.eq.missing_r .OR. &
           isnan(lat)       .OR. isnan(lon) ) 
       earthmask = .false.
@@ -2076,15 +2019,6 @@ subroutine get_abil1b_grid2_1d( yy_abi, xx_abi, req, rpol, pph, nam, satellite_i
 
    call da_get_sat_angles_1d( lat, lon, satellite_id, satzen, satazi )
 
-!!!JJGDEBUG
-!   do n = lbound(yy_abi,1), ubound(yy_abi,1)
-!      if ( earthmask(n) ) then
-!         call da_get_sat_angles( lat(n), lon(n), satellite_id, satzen(n), satazi(n) )
-!
-!      end if
-!   end do
-!!!JJGDEBUG
-
    where ( isnan(satzen) .or. satzen.gt.satzen_limit .or. satzen.eq.missing_r )
       satzen  = missing_r
       zenmask = .false.
@@ -2093,64 +2027,6 @@ subroutine get_abil1b_grid2_1d( yy_abi, xx_abi, req, rpol, pph, nam, satellite_i
    if (trace_use) call da_trace_exit("get_abil1b_grid2_1d")
 
 end subroutine get_abil1b_grid2_1d
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!subroutine get_abil1b_grid2( yy_abi, xx_abi, req, rpol, pph, nam, satellite_id, &
-!                             lat, lon, satzen, satazi, &
-!                             earthmask, zenmask )
-!
-!   implicit none
-!
-!   real,              intent(in)  :: yy_abi, xx_abi
-!   real(r_double),    intent(in)  :: req, rpol, pph, nam
-!   integer,           intent(in)  :: satellite_id
-!
-!   ! GOES-ABI fields
-!   real,              intent(out) :: lat, lon
-!   real,              intent(out) :: satzen, satazi
-!   logical,           intent(out) :: earthmask, zenmask
-!
-!   ! Internal Variables
-!   type(info_type)          :: info
-!   logical                  :: outside_all, dummy_bool
-!
-!   integer                  :: iy, ix
-!   real(r_double)           :: hh
-!   real, parameter          :: satzen_limit=75.0
-!
-!   if (trace_use) call da_trace_entry("get_abil1b_grid2")
-!
-!   lat = missing_r
-!   lon = missing_r
-!   satzen = missing_r
-!   satazi = missing_r
-!   earthmask=.false.
-!   zenmask=.false.
-!
-!   hh=pph+req
-!
-!   call get_abil1b_latlon ( yy_abi, xx_abi, lat, lon, req, rpol, hh, nam )
-!
-!   if( lat.eq.missing_r .OR. lon.eq.missing_r .OR. &
-!       isnan(lat) .OR. isnan(lon) ) return
-!
-!   earthmask=.true.
-!
-!   call da_get_sat_angles(lat, lon, satellite_id, satzen, satazi)
-!!   call da_get_solar_angles_1d( yr, mt, dy, hr, mn, sc, &
-!!                                lat, lon, solzen, solazi )
-!
-!   if ( isnan(satzen) .or. satzen.gt.satzen_limit ) then
-!      satzen = missing_r
-!      return
-!   end if
-!   zenmask=.true.
-!
-!   if (trace_use) call da_trace_exit("get_abil1b_grid2")
-!
-!end subroutine get_abil1b_grid2
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2169,8 +2045,6 @@ subroutine get_abil1b_bt( filename, ys, ye, xs, xe, radmask, bt, inst, ichan )
    logical, intent(inout)        :: radmask( ys:ye, xs:xe )
    real, intent(out)             :: bt( ys:ye, xs:xe )
 
-!   real             :: rad(ys:ye, xs:xe)
-!   integer          :: DQF(ys:ye, xs:xe)
    real             :: rad(xs:xe, ys:ye)
    integer          :: DQF(xs:xe, ys:ye)
 
@@ -2200,17 +2074,12 @@ subroutine get_abil1b_bt( filename, ys, ye, xs, xe, radmask, bt, inst, ichan )
 
    ierr=nf_inq_varid( ncid, 'Rad', varid )
    ierr=nf_get_vara_double ( ncid, varid, (/xs,ys/), (/nxkeep,nykeep/), rad )
-!   ierr=nf_get_vara_double ( ncid, varid, (/ys,xs/), (/nykeep,nxkeep/), rad )
-!                            rad(ys:ye,xs:xe) )
    ierr=nf_get_att_double(ncid,varid,'scale_factor',slp)
    ierr=nf_get_att_double(ncid,varid,'add_offset',itp)
    rad=rad*slp+itp
 
    ierr=nf_inq_varid ( ncid, 'DQF', varid )
    ierr=nf_get_vara_int ( ncid, varid, (/xs,ys/), (/nxkeep,nykeep/), DQF )
-!   ierr=nf_get_vara_int ( ncid, varid, (/ys,xs/), (/nykeep,nxkeep/), DQF )
-
-!                            DQF(ys:ye,xs:xe) )
 
    ierr=nf_inq_varid( ncid, 'planck_bc1', varid )
    ierr=nf_get_var_double( ncid, varid, bc1 )
@@ -2221,17 +2090,9 @@ subroutine get_abil1b_bt( filename, ys, ye, xs, xe, radmask, bt, inst, ichan )
    ierr=nf_inq_varid( ncid, 'planck_fk2', varid )
    ierr=nf_get_var_double( ncid, varid, fk2 )
 
-!   radmask = ( radmask .and. (transpose(DQF).eq.0 .or. transpose(DQF).eq.1) &
-!                       .and. transpose(rad).ge.0.0 )
-
    radmask = ( radmask .and. (transpose(DQF).eq.0 .or. transpose(DQF).eq.1) )
    radmask = ( radmask .and. transpose(rad).ge.0.0 )
 
-!!   radmask = ( radmask .and. (DQF.eq.0 .or. DQF.eq.1) &
-!!                       .and. rad.ge.0.0 )
-!
-!   radmask = ( radmask .and. (DQF.eq.0 .or. DQF.eq.1) )
-!   radmask = ( radmask .and. rad.ge.0.0 )
 
 !!!JJGDEBUG
 !   if (rtm_option == rtm_option_crtm) then
@@ -2247,29 +2108,12 @@ subroutine get_abil1b_bt( filename, ys, ye, xs, xe, radmask, bt, inst, ichan )
 !!!JJGDEBUG
 
       where ( radmask )
-!         bt = ( fk2 / ( log(( fk1 / rad ) + 1.0) ) - bc1 ) / bc2
          bt = ( fk2 / ( log(( fk1 / transpose(rad) ) + 1.0) ) - bc1 ) / bc2
       end where
 
 !!!JJGDEBUG
 !   end if
 !!!JJGDEBUG
-
-!   do ix = xs, xe
-!      do iy = ys, ye
-!         if ( radmask( iy, ix ) ) then
-!            if( rad( iy, ix ).ge.0.0 .and. any(DQF( iy, ix ).eq.(/0,1/)) ) then
-!               bt( iy, ix ) = ( fk2 / ( log( ( fk1 / rad( iy, ix )) + 1. ) ) - bc1 ) / bc2
-!            else
-!               radmask( iy, ix ) = .false.
-!            end if
-!         end if
-!      end do
-!   end do
-
-!#ifdef DM_PARALLEL
-!   call mpi_barrier(comm, ierr)
-!#endif
 
    ierr=nf_close(ncid)
    call handle_err('Error closing file',ierr)
@@ -2315,7 +2159,6 @@ subroutine get_abil1b_terr( filename, ys, ye, xs, xe, terr )
                      nf_inq_varid( ncid, 'terr', varid ) )
    call handle_err ( 'Error reading terrain height', &
                      nf_get_vara_double ( ncid, varid, (/xs,ys/), (/nxkeep,nykeep/), terr_trans ) )
-!                     nf_get_vara_double ( ncid, varid, (/ys,xs/), (/nykeep,nxkeep/), terr ) )
    terr = transpose(terr_trans)
 
    call handle_err ( 'Error with _FillValue', &

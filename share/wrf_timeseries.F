@@ -15,6 +15,7 @@ SUBROUTINE calc_ts_locations( grid )
    USE module_dm, ONLY : wrf_dm_min_real
    USE module_llxy
    USE module_state_description
+   USE module_model_constants
 
    IMPLICIT NONE
 
@@ -336,7 +337,11 @@ SUBROUTINE calc_ts( grid )
 #if (EM_CORE == 1)
             earth_u = grid%u_2(ix,1,iy)*grid%cosa(ix,iy)-grid%v_2(ix,1,iy)*grid%sina(ix,iy)
             earth_v = grid%v_2(ix,1,iy)*grid%cosa(ix,iy)+grid%u_2(ix,1,iy)*grid%sina(ix,iy)
-            output_t = grid%t_2(ix,1,iy)
+            IF (grid%use_theta_m == 1) THEN
+               output_t = (grid%t_2(ix,1,iy)+T0)/(1.+R_v/R_d*grid%moist(ix,1,iy,P_QV)) - T0
+            ELSE
+               output_t =  grid%t_2(ix,1,iy)
+            END IF
 #else
             earth_u = grid%u(ix,1,iy)
             earth_v = grid%v(ix,1,iy)
@@ -400,7 +405,11 @@ SUBROUTINE calc_ts( grid )
             grid%ts_v_profile(n,i,k)   = earth_v_profile(k)
             grid%ts_w_profile(n,i,k)   = (grid%w_2(ix,k,iy)+grid%w_2(ix,k+1,iy))/2.0 ! w on cell center
             grid%ts_gph_profile(n,i,k) = (grid%phb(ix,k,iy)+grid%ph_2(ix,k,iy))/9.81 
-            grid%ts_th_profile(n,i,k)  = grid%t_2(ix,k,iy) + 300
+            IF (grid%use_theta_m == 1) THEN
+               grid%ts_th_profile(n,i,k)  = (grid%t_2(ix,k,iy) + T0)/(1.+R_v/R_d*grid%moist(ix,k,iy,P_QV))
+            ELSE
+               grid%ts_th_profile(n,i,k)  =  grid%t_2(ix,k,iy) + T0
+            END IF
             grid%ts_qv_profile(n,i,k)  = grid%moist(ix,k,iy,P_QV)
             END DO
 #endif

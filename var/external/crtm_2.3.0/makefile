@@ -5,4 +5,4 @@ all :
 	@cd libsrc && $(MAKE) $@
 
 clean:
-	@cd libsrc && $(MAKE) -f makefile_clean $@
+	@cd libsrc && $(MAKE) -s -f makefile_clean $@

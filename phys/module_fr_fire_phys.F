@@ -31,7 +31,24 @@ end type fire_params
 ! use as
 ! type(fire_params)::fp
 
-! moisture behavior, see Mandel et al EGU 2012
+!***************************************************************************************!
+!***                                  Fuel moisture model                            ***!
+!***************************************************************************************!
+!*** subroutine advance_moisure: a step of time-delay differential equation for each ***!
+!***    fuel class (10h, 100h, 1000h) on Earth surface atmospheric mesh, towards     ***!
+!***    fuel moisture content equilibrium from the atmosphere state on the surface   ***!
+!*** subroutine fuel_moisture: interpolate to fire mesh and average the fuel         ***!
+!***    moisture contents from the fuel classes to the fuel present in the fire mesh ***!
+!***    cell with weights given in fuel description                                  ***!
+!*** See https://www.openwfm.org/wiki/Fuel_moisture_model for further details        ***!
+!***    including additional namelist.input and namelist.fire variables.             ***!
+!*** Developed 09/2011-09/2012 and merged from https://github.com/openwfm/wrf-fire   ***!
+!***    with common ancestor as submitted to V3.3 in 01/2017 commit 3f78267b38e0f0a3 ***!
+!*** Reference: J. Mandel, S. Amram, J.D. Beezley, G. Kelman, A.K. Kochanski, V.Y.   ***!
+!***    Kondratenko, B.H. Lynn, B. Regev, M. Vejmelka, Recent advances and           ***!
+!***    applications of WRF–SFIRE. Natural Hazards and Earth System Science, 14,     ***!
+!***    2829-2845, 2014, doi:10.5194/nhess-14-2829-2014                              ***!
+!***************************************************************************************!
 
 !! To add moisture classes:
 !  1. change parameter max_moisture_classes below

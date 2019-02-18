@@ -14,12 +14,12 @@ mkdir -p two_fires fmc rain
 ( cd fmc; ln -s ../../../main/ideal.exe . ;  ln -s ../../../main/wrf.exe . ; \
   ln -s ../input_sounding_hill_simple input_sounding ; \
   ln -s ../namelist.fire_fmc namelist.fire ; \
-  ln -s ../namelist.input_hill_fuel_moisture )
+  ln -s ../namelist.input_hill_fuel_moisture namelist.input )
 
 ( cd rain; ln -s ../../../main/ideal.exe . ;  ln -s ../../../main/wrf.exe . ; \
   ln -s ../input_sounding_rain input_sounding ; \
   ln -s ../namelist.fire_fmc namelist.fire ; \
-  ln -s ../namelist.input_rain )
+  ln -s ../namelist.input_rain namelist.input )
  
 for i in ETAMPNEW_DATA LANDUSE.TBL RRTMG_SW_DATA URBPARM.TBL GENPARM.TBL \
 RRTMG_LW_DATA SOILPARM.TBL VEGPARM.TBL

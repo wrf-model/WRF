@@ -12,7 +12,7 @@ subroutine da_write_filtered_rad(ob, iv)
    type (iv_type),    intent(in)  :: iv       ! O-B structure.
 
    integer                        :: n        ! Loop counter.
-   integer                        :: i        ! Index dimension.
+   integer                        :: i,m,m1,m2        ! Index dimension.
 
    integer            :: ios, filtered_rad_unit
    character(len=50)  :: filename
@@ -22,6 +22,19 @@ subroutine da_write_filtered_rad(ob, iv)
    do i = 1, iv%num_inst
       if (iv%instid(i)%num_rad < 1) cycle
 
+   do m=num_fgat_time,1,-1
+      iv%instid(i)%info%n1 = iv%instid(i)%info%plocal(m-1) + 1
+      iv%instid(i)%info%n2=iv%instid(i)%info%plocal(m)
+
+      if (num_fgat_time >1) then
+#ifdef DM_PARALLEL
+      write(unit=filename, fmt='(a,i2.2,a,i4.4)') &
+         'filtered_'//trim(iv%instid(i)%rttovid_string)//'_',m,'.', myproc
+#else
+      write(unit=filename, fmt='(a,i2.2)') &
+         'filtered_'//trim(iv%instid(i)%rttovid_string)//'_',m
+#endif
+      else
 #ifdef DM_PARALLEL
       write(unit=filename, fmt='(a,i4.4)') &
          'filtered_'//trim(iv%instid(i)%rttovid_string)//'.', myproc
@@ -29,6 +42,7 @@ subroutine da_write_filtered_rad(ob, iv)
       write(unit=filename, fmt='(a)') &
          'filtered_'//trim(iv%instid(i)%rttovid_string)
 #endif
+     end if
       
       call da_get_unit(filtered_rad_unit)
       open(unit=filtered_rad_unit,file=trim(filename), &
@@ -38,9 +52,10 @@ subroutine da_write_filtered_rad(ob, iv)
             (/"Cannot open filtered radiance file"//filename/))
       Endif
 
-      write(unit=filtered_rad_unit) iv%instid(i)%num_rad
+      write(unit=filtered_rad_unit) iv%instid(i)%info%n1-iv%instid(i)%info%n2
 
-      do n =1,iv%instid(i)%num_rad
+!      do n =1,iv%instid(i)%num_rad
+       do n=iv%instid(i)%info%n1,iv%instid(i)%info%n2
          write(unit=filtered_rad_unit) n, &
                    iv%instid(i)%info%date_char(n), &
                    iv%instid(i)%scanpos(n)        , &
@@ -58,6 +73,7 @@ subroutine da_write_filtered_rad(ob, iv)
       end do     ! end do pixels
       close(unit=filtered_rad_unit)
       call da_free_unit(filtered_rad_unit)
+   end do ! enddo wuyl n1,n2
    end do    !! end do instruments
 
    if (trace_use) call da_trace_exit("da_write_filtered_rad")

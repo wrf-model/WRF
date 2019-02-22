@@ -101,12 +101,30 @@
             if ( index(iv%instid(i)%rttovid_string,'amsr2') > 0 ) then
                deallocate (iv%instid(i)%clw)
             end if
+            if ( index(iv%instid(i)%rttovid_string,'gmi') > 0 ) then
+               deallocate (iv%instid(i)%clw)
+            end if
+            if ( index(iv%instid(i)%rttovid_string,'ahi') > 0 ) then
+               deallocate (iv%instid(i)%clw)
+            end if
+            if ( index(iv%instid(i)%rttovid_string,'agri') > 0 ) then
+               deallocate (iv%instid(i)%clw)
+            end if
+
+            if ( index(iv%instid(i)%rttovid_string, 'ahi') > 0 ) then
+               deallocate (iv%instid(i)%cloudflag)
+            end if 
+            if ( index(iv%instid(i)%rttovid_string, 'agri') > 0 ) then
+               deallocate (iv%instid(i)%cloudflag)
+            end if
             deallocate (iv%instid(i)%ps)
             deallocate (iv%instid(i)%tb_xb)
             if ( crtm_cloud ) then
                deallocate (iv%instid(i)%tb_xb_clr)
             end if
             deallocate (iv%instid(i)%tb_qc)
+            deallocate (iv%instid(i)%ca_mean)
+            deallocate (iv%instid(i)%SDob)
             deallocate (iv%instid(i)%tb_inv)
             deallocate (iv%instid(i)%tb_error)
             deallocate (iv%instid(i)%tb_sens)
@@ -119,6 +137,7 @@
             deallocate (iv%instid(i)%scanline)
             deallocate (iv%instid(i)%ifgat)
             deallocate (iv%instid(i)%cloud_flag)
+            deallocate (iv%instid(i)%tropt)
             deallocate (iv%instid(i)%rain_flag)
             deallocate (iv%instid(i)%satzen)
             deallocate (iv%instid(i)%satazi)

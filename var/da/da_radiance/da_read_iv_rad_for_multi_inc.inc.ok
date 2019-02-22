@@ -1,20 +1,20 @@
-subroutine da_write_iv_rad_ascii (it,ob, iv )
+subroutine da_read_iv_rad_for_multi_inc (it,ob, iv )
 
    !---------------------------------------------------------------------------
-   ! Purpose: write out innovation vector structure for radiance data.
+   ! Purpose: read out innovation vector structure for radiance data.
    !---------------------------------------------------------------------------
 
    implicit none
 
    integer      ,     intent(in)  :: it       ! outer loop count
    type (y_type),     intent(in)  :: ob       ! Observation structure.
-   type (iv_type),    intent(in)  :: iv       ! O-B structure.
+   type (iv_type),    intent(inout)  :: iv       ! O-B structure.
 
    integer                        :: n        ! Loop counter.
-   integer                        :: i, k, l, m, m1, m2  ! Index dimension.
+   integer                        :: i, k, l, m, m1, m2,nobs_tot,nobs_in  ! Index dimension.
    integer                        :: nlevelss ! Number of obs levels.
 
-   integer            :: ios, innov_rad_unit
+   integer            :: ios, innov_rad_unit_in
    character(len=filename_len)  :: filename
    character(len=7)   :: surftype
    integer            :: ndomain
@@ -22,9 +22,9 @@ subroutine da_write_iv_rad_ascii (it,ob, iv )
 
    real, allocatable :: dtransmt(:,:), transmt_jac(:,:), transmt(:,:), lod(:,:), lod_jac(:,:)
 
-   if (trace_use) call da_trace_entry("da_write_iv_rad_ascii")
+   if (trace_use) call da_trace_entry("da_read_iv_rad_ascii")
 
-   write(unit=message(1),fmt='(A)') 'Writing radiance OMB ascii file'
+   write(unit=message(1),fmt='(A)') 'Reading radiance OMB ascii file'
    call da_message(message(1:1))
 
    do i = 1, iv%num_inst
@@ -32,20 +32,36 @@ subroutine da_write_iv_rad_ascii (it,ob, iv )
 
       ! count number of obs within the loc%proc_domain
       ! ---------------------------------------------
-   do m=num_fgat_time,1,-1
-      iv%instid(i)%info%n1 = iv%instid(i)%info%plocal(m-1) + 1
-      iv%instid(i)%info%n2=iv%instid(i)%info%plocal(m)
-      ndomain = 0
-!      do n =1,iv%instid(i)%num_rad
-      do n = iv%instid(i)%info%n1,iv%instid(i)%info%n2
- 
-      if (iv%instid(i)%info%proc_domain(1,n)) then
-            ndomain = ndomain + 1
+      nobs_tot = iv%instid(i)%info%ptotal(num_fgat_time) - iv%instid(i)%info%ptotal(0)
+      do m=num_fgat_time,1,-1
+      if ( nobs_tot > 0 ) then
+         if ( rootproc ) then
+            write(unit=filename, fmt='(a,i3.3)') 'inv_'//trim(iv%instid(i)%rttovid_string)//'_',m
+            call da_get_unit(innov_rad_unit_in)
+            open(unit=innov_rad_unit_in,file=trim(filename),form='formatted',status='replace',iostat=ios)
+            if (ios /= 0 ) then
+               call da_error(__FILE__,__LINE__, &
+               (/"Cannot open innovation radiance file"//filename/))
+            Endif
+            read(innov_rad_unit_in) nobs_in 
+            if ( nobs_in /= nobs_tot ) then
+               call da_error(__FILE__,__LINE__, &
+               (/"Dimensions (nobs_tot of radiance) mismatch "/))
       end if
-      end do
-      if (ndomain < 1) cycle
+         end if ! root open ounit
+         iv%instid(i)%info%n1 = iv%instid(i)%info%plocal(m-1) + 1
+         iv%instid(i)%info%n2=iv%instid(i)%info%plocal(m)
+         ndomain = 0
+!      do n =1,iv%instid(i)%num_rad
+         do n = iv%instid(i)%info%n1,iv%instid(i)%info%n2
+ 
+         if (iv%instid(i)%info%proc_domain(1,n)) then
+             ndomain = ndomain + 1
+         end if
+       end do
+       if (ndomain < 1) cycle
 
-      if (rtm_option==rtm_option_crtm .and. write_jacobian ) then
+       if (rtm_option==rtm_option_crtm .and. write_jacobian ) then
          allocate ( dtransmt(iv%instid(i)%nchan,iv%instid(i)%nlevels) )
          allocate ( transmt_jac(iv%instid(i)%nchan,iv%instid(i)%nlevels) )
          allocate ( transmt(iv%instid(i)%nchan,iv%instid(i)%nlevels) )
@@ -54,43 +70,26 @@ subroutine da_write_iv_rad_ascii (it,ob, iv )
       end if
 
       amsr2 = index(iv%instid(i)%rttovid_string,'amsr2') > 0
-!wuyl
-!   do m=num_fgat_time,1,-1
-!   iv%time=m
-!   iv%instid(i)%info%n1 = iv%instid(i)%info%plocal(m-1) + 1
-!   iv%instid(i)%info%n2=iv%instid(i)%info%plocal(m)
   
-   if (num_fgat_time >1) then
-                 
-      write(unit=filename, fmt='(i2.2,a,i2.2,a,i4.4)') it,'_inv_'//trim(iv%instid(i)%rttovid_string)//'_',m,'.', myproc
-  else
-      write(unit=filename, fmt='(i2.2,a,i4.4)') it,'_inv_'//trim(iv%instid(i)%rttovid_string)//'.', myproc
-  end if
-      call da_get_unit(innov_rad_unit)
-      open(unit=innov_rad_unit,file=trim(filename),form='formatted',iostat=ios)
-      if (ios /= 0 ) then
-         call da_error(__FILE__,__LINE__, &
-            (/"Cannot open innovation radiance file"//filename/))
-      Endif
-      write(unit=innov_rad_unit,fmt='(a,a,i7,a,i5,a)') trim(iv%instid(i)%rttovid_string), &
+      read(unit=innov_rad_unit_in,fmt='(a,a,i7,a,i5,a)') iv%instid(i)%rttovid_string, &
                         ' number-of-pixels : ', ndomain, &
                         ' channel-number-of-each-pixel : ', iv%instid(i)%nchan, &
                         ' index-of-channels : '
-      write(unit=innov_rad_unit,fmt='(10i5)') iv%instid(i)%ichan
+      read(unit=innov_rad_unit_in,fmt='(10i5)') iv%instid(i)%ichan
       if ( amsr2 ) then
-         write(unit=innov_rad_unit,fmt='(a)') ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi clw'
+         read(unit=innov_rad_unit_in,fmt='(a)') ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi clw'
       else
-         write(unit=innov_rad_unit,fmt='(a)') ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi'
+         read(unit=innov_rad_unit_in,fmt='(a)') ' pixel-info : i date scanpos landsea_mask  elv lat lon  satzen satazi'
       end if
-      write(unit=innov_rad_unit,fmt='(a)') ' grid%xb-surf-info : i t2m mr2m(ppmv) u10 v10 ps ts smois tslb snowh isflg &
+      read(unit=innov_rad_unit_in,fmt='(a)') ' grid%xb-surf-info : i t2m mr2m(ppmv) u10 v10 ps ts smois tslb snowh isflg &
                     & soiltyp vegtyp vegfra elev clwp'
       ndomain = 0
 !wuyl      do n =1,iv%instid(i)%num_rad
       do n = iv%instid(i)%info%n1,iv%instid(i)%info%n2
          if (iv%instid(i)%info%proc_domain(1,n)) then
             ndomain=ndomain+1
-            if ( amsr2 ) then ! write out clw
-               write(unit=innov_rad_unit,fmt='(a,i7,2x,a,i6,i3,f6.0,4f8.2,f8.3)') 'INFO : ', ndomain, &
+            if ( amsr2 ) then ! read out clw
+               read(unit=innov_rad_unit_in,fmt='(a,i7,2x,a,i6,i3,f6.0,4f8.2,f8.3)') 'INFO : ', ndomain, &
                                 iv%instid(i)%info%date_char(n), &
                                 iv%instid(i)%scanpos(n),        &
                                 iv%instid(i)%landsea_mask(n),   &
@@ -101,7 +100,7 @@ subroutine da_write_iv_rad_ascii (it,ob, iv )
                                 iv%instid(i)%satazi(n),         &
                                 iv%instid(i)%clw(n)
             else ! no clw info
-               write(unit=innov_rad_unit,fmt='(a,i7,2x,a,i6,i3,f6.0,4f8.2)') 'INFO : ', ndomain, &
+               read(unit=innov_rad_unit_in,fmt='(a,i7,2x,a,i6,i3,f6.0,4f8.2)') 'INFO : ', ndomain, &
                                 iv%instid(i)%info%date_char(n), &
                                 iv%instid(i)%scanpos(n),        &
                                 iv%instid(i)%landsea_mask(n),   &
@@ -129,7 +128,7 @@ subroutine da_write_iv_rad_ascii (it,ob, iv )
             case (7) ;
                surftype = 'MSNO : '
             end select
-            write(unit=innov_rad_unit,fmt='(a,i7,9f10.2,3i3,f8.3,f10.2,f8.3)') surftype, n, &
+            read(unit=innov_rad_unit_in,fmt='(a,i7,9f10.2,3i3,f8.3,f10.2,f8.3)') surftype, n, &
                              iv%instid(i)%t2m(n), &
                              iv%instid(i)%mr2m(n),   &
                              iv%instid(i)%u10(n), &
@@ -146,41 +145,41 @@ subroutine da_write_iv_rad_ascii (it,ob, iv )
                              iv%instid(i)%elevation(n), &
                              iv%instid(i)%clwp(n)
 
-            write(unit=innov_rad_unit,fmt='(a)') 'OBS  : '
-            write(unit=innov_rad_unit,fmt='(10f11.2)') ob%instid(i)%tb(:,n)
-            write(unit=innov_rad_unit,fmt='(a)') 'BAK  : '
-            write(unit=innov_rad_unit,fmt='(10f11.2)') iv%instid(i)%tb_xb(:,n)
-            write(unit=innov_rad_unit,fmt='(a)') 'IVBC : '
-            write(unit=innov_rad_unit,fmt='(10f11.2)')  iv%instid(i)%tb_inv(:,n)
-            write(unit=innov_rad_unit,fmt='(a)') 'EMS  : '
-            write(unit=innov_rad_unit,fmt='(10f11.2)')  iv%instid(i)%emiss(1:iv%instid(i)%nchan,n)
+            read(unit=innov_rad_unit_in,fmt='(a)') 'OBS  : '
+            read(unit=innov_rad_unit_in,fmt='(10f11.2)') ob%instid(i)%tb(:,n)
+            read(unit=innov_rad_unit_in,fmt='(a)') 'BAK  : '
+            read(unit=innov_rad_unit_in,fmt='(10f11.2)') iv%instid(i)%tb_xb(:,n)
+            read(unit=innov_rad_unit_in,fmt='(a)') 'IVBC : '
+            read(unit=innov_rad_unit_in,fmt='(10f11.2)')  iv%instid(i)%tb_inv(:,n)
+            read(unit=innov_rad_unit_in,fmt='(a)') 'EMS  : '
+            read(unit=innov_rad_unit_in,fmt='(10f11.2)')  iv%instid(i)%emiss(1:iv%instid(i)%nchan,n)
             if (rtm_option==rtm_option_crtm .and. write_jacobian) then
-               write(unit=innov_rad_unit,fmt='(a)') 'EMS_JACOBIAN : '
-               write(unit=innov_rad_unit,fmt='(10f10.3)') iv%instid(i)%emiss_jacobian(1:iv%instid(i)%nchan,n)
+               read(unit=innov_rad_unit_in,fmt='(a)') 'EMS_JACOBIAN : '
+               read(unit=innov_rad_unit_in,fmt='(10f10.3)') iv%instid(i)%emiss_jacobian(1:iv%instid(i)%nchan,n)
             end if
-            write(unit=innov_rad_unit,fmt='(a)') 'ERR  : '
-            write(unit=innov_rad_unit,fmt='(10f11.2)') iv%instid(i)%tb_error(:,n)
-            write(unit=innov_rad_unit,fmt='(a)') 'QC   : '
-            write(unit=innov_rad_unit,fmt='(10i11)') iv%instid(i)%tb_qc(:,n)
+            read(unit=innov_rad_unit_in,fmt='(a)') 'ERR  : '
+            read(unit=innov_rad_unit_in,fmt='(10f11.2)') iv%instid(i)%tb_error(:,n)
+            read(unit=innov_rad_unit_in,fmt='(a)') 'QC   : '
+            read(unit=innov_rad_unit_in,fmt='(10i11)') iv%instid(i)%tb_qc(:,n)
 
             if (write_profile) then
                nlevelss  = iv%instid(i)%nlevels
                if ( rtm_option == rtm_option_rttov ) then
 #ifdef RTTOV
-                  ! first, write RTTOV levels
-                  write(unit=innov_rad_unit,fmt='(a)') 'RTM_level pres(mb) T(k) Q(ppmv)'
+                  ! first, read RTTOV levels
+                  read(unit=innov_rad_unit_in,fmt='(a)') 'RTM_level pres(mb) T(k) Q(ppmv)'
                   do k = 1, nlevelss
-                     write(unit=innov_rad_unit,fmt='(i3,f10.2,f8.2,e11.4)') &
+                     read(unit=innov_rad_unit_in,fmt='(i3,f10.2,f8.2,e11.4)') &
                         k, &                             ! RTTOV levels
                         coefs(i) % coef % ref_prfl_p(k) , &
                         iv%instid(i)%t(k,n) , &
                         iv%instid(i)%mr(k,n)
                   end do  ! end loop RTTOV level
-                  ! second, write WRF model levels
-                  write(unit=innov_rad_unit,fmt='(a)') &
+                  ! second, read WRF model levels
+                  read(unit=innov_rad_unit_in,fmt='(a)') &
                      'WRF_level pres(mb) T(k) q(g/kg) clw(g/kg) rain(g/kg)'
                   do k=kts,kte
-                     write(unit=innov_rad_unit,fmt='(i3,f10.2,f8.2,3e11.4)') &
+                     read(unit=innov_rad_unit_in,fmt='(i3,f10.2,f8.2,3e11.4)') &
                         k,  &                     ! WRF model levels
                         iv%instid(i)%pm(k,n) , &
                         iv%instid(i)%tm(k,n) , &
@@ -193,11 +192,11 @@ subroutine da_write_iv_rad_ascii (it,ob, iv )
 
                if ( rtm_option == rtm_option_crtm ) then
 #ifdef CRTM
-                  write(unit=innov_rad_unit,fmt='(a)') &
+                  read(unit=innov_rad_unit_in,fmt='(a)') &
                      'level fullp(mb) halfp(mb) t(k) q(g/kg) water(mm) ice(mm) rain(mm) snow(mm) graupel(mm) hail(mm)'
                   if (crtm_cloud) then
                      do k=1,iv%instid(i)%nlevels-1
-                        write(unit=innov_rad_unit,fmt='(i3,2f10.2,f8.2,13f8.3)') &
+                        read(unit=innov_rad_unit_in,fmt='(i3,2f10.2,f8.2,13f8.3)') &
                            k,  &
                            iv%instid(i)%pf(k,n), &
                            iv%instid(i)%pm(k,n), &
@@ -218,7 +217,7 @@ subroutine da_write_iv_rad_ascii (it,ob, iv )
                      end do ! end loop profile
                   else  ! no cloud
                      do k=1,iv%instid(i)%nlevels-1
-                        write(unit=innov_rad_unit,fmt='(i3,2f10.2,f8.2,7f8.3)') &
+                        read(unit=innov_rad_unit_in,fmt='(i3,2f10.2,f8.2,7f8.3)') &
                            k,  &
                            iv%instid(i)%pf(k,n), &
                            iv%instid(i)%pm(k,n), &
@@ -235,7 +234,7 @@ subroutine da_write_iv_rad_ascii (it,ob, iv )
 #endif
                end if ! end if rtm_option_crtm
 
-            end if  ! end if write_profile
+            end if  ! end if read_profile
 
             if ( rtm_option == rtm_option_crtm .and. write_jacobian) then
 #ifdef CRTM
@@ -254,12 +253,12 @@ subroutine da_write_iv_rad_ascii (it,ob, iv )
                   lod_jac(:,:)     = 0.0
                end if
 
-               write(unit=innov_rad_unit,fmt='(a)') &
+               read(unit=innov_rad_unit_in,fmt='(a)') &
                   'channel level halfp(mb) t(k) q(g/kg) der_trans trans_jac trans lod_jac lod water(mm) ice(mm) rain(mm) snow(mm) graupel(mm) hail(mm)'
                if (crtm_cloud) then
                   do l=1,iv%instid(i)%nchan
                      do k=1,iv%instid(i)%nlevels-1
-                        write(unit=innov_rad_unit,fmt='(i5,i3,f10.2,13f14.7,6f14.7)') &
+                        read(unit=innov_rad_unit_in,fmt='(i5,i3,f10.2,13f14.7,6f14.7)') &
                            l, k,  &
                            iv%instid(i)%pm(k,n), &
                            iv%instid(i)%t_jacobian(l,k,n), &
@@ -286,7 +285,7 @@ subroutine da_write_iv_rad_ascii (it,ob, iv )
                else  ! no cloud
                   do l=1,iv%instid(i)%nchan
                      do k=1,iv%instid(i)%nlevels-1
-                        write(unit=innov_rad_unit,fmt='(i5,i3,f10.2,13f14.7,6f14.7)') &
+                        read(unit=innov_rad_unit_in,fmt='(i5,i3,f10.2,13f14.7,6f14.7)') &
                            l, k,  &
                            iv%instid(i)%pm(k,n), &
                            iv%instid(i)%t_jacobian(l,k,n), &
@@ -312,7 +311,7 @@ subroutine da_write_iv_rad_ascii (it,ob, iv )
                   end do ! end loop channels
                end if  ! end if crtm_cloud
 #endif
-            end if !  end if write_jacobian
+            end if !  end if read_jacobian
 
          end if ! end if proc_domain
       end do ! end do pixels 
@@ -323,12 +322,13 @@ subroutine da_write_iv_rad_ascii (it,ob, iv )
          deallocate ( lod )
          deallocate ( lod_jac )
       end if
-      close(unit=innov_rad_unit)
-      call da_free_unit(innov_rad_unit)
-   end do ! n1,n2 wuyl
+      close(unit=innov_rad_unit_in)
+      call da_free_unit(innov_rad_unit_in)
+    end if ! nobs_tot
+  end do ! n1,n2 wuyl
 end do ! end do instruments
 
-   if (trace_use) call da_trace_exit("da_write_iv_rad_ascii")
+   if (trace_use) call da_trace_exit("da_read_iv_rad_ascii")
 
-end subroutine da_write_iv_rad_ascii
+end subroutine da_read_iv_rad_for_multi_inc
 

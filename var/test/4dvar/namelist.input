@@ -28,6 +28,7 @@ use_gpspwobs=true,
 use_gpsrefobs=true,
 use_qscatobs=true,
 use_rainobs=false,
+use_ahiobs=true,
 /
 &wrfvar5
 check_max_iv=true,
@@ -59,6 +60,26 @@ calculate_cg_cost_fn=false,
 &wrfvar13
 /
 &wrfvar14
+rtminit_nsensor=1
+rtminit_platform=31
+rtminit_satid=8
+rtminit_sensor=56
+thinning_mesh=36.0,
+thinning=true,
+qc_rad=true,
+write_iv_rad_ascii=true,
+write_oa_rad_ascii=true,
+rtm_option=2,
+crtm_cloud=false,
+only_sea_rad=false,
+use_varbc=true,
+varbc_nobsmin=10,
+varbc_scan=2,
+calc_weightfunc =false,
+crtm_irland_coef='IGBP.IRland.EmisCoeff.bin'
+write_profile =false,
+write_jacobian = false,
+write_filtered_rad = false,
 /
 &wrfvar15
 /
@@ -148,7 +169,7 @@ real_data_init_type=3,
 &perturbation
 trajectory_io=true,
 enable_identity=false,
-jcdfi_use=false,
+jcdfi_use=true,
 jcdfi_diag=1,
 jcdfi_penalty=1000.0,
 /

@@ -23,7 +23,7 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
 
    integer :: nobs_tot, nlev_max, k , iobs
    integer :: nobs_in, nlev_in
-   logical :: has_rv, has_rf, has_rhv, has_rqv
+   logical :: has_rv, has_rf, has_rhv, has_rqv,fexist
    real, allocatable :: data2d(:,:)
    real, allocatable :: data3d(:,:,:)
 
@@ -41,6 +41,8 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
 
    if (iv%info(synop)%plocal(iv%time)-iv%info(synop)%plocal(iv%time-1) > 0) then
 
+       inquire (file=filename//'.synop', exist=fexist)
+       if (fexist) then
        open(unit=unit_in,file=trim(filename)//'.synop',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -64,12 +66,15 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+     end if !fexist
    end if
 
    ! [2] metar obs:
 
    if (iv%info(metar)%plocal(iv%time)-iv%info(metar)%plocal(iv%time-1) > 0) then
-
+      
+       inquire (file=filename//'.metar', exist=fexist)
+       if (fexist) then
        open(unit=unit_in,file=trim(filename)//'.metar',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -93,12 +98,15 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+      end if
    end if
 
    ! [3] ships obs:
 
    if (iv%info(ships)%plocal(iv%time)-iv%info(ships)%plocal(iv%time-1) > 0) then
 
+       inquire (file=filename//'.ships', exist=fexist)
+       if (fexist) then
        open(unit=unit_in,file=trim(filename)//'.ships',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -122,12 +130,15 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+      end if
    end if
 
    ! [4] sonde_sfc obs:
 
    if (iv%info(sonde_sfc)%plocal(iv%time)-iv%info(sonde_sfc)%plocal(iv%time-1) > 0) then
 
+       inquire (file=filename//'.sonde_sfc', exist=fexist)
+       if (fexist) then
        open(unit=unit_in,file=trim(filename)//'.sonde_sfc',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -151,12 +162,15 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+      end if
    end if
 
    ! [5] sound obs:
 
    if (iv%info(sound)%plocal(iv%time)-iv%info(sound)%plocal(iv%time-1) > 0) then
 
+       inquire (file=filename//'.sound', exist=fexist)
+       if (fexist) then
        open(unit=unit_in,file=trim(filename)//'.sound',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -180,11 +194,15 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+      end if
    end if
 
    ! [6] mtgirs obs:
 
    if (iv%info(mtgirs)%plocal(iv%time)-iv%info(mtgirs)%plocal(iv%time-1) > 0) then
+
+       inquire (file=filename//'.mtgirs', exist=fexist)
+       if (fexist) then
 
        open(unit=unit_in,file=trim(filename)//'.mtgirs',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
@@ -209,11 +227,15 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+      end if
    end if
 
    ! [7] tamdar obs:
 
    if (iv%info(tamdar)%plocal(iv%time)-iv%info(tamdar)%plocal(iv%time-1) > 0) then
+
+       inquire (file=filename//'.tamdar', exist=fexist)
+       if (fexist) then
 
        open(unit=unit_in,file=trim(filename)//'.tamdar',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
@@ -238,11 +260,15 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+      end if
    end if
 
    ! [8] tamdar_sfc obs:
 
    if (iv%info(tamdar_sfc)%plocal(iv%time)-iv%info(tamdar_sfc)%plocal(iv%time-1) > 0) then
+
+       inquire (file=filename//'.tamdar_sfc', exist=fexist)
+       if (fexist) then
 
        open(unit=unit_in,file=trim(filename)//'.tamdar_sfc',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
@@ -267,12 +293,15 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+      end if
    end if
 
    ! [9] buoy obs:
 
    if (iv%info(buoy)%plocal(iv%time)-iv%info(buoy)%plocal(iv%time-1) > 0) then
-
+       
+       inquire (file=filename//'.buoy', exist=fexist)
+       if (fexist) then
        open(unit=unit_in,file=trim(filename)//'.buoy',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -296,11 +325,15 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+      end if
    end if
 
    ! [10] Geo AMV obs:
 
    if (iv%info(geoamv)%plocal(iv%time)-iv%info(geoamv)%plocal(iv%time-1) > 0) then
+
+       inquire (file=filename//'.geoamv', exist=fexist)
+       if (fexist) then
 
        open(unit=unit_in,file=trim(filename)//'.geoamv',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
@@ -325,12 +358,16 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+      end if
    end if
 
    ! [11] gpspw obs:
 
    if (iv%info(gpspw)%plocal(iv%time)-iv%info(gpspw)%plocal(iv%time-1) > 0) then
 
+       inquire (file=filename//'.gpspw', exist=fexist)
+       if (fexist) then
+   
        open(unit=unit_in,file=trim(filename)//'.gpspw',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -354,11 +391,15 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+      end if
    end if
 
    ! [12] SSM/I obs:
 
    if (iv%info(ssmi_rv)%plocal(iv%time)-iv%info(ssmi_rv)%plocal(iv%time-1) > 0) then
+
+       inquire (file=filename//'.ssmir', exist=fexist)
+       if (fexist) then
 
        open(unit=unit_in,file=trim(filename)//'.ssmir',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
@@ -383,12 +424,15 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+      end if
    end if
 
    ! [13] airep obs:
 
    if (iv%info(airep)%plocal(iv%time)-iv%info(airep)%plocal(iv%time-1) > 0) then
 
+       inquire (file=filename//'.airep', exist=fexist)
+       if (fexist) then
        open(unit=unit_in,file=trim(filename)//'.airep',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -412,12 +456,15 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+      end if
    end if
 
    ! [14] polaramv obs:
 
    if (iv%info(polaramv)%plocal(iv%time)-iv%info(polaramv)%plocal(iv%time-1) > 0) then
 
+       inquire (file=filename//'.polaramv', exist=fexist)
+       if (fexist) then
        open(unit=unit_in,file=trim(filename)//'.polaramv',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -441,12 +488,15 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+      end if
    end if
 
    ! [15] pilot obs:
 
    if (iv%info(pilot)%plocal(iv%time)-iv%info(pilot)%plocal(iv%time-1) > 0) then
 
+       inquire (file=filename//'.pilot', exist=fexist)
+       if (fexist) then
        open(unit=unit_in,file=trim(filename)//'.pilot',form='formatted',status='old',iostat=ios)
 
        if (ios /= 0) Then
@@ -471,12 +521,15 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+      end if
    end if
 
    ! [16] ssmi_tb obs:
 
    if (iv%info(ssmi_tb)%plocal(iv%time)-iv%info(ssmi_tb)%plocal(iv%time-1) > 0) then
 
+       inquire (file=filename//'.ssmi_tb', exist=fexist)
+       if (fexist) then
        open(unit=unit_in,file=trim(filename)//'.ssmi_tb',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -500,12 +553,14 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+      end if
    end if
 
    ! [17] satem obs:
 
    if (iv%info(satem)%plocal(iv%time)-iv%info(satem)%plocal(iv%time-1) > 0) then
-
+       inquire (file=filename//'.satem', exist=fexist)
+       if (fexist) then
        open(unit=unit_in,file=trim(filename)//'.satem',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -529,12 +584,15 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+      end if
    end if
 
    ! [18] ssmt1 obs:
 
    if (iv%info(ssmt1)%plocal(iv%time)-iv%info(ssmt1)%plocal(iv%time-1) > 0) then
 
+       inquire (file=filename//'.ssmt1', exist=fexist)
+       if (fexist) then
        open(unit=unit_in,file=trim(filename)//'.ssmt1',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -558,12 +616,15 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+      end if
    end if
 
    ! [19] ssmt2 obs:
 
    if (iv%info(ssmt2)%plocal(iv%time)-iv%info(ssmt2)%plocal(iv%time-1) > 0) then
 
+       inquire (file=filename//'.ssmt2', exist=fexist)
+       if (fexist) then
        open(unit=unit_in,file=trim(filename)//'.ssmt2',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -587,12 +648,15 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+      end if
    end if
 
    ! [20] scatterometer obs:
 
    if (iv%info(qscat)%plocal(iv%time)-iv%info(qscat)%plocal(iv%time-1) > 0) then
-
+       
+       inquire (file=filename//'.qscat', exist=fexist)
+       if (fexist) then
        open(unit=unit_in,file=trim(filename)//'.qscat',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -616,12 +680,15 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+      end if
    end if
 
    ! [21] profiler obs:
 
    if (iv%info(profiler)%plocal(iv%time)-iv%info(profiler)%plocal(iv%time-1) > 0) then
 
+       inquire (file=filename//'.profiler', exist=fexist)
+       if (fexist) then
        open(unit=unit_in,file=trim(filename)//'.profiler',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -645,12 +712,15 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+      end if
    end if
 
    ! [22] TC bogus obs:
 
    if (iv%info(bogus)%plocal(iv%time)-iv%info(bogus)%plocal(iv%time-1) > 0) then
 
+       inquire (file=filename//'.bogus', exist=fexist)
+       if (fexist) then
        open(unit=unit_in,file=trim(filename)//'.bogus',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -674,12 +744,15 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+      end if
    end if
 
    ! [23] AIRS retrievals:
 
    if (iv%info(airsr)%plocal(iv%time)-iv%info(airsr)%plocal(iv%time-1) > 0) then
 
+       inquire (file=filename//'.airsr', exist=fexist)
+       if (fexist) then
        open(unit=unit_in,file=trim(filename)//'.airsr',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -703,12 +776,15 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+      end if
    end if
 
    ! [24] gpsref obs:
 
    if (iv%info(gpsref)%plocal(iv%time)-iv%info(gpsref)%plocal(iv%time-1) > 0) then
 
+       inquire (file=filename//'.gpsref', exist=fexist)
+       if (fexist) then
        open(unit=unit_in,file=trim(filename)//'.gpsref',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -732,6 +808,7 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
            call da_error(__FILE__,__LINE__, &
                         (/"Unequal obs. found "/))
        close (unit_in)
+      end if
    end if
 
 
@@ -743,6 +820,8 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
    if ( nobs_tot > 0 ) then
 
       write(unit=filename, fmt='(a,i3.3)') 'radar_innov_t', file_index
+      inquire (file=filename, exist=fexist)
+       if (fexist) then
       open(unit=unit_in,file=trim(filename),form='unformatted',status='old',iostat=ios)
       if (ios /= 0) Then
          call da_error(__FILE__,__LINE__, &
@@ -826,6 +905,7 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
       end if
 
       close (unit_in)
+     end if
    end if ! nobs_tot > 0
 
 999 continue

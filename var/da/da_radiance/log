@@ -1,0 +1,76 @@
+da_crtm.f:48:   use da_tools, only: da_get_time_slots, da_eof_decomposition
+da_crtm.f:1950:            call da_eof_decomposition(nclouds, hessian, eignvec, eignval)
+da_gen_be.f:5065:subroutine da_eof_decomposition (kz, bx, e, l)
+da_gen_be.f:5089:   if (trace_use) call da_trace_entry("da_eof_decomposition")    
+da_gen_be.f:5104:      call da_error("da_eof_decomposition.inc",40,message(1:1))
+da_gen_be.f:5114:   if (trace_use) call da_trace_exit("da_eof_decomposition")    
+da_gen_be.f:5116:end subroutine da_eof_decomposition
+da_gen_be.f:5119:subroutine da_eof_decomposition_test (kz, bx, e, l)
+da_gen_be.f:5145:   if (trace_use) call da_trace_entry("da_eof_decomposition_test")
+da_gen_be.f:5239:   if (trace_use) call da_trace_exit("da_eof_decomposition_test")
+da_gen_be.f:5241:end subroutine da_eof_decomposition_test
+da_radiance1.f:27:   use da_tools, only : da_residual_new, da_eof_decomposition
+da_radiance1.f:1018:!!!      call da_eof_decomposition(ndim, hessian, eignvec, eignval)
+da_setup_structures.f:92:   use da_vtox_transforms, only : da_check_eof_decomposition
+da_setup_structures.f:1368:      call da_check_eof_decomposition(be%v1%val_g(:), be%v1%evec_g(:,:),&
+da_setup_structures.f:1370:      call da_check_eof_decomposition(be%v2%val_g(:), be%v2%evec_g(:,:),&
+da_setup_structures.f:1372:      call da_check_eof_decomposition(be%v3%val_g(:), be%v3%evec_g(:,:),&
+da_setup_structures.f:1374:      call da_check_eof_decomposition(be%v4%val_g(:), be%v4%evec_g(:,:),&
+da_setup_structures.f:3702:         call da_check_eof_decomposition(be1_eval_glo(:), be1_evec_glo(:,:), be % v1 % name)
+da_setup_structures.f:3703:         call da_check_eof_decomposition(be2_eval_glo(:), be2_evec_glo(:,:), be % v2 % name)
+da_setup_structures.f:3704:         call da_check_eof_decomposition(be3_eval_glo(:), be3_evec_glo(:,:), be % v3 % name)
+da_setup_structures.f:3705:         call da_check_eof_decomposition(be4_eval_glo(:), be4_evec_glo(:,:), be % v4 % name)
+da_setup_structures.f:3708:            call da_check_eof_decomposition(be6_eval_glo(:),  be6_evec_glo(:,:),  be % v6 % name)
+da_setup_structures.f:3709:            call da_check_eof_decomposition(be7_eval_glo(:),  be7_evec_glo(:,:),  be % v7 % name)
+da_setup_structures.f:3710:            call da_check_eof_decomposition(be8_eval_glo(:),  be8_evec_glo(:,:),  be % v8 % name)
+da_setup_structures.f:3711:            call da_check_eof_decomposition(be9_eval_glo(:),  be9_evec_glo(:,:),  be % v9 % name)
+da_setup_structures.f:3712:            call da_check_eof_decomposition(be10_eval_glo(:), be10_evec_glo(:,:), be % v10 % name)
+da_setup_structures.f:3716:            call da_check_eof_decomposition(be11_eval_glo(:), be11_evec_glo(:,:), be % v11 % name)
+da_setup_structures.f:3917:      call da_check_eof_decomposition(be%v1%val_g(:), be%v1%evec_g(:,:),&
+da_setup_structures.f:3919:      call da_check_eof_decomposition(be%v2%val_g(:), be%v2%evec_g(:,:),&
+da_setup_structures.f:3921:      call da_check_eof_decomposition(be%v3%val_g(:), be%v3%evec_g(:,:),&
+da_setup_structures.f:3923:      call da_check_eof_decomposition(be%v4%val_g(:), be%v4%evec_g(:,:),&
+da_setup_structures.f:3927:         call da_check_eof_decomposition(be%v6%val_g(:), be%v6%evec_g(:,:),&
+da_setup_structures.f:3929:         call da_check_eof_decomposition(be%v7%val_g(:), be%v7%evec_g(:,:),&
+da_setup_structures.f:3931:         call da_check_eof_decomposition(be%v8%val_g(:), be%v8%evec_g(:,:),&
+da_setup_structures.f:3933:         call da_check_eof_decomposition(be%v9%val_g(:), be%v9%evec_g(:,:),&
+da_setup_structures.f:3935:         call da_check_eof_decomposition(be%v10%val_g(:), be%v10%evec_g(:,:),&
+da_setup_structures.f:3939:         call da_check_eof_decomposition(be%v11%val_g(:), be%v11%evec_g(:,:),&
+da_setup_structures.f:4719:         call da_check_eof_decomposition(be1_eval_glo(:), be1_evec_glo(:,:), be % v1 % name)
+da_setup_structures.f:4720:         call da_check_eof_decomposition(be2_eval_glo(:), be2_evec_glo(:,:), be % v2 % name)
+da_setup_structures.f:4721:         call da_check_eof_decomposition(be3_eval_glo(:), be3_evec_glo(:,:), be % v3 % name)
+da_setup_structures.f:4722:         call da_check_eof_decomposition(be4_eval_glo(:), be4_evec_glo(:,:), be % v4 % name)
+da_setup_structures.f:4824:      call da_check_eof_decomposition(be%v1%val_g(:), be%v1%evec_g(:,:),&
+da_setup_structures.f:4826:      call da_check_eof_decomposition(be%v2%val_g(:), be%v2%evec_g(:,:),&
+da_setup_structures.f:4828:      call da_check_eof_decomposition(be%v3%val_g(:), be%v3%evec_g(:,:),&
+da_setup_structures.f:4830:      call da_check_eof_decomposition(be%v4%val_g(:), be%v4%evec_g(:,:),&
+da_tools.f:4091:subroutine da_eof_decomposition_test (kz, bx, e, l)
+da_tools.f:4117:   if (trace_use) call da_trace_entry("da_eof_decomposition_test")
+da_tools.f:4211:   if (trace_use) call da_trace_exit("da_eof_decomposition_test")
+da_tools.f:4213:end subroutine da_eof_decomposition_test
+da_tools.f:4216:subroutine da_eof_decomposition (kz, bx, e, l)
+da_tools.f:4240:   if (trace_use) call da_trace_entry("da_eof_decomposition")    
+da_tools.f:4255:      call da_error("da_eof_decomposition.inc",40,message(1:1))
+da_tools.f:4265:   if (trace_use) call da_trace_exit("da_eof_decomposition")    
+da_tools.f:4267:end subroutine da_eof_decomposition
+da_varbc.f:18:   use da_tools, only : da_eof_decomposition
+da_varbc.f:578:	    call da_eof_decomposition(npred, hessian(1:npred,1:npred), &
+da_vtox_transforms.f:166:subroutine da_check_eof_decomposition(be_eigenval, be_eigenvec, name)
+da_vtox_transforms.f:192:   if (trace_use) call da_trace_entry("da_check_eof_decomposition")
+da_vtox_transforms.f:277:   if (trace_use) call da_trace_exit("da_check_eof_decomposition")
+da_vtox_transforms.f:279:end subroutine da_check_eof_decomposition
+gen_be_stage2_1dvar.f:13:   use da_gen_be, only : da_eof_decomposition, da_eof_decomposition_test
+gen_be_stage2_1dvar.f:561:   call da_eof_decomposition( nk, be, evec, eval )
+gen_be_stage2_1dvar.f:565:      call da_eof_decomposition_test( nk, be, evec, eval )
+gen_be_stage2.f:6:   use da_gen_be, only : da_eof_decomposition,da_eof_decomposition_test
+gen_be_stage2.f:290:      call da_eof_decomposition( nk, work, evec, eval )
+gen_be_stage2.f:293:         call da_eof_decomposition_test( nk, work, evec, eval )
+gen_be_stage3.f:4:   use da_gen_be, only : da_eof_decomposition_test, da_eof_decomposition, &
+gen_be_stage3.f:229:         call da_eof_decomposition( nk, work, e_vec, e_val )
+gen_be_stage3.f:241:      call da_eof_decomposition( nk, work, e_vec, e_val )
+gen_be_stage3.f:244:         call da_eof_decomposition_test( nk, work, e_vec, e_val )
+gen_be_vertloc.f:3:   use da_gen_be, only : da_eof_decomposition
+gen_be_vertloc.f:88:   call da_eof_decomposition( nk, cov, evec, eval )
+gen_mbe_stage2.f:1369:   use da_gen_be, only : da_eof_decomposition,da_eof_decomposition_test
+gen_mbe_stage2.f:1410:      call da_eof_decomposition( nk, work, evec, eval )
+gen_mbe_stage2.f:1413:         call da_eof_decomposition_test( nk, work, evec, eval )

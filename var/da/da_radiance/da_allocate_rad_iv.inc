@@ -78,6 +78,22 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
       if ( index(iv%instid(i)%rttovid_string, 'amsr2') > 0 ) then
          allocate (iv%instid(i)%clw(iv%instid(i)%num_rad))
       end if
+      if ( index(iv%instid(i)%rttovid_string, 'gmi') > 0 ) then
+         allocate (iv%instid(i)%clw(iv%instid(i)%num_rad))
+      end if
+      if ( index(iv%instid(i)%rttovid_string, 'ahi') > 0 ) then
+         allocate (iv%instid(i)%clw(iv%instid(i)%num_rad))
+      end if
+      if ( index(iv%instid(i)%rttovid_string, 'agri') > 0 ) then
+         allocate (iv%instid(i)%clw(iv%instid(i)%num_rad))
+      end if
+
+      if ( index(iv%instid(i)%rttovid_string, 'ahi') > 0 ) then
+                 allocate (iv%instid(i)%cloudflag(iv%instid(i)%num_rad))
+      end if
+      if ( index(iv%instid(i)%rttovid_string, 'agri') > 0 ) then
+                 allocate (iv%instid(i)%cloudflag(iv%instid(i)%num_rad))
+      end if
       allocate (iv%instid(i)%ps(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%tb_xb(nchan,iv%instid(i)%num_rad))
       if ( crtm_cloud ) then
@@ -86,6 +102,8 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
       allocate (iv%instid(i)%tb_qc(nchan,iv%instid(i)%num_rad))
       allocate (iv%instid(i)%tb_inv(nchan,iv%instid(i)%num_rad))
       allocate (iv%instid(i)%tb_error(nchan,iv%instid(i)%num_rad))
+      allocate (iv%instid(i)%ca_mean(nchan,iv%instid(i)%num_rad))
+      allocate (iv%instid(i)%SDob(iv%instid(i)%num_rad))      !(Okamoto,2017,ahi allsky)
       allocate (iv%instid(i)%tb_sens(nchan,iv%instid(i)%num_rad))
       allocate (iv%instid(i)%tb_imp(nchan,iv%instid(i)%num_rad))
       allocate (iv%instid(i)%rad_xb(nchan,iv%instid(i)%num_rad))
@@ -96,6 +114,7 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
       allocate (iv%instid(i)%scanline(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%ifgat(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%cloud_flag(nchan,iv%instid(i)%num_rad))
+      allocate (iv%instid(i)%tropt(iv%instid(i)%num_rad))  !(Zhuge Zou,2016,cloud check)
       allocate (iv%instid(i)%rain_flag(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%satzen(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%satazi(iv%instid(i)%num_rad))

@@ -8,7 +8,7 @@ subroutine da_final_write_obs(it,iv)
  
    integer,        intent(in)    :: it
    type (iv_type), intent(in)    :: iv      ! O-B structure.
-   integer                       :: n, k, iunit
+   integer                       :: n, k, iunit,m, m1,m2
    integer                       :: ios  ! Error code from MPI routines.
    integer                       :: num_obs
    logical                       :: if_wind_sd
@@ -23,22 +23,34 @@ subroutine da_final_write_obs(it,iv)
    call mpi_barrier(comm, ierr)
 #endif
 
-   if (rootproc) then
-      call da_get_unit(iunit)
-      allocate (filename(0:num_procs-1))
-      do k = 0,num_procs-1
-         write(unit=filename(k),fmt ='(a,i2.2,a,i4.4)')'gts_omb_oma_',it,'.',k
-      end do 
-      call da_get_unit(omb_unit)
-       write(unit=file,fmt ='(a,i2.2)')'gts_omb_oma_',it
-      open(unit=omb_unit,file=trim(file),form='formatted', status='replace', iostat=ios) 
-      if (ios /= 0) call da_error(__FILE__,__LINE__, &
-         (/"Cannot open file "//file/))
-   end if
+!wuyl
+do m= num_fgat_time , 1, -1
+
+      if (rootproc) then
+         call da_get_unit(iunit)
+         allocate (filename(0:num_procs-1))
+         do k = 0,num_procs-1
+            write(unit=filename(k),fmt ='(a,i2.2,a,i4.4)')'gts_omb_oma_',it,'.',k
+         end do 
+
+
+         call da_get_unit(omb_unit)
+         if (num_fgat_time>1) then
+             write(unit=file,fmt ='(a,i2.2,a,i2.2)')'gts_omb_oma_',m,'_',it
+         else
+             write(unit=file,fmt ='(a,i2.2)')'gts_omb_oma_',it
+         end if
+         open(unit=omb_unit,file=trim(file),form='formatted', status='replace', iostat=ios) 
+         if (ios /= 0) call da_error(__FILE__,__LINE__, &
+            (/"Cannot open file "//file/))
+      end if
 
    num_obs = 0
    if (iv%info(synop)%nlocal > 0) then
-      do n = 1, iv%info(synop)%nlocal
+!wuyl      do n = 1, iv%info(synop)%nlocal
+      m1 = iv%info(synop)%plocal(m-1) + 1
+      m2 = iv%info(synop)%plocal(m)
+      do n = m1,m2
          if(iv%info(synop)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -59,7 +71,10 @@ subroutine da_final_write_obs(it,iv)
 
    num_obs = 0
    if (iv%info(metar)%nlocal > 0) then
-      do n = 1, iv%info(metar)%nlocal
+!wuyl      do n = 1, iv%info(metar)%nlocal
+      m1 = iv%info(metar)%plocal(m-1) + 1
+      m2 = iv%info(metar)%plocal(m)
+      do n = m1,m2
          if (iv%info(metar)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -80,7 +95,10 @@ subroutine da_final_write_obs(it,iv)
 
    num_obs = 0
    if (iv%info(ships)%nlocal > 0) then
-      do n = 1, iv%info(ships)%nlocal
+!wuyl      do n = 1, iv%info(ships)%nlocal
+      m1 = iv%info(ships)%plocal(m-1) + 1
+      m2 = iv%info(ships)%plocal(m)
+      do n = m1,m2
          if(iv%info(ships)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -101,7 +119,10 @@ subroutine da_final_write_obs(it,iv)
 
    num_obs = 0
    if (iv%info(geoamv)%nlocal > 0) then
-       do n = 1, iv%info(geoamv)%nlocal
+!wuyl       do n = 1, iv%info(geoamv)%nlocal
+      m1 = iv%info(geoamv)%plocal(m-1) + 1
+      m2 = iv%info(geoamv)%plocal(m)
+      do n = m1,m2
           if (iv%info(geoamv)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -122,7 +143,10 @@ subroutine da_final_write_obs(it,iv)
 
    num_obs = 0
    if (iv%info(polaramv)%nlocal > 0) then
-      do n = 1, iv%info(polaramv)%nlocal
+!wuyl      do n = 1, iv%info(polaramv)%nlocal
+      m1 = iv%info(polaramv)%plocal(m-1) + 1
+      m2 = iv%info(polaramv)%plocal(m)
+      do n = m1,m2
          if (iv%info(polaramv)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -143,7 +167,10 @@ subroutine da_final_write_obs(it,iv)
 
    num_obs = 0
    if (iv%info(gpspw)%nlocal > 0) then
-      do n = 1, iv%info(gpspw)%nlocal
+!wuyl      do n = 1, iv%info(gpspw)%nlocal
+      m1 = iv%info(gpspw)%plocal(m-1) + 1
+      m2 = iv%info(gpspw)%plocal(m)
+      do n = m1,m2
          if(iv%info(gpspw)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -163,7 +190,10 @@ subroutine da_final_write_obs(it,iv)
 
    num_obs = 0
    if (iv%info(sound)%nlocal > 0) then
-      do n = 1, iv%info(sound)%nlocal
+!wuyl      do n = 1, iv%info(sound)%nlocal
+      m1 = iv%info(sound)%plocal(m-1) + 1
+      m2 = iv%info(sound)%plocal(m)
+      do n = m1,m2
          if (iv%info(sound)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -181,7 +211,10 @@ subroutine da_final_write_obs(it,iv)
 !  Now sonde_sfc
    num_obs = 0
    if (iv%info(sonde_sfc)%nlocal > 0) then
-      do n = 1, iv%info(sonde_sfc)%nlocal
+!wuyl      do n = 1, iv%info(sonde_sfc)%nlocal
+      m1 = iv%info(sonde_sfc)%plocal(m-1) + 1
+      m2 = iv%info(sonde_sfc)%plocal(m)
+      do n = m1,m2
          if(iv%info(sonde_sfc)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -200,7 +233,10 @@ subroutine da_final_write_obs(it,iv)
 
    num_obs = 0
    if (iv%info(airep)%nlocal > 0) then
-      do n = 1, iv%info(airep)%nlocal
+!wuyl      do n = 1, iv%info(airep)%nlocal
+      m1 = iv%info(airep)%plocal(m-1) + 1
+      m2 = iv%info(airep)%plocal(m)
+      do n = m1,m2
          if(iv%info(airep)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -221,7 +257,10 @@ subroutine da_final_write_obs(it,iv)
    
    num_obs = 0
    if (iv%info(pilot)%nlocal > 0) then
-      do n = 1, iv%info(pilot)%nlocal
+!      do n = 1, iv%info(pilot)%nlocal
+      m1 = iv%info(pilot)%plocal(m-1) + 1
+      m2 = iv%info(pilot)%plocal(m)
+      do n = m1,m2
          if(iv%info(pilot)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -242,7 +281,10 @@ subroutine da_final_write_obs(it,iv)
 
    num_obs = 0
    if (iv%info(ssmi_rv)%nlocal > 0) then
-      do n = 1, iv%info(ssmi_rv)%nlocal
+!      do n = 1, iv%info(ssmi_rv)%nlocal
+      m1 = iv%info(ssmi_rv)%plocal(m-1) + 1
+      m2 = iv%info(ssmi_rv)%plocal(m)
+      do n = m1,m2
          if(iv%info(ssmi_rv)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -262,7 +304,10 @@ subroutine da_final_write_obs(it,iv)
    
    num_obs = 0
    if (iv%info(ssmi_tb)%nlocal > 0) then
-      do n = 1, iv%info(ssmi_tb)%nlocal
+!      do n = 1, iv%info(ssmi_tb)%nlocal
+      m1 = iv%info(ssmi_tb)%plocal(m-1) + 1
+      m2 = iv%info(ssmi_tb)%plocal(m)
+      do n = m1,m2
          if (iv%info(ssmi_tb)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -282,7 +327,10 @@ subroutine da_final_write_obs(it,iv)
 
    num_obs = 0
    if (iv%info(satem)%nlocal > 0) then
-      do n = 1, iv%info(satem)%nlocal
+!      do n = 1, iv%info(satem)%nlocal
+      m1 = iv%info(satem)%plocal(m-1) + 1
+      m2 = iv%info(satem)%plocal(m)
+      do n = m1,m2
          if(iv%info(satem)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -302,7 +350,10 @@ subroutine da_final_write_obs(it,iv)
 
    num_obs = 0
    if (iv%info(ssmt1)%nlocal > 0) then
-      do n = 1, iv%info(ssmt1)%nlocal
+!      do n = 1, iv%info(ssmt1)%nlocal
+      m1 = iv%info(ssmt1)%plocal(m-1) + 1
+      m2 = iv%info(ssmt1)%plocal(m)
+      do n = m1,m2
          if(iv%info(ssmt1)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -322,7 +373,10 @@ subroutine da_final_write_obs(it,iv)
 
    num_obs = 0
    if (iv%info(ssmt2)%nlocal > 0) then
-      do n = 1, iv%info(ssmt2)%nlocal
+!      do n = 1, iv%info(ssmt2)%nlocal
+      m1 = iv%info(ssmt2)%plocal(m-1) + 1
+      m2 = iv%info(ssmt2)%plocal(m)
+      do n = m1,m2
          if(iv%info(ssmt2)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -342,7 +396,10 @@ subroutine da_final_write_obs(it,iv)
    
    num_obs = 0
    if (iv%info(qscat)%nlocal > 0) then
-      do n = 1, iv%info(qscat)%nlocal
+!      do n = 1, iv%info(qscat)%nlocal
+      m1 = iv%info(qscat)%plocal(m-1) + 1
+      m2 = iv%info(qscat)%plocal(m)
+      do n = m1,m2
          if(iv%info(qscat)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -363,7 +420,10 @@ subroutine da_final_write_obs(it,iv)
 
    num_obs = 0
    if (iv%info(profiler)%nlocal > 0) then
-      do n = 1, iv%info(profiler)%nlocal
+!      do n = 1, iv%info(profiler)%nlocal
+      m1 = iv%info(profiler)%plocal(m-1) + 1
+      m2 = iv%info(profiler)%plocal(m)
+      do n = m1,m2
          if(iv%info(profiler)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -384,7 +444,10 @@ subroutine da_final_write_obs(it,iv)
    
    num_obs = 0
    if (iv%info(buoy)%nlocal > 0) then
-      do n = 1, iv%info(buoy)%nlocal
+!      do n = 1, iv%info(buoy)%nlocal
+      m1 = iv%info(buoy)%plocal(m-1) + 1
+      m2 = iv%info(buoy)%plocal(m)
+      do n = m1,m2
          if(iv%info(buoy)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -405,7 +468,10 @@ subroutine da_final_write_obs(it,iv)
    
    num_obs = 0
    if (iv%info(bogus)%nlocal > 0) then
-      do n = 1, iv%info(bogus)%nlocal
+!      do n = 1, iv%info(bogus)%nlocal
+      m1 = iv%info(bogus)%plocal(m-1) + 1
+      m2 = iv%info(bogus)%plocal(m)
+      do n = m1,m2
          if(iv%info(bogus)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -425,7 +491,10 @@ subroutine da_final_write_obs(it,iv)
 
    num_obs = 0
    if (iv%info(tamdar)%nlocal > 0) then
-      do n = 1, iv%info(tamdar)%nlocal
+!      do n = 1, iv%info(tamdar)%nlocal
+      m1 = iv%info(tamdar)%plocal(m-1) + 1
+      m2 = iv%info(tamdar)%plocal(m)
+      do n = m1,m2
          if (iv%info(tamdar)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -444,7 +513,10 @@ subroutine da_final_write_obs(it,iv)
 !  Now tamdar_sfc
    num_obs = 0
    if (iv%info(tamdar_sfc)%nlocal > 0) then
-      do n = 1, iv%info(tamdar_sfc)%nlocal
+!      do n = 1, iv%info(tamdar_sfc)%nlocal
+      m1 = iv%info(tamdar_sfc)%plocal(m-1) + 1
+      m2 = iv%info(tamdar_sfc)%plocal(m)
+      do n = m1,m2
          if(iv%info(tamdar_sfc)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -463,7 +535,10 @@ subroutine da_final_write_obs(it,iv)
 
    num_obs = 0
    if (iv%info(airsr)%nlocal > 0) then
-      do n = 1, iv%info(airsr)%nlocal
+!      do n = 1, iv%info(airsr)%nlocal
+      m1 = iv%info(airsr)%plocal(m-1) + 1
+      m2 = iv%info(airsr)%plocal(m)
+      do n = m1,m2
          if(iv%info(airsr)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -483,7 +558,10 @@ subroutine da_final_write_obs(it,iv)
 
    num_obs = 0
    if (iv%info(gpsref)%nlocal > 0) then
-      do n = 1, iv%info(gpsref)%nlocal
+!      do n = 1, iv%info(gpsref)%nlocal
+      m1 = iv%info(gpsref)%plocal(m-1) + 1
+      m2 = iv%info(gpsref)%plocal(m)
+      do n = m1,m2
          if(iv%info(gpsref)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -503,7 +581,10 @@ subroutine da_final_write_obs(it,iv)
    
    num_obs = 0
    if (iv%info(rain)%nlocal > 0) then
-      do n = 1, iv%info(rain)%nlocal
+!      do n = 1, iv%info(rain)%nlocal
+      m1 = iv%info(rain)%plocal(m-1) + 1
+      m2 = iv%info(rain)%plocal(m)
+      do n = m1,m2
          if(iv%info(rain)%proc_domain(1,n)) num_obs = num_obs + 1
       end do
    end if
@@ -526,6 +607,7 @@ subroutine da_final_write_obs(it,iv)
       deallocate (filename)
    end if
 
+end do !wuyl n1,n2
    if (trace_use) call da_trace_exit("da_final_write_obs")
    
 end subroutine da_final_write_obs

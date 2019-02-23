@@ -1,4 +1,4 @@
-subroutine da_write_iv_rad_ascii (it, ob, iv )
+subroutine da_write_iv_rad_ascii (it,ob, iv )
 
    !---------------------------------------------------------------------------
    ! Purpose: write out innovation vector structure for radiance data.
@@ -11,7 +11,7 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
    type (iv_type),    intent(in)  :: iv       ! O-B structure.
 
    integer                        :: n        ! Loop counter.
-   integer                        :: i, k, l  ! Index dimension.
+   integer                        :: i, k, l, m, m1, m2  ! Index dimension.
    integer                        :: nlevelss ! Number of obs levels.
 
    integer            :: ios, innov_rad_unit
@@ -32,11 +32,16 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
 
       ! count number of obs within the loc%proc_domain
       ! ---------------------------------------------
+   do m=num_fgat_time,1,-1
+      iv%instid(i)%info%n1 = iv%instid(i)%info%plocal(m-1) + 1
+      iv%instid(i)%info%n2=iv%instid(i)%info%plocal(m)
       ndomain = 0
-      do n =1,iv%instid(i)%num_rad
-         if (iv%instid(i)%info%proc_domain(1,n)) then
+!      do n =1,iv%instid(i)%num_rad
+      do n = iv%instid(i)%info%n1,iv%instid(i)%info%n2
+ 
+      if (iv%instid(i)%info%proc_domain(1,n)) then
             ndomain = ndomain + 1
-         end if
+      end if
       end do
       if (ndomain < 1) cycle
 
@@ -49,9 +54,18 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
       end if
 
       amsr2 = index(iv%instid(i)%rttovid_string,'amsr2') > 0
-
+!wuyl
+!   do m=num_fgat_time,1,-1
+!   iv%time=m
+!   iv%instid(i)%info%n1 = iv%instid(i)%info%plocal(m-1) + 1
+!   iv%instid(i)%info%n2=iv%instid(i)%info%plocal(m)
+  
+   if (num_fgat_time >1) then
+                 
+      write(unit=filename, fmt='(i2.2,a,i2.2,a,i4.4)') it,'_inv_'//trim(iv%instid(i)%rttovid_string)//'_',m,'.', myproc
+  else
       write(unit=filename, fmt='(i2.2,a,i4.4)') it,'_inv_'//trim(iv%instid(i)%rttovid_string)//'.', myproc
-
+  end if
       call da_get_unit(innov_rad_unit)
       open(unit=innov_rad_unit,file=trim(filename),form='formatted',iostat=ios)
       if (ios /= 0 ) then
@@ -71,7 +85,8 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
       write(unit=innov_rad_unit,fmt='(a)') ' grid%xb-surf-info : i t2m mr2m(ppmv) u10 v10 ps ts smois tslb snowh isflg &
                     & soiltyp vegtyp vegfra elev clwp'
       ndomain = 0
-      do n =1,iv%instid(i)%num_rad
+!wuyl      do n =1,iv%instid(i)%num_rad
+      do n = iv%instid(i)%info%n1,iv%instid(i)%info%n2
          if (iv%instid(i)%info%proc_domain(1,n)) then
             ndomain=ndomain+1
             if ( amsr2 ) then ! write out clw
@@ -300,7 +315,7 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
             end if !  end if write_jacobian
 
          end if ! end if proc_domain
-      end do ! end do pixels
+      end do ! end do pixels 
       if (rtm_option==rtm_option_crtm .and. write_jacobian ) then
          deallocate ( dtransmt )
          deallocate ( transmt_jac )
@@ -310,7 +325,8 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
       end if
       close(unit=innov_rad_unit)
       call da_free_unit(innov_rad_unit)
-   end do ! end do instruments
+   end do ! n1,n2 wuyl
+end do ! end do instruments
 
    if (trace_use) call da_trace_exit("da_write_iv_rad_ascii")
 

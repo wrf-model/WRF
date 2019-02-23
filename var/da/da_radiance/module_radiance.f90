@@ -116,7 +116,7 @@ module module_radiance
         & 'coriolis', 'npp     ', 'gifts   ', 'tiros   ', 'meghat  ',  &
         & 'kalpana ', 'tiros   ', 'fy3     ', 'coms    ', 'xxxxxxxx',  &
         & 'xxxxxxxx', 'xxxxxxxx', 'reserved', 'gcom-w  ', 'xxxxxxxx',  &
-        & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx'/)
+        & 'himawari', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx'/)
 
   ! cf. rttov_inst_name above and CRTM: v2.1.3 User Guide Table B.1
   ! List of instruments  !!!! HIRS is number 0
@@ -136,7 +136,7 @@ module module_radiance
         & 'mwts    ', 'mwhs    ', 'iras    ', 'mwri    ', 'abi     ',  &
         & 'xxxxxxxx', 'xxxxxxxx', 'reserved', 'xxxxxxxx', 'xxxxxxxx',  &
         & 'reserved', 'reserved', 'reserved', 'reserved', 'xxxxxxxx',  &
-        & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
+        & 'xxxxxxxx', 'ahi     ', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
         & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'amsr2   ', 'vissr   ',  &
         & 'xxxxxxxx'/)
 

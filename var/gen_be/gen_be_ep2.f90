@@ -1,626 +1,579 @@
 program gen_be_ep2
-!
-!---------------------------------------------------------------------- 
-!  Purpose : To convert WRF ensemble to format required for use as 
-!  flow-dependent perturbations in WRF-Var (alpha control variable, 
-!  alphacv_method = 2).
-!
-!  Dale Barker (NCAR/MMM)      January 2007
-!  Arthur P. Mizzi (NCAR/MMM)  February 2011  Modified to use .vari extension for
-!                                             ensemble variance file output from
-!                                             gen_be_ensmean.f90
-!
-!----------------------------------------------------------------------
 
-#ifdef crayx1
-#define iargc ipxfargc
-#endif
-
-   use da_control, only : stderr, stdout, filename_len
-   use da_tools_serial, only : da_get_unit, da_free_unit
-   use da_gen_be, only : da_stage0_initialize, da_get_field, da_get_trh
+!-----------------------------------------------------------------------
+! Purpose: To convert WRF ensemble to format required for use as
+!          flow-dependent perturbations in WRFDA (alpha control variable,
+!          alphacv_method = 2).
+! History:
+!     March 2017 - Creation   Jamie Bresch
+!                  new parallelized code to replace the previous gen_be_ep2
+!                  (now named gen_be_ep2_serial.f90)
+!-----------------------------------------------------------------------
 
    implicit none
 
-   character (len=filename_len)   :: directory        ! General filename stub.
-   character (len=filename_len)   :: filename         ! General filename stub.
-   character (len=filename_len)   :: input_file       ! Input file.
-   character (len=filename_len)   :: output_file      ! Output file.
-   character (len=10)    :: date                      ! Character date.
-   character (len=10)    :: var                       ! Variable to search for.
-   character (len=3)     :: cne                       ! Ensemble size.
-   character (len=3)     :: ce                        ! Member index -> character.
-   character (len=filename_len)   :: moist_string
+#ifdef DM_PARALLEL
+   include 'mpif.h'
+#if ( DWORDSIZE != RWORDSIZE )
+   integer, parameter :: true_mpi_real    = mpi_real
+#else
+   integer, parameter :: true_mpi_real    = mpi_real8
+#endif
+#endif
 
-   integer, external     :: iargc
-   integer               :: numarg
-   integer               :: ne                        ! Ensemble size.
-   integer               :: i, j, k, member           ! Loop counters.
-   integer               :: dim1                      ! Dimensions of grid (T points).
-   integer               :: dim1s                     ! Dimensions of grid (vor/psi pts).
-   integer               :: dim2                      ! Dimensions of grid (T points).
-   integer               :: dim2s                     ! Dimensions of grid (vor/psi pts).
-   integer               :: dim3                      ! Dimensions of grid (T points).
-   integer               :: mp_physics                ! microphysics option
-   real                  :: member_inv                ! 1 / member.
-   real                  :: ds                        ! Grid resolution.
-   logical               :: remove_mean               ! Remove mean from standard fields.
-   logical               :: has_cloud, has_rain, has_ice, has_snow, has_graup
+   integer, parameter :: DateStrLen = 19 !as in wrf_io.F
+   integer, parameter :: VarNameLen = 31 !as in wrf_io.F
+   integer, parameter :: stdout = 6
+   integer, parameter :: root = 0
+   integer, parameter :: nvar_max = 10
+   real,    parameter :: t00 = 300.0
+   real,    parameter :: p00 = 100000.0
+   real,    parameter :: gas_constant = 287.0
+   real,    parameter :: cp = 7.0*gas_constant/2.0
+   real,    parameter :: kappa = gas_constant/cp
 
-   real, allocatable     :: u(:,:,:)                  ! u-wind.
-   real, allocatable     :: v(:,:,:)                  ! v-wind.
-   real, allocatable     :: temp(:,:,:)               ! Temperature.
-   real, allocatable     :: q(:,:,:)                  ! Specific humidity.
-   real, allocatable     :: qcloud(:,:,:)             ! Cloud.
-   real, allocatable     :: qrain(:,:,:)              ! Rain.
-   real, allocatable     :: qice(:,:,:)               ! ice
-   real, allocatable     :: qsnow(:,:,:)              ! snow
-   real, allocatable     :: qgraup(:,:,:)             ! graupel
-   real, allocatable     :: psfc(:,:)                 ! Surface pressure.
-   real, allocatable     :: u_mean(:,:,:)             ! u-wind.
-   real, allocatable     :: v_mean(:,:,:)             ! v-wind.
-   real, allocatable     :: temp_mean(:,:,:)          ! Temperature.
-   real, allocatable     :: q_mean(:,:,:)             ! Specific humidity.
-   real, allocatable     :: qcloud_mean(:,:,:)        ! Cloud.
-   real, allocatable     :: qrain_mean(:,:,:)         ! Rain.
-   real, allocatable     :: qice_mean(:,:,:)          ! ice
-   real, allocatable     :: qsnow_mean(:,:,:)         ! snow
-   real, allocatable     :: qgraup_mean(:,:,:)        ! graupel
-   real, allocatable     :: psfc_mean(:,:)            ! Surface pressure.
-   real, allocatable     :: u_mnsq(:,:,:)             ! u-wind.
-   real, allocatable     :: v_mnsq(:,:,:)             ! v-wind.
-   real, allocatable     :: temp_mnsq(:,:,:)          ! Temperature.
-   real, allocatable     :: q_mnsq(:,:,:)             ! Specific humidity.
-   real, allocatable     :: qcloud_mnsq(:,:,:)        ! Cloud.
-   real, allocatable     :: qrain_mnsq(:,:,:)         ! Rain.
-   real, allocatable     :: qice_mnsq(:,:,:)          ! ice
-   real, allocatable     :: qsnow_mnsq(:,:,:)         ! snow
-   real, allocatable     :: qgraup_mnsq(:,:,:)        ! graupel
-   real, allocatable     :: psfc_mnsq(:,:)            ! Surface pressure.
+   logical :: remove_mean        = .true.
+   logical :: alpha_hydrometeors = .true.
+   logical :: write_mean_stdv    = .true.
 
-   real, allocatable     :: utmp(:,:)                 ! u-wind.
-   real, allocatable     :: vtmp(:,:)                 ! v-wind.
-   real, allocatable     :: ttmp(:,:)                 ! temperature.
-   real, allocatable     :: dummy(:,:)                ! dummy.
+   type xdata_type
+      character(len=VarNameLen) :: name
+      real, allocatable :: value(:,:,:,:)
+      real, allocatable :: mean(:,:,:)
+      real, allocatable :: mnsq(:,:,:) !mean square
+      real, allocatable :: stdv(:,:,:)
+   end type xdata_type
+   type (xdata_type), allocatable :: xdata(:)
 
-   integer :: gen_be_iunit, gen_be_ounit
+   character(len=VarNameLen) :: varnames(nvar_max)
+   character(len=VarNameLen) :: fnames(nvar_max)
 
-   stderr = 0
-   stdout = 6
+   ! argument variables
+   character(len=512)        :: directory, filename
+   character(len=VarNameLen) :: cvar
+   character(len=10)         :: cdate10
+   character(len=3)          :: cne
+   integer                   :: numarg
+   integer                   :: icode
 
-!---------------------------------------------------------------------------------------------
-   write(6,'(/a)')' [1] Initialize information.'
-!---------------------------------------------------------------------------------------------
+   integer :: num_procs, myproc
+   integer :: ounit
+   integer :: nvar, nens, iv, ivar, ie
+   integer :: i, j, k, ijk
+   integer :: ni, ni1, nj, nj1, nk
+   integer :: mp_physics
+   real    :: ens_inv
 
-   call da_get_unit(gen_be_iunit)
-   call da_get_unit(gen_be_ounit)
+   character(len=512) :: input_file, output_file
+   character(len=3)   :: ce
 
-   remove_mean = .true.
+   character(len=80), dimension(3) :: dimnames
+   character(len=4)                :: staggering=' N/A' !dummy
+   character(len=3)                :: ordering
+   character(len=DateStrLen)       :: DateStr
+   character(len=VarNameLen)       :: varname
+   integer, dimension(4)           :: start_index, end_index
+   integer                         :: fid, ierr, ndim, wrftype
+   integer                         :: icnt
 
-   numarg = iargc()
-   if ( numarg /= 4 )then
-      write(UNIT=6,FMT='(a)') &
-        "Usage: gen_be_ep2 date ne <directory> <filename> Stop"
+   integer :: avail(nvar_max)
+   integer :: readit(nvar_max)
+   integer, allocatable :: istart(:), iend(:)
+   integer, allocatable :: ncount(:), displs(:)
+
+   real*4, allocatable :: pp(:,:,:) ! WRF perturbation P
+   real*4, allocatable :: pb(:,:,:) ! WRF base P
+   real*4, allocatable :: xfield(:,:,:)
+   real*4, allocatable :: xfield_u(:,:,:)
+   real*4, allocatable :: xfield_v(:,:,:)
+
+   real,   allocatable :: globuf(:,:,:,:)
+   real,   allocatable :: globuf1d(:)
+   real,   allocatable :: tmp1d(:)
+
+#ifdef DM_PARALLEL
+   call mpi_init(ierr)
+   call mpi_comm_size(mpi_comm_world,num_procs,ierr)
+   call mpi_comm_rank(mpi_comm_world,myproc,ierr)
+#else
+   num_procs = 1
+   myproc = 0
+#endif
+
+   ! variable names in wrfout files
+   varnames = (/ 'U     ', 'V     ', 'T     ', 'QVAPOR', 'PSFC  ', &
+                 'QCLOUD', 'QRAIN ', 'QICE  ', 'QSNOW ', 'QGRAUP' /)
+
+   ! variable names for output
+   fnames   = (/ 'u     ', 'v     ', 't     ', 'q     ', 'ps    ',  &
+                 'qcloud', 'qrain ', 'qice  ', 'qsnow ', 'qgraup' /)
+
+   numarg = command_argument_count()
+   if ( numarg /= 4 .and. numarg /= 5 )then
+      write(stdout,FMT='(a)') &
+        "Usage: gen_be_ep2.exe  date  ne  directory  filename  [varname]"
+#ifdef DM_PARALLEL
+      call mpi_abort(mpi_comm_world,1,ierr)
+#else
       stop
+#endif
    end if
 
-   ! Initialse to stop Cray compiler complaining
-   date=""
-   cne=""
-   directory=""
-   filename=""
+   ! initialze argument variables
+   cdate10   = ""
+   cne       = ""
+   directory = ""
+   filename  = ""
+   cvar      = ""
 
-   call getarg( 1, date )
-   call getarg( 2, cne )
-   read(cne,'(i3)')ne
-   call getarg( 3, directory )
-   call getarg( 4, filename )
-
-   if ( remove_mean ) then
-      write(6,'(a,a)')' Computing gen_be ensemble perturbation files for date ', date
+   call get_command_argument(number=1, value=cdate10)
+   call get_command_argument(number=2, value=cne)
+   read(cne,'(i3)') nens
+   call get_command_argument(number=3, value=directory)
+   call get_command_argument(number=4, value=filename)
+   if ( numarg == 5 ) then
+      call get_command_argument(number=5, value=cvar)
+      ! convert cvar to be in lowercase
+      do i = 1, len_trim(cvar)
+         icode = ichar(cvar(i:i))
+         if (icode>=65 .and. icode<=90) then
+            cvar(i:i) = char(icode + 97 - 65)
+         end if
+      end do
    else
-      write(6,'(a,a)')' Computing gen_be ensemble forecast files for date ', date
+      cvar = 'all'
    end if
-   write(6,'(a)')' Perturbations are in MODEL SPACE (u, v, t, q, ps)'
-   write(6,'(a,i4)')' Ensemble Size = ', ne
-   write(6,'(a,a)')' Directory = ', trim(directory)
-   write(6,'(a,a)')' Filename = ', trim(filename)
 
-!---------------------------------------------------------------------------------------------
-   write(6,'(/a)')' [2] Set up data dimensions and allocate arrays:' 
-!---------------------------------------------------------------------------------------------
+   if ( myproc == root ) then
+      if ( remove_mean ) then
+         write(stdout,'(a,a)')' Computing gen_be ensemble perturbation files for date ', cdate10
+      else
+         write(stdout,'(a,a)')' Computing gen_be ensemble forecast files for date ', cdate10
+      end if
+      write(stdout,'(a)')' Perturbations are in MODEL SPACE'
+      write(stdout,'(a,i4)')' Ensemble Size = ', nens
+      write(stdout,'(a,a)')' Directory = ', trim(directory)
+      write(stdout,'(a,a)')' Filename = ', trim(filename)
+   end if
 
-!  Get grid dimensions from first T field:
-   var = "T"
+   ounit = 61
+
+   call ext_ncd_ioinit("",ierr)
+
+   ! open file e001 for retrieving general information
+
    input_file = trim(directory)//'/'//trim(filename)//'.e001'
-   call da_stage0_initialize( input_file, var, dim1, dim2, dim3, ds, mp_physics )
-   dim1s = dim1+1 ! u i dimension is 1 larger.
-   dim2s = dim2+1 ! v j dimension is 1 larger.
+   call ext_ncd_open_for_read(trim(input_file), 0, 0, "", fid, ierr)
+   if ( ierr /= 0 ) then
+      write(stdout, '(a,a,i8)') 'Error opening ', trim(input_file), ierr
+#ifdef DM_PARALLEL
+      call mpi_abort(mpi_comm_world,1,ierr)
+#else
+      stop
+#endif
+   end if
 
-!  Allocate arrays in output fields:
-   allocate( u(1:dim1,1:dim2,1:dim3) ) ! Note - interpolated to mass pts for output.
-   allocate( v(1:dim1,1:dim2,1:dim3) ) ! Note - interpolated to mass pts for output.
-   allocate( temp(1:dim1,1:dim2,1:dim3) )
-   allocate( q(1:dim1,1:dim2,1:dim3) )
-   allocate( psfc(1:dim1,1:dim2) )
-   allocate( u_mean(1:dim1,1:dim2,1:dim3) ) ! Note - interpolated to chi pts for output.
-   allocate( v_mean(1:dim1,1:dim2,1:dim3) )
-   allocate( temp_mean(1:dim1,1:dim2,1:dim3) )
-   allocate( q_mean(1:dim1,1:dim2,1:dim3) )
-   allocate( psfc_mean(1:dim1,1:dim2) )
-   allocate( u_mnsq(1:dim1,1:dim2,1:dim3) ) ! Note - interpolated to chi pts for output.
-   allocate( v_mnsq(1:dim1,1:dim2,1:dim3) )
-   allocate( temp_mnsq(1:dim1,1:dim2,1:dim3) )
-   allocate( q_mnsq(1:dim1,1:dim2,1:dim3) )
-   allocate( psfc_mnsq(1:dim1,1:dim2) )
-   ! cloud variables
-   has_cloud = .false.
-   has_rain  = .false.
-   has_ice   = .false.
-   has_snow  = .false.
-   has_graup = .false.
-   moist_string = ''
-   if ( mp_physics > 0 ) then
-      has_cloud = .true.
-      has_rain  = .true.
-      allocate( qcloud(1:dim1,1:dim2,1:dim3) )
-      allocate( qrain(1:dim1,1:dim2,1:dim3) )
-      allocate( qcloud_mean(1:dim1,1:dim2,1:dim3) )
-      allocate( qrain_mean(1:dim1,1:dim2,1:dim3) )
-      allocate( qcloud_mnsq(1:dim1,1:dim2,1:dim3) )
-      allocate( qrain_mnsq(1:dim1,1:dim2,1:dim3) )
-      qcloud_mean = 0.0
-      qrain_mean = 0.0
-      qcloud_mnsq = 0.0
-      qrain_mnsq = 0.0
-      moist_string = trim(moist_string)//'qcloud, qrain '
-      if ( mp_physics == 2 .or. mp_physics == 4 .or. &
-           mp_physics >= 6 ) then
-         has_ice   = .true.
-         allocate( qice(1:dim1,1:dim2,1:dim3) )
-         allocate( qice_mean(1:dim1,1:dim2,1:dim3) )
-         allocate( qice_mnsq(1:dim1,1:dim2,1:dim3) )
-         qice_mean = 0.0
-         qice_mnsq = 0.0
-         moist_string = trim(moist_string)//', qice '
-      end if
-      if ( mp_physics == 2 .or. mp_physics >= 4 ) then
-         has_snow  = .true.
-         allocate( qsnow(1:dim1,1:dim2,1:dim3) )
-         allocate( qsnow_mean(1:dim1,1:dim2,1:dim3) )
-         allocate( qsnow_mnsq(1:dim1,1:dim2,1:dim3) )
-         qsnow_mean = 0.0
-         qsnow_mnsq = 0.0
-         moist_string = trim(moist_string)//', qsnow '
-      end if
-      if ( mp_physics == 2 .or. mp_physics >= 6 ) then
-         if ( mp_physics /= 11 .and. mp_physics /= 13 .and. &
-              mp_physics /= 14 ) then
-            has_graup = .true.
-            allocate( qgraup(1:dim1,1:dim2,1:dim3) )
-            allocate( qgraup_mean(1:dim1,1:dim2,1:dim3) )
-            allocate( qgraup_mnsq(1:dim1,1:dim2,1:dim3) )
-            qgraup_mean = 0.0
-            qgraup_mnsq = 0.0
-            moist_string = trim(moist_string)//', qgraup '
+   ! retrieve dimensions from variable T
+
+   varname = "T"
+   call ext_ncd_get_var_info (fid, varname, ndim, ordering, staggering, &
+                              start_index, end_index, wrftype, ierr)
+   ni = end_index(1)
+   nj = end_index(2)
+   nk = end_index(3)
+   ni1 = ni + 1
+   nj1 = nj + 1
+   ijk = ni * nj * nk
+   if ( myproc == root ) write(stdout, '(a,3i5)') ' ni, nj, nk = ', ni, nj, nk
+
+   ! retrieve information for cloud variables
+
+   mp_physics = 0 !initialize
+   call ext_ncd_get_dom_ti_integer (fid, 'MP_PHYSICS', mp_physics, 1, icnt, ierr)
+
+   avail(1:5)  = 1 ! initialize as available for 5 basic variables
+   avail(6:10) = 0 ! initialize as not available for cloud variables
+   if ( alpha_hydrometeors ) then
+      if ( mp_physics > 0 ) then
+         avail(6) = 1  ! qcloud
+         avail(7) = 1  ! qrain
+         if ( mp_physics == 2 .or. mp_physics == 4 .or.  &
+              mp_physics >= 6 ) then
+            avail(8) = 1 ! qice
+         end if
+         if ( mp_physics == 2 .or. mp_physics >= 4 ) then
+            avail(9) = 1 ! qsnow
+         end if
+         if ( mp_physics == 2 .or. mp_physics >= 6 ) then
+            if ( mp_physics /= 11 .and. mp_physics /= 13 .and. &
+                 mp_physics /= 14 ) then
+               avail(10) = 1 ! qgraup
+            end if
          end if
       end if
-      write(6,'(a)')' cloud variables are '//trim(moist_string)
    end if
 
-   u_mean = 0.0
-   v_mean = 0.0
-   temp_mean = 0.0
-   q_mean = 0.0
-   psfc_mean = 0.0
-   u_mnsq = 0.0
-   v_mnsq = 0.0
-   temp_mnsq = 0.0
-   q_mnsq = 0.0
-   psfc_mnsq = 0.0
+   ! done retrieving information from file e001
+   call ext_ncd_ioclose(fid, ierr)
 
-!  Temporary arrays:
-   allocate( utmp(1:dim1s,1:dim2) ) ! u on Arakawa C-grid.
-   allocate( vtmp(1:dim1,1:dim2s) ) ! v on Arakawa C-grid.
-   allocate( ttmp(1:dim1,1:dim2) )
-   allocate( dummy(1:dim1,1:dim2) )
+   allocate (xfield  (ni, nj, nk))
+   allocate (xfield_u(ni1,nj, nk))
+   allocate (xfield_v(ni, nj1,nk))
 
-!---------------------------------------------------------------------------------------------
-   write(6,'(/a)')' [3] Extract necessary fields from input NETCDF files and output.'
-!---------------------------------------------------------------------------------------------
+   ! number of variables to read
+   readit(1:nvar_max) = 0 ! initilaze as not read
+   if ( trim(cvar) == 'all' ) then
+      readit(:) = 1
+   else
+      do i = 1, nvar_max
+         if ( fnames(i) == trim(cvar) ) then
+            readit(i) = 1
+            exit
+         end if
+      end do
+   end if
+   nvar = 0
+   do i = 1, nvar_max
+      if ( avail(i) == 1 .and. readit(i) == 1 ) then
+         nvar = nvar + 1
+      end if
+   end do
 
-   do member = 1, ne
+   if ( nvar < 1 ) then
+      write(stdout, '(a,i3)') 'invalid number of variables to process ', nvar
+#ifdef DM_PARALLEL
+      call mpi_abort(mpi_comm_world,1,ierr)
+#else
+      stop
+#endif
+   end if
 
-      write(UNIT=ce,FMT='(i3.3)')member
+   ! divide nens among available processors
+   allocate (istart(0:num_procs-1))
+   allocate (iend  (0:num_procs-1))
+   allocate (ncount(0:num_procs-1))
+   allocate (displs(0:num_procs-1))
+   do i = 0, num_procs - 1
+      call para_range(1, nens, num_procs, i, istart(i), iend(i))
+      ncount(i) = iend(i) - istart(i) + 1
+   end do
+   ! get displs to be used later in mpi gather
+   displs(0) = 0
+   do i = 1, num_procs-1
+      displs(i) = displs(i-1) + ncount(i-1)
+   end do
+   write(stdout,'(a,i4,a,i4,a,i4)') &
+      'Processor ', myproc, ' will read files ', istart(myproc), ' - ', iend(myproc)
+
+   allocate(xdata(nvar))
+   do ivar = 1, nvar
+      allocate(xdata(ivar)%value(ni,nj,nk,istart(myproc):iend(myproc)))
+      allocate(xdata(ivar)%mean(ni,nj,nk))
+      xdata(ivar)%value = 0.0
+      xdata(ivar)%mean  = 0.0
+   end do
+
+   allocate (pp(ni, nj, nk))
+   allocate (pb(ni, nj, nk))
+
+   !do ie = 1, nens
+   do ie = istart(myproc), iend(myproc) ! each proc reads a subset of nens
+
+      write(ce,'(i3.3)') ie
       input_file = trim(directory)//'/'//trim(filename)//'.e'//trim(ce)
 
-      do k = 1, dim3
+      call ext_ncd_open_for_read(trim(input_file), 0, 0, "", fid, ierr)
+      if ( ierr /= 0 ) then
+         write(stdout, '(a,a)') 'Error opening ', trim(input_file)
+#ifdef DM_PARALLEL
+         call mpi_abort(mpi_comm_world,1,ierr)
+#else
+         stop
+#endif
+      end if
 
-         ! Read u, v:
-         var = "U"
-         call da_get_field( input_file, var, 3, dim1s, dim2, dim3, k, utmp )
-         var = "V"
-         call da_get_field( input_file, var, 3, dim1, dim2s, dim3, k, vtmp )
+      call ext_ncd_get_next_time(fid, DateStr, ierr)
 
-!        Interpolate u to mass pts:
-         do j = 1, dim2
-            do i = 1, dim1
-               u(i,j,k) = 0.5 * ( utmp(i,j) + utmp(i+1,j) )
-               v(i,j,k) = 0.5 * ( vtmp(i,j) + vtmp(i,j+1) )
+      ! read P and PB for converting T (theta) to temperature
+      call ext_ncd_get_var_info (fid, 'P', ndim, ordering, staggering,  &
+                                 start_index, end_index, wrftype, ierr)
+      call ext_ncd_read_field(fid, DateStr, 'P',         &
+                              pp, wrftype,               &
+                              0, 0, 0, ordering,         &
+                              staggering, dimnames,      & !dummy
+                              start_index, end_index,    & !dom
+                              start_index, end_index,    & !mem
+                              start_index, end_index,    & !pat
+                              ierr                   )
+      call ext_ncd_get_var_info (fid, 'PB', ndim, ordering, staggering, &
+                                 start_index, end_index, wrftype, ierr)
+      call ext_ncd_read_field(fid, DateStr, 'PB',        &
+                              pb, wrftype,               &
+                              0, 0, 0, ordering,         &
+                              staggering, dimnames,      & !dummy
+                              start_index, end_index,    & !dom
+                              start_index, end_index,    & !mem
+                              start_index, end_index,    & !pat
+                              ierr                   )
+
+      ivar = 0
+      var_loop: do iv = 1, nvar_max
+
+         if ( avail(iv)==0 .or. readit(iv)==0 ) cycle var_loop
+
+         varname = trim(varnames(iv))
+         call ext_ncd_get_var_info (fid, varname, ndim, ordering, staggering, &
+                                    start_index, end_index, wrftype, ierr)
+
+         ivar = ivar + 1
+         xdata(ivar)%name = fnames(iv)
+
+         write(stdout, '(a,a8,a,a)') ' Reading ', trim(varname), ' from ', trim(input_file)
+
+         if ( varname == 'PSFC' ) then
+            call ext_ncd_read_field(fid, DateStr, varname,     &
+                                    xfield(:,:,1), wrftype,    &
+                                    0, 0, 0, ordering,         &
+                                    staggering, dimnames,      & !dummy
+                                    start_index, end_index,    & !dom
+                                    start_index, end_index,    & !mem
+                                    start_index, end_index,    & !pat
+                                    ierr                   )
+            xdata(ivar)%value(:,:,1,ie) = xfield(:,:,1)
+         else if ( varname == 'U' ) then
+            call ext_ncd_read_field(fid, DateStr, varname,     &
+                                    xfield_u(:,:,:), wrftype,  &
+                                    0, 0, 0, ordering,         &
+                                    staggering, dimnames,      & !dummy
+                                    start_index, end_index,    & !dom
+                                    start_index, end_index,    & !mem
+                                    start_index, end_index,    & !pat
+                                    ierr                   )
+            do k = 1, nk
+               do j = 1, nj
+                  do i = 1, ni
+                     xdata(ivar)%value(i,j,k,ie) = &
+                        0.5 * ( dble(xfield_u(i,j,k)) + dble(xfield_u(i+1,j,k)) )
+                  end do
+               end do
             end do
+         else if ( varname == 'V' ) then
+            call ext_ncd_read_field(fid, DateStr, varname,     &
+                                    xfield_v(:,:,:), wrftype,  &
+                                    0, 0, 0, ordering,         &
+                                    staggering, dimnames,      & !dummy
+                                    start_index, end_index,    & !dom
+                                    start_index, end_index,    & !mem
+                                    start_index, end_index,    & !pat
+                                    ierr                   )
+            do k = 1, nk
+               do j = 1, nj
+                  do i = 1, ni
+                     xdata(ivar)%value(i,j,k,ie) = &
+                        0.5 * ( dble(xfield_v(i,j,k)) + dble(xfield_v(i,j+1,k)) )
+                  end do
+               end do
+            end do
+         else
+            call ext_ncd_read_field(fid, DateStr, varname,     &
+                                    xfield, wrftype,           &
+                                    0, 0, 0, ordering,         &
+                                    staggering, dimnames,      & !dummy
+                                    start_index, end_index,    & !dom
+                                    start_index, end_index,    & !mem
+                                    start_index, end_index,    & !pat
+                                    ierr                   )
+            if ( varname == 'QVAPOR' ) then
+               ! from mixing ratio to specific humidity
+               xdata(ivar)%value(:,:,:,ie) = xfield(:,:,:) / ( 1.0 + xfield(:,:,:) )
+            else if ( varname == 'T' ) then
+               xdata(ivar)%value(:,:,:,ie) = &
+                  (t00+xfield(:,:,:))*((pp(:,:,:)+pb(:,:,:))/p00)**kappa
+            else
+               xdata(ivar)%value(:,:,:,ie) = xfield
+            end if
+         end if
+
+      end do var_loop ! nvar loop
+
+      call ext_ncd_ioclose(fid, ierr)
+
+   end do ! nens loop
+
+   deallocate (pp)
+   deallocate (pb)
+   deallocate (xfield)
+   deallocate (xfield_u)
+   deallocate (xfield_v)
+
+   if ( myproc == root ) write(stdout,'(a)') ' Computing mean'
+   if ( myproc == root ) then
+      allocate (globuf  (ni, nj, nk, nens))
+   end if
+#ifdef DM_PARALLEL
+   if ( myproc == root ) then
+      allocate (globuf1d(ijk*nens))
+   end if
+   allocate (tmp1d (ijk*ncount(myproc)))
+#endif
+
+   do ivar = 1, nvar
+#ifdef DM_PARALLEL
+      tmp1d = reshape(xdata(ivar)%value(:,:,:,istart(myproc):iend(myproc)), &
+                      (/ ijk*ncount(myproc) /))
+      ! gather all ens members to root
+      call mpi_gatherv( tmp1d,                                 &
+                        ijk*ncount(myproc), true_mpi_real,     &
+                        globuf1d,                              &
+                        ijk*ncount, ijk*displs, true_mpi_real, &
+                        root, mpi_comm_world, ierr )
+      if ( ierr /= 0 ) then
+         write(stdout, '(a, i2)') 'Error mpi_gatherv on proc ', myproc
+         call mpi_abort(mpi_comm_world,1,ierr)
+      end if
+      if ( myproc == root ) then
+         globuf = reshape(globuf1d, (/ ni, nj, nk, nens /))
+      end if
+#else
+      globuf(:,:,:,:) = xdata(ivar)%value(:,:,:,:)
+#endif
+      if ( myproc == root ) then
+
+         allocate(xdata(ivar)%mnsq(ni,nj,nk))
+         allocate(xdata(ivar)%stdv(ni,nj,nk))
+         xdata(ivar)%mnsq  = 0.0
+         xdata(ivar)%stdv  = 0.0
+
+         do ie = 1, nens ! loop over all ens member
+            ens_inv = 1.0/real(ie)
+            ! calculate accumulating mean and mean square
+           xdata(ivar)%mean(:,:,:) = (real(ie-1)*xdata(ivar)%mean(:,:,:)+globuf(:,:,:,ie))*ens_inv
+           xdata(ivar)%mnsq(:,:,:) = (real(ie-1)*xdata(ivar)%mnsq(:,:,:)+globuf(:,:,:,ie)*globuf(:,:,:,ie))*ens_inv
          end do
 
-!        Read theta, and convert to temperature:
-         call da_get_trh( input_file, dim1, dim2, dim3, k, ttmp, dummy )
-         temp(:,:,k) = ttmp(:,:)
+         if ( write_mean_stdv ) then
+            write(stdout,'(a,a)') ' Computing standard deviation and writing out for ', trim(xdata(ivar)%name)
+            xdata(ivar)%stdv(:,:,:) = sqrt(xdata(ivar)%mnsq(:,:,:)-xdata(ivar)%mean(:,:,:)*xdata(ivar)%mean(:,:,:))
 
-!        Read mixing ratio, and convert to specific humidity:
-         var = "QVAPOR"
-         call da_get_field( input_file, var, 3, dim1, dim2, dim3, k, dummy )
-         q(:,:,k) = dummy(:,:) / ( 1.0 + dummy(:,:) )
+            ! output mean
+            output_file = trim(xdata(ivar)%name)//'.mean'
+            open (ounit, file = output_file, form='unformatted')
+            write(ounit) ni, nj, nk
+            if ( trim(xdata(ivar)%name) == 'ps' ) then
+               write(ounit) xdata(ivar)%mean(:,:,1)
+            else
+               write(ounit) xdata(ivar)%mean(:,:,1:nk)
+            end if
+            close(ounit)
 
-!        Read hydrometeors
-         if ( has_cloud ) then
-            var = "QCLOUD"
-            call da_get_field( input_file, var, 3, dim1, dim2, dim3, k, dummy )
-            qcloud(:,:,k) = dummy(:,:)
-         end if
-         if ( has_rain ) then
-            var = "QRAIN"
-            call da_get_field( input_file, var, 3, dim1, dim2, dim3, k, dummy )
-            qrain(:,:,k) = dummy(:,:)
-         end if
-         if ( has_ice ) then
-            var = "QICE"
-            call da_get_field( input_file, var, 3, dim1, dim2, dim3, k, dummy )
-            qice(:,:,k) = dummy(:,:)
-         end if
-         if ( has_snow ) then
-            var = "QSNOW"
-            call da_get_field( input_file, var, 3, dim1, dim2, dim3, k, dummy )
-            qsnow(:,:,k) = dummy(:,:)
-         end if
-         if ( has_graup ) then
-            var = "QGRAUP"
-            call da_get_field( input_file, var, 3, dim1, dim2, dim3, k, dummy )
-            qgraup(:,:,k) = dummy(:,:)
-         end if
+            ! output stdv
+            output_file = trim(xdata(ivar)%name)//'.stdv'
+            open (ounit, file = output_file, form='unformatted')
+            write(ounit) ni, nj, nk
+            if ( trim(xdata(ivar)%name) == 'ps' ) then
+               write(ounit) xdata(ivar)%stdv(:,:,1)
+            else
+               write(ounit) xdata(ivar)%stdv(:,:,1:nk)
+            end if
+            close(ounit)
+         end if ! write_mean_stdv
+         deallocate(xdata(ivar)%mnsq)
+         deallocate(xdata(ivar)%stdv)
 
-      end do
+      end if ! root
 
-!     Finally, extract surface pressure:
-      var = "PSFC"
-      call da_get_field( input_file, var, 2, dim1, dim2, dim3, 1, psfc )
-
-!     Write out ensemble forecasts for this member:
-      output_file = 'tmp.e'//ce  
-      open (gen_be_ounit, file = output_file, form='unformatted')
-      write(gen_be_ounit)date, dim1, dim2, dim3
-      write(gen_be_ounit)u
-      write(gen_be_ounit)v
-      write(gen_be_ounit)temp
-      write(gen_be_ounit)q
-      if ( has_cloud ) write(gen_be_ounit)qcloud
-      if ( has_rain )  write(gen_be_ounit)qrain
-      if ( has_ice )   write(gen_be_ounit)qice
-      if ( has_snow )  write(gen_be_ounit)qsnow
-      if ( has_graup ) write(gen_be_ounit)qgraup
-      write(gen_be_ounit)psfc
-      close(gen_be_ounit)
-
-!     Calculate accumulating mean and mean square:
-      member_inv = 1.0 / real(member)
-      u_mean = ( real( member-1 ) * u_mean + u ) * member_inv
-      v_mean = ( real( member-1 ) * v_mean + v ) * member_inv
-      temp_mean = ( real( member-1 ) * temp_mean + temp ) * member_inv
-      q_mean = ( real( member-1 ) * q_mean + q ) * member_inv
-      psfc_mean = ( real( member-1 ) * psfc_mean + psfc ) * member_inv
-      u_mnsq = ( real( member-1 ) * u_mnsq + u * u ) * member_inv
-      v_mnsq = ( real( member-1 ) * v_mnsq + v * v ) * member_inv
-      temp_mnsq = ( real( member-1 ) * temp_mnsq + temp * temp ) * member_inv
-      q_mnsq = ( real( member-1 ) * q_mnsq + q * q ) * member_inv
-      psfc_mnsq = ( real( member-1 ) * psfc_mnsq + psfc * psfc ) * member_inv
-      if ( has_cloud ) then
-         qcloud_mean = ( real( member-1 ) * qcloud_mean + qcloud ) * member_inv
-         qcloud_mnsq = ( real( member-1 ) * qcloud_mnsq + qcloud * qcloud ) * member_inv
-      end if
-      if ( has_rain ) then
-         qrain_mean = ( real( member-1 ) * qrain_mean + qrain ) * member_inv
-         qrain_mnsq = ( real( member-1 ) * qrain_mnsq + qrain * qrain ) * member_inv
-      end if
-      if ( has_ice ) then
-         qice_mean = ( real( member-1 ) * qice_mean + qice ) * member_inv
-         qice_mnsq = ( real( member-1 ) * qice_mnsq + qice * qice ) * member_inv
-      end if
-      if ( has_snow ) then
-         qsnow_mean = ( real( member-1 ) * qsnow_mean + qsnow ) * member_inv
-         qsnow_mnsq = ( real( member-1 ) * qsnow_mnsq + qsnow * qsnow ) * member_inv
-      end if
-      if ( has_graup ) then
-         qgraup_mean = ( real( member-1 ) * qgraup_mean + qgraup ) * member_inv
-         qgraup_mnsq = ( real( member-1 ) * qgraup_mnsq + qgraup * qgraup ) * member_inv
-      end if
-
-   end do
-
-   deallocate( utmp )
-   deallocate( vtmp )
-   deallocate( ttmp )
-   deallocate( dummy )
-
-!---------------------------------------------------------------------------------------------
-   write(6,'(/a)')' [4] Compute perturbations and output' 
-!---------------------------------------------------------------------------------------------
-
-   if ( remove_mean ) then
-      write(6,'(a)') "    Calculate ensemble perturbations"
-   else
-      write(6,'(a)') "    WARNING: Not removing ensemble mean (outputs are full-fields)"
-   end if
-
-   do member = 1, ne
-      write(UNIT=ce,FMT='(i3.3)')member
-
-!     Re-read ensemble member standard fields:
-      input_file = 'tmp.e'//ce  
-      open (gen_be_iunit, file = input_file, form='unformatted')
-      read(gen_be_iunit)date, dim1, dim2, dim3
-      read(gen_be_iunit)u
-      read(gen_be_iunit)v
-      read(gen_be_iunit)temp
-      read(gen_be_iunit)q
-      if ( has_cloud ) read(gen_be_iunit)qcloud
-      if ( has_rain )  read(gen_be_iunit)qrain
-      if ( has_ice )   read(gen_be_iunit)qice
-      if ( has_snow )  read(gen_be_iunit)qsnow
-      if ( has_graup ) read(gen_be_iunit)qgraup
-      read(gen_be_iunit)psfc
-      close(gen_be_iunit)
-
+#ifdef DM_PARALLEL
       if ( remove_mean ) then
-         u = u - u_mean
-         v = v - v_mean
-         temp = temp - temp_mean
-         q = q - q_mean
-         if ( has_cloud ) qcloud = qcloud - qcloud_mean
-         if ( has_rain )  qrain  = qrain  - qrain_mean
-         if ( has_ice )   qice   = qice   - qice_mean
-         if ( has_snow )  qsnow  = qsnow  - qsnow_mean
-         if ( has_graup ) qgraup = qgraup - qgraup_mean
-         psfc = psfc - psfc_mean
+         call mpi_bcast(xdata(ivar)%mean, ijk , true_mpi_real , root , mpi_comm_world, ierr )
       end if
-
-!     Write out perturbations for this member:
-
-      output_file = 'u.e'//trim(ce) ! Output u.
-      open (gen_be_ounit, file = output_file, form='unformatted')
-      write(gen_be_ounit)dim1, dim2, dim3
-      write(gen_be_ounit)u
-      close(gen_be_ounit)
-
-      output_file = 'v.e'//trim(ce) ! Output v.
-      open (gen_be_ounit, file = output_file, form='unformatted')
-      write(gen_be_ounit)dim1, dim2, dim3
-      write(gen_be_ounit)v
-      close(gen_be_ounit)
-
-      output_file = 't.e'//trim(ce) ! Output t.
-      open (gen_be_ounit, file = output_file, form='unformatted')
-      write(gen_be_ounit)dim1, dim2, dim3
-      write(gen_be_ounit)temp
-      close(gen_be_ounit)
-
-      output_file = 'q.e'//trim(ce) ! Output q.
-      open (gen_be_ounit, file = output_file, form='unformatted')
-      write(gen_be_ounit)dim1, dim2, dim3
-      write(gen_be_ounit)q
-      close(gen_be_ounit)
-
-      output_file = 'ps.e'//trim(ce) ! Output ps.
-      open (gen_be_ounit, file = output_file, form='unformatted')
-      write(gen_be_ounit)dim1, dim2, dim3
-      write(gen_be_ounit)psfc
-      close(gen_be_ounit)
-
-      if ( has_cloud ) then
-         output_file = 'qcloud.e'//trim(ce) ! Output qcloud.
-         open (gen_be_ounit, file = output_file, form='unformatted')
-         write(gen_be_ounit)dim1, dim2, dim3
-         write(gen_be_ounit)qcloud
-         close(gen_be_ounit)
-      end if
-
-      if ( has_rain ) then
-         output_file = 'qrain.e'//trim(ce) ! Output qrain.
-         open (gen_be_ounit, file = output_file, form='unformatted')
-         write(gen_be_ounit)dim1, dim2, dim3
-         write(gen_be_ounit)qrain
-         close(gen_be_ounit)
-      end if
-
-      if ( has_ice ) then
-         output_file = 'qice.e'//trim(ce) ! Output qice.
-         open (gen_be_ounit, file = output_file, form='unformatted')
-         write(gen_be_ounit)dim1, dim2, dim3
-         write(gen_be_ounit)qice
-         close(gen_be_ounit)
-      end if
-
-      if ( has_snow ) then
-         output_file = 'qsnow.e'//trim(ce) ! Output qsnow.
-         open (gen_be_ounit, file = output_file, form='unformatted')
-         write(gen_be_ounit)dim1, dim2, dim3
-         write(gen_be_ounit)qsnow
-         close(gen_be_ounit)
-      end if
-
-      if ( has_graup ) then
-         output_file = 'qgraup.e'//trim(ce) ! Output qgraup.
-         open (gen_be_ounit, file = output_file, form='unformatted')
-         write(gen_be_ounit)dim1, dim2, dim3
-         write(gen_be_ounit)qgraup
-         close(gen_be_ounit)
-      end if
+#endif
 
    end do
 
-!  Write out mean/stdv fields (stdv stored in mnsq arrays):
-   u_mnsq = sqrt( u_mnsq - u_mean * u_mean )
-   v_mnsq = sqrt( v_mnsq - v_mean * v_mean )
-   temp_mnsq = sqrt( temp_mnsq - temp_mean * temp_mean )
-   q_mnsq = sqrt( q_mnsq - q_mean * q_mean )
-   psfc_mnsq = sqrt( psfc_mnsq - psfc_mean * psfc_mean )
-   if ( has_cloud ) qcloud_mnsq = sqrt( qcloud_mnsq - qcloud_mean * qcloud_mean )
-   if ( has_rain )  qrain_mnsq  = sqrt( qrain_mnsq - qrain_mean * qrain_mean )
-   if ( has_ice )   qice_mnsq   = sqrt( qice_mnsq - qice_mean * qice_mean )
-   if ( has_snow )  qsnow_mnsq  = sqrt( qsnow_mnsq - qsnow_mean * qsnow_mean )
-   if ( has_graup ) qgraup_mnsq = sqrt( qgraup_mnsq - qgraup_mean * qgraup_mean )
+#ifdef DM_PARALLEL
+   call mpi_barrier (mpi_comm_world,ierr)
+#endif
 
-   output_file = 'u.mean' ! Output u.
-   open (gen_be_ounit, file = output_file, form='unformatted')
-   write(gen_be_ounit)dim1, dim2, dim3
-   write(gen_be_ounit)u_mean
-   close(gen_be_ounit)
-
-   output_file = 'u.stdv' ! Output u.
-   open (gen_be_ounit, file = output_file, form='unformatted')
-   write(gen_be_ounit)dim1, dim2, dim3
-   write(gen_be_ounit)u_mnsq
-   close(gen_be_ounit)
-
-   output_file = 'v.mean' ! Output v.
-   open (gen_be_ounit, file = output_file, form='unformatted')
-   write(gen_be_ounit)dim1, dim2, dim3
-   write(gen_be_ounit)v_mean
-   close(gen_be_ounit)
-
-   output_file = 'v.stdv' ! Output v.
-   open (gen_be_ounit, file = output_file, form='unformatted')
-   write(gen_be_ounit)dim1, dim2, dim3
-   write(gen_be_ounit)v_mnsq
-   close(gen_be_ounit)
-
-   output_file = 't.mean' ! Output t.
-   open (gen_be_ounit, file = output_file, form='unformatted')
-   write(gen_be_ounit)dim1, dim2, dim3
-   write(gen_be_ounit)temp_mean
-   close(gen_be_ounit)
-
-   output_file = 't.stdv' ! Output t.
-   open (gen_be_ounit, file = output_file, form='unformatted')
-   write(gen_be_ounit)dim1, dim2, dim3
-   write(gen_be_ounit)temp_mnsq
-   close(gen_be_ounit)
-
-   output_file = 'q.mean' ! Output q.
-   open (gen_be_ounit, file = output_file, form='unformatted')
-   write(gen_be_ounit)dim1, dim2, dim3
-   write(gen_be_ounit)q_mean
-   close(gen_be_ounit)
-
-   output_file = 'q.stdv' ! Output q.
-   open (gen_be_ounit, file = output_file, form='unformatted')
-   write(gen_be_ounit)dim1, dim2, dim3
-   write(gen_be_ounit)q_mnsq
-   close(gen_be_ounit)
-
-   output_file = 'ps.mean' ! Output ps.
-   open (gen_be_ounit, file = output_file, form='unformatted')
-   write(gen_be_ounit)dim1, dim2, dim3
-   write(gen_be_ounit)psfc_mean
-   close(gen_be_ounit)
-
-   output_file = 'ps.stdv' ! Output ps.
-   open (gen_be_ounit, file = output_file, form='unformatted')
-   write(gen_be_ounit)dim1, dim2, dim3
-   write(gen_be_ounit)psfc_mnsq
-   close(gen_be_ounit)
-
-   if ( has_cloud ) then
-      output_file = 'qcloud.mean' ! Output qcloud.
-      open (gen_be_ounit, file = output_file, form='unformatted')
-      write(gen_be_ounit)dim1, dim2, dim3
-      write(gen_be_ounit)qcloud_mean
-      close(gen_be_ounit)
-
-      output_file = 'qcloud.stdv' ! Output qcloud.
-      open (gen_be_ounit, file = output_file, form='unformatted')
-      write(gen_be_ounit)dim1, dim2, dim3
-      write(gen_be_ounit)qcloud_mnsq
-      close(gen_be_ounit)
+   if ( myproc == root ) then
+      deallocate (globuf)
    end if
-
-   if ( has_rain ) then
-      output_file = 'qrain.mean' ! Output qrain.
-      open (gen_be_ounit, file = output_file, form='unformatted')
-      write(gen_be_ounit)dim1, dim2, dim3
-      write(gen_be_ounit)qrain_mean
-      close(gen_be_ounit)
-
-      output_file = 'qrain.stdv' ! Output qrain.
-      open (gen_be_ounit, file = output_file, form='unformatted')
-      write(gen_be_ounit)dim1, dim2, dim3
-      write(gen_be_ounit)qrain_mnsq
-      close(gen_be_ounit)
+#ifdef DM_PARALLEL
+   if ( myproc == root ) then
+      deallocate (globuf1d)
    end if
+   deallocate (tmp1d)
+#endif
 
-   if ( has_ice ) then
-      output_file = 'qice.mean' ! Output qice.
-      open (gen_be_ounit, file = output_file, form='unformatted')
-      write(gen_be_ounit)dim1, dim2, dim3
-      write(gen_be_ounit)qice_mean
-      close(gen_be_ounit)
+   if ( myproc == root ) write(stdout,'(a)') ' Computing perturbations and writing out'
+   do ivar = 1, nvar
+      do ie = istart(myproc), iend(myproc) ! each proc loops over a subset of ens
+         if ( remove_mean ) then
+            xdata(ivar)%value(:,:,:,ie) = xdata(ivar)%value(:,:,:,ie) - xdata(ivar)%mean(:,:,:)
+         end if
+         write(ce,'(i3.3)') ie
+         output_file = trim(xdata(ivar)%name)//'.e'//trim(ce)
+         open (ounit, file = output_file, form='unformatted')
+         write(ounit) ni, nj, nk
+         if ( trim(xdata(ivar)%name) == 'ps' ) then
+            write(ounit) xdata(ivar)%value(:,:,1,ie)
+         else
+            write(ounit) xdata(ivar)%value(:,:,1:nk,ie)
+         end if
+         close(ounit)
+      end do
+   end do
 
-      output_file = 'qice.stdv' ! Output qice.
-      open (gen_be_ounit, file = output_file, form='unformatted')
-      write(gen_be_ounit)dim1, dim2, dim3
-      write(gen_be_ounit)qice_mnsq
-      close(gen_be_ounit)
-   end if
+#ifdef DM_PARALLEL
+   call mpi_barrier (mpi_comm_world,ierr)
+#endif
 
-   if ( has_snow ) then
-      output_file = 'qsnow.mean' ! Output qsnow.
-      open (gen_be_ounit, file = output_file, form='unformatted')
-      write(gen_be_ounit)dim1, dim2, dim3
-      write(gen_be_ounit)qsnow_mean
-      close(gen_be_ounit)
+   deallocate (istart)
+   deallocate (iend  )
+   deallocate (ncount)
+   deallocate (displs)
 
-      output_file = 'qsnow.stdv' ! Output qsnow.
-      open (gen_be_ounit, file = output_file, form='unformatted')
-      write(gen_be_ounit)dim1, dim2, dim3
-      write(gen_be_ounit)qsnow_mnsq
-      close(gen_be_ounit)
-   end if
+   do ivar = 1, nvar
+      deallocate(xdata(ivar)%value)
+      deallocate(xdata(ivar)%mean)
+   end do
+   deallocate(xdata)
 
-   if ( has_graup ) then
-      output_file = 'qgraup.mean' ! Output qgraup.
-      open (gen_be_ounit, file = output_file, form='unformatted')
-      write(gen_be_ounit)dim1, dim2, dim3
-      write(gen_be_ounit)qgraup_mean
-      close(gen_be_ounit)
+   if ( myproc == root ) write(stdout,'(a)')' All Done!'
 
-      output_file = 'qgraup.stdv' ! Output qgraup.
-      open (gen_be_ounit, file = output_file, form='unformatted')
-      write(gen_be_ounit)dim1, dim2, dim3
-      write(gen_be_ounit)qgraup_mnsq
-      close(gen_be_ounit)
-   end if
+#ifdef DM_PARALLEL
+   call mpi_finalize(ierr)
+#endif
 
-   call da_free_unit(gen_be_iunit)
-   call da_free_unit(gen_be_ounit)
-
-#ifdef crayx1
 contains
 
-   subroutine getarg(i, harg)
-     implicit none
-     character(len=*) :: harg
-     integer :: ierr, ilen, i
+subroutine para_range(n1, n2, nprocs, myrank, ista, iend)
+!
+! Purpose: determines the start and end index for each PE
+!          given the loop range.
+! History: 2014-02-24  Xin Zhang
+!
+   implicit none
 
-     call pxfgetarg(i, harg, ilen, ierr)
-     return
-   end subroutine getarg
-#endif
+   integer, intent(in)  :: n1, n2, nprocs, myrank
+   integer, intent(out) :: ista, iend
+
+   integer :: iwork1, iwork2
+
+   iwork1 = (n2 - n1 + 1) / nprocs
+   iwork2 = mod(n2 - n1 + 1, nprocs)
+   ista = myrank * iwork1 + n1 + min(myrank, iwork2)
+   iend = ista + iwork1 - 1
+   if (iwork2 > myrank) iend = iend + 1
+   return
+end subroutine para_range
 
 end program gen_be_ep2
 
+! wrf_debug is called by ext_ncd_ subroutines
+! add dummy subroutine wrf_debug here to avoid WRF dependency
+SUBROUTINE wrf_debug( level , str )
+  IMPLICIT NONE
+  CHARACTER*(*) str
+  INTEGER , INTENT (IN) :: level
+  RETURN
+END SUBROUTINE wrf_debug

@@ -2,9 +2,11 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 
 
    !-----------------------------------------------------------------------
-   ! Purpose: TBD
-   !    Updated for Analysis on Arakawa-C grid
-   !    Author: Syed RH Rizvi,  MMM/ESSL/NCAR,  Date: 10/22/2008
+   ! Purpose: driver routine for getting innovation vectors
+   ! History:$
+   !    10/22/2008 - Updated for Analysis on Arakawa-C grid (Syed RH Rizvi, NCAR)
+   !    03/2017 - Radar neighborhood no-rain scheme (radar_non_precip_opt=2)
+   !              requires all processors to call da_get_innov_vector_radar
    !-----------------------------------------------------------------------
 
    implicit none
@@ -97,6 +99,8 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
          endif 
       end if
 
+!    if ( multi_inc == 0 .or. multi_inc == 1) then
+! eof_decomposition error if uesed
       ! Radiosonde:
       if (iv%info(sound)%nlocal > 0) then
          call da_get_innov_vector_sound     (it, num_qcstat_conv, grid, ob, iv)
@@ -144,7 +148,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
          call da_get_innov_vector_ssmt2     (it, num_qcstat_conv,grid, ob, iv)
       if (iv%info(satem)%nlocal     > 0) &
          call da_get_innov_vector_satem     (it, num_qcstat_conv,grid, ob, iv)
-      if (iv%info(radar)%nlocal     > 0) &
+      if (iv%info(radar)%nlocal     >= 0 .and. use_radarobs) &
          call da_get_innov_vector_radar     (it, grid, ob, iv)
       if (iv%info(qscat)%nlocal     > 0) &
          call da_get_innov_vector_qscat     (it, num_qcstat_conv,grid, ob, iv)
@@ -167,7 +171,8 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       end if
       if (iv%info(airsr)%nlocal     > 0) &
       call da_get_innov_vector_airsr    (it,num_qcstat_conv, grid, ob, iv)
-
+ 
+!   end if
    !----------------------------------------------
    ! [5]  write out iv in ascii format
    !-----------------------------------------------
@@ -197,10 +202,26 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
 
 #if defined(RTTOV) || defined(CRTM)
    if (use_rad) then
-      if ( use_varbc .or. freeze_varbc ) then
-         if ( num_fgat_time > 1 ) call da_varbc_coldstart(iv)
-      end if
-      if ( use_varbc .and. it == 1 ) call da_varbc_precond(iv)
+       if ( use_varbc .or. freeze_varbc ) then
+!         if ( num_fgat_time > 1 ) call da_varbc_coldstart(iv)
+!      end if
+!      if ( use_varbc .and. it == 1 ) call da_varbc_precond(iv)
+          if ( num_fgat_time > 1 ) then
+             iv%instid(:)%info%n1 = 1
+             iv%instid(:)%info%n2 = iv%instid(:)%info%plocal(num_fgat_time)
+             call da_varbc_coldstart(iv)
+             do n= num_fgat_time , 1, -1
+                iv%time = n 
+                iv%instid(:)%info%n1 = iv%instid(:)%info%plocal(iv%time-1) + 1 
+                iv%instid(:)%info%n2 = iv%instid(:)%info%plocal(iv%time) 
+                call da_varbc_direct(iv)
+                if (qc_rad) then
+                   call da_qc_rad(it, ob, iv) 
+                end if     ! qc is conducted inside n1-n2
+             end do
+          end if
+       end if
+       if ( use_varbc .and. it == 1 ) call da_varbc_precond(iv)   !fixed by wuyl
    end if
 #endif
 
@@ -227,6 +248,19 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       call domain_clock_set (grid, time_step_seconds=time_step_seconds)
       call domain_clockprint(150, grid, 'get CurrTime from clock,')
    end if
+
+#if defined(CRTM) || defined(RTTOV)
+   !----------------------------------------------
+   ! write out or read in radiance iv for multi in binary format
+   !-----------------------------------------------
+   if (use_rad) then
+      if ( multi_inc == 1 ) then
+         call da_write_iv_rad_for_multi_inc(it,ob,iv)
+      elseif ( multi_inc == 2 ) then
+         call da_read_iv_rad_for_multi_inc(it,ob,iv)
+      end if
+   end if
+#endif
 
    if ( multi_inc == 1 ) then
 #ifdef DM_PARALLEL
@@ -280,6 +314,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       call da_write_iv_rad_ascii(it,ob,iv)
    end if
 #endif
+
 
    !----------------------------------------------------------
    ! [6]  write out filtered radiance obs in binary format

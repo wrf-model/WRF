@@ -43,7 +43,8 @@ subroutine da_get_time_slots(nt,tmin,tana,tmax,time_slots,itime_ana)
    if (nt > 1) then
       dt = (time_slots(nt)-time_slots(0))/float(nt-1)
       time_slots(1)  = time_slots(0)+dt*0.5
-      do it=2,nt-1
+!      do it=2,nt-1
+      do it=2,nt  !wuyl
          time_slots(it) = time_slots(it-1)+dt
       end do
    end if

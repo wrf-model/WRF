@@ -1,0 +1,24 @@
+da_read_iv_for_multi_inc_opt2.inc:760:         iobs = iv%info(radar)%obs_global_index(n)
+da_read_iv_for_multi_inc_opt2.inc:770:            iobs = iv%info(radar)%obs_global_index(n)
+da_read_iv_for_multi_inc_opt2.inc:784:            iobs = iv%info(radar)%obs_global_index(n)
+da_read_iv_for_multi_inc_opt2.inc:798:            iobs = iv%info(radar)%obs_global_index(n)
+da_read_iv_for_multi_inc_opt2.inc:818:            iobs = iv%info(radar)%obs_global_index(n)
+da_read_lsac_util.inc:346:         iv%info(bogus)%obs_global_index(nlocal) = nlocal
+da_read_obs_ascii.inc:788:               iv%info(tamdar)%obs_global_index(ilocal(tamdar)) = ntotal(tamdar)
+da_read_obs_ascii.inc:1099:               iv%info(airep)%obs_global_index(ilocal(airep)) = ntotal(airep)
+da_read_obs_ascii.inc:1447:            iv%info(obs_index)%obs_global_index(nlocal(obs_index)) = ntotal(obs_index)
+da_read_obs_ascii.inc:1472:               iv%info(sonde_sfc)%obs_global_index(ilocal(sonde_sfc)) = ntotal(obs_index)
+da_read_obs_ascii.inc:1498:               iv%info(tamdar_sfc)%obs_global_index(ilocal(tamdar_sfc)) = ntotal(tamdar_sfc)
+da_read_obs_bufrgpsro.inc:56:       integer                  :: obs_global_index
+da_read_obs_bufrgpsro.inc:331:         plink%obs_global_index = ntotal
+da_read_obs_bufrgpsro.inc:399:         allocate (iv%info(gpsref)%obs_global_index(iv%info(gpsref)%nlocal)) 
+da_read_obs_bufrgpsro.inc:443:         iv%info(gpsref)%obs_global_index(nlocal) = plink%obs_global_index
+da_read_obs_bufr.inc:2160:         iv%info(obs_index)%obs_global_index(ilocal(obs_index)) = iv%info(obs_index)%ntotal
+da_read_obs_bufr.inc:2186:            iv%info(sonde_sfc)%obs_global_index(ilocal(sonde_sfc)) =iv%info(sonde_sfc)%ntotal
+da_read_obs_radar.inc:285:               iv%info(radar)%obs_global_index(ilocal) = ntotal
+da_read_obs_rain.inc:247:            iv%info(rain)%obs_global_index(ilocal) = ntotal
+da_write_iv_for_multi_inc_opt2.inc:764:         iobs = iv%info(radar)%obs_global_index(n)
+da_write_iv_for_multi_inc_opt2.inc:786:            iobs = iv%info(radar)%obs_global_index(n)
+da_write_iv_for_multi_inc_opt2.inc:811:            iobs = iv%info(radar)%obs_global_index(n)
+da_write_iv_for_multi_inc_opt2.inc:836:            iobs = iv%info(radar)%obs_global_index(n)
+da_write_iv_for_multi_inc_opt2.inc:867:            iobs = iv%info(radar)%obs_global_index(n)

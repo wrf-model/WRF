@@ -69,7 +69,6 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
    ! [2] metar obs:
 
    if (iv%info(metar)%plocal(iv%time)-iv%info(metar)%plocal(iv%time-1) > 0) then
-
        open(unit=unit_in,file=trim(filename)//'.metar',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -272,7 +271,6 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
    ! [9] buoy obs:
 
    if (iv%info(buoy)%plocal(iv%time)-iv%info(buoy)%plocal(iv%time-1) > 0) then
-
        open(unit=unit_in,file=trim(filename)//'.buoy',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -505,7 +503,6 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
    ! [17] satem obs:
 
    if (iv%info(satem)%plocal(iv%time)-iv%info(satem)%plocal(iv%time-1) > 0) then
-
        open(unit=unit_in,file=trim(filename)//'.satem',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &
@@ -592,7 +589,6 @@ subroutine da_read_iv_for_multi_inc_opt2(file_index, iv)
    ! [20] scatterometer obs:
 
    if (iv%info(qscat)%plocal(iv%time)-iv%info(qscat)%plocal(iv%time-1) > 0) then
-
        open(unit=unit_in,file=trim(filename)//'.qscat',form='formatted',status='old',iostat=ios)
        if (ios /= 0) Then
           call da_error(__FILE__,__LINE__, &

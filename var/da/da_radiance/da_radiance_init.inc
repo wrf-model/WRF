@@ -23,7 +23,7 @@ subroutine da_radiance_init(iv,ob)
 !
 !  local arguments
 !------------------- 
- integer   :: n, j, ichan
+ integer   :: n, j, ichan, iret
  integer :: nsensor, unit_factor_rad
  integer     :: error
  integer, allocatable   ::  nscan(:), nchanl(:)
@@ -134,13 +134,25 @@ subroutine da_radiance_init(iv,ob)
    else if ( trim( crtm_sensor_name(rtminit_sensor(n))) == 'imgr' ) then
       nchanl(n)  = 4
       nscan(n)   = 60
+   else if ( trim( crtm_sensor_name(rtminit_sensor(n))) == 'ahi' ) then
+   
+     !open the ahi info file 
+      open(unit=1990,file='ahi_info',status='old',iostat=iret)
+      if(iret /= 0)then
+		  call da_error(__FILE__,__LINE__,(/"Read ahi_info error: no such file"/))
+      end if	  
+     !read ahi information
+      read(1990,*)  
+	  read(1990,*) 
+	  read(1990,*) 
+      read(1990,*) nscan(n) 
+      close(1990)     
+	  write(*,*) nscan(n)   
+      nchanl(n)  = 10
+      
    else
-      write(unit=message(1),fmt='(A)') "Unrecognized instrument: "
-      write(unit=message(2),fmt='(A,I4)') "rtminit_platform = ",rtminit_platform(n)
-      write(unit=message(3),fmt='(A,I4)') "rtminit_satid    = ",rtminit_satid(n)
-      write(unit=message(4),fmt='(A,I4)') "rtminit_sensor   = ",rtminit_sensor(n)
-      write(unit=message(5),fmt='(A)') "Check your namelist settings"
-      call da_error(__FILE__,__LINE__,message(1:5))
+      call da_error(__FILE__,__LINE__, &
+        (/"Unrecognized instrument"/))
    end if
 
    iv%instid(n)%nchan  = nchanl(n)

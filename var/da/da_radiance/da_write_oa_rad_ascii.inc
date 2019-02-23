@@ -12,7 +12,7 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
    type (y_type),     intent(in)  :: re       ! O-A structure.
 
    integer                        :: n        ! Loop counter.
-   integer                        :: i, k     ! Index dimension.
+   integer                        :: i, k, m, m1, m2     ! Index dimension.
    integer                        :: nlevelss ! Number of obs levels.
 
    integer            :: ios, oma_rad_unit
@@ -31,8 +31,12 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
 
       ! count number of obs within the proc_domain
       !---------------------------------------------
+   do m=num_fgat_time,1,-1
+      iv%instid(i)%info%n1 = iv%instid(i)%info%plocal(m-1) + 1 
+      iv%instid(i)%info%n2=iv%instid(i)%info%plocal(m)
       ndomain = 0
-      do n =1,iv%instid(i)%num_rad
+   !   do n =1,iv%instid(i)%num_rad
+       do n = iv%instid(i)%info%n1,iv%instid(i)%info%n2
          if (iv%instid(i)%info%proc_domain(1,n)) then
             ndomain = ndomain + 1
          end if
@@ -41,7 +45,11 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
 
       amsr2 = index(iv%instid(i)%rttovid_string,'amsr2') > 0
 
+   if (num_fgat_time >1) then
+      write(unit=filename, fmt='(i2.2,a,i2.2,a,i4.4)') it,'_oma_'//trim(iv%instid(i)%rttovid_string)//'_',m,'.', myproc
+   else
       write(unit=filename, fmt='(i2.2,a,i4.4)') it,'_oma_'//trim(iv%instid(i)%rttovid_string)//'.', myproc
+   end if
 
       call da_get_unit(oma_rad_unit)
       open(unit=oma_rad_unit,file=trim(filename),form='formatted',iostat=ios)
@@ -62,7 +70,8 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
       write(unit=oma_rad_unit,fmt='(a)') ' xb-surf-info : i t2m mr2m(ppmv) u10 v10 ps ts smois tslb snowh isflg &
                        & soiltyp vegtyp vegfra elev clwp'
       ndomain = 0
-      do n=1,iv%instid(i)%num_rad
+!      do n=1,iv%instid(i)%num_rad
+       do n = iv%instid(i)%info%n1,iv%instid(i)%info%n2
          if (iv%instid(i)%info%proc_domain(1,n)) then
             ndomain=ndomain+1
             if ( amsr2 ) then !write out clw
@@ -214,6 +223,7 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
       end do     ! end do pixels
       close(unit=oma_rad_unit)
       call da_free_unit(oma_rad_unit)
+     end do ! n1,n2 wuyl
    end do    !! end do instruments
 
    if (trace_use) call da_trace_exit("da_write_oa_rad_ascii")

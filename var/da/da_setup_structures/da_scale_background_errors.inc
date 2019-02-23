@@ -20,7 +20,7 @@ subroutine da_scale_background_errors ( be, it )
 ! Rewind the unit:
     be_rf_unit    = unit_end + 1
     be_print_unit = unit_end + 2
-    rewind (be_rf_unit)
+    if ( rootproc ) rewind (be_rf_unit)
 !
 ! Read the dimensions and allocate the arrays:
     read(be_rf_unit) kz, jy, ix, v1_mz, v2_mz, v3_mz, v4_mz, v5_mz, ds

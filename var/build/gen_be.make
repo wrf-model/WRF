@@ -23,6 +23,7 @@ be : \
 	gen_be_stage0_gsi.exe \
 	gen_be_ep1.exe \
 	gen_be_ep2.exe \
+	gen_be_ep2_serial.exe \
 	gen_be_stage1.exe \
 	gen_be_vertloc.exe \
 	gen_be_addmean.exe \
@@ -100,19 +101,28 @@ gen_be_ep1.exe     : gen_be_ep1.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
 	$(SFC) -o gen_be_ep1.exe $(LDFLAGS) $(GEN_BE_OBJS)  gen_be_ep1.o $(GEN_BE_LIB)
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
-gen_be_ep2.exe     : gen_be_ep2.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
+gen_be_ep2_serial.exe: gen_be_ep2_serial.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
 	$(RM) $@
-	$(SED_FTN) gen_be_ep2.f90 > gen_be_ep2.b
+	$(SED_FTN) gen_be_ep2_serial.f90 > gen_be_ep2_serial.b
 	x=`echo "$(SFC)" | awk '{print $$1}'` ; export x ; \
         if [ $$x = "gfortran" ] ; then \
            echo removing external declaration of iargc for gfortran ; \
-           $(CPP) $(CPPFLAGS) $(FPPFLAGS) gen_be_ep2.b | sed '/integer *, *external.*iargc/d' > gen_be_ep2.f ;\
+           $(CPP) $(CPPFLAGS) $(FPPFLAGS) gen_be_ep2_serial.b | sed '/integer *, *external.*iargc/d' > gen_be_ep2_serial.f ;\
         else \
-           $(CPP) $(CPPFLAGS) $(FPPFLAGS) gen_be_ep2.b > gen_be_ep2.f ; \
+           $(CPP) $(CPPFLAGS) $(FPPFLAGS) gen_be_ep2_serial.b > gen_be_ep2_serial.f ; \
         fi
+	$(RM) gen_be_ep2_serial.b
+	$(SFC) -c $(FCFLAGS) $(PROMOTION) gen_be_ep2_serial.f
+	$(SFC) -o gen_be_ep2_serial.exe $(LDFLAGS) $(GEN_BE_OBJS)  gen_be_ep2_serial.o $(GEN_BE_LIB)
+	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
+
+gen_be_ep2.exe : gen_be_ep2.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)
+	$(RM) $@
+	$(SED_FTN) gen_be_ep2.f90 > gen_be_ep2.b
+	$(CPP) $(CPPFLAGS) $(FPPFLAGS) gen_be_ep2.b > gen_be_ep2.f ; \
 	$(RM) gen_be_ep2.b
-	$(SFC) -c $(FCFLAGS) $(PROMOTION) gen_be_ep2.f
-	$(SFC) -o gen_be_ep2.exe $(LDFLAGS) $(GEN_BE_OBJS)  gen_be_ep2.o $(GEN_BE_LIB)
+	$(FC) -c $(FCFLAGS) $(PROMOTION) gen_be_ep2.f
+	$(FC) -o gen_be_ep2.exe $(LDFLAGS) $(GEN_BE_OBJS) gen_be_ep2.o $(GEN_BE_LIB)
 	@ if test -x $@ ;  then cd ../da; $(LN) ../build/$@ . ; fi
 
 gen_be_stage1.exe : gen_be_stage1.o $(GEN_BE_OBJS) $(GEN_BE_LIBS)

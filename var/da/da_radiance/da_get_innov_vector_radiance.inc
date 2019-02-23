@@ -1,4 +1,4 @@
-subroutine da_get_innov_vector_radiance (it, grid, ob, iv)
+subroutine da_get_innov_vector_radiance (it,grid, ob, iv)
 
    !---------------------------------------------------------------------------
    !  PURPOSE: Calculate innovation vector for radiance data.
@@ -24,7 +24,6 @@ subroutine da_get_innov_vector_radiance (it, grid, ob, iv)
 
    iv%instid(:)%info%n1 = iv%instid(:)%info%plocal(iv%time-1) + 1
    iv%instid(:)%info%n2 = iv%instid(:)%info%plocal(iv%time)
-
    !------------------------------------------------------------------------
    ! [1.0] calculate components of innovation vector
    !------------------------------------------------------------------------
@@ -46,17 +45,22 @@ subroutine da_get_innov_vector_radiance (it, grid, ob, iv)
    else
       call da_warning(__FILE__,__LINE__,(/"Unknown Radiative Transfer Model"/))
    endif
-
    !------------------------------------------------------------------------
    ! [2.0] Perform (Variational) bias correction
    !------------------------------------------------------------------------
    if (use_varbc .or. freeze_varbc) then
       call da_varbc_pred(iv)
+	  
       !varbc coldstart can not be done here when num_fgat_time>1
       if ( num_fgat_time == 1 ) then
          call da_varbc_coldstart(iv)  
+         call da_varbc_direct(iv)   
+         if (qc_rad) then
+            call da_qc_rad(it, ob, iv)
+         end if
       end if
-      call da_varbc_direct(iv)      
+
+
    else if (biascorr) then
       do inst = 1, iv%num_inst                 ! loop for sensor
          write(unit=stdout,fmt='(A,A)') 'Performing bias correction for ', &
@@ -64,14 +68,12 @@ subroutine da_get_innov_vector_radiance (it, grid, ob, iv)
          call da_biascorr(inst,ob,iv)
       end do                                   ! end loop for sensor
    end if
-
-   !------------------------------------------------------------------------
-   ! [3.0] Perform QC check
-   !------------------------------------------------------------------------
-   if (qc_rad) then
-      call da_qc_rad(it, ob, iv)
-   end if
-
+!wuyl !------------------------------------------------------------------------
+!   ! [3.0] Perform QC check
+!   !------------------------------------------------------------------------
+!   if (qc_rad) then
+!      call da_qc_rad(it, ob, iv)
+!   end if
    !------------------------------------------------------------------------
    ! [4.0] Compute preconditioning for Variational bias correction
    !------------------------------------------------------------------------
@@ -88,7 +90,6 @@ subroutine da_get_innov_vector_radiance (it, grid, ob, iv)
          call da_biasprep(inst,ob,iv)
       end do
    end if
-
    if(trace_use) call  da_trace_exit("da_get_innov_vector_radiance")
 
 end subroutine da_get_innov_vector_radiance

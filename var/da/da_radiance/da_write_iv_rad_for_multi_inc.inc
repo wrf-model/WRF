@@ -74,7 +74,7 @@ subroutine da_write_iv_rad_for_multi_inc (it,ob, iv )
          if (iv%instid(i)%info%proc_domain(1,n)) then
 !            iobs = iv%instid(i)%info%obs_global_index(n)
             iobs = n
-            write(unit=message(1),fmt='(I)') iobs
+            write(unit=message(1),fmt='(I4)') iobs
             call da_message(message(1:1)) 
             if ( amsr2 ) then ! write out clw
                data2d(iobs, 1) = iv%instid(i)%info%lat(1,n)

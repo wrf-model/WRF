@@ -144,7 +144,7 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
                   ! first, write RTTOV levels
                   write(unit=oma_rad_unit,fmt='(a)') 'RTM_level pres(mb) T(k) Q(ppmv)'
                   do k = 1, nlevelss
-                     write(unit=oma_rad_unit,fmt='(i3,f10.2,f8.2,e11.4)') &
+                     write(unit=oma_rad_unit,fmt='(i3,f10.3,f8.2,e11.4)') &
                         k, &                             ! RTTOV levels
                         coefs(i) % coef % ref_prfl_p(k) , &
                         iv%instid(i)%t(k,n) , &

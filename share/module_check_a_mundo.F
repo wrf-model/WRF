@@ -1597,12 +1597,6 @@
      END DO
 
 !-----------------------------------------------------------------------
-!  The hybrid vertical coordinate (HVC) namelist.input option (hybrid_opt=2)
-!  requires the code to be built with the HVC code enabled.  This is a run-time
-!  test to make sure the correct compile-time capabilities are available.
-!-----------------------------------------------------------------------
-
-!-----------------------------------------------------------------------
 !  DJW Check that we're not using ndown and vertical nesting.
 !-----------------------------------------------------------------------
      DO i=1,model_config_rec%max_dom

@@ -20,7 +20,6 @@ endif
 ( cd inc ; /bin/rm -f *.inc namelist.default )
 
 
-set echo
 set arg="$1"
 if ( "$arg" == '-a' || "$arg" == '-aa' ) then
   if ( -d var ) then

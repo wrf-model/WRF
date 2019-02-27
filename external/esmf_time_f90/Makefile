@@ -83,10 +83,10 @@ Test1_WRFU.exe : libesmf_time.a Test1_WRFU.o
 clean : testclean
 
 testclean: 
-	$(RM) *.b *.f *.o *.obj *.i libesmf_time.a *.mod Test1*.exe
+	@$(RM) *.b *.f *.o *.obj *.i libesmf_time.a *.mod Test1*.exe
 
 superclean: testclean
-	$(RM) Test1*.out make_tests.out
+	@$(RM) Test1*.out make_tests.out
 
 # DEPENDENCIES : only dependencies after this line 
 

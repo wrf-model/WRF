@@ -14,11 +14,13 @@ CONTAINS
    SUBROUTINE trad_fields ( u,v,w,t,qv,zp,zb,pp,pb,p,pw,            &
                     msfux,msfuy,msfvx,msfvy,msftx,msfty,            &
                     f,e,sina,cosa,                                  &
-                    ht,                                             &
+                    qc,rho,dz8w, ht,                                &
                     use_theta_m,                                    &
+                    psfc,rainc,rainnc,snownc,graupelnc,hailnc,      &
                     sealevelp,                                      &
                     temperature,pressure,geoheight,                 &
                     umet,vmet,speed,dir,                            &
+                    rain, liqrain, tpw,potential_t, rh,             &
                     ids,ide, jds,jde, kds,kde,                      &
                     ims,ime, jms,jme, kms,kme,                      &
                     ips,ipe, jps,jpe, kps,kpe,                      &
@@ -40,21 +42,26 @@ CONTAINS
                                                                          f,e,sina,cosa,ht
       INTEGER, INTENT(IN   )                                          :: use_theta_m
       REAL   , INTENT(IN   ) , DIMENSION(ims:ime , kms:kme , jms:jme) :: u,v,w,t,qv,zp,zb,pp,pb,p,pw
+
+      REAL   , INTENT(IN   ) , DIMENSION(ims:ime , kms:kme , jms:jme) :: qc, rho, dz8w
+      REAL   , INTENT(IN   ) , DIMENSION(ims:ime , jms:jme)           :: psfc, rainc, rainnc, hailnc,graupelnc, snownc
    
       !  Output variables
    
-      REAL   , INTENT(  OUT) ,  DIMENSION(ims:ime , jms:jme)           :: sealevelp
       REAL   , INTENT(  OUT) ,  DIMENSION(ims:ime , kms:kme , jms:jme) :: temperature , &
                                                                           pressure    , &
                                                                           geoheight   , &
                                                                           umet        , &
                                                                           vmet        , &
                                                                           speed       , &
+                                                                          potential_t , &
+                                                                          rh          , &
                                                                           dir
+      REAL   , INTENT(  OUT) ,  DIMENSION(ims:ime , jms:jme)           :: sealevelp, rain, liqrain,tpw
    
       !  Local variables
    
-      REAL,  DIMENSION(its:ite , jts:jte) :: pscf
+      REAL :: ptot
 
       REAL, PARAMETER :: eps = 0.622, t_kelvin = svpt0 , s1 = 243.5, s2 = svp2 , s3 = svp1*10., s4 = 611.0, s5 = 5418.12
       REAL, PARAMETER :: zshul=75., tvshul=290.66
@@ -77,7 +84,7 @@ CONTAINS
                   temperature(i,k,j) = ( ( t(i,k,j) + t0 ) * ( (pb(i,k,j)+pp(i,k,j)) / p1000mb ) ** rcp )
                END IF
  
-               !  Hydrostatic ressure
+               !  Hydrostatic pressure
 
                pressure(i,k,j) = p(i,k,j)
  
@@ -112,6 +119,20 @@ CONTAINS
                   END IF
                END IF
 
+               !  Potential Temperature  
+
+               IF ( use_theta_m .EQ. 1 ) THEN
+                  potential_t(i,k,j) =  ( t(i,k,j) + t0 )  / ( 1. + (R_v/R_d) * qv(i,k,j) )
+               ELSE
+                  potential_t(i,k,j) =   t(i,k,j) + t0  
+               END IF
+
+
+               !  Relative humidity
+
+                  ptot      = pb(i,k,j)+pp(i,k,j)
+                  rh(i,k,j) = calc_rh(ptot, temperature(i,k,j), qv(i,k,j)) 
+
             END DO i_loop_h
          END DO k_loop_h
       END DO j_loop_h
@@ -137,7 +158,19 @@ CONTAINS
 
                sealevelp(i,j) =   MSLP ( ht(i,j), pressure(i,kms,j), geoheight(i,kms,j) , &
                                          qv(i,kms,j), temperature(i,kms,j) )
- 
+
+               ! Total rainfall
+
+               rain(i,j) =   rainc(i,j) + rainnc(i,j)
+
+               ! Total liquid rainfall
+
+               liqrain(i,j) =   rainc(i,j) + rainnc(i,j) - snownc(i,j) - graupelnc(i,j) - hailnc(i,j)
+
+               ! Total precipitable water
+
+               tpw(i,j) = PWAT(kme-kms+1, qv(i,kms:kme,j), qc(i,kms:kme,j), dz8w(i,kms:kme,j), rho(i,kms:kme,j))  
+
          END DO i_loop_2
       END DO j_loop_2
 

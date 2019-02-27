@@ -96,6 +96,8 @@ subroutine da_qc_rad (it, ob, iv)
          call da_qc_seviri(it,i,nchan,ob,iv)
       else if (amsr2) then
          call da_qc_amsr2(it,i,nchan,ob,iv)
+      else if (ahi) then
+         call da_qc_ahi(it,i,nchan,ob,iv)
       else if (imager) then
          call da_qc_goesimg(it,i,nchan,ob,iv)
       else if (ahi) then

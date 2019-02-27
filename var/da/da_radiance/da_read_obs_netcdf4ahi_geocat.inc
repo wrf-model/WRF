@@ -82,6 +82,7 @@ subroutine da_read_obs_netcdf4ahi_geocat (iv, infile_tb, infile_clp)
    integer          :: vtype
    character(80)    :: vname
    logical          :: fexist,got_clp_file
+   integer          :: ahi_info_unit
    
 ! Allocatable arrays
    integer(i_kind),allocatable  :: ptotal(:)
@@ -99,6 +100,15 @@ subroutine da_read_obs_netcdf4ahi_geocat (iv, infile_tb, infile_clp)
 				 'himawari_8_ahi_channel_14_brightness_temperature',&
 				 'himawari_8_ahi_channel_15_brightness_temperature',&
 				 'himawari_8_ahi_channel_16_brightness_temperature'/   
+=======
+                 'himawari_8_ahi_channel_10_brightness_temperature',&
+                 'himawari_8_ahi_channel_11_brightness_temperature',&
+                 'himawari_8_ahi_channel_12_brightness_temperature',&
+                 'himawari_8_ahi_channel_13_brightness_temperature',&
+                 'himawari_8_ahi_channel_14_brightness_temperature',&
+                 'himawari_8_ahi_channel_15_brightness_temperature',&
+                 'himawari_8_ahi_channel_16_brightness_temperature'/   
+>>>>>>> develop
 
    if (trace_use) call da_trace_entry("da_read_obs_netcdf4ahi_geocat")
 
@@ -149,19 +159,19 @@ subroutine da_read_obs_netcdf4ahi_geocat (iv, infile_tb, infile_clp)
    if ( fexist ) then
       nfile = 1
       fname_tb(nfile)  = filename1
-	  fname_clp(nfile) = filename2
+      fname_clp(nfile) = filename2
    else
       ! check if netcdf4 files are available for multiple input files
       ! here 0x is the input file sequence number
       ! do not confuse it with fgat time slot index
       do i = 1, nfile_max
          write(filename1,fmt='(A,A,I2.2,A)') trim(infile_tb),'-',i
-		 write(filename2,fmt='(A,A,I2.2,A)') trim(infile_clp),'-',i
+         write(filename2,fmt='(A,A,I2.2,A)') trim(infile_clp),'-',i
          inquire (file=filename1, exist=fexist)
          if ( fexist ) then
             nfile = nfile + 1
             fname_tb(nfile)  = filename1
-			fname_clp(nfile) = filename2
+            fname_clp(nfile) = filename2
          else
             exit
          end if
@@ -177,18 +187,28 @@ subroutine da_read_obs_netcdf4ahi_geocat (iv, infile_tb, infile_clp)
  
  
   !open the data area info file 
-   open(unit=1990,file='ahi_info',status='old',iostat=iret)
+!   open(unit=1990,file='ahi_info',status='old',iostat=iret)
+   call da_get_unit(ahi_info_unit)
+   open(unit=ahi_info_unit,file='ahi_info',status='old',iostat=iret)
    if(iret /= 0)then
        call da_warning(__FILE__,__LINE__,(/"area_info file read error"/))
    endif	  
   !read date information
-   read(1990,*) 
-   read(1990,*) 
-   read(1990,*) 
-   read(1990,*) 
-   read(1990,*) 
-   read(1990,*) lonstart,latstart,nlongitude,nlatitude 
-   close(1990)
+!   read(1990,*) 
+!   read(1990,*) 
+!   read(1990,*) 
+!   read(1990,*) 
+!   read(1990,*) 
+!   read(1990,*) lonstart,latstart,nlongitude,nlatitude 
+!   close(1990)
+   read(ahi_info_unit,*) 
+   read(ahi_info_unit,*) 
+   read(ahi_info_unit,*) 
+   read(ahi_info_unit,*) 
+   read(ahi_info_unit,*) 
+   read(ahi_info_unit,*) lonstart,latstart,nlongitude,nlatitude 
+   close(ahi_info_unit)
+   call da_free_unit(ahi_info_unit)
    
    write(*,*) lonstart,latstart,nlongitude,nlatitude
 
@@ -208,12 +228,9 @@ subroutine da_read_obs_netcdf4ahi_geocat (iv, infile_tb, infile_clp)
    ! read dimensions: 	latitude and longitude
      ! iret = nf90_inq_dimid(ncid, "lines", LatDimID)
      ! iret = nf90_inquire_dimension(ncid, LatDimID, len=nlatitude)
-	  
-	 ! iret = nf90_inq_dimid(ncid, "elements", LonDimID)
-	 ! iret = nf90_inquire_dimension(ncid, LonDimID, len=nlongitude)
-	  
-	 ! write(unit=stdout,fmt=*) nlongitude,nlatitude
-	 
+     ! iret = nf90_inq_dimid(ncid, "elements", LonDimID)
+     ! iret = nf90_inquire_dimension(ncid, LonDimID, len=nlongitude)
+     ! write(unit=stdout,fmt=*) nlongitude,nlatitude
 	   
    ! read array: time
       iret = nf90_get_att(ncid, nf90_global, "Image_Date_Time", filename)
@@ -221,98 +238,95 @@ subroutine da_read_obs_netcdf4ahi_geocat (iv, infile_tb, infile_clp)
          call da_warning(__FILE__,__LINE__, &
              (/"NETCDF4 read error for: observation date"/))
       end if	  
-	  read(filename,"(I4,A1,I2,A1,I2,A1,I2,A1,I2,A1,I2,A1)") idate5(1),str_tmp,idate5(2),str_tmp,&
-	                   idate5(3),str_tmp,idate5(4),str_tmp,idate5(5),str_tmp,idate5(6),str_tmp	  						                        
-	  write(unit=stdout,fmt=*)'observation date: ', idate5   
+         read(filename,"(I4,A1,I2,A1,I2,A1,I2,A1,I2,A1,I2,A1)") idate5(1),str_tmp,idate5(2),str_tmp,&
+           idate5(3),str_tmp,idate5(4),str_tmp,idate5(5),str_tmp,idate5(6),str_tmp
+
+         write(unit=stdout,fmt=*)'observation date: ', idate5   
    
    ! read array: lat
-   ! read lat
-	  iret = nf90_inq_varid(ncid, 'pixel_latitude', latid)	  
-	  allocate(vlatitude(nlongitude,nlatitude))
+      iret = nf90_inq_varid(ncid, 'pixel_latitude', latid)	  
+      allocate(vlatitude(nlongitude,nlatitude))
       iret = nf90_get_var(ncid,latid,vlatitude,start=(/lonstart,latstart/), &
-	                      count=(/nlongitude,nlatitude/)) !
+                          count=(/nlongitude,nlatitude/)) !
       if(iret /= 0)then
          call da_warning(__FILE__,__LINE__, &
              (/"NETCDF4 read error for: Latitude of Observation Point"/))
       endif
-	  do j=1,nlatitude
-		do i=1,nlongitude			
-			vlatitude(i,j)=vlatitude(i,j) * scale_factor_lat
-		end do
-	  end do
+      do j=1,nlatitude
+      do i=1,nlongitude			
+          vlatitude(i,j)=vlatitude(i,j) * scale_factor_lat
+      end do
+      end do
    ! sample display 
-	  write(unit=stdout,fmt=*)'vlatitude(pixel=1,scan=1): ',vlatitude(1,1)
-	  
+      write(unit=stdout,fmt=*)'vlatitude(pixel=1,scan=1): ',vlatitude(1,1)
+
    ! read lon
-	  iret = nf90_inq_varid(ncid, 'pixel_longitude', lonid)
-	  allocate(vlongitude(nlongitude,nlatitude))
+      iret = nf90_inq_varid(ncid, 'pixel_longitude', lonid)
+      allocate(vlongitude(nlongitude,nlatitude))
       iret = nf90_get_var(ncid,lonid,vlongitude,start=(/lonstart,latstart/), &
-	                      count=(/nlongitude,nlatitude/))
+                          count=(/nlongitude,nlatitude/))
       if(iret /= 0)then
           call da_warning(__FILE__,__LINE__, &
               (/"NETCDF4 read error for: Longitude of Observation Point"/))
           call da_trace_exit("da_read_obs_netcdf4ahi_geocat")
       endif
-	  do j=1,nlatitude
-		do i=1,nlongitude
-			vlongitude(i,j)=vlongitude(i,j) * scale_factor_lon	
-		end do
-	  end do
+      do j=1,nlatitude
+      do i=1,nlongitude
+         vlongitude(i,j)=vlongitude(i,j) * scale_factor_lon	
+      end do
+      end do
    ! sample display
       write(unit=stdout,fmt=*)'vlongitude(pixel=1,scan=1): ',vlongitude(1,1)
 
    ! read array: tb for band 7-16
-   ! read	 
       allocate(tbb(nlongitude,nlatitude,nchan))
-	  do k=1,nchan
-		iret = nf90_inq_varid(ncid, tbb_name(k), tbb_id)	
-		iret = nf90_get_var(ncid,tbb_id,tbb(:,:,k),start=(/lonstart,latstart/), &
-		                    count=(/nlongitude,nlatitude/))
-		if(iret /= 0)then
-			call da_warning(__FILE__,__LINE__, &
-				(/"NETCDF4 read error for: Brightness Temperature"/))
-		endif
-		do j=1,nlatitude
-			do i=1,nlongitude
-				if(k==1) then
-					tbb(i,j,k)=tbb(i,j,k) * scale_factor_tb1 + add_offset_tb1
-				end if
-				if(k>=2 .and. k<=4) then
-					tbb(i,j,k)=tbb(i,j,k) * scale_factor_tb2 + add_offset_tb2
-				end if		
-				if(k>=5 .and. k<=9) then
-					tbb(i,j,k)=tbb(i,j,k) * scale_factor_tb3 + add_offset_tb3
-				end if	
-				if(k==10) then
-					tbb(i,j,k)=tbb(i,j,k) * scale_factor_tb4 + add_offset_tb4
-				end if					
-			end do
-		end do	  	  
-	   ! sample display
-		  write(unit=stdout,fmt=*) 'tbb(pixel=1,scan=1,chan=',k,'): ', tbb(1,1,k)
-	  end do
+      do k=1,nchan
+         iret = nf90_inq_varid(ncid, tbb_name(k), tbb_id)	
+         iret = nf90_get_var(ncid,tbb_id,tbb(:,:,k),start=(/lonstart,latstart/), &
+                             count=(/nlongitude,nlatitude/))
+         if(iret /= 0)  then
+            call da_warning(__FILE__,__LINE__, &
+                   (/"NETCDF4 read error for: Brightness Temperature"/))
+         endif
+         do j=1,nlatitude
+         do i=1,nlongitude
+            if(k==1) then
+              tbb(i,j,k)=tbb(i,j,k) * scale_factor_tb1 + add_offset_tb1
+            end if
+            if(k>=2 .and. k<=4) then
+              tbb(i,j,k)=tbb(i,j,k) * scale_factor_tb2 + add_offset_tb2
+            end if		
+            if(k>=5 .and. k<=9) then
+              tbb(i,j,k)=tbb(i,j,k) * scale_factor_tb3 + add_offset_tb3
+            end if	
+            if(k==10) then
+              tbb(i,j,k)=tbb(i,j,k) * scale_factor_tb4 + add_offset_tb4
+            end if					
+         end do
+         end do
+         ! sample display
+         write(unit=stdout,fmt=*) 'tbb(pixel=1,scan=1,chan=',k,'): ', tbb(1,1,k)
+      end do
 		 
    ! read array: satellite zenith angle
-   ! read
-	  iret = nf90_inq_varid(ncid, 'pixel_satellite_zenith_angle', sazid)	  
-	  allocate(sat_zenith(nlongitude,nlatitude))
-	  iret = nf90_get_var(ncid,sazid,sat_zenith,start=(/lonstart,latstart/), &
-	                      count=(/nlongitude,nlatitude/))
+      iret = nf90_inq_varid(ncid, 'pixel_satellite_zenith_angle', sazid)	  
+      allocate(sat_zenith(nlongitude,nlatitude))
+      iret = nf90_get_var(ncid,sazid,sat_zenith,start=(/lonstart,latstart/), &
+                          count=(/nlongitude,nlatitude/))
       if(iret /= 0)then
          call da_warning(__FILE__,__LINE__, &
             (/"NETCDF4 read error for: satellite zenith angle"/))
       endif
-	  do j=1,nlatitude
-		do i=1,nlongitude
-			sat_zenith(i,j)=sat_zenith(i,j) * scale_factor_saz + add_offset_saz	
-		end do
-	  end do	  	  
+      do j=1,nlatitude
+      do i=1,nlongitude
+         sat_zenith(i,j)=sat_zenith(i,j) * scale_factor_saz + add_offset_saz	
+      end do
+      end do	  	  
    ! sample display
       write(unit=stdout,fmt=*) 'satellite zenith angle(pixel=1,scan=1): ',sat_zenith(1,1)
  
    ! close infile_tb file 		 
       iret = nf90_close(ncid)
-	  
      !open infile_clp file 
       got_clp_file = .false.
       iret = nf90_open(fname_clp(ifile), nf90_NOWRITE, ncid)
@@ -321,18 +335,18 @@ subroutine da_read_obs_netcdf4ahi_geocat (iv, infile_tb, infile_clp)
       endif
 	  
       if ( got_clp_file ) then
-		! read array: eps_cmask_ahi_cloud_mask
+        ! read array: eps_cmask_ahi_cloud_mask
           rcode = nf90_inq_varid(ncid, "eps_cmask_ahi_cloud_mask", cltyid)
           allocate(cloud_mask(nlongitude,nlatitude))
-		  iret = nf90_get_var(ncid,cltyid,cloud_mask,start=(/lonstart,latstart/), &
-		                      count=(/nlongitude,nlatitude/))
+          iret = nf90_get_var(ncid,cltyid,cloud_mask,start=(/lonstart,latstart/), &
+                              count=(/nlongitude,nlatitude/))
           if(iret /= 0)then
             call da_warning(__FILE__,__LINE__,(/"NETCDF4 read error for: CLTYPE data"/))
           endif
         ! sample display
           write(unit=stdout,fmt=*)'cloud_mask(pixel=1,scan=1): ',cloud_mask(1,1)		 
-		! close infile_clp file 		 
-		  iret = nf90_close(ncid)		 	 
+        ! close infile_clp file 		 
+          iret = nf90_close(ncid)		 	 
       end if   
 
 ! 2.0 Loop to read netcdf and assign information to a sequential structure
@@ -345,10 +359,10 @@ subroutine da_read_obs_netcdf4ahi_geocat (iv, infile_tb, infile_clp)
          p => head
          head_allocated = .true.
       end if
-	  
+
    ! start scan_loop
       scan_loop:     do ilatitude=1, nlatitude
-	  
+
          call da_get_julian_time(idate5(1),idate5(2),idate5(3),idate5(4),idate5(5),obs_time)
          if ( obs_time < time_slots(0) .or.  &
             obs_time >= time_slots(num_fgat_time) ) cycle scan_loop
@@ -359,9 +373,9 @@ subroutine da_read_obs_netcdf4ahi_geocat (iv, infile_tb, infile_clp)
 
       ! start fov_loop
          fov_loop:      do ilongitude=1, nlongitude
-		 
-			if ( sat_zenith(ilongitude,ilatitude) > 65.0 ) cycle fov_loop
-		 
+
+            if ( sat_zenith(ilongitude,ilatitude) > 65.0 ) cycle fov_loop
+
             num_ahi_file       = num_ahi_file + 1
             num_ahi_file_local = num_ahi_file_local + 1
             info%lat  =  vlatitude(ilongitude,ilatitude)

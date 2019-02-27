@@ -299,6 +299,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
    if ( Is_alarm_tstep(grid%domain_clock, grid%alarms(HISTORY_ALARM)) ) then
       diag_flag = .true.
    endif
+   IF (config_flags%nwp_diagnostics == 1) diag_flag = .true.
 
    grid%itimestep = grid%itimestep + 1
    grid%dtbc = grid%dtbc + grid%dt
@@ -3605,9 +3606,18 @@ BENCH_START(micro_driver_tim)
       &        ,vmi3d=grid%vmi3d                                          & ! for P3
       &        ,di3d=grid%di3d                                            & ! for P3
       &        ,rhopo3d=grid%rhopo3d                                      & ! for P3
+      &        ,phii3d=grid%phii3d                                        & ! for Jensen ISHMAEL
       &        ,vmi3d_2=grid%vmi3d_2                                      & ! for P3
       &        ,di3d_2=grid%di3d_2                                        & ! for P3
       &        ,rhopo3d_2=grid%rhopo3d_2                                  & ! for P3
+      &        ,phii3d_2=grid%phii3d_2                                    & ! for Jensen ISHMAEL
+      &        ,vmi3d_3=grid%vmi3d_3                                      & ! for Jensen ISHMAEL
+      &        ,di3d_3=grid%di3d_3                                        & ! for Jensen ISHMAEL
+      &        ,rhopo3d_3=grid%rhopo3d_3                                  & ! for Jensen ISHMAEL
+      &        ,phii3d_3=grid%phii3d_3                                    & ! for Jensen ISHMAEL
+      &        ,itype=grid%itype                                          & ! for Jensen ISHMAEL
+      &        ,itype_2=grid%itype_2                                      & ! for Jensen ISHMAEL
+      &        ,itype_3=grid%itype_3                                      & ! for Jensen ISHMAEL
       &        ,WARM_RAIN=grid%warm_rain                                  &
       &        ,T8W=t8w                                                   &
       &        ,CLDFRA=grid%cldfra, EXCH_H=grid%exch_h &
@@ -3700,10 +3710,18 @@ BENCH_START(micro_driver_tim)
       &        , QNID_CURR=scalar(ims,kms,jms,P_QNID), F_QNID=F_QNID          &
       &        , QIR_CURR=scalar(ims,kms,jms,P_QIR), F_QIR=F_QIR          & ! for P3
       &        , QIB_CURR=scalar(ims,kms,jms,P_QIB), F_QIB=F_QIB          & ! for P3
+      &        , QVOLI_CURR=scalar(ims,kms,jms,P_QVOLI), F_QVOLI=F_QVOLI  & ! for Jensen ISHMAEL
+      &        , QAOLI_CURR=scalar(ims,kms,jms,P_QAOLI), F_QAOLI=F_QAOLI  & ! for Jensen ISHMAEL
       &        , QI2_CURR=moist(ims,kms,jms,P_QI2), F_QI2=F_QI2           & ! for P3
       &        , QNI2_CURR=scalar(ims,kms,jms,P_QNI2), F_QNI2=F_QNI2      & ! for P3
       &        , QIR2_CURR=scalar(ims,kms,jms,P_QIR2), F_QIR2=F_QIR2      & ! for P3
       &        , QIB2_CURR=scalar(ims,kms,jms,P_QIB2), F_QIB2=F_QIB2      & ! for P3
+      &        , QVOLI2_CURR=scalar(ims,kms,jms,P_QVOLI2), F_QVOLI2=F_QVOLI2  & ! for Jensen ISHMAEL
+      &        , QAOLI2_CURR=scalar(ims,kms,jms,P_QAOLI2), F_QAOLI2=F_QAOLI2  & ! for Jensen ISHMAEL
+      &        , QI3_CURR=moist(ims,kms,jms,P_QI3), F_QI3=F_QI3           & ! for Jensen ISHMAEL
+      &        , QNI3_CURR=scalar(ims,kms,jms,P_QNI3), F_QNI3=F_QNI3      & ! for Jensen ISHMAEL
+      &        , QVOLI3_CURR=scalar(ims,kms,jms,P_QVOLI3), F_QVOLI3=F_QVOLI3  & ! for Jensen ISHMAEL
+      &        , QAOLI3_CURR=scalar(ims,kms,jms,P_QAOLI3), F_QAOLI3=F_QAOLI3  & ! for Jensen ISHMAEL
 !       &        , QZR_CURR=scalar(ims,kms,jms,P_QZR), F_QZR=F_QZR          & ! for milbrandt3mom
 !       &        , QZI_CURR=scalar(ims,kms,jms,P_QZI), F_QZI=F_QZI          & ! "
 !       &        , QZS_CURR=scalar(ims,kms,jms,P_QZS), F_QZS=F_QZS          & ! "
@@ -3716,6 +3734,36 @@ BENCH_START(micro_driver_tim)
       &        , qicuten=grid%rqicuten, qccuten=grid%rqccuten             &
       &        , HAIL=config_flags%gsfcgce_hail                           & ! for gsfcgce
       &        , ICE2=config_flags%gsfcgce_2ice                           & ! for gsfcgce
+      &        , PHYS_TOT=grid%phys_tot                                   & ! for gsfcgce
+      &        , PHYSC=grid%physc                                         & ! for gsfcgce
+      &        , PHYSE=grid%physe                                         & ! for gsfcgce
+      &        , PHYSD=grid%physd                                         & ! for gsfcgce
+      &        , PHYSS=grid%physs                                         & ! for gsfcgce
+      &        , PHYSM=grid%physm                                         & ! for gsfcgce
+      &        , PHYSF=grid%physf                                         & ! for gsfcgce
+
+      &        , ACPHYS_TOT=grid%acphys_tot                               & ! for gsfcgce
+      &        , ACPHYSC=grid%acphysc                                     & ! for gsfcgce
+      &        , ACPHYSE=grid%acphyse                                     & ! for gsfcgce
+      &        , ACPHYSD=grid%acphysd                                     & ! for gsfcgce
+      &        , ACPHYSS=grid%acphyss                                     & ! for gsfcgce
+      &        , ACPHYSM=grid%acphysm                                     & ! for gsfcgce
+      &        , ACPHYSF=grid%acphysf                                     & ! for gsfcgce
+
+      &        , RE_CLOUD_GSFC=grid%re_cloud_gsfc                         & ! for gsfcgce
+      &        , RE_RAIN_GSFC=grid%re_rain_gsfc                           & ! for gsfcgce
+      &        , RE_ICE_GSFC=grid%re_ice_gsfc                             & ! for gsfcgce
+      &        , RE_SNOW_GSFC=grid%re_snow_gsfc                           & ! for gsfcgce
+      &        , RE_GRAUPEL_GSFC=grid%re_graupel_gsfc                     & ! for gsfcgce
+      &        , RE_HAIL_GSFC=grid%re_hail_gsfc                           & ! for gsfcgce
+      &        , PRECR3D=grid%precr3d, PRECI3D=grid%preci3d, PRECS3D=grid%precs3d  &
+      &        , PRECG3D=grid%precg3d, PRECH3D=grid%prech3d               &
+#if ( WRF_CHEM == 1)
+      &        , GSFCGCE_GOCART_COUPLING=config_flags%gsfcgce_gocart_coupling &
+      &        , ICN_DIAG=grid%icn_diag                                   & ! inline gocart
+      &        , NC_DIAG=grid%nc_diag                                     & ! inline gocart
+#endif
+!NUWRF JJS 20110525 ^^^^^
 !     &        , ccntype=config_flags%milbrandt_ccntype                   & ! for milbrandt (2mom)
 ! YLIN
 ! RI_CURR INPUT

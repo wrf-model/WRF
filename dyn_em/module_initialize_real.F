@@ -165,6 +165,7 @@ integer::oops1,oops2
       LOGICAL :: vnest !T if using vertical nesting with vet_refine_method=2, otherwise F
 
       INTEGER :: j_save
+      INTEGER :: change_soil, change_soilw, iforce
 
       LOGICAL :: wif_upside_down = .FALSE.
       
@@ -2995,6 +2996,32 @@ integer::oops1,oops2
             CALL wrf_error_fatal ( a_message )
          END IF
 
+         !  Need to match isltyp to landmask
+
+         iforce = 0
+         change_soil = 0
+         change_soilw = 0
+         DO j = jts, MIN(jde-1,jte)
+            DO i = its, MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
+               IF ( grid%landmask(i,j) .GT. 0.5 .AND. grid%isltyp(i,j) .EQ. grid%isoilwater ) THEN
+                  grid%isltyp(i,j) = 8
+                  change_soilw =  change_soilw + 1
+                  iforce =  iforce + 1
+               ELSE IF ( grid%landmask(i,j) .LT. 0.5 .AND. grid%isltyp(i,j) .NE. grid%isoilwater ) THEN
+                  grid%isltyp(i,j) = grid%isoilwater
+                  change_soil =  change_soil + 1
+                  iforce =  iforce + 1
+               END IF
+            END DO
+         END DO
+         IF ( change_soilw .GT. 0 .OR. change_soil .GT. 0 ) THEN
+            WRITE(a_message,FMT='(A,I4,A,I6)' ) &
+                  'forcing artificial silty clay loam at ',iforce,' points, out of ',&
+                  (MIN(ide-1,ite)-its+1)*(MIN(jde-1,jte)-jts+1)
+                  CALL wrf_debug(0,a_message)
+         END IF
+
       END IF
 
       !  Split NUDAPT  Urban Parameters
@@ -3004,7 +3031,7 @@ integer::oops1,oops2
             DO i = its , MIN(ide-1,ite)
               IF ( MMINLU == 'NLCD40' .OR. MMINLU == 'MODIFIED_IGBP_MODIS_NOAH') THEN
                   IF ( grid%FRC_URB2D(i,j) .GE. 0.5 .AND.  &
-                      (grid%ivgtyp(i,j).NE.13 .OR. grid%ivgtyp(i,j).NE.24 .OR. grid%ivgtyp(i,j).NE.25 .OR. grid%ivgtyp(i,j).NE.26)) grid%ivgtyp(i,j)=13
+                      (grid%ivgtyp(i,j).NE.13 .AND. grid%ivgtyp(i,j).NE.24 .AND. grid%ivgtyp(i,j).NE.25 .AND. grid%ivgtyp(i,j).NE.26)) grid%ivgtyp(i,j)=13
               ELSE IF ( MMINLU == "USGS" ) THEN
                   IF ( grid%FRC_URB2D(i,j) .GE. 0.5 .AND.  &
                        grid%ivgtyp(i,j).NE.1 ) grid%ivgtyp(i,j)=1
@@ -3041,34 +3068,6 @@ integer::oops1,oops2
                grid%MH_URB2D(i,j)  = grid%URB_PARAM(i,92,j)
                grid%STDH_URB2D(i,j)  = grid%URB_PARAM(i,93,j)
             ENDIF
-            grid%H2W_URB2D(i,j)  = grid%URB_PARAM(i,101,j)
-            grid%Z0S_URB2D(i,j)  = grid%URB_PARAM(i,103,j)
-            grid%ZDS_URB2D(i,j)  = grid%URB_PARAM(i,104,j)
-            grid%ZDM_URB2D(i,j)  = grid%URB_PARAM(i,117,j)
-            IF(grid%URB_PARAM(i,100,j).eq.0)THEN
-               grid%CAR_URB2D(i,j) = 1.0
-            ELSE
-               grid%CAR_URB2D(i,j) = grid%URB_PARAM(i,100,j)
-            END IF
-            IF(grid%URB_PARAM(i,102,j).eq.0)THEN
-               grid%SVF_URB2D(i,j) = 1.0
-            ELSE
-               grid%SVF_URB2D(i,j) = grid%URB_PARAM(i,102,j)
-            END IF
-         END DO
-      END DO
-
-      DO j = jts , MIN(jde-1,jte)
-         DO i = its , MIN(ide-1,ite)
-            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
-            DO k = 1, 15
-               grid%FAD0_URB2D(i,k,j)  = grid%URB_PARAM(i,k,j)
-               grid%FAD135_URB2D(i,k,j)  = grid%URB_PARAM(i,k+15,j)
-               grid%FAD45_URB2D(i,k,j)  = grid%URB_PARAM(i,k+30,j)
-               grid%FAD90_URB2D(i,k,j)  = grid%URB_PARAM(i,k+45,j)
-               grid%PAD_URB2D(i,k,j)  = grid%URB_PARAM(i,k+60,j)
-               grid%RAD_URB2D(i,k,j)  = grid%URB_PARAM(i,k+75,j)
-            END DO
          END DO
       END DO
 
@@ -3079,22 +3078,7 @@ integer::oops1,oops2
                IF ( config_flags%sf_urban_physics==1 ) THEN
                   grid%LF_URB2D(i,k,j)  = grid%URB_PARAM(i,k+95,j)
                ENDIF
-               grid%Z0M_URB2D(i,k,j)  = grid%URB_PARAM(i,k+112,j)
             END DO
-         END DO
-      END DO
-
-      DO  j = jts , MIN(jde-1,jte)
-         DO i = its , MIN(ide-1,ite)
-            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
-            grid%Z0R_URB2D(i,1,j)  = grid%URB_PARAM(i,105,j)
-            grid%Z0R_URB2D(i,2,j)  = grid%URB_PARAM(i,107,j)
-            grid%Z0R_URB2D(i,3,j)  = grid%URB_PARAM(i,109,j)
-            grid%Z0R_URB2D(i,4,j)  = grid%URB_PARAM(i,111,j)
-            grid%ZDR_URB2D(i,1,j)  = grid%URB_PARAM(i,106,j)
-            grid%ZDR_URB2D(i,2,j)  = grid%URB_PARAM(i,108,j)
-            grid%ZDR_URB2D(i,3,j)  = grid%URB_PARAM(i,110,j)
-            grid%ZDR_URB2D(i,4,j)  = grid%URB_PARAM(i,112,j)
          END DO
       END DO
 
@@ -3678,6 +3662,7 @@ endif
                grid%t_init(i,k,j) = temp*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
                grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
             END DO
+            grid%php(i,kte,j) = grid%p_top
             !  Base state mu is defined as base state surface pressure minus grid%p_top
             grid%MUB(i,j) = p_surf - grid%p_top
             !  Dry surface pressure is defined as the following (this mu is from the input file

@@ -3418,6 +3418,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                                     tracer_tendf, n_tracer,                   &
                                     u_2, v_2,                                 &
                                     thp,u_base,v_base,t_base,qv_base,tke,     &
+                                    theta,                                    &
                                     config_flags,defor13,defor23,defor33,     &
                                     nba_mij, n_nba_mij,                       &
                                     div,                                      &
@@ -3488,6 +3489,7 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                                                                     xkhv, &
                                                                     xkmh, &
                                                                      tke, &
+                                                                   theta, &
                                                                      rdz, &
                                                                      u_2, &
                                                                      v_2, &
@@ -3701,6 +3703,10 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
        hfx(i,j)=heat_flux*cpm*rho(i,kts,j)         ! provided for output only
        rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
              -g*heat_flux*rho(i,kts,j)/dnw(kts)
+       if(config_flags%use_theta_m == 1)THEN
+         rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
+             -g*1.61*theta(i,kts,j)*qfx(i,j)/dnw(kts)
+       ENDIF
     ENDDO
     ENDDO
 
@@ -3712,6 +3718,10 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
        heat_flux = hfx(i,j)/cpm
        rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
             -g*heat_flux/dnw(kts)
+       if(config_flags%use_theta_m == 1)THEN
+         rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
+             -g*1.61*theta(i,kts,j)*qfx(i,j)/dnw(kts)
+       ENDIF
 
     ENDDO
     ENDDO

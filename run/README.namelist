@@ -479,9 +479,9 @@ Namelist variables for controlling the adaptive time step option:
                                      = 4, WSM 5-class scheme
                                      = 5, Ferrier (new Eta) microphysics, operational High-Resolution Window version
                                      = 6, WSM 6-class graupel scheme
-                                     = 7, Goddard GCE scheme (also uses gsfcgce_hail, gsfcgce_2ice)
-                                     = 8, Thompson scheme (new for V3.1)
-                                     = 9, Milbrandt-Yau 2-moment scheme (new for V3.2)
+                                     = 7, Goddard 4-ice scheme
+                                     = 8, Thompson scheme
+                                     = 9, Milbrandt-Yau 2-moment scheme
                                      = 10, Morrison (2 moments)
                                      = 11, CAM 5.1 microphysics
                                      = 13, SBU_YLIN scheme
@@ -490,7 +490,8 @@ Namelist variables for controlling the adaptive time step option:
                                      = 17, NSSL 2-moment 4-ice scheme (steady background CCN)
                                      = 18, NSSL 2-moment 4-ice scheme with predicted CCN (better for idealized than real cases)
                                            to set a global CCN value, use
-                                           nssl_cccn  = 0.7e9   ; CCN for NSSL scheme (18). Also sets same value to ccn_conc for mp_physics=18
+                                           nssl_cccn  = 0.7e9   ; CCN for NSSL scheme (18). 
+                                           Also sets same value to ccn_conc for mp_physics=18
                                      = 19, NSSL 1-moment (7 class: qv,qc,qr,qi,qs,qg,qh; predicts graupel density)
                                      = 21, NSSL 1-moment, (6-class), very similar to Gilmore et al. 2004
                                            Can set intercepts and particle densities in physics namelist, e.g., nssl_cnor
@@ -506,6 +507,7 @@ Namelist variables for controlling the adaptive time step option:
                                        nssl_rho_qh  = 500.  ! graupel density
                                        nssl_rho_qhl = 900.  ! hail density
                                        nssl_rho_qs  = 100.  ! snow density
+                                     = 27, Goddard 3-ice scheme
                                      = 28, aerosol-aware Thompson scheme with water- and ice-friendly aerosol climatology 
                                            (new for V3.6)
                                        This option has two climatological aerosol input options:
@@ -518,6 +520,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 50, P3 1-category
                                      = 51, P3 1-category plus double-moment cloud water
                                      = 95, Ferrier (old Eta) microphysics, operational NAM (WRF NMM) version
+                                     = 97, Goddard GCE scheme (also uses gsfcgce_hail, gsfcgce_2ice)
 
  For non-zero mp_physics options, to keep Qv .GE. 0, and to set the other moisture
  fields .LT. a critical value to zero
@@ -670,13 +673,22 @@ Namelist variables for controlling the adaptive time step option:
                                      = 8, Simplified Simple Biosphere Model (SSiB) 
                                           - can be used with Dudhia/RRTM, CAM or RRTMG radiation options
 
- sf_urban_physics(max_dom)           = 0, ! activate urban canopy model (in Noah LSM only)
+ sf_urban_physics(max_dom)           = 0, ! activate urban canopy model (in Noah and Noah-MP LSMs only)
                                      = 0: no
                                      = 1: Single-layer, UCM 
                                      = 2: Multi-layer, Building Environment Parameterization (BEP) scheme 
                                           (works only with MYJ and BouLac PBL)
                                      = 3: Multi-layer, Building Environment Model (BEM) scheme 
                                           (works only with MYJ and BouLac PBL)
+
+ num_urban_ndm                       = 1! (=  2 if BEP or BEM active) maximum number of street dimensions (ndm in BEP or BEM header)
+ num_urban_ng                        = 1! (= 10 if BEP or BEM active) number of grid levels in the ground (ng_u in BEP or BEM header)
+ num_urban_nwr                       = 1! (= 10 if BEP or BEM active) number of grid levels in the walls or roof (nwr_u in BEP or BEM header)
+ num_urban_nz                        = 1! (= 18 if BEP or BEM active) maximum number of vertical levels in the urban grid (nz_um in BEP or BEM header)
+ num_urban_ngb                       = 1! (= 10 if BEM active)        number of grid levels in the ground below building (ngb_u in BEM header)
+ num_urban_nf                        = 1! (= 10 if BEM active)        number of grid levels in the floors (nf_u in BEM header)
+ num_urban_nbui                      = 1! (= 15 if BEM active)        maximum number of types of buildings in an urban class (nbui_max in BEM header)
+
 
  bl_pbl_physics (max_dom)            boundary-layer option
                                      = 0, no boundary-layer 
@@ -785,17 +797,18 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1, Grell 3D ensemble scheme (use with cu_physics=93 or 5) (PLACEHOLDER: SWITCH NOT YET IMPLEMENTED--use ishallow)
                                      = 2, Park and Bretherton shallow cumulus from CAM5 (CESM 1_0_1)
                                      = 3, GRIMS shallow cumulus from YSU group
+                                     = 5, Deng shallow cumulus from PSU and WRF-Solar
 
  ishallow                            = 0, !  = 1 turns on shallow convection, used with Grell 3D ensemble schemes (cu_physics = 3 or 5)
  clos_choice                         = 0, !  closure choice (place holder only)
- cu_diag (max_dom)                   = 0, !  additional t-averaged stuff for cu physics (cu_phys = 3, 5 and 93 only)
+ cu_diag (max_dom)                   = 0, !  additional t-averaged stuff for cu physics (cu_phys = 3, 5, 10, and 93 only)
  kf_edrates (max_dom)                = 0, !  Add entrainment/detrainment rates and convective timescale output variables for KF-based 
                                              cumulus schemes (cu_phys = 1, 11 and 99 only) (new in 3.8)
                                      = 0,  !  no output; = 1, additional output
  convtrans_avglen_m                  = 30, !  averaging time for variables used by convective transport (call cu_phys options)  and radiation routines (only cu_phys=3,5 and 93) (minutes) 
  cu_rad_feedback (max_dom)           = .false.  ! sub-grid cloud effect to the optical depth in radiation
                                                   currently it works only for GF, G3, GD and KF scheme
-                                                  One also needs to set cu_diag = 1 for GF, G3 and GD schemes
+                                                  One also needs to set cu_diag = 1 for GF, G3, KF-CuP, and GD schemes
  cudt (max_dom)                      = 0,       ! minutes between cumulus physics calls
  kfeta_trigger                       KF trigger option (cu_physics=1 only):
                                      = 1, default option
@@ -892,6 +905,10 @@ Namelist variables for controlling the adaptive time step option:
  pxlsm_smois_init(max_dom)           = 1        ! PXLSM Soil moisture initialization option 
                                                    0 - From analysis, 1 - From moisture availability
                                                    or SLMO in LANDUSE.TBL
+ pxlsm_modis_veg                     = 1,       ! PX LSM LAI and VEGFRA 
+                                                   0 - Old PX method that uses PX landuse look-up table
+                                                   1 - Use VEGFRA and LAI in wrflowinp_d0* file
+                                                   Note: Values used are called VEGF_PX and LAI_PX in output.
 
  maxiens                             = 1,       ! Grell-Devenyi only
  maxens                              = 3,       ! G-D only

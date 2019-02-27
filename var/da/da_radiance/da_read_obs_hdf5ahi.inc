@@ -79,7 +79,7 @@ subroutine da_read_obs_hdf5ahi (iv,infile_tb,infile_clp)
    integer(i_kind)  :: itx, itt
    character(80)    :: filename1, filename2
    integer          :: nchan,ilongitude,ilatitude,ichannels
-   integer          :: nfile
+   integer          :: nfile, ahi_info_unit
    character(80)    :: fname_tb(nfile_max)
    character(80)    :: fname_clp(nfile_max)
    logical          :: fexist, got_clp_file
@@ -174,17 +174,29 @@ subroutine da_read_obs_hdf5ahi (iv,infile_tb,infile_clp)
    end if
 
   !open the data info file 
-   open(unit=1990,file='ahi_info',status='old',iostat=iret)
+!   open(unit=1990,file='ahi_info',status='old',iostat=iret)
+!   if(iret /= 0)then
+!      call da_warning(__FILE__,__LINE__,(/"data_info file read error"/))
+!   endif
+!   read(1990,*) 
+!   read(1990,*)
+!   read(1990,*)
+!   read(1990,*)
+!   read(1990,*)
+!   read(1990,*)
+!   read(1990,*)
+   call da_get_unit(ahi_info_unit)
+   open(unit=ahi_info_unit,file='ahi_info',status='old',iostat=iret)
    if(iret /= 0)then
       call da_warning(__FILE__,__LINE__,(/"data_info file read error"/))
    endif
-   read(1990,*) 
-   read(1990,*)
-   read(1990,*)
-   read(1990,*)
-   read(1990,*)
-   read(1990,*)
-   read(1990,*)
+   read(ahi_info_unit,*) 
+   read(ahi_info_unit,*)
+   read(ahi_info_unit,*)
+   read(ahi_info_unit,*)
+   read(ahi_info_unit,*)
+   read(ahi_info_unit,*)
+   read(ahi_info_unit,*)
    
    infile_loop:  do ifile = 1, nfile
       num_ahi_file_local    = 0
@@ -357,7 +369,8 @@ subroutine da_read_obs_hdf5ahi (iv,infile_tb,infile_clp)
       end if 
 
 	 !read date information	  
-	  read(1990,*) idate5(1),idate5(2),idate5(3),idate5(4),idate5(5),idate5(6)
+!	  read(1990,*) idate5(1),idate5(2),idate5(3),idate5(4),idate5(5),idate5(6)
+	  read(ahi_info_unit,*) idate5(1),idate5(2),idate5(3),idate5(4),idate5(5),idate5(6)
 	  
 ! 2.0 Loop to read hdf file and assign information to a sequential structure
 !-------------------------------------------------------------------------
@@ -494,7 +507,9 @@ subroutine da_read_obs_hdf5ahi (iv,infile_tb,infile_clp)
       write(stdout,fmt='(3a,i7)') ' In file: ',trim(fname_tb(ifile)),' got num_ahi_local   : ',num_ahi_local_local
    end do infile_loop
  
-   close(1990) !close date information file
+!   close(1990) !close date information file
+   close(ahi_info_unit) !close date information file
+   call da_free_unit(ahi_info_unit)
    call H5close_f(iret)
    deallocate(data_all) ! Deallocate data arrays
 

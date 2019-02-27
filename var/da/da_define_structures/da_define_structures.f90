@@ -515,7 +515,7 @@ module da_define_structures
       integer, pointer     :: scanpos(:)
       integer, pointer     :: scanline(:)
       integer, pointer     :: cloud_flag(:,:)
-      integer, pointer     :: cloudflag(:)   !rewritted by wuyl
+      integer, pointer     :: cloudflag(:)
       integer, pointer     :: rain_flag(:)
       real,    pointer     :: satzen(:) 
       real,    pointer     :: satazi(:) 

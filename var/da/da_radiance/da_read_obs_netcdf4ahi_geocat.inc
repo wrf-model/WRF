@@ -100,15 +100,6 @@ subroutine da_read_obs_netcdf4ahi_geocat (iv, infile_tb, infile_clp)
 				 'himawari_8_ahi_channel_14_brightness_temperature',&
 				 'himawari_8_ahi_channel_15_brightness_temperature',&
 				 'himawari_8_ahi_channel_16_brightness_temperature'/   
-=======
-                 'himawari_8_ahi_channel_10_brightness_temperature',&
-                 'himawari_8_ahi_channel_11_brightness_temperature',&
-                 'himawari_8_ahi_channel_12_brightness_temperature',&
-                 'himawari_8_ahi_channel_13_brightness_temperature',&
-                 'himawari_8_ahi_channel_14_brightness_temperature',&
-                 'himawari_8_ahi_channel_15_brightness_temperature',&
-                 'himawari_8_ahi_channel_16_brightness_temperature'/   
->>>>>>> develop
 
    if (trace_use) call da_trace_entry("da_read_obs_netcdf4ahi_geocat")
 

@@ -75,7 +75,8 @@ subroutine da_varbc_pred(iv)
       if (npredmax >= 5) iv%instid(inst)%varbc_info%pred(5,n) = pred_hk(4)
 		
       ! Scan predictors	
-      if (varbc_scan(inst) == 1) then ! use scanpos for polar-orbiting sensors
+!wuyl      if (varbc_scan(inst) == 1) then ! use scanpos for polar-orbiting sensors
+      if (varbc_scan == 1) then ! use scanpos for polar-orbiting sensors
          if (npredmax >= 6) iv%instid(inst)%varbc_info%pred(6,n) = iv%instid(inst)%scanpos(n)
          if (npredmax >= 7) iv%instid(inst)%varbc_info%pred(7,n) = iv%instid(inst)%scanpos(n)**2
          if (npredmax >= 8) iv%instid(inst)%varbc_info%pred(8,n) = iv%instid(inst)%scanpos(n)**3

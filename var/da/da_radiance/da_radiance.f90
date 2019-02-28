@@ -122,7 +122,6 @@ contains
 #include "da_read_obs_bufriasi.inc"
 #include "da_read_obs_bufrseviri.inc"
 #include "da_read_obs_hdf5amsr2.inc"
-#include "da_read_obs_hdf5ahi.inc"
 #include "da_read_obs_netcdf4ahi_geocat.inc"
 #include "da_read_obs_netcdf4ahi_jaxa.inc"
 #include "da_read_obs_ncgoesimg.inc"

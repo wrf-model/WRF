@@ -69,12 +69,6 @@ end type fire_params
    ! relative weights of moisture class for each fuel category
    integer::itmp
    CHARACTER (len=80), DIMENSION(max_moisture_classes), save :: moisture_class_name
-   real, dimension(mfuelcats):: &  ! should sum up to one
-     fmc_gw01=(/ (1.0, itmp=1,mfuelcats) /), & 
-     fmc_gw02=(/ (0.0, itmp=1,mfuelcats) /), & 
-     fmc_gw03=(/ (0.0, itmp=1,mfuelcats) /), & 
-     fmc_gw04=(/ (0.0, itmp=1,mfuelcats) /), & 
-     fmc_gw05=(/ (0.0, itmp=1,mfuelcats) /) 
     
   data moisture_class_name /'1-hour fuel','10-hour fuel','100-hour fuel',zm*'NOT USED'/
   data drying_lag                 /1., 10., 100. , zm*0./  ! time lag (h) approaching equilibrium moisture 

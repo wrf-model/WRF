@@ -570,6 +570,9 @@
      CASE (CBMZ_MOSAIC_KPP)
        CALL wrf_debug(15,'calling cbmz_mosaic_kpp from chem_driver')
        haveaer = .false.
+     CASE (WCV_MECH_KPP)
+       CALL wrf_debug(15,'calling wcv_mech_kpp frpm chem driver')
+       haveaer = .false.
      CASE (CBMZ_MOSAIC_4BIN)
        CALL wrf_debug(15,'calling cbmz_mosaic_4bin aerosols driver from chem_driver')
        haveaer = .true.

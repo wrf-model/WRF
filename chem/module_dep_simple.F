@@ -275,6 +275,7 @@ tile_lon_loop : &
            (config_flags%chem_opt == CBMZ_BB       ) .or.          &
            (config_flags%chem_opt == CBMZ_BB_KPP   ) .or.          &
            (config_flags%chem_opt == CBMZ_MOSAIC_KPP   ) .or.      &
+           (config_flags%chem_opt == WCV_MECH_KPP   ) .or.      & !LSURL 20190226
            (config_flags%chem_opt == CBMZ_MOSAIC_4BIN_AQ) .or.     &
            (config_flags%chem_opt == CBMZ_MOSAIC_8BIN_AQ) .or.     &
            (config_flags%chem_opt == CBMZ_MOSAIC_4BIN) .or.        &
@@ -409,6 +410,23 @@ tile_lon_loop : &
          end do
       end if
 
+      if  (config_flags%chem_opt == WCV_MECH_KPP  )   then
+         do j=jts,jte
+            do i=its,ite
+               ddvel(i,j,p_aro1)        = 0
+               ddvel(i,j,p_aro2)         = 0
+               ddvel(i,j,p_alk1)         = 0
+               ddvel(i,j,p_ole1)        = 0
+               ddvel(i,j,p_api1)        = 0
+               ddvel(i,j,p_api2)        = 0
+               ddvel(i,j,p_lim1)        = 0
+               ddvel(i,j,p_lim2)        = 0
+               ddvel(i,j,p_api)        = 0
+               ddvel(i,j,p_lim)        = 0
+
+            end do
+         end do
+      end if
 
 
 ! For gocartracm,radm

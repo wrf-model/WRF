@@ -273,6 +273,7 @@
 !    call mieaer_modal()
 !
    CASE (CBMZ_MOSAIC_4BIN, CBMZ_MOSAIC_8BIN  , CBMZ_MOSAIC_KPP,        &
+         WCV_MECH_KPP, & !LSURL 20190226 added
          CBMZ_MOSAIC_4BIN_AQ, CBMZ_MOSAIC_8BIN_AQ,                     &
          CBMZ_MOSAIC_DMS_4BIN, CBMZ_MOSAIC_DMS_8BIN,                   &
          CBMZ_MOSAIC_DMS_4BIN_AQ, CBMZ_MOSAIC_DMS_8BIN_AQ,             &

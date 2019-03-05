@@ -72,7 +72,7 @@ end type fire_params
     
   data moisture_class_name /'1-hour fuel','10-hour fuel','100-hour fuel',zm*'NOT USED'/
   data drying_lag                 /1., 10., 100. , zm*0./  ! time lag (h) approaching equilibrium moisture 
-  data wetting_lag                   /14, 140., 1400., zm*0./  ! time lag (h) for approaching saturation in rain
+  data wetting_lag                   /1.4, 14., 140., zm*0./  ! time lag (h) for approaching saturation in rain
   data saturation_moisture        /2.5, 2.5, 2.5 , zm*0./  ! saturation moisture contents (1) in rain
   data saturation_rain            /8.0, 8.0, 8.0 , zm*0./  ! stronger rain matters only in duration (mm/h) 
   data rain_threshold             /0.05, 0.05, 0.05, zm*0 /! rain intensity this small is same as nothing

@@ -30,6 +30,7 @@ dimspec    nndgvar -     namelist=nobs_ndg_vars            c     nobs_ndg_vars
 dimspec    [       -     namelist=obs_prt_max              c     obs_prt_max
 dimspec    obsstid -     constant=40                       c     obs station id names
 dimspec    &       2     namelist=lagday                   z     lagday
+dimspec    seed    1     namelist=seed_dim                 z     seed_dim
 endif
 
 

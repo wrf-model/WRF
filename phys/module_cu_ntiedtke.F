@@ -49,26 +49,21 @@ module module_cu_ntiedtke
 #if defined(mpas)
      use mpas_atmphys_constants, only: rd=>R_d, rv=>R_v, &
    &       cpd=>cp, alv=>xlv, als=>xls, alf=>xlf, g=>gravity
-#elif defined(wrfmodel)
+#else
      use module_model_constants, only:rd=>r_d, rv=>r_v, &
-   &       cpd=>cp, alv=>xlv, als=>xls, alf=>xlf, t13=>Prandtl, g              
+   &       cpd=>cp, alv=>xlv, als=>xls, alf=>xlf, g
 #endif
 
      implicit none
-     real,private :: rcpd,vtmpc1,tmelt,                &
+     real,private :: t13,rcpd,vtmpc1,tmelt,            &
              c1es,c2es,c3les,c3ies,c4les,c4ies,c5les,c5ies,zrg
-#if defined(mpas)
-     real,private :: t13
-#endif
+
      real,private :: r5alvcp,r5alscp,ralvdcp,ralsdcp,ralfdcp,rtwat,rtber,rtice 
      real,private :: entrdd,cmfcmax,cmfcmin,cmfdeps,zdnoprc,cprcon,pgcoef
      integer,private :: momtrans
 
      parameter(         &
-#if defined(mpas)
-! parameter not present in mpas_atmphy_constants
       t13=1.0/3.0,      &
-#endif
       rcpd=1.0/cpd,     &
       tmelt=273.16,     &
       zrg=1.0/g,        &
@@ -3885,4 +3880,4 @@ contains
       end function  foeldcpm
 
 end module module_cu_ntiedtke
-                                                                                         
+

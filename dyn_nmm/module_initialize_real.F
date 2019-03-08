@@ -2102,9 +2102,13 @@ CONTAINS
    SUBROUTINE make_coupler_fort65(grid,&
         NDLMD,NDPHD,NWBD,NSBD,&
         NIDE,NJDE,PIFE,PJFE,tph0d,tlm0d)
-     use mpi
      use module_dm,only: local_communicator
      implicit none
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
+     include 'mpif.h'
+#else
+     integer, parameter :: MPI_UNDEFINED = -1
+#endif
      type(domain), intent(in) :: grid
      INTEGER,PARAMETER                           :: KNUM=SELECTED_REAL_KIND(13)
      REAL(KIND=KNUM), DIMENSION(:,:),    ALLOCATABLE :: NHLAT,NHLON,NVLAT,NVLON

@@ -165,8 +165,6 @@
 ! projection is not Cartesian), and only look at user-specified time steps
 ! (not the adaptive dt option).
 !-----------------------------------------------------------------------
-print *,'dt = ',config_flags%time_step
-print *,'dx = ',config_flags%dx
       IF ( ( grid%id .EQ. 1 ) .AND. &
            ( config_flags%map_proj .NE. 0 ) .AND. &
            ( .NOT. config_flags%use_adaptive_time_step ) ) THEN

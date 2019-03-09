@@ -126,6 +126,9 @@
 !  CCN for MP=18 initializatio
    REAL :: ccn_max_val
 
+   REAL :: dt_s, dx_km
+
+
    REAL :: max_mf, max_rot_angle
    CALL get_ijk_from_grid ( grid ,                              &
                            ids, ide, jds, jde, kds, kde,        &
@@ -153,6 +156,31 @@
       CALL wrf_error_fatal ( message )
    END IF
 
+!-----------------------------------------------------------------------
+! Do a gross check on the time step for the most coarse grid (not for
+! adaptive time steps. If the value is significantly larger than reasonable,
+! then stop immediately. Likely the user made a mistake.
+! If the rule of thumb is 6 DX = DT, then anything > 10 is flagged.
+! Only look at domain 1, only look at real-data cases (where the map
+! projection is not Cartesian), and only look at user-specified time steps
+! (not the adaptive dt option).
+!-----------------------------------------------------------------------
+print *,'dt = ',config_flags%time_step
+print *,'dx = ',config_flags%dx
+      IF ( ( grid%id .EQ. 1 ) .AND. &
+           ( config_flags%map_proj .NE. 0 ) .AND. &
+           ( .NOT. config_flags%use_adaptive_time_step ) ) THEN
+         dt_s = REAL(config_flags%time_step) + &
+                REAL(config_flags%time_step_fract_num) / &
+                REAL(config_flags%time_step_fract_den)
+         dx_km = MIN ( config_flags%dx , config_flags%dy ) / 1000.
+         IF ( dt_s / dx_km > config_flags%reasonable_time_step_ratio ) THEN
+            WRITE (message,*) 'Time step = ',dt_s, ' (s), Grid distance = ',dx_km, ' (km)'
+            CALL wrf_message ( TRIM(message) ) 
+            CALL wrf_error_fatal ( '--- ERROR: The time step is too large for this grid distance')
+         END IF
+      END IF
+
    IF ( config_flags%polar ) THEN
 !write(0,*)"<stdin>",__LINE__,' clat ',ips,ipe,jps,jpe
 !do j = jps,jpe
@@ -174,7 +202,6 @@
         CALL wrf_message ( TRIM(alloc_err_message) )
         CALL wrf_error_fatal ( 'Error allocating entire domain size of 2d array CLAT for global domain' )
      END IF
-
      CALL wrf_patch_to_global_real ( grid%clat, clat_glob, grid%domdesc, 'xy', 'xy', &
                                      ids, ide, jds, jde, 1, 1, &
                                      ims, ime, jms, jme, 1, 1, &

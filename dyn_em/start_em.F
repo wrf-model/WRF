@@ -200,6 +200,7 @@
         CALL wrf_message ( TRIM(alloc_err_message) )
         CALL wrf_error_fatal ( 'Error allocating entire domain size of 2d array CLAT for global domain' )
      END IF
+     
      CALL wrf_patch_to_global_real ( grid%clat, clat_glob, grid%domdesc, 'xy', 'xy', &
                                      ids, ide, jds, jde, 1, 1, &
                                      ims, ime, jms, jme, 1, 1, &

@@ -703,7 +703,7 @@ contains
      &     pssfc,    ldcum,                              &
      &     ktype,    kcbot,    kctop,    ptu,      pqu,&
      &     plu,      plude,    pmfu,     pmfd,     prain,&
-     &     pcte,     phhfl,    lndj,     zgeoh,    dx)
+     &     pcte,     phhfl,    lndj,     zgeoh,   dx)
       implicit none
 !
 !***cumastrn*  master routine for cumulus massflux-scheme

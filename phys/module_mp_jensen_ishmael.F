@@ -2831,7 +2831,7 @@ contains
   !.. Set incoming limit after sedimentation
   !.. smallest values for which we care about shape              
              if(ai(cc,k).lt.1.e-12.or.ci(cc,k).lt.1.e-12) then
-                ai(cc,k)=max(ai(cc,k),ci(cc,k))
+                ai(cc,k)=min(ai(cc,k),ci(cc,k))
                 ci(cc,k)=ai(cc,k)
                 ani(cc)=(ai(cc,k)/ni(cc,k))**0.3333333333
                 cni(cc)=(ci(cc,k)/ni(cc,k))**0.3333333333
@@ -3828,7 +3828,7 @@ contains
 
     implicit none
     
-    real, parameter :: QASMALL= 1.e-19   ! Smallest ice size   (m^-3 kg^-1)
+    real, parameter :: QNSMALL= 1.25e-7   ! Smallest ice number
     integer icat,k,kp1,kp2,isnow,ipris,it,ihab,jhab
     integer, parameter :: ncat=7,npair=35,ndn=60,nftab=1000,ngam=5000,nz=1
     real, parameter :: rsmall=1.e-12
@@ -4286,7 +4286,7 @@ contains
   !.. Update to characteristic diameters after aggregation
   !.. Note that for ice-one and ice-two, the axes will be re-diagnosed
   !.. after aggregation based on delta*, so only output aggregation size
-          dn(k,5) = ((r(k,5)+qagg3)*rhoa(k)/(MAX((en(k,5)+nagg3),QASMALL)*cfmas(5) &
+          dn(k,5) = ((r(k,5)+qagg3)*rhoa(k)/(MAX((en(k,5)+nagg3),QNSMALL)*cfmas(5) &
                *(gamma(gnu(5)+ &
                pwmas(5)))/(gamma(gnu(5))) ) )**(1./pwmas(5))
           ddum3=dn(k,5)

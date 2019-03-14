@@ -3865,6 +3865,7 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    INTEGER :: i, j, itf, jtf
    REAL, DIMENSION(20) :: nssl_params
    INTEGER    :: nssl_ipelec_tmp
+   INTEGER    :: i_err
 
    warm_rain = .false.
    adv_moist_cond = .true.
@@ -3976,11 +3977,11 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
          CALL morr_two_moment_init_aero( config_flags%morr_rimed_ice )
 #endif
      CASE (P3_1CATEGORY)
-         CALL p3_init('.',1)
+         CALL p3_init('.',1,'WRF',i_err,.false.)
      CASE (P3_1CATEGORY_NC)
-         CALL p3_init('.',1)
+         CALL p3_init('.',1,'WRF',i_err,.false.)
      CASE (P3_2CATEGORY)
-         CALL p3_init('.',2)
+         CALL p3_init('.',2,'WRF',i_err,.false.)
      CASE (MILBRANDT2MOM)
          CALL milbrandt2mom_init
 !      CASE (MILBRANDT3MOM)

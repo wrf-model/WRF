@@ -1,7 +1,7 @@
  &time_control
  run_days                            = 0,
  run_hours                           = 0,
- run_minutes                         = 240,
+ run_minutes                         = 480,
  run_seconds                         = 0,
  start_year                          = 0001, 0001, 0001,
  start_month                         = 01,   01,   01,
@@ -129,10 +129,10 @@
 ! ignition 
  fire_num_ignitions = 1,             ! integer, only the first fire_num_ignition used, up to 5 allowed
  fire_ignition_ros1 =   0.1,         ! rate of spread during ignition, m/s  
- fire_ignition_start_x1 = 40000,     ! start points of ignition lines, in m from lower left corner
- fire_ignition_start_y1 = 40000,     ! start points of ignition lines, in m from lower left corner
- fire_ignition_end_x1 =   41000,     ! end points of ignition lines, in m from lower left corner
- fire_ignition_end_y1 =   40000,     ! end points of ignition lines, in m from lower left corner
+ fire_ignition_start_x1 = 60000,     ! start points of ignition lines, in m from lower left corner
+ fire_ignition_start_y1 = 52000,     ! start points of ignition lines, in m from lower left corner
+ fire_ignition_end_x1 =   61000,     ! end points of ignition lines, in m from lower left corner
+ fire_ignition_end_y1 =   51000,     ! end points of ignition lines, in m from lower left corner
  fire_ignition_radius1 =    400,     ! all within this radius will ignite, > fire mesh step
  fire_ignition_start_time1 = 2,      ! sec for ignition from the start
  fire_ignition_end_time1  =502,      ! sec for ignition from the start

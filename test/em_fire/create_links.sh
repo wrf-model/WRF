@@ -4,17 +4,12 @@
 # This script is executed from compile em_fire
 # The directories are destroyed by clean -a
 
-mkdir -p two_fires fmc rain
+mkdir -p two_fires rain
 
 ( cd two_fires; ln -s ../../../main/ideal.exe . ;  ln -s ../../../main/wrf.exe . ; \
   ln -s ../input_sounding_two_fires input_sounding ; \
   ln -s ../namelist.fire_two_fires namelist.fire ; \
   ln -s ../namelist.input_two_fires namelist.input )
-
-( cd fmc; ln -s ../../../main/ideal.exe . ;  ln -s ../../../main/wrf.exe . ; \
-  ln -s ../input_sounding_hill_simple input_sounding ; \
-  ln -s ../namelist.fire_fmc namelist.fire ; \
-  ln -s ../namelist.input_hill_fuel_moisture namelist.input )
 
 ( cd rain; ln -s ../../../main/ideal.exe . ;  ln -s ../../../main/wrf.exe . ; \
   ln -s ../input_sounding_rain input_sounding ; \

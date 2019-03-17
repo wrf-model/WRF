@@ -3909,7 +3909,7 @@ ENDIF
 
 !JOE-add GRIMS parameters & variables
    real,parameter    ::  d1 = 0.02, d2 = 0.05, d3 = 0.001
-   real,parameter    ::  h1 = 0.33333335, h2 = 0.6666667
+   real,parameter    ::  h1 = 0.33333333, h2 = 0.6666667
    REAL :: govrth, sflux, bfx0, wstar3, wm2, wm3, delb
 !JOE-end GRIMS
 !JOE-top-down diffusion

@@ -66,17 +66,15 @@ no_fuel_cat = 14                   ! extra category for no fuel
              0.00000, 0.00000, 0.16639, 0.00000, 0.00000, 0.00000, 0.00000,
  /
 
-
 &moisture
-moisture_class_name = '1 hour fine fuel', '10 hour fine fuel',
-moisture_classes=2,   ! number of classes
-drying_model=1, 1,    ! number of model - only 1= equilibrium moisture Van Wagner (1972) per Viney (1991)  allowed at this moment
-drying_lag=1.0, 10.0,   ! so-called 10hr and 100hr fuel
-wetting_model=1, 1,   ! number of model - only 1= allowed at this moment
-wetting_lag=14.0, 140.0,  ! 14 is callibrated to VanWagner&Pickett 1985, Canadian fire danger rating system
-saturation_moisture=2.5, 2.5, ! ditto
-saturation_rain = 8.0,8.0, !  stronger rain than this (mm/h) does not make much difference.
-rain_threshold = 0.05,0.05 ! mm/h rain too weak to wet anything.
-fmc_gc_initialization =   2,     2,    ! 0 = from input, 1 = from fuelmc_g in namelist.input 2 = from equibrium
+moisture_classes=         5,               ! number of classes, max 5 (see comments in module_fr_sfire_phys.F how to increase)
+drying_model=             1,     1,     1,    1,     1, ! number of model - only 1= equilibrium moisture Van Wagner (1972) per Viney (1991)  allowed
+drying_lag=               1,    10,   100,  1000,   1e9, ! so-called 10hr and 100hr fuel
+wetting_model=            1,     1,     1,    1,     1, ! number of model - only 1= allowed at this moment
+wetting_lag=            1.4,  14.0,  140.0, 1400.0, 1e9, ! 14 is callibrated to VanWagner&Pickett 1985, Canadian fire danger rating system
+saturation_moisture=    2.5,   2.5,   2.5,  2.5,   2.5, ! ditto
+saturation_rain =       8.0,   8.0,   8.0,  8.0,   8.0, ! stronger rain than this (mm/h) does not make much difference.
+rain_threshold =       0.05,  0.05,  0.05,  0.05,  0.05,! mm/h rain too weak to wet anything.
+
 /
 

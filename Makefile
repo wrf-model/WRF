@@ -627,6 +627,9 @@ em_real : wrf
              ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
              ln -sf ../../run/p3_lookup_table_1.dat-v2.8.2 . ;                   \
              ln -sf ../../run/p3_lookup_table_2.dat-v2.8.2 . ;                   \
+             ln -sf ../../run/ishmael-gamma-tab.bin . ;             \
+             ln -sf ../../run/ishmael-qi-qc.bin . ;             \
+             ln -sf ../../run/ishmael-qi-qr.bin . ;             \
              ln -sf ../../run/BROADBAND_CLOUD_GODDARD.bin . ;        \
              if [ $(RWORDSIZE) -eq 8 ] ; then                       \
                 ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \

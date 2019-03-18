@@ -2196,6 +2196,12 @@
       
 #if ( (NMM_CORE != 1) && (DA_CORE != 1) )
 !-----------------------------------------------------------------------
+! How big to allocate random seed arrays.
+!-----------------------------------------------------------------------
+
+      CALL RANDOM_SEED ( SIZE = model_config_rec % seed_dim )
+
+!-----------------------------------------------------------------------
 ! If this is a WRF run with polar boundary conditions, then this is a
 ! global domain. A global domain needs to have the FFT arrays allocated.
 !-----------------------------------------------------------------------

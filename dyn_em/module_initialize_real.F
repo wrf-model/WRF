@@ -1776,7 +1776,7 @@ integer::oops1,oops2
                             config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                             config_flags%maxw_above_this_level , &
                             num_metgrid_levels , 'Q' , &
-                            interp_type , linear_interp , extrap_type , &
+                            interp_type , lagrange_order , extrap_type , &
                             lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                             zap_close_levels , force_sfc_in_vinterp , grid%id , &
                             ids , ide , jds , jde , kds , kde , &

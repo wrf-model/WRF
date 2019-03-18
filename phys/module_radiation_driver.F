@@ -4425,7 +4425,7 @@ SUBROUTINE ozn_time_int(julday,julian,ozmixm,ozmixt,levsiz,num_months,  &
       do j=jts,jte
       do k=1,levsiz
       do i=its,ite
-            ozmixt(i,k,j) = ozmixm(i,k,j,nm)*fact1 + ozmixm(i,k,j,np)*fact2
+            ozmixt(i,k,j) = ozmixm(i,k,j,nm+1)*fact1 + ozmixm(i,k,j,np+1)*fact2
       end do
       end do
       end do

@@ -191,6 +191,7 @@ rconfig   logical   use_obs_errfac          namelist,wrfvar4  1  .false.  - "use
 rconfig   logical   use_atmsobs             namelist,wrfvar4  1  .false.  - "use_atmsobs"              ""  ""
 rconfig   logical   use_mwtsobs             namelist,wrfvar4  1  .false.  - "use_mwtsobs"              ""  ""
 rconfig   logical   use_mwhsobs             namelist,wrfvar4  1  .false.  - "use_mwhsobs"              ""  ""
+rconfig   logical   use_mwhs2obs            namelist,wrfvar4  1  .false.  - "use_mwhs2obs"             ""  ""
 rconfig   logical   check_max_iv            namelist,wrfvar5  1  .true.   - "check_max_iv"             ""  ""
 rconfig   real      max_error_t             namelist,wrfvar5  1   5.0     - "max_error_t"              ""  ""
 rconfig   real      max_error_uv            namelist,wrfvar5  1   5.0     - "max_error_uv"             ""  ""

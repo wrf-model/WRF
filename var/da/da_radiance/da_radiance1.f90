@@ -234,6 +234,7 @@ contains
 #include "da_qc_mhs.inc"
 #include "da_qc_mwts.inc"
 #include "da_qc_mwhs.inc"
+#include "da_qc_mwhs2.inc"
 #include "da_qc_atms.inc"
 #include "da_qc_seviri.inc"
 #include "da_qc_amsr2.inc"

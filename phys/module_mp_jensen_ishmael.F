@@ -55,6 +55,11 @@ module module_mp_jensen_ishmael
   !.. Aggregation lookup tables arrays
   real, private, allocatable, dimension(:,:,:) :: coltab, coltabn
 
+  !.. Added for double precision
+  integer, parameter :: LUT_KIND_R4 = selected_real_kind(6) !.. 4 byte real
+  real(kind=LUT_KIND_R4), private, allocatable, dimension(:,:,:,:,:) :: itab_o, itabr_o
+  real(kind=LUT_KIND_R4), private, allocatable, dimension(:) :: gamma_tab_o
+
 contains
   !--------------------------------------------------------------------------------------------------------------!
   !--------------------------------------------------------------------------------------------------------------!
@@ -108,16 +113,16 @@ contains
     enddo
 
   !.. Read in ice-cloud water collection lookup table
-    if(.not.allocated(itab)) then 
-       allocate(itab(51,51,51,11,2))
+    if(.not.allocated(itab_o)) then 
+       allocate(itab_o(51,51,51,11,2))
 
        open(20, FILE='ishmael-qi-qc.bin', FORM='unformatted')
        do i1 = 1,51
           do i2 = 1,51
              do i3 = 1,51
                 do i4 = 1,11
-                   read(20) itab(i1,i2,i3,i4,1), &
-                        itab(i1,i2,i3,i4,2)
+                   read(20) itab_o(i1,i2,i3,i4,1), &
+                        itab_o(i1,i2,i3,i4,2)
                 enddo
              enddo
           enddo
@@ -127,20 +132,20 @@ contains
     endif
 
   !.. Read in ice-rain collection lookup table
-    if(.not.allocated(itabr)) then
-       allocate(itabr(51,51,51,11,6))
+    if(.not.allocated(itabr_o)) then
+       allocate(itabr_o(51,51,51,11,6))
 
        open(30, FILE='ishmael-qi-qr.bin', FORM='unformatted')
        do i1 = 1,51
           do i2 = 1,51
              do i3 = 1,51
                 do i4 = 1,11
-                   read(30) itabr(i1,i2,i3,i4,1), &
-                        itabr(i1,i2,i3,i4,2), &
-                        itabr(i1,i2,i3,i4,3), &
-                        itabr(i1,i2,i3,i4,4), &
-                        itabr(i1,i2,i3,i4,5), &
-                        itabr(i1,i2,i3,i4,6)
+                   read(30) itabr_o(i1,i2,i3,i4,1), &
+                        itabr_o(i1,i2,i3,i4,2), &
+                        itabr_o(i1,i2,i3,i4,3), &
+                        itabr_o(i1,i2,i3,i4,4), &
+                        itabr_o(i1,i2,i3,i4,5), &
+                        itabr_o(i1,i2,i3,i4,6)
                 enddo
              enddo
           enddo
@@ -150,12 +155,12 @@ contains
     endif
 
   !.. Read in gamma function lookup table for speedy code
-    if(.not.allocated(gamma_tab)) then
-       allocate(gamma_tab(505001))
+    if(.not.allocated(gamma_tab_o)) then
+       allocate(gamma_tab_o(505001))
 
        open(40, FILE='ishmael-gamma-tab.bin', FORM='unformatted')
        do i1 = 1,505001
-          read(40) gamma_tab(i1)
+          read(40) gamma_tab_o(i1)
        enddo
        close(40)
        print*, 'Jensen_ISHMAEL lookup table 3 of 3'
@@ -196,6 +201,8 @@ contains
   !.. Call to build the aggregation lookup table
     call mkcoltb(ndn,ncat,coltab,coltabn,ipair,gnu,tablo,tabhi,cfmas,pwmas,cfvt,pwvt)
     print*, 'Jensen_ISHMAEL aggregation lookup table built'
+
+    itab = itab_o; itabr = itabr_o; gamma_tab = gamma_tab_o
 
   end subroutine jensen_ishmael_init
 
@@ -533,6 +540,9 @@ contains
     real :: sink, source, ratio !.. Terms used to prevent over-depletion
     real :: rrr                 !.. rain characteristic radius
 
+  !.. Fall speed parameters
+    real :: phiivt, bl, al, aa, ba, qe, xn, bx, xm, f_c1, f_c2, bm, am, nre
+                
   !.. Local variables for riming
     real :: vir, vif, vfr, rhobarrime, rimedr, rimedrr, rimec1, rhobarwg
 
@@ -542,7 +552,7 @@ contains
     real :: curnum, ratel, ratekg, inrate
 
   !.. Local variables for vapor growth
-    real :: vi, iwci, nim3dum, prdsum, qcrimesum
+    real :: vi, iwci, nim3dum, prdsum, qcrimesum, qcrimesumr
 
   !.. Local variables for melting
     real :: mfact, nimelt
@@ -588,6 +598,8 @@ contains
     real :: mnuccd  !.. Deposition nucleation rate (kg kg^-1 s^-1)
     real :: nnuccd  !.. Deposition nucleation rate (# kg^-1)                               
     real :: pcc     !.. Cloud mass growth rate (kg kg^-1 s^-1)                                            
+    real :: qagg(cat)    !.. Aggregation mass tendency (kg kg^-1)
+    real :: nagg(cat)    !.. Aggregation number tendency (# kg^-1)
     real :: prd(cat)     !.. Vapor growth rate (kg kg^-1 s^-1)                       
     real :: nrd(cat)     !.. Vapor growth number rate sublimation (# kg^-1 s^-1)                       
     real :: ard(cat)     !.. A-axis vapor growth rate mixing ratio (m kg^-1 s^-1) 
@@ -734,6 +746,8 @@ contains
              ani(cc)=0.
              cni(cc)=0.
              rni(cc)=0.
+             qagg(cc)=0.
+             nagg(cc)=0.
              prd(cc) =0.
              nrd(cc) =0.
              ard(cc) =0.
@@ -863,14 +877,24 @@ contains
                 ani(cc) =max((((ai(cc,k)**2)/(ci(cc,k)*ni(cc,k)))**0.333333333333),2.e-6)
                 cni(cc) =max((((ci(cc,k)**2)/(ai(cc,k)*ni(cc,k)))**0.333333333333),2.e-6)
 
-                ci(cc,k) = cni(cc)**2*ani(cc)*ni(cc,k)                                                                                                
+  !.. Set incoming limit after advection
+  !.. smallest values for which we care about shape              
+                if(ai(cc,k).lt.1.e-12.or.ci(cc,k).lt.1.e-12) then
+                   ai(cc,k)=min(ai(cc,k),ci(cc,k))
+                   ci(cc,k)=ai(cc,k)
+                   ani(cc)=(ai(cc,k)/ni(cc,k))**0.3333333333
+                   cni(cc)=(ci(cc,k)/ni(cc,k))**0.3333333333
+                endif
+
+                if(ani(cc).lt.2.e-6.or.cni(cc).lt.2.e-6) then
+                   ani(cc)=2.e-6
+                   cni(cc)=2.e-6
+                endif
+
+                ci(cc,k) = cni(cc)**2*ani(cc)*ni(cc,k)                                           
                 ai(cc,k) = ani(cc)**2*cni(cc)*ni(cc,k)
 
-                if(ani(cc).gt.(1.1*ao).and.cni(cc).gt.(1.1*ao)) then
-                   deltastr(cc)=(log(cni(cc))-log(ao))/(log(ani(cc))-log(ao)) 
-                else
-                   deltastr(cc)=1.
-                endif
+                deltastr(cc)=(log(cni(cc))-log(ao))/(log(ani(cc))-log(ao)) 
              
                 call var_check(NU, ao, fourthirdspi, gammnu, qi(cc,k), deltastr(cc),       &
                      ani(cc), cni(cc), rni(cc), rhobar(cc), ni(cc,k), ai(cc,k), ci(cc,k),  &
@@ -879,18 +903,12 @@ contains
   !--------------------------------------------------------------------------------------------------------------!
   !--------------------------------------------------------------------------------------------------------------!
   !.. Ice-cloud riming rates from lookup table
-                if(RIMING.and.qc(k).gt.QSMALL) then
+                if(RIMING.and.qc(k).gt.1.e-7) then
                 
   !.. The lookup table is in log space.  Do not change the following 4 lines without
   !.. changing the offline-built lookup table
                    rrni = 13.498*log10(0.5e6*rni(cc))
-                   
-                   if((1.0e7*(exp(qc(k))-1.)).gt.1.) then
-                      rqci = 8.776*log10(1.0e7*(exp(qc(k))-1.))
-                   else
-                      rqci = 1.
-                   endif
-
+                   rqci = 8.776*log10(1.0e7*(exp(qc(k))-1.))
                    rdsi = 50.*(deltastr(cc) - 0.5)
                    rrho = 7.888*log10(0.02*rhobar(cc))
                    irni = int(rrni)
@@ -1357,8 +1375,7 @@ contains
                    
                    qmlt(cc)=min(qmlt(cc),0.)
                    qmlt(cc)=max(qmlt(cc),(-qi(cc,k)*i_dt))
-                   
-                   nmlt(cc) = ni(cc,k)*max(-1.,qmlt(cc)/qi(cc,k))
+                   nmlt(cc) = max((-ni(cc,k)*i_dt),(ni(cc,k)*qmlt(cc)/qi(cc,k)-dNmltri(cc)))
                    
                    gamma_arg = NU+2.+deltastr(cc)
                    gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
@@ -1424,13 +1441,13 @@ contains
              inrate = inrate*i_rhoair(k) !.. # kg^-1
              
              if((((ni(ICE1,k)+ni(ICE2,k)+inrate)*rhoair(k))/1000.).le.10000.) then
-                mnuccd=(inrate)*(fourthirdspi*RHOI*(1.e-6)**3)*i_dt
+                mnuccd=(inrate)*(fourthirdspi*RHOI*(2.e-6)**3)*i_dt
                 nnuccd=inrate*i_dt
              else
                 curnum = (ni(ICE1,k)+ni(ICE2,k))*rhoair(k)/1000.
                 ratel = max(0.,(10000.-curnum))
                 ratekg = ratel*1000.*i_rhoair(k)
-                mnuccd=(ratekg)*(fourthirdspi*RHOI*(1.e-6)**3)*i_dt
+                mnuccd=(ratekg)*(fourthirdspi*RHOI*(2.e-6)**3)*i_dt
                 nnuccd=ratekg*i_dt
              endif
           endif
@@ -1459,9 +1476,57 @@ contains
              enddo
           endif
 
-  !------------------------------------------------------------------------------------------------------!
-  !------------------------------------------------------------------------------------------------------!
-
+  !.. Aggregation (currently only for T < T0
+          if(temp.le.T0) then
+             
+             if(qi(ICE1,k).gt.1.e-8.or.qi(ICE2,k).gt.1.e-8.or.qi(ICE3,k).gt.1.e-8) then
+                do cc = 1, cat
+                   ni(cc,k) = max(ni(cc,k),QNSMALL)
+                   ai(cc,k) = max(ai(cc,k),QASMALL)
+                   ci(cc,k) = max(ci(cc,k),QASMALL)
+                enddo
+                
+  !.. Get characteristic diameters for aggregation
+                dn1      = 2.*((ai(ICE1,k)**2)/(ci(ICE1,k)*ni(ICE1,k)))**0.333333333333
+                dn2      = 2.*((ci(ICE2,k)**2)/(ai(ICE2,k)*ni(ICE2,k)))**0.333333333333
+                dn3      = 2.*((ai(ICE3,k)**2)/(ci(ICE3,k)*ni(ICE3,k)))**0.333333333333
+                  
+                dn1 = MIN(dn1,1.e-2)
+                dn2 = MIN(dn2,1.e-2)
+                dn3 = MIN(dn3,1.e-2)
+                
+                dn1 = MAX(dn1,1.e-6)
+                dn2 = MAX(dn2,1.e-6)
+                dn3 = MAX(dn3,1.e-6)
+                
+  !.. Get ice-one and ice-two aspect ratios 
+  !.. Spherical paritcles aggregate at a slower rate than less spherical ones
+                gamma_arg = NU-1.+deltastr(1)
+                gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
+                phiagg1=ci(1,k)/ai(1,k)*gamma_tab(gi)*i_gammnu
+                
+                gamma_arg = NU-1.+deltastr(2)
+                gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
+                phiagg2=ci(2,k)/ai(2,k)*gamma_tab(gi)*i_gammnu
+                
+                phiagg1=MIN(phiagg1,100.)
+                phiagg1=MAX(phiagg1,0.01)
+                
+                phiagg2=MIN(phiagg2,100.)
+                phiagg2=MAX(phiagg2,0.01)
+                
+  !.. Ice-1 and ice-2 mass and number loss to aggregates occurs inside of aggregation
+  !.. After aggregation, ice-1 and ice-2 bulk distribution properties are adjusted 
+  !.. assuming that aggregation did not cause the original shape and density of the
+  !.. unaggregated particles to change
+                call aggregation(dt,rhoair(k),temp,qi(ICE1,k),ni(ICE1,k),dn1,qi(ICE2,k),ni(ICE2,k),dn2,  &
+                     qi(ICE3,k),ni(ICE3,k),dn3,rhobar(ICE1),rhobar(ICE2),phiagg1,phiagg2,coltab,         &
+                     coltabn,qagg(ICE1),qagg(ICE2),qagg(ICE3),nagg(ICE1),nagg(ICE2),nagg(ICE3))
+             endif  !.. If ice mass mixing ratios are high enough to aggregate
+          endif
+          
+  !--------------------------------------------------------------------------------------------------------------!
+  !--------------------------------------------------------------------------------------------------------------!
   !.. Warm Microphysics
 
   !.. Get raindrop size distribution parameters
@@ -1555,60 +1620,218 @@ contains
   !.. itself does not change but the distribution shape becomes 
   !.. more spherical as nucleated particles are added.   
 
+  !.. Do not over-deplete
+  
+  !.. Cloud water
+  !.. First sum the total loss from riming
           qcrimesum=0.
           do cc = 1, cat
              qcrimesum = qcrimesum + prdr(cc)*qcrimefrac(cc)
           enddo
 
-          ! Cloud water
-          sink  =(prc+pra+qcrimesum)*dt
+          sink  =(prc+pra+qcrimesum+mim)*dt
           source=qc(k)
           if(sink.gt.source.and.qc(k).gt.QSMALL) then
              ratio = source/sink
              prc = prc*ratio
              pra = pra*ratio
+             mim = mim*ratio
              do cc = 1, cat
                 prdr(cc) = prdr(cc)*ratio
                 ardr(cc) = ardr(cc)*ratio
                 crdr(cc) = crdr(cc)*ratio
              enddo
           endif
-          
-          ! Ice
-          do cc = 1, CAT
-             sink  =(-qmlt(cc))*dt
-             source=qi(cc,k)
-             if(sink.gt.source.and.qi(cc,k).gt.QSMALL) then
-                ratio= source/sink
-                qmlt(cc) = qmlt(cc)*ratio
-                nmlt(cc) = nmlt(cc)*ratio
-                amlt(cc) = amlt(cc)*ratio
-                cmlt(cc) = cmlt(cc)*ratio
-             endif
-          enddo
 
-          qcrimesum=0.
+  !.. Rain
+  !.. First sum the total loss from riming
+          qcrimesumr=0.
           do cc = 1, cat
-             qcrimesum = qcrimesum + prdr(cc)*(1.-qcrimefrac(cc))
+             qcrimesumr = qcrimesumr + prdr(cc)*(1.-qcrimefrac(cc))
           enddo
 
-          ! Rain
-          sink = (-pre+qcrimesum)*dt
+          sink = (-pre+qcrimesumr+mimr+mbiggr)*dt
           source = qr(k) + (pra+prc)*dt
           do cc = 1, cat
              source = source + (-qmlt(cc)*dt)
           enddo
+          do cc = 1, cat
+             sink = sink + (dQRfzri(cc))*dt
+          enddo
           if(sink.gt.source.and.qr(k).gt.QSMALL) then
              ratio= source/sink
-             pre = pre*ratio
              do cc = 1, cat
                 prdr(cc) = prdr(cc)*ratio
                 ardr(cc) = ardr(cc)*ratio
                 crdr(cc) = crdr(cc)*ratio
                 qi_qr_nrn(cc)=qi_qr_nrn(cc)*ratio
+                dQRfzri(cc) = dQRfzri(cc)*ratio
+                dQIfzri(cc) = dQIfzri(cc)*ratio
+                dNfzri(cc)  = dNfzri(cc)*ratio
              enddo
+             mimr       = mimr*ratio
+             nimr       = nimr*ratio
+             mbiggr     =mbiggr*ratio
+             nbiggr     =nbiggr*ratio
+             pre        = pre*ratio
           endif
-          
+
+  !.. Ice
+          if(igr.le.1.) then
+  !.. nucleation to ice 1
+  !.. Ice 1 
+             sink  =(-qmlt(ICE1)-qagg(ICE1))*dt
+             source=qi(ICE1,k) + (prdr(ICE1))*dt
+             if(prd(ICE1).gt.0.) then
+                source = source + prd(ICE1)*dt
+             else
+                sink = sink + (-prd(ICE1))*dt
+             endif
+
+  !.. Added because of ice initaltion to ice 1
+             source = source + (mnuccd+mim+mimr+mbiggr+dQIfzri(ICE2)+dQIfzri(ICE3))*dt
+             do cc = 1, cat
+                source = source + (qmult(cc)+dQRfzri(cc))*dt
+             enddo
+
+             if(sink.gt.source.and.qi(ICE1,k).gt.QSMALL) then
+                ratio= source/sink
+                qmlt(ICE1) = qmlt(ICE1)*ratio
+                nmlt(ICE1) = nmlt(ICE1)*ratio
+                amlt(ICE1) = amlt(ICE1)*ratio
+                cmlt(ICE1) = cmlt(ICE1)*ratio
+                qagg(ICE1) = qagg(ICE1)*ratio
+                nagg(ICE1) = nagg(ICE1)*ratio
+                if(prd(ICE1).lt.0.) then
+                   prd(ICE1) = prd(ICE1)*ratio
+                endif
+             endif
+
+  !.. Ice 2
+             sink  =(dQIfzri(ICE2)-qmlt(ICE2)-qagg(ICE2))*dt
+             source=qi(ICE2,k) + (prdr(ICE2))*dt
+             if(prd(ICE2).gt.0.) then
+                source = source + prd(ICE2)*dt
+             else
+                sink = sink + (-prd(ICE2))*dt
+             endif
+
+             if(sink.gt.source.and.qi(ICE2,k).gt.QSMALL) then
+                ratio= source/sink
+                dQIfzri(ICE2) = dQIfzri(ICE2)*ratio
+                dQRfzri(ICE2) = dQRfzri(ICE2)*ratio
+                dNfzri(ICE2)  = dNfzri(ICE2)*ratio
+                qmlt(ICE2) = qmlt(ICE2)*ratio
+                nmlt(ICE2) = nmlt(ICE2)*ratio
+                amlt(ICE2) = amlt(ICE2)*ratio
+                cmlt(ICE2) = cmlt(ICE2)*ratio
+                qagg(ICE2) = qagg(ICE2)*ratio
+                nagg(ICE2) = nagg(ICE2)*ratio
+                if(prd(ICE2).lt.0.) then
+                   prd(ICE2) = prd(ICE2)*ratio
+                endif
+             endif
+  !.. Ice 3
+             sink  =(dQIfzri(ICE3)-qmlt(ICE3))*dt
+             source=qi(ICE3,k) + (prdr(ICE3)+qagg(ICE3))*dt
+             if(prd(ICE3).gt.0.) then
+                source = source + prd(ICE3)*dt
+             else
+                sink = sink + (-prd(ICE3))*dt
+             endif
+
+             if(sink.gt.source.and.qi(ICE3,k).gt.QSMALL) then
+                ratio= source/sink
+                dQIfzri(ICE3) = dQIfzri(ICE3)*ratio
+                dQRfzri(ICE3) = dQRfzri(ICE3)*ratio
+                dNfzri(ICE3)  = dNfzri(ICE3)*ratio
+                qmlt(ICE3) = qmlt(ICE3)*ratio
+                nmlt(ICE3) = nmlt(ICE3)*ratio
+                amlt(ICE3) = amlt(ICE3)*ratio
+                cmlt(ICE3) = cmlt(ICE3)*ratio
+                if(prd(ICE3).lt.0.) then
+                   prd(ICE3) = prd(ICE3)*ratio
+                endif
+             endif
+          else
+  !.. nucleation to ice 2
+  !.. Ice 2 
+             sink  =(-qmlt(ICE2)-qagg(ICE2))*dt
+             source=qi(ICE2,k) + (prdr(ICE2))*dt
+             if(prd(ICE2).gt.0.) then
+                source = source + prd(ICE2)*dt
+             else
+                sink = sink + (-prd(ICE2))*dt
+             endif
+
+  !.. Added because of ice initaltion to ice 2
+             source = source + (mnuccd+mim+mimr+mbiggr+dQIfzri(ICE1)+dQIfzri(ICE3))*dt
+             do cc = 1, cat
+                source = source + (qmult(cc)+dQRfzri(cc))*dt
+             enddo
+
+             if(sink.gt.source.and.qi(ICE2,k).gt.QSMALL) then
+                ratio= source/sink
+                qmlt(ICE2) = qmlt(ICE2)*ratio
+                nmlt(ICE2) = nmlt(ICE2)*ratio
+                amlt(ICE2) = amlt(ICE2)*ratio
+                cmlt(ICE2) = cmlt(ICE2)*ratio
+                qagg(ICE2) = qagg(ICE2)*ratio
+                nagg(ICE2) = nagg(ICE2)*ratio
+                if(prd(ICE2).lt.0.) then
+                   prd(ICE2) = prd(ICE2)*ratio
+                endif
+             endif
+
+  !.. Ice 1
+             sink  =(dQIfzri(ICE1)-qmlt(ICE1)-qagg(ICE1))*dt
+             source=qi(ICE1,k) + (prdr(ICE1))*dt
+             if(prd(ICE1).gt.0.) then
+                source = source + prd(ICE1)*dt
+             else
+                sink = sink + (-prd(ICE1))*dt
+             endif
+
+             if(sink.gt.source.and.qi(ICE1,k).gt.QSMALL) then
+                ratio= source/sink
+                dQIfzri(ICE1) = dQIfzri(ICE1)*ratio
+                dQRfzri(ICE1) = dQRfzri(ICE1)*ratio
+                dNfzri(ICE1)  = dNfzri(ICE1)*ratio
+                qmlt(ICE1) = qmlt(ICE1)*ratio
+                nmlt(ICE1) = nmlt(ICE1)*ratio
+                amlt(ICE1) = amlt(ICE1)*ratio
+                cmlt(ICE1) = cmlt(ICE1)*ratio
+                qagg(ICE1) = qagg(ICE1)*ratio
+                nagg(ICE1) = nagg(ICE1)*ratio
+                if(prd(ICE1).lt.0.) then
+                   prd(ICE1) = prd(ICE1)*ratio
+                endif
+             endif
+  !.. Ice 3
+             sink  =(dQIfzri(ICE3)-qmlt(ICE3))*dt
+             source=qi(ICE3,k) + (prdr(ICE3)+qagg(ICE3))*dt
+             if(prd(ICE3).gt.0.) then
+                source = source + prd(ICE3)*dt
+             else
+                sink = sink + (-prd(ICE3))*dt
+             endif
+
+             if(sink.gt.source.and.qi(ICE3,k).gt.QSMALL) then
+                ratio= source/sink
+                dQIfzri(ICE3) = dQIfzri(ICE3)*ratio
+                dQRfzri(ICE3) = dQRfzri(ICE3)*ratio
+                dNfzri(ICE3)  = dNfzri(ICE3)*ratio
+                qmlt(ICE3) = qmlt(ICE3)*ratio
+                nmlt(ICE3) = nmlt(ICE3)*ratio
+                amlt(ICE3) = amlt(ICE3)*ratio
+                cmlt(ICE3) = cmlt(ICE3)*ratio
+                if(prd(ICE3).lt.0.) then
+                   prd(ICE3) = prd(ICE3)*ratio
+                endif
+             endif
+          endif
+
+  !.. Do not let vapor growth of ice create subsaturated conditions          
           prdsum=0.
           do cc = 1, cat
              prdsum = prdsum + prd(cc)
@@ -1638,7 +1861,6 @@ contains
              ni(cc,k)=ni(cc,k)+(nrd(cc))*dt
              ai(cc,k)=ai(cc,k)+(ard(cc))*dt
              ci(cc,k)=ci(cc,k)+(crd(cc))*dt
-             qv(k)=qv(k)-(prd(cc))*dt
              
              ni(cc,k) = max(ni(cc,k),QNSMALL)
              ai(cc,k) = max(ai(cc,k),QASMALL)
@@ -1677,21 +1899,10 @@ contains
                 rhobar(cc) = RHOI
              endif
              
-             if(temp.le.T0) then
-                ! Riming update
-                qi(cc,k)=qi(cc,k)+(prdr(cc))*dt
-                ai(cc,k)=ai(cc,k)+(ardr(cc))*dt
-                ci(cc,k)=ci(cc,k)+(crdr(cc))*dt
-             else
-                ! Shedding
-                qr(k) = qr(k) + (prdr(cc))*dt
-                lamr = 4000.
-                nr(k) = nr(k) + ((prdr(cc)*lamr*lamr*lamr)/(PI*RHOW))*dt
-             endif
+             qi(cc,k)=qi(cc,k)+(prdr(cc))*dt
+             ai(cc,k)=ai(cc,k)+(ardr(cc))*dt
+             ci(cc,k)=ci(cc,k)+(crdr(cc))*dt
 
-             ! Riming loss of cloud water rain
-             qr(k)=qr(k)-(prdr(cc)*(1.-qcrimefrac(cc)))*dt
-             nr(k)=nr(k)-(max((qi_qr_nrn(cc)*ni(cc,k)*nr(k)*rhoair(k)),0.))*dt
           enddo
 
   !.. Keep everything in bounds after vapor growth and riming
@@ -1706,11 +1917,7 @@ contains
                 ci(cc,k) = cni(cc)**2*ani(cc)*ni(cc,k)                                          
                 ai(cc,k) = ani(cc)**2*cni(cc)*ni(cc,k)
 
-                if(ani(cc).gt.(1.1*ao).and.cni(cc).gt.(1.1*ao)) then
-                   deltastr(cc)=(log(cni(cc))-log(ao))/(log(ani(cc))-log(ao))
-                else
-                   deltastr(cc)=1.
-                endif
+                deltastr(cc)=(log(cni(cc))-log(ao))/(log(ani(cc))-log(ao))
                    
                 call var_check(NU, ao, fourthirdspi, gammnu, qi(cc,k), deltastr(cc),       &
                      ani(cc), cni(cc), rni(cc), rhobar(cc), ni(cc,k), ai(cc,k), ci(cc,k),  &
@@ -1718,18 +1925,8 @@ contains
              endif
           enddo
 
-
-          ! Update rain after warm rain and ice melting
-          qr(k)=qr(k)+(pre+prc+pra)*dt
-          nr(k)=nr(k)+(nprc1+nragg+npre)*dt
-          do cc = 1, cat
-             qr(k)=qr(k)+(-qmlt(cc))*dt
-             nr(k)=nr(k)+(-nmlt(cc))*dt
-          enddo
-          
-  !------------------------------------------------------------------------------------------------------!
-  !------------------------------------------------------------------------------------------------------!       
-
+  !--------------------------------------------------------------------------------------------------------------!
+  !--------------------------------------------------------------------------------------------------------------!
   !.. Update to ice after melting
           if(temp.gt.T0) then
              do cc = 1, cat
@@ -1764,146 +1961,41 @@ contains
                    ci(cc,k) = cni(cc)**2*ani(cc)*ni(cc,k)                                   
                    ai(cc,k) = ani(cc)**2*cni(cc)*ni(cc,k)
 
-                   if(ani(cc).gt.(1.1*ao).and.cni(cc).gt.(1.1*ao)) then
-                      deltastr(cc)=(log(cni(cc))-log(ao))/(log(ani(cc))-log(ao))
-                   else
-                      deltastr(cc)=1.
-                   endif
-                   
-  !.. Once ice has melted to a certain density make it spherical
-                   if(rhobar(cc).ge.700..and.qmlt(cc)<0.) then
-                      deltastr(cc)=1.
-                   endif
-                   
-!                   if(deltastr(cc).lt.0.55.or.deltastr(cc).gt.1.3) then
-                   call var_check(NU, ao, fourthirdspi, gammnu, qi(cc,k), deltastr(cc), &
-                        ani(cc), cni(cc), rni(cc), rhobar(cc), ni(cc,k), ai(cc,k), ci(cc,k),        &
-                        alphstr, alphv, betam)
-!                   endif
-                
-                   ! Update ani after melting
-!                   alphstr=ao**(1.-deltastr(cc))
-!                   gamma_arg = NU+2.+deltastr(cc)
-!                   gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
-!                   ani(cc) = ((qi(cc,k))/(ni(cc,k)*rhobar(cc)*fourthirdspi*alphstr*gamma_tab(gi)*i_gammnu))**&
-!                        (1./(2.+deltastr(cc)))
-                
-  !.. The density increase during melting coupled with small amounts of mass size sorting out
-  !.. can cause large sizes.  We rediagnose the number mixing ratio, assuming that the distributions narrow
-  !.. during melting.  This prevents small mass mixing ratios with very large sizes during melting      
-  !.. size sorting is also removed from the fall speed during melting in bulkevolve subroutine
-!                   if(rhobar(cc).ge.700.and.cc.ne.3) then
-!                      mfact = (rhobar(cc)-645.)/13.75
-!                      mfact = max(mfact,4.)
-!                      mfact = min(mfact,20.)
-                      
-!                      ni(cc,k)=ni(cc,k)-nmlt(cc)*dt
-!                      ani = ((qi(cc,k))/(ni(cc,k)*rhobar(cc)*fourthirdspi*alphstr* &
-!                           (gamma(mfact+deltastr(cc)+2.))/(gamma(mfact))))**(1./(2.+deltastr(cc)))
-!                      ani = max(ani,0.)
-!                      gamma_arg = NU+2.+deltastr(cc)
-!                      gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
-!                      nimelt = ((qi(cc,k))/(rhobar(cc)*fourthirdspi*alphstr* &
-!                           ani**(2.+deltastr(cc))*gamma_tab(gi)/gammnu))
-                      
-!                      if(nimelt.gt.ni(cc,k)) then
-!                         nimelt=ni(cc,k)
-!                         ani = ((qi(cc,k))/(nimelt*rhobar(cc)*fourthirdspi*alphstr* &
-!                              (gamma(mfact+deltastr(cc)+2.))/(gamma(mfact))))**&
-!                              (1./(2.+deltastr(cc)))
-!                         ani = max(ani,0.)
-!                      endif
-                      
-!                      ni(cc,k) = nimelt
-!                      ni(cc,k)=max(ni(cc,k),QNSMALL)
-!                   endif
-                   
-!                   ani(cc)=max(ani(cc),0.)
-!                   cni(cc)=alphstr*ani(cc)**deltastr(cc)
-!                   ai(cc,k)=ani(cc)**2*cni(cc)*ni(cc,k)
-!                   ci(cc,k)=cni(cc)**2*ani(cc)*ni(cc,k)
-                   
-                endif  ! End if ice exists after melting
-             enddo     ! Loop over all ices species
-          endif        ! End temperature above melting
-       
-  !------------------------------------------------------------------------------------------------------!
-  !------------------------------------------------------------------------------------------------------!       
+                   deltastr(cc)=(log(cni(cc))-log(ao))/(log(ani(cc))-log(ao))
 
-          ! Update to cloud and vapor
-          qc(k)=qc(k)+(-prc-pra)*dt
+                   call var_check(NU, ao, fourthirdspi, gammnu, qi(cc,k), deltastr(cc),       &
+                        ani(cc), cni(cc), rni(cc), rhobar(cc), ni(cc,k), ai(cc,k), ci(cc,k),  &
+                        alphstr, alphv, betam)
+                   
+                endif  !.. End if ice exists after melting
+             enddo     !.. Loop over all ices species
+          endif        !.. End temperature above melting
+       
+  !--------------------------------------------------------------------------------------------------------------!
+  !--------------------------------------------------------------------------------------------------------------!
+  !.. Update to vapor
+          qv(k)=qv(k)+(-pre-mnuccd)*dt
+          do cc = 1, cat
+             qv(k)=qv(k)+(-prd(cc))*dt
+          enddo
+
+  !.. Update to cloud
+          qc(k)=qc(k)+(-prc-pra-mim)*dt
           do cc = 1, cat
              qc(k) = qc(k)-(prdr(cc)*qcrimefrac(cc)*dt)
           enddo
-          qv(k)=qv(k)+(-pre)*dt
-          
-  !------------------------------------------------------------------------------------------------------!
-  !------------------------------------------------------------------------------------------------------!       
 
-  !.. Nucleation update
-  !.. First ensure that freezing of rain does not over-deplete rain
-!          sink  =(dQRfzri(1)+dQRfzri(2)+dQRfzri(3)+mimr+mbiggr)*dt
-          sink  =(mimr+mbiggr)*dt
+  !.. Update to rain
+          qr(k)=qr(k)+(pre+prc+pra-mimr-mbiggr)*dt
+          nr(k)=nr(k)+(nprc1+nragg+npre-nimr-nbiggr)*dt
           do cc = 1, cat
-             sink = sink + (dQRfzri(cc))*dt
+             qr(k)=qr(k)+((-prdr(cc)*(1.-qcrimefrac(cc)))-qmlt(cc)-dQRfzri(cc))*dt
+             nr(k)=max((nr(k)+((-qi_qr_nrn(cc)*ni(cc,k)*nr(k)*rhoair(k))-nmlt(cc)-dNfzri(cc))*dt),0.)
           enddo
 
-          source=qr(k)
-          if(sink.gt.source.and.qr(k).gt.QSMALL) then
-             ratio = source/sink
-             do cc = 1, cat
-                dQRfzri(cc) = dQRfzri(cc)*ratio
-                dQIfzri(cc) = dQIfzri(cc)*ratio
-                dNfzri(cc)  = dNfzri(cc)*ratio
-             enddo
-             mimr       = mimr*ratio
-             nimr       = nimr*ratio
-             mbiggr     =mbiggr*ratio
-             nbiggr     =nbiggr*ratio
-          endif
-
-  !.. Ensure that ice-rain collection which freezes rain and can transfer the frozen ice part 
-  !.. to another ice species does not over-deplete the ice species being transfered
-          if(igr.le.1.) then
-             sink  =dQIfzri(ICE2)*dt
-             source=qi(ICE2,k)
-             if(sink.gt.source.and.qi(ICE2,k).gt.QSMALL) then
-                ratio= source/sink
-                dQIfzri(ICE2) = dQIfzri(ICE2)*ratio
-                dQRfzri(ICE2) = dQRfzri(ICE2)*ratio
-                dNfzri(ICE2)  = dNfzri(ICE2)*ratio
-             endif
-             sink  =dQIfzri(ICE3)*dt
-             source=qi(ICE3,k)
-             if(sink.gt.source.and.qi(ICE3,k).gt.QSMALL) then
-                ratio= source/sink
-                dQIfzri(ICE3) = dQIfzri(ICE3)*ratio
-                dQRfzri(ICE3) = dQRfzri(ICE3)*ratio
-                dNfzri(ICE3)  = dNfzri(ICE3)*ratio
-             endif
-          else
-             sink  =dQIfzri(ICE1)*dt
-             source=qi(ICE1,k)
-             if(sink.gt.source.and.qi(ICE1,k).gt.QSMALL) then
-                ratio= source/sink
-                dQIfzri(ICE1) = dQIfzri(ICE1)*ratio
-                dQRfzri(ICE1) = dQRfzri(ICE1)*ratio
-                dNfzri(ICE1)  = dNfzri(ICE1)*ratio
-             endif
-             sink  =dQIfzri(ICE3)*dt
-             source=qi(ICE3,k)
-             if(sink.gt.source.and.qi(ICE3,k).gt.QSMALL) then
-                ratio= source/sink
-                dQIfzri(ICE3) = dQIfzri(ICE3)*ratio
-                dQRfzri(ICE3) = dQRfzri(ICE3)*ratio
-                dNfzri(ICE3)  = dNfzri(ICE3)*ratio
-             endif
-          endif
-
-  !------------------------------------------------------------------------------------------------------!
-  !------------------------------------------------------------------------------------------------------!       
-
-          ! Number before nucleation
+  !--------------------------------------------------------------------------------------------------------------!
+  !--------------------------------------------------------------------------------------------------------------!
+  !.. Store the number before nucleation for later use
           do cc = 1, cat
              nibnuc(cc)=ni(cc,k)
           enddo
@@ -1952,19 +2044,7 @@ contains
 
           endif
 
-          ! Update to vapor and cloud from nucleation
-          qv(k)=qv(k)-mnuccd*dt
-          qc(k)=qc(k)-mim*dt
-          
-          ! Update to rain from nucleation
-          qr(k)=qr(k)-(mimr+mbiggr)*dt
-          nr(k)=max((nr(k)-(nimr+nbiggr)*dt),0.)
-          do cc = 1, cat
-             qr(k)=qr(k)-(dQRfzri(cc))*dt
-             nr(k)=max((nr(k)-(dNfzri(cc))*dt),0.)
-          enddo
-
-          ! Limit ice number concentrations to 1000/L
+  !.. Limit ice number concentrations to 1000/L
           do cc = 1, cat
              ni(cc,k)=min(ni(cc,k),(1000.*1000.*i_rhoair(k)))
           enddo
@@ -2032,6 +2112,7 @@ contains
 
                 aniold(cc)      = ani(cc)
                 cniold(cc)      = cni(cc)
+                dsold(cc)=(log(cniold(cc))-log(ao))/(log(aniold(cc))-log(ao))
 
   !.. Get the size distribution properties of nucleated particles
                 if(nucfrac.gt.1.e-5.and.totalnucn(cc).gt.0.) then
@@ -2068,11 +2149,22 @@ contains
                    else
                       deltastr(cc)=1.
                    endif
-                   
-                   if(deltastr(cc).lt.0.55.or.deltastr(cc).gt.1.3) then
-                      call var_check(NU, ao, fourthirdspi, gammnu, qi(cc,k), deltastr(cc), &
-                           ani(cc), cni(cc), rni(cc), rhobar(cc), ni(cc,k), ai(cc,k), ci(cc,k),        &
-                           alphstr, alphv, betam)
+
+  !.. Nucleation should only make the average distribution more spherical
+                   if(dsold(cc).le.1.) then
+                      if(deltastr(cc).lt.dsold(cc)) then
+                         deltastr(cc)=dsold(cc)
+                      endif
+                      if(deltastr(cc).gt.1.) then
+                         deltastr(cc)=dsold(cc)
+                      endif
+                   else
+                      if(deltastr(cc).gt.dsold(cc)) then
+                         deltastr(cc)=dsold(cc)
+                      endif
+                      if(deltastr(cc).lt.1.) then
+                         deltastr(cc)=dsold(cc)
+                      endif
                    endif
                 endif    !.. End nucleation update distribution properties
 
@@ -2135,77 +2227,36 @@ contains
                 vtrzi1(cc,k)=0.
                 vtrmi1(cc,k)=0.
                 vtrni1(cc,k)=0.
-             endif  ! End check for ice
-          enddo     ! Loop over all ice species
+             endif  !.. End check for ice
+          enddo     !.. Loop over all ice species
 
-  !.. Aggregation goes along with nulceation
+  !--------------------------------------------------------------------------------------------------------------!
+  !--------------------------------------------------------------------------------------------------------------!
+          if(temp.le.T0) then  
+  !.. Aggregation occurs similarly to nulceation
+  !.. We assume that the loss of ice1 and ice2 to aggregates does 
+  !.. not significantly change the shape and density of the 
+  !.. remaining particles. Both ani and cni are updated 
+  !.. with no change to density and delta*. 
   !.. Aggregation (see Jensen et al. 2017, 2018a, 2018b)
-          if(temp.le.T0) then  ! Assume aggregates form at below the melting point because they melt fast
-             
-             if(qi(ICE1,k).gt.1.e-8.or.qi(ICE2,k).gt.1.e-8.or.qi(ICE3,k).gt.1.e-8) then
-                do cc=1,CAT
-                   ni(cc,k) = max(ni(cc,k),QNSMALL)
-                   ai(cc,k) = max(ai(cc,k),QASMALL)
-                   ci(cc,k) = max(ci(cc,k),QASMALL)
-                enddo
-                
-                ! Get characteristic diameters for aggregation
-                dn1      = 2.*((ai(ICE1,k)**2)/(ci(ICE1,k)*ni(ICE1,k)))**0.333333333333
-                dn2      = 2.*((ci(ICE2,k)**2)/(ai(ICE2,k)*ni(ICE2,k)))**0.333333333333
-                dn3      = 2.*((ai(ICE3,k)**2)/(ci(ICE3,k)*ni(ICE3,k)))**0.333333333333
-                  
-                dn1 = MIN(dn1,1.e-2)
-                dn2 = MIN(dn2,1.e-2)
-                dn3 = MIN(dn3,1.e-2)
-                
-                dn1 = MAX(dn1,1.e-6)
-                dn2 = MAX(dn2,1.e-6)
-                dn3 = MAX(dn3,1.e-6)
-                
-                ! Get ice-one and ice-two aspect ratios 
-                ! Spherical paritcles aggregate at a slower rate than less spherical ones
-                gamma_arg = NU-1.+deltastr(1)
-                gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
-                phiagg1=ci(1,k)/ai(1,k)*gamma_tab(gi)*i_gammnu
-                
-                gamma_arg = NU-1.+deltastr(2)
-                gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
-                phiagg2=ci(2,k)/ai(2,k)*gamma_tab(gi)*i_gammnu
-                
-                phiagg1=MIN(phiagg1,100.)
-                phiagg1=MAX(phiagg1,0.01)
-                
-                phiagg2=MIN(phiagg2,100.)
-                phiagg2=MAX(phiagg2,0.01)
-                
-                ! Ice-1 and ice-2 mass and number loss to aggregates occurs inside of ramsagg
-                ! After ramsagg, ice-1 and ice-2 bulk distribution properties are adjusted 
-                ! assuming that aggregation did not cause the original shape and density of the
-                ! unaggregated particles to change
-!                call ramsagg(dt,rhoair(k),temp,aggcalled,qi(ICE1,k),ni(ICE1,k),dn1,qi(ICE2,k),ni(ICE2,k),dn2, &
-!                     qi(ICE3,k),ni(ICE3,k),dn3, rhobar(ICE1),rhobar(ICE2),phiagg1,phiagg2)
-
-                call ramsagg(dt,rhoair(k),temp,qi(ICE1,k),ni(ICE1,k),dn1,qi(ICE2,k),ni(ICE2,k),dn2, &
-                     qi(ICE3,k),ni(ICE3,k),dn3, rhobar(ICE1),rhobar(ICE2),phiagg1,phiagg2,coltab,coltabn)
-             endif  ! If ice mass mixing ratios are high enough to aggregate
-          
-  !------------------------------------------------------------------------------------------------------!
-  !------------------------------------------------------------------------------------------------------!       
-          
              do cc = 1, cat
+                nibnuc(cc) = max(ni(cc,k),QNSMALL)
+                qi(cc,k) = qi(cc,k) + qagg(cc)
+                ni(cc,k) = ni(cc,k) + nagg(cc)
                 if(qi(cc,k).gt.QSMALL) then
                    
   !.. Aggregate (unmelted) density and aspect ratio are assumed
   !.. Force the shape of aggregates
                    if(cc.eq.ICE3) then
-                      if(temp.lt.T0) then
-                         rhobar(cc)=50.
-                      endif
+                      rhobar(cc)=50.
                       phiagg3 = 0.2
                       ani(cc)=.5*dn3
                       gamma_arg = NU-1.+deltastr(cc)
                       gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
                       cni(cc)=phiagg3*ani(cc)*gammnu/gamma_tab(gi)
+
+                      ai(cc,k)=ani(cc)**2*cni(cc)*ni(cc,k)
+                      ci(cc,k)=cni(cc)**2*ani(cc)*ni(cc,k)
                       
                       ni(cc,k)=max(ni(cc,k),QNSMALL)
                       ai(cc,k)=max(ai(cc,k),QASMALL)
@@ -2221,8 +2272,6 @@ contains
                            ani(cc), cni(cc), rni(cc), rhobar(cc), ni(cc,k), ai(cc,k), ci(cc,k),  &
                            alphstr, alphv, betam)
 
-                      ai(cc,k)=ani(cc)**2*cni(cc)*ni(cc,k)
-                      ci(cc,k)=cni(cc)**2*ani(cc)*ni(cc,k)
                    else
 
   !.. Variable check on ice-1 and ice-2 after aggregation
@@ -2231,19 +2280,11 @@ contains
                       ci(cc,k)=max(ci(cc,k),QASMALL)
                       ani(cc) =max((((ai(cc,k)**2)/(ci(cc,k)*nibnuc(cc)))**0.333333333333),2.e-6)
                       cni(cc) =max((((ci(cc,k)**2)/(ai(cc,k)*nibnuc(cc)))**0.333333333333),2.e-6)
-                      
-                      ci(cc,k) = cni(cc)**2*ani(cc)*ni(cc,k)                                                                                                
-                      ai(cc,k) = ani(cc)**2*cni(cc)*ni(cc,k)
 
                       aniold(cc) = ani(cc)
                       cniold(cc) = cni(cc)
-                      nibnuc(cc) = ni(cc,k)
                       
-                      if(ani(cc).gt.(1.1*ao).and.cni(cc).gt.(1.1*ao)) then
-                         deltastr(cc)=(log(cni(cc))-log(ao))/(log(ani(cc))-log(ao))
-                      else
-                         deltastr(cc)=1.
-                      endif
+                      deltastr(cc)=(log(cni(cc))-log(ao))/(log(ani(cc))-log(ao))
                 
   !.. Update ice1 and ice2 sizes after aggregation from
   !.. updated mass and number mixiing ratios (transfer to aggregates) and an
@@ -2253,7 +2294,7 @@ contains
                       gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
                       ani(cc) = ((qi(cc,k))/(ni(cc,k)*rhobar(cc)*fourthirdspi*alphstr*gamma_tab(gi)*i_gammnu))**&
                            (1./(2.+deltastr(cc)))
-                      ani(cc)=max(ani(cc),0.)
+                      ani(cc)=max(ani(cc),2.e-6)
                       cni(cc)=alphstr*ani(cc)**deltastr(cc)
 
   !.. volume and volume*aspect ratio updates
@@ -2366,11 +2407,7 @@ contains
                 ci(cc,k) = cni(cc)**2*ani(cc)*ni(cc,k)                                              
                 ai(cc,k) = ani(cc)**2*cni(cc)*ni(cc,k)
 
-                if(ani(cc).gt.(1.1*ao).and.cni(cc).gt.(1.1*ao)) then
-                   deltastr(cc)=(log(cni(cc))-log(ao))/(log(ani(cc))-log(ao)) 
-                else
-                   deltastr(cc)=1.
-                endif
+                deltastr(cc)=(log(cni(cc))-log(ao))/(log(ani(cc))-log(ao)) 
                 
                 call var_check(NU, ao, fourthirdspi, gammnu, qi(cc,k), deltastr(cc),       &
                      ani(cc), cni(cc), rni(cc), rhobar(cc), ni(cc,k), ai(cc,k), ci(cc,k),  &
@@ -2378,14 +2415,16 @@ contains
                 
   !.. Final check on aggregates
                 if(cc.eq.ICE3) then
-                   if(temp.lt.T0) then
+                   if(temp.le.T0) then
                       rhobar(cc)=50.
+                      phiagg3 = 0.2
+                      gamma_arg = NU-1.+deltastr(cc)
+                      gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
+                      cni(cc)=phiagg3*ani(cc)*gammnu/gamma_tab(gi)
+
+                      ai(cc,k)=ani(cc)**2*cni(cc)*ni(cc,k)
+                      ci(cc,k)=cni(cc)**2*ani(cc)*ni(cc,k)
                    endif
-                   phiagg3 = 0.2
-                   gamma_arg = NU-1.+deltastr(cc)
-                   gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
-                   cni(cc)=phiagg3*ani(cc)*gammnu/gamma_tab(gi)
-!!                   ci(cc,k)=max((cni(cc)**2*ani(cc)*ni(cc,k)),QASMALL)
                    
                    if(ani(cc).gt.(1.1*ao).and.cni(cc).gt.(1.1*ao)) then
                       deltastr(cc)=(log(cni(cc))-log(ao))/(log(ani(cc))-log(ao))
@@ -2399,8 +2438,7 @@ contains
                    ani(cc) = ((qi(cc,k))/(ni(cc,k)*rhobar(cc)*fourthirdspi*alphstr*&
                         gamma_tab(gi)/gammnu))**(1./(2.+deltastr(cc)))
 
-!!                   ani(cc) = ((ai(cc,k)**2)/(ci(cc,k)*ni(cc,k)))**0.333333333333
-                   ani(cc) = max(ani(cc),1.e-6)
+                   ani(cc) = max(ani(cc),2.e-6)
                    cni(cc)=alphstr*ani(cc)**deltastr(cc)
 
   !.. Final check on aggregate size (implicit breakup)
@@ -2411,20 +2449,97 @@ contains
                       gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
                       ni(cc,k) = (qi(cc,k))/(rhobar(cc)*fourthirdspi*ao**(1.-deltastr(cc))* &
                            ani(cc)**(2.+deltastr(cc))*gamma_tab(gi)/gammnu)
-!                      ai(cc,k)=ani(cc)**2*cni(cc)*ni(cc,k)
-!                      ci(cc,k)=cni(cc)**2*ani(cc)*ni(cc,k)
                       ni(cc,k)=max(ni(cc,k),QNSMALL)
                    endif
                 
-                   call var_check(NU, ao, fourthirdspi, gammnu, qi(cc,k), deltastr(cc), &
-                        ani(cc), cni(cc), rni(cc), rhobar(cc), ni(cc,k), ai(cc,k), ci(cc,k),        &               
-                     alphstr, alphv, betam)
+                   ai(cc,k)=ani(cc)**2*cni(cc)*ni(cc,k)
+                   ci(cc,k)=cni(cc)**2*ani(cc)*ni(cc,k)
+
+                   call var_check(NU, ao, fourthirdspi, gammnu, qi(cc,k), deltastr(cc),       &
+                        ani(cc), cni(cc), rni(cc), rhobar(cc), ni(cc,k), ai(cc,k), ci(cc,k),  &  
+                        alphstr, alphv, betam)
+                   
                 endif ! Check on aggregates
 
-                ! Determine the ice radiative properties 
-                ! For simlicity this is 
-                ! Planar ice:   integral of a^2c / integral of a^2
-                ! Columnar ice: integral of a^2c / integral of a*c
+  !.. Fall speed moved to here
+  !.. See Harrington et al. 2013 and Mitchell and Heymsfield 2005
+                fv(cc) = 1.0
+                fh(cc) = 1.0
+                
+                gamma_arg = NU-1.+deltastr(cc)
+                gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
+                phiivt = cni(cc)/ani(cc)*gamma_tab(gi)*i_gammnu
+                alphstr=ao**(1.-deltastr(cc))
+                   
+  !.. Determine  coefficeients for the Best number for fall speeds
+                if(phiivt.lt.1.0)then
+                   bl = 1.
+                   al = 2.
+                   aa = PI
+                   ba = 2.
+                   qe = (1.-phiivt)*(rhobar(cc)/RHOI) + phiivt
+                else if(phiivt .gt. 1.0)then
+                   al = 2.0
+                   bl = 1.
+                   aa = PI*alphstr
+                   ba = deltastr(cc) + 1.
+                   qe = 1.0
+                else if(phiivt .eq. 1.0)then
+                   bl = 1.
+                   al = 2.
+                   aa = PI
+                   ba = 2.
+                   qe = 1.0
+                endif
+                qe = min(qe, 1.0)
+                
+  !.. Fall speed and ventilation (Best number formulation)
+                xn =  2./rhobar(cc)*(rhobar(cc)-rhoair(k))*G_HOME*rhoair(k)/mu**2 * &
+                     (fourthirdspi*rhobar(cc))*alphstr*al**2/(aa*qe) * qe**(3./4.)
+                bx = deltastr(cc)+2.+2.*bl-ba
+                
+  !.. Number-average Best Number
+                xm = xn*ani(cc)**bx * (gamma(NU+bx))*i_gammnu
+                
+  !.. The following fall speed coefficients are from 
+  !.. Mitchell and Heymsfiled 2005
+                f_c1 = 4.0 / (5.83 * 5.83 * SQRT(0.6))
+                f_c2 = (5.83 * 5.83) / 4.0
+                bm = ((f_c1 * SQRT(xm)) / &
+                     (2.0 * (SQRT(1.0 + f_c1 * SQRT(xm)) - 1.0) * &
+                     (SQRT(1.0 + f_c1 * SQRT(xm))))) - &
+                     (1.0e-5 * xm) / &
+                     (f_c2 * (SQRT(1.0 + f_c1 * SQRT(xm)) - 1.0)**2.0)
+                am = ((f_c2 * (SQRT(1.0 + f_c1 * SQRT(xm)) - 1.0)**2.0) - &
+                     (1.0e-5 * xm)) / (xm**bm)
+                
+                if(xm.gt.1.e8)then
+                   am = 1.0865
+                   bm = 0.499
+                endif
+                
+  !.. Reynolds Number
+                Nre = am*xm**bm          
+                
+  !.. Number-averaged ice fall speed
+                vtrni1(cc,k) = min((mu/rhoair(k)*0.5 * am*(xn)**bm*ani(cc)**(bx*bm-1.) * &
+                     (gamma(NU+bx*bm-1.))*i_gammnu),25.)
+                
+  !.. Mass-averaged ice fall speed
+                vtrmi1(cc,k) = min((mu/rhoair(k)*0.5 * am*(xn)**bm*ani(cc)**(bx*bm-1.) * &
+                     (gamma(NU+bx*bm-1.+2.+deltastr(cc)))/(gamma(NU+2.+deltastr(cc)))),25.)
+                
+  !.. Remove size sorting when melting
+                if(temp.gt.T0.and.qmlt(cc).lt.0.) then
+                   vtrni1(cc,k) = vtrmi1(cc,k)
+                endif
+
+  !--------------------------------------------------------------------------------------------------------------!
+  !--------------------------------------------------------------------------------------------------------------!
+  !.. Determine the ice radiative properties 
+  !.. For simlicity this is 
+  !.. Planar ice:   integral of a^2c / integral of a^2
+  !.. Columnar ice: integral of a^2c / integral of a*c
 
                 gamma_arg = NU-1.+deltastr(cc)
                 gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
@@ -2462,16 +2577,19 @@ contains
                 vtrzi1(cc,k)=0.
                 vtrmi1(cc,k)=0.
                 vtrni1(cc,k)=0.
-             endif ! If ice
-             
-             !.. output diagnostics
-             rhopo1d(cc,k) = rhobar(cc)
+             endif !.. If ice exists
+
+  !--------------------------------------------------------------------------------------------------------------!
+  !--------------------------------------------------------------------------------------------------------------!
+  !.. Output diagnostics
              gamma_arg = NU-1.+deltastr(cc)
              gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
              
-             !.. For aspect ratio diagnostic set lower size limit
-             if(ani(cc).gt.1.e-6.and.cni(cc).gt.1.e-6) then
+  !.. For aspect ratio diagnostic set lower size limit
+             if(ai(cc,k).gt.1.e-12.and.ci(cc,k).gt.1.e-12.and. &
+                  ani(cc).gt.2.e-6.and.cni(cc).gt.2.e-6.and.qi(cc,k).gt.1.e-8) then
                 phii1d(cc,k) = cni(cc)/ani(cc)*gamma_tab(gi)*i_gammnu
+                rhopo1d(cc,k) = rhobar(cc)
              endif
              
              gamma_arg = NU+3.+deltastr(cc)
@@ -2481,83 +2599,11 @@ contains
              gamma_arg = NU+2.+(2.*deltastr(cc))
              gi3=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
 
-             di1d(cc,k)  = MAX((2.*ani(cc)*gamma_tab(gi)/gamma_tab(gi2)),(2.*cni(cc)*gamma_tab(gi3)/gamma_tab(gi2)))
-             vmi1d(cc,k) = vtrmi1(cc,k)
-             
-             !.. simple ice type diagnostistcs
-             ! 0 No classificatoin
-             ! 1 Cloud ice
-             ! 2 Snow
-             ! 3 Partially rimed
-             ! 4 Graupel
-             ! 5 Hail/melted ice, frozen rain
-             if(qi(ICE1,k).gt.1.e-8.and.(ni(ICE1,k)*rhoair(k)/1000.).gt.1.e-3) then
-
-                if(di1d(ICE1,k).lt.500.e-6) then
-                   icetype1d(ICE1,k) = 1.
-                else
-                   if(vmi1d(ICE1,k).gt.5.) then
-                      icetype1d(ICE1,k) = 5.
-                   else
-                      if(phii1d(ICE1,k).gt.0.6.and.phii1d(ICE1,k).le.1.66) then
-                         if(rhopo1d(ICE1,k).lt.700.) then
-                            icetype1d(ICE1,k) = 4.
-                         else
-                            icetype1d(ICE1,k) = 2.
-                         endif
-                      elseif(phii1d(ICE1,k).gt.0.1.and.phii1d(ICE1,k).le.0.6) then
-                         if(rhopo1d(ICE1,k).lt.700.) then
-                            icetype1d(ICE1,k) = 3.
-                         else
-                            icetype1d(ICE1,k) = 2.
-                         endif
-                      elseif(phii1d(ICE1,k).gt.0.) then
-                         icetype1d(ICE1,k) = 2.
-                      else
-                         icetype1d(ICE1,k) = 0.
-                      endif
-                   endif
-                endif
-             endif
-
-             ! Ice-2
-             if(qi(ICE2,k).gt.1.e-8.and.(ni(ICE2,k)*rhoair(k)/1000.).gt.1.e-3) then
-                if(di1d(ICE2,k).lt.500.e-6) then
-                   icetype1d(ICE2,k) = 1.
-                else
-                   if(vmi1d(ICE2,k).gt.5.) then
-                      icetype1d(ICE2,k) = 5.
-                   else
-                      if(phii1d(ICE2,k).gt.0.6.and.phii1d(ICE2,k).le.1.66) then
-                         if(rhopo1d(ICE2,k).lt.700.) then
-                            icetype1d(ICE2,k) = 4.
-                         else
-                            icetype1d(ICE2,k) = 2.
-                         endif
-                      elseif(phii1d(ICE2,k).gt.0.1.and.phii1d(ICE2,k).le.0.6) then
-                         if(rhopo1d(ICE2,k).lt.700.) then
-                            icetype1d(ICE2,k) = 3.
-                         else
-                            icetype1d(ICE2,k) = 2.
-                         endif
-                      elseif(phii1d(ICE2,k).gt.1.66) then
-                         if(rhopo1d(ICE2,k).lt.400.) then
-                            icetype1d(ICE2,k) = 3.
-                         else
-                            icetype1d(ICE2,k) = 2.
-                         endif
-                      elseif(phii1d(ICE2,k).gt.0.) then
-                         icetype1d(ICE2,k) = 2.
-                      else
-                         icetype1d(ICE2,k) = 0.
-                      endif
-                   endif
-                endif
-             endif
-
-             ! Ice-3
-             if(qi(ICE3,k).gt.1.e-8.and.(ni(ICE3,k)*rhoair(k)/1000.).gt.1.e-3) then
-                icetype1d(ICE3,k) = 2
+             if(ai(cc,k).gt.1.e-12.and.ci(cc,k).gt.1.e-12.and. &
+                  ani(cc).gt.2.e-6.and.cni(cc).gt.2.e-6.and.qi(cc,k).gt.1.e-8) then
+                di1d(cc,k)  = MAX((2.*ani(cc)*gamma_tab(gi)/gamma_tab(gi2)), &
+                     (2.*cni(cc)*gamma_tab(gi3)/gamma_tab(gi2)))
+                vmi1d(cc,k) = vtrmi1(cc,k)
              endif
 
              if(ni(cc,k).gt.0..and.ani(cc).gt.0.) then
@@ -2736,7 +2782,7 @@ contains
   !.. OF LIQUID WATER CANCELS THIS FACTOR OF 1000
                 
   !.. Ice precipitation rate
-                if(k.eq.kts) then
+                if(k.eq.kts.and.qi(cc,k).gt.1.e-9) then
                    qipre1d(cc) = qipre1d(cc)+fluxqi(cc,k)*dt/nstep
                 endif
                 
@@ -2745,7 +2791,7 @@ contains
              nr(k) = nr(k)+falltndnr*dt/nstep
              
   !.. Rain precipitation rate
-             if(k.eq.kts) then
+             if(k.eq.kts.and.qr(k).gt.1.e-9) then
                 qrpre1d = qrpre1d + fluxqr(k)*dt/nstep
              endif
           enddo
@@ -2774,9 +2820,85 @@ contains
        
        do cc = 1, CAT
           if(qi(cc,k).gt.QSMALL) then
-             ni(cc,k)=max(ni(cc,k),0.)
-             ai(cc,k)=max(ai(cc,k),0.)
-             ci(cc,k)=max(ci(cc,k),0.)                
+
+  !.. Keep variables in bounds
+             ni(cc,k)=max(ni(cc,k),QNSMALL)
+             ai(cc,k)=max(ai(cc,k),QASMALL)
+             ci(cc,k)=max(ci(cc,k),QASMALL)
+             ani(cc) =max((((ai(cc,k)**2)/(ci(cc,k)*ni(cc,k)))**0.333333333333),2.e-6)
+             cni(cc) =max((((ci(cc,k)**2)/(ai(cc,k)*ni(cc,k)))**0.333333333333),2.e-6)
+
+  !.. Set incoming limit after sedimentation
+  !.. smallest values for which we care about shape              
+             if(ai(cc,k).lt.1.e-12.or.ci(cc,k).lt.1.e-12) then
+                ai(cc,k)=min(ai(cc,k),ci(cc,k))
+                ci(cc,k)=ai(cc,k)
+                ani(cc)=(ai(cc,k)/ni(cc,k))**0.3333333333
+                cni(cc)=(ci(cc,k)/ni(cc,k))**0.3333333333
+             endif
+             
+             if(ani(cc).lt.2.e-6.or.cni(cc).lt.2.e-6) then
+                ani(cc)=2.e-6
+                cni(cc)=2.e-6
+             endif
+
+             ci(cc,k) = cni(cc)**2*ani(cc)*ni(cc,k)                                           
+             ai(cc,k) = ani(cc)**2*cni(cc)*ni(cc,k)
+             
+             deltastr(cc)=(log(cni(cc))-log(ao))/(log(ani(cc))-log(ao)) 
+             
+  !.. Final check on aggregates
+             if(cc.eq.ICE3) then
+                if(temp.le.T0) then
+                   rhobar(cc)=50.
+                   phiagg3 = 0.2
+                   gamma_arg = NU-1.+deltastr(cc)
+                   gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
+                   cni(cc)=phiagg3*ani(cc)*gammnu/gamma_tab(gi)
+                endif
+                
+                ai(cc,k)=ani(cc)**2*cni(cc)*ni(cc,k)
+                ci(cc,k)=cni(cc)**2*ani(cc)*ni(cc,k)
+
+                if(ani(cc).gt.(1.1*ao).and.cni(cc).gt.(1.1*ao)) then
+                   deltastr(cc)=(log(cni(cc))-log(ao))/(log(ani(cc))-log(ao))
+                else
+                   deltastr(cc)=1.
+                endif
+                
+                alphstr=ao**(1.-deltastr(cc))
+                gamma_arg = NU+2.+deltastr(cc)
+                gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
+                ani(cc) = ((qi(cc,k))/(ni(cc,k)*rhobar(cc)*fourthirdspi*alphstr*&
+                     gamma_tab(gi)/gammnu))**(1./(2.+deltastr(cc)))
+
+                ani(cc) = max(ani(cc),2.e-6)
+                cni(cc)=alphstr*ani(cc)**deltastr(cc)
+                
+  !.. Final check on aggregate size (implicit breakup)
+                if(ani(cc).gt.0.5e-3) then
+                   ani(cc)=0.5e-3
+                   cni(cc)=ao**(1.-deltastr(cc))*ani(cc)**deltastr(cc)
+                   gamma_arg = NU+2.+deltastr(cc)
+                   gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
+                   ni(cc,k) = (qi(cc,k))/(rhobar(cc)*fourthirdspi*ao**(1.-deltastr(cc))* &
+                        ani(cc)**(2.+deltastr(cc))*gamma_tab(gi)/gammnu)
+                   ni(cc,k)=max(ni(cc,k),QNSMALL)
+                endif
+
+                ai(cc,k)=ani(cc)**2*cni(cc)*ni(cc,k)
+                ci(cc,k)=cni(cc)**2*ani(cc)*ni(cc,k)
+                
+                call var_check(NU, ao, fourthirdspi, gammnu, qi(cc,k), deltastr(cc),       &
+                     ani(cc), cni(cc), rni(cc), rhobar(cc), ni(cc,k), ai(cc,k), ci(cc,k),  &  
+                     alphstr, alphv, betam)
+
+             endif !.. Check on aggregates
+
+             call var_check(NU, ao, fourthirdspi, gammnu, qi(cc,k), deltastr(cc),       &
+                  ani(cc), cni(cc), rni(cc), rhobar(cc), ni(cc,k), ai(cc,k), ci(cc,k),  &
+                  alphstr, alphv, betam)
+
           else
              qv(k)=qv(k)+qi(cc,k)
              theta(k)=theta(k)+theta(k)*i_temp*(qi(cc,k)*xxls)*i_cp
@@ -2889,16 +3011,16 @@ contains
   !.. This is a number weighted diameter of 8 mm and 
   !.. a spherical mass weighted diameter of 14 mm 
     maxsize = max(ani,cni)
-    if (maxsize.gt.0.5e-3) then
+    if (maxsize.gt.1.e-3) then
        if(ani.ge.cni) then
-          ani = 0.5e-3
+          ani = 1.e-3
           nidum=qidum*gammnu/(fourthirdspi*rbdum*ao**(1.-dsdum)*ani**(2.+dsdum)* &
                (gamma_tab(gi)))
           cni=ao**(1.-dsdum)*ani**dsdum
           aidum=ani**2*cni*nidum
           cidum=cni**2*ani*nidum
        else
-          cni = 0.5e-3
+          cni = 1.e-3
           ani = (cni/(ao**(1.-dsdum)))**(1./dsdum)
           nidum=qidum*gammnu/(fourthirdspi*rbdum*ao**(1.-dsdum)*ani**(2.+dsdum)* &
                (gamma_tab(gi)))
@@ -3064,37 +3186,9 @@ contains
        else !.. Columnar
           rhodep = (RHOI/igr)*maxsui + RHOI*(1.-maxsui)
        endif
-
-  !.. Cacluate the vapor growth density (Jensen and Harrington 2015)
- !!      if(igr.le.1.0) then ! Planar
-  !        if(vtbranch.gt.0.) then
-  !           if(sup.ge.0.0) then
-  !              if(ani.gt.SQRT((dv*PI*2.*cni)/(vtbranch*nu))) then
-  !                 rhodep = igr*RHOI
-  !              else
-  !                 rhodep = RHOI
-  !              endif
-  !           else
-  !              if(ani.gt.SQRT((dv*PI*2.*cni)/(vtbranch*nu)).and.maxsui.gt.0.) then
-  !                 rhodep = RHOI * ((1.0 - (sui/maxsui)) + (igr*(sui/maxsui)))
-  !              else
-  !                 rhodep = RHOI
-  !              endif
-  !           endif
-  !        else
-  !           rhodep = RHOI
-  !        endif
-  !     else ! Columnar
-  !        if(sup.ge.0.0) then
-  !           rhodep = RHOI / igr
-  !        else
-  !           if(maxsui.gt.0.) then
-  !              rhodep = RHOI / ((1.0 - (sui/maxsui)) + (igr*(sui/maxsui)))
-  !           else
-  !              rhodep = RHOI
-  !           endif
-  !        endif
-  !     endif
+  !.. high limit on rhodep for vapor growth = 700 kg m^-3 
+  !.. Cotton et al. 2012 (QJRMS)
+       rhodep = min(rhodep,700.)
        
   !.. Vapor growth solution which includes heating from rime mass
   !.. See J.P. Chen's thesis
@@ -3172,25 +3266,7 @@ contains
        rbdumtmp = min(rbdumtmp,RHOI)
        iwcf = nidum*rbdumtmp*vf
        
-       ! Do not let particles sublimate to sizes that are 
-       ! too small to handle
-       if(afn.lt.0..and.rnf.lt.1.e-6) then
-          rbdum  =RHOI
-          rdout  =RHOI
-          dsdumout   =1.
-          phif    =1.
-          anf     =rnf
-       endif
-       
-       if(afn.lt.0..and.anf.lt.1.e-6) then
-          rbdum  =RHOI
-          rdout  =RHOI
-          dsdumout   =1.
-          phif    =1.
-          anf     =rnf
-       endif
-      
-       ! Update delta* from vapor growth/sublimation
+  !.. Update delta* from vapor growth/sublimation
        if(igr.ne.1.0)then
 
           if(anf.gt.(1.1*ao)) then
@@ -3200,6 +3276,26 @@ contains
              dsdumout=1.
           endif
        endif
+
+  !.. Do not let particles sublimate to sizes that are too small
+       if(afn.lt.0..and.rnf.lt.1.e-6) then
+          rbdum  =RHOI
+          rdout  =RHOI
+          dsdumout   =1.
+          phif    =1.
+          alphanr = ani/rni
+          anf = alphanr*rnf
+       endif
+       
+       if(afn.lt.0..and.anf.lt.1.e-6) then
+          rbdum  =RHOI
+          rdout  =RHOI
+          dsdumout   =1.
+          phif    =1.
+          alphanr = ani/rni
+          anf = alphanr*rnf
+       endif
+      
        
   !.. Sublimation check
        if(afn.lt.0..and.dsdumout.le.0.) then
@@ -3723,15 +3819,16 @@ contains
     
   end function get_igr
 
-  !------------------------------------------------------------------------------------------------------!
-  !------------------------------------------------------------------------------------------------------!              
-
-  subroutine ramsagg(dtdum,rhoairdum,tempdum,qdum1,ndum1,ddum1,&
-       qdum2,ndum2,ddum2,qdum3,ndum3,ddum3,rhodum1,rhodum2,phidum1,phidum2,coltab,coltabn)
+  !--------------------------------------------------------------------------------------------------------------!
+  !--------------------------------------------------------------------------------------------------------------!
+  !.. Aggregation routine (see Jensen et al. 2017)
+  subroutine aggregation(dtdum,rhoairdum,tempdum,qdum1,ndum1,ddum1,qdum2,ndum2,ddum2, &
+       qdum3,ndum3,ddum3,rhodum1,rhodum2,phidum1,phidum2,coltab,coltabn,              &
+       qagg1,qagg2,qagg3,nagg1,nagg2,nagg3)
 
     implicit none
     
-    real, parameter :: QASMALL= 1.e-19   ! Smallest ice size   (m^-3 kg^-1)
+    real, parameter :: QNSMALL= 1.25e-7   ! Smallest ice number
     integer icat,k,kp1,kp2,isnow,ipris,it,ihab,jhab
     integer, parameter :: ncat=7,npair=35,ndn=60,nftab=1000,ngam=5000,nz=1
     real, parameter :: rsmall=1.e-12
@@ -3758,7 +3855,8 @@ contains
     real, intent(IN) :: coltab(ndn,ndn,npair),coltabn(ndn,ndn,npair)
     integer ipair(ncat,ncat),ict(nz,ncat)
     real, dimension(ncat,9) :: dstprms
-    real, intent(INOUT) :: qdum1,ndum1,ddum1,qdum2,ndum2,ddum2,qdum3,ndum3,ddum3
+    real, intent(IN) :: qdum1,ndum1,qdum2,ndum2,qdum3,ndum3,ddum1,ddum2
+    real, intent(INOUT) :: qagg1,qagg2,qagg3,nagg1,nagg2,nagg3,ddum3
     real, intent(IN) :: rhodum1, rhodum2, phidum1, phidum2
     real :: rhoeff, phieff, rhoeffmax, phieffmax, efffact
     real :: source3, sink3, source4, sink4, ratioagg
@@ -3976,7 +4074,7 @@ contains
           phieff = 0.
        endif
        
-       phieff = max(phieff,0.)
+       phieff = max(phieff,0.01) !.. Low limit currently set to 0.01 AAJ
        phieff = min(phieff,1.)
        efffact = phieff * rhoeff
        
@@ -4015,7 +4113,7 @@ contains
           phieff = 0.
        endif
 
-       phieff = max(phieff,0.)
+       phieff = max(phieff,0.01)
        phieff = min(phieff,1.)
        efffact = phieff * rhoeff
        
@@ -4050,7 +4148,7 @@ contains
           phieff = 0.
        endif
        
-       phieff = max(phieff,0.)
+       phieff = max(phieff,0.01)
        phieff = min(phieff,1.)
        efffact = phieff * rhoeff
        
@@ -4085,7 +4183,7 @@ contains
           phieff = 0.
        endif
        
-       phieff = max(phieff,0.)
+       phieff = max(phieff,0.01)
        phieff = min(phieff,1.)
        efffact = phieff * rhoeff
        
@@ -4120,7 +4218,7 @@ contains
           phieff = 0.
        endif
        
-       phieff = max(phieff,0.)
+       phieff = max(phieff,0.01)
        phieff = min(phieff,1.)
        efffact = phieff * rhoeff
        
@@ -4163,70 +4261,39 @@ contains
              pprxfer(k,4,5) = pprxfer(k,4,5)*ratioagg
           endif
 
-          ! Update mass and number from aggregation
-          r(k,3) = MAX((r(k,3) - rcrossloss*rxfer(k,3,5) - &
-               rcrossloss*parxfer(k,3,5) - &
-               rselfloss*pprxfer(k,3,5)),0.)
-          en(k,3) = MAX((en(k,3) - (ncrossloss*enxfer(k,3,5) + &
-               ncrossloss*paenxfer(k,3,5) + &
-               nselfloss*ppenxfer(k,3,5)) ),0.)
-
-          r(k,4) = MAX((r(k,4) - rcrossloss*rxfer(k,4,5) - &
-               rcrossloss*parxfer(k,4,5) - &
-               rselfloss*pprxfer(k,4,5)),0.)
-          en(k,4) = MAX((en(k,4) - (ncrossloss*enxfer(k,4,5) + &
-               ncrossloss*paenxfer(k,4,5) + &
-             nselfloss*ppenxfer(k,4,5))  ),0.)
-
           totaldc(k)=totaldc(k) + &
                ncrossloss*enxfer(k,3,5)+ncrossloss*paenxfer(k,3,5)+ &
                nselfloss*ppenxfer(k,3,5)+ &
                ncrossloss*enxfer(k,4,5)+ncrossloss*paenxfer(k,4,5)+ &
                nselfloss*ppenxfer(k,4,5)
-          
-          r(k,5) = r(k,5) + rcrossgain*rxfer(k,3,5) + &
-               rcrossgain*rxfer(k,4,5) + &
-               rcrossgain*parxfer(k,3,5) + rcrossgain*parxfer(k,4,5) + &
-               rselfgain*pprxfer(k,3,5) + rselfgain*pprxfer(k,4,5)
-          
-          en(k,5) = en(k,5) + (ncrossgain*enxfer(k,3,5) + &
-               ncrossgain*enxfer(k,4,5) + &
-               nselfgain*ppenxfer(k,3,5) + nselfgain*ppenxfer(k,4,5)) &
-               - 0.5*ppenxfer(k,5,5)
 
-          do ihab=1,7
-             if(r(k,ihab).lt.rsmall)then
-                r(k,ihab) = 0.0
-                en(k,ihab) = 0.0
-             endif
-          enddo
-          
+  !.. qagg is the mass tendency, nagg is the number tendency         
+          qagg1 = -rcrossloss*rxfer(k,3,5) - rcrossloss*parxfer(k,3,5) - rselfloss*pprxfer(k,3,5)
+          nagg1 = -ncrossloss*enxfer(k,3,5) - ncrossloss*paenxfer(k,3,5) - nselfloss*ppenxfer(k,3,5)
 
-          ! Update to characteristic diameters after aggregation
-          ! Note that for ice-one and ice-two, the axes will be re-diagnosed
-          ! after aggregation based on delta*
-          dn(k,3) = (r(k,3)*rhoa(k)/(MAX(en(k,3),QASMALL)*cfmas(3) &
-               *(gamma(gnu(3)+ &
-               pwmas(3)))/(gamma(gnu(3))) ) )**(1./pwmas(3))
-          dn(k,4) = (r(k,4)*rhoa(k)/(MAX(en(k,3),QASMALL)*cfmas(4) &
-               *(gamma(gnu(4)+ &
-               pwmas(3)))/(gamma(gnu(4))) ) )**(1./pwmas(4))
-          dn(k,5) = (r(k,5)*rhoa(k)/(MAX(en(k,5),QASMALL)*cfmas(5) &
+          qagg2 = -rcrossloss*rxfer(k,4,5) - rcrossloss*parxfer(k,4,5) - rselfloss*pprxfer(k,4,5)
+          nagg2 = -ncrossloss*enxfer(k,4,5) - ncrossloss*paenxfer(k,4,5) - nselfloss*ppenxfer(k,4,5)
+
+          qagg3 = rcrossgain*rxfer(k,3,5) + rcrossgain*rxfer(k,4,5) + rcrossgain*parxfer(k,3,5) + &
+               rcrossgain*parxfer(k,4,5) + rselfgain*pprxfer(k,3,5) + rselfgain*pprxfer(k,4,5)
+          nagg3 = ncrossgain*enxfer(k,3,5) + ncrossgain*enxfer(k,4,5) + nselfgain*ppenxfer(k,3,5) + &
+               nselfgain*ppenxfer(k,4,5) - 0.5*ppenxfer(k,5,5)
+
+          qagg1 = min(qagg1,0.)
+          qagg2 = min(qagg2,0.)
+          qagg3 = max(qagg3,0.)
+
+  !.. Update to characteristic diameters after aggregation
+  !.. Note that for ice-one and ice-two, the axes will be re-diagnosed
+  !.. after aggregation based on delta*, so only output aggregation size
+          dn(k,5) = ((r(k,5)+qagg3)*rhoa(k)/(MAX((en(k,5)+nagg3),QNSMALL)*cfmas(5) &
                *(gamma(gnu(5)+ &
                pwmas(5)))/(gamma(gnu(5))) ) )**(1./pwmas(5))
-          
-          ! Output back to the microphysics
-          ddum1=dn(k,3)
-          ddum2=dn(k,4)
           ddum3=dn(k,5)
-          
-          ndum1=en(k,3)/rhoa(k)
-          ndum2=en(k,4)/rhoa(k)
-          ndum3=en(k,5)/rhoa(k)
-          
-          qdum1=r(k,3)
-          qdum2=r(k,4)
-          qdum3=r(k,5)
+
+          nagg1 = nagg1/rhoa(k)
+          nagg2 = nagg2/rhoa(k)
+          nagg3 = nagg3/rhoa(k)
           
           totalc(k)=0.
           totalc(k) = en(k,3)+en(k,4) + 0.
@@ -4241,10 +4308,7 @@ contains
        enddo
     enddo
 
-  end subroutine ramsagg
-
-  !------------------------------------------------------------------------------------------------------!
-  !------------------------------------------------------------------------------------------------------!              
+  end subroutine aggregation
 
   !--------------------------------------------------------------------------------------------------------------!
   !--------------------------------------------------------------------------------------------------------------!

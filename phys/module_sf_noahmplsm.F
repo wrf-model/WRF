@@ -1813,6 +1813,7 @@ ENDIF   ! CROPTYPE == 0
     CHLEAF    = 0.
     CHUC      = 0.
     CHV2      = 0.
+    RB        = 0.
 
 ! wind speed at reference height: ur >= 1
 

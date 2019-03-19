@@ -2044,7 +2044,7 @@ CONTAINS
 
        ftnw=1.                                                       
            if(ql.lt.cmin .and. tair .gt. t0)then                      
-             bin_factor=0.11*(1000.*qri)**-1.27 + 0.98      
+             bin_factor=0.11*(1000.*qri)**(-1.27) + 0.98      
              bin_factor=min(bin_factor, 1.30)       
              ftnw=1./bin_factor**3.35                             
              ftnwmin=r00*qri/draimax                        
@@ -4137,7 +4137,7 @@ CONTAINS
              fdwv    = dd(i)/(term1+term2*dwv0/dwv(i))
              ftnw=1.
              if (qr(i) .gt. cmin.and.tair(i).gt.t0) then   !no need to check qc, no qc if ssw < 0
-                 bin_factor(i)=0.11*(1000.*qr(i))**-1.27 + 0.98
+                 bin_factor(i)=0.11*(1000.*qr(i))**(-1.27) + 0.98
                  bin_factor(i)=min(bin_factor(i),1.30)
                  ftnw=1./bin_factor(i)**3.35
                  ftnwmin=r00(i)*qr(i)/draimax
@@ -4301,7 +4301,7 @@ CONTAINS
 
         ftnw=1.
         if(qr(i).gt.cmin .and. qc(i).lt.cmin)then
-             bin_factor(i)=0.11*(1000.*qr(i))**-1.27 + 0.98
+             bin_factor(i)=0.11*(1000.*qr(i))**(-1.27) + 0.98
 !            bin_factor(i)=min(bin_factor(i),1.35)
              bin_factor(i)=min(bin_factor(i),1.30)
              ftnw=1./bin_factor(i)**3.50

@@ -1869,7 +1869,7 @@ contains
   !.. If vapor growth of ice is going to cause
   !.. subsaturated condtions, reduce vapor growth
   !.. rates (done above) and rediagnose the axes
-             if(vgflag) then
+             if(vgflag.and.qi(cc,k).gt.QSMALL) then
                 alphstr=ao**(1.-deltastr(cc))
                 alphv=fourthirdspi*alphstr
                 betam=2.+deltastr(cc)

@@ -120,8 +120,14 @@ SUBROUTINE track_driver( grid )
          grid%track_z(n,grid%sm32:grid%em32-1)      = grid%z(ix,grid%sm32:grid%em32-1,iy)
          grid%track_p(n,grid%sm32:grid%em32-1)      = grid%p(ix,grid%sm32:grid%em32-1,iy) + &
                                                     grid%pb(ix,grid%sm32:grid%em32-1,iy)
-         grid%track_t(n,grid%sm32:grid%em32-1)      = (grid%t_2(ix,grid%sm32:grid%em32-1,iy) + t0 ) * &
+         if ( grid%use_theta_m == 1 ) then
+            grid%track_t(n,grid%sm32:grid%em32-1)   = (grid%t_2(ix,grid%sm32:grid%em32-1,iy) + t0 ) * &
+                                                    (grid%track_p(n,grid%sm32:grid%em32-1)/p1000mb)**rcp / &
+                                                    (1.+R_v/R_d*grid%moist(ix,grid%sm32:grid%em32-1,iy,P_QV))
+         else
+            grid%track_t(n,grid%sm32:grid%em32-1)   = (grid%t_2(ix,grid%sm32:grid%em32-1,iy) + t0 ) * &
                                                     (grid%track_p(n,grid%sm32:grid%em32-1)/p1000mb)**rcp
+         end if
          grid%track_u(n,grid%sm32:grid%em32-1)      = (grid%u_2(ix,grid%sm32:grid%em32-1,iy) + &
                                                      grid%u_2(ix+1,grid%sm32:grid%em32-1,iy) )*0.5
          grid%track_v(n,grid%sm32:grid%em32-1)      = (grid%v_2(ix,grid%sm32:grid%em32-1,iy) + &

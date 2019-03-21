@@ -49,26 +49,21 @@ module module_cu_ntiedtke
 #if defined(mpas)
      use mpas_atmphys_constants, only: rd=>R_d, rv=>R_v, &
    &       cpd=>cp, alv=>xlv, als=>xls, alf=>xlf, g=>gravity
-#elif defined(wrfmodel)
+#else
      use module_model_constants, only:rd=>r_d, rv=>r_v, &
-   &       cpd=>cp, alv=>xlv, als=>xls, alf=>xlf, t13=>Prandtl, g              
+   &       cpd=>cp, alv=>xlv, als=>xls, alf=>xlf, g
 #endif
 
      implicit none
-     real,private :: rcpd,vtmpc1,tmelt,                &
+     real,private :: t13,rcpd,vtmpc1,tmelt,            &
              c1es,c2es,c3les,c3ies,c4les,c4ies,c5les,c5ies,zrg
-#if defined(mpas)
-     real,private :: t13
-#endif
+
      real,private :: r5alvcp,r5alscp,ralvdcp,ralsdcp,ralfdcp,rtwat,rtber,rtice 
      real,private :: entrdd,cmfcmax,cmfcmin,cmfdeps,zdnoprc,cprcon,pgcoef
      integer,private :: momtrans
 
      parameter(         &
-#if defined(mpas)
-! parameter not present in mpas_atmphy_constants
       t13=1.0/3.0,      &
-#endif
       rcpd=1.0/cpd,     &
       tmelt=273.16,     &
       zrg=1.0/g,        &
@@ -294,7 +289,9 @@ contains
                                         rcs,                            &
                                         rn,                             &
                                         evap,                           &
-                                        heatflux
+                                        heatflux,                       &
+                                        dx2d
+
       integer  , dimension(its:ite) ::  slimsk
 
 
@@ -381,6 +378,16 @@ contains
         slimsk(i)=int(abs(xland(i,j)-2.))
       enddo
 
+#if defined(mpas)
+      do i=its,ite
+         dx2d(i) = dx(i,j)
+      enddo
+#else
+      do i=its,ite
+         dx2d(i) = dx
+      enddo
+#endif
+
       do k=kts,kte
         kp=k+1
         do i=its,ite
@@ -429,7 +436,7 @@ contains
 !
 !########################################################################
       call tiecnvn(u1,v1,t1,q1,q2,q3,q1b,t1b,ghtl,ghti,omg,prsl,prsi,evap,heatflux,  &
-                  rn,slimsk,im,kx,kx1,delt,dx)
+                  rn,slimsk,im,kx,kx1,delt,dx2d)
 
       do i=its,ite
          raincv(i,j)=rn(i)/stepcu
@@ -579,11 +586,8 @@ contains
      &     zlu(lq,km),     zlude(lq,km), zmfu(lq,km),  zmfd(lq,km), &
      &     zqsat(lq,km),   pqc(lq,km),   pqi(lq,km),   zrain(lq)
       real pqvf(lq,km),    ptf(lq,km)
-#if defined(mpas)
       real dx(lq)
-#elif defined(wrfmodel)
-      real dx
-#endif
+
       integer icbot(lq),   ictop(lq),     ktype(lq),   lndj(lq)
       logical locum(lq)
 !
@@ -795,11 +799,7 @@ contains
       real     wup(klon),              zdqcv(klon)            
       real     wbase(klon),            zmfuub(klon)
       real     upbl(klon)
-#if defined(mpas)
       real     dx(klon)
-#elif defined(wrfmodel)
-      real     dx
-#endif
       real     pmfude_rate(klon,klev), pmfdde_rate(klon,klev)
       real     zmfuus(klon,klev),      zmfdus(klon,klev)
       real     zuv2(klon,klev),ztenu(klon,klev),ztenv(klon,klev)
@@ -1027,11 +1027,7 @@ contains
        if(ldcum(jl).and.ktype(jl).eq.1) then
            ikb = kcbot(jl)
            ikt = kctop(jl)
-#if defined(mpas)
            ztau = ztauc(jl) * (1.+1.33e-5*dx(jl))
-#elif defined(wrfmodel)
-           ztau = ztauc(jl) * (1.+1.33e-5*dx)
-#endif
            ztau = max(ztmst,ztau)
            ztau = max(360.,ztau)
            ztau = min(10800.,ztau)
@@ -3885,4 +3881,4 @@ contains
       end function  foeldcpm
 
 end module module_cu_ntiedtke
-                                                                                         
+

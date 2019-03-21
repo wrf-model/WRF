@@ -1502,6 +1502,10 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
   fast_overcast = .false.
  endif
 
+! Removing these OpenMP directives since this is already in a 
+! threaded region from the radiation driver for the WRF model.
+! Perhaps other models use these, so we will keep them around.
+#if (NUWRF_GODDARD == 1)
 !$OMP PARALLEL DO &
 !$OMP PRIVATE ( ic, ii) &
 !$OMP PRIVATE ( i,j,k,nk,ib,n,kt,km, i24h ) &
@@ -1520,6 +1524,7 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
 !$OMP PRIVATE ( aero1d ) &
 #endif
 !$OMP SCHEDULE(dynamic,1)
+#endif
 
   DO ip = 1,((1+(ite-its+1)/CHUNK)*CHUNK)*(jte-jts+1),CHUNK ! *ij_skip
   j  = jts+(ip-1)/((1+(ite-its+1)/CHUNK)*CHUNK) ! *ij_skip

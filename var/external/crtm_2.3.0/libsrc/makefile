@@ -21,7 +21,7 @@ $(LIBRARY): $(OBJ_FILES)
 library: $(LIBRARY)
 
 clean:
-	$(RM) *.o *.mod *.a
+	@$(RM) *.o *.mod *.a
 
 # File dependency and compilation rule include files
 include make.dependencies

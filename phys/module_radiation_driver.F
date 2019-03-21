@@ -87,6 +87,7 @@ CONTAINS
               , QR, F_QR                     &
               , QI, F_QI                     &
               , QI2, F_QI2                   & ! for P3
+              , QI3, F_QI3                   & ! for Jensen ISHMAEL
               , QS, F_QS                     &
               , QG, F_QG                     &
               , QH, F_QH                     &  !goddardrad
@@ -158,6 +159,7 @@ CONTAINS
               ,aer_asy_opt, aer_asy_val                                   &
               ,aod5502d, angexp2d, aerssa2d, aerasy2d                     &
               ,aod5503d                                                   &
+              ,cw_rad, shcu_physics                      &
               ,taod5502d, taod5503d                                       & !  Trude
               ,mp_physics                                                 &
               ,EFCG,EFCS,EFIG,EFIS,EFSG,aercu_opt                         &
@@ -484,6 +486,11 @@ CONTAINS
                                                              t8w, &
                                                              rho
 
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
+         OPTIONAL,                                                &
+         INTENT(IN   )  ::                       cw_rad
+   INTEGER, OPTIONAL,                INTENT(IN) ::  shcu_physics
+
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL,        &
         INTENT(IN)     ::                            EFCG,       & 
                                                      EFCS,       &
@@ -759,13 +766,13 @@ CONTAINS
          OPTIONAL,                                                &
          INTENT(INOUT ) ::                                        &
                                                                pb &
-                               ,qv,qc,qr,qi,qs,qg,qh,qndrop,      &
-                                             qnifa,qnwfa,         & ! Trude
-                                                               qi2  ! for P3
+                                        ,qv,qc,qr,qi,qs,qg,qh,qndrop,      &
+                                                      qnifa,qnwfa,      & ! Trude
+                                                      qi2,qi3        ! for P3
 
    LOGICAL, OPTIONAL ::     f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qh,f_qndrop,&
                                                 f_qnifa,f_qnwfa,        &  ! trude
-                                                f_qi2            ! for P3
+                                                f_qi2,f_qi3            ! for P3
 !shbaek
    real, dimension ( ims:ime, kms:kme, jms:jme ), optional, intent(in) :: qnc_curr
    LOGICAL, OPTIONAL :: f_qnc
@@ -1245,6 +1252,17 @@ CONTAINS
           ENDDO
           ENDDO
      ENDIF
+
+! for Jensen ISHMAEL, add the third ice species
+     IF ( F_QI3) THEN
+          DO j=jts,jte
+          DO k=kts,kte
+          DO i=its,ite
+             qi(i,k,j) = qi(i,k,j) + qi3(i,k,j)
+          ENDDO
+          ENDDO
+          ENDDO
+     ENDIF
 #endif
 
 ! these are half level parameters.....so, it should start from kts to kte - 1
@@ -1557,6 +1575,21 @@ CONTAINS
            ENDDO
         end if
      endif
+
+#if (EM_CORE==1)
+     IF( shcu_physics == 5 ) THEN
+        DO j=jts,jte
+        DO k=kts,kte
+        DO i=its,ite
+           cldfra(I,K,J) = max(cldfra_sh(I,K,J), cldfra(I,K,J))
+           qc_save(I,K,J)=qc(I,K,J)
+           qc(I,K,J)=cw_rad(I,K,J)+qc(I,K,J)
+        ENDDO
+        ENDDO
+        ENDDO
+     ENDIF
+#endif
+
         
 
      lwrad_select: SELECT CASE(lw_physics)

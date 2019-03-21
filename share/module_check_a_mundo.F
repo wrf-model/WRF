@@ -1392,7 +1392,11 @@
                ( model_config_rec%cu_physics(i) .NE. G3SCHEME ) ) THEN
                 wrf_err_message = '--- ERROR: Using cu_diag=1 requires use of one of the following CU schemes:'
                 CALL wrf_message ( wrf_err_message )
-                wrf_err_message = '---          Grell (G3) CU scheme'
+                wrf_err_message = '---          Grell-Freitas (GF) CU scheme'
+                CALL wrf_message ( wrf_err_message )
+                wrf_err_message = '---          Grell 3D (G3) CU scheme'
+                CALL wrf_message ( wrf_err_message )
+                wrf_err_message = '---          Kain–Fritsch Cumulus Potential (KF-CuP) CU scheme'
                 CALL wrf_message ( wrf_err_message )
                 wrf_err_message = '---          Grell-Devenyi (GD) CU scheme'
             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )

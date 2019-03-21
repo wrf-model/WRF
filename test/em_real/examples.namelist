@@ -475,7 +475,8 @@ to turn on the option (vert_refine_method).  The namelist array eta_levels
 is manually filled in for each domain.  Below is an example for two 
 domains.  
 
-NOTE: The user is restricted to either the RRTM or RRTMG radiation schemes.
+NOTE: The user is restricted to using the RRTM LW and Dudhia SW radiation schemes.
+NOTE: The user is restricted from using the hybrid vertical coordinate.
 
  &domains
  max_dom                             = 2,

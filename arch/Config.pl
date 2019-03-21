@@ -419,7 +419,11 @@ $optchoice = $response ;
 if ( $response == 2 || $response == 3 ) {
   if ( $ENV{'TERRAIN_AND_LANDUSE'} eq "1" && index($sw_wrf_core, "EM_CORE") > -1 ) { 
     $sw_terrain_and_landuse =" -DTERRAIN_AND_LANDUSE" ;
+  } else {
+    $sw_terrain_and_landuse =" -DLANDREAD_STUB=1" ;
   }
+} else {
+  $sw_terrain_and_landuse =" -DLANDREAD_STUB=1" ;
 } 
 open CONFIGURE_DEFAULTS, "cat ./arch/configure.defaults |"  ;
 $latchon = 0 ;
@@ -549,7 +553,7 @@ while ( <CONFIGURE_DEFAULTS> )
      }
    else
      {
-       $_  =~ s:CONFIGURE_TERRAIN_AND_LANDUSE::g;
+       $_  =~ s:CONFIGURE_TERRAIN_AND_LANDUSE:-DLANDREAD_STUB=1:g;
      }
 
     # ESMF substitutions in configure.defaults

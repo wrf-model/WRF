@@ -1697,9 +1697,6 @@ contains
              if(sink.gt.source.and.qi(ICE1,k).gt.QSMALL) then
                 ratio= source/sink
                 qmlt(ICE1) = qmlt(ICE1)*ratio
-                nmlt(ICE1) = nmlt(ICE1)*ratio
-                amlt(ICE1) = amlt(ICE1)*ratio
-                cmlt(ICE1) = cmlt(ICE1)*ratio
                 qagg(ICE1) = qagg(ICE1)*ratio
                 nagg(ICE1) = nagg(ICE1)*ratio
                 if(prd(ICE1).lt.0.) then
@@ -1722,9 +1719,6 @@ contains
                 dQRfzri(ICE2) = dQRfzri(ICE2)*ratio
                 dNfzri(ICE2)  = dNfzri(ICE2)*ratio
                 qmlt(ICE2) = qmlt(ICE2)*ratio
-                nmlt(ICE2) = nmlt(ICE2)*ratio
-                amlt(ICE2) = amlt(ICE2)*ratio
-                cmlt(ICE2) = cmlt(ICE2)*ratio
                 qagg(ICE2) = qagg(ICE2)*ratio
                 nagg(ICE2) = nagg(ICE2)*ratio
                 if(prd(ICE2).lt.0.) then
@@ -1746,9 +1740,6 @@ contains
                 dQRfzri(ICE3) = dQRfzri(ICE3)*ratio
                 dNfzri(ICE3)  = dNfzri(ICE3)*ratio
                 qmlt(ICE3) = qmlt(ICE3)*ratio
-                nmlt(ICE3) = nmlt(ICE3)*ratio
-                amlt(ICE3) = amlt(ICE3)*ratio
-                cmlt(ICE3) = cmlt(ICE3)*ratio
                 if(prd(ICE3).lt.0.) then
                    prd(ICE3) = prd(ICE3)*ratio
                 endif
@@ -1773,9 +1764,6 @@ contains
              if(sink.gt.source.and.qi(ICE2,k).gt.QSMALL) then
                 ratio= source/sink
                 qmlt(ICE2) = qmlt(ICE2)*ratio
-                nmlt(ICE2) = nmlt(ICE2)*ratio
-                amlt(ICE2) = amlt(ICE2)*ratio
-                cmlt(ICE2) = cmlt(ICE2)*ratio
                 qagg(ICE2) = qagg(ICE2)*ratio
                 nagg(ICE2) = nagg(ICE2)*ratio
                 if(prd(ICE2).lt.0.) then
@@ -1798,9 +1786,6 @@ contains
                 dQRfzri(ICE1) = dQRfzri(ICE1)*ratio
                 dNfzri(ICE1)  = dNfzri(ICE1)*ratio
                 qmlt(ICE1) = qmlt(ICE1)*ratio
-                nmlt(ICE1) = nmlt(ICE1)*ratio
-                amlt(ICE1) = amlt(ICE1)*ratio
-                cmlt(ICE1) = cmlt(ICE1)*ratio
                 qagg(ICE1) = qagg(ICE1)*ratio
                 nagg(ICE1) = nagg(ICE1)*ratio
                 if(prd(ICE1).lt.0.) then
@@ -1822,9 +1807,6 @@ contains
                 dQRfzri(ICE3) = dQRfzri(ICE3)*ratio
                 dNfzri(ICE3)  = dNfzri(ICE3)*ratio
                 qmlt(ICE3) = qmlt(ICE3)*ratio
-                nmlt(ICE3) = nmlt(ICE3)*ratio
-                amlt(ICE3) = amlt(ICE3)*ratio
-                cmlt(ICE3) = cmlt(ICE3)*ratio
                 if(prd(ICE3).lt.0.) then
                    prd(ICE3) = prd(ICE3)*ratio
                 endif

@@ -219,12 +219,8 @@ contains
 
       real,    intent(in) ::                                            &
                                         dt
-#if defined(mpas)
       real,    dimension(ims:ime, jms:jme), intent(in) ::               &
                                         dx
-#elif defined(wrfmodel)
-      real,    intent(in) ::            dx
-#endif
 
       real,    dimension(ims:ime, jms:jme), intent(in) ::               &
                                         xland
@@ -574,11 +570,7 @@ contains
      &     zlu(lq,km),     zlude(lq,km), zmfu(lq,km),  zmfd(lq,km), &
      &     zqsat(lq,km),   pqc(lq,km),   pqi(lq,km),   zrain(lq)
       real pqvf(lq,km),    ptf(lq,km)
-#if defined(mpas)
       real dx(lq)
-#elif defined(wrfmodel)
-      real dx
-#endif
       integer icbot(lq),   ictop(lq),     ktype(lq),   lndj(lq)
       logical locum(lq)
 !
@@ -790,11 +782,7 @@ contains
       real     wup(klon),              zdqcv(klon)            
       real     wbase(klon),            zmfuub(klon)
       real     upbl(klon)
-#if defined(mpas)
       real     dx(klon)
-#elif defined(wrfmodel)
-      real     dx
-#endif
       real     pmfude_rate(klon,klev), pmfdde_rate(klon,klev)
       real     zmfuus(klon,klev),      zmfdus(klon,klev)
       real     zuv2(klon,klev),ztenu(klon,klev),ztenv(klon,klev)
@@ -1022,11 +1010,7 @@ contains
        if(ldcum(jl).and.ktype(jl).eq.1) then
            ikb = kcbot(jl)
            ikt = kctop(jl)
-#if defined(mpas)
            ztau = ztauc(jl) * (1.+1.33e-5*dx(jl))
-#elif defined(wrfmodel)
-           ztau = ztauc(jl) * (1.+1.33e-5*dx)
-#endif
            ztau = max(ztmst,ztau)
            ztau = max(360.,ztau)
            ztau = min(10800.,ztau)

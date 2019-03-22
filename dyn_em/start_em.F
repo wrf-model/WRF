@@ -127,6 +127,8 @@
 !  CCN for MP=18 initializatio
    REAL :: ccn_max_val
 
+   REAL :: dt_s, dx_km
+
    REAL :: max_mf, max_rot_angle
    CALL get_ijk_from_grid ( grid ,                              &
                            ids, ide, jds, jde, kds, kde,        &
@@ -235,23 +237,59 @@
        first_trip_for_this_domain = .TRUE.
    ENDIF
 
-      ! Print out the maximum map scale factor on the coarse domain
+   ! Print out the maximum map scale factor on the coarse domain
 
-      IF ( ( first_trip_for_this_domain ) .AND. ( grid%id .EQ. 1 ) .AND. &
-           ( .NOT. config_flags%polar ) ) THEN
-         max_mf = grid%msft(its,jts)
-         DO j=jts,MIN(jde-1,jte)
-            DO i=its,MIN(ide-1,ite)
-               max_mf = MAX ( max_mf , grid%msft(i,j) )
-            END DO
+   IF ( ( first_trip_for_this_domain ) .AND. ( grid%id .EQ. 1 ) .AND. &
+        ( .NOT. config_flags%polar ) ) THEN
+      max_mf = grid%msft(its,jts)
+      DO j=jts,MIN(jde-1,jte)
+         DO i=its,MIN(ide-1,ite)
+            max_mf = MAX ( max_mf , grid%msft(i,j) )
          END DO
+      END DO
 #if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
-         max_mf = wrf_dm_max_real ( max_mf )
+      max_mf = wrf_dm_max_real ( max_mf )
 #endif
-         WRITE ( a_message , FMT='(A,F5.2,A)' ) 'Max map factor in domain 1 = ',max_mf, &
-                                                '. Scale the dt in the model accordingly.'
-         CALL wrf_message ( a_message )
+      WRITE ( a_message , FMT='(A,F5.2,A)' ) 'Max map factor in domain 1 = ',max_mf, &
+                                             '. Scale the dt in the model accordingly.'
+      CALL wrf_message ( a_message )
+   END IF
+
+!-----------------------------------------------------------------------
+! Do a gross check on the time step for the most coarse grid (not for
+! adaptive time steps. If the value is significantly larger than reasonable,
+! then stop immediately. Likely the user made a mistake.
+! If the rule of thumb is 6 DX = DT, then anything > 10 is flagged.
+! Only look at domain 1, only do this for the firt time into this routine,
+! only look at real-data cases (where the map projection is not Cartesian), 
+! and only look at user-specified time steps (not the adaptive dt option).
+!-----------------------------------------------------------------------
+   IF ( ( grid%id .EQ. 1 ) .AND. &
+        ( first_trip_for_this_domain ) .AND. &
+        ( config_flags%map_proj .NE. 0 ) .AND. &
+        ( .NOT. config_flags%use_adaptive_time_step ) ) THEN
+      dt_s = REAL(config_flags%time_step) + &
+             REAL(config_flags%time_step_fract_num) / &
+             REAL(config_flags%time_step_fract_den)
+      dx_km = MIN ( config_flags%dx , config_flags%dy ) / 1000.
+      WRITE (message,*) 'D01: Time step                              = ',dt_s ,' (s)'
+      CALL wrf_message ( TRIM(message) ) 
+      WRITE (message,*) 'D01: Grid Distance                          = ',dx_km ,' (km)'
+      CALL wrf_message ( TRIM(message) ) 
+      WRITE (message,*) 'D01: Grid Distance Ratio dt/dx              = ', dt_s / dx_km, ' (s/km)'
+      CALL wrf_message ( TRIM(message) ) 
+      WRITE (message,*) 'D01: Ratio Including Maximum Map Factor     = ', dt_s / (dx_km / max_mf) , ' (s/km)'
+      CALL wrf_message ( TRIM(message) ) 
+      WRITE (message,*) 'D01: NML defined reasonable_time_step_ratio = ', config_flags%reasonable_time_step_ratio
+      CALL wrf_message ( TRIM(message) ) 
+      IF ( dt_s / dx_km > config_flags%reasonable_time_step_ratio ) THEN
+         CALL wrf_message ( 'The time step is probably too large for this grid distance, reduce it.' )
+         WRITE (message, * ) 'If you are sure of your settings, set reasonable_time_step_ratio in namelist.input > ' &
+                             ,dt_s / (dx_km / max_mf)
+         CALL wrf_message ( TRIM(message) ) 
+         CALL wrf_error_fatal ( '--- ERROR: Time step too large')
       END IF
+   END IF
 
     if(config_flags%cycling) then
 ! Clear the buckets for diagnostics at initial time

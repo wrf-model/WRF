@@ -285,7 +285,9 @@ contains
                                         rcs,                            &
                                         rn,                             &
                                         evap,                           &
-                                        heatflux
+                                        heatflux,                       &
+                                        dx2d
+
       integer  , dimension(its:ite) ::  slimsk
 
 
@@ -372,6 +374,16 @@ contains
         slimsk(i)=int(abs(xland(i,j)-2.))
       enddo
 
+#if defined(mpas)
+      do i=its,ite
+         dx2d(i) = dx(i,j)
+      enddo
+#else
+      do i=its,ite
+         dx2d(i) = dx
+      enddo
+#endif
+
       do k=kts,kte
         kp=k+1
         do i=its,ite
@@ -420,7 +432,7 @@ contains
 !
 !########################################################################
       call tiecnvn(u1,v1,t1,q1,q2,q3,q1b,t1b,ghtl,ghti,omg,prsl,prsi,evap,heatflux,  &
-                  rn,slimsk,im,kx,kx1,delt,dx)
+                  rn,slimsk,im,kx,kx1,delt,dx2d)
 
       do i=its,ite
          raincv(i,j)=rn(i)/stepcu
@@ -571,6 +583,7 @@ contains
      &     zqsat(lq,km),   pqc(lq,km),   pqi(lq,km),   zrain(lq)
       real pqvf(lq,km),    ptf(lq,km)
       real dx(lq)
+
       integer icbot(lq),   ictop(lq),     ktype(lq),   lndj(lq)
       logical locum(lq)
 !

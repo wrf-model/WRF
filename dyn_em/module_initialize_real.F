@@ -1683,8 +1683,8 @@ integer::oops1,oops2
             !  scaled by the eta levels.
 
             interp_type = 2
-            linear_interp = grid%linear_interp
             lagrange_order = grid%lagrange_order
+            linear_interp = grid%linear_interp
             lowest_lev_from_sfc = .FALSE.
             use_levels_below_ground = .TRUE.
             use_surface = .TRUE.

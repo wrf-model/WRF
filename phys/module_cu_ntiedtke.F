@@ -374,15 +374,9 @@ contains
         slimsk(i)=int(abs(xland(i,j)-2.))
       enddo
 
-#if defined(mpas)
       do i=its,ite
          dx2d(i) = dx(i,j)
       enddo
-#else
-      do i=its,ite
-         dx2d(i) = dx
-      enddo
-#endif
 
       do k=kts,kte
         kp=k+1

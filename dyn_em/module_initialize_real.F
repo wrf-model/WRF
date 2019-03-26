@@ -131,7 +131,6 @@ integer::oops1,oops2
       REAL    :: zap_close_levels
       INTEGER :: force_sfc_in_vinterp
       INTEGER :: interp_type , lagrange_order , extrap_type , t_extrap_type
-      INTEGER :: linear_interp
       LOGICAL :: lowest_lev_from_sfc , use_levels_below_ground , use_surface
       LOGICAL :: we_have_tavgsfc , we_have_tsk
 
@@ -1682,7 +1681,6 @@ integer::oops1,oops2
 
             interp_type = 2
             lagrange_order = grid%lagrange_order
-            linear_interp = grid%linear_interp
             lowest_lev_from_sfc = .FALSE.
             use_levels_below_ground = .TRUE.
             use_surface = .TRUE.
@@ -1895,7 +1893,7 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , linear_interp , extrap_type , &
+                                     interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
@@ -1925,7 +1923,7 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , linear_interp , extrap_type , &
+                                     interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
@@ -1955,7 +1953,7 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , linear_interp , extrap_type , &
+                                     interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
@@ -1975,7 +1973,7 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , linear_interp , extrap_type , &
+                                     interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
@@ -1995,7 +1993,7 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , linear_interp , extrap_type , &
+                                     interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
@@ -2015,7 +2013,7 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , linear_interp , extrap_type , &
+                                     interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
@@ -2035,7 +2033,7 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , linear_interp , extrap_type , &
+                                     interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
@@ -2055,7 +2053,7 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , linear_interp , extrap_type , &
+                                     interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
@@ -2075,7 +2073,7 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , linear_interp , extrap_type , &
+                                     interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
@@ -2095,7 +2093,7 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , linear_interp , extrap_type , &
+                                     interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
@@ -2115,7 +2113,7 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , linear_interp , extrap_type , &
+                                     interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
@@ -2135,7 +2133,7 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , linear_interp , extrap_type , &
+                                     interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
@@ -2160,7 +2158,7 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , linear_interp , extrap_type , &
+                                     interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
@@ -2176,7 +2174,7 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , linear_interp , extrap_type , &
+                                     interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
@@ -2213,7 +2211,7 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , linear_interp , extrap_type , &
+                                     interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
@@ -2228,7 +2226,7 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , linear_interp , extrap_type , &
+                                     interp_type , lagrange_order , extrap_type , &
                                      lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
@@ -2322,7 +2320,7 @@ integer::oops1,oops2
                                config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                config_flags%maxw_above_this_level , &
                                config_flags%num_gca_levels , 'Q' , &
-                               interp_type , linear_interp , extrap_type , &
+                               interp_type , lagrange_order , extrap_type , &
                                lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                                zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                ids , ide , jds , jde , kds , kde , &
@@ -2374,7 +2372,7 @@ integer::oops1,oops2
                                config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                config_flags%maxw_above_this_level , &
                                config_flags%num_gca_levels , 'Q' , &
-                               interp_type , linear_interp , extrap_type , &
+                               interp_type , lagrange_order , extrap_type , &
                                lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                                zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                ids , ide , jds , jde , kds , kde , &
@@ -2426,7 +2424,7 @@ integer::oops1,oops2
                                config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                config_flags%maxw_above_this_level , &
                                config_flags%num_gca_levels , 'Q' , &
-                               interp_type , linear_interp , extrap_type , &
+                               interp_type , lagrange_order , extrap_type , &
                                lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                                zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                ids , ide , jds , jde , kds , kde , &
@@ -2550,7 +2548,7 @@ integer::oops1,oops2
                                config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                config_flags%maxw_above_this_level , &
                                config_flags%num_wif_levels , 'Q' , &
-                               interp_type , linear_interp , extrap_type , &
+                               interp_type , lagrange_order , extrap_type , &
                                lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                                zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                ids , ide , jds , jde , kds , kde , &
@@ -2611,7 +2609,7 @@ integer::oops1,oops2
                                config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                config_flags%maxw_above_this_level , &
                                config_flags%num_wif_levels , 'Q' , &
-                               interp_type , linear_interp , extrap_type , &
+                               interp_type , lagrange_order , extrap_type , &
                                lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
                                zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                ids , ide , jds , jde , kds , kde , &

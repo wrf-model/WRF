@@ -5235,8 +5235,8 @@ subroutine interp_vec_cu(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
 
      do j = jts, min(jde-1,jte)
         do i = its, min(ide-1,ite)
-           dx2d  (i,j) = sqrt ( dx/msftx(i,j) * dy/msfty(i,j) )
-           area2d(i,j) =        dx/msftx(i,j) * dy/msfty(i,j)
+           area2d(i,j) = dx/msftx(i,j) * dy/msfty(i,j)
+           dx2d  (i,j) = sqrt ( area2d(i,j) )
         end do
      end do
 

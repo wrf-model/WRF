@@ -760,6 +760,7 @@ contains
              amlt(cc)=0.
              cmlt(cc)=0.
              deltastr(cc)=1.
+             dsold(cc)=1.
              dsdepout(cc)=1.
              rhobar(cc)=RHOI
              rhodepout(cc)=RHOI
@@ -895,7 +896,8 @@ contains
                 ai(cc,k) = ani(cc)**2*cni(cc)*ni(cc,k)
 
                 deltastr(cc)=(log(cni(cc))-log(ao))/(log(ani(cc))-log(ao)) 
-             
+                dsold(cc) = deltastr(cc)
+
                 call var_check(NU, ao, fourthirdspi, gammnu, qi(cc,k), deltastr(cc),       &
                      ani(cc), cni(cc), rni(cc), rhobar(cc), ni(cc,k), ai(cc,k), ci(cc,k),  &
                      alphstr, alphv, betam)
@@ -1137,7 +1139,7 @@ contains
                 endif
                 
   !.. Limit vapor growth if values small
-                if(abs(prd(cc)).lt.QSMALL) then
+                if(abs(prd(cc)*dt).lt.(QSMALL*0.01)) then
                    prd(cc)=0.
                    nrd(cc)=0.
                    ard(cc)=0.
@@ -1697,9 +1699,6 @@ contains
              if(sink.gt.source.and.qi(ICE1,k).gt.QSMALL) then
                 ratio= source/sink
                 qmlt(ICE1) = qmlt(ICE1)*ratio
-                nmlt(ICE1) = nmlt(ICE1)*ratio
-                amlt(ICE1) = amlt(ICE1)*ratio
-                cmlt(ICE1) = cmlt(ICE1)*ratio
                 qagg(ICE1) = qagg(ICE1)*ratio
                 nagg(ICE1) = nagg(ICE1)*ratio
                 if(prd(ICE1).lt.0.) then
@@ -1722,9 +1721,6 @@ contains
                 dQRfzri(ICE2) = dQRfzri(ICE2)*ratio
                 dNfzri(ICE2)  = dNfzri(ICE2)*ratio
                 qmlt(ICE2) = qmlt(ICE2)*ratio
-                nmlt(ICE2) = nmlt(ICE2)*ratio
-                amlt(ICE2) = amlt(ICE2)*ratio
-                cmlt(ICE2) = cmlt(ICE2)*ratio
                 qagg(ICE2) = qagg(ICE2)*ratio
                 nagg(ICE2) = nagg(ICE2)*ratio
                 if(prd(ICE2).lt.0.) then
@@ -1746,9 +1742,6 @@ contains
                 dQRfzri(ICE3) = dQRfzri(ICE3)*ratio
                 dNfzri(ICE3)  = dNfzri(ICE3)*ratio
                 qmlt(ICE3) = qmlt(ICE3)*ratio
-                nmlt(ICE3) = nmlt(ICE3)*ratio
-                amlt(ICE3) = amlt(ICE3)*ratio
-                cmlt(ICE3) = cmlt(ICE3)*ratio
                 if(prd(ICE3).lt.0.) then
                    prd(ICE3) = prd(ICE3)*ratio
                 endif
@@ -1773,9 +1766,6 @@ contains
              if(sink.gt.source.and.qi(ICE2,k).gt.QSMALL) then
                 ratio= source/sink
                 qmlt(ICE2) = qmlt(ICE2)*ratio
-                nmlt(ICE2) = nmlt(ICE2)*ratio
-                amlt(ICE2) = amlt(ICE2)*ratio
-                cmlt(ICE2) = cmlt(ICE2)*ratio
                 qagg(ICE2) = qagg(ICE2)*ratio
                 nagg(ICE2) = nagg(ICE2)*ratio
                 if(prd(ICE2).lt.0.) then
@@ -1798,9 +1788,6 @@ contains
                 dQRfzri(ICE1) = dQRfzri(ICE1)*ratio
                 dNfzri(ICE1)  = dNfzri(ICE1)*ratio
                 qmlt(ICE1) = qmlt(ICE1)*ratio
-                nmlt(ICE1) = nmlt(ICE1)*ratio
-                amlt(ICE1) = amlt(ICE1)*ratio
-                cmlt(ICE1) = cmlt(ICE1)*ratio
                 qagg(ICE1) = qagg(ICE1)*ratio
                 nagg(ICE1) = nagg(ICE1)*ratio
                 if(prd(ICE1).lt.0.) then
@@ -1822,9 +1809,6 @@ contains
                 dQRfzri(ICE3) = dQRfzri(ICE3)*ratio
                 dNfzri(ICE3)  = dNfzri(ICE3)*ratio
                 qmlt(ICE3) = qmlt(ICE3)*ratio
-                nmlt(ICE3) = nmlt(ICE3)*ratio
-                amlt(ICE3) = amlt(ICE3)*ratio
-                cmlt(ICE3) = cmlt(ICE3)*ratio
                 if(prd(ICE3).lt.0.) then
                    prd(ICE3) = prd(ICE3)*ratio
                 endif
@@ -1962,6 +1946,26 @@ contains
                    ai(cc,k) = ani(cc)**2*cni(cc)*ni(cc,k)
 
                    deltastr(cc)=(log(cni(cc))-log(ao))/(log(ani(cc))-log(ao))
+
+  !.. Melting should only make the average distribution more spherical
+                   if(dsold(cc).le.1.) then
+                      if(deltastr(cc).lt.dsold(cc)) then
+                         deltastr(cc)=dsold(cc)
+                      endif
+                      if(deltastr(cc).gt.1.) then
+                         deltastr(cc)=dsold(cc)
+                      endif
+                   else
+                      if(deltastr(cc).gt.dsold(cc)) then
+                         deltastr(cc)=dsold(cc)
+                      endif
+                      if(deltastr(cc).lt.1.) then
+                         deltastr(cc)=dsold(cc)
+                      endif
+                   endif
+                   cni(cc)=ao**(1.-deltastr(cc))*ani(cc)**deltastr(cc)
+                   ai(cc,k)=ani(cc)**2*cni(cc)*ni(cc,k)
+                   ci(cc,k)=cni(cc)**2*ani(cc)*ni(cc,k)
 
                    call var_check(NU, ao, fourthirdspi, gammnu, qi(cc,k), deltastr(cc),       &
                         ani(cc), cni(cc), rni(cc), rhobar(cc), ni(cc,k), ai(cc,k), ci(cc,k),  &
@@ -2431,6 +2435,8 @@ contains
                    else
                       deltastr(cc)=1.
                    endif
+  !.. Keep aggregates spherical or oblate (for now)
+                   deltastr(cc) = min(deltastr(cc),1.)
 
                    alphstr=ao**(1.-deltastr(cc))
                    gamma_arg = NU+2.+deltastr(cc)
@@ -2865,6 +2871,8 @@ contains
                 else
                    deltastr(cc)=1.
                 endif
+  !.. Keep aggregates spherical or oblate (for now)
+                deltastr(cc) = min(deltastr(cc),1.)
                 
                 alphstr=ao**(1.-deltastr(cc))
                 gamma_arg = NU+2.+deltastr(cc)
@@ -4415,6 +4423,9 @@ contains
                       fx(idx) = xjnum(dx(idx),cfvt(ix),pwvt(ix),cfvt(iy) &
                            ,pwvt(iy),vny,dnx,dny,gnu(ix),gnu(iy) &
                            ,gyn1,gyn2,gynp,gynp1,gynp2)
+                      if(fx(idx).lt.1.e-15) then
+                         fx(idx) = 0.
+                      endif
                       gx(idx) = fx(idx) * cfmas(ix) &
                            * dx(idx) ** pwmas(ix)
                    enddo
@@ -4443,8 +4454,10 @@ contains
     
     dnxi = 1. / dnx
     rdx = dx * dnxi
-    vx = cvx * dx ** pvx
+    vx = max((cvx * dx ** pvx),1.e-6)
     dxy = (vx / cvy) ** (1. / pvy) / dny
+    dxy = max(dxy,1.e-5)
+    dxy = min(dxy,70.)
     ynup = ynu + pvy
     
     if (rdx .lt. 38.) then
@@ -4531,8 +4544,8 @@ contains
        sum=sum+del
        if(abs(del).lt.abs(sum)*EPS) exit
     enddo
+    
     gammaser = sum*exp(-x+a*log(x)-gln)
-
     return
   end subroutine lowgseries
 
@@ -4566,8 +4579,8 @@ contains
        h = h*del
        if(abs(del-1.).lt.EPS) exit
     enddo
+
     gammacf = exp(-x+a*log(x)-gln)*h
-    
     return
   end subroutine highgcontfrac
 

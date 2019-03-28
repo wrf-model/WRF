@@ -34,7 +34,8 @@ SUBROUTINE calc_ts_locations( grid )
    CHARACTER (LEN=132) :: message
    CHARACTER (LEN=24) :: ts_profile_filename
    INTEGER, PARAMETER :: TS_FIELDS = 7
-   CHARACTER (LEN=2), DIMENSION(6) :: ts_file_endings = (/ 'UU', 'VV', 'PH', 'TH', 'QV' ,'WW', 'PR'/) 
+   CHARACTER (LEN=2), DIMENSION(TS_FIELDS) :: &
+      ts_file_endings = (/ 'UU', 'VV', 'PH', 'TH', 'QV' ,'WW', 'PR'/) 
    TYPE (PROJ_INFO) :: ts_proj
    TYPE (grid_config_rec_type) :: config_flags
 
@@ -220,14 +221,25 @@ SUBROUTINE calc_ts_locations( grid )
                WRITE(grid%ts_filename(k)(i-4:i-3),'(I2.2)') grid%id
                OPEN(UNIT=iunit, FILE=TRIM(grid%ts_filename(k)), FORM='FORMATTED', STATUS='REPLACE')
 #if (EM_CORE == 1)
-               WRITE(UNIT=iunit, &
-                     FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2,F6.1,A7)') &
-                     grid%desctsloc(grid%id_tsloc(k))//' ', grid%id, grid%id_tsloc(k), &
-                     ' '//grid%nametsloc(grid%id_tsloc(k)), &
-                     ' (', grid%lattsloc(grid%id_tsloc(k)), ',', grid%lontsloc(grid%id_tsloc(k)), ') (', &
-                     grid%itsloc(k), ',', grid%jtsloc(k), ') (', &
-                     ts_xlat, ',', ts_xlong, ') ', &
-                     ts_hgt,' meters'
+               IF ( .NOT. grid%tslist_ij ) THEN 
+                  WRITE(UNIT=iunit, &
+                        FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2,F6.1,A7)') &
+                        grid%desctsloc(grid%id_tsloc(k))//' ', grid%id, grid%id_tsloc(k), &
+                        ' '//grid%nametsloc(grid%id_tsloc(k)), &
+                        ' (', grid%lattsloc(grid%id_tsloc(k)), ',', grid%lontsloc(grid%id_tsloc(k)), ') (', &
+                        grid%itsloc(k), ',', grid%jtsloc(k), ') (', &
+                        ts_xlat, ',', ts_xlong, ') ', &
+                        ts_hgt,' meters'
+               ELSE
+                  WRITE(UNIT=iunit, &
+                        FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2,F6.1,A7)') &
+                        grid%desctsloc(grid%id_tsloc(k))//' ', grid%id, grid%id_tsloc(k), &
+                        ' '//grid%nametsloc(grid%id_tsloc(k)), &
+                        ' (', ts_xlat, ',', ts_xlong, ') (', &
+                        grid%itsloc(k), ',', grid%jtsloc(k), ') (', &
+                        ts_xlat, ',', ts_xlong, ') ', &
+                        ts_hgt,' meters'
+               END IF
 #else
                WRITE(UNIT=iunit, &
                      FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2)') &
@@ -250,14 +262,25 @@ SUBROUTINE calc_ts_locations( grid )
                   WRITE(ts_profile_filename(i-1:i),'(A2)') ts_file_endings(j)
                   OPEN(UNIT=iunit, FILE=TRIM(ts_profile_filename), FORM='FORMATTED', STATUS='REPLACE')
 #if (EM_CORE == 1)
-                  WRITE(UNIT=iunit, &
-                        FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2,F6.1,A7)') &
-                        grid%desctsloc(grid%id_tsloc(k))//' ', grid%id, grid%id_tsloc(k), &
-                        ' '//grid%nametsloc(grid%id_tsloc(k)), &
-                        ' (', grid%lattsloc(grid%id_tsloc(k)), ',', grid%lontsloc(grid%id_tsloc(k)), ') (', &
-                        grid%itsloc(k), ',', grid%jtsloc(k), ') (', &
-                        ts_xlat, ',', ts_xlong, ') ', &
-                        ts_hgt,' meters'
+                  IF ( .NOT. grid%tslist_ij ) THEN 
+                     WRITE(UNIT=iunit, &
+                           FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2,F6.1,A7)') &
+                           grid%desctsloc(grid%id_tsloc(k))//' ', grid%id, grid%id_tsloc(k), &
+                           ' '//grid%nametsloc(grid%id_tsloc(k)), &
+                           ' (', grid%lattsloc(grid%id_tsloc(k)), ',', grid%lontsloc(grid%id_tsloc(k)), ') (', &
+                           grid%itsloc(k), ',', grid%jtsloc(k), ') (', &
+                           ts_xlat, ',', ts_xlong, ') ', &
+                           ts_hgt,' meters'
+                  ELSE
+                     WRITE(UNIT=iunit, &
+                           FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2,F6.1,A7)') &
+                           grid%desctsloc(grid%id_tsloc(k))//' ', grid%id, grid%id_tsloc(k), &
+                           ' '//grid%nametsloc(grid%id_tsloc(k)), &
+                           ' (', ts_xlat, ',', ts_xlong, ') (', &
+                           grid%itsloc(k), ',', grid%jtsloc(k), ') (', &
+                           ts_xlat, ',', ts_xlong, ') ', &
+                           ts_hgt,' meters'
+                 END IF
 #else
                   WRITE(UNIT=iunit, &
                         FMT='(A26,I2,I3,A6,A2,F7.3,A1,F8.3,A3,I4,A1,I4,A3,F7.3,A1,F8.3,A2)') &

@@ -632,8 +632,6 @@ integer::oops1,oops2
 
          !  Variables that are named differently between SI and WPS.
 
-grid%ht_gc(10,10)=9000
-
          DO j = jts, MIN(jte,jde-1)
             DO i = its, MIN(ite,ide-1)
                IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE

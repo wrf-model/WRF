@@ -17,7 +17,6 @@ SUBROUTINE wrf_tsin ( grid , ierr )
     LOGICAL, EXTERNAL :: wrf_dm_on_monitor
     INTEGER, EXTERNAL :: get_unused_unit
 
-    REAL, ALLOCATABLE, DIMENSION(:) :: lattslocs, lontslocs
     INTEGER :: istatus, iunit
     LOGICAL :: exists
     CHARACTER (LEN=256) :: errmess

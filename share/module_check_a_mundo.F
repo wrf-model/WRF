@@ -207,14 +207,6 @@
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          count_fatal_error = count_fatal_error + 1
          END IF
-         IF ( model_config_rec % shcu_physics(i) == dengshcuscheme .AND. &
-              model_config_rec % cu_physics(i) /= nocuscheme  ) THEN
-            wrf_err_message = '--- ERROR: Deng shallow convection must run with cu_physics=0 '
-            CALL wrf_message ( wrf_err_message )
-            wrf_err_message = '--- ERROR: Fix shcu_physics or cu_physics in namelist.input.'
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         count_fatal_error = count_fatal_error + 1
-         END IF
       ENDDO
 
 #endif

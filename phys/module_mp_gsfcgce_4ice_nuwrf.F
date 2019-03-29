@@ -3080,9 +3080,8 @@ CONTAINS
 !                  call mass2icn(p0(i,k)*0.001,tair(i),aero(i,k,:), icn_out,i,k)
                   ! EMK...mass2icn requires i,j,k indices, but only prints
                   ! the values when an error occurs.  In no case are the i,j,k
-                  ! used to access a value in an array.  Since mass2icn is
-                  ! shared with the older 3ICE scheme which still uses j,
-                  ! we will simply pass a bogus value of j=1 in the call
+                  ! used to access a value in an array.  
+                  ! We will simply pass a bogus value of j=1 in the call
                   ! below.
                   call mass2icn(p0(i,k)*0.001,tair(i),aero(i,k,:), icn_out(i),&
                        i,1,k)

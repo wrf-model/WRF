@@ -148,7 +148,7 @@ SUBROUTINE microphysics_driver(                                          &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN, NSSL_2MOMG  &
                     ,NSSL_1MOM,NSSL_1MOMLFO, FER_MP_HIRES_ADVECT &
                     ,WSM7SCHEME, WDM7SCHEME &
-                    ,NUWRF3ICESCHEME, NUWRF4ICESCHEME & 
+                    ,NUWRF4ICESCHEME & 
                     ,MILBRANDT2MOM, P3_1CATEGORY, P3_1CATEGORY_NC, JENSEN_ISHMAEL  !, P3_2CATEGORY ,MILBRANDT3MOM 
 #else
    USE module_state_description, ONLY :                                  &
@@ -157,7 +157,7 @@ SUBROUTINE microphysics_driver(                                          &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN, NSSL_2MOMG  &
                     ,NSSL_1MOM,NSSL_1MOMLFO, FER_MP_HIRES_ADVECT & ! ,NSSL_3MOM       &
                     ,WSM7SCHEME, WDM7SCHEME &
-                    ,NUWRF3ICESCHEME, NUWRF4ICESCHEME &
+                    ,NUWRF4ICESCHEME &
                     ,MILBRANDT2MOM , CAMMGMPSCHEME,FULL_KHAIN_LYNN, P3_1CATEGORY, P3_1CATEGORY_NC, P3_2CATEGORY, MORR_TM_AERO, JENSEN_ISHMAEL !,MILBRANDT3MOM
 #if ( WRFPLUS == 1 )
    USE module_state_description, ONLY : LSCONDSCHEME, MKESSLERSCHEME
@@ -209,7 +209,6 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_mp_full_sbm
    USE module_mp_fast_sbm
    USE module_mp_gsfcgce
-   USE module_mp_gsfcgce_3ice_nuwrf, only: gsfcgce_3ice_nuwrf
    USE module_mp_gsfcgce_4ice_nuwrf, only: gsfcgce_4ice_nuwrf
    USE module_mp_morr_two_moment
    USE module_mp_p3
@@ -2019,84 +2018,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                 CALL wrf_error_fatal ( 'arguments not present for calling GSFCGCE' )
              ENDIF
 
-        CASE (NUWRF3ICESCHEME)
-             CALL wrf_debug ( 100 , 'microphysics_driver: calling NUWRF3ICE' )
-             IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &
-                  PRESENT( QR_CURR ) .AND. PRESENT ( QI_CURR ) .AND.  &
-                  PRESENT( QS_CURR )                           .AND.  &
-                  PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV ) .AND.  &
-                  PRESENT( HAIL    ) .AND. PRESENT ( ICE2    ) .AND.  &
-                  PRESENT( Z       ) .AND. PRESENT ( W       )  ) THEN
-               CALL gsfcgce_3ice_nuwrf(                             &
-                  TH=th                                             &
-                 ,QV=qv_curr                                        &
-                 ,QL=qc_curr                                        &
-                 ,QR=qr_curr                                        &
-                 ,QI=qi_curr                                        &
-                 ,QS=qs_curr                                        &
-                 ,RHO=rho, PII=pi_phy, P=p, DT_IN=dt, Z=z           &
-                 ,HT=ht, DZ8W=dz8w, GRAV=G, W=w                     &
-                 ,RHOWATER=rhowater, RHOSNOW=rhosnow                &
-                 ,ITIMESTEP=itimestep, XLAND=xland                  &
-                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
-                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
-                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
-                 ,RAINNC=rainnc, RAINNCV=rainncv                    &
-                 ,SNOWNC=snownc, SNOWNCV=snowncv ,SR=sr             &
-                 ,GRAUPELNC=graupelnc ,GRAUPELNCV=graupelncv        &
-                 ,REFL_10CM=refl_10cm                               &  ! added for radar reflectivity
-                 ,diagflag=diagflag                                 &  ! added for radar reflectivity
-                 ,do_radar_ref=do_radar_ref                         &  ! added for radar reflectivity
-                 ,F_QG=f_qg                                         &
-                 ,QG=qg_curr                                        &
-                 ,IHAIL=hail, ICE2=ice2                             &
-!NUWRF JJS 20110525 vvvvv
-                 ,PHYSC=physc, PHYSE=physe, PHYSD=physd             &
-                 ,PHYSS=physs, PHYSM=physm, PHYSF=physf             &
-                 ,ACPHYSC=acphysc, ACPHYSE=physe, ACPHYSD=acphysd   &
-                 ,ACPHYSS=acphyss, ACPHYSM=physm, ACPHYSF=acphysf   &
-                 ,RE_CLOUD_GSFC=re_cloud_gsfc                       &
-                 ,RE_RAIN_GSFC=re_rain_gsfc                         &
-                 ,RE_ICE_GSFC=re_ice_gsfc                           &
-                 ,RE_SNOW_GSFC=re_snow_gsfc                         &
-                 ,RE_GRAUPEL_GSFC=re_graupel_gsfc                   &
-#if ( WRF_CHEM == 1)
-                 ,AERO=aero                                         &
-                 ,ICN_DIAG=icn_diag, NC_DIAG=nc_diag, GID=ID        &
-                 ,CHEM_OPT=chem_opt                                 &
-                 ,GSFCGCE_GOCART_COUPLING=gsfcgce_gocart_coupling   &
-#endif
-!NUWRF JJS 20110525 ^^^^^         
-                                                                    )
-
-               do j=jts,jte
-                  do k=kts,kte
-                     do i=its,ite
-                        ! Snapshot total latent heating rate [K/s]
-                        phys_tot(i,k,j) = physc(i,k,j) + physe(i,k,j) + &
-                             physd(i,k,j) + physs(i,k,j) + physm(i,k,j) + &
-                             physf(i,k,j)
-                        ! Accumulated total latent heating [K]
-                        acphys_tot(i,k,j) = acphysc(i,k,j) + acphyse(i,k,j) + &
-                             acphysd(i,k,j) + acphyss(i,k,j) + acphysm(i,k,j) + &
-                             acphysf(i,k,j)
-                     end do
-                  end do
-               end do
-
-
-! HAIL = 0,  run gsfcgce with graupel option   <---- default
-!        1,  run gsfcgce with hail option
-!        note: no effect if ice2 > 0
-! ICE2 = 0,  run gsfcgce with snow, ice and hail/graupel   <---- default
-!        1,  run gsfcgce with only snow, ice
-!        2,  run gsfcgce with only graupel, ice
-!        3,  run gsfcgce with warm rain only (no ice)
-
-             ELSE
-                CALL wrf_error_fatal ( 'arguments not present for calling NUWRF3ICESFCGCE' )
-             ENDIF
-!
         CASE (NUWRF4ICESCHEME)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling NUWRF4ICE' )
              IF ( PRESENT( QV_CURR ) .AND. PRESENT ( QC_CURR ) .AND.  &

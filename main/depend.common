@@ -579,7 +579,6 @@ module_physics_init.o : \
 		module_fddaobs_rtfdda.o		\
 		module_mp_thompson.o            \
 		module_mp_gsfcgce.o 		\
-		module_mp_gsfcgce_3ice_nuwrf.o 	\
 		module_mp_gsfcgce_4ice_nuwrf.o  \
                 module_mp_morr_two_moment.o     \
                 module_mp_milbrandt2mom.o     \
@@ -612,7 +611,6 @@ module_microphysics_driver.o: \
 		module_mp_fer_hires.o module_mp_HWRF.o  \
 		module_mp_thompson.o            \
 		module_mp_gsfcgce.o 		\
-		module_mp_gsfcgce_3ice_nuwrf.o  \
 		module_mp_gsfcgce_4ice_nuwrf.o  \
                 module_mp_morr_two_moment.o     \
                 module_mp_morr_two_moment_aero.o     \
@@ -929,11 +927,6 @@ module_gocart_coupling.o:
 module_ra_goddard.o : ../frame/module_wrf_error.o \
                             module_gocart_coupling.o \
                             module_checkerror.o
-
-module_mp_gsfcgce_3ice_nuwrf.o : ../frame/module_wrf_error.o \
-                            module_gocart_coupling.o \
-                            module_checkerror.o \
-                            module_mp_radar.o
 
 module_mp_gsfcgce_4ice_nuwrf.o : ../frame/module_wrf_error.o \
                             module_gocart_coupling.o \

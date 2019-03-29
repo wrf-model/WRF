@@ -194,6 +194,7 @@
          count_fatal_error = count_fatal_error + 1
          END IF
       ENDDO
+
 !-----------------------------------------------------------------------
 ! Check that Deng Shallow Convection Must work with MYJ or MYNN PBL
 !-----------------------------------------------------------------------
@@ -204,8 +205,8 @@
             wrf_err_message = '--- ERROR: Deng shallow convection can only work with MYJ or MYNN PBL '
             CALL wrf_message ( wrf_err_message )
             wrf_err_message = '--- ERROR: Fix shcu_physics or bl_pbl_physics in namelist.input.'
-         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         count_fatal_error = count_fatal_error + 1
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
          END IF
       ENDDO
 

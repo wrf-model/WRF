@@ -589,6 +589,8 @@ Namelist variables for controlling the adaptive time step option:
  radt (max_dom)                      = 30,  ! minutes between radiation physics calls
                                               recommend 1 min per km of dx (e.g. 10 for 10 km);
                                               use the same value for all nests.                      
+ cldovrlp                            = 2,   ! cloud overlapping option for RRTMG only. 1=random, 2=maximum-random (default), 
+                                              3=maximum, 4=exponential, 5=exponential-random
 
  nrads (max_dom)                     = FOR NMM: number of fundamental timesteps between 
                                                 calls to shortwave radiation; the value

@@ -798,7 +798,7 @@ Namelist variables for controlling the adaptive time step option:
                                      = 2, Park and Bretherton shallow cumulus from CAM5 (CESM 1_0_1)
                                      = 3, GRIMS shallow cumulus from YSU group
                                      = 5, Deng cumulus scheme (including both shallow and deep convections) from PSU and WRF-Solar.
-                                          However the deep part isn't very active. Not recommended to use along for deep convection 
+                                          However the deep part isn't very active. Not recommended to use alone for deep convection 
                                           case. Could work well for grid sizes 3-9 km.
                                           This scheme only works with MYJ or MYNN PBL schemes 
 

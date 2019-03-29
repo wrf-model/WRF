@@ -1377,6 +1377,14 @@ contains
                    
                    qmlt(cc)=min(qmlt(cc),0.)
                    qmlt(cc)=max(qmlt(cc),(-qi(cc,k)*i_dt))
+
+  !.. Don't let small number mixing ratios cause ice precipitation through size sorting                   
+                   if(qmlt(cc).lt.0.) then
+                      if(ai(cc,k).lt.1.e-12.or.ci(cc,k).lt.1.e-12) then
+                         qmlt(cc)=-qi(cc,k)*i_dt
+                      endif
+                   endif
+
                    nmlt(cc) = max((-ni(cc,k)*i_dt),(ni(cc,k)*qmlt(cc)/qi(cc,k)-dNmltri(cc)))
                    
                    gamma_arg = NU+2.+deltastr(cc)
@@ -2593,7 +2601,7 @@ contains
              
   !.. For aspect ratio diagnostic set lower size limit
              if(ai(cc,k).gt.1.e-12.and.ci(cc,k).gt.1.e-12.and. &
-                  ani(cc).gt.2.e-6.and.cni(cc).gt.2.e-6.and.qi(cc,k).gt.1.e-8) then
+                  ani(cc).gt.2.e-6.and.cni(cc).gt.2.e-6.and.qi(cc,k).gt.1.e-9) then
                 phii1d(cc,k) = cni(cc)/ani(cc)*gamma_tab(gi)*i_gammnu
                 rhopo1d(cc,k) = rhobar(cc)
              endif
@@ -2606,7 +2614,7 @@ contains
              gi3=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
 
              if(ai(cc,k).gt.1.e-12.and.ci(cc,k).gt.1.e-12.and. &
-                  ani(cc).gt.2.e-6.and.cni(cc).gt.2.e-6.and.qi(cc,k).gt.1.e-8) then
+                  ani(cc).gt.2.e-6.and.cni(cc).gt.2.e-6.and.qi(cc,k).gt.1.e-9) then
                 di1d(cc,k)  = MAX((2.*ani(cc)*gamma_tab(gi)/gamma_tab(gi2)), &
                      (2.*cni(cc)*gamma_tab(gi3)/gamma_tab(gi2)))
                 vmi1d(cc,k) = vtrmi1(cc,k)

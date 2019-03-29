@@ -869,11 +869,13 @@ CONTAINS
 #if( BUILD_RRTMG_FAST == 1)
          (config_flags%ra_lw_physics .eq. RRTMG_LWSCHEME_FAST ) .or. &
 #endif
+         (config_flags%ra_lw_physics .eq. goddardlwscheme ) .or. &
          (config_flags%ra_lw_physics .eq. RRTMK_LWSCHEME  ) ) .and. &
        ( (config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME ) .or. &
 #if( BUILD_RRTMG_FAST == 1)
          (config_flags%ra_sw_physics .eq. RRTMG_SWSCHEME_FAST ) .or. &
 #endif
+         (config_flags%ra_sw_physics .eq. goddardswscheme ) .or. &
          (config_flags%ra_sw_physics .eq. RRTMK_SWSCHEME ) ) .and. &
         (config_flags%mp_physics  .eq. THOMPSON .or.        &
          config_flags%mp_physics  .eq. THOMPSONAERO .or.    &
@@ -886,8 +888,9 @@ CONTAINS
          config_flags%mp_physics  .eq. WSM7SCHEME .or.      &
          config_flags%mp_physics  .eq. WDM5SCHEME .or.      &
          config_flags%mp_physics  .eq. WDM6SCHEME .or.      &
-         config_flags%mp_physics  .eq. JENSEN_ISHMAEL .or.  &
          config_flags%mp_physics  .eq. WDM7SCHEME .or.      &
+         config_flags%mp_physics  .eq. nuwrf4icescheme .or. &
+         config_flags%mp_physics  .eq. JENSEN_ISHMAEL .or.  &
          config_flags%mp_physics  .eq. P3_1CATEGORY .or.    &
          config_flags%mp_physics  .eq. P3_1CATEGORY_NC .or. &
          config_flags%mp_physics  .eq. P3_2CATEGORY    ) ) then    ! P3
@@ -1536,12 +1539,13 @@ CONTAINS
 #endif
 
 !  Initialize cloud droplet effective radius for Goddard MP and Radiation
-!  Must be (Goddard LW and SW) AND must be (Goddard 4ice)
+!  Must be (Goddard LW and SW) AND must be (Goddard 3ice OR 4ice)
 #if ( EM_CORE == 1 )
     
    if ( ( ( config_flags%ra_lw_physics .EQ. GODDARDLWSCHEME )   .AND. &
           ( config_flags%ra_sw_physics .EQ. GODDARDSWSCHEME ) ) .AND. &
-          ( config_flags%mp_physics    .EQ. NUWRF4ICESCHEME )   ) THEN
+        ( ( config_flags%mp_physics    .EQ. NUWRF3ICESCHEME )   .OR.  &
+          ( config_flags%mp_physics    .EQ. NUWRF4ICESCHEME ) ) ) THEN
       do j=jts,jtf
          do k=kts,ktf
             do i=its,itf

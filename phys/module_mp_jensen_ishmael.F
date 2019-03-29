@@ -1298,7 +1298,7 @@ contains
                          anfr = rnfr
                          cnfr = rnfr
                       elseif(phibr.gt.1.25) then !.. Prolate ice
-                         phifr = phibr*(((rnfr/rni(cc))**3)**-0.5)
+                         phifr = phibr*(((rnfr/rni(cc))**3)**(-0.5))
                          anfr = (ani(cc)/rni(cc)**(1.5))*rnfr**(1.5)
                       elseif(phibr.lt.0.8) then !.. Oblate ice
                          phifr = phibr*(rnfr/rni(cc))**3
@@ -3203,12 +3203,12 @@ contains
        alpha = (dv*fvdum*svpi*xxls)/(RV*kt*fhdum*temp)
        if(nidum.gt.0.0.and.rimesum.gt.0.0) then
           del1 = (xxlf*(rimesum/nidum)/(4.*PI*kt*fhdum*capgam)) * &
-               ((temp + alpha*((xxls/(RV*temp))-1.))**-1.0)
+               ((temp + alpha*((xxls/(RV*temp))-1.))**(-1.0))
        else
           del1 = 0.0
        endif
        del2 = sui * &
-            (((temp/alpha) + ((xxls/(RV*temp))-1.))**-1.0)
+            (((temp/alpha) + ((xxls/(RV*temp))-1.))**(-1.0))
        del = del1 + del2
        afn = ((dv*fvdum*polysvp(temp,1))/(RV*temp)) * &
             (sui - del*((xxls/(RV*temp))-1.))
@@ -4073,7 +4073,7 @@ contains
        if(phieffmax.le.0.03) then
           phieff = 1.
        elseif(phieffmax.gt.0.03.and.phieffmax.lt.0.5) then
-          phieff = 0.0001*((phieffmax+0.07)**-4.)
+          phieff = 0.0001*((phieffmax+0.07)**(-4.))
        else
           phieff = 0.
        endif
@@ -4112,7 +4112,7 @@ contains
        if(phieffmax.le.0.03) then
           phieff = 1.
        elseif(phieffmax.gt.0.03.and.phieffmax.lt.0.5) then
-          phieff = 0.0001*((phieffmax+0.07)**-4.)
+          phieff = 0.0001*((phieffmax+0.07)**(-4.))
        else
           phieff = 0.
        endif
@@ -4147,7 +4147,7 @@ contains
        if(phieffmax.le.0.03) then
           phieff = 1.
        elseif(phieffmax.gt.0.03.and.phieffmax.lt.0.5) then
-          phieff = 0.0001*((phieffmax+0.07)**-4.)
+          phieff = 0.0001*((phieffmax+0.07)**(-4.))
        else
           phieff = 0.
        endif
@@ -4182,7 +4182,7 @@ contains
        if(phieffmax.le.0.03) then
           phieff = 1.
        elseif(phieffmax.gt.0.03.and.phieffmax.lt.0.5) then
-          phieff = 0.0001*((phieffmax+0.07)**-4.)
+          phieff = 0.0001*((phieffmax+0.07)**(-4.))
        else
           phieff = 0.
        endif
@@ -4217,7 +4217,7 @@ contains
        if(phieffmax.le.0.03) then
           phieff = 1.
        elseif(phieffmax.gt.0.03.and.phieffmax.lt.0.5) then
-          phieff = 0.0001*((phieffmax+0.07)**-4.)
+          phieff = 0.0001*((phieffmax+0.07)**(-4.))
        else
           phieff = 0.
        endif

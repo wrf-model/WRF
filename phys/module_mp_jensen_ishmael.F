@@ -1,7 +1,7 @@
 module module_mp_jensen_ishmael
 
   !------------------------------------------------------------------------------------------------------!
-  ! This is the inital release of the Ice-Spheroids Habit Model with Aspect-ratio Evolution (ISHMAEL).   !
+  ! This is the initial release of the Ice-Spheroids Habit Model with Aspect-ratio Evolution (ISHMAEL).  !
   ! This code calculates the moisture tendencies of water vapor, cloud water, rainwater, and three ice   !
   ! species which are planar-nucleated particles, columnar-nucleated particles, and aggregates. Planar-  !
   ! and columnar-nucleated ice particles are parameterized as spheroids (two growth dimensions are       !
@@ -9,7 +9,7 @@ module module_mp_jensen_ishmael
   ! riming, and melting. The model can produce various vapor-grown habits (which currently depend on the !
   ! environmental temperature and supersaturation), and the model predicts the change in ice particle    !
   ! shape and density during riming. Ice particle fall speeds are diagnosed based on ice particle        !
-  ! properties. Aggregates are currently paramterized as spheroids with a fixed shape and density. Ice   !
+  ! properties. Aggregates are currently parameterized as spheroids with a fixed shape and density. Ice  !
   ! is initiated as planar or columnar based on temperature. After nucleation, the shapes of particles   !
   ! are not constrained, i.e., planar-nucleated particles can attain columnar shapes if the growth       !
   ! conditions allow it.                                                                                 !
@@ -20,7 +20,7 @@ module module_mp_jensen_ishmael
   ! See Jensen et al. 2017 (JAS), Jensen et al. 2018 (MWR), and Jensen et al. 2018 (JAS) for details.    !
   !                                                                                                      !
   ! Author:        Anders A. Jensen, NCAR-RAL, ajensen@ucar.edu, 303-497-8484                            ! 
-  ! Last modified: 08 March 2019                                                                         !
+  ! Last modified: 29 March 2019                                                                         !
   !------------------------------------------------------------------------------------------------------!
 
   use module_wrf_error   
@@ -84,7 +84,7 @@ contains
          ,18,20,27,31,33,34,0/),                               &
          (/ncat,ncat/))
 
-  !.. Ice-ice collection lookup table properties
+  !.. Ice-ice collection lookup table properties (JYH)
     dstprms=&
          !-----------------------------------------------------------------------  
          !-----------------------------------------------------------------------  
@@ -198,7 +198,7 @@ contains
        allocate(coltabn(ndn,ndn,npair))
     endif
     
-  !.. Call to build the aggregation lookup table
+  !.. Call to build the aggregation lookup table (JYH)
     call mkcoltb(ndn,ncat,coltab,coltabn,ipair,gnu,tablo,tabhi,cfmas,pwmas,cfvt,pwvt)
     print*, 'Jensen_ISHMAEL aggregation lookup table built'
 
@@ -255,10 +255,10 @@ contains
   !.. ITS,ITE - I tile start/end locations
   !.. JTS,JTE - J tile start/end locations
   !.. KTS,KTE - K tile start/end locations
-  !.. RAINNC - rain accumulated precipitation (mm)
-  !.. RAINNCV - rain accumulated precipitation in a time step (mm)
-  !.. SNOWNC - planar-nucleated accumulated precipitation (mm)
-  !.. SNOWNCV - planar-nucleated accumulated precipitation in a time step (mm)
+  !.. RAINNC - total accumulated precipitation (mm)
+  !.. RAINNCV - total accumulated precipitation in a time step (mm)
+  !.. SNOWNC - total ice accumulated precipitation (mm)
+  !.. SNOWNCV - total ice accumulated precipitation in a time step (mm)
   !.. DIAG_EFFC3D - Effective cloud water radius for coupling to radiation (m)
   !.. DIAG_EFFI3D - Effective ice radius for coupling to radiation (m)
   !.. DIAG_DBZ3D - 10-cm reflectivity (dBZ)
@@ -437,11 +437,11 @@ contains
           enddo
 
   !.. Accumulated precipitation and precipitation rates
- 
-          ! Ice-one precipitation
+  !.. Frozen precipitation
           SNOWNC(i,j) = SNOWNC(i,j) + qipre1d(ICE1) + qipre1d(ICE2) + qipre1d(ICE3)
           SNOWNCV(i,j) = qipre1d(ICE1) + qipre1d(ICE2) + qipre1d(ICE3)
-          
+
+  !.. Total precipitation         
           RAINNC(i,j) = RAINNC(i,j) + qrpre1d + qipre1d(ICE1) + qipre1d(ICE2) + qipre1d(ICE3)
           RAINNCV(i,j) = qrpre1d + qipre1d(ICE1) + qipre1d(ICE2) + qipre1d(ICE3)
 
@@ -485,6 +485,7 @@ contains
     real, dimension(cat, kts:kte), intent(inout) :: ai !.. Ice a^2c mixing ratio (m^3 kg^-1)
     real, dimension(cat, kts:kte), intent(inout) :: ci !.. Ice c^2a mixing ratio (m^3 kg^-1)
 
+  !.. Ice diagnostics
     real, dimension(kts:kte), intent(inout) :: effc1d, effi1d, dbz1d
     real, dimension(cat, kts:kte), intent(inout) :: rhopo1d 
     real, dimension(cat, kts:kte), intent(inout) :: phii1d
@@ -497,12 +498,12 @@ contains
     real, dimension(cat) :: qipre1d !.. Ice liquid-equivalent precipitation accumulation (mm)
 
   !.. The Parameters                                            
-    real, parameter :: NU = 4.0          !.. Ice distribution parameter (keep at 4 unless
-                                         !.. new lookup tables are built)
+    real, parameter :: NU = 4.0          !.. Ice distribution parameter (keep at 4)
+                                         !.. If changed, build new lookup tables
 
     real, parameter :: QSMALL = 1.e-12   !.. Smallest ice mass (kg kg^-1)
     real, parameter :: QNSMALL= 1.25e-7  !.. Smallest ice number (# kg^-1)
-    real, parameter :: QASMALL= 1.e-24   !.. Smallest ice size   (m^-3 kg^-1)
+    real, parameter :: QASMALL= 1.e-24   !.. Smallest ice volume (m^-3 kg^-1)
     real, parameter :: ao = 0.1e-6       !.. alphstr=ao^(1-deltastr)     
     real, parameter :: AR = 149.1        !.. 'a' parameter in rain fallspeed-size relation (m^(1-br)/s)
     real, parameter :: BR = 0.5          !.. 'b' parameter in rain fallspeed-size relation   
@@ -611,9 +612,9 @@ contains
     real :: nmlt(cat)    !.. Number melting rate (# kg^-1 s^-1)
     real :: amlt(cat)    !.. A-axis melting rate (m kg^-1 s^-1)
     real :: cmlt(cat)    !.. C-axis melting rate (m kg^-1 s^-1)
-    real :: rimesum(cat)  !.. Ice-cloud rime mass (kg m^-3)
-    real :: rimesumr(cat)  !.. Ice-rain rime mass (kg m^-3)
-    real :: rimetotal(cat) !.. Total rime mass (kg m^-3)
+    real :: rimesum(cat)  !.. Ice-cloud rime mass rate (kg m^-3 s^-1)
+    real :: rimesumr(cat)  !.. Ice-rain rime mass rate (kg m^-3 s^-1)
+    real :: rimetotal(cat) !.. Total rime mass rate (kg m^-3 s^-1)
     real :: dQRfzri(cat)   !.. Change in rain mass from ice-rain (kg kg^-1 s^-1)
     real :: dQIfzri(cat)   !.. Change in ice mass from ice-rain (kg kg^-1 s^-1)
     real :: dNfzri(cat)    !.. Change in ice number from ice-rain (# kg^-1 s^-1)
@@ -679,7 +680,7 @@ contains
     i_gammnu = 1./gammnu !.. Inverse gamma
     i_dt     = 1./dt     !.. Inverse timestep
     i_cp     = 1./CP     !.. Inverse heat capacity
-    fourthirdspi = 4./3.*PI
+    fourthirdspi = 4./3.*PI !.. Four divided by three times pi
 
   !.. No need to loop through microphysics and sedimentation unless
   !.. condensate exists
@@ -878,8 +879,9 @@ contains
                 ani(cc) =max((((ai(cc,k)**2)/(ci(cc,k)*ni(cc,k)))**0.333333333333),2.e-6)
                 cni(cc) =max((((ci(cc,k)**2)/(ai(cc,k)*ni(cc,k)))**0.333333333333),2.e-6)
 
-  !.. Set incoming limit after advection
-  !.. smallest values for which we care about shape              
+  !.. Set incoming volume limit after advection
+  !.. This is the smallest bulk volume for which we care about shape              
+  !.. If smaller than this limit, assume spherical
                 if(ai(cc,k).lt.1.e-12.or.ci(cc,k).lt.1.e-12) then
                    ai(cc,k)=min(ai(cc,k),ci(cc,k))
                    ci(cc,k)=ai(cc,k)
@@ -898,6 +900,7 @@ contains
                 deltastr(cc)=(log(cni(cc))-log(ao))/(log(ani(cc))-log(ao)) 
                 dsold(cc) = deltastr(cc)
 
+  !.. Check to keep ice properties in bounds
                 call var_check(NU, ao, fourthirdspi, gammnu, qi(cc,k), deltastr(cc),       &
                      ani(cc), cni(cc), rni(cc), rhobar(cc), ni(cc,k), ai(cc,k), ci(cc,k),  &
                      alphstr, alphv, betam)
@@ -947,7 +950,7 @@ contains
                    
   !.. proc(cc,1) is the normalized riming rate
   !.. proc(cc,2) is related to the normalized rime density
-  !.. rimesum is the riming rate in kg m^-3
+  !.. rimesum is the riming rate in kg m^-3 s^-1
                    rimesum(cc)  = max((proc(cc,1)*ni(cc,k)*nc(k)*rhoair(k)**2),0.)
                    qi_qc_nrm(cc)= proc(cc,1)
                    qi_qc_nrd(cc)= proc(cc,2)
@@ -1049,7 +1052,7 @@ contains
   !.. procr(cc,1) is the normalized riming rate
   !.. procr(cc,2) is trelated to the he normalized rime density
   !.. procr(cc,3) is the normalized loss in rain number from riming
-  !.. rimesumr is in kg m^-3
+  !.. rimesumr is in kg m^-3 s^-1
 
   !.. Ice-rain leads to riming when the fall speed of the collected rain is slower than
   !.. the fall speed of the ice collector.  Otherwise, ice-rain freezes rain
@@ -1106,7 +1109,7 @@ contains
                 iwci = ni(cc,k)*rhobar(cc)*vi*rhoair(k)
                 nim3dum=ni(cc,k)*rhoair(k)
                 
-  !.. Total riming (the heating goes into vapor growth)
+  !.. Total riming rate (the heating goes into vapor growth)
                 rimetotal(cc) = rimesum(cc)+rimesumr(cc)
                 alphstr=ao**(1.-deltastr(cc))
   !.. Distribtuion-averaged capacitance (see Harrington et al. 2013)
@@ -1120,7 +1123,7 @@ contains
                 endif
                 
   !.. This subroutine first calculates the bulk fall speeds, then the ventilation, 
-  !.. and finally the vapor growth (or sublimation) rate
+  !.. and finally the vapor growth (or sublimation) rate. (See Harrington et al. 2013)
                 call vaporgrow(dt, ani(cc), cni(cc), rni(cc), igr, nim3dum, temp, rimetotal(cc),         &
                      pres_e(k), NU, alphstr, sui, sup, qvs, qvi, mu, iwci, rhoair(k), qi(cc,k),          &
                      dv, kt, ao, nsch, npr, gammnu, i_gammnu, fourthirdspi, svpi, xxls, xxlv, xxlf,      &
@@ -1378,7 +1381,7 @@ contains
                    qmlt(cc)=min(qmlt(cc),0.)
                    qmlt(cc)=max(qmlt(cc),(-qi(cc,k)*i_dt))
 
-  !.. Don't let small number mixing ratios cause ice precipitation through size sorting                   
+  !.. Don't let small very number mixing ratios (large sizes) cause ice precipitation
                    if(qmlt(cc).lt.0.) then
                       if(ai(cc,k).lt.1.e-12.or.ci(cc,k).lt.1.e-12) then
                          qmlt(cc)=-qi(cc,k)*i_dt
@@ -1686,9 +1689,8 @@ contains
              pre        = pre*ratio
           endif
 
-  !.. Ice
-          if(igr.le.1.) then
-  !.. nucleation to ice 1
+  !.. Ice 
+          if(igr.le.1.) then !.. Nucleation initiation to ice 1
   !.. Ice 1 
              sink  =(-qmlt(ICE1)-qagg(ICE1))*dt
              source=qi(ICE1,k) + (prdr(ICE1))*dt
@@ -1698,7 +1700,7 @@ contains
                 sink = sink + (-prd(ICE1))*dt
              endif
 
-  !.. Added because of ice initaltion to ice 1
+  !.. Added because of ice initiation to ice 1
              source = source + (mnuccd+mim+mimr+mbiggr+dQIfzri(ICE2)+dQIfzri(ICE3))*dt
              do cc = 1, cat
                 source = source + (qmult(cc)+dQRfzri(cc))*dt
@@ -1754,8 +1756,7 @@ contains
                    prd(ICE3) = prd(ICE3)*ratio
                 endif
              endif
-          else
-  !.. nucleation to ice 2
+          else !.. nucleation to ice 2
   !.. Ice 2 
              sink  =(-qmlt(ICE2)-qagg(ICE2))*dt
              source=qi(ICE2,k) + (prdr(ICE2))*dt
@@ -1765,7 +1766,7 @@ contains
                 sink = sink + (-prd(ICE2))*dt
              endif
 
-  !.. Added because of ice initaltion to ice 2
+  !.. Added because of ice initiation to ice 2
              source = source + (mnuccd+mim+mimr+mbiggr+dQIfzri(ICE1)+dQIfzri(ICE3))*dt
              do cc = 1, cat
                 source = source + (qmult(cc)+dQRfzri(cc))*dt
@@ -3053,6 +3054,7 @@ contains
   !--------------------------------------------------------------------------------------------------------------!
   !--------------------------------------------------------------------------------------------------------------!
   !.. This is the ventilation, fall speed, vapor growth routine
+  !.. See Harrington et al. 2013
 
   subroutine vaporgrow(dt, ani, cni, rni, igr, nidum, temp, rimesum, presdum,    &
        NU, alphstr, sui, sup, qvs, qvi, mu, iwci, rhodum, qidum, dv, kt, ao,     &
@@ -3470,7 +3472,7 @@ contains
 
   !--------------------------------------------------------------------------------------------------------------!
   !--------------------------------------------------------------------------------------------------------------!
-  !.. Access and interpolate lookup table values
+  !.. Access and interpolate lookup table values (from Hugh Morrison)
   subroutine access_lookup_table(itabdum,dumjj,dumii,dumi,dumk,index, &
        dum1,dum2,dum4,dum5,proc)
     
@@ -3837,7 +3839,8 @@ contains
 
   !--------------------------------------------------------------------------------------------------------------!
   !--------------------------------------------------------------------------------------------------------------!
-  !.. Aggregation routine (see Jensen et al. 2017)
+  !.. Aggregation routine (see Jensen et al. 2017, implentation by JYH and AAJ)
+  !.. See Walko et al. 1995 and Meyers et al. 1997 for more details
   subroutine aggregation(dtdum,rhoairdum,tempdum,qdum1,ndum1,ddum1,qdum2,ndum2,ddum2, &
        qdum3,ndum3,ddum3,rhodum1,rhodum2,phidum1,phidum2,coltab,coltabn,              &
        qagg1,qagg2,qagg3,nagg1,nagg2,nagg3)
@@ -4074,10 +4077,10 @@ contains
        rhoeff = max(rhoeff,0.)
        rhoeff = min(rhoeff,1.)
        
-  !.. Based on Connolly et al 2012
-  !.. See Jensen et al. 2018b
   !.. Spherical particles collect less efficiently than more extreme
   !.. particle shapes
+  !.. Based on Connolly et al 2012
+  !.. See Jensen et al. 2018b
        if(phieffmax.le.0.03) then
           phieff = 1.
        elseif(phieffmax.gt.0.03.and.phieffmax.lt.0.5) then
@@ -4431,7 +4434,7 @@ contains
                       fx(idx) = xjnum(dx(idx),cfvt(ix),pwvt(ix),cfvt(iy) &
                            ,pwvt(iy),vny,dnx,dny,gnu(ix),gnu(iy) &
                            ,gyn1,gyn2,gynp,gynp1,gynp2)
-                      if(fx(idx).lt.1.e-15) then
+                      if(fx(idx).lt.1.e-15) then !.. low limit added by AAJ
                          fx(idx) = 0.
                       endif
                       gx(idx) = fx(idx) * cfmas(ix) &
@@ -4462,7 +4465,7 @@ contains
     
     dnxi = 1. / dnx
     rdx = dx * dnxi
-    vx = max((cvx * dx ** pvx),1.e-6)
+    vx = max((cvx * dx ** pvx),1.e-6) !.. low limit added by AAJ
     dxy = (vx / cvy) ** (1. / pvy) / dny
     dxy = max(dxy,1.e-5)
     dxy = min(dxy,70.)
@@ -4694,5 +4697,5 @@ SUBROUTINE AVINT(X,Y,N,XLO,XUP,ANS)
 
 end module module_mp_jensen_ishmael
 
-
+  !.. Full stop
 

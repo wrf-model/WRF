@@ -8,10 +8,6 @@
 
 MODULE module_mp_wsm6
 !
-#if ( defined(wrfmodel) )
-   USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
-   USE module_domain, ONLY : HISTORY_ALARM, Is_alarm_tstep
-#endif
    USE module_mp_radar
 !
    REAL, PARAMETER, PRIVATE :: dtcldcr     = 120. ! maximum time step for minor loops
@@ -136,8 +132,8 @@ CONTAINS
                                                           re_ice, &
                                                          re_snow
 !+---+-----------------------------------------------------------------+
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::     &  ! GT
-                                                       refl_10cm
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), OPTIONAL,           &   ! GT
+        INTENT(INOUT) ::                               refl_10cm
 !+---+-----------------------------------------------------------------+
 
   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,                 &

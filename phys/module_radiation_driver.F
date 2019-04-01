@@ -1656,6 +1656,7 @@ CONTAINS
                       re_cloud_gsfc(i,k,j) = re_cloud(i,k,j) * 1.E+6
                       re_ice_gsfc(i,k,j) = re_ice(i,k,j) * 1.E+6
                       re_snow_gsfc(i,k,j) = re_snow(i,k,j) * 1.E+6
+                      re_rain_gsfc(i,k,j) = 0.
                       re_graupel_gsfc(i,k,j) = 0.
                       re_hail_gsfc(i,k,j) = 0.
                    ENDDO
@@ -2053,6 +2054,7 @@ CONTAINS
            tlwup(i,j) = erbe_out(i,j,2)    ! TOA LW upwelling flux [W/m2]
            slwdn(i,j) = erbe_out(i,j,3)    ! surface LW downwelling flux [W/m2]
            slwup(i,j) = erbe_out(i,j,4)    ! surface LW upwelling flux [W/m2]
+           olr(i,j)   = erbe_out(i,j,2)
         ENDDO    
         ENDDO    
           ENDIF
@@ -2187,6 +2189,7 @@ CONTAINS
                       re_cloud_gsfc(i,k,j) = re_cloud(i,k,j) * 1.E+6
                       re_ice_gsfc(i,k,j) = re_ice(i,k,j) * 1.E+6
                       re_snow_gsfc(i,k,j) = re_snow(i,k,j) * 1.E+6
+                      re_rain_gsfc(i,k,j) = 0.
                       re_graupel_gsfc(i,k,j) = 0.
                       re_hail_gsfc(i,k,j) = 0.
                    ENDDO

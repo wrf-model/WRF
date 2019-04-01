@@ -26,12 +26,65 @@ program gen_be_vertloc
    real*8,allocatable      :: evec(:,:)
    real*8,allocatable      :: v(:)
    real*8,allocatable      :: x(:)
-   
+   ! variables for log-P method
+   real*8,allocatable      :: znw(:)
+   real*8,allocatable      :: p_w(:) ! pressure at full levels
+   real*8,allocatable      :: ln_p_w(:)
+   real*8,allocatable      :: dlnp(:)
+   real*8                  :: p00, ptop, s_ens_v, grd
+   ! if set use_logp =.true., need to edit ,s_ens_v, ptop and znw below in the code.
+   logical                 :: use_logp = .false.
+
   cnk=""
   call getarg( 1, cnk )
   read(cnk,'(i3)')nk2
   nk=nk2-1
   write(stdout,'(a,i6)') ' vertical level = ', nk2
+
+  if ( use_logp ) then
+     allocate(znw(1:nk+1))
+     allocate(p_w(1:nk+1))
+     allocate(ln_p_w(1:nk+1))
+     allocate(dlnp(1:nk))
+     znw(:) = -99.0
+     p00 = 100000.0
+
+     ! empirical settings
+     s_ens_v = 0.388
+
+     ! HRRR settings
+     !ptop = 1500.0
+     !znw(1:nk+1) = (/ 1.0, 0.998, 0.994, 0.987, 0.975, 0.959, 0.939, 0.916, 0.892, 0.865, 0.835, &
+     !   0.802, 0.766, 0.727, 0.685, 0.64, 0.592, 0.542, 0.497, 0.4565, 0.4205,  &
+     !   0.3877, 0.3582, 0.3317, 0.3078, 0.2863, 0.267, 0.2496, 0.2329, 0.2188,  &
+     !   0.2047, 0.1906, 0.1765, 0.1624, 0.1483, 0.1342, 0.1201, 0.106, 0.0919,  &
+     !   0.0778, 0.0657, 0.0568, 0.0486, 0.0409, 0.0337, 0.0271, 0.0209, 0.0151, &
+     !   0.0097, 0.0047, 0.0 /)
+
+     ! CWB settings
+     ptop = 2000.0
+     znw(1:nk+1) = (/ 1.0, 0.9965, 0.992, 0.9865, 0.9795, 0.971, 0.961, 0.9495, 0.9365, 0.9216, &
+        0.905, 0.887, 0.8675, 0.8465, 0.824, 0.7995, 0.773, 0.745, 0.715, 0.683,  &
+        0.65, 0.616, 0.581, 0.546, 0.5115, 0.4775, 0.4445, 0.413, 0.3835, 0.3558, &
+        0.3299, 0.3057, 0.2831, 0.262, 0.2422, 0.2235, 0.2058, 0.1892, 0.1735,    &
+        0.1585, 0.1442, 0.1306, 0.1177, 0.1055, 0.094, 0.0828, 0.0719, 0.061,     &
+        0.05, 0.038, 0.021, 0.0 /)
+
+     if ( any(znw(:) < 0.0) ) then
+        write(stdout,'(a,i3)') '--- ERROR: znw is not set properly for nlevel = ', nk+1
+        write(stdout,'(a)')    '           Please edit var/gen_be/gen_be_vertloc.f90 and recompile, or'
+        write(stdout,'(a)')    '           run var/build/gen_be_vertloc.exe with a proper nk.'
+        stop
+     end if
+
+     do k = 1, nk+1
+        p_w(k) = znw(k)*(p00 - ptop) + ptop
+        ln_p_w(k) = log(max(p_w(k),0.0001))
+     end do
+     do k = 1, nk
+        dlnp(k) = abs(ln_p_w(k)-ln_p_w(k+1))
+     end do
+  end if
 
   allocate(rho(1:nk,1:nk))
   allocate(e(1:ni,1:nk))
@@ -46,9 +99,20 @@ program gen_be_vertloc
 
 !  Specify probability densities:
    do k = 1, nk
-      kscale = 10.0 * real(k) * nk_inv  ! Very simple parametrization of vertical variation of localization scale.
-!      kscale = 3.0 + 7.0 * real(k-3) * nk3_inv  ! Very simple parametrization of vertical variation of localization scale.
-!      kscale = 10.0
+      ! (a) is the default before v4.1. It suppresses increments at low levels above surface.
+      ! It is not recommended and commented out in v4.1.
+      ! kscale = 10.0 * real(k) * nk_inv  ! (a)
+      ! (b) can still reduce near-surface correlation than that from ensembles.
+      ! kscale = 3.0 + 7.0 * real(k-3) * nk3_inv  ! (b)
+      ! (c) can be an OK option
+      ! kscale = 10.0  ! (c)
+      ! (d) is the default as of v4.1. A simple parameterization of vertical variation of localization scale
+      kscale = 5.0 + real(nk)/real(k+3)  ! (d)
+      if ( use_logp ) then
+         grd = abs(s_ens_v)/dlnp(k)
+         kscale = min(real(nk), grd)
+      end if
+      print*, k, kscale
       kscale_invsq = 1.0 / ( kscale * kscale )
       do k1 = k, nk
          kdist = k1 - k

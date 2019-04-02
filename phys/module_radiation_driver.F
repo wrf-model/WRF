@@ -211,6 +211,7 @@ CONTAINS
 #ifndef HWRF
    USE module_wrf_error , ONLY : wrf_err_message
 #endif
+   USE module_state_description, ONLY : nuwrf4icescheme
 
 ! *** add new modules of schemes here
 
@@ -1647,6 +1648,26 @@ CONTAINS
 
              CALL wrf_debug(100, 'CALL NUWRF goddard longwave radiation scheme 2017')
 
+            IF ( mp_physics .NE. nuwrf4icescheme ) THEN
+                IF ( has_reqc .EQ. 1 ) THEN
+                   DO j=jts,jte
+                   DO k=kts,kte
+                   DO i=its,ite
+                      re_cloud_gsfc(i,k,j) = re_cloud(i,k,j) * 1.E+6
+                      re_ice_gsfc(i,k,j) = re_ice(i,k,j) * 1.E+6
+                      re_snow_gsfc(i,k,j) = re_snow(i,k,j) * 1.E+6
+                      re_rain_gsfc(i,k,j) = 0.
+                      re_graupel_gsfc(i,k,j) = 0.
+                      re_hail_gsfc(i,k,j) = 0.
+                   ENDDO
+                   ENDDO
+                   ENDDO
+                ELSE
+                   WRITE ( wrf_err_message , * ) 'Must choose a microphysics that provides effective radii.'
+                   CALL wrf_debug (0, wrf_err_message)
+                END IF
+             END IF
+
              CALL goddardrad(sw_or_lw='lw',dx=dx                  &
                     ,rthraten=rthraten,gsf=glw,xlat=xlat,xlong=xlong   &
                     ,alb=albedo,t3d=t,p3d=p,p8w3d=p8w,pi3d=pi          &
@@ -1801,7 +1822,20 @@ CONTAINS
              ENDIF
 
         CASE (RRTMG_LWSCHEME)
+
              CALL wrf_debug (100, 'CALL rrtmg_lw')
+             IF ( mp_physics .EQ. nuwrf4icescheme ) THEN
+                DO j=jts,jte
+                DO k=kts,kte
+                DO i=its,ite
+                   re_cloud(i,k,j) = re_cloud_gsfc(i,k,j) * 1.E-6
+                   re_ice(i,k,j) = re_ice_gsfc(i,k,j) * 1.E-6
+                   re_snow(i,k,j) = re_snow_gsfc(i,k,j) * 1.E-6
+                ENDDO
+                ENDDO
+                ENDDO
+             END IF
+
              CALL RRTMG_LWRAD(                                      &
                   RTHRATENLW=RTHRATEN,                              &
                   LWUPT=LWUPT,LWUPTC=LWUPTC,LWUPTCLN=LWUPTCLN,      &
@@ -2020,6 +2054,7 @@ CONTAINS
            tlwup(i,j) = erbe_out(i,j,2)    ! TOA LW upwelling flux [W/m2]
            slwdn(i,j) = erbe_out(i,j,3)    ! surface LW downwelling flux [W/m2]
            slwup(i,j) = erbe_out(i,j,4)    ! surface LW upwelling flux [W/m2]
+           olr(i,j)   = -erbe_out(i,j,2)
         ENDDO    
         ENDDO    
           ENDIF
@@ -2146,6 +2181,26 @@ CONTAINS
 
              CALL wrf_debug(100, 'CALL NUWRF goddard shortwave radiation scheme 2017')
 
+             IF ( mp_physics .NE. nuwrf4icescheme ) THEN
+                IF ( has_reqc .EQ. 1 ) THEN
+                   DO j=jts,jte
+                   DO k=kts,kte
+                   DO i=its,ite
+                      re_cloud_gsfc(i,k,j) = re_cloud(i,k,j) * 1.E+6
+                      re_ice_gsfc(i,k,j) = re_ice(i,k,j) * 1.E+6
+                      re_snow_gsfc(i,k,j) = re_snow(i,k,j) * 1.E+6
+                      re_rain_gsfc(i,k,j) = 0.
+                      re_graupel_gsfc(i,k,j) = 0.
+                      re_hail_gsfc(i,k,j) = 0.
+                   ENDDO
+                   ENDDO
+                   ENDDO
+                ELSE
+                   WRITE ( wrf_err_message , * ) 'Must choose a microphysics that provides effective radii.'
+                   CALL wrf_debug (0, wrf_err_message)
+                END IF
+             END IF
+
              CALL goddardrad(sw_or_lw='sw',dx=dx                  &
                     ,rthraten=rthraten,gsf=gsw,xlat=xlat,xlong=xlong   &
                     ,alb=albedo,t3d=t,p3d=p,p8w3d=p8w,pi3d=pi          &
@@ -2249,7 +2304,20 @@ CONTAINS
              ENDDO
 
         CASE (RRTMG_SWSCHEME)
+
              CALL wrf_debug(100, 'CALL rrtmg_sw')
+             IF ( mp_physics .EQ. nuwrf4icescheme ) THEN
+                DO j=jts,jte
+                DO k=kts,kte
+                DO i=its,ite
+                   re_cloud(i,k,j) = re_cloud_gsfc(i,k,j) * 1.E-6
+                   re_ice(i,k,j) = re_ice_gsfc(i,k,j) * 1.E-6
+                   re_snow(i,k,j) = re_snow_gsfc(i,k,j) * 1.E-6
+                ENDDO
+                ENDDO
+                ENDDO
+             END IF
+
              CALL RRTMG_SWRAD(                                         &
                      RTHRATENSW=RTHRATENSW,                            &
                      SWUPT=SWUPT,SWUPTC=SWUPTC,SWUPTCLN=SWUPTCLN,      &

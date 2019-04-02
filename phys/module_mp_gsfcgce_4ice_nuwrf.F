@@ -676,19 +676,6 @@ CONTAINS
   REAL                          :: t_del_tv, del_tv, flux, fluxin, fluxout
   LOGICAL                       :: notlast
 
-  if (itimestep.eq.1) then
-     write(6, *) 'GSFCGCE 4ice scheme inside fall_flux'
-     write(6, *) 'improve = ', improve
-    
-     write(6, *) 'ims=', ims, '  ime=', ime
-     write(6, *) 'jms=', jms, '  jme=', jme
-     write(6, *) 'kms=', kms, '  kme=', kme
-     write(6, *) 'its=', its, '  ite=', ite
-     write(6, *) 'jts=', jts, '  jte=', jte
-     write(6, *) 'kts=', kts, '  kte=', kte
-     write(6, *) 'dt=', dt
-  endif 
-
 !-----------------------------------------------------------------------
 !  This program calculates precipitation fluxes due to terminal velocities.
 !-----------------------------------------------------------------------

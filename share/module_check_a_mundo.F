@@ -230,8 +230,25 @@
       ENDDO god_r8
 
 # endif
-#endif
 
+!-----------------------------------------------------------------------
+! Print a warning message for not using a combination of radiation and microphysics from Goddard
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( (model_config_rec % ra_lw_physics(i) == goddardlwscheme .OR. &
+                 model_config_rec % ra_sw_physics(i) == goddardswscheme) .AND. &
+                 model_config_rec % mp_physics(i) /= nuwrf4icescheme ) .OR. &
+              (  model_config_rec % mp_physics(i) == nuwrf4icescheme .AND. &
+                (model_config_rec % ra_lw_physics(i) /= goddardlwscheme .AND. &
+                 model_config_rec % ra_sw_physics(i) /= goddardswscheme) ) ) THEN
+            wrf_err_message = '--- WARNING: Goddard radiation and Goddard 4ice microphysics are not used together'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- WARNING: These options may be best to use together.'
+            CALL wrf_message ( wrf_err_message )
+         END IF
+      ENDDO
+
+#endif
 
 !-----------------------------------------------------------------------
 ! Check that some microphysics is not allowed for WRF-NMM run

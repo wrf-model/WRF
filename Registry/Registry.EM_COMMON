@@ -735,13 +735,15 @@ state    real   ts_clw          ?!       misc      -         -      -        "TS
 state    real   ts_rainc        ?!       misc      -         -      -        "TS_RAINC"       "Cumulus precip"
 state    real   ts_rainnc       ?!       misc      -         -      -        "TS_RAINNC"      "Grid-scale precip"
 
-# Time series of vertical profile of U, V, GHT, THETA and QVAPOR
-state    real   ts_u_profile   ?!k       misc      -         -      -        "TS_U_PROFILE"   "Wind u-Component, earth relative, vertical profile"
-state    real   ts_v_profile   ?!k       misc      -         -      -        "TS_V_PROFILE"   "Wind v-Component, earth relative, vertical profile"
-state    real   ts_w_profile   ?!k       misc      -         -      -        "TS_W_PROFILE"   "Wind w-Component, earth relative, vertical profile"
-state    real   ts_gph_profile ?!k       misc      -         -      -        "TS_GPH_PROFILE" "Total geopotential height, vertical profile"
-state    real   ts_th_profile  ?!k       misc      -         -      -        "TS_TH_PROFILE"  "Total potential temperature, vertical profile"
-state    real   ts_qv_profile  ?!k       misc      -         -      -        "TS_QV_PROFILE"  "Water vapor mixing ratio, vertical profile"
+# Time series of vertical profile of U, V, GHT, THETA, QVAPOR, PRESSURE
+state    real   ts_u_profile   ?!k       misc      -         -      -        "TS_U_PROFILE"   "Wind u-Component, earth relative, vertical profile" "m/s"
+state    real   ts_v_profile   ?!k       misc      -         -      -        "TS_V_PROFILE"   "Wind v-Component, earth relative, vertical profile" "m/s"
+state    real   ts_w_profile   ?!k       misc      -         -      -        "TS_W_PROFILE"   "Wind w-Component, vertical profile" "m/s"
+state    real   ts_gph_profile ?!k       misc      -         -      -        "TS_GPH_PROFILE" "Total geopotential height, vertical profile" "m"
+state    real   ts_th_profile  ?!k       misc      -         -      -        "TS_TH_PROFILE"  "Total potential temperature, vertical profile" "K"
+state    real   ts_qv_profile  ?!k       misc      -         -      -        "TS_QV_PROFILE"  "Water vapor mixing ratio, vertical profile" "kg/kg"
+state    real   ts_p_profile   ?!k       misc      -         -      -        "TS_P_PROFILE"   "Pressure, vertical profile" "Pa"
+
 
 # urban model variables
 state    real   DZR             l        em      -         Z     r        "DZR"            "THICKNESSES OF ROOF LAYERS"                      "m"

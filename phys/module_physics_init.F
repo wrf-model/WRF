@@ -1538,13 +1538,12 @@ CONTAINS
    end if
 #endif
 
-!  Initialize cloud droplet effective radius for Goddard MP and Radiation
-!  Must be (Goddard LW and SW) AND must be (Goddard 4ice)
+!  Initialize cloud droplet effective radii for Goddard MP and/or Radiation
 #if ( EM_CORE == 1 )
     
-   if ( ( ( config_flags%ra_lw_physics .EQ. GODDARDLWSCHEME )   .AND. &
-          ( config_flags%ra_sw_physics .EQ. GODDARDSWSCHEME ) ) .AND. &
-          ( config_flags%mp_physics    .EQ. NUWRF4ICESCHEME ) ) ) THEN
+   if ( config_flags%ra_lw_physics .EQ. GODDARDLWSCHEME .OR. &
+        config_flags%ra_sw_physics .EQ. GODDARDSWSCHEME .OR. &
+        config_flags%mp_physics    .EQ. NUWRF4ICESCHEME ) THEN
       do j=jts,jtf
          do k=kts,ktf
             do i=its,itf

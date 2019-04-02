@@ -1663,7 +1663,7 @@ CONTAINS
                    ENDDO
                    ENDDO
                 ELSE
-                   WRITE ( wrf_err_message , * ) 'must choose one of the microphysics: 3,4,6,8,14,16,17-21,28,51,or 52'
+                   WRITE ( wrf_err_message , * ) 'Must choose a microphysics that provides effective radii.'
                    CALL wrf_debug (0, wrf_err_message)
                 END IF
              END IF
@@ -2196,7 +2196,7 @@ CONTAINS
                    ENDDO
                    ENDDO
                 ELSE
-                   WRITE ( wrf_err_message , * ) 'must choose a diff microphysics: 3,4,6,8,14,16,17-21,28,51,or 52'
+                   WRITE ( wrf_err_message , * ) 'Must choose a microphysics that provides effective radii.'
                    CALL wrf_debug (0, wrf_err_message)
                 END IF
              END IF

@@ -9,8 +9,6 @@
    module module_mp_wdm6
 !-------------------------------------------------------------------------------
 !
-   use module_utility, only: WRFU_Clock, WRFU_Alarm
-   use module_domain, only: HISTORY_ALARM, Is_alarm_tstep
    use module_mp_radar
 !
 !

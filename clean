@@ -19,6 +19,7 @@ endif
 
 ( cd inc ; /bin/rm -f *.inc namelist.default )
 
+find . -name \*.dSYM -exec rm -rf {} \; >& /dev/null
 
 set arg="$1"
 if ( "$arg" == '-a' || "$arg" == '-aa' ) then

@@ -176,6 +176,10 @@ integer::oops1,oops2
 
       INTEGER :: geogrid_flag_error
 
+      !  Vertical pressure checks
+
+      REAL :: press_above, press_below
+
       !  Dimension information stored in grid data structure.
 
       CALL cpu_time(t_start)
@@ -1652,6 +1656,32 @@ integer::oops1,oops2
          DO k=1, kde-1
             grid%c1h(k) = ( grid%c3f(k+1) - grid%c3f(k) ) / ( grid%znw(k+1) - grid%znw(k) )
             grid%c2h(k) = ( 1. - grid%c1h(k) ) * ( p1000mb - grid%p_top )
+         ENDDO
+
+         !  With c3 and c4 on full levels, we can verify that we are maintaining monotonically
+         !  decreasing reference pressure.
+         !  P_dry_ref(k)  = c3f(k) * ( psurf - p_top ) + c4f(k) + p_top
+
+         DO j = jts, MIN(jde-1,jte)
+            DO i = its, MIN(ide-1,ite)
+               p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
+               DO k=1, kde-1
+                  press_above = grid%c3f(k+1)*(p_surf-grid%p_top) + grid%c4f(k+1) + grid%p_top
+                  press_below = grid%c3f(k  )*(p_surf-grid%p_top) + grid%c4f(k  ) + grid%p_top
+                  IF ( press_below - press_above .LE. 0.0 ) THEN
+                     CALL wrf_message ( '----- ERROR: The reference pressure is not monotonically decreasing' )
+                     CALL wrf_message ( '             This tends to be caused by very high topography')
+                     WRITE (a_message,*) '(i,j) = ',i,j,', topography = ',grid%ht(i,j),' m'
+                     CALL wrf_message ( TRIM(a_message) )
+                     WRITE (a_message,*) 'k = ',k,', reference pressure = ',press_below,' Pa'
+                     CALL wrf_message ( TRIM(a_message) )
+                     WRITE (a_message,*) 'k = ',k+1,', reference pressure = ',press_above,' Pa'
+                     CALL wrf_message ( TRIM(a_message) )
+                     WRITE (a_message,*) 'In the dynamics namelist record, reduce etac from ',config_flags%etac
+                     CALL wrf_error_fatal ( TRIM(a_message) )
+                  END IF
+               ENDDO
+            ENDDO
          ENDDO
 
          IF ( config_flags%interp_theta ) THEN

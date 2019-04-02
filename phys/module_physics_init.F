@@ -1146,6 +1146,27 @@ CONTAINS
        end do
     endif
 
+!  Initialize cloud droplet effective radii for Goddard MP and/or Radiation
+#if ( EM_CORE == 1 )
+
+   if ( config_flags%ra_lw_physics .EQ. GODDARDLWSCHEME .OR. &
+        config_flags%ra_sw_physics .EQ. GODDARDSWSCHEME .OR. &
+        config_flags%mp_physics    .EQ. NUWRF4ICESCHEME ) THEN
+      do j=jts,jtf
+         do k=kts,ktf
+            do i=its,itf
+               re_cloud_gsfc(i,k,j)   = 0.
+               re_rain_gsfc(i,k,j)    = 0.
+               re_snow_gsfc(i,k,j)    = 0.
+               re_ice_gsfc(i,k,j)     = 0.
+               re_graupel_gsfc(i,k,j) = 0.
+               re_hail_gsfc(i,k,j)    = 0.
+            end do
+         end do
+      end do
+   end if
+#endif
+
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to landuse_init' )
 
    IF(mminlu_loc .ne. '    ')THEN
@@ -1535,27 +1556,6 @@ CONTAINS
         config_flags%gsfcgce_gocart_coupling == 1) then
       CALL wrf_debug(200 , 'phy_init: Before call to makelut_ccn_icn')
       call makelut_ccn_icn
-   end if
-#endif
-
-!  Initialize cloud droplet effective radii for Goddard MP and/or Radiation
-#if ( EM_CORE == 1 )
-    
-   if ( config_flags%ra_lw_physics .EQ. GODDARDLWSCHEME .OR. &
-        config_flags%ra_sw_physics .EQ. GODDARDSWSCHEME .OR. &
-        config_flags%mp_physics    .EQ. NUWRF4ICESCHEME ) THEN
-      do j=jts,jtf
-         do k=kts,ktf
-            do i=its,itf
-               re_cloud_gsfc(i,k,j)   = 0.
-               re_rain_gsfc(i,k,j)    = 0.
-               re_snow_gsfc(i,k,j)    = 0.
-               re_ice_gsfc(i,k,j)     = 0.
-               re_graupel_gsfc(i,k,j) = 0.
-               re_hail_gsfc(i,k,j)    = 0.
-            end do
-         end do
-      end do
    end if
 #endif
 

@@ -2054,7 +2054,7 @@ CONTAINS
            tlwup(i,j) = erbe_out(i,j,2)    ! TOA LW upwelling flux [W/m2]
            slwdn(i,j) = erbe_out(i,j,3)    ! surface LW downwelling flux [W/m2]
            slwup(i,j) = erbe_out(i,j,4)    ! surface LW upwelling flux [W/m2]
-           olr(i,j)   = erbe_out(i,j,2)
+           olr(i,j)   = -erbe_out(i,j,2)
         ENDDO    
         ENDDO    
           ENDIF

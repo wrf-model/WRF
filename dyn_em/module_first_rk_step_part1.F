@@ -453,7 +453,8 @@ BENCH_START(surf_driver_tim)
      &        ,AKMS=grid%akms          ,ALBBCK=grid%albbck      ,ALBEDO=grid%albedo      &
      &        ,EMBCK=grid%embck                                                          &
      &        ,BR=grid%br              ,CANWAT=grid%canwat      ,CHKLOWQ=chklowq    &
-     &        ,CT=grid%ct              ,DT=grid%dt         ,DX=grid%dx         &
+     &        ,CT=grid%ct              ,DT=grid%dt         ,DX=grid%dx              &
+     &        ,DX2D=grid%dx2d          ,AREA2d=grid%area2d                          &
      &        ,DZ8W=dz8w          ,DZS=grid%dzs            ,FLHC=grid%flhc          &
      &        ,FM=grid%fm         ,FHH=grid%fh                                      &
      &        ,FLQC=grid%flqc          ,GLW=grid%glw            ,GRDFLX=grid%grdflx      &
@@ -1091,6 +1092,7 @@ BENCH_START(cu_driver_tim)
      &             ,W=grid%w_2     ,P=grid%p_hyd   ,PI=pi_phy  ,RHO=grid%rho             &
                  ! Other arguments
      &             ,ITIMESTEP=grid%itimestep ,DT=grid%dt      ,DX=grid%dx              &
+     &             ,DX2D=grid%dx2d, AREA2D=grid%area2d                                 &
      &             ,CUDT=grid%cudt,CURR_SECS=curr_secs,ADAPT_STEP_FLAG=adapt_step_flag &
      &             ,CUDTACTTIME=grid%cudtacttime                                       & 
      &             ,RAINC=grid%rainc   ,RAINCV=grid%raincv   ,PRATEC=grid%pratec       &

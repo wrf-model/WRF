@@ -253,7 +253,9 @@ CONTAINS
       DO j = jms, jme
         DO i = ims, ime
           grid % wspd10max(i,j) = 0.
+          IF ( config_flags % afwa_severe_opt == 1 ) THEN
           grid % afwa_llws(i,j) = 0.
+          ENDIF
         ENDDO
       ENDDO
     ENDIF 
@@ -312,6 +314,7 @@ CONTAINS
 
     ! Calculate 0-2000 foot (0 - 609.6 meter) shear.
     ! ----------------------------------------------
+    IF ( config_flags % afwa_severe_opt == 1 ) THEN
     DO j = jts, jte
       DO i = its, ite
         is_target_level=.false.
@@ -335,6 +338,7 @@ CONTAINS
         ENDDO
       ENDDO
     ENDDO
+    ENDIF
 
 #if ( WRF_CHEM == 1 )
     ! Surface dust concentration array (ug m-3)

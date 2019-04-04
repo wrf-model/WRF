@@ -36,7 +36,7 @@ MODULES = \
 	module_bl_shinhong.o \
 	module_bl_mrf.o \
 	module_bl_gfs.o \
-        module_bl_gfsedmf.o \
+	module_bl_gfsedmf.o \
 	module_bl_myjpbl.o \
 	module_bl_qnsepbl.o \
 	module_bl_acm.o \
@@ -87,6 +87,7 @@ MODULES = \
 	module_mp_fer_hires.o \
 	module_mp_HWRF.o \
 	module_mp_thompson.o \
+	module_mp_SBM_polar_radar.o \
 	module_mp_full_sbm.o \
 	module_mp_fast_sbm.o \
 	module_ltng_lpi.o \
@@ -94,9 +95,9 @@ MODULES = \
 	module_mp_gsfcgce_3ice_nuwrf.o \
 	module_mp_gsfcgce_4ice_nuwrf.o \
 	module_mp_morr_two_moment.o \
-        module_mp_p3.o \
-        module_mp_jensen_ishmael.o \
-        module_mp_morr_two_moment_aero.o \
+	module_mp_p3.o \
+	module_mp_jensen_ishmael.o \
+	module_mp_morr_two_moment_aero.o \
 	module_mp_milbrandt2mom.o \
 	module_mp_nssl_2mom.o \
 	module_mp_wdm5.o \
@@ -107,18 +108,18 @@ MODULES = \
 	module_ra_clWRF_support.o  \
 	module_ra_gsfcsw.o \
 	module_ra_goddard.o \
-        module_ra_effective_radius.o \
+	module_ra_effective_radius.o \
 	module_ra_rrtm.o  \
 	module_ra_rrtmg_lw.o  \
 	module_ra_rrtmg_sw.o  \
 	module_ra_rrtmg_lwf.o  \
 	module_ra_rrtmg_swf.o  \
-        module_ra_rrtmg_lwk.o  \
-        module_ra_rrtmg_swk.o  \
-        module_ra_cam_support.o \
-        module_ra_cam.o \
+	module_ra_rrtmg_lwk.o  \
+	module_ra_rrtmg_swk.o  \
+	module_ra_cam_support.o \
+	module_ra_cam.o \
 	module_ra_gfdleta.o \
-        module_ra_flg.o \
+	module_ra_flg.o \
 	module_ra_HWRF.o \
 	module_ra_hs.o  \
 	module_ra_aerosol.o  \
@@ -131,19 +132,19 @@ MODULES = \
 	module_sf_noahdrv.o  \
 	module_sf_noahlsm.o  \
 	module_sf_clm.o  \
-        module_sf_ssib.o  \
+	module_sf_ssib.o  \
 	module_sf_noah_seaice.o \
 	module_sf_noah_seaice_drv.o \
 	module_sf_noahlsm_glacial_only.o \
-        module_sf_noahmp_groundwater.o \
-        module_sf_gecros.o \
+	module_sf_noahmp_groundwater.o \
+	module_sf_gecros.o \
 	module_sf_noahmpdrv.o \
 	module_sf_noahmplsm.o \
 	module_sf_noahmp_glacier.o \
-        module_sf_urban.o  \
-        module_sf_bep.o  \
-        module_sf_bep_bem.o \
-        module_sf_bem.o \
+	module_sf_urban.o  \
+	module_sf_bep.o  \
+	module_sf_bep_bem.o \
+	module_sf_bem.o \
 	module_sf_pxlsm.o \
 	module_sf_pxlsm_data.o \
 	module_sf_ruclsm.o \
@@ -171,7 +172,7 @@ MODULES = \
 	module_progtm.o \
 	module_pbl_driver.o \
 	module_data_gocart_dust.o \
-        module_dust_emis.o \
+	module_dust_emis.o \
 	module_cumulus_driver.o \
 	module_shallowcu_driver.o \
 	module_microphysics_driver.o \
@@ -186,7 +187,7 @@ MODULES = \
 	module_fdda_psufddagd.o \
 	module_fdda_spnudging.o \
 	module_fddagd_driver.o  \
-        module_fddaobs_rtfdda.o \
+	module_fddaobs_rtfdda.o \
 	module_fddaobs_driver.o \
 	module_wind_fitch.o \
 	module_sf_lake.o \
@@ -211,13 +212,13 @@ DIAGNOSTIC_MODULES_EM = \
 	module_diag_pld.o \
 	module_diag_zld.o \
 	module_diag_trad_fields.o
-  
+
 DIAGNOSTIC_MODULES_NMM = \
 	module_diag_refl.o
 
 OBJS    =
 
-NMM_MODULES =  
+NMM_MODULES =
 
 LIBTARGET    =  physics
 TARGETDIR    =  ./

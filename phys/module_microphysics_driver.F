@@ -37,7 +37,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,qme3d,prain3d,nevapr3d,rate1ord_cw2pr_st3d        &
                       ,dgnum4D,dgnumwet4D                                &
 #endif
-!======================                                   
+!======================
                       ,qv_curr,qc_curr,qr_curr,qi_curr,qs_curr,qg_curr   &
                       ,qic_curr,qip_curr,qid_curr &
                       ,qnic_curr,qnip_curr,qnid_curr &
@@ -53,7 +53,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,qvoli2_curr,qaoli2_curr                           & ! for Jensen ISHMAEL
                       ,qi3_curr,qni3_curr,qvoli3_curr,qaoli3_curr        & ! for Jensen ISHMAEL
                       ,effr_curr,ice_effr_curr,tot_effr_curr             &
-                      ,qic_effr_curr,qip_effr_curr,qid_effr_curr         &             
+                      ,qic_effr_curr,qip_effr_curr,qid_effr_curr         &
                       ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop,f_qni      &
                       ,f_qns,f_qnr,f_qng,f_qnc,f_qnn,f_qh,f_qnh          &
                       ,            f_qzr,f_qzi,f_qzs,f_qzg,f_qzh         &
@@ -66,7 +66,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,f_qvoli2,f_qaoli2                                 & ! for Jensen ISHMAEL
                       ,f_qi3,f_qni3,f_qvoli3,f_qaoli3                    & ! for Jensen ISHMAEL
                       ,f_effr,f_ice_effr,f_tot_effr                      &
-                      ,f_qic_effr,f_qip_effr,f_qid_effr                  &                 
+                      ,f_qic_effr,f_qip_effr,f_qid_effr                  &
                       ,cu_used                                           &
                       ,qrcuten, qscuten, qicuten, qccuten                &
                       ,qt_curr,f_qt                                      &
@@ -86,7 +86,7 @@ SUBROUTINE microphysics_driver(                                          &
 #endif
 !NUWRF JJS 20110525 ^^^^^
 !                     ,ccntype                                           & ! for mp_milbrandt2mom
-                      ,u,v,w,z                                          &   
+                      ,u,v,w,z                                          &
                       ,rainnc,    rainncv                                &
                       ,snownc,    snowncv                                &
                       ,hailnc,    hailncv                                &
@@ -97,13 +97,13 @@ SUBROUTINE microphysics_driver(                                          &
 #endif
                       ,qnwfa2d, qnifa2d                                  & ! for water/ice-friendly aerosols
                       ,refl_10cm                                         & ! HM, 9/22/09, add for refl
-                      ,vmi3d                                             & ! for P3 
-                      ,di3d                                              & ! for P3 
-                      ,rhopo3d                                           & ! for P3 
+                      ,vmi3d                                             & ! for P3
+                      ,di3d                                              & ! for P3
+                      ,rhopo3d                                           & ! for P3
                       ,phii3d                                            & ! for Jensen ISHMAEL
-                      ,vmi3d_2                                           & ! for P3 
-                      ,di3d_2                                            & ! for P3 
-                      ,rhopo3d_2                                         & ! for P3 
+                      ,vmi3d_2                                           & ! for P3
+                      ,di3d_2                                            & ! for P3
+                      ,rhopo3d_2                                         & ! for P3
                       ,phii3d_2                                          & ! for Jensen ISHMAEL
                       ,vmi3d_3                                           & ! for Jensen ISHMAEL
                       ,di3d_3                                            & ! for Jensen ISHMAEL
@@ -132,6 +132,7 @@ SUBROUTINE microphysics_driver(                                          &
                       ,xlat,xlong,ivgtyp                                 &
                       ,qrimef_curr,f_qrimef                              &
                       ,aercu_opt                                         &
+                      ,sbmradar,num_sbmradar                             &
 # if( EM_CORE==1 )
                       ,aerocu,aercu_fct,no_src_types_cu                  &
                       ,PBL,EFCG,EFIG,EFSG,WACT,CCN1_GS,CCN2_GS           &
@@ -148,12 +149,12 @@ SUBROUTINE microphysics_driver(                                          &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN, NSSL_2MOMG  &
                     ,NSSL_1MOM,NSSL_1MOMLFO, FER_MP_HIRES_ADVECT &
                     ,WSM7SCHEME, WDM7SCHEME &
-                    ,NUWRF3ICESCHEME, NUWRF4ICESCHEME & 
-                    ,MILBRANDT2MOM, P3_1CATEGORY, P3_1CATEGORY_NC, JENSEN_ISHMAEL  !, P3_2CATEGORY ,MILBRANDT3MOM 
+                    ,NUWRF3ICESCHEME, NUWRF4ICESCHEME &
+                    ,MILBRANDT2MOM, P3_1CATEGORY, P3_1CATEGORY_NC, JENSEN_ISHMAEL  !, P3_2CATEGORY ,MILBRANDT3MOM
 #else
    USE module_state_description, ONLY :                                  &
                      KESSLERSCHEME, LINSCHEME, SBU_YLINSCHEME, WSM3SCHEME, WSM5SCHEME    &
-                    ,WSM6SCHEME, ETAMPNEW, FER_MP_HIRES, THOMPSON, THOMPSONAERO, FAST_KHAIN_LYNN, MORR_TWO_MOMENT     &
+                    ,WSM6SCHEME, ETAMPNEW, FER_MP_HIRES, THOMPSON, THOMPSONAERO, FAST_KHAIN_LYNN_SHPUND, MORR_TWO_MOMENT     &
                     ,GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME, NSSL_2MOM, NSSL_2MOMCCN, NSSL_2MOMG  &
                     ,NSSL_1MOM,NSSL_1MOMLFO, FER_MP_HIRES_ADVECT & ! ,NSSL_3MOM       &
                     ,WSM7SCHEME, WDM7SCHEME &
@@ -171,7 +172,7 @@ SUBROUTINE microphysics_driver(                                          &
                     ,p_dust_1, p_dust_2, p_dust_3                       & !inline gocart
                     ,p_dust_4, p_dust_5                                 & !inline gocart
                     ,p_sulf, p_seas_1, p_seas_2                         & !inline gocart
-                    ,p_seas_3, p_seas_4 
+                    ,p_seas_3, p_seas_4
 
 #endif
 
@@ -184,9 +185,9 @@ SUBROUTINE microphysics_driver(                                          &
    USE module_model_constants
    USE module_wrf_error
    USE module_configure, only: grid_config_rec_type
-#if ( WRF_CHEM == 1 )   
+#if ( WRF_CHEM == 1 )
 !mchen   USE module_state_description, only: num_scalar               ! For CAMMGMP scheme Prognostic aerosols
-   USE module_state_description, only: num_chem               ! mchen 
+   USE module_state_description, only: num_chem               ! mchen
    USE modal_aero_data, only:  ntot_amode_cam_mam => ntot_amode ! For CAMMGMP scheme Prognostic aerosols
 #endif
 
@@ -399,7 +400,7 @@ SUBROUTINE microphysics_driver(                                          &
    INTEGER, OPTIONAL, INTENT(IN   )    :: hail, ice2 !, ccntype
 !
    INTEGER,      INTENT(IN   )    ::       ids,ide, jds,jde, kds,kde
-   INTEGER,      INTENT(IN   )    ::       ims,ime, jms,jme, kms,kme,num_scalar
+   INTEGER,      INTENT(IN   )    ::       ims,ime, jms,jme, kms,kme,num_scalar,num_sbmradar
    INTEGER, OPTIONAL, INTENT(IN   )    ::       ips,ipe, jps,jpe, kps,kpe
    INTEGER,      INTENT(IN   )    ::                         kts,kte
    INTEGER,      INTENT(IN   )    ::     itimestep,num_tiles,spec_zone
@@ -458,22 +459,23 @@ SUBROUTINE microphysics_driver(                                          &
 
     REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),INTENT(INOUT), OPTIONAL :: th_old,qv_old
     REAL,DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar),INTENT(INOUT), OPTIONAL   :: scalar
+    REAL, DIMENSION(ims:ime,kms:kme,jms:jme,num_sbmradar),INTENT(INOUT) :: sbmradar
     INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(IN), OPTIONAL::   IVGTYP
     REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN), OPTIONAL    :: XLAT, XLONG
 
 !=================
 !Data for CAMMGMP scheme
-   REAL,INTENT(IN), OPTIONAL ::accum_mode,aitken_mode,coarse_mode  
+   REAL,INTENT(IN), OPTIONAL ::accum_mode,aitken_mode,coarse_mode
 !1D variables required for CAMMGMP scheme
    REAL , DIMENSION( kms:kme ) ,                                      &
         INTENT(IN   ) , OPTIONAL ::                                        fnm,  & !Factors for interpolation at "w" grid (interfaces)
-                                                                fnp     
+                                                                fnp
 !2D variables required for CAMMGMP scheme
    REAL, DIMENSION( ims:ime, jms:jme ),                               &
         INTENT(IN), OPTIONAL ::                                                 &
                                                                  qfx, &    !Moisture flux at surface (kg m-2 s-1)
                                                                  rliq      !Vertically-integrated reserved cloud condensate(m/s)
- 
+
  !3D variables required for CAMMGMP scheme
  REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
       INTENT(IN), OPTIONAL ::                                                   &
@@ -482,7 +484,7 @@ SUBROUTINE microphysics_driver(                                          &
                                                                t_phy, &    !Temprature at the mid points (K)
                                                                p_hyd, &    !Hydrostatic pressure(Pa)
                                                              p8w_hyd, &    !Hydrostatic Pressure at level interface (Pa)
-                                                              z_at_w, &    !Height above sea level at layer interfaces (m) 
+                                                              z_at_w, &    !Height above sea level at layer interfaces (m)
                                                              tke_pbl, &    !Turbulence kinetic energy
                                                           turbtype3d, &    !Turbulent interface types [ no unit ]
                                                               smaw3d, &    !Normalized Galperin instability function for momentum [no units]
@@ -497,7 +499,7 @@ SUBROUTINE microphysics_driver(                                          &
  REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme,ntot_amode_cam_mam ),     &
         INTENT(IN) ::                                                 &
                                                              dgnum4D, &
-                                                          dgnumwet4D 
+                                                          dgnumwet4D
 #endif
 !In-outs
  REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
@@ -509,19 +511,19 @@ SUBROUTINE microphysics_driver(                                          &
 #if ( WRF_CHEM == 1 )
  REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme, num_chem),     &
       INTENT(INOUT) ::                                                &
-                                                                 chem      !Chem array for CAMMGMP scheme Prognostic aerosols      
+                                                                 chem      !Chem array for CAMMGMP scheme Prognostic aerosols
 #endif
 !outs
 REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
       INTENT(INOUT) , OPTIONAL::                                                 &
-                                                            wsedl3d, &    !Sedimentation velocity of stratiform liquid cloud droplet (m/s) 
+                                                            wsedl3d, &    !Sedimentation velocity of stratiform liquid cloud droplet (m/s)
                                                           cldfra_mp, &    !Old Cloud fraction for CAMMGMP microphysics only
                                                       cldfra_mp_all, &    !Old Cloud fraction for CAMMGMP microphysics only
                                                             cldfrai, &    !Old Cloud fraction for CAMMGMP microphysics only
                                                             cldfral, &    !Old Cloud fraction for CAMMGMP microphysics only
                                                             lradius, &    !Old Cloud fraction for CAMMGMP microphysics only
-                                                            iradius, &    !Old Cloud fraction for CAMMGMP microphysics only                                                            
-                                                        cldfra_conv 
+                                                            iradius, &    !Old Cloud fraction for CAMMGMP microphysics only
+                                                        cldfra_conv
 
 
 
@@ -633,7 +635,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                                                       ,GRAUPELNCV &
                                                           ,HAILNC &
                                                           ,HAILNCV
-                                                          
+
 #if ( WRF_CHEM == 1)
 ! NUWRF JJS 20110525 vvvvv
 ! for inline Gocart coupling
@@ -644,7 +646,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
  REAL, DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(OUT) :: nc_diag
  integer, intent(in) :: gsfcgce_gocart_coupling ! EMK
  REAL, PARAMETER :: frac(4)=(/ 0.01053,0.08421,0.25263,0.65263 /) !fraction for fine dust
- 
+
 ! NUWRF JJS 20110525 ^^^^^
 #endif
 
@@ -687,7 +689,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
   INTEGER, OPTIONAL, INTENT(IN   )    :: PBL
   INTEGER,           INTENT(IN   )    :: no_src_types_cu
   REAL,              INTENT(IN   )    :: aercu_fct
-  REAL,    OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme, no_src_types_cu), INTENT(INOUT) & 
+  REAL,    OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme, no_src_types_cu), INTENT(INOUT) &
                                       :: aerocu
   REAL,    OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT) &
                                       :: EFCG,           &
@@ -788,7 +790,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
             ,has_reqs=has_reqs                                 &
             ,re_cloud=re_cloud                                 &
             ,re_ice=re_ice                                     &
-            ,re_snow=re_snow                                   &  ! for radiation -  
+            ,re_snow=re_snow                                   &  ! for radiation -
             ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
             ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
             ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
@@ -820,7 +822,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 
 !-----------
        IF( PRESENT(chem_opt) .AND. PRESENT(progn) ) THEN
-       
+
        ! ERM: check whether to use built-in droplet nucleation or use qndrop from CHEM
        IF ( mp_physics==NSSL_2MOMCCN .or. mp_physics==NSSL_2MOM .or. mp_physics==NSSL_2MOMG ) THEN
          IF ( progn > 0 ) THEN
@@ -829,7 +831,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
            nssl_progn = .false. ! use NUCOND for droplet nucleation
          ENDIF
        ENDIF
-       
+
        !Add pass for dust-only wrf-chem option - RAS
        IF( (chem_opt==0 .OR. chem_opt==401) .AND. progn==1 .AND. (mp_physics==LINSCHEME  .OR. mp_physics==MORR_TWO_MOMENT)) THEN
           IF( PRESENT( QNDROP_CURR ) ) THEN
@@ -1067,7 +1069,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                 CALL wrf_error_fatal ( 'arguments not present for calling thompson_et_al' )
              ENDIF
 #if (EM_CORE==1)
-       CASE (FAST_KHAIN_LYNN)
+       CASE (FAST_KHAIN_LYNN_SHPUND)
              CALL wrf_debug ( 100 , 'microphysics_driver: calling sbm' )
                CALL fast_sbm(W=w,U=u,V=v,TH_OLD=th_old          &
                  ,CHEM_new=scalar,N_CHEM=num_scalar                     &
@@ -1086,15 +1088,15 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,QV_OLD=qv_old                                     &
                  ,QNC=qnc_curr                                      &
                  ,QNR=qnr_curr                                      &
+                 ,QNI=qni_curr                                      &
                  ,QNS=qns_curr                                      &
                  ,QNG=qng_curr                                      &
                  ,QNA=qnn_curr                                      &
+                 ,sbmradar=sbmradar,num_sbmradar=num_sbmradar       &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
-                 ,REFL_10CM=refl_10cm                 &  ! added for radar reflectivity
                  ,diagflag=diagflag                   &  ! added for radar reflectivity
-                 ,do_radar_ref=do_radar_ref           &  ! added for radar reflectivity
                  ,RAINNC=rainnc                       &
                  ,RAINNCV=rainncv                     &
                  ,SNOWNC=snownc                       &
@@ -1185,25 +1187,25 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              PRESENT (QI3_CURR).AND. PRESENT (QNI3_CURR) .AND. &
              PRESENT (QVOLI3_CURR).AND. PRESENT (QAOLI3_CURR)) THEN
              CALL mp_jensen_ishmael(             &
-             ITIMESTEP=itimestep,                &  !*                                                                         
+             ITIMESTEP=itimestep,                &  !*
              DT_IN=dt,                           &  !*
-             P=p,                                &  !*                                                                         
+             P=p,                                &  !*
              DZ=dz8w,                            &  !* !
-             TH=th,                              &  !*                                                                         
-             QV=qv_curr,                         &  !*                                                                         
-             QC=qc_curr,                         &  !*                                                                         
-             QR=qr_curr,                         &  !*                                                                         
+             TH=th,                              &  !*
+             QV=qv_curr,                         &  !*
+             QC=qc_curr,                         &  !*
+             QR=qr_curr,                         &  !*
              NR=qnr_curr,                        &  !* !
-             QI1=qi_curr,                        &  !*                                                                         
-             NI1=qni_curr,                       &  !*                                                                         
+             QI1=qi_curr,                        &  !*
+             NI1=qni_curr,                       &  !*
              AI1=qvoli_curr,                     &  !*
              CI1=qaoli_curr,                     &  !*
-             QI2=qi2_curr,                       &  !*                                                                         
-             NI2=qni2_curr,                      &  !*                                                                         
+             QI2=qi2_curr,                       &  !*
+             NI2=qni2_curr,                      &  !*
              AI2=qvoli2_curr,                    &  !*
              CI2=qaoli2_curr,                    &  !*
-             QI3=qi3_curr,                       &  !*                                                                         
-             NI3=qni3_curr,                      &  !*                                                                         
+             QI3=qi3_curr,                       &  !*
+             NI3=qni3_curr,                      &  !*
              AI3=qvoli3_curr,                    &  !*
              CI3=qaoli3_curr,                    &  !*
              IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde, &
@@ -1647,7 +1649,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 #endif
              PRESENT ( W      )  .AND. &
              PRESENT (QVOLG_CURR) ) THEN
-             
+
 
          CALL nssl_2mom_driver(                          &
                      ITIMESTEP=itimestep,                &
@@ -1706,7 +1708,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              PRESENT (GRAUPELNC).AND.PRESENT (GRAUPELNCV).AND. &
 #endif
              PRESENT ( W      )  ) THEN
-             
+
 
          CALL nssl_2mom_driver(                          &
                      ITIMESTEP=itimestep,                &
@@ -1758,7 +1760,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              PRESENT ( W      )  .AND. &
              PRESENT (QVOLG_CURR) .AND. F_QVOLG  .AND.         &
              PRESENT (QVOLH_CURR) .AND. F_QVOLH ) THEN
-             
+
 
          CALL nssl_2mom_driver(                          &
                      ITIMESTEP=itimestep,                &
@@ -1836,7 +1838,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
 #endif
              PRESENT ( W      )  .AND. &
              PRESENT (QVOLG_CURR) .AND. F_QVOLG  ) THEN
-             
+
 
          CALL nssl_2mom_driver(                          &
                      ITIMESTEP=itimestep,                &
@@ -1914,7 +1916,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              PRESENT (QVOLG_CURR) .AND. F_QVOLG  .AND.         &
              PRESENT (QVOLH_CURR) .AND. F_QVOLH  .AND.         &
              PRESENT( QNN_CURR )                          ) THEN
-             
+
 
          CALL nssl_2mom_driver(                          &
                      ITIMESTEP=itimestep,                &
@@ -2066,7 +2068,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,CHEM_OPT=chem_opt                                 &
                  ,GSFCGCE_GOCART_COUPLING=gsfcgce_gocart_coupling   &
 #endif
-!NUWRF JJS 20110525 ^^^^^         
+!NUWRF JJS 20110525 ^^^^^
                                                                     )
 
                do j=jts,jte
@@ -2131,7 +2133,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,F_QG=f_qg                                         &
                  ,QG=qg_curr                                        &
 !                 ,IHAIL=hail, ICE4=ice2                             & ! hardcoded in the 4ice scheme
-                                                                       ! ihail = 0, ice4=4 
+                                                                       ! ihail = 0, ice4=4
 !NUWRF JJS 20110525 vvvvv
                  ,PHYSC=physc, PHYSE=physe, PHYSD=physd             &
                  ,PHYSS=physs, PHYSM=physm, PHYSF=physf             &
@@ -2165,7 +2167,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                         acphys_tot(i,k,j) = acphysc(i,k,j) + acphyse(i,k,j) + &
                              acphysd(i,k,j) + acphyss(i,k,j) + acphysm(i,k,j) + &
                              acphysf(i,k,j)
-                        
+
                      end do
                   end do
                end do
@@ -2283,7 +2285,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,has_reqs=has_reqs                                 &
                  ,re_cloud=re_cloud                                 &
                  ,re_ice=re_ice                                     &
-                 ,re_snow=re_snow                                   &  ! for radiation -  
+                 ,re_snow=re_snow                                   &  ! for radiation -
 # endif
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
@@ -2326,7 +2328,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,has_reqs=has_reqs                                 &
                  ,re_cloud=re_cloud                                 &
                  ,re_ice=re_ice                                     &
-                 ,re_snow=re_snow                                   &  ! for radiation -  
+                 ,re_snow=re_snow                                   &  ! for radiation -
 # endif
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
@@ -2370,7 +2372,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,has_reqs=has_reqs                                 &
                  ,re_cloud=re_cloud                                 &
                  ,re_ice=re_ice                                     &
-                 ,re_snow=re_snow                                   &  ! for radiation -  
+                 ,re_snow=re_snow                                   &  ! for radiation -
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
@@ -2462,8 +2464,8 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,has_reqs=has_reqs                                 &
                  ,re_cloud=re_cloud                                 &
                  ,re_ice=re_ice                                     &
-                 ,re_snow=re_snow                                   &  ! for radiation -       
-                 ,ITIMESTEP=itimestep                               & 
+                 ,re_snow=re_snow                                   &  ! for radiation -
+                 ,ITIMESTEP=itimestep                               &
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
@@ -2506,13 +2508,13 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                  ,diagflag=diagflag                                 &  ! added for radar reflectivity
                  ,do_radar_ref=do_radar_ref                         &  ! added for radar reflectivity
                  ,GRAUPEL=graupelnc ,GRAUPELNCV=graupelncv          &
-                 ,ITIMESTEP=itimestep                               & 
+                 ,ITIMESTEP=itimestep                               &
                  ,has_reqc=has_reqc                                 &  ! for radiation +
                  ,has_reqi=has_reqi                                 &
                  ,has_reqs=has_reqs                                 &
                  ,re_cloud=re_cloud                                 &
-                 ,re_ice=re_ice                                     & 
-                 ,re_snow=re_snow                                   &  ! for radiation -  
+                 ,re_ice=re_ice                                     &
+                 ,re_snow=re_snow                                   &  ! for radiation -
                  ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
                  ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
                  ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte &
@@ -2702,7 +2704,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                   PRESENT( qs_curr    ) .AND.                              &
                   PRESENT( qv_curr    ) .AND. PRESENT( qc_curr     ) .AND. &
                   PRESENT( qi_curr    ) .AND. PRESENT( f_qc        ) .AND. &
-                  PRESENT( qr_curr    ) .AND. PRESENT( qndrop_curr ) .AND. &                  
+                  PRESENT( qr_curr    ) .AND. PRESENT( qndrop_curr ) .AND. &
                   PRESENT( f_qi       ) .AND. PRESENT( qnc_curr    ) .AND. &
                   PRESENT( RAINNCV    ) .AND. PRESENT( SNOWNCV     ) .AND. &
                   PRESENT( qns_curr   ) .AND. PRESENT( qnr_curr    ) .AND. &
@@ -2717,7 +2719,7 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
                 qi_b4mp(its:ite,kts:kte,jts:jte) = qi_curr(its:ite,kts:kte,jts:jte)
                 qs_b4mp(its:ite,kts:kte,jts:jte) = qs_curr(its:ite,kts:kte,jts:jte)
 #endif
-                  
+
                 CALL CAMMGMP(ITIMESTEP=itimestep,DT=dt,P8W=p8w_hyd,P_HYD=p_hyd    &
                      ,T_PHY=t_phy,PI_PHY=pi_phy,Z_AT_W=z_at_w,QFX=qfx             &
                      ,TKE_PBL=tke_pbl,TURBTYPE3D=turbtype3d,SMAW3D=smaw3d     &
@@ -2761,14 +2763,14 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
              CALL wrf_debug ( 100 , 'microphysics_driver: calling lscond' )
              IF ( PRESENT( QV_CURR ) .AND.                          &
                   PRESENT( RAINNC  ) .AND. PRESENT ( RAINNCV )) THEN
-                                          
+
                CALL lscond(                                         &
                   TH=th                                              &
-                 ,P=p                                               & 
+                 ,P=p                                               &
                  ,QV=qv_curr                                        &
-                 ,RHO=rho, PII=pi_phy, XLV=xlv, CP=cp               &  
+                 ,RHO=rho, PII=pi_phy, XLV=xlv, CP=cp               &
                  ,EP2=ep_2,SVP1=svp1,SVP2=svp2                      &
-                 ,SVP3=svp3,SVPT0=svpt0                             & 
+                 ,SVP3=svp3,SVPT0=svpt0                             &
                  ,R_V= R_v                                          & ! added
                  ,DZ8W=dz8w                                         &
                  ,RAINNC=rainnc,RAINNCV=rainncv                     &

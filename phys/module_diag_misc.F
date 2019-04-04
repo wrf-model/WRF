@@ -65,7 +65,7 @@ CONTAINS
       WSM6SCHEME, ETAMPNEW, THOMPSON, THOMPSONAERO,                     &
       MORR_TWO_MOMENT, GSFCGCESCHEME, WDM5SCHEME, WDM6SCHEME,           &
       NSSL_2MOM, NSSL_2MOMG, NSSL_2MOMCCN, NSSL_1MOM, NSSL_1MOMLFO,                 &
-      MILBRANDT2MOM , CAMMGMPSCHEME, FAST_KHAIN_LYNN, FULL_KHAIN_LYNN,  &
+      MILBRANDT2MOM , CAMMGMPSCHEME, FAST_KHAIN_LYNN_SHPUND, FULL_KHAIN_LYNN,  &
       MORR_TM_AERO  !TWG 2017  !,MILBRANDT3MOM, NSSL_3MOM
 
    IMPLICIT NONE
@@ -166,8 +166,8 @@ CONTAINS
                                                     ,   SNOWNCV  &
                                                     ,       HFX  &
                                                     ,        LH  &
-                                                    ,    SFCEVP  &  
-                                                    ,        T2     
+                                                    ,    SFCEVP  &
+                                                    ,        T2
 
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
           INTENT(INOUT) ::                                DPSDT  &
@@ -176,7 +176,7 @@ CONTAINS
                                                     ,     RAINC  &
                                                     ,     MU_2M  &
                                                     ,      PK1M
- 
+
    REAL,  INTENT(IN   ) :: DT, XTIME
    INTEGER,  INTENT(IN   ) :: SBW
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) ::     &
@@ -278,7 +278,7 @@ CONTAINS
         DO i=i_start(ij),i_end(ij)
           i_rainnc(i,j) = 0
           i_rainc(i,j) = 0
-        ENDDO      
+        ENDDO
         ENDDO
       ENDIF
       DO j=j_start(ij),j_end(ij)
@@ -291,7 +291,7 @@ CONTAINS
           rainc(i,j) = rainc(i,j) - bucket_mm
           i_rainc(i,j) =  i_rainc(i,j) + 1
         ENDIF
-      ENDDO      
+      ENDDO
       ENDDO
 
       IF (xtime .eq. 0.0 .and. bucket_J .gt. 0.0 .and. PRESENT(ACSWUPT))THEN
@@ -305,7 +305,7 @@ CONTAINS
           i_acswupbc(i,j) = 0
           i_acswdnb(i,j) = 0
           i_acswdnbc(i,j) = 0
-        ENDDO      
+        ENDDO
         ENDDO
       ENDIF
       IF (xtime .eq. 0.0  .and. bucket_J .gt. 0.0 .and. PRESENT(ACLWUPT))THEN
@@ -319,7 +319,7 @@ CONTAINS
           i_aclwupbc(i,j) = 0
           i_aclwdnb(i,j) = 0
           i_aclwdnbc(i,j) = 0
-        ENDDO      
+        ENDDO
         ENDDO
       ENDIF
       IF (PRESENT(ACSWUPT) .and. bucket_J .gt. 0.0)THEN
@@ -357,7 +357,7 @@ CONTAINS
           acswdnbc(i,j) = acswdnbc(i,j) - bucket_J
           i_acswdnbc(i,j) =  i_acswdnbc(i,j) + 1
         ENDIF
-      ENDDO      
+      ENDDO
       ENDDO
       ENDIF
       IF (PRESENT(ACLWUPT) .and. bucket_J .gt. 0.0)THEN
@@ -395,7 +395,7 @@ CONTAINS
           aclwdnbc(i,j) = aclwdnbc(i,j) - bucket_J
           i_aclwdnbc(i,j) =  i_aclwdnbc(i,j) + 1
         ENDIF
-      ENDDO      
+      ENDDO
       ENDDO
       ENDIF
    ENDDO
@@ -427,10 +427,10 @@ CONTAINS
          snow_acc_nc(i,j)   = snow_acc_nc(i,j) +  RAINCV(i,j)
          snow_acc_nc(i,j)   = MAX (snow_acc_nc(i,j), 0.0)
          ENDIF
-      ENDDO     
-      ENDDO     
+      ENDDO
+      ENDDO
 
-   ENDDO     
+   ENDDO
 
 !  !$OMP END PARALLEL DO
    ENDIF
@@ -580,8 +580,8 @@ CONTAINS
 
 
 
-!+---+-----------------------------------------------------------------+ 
-!+---+-----------------------------------------------------------------+ 
+!+---+-----------------------------------------------------------------+
+!+---+-----------------------------------------------------------------+
 !..Calculate a maximum hail diameter from the characteristics of the
 !.. graupel category mixing ratio and number concentration (or hail, if
 !.. available).  This diagnostic uses the actual spectral distribution
@@ -589,7 +589,7 @@ CONTAINS
 !.. from 0.5mm to 7.5cm.  Once a minimum number concentration of 0.01
 !.. particle per cubic meter of air is reached, from the upper size
 !.. limit, then this bin is considered the max size.
-!+---+-----------------------------------------------------------------+ 
+!+---+-----------------------------------------------------------------+
 
       WRITE(outstring,*) 'GT-Diagnostics, computing max-hail diameter'
       CALL wrf_debug (100, TRIM(outstring))
@@ -908,7 +908,7 @@ CONTAINS
 !      explicit bin scheme so code below not applicable
 !      scheme authors need to implement if desired.
 
-     CASE (FAST_KHAIN_LYNN)
+     CASE (FAST_KHAIN_LYNN_SHPUND)
 !      explicit bin scheme so code below not applicable
 !      scheme authors need to implement if desired.
 
@@ -1004,7 +1004,7 @@ CONTAINS
            idp=i
            jdp=j
          endif
-      ENDDO      
+      ENDDO
       ENDDO
 
    ENDDO
@@ -1160,7 +1160,7 @@ CONTAINS
    END SUBROUTINE diagnostic_output_calc
 
 
-!+---+-----------------------------------------------------------------+ 
+!+---+-----------------------------------------------------------------+
       REAL FUNCTION GAMMLN(XX)
 !     --- RETURNS THE VALUE LN(GAMMA(XX)) FOR XX > 0.
       IMPLICIT NONE
@@ -1185,7 +1185,7 @@ CONTAINS
       GAMMLN=TMP+LOG(STP*SER/X)
       END FUNCTION GAMMLN
 !  (C) Copr. 1986-92 Numerical Recipes Software 2.02
-!+---+-----------------------------------------------------------------+ 
+!+---+-----------------------------------------------------------------+
       REAL FUNCTION WGAMMA(y)
 
       IMPLICIT NONE
@@ -1194,7 +1194,7 @@ CONTAINS
       WGAMMA = EXP(GAMMLN(y))
 
       END FUNCTION WGAMMA
-!+---+-----------------------------------------------------------------+ 
+!+---+-----------------------------------------------------------------+
 
 
 END MODULE module_diag_misc

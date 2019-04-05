@@ -1187,7 +1187,7 @@ CONTAINS
                 N_ice = 0.
              ENDIF
              IF (Q_ice .GT. 0) THEN
-                temper = theta(i,k,j) * (pressure(i,k,j)/p00)**RCP
+                temper = theta(i,k,j) * (pressure(i,k,j)/p00)**(R_d/Cp)
                 re_snow(i,k,j) = calc_effectRad_Ice (Q_ice, N_ice, inv_dens(i,k,j), temper)
              ENDIF
           end do

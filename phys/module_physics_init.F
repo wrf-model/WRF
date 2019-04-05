@@ -46,6 +46,8 @@ CONTAINS
                          W0AVG, RAINNC, RAINC, RAINCV, RAINNCV,  &
                          SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV, &
                          z_at_q, inv_dens, qnwfa2d, scalar, num_sc,  & ! G. Thompson
+                         moist, num_qm,                          & ! G. Thompson
+                         theta, pressure,                        & ! G. Thompson
                          re_cloud, re_ice, re_snow,              & ! G. Thompson
                          has_reqc, has_reqi, has_reqs,           & ! G. Thompson
 #if ( EM_CORE == 1 )
@@ -371,6 +373,7 @@ CONTAINS
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: re_cloud, &
              re_ice, re_snow
    INTEGER, INTENT(INOUT):: has_reqc, has_reqi, has_reqs
+   REAL:: Q_cld, N_cld, Q_ice, N_ice, temper
 #if ( EM_CORE == 1 )
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) :: re_cloud_gsfc, &
              re_ice_gsfc, re_snow_gsfc, re_graupel_gsfc, re_hail_gsfc, re_rain_gsfc
@@ -428,8 +431,10 @@ CONTAINS
    REAL,     DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) :: z_at_q            !  G. Thompson
    REAL,     DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) :: inv_dens          !  G. Thompson
    REAL,     DIMENSION(ims:ime,jms:jme), INTENT(INOUT) :: qnwfa2d                !  G. Thompson
-   INTEGER,  INTENT(IN) :: num_sc                                                !  G. Thompson
+   INTEGER,  INTENT(IN) :: num_sc, num_qm                                        !  G. Thompson
    REAL,     DIMENSION(ims:ime,kms:kme,jms:jme,num_sc), INTENT(INOUT) :: scalar  !  G. Thompson
+   REAL,     DIMENSION(ims:ime,kms:kme,jms:jme,num_qm), INTENT(INOUT) :: moist  !  G. Thompson
+   REAL,     DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN) :: theta, pressure  !  G. Thompson
 
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT) :: CLDEFI, NCA
 
@@ -1115,36 +1120,81 @@ CONTAINS
       end do
     end do
 
-!..Fill initial starting values of radiative effective radii for
-!.. cloud water (2.51 microns), cloud ice (5.01 microns), and
-!.. snow (10.01 microns).
+!+---+-----------------------------------------------------------------+
+!..Fill initial starting values of radiative effective radii for cloud water,
+!.. cloud ice, and snow.  The very first timestep calls radiation before calling
+!.. microphysics, so it is better to supply something more realistic at the
+!.. onset rather than waiting until the 2nd radiation timestep.
+!+---+-----------------------------------------------------------------+
     if (has_reqc.ne.0) then
        do j=jts,jtf
           do k=kts,ktf
           do i=its,itf
-             re_cloud(i,k,j) = 2.51E-6
+             re_cloud(i,k,j) = 0.
+             IF (P_QC .GT. 1) THEN
+                Q_cld = MAX(0., moist(i,k,j,P_QC))
+             ENDIF
+             IF (P_QNC .GT. 1) THEN
+                N_cld = MAX(0., scalar(i,k,j,P_QNC))
+                IF (Q_cld .GT. 0) THEN
+                   re_cloud(i,k,j) = calc_effectRad_H20 (Q_cld, N_cld, inv_dens(i,k,j))
+                ENDIF
+             ELSE
+                IF ((XLAND(I,J)-1.5).GT.0.) THEN                         !--- Ocean
+                   re_cloud(i,k,j) = 9.5E-6
+                ELSE                                                     !--- Land
+                   re_cloud(i,k,j) = 5.5E-6
+                ENDIF
+             ENDIF
           end do
           end do
        end do
     endif
+
     if (has_reqi.ne.0) then
        do j=jts,jtf
           do k=kts,ktf
           do i=its,itf
-             re_ice(i,k,j) = 5.01E-6
+             re_ice(i,k,j) = 0.
+             IF (P_QI .GT. 1) THEN
+                Q_ice = MAX(0., moist(i,k,j,P_QI))
+             ENDIF
+             IF (P_QNI .GT. 1) THEN
+                N_ice = MAX(0., scalar(i,k,j,P_QNI))
+             ELSE
+                N_ice = 0.
+             ENDIF
+             IF (Q_ice .GT. 0) THEN
+                temper = theta(i,k,j) * (pressure(i,k,j)/p00)**(R_d/Cp)
+                re_ice(i,k,j) = calc_effectRad_Ice (Q_ice, N_ice, inv_dens(i,k,j), temper)
+             ENDIF
           end do
           end do
        end do
     endif
+
     if (has_reqs.ne.0) then
        do j=jts,jtf
           do k=kts,ktf
           do i=its,itf
-             re_snow(i,k,j) = 10.01E-6
+             re_snow(i,k,j) = 0.
+             IF (P_QS .GT. 1) THEN
+                Q_ice = MAX(0., moist(i,k,j,P_QS))
+             ENDIF
+             IF (P_QNS .GT. 1) THEN
+                N_ice = MAX(0., scalar(i,k,j,P_QNS))
+             ELSE
+                N_ice = 0.
+             ENDIF
+             IF (Q_ice .GT. 0) THEN
+                temper = theta(i,k,j) * (pressure(i,k,j)/p00)**RCP
+                re_snow(i,k,j) = calc_effectRad_Ice (Q_ice, N_ice, inv_dens(i,k,j), temper)
+             ENDIF
           end do
           end do
        end do
     endif
+
 
 !  Initialize cloud droplet effective radii for Goddard MP and/or Radiation
 #if ( EM_CORE == 1 )
@@ -5199,5 +5249,111 @@ subroutine interp_vec_cu(locvec,locwant,periodic,loc1,loc2,wght1,wght2)
   return
   end subroutine interp_vec_cu
 !---------------------END   PSH/TWG  CHANGES----------------
+
+!+---+-----------------------------------------------------------------+
+
+      real function calc_effectRad_H20 (Q_cld, N_cld, O_rho)
+
+      IMPLICIT NONE
+      real:: Q_cld, N_cld, O_rho
+      DOUBLE PRECISION:: lamc
+      INTEGER:: inu_c
+      real:: Qcloud, Ncloud, re_cloud
+      real, parameter:: am_r = 3.1415926536 * 1000. / 6.
+      real, dimension(15), parameter:: g_ratio = (/24,60,120,210,336,   &
+     &                504,720,990,1320,1716,2184,2730,3360,4080,4896/)
+
+      Qcloud = MAX(1.E-15, Q_cld/O_rho)
+      Ncloud = MAX(1.E-10, N_cld/O_rho)
+      if (Ncloud.lt.100.) then
+         inu_c = 15
+      elseif (Ncloud.gt.1.E10) then
+         inu_c = 2
+      else
+         inu_c = MIN(15, NINT(1000.E6/Ncloud) + 2)
+      endif
+      lamc = (Ncloud*am_r*g_ratio(inu_c)/Qcloud)**(1./3.)
+      re_cloud = MAX(2.51E-6, MIN(SNGL(0.5D0 * DBLE(3.+inu_c)/lamc), 30.E-6))
+
+      calc_effectRad_H20 = re_cloud
+
+      return
+      end function calc_effectRad_H20
+
+!+---+-----------------------------------------------------------------+
+
+      real function calc_effectRad_Ice (Q_ice, N_ice, O_rho, temp)
+
+      IMPLICIT NONE
+
+      real:: Q_ice, N_ice, temp, O_rho
+      integer:: idx_rei
+      real:: Qice, Nice, corr, re_ice
+      double precision:: lami
+
+      REAL, PARAMETER:: Ice_density = 890.0
+      REAL, PARAMETER:: PI = 3.1415926536
+
+!+---+-----------------------------------------------------------------+ 
+!..Table of lookup values of radiative effective radius of ice crystals
+!.. as a function of Temperature from -94C to 0C.  Taken from WRF RRTMG
+!.. radiation code where it is attributed to Jon Egill Kristjansson
+!.. and coauthors.
+!+---+-----------------------------------------------------------------+ 
+
+      real retab(95)
+      data retab /                                                      &
+         5.92779, 6.26422, 6.61973, 6.99539, 7.39234,                   &
+         7.81177, 8.25496, 8.72323, 9.21800, 9.74075, 10.2930,          &
+         10.8765, 11.4929, 12.1440, 12.8317, 13.5581, 14.2319,          &
+         15.0351, 15.8799, 16.7674, 17.6986, 18.6744, 19.6955,          &
+         20.7623, 21.8757, 23.0364, 24.2452, 25.5034, 26.8125,          &
+         27.7895, 28.6450, 29.4167, 30.1088, 30.7306, 31.2943,          &
+         31.8151, 32.3077, 32.7870, 33.2657, 33.7540, 34.2601,          &
+         34.7892, 35.3442, 35.9255, 36.5316, 37.1602, 37.8078,          &
+         38.4720, 39.1508, 39.8442, 40.5552, 41.2912, 42.0635,          &
+         42.8876, 43.7863, 44.7853, 45.9170, 47.2165, 48.7221,          &
+         50.4710, 52.4980, 54.8315, 57.4898, 60.4785, 63.7898,          &
+         65.5604, 71.2885, 75.4113, 79.7368, 84.2351, 88.8833,          &
+         93.6658, 98.5739, 103.603, 108.752, 114.025, 119.424,          &
+         124.954, 130.630, 136.457, 142.446, 148.608, 154.956,          &
+         161.503, 168.262, 175.248, 182.473, 189.952, 197.699,          &
+         205.728, 214.055, 222.694, 231.661, 240.971, 250.639/
+
+!+---+-----------------------------------------------------------------+ 
+!..If it appears we have both mass and number mixing ratio, then calculate
+!.. the slope (lami) and then radius.  If we do not have number, then
+!.. just use the retab above to give a starting size.
+!+---+-----------------------------------------------------------------+ 
+
+      if (N_ice .gt. 0) then
+
+         Qice = MAX(1.E-15, Q_ice/O_rho)
+         Nice = MAX(1.E-10, N_ice/O_rho)
+         lami = (Nice*PI*Ice_density/Qice)**(1./3.)
+         re_ice = MAX(2.51E-6, MIN(SNGL(0.5D0*3.D0/lami), 125.E-6))
+
+      else
+
+!+---+-----------------------------------------------------------------+ 
+!..From the model 3D temperature field, subtract 179K for which
+!.. index value of retab as a start.  Value of corr is for
+!.. interpolating between neighboring values in the table.
+!+---+-----------------------------------------------------------------+ 
+
+         idx_rei = int(temp-179.)
+         idx_rei = min(max(idx_rei,1),94)
+         corr = temp - int(temp)
+         re_ice = retab(idx_rei)*(1.-corr) + retab(idx_rei+1)*corr
+
+      endif
+
+      calc_effectRad_Ice = re_ice
+
+      return
+      end function calc_effectRad_Ice
+
+!+---+-----------------------------------------------------------------+ 
+!+---+-----------------------------------------------------------------+ 
 
 END MODULE module_physics_init

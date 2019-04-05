@@ -992,6 +992,8 @@ endif
                       grid%w0avg, grid%rainnc, grid%rainc, grid%raincv, grid%rainncv,  &
                       grid%snownc, grid%snowncv, grid%graupelnc, grid%graupelncv,  &
                       z_at_q, grid%alt, grid%qnwfa2d, scalar(ims,kms,jms,1), num_scalar,         & ! G. Thompson
+                      moist(ims,kms,jms,1), num_moist,                  & ! G. Thompson
+                      grid%t_1, grid%p_hyd,                             & ! G. Thompson
                       grid%re_cloud, grid%re_ice, grid%re_snow,         & ! G. Thompson
                       grid%has_reqc, grid%has_reqi, grid%has_reqs,      & ! G. Thompson
                       grid%re_cloud_gsfc, grid%re_ice_gsfc,             & ! Goddard

@@ -807,28 +807,32 @@ CONTAINS
             icing_opt=0  ! Not supported
           ENDIF
    
-          write ( message, * ) 'Calculating Icing with icing opt ',icing_opt 
-          CALL wrf_debug( 100 , message )
-          CALL icing_diagnostics ( icing_opt                      &
-                               , grid % fzlev                     &
-                               , grid % icing_lg                  &
-                               , grid % icing_sm                  &
-                               , grid % qicing_lg_max             &
-                               , grid % qicing_sm_max             &
-                               , grid % qicing_lg                 &
-                               , grid % qicing_sm                 &
-                               , grid % icingtop                  &
-                               , grid % icingbot                  &
-                               , grid % t_phy                     &
-                               , grid % z                         &
-                               , dz8w                             &
-                               , rho                              &
-                               , qrain                            &
-                               , qcloud                           &
-                               , ncloud                           &
-                               , ids, ide, jds, jde, kds, kde     &
-                               , ims, ime, jms, jme, kms, kme     &
-                               , ips, ipe, jps, jpe, kps, kpe )
+          IF ( icing_opt .NE. 0 ) THEN
+            write ( message, * ) 'Calculating Icing with icing opt ',icing_opt 
+            CALL wrf_debug( 100 , message )
+            CALL icing_diagnostics ( icing_opt                      &
+                                 , grid % fzlev                     &
+                                 , grid % icing_lg                  &
+                                 , grid % icing_sm                  &
+                                 , grid % qicing_lg_max             &
+                                 , grid % qicing_sm_max             &
+                                 , grid % qicing_lg                 &
+                                 , grid % qicing_sm                 &
+                                 , grid % icingtop                  &
+                                 , grid % icingbot                  &
+                                 , grid % t_phy                     &
+                                 , grid % z                         &
+                                 , dz8w                             &
+                                 , rho                              &
+                                 , qrain                            &
+                                 , qcloud                           &
+                                 , ncloud                           &
+                                 , ids, ide, jds, jde, kds, kde     &
+                                 , ims, ime, jms, jme, kms, kme     &
+                                 , ips, ipe, jps, jpe, kps, kpe )
+          ELSE
+            CALL wrf_debug ( DEBUG_LEVEL, 'Icing diagnostics not processed due to unknown MP scheme' )
+          END IF
         ENDIF  ! afwa_icing_opt
       ELSE
         CALL wrf_debug ( DEBUG_LEVEL, 'Option icing_diagnostics requires: QC, QR, QNC' )

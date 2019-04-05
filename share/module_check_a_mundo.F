@@ -411,6 +411,31 @@
          model_config_rec%mp_physics(i) = d1_value
       END DO
 
+#if (EM_CORE == 1)
+!-----------------------------------------------------------------------
+! There are restrictions on the AFWA diagnostics regarding the choice
+! of microphysics scheme. These are hard coded in the AFWA diags driver,
+! so while this is inelegant, it is about as good as we can do.
+!-----------------------------------------------------------------------
+      IF ( model_config_rec%afwa_diag_opt(1) .EQ. 1 ) THEN
+         IF ( ( model_config_rec % mp_physics(1) .EQ. GSFCGCESCHEME   ) .OR. &
+              ( model_config_rec % mp_physics(1) .EQ. ETAMPNEW        ) .OR. &
+              ( model_config_rec % mp_physics(1) .EQ. THOMPSON        ) .OR. &
+              ( model_config_rec % mp_physics(1) .EQ. WSM5SCHEME      ) .OR. &
+              ( model_config_rec % mp_physics(1) .EQ. WSM6SCHEME      ) .OR. &
+              ( model_config_rec % mp_physics(1) .EQ. WDM6SCHEME      ) .OR. &
+              ( model_config_rec % mp_physics(1) .EQ. MORR_TWO_MOMENT ) .OR. &
+              ( model_config_rec % mp_physics(1) .EQ. MORR_TM_AERO    ) ) THEN 
+            !  All is OK
+         ELSE
+            wrf_err_message = '--- WARNING: the AFWA diagnostics option knows only about the following MP schemes:'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- GSFCGCESCHEME, ETAMPNEW, THOMPSON, WSM5SCHEME, WSM6SCHEME, MORR_TWO_MOMENT, MORR_TM_AERO, WDM6SCHEME'
+            CALL wrf_message ( wrf_err_message )
+         END IF
+      END IF
+#endif
+
 
 !-----------------------------------------------------------------------
 ! Check that all values of ra_physics are the same for all domains

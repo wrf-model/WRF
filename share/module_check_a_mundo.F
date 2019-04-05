@@ -96,6 +96,97 @@
 
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
+! AFWA diagnostics require each domain is treated the same. If
+! any domain has an option activated, all domains must have that
+! option activated.
+!-----------------------------------------------------------------------
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_diag_opt(i)   .EQ. 1 ) then
+      model_config_rec%afwa_diag_opt(:)   = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_ptype_opt(i)  .EQ. 1 ) then
+      model_config_rec%afwa_ptype_opt(:)  = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_vil_opt(i)    .EQ. 1 ) then
+      model_config_rec%afwa_vil_opt(:)    = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_radar_opt(i)  .EQ. 1 ) then
+      model_config_rec%afwa_radar_opt(:)  = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_severe_opt(i) .EQ. 1 ) then
+      model_config_rec%afwa_severe_opt(:) = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_icing_opt(i)  .EQ. 1 ) then
+      model_config_rec%afwa_icing_opt(:)  = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_cloud_opt(i)  .EQ. 1 ) then
+      model_config_rec%afwa_cloud_opt(:)  = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_vis_opt(i)    .EQ. 1 ) then
+      model_config_rec%afwa_vis_opt(:)    = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_therm_opt(i)  .EQ. 1 ) then
+      model_config_rec%afwa_therm_opt(:)  = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_turb_opt(i)   .EQ. 1 ) then
+      model_config_rec%afwa_turb_opt(:)   = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_buoy_opt(i)   .EQ. 1 ) then
+      model_config_rec%afwa_buoy_opt(:)   = 1
+      exit
+    endif
+  enddo
+
+!-----------------------------------------------------------------------
+! If any AFWA diagnostics are activated, there is a minimum that
+! must always be activated.
+!-----------------------------------------------------------------------
+  do i=1,model_config_rec%max_dom
+    if ( ( model_config_rec%afwa_ptype_opt(i)  .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_vil_opt(i)    .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_radar_opt(i)  .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_severe_opt(i) .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_icing_opt(i)  .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_cloud_opt(i)  .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_vis_opt(i)    .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_therm_opt(i)  .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_turb_opt(i)   .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_buoy_opt(i)   .EQ. 1 ) ) then
+      model_config_rec%afwa_diag_opt(i)=1
+    endif
+  enddo
+
+!-----------------------------------------------------------------------
 ! LBC: Always the case, nested setup up: F, T, T, T
 !-----------------------------------------------------------------------
    model_config_rec%nested(1)    = .FALSE.
@@ -319,6 +410,31 @@
       DO i = 1, model_config_rec % max_dom-1
          model_config_rec%mp_physics(i) = d1_value
       END DO
+
+#if (EM_CORE == 1)
+!-----------------------------------------------------------------------
+! There are restrictions on the AFWA diagnostics regarding the choice
+! of microphysics scheme. These are hard coded in the AFWA diags driver,
+! so while this is inelegant, it is about as good as we can do.
+!-----------------------------------------------------------------------
+      IF ( model_config_rec%afwa_diag_opt(1) .EQ. 1 ) THEN
+         IF ( ( model_config_rec % mp_physics(1) .EQ. GSFCGCESCHEME   ) .OR. &
+              ( model_config_rec % mp_physics(1) .EQ. ETAMPNEW        ) .OR. &
+              ( model_config_rec % mp_physics(1) .EQ. THOMPSON        ) .OR. &
+              ( model_config_rec % mp_physics(1) .EQ. WSM5SCHEME      ) .OR. &
+              ( model_config_rec % mp_physics(1) .EQ. WSM6SCHEME      ) .OR. &
+              ( model_config_rec % mp_physics(1) .EQ. WDM6SCHEME      ) .OR. &
+              ( model_config_rec % mp_physics(1) .EQ. MORR_TWO_MOMENT ) .OR. &
+              ( model_config_rec % mp_physics(1) .EQ. MORR_TM_AERO    ) ) THEN 
+            !  All is OK
+         ELSE
+            wrf_err_message = '--- WARNING: the AFWA diagnostics option knows only about the following MP schemes:'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- GSFCGCESCHEME, ETAMPNEW, THOMPSON, WSM5SCHEME, WSM6SCHEME, MORR_TWO_MOMENT, MORR_TM_AERO, WDM6SCHEME'
+            CALL wrf_message ( wrf_err_message )
+         END IF
+      END IF
+#endif
 
 
 !-----------------------------------------------------------------------

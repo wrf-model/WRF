@@ -166,8 +166,8 @@ CONTAINS
                                                     ,   SNOWNCV  &
                                                     ,       HFX  &
                                                     ,        LH  &
-                                                    ,    SFCEVP  &   
-                                                    ,        T2   
+                                                    ,    SFCEVP  &
+                                                    ,        T2
 
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
           INTENT(INOUT) ::                                DPSDT  &

@@ -117,7 +117,7 @@ MODULES = \
         module_ra_rrtmg_lwk.o  \
         module_ra_rrtmg_swk.o  \
         module_ra_cam_support.o \
-	module_ra_cam.o \
+        module_ra_cam.o \
 	module_ra_gfdleta.o \
         module_ra_flg.o \
 	module_ra_HWRF.o \
@@ -137,7 +137,7 @@ MODULES = \
 	module_sf_noah_seaice_drv.o \
 	module_sf_noahlsm_glacial_only.o \
         module_sf_noahmp_groundwater.o \
-	module_sf_gecros.o \
+        module_sf_gecros.o \
 	module_sf_noahmpdrv.o \
 	module_sf_noahmplsm.o \
 	module_sf_noahmp_glacier.o \

@@ -96,6 +96,97 @@
 
 #if (EM_CORE == 1)
 !-----------------------------------------------------------------------
+! AFWA diagnostics require each domain is treated the same. If
+! any domain has an option activated, all domains must have that
+! option activated.
+!-----------------------------------------------------------------------
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_diag_opt(i)   .EQ. 1 ) then
+      model_config_rec%afwa_diag_opt(:)   = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_ptype_opt(i)  .EQ. 1 ) then
+      model_config_rec%afwa_ptype_opt(:)  = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_vil_opt(i)    .EQ. 1 ) then
+      model_config_rec%afwa_vil_opt(:)    = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_radar_opt(i)  .EQ. 1 ) then
+      model_config_rec%afwa_radar_opt(:)  = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_severe_opt(i) .EQ. 1 ) then
+      model_config_rec%afwa_severe_opt(:) = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_icing_opt(i)  .EQ. 1 ) then
+      model_config_rec%afwa_icing_opt(:)  = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_cloud_opt(i)  .EQ. 1 ) then
+      model_config_rec%afwa_cloud_opt(:)  = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_vis_opt(i)    .EQ. 1 ) then
+      model_config_rec%afwa_vis_opt(:)    = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_therm_opt(i)  .EQ. 1 ) then
+      model_config_rec%afwa_therm_opt(:)  = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_turb_opt(i)   .EQ. 1 ) then
+      model_config_rec%afwa_turb_opt(:)   = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_buoy_opt(i)   .EQ. 1 ) then
+      model_config_rec%afwa_buoy_opt(:)   = 1
+      exit
+    endif
+  enddo
+
+!-----------------------------------------------------------------------
+! If any AFWA diagnostics are activated, there is a minimum that
+! must always be activated.
+!-----------------------------------------------------------------------
+  do i=1,model_config_rec%max_dom
+    if ( ( model_config_rec%afwa_ptype_opt(i)  .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_vil_opt(i)    .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_radar_opt(i)  .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_severe_opt(i) .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_icing_opt(i)  .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_cloud_opt(i)  .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_vis_opt(i)    .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_therm_opt(i)  .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_turb_opt(i)   .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_buoy_opt(i)   .EQ. 1 ) ) then
+      model_config_rec%afwa_diag_opt(i)=1
+    endif
+  enddo
+
+!-----------------------------------------------------------------------
 ! LBC: Always the case, nested setup up: F, T, T, T
 !-----------------------------------------------------------------------
    model_config_rec%nested(1)    = .FALSE.

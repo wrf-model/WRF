@@ -112,6 +112,7 @@ CONTAINS
     TYPE(WRFU_Time) :: hist_time, aux2_time, CurrTime, StartTime
     TYPE(WRFU_TimeInterval) :: dtint, histint, aux2int
     LOGICAL :: is_after_history_dump, is_output_timestep, is_first_timestep
+    INTEGER , PARAMETER :: DEBUG_LEVEL = 1
 
     ! Chirp the routine name for debugging purposes
     ! ---------------------------------------------
@@ -284,6 +285,8 @@ CONTAINS
           ENDDO
         ENDDO
       ENDDO
+    ELSE
+      CALL wrf_debug ( DEBUG_LEVEL, 'Option rh requires: QV' )
     END IF
     IF ( F_QV .AND. F_QC .AND. F_QI ) THEN
       DO i=ims,ime
@@ -293,6 +296,8 @@ CONTAINS
           ENDDO
         ENDDO
       ENDDO
+    ELSE
+      CALL wrf_debug ( DEBUG_LEVEL, 'Option rh_cld requires: QV, QC, QI' )
     END IF
 
     ! Time-step precipitation (convective + nonconvective)
@@ -317,6 +322,8 @@ CONTAINS
                                             rho(i,kms:kme,j) )
         ENDDO
       ENDDO
+    ELSE
+      CALL wrf_debug ( DEBUG_LEVEL, 'Option pwat requires: QV, QC' )
     END IF
 
     ! After each history dump, reset max/min value arrays
@@ -529,6 +536,8 @@ CONTAINS
                                , k_start, k_end                   &
                                , j_start, j_end, i_start, i_end   )
 
+      ELSE
+        CALL wrf_debug ( DEBUG_LEVEL, 'Option severe_wx_diagnostics requires: QV, QR, QC, QI, QS, QG, QNG' )
       END IF
     ENDIF   ! afwa_severe_opt == 1
 
@@ -556,6 +565,7 @@ CONTAINS
                              , grid % t2                        &
                              , rh                               &
                              , grid % z                         &
+                             , dz8w                             &
                              , grid % ht                        &
                              , grid % afwa_precip               &
                              , grid % swdown                    &
@@ -820,6 +830,8 @@ CONTAINS
                                , ims, ime, jms, jme, kms, kme     &
                                , ips, ipe, jps, jpe, kps, kpe )
         ENDIF  ! afwa_icing_opt
+      ELSE
+        CALL wrf_debug ( DEBUG_LEVEL, 'Option icing_diagnostics requires: QC, QR, QNC' )
       END IF
 
       ! Calculate visiblility diagnostics
@@ -910,6 +922,8 @@ CONTAINS
                                , ids, ide, jds, jde, kds, kde     &
                                , ims, ime, jms, jme, kms, kme     &
                                , ips, ipe, jps, jpe, kps, kpe ) 
+        ELSE
+          CALL wrf_debug ( DEBUG_LEVEL, 'Option vis_diagnostics requires: QC, QR, QI, QS, QG' )
         END IF
       ENDIF
 
@@ -933,6 +947,8 @@ CONTAINS
                                , ims, ime, jms, jme, kms, kme     &
                                , ips, ipe, jps, jpe, kps, kpe )
         ENDIF
+      ELSE
+        CALL wrf_debug ( DEBUG_LEVEL, 'Option cloud_diagnostics requires: QC, QI, QS' )
       END IF
 
     ENDIF  ! is_output_timestep
@@ -1785,6 +1801,7 @@ CONTAINS
                              , t2                               &
                              , rh                               &
                              , z                                &
+                             , dz8w                             &
                              , ht                               &
                              , precip                           &
                              , swdown                           &
@@ -1806,7 +1823,8 @@ CONTAINS
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),               &
          INTENT(IN   ) ::                                t_phy  &
                                               ,             rh  &
-                                              ,              z
+                                              ,              z  &
+                                              ,           dz8w
     REAL, DIMENSION( ims:ime, jms:jme ),                        &
          INTENT(IN   ) ::                                   t2  &
                                               ,             ht  &
@@ -1915,7 +1933,7 @@ CONTAINS
               IF ((precip_type(i,j) .eq. 2 .or. precip_type(i,j) .eq. 3) .and. &
               t_phy(i,k,j) .gt. 273.15) THEN
                 melt(i,j)=melt(i,j)+9.8*(((t_phy(i,k,j)-273.15)/273.15)* &
-                          (z(i,k,j)-z(i,k-1,j)))
+                          (dz8w(i,k,j)))
                 IF (melt(i,j) .gt. total_melt) THEN
                   precip_type(i,j)=1  ! Rain
                   melt(i,j)=0.0  ! Reset melting energy in case it re-freezes

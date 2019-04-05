@@ -2051,6 +2051,8 @@ rconfig   integer time_step_fract_num     namelist,domains	1             0      
 rconfig   integer time_step_fract_den     namelist,domains	1             1       ih   "time_step_fract_den"     
 rconfig   integer time_step_dfi           namelist,domains      1            -1       ih   "time_step_dfi"
 
+rconfig   real    reasonable_time_step_ratio namelist,domains   1             6.      ih   "reasonable_time_step_ratio" "Any d01, real-data case with a time step ratio larger than this is stopped"
+
 rconfig   integer min_time_step           namelist,domains      max_domains   -1      h    "min_time_step"
 rconfig   integer min_time_step_den       namelist,domains      max_domains    0      h    "min_time_step denominator"
 rconfig   integer max_time_step           namelist,domains      max_domains   -1      h    "max_time_step"

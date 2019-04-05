@@ -209,7 +209,7 @@
          write(unit=message(1),fmt='(A)') &
             'Alpha control variables are not implemented for cv_options = 3'
          write(unit=message(2),fmt='(A)') &
-            'Please use a different value for cv_options or set ensdim_alpha = 0'
+            'Please set cv_options=5 or 7, or ensdim_alpha=0'
          call da_error(__FILE__,__LINE__,message(1:2))
       end if
    end if

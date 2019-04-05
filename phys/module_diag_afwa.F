@@ -349,47 +349,49 @@ CONTAINS
     ! higher of the surface and the blended winds. Blending
     ! is linear weighted between 50-150 mm/hr precip rates.
     ! -------------------------------------------------------
-    DO j = jms, jme
-      DO i = ims, ime
-        wind_vel = uv_wind ( grid % u10(i,j) , grid % v10(i,j) )
-        prate_mm_per_hr = ( grid % afwa_precip(i,j) / grid % dt ) * 3600.
-
-        ! Is this an area of heavy precip?  Calculate 1km winds to blend down
-        ! -------------------------------------------------------------------
-        IF ( prate_mm_per_hr .GT. 50. ) THEN
-          is_target_level=.false.
-          DO k=kms,kme    
-            IF ( ( zagl(i,k,j) >= 1000. ) .and. &
-                 ( .NOT. is_target_level ) .and. &
-                 ( k .ne. kms ) ) THEN
-              is_target_level = .true.
-              u1km = u_phy(i,k-1,j) + (1000. - (zagl(i,k-1,j))) &
-                     * ((u_phy(i,k,j) - u_phy(i,k-1,j))/(zagl(i,k,j)))
-              v1km = v_phy(i,k-1,j) + (1000. - (zagl(i,k-1,j))) &
-                     * ((v_phy(i,k,j) - v_phy(i,k-1,j))/(zagl(i,k,j)))
-              EXIT ! We've found our level, break the loop
+    IF ( config_flags % afwa_severe_opt == 1 ) THEN
+      DO j = jms, jme
+        DO i = ims, ime
+          wind_vel = uv_wind ( grid % u10(i,j) , grid % v10(i,j) )
+          prate_mm_per_hr = ( grid % afwa_precip(i,j) / grid % dt ) * 3600.
+  
+          ! Is this an area of heavy precip?  Calculate 1km winds to blend down
+          ! -------------------------------------------------------------------
+          IF ( prate_mm_per_hr .GT. 50. ) THEN
+            is_target_level=.false.
+            DO k=kms,kme    
+              IF ( ( zagl(i,k,j) >= 1000. ) .and. &
+                   ( .NOT. is_target_level ) .and. &
+                   ( k .ne. kms ) ) THEN
+                is_target_level = .true.
+                u1km = u_phy(i,k-1,j) + (1000. - (zagl(i,k-1,j))) &
+                       * ((u_phy(i,k,j) - u_phy(i,k-1,j))/(zagl(i,k,j)))
+                v1km = v_phy(i,k-1,j) + (1000. - (zagl(i,k-1,j))) &
+                       * ((v_phy(i,k,j) - v_phy(i,k-1,j))/(zagl(i,k,j)))
+                EXIT ! We've found our level, break the loop
+              ENDIF
+            ENDDO
+            
+            ! Compute blended wind
+            ! --------------------
+            factor = MAX ( ( ( 150. - prate_mm_per_hr ) / 100. ), 0. )
+            ublend = grid % u10(i,j) * factor + u1km * (1. - factor)
+            vblend = grid % v10(i,j) * factor + v1km * (1. - factor)
+            wind_blend = uv_wind ( ublend, vblend )
+  
+            ! Set the surface wind to the blended wind if higher
+            ! --------------------------------------------------
+            IF ( wind_blend .GT. wind_vel ) THEN
+              wind_vel = wind_blend
             ENDIF
-          ENDDO
-          
-          ! Compute blended wind
-          ! --------------------
-          factor = MAX ( ( ( 150. - prate_mm_per_hr ) / 100. ), 0. )
-          ublend = grid % u10(i,j) * factor + u1km * (1. - factor)
-          vblend = grid % v10(i,j) * factor + v1km * (1. - factor)
-          wind_blend = uv_wind ( ublend, vblend )
-
-          ! Set the surface wind to the blended wind if higher
-          ! --------------------------------------------------
-          IF ( wind_blend .GT. wind_vel ) THEN
-            wind_vel = wind_blend
           ENDIF
-        ENDIF
-
-        IF ( wind_vel .GT. grid % wspd10max(i,j) ) THEN
-          grid % wspd10max(i,j) = wind_vel
-        ENDIF
+  
+          IF ( wind_vel .GT. grid % wspd10max(i,j) ) THEN
+            grid % wspd10max(i,j) = wind_vel
+          ENDIF
+        ENDDO
       ENDDO
-    ENDDO
+    ENDIF
 
     ! Calculate 0-2000 foot (0 - 609.6 meter) shear.
     ! ----------------------------------------------
@@ -448,13 +450,11 @@ CONTAINS
       IF ( is_after_history_dump ) THEN
         DO j = jms, jme
           DO i = ims, ime
-!            grid%wspd10max(i,j) = 0.
             grid%w_up_max(i,j) = 0.
             grid%w_dn_max(i,j) = 0.
             grid%tcoli_max(i,j) = 0.
             grid%grpl_flx_max(i,j) = 0.
             grid%up_heli_max(i,j) = 0.
-!            grid%refd_max(i,j) = 0.
             grid%afwa_tornado(i,j) = 0.
             grid%midrh_min_old(i,j) = grid%midrh_min(i,j) ! Save old midrh_min
             grid%midrh_min(i,j) = 999.
@@ -971,8 +971,6 @@ CONTAINS
                              , afwa_hail                        &
                              , cape                             &
                              , cin                              &
-!                             , cape_mu                          &
-!                             , cin_mu                           &
                              , zlfc                             &
                              , plfc                             &
                              , lidx                             &
@@ -1056,14 +1054,6 @@ CONTAINS
                                               ,    tornado_dur 
 
 
-!    REAL, DIMENSION( ims:ime, jms:jme ),                        &
-!         INTENT(  OUT) ::                                 cape  &
-!                                              ,            cin  &
-!                                              ,        cape_mu  &
-!                                              ,         cin_mu  &
-!                                              ,           zlfc  &
-!                                              ,           plfc  &
-!                                              ,           lidx
     REAL, DIMENSION( ims:ime, jms:jme ),                        &
          INTENT(INOUT) ::                                 cape  &
                                               ,            cin  &

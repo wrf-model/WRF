@@ -270,6 +270,73 @@
       END IF
 
 !-----------------------------------------------------------------------
+! Check that the dimensions are correctly secified when sf_urban_physics = 2 and 3
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % sf_urban_physics(i) == bepscheme .OR. &
+              model_config_rec % sf_urban_physics(i) == bep_bemscheme )  THEN
+           IF ( model_config_rec % num_urban_ndm .NE. 2 ) THEN
+             wrf_err_message = '--- ERROR: num_urban_ndm is wrong'
+             CALL wrf_message ( wrf_err_message )
+             wrf_err_message = '--- Please refer to example.namelist for correct setting of num_urban_ndm'
+             CALL wrf_message ( wrf_err_message )
+             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+             count_fatal_error = count_fatal_error + 1
+           END IF
+           IF ( model_config_rec % num_urban_nz .NE. 18 ) THEN
+             wrf_err_message = '--- ERROR: num_urban_nz is wrong'
+             CALL wrf_message ( wrf_err_message )
+             wrf_err_message = '--- Please refer to example.namelist for correct setting of num_urban_nz'
+             CALL wrf_message ( wrf_err_message )
+             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+             count_fatal_error = count_fatal_error + 1
+           END IF
+           IF ( model_config_rec % num_urban_ng .NE. 10 ) THEN
+             wrf_err_message = '--- ERROR: num_urban_ng is wrong'
+             CALL wrf_message ( wrf_err_message )
+             wrf_err_message = '--- Please refer to example.namelist for correct setting of num_urban_ng'
+             CALL wrf_message ( wrf_err_message )
+             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+             count_fatal_error = count_fatal_error + 1
+           END IF
+           IF ( model_config_rec % num_urban_nwr .NE. 10 ) THEN
+             wrf_err_message = '--- ERROR: num_urban_nwr is wrong'
+             CALL wrf_message ( wrf_err_message )
+             wrf_err_message = '--- Please refer to example.namelist for correct setting of num_urban_nwr'
+             CALL wrf_message ( wrf_err_message )
+             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+             count_fatal_error = count_fatal_error + 1
+           END IF
+         END IF
+         IF ( model_config_rec % sf_urban_physics(i) == bep_bemscheme ) THEN 
+           IF ( model_config_rec % num_urban_nf .NE. 10 ) THEN
+             wrf_err_message = '--- ERROR: num_urban_nf is wrong'
+             CALL wrf_message ( wrf_err_message )
+             wrf_err_message = '--- Please refer to example.namelist for correct setting of num_urban_nf'
+             CALL wrf_message ( wrf_err_message )
+             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+             count_fatal_error = count_fatal_error + 1
+           END IF
+           IF ( model_config_rec % num_urban_ngb .NE. 10 ) THEN
+             wrf_err_message = '--- ERROR: num_urban_ngb is wrong'
+             CALL wrf_message ( wrf_err_message )
+             wrf_err_message = '--- Please refer to example.namelist for correct setting of num_urban_ngb'
+             CALL wrf_message ( wrf_err_message )
+             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+             count_fatal_error = count_fatal_error + 1
+           END IF
+           IF ( model_config_rec % num_urban_nbui.NE. 15 ) THEN
+             wrf_err_message = '--- ERROR: num_urban_nbui is wrong'
+             CALL wrf_message ( wrf_err_message )
+             wrf_err_message = '--- Please refer to example.namelist for correct setting of num_urban_nbui'
+             CALL wrf_message ( wrf_err_message )
+             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+             count_fatal_error = count_fatal_error + 1
+           END IF
+         END IF
+      ENDDO
+
+!-----------------------------------------------------------------------
 ! Check that mosiac option cannot turn on when sf_urban_physics = 2 and 3
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom

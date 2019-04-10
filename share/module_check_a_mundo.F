@@ -67,6 +67,52 @@
 !
       INTEGER :: count_fatal_error
 
+      !  These functions are located with in the Urban Physics files, but
+      !  not within the confines of the modules. Since we are in the share
+      !  directory, we need to break an possible circular build dependencies.
+
+      INTERFACE
+         INTEGER FUNCTION bep_nurbm()
+         END FUNCTION bep_nurbm
+
+         INTEGER FUNCTION bep_ndm()
+         END FUNCTION bep_ndm
+
+         INTEGER FUNCTION bep_nz_um()
+         END FUNCTION bep_nz_um
+
+         INTEGER FUNCTION bep_ng_u()
+         END FUNCTION bep_ng_u
+
+         INTEGER FUNCTION bep_nwr_u()
+         END FUNCTION bep_nwr_u
+
+         INTEGER FUNCTION bep_bem_nurbm()
+         END FUNCTION bep_bem_nurbm
+
+         INTEGER FUNCTION bep_bem_ndm()
+         END FUNCTION bep_bem_ndm
+
+         INTEGER FUNCTION bep_bem_nz_um()
+         END FUNCTION bep_bem_nz_um
+
+         INTEGER FUNCTION bep_bem_ng_u()
+         END FUNCTION bep_bem_ng_u
+
+         INTEGER FUNCTION bep_bem_nwr_u()
+         END FUNCTION bep_bem_nwr_u
+
+         INTEGER FUNCTION bep_bem_nf_u()
+         END FUNCTION bep_bem_nf_u
+
+         INTEGER FUNCTION bep_bem_ngb_u()
+         END FUNCTION bep_bem_ngb_u
+
+         INTEGER FUNCTION bep_bem_nbui_max() 
+         END FUNCTION bep_bem_nbui_max
+      END INTERFACE
+
+
 !-----------------------------------------------------------------------
 ! Set up the WRF Hydro namelist option to allow dynamic allocation of
 ! variables.
@@ -270,69 +316,24 @@
       END IF
 
 !-----------------------------------------------------------------------
-! Check that the dimensions are correctly secified when sf_urban_physics = 2 and 3
+! Assign the dimensions for the urban options to the values defined in 
+! each of those respective modules.
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec % sf_urban_physics(i) == bepscheme .OR. &
-              model_config_rec % sf_urban_physics(i) == bep_bemscheme )  THEN
-           IF ( model_config_rec % num_urban_ndm .EQ. 1 ) THEN
-             wrf_err_message = '--- ERROR: num_urban_ndm is wrong'
-             CALL wrf_message ( wrf_err_message )
-             wrf_err_message = '--- Please refer to examples.namelist for the correct setting of num_urban_ndm'
-             CALL wrf_message ( wrf_err_message )
-             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-             count_fatal_error = count_fatal_error + 1
-           END IF
-           IF ( model_config_rec % num_urban_nz .EQ. 1 ) THEN
-             wrf_err_message = '--- ERROR: num_urban_nz is wrong'
-             CALL wrf_message ( wrf_err_message )
-             wrf_err_message = '--- Please refer to examples.namelist for the correct setting of num_urban_nz'
-             CALL wrf_message ( wrf_err_message )
-             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-             count_fatal_error = count_fatal_error + 1
-           END IF
-           IF ( model_config_rec % num_urban_ng .EQ. 1 ) THEN
-             wrf_err_message = '--- ERROR: num_urban_ng is wrong'
-             CALL wrf_message ( wrf_err_message )
-             wrf_err_message = '--- Please refer to examples.namelist for the correct setting of num_urban_ng'
-             CALL wrf_message ( wrf_err_message )
-             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-             count_fatal_error = count_fatal_error + 1
-           END IF
-           IF ( model_config_rec % num_urban_nwr .EQ. 1 ) THEN
-             wrf_err_message = '--- ERROR: num_urban_nwr is wrong'
-             CALL wrf_message ( wrf_err_message )
-             wrf_err_message = '--- Please refer to examples.namelist for the correct setting of num_urban_nwr'
-             CALL wrf_message ( wrf_err_message )
-             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-             count_fatal_error = count_fatal_error + 1
-           END IF
+         IF ( model_config_rec % sf_urban_physics(i) == bepscheme     ) THEN
+           model_config_rec % num_urban_ndm  = bep_ndm()
+           model_config_rec % num_urban_nz   = bep_nz_um()
+           model_config_rec % num_urban_ng   = bep_ng_u()
+           model_config_rec % num_urban_nwr  = bep_nwr_u()
          END IF
          IF ( model_config_rec % sf_urban_physics(i) == bep_bemscheme ) THEN 
-           IF ( model_config_rec % num_urban_nf .EQ. 1 ) THEN
-             wrf_err_message = '--- ERROR: num_urban_nf is wrong'
-             CALL wrf_message ( wrf_err_message )
-             wrf_err_message = '--- Please refer to examples.namelist for the correct setting of num_urban_nf'
-             CALL wrf_message ( wrf_err_message )
-             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-             count_fatal_error = count_fatal_error + 1
-           END IF
-           IF ( model_config_rec % num_urban_ngb .EQ. 1 ) THEN
-             wrf_err_message = '--- ERROR: num_urban_ngb is wrong'
-             CALL wrf_message ( wrf_err_message )
-             wrf_err_message = '--- Please refer to examples.namelist for the correct setting of num_urban_ngb'
-             CALL wrf_message ( wrf_err_message )
-             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-             count_fatal_error = count_fatal_error + 1
-           END IF
-           IF ( model_config_rec % num_urban_nbui .EQ. 1 ) THEN
-             wrf_err_message = '--- ERROR: num_urban_nbui is wrong'
-             CALL wrf_message ( wrf_err_message )
-             wrf_err_message = '--- Please refer to examples.namelist for the correct setting of num_urban_nbui'
-             CALL wrf_message ( wrf_err_message )
-             CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-             count_fatal_error = count_fatal_error + 1
-           END IF
+           model_config_rec % num_urban_ndm  = bep_bem_ndm()
+           model_config_rec % num_urban_nz   = bep_bem_nz_um()
+           model_config_rec % num_urban_ng   = bep_bem_ng_u()
+           model_config_rec % num_urban_nwr  = bep_bem_nwr_u()
+           model_config_rec % num_urban_nf   = bep_bem_nf_u()
+           model_config_rec % num_urban_ngb  = bep_bem_ngb_u()
+           model_config_rec % num_urban_nbui = bep_bem_nbui_max()
          END IF
       ENDDO
 

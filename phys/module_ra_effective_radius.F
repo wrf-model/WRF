@@ -179,9 +179,9 @@
 !
      rqc(k) = max(r1,qc(k)*rho(k))
      qcmps(k)  = qc(k)-qccps(k)
-     rqcmps(k) = qcmps(k)*rho(k)
+     rqcmps(k) = max(r1,qcmps(k)*rho(k))
      if(f_qnc) then
-       lammps    = 2.*cdm2*(pidnc*nc(k)/rqcmps(k))**obmr
+       lammps    = 2.*cdm2*(pidnc*MAX(r1,nc(k))/rqcmps(k))**obmr
      else
        lammps   = (pidnc*nc0/rqcmps(k))**obmr
      endif
@@ -208,7 +208,7 @@
    if (has_qc) then
      do k = kts,kte_in
        if (rqc(k).le.r1.or.rnc(k).le.r2) cycle
-       lamc = 2.*cdm2*(pidnc*(nc(k)+nccps(k))/rqc(k))**obmr
+       lamc = 2.*cdm2*(pidnc*(MAX(r1,nc(k))+nccps(k))/rqc(k))**obmr
        re_qc(k) =  max(2.51e-6,min(sngl(3.0/lamc),50.e-6))
      enddo
    endif

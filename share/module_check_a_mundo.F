@@ -67,6 +67,52 @@
 !
       INTEGER :: count_fatal_error
 
+      !  These functions are located with in the Urban Physics files, but
+      !  not within the confines of the modules. Since we are in the share
+      !  directory, we need to break possible circular build dependencies.
+
+      INTERFACE
+         INTEGER FUNCTION bep_nurbm()
+         END FUNCTION bep_nurbm
+
+         INTEGER FUNCTION bep_ndm()
+         END FUNCTION bep_ndm
+
+         INTEGER FUNCTION bep_nz_um()
+         END FUNCTION bep_nz_um
+
+         INTEGER FUNCTION bep_ng_u()
+         END FUNCTION bep_ng_u
+
+         INTEGER FUNCTION bep_nwr_u()
+         END FUNCTION bep_nwr_u
+
+         INTEGER FUNCTION bep_bem_nurbm()
+         END FUNCTION bep_bem_nurbm
+
+         INTEGER FUNCTION bep_bem_ndm()
+         END FUNCTION bep_bem_ndm
+
+         INTEGER FUNCTION bep_bem_nz_um()
+         END FUNCTION bep_bem_nz_um
+
+         INTEGER FUNCTION bep_bem_ng_u()
+         END FUNCTION bep_bem_ng_u
+
+         INTEGER FUNCTION bep_bem_nwr_u()
+         END FUNCTION bep_bem_nwr_u
+
+         INTEGER FUNCTION bep_bem_nf_u()
+         END FUNCTION bep_bem_nf_u
+
+         INTEGER FUNCTION bep_bem_ngb_u()
+         END FUNCTION bep_bem_ngb_u
+
+         INTEGER FUNCTION bep_bem_nbui_max() 
+         END FUNCTION bep_bem_nbui_max
+      END INTERFACE
+
+
 !-----------------------------------------------------------------------
 ! Set up the WRF Hydro namelist option to allow dynamic allocation of
 ! variables.
@@ -268,6 +314,28 @@
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          count_fatal_error = count_fatal_error + 1
       END IF
+
+!-----------------------------------------------------------------------
+! Assign the dimensions for the urban options to the values defined in 
+! each of those respective modules.
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % sf_urban_physics(i) == bepscheme     ) THEN
+           model_config_rec % num_urban_ndm  = bep_ndm()
+           model_config_rec % num_urban_nz   = bep_nz_um()
+           model_config_rec % num_urban_ng   = bep_ng_u()
+           model_config_rec % num_urban_nwr  = bep_nwr_u()
+         END IF
+         IF ( model_config_rec % sf_urban_physics(i) == bep_bemscheme ) THEN 
+           model_config_rec % num_urban_ndm  = bep_bem_ndm()
+           model_config_rec % num_urban_nz   = bep_bem_nz_um()
+           model_config_rec % num_urban_ng   = bep_bem_ng_u()
+           model_config_rec % num_urban_nwr  = bep_bem_nwr_u()
+           model_config_rec % num_urban_nf   = bep_bem_nf_u()
+           model_config_rec % num_urban_ngb  = bep_bem_ngb_u()
+           model_config_rec % num_urban_nbui = bep_bem_nbui_max()
+         END IF
+      ENDDO
 
 !-----------------------------------------------------------------------
 ! Check that mosiac option cannot turn on when sf_urban_physics = 2 and 3

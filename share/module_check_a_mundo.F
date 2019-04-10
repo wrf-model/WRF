@@ -69,7 +69,7 @@
 
       !  These functions are located with in the Urban Physics files, but
       !  not within the confines of the modules. Since we are in the share
-      !  directory, we need to break an possible circular build dependencies.
+      !  directory, we need to break possible circular build dependencies.
 
       INTERFACE
          INTEGER FUNCTION bep_nurbm()

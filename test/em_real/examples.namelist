@@ -56,28 +56,17 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  opt_stc  = 1,
 /
 
-** Using UCM urban  model
+** Using UCM urban model
 &physics
- sf_urban_physics                    = 1, 1, 1,
+ sf_urban_physics                    = 1,      1,     1,
 
-** Using BEP urban  model
+** Using BEP urban model
 &physics
- sf_urban_physics                    = 2, 2, 2,
- num_urban_ndm                       = 2
- num_urban_nz                        = 18
- num_urban_ng                        = 10
- num_urban_nwr                       = 10
+ sf_urban_physics                    = 2,      2,     2,
 
-** Using BEM urban  model
+** Using BEM urban model
 &physics
- sf_urban_physics                    = 3, 3, 3,
- num_urban_ndm                       = 2
- num_urban_nz                        = 18
- num_urban_ng                        = 10
- num_urban_nwr                       = 10
- num_urban_nf                        = 10
- num_urban_ngb                       = 10
- num_urban_nbui                      = 15
+ sf_urban_physics                    = 3,      3,     3,
 
 ** Using lake model
 &physics

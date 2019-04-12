@@ -238,8 +238,8 @@
      enddo
 !
      do k = kts,kte_in
-       qsqg(k) = qs(k)+qg(k)
-       re_qs(k) = (re_qs(k)*qs(k)+re_qg(k)*qg(k))/qsqg(k)
+       qsqg(k) = max(r1,qs(k)+qg(k))
+       re_qs(k) = (re_qs(k)*max(0.,qs(k))+re_qg(k)*max(0.,qg(k)))/qsqg(k)
      enddo     
    endif
 !

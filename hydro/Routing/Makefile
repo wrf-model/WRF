@@ -17,7 +17,9 @@ OBJS = \
 	Noah_distr_routing.o \
 	module_channel_routing.o \
 	module_lsm_forcing.o \
-	module_date_utilities_rt.o
+	module_date_utilities_rt.o \
+	module_NWM_io_dict.o \
+	module_NWM_io.o
 
 all:	$(OBJS)
 
@@ -57,6 +59,15 @@ module_HYDRO_io.o:  module_HYDRO_utils.o \
                     ../Data_Rec/module_namelist.o \
 	 	    ../Data_Rec/module_RT_data.o 
 endif
+
+module_NWM_io_dict: ../Data_Rec/module_namelist.o
+
+module_NWM_io: module_HYDRO_utils.o \
+               module_NWM_io_dict.o \
+               module_HYDRO_io.o \
+               module_date_utilities_rt.o \
+               ../Data_Rec/module_namelist.o \
+               ../Data_Rec/module_RT_data.o
 
 module_HYDRO_utils.o: ../Data_Rec/module_namelist.o ../Data_Rec/module_RT_data.o
 

@@ -162,6 +162,7 @@ CONTAINS
                           grid%num_stoch_levels,grid%num_stoch_levels,        &
                           grid%num_stoch_levels,grid%num_stoch_levels,        &
                           config_flags%restart, grid%iseedarr_skebs,          &
+                          config_flags%seed_dim,                              &
                           grid%DX,grid%DY,grid%skebs_vertstruc,               &
                           grid%rt_tendf_stoch,                                &
                           grid%stddev_cutoff_sppt,grid%gridpt_stddev_sppt, & 
@@ -181,6 +182,7 @@ CONTAINS
                            grid% num_stoch_levels,grid% num_stoch_levels,     &
                            grid% num_stoch_levels,grid% num_stoch_levels,     &
                            config_flags%restart, grid%iseedarr_skebs,         &
+                           config_flags%seed_dim,                             &
                            grid%DX,grid%DY,grid%skebs_vertstruc,              &
                            grid%ru_tendf_stoch,                               &
                            grid%stddev_cutoff_sppt,grid%gridpt_stddev_sppt, & 
@@ -200,6 +202,7 @@ CONTAINS
                            grid% num_stoch_levels,grid% num_stoch_levels,     &
                            grid% num_stoch_levels,grid% num_stoch_levels,     &
                            config_flags%restart, grid%iseedarr_skebs,         &
+                           config_flags%seed_dim,                             &
                            grid%DX,grid%DY,grid%skebs_vertstruc,              &
                            grid%rv_tendf_stoch,                               &
                            grid%stddev_cutoff_sppt,grid%gridpt_stddev_sppt, & 
@@ -221,6 +224,7 @@ CONTAINS
                           grid%num_stoch_levels,grid%num_stoch_levels,        &
                           grid%num_stoch_levels,grid%num_stoch_levels,        &
                           config_flags%restart, grid%iseedarr_sppt,           &
+                          config_flags%seed_dim,                              &
                           grid%DX,grid%DY,grid%sppt_vertstruc,                &
                           grid%rstoch,                                        &
                           grid%stddev_cutoff_sppt,grid%gridpt_stddev_sppt, & 
@@ -242,6 +246,7 @@ CONTAINS
                            grid%num_stoch_levels,grid%num_stoch_levels,        &
                            grid%num_stoch_levels,grid%num_stoch_levels,        &
                            config_flags%restart, grid%iseedarr_rand_pert,      &
+                           config_flags%seed_dim,                              &
                            grid%DX,grid%DY,grid%rand_pert_vertstruc,           &
                            grid%RAND_PERT,                                     &
                            grid%stddev_cutoff_rand_pert,grid%gridpt_stddev_rand_pert, & 
@@ -261,9 +266,10 @@ CONTAINS
                            ipsy,ipey,jpsy,jpey,kpsy,kpey,                      &
                            grid%num_stoch_levels,grid%num_stoch_levels,        &
                            grid%num_stoch_levels,grid%num_stoch_levels,        &
-                           config_flags%restart, grid%iseedarr_spp_conv,          &
+                           config_flags%restart, grid%iseedarr_spp_conv,       &
+                           config_flags%seed_dim,                              &
                            grid%DX,grid%DY,grid%vertstruc_spp_conv,            &
-                           grid%pattern_spp_conv,                             & 
+                           grid%pattern_spp_conv,                              & 
                            grid%stddev_cutoff_spp_conv,grid%gridpt_stddev_spp_conv, & 
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT       )
       ENDIF !spp_conv
@@ -281,9 +287,10 @@ CONTAINS
                            ipsy,ipey,jpsy,jpey,kpsy,kpey,                      &
                            grid%num_stoch_levels,grid%num_stoch_levels,        &
                            grid%num_stoch_levels,grid%num_stoch_levels,        &
-                           config_flags%restart, grid%iseedarr_spp_pbl,           &
+                           config_flags%restart, grid%iseedarr_spp_pbl,        &
+                           config_flags%seed_dim,                              &
                            grid%DX,grid%DY,grid%vertstruc_spp_pbl,             &
-                           grid%pattern_spp_pbl,                             & 
+                           grid%pattern_spp_pbl,                               & 
                            grid%stddev_cutoff_spp_pbl,grid%gridpt_stddev_spp_pbl, & 
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT       )
       ENDIF !spp_pbl
@@ -301,9 +308,10 @@ CONTAINS
                            ipsy,ipey,jpsy,jpey,kpsy,kpey,                      &
                            grid%num_stoch_levels,grid%num_stoch_levels,        &
                            grid%num_stoch_levels,grid%num_stoch_levels,        &
-                           config_flags%restart, grid%iseedarr_spp_lsm,           &
+                           config_flags%restart, grid%iseedarr_spp_lsm,        &
+                           config_flags%seed_dim,                              &
                            grid%DX,grid%DY,grid%vertstruc_spp_lsm,             &
-                           grid%pattern_spp_lsm,                             & 
+                           grid%pattern_spp_lsm,                               & 
                            grid%stddev_cutoff_spp_lsm,grid%gridpt_stddev_spp_lsm, & 
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT       )
       ENDIF !spp_lsm

@@ -91,7 +91,8 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_hsbobs .OR. use_kma1dvar .OR. use_filtered_rad .OR. &
       use_ssmisobs .OR. use_hirs4obs .OR. use_mhsobs .OR. use_pseudo_rad .OR. &
       use_mwtsobs  .OR. use_mwhsobs .OR. use_atmsobs .OR. use_simulated_rad .OR. &
-      use_iasiobs .OR. use_seviriobs .OR. use_amsr2obs .OR. use_goesimgobs) then
+      use_iasiobs .OR. use_seviriobs .OR. use_amsr2obs .OR. use_goesimgobs .OR. &
+      use_ahiobs) then
       use_rad = .true.
    else
       use_rad = .false.
@@ -188,6 +189,20 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
          pseudo_var(i:i)=char(icode + 97 - 65)
       end if
    end do
+
+   if ( num_pseudo > 0 .and.                   &
+        (trim(adjustl(pseudo_var))=='qcw' .or. &
+         trim(adjustl(pseudo_var))=='qrn' .or. &
+         trim(adjustl(pseudo_var))=='qci' .or. &
+         trim(adjustl(pseudo_var))=='qsn' .or. &
+         trim(adjustl(pseudo_var))=='qgr') ) then
+      if ( cloud_cv_options < 2 ) then
+         write(unit=message(1),fmt='(A,A)') &
+            'cloud_cv_options should be 2 or 3 for pseudo_var = ', trim(pseudo_var)
+         call da_error(__FILE__,__LINE__,message(1:1))
+      end if
+   end if
+
    pseudo_tpw = .false.
    pseudo_ztd = .false.
    pseudo_ref = .false.

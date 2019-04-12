@@ -4,8 +4,6 @@
 MODULE module_mp_lin
 
    USE     module_wrf_error
-   USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
-   USE module_domain, ONLY : HISTORY_ALARM, Is_alarm_tstep
    USE module_mp_radar
 !
    REAL    , PARAMETER, PRIVATE ::       RH = 1.0

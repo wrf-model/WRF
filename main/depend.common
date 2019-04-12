@@ -248,6 +248,8 @@ module_shcu_camuwshcu.o: module_cam_support.o \
                 module_cam_physconst.o \
                 module_bl_camuwpbl_driver.o
 
+module_shcu_deng.o:
+
 module_cu_camzm_driver.o: ../share/module_model_constants.o \
                 module_cam_shr_kind_mod.o \
                 module_cam_support.o \
@@ -418,8 +420,6 @@ module_cam_mp_radconstants.o : module_cam_shr_kind_mod.o \
 		module_cam_support.o 
 module_cam_infnan.o: module_cam_shr_kind_mod.o
 
-module_ra_goddard.o : ../frame/module_wrf_error.o
-
 module_mp_gsfcgce.o : ../frame/module_wrf_error.o \
 		module_mp_radar.o
 
@@ -460,7 +460,8 @@ module_sf_noahmpdrv.o: module_sf_noahmplsm.o \
 			module_sf_noahmp_glacier.o \
 			module_sf_noahmp_groundwater.o \
 			module_sf_gecros.o \
-			../share/module_model_constants.o
+			../share/module_model_constants.o \
+                        module_sf_urban.o module_sf_bep.o module_sf_bep_bem.o
 
 module_sf_noahlsm_glacial_only.o: module_sf_noahlsm.o module_sf_noahmplsm.o
 
@@ -499,7 +500,6 @@ module_physics_addtendc.o: \
 		$(PHYS_CU) \
 		../frame/module_state_description.o \
 		../frame/module_configure.o
-
 
 module_physics_init.o : \
 		module_ra_rrtm.o		\
@@ -565,6 +565,7 @@ module_physics_init.o : \
 		module_cu_camzm_driver.o        \
 		module_cu_kfcup.o               \
 		module_shcu_camuwshcu.o		\
+		module_shcu_deng.o              \
                 module_shcu_grims.o             \
 		module_mp_sbu_ylin.o		\
 		module_mp_wsm3.o		\
@@ -578,6 +579,7 @@ module_physics_init.o : \
 		module_fddaobs_rtfdda.o		\
 		module_mp_thompson.o            \
 		module_mp_gsfcgce.o 		\
+		module_mp_gsfcgce_4ice_nuwrf.o  \
                 module_mp_morr_two_moment.o     \
                 module_mp_milbrandt2mom.o     \
                 module_mp_nssl_2mom.o         \
@@ -591,6 +593,8 @@ module_physics_init.o : \
 		module_cam_mp_modal_aero_initialize_data_phys.o \
 		module_cam_support.o \
 		module_wind_fitch.o \
+		module_gocart_coupling.o \
+		module_data_gocart_dust.o \
 		../frame/module_state_description.o \
 		../frame/module_configure.o \
 		../frame/module_wrf_error.o \
@@ -607,6 +611,7 @@ module_microphysics_driver.o: \
 		module_mp_fer_hires.o module_mp_HWRF.o  \
 		module_mp_thompson.o            \
 		module_mp_gsfcgce.o 		\
+		module_mp_gsfcgce_4ice_nuwrf.o  \
                 module_mp_morr_two_moment.o     \
                 module_mp_morr_two_moment_aero.o     \
                 module_mp_milbrandt2mom.o     \
@@ -617,10 +622,13 @@ module_microphysics_driver.o: \
 		../frame/module_state_description.o \
 		../frame/module_wrf_error.o \
 		../frame/module_configure.o \
+		../frame/module_comm_dm.o \
+		../frame/module_dm.o \
 		../share/module_model_constants.o 
 
 module_shallowcu_driver.o: \
 		module_shcu_camuwshcu_driver.o \
+		module_shcu_deng.o             \
 		../frame/module_state_description.o \
 		../share/module_model_constants.o
 
@@ -786,7 +794,7 @@ module_diag_afwa.o: \
 		../frame/module_configure.o 		\
 		../frame/module_streams.o		\
 		../external/esmf_time_f90/module_utility.o \
-		../share/module_model_constants.o
+	        ../share/module_model_constants.o
 
 module_diag_hailcast.o: \
 		../frame/module_configure.o 		\
@@ -911,6 +919,17 @@ module_ltng_iccg.o :
 module_ra_aerosol.o :\
 	../frame/module_wrf_error.o
 
+module_gocart_coupling.o:
+
+module_ra_goddard.o : ../frame/module_wrf_error.o \
+                            module_gocart_coupling.o \
+                            module_checkerror.o
+
+module_mp_gsfcgce_4ice_nuwrf.o : ../frame/module_wrf_error.o \
+                            module_gocart_coupling.o \
+                            module_checkerror.o \
+                            module_mp_radar.o
+
 # End of DEPENDENCIES for phys
 
 
@@ -927,6 +946,8 @@ module_trajectory.o: ../frame/module_domain.o \
 
 solve_interface.o: solve_em.int ../frame/module_domain.o ../frame/module_configure.o \
 		../frame/module_timing.o ../frame/module_driver_constants.o \
+		../frame/module_wrf_error.o \
+		../frame/module_state_description.o ../phys/module_checkerror.o \
 		../frame/module_wrf_error.o module_trajectory.o
 
 start_domain.o: start_domain_em.int wrf_timeseries.o track_driver.o ../frame/module_domain.o ../frame/module_configure.o ../share/module_llxy.o
@@ -961,6 +982,8 @@ wrf_fddaobs_in.o: \
 wrf_timeseries.o: wrf_tsin.o \
 		module_model_constants.o \
 		module_llxy.o \
+		module_model_constants.o \
+		module_string_tools.o \
 		../frame/module_domain.o \
 		../frame/module_configure.o \
 		../frame/module_dm.o

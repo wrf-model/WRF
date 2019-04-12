@@ -7,8 +7,8 @@ PROGRAM make_p3_lookuptable1
 !
 !  Note:  compile with double-precision (pgf90 -r8 create_p3_lookupTable_1.f90)
 !
-! P3 package version: v2.4.7
-! Last modified     : 2017-06-28
+! P3 lookup table version: v4.1
+! Last modified     : 2019-03-13
 !______________________________________________________________________________________
 
  implicit none
@@ -48,6 +48,9 @@ PROGRAM make_p3_lookuptable1
 
  real, parameter            :: Dm_max = 2000.e-6   ! max. mean ice size for lambda limiter
  real, parameter            :: Dm_min =    2.e-6   ! min. mean ice size for lambda limiter
+
+! modify for constant mu_r, set value here
+ real, parameter            :: mu_r_constant = 0.
 
  real, parameter            :: thrd = 1./3.
  real, parameter            :: sxth = 1./6.
@@ -165,7 +168,7 @@ PROGRAM make_p3_lookuptable1
     stop
  endif
 
- open(unit=1,file='./p3_lookup_table_1-v2.4.7.dat',status='unknown')
+ open(unit=1,file='./p3_lookup_table_1.dat-v4.1',status='unknown')
 
 !.........................................................
 
@@ -206,7 +209,9 @@ PROGRAM make_p3_lookuptable1
 111 continue
 
 ! assign lookup table values
-    mu_r_table(i) = mu_r
+! modify for constant mu_r = 1
+!    mu_r_table(i) = mu_r
+    mu_r_table(i) = mu_r_constant
 
  enddo !i-loop
 
@@ -1029,19 +1034,23 @@ PROGRAM make_p3_lookuptable1
 ! get mu_r from lamr
                 dum = 1./lamv
 
-                if (dum.lt.282.e-6) then
-                   mu_r = 8.282
-                elseif (dum.ge.282.e-6 .and. dum.lt.502.e-6) then
-! interpolate
-                   rdumii = (dum-250.e-6)*1.e6*0.5
-                   rdumii = max(rdumii,1.)
-                   rdumii = min(rdumii,150.)
-                   dumii  = int(rdumii)
-                   dumii  = min(149,dumii)
-                   mu_r    = mu_r_table(dumii)+(mu_r_table(dumii+1)-mu_r_table(dumii))*(rdumii-real(dumii))
-                elseif (dum.ge.502.e-6) then
-                   mu_r    = 0.
-                endif
+!                if (dum.lt.282.e-6) then
+!                   mu_r = 8.282
+!                elseif (dum.ge.282.e-6 .and. dum.lt.502.e-6) then
+!! interpolate
+!                   rdumii = (dum-250.e-6)*1.e6*0.5
+!                   rdumii = max(rdumii,1.)
+!                   rdumii = min(rdumii,150.)
+!                   dumii  = int(rdumii)
+!                   dumii  = min(149,dumii)
+!                   mu_r    = mu_r_table(dumii)+(mu_r_table(dumii+1)-mu_r_table(dumii))*(rdumii-real(dumii))
+!                elseif (dum.ge.502.e-6) then
+!                   mu_r    = 0.
+!                endif
+
+! modify for constant mu_r
+                mu_r = mu_r_constant
+
 ! recalculate slope based on mu_r
 !               LAMR = (pi*sxth*rhow*nr(i_Qnorm,k)*gamma(mu_r+4.)/(qr(i_Qnorm,k)*gamma(mu_r+1.)))**thrd
 

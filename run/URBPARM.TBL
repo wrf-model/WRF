@@ -371,6 +371,19 @@ TGLEND: 293.00, 293.00, 293.00
 COP: 3.5, 3.5, 3.5
 
 #
+# BLDAC_FRC: fraction of buildings installed with A/C systems [ - ] 
+#      (sf_urban_physics=3)
+#
+
+BLDAC_FRC: 1.0, 1.0, 1.0
+
+#
+# COOLED_FRC: fraction of cooled floor area in buildings [ - ]
+#      (sf_urban_physics=3)
+#
+COOLED_FRC: 1.0, 1.0, 1.0
+
+#
 # PWIN:  Coverage area fraction of windows in the walls of the building [ - ]
 #      (sf_urban_physics=3)
 #

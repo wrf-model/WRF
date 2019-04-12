@@ -34,8 +34,10 @@ subroutine da_check_max_iv_buoy(iv,ob, it, num_qcstat_conv)
                        num_qcstat_conv(1,buoy,1,1) = num_qcstat_conv(1,buoy,1,1) + 1
                        if(failed) then
                           num_qcstat_conv(2,buoy,1,1) = num_qcstat_conv(2,buoy,1,1) + 1
+                          if ( write_rej_obs_conv ) then
                           write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
                           'buoy',ob_vars(1),iv%info(buoy)%lat(1,n),iv%info(buoy)%lon(1,n),0.01*ob%buoy(n)%p
+                          end if
                        end if
                    end if
                 end if
@@ -47,8 +49,10 @@ subroutine da_check_max_iv_buoy(iv,ob, it, num_qcstat_conv)
                         num_qcstat_conv(1,buoy,2,1) = num_qcstat_conv(1,buoy,2,1) + 1
                         if(failed)then
                            num_qcstat_conv(2,buoy,2,1) = num_qcstat_conv(2,buoy,2,1) + 1
+                           if ( write_rej_obs_conv ) then
                            write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
                            'buoy',ob_vars(2),iv%info(buoy)%lat(1,n),iv%info(buoy)%lon(1,n),0.01*ob%buoy(n)%p
+                           end if
                         end if
                     end if
                 end if
@@ -62,8 +66,10 @@ subroutine da_check_max_iv_buoy(iv,ob, it, num_qcstat_conv)
                         num_qcstat_conv(1,buoy,1,1) = num_qcstat_conv(1,buoy,1,1) + 1
                         if(failed) then
                            num_qcstat_conv(2,buoy,1,1) = num_qcstat_conv(2,buoy,1,1) + 1
+                           if ( write_rej_obs_conv ) then
                            write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
                            'buoy',ob_vars(1),iv%info(buoy)%lat(1,n),iv%info(buoy)%lon(1,n),0.01*ob%buoy(n)%p
+                           end if
                         end if
                     end if
                  end if
@@ -75,8 +81,10 @@ subroutine da_check_max_iv_buoy(iv,ob, it, num_qcstat_conv)
                          num_qcstat_conv(1,buoy,2,1) = num_qcstat_conv(1,buoy,2,1) + 1
                          if(failed)then
                             num_qcstat_conv(2,buoy,2,1) = num_qcstat_conv(2,buoy,2,1) + 1
+                            if ( write_rej_obs_conv ) then
                             write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
                             'buoy',ob_vars(2),iv%info(buoy)%lat(1,n),iv%info(buoy)%lon(1,n),0.01*ob%buoy(n)%p
+                            end if
                          end if
                      end if
                  end if
@@ -112,11 +120,15 @@ subroutine da_check_max_iv_buoy(iv,ob, it, num_qcstat_conv)
 
                   if(failed1 .or. failed2) then
                      num_qcstat_conv(2,buoy,1,1) = num_qcstat_conv(2,buoy,1,1) + 1
+                     if ( write_rej_obs_conv ) then
                      write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
                            'buoy',ob_vars(1),iv%info(buoy)%lat(1,n),iv%info(buoy)%lon(1,n),0.01*ob%buoy(n)%p
+                     end if
                      num_qcstat_conv(2,buoy,2,1) = num_qcstat_conv(2,buoy,2,1) + 1
+                     if ( write_rej_obs_conv ) then
                      write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
                            'buoy',ob_vars(2),iv%info(buoy)%lat(1,n),iv%info(buoy)%lon(1,n),0.01*ob%buoy(n)%p
+                     end if
                   endif
                endif
 
@@ -145,8 +157,10 @@ subroutine da_check_max_iv_buoy(iv,ob, it, num_qcstat_conv)
       num_qcstat_conv(1,buoy,3,1)= num_qcstat_conv(1,buoy,3,1) + 1
       if(failed) then
       num_qcstat_conv(2,buoy,3,1)= num_qcstat_conv(2,buoy,3,1) + 1
+      if ( write_rej_obs_conv ) then
       write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
            'buoy',ob_vars(3),iv%info(buoy)%lat(1,n),iv%info(buoy)%lon(1,n),0.01*ob%buoy(n)%p
+      end if
       end if
       end if
       end if
@@ -158,8 +172,10 @@ subroutine da_check_max_iv_buoy(iv,ob, it, num_qcstat_conv)
       num_qcstat_conv(1,buoy,5,1)= num_qcstat_conv(1,buoy,5,1) + 1
       if(failed) then
       num_qcstat_conv(2,buoy,5,1)= num_qcstat_conv(2,buoy,5,1) + 1
+      if ( write_rej_obs_conv ) then
       write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
            'buoy',ob_vars(5),iv%info(buoy)%lat(1,n),iv%info(buoy)%lon(1,n),0.01*ob%buoy(n)%p
+      end if
       end if
       end if
       end if
@@ -178,8 +194,10 @@ subroutine da_check_max_iv_buoy(iv,ob, it, num_qcstat_conv)
       num_qcstat_conv(1,buoy,4,1)= num_qcstat_conv(1,buoy,4,1) + 1
       if(failed) then
       num_qcstat_conv(2,buoy,4,1)= num_qcstat_conv(2,buoy,4,1) + 1
+      if ( write_rej_obs_conv ) then
       write(qcstat_conv_unit,'(2x,a10,2x,a4,3f12.2)')&
            'buoy',ob_vars(4),iv%info(buoy)%lat(1,n),iv%info(buoy)%lon(1,n),0.01*ob%buoy(n)%p
+      end if
       end if
       end if
       end if

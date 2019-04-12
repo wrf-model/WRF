@@ -147,7 +147,7 @@ all_wrfvar :
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" ext
 	$(MAKE) MODULE_DIRS="$(DA_WRFVAR_MODULES)" toolsdir
 	if [ $(CRTM) -ne 0 ] ; then \
-	  (cd var/external/crtm_2.2.3; $(MAKE) $(J)) ; \
+	  (cd var/external/crtm_2.3.0; $(MAKE) $(J)) ; \
 	fi
 	if [ $(BUFR) ] ; then \
 	  (cd var/external/bufr;  \
@@ -556,8 +556,14 @@ em_real : wrf
                ln -sf ../../run/aerosol_lon.formatted . ;              \
                ln -sf ../../run/aerosol_plev.formatted . ;             \
                ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
-               ln -sf ../../run/p3_lookup_table_1.dat-v2.8.2 . ;              \
-               ln -sf ../../run/p3_lookup_table_2.dat-v2.8.2 . ;              \
+               ln -sf ../../run/p3_lookup_table_1.dat-v4.1 . ;         \
+               ln -sf ../../run/p3_lookup_table_2.dat-v4.1 . ;         \
+               ln -sf ../../run/HLC.TBL . ;                            \
+               ln -sf ../../run/wind-turbine-1.tbl . ;                 \
+               ln -sf ../../run/ishmael-gamma-tab.bin . ;              \
+               ln -sf ../../run/ishmael-qi-qc.bin . ;                  \
+               ln -sf ../../run/ishmael-qi-qr.bin . ;                  \
+               ln -sf ../../run/BROADBAND_CLOUD_GODDARD.bin . ;        \
                if [ $(RWORDSIZE) -eq 8 ] ; then                        \
                   ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;   \
                   ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \
@@ -610,19 +616,25 @@ em_real : wrf
              ln -sf ../../run/aerosol_lat.formatted . ;             \
              ln -sf ../../run/aerosol_lon.formatted . ;             \
              ln -sf ../../run/aerosol_plev.formatted . ;            \
-             ln -sf ../../run/capacity.asc . ;            \
-             ln -sf ../../run/coeff_p.asc . ;            \
-             ln -sf ../../run/coeff_q.asc . ;            \
-             ln -sf ../../run/constants.asc . ;            \
-             ln -sf ../../run/masses.asc . ;            \
-             ln -sf ../../run/termvels.asc . ;            \
+             ln -sf ../../run/capacity.asc . ;                      \
+             ln -sf ../../run/coeff_p.asc . ;                       \
+             ln -sf ../../run/coeff_q.asc . ;                       \
+             ln -sf ../../run/constants.asc . ;                     \
+             ln -sf ../../run/masses.asc . ;                        \
+             ln -sf ../../run/termvels.asc . ;                      \
              ln -sf ../../run/kernels.asc_s_0_03_0_9 . ;            \
-             ln -sf ../../run/kernels_z.asc . ;            \
-             ln -sf ../../run/bulkdens.asc_s_0_03_0_9 . ;            \
-             ln -sf ../../run/bulkradii.asc_s_0_03_0_9 . ;            \
-             ln -sf ../../run/CCN_ACTIVATE.BIN . ;                   \
-             ln -sf ../../run/p3_lookup_table_1.dat-v2.8.2 . ;                   \
-             ln -sf ../../run/p3_lookup_table_2.dat-v2.8.2 . ;                   \
+             ln -sf ../../run/kernels_z.asc . ;                     \
+             ln -sf ../../run/bulkdens.asc_s_0_03_0_9 . ;           \
+             ln -sf ../../run/bulkradii.asc_s_0_03_0_9 . ;          \
+             ln -sf ../../run/CCN_ACTIVATE.BIN . ;                  \
+             ln -sf ../../run/p3_lookup_table_1.dat-v4.1 . ;        \
+             ln -sf ../../run/p3_lookup_table_2.dat-v4.1 . ;        \
+             ln -sf ../../run/HLC.TBL . ;                           \
+             ln -sf ../../run/wind-turbine-1.tbl . ;                \
+             ln -sf ../../run/ishmael-gamma-tab.bin . ;             \
+             ln -sf ../../run/ishmael-qi-qc.bin . ;                 \
+             ln -sf ../../run/ishmael-qi-qr.bin . ;                 \
+             ln -sf ../../run/BROADBAND_CLOUD_GODDARD.bin . ;       \
              if [ $(RWORDSIZE) -eq 8 ] ; then                       \
                 ln -sf ../../run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA ;  \
                 ln -sf ../../run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain ;   \

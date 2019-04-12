@@ -2106,7 +2106,10 @@ CONTAINS
      use module_dm,only: local_communicator
      implicit none
      type(domain), intent(in) :: grid
-     REAL, DIMENSION(:,:),    ALLOCATABLE :: NHLAT,NHLON,NVLAT,NVLON,HRES_SM,&
+     INTEGER,PARAMETER                           :: KNUM=SELECTED_REAL_KIND(13)
+     REAL(KIND=KNUM), DIMENSION(:,:),    ALLOCATABLE :: NHLAT,NHLON,NVLAT,NVLON
+     REAL :: NHLAT_temp,NHLON_temp
+     REAL, DIMENSION(:,:),    ALLOCATABLE :: HRES_SM, &
           HBWGT1, HBWGT2, HBWGT3, HBWGT4
      INTEGER, DIMENSION(:,:), ALLOCATABLE :: IIH, JJH, HNEAR_I,HNEAR_J,CENFLAG
      REAL, INTENT(IN)                     :: NDLMD,NDPHD,NWBD,NSBD,tph0d,tlm0d
@@ -2161,12 +2164,12 @@ CONTAINS
      allocate(HBWGT2(nide,njde),HBWGT3(nide,njde),HBWGT4(nide,njde))
      allocate(HNEAR_I(nide,njde),HNEAR_J(nide,njde),CENFLAG(nide,njde))
 
-     CALL EARTH_LATLON (  NHLAT,NHLON,NVLAT,NVLON,  & ! rotated lat,lon at H&V
-                          NDLMD,NDPHD,NWBD,NSBD,    & ! resolution & SW corner
-                          tph0d,tlm0d,              & ! projection center
-                          1,NIDE+1,1,NJDE+1,1,1,    & ! WRF domain size
-                          1,NIDE,1,NJDE,1,1,        & ! memory size
-                          1,NIDE,1,NJDE,1,1         ) ! patch size
+     CALL EARTH_LATLON_r8 (  NHLAT,NHLON,NVLAT,NVLON,  & ! rotated lat,lon at H&V
+                             NDLMD,NDPHD,NWBD,NSBD,    & ! resolution & SW corner
+                             tph0d,tlm0d,              & ! projection center
+                             1,NIDE+1,1,NJDE+1,1,1,    & ! WRF domain size
+                             1,NIDE,1,NJDE,1,1,        & ! memory size
+                             1,NIDE,1,NJDE,1,1         ) ! patch size
 
      HBWGT1=999
      HBWGT2=999
@@ -2194,6 +2197,7 @@ CONTAINS
      noncount=0
      bigcount=0
      count=0
+     call wrf_debug(1,'Master enters big loop.')
      do nj=1,njde
         do ni=1,nide
            ci=HNEAR_I(ni,nj)
@@ -2209,8 +2213,10 @@ CONTAINS
            maxweight=max(HBWGT1(ni,nj),HBWGT2(ni,nj),HBWGT3(ni,nj),HBWGT4(ni,nj))
            if(maxweight>0.9999 .and. maxweight<1.03) then
               cenflag(ni,nj)=1
+              NHLON_temp=NHLON(ni,nj)
+              NHLAT_temp=NHLAT(ni,nj)
               dist=greatarc(bigHLAT(ci,cj,1),bigHLON(ci,cj,1),&
-                   NHLAT(ni,nj),NHLON(ni,nj))
+                   NHLAT_temp,NHLON_temp)
               if(dist>100) then
                  bigcount=bigcount+1
               endif

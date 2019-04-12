@@ -375,6 +375,8 @@ CONTAINS
     REAL                                :: SAG          ! solar rad absorbed by ground (w/m2)
     REAL                                :: RSSUN        ! sunlit leaf stomatal resistance (s/m)
     REAL                                :: RSSHA        ! shaded leaf stomatal resistance (s/m)
+    REAL, DIMENSION(1:2)                :: ALBSND       ! snow albedo (direct)
+    REAL, DIMENSION(1:2)                :: ALBSNI       ! snow albedo (diffuse)
     REAL                                :: RB           ! leaf boundary layer resistance (s/m)
     REAL                                :: LAISUN       ! sunlit leaf area index (m2/m2)
     REAL                                :: LAISHA       ! shaded leaf area index (m2/m2)
@@ -870,6 +872,7 @@ CONTAINS
             RUNSF   , RUNSB   , APAR    , PSN     , SAV     , SAG     , & ! OUT : 
             FSNO    , NEE     , GPP     , NPP     , FVEGMP  , SALB    , & ! OUT : 
             QSNBOT  , PONDING , PONDING1, PONDING2, RSSUN   , RSSHA   , & ! OUT : 
+            ALBSND  , ALBSNI  ,                                         & ! OUT :
             BGAP    , WGAP    , CHV     , CHB     , EMISSI  ,           & ! OUT : 
             SHG     , SHC     , SHB     , EVG     , EVB     , GHV     , & ! OUT :
 	    GHB     , IRG     , IRC     , IRB     , TR      , EVC     , & ! OUT :
@@ -1198,7 +1201,19 @@ SUBROUTINE TRANSFER_MP_PARAMETERS(VEGTYPE,SOILTYPE,SLOPETYPE,SOILCOLOR,CROPTYPE,
    parameters%Z0SNO      =       Z0SNO_TABLE
    parameters%SSI        =         SSI_TABLE
    parameters%SWEMX      =       SWEMX_TABLE
+   parameters%TAU0         =      TAU0_TABLE
+   parameters%GRAIN_GROWTH = GRAIN_GROWTH_TABLE
+   parameters%EXTRA_GROWTH = EXTRA_GROWTH_TABLE
+   parameters%DIRT_SOOT    =    DIRT_SOOT_TABLE
+   parameters%BATS_COSZ    =    BATS_COSZ_TABLE
+   parameters%BATS_VIS_NEW = BATS_VIS_NEW_TABLE
+   parameters%BATS_NIR_NEW = BATS_NIR_NEW_TABLE
+   parameters%BATS_VIS_AGE = BATS_VIS_AGE_TABLE
+   parameters%BATS_NIR_AGE = BATS_NIR_AGE_TABLE
+   parameters%BATS_VIS_DIR = BATS_VIS_DIR_TABLE
+   parameters%BATS_NIR_DIR = BATS_NIR_DIR_TABLE
    parameters%RSURF_SNOW =  RSURF_SNOW_TABLE
+   parameters%RSURF_EXP  =   RSURF_EXP_TABLE
 
 ! ----------------------------------------------------------------------
 !  Transfer soil parameters
@@ -1253,6 +1268,8 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
   use module_sf_noahmplsm
   use noahmp_tables
         
+  implicit none
+        
   integer,                    intent(in   ) :: nsoil     ! number of soil layers
   real, dimension( 1:nsoil ), intent(inout) :: sand
   real, dimension( 1:nsoil ), intent(inout) :: clay
@@ -1268,6 +1285,7 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
   real, dimension( 1:nsoil ) :: psi_e
     
   type(noahmp_parameters), intent(inout) :: parameters
+  integer :: k
 
   do k = 1,4
     if(sand(k) <= 0 .or. clay(k) <= 0) then
@@ -2483,7 +2501,9 @@ end function checkIfHarvest
                              julian,          julyr,                                        & !H urban
                           frc_urb2d,    utype_urb2d,                                        & !I urban
                                 chs,           chs2,           cqs2,                        & !H
-                   num_urban_layers,                                                        & !I multi-layer urban
+                      num_urban_ndm,  urban_map_zrd,  urban_map_zwd, urban_map_gd,          & !I multi-layer urban
+                       urban_map_zd,  urban_map_zdf,   urban_map_bd, urban_map_wd,          & !I multi-layer urban
+                      urban_map_gbd,  urban_map_fbd,                                        & !I multi-layer urban
                        num_urban_hi,                                                        & !I multi-layer urban
                           trb_urb4d,      tw1_urb4d,      tw2_urb4d,  tgb_urb4d,            & !H multi-layer urban
                          tlev_urb3d,     qlev_urb3d,                                        & !H multi-layer urban
@@ -2714,7 +2734,16 @@ end function checkIfHarvest
      REAL, OPTIONAL,                                                    INTENT(IN   ) :: GMT
      INTEGER, OPTIONAL,                                                 INTENT(IN   ) :: JULDAY
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ),                     INTENT(IN   ) :: XLAT, XLONG
-     INTEGER,                                                           INTENT(IN   ) :: NUM_URBAN_LAYERS
+     INTEGER,                                                           INTENT(IN   ) :: num_urban_ndm
+     INTEGER,                                                           INTENT(IN   ) :: urban_map_zrd
+     INTEGER,                                                           INTENT(IN   ) :: urban_map_zwd
+     INTEGER,                                                           INTENT(IN   ) :: urban_map_gd
+     INTEGER,                                                           INTENT(IN   ) :: urban_map_zd
+     INTEGER,                                                           INTENT(IN   ) :: urban_map_zdf
+     INTEGER,                                                           INTENT(IN   ) :: urban_map_bd
+     INTEGER,                                                           INTENT(IN   ) :: urban_map_wd
+     INTEGER,                                                           INTENT(IN   ) :: urban_map_gbd
+     INTEGER,                                                           INTENT(IN   ) :: urban_map_fbd
      INTEGER,                                                           INTENT(IN   ) :: NUM_URBAN_HI
      REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_hi, jms:jme ),     INTENT(IN   ) :: hi_urb2d
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ),                     INTENT(IN   ) :: lp_urb2d
@@ -2724,27 +2753,27 @@ end function checkIfHarvest
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ),                     INTENT(IN   ) :: stdh_urb2d
      REAL, OPTIONAL, DIMENSION( ims:ime, 4, jms:jme ),                  INTENT(IN   ) :: lf_urb2d
 
-     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: trb_urb4d
-     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw1_urb4d
-     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw2_urb4d
-     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tgb_urb4d
-     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tlev_urb3d
-     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: qlev_urb3d
-     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw1lev_urb3d
-     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw2lev_urb3d
-     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tglev_urb3d
-     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tflev_urb3d
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zrd, jms:jme ),    INTENT(INOUT) :: trb_urb4d
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zwd, jms:jme ),    INTENT(INOUT) :: tw1_urb4d
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zwd, jms:jme ),    INTENT(INOUT) :: tw2_urb4d
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_gd , jms:jme ),    INTENT(INOUT) :: tgb_urb4d
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_bd , jms:jme ),    INTENT(INOUT) :: tlev_urb3d
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_bd , jms:jme ),    INTENT(INOUT) :: qlev_urb3d
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_wd , jms:jme ),    INTENT(INOUT) :: tw1lev_urb3d
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_wd , jms:jme ),    INTENT(INOUT) :: tw2lev_urb3d
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_gbd, jms:jme ),    INTENT(INOUT) :: tglev_urb3d
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_fbd, jms:jme ),    INTENT(INOUT) :: tflev_urb3d
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ),                     INTENT(INOUT) :: lf_ac_urb3d
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ),                     INTENT(INOUT) :: sf_ac_urb3d
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ),                     INTENT(INOUT) :: cm_ac_urb3d
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ),                     INTENT(INOUT) :: sfvent_urb3d
      REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ),                     INTENT(INOUT) :: lfvent_urb3d
-     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfwin1_urb3d
-     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfwin2_urb3d
-     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfw1_urb3d
-     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfw2_urb3d
-     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfr_urb3d
-     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfg_urb3d
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_wd , jms:jme ),    INTENT(INOUT) :: sfwin1_urb3d
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_wd , jms:jme ),    INTENT(INOUT) :: sfwin2_urb3d
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zd , jms:jme ),    INTENT(INOUT) :: sfw1_urb3d
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zd , jms:jme ),    INTENT(INOUT) :: sfw2_urb3d
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ),    INTENT(INOUT) :: sfr_urb3d
+     REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ),    INTENT(INOUT) :: sfg_urb3d
      REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),            INTENT(INOUT) :: a_u_bep   !Implicit momemtum component X-direction
      REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),            INTENT(INOUT) :: a_v_bep   !Implicit momemtum component Y-direction
      REAL, OPTIONAL, DIMENSION( ims:ime, kms:kme, jms:jme ),            INTENT(INOUT) :: a_t_bep   !Implicit component pot. temperature
@@ -3037,7 +3066,9 @@ END DO
               th_phy,          rho,     p_phy,     swdown,    glw, &
                  gmt,       julday,     xlong,       xlat,         &
           declin_urb,   cosz_urb2d, omg_urb2d,                     &
-    num_urban_layers, num_urban_hi,                                &
+       num_urban_ndm, urban_map_zrd, urban_map_zwd, urban_map_gd,  &
+        urban_map_zd, urban_map_zdf,  urban_map_bd, urban_map_wd,  &
+       urban_map_gbd, urban_map_fbd,  num_urban_hi,                &
            trb_urb4d,    tw1_urb4d, tw2_urb4d,  tgb_urb4d,         &
           sfw1_urb3d,   sfw2_urb3d, sfr_urb3d,  sfg_urb3d,         &
             lp_urb2d,     hi_urb2d,  lb_urb2d,  hgt_urb2d,         &
@@ -3071,7 +3102,9 @@ END DO
                    th_phy,          rho,        p_phy,       swdown,  glw, &
                       gmt,       julday,        xlong,         xlat,       &
                declin_urb,   cosz_urb2d,    omg_urb2d,                     &
-         num_urban_layers, num_urban_hi,                                   &
+            num_urban_ndm, urban_map_zrd, urban_map_zwd, urban_map_gd,     &
+             urban_map_zd, urban_map_zdf,  urban_map_bd, urban_map_wd,     &
+            urban_map_gbd, urban_map_fbd,  num_urban_hi,                   &
                 trb_urb4d,    tw1_urb4d,    tw2_urb4d,    tgb_urb4d,       &
                tlev_urb3d,   qlev_urb3d, tw1lev_urb3d, tw2lev_urb3d,       &
               tglev_urb3d,  tflev_urb3d,  sf_ac_urb3d,  lf_ac_urb3d,       &

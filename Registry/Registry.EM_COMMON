@@ -231,7 +231,7 @@ i1       real   ph_tendf       ikj     dyn_em      1         Z
 i1       real   ph_save        ikj     dyn_em      1         Z 
 
 # Potential Temperature
-state    real   th_phy_m_t0    ikj      dyn_em      1         -     ihd "t"      "perturbation potential temperature theta-t0" "K"
+state    real   th_phy_m_t0    ikj      dyn_em      1         -     irhd      "t"      "perturbation potential temperature theta-t0" "K"
 state    real   t              ikjb     dyn_em      2         -     \
        i0rhusdf=(bdy_interp:dt)   "thm"      "either 1) pert moist pot temp=(1+Rv/Rd Qv)*(theta)-T0, or 2) pert dry pot temp=theta-T0; based on use_theta_m setting" "K"
 
@@ -339,13 +339,13 @@ i1       real   tke_tend       ikj     dyn_em      1         -
 
 # Pressure and Density
 state    real   p              ikj     dyn_em      1         -      irh       "p"           "perturbation pressure"         "Pa"
-state    real   al             ikj     dyn_em      1         -      r         "al"          "inverse perturbation density"  "m3 kg-1"
+state    real   al             ikj     dyn_em      1         -      ir        "al"          "inverse perturbation density"  "m3 kg-1"
 state    real   alt            ikj     dyn_em      1         -      r         "alt"         "inverse density"               "m3 kg-1"
-state    real   alb            ikj     dyn_em      1         -      rdus      "alb"         "inverse base density"          "m3 kg-1"
+state    real   alb            ikj     dyn_em      1         -      irdus     "alb"         "inverse base density"          "m3 kg-1"
 state    real   zx             ikj     dyn_em      1         XZ     -         " "  " "  " "    
 state    real   zy             ikj     dyn_em      1         YZ     -         " "  " "  " "   
 state    real   rdz            ikj     dyn_em      1         Z      -         " "  " "  " "   
-state    real   rdzw           ikj     dyn_em      1         Z       -        " "  " "  " "   
+state    real   rdzw           ikj     dyn_em      1         Z      -         " "  " "  " "   
 state    real   pb             ikj     dyn_em      1         -      irhdus    "pb"          "BASE STATE PRESSURE "          "Pa"
 
 #                                               
@@ -396,7 +396,7 @@ state    real   p_hyd_w         ikj     dyn_em      1         Z       r        "
 state    real   Q2               ij     misc        1         -     irh01{22}{23}du    "Q2"                   "QV at 2 M"         "kg kg-1"
 state    real   T2               ij     misc        1         -     i01rh01{22}{23}du  "T2"                   "TEMP at 2 M"       "K"
 state    real   TH2              ij     misc        1         -     irhdu     "TH2"                  "POT TEMP at 2 M"   "K"
-state    real   PSFC             ij     misc        1         -     i01rhdu   "PSFC"                 "SFC PRESSURE"      "Pa"
+state    real   PSFC             ij     misc        1         -     i01rh01du   "PSFC"                 "SFC PRESSURE"      "Pa"
 
 # these next 2 are for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
 # with wave model, only if compiled with -DMCELIO, JM 2003/05/29
@@ -476,6 +476,8 @@ state   real    qi             ikjftb   moist       1         -     \
   i0rhusdf=(bdy_interp:dt)   "QICE"             "Ice mixing ratio"              "kg kg-1"
 state   real    qi2             ikjftb   moist       1         -     \
   i0rhusdf=(bdy_interp:dt)   "QICE2"             "Ice mixing ratio cat 2"              "kg kg-1"
+state   real    qi3             ikjftb   moist       1         -     \
+  i0rhusdf=(bdy_interp:dt)   "QICE3"             "Ice mixing ratio cat 3"              "kg kg-1"
 state   real    qs             ikjftb   moist       1         -     \
   i0rhusdf=(bdy_interp:dt)   "QSNOW"            "Snow mixing ratio"             "kg kg-1"
 state   real    qg             ikjftb   moist       1         -     \
@@ -493,6 +495,8 @@ state   real    dfi_qi         ikjftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QICE"         "Ice mixing ratio"              "kg kg-1"
 state   real    dfi_qi2         ikjftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QICE2"         "Ice mixing ratio cat 2"              "kg kg-1"
+state   real    dfi_qi3         ikjftb   dfi_moist       1         -     \
+   rusdf=(bdy_interp:dt)  "DFI_QICE3"         "Ice mixing ratio cat 3"              "kg kg-1"
 state   real    dfi_qs         ikjftb   dfi_moist       1         -     \
    rusdf=(bdy_interp:dt)  "DFI_QSNOW"        "Snow mixing ratio"             "kg kg-1"
 state   real    dfi_qg         ikjftb   dfi_moist       1         -     \
@@ -506,9 +510,21 @@ state    real   qnifa2d          ij     misc        1         -     i014rhdu "QN
 state    real   re_cloud         ikj    misc        1         -     r        "RE_CLOUD"       "Effective radius cloud water"  "m"
 state    real   re_ice           ikj    misc        1         -     r        "RE_ICE"         "Effective radius cloud ice"    "m"
 state    real   re_snow          ikj    misc        1         -     r        "RE_SNOW"        "Effective radius snow"         "m"
+state    real   re_cloud_gsfc    ikj    misc        1         -     rh       "RE_CLOUD_GSFC"  "Cloud Water effective radius"      "micron"
+state    real   re_rain_gsfc     ikj    misc        1         -     rh       "RE_RAIN_GSFC"   "Rain Water effective radius"       "micron"
+state    real   re_ice_gsfc      ikj    misc        1         -     rh       "RE_ICE_GSFC"    "Cloud Ice effective radius"        "micron"
+state    real   re_snow_gsfc     ikj    misc        1         -     rh       "RE_SNOW_GSFC"   "Snow effective radius"             "micron"
+state    real   re_graupel_gsfc  ikj    misc        1         -     rh       "RE_GRAUPEL_GSFC"  "Graupel Water effective radius"  "micron"
+state    real   re_hail_gsfc     ikj    misc        1         -     rh       "RE_HAIL_GSFC"   "Hail Water effective radius"       "micron"
 state    real   dfi_re_cloud     ikj    misc        1         -     -        "DFI_RE_CLOUD"   "DFI Effective radius cloud water"  "m"
 state    real   dfi_re_ice       ikj    misc        1         -     -        "DFI_RE_ICE"     "DFI Effective radius cloud ice"    "m"
 state    real   dfi_re_snow      ikj    misc        1         -     -        "DFI_RE_SNOW"    "DFI Effective radius snow"         "m"
+state    real   dfi_re_cloud_gsfc   ikj    misc        1         -      -       "DFI_RE_CLOUD_GSFC"  "DFI Cloud Water effective radius"      "micron"
+state    real   dfi_re_rain_gsfc    ikj    misc        1         -      -       "DFI_RE_RAIN_GSFC"   "DFI Rain Water effective radius"       "micron"
+state    real   dfi_re_ice_gsfc     ikj    misc        1         -      -       "DFI_RE_ICE_GSFC"    "DFI Cloud Ice effective radius"        "micron"
+state    real   dfi_re_snow_gsfc    ikj    misc        1         -      -       "DFI_RE_SNOW_GSFC"   "DFI Snow effective radius"             "micron"
+state    real   dfi_re_graupel_gsfc ikj    misc        1         -      -       "DFI_RE_GRAUPEL_GSFC"  "DFI Graupel Water effective radius"  "micron"
+state    real   dfi_re_hail_gsfc    ikj    misc        1         -      -       "DFI_RE_HAIL_GSFC"   "DFI Hail Water effective radius"       "micron"
 state  integer  has_reqc          -     misc        1         -     r        "has_reqc"       "Flag for having effective radius cloud water"  ""
 state  integer  has_reqi          -     misc        1         -     r        "has_reqi"       "Flag for having effective radius cloud ice"  ""
 state  integer  has_reqs          -     misc        1         -     r        "has_reqs"       "Flag for having effective radius snow"  ""
@@ -521,6 +537,8 @@ state   real    qni            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QNICE"         "Ice Number concentration" "# kg-1"
 state   real    qni2            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QNICE2"         "Ice Number concentration cat 2" "# kg-1"
+state   real    qni3            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QNICE3"         "Ice Number concentration cat 3" "# kg-1"
 state   real    qt             ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "CWM"           "Total condensate mixing ratio"      "kg kg-1"
 state   real    qns            ikjftb  scalar      1         -     \
@@ -549,6 +567,18 @@ state   real    qir2            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QIR2"           "Rime ice mass-2 mixing ratio" "kg kg(-1)"
 state   real    qib2            ikjftb  scalar      1         -     \
    i0rhusdf=(bdy_interp:dt)    "QIB2"           "Rime ice volume-2 mixing ratio" "m(3) kg(-1)"
+state   real    qvoli            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QVOLI"           "Ice volume-1 mixing ratio" "m(3) kg(-1)"
+state   real    qaoli            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QAOLI"           "Ice volume-1 times aspect ratio mixing ratio" "m(3) kg(-1)"
+state   real    qvoli2            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QVOLI2"           "Ice volume-2 mixing ratio" "m(3) kg(-1)"
+state   real    qaoli2            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QAOLI2"           "Ice volume-2 times aspect ratio mixing ratio" "m(3) kg(-1)"
+state   real    qvoli3            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QVOLI3"           "Ice volume-3 mixing ratio" "m(3) kg(-1)"
+state   real    qaoli3            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "QAOLI3"           "Ice volume-3 times aspect ratio mixing ratio" "m(3) kg(-1)"
 
 state   real    -              ikjftb  dfi_scalar      1         -     -   -
 state   real    dfi_qndrop     ikjftb  dfi_scalar      1         -     \
@@ -557,6 +587,8 @@ state   real    dfi_qni        ikjftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNICE"     "DFI Ice Number concentration" "# kg-1"
 state   real    dfi_qni2        ikjftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_QNICE2"     "DFI Ice Number concentration cat 2" "# kg-1"
+state   real    dfi_qni3        ikjftb  dfi_scalar      1         -     \
+   rusdf=(bdy_interp:dt)    "DFI_QNICE3"     "DFI Ice Number concentration cat 3" "# kg-1"
 state   real    dfi_qt         ikjftb  dfi_scalar      1         -     \
    rusdf=(bdy_interp:dt)    "DFI_CWM"       "DFI Total condensate mixing ratio"      "kg kg-1"
 state   real    dfi_qns        ikjftb  dfi_scalar      1         -     \
@@ -583,6 +615,19 @@ state   real    dfi_qir2        ikjftb  dfi_scalar      1         -     \
    rhusdf=(bdy_interp:dt)    "DFI_QIR2"    "DFI Rime ice mass-2 mixing ratio" "kg kg(-1)"
 state   real    dfi_qib2        ikjftb  dfi_scalar      1         -     \
    rhusdf=(bdy_interp:dt)    "DFI_QIB2"    "DFI Rime ice volume-2 mixing ratio" "m(3) kg(-1)"
+state   real    dfi_qvoli        ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)    "DFI_QVOLI"    "DFI Ice volume-1 mixing ratio" "kg kg(-1)"
+state   real    dfi_qaoli        ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)    "DFI_QAOLI"    "DFI Ice volume-1 times aspect ratio mixing ratio" "kg kg(-1)"
+state   real    dfi_qvoli2        ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)    "DFI_QVOLI2"    "DFI Ice volume-2 mixing ratio" "kg kg(-1)"
+state   real    dfi_qaoli2        ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)    "DFI_QAOLI2"    "DFI Ice volume-2 times aspect ratio mixing ratio" "kg kg(-1)"
+state   real    dfi_qvoli3        ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)    "DFI_QVOLI3"    "DFI Ice volume-3 mixing ratio" "kg kg(-1)"
+state   real    dfi_qaoli3        ikjftb  dfi_scalar      1         -     \
+   rhusdf=(bdy_interp:dt)    "DFI_QAOLI3"    "DFI Ice volume-3 times aspect ratio mixing ratio" "kg kg(-1)"
+
 state   real    dfi_qke_adv   ikjftb  dfi_scalar      1         -      \
    rusdf=(bdy_interp:dt) "dfi_qke_adv"   "DFI twice TKE from MYNN"      "m2 s-2"
 
@@ -690,12 +735,15 @@ state    real   ts_clw          ?!       misc      -         -      -        "TS
 state    real   ts_rainc        ?!       misc      -         -      -        "TS_RAINC"       "Cumulus precip"
 state    real   ts_rainnc       ?!       misc      -         -      -        "TS_RAINNC"      "Grid-scale precip"
 
-# Time series of vertical profile of U, V, GHT, THETA and QVAPOR
-state    real   ts_u_profile   ?!k       misc      -         -      -        "TS_U_PROFILE"   "Wind u-Component, earth relative, vertical profile"
-state    real   ts_v_profile   ?!k       misc      -         -      -        "TS_V_PROFILE"   "Wind v-Component, earth relative, vertical profile"
-state    real   ts_gph_profile ?!k       misc      -         -      -        "TS_GPH_PROFILE" "Total geopotential height, vertical profile"
-state    real   ts_th_profile  ?!k       misc      -         -      -        "TS_TH_PROFILE"  "Total potential temperature, vertical profile"
-state    real   ts_qv_profile  ?!k       misc      -         -      -        "TS_QV_PROFILE"  "Water vapor mixing ratio, vertical profile"
+# Time series of vertical profile of U, V, GHT, THETA, QVAPOR, PRESSURE
+state    real   ts_u_profile   ?!k       misc      -         -      -        "TS_U_PROFILE"   "Wind u-Component, earth relative, vertical profile" "m/s"
+state    real   ts_v_profile   ?!k       misc      -         -      -        "TS_V_PROFILE"   "Wind v-Component, earth relative, vertical profile" "m/s"
+state    real   ts_w_profile   ?!k       misc      -         -      -        "TS_W_PROFILE"   "Wind w-Component, vertical profile" "m/s"
+state    real   ts_gph_profile ?!k       misc      -         -      -        "TS_GPH_PROFILE" "Total geopotential height, vertical profile" "m"
+state    real   ts_th_profile  ?!k       misc      -         -      -        "TS_TH_PROFILE"  "Total potential temperature, vertical profile" "K"
+state    real   ts_qv_profile  ?!k       misc      -         -      -        "TS_QV_PROFILE"  "Water vapor mixing ratio, vertical profile" "kg/kg"
+state    real   ts_p_profile   ?!k       misc      -         -      -        "TS_P_PROFILE"   "Pressure, vertical profile" "Pa"
+
 
 # urban model variables
 state    real   DZR             l        em      -         Z     r        "DZR"            "THICKNESSES OF ROOF LAYERS"                      "m"
@@ -706,25 +754,9 @@ state    real   LP_URB2D       ij       misc      1        -     i0  "BUILD_AREA
 state    real   HI_URB2D       i{uhi}j  misc      1        Z     i0  "HEIGHT_HISTOGRAMS" "DISTRIBUTION OF BUILDING HEIGHTS" "dimensionless"
 state    real   LB_URB2D       ij       misc      1        -     i0  "BUILD_SURF_RATIO" "BUILDING SURFACE AREA TO PLAN AREA RATIO" "dimensionless"
 state    real   HGT_URB2D      ij       misc      1        -     i0  "BUILD_HEIGHT" "AVERAGE BUILDING HEIGHT WEIGHTED BY BUILDING PLAN AREA" "m"
-state    real   FAD0_URB2D     i{uhi}j  misc      1        Z      -  "FAD0_URB2D" "Frontal Area Density from the 0 Degree Wind Direction" "m-1"
-state    real   FAD135_URB2D   i{uhi}j  misc      1        Z      -  "FAD135_URB2D" "Frontal Area Density from the 135 Degree Direction" "m-1"
-state    real   FAD45_URB2D    i{uhi}j  misc      1        Z      -  "FAD45_URB2D" "Frontal Area Density from the 45 Degree Wind Direction" "m-1"
-state    real   PAD_URB2D      i{uhi}j  misc      1        Z      -  "PAD_URB2D" "Building Plan Area Density" "m-1"
-state    real   FAD90_URB2D    i{uhi}j  misc      1        Z      -  "FAD90_URB2D" "Frontal Area Density from the 90 Degree Wind Direction" "m-1"
-state    real   RAD_URB2D      i{uhi}j  misc      1        -      -  "RAD_URB2D" "Roof Area Density" "m-1"
 state    real   MH_URB2D       ij       misc      1        -     i0  "MH_URB2D"  "Mean Building Height" "m"
 state    real   STDH_URB2D     ij       misc      1        -     i0  "STDH_URB2D" "Standard Deviation of Building Height" "m2"
 state    real   LF_URB2D       i{udr}j  misc      1        Z     i0  "LF_URB2D"   "Frontal Area Index" "dimensionless"
-state    real   CAR_URB2D      ij       misc      1        -      -  "CAR_URB2D"  "Complete Aspect Ratio" "dimensionless"
-state    real   H2W_URB2D      ij       misc      1        -      -  "H2W_URB2D"  "Height-to-Width Ratio" "dimensionless"
-state    real   SVF_URB2D      ij       misc      1        -      -  "SVF_URB2D"  "Sky View Factor"   "dimensionless"
-state    real   Z0S_URB2D      ij       misc      1        -      -  "Z0S_URB2D"   "Roughness Length S" "m"
-state    real   Z0R_URB2D      i{udr}j  misc      1        Z      -  "Z0R_URB2D"   "Roughness Length R" "m"
-state    real   Z0M_URB2D      i{udr}j  misc      1        Z      -  "Z0M_URB2D"   "Roughness Length M" "m"
-state    real   ZDS_URB2D      ij       misc      1        -      -  "ZDS_URB2D"   "Displacement Height S" "m"
-state    real   ZDM_URB2D      ij       misc      1        -      -  "ZDM_URB2D"   "Displacement Height M" "m"
-state    real   ZDR_URB2D      i{udr}j  misc      1        Z      -  "ZDR_URB2D"   "Displacement Height R" "m"
-
 
 # lsm State Variables
 
@@ -832,27 +864,27 @@ state    real   RN_URB2D        ij    misc        1         -       rd=(interp_f
 state    real   TS_URB2D        ij    misc        1         -       rd=(interp_fcnm)u=(copy_fcnm)       "TS_URB"  "SKIN TEMPERATURE"          "K"
 state    real   FRC_URB2D       ij    misc        1         -     i012rd=(interp_fcnm)u=(copy_fcnm)      "FRC_URB2D"  "URBAN FRACTION"         "dimensionless"
 state    integer   UTYPE_URB2D  ij    misc        1         -     rd=(interp_fcnm)u=(copy_fcnm)       "UTYPE_URB"  "URBAN TYPE"         "dimensionless"
-state    real   TRB_URB4D       i{ulay}j    misc       1         Z     r      "TRB_URB4D" "ROOF LAYER TEMPERATURE"          "K"
-state    real   TW1_URB4D       i{ulay}j    misc       1         Z     r      "TW1_URB4D" "WALL LAYER TEMPERATURE"          "K"
-state    real   TW2_URB4D       i{ulay}j    misc       1         Z     r      "TW2_URB4D" "WALL LAYER TEMPERATURE"          "K"
-state    real   TGB_URB4D       i{ulay}j    misc       1         Z     r      "TGB_URB4D" "ROAD LAYER TEMPERATURE"          "K"
-state    real   TLEV_URB3D      i{ulay}j    misc       1         Z     r      "TLEV_URB3D" "INDOOR TEMPERATURE"             "K"
-state    real   QLEV_URB3D      i{ulay}j    misc       1         Z     r      "QLEV_URB3D" "SPECIFIC HUMIDITY"              "dimensionless"
-state    real   TW1LEV_URB3D    i{ulay}j    misc       1         Z     r      "TW1LEV_URB3D" "WINDOW TEMPERATURE"           "K"
-state    real   TW2LEV_URB3D    i{ulay}j    misc       1         Z     r      "TW2LEV_URB3D" "WINDOW TEMPERATURE"           "K"
-state    real   TGLEV_URB3D     i{ulay}j    misc       1         Z     r      "TGLEV_URB3D" "GROUND TEMPERATURE BELOW A BUILDING"     "K"
-state    real   TFLEV_URB3D     i{ulay}j    misc       1         Z     r      "TFLEV_URB3D" "FLOOR TEMPERATURE"                       "K"
+state    real   TRB_URB4D       i{umap1}j   misc       1         Z     r      "TRB_URB4D" "ROOF LAYER TEMPERATURE"          "K"
+state    real   TW1_URB4D       i{umap2}j   misc       1         Z     r      "TW1_URB4D" "WALL LAYER TEMPERATURE"          "K"
+state    real   TW2_URB4D       i{umap2}j   misc       1         Z     r      "TW2_URB4D" "WALL LAYER TEMPERATURE"          "K"
+state    real   TGB_URB4D       i{umap3}j   misc       1         Z     r      "TGB_URB4D" "ROAD LAYER TEMPERATURE"          "K"
+state    real   TLEV_URB3D      i{umap6}j   misc       1         Z     r      "TLEV_URB3D" "INDOOR TEMPERATURE"             "K"
+state    real   QLEV_URB3D      i{umap6}j   misc       1         Z     r      "QLEV_URB3D" "SPECIFIC HUMIDITY"              "dimensionless"
+state    real   TW1LEV_URB3D    i{umap7}j   misc       1         Z     r      "TW1LEV_URB3D" "WINDOW TEMPERATURE"           "K"
+state    real   TW2LEV_URB3D    i{umap7}j   misc       1         Z     r      "TW2LEV_URB3D" "WINDOW TEMPERATURE"           "K"
+state    real   TGLEV_URB3D     i{umap8}j   misc       1         Z     r      "TGLEV_URB3D" "GROUND TEMPERATURE BELOW A BUILDING"     "K"
+state    real   TFLEV_URB3D     i{umap9}j   misc       1         Z     r      "TFLEV_URB3D" "FLOOR TEMPERATURE"                       "K"
 state    real   SF_AC_URB3D     ij          misc       1         -     r      "SF_AC_URB3D"  "SENSIBLE HEAT FLUX FROM THE AIR COND." "W m{-2}"
 state    real   LF_AC_URB3D     ij          misc       1         -     r      "LF_AC_URB3D"  "LATENT HEAT FLUX FROM THE AIR COND." "W m{-2}"
 state    real   CM_AC_URB3D     ij          misc       1         -     r      "CM_AC_URB3D"  "CONSUMPTION OF THE AIR COND." "W m{-2}"
 state    real   SFVENT_URB3D    ij          misc       1         -     r      "SFVENT_URB3D" "SENSIBLE HEAT FLUX FROM URBAN VENTILATION" "W m{-2}"
 state    real   LFVENT_URB3D    ij          misc       1         -     r      "LFVENT_URB3D" "LATENT HEAT FLUX FROM URBAN VENTILATION" "W m{-2}"
-state    real   SFWIN1_URB3D    i{ulay}j    misc       1         Z     r      "SFWIN1_URB3D" "SENSIBLE HEAT FLUX FROM URBAN SFC WINDOW"  "W m{-2}"
-state    real   SFWIN2_URB3D    i{ulay}j    misc       1         Z     r      "SFWIN2_URB3D" "SENSIBLE HEAT FLUX FROM URBAN SFC WINDOW"  "W m{-2}"
-state    real   SFW1_URB3D      i{ulay}j    misc       1         Z     r      "SFW1_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
-state    real   SFW2_URB3D      i{ulay}j    misc       1         Z     r      "SFW2_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
-state    real   SFR_URB3D       i{ulay}j    misc       1         Z     r      "SFR_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
-state    real   SFG_URB3D       i{ulay}j    misc       1         Z     r      "SFG_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
+state    real   SFWIN1_URB3D    i{umap7}j   misc       1         Z     r      "SFWIN1_URB3D" "SENSIBLE HEAT FLUX FROM URBAN SFC WINDOW"  "W m{-2}"
+state    real   SFWIN2_URB3D    i{umap7}j   misc       1         Z     r      "SFWIN2_URB3D" "SENSIBLE HEAT FLUX FROM URBAN SFC WINDOW"  "W m{-2}"
+state    real   SFW1_URB3D      i{umap4}j   misc       1         Z     r      "SFW1_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
+state    real   SFW2_URB3D      i{umap4}j   misc       1         Z     r      "SFW2_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
+state    real   SFR_URB3D       i{umap5}j   misc       1         Z     r      "SFR_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
+state    real   SFG_URB3D       i{umap0}j   misc       1         Z     r      "SFG_URB3D"  "SENSIBLE HEAT FLUX FROM URBAN SFC"  "W m{-2}"
 state    real   CMR_SFCDIF      ij          misc       1         -     r      "CMR_SFCDIF" "" ""
 state    real   CHR_SFCDIF      ij          misc       1         -     r      "CHR_SFCDIF" "" ""
 state    real   CMC_SFCDIF      ij          misc       1         -     r      "CMC_SFCDIF" "" ""
@@ -893,6 +925,13 @@ state    real   T2OBS            ij     misc        1         -      r        "T
 state    real   Q2OBS            ij     misc        1         -      r        "Q2OBS"        "2-m mixing ratio from analysis "   "kg/kg"
 state    real   IMPERV           ij     misc        1         -      i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)      "IMPERV"       "Impervious surface fraction NLCD"  "percent"
 state    real   CANFRA           ij     misc        1         -      i012rhd=(interp_mask_field:lu_index,iswater)u=(copy_fcnm)      "CANFRA"       "Satellite canopy fraction"         "percent"
+state    real   LAI_PX           ij     misc        1         -      rh        "LAI_PX"       "LAI used for PX LSM"              "m2/m2"
+state    real   WWLT_PX          ij     misc        1         -      rh       "WWLT_PX"       "Soil wilting point for PX LSM"    "m3/m3"
+state    real   WFC_PX           ij     misc        1         -      rh       "WFC_PX"        "Soil field capacity for PX LSM"    "m3/m3"
+state    real   WSAT_PX          ij     misc        1         -      rh       "WSAT_PX"       "Soil saturation for PX LSM"    "m3/m3"
+state    real   CLAY_PX          ij     misc        1         -      rh       "CLAY_PX"       "Clay perent for PX LSM"    "fraction"
+state    real   CSAND_PX         ij     misc        1         -      rh       "CSAND_PX"      "Coarse sand perent for PX LSM"    "fraction"
+state    real   FMSAND_PX        ij     misc        1         -      rh       "FMSAND_PX"     "Fine-medium sand perent for PX LSM"    "fraction"
 
 # sfclay PBL variables
 i1      real   PSIM           ij     misc        1         -     -         "PSIM"                "SIMILARITY FUNCTION FOR MOMENTUM"     ""
@@ -1283,6 +1322,31 @@ state   real    p_strat        -       misc         -         -     i02rh     "p
 state   real    max_msftx      -       misc         -         -      rh       "max_mstfx"             "Max map factor in domain"  ""
 state   real    max_msfty      -       misc         -         -      rh       "max_mstfy"             "Max map factor in domain"  ""
 
+# NUWRF:  State variables for Goddard microphysics
+state   real    phys_tot       ikj      misc        1         -     h         "PHYS_TOT"              "TOTAL LATENT HEATING RATE"                       "K s-1"
+state   real    physc          ikj      misc        1         -     -         "PHYSC"                 "LATENT HEATING RATE DUE TO CONDENSATION"         "K s-1"
+state   real    physe          ikj      misc        1         -     -         "PHYSE"                 "LATENT HEATING RATE DUE TO EVAPORATION"          "K s-1"
+state   real    physd          ikj      misc        1         -     -         "PHYSD"                 "LATENT HEATING RATE DUE TO DEPOSITION"           "K s-1"
+state   real    physs          ikj      misc        1         -     -         "PHYSS"                 "LATENT HEATING RATE DUE TO SUBLIMATION"          "K s-1"
+state   real    physm          ikj      misc        1         -     -         "PHYSM"                 "LATENT HEATING RATE DUE TO MELTING"              "K s-1"
+state   real    physf          ikj      misc        1         -     -         "PHYSF"                 "LATENT HEATING RATE DUE TO FREEZING"             "K s-1"
+# NUWRF EMK
+state   real    acphys_tot       ikj      misc        1         -     r       "ACPHYS_TOT"            "ACCUMULATED TOTAL LATENT HEATING"                "K"
+state   real    acphysc          ikj      misc        1         -     r       "ACPHYSC"               "ACCUMULATED LATENT HEATING DUE TO CONDENSATION"  "K"
+state   real    acphyse          ikj      misc        1         -     r       "ACPHYSE"               "ACCUMULATED LATENT HEATING DUE TO EVAPORATION"   "K"
+state   real    acphysd          ikj      misc        1         -     r       "ACPHYSD"               "ACCUMULATED LATENT HEATING DUE TO DEPOSITION"    "K"
+state   real    acphyss          ikj      misc        1         -     r       "ACPHYSS"               "ACCUMULATED LATENT HEATING DUE TO SUBLIMATION"   "K"
+state   real    acphysm          ikj      misc        1         -     r       "ACPHYSM"               "ACCUMULATED LATENT HEATING DUE TO MELTING"       "K"
+state   real    acphysf          ikj      misc        1         -     r       "ACPHYSF"               "ACCUMULATED LATENT HEATING DUE TO FREEZING"      "K"
+
+#state   real    dbz            ikj      misc        1         -     -         "DBZ"                   "RADAR REFLECTIVITIES"             "dbz"
+# NUWRF...4ICE output
+state   real    preci3d       ikj      misc        1         -     -       "PRECI3D"                   "Sedimentation Fluxes for cloud ice"             "KG/M^2/S"
+state   real    precs3d       ikj      misc        1         -     -       "PRECS3D"                   "Sedimentation Fluxes for snow"                  "KG/M^2/S"
+state   real    precg3d       ikj      misc        1         -     -       "PRECG3D"                   "Sedimentation Fluxes for graupel"               "KG/M^2/S"
+state   real    prech3d       ikj      misc        1         -     -       "PRECH3D"                   "Sedimentation Fluxes for hail"               "KG/M^2/S"
+state   real    precr3d       ikj      misc        1         -     -       "PRECR3D"                   "Sedimentation Fluxes for rain"                  "KG/M^2/S"
+
 # State variables for Goddard LW and SW radiation
 state    real  TLWDN           ij      misc        1         -      h         "TLWDN"                 "TOA LW downwelling flux"           "W m-2"
 state    real  TLWUP           ij      misc        1         -      h         "TLWUP"                 "TOA LW upwelling flux"             "W m-2"
@@ -1292,7 +1356,10 @@ state    real  TSWDN           ij      misc        1         -      h         "T
 state    real  TSWUP           ij      misc        1         -      h         "TSWUP"                 "TOA SW upwelling flux"             "W m-2"
 state    real  SSWDN           ij      misc        1         -      h         "SSWDN"                 "Surface SW downwelling flux"       "W m-2"
 state    real  SSWUP           ij      misc        1         -      h         "SSWUP"                 "Surface SW upwelling flux"         "W m-2"
-                                                
+state    real  COD2D_OUT       ij      misc        1         -      h         "COD2D_OUT"             "Column Cloud Optical Depth"        " "
+state    real  CTOP2D_OUT      ij      misc        1         -      h         "CTOP2D_OUT"            "Cloud-Top Pressure"                "mb"
+                
+                                
 # Other physics variables
 
 state    real  RUSHTEN         ikj      misc        1         -      r        "RUSHTEN"               "X WIND TENDENCY DUE TO SHALLOW CUMULUS SCHEME"   "m s-2"
@@ -1306,6 +1373,33 @@ state    real  RQISHTEN        ikj      misc        1         -      r        "R
 state    real  RQGSHTEN        ikj      misc        1         -      r        "RQGSHTEN"              "Q_G TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "kg kg-1 s-1"
 state    real  RQCNSHTEN       ikj      misc        1         -      r        "RQCNSHTEN"             "Q_CN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"     "# kg-1 s-1"
 state    real  RQINSHTEN       ikj      misc        1         -      r        "RQINSHTEN"             "Q_IN TENDENCY DUE TO SHALLOW CUMULUS SCHEME"     "# kg-1 s-1"
+
+# Deng Shallow Convection Parameterization
+state    real  RDCASHTEN       ikj      misc        1         -      r        "RDCASHTEN"             "CLOUD FRACTION AREA TENDENCY DUE TO DENG SHALLOW CUMULUS SCHEME"    "Pa s-1"
+state    real  RQCDCSHTEN      ikj      misc        1         -      r        "RQCDCSHTEN"            "CLOUD LIQUID TENDENCY DUE TO DENG SHALLOW CUMULUS SCHEME"   "kg kg-1 s-1"
+state    real  CLDAREAA        ikj      dyn_em      1         -      r        "CLDAREAA"              "CLOUD FRACTION FROM DENG SCHEME" ""
+state    real  CLDAREAB        ikj      dyn_em      1         -      r        "CLDAREAB"              "CLOUD FRACTION FROM DENG SCHEME" ""
+state    real  CA_RAD          ikj      dyn_em      1         -      r        "CA_RAD"                "CLOUD WATER CONTENT FROM DENG SCHEME FOR RADIATION" "kg kg-1"
+state    real  CW_RAD          ikj      dyn_em      1         -      r        "CW_RAD"                "CLOUD WATER CONTENT FROM DENG SCHEME FOR RADIATION" "kg kg-1"
+state    real  CLDLIQA         ikj      dyn_em      1         -      r        "CLDLIQA"               "CLOUD WATER CONTENT FROM DENG SCHEME" "kg kg-1"
+state    real  CLDLIQB         ikj      dyn_em      1         -      r        "CLDLIQB"               "CLOUD WATER CONTENT FROM DENG SCHEME" "kg kg-1"
+state    real  CLDDPTHB         ij      misc        1         -      r        "CLDDPTHB"              "CLOUD DEPTH FROM TAU-1"                "m"
+state    real  CLDTOPB          ij      misc        1         -      r        "CLDTOPB"               "CLOUD TOP FROM TAU-1"                "m"
+state    real  PBLMAX           ij      misc        1         -      r        "PBLMAX"                "MAXIMUM VALUE OF PBL DEPTH SINCE THE START OF THE MODEL RUN"                 "m"
+state    real  WUB             ikj      misc        1         -      r        "WUB"                   "UPDRAFT VERTICAL VELOCITY"                 "m s-1"
+state    real  RAINSHVB         ij      misc        1         -      r        "RAINSHVB"              "TIME-STEP SHCU PRECIPITATION FROM TAU-1"       "m s-1"
+state    real  CAPESAVE         ij      misc        1         -      r        "CAPESAVE"              "CAPE FROM TAU-1"       ""
+state    real  RADSAVE          ij      misc        1         -      r        "RADSAVE"               "CLOUD RADIUS FROM TAU-1"       "m"
+state    real  AINCKFSA        i{nsh}j  misc        1         -      r        "AINCKFSA"              "NUMBER OF CLOUDS FROM TAU-1"       ""
+state  integer LTOPB            ij      misc        1         -      r        "LTOPB"                 "LEVEL OF UPDRAFT TOP FROM TAU-1"       ""
+state  integer KDCLDTOP         ij      misc        1         -      r        "KDCLDTOP"              "LEVEL OF NBC TOP"                     ""
+state  integer KDCLDBAS         ij      misc        1         -      r        "KDCLDBAS"              "LEVEL OF NBC BASE"                    ""
+state    real  XTIME1           ij      misc        1         -      r        "XTIME1"                "TIME COUNTER AFTER RAIN"              "min."
+state    real  PBLHAVG          ij      misc        1         -      r        "PBLHAVG"               "TIME AVERAGE OF PBLH"                 "m"
+state    real  TKEAVG          ikj      misc        1         -      r        "TKEAVG"                "TIME AVERAGE OF TKE"                 "m2 s-2"
+state    real  WSUBSID          k       misc        1         -      -        "WSUBSID"               "LARGE-SCALE SUBSIDENCE IN DENG SHCU SCHEME"    "m s-1"
+# End Deng Shallow Convection Parameterization
+
 
 state    real  RUCUTEN         ikj      misc        1         -      r        "RUCUTEN"               "X WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "m s-2"
 state    real  RVCUTEN         ikj      misc        1         -      r        "RVCUTEN"               "Y WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "m s-2"
@@ -1343,9 +1437,19 @@ state    real    qv_old          ikj      misc        1         -      rusd     
 state    real    vmi3d          ikj     misc        1         -     hdu       "v_ice"                 "Mass-weighted ice fallspeed cat 1"  "m s-1"
 state    real    di3d           ikj     misc        1         -     hdu       "d_ice"                 "Mass-weighted mean ice size cat 1"  "m"
 state    real    rhopo3d        ikj     misc        1         -     hdu       "rho_ice"               "Mass-weighted mean ice density cat 1"  "kg m-3"
+state    real    phii3d        ikj     misc        1         -     hdu       "phi_ice"               "Number-weighted mean ice aspect ratio cat 1"  ""
 state    real    vmi3d_2          ikj     misc        1         -     hdu     "v_ice2"                 "Mass-weighted ice fallspeed cat 2"  "m s-1"
 state    real    di3d_2           ikj     misc        1         -     hdu     "d_ice2"                 "Mass-weighted mean ice size cat 2"  "m"
 state    real    rhopo3d_2        ikj     misc        1         -     hdu     "rho_ice2"               "Mass-weighted mean ice density cat 2"  "kg m-3"
+state    real    phii3d_2        ikj     misc        1         -     hdu       "phi_ice2"               "Number-weighted mean ice aspect ratio cat 2"  ""
+state    real    vmi3d_3          ikj     misc        1         -     hdu     "v_ice3"                 "Mass-weighted ice fallspeed cat 3"  "m s-1"
+state    real    di3d_3           ikj     misc        1         -     hdu     "d_ice3"                 "Mass-weighted mean ice size cat 3"  "m"
+state    real    rhopo3d_3        ikj     misc        1         -     hdu     "rho_ice3"               "Mass-weighted mean ice density cat 3"  "kg m-3"
+state    real    phii3d_3        ikj     misc        1         -     hdu       "phi_ice3"               "Number-weighted mean ice aspect ratio cat 3"  ""
+state    real    itype          ikj     misc        1         -     hdu       "ice_type"             "Diagnostic ice type cat 1 ISHMAEL microphysics"  ""
+state    real    itype_2          ikj     misc        1         -     hdu       "ice_type2"             "Diagnostic ice type cat 2 ISHMAEL microphysics"  ""
+state    real    itype_3          ikj     misc        1         -     hdu       "ice_type3"             "Diagnostic ice type cat 3 ISHMAEL microphysics"  ""
+
 # LIGHTNING NUDGING
 #state    real    ltg_dat        ij      misc        1         -      r         "ltg_dat"               "gridded lightning data"  "Flash per xkm x xkm per LAD_INT sec"
 # END LIGHTNING NUDGING
@@ -1987,6 +2091,7 @@ rconfig   logical use_levels_below_ground namelist,domains	1             .true. 
 rconfig   logical use_tavg_for_tsk        namelist,domains	1             .false.  irh    "use_tavg_for_tsk"   "T/F: use diurnal avg sfc temp for tsk" ""
 rconfig   logical use_surface             namelist,domains	1             .true.   irh    "use_surface"   "T/F: use input surface level in interpolation" ""
 rconfig   integer lagrange_order          namelist,domains	1              2       irh    "lagrange_order"   "1=linear, 2=quadratic vertical interpolation, 9=cubic spline"      ""
+rconfig   integer linear_interp           namelist,domains	1              1       irh    "linear_interp"   "1=linear"      ""
 rconfig   integer force_sfc_in_vinterp    namelist,domains	1              1       irh    "force_sfc_in_vinterp"   "number of eta levels forced to use sfc in vert interp"      ""
 rconfig   real    zap_close_levels        namelist,domains	1              500     irh    "zap_close_levels"   "delta p where level is removed in vert interp"      "Pa"
 rconfig   real    maxw_horiz_pres_diff    namelist,domains	1              5000    irh    "maxw_horiz_pres_diff"   "pressure limit (Pa), when horiz diff exceeded do not use max_wind level in real"
@@ -2046,6 +2151,8 @@ rconfig   integer alloc_qndropsource      derived               1             0 
 rconfig   integer   num_moves       namelist,domains    1                0
 rconfig   integer   ts_buf_size     namelist,domains    1                200          -       "ts_buf_size"   "Size of time series buffer"
 rconfig   integer   max_ts_locs     namelist,domains    1                5            -       "max_ts_locs"   "Maximum number of time series locations"
+rconfig   logical   tslist_ij             derived       1              .false. rh  "tslist_ij"    "Use i,j locations in tslist"   ""
+rconfig   logical   tslist_unstagger_winds   namelist,domains    1              .false. rh  "tslist_unstagger_winds"    "interpolate u and v to cell centers"   ""
 rconfig   integer   vortex_interval  namelist,domains   max_domains      15  -  "" "" "minutes"
 rconfig   integer   max_vortex_speed namelist,domains   max_domains      40  -  "" "" "meters per second"
 rconfig   integer   corral_dist     namelist,domains    max_domains      8
@@ -2140,12 +2247,12 @@ rconfig   integer     bl_mynn_tkebudget   namelist,physics      max_domains    0
 rconfig   integer     ysu_topdown_pblmix  namelist,physics      1              0       rh       "ysu_topdown_pblmix"            ""      ""
 rconfig   integer     shinhong_tke_diag   namelist,physics      max_domains    0       rh       "shinhong_tke_diag"             ""      ""
 rconfig   logical     bl_mynn_tkeadvect   namelist,physics      max_domains    .false.  rh      "bl_mynn_tkeadvect"             ""      ""
-rconfig   integer     bl_mynn_cloudpdf    namelist,physics      1              2       irh      "bl_mynn_cloudpdf"              ""      ""
-rconfig   integer     bl_mynn_mixlength   namelist,physics      1              2       irh      "bl_mynn_mixlength"             "0:original,1:RAP/HRRR,2:new blending&cloud mix length" ""
+rconfig   integer     bl_mynn_cloudpdf    namelist,physics      1              2       irh      "bl_mynn_cloudpdf"              "0:original, 1:Kuwano, 2:Chaboreau-Bechtold"            ""
+rconfig   integer     bl_mynn_mixlength   namelist,physics      1              1       irh      "bl_mynn_mixlength"             "0:original,1:RAP/HRRR,2:new blending&cloud mix length" ""
 rconfig   integer     bl_mynn_edmf        namelist,physics      max_domains    1       irh      "bl_mynn_edmf"                  "0:off,1:activate mass-flux in mynn"                    ""
-rconfig   integer     bl_mynn_edmf_mom    namelist,physics      max_domains    0       irh      "bl_mynn_edmf_mom"              "0:off,1:activate mass-flux transport of momentum"      ""
+rconfig   integer     bl_mynn_edmf_mom    namelist,physics      max_domains    1       irh      "bl_mynn_edmf_mom"              "0:off,1:activate mass-flux transport of momentum"      ""
 rconfig   integer     bl_mynn_edmf_tke    namelist,physics      max_domains    0       irh      "bl_mynn_edmf_tke"              "0:off,1:activate mass-flux transport of tke"           ""
-rconfig   integer     bl_mynn_edmf_part   namelist,physics      max_domains    0       irh      "bl_mynn_edmf_part"             "0:off,1:activate areal partitioning of ed and mf"      ""
+rconfig   integer     bl_mynn_mixscalars  namelist,physics      max_domains    0       irh      "bl_mynn_mixscalars"            "0:off,1:activate mixing of scalars (qnx, qnxfa) in MYNN"      ""
 rconfig   integer     bl_mynn_cloudmix    namelist,physics      max_domains    1       irh      "bl_mynn_cloudmix"              "0:off,1:activate mixing of all cloud species"          ""
 rconfig   integer     bl_mynn_mixqt       namelist,physics      max_domains    0       irh      "bl_mynn_mixqt"                 "0:mix moisture species separate,1: mix total water"    ""
 rconfig   integer     icloud_bl           namelist,physics      1              1       irh      "icloud_bl"                     "0:no subgrid cloud-radiation coupling,1:activated"     ""
@@ -2163,6 +2270,7 @@ rconfig   real    GSMDT                   namelist,physics	max_domains    0     
 rconfig   integer ISFFLX                  namelist,physics 	1             1       irh    "ISFFLX"                        ""      ""
 rconfig   integer IFSNOW                  namelist,physics	1             1       irh    "IFSNOW"                        ""      ""
 rconfig   integer ICLOUD                  namelist,physics	1             1       irh    "ICLOUD"                        ""      ""
+rconfig   integer cldovrlp                namelist,physics      1             2       irh    "cldovrlp"                      "1=random, 2=maximum-random, 3=maximum, 4=exponential, 5=exponential-random"      ""
 rconfig   integer ideal_xland             namelist,physics	1             1        rh    "IDEAL_XLAND"  "land=1(def), water=2, for ideal cases with no land-use"      ""
 rconfig   real    swrad_scat              namelist,physics	1             1       irh    "SWRAD_SCAT" "SCATTERING FACTOR IN SWRAD"      ""
 rconfig   integer surface_input_source    namelist,physics	1             3       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=dominant cateogry from metgrid"      ""
@@ -2170,7 +2278,25 @@ rconfig   integer num_soil_layers         namelist,physics	1             5      
 rconfig   integer maxpatch                namelist,physics      1            10       irh    "maxpatch"                      ""      ""
 rconfig   integer num_snow_layers         namelist,physics	1             3       irh    "num_snow_layers"               ""      ""
 rconfig   integer num_snso_layers         namelist,physics	1             7       irh    "num_snso_layers"               ""      ""
-rconfig   integer num_urban_layers        namelist,physics	1            400       irh    "num_urban_layers"               ""      ""
+
+rconfig   integer num_urban_ndm           derived               1             1       irh    "num_urban_ndm"   "maximum number of street dimensions (ndm in BEP or BEM header)"                     ""
+rconfig   integer num_urban_ng            derived               1             1       irh    "num_urban_ng"    "number of grid levels in the ground (ng_u in BEP or BEM header)"                    ""
+rconfig   integer num_urban_nwr           derived               1             1       irh    "num_urban_nwr"   "number of grid levels in the walls or roof (nwr_u in BEP or BEM header)"            ""
+rconfig   integer num_urban_ngb           derived               1             1       irh    "num_urban_ngb"   "number of grid levels in the ground below building (ngb_u in BEM header)"           ""
+rconfig   integer num_urban_nf            derived               1             1       irh    "num_urban_nf"    "number of grid levels in the floors (nf_u in BEM header)"                           ""
+rconfig   integer num_urban_nz            derived               1             1       irh    "num_urban_nz"    "maximum number of vertical levels in the urban grid (nz_um in BEP or BEM header)"   ""
+rconfig   integer num_urban_nbui          derived               1             1       irh    "num_urban_nbui"  "maximum number of types of buildings in an urban class (nbui_max in BEM header)"    ""
+
+rconfig   integer urban_map_zrd           derived         	1             1        rh    "urban_map_zrd"   "urban mapping 1: ind_zrd"      ""  
+rconfig   integer urban_map_zwd           derived         	1             1        rh    "urban_map_zwd"   "urban mapping 2: ind_zwd"      ""  
+rconfig   integer urban_map_gd            derived         	1             1        rh    "urban_map_gd"    "urban mapping 3: ind_gd"       ""  
+rconfig   integer urban_map_zd            derived         	1             1        rh    "urban_map_zd"    "urban mapping 4: ind_zd"       ""  
+rconfig   integer urban_map_zdf           derived         	1             1        rh    "urban_map_zdf"   "urban mapping 5: ind_zdf"      ""  
+rconfig   integer urban_map_bd            derived         	1             1        rh    "urban_map_bd"    "urban mapping 6: ind_bd"       ""  
+rconfig   integer urban_map_wd            derived         	1             1        rh    "urban_map_wd"    "urban mapping 7: ind_wd"       ""  
+rconfig   integer urban_map_gbd           derived         	1             1        rh    "urban_map_gbd"   "urban mapping 8: ind_gbd"      ""  
+rconfig   integer urban_map_fbd           derived         	1             1        rh    "urban_map_fbd"   "urban mapping 9: ind_fbd"      ""  
+
 rconfig   integer num_urban_hi            namelist,physics      1            15       irh    "num_urban_hi"             ""      ""
 rconfig   integer num_months              namelist,physics      1            12       irh    "num_months"               ""      ""
 rconfig   integer sf_surface_mosaic       namelist,physics	1             0       rh     "sf_surface_mosaic"        "1= mosaic, 0=no mosaic method, add by danli"      ""  
@@ -2178,6 +2304,7 @@ rconfig   integer mosaic_cat              namelist,physics	1             3      
 rconfig   integer mosaic_cat_soil         derived         	1            12       rh     "mosaic_cat_soil"          "should be the number of soil layers times the mosaic_cat"      ""  
 rconfig   integer mosaic_lu               namelist,physics      1             0       irh    "mosaic_lu"             ""      ""
 rconfig   integer mosaic_soil             namelist,physics      1             0       irh    "mosaic_soil"           ""      ""
+rconfig   integer flag_sm_adj             namelist,physics      1             0       irh    "flag_sm_adj" "1-adjustment, 0-no soil moisture adjustment in RUC soil moisture initialization from Noah LSM"      ""
 rconfig   integer maxiens                 namelist,physics	1             1       irh    "maxiens"                    ""      ""
 rconfig   integer maxens                  namelist,physics	1             3       irh    "maxens"                    ""      ""
 rconfig   integer maxens2                 namelist,physics	1             3       irh    "maxens2"                    ""      ""
@@ -2245,6 +2372,7 @@ rconfig   integer shcu_aerosols_opt       namelist,physics      max_domains    0
 
 rconfig   integer ICLOUD_CU               derived               max_domains   0        -     "ICLOUD_CU"                     ""      ""
 rconfig   integer pxlsm_smois_init        namelist,physics      max_domains   1       irh    "PXLSM_SMOIS_INIT"    "Soil moisture initialization option 0-From analysis 1-From MAVAIL"   ""
+rconfig   integer pxlsm_modis_veg         namelist,physics      max_domains   0       irh    "PXLSM_MODIS_VEG"     "If 1 use MODIS VEGFRA from wrflowinp updates, 1=yes"   ""
 rconfig   integer omlcall                 namelist,physics      1            0         h     "omlcall"     "temporary holder to allow checking for new name: oml_opt"
 rconfig   integer sf_ocean_physics        namelist,physics      1            0         h     "sf_ocean_physics"     "activate ocean model  0=no, 1=1d mixed layer, 2=3D PWP" ""
 rconfig   integer traj_opt                namelist,physics      1            0         h     "traj_opt"    "activate trajectory calculation  0=no, 1=on"   ""
@@ -2630,7 +2758,7 @@ package   wsm5scheme      mp_physics==4                -             moist:qv,qc
 package   fer_mp_hires    mp_physics==5                -             moist:qv,qc,qr,qi;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
 package   fer_mp_hires_advect  mp_physics==15          -             moist:qv,qc,qr,qi;scalar:qrimef
 package   wsm6scheme      mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg;state:re_cloud,re_ice,re_snow
-package   gsfcgcescheme   mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
+package   nuwrf4icescheme mp_physics==7              -               moist:qv,qc,qr,qi,qs,qg,qh;state:phys_tot,physc,physe,physd,physs,physm,physf,acphys_tot,acphysc,acphyse,acphysd,acphyss,acphysm,acphysf,preci3d,precs3d,precg3d,precr3d,prech3d,re_cloud_gsfc,re_rain_gsfc,re_ice_gsfc,re_snow_gsfc,re_graupel_gsfc,re_hail_gsfc,re_cloud,re_ice,re_snow
 package   thompson        mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow
 package   milbrandt2mom   mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
 package   morr_two_moment mp_physics==10               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qns,qnr,qng;state:rqrcuten,rqscuten,rqicuten
@@ -2644,12 +2772,17 @@ package   nssl_2momccn    mp_physics==18               -             moist:qv,qc
 package   nssl_1mom       mp_physics==19               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qvolg
 package   nssl_1momlfo    mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
 package   nssl_2momg      mp_physics==22               -             moist:qv,qc,qr,qi,qs,qg;scalar:qndrop,qnr,qni,qns,qng,qvolg;state:re_cloud,re_ice,re_snow
+package   wsm7scheme      mp_physics==24               -             moist:qv,qc,qr,qi,qs,qg,qh;state:re_cloud,re_ice,re_snow
+package   wdm7scheme      mp_physics==26               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qnc,qnr;state:re_cloud,re_ice,re_snow
 package   thompsonaero    mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow,qnwfa2d,qnifa2d,taod5503d,taod5502d
 package   p3_1category    mp_physics==50               -             moist:qv,qc,qr,qi;scalar:qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   p3_1category_nc mp_physics==51               -             moist:qv,qc,qr,qi;scalar:qnc,qni,qnr,qir,qib;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,refl_10cm,th_old,qv_old
 package   p3_2category    mp_physics==52               -             moist:qv,qc,qr,qi,qi2;scalar:qnc,qni,qnr,qir,qib,qni2,qir2,qib2;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,vmi3d_2,rhopo3d_2,di3d_2,refl_10cm,th_old,qv_old
 package   morr_tm_aero    mp_physics==40               -             moist:qv,qc,qr,qi,qs,qg;scalar:qnc,qni,qns,qnr,qng;state:rqrcuten,rqscuten,rqicuten,EFCG,EFIG,EFSG,WACT,CCN1_GS,CCN2_GS,CCN3_GS,CCN4_GS,CCN5_GS,CCN6_GS,CCN7_GS,re_cloud,re_ice,re_snow,mskf_refl_10cm
+package   jensen_ishmael  mp_physics==55               -             moist:qv,qc,qr,qi,qi2,qi3;scalar:qnr,qni,qvoli,qaoli,qni2,qvoli2,qaoli2,qni3,qvoli3,qaoli3;state:re_cloud,re_ice,vmi3d,rhopo3d,di3d,phii3d,itype,vmi3d_2,rhopo3d_2,di3d_2,phii3d_2,itype_2,vmi3d_3,rhopo3d_3,di3d_3,phii3d_3,itype_3,refl_10cm
 package   etampnew        mp_physics==95               -             moist:qv,qc,qr,qs;scalar:qt;state:f_ice_phy,f_rain_phy,f_rimef_phy
+package   gsfcgcescheme   mp_physics==97               -             moist:qv,qc,qr,qi,qs,qg
+
 
 package   radar_refl      compute_radar_ref==1         -             state:refl_10cm,refd_max
 endif
@@ -2662,7 +2795,7 @@ package   wsm3scheme_dfi    mp_physics_dfi==3        -             dfi_moist:dfi
 package   wsm5scheme_dfi    mp_physics_dfi==4        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   fer_mp_hires_dfi  mp_physics_dfi==5        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qt
 package   wsm6scheme_dfi    mp_physics_dfi==6        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
-package   gsfcgcescheme_dfi mp_physics_dfi==7        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
+package   nuwrf4icescheme_dfi mp_physics_dfi==7      -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;state:dfi_re_cloud_gsfc,dfi_re_rain_gsfc,dfi_re_ice_gsfc,dfi_re_snow_gsfc,dfi_re_graupel_gsfc,dfi_re_hail_gsfc,dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   thompson_dfi      mp_physics_dfi==8        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   milbrandt2mom_dfi mp_physics_dfi==9        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnc,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh
 package   morr_two_moment_dfi  mp_physics_dfi==10    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qns,dfi_qnr,dfi_qng
@@ -2674,11 +2807,15 @@ package   nssl_2mom_dfi     mp_physics_dfi==17       -             dfi_moist:dfi
 package   nssl_2mom_dficcn  mp_physics_dfi==18       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qndrop,dfi_qnn,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh,dfi_qvolg;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   nssl_1mom_dfi     mp_physics_dfi==19       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qvolg
 package   nssl_1momlfo_dfi  mp_physics_dfi==21       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
+package   wsm7scheme_dfi    mp_physics_dfi==24       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
+package   wdm7scheme_dfi    mp_physics_dfi==26       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   thompsonaero_dfi  mp_physics_dfi==28       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qnc,dfi_qnwfa,dfi_qnifa;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   p3_1category_dfi  mp_physics_dfi==50       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
 package   p3_1category_nc_dfi  mp_physics_dfi==51    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi;dfi_scalar:dfi_qnc,dfi_qni,dfi_qnr,dfi_qir,dfi_qib;state:dfi_re_cloud,dfi_re_ice
 package   p3_2category_dfi  mp_physics_dfi==52    -                dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qi2;dfi_scalar:dfi_qnc,dfi_qni,dfi_qnr,dfi_qir,dfi_qib,dfi_qni2,dfi_qir2,dfi_qib2;state:dfi_re_cloud,dfi_re_ice
+package   jensen_ishmael_dfi  mp_physics_dfi==55         -         dfi_moist:qdfi_v,dfi_qc,dfi_qr,dfi_qi,dfi_qi2,dfi_qi3;dfi_scalar:dfi_qnr,dfi_qni,dfi_qvoli,dfi_qaoli,dfi_qni2,dfi_qvoli2,dfi_qaoli2,dfi_qni3,dfi_qvoli3,dfi_qaoli3;state:dfi_re_cloud,dfi_re_ice
 package   etampnew_dfi      mp_physics_dfi==95       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs;dfi_scalar:dfi_qt
+package   gsfcgcescheme_dfi   mp_physics_dfi==97     -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
 
 package   noprogn       progn==0                     -             -
 package   progndrop     progn==1                     -             scalar:qndrop;dfi_scalar:dfi_qndrop;state:qndropsource
@@ -2691,7 +2828,7 @@ package   camlwscheme      ra_lw_physics==3          -             ozmixm:mth01,
 package   rrtmg_lwscheme   ra_lw_physics==4          -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,o3rad
 package   rrtmk_lwscheme   ra_lw_physics==14          -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,o3rad
 package   rrtmg_lwscheme_fast  ra_lw_physics==24     -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:aclwupt,aclwuptc,aclwdnt,aclwdntc,aclwupb,aclwupbc,aclwdnb,aclwdnbc,lwupt,lwuptc,lwdnt,lwdntc,lwupb,lwupbc,lwdnb,lwdnbc,o3rad
-package   goddardlwscheme  ra_lw_physics==5          -             state:tlwdn,tlwup,slwdn,slwup,taucldc,taucldi
+package   goddardlwscheme  ra_lw_physics==5          -             state:tlwdn,tlwup,slwdn,slwup,taucldc,taucldi,re_cloud_gsfc,re_rain_gsfc,re_ice_gsfc,re_snow_gsfc,re_graupel_gsfc,re_hail_gsfc,cod2d_out,ctop2d_out,re_cloud,re_ice,re_snow
 package   flglwscheme      ra_lw_physics==7          -             -
 package   heldsuarez       ra_lw_physics==31         -             -
 package   gfdllwscheme     ra_lw_physics==99         -             -
@@ -2702,7 +2839,7 @@ package   camswscheme     ra_sw_physics==3           -             ozmixm:mth01,
 package   rrtmg_swscheme  ra_sw_physics==4           -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,o3rad;aerod:ocarbon,seasalt,dust,bcarbon,sulfate,upperaer
 package   rrtmk_swscheme  ra_sw_physics==14           -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,o3rad;aerod:ocarbon,seasalt,dust,bcarbon,sulfate,upperaer
 package   rrtmg_swscheme_fast  ra_sw_physics==24     -             ozmixm:mth01,mth02,mth03,mth04,mth05,mth06,mth07,mth08,mth09,mth10,mth11,mth12;state:acswupt,acswuptc,acswdnt,acswdntc,acswupb,acswupbc,acswdnb,acswdnbc,swupt,swuptc,swdnt,swdntc,swupb,swupbc,swdnb,swdnbc,o3rad;aerod:ocarbon,seasalt,dust,bcarbon,sulfate,upperaer
-package   goddardswscheme ra_sw_physics==5           -             state:tswdn,tswup,sswdn,sswup,taucldc,taucldi
+package   goddardswscheme ra_sw_physics==5           -             state:tswdn,tswup,sswdn,sswup,taucldc,taucldi,re_cloud_gsfc,re_rain_gsfc,re_ice_gsfc,re_snow_gsfc,re_graupel_gsfc,re_hail_gsfc,cod2d_out,ctop2d_out,re_cloud,re_ice,re_snow
 package   flgswscheme     ra_sw_physics==7           -             -
 package   gfdlswscheme    ra_sw_physics==99          -             -
 
@@ -2726,7 +2863,7 @@ package   lsmscheme      sf_surface_physics==2       -             state:flx4,fv
 package   ruclsmscheme   sf_surface_physics==3       -             state:smfr3d,keepfr3dflag,soilt1,rhosnf,snowfallac,precipfr,acrunoff
 package   noahmpscheme   sf_surface_physics==4       -             state:isnowxy,tvxy,tgxy,canliqxy,canicexy,eahxy,tahxy,cmxy,chxy,fwetxy,sneqvoxy,alboldxy,qsnowxy,wslakexy,zwtxy,waxy,wtxy,tsnoxy,zsnsoxy,snicexy,snliqxy,lfmassxy,rtmassxy,stmassxy,woodxy,stblcpxy,fastcpxy,xsaixy,taussxy,t2mvxy,t2mbxy,q2mvxy,q2mbxy,tradxy,neexy,gppxy,nppxy,fvegxy,qinxy,runsfxy,runsbxy,ecanxy,edirxy,etranxy,fsaxy,firaxy,aparxy,psnxy,savxy,sagxy,rssunxy,rsshaxy,bgapxy,wgapxy,tgvxy,tgbxy,chvxy,chbxy,shgxy,shcxy,shbxy,evgxy,evbxy,ghvxy,ghbxy,irgxy,ircxy,irbxy,trxy,evcxy,chleafxy,chucxy,chv2xy,chb2xy,chstarxy,smoiseq,smcwtdxy,rechxy,deeprechxy,fdepthxy,areaxy,rivercondxy,riverbedxy,eqzwt,pexpxy,qrfxy,qrfsxy,qspringxy,qspringsxy,qslatxy,stepwtd,rechclim,gddxy,grainxy,croptype,planting,harvest,season_gdd,cropcat,pgsxy,soilcomp,soilcl1,soilcl2,soilcl3,soilcl4
 package   clmscheme      sf_surface_physics==5       -             state:numc,nump,sabv,sabg,lwup,lhsoi,lhveg,lhtran,snl,snowdp,wtc,wtp,h2osno,t_grnd,t_veg,h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm,t_ref2m,h2osoi_liq_s1,h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,h2osoi_ice_s1,h2osoi_ice_s2,h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,t_soisno4,t_soisno5,t_soisno6,t_soisno7,t_soisno8,t_soisno9,t_soisno10,dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,h2osoi_vol7,h2osoi_vol8,h2osoi_vol9,h2osoi_vol10,albedosubgrid,lhsubgrid,hfxsubgrid,lwupsubgrid,q2subgrid,sabvsubgrid,sabgsubgrid,nrasubgrid,swupsubgrid
-package   pxlsmscheme    sf_surface_physics==7       -             state:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old,vegf_px,imperv,canfra
+package   pxlsmscheme    sf_surface_physics==7       -             state:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old,t2obs,q2obs,vegf_px,imperv,canfra,lai_px,wwlt_px,wfc_px,wsat_px,clay_px,csand_px,fmsand_px
 package   ssibscheme     sf_surface_physics==8       -             state:ssib_fm,ssib_fh,ssib_cm,ssibxdd,ssib_br,ssib_lhf,ssib_shf,ssib_ghf,ssib_egs,ssib_eci,ssib_ect,ssib_egi,ssib_egt,ssib_sdn,ssib_sup,ssib_ldn,ssib_lup,ssib_wat,ssib_shc,ssib_shg,ssib_lai,ssib_vcf,ssib_z00,ssib_veg,isnow,swe,snowden,snowdepth,tkair,dzo1,wo1,tssn1,tssno1,bwo1,bto1,cto1,fio1,flo1,bio1,blo1,ho1,dzo2,wo2,tssn2,tssno2,bwo2,bto2,cto2,fio2,flo2,bio2,blo2,ho2,dzo3,wo3,tssn3,tssno3,bwo3,bto3,cto3,fio3,flo3,bio3,blo3,ho3,dzo4,wo4,tssn4,tssno4,bwo4,bto4,cto4,fio4,flo4,bio4,blo4,ho4
 
 package   noahmpoptcrop2 opt_crop==2                 -             state:gecros_state
@@ -2748,8 +2885,7 @@ package   gbmpblscheme   bl_pbl_physics==12          -             state:exch_tk
 package   mrfscheme      bl_pbl_physics==99          -             -
 
 package   mynn_tkebudget bl_mynn_tkebudget==1        -             state:qSHEAR,qBUOY,qDISS,qWT,dqke
-package   mynn_stem_edmf bl_mynn_edmf==1            -              state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,ktop_shallow,maxmf,nupdraft
-package   mynn_temf_edmf bl_mynn_edmf==2            -              state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc
+package   mynn_dmp_edmf  bl_mynn_edmf==1            -              state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,ktop_shallow,maxmf,nupdraft
 package   pbl_cloud      icloud_bl==1                -             state:cldfra_bl,qc_bl
 
 # dfi
@@ -2789,6 +2925,7 @@ package   g3shcuscheme    shcu_physics==1            -             -
 package   camuwshcuscheme shcu_physics==2            -             state:shfrc3d,dlf,dlf2,cmfmc,cmfmc2,qtflx_cu,slflx_cu,uflx_cu,vflx_cu,qtten_cu,slten_cu,uten_cu,vten_cu,qvten_cu,qlten_cu,qiten_cu,cbmf_cu,ufrcinvbase_cu,ufrclcl_cu,winvbase_cu,wlcl_cu,plcl_cu,pinv_cu,plfc_cu,pbup_cu,ppen_cu,qtsrc_cu,thlsrc_cu,thvlsrc_cu,emkfbup_cu,cin_cu,cinlcl_cu,cbmflimit_cu,tkeavg_cu,zinv_cu,rcwp_cu,rlwp_cu,riwp_cu,tophgt_cu,wu_cu,ufrc_cu,qtu_cu,thlu_cu,thvu_cu,uu_cu,vu_cu,qtu_emf_cu,thlu_emf_cu,uu_emf_cu,vu_emf_cu,umf_cu,uemf_cu,qcu_cu,qlu_cu,qiu_cu,cufrc_cu,fer_cu,fdr_cu,dwten_cu,diten_cu,qrten_cu,qsten_cu,flxrain_cu,flxsnow_cu,ntraprd_cu,ntsnprd_cu,excessu_cu,excessu0_cu,xc_cu,aquad_cu,bquad_cu,cquad_cu,bogbot_cu,bogtop_cu,exit_uwcu_cu,exit_conden_cu,exit_klclmkx_cu,exit_klfcmkx_cu,exit_ufrc_cu,exit_wtw_cu,exit_drycore_cu,exit_wu_cu,exit_cufliter_cu,exit_kinv1_cu,exit_rei_cu,limit_shcu_cu,limit_negcon_cu,limit_ufrc_cu,limit_ppen_cu,limit_emf_cu,limit_cinlcl_cu,limit_cin_cu,limit_cbmf_cu,limit_rei_cu,ind_delcin_cu,evapcsh,cmfsl,cmflq,cldfrash,cush,icwmrsh,snowsh,rprdsh,rliq2,rliq
 package   grimsshcuscheme shcu_physics==3            -             -
 package   nscvshcuscheme  shcu_physics==4            -             -
+package   dengshcuscheme  shcu_physics==5            -             state:RDCASHTEN,RQCDCSHTEN,CLDAREAA,CLDAREAB,CA_RAD,CW_RAD,CLDLIQA,CLDLIQB,CLDDPTHB,CLDTOPB,PBLMAX,WUB,RAINSHVB,CAPESAVE,RADSAVE,AINCKFSA,LTOPB,KDCLDTOP,KDCLDBAS,XTIME1,PBLHAVG,TKEAVG,W0AVG
 
 package   no_shcu_used    shcu_used==0               -             -
 package   any_shcu_used   shcu_used==1               -             state:rushten,rvshten,rthshten,rqvshten,rqrshten,rqcshten,rqsshten,rqishten,rqgshten,rqcnshten,rqinshten
@@ -3204,3 +3341,4 @@ xpose XPOSE_SPECTRAL_NUDGING dyn_em dif_analysis,dif_xxx,dif_yyy
 
 package   no_fft_used    fft_used==0                  -             -
 package   any_fft_used   fft_used==1                  -             state:t_xxx,u_xxx,ru_xxx,v_xxx,rv_xxx,w_xxx,ww_xxx,ph_xxx,dum_yyy,fourd_xxx
+

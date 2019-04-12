@@ -45,10 +45,12 @@ MODULES = \
 	module_bl_gwdo.o \
 	module_bl_myjurb.o \
 	module_bl_boulac.o \
+	module_checkerror.o \
 	module_bl_camuwpbl_driver.o \
 	module_bl_mfshconvpbl.o \
 	module_shcu_camuwshcu_driver.o \
 	module_shcu_camuwshcu.o \
+	module_shcu_deng.o          \
 	module_shcu_grims.o \
 	module_shcu_nscv.o \
 	module_cu_camzm_driver.o \
@@ -69,6 +71,7 @@ MODULES = \
 	module_cu_ksas.o \
 	module_cu_nsas.o \
 	module_cu_sas.o \
+	module_gocart_coupling.o \
 	module_cu_scalesas.o \
 	module_cu_osas.o \
 	module_cu_kfcup.o \
@@ -79,6 +82,7 @@ MODULES = \
 	module_mp_wsm3.o \
 	module_mp_wsm5.o \
 	module_mp_wsm6.o \
+	module_mp_wsm7.o \
 	module_mp_etanew.o \
 	module_mp_fer_hires.o \
 	module_mp_HWRF.o \
@@ -87,13 +91,16 @@ MODULES = \
 	module_mp_fast_sbm.o \
 	module_ltng_lpi.o \
 	module_mp_gsfcgce.o \
+	module_mp_gsfcgce_4ice_nuwrf.o \
 	module_mp_morr_two_moment.o \
         module_mp_p3.o \
+        module_mp_jensen_ishmael.o \
         module_mp_morr_two_moment_aero.o \
 	module_mp_milbrandt2mom.o \
 	module_mp_nssl_2mom.o \
 	module_mp_wdm5.o \
 	module_mp_wdm6.o \
+	module_mp_wdm7.o \
 	module_mp_cammgmp_driver.o \
 	module_ra_sw.o  \
 	module_ra_clWRF_support.o  \
@@ -192,7 +199,7 @@ FIRE_MODULES = \
         module_fr_fire_core.o \
         module_fr_fire_phys.o \
         module_fr_fire_util.o
-  
+
 DIAGNOSTIC_MODULES_EM = \
 	module_diag_afwa.o \
 	module_diag_cl.o \

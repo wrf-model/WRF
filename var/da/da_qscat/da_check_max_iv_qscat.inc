@@ -32,8 +32,10 @@ subroutine da_check_max_iv_qscat(iv, it, num_qcstat_conv)
                     num_qcstat_conv(1,qscat,1,1) = num_qcstat_conv(1,qscat,1,1) + 1
                     if(failed) then
                        num_qcstat_conv(2,qscat,1,1) = num_qcstat_conv(2,qscat,1,1) + 1
+                       if ( write_rej_obs_conv ) then
                        write(qcstat_conv_unit,'(2x,a10,2x,a4,2f12.2,a12)')&
                        'qscat',ob_vars(1),iv%info(qscat)%lat(1,n),iv%info(qscat)%lon(1,n),'1013.25'
+                       end if
                     end if
                 end if
             end if
@@ -45,8 +47,10 @@ subroutine da_check_max_iv_qscat(iv, it, num_qcstat_conv)
                     num_qcstat_conv(1,qscat,2,1) = num_qcstat_conv(1,qscat,2,1) + 1
                     if(failed)then
                        num_qcstat_conv(2,qscat,2,1) = num_qcstat_conv(2,qscat,2,1) + 1
+                       if ( write_rej_obs_conv ) then
                        write(qcstat_conv_unit,'(2x,a10,2x,a4,2f12.2,a12)')&
                              'qscat',ob_vars(2),iv%info(qscat)%lat(1,n),iv%info(qscat)%lon(1,n),'1013.25'
+                       end if
                     end if
                 end if
             end if
@@ -59,8 +63,10 @@ subroutine da_check_max_iv_qscat(iv, it, num_qcstat_conv)
                     num_qcstat_conv(1,qscat,1,1) = num_qcstat_conv(1,qscat,1,1) + 1
                     if(failed) then
                        num_qcstat_conv(2,qscat,1,1) = num_qcstat_conv(2,qscat,1,1) + 1
+                       if ( write_rej_obs_conv ) then
                        write(qcstat_conv_unit,'(2x,a10,2x,a4,2f12.2,a12)')&
                              'qscat',ob_vars(1),iv%info(qscat)%lat(1,n),iv%info(qscat)%lon(1,n),'1013.25'
+                       end if
                     end if
                 end if
             end if
@@ -71,8 +77,10 @@ subroutine da_check_max_iv_qscat(iv, it, num_qcstat_conv)
                     num_qcstat_conv(1,qscat,2,1) = num_qcstat_conv(1,qscat,2,1) + 1
                     if(failed)then
                        num_qcstat_conv(2,qscat,2,1) = num_qcstat_conv(2,qscat,2,1) + 1
+                       if ( write_rej_obs_conv ) then
                        write(qcstat_conv_unit,'(2x,a10,2x,a4,2f12.2,a12)')&
                              'qscat',ob_vars(2),iv%info(qscat)%lat(1,n),iv%info(qscat)%lon(1,n),'1013.25'
+                       end if
                     end if
                 end if
              end if
@@ -109,11 +117,15 @@ subroutine da_check_max_iv_qscat(iv, it, num_qcstat_conv)
  
                   if(failed1 .or. failed2) then
                      num_qcstat_conv(2,qscat,1,1) = num_qcstat_conv(2,qscat,1,1) + 1
+                     if ( write_rej_obs_conv ) then
                      write(qcstat_conv_unit,'(2x,a10,2x,a4,2f12.2,a12)')&
                            'qscat',ob_vars(1),iv%info(qscat)%lat(1,n),iv%info(qscat)%lon(1,n),'1013.25'
+                     end if
                      num_qcstat_conv(2,qscat,2,1) = num_qcstat_conv(2,qscat,2,1) + 1
+                     if ( write_rej_obs_conv ) then
                      write(qcstat_conv_unit,'(2x,a10,2x,a4,2f12.2,a12)')&
                            'qscat',ob_vars(2),iv%info(qscat)%lat(1,n),iv%info(qscat)%lon(1,n),'1013.25'
+                     end if
                   end if
               end if
           end if

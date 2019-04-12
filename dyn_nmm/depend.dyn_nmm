@@ -75,6 +75,7 @@ start_domain_nmm.o: module_ADVECTION.o module_BNDRY_COND.o module_CTLBLK.o \
                     module_IGWAVE_ADJUST.o \
                     module_HIFREQ.o ../share/module_random.o \
                     ../phys/module_physics_init.o \
+                    ../phys/module_sf_exchcoef.o \
                     module_STATS_FOR_MOVE.o \
                     module_tornado_genesis.o module_swath.o ../frame/module_clear_halos.o
 

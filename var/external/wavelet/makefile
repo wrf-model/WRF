@@ -90,7 +90,7 @@ xp.o:			awaprogs/chap09/xp.c awaprogs/chap02/common.h awaprogs/chap02/real.h awa
 			$(CC) $(CFLAGS_LOCAL) -c $<
 
 clean : 
-			$(RM) *.f *.o *.mod *.obj *.i
+			@$(RM) *.f *.o *.mod *.obj *.i
 
 superclean : clean
-			$(RM) *.a
+			@$(RM) *.a

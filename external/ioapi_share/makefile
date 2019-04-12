@@ -19,7 +19,7 @@ all: ../../inc/wrf_io_flags.h ../../inc/wrf_status_codes.h
 	/bin/cp wrf_status_codes.h ../../inc
 
 superclean: 
-	/bin/rm -f ../../inc/wrf_io_flags.h ../../inc/wrf_status_codes.h
+	@/bin/rm -f ../../inc/wrf_io_flags.h ../../inc/wrf_status_codes.h
 
 # DEPENDENCIES : only dependencies after this line 
 

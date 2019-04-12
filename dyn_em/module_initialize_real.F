@@ -131,6 +131,7 @@ integer::oops1,oops2
       REAL    :: zap_close_levels
       INTEGER :: force_sfc_in_vinterp
       INTEGER :: interp_type , lagrange_order , extrap_type , t_extrap_type
+      INTEGER :: linear_interp
       LOGICAL :: lowest_lev_from_sfc , use_levels_below_ground , use_surface
       LOGICAL :: we_have_tavgsfc , we_have_tsk
 
@@ -165,12 +166,19 @@ integer::oops1,oops2
       LOGICAL :: vnest !T if using vertical nesting with vet_refine_method=2, otherwise F
 
       INTEGER :: j_save
+      INTEGER :: change_soil, change_soilw, iforce
+
+      REAL:: temp_rho
 
       LOGICAL :: wif_upside_down = .FALSE.
       
       !  Test on consistency between namelist settings and the available data from geogrid.
 
       INTEGER :: geogrid_flag_error
+
+      !  Vertical pressure checks
+
+      REAL :: press_above, press_below
 
       !  Dimension information stored in grid data structure.
 
@@ -1650,6 +1658,32 @@ integer::oops1,oops2
             grid%c2h(k) = ( 1. - grid%c1h(k) ) * ( p1000mb - grid%p_top )
          ENDDO
 
+         !  With c3 and c4 on full levels, we can verify that we are maintaining monotonically
+         !  decreasing reference pressure.
+         !  P_dry_ref(k)  = c3f(k) * ( psurf - p_top ) + c4f(k) + p_top
+
+         DO j = jts, MIN(jde-1,jte)
+            DO i = its, MIN(ide-1,ite)
+               p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*grid%ht(i,j)/a/r_d ) **0.5 )
+               DO k=1, kde-1
+                  press_above = grid%c3f(k+1)*(p_surf-grid%p_top) + grid%c4f(k+1) + grid%p_top
+                  press_below = grid%c3f(k  )*(p_surf-grid%p_top) + grid%c4f(k  ) + grid%p_top
+                  IF ( press_below - press_above .LE. 0.0 ) THEN
+                     CALL wrf_message ( '----- ERROR: The reference pressure is not monotonically decreasing' )
+                     CALL wrf_message ( '             This tends to be caused by very high topography')
+                     WRITE (a_message,*) '(i,j) = ',i,j,', topography = ',grid%ht(i,j),' m'
+                     CALL wrf_message ( TRIM(a_message) )
+                     WRITE (a_message,*) 'k = ',k,', reference pressure = ',press_below,' Pa'
+                     CALL wrf_message ( TRIM(a_message) )
+                     WRITE (a_message,*) 'k = ',k+1,', reference pressure = ',press_above,' Pa'
+                     CALL wrf_message ( TRIM(a_message) )
+                     WRITE (a_message,*) 'In the dynamics namelist record, reduce etac from ',config_flags%etac
+                     CALL wrf_error_fatal ( TRIM(a_message) )
+                  END IF
+               ENDDO
+            ENDDO
+         ENDDO
+
          IF ( config_flags%interp_theta ) THEN
 
             !  The input field is temperature, we want potential temp.
@@ -1680,6 +1714,7 @@ integer::oops1,oops2
 
             interp_type = 2
             lagrange_order = grid%lagrange_order
+            linear_interp = grid%linear_interp
             lowest_lev_from_sfc = .FALSE.
             use_levels_below_ground = .TRUE.
             use_surface = .TRUE.
@@ -1892,8 +1927,8 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , lagrange_order , extrap_type , &
-                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     interp_type , linear_interp , extrap_type , &
+                                     .false. , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
@@ -1922,8 +1957,8 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , lagrange_order , extrap_type , &
-                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     interp_type , linear_interp , extrap_type , &
+                                     .false. , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
@@ -1952,8 +1987,8 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , lagrange_order , extrap_type , &
-                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     interp_type , linear_interp , extrap_type , &
+                                     .false. , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
@@ -1972,8 +2007,8 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , lagrange_order , extrap_type , &
-                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     interp_type , linear_interp , extrap_type , &
+                                     .false. , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
@@ -1992,8 +2027,8 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , lagrange_order , extrap_type , &
-                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     interp_type , linear_interp , extrap_type , &
+                                     .false. , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
@@ -2012,8 +2047,8 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , lagrange_order , extrap_type , &
-                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     interp_type , linear_interp , extrap_type , &
+                                     .false. , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
@@ -2032,8 +2067,8 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , lagrange_order , extrap_type , &
-                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     interp_type , linear_interp , extrap_type , &
+                                     .false. , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
@@ -2052,8 +2087,8 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , lagrange_order , extrap_type , &
-                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     interp_type , linear_interp , extrap_type , &
+                                     .false. , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
@@ -2072,8 +2107,8 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , lagrange_order , extrap_type , &
-                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     interp_type , linear_interp , extrap_type , &
+                                     .false. , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
@@ -2092,8 +2127,8 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , lagrange_order , extrap_type , &
-                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     interp_type , linear_interp , extrap_type , &
+                                     .false. , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
@@ -2112,8 +2147,8 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , lagrange_order , extrap_type , &
-                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     interp_type , linear_interp , extrap_type , &
+                                     .false. , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
@@ -2132,8 +2167,8 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , lagrange_order , extrap_type , &
-                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     interp_type , linear_interp , extrap_type , &
+                                     .false. , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
@@ -2157,8 +2192,8 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , lagrange_order , extrap_type , &
-                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     interp_type , linear_interp , extrap_type , &
+                                     .false. , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
@@ -2173,8 +2208,8 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , lagrange_order , extrap_type , &
-                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     interp_type , linear_interp , extrap_type , &
+                                     .false. , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
@@ -2210,8 +2245,8 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , lagrange_order , extrap_type , &
-                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     interp_type , linear_interp , extrap_type , &
+                                     .false. , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
@@ -2225,8 +2260,8 @@ integer::oops1,oops2
                                      config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                      config_flags%maxw_above_this_level , &
                                      num_metgrid_levels , 'Q' , &
-                                     interp_type , lagrange_order , extrap_type , &
-                                     lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                                     interp_type , linear_interp , extrap_type , &
+                                     .false. , use_levels_below_ground , use_surface , &
                                      zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                      ids , ide , jds , jde , kds , kde , &
                                      ims , ime , jms , jme , kms , kme , &
@@ -2319,8 +2354,8 @@ integer::oops1,oops2
                                config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                config_flags%maxw_above_this_level , &
                                config_flags%num_gca_levels , 'Q' , &
-                               interp_type , lagrange_order , extrap_type , &
-                               lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                               interp_type , linear_interp , extrap_type , &
+                               .false. , use_levels_below_ground , use_surface , &
                                zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                ids , ide , jds , jde , kds , kde , &
                                ims , ime , jms , jme , kms , kme , &
@@ -2371,8 +2406,8 @@ integer::oops1,oops2
                                config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                config_flags%maxw_above_this_level , &
                                config_flags%num_gca_levels , 'Q' , &
-                               interp_type , lagrange_order , extrap_type , &
-                               lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                               interp_type , linear_interp , extrap_type , &
+                               .false. , use_levels_below_ground , use_surface , &
                                zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                ids , ide , jds , jde , kds , kde , &
                                ims , ime , jms , jme , kms , kme , &
@@ -2423,8 +2458,8 @@ integer::oops1,oops2
                                config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                config_flags%maxw_above_this_level , &
                                config_flags%num_gca_levels , 'Q' , &
-                               interp_type , lagrange_order , extrap_type , &
-                               lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                               interp_type , linear_interp , extrap_type , &
+                               .false. , use_levels_below_ground , use_surface , &
                                zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                ids , ide , jds , jde , kds , kde , &
                                ims , ime , jms , jme , kms , kme , &
@@ -2547,8 +2582,8 @@ integer::oops1,oops2
                                config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                config_flags%maxw_above_this_level , &
                                config_flags%num_wif_levels , 'Q' , &
-                               interp_type , lagrange_order , extrap_type , &
-                               lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                               interp_type , linear_interp , extrap_type , &
+                               .false. , use_levels_below_ground , use_surface , &
                                zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                ids , ide , jds , jde , kds , kde , &
                                ims , ime , jms , jme , kms , kme , &
@@ -2608,8 +2643,8 @@ integer::oops1,oops2
                                config_flags%maxw_horiz_pres_diff , config_flags%trop_horiz_pres_diff , &
                                config_flags%maxw_above_this_level , &
                                config_flags%num_wif_levels , 'Q' , &
-                               interp_type , lagrange_order , extrap_type , &
-                               lowest_lev_from_sfc , use_levels_below_ground , use_surface , &
+                               interp_type , linear_interp , extrap_type , &
+                               .false. , use_levels_below_ground , use_surface , &
                                zap_close_levels , force_sfc_in_vinterp , grid%id , &
                                ids , ide , jds , jde , kds , kde , &
                                ims , ime , jms , jme , kms , kme , &
@@ -2891,8 +2926,9 @@ integer::oops1,oops2
                                   grid%landmask , grid%sst , grid%ht, grid%toposoil, &
                                   st_input , sm_input , sw_input , &
                                   st_levels_input , sm_levels_input , sw_levels_input , &
-                                  grid%zs , grid%dzs , grid%tslb , grid%smois , grid%sh2o , &
-                                  flag_sst , flag_tavgsfc, flag_soilhgt,&
+                                  grid%zs , grid%dzs , model_config_rec%flag_sm_adj , &
+                                  grid%tslb , grid%smois , grid%sh2o , &
+                                  flag_sst , flag_tavgsfc, flag_soilhgt, &
                                   flag_soil_layers, flag_soil_levels, &
                                   ids , ide , jds , jde , kds , kde , &
                                   ims , ime , jms , jme , kms , kme , &
@@ -2994,6 +3030,32 @@ integer::oops1,oops2
             CALL wrf_error_fatal ( a_message )
          END IF
 
+         !  Need to match isltyp to landmask
+
+         iforce = 0
+         change_soil = 0
+         change_soilw = 0
+         DO j = jts, MIN(jde-1,jte)
+            DO i = its, MIN(ide-1,ite)
+               IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
+               IF ( grid%landmask(i,j) .GT. 0.5 .AND. grid%isltyp(i,j) .EQ. grid%isoilwater ) THEN
+                  grid%isltyp(i,j) = 8
+                  change_soilw =  change_soilw + 1
+                  iforce =  iforce + 1
+               ELSE IF ( grid%landmask(i,j) .LT. 0.5 .AND. grid%isltyp(i,j) .NE. grid%isoilwater ) THEN
+                  grid%isltyp(i,j) = grid%isoilwater
+                  change_soil =  change_soil + 1
+                  iforce =  iforce + 1
+               END IF
+            END DO
+         END DO
+         IF ( change_soilw .GT. 0 .OR. change_soil .GT. 0 ) THEN
+            WRITE(a_message,FMT='(A,I4,A,I6)' ) &
+                  'forcing artificial silty clay loam at ',iforce,' points, out of ',&
+                  (MIN(ide-1,ite)-its+1)*(MIN(jde-1,jte)-jts+1)
+                  CALL wrf_debug(0,a_message)
+         END IF
+
       END IF
 
       !  Split NUDAPT  Urban Parameters
@@ -3040,34 +3102,6 @@ integer::oops1,oops2
                grid%MH_URB2D(i,j)  = grid%URB_PARAM(i,92,j)
                grid%STDH_URB2D(i,j)  = grid%URB_PARAM(i,93,j)
             ENDIF
-            grid%H2W_URB2D(i,j)  = grid%URB_PARAM(i,101,j)
-            grid%Z0S_URB2D(i,j)  = grid%URB_PARAM(i,103,j)
-            grid%ZDS_URB2D(i,j)  = grid%URB_PARAM(i,104,j)
-            grid%ZDM_URB2D(i,j)  = grid%URB_PARAM(i,117,j)
-            IF(grid%URB_PARAM(i,100,j).eq.0)THEN
-               grid%CAR_URB2D(i,j) = 1.0
-            ELSE
-               grid%CAR_URB2D(i,j) = grid%URB_PARAM(i,100,j)
-            END IF
-            IF(grid%URB_PARAM(i,102,j).eq.0)THEN
-               grid%SVF_URB2D(i,j) = 1.0
-            ELSE
-               grid%SVF_URB2D(i,j) = grid%URB_PARAM(i,102,j)
-            END IF
-         END DO
-      END DO
-
-      DO j = jts , MIN(jde-1,jte)
-         DO i = its , MIN(ide-1,ite)
-            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
-            DO k = 1, 15
-               grid%FAD0_URB2D(i,k,j)  = grid%URB_PARAM(i,k,j)
-               grid%FAD135_URB2D(i,k,j)  = grid%URB_PARAM(i,k+15,j)
-               grid%FAD45_URB2D(i,k,j)  = grid%URB_PARAM(i,k+30,j)
-               grid%FAD90_URB2D(i,k,j)  = grid%URB_PARAM(i,k+45,j)
-               grid%PAD_URB2D(i,k,j)  = grid%URB_PARAM(i,k+60,j)
-               grid%RAD_URB2D(i,k,j)  = grid%URB_PARAM(i,k+75,j)
-            END DO
          END DO
       END DO
 
@@ -3078,22 +3112,7 @@ integer::oops1,oops2
                IF ( config_flags%sf_urban_physics==1 ) THEN
                   grid%LF_URB2D(i,k,j)  = grid%URB_PARAM(i,k+95,j)
                ENDIF
-               grid%Z0M_URB2D(i,k,j)  = grid%URB_PARAM(i,k+112,j)
             END DO
-         END DO
-      END DO
-
-      DO  j = jts , MIN(jde-1,jte)
-         DO i = its , MIN(ide-1,ite)
-            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
-            grid%Z0R_URB2D(i,1,j)  = grid%URB_PARAM(i,105,j)
-            grid%Z0R_URB2D(i,2,j)  = grid%URB_PARAM(i,107,j)
-            grid%Z0R_URB2D(i,3,j)  = grid%URB_PARAM(i,109,j)
-            grid%Z0R_URB2D(i,4,j)  = grid%URB_PARAM(i,111,j)
-            grid%ZDR_URB2D(i,1,j)  = grid%URB_PARAM(i,106,j)
-            grid%ZDR_URB2D(i,2,j)  = grid%URB_PARAM(i,108,j)
-            grid%ZDR_URB2D(i,3,j)  = grid%URB_PARAM(i,110,j)
-            grid%ZDR_URB2D(i,4,j)  = grid%URB_PARAM(i,112,j)
          END DO
       END DO
 
@@ -3677,6 +3696,7 @@ endif
                grid%t_init(i,k,j) = temp*(p00/grid%pb(i,k,j))**(r_d/cp) - t0
                grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
             END DO
+            grid%php(i,kte,j) = grid%p_top
             !  Base state mu is defined as base state surface pressure minus grid%p_top
             grid%MUB(i,j) = p_surf - grid%p_top
             !  Dry surface pressure is defined as the following (this mu is from the input file
@@ -4428,7 +4448,73 @@ endif
          enddo
          enddo
       ENDIF
+
 !+---+-----------------------------------------------------------------+
+!..Let us ensure that double-moment microphysics variables have numbers
+!.. where there is mass.  Currently doing this for Thompson-MP only, but
+!.. can consider doing it for every MP scheme that has 2-moment variables.
+!.. This is important because pressure-level RAP/HRRR files have mass but
+!.. not number values for example (whereas native model level files have
+!.. both).
+!+---+-----------------------------------------------------------------+
+
+      IF ( config_flags%mp_physics .EQ. THOMPSON .OR.                   &
+                   config_flags%mp_physics .EQ. THOMPSONAERO ) THEN
+
+         !..As it occurs up above, temporarily utilizing the v_1 variable,
+         !.. to hold temperature, which it does when time_loop=0.
+
+         IF ( internal_time_loop .GT. 1 ) THEN
+            grid%v_1 = grid%t_2+t0
+
+            CALL theta_to_t ( grid%v_1 , grid%p_hyd  , p00 , &
+                           ids , ide , jds , jde , kds , kde , &
+                           ims , ime , jms , jme , kms , kme , &
+                           its , ite , jts , jte , kts , kte )
+         ENDIF
+
+
+         do j = jts, MIN(jte,jde-1)
+         do i = its, MIN(ite,ide-1)
+
+            IF ( skip_middle_points_t ( ids , ide , jds , jde , i , j , em_width , hold_ups ) ) CYCLE
+
+            do k = kts, kte-1
+               temp_rho = 1./grid%alt(i,k,j)
+
+               !..Produce a sensible cloud droplet number concentration
+
+               if (P_QNC.gt.1 .AND. moist(i,k,j,P_QC).gt.0.0 .AND. scalar(i,k,j,P_QNC).le.0.0) then
+                  if (P_QNWFA .gt. 1) then
+                     scalar(i,k,j,P_QNC) = make_DropletNumber (moist(i,k,j,P_QC)*temp_rho,       &
+     &                           scalar(i,k,j,P_QNWFA)*temp_rho, grid%xland(i,j))
+                  else
+                     scalar(i,k,j,P_QNC) = make_DropletNumber (moist(i,k,j,P_QC)*temp_rho,       &
+     &                           0.0, grid%xland(i,j))
+                  endif
+                  scalar(i,k,j,P_QNC) = scalar(i,k,j,P_QNC) / temp_rho
+               endif
+
+               !..Produce a sensible cloud ice number concentration
+
+               if (P_QNI.gt.1 .AND. moist(i,k,j,P_QI).gt.0.0 .AND. scalar(i,k,j,P_QNI).le.0.0) then
+                  scalar(i,k,j,P_QNI) = make_IceNumber (moist(i,k,j,P_QI)*temp_rho, grid%v_1(i,k,j))
+                  scalar(i,k,j,P_QNI) = scalar(i,k,j,P_QNI) / temp_rho
+               endif
+
+               !..Produce a sensible rain number concentration
+
+               if (P_QNR.gt.1 .AND. moist(i,k,j,P_QR).gt.0.0 .AND. scalar(i,k,j,P_QNR).le.0.0) then
+                  scalar(i,k,j,P_QNR) = make_RainNumber (moist(i,k,j,P_QR)*temp_rho, grid%v_1(i,k,j))
+                  scalar(i,k,j,P_QNR) = scalar(i,k,j,P_QNR) / temp_rho
+               endif
+
+            enddo
+
+         enddo
+         enddo
+
+      ENDIF
 
 !+---+-----------------------------------------------------------------+
       !  Added by Greg Thompson.  Pre-set snow depth by latitude, elevation, and day-of-year.
@@ -8562,6 +8648,162 @@ end do
 
       END FUNCTION snowHires
 
+!+---+-----------------------------------------------------------------+
+!+---+-----------------------------------------------------------------+
+
+      real function make_IceNumber (Q_ice, temp)
+
+      IMPLICIT NONE
+      REAL, PARAMETER:: Ice_density = 890.0
+      REAL, PARAMETER:: PI = 3.1415926536
+      integer idx_rei
+      real corr, reice, deice, Q_ice, temp
+      double precision lambda
+
+!+---+-----------------------------------------------------------------+
+!..Table of lookup values of radiative effective radius of ice crystals
+!.. as a function of Temperature from -94C to 0C.  Taken from WRF RRTMG
+!.. radiation code where it is attributed to Jon Egill Kristjansson
+!.. and coauthors.
+!+---+-----------------------------------------------------------------+
+
+      real retab(95)
+      data retab /                                                      &
+         5.92779, 6.26422, 6.61973, 6.99539, 7.39234,                   &
+         7.81177, 8.25496, 8.72323, 9.21800, 9.74075, 10.2930,          &
+         10.8765, 11.4929, 12.1440, 12.8317, 13.5581, 14.2319,          &
+         15.0351, 15.8799, 16.7674, 17.6986, 18.6744, 19.6955,          &
+         20.7623, 21.8757, 23.0364, 24.2452, 25.5034, 26.8125,          &
+         27.7895, 28.6450, 29.4167, 30.1088, 30.7306, 31.2943,          &
+         31.8151, 32.3077, 32.7870, 33.2657, 33.7540, 34.2601,          &
+         34.7892, 35.3442, 35.9255, 36.5316, 37.1602, 37.8078,          &
+         38.4720, 39.1508, 39.8442, 40.5552, 41.2912, 42.0635,          &
+         42.8876, 43.7863, 44.7853, 45.9170, 47.2165, 48.7221,          &
+         50.4710, 52.4980, 54.8315, 57.4898, 60.4785, 63.7898,          &
+         65.5604, 71.2885, 75.4113, 79.7368, 84.2351, 88.8833,          &
+         93.6658, 98.5739, 103.603, 108.752, 114.025, 119.424,          &
+         124.954, 130.630, 136.457, 142.446, 148.608, 154.956,          &
+         161.503, 168.262, 175.248, 182.473, 189.952, 197.699,          &
+         205.728, 214.055, 222.694, 231.661, 240.971, 250.639/
+
+!+---+-----------------------------------------------------------------+
+!..From the model 3D temperature field, subtract 179K for which
+!.. index value of retab as a start.  Value of corr is for
+!.. interpolating between neighboring values in the table.
+!+---+-----------------------------------------------------------------+
+
+      idx_rei = int(temp-179.)
+      idx_rei = min(max(idx_rei,1),94)
+      corr = temp - int(temp)
+      reice = retab(idx_rei)*(1.-corr) + retab(idx_rei+1)*corr
+      deice = 2.*reice * 1.E-6
+
+!+---+-----------------------------------------------------------------+
+!..Now we have the final radiative effective size of ice (as function
+!.. of temperature only).  This size represents 3rd moment divided by
+!.. second moment of the ice size distribution, so we can compute a
+!.. number concentration from the mean size and mass mixing ratio.
+!.. The mean (radiative effective) diameter is 3./Slope for an inverse
+!.. exponential size distribution.  So, starting with slope, work
+!.. backwords to get number concentration.
+!+---+-----------------------------------------------------------------+
+
+      lambda = 3.0 / deice
+      make_IceNumber = Q_ice * lambda*lambda*lambda / (PI*Ice_density)
+
+!+---+-----------------------------------------------------------------+
+!..Example1: Common ice size coming from Thompson scheme is about 30 microns.
+!.. An example ice mixing ratio could be 0.001 g/kg for a temperature of -50C.
+!.. Remember to convert both into MKS units.  This gives N_ice=357652 per kg.
+!..Example2: Lower in atmosphere at T=-10C matching ~162 microns in retab,
+!.. and assuming we have 0.1 g/kg mixing ratio, then N_ice=28122 per kg,
+!.. which is 28 crystals per liter of air if the air density is 1.0.
+!+---+-----------------------------------------------------------------+
+
+      return
+      end function make_IceNumber
+
+!+---+-----------------------------------------------------------------+
+!+---+-----------------------------------------------------------------+
+
+      real function make_DropletNumber (Q_cloud, qnwfa, xland)
+
+      IMPLICIT NONE
+
+      real:: Q_cloud, qnwfa, xland
+
+      real, parameter:: PI = 3.1415926536
+      real, parameter:: am_r = PI*1000./6.
+      real, dimension(15), parameter:: g_ratio = (/24,60,120,210,336,   &
+     &                504,720,990,1320,1716,2184,2730,3360,4080,4896/)
+      double precision:: lambda, qnc
+      real:: q_nwfa, x1, xDc
+      integer:: nu_c
+
+!+---+
+
+      if (qnwfa .le. 0.0) then
+
+         if ((xland-1.5).gt.0.) then                                     !--- Ocean
+            xDc = 17.E-6
+            nu_c = 12
+         else                                                            !--- Land
+            xDc = 11.E-6
+            nu_c = 4
+         endif
+
+      else
+         q_nwfa = MAX(99.E6, MIN(qnwfa,5.E10))
+         nu_c = MAX(2, MIN(NINT(2.5E10/q_nwfa), 15))
+
+         x1 = MAX(1., MIN(q_nwfa*1.E-9, 10.)) - 1.
+         xDc = (30. - x1*20./9.) * 1.E-6
+      endif
+
+      lambda = (4.0D0 + nu_c) / xDc
+      qnc = Q_cloud / g_ratio(nu_c) * lambda*lambda*lambda / am_r
+      make_DropletNumber = SNGL(qnc)
+
+      return
+      end function make_DropletNumber
+
+!+---+-----------------------------------------------------------------+
+!+---+-----------------------------------------------------------------+
+
+      real function make_RainNumber (Q_rain, temp)
+
+      IMPLICIT NONE
+
+      real, intent(in):: Q_rain, temp
+      double precision:: lambda, N0, qnr
+      real, parameter:: PI = 3.1415926536
+      real, parameter:: am_r = PI*1000./6.
+
+      !+---+-----------------------------------------------------------------+ 
+      !.. Not thrilled with it, but set Y-intercept parameter to Marshal-Palmer value
+      !.. that basically assumes melting snow becomes typical rain. However, for
+      !.. -2C < T < 0C, make linear increase in exponent to attempt to keep
+      !.. supercooled collision-coalescence (warm-rain) similar to drizzle rather
+      !.. than bigger rain drops.  While this could also exist at T>0C, it is
+      !.. more difficult to assume it directly from having mass and not number.
+      !+---+-----------------------------------------------------------------+ 
+
+      N0 = 8.E6
+
+      if (temp .le. 271.15) then
+         N0 = 8.E8      
+      elseif (temp .gt. 271.15 .and. temp.lt.273.15) then
+         N0 = 8. * 10**(279.15-temp)
+      endif
+
+      lambda = SQRT(SQRT(N0*am_r*6.0/Q_rain))
+      qnr = Q_rain / 6.0 * lambda*lambda*lambda / am_r
+      make_RainNumber = SNGL(qnr)
+
+      return
+      end function make_RainNumber
+
+!+---+-----------------------------------------------------------------+
 !+---+-----------------------------------------------------------------+
 
 

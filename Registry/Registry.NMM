@@ -460,8 +460,8 @@ state  real   AKMS_OUT  ij    dyn_nmm   1    -     rh023       "AKMS_OUT"  "Outp
 #
 # module_PHYS
 #
-state  real   cd_out    ij    dyn_nmm   1    -     rh0123d=(DownCopy)       "CD_OUT"  "sfc exch coeff for momentum"        "m2 s-1"
-state  real   ch_out    ij    dyn_nmm   1    -     rh0123d=(DownCopy)       "CH_OUT"  "sfc exch coeff for heat"            "m2 s-1"
+state  real   cd_out    ij    dyn_nmm   1    -     rh0123d=(DownCopy)       "CD10"  "sfc exch coeff for momentum at 10m"        "m2 s-1"
+state  real   ch_out    ij    dyn_nmm   1    -     rh0123d=(DownCopy)       "CH10"  "sfc exch coeff for heat at 10m"            "m2 s-1"
 
 state  real   albase    ij    dyn_nmm   1    -     i01rh023d=(DownCopy) "ALBASE"    "Base albedo"            ""
 state  real   albedo    ij    dyn_nmm   1    -     irh023      "ALBEDO"    "Dynamic albedo"         ""
@@ -1367,6 +1367,7 @@ rconfig   integer irand                   namelist,domains	1             0      
 rconfig   real    dt                      derived              max_domains    2.      h0123     "dt"        "TEMPORAL RESOLUTION"      "SECONDS"
 rconfig   integer   ts_buf_size     namelist,domains    1                200          -       "ts_buf_size"   "Size of time series buffer"
 rconfig   integer   max_ts_locs     namelist,domains    1                5            -       "max_ts_locs"   "Maximum number of time series locations"
+rconfig   logical   tslist_ij             derived       1              .false. rh  "tslist_ij"    "Use i,j locations in tslist"   ""
 rconfig   integer   num_moves       namelist,domains    1                0
 rconfig   integer   vortex_interval namelist,domains    max_domains      15  -  "" "" "minutes"
 rconfig   integer   corral_dist     namelist,domains    max_domains      8
@@ -1442,10 +1443,29 @@ rconfig   integer ISFFLX                  namelist,physics 	1             1     
 rconfig   integer ideal_xland             namelist,physics      1             1        rh    "IDEAL_XLAND"  "land=1(def), water=2, for ideal cases with no land-use"      ""
 rconfig   integer IFSNOW                  namelist,physics	1             1       irh    "IFSNOW"                        ""      ""
 rconfig   integer ICLOUD                  namelist,physics	1             1       irh    "ICLOUD"                        ""      ""
+rconfig   integer cldovrlp                namelist,physics      1             2       irh    "cldovrlp"                      "1=random, 2=maximum-random, 3=maximum, 4=exponential, 5=exponential-random"      ""
 rconfig   real    swrad_scat              namelist,physics      1             1       irh    "SWRAD_SCAT" "SCATTERING FACTOR IN SWRAD"      ""
 rconfig   integer surface_input_source    namelist,physics	1             1       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=hybrid (not yet implemented)"      ""
 rconfig   integer num_soil_layers         namelist,physics	1             5       irh    "num_soil_layers"               ""      ""
-rconfig   integer num_urban_layers        namelist,physics      1            400       irh    "num_urban_layers"               ""      ""
+
+rconfig   integer num_urban_ndm           namelist,physics	1             1       irh    "num_urban_ndm"   "maximum number of street dimensions (ndm in BEP or BEM header)"                     ""
+rconfig   integer num_urban_ng            namelist,physics	1             1       irh    "num_urban_ng"    "number of grid levels in the ground (ng_u in BEP or BEM header)"                    ""
+rconfig   integer num_urban_nwr           namelist,physics	1             1       irh    "num_urban_nwr"   "number of grid levels in the walls or roof (nwr_u in BEP or BEM header)"            ""
+rconfig   integer num_urban_ngb           namelist,physics	1             1       irh    "num_urban_ngb"   "number of grid levels in the ground below building (ngb_u in BEM header)"           ""
+rconfig   integer num_urban_nf            namelist,physics	1             1       irh    "num_urban_nf"    "number of grid levels in the floors (nf_u in BEM header)"                           ""
+rconfig   integer num_urban_nz            namelist,physics	1             1       irh    "num_urban_nz"    "maximum number of vertical levels in the urban grid (nz_um in BEP or BEM header)"   ""
+rconfig   integer num_urban_nbui          namelist,physics	1             1       irh    "num_urban_nbui"  "maximum number of types of buildings in an urban class (nbui_max in BEM header)"    ""
+
+rconfig   integer urban_map_zrd           derived         	1             1        rh    "urban_map_zrd"   "urban mapping 1: ind_zrd"      ""  
+rconfig   integer urban_map_zwd           derived         	1             1        rh    "urban_map_zwd"   "urban mapping 2: ind_zwd"      ""  
+rconfig   integer urban_map_gd            derived         	1             1        rh    "urban_map_gd"    "urban mapping 3: ind_gd"       ""  
+rconfig   integer urban_map_zd            derived         	1             1        rh    "urban_map_zd"    "urban mapping 4: ind_zd"       ""  
+rconfig   integer urban_map_zdf           derived         	1             1        rh    "urban_map_zdf"   "urban mapping 5: ind_zdf"      ""  
+rconfig   integer urban_map_bd            derived         	1             1        rh    "urban_map_bd"    "urban mapping 6: ind_bd"       ""  
+rconfig   integer urban_map_wd            derived         	1             1        rh    "urban_map_wd"    "urban mapping 7: ind_wd"       ""  
+rconfig   integer urban_map_gbd           derived         	1             1        rh    "urban_map_gbd"   "urban mapping 8: ind_gbd"      ""  
+rconfig   integer urban_map_fbd           derived         	1             1        rh    "urban_map_fbd"   "urban mapping 9: ind_fbd"      ""  
+
 rconfig   integer sf_surface_mosaic       namelist,physics      1             0       rh      "sf_surface_mosaic"             "1= mosaic, 0=no mosaic method, add by danli"      ""  
 rconfig   integer mosaic_cat              namelist,physics      1             3       rh      "mosaic_cat"                    "works when sf_surface_mosaic=1;  it is the number of mosaic tiles"      ""
 rconfig   integer mosaic_cat_soil         derived               1             12      rh      "mosaic_cat_soil"                "should be the number of soil layers times the mosaic_cat"      ""
@@ -1504,6 +1524,7 @@ rconfig   logical lcurr_sf                namelist,physics     max_domains    .f
 ifdef HWRF=1
 #added by Zhan Zhang for perturbings for SAS and PBL
 rconfig   integer ens_random_seed         namelist,physics     max_domains   -1       irh   "ens_random_seed"  "ensemble random number generator initial seed"
+rconfig   integer ensda_physics_pert      namelist,physics     max_domains    0       irh   "ensda_physics_pert"  "0: no stochastic phys pert., 1: yes"
 rconfig   logical pert_sas                namelist,physics      1        .false.      irh   "pert_sas"  "ensemble choice:F, no pert, T, pert SAS"
 rconfig   logical pert_pbl                namelist,physics      1        .false.      irh   "pert_pbl"  "ensemble choice:F, no pert, T, pert PBL"
 rconfig   logical pert_Cd                 namelist,physics      1        .false.      irh   "pert_Cd"  "ensemble choice:F, no pert, T, pert Cd"
@@ -1717,10 +1738,6 @@ rconfig   integer maxpatch                namelist,physics      1            10 
 #key      package       associated                package          associated 4d scalars
 #         name          namelist choice           state vars
 
-#### 9. Edit the Registry file to set up '5' as the value of the
-**** namelist variable dyn_opt that means to select our exp dyncore.
-package   dyn_exp       dyn_opt==5                   -             -
-
 package   passivec1     chem_opt==0                  -
 package   passiveqv     mp_physics==0                -             moist:qv
 package   kesslerscheme mp_physics==1                -             moist:qv,qc,qr
@@ -1730,7 +1747,7 @@ package   wsm5scheme    mp_physics==4                -             moist:qv,qc,q
 package   fer_mp_hires  mp_physics==5                -             moist:qv,qc,qr,qi,qs;state:f_ice,f_rain,f_rimef
 package   fer_mp_hires_advect  mp_physics==15        -             moist:qv,qc,qr,qi;scalar:qrimef
 package   wsm6scheme    mp_physics==6                -             moist:qv,qc,qr,qi,qs,qg;state:re_cloud,re_ice,re_snow
-package   gsfcgcescheme mp_physics==7                -             moist:qv,qc,qr,qi,qs,qg
+package   nuwrf4icescheme mp_physics==7              -             moist:qv,qc,qr,qi,qs,qg
 package   thompson      mp_physics==8                -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr;state:re_cloud,re_ice,re_snow
 package   thompsonaero  mp_physics==28               -             moist:qv,qc,qr,qi,qs,qg;scalar:qni,qnr,qnc,qnwfa,qnifa;state:re_cloud,re_ice,re_snow
 package   milbrandt2mom mp_physics==9                -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnc,qnr,qni,qns,qng,qnh
@@ -1743,11 +1760,15 @@ package   nssl_2momccn  mp_physics==18                -            moist:qv,qc,q
 package   nssl_1mom     mp_physics==19               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qvolg
 package   nssl_1momlfo  mp_physics==21               -             moist:qv,qc,qr,qi,qs,qg
 package   nssl_2momg    mp_physics==22                -            moist:qv,qc,qr,qi,qs,qg;scalar:qndrop,qnr,qni,qns,qng,qvolg;state:re_cloud,re_ice,re_snow
+package   wsm7scheme    mp_physics==24               -             moist:qv,qc,qr,qi,qs,qg,qh;state:re_cloud,re_ice,re_snow
+package   wdm7scheme    mp_physics==26               -             moist:qv,qc,qr,qi,qs,qg,qh;scalar:qnn,qnc,qnr;state:re_cloud,re_ice,re_snow
 package   p3_1category    mp_physics==50               -             moist:qv
 package   p3_1category_nc mp_physics==51               -             moist:qv
 package   p3_2category    mp_physics==52               -             moist:qv
+package   jensen_ishmael    mp_physics==86               -             moist:qv
 package   etamp_hwrf    mp_physics==85               -             moist:qv,qc,qr,qi,qs;state:f_ice,f_rain,f_rimef
 package   etampnew      mp_physics==95               -             moist:qv,qc,qr,qs;state:f_ice,f_rain,f_rimef
+package   gsfcgcescheme mp_physics==97               -             moist:qv,qc,qr,qi,qs,qg
 package   radar_refl    compute_radar_ref==1         -             state:refl_10cm,refd_max
 
 package   nodfimoist        mp_physics_dfi==-1       -             -
@@ -1758,15 +1779,18 @@ package   wsm3scheme_dfi    mp_physics_dfi==3        -             dfi_moist:dfi
 package   wsm5scheme_dfi    mp_physics_dfi==4        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   fer_mp_hires_dfi  mp_physics_dfi==5        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs
 package   wsm6scheme_dfi    mp_physics_dfi==6        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
-package   gsfcgcescheme_dfi mp_physics_dfi==7        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
+package   nuwrf4icescheme_dfi mp_physics_dfi==7      -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
 package   thompson_dfi      mp_physics_dfi==8        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
-package   thompsonaero_dfi  mp_physics_dfi==28       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qnc,dfi_qnwfa,dfi_qnifa;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   milbrandt2mom_dfi mp_physics_dfi==9        -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnc,dfi_qnr,dfi_qni,dfi_qns,dfi_qng,dfi_qnh
 package   morr_two_moment_dfi  mp_physics_dfi==10    -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qns,dfi_qnr,dfi_qng
 package   sbu_ylinscheme_dfi    mp_physics==13           -         dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs
 package   wdm5scheme_dfi    mp_physics_dfi==14       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   wdm6scheme_dfi    mp_physics_dfi==16       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
+package   wsm7scheme_dfi    mp_physics_dfi==24       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
+package   wdm7scheme_dfi    mp_physics_dfi==26       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg,dfi_qh;dfi_scalar:dfi_qnn,dfi_qnc,dfi_qnr;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
+package   thompsonaero_dfi  mp_physics_dfi==28       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg;dfi_scalar:dfi_qni,dfi_qnr,dfi_qnc,dfi_qnwfa,dfi_qnifa;state:dfi_re_cloud,dfi_re_ice,dfi_re_snow
 package   etampnew_dfi      mp_physics_dfi==95       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qs
+package   gsfcgcescheme_dfi mp_physics_dfi==97       -             dfi_moist:dfi_qv,dfi_qc,dfi_qr,dfi_qi,dfi_qs,dfi_qg
 
 # package   noprogn       progn==0                     -             -
 # package   progndrop     progn==1                     -             scalar:qndrop;dfi_scalar:dfi_qndrop
@@ -1853,6 +1877,7 @@ package   g3shcuscheme   shcu_physics==1             -             -
 package   camuwshcuscheme shcu_physics==2            -             -
 package   grimsshcuscheme shcu_physics==3            -             -
 package   nscvshcuscheme  shcu_physics==4            -             -
+package   dengshcuscheme  shcu_physics==5            -             -
 
 package   dfi_setup      dfi_stage==0                -             -
 package   dfi_bck        dfi_stage==1                -             -

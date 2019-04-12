@@ -59,7 +59,7 @@ include ${CPATH}/../configure.wrf
 	$(SCC) -c $(CFLAGS) $*.c
 
 clean: 
-	$(RM) *.o *.tmp *.mod module_kpp_* *~ *.inc *.exe *.f90
+	@$(RM) *.o *.tmp *.mod module_kpp_* *~ *.inc *.exe *.f90
 
 
 

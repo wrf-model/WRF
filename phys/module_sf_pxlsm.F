@@ -40,6 +40,10 @@ CONTAINS
                     SN_NDG_OLD, SN_NDG_NEW, SNOW, SNOWH,SNOWNCV,&
                     T2OBS, Q2OBS, PXLSM_SMOIS_INIT,             &           
                     PXLSM_SOIL_NUDGE,                           &
+                    pxlsm_modis_veg,                            &
+                    LAI_PX,                                     &
+                    WWLT_PX, WFC_PX, WSAT_PX,                   &
+                    CLAY_PX, CSAND_PX, FMSAND_PX,               &
                     ids,ide, jds,jde, kds,kde,                  &
                     ims,ime, jms,jme, kms,kme,                  &
                     its,ite, jts,jte, kts,kte                    )
@@ -118,7 +122,15 @@ CONTAINS
 !                      for use over all non-water and non-frozen surfaces.
 !                    - PAR function and impact on transpiration modified according to Echer et al.(2015). See P-X LSM documentation
 !                      for full reference. These act to reduce moisture bias near surface during PBL transition.
-!                                                   
+!
+!    JP     11/2017 -  Updated vegetation table for different land cover types. Added in WRFv4.0.
+!
+!    LR     11/2017 -  Update for MODIS vegetation: many changes in soil properties. Added in WRFv4.1. 
+!                      (Ran et al., 2016 JGR-atmosphere, Ran et al. 2017 in preparation)
+!    JP     12/2018 -  revised soil type categories (ISTI) to conform to WRF soil type input data 
+!                      soil types Sand through Clay are now 1-12 rather than 1-11
+
+!
 !--------------------------------------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------------------------------------
 !   ARGUMENT LIST:
@@ -174,7 +186,7 @@ CONTAINS
 
 !-- RA           Aerodynamic resistence			
 !-- RS           Stomatal resistence			
-!-- LAI          Leaf area index (weighted according to fractional landuse)
+!-- LAI          read in Leaf area index (weighted according to fractional landuse)
 !-- ZNT          rougness length
 !-- QSFC         Sat. water vapor mixing ratio at the surface interface
 
@@ -219,7 +231,15 @@ CONTAINS
 !-- PXLSM_SMOIS_INIT  Flag to intialize deep soil moisture to a value derived from moisture availiability.
 !-- PXLSM_SOIL_NUDGE  Flag to use soil moisture and temperature nudging in the PX LSM
 !                     This is typically done for the first simulation.
-
+!-- pxlsm_modis_veg   Use MODIS vegetation option: 1 yes, 0 no
+!-- LAI_PX            LAI used for PX (m^2/m^2)
+!-- WWLT_PX           Computed soil wilting point for PX (m^3/m^3)
+!-- WFC_PX            Computed soil field capacity for PX (m^3/m^3)
+!-- WSAT_PX           Computed soil saturation for PX (m^3/m^3) 
+!-- CLAY_PX           Aggregated soil clay fraction for PX (%)
+!-- CSAND_PX          Aggregated soil coarse sand fraction for PX (%)
+!-- FMSAND_PX         Aggregated soil fine-medium sand fraction for PX (%)
+!
 !-- ids             start index for i in domain
 !-- ide             end index for i in domain
 !-- jds             start index for j in domain
@@ -288,6 +308,13 @@ CONTAINS
                                        SNOWH, SNOWC, ALBEDO, XLAND, XICE,      &
                                        IMPERV, CANFRA
 
+   INTEGER, OPTIONAL, INTENT(IN)  :: pxlsm_modis_veg
+
+   REAL,    DIMENSION( ims:ime,  jms:jme ),                                    &
+            OPTIONAL, INTENT(OUT)  :: LAI_PX, WWLT_PX, WFC_PX, WSAT_PX,        &
+                                      CLAY_PX, CSAND_PX, FMSAND_PX
+   INTEGER  ::  KWAT
+
    LOGICAL :: radiation
 
 !-------------------------------------------------------------------------
@@ -320,9 +347,11 @@ CONTAINS
             CORE, CORB, TIME_BETWEEN_ANALYSIS,        &
             G1000, ALN10,RH2OBS, HU, SNOBS,           &
             FWSAT,FWFC,FWWLT,FB,FCGSAT,FJP,FAS,       &
+            FWRES, FC3, FCLAY, FCSAND, FFMSAND,       &   ! Soil model updates - JEP 12/14, LR 04/2017
             FSEAS, T2I, HC_SNOW, SNOW_FRA,SNOWALB,    &
             QST12,ZFUNC,ZF1,ZA2,QV2, DT_FDDA,         &
             FC2R,FC1SAT, DTPBL, RAW
+
 
       CHARACTER (LEN = 6) :: LAND_USE_TYPE
 
@@ -385,9 +414,11 @@ CONTAINS
                     XLAND, XALB,XSNOALB,WETFRA,IMPERV,CANFRA, &
                     ids,ide, jds,jde, kds,kde,                &
                     ims,ime, jms,jme, kms,kme,                &
-                    its,ite, jts,jte, kts,kte, LAND_USE_TYPE   )
+                    its,ite, jts,jte, kts,kte, LAND_USE_TYPE, &
+                    KWAT )
       !-----------------------------------------------------------------------------------
       
+
       !-----------------------------------------------------------------------------------
       ! Main loop over individual grid cells
       DO J = jts,jte    !-- J LOOP
@@ -402,15 +433,37 @@ CONTAINS
             CALL SOILPROP (SOILCBOT(I,:,J), WEIGHT,               &
                          ITIMESTEP, MAVAIL(I,J),                  &
                          PXLSM_SMOIS_INIT,                        &
-                         FWSAT,FWFC,FWWLT,FB,FCGSAT,              &  
-                         FJP,FAS,FC2R,FC1SAT,ISTI,SMOIS(I,1,J),   &
-                         SMOIS(I,2,J)) 
+                         FWSAT,FWFC,FWWLT,FCLAY,FCSAND,FFMSAND,   &
+                         FB,FCGSAT,                               &  
+                         FJP,FAS,FC2R,FC1SAT,FWRES, FC3, ISTI,    & 
+                         SMOIS(I,1,J),  SMOIS(I,2,J)    )
           !----------------------------------------------------------
           !----------------------------------------------------------
             ISLTYP(I,J) = ISTI                      
           ELSE
             ISLTYP(I,J) = 14                    ! STATSGO type for water
+
+            !-- aded for MODIS model
+            FWWLT = 0.1
+            FWFC = 1.0
+            FWSAT = 1.0
+
+            FCLAY = 0.0
+            FCSAND = 0.0
+            FFMSAND = 0.0
+            !-- end
+
           ENDIF
+
+          !-- aded for MODIS model
+          WWLT_PX(I,J) = FWWLT
+          WFC_PX(I,J) = FWFC
+          WSAT_PX(I,J) = FWSAT
+
+          CLAY_PX(I,J) = FCLAY * 0.01   ! percent to fraction
+          CSAND_PX(I,J) = FCSAND * 0.01
+          FMSAND_PX(I,J) = FFMSAND * 0.01
+          !-- end
 
           !--  Variables Sub. SURFPX needs
           SFCPRS = PSFC(i,j) / 1000.0                 ! surface pressure in cb
@@ -495,13 +548,49 @@ CONTAINS
           FSEAS = AMAX1(1.0 - 0.015625 * (290.0 - T2I) ** 2,0.0) ! JP97            
           IF (T2I .GE. 290.0) FSEAS = 1.0                                          
           
-          LAI(I,J)       = XLAIMN(I,J) + FSEAS*(XLAI(I,J) - XLAIMN(I,J))                 
+          !get PX table vegetation
+          LAI_PX(I,J)    = XLAIMN(I,J) + FSEAS*(XLAI(I,J) - XLAIMN(I,J))
           VEGF_PX(I,J)   = XVEGMN(I,J) + FSEAS*(XVEG(I,J) - XVEGMN(I,J))                       
           
+!... use MODIS LAI and VEGFRA from wrflowinp
+          IF ( pxlsm_modis_veg .EQ. 1 ) THEN
+
+!               IF ( I .EQ. 300 .AND. J .EQ. 120 ) THEN
+!                    print*, "  I=",I," J=",J," LAI_PX=",LAI_PX(I,J)," VEGF_PX=",VEGF_PX(I,J), &
+!                            " LAI=",LAI(I,J)," VEGFRA=",VEGFRA(I,J)
+!               ENDIF
+
+                ! get LAI for vegetated area
+                IF ( VEGFRA(I,J) .GT. 0.0 )  THEN
+                   LAI_PX(I,J) = LAI(I,J) / ( VEGFRA(I,J) / 100.0)
+                ELSE
+                   LAI_PX(I,J) = 0.0
+                ENDIF
+
+                VEGF_PX(I,J) = VEGFRA(I,J) / 100.0
+
+                !vegF is just for the land
+                IF ( LANDUSEF(I,KWAT,J) .LT. 1.0 )  THEN
+                   VEGF_PX(I,J) = VEGF_PX(I,J) / (1.0 - LANDUSEF(I,KWAT,J))
+                ELSE
+                   VEGF_PX(I,J) = 0.0
+                ENDIF
+
+          ENDIF
+
+          LAI_PX(I,J) = MIN(LAI_PX(I,J), 8.0)
+          LAI_PX(I,J) = MAX(LAI_PX(I,J), 0.0001)
+
+          VEGF_PX(I,J) = MIN(VEGF_PX(I,J), 1.0)
+          VEGF_PX(I,J) = MAX(VEGF_PX(I,J), 0.0001)
+
+!... END OF MODIS LAI and FPAR
+
+
           ! Ensure veg algorithms not used for water 
           IF (IFLAND .GE. 1.5) THEN                        
              VEGF_PX(I,J) = 0.0
-             LAI(I,J) = 0.0         
+             LAI_PX(I,J) = 0.0         
           ENDIF                                                                   
           !-------------------------------------------------------------
 
@@ -555,10 +644,10 @@ CONTAINS
                       THETA1,   PRECIP,                                         & !in
                       CPAIR, PSIH(I,J),                                         & !in
                       RH2OBS,T2OBS(I,J),                                        & !in
-                      VEGF_PX(I,J), ISTI, LAI(I,J), IMPERV(I,J), CANFRA(I,J),   & !in
+                      VEGF_PX(I,J), ISTI, LAI_PX(I,J), IMPERV(I,J), CANFRA(I,J),   & !in
                       BETAP, RSTMIN(I,J), HC_SNOW, SNOW_FRA, WETFRA(I,J),       & !in          
-                      FWWLT, FWFC, FCGSAT,  FWSAT, FB,                          & !in
-                      FC1SAT,FC2R,FAS,FJP,DZS(1),DZS(2),QST12,                  & !in
+                      FWWLT, FWFC, FWRES, FCGSAT,  FWSAT, FB,                   & !in    ! Soil model updates - JEP 12/14
+                      FC1SAT,FC2R,FAS,FJP,FC3,DZS(1),DZS(2),QST12,              & !in
                       RADNET(I,J), GRDFLX(I,J), HFX(I,J), QFX(I,J), LH(I,J),    & !out
                       EG(I,J), ER(I,J), ETR(I,J),                               & !out
                       QST(I,J), CAPG(I,J), RS(I,J), RA(I,J),                    & !out
@@ -593,7 +682,7 @@ CONTAINS
                             ids,ide, jds,jde, kds,kde,                  &
                             ims,ime, jms,jme, kms,kme,                  &
                             its,ite, jts,jte, kts,kte,                  &
-                            LAND_USE_TYPE                                )
+                            LAND_USE_TYPE, KWAT_OUT )
 !-------------------------------------------------------------------------
 !           
 !   CALLED FROM Sub. bl_init in module_physics.init.F
@@ -629,6 +718,9 @@ CONTAINS
       REAL,     DIMENSION( ims:ime, jms:jme ), INTENT(OUT) :: XLAI, XLAIMN, RSTMIN, XALB, &
                                                               XVEG, XVEGMN, XSNUP, XLAND, &
                                                               WETFRA, XSNOALB 
+
+      INTEGER, INTENT(OUT)      ::  KWAT_OUT
+
       CHARACTER (LEN = 6), INTENT(IN) :: LAND_USE_TYPE
 
                                      
@@ -717,6 +809,8 @@ CONTAINS
          LIMIT1 = 12
          LIMIT1 = 14
       END IF
+
+      KWAT_OUT = KWAT
       !--------------------------------------------------------------------
       DO J = jts,jte
         DO I = its,ite
@@ -907,6 +1001,7 @@ CONTAINS
             XSNOALB(I,J)= SUMSNOALB
           ENDIF
 
+          !!!!!!!!!!!!!!!!!!!Qestion Limei Ran, deleted in wrf37
           IF (FWAT .GT. 0.50) THEN
             ZNT(I,J)    = Z0(KWAT)
             XALB(I,J)   = ALB(KWAT)
@@ -965,10 +1060,11 @@ CONTAINS
                         QV1, QSS, TA1, THETA1, PRECIP, CPAIR, PSIH,          & !in
                         RH2OBS, T2OBS, VEGFRC, ISTI,LAI,IMPERV,CANFRA,BETAP, & !in
                         RSTMIN, HC_SNOW, SNOW_FRA, WETFRA, WWLT, WFC,        & !in
-                        CGSAT, WSAT, B, C1SAT, C2R, AS, JP, DS1, DS2, QST12, & !in
-                        RADNET, GRDFLX, HFX, QFX, LH, EG, ER,  ETR,          & !out
+                        WRES, CGSAT, WSAT, B, C1SAT, C2R, AS, JP, C3, DS1,   & !in 
+                        DS2, QST12,                                          & !in
+                        RADNET, GRDFLX, HFX, QFX, LH, EG, ER, ETR,           & !out
                         QST, CAPG, RS, RA, TG, T2, WG, W2, WR,               & !out
-                        TA2, QA2, LAND_USE_TYPE, I, J )                            !out
+                        TA2, QA2, LAND_USE_TYPE, I, J )                        !out
 
 !------------------------------------------------------------------------------
 ! 
@@ -1057,7 +1153,7 @@ CONTAINS
       REAL ,    INTENT(IN)  :: CPAIR
       REAL ,    INTENT(IN)  :: VEGFRC, LAI, IMPERV, CANFRA
       REAL ,    INTENT(IN)  :: RSTMIN, HC_SNOW, SNOW_FRA, WETFRA 
-      REAL ,    INTENT(IN)  :: WWLT, WFC, CGSAT, WSAT, B, C1SAT, C2R, AS, JP
+      REAL ,    INTENT(IN)  :: WWLT, WFC, WRES, CGSAT, WSAT, B, C1SAT, C2R, AS, JP, C3
       REAL ,    INTENT(IN)  :: RH2OBS,T2OBS
       REAL ,    INTENT(IN)  :: QST12
 
@@ -1067,7 +1163,7 @@ CONTAINS
       REAL ,    INTENT(INOUT) :: TG, T2, WG, W2, WR, UST, RA, BETAP 
       REAL ,    INTENT(INOUT) :: GRDFLX, QFX, HFX, LH, PSIH, MOL
 
-      CHARACTER (LEN = 5), INTENT(IN) :: LAND_USE_TYPE
+      CHARACTER (LEN = 6), INTENT(IN) :: LAND_USE_TYPE      ! Check Limei Ran, wrf38 set to 5
 
 !... Local Variables
 
@@ -1084,10 +1180,13 @@ CONTAINS
       REAL        :: QST1,PHIH,PSIOB
       REAL        :: T2NUD, T2NUDF
       REAL        :: VAPPRS, QSBT, RH2MOD, IMF, VEGF, SOILF
+      REAL        :: RSOIL, LDRY, DP       ! Soil model updates - JEP 12/14
+      REAL        :: C1MAX,ZZA,ZZB,ZDEL,ZLY,ZA,ZB,ZY2
 
 !... Parameters
       REAL        :: ZOBS, GAMAH, BETAH, SIGF, BH, CT_SNOW, CT_IMPERV
 
+!      REAL, PARAMETER :: CV = 2.0E-5   !1.2E-5   ! K-M2/J Note: Update from 8E-6 10/14 Jon Pleim
       REAL, PARAMETER :: CV = 1.2E-5   ! K-M2/J Note: Update from 8E-6 10/14 Jon Pleim
 
       PARAMETER (ZOBS  = 1.5)    ! height for observed screen temp., (m)
@@ -1095,6 +1194,7 @@ CONTAINS
       PARAMETER (GAMAH = 16. )   !11.6)
       PARAMETER (BETAH = 5.0 )   !8.21)
       PARAMETER (SIGF  = 0.5)    ! rain interception see LSM (can be 0-1)
+      REAL, PARAMETER  :: DWAT   = 0.2178  ! [cm^2 / s] at 273.15K
       !--------------------------------------------------------------------
       !  OLD PX legacy value from MM5 ... unknown origin PARAMETER (CT_SNOW  = 5.54E-5)   
       ! New value of CT_SNOW calibrated using multilayer soil model where csnow=6.9E5 J/(m3 K) 
@@ -1166,15 +1266,30 @@ CONTAINS
         RA=PR0* ( ALOG(Z1/ZNT) - PSIH )/(KARMAN*UST)
         RAH = RA + 5.0 / UST
         RAW = RA + 4.503 / UST
+        IF (IFLAND .LT. 1.5.AND. XICE1.LT.0.5) THEN
+          LDRY = 1.75*DS1*(EXP((1.-WG/WSAT)**5)-1.)/1.718       ! 1.75 cm is the layer thickness used by S&Z09
+          DP  = DWAT*1.E-4 * WSAT**2 * (1.-WRES/WSAT)**(2.+3./B)
+          !DP  = DWAT*1.E-4 * 0.1 * ( 2.0*(1.-WRES/WSAT)**3 + 0.04*(1.-WRES/WSAT) )   !Deepagoda et al. 2010
+          RSOIL=LDRY/DP
 
+          !Merlin et al. 2016 ECMWF H-TESSEL
+          !IF ( WG > WRES ) THEN
+          !   RSOIL = 50.0 * (WFC - WRES ) / (WG - WRES) 
+          !ELSE
+          !   RSOIL = 8000.0
+          !ENDIF
+
+        ELSE
+          RSOIL = 0.0
+        ENDIF
         !--------------------------------------------------------------------
         ! Compute soil moisture layer 2 that considers fraction of saturated 
         ! wetlands. If 100% of cell is wetland, soil moisture can be no lower
         ! than full soil saturation. If half wetland, no less than half saturated 
         IF (IFLAND .LT. 1.5 ) THEN
-        WETSAT = 1.00 * WSAT                           ! Wetlands soil moisture
-        SM2    = (WETFRA * WETSAT)                     ! 
-        W2     = AMAX1(SM2, W2)                        ! In case that W2 > Field capacity (heavy precip), use wetter W2
+          WETSAT = 1.00 * WSAT                           ! Wetlands soil moisture
+          SM2    = (WETFRA * WETSAT)                     ! 
+          W2     = AMAX1(SM2, W2)                        ! In case that W2 > Field capacity (heavy precip), use wetter W2
         ENDIF
 
         !--------------------------------------------------------------------
@@ -1182,7 +1297,7 @@ CONTAINS
         CALL QFLUX( DENS1,  QV1,    TA1,  SOLDN,  RAW, QSS,            &
                     VEGFRC, ISNOW,  ISTI, IFLAND, LAI, BETAP,          &
                     WG,     W2,     WR,                                &
-                    RSTMIN, WWLT, WFC,                                 &
+                    RSTMIN, WWLT, WFC, RSOIL,                          &     !  Soil model updates - JEP 12/14
                     EG,     ER,     ETR,  CQ4,    RS,  FASS)
         !--------------------------------------------------------------------
 
@@ -1252,11 +1367,13 @@ CONTAINS
             CALL SMASS (ISTI,  FASS,  SOLDN,   VEGFRC, RA, WWLT, WFC,   &                       
                         ALPH1, ALPH2, BET1, BET2, T2NUDF)                             
 
-            !--COMPUTE MODEL RH
-            WGNUDG = ALPH1 * (T2OBS - TA2) + ALPH2 * (RH2OBS - RH2MOD) * 100  
+            !--COMPUTE SOIL MOISTURE NUDGING
+            WGNUDG = ALPH1 * (T2OBS - TA2) + ALPH2 * (RH2OBS - RH2MOD) * 100  !NUDGING W2 FOR NON-VEG
             W2NUDG = BET1  * (T2OBS - TA2) + BET2  * (RH2OBS - RH2MOD) * 100
             IF (W2 .GE. WFC)  W2NUDG = AMIN1(W2NUDG,0.0)
             IF (W2 .LE. WWLT) W2NUDG = AMAX1(W2NUDG,0.0)
+            IF (W2 .GE. WFC)  WGNUDG = AMIN1(WGNUDG,0.0)
+            IF (W2 .LE. WWLT) WGNUDG = AMAX1(WGNUDG,0.0)
             T2NUD = T2NUDF * (T2OBS - TA2)
           ENDIF
         ENDIF
@@ -1269,7 +1386,8 @@ CONTAINS
           !-- Calculate the coefficients for implicit calculation of TG
           CQ1      = (1.0 - 0.622 * LV * CRANKP / (r_d * TG)) * QSS
           CQ2      = 0.622 * LV * QSS * CRANKP / (r_d * TG * TG)
-          CQ3      = DENS1 * BETAP * (1.0 - VEGFRC) / RAW
+          CQ3      = DENS1 * (1.0 - VEGFRC) / (RAW + RSOIL)
+!          CQ3      = DENS1 * BETAP * (1.0 - VEGFRC) / RAW
           COEFFNP1 = 1.0 + DTPBL * CRANKP * (4.0 * EMISSI *  STBOLT * TG ** 3    &
                      * CT + DENS1 * CPAIR / RAH * CPOT * CT + 2.0 * PI           &
                      * TAUINV ) + DTPBL * (CT * LV * CQ2 * (CQ3 + CQ4))
@@ -1325,10 +1443,11 @@ CONTAINS
           !-- Compute W2
           PG     = DENW * (PRECIP - PC)               ! PG is precip. reaching soil (PC already including ROFF)
           TENDW2 = 1.0 / (DENW * DS2) * (PG - EG - ETR) &
+                   - C3/DS2 * TAUINV * AMAX1(0.0,(W2 - WFC)) &
                    + (W2NUDG + WGNUDG) / DS2                    ! NUDGING
           W2NEW  = W2 + DTPBL * TENDW2
           W2NEW  = AMIN1(W2NEW,WSAT)
-          W2NEW  = AMAX1(W2NEW,0.05)
+          W2NEW  = AMAX1(W2NEW,WRES) !0.05)  !Limei 08/02/2017
           W2HLF  = 0.5 * (W2 + W2NEW)
           !.. new values
           W2     = W2NEW
@@ -1346,10 +1465,22 @@ CONTAINS
           ELSE
             W2REL = W2HLF / WSAT
             IF (WG .GT. WWLT) THEN
-              C1 = C1SAT * (WSAT / WG) ** (0.5 * B + 1.0) 
-            ELSE   ! elimilate C1 for wg < wilting point
-              C1 = C1SAT * (WSAT / WWLT) ** (0.5 * B + 1.0)
+              C1 = DS1*C1SAT * (WSAT / WG) ** (0.5 * B + 1.0) 
+            ELSE   ! revise C1 for wg < wilting point Noilhan & Mahfouf (1996)
+              ZY2   = C1SAT * (WSAT / WWLT) ** (0.5 * B + 1.0)
+              C1MAX = (1.19*WWLT - 5.09)*TG - 146.*WWLT + 1786.
+              C1MAX = MAX(MAX(C1MAX,ZY2),10.)
+!* Giard-Bazile formulation (resolution of a second order equation)
+!
+              ZLY =   LOG( C1MAX/10.)
+              ZZA = - LOG( ZY2  /10.)
+              ZZB = 2. * WWLT * ZLY
+              ZDEL = 4. * (ZLY+ZZA) * ZLY * WWLT**2
+              ZA  = (-ZZB+SQRT(ZDEL)) / (2.*ZZA)
+              ZB  = ZA**2 / ZLY
+              C1 = DS1*C1MAX * EXP(-(WG-ZA)**2/ZB)
             ENDIF
+
             C2 = C2R * W2HLF / (WSAT - W2HLF + 1.E-11) 
             IF (W2HLF .GE. WSAT) THEN
               WEQ = WSAT
@@ -1358,12 +1489,12 @@ CONTAINS
                    (1.0 - W2REL ** (8.0 * JP))
             ENDIF
 
-            !.... The beta method, Lee & Pielke (JAM, May 1992)
+            !.... The diffusion method in Sakaguchi and Zeng [2009] (JGR-Atmos.)
             CFNP1 = 1.0 + DTPBL * C2 * TAUINV * CRANKP
             CFN   = C1 / (DENW * DS1) * (PG - EG) - C2 * TAUINV *               &
-                    ((1.0 - CRANKP) * WG - WEQ) + WGNUDG/ DS1                                    
+                    ((1.0 - CRANKP) * WG - WEQ) + WGNUDG/ DS1
 
-            WGNEW = AMAX1((WG + DTPBL * CFN) / CFNP1,0.001)
+            WGNEW = AMAX1((WG + DTPBL * CFN) / CFNP1, WRES ) !0.001)  ! Limei 08/02/2017
             !-- NEW VALUES
             WG    = AMIN1(WGNEW,WSAT)
             
@@ -1379,7 +1510,7 @@ CONTAINS
       SUBROUTINE QFLUX (DENS1,  QV1,   TA1,  RG,     RAW, QSS,           & ! in
                         VEGFRC, ISNOW, ISTI, IFLAND, LAI, BETAP,         & ! in
                         WG,     W2,    WR,                               & ! in
-                        RSTMIN, WWLT,  WFC,                              &
+                        RSTMIN, WWLT,  WFC,  RSOIL,                      & ! in  !Soil model updates - JEP 12/14
                         EG,     ER,    ETR,  CQ4,    RS,  FASS)            ! out
 
 !-------------------------------------------------------------------------
@@ -1433,7 +1564,7 @@ CONTAINS
       REAL ,    INTENT(IN)  :: DENS1, QV1, TA1, RG, RAW, QSS,            &
                                VEGFRC, LAI,                              &
                                WG, W2, WR, RSTMIN   
-      REAL ,    INTENT(INOUT)  :: BETAP
+      REAL ,    INTENT(INOUT)  :: BETAP, RSOIL
       REAL,     INTENT(IN)   :: WWLT, WFC
 
       REAL ,    INTENT(OUT) :: EG, ER, ETR, CQ4, RS, FASS
@@ -1459,8 +1590,10 @@ CONTAINS
       CQ4 = 0.0
       
 !... GROUND EVAPORATION (DEPOSITION)
-      IF (QSS .LT. QV1) BETAP = 1.0
-      EG = DENS1 * (1.0 - VEGFRC) * BETAP * (QSS - QV1) / RAW
+!      IF (QSS .LT. QV1) BETAP = 1.0  
+      IF (QSS .LT. QV1) RSOIL = 0.0
+!      EG = DENS1 * (1.0 - VEGFRC) * BETAP * (QSS - QV1) / RAW
+      EG = DENS1 * (1.0 - VEGFRC) * (QSS - QV1) / (RAW + RSOIL)
 
       !!---------------------------------------------------------------------
 !... CANOPY
@@ -1576,35 +1709,29 @@ CONTAINS
 
 !... Real
       REAL    :: FBET, FALPH, FRA, FTEXT
-      REAL,    DIMENSION( 1: NSCAT ) :: WFCX, WWLTX
       
 !... Parameters
       REAL, PARAMETER  :: A1MAX = -10.E-5, A2MAX = 1.E-5  ! m/K, m for 6hr period
       REAL, PARAMETER  :: B1MAX = -10.E-3, B2MAX = 1.E-3  ! m/K, m (Bouttier et al 1993)
       REAL, PARAMETER  :: TASSI = 4.6296E-5               ! 1/6hr in 1/sec
       REAL, PARAMETER  :: RAMIN = 10.0                    ! 0.1 s/cm
-!
-!-- WFC is field capacity (M^3/M^3) (JN90)
-      DATA WFCX   /  0.135, 0.150, 0.195, 0.255, 0.240, 0.255, 0.322,    &
-                    0.325, 0.310, 0.370, 0.367, 0.367, 0.367, 0.367, 0.367, 0.367 /
-!
-!-- WWLT is wilting point (M^3/M^3) (JN90)
-      DATA WWLTX  /  0.068, 0.075, 0.114, 0.179, 0.155, 0.175, 0.218,    &
-                    0.250, 0.219, 0.283, 0.286, 0.286, 0.286, 0.286, 0.286, 0.286 /
+      REAL, PARAMETER  :: WFCX  = 0.243                   ! middle of WFC range 
+      REAL, PARAMETER  :: WWLTX = 0.169                   ! middle of WWLT range 
 
 !
       FBET  = FASS
       FALPH = RG / 1370.0
 !--TEXTURE FACTOR NORMALIZED BY LOAM (IST=5)
       FRA   = RAMIN / RA            ! scale by aerodynamic resistance
-      FTEXT = TASSI * (WWLT + WFC) / (WWLTX(5) + WFCX(5)) * FRA
+      FTEXT = TASSI * (WWLT + WFC) / (WWLTX + WFCX) * FRA
 !        write(6,*) ' ftot, fbet=',ftot, fbet,' ftext=',ftext/tassi
 !
       ALPH1 = A1MAX * FALPH * (1.0 - VEGFRC) * FTEXT
       ALPH2 = A2MAX * FALPH * (1.0 - VEGFRC) * FTEXT
       BET1  = B1MAX * FBET  *        VEGFRC  * FTEXT
       BET2  = B2MAX * FBET  *        VEGFRC  * FTEXT
-      T2NUDF = 1.0E-5 * MAX((1.0 - 5.0 * FALPH),0.0)   ! T2 Nudging at night
+      !T2NUDF = 1.0E-5 * MAX((1.0 - 5.0 * FALPH),0.0)   ! T2 Nudging at night
+      T2NUDF = 1.0E-5 * ( VEGFRC*MAX((1.0 - 5.0 * FALPH),0.0) + (1-VEGFRC) )  !  T2 Nudging at night and day for non-veg frac - jp 10/30/14
 
     END SUBROUTINE smass
 !------------------------------------------------------------------------------------------
@@ -1612,31 +1739,34 @@ CONTAINS
 
 !------------------------------------------------------------------------------------------
 !------------------------------------------------------------------------------------------
+
       SUBROUTINE SOILPROP (SOILCBOT,WEIGHT, ITIMESTEP, MAVAIL, &  ! IN
                            PXLSM_SMOIS_INIT,                   &  ! IN
-                           FWSAT,FWFC,FWWLT,FB,FCGSAT,         &  ! OUT
-                           FJP,FAS,FC2R,FC1SAT,ISTI, WG, W2    )  ! OUT
+                           FWSAT,FWFC,FWWLT,FCLAY,FCSAND,      &  ! OUT
+                           FFMSAND,FB,FCGSAT,                  &  ! OUT
+                           FJP,FAS,FC2R,FC1SAT,FWRES,FC3,ISTI, &  ! OUT
+                           WG, W2    )                            ! OUT
      !------------------------------------------------------------------------
      !     SOILPROP COMPUTES SOIL PARAMETERS FOR BOTH BOTTOM AND TOP LAYERS
      !              USING FRACTIONAL SOIL TYPE. A HARD CODED OPTION IS AVAILIABLE
      !              TO COMPUTE THE SOIL PARAMETERS USING FRACTIONAL INFORMATION, OR
      !              TO JUST USE SOIL PARAMETERS OF THE DOMINANT SOIL TYPE
      !------------------------------------------------------------------------
-     !-- SOIL PARAMETERS ARE SPECIFIED BY SOIL TYPE: 
-     !   #  SOIL TYPE  WSAT  WFC  WWLT    B   CGSAT   JP   AS   C2R  C1SAT
-     !   _  _________  ____  ___  ____  ____  _____   ___  ___  ___  _____
-     !   1  SAND       .395 .135  .068  4.05  3.222    4  .387  3.9  .082
-     !   2  LOAMY SAND .410 .150  .075  4.38  3.057    4  .404  3.7  .098
-     !   3  SANDY LOAM .435 .195  .114  4.90  3.560    4  .219  1.8  .132
-     !   4  SILT LOAM  .485 .255  .179  5.30  4.418    6  .105  0.8  .153
-     !   5  SILT       .485 .255  .179  5.30  4.418    6  .105  0.8  .153 NP89 does not have Silt so mapped to Silt Loam
-     !   6  LOAM       .451 .240  .155  5.39  4.111    6  .148  0.8  .191
-     !   7  SND CLY LM .420 .255  .175  7.12  3.670    6  .135  0.8  .213
-     !   8  SLT CLY LM .477 .322  .218  7.75  3.593    8  .127  0.4  .385
-     !   9  CLAY LOAM  .476 .325  .250  8.52  3.995   10  .084  0.6  .227
-     !  10  SANDY CLAY .426 .310  .219 10.40  3.058    8  .139  0.3  .421
-     !  11  SILTY CLAY .482 .370  .283 10.40  3.729   10  .075  0.3  .375
-     !  12  CLAY       .482 .367  .286 11.40  3.600   12  .083  0.3  .342
+     !-- SOIL PARAMETERS ARE SPECIFIED BY SOIL TYPE:
+     !   #  SOIL TYPE  WSAT  WFC  WWLT    B   CGSAT   JP   AS   C2R  C1SAT WRES
+     !   _  _________  ____  ___  ____  ____  _____   ___  ___  ___  _____ ____
+     !   1  SAND       .395 .135  .068  4.05  3.222    4  .387  3.9  .082  0.020
+     !   2  LOAMY SAND .410 .150  .075  4.38  3.057    4  .404  3.7  .098  0.035
+     !   3  SANDY LOAM .435 .195  .114  4.90  3.560    4  .219  1.8  .132  0.041
+     !   4  SILT LOAM  .485 .255  .179  5.30  4.418    6  .105  0.8  .153  0.015
+     !   5  SILT       .485 .255  .179  5.30  4.418    6  .105  0.8  .153  0.015
+     !   6  LOAM       .451 .240  .155  5.39  4.111    6  .148  0.8  .191  0.027
+     !   7  SND CLY LM .420 .255  .175  7.12  3.670    6  .135  0.8  .213  0.068
+     !   8  SLT CLY LM .477 .322  .218  7.75  3.593    8  .127  0.4  .385  0.040
+     !   9  CLAY LOAM  .476 .325  .250  8.52  3.995   10  .084  0.6  .227  0.075
+     !  10  SANDY CLAY .426 .310  .219 10.40  3.058    8  .139  0.3  .421  0.109
+     !  11  SILTY CLAY .482 .370  .283 10.40  3.729   10  .075  0.3  .375  0.056
+     !  12  CLAY       .482 .367  .286 11.40  3.600   12  .083  0.3  .342  0.090
      !------------------------------------------------------------------------
 !------------------------------------------------------------------------------------------
 !------------------------------------------------------------------------------------------
@@ -1649,8 +1779,9 @@ CONTAINS
       INTEGER,                      INTENT(IN)   :: WEIGHT, ITIMESTEP, PXLSM_SMOIS_INIT
       REAL,                         INTENT(IN)   :: MAVAIL
       REAL,     DIMENSION(1:NSCAT), INTENT(IN)   :: SOILCBOT
-      REAL,                         INTENT(OUT)  :: FWSAT,FWFC,FWWLT,FB,FCGSAT,          &
-                                                    FJP,FAS,FC2R,FC1SAT
+      REAL,                         INTENT(OUT)  :: FWSAT,FWFC,FWWLT,FCLAY,       &
+                                                    FCSAND,FFMSAND,FB,FCGSAT,     &
+                                                    FJP,FAS,FC2R,FC1SAT,FWRES,FC3
       REAL,                         INTENT(INOUT)  :: W2, WG
 
 
@@ -1661,182 +1792,144 @@ CONTAINS
 !... Integer
       INTEGER:: S
 !... Real
-      REAL:: TFRACBOT, CFRAC, SUMSND, SUMCLY, AVS, AVC, AVSLT
+      REAL:: TFRACBOT, CFRAC, SUMCSND, SUMFMSND, SUMCLY,        &
+             AVS, AVCS, AVFMS, AVC, AVSLT,                      &
+             SSMPOT, DSMPOT         ! saturated and air-dry soil matric potential
+
       REAL,    DIMENSION( 1: NSCAT ) :: WSAT, WFC, WWLT, B, CGSAT, AS,  &
-                                        JP, C2R, C1SAT
+                                        JP, C2R, C1SAT, WRES
 
-      REAL,    DIMENSION( 1: NSCATMIN ) ::  SAND, CLAY
+      REAL,    DIMENSION( 1: NSCATMIN ) ::  CSAND,FMSAND, CLAY
 !.......... DATA statement for SOIL PARAMETERS for the 11 soil types
-      DATA SAND /92.5,80.5,61.1,19.6,4.0,40.0,57.1,11.3,26.8,       &
-                 52.0,6.5,10.2,1.0,1.0,1.0,1.0/                                                  
-      DATA CLAY/2.1,4.1,10.9,19.1,7.3,18.8,23.3,32.2,36.6,          &                     
-                43.0,46.2,58.8,1.0,1.0,1.0,1.0/                                                 
-      DATA TEXID/'Sand','Lsan','Sloa','Sill','Silt','Loam','Sclo',  &             
-                 'Sicl','Cllo','Sacl','Sicy','Clay','Ormt','Wate',  &           
-                 'Bedr','Othe'/                                         
+!...........Follow Menut et al., 2013 JGR
+      DATA CSAND  /46.0,40.0,29.0, 0.0, 0.0,                        &
+                    0.0,29.0, 0.0, 0.0, 0.0,                        &
+                    0.0, 0.0, 0.0, 0.0,46.0,                        &
+                    0.0/
+      DATA FMSAND /46.0,40.0,29.0,17.0,10.0,                        &
+                   43.0,29.0,10.0,32.0,52.0,                        &
+                    6.0,22.0,43.0,43.0,46.0,                        &
+                   32.0/
 
-!
-!-- WSAT is saturated soil moisture (M^3/M^3) (JN90)
-      DATA WSAT  /  0.395, 0.410, 0.435, 0.485, 0.451, 0.420, 0.477,    &
-                    0.476, 0.426, 0.482, 0.482, 0.482, 0.482, 0.482, 0.482, 0.482 /
-!
-!-- WFC is field capacity (M^3/M^3) (JN90)
-      DATA WFC   /  0.135, 0.150, 0.195, 0.255, 0.240, 0.255, 0.322,    &
-                    0.325, 0.310, 0.370, 0.367, 0.367, 0.367, 0.367, 0.367, 0.367 /
-!
-!-- WWLT is wilting point (M^3/M^3) (JN90)
-      DATA WWLT  /  0.068, 0.075, 0.114, 0.179, 0.155, 0.175, 0.218,    &
-                    0.250, 0.219, 0.283, 0.286, 0.286, 0.286, 0.286, 0.286, 0.286 /
-!
-!-- B is slop of the retention curve (NP89)
-      DATA B     /  4.05,  4.38,  4.90,  5.30,  5.39,  7.12,  7.75,     &
-                    8.52, 10.40, 10.40, 11.40, 11.40, 11.40, 11.40, 11.40, 11.40  /
-!
-!-- CGSAT is soil thermal coef. at saturation (10^-6 K M^2 J^-1) (NP89)
-      DATA CGSAT /  3.222, 3.057, 3.560, 4.418, 4.111, 3.670, 3.593,    &
-                    3.995, 3.058, 3.729, 3.600, 3.600, 3.600, 3.600, 3.600, 3.600 /
-!
-!-- JP is coefficient of WGEQ formulation (NP89)
-      DATA JP    /  4,     4,     4,     6,     6,     6,     8,        &
-                   10,     8,    10,    12,    12,    12,    12,    12,    12     /
-!
-!-- AS is coefficient of WGEQ formulation (NP89)
-      DATA AS    /  0.387, 0.404, 0.219, 0.105, 0.148, 0.135, 0.127,    &
-                    0.084, 0.139, 0.075, 0.083, 0.083, 0.083, 0.083, 0.083, 0.083 /
-!
-!-- C2R is the value of C2 for W2=0.5WSAT (NP89)
-      DATA C2R   /  3.9,   3.7,   1.8,   0.8,   0.8,   0.8,   0.4,      &
-                    0.6,   0.3,   0.3,   0.3,   0.3,   0.3,   0.3,   0.3,   0.3   /
-!
-!-- C1SAT is the value of C1 at saturation (NP89)
-      DATA C1SAT /  0.082, 0.098, 0.132, 0.153, 0.191, 0.213, 0.385,    &
-                    0.227, 0.421, 0.375, 0.342, 0.342, 0.342, 0.342, 0.342, 0.342 /
+      DATA CLAY   / 3.0, 4.0,10.0,13.0, 5.0,                        &
+                   18.0,27.0,34.0,34.0,42.0,                        &
+                   47.0,58.0,18.0,18.0, 3.0,                        &
+                   34.0/
+
+      DATA TEXID/'Sand','Lsan','Sloa','Sill','Silt',                &
+                 'Loam','Sclo','Sicl','Cllo','Sacl',                &
+                 'Sicy','Clay','Ormt','Wate','Bedr',                &
+                 'Othe'/                                         
+!-- Removed soil parameter lookup table data since these parameters are now computed analytically (Noilhan and Mahfouf 1996)
+
+      DSMPOT  =  -1.0E7          ! mm air-dry water matric potential
 !   
 !-------------------------------Exicutable starts here--------------------
 
-    IF(WEIGHT.GE.1.0) THEN   !Compute soil characteristics using weighting determined by fractional soil content
-     FWSAT =0
-     FWFC  =0
-     FWWLT =0
-     FB    =0
-     FCGSAT=0
-     FJP   =0
-     FAS   =0
-     FC2R  =0
-     FC1SAT=0
-     TFRACBOT =0
-     CFRAC=0
-     
-     DO S=1,NSCAT
-
-       IF(SOILCBOT(S).GE.CFRAC) THEN
-         ISTI=S
-         CFRAC=SOILCBOT(S)
-       ENDIF
-      
-       TFRACBOT=TFRACBOT+SOILCBOT(S)
-       FWSAT =FWSAT  +  WSAT(S)  *SOILCBOT(S)
-       FWFC  =FWFC   +  WFC(S)   *SOILCBOT(S)
-       FWWLT =FWWLT  +  WWLT(S)  *SOILCBOT(S)
-       FB    =FB     +  B(S)     *SOILCBOT(S)
-       FCGSAT=FCGSAT +  CGSAT(S) *SOILCBOT(S)
-       FJP   =FJP    +  JP(S)    *SOILCBOT(S)
-       FAS   =FAS    +  AS(S)    *SOILCBOT(S)
-       FC2R  =FC2R   +  C2R(S)   *SOILCBOT(S)
-       FC1SAT=FC1SAT +  C1SAT(S) *SOILCBOT(S)
-             
-     ENDDO
-
-     TFRACBOT = 1/TFRACBOT
-     FWSAT =FWSAT   *  TFRACBOT
-     FWFC  =FWFC    *  TFRACBOT
-     FWWLT =FWWLT   *  TFRACBOT
-     FB    =FB      *  TFRACBOT
-     FCGSAT=FCGSAT  *  TFRACBOT
-     FJP   =FJP     *  TFRACBOT
-     FAS   =FAS     *  TFRACBOT
-     FC2R  =FC2R    *  TFRACBOT
-     FC1SAT=FC1SAT  *  TFRACBOT
-    
-    ELSE                !Compute soil characteristics by sand and clay fraction
+!     Compute soil characteristics by sand (coarse and fine-medium) and clay fraction
     
       CFRAC      = 0.0                                                               
-      SUMSND     = 0.0                                                               
+      SUMCSND    = 0.0
+      SUMFMSND   = 0.0
       SUMCLY     = 0.0                                                               
       TFRACBOT   = 0.0                                                              
                                                                                 
-      DO S = 1,12                                                         
+      DO S = 1,NSCAT                                                        
 
         TFRACBOT  = TFRACBOT  + SOILCBOT(S)
-        SUMSND    = SUMSND    + SAND(S) * SOILCBOT(S)
-        SUMCLY    = SUMCLY    + CLAY(S) * SOILCBOT(S)
-         
+        SUMCSND   = SUMCSND   + CSAND(S)  * SOILCBOT(S)
+        SUMFMSND  = SUMFMSND  + FMSAND(S) * SOILCBOT(S)
+        SUMCLY    = SUMCLY    + CLAY(S)   * SOILCBOT(S)
+        
         IF(SOILCBOT(S).GE.CFRAC) THEN   ! Find Dominant Category and fraction
           ISTI=S
           CFRAC=SOILCBOT(S)
         ENDIF
 
       ENDDO
+
          
       IF(TFRACBOT.GT.0.001) THEN                                                  
-        AVS = SUMSND / TFRACBOT                                               
-        AVC = SUMCLY / TFRACBOT                                           
-        AVSLT = 100 - AVS - AVC                                   
+        AVCS  = SUMCSND / TFRACBOT
+        AVFMS = SUMFMSND / TFRACBOT
+        AVS   = AVCS + AVFMS                                               
+
+        AVC   = SUMCLY / TFRACBOT                                           
+        AVSLT = 100.0 - AVS - AVC                                   
         
         IF(AVS.GT.(85.+ 0.5*AVC)) THEN
           AVCLASS= 'Sand'                                                   
-          ISTI = 1                                                          
+          ISTI = 1
         ELSE IF(AVS.GT.(70.+ AVC)) THEN
           AVCLASS= 'Lsan'                                             
-          ISTI = 2                                                  
+          ISTI = 2
         ELSE IF((AVC.LT.20..AND.AVS.GT.52.) &
                 .OR.(AVC.LE.7.5.AND.AVSLT.LT.50.)) THEN                
           AVCLASS= 'Sloa'                                             
-          ISTI = 3                                                     
+          ISTI = 3
         ELSE IF(AVC.LT.35..AND.AVS.GT.45..AND.AVSLT.LT.28.) THEN      
           AVCLASS= 'Sclo'                                                  
-          ISTI = 6                                                     
+          ISTI = 7
         ELSE IF(AVC.GE.35..AND.AVS.GT.45.) THEN                           
           AVCLASS = 'Sacl'                                                  
-          ISTI = 9                                                         
+          ISTI = 10
         ELSE IF(AVC.LT.27.0.AND.AVSLT.LT.50.) THEN                        
           AVCLASS= 'Loam'                                                
-          ISTI = 5                                                        
+          ISTI = 6
         ELSE IF(AVC.LT.12..AND.AVSLT.GT.80.) THEN                
           AVCLASS = 'Silt'                                         
-          ISTI = 4                                                           
+          ISTI = 5
         ELSE IF(AVC.LT.27.) THEN                                                 
           AVCLASS = 'Sill'                                                       
-          ISTI = 4                                                              
+          ISTI = 4
         ELSE IF(AVC.LT.40..AND.AVS.GT.20.) THEN                                  
           AVCLASS = 'Cllo'                                                       
-          ISTI = 8                                                               
+          ISTI = 9 
         ELSE IF(AVC.LT.40.) THEN                                                 
           AVCLASS = 'Sicl'                                                       
-          ISTI = 7                                                               
+          ISTI = 8       
         ELSE IF(AVSLT.GE.40.) THEN                                               
           AVCLASS = 'Sicy'                                                       
-          ISTI = 10                                                              
+          ISTI = 11            
         ELSE                                                                     
           AVCLASS = 'Clay'                                                       
-          ISTI = 11                                                              
+          ISTI = 12                        
         ENDIF                                                                          
       ELSE
-        ISTI=5
+        ! set no soil to 9 - clay loam
+        ISTI = 9
         AVCLASS = TEXID(ISTI)  
+
+        AVCS  = CSAND(ISTI)
+        AVFMS = FMSAND(ISTI)
+        AVS   = AVCS + AVFMS
+
+        AVC   = CLAY(ISTI)
+        AVSLT = 100.0 - AVS - AVC
+
       ENDIF
+
+      FCSAND  = AVCS
+      FFMSAND = AVFMS
+      FCLAY   = AVC
   
-      FWSAT =WSAT(ISTI)   
-      FWFC  =WFC(ISTI)    
-      FWWLT =WWLT(ISTI)   
-      FB    =B(ISTI)      
-      FCGSAT=CGSAT(ISTI)  
-      FJP   =JP(ISTI)     
-      FAS   =AS(ISTI)     
-      FC2R  =C2R(ISTI)   
-      FC1SAT=C1SAT(ISTI)  
+      ! Continous formulation of secondary soil parmeters (Noilhan and Mahfouf 1996)
+      FWSAT = (-1.08 * AVS + 494.305) * 1.0E-3
+      FWWLT = 37.1342E-3 * SQRT(AVC)
+      FWFC  = 89.0467E-3 * AVC**0.3496
+      FB    = 0.137 * AVC + 3.501
+      FCGSAT= -1.557E-2 * AVS - 1.441E-2 * AVC + 4.7021
+      FC1SAT= (5.58 * AVC + 84.88) * 1.0E-2
+      FC2R  = 13.815 * AVC**(-0.954)
+      FC3   = 5.327 * AVC **(-1.043)
+      FAS   = 732.42E-3 * AVC **(-0.539)
+      FJP   = 0.134 * AVC + 3.4
+      FWRES = 0.00123 * AVC - 0.00066 * AVSLT + 0.0405  !J. Pleim fitted function
+      FWRES = AMAX1(FWRES, 0.01)                        !L. Ran set minimum
+
+      !SSMPOT = -10.0 * 10.0**(1.88 - 0.0131 * AVS)   !compute saturated mineral soil matric potential CLM4.5
+      !FWRES = FWSAT * (SSMPOT/DSMPOT)**(1.0 / FB)    !Swenson and Lawrence 2014, Dingman 2002
                             
-    ENDIF
     
     ! Compute W2 using soil moisture availiability if pxlsm_smois_init (in namelist) is not zero
     IF (ITIMESTEP .EQ. 1 .AND. PXLSM_SMOIS_INIT .GT. 0) THEN
@@ -1847,7 +1940,6 @@ CONTAINS
     END SUBROUTINE soilprop
 !------------------------------------------------------------------------------------------
 !------------------------------------------------------------------------------------------
-
 
 !------------------------------------------------------------------------------------------
 !------------------------------------------------------------------------------------------

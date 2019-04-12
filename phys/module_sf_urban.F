@@ -26,6 +26,8 @@ MODULE module_sf_urban
    REAL, ALLOCATABLE, DIMENSION(:) :: FRC_URB_TBL
 
    REAL, ALLOCATABLE, DIMENSION(:) :: COP_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: BLDAC_FRC_TBL
+   REAL, ALLOCATABLE, DIMENSION(:) :: COOLED_FRC_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: PWIN_TBL
    REAL, ALLOCATABLE, DIMENSION(:) :: BETA_TBL
    INTEGER, ALLOCATABLE, DIMENSION(:) :: SW_COND_TBL
@@ -2101,6 +2103,10 @@ ENDIF
             if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating HPERCENT_BIN_TBL in urban_param_init')
             ALLOCATE( COP_TBL(ICATE), stat=allocate_status )
             if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating COP_TBL in urban_param_init')
+            ALLOCATE( BLDAC_FRC_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating BLDAC_FRC_TBL in urban_param_init')
+            ALLOCATE( COOLED_FRC_TBL(ICATE), stat=allocate_status )
+            if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating COOLED_FRC_TBL in urban_param_init')
             ALLOCATE( PWIN_TBL(ICATE), stat=allocate_status )
             if(allocate_status /= 0) CALL wrf_error_fatal('Error allocating PWIN_TBL in urban_param_init')
             ALLOCATE( BETA_TBL(ICATE), stat=allocate_status )
@@ -2287,6 +2293,10 @@ ENDIF
          read(string(indx+1:),*) Z0R_tbl(1:icate)
       else if ( name == "COP") then
          read(string(indx+1:),*) cop_tbl(1:icate)
+      else if ( name == "BLDAC_FRC") then
+         read(string(indx+1:),*) bldac_frc_tbl(1:icate)
+      else if ( name == "COOLED_FRC") then
+         read(string(indx+1:),*) cooled_frc_tbl(1:icate)
       else if ( name == "PWIN") then
          read(string(indx+1:),*) pwin_tbl(1:icate)
       else if ( name == "BETA") then
@@ -2413,7 +2423,16 @@ ENDIF
                              TRL_URB3D,TBL_URB3D,TGL_URB3D,                & ! inout
                              SH_URB2D,LH_URB2D,G_URB2D,RN_URB2D,           & ! inout
                              TS_URB2D,                                     & ! inout
-                             num_urban_layers,                             & ! in
+                             num_urban_ndm,                                & ! in
+                             urban_map_zrd,                                & ! in
+                             urban_map_zwd,                                & ! in
+                             urban_map_gd,                                 & ! in
+                             urban_map_zd,                                 & ! in
+                             urban_map_zdf,                                & ! in
+                             urban_map_bd,                                 & ! in
+                             urban_map_wd,                                 & ! in
+                             urban_map_gbd,                                & ! in
+                             urban_map_fbd,                                & ! in
                              num_urban_hi,                                 & ! in
                              TRB_URB4D,TW1_URB4D,TW2_URB4D,TGB_URB4D,      & ! inout
                              TLEV_URB3D,QLEV_URB3D,                        & ! inout
@@ -2439,7 +2458,16 @@ ENDIF
    INTEGER, INTENT(IN) :: ISURBAN, sf_urban_physics
    INTEGER, INTENT(IN) :: LOW_DENSITY_RESIDENTIAL, HIGH_DENSITY_RESIDENTIAL, HIGH_INTENSITY_INDUSTRIAL
    INTEGER, INTENT(IN) :: ims,ime,jms,jme,kms,kme,num_soil_layers
-   INTEGER, INTENT(IN) :: num_urban_layers                            !multi-layer urban
+   INTEGER, INTENT(IN) :: num_urban_ndm
+   INTEGER, INTENT(IN) :: urban_map_zrd
+   INTEGER, INTENT(IN) :: urban_map_zwd
+   INTEGER, INTENT(IN) :: urban_map_gd
+   INTEGER, INTENT(IN) :: urban_map_zd
+   INTEGER, INTENT(IN) :: urban_map_zdf
+   INTEGER, INTENT(IN) :: urban_map_bd
+   INTEGER, INTENT(IN) :: urban_map_wd
+   INTEGER, INTENT(IN) :: urban_map_gbd
+   INTEGER, INTENT(IN) :: urban_map_fbd
    INTEGER, INTENT(IN) :: num_urban_hi                                !multi-layer urban
 !   INTEGER, INTENT(IN) :: num_roof_layers, num_wall_layers, num_road_layers
 
@@ -2484,28 +2512,28 @@ ENDIF
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: TS_URB2D
 
 ! multi-layer UCM variables
-   REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TRB_URB4D
-   REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TW1_URB4D
-   REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TW2_URB4D
-   REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TGB_URB4D
-   REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: TLEV_URB3D
-   REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: QLEV_URB3D
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TW1LEV_URB3D
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TW2LEV_URB3D
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TGLEV_URB3D
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: TFLEV_URB3D
+   REAL, DIMENSION(ims:ime, 1:urban_map_zrd, jms:jme), INTENT(INOUT) :: TRB_URB4D
+   REAL, DIMENSION(ims:ime, 1:urban_map_zwd, jms:jme), INTENT(INOUT) :: TW1_URB4D
+   REAL, DIMENSION(ims:ime, 1:urban_map_zwd, jms:jme), INTENT(INOUT) :: TW2_URB4D
+   REAL, DIMENSION(ims:ime, 1:urban_map_gd , jms:jme), INTENT(INOUT) :: TGB_URB4D
+   REAL, DIMENSION(ims:ime, 1:urban_map_bd , jms:jme), INTENT(INOUT) :: TLEV_URB3D
+   REAL, DIMENSION(ims:ime, 1:urban_map_bd , jms:jme), INTENT(INOUT) :: QLEV_URB3D
+   REAL, DIMENSION(ims:ime, 1:urban_map_wd , jms:jme), INTENT(INOUT) :: TW1LEV_URB3D
+   REAL, DIMENSION(ims:ime, 1:urban_map_wd , jms:jme), INTENT(INOUT) :: TW2LEV_URB3D
+   REAL, DIMENSION(ims:ime, 1:urban_map_gbd, jms:jme), INTENT(INOUT) :: TGLEV_URB3D
+   REAL, DIMENSION(ims:ime, 1:urban_map_fbd, jms:jme), INTENT(INOUT) :: TFLEV_URB3D
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LF_AC_URB3D
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: SF_AC_URB3D
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: CM_AC_URB3D
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: SFVENT_URB3D
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LFVENT_URB3D
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: SFWIN1_URB3D
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: SFWIN2_URB3D
-   REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFW1_URB3D
-   REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFW2_URB3D
-   REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFR_URB3D
-   REAL, DIMENSION(ims:ime, 1:num_urban_layers, jms:jme), INTENT(INOUT) :: SFG_URB3D
-   REAL, DIMENSION( ims:ime,1:num_urban_hi, jms:jme), INTENT(INOUT) :: HI_URB2D
+   REAL, DIMENSION( ims:ime, 1:urban_map_wd, jms:jme), INTENT(INOUT) :: SFWIN1_URB3D
+   REAL, DIMENSION( ims:ime, 1:urban_map_wd, jms:jme), INTENT(INOUT) :: SFWIN2_URB3D
+   REAL, DIMENSION(ims:ime, 1:urban_map_zd , jms:jme), INTENT(INOUT) :: SFW1_URB3D
+   REAL, DIMENSION(ims:ime, 1:urban_map_zd , jms:jme), INTENT(INOUT) :: SFW2_URB3D
+   REAL, DIMENSION(ims:ime, 1:urban_map_zdf, jms:jme), INTENT(INOUT) :: SFR_URB3D
+   REAL, DIMENSION(ims:ime, 1:num_urban_ndm, jms:jme), INTENT(INOUT) :: SFG_URB3D
+   REAL, DIMENSION( ims:ime,1:num_urban_hi , jms:jme), INTENT(INOUT) :: HI_URB2D
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LP_URB2D
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: LB_URB2D
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: HGT_URB2D
@@ -2786,7 +2814,6 @@ ENDIF
 ! multi-layer urban
 !      IF( sf_urban_physics .EQ. 2)THEN
        IF((SF_URBAN_PHYSICS.eq.2).OR.(SF_URBAN_PHYSICS.eq.3)) THEN
-      DO k=1,num_urban_layers
 !        TRB_URB4D(I,k,J)=TSURFACE0_URB(I,J)
 !        TW1_URB4D(I,k,J)=TSURFACE0_URB(I,J)
 !        TW2_URB4D(I,k,J)=TSURFACE0_URB(I,J)
@@ -2795,20 +2822,19 @@ ENDIF
 !MT        TW1_URB4D(I,K,J)=tlayer0_urb(I,1,J)
 !MT        TW2_URB4D(I,K,J)=tlayer0_urb(I,1,J)
         IF (UTYPE_URB2D(I,J) > 0) THEN
-           TRB_URB4D(I,K,J)=TBLEND_TBL(UTYPE_URB2D(I,J))
-           TW1_URB4D(I,K,J)=TBLEND_TBL(UTYPE_URB2D(I,J))
-           TW2_URB4D(I,K,J)=TBLEND_TBL(UTYPE_URB2D(I,J))
+           TRB_URB4D(I,:,J)=TBLEND_TBL(UTYPE_URB2D(I,J))
+           TW1_URB4D(I,:,J)=TBLEND_TBL(UTYPE_URB2D(I,J))
+           TW2_URB4D(I,:,J)=TBLEND_TBL(UTYPE_URB2D(I,J))
         ELSE
-           TRB_URB4D(I,K,J)=tlayer0_urb(I,1,J)
-           TW1_URB4D(I,K,J)=tlayer0_urb(I,1,J)
-           TW2_URB4D(I,K,J)=tlayer0_urb(I,1,J)
+           TRB_URB4D(I,:,J)=tlayer0_urb(I,1,J)
+           TW1_URB4D(I,:,J)=tlayer0_urb(I,1,J)
+           TW2_URB4D(I,:,J)=tlayer0_urb(I,1,J)
         ENDIF
-        TGB_URB4D(I,K,J)=tlayer0_urb(I,1,J)
-        SFW1_URB3D(I,K,J)=0.
-        SFW2_URB3D(I,K,J)=0.
-        SFR_URB3D(I,K,J)=0.
-        SFG_URB3D(I,K,J)=0.
-      ENDDO
+        TGB_URB4D(I,:,J)=tlayer0_urb(I,1,J)
+        SFW1_URB3D(I,:,J)=0.
+        SFW2_URB3D(I,:,J)=0.
+        SFR_URB3D(I,:,J)=0.
+        SFG_URB3D(I,:,J)=0.
        
        ENDIF 
               
@@ -2819,21 +2845,19 @@ ENDIF
          SFVENT_URB3D(I,J)=0.
          LFVENT_URB3D(I,J)=0.
 
-         DO K=1,num_urban_layers
-            TLEV_URB3D(I,K,J)=tlayer0_urb(I,1,J)
-            TW1LEV_URB3D(I,K,J)=tlayer0_urb(I,1,J)
-            TW2LEV_URB3D(I,K,J)=tlayer0_urb(I,1,J)
-            TGLEV_URB3D(I,K,J)=tlayer0_urb(I,1,J)
-            TFLEV_URB3D(I,K,J)=tlayer0_urb(I,1,J)
-            QLEV_URB3D(I,K,J)=0.01
-            SFWIN1_URB3D(I,K,J)=0.
-            SFWIN2_URB3D(I,K,J)=0.
+            TLEV_URB3D(I,:,J)=tlayer0_urb(I,1,J)
+            TW1LEV_URB3D(I,:,J)=tlayer0_urb(I,1,J)
+            TW2LEV_URB3D(I,:,J)=tlayer0_urb(I,1,J)
+            TGLEV_URB3D(I,:,J)=tlayer0_urb(I,1,J)
+            TFLEV_URB3D(I,:,J)=tlayer0_urb(I,1,J)
+            QLEV_URB3D(I,:,J)=0.01
+            SFWIN1_URB3D(I,:,J)=0.
+            SFWIN2_URB3D(I,:,J)=0.
 !rm         LF_AC_URB3D(I,J)=0.
 !rm         SF_AC_URB3D(I,J)=0.
 !rm         CM_AC_URB3D(I,J)=0.
 !rm         SFVENT_URB3D(I,J)=0.
 !rm         LFVENT_URB3D(I,J)=0.
-         ENDDO
 
       endif
 
@@ -2861,6 +2885,8 @@ ENDIF
 
       IF (CHECK.EQ.0)THEN
       IF(IVGTYP(I,J).EQ.1)THEN
+        write(mesg,*) 'Sample of Urban settings'
+        call wrf_message(mesg)
         write(mesg,*) 'TSURFACE0_URB',TSURFACE0_URB(I,J)
         call wrf_message(mesg)
         write(mesg,*) 'TDEEP0_URB', TDEEP0_URB(I,J)

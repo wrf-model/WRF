@@ -4,6 +4,8 @@ MODULE MODULE_GOCART_SETTLING
 ! KYKang, MKlose, CLWu various changes 
 ! YShao [2011/09/30] complete update
 !
+! 11/29/18 - A. Ukhov, bug fix: dust (and sea salt) mass balance was
+! violated in the "settling" routine 
 
 CONTAINS
 
@@ -117,7 +119,7 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,      &
        idust=1
        CALL settling(1,1,lmx,5,g,dyn_visc,ddust,tmp,p_mid,delz,       &
                      imod,graset_dust,grasetvel_dust, uoc_flag,       & 
-                     den_dust,reff_dust,dt,rh,idust,iseas)
+                     den_dust,reff_dust,dt,rh,idust,iseas,airden)
           
        IF (config_flags%chem_opt == 2 .or. config_flags%chem_opt == 11 ) THEN
           kk=1
@@ -170,7 +172,7 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,      &
 
        CALL settling(1,1,lmx,4,g,dyn_visc,sea_salt,tmp,p_mid,delz,        &
                      imod,graset_ss,grasetvel_ss, uoc_flag,               &
-                     den_seas,reff_seas,dt,rh,idust,iseas)
+                     den_seas,reff_seas,dt,rh,idust,iseas,airden)
        IF (config_flags%chem_opt == 2 .or. config_flags%chem_opt == 11 ) THEN
           kk=1
           do kkk=1,4
@@ -204,7 +206,7 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,      &
 
  subroutine settling(imx,jmx,lmx,nmx,g0,dyn_visc,tc,tmp,p_mid,delz, &
                     imod,graset, grasetvel, uoc,                    & 
-                    den_in,reff_in,dt,rh,idust,iseas)
+                    den_in,reff_in,dt,rh,idust,iseas,airden)
 
 ! ****************************************************************************
 ! *                                                                          *
@@ -224,7 +226,7 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,      &
   INTEGER             :: ntdt
   REAL,    INTENT(IN) :: dt,g0,dyn_visc
   REAL*8,  INTENT(IN) :: tmp(imx,jmx,lmx), delz(imx,jmx,lmx),  &
-                         rh(imx,jmx,lmx), p_mid(imx,jmx,lmx)
+                         rh(imx,jmx,lmx), p_mid(imx,jmx,lmx),airden(imx,jmx,lmx)
 ! 
   REAL*8, INTENT(IN)  :: den_in(nmx), reff_in(nmx)
 
@@ -239,8 +241,10 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,      &
   INTEGER   :: ndt_settl(nmx)
   REAL*8    :: dzmin, vsettl, dtmax, pres, rhb, rwet(nmx), ratio_r(nmx)
   REAL*8    :: c_stokes, free_path, c_cun, viscosity, growth_fac
-  REAL*8    :: vd_cor(lmx), vd_wk1, vd_wk2
+  REAL*8    :: vd_cor(lmx), vd_wk1
   INTEGER   :: k, n, i, j, l, l2
+
+  REAL*8    :: transfer_to_below_level,temp_tc
 
 ! for sea-salt:
   REAL*8, PARAMETER :: c1=0.7674, c2=3.079, c3=2.573E-11, c4=-1.424 
@@ -315,6 +319,9 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,      &
         END IF
 
         DO n = 1,ndt_settl(k)        ! time loop 
+
+          transfer_to_below_level=0
+
           DO l = lmx,1,-1            ! height loop, from top
              l2 = lmx - l + 1
 
@@ -338,18 +345,15 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,      &
 
              vd_cor(l) = 2./9.*g0*rho_priv(k)*rwet_priv(k)**2/viscosity  ! Settling velocity, depends on temp
 
-! Update mixing ratio; order of delz: top->sfc
-             IF (l == lmx) THEN
-                vd_wk1 = dt_settl(k)*vd_cor(l)/delz(i,j,l2)              ! Dimensionless
-                tc(i,j,l,k) = tc(i,j,l,k)/(1.+ vd_wk1)
-             ELSE                  
-                vd_wk1 = dt_settl(k)*vd_cor(l)/delz(i,j,l2)              ! Dimensionless
-                vd_wk2 = dt_settl(k)*vd_cor(l+1)/delz(i,j,l2)            ! Dimensionless
-                tc(i,j,l,k) = (tc(i,j,l,k)+vd_wk2*tc(i,j,l+1,k))/(1.+vd_wk1)
-             ENDIF
+            ! Update mixing ratio; order of delz: top->sfc
+            temp_tc=tc(i,j,l,k)                                          ! temp_tc - for temporal storage [ug/kg]            
+            vd_wk1 = dt_settl(k)*vd_cor(l)/delz(i,j,l2)                  ! fraction to leave level
+
+            tc(i,j,l,k)   =  tc(i,j,l,k)*(1.- vd_wk1)+transfer_to_below_level          ! [ug/kg]
+            transfer_to_below_level = (temp_tc*vd_wk1)*((delz(i,j,l2)*airden(i,j,l))/(delz(i,j,l2+1)*airden(i,j,l-1))) ! [ug/kg]
 
              IF (l==1) THEN
-                graset(i,j,k)=graset(i,j,k)+vd_cor(l)*tc(i,j,l,k)/ndt_settl(k) ! [ug/kg][m/s]
+                graset(i,j,k)=graset(i,j,k)+vd_cor(l)*(temp_tc*vd_wk1)/ndt_settl(k) ! [ug/kg][m/s]
                 grasetvel(i,j,k)=vd_cor(l)                                     ! [m/s]
              ENDIF
           ENDDO                 !l, height

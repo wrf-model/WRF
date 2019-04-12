@@ -56,6 +56,18 @@ Note, this is not a namelist.input file. Find what interests you, and cut and pa
  opt_stc  = 1,
 /
 
+** Using UCM urban model
+&physics
+ sf_urban_physics                    = 1,      1,     1,
+
+** Using BEP urban model
+&physics
+ sf_urban_physics                    = 2,      2,     2,
+
+** Using BEM urban model
+&physics
+ sf_urban_physics                    = 3,      3,     3,
+
 ** Using lake model
 &physics
  sf_lake_physics                     = 1,      1,     1,
@@ -475,7 +487,8 @@ to turn on the option (vert_refine_method).  The namelist array eta_levels
 is manually filled in for each domain.  Below is an example for two 
 domains.  
 
-NOTE: The user is restricted to either the RRTM or RRTMG radiation schemes.
+NOTE: The user is restricted to using the RRTM LW and Dudhia SW radiation schemes.
+NOTE: The user is restricted from using the hybrid vertical coordinate.
 
  &domains
  max_dom                             = 2,

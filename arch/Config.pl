@@ -604,9 +604,9 @@ while ( <CONFIGURE_DEFAULTS> )
                  $_ .= " \$\(NETCDF4_IO_OPTS\)\n" ; 
                }
              if (/^LIB.*=/) 
-               { $_  =~ s/\r|\n//g ;
-                 $_ .=" \$\(NETCDF4_DEP_LIB\)\n" ;
-               }
+	     {
+		 $_ =~ s/(\\?)[\r\n]/ \$\(NETCDF4_DEP_LIB\)\1\n/g ;
+	     }
            }
        }
 

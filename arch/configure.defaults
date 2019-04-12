@@ -1457,7 +1457,6 @@ CC_TOOLS        =      $(SCC)
 LIB_EXTERNAL    = \
                      $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a CONFIGURE_NETCDF_PATH/lib/libnetcdf.dll.a \
 		     -L CONFIGURE_NETCDF_PATH -lnetcdff -lnetcdf -lnetcdf -ltirpc -lhdf5_hl -lhdf5 -lm -lz \
-                     $(WRF_SRC_ROOT_DIR)/external/wavelet/libWavelet.a $(WRF_SRC_ROOT_DIR)/external/wavelet/lib_wavelet.a \
 		     $(WRF_SRC_ROOT_DIR)/external/io_grib2/libio_grib2.a
 ESMF_IO_LIB     =    $(WRF_SRC_ROOT_DIR)/external/esmf_time_f90/libesmf_time.a
 LIB_BUNDLED     = \
@@ -1517,7 +1516,6 @@ CC_TOOLS        =      $(SCC)
 LIB_EXTERNAL    = \
                      $(WRF_SRC_ROOT_DIR)/external/io_netcdf/libwrfio_nf.a CONFIGURE_NETCDF_PATH/lib/libnetcdf.dll.a \
 		     -L CONFIGURE_NETCDF_PATH -lnetcdff -lnetcdf -lnetcdf -lhdf5_hl -lhdf5 -lm -lz \
-                     $(WRF_SRC_ROOT_DIR)/external/wavelet/libWavelet.a $(WRF_SRC_ROOT_DIR)/external/wavelet/lib_wavelet.a \
 		     $(WRF_SRC_ROOT_DIR)/external/io_grib2/libio_grib2.a
 ESMF_IO_LIB     =    $(WRF_SRC_ROOT_DIR)/external/esmf_time_f90/libesmf_time.a
 LIB_BUNDLED     = \
@@ -1806,7 +1804,6 @@ CC_TOOLS        =       $(SCC)
 
 LIB_EXTERNAL    = \
                      ../external/io_netcdf/libwrfio_nf.a CONFIGURE_NETCDF_PATH/lib/libnetcdf.lib \
-                     ../external/wavelet/libWavelet.a ../external/wavelet/lib_wavelet.a
 ESMF_IO_LIB     =    ../external/esmf_time_f90/libesmf_time.a
 LIB_BUNDLED     = \
                      ../external/fftpack/fftpack5/libfftpack.a \

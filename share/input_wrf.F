@@ -1913,6 +1913,7 @@
 
     IF ( &
          ( INDEX(TRIM(input_title_char),'METGRID'     ) .NE. 0 ) .OR. &
+         ( INDEX(TRIM(input_title_char),'OBSGRID'     ) .NE. 0 ) .OR. &
          ( INDEX(TRIM(input_title_char),'SFCFDDA'     ) .NE. 0 ) .OR. &
          ( INDEX(TRIM(input_title_char),'EMISSIONS'   ) .NE. 0 ) .OR. &
          ( INDEX(TRIM(input_title_char),'XYZZY'       ) .NE. 0 )      &

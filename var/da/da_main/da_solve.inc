@@ -196,13 +196,22 @@
          ' Resetting ntmax = 0 for analysis_type = randomcv' 
    end if
 
-   if ( cv_options == 3 .and. cloud_cv_options > 0 ) then
-      write(unit=message(1),fmt='(A)') &
-         'Cloud control variables are not implemented for cv_options = 3'
-      write(unit=message(2),fmt='(A)') &
-         'Resetting cloud_cv_options = 0 for cv_options = 3'
-      cloud_cv_options = 0
-      call da_warning(__FILE__,__LINE__,message(1:2))
+   if ( cv_options == 3 ) then
+      if ( cloud_cv_options > 0 ) then
+         write(unit=message(1),fmt='(A)') &
+            'Cloud control variables are not implemented for cv_options = 3'
+         write(unit=message(2),fmt='(A)') &
+            'Resetting cloud_cv_options = 0 for cv_options = 3'
+         cloud_cv_options = 0
+         call da_warning(__FILE__,__LINE__,message(1:2))
+      end if
+      if ( ensdim_alpha > 0 ) then
+         write(unit=message(1),fmt='(A)') &
+            'Alpha control variables are not implemented for cv_options = 3'
+         write(unit=message(2),fmt='(A)') &
+            'Please set cv_options=5 or 7, or ensdim_alpha=0'
+         call da_error(__FILE__,__LINE__,message(1:2))
+      end if
    end if
 
    if ( use_radarobs ) then

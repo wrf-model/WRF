@@ -676,19 +676,6 @@ CONTAINS
   REAL                          :: t_del_tv, del_tv, flux, fluxin, fluxout
   LOGICAL                       :: notlast
 
-  if (itimestep.eq.1) then
-     write(6, *) 'GSFCGCE 4ice scheme inside fall_flux'
-     write(6, *) 'improve = ', improve
-    
-     write(6, *) 'ims=', ims, '  ime=', ime
-     write(6, *) 'jms=', jms, '  jme=', jme
-     write(6, *) 'kms=', kms, '  kme=', kme
-     write(6, *) 'its=', its, '  ite=', ite
-     write(6, *) 'jts=', jts, '  jte=', jte
-     write(6, *) 'kts=', kts, '  kte=', kte
-     write(6, *) 'dt=', dt
-  endif 
-
 !-----------------------------------------------------------------------
 !  This program calculates precipitation fluxes due to terminal velocities.
 !-----------------------------------------------------------------------
@@ -2044,7 +2031,7 @@ CONTAINS
 
        ftnw=1.                                                       
            if(ql.lt.cmin .and. tair .gt. t0)then                      
-             bin_factor=0.11*(1000.*qri)**-1.27 + 0.98      
+             bin_factor=0.11*(1000.*qri)**(-1.27) + 0.98      
              bin_factor=min(bin_factor, 1.30)       
              ftnw=1./bin_factor**3.35                             
              ftnwmin=r00*qri/draimax                        
@@ -3080,9 +3067,8 @@ CONTAINS
 !                  call mass2icn(p0(i,k)*0.001,tair(i),aero(i,k,:), icn_out,i,k)
                   ! EMK...mass2icn requires i,j,k indices, but only prints
                   ! the values when an error occurs.  In no case are the i,j,k
-                  ! used to access a value in an array.  Since mass2icn is
-                  ! shared with the older 3ICE scheme which still uses j,
-                  ! we will simply pass a bogus value of j=1 in the call
+                  ! used to access a value in an array.  
+                  ! We will simply pass a bogus value of j=1 in the call
                   ! below.
                   call mass2icn(p0(i,k)*0.001,tair(i),aero(i,k,:), icn_out(i),&
                        i,1,k)
@@ -4137,7 +4123,7 @@ CONTAINS
              fdwv    = dd(i)/(term1+term2*dwv0/dwv(i))
              ftnw=1.
              if (qr(i) .gt. cmin.and.tair(i).gt.t0) then   !no need to check qc, no qc if ssw < 0
-                 bin_factor(i)=0.11*(1000.*qr(i))**-1.27 + 0.98
+                 bin_factor(i)=0.11*(1000.*qr(i))**(-1.27) + 0.98
                  bin_factor(i)=min(bin_factor(i),1.30)
                  ftnw=1./bin_factor(i)**3.35
                  ftnwmin=r00(i)*qr(i)/draimax
@@ -4301,7 +4287,7 @@ CONTAINS
 
         ftnw=1.
         if(qr(i).gt.cmin .and. qc(i).lt.cmin)then
-             bin_factor(i)=0.11*(1000.*qr(i))**-1.27 + 0.98
+             bin_factor(i)=0.11*(1000.*qr(i))**(-1.27) + 0.98
 !            bin_factor(i)=min(bin_factor(i),1.35)
              bin_factor(i)=min(bin_factor(i),1.30)
              ftnw=1./bin_factor(i)**3.50

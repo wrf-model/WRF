@@ -507,7 +507,6 @@ Namelist variables for controlling the adaptive time step option:
                                        nssl_rho_qh  = 500.  ! graupel density
                                        nssl_rho_qhl = 900.  ! hail density
                                        nssl_rho_qs  = 100.  ! snow density
-                                     = 27, Goddard 3-ice scheme
                                      = 28, aerosol-aware Thompson scheme with water- and ice-friendly aerosol climatology 
                                            (new for V3.6)
                                        This option has two climatological aerosol input options:
@@ -589,6 +588,8 @@ Namelist variables for controlling the adaptive time step option:
  radt (max_dom)                      = 30,  ! minutes between radiation physics calls
                                               recommend 1 min per km of dx (e.g. 10 for 10 km);
                                               use the same value for all nests.                      
+ cldovrlp                            = 2,   ! cloud overlapping option for RRTMG only. 1=random, 2=maximum-random (default), 
+                                              3=maximum, 4=exponential, 5=exponential-random
 
  nrads (max_dom)                     = FOR NMM: number of fundamental timesteps between 
                                                 calls to shortwave radiation; the value
@@ -797,7 +798,10 @@ Namelist variables for controlling the adaptive time step option:
                                      = 1, Grell 3D ensemble scheme (use with cu_physics=93 or 5) (PLACEHOLDER: SWITCH NOT YET IMPLEMENTED--use ishallow)
                                      = 2, Park and Bretherton shallow cumulus from CAM5 (CESM 1_0_1)
                                      = 3, GRIMS shallow cumulus from YSU group
-                                     = 5, Deng shallow cumulus from PSU and WRF-Solar
+                                     = 5, Deng cumulus scheme (including both shallow and deep convections) from PSU and WRF-Solar.
+                                          However the deep part isn't very active. Not recommended to use alone for deep convection 
+                                          case. Could work well for grid sizes 3-9 km.
+                                          This scheme only works with MYJ or MYNN PBL schemes 
 
  ishallow                            = 0, !  = 1 turns on shallow convection, used with Grell 3D ensemble schemes (cu_physics = 3 or 5)
  clos_choice                         = 0, !  closure choice (place holder only)

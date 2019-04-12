@@ -1380,21 +1380,6 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
 !--------------------       PROGRAM START        ---------------------------------------
 
   i24h=nint(86400./dt_in)
-!  if (mod(itimestep,i24h).eq.1) then
- if ( wrf_dm_on_monitor() .and. mod(itimestep,i24h).eq.1 ) then
-    print *, 'in goddardrad1014 ', sw_or_lw
-    print *, '   kts, kte = ', kts, kte
-    print *, '   kms, kme = ', kms, kme
-    print *, '   kds, kde = ', kds, kde
- endif
-
-  if ( kme .ne. kte+1 ) then
-     print *,'Something is strange, kde, kme, kte = ', kde, kme, kte 
-     print *,'                      kds, kms, kts = ', kds, kms, kts 
-     print *,' at timestep = ', itimestep
-     print *,' at gmt, julday, xtime = ', gmt,julday,xtime
-  endif
-
 !
 ! Make sure there is no negative value in qv and cloud species
 ! Negative value happen through dynamic core (advection).

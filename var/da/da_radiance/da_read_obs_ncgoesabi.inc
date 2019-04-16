@@ -83,6 +83,8 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    integer                      :: ichan, ifile, iview, ifgat, ipass, ioff, &
                                    jchan, jfile, jview, icount, io_stat, &
                                    n, i, j, iy, ix, jy, jx, iyl, ixl, iyfd, ixfd, iproc, subgrid
+   INTEGER :: cstat, estat
+   CHARACTER(LEN=100) :: cmsg
 
    !! Satellite variables
    integer(i_kind),parameter    :: nchan = 10
@@ -92,7 +94,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    integer, parameter           :: channel_list(nchan) = (/7,8,9,10,11,12,13,14,15,16/) !List of all available channels
 !   integer, parameter           :: channel_index(channel_list(1):channel_list(nchan)) = (/1,2,3,4,5,6,7,8,9,10/) !List of all available channels
 
-   integer, parameter           :: nviews=4
+   integer, parameter           :: nviews = 4
    integer(i_kind)              :: inst
    character(len=14), parameter :: INST_PREFIX  = 'OR_ABI-L1b-Rad'
 
@@ -312,6 +314,80 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
       cld_qc_buffer = 0
    end if
 
+   tot_files_used = 0
+   use_view_mask = .false.
+
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !! Collect files available for all views
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   do iview = 1, nviews
+      this_view => view_att(iview)
+
+      if ( .not.this_view % select ) cycle
+
+      write(unit=stdout,fmt='(5A)') 'Searching for GOES ', trim(this_view % name) ,' files in ', trim(this_view % fpath),'...'
+
+      ! Query fpath for files that begin with INST_PREFIX, name, and for this satellite_id
+      fname = trim(INST_PREFIX)//trim(this_view % name_short)
+      list_file    = 'INST'//trim(this_view % name_short)
+
+      call da_get_unit(file_unit)
+
+      ! Create list_file containing all files for this_view
+      if (rootproc) then
+         write(command,fmt='(5A,I2.2,2A)')&
+                 "find ",trim(this_view % fpath), &
+                 " \( -type l -o -type f \) -name '",trim(fname), &
+                 "*G",satellite_id, &
+                 "*' > ",trim(list_file)
+!                    "*' -printf '%P\n' > ",trim(list_file)
+
+         !WARNING: find command requires substantial memory for MESO list_file's
+write(stdout,fmt='(A)') adjustl(trim(command))
+         cmsg = ""
+         call execute_command_line ( adjustl(trim(command)), &
+            WAIT=.true., EXITSTAT=estat, CMDSTAT=cstat, CMDMSG=cmsg )
+write(stdout,*) 'estat: ', estat
+write(stdout,*) 'cstat: ', cstat
+write(stdout,*) 'cmsg:  ', cmsg
+
+         icount = 0
+         io_stat = -1
+         do while (io_stat .ne. 0) 
+            open(unit=file_unit,file=trim(list_file), iostat = io_stat)
+            icount = icount + 1
+            if (icount .gt. 10000) exit
+         end do
+         this_view % nfiles = 0
+         do
+            read(file_unit, fmt=*, iostat = io_stat)
+            if ( io_stat .ne. 0 ) exit
+            this_view % nfiles = this_view % nfiles + 1
+         end do
+         close(file_unit)
+
+         i_dummy = this_view % nfiles
+      end if
+#ifdef DM_PARALLEL
+      call mpi_barrier(comm, ierr)
+      call mpi_bcast ( i_dummy(1), 1, mpi_integer, root, comm, ierr )
+      this_view % nfiles = i_dummy(1)
+#endif
+      if (this_view % nfiles .lt. 1) then
+         this_view % select = .false.
+         cycle
+      end if
+
+      allocate(this_view % filename(this_view % nfiles))
+
+      ! Read the file names for this view
+      open(unit=file_unit,file=trim(list_file))
+      read(file_unit, fmt='(A)') (this_view % filename(ifile), ifile=1,this_view % nfiles)
+      close(file_unit)
+
+      call da_free_unit(file_unit)
+   end do
+
    !! If Full Disk is selected, take 2 passes over the data:
    !! + 1st pass: (A) Determine portions of each view corresponding to this patch
    !!                 for each fgat and each channel across observed domain
@@ -320,13 +396,14 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    !!                 closer to fgat time
    !! + 2nd pass: read radiance values, convert to BT, calculate quantities for online cloud detection QC
    !!
-   !! Otherwise only take one pass, and duplicated data cannot be removed from CONUS/MESO
+   !! Otherwise only take one pass, and duplicated data cannot be removed from CONUS/MESO1/MESO2
 
    npass = 1
-   if (nviews.gt.1 .and. view_att(1) % select) npass = 2
-   tot_files_used = 0
-   use_view_mask = .false.
+   if (count(view_att(:) % select).gt.1 .and. view_att(1) % select) npass = 2
 
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !! Process data for views w/ nfiles > 1
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    do ipass = 1, npass
       write(unit=stdout,fmt=*) ' '
       write(unit=stdout,fmt=*) ' '
@@ -340,63 +417,10 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
       if ( .not.this_view % select ) cycle
 
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !! Collect files available for this view
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if (ipass .eq. 1) then
-         write(unit=stdout,fmt='(5A)') 'Searching for GOES ', trim(this_view % name) ,' files in ', trim(this_view % fpath),'...'
-
-         ! Query fpath for files that begin with INST_PREFIX, name, and for this satellite_id
-         fname = trim(INST_PREFIX)//trim(this_view % name_short)
-         list_file    = 'INST'//trim(this_view % name_short)
-
-         call da_get_unit(file_unit)
-
-         if (rootproc) then
-            write(command,fmt='(5A,I2.2,2A)')&
-                    "find ",trim(this_view % fpath), &
-                    " \( -type l -o -type f \) -name '",trim(fname), &
-                    "*G",satellite_id, &
-                    "*' > ",trim(list_file)
-!                    "*' -printf '%P\n' > ",trim(list_file)
-
-write(stdout,fmt='(A)') adjustl(trim(command))
-            call execute_command_line (adjustl(trim(command)))
-
-            icount = 0
-            io_stat = -1
-            do while (io_stat .ne. 0) 
-               open(unit=file_unit,file=trim(list_file), iostat = io_stat)
-               icount = icount + 1
-               if (icount .gt. 1000) exit
-            end do
-            this_view % nfiles = 0
-            do
-               read(file_unit, fmt=*, iostat = io_stat)
-               if ( io_stat .ne. 0 ) exit
-               this_view % nfiles = this_view % nfiles + 1
-            end do
-            close(file_unit)
-
-            i_dummy = this_view % nfiles
-         end if
-#ifdef DM_PARALLEL
-         call mpi_barrier(comm, ierr)
-         call mpi_bcast ( i_dummy(1), 1, mpi_integer, root, comm, ierr )
-         this_view % nfiles = i_dummy(1)
-#endif
-         if (this_view % nfiles .lt. 1) then
-            if (iview .eq. 1) then
-               npass = 1
-            end if
-            this_view % select = .false.
-            cycle
-         end if
-
          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
          !! Allocate/init components for this_view
          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-         allocate(this_view % filename(this_view % nfiles))
          allocate(this_view % filechan(this_view % nfiles))
          allocate(this_view % filedate(this_view % nfiles))
          allocate(this_view % file_fgat_match(this_view % nfiles,num_fgat_time))
@@ -418,16 +442,7 @@ write(stdout,fmt='(A)') adjustl(trim(command))
          !! + fgat window length
          !! + channels used
          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-         ! Read the file names for this view
-         open(unit=file_unit,file=trim(list_file))
-         read(file_unit, fmt='(A)') (this_view % filename(ifile), ifile=1,this_view % nfiles)
-         close(file_unit)
-
-         call da_free_unit(file_unit)
-
          do ifile = 1, this_view % nfiles
-
 
             !Grab the filename (without path) using INST_PREFIX
             fname = trim(this_view % filename(ifile))
@@ -537,7 +552,7 @@ write(stdout,fmt='(A)') adjustl(trim(command))
                cycle
             end if
          end do
-      end if
+      end if ! ipass == 1
 
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

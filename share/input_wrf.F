@@ -430,6 +430,10 @@
 
 #if (EM_CORE == 1)
 
+       IF ( switch .EQ. input_only ) then
+          CALL wrf_get_dom_ti_char ( fid , 'SIMULATION_START_DATE' , simulation_start_date , ierr )
+       END IF
+
        !  Test to make sure that the grid distances are the right size.
 
        CALL wrf_get_dom_ti_real ( fid , 'DX' ,  dx_compare , 1 , icnt , ierr )
@@ -1168,6 +1172,12 @@
             CALL domain_clock_get( grid, current_time=currtime, &
                                          current_timestr=currtimestr )
 #if (DA_CORE != 1) 
+            IF ( (switch .EQ. input_only) .and. (grid%id .EQ. 1) .and. (grid%itimestep .EQ. 0) ) THEN
+               WRITE( wrf_err_message , * ) 'CURRENT DATE          = ',TRIM( currtimestr )
+               CALL wrf_message ( trim(wrf_err_message) )
+               WRITE( wrf_err_message , * ) 'SIMULATION START DATE = ', simulation_start_date(1:19)
+               CALL wrf_message ( TRIM(wrf_err_message ) )
+            END IF
 ! Don't perform the check for WRFVAR, as we're not passing the right dates
 ! around
             CALL domain_clockprint(150, grid, &
@@ -1903,6 +1913,7 @@
 
     IF ( &
          ( INDEX(TRIM(input_title_char),'METGRID'     ) .NE. 0 ) .OR. &
+         ( INDEX(TRIM(input_title_char),'OBSGRID'     ) .NE. 0 ) .OR. &
          ( INDEX(TRIM(input_title_char),'SFCFDDA'     ) .NE. 0 ) .OR. &
          ( INDEX(TRIM(input_title_char),'EMISSIONS'   ) .NE. 0 ) .OR. &
          ( INDEX(TRIM(input_title_char),'XYZZY'       ) .NE. 0 )      &

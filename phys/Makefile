@@ -91,7 +91,6 @@ MODULES = \
 	module_mp_fast_sbm.o \
 	module_ltng_lpi.o \
 	module_mp_gsfcgce.o \
-	module_mp_gsfcgce_3ice_nuwrf.o \
 	module_mp_gsfcgce_4ice_nuwrf.o \
 	module_mp_morr_two_moment.o \
         module_mp_p3.o \

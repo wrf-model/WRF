@@ -2885,6 +2885,8 @@ ENDIF
 
       IF (CHECK.EQ.0)THEN
       IF(IVGTYP(I,J).EQ.1)THEN
+        write(mesg,*) 'Sample of Urban settings'
+        call wrf_message(mesg)
         write(mesg,*) 'TSURFACE0_URB',TSURFACE0_URB(I,J)
         call wrf_message(mesg)
         write(mesg,*) 'TDEEP0_URB', TDEEP0_URB(I,J)

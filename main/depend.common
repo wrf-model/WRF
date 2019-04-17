@@ -579,7 +579,6 @@ module_physics_init.o : \
 		module_fddaobs_rtfdda.o		\
 		module_mp_thompson.o            \
 		module_mp_gsfcgce.o 		\
-		module_mp_gsfcgce_3ice_nuwrf.o 	\
 		module_mp_gsfcgce_4ice_nuwrf.o  \
                 module_mp_morr_two_moment.o     \
                 module_mp_milbrandt2mom.o     \
@@ -612,7 +611,6 @@ module_microphysics_driver.o: \
 		module_mp_fer_hires.o module_mp_HWRF.o  \
 		module_mp_thompson.o            \
 		module_mp_gsfcgce.o 		\
-		module_mp_gsfcgce_3ice_nuwrf.o  \
 		module_mp_gsfcgce_4ice_nuwrf.o  \
                 module_mp_morr_two_moment.o     \
                 module_mp_morr_two_moment_aero.o     \
@@ -788,8 +786,6 @@ module_diag_pld.o: \
 module_diag_zld.o: \
 		../share/module_model_constants.o
 
-module_diag_afwa_hail.o:
-
 module_diag_afwa.o: \
 		module_diag_trad_fields.o		\
 		../frame/module_domain.o 		\
@@ -798,8 +794,7 @@ module_diag_afwa.o: \
 		../frame/module_configure.o 		\
 		../frame/module_streams.o		\
 		../external/esmf_time_f90/module_utility.o \
-	        ../share/module_model_constants.o       \
-	        module_diag_afwa_hail.o
+	        ../share/module_model_constants.o
 
 module_diag_hailcast.o: \
 		../frame/module_configure.o 		\
@@ -929,11 +924,6 @@ module_gocart_coupling.o:
 module_ra_goddard.o : ../frame/module_wrf_error.o \
                             module_gocart_coupling.o \
                             module_checkerror.o
-
-module_mp_gsfcgce_3ice_nuwrf.o : ../frame/module_wrf_error.o \
-                            module_gocart_coupling.o \
-                            module_checkerror.o \
-                            module_mp_radar.o
 
 module_mp_gsfcgce_4ice_nuwrf.o : ../frame/module_wrf_error.o \
                             module_gocart_coupling.o \

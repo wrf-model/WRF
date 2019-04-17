@@ -19,8 +19,8 @@ endif
 
 ( cd inc ; /bin/rm -f *.inc namelist.default )
 
+find . -name \*.dSYM -exec rm -rf {} \; >& /dev/null
 
-set echo
 set arg="$1"
 if ( "$arg" == '-a' || "$arg" == '-aa' ) then
   if ( -d var ) then
@@ -64,7 +64,8 @@ if ( "$arg" == '-a' || "$arg" == '-aa' ) then
 	  */kernels.asc_s_0_03_0_9 */bulkradii.asc_s_0_03_0_9 */bulkdens.asc_s_0_03_0_9 \
 	  */constants.asc */p3_lookup_table_1.dat \
 	  */masses.asc */kernels_z.asc */capacity.asc */termvels.asc */coeff_p.asc */coeff_q.asc \
-	  */gribmap.txt */tr??t?? */co2_trans */namelist.output ) >& /dev/null
+	  */gribmap.txt */tr??t?? */co2_trans */namelist.output */ishmael-gamma-tab.bin \
+          */ishmael-qi-qc.bin */ishmael-qi-qr.bin ) >& /dev/null
   else if ( "$arg" == '-aa' ) then
     /bin/rm -f configure.wrf.backup
     /bin/rm -f Registry/Registry.backup

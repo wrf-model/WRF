@@ -1,0 +1,8 @@
+
+package = CRTM
+
+# The file definitions. This include must occur before targets.
+include make.filelist
+
+clean:
+	@$(RM) *.o *.mod *.a

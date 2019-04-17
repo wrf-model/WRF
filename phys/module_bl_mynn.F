@@ -2280,7 +2280,7 @@ CONTAINS
     &            Sh, el, bl_mynn_cloudpdf,&
     &            qc_bl1D, cldfra_bl1D,    &
     &            PBLH1,HFX1,              &
-    &            Vt, Vq, th, sgm,         &
+    &            Vt, Vq, th, sgm, rmo,    &
     &            spp_pbl,rstoch_col       )
 
 !-------------------------------------------------------------------
@@ -2292,7 +2292,7 @@ CONTAINS
 # define kte HARDCODE_VERTICAL
 #endif
 
-    REAL, INTENT(IN)      :: dx,PBLH1,HFX1
+    REAL, INTENT(IN)      :: dx,PBLH1,HFX1,rmo
     REAL, DIMENSION(kts:kte), INTENT(IN) :: dz
     REAL, DIMENSION(kts:kte), INTENT(IN) :: p,exner, thl, qw, &
          &tsq, qsq, cov, th
@@ -2304,13 +2304,13 @@ CONTAINS
     DOUBLE PRECISION :: t3sq, r3sq, c3sq
 
     REAL :: qsl,esat,qsat,tlk,qsat_tl,dqsl,cld0,q1k,eq1,qll,&
-         &q2p,pt,rac,qt,t,xl,rsl,cpm,cdhdz,Fng,qww,alpha,beta,bb,ls_min,ls,wt
+         &q2p,pt,rac,qt,t,xl,rsl,cpm,cdhdz,Fng,qww,alpha,beta,bb,ls_min,ls,wt,cld_factor
     INTEGER :: i,j,k
 
     REAL :: erf
 
     !JOE: NEW VARIABLES FOR ALTERNATE SIGMA
-    REAL::dth,dtl,dqw,dzk
+    REAL::dth,dtl,dqw,dzk,els
     REAL, DIMENSION(kts:kte), INTENT(IN) :: Sh,el
 
     !JOE: variables for BL clouds
@@ -2489,9 +2489,12 @@ CONTAINS
                                                  ! in CB02
 
            zagl = zagl + dz(k)
+           !Use analog to surface layer length scale to make the cloud mixing length scale
+           !become less than z in stable conditions.
+           els  = zagl/(1.0 + 1.0*MIN( 0.5*dz(1)*MAX(rmo,0.0), 1. ))
 
            ls_min = 300. + MIN(3.*MAX(HFX1,0.),300.)
-           ls_min = MIN(MAX(zagl,25.),ls_min) ! Let this be the minimum possible length scale:
+           ls_min = MIN(MAX(els,25.),ls_min) ! Let this be the minimum possible length scale:
            if (zagl > PBLH1+2000.) ls_min = MAX(ls_min + 0.5*(PBLH1+2000.-zagl),300.)
                                         !   25 m < ls_min(=zagl) < 300 m
            lfac=MIN(4.25+dx/4000.,6.)   ! A dx-dependent multiplier for the master length scale:
@@ -2645,6 +2648,7 @@ CONTAINS
            !ENDIF
            ! For purposes of the buoyancy flux in stratus, we will use Fng = 1
            !Fng = 1.
+           Q1(k)=MAX(Q1(k),-5.0)
            IF (Q1(k) .GE. 1.0) THEN
               Fng = 1.0
            ELSEIF (Q1(k) .GE. -1.7 .AND. Q1(k) < 1.0) THEN
@@ -2667,8 +2671,8 @@ CONTAINS
            alpha = 0.61*th(k)
            beta  = (th(k)/t)*(xl/cp) - 1.61*th(k)
        
-           vt(k) = qww   - MIN(cld(k),0.75)*beta*bb*Fng   - 1.
-           vq(k) = alpha + MIN(cld(k),0.75)*beta*a(k)*Fng - tv0
+           vt(k) = qww   - MIN(cld(k),0.99)*beta*bb*Fng   - 1.
+           vq(k) = alpha + MIN(cld(k),0.99)*beta*a(k)*Fng - tv0
            ! vt and vq correspond to beta-theta and beta-q, respectively,  
            ! in NN09, Eq. B8.  They also correspond to the bracketed
            ! expressions in BCMT95, Eq. 15, since (s*ql/sigma^2) = cldfra*Fng
@@ -2676,7 +2680,10 @@ CONTAINS
            ! the legacy vt and vq formulations (above).
 
            ! increase the cloud fraction estimate below PBLH+1km
-           if (zagl .lt. PBLH2+1000.) cld(k) = MIN( 1., 1.5*cld(k) ) 
+           if (zagl .lt. PBLH2+1000.) then
+                cld_factor = 1.0 + MAX(0.0, ( RH(k) - 0.83 ) / 0.18 )
+                cld(k) = MIN( 1., cld_factor*cld(k) )  
+           end if
            ! return a cloud condensate and cloud fraction for icloud_bl option:
            cldfra_bl1D(k) = cld(k)
            qc_bl1D(k) = ql(k)
@@ -3909,7 +3916,7 @@ ENDIF
 
 !JOE-add GRIMS parameters & variables
    real,parameter    ::  d1 = 0.02, d2 = 0.05, d3 = 0.001
-   real,parameter    ::  h1 = 0.33333335, h2 = 0.6666667
+   real,parameter    ::  h1 = 0.33333333, h2 = 0.6666667
    REAL :: govrth, sflux, bfx0, wstar3, wm2, wm3, delb
 !JOE-end GRIMS
 !JOE-top-down diffusion
@@ -4343,7 +4350,7 @@ ENDIF
                &Sh,el,bl_mynn_cloudpdf,          &
                &qc_bl1D,cldfra_bl1D,             &
                &PBLH(i,j),HFX(i,j),              &
-               &Vt, Vq, th1, sgm,                &
+               &Vt, Vq, th1, sgm, rmol(i,j),     &
                &spp_pbl, rstoch_col              )
 
           !ADD TKE source driven by cloud top cooling
@@ -5072,7 +5079,7 @@ ENDIF
 
   ! Variables for plume interpolation/saturation check
    REAL,DIMENSION(KTS:KTE) :: exneri,dzi
-   REAL ::  THLp, THp, QTp, QCp, rhplume, esat, qsl
+   REAL ::  THp, QTp, QCp, esat, qsl
 
    ! WA TEST 11/9/15 for consistent reduction of updraft params
    REAL :: csigma,acfac,EntThrottle
@@ -5677,7 +5684,6 @@ ENDIF
             rhgrid = max(.01,MIN( 1., qv(k) /satvp))
 
             !then interpolate plume thl, th, and qt to mass levels
-            THLp= (edmf_thl(k)*dzi(k-1)+edmf_thl(k-1)*dzi(k))/(dzi(k-1)+dzi(k))
             THp = (edmf_th(k)*dzi(k-1)+edmf_th(k-1)*dzi(k))/(dzi(k-1)+dzi(k))
             QTp = (edmf_qt(k)*dzi(k-1)+edmf_qt(k-1)*dzi(k))/(dzi(k-1)+dzi(k))
             !convert TH to T
@@ -5686,8 +5692,8 @@ ENDIF
             esat = esat_blend(t)
             !SATURATED SPECIFIC HUMIDITY
             qsl=ep_2*esat/max(1.e-4,(p(k)-ep_3*esat)) 
-            rhplume = max(.01,MIN( 1., QTp /qsl))
 
+            !condensed liquid in the plume on mass levels
             IF (edmf_qc(k)>0.0 .AND. edmf_qc(k-1)>0.0)THEN
               QCp = 0.5*(edmf_qc(k)+edmf_qc(k-1))
             ELSE
@@ -5696,27 +5702,27 @@ ENDIF
 
             !COMPUTE CLDFRA & QC_BL FROM MASS-FLUX SCHEME and recompute vt & vq
 
-            xl = xl_blend(t)                ! obtain blended heat capacity 
-            tlk = thlp*(p(k)/p1000mb)**rcp    ! recover liquid temp (tl) from thl
+            xl = xl_blend(tk(k))                ! obtain blended heat capacity 
+            tlk = thl(k)*(p(k)/p1000mb)**rcp    ! recover liquid temp (tl) from thl
             qsat_tl = qsat_blend(tlk,p(k))      ! get saturation water vapor mixing ratio
                                                 !   at tl and p
             rsl = xl*qsat_tl / (r_v*tlk**2)     ! slope of C-C curve at t = tl
                                                 ! CB02, Eqn. 4
-            cpm = cp + qtp*cpv                  ! CB02, sec. 2, para. 1
+            cpm = cp + qt(k)*cpv                ! CB02, sec. 2, para. 1
             a   = 1./(1. + xl*rsl/cpm)          ! CB02 variable "a"
             b9  = a*rsl                         ! CB02 variable "b" 
 
             q2p  = xlvcp/exner(k)
-            pt = THp !THLp +q2p*QCp ! plume potential temp
-            bb = b9*t/pt ! bb is "b9" in BCMT95.  Their "b9" differs from
+            pt = thl(k) +q2p*QCp*0.5*(edmf_a(k)+edmf_a(k-1)) ! potential temp (env + plume)
+            bb = b9*tk(k)/pt ! bb is "b9" in BCMT95.  Their "b9" differs from
                            ! "b9" in CB02 by a factor
                            ! of T/theta.  Strictly, b9 above is formulated in
                            ! terms of sat. mixing ratio, but bb in BCMT95 is
                            ! cast in terms of sat. specific humidity.  The
                            ! conversion is neglected here.
-            qww   = 1.+0.61*QTp
+            qww   = 1.+0.61*qt(k)
             alpha = 0.61*pt
-            t     = THp*exner(k)
+            t     = TH(k)*exner(k)
             beta  = pt*xl/(t*cp) - 1.61*pt
             !Buoyancy flux terms have been moved to the end of this section...
 
@@ -5726,18 +5732,18 @@ ENDIF
             else
                f = 1.0
             endif
-            sigq = 6.E-3 * 0.5*(edmf_a(k)+edmf_a(k-1)) * &
+            sigq = 9.E-3 * 0.5*(edmf_a(k)+edmf_a(k-1)) * &
                &           0.5*(edmf_w(k)+edmf_w(k-1)) * f       ! convective component of sigma (CB2005)
-            !sigq = MAX(sigq, 1.0E-4)         
+            !sigq = MAX(sigq, 1.0E-4)
             sigq = SQRT(sigq**2 + sgm(k)**2)    ! combined conv + stratus components
 
-            qmq = a * (QTp - qsat_tl)           ! saturation deficit/excess;
+            qmq = a * (qt(k) - qsat_tl)           ! saturation deficit/excess;
                                                 !   the numerator of Q1
             mf_cf = min(max(0.5 + 0.36 * atan(1.55*(qmq/sigq)),0.01),0.6)
             IF ( debug_code ) THEN
                print*,"In MYNN, StEM edmf"
-               print*,"  CB: env qt=",qt(k)," plume qt=",QTp
-               print*,"      qsat=",qsat_tl," satdef=",QTp - qsat_tl
+               print*,"  CB: env qt=",qt(k)," qsat=",qsat_tl
+               print*,"      satdef=",QTp - qsat_tl
                print*,"  CB: sigq=",sigq," qmq=",qmq," tlk=",tlk
                print*,"  CB: mf_cf=",mf_cf," cldfra_bl=",cldfra_bl1d(k)," edmf_a=",edmf_a(k)
             ENDIF
@@ -5745,17 +5751,13 @@ ENDIF
             IF (cldfra_bl1d(k) < 0.5) THEN
                IF (mf_cf > 0.5*(edmf_a(k)+edmf_a(k-1))) THEN
                   cldfra_bl1d(k) = mf_cf
-                  !qc_bl1d(k) = edmf_qc(k)*edmf_a(k)/mf_cf
                   qc_bl1d(k) = QCp*0.5*(edmf_a(k)+edmf_a(k-1))/mf_cf 
-                      !         0.5*(edmf_qc(k)+edmf_qc(k+1))* &
-                      ! &       0.5*(edmf_a(k)+edmf_a(k+1))/mf_cf
                ELSE
-                  !cldfra_bl1d(k)=edmf_a(k)
-                  !qc_bl1d(k) = edmf_qc(k)
                   cldfra_bl1d(k)=0.5*(edmf_a(k)+edmf_a(k-1))
-                  qc_bl1d(k) = QCp !0.5*(edmf_qc(k)+edmf_qc(k+1))
+                  qc_bl1d(k) = QCp
                ENDIF
             ENDIF
+
             !Now recalculate the terms for the buoyancy flux for mass-flux clouds:
             !See mym_condensation for details on these formulations.  The
             !cloud-fraction bounding was added to improve cloud retention,
@@ -5763,6 +5765,7 @@ ENDIF
             !Fng = 2.05 ! the non-Gaussian transport factor (assumed constant)
             !Use Bechtold and Siebesma (1998) piecewise estimation of Fng:
             Q1 = qmq/MAX(sigq,1E-10)
+            Q1=MAX(Q1,-5.0)
             IF (Q1 .GE. 1.0) THEN
                Fng = 1.0
             ELSEIF (Q1 .GE. -1.7 .AND. Q1 < 1.0) THEN
@@ -5773,8 +5776,8 @@ ENDIF
                Fng = MIN(23.9 + EXP(-1.6*(Q1+2.5)), 60.)
             ENDIF
 
-            vt(k) = qww   - MIN(0.25,cldfra_bl1D(k))*beta*bb*Fng - 1.
-            vq(k) = alpha + MIN(0.25,cldfra_bl1D(k))*beta*a*Fng  - tv0
+            vt(k) = qww   - MIN(0.4,cldfra_bl1D(k))*beta*bb*Fng - 1.
+            vq(k) = alpha + MIN(0.4,cldfra_bl1D(k))*beta*a*Fng  - tv0
          ENDIF
 
       ENDDO

@@ -993,11 +993,6 @@ MODULE module_sf_bep_bem
 
         time_bep=time_bep+dt
 
-      print*, 'ss_urb', ss_urb
-      print*, 'pb_urb', pb_urb
-      print*, 'nz_urb', nz_urb
-      print*, 'd_urb',  d_urb
-            
       return
       end subroutine BEP_BEM
             
@@ -4613,3 +4608,62 @@ MODULE module_sf_bep_bem
 !====================================================================72
 !====================================================================72
 END MODULE module_sf_bep_bem
+! ===6=8===============================================================72
+! ===6=8===============================================================72
+
+      FUNCTION bep_bem_nurbm () RESULT (bep_bem_val_nurbm)
+         USE module_sf_bep_bem
+         IMPLICIT NONE
+         INTEGER :: bep_bem_val_nurbm
+         bep_bem_val_nurbm = nurbm
+      END FUNCTION bep_bem_nurbm
+      
+      FUNCTION bep_bem_ndm () RESULT (bep_bem_val_ndm)
+         USE module_sf_bep_bem
+         IMPLICIT NONE
+         INTEGER :: bep_bem_val_ndm
+         bep_bem_val_ndm = ndm
+      END FUNCTION bep_bem_ndm
+      
+      FUNCTION bep_bem_nz_um () RESULT (bep_bem_val_nz_um)
+         USE module_sf_bep_bem
+         IMPLICIT NONE
+         INTEGER :: bep_bem_val_nz_um
+         bep_bem_val_nz_um = nz_um
+      END FUNCTION bep_bem_nz_um
+      
+      FUNCTION bep_bem_ng_u () RESULT (bep_bem_val_ng_u)
+         USE module_sf_bep_bem
+         IMPLICIT NONE
+         INTEGER :: bep_bem_val_ng_u
+         bep_bem_val_ng_u = ng_u
+      END FUNCTION bep_bem_ng_u
+      
+      FUNCTION bep_bem_nwr_u () RESULT (bep_bem_val_nwr_u)
+         USE module_sf_bep_bem
+         IMPLICIT NONE
+         INTEGER :: bep_bem_val_nwr_u
+         bep_bem_val_nwr_u = nwr_u
+      END FUNCTION bep_bem_nwr_u
+      
+      FUNCTION bep_bem_nf_u () RESULT (bep_bem_val_nf_u)
+         USE module_sf_bep_bem
+         IMPLICIT NONE
+         INTEGER :: bep_bem_val_nf_u
+         bep_bem_val_nf_u = nf_u
+      END FUNCTION bep_bem_nf_u
+
+      FUNCTION bep_bem_ngb_u () RESULT (bep_bem_val_ngb_u)
+         USE module_sf_bep_bem
+         IMPLICIT NONE
+         INTEGER :: bep_bem_val_ngb_u
+         bep_bem_val_ngb_u = ngb_u
+      END FUNCTION bep_bem_ngb_u
+
+      FUNCTION bep_bem_nbui_max () RESULT (bep_bem_val_nbui_max)
+         USE module_sf_bep_bem
+         IMPLICIT NONE
+         INTEGER :: bep_bem_val_nbui_max
+         bep_bem_val_nbui_max = nbui_max
+      END FUNCTION bep_bem_nbui_max
+

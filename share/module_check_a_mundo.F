@@ -67,6 +67,52 @@
 !
       INTEGER :: count_fatal_error
 
+      !  These functions are located with in the Urban Physics files, but
+      !  not within the confines of the modules. Since we are in the share
+      !  directory, we need to break possible circular build dependencies.
+
+      INTERFACE
+         INTEGER FUNCTION bep_nurbm()
+         END FUNCTION bep_nurbm
+
+         INTEGER FUNCTION bep_ndm()
+         END FUNCTION bep_ndm
+
+         INTEGER FUNCTION bep_nz_um()
+         END FUNCTION bep_nz_um
+
+         INTEGER FUNCTION bep_ng_u()
+         END FUNCTION bep_ng_u
+
+         INTEGER FUNCTION bep_nwr_u()
+         END FUNCTION bep_nwr_u
+
+         INTEGER FUNCTION bep_bem_nurbm()
+         END FUNCTION bep_bem_nurbm
+
+         INTEGER FUNCTION bep_bem_ndm()
+         END FUNCTION bep_bem_ndm
+
+         INTEGER FUNCTION bep_bem_nz_um()
+         END FUNCTION bep_bem_nz_um
+
+         INTEGER FUNCTION bep_bem_ng_u()
+         END FUNCTION bep_bem_ng_u
+
+         INTEGER FUNCTION bep_bem_nwr_u()
+         END FUNCTION bep_bem_nwr_u
+
+         INTEGER FUNCTION bep_bem_nf_u()
+         END FUNCTION bep_bem_nf_u
+
+         INTEGER FUNCTION bep_bem_ngb_u()
+         END FUNCTION bep_bem_ngb_u
+
+         INTEGER FUNCTION bep_bem_nbui_max() 
+         END FUNCTION bep_bem_nbui_max
+      END INTERFACE
+
+
 !-----------------------------------------------------------------------
 ! Set up the WRF Hydro namelist option to allow dynamic allocation of
 ! variables.
@@ -95,6 +141,97 @@
 #endif
 
 #if (EM_CORE == 1)
+!-----------------------------------------------------------------------
+! AFWA diagnostics require each domain is treated the same. If
+! any domain has an option activated, all domains must have that
+! option activated.
+!-----------------------------------------------------------------------
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_diag_opt(i)   .EQ. 1 ) then
+      model_config_rec%afwa_diag_opt(:)   = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_ptype_opt(i)  .EQ. 1 ) then
+      model_config_rec%afwa_ptype_opt(:)  = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_vil_opt(i)    .EQ. 1 ) then
+      model_config_rec%afwa_vil_opt(:)    = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_radar_opt(i)  .EQ. 1 ) then
+      model_config_rec%afwa_radar_opt(:)  = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_severe_opt(i) .EQ. 1 ) then
+      model_config_rec%afwa_severe_opt(:) = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_icing_opt(i)  .EQ. 1 ) then
+      model_config_rec%afwa_icing_opt(:)  = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_cloud_opt(i)  .EQ. 1 ) then
+      model_config_rec%afwa_cloud_opt(:)  = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_vis_opt(i)    .EQ. 1 ) then
+      model_config_rec%afwa_vis_opt(:)    = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_therm_opt(i)  .EQ. 1 ) then
+      model_config_rec%afwa_therm_opt(:)  = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_turb_opt(i)   .EQ. 1 ) then
+      model_config_rec%afwa_turb_opt(:)   = 1
+      exit
+    endif
+  enddo
+  do i=1,model_config_rec%max_dom
+    if ( model_config_rec%afwa_buoy_opt(i)   .EQ. 1 ) then
+      model_config_rec%afwa_buoy_opt(:)   = 1
+      exit
+    endif
+  enddo
+
+!-----------------------------------------------------------------------
+! If any AFWA diagnostics are activated, there is a minimum that
+! must always be activated.
+!-----------------------------------------------------------------------
+  do i=1,model_config_rec%max_dom
+    if ( ( model_config_rec%afwa_ptype_opt(i)  .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_vil_opt(i)    .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_radar_opt(i)  .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_severe_opt(i) .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_icing_opt(i)  .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_cloud_opt(i)  .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_vis_opt(i)    .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_therm_opt(i)  .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_turb_opt(i)   .EQ. 1 ) .OR. &
+         ( model_config_rec%afwa_buoy_opt(i)   .EQ. 1 ) ) then
+      model_config_rec%afwa_diag_opt(i)=1
+    endif
+  enddo
+
 !-----------------------------------------------------------------------
 ! LBC: Always the case, nested setup up: F, T, T, T
 !-----------------------------------------------------------------------
@@ -179,6 +316,28 @@
       END IF
 
 !-----------------------------------------------------------------------
+! Assign the dimensions for the urban options to the values defined in 
+! each of those respective modules.
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % sf_urban_physics(i) == bepscheme     ) THEN
+           model_config_rec % num_urban_ndm  = bep_ndm()
+           model_config_rec % num_urban_nz   = bep_nz_um()
+           model_config_rec % num_urban_ng   = bep_ng_u()
+           model_config_rec % num_urban_nwr  = bep_nwr_u()
+         END IF
+         IF ( model_config_rec % sf_urban_physics(i) == bep_bemscheme ) THEN 
+           model_config_rec % num_urban_ndm  = bep_bem_ndm()
+           model_config_rec % num_urban_nz   = bep_bem_nz_um()
+           model_config_rec % num_urban_ng   = bep_bem_ng_u()
+           model_config_rec % num_urban_nwr  = bep_bem_nwr_u()
+           model_config_rec % num_urban_nf   = bep_bem_nf_u()
+           model_config_rec % num_urban_ngb  = bep_bem_ngb_u()
+           model_config_rec % num_urban_nbui = bep_bem_nbui_max()
+         END IF
+      ENDDO
+
+!-----------------------------------------------------------------------
 ! Check that mosiac option cannot turn on when sf_urban_physics = 2 and 3
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
@@ -192,6 +351,21 @@
             wrf_err_message = '--- ERROR: Either: use Noah LSM without the mosaic option, OR change the urban option to 1 '
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
          count_fatal_error = count_fatal_error + 1
+         END IF
+      ENDDO
+
+!-----------------------------------------------------------------------
+! Check that Deng Shallow Convection Must work with MYJ or MYNN PBL
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % shcu_physics(i) == dengshcuscheme .AND. &
+              (model_config_rec % bl_pbl_physics(i) /= myjpblscheme .OR. &
+               model_config_rec % bl_pbl_physics(i) /= mynnpblscheme2 ) ) THEN
+            wrf_err_message = '--- ERROR: Deng shallow convection can only work with MYJ or MYNN PBL '
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- ERROR: Fix shcu_physics or bl_pbl_physics in namelist.input.'
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
          END IF
       ENDDO
 
@@ -215,16 +389,32 @@
       ENDDO god_r8
 
 # endif
-#endif
 
+!-----------------------------------------------------------------------
+! Print a warning message for not using a combination of radiation and microphysics from Goddard
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( ( (model_config_rec % ra_lw_physics(i) == goddardlwscheme .OR. &
+                 model_config_rec % ra_sw_physics(i) == goddardswscheme) .AND. &
+                 model_config_rec % mp_physics(i) /= nuwrf4icescheme ) .OR. &
+              (  model_config_rec % mp_physics(i) == nuwrf4icescheme .AND. &
+                (model_config_rec % ra_lw_physics(i) /= goddardlwscheme .AND. &
+                 model_config_rec % ra_sw_physics(i) /= goddardswscheme) ) ) THEN
+            wrf_err_message = '--- WARNING: Goddard radiation and Goddard 4ice microphysics are not used together'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- WARNING: These options may be best to use together.'
+            CALL wrf_message ( wrf_err_message )
+         END IF
+      ENDDO
+
+#endif
 
 !-----------------------------------------------------------------------
 ! Check that some microphysics is not allowed for WRF-NMM run
 !-----------------------------------------------------------------------
 #if (NMM_CORE == 1) || (HWRF == 1)
       DO i = 1, model_config_rec % max_dom
-         IF ( model_config_rec % mp_physics(i) == nuwrf3icescheme .OR. &
-              model_config_rec % mp_physics(i) == nuwrf4icescheme .OR. &
+         IF ( model_config_rec % mp_physics(i) == nuwrf4icescheme .OR. &
               model_config_rec % mp_physics(i) == nssl_2mom .OR. &
               model_config_rec % mp_physics(i) == nssl_2momccn .OR. &
               model_config_rec % mp_physics(i) == nssl_1mom .OR. &
@@ -288,6 +478,31 @@
       DO i = 1, model_config_rec % max_dom-1
          model_config_rec%mp_physics(i) = d1_value
       END DO
+
+#if (EM_CORE == 1)
+!-----------------------------------------------------------------------
+! There are restrictions on the AFWA diagnostics regarding the choice
+! of microphysics scheme. These are hard coded in the AFWA diags driver,
+! so while this is inelegant, it is about as good as we can do.
+!-----------------------------------------------------------------------
+      IF ( model_config_rec%afwa_diag_opt(1) .EQ. 1 ) THEN
+         IF ( ( model_config_rec % mp_physics(1) .EQ. GSFCGCESCHEME   ) .OR. &
+              ( model_config_rec % mp_physics(1) .EQ. ETAMPNEW        ) .OR. &
+              ( model_config_rec % mp_physics(1) .EQ. THOMPSON        ) .OR. &
+              ( model_config_rec % mp_physics(1) .EQ. WSM5SCHEME      ) .OR. &
+              ( model_config_rec % mp_physics(1) .EQ. WSM6SCHEME      ) .OR. &
+              ( model_config_rec % mp_physics(1) .EQ. WDM6SCHEME      ) .OR. &
+              ( model_config_rec % mp_physics(1) .EQ. MORR_TWO_MOMENT ) .OR. &
+              ( model_config_rec % mp_physics(1) .EQ. MORR_TM_AERO    ) ) THEN 
+            !  All is OK
+         ELSE
+            wrf_err_message = '--- WARNING: the AFWA diagnostics option knows only about the following MP schemes:'
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- GSFCGCESCHEME, ETAMPNEW, THOMPSON, WSM5SCHEME, WSM6SCHEME, MORR_TWO_MOMENT, MORR_TM_AERO, WDM6SCHEME'
+            CALL wrf_message ( wrf_err_message )
+         END IF
+      END IF
+#endif
 
 
 !-----------------------------------------------------------------------
@@ -1597,12 +1812,6 @@
      END DO
 
 !-----------------------------------------------------------------------
-!  The hybrid vertical coordinate (HVC) namelist.input option (hybrid_opt=2)
-!  requires the code to be built with the HVC code enabled.  This is a run-time
-!  test to make sure the correct compile-time capabilities are available.
-!-----------------------------------------------------------------------
-
-!-----------------------------------------------------------------------
 !  DJW Check that we're not using ndown and vertical nesting.
 !-----------------------------------------------------------------------
      DO i=1,model_config_rec%max_dom
@@ -2201,6 +2410,12 @@
       END IF     
       
 #if ( (NMM_CORE != 1) && (DA_CORE != 1) )
+!-----------------------------------------------------------------------
+! How big to allocate random seed arrays.
+!-----------------------------------------------------------------------
+
+      CALL RANDOM_SEED ( SIZE = model_config_rec % seed_dim )
+
 !-----------------------------------------------------------------------
 ! If this is a WRF run with polar boundary conditions, then this is a
 ! global domain. A global domain needs to have the FFT arrays allocated.

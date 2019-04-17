@@ -34,11 +34,13 @@ or nested), the following files are created:
 3. pfx.dNN.VV containing a vertical profile of v wind component for each time step
 4. pfx.dNN.WW containing a vertical profile of w wind component for each time step
 5. pfx.dNN.TH containing a vertical profile of potential temperature for time step
-6. pfx.dNN.PH containing a vertical profile of geopotential height in time step
-7. pfx.dNN.QV containing a vertical profile of water vapor mixing ratio time step
+6. pfx.dNN.PH containing a vertical profile of geopotential height for each time step
+7. pfx.dNN.QV containing a vertical profile of water vapor mixing ratio for each time step
+8. pfx.dNN.PR containing a vertical profile of pressure for each time step
 
 
-Where pfx is the specified prefix for the dd location in the tslist file, and NN is the domain ID, as given in 
+Where pfx is the specified prefix for the dd location in the tslist file, 
+and NN is the domain ID, as given in 
 namelist.input. If locations not in any model domain are specified in the 
 tslist file, they will be simply ignored by the time series capability.
 
@@ -51,8 +53,8 @@ however, smaller buffers will need to be flushed to disk more often than
 larger buffers. Thus, it is recommended that the size of the buffer be set 
 to the maximum number of time steps for any domain in a model run. 
 
-By default, the u, v, and w component winds are output on the staggered grid. To unstagger them,
-the namelist variable tslist_unstagger_winds can be set to true.
+By default, the u, v, and w component winds are output on the staggered grid. 
+To unstagger them, the namelist variable tslist_unstagger_winds can be set to true.
 
 Namelist.input variables related to to this new capability:
 
@@ -96,4 +98,5 @@ Example:
 
 
 Format of the files of vertical  profile:
-each line starting with the model time in hours, followed by the variable at model level 1,2,3, ... up to the highest model level of interest 
+each line starting with the model time in hours, followed by the variable 
+at model level 1,2,3, ... up to the highest model level of interest 

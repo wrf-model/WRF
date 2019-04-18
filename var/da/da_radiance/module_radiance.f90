@@ -87,21 +87,25 @@ module module_radiance
 
   ! cf. RTTOV-11 Users Guide Table 3
   ! List of instruments  !!!! HIRS is number 0
-  Character (len=8), Dimension(0:65) :: rttov_inst_name  =             &
+  CHARACTER(LEN=8), dimension(0:88):: rttov_inst_name =                &
      & (/ 'hirs    ', 'msu     ', 'ssu     ', 'amsua   ', 'amsub   ',  &
-        & 'avhrr   ', 'ssmi    ', 'vtpr1   ', 'spare   ', 'tmi     ',  &
+        & 'avhrr   ', 'ssmi    ', 'vtpr1   ', 'vtpr2   ', 'tmi     ',  &
         & 'ssmis   ', 'airs    ', 'hsb     ', 'modis   ', 'atsr    ',  &
         & 'mhs     ', 'iasi    ', 'amsre   ', 'imager  ', 'atms    ',  &
         & 'mviri   ', 'seviri  ', 'imager  ', 'sounder ', 'imager  ',  &
-        & 'vissr   ', 'mvisr   ', 'cris    ', 'spare   ', 'viirs   ',  &
+        & 'vissr   ', 'mvisr   ', 'cris    ', 'cmis    ', 'viirs   ',  &
         & 'windsat ', 'gifts   ', 'ssmt1   ', 'ssmt2   ', 'saphir  ',  &
-        & 'madras  ', 'spare   ', 'imager  ', 'reserved', 'reserved',  &
+        & 'madras  ', 'ssmisz  ', 'vhrr    ', 'imager  ', 'sounder ',  &
         & 'mwts    ', 'mwhs    ', 'iras    ', 'mwri    ', 'abi     ',  &
-        & 'mi      ', 'msumr   ', 'reserved', 'iir     ', 'mwr     ',  &
-        & 'reserved', 'reserved', 'reserved', 'reserved', 'scams   ',  &
+        & 'mi      ', 'msumr   ', 'tansofts', 'iir     ', 'mwr     ',  &
+        & 'dummyir ', 'dummymw ', 'dummyhi ', 'dummypo ', 'scams   ',  &
         & 'smmr    ', 'ahi     ', 'irs     ', 'altika  ', 'iasing  ',  &
-        & 'tm      ', 'fci     ', 'amsr1   ', 'amsr2   ', 'vissr   ',  &
-        & 'slstr   '/)
+        & 'tm      ', 'fci     ', 'amsr    ', 'amsr2   ', 'vissr   ',  &
+        & 'slstr   ', 'tirs    ', 'amr     ', 'oli     ', 'iris    ',  &
+        & 'ici     ', 'gmi     ', 'mwts2   ', 'mwhs2   ', 'aster   ',  &
+        & 'hatpro  ', 'mtvzagy ', 'metimage', 'mws     ', 'mwi     ',  &
+        & 'epic    ', 'mrir    ', 'si      ', 'mrfirs  ', 'mbfiri  ',  &
+        & 'lhr     ', 'ismar   ', 'mersi1  ', 'mersi2  ' /)
 
   ! cf. rttov_platform_name above and CRTM: v2.1.3 User Guide Table B.1
   ! n=noaa; f=dmsp; g=goes; eos-2/1=aqua/terra;
@@ -124,7 +128,7 @@ module module_radiance
   ! For instrument names that can not be directly mapped here to names
   ! used in crtm coeff names, they will be re-set in
   ! da_crtm_sensor_descriptor.inc
-  Character (len=8), Dimension(0:65) :: crtm_sensor_name  =            &
+  Character (len=8), Dimension(0:88) :: crtm_sensor_name  =            &
      & (/ 'hirs    ', 'msu     ', 'ssu     ', 'amsua   ', 'amsub   ',  &
         & 'avhrr   ', 'ssmi    ', 'xxxxxxxx', 'spare   ', 'tmi     ',  &
         & 'ssmis   ', 'airs    ', 'hsb     ', 'modis   ', 'atsr    ',  &
@@ -138,7 +142,11 @@ module module_radiance
         & 'reserved', 'reserved', 'reserved', 'reserved', 'xxxxxxxx',  &
         & 'xxxxxxxx', 'ahi     ', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
         & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'amsr2   ', 'vissr   ',  &
-        & 'xxxxxxxx'/)
+        & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
+        & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'mwhs2   ', 'xxxxxxxx',  &
+        & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
+        & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx',  &
+        & 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx', 'xxxxxxxx'/)
 
 #ifdef RTTOV
    type (rttov_coefs), allocatable   :: coefs(:)     ! coefficients structure

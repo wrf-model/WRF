@@ -325,7 +325,7 @@ contains
    real,parameter    ::  afac = 6.8,bfac = 6.8,pfac = 2.0,pfac_q = 2.0
    real,parameter    ::  phifac = 8.,sfcfrac = 0.1
    real,parameter    ::  d1 = 0.02, d2 = 0.05, d3 = 0.001
-   real,parameter    ::  h1 = 0.33333335, h2 = 0.6666667
+   real,parameter    ::  h1 = 0.33333333, h2 = 0.6666667
    real,parameter    ::  ckz = 0.001,zfmin = 1.e-8,aphi5 = 5.,aphi16 = 16.
    real,parameter    ::  tmin=1.e-2
    real,parameter    ::  gamcrt = 3.,gamcrq = 2.e-3

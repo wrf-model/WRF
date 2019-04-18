@@ -91,5 +91,5 @@ test_io_mpi: test_io_mpi.f90 $(LIB)
 	$(FC) $(FCFLAGS) $(LDFLAGS) -o $@ $@.f90 -L. -lwrfio_int
 
 superclean:
-	-$(RM) *.f *.o *.obj *.i *.mod $(LIB) diffwrf io_int_idx_tags.h \
+	@$(RM) *.f *.o *.obj *.i *.mod $(LIB) diffwrf io_int_idx_tags.h \
 		test_io_idx test_io_mpi io_int_idx_tags.h

@@ -391,8 +391,11 @@ call wrf_message("**************************************************************
    endif
 
    if ( config_flags%cu_diag == 1) then
-   if ( config_flags%cu_physics /= 3 .AND. config_flags%cu_physics /= 5 .AND. config_flags%cu_physics /= 10) then !BSINGH(12/17/2013): Added for WRFCUP scheme
-         call wrf_error_fatal(" Time averaged variables (cu_diag = 1) requires cu_physics = 3 or 5 or 10")
+   !BSINGH (12/17/2013): Added Kain–Fritsch Cumulus Potential (KF-CuP) scheme (cu_physics = 10)
+   !HSBADR (02/12/2019): Added Grell-Devenyi (GD) ensemble scheme (cu_physics = 93)
+   if ( config_flags%cu_physics /= 3 .AND. config_flags%cu_physics /= 5 .AND. &
+        config_flags%cu_physics /= 10 .AND. config_flags%cu_physics /= 93 ) then
+         call wrf_error_fatal(" Time averaged variables (cu_diag = 1) requires cu_physics = 3 or 5 or 10 or 93")
    endif
    endif
 
@@ -702,13 +705,13 @@ end if
 !!! TUCCELLA
    if( .NOT. config_flags%restart ) then
    kpp_select: SELECT CASE(config_flags%chem_opt)
-     CASE (GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_KPP, &
-           RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP)
+CASE(GOCARTRACM_KPP,RACM_KPP,RACMPM_KPP,RACMSORG_KPP,RACM_MIM_KPP,RACM_ESRLSORG_KPP,&
+           RACMSORG_AQCHEM_KPP,RACM_ESRLSORG_AQCHEM_KPP,RACM_SOA_VBS_KPP,RACM_SOA_VBS_AQCHEM_KPP)
         if(config_flags%chem_in_opt == 0 )then
           do j=jts,jte
              do k=kts,kte
                 do i=its,ite
-                   chem(i,k,j,p_co2)=380.
+                   chem(i,k,j,p_co2)=400. 
                    chem(i,k,j,p_ch4)=1.7
                    chem(i,k,j,p_ete)=chem(i,k,j,p_olt)
                    chem(i,k,j,p_ete)=epsilc

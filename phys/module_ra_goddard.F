@@ -1380,21 +1380,6 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
 !--------------------       PROGRAM START        ---------------------------------------
 
   i24h=nint(86400./dt_in)
-!  if (mod(itimestep,i24h).eq.1) then
- if ( wrf_dm_on_monitor() .and. mod(itimestep,i24h).eq.1 ) then
-    print *, 'in goddardrad1014 ', sw_or_lw
-    print *, '   kts, kte = ', kts, kte
-    print *, '   kms, kme = ', kms, kme
-    print *, '   kds, kde = ', kds, kde
- endif
-
-  if ( kme .ne. kte+1 ) then
-     print *,'Something is strange, kde, kme, kte = ', kde, kme, kte 
-     print *,'                      kds, kms, kts = ', kds, kms, kts 
-     print *,' at timestep = ', itimestep
-     print *,' at gmt, julday, xtime = ', gmt,julday,xtime
-  endif
-
 !
 ! Make sure there is no negative value in qv and cloud species
 ! Negative value happen through dynamic core (advection).
@@ -1502,6 +1487,10 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
   fast_overcast = .false.
  endif
 
+! Removing these OpenMP directives since this is already in a 
+! threaded region from the radiation driver for the WRF model.
+! Perhaps other models use these, so we will keep them around.
+#if (NUWRF_GODDARD == 1)
 !$OMP PARALLEL DO &
 !$OMP PRIVATE ( ic, ii) &
 !$OMP PRIVATE ( i,j,k,nk,ib,n,kt,km, i24h ) &
@@ -1520,6 +1509,7 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
 !$OMP PRIVATE ( aero1d ) &
 #endif
 !$OMP SCHEDULE(dynamic,1)
+#endif
 
   DO ip = 1,((1+(ite-its+1)/CHUNK)*CHUNK)*(jte-jts+1),CHUNK ! *ij_skip
   j  = jts+(ip-1)/((1+(ite-its+1)/CHUNK)*CHUNK) ! *ij_skip

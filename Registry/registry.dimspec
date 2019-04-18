@@ -30,6 +30,7 @@ dimspec    nndgvar -     namelist=nobs_ndg_vars            c     nobs_ndg_vars
 dimspec    [       -     namelist=obs_prt_max              c     obs_prt_max
 dimspec    obsstid -     constant=40                       c     obs station id names
 dimspec    &       2     namelist=lagday                   z     lagday
+dimspec    seed    1     namelist=seed_dim                 z     seed_dim
 endif
 
 
@@ -51,7 +52,6 @@ endif
 dimspec    snly    2     namelist=num_snow_layers          z     snow_layers
 dimspec    l       2     namelist=num_soil_layers          z     soil_layers
 dimspec    snsl    2     namelist=num_snso_layers          z     snso_layers
-dimspec    ulay    2     namelist=num_urban_layers         z     urban_layers
 
 dimspec    umap0   2     namelist=num_urban_ndm            z     num_urban_ndm
 dimspec    umap1   2     namelist=urban_map_zrd            z     urban_map_zrd

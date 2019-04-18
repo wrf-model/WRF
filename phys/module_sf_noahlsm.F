@@ -2689,7 +2689,7 @@ CONTAINS
       REAL, DIMENSION(1:NSOIL), INTENT(IN)   :: ET,ZSOIL
       REAL, DIMENSION(1:NSOIL), INTENT(INOUT):: SMC, SH2O
       REAL, DIMENSION(1:NSOIL)             :: AI, BI, CI, STCF,RHSTS, RHSTT, &
-                                              SICE, SH2OA, SH2OFG
+                                              SICE, SH2OA, SH2OFG, SH2OIN
       REAL                  :: DUMMY, EXCESS,FRZFACT,PCPDRP,RHSCT,TRHSCT
       REAL :: FAC2
       REAL :: FLIMIT
@@ -2784,7 +2784,8 @@ CONTAINS
                     DWSAT,DKSAT,SMCMAX,BEXP,RUNOFF1,                    &
                     RUNOFF2,DT,SMCWLT,SLOPE,KDT,FRZFACT,SICE,AI,BI,CI,  &
                     SFHEAD1RT,INFXS1RT)
-         CALL SSTEP (SH2O,SH2O,CMC,RHSTT,RHSCT,DT,NSOIL,SMCMAX,         &
+         SH2OIN=SH2O
+         CALL SSTEP (SH2O,SH2OIN,CMC,RHSTT,RHSCT,DT,NSOIL,SMCMAX,       &
                         CMCMAX,RUNOFF3,ZSOIL,SMC,SICE,AI,BI,CI,INFXS1RT)
 
       ELSE
@@ -2792,7 +2793,8 @@ CONTAINS
                     DWSAT,DKSAT,SMCMAX,BEXP,RUNOFF1,                    &
                     RUNOFF2,DT,SMCWLT,SLOPE,KDT,FRZFACT,SICE,AI,BI,CI,  &
                    SFHEAD1RT,INFXS1RT)
-         CALL SSTEP (SH2O,SH2O,CMC,RHSTT,RHSCT,DT,NSOIL,SMCMAX,         &
+         SH2OIN=SH2O
+         CALL SSTEP (SH2O,SH2OIN,CMC,RHSTT,RHSCT,DT,NSOIL,SMCMAX,       &
                      CMCMAX,RUNOFF3,ZSOIL,SMC,SICE,AI,BI,CI,INFXS1RT)
 !      RUNOF = RUNOFF
 

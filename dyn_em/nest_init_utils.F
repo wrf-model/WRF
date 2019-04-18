@@ -772,6 +772,7 @@ END SUBROUTINE copy_3d_field
 
 SUBROUTINE adjust_tempqv ( mub, save_mub, c3, c4, znw, p_top, &
                            th, pp, qv,  &
+                           use_theta_m, &
                            ids , ide , jds , jde , kds , kde , &
                            ims , ime , jms , jme , kms , kme , &
                            ips , ipe , jps , jpe , kps , kpe )
@@ -794,9 +795,10 @@ SUBROUTINE adjust_tempqv ( mub, save_mub, c3, c4, znw, p_top, &
    REAL , DIMENSION(kms:kme) , INTENT(IN)    :: znw
    REAL , DIMENSION(kms:kme) , INTENT(IN)    :: c3, c4
    REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(INOUT) :: th, pp, qv
+   INTEGER , INTENT(IN)                       :: use_theta_m
 
    REAL , DIMENSION(ims:ime,kms:kme,jms:jme) :: p_old, p_new, rh
-   REAL :: es,dth,tc,e,dth1
+   REAL :: es,dth,tc,e,dth1,thloc
    INTEGER :: i , j , k
 
    real p_top
@@ -808,7 +810,11 @@ SUBROUTINE adjust_tempqv ( mub, save_mub, c3, c4, znw, p_top, &
       DO k = kps , kpe-1
          DO i = ips , MIN(ipe, ide-1)
             p_old(i,k,j) = c4(k) +         c3(k)*save_mub(i,j) + p_top + pp(i,k,j)
-            tc = (th(i,k,j)+300.)*(p_old(i,k,j)/1.e5)**(2./7.) - 273.15
+            IF ( use_theta_m .EQ. 1 ) THEN
+               tc = (th(i,k,j)+300.)*(p_old(i,k,j)/1.e5)**(2./7.)/(1.+R_v/R_d*qv(i,k,j)) - 273.15
+            ELSE
+               tc = (th(i,k,j)+300.)*(p_old(i,k,j)/1.e5)**(2./7.)                        - 273.15
+            END IF
             es = 610.78*exp(17.0809*tc/(234.175+tc))
             e = qv(i,k,j)*p_old(i,k,j)/(0.622+qv(i,k,j))
             rh(i,k,j) = e/es
@@ -821,10 +827,19 @@ SUBROUTINE adjust_tempqv ( mub, save_mub, c3, c4, znw, p_top, &
          DO i = ips , MIN(ipe, ide-1)
             p_new(i,k,j) = c4(k) +         c3(k)*mub(i,j) + p_top + pp(i,k,j)
 ! 2*(g/cp-6.5e-3)*R_dry/g = -191.86e-3
-            dth1 = -191.86e-3*(th(i,k,j)+300.)/(p_new(i,k,j)+p_old(i,k,j))*(p_new(i,k,j)-p_old(i,k,j))
-            dth = -191.86e-3*(th(i,k,j)+0.5*dth1+300.)/(p_new(i,k,j)+p_old(i,k,j))*(p_new(i,k,j)-p_old(i,k,j))
-            th(i,k,j) = th(i,k,j)+dth
-            tc = (th(i,k,j)+300.)*(p_new(i,k,j)/1.e5)**(2./7.) - 273.15
+            IF ( use_theta_m .EQ. 1 ) THEN
+               thloc = (th(i,k,j)+300.)/(1.+R_v/R_d*qv(i,k,j))
+            ELSE
+               thloc = (th(i,k,j)+300.)
+            END IF
+            dth1 = -191.86e-3*(thloc         )/(p_new(i,k,j)+p_old(i,k,j))*(p_new(i,k,j)-p_old(i,k,j))
+            dth  = -191.86e-3*(thloc+0.5*dth1)/(p_new(i,k,j)+p_old(i,k,j))*(p_new(i,k,j)-p_old(i,k,j))
+            IF ( use_theta_m .EQ. 1 ) THEN
+               th(i,k,j) = (thloc+dth)*(1.+R_v/R_d*qv(i,k,j))-300.
+            ELSE
+               th(i,k,j) = (thloc+dth)                       -300.
+            END IF
+            tc = (thloc+dth)*(p_new(i,k,j)/1.e5)**(2./7.) - 273.15
             es = 610.78*exp(17.0809*tc/(234.175+tc))
             e = rh(i,k,j)*es
             qv(i,k,j) = 0.622*e/(p_new(i,k,j)-e)

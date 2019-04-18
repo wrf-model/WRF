@@ -85,6 +85,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                                    n, i, j, iy, ix, jy, jx, iyl, ixl, iyfd, ixfd, iproc, subgrid
    INTEGER :: cstat, estat
    CHARACTER(LEN=100) :: cmsg
+   logical :: exists
 
    !! Satellite variables
    integer(i_kind),parameter    :: nchan = 10
@@ -325,31 +326,36 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
       if ( .not.this_view % select ) cycle
 
-      write(unit=stdout,fmt='(5A)') 'Searching for GOES ', trim(this_view % name) ,' files in ', trim(this_view % fpath),'...'
-
-      ! Query fpath for files that begin with INST_PREFIX, name, and for this satellite_id
+      ! Query fpath for files that match L1B naming conventions for this_view and satellite_id
       fname = trim(INST_PREFIX)//trim(this_view % name_short)
-      list_file    = 'INST'//trim(this_view % name_short)
+      list_file    = 'file_list_GOES-ABI_'//trim(this_view % name_short)
 
       call da_get_unit(file_unit)
 
-      ! Create list_file containing all files for this_view
       if (rootproc) then
-         write(command,fmt='(5A,I2.2,2A)')&
-                 "find ",trim(this_view % fpath), &
-                 " \( -type l -o -type f \) -name '",trim(fname), &
-                 "*G",satellite_id, &
-                 "*' > ",trim(list_file)
+         inquire(file=trim(list_file), exist=exists)
+         if ( .not.exists ) then
+            ! Create list_file containing all files for this_view
+            write(unit=stdout,fmt='(5A)') 'Searching for GOES ', trim(this_view % name) ,' files in ', trim(this_view % fpath),'...'
+
+            write(command,fmt='(5A,I2.2,2A)')&
+                    "find ",trim(this_view % fpath), &
+                    " \( -type l -o -type f \) -name '",trim(fname), &
+                    "*G",satellite_id, &
+                    "*' > ",trim(list_file)
 !                    "*' -printf '%P\n' > ",trim(list_file)
 
-         !WARNING: find command requires substantial memory for MESO list_file's
-write(stdout,fmt='(A)') adjustl(trim(command))
-         cmsg = ""
-         call execute_command_line ( adjustl(trim(command)), &
-            WAIT=.true., EXITSTAT=estat, CMDSTAT=cstat, CMDMSG=cmsg )
-write(stdout,*) 'estat: ', estat
-write(stdout,*) 'cstat: ', cstat
-write(stdout,*) 'cmsg:  ', cmsg
+            write(stdout,fmt='(A)') 'WARNING find requires substantial memory. It is recommended to issue'
+            write(stdout,fmt='(A)') 'WARNING  the following from the command line before running WRFDA:'
+            write(stdout,fmt='(A)') adjustl(trim(command))
+            cmsg = ""
+            call execute_command_line ( adjustl(trim(command)), &
+               WAIT=.true., EXITSTAT=estat, CMDSTAT=cstat, CMDMSG=cmsg )
+            write(stdout,*) 'estat: ', estat
+            write(stdout,*) 'cstat: ', cstat
+            write(stdout,*) 'cmsg:  ', cmsg
+         end if
+         write(unit=stdout,fmt='(5A)') 'Using GOES ', trim(this_view % name) ,' files listed in ', trim(list_file)
 
          icount = 0
          io_stat = -1
@@ -358,6 +364,7 @@ write(stdout,*) 'cmsg:  ', cmsg
             icount = icount + 1
             if (icount .gt. 10000) exit
          end do
+
          this_view % nfiles = 0
          do
             read(file_unit, fmt=*, iostat = io_stat)

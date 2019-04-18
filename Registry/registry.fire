@@ -8,7 +8,7 @@
 #<key>   <package       <associated               <package        <associated 4d scalars>
 #         name>          namelist choice>          state vars>
 # 
-package   fire_sfire    ifire==2                    -             state:nfuel_cat,zsf,tign_g,rthfrten,rqvfrten,grnhfx,grnqfx,canhfx,canqfx,lfn,fuel_frac,fire_area,uf,vf,fgrnhfx,fgrnqfx,fcanhfx,fcanhfx,fcanqfx,ros,fxlong,fxlat,fuel_time,bbb,betafl,phiwc,r_0,fgip,ischap,lfn_hist,lfn_time,avg_fuel_frac,uah,vah,fmc_g
+package   fire_sfire    ifire==2                    -             state:avg_fuel_frac,bbb,betafl,burnt_area_dt,canhfx,canqfx,dzdxf,dzdyf,fcanhfx,fcanqfx,fgip,fgrnhfx,fgrnqfx,fire_area,fire_smoke,flame_length,fmc_equi,fmc_g,fmc_gc,fmc_lag,fmoist_lasttime,fmoist_nexttime,fuel_frac,fuel_time,fxlat,fxlong,fz0,grnhfx,grnhfx_fu,grnqfx,grnqfx_fu,iboros,ischap,lfn,lfn_0,lfn_1,lfn_2,lfn_hist,lfn_s0,lfn_s1,lfn_s2,lfn_s3,lfn_time,nfuel_cat,phiwc,psfc_old,q2_old,r_0,rain_old,rh_fire,ros,ros_front,rqvfrten,rthfrten,t2_old,tign_g,uah,uf,vah,vf,zsf
 
 # level function history support
 dimspec   ign   2           constant=1      z    i_lfn_history

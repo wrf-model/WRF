@@ -151,7 +151,7 @@
  fire_print_file    = 0,        ! 1 write files for matlab
 !
 ! moisture model
- fmoist_run = .true.,        ! yes do run the moisture model
+ fmoist_run = .true.,        ! yes do run the moisture model - set also sf_sfclay_physics and sf_surface_physics in &physics
  fmoist_interp = .true.,     ! yes do interpolate moisture to fuels
  fmoist_only = .false.       ! skip the fire model and run moisture only
  fmoist_freq = 0,            ! frequency of run or 0 to run using the specified fmost_dt
@@ -164,6 +164,9 @@
  fire_const_grnhfx = -1,        ! (W/s) if both >=0, use this flux (meant to be used when fire_const_time=ignition time) 
  fire_const_grnqfx = -1,        ! (W/s) if both >=0, use this flux (meant to be used when fire_const_time=ignition time) 
  fire_test_steps=0,             ! >0 = on first call, do specified number of steps and terminate (testing only)
+!
+! the following flags are  for ideal.exe only
+!
  fire_mountain_type=1,          ! in ideal: 0=none, 1= hill, 2=EW ridge, 3=NS ridge
  fire_mountain_height=100.,     ! (m) ideal mountain height
  fire_mountain_start_x=900.,    ! (m) coord of start of the mountain from lower left corner (just like ignition)

@@ -180,7 +180,7 @@ subroutine da_qc_iasi (it, i, nchan, ob, iv)
 
       ! Do inter-processor communication to gather statistics.
 
-      if (use_clddet_mmr .and. (.not.use_satcv(2))) then
+      if ((use_clddet_mmr .or. use_clddet_pf) .and. (.not.use_satcv(2))) then
          do k = 1, nchan
             bias_global(k)   = wrf_dm_sum_real(bias_local(k))
             numrad_global(k) = wrf_dm_sum_integer(numrad_local(k))
@@ -190,9 +190,9 @@ subroutine da_qc_iasi (it, i, nchan, ob, iv)
 
       do n= iv%instid(i)%info%n1,iv%instid(i)%info%n2
 
-         ! 1. Cloud detection scheme (NESDIS or MMR)
+         ! 1. Cloud detection scheme (NESDIS MMR .or. PF)
          !---------------------------------------------
-         if (use_clddet_mmr .and. (.not.use_satcv(2))) then
+         if ((use_clddet_mmr .or. use_clddet_pf) .and. (.not.use_satcv(2))) then
             iv%instid(i)%cloud_flag(:,n) = qc_good
 
             if (rtm_option == rtm_option_rttov) then
@@ -221,7 +221,7 @@ subroutine da_qc_iasi (it, i, nchan, ob, iv)
 
             ndim = kte_surf - kts_100hPa(1) + 1
 
-            call da_cloud_detect_iasi(i,nchan,ndim,kts_100hPa(1),kte_surf,n,iv)
+            call da_cloud_detect(i,nchan,ndim,kts_100hPa(1),kte_surf,n,iv)
          end if
 
          do k = 1, nchan

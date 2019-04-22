@@ -618,7 +618,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
          ! Compute Overcast Radiances for AIRS Cloud Detection (MMR)
          !----------------------------------------------------------------
-         if (use_clddet_mmr .or. use_clddet_ecmwf ) then
+         if (use_clddet_mmr .or. use_clddet_pf .or. use_clddet_ecmwf ) then
             do i = 1, nchanl
                !crtm_2.2.3 contains Upwelling_Overcast_Radiance
                iv%instid(inst)%rad_ovc(i,kts:kte,n)=RTSolution(i,1)%Upwelling_Overcast_Radiance(:)

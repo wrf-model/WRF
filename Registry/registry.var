@@ -440,6 +440,7 @@ rconfig   real      varbc_factor            namelist,wrfvar14  1  1.0      - "va
 rconfig   integer   varbc_nbgerr            namelist,wrfvar14  1  5000     - "varbc_nbgerr"            ""  ""
 rconfig   integer   varbc_nobsmin           namelist,wrfvar14  1  10       - "varbc_nobsmin"           ""  ""
 rconfig   logical   use_clddet_mmr          namelist,wrfvar14  1  .false.  - "use_clddet_mmr"            ""  ""
+rconfig   logical   use_clddet_pf           namelist,wrfvar14  1  .false.  - "use_clddet_pf"            ""  ""
 rconfig   logical   use_clddet_ecmwf        namelist,wrfvar14  1  .false.  - "use_clddet_ecmwf"          ""  ""
 rconfig   logical   airs_warmest_fov        namelist,wrfvar14  1  .false.  - "airs_warmest_fov"        ""  ""
 rconfig   logical   use_satcv               namelist,wrfvar14  2  .false.  - "use_satcv"               ""  ""

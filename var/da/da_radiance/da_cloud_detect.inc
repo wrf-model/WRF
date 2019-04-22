@@ -1,6 +1,6 @@
 subroutine da_cloud_detect(isensor,nchannels,ndim,kts,kte,n,iv)
 
-!** *CLOUD_DETECT_AIRS* - CLOUD FLAGGING FOR IR Channels 
+!** *CLOUD_DETECT* - CLOUD FLAGGING FOR IR Channels 
 
 !    AUTHOR: THOMAS AULIGNE      DATE : 01/08/2005
 !

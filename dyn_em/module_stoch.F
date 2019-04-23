@@ -1343,12 +1343,18 @@ IF (grid%sppt_on==1) then
 
       one_big = 1
       iseedarr=0.0
-      do i = seed_start,seed_dim-3,4
-         iseedarr(i  )= iseed1+config_flags%nens*1000000
-         iseedarr(i+1)= mod(fctime+iseed1*config_flags%nens*1000000,19211*one_big)
-         iseedarr(i+2)= mod(fctime+iseed1*config_flags%nens*1000000,71209*one_big)
-         iseedarr(i+3)= mod(fctime+iseed1*config_flags%nens*1000000,11279*one_big)
-      enddo
+      if ( seed_dim-3 .lt. seed_start ) then
+         do i = seed_start,seed_dim
+            iseedarr(i  )= iseed1+config_flags%nens*1000000
+         enddo
+      else
+         do i = seed_start,seed_dim-3,4
+            iseedarr(i  )= iseed1+config_flags%nens*1000000
+            iseedarr(i+1)= mod(fctime+iseed1*config_flags%nens*1000000,19211*one_big)
+            iseedarr(i+2)= mod(fctime+iseed1*config_flags%nens*1000000,71209*one_big)
+            iseedarr(i+3)= mod(fctime+iseed1*config_flags%nens*1000000,11279*one_big)
+         enddo
+      end if
 
       end SUBROUTINE rand_seed
 !     ------------------------------------------------------------------

@@ -119,6 +119,9 @@ module module_interp_nmm
 
   public :: c2n_near3dikj, c2n_sst, c2n_near3d
 
+  public :: c2n_copymask3d, c2n_copymask3dikj, c2n_copymask2d
+  public :: c2n_nearmask3d, c2n_nearmask3dikj, c2n_nearmask2d, c2n_inearmask2d
+
 ! unimplemented:  public :: nmm_method_quadratic, nmm_method_spline_log, nmm_method_copy, nmm_method_spline
 
 !  integer, parameter :: nmm_method_copy = 5
@@ -750,6 +753,437 @@ contains
     end do bigj
   end subroutine c2n_copy2d_nomask
 
+  subroutine c2n_copymask2d (II,JJ,W1,W2,W3,W4,    &
+       cfield,nfield,imask,     &
+       clu,nlu,cflag,nflag,defvalyes,defvalno, &
+       cims, cime, cjms, cjme,   &
+       nids, nide, njds, njde,   &
+       nims, nime, njms, njme,   &
+       nits, nite, njts, njte, hgrid)
+    implicit none
+    logical, intent(in) :: hgrid
+    real, intent(in), dimension(nims:nime,njms:njme) :: &
+         W1,W2,W3,W4
+    integer, intent(in), dimension(nims:nime,njms:njme) :: II,JJ
+
+    integer, intent(in):: cims, cime, cjms, cjme,   &
+         nids, nide, njds, njde,   &
+         nims, nime, njms, njme,   &
+         nits, nite, njts, njte
+    integer, intent(in), dimension(nims:nime,njms:njme) :: imask
+    real, intent(in) :: cfield(cims:cime,cjms:cjme)
+    real, intent(out) :: nfield(nims:nime,njms:njme)
+
+    real, intent(in) :: clu(cims:cime,cjms:cjme)
+    real, intent(in) :: nlu(nims:nime,njms:njme)
+    integer, intent(in) :: cflag, nflag
+    real, intent(in) :: defvalyes,defvalno
+
+    integer :: iswater
+
+    character*255 :: message
+    integer :: icount
+    real :: sumtmp
+
+    integer :: j,i,a,nx
+
+    iswater=nflag
+
+    nx=min(nide-1,nite)-max(nids,nits)+1
+
+    bigj: do j=max(njds,njts),min(njde-1,njte)
+       interploop: do i=max(nids,nits),min(nide-1,nite)
+          if(imask(i,j)/=0) cycle interploop
+          if(hgrid) then
+             a=1-mod(JJ(i,j),2)
+          else
+             a=mod(JJ(i,j),2)
+          endif
+          ! Nested cell is a water cell.
+          if(NINT(nlu(i,j))==iswater)then
+             ! If the surrounding coarse values are all LAND points, i.e. this is a 1-cell lake,
+             ! use the defval, if a reasonable default value (defval) is provided, otherwise no better way to
+             ! come up with the value than to do a simple 4-pt interpolation.
+             if( nint(clu(II(i,j),JJ(i,j)))/=iswater   .and.   &
+                 nint(clu(II(i,j)+1,JJ(i,j)))/=iswater .and.   &
+                 nint(clu(II(i,j)+a,JJ(i,j)-1))/=iswater .and. &
+                 nint(clu(II(i,j)+a,JJ(i,j)+1))/=iswater ) then
+                call wrf_debug(100,'WARNING: Water child cell surrounded by all land parent points.')
+                write(message,*) 'At i,j,nlu(i,j),II,JJ=',i,j,nlu(i,j),II(i,j),JJ(i,j)
+                call wrf_debug(100,message)
+                if( abs(-999.99-defvalyes) > 1.e-6) then
+                   nfield(i,j)=defvalyes
+                   write(message,*) 'Set nfield with the provided default value: ',nfield(i,j)
+                   call wrf_debug(100,message)
+                else
+                   nfield(i,j)=ICOPY2D(cfield,i,j)
+                   write(message,*) 'Fill nfield from a simple 4-pt interpolation',nfield(i,j)
+                   call wrf_debug(100,message)
+                end if
+             ! If the surrounding coarse values are all WATER points,
+             ! i.e. open water, this is a simple 4-pt interpolation.
+             else if( nint(clu(II(i,j),JJ(i,j)))==iswater   .and.   &
+                      nint(clu(II(i,j)+1,JJ(i,j)))==iswater .and.   &
+                      nint(clu(II(i,j)+a,JJ(i,j)-1))==iswater .and. &
+                      nint(clu(II(i,j)+a,JJ(i,j)+1))==iswater ) then
+                nfield(i,j)=ICOPY2D(cfield,i,j)
+             ! If there are some land points and some water points, take an average.
+             else
+                icount=0
+                sumtmp=0.
+                if ( nint(clu(ii(i,j),jj(i,j)))==iswater ) then
+                   icount = icount + 1
+                   sumtmp = sumtmp + cfield(ii(i,j),jj(i,j))
+                end if
+                if ( nint(clu(ii(i,j)+1,jj(i,j)))==iswater ) then
+                   icount = icount + 1
+                   sumtmp = sumtmp + cfield(ii(i,j)+1,jj(i,j))
+                end if
+                if ( nint(clu(ii(i,j)+a,jj(i,j)-1))==iswater ) then
+                   icount = icount + 1
+                   sumtmp = sumtmp + cfield(ii(i,j),jj(i,j)-1)
+                end if
+                if ( nint(clu(ii(i,j)+a,jj(i,j)+1))==iswater ) then
+                   icount = icount + 1
+                   sumtmp = sumtmp + cfield(ii(i,j)+a,jj(i,j)+1)
+                end if
+                nfield(i,j) = sumtmp / real ( icount )
+             end if
+          ! Nested cell is a land cell.
+          else if(NINT(nlu(i,j))/=iswater)then
+             ! If the surrounding coarse values are all WATER points, i.e. this is a 1-cell island,
+             ! use the defval, if a reasonable default value (defval) is provided, otherwise no better way to
+             ! come up with the value than to do a simple 4-pt interpolation.
+             if( nint(clu(II(i,j),JJ(i,j)))==iswater   .and.   &
+                 nint(clu(II(i,j)+1,JJ(i,j)))==iswater .and.   &
+                 nint(clu(II(i,j)+a,JJ(i,j)-1))==iswater .and. &
+                 nint(clu(II(i,j)+a,JJ(i,j)+1))==iswater ) then
+                call wrf_debug(100,'WARNING: Land child cell surrounded by all water parent points.')
+                write(message,*) 'At i,j,nlu(i,j),II,JJ=',i,j,nlu(i,j),II(i,j),JJ(i,j)
+                call wrf_debug(100,message)
+                if( abs(-999.99-defvalno) > 1.e-6) then
+                   nfield(i,j)=defvalno
+                   write(message,*) 'Set nfield with the provided default value: ',nfield(i,j)
+                   call wrf_debug(100,message)
+                else
+                   nfield(i,j)=ICOPY2D(cfield,i,j)
+                   write(message,*) 'Fill nfield from a simple 4-pt interpolation',nfield(i,j)
+                   call wrf_debug(100,message)
+                end if
+             ! If the surrounding coarse values are all LAND points,
+             ! this is a simple 4-pt interpolation.
+             else if( nint(clu(II(i,j),JJ(i,j)))/=iswater   .and.   &
+                      nint(clu(II(i,j)+1,JJ(i,j)))/=iswater .and.   &
+                      nint(clu(II(i,j)+a,JJ(i,j)-1))/=iswater .and. &
+                      nint(clu(II(i,j)+a,JJ(i,j)+1))/=iswater ) then
+                nfield(i,j)=ICOPY2D(cfield,i,j)
+             ! If there are some land points and some water points, take an average.
+             else
+                icount=0
+                sumtmp=0.
+                if ( nint(clu(ii(i,j),jj(i,j)))/=iswater ) then
+                   icount = icount + 1
+                   sumtmp = sumtmp + cfield(ii(i,j),jj(i,j))
+                end if
+                if ( nint(clu(ii(i,j)+1,jj(i,j)))/=iswater ) then
+                   icount = icount + 1
+                   sumtmp = sumtmp + cfield(ii(i,j)+1,jj(i,j))
+                end if
+                if ( nint(clu(ii(i,j)+a,jj(i,j)-1))/=iswater ) then
+                   icount = icount + 1
+                   sumtmp = sumtmp + cfield(ii(i,j),jj(i,j)-1)
+                end if
+                if ( nint(clu(ii(i,j)+a,jj(i,j)+1))/=iswater ) then
+                   icount = icount + 1
+                   sumtmp = sumtmp + cfield(ii(i,j)+a,jj(i,j)+1)
+                end if
+                nfield(i,j) = sumtmp / real ( icount )
+             end if
+          end if
+       enddo interploop
+    end do bigj
+  end subroutine c2n_copymask2d
+
+  subroutine c2n_nearmask2d (inear,jnear,II,JJ,W1,W2,W3,W4,    &
+       cfield,nfield,imask,     &
+       clu,nlu,cflag,nflag,defvalyes,defvalno, &
+       cims, cime, cjms, cjme,   &
+       nids, nide, njds, njde,   &
+       nims, nime, njms, njme,   &
+       nits, nite, njts, njte, hgrid)
+    implicit none
+    logical, intent(in) :: hgrid
+    integer, intent(in), dimension(nims:nime,njms:njme) :: inear,jnear
+    real, intent(in), dimension(nims:nime,njms:njme) :: &
+         W1,W2,W3,W4
+    integer, intent(in), dimension(nims:nime,njms:njme) :: II,JJ
+
+    integer, intent(in):: cims, cime, cjms, cjme,   &
+         nids, nide, njds, njde,   &
+         nims, nime, njms, njme,   &
+         nits, nite, njts, njte
+    integer, intent(in), dimension(nims:nime,njms:njme) :: imask
+    real, intent(in) :: cfield(cims:cime,cjms:cjme)
+    real, intent(out) :: nfield(nims:nime,njms:njme)
+
+    real, intent(in) :: clu(cims:cime,cjms:cjme)
+    real, intent(in) :: nlu(nims:nime,njms:njme)
+    integer, intent(in) :: cflag, nflag
+    real, intent(in) :: defvalyes,defvalno
+
+    integer :: iswater
+
+    character*255 :: message
+    integer :: icount
+    real :: wtmp
+
+    integer :: j,i,a,nx
+
+    iswater=nflag
+
+    nx=min(nide-1,nite)-max(nids,nits)+1
+
+    bigj: do j=max(njds,njts),min(njde-1,njte)
+       interploop: do i=max(nids,nits),min(nide-1,nite)
+          if(imask(i,j)/=0) cycle interploop
+          if(hgrid) then
+             a=1-mod(JJ(i,j),2)
+          else
+             a=mod(JJ(i,j),2)
+          endif
+          ! Nested cell is a water cell.
+          if(NINT(nlu(i,j))==iswater)then
+             wtmp=-1.0
+             ! If the nearest parent point is a WATER point,
+             ! Take the value from its nearest parent point.
+             if( nint(clu(inear(i,j),jnear(i,j)))==iswater ) then
+                nfield(i,j)=cfield(inear(i,j),jnear(i,j))
+                wtmp=1.0
+             ! If there are some land points and some water points, take the value from its nearest parent water point.
+             else
+                if( nint(clu(II(i,j),JJ(i,j)))==iswater .and. W1(i,j)>=wtmp ) then
+                   nfield(i,j)=cfield(II(i,j),JJ(i,j))
+                   wtmp=W1(i,j)
+                end if
+                if( nint(clu(II(i,j)+1,JJ(i,j)))==iswater .and. W2(i,j)>=wtmp )  then
+                   nfield(i,j)=cfield(II(i,j)+1,JJ(i,j))
+                   wtmp=W2(i,j)
+                end if
+                if( nint(clu(II(i,j)+a,JJ(i,j)-1))==iswater .and. W3(i,j)>=wtmp ) then
+                   nfield(i,j)=cfield(II(i,j)+a,JJ(i,j)-1)
+                   wtmp=W3(i,j)
+                end if
+                if( nint(clu(II(i,j)+a,JJ(i,j)+1))==iswater .and. W4(i,j)>=wtmp ) then
+                   nfield(i,j)=cfield(II(i,j)+a,JJ(i,j)+1)
+                   wtmp=W4(i,j)
+                end if
+             end if
+             ! If the surrounding coarse values are all LAND points, i.e. this is a 1-cell lake,
+             ! Use the defval, if a reasonable default value (defval) is provided. 
+             ! Or, just take its nearest parent point anyway.
+             if (wtmp<0.)then
+                call wrf_debug(100,'WARNING: Water child cell surrounded by all land parent points.')
+                write(message,*) 'At i,j,nlu(i,j),II,JJ=',i,j,nlu(i,j),II(i,j),JJ(i,j)
+                call wrf_debug(100,message)
+                if( abs(-999.99-defvalyes) > 1.e-6) then
+                   nfield(i,j)=defvalyes
+                   write(message,*) 'Set nfield with the provided default value: ',nfield(i,j)
+                   call wrf_debug(100,message)
+                else
+                   nfield(i,j)=cfield(inear(i,j),jnear(i,j))
+                   write(message,*) 'Fill nfield with its nearest parent point anyway',nfield(i,j)
+                   call wrf_debug(100,message)
+                end if
+             end if
+          ! Nested cell is a land cell.
+          else if(NINT(nlu(i,j))/=iswater)then
+             wtmp=-1.0
+             ! If the nearest parent point is a land point,
+             ! Take the value from its nearest parent point.
+             if( nint(clu(inear(i,j),jnear(i,j)))/=iswater ) then
+                nfield(i,j)=cfield(inear(i,j),jnear(i,j))
+                wtmp=1.0
+             ! If there are some land points and some water points, take the value from its nearest parent land point.
+             else
+                if( nint(clu(II(i,j),JJ(i,j)))/=iswater .and. W1(i,j)>=wtmp ) then
+                   nfield(i,j)=cfield(II(i,j),JJ(i,j))
+                   wtmp=W1(i,j)
+                end if
+                if( nint(clu(II(i,j)+1,JJ(i,j)))/=iswater .and. W2(i,j)>=wtmp )  then
+                   nfield(i,j)=cfield(II(i,j)+1,JJ(i,j))
+                   wtmp=W2(i,j)
+                end if
+                if( nint(clu(II(i,j)+a,JJ(i,j)-1))/=iswater .and. W3(i,j)>=wtmp ) then
+                   nfield(i,j)=cfield(II(i,j)+a,JJ(i,j)-1)
+                   wtmp=W3(i,j)
+                end if
+                if( nint(clu(II(i,j)+a,JJ(i,j)+1))/=iswater .and. W4(i,j)>=wtmp ) then
+                   nfield(i,j)=cfield(II(i,j)+a,JJ(i,j)+1)
+                   wtmp=W4(i,j)
+                end if
+             end if
+             ! If the surrounding coarse values are all WATER points, i.e. this is a 1-cell island,
+             ! Use the defval, if a reasonable default value (defval) is provided. 
+             ! Or, just take its nearest parent point anyway.
+             if (wtmp<0.)then
+                call wrf_debug(100,'WARNING: Land child cell surrounded by all water parent points.')
+                write(message,*) 'At i,j,nlu(i,j),II,JJ=',i,j,nlu(i,j),II(i,j),JJ(i,j)
+                call wrf_debug(100,message)
+                if( abs(-999.99-defvalno) > 1.e-6) then
+                   nfield(i,j)=defvalno
+                   write(message,*) 'Set nfield with the provided default value: ',nfield(i,j)
+                   call wrf_debug(100,message)
+                else
+                   nfield(i,j)=cfield(inear(i,j),jnear(i,j))
+                   write(message,*) 'Fill nfield with its nearest parent point anyway',nfield(i,j)
+                   call wrf_debug(100,message)
+                end if
+             end if
+          end if
+       enddo interploop
+    end do bigj
+  end subroutine c2n_nearmask2d
+
+  subroutine c2n_inearmask2d (inear,jnear,II,JJ,W1,W2,W3,W4,    &
+       cfield,nfield,imask,     &
+       clu,nlu,cflag,nflag,defvalyes,defvalno, &
+       cims, cime, cjms, cjme,   &
+       nids, nide, njds, njde,   &
+       nims, nime, njms, njme,   &
+       nits, nite, njts, njte, hgrid)
+    implicit none
+    logical, intent(in) :: hgrid
+    integer, intent(in), dimension(nims:nime,njms:njme) :: inear,jnear
+    real, intent(in), dimension(nims:nime,njms:njme) :: &
+         W1,W2,W3,W4
+    integer, intent(in), dimension(nims:nime,njms:njme) :: II,JJ
+
+    integer, intent(in):: cims, cime, cjms, cjme,   &
+         nids, nide, njds, njde,   &
+         nims, nime, njms, njme,   &
+         nits, nite, njts, njte
+    integer, intent(in), dimension(nims:nime,njms:njme) :: imask
+    integer, intent(in) :: cfield(cims:cime,cjms:cjme)
+    integer, intent(out) :: nfield(nims:nime,njms:njme)
+
+    real, intent(in) :: clu(cims:cime,cjms:cjme)
+    real, intent(in) :: nlu(nims:nime,njms:njme)
+    integer, intent(in) :: cflag, nflag
+    integer, intent(in) :: defvalyes,defvalno
+
+    integer :: iswater
+
+    character*255 :: message
+    integer :: icount
+    real :: wtmp
+
+    integer :: j,i,a,nx
+
+    iswater=nflag
+
+    nx=min(nide-1,nite)-max(nids,nits)+1
+
+    bigj: do j=max(njds,njts),min(njde-1,njte)
+       interploop: do i=max(nids,nits),min(nide-1,nite)
+          if(imask(i,j)/=0) cycle interploop
+          if(hgrid) then
+             a=1-mod(JJ(i,j),2)
+          else
+             a=mod(JJ(i,j),2)
+          endif
+          ! Nested cell is a water cell.
+          if(NINT(nlu(i,j))==iswater)then
+             wtmp=-1.0
+             ! If the nearest parent point is a WATER point,
+             ! Take the value from its nearest parent point.
+             if( nint(clu(inear(i,j),jnear(i,j)))==iswater ) then
+                nfield(i,j)=cfield(inear(i,j),jnear(i,j))
+                wtmp=1.0
+             ! If there are some land points and some water points, take the value from its nearest parent water point.
+             else
+                if( nint(clu(II(i,j),JJ(i,j)))==iswater .and. W1(i,j)>=wtmp ) then
+                   nfield(i,j)=cfield(II(i,j),JJ(i,j))
+                   wtmp=W1(i,j)
+                end if
+                if( nint(clu(II(i,j)+1,JJ(i,j)))==iswater .and. W2(i,j)>=wtmp )  then
+                   nfield(i,j)=cfield(II(i,j)+1,JJ(i,j))
+                   wtmp=W2(i,j)
+                end if
+                if( nint(clu(II(i,j)+a,JJ(i,j)-1))==iswater .and. W3(i,j)>=wtmp ) then
+                   nfield(i,j)=cfield(II(i,j)+a,JJ(i,j)-1)
+                   wtmp=W3(i,j)
+                end if
+                if( nint(clu(II(i,j)+a,JJ(i,j)+1))==iswater .and. W4(i,j)>=wtmp ) then
+                   nfield(i,j)=cfield(II(i,j)+a,JJ(i,j)+1)
+                   wtmp=W4(i,j)
+                end if
+             end if
+             ! If the surrounding coarse values are all LAND points, i.e. this is a 1-cell lake,
+             ! Use the defval, if a reasonable default value (defval) is provided. 
+             ! Or, just take its nearest parent point anyway.
+             if (wtmp<0.)then
+                call wrf_debug(100,'WARNING: Water child cell surrounded by all land parent points.')
+                write(message,*) 'At i,j,nlu(i,j),II,JJ=',i,j,nlu(i,j),II(i,j),JJ(i,j)
+                call wrf_debug(100,message)
+                if( abs(-999-defvalyes) > 1.e-6) then
+                   nfield(i,j)=defvalyes
+                   write(message,*) 'Set nfield with the provided default value: ',nfield(i,j)
+                   call wrf_debug(100,message)
+                else
+                   nfield(i,j)=cfield(inear(i,j),jnear(i,j))
+                   write(message,*) 'Fill nfield with its nearest parent point anyway',nfield(i,j)
+                   call wrf_debug(100,message)
+                end if
+             end if
+          ! Nested cell is a land cell.
+          else if(NINT(nlu(i,j))/=iswater)then
+             wtmp=-1.0
+             ! If the nearest parent point is a land point,
+             ! Take the value from its nearest parent point.
+             if( nint(clu(inear(i,j),jnear(i,j)))/=iswater ) then
+                nfield(i,j)=cfield(inear(i,j),jnear(i,j))
+                wtmp=1.0
+             ! If there are some land points and some water points, take the value from its nearest parent land point.
+             else
+                if( nint(clu(II(i,j),JJ(i,j)))/=iswater .and. W1(i,j)>=wtmp ) then
+                   nfield(i,j)=cfield(II(i,j),JJ(i,j))
+                   wtmp=W1(i,j)
+                end if
+                if( nint(clu(II(i,j)+1,JJ(i,j)))/=iswater .and. W2(i,j)>=wtmp )  then
+                   nfield(i,j)=cfield(II(i,j)+1,JJ(i,j))
+                   wtmp=W2(i,j)
+                end if
+                if( nint(clu(II(i,j)+a,JJ(i,j)-1))/=iswater .and. W3(i,j)>=wtmp ) then
+                   nfield(i,j)=cfield(II(i,j)+a,JJ(i,j)-1)
+                   wtmp=W3(i,j)
+                end if
+                if( nint(clu(II(i,j)+a,JJ(i,j)+1))/=iswater .and. W4(i,j)>=wtmp ) then
+                   nfield(i,j)=cfield(II(i,j)+a,JJ(i,j)+1)
+                   wtmp=W4(i,j)
+                end if
+             end if
+             ! If the surrounding coarse values are all WATER points, i.e. this is a 1-cell island,
+             ! Use the defval, if a reasonable default value (defval) is provided. 
+             ! Or, just take its nearest parent point anyway.
+             if (wtmp<0.)then
+                call wrf_debug(100,'WARNING: Land child cell surrounded by all water parent points.')
+                write(message,*) 'At i,j,nlu(i,j),II,JJ=',i,j,nlu(i,j),II(i,j),JJ(i,j)
+                call wrf_debug(100,message)
+                if( abs(-999-defvalno) > 1.e-6) then
+                   nfield(i,j)=defvalno
+                   write(message,*) 'Set nfield with the provided default value: ',nfield(i,j)
+                   call wrf_debug(100,message)
+                else
+                   nfield(i,j)=cfield(inear(i,j),jnear(i,j))
+                   write(message,*) 'Fill nfield with its nearest parent point anyway',nfield(i,j)
+                   call wrf_debug(100,message)
+                end if
+             end if
+          end if
+       enddo interploop
+    end do bigj
+  end subroutine c2n_inearmask2d
+
 
   ! ********************************************************************
   ! subs *_COPY3D -- horizontally interpolate but do not vertically
@@ -845,7 +1279,7 @@ contains
        enddo
     endif
   end subroutine c2b_copy3d
-  
+
   subroutine n2c_copy3d (&
        cfield,nfield,ipos,jpos,  &
        cids, cide, cjds, cjde, ckds, ckde,   &
@@ -987,6 +1421,601 @@ contains
        enddo interploop
     end do bigj
   end subroutine c2n_copy3d
+
+  subroutine c2n_copymask3d (II,JJ,W1,W2,W3,W4,    &
+       cfield,nfield,imask,      &
+       clu,nlu,cflag,nflag,defvalyes,defvalno, &
+       cims, cime, cjms, cjme, ckms, ckme,   &
+       nids, nide, njds, njde, nkds, nkde,   &
+       nims, nime, njms, njme, nkms, nkme,   &
+       nits, nite, njts, njte, nkts, nkte,   &
+       hgrid)
+    implicit none
+    real, intent(in), dimension(nims:nime,njms:njme) :: &
+         W1,W2,W3,W4
+    integer, intent(in), dimension(nims:nime,njms:njme) :: II,JJ
+    logical, intent(in) :: hgrid
+    integer, intent(in):: cims, cime, cjms, cjme, ckms, ckme,   &
+         nids, nide, njds, njde, nkds, nkde,   &
+         nims, nime, njms, njme, nkms, nkme,   &
+         nits, nite, njts, njte, nkts, nkte
+    integer, intent(in), dimension(nims:nime,njms:njme) :: imask
+    real, intent(in) :: cfield(cims:cime,cjms:cjme,ckms:ckme)
+    real, intent(out) :: nfield(nims:nime,njms:njme,nkms:nkme)
+
+    real, intent(in) :: clu(cims:cime,cjms:cjme)
+    real, intent(in) :: nlu(nims:nime,njms:njme)
+    integer, intent(in) :: cflag, nflag
+    real, intent(in) :: defvalyes,defvalno
+
+    integer :: iswater
+
+    character*255 :: message
+    integer :: icount
+    real :: sumtmp
+
+    integer :: j,i,a,nx,nz,k
+
+    iswater=nflag
+
+    nx=min(nide-1,nite)-max(nids,nits)+1
+    nz=nkde-nkds+1
+
+    bigj: do j=max(njds,njts),min(njde-1,njte)
+       interploop: do i=max(nids,nits),min(nide-1,nite)
+          if(imask(i,j)/=0) cycle interploop
+          kinterploop: do k=nkds,nkde
+             if(hgrid) then
+                a=1-mod(JJ(i,j),2)
+             else
+                a=mod(JJ(i,j),2)
+             endif
+             ! Nested cell is a water cell.
+             if(NINT(nlu(i,j))==iswater)then
+                ! If the surrounding coarse values are all LAND points, i.e. this is a 1-cell lake,
+                ! use the defval, if a reasonable default value (defval) is provided, otherwise no better way to
+                ! come up with the value than to do a simple 4-pt interpolation.
+                if( nint(clu(II(i,j),JJ(i,j)))/=iswater   .and.   &
+                    nint(clu(II(i,j)+1,JJ(i,j)))/=iswater .and.   &
+                    nint(clu(II(i,j)+a,JJ(i,j)-1))/=iswater .and. &
+                    nint(clu(II(i,j)+a,JJ(i,j)+1))/=iswater ) then
+                   call wrf_debug(100,'WARNING: Water child cell surrounded by all land parent points.')
+                   write(message,*) 'At i,j,nlu(i,j),II,JJ=',i,j,nlu(i,j),II(i,j),JJ(i,j)
+                   call wrf_debug(100,message)
+                   if( abs(-999.99-defvalyes) > 1.e-6) then
+                      nfield(i,j,k)=defvalyes
+                      write(message,*) 'Set nfield with the provided default value: ',nfield(i,j,k)
+                      call wrf_debug(100,message)
+                   else
+                      nfield(i,j,k) = ICOPY(cfield,i,j,k)
+                      write(message,*) 'Fill nfield from a simple 4-pt interpolation',nfield(i,j,k)
+                      call wrf_debug(100,message)
+                   end if
+                ! If the surrounding coarse values are all WATER points,
+                ! i.e. open water, this is a simple 4-pt interpolation.
+                else if( nint(clu(II(i,j),JJ(i,j)))==iswater   .and.   &
+                         nint(clu(II(i,j)+1,JJ(i,j)))==iswater .and.   &
+                         nint(clu(II(i,j)+a,JJ(i,j)-1))==iswater .and. &
+                         nint(clu(II(i,j)+a,JJ(i,j)+1))==iswater ) then
+                   nfield(i,j,k) = ICOPY(cfield,i,j,k)
+                ! If there are some land points and some water points, take an average.
+                else
+                   icount=0
+                   sumtmp=0.
+                   if ( nint(clu(ii(i,j),jj(i,j)))==iswater ) then
+                      icount = icount + 1
+                      sumtmp = sumtmp + cfield(ii(i,j),jj(i,j),k)
+                   end if
+                   if ( nint(clu(ii(i,j)+1,jj(i,j)))==iswater ) then
+                      icount = icount + 1
+                      sumtmp = sumtmp + cfield(ii(i,j)+1,jj(i,j),k)
+                   end if
+                   if ( nint(clu(ii(i,j)+a,jj(i,j)-1))==iswater ) then
+                      icount = icount + 1
+                      sumtmp = sumtmp + cfield(ii(i,j),jj(i,j)-1,k)
+                   end if
+                   if ( nint(clu(ii(i,j)+a,jj(i,j)+1))==iswater ) then
+                      icount = icount + 1
+                      sumtmp = sumtmp + cfield(ii(i,j)+a,jj(i,j)+1,k)
+                   end if
+                   nfield(i,j,k) = sumtmp / real ( icount )
+                end if
+             ! Nested cell is a land cell.
+             else if(NINT(nlu(i,j))/=iswater)then
+                ! If the surrounding coarse values are all WATER points, i.e. this is a 1-cell island,
+                ! use the defval, if a reasonable default value (defval) is provided, otherwise no better way to
+                ! come up with the value than to do a simple 4-pt interpolation.
+                if( nint(clu(II(i,j),JJ(i,j)))==iswater   .and.   &
+                    nint(clu(II(i,j)+1,JJ(i,j)))==iswater .and.   &
+                    nint(clu(II(i,j)+a,JJ(i,j)-1))==iswater .and. &
+                    nint(clu(II(i,j)+a,JJ(i,j)+1))==iswater ) then
+                   call wrf_debug(100,'WARNING: Land child cell surrounded by all water parent points.')
+                   write(message,*) 'At i,j,nlu(i,j),II,JJ=',i,j,nlu(i,j),II(i,j),JJ(i,j)
+                   call wrf_debug(100,message)
+                   if( abs(-999.99-defvalno) > 1.e-6) then
+                      nfield(i,j,k)=defvalno
+                      write(message,*) 'Set nfield with the provided default value: ',nfield(i,j,k)
+                      call wrf_debug(100,message)
+                   else
+                      nfield(i,j,k) = ICOPY(cfield,i,j,k)
+                      write(message,*) 'Fill nfield from a simple 4-pt interpolation',nfield(i,j,k)
+                      call wrf_debug(100,message)
+                   end if
+                ! If the surrounding coarse values are all LAND points,
+                ! this is a simple 4-pt interpolation.
+                 else if( nint(clu(II(i,j),JJ(i,j)))/=iswater   .and.   &
+                          nint(clu(II(i,j)+1,JJ(i,j)))/=iswater .and.   &
+                          nint(clu(II(i,j)+a,JJ(i,j)-1))/=iswater .and. &
+                          nint(clu(II(i,j)+a,JJ(i,j)+1))/=iswater ) then
+                   nfield(i,j,k) = ICOPY(cfield,i,j,k)
+                ! If there are some land points and some water points, take an average.
+                else
+                   icount=0
+                   sumtmp=0.
+                   if ( nint(clu(ii(i,j),jj(i,j)))/=iswater ) then
+                      icount = icount + 1
+                      sumtmp = sumtmp + cfield(ii(i,j),jj(i,j),k)
+                   end if
+                   if ( nint(clu(ii(i,j)+1,jj(i,j)))/=iswater ) then
+                      icount = icount + 1
+                      sumtmp = sumtmp + cfield(ii(i,j)+1,jj(i,j),k)
+                   end if
+                   if ( nint(clu(ii(i,j)+a,jj(i,j)-1))/=iswater ) then
+                      icount = icount + 1
+                      sumtmp = sumtmp + cfield(ii(i,j),jj(i,j)-1,k)
+                   end if
+                   if ( nint(clu(ii(i,j)+a,jj(i,j)+1))/=iswater ) then
+                      icount = icount + 1
+                      sumtmp = sumtmp + cfield(ii(i,j)+a,jj(i,j)+1,k)
+                   end if
+                   nfield(i,j,k) = sumtmp / real ( icount )
+                end if
+             end if
+          enddo kinterploop
+       enddo interploop
+    end do bigj
+  end subroutine c2n_copymask3d
+
+  subroutine c2n_copymask3dikj (II,JJ,W1,W2,W3,W4,    &
+       cfield,nfield,imask,      &
+       clu,nlu,cflag,nflag,defvalyes,defvalno, &
+       cims, cime, cjms, cjme, ckms, ckme,   &
+       nids, nide, njds, njde, nkds, nkde,   &
+       nims, nime, njms, njme, nkms, nkme,   &
+       nits, nite, njts, njte, nkts, nkte,   &
+       hgrid)
+    implicit none
+    real, intent(in), dimension(nims:nime,njms:njme) :: &
+         W1,W2,W3,W4
+    integer, intent(in), dimension(nims:nime,njms:njme) :: II,JJ
+    logical, intent(in) :: hgrid
+    integer, intent(in):: cims, cime, cjms, cjme, ckms, ckme,   &
+         nids, nide, njds, njde, nkds, nkde,   &
+         nims, nime, njms, njme, nkms, nkme,   &
+         nits, nite, njts, njte, nkts, nkte
+    integer, intent(in), dimension(nims:nime,njms:njme) :: imask
+    real, intent(in) :: cfield(cims:cime,ckms:ckme,cjms:cjme)
+    real, intent(out) :: nfield(nims:nime,nkms:nkme,njms:njme)
+
+    real, intent(in) :: clu(cims:cime,cjms:cjme)
+    real, intent(in) :: nlu(nims:nime,njms:njme)
+    integer, intent(in) :: cflag, nflag
+    real, intent(in) :: defvalyes, defvalno
+
+    integer :: iswater
+
+    character*255 :: message
+    integer :: icount
+    real :: sumtmp
+
+    integer :: j,i,a,nx,nz,k
+
+    iswater=nflag
+
+    nx=min(nide-1,nite)-max(nids,nits)+1
+    nz=nkde-nkds+1
+
+    bigj: do j=max(njds,njts),min(njde-1,njte)
+       interploop: do i=max(nids,nits),min(nide-1,nite)
+          if(imask(i,j)/=0) cycle interploop
+          kinterploop: do k=nkds,nkde
+             if(hgrid) then
+                a=1-mod(JJ(i,j),2)
+             else
+                a=mod(JJ(i,j),2)
+             endif
+             ! Nested cell is a water cell.
+             if(NINT(nlu(i,j))==iswater)then
+                ! If the surrounding coarse values are all LAND points, i.e. this is a 1-cell lake,
+                ! use the defval, if a reasonable default value (defval) is provided, otherwise no better way to
+                ! come up with the value than to do a simple 4-pt interpolation.
+                if( nint(clu(II(i,j),JJ(i,j)))/=iswater   .and.   &
+                    nint(clu(II(i,j)+1,JJ(i,j)))/=iswater .and.   &
+                    nint(clu(II(i,j)+a,JJ(i,j)-1))/=iswater .and. &
+                    nint(clu(II(i,j)+a,JJ(i,j)+1))/=iswater ) then
+                   call wrf_debug(100,'WARNING: Water child cell surrounded by all land parent points.')
+                   write(message,*) 'At i,j,nlu(i,j),II,JJ=',i,j,nlu(i,j),II(i,j),JJ(i,j)
+                   call wrf_debug(100,message)
+                   if( abs(-999.99-defvalyes) > 1.e-6) then
+                      nfield(i,k,j)=defvalyes
+                      write(message,*) 'Set nfield with the provided default value: ',nfield(i,k,j)
+                      call wrf_debug(100,message)
+                   else
+                      nfield(i,k,j) = IKJCOPY(cfield,i,k,j)
+                      write(message,*) 'Fill nfield from a simple 4-pt interpolation',nfield(i,k,j)
+                      call wrf_debug(100,message)
+                   end if
+                ! If the surrounding coarse values are all WATER points,
+                ! i.e. open water, this is a simple 4-pt interpolation.
+                else if( nint(clu(II(i,j),JJ(i,j)))==iswater   .and.   &
+                         nint(clu(II(i,j)+1,JJ(i,j)))==iswater .and.   &
+                         nint(clu(II(i,j)+a,JJ(i,j)-1))==iswater .and. &
+                         nint(clu(II(i,j)+a,JJ(i,j)+1))==iswater ) then
+                   nfield(i,k,j) = IKJCOPY(cfield,i,k,j)
+                ! If there are some land points and some water points, take an average.
+                else
+                   icount=0
+                   sumtmp=0.
+                   if ( nint(clu(ii(i,j),jj(i,j)))==iswater ) then
+                      icount = icount + 1
+                      sumtmp = sumtmp + cfield(ii(i,j),k,jj(i,j))
+                   end if
+                   if ( nint(clu(ii(i,j)+1,jj(i,j)))==iswater ) then
+                      icount = icount + 1
+                      sumtmp = sumtmp + cfield(ii(i,j)+1,k,jj(i,j))
+                   end if
+                   if ( nint(clu(ii(i,j)+a,jj(i,j)-1))==iswater ) then
+                      icount = icount + 1
+                      sumtmp = sumtmp + cfield(ii(i,j),k,jj(i,j)-1)
+                   end if
+                   if ( nint(clu(ii(i,j)+a,jj(i,j)+1))==iswater ) then
+                      icount = icount + 1
+                      sumtmp = sumtmp + cfield(ii(i,j)+a,k,jj(i,j)+1)
+                   end if
+                   nfield(i,k,j) = sumtmp / real ( icount )
+                end if
+             ! Nested cell is a land cell.
+             else if(NINT(nlu(i,j))/=iswater)then
+                ! If the surrounding coarse values are all WATER points, i.e. this is a 1-cell island,
+                ! use the defval, if a reasonable default value (defval) is provided, otherwise no better way to
+                ! come up with the value than to do a simple 4-pt interpolation.
+                if( nint(clu(II(i,j),JJ(i,j)))==iswater   .and.   &
+                    nint(clu(II(i,j)+1,JJ(i,j)))==iswater .and.   &
+                    nint(clu(II(i,j)+a,JJ(i,j)-1))==iswater .and. &
+                    nint(clu(II(i,j)+a,JJ(i,j)+1))==iswater ) then
+                   call wrf_debug(100,'WARNING: Land child cell surrounded by all water parent points.')
+                   write(message,*) 'At i,j,nlu(i,j),II,JJ=',i,j,nlu(i,j),II(i,j),JJ(i,j)
+                   call wrf_debug(100,message)
+                   if( abs(-999.99-defvalno) > 1.e-6) then
+                      nfield(i,k,j)=defvalno
+                      write(message,*) 'Set nfield with the provided default value: ',nfield(i,k,j)
+                      call wrf_debug(100,message)
+                   else
+                      nfield(i,k,j) = IKJCOPY(cfield,i,k,j)
+                      write(message,*) 'Fill nfield from a simple 4-pt interpolation',nfield(i,k,j)
+                      call wrf_debug(100,message)
+                   end if
+                ! If the surrounding coarse values are all LAND points,
+                ! this is a simple 4-pt interpolation.
+                 else if( nint(clu(II(i,j),JJ(i,j)))/=iswater   .and.   &
+                          nint(clu(II(i,j)+1,JJ(i,j)))/=iswater .and.   &
+                          nint(clu(II(i,j)+a,JJ(i,j)-1))/=iswater .and. &
+                          nint(clu(II(i,j)+a,JJ(i,j)+1))/=iswater ) then
+                   nfield(i,k,j) = IKJCOPY(cfield,i,k,j)
+                ! If there are some land points and some water points, take an average.
+                else
+                   icount=0
+                   sumtmp=0.
+                   if ( nint(clu(ii(i,j),jj(i,j)))/=iswater ) then
+                      icount = icount + 1
+                      sumtmp = sumtmp + cfield(ii(i,j),k,jj(i,j))
+                   end if
+                   if ( nint(clu(ii(i,j)+1,jj(i,j)))/=iswater ) then
+                      icount = icount + 1
+                      sumtmp = sumtmp + cfield(ii(i,j)+1,k,jj(i,j))
+                   end if
+                   if ( nint(clu(ii(i,j)+a,jj(i,j)-1))/=iswater ) then
+                      icount = icount + 1
+                      sumtmp = sumtmp + cfield(ii(i,j),k,jj(i,j)-1)
+                   end if
+                   if ( nint(clu(ii(i,j)+a,jj(i,j)+1))/=iswater ) then
+                      icount = icount + 1
+                      sumtmp = sumtmp + cfield(ii(i,j)+a,k,jj(i,j)+1)
+                   end if
+                   nfield(i,k,j) = sumtmp / real ( icount )
+                end if
+             end if
+          enddo kinterploop
+       enddo interploop
+    end do bigj
+  end subroutine c2n_copymask3dikj
+
+  subroutine c2n_nearmask3d (inear,jnear,II,JJ,W1,W2,W3,W4,    &
+       cfield,nfield,imask,     &
+       clu,nlu,cflag,nflag,defvalyes,defvalno, &
+       cims, cime, cjms, cjme, ckms, ckme,   &
+       nids, nide, njds, njde, nkds, nkde,   &
+       nims, nime, njms, njme, nkms, nkme,   &
+       nits, nite, njts, njte, nkts, nkte,   &
+       hgrid)
+    implicit none
+    logical, intent(in) :: hgrid
+    integer, intent(in), dimension(nims:nime,njms:njme) :: inear,jnear
+    real, intent(in), dimension(nims:nime,njms:njme) :: &
+         W1,W2,W3,W4
+    integer, intent(in), dimension(nims:nime,njms:njme) :: II,JJ
+
+    integer, intent(in):: cims, cime, cjms, cjme, ckms, ckme,   &
+         nids, nide, njds, njde, nkds, nkde,   &
+         nims, nime, njms, njme, nkms, nkme,   &
+         nits, nite, njts, njte, nkts, nkte
+    integer, intent(in), dimension(nims:nime,njms:njme) :: imask
+    real, intent(in) :: cfield(cims:cime,cjms:cjme,ckms:ckme)
+    real, intent(out) :: nfield(nims:nime,njms:njme,nkms:nkme)
+
+    real, intent(in) :: clu(cims:cime,cjms:cjme)
+    real, intent(in) :: nlu(nims:nime,njms:njme)
+    integer, intent(in) :: cflag, nflag
+    real, intent(in) :: defvalyes,defvalno
+
+    integer :: iswater
+
+    character*255 :: message
+    integer :: icount
+    real :: wtmp
+
+    integer :: k,j,i,a,nx
+
+    iswater=nflag
+
+    nx=min(nide-1,nite)-max(nids,nits)+1
+
+    bigj: do j=max(njds,njts),min(njde-1,njte)
+       interploop: do i=max(nids,nits),min(nide-1,nite)
+          if(imask(i,j)/=0) cycle interploop
+          kinterploop: do k=nkds,nkde
+          if(hgrid) then
+             a=1-mod(JJ(i,j),2)
+          else
+             a=mod(JJ(i,j),2)
+          endif
+          ! Nested cell is a water cell.
+          if(NINT(nlu(i,j))==iswater)then
+             wtmp=-1.0
+             ! If the nearest parent point is a WATER point,
+             ! Take the value from its nearest parent point.
+             if( nint(clu(inear(i,j),jnear(i,j)))==iswater ) then
+                nfield(i,j,k)=cfield(inear(i,j),jnear(i,j),k)
+                wtmp=1.0
+             ! If there are some land points and some water points, take the value from its nearest parent water point.
+             else
+                if( nint(clu(II(i,j),JJ(i,j)))==iswater .and. W1(i,j)>=wtmp ) then
+                   nfield(i,j,k)=cfield(II(i,j),JJ(i,j),k)
+                   wtmp=W1(i,j)
+                end if
+                if( nint(clu(II(i,j)+1,JJ(i,j)))==iswater .and. W2(i,j)>=wtmp )  then
+                   nfield(i,j,k)=cfield(II(i,j)+1,JJ(i,j),k)
+                   wtmp=W2(i,j)
+                end if
+                if( nint(clu(II(i,j)+a,JJ(i,j)-1))==iswater .and. W3(i,j)>=wtmp ) then
+                   nfield(i,j,k)=cfield(II(i,j)+a,JJ(i,j)-1,k)
+                   wtmp=W3(i,j)
+                end if
+                if( nint(clu(II(i,j)+a,JJ(i,j)+1))==iswater .and. W4(i,j)>=wtmp ) then
+                   nfield(i,j,k)=cfield(II(i,j)+a,JJ(i,j)+1,k)
+                   wtmp=W4(i,j)
+                end if
+             end if
+             ! If the surrounding coarse values are all LAND points, i.e. this is a 1-cell lake,
+             ! Use the defval, if a reasonable default value (defval) is provided. 
+             ! Or, just take its nearest parent point anyway.
+             if (wtmp<0.)then
+                call wrf_debug(100,'WARNING: Water child cell surrounded by all land parent points.')
+                write(message,*) 'At i,j,nlu(i,j),II,JJ=',i,j,nlu(i,j),II(i,j),JJ(i,j)
+                call wrf_debug(100,message)
+                if( abs(-999.99-defvalyes) > 1.e-6) then
+                   nfield(i,j,k)=defvalyes
+                   write(message,*) 'Set nfield with the provided default value: ',nfield(i,j,k)
+                   call wrf_debug(100,message)
+                else
+                   nfield(i,j,k)=cfield(inear(i,j),jnear(i,j),k)
+                   write(message,*) 'Fill nfield with its nearest parent point anyway',nfield(i,j,k)
+                   call wrf_debug(100,message)
+                end if
+             end if
+          ! Nested cell is a land cell.
+          else if(NINT(nlu(i,j))/=iswater)then
+             wtmp=-1.0
+             ! If the nearest parent point is a land point,
+             ! Take the value from its nearest parent point.
+             if( nint(clu(inear(i,j),jnear(i,j)))/=iswater ) then
+                nfield(i,j,k)=cfield(inear(i,j),jnear(i,j),k)
+                wtmp=1.0
+             ! If there are some land points and some water points, take the value from its nearest parent land point.
+             else
+                if( nint(clu(II(i,j),JJ(i,j)))/=iswater .and. W1(i,j)>=wtmp ) then
+                   nfield(i,j,k)=cfield(II(i,j),JJ(i,j),k)
+                   wtmp=W1(i,j)
+                end if
+                if( nint(clu(II(i,j)+1,JJ(i,j)))/=iswater .and. W2(i,j)>=wtmp )  then
+                   nfield(i,j,k)=cfield(II(i,j)+1,JJ(i,j),k)
+                   wtmp=W2(i,j)
+                end if
+                if( nint(clu(II(i,j)+a,JJ(i,j)-1))/=iswater .and. W3(i,j)>=wtmp ) then
+                   nfield(i,j,k)=cfield(II(i,j)+a,JJ(i,j)-1,k)
+                   wtmp=W3(i,j)
+                end if
+                if( nint(clu(II(i,j)+a,JJ(i,j)+1))/=iswater .and. W4(i,j)>=wtmp ) then
+                   nfield(i,j,k)=cfield(II(i,j)+a,JJ(i,j)+1,k)
+                   wtmp=W4(i,j)
+                end if
+             end if
+             ! If the surrounding coarse values are all WATER points, i.e. this is a 1-cell island,
+             ! Use the defval, if a reasonable default value (defval) is provided. 
+             ! Or, just take its nearest parent point anyway.
+             if (wtmp<0.)then
+                call wrf_debug(100,'WARNING: Land child cell surrounded by all water parent points.')
+                write(message,*) 'At i,j,nlu(i,j),II,JJ=',i,j,nlu(i,j),II(i,j),JJ(i,j)
+                call wrf_debug(100,message)
+                if( abs(-999.99-defvalno) > 1.e-6) then
+                   nfield(i,j,k)=defvalno
+                   write(message,*) 'Set nfield with the provided default value: ',nfield(i,j,k)
+                   call wrf_debug(100,message)
+                else
+                   nfield(i,j,k)=cfield(inear(i,j),jnear(i,j),k)
+                   write(message,*) 'Fill nfield with its nearest parent point anyway',nfield(i,j,k)
+                   call wrf_debug(100,message)
+                end if
+             end if
+          end if
+          enddo kinterploop
+       enddo interploop
+    end do bigj
+  end subroutine c2n_nearmask3d
+
+  subroutine c2n_nearmask3dikj (inear,jnear,II,JJ,W1,W2,W3,W4,    &
+       cfield,nfield,imask,     &
+       clu,nlu,cflag,nflag,defvalyes,defvalno, &
+       cims, cime, cjms, cjme, ckms, ckme,   &
+       nids, nide, njds, njde, nkds, nkde,   &
+       nims, nime, njms, njme, nkms, nkme,   &
+       nits, nite, njts, njte, nkts, nkte,   &
+       hgrid)
+    implicit none
+    logical, intent(in) :: hgrid
+    integer, intent(in), dimension(nims:nime,njms:njme) :: inear,jnear
+    real, intent(in), dimension(nims:nime,njms:njme) :: &
+         W1,W2,W3,W4
+    integer, intent(in), dimension(nims:nime,njms:njme) :: II,JJ
+
+    integer, intent(in):: cims, cime, cjms, cjme, ckms, ckme,   &
+         nids, nide, njds, njde, nkds, nkde,   &
+         nims, nime, njms, njme, nkms, nkme,   &
+         nits, nite, njts, njte, nkts, nkte
+    integer, intent(in), dimension(nims:nime,njms:njme) :: imask
+    real, intent(in) :: cfield(cims:cime,ckms:ckme,cjms:cjme)
+    real, intent(out) :: nfield(nims:nime,nkms:nkme,njms:njme)
+
+    real, intent(in) :: clu(cims:cime,cjms:cjme)
+    real, intent(in) :: nlu(nims:nime,njms:njme)
+    integer, intent(in) :: cflag, nflag
+    real, intent(in) :: defvalyes,defvalno
+
+    integer :: iswater
+
+    character*255 :: message
+    integer :: icount
+    real :: wtmp
+
+    integer :: k,j,i,a,nx
+
+    iswater=nflag
+
+    nx=min(nide-1,nite)-max(nids,nits)+1
+
+    bigj: do j=max(njds,njts),min(njde-1,njte)
+       interploop: do i=max(nids,nits),min(nide-1,nite)
+          if(imask(i,j)/=0) cycle interploop
+          kinterploop: do k=nkds,nkde
+          if(hgrid) then
+             a=1-mod(JJ(i,j),2)
+          else
+             a=mod(JJ(i,j),2)
+          endif
+          ! Nested cell is a water cell.
+          if(NINT(nlu(i,j))==iswater)then
+             wtmp=-1.0
+             ! If the nearest parent point is a WATER point,
+             ! Take the value from its nearest parent point.
+             if( nint(clu(inear(i,j),jnear(i,j)))==iswater ) then
+                nfield(i,k,j)=cfield(inear(i,j),k,jnear(i,j))
+                wtmp=1.0
+             ! If there are some land points and some water points, take the value from its nearest parent water point.
+             else
+                if( nint(clu(II(i,j),JJ(i,j)))==iswater .and. W1(i,j)>=wtmp ) then
+                   nfield(i,k,j)=cfield(II(i,j),k,JJ(i,j))
+                   wtmp=W1(i,j)
+                end if
+                if( nint(clu(II(i,j)+1,JJ(i,j)))==iswater .and. W2(i,j)>=wtmp )  then
+                   nfield(i,k,j)=cfield(II(i,j)+1,k,JJ(i,j))
+                   wtmp=W2(i,j)
+                end if
+                if( nint(clu(II(i,j)+a,JJ(i,j)-1))==iswater .and. W3(i,j)>=wtmp ) then
+                   nfield(i,k,j)=cfield(II(i,j)+a,k,JJ(i,j)-1)
+                   wtmp=W3(i,j)
+                end if
+                if( nint(clu(II(i,j)+a,JJ(i,j)+1))==iswater .and. W4(i,j)>=wtmp ) then
+                   nfield(i,k,j)=cfield(II(i,j)+a,k,JJ(i,j)+1)
+                   wtmp=W4(i,j)
+                end if
+             end if
+             ! If the surrounding coarse values are all LAND points, i.e. this is a 1-cell lake,
+             ! Use the defval, if a reasonable default value (defval) is provided. 
+             ! Or, just take its nearest parent point anyway.
+             if (wtmp<0.)then
+                call wrf_debug(100,'WARNING: Water child cell surrounded by all land parent points.')
+                write(message,*) 'At i,j,nlu(i,j),II,JJ=',i,j,nlu(i,j),II(i,j),JJ(i,j)
+                call wrf_debug(100,message)
+                if( abs(-999.99-defvalyes) > 1.e-6) then
+                   nfield(i,k,j)=defvalyes
+                   write(message,*) 'Set nfield with the provided default value: ',nfield(i,k,j)
+                   call wrf_debug(100,message)
+                else
+                   nfield(i,k,j)=cfield(inear(i,j),k,jnear(i,j))
+                   write(message,*) 'Fill nfield with its nearest parent point anyway',nfield(i,k,j)
+                   call wrf_debug(100,message)
+                end if
+             end if
+          ! Nested cell is a land cell.
+          else if(NINT(nlu(i,j))/=iswater)then
+             wtmp=-1.0
+             ! If the nearest parent point is a land point,
+             ! Take the value from its nearest parent point.
+             if( nint(clu(inear(i,j),jnear(i,j)))/=iswater ) then
+                nfield(i,k,j)=cfield(inear(i,j),k,jnear(i,j))
+                wtmp=1.0
+             ! If there are some land points and some water points, take the value from its nearest parent land point.
+             else
+                if( nint(clu(II(i,j),JJ(i,j)))/=iswater .and. W1(i,j)>=wtmp ) then
+                   nfield(i,k,j)=cfield(II(i,j),k,JJ(i,j))
+                   wtmp=W1(i,j)
+                end if
+                if( nint(clu(II(i,j)+1,JJ(i,j)))/=iswater .and. W2(i,j)>=wtmp )  then
+                   nfield(i,k,j)=cfield(II(i,j)+1,k,JJ(i,j))
+                   wtmp=W2(i,j)
+                end if
+                if( nint(clu(II(i,j)+a,JJ(i,j)-1))/=iswater .and. W3(i,j)>=wtmp ) then
+                   nfield(i,k,j)=cfield(II(i,j)+a,k,JJ(i,j)-1)
+                   wtmp=W3(i,j)
+                end if
+                if( nint(clu(II(i,j)+a,JJ(i,j)+1))/=iswater .and. W4(i,j)>=wtmp ) then
+                   nfield(i,k,j)=cfield(II(i,j)+a,k,JJ(i,j)+1)
+                   wtmp=W4(i,j)
+                end if
+             end if
+             ! If the surrounding coarse values are all WATER points, i.e. this is a 1-cell island,
+             ! Use the defval, if a reasonable default value (defval) is provided. 
+             ! Or, just take its nearest parent point anyway.
+             if (wtmp<0.)then
+                call wrf_debug(100,'WARNING: Land child cell surrounded by all water parent points.')
+                write(message,*) 'At i,j,nlu(i,j),II,JJ=',i,j,nlu(i,j),II(i,j),JJ(i,j)
+                call wrf_debug(100,message)
+                if( abs(-999.99-defvalno) > 1.e-6) then
+                   nfield(i,k,j)=defvalno
+                   write(message,*) 'Set nfield with the provided default value: ',nfield(i,k,j)
+                   call wrf_debug(100,message)
+                else
+                   nfield(i,k,j)=cfield(inear(i,j),k,jnear(i,j))
+                   write(message,*) 'Fill nfield with its nearest parent point anyway',nfield(i,k,j)
+                   call wrf_debug(100,message)
+                end if
+             end if
+          end if
+          enddo kinterploop
+       enddo interploop
+    end do bigj
+  end subroutine c2n_nearmask3dikj
+
 
   ! ********************************************************************
   ! subs *_MASS -- horizontally and vertically interpolate.  Vertical

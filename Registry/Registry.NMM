@@ -94,8 +94,8 @@ package tracer_option_2 ntracers==4 - szj:szj1,szj2,szj3,szj4;s1z:s1z1,s1z2,s1z3
 # It is reauired that LU_INDEX appears before any variable that is
 # interpolated with a mask, as lu_index supplies that mask.
 #
-state    real  LU_INDEX         ij      misc        1         f     irhd=(DownNear)u=(UpNear)   "LU_INDEX"              "LAND USE CATEGORY"         ""
-state    real  LU_MASK          ij      misc        1         f     i3h     "LU_MASK"              "0 land 1 water"         ""
+state    real  LU_INDEX         ij      misc        1         f     irhd=(NoInterp)u=(NoInterp)f=(NoInterp)     "LU_INDEX"             "LAND USE CATEGORY"         ""
+state    real  LU_MASK          ij      misc        1         f     i3hd=(NoInterp)u=(NoInterp)f=(NoInterp)     "LU_MASK"              "0 land 1 water"         ""
 ################################################################################
 ################################################################################
 
@@ -261,9 +261,10 @@ state  real   PSTD      k      dyn_nmm     1      Z      r
 state  integer KZMAX    -      dyn_nmm     -      -      r
 #end of HWRF: 
 
-state  real HRES_FIS    ij     dyn_nmm     1      -      rd=(NoInterp)u=(NoInterp)f=(NoInterp)  "HRES_FIS" "HIGH RESOLUTION TERRAIN DATA FOR NESTED DOMAIN"
-state  real HRES_AVC    ij     dyn_nmm     1      -      -  "HRES_AVC" "TEMPORARY STORAGE OF HRES_FIS/9.81"
-state  real HRES_LND    ij     dyn_nmm     1      -      -  "HRES_LND" "TEMPORARY STORAGE OF HIGH-RES LND"
+state  real HRES_FIS       ij     dyn_nmm     1      -      rd=(NoInterp)u=(NoInterp)f=(NoInterp)  "HRES_FIS"        "HIGH RESOLUTION TERRAIN DATA FOR NESTED DOMAIN"   ""
+state  real HRES_AVC       ij     dyn_nmm     1      -      -                                      "HRES_AVC"        "TEMPORARY STORAGE OF HRES_FIS/9.81"               ""
+state  real HRES_LND       ij     dyn_nmm     1      -      rd=(NoInterp)u=(NoInterp)f=(NoInterp)  "HRES_LND"        "TEMPORARY STORAGE OF HIGH-RES LND"                ""
+state  real HRES_LU_INDEX  ij     dyn_nmm     1      f      rd=(NoInterp)u=(NoInterp)f=(NoInterp)  "HRES_LU_INDEX"   "TEMPORARY STORAGE OF HIGH-RES LAND USE CATEGORY"  ""
 
 #
 # module_MASKS
@@ -272,8 +273,8 @@ state  real   hbm2      ij     dyn_nmm     1      -      irh0123     "HBM2"    "
 state  real   hbm3      ij     dyn_nmm     1      -      irh     "HBM3"    "Height boundary mask; =0 outer 3 rows on H points"       ""
 state  real   vbm2      ij     dyn_nmm     1      -      irh     "VBM2"    "Velocity boundary mask; =0 outer 2 rows on V points"     ""
 state  real   vbm3      ij     dyn_nmm     1      -      irh     "VBM3"    "Velocity boundary mask; =0 outer 3 rows on V points"     ""
-state  real   sm        ijb     dyn_nmm     1      -      i01rh0123d=(DownNear)f=(BdyNear)  "SM"      "Sea mask; =1 for sea, =0 for land"      ""
-state  real   sice      ij     dyn_nmm     1      f      irh023d=(DownNear)     "SICE"    "Sea ice mask; =1 for sea ice, =0 for no sea ice"         ""
+state  real   sm        ijb     dyn_nmm     1      -      i01rh0123u=(NoInterp)d=(NoInterp)f=(NoInterp)  "SM"      "Sea mask; =1 for sea, =0 for land"      ""
+state  real   sice      ij     dyn_nmm     1      f      irh023d=(DownNearMaskDef:lu_index,iswater,0.,0.)     "SICE"    "Sea ice mask; =1 for sea ice, =0 for no sea ice"         ""
 #
 # module_VRBLS
 #
@@ -394,13 +395,13 @@ state  real   rtop      ijk    dyn_nmm     1      -      r       "RTOP"    "Rd *
 state real  pblh        ij    dyn_nmm   1    -     rh023       "PBLH"     "PBL Height"                           "m"
 state integer lpbl      ij    dyn_nmm   1    -     ir       "LPBL"     "Model layer of PBL top"               ""
 state  real   mixht     ij    dyn_nmm   1    -     rh        "MIXHT"                 "MXL HEIGHT"              "m"
-state  real   ustar     ij    dyn_nmm   1    -     irh023d=(DownNear) "USTAR"    "Friction velocity"                    "m s-1"
-state  real   z0        ij    dyn_nmm   1    -     i01rh023d=(DownNear) "Z0"   "Thermal Roughness length"                    "m"
+state  real   ustar     ij    dyn_nmm   1    -     irh023d=(DownNearMask:lu_index,iswater) "USTAR"    "Friction velocity"                    "m s-1"
+state  real   z0        ij    dyn_nmm   1    -     i01rh023d=(DownNearMask:lu_index,iswater) "Z0"   "Thermal Roughness length"                    "m"
 state  real   mz0       ij    dyn_nmm   1    -       h        "MZ0"       "momentum Roughness length"                     "m"
-state  real   scurx     ij    dyn_nmm   1    -     irh023d=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "SCURX"       "Surface Currents(X)"                    "m s-1"
-state  real   scury     ij    dyn_nmm   1    -     irh023d=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "SCURY"       "Surface Currents(Y)"                     "m s-1"
-state  real   charn     ij    dyn_nmm   1    -     irh023d=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "CHARN"       "Charnock Coeff"                    " "
-state  real   msang     ij    dyn_nmm   1    -     irh023d=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "MSANG"       "Wind/Stress Angle"                    "Radian"
+state  real   scurx     ij    dyn_nmm   1    -     irh023d=(DownNearMask:lu_index,iswater)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "SCURX"       "Surface Currents(X)"                  "m s-1"
+state  real   scury     ij    dyn_nmm   1    -     irh023d=(DownNearMask:lu_index,iswater)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "SCURY"       "Surface Currents(Y)"                  "m s-1"
+state  real   charn     ij    dyn_nmm   1    -     irh023d=(DownNearMask:lu_index,iswater)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "CHARN"       "Charnock Coeff"                       " "
+state  real   msang     ij    dyn_nmm   1    -     irh023d=(DownNearMask:lu_index,iswater)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)      "MSANG"       "Wind/Stress Angle"                    "Radian"
 state  real   rchno     ij    dyn_nmm   1    -     irh023      "RCHNO"       "Richardson number"                    " "
 state  real   zsig1     ij    dyn_nmm   1    -     irh023      "ZSIG1"       "Height of lowest model level"                "m"
 state  real   ulowl     ij    dyn_nmm   1    -     irh023      "ULOWL"       "U at Lowest Level"         "m s-1"
@@ -475,14 +476,14 @@ state  real   epsr      ij    dyn_nmm   1    -     irh023      "EPSR"      "Radi
 state  real   gffc      ij    dyn_nmm   1    -     ir
 state  real   glat      ij    dyn_nmm   1    -     i01rh023    "GLAT"      "Geographic latitude, radians"                    ""
 state  real   glon      ij    dyn_nmm   1    -     i01rh023    "GLON"      "Geographic longitude, radians"                   ""
-state  real   NMM_TSK   ij    dyn_nmm   1    -     i01rh023d=(DownNear)     "TSK"       "Skin temperature"                                "K"
+state  real   NMM_TSK   ij    dyn_nmm   1    -     i01rh023d=(DownNearMask:lu_index,iswater)     "TSK"       "Skin temperature"                                "K"
 state  real   hdac      ij    dyn_nmm   1    -     ir       "HDAC"      "Composite diffusion coeff for mass points"       "s m-1"
 state  real   hdacv     ij    dyn_nmm   1    -     ir       "HDACV"     "Composite diffusion coeff for velocity points"   "s m-1"
-state  real   mxsnal    ij    dyn_nmm   1    -     i01rh023d=(DownNear) "MXSNAL"    "Maximum deep snow albedo"                        ""
+state  real   mxsnal    ij    dyn_nmm   1    -     i01rh023d=(DownNearMask:lu_index,iswater) "MXSNAL"    "Maximum deep snow albedo"                        ""
 state  real   radin     ij    dyn_nmm   1    -     r
 state  real   radot     ij    dyn_nmm   1    -     rh023       "RADOT"     "Radiative emission from surface"                 "W m-2"
 state  real   sigt4     ij    dyn_nmm   1    -     rh023d=(DownCopy)       "SIGT4"     "Stefan-Boltzmann * T**4"                         "W m-2"
-state  real   tg        ij    dyn_nmm   1    -     i01rh023d=(DownNear) "TGROUND"   "Deep ground soil temperature"                    "K"
+state  real   tg        ij    dyn_nmm   1    -     i01rh023d=(DownNearMask:lu_index,iswater) "TGROUND"   "Deep ground soil temperature"                    "K"
 state  real   dfrlg     k     dyn_nmm   1    Z     i01r     "DFRLG"     "Std atmosphere height of model layer interfaces" "m"
 state integer lvl       ij    dyn_nmm   1    -     ir
 state    integer  k22_deep     ij      misc        1         -       -       "K22_DEEP"             "K22 LEVEL FROM DEEPCONVECTION (G3 only)"             ""
@@ -609,20 +610,20 @@ state logical micro_start        -     dyn_nmm   -    -     -
 #
 # module_SOIL.F
 #
-state integer islope    ij    dyn_nmm   1    -     i01rh023d=(DownINear)  "ISLOPE"
+state integer islope    ij    dyn_nmm   1    -     i01rh023d=(DownINearMask:lu_index,iswater)  "ISLOPE"
 state  real   dzsoil    k     dyn_nmm   1    -     irh023      "DZSOIL"    "Thickness of soil layers"         "m"
 state  real   rtdpth    k     dyn_nmm   1    -     i01r
 state  real   sldpth    k     dyn_nmm   1    -     i01rh023    "SLDPTH"    "Depths of centers of soil layers" "m"
-state  real   cmc       ij    dyn_nmm   1    -     i01rh023d=(DownNear) "CMC"       "Canopy moisture"                  "m"
+state  real   cmc       ij    dyn_nmm   1    -     i01rh023d=(DownNearMask:lu_index,iswater) "CMC"       "Canopy moisture"                  "m"
 state  real   grnflx    ij    dyn_nmm   1    -     irh023      "GRNFLX"    "Deep soil heat flux"              "W m-2"
 state  real   pctsno    ij    dyn_nmm   1    -     irh023
-state  real   soiltb    ij    dyn_nmm   1    -     i01rh023d=(DownNear) "SOILTB"    "Deep ground soil temperature"     "K"
-state  real   vegfrc    ij    dyn_nmm   1    -     i014rh023d=(DownNear) "VEGFRC"    "Vegetation fraction"              ""
-state  real   shdmax    ij    dyn_nmm   1    -     ird=(DownNear)        "SHDMAX"        "ANNUAL MAX VEG FRACTION" ""
-state  real   shdmin    ij    dyn_nmm   1    -     ird=(DownNear)        "SHDMIN"        "ANNUAL MIN VEG FRACTION" ""
-state  real   sh2o      ilj   dyn_nmm   1    Z     irh023d=(DownNearIKJ)   "SH2O"      "Unfrozen soil moisture volume fraction"  ""
-state  real   smc       ilj   dyn_nmm   1    Z     irh023d=(DownNearIKJ)   "SMC"       "Soil moisture volume fraction"    ""
-state  real   stc       ilj   dyn_nmm   1    Z     irh023d=(DownNearIKJ)   "STC"       "Soil temperature"                 "K"
+state  real   soiltb    ij    dyn_nmm   1    -     i01rh023d=(DownNearMask:lu_index,iswater) "SOILTB"    "Deep ground soil temperature"     "K"
+state  real   vegfrc    ij    dyn_nmm   1    -     i014rh023d=(DownNearMask:lu_index,iswater) "VEGFRC"    "Vegetation fraction"              ""
+state  real   shdmax    ij    dyn_nmm   1    -     ird=(DownNearMask:lu_index,iswater)        "SHDMAX"        "ANNUAL MAX VEG FRACTION" ""
+state  real   shdmin    ij    dyn_nmm   1    -     ird=(DownNearMask:lu_index,iswater)        "SHDMIN"        "ANNUAL MIN VEG FRACTION" ""
+state  real   sh2o      ilj   dyn_nmm   1    Z     irh023d=(DownNearMaskIKJ:lu_index,iswater)   "SH2O"      "Unfrozen soil moisture volume fraction"  ""
+state  real   smc       ilj   dyn_nmm   1    Z     irh023d=(DownNearMaskIKJ:lu_index,iswater)   "SMC"       "Soil moisture volume fraction"    ""
+state  real   stc       ilj   dyn_nmm   1    Z     irh023d=(DownNearMaskIKJ:lu_index,iswater)   "STC"       "Soil temperature"                 "K"
 #
 # module_GWD.F
 #
@@ -805,14 +806,15 @@ state   real   soilt020            ij    misc          1     -     i1      "SOIL
 state   real   soilt040            ij    misc          1     -     i1      "SOILT040"      "description"  "units"
 state   real   soilt160            ij    misc          1     -     i1      "SOILT160"      "description"  "units"
 state   real   soilt300            ij    misc          1     -     i1      "SOILT300"      "description"  "units"
-state   real   landmask            ij    misc          1     f     i01rhd=(DownNear)   "LANDMASK"      "description"  "units"
+state   real   landmask            ij    misc          1     f     i01rhd=(NoInterp)   "LANDMASK"      "description"  "units"
 state   real   topostdv            ij    misc          1     -     i1      "TOPOSTDV"      "description"  "units"
 state   real   toposlpx            ij    misc          1     -     i1      "TOPOSLPX"      "description"  "units"
 state   real   toposlpy            ij    misc          1     -     i1      "TOPOSLPY"      "description"  "units"
 state   real   greenmax            ij    misc          1     -     i1      "GREENMAX"      "description"  "units"
 state   real   greenmin            ij    misc          1     -     i1      "GREENMIN"      "description"  "units"
 state   real   albedomx            ij    misc          1     -     i1      "ALBEDOMX"      "description"  "units"
-state   real   toposoil            ij    misc          1     -     i1d=(DownNear)      "TOPOSOIL"      "description"  "units"
+state   real   slopecat            ij    misc          1     -     i1      "SLOPECAT"      "description"  "units"
+state   real   toposoil            ij    misc          1     -     i1d=(DownNearMask:lu_index,iswater)      "TOPOSOIL"      "description"  "units"
 state   real   landusef            iuj   misc          1     Z     -      ""      "description"  "units"
 state   real   soilctop            isj   misc          1     Z     -      ""      "description"  "units"
 state   real   soilcbot            isj   misc          1     Z     -      ""      "description"  "units"
@@ -1019,10 +1021,10 @@ state    real   TH2              ij     misc        1         -     irh       "T
 state    real   T2               ij     misc        1         -     ir        "T2"                  "TEMP at 2 M" ""
 state    real   U10              ij     misc        1         -     irh0123d=(DownCopy)       "U10"                  "U at 10 M"         " "
 state    real   V10              ij     misc        1         -     irh0123d=(DownCopy)       "V10"                  "V at 10 M"         " "
-state    real   XICE             ij     misc        1         -     i01rd=(DownNear)      "XICE"                 "SEA ICE"         ""
-state    real   ICEDEPTH         ij     misc        1         -     i0124rhd=(DownNear)   "ICEDEPTH"        "SEA ICE THICKNESS"    "m"
-state    real   ALBSI            ij     misc        1         -     i0124rhd=(DownNear)   "ALBSI"        "SEA ICE ALBEDO"    " "
-state    real   SNOWSI           ij     misc        1         -     i0124rhd=(DownNear)   "SNOWSI"          "SNOW DEPTH ON SEA ICE" "m"
+state    real   XICE             ij     misc        1         -     i01rd=(DownNearMask:lu_index,iswater)      "XICE"                 "SEA ICE"         ""
+state    real   ICEDEPTH         ij     misc        1         -     i0124rhd=(DownNearMask:lu_index,iswater)   "ICEDEPTH"        "SEA ICE THICKNESS"    "m"
+state    real   ALBSI            ij     misc        1         -     i0124rhd=(DownNearMask:lu_index,iswater)   "ALBSI"        "SEA ICE ALBEDO"    " "
+state    real   SNOWSI           ij     misc        1         -     i0124rhd=(DownNearMask:lu_index,iswater)   "SNOWSI"          "SNOW DEPTH ON SEA ICE" "m"
 state    real   LAI              ij     misc        1         -     i0124rh   "LAI"                  "Leaf area index"          "area/area"
 state    real   SMSTAV           ij     misc        1         -     irh023       "SMSTAV"               "MOISTURE VARIBILITY" ""
 state    real   SMSTOT           ij     misc        1         -     irh023     "SMSTOT"               "TOTAL SOIL MOISTURE" ""
@@ -1031,9 +1033,9 @@ state    real   SFCHEADRT        ij     misc        1         -      r          
 state    real   INFXSRT          ij     misc        1         -      r                                          "INFXSRT"          "time step infiltration excess"  "mm"
 state    real   SFCRUNOFF        ij     misc        1         -     rh       "SFROFF"               "SURFACE RUNOFF" ""
 state    real   UDRUNOFF         ij     misc        1         -     rh023       "UDROFF"               "UNDERGROUND RUNOFF" ""
-state  integer  IVGTYP           ij     misc        1         f     irh023d=(DownINear)       "IVGTYP"               "VEGETATION TYPE" ""
-state  integer  ISLTYP           ij     misc        1         f     irh023d=(DownINear)       "ISLTYP"               "SOIL TYPE"         " "
-state    real   VEGFRA           ij     misc        1         -     i014rh023d=(DownNear)       "VEGFRA"               "VEGETATION FRACTION" ""
+state  integer  IVGTYP           ij     misc        1         f     irh023d=(DownINearMask:lu_index,iswater)       "IVGTYP"               "VEGETATION TYPE" ""
+state  integer  ISLTYP           ij     misc        1         f     irh023d=(DownINearMaskDef:lu_index,iswater,14,8)       "ISLTYP"               "SOIL TYPE"         " "
+state    real   VEGFRA           ij     misc        1         -     i014rh023d=(DownNearMask:lu_index,iswater)       "VEGFRA"               "VEGETATION FRACTION" ""
 state    real   SFCEVP           ij     misc        1         -     irh023     "SFCEVP"               "SURFACE EVAPORATION" ""
 state    real   GRDFLX           ij     misc        1         -     irh     "GRDFLX"               "GROUND HEAT FLUX" ""
 state    real   ALBBCK           ij     misc        1         -     i0124r   "ALBBCK"          "BACKGROUND ALBEDO"        "NA"
@@ -1046,10 +1048,10 @@ state    real   RMOL             ij     misc        1         -     ir       "RM
 state    real   SNOW             ij     misc        1         -     i01rh       "SNOW"                 "SNOW WATER EQUIVALENT"         "kg m-2"
 state    real   CANWAT           ij     misc        1         -     i01rh       "CANWAT"               "CANOPY WATER" ""
 state  integer  FORCE_SST        k      misc        1         -     -        "FORCE_SST"          "IF FORCE_SST(1) IS 1, FEED SST FROM PARENT EVERY DT" ""
-state    real   SST              ij     misc        1         -     i014rh0123d=(DownNear)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)       "SST"                  "SEA SURFACE TEMPERATURE" "K"
+state    real   SST              ij     misc        1         -     i014rh0123d=(DownNearMask:lu_index,iswater)f=(force_sst_nmm:IIH,JJH,HBWGT1,HBWGT2,HBWGT3,HBWGT4,FORCE_SST)       "SST"                  "SEA SURFACE TEMPERATURE" "K"
 state    real   UOCE             ij     misc        1         -     i014rh023    "UOCE"               "SEA SURFACE ZONAL CURRENTS" "m s-1"
 state    real   VOCE             ij     misc        1         -     i014rh023    "VOCE"               "SEA SURFACE MERIDIONAL CURRENTS" "m s-1"
-state    real   WEASD            ij     misc        1         -     i01rh023d=(DownNear)       "WEASD"                "WATER EQUIVALENT OF ACCUMULATED SNOW" "kg m-2"
+state    real   WEASD            ij     misc        1         -     i01rh023d=(DownNearMask:lu_index,iswater)       "WEASD"                "WATER EQUIVALENT OF ACCUMULATED SNOW" "kg m-2"
 state    real  ZNT              ij      misc        1         -     irh023        "ZNT"                   "TIME-VARYING ROUGHNESS LENGTH"
 state    real  CDX               ij      misc        1         -      r        "CDX"                    "DRAG COEFF AT 10m"  
 state    real  MOL              ij      misc        1         -     ir        "MOL"                   "T* IN SIMILARITY THEORY"                      "K"

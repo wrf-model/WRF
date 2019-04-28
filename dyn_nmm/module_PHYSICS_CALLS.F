@@ -1231,6 +1231,7 @@
         EXNSFC(I,J)=(1.E5/PSFC)**CAPA
         THS(I,J)=(SST(I,J)*EXNSFC(I,J))*SM(I,J)+THS(I,J)*(1.-SM(I,J))
         TSFC(I,J)=THS(I,J)/EXNSFC(I,J)
+        SST(I,J)=SST(I,J)*SM(I,J)+TSFC(I,J)*(1.-SM(I,J)) ! Fill SST values on land points with TSFC (TSK)
         SFCZ(I,J)=FIS(I,J)*G_INV
 !YL     RAIN(I,J)=PREC(I,J)*RHOWATER
         IF (PCPFLG.AND.DDATA(I,J)<100.)THEN
@@ -1973,6 +1974,7 @@
         TSFC2=TSFC(I,J)*TSFC(I,J)
         RADOT(I,J)=HBM2(I,J)*EPSR(I,J)*STBOLT*TSFC2*TSFC2
         THS(I,J)=TSFC(I,J)*EXNSFC(I,J)
+        SST(I,J)=SST(I,J)*SM(I,J)+TSFC(I,J)*(1.-SM(I,J)) ! Update SST values on land points with TSFC (TSK)
         PREC(I,J)=0.
       ENDDO
       ENDDO

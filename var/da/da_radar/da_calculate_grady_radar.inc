@@ -23,14 +23,21 @@ subroutine da_calculate_grady_radar(iv, re, jo_grad_y)
             jo_grad_y%radar(n)%rv(k) = -re%radar(n)%rv(k) / (iv%radar(n)%rv(k)%error * iv%radar(n)%rv(k)%error) 
          end if
 
-         if (use_radar_rf) then
+         if ((use_radar_rf.or.use_radar_rhv).and.radar_rf_opt>=2) then
             if (iv%radar(n)%rf(k)%qc < obs_qc_pointer) then
                re%radar(n)%rf(k) = 0.0
             end if
             jo_grad_y%radar(n)%rf(k) = -re%radar(n)%rf(k) / (iv%radar(n)%rf(k)%error * iv%radar(n)%rf(k)%error) 
          end if
 
-         if (.not.use_radar_rf .and. use_radar_rhv) then
+         if (use_radar_rf.and.radar_rf_opt==1) then
+            if (iv%radar(n)%rf(k)%qc < obs_qc_pointer) then
+               re%radar(n)%rf(k) = 0.0
+            end if
+            jo_grad_y%radar(n)%rf(k) = -re%radar(n)%rf(k) / (iv%radar(n)%rf(k)%error * iv%radar(n)%rf(k)%error) 
+         end if
+
+         if (.not.use_radar_rf .and. use_radar_rhv.and.radar_rf_opt==1) then
             if (iv%radar(n)%rrn(k)%qc < obs_qc_pointer) then
                re%radar(n)%rrn(k) = 0.0
             end if
@@ -45,7 +52,7 @@ subroutine da_calculate_grady_radar(iv, re, jo_grad_y)
             jo_grad_y%radar(n)%rgr(k) = -re%radar(n)%rgr(k) / (iv%radar(n)%rgr(k)%error * iv%radar(n)%rgr(k)%error)
          end if
 
-         if (use_radar_rqv) then
+         if (use_radar_rqv.and.radar_rf_opt==1) then
             if (iv%radar(n)%rqv(k)%qc < obs_qc_pointer) then
                re%radar(n)%rqv(k) = 0.0
             end if

@@ -217,6 +217,7 @@ module da_define_structures
       real, pointer           :: model_qrn(:)
       real, pointer           :: model_qsn(:)
       real, pointer           :: model_qgr(:)
+      real, pointer           :: model_zmm(:)  ! reflectivity in mm^6 mm^-3
       real                    :: model_ps
 
       real                  , pointer :: height   (:) ! Height in m
@@ -224,6 +225,7 @@ module da_define_structures
 
       type (field_type)     , pointer :: rv       (:) ! Radial Velocity
       type (field_type)     , pointer :: rf       (:) ! Reflectivity
+      type (field_type)     , pointer :: zmm      (:) ! Reflectivity (mm^6 mm^-3)
       type (field_type)     , pointer :: rrn      (:) ! qrain
       type (field_type)     , pointer :: rsn      (:) ! qsnow
       type (field_type)     , pointer :: rgr      (:) ! qgraupel

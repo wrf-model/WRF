@@ -52,7 +52,7 @@ subroutine da_oi_stats_radar (stats_unit, iv)
                   stats%average%rv, stats%rms_err%rv)
             end if
 
-            if (use_radar_rf) then
+            if (use_radar_rf.or.(use_radar_rhv.and.radar_rf_opt>=2)) then
                call da_stats_calculate(iv%info(radar)%obs_global_index(n), &
                   k, iv%radar(n)%rf(k)%qc, &
                   iv%radar(n)%rf(k)%inv, nrf, &
@@ -60,7 +60,7 @@ subroutine da_oi_stats_radar (stats_unit, iv)
                   stats%average%rf, stats%rms_err%rf)
             end if
 
-            if (.not. use_radar_rf .and. use_radar_rhv) then
+            if (.not. use_radar_rf .and. use_radar_rhv.and.radar_rf_opt==1) then
                call da_stats_calculate(iv%info(radar)%obs_global_index(n), &
                   k, iv%radar(n)%rrn(k)%qc, &
                   iv%radar(n)%rrn(k)%inv, nrrn, &
@@ -78,7 +78,7 @@ subroutine da_oi_stats_radar (stats_unit, iv)
                   stats%average%rgr, stats%rms_err%rgr)
             end if
 
-            if (use_radar_rqv) then
+            if (use_radar_rqv.and.radar_rf_opt==1) then
                call da_stats_calculate(iv%info(radar)%obs_global_index(n), &
                   k, iv%radar(n)%rqv(k)%qc, &
                   iv%radar(n)%rqv(k)%inv, nrqv, &
@@ -100,7 +100,7 @@ subroutine da_oi_stats_radar (stats_unit, iv)
          stats%minimum%rv%l, stats%maximum%rv%l)
    end if
    
-   if (use_radar_rf) then
+   if (use_radar_rf.or.(use_radar_rhv.and.radar_rf_opt>=2)) then
       call da_proc_sum_int(nrf)
       call da_proc_stats_combine(stats%average%rf, stats%rms_err%rf, &
          stats%minimum%rf%value, stats%maximum%rf%value, &
@@ -108,7 +108,7 @@ subroutine da_oi_stats_radar (stats_unit, iv)
          stats%minimum%rf%l, stats%maximum%rf%l)
    end if
 
-   if (.not.use_radar_rf .and. use_radar_rhv) then
+   if (.not.use_radar_rf .and. use_radar_rhv.and.radar_rf_opt==1) then
       call da_proc_sum_int(nrrn)
       call da_proc_stats_combine(stats%average%rrn, stats%rms_err%rrn, &
          stats%minimum%rrn%value, stats%maximum%rrn%value, &
@@ -126,7 +126,7 @@ subroutine da_oi_stats_radar (stats_unit, iv)
          stats%minimum%rgr%l, stats%maximum%rgr%l)
    end if
 
-   if (use_radar_rqv) then
+   if (use_radar_rqv.and.radar_rf_opt==1) then
       call da_proc_sum_int(nrqv)
       call da_proc_stats_combine(stats%average%rqv, stats%rms_err%rqv, &
          stats%minimum%rqv%value, stats%maximum%rqv%value, &

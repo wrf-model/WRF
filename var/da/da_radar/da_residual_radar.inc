@@ -34,20 +34,25 @@ subroutine da_residual_radar(iv, y, re, np_missing, np_bad_data, np_obs_used, np
             re%radar(n)%rv(k) = da_residual(n, k, y%radar(n)%rv(k), iv%radar(n)%rv(k), n_obs_bad % rv)
          end if
 
-         if (use_radar_rf) then
+         if (use_radar_rhv.and.radar_rf_opt>=2) then
+            np_available = np_available + 1
+            re%radar(n)%rf(k) = da_residual(n, k, y%radar(n)%rf(k), iv%radar(n)%rf(k), n_obs_bad % rf)
+         end if
+
+         if (use_radar_rf.and.radar_rf_opt==1) then
             np_available = np_available + 1
             if (.not. use_radar_rhv) then
                re%radar(n)%rf(k) = da_residual(n, k, y%radar(n)%rf(k), iv%radar(n)%rf(k), n_obs_bad % rf)
             end if
          end if
 
-        if (.not.use_radar_rf .and. use_radar_rhv) then
+        if (.not.use_radar_rf .and. use_radar_rhv.and.radar_rf_opt==1) then
            re%radar(n)%rrn(k) = da_residual(n, k, y%radar(n)%rrn(k), iv%radar(n)%rrn(k), n_obs_bad % rrn)
            re%radar(n)%rsn(k) = da_residual(n, k, y%radar(n)%rsn(k), iv%radar(n)%rsn(k), n_obs_bad % rsn)
            re%radar(n)%rgr(k) = da_residual(n, k, y%radar(n)%rgr(k), iv%radar(n)%rgr(k), n_obs_bad % rgr)
         end if
 
-        if (use_radar_rqv) then
+        if (use_radar_rqv.and.radar_rf_opt==1) then
            re%radar(n)%rqv(k) = da_residual(n, k, y%radar(n)%rqv(k), iv%radar(n)%rqv(k), n_obs_bad % rqv)
         end if
       end do

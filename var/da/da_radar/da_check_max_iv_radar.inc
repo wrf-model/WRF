@@ -49,7 +49,7 @@ subroutine da_check_max_iv_radar(iv, it, irv, irf, irvf, irff)
             end if
 
             ! rf
-            if (use_radar_rf) then
+            if (use_radar_rf.or.(use_radar_rhv.and.radar_rf_opt>=2)) then
                call da_max_error_qc_radar(it, iv%info(radar), n, iv%radar(n)%rf(k), max_error_rf, irf, irff, &
                   check_max_iv_unit, 'rf   ', failed, check_max_iv_print)
             end if

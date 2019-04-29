@@ -4,16 +4,18 @@ subroutine da_scale_background_errors ( be, it )
    INTEGER,        INTENT(IN)    :: it     ! outer-loop index
 !
    real, allocatable, dimension(:,:) :: v1_val , v2_val , v3_val , &
-                                        v4_val , v5_val
+                                        v4_val , v5_val,           &
+                                        v6_val , v7_val , v8_val , &
+                                        v9_val , v10_val, v11_val
    real*8, allocatable, dimension(:) :: rf_len1, rf_len2, rf_len3, &
-                                        rf_len4, rf_len5
+                                        rf_len4, rf_len5,          &
+                                        rf_len6, rf_len7, rf_len8, &
+                                        rf_len9, rf_len10,rf_len11
 !
    integer                     :: be_rf_unit, be_print_unit
-   integer  :: i, ix, jy, kz, v1_mz, v2_mz, v3_mz, v4_mz, v5_mz
+   integer  :: i, ix, jy, kz, v1_mz, v2_mz, v3_mz, v4_mz, v5_mz,  &
+                              v6_mz, v7_mz, v8_mz, v9_mz, v10_mz,v11_mz
    real     :: ds
-
-   real*8, allocatable, dimension(:) :: rf_len6, rf_len7, rf_len8, &
-                                        rf_len9, rf_len10, rf_len11
 
    if ( jb_factor <= 0.0 ) return
 !
@@ -23,7 +25,13 @@ subroutine da_scale_background_errors ( be, it )
     rewind (be_rf_unit)
 !
 ! Read the dimensions and allocate the arrays:
-    read(be_rf_unit) kz, jy, ix, v1_mz, v2_mz, v3_mz, v4_mz, v5_mz, ds
+    if(cloud_cv_options >= 2.and. cloud_cv_options.ne.3) then
+      read(be_rf_unit) kz, jy, ix, v1_mz, v2_mz, v3_mz, v4_mz, v5_mz, &
+                       v6_mz, v7_mz, v8_mz, v9_mz, v10_mz,v11_mz,      &
+                       ds   
+    else
+      read(be_rf_unit) kz, jy, ix, v1_mz, v2_mz, v3_mz, v4_mz, v5_mz, ds
+    endif
 !
     allocate ( v1_val (1:jy,1:v1_mz) )
     allocate ( rf_len1(1:kz) )
@@ -35,16 +43,47 @@ subroutine da_scale_background_errors ( be, it )
     allocate ( rf_len4(1:kz) )
     allocate ( v5_val (1:jy,1:v5_mz) )
     allocate ( rf_len5(1:1) )
+    if(cloud_cv_options >= 2 .and. cloud_cv_options .ne. 3) then
+      allocate ( v6_val (1:jy,1:v6_mz) )
+      allocate ( rf_len6(1:kz) )
+      allocate ( v7_val (1:jy,1:v7_mz) )
+      allocate ( rf_len7(1:kz) )
+      allocate ( v8_val (1:jy,1:v8_mz) )
+      allocate ( rf_len8(1:kz) )
+      allocate ( v9_val (1:jy,1:v9_mz) )
+      allocate ( rf_len9(1:kz) )
+      allocate ( v10_val (1:jy,1:v10_mz) )
+      allocate ( rf_len10(1:kz) )
+      allocate ( v11_val (1:jy,1:v11_mz) )
+      allocate ( rf_len11(1:kz) )
+    endif
+
 !
 ! Read the variances and scale-lengths and restore them to be:
-    read(be_rf_unit) v1_val , v2_val , v3_val , v4_val , v5_val , &
-                     rf_len1, rf_len2, rf_len3, rf_len4, rf_len5
+   if(cloud_cv_options >= 2.and.cloud_cv_options.ne.3) then
+      read(be_rf_unit) v1_val , v2_val , v3_val , v4_val , v5_val , &
+                       v6_val , v7_val , v8_val , v9_val , v10_val , v11_val, &
+                       rf_len1, rf_len2, rf_len3, rf_len4, rf_len5, &
+                       rf_len6, rf_len7, rf_len8, rf_len9, rf_len10,rf_len11
+
+   else
+      read(be_rf_unit) v1_val , v2_val , v3_val , v4_val , v5_val , &
+                       rf_len1, rf_len2, rf_len3, rf_len4, rf_len5
+   endif
 !
     be % v1 % val = v1_val
     be % v2 % val = v2_val
     be % v3 % val = v3_val
     be % v4 % val = v4_val
     be % v5 % val = v5_val
+    if(cloud_cv_options >= 2.and.cloud_cv_options.ne.3) then
+      be % v6 % val = v6_val
+      be % v7 % val = v7_val
+      be % v8 % val = v8_val
+      be % v9 % val = v9_val
+      be % v10 % val = v10_val    
+      be % v11 % val = v11_val
+    endif
 !
 ! Rescale the scale-lengths and variances:
    CALL da_rescale_background_errors( var_scaling1(it), len_scaling1(it), &
@@ -61,6 +100,26 @@ subroutine da_scale_background_errors ( be, it )
 ! ..............................................................
    CALL da_rescale_background_errors( var_scaling5(it), len_scaling5(it), &
                                       ds, rf_len5, be % v5 )
+   if(cloud_cv_options >= 2 .and. cloud_cv_options .ne. 3 ) then
+
+     CALL da_rescale_background_errors( var_scaling6(it), len_scaling6(it), &
+                                        ds, rf_len6, be % v6 )
+!  .........................................................
+     CALL da_rescale_background_errors( var_scaling7(it), len_scaling7(it), &
+                                        ds, rf_len7, be % v7 )
+! ..........................................................
+     CALL da_rescale_background_errors( var_scaling8(it), len_scaling8(it), &
+                                        ds, rf_len8, be % v8 )
+! ...............................................................
+     CALL da_rescale_background_errors( var_scaling9(it), len_scaling9(it), &
+                                        ds, rf_len9, be % v9 )
+! ..............................................................
+     CALL da_rescale_background_errors( var_scaling10(it), len_scaling10(it), &
+                                        ds, rf_len10, be % v10 )
+! ..............................................................
+     CALL da_rescale_background_errors( var_scaling11(it), len_scaling11(it), &
+                                        ds, rf_len11, be % v11 )
+   endif
 !
 ! Print the variances and RF (Recursive Filter) factors rf_alpha:
     write(unit=stdout,fmt='(/5x,"Complete the Rescale BES in outer-loop:" i2)') it
@@ -108,40 +167,21 @@ subroutine da_scale_background_errors ( be, it )
     deallocate ( rf_len4 )
     deallocate ( v5_val )
     deallocate ( rf_len5 )
-
-    if ( cloud_cv_options >= 2 ) then
-       allocate ( rf_len6(1:kz) )
-       allocate ( rf_len7(1:kz) )
-       allocate ( rf_len8(1:kz) )
-       allocate ( rf_len9(1:kz) )
-       allocate ( rf_len10(1:kz) )
-       read (be_rf_unit) be%v6%val, be%v7%val, be%v8%val, &
-                         be%v9%val, be%v10%val
-       read (be_rf_unit) rf_len6, rf_len7, rf_len8, rf_len9, rf_len10
-       call da_rescale_background_errors( var_scaling6(it), len_scaling6(it), &
-                                          ds, rf_len6, be % v6 )
-       call da_rescale_background_errors( var_scaling7(it), len_scaling7(it), &
-                                          ds, rf_len7, be % v7 )
-       call da_rescale_background_errors( var_scaling8(it), len_scaling8(it), &
-                                          ds, rf_len8, be % v8 )
-       call da_rescale_background_errors( var_scaling9(it), len_scaling9(it), &
-                                          ds, rf_len9, be % v9 )
-       call da_rescale_background_errors( var_scaling10(it), len_scaling10(it), &
-                                          ds, rf_len10, be % v10)
-       deallocate ( rf_len6 )
-       deallocate ( rf_len7 )
-       deallocate ( rf_len8 )
-       deallocate ( rf_len9 )
-       deallocate ( rf_len10 )
-    end if
-    if ( use_cv_w ) then
-       allocate ( rf_len11(1:kz) )
-       read (be_rf_unit) be%v11%val
-       read (be_rf_unit) rf_len11
-       call da_rescale_background_errors( var_scaling11(it), len_scaling11(it), &
-                                          ds, rf_len11, be % v11)
-       deallocate ( rf_len11 )
-    end if
-
+    if ( cloud_cv_options >= 2 .and.cloud_cv_options .ne. 3 ) then
+      print*,"deallocate cloud_cv_options >=2 arrays"
+      if(allocated(v6_val))deallocate(v6_val)
+      if(allocated(v7_val))deallocate(v7_val)
+      if(allocated(v8_val))deallocate(v8_val)
+      if(allocated(v9_val))deallocate(v9_val)
+      if(allocated(v10_val))deallocate(v10_val)
+      if(allocated(v11_val))deallocate(v11_val)
+      if(allocated(rf_len6))deallocate(rf_len6)
+      if(allocated(rf_len7))deallocate(rf_len7)
+      if(allocated(rf_len8))deallocate(rf_len8)
+      if(allocated(rf_len9))deallocate(rf_len9)
+      if(allocated(rf_len10))deallocate(rf_len10)
+      if(allocated(rf_len11))deallocate(rf_len11)
+    endif
+!
 end subroutine da_scale_background_errors
 

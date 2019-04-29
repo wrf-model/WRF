@@ -61,6 +61,22 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
 
    logical           :: echo_non_precip, echo_rf_good
 
+   !------------------------
+   !  for jung et al 2008
+   !------------------------
+
+   real    :: qvp,qra,qsn,qgr ! mixing ratio
+   real    :: dqra,dqsn,dqgr,dtmk,dqvp
+   real    :: dqnr,dqns,dqng
+   real    :: zmm,zmm_ref
+   real    :: qnr,qns,qng            ! number concentration of rain snow and graupel
+   real    :: tmk,prs                ! temperature and pressure
+   real    :: dbz                    ! reflectivity in dBZ
+   real    :: rn0_r,rn0_s,rn0_g      ! intercept parameter of rain snow and graupel
+   real    :: rhos,rhog              ! density of snow and graupel
+
+   !------------------------
+
    alog_10 = alog(10.0)
 
    ! Ze=zv*(ro*v)**1.75
@@ -70,7 +86,18 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    zws = 4.26*1.00e+11 ! wet snow
    zg  = 4.33*1.00e+10 ! grauple
 
-   
+   !------------------------
+   !  for jung et al 2008
+   !------------------------
+   qnr=0
+   qns=0
+   qng=0
+   rn0_r=8e6
+   rn0_s=3e6
+   rn0_g=4e5
+   rhos=100.0
+   rhog=400.0
+   !------------------------   
    if (trace_use) call da_trace_entry("da_get_innov_vector_radar")
 
    irv = 0; irvf = 0; irf = 0; irff = 0
@@ -91,7 +118,7 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    allocate (model_w(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
 
    if ( use_radar_rv ) allocate (model_rv(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
-   if ( use_radar_rf ) allocate (model_rf(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
+   if ( use_radar_rf .or. (use_radar_rhv.and.radar_rf_opt>=2) ) allocate (model_rf(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_ps(iv%info(radar)%n1:iv%info(radar)%n2))
 
    allocate (model_qv(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
@@ -115,7 +142,7 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    model_w(:,:)    = 0.
 
    if ( use_radar_rv ) model_rv(:,:)   = 0.
-   if ( use_radar_rf ) model_rf(:,:)   = 0.
+   if ( use_radar_rf .or. (use_radar_rhv.and.radar_rf_opt>=2) ) model_rf(:,:)   = 0.
    model_ps(:)     = 0.
 
    model_qv(:,:)   = 0.
@@ -324,12 +351,32 @@ END IF
                         model_qrn(k,n), model_ps(n), xr, yr, zr,           &
                         model_rho(k,n))
 
-                     iv % radar(n) % rv(k) % inv = ob % radar(n) % rv(k) - model_rv(k,n)
+                     iv % radar(n) % rv(k) % inv = ob % radar(n) % rv(k) - model_rv(k,n)*radar_rv_rscl
                   end if
                end if
             end if
 
-            if (use_radar_rf) then
+            if ((use_radar_rf.or.use_radar_rhv).and.radar_rf_opt>=2) then
+              if ( echo_rf_good ) then
+                select case (radar_rf_opt)
+                case(2)
+                  tmk=model_tc(k,n)+273.15
+                  prs=model_p(k,n)
+                  zmm=0
+                  zmm_ref=0
+ 
+                  call RadZIceVar(model_qv(k,n),model_qrn(k,n),model_qsn(k,n),model_qgr(k,n),qnr,qns,qng,tmk,prs,dbz,        &
+                                  1,1,1,0,0,0,rn0_r,rn0_s,rn0_g,                                                             &
+                                  rhos,rhog,dtmk,dqvp,dqra,dqsn,dqgr,dqnr,dqns,dqng,zmm,0,                                   &
+                                  0,zmm_ref)
+                  model_rf(k,n)=dbz*radar_rf_rscl
+                  iv % radar(n) % zmm(k) % inv = zmm
+                  iv % radar(n) % rf(k) % inv = ob % radar(n) % rf(k) - model_rf(k,n)
+                end select
+              end if
+            end if
+
+            if (use_radar_rf.and.radar_rf_opt==1) then
                if ( echo_rf_good ) then
                   model_rf(k,n) = leh1 + leh2 * alog10(model_rho(k,n) * model_qrn(k,n) * 1.0e+3)
                   iv % radar(n) % rf(k) % inv = ob % radar(n) % rf(k) - model_rf(k,n)
@@ -337,16 +384,18 @@ END IF
             end if
 
             ! calculate background/model reflectivity
-            if (use_radar_rhv .or. use_radar_rqv) then
+            if ((use_radar_rhv .or. use_radar_rqv).and.radar_rf_opt==1) then
                if ( echo_rf_good ) then
                   call da_radar_rf (model_qrn(k,n),model_qsn(k,n),model_qgr(k,n),model_tc(k,n),model_rho(k,n),bg_rze)
                   bg_rf = 10.0*log10(bg_rze)  ! Z to dBZ
+                  iv % radar(n) % zmm(k) % inv = bg_rf
+                  iv % radar(n) % rf(k) % inv = ob % radar(n) % rf(k) - bg_rf
                end if
             end if
 
             ! calculate retrieved hydrometeorological variables
             ! Jidong Gao JAS 2013
-            if (use_radar_rhv) then
+            if (use_radar_rhv.and.radar_rf_opt==1) then
                if ( echo_rf_good ) then
 
                   ! compute retrieved hydrometeors rhv
@@ -456,7 +505,7 @@ END IF
             end if ! rhv
 
             ! retrieved water vapor
-            if (use_radar_rqv) then
+            if (use_radar_rqv.and.radar_rf_opt==1) then
                !iv%%rqv and iv%%rqvo were assigned to missing values in read_obs_radar_ascii.inc
                !iter=1, rqv is missing; for second loop, dont change rqv value
                if (it .eq. 1) then

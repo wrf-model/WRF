@@ -55,14 +55,14 @@ state    real  SPPT_AMP       ij   misc   1 -   r          "SPPT_AMP"       "amp
 
 
 # 1d arrays
-state    real  VERTAMPT        k   misc   1 -   r          "VERTAMPT"       "vert. amplitude of stoch. temperature perturb." "" ""
-state    real  VERTAMPUV       k   misc   1 -   r          "VERTAMPUV"      "vert. amplitude of stoch. u,v perturb." "" ""
-state integer  ISEEDARR_SPPT      k   misc   1  -   rh     "ISEEDARR_SPPT"         "Array to hold seed for restart, SPPT" "" ""
-state integer  ISEEDARR_SKEBS     k   misc   1  -   rh     "ISEEDARR_SKEBS"        "Array to hold seed for restart, SKEBS" "" ""
-state integer  ISEEDARR_RAND_PERT k   misc   1  -   rh     "ISEEDARR_RAND_PERTURB" "Array to hold seed for restart, RAND_PERT" "" ""
-state integer  iseedarr_spp_conv k  misc   1  -   rh     "iseedarray_spp_conv"   "Array to hold seed for restart, RAND_PERT2" "" ""
-state integer  iseedarr_spp_pbl k   misc   1  -   rh     "iseedarray_spp_pbl"    "Array to hold seed for restart, RAND_PERT3" "" ""
-state integer  iseedarr_spp_lsm k   misc   1  -   rh     "iseedarray_spp_lsm"    "Array to hold seed for restart, RAND_PERT4" "" ""
+state    real  VERTAMPT           k       misc   1 -    r      "VERTAMPT"              "vert. amplitude of stoch. temperature perturb." "" ""
+state    real  VERTAMPUV          k       misc   1 -    r      "VERTAMPUV"             "vert. amplitude of stoch. u,v perturb." "" ""
+state integer  ISEEDARR_SPPT      {seed}  misc   1  Z   rh     "ISEEDARR_SPPT"         "Array to hold seed for restart, SPPT" "" ""
+state integer  ISEEDARR_SKEBS     {seed}  misc   1  Z   rh     "ISEEDARR_SKEBS"        "Array to hold seed for restart, SKEBS" "" ""
+state integer  ISEEDARR_RAND_PERT {seed}  misc   1  Z   rh     "ISEEDARR_RAND_PERTURB" "Array to hold seed for restart, RAND_PERT" "" ""
+state integer  iseedarr_spp_conv  {seed}  misc   1  Z   rh     "iseedarray_spp_conv"   "Array to hold seed for restart, RAND_PERT2" "" ""
+state integer  iseedarr_spp_pbl   {seed}  misc   1  Z   rh     "iseedarray_spp_pbl"    "Array to hold seed for restart, RAND_PERT3" "" ""
+state integer  iseedarr_spp_lsm   {seed}  misc   1  Z   rh     "iseedarray_spp_lsm"    "Array to hold seed for restart, RAND_PERT4" "" ""
 
 # 1d arrays for FFT transpose
 state    real   RAND_REAL_xxx   i{stoclev}jx dyn_em 1 XYZ
@@ -121,32 +121,32 @@ rconfig   real        gridpt_stddev_sppt      namelist,stoch      max_domains   
 rconfig   real        stddev_cutoff_sppt      namelist,stoch      max_domains          2.0  - "cutoff tails of pdf above this threshold standard deviation"
 rconfig   real        lengthscale_sppt        namelist,stoch      max_domains     150000.0  - "Correlation length scale in meters for SPPT"
 rconfig   real        timescale_sppt          namelist,stoch      max_domains      21600.0  - "Decorrelation time scale in s for SPPT"
-rconfig   integer     sppt_vertstruc          namelist,stoch      1                      0 -  "vertical structure for sppt: 0=constant, 1=random phase"
+rconfig   integer     sppt_vertstruc          namelist,stoch      1                      0  - "vertical structure for sppt: 0=constant, 1=random phase"
 rconfig   integer     iseed_sppt              namelist,stoch      1                     53  - "ISEED_SPPT"            "RANDOM SEED FOR SPPT "  ""
 
 # Namelist parameters for random perturbations
 
 rconfig   integer     rand_perturb            namelist,stoch      max_domains           0  - "generate array with random perturbations: 0=off, 1=on"
-rconfig   real        gridpt_stddev_rand_pert namelist,stoch      max_domains         0.03  - "gridpoint standard deviation of random perturbations"
+rconfig   real        gridpt_stddev_rand_pert namelist,stoch      max_domains         0.03 - "gridpoint standard deviation of random perturbations"
 rconfig   real        stddev_cutoff_rand_pert namelist,stoch      max_domains         3.0  - "cutoff tails of pdf above this threshold standard deviation"
 rconfig   real        lengthscale_rand_pert   namelist,stoch      max_domains    500000.0  - "Correlation length scale in meters"
 rconfig   real        timescale_rand_pert     namelist,stoch      max_domains     21600.0  - "Decorrelation time scale in s"
-rconfig   integer     rand_pert_vertstruc     namelist,stoch      1                      0 -  "vertical structure for random perturb: 0=constant, 1=random phase"
+rconfig   integer     rand_pert_vertstruc     namelist,stoch      1                     0  - "vertical structure for random perturb: 0=constant, 1=random phase"
 rconfig   integer     iseed_rand_pert         namelist,stoch      1                    17  - "ISEED_RAND_PERT"       "RANDOM SEED FOR RAND_PERT "  ""
 
 # Namelist parameters for stochastic perturbed parameters 
 
 rconfig   integer     spp                    namelist,stoch       max_domains           0  - "generate array with random perturbations: 0=off, 1=on"
-rconfig   logical     hrrr_cycling           namelist,stoch       1               .false.  - "switch to control restart in quasi-cycled hrrr-forecasts"
+rconfig   logical     hrrr_cycling           namelist,stoch       1               .true.   - "switch to control restart in quasi-cycled hrrr-forecasts"
 
 # Namelist parameters for stochastic perturbed parameters (SPP) for convective scheme
 
-rconfig   integer     spp_conv               namelist,stoch       max_domains           0  - "generate array with random perturbations: 0=off, 1=on"
+rconfig   integer     spp_conv               namelist,stoch       max_domains          0  - "generate array with random perturbations: 0=off, 1=on"
 rconfig   real        gridpt_stddev_spp_conv namelist,stoch      max_domains         0.3  - "gridpoint standard deviation of random perturbations"
 rconfig   real        stddev_cutoff_spp_conv namelist,stoch      max_domains         3.0  - "cutoff tails of pdf above this threshold standard deviation"
 rconfig   real        lengthscale_spp_conv   namelist,stoch      max_domains    150000.0  - "Correlation length scale in meters"
 rconfig   real        timescale_spp_conv     namelist,stoch      max_domains     21600.0  - "Decorrelation time scale in s"
-rconfig   integer     vertstruc_spp_conv     namelist,stoch      1                      0 -  "vertical structure for random perturb: 0=constant, 1=random phase"
+rconfig   integer     vertstruc_spp_conv     namelist,stoch      1                     0  - "vertical structure for random perturb: 0=constant, 1=random phase"
 rconfig   integer     iseed_spp_conv         namelist,stoch      1                   171  - "ISEED_RAND_PERT"       "RANDOM SEED FOR RAND_PERT "  ""
 
 # Namelist parameters for stochastic perturbed parameters (SPP) for pbl 
@@ -156,7 +156,7 @@ rconfig   real        gridpt_stddev_spp_pbl namelist,stoch      max_domains     
 rconfig   real        stddev_cutoff_spp_pbl namelist,stoch      max_domains         2.0  - "cutoff tails of pdf above this threshold standard deviation"
 rconfig   real        lengthscale_spp_pbl   namelist,stoch      max_domains    700000.0  - "Correlation length scale in meters"
 rconfig   real        timescale_spp_pbl     namelist,stoch      max_domains     21600.0  - "Decorrelation time scale in s"
-rconfig   integer     vertstruc_spp_pbl     namelist,stoch      1                      0 -  "vertical structure for random perturb: 0=constant, 1=random phase"
+rconfig   integer     vertstruc_spp_pbl     namelist,stoch      1                     0  - "vertical structure for random perturb: 0=constant, 1=random phase"
 rconfig   integer     iseed_spp_pbl         namelist,stoch      1                   217  - "ISEED_RAND_PERT"       "RANDOM SEED FOR RAND_PERT "  ""
 
 
@@ -167,7 +167,7 @@ rconfig   real        gridpt_stddev_spp_lsm namelist,stoch      max_domains     
 rconfig   real        stddev_cutoff_spp_lsm namelist,stoch      max_domains         3.0  - "cutoff tails of pdf above this threshold standard deviation"
 rconfig   real        lengthscale_spp_lsm   namelist,stoch      max_domains     50000.0  - "Correlation length scale in meters"
 rconfig   real        timescale_spp_lsm     namelist,stoch      max_domains     86400.0  - "Decorrelation time scale in s"
-rconfig   integer     vertstruc_spp_lsm     namelist,stoch      1                      0 -  "vertical structure for random perturb: 0=constant, 1=random phase"
+rconfig   integer     vertstruc_spp_lsm     namelist,stoch      1                     0  - "vertical structure for random perturb: 0=constant, 1=random phase"
 rconfig   integer     iseed_spp_lsm         namelist,stoch      1                   317  - "ISEED_RAND_PERT"       "RANDOM SEED FOR RAND_PERT "  ""
 
 # Derived namelist parameters used in share/module_check_amundo.F
@@ -177,6 +177,7 @@ rconfig   integer     sppt_on                 derived    1        0        - "sp
 rconfig   integer     spp_on                  derived    1        0        - "skebs_on"         "skebs arrays are declared&filled for all domains"          ""
 rconfig   integer     rand_perturb_on         derived    1        0        - "rand_perturb_on " "random perturb. array is declared&filled for all domains"  ""
 rconfig   integer     num_stoch_levels        derived    1        1        - "num_stoch_levels" "number of vertical levels of random fields"  ""
+rconfig   integer     seed_dim                derived    1        0        - "seed_dim"         "output of CALL RANDOM_SEED(SIZE=seed_dim)"   ""
 
 # Package declarations
 

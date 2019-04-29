@@ -430,6 +430,10 @@
 
 #if (EM_CORE == 1)
 
+       IF ( switch .EQ. input_only ) then
+          CALL wrf_get_dom_ti_char ( fid , 'SIMULATION_START_DATE' , simulation_start_date , ierr )
+       END IF
+
        !  Test to make sure that the grid distances are the right size.
 
        CALL wrf_get_dom_ti_real ( fid , 'DX' ,  dx_compare , 1 , icnt , ierr )
@@ -903,14 +907,28 @@
             ( ( switch .EQ. auxinput1_only ) .AND. &
               ( config_flags%auxinput1_inname(1:8) .EQ. 'wrf_real' ) ) ) THEN
 
-       !  Test to make sure that the input data is the right size.
+       !  Test to make sure that the input data is the right size: real into WRF.
 
-       IF ( ( ide .NE. ide_compare    ) .OR. &
-            ( kde .NE. kde_compare    ) .OR. &
-            ( jde .NE. jde_compare    ) ) THEN
-          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist   ide,jde,kde=',ide,jde,kde
+       IF ( ide .NE. ide_compare ) THEN
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist e_we                         = ',ide
           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  input file ide,jde,kde=',ide_compare , jde_compare , kde_compare
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  input file WEST-EAST_GRID_DIMENSION   = ',ide_compare
+          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+          CALL wrf_debug ( 0, "---- ERROR: Mismatch between namelist and input file dimensions" )
+          count_fatal_error = count_fatal_error + 1
+       ENDIF
+       IF ( jde .NE. jde_compare ) THEN
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist e_sn                         = ',jde
+          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  input file SOUTH-NORTH_GRID_DIMENSION = ',jde_compare
+          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+          CALL wrf_debug ( 0, "---- ERROR: Mismatch between namelist and input file dimensions" )
+          count_fatal_error = count_fatal_error + 1
+       ENDIF
+       IF ( kde .NE. kde_compare ) THEN
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist e_vert                       = ',kde
+          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  input file BOTTOM-TOP_GRID_DIMENSION  = ',kde_compare
           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
           CALL wrf_debug ( 0, "---- ERROR: Mismatch between namelist and input file dimensions" )
           count_fatal_error = count_fatal_error + 1
@@ -918,14 +936,28 @@
 
     ELSE IF ( switch .EQ. auxinput1_only ) THEN
 
-       !  Test to make sure that the input data is the right size.
+       !  Test to make sure that the input data is the right size: metgrid into real.
 
-       IF ( ( ide                             .NE. ide_compare ) .OR. &
-            ( config_flags%num_metgrid_levels .NE. kde_compare ) .OR. &
-            ( jde                             .NE. jde_compare ) ) THEN
-          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist   ide,jde,num_metgrid_levels=',ide,jde,config_flags%num_metgrid_levels
+       IF ( ide                             .NE. ide_compare ) THEN
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist e_we                         = ',ide
           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  input file ide,jde,kde               =',ide_compare , jde_compare , kde_compare
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  input file WEST-EAST_GRID_DIMENSION   = ',ide_compare
+          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+          CALL wrf_debug ( 0, "---- ERROR: Mismatch between namelist and input file dimensions" )
+          count_fatal_error = count_fatal_error + 1
+       ENDIF
+       IF ( jde                             .NE. jde_compare ) THEN
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist e_sn                         = ',jde
+          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  input file SOUTH-NORTH_GRID_DIMENSION = ',jde_compare
+          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+          CALL wrf_debug ( 0, "---- ERROR: Mismatch between namelist and input file dimensions" )
+          count_fatal_error = count_fatal_error + 1
+       ENDIF
+       IF ( config_flags%num_metgrid_levels .NE. kde_compare ) THEN
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  namelist num_metgrid_levels           = ',config_flags%num_metgrid_levels
+          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+          WRITE(wrf_err_message,*)'input_wrf.F: SIZE MISMATCH:  input file BOTTOM-TOP_GRID_DIMENSION  = ',kde_compare
           CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
           CALL wrf_debug ( 0, "---- ERROR: Mismatch between namelist and input file dimensions" )
           count_fatal_error = count_fatal_error + 1
@@ -1140,6 +1172,12 @@
             CALL domain_clock_get( grid, current_time=currtime, &
                                          current_timestr=currtimestr )
 #if (DA_CORE != 1) 
+            IF ( (switch .EQ. input_only) .and. (grid%id .EQ. 1) .and. (grid%itimestep .EQ. 0) ) THEN
+               WRITE( wrf_err_message , * ) 'CURRENT DATE          = ',TRIM( currtimestr )
+               CALL wrf_message ( trim(wrf_err_message) )
+               WRITE( wrf_err_message , * ) 'SIMULATION START DATE = ', simulation_start_date(1:19)
+               CALL wrf_message ( TRIM(wrf_err_message ) )
+            END IF
 ! Don't perform the check for WRFVAR, as we're not passing the right dates
 ! around
             CALL domain_clockprint(150, grid, &
@@ -1875,6 +1913,7 @@
 
     IF ( &
          ( INDEX(TRIM(input_title_char),'METGRID'     ) .NE. 0 ) .OR. &
+         ( INDEX(TRIM(input_title_char),'OBSGRID'     ) .NE. 0 ) .OR. &
          ( INDEX(TRIM(input_title_char),'SFCFDDA'     ) .NE. 0 ) .OR. &
          ( INDEX(TRIM(input_title_char),'EMISSIONS'   ) .NE. 0 ) .OR. &
          ( INDEX(TRIM(input_title_char),'XYZZY'       ) .NE. 0 )      &

@@ -50,6 +50,7 @@ MODULES = \
 	module_bl_mfshconvpbl.o \
 	module_shcu_camuwshcu_driver.o \
 	module_shcu_camuwshcu.o \
+	module_shcu_deng.o          \
 	module_shcu_grims.o \
 	module_shcu_nscv.o \
 	module_cu_camzm_driver.o \
@@ -90,10 +91,10 @@ MODULES = \
 	module_mp_fast_sbm.o \
 	module_ltng_lpi.o \
 	module_mp_gsfcgce.o \
-	module_mp_gsfcgce_3ice_nuwrf.o \
 	module_mp_gsfcgce_4ice_nuwrf.o \
 	module_mp_morr_two_moment.o \
         module_mp_p3.o \
+        module_mp_jensen_ishmael.o \
         module_mp_morr_two_moment_aero.o \
 	module_mp_milbrandt2mom.o \
 	module_mp_nssl_2mom.o \

@@ -137,6 +137,9 @@
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: RTHRATEN,RTHBLTEN,RQVBLTEN
       REAL,ALLOCATABLE,DIMENSION(:,:)   :: HPBL_HOLD
 !
+! Double precision lat/lon for coupler
+      REAL*8,ALLOCATABLE,DIMENSION(:,:) :: HLAT_DBL,HLON_DBL,VLAT_DBL,VLON_DBL
+      REAL                              :: parent_CLAT,parent_CLON,WBD,SBD,DLMD,DPHD
 !-----------------------------------------------------------------------
 !
       LOGICAL wrf_dm_on_monitor
@@ -164,6 +167,7 @@
       real,save :: exch_tim_max
       real :: ttim,btimx
       real :: et_max,this_tim
+      double precision :: fhr
       integer :: n_print_time
 !!BEGIN: LSM changes for LANDFALL: Subashini 7/27/2016
       integer :: move_land_time
@@ -312,7 +316,7 @@
 !!!!! IF(WRF_DM_ON_MONITOR() )THEN
         WRITE(MESSAGE,125)grid%id,grid%ntsd,grid%ntsd*GRID%DT/3600.
   125   FORMAT(' SOLVE_NMM: ',I3,' TIMESTEP IS ',I5,'   TIME IS ',F7.3,' HOURS')
-        CALL WRF_MESSAGE(TRIM(MESSAGE))
+!!!!        CALL WRF_MESSAGE(TRIM(MESSAGE))
 !!!!  ENDIF
 !
 !-----------------------------------------------------------------------
@@ -396,6 +400,13 @@
       ALLOCATE(RQVBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
       ALLOCATE(RTHRATEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
       ALLOCATE(HPBL_HOLD(IMS:IME,JMS:JME),STAT=ISTAT)
+!
+!Zhan: Double precision lat/lon for coupler
+      ALLOCATE(HLAT_DBL(IMS:IME,JMS:JME),STAT=ISTAT)
+      ALLOCATE(HLON_DBL(IMS:IME,JMS:JME),STAT=ISTAT)
+      ALLOCATE(VLAT_DBL(IMS:IME,JMS:JME),STAT=ISTAT)
+      ALLOCATE(VLON_DBL(IMS:IME,JMS:JME),STAT=ISTAT)
+
 !
         IF(CONFIG_FLAGS%CU_PHYSICS==GDSCHEME.OR.                        &
      &  CONFIG_FLAGS%CU_PHYSICS==TIEDTKESCHEME.OR.                      &
@@ -814,10 +825,23 @@
 ! Coupling insertion:->
       ELSE
         btimx=now_time()
+        CALL nl_get_cen_lat (GRID%ID, parent_CLAT)
+        CALL nl_get_cen_lon (GRID%ID, parent_CLON)
+        DLMD = grid%dx
+        DPHD = grid%dy
+        WBD  = grid%wbd0
+        SBD  = grid%sbd0
+        CALL EARTH_LATLON_r8 ( HLAT_DBL,HLON_DBL,VLAT_DBL,VLON_DBL,  & !output
+                            DLMD,DPHD,WBD,SBD,                    & !inputs 
+                            parent_CLAT,parent_CLON,                                          &
+                            IDS,IDE,JDS,JDE,KDS,KDE,                                          &
+                            IMS,IME,JMS,JME,KMS,KME,                                          &
+                            ITS,ITE,JTS,JTE,KTS,KTE                                           )
+
         call ATM_TSTEP_INIT(NTSD_current,grid%NPHS,GRID%ID,grid%NPHS*grid%dt, &
         ids,idf,jds,jdf,its,ite,jts,jte,ims,ime,jms,jme,           &
                          kds,kde,kts,kte,kms,kme,                  &
-                         grid%HLON,grid%HLAT,grid%VLON,grid%VLAT,grid%sm,                   &
+                         HLON_DBL,HLAT_DBL,VLON_DBL,VLAT_DBL,grid%sm,                   &
                          grid%i_parent_start,grid%j_parent_start,  &
                          grid%guessdtc,grid%dtc)
         cplstep_tim=cplstep_tim+now_time()-btimx

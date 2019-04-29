@@ -122,9 +122,12 @@
 
 !..Need to fill special height var for setting up initial condition.  G. Thompson
    REAL, ALLOCATABLE, DIMENSION(:,:,:) :: z_at_q
+   REAL, ALLOCATABLE, DIMENSION(:,:,:) :: dz8w   !mchen
 
 !  CCN for MP=18 initializatio
    REAL :: ccn_max_val
+
+   REAL :: dt_s, dx_km
 
    REAL :: max_mf, max_rot_angle
    CALL get_ijk_from_grid ( grid ,                              &
@@ -142,6 +145,7 @@
 #if (WRF_CHEM != 1)
          ALLOCATE(CLDFRA_OLD(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; CLDFRA_OLD = 0.
 #endif
+   ALLOCATE(dz8w(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; dz8w = 0.
    ALLOCATE(z_at_q(IMS:IME,KMS:KME,JMS:JME),STAT=I)  ; z_at_q = 0.
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 
@@ -233,23 +237,59 @@
        first_trip_for_this_domain = .TRUE.
    ENDIF
 
-      ! Print out the maximum map scale factor on the coarse domain
+   ! Print out the maximum map scale factor on the coarse domain
 
-      IF ( ( first_trip_for_this_domain ) .AND. ( grid%id .EQ. 1 ) .AND. &
-           ( .NOT. config_flags%polar ) ) THEN
-         max_mf = grid%msft(its,jts)
-         DO j=jts,MIN(jde-1,jte)
-            DO i=its,MIN(ide-1,ite)
-               max_mf = MAX ( max_mf , grid%msft(i,j) )
-            END DO
+   IF ( ( first_trip_for_this_domain ) .AND. ( grid%id .EQ. 1 ) .AND. &
+        ( .NOT. config_flags%polar ) ) THEN
+      max_mf = grid%msft(its,jts)
+      DO j=jts,MIN(jde-1,jte)
+         DO i=its,MIN(ide-1,ite)
+            max_mf = MAX ( max_mf , grid%msft(i,j) )
          END DO
+      END DO
 #if ( defined(DM_PARALLEL)  &&   ! defined(STUBMPI) )
-         max_mf = wrf_dm_max_real ( max_mf )
+      max_mf = wrf_dm_max_real ( max_mf )
 #endif
-         WRITE ( a_message , FMT='(A,F5.2,A)' ) 'Max map factor in domain 1 = ',max_mf, &
-                                                '. Scale the dt in the model accordingly.'
-         CALL wrf_message ( a_message )
+      WRITE ( a_message , FMT='(A,F5.2,A)' ) 'Max map factor in domain 1 = ',max_mf, &
+                                             '. Scale the dt in the model accordingly.'
+      CALL wrf_message ( a_message )
+   END IF
+
+!-----------------------------------------------------------------------
+! Do a gross check on the time step for the most coarse grid (not for
+! adaptive time steps. If the value is significantly larger than reasonable,
+! then stop immediately. Likely the user made a mistake.
+! If the rule of thumb is 6 DX = DT, then anything > 10 is flagged.
+! Only look at domain 1, only do this for the firt time into this routine,
+! only look at real-data cases (where the map projection is not Cartesian), 
+! and only look at user-specified time steps (not the adaptive dt option).
+!-----------------------------------------------------------------------
+   IF ( ( grid%id .EQ. 1 ) .AND. &
+        ( first_trip_for_this_domain ) .AND. &
+        ( config_flags%map_proj .NE. 0 ) .AND. &
+        ( .NOT. config_flags%use_adaptive_time_step ) ) THEN
+      dt_s = REAL(config_flags%time_step) + &
+             REAL(config_flags%time_step_fract_num) / &
+             REAL(config_flags%time_step_fract_den)
+      dx_km = MIN ( config_flags%dx , config_flags%dy ) / 1000.
+      WRITE (message,*) 'D01: Time step                              = ',dt_s ,' (s)'
+      CALL wrf_message ( TRIM(message) ) 
+      WRITE (message,*) 'D01: Grid Distance                          = ',dx_km ,' (km)'
+      CALL wrf_message ( TRIM(message) ) 
+      WRITE (message,*) 'D01: Grid Distance Ratio dt/dx              = ', dt_s / dx_km, ' (s/km)'
+      CALL wrf_message ( TRIM(message) ) 
+      WRITE (message,*) 'D01: Ratio Including Maximum Map Factor     = ', dt_s / (dx_km / max_mf) , ' (s/km)'
+      CALL wrf_message ( TRIM(message) ) 
+      WRITE (message,*) 'D01: NML defined reasonable_time_step_ratio = ', config_flags%reasonable_time_step_ratio
+      CALL wrf_message ( TRIM(message) ) 
+      IF ( dt_s / dx_km > config_flags%reasonable_time_step_ratio ) THEN
+         CALL wrf_message ( 'The time step is probably too large for this grid distance, reduce it.' )
+         WRITE (message, * ) 'If you are sure of your settings, set reasonable_time_step_ratio in namelist.input > ' &
+                             ,dt_s / (dx_km / max_mf)
+         CALL wrf_message ( TRIM(message) ) 
+         CALL wrf_error_fatal ( '--- ERROR: Time step too large')
       END IF
+   END IF
 
     if(config_flags%cycling) then
 ! Clear the buckets for diagnostics at initial time
@@ -1031,7 +1071,16 @@ endif
                       ids, ide, jds, jde, kds, kde,           &
                       ims, ime, jms, jme, kms, kme,           &
                       grid%i_start(ij), grid%i_end(ij), grid%j_start(ij), grid%j_end(ij), kts, kte, &
-                      config_flags%num_urban_layers,                        & !multi-layer urban
+                      config_flags%num_urban_ndm,                           & !multi-layer urban
+                      config_flags%urban_map_zrd,                           & !multi-layer urban
+                      config_flags%urban_map_zwd,                           & !multi-layer urban
+                      config_flags%urban_map_gd,                            & !multi-layer urban
+                      config_flags%urban_map_zd,                            & !multi-layer urban
+                      config_flags%urban_map_zdf,                           & !multi-layer urban
+                      config_flags%urban_map_bd,                            & !multi-layer urban
+                      config_flags%urban_map_wd,                            & !multi-layer urban
+                      config_flags%urban_map_gbd,                           & !multi-layer urban
+                      config_flags%urban_map_fbd,                           & !multi-layer urban
                       config_flags%num_urban_hi,                            & !multi-layer urban
                       grid%raincv_a,grid%raincv_b,                                    &
                       grid%gd_cloud, grid%gd_cloud2,                                  & ! Optional
@@ -1169,6 +1218,13 @@ endif
                       ,grid%massflux_EDKF, grid%entr_EDKF, grid%detr_EDKF                &
                       ,grid%thl_up,grid%thv_up,grid%rt_up                                &
                       ,grid%rv_up,grid%rc_up,grid%u_up,grid%v_up,grid%frac_up            &
+                      ,grid%RDCASHTEN, grid%RQCDCSHTEN                                   &
+                      ,grid%cldareaa, grid%cldareab, grid%cldliqa, grid%cldliqb          &
+                      ,grid%ca_rad, grid%cw_rad                                          &
+                      ,grid%pblmax, grid%wub, grid%ltopb, grid%clddpthb, grid%cldtopb    &
+                      ,grid%capesave, grid%ainckfsa, grid%radsave                        &
+                      ,grid%rainsh, grid%rainshvb, grid%kdcldtop, grid%kdcldbas          &
+                      ,grid%xtime1, grid%PBLHAVG, grid%TKEAVG                            &
                       ,grid%ccn_conc                                          & ! RAS
                       ,grid%QKE                                               &!JOE-for mynn
                       ,grid%landusef,grid%landusef2,grid%mosaic_cat_index                            & ! danli mosaic
@@ -1996,6 +2052,14 @@ DEALLOCATE(z_at_q)
 
    IF ( config_flags%diag_nwp2 == DO_TRAD_FIELDS ) THEN
       CALL wrf_debug ( 100 , '--> CALL DIAGNOSTICS PACKAGE: TRAD_FIELDS' )
+      DO j = jts, MIN(jte,jde-1)
+         DO k = 1, kte-1
+            DO i = its, MIN(ite,ide-1)
+               dz8w(i,k,j) = (grid%phb(i,k+1,j)+grid%ph_2(i,k+1,j))/g - (grid%phb(i,k,j)+grid%ph_2(i,k,j))/g
+               grid%rho(i,k,j) = 1./( grid%al(i,k,j)+grid%alb(i,k,j) ) 
+            END DO
+         END DO
+      END DO
       CALL trad_fields ( &
                !  Input data for computing
                U=grid%u_2                                           &
@@ -2021,9 +2085,17 @@ DEALLOCATE(z_at_q)
                ,sina=grid%sina                                      &
                ,cosa=grid%cosa                                      &
                !  Terrestrial data                
+               ,rho=grid%rho                                        &
+               ,dz8w=dz8w                                           &
                ,ht=grid%ht                                          &
                !  Namelist info
                ,use_theta_m=config_flags%use_theta_m                &
+               ,qc=moist(:,:,:,P_QC)                                &
+               ,rainc=grid%rainc                                    &
+               ,rainnc=grid%rainnc                                  &
+               ,snownc=grid%snownc                                  &
+               ,graupelnc=grid%graupelnc                            &
+               ,hailnc=grid%hailnc                                  &
                !  The diagnostic output variables
                ,sealevelp=grid%sealevelp                            &
                ,temperature=grid%temperature                        &
@@ -2033,6 +2105,12 @@ DEALLOCATE(z_at_q)
                ,vmet=grid%vmet                                      &
                ,speed=grid%speed                                    &
                ,dir=grid%dir                                        &
+               ,psfc=grid%psfc                                      &
+               ,rain=grid%rain                                      &
+               ,liqrain=grid%liqrain                                &
+               ,tpw=grid%tpw                                        &
+               ,potential_t=grid%potential_t                        &
+               ,rh=grid%rh                                          &
                !  Various indexes for declarations, loop bounds
                ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde   &
                ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme   &

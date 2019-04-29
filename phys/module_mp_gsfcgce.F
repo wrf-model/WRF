@@ -4,8 +4,6 @@
 MODULE module_mp_gsfcgce
 
    USE     module_wrf_error
-   USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
-   USE module_domain, ONLY : HISTORY_ALARM, Is_alarm_tstep
    USE module_mp_radar
 
 !JJS 1/3/2008     vvvvv
@@ -342,7 +340,6 @@ CONTAINS
 !                   qiold, qsold, qgold,                         &
                    rho, pii, p, itimestep,                      & 
                    refl_10cm, diagflag, do_radar_ref,           & ! GT added for reflectivity calcs
-!                  refl_10cm, grid_clock, grid_alarms,          & ! GT added for reflectivity calcs
                    ids,ide, jds,jde, kds,kde,                   & ! domain dims
                    ims,ime, jms,jme, kms,kme,                   & ! memory dims
                    its,ite, jts,jte, kts,kte                    & ! tile   dims
@@ -1244,7 +1241,6 @@ CONTAINS
                        qiwrf, qswrf, qgwrf, &
                        rho_mks, pi_mks, p0_mks,itimestep, &
                        refl_10cm, diagflag, do_radar_ref,           & ! GT added for reflectivity calcs
-!                      refl_10cm, grid_clock, grid_alarms,          & ! GT added for reflectivity calcs
                        ids,ide, jds,jde, kds,kde, &
                        ims,ime, jms,jme, kms,kme, &
                        its,ite, jts,jte, kts,kte  &
@@ -1505,8 +1501,6 @@ CONTAINS
 
 !+---+-----------------------------------------------------------------+
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT):: refl_10cm  ! GT
-! TYPE (WRFU_Clock):: grid_clock
-! TYPE (WRFU_Alarm), POINTER:: grid_alarms(:)
 
 
       REAL, DIMENSION(kts:kte):: qv1d, t1d, p1d, qr1d, qs1d, qg1d, dBZ

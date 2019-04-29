@@ -449,6 +449,7 @@
      &                 ,SW_PHYSICS=CONFIG_FLAGS%RA_SW_PHYSICS           &
      &                 ,RADT=RADT,RA_CALL_OFFSET=GRID%RA_CALL_OFFSET    &
      &                 ,STEPRA=NRAD,ICLOUD=config_flags%ICLOUD          &
+     &                 ,cldovrlp=config_flags%cldovrlp                  & ! J. Henderson AER: cldovrlp namelist value
      &                 ,WARM_RAIN=WARM_RAIN                             &
      &                 ,SWDOWNC=TOTSWDNC,CLDFRA=CLFR                    &
      &                 ,SWUPT=SWUPT                                     &
@@ -1058,6 +1059,11 @@
       CHARACTER(len=255) :: message
 #if HWRF==1
 !dbg integer :: kpblmin,kpblmax,lpblmin,lpblmax    !dbg
+      logical :: pert_pbl
+      logical :: pert_Cd
+      real    :: ens_Cdamp
+      real    :: ens_pblamp
+      integer :: ens_random_seed
 #endif
 !
 !
@@ -1481,7 +1487,16 @@
      &          ,LAI=GRID%LAI,IZ0TLND=CONFIG_FLAGS%IZ0TLND              &
      &          ,SF_URBAN_PHYSICS=SF_URBAN_PHYSICS                      &
 !     &          ,GMT=GMT,XLAT=XLAT,XLONG=XLONG,JULDAY=JULDAY            &
-     &          ,NUM_URBAN_LAYERS=NUM_URBAN_LAYERS                      &
+     &          ,num_urban_ndm = config_flags%num_urban_ndm             & !multi-layer urban
+     &          ,urban_map_zrd = config_flags%urban_map_zrd             & !multi-layer urban
+     &          ,urban_map_zwd = config_flags%urban_map_zwd             & !multi-layer urban
+     &          ,urban_map_gd  = config_flags%urban_map_gd              & !multi-layer urban
+     &          ,urban_map_zd  = config_flags%urban_map_zd              & !multi-layer urban
+     &          ,urban_map_zdf = config_flags%urban_map_zdf             & !multi-layer urban
+     &          ,urban_map_bd  = config_flags%urban_map_bd              & !multi-layer urban
+     &          ,urban_map_wd  = config_flags%urban_map_wd              & !multi-layer urban
+     &          ,urban_map_gbd = config_flags%urban_map_gbd             & !multi-layer urban
+     &          ,urban_map_fbd = config_flags%urban_map_fbd             & !multi-layer urban
      &          ,NUM_URBAN_HI=config_flags%num_urban_hi                 & !multi-layer urban
      &          ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE        &
      &          ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME        &
@@ -1641,6 +1656,8 @@
       CALL nl_get_var_ric(1, var_ric)
       CALL nl_get_coef_ric_s(1, coef_ric_s)
       CALL nl_get_coef_ric_l(1, coef_ric_l)
+      CALL nl_get_pert_pbl(1,pert_pbl)
+      CALL nl_get_ens_pblamp(1,ens_pblamp)
 !      write(0,*) 'var_ric & coef_ric_s l from namelist Kwon  ',var_ric,coef_ric_s,coef_ric_l
 #endif
 !
@@ -1706,9 +1723,9 @@
      &               ,DKU3D=DKU3D,DKT3D=DKT3D 
 #if HWRF==1
      &               ,coef_ric_l=coef_ric_l,coef_ric_s=coef_ric_s     &    !Kwon for Ric
-     &          ,pert_pbl=config_flags%pert_pbl                       &
-     &          ,ens_random_seed=config_flags%ens_random_seed         &
-     &          ,ens_pblamp=config_flags%ens_pblamp                   &
+     &          ,pert_pbl=pert_pbl                                    &
+     &          ,ens_random_seed=ens_random_seed                      &
+     &          ,ens_pblamp=ens_pblamp                                &
 #endif
      &               ,QV_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QV),F_QV=F_QV &
      &               ,QC_CURR=MOIST_TRANS(IMS,KMS,JMS,P_QC),F_QC=F_QC &
@@ -2494,6 +2511,11 @@
       INTEGER                    :: IDT                
       REAL,   DIMENSION(2)       :: RND1 
 #endif
+#if HWRF==1
+      logical :: pert_sas
+      integer :: ens_random_seed
+      real    :: ens_sasamp
+#endif
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
@@ -2520,7 +2542,11 @@
          DO J=JMS,JME
          DO I=IMS,IME
            HTOP(I,J)=0.
+           HTOPD(I,J)=0.
+           HTOPS(I,J)=0.
            HBOT(I,J)=REAL(KTE+1)
+           HBOTD(I,J)=REAL(KTE+1)
+           HBOTS(I,J)=REAL(KTE+1)
            CUTOP(I,J)=0.
            CUBOT(I,J)=REAL(KTE+1)
            CUPPT(I,J)=0.
@@ -2647,6 +2673,25 @@
         ENDDO
       ENDDO
       ENDDO
+#if (NMM_CORE==1)
+!$omp parallel do                                                       &
+!$omp& private(i,j,k)
+        DO K=KTS,KTE
+        DO J=JTS,JTE
+        DO I=ITS,ITE
+           DUCUDT(i,j,k)=0.0
+           DVCUDT(i,j,k)=0.0
+           DTHCUDT(i,j,k)=0.0
+           DQVCUDT(i,j,k)=0.0
+           DQRCUDT(i,j,k)=0.0
+           DQCCUDT(i,j,k)=0.0
+           DQICUDT(i,j,k)=0.0
+           DQSCUDT(i,j,k)=0.0
+        ENDDO
+        ENDDO
+        ENDDO
+#endif
+
 !
 !-----------------------------------------------------------------------
 !
@@ -2780,6 +2825,12 @@
 
 
       CALL SET_TILES(GRID,IDS+1,IDE-1,JDS+2,JDE-2,ITS,ITE,JTS,JTE)
+#if HWRF==1
+      CALL nl_get_pert_sas(1,pert_sas)
+      CALL nl_get_ens_random_seed(1,ens_random_seed)
+      CALL nl_get_ens_sasamp(1,ens_sasamp)
+#endif
+
 #if (NMM_CORE==1)
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
@@ -2846,9 +2897,9 @@
      &                 ,RUCUTEN=DUCUDT, RVCUTEN=DVCUDT, MOMMIX=MOMMIX   &
                        ,store_rand=store_rand                           &
 #if (HWRF==1)
-     &                 ,pert_sas=config_flags%pert_sas                  &
-     &                 ,ens_random_seed=config_flags%ens_random_seed    &
-     &                 ,ens_sasamp=config_flags%ens_sasamp              &
+     &                 ,pert_sas=pert_sas                               &
+     &                 ,ens_random_seed=ens_random_seed                 &
+     &                 ,ens_sasamp=ens_sasamp                           &
 #endif
 #endif
      &                 ,SHALL=grid%shall                                &

@@ -897,16 +897,35 @@ CONTAINS
       real*8 :: gasdev,ran1          !zhang
       real :: rr                     !zhang
       logical,save :: pert_Cd_local            !zhang
-      integer,save :: ens_random_seed_local         !zhang
+      CHARACTER(len=3) :: env_memb,env_pp
+      integer,save :: ens_random_seed_local,env_pp_local         !zhang
+      integer :: ensda_physics_pert !zhang
       real,save :: ens_Cdamp_local         !zhang
       data ens_random_seed_local/0/
+      data env_pp_local/0/
       if ( ens_random_seed_local .eq. 0 ) then
-!        CALL nl_get_pert_Cd(1,pert_Cd)
-!        CALL nl_get_ens_random_seed(1,ens_random_seed)
-!        CALL nl_get_ens_Cdamp(1,ens_Cdamp)
+         CALL nl_get_ensda_physics_pert(1,ensda_physics_pert)
          ens_random_seed_local=ens_random_seed
-         pert_Cd_local=pert_Cd
-         ens_Cdamp_local=ens_Cdamp
+         env_pp_local=ensda_physics_pert
+         pert_Cd_local=.false.
+         ens_Cdamp_local=0.0
+! env_pp=1: do physics perturbations for ensda members, ens_random_seed must be 99
+         if ( env_pp_local .eq. 1 ) then
+            if ( ens_random_seed .ne. 99 ) then
+               pert_Cd_local=.true.
+               ens_Cdamp_local=ens_Cdamp
+            else
+! ens_random_seed=99 do physics perturbation for ensemble forecasts, env_pp must be zero
+               ens_random_seed_local=ens_random_seed
+               pert_Cd_local=pert_Cd
+               ens_Cdamp_local=ens_Cdamp
+            endif
+         else
+            ens_random_seed_local=ens_random_seed
+            pert_Cd_local=pert_Cd
+            ens_Cdamp_local=ens_Cdamp
+         endif
+      print*, "Cd ===", ens_random_seed_local,pert_Cd_local,ens_Cdamp_local,ensda_physics_pert
       endif
 #endif
 
@@ -1742,9 +1761,14 @@ CONTAINS
 !                i, zot(i),zoc(i), cdm(i),cdm2(i), tsg(i),wind(i)
 #if HWRF==1
 ! randomly perturb the Cd
+!zzz        if( pert_Cd_local .and. ens_random_seed_local .gt. 0 ) then
         if( pert_Cd_local ) then
-        rr=2.0*ens_Cdamp_local*ran1(ens_random_seed_local)-ens_Cdamp_local
+!        print*, "zhang cd ens_random_seed==",ens_random_seed,ens_random_seed_local
+        ens_random_seed_local=ran1(-ens_random_seed_local)*1000
+        rr=2.0*ens_Cdamp_local*ran1(-ens_random_seed_local)-ens_Cdamp_local
+!        print*, "zhang cd a=", rr,cdm(i),ens_Cdamp_local,ens_random_seed_local
         cdm(i) = cdm(i) *(1.0+rr)
+!        print*, "zhang cd b=", rr,cdm(i),ens_Cdamp_local,ens_random_seed_local
         endif
 #endif
 

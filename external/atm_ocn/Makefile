@@ -20,9 +20,9 @@ library: $(OBJ)
 	$(FC) -o $@ -c $(FFLAGS)  $*.f90 
 
 clean:
-	rm -f $(OBJ) $(TARGET)
-	rm -f *.f90 
-	rm -f *.mod
+	@rm -f $(OBJ) $(TARGET)
+	@rm -f *.f90 
+	@rm -f *.mod
 
 
 superclean: clean

@@ -759,8 +759,8 @@ bufrfile:  do ibufr=1,numbufr
             end if
          end if
       end if
-      ! assign tpw obs errors for gpspw
-      if ( t29 == 74 ) then
+      ! assign tpw obs errors for gpspw (t29=74) and SPSSMI retrieved TPW (t29=65)
+      if ( t29 == 74 .or. t29 == 65 ) then
          if ( pwq == 8 .or. pwq  == 9 .or. pwq  == 15) then
             if ( obs(7,1) > 0.0 .and. obs(7,1) < r8bfms ) then
             platform%loc%pw%inv   = obs(7,1) * 0.1    ! convert to cm

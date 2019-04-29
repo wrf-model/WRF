@@ -1,9 +1,10 @@
 To activate time series output in WRF, a file named "tslist" must be present
 in the WRF run directory. The tslist file contains a list of locations, given
-by their latitude and longitude, along with a short description and an 
-abbreviation for each location. The first three lines in the file are 
-regarded as header information, and are ignored. The contents of an example 
-tslist file are shown below. 
+by their latitude and longitude, or i/j coordinates, along with a short 
+description and an abbreviation for each location. The first three lines in 
+the file are regarded as header information, and are used to determine if the
+given coordinates are lat/long or i/j. The contents of an example tslist file 
+for coordinate specification are shown below. 
 
 
 #-----------------------------------------------#
@@ -15,18 +16,31 @@ Bogus point A             pt_a   29.718  -75.772
 Bogus point B             pt_b   37.614  -74.650
 
 
+If cell locations are to be used (such as for idealized cases), the i/j 
+locations are to be specified as follows:
+
+#-----------------------------------------------#
+# 24 characters for name | pfx |   I   |    J   |
+#-----------------------------------------------#
+tower0001                 t0001  10       10
+tower0002                 t0002  20       20
+tower0003                 t0003  30       30
+
 Given a tslist file, for each location inside a model domain (either coarse 
-or nested), below files are created:
+or nested), the following files are created:
 
 1. pfx*.dNN.TS containing the regular time series output of surface variables.
 2. pfx.dNN.UU containing a vertical profile of u wind component for each time step
 3. pfx.dNN.VV containing a vertical profile of v wind component for each time step
-4. pfx.dNN.TH containing a vertical profile of potential temperature for time step
-5. pfx.dNN.PH containing a vertical profile of geopotential height in time step
-6. pfx.dNN.QV containing a vertical profile of water vapor mixing ratio time step
+4. pfx.dNN.WW containing a vertical profile of w wind component for each time step
+5. pfx.dNN.TH containing a vertical profile of potential temperature for time step
+6. pfx.dNN.PH containing a vertical profile of geopotential height for each time step
+7. pfx.dNN.QV containing a vertical profile of water vapor mixing ratio for each time step
+8. pfx.dNN.PR containing a vertical profile of pressure for each time step
 
 
-Where pfx is the specified prefix for the dd location in the tslist file, and NN is the domain ID, as given in 
+Where pfx is the specified prefix for the dd location in the tslist file, 
+and NN is the domain ID, as given in 
 namelist.input. If locations not in any model domain are specified in the 
 tslist file, they will be simply ignored by the time series capability.
 
@@ -39,12 +53,17 @@ however, smaller buffers will need to be flushed to disk more often than
 larger buffers. Thus, it is recommended that the size of the buffer be set 
 to the maximum number of time steps for any domain in a model run. 
 
+By default, the u, v, and w component winds are output on the staggered grid. 
+To unstagger them, the namelist variable tslist_unstagger_winds can be set to true.
+
 Namelist.input variables related to to this new capability:
 
  * max_ts_locs = maximum number of locations in 'tslist' ( default is 5)
  * ts_buf_size = buffer size for time series output (default is 200)
  * max_ts_level = number of model levels for time series vertical
    profiles (default is 15)
+ * tslist_unstagger_winds = output the unstaggered u, v, and w component
+   winds (default is false)
 
 The first line in a time-series output of surface variables (pfx*.dNN.TS) looks like this:
 
@@ -79,4 +98,5 @@ Example:
 
 
 Format of the files of vertical  profile:
-each line starting with the model time in hours, followed by the variable at model level 1,2,3, ... up to the highest model level of interest 
+each line starting with the model time in hours, followed by the variable 
+at model level 1,2,3, ... up to the highest model level of interest 

@@ -1432,7 +1432,7 @@
       REAL:: r_frac, g_frac
       REAL:: Ef_rw, Ef_sw, Ef_gw, Ef_rr
       REAL:: Ef_ra, Ef_sa, Ef_ga
-      REAL:: dtsave, odts, odt, odzq, hgt_agl
+      REAL:: dtsave, odts, odt, odzq, hgt_agl, SR
       REAL:: xslw1, ygra1, zans1, eva_factor
       INTEGER:: i, k, k2, n, nn, nstep, k_0, kbot, IT, iexfrq
       INTEGER, DIMENSION(5):: ksed1
@@ -1617,7 +1617,7 @@
             ri(k) = qi1d(k)*rho(k)
             ni(k) = MAX(R2, ni1d(k)*rho(k))
             if (ni(k).le. R2) then
-               lami = cie(2)/25.E-6
+               lami = cie(2)/5.E-6
                ni(k) = MIN(9999.D3, cig(1)*oig2*ri(k)/am_i*lami**bm_i)
             endif
             L_qi(k) = .true.
@@ -1905,7 +1905,7 @@
           tau  = 3.72/(rc(k)*taud)
           prr_wau(k) = zeta/tau
           prr_wau(k) = MIN(DBLE(rc(k)*odts), prr_wau(k))
-          pnr_wau(k) = prr_wau(k) / (am_r*nu_c*D0r*D0r*D0r)              ! RAIN2M
+          pnr_wau(k) = prr_wau(k) / (am_r*nu_c*200.*D0r*D0r*D0r)         ! RAIN2M
           pnc_wau(k) = MIN(DBLE(nc(k)*odts), prr_wau(k)                 &
                      / (am_r*mvd_c(k)*mvd_c(k)*mvd_c(k)))                   ! Qc2M
          endif
@@ -2179,6 +2179,7 @@
                          + tnr_racs2(idx_s,idx_t,idx_r1,idx_r)          &
                          + tnr_sacr1(idx_s,idx_t,idx_r1,idx_r)          &
                          + tnr_sacr2(idx_s,idx_t,idx_r1,idx_r)
+            pnr_rcs(k) = MIN(DBLE(nr(k)*odts), pnr_rcs(k))
            else
             prs_rcs(k) = -tcs_racs1(idx_s,idx_t,idx_r1,idx_r)           &
                          - tms_sacr1(idx_s,idx_t,idx_r1,idx_r)          &
@@ -2186,10 +2187,7 @@
                          + tcr_sacr2(idx_s,idx_t,idx_r1,idx_r)
             prs_rcs(k) = MAX(DBLE(-rs(k)*odts), prs_rcs(k))
             prr_rcs(k) = -prs_rcs(k)
-            pnr_rcs(k) = tnr_racs2(idx_s,idx_t,idx_r1,idx_r)            &   ! RAIN2M
-                         + tnr_sacr2(idx_s,idx_t,idx_r1,idx_r)
            endif
-           pnr_rcs(k) = MIN(DBLE(nr(k)*odts), pnr_rcs(k))
           endif
 
 !..Rain collecting graupel.  Cannot assume Wisner (1972) approximation
@@ -2267,8 +2265,7 @@
            pnr_rfz(k) = MIN(DBLE(nr(k)*odts), pnr_rfz(k))
           elseif (rr(k).gt. R1 .and. temp(k).lt.HGFR) then
            pri_rfz(k) = rr(k)*odts
-           pnr_rfz(k) = nr(k)*odts                                         ! RAIN2M
-           pni_rfz(k) = pnr_rfz(k)
+           pni_rfz(k) = nr(k)*odts                                         ! RAIN2M
           endif
 
           if (rc(k).gt. r_c(1)) then
@@ -2779,7 +2776,9 @@
          lvt2(k)=lvap(k)*lvap(k)*ocp(k)*oRv*otemp*otemp
 
          nwfa(k) = MAX(11.1E6, (nwfa1d(k) + nwfaten(k)*DT)*rho(k))
+      enddo
 
+      do k = kts, kte
          if ((qc1d(k) + qcten(k)*DT) .gt. R1) then
             rc(k) = (qc1d(k) + qcten(k)*DT)*rho(k)
             nc(k) = MAX(2., MIN((nc1d(k)+ncten(k)*DT)*rho(k), Nt_c_max))
@@ -3095,7 +3094,7 @@
           prv_rev(k) = MIN(DBLE(rate_max), prv_rev(k)*orho)
 
 !..TEST: G. Thompson  10 May 2013
-!..Reduce the rain evaporation in same places as melting graupel occurs. 
+!..Reduce the rain evaporation in same places as melting graupel occurs.
 !..Rationale: falling and simultaneous melting graupel in subsaturated
 !..regions will not melt as fast because particle temperature stays
 !..at 0C.  Also not much shedding of the water from the graupel so
@@ -3268,8 +3267,8 @@
            t4_vts = Kap1*Mrat**mu_s*csg(7)*ils2**cse(7)
            vts = rhof(k)*av_s * (t1_vts+t2_vts)/(t3_vts+t4_vts)
            if (temp(k).gt. (T_0+0.1)) then
-            vtsk(k) = MAX(vts*vts_boost(k),                             &
-     &                vts*((vtrk(k)-vts*vts_boost(k))/(temp(k)-T_0)))
+            SR = rs(k)/(rs(k)+rr(k))
+            vtsk(k) = vts*SR + (1.-SR)*vtrk(k)
            else
             vtsk(k) = vts*vts_boost(k)
            endif

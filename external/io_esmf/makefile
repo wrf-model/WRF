@@ -25,7 +25,7 @@ $(TARGET) : $(OBJS)
 	$(FC) -c -g -I../ioapi_share $*.f
 
 superclean: 
-	/bin/rm -f *.f *.o $(TARGET) *.mod
+	@/bin/rm -f *.f *.o $(TARGET) *.mod
 
 # DEPENDENCIES : only dependencies after this line 
 

@@ -158,6 +158,28 @@ subroutine da_med_initialdata_input (grid, config_flags, filename, in_date)
    write(unit=message(1),fmt='(A,I2)') 'hybrid_opt = ', grid%hybrid_opt
    call da_message(message(1:1))
 
+   !global attribute USE_THETA_M exists in WRF V3.7? and later
+   call wrf_get_dom_ti_integer (fid, 'USE_THETA_M', grid%use_theta_m, 1, icnt, ierr)
+   if ( ierr /= 0 ) then
+      grid%use_theta_m = 0
+      write(unit=message(1),fmt='(A,A)') trim(filename), ' appears to be from earlier than WRF V3.7'
+      write(unit=message(2),fmt='(A)')   'Setting use_theta_m = 0'
+      call da_message(message(1:2))
+   else
+      ! when input file contains USE_THETA_M, stop 4DVAR (wrfplus not work with thetam yet).
+      if ( var4d ) then
+         if ( grid%use_theta_m > 0 ) then
+            write(unit=message(1),fmt='(A,I2,A,A)') 'USE_THETA_M = ', grid%use_theta_m, ' in ', trim(filename)
+            write(unit=message(2),fmt='(A)') '4DVAR does not work with moist potential T'
+            call da_error(__FILE__,__LINE__,message(1:2))
+         end if
+      end if
+   end if
+
+   write(unit=message(1),fmt='(A,I2)') 'use_theta_m = ', grid%use_theta_m
+   call da_message(message(1:1))
+
+
    call close_dataset (fid , config_flags , "DATASET=INPUT")
 
    if (trace_use) call da_trace_exit("da_med_initialdata_input")

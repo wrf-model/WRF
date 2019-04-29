@@ -1813,6 +1813,7 @@ ENDIF   ! CROPTYPE == 0
     CHLEAF    = 0.
     CHUC      = 0.
     CHV2      = 0.
+    RB        = 0.
 
 ! wind speed at reference height: ur >= 1
 
@@ -1855,6 +1856,15 @@ ENDIF   ! CROPTYPE == 0
      ELSE
         Z0M  = Z0MG
         ZPD  = ZPDG
+     END IF
+
+! special case for urban
+
+     IF (parameters%urban_flag) THEN
+       Z0MG = parameters%Z0MVT
+       ZPDG  = 0.65 * parameters%HVT
+       Z0M  = Z0MG
+       ZPD  = ZPDG
      END IF
 
      ZLVL = MAX(ZPD,parameters%HVT) + ZREF

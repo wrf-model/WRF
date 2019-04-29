@@ -80,7 +80,10 @@ MODULE module_sf_bep_bem
                       th_phy,rho,p_phy,swdown,glw,                                 &
                       gmt,julday,xlong,xlat,                                       &
                       declin_urb,cosz_urb2d,omg_urb2d,                             &
-                      num_urban_layers,num_urban_hi,                               &
+                      num_urban_ndm,  urban_map_zrd,  urban_map_zwd, urban_map_gd, &
+                       urban_map_zd,  urban_map_zdf,   urban_map_bd, urban_map_wd, &
+                      urban_map_gbd,  urban_map_fbd,                               &
+                       num_urban_hi,                                               &
                       trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,                     &
                       tlev_urb3d,qlev_urb3d,tw1lev_urb3d,tw2lev_urb3d,             &
                       tglev_urb3d,tflev_urb3d,sf_ac_urb3d,lf_ac_urb3d,             &
@@ -127,32 +130,41 @@ MODULE module_sf_bep_bem
    REAL, INTENT(IN) :: DECLIN_URB
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: COSZ_URB2D
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN) :: OMG_URB2D
-   INTEGER, INTENT(IN  ) :: num_urban_layers
+   INTEGER, INTENT(IN  ) :: num_urban_ndm
+   INTEGER, INTENT(IN  ) :: urban_map_zrd
+   INTEGER, INTENT(IN  ) :: urban_map_zwd
+   INTEGER, INTENT(IN  ) :: urban_map_gd
+   INTEGER, INTENT(IN  ) :: urban_map_zd
+   INTEGER, INTENT(IN  ) :: urban_map_zdf
+   INTEGER, INTENT(IN  ) :: urban_map_bd
+   INTEGER, INTENT(IN  ) :: urban_map_wd
+   INTEGER, INTENT(IN  ) :: urban_map_gbd
+   INTEGER, INTENT(IN  ) :: urban_map_fbd
    INTEGER, INTENT(IN  ) :: num_urban_hi
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: trb_urb4d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw1_urb4d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw2_urb4d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tgb_urb4d
+   REAL, DIMENSION( ims:ime, 1:urban_map_zrd, jms:jme ), INTENT(INOUT) :: trb_urb4d
+   REAL, DIMENSION( ims:ime, 1:urban_map_zwd, jms:jme ), INTENT(INOUT) :: tw1_urb4d
+   REAL, DIMENSION( ims:ime, 1:urban_map_zwd, jms:jme ), INTENT(INOUT) :: tw2_urb4d
+   REAL, DIMENSION( ims:ime, 1:urban_map_gd , jms:jme ), INTENT(INOUT) :: tgb_urb4d
 !New variables used for BEM
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ):: qv_phy
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tlev_urb3d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: qlev_urb3d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw1lev_urb3d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw2lev_urb3d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tglev_urb3d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tflev_urb3d
+   REAL, DIMENSION( ims:ime, 1:urban_map_bd , jms:jme ), INTENT(INOUT) :: tlev_urb3d
+   REAL, DIMENSION( ims:ime, 1:urban_map_bd , jms:jme ), INTENT(INOUT) :: qlev_urb3d
+   REAL, DIMENSION( ims:ime, 1:urban_map_wd , jms:jme ), INTENT(INOUT) :: tw1lev_urb3d
+   REAL, DIMENSION( ims:ime, 1:urban_map_wd , jms:jme ), INTENT(INOUT) :: tw2lev_urb3d
+   REAL, DIMENSION( ims:ime, 1:urban_map_gbd, jms:jme ), INTENT(INOUT) :: tglev_urb3d
+   REAL, DIMENSION( ims:ime, 1:urban_map_fbd, jms:jme ), INTENT(INOUT) :: tflev_urb3d
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: lf_ac_urb3d
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: sf_ac_urb3d
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: cm_ac_urb3d
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: sfvent_urb3d
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) :: lfvent_urb3d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfwin1_urb3d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfwin2_urb3d
+   REAL, DIMENSION( ims:ime, 1:urban_map_wd , jms:jme ), INTENT(INOUT) :: sfwin1_urb3d
+   REAL, DIMENSION( ims:ime, 1:urban_map_wd , jms:jme ), INTENT(INOUT) :: sfwin2_urb3d
 !End variables
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfw1_urb3d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfw2_urb3d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfr_urb3d
-   REAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: sfg_urb3d
+   REAL, DIMENSION( ims:ime, 1:urban_map_zd , jms:jme ), INTENT(INOUT) :: sfw1_urb3d
+   REAL, DIMENSION( ims:ime, 1:urban_map_zd , jms:jme ), INTENT(INOUT) :: sfw2_urb3d
+   REAL, DIMENSION( ims:ime, 1:urban_map_zdf, jms:jme ), INTENT(INOUT) :: sfr_urb3d
+   REAL, DIMENSION( ims:ime, 1:num_urban_ndm, jms:jme ), INTENT(INOUT) :: sfg_urb3d
    REAL, DIMENSION( ims:ime, 1:num_urban_hi, jms:jme ), INTENT(IN) :: hi_urb2d
    REAL, DIMENSION( ims:ime,jms:jme), INTENT(IN) :: lp_urb2d
    REAL, DIMENSION( ims:ime,jms:jme), INTENT(IN) :: lb_urb2d
@@ -289,6 +301,8 @@ MODULE module_sf_bep_bem
       real z_u(nz_um)         ! Height of the urban grid levels
 !FS
       real cop_u(nurbm)
+      real bldac_frc_u(nurbm)
+      real cooled_frc_u(nurbm)
       real pwin_u(nurbm)
       real beta_u(nurbm)
       integer sw_cond_u(nurbm)
@@ -389,6 +403,7 @@ MODULE module_sf_bep_bem
            albg_u,albw_u,albr_u,emg_u,emw_u,emr_u,                       &
            z0g_u,z0r_u, nd_u,strd_u,drst_u,ws_u,bs_u,h_b,d_b,ss_u,pb_u,  &
            nz_u,z_u,albwin_u,emwind_u,cop_u,pwin_u,beta_u,sw_cond_u,     &
+           bldac_frc_u,cooled_frc_u,                                     &
            time_on_u,time_off_u,targtemp_u,gaptemp_u,targhum_u,gaphum_u, &
            perflo_u,hsesf_u,hsequip 
 
@@ -409,30 +424,30 @@ MODULE module_sf_bep_bem
 !
 !prepare the arrays to collapse indexes
 
-      if(num_urban_layers.lt.nbui_max*nz_um*ndm*max(nwr_u,ng_u))then
-        write(*,*)'num_urban_layers too small, please increase to at least ', nbui_max*nz_um*ndm*max(nwr_u,ng_u)
+      if(urban_map_zwd.lt.nbui_max*nz_um*ndm*max(nwr_u,ng_u))then
+        write(*,*)'urban_map_zwd too small, please increase to at least ', nbui_max*nz_um*ndm*max(nwr_u,ng_u)
         stop
       endif
 !
 !New conditions for BEM
 !
-      if(num_urban_layers.lt.nbui_max*nz_um)then !limit for indoor temperature and indoor humidity
-        write(*,*)'num_urban_layers too small, please increase to at least ', nbui_max*nz_um
+      if(urban_map_bd.lt.nbui_max*nz_um)then !limit for indoor temperature and indoor humidity
+        write(*,*)'urban_map_bd too small, please increase to at least ', nbui_max*nz_um
         stop
       endif
 
-      if(num_urban_layers.lt.nbui_max*nz_um*ndm)then !limit for window temperature
-        write(*,*)'num_urban_layers too small, please increase to at least ', nbui_max*nz_um*ndm
+      if(urban_map_wd.lt.nbui_max*nz_um*ndm)then !limit for window temperature
+        write(*,*)'urban_map_wd too small, please increase to at least ', nbui_max*nz_um*ndm
         stop
       endif
 
-      if(num_urban_layers.lt.nbui_max*ndm*ngb_u)then !limit for ground temperature below a building
-        write(*,*)'num_urban_layers too small, please increase to at least ', nbui_max*ndm*ngb_u
+      if(urban_map_gbd.lt.nbui_max*ndm*ngb_u)then !limit for ground temperature below a building
+        write(*,*)'urban_map_gbd too small, please increase to at least ', nbui_max*ndm*ngb_u
         stop
       endif
 
-      if(num_urban_layers.lt.(nz_um-1)*nbui_max*ndm*nf_u)then !limit for floor temperature 
-        write(*,*)'num_urban_layers too small, please increase to at least ', nbui_max*ndm*nf_u*(nz_um-1),num_urban_layers
+      if(urban_map_fbd.lt.(nz_um-1)*nbui_max*ndm*nf_u)then !limit for floor temperature 
+        write(*,*)'urban_map_fbd too small, please increase to at least ', nbui_max*ndm*nf_u*(nz_um-1)
         stop
       endif
 
@@ -593,6 +608,7 @@ MODULE module_sf_bep_bem
                 twini_u,trini_u,tgini_u,albg_u,albw_u,albr_u,albwin_u,emg_u,emw_u,&
                 emr_u,emwind_u,z0g_u,z0r_u,nd_u,strd_u,drst_u,ws_u,bs_u,h_b,d_b,  &
                 cop_u,pwin_u,beta_u,sw_cond_u,time_on_u,time_off_u,targtemp_u,    &
+                bldac_frc_u,cooled_frc_u,                                         &
                 gaptemp_u,targhum_u,gaphum_u,perflo_u,hsesf_u,hsequip)
 
 !Initialisation of the urban parameters and calculation of the view factor
@@ -897,6 +913,7 @@ MODULE module_sf_bep_bem
          meso_urb=(1./4.)*FRC_URB2D(ix,iy)/((bs_urb(1,iurb)+ws_urb(1,iurb))*bs_urb(2,iurb))+ &
                   (1./4.)*FRC_URB2D(ix,iy)/((bs_urb(2,iurb)+ws_urb(2,iurb))*bs_urb(1,iurb))
 
+         meso_urb= meso_urb*bldac_frc_u(iurb)*cooled_frc_u(iurb)   !! adjust for fraction AC
          
          ibui=0
          nlev=0
@@ -976,11 +993,6 @@ MODULE module_sf_bep_bem
 
         time_bep=time_bep+dt
 
-      print*, 'ss_urb', ss_urb
-      print*, 'pb_urb', pb_urb
-      print*, 'nz_urb', nz_urb
-      print*, 'd_urb',  d_urb
-            
       return
       end subroutine BEP_BEM
             
@@ -4032,6 +4044,7 @@ MODULE module_sf_bep_bem
         twini_u,trini_u,tgini_u,albg_u,albw_u,albr_u,albwin_u,emg_u,emw_u,&
         emr_u,emwind_u,z0g_u,z0r_u,nd_u,strd_u,drst_u,ws_u,bs_u,h_b,d_b,  &
         cop_u,pwin_u,beta_u,sw_cond_u,time_on_u,time_off_u,targtemp_u,    &
+        bldac_frc_u,cooled_frc_u,                                         &
         gaptemp_u, targhum_u,gaphum_u,perflo_u,hsesf_u,hsequip)
 
 ! initialization routine, where the variables from the table are read
@@ -4077,6 +4090,8 @@ MODULE module_sf_bep_bem
       integer i,iu
       integer nurb ! number of urban classes used
       real, intent(out) :: cop_u(nurbm)
+      real, intent(out) :: bldac_frc_u(nurbm)
+      real, intent(out) :: cooled_frc_u(nurbm)
       real, intent(out) :: pwin_u(nurbm)
       real, intent(out) :: beta_u(nurbm)
       integer, intent(out) :: sw_cond_u(nurbm)
@@ -4124,6 +4139,8 @@ MODULE module_sf_bep_bem
        nd_u=NUMDIR_TBL
 !FS
        cop_u = cop_tbl
+       bldac_frc_u = bldac_frc_tbl
+       cooled_frc_u = cooled_frc_tbl
        pwin_u = pwin_tbl
        beta_u = beta_tbl
        sw_cond_u = sw_cond_tbl
@@ -4140,7 +4157,7 @@ MODULE module_sf_bep_bem
        do iu=1,icate
               if(ndm.lt.nd_u(iu))then
                 write(*,*)'ndm too small in module_sf_bep_bem, please increase to at least ', nd_u(iu)
-                write(*,*)'remember also that num_urban_layers should be equal or greater than nz_um*ndm*nwr-u!'
+                write(*,*)'remember also that urban_map_zrd should be equal or greater than nz_um*ndm*nwr-u!'
                 stop
               endif
          do i=1,nd_u(iu)
@@ -4152,7 +4169,7 @@ MODULE module_sf_bep_bem
        do iu=1,ICATE
           if(nz_um.lt.numhgt_tbl(iu)+3)then
               write(*,*)'nz_um too small in module_sf_bep, please increase to at least ',numhgt_tbl(iu)+3
-              write(*,*)'remember also that num_urban_layers should be equal or greater than nz_um*ndm*nwr-u!'
+              write(*,*)'remember also that urban_map_zrd should be equal or greater than nz_um*ndm*nwr-u!'
               stop
           endif
          do i=1,NUMHGT_TBL(iu)
@@ -4591,3 +4608,62 @@ MODULE module_sf_bep_bem
 !====================================================================72
 !====================================================================72
 END MODULE module_sf_bep_bem
+! ===6=8===============================================================72
+! ===6=8===============================================================72
+
+      FUNCTION bep_bem_nurbm () RESULT (bep_bem_val_nurbm)
+         USE module_sf_bep_bem
+         IMPLICIT NONE
+         INTEGER :: bep_bem_val_nurbm
+         bep_bem_val_nurbm = nurbm
+      END FUNCTION bep_bem_nurbm
+      
+      FUNCTION bep_bem_ndm () RESULT (bep_bem_val_ndm)
+         USE module_sf_bep_bem
+         IMPLICIT NONE
+         INTEGER :: bep_bem_val_ndm
+         bep_bem_val_ndm = ndm
+      END FUNCTION bep_bem_ndm
+      
+      FUNCTION bep_bem_nz_um () RESULT (bep_bem_val_nz_um)
+         USE module_sf_bep_bem
+         IMPLICIT NONE
+         INTEGER :: bep_bem_val_nz_um
+         bep_bem_val_nz_um = nz_um
+      END FUNCTION bep_bem_nz_um
+      
+      FUNCTION bep_bem_ng_u () RESULT (bep_bem_val_ng_u)
+         USE module_sf_bep_bem
+         IMPLICIT NONE
+         INTEGER :: bep_bem_val_ng_u
+         bep_bem_val_ng_u = ng_u
+      END FUNCTION bep_bem_ng_u
+      
+      FUNCTION bep_bem_nwr_u () RESULT (bep_bem_val_nwr_u)
+         USE module_sf_bep_bem
+         IMPLICIT NONE
+         INTEGER :: bep_bem_val_nwr_u
+         bep_bem_val_nwr_u = nwr_u
+      END FUNCTION bep_bem_nwr_u
+      
+      FUNCTION bep_bem_nf_u () RESULT (bep_bem_val_nf_u)
+         USE module_sf_bep_bem
+         IMPLICIT NONE
+         INTEGER :: bep_bem_val_nf_u
+         bep_bem_val_nf_u = nf_u
+      END FUNCTION bep_bem_nf_u
+
+      FUNCTION bep_bem_ngb_u () RESULT (bep_bem_val_ngb_u)
+         USE module_sf_bep_bem
+         IMPLICIT NONE
+         INTEGER :: bep_bem_val_ngb_u
+         bep_bem_val_ngb_u = ngb_u
+      END FUNCTION bep_bem_ngb_u
+
+      FUNCTION bep_bem_nbui_max () RESULT (bep_bem_val_nbui_max)
+         USE module_sf_bep_bem
+         IMPLICIT NONE
+         INTEGER :: bep_bem_val_nbui_max
+         bep_bem_val_nbui_max = nbui_max
+      END FUNCTION bep_bem_nbui_max
+

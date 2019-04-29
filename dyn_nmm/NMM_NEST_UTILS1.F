@@ -132,10 +132,6 @@ SUBROUTINE med_nest_egrid_configure ( parent , nest )
     CALL nl_set_cen_lat ( nest%id , nest%cen_lat)  ! for output purpose
     CALL nl_set_cen_lon ( nest%id , nest%cen_lon)  ! for output purpose
 
-    write(message,*)" - nest%cen_lat   = ",nest%cen_lat
-    CALL wrf_message(trim(message))
-    write(message,*)" - nest%cen_lon   = ",nest%cen_lon
-    CALL wrf_message(trim(message))
 
 
 !   soil configuration
@@ -778,6 +774,122 @@ SUBROUTINE EARTH_LATLON ( HLAT,HLON,VLAT,VLON,     & !Earth lat,lon at H and V p
 END SUBROUTINE EARTH_LATLON
 
 !-----------------------------------------------------------------------------  
+SUBROUTINE EARTH_LATLON_r8 ( HLAT,HLON,VLAT,VLON,     & !Earth lat,lon at H and V points
+                            DLMD1,DPHD1,WBD1,SBD1,   & !input res,west & south boundaries,
+                            CENTRAL_LAT,CENTRAL_LON, & ! central lat,lon, all in degrees
+                            IDS,IDE,JDS,JDE,KDS,KDE, &
+                            IMS,IME,JMS,JME,KMS,KME, &
+                            ITS,ITE,JTS,JTE,KTS,KTE  )
+!============================================================================
+!
+ IMPLICIT NONE
+ INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
+ INTEGER,    INTENT(IN   )                            :: IMS,IME,JMS,JME,KMS,KME
+ INTEGER,    INTENT(IN   )                            :: ITS,ITE,JTS,JTE,KTS,KTE
+ INTEGER,PARAMETER                           :: KNUM=SELECTED_REAL_KIND(13)
+ REAL,       INTENT(IN   )                            :: DLMD1,DPHD1,WBD1,SBD1
+ REAL,       INTENT(IN   )                            :: CENTRAL_LAT,CENTRAL_LON
+ REAL(KIND=KNUM), DIMENSION(IMS:IME,JMS:JME), INTENT(OUT)        :: HLAT,HLON,VLAT,VLON
+
+! local
+
+
+ INTEGER                                     :: I,J
+ REAL(KIND=KNUM)                             :: WB,SB,DLM,DPH,TPH0,STPH0,CTPH0
+ REAL(KIND=KNUM)                             :: TDLM,TDPH,TLMH,TLMV,TLMH0,TLMV0,TPHH,TPHV,DTR
+ REAL(KIND=KNUM)                             :: STPH,CTPH,STPV,CTPV,PI_2
+ REAL(KIND=KNUM)                             :: SPHH,CLMH,FACTH,SPHV,CLMV,FACTV
+ REAL(KIND=KNUM), DIMENSION(IMS:IME,JMS:JME) :: GLATH,GLONH,GLATV,GLONV
+ REAL(KIND=KNUM) :: DLMD8,DPHD8,WBD8,SBD8,CLAT8,CLON8
+ REAL(KIND=KNUM) :: CPHH, CPHV
+!-------------------------------------------------------------------------
+ DLMD8=DLMD1
+ DPHD8=DPHD1
+ WBD8=WBD1
+ SBD8=SBD1
+ CLAT8=CENTRAL_LAT
+ CLON8=CENTRAL_LON
+!
+      PI_2 = DACOS(0.D0)
+      DTR  = PI_2/90.D0
+      WB   = WBD8 * DTR                 ! WB:   western boundary in radians
+      SB   = SBD8 * DTR                 ! SB:   southern boundary in radians
+      DLM  = DLMD8 * DTR                ! DLM:  dlamda in radians
+      DPH  = DPHD8 * DTR                ! DPH:  dphi   in radians
+      TDLM = DLM + DLM                  ! TDLM: 2.0*dlamda
+      TDPH = DPH + DPH                  ! TDPH: 2.0*DPH
+
+!     For earth lat lon only
+
+      TPH0  = CLAT8*DTR                ! TPH0: central lat in radians
+      STPH0 = DSIN(TPH0)
+      CTPH0 = DCOS(TPH0)
+
+                                                !    .H
+      DO J = JTS,MIN(JTE,JDE-1)                 ! H./    This loop takes care of zig-zag
+!                                               !   \.H  starting points along j
+         TLMH0 = WB - TDLM + MOD(J+1,2) * DLM   !  ./    TLMH (rotated lats at H points)
+         TLMV0 = WB - TDLM + MOD(J,2) * DLM     !  H     (//ly for V points)
+         TPHH = SB + (J-1)*DPH                  !   TPHH (rotated lons at H points) are simple trans.
+         TPHV = TPHH                            !   TPHV (rotated lons at V points) are simple trans.
+         STPH = DSIN(TPHH)
+         CTPH = DCOS(TPHH)
+         STPV = DSIN(TPHV)
+         CTPV = COS(TPHV)
+                                                              !   .H
+         DO I = ITS,MIN(ITE,IDE-1)                            !  /
+           TLMH = TLMH0 + I*TDLM                              !  \.H   .U   .H
+!                                                             !H./ ----><----
+           SPHH = CTPH0 * STPH + STPH0 * CTPH * COS(TLMH)     !     DLM + DLM
+           CPHH = dsqrt(1-SPHH**2)
+           GLATH(I,J)=DASIN(SPHH)                              ! GLATH: Earth Lat in radians
+           !CLMH = CTPH*COS(TLMH)/(COS(GLATH(I,J))*CTPH0) &
+           !     - TAN(GLATH(I,J))*TAN(TPH0)
+           CLMH = (CTPH*DCOS(TLMH)-SPHH*STPH0) / (CPHH*CTPH0)
+           IF(CLMH .GT. 1.D0) CLMH = 1.0D0
+           IF(CLMH .LT. -1.D0) CLMH = -1.0D0
+           FACTH = 1.
+           IF(TLMH .GT. 0.) FACTH = -1.D0
+           GLONH(I,J) = -CLON8*DTR + FACTH*DACOS(CLMH)
+
+         ENDDO
+
+         DO I = ITS,MIN(ITE,IDE-1)
+           TLMV = TLMV0 + I*TDLM
+           SPHV = CTPH0 * STPV + STPH0 * CTPV * DCOS(TLMV)
+           CPHV = dsqrt(1.D0-SPHV**2)
+           GLATV(I,J) = DASIN(SPHV)
+           !CLMV = CTPV*COS(TLMV)/(COS(GLATV(I,J))*CTPH0) &
+           !     - TAN(GLATV(I,J))*TAN(TPH0)
+           CLMV = (CTPV*DCOS(TLMV)-SPHV*STPH0) / (CPHV*CTPH0)
+           IF(CLMV .GT. 1.D0) CLMV = 1.D0
+           IF(CLMV .LT. -1.D0) CLMV = -1.D0
+           FACTV = 1.D0
+           IF(TLMV .GT. 0.D0) FACTV = -1.D0
+           GLONV(I,J) = -CLON8*DTR + FACTV*DACOS(CLMV)
+
+         ENDDO
+
+      ENDDO
+
+!     Conversion to degrees (may not be required, eventually)
+
+      DO J = JTS, MIN(JTE,JDE-1)
+       DO I = ITS, MIN(ITE,IDE-1)
+          HLAT(I,J) = GLATH(I,J) / DTR
+          HLON(I,J)= -GLONH(I,J)/DTR
+          IF(HLON(I,J) .GT. 180.D0) HLON(I,J) = HLON(I,J)  - 360.D0
+          IF(HLON(I,J) .LT. -180.D0) HLON(I,J) = HLON(I,J) + 360.D0
+!
+          VLAT(I,J) = GLATV(I,J) / DTR
+          VLON(I,J) = -GLONV(I,J) / DTR
+          IF(VLON(I,J) .GT. 180.D0) VLON(I,J) = VLON(I,J)  - 360.D0
+          IF(VLON(I,J) .LT. -180.D0) VLON(I,J) = VLON(I,J) + 360.D0
+
+       ENDDO
+      ENDDO
+
+END SUBROUTINE EARTH_LATLON_r8
 
 subroutine init_hnear(iih,jjh,hbwgt1,hbwgt2,hbwgt3,hbwgt4, &
                       hnear_i,hnear_j,                     &
@@ -2527,7 +2639,7 @@ SUBROUTINE WEIGTS_CHECK(HBWGT1,HBWGT2,HBWGT3,HBWGT4,       &
 ! USAGE OF NUMBER OF PROCESSORS BEFORE ANY FURTHER COMPUTATIONS. WE INTRODUCE THIS
 ! CHECK FIRST
 
-  IF((ITE-ITS) .LE. 5 .OR. (JTE-JTS) .LE. 5)THEN
+  IF((ITE-ITS) .LE. 4 .OR. (JTE-JTS) .LE. 4)THEN
    WRITE(message,*)'ITE-ITS=',ITE-ITS,'JTE-JTS=',JTE-JTS
    CALL wrf_message(trim(message))
    CALL wrf_error_fatal ('NESTED DOMAIN:PLEASE OPTIMIZE THE NUMBER OF PROCESSES; TRY SQUARES OF NUMBERS') 
@@ -3332,7 +3444,7 @@ SUBROUTINE med_initialize_nest_nmm( grid &
  REAL, PARAMETER:: SNUP=0.040
  REAL, PARAMETER:: W_NMM=0.08
 ! REAL, PARAMETER:: COAC=0.75
- REAL, PARAMETER:: CODAMP=6.4
+! REAL, PARAMETER:: CODAMP=6.4
  REAL, PARAMETER:: TWOM=.00014584
  REAL, PARAMETER:: CP=1004.6
  REAL, PARAMETER:: DFC=1.0    
@@ -3354,6 +3466,7 @@ SUBROUTINE med_initialize_nest_nmm( grid &
  REAL, PARAMETER:: DTR=0.01745329
 
  REAL :: COAC
+ REAL :: CODAMP
 
  CHARACTER(LEN=255) :: message
 
@@ -3377,6 +3490,7 @@ SUBROUTINE med_initialize_nest_nmm( grid &
 !
 
    call nl_get_coac(grid%id,coac)
+   call nl_get_codamp(grid%id,codamp)
 
     DT=grid%dt         !float(TIME_STEP)/parent_time_step_ratio
     NNXP=min(ITE,IDE-1)

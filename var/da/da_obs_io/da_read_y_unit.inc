@@ -34,13 +34,14 @@ subroutine da_read_y_unit(filename,unit_out,num,obs_type_in, nc)
    
    if_write = .false.
    if (index(iv_type,OBS_type_in(1:nc)) > 0) if_write = .true.
-
+   
    ! If radiance data treat differently
    if ( (index(iv_type,'noaa') > 0) .or. (index(iv_type,'eos') > 0) .or.   &
         (index(iv_type,'dmsp') > 0) .or. (index(iv_type,'metop') > 0) .or. &
         (index(iv_type,'tiros') > 0) .or. (index(iv_type,'msg') > 0) .or. &
         (index(iv_type,'jpss') > 0)  .or. (index(iv_type,'gcom-w') >0) .or. &
-        (index(iv_type,'goes') > 0) .or. (index(iv_type,'himawari') >0) ) then
+        (index(iv_type,'goes') > 0) .or. (index(iv_type,'himawari') >0) .or. &
+        (index(iv_type,'fy3') >0)) then
 
       do n = 1, num_obs
          if (if_write) num = num + 1

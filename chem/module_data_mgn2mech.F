@@ -1811,8 +1811,8 @@ CONTAINS
     p_of_megan2crimech(  5) = is_limonene         ; p_of_crimech(  5) = p_bpinene ;  crimech_per_megan(  5)    =  0.333 
     p_of_megan2crimech(  6) = is_carene_3         ; p_of_crimech(  6) = p_apinene ;  crimech_per_megan(  6)    =  1.000 
     p_of_megan2crimech(  7) = is_ocimene_t_b      ; p_of_crimech(  7) = p_bpinene ;  crimech_per_megan(  7)    =  1.000
-    p_of_megan2crimech(  8) = is_pinene_b         ; p_of_crimech(  8) = p_apinene ;  crimech_per_megan(  8)    =  1.000 
-    p_of_megan2crimech(  9) = is_pinene_a         ; p_of_crimech(  9) = p_bpinene ;  crimech_per_megan(  9)    =  1.000 
+    p_of_megan2crimech(  8) = is_pinene_b         ; p_of_crimech(  8) = p_bpinene ;  crimech_per_megan(  8)    =  1.000 
+    p_of_megan2crimech(  9) = is_pinene_a         ; p_of_crimech(  9) = p_apinene ;  crimech_per_megan(  9)    =  1.000 
     p_of_megan2crimech( 10) = is_2met_styrene     ; p_of_crimech( 10) = p_apinene ;  crimech_per_megan( 10)    =  1.000
     p_of_megan2crimech( 11) = is_2met_styrene     ; p_of_crimech( 11) = p_bpinene ;  crimech_per_megan( 11)    =  1.000
     p_of_megan2crimech( 12) = is_cymene_p         ; p_of_crimech( 12) = p_toluene ;  crimech_per_megan( 12)    =  1.500

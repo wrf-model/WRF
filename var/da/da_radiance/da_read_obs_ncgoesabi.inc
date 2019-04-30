@@ -194,7 +194,8 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    ! Other work variables
    real(r_double)   :: dlon_earth,dlat_earth,dlon_earth_deg,dlat_earth_deg
    real(r_double)   :: ngoes
-   integer(i_kind)  :: num_goesabi_local, num_goesabi_global, num_goesabi_used, &
+   integer(i_kind)  :: num_goesabi_local, num_goesabi_global, &
+                 num_goesabi_used, num_goesabi_used_fgat(num_fgat_time), &
                  num_goesabi_used_tmp, num_goesabi_thinned
    integer(i_kind)  :: itx, itt
    real, allocatable :: in(:), out(:)
@@ -304,10 +305,10 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    nullify  (head % next )
    p => head
 
-   num_goesabi_local   = 0
-   num_goesabi_global  = 0
-   num_goesabi_used    = 0
-   num_goesabi_thinned = 0
+   num_goesabi_local     = 0
+   num_goesabi_global    = 0
+   num_goesabi_used_fgat = 0
+   num_goesabi_thinned   = 0
 
    if ( use_clddet_zz ) then
       cld_qc_buffer = 10
@@ -416,7 +417,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
       write(unit=stdout,fmt=*) ' '
       write(unit=stdout,fmt='(A,I0,A,I2.2,A)') &
          'Starting pass ',ipass,&
-         ' of GOES-',satellite_id,' data processing'
+         ' of GOES-',satellite_id,' ABI data processing'
 
    !! Loop over the available views for this instrument (ABI)
    do iview = 1, nviews
@@ -594,9 +595,8 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
          if (first_file .eq. 0) cycle fgat_loop
 
          if ( sum(this_view % nfiles_used(:)).eq.0) &
-            write(unit=stdout,fmt='(A,I0,2A)') &
-               'Processing GOES-',satellite_id,' ABI data for view: ', trim(this_view % name)
-         write(unit=stdout,fmt=*) ''
+            write(unit=stdout,fmt='(2A)') &
+               'Processing data for view: ', trim(this_view % name)
          write(unit=stdout,fmt='(2A)') &
             '          fgat time: ',fgat_times_c(ifgat)
 
@@ -618,8 +618,8 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
             ! Only ny_global and nx_global need to be read for all views, but this is a cheap subroutine
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-            write(unit=stdout,fmt='(A)') &
-               '          Reading abi metadata...'
+!            write(unit=stdout,fmt='(A)') &
+!               '          Reading abi metadata...'
 
             this_view % meta_initialized = .true.
 
@@ -658,8 +658,8 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
          DoGridGen: if (  this_view % moving .or. .not.this_view % grid_initialized ) then
 
             ! Read grid from file, convert to lat, lon, satzen, satazi
-            write(unit=stdout,fmt='(2A)') &
-               '          Establishing abi grid info...'
+!            write(unit=stdout,fmt='(2A)') &
+!               '          Establishing abi grid info...'
 
             this_view % grid_initialized = .true.
 
@@ -760,8 +760,8 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
             deallocate( iy_1d )
             deallocate( ix_1d )
 
-            write(unit=stdout,fmt='(3A,I0)') &
-               '          ',trim(this_view % name),' locations processed on this core: ', nrad_local
+!            write(unit=stdout,fmt='(3A,I0)') &
+!               '          ',trim(this_view % name),' locations processed on this core: ', nrad_local
 
             if (nrad_local .gt. 0) &
                call get_abil1b_grid2_1d( yy_1d(1:nrad_local), xx_1d(1:nrad_local), &
@@ -1075,10 +1075,10 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                this_view % xs_p_fd = this_view % xs_p + this_view % xoff_fd - 1
                this_view % xe_p_fd = this_view % xe_p + this_view % xoff_fd - 1
 
-               write(stdout,*) 'ABI grid extents for this view:'
-               write(stdout,'(A,4I10)') 'ys_p, ye_p, xs_p, xe_p            ',this_view % ys_p, this_view % ye_p, this_view % xs_p, this_view % xe_p
-               write(stdout,*) 'ABI grid extents for Full Disk:'
-               write(stdout,'(A,4I10)') 'ys_p_fd, ye_p_fd, xs_p_fd, xe_p_fd',this_view % ys_p_fd, this_view % ye_p_fd, this_view % xs_p_fd, this_view % xe_p_fd
+!               write(stdout,*) 'ABI grid extents for this view:'
+!               write(stdout,'(A,4I10)') 'ys_p, ye_p, xs_p, xe_p            ',this_view % ys_p, this_view % ye_p, this_view % xs_p, this_view % xe_p
+!               write(stdout,*) 'ABI grid extents for Full Disk:'
+!               write(stdout,'(A,4I10)') 'ys_p_fd, ye_p_fd, xs_p_fd, xe_p_fd',this_view % ys_p_fd, this_view % ye_p_fd, this_view % xs_p_fd, this_view % xe_p_fd
 
                ! Setup ZZ clddet extents
                this_view % ys_local = max(this_view % ys_p - cld_qc_buffer, 1)
@@ -1115,8 +1115,8 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
             else
                this_view % nrad_on_patch_cldqc = 0
             end if
-            write(unit=stdout,fmt='(3A,I0)') &
-               '          ',trim(this_view % name),' locations within this subdomain eligible for ZZ clddet: ', this_view % nrad_on_patch_cldqc
+!            write(unit=stdout,fmt='(3A,I0)') &
+!               '          ',trim(this_view % name),' locations within this subdomain eligible for ZZ clddet: ', this_view % nrad_on_patch_cldqc
 
 
             !FREE UP POINTERS AND BUFFERS
@@ -1153,7 +1153,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
          if ( (ipass.lt.npass .and. iview.eq.1) .or. .not.use_view_mask ) then
             num_goesabi_global = num_goesabi_global + this_view % nrad_on_domain_cldqc
-            ptotal(ifgat) = ptotal(ifgat) + this_view % nrad_on_domain_cldqc
+            !ptotal(ifgat) = ptotal(ifgat) + this_view % nrad_on_domain_cldqc
          end if
 
          PatchMatch: if (this_view % nrad_on_patch_cldqc .gt. 0) then
@@ -1252,8 +1252,8 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                                                 iview, ichan, ifgat ) ) ) then
                         deallocate(allmask_p, readmask_p)
 
-                        write(unit=stdout,fmt='(3A,I0)') &
-                           '          ZERO pixels selected for ',trim(this_view % name),' on band ', channel_list(ichan)
+!                        write(unit=stdout,fmt='(3A,I0)') &
+!                           '          ZERO pixels selected for ',trim(this_view % name),' on band ', channel_list(ichan)
                         this_view % nfiles_used(ifgat) = this_view % nfiles_used(ifgat) - 1
                         cycle
                      end if
@@ -1301,12 +1301,12 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                         end if
                      end do
                      if ( TEMPIR_min_time_diff .gt. 0.5 * TEMPIR_delay_minutes ) then
-                        write(unit=stdout,fmt='(A,F7.2,A)') &
-                           '          TEMPIR: minimum time difference is too large - ',TEMPIR_min_time_diff,' minutes'
+!                        write(unit=stdout,fmt='(A,F7.2,A)') &
+!                           '          TEMPIR: minimum time difference is too large - ',TEMPIR_min_time_diff,' minutes'
                         TEMPIR_ifile = -1
-                     else
-                        write(unit=stdout,fmt='(A,F7.2,A)') &
-                           '          TEMPIR: minimum time difference is accetable - ',TEMPIR_min_time_diff,' minutes'
+!                     else
+!                        write(unit=stdout,fmt='(A,F7.2,A)') &
+!                           '          TEMPIR: minimum time difference is accetable - ',TEMPIR_min_time_diff,' minutes'
                      end if
                   end if
 
@@ -1348,9 +1348,9 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                      hr = this_view % filedate(TEMPIR_ifile) % hr
                      mn = this_view % filedate(TEMPIR_ifile) % mn
                      sc = this_view % filedate(TEMPIR_ifile) % sc
-                     write(unit=stdout, &
-                        fmt='(A,I4.4,A,I2.2,A,I2.2,A,I2.2,A,I2.2,A,I2.2)')  &
-                        '          TEMPIR time: ',yr, '-', mt, '-', dy, '_', hr, ':', mn, ':', sc
+!                     write(unit=stdout, &
+!                        fmt='(A,I4.4,A,I2.2,A,I2.2,A,I2.2,A,I2.2,A,I2.2)')  &
+!                        '          TEMPIR time: ',yr, '-', mt, '-', dy, '_', hr, ':', mn, ':', sc
                   end if
 
                   first_chan = (this_view % nfiles_used(ifgat).eq.1)
@@ -1432,7 +1432,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                      end if
 
                      if (first_chan) then
-                        num_goesabi_used = num_goesabi_used + 1
+                        num_goesabi_used_fgat(ifgat) = num_goesabi_used_fgat(ifgat) + 1
 
                         write(unit=info % date_char, &
                            fmt='(I4.4,A,I2.2,A,I2.2,A,I2.2,A,I2.2,A,I2.2)')  &
@@ -1756,7 +1756,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
       p => head
       prev => head
       head_found = .false.
-      num_goesabi_used_tmp = num_goesabi_used
+      num_goesabi_used_tmp = sum(num_goesabi_used_fgat)
 
       do j = 1, num_goesabi_used_tmp
          n = p % sensor_index
@@ -1790,7 +1790,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
             end if
             deallocate ( current )
             num_goesabi_thinned = num_goesabi_thinned + 1
-            num_goesabi_used = num_goesabi_used - 1
+            num_goesabi_used_fgat(ifgat) = num_goesabi_used_fgat(ifgat) - 1
             continue
          end if
 
@@ -1810,19 +1810,30 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
    end if  ! End of thinning
 !stop
+   num_goesabi_used       = sum(num_goesabi_used_fgat)
    iv % total_rad_pixel   = iv % total_rad_pixel + num_goesabi_used
    iv % total_rad_channel = iv % total_rad_channel + num_goesabi_used*nchan
 
    iv % info(radiance) % nlocal = iv % info(radiance) % nlocal + num_goesabi_used
    iv % info(radiance) % ntotal = iv % info(radiance) % ntotal + num_goesabi_global
 
+#ifdef DM_PARALLEL
+   do i = 1, num_fgat_time
+      call mpi_allreduce( num_goesabi_used_fgat(i), &
+                          ptotal(i), &
+                          1, mpi_integer, mpi_sum, comm, ierr )
+   end do
+#else
+   ptotal(i) = num_goesabi_used_fgat(i)
+#endif
+
    do i = 1, num_fgat_time
       ptotal(i) = ptotal(i) + ptotal(i-1)
       iv % info(radiance) % ptotal(i) = iv % info(radiance) % ptotal(i) + ptotal(i)
    end do
-   if ( iv % info(radiance) % ptotal(num_fgat_time) /= iv % info(radiance) % ntotal ) then
+   if ( iv % info(radiance) % ptotal(num_fgat_time) /= (iv % info(radiance) % ntotal - num_goesabi_thinned) ) then
       write(unit=message(1),fmt='(A,I10,A,I10)') &
-          "Number of ntotal:",iv % info(radiance) % ntotal," is different from the sum of ptotal:", iv % info(radiance) % ptotal(num_fgat_time)
+          "Number of ntotal - nthinned:",iv % info(radiance) % ntotal - num_goesabi_thinned," is different from the sum of ptotal:", iv % info(radiance) % ptotal(num_fgat_time)
       call da_warning(__FILE__,__LINE__,message(1:1))
    endif
 

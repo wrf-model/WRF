@@ -109,9 +109,9 @@ subroutine da_qc_goesimg(it, i, nchan, ob, iv)
          !   end if
          !end if
 		 
-         ! 1. Cloud detection scheme (NESDIS MMR .or. PF)
+         ! 1. Cloud detection scheme MMR in Auligné (2014).or. PF in Xu et al., (2016)
          !---------------------------------------------
-         if ((use_clddet_mmr .or. use_clddet_pf) .and. (.not.use_satcv(2))) then
+         if ((use_clddet==1 .or. use_clddet==2) .and. (.not.use_satcv(2))) then
             iv%instid(i)%cloud_flag(:,n) = qc_good
 
             if (rtm_option == rtm_option_rttov) then

@@ -21,12 +21,14 @@ subroutine da_cloud_detect(isensor,nchannels,ndim,kts,kte,n,iv)
 !**  EXTERNALS
 !    ---------
 !    N2QN1  - Minimization algorithm (double-precision constrained version of M1QN3)
-!
+!**  METHODS
+!    CLOUD DETECTION SCHEME MMR FROM AULIGNÉ T. MWR (2014).OR. PF FROM XU ET AL., GMD (2016)
 !    MODIFICATIONS
 !    -------------
-!    DONGMEI XU
+!    BY DONGMEI XU 201904
 !    PURPOSE, ADD CLOUD DETECTION METHOD BASED ON PARTICLE FILTER
 !    METHOD, Xu et al., 2016: A method for retrieving clouds with satellite infrared radiances using the particle filter. Geosci. Model Dev., 9, 3919–3932
+!
 !**  -----------------------------------------
 
 IMPLICIT NONE
@@ -221,7 +223,7 @@ end if
 	  AMAT(nchan,ndim)     = rad_clr(ich) / rad_obs(ich)
           ZF_CLR               = ZF_CLR + 0.5*(AMAT(nchan,ndim)-1.0)**2 
           
-          if (use_clddet_pf)  then
+          if (use_clddet==2)  then
           p1=0		  
           do ii=0,10
             do jj=1,ndim-1
@@ -248,14 +250,14 @@ end if
         ENDDO
         IF (.NOT. LMATCH) then
            if (print_detail_rad) then
-              write(unit=message(1),fmt='(A,2I8)') 'CLOUD_DETECT_IASI: No match for channel:',i,Bands(i,JBAND)
+              write(unit=message(1),fmt='(A,2I8)') 'CLOUD_DETECT: No match for channel:',i,Bands(i,JBAND)
               call da_message(message(1:1))
            endif
         ENDIF
       ENDDO
     ENDDO BAND_LOOP                      ! Loop over band
 
-if (use_clddet_mmr) then    
+if (use_clddet==1) then    
     !--------------------!
     ! Hessian evaluation !
     !--------------------!

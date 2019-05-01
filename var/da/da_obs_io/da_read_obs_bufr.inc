@@ -89,16 +89,10 @@ subroutine da_read_obs_bufr (iv)
        integer                               :: nlevels_BUFR
        integer                               :: kx_BUFR
        real                                  :: pco_BUFR(8,255)
-       logical                               :: outside
        type(datalink_BUFR), pointer :: next
    end type datalink_BUFR
 
    type(datalink_BUFR),pointer  :: head=>null(), plink=>null()
-
-   integer :: idom, isubset
-   type (info_type), allocatable           :: info_1d(:)
-   type (model_loc_type), allocatable      :: loc_1d(:)
-   logical, allocatable                    :: outside_1d(:), outside_all_1d(:)
 
    if (trace_use) call da_trace_entry("da_read_obs_bufr")
 
@@ -135,7 +129,7 @@ subroutine da_read_obs_bufr (iv)
    tp(:)            = 0
    
 
-! 1.0  Establish file open/read settings
+! 1.0  Open file
 !---------------------------------------------------------------- 
 !
 !check if input file exists
@@ -186,39 +180,54 @@ bufrfile:  do ibufr=1,numbufr
          filename='ob1.bufr'
      endif
 !yw end added
-
-      
+       
 !
-!  We want to use specific unit number to read prepbufr data, which enables us to control its endianness
-   iunit = 96 
+!     We want to use specific unit number to read prepbufr data, which enables us to control its endianness
+      iunit = 96 
+
+      open(unit   = iunit, FILE   = trim(filename), &
+         iostat =  iost, form = 'unformatted', STATUS = 'OLD')
+      if (iost /= 0) then
+         write(unit=message(1),fmt='(A,I5,A)') &
+            "Error",iost," opening PREPBUFR obs file "//trim(filename)
+         call da_warning(__FILE__,__LINE__,message(1:1))
+         if ( num_fgat_time == 1 ) then
+            call da_free_unit(iunit)
+            if (trace_use) call da_trace_exit("da_read_obs_bufr")
+            return
+         else
+            cycle bufrfile
+         end if
+      end if
+   ! open observation error table if provided.
+   call da_get_unit(junit)
+   open (unit=junit, file='obs_errtable', form='formatted', status='old', &
+         iostat=iost)
+   if ( iost /= 0 ) then
+      use_errtable = .false.
+      call da_free_unit(junit)
+   else
+      use_errtable = .true.
+      write(unit=message(1),fmt='(A)') &
+            "obs_errtable file is found. Will use user-provided obs errors."
+      call da_message(message(1:1))
+   end if
+   if ( use_errtable ) then
+      read_loop: do
+         read (junit,'(1x,i3)',iostat=iost) itype
+         if ( iost /=0 ) exit read_loop
+         do k = 1, 33
+            read (junit,'(1x,6e12.5)',iostat=iost) (oetab(itype,k,ivar),ivar=1,6)
+            if ( iost /=0 ) exit read_loop
+         end do
+      end do read_loop
+   end if
 
    hdstr='SID XOB YOB DHR TYP ELV T29'
    obstr='POB QOB TOB ZOB UOB VOB PWO CAT' ! observation
    qmstr='PQM QQM TQM ZQM WQM NUL PWQ NUL' ! quality marker
    oestr='POE QOE TOE NUL WOE NUL PWE NUL' ! observation error
    pcstr='PPC QPC TPC ZPC WPC NUL PWP NUL' ! program code
-
-
-! 2.0  read data, including pre-reading lat/lon
-!---------------------------------------------------------------- 
-
-   ! Loop over 3 stages of the vectorized domain test (da_llxy_1d)
-   domtest: do idom = 1, 3
-
-   open(unit   = iunit, FILE   = trim(filename), &
-      iostat =  iost, form = 'unformatted', STATUS = 'OLD')
-   if (iost /= 0) then
-      write(unit=message(1),fmt='(A,I5,A)') &
-         "Error",iost," opening PREPBUFR obs file "//trim(filename)
-      call da_warning(__FILE__,__LINE__,message(1:1))
-      if ( num_fgat_time == 1 ) then
-         call da_free_unit(iunit)
-         if (trace_use) call da_trace_exit("da_read_obs_bufr")
-         return
-      else
-         cycle bufrfile
-      end if
-   end if
 
    call openbf(iunit,'IN',iunit)
    call datelen(10)
@@ -234,44 +243,21 @@ bufrfile:  do ibufr=1,numbufr
    end if
    !rewind(iunit)
 
-   if (idom .eq. 1) then
-      write(unit=message(1),fmt='(a,i10)') 'BUFR file date is: ', idate
-      call da_message(message(1:1))
-   end if
-   if (idom .eq. 3) then
-      ! open observation error table if provided.
-      call da_get_unit(junit)
-      open (unit=junit, file='obs_errtable', form='formatted', status='old', &
-            iostat=iost)
-      if ( iost /= 0 ) then
-         use_errtable = .false.
-         call da_free_unit(junit)
-      else
-         use_errtable = .true.
-         write(unit=message(1),fmt='(A)') &
-               "obs_errtable file is found. Will use user-provided obs errors."
-         call da_message(message(1:1))
-      end if
-      if ( use_errtable ) then
-         read_loop: do
-            read (junit,'(1x,i3)',iostat=iost) itype
-            if ( iost /=0 ) exit read_loop
-            do k = 1, 33
-               read (junit,'(1x,6e12.5)',iostat=iost) (oetab(itype,k,ivar),ivar=1,6)
-               if ( iost /=0 ) exit read_loop
-            end do
-         end do read_loop
-      end if
-   end if
+   write(unit=message(1),fmt='(a,i10)') 'BUFR file date is: ', idate
+   call da_message(message(1:1))
 
-   end_of_file  = .false.
+
+!  2.0 read data
+!  scan reports first
+!--------------------------------------------------------------
+  
    match        = .false.
+   end_of_file  = .false.
    outside_all  = .false.
    outside_time = .false.
-   isubset = 1
-
    reports: do while ( .not. end_of_file )
-      if ( match .or. outside_all .or. outside_time .or. idom.eq.1) then
+
+      if ( match .or. outside_all .or. outside_time ) then
          call readns(iunit,subset,idate,iret)  ! read in the next subset
          if ( iret /= 0 ) then 
             write(unit=message(1),fmt='(A,I3,A,I3)') & 
@@ -280,10 +266,9 @@ bufrfile:  do ibufr=1,numbufr
             !call da_warning(__FILE__,__LINE__,message(1:1))
             exit reports
          end if
-
-         isubset = isubset + 1 !increment isubset for every call to readns
-         if (idom .eq. 1) cycle reports
       end if
+
+      num_report = num_report+1
 
       call ufbint(iunit,hdr,7,1,iret2,hdstr)
       call ufbint(iunit,pmo,2,1,nlevels,'PMO PMQ')
@@ -293,26 +278,45 @@ bufrfile:  do ibufr=1,numbufr
       call ufbint(iunit,obs,8,255,nlevels,obstr)
       
       r8sid = hdr(1)
-      if (idom .eq. 2) then
-         info_1d (isubset) % name(1:8)  = subset
-         info_1d (isubset) % name(9:40) = '                                '
-         info_1d (isubset) % id(1:5)    = csid(1:5)
-         info_1d (isubset) % id(6:40)   = '                                   '
-         info_1d (isubset) % dhr        = hdr(4)    ! difference in hour
-         info_1d (isubset) % elv        = hdr(6)
-         info_1d (isubset) % lon        = hdr(2)
-         info_1d (isubset) % lat        = hdr(3)
+      platform % info % name(1:8)  = subset
+      platform % info % name(9:40) = '                                '
+      platform % info % id(1:5)    = csid(1:5)
+      platform % info % id(6:40)   = '                                   '
+      platform % info % dhr        = hdr(4)    ! difference in hour
+      platform % info % elv        = hdr(6)
+      platform % info % lon        = hdr(2)
+      platform % info % lat        = hdr(3)
 
-         outside_all = .true.
-
-         cycle reports
+      ! blacklisted stations should be handled through an external table.
+      ! For now, temporary fix is implemented here for known incorrect 
+      ! station info in NCEP PREPBUFR file
+      if ( trim(platform%info%id) == 'BGQQ' ) then
+         platform%info%elv = 19
+         platform%info%lon = -69.21
+         platform%info%lat = 77.46
+      end if
+      if ( trim(platform%info%id) == 'UWKE' ) then
+         platform%info%elv = 194
+         platform%info%lon = 52.09
+         platform%info%lat = 55.56
       end if
 
-      num_report = num_report+1
+      ! Put a check on Lon and Lat
+      if ( platform%info%lon >= 180.0 ) platform%info%lon = platform%info%lon - 360.0
+      ! Fix funny wind direction at Poles
+      !if (platform%info%lat < -89.9999 .or. platform%info%lat > 89.9999) then
+      !   platform%info%lon = 0.0
+      !end if
+      platform%info%lat = max(platform%info%lat, -89.95)
+      platform%info%lat = min(platform%info%lat,  89.95)
 
-      platform % info = info_1d(isubset)
+      ! Restrict to a range of reports, useful for debugging
 
-      outside_all = outside_all_1d(isubset)
+      if (num_report < report_start) cycle reports
+      if (num_report > report_end)  exit reports
+
+      call da_llxy (platform%info, platform%loc,outside, outside_all)
+
       if (outside_all) then
          num_outside_all = num_outside_all + 1
          if ( print_detail_obs ) then
@@ -322,13 +326,6 @@ bufrfile:  do ibufr=1,numbufr
          end if
          cycle reports
       end if
-
-      ! Restrict to a range of reports, useful for debugging
-      if (num_report < report_start) cycle reports
-      if (num_report > report_end)  exit reports
-
-      outside       = outside_1d(isubset)
-      platform%loc  = loc_1d(isubset)
 
       ! check date
       write(cdate,'(i10)') idate
@@ -399,7 +396,6 @@ bufrfile:  do ibufr=1,numbufr
       if ( iret /= 0 ) then
          end_of_file = .true.
       else
-         isubset = isubset + 1 !increment isubset for every call to readns
          match_check: do
             call ufbint(iunit,hdr2,7,1,iret2,hdstr)
             ! check if this subset and the previous one are matching mass and wind
@@ -841,7 +837,6 @@ bufrfile:  do ibufr=1,numbufr
       plink%kx_BUFR=kx
       plink%t29_BUFR=t29
       plink%pco_BUFR=pco
-      plink%outside = outside
 
       num_p=num_p+1
 
@@ -1141,58 +1136,14 @@ bufrfile:  do ibufr=1,numbufr
       plink%kx_BUFR=kx
       plink%t29_BUFR=t29
       plink%pco_BUFR=pco
-      plink%outside = outside
-     
+      
       num_p=num_p+1
          end do dup_loop
        end if !3dvar and 4dvar
     end do reports
     
-   call closbf(iunit)
-   close(iunit)
-
-   if (idom .eq. 1) then
-      allocate ( info_1d        (isubset) )
-      allocate ( loc_1d         (isubset) )
-      allocate ( outside_1d     (isubset) )
-      allocate ( outside_all_1d (isubset) )
-   end if
-   if (idom .eq. 2) then
-      ! blacklisted stations should be handled through an external table.
-      ! For now, temporary fix is implemented here for known incorrect 
-      ! station info in NCEP PREPBUFR file
-      where ( (info_1d % id(1:4)) == 'BGQQ' )
-         info_1d % elv = 19
-         info_1d % lon = -69.21
-         info_1d % lat = 77.46
-      end where
-      where ( (info_1d % id(1:4)) == 'UWKE' )
-         info_1d % elv = 194
-         info_1d % lon = 52.09
-         info_1d % lat = 55.56
-      end where
-
-      ! Put a check on Lon and Lat
-      where ( info_1d (:) % lon >= 180.0 ) info_1d (:) % lon = info_1d (:) % lon - 360.0
-      where ( info_1d (:) % lat < -89.95 ) info_1d (:) % lat = -89.95
-      where ( info_1d (:) % lat >  89.95 ) info_1d (:) % lat =  89.95
-
-      !JJG, NOTE: This llxy work/memory could be divided amongst processors by assigning a subgroup of the subsets to each process.
-      !  Ultimately all subsets that are .not.outside_all need to have outside_1d and loc_1d values populated on 
-      !  each processor. This procedure is shown in da_read_obs_ncgoesabi with two calls to da_llxy_1d and 
-      !  communications of info and loc in between those two calls.
-
-      call da_llxy_1d (info_1d(1:isubset), loc_1d(1:isubset), outside_1d(1:isubset), outside_all_1d(1:isubset))
-   end if
-   if (idom .eq. 3) then
-      deallocate ( info_1d        )
-      deallocate ( loc_1d         )
-      deallocate ( outside_1d     )
-      deallocate ( outside_all_1d )
-   end if
-
-   end do domtest
-
+call closbf(iunit)
+close(iunit)
 if ( use_errtable ) then
   close(junit)
   call da_free_unit(junit)
@@ -1230,7 +1181,7 @@ end do bufrfile
       if (dlon_earth >= 360.0) dlon_earth = dlon_earth - 360.0
       dlat_earth = dlat_earth * deg2rad
       dlon_earth = dlon_earth * deg2rad
-      outside = plink%outside
+      call da_llxy (plink%platform_BUFR%info, plink%platform_BUFR%loc,outside, outside_all)
 
  ! Loop over duplicating obs for global
       ndup = 1
@@ -1627,7 +1578,7 @@ end if
       if (dlon_earth >= 360.0) dlon_earth = dlon_earth - 360.0
       dlat_earth = dlat_earth * deg2rad
       dlon_earth = dlon_earth * deg2rad
-      outside = plink%outside
+      call da_llxy (plink%platform_BUFR%info, plink%platform_BUFR%loc,outside, outside_all)
       ndup = 1
       if (global .and. &
          (plink%platform_BUFR%loc%i < ids .or. plink%platform_BUFR%loc%i >= ide)) ndup= 2

@@ -62,6 +62,7 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    ! pixel information
    integer   ::  year,month,day,hour,minute,second  ! observation time
    real*8    ::  obs_time
+   ! real      ::  rlat, rlon                         !  lat/lon in degrees   for Anfovs
    real      ::  satzen, satazi, solzen ,solazi       !  scan angles for Anfovs
    integer   ::  landsea_mask
    real      ::  srf_height
@@ -87,11 +88,6 @@ subroutine da_read_obs_bufrtovs (obstype,iv, infile)
    integer(i_kind), allocatable :: ptotal(:)
    real , allocatable :: in(:), out(:)
    logical :: found, head_found
-
-   integer :: idom, itovs
-   type(info_type), allocatable      :: info_1d(:)
-   type(model_loc_type), allocatable :: loc_1d(:)
-   logical, allocatable              :: outside_1d(:), outside_all_1d(:)
 
    call da_trace_entry("da_read_obs_bufrtovs")
 
@@ -218,25 +214,11 @@ bufrfile:  do ibufr=1,numbufr
 !  We want to use specific unit number for bufr data, so we can control the endian format in environment. 
    lnbufr = 99
 
-   if ( ibufr == 1 ) then
-      allocate (head)
-      !  allocate ( head % tb_inv (1:nchan) )
-      nullify  ( head % next )
-      p => head
-   endif
-
-   if (tovs_start > 1) then
-      write (unit=stdout,fmt='(A,I6)') "   Skipping tovs obs before", tovs_start
-   end if
-
-   ! Loop over 3 stages of the vectorized domain test (da_llxy_1d)
-   domtest: do idom = 1, 3
-
    open(unit=lnbufr,file=trim(filename),form='unformatted', &
       iostat = iost, status = 'old')
    if (iost /= 0) then
       call da_warning(__FILE__,__LINE__, &
-         (/"Cannot open file (1): "//infile/))
+         (/"Cannot open file "//infile/))
       call da_trace_exit("da_read_obs_bufrtovs")
       return
    end if
@@ -253,23 +235,32 @@ bufrfile:  do ibufr=1,numbufr
       call da_error(__FILE__,__LINE__,message(1:2))
    end if
 
-   if (idom .eq. 1) then
-      iy=0
-      im=0
-      idd=0
-      ihh=0
-      write(unit=date,fmt='( i10)') idate
-      read(unit=date,fmt='(i4,3i2)') iy,im,idd,ihh
-      write(unit=stdout,fmt=*) &
-         'Bufr file date is ',iy,im,idd,ihh,infile
+   iy=0
+   im=0
+   idd=0
+   ihh=0
+   write(unit=date,fmt='( i10)') idate
+   read(unit=date,fmt='(i4,3i2)') iy,im,idd,ihh
+   write(unit=stdout,fmt=*) &
+      'Bufr file date is ',iy,im,idd,ihh,infile
+
+   ! Loop to read bufr file and assign information to a sequential structure
+   !-------------------------------------------------------------------------
+
+   if ( ibufr == 1 ) then
+      allocate (head)
+      !  allocate ( head % tb_inv (1:nchan) )
+      nullify  ( head % next )
+      p => head
+   endif
+
+   if (tovs_start > 1) then
+      write (unit=stdout,fmt='(A,I6)') "   Skipping tovs obs before", tovs_start
    end if
 
-   itovs = 0
+
    obs: do while (ireadmg(lnbufr,subset,idate)==0 .and. subset==subfgn)
       do while (ireadsb(lnbufr)==0)
-
-         itovs = itovs + 1
-         if (idom .eq. 1) cycle
 
          ! 1.0     Read header record and data record
          call ufbint(lnbufr,bfr1bhdr,n1bhdr,1,iret,hdr1b)
@@ -278,25 +269,25 @@ bufrfile:  do ibufr=1,numbufr
          ! call ufbrep(lnbufr,data1b8,1,1,iret,'BEARAZ')
 
          ! check if observation outside range
+
+         num_tovs_file = num_tovs_file + 1
+
          ! 2.0     Extract observation location and other required information
          !     QC1:  judge if data is in the domain, read next record if not
          !------------------------------------------------------------------------
-         if (idom .eq. 2) then
-            if(abs(bfr2bhdr(1)) <= 90. .and. abs(bfr2bhdr(2)) <= 360.)then
-               info_1d(itovs)%lat = bfr2bhdr(1)
-               info_1d(itovs)%lon = bfr2bhdr(2)
-            elseif(abs(bfr1bhdr(9)) <= 90. .and. abs(bfr1bhdr(10)) <= 360.)then
-               info_1d(itovs)%lat = bfr1bhdr(9)
-               info_1d(itovs)%lon = bfr1bhdr(10)
-            endif
+         ! rlat = bfr1bhdr(bufr_lat)
+         ! rlon = bfr1bhdr(bufr_lat)
+         ! if (rlon < 0.0) rlon = rlon+360.0
 
-            cycle
-         end if
+         if(abs(bfr2bhdr(1)) <= 90. .and. abs(bfr2bhdr(2)) <= 360.)then
+            info%lat = bfr2bhdr(1)
+            info%lon = bfr2bhdr(2)
+         elseif(abs(bfr1bhdr(9)) <= 90. .and. abs(bfr1bhdr(10)) <= 360.)then
+            info%lat = bfr1bhdr(9)
+            info%lon = bfr1bhdr(10)
+         endif
 
-         info        = info_1d (itovs)
-         loc         = loc_1d (itovs)
-         outside_all = outside_all_1d (itovs)
-         outside     = outside_1d (itovs)
+         call da_llxy (info, loc, outside, outside_all)
 
          if (outside_all) cycle
 
@@ -502,26 +493,6 @@ bufrfile:  do ibufr=1,numbufr
 
    call closbf(lnbufr)
    close(lnbufr)
-
-   if (idom .eq. 1) then
-      allocate ( info_1d        (itovs) )
-      allocate ( loc_1d         (itovs) )
-      allocate ( outside_1d     (itovs) )
-      allocate ( outside_all_1d (itovs) )
-   end if
-   if (idom .eq. 2) then
-      call da_llxy_1d (info_1d(1:itovs), loc_1d(1:itovs), outside_1d(1:itovs), outside_all_1d(1:itovs))
-   end if
-   if (idom .eq. 3) then
-      deallocate ( info_1d        )
-      deallocate ( loc_1d         )
-      deallocate ( outside_1d     )
-      deallocate ( outside_all_1d )
-   end if
-
-   end do domtest
-
-   num_tovs_file = num_tovs_file + itovs
 
 end do bufrfile
 

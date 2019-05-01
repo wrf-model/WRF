@@ -135,11 +135,6 @@ subroutine da_read_obs_hdf5amsr2 (iv, infile_tb,infile_clw)
                     'Brightness Temperature (res23,23.8GHz,V)','Brightness Temperature (res23,23.8GHz,H)',&
                     'Brightness Temperature (res36,36.5GHz,V)','Brightness Temperature (res36,36.5GHz,H)'/
 
-   integer :: ii_1d
-   type(info_type), allocatable      :: info_1d(:)
-   type(model_loc_type), allocatable :: loc_1d(:)
-   logical, allocatable              :: outside_1d(:), outside_all_1d(:)
-
    if (trace_use) call da_trace_entry("da_read_obs_hdf5amsr2")
 
 !  0.0  Initialize variables
@@ -683,31 +678,6 @@ subroutine da_read_obs_hdf5amsr2 (iv, infile_tb,infile_clw)
          call H5Fclose_f(fhnd2,iret)
       end if
 
-
-      allocate ( info_1d        (nscan*lo_rez_fov) )
-      allocate ( loc_1d         (nscan*lo_rez_fov) )
-      allocate ( outside_1d     (nscan*lo_rez_fov) )
-      allocate ( outside_all_1d (nscan*lo_rez_fov) )
-
-      ii_1d = 0
-      do iscan=1, nscan
-         do i = 1, 6
-            idate5(i)=obstime(i, iscan)
-         end do
-         call da_get_julian_time(idate5(1),idate5(2),idate5(3),idate5(4),idate5(5),obs_time)
-         if ( obs_time < time_slots(0) .or.  &
-            obs_time >= time_slots(num_fgat_time) ) cycle
-         do ifov=1, lo_rez_fov
-            ii_1d = ii_1d + 1
-            info_1d(ii_1d)%lat = latlr(ifov,iscan)
-            info_1d(ii_1d)%lon = lonlr(ifov,iscan)
-         end do
-      end do
-
-      ! Determine loc_1d, outside_1d, outside_all_1d
-      !---------------------------------------------------------------------------------
-      call da_llxy_1d (info_1d(1:ii_1d), loc_1d(1:ii_1d), outside_1d(1:ii_1d), outside_all_1d(1:ii_1d))
-
 ! 2.0 Loop to read hdf file and assign information to a sequential structure
 !-------------------------------------------------------------------------
 
@@ -719,7 +689,6 @@ subroutine da_read_obs_hdf5amsr2 (iv, infile_tb,infile_clw)
          head_allocated = .true.
       end if
    ! start scan_loop
-      ii_1d = 0
       scan_loop:     do iscan=1, nscan
          do i = 1, 6
             idate5(i)=obstime(i, iscan)
@@ -736,12 +705,10 @@ subroutine da_read_obs_hdf5amsr2 (iv, infile_tb,infile_clw)
          fov_loop:      do ifov=1, lo_rez_fov
             num_amsr2_file       = num_amsr2_file + 1
             num_amsr2_file_local = num_amsr2_file_local + 1
-            ii_1d = ii_1d + 1
-            info        = info_1d (ii_1d)
-            loc         = loc_1d (ii_1d)
-            outside     = outside_1d (ii_1d)
-            outside_all = outside_all_1d (ii_1d)
+            info%lat  =  latlr(ifov,iscan)
+            info%lon  =  lonlr(ifov,iscan)
 
+            call da_llxy (info, loc, outside, outside_all)
             if (outside_all) cycle fov_loop
 
             num_amsr2_global       = num_amsr2_global + 1
@@ -822,11 +789,6 @@ subroutine da_read_obs_hdf5amsr2 (iv, infile_tb,infile_clw)
 
    ! Dellocate arrays
       deallocate  (obstime)
-
-      deallocate ( info_1d        )
-      deallocate ( loc_1d         )
-      deallocate ( outside_1d     )
-      deallocate ( outside_all_1d )
 
       write(stdout,fmt='(3a,i7)') ' In file: ',trim(fname_tb(ifile)),' got num_amsr2_file    : ',num_amsr2_file_local
       write(stdout,fmt='(3a,i7)') ' In file: ',trim(fname_tb(ifile)),' got num_amsr2_global  : ',num_amsr2_global_local

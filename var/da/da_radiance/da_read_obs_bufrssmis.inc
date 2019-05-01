@@ -70,11 +70,6 @@ subroutine da_read_obs_bufrssmis (obstype,iv,infile)
 
    integer(i_kind), allocatable :: ptotal(:), nread(:)
 
-   integer :: idom, irads
-   type(info_type), allocatable      :: info_1d(:)
-   type(model_loc_type), allocatable :: loc_1d(:)
-   logical, allocatable              :: outside_1d(:), outside_all_1d(:)
-
    call da_trace_entry("da_read_obs_bufrssmis")
 
    allocate(nread(1:rtminit_nsensor))
@@ -132,22 +127,6 @@ bufrfile:  do ibufr=1,numbufr
    end if
 
    lnbufr=98
-
-   if ( ibufr == 1 ) then
-      allocate (head)
-      nullify  ( head % next )
-      p => head
-   end if
-
-! Set various variables depending on type of data to be read
-
-   !subfgn = 'NC003003'
-   subfgn = 'NC021201'
-   incangl = 53.2_r_kind
-
-   ! Loop over 3 stages of the vectorized domain test (da_llxy_1d)
-   domtest: do idom = 1, 3
-
    open(unit=lnbufr,file=trim(filename),form='unformatted', &
       iostat = iost, status = 'old')
    if (iost /= 0) then
@@ -161,51 +140,51 @@ bufrfile:  do ibufr=1,numbufr
    call datelen(10)
    call readmg(lnbufr,subset,idate,iret)
 
-   if (idom .eq. 1) then
-      iy=0
-      im=0
-      idd=0
-      ihh=0
-      write(unit=date,fmt='( i10)') idate
-      read(unit=date,fmt='(i4,3i2)') iy,im,idd,ihh
-      write(unit=stdout,fmt=*) &
-         'Bufr file date is ',iy,im,idd,ihh,infile
-   end if
+   iy=0
+   im=0
+   idd=0
+   ihh=0
+   write(unit=date,fmt='( i10)') idate
+   read(unit=date,fmt='(i4,3i2)') iy,im,idd,ihh
+   write(unit=stdout,fmt=*) &
+      'Bufr file date is ',iy,im,idd,ihh,infile
 
    ! Loop to read bufr file and assign information to a sequential structure
    !-------------------------------------------------------------------------
-   irads = 0
+   if ( ibufr == 1 ) then
+      allocate (head)
+      nullify  ( head % next )
+      p => head
+   end if
+
+! Set various variables depending on type of data to be read
+
+   !subfgn = 'NC003003'
+   subfgn = 'NC021201'
+   incangl = 53.2_r_kind
+
    subset_loop: do while (ireadmg(lnbufr,subset,idate)==0)
 
       read_loop: do while (ireadsb(lnbufr)==0 .and. subset==subfgn)
 
-         irads = irads + 1
-         if (idom .eq. 1) cycle read_loop
+         num_ssmis_file = num_ssmis_file + 1
+         ! 1.0     Read header record and data record
 
-         ! 1.0     Read header record
          call ufbint(lnbufr,bfr1bhdr,n1bhdr,1,iret,hdr1b)
+         call ufbrep(lnbufr,bufrtbb,2,maxchanl,iret,"CHNM TMBR" )
 
          ! check if observation outside range
 
-         ! 2.1     Extract observation location and other required information
+         ! 2.0     Extract observation location and other required information
          !     QC1:  judge if data is in the domain, read next record if not
          !------------------------------------------------------------------------
-         if (idom .eq. 2) then
-            info_1d(irads) % lat  =  bfr1bhdr(bufr_lat)
-            info_1d(irads) % lon  =  bfr1bhdr(bufr_lon)
 
-            cycle read_loop
-         end if
+         info%lat  =  bfr1bhdr(bufr_lat)
+         info%lon  =  bfr1bhdr(bufr_lon)
+         call da_llxy (info, loc, outside, outside_all)
 
-         info        = info_1d (irads)
-         loc         = loc_1d (irads)
-         outside_all = outside_all_1d (irads)
-         outside     = outside_1d (irads)
 
          if (outside_all) cycle
-
-         ! 2.2     Read data record
-         call ufbrep(lnbufr,bufrtbb,2,maxchanl,iret,"CHNM TMBR" )
 
          !  3.0     Extract other information
 
@@ -377,27 +356,6 @@ bufrfile:  do ibufr=1,numbufr
   call closbf(lnbufr)
   close(lnbufr)
 
-  if (idom .eq. 1) then
-     allocate ( info_1d        (irads) )
-     allocate ( loc_1d         (irads) )
-     allocate ( outside_1d     (irads) )
-     allocate ( outside_all_1d (irads) )
-  end if
-  if (idom .eq. 2) then
-     call da_llxy_1d (info_1d(1:irads), loc_1d(1:irads), outside_1d(1:irads), outside_all_1d(1:irads))
-  end if
-  if (idom .eq. 3) then
-     deallocate ( info_1d        )
-     deallocate ( loc_1d         )
-     deallocate ( outside_1d     )
-     deallocate ( outside_all_1d )
-
-  end if
-
-  end do domtest
-
-  num_ssmis_file = num_ssmis_file + irads
-
 end do bufrfile
 
    if (thinning .and. num_ssmis_global > 0 ) then
@@ -554,8 +512,8 @@ end do bufrfile
    deallocate (nread)
    deallocate (ptotal)
 
-!   call closbf(lnbufr)
-!   close(lnbufr)
+   call closbf(lnbufr)
+   close(lnbufr)
 !   call da_free_unit(lnbufr)
 
    call da_trace_exit("da_read_obs_bufrssmis")

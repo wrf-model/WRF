@@ -86,10 +86,6 @@ subroutine da_read_obs_bufriasi (obstype,iv,infile)
   real(r_kind),parameter    :: tbmax  = 550._r_kind
   real(r_kind),parameter    :: earth_radius = 6371000._r_kind
   
-  integer :: idom, irads
-  type(info_type), allocatable      :: info_1d(:)
-  type(model_loc_type), allocatable :: loc_1d(:)
-  logical, allocatable              :: outside_1d(:), outside_all_1d(:)
 
    if (trace_use) call da_trace_entry("da_read_obs_bufriasi")
 !  0.0  Initialize variables
@@ -112,7 +108,7 @@ subroutine da_read_obs_bufriasi (obstype,iv,infile)
   nread(1:rtminit_nsensor) = 0
   ptotal(0:num_fgat_time) = 0
   iobs = 0                 ! for thinning, argument is inout  
-  num_iasi_file = 0
+  num_iasi_file    = 0
   num_iasi_local   = 0
   num_iasi_global  = 0
   num_iasi_used    = 0
@@ -147,24 +143,11 @@ subroutine da_read_obs_bufriasi (obstype,iv,infile)
       end if
    end if 
    lnbufr = 95
-
-! Allocate arrays to hold data
-  nele=nreal+nchan
-  allocate(data_all(nele))
-   if ( ibufr == 1 ) then
-      allocate (head)
-      nullify  ( head % next )
-      p => head
-   end if
-
-   ! Loop over 3 stages of the vectorized domain test (da_llxy_1d)
-   domtest: do idom = 1, 3
-
    open(unit=lnbufr,file=trim(filename),form='unformatted', &
       iostat = iost, status = 'old')
    if (iost /= 0) then
       call da_warning(__FILE__,__LINE__, &
-         (/"Cannot open file: "//infile/))
+         (/"Cannot open file "//infile/))
       if (trace_use) call da_trace_exit("da_read_obs_bufriasi")
       return
    end if
@@ -173,26 +156,33 @@ subroutine da_read_obs_bufriasi (obstype,iv,infile)
    call openbf(lnbufr,'IN',lnbufr) 
    call datelen(10)
    call readmg(lnbufr,subset,idate,iret)
-   if (idom .eq. 1) then
-      iy=0
-      im=0
-      idd=0
-      ihh=0
-      write(unit=date,fmt='( i10)') idate
-      read(unit=date,fmt='(i4,3i2)') iy,im,idd,ihh
-      write(unit=stdout,fmt='(a,4i4,2x,a)') &
-         'Bufr file date is ',iy,im,idd,ihh,trim(infile)
-   end if 
+   iy=0
+   im=0
+   idd=0
+   ihh=0
+   write(unit=date,fmt='( i10)') idate
+   read(unit=date,fmt='(i4,3i2)') iy,im,idd,ihh
+   write(unit=stdout,fmt='(a,4i4,2x,a)') &
+      'Bufr file date is ',iy,im,idd,ihh,trim(infile)
+
+   ! Loop to read bufr file and assign information to a sequential structure
+   !-------------------------------------------------------------------------
+! Allocate arrays to hold data
+  nele=nreal+nchan
+  allocate(data_all(nele))
+   if ( ibufr == 1 ) then
+      allocate (head)
+      nullify  ( head % next )
+      p => head
+   end if
+  
 
 ! Big loop to read data file
 
-  irads = 0
   do while(ireadmg(lnbufr,subset,idate)>=0)  
 
      read_loop: do while (ireadsb(lnbufr)==0)
-
-        irads = irads + 1
-        if (idom .eq. 1) cycle read_loop
+         num_iasi_file = num_iasi_file + 1	 
 
 !    Read IASI FOV information
          call ufbint(lnbufr,linele,5,1,iret,'FOVN SLNM QGFQ MJFC SELV')				
@@ -224,19 +214,9 @@ subroutine da_read_obs_bufriasi (obstype,iv,infile)
              satellite_id = 3
          end if
 
-         if (idom .eq. 2) then
-            ! Get observing position
-            info_1d (irads) % lat  =  allspot(8)  ! latitude
-            info_1d (irads) % lon  =  allspot(9)  ! longitude
-
-            cycle read_loop
-         end if
-
-         info         = info_1d (irads)
-         loc          = loc_1d (irads)
-         outside      = outside_1d (irads)
-         outside_all  = outside_all_1d (irads)
-
+!    Check observing position
+         info%lat  =  allspot(8)  ! latitude
+         info%lon  =  allspot(9)  ! longitude)
          if( abs(info%lat) > r90  .or. abs(info%lon) > r360 .or. &
          (abs(info%lat) == r90 .and. info%lon /= zero) )then
          write(unit=stdout,fmt=*) &
@@ -245,7 +225,8 @@ subroutine da_read_obs_bufriasi (obstype,iv,infile)
             cycle read_loop
          end if		 
 	 		 
-         if (outside_all) cycle read_loop
+         call da_llxy (info, loc, outside, outside_all)	
+         if (outside_all) cycle
 	     inst = 0	 
          do i = 1, rtminit_nsensor
             if (platform_id  == rtminit_platform(i) &
@@ -440,28 +421,6 @@ subroutine da_read_obs_bufriasi (obstype,iv,infile)
      end do read_loop
   end do
   call closbf(lnbufr)
-  close(lnbufr)
-
-  if (idom .eq. 1) then
-     allocate ( info_1d        (irads) )
-     allocate ( loc_1d         (irads) )
-     allocate ( outside_1d     (irads) )
-     allocate ( outside_all_1d (irads) )
-  end if
-  if (idom .eq. 2) then
-     call da_llxy_1d (info_1d(1:irads), loc_1d(1:irads), outside_1d(1:irads), outside_all_1d(1:irads))
-  end if
-  if (idom .eq. 3) then
-     deallocate ( info_1d        )
-     deallocate ( loc_1d         )
-     deallocate ( outside_1d     )
-     deallocate ( outside_all_1d )
-
-  end if
-
-  end do domtest
-
-  num_iasi_file = num_iasi_file + irads
 
   !Deallocate temporary array for next bufrfile do loop
   deallocate(data_all)
@@ -618,8 +577,8 @@ end do bufrfile
    deallocate (nread)
    deallocate (ptotal)
 
-!   call closbf(lnbufr)
-!   close(lnbufr)
+   call closbf(lnbufr)
+   close(lnbufr)
 
 !   call da_free_unit(lnbufr)
 

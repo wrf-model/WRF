@@ -115,10 +115,6 @@ subroutine da_read_obs_bufratms (obstype,iv, infile)
    real , allocatable :: in(:), out(:)
    logical :: found, head_found
 
-   type(info_type), allocatable      :: info_1d(:)
-   type(model_loc_type), allocatable :: loc_1d(:)
-   logical, allocatable              :: outside_1d(:), outside_all_1d(:)
-
    if (trace_use) call da_trace_entry("da_read_obs_bufratms")
 
    ! Initialize variables
@@ -337,21 +333,6 @@ bufrfile:  do ibufr=1,numbufr
          call da_error(__FILE__,__LINE__,message(1:1))
       endif         
 
-   allocate ( info_1d        (nnum) )
-   allocate ( loc_1d         (nnum) )
-   allocate ( outside_1d     (nnum) )
-   allocate ( outside_all_1d (nnum) )
-
-   info_1d%lat = lat_save(1:nnum)
-   info_1d%lon = lon_save(1:nnum)
-
-   deallocate(lat_save)
-   deallocate(lon_save)
-
-   ! Determine loc_1d, outside_1d, outside_all_1d
-   !---------------------------------------------------------------------------------
-   call da_llxy_1d (info_1d, loc_1d, outside_1d, outside_all_1d)
-
  obs: do nn=1, nnum
    if ( nn == 1 ) then
       allocate (head)
@@ -366,10 +347,10 @@ bufrfile:  do ibufr=1,numbufr
          ! rlat = bfr1bhdr(bufr_lat)
          ! rlon = bfr1bhdr(bufr_lat)
          ! if (rlon < 0.0) rlon = rlon+360.0
-         info        = info_1d (nn)
-         loc         = loc_1d (nn)
-         outside     = outside_1d (nn)
-         outside_all = outside_all_1d (nn)
+              info%lat = lat_save(nn)
+              info%lon = lon_save(nn)
+
+         call da_llxy (info, loc, outside, outside_all)
 
          if (outside_all) cycle
 
@@ -537,11 +518,6 @@ bufrfile:  do ibufr=1,numbufr
 !   call closbf(lnbufr)
 !   close(lnbufr)
 
-   deallocate ( info_1d        )
-   deallocate ( loc_1d         )
-   deallocate ( outside_1d     )
-   deallocate ( outside_all_1d )
-
 !end do bufrfile
 
    if (thinning .and. num_tovs_global > 0 ) then
@@ -699,6 +675,8 @@ bufrfile:  do ibufr=1,numbufr
    deallocate(Time_save)
    deallocate(BT_InOut_save)
    deallocate(Scanline_save)
+   deallocate(lat_save)
+   deallocate(lon_save)
    deallocate(satid_save)
    deallocate(obs_time_save)
    deallocate(satzen_save)

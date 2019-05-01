@@ -66,7 +66,6 @@ subroutine da_llxy (info, loc, outside, outside_all)
       end if
    end if
 
-
    if (fg_format == fg_format_kma_global) then
       if ((loc%j < jts-1) .or. (loc%j > jte)) then
          outside = .true.

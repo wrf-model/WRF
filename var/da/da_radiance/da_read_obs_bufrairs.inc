@@ -87,8 +87,6 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
 ! BUFR talble file sequencial number
   character(len=512)  :: table_file
 
-! BUFR functions
-  integer(i_kind)   :: ireadsb,ireadmg
 
 ! Variables for BUFR IO    
   type(aquaspot_list) :: aquaspot
@@ -155,11 +153,6 @@ subroutine da_read_obs_bufrairs(obstype,iv,infile)
   type(info_type)            :: info
   type(model_loc_type)       :: loc
   type (datalink_type), pointer   :: head, p, current, prev
-
-  integer :: idom, irads
-  type(info_type), allocatable      :: info_1d(:)
-  type(model_loc_type), allocatable :: loc_1d(:)
-  logical, allocatable              :: outside_1d(:), outside_all_1d(:)
 
   if (trace_use) call da_trace_entry("da_read_obs_bufrairs")
 
@@ -279,16 +272,6 @@ bufrfile:  do ibufr=1,numbufr
 
   lnbufr=97
 
-  if ( ibufr == 1 ) then
-     allocate ( head )
-   ! allocate ( head % tb (1:nchan) )
-     nullify  ( head % next )
-     p => head
-  endif 
-
-   ! Loop over 3 stages of the vectorized domain test (da_llxy_1d)
-  domtest: do idom = 1, 3
-
   open(unit=lnbufr,file=trim(filename),form='unformatted',iostat = iost, status = 'old')
   if (iost /= 0) then
      call da_warning(__FILE__,__LINE__, &
@@ -308,43 +291,44 @@ bufrfile:  do ibufr=1,numbufr
   end if
   call datelen(10)
 
+
 !   2.0  Read header
 !---------------------------
   call readmg(lnbufr,subset,idate,iret)
 
-  if (idom .eq. 1) then
-     iy = 0
-     im = 0
-     idd = 0
-     ihh = 0
-     if( iret /= 0 ) goto 1000     ! no data?
+  iy = 0
+  im = 0
+  idd = 0
+  ihh = 0
+  if( iret /= 0 ) goto 1000     ! no data?
 
-     write(unit=date,fmt='( i10)') idate
-     read(unit=date,fmt='(i4,3i2)') iy,im,idd,ihh
-     write(unit=stdout,fmt='(a,4i4,2x,a)') &
-         'Bufr file date is ',iy,im,idd,ihh,trim(infile)
-  end if
+  write(unit=date,fmt='( i10)') idate
+  read(unit=date,fmt='(i4,3i2)') iy,im,idd,ihh
+  write(unit=stdout,fmt='(a,4i4,2x,a)') &
+      'Bufr file date is ',iy,im,idd,ihh,trim(infile)
 
 !   3.0 Loop over observations
 !----------------------------
-  irads = 0
-  do while (ireadmg(lnbufr,subset,idate)==0)
-     loop_obspoints: do while (ireadsb(lnbufr)==0)
+     if ( ibufr == 1 ) then
+        allocate ( head )
+      ! allocate ( head % tb (1:nchan) )
+        nullify  ( head % next )
+        p => head
+     endif  
 
-!  loop_obspoints: do
-!
-!!   3.1 Read headder
-!!-------------------------------
-!     call readsb(lnbufr,iret)
-!
-!     if( iret /=0 )then
-!        call readmg(lnbufr,subset,idate,iret)
-!        if( iret /= 0 ) exit loop_obspoints     ! end of file
-!        cycle loop_obspoints
-!     end if
+  loop_obspoints: do
 
-     irads = irads + 1
-     if (idom .eq. 1) cycle loop_obspoints
+!   3.1 Read headder
+!-------------------------------
+     call readsb(lnbufr,iret)
+
+     if( iret /=0 )then
+        call readmg(lnbufr,subset,idate,iret)
+        if( iret /= 0 ) exit loop_obspoints     ! end of file
+        cycle loop_obspoints
+     end if
+
+     num_eos_file = num_eos_file + 1
 
 !   3.2 Read AQUASPOT (SPITSEQN)
 !------------------------
@@ -378,42 +362,6 @@ bufrfile:  do ibufr=1,numbufr
                                airsspot_list_array(11), &
                                airsspot_list_array(12) )
 
-    
-!   4.0  Check observing position (lat/lon)
-!      QC1:  juge if data is in the domain, 
-!            read next record if not
-!------------------------------------------
-     if( abs(airsspot%clath) > R90  .or. &
-          abs(airsspot%clonh) > R360 .or. &
-          (abs(airsspot%clath) == R90 .and. airsspot%clonh /= ZERO) )then
-        irads = irads - 1
-        cycle loop_obspoints
-     end if
-
-!    Retrieve observing position
-     if(airsspot%clonh >= R360) then
-        airsspot%clonh = airsspot%clonh - R360
-!     else if(airsspot%clonh < ZERO) then
-!        airsspot%clonh = airsspot%clonh + R360
-     end if
-
-     if (idom .eq. 2) then
-        info_1d(irads) % lat  = airsspot%clath
-        info_1d(irads) % lon  = airsspot%clonh 
-        cycle loop_obspoints
-     end if
-
-     info%lat  = airsspot%clath
-     info%lon  = airsspot%clonh 
-
-     outside_all = outside_all_1d(irads)
-
-     if ( outside_all ) cycle loop_obspoints
-
-     loc         = loc_1d(irads)
-     outside     = outside_1d(irads)
-
-!Temporary moved
 !   3.4 Read AIRSCHAN or AMSUCHAN or HSBCHAN
 !-------------------------------------------
      if ( trim(senname) == 'AIRS' ) then
@@ -437,11 +385,32 @@ bufrfile:  do ibufr=1,numbufr
         cycle loop_obspoints
      end if
 
-!Temporary moved
 !   3.5 Read Cloud Cover from AIRS/VISNIR
 !-------------------------------------------
      call ufbint(lnbufr,tocc,1,1,iret,'TOCC')
- 
+     
+!   4.0  Check observing position (lat/lon)
+!      QC1:  juge if data is in the domain, 
+!            read next record if not
+!------------------------------------------
+     if( abs(airsspot%clath) > R90  .or. &
+          abs(airsspot%clonh) > R360 .or. &
+          (abs(airsspot%clath) == R90 .and. airsspot%clonh /= ZERO) )then
+        cycle loop_obspoints
+     end if
+
+!    Retrieve observing position
+     if(airsspot%clonh >= R360) then
+        airsspot%clonh = airsspot%clonh - R360
+!     else if(airsspot%clonh < ZERO) then
+!        airsspot%clonh = airsspot%clonh + R360
+     end if
+
+        info%lat  = airsspot%clath
+        info%lon  = airsspot%clonh 
+        call da_llxy (info, loc, outside, outside_all )
+
+        if ( outside_all ) cycle loop_obspoints
 	
 !  4.1  Check obs time
 !-------------------------------------
@@ -593,31 +562,10 @@ bufrfile:  do ibufr=1,numbufr
    p => p%next
    nullify (p%next)
 
-     end do loop_obspoints
-  end do
+  end do loop_obspoints
 
   call closbf(lnbufr)
   close(lnbufr)
-
-  if (idom .eq. 1) then
-     allocate ( info_1d        (irads) )
-     allocate ( loc_1d         (irads) )
-     allocate ( outside_1d     (irads) )
-     allocate ( outside_all_1d (irads) )
-  end if
-  if (idom .eq. 2) then
-     call da_llxy_1d (info_1d(1:irads), loc_1d(1:irads), outside_1d(1:irads), outside_all_1d(1:irads))
-  end if
-  if (idom .eq. 3) then
-     deallocate ( info_1d        )
-     deallocate ( loc_1d         )
-     deallocate ( outside_1d     )
-     deallocate ( outside_all_1d )
-  end if
-
-  end do domtest
-
-  num_eos_file = num_eos_file + irads
 
 end do bufrfile
 

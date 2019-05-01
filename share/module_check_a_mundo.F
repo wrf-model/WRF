@@ -359,7 +359,7 @@
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec % shcu_physics(i) == dengshcuscheme .AND. &
-              (model_config_rec % bl_pbl_physics(i) /= myjpblscheme .OR. &
+              (model_config_rec % bl_pbl_physics(i) /= myjpblscheme .AND. &
                model_config_rec % bl_pbl_physics(i) /= mynnpblscheme2 ) ) THEN
             wrf_err_message = '--- ERROR: Deng shallow convection can only work with MYJ or MYNN PBL '
             CALL wrf_message ( wrf_err_message )

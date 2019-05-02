@@ -241,6 +241,23 @@ END SUBROUTINE init_domain_vert_nesting
       
       ! the variables dzs and zs are kept from the parent domain.  These are the depths and thickness of the soil layers, which are not included in vertical nesting.
 
+      !KAL 2019
+      IF (nest%hybrid_opt == 0) THEN
+	 DO k = 1, kde_n
+	 nest%c1f(k) = 1.
+	 nest%c2f(k) = 0.
+	 nest%c3f(k) = nest%znw(k)
+	 nest%c4f(k) = 0.
+	 nest%c1h(k) = 1.
+	 nest%c2h(k) = 0.
+	 nest%c3h(k) = nest%znu(k)
+	 nest%c4h(k) = 0.
+	 END DO
+      ELSE
+          write(wrf_err_message,'(A,I2,A)') "--- ERROR: vertical nesting only works with hybrid_opt 0"
+          CALL wrf_error_fatal( wrf_err_message )
+      ENDIF
+    
       END SUBROUTINE vert_cor_vertical_nesting_integer
 
 !-----------------------------------------------------------------------------------------
@@ -384,6 +401,25 @@ SUBROUTINE vert_cor_vertical_nesting_arbitrary(nest,znw_c,kde_c,use_baseparam_fr
     nest%cf3  = cof2
     nest%cfn  = (.5*nest%dnw(kde_n-1)+nest%dn(kde_n-1))/nest%dn(kde_n-1)
     nest%cfn1 = -.5*nest%dnw(kde_n-1)/nest%dn(kde_n-1)
+
+    
+    !KAL 2019
+    IF (nest%hybrid_opt == 0) THEN
+       DO k = 1, kde_n
+       nest%c1f(k) = 1.
+       nest%c2f(k) = 0.
+       nest%c3f(k) = nest%znw(k)
+       nest%c4f(k) = 0.
+       nest%c1h(k) = 1.
+       nest%c2h(k) = 0.
+       nest%c3h(k) = nest%znu(k)
+       nest%c4h(k) = 0.
+       END DO
+    ELSE
+        write(wrf_err_message,'(A,I2,A)') "--- ERROR: vertical nesting only works with hybrid_opt 0"
+        CALL wrf_error_fatal( wrf_err_message )
+    ENDIF
+    
 
 END SUBROUTINE vert_cor_vertical_nesting_arbitrary
 

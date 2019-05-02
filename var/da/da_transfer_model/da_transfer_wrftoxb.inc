@@ -21,7 +21,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
    character(len=19) :: current_date
 
-   real :: loc_psac_mean
+   real :: loc_psac_mean(1)
 
    real, dimension(jds:jde) :: loc_latc_mean
 
@@ -911,12 +911,12 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
    if (test_dm_exact) then
       ! Broadcast result from monitor to other tasks.
       call wrf_dm_bcast_real(loc_psac_mean, 1)
-      xbx % psac_mean = loc_psac_mean
+      xbx % psac_mean = loc_psac_mean(1)
       ! Broadcast result from monitor to other tasks.
       call wrf_dm_bcast_real(loc_latc_mean, (jde-jds+1))
       xbx % latc_mean = loc_latc_mean
    else
-      xbx % psac_mean = wrf_dm_sum_real(loc_psac_mean)
+      xbx % psac_mean = wrf_dm_sum_real(loc_psac_mean(1))
       call wrf_dm_sum_reals(loc_latc_mean, xbx % latc_mean)
    end if
 

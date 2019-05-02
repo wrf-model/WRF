@@ -8,7 +8,7 @@ module da_wrf_interfaces
    interface
       subroutine wrf_dm_bcast_real (buf, n1)
          integer, intent(in) :: n1
-         real, intent(inout) :: buf(:)
+         real, intent(inout) :: buf(*)
       end subroutine wrf_dm_bcast_real
    end interface 
 
@@ -26,9 +26,33 @@ module da_wrf_interfaces
    end interface
 
    interface
+      subroutine wrf_dm_bcast_integer(buf, n1)
+         implicit none
+         integer, intent(in)    ::  n1
+         integer, intent(inout) :: buf(*)
+      end subroutine wrf_dm_bcast_integer
+   end interface
+
+   interface
       integer function wrf_dm_sum_integer (inval)
          integer, intent(in) :: inval
       end function wrf_dm_sum_integer
+   end interface
+
+   interface
+      subroutine wrf_dm_bcast_string(buf, n1)
+         implicit none
+         integer, intent(in)          ::  n1
+         character*(*), intent(inout) :: buf(*)
+      end subroutine wrf_dm_bcast_string
+   end interface
+
+   interface
+      subroutine wrf_dm_bcast_bytes(buf, size)
+         implicit none
+         integer, intent(in)    :: size
+         integer, intent(inout) :: buf(*)
+      end subroutine wrf_dm_bcast_bytes
    end interface
 
    interface
@@ -126,14 +150,6 @@ module da_wrf_interfaces
          character*(*), intent(in) :: str
          integer,          intent(in) :: level 
       end subroutine wrf_debug
-   end interface
-
-   interface
-      subroutine wrf_dm_bcast_integer(buf, n1)
-         implicit none
-         integer, intent(in)    ::  n1
-         integer, intent(inout) :: buf(:)
-      end subroutine wrf_dm_bcast_integer
    end interface
 
    interface 

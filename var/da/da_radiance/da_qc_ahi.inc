@@ -3,7 +3,6 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
    !---------------------------------------------------------------------------
    ! Purpose: perform quality control for ahi  data.
    !  Method: Assume cloud flag coming from GEOCAT processing
-   ! To be developed: built in cloud_detection method 
    !---------------------------------------------------------------------------
 
    implicit none
@@ -27,6 +26,13 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
    character(len=30)  :: filename
    real      :: c37_mean
 
+   ! mmr or pf Cloud Detection Variables
+   integer              :: kts_100hPa(1), kte_surf, ndim
+   integer              :: numrad_local(nchan), numrad_global(nchan)
+   real                 :: tstore
+   real                 :: bias_local(nchan), bias_global(nchan)
+   integer              :: kmin, kmax
+   integer, allocatable  :: k_cloud_flag(:) ! cloud flags
    if (trace_use) call da_trace_entry("da_qc_ahi")
 
    ngood(:)        = 0
@@ -160,6 +166,45 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
                         nrej_omb_abs(k) = nrej_omb_abs(k) + 1
             end if			
          end do ! nchan
+
+         ! 1. Cloud detection scheme MMR in Auligné (2014).or. PF in Xu et al., (2016)
+         !---------------------------------------------
+         if ((use_clddet==1 .or. use_clddet==2) .and. (.not.use_satcv(2))) then
+            iv%instid(i)%cloud_flag(:,n) = qc_good
+
+            if (rtm_option == rtm_option_rttov) then
+#ifdef RTTOV
+               kte_surf   = iv%instid(i)%nlevels
+               kts_100hPa = MAXLOC(coefs(i)%coef%ref_prfl_p(1:kte_surf), &
+                            MASK = coefs(i)%coef%ref_prfl_p(1:kte_surf) < 100.0)
+               do k=1,nchan
+                  tstore = coefs(i)%coef%ff_bco(k) + coefs(i)%coef%ff_bcs(k) * &
+                           (ob%instid(i)%tb(k,n) - bias_global(k))
+                  iv%instid(i)%rad_obs(k,n) = coefs(i)%coef%planck1(k) / &
+                           (EXP(coefs(i)%coef%planck2(k)/tstore) - 1.0)
+               end do
+#endif
+            elseif (rtm_option == rtm_option_crtm) then
+               kte_surf   = kte
+               kts_100hPa = MAXLOC(iv%instid(i)%pm(kts:kte,n), &
+                            MASK = iv%instid(i)%pm(kts:kte,n) < 100.0)
+
+               do k = 1, nchan
+                  CALL CRTM_Planck_Radiance(i,k,ob%instid(i)%tb(k,n) - bias_global(k), &
+                                            iv%instid(i)%rad_obs(k,n))
+               end do
+
+            end if
+
+            ndim = kte_surf - kts_100hPa(1) + 1
+
+            call da_cloud_detect(i,nchan,ndim,kts_100hPa(1),kte_surf,n,iv)
+         end if
+
+         do k = 1, nchan
+            if (iv%instid(i)%cloud_flag(k,n) == qc_bad) iv%instid(i)%tb_qc(k,n) = qc_bad
+         end do
+		 
       end if
 
       do k = 1, nchan

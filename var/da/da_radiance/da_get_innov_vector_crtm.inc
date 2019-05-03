@@ -86,7 +86,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    logical :: calc_tb_clr
    type (CRTM_RTSolution_type), allocatable :: RTSolution_clr(:,:)
 
-   ! Initializations for AIRS (MMR) Cloud Detection
+   ! Initializations for Cloud Detection
    integer           :: ilev, jlev, nclouds
    real, allocatable :: hessian(:,:)
    real*8, allocatable :: eignvec(:,:), eignval(:)
@@ -616,9 +616,9 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 	    
 	 end if
 
-         ! Compute Overcast Radiances for AIRS Cloud Detection (MMR)
+! Compute Overcast Radiances for MMR in Auligné (2014).or. PF in Xu et al., (2016).or. MW03 ecmwf method in McNally AP and Watts PD (2003) 
          !----------------------------------------------------------------
-         if (use_clddet_mmr .or. use_clddet_ecmwf ) then
+         if (use_clddet==1 .or. use_clddet==2.or. use_clddet==3 ) then
             do i = 1, nchanl
                !crtm_2.2.3 contains Upwelling_Overcast_Radiance
                iv%instid(inst)%rad_ovc(i,kts:kte,n)=RTSolution(i,1)%Upwelling_Overcast_Radiance(:)
@@ -773,7 +773,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
             end do
          end if
 
-         if (use_clddet_ecmwf) then  !begin ecmwf cloud detection
+         if (use_clddet==3) then  !begin ecmwf cloud detection
             !kmin_t,kmax_p corresponding tropopause and KBPL
             ! find the k index of tropopause
             t_tropp = 999.0  ! initialize

@@ -223,7 +223,7 @@ end if
 	  AMAT(nchan,ndim)     = rad_clr(ich) / rad_obs(ich)
           ZF_CLR               = ZF_CLR + 0.5*(AMAT(nchan,ndim)-1.0)**2 
           
-          if (use_clddet==2)  then
+        if (use_clddet==2)  then
           p1=0		  
           do ii=0,10
             do jj=1,ndim-1
@@ -246,7 +246,7 @@ end if
             px(k)= SUM(wx(1:p1)*ppx(1:p1,k))
           end do
           px(1:ndim) = px(1:ndim) / SUM(px(1:ndim))   ! Re-normalization
-end if		  
+        end if		  
         ENDDO
         IF (.NOT. LMATCH) then
            if (print_detail_rad) then

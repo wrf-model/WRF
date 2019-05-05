@@ -180,12 +180,13 @@ else if (ahi) then
       Bands(1:Band_Size(1),1) = &
 &   (/7,8,9,10/)	 
 end if
-    jo=0
+
     allocate(ppx(ndim*11,ndim))  
     allocate(wx(ndim*11))    
     allocate(jo(ndim*11))
     wx=1.0
-	px(1:ndim-1) = 1.0/ndim
+    jo=0.0
+    px(1:ndim-1) = 1.0/ndim
     px(ndim)     = 1.0 - SUM(px(1:ndim-1))
     ichan        = iv%instid(isensor)%ichan(1:nchannels)
     rad_clr      = iv%instid(isensor)%rad_xb(1:nchannels,n)              !iv%instid(isensor)%tb_xb(1:nchan,n)
@@ -324,6 +325,9 @@ if (use_clddet==1) then
       IF (ALLOCATED(DZS)) DEALLOCATE(DZS)       
       if (allocated(rzs)) deallocate(rzs)                 
 end if !mmr
+       deallocate(ppx)
+       deallocate(wx)
+       deallocate(jo)
         
       !-----------------!
       ! Cloudy radiance !

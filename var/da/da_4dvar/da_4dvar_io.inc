@@ -13,7 +13,7 @@ subroutine init_4dvar
    run_length = head_grid%stop_subtime - head_grid%start_subtime
    CALL WRFU_TimeIntervalGet( run_length, S=run_seconds, rc=rc )
 
-   if ( run_seconds .gt. config_flags%interval_seconds ) then
+   if ( run_seconds .gt. config_flags%interval_seconds .and. checkpoint_interval .le. 0 ) then
       write(unit=message(1),fmt='(A)') 'In 4D-Var assimilation window, lateral boundary update is not allowed.'
       write(unit=message(2),fmt='(A)') '"run_seconds" must be less than or equal to "interval_seconds"'
       write(unit=message(3),fmt='(A,I0)')'run_seconds      = ',run_seconds
@@ -32,6 +32,8 @@ subroutine init_4dvar
    original_ra_sw_physics = itmp
    call nl_get_sf_sfclay_physics (head_grid%id, itmp)
    original_sf_sfclay_physics = itmp
+   call nl_get_sf_surface_physics(head_grid%id, itmp)
+   original_sf_surface_physics = itmp
    call nl_get_bl_pbl_physics (head_grid%id, itmp)
    original_bl_pbl_physics = itmp
    call nl_get_cu_physics (head_grid%id, itmp)

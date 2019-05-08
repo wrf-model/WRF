@@ -7,7 +7,11 @@ module da_par_util
    !---------------------------------------------------------------------------
 
    use da_control, only: use_rf
-   use module_domain, only : domain, xpose_type
+#if (WRF_CHEM != 1)
+   use module_domain, only : domain, xpose_type, x_type, vp_type
+#else
+   use module_domain, only : domain, xpose_type, x_type, vp_type, xch_type, xchem_type
+#endif
 
 #ifdef DM_PARALLEL
    use module_dm, only : local_communicator_x, &
@@ -20,8 +24,13 @@ module da_par_util
    use da_reporting, only : message
 #endif
 
+#if (WRF_CHEM == 1)
+   use module_state_description, only :  PARAM_FIRST_SCALAR, &
+      num_scaleant, num_scalebb, num_chem
+#endif
+
    use da_define_structures, only : be_subtype, &
-      x_type, vp_type, residual_synop_type, residual_sound_type, iv_type, &
+      residual_synop_type, residual_sound_type, iv_type, &
       y_type, count_obs_number_type, maxmin_field_type
 
    use da_control, only : trace_use,num_ob_indexes, myproc, root, comm, ierr, &
@@ -58,7 +67,9 @@ module da_par_util
    contains
 
 #include "da_cv_to_vv.inc"
+#include "da_cv_to_vv_chem.inc"
 #include "da_vv_to_cv.inc"
+#include "da_vv_to_cv_chem.inc"
 #include "da_alloc_and_copy_be_arrays.inc"
 #include "da_copy_dims.inc"
 #include "da_copy_tile_dims.inc"

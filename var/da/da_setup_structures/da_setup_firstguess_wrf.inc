@@ -4,6 +4,12 @@ subroutine da_setup_firstguess_wrf(xbx, grid, config_flags, ens)
    ! Purpose: Define/allocate components of WRF model state.
    !---------------------------------------------------------------------------
 
+   USE module_state_description, ONLY :                                 &
+                     num_chem                                           & !inline gocart
+                    ,p_chem_ic_bc1, p_chem_ic_bc2, p_chem_ic_oc1, p_chem_ic_oc2                         & !inline gocart
+                    ,p_chem_ic_so2, p_chem_ic_no2, p_chem_ic_o3, p_chem_ic_co      &
+                    ,p_chem_ic_p10,  p_chem_ic_p25,  p_chem_ic_sulf
+
    implicit none
 
    type (xbx_type), intent(out)         :: xbx    ! Header & non-gridded vars.
@@ -19,7 +25,9 @@ subroutine da_setup_firstguess_wrf(xbx, grid, config_flags, ens)
 
    character(len=24) :: xb_date, an_date
    integer           :: len, seconds, i_grid,  j_grid, m_expand
-
+#if (WRF_CHEM == 1)
+   integer           :: ic
+#endif
 
    if (trace_use) call da_trace_entry("da_setup_firstguess_wrf")
 
@@ -204,12 +212,49 @@ subroutine da_setup_firstguess_wrf(xbx, grid, config_flags, ens)
    mix = grid%xb % mix
    mjy = grid%xb % mjy
    mkz = grid%xb % mkz
-   
+
+#if (WRF_CHEM == 1)
+   grid%scaleant = 0.D0
+   do ic = PARAM_FIRST_SCALAR, num_scaleant
+      grid%scaleant(:,:,:,ic) = REAL( init_scale, 8 )
+   end do
+
+   grid%scalebb = 0.D0
+   do ic = PARAM_FIRST_SCALAR, num_scalebb
+      grid%scalebb(:,:,:,ic) = REAL( init_scale, 8 )
+   end do
+
+   call da_transfer_wrftoxb_gocart(grid)
+
+!        write(*,*) 'oc111  ',p_oc2,grid%chem(1:100,1:100,1,p_oc2)
+!        write(*,*) 'bc111  ',p_bc2,grid%chem(1:100,1:100,1,p_bc2)
+!        write(*,*) 'so2111  ',p_so2,grid%chem(1:100,1:100,1,p_so2)
+!        write(*,*) 'no2111  ',p_no2,grid%chem(1:100,1:100,1,p_no2)
+!        write(*,*) 'o3111  ',p_o3,grid%chem(1:100,1:100,1,p_o3)
+!        write(*,*) 'co111  ',p_co,grid%chem(1:100,1:100,1,p_co)
+!        write(*,*) 'p10111  ',p_p10,grid%chem(1:100,1:100,1,p_p10)
+!        write(*,*) 'p25111  ',p_p25,grid%chem(1:100,1:100,1,p_p25)
+!        write(*,*) 'chksulf11  ',p_sulf,grid%chem(1:10,1:10,1,p_sulf)
+        write(*,*) 'num111  ',num_chem
+
+!        write(*,*) 'oc222  ',ic,grid%xbchem%chem_ic(1:100,1:100,1,p_chem_ic_oc2)
+!        write(*,*) 'bc222  ',ic,grid%xbchem%chem_ic(1:100,1:100,1,p_chem_ic_bc2)
+!        write(*,*) 'so2222  ',ic,grid%xbchem%chem_ic(1:100,1:100,1,p_chem_ic_so2)
+!        write(*,*) 'no2222  ',ic,grid%xbchem%chem_ic(1:100,1:100,1,p_chem_ic_no2)
+!        write(*,*) 'o3222  ',ic,grid%xbchem%chem_ic(1:100,1:100,1,p_chem_ic_o3)
+!        write(*,*) 'co222  ',ic,grid%xbchem%chem_ic(1:100,1:100,1,p_chem_ic_co)
+!        write(*,*) 'p10222  ',ic,grid%xbchem%chem_ic(1:100,1:100,1,p_chem_ic_p10)
+!        write(*,*) 'p25222  ',ic,grid%xbchem%chem_ic(1:100,1:100,1,p_chem_ic_p25)
+!        write(*,*) 'chksulf22  ',p_chem_ic_sulf,grid%xbchem%chem_ic(1:10,1:10,1,p_chem_ic_sulf)
+
+#endif
+
    if ( .not. ens ) then
       call da_transfer_wrftoxb(xbx, grid, config_flags)
    endif
 
    if (trace_use) call da_trace_exit("da_setup_firstguess_wrf")
+
 
 end subroutine da_setup_firstguess_wrf
 

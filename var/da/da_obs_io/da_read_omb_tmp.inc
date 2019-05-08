@@ -30,8 +30,9 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
                    spd_obs, spd_inv, spd_err, spd_inc,   &
                    ref_obs, ref_inv, ref_error, ref_inc, &
                    eph_obs, eph_inv, eph_error, eph_inc, &
-                   rain_obs, rain_inv, rain_error, rain_inc, zk
-   integer     :: u_qc, v_qc, t_qc, p_qc, q_qc, tpw_qc, spd_qc, ref_qc, rain_qc
+                   rain_obs, rain_inv, rain_error, rain_inc, zk, &
+                   chem_obs, chem_inv, chem_err, chem_inc
+   integer     :: u_qc, v_qc, t_qc, p_qc, q_qc, tpw_qc, spd_qc, ref_qc, rain_qc, chem_qc
    integer     :: eph_qc
    integer     :: ifgat
 
@@ -429,8 +430,31 @@ subroutine da_read_omb_tmp(filename,unit_in,num,obs_type_in,nc,if_wind_sd)
          if (if_write) exit reports
          cycle reports
 
+      case ('chem' )
+         if (num_obs > 0) then
+            do n = 1, num_obs
+               read(unit_in,'(2i8)')levels, ifgat
+               if (if_write) then
+                  write(omb_unit,'(2i8)')levels, ifgat
+               num = num + 1
+               end if
+               do k = 1, levels
+                  read(unit_in,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
+                     kk,l, stn_id, &          ! Station
+                     lat, lon, dummy, &       ! Lat/lon, dummy
+                     chem_obs, chem_inv, chem_qc, chem_err, chem_inc
+                  if (if_write) &
+                     write(omb_unit,'(2i8,a5,2f9.2,f17.7,5(2f17.7,i8,2f17.7))', err= 1000)&
+                        num, k, stn_id,  &       ! Station
+                        lat, lon, dummy, &       ! Lat/lon, dummy
+                        chem_obs, chem_inv, chem_qc, chem_err, chem_inc
+               end do
+            end do
+         end if
+         if (if_write) exit reports
+         cycle reports
+
       case default;
-                  
 
          write(unit=message(1), fmt='(a,a20,a,i3)') &
             'Got unknown obs_type string:', trim(iv_type),' on unit ',unit_in

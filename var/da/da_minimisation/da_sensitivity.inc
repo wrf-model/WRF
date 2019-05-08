@@ -49,7 +49,11 @@ subroutine da_sensitivity(grid, config_flags, it, cv_size, xbx, be, iv, xhat, qh
          do j = 1, neign
             ritz(i,j) = SUM( eignvec(i,1:neign) * (1.0/eignval(1:neign)) * eignvec(j,1:neign) )
             amat      = amat + qhat(:,i) * ritz(i,j) * &
-                        da_dot_cv(cv_size, qhat(:,j), shat, grid, be%cv_mz, be%ncv_mz, jp_start, jp_end)
+                        da_dot_cv(cv_size, qhat(:,j), shat, grid, be%cv_mz, be%ncv_mz, &
+#if (WRF_CHEM == 1)
+                                   be%cv_mz_chem, &
+#endif
+                                   jp_start, jp_end)
          end do
       end do
 
@@ -72,6 +76,10 @@ subroutine da_sensitivity(grid, config_flags, it, cv_size, xbx, be, iv, xhat, qh
       call da_deallocate_y(ktr)
 
     ! Adjoint test
-!      write(stdout,*) 'ADJOINT_TEST2:', da_dot_cv(cv_size, xhat, xhat, grid, be%cv_mz, be%ncv_mz, jp_start, jp_end)
+!      write(stdout,*) 'ADJOINT_TEST2:', da_dot_cv(cv_size, xhat, xhat, grid, be%cv_mz, be%ncv_mz, &
+!#if (WRF_CHEM == 1)
+!                                                   ,be%cv_mz_chem &
+!#endif
+!                                                    jp_start, jp_end)
 
 end subroutine da_sensitivity

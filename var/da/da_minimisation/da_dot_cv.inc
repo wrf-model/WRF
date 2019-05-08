@@ -1,4 +1,8 @@
-real function da_dot_cv(cv_size, x, y, grid, mzs, nmzs, jp_start, jp_end)
+real function da_dot_cv(cv_size, x, y, grid, mzs, nmzs &
+#if (WRF_CHEM == 1)
+       , mzs_chem &
+#endif
+       , jp_start, jp_end)
 
    !-----------------------------------------------------------------------
    ! Purpose: Forms the dot product of two vectors that are organized in the 
@@ -17,7 +21,11 @@ real function da_dot_cv(cv_size, x, y, grid, mzs, nmzs, jp_start, jp_end)
    type(domain),     intent(in) :: grid              ! decomposed dimensions
    integer,          intent(in) :: nmzs              ! number of mz
    integer,          intent(in) :: mzs(nmzs)         ! mz for each variable
-                                                     ! (to identify 2D arrays)
+#if (WRF_CHEM == 1)
+!!!   integer,          intent(in) :: mzs_chem(:) ! mz for each chem variable
+   integer, optional,   intent(in) :: mzs_chem(:) ! mz for each chem variable
+#endif
+                                                   ! (to identify 2D arrays)
    integer, optional,intent(in) :: jp_start, jp_end
 
    logical       :: lvarbc
@@ -36,9 +44,11 @@ real function da_dot_cv(cv_size, x, y, grid, mzs, nmzs, jp_start, jp_end)
  !-------------------------------------------------------------
    lvarbc = present(jp_start) .and. present(jp_end)
    if (lvarbc) lvarbc = lvarbc .and. (jp_end >= jp_start)   
+!!!	write(*,*) 'chkdot111', jp_start,jp_end
    if (lvarbc .and. .not. rootproc) then
       xx(jp_start:jp_end) = 0.
       yy(jp_start:jp_end) = 0.
+	write(*,*) 'chkdot222', jp_start,jp_end
    end if
       
    ! Bitwise-exact reduction preserves operation order of serial code for
@@ -59,8 +69,16 @@ real function da_dot_cv(cv_size, x, y, grid, mzs, nmzs, jp_start, jp_end)
          allocate(yg(1:cv_size_domain))
       end if
 
-      call da_cv_to_global(cv_size, cv_size_domain, xx, grid, mzs, nmzs, xg)
-      call da_cv_to_global(cv_size, cv_size_domain, yy, grid, mzs, nmzs, yg)
+      call da_cv_to_global(cv_size, cv_size_domain, xx, grid, mzs, nmzs, xg &
+#if (WRF_CHEM == 1)
+                           , mzs_chem &
+#endif
+                          )
+      call da_cv_to_global(cv_size, cv_size_domain, yy, grid, mzs, nmzs, yg &
+#if (WRF_CHEM == 1)       
+                           , mzs_chem &
+#endif                    
+                          )
 
       if (rootproc) then
          dtemp1(1) = da_dot(cv_size_domain, xg, yg)
@@ -72,14 +90,18 @@ real function da_dot_cv(cv_size, x, y, grid, mzs, nmzs, jp_start, jp_end)
 
    else
 
+!!!	write(*,*) 'chkdot333', cv_size,xx(2126629:2126629+10), yy(2126629:2126629+10) 
+      write(*,*) 'chkdot333', cv_size, dtemp1(1)
+
       dtemp1(1) = da_dot(cv_size, xx, yy)
-      
+      write(*,*) 'chkdot444', cv_size, dtemp1(1)
       !if (.not. global) then
          dtmp = dtemp1(1)
          ! summation across processors:
          dtemp1(1) = wrf_dm_sum_real(dtmp)
       !end if
 
+      write(*,*) 'chkdot555', cv_size, dtemp1(1)
    end if
   
    deallocate(xx,yy)

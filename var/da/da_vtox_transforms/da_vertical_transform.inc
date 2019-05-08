@@ -263,11 +263,14 @@ subroutine da_vertical_transform(grid, string, be, vertical_wgt, vv, vp)
       ! [3.0] Perform vv_adj = U_{v}^{T} vp_adj transform:
       !------------------------------------------------------------------- 
 
+	write(*,*) 'chkvv3', vv % v1(10:20,1,1), be % v1 % evec(10:20,1,1), be % v1 % val(10:20,1)
+
       if (be % v1 % mz > 0) then
          call da_transform_vvtovp_adj (grid, be % v1 % evec, be % v1 % val, vertical_wgt, &
             vp % v1, vv % v1, be % v1 % mz, kte)
       end if
 
+	write(*,*) 'chkvv4', vv % v1(10:20,1,1), be % v1 % evec(10:20,1,1), be % v1 % val(10:20,1)
       if (be % v2 % mz > 0) then
          call da_transform_vvtovp_adj (grid, be % v2 % evec, be % v2 % val, vertical_wgt, &
             vp % v2, vv % v2, be % v2 % mz, kte)

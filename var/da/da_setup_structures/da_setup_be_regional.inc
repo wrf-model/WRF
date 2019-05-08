@@ -9,6 +9,12 @@ subroutine da_setup_be_regional(xb, be, grid)
    !       Syed RH Rizvi,  MMM/NESL/NCAR,  Date: 02/01/2010
    !---------------------------------------------------------------------------
 
+   USE module_state_description, ONLY :  p_bc1, p_bc2, p_oc1, p_oc2                         & !inline gocart
+                                        ,p_dust_1, p_dust_2, p_dust_3 ,p_dust_4            & !inline gocart
+                                        ,p_seas_1, p_seas_2, p_seas_3 ,p_seas_4            & !inline gocart
+                                        ,p_co, p_o3, p_no2, p_so2                    & !inline gocart
+                                        ,p_p25, p_p10, p_sulf  
+
    implicit none
 
    type (xb_type), intent(in)    :: xb                    ! First guess structure.
@@ -17,6 +23,7 @@ subroutine da_setup_be_regional(xb, be, grid)
 
    logical                do_normalize1      ! Test do_normalize.
    integer             :: i, j, k, m         ! Loop counters.
+   integer             :: ispcc              ! chem species index.
    integer, allocatable:: bin(:,:,:)         ! Bin assigned to each 3D point
    integer, allocatable:: bin2d(:,:)         ! Bin assigned to each 2D point
    integer             :: bin_type           ! Type of bin to average over.
@@ -29,6 +36,7 @@ subroutine da_setup_be_regional(xb, be, grid)
    integer :: num_cv_3d_basic  ! number of 3D mandatory control variables
    integer :: num_cv_3d_extra  ! number of 3D optional control variables
    integer :: num_cv_2d        ! number of 2D control variables
+   integer :: num_cv_3d_chem   ! number of 3D chem control variables
 
    real*8, allocatable           :: be1_eval_loc(:,:)     ! Temp arrays.
    real*8, allocatable           :: be2_eval_loc(:,:)     ! Temp arrays.
@@ -43,6 +51,8 @@ subroutine da_setup_be_regional(xb, be, grid)
    real*8, allocatable           :: be10_eval_loc(:,:)    ! Temp arrays.
    real*8, allocatable           :: be11_eval_loc(:,:)    ! Temp arrays.
 
+   real*8, allocatable           :: be12_eval_loc(:,:,:)    ! Temp arrays for chem.
+
    real*8, allocatable           :: be1_eval_glo(:)       ! Global Eigenvalues.
    real*8, allocatable           :: be2_eval_glo(:)       ! Global Eigenvalues.
    real*8, allocatable           :: be3_eval_glo(:)       ! Global Eigenvalues.
@@ -55,6 +65,8 @@ subroutine da_setup_be_regional(xb, be, grid)
    real*8, allocatable           :: be9_eval_glo(:)       ! Global Eigenvalues.
    real*8, allocatable           :: be10_eval_glo(:)      ! Global Eigenvalues.
    real*8, allocatable           :: be11_eval_glo(:)      ! Global Eigenvalues.
+
+   real*8, allocatable           :: be12_eval_glo(:,:)      ! Global Eigenvalues for chem.
 
    real*8, allocatable           :: alpha_val(:)          ! Global Eigenvalues.
 
@@ -71,6 +83,8 @@ subroutine da_setup_be_regional(xb, be, grid)
    real*8, allocatable           :: be10_evec_loc(:,:,:)  ! Local Eigenvectors.
    real*8, allocatable           :: be11_evec_loc(:,:,:)  ! Local Eigenvectors.
 
+   real*8, allocatable           :: be12_evec_loc(:,:,:,:)  ! Local Eigenvectors for chem.
+
    real*8, allocatable           :: be1_evec_glo(:,:)     ! Global Eigenvectors.
    real*8, allocatable           :: be2_evec_glo(:,:)     ! Global Eigenvectors.
    real*8, allocatable           :: be3_evec_glo(:,:)     ! Global Eigenvectors.
@@ -83,6 +97,8 @@ subroutine da_setup_be_regional(xb, be, grid)
    real*8, allocatable           :: be9_evec_glo(:,:)     ! Global Eigenvectors.
    real*8, allocatable           :: be10_evec_glo(:,:)    ! Global Eigenvectors.
    real*8, allocatable           :: be11_evec_glo(:,:)    ! Global Eigenvectors.
+
+   real*8, allocatable           :: be12_evec_glo(:,:,:)    ! Global Eigenvectors for chem.
 
 
    real*8, allocatable           :: alpha_evec(:,:)       ! Global Eigenvectors.
@@ -99,6 +115,8 @@ subroutine da_setup_be_regional(xb, be, grid)
    real*8, allocatable           :: be9_rf_lengthscale(:)
    real*8, allocatable           :: be10_rf_lengthscale(:)
    real*8, allocatable           :: be11_rf_lengthscale(:)
+
+   real*8, allocatable           :: be12_rf_lengthscale(:,:) ! for chem
 
    real*8, allocatable           :: alpha_rf_lengthscale(:)
    real*8, allocatable           :: alpha_rf_scale_factor(:)
@@ -121,7 +139,7 @@ subroutine da_setup_be_regional(xb, be, grid)
    real, allocatable   :: regcoeff_chi_u_rh(:,:,:)   ! chi_u/rh   regression coefficient
    real, allocatable   :: regcoeff_t_u_rh(:,:,:)     ! t_u/rh     regression coefficient
    real, allocatable   :: regcoeff_ps_u_rh(:,:)      ! ps_u/rh    regression coefficient
-   real                :: qrain_th_low, qrain_th_high
+   !real                :: qrain_th_low, qrain_th_high
 
    integer                     :: be_unit, ier, be_rf_unit, be_print_unit, it, idummy
 
@@ -154,6 +172,10 @@ subroutine da_setup_be_regional(xb, be, grid)
          write (unit=message(1),fmt='(A,I3)') 'interpolate_stats is not implemented for cloud_cv_options=',cloud_cv_options
          call da_error(__FILE__,__LINE__,message(1:1))
       end if
+      if ( ( chem_cv_options .eq.1 ) .and. interpolate_stats ) then
+         write (unit=message(1),fmt='(A,I3)') 'interpolate_stats is not implemented for chem_cv_options=',chem_cv_options
+         call da_error(__FILE__,__LINE__,message(1:1))
+      end if
    else 
       write (unit=message(1),fmt='(a)') 'cv_options should be 5, 6, or 7'
       call da_error(__FILE__,__LINE__,message(1:1))
@@ -171,11 +193,13 @@ subroutine da_setup_be_regional(xb, be, grid)
 
    rewind (be_unit)
    read (be_unit, iostat=ier) ni, nj, nk
+   print *, 'ni, nj, nk = ', ni, nj, nk
    if (ier /= 0) then
       write (unit=message(1),fmt='(a,i3)') 'Error in reading be.dat, unit= ',be_unit
       call da_error(__FILE__,__LINE__,message(1:1))
    end if
    read (be_unit) bin_type
+   print *, 'bin_type = ', bin_type
 
 !-----------for interpolating CV5--------------------------------------------------------------
    if ( .not. interpolate_stats ) then 
@@ -222,26 +246,37 @@ subroutine da_setup_be_regional(xb, be, grid)
    allocate (bin(1:ni,1:nj,1:nk))
    allocate (bin2d(1:ni,1:nj))
 
-  if(cloud_cv_options.eq.2)then
-   read (be_unit)num_bins, num_bins2d
+  !if(cloud_cv_options.eq.2)then
+  ! read (be_unit)num_bins, num_bins2d
+  ! read (be_unit)lat_min, lat_max, binwidth_lat
+  ! read (be_unit)hgt_min, hgt_max, binwidth_hgt
+  ! read (be_unit)qrain_th_low, qrain_th_high
+  ! read (be_unit)bin(1:ni,1:nj,1:nk)
+  ! read (be_unit)bin2d(1:ni,1:nj)
+  !else
    read (be_unit)lat_min, lat_max, binwidth_lat
    read (be_unit)hgt_min, hgt_max, binwidth_hgt
-   read (be_unit)qrain_th_low, qrain_th_high
-   read (be_unit)bin(1:ni,1:nj,1:nk)
-   read (be_unit)bin2d(1:ni,1:nj)
-  else
-   read (be_unit)lat_min, lat_max, binwidth_lat
-   read (be_unit)hgt_min, hgt_max, binwidth_hgt
    read (be_unit)num_bins, num_bins2d
    read (be_unit)bin(1:ni,1:nj,1:nk)
    read (be_unit)bin2d(1:ni,1:nj)
-  end if
+  !end if
+
+   print *, lat_min, lat_max, binwidth_lat
+   print *, hgt_min, hgt_max, binwidth_hgt
+   print *, 'num_bins, num_bins2d = ', num_bins, num_bins2d
+   print *, 'bin = ',   bin(1:1,1:1,1:1)
+   print *, 'bin2d = ', bin2d(1:1,1:1)
 
    num_cv_3d_basic = 4
    num_cv_3d_extra = 0
    num_cv_2d       = 1
    if ( cloud_cv_options >= 2 ) then
       num_cv_3d_extra = 5
+   end if
+   if ( chem_cv_options == 1 ) then
+      num_cv_3d_extra = 19
+      num_cv_3d_chem = num_cv_3d_extra
+      allocate (be % v12 (num_cv_3d_chem) )
    end if
    if ( use_cv_w ) then
       num_cv_3d_extra = num_cv_3d_extra + 1
@@ -503,6 +538,11 @@ subroutine da_setup_be_regional(xb, be, grid)
       allocate (be9_eval_loc  (1:nj,1:nk))
       allocate (be10_eval_loc (1:nj,1:nk))
    end if
+
+   if ( chem_cv_options >= 1 ) then
+      allocate (be12_eval_loc  (num_cv_3d_chem,1:nj,1:nk))
+   end if
+
    if ( use_cv_w ) then
       allocate (be11_eval_loc (1:nj,1:nk))
    end if
@@ -523,6 +563,10 @@ subroutine da_setup_be_regional(xb, be, grid)
          allocate (be10_eval_glo(1:nk))
       end if
 
+      if ( chem_cv_options >= 1 ) then
+         allocate (be12_eval_glo(num_cv_3d_chem,1:nk))
+      end if
+
       if ( use_cv_w ) then
          allocate (be11_eval_glo(1:nk))
       end if
@@ -540,6 +584,11 @@ subroutine da_setup_be_regional(xb, be, grid)
          allocate (be9_evec_loc (1:nj,1:nk,1:nk))
          allocate (be10_evec_loc(1:nj,1:nk,1:nk))
       end if
+
+      if ( chem_cv_options >= 1 ) then
+         allocate (be12_evec_loc (num_cv_3d_chem,1:nj,1:nk,1:nk))
+      end if
+
       if ( use_cv_w ) then
          allocate (be11_evec_loc(1:nj,1:nk,1:nk))
       end if
@@ -558,6 +607,10 @@ subroutine da_setup_be_regional(xb, be, grid)
          allocate (be10_evec_glo(1:nk,1:nk))
       end if
 
+      if ( chem_cv_options >= 1 ) then
+         allocate (be12_evec_glo(num_cv_3d_chem,1:nk,1:nk))
+      end if
+
       if ( use_cv_w ) then
          allocate (be11_evec_glo(1:nk,1:nk))
       end if
@@ -572,6 +625,11 @@ subroutine da_setup_be_regional(xb, be, grid)
          allocate ( be9_rf_lengthscale(1:kz))
          allocate (be10_rf_lengthscale(1:kz))
       end if
+
+      if ( chem_cv_options >= 1 ) then
+         allocate (be12_rf_lengthscale(num_cv_3d_chem,1:kz))
+      end if
+
       if ( use_cv_w ) then
          allocate (be11_rf_lengthscale(1:kz))
       end if
@@ -583,14 +641,14 @@ subroutine da_setup_be_regional(xb, be, grid)
       be % v7  % name     = "qrain"
       be % v8  % name     = "qice"
       be % v9  % name     = "qsnow"
-      be % v10 % name     = "qgraupel"
+      be % v10 % name     = "qgraup"
       be6_eval_glo        = 1.0e-6
       be7_eval_glo        = 1.0e-6
       be8_eval_glo        = 1.0e-6
       be9_eval_glo        = 1.0e-6
       be10_eval_glo       = 1.0e-6
       if ( use_cv_w ) then
-         be % v11 % name     = "z-wind"
+         be % v11 % name     = "w"
          be11_eval_glo       = 1.0
       end if
       if ( use_rf ) then
@@ -607,9 +665,11 @@ subroutine da_setup_be_regional(xb, be, grid)
 
    ! 2.2 Read in the eigenvector and eigenvalue
 
+   print *, '-------- reading eigen vector/value -------'
    do i = 1 , num_cv_3d_basic
       read (be_unit) variable
       read (be_unit) nk, num_bins2d
+      print *, trim(adjustl(variable)), nk, num_bins2d
       if ( i == 1 ) then
          allocate (evec_loc(1:nk,1:nk,1:num_bins2d))
          allocate (eval_loc(1:nk,     1:num_bins2d))
@@ -671,12 +731,14 @@ subroutine da_setup_be_regional(xb, be, grid)
       end select
 
    end do !1-num_cv_3d_basic
-
+   
    if ( cloud_cv_options == 2 ) then
+      print*,"cloud_cv_options == 2 variables from id ",num_cv_3d_basic+1 ,"to id", num_cv_3d_basic+num_cv_3d_extra
       do i = num_cv_3d_basic+1 , num_cv_3d_basic+num_cv_3d_extra
 
          read (be_unit) variable
          read (be_unit) nk, num_bins2d
+         print *, trim(adjustl(variable)), nk, num_bins2d
 
          select case( trim(adjustl(variable)) )
 
@@ -728,9 +790,9 @@ subroutine da_setup_be_regional(xb, be, grid)
                be9_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
             end do
 
-         case ('qgraupel' )
+         case ('qgraup' )
             be % v10 % name = trim(adjustl(variable))
-            read (be_unit) nk, num_bins2d
+            !read (be_unit) nk, num_bins2d
             read (be_unit)  be10_evec_glo
             read (be_unit)  be10_eval_glo
             read (be_unit)  evec_loc
@@ -741,15 +803,9 @@ subroutine da_setup_be_regional(xb, be, grid)
                be10_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
             end do
 
-         case default;
-            message(1)=' Read problem in eigen vectors/values in BE file '
-            write (unit=message(2),fmt='(A,A)') ' Trying to read Eigenvectors for variable: ',trim(adjustl(variable))
-            write (unit=message(3),fmt='(A)') ' Make sure you are using the correct be.dat file for your cv_options setting!'
-            call da_error(__FILE__,__LINE__,message(1:3))
-         end select
-
-         if ( use_cv_w ) then
-            if ( trim(adjustl(variable)) == 'z-wind' ) then
+         case ('w' )
+           !if ( use_cv_w ) then
+           ! if ( trim(adjustl(variable)) == 'w' ) then
                be % v11 % name = trim(adjustl(variable))
                read (be_unit)  be11_evec_glo
                read (be_unit)  be11_eval_glo
@@ -760,12 +816,303 @@ subroutine da_setup_be_regional(xb, be, grid)
                   be11_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
                   be11_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
                end do
-            end if
-         end if
+           ! end if
+           !end if
 
-      end do ! num_cv_3d_basic+1 - num_cv_3d_basic+num_cv_3d_extra
+         case default;
+            message(1)=' Read problem in eigen vectors/values in BE file '
+            write (unit=message(2),fmt='(A,A)') ' Trying to read Eigenvectors for variable: ',trim(adjustl(variable))
+            write (unit=message(3),fmt='(A)') ' Make sure you are using the correct be.dat file for your cv_options setting!'
+            call da_error(__FILE__,__LINE__,message(1:3))
+         end select
 
+      end do ! num_cv_3d_basic+1 - num_cv_3d_basic+num_cv_3d_extra-1
+      print*,"reading variables for cloud_cv_options=2 is done"
    end if ! cloud_cv_options=2
+
+   if ( chem_cv_options == 1 ) then
+      print*,"chem_cv_options == 1 variables from id ",num_cv_3d_basic+1 ,"to id", num_cv_3d_basic+num_cv_3d_extra
+      do i = num_cv_3d_basic+1 , num_cv_3d_basic+num_cv_3d_extra
+
+         read (be_unit) variable
+         read (be_unit) nk, num_bins2d
+         print *, trim(adjustl(variable)), nk, num_bins2d
+
+         select case( trim(adjustl(variable)) )
+
+         case ('dust_1' )
+            ispcc=p_dust_1-1
+            be % v12(ispcc) % name = trim(adjustl(variable))
+            read (be_unit)  be12_evec_glo(ispcc,:,:)
+            read (be_unit)  be12_eval_glo(ispcc,:)
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be12_evec_loc(ispcc,j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be12_eval_loc(ispcc,j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+
+         case ('dust_2' )
+            ispcc=p_dust_2-1
+            be % v12(ispcc) % name = trim(adjustl(variable))
+            read (be_unit)  be12_evec_glo(ispcc,:,:)
+            read (be_unit)  be12_eval_glo(ispcc,:)
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be12_evec_loc(ispcc,j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be12_eval_loc(ispcc,j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+
+         case ('dust_3' )
+            ispcc=p_dust_3-1
+            be % v12(ispcc) % name = trim(adjustl(variable))
+            read (be_unit)  be12_evec_glo(ispcc,:,:)
+            read (be_unit)  be12_eval_glo(ispcc,:)
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be12_evec_loc(ispcc,j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be12_eval_loc(ispcc,j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+
+         case ('dust_4' )
+            ispcc=p_dust_4-1
+            be % v12(ispcc) % name = trim(adjustl(variable))
+            read (be_unit)  be12_evec_glo(ispcc,:,:)
+            read (be_unit)  be12_eval_glo(ispcc,:)
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be12_evec_loc(ispcc,j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be12_eval_loc(ispcc,j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+
+         case ('seas_1' )
+            ispcc=p_seas_1-1
+            be % v12(ispcc) % name = trim(adjustl(variable))
+            read (be_unit)  be12_evec_glo(ispcc,:,:)
+            read (be_unit)  be12_eval_glo(ispcc,:)
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be12_evec_loc(ispcc,j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be12_eval_loc(ispcc,j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+
+         case ('seas_2' )
+            ispcc=p_seas_2-1
+            be % v12(ispcc) % name = trim(adjustl(variable))
+            read (be_unit)  be12_evec_glo(ispcc,:,:)
+            read (be_unit)  be12_eval_glo(ispcc,:)
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be12_evec_loc(ispcc,j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be12_eval_loc(ispcc,j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+
+         case ('seas_3' )
+            ispcc=p_seas_3-1
+            be % v12(ispcc) % name = trim(adjustl(variable))
+            read (be_unit)  be12_evec_glo(ispcc,:,:)
+            read (be_unit)  be12_eval_glo(ispcc,:)
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be12_evec_loc(ispcc,j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be12_eval_loc(ispcc,j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+
+         case ('seas_4' )
+            ispcc=p_seas_4-1
+            be % v12(ispcc) % name = trim(adjustl(variable))
+            read (be_unit)  be12_evec_glo(ispcc,:,:)
+            read (be_unit)  be12_eval_glo(ispcc,:)
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be12_evec_loc(ispcc,j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be12_eval_loc(ispcc,j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+
+         case ('oc1' )
+            ispcc=p_oc1-1
+            be % v12(ispcc) % name = trim(adjustl(variable))
+            read (be_unit)  be12_evec_glo(ispcc,:,:)
+            read (be_unit)  be12_eval_glo(ispcc,:)
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be12_evec_loc(ispcc,j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be12_eval_loc(ispcc,j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+
+         case ('oc2' )
+            ispcc=p_oc2-1
+            be % v12(ispcc) % name = trim(adjustl(variable))
+            read (be_unit)  be12_evec_glo(ispcc,:,:)
+            read (be_unit)  be12_eval_glo(ispcc,:)
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be12_evec_loc(ispcc,j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be12_eval_loc(ispcc,j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+
+         case ('bc1' )
+            ispcc=p_bc1-1
+            be % v12(ispcc) % name = trim(adjustl(variable))
+            read (be_unit)  be12_evec_glo(ispcc,:,:)
+            read (be_unit)  be12_eval_glo(ispcc,:)
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be12_evec_loc(ispcc,j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be12_eval_loc(ispcc,j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+
+         case ('bc2' )
+            ispcc=p_bc2-1
+            be % v12(ispcc) % name = trim(adjustl(variable))
+            read (be_unit)  be12_evec_glo(ispcc,:,:)
+            read (be_unit)  be12_eval_glo(ispcc,:)
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be12_evec_loc(ispcc,j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be12_eval_loc(ispcc,j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+
+         case ('so2' )
+            ispcc=p_so2-1
+            be % v12(ispcc) % name = trim(adjustl(variable))
+            read (be_unit)  be12_evec_glo(ispcc,:,:)
+            read (be_unit)  be12_eval_glo(ispcc,:)
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be12_evec_loc(ispcc,j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be12_eval_loc(ispcc,j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+
+         case ('no2' )
+            ispcc=p_no2-1
+            be % v12(ispcc) % name = trim(adjustl(variable))
+            read (be_unit)  be12_evec_glo(ispcc,:,:)
+            read (be_unit)  be12_eval_glo(ispcc,:)
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be12_evec_loc(ispcc,j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be12_eval_loc(ispcc,j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+
+         case ('o3' )
+            ispcc=p_o3-1
+            be % v12(ispcc) % name = trim(adjustl(variable))
+            read (be_unit)  be12_evec_glo(ispcc,:,:)
+            read (be_unit)  be12_eval_glo(ispcc,:)
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be12_evec_loc(ispcc,j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be12_eval_loc(ispcc,j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+
+         case ('co' )
+            ispcc=p_co-1
+            be % v12(ispcc) % name = trim(adjustl(variable))
+            read (be_unit)  be12_evec_glo(ispcc,:,:)
+            read (be_unit)  be12_eval_glo(ispcc,:)
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be12_evec_loc(ispcc,j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be12_eval_loc(ispcc,j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+
+         case ('sulf' )
+            ispcc=p_sulf-1
+            be % v12(ispcc) % name = trim(adjustl(variable))
+            read (be_unit)  be12_evec_glo(ispcc,:,:)
+            read (be_unit)  be12_eval_glo(ispcc,:)
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be12_evec_loc(ispcc,j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be12_eval_loc(ispcc,j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+
+         case ('p25' )
+            ispcc=p_p25-1
+            be % v12(ispcc) % name = trim(adjustl(variable))
+            read (be_unit)  be12_evec_glo(ispcc,:,:)
+            read (be_unit)  be12_eval_glo(ispcc,:)
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be12_evec_loc(ispcc,j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be12_eval_loc(ispcc,j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+
+         case ('p10' )
+            ispcc=p_p10-1
+            be % v12(ispcc) % name = trim(adjustl(variable))
+            read (be_unit)  be12_evec_glo(ispcc,:,:)
+            read (be_unit)  be12_eval_glo(ispcc,:)
+            read (be_unit)  evec_loc
+            read (be_unit)  eval_loc
+            do j=1,nj
+               b = bin2d(1,j)
+               be12_evec_loc(ispcc,j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+               be12_eval_loc(ispcc,j,1:nk  ) = eval_loc(1:nk,b)
+            end do
+
+         case ('w' )
+           !if ( use_cv_w ) then
+           ! if ( trim(adjustl(variable)) == 'w' ) then
+               be % v11 % name = trim(adjustl(variable))
+               read (be_unit)  be11_evec_glo
+               read (be_unit)  be11_eval_glo
+               read (be_unit)  evec_loc
+               read (be_unit)  eval_loc
+               do j=1,nj
+                  b = bin2d(1,j)
+                  be11_evec_loc(j,1:nk,1:nk) = evec_loc(1:nk,1:nk,b)
+                  be11_eval_loc(j,1:nk  ) = eval_loc(1:nk,b)
+               end do
+           ! end if
+           !end if
+
+         case default;
+            message(1)=' Read problem in eigen vectors/values in BE file '
+            write (unit=message(2),fmt='(A,A)') ' Trying to read Eigenvectors for variable: ',trim(adjustl(variable))
+            write (unit=message(3),fmt='(A)') ' Make sure you are using the correct be.dat file for your cv_options setting!'
+            call da_error(__FILE__,__LINE__,message(1:3))
+         end select
+
+      end do ! num_cv_3d_basic+1 - num_cv_3d_basic+num_cv_3d_extra-1
+      print*,"reading variables for chem_cv_options=1 is done"
+   end if ! chem_cv_options=1
 
    deallocate (evec_loc)
    deallocate (eval_loc)
@@ -774,6 +1121,8 @@ subroutine da_setup_be_regional(xb, be, grid)
 
    read (be_unit) variable
    read (be_unit) nk_2d, num_bins2d
+   print *, trim(adjustl(variable)), nk_2d, num_bins2d
+
 !hcl-why
 !#ifdef CLOUD_CV
 !   nk_2d=1
@@ -809,6 +1158,7 @@ subroutine da_setup_be_regional(xb, be, grid)
 
    message(1:5) = ''
    write (unit=message(1),fmt='(3x,A,i2)') 'cloud_cv_options = ', cloud_cv_options
+   write (unit=message(1),fmt='(3x,A,i2)') 'chem_cv_options = ', chem_cv_options
    write (unit=message(2),fmt='(3x,A,7A)') 'WRFDA dry control variables are: ', &
       trim(be % v1 % name), ', ', trim(be % v2 % name), ', ', &
       trim(be % v3 % name), ' and ', trim(be % v5 % name)
@@ -820,9 +1170,20 @@ subroutine da_setup_be_regional(xb, be, grid)
          trim(be % v8 % name), ', ', trim(be % v9 % name), ', and ', &
          trim(be % v10 % name)
    end if
+   if ( chem_cv_options == 1 ) then
+      write (unit=message(4),fmt='(3x,A,32A)') 'WRFDA chem control variables are: ', &
+         trim(be % v12(1) % name), ', ', trim(be % v12(2) % name), ', ', &
+         trim(be % v12(3) % name), ', ', trim(be % v12(4) % name), ', ', &
+         trim(be % v12(5) % name), ', ', trim(be % v12(6) % name), ', ', &
+         trim(be % v12(7) % name), ', ', trim(be % v12(7) % name), ', ', &
+         trim(be % v12(9) % name), ', ', trim(be % v12(10) % name), ', ', &
+         trim(be % v12(11) % name), ', ', trim(be % v12(12) % name), ', ', &
+         trim(be % v12(13) % name), ', ', trim(be % v12(14) % name), ', ', &
+         trim(be % v12(15) % name), ', ', trim(be % v12(16) % name)
+   end if
    if ( use_cv_w ) then
       write (unit=message(5),fmt='(3x,A)') &
-         'z-wind control variable is activated'
+         'w control variable is activated'
    end if
    call da_message(message(1:5))
 
@@ -857,8 +1218,10 @@ subroutine da_setup_be_regional(xb, be, grid)
 
       ! 3.2 read in the scale lengths
 
+      print *, '----- read lengthscale --------'
       do i = 1 , num_cv_3d_basic
          read (be_unit) variable
+         print *, trim(adjustl(variable))
          select case( trim(adjustl(variable)) )
          case ('psi', 'u')
             read(be_unit) rfls1_be
@@ -882,6 +1245,7 @@ subroutine da_setup_be_regional(xb, be, grid)
       if ( cloud_cv_options == 2 ) then
          do i = num_cv_3d_basic+1 , num_cv_3d_basic+num_cv_3d_extra
             read (be_unit) variable
+            print *, trim(adjustl(variable))
             select case( trim(adjustl(variable)) )
             case ('qcloud')
                read(be_unit) be6_rf_lengthscale
@@ -891,24 +1255,106 @@ subroutine da_setup_be_regional(xb, be, grid)
                read(be_unit) be8_rf_lengthscale
             case ('qsnow')
                read(be_unit) be9_rf_lengthscale
-            case ('qgraupel')
+            case ('qgraup')
                read(be_unit) be10_rf_lengthscale
+            case ('w')
+            !if ( use_cv_w ) then
+            !   if ( trim(adjustl(variable)) == 'w' ) then
+               read(be_unit) be11_rf_lengthscale
+            !   end if
+            !end if
             case default;
                message(1)='Read problem in lengthscales in be.dat'
                write(message(2),'("Trying to read lengthscales for variable ",I0,": ",A)')i,trim(adjustl(variable))
                call da_error(__FILE__,__LINE__,message(1:2))
             end select
-            if ( use_cv_w ) then
-               if ( trim(adjustl(variable)) == 'z-wind' ) then
-                  read(be_unit) be11_rf_lengthscale
-               end if
-            end if
+         end do ! num_cv_3d_basic+1 - num_cv_3d_basic+num_cv_3d_extra
+      end if
+
+      if ( chem_cv_options == 1 ) then
+         do i = num_cv_3d_basic+1 , num_cv_3d_basic+num_cv_3d_extra
+            read (be_unit) variable
+            print *, trim(adjustl(variable))
+            select case( trim(adjustl(variable)) )
+            case ('dust_1')
+               ispcc=p_dust_1-1
+               read(be_unit) be12_rf_lengthscale(ispcc,:)
+            case ('dust_2')
+               ispcc=p_dust_2-1
+               read(be_unit) be12_rf_lengthscale(ispcc,:)
+            case ('dust_3')
+               ispcc=p_dust_3-1
+               read(be_unit) be12_rf_lengthscale(ispcc,:)
+            case ('dust_4')
+               ispcc=p_dust_4-1
+               read(be_unit) be12_rf_lengthscale(ispcc,:)
+
+            case ('seas_1')
+               ispcc=p_seas_1-1
+               read(be_unit) be12_rf_lengthscale(ispcc,:)
+            case ('seas_2')
+               ispcc=p_seas_2-1
+               read(be_unit) be12_rf_lengthscale(ispcc,:)
+            case ('seas_3')
+               ispcc=p_seas_3-1
+               read(be_unit) be12_rf_lengthscale(ispcc,:)
+            case ('seas_4')
+               ispcc=p_seas_4-1
+               read(be_unit) be12_rf_lengthscale(ispcc,:)
+
+            case ('oc1')
+               ispcc=p_oc1-1
+               read(be_unit) be12_rf_lengthscale(ispcc,:)
+            case ('oc2')
+               ispcc=p_oc2-1
+               read(be_unit) be12_rf_lengthscale(ispcc,:)
+            case ('bc1')
+               ispcc=p_bc1-1
+               read(be_unit) be12_rf_lengthscale(ispcc,:)
+            case ('bc2')
+               ispcc=p_bc2-1
+               read(be_unit) be12_rf_lengthscale(ispcc,:)
+
+            case ('so2')
+               ispcc=p_so2-1
+               read(be_unit) be12_rf_lengthscale(ispcc,:)
+            case ('no2')
+               ispcc=p_no2-1
+               read(be_unit) be12_rf_lengthscale(ispcc,:)
+            case ('o3')
+               ispcc=p_o3-1
+               read(be_unit) be12_rf_lengthscale(ispcc,:)
+            case ('co')
+               ispcc=p_co-1
+               read(be_unit) be12_rf_lengthscale(ispcc,:)
+            case ('sulf')
+               ispcc=p_sulf-1
+               read(be_unit) be12_rf_lengthscale(ispcc,:)
+            case ('p25')
+               ispcc=p_p25-1
+               read(be_unit) be12_rf_lengthscale(ispcc,:)
+            case ('p10')
+               ispcc=p_p10-1
+               read(be_unit) be12_rf_lengthscale(ispcc,:)
+
+            case ('w')
+            !if ( use_cv_w ) then
+            !   if ( trim(adjustl(variable)) == 'w' ) then
+               read(be_unit) be11_rf_lengthscale
+            !   end if
+            !end if
+            case default;
+               message(1)='Read problem in lengthscales in be.dat'
+               write(message(2),'("Trying to read lengthscales for variable ",I0,": ",A)')i,trim(adjustl(variable))
+               call da_error(__FILE__,__LINE__,message(1:2))
+            end select
          end do ! num_cv_3d_basic+1 - num_cv_3d_basic+num_cv_3d_extra
       end if
 
       ! Read in lengthscale of 2D Control variable ps_u
 
       read (be_unit) variable
+      print *, trim(adjustl(variable))
       if ( trim(adjustl(variable)) /= 'ps_u' .and. &
            trim(adjustl(variable)) /= 'ps' ) then
          message(1)='Read problem in lengthscales in be.dat'
@@ -952,6 +1398,15 @@ subroutine da_setup_be_regional(xb, be, grid)
             write(unit=message(11),fmt=write_fmt) 'be10= ',be10_rf_lengthscale
             call da_message(message(7:11))
          end if
+
+         if ( chem_cv_options >= 1 ) then
+	    do i=1,num_cv_3d_chem
+!                write(unit=message(i+6),fmt=write_fmt) 'be',(i+5),'= ',be12_rf_lengthscale(i,:)
+                write(*,*) 'be',(i+5),'= ',be12_rf_lengthscale(i,:)
+            end do
+            call da_message(message(i+6:num_cv_3d_chem+6))
+         end if
+
          if ( use_cv_w ) then
             write(unit=message(12),fmt=write_fmt) 'be11= ',be11_rf_lengthscale
             call da_message(message(12:12))
@@ -1215,6 +1670,16 @@ subroutine da_setup_be_regional(xb, be, grid)
                call da_check_eof_decomposition(be11_eval_glo(:), be11_evec_glo(:,:), be % v11 % name)
             end if
          end if
+
+         if ( chem_cv_options == 1 ) then
+            do i=1,num_cv_3d_chem
+                call da_check_eof_decomposition(be12_eval_glo(i,:),  be12_evec_glo(i,:,:),  be % v12(i) % name)
+            end do
+            if ( use_cv_w ) then
+               call da_check_eof_decomposition(be11_eval_glo(:), be11_evec_glo(:,:), be % v11 % name)
+            end if
+         end if
+
       end if
 
       ! 4.2 Truncate in vertical:
@@ -1230,6 +1695,13 @@ subroutine da_setup_be_regional(xb, be, grid)
          call da_get_vertical_truncation(max_vert_var8, be8_eval_glo(:), be % v8)
          call da_get_vertical_truncation(max_vert_var9, be9_eval_glo(:), be % v9)
          call da_get_vertical_truncation(max_vert_var10,be10_eval_glo(:),be % v10)
+         if ( use_cv_w ) then
+            call da_get_vertical_truncation(max_vert_var11,be11_eval_glo(:),be % v11)
+         end if
+      else if ( chem_cv_options == 1 ) then
+         do i=1,num_cv_3d_chem
+            call da_get_vertical_truncation(max_vert_var12(i), be12_eval_glo(i,:), be % v12(i))
+         end do
          if ( use_cv_w ) then
             call da_get_vertical_truncation(max_vert_var11,be11_eval_glo(:),be % v11)
          end if
@@ -1316,6 +1788,14 @@ subroutine da_setup_be_regional(xb, be, grid)
       call da_allocate_background_errors(jy, kz, be10_eval_glo, be10_evec_glo, be10_eval_loc, &
                                          be10_evec_loc, be % v10)
    end if
+
+   if ( chem_cv_options >=1 ) then
+      do i=1,num_cv_3d_chem
+         call da_allocate_background_errors(jy, kz, be12_eval_glo(i,:), be12_evec_glo(i,:,:), be12_eval_loc(i,:,:), &
+                                         be12_evec_loc(i,:,:,:), be % v12(i))
+      end do
+   end if
+
    if ( use_cv_w ) then
       call da_allocate_background_errors(jy, kz, be11_eval_glo, be11_evec_glo, be11_eval_loc, &
                                          be11_evec_loc, be % v11)
@@ -1342,6 +1822,13 @@ subroutine da_setup_be_regional(xb, be, grid)
          be9_rf_lengthscale(1:kz) =  be9_rf_lengthscale(1:kz) * xb%ds
          be10_rf_lengthscale(1:kz)= be10_rf_lengthscale(1:kz) * xb%ds
       end if
+
+      if ( chem_cv_options >= 1 ) then
+         do i=1,num_cv_3d_chem
+            be12_rf_lengthscale(i,1:kz) =  be12_rf_lengthscale(i,1:kz) * xb%ds
+         end do
+      end if
+
       if ( use_cv_w ) then
          be11_rf_lengthscale(1:kz)= be11_rf_lengthscale(1:kz) * xb%ds
       end if
@@ -1430,6 +1917,14 @@ subroutine da_setup_be_regional(xb, be, grid)
          call da_check_eof_decomposition(be%v10%val_g(:), be%v10%evec_g(:,:),&
                                          be%v10%name)
       end if
+
+      if ( chem_cv_options >= 1 ) then
+         do i=1,num_cv_3d_chem
+            call da_check_eof_decomposition(be%v12(i)%val_g(:), be%v12(i)%evec_g(:,:),&
+                                         be%v12(i)%name)
+         end do
+      end if
+
       if ( use_cv_w ) then
          call da_check_eof_decomposition(be%v11%val_g(:), be%v11%evec_g(:,:),&
                                          be%v11%name)
@@ -1450,26 +1945,56 @@ subroutine da_setup_be_regional(xb, be, grid)
 
       if (max_ext_its > 1 .and. jb_factor > 0.0) then
 
-        if ( rootproc ) then
           write(unit=message(1),fmt='(A,I4)') '>>> Save the variances and scale-lengths in outer-loop', it
           call da_message(message(1:1))
-          write(be_rf_unit)  kz, jy, ix, be % v1 % mz, be % v2 % mz, be% v3 % mz, &
-                                     be % v4 % mz, be % v5 % mz, xb % ds
-          write(be_rf_unit) be % v1 % val, be % v2 % val, be% v3 % val, &
+          if ( cloud_cv_options >= 2.and. cloud_cv_options.ne.3 ) then
+             write(be_rf_unit)  kz, jy, ix, be % v1 % mz, be % v2 % mz, be% v3 % mz, &
+                                     be % v4 % mz, be % v5 % mz,                  &
+                                     be % v6 % mz, be % v7 % mz, be% v8 % mz,be % v9 % mz, be % v10 % mz, be% v11 % mz, &
+                                     xb % ds
+             write(be_rf_unit) be % v1 % val, be % v2 % val, be% v3 % val, &
                                      be % v4 % val, be % v5 % val, &
-             be1_rf_lengthscale, be2_rf_lengthscale, be3_rf_lengthscale, &
-             be4_rf_lengthscale, be5_rf_lengthscale
-          if ( cloud_cv_options >= 2 ) then
-             write(be_rf_unit) be%v6%val, be%v7%val, be%v8%val, be%v9%val, be%v10%val
-             write(be_rf_unit) be6_rf_lengthscale, be7_rf_lengthscale, be8_rf_lengthscale, &
-                               be9_rf_lengthscale, be10_rf_lengthscale
-          end if
-          if ( use_cv_w ) then
-             write(be_rf_unit) be%v11%val
-             write(be_rf_unit) be11_rf_lengthscale
-          end if
-        end if ! rootproc
-
+                                     be % v6 % val, be % v7 % val, be% v8 % val,be % v9 % val, be % v10 % val, be% v11 % val, &
+                                     be1_rf_lengthscale, be2_rf_lengthscale, be3_rf_lengthscale, &
+                                     be4_rf_lengthscale, be5_rf_lengthscale,                     &
+                                     be6_rf_lengthscale, be7_rf_lengthscale, be8_rf_lengthscale, &
+                                     be9_rf_lengthscale, be10_rf_lengthscale,be11_rf_lengthscale
+          else if ( chem_cv_options == 1 ) then
+             write(be_rf_unit)  kz, jy, ix, be % v1 % mz, be % v2 % mz, be% v3 % mz, &
+                                     be % v4 % mz, be % v5 % mz,                  &
+                                     be % v12(1) % mz, be % v12(2) % mz, be% v12(3) % mz,be % v12(4) % mz, &
+                                     be % v12(5) % mz, be % v12(6) % mz, be% v12(7) % mz,be % v12(8) % mz, &
+                                     be % v12(9) % mz, be % v12(10) % mz, be% v12(11) % mz,be % v12(12) % mz, &
+                                     be % v12(13) % mz, be % v12(14) % mz, be% v12(15) % mz,be % v12(16) % mz, &
+                                     be % v12(17) % mz, be % v12(18) % mz, be% v12(19) % mz, &
+                                     be% v11 % mz, xb % ds
+             write(be_rf_unit) be % v1 % val, be % v2 % val, be% v3 % val, &
+                                     be % v4 % val, be % v5 % val, &
+                                     be % v12(1) % val, be % v12(2) % val, be% v12(3) % val,be % v12(4) % val, &
+                                     be % v12(5) % val, be % v12(6) % val, be% v12(7) % val,be % v12(8) % val, &
+                                     be % v12(9) % val, be % v12(10) % val, be% v12(11) % val,be % v12(12) % val, &
+                                     be % v12(13) % val, be % v12(14) % val, be% v12(15) % val,be % v12(16) % val, &
+                                     be % v12(17) % val, be % v12(18) % val, be% v12(19) % val, &
+                                     be % v11 % val, &
+                                     be1_rf_lengthscale, be2_rf_lengthscale, be3_rf_lengthscale, &
+                                     be4_rf_lengthscale, be5_rf_lengthscale,                     &
+                                     be12_rf_lengthscale(1,:), be12_rf_lengthscale(2,:), be12_rf_lengthscale(3,:), &
+                                     be12_rf_lengthscale(4,:), be12_rf_lengthscale(5,:), be12_rf_lengthscale(6,:), &
+                                     be12_rf_lengthscale(7,:), be12_rf_lengthscale(8,:), be12_rf_lengthscale(9,:), &
+                                     be12_rf_lengthscale(10,:), be12_rf_lengthscale(11,:), be12_rf_lengthscale(12,:), &
+                                     be12_rf_lengthscale(13,:), be12_rf_lengthscale(14,:), be12_rf_lengthscale(15,:), &
+                                     be12_rf_lengthscale(16,:), be12_rf_lengthscale(17,:), be12_rf_lengthscale(18,:), &
+                                     be12_rf_lengthscale(19,:), &
+                                     be11_rf_lengthscale
+          else
+             write(be_rf_unit)  kz, jy, ix, be % v1 % mz, be % v2 % mz, be% v3 % mz, &
+                                     be % v4 % mz, be % v5 % mz,                  &
+                                     xb % ds
+             write(be_rf_unit) be % v1 % val, be % v2 % val, be% v3 % val, &
+                                     be % v4 % val, be % v5 % val, &
+                                     be1_rf_lengthscale, be2_rf_lengthscale, be3_rf_lengthscale, &
+                                     be4_rf_lengthscale, be5_rf_lengthscale
+          endif
           if (print_detail_be ) then
              write(be_print_unit,'("it=",i2,2x,"kz=",i3,2x,"jy=",i4,2x,"ix=",i4,2x,"ds=",e12.5)') &
                                                it, kz, jy, ix, xb % ds
@@ -1499,6 +2024,8 @@ subroutine da_setup_be_regional(xb, be, grid)
       ! 7.0 Apply empirical and recursive filter rescaling factor:
       ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+	write(*,*) 'chkbe11', be % v1 % val(1:10,1), var_scaling1(1), len_scaling1(1), xb % ds, sum(be1_rf_lengthscale), size(be1_rf_lengthscale,dim=1),size(be12_rf_lengthscale,dim=1    ), size(be12_rf_lengthscale,dim=2), size(be%v1%val,dim=1), size(be%v1%val,dim=2), size(be%v12(1)%val,dim=1), size(be%v12(1)%val,dim=2), sum(be % v12(17) % val), sum(be % v12(18) % val), sum(be % v12(19) % val), sum(be % v11 % val) 
+
       call da_rescale_background_errors(var_scaling1(1), len_scaling1(1), &
                                          xb % ds, be1_rf_lengthscale, be % v1)
       call da_rescale_background_errors(var_scaling2(1), len_scaling2(1), &
@@ -1520,6 +2047,12 @@ subroutine da_setup_be_regional(xb, be, grid)
                                            xb % ds, be9_rf_lengthscale, be % v9)
          call da_rescale_background_errors(var_scaling10(1), len_scaling10(1), &
                                            xb % ds, be10_rf_lengthscale, be % v10)
+      end if
+      if ( chem_cv_options >= 1 ) then
+      do i=1,num_cv_3d_chem
+         call da_rescale_background_errors(var_scaling12(i), len_scaling12(i), &
+                                           xb % ds, be12_rf_lengthscale(i,:), be % v12(i))
+      end do
       end if
       if ( use_cv_w ) then
          call da_rescale_background_errors(var_scaling11(1), len_scaling11(1), &
@@ -1553,6 +2086,13 @@ subroutine da_setup_be_regional(xb, be, grid)
           write(be_print_unit,'("mz=",i3,2x,"be%v9%val:"/(10e12.5))') be%v9%mz, be%v9%val(1,:)
           write(be_print_unit,'("mz=",i3,2x,"be%v10%val:"/(10e12.5))') be%v10%mz, be%v10%val(1,:)
        end if
+
+       if ( chem_cv_options >= 1 ) then
+       do i=1,num_cv_3d_chem
+          write(be_print_unit,'("mz=",i3,2x,"be%v12%val:"/(10e12.5))') be%v12(i)%mz, be%v12(i)%val(1,:)
+       end do
+       end if
+
        if ( use_cv_w ) then
           write(be_print_unit,'("mz=",i3,2x,"be%v11%val:"/(10e12.5))') be%v11%mz, be%v11%val(1,:)
        end if
@@ -1571,6 +2111,13 @@ subroutine da_setup_be_regional(xb, be, grid)
           write(be_print_unit,'("be%v9%rf_alpha:"/(10e12.5))')  be % v9 % rf_alpha(:)
           write(be_print_unit,'("be%v10%rf_alpha:"/(10e12.5))') be % v10 % rf_alpha(:)
        end if
+
+       if ( chem_cv_options >= 1 ) then
+       do i=1,num_cv_3d_chem
+          write(be_print_unit,'("be%v12%rf_alpha:"/(10e12.5))')  be % v12(i) % rf_alpha(:)
+       end do
+       end if
+
        if ( use_cv_w ) then
           write(be_print_unit,'("be%v11%rf_alpha:"/(10e12.5))') be % v11 % rf_alpha(:)
        end if
@@ -1586,6 +2133,25 @@ subroutine da_setup_be_regional(xb, be, grid)
                 write(be_print_unit,'(i3,2x,4e15.5,15x,5e15.5)') i, be1_rf_lengthscale(i), be2_rf_lengthscale(i), &
                    be3_rf_lengthscale(i), be4_rf_lengthscale(i), be6_rf_lengthscale(i), be7_rf_lengthscale(i), &
                    be8_rf_lengthscale(i), be9_rf_lengthscale(i), be10_rf_lengthscale(i)
+             endif
+          enddo
+       else if ( chem_cv_options == 1 ) then
+          do i = 1,kz
+             if (i == 1) then
+                write(be_print_unit,'(i3,2x,22e15.5)') i, be1_rf_lengthscale(i), be2_rf_lengthscale(i), &
+                   be3_rf_lengthscale(i), be4_rf_lengthscale(i), be5_rf_lengthscale(i), &
+                   be12_rf_lengthscale(1,i), be12_rf_lengthscale(2,i), be12_rf_lengthscale(3,i), be12_rf_lengthscale(4,i) , &
+                   be12_rf_lengthscale(5,i), be12_rf_lengthscale(6,i), be12_rf_lengthscale(7,i), be12_rf_lengthscale(8,i) , &
+                   be12_rf_lengthscale(9,i), be12_rf_lengthscale(10,i), be12_rf_lengthscale(11,i), be12_rf_lengthscale(12,i) , &
+                   be12_rf_lengthscale(13,i), be12_rf_lengthscale(14,i), be12_rf_lengthscale(15,i), be12_rf_lengthscale(16,i) , &
+                   be10_rf_lengthscale(i)
+             else
+                write(be_print_unit,'(i3,2x,4e15.5,15x,16e15.5)') i, be1_rf_lengthscale(i), be2_rf_lengthscale(i), &
+                   be3_rf_lengthscale(i), be4_rf_lengthscale(i),  &
+                   be12_rf_lengthscale(1,i), be12_rf_lengthscale(2,i), be12_rf_lengthscale(3,i), be12_rf_lengthscale(4,i) , &
+                   be12_rf_lengthscale(5,i), be12_rf_lengthscale(6,i), be12_rf_lengthscale(7,i), be12_rf_lengthscale(8,i) , &
+                   be12_rf_lengthscale(9,i), be12_rf_lengthscale(10,i), be12_rf_lengthscale(11,i), be12_rf_lengthscale(12,i) , &
+                   be12_rf_lengthscale(13,i), be12_rf_lengthscale(14,i), be12_rf_lengthscale(15,i), be12_rf_lengthscale(16,i)
              endif
           enddo
        else
@@ -1618,6 +2184,9 @@ subroutine da_setup_be_regional(xb, be, grid)
       deallocate (be9_eval_loc)
       deallocate (be10_eval_loc)
    end if
+   if ( chem_cv_options >= 1 ) then
+      deallocate (be12_eval_loc)
+   end if
    if ( use_cv_w ) then
       deallocate (be11_eval_loc)
    end if
@@ -1636,6 +2205,11 @@ subroutine da_setup_be_regional(xb, be, grid)
          deallocate (be9_rf_lengthscale)
          deallocate (be10_rf_lengthscale)
       end if
+
+      if ( chem_cv_options >= 1 ) then
+         deallocate (be12_rf_lengthscale)
+      end if
+
       if ( use_cv_w ) then
          deallocate (be11_rf_lengthscale)
       end if
@@ -1655,6 +2229,11 @@ subroutine da_setup_be_regional(xb, be, grid)
          deallocate (be9_eval_glo)
          deallocate (be10_eval_glo)
       end if
+
+      if ( chem_cv_options >= 1 ) then
+         deallocate (be12_eval_glo)
+      end if
+
       if ( use_cv_w ) then
         deallocate (be11_eval_glo)
       end if
@@ -1672,6 +2251,11 @@ subroutine da_setup_be_regional(xb, be, grid)
          deallocate (be9_evec_loc)
          deallocate (be10_evec_loc)
       end if
+
+      if ( chem_cv_options >= 1 ) then
+         deallocate (be12_evec_loc)
+      end if
+
       if ( use_cv_w ) then
          deallocate (be11_evec_loc)
       end if
@@ -1689,6 +2273,11 @@ subroutine da_setup_be_regional(xb, be, grid)
          deallocate (be9_evec_glo)
          deallocate (be10_evec_glo)
       end if
+
+      if ( chem_cv_options >= 1 ) then
+         deallocate (be12_evec_glo)
+      end if
+
       if ( use_cv_w ) then
          deallocate (be11_evec_glo)
       end if
@@ -1790,11 +2379,36 @@ subroutine da_setup_be_regional(xb, be, grid)
       be%cv_mz(9)  = be%v9%mz
       be%cv_mz(10) = be%v10%mz
    end if
+
+   if ( chem_cv_options >= 1 ) then
+     be % ncv_mz_chemic  = num_cv_3d_chem
+     allocate ( be%cv_mz_chemic(1:be%ncv_mz_chemic) )
+     be%cv_mz_chemic(:) = 0 ! initialize
+
+     do i=1,num_cv_3d_chem
+        be%cv_mz_chemic(i)  = be%v12(i)%mz
+     end do
+   end if
+
    if ( use_cv_w ) then
-      be%cv_mz(num_cv_3d_basic+num_cv_3d_extra+num_cv_2d) = be%v11%mz
+      if (be%ncv_mz ==8 .or. be%ncv_mz ==13 ) then
+        be%cv_mz(be%ncv_mz-2) = be%v11%mz
+      else
+        be%cv_mz(num_cv_3d_basic+num_cv_3d_extra+num_cv_2d) = be%v11%mz
+      end if
+	write(*,*) 'cv_mz num  ', num_cv_3d_basic, num_cv_3d_extra, num_cv_2d, be%v11%mz
    end if
    be%cv_mz(be%ncv_mz-1) = be%alpha%mz
    be%cv_mz(be%ncv_mz)   = be%ne
+
+   write(*,*) 'chkbe22', be % v12(19) % val(1:10,1), sum(be %v12(19)%val), sum(be %v12(14)%val), sum(be %v12(11)%val)
+
+   write(*,*) 'cv_mz num222  ', be%ncv_mz-1,  be%cv_mz(be%ncv_mz-1), be%ncv_mz,  be%cv_mz(be%ncv_mz)
+
+!	write(*,*) 'eval test 111  ', be % v12(1) % val
+!	write(*,*) 'eval test 222  ', be % v12(5) % val
+!	write(*,*) 'eval test 333  ', be % v12(9) % val
+!	write(*,*) 'eval test 444  ', be % v12(15) % val
 
    if (trace_use) call da_trace_exit("da_setup_be_regional")
 

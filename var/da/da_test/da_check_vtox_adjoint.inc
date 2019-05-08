@@ -131,6 +131,7 @@ subroutine da_check_vtox_adjoint(grid, cv_size, xbx, be, ep, cv1, vv, vp)
 
    adj_par_rhs = sum(cv1(1:cv_size) * cv2(1:cv_size))
 
+	write(*,*) 'chemadj_size ', cv_size
    !-------------------------------------------------------------------------
    ! [7.0] Print output:
    !-------------------------------------------------------------------------

@@ -12,6 +12,9 @@ WRFVAR_OBJS = \
    da_minimisation.o \
    da_vtox_transforms.o \
    da_obs.o \
+   da_chem.o \
+   da_chem_sfc.o \
+   da_chem_tools.o \
    da_obs_io.o \
    da_join_iv_for_multi_inc.o \
    da_metar.o \
@@ -329,7 +332,7 @@ da_gen_be.o gen_be_ensmean.o gen_be_addmean.o:
         fi
 	$(SFC) -c $(FCFLAGS) $(PROMOTION) $*.f
 
-da_etkf.o da_tools.o :
+da_etkf.o da_tools.o da_chem_tools.o :
 	$(RM) $@
 	$(SED_FTN) $*.f90 > $*.b
 	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) $*.b  > $*.f
@@ -340,6 +343,21 @@ da_etkf.o da_tools.o :
           mv $*.f.tmp $*.f ; \
         fi
 	$(FC) -c $(FCFLAGS) $(PROMOTION) $*.f
+
+da_chem.o :
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          ${LN} ${WRFPLUS_DIR}/main/module_wrf_top.mod . ; \
+        fi
+	$(RM) $@
+	$(SED_FTN) $*.f90 > $*.b
+	$(CPP) $(CPPFLAGS) $(OMPCPP) $(FPPFLAGS) $*.b  > $*.f
+	$(RM) $*.b
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+          echo COMPILING $*.f90 for 4DVAR ; \
+          $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f > $*.f.tmp ; \
+          mv $*.f.tmp $*.f ; \
+        fi
+	$(FC) -c $(FCFLAGS) $(PROMOTION) -I$(WRFPLUS_DIR)/main -I$(WRFPLUS_DIR)/frame -I$(WRFPLUS_DIR)/share $*.f
 
 da_4dvar.o :
 	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \

@@ -9,28 +9,32 @@
 # Velocities
 #
 # U Vel
-state    real   a_u            ijk     misc        2         X      rh       "A_U"                    "x-wind component"   "m s-1"
-state    real   g_u            ijk     misc        2         X      rh       "G_U"                    "x-wind component"   "m s-1"
+state    real   a_u            ijk     misc        2         X      i{17}h{17}   "A_U"       "x-wind component"   "m s-1"
+state    real   g_u            ijk     misc        2         X      i{18}h{18}   "G_U"       "x-wind component"   "m s-1"
 #                                               
 # V Vel
-state    real   a_v            ijk     misc        2         Y      rh       "A_V"                     "y-wind component"   "m s-1"
-state    real   g_v            ijk     misc        2         Y      rh       "G_V"                     "y-wind component"   "m s-1"
+state    real   a_v            ijk     misc        2         Y      i{17}h{17}   "A_V"       "y-wind component"   "m s-1"
+state    real   g_v            ijk     misc        2         Y      i{18}h{18}   "G_V"       "y-wind component"   "m s-1"
 #                                               
 # Vertical Vel                                          
-state    real   a_w            ijk     misc        2         Z      rh        "A_W"                        "z-wind component"   "m s-1"
-state    real   g_w            ijk     misc        2         Z      rh        "G_W"                        "z-wind component"   "m s-1"
+state    real   a_w            ijk     misc        2         Z      i{17}h{17}   "A_W"       "z-wind component"   "m s-1"
+state    real   g_w            ijk     misc        2         Z      i{18}h{18}   "G_W"       "z-wind component"   "m s-1"
 # Geopotential
-state    real   a_ph           ijk     misc        2         Z      rh    "A_PH"   "perturbation geopotential"  "m2 s-2"
-state    real   g_ph           ijk     misc        2         Z      rh    "G_PH"   "perturbation geopotential"  "m2 s-2"
+state    real   a_ph           ijk     misc        2         Z      i{17}h{17}   "A_PH"      "perturbation geopotential"  "m2 s-2"
+state    real   g_ph           ijk     misc        2         Z      i{18}h{18}   "G_PH"      "perturbation geopotential"  "m2 s-2"
 # Potential Temperature
-state    real   a_t            ijk     misc        2         -      rh       "A_T"      "perturbation potential temperature (theta-t0)" "K"
-state    real   g_t            ijk     misc        2         -      rh       "G_T"      "perturbation potential temperature (theta-t0)" "K"
+state    real   a_t            ijk     misc        2         -      i{17}h{17}   "A_T"       "perturbation potential temperature (theta-t0)" "K"
+state    real   g_t            ijk     misc        2         -      i{18}h{18}   "G_T"       "perturbation potential temperature (theta-t0)" "K"
 # Mass
-state    real   a_mu            ij     misc        2          -     rh          "A_MU"  "perturbation dry air mass in column" "Pa"
-state    real   g_mu            ij     misc        2          -     rh          "G_MU"  "perturbation dry air mass in column" "Pa"
+state    real   a_mu            ij     misc        2          -     i{17}h{17}   "A_MU"      "perturbation dry air mass in column" "Pa"
+state    real   g_mu            ij     misc        2          -     i{18}h{18}   "G_MU"      "perturbation dry air mass in column" "Pa"
 # Pressure and Density
-state    real   a_p            ijk     dyn_em      1         -      rh        "a_p"         "perturbation pressure"         "Pa"
-state    real   g_p            ijk     dyn_em      1         -      rh        "g_p"         "perturbation pressure"         "Pa"
+state    real   a_p            ijk     dyn_em      1         -      i{17}h{17}   "a_p"       "perturbation pressure"         "Pa"
+state    real   g_p            ijk     dyn_em      1         -      i{18}h{18}   "g_p"       "perturbation pressure"         "Pa"
+state    real   a_al           ijk     dyn_em      1         -      i{17}h{17}   "a_al"      "inverse perturbation density"  "m3 kg-1"
+state    real   g_al           ijk     dyn_em      1         -      i{18}h{18}   "g_al"      "inverse perturbation density"  "m3 kg-1"
+state    real   a_alt          ijk     dyn_em      1         -      -            "a_alt"     "inverse density"               "m3 kg-1"
+state    real   g_alt          ijk     dyn_em      1         -      -            "g_alt"     "inverse density"               "m3 kg-1"
 #                                               
 # Other dyn                                             
 #                                               
@@ -39,7 +43,140 @@ state    real    g_z            ijk     misc        1         Z     -         " 
 # For KMA, pressure coefficient.
 state    real    kma_a          k       misc        1         Z     -         "A"  "KMA Constants A to convert surface presure to full level pressure" "dimensionless"
 state    real    kma_b          k       misc        1         Z     -         "B"  "KMA Constants B to convert surface presure to full level pressure" "dimensionless"
+state    real    J              ijk     misc        1         -     h0{17}{18}   "J_COST"    "Cost Function"   ""
+state    real    dJ             ijk     misc        1         -     h0{17}{18}   "ADJ_FORC"  "Adjoint Forcing" ""
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# PBL and SURFACE Variables
+
+#state   real  g_defor11          ijk      misc        1         -     r         "g_defor11"               "DEFORMATION 11"              "s-1"      
+#state   real  g_defor22          ijk      misc        1         -     r         "g_defor22"               "DEFORMATION 22"              "s-1"
+#state   real  g_defor12          ijk      misc        1         -     r         "g_defor12"               "DEFORMATION 12"              "s-1"
+#state   real  g_defor33          ijk      misc        1         z     r         "g_defor33"               "DEFORMATION 33"              "s-1"
+#state   real  g_defor13          ijk      misc        1         z     r         "g_defor13"               "DEFORMATION 13"              "s-1"
+#state   real  g_defor23          ijk      misc        1         z     r         "g_defor23"               "DEFORMATION 23"              "s-1"
+#state   real   g_xkmv            ijk      misc        1         -     r         "g_xkmv"                  "VERTICAL EDDY VISCOSITY"     "m2 s-1"
+#state   real   g_xkmh            ijk      misc        1         -     r         "g_xkmh"                  "HORIZONTAL EDDY VISCOSITY"   "m2 s-1"
+#state   real   g_xkhv            ijk      misc        1         -     r         "g_xkhv"                  "VERTICAL EDDY DIFFUSIVITY OF HEAT"                               "m2 s-1"
+#state   real   g_xkhh            ijk      misc        1         -     r         "g_xkhh"                  "HORIZONTAL EDDY DIFFUSIVITY OF HEAT"                             "m2 s-1"
+#state   real    g_div            ijk      misc        1         -     r         "g_div"                   "DIVERGENCE"                                                      "s-1"
+#state   real    g_BN2            ijk      misc        1         -     r         "g_BN2"                   "BRUNT-VAISALA FREQUENCY"                                         "s-2"
+#state    real   g_zx             ijk     dyn_em      1         X      -         " "  " "  " "
+#state    real   g_zy             ijk     dyn_em      1         Y      -         " "  " "  " "
+#state    real   g_rdz            ijk     dyn_em      1         Z      -         " "  " "  " "
+#state    real   g_rdzw           ijk     dyn_em      1         Z       -        " "  " "  " "
+state    real  g_HFX              ij      misc        1         -      i{18}h{18}       "g_HFX"                   "UPWARD HEAT FLUX AT THE SURFACE"              "W m-2"
+state    real  g_QFX              ij      misc        1         -      i{18}h{18}       "g_QFX"                   "UPWARD MOISTURE FLUX AT THE SURFACE"          "kg m-2 s-1"
+#state    real  g_RTHRATEN        ijk      misc        1         -      rd       "g_RTHRATEN"              "COUPLED THETA TENDENCY DUE TO RADIATION"              "Pa K s-1"
+state    real  g_RQCBLTEN        ijk      misc        1         -      -        "g_RQCBLTEN"              "COUPLED Q_C TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"
+state    real  g_RQIBLTEN        ijk      misc        1         -      -        "g_RQIBLTEN"              "COUPLED Q_I TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"
+#state    real  g_RTHCUTEN        ijk      misc        1         -      r        "g_RTHCUTEN"              "COUPLED THETA TENDENCY DUE TO CUMULUS SCHEME"     "Pa K s-1"
+#state    real  g_RQVCUTEN        ijk      misc        1         -      r        "g_RQVCUTEN"              "COUPLED Q_V TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+#state    real  g_RQRCUTEN        ijk      misc        1         -      r        "g_RQRCUTEN"              "COUPLED Q_R TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+#state    real  g_RQCCUTEN        ijk      misc        1         -      r        "g_RQCCUTEN"              "COUPLED Q_C TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+#state    real  g_RQSCUTEN        ijk      misc        1         -      r        "g_RQSCUTEN"              "COUPLED Q_S TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+#state    real  g_RQICUTEN        ijk      misc        1         -      r        "g_RQICUTEN"              "COUPLED Q_I TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+#state    real  g_RTHSHTEN        ijk      misc        1         -      r        "g_RTHSHTEN"              "COUPLED THETA TENDENCY DUE TO SHALLOW CUMULUS SCHEME"    "Pa K s-1"
+#state    real  g_RQVSHTEN        ijk      misc        1         -      r        "g_RQVSHTEN"              "COUPLED Q_V TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+#state    real  g_RQRSHTEN        ijk      misc        1         -      r        "g_RQRSHTEN"              "COUPLED Q_R TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+#state    real  g_RQCSHTEN        ijk      misc        1         -      r        "g_RQCSHTEN"              "COUPLED Q_C TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+#state    real  g_RQSSHTEN        ijk      misc        1         -      r        "g_RQSSHTEN"              "COUPLED Q_S TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+#state    real  g_RQISHTEN        ijk      misc        1         -      r        "g_RQISHTEN"              "COUPLED Q_I TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+#state    real  g_RQGSHTEN        ijk      misc        1         -      r        "g_RQGSHTEN"              "COUPLED Q_G TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+#state    real  g_RTHFTEN         ijk      misc        1         -      r        "a_RTHFTEN"               "TEMPERATURE TENDENCY USED IN GRELL CUMULUS SCHEME"  "K s-1"
+#state    real  g_RQVFTEN         ijk      misc        1         -      r        "g_RQVFTEN"               "MOISTURE TENDENCY USED IN GRELL CUMULUS SCHEME"     "kg s-1"
+#state    real  g_RUNDGDTEN       ijk      misc        1         X      r        "g_RUNDGDTEN"               "COUPLED X WIND TENDENCY DUE TO FDDA GRID NUDGING"  "Pa m s-2"
+#state    real  g_RVNDGDTEN       ijk      misc        1         Y      r        "g_RVNDGDTEN"               "COUPLED Y WIND TENDENCY DUE TO FDDA GRID NUDGING"  "Pa m s-2"
+#state    real  g_RTHNDGDTEN      ijk      misc        1         -      r        "g_RTHNDGDTEN"              "COUPLED THETA TENDENCY DUE TO FDDA GRID NUDGING"   "Pa K s-1"
+#state    real  g_RPHNDGDTEN      ijk      misc        1         -      r        "g_RPHNDGDTEN"              "COUPLED GEOPOTENTIAL TENDENCY DUE TO FDDA GRID NUDGING"   "Pa m2 s-3"
+#state    real  g_RQVNDGDTEN      ijk      misc        1         -      r        "g_RQVNDGDTEN"              "COUPLED Q_V TENDENCY DUE TO FDDA GRID NUDGING"     "Pa kg kg-1 s-1"
+#state    real  g_RUSHTEN         ijk      misc        1         -      r        "g_RUSHTEN"               "COUPLED X WIND TENDENCY DUE TO SHALLOW CUMULUS SCHEME"   "Pa m s-2"
+#state    real  g_RVSHTEN         ijk      misc        1         -      r        "g_RVSHTEN"               "COUPLED Y WIND TENDENCY DUE TO SHALLOW CUMULUS SCHEME"   "Pa m s-2"
+#state    real  g_RUCUTEN         ijk      misc        1         -      r        "g_RUCUTEN"               "COUPLED X WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "Pa m s-2"
+#state    real  g_RVCUTEN         ijk      misc        1         -      r        "g_RVCUTEN"               "COUPLED Y WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "Pa m s-2"
+state    real  g_RUBLTEN         ijk      misc        1         -      -        "g_RUBLTEN"               "COUPLED X WIND TENDENCY DUE TO PBL PARAMETERIZATION"  "Pa m s-2"
+state    real  g_RVBLTEN         ijk      misc        1         -      -        "g_RVBLTEN"               "COUPLED Y WIND TENDENCY DUE TO PBL PARAMETERIZATION"  "Pa m s-2"
+state    real  g_RTHBLTEN        ijk      misc        1         -      -        "g_RTHBLTEN"              "COUPLED THETA TENDENCY DUE TO PBL PARAMETERIZATION"   "Pa K s-1"
+state    real  g_RQVBLTEN        ijk      misc        1         -      -        "g_RQVBLTEN"              "COUPLED Q_V TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"
+state    real  g_USTM             ij      misc        1         -      -        "g_USTM"                  "U* IN SIMILARITY THEORY WITHOUT VCONV"        "m s-1"
+state    real  g_UST              ij      misc        1         -      i{18}h{18}        "g_UST"                  "U* IN SIMILARITY THEORY"        "m s-1"
+state    real  g_ZNT              ij      misc        1         -      i{18}h{18}        "g_ZNT"                  "TIME-VARYING ROUGHNESS LENGTH"        "m"
+state    real  g_RMOL             ij      misc        1         -      -        "g_RMOL"                  "1./Monin Ob. Length"                      ""
+state    real  g_MOL              ij      misc        1         -      i{18}h{18}        "g_MOL"                   "T* IN SIMILARITY THEORY"                      "K"
+state    real  g_PBLH             ij      misc        1         -      i{18}h{18}       "g_PBLH"                  "PBL HEIGHT"         "m"
+state    real  g_CANWAT           ij      misc        1         -      i{18}h{18}        "g_CANWAT"           "CANOPY WATER"             "kg m-2"
+i1       real  g_WSPD             ij      misc        1         -      -        "g_WSPD"                "Wind speed"
+state    real  g_TSLB            ijl      misc        1         Z      i{18}h{18}       "g_TSLB"     "SOIL TEMPERATURE"   "K"
+state    real  g_SMOIS           ijl      -           1         Z      i{18}h{18}       "g_SMOIS"            "SOIL MOISTURE"     "m3 m-3"
+# hydrostatic pressure vars
+state    real   g_p_hyd           ijk     dyn_em      1         -      -       "g_p_hyd"       "hydrostatic pressure"         "Pa"
+state    real   g_p_hyd_w         ijk     dyn_em      1         Z       -        "g_p_hyd_w"     "hydrostatic pressure at full levels"         "Pa"
+
+# PBL and SURFACE Variables
+#state   real  a_defor11          ijk      misc        1         -     r         "a_defor11"               "DEFORMATION 11"              "s-1"
+#state   real  a_defor22          ijk      misc        1         -     r         "a_defor22"               "DEFORMATION 22"              "s-1"
+#state   real  a_defor12          ijk      misc        1         -     r         "a_defor12"               "DEFORMATION 12"              "s-1"
+#state   real  a_defor33          ijk      misc        1         z     r         "a_defor33"               "DEFORMATION 33"              "s-1"
+#state   real  a_defor13          ijk      misc        1         z     r         "a_defor13"               "DEFORMATION 13"              "s-1"
+#state   real  a_defor23          ijk      misc        1         z     r         "a_defor23"               "DEFORMATION 23"              "s-1"
+#state   real   a_xkmv            ijk      misc        1         -     r         "a_xkmv"                  "VERTICAL EDDY VISCOSITY"     "m2 s-1"
+#state   real   a_xkmh            ijk      misc        1         -     r         "a_xkmh"                  "HORIZONTAL EDDY VISCOSITY"   "m2 s-1"
+#state   real   a_xkhv            ijk      misc        1         -     r         "a_xkhv"                  "VERTICAL EDDY DIFFUSIVITY OF HEAT"                               "m2 s-1"
+#state   real   a_xkhh            ijk      misc        1         -     r         "a_xkhh"                  "HORIZONTAL EDDY DIFFUSIVITY OF HEAT"                             "m2 s-1"
+#state   real    a_div            ijk      misc        1         -     r         "a_div"                   "DIVERGENCE"                                                      "s-1"
+#state   real    a_BN2            ijk      misc        1         -     r         "a_BN2"                   "BRUNT-VAISALA FREQUENCY"                                         "s-2"
+#state    real   a_zx             ijk     dyn_em      1         X      -         " "  " "  " "
+#state    real   a_zy             ijk     dyn_em      1         Y      -         " "  " "  " "
+#state    real   a_rdz            ijk     dyn_em      1         Z      -         " "  " "  " "
+#state    real   a_rdzw           ijk     dyn_em      1         Z       -        " "  " "  " "
+state    real  a_HFX              ij      misc        1         -      i{17}h{17}       "a_HFX"                   "UPWARD HEAT FLUX AT THE SURFACE"              "W m-2"
+state    real  a_QFX              ij      misc        1         -      i{17}h{17}       "a_QFX"                   "UPWARD MOISTURE FLUX AT THE SURFACE"          "kg m-2 s-1"
+#state    real  a_RTHRATEN        ijk      misc        1         -      rd       "a_RTHRATEN"              "COUPLED THETA TENDENCY DUE TO RADIATION"              "Pa K s-1"
+state    real  a_RQCBLTEN        ijk      misc        1         -      -        "a_RQCBLTEN"              "COUPLED Q_C TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"
+state    real  a_RQIBLTEN        ijk      misc        1         -      -        "a_RQIBLTEN"              "COUPLED Q_I TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"
+#state    real  a_RTHCUTEN        ijk      misc        1         -      r        "a_RTHCUTEN"              "COUPLED THETA TENDENCY DUE TO CUMULUS SCHEME"     "Pa K s-1"
+#state    real  a_RQVCUTEN        ijk      misc        1         -      r        "a_RQVCUTEN"              "COUPLED Q_V TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+#state    real  a_RQRCUTEN        ijk      misc        1         -      r        "a_RQRCUTEN"              "COUPLED Q_R TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+#state    real  a_RQCCUTEN        ijk      misc        1         -      r        "a_RQCCUTEN"              "COUPLED Q_C TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+#state    real  a_RQSCUTEN        ijk      misc        1         -      r        "a_RQSCUTEN"              "COUPLED Q_S TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+#state    real  a_RQICUTEN        ijk      misc        1         -      r        "a_RQICUTEN"              "COUPLED Q_I TENDENCY DUE TO CUMULUS SCHEME"       "Pa kg kg-1 s-1"
+#state    real  a_RTHSHTEN        ijk      misc        1         -      r        "a_RTHSHTEN"              "COUPLED THETA TENDENCY DUE TO SHALLOW CUMULUS SCHEME"    "Pa K s-1"
+#state    real  a_RQVSHTEN        ijk      misc        1         -      r        "a_RQVSHTEN"              "COUPLED Q_V TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+#state    real  a_RQRSHTEN        ijk      misc        1         -      r        "a_RQRSHTEN"              "COUPLED Q_R TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+#state    real  a_RQCSHTEN        ijk      misc        1         -      r        "a_RQCSHTEN"              "COUPLED Q_C TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+#state    real  a_RQSSHTEN        ijk      misc        1         -      r        "a_RQSSHTEN"              "COUPLED Q_S TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+#state    real  a_RQISHTEN        ijk      misc        1         -      r        "a_RQISHTEN"              "COUPLED Q_I TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+#state    real  a_RQGSHTEN        ijk      misc        1         -      r        "a_RQGSHTEN"              "COUPLED Q_G TENDENCY DUE TO SHALLOW CUMULUS SCHEME"      "Pa kg kg-1 s-1"
+#state    real  a_RTHFTEN         ijk      misc        1         -      r        "a_RTHFTEN"               "TEMPERATURE TENDENCY USED IN GRELL CUMULUS SCHEME"  "K s-1"
+#state    real  a_RQVFTEN         ijk      misc        1         -      r        "a_RQVFTEN"               "MOISTURE TENDENCY USED IN GRELL CUMULUS SCHEME"     "kg s-1"
+#state    real  a_RUNDGDTEN       ijk      misc        1         X      r        "a_RUNDGDTEN"               "COUPLED X WIND TENDENCY DUE TO FDDA GRID NUDGING"  "Pa m s-2"
+#state    real  a_RVNDGDTEN       ijk      misc        1         Y      r        "a_RVNDGDTEN"               "COUPLED Y WIND TENDENCY DUE TO FDDA GRID NUDGING"  "Pa m s-2"
+#state    real  a_RTHNDGDTEN      ijk      misc        1         -      r        "a_RTHNDGDTEN"              "COUPLED THETA TENDENCY DUE TO FDDA GRID NUDGING"   "Pa K s-1"
+#state    real  a_RPHNDGDTEN      ijk      misc        1         -      r        "a_RPHNDGDTEN"              "COUPLED GEOPOTENTIAL TENDENCY DUE TO FDDA GRID NUDGING"   "Pa m2 s-3"
+#state    real  a_RQVNDGDTEN      ijk      misc        1         -      r        "a_RQVNDGDTEN"              "COUPLED Q_V TENDENCY DUE TO FDDA GRID NUDGING"     "Pa kg kg-1 s-1"
+#state    real  a_RUSHTEN         ijk      misc        1         -      r        "a_RUSHTEN"               "COUPLED X WIND TENDENCY DUE TO SHALLOW CUMULUS SCHEME"   "Pa m s-2"
+#state    real  a_RVSHTEN         ijk      misc        1         -      r        "a_RVSHTEN"               "COUPLED Y WIND TENDENCY DUE TO SHALLOW CUMULUS SCHEME"   "Pa m s-2"
+#state    real  a_RUCUTEN         ijk      misc        1         -      r        "a_RUCUTEN"               "COUPLED X WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "Pa m s-2"
+#state    real  a_RVCUTEN         ijk      misc        1         -      r        "a_RVCUTEN"               "COUPLED Y WIND TENDENCY DUE TO CUMULUS PARAMETERIZATION"  "Pa m s-2"
+state    real  a_RUBLTEN         ijk      misc        1         -      -        "a_RUBLTEN"               "COUPLED X WIND TENDENCY DUE TO PBL PARAMETERIZATION"  "Pa m s-2"
+state    real  a_RVBLTEN         ijk      misc        1         -      -        "a_RVBLTEN"               "COUPLED Y WIND TENDENCY DUE TO PBL PARAMETERIZATION"  "Pa m s-2"
+state    real  a_RTHBLTEN        ijk      misc        1         -      -        "a_RTHBLTEN"              "COUPLED THETA TENDENCY DUE TO PBL PARAMETERIZATION"   "Pa K s-1"
+state    real  a_RQVBLTEN        ijk      misc        1         -      -        "a_RQVBLTEN"              "COUPLED Q_V TENDENCY DUE TO PBL PARAMETERIZATION"     "Pa kg kg-1 s-1"
+state    real  a_USTM             ij      misc        1         -      -        "a_USTM"                  "U* IN SIMILARITY THEORY WITHOUT VCONV"        "m s-1"
+state    real  a_UST              ij      misc        1         -      i{17}h{17}        "a_UST"                  "U* IN SIMILARITY THEORY"        "m s-1"
+state    real  a_ZNT              ij      misc        1         -      i{17}h{17}        "a_ZNT"                  "TIME-VARYING ROUGHNESS LENGTH"        "m"
+state    real  a_RMOL             ij      misc        1         -      -        "a_RMOL"                  "1./Monin Ob. Length"                      ""
+state    real  a_MOL              ij      misc        1         -      i{17}h{17}        "a_MOL"                   "T* IN SIMILARITY THEORY"                      "K"
+state    real  a_PBLH             ij      misc        1         -      i{17}h{17}       "a_PBLH"                  "PBL HEIGHT"         "m"
+state    real  a_CANWAT           ij      misc        1         -      i{17}h{17}        "a_CANWAT"           "CANOPY WATER"             "kg m-2"
+i1       real  a_WSPD             ij      misc        1         -      -        "a_WSPD"                "Wind speed"
+state    real  a_TSLB            ijl      misc        1         Z      i{17}h{17}       "a_TSLB"     "SOIL TEMPERATURE"   "K"
+state    real  a_SMOIS           ijl      -           1         Z      i{17}h{17}       "a_SMOIS"            "SOIL MOISTURE"     "m3 m-3"
+
+# hydrostatic pressure vars
+state    real   a_p_hyd           ijk     dyn_em      1         -      -       "a_p_hyd"       "hydrostatic pressure"         "Pa"
+state    real   a_p_hyd_w         ijk     dyn_em      1         Z       -        "a_p_hyd_w"     "hydrostatic pressure at full levels"         "Pa"
+
 # Scalar (4D) arrays
 # Moist Scalars
 #                                               
@@ -74,6 +211,8 @@ state    real  G_RAINCV         ij      misc        1         -      r        "G
 state    real  A_RAINCV         ij      misc        1         -      r        "A_RAINCV"              "TIME-STEP CUMULUS PRECIPITATION"                         "mm"      
 state    real  G_RAINNCV        ij      misc        1         -      r        "G_RAINNCV"             "TIME-STEP NONCONVECTIVE PRECIPITATION"                   "mm"
 state    real  A_RAINNCV        ij      misc        1         -      r        "A_RAINNCV"             "TIME-STEP NONCONVECTIVE PRECIPITATION"                   "mm"
+state   real    g_h_diabatic   ijk     misc         1         -      i{18}h{18}du      "g_h_diabatic"          "MICROPHYSICS LATENT HEATING"         "K s-1"      
+state   real    a_h_diabatic   ijk     misc         1         -      i{18}h{18}du      "a_h_diabatic"          "MICROPHYSICS LATENT HEATING"         "K s-1"      
 ######                                          
 #                                               
 # Variables that are set at run-time to control configuration  (namelist-settable)                                              
@@ -265,8 +404,10 @@ rconfig   logical   read_lanczos            namelist,wrfvar6  1  .false.  - "rea
 rconfig   logical   write_lanczos           namelist,wrfvar6  1  .false.  - "write_lanczos"            ""  ""
 rconfig   character lanczos_ep_filename     namelist,wrfvar6  1  "../lanczos_eigenpairs"  - "lanczos_ep_filename" "File name for lanczos eigenpairs"  ""
 rconfig   logical   orthonorm_gradient      namelist,wrfvar6  1  .false.  - "orthonorm_gradient"       ""  ""
+rconfig   logical   info_stop               namelist,wrfvar6  1  .true.   -  "info_stop"               ""  ""
 rconfig   integer   cv_options              namelist,wrfvar7  1  5        - "cv_options"               ""  ""
 rconfig   integer   cloud_cv_options        namelist,wrfvar7  1  0        - "cloud_cv_options"         "0: off, 1: qt, 3: specified qc,qr,qi,qs,qg BE"  ""
+rconfig   integer   chem_cv_options         namelist,wrfvar7  1  0        - "chem_cv_options"          "0: off, 1: gocart "  ""
 rconfig   logical   use_cv_w                namelist,wrfvar7  1  .false.  - "use_cv_w"                 "if activate w control variable when cloud_cv_options=3"  ""
 rconfig   real      as1                     namelist,wrfvar7  3*max_outer_iterations -1.0    - "as1"   ""  ""
 rconfig   real      as2                     namelist,wrfvar7  3*max_outer_iterations -1.0    - "as2"   ""  ""
@@ -287,6 +428,7 @@ rconfig   real      var_scaling8            namelist,wrfvar7  max_outer_iteratio
 rconfig   real      var_scaling9            namelist,wrfvar7  max_outer_iterations  1.0      - "var_scaling9"             ""  ""
 rconfig   real      var_scaling10           namelist,wrfvar7  max_outer_iterations  1.0      - "var_scaling10"            ""  ""
 rconfig   real      var_scaling11           namelist,wrfvar7  max_outer_iterations  1.0      - "var_scaling11"            ""  ""
+rconfig   real      var_scaling12           namelist,wrfvar7  19*max_outer_iterations  1.0   - "var_scaling12"            ""  ""
 rconfig   real      len_scaling1            namelist,wrfvar7  max_outer_iterations  1.0      - "len_scaling1"             ""  ""
 rconfig   real      len_scaling2            namelist,wrfvar7  max_outer_iterations  1.0      - "len_scaling2"             ""  ""
 rconfig   real      len_scaling3            namelist,wrfvar7  max_outer_iterations  1.0      - "len_scaling3"             ""  ""
@@ -298,6 +440,7 @@ rconfig   real      len_scaling8            namelist,wrfvar7  max_outer_iteratio
 rconfig   real      len_scaling9            namelist,wrfvar7  max_outer_iterations  1.0      - "len_scaling9"             ""  ""
 rconfig   real      len_scaling10           namelist,wrfvar7  max_outer_iterations  1.0      - "len_scaling10"            ""  ""
 rconfig   real      len_scaling11           namelist,wrfvar7  max_outer_iterations  1.0      - "len_scaling11"            ""  ""
+rconfig   real      len_scaling12           namelist,wrfvar7  16*max_outer_iterations  1.0   - "len_scaling12"            ""  ""
 rconfig   real      je_factor               namelist,wrfvar7  1  1.0      - "je_factor"                ""  ""
 rconfig   real      power_truncation        namelist,wrfvar7  1  1.0      - "power_truncation"         ""  ""
 rconfig   logical   def_sub_domain          namelist,wrfvar8  1  .false.  - "def_sub_domain"           ""  ""
@@ -321,6 +464,7 @@ rconfig   logical   trace_csv               namelist,wrfvar9  1  .true.    - "tr
 rconfig   logical   use_html                namelist,wrfvar9  1  .false.   - "use_html"                ""  ""
 rconfig   logical   warnings_are_fatal      namelist,wrfvar9  1  .false.   - "warnings_are_fatal"      ""  ""
 rconfig   logical   test_transforms         namelist,wrfvar10  1  .false.  - "test_transforms"         ""  ""  
+rconfig   logical   test_transformsch       namelist,wrfvar10  1  .false.  - "test_transformsch"       ""  ""  
 rconfig   logical   test_gradient           namelist,wrfvar10  1  .false.  - "test_gradient"           ""  ""  
 rconfig   logical   test_statistics         namelist,wrfvar10  1  .false.  - "test_statistics"         ""  ""  
 rconfig   logical   interpolate_stats       namelist,wrfvar10  1  .false.  - "interpolate_stats"       ""  ""  
@@ -377,6 +521,7 @@ rconfig   real      max_vert_var8           namelist,wrfvar13  1  99.0     - "ma
 rconfig   real      max_vert_var9           namelist,wrfvar13  1  99.0     - "max_vert_var9"           ""  ""
 rconfig   real      max_vert_var10          namelist,wrfvar13  1  99.0     - "max_vert_var10"          ""  ""
 rconfig   real      max_vert_var11          namelist,wrfvar13  1  99.0     - "max_vert_var11"          ""  ""
+rconfig   real      max_vert_var12          namelist,wrfvar13 16*1  99.0   - "max_vert_var12"          ""  ""
 rconfig   real      max_vert_var_alpha      namelist,wrfvar13  1  99.0     - "max_vert_var_alpha"      ""  ""
 rconfig   real      psi_chi_factor          namelist,wrfvar13  1  1.0      - "psi_chi_factor"          ""  ""
 rconfig   real      psi_t_factor            namelist,wrfvar13  1  1.0      - "psi_t_factor"            ""  ""
@@ -503,9 +648,11 @@ rconfig   integer jcdfi_diag                namelist,perturbation  1  1        -
 rconfig   real    jcdfi_penalty             namelist,perturbation  1  10.      -   "jcdfi_penalty"    "Penalty parameter for JcDF"      ""
 rconfig   logical enable_identity           namelist,perturbation  1  .false.  -   "enable identity AD/TL model"        ""      ""
 rconfig   logical trajectory_io             namelist,perturbation  1  .true.   -  "0:disk IO;1:memory IO"   ""  ""
+rconfig   logical boundary_io               namelist,perturbation  1  .true.   -  "choice for boundary I/O during checkpointed AD/TL"  ""      ""
 rconfig   logical var4d_detail_out          namelist,perturbation  1  .false.  -  "true:output perturbation, gradient to disk"   ""  ""
 rconfig   logical var4d_run                 namelist,perturbation  1  .true.  -  "true: exlcude the P calculation in start_em"   ""  ""
 rconfig   integer  mp_physics_ad            namelist,physics   max_domains   99   -      "mp_physics_ad"            ""      ""
+rconfig   integer adtl_run_hours            namelist,wrfvar23      1  0        -  "adtl_run_hours"      "NUMBER OF HOURS TO RUN AD/TL" ""
 # NAMELIST DERIVED
 rconfig   integer mp_physics_4dvar        derived                  max_domains   -1       -        "mp_physics_4dvar"     ""      "-1 = no 4dvar and so no need to allocate a_ and g_ moist and scalar variables, >0 = running 4dvar, so allocate a_ and g_ moist and scalar variables appropriate for selected microphysics package"
 #
@@ -586,8 +733,23 @@ package   etampnew_4dvar         mp_physics_4dvar==95     -          g_moist:g_q
 package   lscond_4dvar           mp_physics_4dvar==98     -          g_moist:g_qv;a_moist:a_qv
 package   mkessler_4dvar         mp_physics_4dvar==99     -          g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
 
-package   surfdragscheme  bl_pbl_physics==98           -             -
-package   ducuscheme      cu_physics==98               -             -
+package   acmpblscheme   bl_pbl_physics==7           -             -
+package   surfdragscheme bl_pbl_physics==98          -             -
+package   ducuscheme     cu_physics==98              -             -
+
+#package   sfclayrevscheme sf_sfclay_physics==1       -             -
+#package   myjsfcscheme   sf_sfclay_physics==2        -             state:tke_pbl
+#package   gfssfcscheme   sf_sfclay_physics==3        -             -
+#package   qnsesfcscheme  sf_sfclay_physics==4        -             -
+#package   mynnsfcscheme  sf_sfclay_physics==5        -             state:sh3d,tsq,qsq,cov
+package   pxsfcscheme    sf_sfclay_physics==7        -             -
+#package   temfsfcscheme  sf_sfclay_physics==10       -             state:wm_temf
+#package   idealscmsfcscheme  sf_sfclay_physics==89   -             -
+package   sfclayscheme   sf_sfclay_physics==91       -             -
+
+#package   clmscheme      sf_surface_physics==5       -             state:numc,nump,sabv,sabg,lwup,lhsoi,lhveg,lhtran,snl,snowdp,wtc,wtp,h2osno,t_grnd,t_veg,h2ocan,h2ocan_col,t2m_max,t2m_min,t2clm,t_ref2m,h2osoi_liq_s1,h2osoi_liq_s2,h2osoi_liq_s3,h2osoi_liq_s4,h2osoi_liq_s5,h2osoi_liq1,h2osoi_liq2,h2osoi_liq3,h2osoi_liq4,h2osoi_liq5,h2osoi_liq6,h2osoi_liq7,h2osoi_liq8,h2osoi_liq9,h2osoi_liq10,h2osoi_ice_s1,h2osoi_ice_s2,h2osoi_ice_s3,h2osoi_ice_s4,h2osoi_ice_s5,h2osoi_ice1,h2osoi_ice2,h2osoi_ice3,h2osoi_ice4,h2osoi_ice5,h2osoi_ice6,h2osoi_ice7,h2osoi_ice8,h2osoi_ice9,h2osoi_ice10,t_soisno_s1,t_soisno_s2,t_soisno_s3,t_soisno_s4,t_soisno_s5,t_soisno1,t_soisno2,t_soisno3,t_soisno4,t_soisno5,t_soisno6,t_soisno7,t_soisno8,t_soisno9,t_soisno10,dzsnow1,dzsnow2,dzsnow3,dzsnow4,dzsnow5,snowrds1,snowrds2,snowrds3,snowrds4,snowrds5,t_lake1,t_lake2,t_lake3,t_lake4,t_lake5,t_lake6,t_lake7,t_lake8,t_lake9,t_lake10,h2osoi_vol1,h2osoi_vol2,h2osoi_vol3,h2osoi_vol4,h2osoi_vol5,h2osoi_vol6,h2osoi_vol7,h2osoi_vol8,h2osoi_vol9,h2osoi_vol10,albedosubgrid,lhsubgrid,hfxsubgrid,lwupsubgrid,q2subgrid,sabvsubgrid,sabgsubgrid,nrasubgrid,swupsubgrid
+package   pxlsmscheme    sf_surface_physics==7       -             state:t2_ndg_new,q2_ndg_new,t2_ndg_old,q2_ndg_old
+#package   ssibscheme     sf_surface_physics==8       -             state:ssib_fm,ssib_fh,ssib_cm,ssibxdd,ssib_br,ssib_lhf,ssib_shf,ssib_ghf,ssib_egs,ssib_eci,ssib_ect,ssib_egi,ssib_egt,ssib_sdn,ssib_sup,ssib_ldn,ssib_lup,ssib_wat,ssib_shc,ssib_shg,ssib_lai,ssib_vcf,ssib_z00,ssib_veg,isnow,swe,snowden,snowdepth,tkair,dzo1,wo1,tssn1,tssno1,bwo1,bto1,cto1,fio1,flo1,bio1,blo1,ho1,dzo2,wo2,tssn2,tssno2,bwo2,bto2,cto2,fio2,flo2,bio2,blo2,ho2,dzo3,wo3,tssn3,tssno3,bwo3,bto3,cto3,fio3,flo3,bio3,blo3,ho3,dzo4,wo4,tssn4,tssno4,bwo4,bto4,cto4,fio4,flo4,bio4,blo4,ho4
 
 # only need to specify these once; not for every io_form* variable
 # Placeholders for additional packages (we can go beyond zzz

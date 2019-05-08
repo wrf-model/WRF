@@ -4,17 +4,24 @@ subroutine da_transfer_xatoanalysis(it, xbx, grid, config_flags)
    ! Purpose: Transfer xb and xa (increments) to analysis.
    !---------------------------------------------------------------------------
 
+   USE module_state_description, ONLY :                                 &
+                     num_chem                                           & !inline gocart
+                    ,p_chem_ic_bc1, p_chem_ic_bc2, p_chem_ic_oc1, p_chem_ic_oc2                         & !inline gocart
+                    ,p_chem_ic_so2, p_chem_ic_no2, p_chem_ic_o3, p_chem_ic_co      &
+                    ,p_chem_ic_p10,  p_chem_ic_p25,  p_chem_ic_sulf  
+
    implicit none
 
    integer,         intent(in)    :: it    ! outer-loop index
    type (xbx_type), intent(out)   :: xbx    ! Header & non-gridded vars.
    type(domain),    intent(inout) :: grid
-
+  
    type (grid_config_rec_type), intent(inout) :: config_flags
 
    character*4 filnam
    character(len=256) ::  timestr
 
+   integer n,ichem
    if (trace_use) call da_trace_entry("da_transfer_xatoanalysis")
 
    !---------------------------------------------------------------------------
@@ -30,8 +37,18 @@ subroutine da_transfer_xatoanalysis(it, xbx, grid, config_flags)
 
       call da_transfer_xatowrf(grid, config_flags)
 
+	n=1
+	ichem=2
+!		write(*,*) 'chksulf333 ', ob % chemic_surf(n) % chem(ichem), model_chemic_surf(n,ichem), grid%xbchem%chem_ic(iv%info(chemic_surf)%i(1,n), iv%info(chemic_surf)%j(1,n), 1,p_chem_ic_p25), grid%xbchem%chem_ic(iv%info(chemic_surf)%i(1,n)+1, iv%info(chemic_surf)%j(1,n), 1,p_chem_ic_p25), grid%xbchem%chem_ic(iv%info(chemic_surf)%i(1,n), iv%info(chemic_surf)%j(1,n)+1, 1,p_chem_ic_p25), grid%xbchem%chem_ic(iv%info(chemic_surf)%i(1,n)+1, iv%info(chemic_surf)%j(1,n)+1, 1,p_chem_ic_p25), n
       if (it < max_ext_its) then
          call da_transfer_wrftoxb(xbx, grid, config_flags)
+#if (WRF_CHEM == 1)
+         call da_transfer_wrftoxb_chem(grid)
+         call da_transfer_wrftoxb_gocart(grid)
+!		write(*,*) 'chksulf444 ', ob % chemic_surf(n) % chem(ichem), model_chemic_surf(n,ichem), grid%xachem%chem_ic(iv%info(chemic_surf)%i(1,n), iv%info(chemic_surf)%j(1,n), 1,p_chem_ic_p25), grid%xachem%chem_ic(iv%info(chemic_surf)%i(1,n)+1, iv%info(chemic_surf)%j(1,n), 1,p_chem_ic_p25), grid%xachem%chem_ic(iv%info(chemic_surf)%i(1,n), iv%info(chemic_surf)%j(1,n)+1, 1,p_chem_ic_p25), grid%xachem%chem_ic(iv%info(chemic_surf)%i(1,n)+1, iv%info(chemic_surf)%j(1,n)+1, 1,p_chem_ic_p25), n
+!		write(*,*) 'chksulf555 ', ob % chemic_surf(n) % chem(ichem), model_chemic_surf(n,ichem), grid%xbchem%chem_ic(iv%info(chemic_surf)%i(1,n), iv%info(chemic_surf)%j(1,n), 1,p_chem_ic_p25), grid%xbchem%chem_ic(iv%info(chemic_surf)%i(1,n)+1, iv%info(chemic_surf)%j(1,n), 1,p_chem_ic_p25), grid%xbchem%chem_ic(iv%info(chemic_surf)%i(1,n), iv%info(chemic_surf)%j(1,n)+1, 1,p_chem_ic_p25), grid%xbchem%chem_ic(iv%info(chemic_surf)%i(1,n)+1, iv%info(chemic_surf)%j(1,n)+1, 1,p_chem_ic_p25), n
+	write(*,*) 'wrftoxb chem done'
+#endif
       end if
    else if (fg_format == fg_format_wrf_arw_global) then
       if( var4d) then

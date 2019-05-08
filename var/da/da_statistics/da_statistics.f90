@@ -8,6 +8,9 @@ module da_statistics
    use da_control, only : obs_qc_pointer,stdout, missing_r, &
       myproc,rootproc, mjy, mix, mkz, jts,jte,its,ite,kts,kte, trace_use_dull, trace_use,&
       crtm_cloud,use_radar_rf,pptop,ppbot,num_ob_indexes,num_ob_vars,npres_print,&
+#if (WRF_CHEM == 1)
+      chem_cv_options, &
+#endif
       obs_names, ob_vars, filename_len, cloud_cv_options
    use da_define_structures, only : iv_type, maxmin_type, x_type, maxmin_field_type
    use da_par_util1, only : da_proc_sum_real, da_proc_sum_int, da_proc_sum_ints

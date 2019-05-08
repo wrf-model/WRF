@@ -10,6 +10,9 @@ subroutine da_setup_cv(be)
 
    integer :: iy, jx   ! Local horizontal domain dimensions.
    integer :: ij       ! Product of horizontal dims.
+#if (WRF_CHEM == 1)
+   integer :: ic
+#endif
 
    if (trace_use) call da_trace_entry("da_setup_cv")
 
@@ -59,8 +62,12 @@ subroutine da_setup_cv(be)
 
    end if
 
+
    be % cv % size_jb = be % cv % size1 + be % cv % size2 + be % cv % size3 + &
       be % cv % size4 + be % cv % size5
+
+      write(*,*) 'set cvsizeee 000 = ', be % cv % size_jb, be % cv % size1, be % cv % size2, be % cv % size3, &
+      be % cv % size4, be % cv % size5
 
    if ( cloud_cv_options >= 2 ) then
       be % cv % size_jb = be % cv % size_jb + be % cv % size6 + &
@@ -68,9 +75,13 @@ subroutine da_setup_cv(be)
          be % cv % size10
    end if
 
+      write(*,*) 'set cvsizeee 001 = ', be % cv % size_jb
+
    if ( use_cv_w ) then
       be % cv % size_jb = be % cv % size_jb + be % cv % size11i
    end if
+
+      write(*,*) 'set cvsizeee 002 = ', be % cv % size_jb
 
    !--------------------------------------------------------------
    ! [1.1] Define 4D-Var lateral boundary condition control variable size:
@@ -133,6 +144,57 @@ subroutine da_setup_cv(be)
          cv_size_domain_jl = cv_size_domain_jb 
       end if
    end if
+
+   !--------------------------------------------------------------
+   ! [4] Define and add chem emiss cv sizes
+   !--------------------------------------------------------------
+#if (WRF_CHEM == 1)
+      iy = ite - its + 1
+      jx = jte - jts + 1
+
+      ij = iy * jx              ! cv space size same as state space size
+
+      write(*,*) 'set cvsizeee 111 = ', be % cv % size_jb
+
+!      be % cv % sizechem (:) = 0
+!      do ic = PARAM_FIRST_SCALAR, num_scalechem
+!         be % cv % sizechem (ic) = ij * be % alpha_chem(ic) % mz
+!      end do
+!      be % cv % size_jb = be % cv % size_jb + sum( be % cv % sizechem (:) )
+
+
+      be % cv % sizechemic (:) = 0
+      do ic = PARAM_FIRST_SCALAR, num_chem
+!!!      do ic = 1, num_chem-1
+         be % cv % sizechemic (ic) = ij * be % v12(ic-1) % mz
+	write(*,*) 'ic = ', ic, be % cv % sizechemic (ic), ij, be % v12(ic-1) % mz
+      end do
+      be % cv % size_jb = be % cv % size_jb + sum (be % cv % sizechemic (:))
+
+      write(*,*) 'set cvsizeee 222 = ', be % cv % size_jb
+
+      be % cv % sizeant (:) = 0
+      do ic = PARAM_FIRST_SCALAR, num_scaleant
+         be % cv % sizeant (ic) = ij * be % alpha_ant_chem(ic) % mz
+      end do
+      be % cv % size_jb = be % cv % size_jb + sum (be % cv % sizeant (:))
+
+      write(*,*) 'set cvsizeee 333 = ', be % cv % size_jb
+
+      be % cv % sizebb (:) = 0
+      do ic = PARAM_FIRST_SCALAR, num_scalebb
+         be % cv % sizebb (ic) = ij * be % alpha_bb_chem(ic) % mz
+      end do
+      be % cv % size_jb = be % cv % size_jb + sum( be % cv % sizebb (:) )
+
+      write(*,*) 'set cvsizeee 444 = ', be % cv % size_jb
+
+!      be % cv % sizebio (:) = 0
+!      do ic = PARAM_FIRST_SCALAR, num_scalebio
+!         be % cv % sizebio (ic) = ij * be % alpha_bio_chem(ic) % mz
+!      end do
+!      be % cv % size_jb = be % cv % size_jb + sum( be % cv % sizebio (:) )
+#endif
 
    if (trace_use) call da_trace_exit("da_setup_cv")
 

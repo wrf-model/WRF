@@ -16,6 +16,9 @@ module da_wrfvar_top
    use module_io_domain, only : close_dataset
 #ifdef VAR4D
    use da_4dvar, only : da_nl_model, model_grid, u6_2, v6_2, w6_2, t6_2, ph6_2, p6, &
+#if (WRF_CHEM == 1)
+      da_ad_model, da_init_model_input, &
+#endif
       mu6_2, psfc6, moist6, kj_swap, da_finalize_model, da_model_lbc_off
    !use da_wrfvar_io, only : da_med_initialdata_output_lbc
 #endif
@@ -29,7 +32,36 @@ module da_wrfvar_top
 
    use module_state_description, only : num_moist, num_a_moist, num_g_moist, &
       num_scalar, num_a_scalar, num_g_scalar, &
-      num_chem, PARAM_FIRST_SCALAR, num_tracer 
+      !num_chem, PARAM_FIRST_SCALAR, num_tracer 
+      num_tracer, num_a_tracer, num_g_tracer, &
+#if (WRF_CHEM == 1)
+      num_chem, num_a_chem, num_g_chem, &
+      num_emis_ant, num_scaleant, num_a_scaleant, num_g_scaleant, &
+      num_ebu, num_ebu_in, num_scalebb, num_a_scalebb, num_g_scalebb, &
+      num_ext_coef, & !num_a_ext_coef, num_g_ext_coef, &
+      num_bscat_coef, & !num_a_bscat_coef, num_g_bscat_coef, &
+      num_asym_par, & !num_a_asym_par, num_g_asym_par, &
+      !num_eghg_bio,num_emis_dust,num_emis_seas,num_emis_vol
+      num_chem_surf, num_chem_acft, &
+      num_surf_hx, num_g_surf_hx, num_a_surf_hx, &
+      num_acft_hx, num_g_acft_hx, num_a_acft_hx, &
+#endif
+      PARAM_FIRST_SCALAR
+#if (WRF_CHEM == 1)
+   use da_chem, only:  da_retrieve_chem_hx, da_write_obs_chem, da_calculate_chem_forcing_ad
+   use da_chem_tools, only: da_hdgn, da_dgn 
+
+!   use da_control, only: use_synopobs, use_shipsobs, use_metarobs, use_soundobs, &
+!              use_mtgirsobs, use_tamdarobs, use_bogusobs, use_pilotobs, &
+!              use_airepobs, use_geoamvobs, use_polaramvobs, use_buoyobs, &
+!              use_profilerobs, use_satemobs, use_gpspwobs, use_gpsztdobs, &
+!              use_gpsrefobs, use_ssmiretrievalobs, use_ssmitbobs, &
+!              use_ssmt1obs, use_ssmt2obs, use_qscatobs, use_hirs2obs, &
+!              use_hirs3obs, use_hirs4obs, use_mhsobs, use_msuobs, &
+!              use_amsuaobs, use_amsubobs, use_mwtsobs, use_mwhsobs, &
+!              use_atmsobs, use_airsobs, use_eos_amsuaobs, use_hsbobs, use_airsretobs, &
+!              use_rainobs, use_iasiobs, use_radarobs, use_radar_rv, use_radar_rf
+#endif
    use module_tiles, only : set_tiles
 
 
@@ -39,6 +71,9 @@ module da_wrfvar_top
       ntasks, data_order_xy,wrf_dm_initialize
    use module_comm_dm, only : halo_radar_xa_w_sub,halo_ssmi_xa_sub, &
       halo_sfc_xa_sub, halo_xa_sub, halo_psichi_uv_adj_sub, halo_bal_eqn_adj_sub, &
+#if (WRF_CHEM == 1)
+      halo_chem_init_sub, halo_chem_xa_sub, &
+#endif
       halo_psichi_uv_sub, halo_init_sub, halo_psichi_uv_adj_sub, halo_2d_work_sub
 #endif
 
@@ -47,14 +82,23 @@ module da_wrfvar_top
    use da_define_structures, only : y_type, j_type, iv_type, be_type, &
       xbx_type,da_deallocate_background_errors,da_initialize_cv, &
       da_zero_vp_type,da_allocate_y,da_deallocate_observations, &
+#if (WRF_CHEM == 1)
+      da_zero_xch_type, da_allocate_y_chem, da_zero_xchem_type, &
+#endif
       da_deallocate_y, da_zero_x
    use da_minimisation, only : da_get_innov_vector,da_minimise_cg, &
       da_minimise_lz, da_write_diagnostics, da_calculate_residual, &
       da_calculate_grady, da_sensitivity, da_lanczos_io, da_calculate_j, &
+#if (WRF_CHEM == 1)
+      da_calculate_aminusb, &
+#endif
       da_kmat_mul
    use da_obs, only : da_transform_xtoy_adj 
    use da_obs_io, only : da_write_filtered_obs, da_write_obs, da_final_write_obs , &
-                         da_write_obs_etkf, da_write_modified_filtered_obs
+#if (WRF_CHEM == 1)
+      da_read_obs_chem, da_read_obs_chem_sfc, &
+#endif
+      da_write_obs_etkf, da_write_modified_filtered_obs
    use da_par_util, only : da_system,da_copy_tile_dims,da_copy_dims
    use da_physics, only : da_uvprho_to_w_lin
 #if defined (CRTM) || defined (RTTOV)
@@ -73,6 +117,9 @@ module da_wrfvar_top
    use da_tools_serial, only : da_get_unit, da_free_unit
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace, da_trace_report
    use da_transfer_model, only : da_transfer_xatoanalysis,da_setup_firstguess, &
+#if (WRF_CHEM == 1)
+       da_transfer_wrftoxb_chem, da_transfer_wrftoxb_gocart, &
+#endif
        da_transfer_wrftltoxa_adj
    use da_vtox_transforms, only : da_transform_vtox, da_transform_xtoxa, &
       da_transform_xtoxa_adj, da_copy_xa, da_add_xa, da_transform_vpatox
@@ -114,6 +161,7 @@ module da_wrfvar_top
 
    use da_netcdf_interface, only : da_get_var_2d_real_cdf
 
+   use module_streams, only : MAX_WRF_ALARMS  !!! add !!!
    implicit none
 
    integer :: loop, levels_to_process
@@ -126,6 +174,8 @@ module da_wrfvar_top
 
    integer :: domain_id , fid , oid , idum1 , idum2
 
+   type (domain), pointer :: model_grid !!! add !!!
+   integer :: original_restart_interval !!! add !!!
 #ifdef DM_PARALLEL
    integer                 :: nbytes
    integer, parameter      :: configbuflen = 4* CONFIG_BUF_LEN
@@ -140,6 +190,7 @@ module da_wrfvar_top
 
 contains
 
+!!! #include "da_nl_model.inc"  !!! add !!!
 #include "da_wrfvar_init1.inc"
 #include "da_wrfvar_init2.inc"
 #include "da_wrfvar_run.inc"

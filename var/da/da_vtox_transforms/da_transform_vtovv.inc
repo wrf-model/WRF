@@ -1,4 +1,8 @@
-subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
+subroutine da_transform_vtovv(grid, cv_size, be, cv, vv &
+#if (WRF_CHEM == 1)
+                        ,vch, vchem &
+#endif
+                        )
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -12,6 +16,12 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
    real,          intent(in)    :: cv(cv_size)   ! control variables.
    type(vp_type), intent(inout) :: vv   ! Grid point/EOF equivalent.
 
+#if (WRF_CHEM == 1) 
+   type(xch_type), optional, intent(inout) :: vch   ! Grid point/EOF equivalent.
+   type(xchem_type), optional, intent(inout) :: vchem   ! Grid point/EOF equivalent.
+   integer :: ic
+#endif
+
    integer :: s(4)   ! Index bounds into arrays.
    integer :: n      ! Loop counter.
    integer :: mz     ! Vertical truncations.
@@ -23,11 +33,38 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
 
    if (trace_use) call da_trace_entry("da_transform_vtovv")
 
+	write(*,*) 'call111'
    if( use_rf )then
       !-------------------------------------------------------------------------
       ! [1.0] Fill vv arrays from 1-dimensional cv array.
       !-------------------------------------------------------------------------
-      call da_cv_to_vv(cv_size, cv, be%cv_mz, be%ncv_mz, vv)
+#if (WRF_CHEM == 1)
+	write(*,*) 'call222'
+      if (present(vch)) then
+         call da_cv_to_vv(cv_size, cv, be%cv_mz, be%ncv_mz, vv, be%cv_mz_chem, vch=vch)
+!        write(*,*) 'mz levels vch', be%cv_mz
+!        write(*,*) 'mz jj levels vch', be%cv_mz_chem
+!        write(*,*) 'mz chem levels vch ', be%cv_mz_chemic
+!        write(*,*) 'call cv_to_vv nochem  done'
+!      else if (present(vchem) .and. iv%info(chemic_surf)%nlocal > 0) then
+      else if (present(vchem)) then
+	write(*,*) 'call cv_to_vv_chem'
+         call da_cv_to_vv_chem(cv_size, cv, be%cv_mz, be%ncv_mz, vv, be%cv_mz_chemic, vchem=vchem)
+        write(*,*) 'mz levels vchem', be%cv_mz
+        write(*,*) 'mz jj levels vchem', be%cv_mz_chem
+        write(*,*) 'mz chem levels vchem', be%cv_mz_chemic
+	write(*,*) 'call cv_to_vv chem  done'
+      else
+#endif
+         call da_cv_to_vv(cv_size, cv, be%cv_mz, be%ncv_mz, vv)
+!        write(*,*) 'mz levels met', be%cv_mz
+!        write(*,*) 'mz jj levels met', be%cv_mz_chem
+!        write(*,*) 'mz chem levels met', be%cv_mz_chemic
+	write(*,*) 'call cv_to_vv noall  done'
+
+#if (WRF_CHEM == 1)
+      end if
+#endif
    endif
    if( .not. use_rf .or. do_normalize ) s(1:2)=1
 
@@ -224,6 +261,73 @@ subroutine da_transform_vtovv(grid, cv_size, be, cv, vv)
          end do
       endif
    endif
+
+#if (WRF_CHEM == 1)
+   ! [2.9] Transform emission control variables
+
+   do ic = PARAM_FIRST_SCALAR, num_scaleant
+      mz = be % alpha_ant_chem (ic) % mz
+      if( use_rf .and. mz > 0 ) then
+
+        write(*,*) 'iccc222 =  ', ic
+        write(*,*) 'mzzz =  ', mz
+        write(*,*) 'rf_alpha =  ', be % alpha_bb_chem (ic) % rf_alpha
+        write(*,*) 'val =  ', be % alpha_bb_chem (ic) % val
+        write(*,*) 'field =  ', vch % alpha_bb (:,:,:,ic)
+
+         call da_transform_through_rf(grid, mz, be % alpha_ant_chem (ic) % rf_alpha, &
+                                                be % alpha_ant_chem (ic) % val, &
+                                                vch % alpha_ant (:,:,:,ic) )
+      elseif( .not. use_rf ) then
+         call da_error(__FILE__,__LINE__,(/"no da_transform_through_wavelet for alpha_ant"/))
+      endif
+   end do
+
+   do ic = PARAM_FIRST_SCALAR, num_scalebb
+      mz = be % alpha_bb_chem (ic) % mz
+
+      if( use_rf .and. mz > 0 ) then
+
+        write(*,*) 'iccc333 =  ', ic
+        write(*,*) 'mzzz =  ', mz
+        write(*,*) 'rf_alpha =  ', be % alpha_bb_chem (ic) % rf_alpha
+        write(*,*) 'val =  ', be % alpha_bb_chem (ic) % val
+        write(*,*) 'field =  ', vch % alpha_bb (:,:,:,ic)
+
+         call da_transform_through_rf(grid, mz, be % alpha_bb_chem (ic) % rf_alpha, &
+                                                be % alpha_bb_chem (ic) % val, &
+                                                vch % alpha_bb (:,:,:,ic) )
+      elseif( .not. use_rf ) then
+         call da_error(__FILE__,__LINE__,(/"no da_transform_through_wavelet for alpha_bb"/))
+      endif
+   end do
+
+   ! [2.10] Transform chem_ic control variables
+
+!   if (present(vchem) .and. iv%info(chemic_surf)%nlocal > 0) then
+   if (present(vchem)) then
+!!!   do ic = 1, num_chem-1
+   do ic = PARAM_FIRST_SCALAR, num_chem
+      mz = be % v12 (ic-1) % mz
+      if( use_rf .and. mz > 0 ) then
+!	write(*,*) 'iccc =  ', ic
+!	write(*,*) 'mzzz =  ', mz
+!	write(*,*) 'rf_alpha =  ', be % v12 (ic-1) % rf_alpha
+!	write(*,*) 'val =  ', be % v12 (ic-1) % val
+
+	    write(*,*) 'fieldjj =  ', ic,   vchem % chem_ic (1:5,1,1,ic)
+         call da_transform_through_rf(grid, mz, be % v12 (ic-1) % rf_alpha, &
+                                                be % v12 (ic-1) % val, &
+                                                vchem % chem_ic (:,:,:,ic))
+	    write(*,*) 'fieldkk =  ', ic,  vchem % chem_ic (1:5,1,1,ic)
+
+     elseif( .not. use_rf ) then
+         call da_error(__FILE__,__LINE__,(/"no da_transform_through_wavelet for chem_ic"/))
+      endif
+   end do
+   end if
+
+#endif
 
    if (trace_use) call da_trace_exit("da_transform_vtovv")
 

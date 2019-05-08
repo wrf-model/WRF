@@ -23,7 +23,7 @@ subroutine da_initialize_cv(cv_size, cv)
       ! [2.1] Initialize random number generator and scalars:
 
       call da_random_seed
-      
+     
       if( use_rf )then
 
          ! [2.2] Calculate random numbers with Gaussian distribution:

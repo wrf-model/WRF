@@ -1,13 +1,20 @@
-subroutine da_analysis_stats  (grid, stats_unit)
+subroutine da_analysis_stats  (grid, stats_unit, stats_unit2)
    
    !------------------------------------------------------------------------
    ! Purpose: Calculate min, max, mean and RMS of input 1d field.
    !------------------------------------------------------------------------
+#if (WRF_CHEM == 1)
+use module_state_description, only : num_chem, PARAM_FIRST_SCALAR                   &
+                     ,p_chem_ic_p25,  p_chem_ic_sulf                                &
+                     ,p_chem_ic_bc1, p_chem_ic_bc2, p_chem_ic_oc1, p_chem_ic_oc2    &
+                     ,p_chem_ic_dust_1, p_chem_ic_dust_2, p_chem_ic_seas_1, p_chem_ic_seas_2
+#endif
 
    implicit none
 
    type (domain), intent (in) :: grid
    integer,       intent (in) :: stats_unit ! Output unit for stats.
+   integer,       intent (in) :: stats_unit2 ! Output unit for chem stats.
    
    integer :: i, j, k
    integer :: ij_g, ijk_g   ! ij, ijk for global domain. 
@@ -30,6 +37,11 @@ subroutine da_analysis_stats  (grid, stats_unit)
                                min_qcw(kts:kte), min_qrn(kts:kte), &
                                min_qci(kts:kte), min_qsn(kts:kte), &
                                min_qgr(kts:kte)
+#if (WRF_CHEM == 1)
+   type (maxmin_field_type) :: max_chem(kts:kte,num_chem), min_chem(kts:kte,num_chem)
+   real    :: chemm(num_chem), chemv(kts:kte,num_chem)
+   integer :: ic
+#endif
 
    real                     :: uv(kts:kte), vv(kts:kte),     &
                                tv(kts:kte), pv(kts:kte),     &
@@ -83,6 +95,25 @@ subroutine da_analysis_stats  (grid, stats_unit)
               'qsn   i    j          ', &
               'qgr   i    j'
       end select
+
+#if (WRF_CHEM == 1)
+      write(unit=stats_unit2, fmt='(/a/)') ' Minimum of gridded analysis increments'
+      select case ( chem_cv_options )
+       case ( 1 )
+          write(unit=stats_unit2, fmt='(11a/)') &
+               ' Lvl         ', &
+               'p25      i    j          ', &
+               'sulf     i    j          ', &
+               'bc1      i    j          ', &
+               'bc2      i    j          ', &
+               'oc1      i    j          ', &
+               'oc2      i    j          ', &
+               'dust_1   i    j          ', &
+               'dust_2   i    j          ', &
+               'seas_1   i    j          ', &
+               'seas_2   i    j'
+      end select
+#endif
    end if
 
    call da_maxmin_in_field(grid%xa%u(its:ite,jts:jte,kts:kte), max_u, min_u)
@@ -112,6 +143,15 @@ subroutine da_analysis_stats  (grid, stats_unit)
       call da_proc_maxmin_combine(kdim, max_qgr, min_qgr)
    end if
 
+#if (WRF_CHEM == 1)
+   if ( chem_cv_options >= 1 ) then
+   do ic=PARAM_FIRST_SCALAR, num_chem
+     call da_maxmin_in_field(grid%xachem%chem_ic(its:ite,jts:jte,kts:kte, ic), max_chem(:,ic), min_chem(:,ic))
+     call da_proc_maxmin_combine(kdim, max_chem(:,ic), min_chem(:,ic))
+   end do
+   end if
+#endif
+
    um = 999999.0
    vm = 999999.0
    tm = 999999.0
@@ -123,6 +163,10 @@ subroutine da_analysis_stats  (grid, stats_unit)
    qcim = 999999.0
    qsnm = 999999.0
    qgrm = 999999.0
+
+#if (WRF_CHEM == 1)
+   chemm = 999999.0
+#endif
 
    do k = kts, kte
       if (rootproc) then
@@ -140,7 +184,18 @@ subroutine da_analysis_stats  (grid, stats_unit)
                min_u(k), min_v(k), min_t(k), min_p(k), min_q(k),            &
                min_qcw(k), min_qrn(k), min_qci(k), min_qsn(k), min_qgr(k)
          end select
+
+#if (WRF_CHEM == 1)
+         select case ( chem_cv_options )
+         case ( 1 )
+            write(unit=stats_unit2, fmt='(i4,4(f12.4,2i5),6(e12.4,2i5))') k, &
+               min_chem(k, p_chem_ic_p25), min_chem(k, p_chem_ic_sulf), &
+               min_chem(k, p_chem_ic_bc1), min_chem(k, p_chem_ic_bc2), min_chem(k, p_chem_ic_oc1), min_chem(k, p_chem_ic_oc2), &
+               min_chem(k, p_chem_ic_dust_1), min_chem(k, p_chem_ic_dust_2), min_chem(k, p_chem_ic_seas_1), min_chem(k, p_chem_ic_seas_1)
+         end select
+#endif
       end if ! rootproc
+
       um=minval(min_u(:)%value)
       vm=minval(min_v(:)%value)
       tm=minval(min_t(:)%value)
@@ -157,6 +212,12 @@ subroutine da_analysis_stats  (grid, stats_unit)
       end if
    end do
 
+#if (WRF_CHEM == 1)
+   do ic=PARAM_FIRST_SCALAR, num_chem
+      chemm(ic)=minval(min_chem(:,ic)%value)
+   end do
+#endif
+
    if (rootproc) then
       select case ( cloud_cv_options )
       case ( 0 )
@@ -170,8 +231,36 @@ subroutine da_analysis_stats  (grid, stats_unit)
             um, vm, tm, pm, qm, qcwm, qrnm, qcim, qsnm, qgrm
       end select
 
+#if (WRF_CHEM == 1)
+      select case ( chem_cv_options )
+      case ( 1 )
+          write(unit=stats_unit2, fmt='(a,4(f12.4,10x),6(e12.4,10x))') ' ALL', &
+             chemm(p_chem_ic_p25), chemm(p_chem_ic_sulf), chemm(p_chem_ic_bc1), chemm(p_chem_ic_bc2), chemm(p_chem_ic_oc1), &
+             chemm(p_chem_ic_oc2), chemm(p_chem_ic_dust_1), chemm(p_chem_ic_dust_2), chemm(p_chem_ic_seas_1), chemm(p_chem_ic_seas_2)
+      end select
+#endif
+
       write(unit=stats_unit, fmt='(/a/)') &
          ' Maximum of gridded analysis increments'
+
+#if (WRF_CHEM == 1)
+      write(unit=stats_unit2, fmt='(/a/)') ' Maximum of gridded analysis increments'
+      select case ( chem_cv_options )
+       case ( 1 )
+          write(unit=stats_unit2, fmt='(11a/)') &
+               ' Lvl         ', &
+               'p25      i    j          ', &
+               'sulf     i    j          ', &
+               'bc1      i    j          ', &
+               'bc2      i    j          ', &
+               'oc1      i    j          ', &
+               'oc2      i    j          ', &
+               'dust_1   i    j          ', &
+               'dust_2   i    j          ', &
+               'seas_1   i    j          ', &
+               'seas_2   i    j'
+      end select
+#endif
 
       select case ( cloud_cv_options )
       case ( 0 )
@@ -224,6 +313,16 @@ subroutine da_analysis_stats  (grid, stats_unit)
                max_u(k), max_v(k), max_t(k), max_p(k), max_q(k),            &
                max_qcw(k), max_qrn(k), max_qci(k), max_qsn(k), max_qgr(k)
          end select
+
+#if (WRF_CHEM == 1)
+         select case ( chem_cv_options )
+         case ( 1 )
+            write(unit=stats_unit2, fmt='(i4,4(f12.4,2i5),6(e12.4,2i5))') k, &
+               max_chem(k, p_chem_ic_p25), max_chem(k, p_chem_ic_sulf), &
+               max_chem(k, p_chem_ic_bc1), max_chem(k, p_chem_ic_bc2), max_chem(k, p_chem_ic_oc1), max_chem(k, p_chem_ic_oc2), &
+               max_chem(k, p_chem_ic_dust_1), max_chem(k, p_chem_ic_dust_2), max_chem(k, p_chem_ic_seas_1), max_chem(k, p_chem_ic_seas_1)
+         end select
+#endif
       end if
 
       um=maxval(max_u(:)%value)
@@ -242,6 +341,12 @@ subroutine da_analysis_stats  (grid, stats_unit)
       end if
    end do
 
+#if (WRF_CHEM == 1)
+   do ic=PARAM_FIRST_SCALAR, num_chem
+      chemm(ic)=maxval(max_chem(:,ic)%value)
+   end do
+#endif
+
    if (rootproc) then
       select case ( cloud_cv_options )
       case ( 0 )
@@ -255,7 +360,25 @@ subroutine da_analysis_stats  (grid, stats_unit)
            um, vm, tm, pm, qm, qcwm, qrnm, qcim, qsnm, qgrm
       end select
 
+#if (WRF_CHEM == 1)
+      select case ( chem_cv_options )
+      case ( 1 )
+          write(unit=stats_unit2, fmt='(a,4(f12.4,10x),6(e12.4,10x))') ' ALL', &
+             chemm(p_chem_ic_p25), chemm(p_chem_ic_sulf), chemm(p_chem_ic_bc1), chemm(p_chem_ic_bc2), chemm(p_chem_ic_oc1), &
+             chemm(p_chem_ic_oc2), chemm(p_chem_ic_dust_1), chemm(p_chem_ic_dust_2), chemm(p_chem_ic_seas_1), chemm(p_chem_ic_seas_2)
+      end select
+#endif
+
       write(unit=stats_unit, fmt='(/a/)') ' Mean of gridded analysis increments'
+
+#if (WRF_CHEM == 1)
+      write(unit=stats_unit2, fmt='(/a/)') ' Mean of gridded analysis increments'
+      select case ( chem_cv_options )
+       case ( 1 )
+          write(unit=stats_unit2, fmt='(a/)') &
+            ' Lvl        p25           sulf           bc1           bc2           oc1           oc2         dust_1         dust_2         seas_1         seas_2'
+      end select
+#endif
 
       select case ( cloud_cv_options )
       case ( 0 )
@@ -275,6 +398,19 @@ subroutine da_analysis_stats  (grid, stats_unit)
    tm = 0.0
    pm = 0.0
    qm = 0.0
+
+#if (WRF_CHEM == 1)
+   chemm = 0.0
+   if ( chem_cv_options >= 1 ) then
+   do ic=PARAM_FIRST_SCALAR, num_chem
+     do k = kts, kte
+        chemv(k,ic) = sum(grid%xachem%chem_ic(its:ite,jts:jte,k,ic))
+     end do
+   call da_proc_sum_real (chemv(:,ic))
+   end do
+   end if
+#endif
+
    do k = kts, kte
       uv(k) = sum(grid%xa%u(its:ite,jts:jte,k))
       vv(k) = sum(grid%xa%v(its:ite,jts:jte,k))
@@ -331,6 +467,20 @@ subroutine da_analysis_stats  (grid, stats_unit)
                qcwv(k)*rij_g, qrnv(k)*rij_g, qciv(k)*rij_g,     &
                qsnv(k)*rij_g, qgrv(k)*rij_g
          end select
+
+#if (WRF_CHEM == 1)
+         select case ( chem_cv_options )
+         case ( 1 )
+            write(unit=stats_unit2, fmt='(i4,10e14.4)') k, &
+               chemv(k, p_chem_ic_p25)*rij_g, chemv(k, p_chem_ic_sulf)*rij_g, &
+               chemv(k, p_chem_ic_bc1)*rij_g, chemv(k, p_chem_ic_bc2)*rij_g, chemv(k, p_chem_ic_oc1)*rij_g, chemv(k, p_chem_ic_oc2)*rij_g, &
+               chemv(k, p_chem_ic_dust_1)*rij_g, chemv(k, p_chem_ic_dust_2)*rij_g, chemv(k, p_chem_ic_seas_2)*rij_g, chemv(k, p_chem_ic_seas_2)*rij_g
+         end select
+         do ic=PARAM_FIRST_SCALAR, num_chem
+           chemm(ic)=chemm(ic)+chemv(k,ic)
+         end do
+#endif
+
          um=um+uv(k)
          vm=vm+vv(k)
          tm=tm+tv(k)
@@ -363,7 +513,27 @@ subroutine da_analysis_stats  (grid, stats_unit)
             qcwm*rijk_g, qrnm*rijk_g, qcim*rijk_g, qsnm*rijk_g, qgrm*rijk_g
       end select
 
+#if (WRF_CHEM == 1)
+         select case ( chem_cv_options )
+         case ( 1 )
+         write(unit=stats_unit2, fmt='(a,10e14.4)') ' ALL',   &                                                                                      
+            chemv(k, p_chem_ic_p25)*rijk_g, chemv(k, p_chem_ic_sulf)*rijk_g, &
+            chemv(k, p_chem_ic_bc1)*rijk_g, chemv(k, p_chem_ic_bc2)*rijk_g, chemv(k, p_chem_ic_oc1)*rijk_g, chemv(k, p_chem_ic_oc2)*rijk_g, &
+            chemv(k, p_chem_ic_dust_1)*rijk_g, chemv(k, p_chem_ic_dust_2)*rijk_g, chemv(k, p_chem_ic_seas_2)*rijk_g, chemv(k, p_chem_ic_seas_2)*rijk_g
+         end select
+#endif
+
+
       write(unit=stats_unit, fmt='(/a/)') ' RMSE of gridded analysis increments'
+
+#if (WRF_CHEM == 1)
+      write(unit=stats_unit2, fmt='(/a/)') ' Mean of gridded analysis increments'
+      select case ( chem_cv_options )
+       case ( 1 )
+          write(unit=stats_unit2, fmt='(a/)') &
+            ' Lvl        p25           sulf           bc1           bc2           oc1           oc2         dust_1         dust_2         seas_1         seas_2'
+      end select
+#endif
 
       select case ( cloud_cv_options )
       case ( 0 )
@@ -388,6 +558,11 @@ subroutine da_analysis_stats  (grid, stats_unit)
    tv = 0.0
    pv = 0.0
    qv = 0.0
+
+#if (WRF_CHEM == 1)
+   chemm = 0.0
+   chemv = 0.0
+#endif
 
    qcwv = 0.0
    qrnv = 0.0
@@ -416,6 +591,19 @@ subroutine da_analysis_stats  (grid, stats_unit)
    call da_proc_sum_real (tv)
    call da_proc_sum_real (pv)
    call da_proc_sum_real (qv)
+
+#if (WRF_CHEM == 1)
+   do ic=PARAM_FIRST_SCALAR, num_chem
+   do k = kts, kte
+      do j=jts,jte
+         do i=its,ite
+            chemv(k,ic) = chemv(k,ic) + grid%xachem%chem_ic(i,j,k,ic) * grid%xachem%chem_ic(i,j,k,ic)
+         end do
+      end do
+   call da_proc_sum_real (chemv(:,ic))
+   end do
+   end do
+#endif
 
    if ( cloud_cv_options >= 1 ) then
       do k = kts, kte
@@ -478,6 +666,26 @@ subroutine da_analysis_stats  (grid, stats_unit)
                sqrt(qgrv(k)*rij_g)
          end select
 
+#if (WRF_CHEM == 1)
+         select case ( chem_cv_options )
+         case ( 1 )
+            write(unit=stats_unit2, fmt='(i4,10e14.4)') k, &
+               sqrt(chemv(k, p_chem_ic_p25)*rij_g),   &
+               sqrt(chemv(k, p_chem_ic_sulf)*rij_g),   &
+               sqrt(chemv(k, p_chem_ic_bc1)*rij_g),   &
+               sqrt(chemv(k, p_chem_ic_bc2)*rij_g),   &
+               sqrt(chemv(k, p_chem_ic_oc1)*rij_g),   &
+               sqrt(chemv(k, p_chem_ic_oc2)*rij_g), &
+               sqrt(chemv(k, p_chem_ic_dust_1)*rij_g), &
+               sqrt(chemv(k, p_chem_ic_dust_2)*rij_g), &
+               sqrt(chemv(k, p_chem_ic_seas_1)*rij_g), &
+               sqrt(chemv(k, p_chem_ic_seas_2)*rij_g)
+         end select
+         do ic=PARAM_FIRST_SCALAR, num_chem
+           chemm(ic)=chemm(ic)+chemv(k,ic)
+         end do
+#endif
+
          um=um+uv(k)
          vm=vm+vv(k)
          tm=tm+tv(k)
@@ -512,6 +720,17 @@ subroutine da_analysis_stats  (grid, stats_unit)
             sqrt(qcwm*rijk_g), sqrt(qrnm*rijk_g), sqrt(qcim*rijk_g), &
             sqrt(qsnm*rijk_g), sqrt(qgrm*rijk_g)
       end select
+
+#if (WRF_CHEM == 1)
+         select case ( chem_cv_options )
+         case ( 1 )
+         write(unit=stats_unit2, fmt='(a,10e14.4)') ' ALL', &
+         sqrt(chemm(p_chem_ic_p25)*rijk_g), sqrt(chemm(p_chem_ic_sulf)*rijk_g),   &
+         sqrt(chemm(p_chem_ic_bc1)*rijk_g), sqrt(chemm(p_chem_ic_bc2)*rijk_g), sqrt(chemm(p_chem_ic_oc1)*rijk_g), sqrt(chemm(p_chem_ic_oc2)*rijk_g), &
+         sqrt(chemm(p_chem_ic_dust_1)*rijk_g), sqrt(chemm(p_chem_ic_dust_2)*rijk_g), &
+         sqrt(chemm(p_chem_ic_seas_1)*rijk_g), sqrt(chemm(p_chem_ic_seas_2)*rijk_g)
+         end select
+#endif
    end if
 
    call da_trace_exit("da_analysis_stats")

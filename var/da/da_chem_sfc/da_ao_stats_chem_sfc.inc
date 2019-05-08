@@ -1,0 +1,85 @@
+subroutine da_ao_stats_chem_sfc (stats_unit, iv, re, ob)
+
+   !-----------------------------------------------------------------------
+   ! Purpose: TBD
+   !-----------------------------------------------------------------------
+
+   implicit none
+
+   integer,        intent (in)    :: stats_unit    ! Output unit for stats.
+   type (iv_type), intent (inout) :: iv            ! iv
+   type  (y_type), intent (in)    :: re            ! A - O
+   type(y_type),   intent (in)    :: ob            ! Observation structure.
+
+   type (stats_chem_sfc_type) :: stats
+   integer                 :: nchem
+   integer                 :: n, ichem
+   real                    :: chem_inc, v_inc
+
+   if (trace_use_dull) call da_trace_entry("da_ao_stats_chem_sfc")
+
+   nchem=0
+
+   allocate(stats%maximum%chem(num_chemic_surf))
+   allocate(stats%minimum%chem(num_chemic_surf))
+   allocate(stats%average%chem(num_chemic_surf))
+   allocate(stats%rms_err%chem(num_chemic_surf))
+
+   do ichem=PARAM_FIRST_SCALAR, num_chemic_surf
+    stats%maximum%chem(ichem) = maxmin_type (0.0, 0, 0)
+    stats%minimum%chem(ichem) = maxmin_type (0.0, 0, 0)
+    stats%average%chem(ichem) = 0.0
+    stats%rms_err%chem(ichem) = 0.0
+   end do
+
+   do ichem=PARAM_FIRST_SCALAR, num_chemic_surf
+
+!   stats%maximum%chem(ichem) = maxmin_type (missing_r, 0, 0)
+!   stats%minimum%chem(ichem) = maxmin_type (missing_r, 0, 0)
+!   stats%average = residual_chem_sfc_type(0.0, 0.0, 0.0, 0.0, 0.0)
+!   stats%rms_err = stats%average
+
+   do n=1, iv%info(chemic_surf)%nlocal
+      if (iv%info(chemic_surf)%proc_domain(1,n)) then
+
+         chem_inc = re%chemic_surf(n)%chem(ichem)
+
+         call da_stats_calculate (n, 0, iv%chemic_surf(n)%chem(ichem)%qc,  & 
+            chem_inc, nchem, & 
+            stats%minimum%chem(ichem), stats%maximum%chem(ichem), &
+            stats%average%chem(ichem), stats%rms_err%chem(ichem))
+      end if 
+   end do
+
+	write(*,*) 'chkao111', iv%info(chemic_surf)%nlocal, nchem, iv%nstats(chemic_surf)
+   ! Do inter-processor communication to gather statistics.
+   call da_proc_sum_int (nchem)
+	write(*,*) 'chkao222', iv%info(chemic_surf)%nlocal, nchem, iv%nstats(chemic_surf)
+
+   iv%nstats(chemic_surf) = nchem
+	write(*,*) 'chkao333', iv%info(chemic_surf)%nlocal, nchem, iv%nstats(chemic_surf)
+
+   call da_proc_stats_combine(stats%average%chem(ichem), stats%rms_err%chem(ichem), &
+      stats%minimum%chem(ichem)%value, stats%maximum%chem(ichem)%value, &
+      stats%minimum%chem(ichem)%n, stats%maximum%chem(ichem)%n, &
+      stats%minimum%chem(ichem)%l, stats%maximum%chem(ichem)%l)
+   end do
+
+   if (rootproc) then
+      if (nchem /= 0 ) then
+         write(unit=stats_unit, fmt='(/a/)') ' Diagnostics of AO for chem'
+!         call da_print_aostats_chem_sfc(stats_unit, nchem, stats)
+         call da_print_stats_chem_sfc(stats_unit, nchem, stats)
+      end if
+   end if
+
+    deallocate(stats%maximum%chem)
+    deallocate(stats%minimum%chem)
+    deallocate(stats%average%chem)
+    deallocate(stats%rms_err%chem)  
+
+   if (trace_use_dull) call da_trace_exit("da_ao_stats_chem_sfc")
+
+end subroutine da_ao_stats_chem_sfc
+
+

@@ -19,12 +19,21 @@ subroutine da_transfer_xatowrf(grid, config_flags)
    !
    !---------------------------------------------------------------------------
 
+   USE module_state_description, ONLY :                                 &
+                     num_chem                                           & !inline gocart
+                    ,p_chem_ic_bc1, p_chem_ic_bc2, p_chem_ic_oc1, p_chem_ic_oc2                         & !inline gocart
+                    ,p_chem_ic_so2, p_chem_ic_no2, p_chem_ic_o3, p_chem_ic_co      &
+                    ,p_chem_ic_p10,  p_chem_ic_p25,  p_chem_ic_sulf
+
    implicit none
 
    type(domain), intent(inout)            :: grid
    type(grid_config_rec_type), intent(in) :: config_flags
 
    integer :: i, j, k
+#if (WRF_CHEM == 1)
+   integer :: ic
+#endif
 
    real    :: sdmd, s1md
 
@@ -704,8 +713,56 @@ subroutine da_transfer_xatowrf(grid, config_flags)
       grid%moist_btys = grid%moist_btys + model_grid%g_moist_btys
       grid%moist_btye = grid%moist_btye + model_grid%g_moist_btye
 
-   ENDIF
+#if (WRF_CHEM == 1)
+      ! Don't ever want scale < 0; alpha < 0 is no problem
+      do ic = PARAM_FIRST_SCALAR, num_scaleant
+         do j=jts,jte
+            do i=its,ite
+               do k=1, num_ant_steps
+                  grid%scaleant(i,j,k,ic) = exp(grid%xbch%alpha_ant(i,j,k,ic) + grid%xach%alpha_ant(i,j,k,ic))
+               end do
+            end do
+         end do
+      end do
+
+      do ic = PARAM_FIRST_SCALAR, num_scalebb
+         do j=jts,jte
+            do i=its,ite
+               do k=1, num_bb_steps
+                  grid%scalebb(i,j,k,ic) = exp(grid%xbch%alpha_bb(i,j,k,ic) + grid%xach%alpha_bb(i,j,k,ic))
+               end do
+            end do
+         end do
+      end do
 #endif
+
+#else !! not var4d !!
+
+#if (WRF_CHEM == 1)
+!!!      do ic = 1, num_chem-1
+      do ic = PARAM_FIRST_SCALAR, num_chem
+         do j=jts,jte
+            do i=its,ite
+               do k=kts, kte
+!!!                  grid%chem(i,j,k,ic) = grid%xbchem%chem_ic(i,j,k,ic) + grid%xachem%chem_ic(i,j,k,ic)
+!!!                  grid%chem(i,j,k,ic) = max(grid%xbchem%chem_ic(i,j,k,ic) + grid%xachem%chem_ic(i,j,k,ic), 0.0)
+			if (grid%xbchem%chem_ic(i,j,k,ic) + grid%xachem%chem_ic(i,j,k,ic).lt.0.0) then
+	                  grid%chem(i,j,k,ic) = grid%xbchem%chem_ic(i,j,k,ic)
+			else
+	                  grid%chem(i,j,k,ic) = grid%xbchem%chem_ic(i,j,k,ic) + grid%xachem%chem_ic(i,j,k,ic)
+			end if
+               end do
+            end do
+         end do
+      end do
+      write(*,*) 'xatowrf chem done'
+
+      write(*,*) 'sulf333  ', grid%xbchem%chem_ic(40,4,1,p_chem_ic_p25), grid%xachem%chem_ic(40,4,1,p_chem_ic_p25), grid%chem(40,4,1,p_chem_ic_p25)
+
+#endif
+
+#endif
+
    if (trace_use) call da_trace_exit("da_transfer_xatowrf")
 
 end subroutine da_transfer_xatowrf

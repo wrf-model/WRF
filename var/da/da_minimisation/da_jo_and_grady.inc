@@ -1,4 +1,8 @@
-subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
+subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y &
+#if (WRF_CHEM == 1)
+                           , joc &
+#endif
+)
 
    !-----------------------------------------------------------------------
    ! Purpose: TBD
@@ -9,6 +13,9 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
    type (iv_type), intent(in)   :: iv          ! Innovation vector (O-B).
    type (y_type),  intent(in)   :: re          ! Residual vector (O-A).
    real,           intent(out)  :: jot         ! Obs cost function.
+#if (WRF_CHEM == 1)
+   real,           intent(out)  :: joc         ! Obs cost function for cross validation
+#endif
    type (jo_type), intent(out)  :: jo          ! Obs cost function.
    type (y_type),  intent(out)  :: jo_grad_y   ! Grad_y(Jo)
 
@@ -20,6 +27,10 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
               jo_pseudo, jo_qscat, jo_buoy, &
               jo_profiler, jo_radar, jo_gpsref, jo_gpseph, jo_bogus, jo_rain, &
               jo_radiance, jo_airsr, jo_mtgirs, jo_tamdar, jo_tamdar_sfc
+#if (WRF_CHEM == 1)
+   real    :: jo_chem_surf, jo_chem_acft, jo_chemic_surf
+   real    :: jo_chem_surf_cross, jo_chem_acft_cross
+#endif
    integer :: i,k
 
    if (trace_use) call da_trace_entry("da_jo_and_grady")
@@ -558,17 +569,80 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
       jo_airsr = 0.0
    end if
 
+#if (WRF_CHEM == 1)
+   if ( iv%info(chem_surf)%nlocal > 0 ) then
+       call da_jo_and_grady_chem_surf(iv, re, jo, jo_grad_y)
+       jo_chem_surf = jo%chem_surf
+       jo_chem_surf_cross = jo%chem_surf_cross
+
+      if (print_detail_grad) then
+          write(unit=stdout, fmt='(a, e24.12)') &
+               ' jo_chem_surf          ', jo_chem_surf, &
+               '   jo%chem_surf      ', jo%chem_surf, &
+               ' jo_chem_surf_cross          ', jo_chem_surf_cross, &
+               '   jo%chem_surf_cross      ', jo%chem_surf_cross
+
+      end if
+   else
+      jo % chem_surf = 0.0
+      jo_chem_surf = 0.0
+   end if
+
+   if ( iv%info(chem_acft)%nlocal > 0 ) then
+       call da_jo_and_grady_chem_acft(iv, re, jo, jo_grad_y)
+       jo_chem_acft = jo%chem_acft
+       jo_chem_acft_cross = jo%chem_acft_cross
+
+      if (print_detail_grad) then
+          write(unit=stdout, fmt='(a, e24.12)') &
+               ' jo_chem_acft          ', jo_chem_acft, &
+               '   jo%chem_acft      ', jo%chem_acft, &
+               ' jo_chem_acft_cross          ', jo_chem_acft_cross, &
+               '   jo%chem_acft_cross      ', jo%chem_acft_cross
+
+      end if
+   else
+      jo % chem_acft = 0.0
+      jo_chem_acft = 0.0
+   end if
+
+   jo % chemic_surf = 0.0
+   jo_chemic_surf = 0.0
+
+       write(*,*) 'chkaaa'
+   if ( iv%info(chemic_surf)%nlocal > 0 ) then
+       call da_jo_and_grady_chem_sfc(iv, re, jo, jo_grad_y)
+       jo_chemic_surf = jo%chemic_surf
+
+       write(*,*) 'chkbbb'
+      if (print_detail_grad) then
+          write(unit=stdout, fmt='(a, e24.12)') &
+               ' jo_chemic_surf          ', jo_chemic_surf, &
+               '   jo%chemic_surf      ', jo%chemic_surf
+
+      end if
+   else
+      jo % chemic_surf = 0.0
+      jo_chemic_surf = 0.0
+   end if
+#endif
+
+       write(*,*) 'chkccc'
    !-------------------------------------------------------------------------
    ! [2.0] Jo = 1/2 * (yo-y)**2/ob_err_variance:
    !-------------------------------------------------------------------------
-
+!!!   jo%total = 0.0
    jo%total = jo_sound + jo_sonde_sfc+jo_geoamv + jo_polaramv + jo_synop + jo_satem + &
       jo_pilot + jo_airep + jo_metar + jo_ships + &
       jo_gpspw + jo_ssmi_tb + jo_ssmi_rv + jo_ssmt1 + jo_ssmt2 + &
       jo_pseudo + jo_qscat + jo_profiler + jo_buoy + &
       jo_radar + jo_gpsref + jo_gpseph + jo_bogus + jo_radiance + jo_airsr + jo_mtgirs + &
+#if (WRF_CHEM == 1)
+      jo_chem_surf + jo_chem_acft + jo_chemic_surf + &
+#endif
       jo_tamdar + jo_tamdar_sfc + jo_rain 
 
+       write(*,*) 'chkddd', jo%total, jo_chem_surf, jo_chem_acft, jo_chemic_surf
    jot = jo%total
 
    if (print_detail_grad) then
@@ -604,10 +678,25 @@ subroutine da_jo_and_grady(iv, re, jot, jo, jo_grad_y)
          '   jo_mtgirs       ', jo_mtgirs, &
          '   jo_tamdar       ', jo_tamdar, &
          '   jo_tamdar_sfc   ', jo_tamdar_sfc, &
+#if (WRF_CHEM == 1)
+         '   jo_rain         ', jo_rain, &
+         '   jo_chem_surf    ', jo_chem_surf, &
+         '   jo_chem_acft    ', jo_chem_acft, &
+         '   jo_chemic_surf  ', jo_chemic_surf
+#else
          '   jo_rain         ', jo_rain
+#endif
 
    end if
 
+       write(*,*) 'chkeee'
+#if (WRF_CHEM == 1)
+    jo%crossval = jo_chem_surf_cross + jo_chem_acft_cross
+
+    joc = jo%crossval
+#endif
+
+       write(*,*) 'chkfff', jo%crossval
    if (trace_use) call da_trace_exit("da_jo_and_grady")
 
 end subroutine da_jo_and_grady

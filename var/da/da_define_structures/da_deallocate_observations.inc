@@ -224,6 +224,26 @@ subroutine da_deallocate_observations (iv)
       deallocate (iv%airsr)
    end if
 
+#if (WRF_CHEM == 1)
+   if (iv%info(chem_surf)%nlocal > 0) then
+      do n = 1, iv%info(chem_surf)%nlocal
+         deallocate (iv%chem_surf (n) % chem)
+         deallocate (iv%chem_surf (n) % weight)
+      end do
+
+      deallocate (iv%chem_surf)
+   end if
+
+  if (iv%info(chem_acft)%nlocal > 0) then
+      do n = 1, iv%info(chem_acft)%nlocal
+         deallocate (iv%chem_acft (n) % chem)
+         deallocate (iv%chem_acft (n) % weight)
+      end do
+
+      deallocate (iv%chem_acft)
+   end if
+#endif
+
    do n = 1, num_ob_indexes
       if (n .ne. radiance .and. iv%info(n)%nlocal > 0) then
          deallocate (iv%info(n)%name)

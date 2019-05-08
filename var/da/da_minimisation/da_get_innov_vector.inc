@@ -81,6 +81,7 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       call domain_clockprint(150, grid, 'get CurrTime from clock,')
    endif
 
+   if (checkpoint_interval .eq. 0 ) then
    do n= num_fgat_time , 1, -1
       iv%time = n
       iv%info(:)%n1 = iv%info(:)%plocal(iv%time-1) + 1
@@ -186,6 +187,20 @@ subroutine da_get_innov_vector (it, num_qcstat_conv, ob, iv, grid, config_flags)
       call domain_clockprint(150, grid, 'DEBUG Adjoint Forcing:  get CurrTime from clock,')
 
    end do
+   else
+      call wrf_message ("WARNING: WRFDA offline obs. operators are turned off when checkpoint_interval > 0")
+   endif
+
+#if (WRF_CHEM == 1)
+   if (iv%info(chem_surf)%nlocal      > 0) &
+         call da_get_innov_vector_chem_surf (it,num_qcstat_conv, ob, iv)
+
+   if (iv%info(chem_acft)%nlocal      > 0) &
+         call da_get_innov_vector_chem_acft (it,num_qcstat_conv, ob, iv)
+
+   if (iv%info(chemic_surf)%nlocal      > 0) &
+         call da_get_innov_vector_chem_sfc (it,num_qcstat_conv, grid, ob, iv)
+#endif
 
 #if defined(RTTOV) || defined(CRTM)
    if (use_rad) then

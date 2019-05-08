@@ -27,6 +27,8 @@ subroutine da_check_cvtovv_adjoint(grid, cv_size, xbx, be, cv, vv)
    ! [1.0] Initialise:
    !-------------------------------------------------------------------------
 
+   cv2 = 0.0
+
    if (trace_use) call da_trace_entry("da_check_cvtovv_adjoint")
 
    if (cv_options == 3 ) then
@@ -79,6 +81,7 @@ subroutine da_check_cvtovv_adjoint(grid, cv_size, xbx, be, cv, vv)
    ! [4.0] Calculate RHS of adjoint test equation:
    !----------------------------------------------------------------------
 
+
    if (global) then
       call da_transform_vtovv_global_adj(cv_size, xbx, be, cv2, vv)
    else
@@ -88,6 +91,7 @@ subroutine da_check_cvtovv_adjoint(grid, cv_size, xbx, be, cv, vv)
    cv_size_tmp = cv_size - be%cv%size_jp - be%cv%size_js - be%cv%size_jl
    adj_par_rhs = sum(cv(1:cv_size_tmp) * cv2(1:cv_size_tmp))
 
+	write(*,*) 'chkadj size', cv_size_tmp
    !----------------------------------------------------------------------
    ! [5.0] Print output:
    !----------------------------------------------------------------------

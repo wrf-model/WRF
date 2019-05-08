@@ -1,0 +1,9 @@
+#!/bin/tcsh
+#PBS -N COMPILE.EXE
+#PBS -A NMMM0035
+#PBS -l walltime=00:10:00
+#PBS -q regular
+#PBS -j oe
+#PBS -l select=1:mpiprocs=10:ncpus=10
+
+./compile all_wrfvar >& compile.log

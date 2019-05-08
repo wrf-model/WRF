@@ -1588,6 +1588,7 @@ CONTAINS
       !  We search all of the possible grids.  It is required to find a domain
       !  otherwise it is a fatal error.  
 
+
       find_grid : DO WHILE ( ASSOCIATED(grid) ) 
          IF ( grid%id == id ) THEN
             found = .TRUE.
@@ -1666,6 +1667,7 @@ CONTAINS
         DEALLOCATE( grid%ts_filename )
       ENDIF 
 #if (EM_CORE == 1)
+
       IF ( ASSOCIATED( grid%track_time_in ) ) THEN
         DEALLOCATE( grid%track_time_in )
       ENDIF
@@ -1709,6 +1711,8 @@ CONTAINS
       TYPE(fieldlist), POINTER :: p, q
       p => grid%head_statevars
       DO WHILE ( ASSOCIATED( p ) )
+        if (p%varname.eq."chem_ic")  exit !!! add !!!
+        if (p%varname.eq."alpha_ant")  exit !!! add !!!
          q => p ; p => p%next ; DEALLOCATE(q)
       ENDDO
       NULLIFY(grid%head_statevars) ; NULLIFY( grid%tail_statevars)

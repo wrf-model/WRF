@@ -12,11 +12,52 @@ subroutine da_deallocate_background_errors (be)
    implicit none
 
    type (be_type), intent(inout)        :: be     ! Background error structure.
+#if (WRF_CHEM == 1)
+   integer :: ic
+#endif
    
    if (trace_use) call da_trace_entry("da_deallocate_background_errors")
 
-   if (cv_options /= 3) then
+#if (WRF_CHEM == 1)
+   if (cv_options == 10) then
+      !! Anthropogenic
+      do ic = PARAM_FIRST_SCALAR, num_scaleant
+         if ( be % alpha_ant_chem(ic) % mz > 0 ) then
+            deallocate( be % alpha_ant_chem(ic) % val )
+            deallocate( be % alpha_ant_chem(ic) % evec )
+            deallocate( be % alpha_ant_chem(ic) % rf_alpha )
+         end if
+      end do
+      deallocate ( be % alpha_ant_chem )
 
+      !! Biomass Burning
+      do ic = PARAM_FIRST_SCALAR, num_scalebb
+         if ( be % alpha_bb_chem(ic) % mz > 0 ) then
+            deallocate( be % alpha_bb_chem(ic) % val )
+            deallocate( be % alpha_bb_chem(ic) % evec )
+            deallocate( be % alpha_bb_chem(ic) % rf_alpha )
+         end if
+      end do
+      deallocate ( be % alpha_bb_chem )
+
+   elseif (cv_options /= 3) then
+#else
+   if (cv_options /= 3) then
+#endif
+
+#if (WRF_CHEM == 1)
+     if (chem_cv_options ==1 ) then
+       !! Chem SFC
+       do ic = PARAM_FIRST_SCALAR, num_chem
+          if ( be % v12(ic-1) % mz > 0 ) then
+             deallocate( be % v12(ic-1) % val )
+             deallocate( be % v12(ic-1) % evec )
+             deallocate( be % v12(ic-1) % rf_alpha )
+          end if
+      end do                                                                                                                               
+      deallocate ( be % v12 )
+     end if
+#endif
       ! Deallocate gridpoint errors:
 
       if (be % v1 % mz > 0) deallocate (be % v1 % val)

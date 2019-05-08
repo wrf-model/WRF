@@ -169,13 +169,21 @@ program da_update_bc
    end if
 
    ! 3D need update
-   num3d=5
+   num3d=13
    var3d(1)='U'
    var3d(2)='V'
    var3d(3)='T'
    var3d(4)='PH'
    var3d(5)='QVAPOR'
 !  var3d(6)='W'
+   var3d(6)='BC1'
+   var3d(7)='BC2'
+   var3d(8)='OC1'
+   var3d(9)='OC2'
+   var3d(10)='DUST_1'
+   var3d(11)='DUST_2'
+   var3d(12)='SEAS_1'
+   var3d(13)='SEAS_2'
 
    ! 2D need update
    num2d=23
@@ -773,7 +781,8 @@ program da_update_bc
                  'After  couple Sample ', trim(var3d(n)), &
                  '=', full3d(dims(1)/2,dims(2)/2,dims(3)/2)
          end if
-      case ('T', 'PH') ;
+
+      case ('T', 'PH', 'BC1','BC2','OC1','OC2','DUST_1','DUST_2','SEAS_1','SEAS_2') ;
          var_pref=trim(var3d(n))
  
          call da_get_var_3d_real_cdf( da_file, trim(var3d(n)), &

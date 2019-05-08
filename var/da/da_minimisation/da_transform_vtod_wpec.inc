@@ -25,7 +25,7 @@ subroutine da_transform_vtod_wpec(cv_size, be, ep, cv, vp, vv, xbx, grid)
          call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
       end if
 
-      call da_transform_xtoxa(grid, .true.)
+!!!      call da_transform_xtoxa(grid, .true.)
 
       call da_wpec_constraint_lin(grid, xbx)
 

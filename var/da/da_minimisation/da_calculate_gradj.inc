@@ -79,33 +79,83 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    !-------------------------------------------------------------------------
    ! [1.0] calculate grad_v (jo):
    !-------------------------------------------------------------------------
+
    call da_allocate_y(iv, jo_grad_y)
-   
+#if (WRF_CHEM == 1)
+   call da_allocate_y_chem(iv, jo_grad_y)
+   call da_allocate_y_chem_sfc(iv, jo_grad_y)
+#endif
+
    if (present(re)) then
       call da_calculate_grady(iv, re, jo_grad_y)   
       if ( iter > 0 .and. test_gradient ) jcdf_flag = .true.
 #ifdef VAR4D
       call da_transform_vtoy_adj(cv_size, be, grid%ep, grad_jo, iv, &
-               grid%vp, grid%vv, xbx, jo_grad_y, grid, config_flags, jcdf_flag, grid%vp6, grid%vv6)
+               grid%vp, grid%vv, xbx, jo_grad_y, grid, config_flags, jcdf_flag, grid%vp6, grid%vv6 &
+#if (WRF_CHEM == 1)
+              , grid%vch &
+#endif
+              )
 #else
+      write(*,*) 'grad jo111',sum(grad_jo(:))
       call da_transform_vtoy_adj(cv_size, be, grid%ep, grad_jo, iv, &
-               grid%vp, grid%vv, xbx, jo_grad_y, grid, config_flags, jcdf_flag)
+               grid%vp, grid%vv, xbx, jo_grad_y, grid, config_flags, jcdf_flag &
+!!When vch includes initial conditions, need to add vch=grid%vch at end of this call
+#if (WRF_CHEM == 1)
+!!!              , vch=grid%vch &
+              , vchem=grid%vchem &
+#endif
+              )
+!!!      if ( iv%info(chemic_surf)%nlocal == 0 ) grad_jo = 0.0
+      write(*,*) 'grad jo222',sum(grad_jo(:))
+	write(*,*)  'vtoy_adj111 done'
+
+
 #endif
    else
 #ifdef VAR4D
       call da_transform_vtoy(cv_size, be, grid%ep, cv, iv, grid%vp, &
-              grid%vv, xbx, y, grid, config_flags, grid%vp6, grid%vv6)
+              grid%vv, xbx, y, grid, config_flags, grid%vp6, grid%vv6 &
+#if (WRF_CHEM == 1)
+              , grid%vch &
+#endif
+              )
+
 #else
       call da_transform_vtoy(cv_size, be, grid%ep, cv, iv, grid%vp, &
-              grid%vv, xbx, y, grid, config_flags)
+              grid%vv, xbx, y, grid, config_flags &
+!!When vch includes initial conditions, need to add vch=grid%vch at end of this call
+#if (WRF_CHEM == 1)
+!!!              , vch=grid%vch &
+              , vchem=grid%vchem &
+#endif
+              )
+	write(*,*) 'vtoy chkkk'
+
 #endif
       call da_calculate_grady(iv, y, jo_grad_y)   
 #ifdef VAR4D
       call da_transform_vtoy_adj(cv_size, be, grid%ep, grad_jo, iv, &
-              grid%vp, grid%vv, xbx, jo_grad_y, grid, config_flags, .true., grid%vp6, grid%vv6)
+              grid%vp, grid%vv, xbx, jo_grad_y, grid, config_flags, .true., grid%vp6, grid%vv6 &
+#if (WRF_CHEM == 1)
+              , grid%vch &
+#endif
+              )
+
 #else
+      write(*,*) 'grad jo333',sum(grad_jo(:))
       call da_transform_vtoy_adj(cv_size, be, grid%ep, grad_jo, iv, &
-              grid%vp, grid%vv, xbx, jo_grad_y, grid, config_flags, .true.)
+              grid%vp, grid%vv, xbx, jo_grad_y, grid, config_flags, .true. &
+!!When vch includes initial conditions, need to add vch=grid%vch at end of this call
+#if (WRF_CHEM == 1)
+!!!                 , vch=grid%vch &
+                 , vchem=grid%vchem &
+#endif
+              )
+!!!      if ( iv%info(chemic_surf)%nlocal == 0 ) grad_jo = 0.0
+      write(*,*) 'grad jo444',sum(grad_jo(:))
+	write(*,*)  'vtoy_adj222 done'
+
 #endif
       grad_jo = - grad_jo    !! Compensate for sign in calculation of grad_v (Jo)
    end if
@@ -202,12 +252,12 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
          call da_transform_vpatox(grid, be, grid%ep, grid%vp)
          call da_add_xa(grid%xa, grid%xa_ens) !grid%xa = grid%xa + xa_ens
       end if
-      call da_transform_xtoxa(grid)
+!!!      call da_transform_xtoxa(grid)
       call da_divergence_constraint(grid%xb, grid%xa%u, grid%xa%v, inc_div)
       inc_div = inc_div/divc_factor
       call da_zero_x(grid%xa)
       call da_divergence_constraint_adj(grid, grid%xa%u, grid%xa%v, inc_div)
-      call da_transform_xtoxa_adj(grid)
+!!!      call da_transform_xtoxa_adj(grid)
       if (be % ne > 0 .and. alphacv_method == alphacv_method_xa) then
          call da_transform_vpatox_adj(grid, be, grid%ep, grid%vp)
       end if
@@ -231,6 +281,7 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
    end if
 
    if ( present(re) ) then
+#if (WRF_CHEM != 1)
       gnorm_j  = sqrt(da_dot_cv(cv_size, grad,    grad,    grid, be%cv_mz, be%ncv_mz, jp_start, jp_end))
       gnorm_jo = sqrt(da_dot_cv(cv_size, grad_jo, grad_jo, grid, be%cv_mz, be%ncv_mz))
       gnorm_jb = sqrt(da_dot_cv(cv_size, grad_jb, grad_jb, grid, be%cv_mz, be%ncv_mz))
@@ -240,6 +291,27 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
       gnorm_js = sqrt(da_dot_cv(cv_size, grad_js, grad_js, grid, be%cv_mz, be%ncv_mz))
       gnorm_jl = sqrt(da_dot_cv(cv_size, grad_jl, grad_jl, grid, be%cv_mz, be%ncv_mz))
       gnorm_jm = sqrt(da_dot_cv(cv_size, grad_jm, grad_jm, grid, be%cv_mz, be%ncv_mz))
+#else
+#ifdef VAR4D
+      gnorm_j  = sqrt(da_dot_cv(cv_size, grad,    grad,    grid, be%cv_mz, be%ncv_mz,be%cv_mz_chem, jp_start, jp_end))
+      gnorm_jo = sqrt(da_dot_cv(cv_size, grad_jo, grad_jo, grid, be%cv_mz, be%ncv_mz,be%cv_mz_chem))
+      gnorm_jb = sqrt(da_dot_cv(cv_size, grad_jb, grad_jb, grid, be%cv_mz, be%ncv_mz,be%cv_mz_chem))
+      gnorm_je = sqrt(da_dot_cv(cv_size, grad_je, grad_je, grid, be%cv_mz, be%ncv_mz,be%cv_mz_chem))
+      gnorm_jd = sqrt(da_dot_cv(cv_size, grad_jd, grad_jd, grid, be%cv_mz, be%ncv_mz,be%cv_mz_chem))
+      gnorm_jp = sqrt(da_dot_cv(cv_size, grad_jp, grad_jp, grid, be%cv_mz, be%ncv_mz,be%cv_mz_chem, jp_start, jp_end))
+      gnorm_js = sqrt(da_dot_cv(cv_size, grad_js, grad_js, grid, be%cv_mz, be%ncv_mz,be%cv_mz_chem))
+      gnorm_jl = sqrt(da_dot_cv(cv_size, grad_jl, grad_jl, grid, be%cv_mz, be%ncv_mz,be%cv_mz_chem))
+#else
+      gnorm_j  = sqrt(da_dot_cv(cv_size, grad,    grad,    grid, be%cv_mz, be%ncv_mz,be%cv_mz_chemic, jp_start, jp_end))
+      gnorm_jo = sqrt(da_dot_cv(cv_size, grad_jo, grad_jo, grid, be%cv_mz, be%ncv_mz,be%cv_mz_chemic))
+      gnorm_jb = sqrt(da_dot_cv(cv_size, grad_jb, grad_jb, grid, be%cv_mz, be%ncv_mz,be%cv_mz_chemic))
+      gnorm_je = sqrt(da_dot_cv(cv_size, grad_je, grad_je, grid, be%cv_mz, be%ncv_mz,be%cv_mz_chemic))
+      gnorm_jd = sqrt(da_dot_cv(cv_size, grad_jd, grad_jd, grid, be%cv_mz, be%ncv_mz,be%cv_mz_chemic))
+      gnorm_jp = sqrt(da_dot_cv(cv_size, grad_jp, grad_jp, grid, be%cv_mz, be%ncv_mz,be%cv_mz_chemic, jp_start, jp_end))
+      gnorm_js = sqrt(da_dot_cv(cv_size, grad_js, grad_js, grid, be%cv_mz, be%ncv_mz,be%cv_mz_chemic))
+      gnorm_jl = sqrt(da_dot_cv(cv_size, grad_jl, grad_jl, grid, be%cv_mz, be%ncv_mz,be%cv_mz_chemic))
+#endif
+#endif
 
       if (rootproc) &
          write(grad_unit,fmt='(2x,i2,1x,e10.3,2x,i4,9(1x,f10.3))') &

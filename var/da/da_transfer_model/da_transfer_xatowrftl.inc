@@ -18,6 +18,9 @@ subroutine da_transfer_xatowrftl(grid, config_flags, filnam, timestr)
    integer :: is, ie, js, je, ks, ke
    real    :: sdmd, s1md
    real    :: rho_cgrid
+#if (WRF_CHEM == 1)
+   integer :: ic
+#endif
 
 #ifdef A2C
    real, allocatable, dimension(:,:,:) :: g_press
@@ -246,6 +249,34 @@ subroutine da_transfer_xatowrftl(grid, config_flags, filnam, timestr)
 #endif
 
 #endif
+
+#if (WRF_CHEM == 1)
+   !---------------------------------------------------------------------------
+   ! [5.5] compute chem increments
+   !---------------------------------------------------------------------------
+   do ic = PARAM_FIRST_SCALAR, num_scaleant
+      do k = 1, num_ant_steps
+         do j=js,je
+            do i=is,ie
+               grid%g_scaleant(i,j,k,ic) = exp ( grid%xbch%alpha_ant(i,j,k,ic) ) * &
+                                           grid%xach%alpha_ant(i,j,k,ic)
+            end do
+         end do
+      end do
+   end do
+
+   do ic = PARAM_FIRST_SCALAR, num_scalebb
+      do k = 1, num_bb_steps
+         do j=js,je
+            do i=is,ie
+               grid%g_scalebb(i,j,k,ic) = exp ( grid%xbch%alpha_bb(i,j,k,ic) ) * &
+                                          grid%xach%alpha_bb(i,j,k,ic)
+            end do
+         end do
+      end do
+   end do
+#endif
+
    !---------------------------------------------------------------------------
    ! [6.0] save OTHERinCREMENT 
    !---------------------------------------------------------------------------
@@ -307,6 +338,18 @@ subroutine da_transfer_xatowrftl(grid, config_flags, filnam, timestr)
       call kj_swap (grid%g_moist(:,:,:,i), model_grid%g_moist(:,:,:,i), &
                     grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, grid%xp%kms, grid%xp%kme)
    enddo
+
+#if (WRF_CHEM == 1)
+   do ic = PARAM_FIRST_SCALAR, num_scaleant
+      call kj_swap (grid%g_scaleant(:,:,:,ic), model_grid%g_scaleant(:,:,:,ic), &
+                    grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, 1, num_ant_steps)
+   end do
+
+   do ic = PARAM_FIRST_SCALAR, num_scalebb
+      call kj_swap (grid%g_scalebb(:,:,:,ic), model_grid%g_scalebb(:,:,:,ic), &
+                    grid%xp%ims, grid%xp%ime, grid%xp%jms, grid%xp%jme, 1, num_bb_steps)
+   end do
+#endif
 
    if ( .not. trajectory_io .or. var4d_detail_out ) &
       call  med_hist_out ( grid , AUXHIST8_ALARM , config_flags )

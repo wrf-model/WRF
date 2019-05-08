@@ -8,7 +8,11 @@ module da_define_structures
    !  Note: Please acknowledge author/institute in work that uses this code.
    !---------------------------------------------------------------------------
 
+#if (WRF_CHEM != 1)
    use module_domain, only: vp_type, x_type
+#else
+   use module_domain, only: vp_type, x_type, xch_type, xchem_type
+#endif
 
    use da_control, only : anal_type_randomcv, stdout, max_fgat_time, &
       vert_corr, global, vert_evalue,print_detail_be, maxsensor, &
@@ -18,9 +22,17 @@ module da_define_structures
       sound, synop, pilot, satem, geoamv, polaramv, airep, gpspw, gpsref, gpseph, &
       metar, ships, ssmi_rv, ssmi_tb, ssmt1, ssmt2, qscat, profiler, buoy, bogus, &
       mtgirs, tamdar, tamdar_sfc, pseudo, radar, radiance, airsr, sonde_sfc, rain, &
+#if (WRF_CHEM == 1)
+      num_platform, chem_surf, chem_acft, chemic_surf, chem_cv_options, &
+#endif
       trace_use_dull,comm, num_pseudo
    use da_control, only : cloud_cv_options, use_cv_w
    use da_control, only : pseudo_uvtpq
+
+#if (WRF_CHEM == 1)
+   use module_state_description, only : num_chem_surf, num_chem_acft, &
+      num_scaleant, num_scalebb, PARAM_FIRST_SCALAR, num_chem, num_chemic_surf
+#endif
 
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_tools_serial, only : da_array_print
@@ -297,6 +309,54 @@ module da_define_structures
       type (model_loc_type)                   :: loc
       type (rain_each_type)                   :: each(1)
    end type rain_single_level_type
+
+#if (WRF_CHEM == 1)
+
+   type chem_surf_type
+      type (field_type), pointer :: chem(:)       ! Concentration measurement for multiple species
+      real             , pointer :: weight(:)     ! 4D-Var Cost Function weight
+      real :: ti
+      real :: tf
+! Still need I/O, observation operators, CVs, etc. for the following:
+!      type (field_type)       :: oc        ! Organic Carbon (ug/m^3 @ 1013hPa, 273K)
+!      type (field_type)       :: co        ! Carbon Monoxide 
+!      type (field_type)       :: co2       ! Carbon Dioxide
+!      type (field_type)       :: ch4       ! Methane
+   end type chem_surf_type
+
+   type chem_acft_type
+      type (field_type), pointer :: chem(:,:)       ! Concentration measurement for multiple species and platforms
+      real             , pointer :: weight(:,:)     ! 4D-Var Cost Function weight
+      real             , pointer :: mpo(:,:)        ! Model plus Obs
+      real :: ti
+      real :: tf
+
+!      real                    :: i         ! model x index
+!      real                    :: j         ! model y index
+!      real                    :: pressure  ! pressure in hPa
+!      type (field_type)       :: bc        ! Black Carbon (ug/m^3 @ 1013hPa, 273K)
+! Still need I/O, observation operators, CVs, etc. for the following:
+!      type (field_type)       :: oc        ! Organic Carbon (ug/m^3 @ 1013hPa, 273K)
+!      type (field_type)       :: co        ! Carbon Monoxide 
+!      type (field_type)       :: co2       ! Carbon Dioxide
+!      type (field_type)       :: ch4       ! Methane
+   end type chem_acft_type
+
+   type chemic_surf_type
+      real                    :: height         ! Height in m
+      integer                 :: height_qc      ! Height QC
+      real                    :: zk             ! k-coordinates
+      type (field_type), pointer    :: chem(:)       ! Concentration measurement for multiple species and platforms
+   end type chemic_surf_type
+
+   type singl_level_type
+      type (info_type)                        :: info
+      type (model_loc_type)                   :: loc
+!!!      type (chemic_surf_type)                 :: each
+      type (field_type), pointer    :: chem(:)
+   end type singl_level_type
+
+#endif
 
    ! [3.2] Innovation vector structure:
 
@@ -632,6 +692,11 @@ module da_define_structures
       real    :: bogus_ef_u, bogus_ef_v, bogus_ef_t, bogus_ef_p, bogus_ef_q, bogus_ef_slp
       real    :: airsr_ef_t,  airsr_ef_q
       real    :: rain_ef_r
+#if (WRF_CHEM == 1)
+      real    :: chem_surf_ef
+      real    :: chem_acft_ef
+      real    :: chemic_surf_ef
+#endif
 
       type (infa_type) :: info(num_ob_indexes)
 
@@ -664,6 +729,11 @@ module da_define_structures
       type (tamdar_type)   , pointer :: tamdar(:)
       type (synop_type)    , pointer :: tamdar_sfc(:)
       type (rain_type)     , pointer :: rain(:)
+#if (WRF_CHEM == 1)
+      type (chem_surf_type), pointer :: chem_surf(:)
+      type (chem_acft_type), pointer :: chem_acft(:)
+      type (chemic_surf_type), pointer :: chemic_surf(:)
+#endif
 
       real :: missing
       real :: ptop
@@ -702,6 +772,11 @@ module da_define_structures
       type (bad_info_type)       :: slp
       type (bad_info_type)       :: rad
       type (bad_info_type)       :: rain
+#if (WRF_CHEM == 1)
+      type (bad_info_type)       :: chem_surf
+      type (bad_info_type)       :: chem_acft
+      type (bad_info_type)       :: chemic_surf
+#endif
    end type bad_data_type
 
    type count_obs_number_type
@@ -854,6 +929,26 @@ module da_define_structures
       real :: rain
    end type residual_rain_type 
 
+#if (WRF_CHEM == 1)
+   type residual_chem_surf_type
+      real, pointer :: chem(:)       ! Concentration measurement for multiple species
+!      real :: bc
+!      real :: oc
+!      real :: co
+!      real :: co2
+!      real :: ch4
+   end type residual_chem_surf_type
+
+   type residual_chem_acft_type
+      real, pointer :: chem(:,:)     ! Concentration measurement for multiple species, platforms
+!      real :: bc
+!      real :: oc
+!      real :: co
+!      real :: co2
+!      real :: ch4
+   end type residual_chem_acft_type
+#endif
+
    type y_type
       integer :: nlocal(num_ob_indexes)
       integer :: ntotal(num_ob_indexes)
@@ -889,6 +984,11 @@ module da_define_structures
       type (residual_radar_type),    pointer :: radar(:)
       type (residual_instid_type),   pointer :: instid(:)
       type (residual_rain_type),     pointer :: rain(:)
+#if (WRF_CHEM == 1)
+      type (residual_chem_surf_type),pointer :: chem_surf(:)
+      type (residual_chem_acft_type),pointer :: chem_acft(:)
+      type (residual_chem_surf_type),pointer :: chemic_surf(:)
+#endif
    end type y_type
 
    !--------------------------------------------------------------------------
@@ -940,6 +1040,14 @@ module da_define_structures
       real                :: bogus_u, bogus_v, bogus_t, bogus_q, bogus_slp
       real                :: airsr_t, airsr_q
       real                :: rain_r
+#if (WRF_CHEM == 1)
+      real                :: chem_surf
+      real                :: chem_acft
+      real                :: chem_surf_cross
+      real                :: chem_acft_cross
+      real                :: crossval
+      real                :: chemic_surf
+#endif
       type(jo_type_rad), pointer       :: rad(:)
    end type jo_type
 
@@ -995,6 +1103,13 @@ module da_define_structures
       integer :: size3l      ! Size of CV array of 3rd variable lbc error.
       integer :: size4l      ! Size of CV array of 4th variable lbc error.
       integer :: size5l      ! Size of CV array of 5th variable lbc error.
+#if (WRF_CHEM == 1)
+!      integer,allocatable :: sizechem (:) ! Size of CV array of chem variable error.
+      integer,allocatable :: sizechemic (:) ! Size of CV array of chem variable error.
+      integer,allocatable :: sizeant (:) ! Size of CV array of anthro emiss variable error.
+      integer,allocatable :: sizebb (:) ! Size of CV array of bioburn emiss variable error.
+!      integer,allocatable :: sizebio (:) ! Size of CV array of biogenic emiss variable error.
+#endif
    end type cv_type
 
    type qhat_type
@@ -1039,6 +1154,23 @@ module da_define_structures
 
       type (be_subtype) :: alpha
       real*8, pointer     :: pb_vert_reg(:,:,:)
+#if (WRF_CHEM == 1)
+      integer           :: ncv_mz_chem      ! number of variables for cv_mz
+      integer, pointer  :: cv_mz_chem(:)    ! array to hold mz of each cv
+
+      type (be_subtype),allocatable :: v12(:)     ! Chem initial condition scaling factor CVs
+      integer           :: ncv_mz_chemic      ! number of variables for cv_mz
+      integer, pointer  :: cv_mz_chemic(:)    ! array to hold mz of each cv
+
+      type (be_subtype),allocatable :: alpha_ant_chem(:) !Anthro emission scaling factor CVs
+      type (be_subtype),allocatable :: alpha_bb_chem(:)  !Biomass burning emission scaling factor CVs
+!      type (be_subtype),allocatable :: alpha_bio_chem(:) !Biogenic emission scaling factor CVs
+
+!      type (be_subtype),allocatable :: chem(:)     !Initial condition CVs
+!      type (be_subtype),allocatable :: ant_chem(:) !Anthro emission CVs
+!      type (be_subtype),allocatable :: bb_chem(:)  !Biomass burning emission CVs
+!      type (be_subtype),allocatable :: bio_chem(:) !Biogenic emission CVs
+#endif
 
       ! Control variable space errors:
       type (cv_type)    :: cv
@@ -1095,15 +1227,29 @@ contains
 #include "da_allocate_obs_info.inc"
 #include "da_allocate_observations.inc"
 #include "da_allocate_observations_rain.inc"
+#if (WRF_CHEM == 1)
+#include "da_allocate_background_errors_chem.inc"
+#include "da_allocate_observations_chem.inc"
+#include "da_allocate_observations_chem_sfc.inc"
+#endif
 #include "da_allocate_y.inc"
 #include "da_allocate_y_radar.inc"
 #include "da_allocate_y_rain.inc"
+#if (WRF_CHEM == 1)
+#include "da_allocate_y_chem.inc"
+#include "da_allocate_y_chem_sfc.inc"
+#include "da_deallocate_y_chem_sfc.inc"
+#endif
 #include "da_deallocate_background_errors.inc"
 #include "da_deallocate_observations.inc"
 #include "da_deallocate_y.inc"
 #include "da_zero_x.inc"
 #include "da_zero_y.inc"
 #include "da_zero_vp_type.inc"
+#if (WRF_CHEM == 1)
+#include "da_zero_xch_type.inc"
+#include "da_zero_xchem_type.inc"
+#endif
 #include "da_initialize_cv.inc"
 #include "da_random_seed.inc"
 #include "da_gauss_noise.inc"

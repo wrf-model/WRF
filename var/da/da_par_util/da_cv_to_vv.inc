@@ -1,5 +1,8 @@
-subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv)
-
+subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv &
+#if (WRF_CHEM == 1)
+                        ,mzs_chem, vch &
+#endif
+                        )
    !---------------------------------------------------------------------------
    ! Purpose: Fill (local) vv arrays from 1D (local) cv array.
    !---------------------------------------------------------------------------
@@ -11,6 +14,10 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv)
    integer,        intent(in)    :: nmzs        ! number of cv for mz
    integer,        intent(in)    :: mzs(nmzs)   ! Background error structure levels.
    type (vp_type), intent(inout) :: vv          ! Grdipt/EOF cv_array.
+#if (WRF_CHEM == 1)
+   integer, optional, intent(in)    :: mzs_chem(:)   ! chem Background error structure levels.
+   type (xch_type), optional, intent(inout) :: vch   ! Grdipt/EOF cv_array.
+#endif
 
    integer   :: is,ie       ! Local grid range in y coordinate.
    integer   :: js,je       ! Local grid range in x coordinate.
@@ -20,6 +27,9 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv)
    integer   :: cv_s,cv_e   ! Starting and ending indices into CV array.
    integer   :: ijm         ! Size of interior of v1 through v5 arrays.
    integer   :: ijmn        ! Size of interior of alpha cv arrays.
+#if (WRF_CHEM == 1)
+   integer   :: ic, offset
+#endif
 
    if (trace_use) call da_trace_entry("da_cv_to_vv")
 
@@ -46,6 +56,7 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv)
       cv_s = cv_e + 1
       cv_e = cv_s + ijm - 1
       vv % v1(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+            write(*,*) 'cvs & cve v1 = ', cv_s, cv_e
    end if
 
    ! Fill v2
@@ -55,6 +66,7 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv)
       cv_s = cv_e + 1
       cv_e = cv_s + ijm - 1
       vv % v2(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+            write(*,*) 'cvs & cve v2 = ', cv_s, cv_e
    end if
 
    ! Fill v3
@@ -64,6 +76,7 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv)
       cv_s = cv_e + 1
       cv_e = cv_s + ijm - 1
       vv % v3(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+            write(*,*) 'cvs & cve v3 = ', cv_s, cv_e
    end if
 
    ! Fill v4
@@ -73,6 +86,7 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv)
       cv_s = cv_e + 1
       cv_e = cv_s + ijm - 1
       vv % v4(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+            write(*,*) 'cvs & cve v4 = ', cv_s, cv_e
    end if
 
    ! Fill v5
@@ -82,6 +96,7 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv)
       cv_s = cv_e + 1
       cv_e = cv_s + ijm - 1
       vv % v5(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy,mz/))
+            write(*,*) 'cvs & cve v5 = ', cv_s, cv_e
    end if
 
    if ( nmzs > 10 ) then
@@ -92,6 +107,7 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv)
          cv_s = cv_e + 1
          cv_e = cv_s + ijm - 1
          vv % v6(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+            write(*,*) 'cvs & cve v6 = ', cv_s, cv_e
       end if
       ! Fill v7
       mz = mzs(7)
@@ -100,6 +116,7 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv)
          cv_s = cv_e + 1
          cv_e = cv_s + ijm - 1
          vv % v7(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+            write(*,*) 'cvs & cve v7 = ', cv_s, cv_e
       end if
       ! Fill v8
       mz = mzs(8)
@@ -108,6 +125,7 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv)
          cv_s = cv_e + 1
          cv_e = cv_s + ijm - 1
          vv % v8(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+            write(*,*) 'cvs & cve v8 = ', cv_s, cv_e
       end if
       ! Fill v9
       mz = mzs(9)
@@ -116,6 +134,7 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv)
          cv_s = cv_e + 1
          cv_e = cv_s + ijm - 1
          vv % v9(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+            write(*,*) 'cvs & cve v9 = ', cv_s, cv_e
       end if
       ! Fill v10
       mz = mzs(10)
@@ -124,6 +143,7 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv)
          cv_s = cv_e + 1
          cv_e = cv_s + ijm - 1
          vv % v10(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+            write(*,*) 'cvs & cve v10 = ', cv_s, cv_e
       end if
    end if ! cloud cv
 
@@ -135,6 +155,7 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv)
          cv_s = cv_e + 1
          cv_e = cv_s + ijm - 1
          vv % v11(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+            write(*,*) 'cvs & cve v11 = ', cv_s, cv_e
       end if
    end if ! w
 
@@ -151,7 +172,64 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv)
       cv_e = cv_s + ijmn - 1
 !     vv % alpha(is:ie,js:je,1:mz,1:ne) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz, ne/))
       vv % alpha(its_int:ite_int,jts_int:jte_int,1:mz,1:ne) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz, ne/))
+            write(*,*) 'cvs & cve valpha = ', cv_s, cv_e
    end if
+
+#if (WRF_CHEM == 1)
+   if (present(mzs_chem) .and. present(vch)) then
+      ix = ie-is+1
+      jy = je-js+1
+      offset = 1
+
+!      if ( num_scalechem >= PARAM_FIRST_SCALAR ) then
+!         mz = mzs_chem(offset)
+!         do ic = PARAM_FIRST_SCALAR, num_scalechem
+!            ijm = ix * jy * mz
+!            cv_s = cv_e + 1
+!            cv_e = cv_s + ijm - 1
+!            vch % alpha_chem(is:ie,js:je,1:mz,ic) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+!         end do
+!         offset = offset + 1
+!      end if
+
+      if ( num_scaleant >= PARAM_FIRST_SCALAR ) then
+         mz = mzs_chem(offset)
+         do ic = PARAM_FIRST_SCALAR, num_scaleant
+            ijm = ix * jy * mz
+            cv_s = cv_e + 1
+            cv_e = cv_s + ijm - 1
+            vch % alpha_ant(is:ie,js:je,1:mz,ic) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+            write(*,*) 'cvs & cve vchant = ', cv_s, cv_e
+         end do
+         offset = offset + 1
+      end if
+
+      if ( num_scalebb >= PARAM_FIRST_SCALAR ) then
+         mz = mzs_chem(offset)
+         do ic = PARAM_FIRST_SCALAR, num_scalebb
+            ijm = ix * jy * mz
+            cv_s = cv_e + 1
+            cv_e = cv_s + ijm - 1
+            vch % alpha_bb(is:ie,js:je,1:mz,ic) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+            write(*,*) 'cvs & cve vchbb = ', cv_s, cv_e
+         end do
+         offset = offset + 1
+      end if
+
+!      if ( num_scalebio >= PARAM_FIRST_SCALAR ) then
+!         mz = mzs_chem(offset)
+!         do ic = PARAM_FIRST_SCALAR, num_scalebio
+!            ijm = ix * jy * mz
+!            cv_s = cv_e + 1
+!            cv_e = cv_s + ijm - 1
+!            vch % alpha_bio(is:ie,js:je,1:mz,ic) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
+!         end do
+!         offset = offset + 1
+!      end if
+
+   end if
+
+#endif
 
    if (trace_use) call da_trace_exit("da_cv_to_vv")
 

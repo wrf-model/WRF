@@ -46,10 +46,10 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv &
     call da_zero_xch_type (vch)
     call da_transform_vchtox_adj(grid, vch, be)
 
-!   else if ( chem_cv_options == 1 .and. present(vchem) ) then
-!      call da_zero_xchem_type (vchem)
-!      call da_transform_vchemtox_adj(grid, vchem, be)    
-!	write(*,*) 'chk options222'
+   else if ( chem_cv_options == 1 .and. present(vchem) ) then
+      call da_zero_xchem_type (vchem)
+      call da_transform_vchemtox_adj(grid, vchem, be)    
+	write(*,*) 'chk options222'
    else
 #endif
 
@@ -57,11 +57,11 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv &
    ! [3.0]: Perform x = u_p vp transform::
    !-------------------------------------------------------------------------
 
-   if ( chem_cv_options == 1 .and. present(vchem)) then
-      call da_zero_xchem_type (vchem)
-      call da_transform_vchemtox_adj(grid, vchem, be)
-	write(*,*) 'chk options'
-   end if
+!   if ( chem_cv_options == 1 .and. present(vchem)) then
+!      call da_zero_xchem_type (vchem)
+!      call da_transform_vchemtox_adj(grid, vchem, be)
+!	write(*,*) 'chk options'
+!   end if
 
    !zero out vp outside this subroutine in order for vp%alpha to pass in
    !call da_zero_vp_type (vp)
@@ -72,14 +72,9 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv &
    !-------------------------------------------------------------------------
    call da_zero_vp_type (vv)
 
-!         write(*,*) 'chkvv1', vv % v1(10:20,10:20,1), vert_corr
-!         write(*,*) 'chkvp1', vp % v1(10:20,10:20,1), vert_corr
-
    if (vert_corr == 2) then      
       call da_vertical_transform(grid, 'u_adj', be, &
          grid%xb % vertical_inner_product, vv, vp)
-!          write(*,*) 'chkvv2', vv % v1(10:20,10:20,1), vert_corr
-!          write(*,*) 'chkvp2', vp % v1(10:20,10:20,1), vert_corr
 
    else
       vv % v1(its:ite,jts:jte,kts:kte) = vp % v1(its:ite,jts:jte,kts:kte)
@@ -127,17 +122,12 @@ subroutine da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv &
 #if (WRF_CHEM == 1)
 !        if (present(vchem) .and. iv%info(chemic_surf)%nlocal > 0) then
         if (present(vchem)) then
-	write(*,*) 'cv chk 111'
          call da_transform_vtovv_adj(grid, cv_size, be, cv, vv, vchem=vchem)
-	write(*,*) 'cv chk 222'
-	 write(*,*) 'v_to_vv_adj chem mod done'
         else if (present(vch)) then
          call da_transform_vtovv_adj(grid, cv_size, be, cv, vv, vch=vch)
-	 write(*,*) 'v_to_vv_adj nochem done'
       else
 #endif
          call da_transform_vtovv_adj(grid, cv_size, be, cv, vv)
-	 write(*,*) 'v_to_vv_adj noall done'
 #if (WRF_CHEM == 1)
       end if
 #endif

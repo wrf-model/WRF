@@ -56,7 +56,6 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv &
       cv_s = cv_e + 1
       cv_e = cv_s + ijm - 1
       vv % v1(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
-            write(*,*) 'cvs & cve v1 = ', cv_s, cv_e
    end if
 
    ! Fill v2
@@ -66,7 +65,6 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv &
       cv_s = cv_e + 1
       cv_e = cv_s + ijm - 1
       vv % v2(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
-            write(*,*) 'cvs & cve v2 = ', cv_s, cv_e
    end if
 
    ! Fill v3
@@ -76,7 +74,6 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv &
       cv_s = cv_e + 1
       cv_e = cv_s + ijm - 1
       vv % v3(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
-            write(*,*) 'cvs & cve v3 = ', cv_s, cv_e
    end if
 
    ! Fill v4
@@ -86,7 +83,6 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv &
       cv_s = cv_e + 1
       cv_e = cv_s + ijm - 1
       vv % v4(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
-            write(*,*) 'cvs & cve v4 = ', cv_s, cv_e
    end if
 
    ! Fill v5
@@ -96,7 +92,6 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv &
       cv_s = cv_e + 1
       cv_e = cv_s + ijm - 1
       vv % v5(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy,mz/))
-            write(*,*) 'cvs & cve v5 = ', cv_s, cv_e
    end if
 
    if ( nmzs > 10 ) then
@@ -107,7 +102,6 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv &
          cv_s = cv_e + 1
          cv_e = cv_s + ijm - 1
          vv % v6(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
-            write(*,*) 'cvs & cve v6 = ', cv_s, cv_e
       end if
       ! Fill v7
       mz = mzs(7)
@@ -116,7 +110,6 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv &
          cv_s = cv_e + 1
          cv_e = cv_s + ijm - 1
          vv % v7(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
-            write(*,*) 'cvs & cve v7 = ', cv_s, cv_e
       end if
       ! Fill v8
       mz = mzs(8)
@@ -125,7 +118,6 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv &
          cv_s = cv_e + 1
          cv_e = cv_s + ijm - 1
          vv % v8(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
-            write(*,*) 'cvs & cve v8 = ', cv_s, cv_e
       end if
       ! Fill v9
       mz = mzs(9)
@@ -134,7 +126,6 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv &
          cv_s = cv_e + 1
          cv_e = cv_s + ijm - 1
          vv % v9(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
-            write(*,*) 'cvs & cve v9 = ', cv_s, cv_e
       end if
       ! Fill v10
       mz = mzs(10)
@@ -143,7 +134,6 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv &
          cv_s = cv_e + 1
          cv_e = cv_s + ijm - 1
          vv % v10(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
-            write(*,*) 'cvs & cve v10 = ', cv_s, cv_e
       end if
    end if ! cloud cv
 
@@ -155,7 +145,6 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv &
          cv_s = cv_e + 1
          cv_e = cv_s + ijm - 1
          vv % v11(is:ie,js:je,1:mz) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
-            write(*,*) 'cvs & cve v11 = ', cv_s, cv_e
       end if
    end if ! w
 
@@ -172,7 +161,6 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv &
       cv_e = cv_s + ijmn - 1
 !     vv % alpha(is:ie,js:je,1:mz,1:ne) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz, ne/))
       vv % alpha(its_int:ite_int,jts_int:jte_int,1:mz,1:ne) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz, ne/))
-            write(*,*) 'cvs & cve valpha = ', cv_s, cv_e
    end if
 
 #if (WRF_CHEM == 1)
@@ -199,7 +187,6 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv &
             cv_s = cv_e + 1
             cv_e = cv_s + ijm - 1
             vch % alpha_ant(is:ie,js:je,1:mz,ic) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
-            write(*,*) 'cvs & cve vchant = ', cv_s, cv_e
          end do
          offset = offset + 1
       end if
@@ -211,7 +198,6 @@ subroutine da_cv_to_vv (cv_size, rcv, mzs, nmzs, vv &
             cv_s = cv_e + 1
             cv_e = cv_s + ijm - 1
             vch % alpha_bb(is:ie,js:je,1:mz,ic) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
-            write(*,*) 'cvs & cve vchbb = ', cv_s, cv_e
          end do
          offset = offset + 1
       end if

@@ -39,15 +39,11 @@ subroutine da_transfer_xatoanalysis(it, xbx, grid, config_flags)
 
 	n=1
 	ichem=2
-!		write(*,*) 'chksulf333 ', ob % chemic_surf(n) % chem(ichem), model_chemic_surf(n,ichem), grid%xbchem%chem_ic(iv%info(chemic_surf)%i(1,n), iv%info(chemic_surf)%j(1,n), 1,p_chem_ic_p25), grid%xbchem%chem_ic(iv%info(chemic_surf)%i(1,n)+1, iv%info(chemic_surf)%j(1,n), 1,p_chem_ic_p25), grid%xbchem%chem_ic(iv%info(chemic_surf)%i(1,n), iv%info(chemic_surf)%j(1,n)+1, 1,p_chem_ic_p25), grid%xbchem%chem_ic(iv%info(chemic_surf)%i(1,n)+1, iv%info(chemic_surf)%j(1,n)+1, 1,p_chem_ic_p25), n
       if (it < max_ext_its) then
          call da_transfer_wrftoxb(xbx, grid, config_flags)
 #if (WRF_CHEM == 1)
          call da_transfer_wrftoxb_chem(grid)
          call da_transfer_wrftoxb_gocart(grid)
-!		write(*,*) 'chksulf444 ', ob % chemic_surf(n) % chem(ichem), model_chemic_surf(n,ichem), grid%xachem%chem_ic(iv%info(chemic_surf)%i(1,n), iv%info(chemic_surf)%j(1,n), 1,p_chem_ic_p25), grid%xachem%chem_ic(iv%info(chemic_surf)%i(1,n)+1, iv%info(chemic_surf)%j(1,n), 1,p_chem_ic_p25), grid%xachem%chem_ic(iv%info(chemic_surf)%i(1,n), iv%info(chemic_surf)%j(1,n)+1, 1,p_chem_ic_p25), grid%xachem%chem_ic(iv%info(chemic_surf)%i(1,n)+1, iv%info(chemic_surf)%j(1,n)+1, 1,p_chem_ic_p25), n
-!		write(*,*) 'chksulf555 ', ob % chemic_surf(n) % chem(ichem), model_chemic_surf(n,ichem), grid%xbchem%chem_ic(iv%info(chemic_surf)%i(1,n), iv%info(chemic_surf)%j(1,n), 1,p_chem_ic_p25), grid%xbchem%chem_ic(iv%info(chemic_surf)%i(1,n)+1, iv%info(chemic_surf)%j(1,n), 1,p_chem_ic_p25), grid%xbchem%chem_ic(iv%info(chemic_surf)%i(1,n), iv%info(chemic_surf)%j(1,n)+1, 1,p_chem_ic_p25), grid%xbchem%chem_ic(iv%info(chemic_surf)%i(1,n)+1, iv%info(chemic_surf)%j(1,n)+1, 1,p_chem_ic_p25), n
-	write(*,*) 'wrftoxb chem done'
 #endif
       end if
    else if (fg_format == fg_format_wrf_arw_global) then

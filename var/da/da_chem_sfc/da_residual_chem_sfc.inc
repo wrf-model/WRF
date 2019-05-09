@@ -30,9 +30,6 @@ subroutine da_residual_chem_sfc(iv, y, re, np_missing, np_bad_data, np_obs_used,
       do ichem = PARAM_FIRST_SCALAR, num_chemic_surf
          np_available = np_available + 1
            re%chemic_surf(n)%chem(ichem) = da_residual(n, 0, y%chemic_surf(n)%chem(ichem), iv%chemic_surf(n)%chem(ichem), n_obs_bad % chemic_surf)
-		if (ichem==2) then
-		         write(*,*) 're111',re%chemic_surf(n)%chem(ichem), y%chemic_surf(n)%chem(ichem), iv%chemic_surf(n)%chem(ichem)%inv, iv%chemic_surf(n)%chem(ichem)%qc, iv%chemic_surf(n)%chem(ichem)%error, n, iv%info(chemic_surf)%nlocal
-		end if
       end do
    end do
 

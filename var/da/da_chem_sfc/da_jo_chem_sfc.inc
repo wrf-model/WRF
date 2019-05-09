@@ -22,9 +22,6 @@ subroutine da_jo_chem_sfc(iv, re, jo_grad_y, jo)
    do n=1, iv%info(chemic_surf)%nlocal
       if (iv%info(chemic_surf)%proc_domain(1,n)) then
          jo % chemic_surf = jo % chemic_surf - re%chemic_surf(n)%chem(ichem) * jo_grad_y%chemic_surf(n)%chem(ichem)
-	if (ichem==2) then
-		write(*,*) 'joout', jo % chemic_surf,re%chemic_surf(n)%chem(ichem), jo_grad_y%chemic_surf(n)%chem(ichem), n, iv%info(chemic_surf)%nlocal
-	end if
      end if
    end do
    end do

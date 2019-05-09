@@ -36,7 +36,6 @@ subroutine da_transform_xtoy_chem_sfc_adj(grid, iv, jo_grad_y, jo_grad_x)
       ! [1.2] Interpolate horizontally:
         do n=iv%info(chemic_surf)%n1,iv%info(chemic_surf)%n2
            model_chemic_surf(n,ichem)  = jo_grad_y%chemic_surf(n)%chem(ichem)
-!!!		write(*,*) 'xtoy_adj111', n, ichem, model_chemic_surf(n,ichem), jo_grad_y%chemic_surf(n)%chem(ichem)
         end do
       end do
 
@@ -55,14 +54,8 @@ subroutine da_transform_xtoy_chem_sfc_adj(grid, iv, jo_grad_y, jo_grad_x)
      model_chemic(:,p_chem_ic_seas_1)=model_rho(:,p_chem_ic_seas_1)*(model_chemic_surf(:,p_chemsi_pm25))
      model_chemic(:,p_chem_ic_seas_2)=model_rho(:,p_chem_ic_seas_2)*0.942*(model_chemic_surf(:,p_chemsi_pm25))
 
-!     call da_interp_lin_2d_adj (jo_grad_x%chem_ic(:,:,1,p_chem_ic_p25), iv%info(chemic_surf), 1, model_chemic(:,p_chem_ic_p25))
-!	write(*,*) 'p25index', p_chem_ic_p25
-!       write(*,*) 'xtoy_adjout111', p_chem_ic_p25, ims,ime, jms,jme, jo_grad_x%chem_ic(:,:,1,p_chem_ic_p25)
-
       do ichem = PARAM_FIRST_SCALAR, num_chem
         call da_interp_lin_2d_adj (jo_grad_x%chem_ic(:,:,1,ichem), iv%info(chemic_surf), 1, model_chemic(:,ichem))
-!	write(*,*) 'xtoy_adjout111', ichem, ims,ime, jo_grad_x%chem_ic(:,:,1,ichem)
-!	write(*,*) 'xtoy_adjout222', ichem, model_chemic(:,ichem)
       end do
 
       deallocate(model_chemic)
@@ -70,7 +63,6 @@ subroutine da_transform_xtoy_chem_sfc_adj(grid, iv, jo_grad_y, jo_grad_x)
       deallocate(model_rho)
    end if
 
-	write(*,*) 'xtoy_adj done'
    if (trace_use_dull) call da_trace_exit("da_transform_xtoy_chem_sfc_adj")
 
 end subroutine da_transform_xtoy_chem_sfc_adj

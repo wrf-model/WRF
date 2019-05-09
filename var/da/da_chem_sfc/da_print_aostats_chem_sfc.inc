@@ -30,9 +30,6 @@ use module_state_description, only : num_chem, PARAM_FIRST_SCALAR               
      ' Minimum(n,k): ', stats%minimum%chem(p_chemsi_pm25), & 
      ' Maximum(n,k): ', stats%maximum%chem(p_chemsi_pm25)
 
-	write(*,*) 'chkmin', stats%minimum%chem(p_chemsi_pm25)
-	write(*,*) 'chkmax', stats%maximum%chem(p_chemsi_pm25)
-
    write(unit=stats_unit, fmt='((a,(f12.4,10x)))') &
       ' Average     : ', stats%average%chem(p_chemsi_pm25)/real(nchem), &
       '    RMSE     : ', sqrt(stats%rms_err%chem(p_chemsi_pm25)/real(nchem))

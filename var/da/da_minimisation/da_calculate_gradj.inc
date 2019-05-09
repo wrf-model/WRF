@@ -97,19 +97,13 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
 #endif
               )
 #else
-      write(*,*) 'grad jo111',sum(grad_jo(:))
       call da_transform_vtoy_adj(cv_size, be, grid%ep, grad_jo, iv, &
                grid%vp, grid%vv, xbx, jo_grad_y, grid, config_flags, jcdf_flag &
 !!When vch includes initial conditions, need to add vch=grid%vch at end of this call
 #if (WRF_CHEM == 1)
-!!!              , vch=grid%vch &
               , vchem=grid%vchem &
 #endif
               )
-!!!      if ( iv%info(chemic_surf)%nlocal == 0 ) grad_jo = 0.0
-      write(*,*) 'grad jo222',sum(grad_jo(:))
-	write(*,*)  'vtoy_adj111 done'
-
 
 #endif
    else
@@ -130,7 +124,6 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
               , vchem=grid%vchem &
 #endif
               )
-	write(*,*) 'vtoy chkkk'
 
 #endif
       call da_calculate_grady(iv, y, jo_grad_y)   
@@ -143,7 +136,6 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
               )
 
 #else
-      write(*,*) 'grad jo333',sum(grad_jo(:))
       call da_transform_vtoy_adj(cv_size, be, grid%ep, grad_jo, iv, &
               grid%vp, grid%vv, xbx, jo_grad_y, grid, config_flags, .true. &
 !!When vch includes initial conditions, need to add vch=grid%vch at end of this call
@@ -152,9 +144,6 @@ subroutine da_calculate_gradj(it, iter, cv_size, cv_size_jb, cv_size_je, cv_size
                  , vchem=grid%vchem &
 #endif
               )
-!!!      if ( iv%info(chemic_surf)%nlocal == 0 ) grad_jo = 0.0
-      write(*,*) 'grad jo444',sum(grad_jo(:))
-	write(*,*)  'vtoy_adj222 done'
 
 #endif
       grad_jo = - grad_jo    !! Compensate for sign in calculation of grad_v (Jo)

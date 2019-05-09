@@ -165,36 +165,20 @@ subroutine da_cv_to_vv_chem (cv_size, rcv, mzs, nmzs, vv &
    end if
 
 #if (WRF_CHEM == 1)
-!   if (present(mzs_chem) .and. present(vchem) .and. iv%info(chemic_surf)%nlocal > 0) then
    if (present(mzs_chem) .and. present(vchem)) then
       ix = ie-is+1
       jy = je-js+1
-!      offset = 1
 
       if ( num_chem >= PARAM_FIRST_SCALAR ) then
-!         mz = mzs_chem(offset)
-	write(*,*) 'nspeee & nmzzz  ', num_chem, mz
-	write(*,*) 'ise & jse  ', is,ie,js,je
-	write(*,*) 'ix & jy & mz  ', ix,jy,mz
-        write(*,*) 'cv dim ', size(rcv,dim=1)
-        write(*,*) 'mz levels ', mzs
-        write(*,*) 'mz chem levels ', mzs_chem
-!!!         do ic = 1, num_chem-1
          do ic = PARAM_FIRST_SCALAR, num_chem
             mz = mzs_chem(ic-1)
             ijm = ix * jy * mz
             cv_s = cv_e + 1
             cv_e = cv_s + ijm - 1
             vchem % chem_ic(is:ie,js:je,1:mz,ic) = RESHAPE(rcv(cv_s:cv_e),(/ix, jy, mz/))
-            write(*,*) 'cvs & cve = ', cv_s, cv_e
-!	    write(*,*) 'fieldii =  ', ic,  vchem % chem_ic (1:35,1:21,1,ic)
          end do
-!         offset = offset + 1
       end if
    end if
-!	do ic=1,cv_size
-!		write(*,*) 'rcv chk', ic, rcv(ic)
-!	end do
 
 #endif
 

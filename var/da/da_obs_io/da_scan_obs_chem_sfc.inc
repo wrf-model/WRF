@@ -42,8 +42,6 @@ subroutine da_scan_obs_chem_sfc (iv, filename, grid)
    real                         :: dx,dy,dxm,dym,zk
    real                         :: v_p(kms:kme),v_h(kms:kme)
 
-	write(*,*)  '!!!!!!! scan obs chemic !!!!!!!'
-
    if (trace_use) call da_trace_entry("da_scan_obs_chem_sfc")
  ! Initialize counts
 
@@ -96,7 +94,6 @@ subroutine da_scan_obs_chem_sfc (iv, filename, grid)
          platform%chem(:)%qc = missing
          platform%chem(:)%error = missing_r 
 
-!!!	write(*,*) 'chkaaa'
       read (iunit, *, iostat =  iost)  &
          platform%info%date_char,          &
          platform%info%lat,                &
@@ -108,8 +105,6 @@ subroutine da_scan_obs_chem_sfc (iv, filename, grid)
       read (platform%info%date_char,'(i4,3(i2))')  iyear, imonth, iday, ihour
       imin=0
 
-!!!	write(*,*) 'readdd',report,platform%info%lat,platform%info%lon,iyear, imonth, iday, ihour, platform%chem(PARAM_FIRST_SCALAR)%inv, platform%chem(PARAM_FIRST_SCALAR+1)%inv
-	 
       if (iost /= 0) then
          ! FIX? This is expected, but its unclear how we handle failure
          ! here without assuming the fortran2003 convention on
@@ -123,7 +118,6 @@ subroutine da_scan_obs_chem_sfc (iv, filename, grid)
          platform%info%lon = 0.0
       end if
 
-!!!	write(*,*) 'chkbbb'
       ! read model location
       ! =========================
 
@@ -151,7 +145,6 @@ subroutine da_scan_obs_chem_sfc (iv, filename, grid)
          cycle
       endif
 
-!!!	write(*,*) 'chkccc'
       ! Restrict to a range of reports, useful for debugging
 
       if (report < report_start) then
@@ -163,7 +156,6 @@ subroutine da_scan_obs_chem_sfc (iv, filename, grid)
       end if
 
       call da_llxy (platform%info, platform%loc, outside, outside_all)
-!!!	write(*,*) 'chkddd', report_start, report_end, outside
 
       if (outside_all) then
          cycle reports
@@ -187,7 +179,6 @@ subroutine da_scan_obs_chem_sfc (iv, filename, grid)
       dlat_earth = dlat_earth * deg2rad
       dlon_earth = dlon_earth * deg2rad
 
-!!!	write(*,*) 'chkeee'
       levs = 1
 
       ! Loop over duplicating obs for global
@@ -218,13 +209,11 @@ subroutine da_scan_obs_chem_sfc (iv, filename, grid)
          end if
       end if
       
-!!!	write(*,*) 'chkfff'
       dup_loop: do n = 1, ndup
          is_surface=.true.
          if (use_chemic_surfobs) then
             if (.not. use_chemic_surfobs .or. ntotal(chemic_surf) == max_synop_input  ) cycle reports
             if (n==1) iv%info(chemic_surf)%ntotal = iv%info(chemic_surf)%ntotal + 1
-		write(*,*) 'readdd ', iv%info(chemic_surf)%ntotal, n, max_synop_input
             if (outside) cycle reports
             if ( thin_conv_ascii ) then
                crit = tdiff

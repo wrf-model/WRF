@@ -262,7 +262,6 @@ subroutine da_transform_vtovv_adj(grid, cv_size, be, cv, vv &
          call da_error(__FILE__,__LINE__,(/"no da_transform_through_wavelet for chem_ic"/))
       endif
    end do
-	write(*,*) 'trans rf_adj chem done'
   end if
 #endif
 
@@ -271,16 +270,13 @@ subroutine da_transform_vtovv_adj(grid, cv_size, be, cv, vv &
       ! [1.0] Fill 1D cv array from 3-dimensional vv arrays.
       !-------------------------------------------------------------------------
 #if (WRF_CHEM == 1)
-!      if (present(vchem) .and. iv%info(chemic_surf)%nlocal > 0) then
       if (present(vchem)) then
          call da_vv_to_cv_chem( vv, grid%xp, be%cv_mz, be%ncv_mz, cv_size, cv, be%cv_mz_chemic, vchem)
-         write(*,*) 'cvchk111', sum(cv)
       else if (present(vch)) then
         call da_vv_to_cv( vv, grid%xp, be%cv_mz, be%ncv_mz, cv_size, cv, be%cv_mz_chem, vch)
       else
 #endif
          call da_vv_to_cv( vv, grid%xp, be%cv_mz, be%ncv_mz, cv_size, cv)
-	write(*,*) 'call vv_to_cv noall  done'
 #if (WRF_CHEM == 1)
       end if
 #endif

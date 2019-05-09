@@ -23,13 +23,11 @@ subroutine da_transform_vchemtox(grid, vchem, be)
 
    do ij = 1 , grid%num_tiles
       do ic = PARAM_FIRST_SCALAR, num_chem
-!!!         grid%xachem%chem_ic(:,grid%j_start(ij):grid%j_end(ij),:,ic) = 0.D0
          do m = kts, kte    !LEVELS
             do n = 1, be % v12(ic-1) % mz !EIGENMODES
-!               do j = grid%j_start(ij), grid%j_end(ij)
-               do j = jts, jte
+               do j = grid%j_start(ij), grid%j_end(ij)
+!               do j = jts, jte
                   temp = be % v12(ic-1) % evec (j,m,n) * be % v12(ic-1) % val (j,n)
-!			write(*,*) 'temppp  ', ij,ic,m,n,j,temp
                   do i = its, ite
                       grid%xachem%chem_ic (i,j,m,ic) = grid%xachem%chem_ic (i,j,m,ic) + &
                                                        temp * vchem%chem_ic (i,j,n,ic)
@@ -40,10 +38,6 @@ subroutine da_transform_vchemtox(grid, vchem, be)
       end do
    end do
    !$OMP END PARALLEL DO
-
-	write(*,*) 'kts & kte 222', kts, kte
-	write(*,*) 'vchem to x done'
-        write(*,*) 'vchem chkccc',vchem % chem_ic (1:5,1,1,2),temp,grid%xachem%chem_ic  (1:5,1,1,2)
 
 #ifdef DM_PARALLEL
 #include "HALO_CHEM_XA.inc"     

@@ -66,22 +66,15 @@ subroutine da_setup_cv(be)
    be % cv % size_jb = be % cv % size1 + be % cv % size2 + be % cv % size3 + &
       be % cv % size4 + be % cv % size5
 
-      write(*,*) 'set cvsizeee 000 = ', be % cv % size_jb, be % cv % size1, be % cv % size2, be % cv % size3, &
-      be % cv % size4, be % cv % size5
-
    if ( cloud_cv_options >= 2 ) then
       be % cv % size_jb = be % cv % size_jb + be % cv % size6 + &
          be % cv % size7 + be % cv % size8 + be % cv % size9 + &
          be % cv % size10
    end if
 
-      write(*,*) 'set cvsizeee 001 = ', be % cv % size_jb
-
    if ( use_cv_w ) then
       be % cv % size_jb = be % cv % size_jb + be % cv % size11i
    end if
-
-      write(*,*) 'set cvsizeee 002 = ', be % cv % size_jb
 
    !--------------------------------------------------------------
    ! [1.1] Define 4D-Var lateral boundary condition control variable size:
@@ -154,24 +147,17 @@ subroutine da_setup_cv(be)
 
       ij = iy * jx              ! cv space size same as state space size
 
-      write(*,*) 'set cvsizeee 111 = ', be % cv % size_jb
-
 !      be % cv % sizechem (:) = 0
 !      do ic = PARAM_FIRST_SCALAR, num_scalechem
 !         be % cv % sizechem (ic) = ij * be % alpha_chem(ic) % mz
 !      end do
 !      be % cv % size_jb = be % cv % size_jb + sum( be % cv % sizechem (:) )
 
-
       be % cv % sizechemic (:) = 0
       do ic = PARAM_FIRST_SCALAR, num_chem
-!!!      do ic = 1, num_chem-1
          be % cv % sizechemic (ic) = ij * be % v12(ic-1) % mz
-	write(*,*) 'ic = ', ic, be % cv % sizechemic (ic), ij, be % v12(ic-1) % mz
       end do
       be % cv % size_jb = be % cv % size_jb + sum (be % cv % sizechemic (:))
-
-      write(*,*) 'set cvsizeee 222 = ', be % cv % size_jb
 
       be % cv % sizeant (:) = 0
       do ic = PARAM_FIRST_SCALAR, num_scaleant
@@ -179,15 +165,11 @@ subroutine da_setup_cv(be)
       end do
       be % cv % size_jb = be % cv % size_jb + sum (be % cv % sizeant (:))
 
-      write(*,*) 'set cvsizeee 333 = ', be % cv % size_jb
-
       be % cv % sizebb (:) = 0
       do ic = PARAM_FIRST_SCALAR, num_scalebb
          be % cv % sizebb (ic) = ij * be % alpha_bb_chem(ic) % mz
       end do
       be % cv % size_jb = be % cv % size_jb + sum( be % cv % sizebb (:) )
-
-      write(*,*) 'set cvsizeee 444 = ', be % cv % size_jb
 
 !      be % cv % sizebio (:) = 0
 !      do ic = PARAM_FIRST_SCALAR, num_scalebio

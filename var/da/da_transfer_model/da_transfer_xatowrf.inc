@@ -755,9 +755,6 @@ subroutine da_transfer_xatowrf(grid, config_flags)
             end do
          end do
       end do
-      write(*,*) 'xatowrf chem done'
-
-      write(*,*) 'sulf333  ', grid%xbchem%chem_ic(40,4,1,p_chem_ic_p25), grid%xachem%chem_ic(40,4,1,p_chem_ic_p25), grid%chem(40,4,1,p_chem_ic_p25)
 
 #endif
 

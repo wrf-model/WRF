@@ -113,8 +113,6 @@ subroutine da_setup_background_errors(grid, be)
       allocate (be%cv%sizeant (num_scaleant) )
    end if
 
-	write(*,*) 'chk alphaant  ', num_scaleant, size(be % alpha_ant_chem, dim=1)
-
    if (num_scalebb >= PARAM_FIRST_SCALAR) then
       allocate (be%alpha_bb_chem (num_scalebb) )
       do ic = 1, num_scalebb

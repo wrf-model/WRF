@@ -556,10 +556,8 @@
    !---------------------------------------------------------------------------
    ! [5.4] Total control variable:
    !---------------------------------------------------------------------------  
-	write(*,*) 'cvsizeee = ',cv_size 
    be % cv % size = be%cv%size_jb + be%cv%size_je + be%cv%size_jp + be%cv%size_js + be%cv%size_jl
    cv_size = be % cv % size
-	write(*,*) 'cvsizeee = ',cv_size,be%cv%size_jb,be%cv%size_je,be%cv%size_jp,be%cv%size_js,be%cv%size_jl
 
    !---------------------------------------------------------------------------
    ! [6.0] Set up ensemble perturbation input:
@@ -655,16 +653,13 @@
 ! Re-scale the variances and the scale-length for outer-loop > 1:
       if (it > 1 .and. (cv_options == 5 .or. cv_options == 7)) then
          print '(/10X,"===> Re-set BE SCALINGS for outer-loop=",i2)', it
-		write(*,*) 'chkbe1a', be % v1 % val(1:10,1)
          call  da_scale_background_errors ( be, it )
-		write(*,*) 'chkbe1b', be % v1 % val(1:10,1)
       else if (it > 1 .and. cv_options == 3) then
          print '(/10X,"===> Re-set CV3 BE SCALINGS for outer-loop=",i2)', it
          call  da_scale_background_errors_cv3 ( grid, be, it )
       endif
 
       call da_initialize_cv (cv_size, xhat)
-	write(*,*) 'xhat001', xhat(1:5)
 
       ! [8.1] Calculate nonlinear model trajectory 
 
@@ -879,7 +874,6 @@
             call da_allocate_y (iv, y)
             call da_check_gradient (grid, config_flags, cv_size, xhat, cvt, 1.0e-10, 8, &
                  xbx, be, iv, y, re, j)
-	write(*,*) 'xhat002', xhat(1:5)
             call da_deallocate_y (re)
             call da_deallocate_y (y)
          endif
@@ -910,16 +904,13 @@
 
             call da_kmat_mul(grid,config_flags,it,cv_size,xbx, &
                              be,iv,xhat,qhat,cvt,re,y,j,eignvec,eignval,neign)
-	write(*,*) 'xhat003', xhat(1:5)
           ! Output Cost Function
             call da_calculate_j(it, 1, cv_size, be%cv%size_jb, be%cv%size_je, be%cv%size_jp, &
                              be%cv%size_jl, xbx, be, iv, xhat, cvt, re, y, j, grid, config_flags )
-	write(*,*) 'xhat004', xhat(1:5)
 
          else
             call da_minimise_lz(grid, config_flags, it, cv_size, xbx,& 
                              be, iv, j_grad_norm_target, xhat, qhat, cvt, re, y, j, eignvec, eignval, neign )
-	write(*,*) 'xhat005', xhat(1:5)
 #if (WRF_CHEM == 1)
             if (calc_aminusb) call da_calculate_aminusb(grid,config_flags,it,cv_size,xbx, &
                                 be,qhat,eignvec,eignval,neign)
@@ -931,11 +922,8 @@
 
          if (adj_sens) call da_sensitivity(grid,config_flags,it,cv_size,xbx, &
                                            be,iv,xhat,qhat,cvt,y,eignvec,eignval,neign )
-	write(*,*) 'xhat006', xhat(1:5)
 
       else
-
-	write(*,*) 'xhat007', xhat(1:5)
 
          call da_minimise_cg( grid, config_flags, it, be % cv % size, & 
               xbx, be, iv, j_grad_norm_target, xhat, cvt, re, y, j)
@@ -987,9 +975,7 @@
    else if (cv_options == 7 .and. chem_cv_options==1) then
 !            call da_transform_vtox (grid,be%cv%size_jb,xbx,be,grid%ep,xhat(1:be%cv%size_jb),grid%vv,grid%vp,grid%vch,grid%vchem)
             call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp,vchem=grid%vchem)
-            write(*,*)  'call da_transform_vtox chem mod done'
    end if
-	    write(*,*) 'cv sizeee  ',be%cv%size_jb, cv_size
 #else
          call da_transform_vtox (grid,cv_size,xbx,be,grid%ep,xhat,grid%vv,grid%vp)
 
@@ -1095,13 +1081,10 @@
    end do
 
    ! output wrfvar analysis
-	write(*,*) 'proc111'
 
    if ((config_flags%real_data_init_type == 1) .or. &
        (config_flags%real_data_init_type == 3)) then
-	write(*,*) 'proc222'
       call da_update_firstguess(input_grid)
-	write(*,*) 'proc333'
 #ifdef VAR4D
       !if (var4d) call da_med_initialdata_output_lbc (head_grid , config_flags)
       if ( var4d_lbc ) then

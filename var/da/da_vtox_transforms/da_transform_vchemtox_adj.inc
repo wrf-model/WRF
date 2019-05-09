@@ -39,10 +39,6 @@ subroutine da_transform_vchemtox_adj(grid, vchem, be)
       end do
    end do
    !$OMP END PARALLEL DO
-	write(*,*) 'kts & kte 333', kts, kte
-!!!	write(*,*) 'vchem chkbbb',vchem % chem_ic (:,:,1,4)
-!	write(*,*) 'vchem chkbbb',temp
-!        write(*,*) 'vchem chkbbb',grid%xachem%chem_ic  (:,:,1,4)
 
    if (trace_use) call da_trace_exit("da_transform_vchemtox_adj")
 

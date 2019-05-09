@@ -51,13 +51,10 @@ subroutine da_ao_stats_chem_sfc (stats_unit, iv, re, ob)
       end if 
    end do
 
-	write(*,*) 'chkao111', iv%info(chemic_surf)%nlocal, nchem, iv%nstats(chemic_surf)
    ! Do inter-processor communication to gather statistics.
    call da_proc_sum_int (nchem)
-	write(*,*) 'chkao222', iv%info(chemic_surf)%nlocal, nchem, iv%nstats(chemic_surf)
 
    iv%nstats(chemic_surf) = nchem
-	write(*,*) 'chkao333', iv%info(chemic_surf)%nlocal, nchem, iv%nstats(chemic_surf)
 
    call da_proc_stats_combine(stats%average%chem(ichem), stats%rms_err%chem(ichem), &
       stats%minimum%chem(ichem)%value, stats%maximum%chem(ichem)%value, &

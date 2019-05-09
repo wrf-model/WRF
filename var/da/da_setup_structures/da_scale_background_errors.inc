@@ -151,10 +151,6 @@ subroutine da_scale_background_errors ( be, it )
                                      ds, rf_len11, be % v11 )
    end if
 
-!		write(*,*) 'chkbe3', be % v1 % val(1:10,1), var_scaling1(it), len_scaling1(it), ds, sum(rf_len1), size(rf_len1,dim=1), size(rf_len12,dim=1), size(rf_len12,dim=2), size(v1_val,dim=1), size(v1_val,dim=2), size(v12_val,dim=1), size(v12_val,dim=2), size(v12_val,dim=3), sum(v12_val(17,:,1:v12_mz(17))), sum(v12_val(18,:,1:v12_mz(18))), sum(v12_val(19,:,1:v12_mz(19))), sum(v11_val)
-
-   write(*,*) 'chkbe4', be % v12(19) % val(1:10,1), sum(be %v12(19)%val), sum(be %v12(14)%val), sum(be %v12(11)%val)
-
    if(cloud_cv_options >= 2 .and. cloud_cv_options .ne. 3 ) then
 
      CALL da_rescale_background_errors( var_scaling6(it), len_scaling6(it), &

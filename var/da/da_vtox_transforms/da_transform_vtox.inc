@@ -55,17 +55,11 @@ subroutine da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp &
 #if (WRF_CHEM == 1)
       if (present(vch)) then
          call da_transform_vtovv(grid, cv_size, be, cv, vv, vch=vch)
-        write(*,*) 'call vtovv nochem done'
-!      else if (present(vchem) .and. iv%info(chemic_surf)%nlocal > 0) then
       else if (present(vchem)) then
-!!!	write(*,*) 'vchem 001',vchem % chem_ic (1:5,1,1,2)
          call da_transform_vtovv(grid, cv_size, be, cv, vv, vchem=vchem)
-!!!	write(*,*) 'vchem 002',vchem % chem_ic (1:5,1,1,2)
-        write(*,*) 'call vtovv chem done'
       else
 #endif
          call da_transform_vtovv(grid, cv_size, be, cv, vv)
-	write(*,*) 'call vtovv noall done'
 #if (WRF_CHEM == 1)
       end if
 #endif
@@ -88,7 +82,6 @@ subroutine da_transform_vtox(grid, cv_size, xbx, be, ep, cv, vv, vp &
    if (chem_cv_options ==1 .and. present(vchem)) then
       call da_transform_vchemtox(grid, vchem, be)
    end if
-!!!	write(*,*) 'vchem 003',vchem % chem_ic (1:5,1,1,2)
 
    if (  cv_options == 3 ) then
 

@@ -31,8 +31,6 @@ subroutine da_transfer_wrftoxb_gocart(grid)
          end do
       end do
    end do
-	write(*,*) 'ijts & ijte ===  ', its,ite,jts,jte
-	write(*,*) 'ijps & ijpe ===  ', ips,ipe,jps,jpe
 
    end do
    !$OMP END PARALLEL DO

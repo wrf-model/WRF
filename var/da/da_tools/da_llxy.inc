@@ -26,7 +26,6 @@ subroutine da_llxy (info, loc, outside, outside_all)
 
    if ( fg_format == fg_format_wrf_arw_regional ) then
       call da_llxy_wrf(map_info, info%lat, info%lon, loc%x, loc%y)
-!!!	write(*,*) 'chklatlon ', info%lat, info%lon, loc%y, loc%x
    else if (fg_format == fg_format_wrf_nmm_regional) then
       call da_llxy_rotated_latlon(info%lat, info%lon, map_info, loc%x, loc%y)
    else if (global) then
@@ -41,9 +40,7 @@ subroutine da_llxy (info, loc, outside, outside_all)
    call da_togrid (loc%y, jts-3, jte+3, loc%j, loc%dy, loc%dym)
 #else
    call da_togrid (loc%x, its-2, ite+2, loc%i, loc%dx, loc%dxm)!
-!!!   write(*,*) 'chkxxx ', loc%x, its-2, ite+2, loc%i, loc%dx, loc%dxm
    call da_togrid (loc%y, jts-2, jte+2, loc%j, loc%dy, loc%dym)
-!!!   write(*,*) 'chkyyy ', loc%y, jts-2, jte+2, loc%j, loc%dy, loc%dym
 
 #endif
    ! refactor to remove this ugly duplication later
@@ -115,8 +112,6 @@ subroutine da_llxy (info, loc, outside, outside_all)
          end if
       end if
    end if
-
-	if (.not.outside) write(*,*) 'chkout555', loc%i,loc%j,its,ite,jts,jte
 
    ! if (trace_use_frequent) call da_trace_exit("da_llxy")
 

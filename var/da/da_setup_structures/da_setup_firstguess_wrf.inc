@@ -226,27 +226,6 @@ subroutine da_setup_firstguess_wrf(xbx, grid, config_flags, ens)
 
    call da_transfer_wrftoxb_gocart(grid)
 
-!        write(*,*) 'oc111  ',p_oc2,grid%chem(1:100,1:100,1,p_oc2)
-!        write(*,*) 'bc111  ',p_bc2,grid%chem(1:100,1:100,1,p_bc2)
-!        write(*,*) 'so2111  ',p_so2,grid%chem(1:100,1:100,1,p_so2)
-!        write(*,*) 'no2111  ',p_no2,grid%chem(1:100,1:100,1,p_no2)
-!        write(*,*) 'o3111  ',p_o3,grid%chem(1:100,1:100,1,p_o3)
-!        write(*,*) 'co111  ',p_co,grid%chem(1:100,1:100,1,p_co)
-!        write(*,*) 'p10111  ',p_p10,grid%chem(1:100,1:100,1,p_p10)
-!        write(*,*) 'p25111  ',p_p25,grid%chem(1:100,1:100,1,p_p25)
-!        write(*,*) 'chksulf11  ',p_sulf,grid%chem(1:10,1:10,1,p_sulf)
-        write(*,*) 'num111  ',num_chem
-
-!        write(*,*) 'oc222  ',ic,grid%xbchem%chem_ic(1:100,1:100,1,p_chem_ic_oc2)
-!        write(*,*) 'bc222  ',ic,grid%xbchem%chem_ic(1:100,1:100,1,p_chem_ic_bc2)
-!        write(*,*) 'so2222  ',ic,grid%xbchem%chem_ic(1:100,1:100,1,p_chem_ic_so2)
-!        write(*,*) 'no2222  ',ic,grid%xbchem%chem_ic(1:100,1:100,1,p_chem_ic_no2)
-!        write(*,*) 'o3222  ',ic,grid%xbchem%chem_ic(1:100,1:100,1,p_chem_ic_o3)
-!        write(*,*) 'co222  ',ic,grid%xbchem%chem_ic(1:100,1:100,1,p_chem_ic_co)
-!        write(*,*) 'p10222  ',ic,grid%xbchem%chem_ic(1:100,1:100,1,p_chem_ic_p10)
-!        write(*,*) 'p25222  ',ic,grid%xbchem%chem_ic(1:100,1:100,1,p_chem_ic_p25)
-!        write(*,*) 'chksulf22  ',p_chem_ic_sulf,grid%xbchem%chem_ic(1:10,1:10,1,p_chem_ic_sulf)
-
 #endif
 
    if ( .not. ens ) then

@@ -42,8 +42,6 @@ subroutine da_read_obs_chem_sfc (iv, filename, grid)
    real                         :: dx,dy,dxm,dym,zk
    real                         :: v_p(kms:kme),v_h(kms:kme)
 
-	write(*,*)  '!!!!!!! read obs chemic !!!!!!!'
-
    if (trace_use) call da_trace_entry("da_read_obs_chem_sfc")
  ! Initialize counts
    ntotal(:) = iv%info(:)%ptotal(iv%time-1)
@@ -99,7 +97,6 @@ subroutine da_read_obs_chem_sfc (iv, filename, grid)
          platform%chem(:)%qc  = missing
          platform%chem(:)%error = missing_r
 
-!!!	write(*,*) 'chkaaa'
       read (iunit, *, iostat =  iost)  &
          platform%info%id,                 &
          platform%info%lat,                &
@@ -120,8 +117,6 @@ subroutine da_read_obs_chem_sfc (iv, filename, grid)
       read (platform%info%date_char,'(i4,3(i2))')  iyear, imonth, iday, ihour
       imin=0
 
-!!!	write(*,*) 'readdd',report,platform%info%lat,platform%info%lon,iyear, imonth, iday, ihour, platform%chem(PARAM_FIRST_SCALAR)%inv, platform%chem(PARAM_FIRST_SCALAR+1)%inv
-	 
       if (iost /= 0) then
          ! FIX? This is expected, but its unclear how we handle failure
          ! here without assuming the fortran2003 convention on
@@ -135,7 +130,6 @@ subroutine da_read_obs_chem_sfc (iv, filename, grid)
          platform%info%lon = 0.0
       end if
 
-!!!	write(*,*) 'chkbbb'
       ! read model location
       ! =========================
 
@@ -163,7 +157,6 @@ subroutine da_read_obs_chem_sfc (iv, filename, grid)
          cycle
       endif
 
-!!!	write(*,*) 'chkccc'
       ! Restrict to a range of reports, useful for debugging
 
       if (report < report_start) then
@@ -175,7 +168,6 @@ subroutine da_read_obs_chem_sfc (iv, filename, grid)
       end if
 
       call da_llxy (platform%info, platform%loc, outside, outside_all)
-!!!	write(*,*) 'chkddd', report_start, report_end, outside
 
       if (outside_all) then
          cycle reports
@@ -199,7 +191,6 @@ subroutine da_read_obs_chem_sfc (iv, filename, grid)
       dlat_earth = dlat_earth * deg2rad
       dlon_earth = dlon_earth * deg2rad
 
-!!!	write(*,*) 'chkeee'
       levs = 1
 
       ! Loop over duplicating obs for global
@@ -230,7 +221,6 @@ subroutine da_read_obs_chem_sfc (iv, filename, grid)
          end if
       end if
       
-!!!	write(*,*) 'chkfff'
       dup_loop: do n = 1, ndup
          is_surface=.true.
          if (use_chemic_surfobs) then
@@ -244,20 +234,14 @@ subroutine da_read_obs_chem_sfc (iv, filename, grid)
             else
                nlocal(chemic_surf) = nlocal(chemic_surf) + 1
                ilocal(chemic_surf) = ilocal(chemic_surf) + 1
-	write(*,*) 'chkf333',chemic_surf,nlocal(chemic_surf),ilocal(chemic_surf), ntotal(chemic_surf)
             end if
 
 
         allocate ( iv%chemic_surf(ilocal(chemic_surf))%chem(num_chemic_surf))
 
-!!!	write(*,*) 'chkf444',PARAM_FIRST_SCALAR,num_chemic_surf 
             do ichem = PARAM_FIRST_SCALAR, num_chemic_surf
                 iv%chemic_surf(ilocal(chemic_surf))%chem(ichem) = platform%chem(ichem)
-!!!		write(*,*) 'chknum ',ilocal(chemic_surf),nlocal(chemic_surf),ichem,platform%chem(ichem)
-!!!		write(*,*) iv%chemic_surf(ilocal(chemic_surf))%chem(ichem)
             end do
-!!!	write(*,*) 'chkf555'            
-	 
 	 else
 
             write(unit=message(1), fmt='(a)') 'unsaved obs found:'
@@ -270,12 +254,9 @@ subroutine da_read_obs_chem_sfc (iv, filename, grid)
 
          end if
 
-!!!	write(*,*) 'chkggg'
          if( is_surface .or. (obs_index == gpspw) .or. (levs > 0 .and. .not. thin_conv_ascii) .or. &
             (levs > 0 .and. (thin_conv_ascii .and. (obs_index /=  airep .and. obs_index /= tamdar))) ) then
-!!!	write(*,*) 'chkg222', obs_index
             iv%info(obs_index)%name(ilocal(obs_index))      = platform%info%name
-!!!	write(*,*) 'chkg333'
             iv%info(obs_index)%platform(ilocal(obs_index))  = platform%info%platform
             iv%info(obs_index)%id(ilocal(obs_index))        = platform%info%id
             iv%info(obs_index)%date_char(ilocal(obs_index)) = platform%info%date_char
@@ -302,7 +283,6 @@ subroutine da_read_obs_chem_sfc (iv, filename, grid)
 
          end if  ! for thin_conv_ascii skipping obs_index for which thin_3d is true like airep and tamdir
 
-!!!	write(*,*) 'chkhhh'
          if (global .and. n < 2) then
             if (test_transforms) exit dup_loop
             if (platform%loc % i >= ide) then
@@ -314,8 +294,6 @@ subroutine da_read_obs_chem_sfc (iv, filename, grid)
             platform%loc%proc_domain = .not. platform%loc%proc_domain
          end if
       end do dup_loop
-
-!!!	write(*,*) 'chkiii'
 
    end do reports
 

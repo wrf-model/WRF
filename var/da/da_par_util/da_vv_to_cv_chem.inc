@@ -336,28 +336,14 @@ subroutine da_vv_to_cv_chem(vv, xp, mzs, nmzs, cv_size, rcv &
                   do i=is,ie
                      ijk = ijk + 1
                      rcv(ijk) = vchem % chem_ic(i,j,k,ic)
-!!!                     rcv(ijk) = 0.05
-!!!				write(*,*) 'vchtorcv', vchem % chem_ic(i,j,k,ic), i,j,k,ic, rcv(ijk), ijk
                   end do
                end do
             end do
-!!!            write(*,*) 'cvs & cve 2aaa = ', cv_s, cv_e, ix,jy,mz,ijm
 #else
             rcv(cv_s:cv_e) = RESHAPE(vchem % chem_ic(is:ie,js:je,1:mz,ic))
 #endif
          end do
       end if
-
-         if (isnan(sum(rcv))) then
-             do k=1,1
-                 do j=js,js+10
-                    do i=is,is+10
-                           write(*,*) 'vchtorcv', vchem % chem_ic(i,j,k,ic), vv % v1(i,j,k), vv % v3(i,j,k), vv % v5(i,j,k), vv % v9(i,j,k), vv % v11(i,j,k    ), i,j,k,ic, ne, nmzs
-                    end do
-                 end do
-              end do
-         end if
-
 
 !      if ( num_scalebio >= PARAM_FIRST_SCALAR ) then
 !         mz = mzs_chem(offset)

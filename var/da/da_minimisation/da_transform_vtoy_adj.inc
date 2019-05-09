@@ -284,17 +284,14 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
          !in order to pass in vp%alpha
 
 #if (WRF_CHEM == 1)
-!      if (present(vchem) .and. iv%info(chemic_surf)%nlocal > 0) then
       if (present(vchem)) then
 !         call da_transform_vtox_adj(grid, be%cv%size_jb, xbx, be, ep, vp, vv, cv(1:be%cv%size_jb), vchem=vchem)
 !         call da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv, vchem=vchem)
          call da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv_local, vchem=vchem)
          cv = cv + cv_local
-         write(*,*)  'vtox_adj chem mod done', cv_size, be%cv%size_jb
       else
 #endif
          call da_transform_vtox_adj(grid, cv_size, xbx, be, ep, vp, vv, cv_local)
-         write(*,*)  'vtox_adj noall done'
          cv = cv + cv_local
 #if (WRF_CHEM == 1)
       end if

@@ -1310,7 +1310,6 @@ if ( use_chemic_surfobs ) then
 !  write scaleant members
 !
 
-	write(*,*) 'update fg 111'
   p => grid%head_statevars
   varname = ''
   do while (trim(varname) .ne. 'CHEM' .and. ASSOCIATED( p ))
@@ -1318,7 +1317,6 @@ if ( use_chemic_surfobs ) then
      varname = trim( p%DataName )
   end do
 
-	write(*,*) 'update fg 222'
   if ( trim(varname) .eq. 'CHEM' ) then
      ndim1 = p%Ndim - 1
      ordering = p%MemoryOrder
@@ -1330,7 +1328,6 @@ if ( use_chemic_surfobs ) then
      end_index1(2) = p%ed2
      end_index1(3) = p%ed3
 
-	write(*,*) 'update fg 333'
 !!     do ic = 1, num_chem-1
      do ic = PARAM_FIRST_SCALAR, num_chem
 !!!     do ic = 2,2
@@ -1345,7 +1342,6 @@ if ( use_chemic_surfobs ) then
                                           ids, ide-1,          jds, jde-1,          kds, kde-1, &
                                           ims, ime,            jms, jme,            kms, kme,   &
                                           ips, min(ipe,ide-1), jps, min(jpe,jde-1), kps, kpe-1  )
-	write(*,*) 'update fg 444, ic=', ic, num_chem
 #endif
         if (rootproc) then
            do k= 1,nsig_regional
@@ -1359,12 +1355,11 @@ if ( use_chemic_surfobs ) then
                  end do
               end do
            end do
-	write(*,*) 'update fg 555'
            rmse_var = TRIM( p%dname_table(grid%id,ic) )
            dimnames(1) = TRIM(p%dimname1)
            dimnames(2) = TRIM(p%dimname2)
            dimnames(3) = TRIM(p%dimname3)
-          write(*,*)' rmse_var=',trim(rmse_var)
+!          write(*,*)' rmse_var=',trim(rmse_var)
 !          write(*,*)' nlon, nlat, nsig= ',nlon_regional,nlat_regional,nsig_regional
 !          write(*,*)' ordering=',ordering
 !          write(*,*)' WrfType,WRF_REAL=',WrfType,WRF_REAL

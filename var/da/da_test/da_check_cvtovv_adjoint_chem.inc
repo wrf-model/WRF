@@ -97,7 +97,6 @@ subroutine da_check_cvtovv_adjoint_chem(grid, cv_size, xbx, be, cv, vv, vchem)
    cv_size_tmp = cv_size - be%cv%size_jp - be%cv%size_js - be%cv%size_jl
    adj_par_rhs = sum(cv(1:cv_size_tmp) * cv2(1:cv_size_tmp))
 
-	write(*,*) 'chkadj_chem size', cv_size_tmp
    !----------------------------------------------------------------------
    ! [5.0] Print output:
    !----------------------------------------------------------------------

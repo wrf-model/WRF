@@ -37,7 +37,6 @@ subroutine da_jo_and_grady_chem_sfc(iv, re, jo, jo_grad_y)
    do ichem = PARAM_FIRST_SCALAR, num_chemic_surf
    do n=1, iv%info(chemic_surf)%nlocal
       jo_grad_y%chemic_surf(n)%chem(ichem) = -re%chemic_surf(n)%chem(ichem) / (iv%chemic_surf(n)%chem(ichem)%error * iv%chemic_surf(n)%chem(ichem)%error)
-!!!	write(*,*) 'err111', jo_grad_y%chemic_surf(n)%chem(ichem), re%chemic_surf(n)%chem(ichem), iv%chemic_surf(n)%chem(ichem)%error, n, ichem
    end do
    end do
 

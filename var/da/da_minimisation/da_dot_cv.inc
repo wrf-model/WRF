@@ -44,11 +44,9 @@ real function da_dot_cv(cv_size, x, y, grid, mzs, nmzs &
  !-------------------------------------------------------------
    lvarbc = present(jp_start) .and. present(jp_end)
    if (lvarbc) lvarbc = lvarbc .and. (jp_end >= jp_start)   
-!!!	write(*,*) 'chkdot111', jp_start,jp_end
    if (lvarbc .and. .not. rootproc) then
       xx(jp_start:jp_end) = 0.
       yy(jp_start:jp_end) = 0.
-	write(*,*) 'chkdot222', jp_start,jp_end
    end if
       
    ! Bitwise-exact reduction preserves operation order of serial code for
@@ -90,18 +88,13 @@ real function da_dot_cv(cv_size, x, y, grid, mzs, nmzs &
 
    else
 
-!!!	write(*,*) 'chkdot333', cv_size,xx(2126629:2126629+10), yy(2126629:2126629+10) 
-      write(*,*) 'chkdot333', cv_size, dtemp1(1)
-
       dtemp1(1) = da_dot(cv_size, xx, yy)
-      write(*,*) 'chkdot444', cv_size, dtemp1(1)
       !if (.not. global) then
          dtmp = dtemp1(1)
          ! summation across processors:
          dtemp1(1) = wrf_dm_sum_real(dtmp)
       !end if
 
-      write(*,*) 'chkdot555', cv_size, dtemp1(1)
    end if
   
    deallocate(xx,yy)

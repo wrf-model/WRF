@@ -1402,7 +1402,6 @@ subroutine da_setup_be_regional(xb, be, grid)
          if ( chem_cv_options >= 1 ) then
 	    do i=1,num_cv_3d_chem
 !                write(unit=message(i+6),fmt=write_fmt) 'be',(i+5),'= ',be12_rf_lengthscale(i,:)
-                write(*,*) 'be',(i+5),'= ',be12_rf_lengthscale(i,:)
             end do
             call da_message(message(i+6:num_cv_3d_chem+6))
          end if
@@ -2024,8 +2023,6 @@ subroutine da_setup_be_regional(xb, be, grid)
       ! 7.0 Apply empirical and recursive filter rescaling factor:
       ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-	write(*,*) 'chkbe11', be % v1 % val(1:10,1), var_scaling1(1), len_scaling1(1), xb % ds, sum(be1_rf_lengthscale), size(be1_rf_lengthscale,dim=1),size(be12_rf_lengthscale,dim=1    ), size(be12_rf_lengthscale,dim=2), size(be%v1%val,dim=1), size(be%v1%val,dim=2), size(be%v12(1)%val,dim=1), size(be%v12(1)%val,dim=2), sum(be % v12(17) % val), sum(be % v12(18) % val), sum(be % v12(19) % val), sum(be % v11 % val) 
-
       call da_rescale_background_errors(var_scaling1(1), len_scaling1(1), &
                                          xb % ds, be1_rf_lengthscale, be % v1)
       call da_rescale_background_errors(var_scaling2(1), len_scaling2(1), &
@@ -2396,19 +2393,9 @@ subroutine da_setup_be_regional(xb, be, grid)
       else
         be%cv_mz(num_cv_3d_basic+num_cv_3d_extra+num_cv_2d) = be%v11%mz
       end if
-	write(*,*) 'cv_mz num  ', num_cv_3d_basic, num_cv_3d_extra, num_cv_2d, be%v11%mz
    end if
    be%cv_mz(be%ncv_mz-1) = be%alpha%mz
    be%cv_mz(be%ncv_mz)   = be%ne
-
-   write(*,*) 'chkbe22', be % v12(19) % val(1:10,1), sum(be %v12(19)%val), sum(be %v12(14)%val), sum(be %v12(11)%val)
-
-   write(*,*) 'cv_mz num222  ', be%ncv_mz-1,  be%cv_mz(be%ncv_mz-1), be%ncv_mz,  be%cv_mz(be%ncv_mz)
-
-!	write(*,*) 'eval test 111  ', be % v12(1) % val
-!	write(*,*) 'eval test 222  ', be % v12(5) % val
-!	write(*,*) 'eval test 333  ', be % v12(9) % val
-!	write(*,*) 'eval test 444  ', be % v12(15) % val
 
    if (trace_use) call da_trace_exit("da_setup_be_regional")
 

@@ -41,7 +41,11 @@ README.md				@wrf-model/global_owner
 /phys/module_mp_jensen_ishmael.F	@graupely @wrf-model/physics
 /phys/module_mp_gsfcgce_4ice_nuwrf.F	@cacruz @wrf-model/physics
 /phys/module_sf_noahmp*			@barlage @wrf-model/physics
-/phys/module_fr_*			@wrf-model/physics
+/phys/module_fr_*			@pedro-jm @brankokosovic @domingom @wrf-model/physics
+/phys/module_bl_mynn.F			@joeolson42 @wrf-model/physics
+/phys/module_sf_mynn.F			@joeolson42 @wrf-model/physics
+/phys/module_sf_px*   			@coawstwx @wrf-model/physics
+/phys/module_bl_acm.F  			@coawstwx @wrf-model/physics
 
 #	Shared Physics Between MPAS and WRF
 

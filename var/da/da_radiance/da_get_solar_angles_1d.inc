@@ -50,14 +50,14 @@ subroutine da_get_solar_angles_1d( yr, mt, dy, hr, mn, sc, &
    real(r_double), allocatable :: lmst(:), ha(:)
    real(r_double) :: mnlon, mnanom, eclon, oblqec
    real(r_double) :: num, den, ra, dec
-   real(r_double), allocatable :: elev(:), elc(:), refrac(:)
+   real(r_double), allocatable :: elev(:), refrac(:) !, elc(:)
    logical, allocatable :: valid_loc(:)
 
    ! Conversion to Julian day from MJD reference time: 1978 Jan 01 00:12:00 (see da_get_julian_time)
-   real(r_kind), parameter :: jd_jmod = 43510.0  ! = 2443510.0 - 2.4e6 (rel. adjust improves precision of ±)
+   real(r_double), parameter :: jd_jmod = 43510.0  ! = 2443510.0 - 2.4e6 (rel. adjust improves precision of ±)
 
 !   ! Conversion to Julian day from MJD reference time: 1978 Jan 01 00:00:00 (see da_get_julian_time)
-!   real(r_kind), parameter :: jd_jmod = 43509.5  ! = 2443510.0 - 2.4e6 (rel. adjust improves precision of ±)
+!   real(r_double), parameter :: jd_jmod = 43509.5  ! = 2443510.0 - 2.4e6 (rel. adjust improves precision of ±)
 
 
    integer :: n
@@ -67,6 +67,7 @@ subroutine da_get_solar_angles_1d( yr, mt, dy, hr, mn, sc, &
    allocate( lmst(n) )
    allocate( ha(n) )
    allocate( elev(n) )
+!   allocate( elc(n) )
    allocate( refrac(n) )
    allocate( valid_loc(n) )
 
@@ -112,8 +113,8 @@ subroutine da_get_solar_angles_1d( yr, mt, dy, hr, mn, sc, &
    dec = asin( sin( oblqec ) * sin( eclon ) )
 
    ! Calculate Greenwich mean sidereal time in hours
-!   gmst = 6.697375 + 0.0657098242*time + real(hr,r_kind) + real(mn,r_kind) / 60. + real(sc,r_kind) / 3600.
-   gmst = 6.697375 + 0.0657098242*time + real(hr * 3600 + mn * 60 + sc, r_kind) / 3600.
+!   gmst = 6.697375 + 0.0657098242*time + real(hr,r_double) + real(mn,r_double) / 60. + real(sc,r_double) / 3600.
+   gmst = 6.697375 + 0.0657098242*time + real(hr * 3600 + mn * 60 + sc, r_double) / 3600.
 
    ! Hour not changed to sidereal time since 'time' includes the fractional day 
    gmst = mod( gmst, 24. )
@@ -146,6 +147,7 @@ subroutine da_get_solar_angles_1d( yr, mt, dy, hr, mn, sc, &
    where ( ha .gt.  PI .and. valid_loc ) ha = ha - 2.0*PI
 
    ! Change latitude to radians
+   latrad = missing_r
    where ( valid_loc )
       latrad = lat * deg2rad
    end where
@@ -154,10 +156,19 @@ subroutine da_get_solar_angles_1d( yr, mt, dy, hr, mn, sc, &
    ! mnlon in degs, gmst in hours, jd in days if 2.4e6 added;
    ! mnanom, eclon, oblqec, ra, lmst, and ha in radians
 
-   ! Calculate elevation and azimuth
-   solazi = missing_r
+   ! Calculate elevation (90 - zenith)
+   ! (asin varies between -pi/2 to pi/2)
    where ( valid_loc )
       elev = asin(  sin( dec ) * sin( latrad ) + cos( dec ) * cos( latrad ) * cos( ha ) )
+   end where
+
+   ! Night-time angles are inconsequential
+   valid_loc = (valid_loc .and. elev.ge.0.)
+
+   ! Calculate azimuth
+   ! (asin varies between -pi/2 to pi/2)
+   solazi = missing_r
+   where ( valid_loc )
       solazi  = asin( -cos( dec ) * sin( ha ) / cos( elev ) )
    end where
 
@@ -170,20 +181,42 @@ subroutine da_get_solar_angles_1d( yr, mt, dy, hr, mn, sc, &
 !   endif
 
    ! When solazi=90 degs, elev == elcritical = asin( sin(dec) / sin(latrad) )
-   where ( valid_loc )
-      elc = asin( sin( dec ) / sin( latrad ) )
-   end where
-   where ( elev.ge.elc .and. valid_loc )                solazi = PI - solazi
-   where ( elev.le.elc .and. ha.gt.0. .and. valid_loc ) solazi = 2.0*PI + solazi
+! JJG: elc is undefined when sin(dec) / sin(latrad) is outside [-1,1] or dec > latrad when both are positive...need better method to determine quadrant
+   !where ( valid_loc )
+   !   elc = asin( sin( dec ) / sin( latrad ) )
+   !end where
+   !where ( elev.ge.elc .and. valid_loc )                solazi = PI - solazi
+   !where ( elev.le.elc .and. ha.gt.0. .and. valid_loc ) solazi = 2.0*PI + solazi
 
-   ! Convert azimuth and elevation to degs before returning
+   !Updated according to Eq. 3.18 at https://www.powerfromthesun.net/Book/chapter03/chapter03.html
+   ! "Power From The Sun" is the great new website by William Stine and Michael Geyer. It features 
+   ! a revised and updated (and free!) version of "Solar Energy Systems Design" by W.B.Stine and 
+   ! R.W.Harrigan (John Wiley and Sons, Inc. 1986) retitled "Power From The Sun", along with 
+   ! resources we hope you will find useful in learning about solar energy. 
+   where ( valid_loc .and. cos(ha) < ( tan(dec) / tan(latrad) ) )
+      solazi = 2.0*PI + solazi
+   elsewhere ( valid_loc )
+      solazi = PI - solazi
+   end where
+
+   ! Convert az to degs, force between 0 and 2*pi
    where ( valid_loc )
       solazi = solazi / deg2rad
+   end where
+   solazi = mod( solazi, 360. )
+
+   ! Calculate refraction correction for US stan. atmosphere
+   ! (need to have elev in degs before calculating correction)
+   where ( valid_loc )
       elev = elev / deg2rad
    end where
 
-   ! Calculate refraction correction for US stan. atmosphere
-   ! (need to have elev in degs)
+   !JJG: Added these bounds (should not need them)
+   !Keep elevation between -90. to +90.
+   where ( valid_loc .and. elev.lt.-90.) &
+      elev = - (180. + elev)
+   where ( valid_loc .and. elev.gt.90.) &
+      elev = 180. - elev
 
 !   ! Michalsky (1988)
 !   where ( elev.gt. - 0.56 )
@@ -204,24 +237,16 @@ subroutine da_get_solar_angles_1d( yr, mt, dy, hr, mn, sc, &
    end where
    ! note that 3.51579=1013.25 mb/288.2 C
 
-
-   solzen = missing_r
    where ( valid_loc )
       elev = elev + refrac
    end where
 
-   !JJG: Added these bounds
-   !Keep elevation between -90. to +90.
-   where ( valid_loc .and. elev.lt.-90.) &
-      elev = - (180. + elev)
-   where ( valid_loc .and. elev.gt.90.) &
-      elev = 180. - elev
 
-   where ( valid_loc )
-      ! Convert elevation to topocentric zenith
-      solzen = 90.0 - elev
+   ! Convert elevation to topocentric zenith
+   solzen = missing_r
+   where (valid_loc)
+      solzen = 90.0_r_kind - elev
    end where
-
 
    deallocate( latrad, lmst, ha, elev, refrac, valid_loc )
 

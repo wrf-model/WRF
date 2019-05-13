@@ -48,7 +48,7 @@ subroutine da_get_solar_angles( yr, mt, dy, hr, mn, sc, &
    real(r_double) :: delta, ju, jmod, time, gmst, lmst
    real(r_double) :: mnlon, mnanom, eclon, oblqec
    real(r_double) :: num, den, ra, dec, ha
-   real(r_double) :: elev, elc, refrac
+   real(r_double) :: elev, refrac !, elc
 
    ! Conversion to Julian day from MJD reference time: 1978 Jan 01 00:12:00 (see da_get_julian_time)
    real(r_double), parameter :: jd_jmod = 43510.0  ! = 2443510.0 - 2.4e6 (rel. adjust improves precision of ±)
@@ -56,12 +56,12 @@ subroutine da_get_solar_angles( yr, mt, dy, hr, mn, sc, &
 !   ! Conversion to Julian day from MJD reference time: 1978 Jan 01 00:00:00 (see da_get_julian_time)
 !   real(r_double), parameter :: jd_jmod = 43509.5  ! = 2443510.0 - 2.4e6 (rel. adjust improves precision of ±)
 
+   solzen = missing_r
+   solazi = missing_r
    if ( lat .gt.   90. .or. &
         lat .lt.  -90. .or. &
         lon .gt.  180. .or. &
         lon .lt. -180. ) then
-      solzen = missing_r
-      solazi = missing_r
       return
    end if
 
@@ -104,6 +104,7 @@ subroutine da_get_solar_angles( yr, mt, dy, hr, mn, sc, &
    endif
 
    ! Calculate declination in radians
+   ! (asin varies between -pi/2 to pi/2)
    dec = asin( sin( oblqec ) * sin( eclon ) )
 
    ! Calculate Greenwich mean sidereal time in hours
@@ -133,8 +134,15 @@ subroutine da_get_solar_angles( yr, mt, dy, hr, mn, sc, &
    ! mnlon in degs, gmst in hours, ju in days minus 2.4e6;
    ! mnanom, eclon, oblqec, ra, lmst, and ha in radians
 
-   ! Calculate elevation and azimuth
+   ! Calculate elevation (90 - zenith)
+   ! (asin varies between -pi/2 to pi/2)
    elev = asin(  sin( dec ) * sin( latrad ) + cos( dec ) * cos( latrad ) * cos( ha ) )
+
+   ! Night-time angles are inconsequential
+   if ( elev < 0. ) return
+
+   ! Calculate azimuth
+   ! (asin varies between -pi/2 to pi/2)
    solazi  = asin( -cos( dec ) * sin( ha ) / cos( elev ) )
 
 !JJG: From J.P. Justiniano (not in Michalsky, causes differences with NREL SPA)
@@ -145,25 +153,39 @@ subroutine da_get_solar_angles( yr, mt, dy, hr, mn, sc, &
 !      solazi = PI - solazi
 !   endif
 
-   ! When solazi=90 degs, elev == elcritical = asin( sin(dec) / sin(latrad) )
-   elc = asin( sin( dec ) / sin( latrad ) )
-   if ( elev.ge.elc )                solazi = PI - solazi
-   if ( elev.le.elc .and. ha.gt.0. ) solazi = 2.0*PI + solazi
 
-   ! Convert az to degs before returning
+!   ! When solazi=90 degs, elev == elcritical = asin( sin(dec) / sin(latrad) )
+! JJG: elc is undefined when sin(dec) / sin(latrad) is outside [-1,1] or dec > latrad when both are positive...need better method to determine quadrant
+   !ORIGINAL:  
+   !elc = asin( sin( dec ) / sin( latrad ) )
+   !if ( elev.ge.elc )                solazi = PI - solazi
+   !if ( elev.le.elc .and. ha.gt.0. ) solazi = 2.0*PI + solazi
+
+   !Updated according to Eq. 3.18 at https://www.powerfromthesun.net/Book/chapter03/chapter03.html
+   ! "Power From The Sun" is the great new website by William Stine and Michael Geyer. It features 
+   ! a revised and updated (and free!) version of "Solar Energy Systems Design" by W.B.Stine and 
+   ! R.W.Harrigan (John Wiley and Sons, Inc. 1986) retitled "Power From The Sun", along with 
+   ! resources we hope you will find useful in learning about solar energy. 
+   if ( cos(ha) < ( tan(dec) / tan(latrad) ) ) then
+      solazi = 2.0*PI + solazi
+   else
+      solazi = PI - solazi
+   end if
+
+   ! Convert az to degs, force between 0 and 2*pi
    solazi = solazi / deg2rad
+   solazi = mod( solazi, 360. )
 
    ! Calculate refraction correction for US stan. atmosphere
    ! (need to have elev in degs before calculating correction)
    elev = elev / deg2rad
 
-   !JJG: Added these bounds
+   !JJG: Added these bounds (should not need them)
    !Keep elevation between -90. to +90.
    if ( elev.lt.-90. ) &
       elev = - (180. + elev)
    if ( elev.gt.90. ) &
       elev = 180. - elev
-
 
 !   ! Michalsky (1988)
 !   if ( elev.gt. - 0.56 ) then
@@ -186,8 +208,8 @@ subroutine da_get_solar_angles( yr, mt, dy, hr, mn, sc, &
    ! note that 3.51579=1013.25 mb/288.2 C
 
    elev = elev + refrac
-   
+
    ! Convert elevation to topocentric zenith
-   solzen = 90.0 - elev
+   solzen = 90.0_r_kind - elev
 
 end subroutine da_get_solar_angles

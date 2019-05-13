@@ -39,7 +39,7 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
    logical           :: print_cld_debug
 
    !! Additional variables used by Harnish, Weissmann, & Perianez (2016)
-   real              :: BTlim(nchan), BTlim_temp
+   real              :: BTlim(nchan)
    real, allocatable :: cld_impact(:,:), cld_impact_global(:,:), weights_global(:)
    integer           :: buf_i, buf_f, nbuf, nlocal, nglobal, iproc
    real, parameter   :: camin = 0.0
@@ -152,103 +152,17 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
    if ( crtm_cloud ) then
       tb_xb_clr => iv%instid(i)%tb_xb_clr
 
-!      if (calc_ir_btlim) then
-         allocate ( cld_impact (iv%instid(i)%info%n1:iv%instid(i)%info%n2, 1:2) )
-         cld_impact = missing_r
-         BTlim = missing_r
-         nlocal = iv%instid(i)%info%n2 - iv%instid(i)%info%n1 + 1
-#ifdef DM_PARALLEL
-         call mpi_allreduce( nlocal, nglobal, 1, mpi_integer, mpi_sum, comm, ierr )
-#else
-         nglobal = nlocal
-#endif
-         allocate(cld_impact_global(nglobal, 1:2))
-         allocate(weights_global(nglobal))
-
-         do k = 1, nchan
-            do n= iv%instid(i)%info%n1,iv%instid(i)%info%n2
-               if ( .true. &
-                     .and. tb_inv( k, n ) .gt. missing_r &
-                     .and. tb_ob(  k, n ) .gt. 0. &
-                     .and. tb_xb(  k, n ) .gt. 0. &
-                     ) then
-
-                  cld_impact(n,1) = tb_xb(k,n)
-                  cld_impact(n,2) = tb_xb_clr(k,n) - tb_xb(k,n)
-!JJGDEBUG
-                  if (print_cld_debug) write(stdout,'(A,2I8,2F16.8,6(2x,A))') 'PIXEL_DEBUG91: ', n, k, &
-                     cld_impact(n,1:2), &
-                     iv%instid(i)%info%date_char(n)(1:4), &
-                     iv%instid(i)%info%date_char(n)(6:7), &
-                     iv%instid(i)%info%date_char(n)(9:10), &
-                     iv%instid(i)%info%date_char(n)(12:13), &
-                     iv%instid(i)%info%date_char(n)(15:16), &
-                     iv%instid(i)%info%date_char(n)(18:19)
-!                     iv%instid(i)%info%date_char(n)
-
-!JJGDEBUG
-               end if
-
-            end do
-
-            buf_f = 0
-            ProcLoop: do iproc = 0, num_procs-1
-               nbuf = nlocal
-#ifdef DM_PARALLEL
-               call mpi_bcast(nbuf, 1, mpi_integer, iproc, comm, ierr )
-#endif
-               if (nbuf .eq. 0) cycle
-               buf_i = buf_f + 1
-               buf_f = buf_i + nbuf - 1
-
-               if (iproc .eq. myproc) then
-                  cld_impact_global(buf_i:buf_f,:) = cld_impact(:,:)
-               else
-                  cld_impact_global(buf_i:buf_f,:) = missing_r
-               end if
-               call mpi_bcast(cld_impact_global(buf_i:buf_f,:), nbuf * 2, true_mpi_real, iproc, comm, ierr )
-            end do ProcLoop
-
-
-            ! JJG: This is a very rough estimate of BTlim for now
-!            where ( cld_impact_global(:,2) .ge. 0.1 ) !Really need to do this offline with stats from multiple days...
-            where ( cld_impact_global(:,2) .le. 0.00001 .or. cld_impact_global(:,2) .ge. 0.2 ) 
-               cld_impact_global(:,1) = missing_r
-            end where
-
-!            BTlim_temp = sum(cld_impact_global(:,1), cld_impact_global(:,1).gt.missing_r) / &
-!                         count(cld_impact_global(:,1).gt.missing_r)
-
-            where ( cld_impact_global(:,1).gt.missing_r )
-               weights_global = 1. - abs(cld_impact_global(:,2) - 0.1)
-            elsewhere
-               weights_global = missing_r
-            end where
-            BTlim_temp = sum(cld_impact_global(:,1) * weights_global, cld_impact_global(:,1).gt.missing_r) / &
-                         sum(weights_global, cld_impact_global(:,1).gt.missing_r)
-
-!            BTlim_temp = minval(cld_impact_global(:,1), cld_impact_global(:,1).gt.missing_r)
-            if ( BTlim_temp.eq.BTlim_temp ) then
-               if ( BTlim_temp .gt. 0 ) BTlim(k) = BTlim_temp
-            end if
-!Really need to do this offline with stats from multiple days...BTlim will be a lookup table across channels.
-
-            !Alternatively could sort cld_impact by clr-cld difference, then
-            ! find median tb_xb at difference of 0.1 (how??)
-
-!JJGDEBUG
-            if (print_cld_debug) write(stdout,'(A,I8,F12.4)') 'PIXEL_DEBUG92: ', k, &
-               BTlim(k)
-!JJGDEBUG
-
-         end do
-         deallocate ( cld_impact )
-         deallocate ( cld_impact_global )
-         deallocate ( weights_global )
-
-!      else
-!         BTlim = 240.
-!      end if
+      !JJG: for Harnisch et al. BTlim using stats from CONUS 9km 2-hr WRF forecast from GSI analysis
+      BTlim(1)  = 269.5
+      BTlim(2)  = 231.5
+      BTlim(3)  = 240.0
+      BTlim(4)  = 250.0
+      BTlim(5)  = 271.0
+      BTlim(6)  = 258.0
+      BTlim(7)  = 272.0
+      BTlim(8)  = 268.0
+      BTlim(9)  = 270.5
+      BTlim(10) = 258.0
    end if
 
    PixelQCLoop: do n= iv%instid(i)%info%n1,iv%instid(i)%info%n2
@@ -481,18 +395,20 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
                   !--------------------------------------------------------------------------
                   ! Modify EMISS for sun glint area may be  not work, because we are at north land
                   ! - compute relative azimuth
-                  Relaz = RELATIVE_AZIMUTH(iv%instid(i)%solazi(n),iv%instid(i)%satazi(n))
+                  crit_clddet = (rad_o_ch7/rad_o_ch14 - rad_b_ch7/rad_b_ch14)/ & 
+                            (rad_b_ch7 / rad_b_ch14)
 
-                  ! - compute glint angle
-                  Glintzen = GLINT_ANGLE(iv%instid(i)%solzen(n),iv%instid(i)%satzen(n),Relaz )
+                  if (     iv%instid(i)%solzen(n) > 0. &
+                     .and. iv%instid(i)%solzen(n) < 90. ) then
+                     Relaz = RELATIVE_AZIMUTH(iv%instid(i)%solazi(n),iv%instid(i)%satazi(n))
 
-                  if ( Glintzen.lt.40.0 .and. isflg==sea_flag) then
-                     crit_clddet = - tb_inv(ch7,n) ! (B_ch7 - O_ch7)
-                     offset_clddet = 1
-                  else
-                     if (tb_ob(ch7,n) .gt. 0. .and. tb_ob(ch14,n) .gt. 0.) &
-                        crit_clddet = (rad_o_ch7/rad_o_ch14 - rad_b_ch7/rad_b_ch14)/ & 
-                                  (rad_b_ch7 / rad_b_ch14)
+                     ! - compute glint angle
+                     Glintzen = GLINT_ANGLE(iv%instid(i)%solzen(n),iv%instid(i)%satzen(n),Relaz )
+
+                     if ( Glintzen.lt.40.0 .and. isflg==sea_flag) then
+                        crit_clddet = - tb_inv(ch7,n) ! (B_ch7 - O_ch7)
+                        offset_clddet = 1
+                     end if
                   end if
 
                case (8)
@@ -546,7 +462,9 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
                tb_qc_clddet = qc_bad
                if (iv%instid(i)%info%proc_domain(1,n)) then
                   nrej_clddet(:,itest) = nrej_clddet(:,itest) + 1
-                  write(stdout,"(A,F14.6,A,I4,2D12.4)") trim(crit_names_clddet(itest)), crit_clddet, " isflg", isflg, iv%instid(i)%info%lat(1,n), iv%instid(i)%info%lon(1,n)
+!JJGDEBUG
+                  if (print_cld_debug) write(stdout,"(A,F14.6,A,I4,2D12.4)") trim(crit_names_clddet(itest)), crit_clddet, " isflg", isflg, iv%instid(i)%info%lat(1,n), iv%instid(i)%info%lon(1,n)
+!JJGDEBUG
                end if
 
                clddet_tests(itest) = 1
@@ -587,7 +505,7 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
 !               ca_mean(k,n) = 0.5 * ( max( 0., BTlim(k) - tb_xb(k,n) ) + &
 !                                      max( 0., BTlim(k) - tb_ob(k,n) ) )
 
-! above using ob with VarBC 
+! using ob with VarBC 
 ! -------------------------------
                ca_mean(k,n) = 0.5 * ( max( 0., BTlim(k) - tb_xb(k,n) ) + &
                                       max( 0., BTlim(k) - (tb_inv(k,n) + tb_xb(k,n)) ) )

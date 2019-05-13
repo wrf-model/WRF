@@ -32,6 +32,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    type(info_type)              :: info
    type(model_loc_type)         :: loc
    integer(i_kind), allocatable :: ptotal(:)
+   integer(i_kind)              :: nthinned
    real(r_double)               :: crit
    integer(i_kind)              :: iout, iobs, i_dummy(1)
    logical                      :: outside, outside_all, iuse, first_chan
@@ -322,10 +323,10 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    !! Collect files available for all views
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   do iview = 1, nviews
+   PrepViews: do iview = 1, nviews
       this_view => view_att(iview)
 
-      if ( .not.this_view % select ) cycle
+      if ( .not.this_view % select ) cycle PrepViews
 
       ! Query fpath for files that match L1B naming conventions for this_view and satellite_id
       fname = trim(INST_PREFIX)//trim(this_view % name_short)
@@ -383,7 +384,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 #endif
       if (this_view % nfiles .lt. 1) then
          this_view % select = .false.
-         cycle
+         cycle PrepViews
       end if
 
       allocate(this_view % filename(this_view % nfiles))
@@ -394,7 +395,156 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
       close(file_unit)
 
       call da_free_unit(file_unit)
-   end do
+
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !! Allocate/init components for this_view
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      allocate(this_view % filechan(this_view % nfiles))
+      allocate(this_view % filedate(this_view % nfiles))
+      allocate(this_view % file_fgat_match(this_view % nfiles,num_fgat_time))
+      allocate(this_view % fgat_time_abs_diff(this_view % nfiles,num_fgat_time))
+      allocate(this_view % min_time_diff(nchan,num_fgat_time))
+      allocate(this_view % nfiles_used(num_fgat_time))
+
+      this_view % file_fgat_match = .false.
+      do ifgat=1,num_fgat_time
+         this_view % fgat_time_abs_diff(:,ifgat) = &
+            abs(time_slots(ifgat) - time_slots(ifgat-1)) * 60.D0 !seconds
+
+         this_view % min_time_diff(:,ifgat) = &
+            abs(time_slots(ifgat) - time_slots(ifgat-1)) * 60.D0 / 2.D0 !seconds
+      end do
+
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      !! Determine which of the files will be used based on user-definitions:
+      !! + fgat window length
+      !! + channels used
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      do ifile = 1, this_view % nfiles
+
+         !Grab the filename (without path) using INST_PREFIX
+         fname = trim(this_view % filename(ifile))
+         ioff = index(fname, trim(INST_PREFIX))
+!!         this_view % filepath(ifile) = fname(1:ioff-1)
+         fname = trim(fname(ioff:len(adjustl(trim(fname)))))
+!!         this_view % filename(ifile) = trim(fname)
+
+         ioff = 0
+         if (iview.eq.3 .or. iview.eq.4) ioff=1
+         ioff = ioff+19
+         read(fname(1+ioff:2+ioff),fmt='(I2.2)') this_view % filechan(ifile)
+
+!!!         !! The channel could instead be read from band_id in each file, but
+!!!         !!  opening/closing files for all channels is time consuming
+!!!         ierr=nf_open(trim(this_view % fpath)//trim(fname),nf_nowrite,ncid)
+!!!         ierr=nf_inq_varid(ncid,'band_id',varid)
+!!!         ierr=nf_get_var_int(ncid,varid,this_view % filechan(ifile))
+!!!         ierr=nf_close(ncid)
+
+         ! Check if channel is selected
+!            if ( .not.any(this_view % filechan(ifile) .eq. channel_select) .or. &
+         if ( .not.any(this_view % filechan(ifile) .eq. channel_list) ) then
+!!!               ierr=nf_close(ncid)
+            cycle
+         end if
+
+         !! Determine central date of this file for obs binning
+         !obs START time
+         ioff = ioff + 8
+         read(fname(1+ioff:4+ioff),fmt='(I4.4)') yr
+         read(fname(5+ioff:7+ioff),fmt='(I3.3)') jdy
+         read(fname(8+ioff:9+ioff),fmt='(I2.2)') hr
+         read(fname(10+ioff:11+ioff),fmt='(I2.2)') mn
+         read(fname(12+ioff:13+ioff),fmt='(I2.2)') sc
+         obs_time = real(sc,8)/60.D0 / 2.D0
+
+         call jday2cal(jdy, yr, mt, dy)
+         call da_get_julian_time(yr,mt,dy,hr,mn,timbdy(1))
+
+         this_view % filedate(ifile) % jdy = jdy
+
+         !obs END time
+         ioff = ioff + 16
+         read(fname(1+ioff:4+ioff),fmt='(I4.4)') yr
+         read(fname(5+ioff:7+ioff),fmt='(I3.3)') jdy
+         read(fname(8+ioff:9+ioff),fmt='(I2.2)') hr
+         read(fname(10+ioff:11+ioff),fmt='(I2.2)') mn
+         read(fname(12+ioff:13+ioff),fmt='(I2.2)') sc
+         obs_time = obs_time + real(sc,8)/60.D0 / 2.D0
+
+         call jday2cal(jdy, yr, mt, dy)
+         call da_get_julian_time(yr,mt,dy,hr,mn,timbdy(2))
+
+         obs_time = obs_time + (timbdy(1) + timbdy(2)) / 2.D0
+
+!! The time it takes to read time_bounds from each file is not insignificant.  Above method is much faster.
+!         !! Determine central date of this file for obs binning
+!!!         ierr=nf_open(trim(this_view % fpath)//trim(fname),nf_nowrite,ncid)
+!!!         ierr=nf_inq_varid(ncid,'time_bounds',varid)
+!!!         ierr=nf_get_var_double(ncid,varid,timbdy)
+!!!         ierr=nf_close(ncid)
+!!!         j2000=(timbdy(1) + timbdy(2)) / 2.D0 /86400.D0
+
+         call da_get_cal_time(obs_time,yr,mt,dy,hr,mn,sc)
+         obs_time = obs_time * 60.D0
+
+         this_view % filedate(ifile) % yr = yr
+         this_view % filedate(ifile) % mt = mt
+         this_view % filedate(ifile) % dy = dy
+         this_view % filedate(ifile) % hr = hr
+         this_view % filedate(ifile) % mn = mn
+         this_view % filedate(ifile) % sc = sc
+         this_view % filedate(ifile) % obs_time = obs_time
+
+
+!JJG: Note that this test being limited by time_slots prevents the use of data before/after the first/last time of the window even if the observations outside the window were recorded at times nearer to those bounds than data contained within the window.
+         if ( obs_time < time_slots(0) * 60.D0 .or.  &
+            obs_time >= time_slots(num_fgat_time) * 60.D0 ) then
+            cycle
+         end if
+
+         do ifgat=1,num_fgat_time
+            this_view % file_fgat_match(ifile,ifgat) = &
+               ( obs_time >= time_slots(ifgat-1) * 60.D0 .and.  &
+                  obs_time  < time_slots(ifgat) * 60.D0 )
+            if (this_view % file_fgat_match(ifile,ifgat)) exit
+         end do
+
+         this_view % fgat_time_abs_diff(ifile,ifgat) = &
+             abs( obs_time - fgat_times_r(ifgat) )
+
+         call get_ichan(this_view % filechan(ifile), channel_list, nchan, ichan)
+         if ( this_view % fgat_time_abs_diff(ifile, ifgat) .ge. &
+              this_view % min_time_diff(ichan, ifgat) ) then
+            this_view % file_fgat_match(ifile,ifgat) = .false.
+         else
+            this_view % min_time_diff(ichan, ifgat) = this_view % fgat_time_abs_diff(ifile, ifgat)
+         end if
+
+         if (count(this_view % file_fgat_match(ifile,:)) .gt. 1) then
+            print*, 'WARNING: More than one bin was selected for ',trim(fname) 
+            print*, 'num_bin_per_file = ',count(this_view % file_fgat_match(ifile,:))
+            print*, 'obs_time = ',obs_time
+            print*, 'Ignoring this file for reading.'
+            this_view % file_fgat_match(ifile,:) = .false.
+            cycle
+         end if
+      end do
+
+      do ifgat = 1, num_fgat_time
+         ! Select a single file for this view, channel, and fgat using min_time_diff
+         if ( count(this_view % file_fgat_match(:, ifgat)).gt.1 ) then
+            do ifile = 1, this_view % nfiles
+               if ( .not. this_view % file_fgat_match(ifile,ifgat) ) cycle
+               call get_ichan(this_view % filechan(ifile), channel_list, nchan, ichan)
+               if ( this_view % fgat_time_abs_diff(ifile, ifgat) .gt. &
+                    this_view % min_time_diff(ichan, ifgat) ) then
+                  this_view % file_fgat_match(ifile,ifgat) = .false.
+               end if
+            end do
+         end if
+      end do
+   end do PrepViews
 
    !! If Full Disk is selected, take 2 passes over the data:
    !! + 1st pass: (A) Determine portions of each view corresponding to this patch
@@ -425,144 +575,6 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
       if ( .not.this_view % select ) cycle
 
-      if (ipass .eq. 1) then
-         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-         !! Allocate/init components for this_view
-         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-         allocate(this_view % filechan(this_view % nfiles))
-         allocate(this_view % filedate(this_view % nfiles))
-         allocate(this_view % file_fgat_match(this_view % nfiles,num_fgat_time))
-         allocate(this_view % fgat_time_abs_diff(this_view % nfiles,num_fgat_time))
-         allocate(this_view % min_time_diff(nchan,num_fgat_time))
-         allocate(this_view % nfiles_used(num_fgat_time))
-
-         this_view % file_fgat_match = .false.
-         do ifgat=1,num_fgat_time
-            this_view % fgat_time_abs_diff(:,ifgat) = &
-               abs(time_slots(ifgat) - time_slots(ifgat-1)) * 60.D0 !seconds
-
-            this_view % min_time_diff(:,ifgat) = &
-               abs(time_slots(ifgat) - time_slots(ifgat-1)) * 60.D0 / 2.D0 !seconds
-         end do
-
-         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-         !! Determine which of the files will be used based on user-definitions:
-         !! + fgat window length
-         !! + channels used
-         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-         do ifile = 1, this_view % nfiles
-
-            !Grab the filename (without path) using INST_PREFIX
-            fname = trim(this_view % filename(ifile))
-            ioff = index(fname, trim(INST_PREFIX))
-!!            this_view % filepath(ifile) = fname(1:ioff-1)
-            fname = trim(fname(ioff:len(adjustl(trim(fname)))))
-!!            this_view % filename(ifile) = trim(fname)
-
-            ioff = 0
-            if (iview.eq.3 .or. iview.eq.4) ioff=1
-            ioff = ioff+19
-            read(fname(1+ioff:2+ioff),fmt='(I2.2)') this_view % filechan(ifile)
-
-!!!            !! The channel could instead be read from band_id in each file, but
-!!!            !!  opening/closing files for all channels is time consuming
-!!!            ierr=nf_open(trim(this_view % fpath)//trim(fname),nf_nowrite,ncid)
-!!!            ierr=nf_inq_varid(ncid,'band_id',varid)
-!!!            ierr=nf_get_var_int(ncid,varid,this_view % filechan(ifile))
-!!!            ierr=nf_close(ncid)
-
-            ! Check if channel is selected
-!            if ( .not.any(this_view % filechan(ifile) .eq. channel_select) .or. &
-            if ( .not.any(this_view % filechan(ifile) .eq. channel_list) ) then
-!!!               ierr=nf_close(ncid)
-               cycle
-            end if
-
-            !! Determine central date of this file for obs binning
-            !obs START time
-            ioff = ioff + 8
-            read(fname(1+ioff:4+ioff),fmt='(I4.4)') yr
-            read(fname(5+ioff:7+ioff),fmt='(I3.3)') jdy
-            read(fname(8+ioff:9+ioff),fmt='(I2.2)') hr
-            read(fname(10+ioff:11+ioff),fmt='(I2.2)') mn
-            read(fname(12+ioff:13+ioff),fmt='(I2.2)') sc
-            obs_time = real(sc,8)/60.D0 / 2.D0
-
-            call jday2cal(jdy, yr, mt, dy)
-            call da_get_julian_time(yr,mt,dy,hr,mn,timbdy(1))
-
-            this_view % filedate(ifile) % jdy = jdy
-
-            !obs END time
-            ioff = ioff + 16
-            read(fname(1+ioff:4+ioff),fmt='(I4.4)') yr
-            read(fname(5+ioff:7+ioff),fmt='(I3.3)') jdy
-            read(fname(8+ioff:9+ioff),fmt='(I2.2)') hr
-            read(fname(10+ioff:11+ioff),fmt='(I2.2)') mn
-            read(fname(12+ioff:13+ioff),fmt='(I2.2)') sc
-            obs_time = obs_time + real(sc,8)/60.D0 / 2.D0
-
-            call jday2cal(jdy, yr, mt, dy)
-            call da_get_julian_time(yr,mt,dy,hr,mn,timbdy(2))
-
-            obs_time = obs_time + (timbdy(1) + timbdy(2)) / 2.D0
-
-!! The time it takes to read time_bounds from each file is not insignificant.  Above method is much faster.
-!            !! Determine central date of this file for obs binning
-!!!            ierr=nf_open(trim(this_view % fpath)//trim(fname),nf_nowrite,ncid)
-!!!            ierr=nf_inq_varid(ncid,'time_bounds',varid)
-!!!            ierr=nf_get_var_double(ncid,varid,timbdy)
-!!!            ierr=nf_close(ncid)
-!!!            j2000=(timbdy(1) + timbdy(2)) / 2.D0 /86400.D0
-
-            call da_get_cal_time(obs_time,yr,mt,dy,hr,mn,sc)
-            obs_time = obs_time * 60.D0
-
-            this_view % filedate(ifile) % yr = yr
-            this_view % filedate(ifile) % mt = mt
-            this_view % filedate(ifile) % dy = dy
-            this_view % filedate(ifile) % hr = hr
-            this_view % filedate(ifile) % mn = mn
-            this_view % filedate(ifile) % sc = sc
-            this_view % filedate(ifile) % obs_time = obs_time
-
-
-!JJG: Note that this test being limited by time_slots prevents the use of data before/after the first/last time of the window even if the observations outside the window were recorded at times nearer to those bounds than data contained within the window.
-            if ( obs_time < time_slots(0) * 60.D0 .or.  &
-               obs_time >= time_slots(num_fgat_time) * 60.D0 ) then
-               cycle
-            end if
-
-            do ifgat=1,num_fgat_time
-               this_view % file_fgat_match(ifile,ifgat) = &
-                  ( obs_time >= time_slots(ifgat-1) * 60.D0 .and.  &
-                     obs_time  < time_slots(ifgat) * 60.D0 )
-               if (this_view % file_fgat_match(ifile,ifgat)) exit
-            end do
-
-            this_view % fgat_time_abs_diff(ifile,ifgat) = &
-                abs( obs_time - fgat_times_r(ifgat) )
-
-            call get_ichan(this_view % filechan(ifile), channel_list, nchan, ichan)
-            if ( this_view % fgat_time_abs_diff(ifile, ifgat) .ge. &
-                 this_view % min_time_diff(ichan, ifgat) ) then
-               this_view % file_fgat_match(ifile,ifgat) = .false.
-            else
-               this_view % min_time_diff(ichan, ifgat) = this_view % fgat_time_abs_diff(ifile, ifgat)
-            end if
-
-            if (count(this_view % file_fgat_match(ifile,:)) .gt. 1) then
-               print*, 'WARNING: More than one bin was selected for ',trim(fname) 
-               print*, 'num_bin_per_file = ',count(this_view % file_fgat_match(ifile,:))
-               print*, 'obs_time = ',obs_time
-               print*, 'Ignoring this file for reading.'
-               this_view % file_fgat_match(ifile,:) = .false.
-               cycle
-            end if
-         end do
-      end if ! ipass == 1
-
-
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !! Access netcdf channel/band files across all fgat windows
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -572,18 +584,6 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
       fgat_loop: do ifgat = 1, num_fgat_time
          if (count(this_view % file_fgat_match(:, ifgat)) .lt. 1) then
             cycle fgat_loop
-         end if
-
-         if ( ipass .eq. 1 .and. count(this_view % file_fgat_match(:, ifgat)).gt.1 ) then
-            ! Select a single file for this view, channel, and fgat using min_time_diff
-            do ifile = 1, this_view % nfiles
-               if ( .not. this_view % file_fgat_match(ifile,ifgat) ) cycle
-               call get_ichan(this_view % filechan(ifile), channel_list, nchan, ichan)
-               if ( this_view % fgat_time_abs_diff(ifile, ifgat) .gt. &
-                    this_view % min_time_diff(ichan, ifgat) ) then
-                  this_view % file_fgat_match(ifile,ifgat) = .false.
-               end if
-            end do
          end if
 
          first_file = 0
@@ -960,7 +960,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 #ifdef DM_PARALLEL
                call mpi_bcast(nbuf, 1, mpi_integer, iproc, comm, ierr )
 #endif
-               if (nbuf .eq. 0) cycle
+               if (nbuf .eq. 0) cycle ProcLoop
                buf_i = buf_f + 1
                buf_f = buf_i + nbuf - 1
 
@@ -1140,8 +1140,9 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 #endif
          end if DoGridGen
 
-         if ( iview.eq.1 .and. ipass.lt.npass .and. sum(this_view % nfiles_used(:)).eq.0 ) then
-            if (this_view % nrad_on_patch_cldqc .gt. 0) then
+         if ( iview.eq.1 .and. ipass.lt.npass .and. &
+              sum(this_view % nfiles_used(:)).eq.0 ) then
+            if ( this_view % nrad_on_patch_cldqc .gt. 0 ) then
                allocate( view_mask( &
                    this_view % ys_p_fd-2:this_view % ye_p_fd+2, &
                    this_view % xs_p_fd-2:this_view % xe_p_fd+2, &
@@ -1151,10 +1152,10 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
             use_view_mask = .true.
          end if
 
-         if ( (ipass.lt.npass .and. iview.eq.1) .or. .not.use_view_mask ) then
-            num_goesabi_global = num_goesabi_global + this_view % nrad_on_domain_cldqc
-            !ptotal(ifgat) = ptotal(ifgat) + this_view % nrad_on_domain_cldqc
-         end if
+!         if ( (ipass.lt.npass .and. iview.eq.1) .or. .not.use_view_mask ) then
+!            num_goesabi_global = num_goesabi_global + this_view % nrad_on_domain_cldqc
+!            !ptotal(ifgat) = ptotal(ifgat) + this_view % nrad_on_domain_cldqc
+!         end if
 
          PatchMatch: if (this_view % nrad_on_patch_cldqc .gt. 0) then
 
@@ -1169,7 +1170,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                      exit
                   end if
                end do
-               if ( ifile .eq. 0 ) cycle
+               if ( ifile .eq. 0 ) cycle ChannelLoop
 
                this_view % nfiles_used(ifgat) = this_view % nfiles_used(ifgat) + 1
 
@@ -1221,7 +1222,6 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                   end if
 
                else
-                  if (inst == 0) cycle
                   !!Utilizing these masks to eliminate data:
                   !! + earthmask
                   !! + zenmask
@@ -1247,15 +1247,16 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                   ! Only use locations where this view is nearest to this fgat time
                   ! - only available when FD data present for any fgat time
                   if (  use_view_mask ) then
-                     if ( .not.any( view_mask ( this_view % ys_p_fd:this_view % ye_p_fd, &
-                                                this_view % xs_p_fd:this_view % xe_p_fd, &
-                                                iview, ichan, ifgat ) ) ) then
+                     if ( .not.any( &
+                          view_mask ( this_view % ys_p_fd:this_view % ye_p_fd, &
+                                      this_view % xs_p_fd:this_view % xe_p_fd, &
+                                      iview, ichan, ifgat ) &
+                                      ) ) then
                         deallocate(allmask_p, readmask_p)
-
-!                        write(unit=stdout,fmt='(3A,I0)') &
-!                           '          ZERO pixels selected for ',trim(this_view % name),' on band ', channel_list(ichan)
+                        write(unit=stdout,fmt='(3A,I0)') &
+                           '          ZERO pixels selected for ',trim(this_view % name),' on band ', channel_list(ichan)
                         this_view % nfiles_used(ifgat) = this_view % nfiles_used(ifgat) - 1
-                        cycle
+                        cycle ChannelLoop
                      end if
                      do n = 1, this_view % nrad_on_patch
                         iy = this_view % iy_1d % patch (n)
@@ -1278,9 +1279,10 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                   !! + fgat
                   !! + channel/band
                   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                  write(unit=stdout,fmt='(A,I0)') &
-                     '          Reading abi radiances for band ',channel_list(ichan)
-
+                  write(unit=stdout,fmt='(A,I0,A,I0)') &
+                     '          Reading ', count(readmask_p), ' abi radiances for band ',channel_list(ichan)
+                  if ( use_clddet_zz) write(unit=stdout,fmt='(A,I0)') &
+                     '          which includes the cloud detection halo'
                   TEMPIR_ifile = -1
                   if ( use_clddet_zz .and. channel_list(ichan).eq.14 ) then
                      ! Require earlier file to be withn 1/2 of TEMPIR_delay_minutes
@@ -1320,7 +1322,6 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                         this_view % ys_local:this_view % ye_local, &
                         this_view % xs_local:this_view % xe_local, 1 ) )
                   end if
-
                   fname = trim(this_view % filename(ifile))
                   call get_abil1b_bt( fname, &
                                       this_view % ys_local, this_view % ye_local, &
@@ -1334,7 +1335,6 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                   ! flag in the datalink_type.
                   ! Presently readmask_p is used internally within get_abil1b_bt to set bt_p=missing_r (works fine)
                   !allmask_p = (allmask_p .and. readmask_p)
-
                   if ( TEMPIR_ifile.gt.0 ) then
                      fname = trim(this_view % filename(TEMPIR_ifile))
                      call get_abil1b_bt( fname, &
@@ -1389,6 +1389,15 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                         call da_get_solar_angles_1d ( yr, mt, dy, hr, mn, sc, &
                            this_view % lat_1d % patch, this_view % lon_1d % patch, &
                            solzen_1d, solazi_1d )
+
+!                        do n = 1, this_view % nrad_on_patch
+!                           iy = this_view % iy_1d % patch (n)
+!                           ix = this_view % ix_1d % patch (n)
+!                           if (.not. allmask_p( iy, ix )) cycle
+!                           call da_get_solar_angles ( yr, mt, dy, hr, mn, sc, &
+!                              this_view % lat_1d % patch(n), this_view % lon_1d % patch(n), &
+!                              solzen_1d(n), solazi_1d(n) )
+!                        end do
                      end if
 
                      allocate(thinmask(this_view % ys_p:this_view % ye_p, &
@@ -1398,16 +1407,16 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                      p => p_fgat
                   end if
 
-                  do n = 1, this_view % nrad_on_patch
+                  PixelLoop: do n = 1, this_view % nrad_on_patch
                      iy = this_view % iy_1d % patch (n)
                      ix = this_view % ix_1d % patch (n)
 
-                     if (.not. allmask_p( iy, ix )) cycle
+                     if (.not. allmask_p( iy, ix )) cycle PixelLoop
 
                      if (first_chan) then
                         info % lat = this_view % lat_1d % patch (n) ! latitude
                         info % lon = this_view % lon_1d % patch (n) ! longitude
-
+!                        num_goesabi_global = num_goesabi_global + 1
                         num_goesabi_local = num_goesabi_local + 1
                      end if
 
@@ -1424,10 +1433,10 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                            if (.not. iuse) then
                               num_goesabi_thinned=num_goesabi_thinned+1
                               thinmask( iy, ix ) = .true.
-                              cycle
+                              cycle PixelLoop
                            end if
                         else
-                           if (thinmask( iy, ix )) cycle
+                           if (thinmask( iy, ix )) cycle PixelLoop
                         end if
                      end if
 
@@ -1463,6 +1472,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                            p % solzen             = missing_r
                            p % solazi             = missing_r
                         end if
+                        if ( p % solzen < 0. ) p % solzen = 150.
                         p % sensor_index          = inst
                         p % ifgat                 = ifgat
                      end if
@@ -1647,8 +1657,10 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                      if (first_chan) &
                         nullify (p % next)
 
-                  end do
-                  deallocate( bt_p, allmask_p, readmask_p)
+                  end do PixelLoop
+                  if ( allocated(bt_p)        ) deallocate ( bt_p )
+                  if ( allocated(allmask_p)   ) deallocate ( allmask_p )
+                  if ( allocated(readmask_p)  ) deallocate ( readmask_p )
                   if ( allocated(terrain_hgt) ) deallocate ( terrain_hgt )
                end if VIEW_SELECT
             end do ChannelLoop
@@ -1656,6 +1668,9 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
             if ( allocated(thinmask)    ) deallocate ( thinmask )
             if ( allocated(solzen_1d)   ) deallocate ( solzen_1d )
             if ( allocated(solazi_1d)   ) deallocate ( solazi_1d )
+         else
+            write(unit=stdout,fmt='(A)') &
+               '          No pixels to read within this subdomain. Waiting for other processors...'
          end if PatchMatch
 
 #ifdef DM_PARALLEL
@@ -1713,6 +1728,14 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
       call da_warning(__FILE__,__LINE__, message(1:1))
    end if
+
+#ifdef DM_PARALLEL
+   call mpi_allreduce( num_goesabi_local, &
+                       num_goesabi_global, &
+                       1, mpi_integer, mpi_sum, comm, ierr )
+#else
+   num_goesabi_global = num_goesabi_local
+#endif
 
 !------------------------------------------------------
    ! NOTE: Remainder of this subroutine modified from da_read_obs_ncgoesimg.inc
@@ -1817,29 +1840,40 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    iv % info(radiance) % nlocal = iv % info(radiance) % nlocal + num_goesabi_used
    iv % info(radiance) % ntotal = iv % info(radiance) % ntotal + num_goesabi_global
 
-#ifdef DM_PARALLEL
    do i = 1, num_fgat_time
+#ifdef DM_PARALLEL
       call mpi_allreduce( num_goesabi_used_fgat(i), &
                           ptotal(i), &
                           1, mpi_integer, mpi_sum, comm, ierr )
-   end do
 #else
-   ptotal(i) = num_goesabi_used_fgat(i)
+      ptotal(i) = num_goesabi_used_fgat(i)
 #endif
+   end do
 
    do i = 1, num_fgat_time
       ptotal(i) = ptotal(i) + ptotal(i-1)
       iv % info(radiance) % ptotal(i) = iv % info(radiance) % ptotal(i) + ptotal(i)
    end do
-   if ( iv % info(radiance) % ptotal(num_fgat_time) /= (iv % info(radiance) % ntotal - num_goesabi_thinned) ) then
+
+#ifdef DM_PARALLEL
+   call mpi_allreduce( num_goesabi_thinned, &
+                       nthinned, &
+                       1, mpi_integer, mpi_sum, comm, ierr )
+#else
+   nthinned = num_goesabi_thinned
+#endif
+
+   if ( iv % info(radiance) % ptotal(num_fgat_time) /= (iv % info(radiance) % ntotal - nthinned) ) then
       write(unit=message(1),fmt='(A,I10,A,I10)') &
-          "Number of ntotal - nthinned:",iv % info(radiance) % ntotal - num_goesabi_thinned," is different from the sum of ptotal:", iv % info(radiance) % ptotal(num_fgat_time)
+          "Number of ntotal - nthinned:",iv % info(radiance) % ntotal - nthinned," is different from the sum of ptotal:", iv % info(radiance) % ptotal(num_fgat_time)
       call da_warning(__FILE__,__LINE__,message(1:1))
    endif
 
-   write(unit=stdout,fmt='(a)') 'num_goesabi_global, num_goesabi_local, num_goesabi_used, num_goesabi_thinned'
-   write(unit=stdout,fmt=*) num_goesabi_global, num_goesabi_local, num_goesabi_used, num_goesabi_thinned
+   write(unit=stdout,fmt='(a)') 'num_goesabi_global, num_goesabi_thinned_global, num_goesabi_used_global'
+   write(unit=stdout,fmt=*) num_goesabi_global, nthinned, ptotal(num_fgat_time)
 
+   write(unit=stdout,fmt='(a)') 'num_goesabi_local, num_goesabi_thinned, num_goesabi_used'
+   write(unit=stdout,fmt=*) num_goesabi_local, num_goesabi_thinned, num_goesabi_used
 
    !  5.0 allocate innovation radiance structure
    !----------------------------------------------------------------

@@ -44,7 +44,7 @@ subroutine da_kmat_mul(grid, config_flags,            &
    call da_calculate_residual(iv,y,re)
 	    
  ! H^T.R^-1.[y^o-H(x_b)]
-   call da_calculate_gradj(1,1,cv_size,0,0,0,0,xbx,be,iv,cv,y,shat,grid,config_flags,re)
+   call da_calculate_gradj(1,1,cv_size,0,0,0,0,0,xbx,be,iv,cv,y,shat,grid,config_flags,re)
    shat = - shat    !! Compensate for sign in calculation of grad_v (Jo)
 	    
  ! A.H^T.R^-1.[y^o-H(x_b)]

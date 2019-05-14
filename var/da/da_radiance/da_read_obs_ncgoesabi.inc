@@ -311,7 +311,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
    num_goesabi_used_fgat = 0
    num_goesabi_thinned   = 0
 
-   if ( use_clddet_zz ) then
+   if ( use_clddet_abi ) then
       cld_qc_buffer = 10
    else
       cld_qc_buffer = 0
@@ -1281,10 +1281,10 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                   write(unit=stdout,fmt='(A,I0,A,I0)') &
                      '          Reading ', count(readmask_p), ' abi radiances for band ',channel_list(ichan)
-                  if ( use_clddet_zz) write(unit=stdout,fmt='(A,I0)') &
+                  if ( use_clddet_abi) write(unit=stdout,fmt='(A,I0)') &
                      '          which includes the cloud detection halo'
                   TEMPIR_ifile = -1
-                  if ( use_clddet_zz .and. channel_list(ichan).eq.14 ) then
+                  if ( use_clddet_abi .and. channel_list(ichan).eq.14 ) then
                      ! Require earlier file to be withn 1/2 of TEMPIR_delay_minutes
                      TEMPIR_min_time_diff = TEMPIR_delay_minutes
 !write(unit=stdout,fmt='(A,F14.2)') &
@@ -1355,7 +1355,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
                   first_chan = (this_view % nfiles_used(ifgat).eq.1)
 
-                  if ( use_clddet_zz .and. channel_list(ichan).eq.14 .and. cld_qc_buffer.ge.1) then
+                  if ( use_clddet_abi .and. channel_list(ichan).eq.14 .and. cld_qc_buffer.ge.1) then
                      ! Allocate terrain_hgt using local indices for this view
                      allocate( terrain_hgt ( &
                                        this_view % ys_local:this_view % ye_local, &
@@ -1382,7 +1382,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                      mn = this_view % filedate(ifile) % mn
                      sc = this_view % filedate(ifile) % sc
 
-                     if ( use_clddet_zz ) then
+                     if ( use_clddet_abi ) then
                         allocate( solzen_1d (this_view % nrad_on_patch) )
                         allocate( solazi_1d (this_view % nrad_on_patch) )
 
@@ -1465,7 +1465,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
                         end if
                         p % satzen                = this_view % satzen_1d % patch (n)
                         p % satazi                = this_view % satazi_1d % patch (n)
-                        if ( use_clddet_zz ) then
+                        if ( use_clddet_abi ) then
                            p % solzen             = solzen_1d (n)
                            p % solazi             = solazi_1d (n)
                         else
@@ -1640,7 +1640,7 @@ subroutine  da_read_obs_ncgoesabi (iv, satellite_id)
 
                      ! Values for TEMPIR cloud QC
                      ! - channel 14
-                     if ( use_clddet_zz .and. (channel_list(ichan).eq.14) ) then
+                     if ( use_clddet_abi .and. (channel_list(ichan).eq.14) ) then
                         p % cld_qc % TEMPIR = missing_r
                         if ( TEMPIR_ifile.gt.0 .and. &
                              p % tb_inv(ichan).gt.missing_r ) then

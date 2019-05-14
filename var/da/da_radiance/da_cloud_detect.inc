@@ -1,12 +1,12 @@
-subroutine da_cloud_detect_iasi(isensor,nchannels,ndim,kts,kte,n,iv)
+subroutine da_cloud_detect(isensor,nchannels,ndim,kts,kte,n,iv)
 
-!** *CLOUD_DETECT_AIRS* - CLOUD FLAGGING FOR AIRS AND IASI
+!** *CLOUD_DETECT* - CLOUD FLAGGING FOR IR Channels 
 
 !    AUTHOR: THOMAS AULIGNE      DATE : 01/08/2005
 !
 !    PURPOSE.
 !    -------
-!    FLAG THE PRESENCE OF CLOUD CONTAMINATION IN AIRS AND IASI CHANNELS
+!    FLAG THE PRESENCE OF CLOUD CONTAMINATION IN IR CHANNELS
 !
 !**  INTERFACE.
 !    ---------
@@ -21,10 +21,14 @@ subroutine da_cloud_detect_iasi(isensor,nchannels,ndim,kts,kte,n,iv)
 !**  EXTERNALS
 !    ---------
 !    N2QN1  - Minimization algorithm (double-precision constrained version of M1QN3)
-!
+!**  METHODS
+!    CLOUD DETECTION SCHEME MMR FROM AULIGNÉ T. MWR (2014).OR. PF FROM XU ET AL., GMD (2016)
 !    MODIFICATIONS
 !    -------------
-!    NONE
+!    BY DONGMEI XU 201904
+!    PURPOSE, ADD CLOUD DETECTION METHOD BASED ON PARTICLE FILTER
+!    METHOD, Xu et al., 2016: A method for retrieving clouds with satellite infrared radiances using the particle filter. Geosci. Model Dev., 9, 3919–3932
+!
 !**  -----------------------------------------
 
 IMPLICIT NONE
@@ -76,9 +80,22 @@ DOUBLE PRECISION, ALLOCATABLE :: DZS(:)
 INTEGER               :: gn
 REAL :: ZHOOK_HANDLE
 
+
+logical   :: iasi,airs, modis,imager,sounder,cris,giirs,ahi
+double precision, allocatable            :: ppx(:,:),wx(:),jo(:) 
+integer                   :: p1,ii,jj
+double precision      :: tmp
 ! Initializations
-      Band_Size(:)   = 0
-      Bands(:,:)     = 0 
+
+
+iasi  = trim(rttov_inst_name(rtminit_sensor(isensor))) == 'iasi'
+airs  = trim(rttov_inst_name(rtminit_sensor(isensor))) == 'airs'	  	 
+imager  = trim(rttov_inst_name(rtminit_sensor(isensor))) == 'imager'
+ahi  = trim(rttov_inst_name(rtminit_sensor(isensor))) == 'ahi'		 
+Band_Size(:)   = 0
+Bands(:,:)     = 0 
+	  
+if ( iasi ) then	  
       Band_Size(1:5) = (/ 193, 15, 116, 4, 15 /)
  
       Bands(1:Band_Size(1),1) = &
@@ -129,6 +146,48 @@ REAL :: ZHOOK_HANDLE
 &      (/  6982, 6985, 6987, 6989, 6991, 6993, 6995, 6997, 7267, 7269, &
 &          7424, 7426, 7428, 7885, 8007 /)   
 
+else if (airs) then
+      Band_Size(1:5) = (/86, 0, 0, 16, 0 /)
+ 
+      Bands(1:Band_Size(1),1) = &
+&    (/                                                 &              !&      1,   6,   7,  10,  11,  15,  16,  17,  20,  21, &
+&                                                       &              !&     22,  24,  27,  28,  30,  36,  39,  40,  42,  51, &
+&                                                       &              !&     52,  54,  55,  56,  59,  62,  63,  68,  69,  71, &
+&                                                       &              !&     72,  73,  74,  75,  76,  77,  78,  79,  80,  82, &
+&                     92,  93,  98,  99, 101, 104, 105, &              !&     83,  84,  86,  92,  93,  98,  99, 101, 104, 105, &
+&     108, 110, 111, 113, 116, 117, 123, 124, 128, 129, &
+&     138, 139, 144, 145, 150, 151, 156, 157, 159, 162, &
+&     165, 168, 169, 170, 172, 173, 174, 175, 177, 179, &
+&     180, 182, 185, 186, 190, 192,      198, 201, 204, &              !&     180, 182, 185, 186, 190, 192, 193, 198, 201, 204, &
+&     207, 210,      215, 216,      221,      226, 227, &              !&     207, 210, 213, 215, 216, 218, 221, 224, 226, 227, &
+&     232,                     252, 253, 256, 257, 261, &              !&     232, 239, 248, 250, 251, 252, 253, 256, 257, 261, &
+&     262, 267, 272, 295, 299,      305,           310, &              !&     262, 267, 272, 295, 299, 300, 305, 308, 309, 310, &
+&          321, 325, 333, 338, 355, 362, 375, 453, 475, &              !&     318, 321, 325, 333, 338, 355, 362, 375, 453, 475, &
+&     484, 497, 528, 587, 672, 787, 791, 843, 870, 914, &
+&     950 /)
+
+      Bands(1:Band_Size(4),4) = &
+&    (/ 1852, 1865, 1866,       1868, 1869, 1872, 1873,       1876, &  !&    1852, 1865, 1866, 1867, 1868, 1869, 1872, 1873, 1875, 1876, 
+&             1881, 1882, 1883,                   1911, 1917, 1918, &  !&    1877, 1881, 1882, 1883, 1884, 1897, 1901, 1911, 1917, 1918, &
+&                   1924, 1928        /)                               !&    1921, 1923, 1924, 1928, 1937  /)   
+ 
+else if (imager) then
+      Band_Size(1) = 2
+      Bands(1:Band_Size(1),1) = &
+&   (/4,5/)	
+else if (ahi) then
+      Band_Size(1) = 4
+      Bands(1:Band_Size(1),1) = &
+&   (/7,8,9,10/)	 
+end if
+
+    allocate(ppx(ndim*11,ndim))  
+    allocate(wx(ndim*11))    
+    allocate(jo(ndim*11))
+    wx=1.0
+    jo=0.0
+    px(1:ndim-1) = 1.0/ndim
+    px(ndim)     = 1.0 - SUM(px(1:ndim-1))
     ichan        = iv%instid(isensor)%ichan(1:nchannels)
     rad_clr      = iv%instid(isensor)%rad_xb(1:nchannels,n)              !iv%instid(isensor)%tb_xb(1:nchan,n)
     rad_obs      = iv%instid(isensor)%rad_obs(1:nchannels,n)             !iv%instid(isensor)%tb_inv(1:nchan,n) + rad_clr
@@ -163,17 +222,43 @@ REAL :: ZHOOK_HANDLE
           nchan                = nchan +1
           AMAT(nchan,1:ndim-1) = rad_ovc(ich,1:NDIM-1) / rad_obs(ich)
 	  AMAT(nchan,ndim)     = rad_clr(ich) / rad_obs(ich)
-          ZF_CLR               = ZF_CLR + 0.5*(AMAT(nchan,ndim)-1.0)**2   
+          ZF_CLR               = ZF_CLR + 0.5*(AMAT(nchan,ndim)-1.0)**2 
+          
+        if (use_clddet==2)  then
+          p1=0		  
+          do ii=0,10
+            do jj=1,ndim-1
+              p1=p1+1
+              ppx(p1,1:ndim)=0 !initialization
+              ppx(p1,jj)=real(ii)/10
+              ppx(p1,ndim)=1-ppx(p1,jj) !initialization
+              jo(p1)=iv%instid(isensor)%tb_error(ich,n)*(1-SUM(ppx(p1,1:ndim)*amat(nchan,1:ndim)))**2
+           end do
+          end do		  
+          ! step 2 calculate the weight
+          do ii=1,p1
+             ! jo(ii)=jo(ii)-mv
+              tmp=exp(-jo(ii))/sum(exp(-jo(1:p1))) ! normalize the weight
+              wx(ii)=tmp*wx(ii) !1/jo  !exp(-jo)
+          end do
+          wx(:)=wx(:)/sum(wx(1:p1))		
+          px=0
+          do k = 1,ndim
+            px(k)= SUM(wx(1:p1)*ppx(1:p1,k))
+          end do
+          px(1:ndim) = px(1:ndim) / SUM(px(1:ndim))   ! Re-normalization
+        end if		  
         ENDDO
         IF (.NOT. LMATCH) then
            if (print_detail_rad) then
-              write(unit=message(1),fmt='(A,2I8)') 'CLOUD_DETECT_IASI: No match for channel:',i,Bands(i,JBAND)
+              write(unit=message(1),fmt='(A,2I8)') 'CLOUD_DETECT: No match for channel:',i,Bands(i,JBAND)
               call da_message(message(1:1))
            endif
         ENDIF
       ENDDO
     ENDDO BAND_LOOP                      ! Loop over band
-    
+
+if (use_clddet==1) then    
     !--------------------!
     ! Hessian evaluation !
     !--------------------!
@@ -235,11 +320,14 @@ REAL :: ZHOOK_HANDLE
 !    call inria_n2qn1(da_cloud_sim,NDIM,px,ZF,ZG,(/(ZDXMIN,jlev=1,NDIM)/),ZDF1, &
 !                ZEPSG,impres,io,IMODE,nit,NSIM,binf,bsup,IZ,ZRZ,izs,RZS,DZS)
   
-      IF (ALLOCATED(IZ))  DEALLOCATE(IZ)       
-      IF (ALLOCATED(ZRZ)) DEALLOCATE(ZRZ)       
-      IF (ALLOCATED(DZS)) DEALLOCATE(DZS)       
+      if (allocated(iz))  deallocate(iz)       
+      if (allocated(zrz)) deallocate(zrz)       
+      if (allocated(dzs)) deallocate(dzs)       
       if (allocated(rzs)) deallocate(rzs)                 
-         
+end if !mmr
+      deallocate(ppx)
+      deallocate(wx)
+      deallocate(jo)         
       !-----------------!
       ! Cloudy radiance !
       !-----------------!
@@ -268,4 +356,4 @@ REAL :: ZHOOK_HANDLE
 #endif
     end if  	    
     
-end subroutine da_cloud_detect_iasi
+end subroutine da_cloud_detect

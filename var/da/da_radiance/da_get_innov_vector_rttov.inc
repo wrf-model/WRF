@@ -61,7 +61,7 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
    ! [1.0] calculate the background bright temperature
    !-------------------------------------------------------
 
-   if ( use_clddet_zz ) then
+   if ( use_clddet_abi ) then
       allocate ( geoht_full(ims:ime,jms:jme,kms:kme-1) )
       do k = kms, kme-1
          do j = jms, jme
@@ -149,7 +149,8 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
             iv%instid(inst)%surftype(n) = 0
          end if
 
-         if (use_clddet_zz) then
+         if ( use_clddet_abi &
+              .AND.   trim( rttov_inst_name(rtminit_sensor(inst))) == 'abi' ) then
             ! Find tropopause temperature for Zhuge and Zou Cloud Detection
             do k = kts, min(kte,kme-1)
                call da_interp_2d_partial ( grid%xb%t(:,:,k), iv%instid(inst)%info, k, n, n, tt_pixel(k) )
@@ -411,7 +412,7 @@ real,allocatable :: temp(:), temp2(:), temp3(:,:)
 
    end do        ! end loop for sensor
 
-   if ( use_clddet_zz ) deallocate ( geoht_full )
+   if ( use_clddet_abi ) deallocate ( geoht_full )
 
    if (trace_use) call da_trace_exit("da_get_innov_vector_rttov")
 #else

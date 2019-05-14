@@ -231,7 +231,7 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
          end if
       end if
 
-      abi_clddet: if ( use_clddet_zz &
+      abi_clddet: if ( use_clddet_abi &
                      .and. all(tb_inv( (/ch7,ch14,ch15/), n ) .gt. missing_r) &
                      .and. all(tb_ob(  (/ch7,ch14,ch15/), n ) .gt. missing_r) &
                      .and. all(tb_xb(  (/ch7,ch14,ch15/), n ) .gt. missing_r) &

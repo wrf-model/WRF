@@ -132,7 +132,7 @@
             deallocate (iv%instid(i)%solzen)
             deallocate (iv%instid(i)%solazi)
             deallocate (iv%instid(i)%tropt)
-            if ( use_clddet_zz ) then
+            if ( use_clddet_abi ) then
                do n = 1,iv%instid(i)%num_rad
                   if ( allocated (iv%instid(i)%cld_qc(n)%tb_stddev_3x3) ) &
                      deallocate (iv%instid(i)%cld_qc(n)%tb_stddev_3x3) 

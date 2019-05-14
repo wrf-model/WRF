@@ -111,7 +111,7 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
       allocate (iv%instid(i)%solazi(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%tropt(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%gamma_jacobian(nchan,iv%instid(i)%num_rad))
-      if ( use_clddet_zz ) then
+      if ( use_clddet_abi ) then
          allocate (iv%instid(i)%cld_qc(iv%instid(i)%num_rad))
          do n = 1, iv%instid(i)%num_rad
             allocate (iv%instid(i)%cld_qc(n)%tb_stddev_3x3(nchan))
@@ -154,7 +154,7 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
                allocate(iv%instid(i)%der_trans(nchan,iv%instid(i)%nlevels,iv%instid(i)%num_rad))
             end if
 
-            if (use_clddet_ecmwf) then
+            if (use_clddet==3) then
                allocate (iv%instid(i)%kmin_t (iv%instid(i)%num_rad))
                allocate (iv%instid(i)%kmax_p (iv%instid(i)%num_rad))
                allocate (iv%instid(i)%sensitivity_ratio (nchan,iv%instid(i)%nlevels,iv%instid(i)%num_rad))

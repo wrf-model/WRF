@@ -1138,8 +1138,7 @@
       CALL wrf_message ( TRIM(wrf_err_message ) )
       IF ( switch .EQ. boundary_only ) THEN
         WRITE(wrf_err_message,*) '---- ERROR: Ran out of valid boundary conditions in file ',TRIM(fname)
-        CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-        count_fatal_error = count_fatal_error + 1
+        CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
       ELSE
 #if ( NMM_CORE != 1 )
         WRITE(wrf_err_message,*) '---- ERROR: Could not find matching time in input file ',TRIM(fname)

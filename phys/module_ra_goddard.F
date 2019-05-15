@@ -127,7 +127,7 @@
 
  implicit none
 
-  INTEGER, PARAMETER, PRIVATE:: CHUNK = 16  !size of vector (16 is optimized number for Haswell/Broadwell CPUs.
+  INTEGER, PARAMETER, PRIVATE:: chunk = 16  !size of vector (16 is optimized number for Haswell/Broadwell CPUs.
 
 !
 ! encapsulation control

@@ -33,7 +33,7 @@ MODULE module_mp_gsfcgce_4ice_nuwrf
 #endif
    USE module_mp_radar
 
-   INTEGER, PARAMETER, PRIVATE:: CHUNK = 16
+   INTEGER, PARAMETER, PRIVATE:: chunk = 16
 
    LOGICAL, EXTERNAL :: wrf_dm_on_monitor
 

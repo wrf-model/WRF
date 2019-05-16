@@ -28,7 +28,7 @@ module da_physics
    use da_dynamics, only : da_w_adjustment_adj, da_uv_to_divergence_adj, &
       da_w_adjustment_lin, da_uv_to_divergence
    use da_reporting, only : da_error, message
-   use da_wrf_interfaces, only : wrf_debug
+   use da_wrf_interfaces, only : wrf_debug, wrf_dm_bcast_real
    use da_grid_definitions, only : da_ffdduv_model
    use da_gpseph, only : global_xa_ref
 

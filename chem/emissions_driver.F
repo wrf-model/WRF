@@ -334,7 +334,7 @@ CONTAINS
 ! Local variables...
 !
       INTEGER :: begday,endday,i, j, k, ksub, dust_emiss_active, seasalt_emiss_active,emiss_ash_hgt
-      REAL :: conv,conv3,conv4,oconv3,oconv4
+      REAL :: conv,conv3,conv4,oconv3,oconv4, conv1 !added conv1 LSURL
       CHARACTER (LEN=80) :: message
       LOGICAL :: do_bioemiss, do_plumerisefire,do_ex_volcanoe
 
@@ -618,6 +618,111 @@ CONTAINS
       enddo
       ENDIF! config_flags%emiss_opt_vol == 1 .or. config_flags%emiss_opt_vol == 2
 !--------------------------------------------------------------------------------------
+
+if(config_flags%emiss_opt_vol == 5)then
+         do_ex_volcanoe = .false.
+!
+! now we got volcanoc emissions, they need to be added to chem array
+!
+!       write(message,'(" Do volcanic emissions ")') 
+!       CALL WRF_MESSAGE (message)
+      do j=jts,jte
+      do i=its,ite
+         ivolcano = 0
+        if(erup_end(i,j).le.0)cycle
+!        if(emis_vol(i,kts,j,p_e_vash1).le.0.)cycle
+!
+!   erup_end is continuation in minutes
+!
+         begday=int(erup_beg(i,j)/1000.)-1
+         beghr=int(erup_beg(i,j))-(begday+1)*1000
+         begmin=00.
+         endhr=beghr+int(erup_end(i,j)/60.)
+         endday=int(begday+endhr/24)-1
+         endmin=00.
+!        write(0,*)'beghr,endhr = ',beghr,endhr,erup_beg(i,j),erup_end(i,j)
+!        write(0,*)'begday,endday,julday = ',begday,endday,julday
+         ivolcano = 1
+         if(julday.le.begday .or. julday.ge.endday)then
+!           write(0,*)'endhr,endmin,beghr,begmin = ',endhr,endmin,beghr,begmin
+            if( julday.lt.begday)then
+                 write(message,'("before volcano stuff at julday = ",i8)') julday
+                 call wrf_debug(15,message)
+                 ivolcano=0
+            elseif(julday.eq.begday)then
+               if(beghr.gt.int(gmtp))then
+                 write(message,'("before volcano stuff at gmtp = ",i8)') int(gmtp)
+                 call wrf_debug(15,message)
+                 ivolcano=0
+               elseif(beghr.eq.int(gmtp))then
+                  if(begmin.gt.gmtm)then
+                     write(message,'("before volcano stuff at gmtp,begmin = ",2i8)') int(gmtp),int(begmin)
+                     call wrf_debug(15,message)
+                     ivolcano=0
+                  endif
+               endif
+            endif
+            if( julday.gt.endday)then
+                 write(message,'("after volcano stuff at julday = ",i8)') julday
+                 call wrf_debug(15,message)
+                 ivolcano=0
+            elseif(julday.eq.endday)then
+               if(endhr.lt.int(gmtp))then
+                 write(message,'("after volcano stuff at gmtp = ",i8)') int(gmtp)
+                 call wrf_debug(15,message)
+                 ivolcano=0
+               elseif(endhr.eq.int(gmtp))then
+                  if(endmin.lt.gmtm)then
+                     write(message,'("after volcano stuff at gmtm,endmin = ",2i8)') int(gmtm),int(endmin)
+                     call wrf_debug(15,message)
+                     ivolcano=0
+                  endif
+               endif
+            endif
+         endif ! julday.ge.begday .and. julday.le.endday
+
+      volc5_select:  SELECT CASE(config_flags%chem_opt)
+      CASE (WCV_MECH_KPP)
+        CALL wrf_debug(15,'Adding volcanic emissions')
+               do k=kts,kte
+                conv1=float(ivolcano)*alt(i,k,j)*dtstep/dz8w(i,k,j)
+                !other inorganics, 70% of primary aerosol
+                chem(i,k,j,p_oin_a01)=chem(i,k,j,p_oin_a01)+(emis_vol(i,k,j,p_e_vash1)*conv1*0.7)
+                chem(i,k,j,p_oin_a02)=chem(i,k,j,p_oin_a02)+(emis_vol(i,k,j,p_e_vash2)*conv1*0.7)
+                chem(i,k,j,p_oin_a03)=chem(i,k,j,p_oin_a03)+(emis_vol(i,k,j,p_e_vash3)*conv1*0.7)
+                chem(i,k,j,p_oin_a04)=chem(i,k,j,p_oin_a04)+(emis_vol(i,k,j,p_e_vash4)*conv1*0.7)
+                chem(i,k,j,p_oin_a05)=chem(i,k,j,p_oin_a05)+(emis_vol(i,k,j,p_e_vash5)*conv1*0.7)
+                chem(i,k,j,p_oin_a06)=chem(i,k,j,p_oin_a06)+(emis_vol(i,k,j,p_e_vash6)*conv1*0.7)
+                chem(i,k,j,p_oin_a07)=chem(i,k,j,p_oin_a07)+(emis_vol(i,k,j,p_e_vash7)*conv1*0.7)
+                chem(i,k,j,p_oin_a08)=chem(i,k,j,p_oin_a08)+(emis_vol(i,k,j,p_e_vash8)*conv1*0.7)
+                !sulphate, 30% of primary aerosol
+                chem(i,k,j,p_so4_a01)=chem(i,k,j,p_so4_a01)+(emis_vol(i,k,j,p_e_vash1)*conv1*0.3)
+                chem(i,k,j,p_so4_a02)=chem(i,k,j,p_so4_a02)+(emis_vol(i,k,j,p_e_vash2)*conv1*0.3)
+                chem(i,k,j,p_so4_a03)=chem(i,k,j,p_so4_a03)+(emis_vol(i,k,j,p_e_vash3)*conv1*0.3)
+                chem(i,k,j,p_so4_a04)=chem(i,k,j,p_so4_a04)+(emis_vol(i,k,j,p_e_vash4)*conv1*0.3)
+                chem(i,k,j,p_so4_a05)=chem(i,k,j,p_so4_a05)+(emis_vol(i,k,j,p_e_vash5)*conv1*0.3)
+                chem(i,k,j,p_so4_a06)=chem(i,k,j,p_so4_a06)+(emis_vol(i,k,j,p_e_vash6)*conv1*0.3)
+                chem(i,k,j,p_so4_a07)=chem(i,k,j,p_so4_a07)+(emis_vol(i,k,j,p_e_vash7)*conv1*0.3)
+                chem(i,k,j,p_so4_a08)=chem(i,k,j,p_so4_a08)+(emis_vol(i,k,j,p_e_vash8)*conv1*0.3)
+                !gas phase chemistry species
+                conv = float(ivolcano)*4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
+
+                chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)+emis_vol(i,k,j,p_e_vso2)*conv
+                chem(i,k,j,p_br)   = chem(i,k,j,p_br)+emis_vol(i,k,j,p_e_vbr)*conv
+                chem(i,k,j,p_hbr)  = chem(i,k,j,p_hbr)+emis_vol(i,k,j,p_e_vhbr)*conv
+                chem(i,k,j,p_hcl)  = chem(i,k,j,p_hcl)+emis_vol(i,k,j,p_e_vhcl)*conv
+                chem(i,k,j,p_hg)   = chem(i,k,j,p_hg)+emis_vol(i,k,j,p_e_vhg)*conv
+               enddo
+      CASE DEFAULT
+      END SELECT volc5_select
+!!!!!!
+      enddo
+      enddo
+      ENDIF! config_flags%emiss_opt_vol == 5
+!--------------------------------------------------------------------------------------
+
+
+
       do_plumerisefire = .false.
       IF ( config_flags%biomass_burn_opt == BIOMASSB_MOZC .OR. &
            config_flags%biomass_burn_opt == BIOMASSB_T1_MOZCART  .OR. &

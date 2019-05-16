@@ -975,6 +975,9 @@
               grid%ph_mekooh,grid%ph_tolooh,grid%ph_terpooh,grid%ph_mvk,              &
               grid%ph_glyald,grid%ph_hyac,                                            &
               grid%ph_cl2,grid%ph_hocl,grid%ph_fmcl,                                  &
+              grid%ph_br2,grid%ph_bro,grid%ph_hbr,grid%ph_hobr,grid%ph_brno3,         &
+              grid%ph_oclo,grid%ph_clno3,                                             &
+              grid%ph_brcl,                                                           & 
               config_flags%track_tuv_lev,                                             &
               config_flags%track_rad_num,                                             &
               config_flags%track_tuv_num,                                             &

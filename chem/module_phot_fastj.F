@@ -76,6 +76,10 @@
                ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,         &
                ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,&
                ph_n2o5,                                                &
+               ph_cl2,ph_hocl,                                         &
+               ph_br2,ph_bro,ph_hbr,ph_hobr,ph_brno3,                  &
+               ph_oclo,ph_clno2,ph_clno3,                              &
+               ph_brcl,                                                &
                tauaer1,tauaer2,tauaer3,tauaer4,                        &
                gaer1,gaer2,gaer3,gaer4,                                &
                waer1,waer2,waer3,waer4,                                &
@@ -86,14 +90,15 @@
                its,ite, jts,jte, kts,kte                               )
 
 
+   
    USE module_configure
    USE module_state_description
    USE module_data_mosaic_therm, only: nbin_a, nbin_a_maxd
-!  USE module_data_mosaic_asect
-   USE module_data_mosaic_other, only: kmaxd, nsubareas
+   USE module_data_mosaic_asect !uncomment LSURL
+   USE module_data_mosaic_other !, only: kmaxd, nsubareas
    USE module_fastj_mie
 !  USE module_mosaic_therm, only: aerosol_optical_properties
-!  USE module_mosaic_driver, only: mapaer_tofrom_host
+   USE module_mosaic_driver, only: mapaer_tofrom_host !uncomment LSURL
    USE module_fastj_data, only:  nb, nc
 
    implicit none
@@ -102,7 +107,7 @@
    integer, parameter :: single = 4        !compiler dependent value real*4
    integer, parameter :: double = 8        !compiler dependent value real*8
    integer,parameter :: ipar_fastj=1,jpar=1
-   integer,parameter :: jppj=14        !Number of photolytic reactions supplied
+   integer,parameter :: jppj=25       !Number of photolytic reactions supplied UP TO 25 LSURL
    logical,parameter :: ldeg45=.false. !Logical flag for degraded CTM resolution
    integer,save :: lpar           !Number of levels in CTM
    integer,save :: jpnl           !Number of levels requiring chemistry
@@ -122,12 +127,17 @@
    data wavmid     &
        / 0.30e-4, 0.40e-4, 0.60e-4 ,0.999e-04 /
    integer nphoto_fastj
-   parameter (nphoto_fastj = 14)
+   parameter (nphoto_fastj = 26)    !changed 14 to 19 !changed 19 to 20 LUKESURL 2014-03-12 !changed 20 to 26 LUKESURL 2014-08-04
    integer   &
    lfastj_no2,   lfastj_o3a,   lfastj_o3b,    lfastj_h2o2,   &
    lfastj_hchoa, lfastj_hchob, lfastj_ch3ooh, lfastj_no3x,   &
    lfastj_no3l,  lfastj_hono,  lfastj_n2o5,   lfastj_hno3,   &
-   lfastj_hno4     
+   lfastj_hno4,  &
+   lfastj_c2h5o2, & !LUKE SURL 2014-03-12
+   lfastj_bro,   lfastj_br2,    lfastj_hobr,   &
+   lfastj_brno3, lfastj_hbr,                    &
+   lfastj_oclo, lfastj_cl2, lfastj_clno2, lfastj_clno3, lfastj_hocl, lfastj_brcl !LUKE SURL 2014-08-04
+
    parameter( lfastj_no2   = 1 )
    parameter( lfastj_o3a   = 2 )
    parameter( lfastj_o3b   = 3 )
@@ -141,6 +151,18 @@
    parameter( lfastj_n2o5  = 11 )
    parameter( lfastj_hno3  = 12 )
    parameter( lfastj_hno4  = 13 )
+   parameter( lfastj_c2h5o2= 14 ) !LUKE SURL 2014-03-12
+   parameter( lfastj_bro   = 15 ) !LUKE SURL 2014-03-11 NOTE CHANGE. THIS IS DONE TO STOP  C2H5O2 messing everthing up
+   parameter( lfastj_br2   = 16 ) !LUKE SURL 2014-03-11
+   parameter( lfastj_hobr  = 17 ) !LUKE SURL 2014-03-11
+   parameter( lfastj_brno3 = 18 ) !LUKE SURL 2014-03-11
+   parameter( lfastj_hbr   = 19 ) !LUKE SURL 2014-03-11
+   parameter( lfastj_oclo  = 20 )!LUKE SURL 2014-08-04
+   parameter( lfastj_cl2   = 21 )!LUKE SURL 2014-08-04
+   parameter( lfastj_clno2 = 22 )!LUKE SURL 2014-08-04
+   parameter( lfastj_clno3 = 23 )!LUKE SURL 2014-08-04
+   parameter( lfastj_hocl  = 24 )!LUKE SURL 2014-08-04
+   parameter( lfastj_brcl  = 25 )!LUKE SURL 2014-08-04
 !jdf
    INTEGER,      INTENT(IN   ) :: id,julday,                    &
                                   ids,ide, jds,jde, kds,kde,    &
@@ -155,7 +177,8 @@
            ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,     &
            ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,          &
            ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob, &
-           ph_n2o5
+           ph_n2o5,ph_bro,ph_br2,ph_hobr,ph_brno3,ph_hbr,           &
+           ph_oclo,ph_cl2,ph_clno2,ph_clno3,ph_hocl,ph_brcl !LUKE SURL 2014-08-04
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                    &
          INTENT(IN ) ::                                             &
            tauaer1,tauaer2,tauaer3,tauaer4,                         &
@@ -184,7 +207,6 @@
 
    TYPE(grid_config_rec_type), INTENT(IN  ) :: config_flags
 
-
 !local variables
 
       integer iclm, jclm
@@ -209,7 +231,8 @@
       real valuej(kte,nphoto_fastj)
 
       logical processingAerosols
-
+    
+    call wrf_debug(15,'fastj_driver, debug point 1.0')
 !   set "pegasus" grid size variables
 !	itot = ite
 !	jtot = jte
@@ -263,6 +286,7 @@
 ! determine current time of day in Greenwich Mean Time at middle 
 ! of current time step, tmidh.  do this by computing the number of minutes
 ! from beginning of run to middle of current time step
+    call wrf_debug(15,'fastj_driver, debug point 2.0')
     xtime    = curr_secs/60._8 + real(dtstep,8)/120._8
     ixhour   = int(gmt + 0.01,8) + int(xtime/60._8,8)
     xhour    = real(ixhour,8)	!current hour
@@ -363,7 +387,9 @@
            ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,   	&
            ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,        	&
            ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob, &
-           ph_n2o5                                                  )
+           ph_n2o5, &
+           ph_bro,ph_br2,ph_hobr,ph_brno3,ph_hbr,           &
+           ph_oclo,ph_cl2,ph_clno2,ph_clno3,ph_hocl,ph_brcl) !LUKE SURL 2014-08-04
 ! put the aerosol optical properties into the wrf arrays (this is hard-
 ! coded to 4 spectral bins, nspint)
 !     do k=kts,kte
@@ -402,19 +428,26 @@
         ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,   	    &
         ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,        	    &
         ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,    &
-        ph_n2o5                                                     )
+        ph_n2o5, &
+        ph_bro,ph_br2,ph_hobr,ph_brno3,ph_hbr,           &
+        ph_oclo,ph_cl2,ph_clno2,ph_clno3,ph_hocl,ph_brcl) !LUKE SURL 2014-08-04
 
 	USE module_data_cbmz
 
    implicit none
 !jdf
    integer nphoto_fastj
-   parameter (nphoto_fastj = 14)
+   parameter (nphoto_fastj = 26)!changed 14 to 19  !changed 19 to 20 LUKESURL 2014-03-12 !changed 20 to 26 LUKESURL 2014-09-02
    integer   &
    lfastj_no2,   lfastj_o3a,   lfastj_o3b,    lfastj_h2o2,   &
    lfastj_hchoa, lfastj_hchob, lfastj_ch3ooh, lfastj_no3x,   &
    lfastj_no3l,  lfastj_hono,  lfastj_n2o5,   lfastj_hno3,   &
-   lfastj_hno4     
+   lfastj_hno4, &
+   lfastj_c2h5o2,&  !LUKE SURL 2014-03-12
+   lfastj_bro,   lfastj_br2,    lfastj_hobr,   &
+   lfastj_brno3, lfastj_hbr, &
+   lfastj_oclo, lfastj_cl2, lfastj_clno2, lfastj_clno3, lfastj_hocl, lfastj_brcl
+
    parameter( lfastj_no2   = 1 )
    parameter( lfastj_o3a   = 2 )
    parameter( lfastj_o3b   = 3 )
@@ -428,6 +461,18 @@
    parameter( lfastj_n2o5  = 11 )
    parameter( lfastj_hno3  = 12 )
    parameter( lfastj_hno4  = 13 )
+   parameter( lfastj_c2h5o2= 14 ) !LUKE SURL 2014-03-12
+   parameter( lfastj_bro   = 15 ) !LUKE SURL 2014-03-11 NOTE CHANGE. THIS IS DONE TO STOP  C2H5O2 messing everthing up
+   parameter( lfastj_br2   = 16 ) !LUKE SURL 2014-03-11
+   parameter( lfastj_hobr  = 17 ) !LUKE SURL 2014The -03-11
+   parameter( lfastj_brno3 = 18 ) !LUKE SURL 2014-03-11
+   parameter( lfastj_hbr   = 19 )!LUKE SURL 2014-03-11
+   parameter( lfastj_oclo  = 20 )!LUKE SURL 2014-08-04
+   parameter( lfastj_cl2   = 21 )!LUKE SURL 2014-08-04
+   parameter( lfastj_clno2 = 22 )!LUKE SURL 2014-08-04
+   parameter( lfastj_clno3 = 23 )!LUKE SURL 2014-08-04
+   parameter( lfastj_hocl  = 24 )!LUKE SURL 2014-08-04
+   parameter( lfastj_brcl  = 25 )!LUKE SURL 2014-08-04
 !jdf
    INTEGER,      INTENT(IN   ) :: iflag,                        &
                                   ims,ime, jms,jme, kms,kme,    &
@@ -439,7 +484,9 @@
            ph_hno3,ph_hno4,ph_h2o2,ph_ch2or,ph_ch2om,ph_ch3cho,    &
            ph_ch3coch3,ph_ch3coc2h5,ph_hcocho,ph_ch3cocho,         &
            ph_hcochest,ph_ch3o2h,ph_ch3coo2h,ph_ch3ono2,ph_hcochob,&
-           ph_n2o5
+           ph_n2o5,&
+           ph_bro,ph_br2,ph_hobr,ph_brno3,ph_hbr,          &
+           ph_oclo,ph_cl2,ph_clno2,ph_clno3,ph_hocl,ph_brcl
 
    REAL, DIMENSION( kte,nphoto_fastj ), INTENT(INOUT) :: valuej
 
@@ -465,6 +512,20 @@
 	  ph_ch2or(iclm,kt,jclm)     = valuej(kt,lfastj_hchoa) * ft
 	  ph_ch2om(iclm,kt,jclm)     = valuej(kt,lfastj_hchob) * ft
 	  ph_n2o5(iclm,kt,jclm)      = valuej(kt,lfastj_n2o5) * ft
+!         NO WRITING TO/FROM PHOTOLYSIS VARIABLE FOR C2H5O2
+	  ph_bro(iclm,kt,jclm)       = valuej(kt,lfastj_bro)  * ft
+	  ph_br2(iclm,kt,jclm)       = valuej(kt,lfastj_br2)  * ft
+	  ph_hobr(iclm,kt,jclm)      = valuej(kt,lfastj_hobr) * ft
+	  ph_brno3(iclm,kt,jclm)     = valuej(kt,lfastj_brno3) * ft
+	  ph_hbr(iclm,kt,jclm)       = valuej(kt,lfastj_hbr) * ft
+
+          ph_oclo(iclm,kt,jclm)       = valuej(kt,lfastj_oclo) * ft  !LUKE SURL 2014-08-04
+          ph_cl2(iclm,kt,jclm)       = valuej(kt,lfastj_cl2) * ft    !LUKE SURL 2014-08-04
+          ph_clno2(iclm,kt,jclm)       = valuej(kt,lfastj_clno2) * ft!LUKE SURL 2014-08-04
+          ph_clno3(iclm,kt,jclm)       = valuej(kt,lfastj_clno3) * ft!LUKE SURL 2014-08-04
+          ph_hocl(iclm,kt,jclm)       = valuej(kt,lfastj_hocl) * ft  !LUKE SURL 2014-08-04
+          ph_brcl(iclm,kt,jclm)       = valuej(kt,lfastj_brcl) * ft  !LUKE SURL 2014-08-04
+
 
 	  ph_o2(iclm,kt,jclm)        = 0.0
 	  ph_ch3cho(iclm,kt,jclm)    = 0.0
@@ -496,6 +557,19 @@
 	  valuej(kt,lfastj_hchoa)  = ph_ch2or(iclm,kt,jclm)/ ft
 	  valuej(kt,lfastj_hchob)  = ph_ch2om(iclm,kt,jclm)/ ft
 	  valuej(kt,lfastj_n2o5)   = ph_n2o5(iclm,kt,jclm) / ft
+!         NO WRITING TO/FROM PHOTOLYSIS VARIABLE FOR C2H5O2
+          valuej(kt,lfastj_bro)    = ph_bro(iclm,kt,jclm)  / ft
+          valuej(kt,lfastj_br2)    = ph_br2(iclm,kt,jclm)  / ft
+          valuej(kt,lfastj_hobr)   = ph_hobr(iclm,kt,jclm) / ft
+          valuej(kt,lfastj_brno3)  = ph_brno3(iclm,kt,jclm)/ ft
+          valuej(kt,lfastj_hbr)    = ph_hbr(iclm,kt,jclm)  / ft
+
+          valuej(kt,lfastj_oclo)    = ph_oclo(iclm,kt,jclm)  / ft
+          valuej(kt,lfastj_cl2)    = ph_cl2(iclm,kt,jclm)  / ft
+          valuej(kt,lfastj_clno2)    = ph_clno2(iclm,kt,jclm)  / ft
+          valuej(kt,lfastj_clno3)    = ph_clno3(iclm,kt,jclm)  / ft
+          valuej(kt,lfastj_hocl)    = ph_hocl(iclm,kt,jclm)  / ft
+          valuej(kt,lfastj_brcl)    = ph_brcl(iclm,kt,jclm)  / ft
 	end do
 
     return	!finished wrf->peg mapping
@@ -568,7 +642,7 @@
    integer, parameter :: single = 4        !compiler dependent value real*4
    integer, parameter :: double = 8        !compiler dependent value real*8
    integer,parameter :: ipar_fastj=1,jpar=1
-   integer,parameter :: jppj=14        !Number of photolytic reactions supplied
+   integer,parameter :: jppj=26        !Number of photolytic reactions supplied UP TO 26 LSURL
    logical,parameter :: ldeg45=.false. !Logical flag for degraded CTM resolution
    integer lpar           !Number of levels in CTM
    integer jpnl           !Number of levels requiring chemistry
@@ -581,12 +655,16 @@
    integer month_fastj        !  Number of month (1-12)
    integer iday_fastj         !  Day of year
    integer nphoto_fastj
-   parameter (nphoto_fastj = 14)
+   parameter (nphoto_fastj = 26) !changed 14 to 19 !changed 19 to 20 LUKESURL 2014-03-12 !changed 20 to 26 LUKESURL 2014-08-04
    integer   &
    lfastj_no2,   lfastj_o3a,   lfastj_o3b,    lfastj_h2o2,   &
    lfastj_hchoa, lfastj_hchob, lfastj_ch3ooh, lfastj_no3x,   &
    lfastj_no3l,  lfastj_hono,  lfastj_n2o5,   lfastj_hno3,   &
-   lfastj_hno4
+   lfastj_hno4, &
+   lfastj_c2h5o2, & !LUKE SURL 2014-03-12
+   lfastj_bro,   lfastj_br2,    lfastj_hobr,   &
+   lfastj_brno3, lfastj_hbr,                    &
+   lfastj_oclo, lfastj_cl2, lfastj_clno2, lfastj_clno3, lfastj_hocl, lfastj_brcl !LUKE SURL 2014-08-04
    parameter( lfastj_no2   = 1 )
    parameter( lfastj_o3a   = 2 )
    parameter( lfastj_o3b   = 3 )
@@ -600,6 +678,20 @@
    parameter( lfastj_n2o5  = 11 )
    parameter( lfastj_hno3  = 12 )
    parameter( lfastj_hno4  = 13 )
+   parameter( lfastj_c2h5o2= 14 ) !LUKE SURL 2014-03-12
+   parameter( lfastj_bro   = 15 ) !LUKE SURL 2014-03-11 NOTE CHANGE. THIS IS DONE TO STOP  C2H5O2 messing everthing up
+   parameter( lfastj_br2   = 16 ) !LUKE SURL 2014-03-11
+   parameter( lfastj_hobr  = 17 ) !LUKE SURL 2014-03-11
+   parameter( lfastj_brno3 = 18 ) !LUKE SURL 2014-03-11
+   parameter( lfastj_hbr   = 19 )!LUKE SURL 2014-03-11
+
+   parameter( lfastj_oclo   = 20 )!LUKE SURL 2014-08-04
+   parameter( lfastj_cl2   = 21 )!LUKE SURL 2014-08-04
+   parameter( lfastj_clno2   = 22 )!LUKE SURL 2014-08-04
+   parameter( lfastj_clno3   = 23 )!LUKE SURL 2014-08-04
+   parameter( lfastj_hocl   = 24 )!LUKE SURL 2014-08-04
+   parameter( lfastj_brcl   = 25 )!LUKE SURL 2014-08-04
+
    integer nspint           ! Num of spectral intervals across solar 
    parameter ( nspint = 4 ) ! spectrum for FAST-J
    real, dimension (nspint),save :: wavmid !cm
@@ -631,7 +723,7 @@
 	real tmidh, sla, slo	
 
 	integer julian_day,iozone1
-    integer,parameter :: nfastj_rxns = 14
+    integer,parameter :: nfastj_rxns = 25
 	integer k, l
  		
 	real surface_pressure_mb, tauaer_550,   &
@@ -764,17 +856,31 @@
 	     valuej(k, lfastj_n2o5) = jvalue(k,lfastj_n2o5)
 	     valuej(k, lfastj_hno3) = jvalue(k,lfastj_hno3)
 	     valuej(k, lfastj_hno4) = jvalue(k,lfastj_hno4)
+             valuej(k, lfastj_c2h5o2) = jvalue(k,lfastj_c2h5o2)
+             valuej(k, lfastj_bro) = jvalue(k,lfastj_bro)
+             valuej(k, lfastj_br2) = jvalue(k,lfastj_br2)
+             valuej(k, lfastj_hobr) = jvalue(k,lfastj_hobr)
+             valuej(k, lfastj_brno3) = jvalue(k,lfastj_brno3)
+             valuej(k, lfastj_hbr) = jvalue(k,lfastj_hbr)
+
+             valuej(k, lfastj_oclo) = jvalue(k,lfastj_oclo)
+             valuej(k, lfastj_cl2) = jvalue(k,lfastj_cl2)
+             valuej(k, lfastj_clno2) = jvalue(k,lfastj_clno2)
+             valuej(k, lfastj_clno3) = jvalue(k,lfastj_clno3)
+             valuej(k, lfastj_hocl) = jvalue(k,lfastj_hocl)
+             valuej(k, lfastj_brcl) = jvalue(k,lfastj_brcl)    
 	  end do
 ! diagnostic output and zeroed value if negative photolysis rates returned
 	  do k = 1, lpar
          valuej(k,nphoto_fastj)=0.0
          do l = 1, nphoto_fastj-1
             if (valuej(k,l) .lt. 0) then
-               write( msg, '(a,f14.2,4i4,1x,e11.4)' )   &
-                    'FASTJ negative Jrate ' //   &
-                    'tsec i j k l J(k,l)', curr_secs,isvode,jsvode,k,l,valuej(k,l)
-               call peg_message( lunerr, msg )
-               valuej(k,l) = 0.0
+               !Comment out LSURL 2019-04-02
+               !write( msg, '(a,f14.2,4i4,1x,e11.4)' )   &
+               !     'FASTJ negative Jrate ' //   &
+               !     'tsec i j k l J(k,l)', curr_secs,isvode,jsvode,k,l,valuej(k,l)
+               !call peg_message( lunerr, msg )
+               !valuej(k,l) = 0.0
 ! following code used if want run stopped with negative Jrate                 
 !                 msg = '*** subr interface_fastj -- ' //   &
 !                   'Negative J rate returned from Fast-J'

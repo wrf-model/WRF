@@ -98,6 +98,7 @@ PROGRAM convert_emissions
 !     
    real, allocatable, dimension (:,:) :: ash_mass,ash_height,erup_dt
    real, allocatable, dimension (:,:) :: so2_mass, volc_vent
+   real, allocatable, dimension (:,:) :: br_mass, hbr_mass, hcl_mass, hg_mass
    real, allocatable, dimension (:) :: vert_mass_dist
    real, dimension(10) :: size_dist
    real :: x1,percen_mass_umbrel,base_umbrel,ashz_above_vent
@@ -360,7 +361,9 @@ PROGRAM convert_emissions
      ALLOCATE( tmp3(ids:ide,jds:jde,3) )
      ALLOCATE( interpolate(ids:ide,kds:kde,jds:jde) )
      ALLOCATE( gocart_lev(iklev))
-     if(config_flags%emiss_opt_vol == 1 .or. config_flags%emiss_opt_vol == 2) then
+     if(config_flags%emiss_opt_vol == 1 &
+        .or. config_flags%emiss_opt_vol == 2 &
+        .or. config_flags%emiss_opt_vol == 5) then
         ALLOCATE( ash_mass(ids:ide,jds:jde) )
         ALLOCATE( so2_mass(ids:ide,jds:jde) )
         ALLOCATE( volc_vent(ids:ide,jds:jde) )
@@ -369,8 +372,12 @@ PROGRAM convert_emissions
         ALLOCATE( vert_mass_dist(kds:kde) )
         ALLOCATE( zlevel(ids:ide,kds:kde,jds:jde) )
      endif
-
-
+     if(config_flags%emiss_opt_vol == 5) then
+        ALLOCATE( br_mass(ids:ide,jds:jde) )
+        ALLOCATE( hbr_mass(ids:ide,jds:jde) )
+        ALLOCATE( hcl_mass(ids:ide,jds:jde) )
+        ALLOCATE( hg_mass(ids:ide,jds:jde) )
+     endif
    ihour = start_hour
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -835,9 +842,272 @@ PROGRAM convert_emissions
 
 
      endif
+!!!!!!!!!!!!!!!!!!!! end volcanic stuff options 1 & 2
+! Volcanic emissions option 5
+
+      if(config_flags%emiss_opt_vol == 5) then
+     write(message, FMT='(A,4I6)') ' I am reading global volcanic emissions, dims: =',ids, ide-1, jds, jde-1
+     call wrf_message( TRIM( message ) )
+     CALL construct_filename1 ( bdyname , 'volc' , grid%id , 2 )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+        open (92,file=bdyname,form='unformatted')
+     ENDIf
+#else
+     OPEN(92,FILE=bdyname,FORM='UNFORMATTED')
+#endif
+     write(message, FMT='(A,A)') ' OPENED FILE: ',TRIM(bdyname)
+     call wrf_message( TRIM( message ) )
+#ifdef DM_PARALLEL
+     IF (wrf_dm_on_monitor()) THEN
+       read(92)nv_g
+       read(92)dname
+       read(92)dname2
+       CALL wrf_dm_bcast_bytes ( nv_g , rnum8 )
+       CALL wrf_dm_bcast_bytes ( dname , rnum8 )
+       CALL wrf_dm_bcast_bytes ( dname2 , rnum8 )
+     ENDIF
+#else
+       read(92)nv_g
+       read(92)dname
+       read(92)dname2
+#endif
+      CALL geth_julgmt ( config_flags%julyr , config_flags%julday , config_flags%gmt )
+!      dname = YYYYMMDDHHMMSS
+!              12345678901234
+! read in the eruption beg_yr and beg_mon from the volc_d01 data file
+       read(unit=dname2(1:4), FMT='(I4)')beg_yr
+       read(unit=dname2(5:6), FMT='(I2)')beg_mon
+       read(unit=dname2(7:8), FMT='(I2)')beg_day
+       read(unit=dname2(9:10), FMT='(I2)')beg_hour
+!
+! convert the date from the volc_d01 data file to Julian day
+	LEAP = .FALSE.
+	IF((MOD(beg_yr,4) .EQ. 0 .AND. MOD(beg_yr,100).NE.0 ).OR. MOD(beg_yr,400).EQ.0 ) THEN
+            LEAP = .TRUE.        
+        ENDIF
+	IF (LEAP) THEN
+	  K = 1
+	ELSE
+  	  K = 2
+	END IF
+	beg_jul = ((275*beg_mon)/9) - K*((beg_mon+9)/12) + beg_day - 30
+
+       write(0,*)' DNAME2 = ',dname2,beg_jul,beg_hour
+!ash size dist not written in prepchem;.
+#ifdef DM_PARALLEL
+        IF (wrf_dm_on_monitor()) THEN
+            read(92)size_dist
+        ENDIF
+        DM_BCAST_MACRO(size_dist)
+!       write(0,*)size_dist
+#else
+        read(92)size_dist
+#endif
+!       write(0,*)'size_dist = ',size_dist,ids,ide,jds,jde
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do so2 '
+           read(92)so2_mass(ids:ide  ,jds:jde  )
+           write(0,*) so2_mass
+       ENDIF
+       DM_BCAST_MACRO(so2_mass)
+!          write(0,*)maxval(so2_mass)
+#else
+!          write(0,*)'now do so2-s '
+       read(92)so2_mass(ids:ide  ,jds:jde  )
+#endif
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do ash mass '
+           read(92)ash_mass(ids:ide  ,jds:jde  )
+           write(0,*) ash_mass
+       ENDIF
+       DM_BCAST_MACRO(ash_mass)
+#else
+       read(92)ash_mass(ids:ide  ,jds:jde  )
+#endif
+
+!Br
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do br '
+           read(92)br_mass(ids:ide  ,jds:jde  )
+           write(0,*) br_mass
+       ENDIF
+       DM_BCAST_MACRO(br_mass)
+!          write(0,*)maxval(br_mass)
+#else
+!          write(0,*)'now do br-s '
+       read(92)br_mass(ids:ide  ,jds:jde  )
+#endif
+!HBr
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do hbr '
+           read(92)hbr_mass(ids:ide  ,jds:jde  )
+           write(0,*) hbr_mass
+       ENDIF
+       DM_BCAST_MACRO(hbr_mass)
+!          write(0,*)maxval(hbr_mass)
+#else
+!          write(0,*)'now do hbr-s '
+       read(92)hbr_mass(ids:ide  ,jds:jde  )
+#endif
+
+!HBr
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do hcl '
+           read(92)hcl_mass(ids:ide  ,jds:jde  )
+           write(0,*) hcl_mass
+       ENDIF
+       DM_BCAST_MACRO(hcl_mass)
+!          write(0,*)maxval(hcl_mass)
+#else
+!          write(0,*)'now do hcl-s '
+       read(92)hcl_mass(ids:ide  ,jds:jde  )
+#endif
+
+!Hg
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do hg '
+           read(92)hg_mass(ids:ide  ,jds:jde  )
+           write(0,*) hg_mass
+       ENDIF
+       DM_BCAST_MACRO(hg_mass)
+!          write(0,*)maxval(hg_mass)
+#else
+!          write(0,*)'now do hg-s '
+       read(92)hg_mass(ids:ide  ,jds:jde  )
+#endif
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do ash heigt '
+           read(92)ash_height(ids:ide  ,jds:jde  )
+           write(0,*) ash_height
+       ENDIF
+       DM_BCAST_MACRO(ash_height)
+#else
+       read(92)ash_height(ids:ide  ,jds:jde  )
+#endif
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do volc vent '
+           read(92)volc_vent(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(volc_vent)
+!          write(0,*)maxval(volc_vent)
+#else
+       read(92)volc_vent(ids:ide  ,jds:jde  )
+#endif
+
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do erup dt '
+           read(92)erup_dt(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(erup_dt)
+#else  
+       read(92)erup_dt(ids:ide  ,jds:jde  )
+#endif 
+       do j=jps,jpe
+       do k=kps,kpe
+       do i=ips,ipe
+         zlevel(i,k,j) = (grid%phb(i,k,j)+grid%ph_2(i,k,j))/9.81
+       enddo
+       enddo
+       enddo
+       !percen_mass_umbrel=.75
+       !base_umbrel=.25    ! fraction
+       do j=jps,jpe
+       do i=ips,ipe
+
+         if(ash_height(i,j).le.0.)CYCLE
+
+         area = config_flags%dx * config_flags%dy 
+         ashz_above_vent=ash_height(i,j)+volc_vent(i,j) !zlevel(i,kps,j)
+         do k=kpe-1,kps,-1
+           if(zlevel(i,k,j) < ashz_above_vent)then
+             k_final=k+1
+             exit
+           endif
+         enddo
+
+         do k=kpe-1,kps,-1
+
+           if(zlevel(i,k,j) < (1.-base_umbrel)*ashz_above_vent)then
+             k_initial=k
+             exit
+           endif
+          
+         enddo
+          
+         !! VERTICAL MASS DISTRIBUTION TO BE ONLY ON ONE LEVEL - where 3000m occurs
+!        write(0,*)'k_init = ',k_initial
+         vert_mass_dist=0.
+         !vert_mass_dist(1)=1. !GROUND LEVEL
+
+         k_final=20.
+           do ko=1,k_final
+             if(zlevel(i,ko,j).gt. ashz_above_vent) then
+               vert_mass_dist(ko)=1.
+               exit
+             endif
+           enddo
+               
+               do ko=1,k_final
+                 !ash size dist not written in prepchem it seems; Hard coding here
+                 grid%emis_vol(i,ko,j,p_e_vash1)=size_dist(1)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash2)=size_dist(2)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash3)=size_dist(3)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash4)=size_dist(4)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash5)=size_dist(5)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash6)=size_dist(6)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash7)=size_dist(7)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash8)=size_dist(8)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash9)=size_dist(9)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vash10)=size_dist(10)*vert_mass_dist(ko)*ash_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vso2)=vert_mass_dist(ko)*so2_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vbr)=vert_mass_dist(ko)*br_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vhbr)=vert_mass_dist(ko)*hbr_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vhcl)=vert_mass_dist(ko)*hcl_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vhg)=vert_mass_dist(ko)*hg_mass(i,j)
+               enddo
+! Changes made to Julian day from the volc_d01 file
+               grid%erup_beg(i,j)=float(beg_jul)*1000.+float(beg_hour)
+               grid%erup_end(i,j)=grid%erup_beg(i,j)+erup_dt(i,j)
+               !write(0,*)'new mass=',sum(vert_mass_dist)*100.,x1
+!          endif
+       enddo
+       enddo
+
+!
+! simple file dump here....
+!
+         write(message,FMT='(A)') ' OPEN EMISSIONS WRF file for emissions coming from volcano data set'
+         call wrf_message( TRIM( message ) )
+         write(message, FMT='(A)') ' NO TIME DEPENDENCE IN THIS DATASET'
+! emissions from  volcanoes (prep_chem_sources)
+!              
+         CALL construct_filename1( inpname , 'wrfchemv' , grid%id , 2 )
+         CALL open_w_dataset ( id1, TRIM(inpname) , grid , config_flags , output_auxinput13, "DATASET=AUXINPUT13", ierr )
+               
+         CALL output_auxinput13( id1 , grid , config_flags , ierr )
+       
+         CALL close_dataset ( id1 , config_flags , "DATASET=AUXOUTPUT13" )
+
+
+     endif
 !!!!!!!!!!!!!!!!!!!! end volcanic stuff
 !        
-     if(config_flags%emiss_opt_vol == 1 .or. config_flags%emiss_opt_vol == 2) then 
+     if(config_flags%emiss_opt_vol == 1 &
+        .or. config_flags%emiss_opt_vol == 2 &
+        .or. config_flags%emiss_opt_vol == 5) then 
         DEALLOCATE( ash_mass )
         DEALLOCATE( so2_mass )
         DEALLOCATE( volc_vent )
@@ -845,6 +1115,13 @@ PROGRAM convert_emissions
         DEALLOCATE( erup_dt)
         DEALLOCATE( zlevel)
         DEALLOCATE( vert_mass_dist)
+     endif
+
+     if(config_flags%emiss_opt_vol == 5) then
+       DEALLOCATE( br_mass )
+       DEALLOCATE( hbr_mass )
+       DEALLOCATE( hcl_mass )
+       DEALLOCATE( hg_mass )
      endif
 
 !

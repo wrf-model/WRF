@@ -36,8 +36,9 @@
                            ! is not used in WRFDA.
    ep_format=2             !  1: each member in separate file (real*8), the same format as the current gen_be_ep2.exe output.
                            ! 11: each member in separate file (real*4)
-                           !  2: (real*4) all members in one file (full-domain)
+                           !  2: (real*4) all members in one file (full-domain) (recommended)
                            !  3: (real*4) all members in one file (sub-domain), need to specify nproc_out
+                           !     NOTE that ep_format=3 does not work yet for dual-resolution EnVar application.
    nproc_out=32            ! for ep_format=3 only. The number of processors that WRFDA will be running with.
 /
 

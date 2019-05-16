@@ -1597,8 +1597,7 @@ RLFLAGS		=
 CC_TOOLS        =       $(SCC) 
 
 LIB_EXTERNAL    = \
-                     ../external/io_netcdf/libwrfio_nf.a CONFIGURE_NETCDF_PATH/lib/libnetcdf.lib \
-                     ../external/wavelet/libWavelet.a ../external/wavelet/lib_wavelet.a
+                     ../external/io_netcdf/libwrfio_nf.a CONFIGURE_NETCDF_PATH/lib/libnetcdf.lib
 ESMF_IO_LIB     =    ../external/esmf_time_f90/libesmf_time.a
 LIB_BUNDLED     = \
                      ../external/fftpack/fftpack5/libfftpack.a \

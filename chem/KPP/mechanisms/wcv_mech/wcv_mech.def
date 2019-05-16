@@ -1,0 +1,510 @@
+#include atoms_red
+#include ./wcv_mech.spc
+#include ./wcv_mech.eqn
+
+#INLINE F90_RATES
+
+!__________________________________________________
+   REAL(KIND=dp) FUNCTION ARR3( A0,B0, TEMP )
+    REAL(KIND=dp),INTENT(IN) :: TEMP
+    REAL(KIND=dp),INTENT(IN):: A0,B0
+    ARR3 = A0 * EXP(- B0 /TEMP )
+    END FUNCTION ARR3
+!__________________________________________________
+    REAL(KIND=dp) FUNCTION ARR3MS( A0,B0,TEMP,C_M )
+    REAL(KIND=dp), INTENT(IN) :: A0,B0      
+    REAL(KIND=dp), INTENT(IN) :: TEMP,C_M  
+
+    ARR3MS = C_M*A0 *(TEMP/300._dp)**(-B0)
+    END FUNCTION ARR3MS
+!__________________________________________________
+    REAL(KIND=dp) FUNCTION ARR4( A0,B0,TEMP )
+    REAL(KIND=dp), INTENT(IN) :: A0,B0      
+    REAL(KIND=dp), INTENT(IN) :: TEMP  
+
+    ARR4 = A0 *(TEMP/298._dp)**(-B0)
+    END FUNCTION ARR4
+!__________________________________________________
+    REAL(KIND=dp) FUNCTION ARR4MS( A0,B0,TEMP,C_M )
+    REAL(KIND=dp), INTENT(IN) :: A0,B0      
+    REAL(KIND=dp), INTENT(IN) :: TEMP,C_M  
+
+    ARR4MS = C_M*A0 *(TEMP/298._dp)**(-B0)
+    END FUNCTION ARR4MS
+!__________________________________________________
+    REAL(KIND=dp) FUNCTION TROEMS(k0_300K,n,kinf_300K,m,TEMP,C_M)
+
+    INTRINSIC LOG10
+
+    REAL(KIND=dp), INTENT(IN) :: TEMP      ! TEMPerature [K]
+    REAL(KIND=dp), INTENT(IN) :: C_M      ! air concentration [molecules/cm3]
+    REAL(KIND=dp), INTENT(IN) :: k0_300K   ! low pressure limit at 300 K
+    REAL(KIND=dp), INTENT(IN) :: n         ! exponent for low pressure limit
+    REAL(KIND=dp), INTENT(IN) :: kinf_300K ! high pressure limit at 300 K
+    REAL(KIND=dp), INTENT(IN) :: m         ! exponent for high pressure limit
+    REAL(KIND=dp)             :: zt_help, k0_T, kinf_T, k_ratio
+
+    zt_help = TEMP/300._dp
+    k0_T    = k0_300K   * zt_help**(n) * C_M ! k_0   at current T
+    kinf_T  = kinf_300K * zt_help**(m)        ! k_inf at current T
+    k_ratio = k0_T/kinf_T
+    TROEMS   = k0_T/(1._dp+k_ratio)*0.6_dp**(1._dp/(1._dp+LOG10(k_ratio)**2))
+
+    END FUNCTION TROEMS
+!__________________________________________________
+    REAL(KIND=dp) FUNCTION TROEMS2(k0_300K,n,kinf_300K,m,TEMP,C_M)
+
+    INTRINSIC LOG10
+
+    REAL(KIND=dp), INTENT(IN) :: TEMP      ! TEMPerature [K]
+    REAL(KIND=dp), INTENT(IN) :: C_M      ! air concentration [molecules/cm3]
+    REAL(KIND=dp), INTENT(IN) :: k0_300K   ! low pressure limit at 300 K
+    REAL(KIND=dp), INTENT(IN) :: n         ! exponent for low pressure limit
+    REAL(KIND=dp), INTENT(IN) :: kinf_300K ! high pressure limit at 300 K
+    REAL(KIND=dp), INTENT(IN) :: m         ! exponent for high pressure limit
+    REAL(KIND=dp)             :: zt_help, k0_T, kinf_T, k_ratio
+
+    zt_help = TEMP/300._dp
+    k0_T    = k0_300K   * zt_help**(n)        ! k_0   at current T
+    kinf_T  = kinf_300K * zt_help**(m) / C_M  ! k_inf at current T
+    k_ratio = k0_T/kinf_T
+    TROEMS2   = k0_T/(1._dp+k_ratio)*0.6_dp**(1._dp/(1._dp+LOG10(k_ratio)**2))
+
+    END FUNCTION TROEMS2
+!__________________________________________________
+    REAL(KIND=dp) FUNCTION TROEEMS(A, B, k0_300K,n,kinf_300K,m,TEMP,C_M)
+
+    INTRINSIC LOG10
+
+    REAL(KIND=dp), INTENT(IN) :: TEMP      ! TEMPerature [K]
+    REAL(KIND=dp), INTENT(IN) :: C_M      ! air concentration [molecules/cm3]
+    REAL(KIND=dp), INTENT(IN) :: k0_300K   ! low pressure limit at 300 K
+    REAL(KIND=dp), INTENT(IN) :: n         ! exponent for low pressure limit
+    REAL(KIND=dp), INTENT(IN) :: kinf_300K ! high pressure limit at 300 K
+    REAL(KIND=dp), INTENT(IN) :: m         ! exponent for high pressure limit
+    REAL(KIND=dp), INTENT(IN) :: A, B
+    REAL(KIND=dp)             :: zt_help, k0_T, kinf_T, k_ratio, troe
+
+    zt_help = TEMP/300._dp
+    k0_T    = k0_300K   * zt_help**(n) * C_M ! k_0   at current T
+    kinf_T  = kinf_300K * zt_help**(m)        ! k_inf at current T
+    k_ratio = k0_T/kinf_T
+    troe   = k0_T/(1._dp+k_ratio)*0.6_dp**(1._dp/(1._dp+LOG10(k_ratio)**2))
+
+    TROEEMS = A * EXP( - B / TEMP) * troe
+    END FUNCTION TROEEMS
+!__________________________________________________
+   REAL(KIND=dp) FUNCTION k46( TEMP, C_M )
+   REAL(KIND=dp), INTENT(IN) :: TEMP, C_M 
+   REAL(KIND=dp) :: k0, k2, k3 
+   k0=7.2E-15_dp * EXP(785._dp/TEMP)
+   k2=4.1E-16_dp * EXP(1440._dp/TEMP)
+   k3=1.9E-33_dp * EXP(725._dp/TEMP)
+   k46=k0+k3/(1+k3/k2)
+   END FUNCTION k46
+!__________________________________________________
+   REAL(KIND=dp) FUNCTION RK_HO_HNO3( TEMP, C_M )
+   REAL(KIND=dp), INTENT(IN) :: TEMP, C_M 
+   REAL(KIND=dp) :: k1, k2, k3 
+   k1=2.4E-14_dp * EXP(460._dp/TEMP)
+   k2=6.5E-34_dp * EXP(1335._dp/TEMP)
+   k3=2.7E-17_dp * EXP(2199._dp/TEMP)
+   RK_HO_HNO3=k1+(C_M*k2)/(1+(C_M*k2)/k3)
+   END FUNCTION RK_HO_HNO3
+!__________________________________________________
+   REAL(KIND=dp) FUNCTION RK_2HO2( TEMP, C_M )
+   REAL(KIND=dp), INTENT(IN) :: TEMP, C_M 
+   REAL(KIND=dp) :: k1, k2, k3 
+   k1=3.0E-13_dp * EXP(460._dp/TEMP)
+   k2=2.1E-33_dp * EXP(920._dp/TEMP)
+   RK_2HO2=k1+(C_M*k2)
+   END FUNCTION RK_2HO2
+!__________________________________________________
+   REAL(KIND=dp) FUNCTION RK_2HO2_H2O( TEMP, C_M )
+   REAL(KIND=dp), INTENT(IN) :: TEMP, C_M 
+   REAL(KIND=dp) :: k1, k2, k3 
+   k1=2.3E-13_dp * EXP(600._dp/TEMP)
+   k2=1.7E-33_dp * EXP(1000._dp/TEMP) * C_M
+   k3=1.4E-21_dp * EXP(2200._dp/TEMP)
+   RK_2HO2_H2O=(k1+k2)*k3
+   END FUNCTION RK_2HO2_H2O
+!__________________________________________________
+   REAL(KIND=dp) FUNCTION RK_CO_HO( TEMP, C_M )
+   REAL(KIND=dp), INTENT(IN) :: TEMP, C_M 
+   RK_CO_HO =1.5e-13 * (1.0 + 8.18e-23 * TEMP * C_M)
+   END FUNCTION RK_CO_HO
+!__________________________________________________
+   REAL(KIND=dp) FUNCTION peroxy(K,X1,X2,X3,X4,X5,X6,X7,X8,X9,X10, &
+     TEMP,C_M)
+   REAL(KIND=dp), INTENT(IN) :: X1,X2,X3,X4,X5,X6,X7,X8,X9,X10
+   REAL(KIND=dp), INTENT(IN) :: TEMP,C_M
+   INTEGER :: nperox, I, J, K
+   PARAMETER(nperox=10)
+   REAL(KIND=dp) :: Aperox(nperox,nperox),Bperox(nperox,nperox)
+   REAL(KIND=dp) :: RK_PEROX(nperox,nperox)
+   REAL(KIND=dp) :: RK_PARAM(nperox),SPEROX(nperox)
+!
+   SPEROX(1)=X1
+   SPEROX(2)=X2
+   SPEROX(3)=X3
+   SPEROX(4)=X4
+   SPEROX(5)=X5
+   SPEROX(6)=X6
+   SPEROX(7)=X7
+   SPEROX(8)=X8
+   SPEROX(9)=X9
+   SPEROX(10)=X10
+!
+   Aperox(1,1)=2.5e-13
+   Aperox(2,2)=6.8e-14
+   Aperox(3,3)=2.9e-12
+   Aperox(4,4)=8.0e-12
+   Aperox(5,5)=1.0e-12
+   Aperox(6,6)=5.3e-16
+   Aperox(7,7)=3.1e-14
+   Aperox(8,8)=3.1e-14
+   Aperox(9,9)=3.1e-14
+   Aperox(10,10)=3.1e-14
+   Bperox(1,1)=190.
+   Bperox(2,2)=0.0
+   Bperox(3,3)=500.
+   Bperox(4,4)=0.0
+   Bperox(5,5)=0.0
+   Bperox(6,6)=1980.
+   Bperox(7,7)=1000.
+   Bperox(8,8)=1000.
+   Bperox(9,9)=1000.
+   Bperox(10,10)=1000.
+   DO I=1,nperox
+   DO J=1,nperox
+     IF(I.NE.J) THEN
+       Aperox(I,J)=2.0*SQRT(Aperox(I,I)*Aperox(J,J))
+       Bperox(I,J)=0.5*(Bperox(I,I)+Bperox(J,J))
+     ENDIF
+   ENDDO
+   ENDDO
+   Aperox(3,1)=1.3e-12
+   Aperox(1,3)=1.3e-12
+   Bperox(3,1)=640.0
+   Bperox(1,3)=640.0
+!
+   DO I=1,nperox
+     RK_PARAM(I)=0.0
+   ENDDO
+   DO I=1,nperox
+   DO J=1,nperox
+     RK_PEROX(I,J)=ARR3(Aperox(I,J),-Bperox(I,J),TEMP)
+     RK_PARAM(I)=RK_PARAM(I)+RK_PEROX(I,J)*SPEROX(J)
+   ENDDO
+   ENDDO
+   peroxy=RK_PARAM(K)
+!
+   END FUNCTION peroxy
+!__________________________________________________
+  REAL(KIND=dp) FUNCTION ATK_3(a1,a2,b1,b2,fc,TEMP,C_M) 
+!calculate third body reactions according to Atkinson '92 
+  REAL(KIND=dp), INTENT(IN) :: a1,a2,b1,b2,fc,TEMP,C_M
+  REAL(KIND=dp) :: a0, b0
+  INTRINSIC LOG10
+
+  a0=a1*C_M*(TEMP/300.)**a2 
+  b0=b1*(TEMP/300.)**b2 
+  ATK_3=(a0/(1+a0/b0))*(fc**(1/(1+log10(a0/b0)*log10(a0/b0)))) 
+  END FUNCTION ATK_3
+!___________________________________________________
+   REAL(KIND=dp) FUNCTION ORGBRPROD( A0,B0,CH3BRCONC,TEMP, C_M,RATEMULTI )
+    REAL(KIND=dp),INTENT(IN) :: TEMP
+    REAL(KIND=dp),INTENT(IN) :: A0,B0,C_M
+    REAL(KIND=dp),INTENT(IN) :: CH3BRCONC !fixed molar ratio of CH3BR in troposphere. 
+    REAL(KIND=dp),INTENT(IN) :: RATEMULTI !number to multiply rate by to cover for other Br reactions.
+    ORGBRPROD = RATEMULTI * (CH3BRCONC * C_M) * A0 * EXP(- B0 /TEMP )
+    END FUNCTION ORGBRPROD
+
+!_____________________________________________________
+  REAL(KIND=dp) FUNCTION xhet_sim1(J,SURF_DCEN,TEMP)
+   INTEGER,INTENT(IN) :: J
+   REAL(KIND=dp),INTENT(IN)    :: SURF_DCEN,TEMP
+   REAL(KIND=dp)      :: xg,xM
+
+   xhet_sim1 = 0.
+!   gamma = 0.1
+   xg=0.1d0
+! v_mean in m/s: v_mean = sqrt(8*R_gas*T/(pi*M))
+! sqrt(8*R_gas/pi)=4.60138
+! fail safe:
+   xM = 1.d20
+!! Molar mass for ClNO3 
+   IF (J .EQ. 1) THEN
+    xM = 9.7d-2
+   ENDIF
+!! Molar mass for BrNO3 
+   IF (J .EQ. 2) THEN
+    xM = 1.42d-1
+   ENDIF
+!! Molar mass for HgCl2
+   IF (J .EQ. 3) THEN
+    xM = 2.72d-1
+   ENDIF
+!! Molar mass for HgBr2
+   IF (J .EQ. 4) THEN
+    xM = 3.61d-1
+   ENDIF
+
+   xhet_sim1= xg * sqrt(TEMP/xM) * 4.60138d0 * SURF_DCEN * 0.25d0
+   END FUNCTION xhet_sim1
+
+!______________________________
+!______________________________
+
+ REAL(KIND=dp) FUNCTION xhet_sim2(J,SURF_DCEN,C_HBR,C_HOBR,C_HCL,C_HOCL,TEMP)
+   INTEGER,INTENT(IN) :: J
+   REAL(KIND=dp),INTENT(IN) :: SURF_DCEN,TEMP,C_HBR,C_HOBR,C_HCL,C_HOCL
+   REAL(KIND=dp) :: xg,xM,xC
+   REAL(KIND=dp) :: xMHOCL,xMHCL,xMHOBR,xMHBR
+   REAL(KIND=dp) :: xHOCL,xHCL,xHOBR,xHBR
+! calculate pseudo-first order rate coefficient for heterogeneous reaction 
+! of HOX and HY to XY
+! k=0.25 gamma v_mean A
+! this formulation calculates the rate limiting step first
+
+   xhet_sim2 = 0.d0
+
+!--- define parameters ---
+
+! gamma = 0.1; values vary for surface type, see IUPAC 2013 compilation #5649, g=0.1 is not too bad...
+   xg = 0.1d0
+! Molar mass for HOCl
+   xMHOCL = 5.2d-2
+! Molar mass for HCl
+   xMHCL = 3.6d-2
+! Molar mass for HOBr
+   xMHOBR = 9.7d-2
+! Molar mass for HBr
+   xMHBR = 8.1d-2
+
+!--- calculate total heterogeneous rate of gas phase reactant ---
+
+! k = 1/4 v gamma A
+! aer_totsurf -  surface_area, calculated in SR oneD_dist
+! v_mean in m/s: v_mean = sqrt(8*R_gas*T/(pi*M))
+! sqrt(8*R_gas/pi)=4.60138
+   xc = 0.25d0 * 4.60138d0 * SURF_DCEN
+
+!--- rates for various pathways (determined by function arguments)
+
+! j = 1: HOBr + HBr --> Br2
+   IF (J .EQ. 1 .AND. (MIN(C_HBR,C_HOBR) .GT. 1.d-16)) THEN
+    xHOBR=xg*xc*SQRT(TEMP/xMHOBR)*C_HOBR
+    xHBR=xg*xc*SQRT(TEMP/xMHBR)*C_HBR
+    xhet_sim2=MIN(xHBR,xHOBR) / (C_HOBR*C_HBR)
+   ENDIF
+! j = 2: HOBr + HCl --> BrCl
+   IF (J .EQ. 2 .AND. (MIN(C_HCL,C_HOBR) .GT. 1.d-16)) THEN
+    xHOBR=xg*xc*SQRT(TEMP/xMHOBR)*C_HOBR
+    xHCL=xg*xc*SQRT(TEMP/xMHCL)*C_HCL
+    xhet_sim2=MIN(xHCL,xHOBR) / (C_HOBR*C_HCL)
+   ENDIF
+! j = 3: HOCl + HBr --> BrCl
+   IF (J .EQ. 3 .AND. (MIN(C_HBR,C_HOCL) .GT. 1.d-16)) THEN
+    xHOCL=xg*xc*SQRT(TEMP/xMHOCL)*C_HOCL
+    xHBR=xg*xc*SQRT(TEMP/xMHBR)*C_HBR
+    xhet_sim2=MIN(xHBR,xHOCL) / (C_HOCL*C_HBR)
+   ENDIF
+
+   END FUNCTION xhet_sim2
+
+!_________________________________________________
+
+      REAL(KIND=dp) FUNCTION xhet_sim2b(J,SURF_DCEN,C_HBR,&
+                             C_HOBR,C_HCL,C_HOCL,TEMP)
+      
+      INTEGER,INTENT(IN) :: J
+      REAL(KIND=dp),INTENT(IN) :: SURF_DCEN,C_HBR,C_HOBR,C_HCL,C_HOCL,TEMP
+      REAL(KIND=dp) :: xg,xc
+      REAL(KIND=dp) :: xMHOCL,xMHCL,xMHOBR,xMHBR
+      REAL(KIND=dp) :: xH_HCL,xH_HBR
+      REAL(KIND=dp) :: xpr
+      REAL(KIND=dp) :: yBR2,yBRCL
+      REAL(KIND=dp) :: xHOCL,xHBR,xHCL
+! calculate pseudo-first order rate coefficient for heterogeneous reaction 
+! of HOX and HY to XY
+! k=0.25 gamma v_mean A
+! approach follows "WRF 54-58"; Grellier et al., 2014; von Glasow, 2012, 
+! parameterisation documentation
+
+      xhet_sim2b = 0.d0
+! gamma = 0.1; values vary for surface type, see IUPAC 2013 compilation #5649, g=0.1 is not too bad...
+      xg = 0.1d0
+! Molar mass for HOCl
+      xMHOCL = 5.2d-2
+! Molar mass for HCl
+      xMHCL = 3.6d-2
+! Molar mass for HOBr
+      xMHOBR = 9.7d-2
+! Molar mass for HBr
+      xMHBR = 8.1d-2
+
+!--- calculate BrCl : Br2 product yield ratio ---
+
+! equilibrium constants: BrCl + Br- <--> Br2Cl-, K_eq1 = 1.8d4
+! equilibrium constants: Br2 + Cl- <--> Br2Cl-, K_eq2 = 1.3d0
+! note: this approach includes effective solubility, [H+] cancels out
+! Henry's law's coefficient for HCl, H_HCl = 
+      xH_HCL=1.176d0*exp(9001.d0*((1/TEMP)-3.3557d-3))
+! Henry's law's coefficient for HBr, H_HBr = 
+      xH_HBR=1.3d0*exp(10239.d0*((1/TEMP)-3.3557d-3)) 
+! HCl dissociation equilibrium: K_HCl = 1.7d6
+! HBr dissociation equilibrium: K_HBr = 1.0d9
+! calculate product ratio [BrCl] : [Br2]
+      xpr = 0.d0
+      IF (C_HBR .GT. 1.d0) THEN
+       xpr = 1.3d0/1.8d4 * 1.7d6/1.0d9 * xH_HCl/xH_HBR * C_HCl/C_HBR
+      ENDIF
+! yields for each pathway
+      yBR2  = 0.
+      yBRCL = 0.
+      IF (xpr .NE. 1.d0) THEN
+       yBR2 = 1.d0 / (1.d0 + xpr)
+      ENDIF
+      IF (xpr .GT. 0.d0) THEN
+       yBRCL = 1.d0 / (1.d0 + 1.d0/xpr)
+      ENDIF
+
+!--- calculate total heterogeneous rate of gas phase reactant ---
+
+! k = 1/4 v gamma A
+! aer_totsurf -  surface_area, calculated in SR oneD_dist
+! v_mean in m/s: v_mean = sqrt(8*R_gas*T/(pi*M))
+! sqrt(8*R_gas/pi)=4.60138
+      xc = 0.25d0 * 4.60138d0 * SURF_DCEN
+
+!--- rates for various pathways (determined by function arguments)
+
+! j = 1: HOBr + HBr --> Br2
+      IF ((J .EQ. 1) .AND. (C_HBR .GT. 1.d-16)) THEN
+        xhet_sim2b=xg*xc*sqrt(TEMP/xMHOBR)/C_HBR * yBR2
+      ENDIF
+! j = 2: HOBr + HCl --> BrCl
+      IF ((J .EQ. 2) .AND. (C_HBR.GT. 1.d-16)) THEN
+        xhet_sim2b=xg*xc*SQRT(TEMP/xMHOBR)/C_HCL * yBRCL
+      ENDIF
+
+! HOCl uptake - use Luke's approach as no quick equilibria as for Br2Cl-
+! this approach calculates which uptake (HOX or HX) is rate limiting so 
+! the reaction can change from effective HOX uptake to HX uptake:
+! j = 3: HOCl + HBr --> BrCl
+      IF ((J .EQ. 3) .AND. (MIN(C_HBR,C_HOCL) .GT. 1.d-16)) THEN
+        xHOCL=xg*xc*SQRT(TEMP/xMHOCL)*C_HOCL
+        xHBR=xg*xc*SQRT(TEMP/xMHBR)*C_HBR
+        xhet_sim2b=MIN(xHBR,xHOCl) / (C_HOCL*C_HBR)
+      ENDIF
+! j = 4: HOCl + HCl --> Cl2
+      IF ((J .EQ. 4) .AND. (MIN(C_HCL,C_HOCL) .GT. 1.d-16)) THEN
+        xHOCL=xg*xc*SQRT(TEMP/xMHOCL)*C_HOCL
+        xHCL=xg*xc*SQRT(TEMP/xMHCL)*C_HCL
+        xhet_sim2b=MIN(xHCL,xHOCL) / (C_HOCL*C_HCL)
+      ENDIF
+!      print *,'xhet_sim2b = ',xhet_sim2b,aer_totsurf
+!      print *,xc,xHOBr,xHBr
+!      print *,xHOCl,xHCl
+      END FUNCTION xhet_sim2b
+!_____________________________________________
+
+ REAL(KIND=dp) FUNCTION xhet_sim3(b0,c0,C_HBR,C_HCL,SURF_DCEN,TEMP)
+ INTEGER,INTENT(IN) :: b0,c0
+ REAL(KIND=dp),INTENT(IN) :: C_HBR,C_HCL
+ REAL(KIND=dp),INTENT(IN) :: SURF_DCEN,TEMP
+ REAL(KIND=dp) :: xg,xM
+ REAL(KIND=dp) :: xH_HCL,xH_HBR
+ REAL(KIND=dp) :: xpr
+ REAL(KIND=dp) :: yBR2,yBRCL
+ REAL(KIND=dp) :: xBR
+ REAL(KIND=dp) :: xtr,xHp,xCLfac,xBRfac,hetT
+
+ xhet_sim3 = 0.d0
+
+!--- define parameters ---
+
+! gamma = 0.1; values vary for surface type, see IUPAC 2013 compilation #5649, g=0.1 is not too bad...
+ xg=0.1d0
+! fail safe:
+ xM = 1.d20
+!Molar mass for N2O5
+ IF (c0 .EQ. 1) THEN
+  xM = 1.08d-1
+ ENDIF
+! Molar mass for ClNO3 
+ IF (c0 .EQ. 2) THEN
+  xM = 9.7d-2
+ ENDIF
+! Molar mass for BrNO3 
+ IF (c0 .EQ. 3) THEN
+  xM = 1.42d-1
+ ENDIF
+
+!--- calculate BrCl : Br2 product yield ratio ---
+
+! equilibrium constants: BrCl + Br- <--> Br2Cl-, K_eq1 = 1.8d4
+! equilibrium constants: Br2 + Cl- <--> Br2Cl-, K_eq2 = 1.3d0
+! note: this approach includes effective solubility, [H+] cancels out
+! Henry's law's coefficient for HCl, H_HCl = 
+ xH_HCL=1.176d0*exp(9001.d0*((1/TEMP)-3.3557d-3))
+! Henry's law's coefficient for HBr, H_HBr = 
+ xH_HBR=1.3d0*exp(10239.d0*((1/TEMP)-3.3557d-3)) 
+! HCl dissociation equilibrium: K_HCl = 1.7d6
+! HBr dissociation equilibrium: K_HBr = 1.0d9
+! calculate product ratio [BrCl] : [Br2]
+ xpr = 1.3d0/1.8d4 * 1.7d6/1.0d9 * xH_HCL/xH_HBR * C_HCL/C_HBR
+
+! yields for each pathway
+ yBR2  = 0.
+ yBRCL = 0.
+ IF (xpr .NE. 1.d0) THEN 
+  yBR2  = 1.d0 / (1.d0 + xpr)
+ ENDIF
+ IF (xpr .GT. 0.d0) THEN 
+  yBRCL = 1.d0 / (1.d0 + 1.d0/xpr)
+ ENDIF
+
+!--- calculate total heterogeneous rate of gas phase reactant ---
+! k = 1/4 v gamma A
+! v_mean in m/s: v_mean = sqrt(8*R_gas*T/(pi*M))
+! sqrt(8*R_gas/pi)=4.60138
+!  aer_totsurf -  surface_area, calculated in SR oneD_dist
+ xtr = 0.25d0 * SQRT(TEMP/xM) * 4.60138d0 * xg * SURF_DCEN
+
+! calculate relative rates
+! het_total = [H2O] + f_Cl- [Cl-] + f_Br- [Br-]
+! f_Cl- = 5e2, f_Br- = 3e5 (see Behnke et al, 1997, von Glasow et al, 2002a)
+! assume Henry's law equilibrium with 1st dissociation ==> [X-] = K_HX H_HX p_HX / [H+]
+! conversion  concentration [mol m-3_air] to partial pressure [hPa]: p=RTc plus unit conversion (see WRF 58)
+ xHp = 1.d-2 ! assume pH=2
+ xCLfac = 8.314 * 9.869d-6 * TEMP / xHp * 5.0d2*xH_HCL*1.7d6
+ xBRfac = 8.314 * 9.869d-6 * TEMP / xHp * 3.0d5*xH_HBR*1.d9
+ hetT=  55.55d0 + xCLfac * C_HCL + xBRfac * C_HBR
+
+! for b0 = 2/3: xbr = xXfac * [HX] but the rate expression needs to be divided 
+! by [HX] as it's formulated as a pseudo-1st order reaction, hence for reactions
+! with [HX] leading to XY, the rate needs to be divided by [HX], hence it does
+! not appear here:
+ IF (b0 .EQ. 1) THEN
+  xBR=55.55d0
+ ENDIF
+ IF (b0 .EQ. 2) THEN
+  xBR=xCLfac !* C(I_HCl) / C(I_HCl)
+ ENDIF
+ IF (b0 .EQ. 3) THEN
+  xBR=xBRfac !* C(I_HBr) / C(I_HBr)
+ ENDIF
+
+! why was water multiplied as well in old style het reactions??? unit conversion?
+
+ IF (hetT .GT. 0.d0) then
+  xhet_sim3 = xtr * xBR / hetT
+ ELSE
+  xhet_sim3 = 0.
+ ENDIF
+
+END FUNCTION xhet_sim3
+!__________________________________________________
+#ENDINLINE

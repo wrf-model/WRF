@@ -15,7 +15,7 @@
             or a list of WRF forecasts with proper forecast lengths (for example: 24-h and 12-h forecasts).
       (3) Execute gen_be_v3.exe
             The code can be built and run with MPI, however seriel code should have good enough
-            performance by submitting/running each variable separately.
+            performance by submitting/running each variable separately (in different working directory).
 
 (a) namelist.gen_be_v3 for generating ensemble perturbations to be used in WRFDA
 
@@ -24,6 +24,8 @@
    be_method = 'ENS'
    varnames = 'T', 'U', 'V', 'QVAPOR', 'PSFC'  ! basic variables.
                                                ! can also be 'QCLOUD', 'QRAIN', 'QICE', 'QSNOW', 'QGRAUP', 'W'
+   !outnames = 't', 'u', 'v', 'q', 'ps' ! outnames should only be set when ep_format=1.
+                                        ! 'qcloud', 'qrain', 'qice', 'qsnow', 'qgraup' are ep_format=1 cloud names.
    do_pert_calc = .true.
    do_slen_calc = .false.  ! can be set to .true. to also generate BE from ensembles.
 /

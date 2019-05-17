@@ -1,0 +1,68 @@
+
+*** gen_be_b3.F90 is a user-contribute program and is provided as it is. ***
+*** gen_be_b3.F90 is for univariate processing only. ***
+*** gen_be_b3.F90 is for bin_type=5 (domain-average BE statistics) only. ***
+
+1. To compile:
+
+      See the sample compile_cheyenne/compile_casper and the info in gen_be_v3.F90
+
+2. To run:
+
+      (1) Edit namelist.gen_be_v3 (examples are shown below)
+      (2) Prepare a text file that contains a list of wrfout files (full path) to be processed.
+            Either a list of WRF ensembles,
+            or a list of WRF forecasts with proper forecast lengths (for example: 24-h and 12-h forecasts).
+      (3) Execute gen_be_v3.exe
+            The code can be built and run with MPI, however seriel code should have good enough
+            performance by submitting/running each variable separately (in different working directory).
+
+(a) namelist.gen_be_v3 for generating ensemble perturbations to be used in WRFDA
+
+&gen_be_nml
+   nc_list_file = 'flist.txt'  ! flist.txt contains a list of wrfout files in full path
+   be_method = 'ENS'
+   varnames = 'T', 'U', 'V', 'QVAPOR', 'PSFC'  ! basic variables.
+                                               ! can also be 'QCLOUD', 'QRAIN', 'QICE', 'QSNOW', 'QGRAUP', 'W'
+   !outnames = 't', 'u', 'v', 'q', 'ps' ! outnames should only be set when ep_format=1.
+                                        ! 'qcloud', 'qrain', 'qice', 'qsnow', 'qgraup' are ep_format=1 cloud names.
+   do_pert_calc = .true.
+   do_slen_calc = .false.  ! can be set to .true. to also generate BE from ensembles.
+/
+&ens_nml
+   nens = 10               ! number of ensembles, can be smaller than what is available from flist.txt
+   write_ep = .true.
+   write_ens_stdv = .true. ! can be .false. to not write out stdv in the output, since the stdv info
+                           ! is not used in WRFDA.
+   ep_format=2             !  1: each member in separate file (real*8), the same format as the current gen_be_ep2.exe output.
+                           ! 11: each member in separate file (real*4)
+                           !  2: (real*4) all members in one file (full-domain) (recommended)
+                           !  3: (real*4) all members in one file (sub-domain), need to specify nproc_out
+                           !     NOTE that ep_format=3 does not work yet for dual-resolution EnVar application.
+   nproc_out=32            ! for ep_format=3 only. The number of processors that WRFDA will be running with.
+/
+
+(b) namelist.gen_be_v3 for generating background error statistics to be used in WRFDA
+
+&gen_be_nml
+   nc_list_file = 'flist.txt' ! flist.txt contains a list of wrfout files in full path
+   be_method = 'NMC'
+   varnames = 'T', 'U', 'V', 'RH', 'PSFC' ! for cv_options=7.
+                                          ! can also be 'QCLOUD', 'QRAIN', 'QICE', 'QSNOW', 'QGRAUP', 'W'
+   do_pert_calc = .true.
+   do_slen_calc = .true.
+   slen_opt = 2               ! 1: curve-fitting method (extremely slow, need to run with OPENMP on)
+                              ! 2: laplacian method (recommended)
+   do_eof_transform = .true.  ! .true.: statistics on EOF space for WRFDA runs
+                              ! .false.: statistics on physical model levels for diagnostics
+/
+&ens_nml
+/
+
+3. Output:
+
+      Each variable is in separate output file.
+
+      For cv_options=7 purpose, util/combine_be_cv7.f90 can be used to combine be_[T/U/V/RH/PSFC].dat into be.dat that WRFDA can read.
+
+      pert1.* files are intermediate output that can be removed after the successful execution.

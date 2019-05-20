@@ -457,6 +457,7 @@ rconfig   integer   pseudo_time             namelist,wrfvar15  1  1        - "ps
 rconfig   real      pseudo_val              namelist,wrfvar15  1  1.0      - "pseudo_val"              ""  ""   
 rconfig   real      pseudo_err              namelist,wrfvar15  1  1.0      - "pseudo_err"              ""  ""   
 rconfig   real      pseudo_elv              namelist,wrfvar15  1  -999.99  - "pseudo_elv"              "pseudo ob elevation, used by pseudo tpw/ztd"  "m"
+rconfig   integer   ep_format               namelist,wrfvar16  1  1        - "ep_format"               "format of ensemble perturbation"  "1=original,11=original but in real4,2=new full-domain,3=new subdomain"
 rconfig   integer   ep_para_read            namelist,wrfvar16  1  0        - "ep_para_read"            "how the ensemble perturbations are read"  "0: serial read, 1: parallel read"
 rconfig   integer   rden_bin                namelist,wrfvar16  1  1        - "rden_bin"                "number of bins/batches to read ensemble perturbations in parallel"  ""
 rconfig   integer   alphacv_method          namelist,wrfvar16  1  2        - "alphacv_method"          ""  ""   

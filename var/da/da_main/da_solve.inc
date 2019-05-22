@@ -56,7 +56,10 @@
    integer   :: cvt_unit, iost
    character(len=8) :: cvtfile
    logical :: ex
- 
+
+   character(len=10) :: this_time
+   character(len=8)  :: this_date
+
    if (trace_use) call da_trace_entry("da_solve")
 
 #ifdef DM_PARALLEL
@@ -534,17 +537,52 @@
 
       grid % ep % ne = be % ne
       if (use_background_errors .and. be % ne > 0) then
-!        call da_setup_flow_predictors ( ide, jde, kde, be % ne, grid%ep, &
-!                                        its, ite, jts, jte, kts, kte )
-         select case ( ep_para_read )
-            case ( 0 ) ! serial read (default)
-               call da_setup_flow_predictors ( ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
-                                               its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
-            case ( 1 ) ! para_read_opt1, breaks total number of ep into reading bins
-               call da_setup_flow_predictors_para_read_opt1 ( &
-                                            ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
-                                            its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
+
+         call date_and_time(date=this_date, time=this_time)
+         write(unit=message(1),fmt='(a,a8,1x,a12)') &
+            '   Begin reading ensemble perturbations at ', this_date, &
+            this_time(1:2)//':'//this_time(3:4)//' '//this_time(5:10)
+         call da_message(message(1:1))
+
+         select case ( ep_format )
+            case ( 1 ) ! original behavior
+               if ( ep_para_read == 0 ) then
+                  ! each ep file is for one variable and one member
+                  call da_setup_flow_predictors ( &
+                     ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
+                     its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
+               else if ( ep_para_read == 1 ) then
+                  ! para_read_opt1, breaks total number of ep into reading bins
+                  call da_setup_flow_predictors_para_read_opt1 ( &
+                     ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
+                     its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
+               end if
+            case ( 11 )
+               ! similar to ep_format=1 except data are in single precision
+               ! each ep file is for one variable and one member
+               call da_setup_flow_predictors ( &
+                  ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
+                  its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
+            case ( 2 )
+               ! full-domain
+               ! each ep file in single precision is for one variable and all members
+               call da_setup_flow_predictors_ep_format2 ( &
+                  ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
+                  its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
+            case ( 3 )
+               ! decomposed sub-domain
+               ! each ep file in single precision is for one variable and all members
+               call da_setup_flow_predictors_ep_format3 ( &
+                  ide_ens, jde_ens, kde_ens, be % ne, grid%ep, &
+                  its_int, ite_int, jts_int, jte_int, kts_int, kte_int )
          end select
+
+         call date_and_time(date=this_date, time=this_time)
+         write(unit=message(1),fmt='(a,a8,1x,a12)') &
+            '  Fihish reading ensemble perturbations at ', this_date, &
+            this_time(1:2)//':'//this_time(3:4)//' '//this_time(5:10)
+         call da_message(message(1:1))
+
       end if
 
    !---------------------------------------------------------------------------

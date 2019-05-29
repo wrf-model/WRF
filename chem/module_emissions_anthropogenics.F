@@ -440,7 +440,7 @@ CONTAINS
 
       enddo
       enddo
-     CASE (MEGAN2)
+     CASE (MEGAN2,MEGAN2_CLM)
       do j = jts,jte
         con2ppm(its:ite,j) = dtstep/(dz8w(its:ite,kts,j)*60.)
       end do

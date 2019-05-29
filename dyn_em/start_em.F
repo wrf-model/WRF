@@ -33,6 +33,9 @@
    USE module_mosaic_driver, ONLY: sum_pm_mosaic
    USE module_input_tracer, ONLY: initialize_tracer
    USE module_aerosols_soa_vbs, only: sum_pm_soa_vbs
+#if (WRF_USE_CLM == 1)
+   USE shr_megan_mod, only : wrf_spc_chk
+#endif
 #endif
    USE module_diag_pld, ONLY : pld
    USE module_diag_zld, ONLY : zld
@@ -69,6 +72,7 @@
                            ipsy, ipey, jpsy, jpey, kpsy, kpey
 
    INTEGER     :: i_m
+   INTEGER     :: numgas
 
    REAL        :: p_top_test, p00, t00, a, tiso, p_surf, pd_surf, temp, tiso_tmp
    REAL        :: p_strat, a_strat
@@ -1008,6 +1012,10 @@ endif
                       grid%cldefi,grid%lowlyr,                          &
                       grid%mass_flux,                              &
                       grid%rthften, grid%rqvften,                       &
+#if (WRF_USE_CLM == 1)
+                      model_config_rec%megan_specifier, model_config_rec%megan_factors_file,    &
+                      model_config_rec%megan_mapped_emisfctrs,                      &
+#endif
                       grid%cldfra,                                      &
 #if (WRF_CHEM == 1)
                       grid%cldfra_old,                                  &
@@ -1721,10 +1729,20 @@ endif
                          grid%last_chem_time_year,grid%last_chem_time_month,               &
                          grid%last_chem_time_day,grid%last_chem_time_hour,                 &
                          grid%last_chem_time_minute,grid%last_chem_time_second,            &
-                         grid%chem_in_opt,grid%kemit,grid%num_vert_mix,                       &
+                         grid%chem_in_opt,grid%kemit,grid%num_vert_mix,numgas,             &
                          ids , ide , jds , jde , kds , kde ,                &
                          ims , ime , jms , jme , kms , kme ,                &
                          its , ite , jts , jte , kts , kte                  )
+#if( WRF_USE_CLM == 1)
+!-------------------------------------------------------------------
+!   check that the megan emission species are in chem option
+!-------------------------------------------------------------------
+         if (config_flags%chem_opt > 0) then
+           write(message,'('' start_domain_em: numgas = '',i4)') numgas
+           CALL wrf_message( trim(message) )
+           CALL wrf_spc_chk( numgas )
+         endif
+#endif
 
 !
 ! calculate initial pm

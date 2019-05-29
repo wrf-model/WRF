@@ -570,18 +570,18 @@ level_loop : &
           ph_n2o5(i,k,j)  = max( 0._dp,prate(k,pid_n2o5)*m2s )
         enddo
 
-        do m = 1,nw-1
-          do k = 1,nz
-            ph_radfld(i,k,j,m) = radfld(k,m)
-          end do
-        end do
+!jdf    do m = 1,nw-1
+!jdf      do k = 1,nz
+!jdf        ph_radfld(i,k,j,m) = radfld(k,m)
+!jdf      end do
+!jdf    end do
 
-        do m = 1,tuv_jmax
-          do k = 1,nz
-            ph_adjcoe(i,k,j,m) = adjcoe(k,m)
-            ph_prate (i,k,j,m) = prate0(k,m)
-          end do
-        end do
+!jdf    do m = 1,tuv_jmax
+!jdf      do k = 1,nz
+!jdf        ph_adjcoe(i,k,j,m) = adjcoe(k,m)
+!jdf        ph_prate (i,k,j,m) = prate0(k,m)
+!jdf      end do
+!jdf    end do
 
         wc_x(1:nw-1) = wc(1:nw-1)
         zref_x(1:nref) = zref(1:nref)

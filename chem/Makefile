@@ -1,3 +1,8 @@
+#  
+# MANUAL CHANGES TO THIS FILE WILL BE LOST 
+#  ... EDIT Makefile_org INSTEAD ...
+# this file was written by gen_kpp.c 
+
 #
 #  Changing this file requires mods to 
 #	WRFV3_top/chem/KPP/util/wkc/change_chem_Makefile.c
@@ -50,6 +55,203 @@ MODULES =                                 \
         module_data_soa_vbs.o             \
         module_data_sorgam.o              \
         module_data_sorgam_vbs.o          \
+  module_kpp_mozart_mosaic_4bin_aq_Integr.o \
+  module_kpp_mozart_mosaic_4bin_aq_Precision.o \
+  module_kpp_mozart_mosaic_4bin_aq_Parameters.o \
+  module_kpp_mozart_mosaic_4bin_aq_Jacobian.o \
+  module_kpp_mozart_mosaic_4bin_aq_JacobianSP.o \
+  module_kpp_mozart_mosaic_4bin_aq_Update_Rconst.o \
+  module_kpp_mozart_mosaic_4bin_aq_interface.o \
+  module_kpp_racmsorg_Integr.o \
+  module_kpp_racmsorg_Precision.o \
+  module_kpp_racmsorg_Parameters.o \
+  module_kpp_racmsorg_Jacobian.o \
+  module_kpp_racmsorg_JacobianSP.o \
+  module_kpp_racmsorg_Update_Rconst.o \
+  module_kpp_racmsorg_interface.o \
+  module_kpp_racm_Integr.o \
+  module_kpp_racm_Precision.o \
+  module_kpp_racm_Parameters.o \
+  module_kpp_racm_Jacobian.o \
+  module_kpp_racm_JacobianSP.o \
+  module_kpp_racm_Update_Rconst.o \
+  module_kpp_racm_interface.o \
+  module_kpp_cri_mosaic_8bin_aq_Integr.o \
+  module_kpp_cri_mosaic_8bin_aq_Precision.o \
+  module_kpp_cri_mosaic_8bin_aq_Parameters.o \
+  module_kpp_cri_mosaic_8bin_aq_Jacobian.o \
+  module_kpp_cri_mosaic_8bin_aq_JacobianSP.o \
+  module_kpp_cri_mosaic_8bin_aq_Update_Rconst.o \
+  module_kpp_cri_mosaic_8bin_aq_interface.o \
+  module_kpp_crimech_Integr.o \
+  module_kpp_crimech_Precision.o \
+  module_kpp_crimech_Parameters.o \
+  module_kpp_crimech_Jacobian.o \
+  module_kpp_crimech_JacobianSP.o \
+  module_kpp_crimech_Update_Rconst.o \
+  module_kpp_crimech_interface.o \
+  module_kpp_racm_mim_Integr.o \
+  module_kpp_racm_mim_Precision.o \
+  module_kpp_racm_mim_Parameters.o \
+  module_kpp_racm_mim_Jacobian.o \
+  module_kpp_racm_mim_JacobianSP.o \
+  module_kpp_racm_mim_Update_Rconst.o \
+  module_kpp_racm_mim_interface.o \
+  module_kpp_cb05_sorg_aq_Integr.o \
+  module_kpp_cb05_sorg_aq_Precision.o \
+  module_kpp_cb05_sorg_aq_Parameters.o \
+  module_kpp_cb05_sorg_aq_Jacobian.o \
+  module_kpp_cb05_sorg_aq_JacobianSP.o \
+  module_kpp_cb05_sorg_aq_Update_Rconst.o \
+  module_kpp_cb05_sorg_aq_interface.o \
+  module_kpp_saprc99_Integr.o \
+  module_kpp_saprc99_Precision.o \
+  module_kpp_saprc99_Parameters.o \
+  module_kpp_saprc99_Jacobian.o \
+  module_kpp_saprc99_JacobianSP.o \
+  module_kpp_saprc99_Update_Rconst.o \
+  module_kpp_saprc99_interface.o \
+  module_kpp_cbmz_bb_Integr.o \
+  module_kpp_cbmz_bb_Precision.o \
+  module_kpp_cbmz_bb_Parameters.o \
+  module_kpp_cbmz_bb_Jacobian.o \
+  module_kpp_cbmz_bb_JacobianSP.o \
+  module_kpp_cbmz_bb_Update_Rconst.o \
+  module_kpp_cbmz_bb_interface.o \
+  module_kpp_cri_mosaic_4bin_aq_Integr.o \
+  module_kpp_cri_mosaic_4bin_aq_Precision.o \
+  module_kpp_cri_mosaic_4bin_aq_Parameters.o \
+  module_kpp_cri_mosaic_4bin_aq_Jacobian.o \
+  module_kpp_cri_mosaic_4bin_aq_JacobianSP.o \
+  module_kpp_cri_mosaic_4bin_aq_Update_Rconst.o \
+  module_kpp_cri_mosaic_4bin_aq_interface.o \
+  module_kpp_mozcart_Integr.o \
+  module_kpp_mozcart_Precision.o \
+  module_kpp_mozcart_Parameters.o \
+  module_kpp_mozcart_Jacobian.o \
+  module_kpp_mozcart_JacobianSP.o \
+  module_kpp_mozcart_Update_Rconst.o \
+  module_kpp_mozcart_interface.o \
+  module_kpp_cb05_sorg_vbs_aq_Integr.o \
+  module_kpp_cb05_sorg_vbs_aq_Precision.o \
+  module_kpp_cb05_sorg_vbs_aq_Parameters.o \
+  module_kpp_cb05_sorg_vbs_aq_Jacobian.o \
+  module_kpp_cb05_sorg_vbs_aq_JacobianSP.o \
+  module_kpp_cb05_sorg_vbs_aq_Update_Rconst.o \
+  module_kpp_cb05_sorg_vbs_aq_interface.o \
+  module_kpp_racmpm_Integr.o \
+  module_kpp_racmpm_Precision.o \
+  module_kpp_racmpm_Parameters.o \
+  module_kpp_racmpm_Jacobian.o \
+  module_kpp_racmpm_JacobianSP.o \
+  module_kpp_racmpm_Update_Rconst.o \
+  module_kpp_racmpm_interface.o \
+  module_kpp_nmhc9_Integr.o \
+  module_kpp_nmhc9_Precision.o \
+  module_kpp_nmhc9_Parameters.o \
+  module_kpp_nmhc9_Jacobian.o \
+  module_kpp_nmhc9_JacobianSP.o \
+  module_kpp_nmhc9_Update_Rconst.o \
+  module_kpp_nmhc9_interface.o \
+  module_kpp_radm2sorg_Integr.o \
+  module_kpp_radm2sorg_Precision.o \
+  module_kpp_radm2sorg_Parameters.o \
+  module_kpp_radm2sorg_Jacobian.o \
+  module_kpp_radm2sorg_JacobianSP.o \
+  module_kpp_radm2sorg_Update_Rconst.o \
+  module_kpp_radm2sorg_interface.o \
+  module_kpp_racm_soa_vbs_Integr.o \
+  module_kpp_racm_soa_vbs_Precision.o \
+  module_kpp_racm_soa_vbs_Parameters.o \
+  module_kpp_racm_soa_vbs_Jacobian.o \
+  module_kpp_racm_soa_vbs_JacobianSP.o \
+  module_kpp_racm_soa_vbs_Update_Rconst.o \
+  module_kpp_racm_soa_vbs_interface.o \
+  module_kpp_racm_esrlsorg_aqchem_Integr.o \
+  module_kpp_racm_esrlsorg_aqchem_Precision.o \
+  module_kpp_racm_esrlsorg_aqchem_Parameters.o \
+  module_kpp_racm_esrlsorg_aqchem_Jacobian.o \
+  module_kpp_racm_esrlsorg_aqchem_JacobianSP.o \
+  module_kpp_racm_esrlsorg_aqchem_Update_Rconst.o \
+  module_kpp_racm_esrlsorg_aqchem_interface.o \
+  module_kpp_saprc99_mosaic_8bin_vbs2_aq_Integr.o \
+  module_kpp_saprc99_mosaic_8bin_vbs2_aq_Precision.o \
+  module_kpp_saprc99_mosaic_8bin_vbs2_aq_Parameters.o \
+  module_kpp_saprc99_mosaic_8bin_vbs2_aq_Jacobian.o \
+  module_kpp_saprc99_mosaic_8bin_vbs2_aq_JacobianSP.o \
+  module_kpp_saprc99_mosaic_8bin_vbs2_aq_Update_Rconst.o \
+  module_kpp_saprc99_mosaic_8bin_vbs2_aq_interface.o \
+  module_kpp_radm2_Integr.o \
+  module_kpp_radm2_Precision.o \
+  module_kpp_radm2_Parameters.o \
+  module_kpp_radm2_Jacobian.o \
+  module_kpp_radm2_JacobianSP.o \
+  module_kpp_radm2_Update_Rconst.o \
+  module_kpp_radm2_interface.o \
+  module_kpp_cbmz_mosaic_Integr.o \
+  module_kpp_cbmz_mosaic_Precision.o \
+  module_kpp_cbmz_mosaic_Parameters.o \
+  module_kpp_cbmz_mosaic_Jacobian.o \
+  module_kpp_cbmz_mosaic_JacobianSP.o \
+  module_kpp_cbmz_mosaic_Update_Rconst.o \
+  module_kpp_cbmz_mosaic_interface.o \
+  module_kpp_cbm4_Integr.o \
+  module_kpp_cbm4_Precision.o \
+  module_kpp_cbm4_Parameters.o \
+  module_kpp_cbm4_Jacobian.o \
+  module_kpp_cbm4_JacobianSP.o \
+  module_kpp_cbm4_Update_Rconst.o \
+  module_kpp_cbm4_interface.o \
+  module_kpp_racmsorg_aqchem_Integr.o \
+  module_kpp_racmsorg_aqchem_Precision.o \
+  module_kpp_racmsorg_aqchem_Parameters.o \
+  module_kpp_racmsorg_aqchem_Jacobian.o \
+  module_kpp_racmsorg_aqchem_JacobianSP.o \
+  module_kpp_racmsorg_aqchem_Update_Rconst.o \
+  module_kpp_racmsorg_aqchem_interface.o \
+  module_kpp_mozart_mosaic_4bin_Integr.o \
+  module_kpp_mozart_mosaic_4bin_Precision.o \
+  module_kpp_mozart_mosaic_4bin_Parameters.o \
+  module_kpp_mozart_mosaic_4bin_Jacobian.o \
+  module_kpp_mozart_mosaic_4bin_JacobianSP.o \
+  module_kpp_mozart_mosaic_4bin_Update_Rconst.o \
+  module_kpp_mozart_mosaic_4bin_interface.o \
+  module_kpp_racm_esrlsorg_Integr.o \
+  module_kpp_racm_esrlsorg_Precision.o \
+  module_kpp_racm_esrlsorg_Parameters.o \
+  module_kpp_racm_esrlsorg_Jacobian.o \
+  module_kpp_racm_esrlsorg_JacobianSP.o \
+  module_kpp_racm_esrlsorg_Update_Rconst.o \
+  module_kpp_racm_esrlsorg_interface.o \
+  module_kpp_saprc99_mosaic_4bin_vbs2_Integr.o \
+  module_kpp_saprc99_mosaic_4bin_vbs2_Precision.o \
+  module_kpp_saprc99_mosaic_4bin_vbs2_Parameters.o \
+  module_kpp_saprc99_mosaic_4bin_vbs2_Jacobian.o \
+  module_kpp_saprc99_mosaic_4bin_vbs2_JacobianSP.o \
+  module_kpp_saprc99_mosaic_4bin_vbs2_Update_Rconst.o \
+  module_kpp_saprc99_mosaic_4bin_vbs2_interface.o \
+  module_kpp_racm_soa_vbs_aqchem_Integr.o \
+  module_kpp_racm_soa_vbs_aqchem_Precision.o \
+  module_kpp_racm_soa_vbs_aqchem_Parameters.o \
+  module_kpp_racm_soa_vbs_aqchem_Jacobian.o \
+  module_kpp_racm_soa_vbs_aqchem_JacobianSP.o \
+  module_kpp_racm_soa_vbs_aqchem_Update_Rconst.o \
+  module_kpp_racm_soa_vbs_aqchem_interface.o \
+  module_kpp_gocartracm_Integr.o \
+  module_kpp_gocartracm_Precision.o \
+  module_kpp_gocartracm_Parameters.o \
+  module_kpp_gocartracm_Jacobian.o \
+  module_kpp_gocartracm_JacobianSP.o \
+  module_kpp_gocartracm_Update_Rconst.o \
+  module_kpp_gocartracm_interface.o \
+  module_kpp_mozart_Integr.o \
+  module_kpp_mozart_Precision.o \
+  module_kpp_mozart_Parameters.o \
+  module_kpp_mozart_Jacobian.o \
+  module_kpp_mozart_JacobianSP.o \
+  module_kpp_mozart_Update_Rconst.o \
+  module_kpp_mozart_interface.o \
+  module_wkppc_constants.o \
         module_ftuv_subs.o                \
         module_ghg_fluxes.o               \
         module_gocart_drydep.o            \
@@ -160,6 +362,7 @@ MODULES =                                 \
 	module_chem_cup.o
 
 OBJS    =                           \
+	kpp_mechanism_driver.o      \
 	chemics_init.o              \
 	chem_driver.o               \
 	cloudchem_driver.o          \
@@ -189,6 +392,299 @@ clean:
 	@ echo 'use the clean script'
 
 # DEPENDENCIES : only dependencies after this line (don't remove the word DEPENDENCIES)
+module_kpp_mozart_mosaic_4bin_aq_Parameters.o:  module_kpp_mozart_mosaic_4bin_aq_Precision.o   
+
+module_kpp_mozart_mosaic_4bin_aq_Update_Rconst.o:  module_kpp_mozart_mosaic_4bin_aq_Parameters.o   
+
+module_kpp_mozart_mosaic_4bin_aq_Jacobian.o:  module_kpp_mozart_mosaic_4bin_aq_Parameters.o module_kpp_mozart_mosaic_4bin_aq_JacobianSP.o   
+
+module_kpp_mozart_mosaic_4bin_aq_Integr.o: module_kpp_mozart_mosaic_4bin_aq_Parameters.o module_kpp_mozart_mosaic_4bin_aq_Jacobian.o module_kpp_mozart_mosaic_4bin_aq_JacobianSP.o  module_kpp_mozart_mosaic_4bin_aq_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_mozart_mosaic_4bin_aq_interface.o: module_kpp_mozart_mosaic_4bin_aq_Parameters.o module_kpp_mozart_mosaic_4bin_aq_Precision.o module_kpp_mozart_mosaic_4bin_aq_Integr.o  module_kpp_mozart_mosaic_4bin_aq_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_racmsorg_Parameters.o:  module_kpp_racmsorg_Precision.o   
+
+module_kpp_racmsorg_Update_Rconst.o:  module_kpp_racmsorg_Parameters.o   
+
+module_kpp_racmsorg_Jacobian.o:  module_kpp_racmsorg_Parameters.o module_kpp_racmsorg_JacobianSP.o   
+
+module_kpp_racmsorg_Integr.o: module_kpp_racmsorg_Parameters.o module_kpp_racmsorg_Jacobian.o module_kpp_racmsorg_JacobianSP.o  module_kpp_racmsorg_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_racmsorg_interface.o: module_kpp_racmsorg_Parameters.o module_kpp_racmsorg_Precision.o module_kpp_racmsorg_Integr.o  module_kpp_racmsorg_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_racm_Parameters.o:  module_kpp_racm_Precision.o   
+
+module_kpp_racm_Update_Rconst.o:  module_kpp_racm_Parameters.o   
+
+module_kpp_racm_Jacobian.o:  module_kpp_racm_Parameters.o module_kpp_racm_JacobianSP.o   
+
+module_kpp_racm_Integr.o: module_kpp_racm_Parameters.o module_kpp_racm_Jacobian.o module_kpp_racm_JacobianSP.o  module_kpp_racm_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_racm_interface.o: module_kpp_racm_Parameters.o module_kpp_racm_Precision.o module_kpp_racm_Integr.o  module_kpp_racm_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_cri_mosaic_8bin_aq_Parameters.o:  module_kpp_cri_mosaic_8bin_aq_Precision.o   
+
+module_kpp_cri_mosaic_8bin_aq_Update_Rconst.o:  module_kpp_cri_mosaic_8bin_aq_Parameters.o   
+
+module_kpp_cri_mosaic_8bin_aq_Jacobian.o:  module_kpp_cri_mosaic_8bin_aq_Parameters.o module_kpp_cri_mosaic_8bin_aq_JacobianSP.o   
+
+module_kpp_cri_mosaic_8bin_aq_Integr.o: module_kpp_cri_mosaic_8bin_aq_Parameters.o module_kpp_cri_mosaic_8bin_aq_Jacobian.o module_kpp_cri_mosaic_8bin_aq_JacobianSP.o  module_kpp_cri_mosaic_8bin_aq_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_cri_mosaic_8bin_aq_interface.o: module_kpp_cri_mosaic_8bin_aq_Parameters.o module_kpp_cri_mosaic_8bin_aq_Precision.o module_kpp_cri_mosaic_8bin_aq_Integr.o  module_kpp_cri_mosaic_8bin_aq_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_crimech_Parameters.o:  module_kpp_crimech_Precision.o   
+
+module_kpp_crimech_Update_Rconst.o:  module_kpp_crimech_Parameters.o   
+
+module_kpp_crimech_Jacobian.o:  module_kpp_crimech_Parameters.o module_kpp_crimech_JacobianSP.o   
+
+module_kpp_crimech_Integr.o: module_kpp_crimech_Parameters.o module_kpp_crimech_Jacobian.o module_kpp_crimech_JacobianSP.o  module_kpp_crimech_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_crimech_interface.o: module_kpp_crimech_Parameters.o module_kpp_crimech_Precision.o module_kpp_crimech_Integr.o  module_kpp_crimech_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_racm_mim_Parameters.o:  module_kpp_racm_mim_Precision.o   
+
+module_kpp_racm_mim_Update_Rconst.o:  module_kpp_racm_mim_Parameters.o   
+
+module_kpp_racm_mim_Jacobian.o:  module_kpp_racm_mim_Parameters.o module_kpp_racm_mim_JacobianSP.o   
+
+module_kpp_racm_mim_Integr.o: module_kpp_racm_mim_Parameters.o module_kpp_racm_mim_Jacobian.o module_kpp_racm_mim_JacobianSP.o  module_kpp_racm_mim_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_racm_mim_interface.o: module_kpp_racm_mim_Parameters.o module_kpp_racm_mim_Precision.o module_kpp_racm_mim_Integr.o  module_kpp_racm_mim_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_cb05_sorg_aq_Parameters.o:  module_kpp_cb05_sorg_aq_Precision.o   
+
+module_kpp_cb05_sorg_aq_Update_Rconst.o:  module_kpp_cb05_sorg_aq_Parameters.o   
+
+module_kpp_cb05_sorg_aq_Jacobian.o:  module_kpp_cb05_sorg_aq_Parameters.o module_kpp_cb05_sorg_aq_JacobianSP.o   
+
+module_kpp_cb05_sorg_aq_Integr.o: module_kpp_cb05_sorg_aq_Parameters.o module_kpp_cb05_sorg_aq_Jacobian.o module_kpp_cb05_sorg_aq_JacobianSP.o  module_kpp_cb05_sorg_aq_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_cb05_sorg_aq_interface.o: module_kpp_cb05_sorg_aq_Parameters.o module_kpp_cb05_sorg_aq_Precision.o module_kpp_cb05_sorg_aq_Integr.o  module_kpp_cb05_sorg_aq_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_saprc99_Parameters.o:  module_kpp_saprc99_Precision.o   
+
+module_kpp_saprc99_Update_Rconst.o:  module_kpp_saprc99_Parameters.o   
+
+module_kpp_saprc99_Jacobian.o:  module_kpp_saprc99_Parameters.o module_kpp_saprc99_JacobianSP.o   
+
+module_kpp_saprc99_Integr.o: module_kpp_saprc99_Parameters.o module_kpp_saprc99_Jacobian.o module_kpp_saprc99_JacobianSP.o  module_kpp_saprc99_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_saprc99_interface.o: module_kpp_saprc99_Parameters.o module_kpp_saprc99_Precision.o module_kpp_saprc99_Integr.o  module_kpp_saprc99_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_cbmz_bb_Parameters.o:  module_kpp_cbmz_bb_Precision.o   
+
+module_kpp_cbmz_bb_Update_Rconst.o:  module_kpp_cbmz_bb_Parameters.o   
+
+module_kpp_cbmz_bb_Jacobian.o:  module_kpp_cbmz_bb_Parameters.o module_kpp_cbmz_bb_JacobianSP.o   
+
+module_kpp_cbmz_bb_Integr.o: module_kpp_cbmz_bb_Parameters.o module_kpp_cbmz_bb_Jacobian.o module_kpp_cbmz_bb_JacobianSP.o  module_kpp_cbmz_bb_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_cbmz_bb_interface.o: module_kpp_cbmz_bb_Parameters.o module_kpp_cbmz_bb_Precision.o module_kpp_cbmz_bb_Integr.o  module_kpp_cbmz_bb_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_cri_mosaic_4bin_aq_Parameters.o:  module_kpp_cri_mosaic_4bin_aq_Precision.o   
+
+module_kpp_cri_mosaic_4bin_aq_Update_Rconst.o:  module_kpp_cri_mosaic_4bin_aq_Parameters.o   
+
+module_kpp_cri_mosaic_4bin_aq_Jacobian.o:  module_kpp_cri_mosaic_4bin_aq_Parameters.o module_kpp_cri_mosaic_4bin_aq_JacobianSP.o   
+
+module_kpp_cri_mosaic_4bin_aq_Integr.o: module_kpp_cri_mosaic_4bin_aq_Parameters.o module_kpp_cri_mosaic_4bin_aq_Jacobian.o module_kpp_cri_mosaic_4bin_aq_JacobianSP.o  module_kpp_cri_mosaic_4bin_aq_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_cri_mosaic_4bin_aq_interface.o: module_kpp_cri_mosaic_4bin_aq_Parameters.o module_kpp_cri_mosaic_4bin_aq_Precision.o module_kpp_cri_mosaic_4bin_aq_Integr.o  module_kpp_cri_mosaic_4bin_aq_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_mozcart_Parameters.o:  module_kpp_mozcart_Precision.o   
+
+module_kpp_mozcart_Update_Rconst.o:  module_kpp_mozcart_Parameters.o   
+
+module_kpp_mozcart_Jacobian.o:  module_kpp_mozcart_Parameters.o module_kpp_mozcart_JacobianSP.o   
+
+module_kpp_mozcart_Integr.o: module_kpp_mozcart_Parameters.o module_kpp_mozcart_Jacobian.o module_kpp_mozcart_JacobianSP.o  module_kpp_mozcart_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_mozcart_interface.o: module_kpp_mozcart_Parameters.o module_kpp_mozcart_Precision.o module_kpp_mozcart_Integr.o  module_kpp_mozcart_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_cb05_sorg_vbs_aq_Parameters.o:  module_kpp_cb05_sorg_vbs_aq_Precision.o   
+
+module_kpp_cb05_sorg_vbs_aq_Update_Rconst.o:  module_kpp_cb05_sorg_vbs_aq_Parameters.o   
+
+module_kpp_cb05_sorg_vbs_aq_Jacobian.o:  module_kpp_cb05_sorg_vbs_aq_Parameters.o module_kpp_cb05_sorg_vbs_aq_JacobianSP.o   
+
+module_kpp_cb05_sorg_vbs_aq_Integr.o: module_kpp_cb05_sorg_vbs_aq_Parameters.o module_kpp_cb05_sorg_vbs_aq_Jacobian.o module_kpp_cb05_sorg_vbs_aq_JacobianSP.o  module_kpp_cb05_sorg_vbs_aq_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_cb05_sorg_vbs_aq_interface.o: module_kpp_cb05_sorg_vbs_aq_Parameters.o module_kpp_cb05_sorg_vbs_aq_Precision.o module_kpp_cb05_sorg_vbs_aq_Integr.o  module_kpp_cb05_sorg_vbs_aq_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_racmpm_Parameters.o:  module_kpp_racmpm_Precision.o   
+
+module_kpp_racmpm_Update_Rconst.o:  module_kpp_racmpm_Parameters.o   
+
+module_kpp_racmpm_Jacobian.o:  module_kpp_racmpm_Parameters.o module_kpp_racmpm_JacobianSP.o   
+
+module_kpp_racmpm_Integr.o: module_kpp_racmpm_Parameters.o module_kpp_racmpm_Jacobian.o module_kpp_racmpm_JacobianSP.o  module_kpp_racmpm_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_racmpm_interface.o: module_kpp_racmpm_Parameters.o module_kpp_racmpm_Precision.o module_kpp_racmpm_Integr.o  module_kpp_racmpm_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_nmhc9_Parameters.o:  module_kpp_nmhc9_Precision.o   
+
+module_kpp_nmhc9_Update_Rconst.o:  module_kpp_nmhc9_Parameters.o   
+
+module_kpp_nmhc9_Jacobian.o:  module_kpp_nmhc9_Parameters.o module_kpp_nmhc9_JacobianSP.o   
+
+module_kpp_nmhc9_Integr.o: module_kpp_nmhc9_Parameters.o module_kpp_nmhc9_Jacobian.o module_kpp_nmhc9_JacobianSP.o  module_kpp_nmhc9_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_nmhc9_interface.o: module_kpp_nmhc9_Parameters.o module_kpp_nmhc9_Precision.o module_kpp_nmhc9_Integr.o  module_kpp_nmhc9_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_radm2sorg_Parameters.o:  module_kpp_radm2sorg_Precision.o   
+
+module_kpp_radm2sorg_Update_Rconst.o:  module_kpp_radm2sorg_Parameters.o   
+
+module_kpp_radm2sorg_Jacobian.o:  module_kpp_radm2sorg_Parameters.o module_kpp_radm2sorg_JacobianSP.o   
+
+module_kpp_radm2sorg_Integr.o: module_kpp_radm2sorg_Parameters.o module_kpp_radm2sorg_Jacobian.o module_kpp_radm2sorg_JacobianSP.o  module_kpp_radm2sorg_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_radm2sorg_interface.o: module_kpp_radm2sorg_Parameters.o module_kpp_radm2sorg_Precision.o module_kpp_radm2sorg_Integr.o  module_kpp_radm2sorg_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_racm_soa_vbs_Parameters.o:  module_kpp_racm_soa_vbs_Precision.o   
+
+module_kpp_racm_soa_vbs_Update_Rconst.o:  module_kpp_racm_soa_vbs_Parameters.o   
+
+module_kpp_racm_soa_vbs_Jacobian.o:  module_kpp_racm_soa_vbs_Parameters.o module_kpp_racm_soa_vbs_JacobianSP.o   
+
+module_kpp_racm_soa_vbs_Integr.o: module_kpp_racm_soa_vbs_Parameters.o module_kpp_racm_soa_vbs_Jacobian.o module_kpp_racm_soa_vbs_JacobianSP.o  module_kpp_racm_soa_vbs_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_racm_soa_vbs_interface.o: module_kpp_racm_soa_vbs_Parameters.o module_kpp_racm_soa_vbs_Precision.o module_kpp_racm_soa_vbs_Integr.o  module_kpp_racm_soa_vbs_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_racm_esrlsorg_aqchem_Parameters.o:  module_kpp_racm_esrlsorg_aqchem_Precision.o   
+
+module_kpp_racm_esrlsorg_aqchem_Update_Rconst.o:  module_kpp_racm_esrlsorg_aqchem_Parameters.o   
+
+module_kpp_racm_esrlsorg_aqchem_Jacobian.o:  module_kpp_racm_esrlsorg_aqchem_Parameters.o module_kpp_racm_esrlsorg_aqchem_JacobianSP.o   
+
+module_kpp_racm_esrlsorg_aqchem_Integr.o: module_kpp_racm_esrlsorg_aqchem_Parameters.o module_kpp_racm_esrlsorg_aqchem_Jacobian.o module_kpp_racm_esrlsorg_aqchem_JacobianSP.o  module_kpp_racm_esrlsorg_aqchem_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_racm_esrlsorg_aqchem_interface.o: module_kpp_racm_esrlsorg_aqchem_Parameters.o module_kpp_racm_esrlsorg_aqchem_Precision.o module_kpp_racm_esrlsorg_aqchem_Integr.o  module_kpp_racm_esrlsorg_aqchem_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_saprc99_mosaic_8bin_vbs2_aq_Parameters.o:  module_kpp_saprc99_mosaic_8bin_vbs2_aq_Precision.o   
+
+module_kpp_saprc99_mosaic_8bin_vbs2_aq_Update_Rconst.o:  module_kpp_saprc99_mosaic_8bin_vbs2_aq_Parameters.o   
+
+module_kpp_saprc99_mosaic_8bin_vbs2_aq_Jacobian.o:  module_kpp_saprc99_mosaic_8bin_vbs2_aq_Parameters.o module_kpp_saprc99_mosaic_8bin_vbs2_aq_JacobianSP.o   
+
+module_kpp_saprc99_mosaic_8bin_vbs2_aq_Integr.o: module_kpp_saprc99_mosaic_8bin_vbs2_aq_Parameters.o module_kpp_saprc99_mosaic_8bin_vbs2_aq_Jacobian.o module_kpp_saprc99_mosaic_8bin_vbs2_aq_JacobianSP.o  module_kpp_saprc99_mosaic_8bin_vbs2_aq_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_saprc99_mosaic_8bin_vbs2_aq_interface.o: module_kpp_saprc99_mosaic_8bin_vbs2_aq_Parameters.o module_kpp_saprc99_mosaic_8bin_vbs2_aq_Precision.o module_kpp_saprc99_mosaic_8bin_vbs2_aq_Integr.o  module_kpp_saprc99_mosaic_8bin_vbs2_aq_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_radm2_Parameters.o:  module_kpp_radm2_Precision.o   
+
+module_kpp_radm2_Update_Rconst.o:  module_kpp_radm2_Parameters.o   
+
+module_kpp_radm2_Jacobian.o:  module_kpp_radm2_Parameters.o module_kpp_radm2_JacobianSP.o   
+
+module_kpp_radm2_Integr.o: module_kpp_radm2_Parameters.o module_kpp_radm2_Jacobian.o module_kpp_radm2_JacobianSP.o  module_kpp_radm2_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_radm2_interface.o: module_kpp_radm2_Parameters.o module_kpp_radm2_Precision.o module_kpp_radm2_Integr.o  module_kpp_radm2_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_cbmz_mosaic_Parameters.o:  module_kpp_cbmz_mosaic_Precision.o   
+
+module_kpp_cbmz_mosaic_Update_Rconst.o:  module_kpp_cbmz_mosaic_Parameters.o   
+
+module_kpp_cbmz_mosaic_Jacobian.o:  module_kpp_cbmz_mosaic_Parameters.o module_kpp_cbmz_mosaic_JacobianSP.o   
+
+module_kpp_cbmz_mosaic_Integr.o: module_kpp_cbmz_mosaic_Parameters.o module_kpp_cbmz_mosaic_Jacobian.o module_kpp_cbmz_mosaic_JacobianSP.o  module_kpp_cbmz_mosaic_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_cbmz_mosaic_interface.o: module_kpp_cbmz_mosaic_Parameters.o module_kpp_cbmz_mosaic_Precision.o module_kpp_cbmz_mosaic_Integr.o  module_kpp_cbmz_mosaic_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_cbm4_Parameters.o:  module_kpp_cbm4_Precision.o   
+
+module_kpp_cbm4_Update_Rconst.o:  module_kpp_cbm4_Parameters.o   
+
+module_kpp_cbm4_Jacobian.o:  module_kpp_cbm4_Parameters.o module_kpp_cbm4_JacobianSP.o   
+
+module_kpp_cbm4_Integr.o: module_kpp_cbm4_Parameters.o module_kpp_cbm4_Jacobian.o module_kpp_cbm4_JacobianSP.o  module_kpp_cbm4_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_cbm4_interface.o: module_kpp_cbm4_Parameters.o module_kpp_cbm4_Precision.o module_kpp_cbm4_Integr.o  module_kpp_cbm4_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_racmsorg_aqchem_Parameters.o:  module_kpp_racmsorg_aqchem_Precision.o   
+
+module_kpp_racmsorg_aqchem_Update_Rconst.o:  module_kpp_racmsorg_aqchem_Parameters.o   
+
+module_kpp_racmsorg_aqchem_Jacobian.o:  module_kpp_racmsorg_aqchem_Parameters.o module_kpp_racmsorg_aqchem_JacobianSP.o   
+
+module_kpp_racmsorg_aqchem_Integr.o: module_kpp_racmsorg_aqchem_Parameters.o module_kpp_racmsorg_aqchem_Jacobian.o module_kpp_racmsorg_aqchem_JacobianSP.o  module_kpp_racmsorg_aqchem_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_racmsorg_aqchem_interface.o: module_kpp_racmsorg_aqchem_Parameters.o module_kpp_racmsorg_aqchem_Precision.o module_kpp_racmsorg_aqchem_Integr.o  module_kpp_racmsorg_aqchem_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_mozart_mosaic_4bin_Parameters.o:  module_kpp_mozart_mosaic_4bin_Precision.o   
+
+module_kpp_mozart_mosaic_4bin_Update_Rconst.o:  module_kpp_mozart_mosaic_4bin_Parameters.o   
+
+module_kpp_mozart_mosaic_4bin_Jacobian.o:  module_kpp_mozart_mosaic_4bin_Parameters.o module_kpp_mozart_mosaic_4bin_JacobianSP.o   
+
+module_kpp_mozart_mosaic_4bin_Integr.o: module_kpp_mozart_mosaic_4bin_Parameters.o module_kpp_mozart_mosaic_4bin_Jacobian.o module_kpp_mozart_mosaic_4bin_JacobianSP.o  module_kpp_mozart_mosaic_4bin_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_mozart_mosaic_4bin_interface.o: module_kpp_mozart_mosaic_4bin_Parameters.o module_kpp_mozart_mosaic_4bin_Precision.o module_kpp_mozart_mosaic_4bin_Integr.o  module_kpp_mozart_mosaic_4bin_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_racm_esrlsorg_Parameters.o:  module_kpp_racm_esrlsorg_Precision.o   
+
+module_kpp_racm_esrlsorg_Update_Rconst.o:  module_kpp_racm_esrlsorg_Parameters.o   
+
+module_kpp_racm_esrlsorg_Jacobian.o:  module_kpp_racm_esrlsorg_Parameters.o module_kpp_racm_esrlsorg_JacobianSP.o   
+
+module_kpp_racm_esrlsorg_Integr.o: module_kpp_racm_esrlsorg_Parameters.o module_kpp_racm_esrlsorg_Jacobian.o module_kpp_racm_esrlsorg_JacobianSP.o  module_kpp_racm_esrlsorg_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_racm_esrlsorg_interface.o: module_kpp_racm_esrlsorg_Parameters.o module_kpp_racm_esrlsorg_Precision.o module_kpp_racm_esrlsorg_Integr.o  module_kpp_racm_esrlsorg_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_saprc99_mosaic_4bin_vbs2_Parameters.o:  module_kpp_saprc99_mosaic_4bin_vbs2_Precision.o   
+
+module_kpp_saprc99_mosaic_4bin_vbs2_Update_Rconst.o:  module_kpp_saprc99_mosaic_4bin_vbs2_Parameters.o   
+
+module_kpp_saprc99_mosaic_4bin_vbs2_Jacobian.o:  module_kpp_saprc99_mosaic_4bin_vbs2_Parameters.o module_kpp_saprc99_mosaic_4bin_vbs2_JacobianSP.o   
+
+module_kpp_saprc99_mosaic_4bin_vbs2_Integr.o: module_kpp_saprc99_mosaic_4bin_vbs2_Parameters.o module_kpp_saprc99_mosaic_4bin_vbs2_Jacobian.o module_kpp_saprc99_mosaic_4bin_vbs2_JacobianSP.o  module_kpp_saprc99_mosaic_4bin_vbs2_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_saprc99_mosaic_4bin_vbs2_interface.o: module_kpp_saprc99_mosaic_4bin_vbs2_Parameters.o module_kpp_saprc99_mosaic_4bin_vbs2_Precision.o module_kpp_saprc99_mosaic_4bin_vbs2_Integr.o  module_kpp_saprc99_mosaic_4bin_vbs2_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_racm_soa_vbs_aqchem_Parameters.o:  module_kpp_racm_soa_vbs_aqchem_Precision.o   
+
+module_kpp_racm_soa_vbs_aqchem_Update_Rconst.o:  module_kpp_racm_soa_vbs_aqchem_Parameters.o   
+
+module_kpp_racm_soa_vbs_aqchem_Jacobian.o:  module_kpp_racm_soa_vbs_aqchem_Parameters.o module_kpp_racm_soa_vbs_aqchem_JacobianSP.o   
+
+module_kpp_racm_soa_vbs_aqchem_Integr.o: module_kpp_racm_soa_vbs_aqchem_Parameters.o module_kpp_racm_soa_vbs_aqchem_Jacobian.o module_kpp_racm_soa_vbs_aqchem_JacobianSP.o  module_kpp_racm_soa_vbs_aqchem_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_racm_soa_vbs_aqchem_interface.o: module_kpp_racm_soa_vbs_aqchem_Parameters.o module_kpp_racm_soa_vbs_aqchem_Precision.o module_kpp_racm_soa_vbs_aqchem_Integr.o  module_kpp_racm_soa_vbs_aqchem_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_gocartracm_Parameters.o:  module_kpp_gocartracm_Precision.o   
+
+module_kpp_gocartracm_Update_Rconst.o:  module_kpp_gocartracm_Parameters.o   
+
+module_kpp_gocartracm_Jacobian.o:  module_kpp_gocartracm_Parameters.o module_kpp_gocartracm_JacobianSP.o   
+
+module_kpp_gocartracm_Integr.o: module_kpp_gocartracm_Parameters.o module_kpp_gocartracm_Jacobian.o module_kpp_gocartracm_JacobianSP.o  module_kpp_gocartracm_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_gocartracm_interface.o: module_kpp_gocartracm_Parameters.o module_kpp_gocartracm_Precision.o module_kpp_gocartracm_Integr.o  module_kpp_gocartracm_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_mozart_Parameters.o:  module_kpp_mozart_Precision.o   
+
+module_kpp_mozart_Update_Rconst.o:  module_kpp_mozart_Parameters.o   
+
+module_kpp_mozart_Jacobian.o:  module_kpp_mozart_Parameters.o module_kpp_mozart_JacobianSP.o   
+
+module_kpp_mozart_Integr.o: module_kpp_mozart_Parameters.o module_kpp_mozart_Jacobian.o module_kpp_mozart_JacobianSP.o  module_kpp_mozart_Update_Rconst.o  module_wkppc_constants.o  
+
+module_kpp_mozart_interface.o: module_kpp_mozart_Parameters.o module_kpp_mozart_Precision.o module_kpp_mozart_Integr.o  module_kpp_mozart_Update_Rconst.o  module_wkppc_constants.o  
+
+module_wkkpc_constants.o:
+
+kpp_mechanism_driver.o: module_kpp_mozart_mosaic_4bin_aq_interface.o module_kpp_racmsorg_interface.o \
+	module_kpp_racm_interface.o module_kpp_cri_mosaic_8bin_aq_interface.o module_kpp_crimech_interface.o \
+	module_kpp_racm_mim_interface.o module_kpp_cb05_sorg_aq_interface.o module_kpp_saprc99_interface.o \
+	module_kpp_cbmz_bb_interface.o module_kpp_cri_mosaic_4bin_aq_interface.o module_kpp_mozcart_interface.o \
+	module_kpp_cb05_sorg_vbs_aq_interface.o module_kpp_racmpm_interface.o module_kpp_nmhc9_interface.o \
+	module_kpp_radm2sorg_interface.o module_kpp_racm_soa_vbs_interface.o module_kpp_racm_esrlsorg_aqchem_interface.o \
+	module_kpp_saprc99_mosaic_8bin_vbs2_aq_interface.o module_kpp_radm2_interface.o module_kpp_cbmz_mosaic_interface.o \
+	module_kpp_cbm4_interface.o module_kpp_racmsorg_aqchem_interface.o module_kpp_mozart_mosaic_4bin_interface.o \
+	module_kpp_racm_esrlsorg_interface.o module_kpp_saprc99_mosaic_4bin_vbs2_interface.o module_kpp_racm_soa_vbs_aqchem_interface.o \
+	module_kpp_gocartracm_interface.o module_kpp_mozart_interface.o 
+
 
 include depend.chem
 

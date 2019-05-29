@@ -76,6 +76,8 @@ dimspec    =       -     constant=4                        c     num_bands
 dimspec    lake_ssl  2   constant=15                       z     snow_and_soil_levels
 dimspec    lake_intl 2   constant=16                       z     interface_levels
 dimspec    lake_sll  2   constant=10                       z     soil_levels_or_lake_levels
+dimspec    clmvoc  3     constant=2                        z     clmvoc_lev
+dimspec    npft    2     namelist=num_pft_clm              z     pft_fraction
 
 # Dimensions required only for Chemistry
 

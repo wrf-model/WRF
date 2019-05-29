@@ -21,7 +21,7 @@ subroutine da_setup_flow_predictors_ep_format2( ix, jy, kz, ne, ep, its, ite, jt
    real,   allocatable         :: temp2d(:,:)           ! Temporary array
    real                        :: ens_scaling_inv       ! Ensemble scaling of perturbations
    integer                     :: vardim                ! dimension of variable
-   integer                     :: nens                  ! number of ensembles
+   integer                     :: nens, nens_global(1)  ! number of ensembles
    integer                     :: ep_unit,te,it,ie
    integer                     :: ijk
    integer                     :: ierr
@@ -88,9 +88,10 @@ subroutine da_setup_flow_predictors_ep_format2( ix, jy, kz, ne, ep, its, ite, jt
                ' Grid dims from U ep file:    ', ni, nj, nk
             call da_error(__FILE__,__LINE__,message(1:3))
          end if
-
+         nens_global = nens
       end if
-      call wrf_dm_bcast_integer(nens, 1)
+      call wrf_dm_bcast_integer(nens_global, 1)
+      nens = nens_global(1)
 
       do ie = 1, min(ne, nens)
          if ( rootproc ) then

@@ -1777,7 +1777,6 @@
          CALL wrf_debug ( 0, TRIM(wrf_err_message) )
          wrf_err_message = '--- ERROR: Please place the -DWRF_USE_CLM option in configure.wrf file, and recompile.'
          CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-         fatal_error = .true.
          count_fatal_error = count_fatal_error + 1
       END IF
 #else
@@ -1799,7 +1798,6 @@
         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
         wrf_err_message = '--- ERROR: Please set the physics namelist variable sf_surface_physics to 5 in the namelist.input file.'
         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-        fatal_error = .true.
         count_fatal_error = count_fatal_error + 1
       END IF
       oops = 0
@@ -1812,7 +1810,6 @@
       IF ( oops .GT. 0 ) THEN
         wrf_err_message = '--- ERROR: CLM does not work with any URBAN PHYSICS SCHEME'
         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-        fatal_error = .true.
         count_fatal_error = count_fatal_error + 1
       END IF
 #endif

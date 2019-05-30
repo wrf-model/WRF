@@ -143,6 +143,11 @@ CONTAINS
 
    CHARACTER (LEN=256) :: mminlu
    CHARACTER (LEN=1000) :: message
+   LOGICAL    :: do_bioe
+
+!  Added flag to use MEGANv2.1 file   BJG 3/28/19
+   LOGICAL   :: do_meganfile
+!  End modification
 
 #if ( WRF_DFI_RADAR == 1 )
     INTEGER  do_capsupress   ! =1 do CAP supress, other = don't
@@ -466,6 +471,31 @@ BENCH_START(surf_driver_tim)
           HYDRO_dt = -1
       endif
 
+!  Ensure WRF_Chem is compiled if bio_emiss_opt is tested, and add flag to read MEGANv2.1
+!  file if bio_emiss_opt is set properly (even if chem_opt == 0).  
+!  Also explicitly set do_bioe to .false. if chem_opt <= 0.   BJG 3/28/19
+!sw++
+#if( WRF_USE_CLM == 1) && (WRF_CHEM == 1)
+      if( config_flags%bio_emiss_opt == MEGAN2_CLM ) then
+        do_meganfile = .true.
+        if(config_flags%chem_opt > 0) then !czhao +++++
+          do_bioe = grid%itimestep == 1 .or. mod( grid%itimestep,grid%stepbioe ) == 0
+        else
+          do_bioe = .false.
+        endif
+      else
+        do_bioe = .false.
+        do_meganfile = .false.
+      endif !czhao-----
+#else
+      do_bioe = .false.
+      do_meganfile = .false.
+#endif
+!sw--
+!  End modification
+
+
+
       CALL surface_driver(                                                &
      &        HYDRO_dt=HYDRO_dt,  sfcheadrt=grid%sfcheadrt,               &
      &        INFXSRT=grid%INFXSRT,  soldrain=grid%soldrain,              &
@@ -490,7 +520,14 @@ BENCH_START(surf_driver_tim)
      &        ,SEAICE_SNOWDEPTH_MIN=config_flags%seaice_snowdepth_min     &
      &        ,TICE2TSK_IF2COLD=config_flags%tice2tsk_if2cold             &
      &        ,IFNDALBSI=grid%ifndalbsi, IFNDICEDEPTH=grid%ifndicedepth   &
-     &        ,IFNDSNOWSI=grid%ifndsnowsi                                 &
+!sw++
+!  Added test of WRF_Chem compilation for some variables, and added flag.   BJG 3/28/19
+#if ( WRF_CHEM == 1 )
+              ,NE_AREA=grid%ne_area,E_BIO=grid%e_bio &
+#endif
+              ,IFNDSNOWSI=grid%ifndsnowsi, DO_BIOE=do_bioe, DO_MEGANFILE=do_meganfile          &
+!  End modification
+!sw--
      &        ,ISLTYP=grid%isltyp      ,ITIMESTEP=grid%itimestep, JULIAN_IN=grid%julian                  &
      &        ,IVGTYP=grid%ivgtyp      ,LH=grid%lh              ,LOWLYR=grid%lowlyr      &
      &        ,MAVAIL=grid%mavail      ,NUM_SOIL_LAYERS=config_flags%num_soil_layers        &
@@ -614,6 +651,15 @@ BENCH_START(surf_driver_tim)
      &         SABGsubgrid=grid%SABGsubgrid,NRAsubgrid=grid%NRAsubgrid,             &
      &         SWUPsubgrid=grid%SWUPsubgrid,LHsoi=grid%LHsoi,                       &
      &         LHveg=grid%LHveg, LHtran=grid%LHtran                                 &
+!sw++
+               ,t_veg24=grid%t_veg24,            t_veg240=grid%t_veg240,            & !voce accum variables
+               fsun24=grid%fsun24,              fsun240=grid%fsun240,               & !voce accum variables
+               fsd24=grid%fsd24,                fsd240=grid%fsd240,                 & !voce accum variables
+               fsi24=grid%fsi24,                fsi240=grid%fsi240,                 & !voce accum variables
+               laip=grid%laip,                                                      & !voce accum variables
+               pct_pft_input=grid%pct_pft_input,num_pft_input=grid%num_pft_clm,  &
+               input_pft_flag=config_flags%input_pft                             &
+!sw--
 ! end of CLM variables
      &        ,SLOPE_RAD=config_flags%slope_rad,TOPO_SHADING=config_flags%topo_shading & ! solar
      &        ,SHADOWMASK=grid%shadowmask,DIFFUSE_FRAC=grid%diffuse_frac               & ! solar

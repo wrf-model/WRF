@@ -2921,6 +2921,22 @@ is_cbm4_kpp : &
         if(p_par >= param_first_scalar) dvj(p_par) = 0.118   !wig, 1-May-2007: for CBMZ
 ! Dep constants for SAPRCNOV, produced automatically using create_WRF_dep.m script,05-Oct-2009 pablosaide@uiowa.edu
         if(p_methacro.ge.param_first_scalar)then
+
+       if (p_iepox.gt.1) then
+        hstar(p_iepox)=1.7e8 ! mole/L/atm
+        f0(p_iepox)=1.0
+        dhr(p_iepox)=6013.95 !50000/8.314 i.e. 50kJ/mol/8.314
+        dvj(p_iepox) = 1.9 * 0.118**(-2.0/3.0) / 100.0 !cm2/s
+        endif
+
+        if (p_isopooh.gt.1) then
+        hstar(p_isopooh)=1.7e6 ! mole/L/atm, based on GEOS-CHem corresponds to RIP
+        f0(p_isopooh)=1.0
+        dhr(p_isopooh)=6013.95 !50000/8.314 i.e. 50kJ/mol/8.314
+        dvj(p_isopooh) =  1.0E-1 !cm2/s
+        endif
+
+
 ! HSTAR
           hstar(p_h2so4) = 2.600E+06
           hstar(p_ccho) = 1.700E+01

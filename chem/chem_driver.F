@@ -805,9 +805,10 @@
 
 
 !--- emissions
+!  MEGAN2_CLM uses driver below even if other flags are zero.  BJG 5/29/2019
 
     if(config_flags%emiss_inpt_opt > 0 .or. config_flags%dust_opt > 0  &
-       .or. config_flags%tracer_opt > 0  )then
+       .or. config_flags%tracer_opt > 0 .or. config_flags%bio_emiss_opt == MEGAN2_CLM ) then
       call wrf_debug(15,'calling emissions driver')
 
       call emissions_driver(grid%id,ktau,grid%dt,grid%DX,                                  &
@@ -898,7 +899,7 @@
                config_flags%kemit                                                     )
        end if
 #endif 
-     endif
+    endif
 
 !
 ! calculate aerosol optical properities

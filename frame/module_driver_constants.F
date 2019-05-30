@@ -70,6 +70,10 @@ MODULE module_driver_constants
 
    INTEGER , PARAMETER :: max_trackchem   =   100
 
+   !  The maximum number of megan species in chem mech
+
+   INTEGER , PARAMETER :: max_mgnspc      =   100
+
    !  The maximum number of outer iterations (for DA minimisation)
 
    INTEGER , PARAMETER :: max_outer_iterations = 100

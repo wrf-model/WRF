@@ -419,6 +419,8 @@ CONTAINS
                 ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)   &
                 ,KTS=k_start, KTE=min(k_end,kde-1)                   &
                 ,NUM_TILES=grid%num_tiles                            &
+                ,MAX_TIME_STEP=grid%max_time_step                    &
+                ,ADAPTIVE_TS=config_flags%use_adaptive_time_step     &                
                                                                     )
 
         CASE (THOMPSON, THOMPSONAERO)
@@ -496,6 +498,8 @@ CONTAINS
                 ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)   &
                 ,KTS=k_start, KTE=min(k_end,kde-1)                   &
                 ,NUM_TILES=grid%num_tiles                            &
+                ,MAX_TIME_STEP=grid%max_time_step                    &                
+                ,ADAPTIVE_TS=config_flags%use_adaptive_time_step     &                                
                                                                     )
 
         CASE (MORR_TWO_MOMENT, MORR_TM_AERO)  ! TWG add
@@ -572,6 +576,8 @@ CONTAINS
                 ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)   &
                 ,KTS=k_start, KTE=min(k_end,kde-1)                   &
                 ,NUM_TILES=grid%num_tiles                            &
+                ,MAX_TIME_STEP=grid%max_time_step                    &       
+                ,ADAPTIVE_TS=config_flags%use_adaptive_time_step     &                                         
                                                                     )
 
         CASE (NSSL_1MOM)
@@ -648,6 +654,8 @@ CONTAINS
                 ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)   &
                 ,KTS=k_start, KTE=min(k_end,kde-1)                   &
                 ,NUM_TILES=grid%num_tiles                            &
+                ,MAX_TIME_STEP=grid%max_time_step                    &                
+                ,ADAPTIVE_TS=config_flags%use_adaptive_time_step     &                                
                                                                     )
 
         CASE (MILBRANDT2MOM, NSSL_2MOM, NSSL_2MOMCCN)
@@ -726,6 +734,8 @@ CONTAINS
                 ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)   &
                 ,KTS=k_start, KTE=min(k_end,kde-1)                   &
                 ,NUM_TILES=grid%num_tiles                            &
+                ,MAX_TIME_STEP=grid%max_time_step                    &    
+                ,ADAPTIVE_TS=config_flags%use_adaptive_time_step     &                                            
                                                                     )
 
 
@@ -830,6 +840,8 @@ CONTAINS
                 ,J_START=grid%j_start,J_END=min(grid%j_end, jde-1)   &
                 ,KTS=k_start, KTE=min(k_end,kde-1)                   &
                 ,NUM_TILES=grid%num_tiles                            &
+                ,MAX_TIME_STEP=grid%max_time_step                    &            
+                ,ADAPTIVE_TS=config_flags%use_adaptive_time_step     &                                    
                                                                     )
 
 

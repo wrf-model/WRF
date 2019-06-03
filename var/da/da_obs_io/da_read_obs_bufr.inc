@@ -554,26 +554,27 @@ bufrfile:  do ibufr=1,numbufr
       platform % loc % pw %inv    = missing_r     
       platform % loc % pw %qc     = missing_data
       platform % loc % pw %error  = err_pw
-      pmq=nint(pmo(2,1))
-      if ( pmq <= qflag .and. pmq >= 0 .and. &
-           pmo(1,1) < r8bfms ) then
-         platform % loc % slp % inv =pmo(1,1)*100.0
-         platform % loc % slp % qc  =pmq
-         platform % loc % slp % error = err_p          ! hardwired
+      if ( pmo(1,1) < r8bfms ) then
+         pmq=nint(pmo(2,1))
+         if ( pmq <= qflag .and. pmq >= 0 ) then
+            platform % loc % slp % inv =pmo(1,1)*100.0
+            platform % loc % slp % qc  =pmq
+            platform % loc % slp % error = err_p          ! hardwired
+         end if
       end if
-      pwq=nint(qms(7,1))
+      if ( obs(7,1) < r8bfms ) then
+         pwq=nint(qms(7,1))
 #if ( RWORDSIZE == 4 )
-      pwe = min(DBLE(err_pw), oes(7,1))
+         pwe = min(DBLE(err_pw), oes(7,1))
 #else
-      pwe = min(err_pw, oes(7,1))
+         pwe = min(err_pw, oes(7,1))
 #endif
-      if ( pwq <= qflag .and. pwq >= 0 .and. &
-           obs(7,1) < r8bfms ) then
-         platform % loc % pw % inv = obs(7,1) * 0.1    ! convert to cm
-         platform % loc % pw % qc  =  pwq
-         platform % loc % pw % error = pwe          ! hardwired
+         if ( pwq <= qflag .and. pwq >= 0 ) then
+            platform % loc % pw % inv = obs(7,1) * 0.1    ! convert to cm
+            platform % loc % pw % qc  =  pwq
+            platform % loc % pw % error = pwe          ! hardwired
+         end if
       end if
-
       !$OMP PARALLEL DO &
       !$OMP PRIVATE (i)
       do i=1,max_ob_levels
@@ -605,10 +606,6 @@ bufrfile:  do ibufr=1,numbufr
       !!$OMP PARALLEL DO &
       !!$OMP PRIVATE (k, tpc, wpc, pqm, qqm, tqm, wqm, zqm, cat, toe, poe, qoe, woe) 
       do k = 1, platform % info % levels
-
-         tpc = nint(pco(3,k))
-         wpc = nint(pco(5,k))
-
          ! set t units to Kelvin
          if (obs(3,k) > -200.0 .and. obs(3,k) < 300.0) then
             obs(3,k) = obs(3,k) + t_kelvin
@@ -617,6 +614,7 @@ bufrfile:  do ibufr=1,numbufr
          ! scale q and compute t from tv, if they aren't missing
          if (obs(2,k) > 0.0 .and. obs(2,k) < r8bfms) then   
             obs(2,k) = obs(2,k)*1e-6
+            tpc = nint(pco(3,k))
             if (obs(3,k) > -200.0 .and. obs(3,k) < 350.0) then
                if ( tpc >= 8 ) then   ! program code 008 VIRTMP
                   ! 0.61 is used in NCEP prepdata.f to convert T to Tv
@@ -625,12 +623,8 @@ bufrfile:  do ibufr=1,numbufr
             end if
          end if
 
-         pqm=nint(qms(1,k))
-         qqm=nint(qms(2,k))
-         tqm=nint(qms(3,k))
-         zqm=nint(qms(4,k))
-         wqm=nint(qms(5,k))
-         cat=nint(obs(8,k))
+         !Not currently used
+         !cat=nint(obs(8,k))
 
 #if ( RWORDSIZE == 4 )
          toe = min(DBLE(err_t), oes(3,k))
@@ -644,68 +638,76 @@ bufrfile:  do ibufr=1,numbufr
          poe = min(err_p, oes(1,k)*100.0) ! convert to Pa
 #endif
 
-         if ( tqm <= qflag .and. tqm >= 0 .and. &
-              obs(3,k) < r8bfms ) then
-            platform % each (k) % t % inv =obs(3,k)
-            platform % each (k) % t % qc  =tqm
-            platform % each (k) % t % error =toe
-         end if
-
-         if ( wqm <= qflag .and. wqm >= 0 .and. &
-             obs(5,k) < r8bfms .and. obs(6,k) < r8bfms ) then
-            platform % each (k) % u % inv =obs(5,k)
-            platform % each (k) % v % inv =obs(6,k)
-            platform % each (k) % u % qc  =wqm
-            platform % each (k) % u % error =woe
-            platform % each (k) % v % qc  =wqm
-            platform % each (k) % v % error =woe
-
-            ! Convert earth wind to model wind.
-            ! note on SPSSMI wind: only wspd available (stored in VOB)
-            ! and direction is initially set to to zero and stored in UOB
-            ! in wpc = 1 stage. u and v are computed in program wpc = 10 (OIQC).
-            if ( kx /= 283 .or. ( kx == 283 .and. wpc == 10 ) ) then
-               call da_earth_2_model_wind(obs(5,k), obs(6,k), &
-                  platform % each (k) % u % inv, &
-                  platform % each (k) % v % inv, &
-                  platform%info%lon)
-            end if
-            if (platform % each (k) % u % inv == 0.0 .and. platform % each (k) % v % inv == 0.0) then
-               platform % each (k) % u % inv = missing_r  
-               platform % each (k) % v % inv = missing_r  
-               platform % each (k) % u % qc  = missing_data
-               platform % each (k) % v % qc  = missing_data
+         if ( obs(3,k) < r8bfms ) then
+            tqm=nint(qms(3,k))
+            if ( tqm <= qflag .and. tqm >= 0 ) then
+               platform % each (k) % t % inv =obs(3,k)
+               platform % each (k) % t % qc  =tqm
+               platform % each (k) % t % error =toe
             end if
          end if
 
-         if (qqm<=qflag .and. qqm>=0 .and. obs(2,k)>0.0 .and. obs(2,k)<r8bfms) then
-            platform % each (k) % q % inv =obs(2,k)
-            if ( obs(1,k) >= 300.0 .and. obs(1,k) < r8bfms ) then   ! do not use moisture above 300 hPa
-               platform % each (k) % q % qc  =qqm
+         if (obs(5,k) < r8bfms .and. obs(6,k) < r8bfms ) then
+            wqm=nint(qms(5,k))
+            wpc = nint(pco(5,k))
+            if ( wqm <= qflag .and. wqm >= 0 ) then
+               platform % each (k) % u % inv =obs(5,k)
+               platform % each (k) % v % inv =obs(6,k)
+               platform % each (k) % u % qc  =wqm
+               platform % each (k) % u % error =woe
+               platform % each (k) % v % qc  =wqm
+               platform % each (k) % v % error =woe
+
+               ! Convert earth wind to model wind.
+               ! note on SPSSMI wind: only wspd available (stored in VOB)
+               ! and direction is initially set to to zero and stored in UOB
+               ! in wpc = 1 stage. u and v are computed in program wpc = 10 (OIQC).
+               if ( kx /= 283 .or. ( kx == 283 .and. wpc == 10 ) ) then
+                  call da_earth_2_model_wind(obs(5,k), obs(6,k), &
+                     platform % each (k) % u % inv, &
+                     platform % each (k) % v % inv, &
+                     platform%info%lon)
+               end if
+               if (platform % each (k) % u % inv == 0.0 .and. platform % each (k) % v % inv == 0.0) then
+                  platform % each (k) % u % inv = missing_r
+                  platform % each (k) % v % inv = missing_r
+                  platform % each (k) % u % qc  = missing_data
+                  platform % each (k) % v % qc  = missing_data
+               end if
             end if
-            platform % each (k) % q % error = qoe
+         end if
+         if ( obs(2,k)>0.0 .and. obs(2,k)<r8bfms ) then
+            qqm=nint(qms(2,k))
+            if ( qqm<=qflag .and. qqm>=0 ) then
+               platform % each (k) % q % inv =obs(2,k)
+               if ( obs(1,k) >= 300.0 .and. obs(1,k) < r8bfms ) then   ! do not use moisture above 300 hPa
+                  platform % each (k) % q % qc  =qqm
+               end if
+               platform % each (k) % q % error = qoe
+            end if
          end if
 
-         if ( zqm <= qflag .and. zqm >= 0 .and. &
-              obs(4,k) < r8bfms )then
-            platform % each (k) % height  = obs(4,k)
-            platform % each (k) % height_qc =zqm
+         if ( obs(4,k) < r8bfms )then
+            zqm=nint(qms(4,k))
+            if ( zqm <= qflag .and. zqm >= 0 ) then
+               platform % each (k) % height  = obs(4,k)
+               platform % each (k) % height_qc =zqm
+            end if
          end if
 
-         if ( pqm <= qflag .and. pqm >= 0 .and. &
-              obs(1,k) > 0.0 .and. obs(1,k) < r8bfms )then
-            platform % each (k) % p % inv =obs(1,k)*100.0  ! convert to Pa
-            platform % each (k) % p % qc  =pqm
-            platform % each (k) % p % error =poe
+         if ( obs(1,k) > 0.0 .and. obs(1,k) < r8bfms ) then
+            pqm=nint(qms(1,k))
+            if ( pqm <= qflag .and. pqm >= 0 ) then
+               platform % each (k) % p % inv =obs(1,k)*100.0  ! convert to Pa
+               platform % each (k) % p % qc  =pqm
+               platform % each (k) % p % error =poe
+            end if
          end if
       end do
       !!$OMP END PARALLEL DO
 
       ! assign u,v,t,q obs errors for synop and metar
       if ( t29 == 512 .or. t29 == 511 .or. t29 == 514 ) then
-         qqm=nint(qms(2,1))
-         tqm=nint(qms(3,1))
-         wqm=nint(qms(5,1))
 #if ( RWORDSIZE == 4 )
          toe = min(DBLE(err_t), oes(3,1))
          woe = min(DBLE(err_uv), oes(5,1))
@@ -715,61 +717,66 @@ bufrfile:  do ibufr=1,numbufr
          woe = min(err_uv, oes(5,1))
          qoe = min(err_q, oes(2,1)*10.0)  ! convert to % from PREPBUFR percent divided by 10
 #endif
-         if ( wqm == 8 .or. wqm  == 9 .or. wqm  == 15) then
-            platform%each(1)%u%qc  = 88
-            platform%each(1)%v%qc  = 88
-            if ( use_errtable ) then
-               platform%each(1)%u%error = woe
-               platform%each(1)%v%error = woe
-            else
-               platform%each(1)%u%error = 1.1
-               platform%each(1)%v%error = 1.1
-            end if
-            ! Convert earth wind to model wind.
-            call da_earth_2_model_wind(obs(5,1), obs(6,1),     &
-               platform%each(1)%u%inv, platform%each(1)%v%inv, &
-               platform%info%lon)
-            if ( platform%each(1)%u%inv == 0.0 .and. platform%each(1)%v%inv == 0.0 ) then
-               platform%each(1)%u%inv = missing_r  
-               platform%each(1)%v%inv = missing_r  
-               platform%each(1)%u%qc  = missing_data
-               platform%each(1)%v%qc  = missing_data
-            end if
-         end if
-         if ( tqm == 8 .or. tqm == 9 .or. tqm == 15 ) then
-            if ( obs(3,1) < r8bfms ) then
-            platform%each(1)%t%inv = obs(3,1)
-            platform%each(1)%t%qc  = 88
-            if ( use_errtable ) then
-               platform%each(1)%t%error = toe
-            else
-               platform%each(1)%t%error = 2.0
-            end if
+         if (obs(5,1) < r8bfms .and. obs(6,1) < r8bfms ) then
+            wqm=nint(qms(5,1))
+            if ( wqm == 8 .or. wqm  == 9 .or. wqm  == 15) then
+               platform%each(1)%u%qc  = 88
+               platform%each(1)%v%qc  = 88
+               if ( use_errtable ) then
+                  platform%each(1)%u%error = woe
+                  platform%each(1)%v%error = woe
+               else
+                  platform%each(1)%u%error = 1.1
+                  platform%each(1)%v%error = 1.1
+               end if
+               ! Convert earth wind to model wind.
+               call da_earth_2_model_wind(obs(5,1), obs(6,1),     &
+                  platform%each(1)%u%inv, platform%each(1)%v%inv, &
+                  platform%info%lon)
+               if ( platform%each(1)%u%inv == 0.0 .and. platform%each(1)%v%inv == 0.0 ) then
+                  platform%each(1)%u%inv = missing_r  
+                  platform%each(1)%v%inv = missing_r  
+                  platform%each(1)%u%qc  = missing_data
+                  platform%each(1)%v%qc  = missing_data
+               end if
             end if
          end if
-         if ( qqm == 8 .or. qqm == 9 .or. qqm == 15 ) then
-            if ( obs(2,1) > 0.0 .and. obs(2,1) < r8bfms ) then
-            platform%each(1)%q%inv = obs(2,1)
-            platform%each(1)%q%qc  = 88
-            if ( use_errtable ) then
-               platform%each(1)%q%error = qoe  ! RH percent
-            else
-               platform%each(1)%q%error = 10   ! RH percent
+         if ( obs(3,1) < r8bfms ) then
+            tqm=nint(qms(3,1))
+            if ( tqm == 8 .or. tqm == 9 .or. tqm == 15 ) then
+               platform%each(1)%t%inv = obs(3,1)
+               platform%each(1)%t%qc  = 88
+               if ( use_errtable ) then
+                  platform%each(1)%t%error = toe
+               else
+                  platform%each(1)%t%error = 2.0
+               end if
             end if
+         end if
+         if ( obs(2,1) > 0.0 .and. obs(2,1) < r8bfms ) then
+            qqm=nint(qms(2,1))
+            if ( qqm == 8 .or. qqm == 9 .or. qqm == 15 ) then
+               platform%each(1)%q%inv = obs(2,1)
+               platform%each(1)%q%qc  = 88
+               if ( use_errtable ) then
+                  platform%each(1)%q%error = qoe  ! RH percent
+               else
+                  platform%each(1)%q%error = 10   ! RH percent
+               end if
             end if
          end if
       end if
       ! assign tpw obs errors for gpspw (t29=74) and SPSSMI retrieved TPW (t29=65)
-      if ( t29 == 74 .or. t29 == 65 ) then
-         if ( pwq == 8 .or. pwq  == 9 .or. pwq  == 15) then
-            if ( obs(7,1) > 0.0 .and. obs(7,1) < r8bfms ) then
-            platform%loc%pw%inv   = obs(7,1) * 0.1    ! convert to cm
-            platform%loc%pw%qc    = 88
-            if ( use_errtable ) then
-               platform%loc%pw%error = pwe
-            else
-               platform%loc%pw%error = 0.2     ! hardwired to 0.2 cm
-            end if
+      if ( obs(7,1) > 0.0 .and. obs(7,1) < r8bfms ) then
+         if ( t29 == 74 .or. t29 == 65 ) then
+            if ( pwq == 8 .or. pwq  == 9 .or. pwq  == 15) then
+               platform%loc%pw%inv   = obs(7,1) * 0.1    ! convert to cm
+               platform%loc%pw%qc    = 88
+               if ( use_errtable ) then
+                  platform%loc%pw%error = pwe
+               else
+                  platform%loc%pw%error = 0.2     ! hardwired to 0.2 cm
+               end if
             end if
          end if
       end if

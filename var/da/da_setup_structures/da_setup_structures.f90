@@ -12,7 +12,8 @@ module da_setup_structures
       multi_level_type,each_level_type, da_allocate_observations_rain
    use da_define_structures, only : da_allocate_obs_info, da_allocate_y, da_allocate_y_radar, &
       da_allocate_y_rain
-   use da_wrf_interfaces, only : wrf_debug
+   use da_wrf_interfaces, only : wrf_debug, &
+      wrf_dm_bcast_string, wrf_dm_bcast_integer, wrf_dm_bcast_real
    use da_control, only : trace_use,vert_evalue,stdout,rootproc, myproc, &
       analysis_date,coarse_ix,coarse_ds,map_projection,coarse_jy, c2,dsm,phic, &
       pole, cone_factor, start_x,base_pres,ptop,psi1,start_y, base_lapse,base_temp,truelat2_3dv, &

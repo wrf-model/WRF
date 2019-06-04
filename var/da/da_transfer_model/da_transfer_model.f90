@@ -63,9 +63,7 @@ module da_transfer_model
    use da_vtox_transforms, only : da_get_vpoles
    use da_radar, only : zlcl_mean
    use da_gpseph, only : da_gpseph_init
-   ! Do not use line below, because it shows that we are passing a scalar to 
-   ! an array
-   ! use da_wrf_interfaces, only : wrf_dm_bcast_real
+   use da_wrf_interfaces, only : wrf_dm_bcast_real
 #ifdef VAR4D
    use da_4dvar, only : model_grid, push_ad_forcing, push_tl_pert, pop_tl_pert, kj_swap, &
        kj_swap_reverse, model_config_flags, g_couple, g_stuff_bdy, a_couple, a_stuff_bdy, &

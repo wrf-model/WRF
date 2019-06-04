@@ -62,6 +62,7 @@ module da_vtox_transforms
       da_transform_xtogpsref_adj, da_transform_xtowtq_adj, &
       da_transform_xtoztd_lin, da_transform_xtoztd_adj
    use da_par_util, only : da_vv_to_cv, da_cv_to_vv
+   use da_par_util, only : true_mpi_real, mpi_sum, comm
 
    use da_recursive_filter, only : da_transform_through_rf, &
       da_transform_through_rf_adj, da_apply_rf, da_apply_rf_adj, &
@@ -120,5 +121,6 @@ module da_vtox_transforms
 #include "da_calc_flow_dependence_xa_dual_res.inc"
 #include "da_calc_flow_dependence_xa_adj.inc"
 #include "da_calc_flow_dependence_xa_adj_dual_res.inc"
+#include "da_dual_res_c2n_ad.inc"
 
 end module da_vtox_transforms

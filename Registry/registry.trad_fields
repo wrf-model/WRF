@@ -25,4 +25,4 @@ state    real   rh            ikj   dyn_em    1  -   h1  "RH"           "relativ
 #  Package declarations
 
 package   skip_trad_fields   diag_nwp2==0  -   -
-package     do_trad_fields   diag_nwp2==1  -   state:sealevelp,temperature,pressure,geoheight,umet,vmet,speed,dir,rain,liqrain,tpw,theta,rh
+package     do_trad_fields   diag_nwp2==1  -   state:sealevelp,temperature,pressure,geoheight,umet,vmet,speed,dir,rain,liqrain,tpw,potential_t,rh

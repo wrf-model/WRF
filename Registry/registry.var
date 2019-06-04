@@ -940,6 +940,8 @@ rconfig   integer var4d_cloudcv           derived               1            -1 
 rconfig   integer var4d_w_cv              derived               1             0       -     "var4d_w_cv"      "turn on if var4d=true and use_cv_w=true"
 rconfig   integer wpec_used               derived               1             0       -     "wpec_used"       "turn on if use_wpec=true"
 rconfig   integer alloc_xa_static         derived               1             0       -     "alloc_xa_static" "turn on if use_4denvar=true and num_fgat_time>1"
+rconfig   integer alloc_ep                derived               1             0       -     "alloc_ep"        "always 0, ep needs to be allocated outside alloc_and_configure_domain"
+rconfig   integer alloc_alphacv           derived               1             0       -     "alloc_alphacv"   "turn on if ensdim_alpha>0 and not hybrid_dual_res"
 
 #package derived types
 package   no_cloud_cv     cloud_cv_options==0         -             -
@@ -956,9 +958,13 @@ package   has_cv_w        cv_w_used==1                -             state:vp%v11
 package   no_var4d_cv_w   var4d_w_cv==0               -             -
 package   has_var4d_cv_w  var4d_w_cv==1               -             state:vp6%v11,vv6%v11
 package   no_ens          ens_used==0                 -             -
-package   has_ens         ens_used==1                 -             state:xa_ens%u,xa_ens%v,xa_ens%t,xa_ens%q,xa_ens%psfc,ep%v1,ep%v2,ep%v3,ep%v4,ep%v5,vp%alpha,vv%alpha
+package   has_ens         ens_used==1                 -             state:xa_ens%u,xa_ens%v,xa_ens%t,xa_ens%q,xa_ens%psfc
 package   no_ens_cloud    cloud_ens_used==0           -             -
-package   has_ens_cloud   cloud_ens_used==1           -             state:xa_ens%qrn,xa_ens%qcw,xa_ens%qci,xa_ens%qsn,xa_ens%qgr,ep%cw,ep%rn,ep%ci,ep%sn,ep%gr
+package   has_ens_cloud   cloud_ens_used==1           -             state:xa_ens%qrn,xa_ens%qcw,xa_ens%qci,xa_ens%qsn,xa_ens%qgr
+package   no_ep_alloc     alloc_ep==0                 -             -
+package   do_ep_alloc     alloc_ep==1                 -             state:ep%v1,ep%v2,ep%v3,ep%v4,ep%v5,ep%cw,ep%rn,ep%ci,ep%sn,ep%gr
+package   no_alphacv_alloc alloc_alphacv==0           -             -
+package   do_alphacv_alloc alloc_alphacv==1           -             state:vp%alpha,vv%alpha
 package   no_wpec         wpec_used==0                -             -
 package   has_wpec        wpec_used==1                -             state:xa%grad_p_x,xa%grad_p_y,xa%geoh,xa%mu,xb%xb_p_x,xb%xb_p_y
 package   no_xa_static    alloc_xa_static==0          -             -

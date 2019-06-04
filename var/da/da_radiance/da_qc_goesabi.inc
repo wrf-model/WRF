@@ -42,7 +42,8 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
    real              :: BTlim(nchan)
    real, allocatable :: cld_impact(:,:), cld_impact_global(:,:), weights_global(:)
    integer           :: buf_i, buf_f, nbuf, nlocal, nglobal, iproc
-   real, parameter   :: camin = 0.0
+   real, parameter   :: camin = 0.0 !Harnisch et al. (2016)
+   !real, parameter   :: camin = 0.5 !Okamoto et al. (2013)
 
    !! Additional variables used by Zhuge and Zou (2017)
    integer            :: itest
@@ -154,9 +155,14 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
 
       !JJG: for Harnisch et al. BTlim using stats from CONUS 9km 2-hr WRF forecast from GSI analysis
       BTlim(1)  = 269.5
-      BTlim(2)  = 231.5
-      BTlim(3)  = 240.0
-      BTlim(4)  = 250.0
+!3km 2/3 CONUS stats 01 MAY 2018 (mean)
+      BTlim(2)  = 237.0
+      BTlim(3)  = 249.0
+      BTlim(4)  = 261.0
+!3km 2/3 CONUS stats 01 MAY 2018 (median)
+!      BTlim(2)  = 231.5
+!      BTlim(3)  = 240.0
+!      BTlim(4)  = 250.5
       BTlim(5)  = 271.0
       BTlim(6)  = 258.0
       BTlim(7)  = 272.0
@@ -497,54 +503,63 @@ subroutine da_qc_goesabi (it, i, nchan, ob, iv)
                   .and. tb_inv( k, n ) .gt. missing_r &
                   .and. tb_ob(  k, n ) .gt. 0. &
                   .and. tb_xb(  k, n ) .gt. 0. &
-                  .and. BTlim(k) .gt. 0. &
                   ) then
 
-! using ob without VarBC 
+! using ob with VarBC (tb_inv + tb_xb)
 ! -------------------------------
-!               ca_mean(k,n) = 0.5 * ( max( 0., BTlim(k) - tb_xb(k,n) ) + &
-!                                      max( 0., BTlim(k) - tb_ob(k,n) ) )
-
-! using ob with VarBC 
-! -------------------------------
-               ca_mean(k,n) = 0.5 * ( max( 0., BTlim(k) - tb_xb(k,n) ) + &
-                                      max( 0., BTlim(k) - (tb_inv(k,n) + tb_xb(k,n)) ) )
+!! Harnisch et al. (2016)
+               if ( BTlim(k) .gt. 0. ) then
+                  ca_mean(k,n) = 0.5 * ( max( 0., BTlim(k) - tb_xb(k,n) ) + &
+                                         max( 0., BTlim(k) - (tb_inv(k,n) + tb_xb(k,n)) ) )
+               end if
+!               if ( tb_xb_clr(k,n) .gt. 0. ) then
+!! Okamoto et al. (2013)
+!               ca_mean(k,n) = 0.5 * ( abs(  tb_xb(k,n)                - tb_xb_clr(k,n) ) + &
+!                                      abs( (tb_inv(k,n) + tb_xb(k,n)) - tb_xb_clr(k,n) ) )
+!!! J. Guerrette
+!               ca_mean(k,n) = 0.5 * ( max( 0., tb_xb_clr(k,n) - tb_xb(k,n) ) + &
+!                                      max( 0., tb_xb_clr(k,n) - (tb_inv(k,n) + tb_xb(k,n)) ) )
+!               end if
             end if
 !JJGDEBUG
             if (print_cld_debug) write(stdout,'(A,2I8,2F16.8)') 'PIXEL_DEBUG93: ', n, k, &
                ca_mean(k,n)
 !JJGDEBUG
-
          end do
 
-         ! symmetric error model, Harnish, Weissmann, & Perianez (2016)
+         ! symmetric error model
+         ! - Okamoto, McNally, & Bell (2013)
+         ! - Harnish, Weissmann, & Perianez (2016)
          do k = 1, nchan
-            if ( ca_mean(k,n).lt.camin .and. ca_mean(k,n).gt.missing_r ) then
-               iv%instid(i)%tb_error(k,n) = satinfo(i)%error_std(k)
-            else if ( ca_mean(k,n) .lt. satinfo(i)%error_cld_x(k) ) then
-               iv%instid(i)%tb_error(k,n) = satinfo(i)%error_std(k) + &
-                  ( satinfo(i)%error_cld_y(k) - satinfo(i)%error_std(k) ) * &
-                  ( ca_mean(k,n) - camin ) / ( satinfo(i)%error_cld_x(k) - camin )
+            if ( ca_mean(k,n).gt.missing_r ) then
+               if ( ca_mean(k,n).lt.camin ) then
+                  iv%instid(i)%tb_error(k,n) = satinfo(i)%error_std(k)
+               else if ( ca_mean(k,n) .lt. satinfo(i)%error_cld_x(k) ) then
+                  iv%instid(i)%tb_error(k,n) = satinfo(i)%error_std(k) + &
+                     ( satinfo(i)%error_cld_y(k) - satinfo(i)%error_std(k) ) * &
+                     ( ca_mean(k,n) - camin ) / ( satinfo(i)%error_cld_x(k) - camin )
+               else
+                  iv%instid(i)%tb_error(k,n) = satinfo(i)%error_cld_y(k)
+               end if
             else
-               iv%instid(i)%tb_error(k,n) = satinfo(i)%error_cld_y(k)
+               iv%instid(i)%tb_error(k,n) = missing_r
             end if
          end do ! nchan
       end if
 
       !  5.1 check innovation
       !-----------------------------------------------------------------
-      if (.not. crtm_cloud ) then
-         ! absolute departure check
-         do k = 1, nchan
-            inv_grosscheck = 15.0
-            if (use_satcv(2)) inv_grosscheck = 100.0
-            if (abs(tb_inv(k,n)) > inv_grosscheck) then
-                tb_qc(k)  = qc_bad
-                if (iv%instid(i)%info%proc_domain(1,n)) &
-                    nrej_omb_abs(k) = nrej_omb_abs(k) + 1
-            end if
-         end do ! nchan
-      end if
+      ! absolute departure check
+      inv_grosscheck = 15.0
+      if (crtm_cloud) inv_grosscheck = 80.0
+      if (use_satcv(2)) inv_grosscheck = 100.0
+      do k = 1, nchan
+         if (abs(tb_inv(k,n)) > inv_grosscheck) then
+             tb_qc(k)  = qc_bad
+             if (iv%instid(i)%info%proc_domain(1,n)) &
+                 nrej_omb_abs(k) = nrej_omb_abs(k) + 1
+         end if
+      end do ! nchan
 
       iv%instid(i)%tb_qc(:,n) = tb_qc
 

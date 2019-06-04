@@ -9925,7 +9925,7 @@ CONTAINS
                        coszr, julday, solcon,                     &
                        albedo, t3d, t8w, tsk,                     &
                        p3d, p8w, pi3d, rho3d,                     &
-                       dz8w, cldfra3d, lradius, iradius,          & 
+                       dz8w, cldfra3d, ccldfra, lradius, iradius, & 
                        is_cammgmp_used, r, g,                     &
                        re_cloud,re_ice,re_snow,                   &
                        has_reqc,has_reqi,has_reqs,                &
@@ -9935,6 +9935,7 @@ CONTAINS
                        xland, xice, snow,                         &
                        qv3d, qc3d, qr3d,                          &
                        qi3d, qs3d, qg3d,                          &
+                       qcconv,qiconv,                             &
                        o3input, o33d,                             &
                        aer_opt, aerod, no_src,                    &
                        alswvisdir, alswvisdif,                    &  !Zhenxin ssib alb comp (06/20/2011)
@@ -9956,6 +9957,7 @@ CONTAINS
                        its,ite, jts,jte, kts,kte,                 &
                        swupflx, swupflxc,                         &
                        swdnflx, swdnflxc,                         &
+                       cu_physics,                                &
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
                        swddir, swddni, swddif,                    & ! jararias 2013/08
                        swdownc, swddnic, swddirc,                 & ! PAJ
@@ -9972,6 +9974,7 @@ CONTAINS
                                        its,ite, jts,jte, kts,kte
 
    INTEGER, INTENT(IN )      ::        ICLOUD
+   INTEGER, INTENT(IN )      ::        cu_physics
    INTEGER, INTENT(IN )      ::        MP_PHYSICS
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
@@ -10055,7 +10058,10 @@ CONTAINS
                                                             QI3D, &
                                                             QS3D, &
                                                             QG3D, &
-                                                        QNDROP3D
+                                                        QNDROP3D, &
+                                                          QICONV, &
+                                                          QCCONV, &
+                                                         CCLDFRA
 
 !..Added by G. Thompson to couple cloud physics effective radii.
    REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN)::       &
@@ -10235,6 +10241,9 @@ CONTAINS
                                                   snow_mass_factor
     integer ::                                            dyofyr
 
+    real ::                                                ITRMX, &
+                                                           ITRMN
+
     integer:: idx_rei
     real:: corr
 
@@ -10399,16 +10408,31 @@ CONTAINS
 ! moist variables
 
          IF (ICLOUD .ne. 0) THEN
+
+! The overlap between the convective and large-scale cloud fractions is
+! estimated as the average of the maximum and minimum possible overlaps
+! between the two.
+
             IF ( PRESENT( CLDFRA3D ) ) THEN
               DO K=kts,kte
-                 CLDFRA1D(k)=CLDFRA3D(I,K,J)
+                 IF ( cu_physics .eq. 2 ) THEN
+                    ITRMX=MIN(CLDFRA3D(I,K,J),CCLDFRA(I,K,J))
+                    ITRMN=MAX(0.,CLDFRA3D(I,K,J)+CCLDFRA(I,K,J)-1.)
+                    CLDFRA1D(K)=CLDFRA3D(I,K,J)+CCLDFRA(I,K,J)-0.5*(ITRMX+ITRMN)
+                 ELSE
+                    CLDFRA1D(K)=CLDFRA3D(I,K,J)
+                 ENDIF
               ENDDO
             ENDIF
 
             IF (PRESENT(F_QC) .AND. PRESENT(QC3D)) THEN
               IF ( F_QC) THEN
                  DO K=kts,kte
-                    QC1D(K)=QC3D(I,K,J)
+                    IF ( cu_physics .eq. 2 ) THEN
+                       QC1D(K)=QC3D(I,K,J)+QCCONV(I,K,J)
+                    ELSE
+                       QC1D(K)=QC3D(I,K,J)
+                    ENDIF
                     QC1D(K)=max(0.,QC1D(K))
                  ENDDO
               ENDIF
@@ -10446,6 +10470,11 @@ CONTAINS
                DO K=kts,kte
                   IF (T1D(K) .lt. 273.15) THEN
                   QI1D(K)=QC1D(K)
+                  IF ( cu_physics .eq. 2 ) THEN
+                      QI1D(K)=QI1D(K)+QICONV(I,K,J)
+                  ELSE
+                      QI1D(K)=QI1D(K)
+                  ENDIF
                   QS1D(K)=QR1D(K)
                   QC1D(K)=0.
                   QR1D(K)=0.
@@ -10456,7 +10485,11 @@ CONTAINS
             IF (PRESENT(F_QI) .AND. PRESENT(QI3D)) THEN
                IF (F_QI) THEN
                   DO K=kts,kte
-                     QI1D(K)=QI3D(I,K,J)
+                     IF ( cu_physics .eq. 2 ) THEN
+                        QI1D(K)=QI3D(I,K,J)+QICONV(I,K,J)
+                     ELSE
+                        QI1D(K)=QI3D(I,K,J)
+                     ENDIF
                      QI1D(K)=max(0.,QI1D(K))
                   ENDDO
                ENDIF
@@ -10486,7 +10519,11 @@ CONTAINS
                   DO K=kts,kte
                      qi1d(k) = 0.1*qs3d(i,k,j)
                      qs1d(k) = 0.9*qs3d(i,k,j)
-                     qc1d(k) = qc3d(i,k,j)
+                     IF ( cu_physics .eq. 2 ) THEN
+                        qc1d(k) = qc3d(i,k,j)+qcconv(i,k,j)
+                     ELSE
+                        qc1d(k) = qc3d(i,k,j)
+                     ENDIF
                      qi1d(k) = max(0.,qi1d(k))
                      qc1d(k) = max(0.,qc1d(k))
                   ENDDO
@@ -10505,9 +10542,17 @@ CONTAINS
                 mp_physics == FER_MP_HIRES_ADVECT) THEN
 #endif
                   DO K=kts,kte
-                     qi1d(k) = qi3d(i,k,j)
+                     IF ( cu_physics .eq. 2 ) THEN
+                        qi1d(k) = qi3d(i,k,j)+qiconv(i,k,j)
+                     ELSE
+                        qi1d(k) = qi3d(i,k,j)
+                     ENDIF
                      qs1d(k) = 0.0
-                     qc1d(k) = qc3d(i,k,j)
+                     IF ( cu_physics .eq. 2 ) THEN
+                        qc1d(k) = qc3d(i,k,j)+qcconv(i,k,j)
+                     ELSE
+                        qc1d(k) = qc3d(i,k,j)
+                     ENDIF
                      qi1d(k) = max(0.,qi1d(k))
                      qc1d(k) = max(0.,qc1d(k))
                   ENDDO

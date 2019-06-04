@@ -1738,8 +1738,10 @@ CONTAINS
                        ,ims,ime, jms,jme, kms,kme                 &
                        ,its,ite, jts,jte, kts,kte                 &
                        ,qv3d,qc3d,qr3d                            &
-                       ,qi3d,qs3d,qg3d,cldfra3d                   &
+                       ,qi3d,qs3d,qg3d,cldfra3d, ccldfra          &
+                       ,qcconv,qiconv                             &
                        ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg             &
+                       ,cu_physics                                &
 !ccc Added for time-varying trace gases.
                        ,yr, julian                                )
 !ccc
@@ -1757,6 +1759,7 @@ CONTAINS
                                        its,ite, jts,jte, kts,kte
 
    INTEGER, INTENT(IN )      ::        ICLOUD
+   INTEGER, INTENT(IN )      ::        cu_physics
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          INTENT(IN   ) ::                                   dz8w, &
@@ -1797,7 +1800,10 @@ CONTAINS
                                                             QR3D, &
                                                             QI3D, &
                                                             QS3D, &
-                                                            QG3D
+                                                            QG3D, &
+                                                          QICONV, &
+                                                          QCCONV, &
+                                                         CCLDFRA
 
    LOGICAL, OPTIONAL, INTENT(IN )      ::        F_QV,F_QC,F_QR,F_QI,F_QS,F_QG
 
@@ -1819,6 +1825,9 @@ CONTAINS
                                                             QG1D
 !
     REAL   ::                              TSFC,GLW0,OLR0,EMISS0
+
+    REAL   ::                                       ITRMX, ITRMN
+         
 !
     INTEGER:: i,j,K,NK
     LOGICAL :: predicate
@@ -1906,10 +1915,21 @@ CONTAINS
          ENDDO
 
          IF (ICLOUD .ne. 0) THEN
+
+! The overlap between the convective and large-scale cloud fractions is
+! estimated as the average of the maximum and minimum possible overlaps
+! between the two.
+
             IF ( PRESENT( CLDFRA3D ) ) THEN
               DO K=kts,kte
                  NK=kme-1-K+kms
-                 CLDFRA1D(k)=CLDFRA3D(I,NK,J)
+                 IF ( cu_physics .eq. 2 ) THEN
+                    ITRMX=MIN(CLDFRA3D(I,NK,J),CCLDFRA(I,NK,J))
+                    ITRMN=MAX(0.,CLDFRA3D(I,NK,J)+CCLDFRA(I,NK,J)-1.)
+                    CLDFRA1D(K)=CLDFRA3D(I,NK,J)+CCLDFRA(I,NK,J)-0.5*(ITRMX+ITRMN)
+                 ELSE
+                    CLDFRA1D(K)=CLDFRA3D(I,NK,J)
+                 ENDIF
               ENDDO
             ENDIF
 
@@ -1917,7 +1937,11 @@ CONTAINS
               IF ( F_QC) THEN
                  DO K=kts,kte
                     NK=kme-1-K+kms
-                    QC1D(K)=QC3D(I,NK,J)
+                    IF ( cu_physics .eq. 2 ) THEN
+                       QC1D(K)=QC3D(I,NK,J)+QCCONV(I,NK,J)
+                    ELSE
+                       QC1D(K)=QC3D(I,NK,J)
+                    ENDIF
                     QC1D(K)=max(0.,QC1D(K))
                  ENDDO
               ENDIF
@@ -1945,8 +1969,14 @@ CONTAINS
 
             IF (.NOT. predicate .and. .not. warm_rain) THEN
                DO K=kts,kte
+                  NK=kme-1-K+kms
                   IF (T1D(K) .lt. 273.15) THEN
                   QI1D(K)=QC1D(K)
+                  IF ( cu_physics .eq. 2 ) THEN
+                       QI1D(K)=QI1D(K)+QICONV(I,NK,J)
+                  ELSE
+                       QI1D(K)=QI1D(K)
+                  ENDIF
                   QS1D(K)=QR1D(K)
                   QC1D(K)=0.
                   QR1D(K)=0.
@@ -1957,7 +1987,11 @@ CONTAINS
             IF (PRESENT(F_QI) .AND. PRESENT(QI3D)) THEN
                DO K=kts,kte
                   NK=kme-1-K+kms
-                  QI1D(K)=QI3D(I,NK,J)
+                  IF ( cu_physics .eq. 2 ) THEN
+                       QI1D(K)=QI3D(I,NK,J)+QICONV(I,NK,J)
+                  ELSE
+                       QI1D(K)=QI3D(I,NK,J)
+                  ENDIF
                   QI1D(K)=max(0.,QI1D(K))
                ENDDO
             ENDIF

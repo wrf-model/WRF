@@ -15252,13 +15252,14 @@ integer,external :: omp_get_thread_num
                        glw, olr, lwcf, emiss,                     &
                        p8w, p3d, pi3d,                            &
                        dz8w, tsk, t3d, t8w, rho3d, r, g,          &
-                       icloud, warm_rain, cldfra3d,               &
+                       icloud, warm_rain, cldfra3d, ccldfra,      &
                        lradius,iradius,                           & 
                        is_cammgmp_used,                           & 
                        f_ice_phy, f_rain_phy,                     &
                        xland, xice, snow,                         &
                        qv3d, qc3d, qr3d,                          &
                        qi3d, qs3d, qg3d,                          &
+                       qcconv,qiconv,                             &
                        o3input, o33d,                             &
                        f_qv, f_qc, f_qr, f_qi, f_qs, f_qg,        &
                        re_cloud, re_ice, re_snow,                 &  ! G. Thompson
@@ -15277,7 +15278,8 @@ integer,external :: omp_get_thread_num
                        ids,ide, jds,jde, kds,kde,                 & 
                        ims,ime, jms,jme, kms,kme,                 &
                        its,ite, jts,jte, kts,kte,                 &
-                       lwupflx, lwupflxc, lwdnflx, lwdnflxc       &
+                       lwupflx, lwupflxc, lwdnflx, lwdnflxc,      &
+                       cu_physics                                 &
                                                                   )
 !------------------------------------------------------------------
 !ccc To use clWRF time varying trace gases
@@ -15293,6 +15295,7 @@ integer,external :: omp_get_thread_num
                                        its,ite, jts,jte, kts,kte
 
    INTEGER, INTENT(IN )      ::        ICLOUD
+   INTEGER, INTENT(IN )      ::        cu_physics
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          INTENT(IN   ) ::                                   dz8w, &
@@ -15342,7 +15345,10 @@ integer,external :: omp_get_thread_num
                                                             QI3D, &
                                                             QS3D, &
                                                             QG3D, &
-                                                        QNDROP3D
+                                                        QNDROP3D, &
+                                                          QICONV, &
+                                                          QCCONV, &
+                                                         CCLDFRA
 
 !..Added by G. Thompson to couple cloud physics effective radii.
    REAL, DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(IN)::         &
@@ -15481,6 +15487,9 @@ integer,external :: omp_get_thread_num
                                                               ps
     real ::                                                   ro, &
                                                               dz
+
+    real ::                                                ITRMX, &
+                                                           ITRMN
     real:: snow_mass_factor
 
 !..We can use message interface regardless of what options are running,
@@ -15704,16 +15713,31 @@ integer,external :: omp_get_thread_num
 ! moist variables
 
          IF (ICLOUD .ne. 0) THEN
+
+! The overlap between the convective and large-scale cloud fractions is
+! estimated as the average of the maximum and minimum possible overlaps
+! between the two.
+
             IF ( PRESENT( CLDFRA3D ) ) THEN
               DO K=kts,kte
-                 CLDFRA1D(k)=CLDFRA3D(I,K,J)
+                 IF ( cu_physics .eq. 2 ) THEN
+                    ITRMX=MIN(CLDFRA3D(I,K,J),CCLDFRA(I,K,J))
+                    ITRMN=MAX(0.,CLDFRA3D(I,K,J)+CCLDFRA(I,K,J)-1.)
+                    CLDFRA1D(K)=CLDFRA3D(I,K,J)+CCLDFRA(I,K,J)-0.5*(ITRMX+ITRMN)
+                 ELSE
+                    CLDFRA1D(K)=CLDFRA3D(I,K,J)
+                 ENDIF
               ENDDO
             ENDIF
 
             IF (PRESENT(F_QC) .AND. PRESENT(QC3D)) THEN
               IF ( F_QC) THEN
                  DO K=kts,kte
-                    QC1D(K)=QC3D(I,K,J)
+                    IF ( cu_physics .eq. 2 ) THEN
+                       QC1D(K)=QC3D(I,K,J)+QCCONV(I,K,J)
+                    ELSE
+                       QC1D(K)=QC3D(I,K,J)
+                    ENDIF
                     QC1D(K)=max(0.,QC1D(K))
                  ENDDO
               ENDIF
@@ -15751,6 +15775,11 @@ integer,external :: omp_get_thread_num
                DO K=kts,kte
                   IF (T1D(K) .lt. 273.15) THEN
                   QI1D(K)=QC1D(K)
+                  IF ( cu_physics .eq. 2 ) THEN
+                       QI1D(K)=QI1D(K)+QICONV(I,K,J)
+                  ELSE
+                       QI1D(K)=QI1D(K)
+                  ENDIF
                   QS1D(K)=QR1D(K)
                   QC1D(K)=0.
                   QR1D(K)=0.
@@ -15761,7 +15790,11 @@ integer,external :: omp_get_thread_num
             IF (PRESENT(F_QI) .AND. PRESENT(QI3D)) THEN
                IF (F_QI) THEN
                   DO K=kts,kte
-                     QI1D(K)=QI3D(I,K,J)
+                     IF ( cu_physics .eq. 2 ) THEN
+                        QI1D(K)=QI3D(I,K,J)+QICONV(I,K,J)
+                     ELSE
+                        QI1D(K)=QI3D(I,K,J)
+                     ENDIF
                      QI1D(K)=max(0.,QI1D(K))
                   ENDDO
                ENDIF
@@ -15791,7 +15824,11 @@ integer,external :: omp_get_thread_num
                   DO K=kts,kte
                      qi1d(k) = 0.1*qs3d(i,k,j)
                      qs1d(k) = 0.9*qs3d(i,k,j)
-                     qc1d(k) = qc3d(i,k,j)
+                     IF ( cu_physics .eq. 2 ) THEN
+                        qc1d(k) = qc3d(i,k,j)+qcconv(i,k,j)
+                     ELSE
+                        qc1d(k) = qc3d(i,k,j)
+                     ENDIF
                      qi1d(k) = max(0.,qi1d(k))
                      qc1d(k) = max(0.,qc1d(k))
                   ENDDO

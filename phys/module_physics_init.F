@@ -55,7 +55,8 @@ CONTAINS
                          re_rain_gsfc,                           & ! Goddard
 #endif
                          NCA,swrad_scat,                         &
-                         CLDEFI,LOWLYR,                          &
+                         CLDEFI, CCLDFRA, CONVCLD, QCCONV,       &
+                         QICONV, LOWLYR,                         &
                          MASS_FLUX,                              &
                          RTHFTEN, RQVFTEN,                       &
                          CLDFRA,CLDFRA_OLD,GLW,GSW,EMISS,EMBCK,  & !EMBCK new
@@ -434,6 +435,14 @@ CONTAINS
    REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(OUT) :: CLDEFI, NCA
 
    INTEGER,  DIMENSION( ims:ime , jms:jme ) , INTENT(OUT) :: LOWLYR
+
+! bmj
+
+   REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::    &
+             CCLDFRA, QCCONV, QICONV
+
+   REAL,     DIMENSION( ims:ime , jms:jme ) , INTENT(INOUT) ::            &
+             CONVCLD
 
 !pbl
 
@@ -1414,8 +1423,8 @@ CONTAINS
    CALL cu_init(DX,STEPCU,CUDT,DT,RUCUTEN,RVCUTEN,RTHCUTEN,     &
                 RQVCUTEN,RQRCUTEN,RQCCUTEN,RQSCUTEN,RQICUTEN,   &
                 NCA,RAINC,RAINCV,W0AVG,config_flags,restart,    &
-                CLDEFI,LOWLYR,MASS_FLUX,                        &
-                RTHFTEN, RQVFTEN,                               &
+                CLDEFI,CCLDFRA,CONVCLD,QCCONV,QICONV,LOWLYR,    &
+                MASS_FLUX,RTHFTEN,RQVFTEN,                      &
 #if ( EM_CORE == 1 )
                 !BSINGH - For WRFCuP Scheme
                 cupflag,cldfra_cup,cldfratend_cup,              & !CuP, wig 18-Sep-2006
@@ -3549,8 +3558,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    SUBROUTINE cu_init(DX,STEPCU,CUDT,DT,RUCUTEN,RVCUTEN,RTHCUTEN,  &
                       RQVCUTEN,RQRCUTEN,RQCCUTEN,RQSCUTEN,RQICUTEN,&
                       NCA,RAINC,RAINCV,W0AVG,config_flags,restart, &
-                      CLDEFI,LOWLYR,MASS_FLUX,                     &
-                      RTHFTEN, RQVFTEN,                            &
+                      CLDEFI,CCLDFRA,CONVCLD,QCCONV,QICONV,LOWLYR, &
+                      MASS_FLUX, RTHFTEN, RQVFTEN,                 &
 #if ( EM_CORE == 1 )
                       !BSINGH - For WRFCuP Scheme
                       cupflag,cldfra_cup,cldfratend_cup,          & !CuP, wig 18-Sep-2006
@@ -3603,8 +3612,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
    INTEGER , INTENT(INOUT)     :: STEPCU
 
    REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &    
-            RUCUTEN, RVCUTEN, RTHCUTEN, &
-            RQVCUTEN, RQCCUTEN, RQRCUTEN, RQICUTEN, RQSCUTEN
+            RUCUTEN, RVCUTEN, RTHCUTEN, RQVCUTEN, RQCCUTEN,                &
+            RQRCUTEN, RQICUTEN, RQSCUTEN, CCLDFRA, QCCONV, QICONV
 #if ( EM_CORE == 1 )
    !BSINGH - For WRFCuP Scheme
    REAL ,   DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(INOUT) ::    &    
@@ -3622,6 +3631,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
             RTHFTEN, RQVFTEN
 
    REAL ,   DIMENSION( ims:ime , jms:jme ), INTENT(OUT):: RAINC, RAINCV
+
+   REAL ,   DIMENSION( ims:ime , jms:jme ), INTENT(OUT):: CONVCLD
 
    REAL ,   DIMENSION( ims:ime , jms:jme ), INTENT(OUT):: CLDEFI
 #if ( EM_CORE == 1 )
@@ -3678,8 +3689,8 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
 
      CASE (BMJSCHEME)
           CALL bmjinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQRCUTEN,       &
-                      CLDEFI,LOWLYR,cp,r_d,restart,               &
-                      allowed_to_read ,                           &
+                      CLDEFI,CCLDFRA,CONVCLD,QCCONV,QICONV,       &
+                      LOWLYR,cp,r_d,restart,allowed_to_read,      &
                       ids, ide, jds, jde, kds, kde,               &
                       ims, ime, jms, jme, kms, kme,               &
                       its, ite, jts, jte, kts, kte                )

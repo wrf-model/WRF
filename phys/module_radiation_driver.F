@@ -72,6 +72,7 @@ CONTAINS
               , COD2D_OUT                           & ! goddardrad
               , CTOP2D_OUT                          & ! goddardrad
               , CLDFRA,CLDFRA_MP_ALL,CLDT,ZNU       &
+              , CCLDFRA, QCCONV, QICONV             &
 #if (EM_CORE == 1)
               , lradius,iradius                     &
 #endif
@@ -328,6 +329,8 @@ CONTAINS
 ! Qr         rain water mixing ratio (kg/kg)
 ! Qi         cloud ice mixing ratio (kg/kg)
 ! Qs         snow mixing ratio (kg/kg)
+! QCCONV     convective cloud mixing ratio (kg/kg)
+! QICONV     convective ice mixing ratio (kg/kg)
 !-----------------------------------------------------------------
 !-- PM2_5_DRY     Dry PM2.5 aerosol mass for all species (ug m^-3)
 !-- PM2_5_WATER   PM2.5 water mass (ug m^-3)
@@ -353,6 +356,7 @@ CONTAINS
 !-- CLDFRA_DP     cloud fraction from deep cloud in a cumulus scheme
 !-- CLDFRA_SH     cloud fraction from shallow cloud in a cumulus scheme
 !-- CLDFRA_MP_ALL cloud fraction from CAMMGMP microphysics scheme
+!-- CCLDFRA       convective cloud fraction (between 0 and 1)
 !-- EMISS         surface emissivity (between 0 and 1)
 !-- rho_phy       density (kg/m^3)
 !-- rr            dry air density (kg/m^3)
@@ -732,7 +736,10 @@ CONTAINS
 !
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
          OPTIONAL,                                                &
-         INTENT(INOUT) ::                                 CLDFRA   
+         INTENT(INOUT) ::                                 CLDFRA, &
+                                                          CCLDFRA,&
+                                                          QCCONV, &
+                                                          QICONV   
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  & ! ckay for sub-grid cloud fraction
          OPTIONAL,                                                &
@@ -1630,11 +1637,14 @@ CONTAINS
                  ,QI3D=QI                                           &
                  ,QS3D=QS                                           &
                  ,QG3D=QG                                           &
+                 ,QCCONV=QCCONV,QICONV=QICONV                       &
                  ,P8W=p8w,P3D=p,PI3D=pi,DZ8W=dz8w,TSK=tsk,T3D=t     &
-                 ,T8W=t8w,RHO3D=rho, CLDFRA3D=CLDFRA,R=R_d,G=G      &
+                 ,T8W=t8w,RHO3D=rho,CLDFRA3D=CLDFRA,R=R_d,G=G       &
+                 ,CCLDFRA=CCLDFRA                                   &
                  ,F_QV=F_QV,F_QC=F_QC,F_QR=F_QR                     &
                  ,F_QI=F_QI,F_QS=F_QS,F_QG=F_QG                     &
                  ,ICLOUD=icloud,WARM_RAIN=warm_rain                 &
+                 ,cu_physics=cu_physics                             &
 !ccc Added for time-varying trace gases.
                  ,YR=YR,JULIAN=JULIAN                               &
 !ccc
@@ -1847,6 +1857,7 @@ CONTAINS
                   P8W=p8w,P3D=p,PI3D=pi,DZ8W=dz8w,TSK=tsk,T3D=t,    &
                   T8W=t8w,RHO3D=rho,R=R_d,G=G,                      &
                   ICLOUD=icloud,WARM_RAIN=warm_rain,CLDFRA3D=CLDFRA,&
+                  CCLDFRA=CCLDFRA,                                  &
                   cldovrlp=cldovrlp,                                & ! J. Henderson AER: cldovrlp namelist value
 #if (EM_CORE == 1)
                   LRADIUS=lradius, IRADIUS=iradius,                 &
@@ -1859,6 +1870,7 @@ CONTAINS
                   XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
                   QV3D=QV,QC3D=QC,QR3D=QR,                          &
                   QI3D=QI,QS3D=QS,QG3D=QG,                          &
+                  QCCONV=QCCONV,QICONV=QICONV,                      &
                   O3INPUT=O3INPUT,O33D=O3RAD,                       &
                   F_QV=F_QV,F_QC=F_QC,F_QR=F_QR,                    &
                   F_QI=F_QI,F_QS=F_QS,F_QG=F_QG,                    &
@@ -1887,6 +1899,7 @@ CONTAINS
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
                   LWUPFLX=LWUPFLX,LWUPFLXC=LWUPFLXC,                &
                   LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC,                &
+                  cu_physics=cu_physics,                            &
                   mp_physics=mp_physics                             )
 
         CASE (RRTMK_LWSCHEME)
@@ -1933,6 +1946,7 @@ CONTAINS
                   P8W=p8w,P3D=p,PI3D=pi,DZ8W=dz8w,TSK=tsk,T3D=t,    &
                   T8W=t8w,RHO3D=rho,R=R_d,G=G,                      &
                   ICLOUD=icloud,WARM_RAIN=warm_rain,CLDFRA3D=CLDFRA,&
+                  CCLDFRA=CCLDFRA,                                  &
 #if (EM_CORE == 1)
                   LRADIUS=lradius, IRADIUS=iradius,                 &
 #endif
@@ -1944,6 +1958,7 @@ CONTAINS
                   XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
                   QV3D=QV,QC3D=QC,QR3D=QR,                          &
                   QI3D=QI,QS3D=QS,QG3D=QG,                          &
+                  QCCONV=QCCONV,QICONV=QICONV,                      &
                   O3INPUT=O3INPUT,O33D=O3RAD,                       &
                   F_QV=F_QV,F_QC=F_QC,F_QR=F_QR,                    &
                   F_QI=F_QI,F_QS=F_QS,F_QG=F_QG,                    &
@@ -1970,7 +1985,8 @@ CONTAINS
                   IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme,&
                   ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
                   LWUPFLX=LWUPFLX,LWUPFLXC=LWUPFLXC,                &
-                  LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC                 &
+                  LWDNFLX=LWDNFLX,LWDNFLXC=LWDNFLXC,                &
+                  cu_physics=cu_physics                             &
                                                                     )
 #endif
 
@@ -2330,7 +2346,7 @@ CONTAINS
                      COSZR=COSZR,JULDAY=JULDAY,SOLCON=SOLCON,          &
                      ALBEDO=ALBEDO,t3d=t,t8w=t8w,TSK=TSK,              &
                      p3d=p,p8w=p8w,pi3d=pi,rho3d=rho,                  &
-                     dz8w=dz8w,CLDFRA3D=CLDFRA,                        &
+                     dz8w=dz8w,CLDFRA3D=CLDFRA,CCLDFRA=CCLDFRA,        &
 #if (EM_CORE == 1)
                      LRADIUS=lradius, IRADIUS=iradius,                 &
 #endif
@@ -2344,6 +2360,7 @@ CONTAINS
                      XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
                      QV3D=qv,QC3D=qc,QR3D=qr,                          &
                      QI3D=qi,QS3D=qs,QG3D=qg,                          &
+                     QCCONV=QCCONV,QICONV=QICONV,                      &
                      O3INPUT=O3INPUT,O33D=O3RAD,                       &
                      AER_OPT=AER_OPT,aerod=aerod,no_src=no_src_types,  &
                      ALSWVISDIR=alswvisdir ,ALSWVISDIF=alswvisdif,     &  !Zhenxin ssib alb comp (06/2010)
@@ -2373,6 +2390,7 @@ CONTAINS
                      ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
                      SWUPFLX=SWUPFLX,SWUPFLXC=SWUPFLXC,                &
                      SWDNFLX=SWDNFLX,SWDNFLXC=SWDNFLXC,                &
+                     cu_physics=cu_physics,                            &
                      tauaer3d_sw=tauaer_sw,                             & ! jararias 2013/11
                      ssaaer3d_sw=ssaaer_sw,                             & ! jararias 2013/11
                      asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11
@@ -2413,7 +2431,7 @@ CONTAINS
                      COSZR=COSZR,JULDAY=JULDAY,SOLCON=SOLCON,          &
                      ALBEDO=ALBEDO,t3d=t,t8w=t8w,TSK=TSK,              &
                      p3d=p,p8w=p8w,pi3d=pi,rho3d=rho,                  &
-                     dz8w=dz8w,CLDFRA3D=CLDFRA,                        &
+                     dz8w=dz8w,CLDFRA3D=CLDFRA,CCLDFRA=CCLDFRA,        &
 #if (EM_CORE == 1)
                      LRADIUS=lradius, IRADIUS=iradius,                 &
 #endif
@@ -2426,6 +2444,7 @@ CONTAINS
                      XLAND=XLAND,XICE=XICE,SNOW=SNOW,                  &
                      QV3D=qv,QC3D=qc,QR3D=qr,                          &
                      QI3D=qi,QS3D=qs,QG3D=qg,                          &
+                     QCCONV=QCCONV,QICONV=QICONV,                      &
                      O3INPUT=O3INPUT,O33D=O3RAD,                       &
                      AER_OPT=AER_OPT,aerod=aerod,no_src=no_src_types,  &
                      ALSWVISDIR=alswvisdir ,ALSWVISDIF=alswvisdif,     &  !Zhenxin ssib alb comp (06/2010)
@@ -2454,6 +2473,7 @@ CONTAINS
                      ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte,&
                      SWUPFLX=SWUPFLX,SWUPFLXC=SWUPFLXC,                &
                      SWDNFLX=SWDNFLX,SWDNFLXC=SWDNFLXC,                &
+                     cu_physics=cu_physics,                            &
                      tauaer3d_sw=tauaer_sw,                             & ! jararias 2013/11
                      ssaaer3d_sw=ssaaer_sw,                             & ! jararias 2013/11
                      asyaer3d_sw=asyaer_sw,                             & ! jararias 2013/11

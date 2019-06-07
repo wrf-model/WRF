@@ -225,14 +225,14 @@ module da_define_structures
 
       type (field_type)     , pointer :: rv       (:) ! Radial Velocity
       type (field_type)     , pointer :: rf       (:) ! Reflectivity
-      type (field_type)     , pointer :: rrn      (:) ! qrain
-      type (field_type)     , pointer :: rsn      (:) ! qsnow
-      type (field_type)     , pointer :: rgr      (:) ! qgraupel
-      type (field_type)     , pointer :: rqv      (:)
-      real                  , pointer :: rrno     (:)
-      real                  , pointer :: rsno     (:)
-      real                  , pointer :: rgro     (:)
-      real                  , pointer :: rqvo     (:)
+      type (field_type)     , pointer :: rrn      (:) => null() ! qrain
+      type (field_type)     , pointer :: rsn      (:) => null() ! qsnow
+      type (field_type)     , pointer :: rgr      (:) => null() ! qgraupel
+      type (field_type)     , pointer :: rqv      (:) => null()
+      real                  , pointer :: rrno     (:) => null()
+      real                  , pointer :: rsno     (:) => null()
+      real                  , pointer :: rgro     (:) => null()
+      real                  , pointer :: rqvo     (:) => null()
    end type radar_type
 
    type multi_level_type
@@ -838,10 +838,10 @@ module da_define_structures
    type residual_radar_type
       real, pointer :: rv(:)                    ! rv
       real, pointer :: rf(:)                    ! rf
-      real, pointer :: rrn(:)                   ! rrain
-      real, pointer :: rsn(:)                   ! rsnow
-      real, pointer :: rgr(:)                   ! rgraupel
-      real, pointer :: rqv(:) 
+      real, pointer :: rrn(:) => null()         ! rrain
+      real, pointer :: rsn(:) => null()         ! rsnow
+      real, pointer :: rgr(:) => null()         ! rgraupel
+      real, pointer :: rqv(:) => null()
    end type residual_radar_type
 
    type residual_instid_type

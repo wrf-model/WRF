@@ -148,6 +148,8 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
             write(unit=innov_rad_unit,fmt='(10f11.2)') iv%instid(i)%tb_error(:,n)
             write(unit=innov_rad_unit,fmt='(a)') 'QC   : '
             write(unit=innov_rad_unit,fmt='(10i11)') iv%instid(i)%tb_qc(:,n)
+            write(unit=innov_rad_unit,fmt='(a)') 'CLOUD   : '
+            write(unit=innov_rad_unit,fmt='(10i11)') iv%instid(i)%cloud_flag(:,n)
             if ( abi .and. crtm_cloud ) then ! write out ca_mean, tb_xb_clr
                write(unit=innov_rad_unit,fmt='(a)') 'CA   : '
                write(unit=innov_rad_unit,fmt='(10f11.2)') iv%instid(i)%ca_mean(:,n)

@@ -60,7 +60,7 @@ program da_rad_diags
    real*4,  dimension(:), allocatable     :: ret_clw
    real*4,  dimension(:), allocatable     :: satzen, satazi, t2m, mr2m, u10, v10, ps, ts
    real*4,  dimension(:), allocatable     :: smois, tslb, snowh, vegfra, clwp
-   integer, dimension(:,:), allocatable   :: tb_qc
+   integer, dimension(:,:), allocatable   :: tb_qc, tb_cloud
    real*4,  dimension(:,:), allocatable   :: tb_obs, tb_bak, tb_inv, tb_oma, tb_err, ems, ems_jac
    real*4,  dimension(:,:), allocatable   :: ca_mean, tb_bak_clr
    real*4,  dimension(:,:), allocatable   :: prf_pfull, prf_phalf, prf_t, prf_q, prf_water
@@ -254,6 +254,7 @@ ntime_loop: do itime = 1, ntime
             allocate ( tb_oma(1:nchan,1:total_npixel) )
             allocate ( tb_err(1:nchan,1:total_npixel) )
             allocate ( tb_qc(1:nchan,1:total_npixel)  )
+            allocate ( tb_cloud(1:nchan,1:total_npixel)  )
             if ( abi ) then
                allocate ( ca_mean(1:nchan,1:total_npixel) )
                allocate ( tb_bak_clr(1:nchan,1:total_npixel) )
@@ -380,7 +381,13 @@ ntime_loop: do itime = 1, ntime
             read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) tb_err(:,ipixel)
             read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! QC
             read(unit=iunit(iproc),fmt='(10i11)',iostat=ios  ) tb_qc(:,ipixel)
-            read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! CA or INFO or level
+            read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf           ! CLOUD, CA, INFO, or level
+            if ( buf(1:5) == "CLOUD" ) then ! read cloud detection info
+               read(unit=iunit(iproc),fmt='(10i11)',iostat=ios  ) tb_cloud(:,ipixel)
+               read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! CA, INFO, or level
+            else
+               tb_cloud = 0
+            end if
             if ( abi .and. buf(1:2) == "CA" ) then ! read ca_mean, tb_bak_clr for abi
                read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) ca_mean(:,ipixel)
                read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! BGCLR
@@ -513,6 +520,7 @@ ntime_loop: do itime = 1, ntime
       end if
       ios = NF_DEF_VAR(ncid, 'tb_err', NF_FLOAT, 2, ishape(1:2), varid)
       ios = NF_DEF_VAR(ncid, 'tb_qc',  NF_INT,   2, ishape(1:2), varid)
+      ios = NF_DEF_VAR(ncid, 'tb_cloud',  NF_INT,   2, ishape(1:2), varid)
       if ( abi ) then
          ios = NF_DEF_VAR(ncid, 'ca_mean', NF_FLOAT, 2, ishape(1:2), varid)
          ios = NF_PUT_ATT_REAL(ncid, varid, 'missing_value', NF_FLOAT, 1, missing_r)
@@ -656,6 +664,8 @@ ntime_loop: do itime = 1, ntime
       ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), tb_err)
       ios = NF_INQ_VARID (ncid, 'tb_qc', varid)
       ios = NF_PUT_VARA_INT(ncid,  varid, istart(1:2), icount(1:2), tb_qc)
+      ios = NF_INQ_VARID (ncid, 'tb_cloud', varid)
+      ios = NF_PUT_VARA_INT(ncid,  varid, istart(1:2), icount(1:2), tb_cloud)
       if ( abi ) then
          ios = NF_INQ_VARID (ncid, 'ca_mean', varid)
          ios = NF_PUT_VARA_REAL(ncid, varid, istart(1:2), icount(1:2), ca_mean)
@@ -875,6 +885,7 @@ ntime_loop: do itime = 1, ntime
       if ( jac_found ) deallocate ( ems_jac )
       deallocate ( tb_err )
       deallocate ( tb_qc )
+      deallocate ( tb_cloud )
       if ( prf_found .and. (rtm_option == 'CRTM') ) then
          deallocate ( prf_pfull )
          deallocate ( prf_phalf )

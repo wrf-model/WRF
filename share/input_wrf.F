@@ -106,6 +106,8 @@
 
     LOGICAL :: yes_use_this_data
 
+    CHARACTER(10) :: check_which_switch 
+    CHARACTER(10) :: my_string
 
 
 !<DESCRIPTION>
@@ -159,20 +161,25 @@
 
 #if ( NMM_CORE != 1 )
     IF ( .NOT. dryrun ) THEN
+   
+       !  Does this file exist?
+   
+       CALL wrf_inquire_filename ( fid , fname , filestate , ierr )
+       IF ( ( filestate .EQ. WRF_FILE_NOT_OPENED       ) .OR. &
+            ( filestate .EQ. WRF_FILE_OPENED_FOR_WRITE ) ) THEN
+          my_string = check_which_switch(switch)
+          CALL wrf_error_fatal( 'Possibly missing file for = ' // TRIM(my_string) )
+       END IF
 
        !  Determine is the input file we are reading is acceptable given the
        !  assumptions about the current version of the modeling system.
    
        CALL is_this_data_ok_to_use ( fid , yes_use_this_data )
-   
-       CALL wrf_inquire_filename ( fid , fname , filestate , ierr )
        IF ( ( yes_use_this_data ) .OR. ( config_flags%force_use_old_data ) ) THEN
           WRITE(wrf_err_message,*)'Input data is acceptable to use: ' // TRIM(fname) 
           CALL wrf_debug( 0 , wrf_err_message )
        ELSE
           CALL wrf_debug( 0 , 'File name that is causing troubles = ' // TRIM(fname) )
-          CALL wrf_debug( 0 , TRIM(fname) )
-          CALL wrf_debug( 0 , TRIM(wrf_err_message) )
           WRITE(wrf_err_message,*)'You can try 1) ensure that the input file was created with WRF v4 pre-processors, or '
           CALL wrf_debug( 0 , TRIM(wrf_err_message) )
           WRITE(wrf_err_message,*)'2) use force_use_old_data=T in the time_control record of the namelist.input file'
@@ -1142,8 +1149,7 @@
       CALL wrf_message ( TRIM(wrf_err_message ) )
       IF ( switch .EQ. boundary_only ) THEN
         WRITE(wrf_err_message,*) '---- ERROR: Ran out of valid boundary conditions in file ',TRIM(fname)
-        CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
-        count_fatal_error = count_fatal_error + 1
+        CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
       ELSE
 #if ( NMM_CORE != 1 )
         WRITE(wrf_err_message,*) '---- ERROR: Could not find matching time in input file ',TRIM(fname)
@@ -1939,4 +1945,32 @@
     END IF
     
   END SUBROUTINE is_this_data_ok_to_use
+
+  FUNCTION check_which_switch (switch) RESULT (aux_thing)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN) :: switch
+    CHARACTER(10) :: aux_thing
+  
+    CHARACTER(LEN=80) :: joe_message
+    INTEGER :: switch_loop, start, end, count
+  
+    aux_thing = 'auxinputxx'
+  
+    start =   MAX_HISTORY + 1
+    end   = 2*MAX_HISTORY
+    count = 0
+    DO switch_loop = start, end
+      IF ( switch .EQ. switch_loop ) THEN
+        IF ( count .EQ. 0 ) THEN
+          WRITE(aux_thing,FMT='(a      )') 'wrfinput '
+        ELSE IF ( count .LT. 10 ) THEN
+          WRITE(aux_thing,FMT='(a,i1   )') 'auxinput',count
+        ELSE 
+          WRITE(aux_thing,FMT='(a,i2.2 )') 'auxinput',count
+        END IF
+      END IF
+      count = count +1
+    END DO
+  END FUNCTION check_which_switch
+
 #endif

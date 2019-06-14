@@ -1,1 +1,1 @@
-   CHARACTER (LEN=10) :: release_version = 'V4.1      '
+   CHARACTER (LEN=*), PARAMETER :: release_version = 'V4.1.1'

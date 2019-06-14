@@ -26,6 +26,7 @@ module da_gpseph
    use da_tools_serial, only : da_free_unit, da_get_unit
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_reporting, only : da_error
+   use da_wrf_interfaces, only : wrf_dm_bcast_real
 
    ! The "stats_gpseph_type" is ONLY used locally in da_gpseph:
 

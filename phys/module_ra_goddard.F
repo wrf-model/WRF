@@ -127,7 +127,7 @@
 
  implicit none
 
-  INTEGER, PARAMETER, PRIVATE:: CHUNK = 16  !size of vector (16 is optimized number for Haswell/Broadwell CPUs.
+  INTEGER, PARAMETER, PRIVATE:: chunk = 16  !size of vector (16 is optimized number for Haswell/Broadwell CPUs.
 
 !
 ! encapsulation control
@@ -1041,7 +1041,9 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
                    ,gsfcrad_gocart_coupling                       &
 #endif
                     )
+#ifndef NO_IEEE_MODULE
  use, intrinsic :: ieee_arithmetic
+#endif
  implicit none
 !----------------------------------------------------------------------
 !
@@ -2093,6 +2095,7 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
          i = ii+ic -1
          tten1d(ic,kt) = - fac * (flx(ic,kt-1) - flx(ic,kt)) / (p8w1d(ic,kt-1)-p8w1d(ic,kt))
 
+#ifndef NO_IEEE_MODULE
          ! check error
          if( ieee_is_nan( tten1d(ic,kt) ) ) then
             print*,'MSG goddardrad SW: Found NaN in tten1d(k)',i,j,kt
@@ -2108,6 +2111,7 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
             print*,'asyal_sw',asyal_sw(ic,:,:)
             tten1d(ic,kt) = 0.  !brute force correction
          endif
+#endif
         endif
         ENDDO
       enddo
@@ -2329,6 +2333,7 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
         i = ii+ic -1
         tten1d(ic,kt) = - fac * (flx(ic,kt-1) - flx(ic,kt)) / (p8w1d(ic,kt-1)-p8w1d(ic,kt))
 
+#ifndef NO_IEEE_MODULE
         if( ieee_is_nan( tten1d(ic,kt) ) ) then
             print*,'MSG goddardrad LW: Found NaN in tten1d(k)',i,j,kt
             print*,'tsfc',tsfc(ic)
@@ -2345,6 +2350,7 @@ data ((mcdat(ilev,10,ifld),ifld=1,6),ilev=12,22)/  &
             print*,'asyal_lw',asyal_lw(ic,:,:)
             tten1d(ic,k) = 0.  !brute force correction
         endif
+#endif
        ENDDO
      enddo
 
@@ -12407,7 +12413,9 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
 !GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
  subroutine check_reff(spc,q,re,i,j,k)
+#ifndef NO_IEEE_MODULE
  use, intrinsic :: ieee_arithmetic
+#endif
  implicit none
  character(len=*) :: spc  !species 
  real,intent(inout) :: q !mass concentration [g/m2]
@@ -12415,6 +12423,7 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
  integer,intent(in) :: i,j,k !array index
 
 
+#ifndef NO_IEEE_MODULE
 !
 ! Check NaN
 !
@@ -12422,6 +12431,7 @@ subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
   print*,'MSG check_reff: Warning '//trim(spc)//' re is NaN at (i,j,k)=',i,j,k
   re = 0.e0
  endif
+#endif
 !
 ! Check  too large (100m)
 !

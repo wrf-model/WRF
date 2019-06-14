@@ -879,7 +879,7 @@ EOF
   rm -f ${foo} ${foo}.[cfo] 2> /dev/null
 fi
 
-# testing for Fortran 2003 IEEE signaling features
+# testing for Fortran 2003 IEEE features
 make fortran_2003_ieee_test > tools/fortran_2003_ieee_test.log 2>&1
 rm -f tools/fortran_2003_ieee_test.log
 retval=-1
@@ -893,8 +893,8 @@ if [ $retval -ne 0 ] ; then
   echo " "
   echo "************************** W A R N I N G ************************************"
   echo " "
-  echo "There are some Fortran 2003 features in WRF that your compiler does not recognize"
-  echo "The IEEE signaling call has been removed.  That may not be enough."
+  echo "There are some IEEE Fortran 2003 features in WRF that your compiler does not"
+  echo "recognize. The IEEE function calls have been removed."
   echo " "
   echo "*****************************************************************************"
 fi

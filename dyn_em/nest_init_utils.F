@@ -185,6 +185,7 @@ END SUBROUTINE init_domain_vert_nesting
 !so a dependecy on ndown will not work. Additionally, ndown is not compiled for ideal cases. The variable is named parent in ndown, but it is actually operating on the nest. It has been renamed to nest here.
       SUBROUTINE vert_cor_vertical_nesting_integer(nest,znw_c,k_dim_c)
          USE module_domain
+         USE module_model_constants
    IMPLICIT NONE
          TYPE(domain), POINTER :: nest
          integer , intent(in) :: k_dim_c
@@ -192,6 +193,11 @@ END SUBROUTINE init_domain_vert_nesting
 
        integer :: kde_c , kde_n ,n_refine,ii,kkk,k
        real :: dznw_m,cof1,cof2
+
+       INTEGER :: ids, ide, jds, jde, kds, kde, &
+                  ims, ime, jms, jme, kms, kme, &
+                  its, ite, jts, jte, kts, kte
+
 !KAL this subroutine recalculates the vertical coordinates for the nest when vertical nesting is used.  This routine is copied from ndown and allows integer refinement only.
 
 !KAL znw is eta values on full w levels
@@ -240,6 +246,22 @@ END SUBROUTINE init_domain_vert_nesting
       nest%cfn1 = -.5*nest%dnw(kde_n-1)/nest%dn(kde_n-1)
       
       ! the variables dzs and zs are kept from the parent domain.  These are the depths and thickness of the soil layers, which are not included in vertical nesting.
+
+    CALL get_ijk_from_grid( nest, &
+                            ids, ide, jds, jde, kds, kde, &
+                            ims, ime, jms, jme, kms, kme, &
+                            its, ite, jts, jte, kts, kte )
+
+    CALL compute_vcoord_1d_coeffs ( nest%ht, nest%etac, nest%znw, &
+                                    model_config_rec%hybrid_opt, &
+                                    r_d, g, p1000mb, &
+                                    nest%p_top, nest%p00, nest%t00, nest%tlp, &
+                                    ids, ide, jds, jde, kds, kde, &
+                                    ims, ime, jms, jme, kms, kme, &
+                                    its, ite, jts, jte, kts, kte, &
+                                    nest%znu, &
+                                    nest%c1f, nest%c2f, nest%c3f, nest%c4f, &
+                                    nest%c1h, nest%c2h, nest%c3h, nest%c4h )
 
       END SUBROUTINE vert_cor_vertical_nesting_integer
 
@@ -385,6 +407,22 @@ SUBROUTINE vert_cor_vertical_nesting_arbitrary(nest,znw_c,kde_c,use_baseparam_fr
     nest%cfn  = (.5*nest%dnw(kde_n-1)+nest%dn(kde_n-1))/nest%dn(kde_n-1)
     nest%cfn1 = -.5*nest%dnw(kde_n-1)/nest%dn(kde_n-1)
 
+    CALL get_ijk_from_grid( nest, &
+                            ids, ide, jds, jde, kds, kde, &
+                            ims, ime, jms, jme, kms, kme, &
+                            its, ite, jts, jte, kts, kte )
+
+    CALL compute_vcoord_1d_coeffs ( nest%ht, nest%etac, nest%znw, &
+                                    model_config_rec%hybrid_opt, &
+                                    r_d, g, p1000mb, &
+                                    nest%p_top, nest%p00, nest%t00, nest%tlp, &
+                                    ids, ide, jds, jde, kds, kde, &
+                                    ims, ime, jms, jme, kms, kme, &
+                                    its, ite, jts, jte, kts, kte, &
+                                    nest%znu, &
+                                    nest%c1f, nest%c2f, nest%c3f, nest%c4f, &
+                                    nest%c1h, nest%c2h, nest%c3h, nest%c4h )
+    
 END SUBROUTINE vert_cor_vertical_nesting_arbitrary
 
 SUBROUTINE compute_eta ( znw , &
@@ -991,3 +1029,155 @@ SUBROUTINE update_after_feedback_em ( grid  &
 
 END SUBROUTINE update_after_feedback_em
 
+SUBROUTINE compute_vcoord_1d_coeffs ( ht, etac, znw, &
+                                      hybrid_opt, &
+                                      r_d, g, p1000mb, &
+                                      p_top, p00, t00, a, &
+                                      ids, ide, jds, jde, kds, kde, &
+                                      ims, ime, jms, jme, kms, kme, &
+                                      its, ite, jts, jte, kts, kte, &
+                                      znu, &
+                                      c1f, c2f, c3f, c4f, &
+                                      c1h, c2h, c3h, c4h )
+
+   IMPLICIT NONE
+
+   !  Input 
+
+   INTEGER ,                      INTENT(IN ) :: hybrid_opt
+   REAL    ,                      INTENT(IN ) :: etac
+   REAL    ,                      INTENT(IN ) :: r_d, g, p1000mb, p_top, p00, t00, a
+   INTEGER ,                      INTENT(IN ) :: ids, ide, jds, jde, kds, kde, &
+                                                 ims, ime, jms, jme, kms, kme, &
+                                                 its, ite, jts, jte, kts, kte
+   REAL    , DIMENSION(kms:kme) ,           INTENT(IN ) :: znw
+   REAL    , DIMENSION(ims:ime , jms:jme) , INTENT(IN ) :: ht
+
+   !  Output
+
+   REAL    , DIMENSION(kms:kme) , INTENT(OUT) :: znu
+   REAL    , DIMENSION(kms:kme) , INTENT(OUT) :: c1f, c2f, c3f, c4f, &
+                                                 c1h, c2h, c3h, c4h
+
+   !  Local vars
+
+   INTEGER :: i, j, k
+   REAL    :: B1, B2, B3, B4, B5
+   REAL    :: p_surf, press_above, press_below
+   CHARACTER (LEN=256) :: a_message
+
+   DO k=kts, kte
+      IF      ( hybrid_opt .EQ. 0 ) THEN
+         c3f(k) = znw(k)
+      ELSE IF ( hybrid_opt .EQ. 1 ) THEN
+         c3f(k) = znw(k)
+      ELSE IF ( hybrid_opt .EQ. 2 ) THEN
+         B1 = 2. * etac**2 * ( 1. - etac )
+         B2 = -etac * ( 4. - 3. * etac - etac**3 )
+         B3 = 2. * ( 1. - etac**3 )
+         B4 = - ( 1. - etac**2 )
+         B5 = (1.-etac)**4
+         c3f(k) = ( B1 + B2*znw(k) + B3*znw(k)**2 + B4*znw(k)**3 ) / B5
+         IF ( znw(k) .LT. etac ) THEN
+            c3f(k) = 0.
+         END IF
+         IF ( k .EQ. kds ) THEN
+            c3f(k) = 1.
+         ELSE IF ( k .EQ. kde ) THEN
+            c3f(k) = 0.
+         END IF
+      ELSE IF ( hybrid_opt .EQ. 3 ) THEN
+         c3f(k) = znw(k)*sin(0.5*3.14159*znw(k))**2
+         IF      ( k .EQ. kds ) THEN
+            c3f(k) = 1.
+         ELSE IF ( k .EQ. kds ) THEN
+            c3f(kde) = 0.
+         END IF
+      ELSE
+         CALL wrf_message     ( 'ERROR: --- hybrid_opt' )
+         CALL wrf_message     ( 'ERROR: --- hybrid_opt=0    ==> Standard WRF terrain-following coordinate' )
+         CALL wrf_message     ( 'ERROR: --- hybrid_opt=1    ==> Standard WRF terrain-following coordinate, hybrid c1, c2, c3, c4' )
+         CALL wrf_message     ( 'ERROR: --- hybrid_opt=2    ==> Hybrid, Klemp polynomial' )
+         CALL wrf_message     ( 'ERROR: --- hybrid_opt=3    ==> Hybrid, sin^2' )
+         CALL wrf_error_fatal ( 'ERROR: --- Invalid option' )
+      END IF
+   END DO
+
+   !  c4 is a function of c3 and eta.
+
+   DO k=1, kde
+      c4f(k) = ( znw(k) - c3f(k) ) * ( p1000mb - p_top )
+   ENDDO
+
+   !  Now on half levels, just add up and divide by 2 (for c3h).  Use (eta-c3)*(p00-pt) for c4 on half levels.
+
+   DO k=1, kde-1
+      znu(k) = ( znw(k+1) + znw(k) ) * 0.5
+      c3h(k) = ( c3f(k+1) + c3f(k) ) * 0.5
+      c4h(k) = ( znu(k) - c3h(k) ) * ( p1000mb - p_top )
+   ENDDO
+
+   !  c1 = d(B)/d(eta).  We define c1f as c1 on FULL levels.  For a vertical difference,
+   !  we need to use B and eta on half levels.  The k-loop ends up referring to the
+   !  full levels, neglecting the top and bottom.
+
+   DO k=kds+1, kde-1
+      c1f(k) = ( c3h(k) - c3h(k-1) ) / ( znu(k) - znu(k-1) )
+   ENDDO
+
+   !  The boundary conditions to get the coefficients:
+   !  1) At k=kts: define d(B)/d(eta) = 1.  This gives us the same value of B and d(B)/d(eta)
+   !     when doing the sigma-only B=eta.
+   !  2) At k=kte: define d(B)/d(eta) = 0.  The curve B SMOOTHLY goes to zero, and at the very
+   !     top, B continues to SMOOTHLY go to zero.  Note that for almost all cases of non B=eta,
+   !     B is ALREADY=ZERO at the top, so this is a reasonable BC to assume.
+
+   c1f(kds) = 1.
+   IF ( ( hybrid_opt .EQ. 0 ) .OR. ( hybrid_opt .EQ. 1 ) ) THEN
+      c1f(kde) = 1.
+   ELSE
+      c1f(kde) = 0.
+   END IF
+
+   !  c2 = ( 1. - c1(k) ) * (p00 - pt).  There is no vertical differencing, so we can do the
+   !  full kds to kde looping.
+
+   DO k=kds, kde
+      c2f(k) = ( 1. - c1f(k) ) * ( p1000mb - p_top )
+   ENDDO
+
+   !  Now on half levels for c1 and c2.  The c1h will result from the full level c3 and full
+   !  level eta differences.  The c2 value use the half level c1(k).
+
+   DO k=1, kde-1
+      c1h(k) = ( c3f(k+1) - c3f(k) ) / ( znw(k+1) - znw(k) )
+      c2h(k) = ( 1. - c1h(k) ) * ( p1000mb - p_top )
+   ENDDO
+
+   !  With c3 and c4 on full levels, we can verify that we are maintaining monotonically
+   !  decreasing reference pressure.
+   !  P_dry_ref(k)  = c3f(k) * ( psurf - p_top ) + c4f(k) + p_top
+
+   DO j = jts, MIN(jde-1,jte)
+      DO i = its, MIN(ide-1,ite)
+         p_surf = p00 * EXP ( -t00/a + ( (t00/a)**2 - 2.*g*ht(i,j)/a/r_d ) **0.5 )
+         DO k=1, kde-1
+            press_above = c3f(k+1)*(p_surf-p_top) + c4f(k+1) + p_top
+            press_below = c3f(k  )*(p_surf-p_top) + c4f(k  ) + p_top
+            IF ( press_below - press_above .LE. 0.0 ) THEN
+               CALL wrf_message ( '----- ERROR: The reference pressure is not monotonically decreasing' )
+               CALL wrf_message ( '             This tends to be caused by very high topography')
+               WRITE (a_message,*) '(i,j) = ',i,j,', topography = ',ht(i,j),' m'
+               CALL wrf_message ( TRIM(a_message) )
+               WRITE (a_message,*) 'k = ',k,', reference pressure = ',press_below,' Pa'
+               CALL wrf_message ( TRIM(a_message) )
+               WRITE (a_message,*) 'k = ',k+1,', reference pressure = ',press_above,' Pa'
+               CALL wrf_message ( TRIM(a_message) )
+               WRITE (a_message,*) 'In the dynamics namelist record, reduce etac from ',etac
+               CALL wrf_error_fatal ( TRIM(a_message) )
+            END IF
+         ENDDO
+      ENDDO
+   ENDDO
+                                      
+END SUBROUTINE compute_vcoord_1d_coeffs

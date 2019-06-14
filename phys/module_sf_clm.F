@@ -25652,7 +25652,6 @@ contains
   end subroutine aerdealloc
 
 end module aerdepMod
-#if defined(USE_CLM_ACCUM)
 module accumulMod
 
 !-----------------------------------------------------------------------
@@ -25699,12 +25698,6 @@ module accumulMod
      module procedure update_accum_field_sl  ! Update single-level accumulator field
      module procedure update_accum_field_ml  ! Update multi-level accumulator field
   end interface
-
-  integer :: its, ite, jts, jte
-  integer :: ilx, jlx
-  integer :: grid_id
-
-  public  :: its, ite, jts, jte, ilx, jlx, grid_id
 !
 ! !REVISION HISTORY:
 ! Created by Sam Levis
@@ -25729,16 +25722,14 @@ module accumulMod
      integer :: num1d               !total subgrid points
      integer :: numlev              !number of vertical levels in field
      real(r8):: initval             !initial value of accumulated field
-     real(r8), pointer :: val(:,:,:,:)  !accumulated field
+     real(r8), pointer :: val(:,:)  !accumulated field
      integer :: period              !field accumulation period (in model time steps)
   end type accum_field
 
 
- integer, parameter :: max_accum = 100    !maximum number of accumulated fields
-! type (accum_field) :: accum(max_accum)   !array accumulated fields
-  type (accum_field), allocatable :: accum(:,:)   !array accumulated fields
-! integer :: naccflds = 0 
-  integer, allocatable :: naccflds(:)
+  integer, parameter :: max_accum = 100    !maximum number of accumulated fields
+  type (accum_field) :: accum(max_accum)   !array accumulated fields
+  integer :: naccflds = 0 
 !------------------------------------------------------------------------
 
 contains
@@ -25787,10 +25778,7 @@ contains
 !EOP
 !
 ! LOCAL VARIABLES:
-    integer :: astat, max_dom
-    integer :: i, j         ! grid cell index
     integer :: nf           ! field index
-    integer :: id           ! grid id
     integer :: beg1d,end1d  ! beggining and end subgrid indices
     integer :: num1d        ! total number subgrid indices
     integer :: begp, endp   ! per-proc beginning and ending pft indices
@@ -25798,96 +25786,38 @@ contains
     integer :: begl, endl   ! per-proc beginning and ending landunit indices
     integer :: begg, endg   ! per-proc gridcell ending gridcell indices
 
-    character(len=132) :: msg
-
-    if( .not. allocated( accum ) ) then
-      call nl_get_max_dom( 1,max_dom )
-      allocate( accum(max_accum,max_dom),naccflds(max_dom),stat=astat )
-      if( astat /= 0 ) then
-        write(msg,'(''INIT_ACCUM_FIELD: failed to allocate accum; error = '',i5)') astat
-        call wrf_error_fatal( trim(msg) )
-      endif
-    endif
-
 !------------------------------------------------------------------------
 
     ! Determine necessary indices
 
+    call get_proc_bounds(begg, endg, begl, endl, begc, endc, begp, endp)
+
     ! update field index
     ! Consistency check that number of accumulated does not exceed maximum.
-!
-! !USES:
-  use shr_kind_mod,    only : r8 => shr_kind_r8
-  use clm_varcon     , only : secspday,set_caerdep_from_file, set_dustdep_from_file
-  use decompMod    , only : get_proc_bounds
-  use module_cam_support, only: endrun
+
+! this needs to be changed
+
+!    naccflds = nct
 
 
-!
-! !PUBLIC TYPES:
-  implicit none
-
-  private
-
-! !INCLUDES:
-  
-!
-! !PUBLIC MEMBER FUNCTIONS:
-  public :: interpMonthlyAerdep   ! interpolate monthly aerosol deposition data
-  public :: aerdepini             ! aerosol deposition initialization
-
-!
-! !REVISION HISTORY:
-! Created by Mark Flanner, 
-!   based on vegetation interpolation schemes in STATICEcosystemDynMod
-!    2009-Apr-17 B. Kauffman -- added multi-year time series functionality
-!
-!
-! !PRIVATE MEMBER FUNCTIONS:
-  private :: readMonthlyAerdep       ! read monthly aerosol deposition data for two months
-
-!
-! !PRIVATE TYPES:
-!EOP
-
-  real(r8), save, private, allocatable :: bcphiwet2t(:,:)
-  real(r8), save, private, allocatable :: bcphidry2t(:,:)
-  real(r8), save, private, allocatable :: bcphodry2t(:,:)
-  real(r8), save, private, allocatable :: ocphiwet2t(:,:)
-  real(r8), save, private, allocatable :: ocphidry2t(:,:)
-  real(r8), save, private, allocatable :: ocphodry2t(:,:)
-  real(r8), save, private, allocatable :: dstx01wd2t(:,:)
-  real(r8), save, private, allocatable :: dstx01dd2t(:,:)
-  real(r8), save, private, allocatable :: dstx02wd2t(:,:)
-  real(r8), save, private, allocatable :: dstx02dd2t(:,:)
-  real(r8), save, private, allocatable :: dstx03wd2t(:,:)
-  real(r8), save, private, allocatable :: dstx03dd2t(:,:)
-  real(r8), save, private, allocatable :: dstx04wd2t(:,:)
-  real(r8), save, private, allocatable :: dstx04dd2t(:,:)
-
-  integer,parameter  :: nt =12      ! size of time(:) array
-  real(r8) :: time(12) ! data time, elapsed days since 0000-01-01 0s
-  real(r8),parameter  :: daysPerYear = 365.0_r8 ! days per year
-
-    naccflds(grid_id) = naccflds(grid_id) + 1
-    if (naccflds(grid_id) > max_accum) then
-       write(msg,'(''INIT_ACCUM_FIELD: user-defined accumulation field count '', &
-                   ,i3,'' exceeds max_accum'',i3)')  naccflds(grid_id),max_accum
-       call wrf_error_fatal( trim(msg) )
+    if (naccflds > max_accum) then
+       write (6,*) 'INIT_ACCUM_FIELD error: user-defined accumulation fields ', &
+            'equal to ',naccflds,' exceeds max_accum'
+       call endrun
     end if
-    nf = naccflds(grid_id)
+    nf = naccflds
 
     ! Note accumulation period must be converted from days
     ! to number of iterations
 
-    accum(nf,id)%name = trim(name)
-    accum(nf,id)%units = trim(units)
-    accum(nf,id)%desc = trim(desc)
-    accum(nf,id)%acctype = trim(accum_type)
-    accum(nf,id)%initval = init_value
-    accum(nf,id)%period = accum_period
-    if (accum(nf,id)%period < 0) then
-       accum(nf,id)%period = -accum(nf,id)%period * nint(cday) / dtime
+    accum(nf)%name = trim(name)
+    accum(nf)%units = trim(units)
+    accum(nf)%desc = trim(desc)
+    accum(nf)%acctype = trim(accum_type)
+    accum(nf)%initval = init_value
+    accum(nf)%period = accum_period
+    if (accum(nf)%period < 0) then
+       accum(nf)%period = -accum(nf)%period * nint(cday) / dtime
     end if
 
     select case (trim(subgrid_type))
@@ -25904,36 +25834,34 @@ contains
        end1d = endc
        num1d = endc - begc + 1
     case ('pft')
-!      beg1d = begp
-!      end1d = endp
-       beg1d = 1
-       end1d = maxpatch
-!      num1d = endp - begp + 1
-       num1d = maxpatch
+       beg1d = begp
+       end1d = endp
+       num1d = endp - begp + 1
     case default
-       write(msg,'(''INIT_ACCUM_FIELD: unknown subgrid type '',a)') trim(subgrid_type)
-       call wrf_error_fatal( trim(msg) )
+       write(6,*)'INIT_ACCUM_FIELD: unknown subgrid type ',subgrid_type
+       call endrun ()
     end select
 
-    accum(nf,id)%type1d = trim(subgrid_type)
-    accum(nf,id)%beg1d = beg1d
-    accum(nf,id)%end1d = end1d
-    accum(nf,id)%num1d = num1d
-    accum(nf,id)%numlev = numlev
+    accum(nf)%type1d = trim(subgrid_type)
+    accum(nf)%beg1d = beg1d
+    accum(nf)%end1d = end1d
+    accum(nf)%num1d = num1d
+    accum(nf)%numlev = numlev
 
     if (present(type2d)) then
-       accum(nf,id)%type2d = type2d
+       accum(nf)%type2d = type2d
     else
-       accum(nf,id)%type2d = ' '
+       accum(nf)%type2d = ' '
     end if
 
     ! Allocate and initialize accumulation field
 
 ! Here numlev is always equal to 1 
-    allocate(accum(nf,id)%val(beg1d:end1d,numlev,its:ite,jts:jte))
-    accum(nf,id)%val(beg1d:end1d,1,its:ite,jts:jte) = init_value
+    allocate(accum(nf)%val(beg1d:end1d,numlev))
+    accum(nf)%val(beg1d:end1d,1) = init_value
 
   end subroutine init_accum_field
+
 !------------------------------------------------------------------------
 !BOP
 !
@@ -25968,49 +25896,47 @@ contains
 ! LOCAL VARIABLES:
     integer :: i,k,nf        !indices
     integer :: beg,end         !subgrid beginning,ending indices
-    character(len=132) :: msg
 !------------------------------------------------------------------------
 
     ! find field index. return if "name" is not on list
 
+    nf = 0
 !dir$ concurrent
 !cdir nodep
-    do nf = 1, naccflds(grid_id)
-       if (name == accum(nf,grid_id)%name) then
-         exit
-       endif
+    do i = 1, naccflds
+       if (name == accum(i)%name) nf = i
     end do
-    if (nf > naccflds(gridid)) then
-       write(msg,'(''EXTRACT_ACCUM_FIELD_SL: field '',a,'' not found'')') trim(name)
-       call wrf_error_fatal( trim(msg) )
+    if (nf == 0) then
+       write(6,*) 'EXTRACT_ACCUM_FIELD_SL error: field name ',name,' not found'
+       call endrun
     endif
 
     ! error check
 
-!   beg = accum(nf)%beg1d
-!   end = accum(nf)%end1d
-    beg = 1
-    end = size( field,dim=1 )
-!   if (size(field,dim=1) /= end-beg+1) then
-    if ( end > maxpatch ) then
-       write(msg,'(''extract_accum_field: dimension mismatch for field '',a)') trim(accum(nf)%name)
-       call wrf_message( trim(msg) )
-       write(msg,'(''size of first dimension of field is '',i3, &
-                   ''and should be =< '',i3)') end,maxpatch
-       call wrf_error_fatal( trim(msg) )
+    beg = accum(nf)%beg1d
+    end = accum(nf)%end1d
+    if (size(field,dim=1) /= end-beg+1) then
+       write(6,*)'ERROR in extract_accum_field for field ',accum(nf)%name
+       write(6,*)'size of first dimension of field is ',&
+            size(field,dim=1),' and should be ',end-beg+1
+       call endrun
     endif
 
     ! extract field
 
-    if (accum(nf,grid_id)%acctype == 'timeavg' .and. &
-         mod(nstep,accum(nf,grid_id)%period) /= 0) then
+    if (accum(nf)%acctype == 'timeavg' .and. &
+         mod(nstep,accum(nf)%period) /= 0) then
 !dir$ concurrent
 !cdir nodep
-       field(beg:end) = spval  !assign absurd value when avg not ready
+       do k = beg,end
+          field(k) = spval  !assign absurd value when avg not ready
+       end do
     else
 !dir$ concurrent
 !cdir nodep
-       field(beg:end) = accum(nf,grid_id)%val(beg:end,1,ilx,jlx)
+       do k = beg,end
+          field(k) = accum(nf)%val(k,1)
+       end do
     end if
 
   end subroutine extract_accum_field_sl
@@ -26132,49 +26058,40 @@ contains
     integer :: i,k,nf              !indices
     integer :: accper              !temporary accumulation period
     integer :: beg,end             !subgrid beginning,ending indices
-    character(len=132) :: msg
 !------------------------------------------------------------------------
 
     ! find field index. return if "name" is not on list
 
-    do nf = 1, naccflds(grid_id)
-       if (name == accum(nf,grid_id)%name) then
-         exit
-       endif
+    nf = 0
+    do i = 1, naccflds
+       if (name == accum(i)%name) nf = i
     end do
-    if (nf > naccflds(grid_id)) then
-       write(msg,'(''UPDATE_ACCUM_FIELD_SL: field name '',a,'' not found'')') trim(name)
-       call wrf_error_fatal( trim(msg) )
+    if (nf == 0) then
+       write(6,*) 'UPDATE_ACCUM_FIELD_SL error: field name ',name,' not found'
+       call endrun
     endif
 
     ! error check
 
-!   beg = accum(nf)%beg1d
-!   end = accum(nf)%end1d
-    beg = 1
-    end = size( field,dim=1 )
-!   if (size(field,dim=1) /= end-beg+1) then
-    if (end > maxpatch) then
-       write(msg,'(''UPDATE_ACCUM_FIELD_SL: dimension mismatch for field '',a)') trim(accum(nf)%name)
-       call wrf_message( trim(msg) )
-       write(msg,'(''size of first dimension of field is '',i3,'' and should be <= '',i3)') &
-            end,maxpatch
-       call wrf_message( trim(msg) )
-       call wrf_error_fatal( ' ' )
+    beg = accum(nf)%beg1d
+    end = accum(nf)%end1d
+    if (size(field,dim=1) /= end-beg+1) then
+       write(6,*)'ERROR in UPDATE_ACCUM_FIELD_SL for field ',accum(nf)%name
+       write(6,*)'size of first dimension of field is ',size(field,dim=1),&
+            ' and should be ',end-beg+1
+       call endrun
     endif
 
     ! accumulate field
 
-    if (accum(nf,grid_id)%acctype /= 'timeavg' .AND. &
-        accum(nf,grid_id)%acctype /= 'runmean' .AND. &
-        accum(nf,grid_id)%acctype /= 'runaccum') then
-       call wrf_message( 'UPDATE_ACCUM_FIELD_SL: incorrect accumulation type' )
-       write(msg,'('' was specified for field '',a)') trim(name)
-       call wrf_message( trim(msg) )
-       write(msg,'('' accumulation type specified is '',a)') trim(accum(nf)%acctype)
-       call wrf_message( trim(msg) )
-       call wrf_message( ' only [timeavg, runmean, runaccum] are currently acceptable' )
-       call wrf_error_fatal( ' ' )
+    if (accum(nf)%acctype /= 'timeavg' .AND. &
+        accum(nf)%acctype /= 'runmean' .AND. &
+        accum(nf)%acctype /= 'runaccum') then
+       write(6,*) 'UPDATE_ACCUM_FIELD_SL error: incorrect accumulation type'
+       write(6,*) ' was specified for field ',name
+       write(6,*)' accumulation type specified is ',accum(nf)%acctype
+       write(6,*)' only [timeavg, runmean, runaccum] are currently acceptable'
+       call endrun()
     end if
 
 
@@ -26182,40 +26099,38 @@ contains
     ! accumulation field
     ! running mean never reset
 
-    if (accum(nf,grid_id)%acctype == 'timeavg') then
+    if (accum(nf)%acctype == 'timeavg') then
 
        !time average field reset every accumulation period
        !normalize at end of accumulation period
 
-       if ((mod(nstep,accum(nf,grid_id)%period) == 1) .and. (nstep /= 0)) then
-          accum(nf,grid_id)%val(beg:end,1,ilx,jlx) = 0._r8
+       if ((mod(nstep,accum(nf)%period) == 1) .and. (nstep /= 0)) then
+          accum(nf)%val(beg:end,1) = 0._r8
        end if
-       accum(nf,grid_id)%val(beg:end,1) =  accum(nf,grid_id)%val(beg:end,1) + field(beg:end)
-       if (mod(nstep,accum(nf,grid_id)%period) == 0) then
-          accum(nf,grid_id)%val(beg:end,1,ilx,jlx) = accum(nf,grid_id)%val(beg:end,1,ilx,jlx) &
-                                     / real(accum(nf,grid_id)%period,kind=r8)
+       accum(nf)%val(beg:end,1) =  accum(nf)%val(beg:end,1) + field(beg:end)
+       if (mod(nstep,accum(nf)%period) == 0) then
+          accum(nf)%val(beg:end,1) = accum(nf)%val(beg:end,1) / accum(nf)%period
        endif
 
-    else if (accum(nf,grid_id)%acctype == 'runmean') then
+    else if (accum(nf)%acctype == 'runmean') then
 
        !running mean - reset accumulation period until greater than nstep
 
-       accper = min (nstep,accum(nf,grid_id)%period)
-       accum(nf,grid_id)%val(beg:end,1,ilx,jlx) = &
-         (real((accper-1),kind=r8)*accum(nf,grid_id)%val(beg:end,1,ilx,jlx) + field(beg:end)) &
-         / real(accper,kind=r8)
+       accper = min (nstep,accum(nf)%period)
+       accum(nf)%val(beg:end,1) = ((accper-1)*accum(nf)%val(beg:end,1) + field(beg:end)) / accper
 
-    else if (accum(nf,grid_id)%acctype == 'runaccum') then
+    else if (accum(nf)%acctype == 'runaccum') then
 
        !running accumulation field reset at trigger -99999
 
 !dir$ concurrent
 !cdir nodep
-       where (nint(field(beg:end)) == -99999)
-         accum(nf,grid_id)%val(beg:end,1,ilx,jlx) = 0._r8
-       endwhere
-       accum(nf,grid_id)%val(beg:end,1,ilx,jlx) =  &
-         min(max(accum(nf,grid_id)%val(beg:end,1,ilx,jlx) + field(beg:end), 0._r8), 99999._r8)
+       do k = beg,end
+          if (nint(field(k)) == -99999) then
+             accum(nf)%val(k,1) = 0._r8
+          end if
+       end do
+       accum(nf)%val(beg:end,1) = min(max(accum(nf)%val(beg:end,1) + field(beg:end), 0._r8), 99999._r8)
 
     end if
 
@@ -26351,18 +26266,13 @@ contains
 ! Deallocate dynamic memory for module variables
 !
 ! !ARGUMENTS:
-    implicit none 
-
-    integer :: i, dm
-    integer :: max_dom
+    implicit none
+    integer :: i
 !EOP
 !-----------------------------------------------------------------------
 
-    call nl_get_max_dom( 1,max_dom )
-    do dm = 1,max_dom
-      do i = 1,naccflds(dm)
-        deallocate (accum(i,dm)%val) 
-      end do
+    do i = 1,naccflds
+      deallocate (accum(i)%val) 
     end do
 
   end subroutine accum_dealloc
@@ -26425,7 +26335,7 @@ contains
 !  subroutine initAccFlds(t_ref2m  ,tda   ,t10    ,fnpsn10   ,prec365,&
 !                         agdd0    ,agdd5 ,agddtw ,agdd)
 !#else
-  subroutine initAccFlds( id, its_in, ite_in, jts_in, jte_in )
+  subroutine initAccFlds()
 !#endif
 !
 ! !DESCRIPTION:
@@ -26434,7 +26344,6 @@ contains
 ! !USES:
     use decompMod    , only : get_proc_bounds
     use accumulMod   , only : init_accum_field
-    use accumulMod   , only : its, ite, jts, jte
     use globals      , only : dtime, nstep
     use clm_varcon   , only : cday, tfrz
     use nanMod       , only : bigint
@@ -26444,9 +26353,6 @@ contains
 !
 ! !ARGUMENTS:
     implicit none
-
-    integer, intent(in) :: id
-    integer, intent(in) :: its_in, ite_in, jts_in, jte_in
 !
 ! !REVISION HISTORY::
 ! Created by M. Vertenstein 03/2003
@@ -26456,11 +26362,6 @@ contains
     integer, parameter :: not_used = bigint
 !------------------------------------------------------------------------
 
-    its = its_in ; ite = ite_in
-    jts = jts_in ; jte = jte_in
-    grid_id = id
-
-#if defined(FULL_ACCUM_FLDS)
    call init_accum_field(name='TREFAV', units='K', &
          desc='average over an hour of 2-m temperature', &
          accum_type='timeavg', accum_period=nint(3600._r8/dtime), &
@@ -26479,7 +26380,6 @@ contains
          desc='average over an hour of rural 2-m temperature', &
          accum_type='timeavg', accum_period=nint(3600._r8/dtime), &
          subgrid_type='pft', numlev=1, init_value=0._r8)
-#endif
 
     ! 24hr average of vegetation temperature (heald, 04/06)
     call init_accum_field (name='T_VEG24', units='K', &
@@ -26548,7 +26448,7 @@ contains
     call init_accum_field (name='T10', units='K', &
          desc='10-day running mean of 2-m temperature', &
          accum_type='runmean', accum_period=-10, &
-         subgrid_type='pft', numlev=1,init_value=SHR_CONST_TKFRZ+20._r8, &
+         subgrid_type='pft', numlev=1,init_value=SHR_CONST_TKFRZ+20._r8)
 
     call init_accum_field (name='PREC365', units='MM H2O/S', &
          desc='365-day running mean of total precipitation', &
@@ -26620,13 +26520,14 @@ contains
 !    call print_accum_fields()
 
   end subroutine initAccFlds
+
 !------------------------------------------------------------------------
 !BOP
 !
 ! !IROUTINE: updateAccFlds
 !
 ! !INTERFACE:
-  subroutine updateAccFlds( id, i_in, j_in )
+  subroutine updateAccFlds()
 !
 ! !DESCRIPTION:
 ! Update and/or extract accumulated fields
@@ -26639,7 +26540,6 @@ contains
     use pftvarcon    , only : ndllf_dcd_brl_tree 
     use globals      , only : dtime, nstep, secs,day,dayp1,month
     use accumulMod   , only : update_accum_field, extract_accum_field
-    use accumulMod   , only : ilx, jlx
 #if (defined CROP)
     use pftvarcon    , only : nwwheat, mxtmp, baset
 !    use clm_time_manager , only : get_start_date
@@ -26647,10 +26547,6 @@ contains
 !
 ! !ARGUMENTS:
     implicit none
-
-    integer, intent(in) :: id
-    integer, intent(in) :: i_in
-    integer, intent(in) :: j_in
 !
 ! !REVISION HISTORY:
 ! Created by M. Vertenstein 03/2003
@@ -26751,12 +26647,9 @@ contains
     integer :: begl, endl                !  per-proc beginning and ending landunit indices
     integer :: begg, endg                !  per-proc gridcell ending gridcell indices
     real(r8), pointer :: rbufslp(:)      ! temporary single level - pft level
-    character(len=132) :: msg
 
 
 !------------------------------------------------------------------------
-
-    ilx = i_in ; jlx = j_in ; grid_id = id
 
     ! Determine necessary indices
 
@@ -26848,11 +26741,10 @@ contains
 
     allocate(rbufslp(begp:endp), stat=ier)
     if (ier/=0) then
-       write(msg,'(''updateAccFlds: allocation error for rbufslp = '',i5)') ier
-       call wrf_error_fatal( trim(msg) )
+       write(6,*)'update_accum_hist allocation error for rbuf1dp'
+       call endrun
     endif
 
-#if defined(FULL_ACCUM_FLDS)
     ! Accumulate and extract TREFAV - hourly average 2m air temperature
     ! Used to compute maximum and minimum of hourly averaged 2m reference
     ! temperature over a day. Note that "spval" is returned by the call to
@@ -26942,10 +26834,11 @@ contains
           t_ref2m_min_r(p) = spval
        endif
     end do
-#endif
 
     ! Accumulate and extract T_VEG24 & T_VEG240 (heald 04/06)
-    rbufslp(begp:endp) = t_veg(begp:endp)
+    do p = begp,endp
+       rbufslp(p) = t_veg(p)
+    end do
     call update_accum_field  ('T_VEG24', rbufslp, nstep)
     call extract_accum_field ('T_VEG24', t_veg24, nstep)
     call update_accum_field  ('T_VEG240', rbufslp, nstep)
@@ -26972,16 +26865,22 @@ contains
     call extract_accum_field ('FSI240', fsi240, nstep)
 
     ! Accumulate and extract fsun24 & fsun240 (heald 04/06)
-    rbufslp(begp:endp) = fsun(begp:endp)
+    do p = begp,endp
+       rbufslp(p) = fsun(p)
+    end do
     call update_accum_field  ('FSUN24', rbufslp, nstep)
     call extract_accum_field ('FSUN24', fsun24, nstep)
     call update_accum_field  ('FSUN240', rbufslp, nstep)
     call extract_accum_field ('FSUN240', fsun240, nstep)
 
     ! Accumulate and extract elai_p (heald 04/06)
-    rbufslp(begp:endp) = elai(begp:endp)
+    do p = begp,endp
+       rbufslp(p) = elai(p)
+    end do
     call update_accum_field  ('LAIP', rbufslp, nstep)
     call extract_accum_field ('LAIP', elai_p, nstep)
+
+
 
 #if (defined CNDV)
     ! Accumulate and extract TDA
@@ -27211,7 +27110,7 @@ contains
 ! !IROUTINE: initAccClmtype
 !
 ! !INTERFACE:
-  subroutine initAccClmtype( id, i_in, j_in )
+  subroutine initAccClmtype  !(t2m_max,t2m_min,t2m_max_inst,t2m_min_inst)
 !
 ! !DESCRIPTION:
 ! Initialize clmtype variables that are associated with
@@ -27226,14 +27125,11 @@ contains
     use clmtype
     use decompMod   , only : get_proc_bounds
     use accumulMod  , only : extract_accum_field
-    use accumulMod  , only : ilx, jlx
     use clm_varcon  , only : spval
     use globals     , only : nstep
 !
 ! !ARGUMENTS:
     implicit none
-
-    integer, intent(in) :: i_in, j_in, id
 !
 ! !CALLED FROM:
 !
@@ -27297,10 +27193,8 @@ contains
     integer :: begg, endg   ! per-proc gridcell ending gridcell indices
     real(r8), pointer :: rbufslp(:)  ! temporary
     character(len=32) :: subname = 'initAccClmtype'  ! subroutine name
-    character(len=132) :: msg
 !-----------------------------------------------------------------------
 
-    ilx = i_in ; jlx = j_in ; grid_id = id
 
     ! Assign local pointers to derived subtypes components (pft-level)
 
@@ -27370,38 +27264,56 @@ contains
 
     allocate(rbufslp(begp:endp), stat=ier)
     if (ier/=0) then
-       write(msg,'(''initAccClmtype: allocation error for rbufslp = '',i5)') ier
-       call wrf_error_fatal( trim(msg) )
+       write(6,*)'update_accum_hist allocation error for rbufslp'
+       call endrun
     endif
 
     ! Initialize clmtype variables that are to be time accumulated
 
     call extract_accum_field ('T_VEG24', rbufslp, nstep)
-    t_veg24(begp:endp) = rbufslp(begp:endp)
+    do p = begp,endp
+       t_veg24(p) = rbufslp(p)
+    end do
     
     call extract_accum_field ('T_VEG240', rbufslp, nstep)
-    t_veg240(begp:endp) = rbufslp(begp:endp)
+    do p = begp,endp
+       t_veg240(p) = rbufslp(p)
+    end do
     
     call extract_accum_field ('FSD24', rbufslp, nstep)
-    fsd24(begp:endp) = rbufslp(begp:endp)
+    do p = begp,endp
+       fsd24(p) = rbufslp(p)
+    end do
     
     call extract_accum_field ('FSD240', rbufslp, nstep)
-    fsd240(begp:endp) = rbufslp(begp:endp)
+    do p = begp,endp
+       fsd240(p) = rbufslp(p)
+    end do
     
     call extract_accum_field ('FSI24', rbufslp, nstep)
-    fsi24(begp:endp) = rbufslp(begp:endp)
+    do p = begp,endp
+       fsi24(p) = rbufslp(p)
+    end do
 
     call extract_accum_field ('FSI240', rbufslp, nstep)
-    fsi240(begp:endp) = rbufslp(begp:endp)
+    do p = begp,endp
+       fsi240(p) = rbufslp(p)
+    end do
 
     call extract_accum_field ('FSUN24', rbufslp, nstep)
-    fsun24(begp:endp) = rbufslp(begp:endp)
+    do p = begp,endp
+       fsun24(p) = rbufslp(p)
+    end do
 
     call extract_accum_field ('FSUN240', rbufslp, nstep)
-    fsun240(begp:endp) = rbufslp(begp:endp)
+    do p = begp,endp
+       fsun240(p) = rbufslp(p)
+    end do
 
     call extract_accum_field ('LAIP', rbufslp, nstep)
-    elai_p(begp:endp) = rbufslp(begp:endp)
+    do p = begp,endp
+       elai_p(p) = rbufslp(p)
+    end do
 
 #if (defined CROP)
 
@@ -27476,7 +27388,6 @@ contains
   end subroutine initAccClmtype
 
 end module accFldsMod
-#endif
 
 module SurfaceRadiationMod
 
@@ -56849,9 +56760,7 @@ contains
                                  area
     use filterMod       , only : filter,allocFilters,setFilters
     use decompMod       , only : initDecomp
-#if defined(USE_CLM_ACCUM)
-    use accFldsMod      , only : initAccClmtype
-#endif
+!    use accFldsMod      , only : initAccFlds, initAccClmtype
     use surfFileMod     , only : surfrd
     use pftvarcon       , only : pftconrd
 #ifdef CN
@@ -57229,10 +57138,7 @@ contains
     ! and at nstep=1 for offline mode. This routine is also always called for a
     ! restart run and must therefore be called after the restart file is read in
 !    call CLMDebug('call initAccClmtype')
-#if defined(USE_CLM_ACCUM)
-     call initAccClmtype( ilx, jlx )
-#endif
-
+!    call initAccClmtype()
 
 
 
@@ -58150,9 +58056,7 @@ subroutine driver (doalb,ilx,jlx,nextsw_cday, declinp1, declin, &
   use BiogeophysicsLakeMod, only : BiogeophysicsLake
   use SurfaceAlbedoMod    , only : SurfaceAlbedo
   use pft2colMod          , only : pft2col
-#if defined(USE_CLM_ACCUM)
-  use accFldsMod          , only : updateAccFlds
-#endif
+!  use accFldsMod          , only : updateAccFlds
 !  use accumulMod          , only : accum_dealloc
 
 #if (defined CN)
@@ -58816,9 +58720,7 @@ subroutine driver (doalb,ilx,jlx,nextsw_cday, declinp1, declin, &
      end if
 
 !     call CLMDebug('updateAccFlds')
-#if defined(USE_CLM_ACCUM)
-     call updateAccFlds( ilx, jlx )
-#endif
+!     call updateAccFlds()
 
 
 !  call accum_dealloc
@@ -60636,9 +60538,6 @@ end subroutine clmdrv
   USE shr_megan_mod, only   : shr_megan_init
   USE MEGANFactorsMod, only : megan_factors_init
   USE VOCEmissionMod, only  : VOCEmission_init
-#if defined(USE_CLM_ACCUM)
-  USE accFldsMod,     only  : initAccFlds
-#endif
   USE globals,        only  : dtime
    use clm_varcon, only :snowage_tau,snowage_kappa,snowage_drdt0            &
                         ,ss_alb_snw_drc,asm_prm_snw_drc                     &
@@ -61560,9 +61459,6 @@ END IF
       if( do_readmeganfile ) then
 
         dtime = dt
-#if defined(USE_CLM_ACCUM)
-        call initAccFlds( id, its, ite, jts, jte )
-#endif
       endif
 
    call CLMDebug('clminit done')

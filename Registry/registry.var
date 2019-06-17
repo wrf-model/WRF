@@ -526,6 +526,7 @@ package   nomoist_ad   mp_physics_ad==98            -             -
 package   warmrain_ad  mp_physics_ad==99            -             -
 
 #do "grep package Registry/Registry.EM_COMMON | grep mp_physics==", then remove non-moist lists
+package   mpnotset        mp_physics==-1               -             moist:qv
 package   passiveqv       mp_physics==0                -             moist:qv
 package   kesslerscheme   mp_physics==1                -             moist:qv,qc,qr
 package   linscheme       mp_physics==2                -             moist:qv,qc,qr,qi,qs,qg
@@ -556,6 +557,7 @@ package   etampnew        mp_physics==95               -             moist:qv,qc
 package   lscondscheme    mp_physics==98               -             moist:qv
 package   mkesslerscheme  mp_physics==99               -             moist:qv,qc,qr
 #
+package   mpnotset_4dvar         mp_physics_4dvar==-1     -          g_moist:g_qv;a_moist:a_qv
 package   passiveqv_4dvar        mp_physics_4dvar==0      -          g_moist:g_qv;a_moist:a_qv
 package   kessler_4dvar          mp_physics_4dvar==1      -          g_moist:g_qv,g_qc,g_qr;a_moist:a_qv,a_qc,a_qr
 package   lins_4dvar             mp_physics_4dvar==2      -          g_moist:g_qv,g_qc,g_qr,g_qi,g_qs,g_qg;a_moist:a_qv,a_qc,a_qr

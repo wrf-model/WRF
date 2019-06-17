@@ -1648,12 +1648,16 @@ END SUBROUTINE check_consistency2
 !!!!!!!!!!!!!!!!!!!!!!!!!!!11
       SUBROUTINE vert_cor(parent,znw_c,k_dim_c)
          USE module_domain
+         USE module_model_constants
    IMPLICIT NONE
          TYPE(domain), POINTER :: parent
          integer , intent(in) :: k_dim_c
          real , dimension(k_dim_c), INTENT(IN) :: znw_c
 
        integer :: kde_c , kde_n ,n_refine,ii,kkk,k
+       INTEGER :: ids, ide, jds, jde, kds, kde, &
+                  ims, ime, jms, jme, kms, kme, &
+                  ips, ipe, jps, jpe, kps, kpe
        real :: dznw_m,cof1,cof2
 
         kde_c = k_dim_c
@@ -1695,7 +1699,34 @@ END SUBROUTINE check_consistency2
       parent%cfn  = (.5*parent%dnw(kde_n-1)+parent%dn(kde_n-1))/parent%dn(kde_n-1)
       parent%cfn1 = -.5*parent%dnw(kde_n-1)/parent%dn(kde_n-1)
 
+      ids = parent%sd31
+      ide = parent%ed31
+      kds = parent%sd32
+      jds = parent%sd33
+      jde = parent%ed33
 
+      ims = parent%sm31
+      ime = parent%em31
+      kms = parent%sm32
+      jms = parent%sm33
+      jme = parent%em33
+
+      ips = parent%sp31
+      ipe = parent%ep31
+      kps = parent%sp32
+      jps = parent%sp33
+      jpe = parent%ep33
+
+      CALL compute_vcoord_1d_coeffs ( parent%ht, parent%etac, parent%znw, &
+                                      parent%hybrid_opt, &
+                                      r_d, g, p1000mb, &
+                                      parent%p_top, parent%p00, parent%t00, parent%tlp, &
+                                      ids, ide, jds, jde, kds, kde_n, &
+                                      ims, ime, jms, jme, kms, kde_n, &
+                                      ips, ipe, jps, jpe, kps, kde_n, &
+                                      parent%znu, &
+                                      parent%c1f, parent%c2f, parent%c3f, parent%c4f, &
+                                      parent%c1h, parent%c2h, parent%c3h, parent%c4h )
 
       END SUBROUTINE vert_cor
 

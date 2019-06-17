@@ -359,7 +359,7 @@
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom
          IF ( model_config_rec % shcu_physics(i) == dengshcuscheme .AND. &
-              (model_config_rec % bl_pbl_physics(i) /= myjpblscheme .OR. &
+              (model_config_rec % bl_pbl_physics(i) /= myjpblscheme .AND. &
                model_config_rec % bl_pbl_physics(i) /= mynnpblscheme2 ) ) THEN
             wrf_err_message = '--- ERROR: Deng shallow convection can only work with MYJ or MYNN PBL '
             CALL wrf_message ( wrf_err_message )
@@ -1799,17 +1799,6 @@
          wrf_err_message = '--- WARNING: MYNN is set to mix scalars, turning off scalar_pblmix'
          CALL wrf_message ( wrf_err_message )
       END IF
-
-!-----------------------------------------------------------------------
-!  The hybrid vertical coordinate does not work with vertical refinement.
-!-----------------------------------------------------------------------
-     DO i=1,model_config_rec%max_dom
-        IF ((model_config_rec%vert_refine_method(i) .EQ. 2) .AND. (model_config_rec%hybrid_opt .EQ. 2)) THEN
-           WRITE(wrf_err_message,'(A)') '--- ERROR: The hybrid vertical coordinate does not work with vertical refinement.'
-           CALL wrf_message( wrf_err_message )
-           count_fatal_error = count_fatal_error + 1
-        ENDIF
-     END DO
 
 !-----------------------------------------------------------------------
 !  DJW Check that we're not using ndown and vertical nesting.

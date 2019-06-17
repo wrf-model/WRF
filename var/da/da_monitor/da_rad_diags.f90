@@ -255,6 +255,7 @@ ntime_loop: do itime = 1, ntime
             allocate ( tb_err(1:nchan,1:total_npixel) )
             allocate ( tb_qc(1:nchan,1:total_npixel)  )
             allocate ( tb_cloud(1:nchan,1:total_npixel)  )
+            tb_cloud = 0
             if ( abi ) then
                allocate ( ca_mean(1:nchan,1:total_npixel) )
                allocate ( tb_bak_clr(1:nchan,1:total_npixel) )
@@ -385,8 +386,6 @@ ntime_loop: do itime = 1, ntime
             if ( buf(1:5) == "CLOUD" ) then ! read cloud detection info
                read(unit=iunit(iproc),fmt='(10i11)',iostat=ios  ) tb_cloud(:,ipixel)
                read(unit=iunit(iproc),fmt='(a)',iostat=ios) buf        ! CA, INFO, or level
-            else
-               tb_cloud = 0
             end if
             if ( abi .and. buf(1:2) == "CA" ) then ! read ca_mean, tb_bak_clr for abi
                read(unit=iunit(iproc),fmt='(10f11.2)',iostat=ios) ca_mean(:,ipixel)

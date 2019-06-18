@@ -800,6 +800,9 @@ BENCH_START(rk_tend_tim)
        CALL wrf_debug ( 200 , ' call rk_tendency' )
        CALL rk_tendency ( config_flags, rk_step                                                                &
                          ,grid%ru_tend, grid%rv_tend, rw_tend, ph_tend, t_tend                                 &
+			 ,grid%ru_tend_cor, grid%ru_tend_adv, grid%ru_tend_pgf, grid%ru_tend_curv, grid%ru_tend_hdiff      & !added line for u tendencies (NM)
+                         ,grid%rv_tend_cor, grid%rv_tend_adv, grid%rv_tend_pgf, grid%rv_tend_curv, grid%rv_tend_hdiff      & !added line for v tendencies (NM)
+			 ,grid%t_tend_adv									       &	!added line for t_adv (JSR)
                          ,ru_tendf, rv_tendf, rw_tendf, ph_tendf, t_tendf                                      &
                          ,mu_tend, grid%u_save, grid%v_save, w_save, ph_save                                   &
                          ,grid%t_save, mu_save, grid%rthften                                                   &
@@ -886,6 +889,7 @@ BENCH_START(relax_bdy_dry_tim)
 
        CALL rk_addtend_dry( grid%ru_tend,  grid%rv_tend,  rw_tend,  ph_tend,  t_tend,  &
                             ru_tendf, rv_tendf, rw_tendf, ph_tendf, t_tendf, &
+                                                        grid%ru_tend_phys, grid%rv_tend_phys, &                 ! added line for extracting physics tendencies (NM)
                             grid%u_save, grid%v_save, w_save, ph_save, grid%t_save, &
                             mu_tend, mu_tendf, rk_step,                      &
                             grid%c1h, grid%c2h,                              &
@@ -3553,7 +3557,7 @@ BENCH_START(moist_physics_prep_tim)
          CALL wrf_debug ( 200 , ' call bulk_dust_emis' )
          CALL bulk_dust_emis (grid%itimestep,dtm,config_flags%num_soil_layers  &
                ,grid%u_phy,grid%v_phy,grid%rho,grid%alt                        &
-               ,grid%u10,grid%v10,p8w,dz8w,grid%smois,grid%erod                &
+               ,grid%u10,grid%v10,p8w,dz8w,grid%smois,grid%aerod                &
                ,grid%ivgtyp,grid%isltyp,grid%vegfra,grid%albbck,grid%xland     &
                ,grid%dx, g, grid%qnifa2d, ids,ide, jds,jde, kds,kde            &
                ,ims,ime, jms,jme, kms,kme                                      &

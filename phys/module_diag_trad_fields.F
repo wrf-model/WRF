@@ -78,11 +78,7 @@ CONTAINS
    
                !  Temperature
 
-               IF ( use_theta_m .EQ. 1 ) THEN
-                  temperature(i,k,j) = ( ( t(i,k,j) + t0 ) * ( (pb(i,k,j)+pp(i,k,j)) / p1000mb ) ** rcp ) / ( 1. + (R_v/R_d) * qv(i,k,j) )
-               ELSE
-                  temperature(i,k,j) = ( ( t(i,k,j) + t0 ) * ( (pb(i,k,j)+pp(i,k,j)) / p1000mb ) ** rcp )
-               END IF
+               temperature(i,k,j) = ( ( t(i,k,j) + t0 ) * ( (pb(i,k,j)+pp(i,k,j)) / p1000mb ) ** rcp )
  
                !  Hydrostatic pressure
 
@@ -121,11 +117,7 @@ CONTAINS
 
                !  Potential Temperature  
 
-               IF ( use_theta_m .EQ. 1 ) THEN
-                  potential_t(i,k,j) =  ( t(i,k,j) + t0 )  / ( 1. + (R_v/R_d) * qv(i,k,j) )
-               ELSE
-                  potential_t(i,k,j) =   t(i,k,j) + t0  
-               END IF
+               potential_t(i,k,j) =   t(i,k,j) + t0  
 
 
                !  Relative humidity

@@ -90,8 +90,8 @@ CONTAINS
    
                !  Earth relative winds
 
-               umet(i,k,j) = (u(i,k,j)+u(i+1,k,j))*cosa(i,j) - (v(i,k,j)+v(i,k,j+1))*sina(i,j)
-               vmet(i,k,j) = (u(i,k,j)+u(i+1,k,j))*sina(i,j) + (v(i,k,j)+v(i,k,j+1))*cosa(i,j)
+               umet(i,k,j) = 0.5 * ( (u(i,k,j)+u(i+1,k,j))*cosa(i,j) - (v(i,k,j)+v(i,k,j+1))*sina(i,j) )
+               vmet(i,k,j) = 0.5 * ( (u(i,k,j)+u(i+1,k,j))*sina(i,j) + (v(i,k,j)+v(i,k,j+1))*cosa(i,j) )
    
                !  Horizontal wind speed
 

@@ -4,9 +4,7 @@ subroutine d1f3kb ( ido, l1, cc, in1, ch, in2, wa1, wa2 )
 !
 !! D1F3KB is an FFTPACK5 auxiliary routine.
 !
-!  License:
 !
-!    Licensed under the GNU General Public License (GPL).
 !
 !  Modified:
 !

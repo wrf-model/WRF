@@ -4,9 +4,7 @@ subroutine dcosqf1 ( n, inc, x, wsave, work, ier )
 !
 !! DCOSQF1 is an FFTPACK5 auxiliary routine.
 !
-!  License:
 !
-!    Licensed under the GNU General Public License (GPL).
 !
 !  Modified:
 !

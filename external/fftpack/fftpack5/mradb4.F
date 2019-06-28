@@ -4,9 +4,7 @@ subroutine mradb4 ( m, ido, l1, cc, im1, in1, ch, im2, in2, wa1, wa2, wa3 )
 !
 !! MRADB4 is an FFTPACK5 auxiliary routine.
 !
-!  License:
 !
-!    Licensed under the GNU General Public License (GPL).
 !    Copyright (C) 1995-2004, Scientific Computing Division,
 !    University Corporation for Atmospheric Research
 !

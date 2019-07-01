@@ -717,6 +717,15 @@
    END IF
 
 !-----------------------------------------------------------------------
+! Check if the bucket size for radiation is > 0. If so, then we need to activate
+! a derived namelist variable: bucketf_opt.
+!-----------------------------------------------------------------------
+
+   IF ( model_config_rec%bucket_J .GT. 0. ) THEN
+      model_config_rec%bucketf_opt = 1
+   END IF
+
+!-----------------------------------------------------------------------
 ! Check if the precip bucket reset time interval > 0. If so, then we need to 
 ! activate a derived namelist variable: prec_acc_opt
 !-----------------------------------------------------------------------
@@ -726,15 +735,6 @@
          model_config_rec%prec_acc_opt = 1
       END IF
    END DO
-
-!-----------------------------------------------------------------------
-! Check if the bucket size for radiation is > 0. If so, then we need to activate
-! a derived namelist variable: bucketf_opt.
-!-----------------------------------------------------------------------
-
-   IF ( model_config_rec%bucket_J .GT. 0. ) THEN
-      model_config_rec%bucketf_opt = 1
-   END IF
 
 !-----------------------------------------------------------------------
 ! Check if any stochastic perturbation scheme is turned on in any domain,

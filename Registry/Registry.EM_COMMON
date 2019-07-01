@@ -54,8 +54,6 @@ state    real  XLONG            ij      misc        1         -     i0123rh0156{
 
 # It is required that LU_INDEX appears before any variable that is
 # interpolated with a mask, as lu_index supplies that mask.
-# this next 1 is for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
-# with wave model, only if compiled with -DMCELIO, JM 2003/05/29
 state    real  LU_INDEX         ij      misc        1         -     i012rh01d=(interp_fcnm_lu:xlat,xlong,dx,grid_id)u=(copy_fcnm)   "LU_INDEX"              "LAND USE CATEGORY"         ""
 state    real  LU_MASK          ij      misc        1         -     i3h1     "LU_MASK"              "0 land 1 water"         ""
 
@@ -398,8 +396,6 @@ state    real   T2               ij     misc        1         -     i01rh01{22}{
 state    real   TH2              ij     misc        1         -     irhdu     "TH2"                  "POT TEMP at 2 M"   "K"
 state    real   PSFC             ij     misc        1         -     i01rh01du   "PSFC"                 "SFC PRESSURE"      "Pa"
 
-# these next 2 are for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
-# with wave model, only if compiled with -DMCELIO, JM 2003/05/29
 state    real   U10              ij     misc        1         -     irh01{22}{23}du     "U10"                "U at 10 M"         "m s-1"
 state    real   V10              ij     misc        1         -     irh01{22}{23}du     "V10"                "V at 10 M"         "m s-1"
 # LPI
@@ -1665,8 +1661,6 @@ state    real  SWCF             ij      misc        1         -      r        "S
 state    real  LWCF             ij      misc        1         -      r        "LWCF"                  "LONG WAVE CLOUD FORCING AT TOA"                      "W m-2"
 state    real  OLR              ij      misc        1         -      rh        "OLR"                   "TOA OUTGOING LONG WAVE"                              "W m-2"
 
-# these next 2 are for the HFSoLE/PET demo; writing these to auxhist1 output over MCEL for coupling
-# with wave model, only if compiled with -DMCELIO, JM 2003/05/29
 state    real  XLAT_U           ij      dyn_em      1         X     i012rhdu=(copy_fcnm)         "XLAT_U"              "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
 state    real  XLONG_U          ij      dyn_em      1         X     i012rhd=(interp_fcn_blint_ll:xlat_u,input_from_file)u=(copy_fcnm)         "XLONG_U"             "LONGITUDE, WEST IS NEGATIVE"                                          "degree_east"
 state    real  XLAT_V           ij      dyn_em      1         Y     i012rhdu=(copy_fcnm)         "XLAT_V"              "LATITUDE, SOUTH IS NEGATIVE"                                          "degree_north"
@@ -3062,7 +3056,6 @@ package   io_netcdf   io_form_restart==2                     -             -
 package   io_hdf      io_form_restart==3                     -             -
 package   io_phdf5    io_form_restart==4                     -             -
 package   io_grib1    io_form_restart==5                     -             -
-package   io_mcel     io_form_restart==6                     -             -
 package   io_esmf     io_form_restart==7                     -             -
 package   io_yyy      io_form_restart==8                     -             -
 package   io_zzz      io_form_restart==9                     -             -

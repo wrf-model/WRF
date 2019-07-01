@@ -294,43 +294,43 @@ CONTAINS
       DO i=i_start(ij),i_end(ij)
         IF(acswupt(i,j) .gt. bucket_J)THEN
           bc = INT(acswupt(i,j)/bucket_J)
-          acswupt(i,j) = acswupt(i,j) - nb*bucket_J
+          acswupt(i,j) = acswupt(i,j) - bc*bucket_J
           i_acswupt(i,j) =  i_acswupt(i,j) + bc
         ENDIF
         IF(acswuptc(i,j) .gt. bucket_J)THEN
           bc = INT(acswuptc(i,j)/bucket_J)
-          acswuptc(i,j) = acswuptc(i,j) - nb*bucket_J
-          i_acswuptc(i,j) =  i_acswuptc(i,j) + nb
+          acswuptc(i,j) = acswuptc(i,j) - bc*bucket_J
+          i_acswuptc(i,j) =  i_acswuptc(i,j) + bc
         ENDIF
         IF(acswdnt(i,j) .gt. bucket_J)THEN
           bc = INT(acswdnt(i,j)/bucket_J)
-          acswdnt(i,j) = acswdnt(i,j) - nb*bucket_J
-          i_acswdnt(i,j) =  i_acswdnt(i,j) + nb
+          acswdnt(i,j) = acswdnt(i,j) - bc*bucket_J
+          i_acswdnt(i,j) =  i_acswdnt(i,j) + bc
         ENDIF
         IF(acswdntc(i,j) .gt. bucket_J)THEN
           bc = INT(acswdntc(i,j)/bucket_J)
-          acswdntc(i,j) = acswdntc(i,j) - nb*bucket_J
-          i_acswdntc(i,j) =  i_acswdntc(i,j) + nb
+          acswdntc(i,j) = acswdntc(i,j) - bc*bucket_J
+          i_acswdntc(i,j) =  i_acswdntc(i,j) + bc
         ENDIF
         IF(acswupb(i,j) .gt. bucket_J)THEN
           bc = INT(acswupb(i,j)/bucket_J)
-          acswupb(i,j) = acswupb(i,j) - nb*bucket_J
-          i_acswupb(i,j) =  i_acswupb(i,j) + nb
+          acswupb(i,j) = acswupb(i,j) - bc*bucket_J
+          i_acswupb(i,j) =  i_acswupb(i,j) + bc
         ENDIF
         IF(acswupbc(i,j) .gt. bucket_J)THEN
           bc = INT(acswupbc(i,j)/bucket_J)
-          acswupbc(i,j) = acswupbc(i,j) - nb*bucket_J
-          i_acswupbc(i,j) =  i_acswupbc(i,j) + nb
+          acswupbc(i,j) = acswupbc(i,j) - bc*bucket_J
+          i_acswupbc(i,j) =  i_acswupbc(i,j) + bc
         ENDIF
         IF(acswdnb(i,j) .gt. bucket_J)THEN
           bc = INT(acswdnb(i,j)/bucket_J)
-          acswdnb(i,j) = acswdnb(i,j) - nb*bucket_J
-          i_acswdnb(i,j) =  i_acswdnb(i,j) + nb
+          acswdnb(i,j) = acswdnb(i,j) - bc*bucket_J
+          i_acswdnb(i,j) =  i_acswdnb(i,j) + bc
         ENDIF
         IF(acswdnbc(i,j) .gt. bucket_J)THEN
           bc = INT(acswdnbc(i,j)/bucket_J)
-          acswdnbc(i,j) = acswdnbc(i,j) - nb*bucket_J
-          i_acswdnbc(i,j) =  i_acswdnbc(i,j) + nb
+          acswdnbc(i,j) = acswdnbc(i,j) - bc*bucket_J
+          i_acswdnbc(i,j) =  i_acswdnbc(i,j) + bc
         ENDIF
       ENDDO      
       ENDDO
@@ -340,43 +340,43 @@ CONTAINS
       DO i=i_start(ij),i_end(ij)
         IF(aclwupt(i,j) .gt. bucket_J)THEN
           bc = INT(aclwupt(i,j)/bucket_J)
-          aclwupt(i,j) = aclwupt(i,j) - nb*bucket_J
-          i_aclwupt(i,j) =  i_aclwupt(i,j) + nb
+          aclwupt(i,j) = aclwupt(i,j) - bc*bucket_J
+          i_aclwupt(i,j) =  i_aclwupt(i,j) + bc
         ENDIF
         IF(aclwuptc(i,j) .gt. bucket_J)THEN
           bc = INT(aclwuptc(i,j)/bucket_J)
-          aclwuptc(i,j) = aclwuptc(i,j) - nb*bucket_J
-          i_aclwuptc(i,j) =  i_aclwuptc(i,j) + nb
+          aclwuptc(i,j) = aclwuptc(i,j) - bc*bucket_J
+          i_aclwuptc(i,j) =  i_aclwuptc(i,j) + bc
         ENDIF
         IF(aclwdnt(i,j) .gt. bucket_J)THEN
           bc = INT(aclwdnt(i,j)/bucket_J)
-          aclwdnt(i,j) = aclwdnt(i,j) - nb*bucket_J
-          i_aclwdnt(i,j) =  i_aclwdnt(i,j) + nb
+          aclwdnt(i,j) = aclwdnt(i,j) - bc*bucket_J
+          i_aclwdnt(i,j) =  i_aclwdnt(i,j) + bc
         ENDIF
         IF(aclwdntc(i,j) .gt. bucket_J)THEN
           bc = INT(aclwdntc(i,j)/bucket_J)
-          aclwdntc(i,j) = aclwdntc(i,j) - nb*bucket_J
-          i_aclwdntc(i,j) =  i_aclwdntc(i,j) + nb
+          aclwdntc(i,j) = aclwdntc(i,j) - bc*bucket_J
+          i_aclwdntc(i,j) =  i_aclwdntc(i,j) + bc
         ENDIF
         IF(aclwupb(i,j) .gt. bucket_J)THEN
           bc = INT(aclwupb(i,j)/bucket_J)
-          aclwupb(i,j) = aclwupb(i,j) - nb*bucket_J
-          i_aclwupb(i,j) =  i_aclwupb(i,j) + nb
+          aclwupb(i,j) = aclwupb(i,j) - bc*bucket_J
+          i_aclwupb(i,j) =  i_aclwupb(i,j) + bc
         ENDIF
         IF(aclwupbc(i,j) .gt. bucket_J)THEN
           bc = INT(aclwupbc(i,j)/bucket_J)
-          aclwupbc(i,j) = aclwupbc(i,j) - nb*bucket_J
-          i_aclwupbc(i,j) =  i_aclwupbc(i,j) + nb
+          aclwupbc(i,j) = aclwupbc(i,j) - bc*bucket_J
+          i_aclwupbc(i,j) =  i_aclwupbc(i,j) + bc
         ENDIF
         IF(aclwdnb(i,j) .gt. bucket_J)THEN
           bc = INT(aclwdnb(i,j)/bucket_J)
-          aclwdnb(i,j) = aclwdnb(i,j) - nb*bucket_J
-          i_aclwdnb(i,j) =  i_aclwdnb(i,j) + nb
+          aclwdnb(i,j) = aclwdnb(i,j) - bc*bucket_J
+          i_aclwdnb(i,j) =  i_aclwdnb(i,j) + bc
         ENDIF
         IF(aclwdnbc(i,j) .gt. bucket_J)THEN
           bc = INT(aclwdnbc(i,j)/bucket_J)
-          aclwdnbc(i,j) = aclwdnbc(i,j) - nb*bucket_J
-          i_aclwdnbc(i,j) =  i_aclwdnbc(i,j) + nb
+          aclwdnbc(i,j) = aclwdnbc(i,j) - bc*bucket_J
+          i_aclwdnbc(i,j) =  i_aclwdnbc(i,j) + bc
         ENDIF
       ENDDO      
       ENDDO

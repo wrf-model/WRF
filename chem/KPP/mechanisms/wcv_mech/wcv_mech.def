@@ -231,6 +231,7 @@
    xg=0.1d0
 ! v_mean in m/s: v_mean = sqrt(8*R_gas*T/(pi*M))
 ! sqrt(8*R_gas/pi)=4.60138
+! v_mean in cm/s is 100 times this
 ! fail safe:
    xM = 1.d20
 !! Molar mass for ClNO3 
@@ -250,7 +251,7 @@
     xM = 3.61d-1
    ENDIF
 
-   xhet_sim1= xg * sqrt(TEMP/xM) * 4.60138d0 * SURF_DCEN * 0.25d0
+   xhet_sim1= xg * sqrt(TEMP/xM) * 4.60138d0 * 100 * SURF_DCEN * 0.25d0
    END FUNCTION xhet_sim1
 
 !______________________________
@@ -259,7 +260,7 @@
  REAL(KIND=dp) FUNCTION xhet_sim2(J,SURF_DCEN,C_HBR,C_HOBR,C_HCL,C_HOCL,TEMP)
    INTEGER,INTENT(IN) :: J
    REAL(KIND=dp),INTENT(IN) :: SURF_DCEN,TEMP,C_HBR,C_HOBR,C_HCL,C_HOCL
-   REAL(KIND=dp) :: xg,xM,xC
+   REAL(KIND=dp) :: xg,xM,xc
    REAL(KIND=dp) :: xMHOCL,xMHCL,xMHOBR,xMHBR
    REAL(KIND=dp) :: xHOCL,xHCL,xHOBR,xHBR
 ! calculate pseudo-first order rate coefficient for heterogeneous reaction 
@@ -288,7 +289,8 @@
 ! aer_totsurf -  surface_area, calculated in SR oneD_dist
 ! v_mean in m/s: v_mean = sqrt(8*R_gas*T/(pi*M))
 ! sqrt(8*R_gas/pi)=4.60138
-   xc = 0.25d0 * 4.60138d0 * SURF_DCEN
+! v_mean in cm/s is 100 times this
+   xc = 0.25d0 * 4.60138d0 * 100 * SURF_DCEN
 
 !--- rates for various pathways (determined by function arguments)
 
@@ -376,7 +378,8 @@
 ! aer_totsurf -  surface_area, calculated in SR oneD_dist
 ! v_mean in m/s: v_mean = sqrt(8*R_gas*T/(pi*M))
 ! sqrt(8*R_gas/pi)=4.60138
-      xc = 0.25d0 * 4.60138d0 * SURF_DCEN
+! v_mean in cm/s is 100 times this
+   xc = 0.25d0 * 4.60138d0 * 100 * SURF_DCEN
 
 !--- rates for various pathways (determined by function arguments)
 
@@ -470,8 +473,9 @@
 ! k = 1/4 v gamma A
 ! v_mean in m/s: v_mean = sqrt(8*R_gas*T/(pi*M))
 ! sqrt(8*R_gas/pi)=4.60138
-!  aer_totsurf -  surface_area, calculated in SR oneD_dist
- xtr = 0.25d0 * SQRT(TEMP/xM) * 4.60138d0 * xg * SURF_DCEN
+! v_mean in cm/s is 100 times this
+
+   xtr = 0.25d0 * SQRT(TEMP/xM) * 4.60138d0 * xg * (SURF_DCEN * 1.0d2)
 
 ! calculate relative rates
 ! het_total = [H2O] + f_Cl- [Cl-] + f_Br- [Br-]

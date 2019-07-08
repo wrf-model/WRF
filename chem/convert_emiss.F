@@ -95,11 +95,17 @@ PROGRAM convert_emissions
    REAL, ALLOCATABLE :: dumc1(:,:)
    real mmax
 ! Volcanic stuff
-!     
-   real, allocatable, dimension (:,:) :: ash_mass,ash_height,erup_dt
-   real, allocatable, dimension (:,:) :: so2_mass, volc_vent
-   real, allocatable, dimension (:,:) :: br_mass, hbr_mass, hcl_mass, hg_mass
-   real, allocatable, dimension (:) :: vert_mass_dist
+!  
+   real, allocatable, dimension (:,:) :: ash_height,volc_vent,erup_dt
+   real, allocatable, dimension (:,:) :: ash_mass
+   real, allocatable, dimension (:,:) :: so2_mass,sulf_mass
+   real, allocatable, dimension (:,:) :: br_mass,hbr_mass,hobr_mass,br2_mass,bro_mass
+   real, allocatable, dimension (:,:) :: cl_mass,hcl_mass,hocl_mass,cl2_mass,clo_mass
+   real, allocatable, dimension (:,:) :: ho_mass,ho2_mass
+   real, allocatable, dimension (:,:) :: no_mass,no2_mass,hno3_mass
+   real, allocatable, dimension (:,:) :: hg_mass
+
+   real, allocatable, dimension (:)  :: vert_mass_dist
    real, dimension(10) :: size_dist
    real :: x1,percen_mass_umbrel,base_umbrel,ashz_above_vent
 
@@ -373,9 +379,22 @@ PROGRAM convert_emissions
         ALLOCATE( zlevel(ids:ide,kds:kde,jds:jde) )
      endif
      if(config_flags%emiss_opt_vol == 5) then
+        ALLOCATE( sulf_mass(ids:ide,jds:jde) )
         ALLOCATE( br_mass(ids:ide,jds:jde) )
         ALLOCATE( hbr_mass(ids:ide,jds:jde) )
+        ALLOCATE( hobr_mass(ids:ide,jds:jde) )
+        ALLOCATE( br2_mass(ids:ide,jds:jde) )
+        ALLOCATE( bro_mass(ids:ide,jds:jde) )
+        ALLOCATE( cl_mass(ids:ide,jds:jde) )
         ALLOCATE( hcl_mass(ids:ide,jds:jde) )
+        ALLOCATE( hocl_mass(ids:ide,jds:jde) )
+        ALLOCATE( cl2_mass(ids:ide,jds:jde) )
+        ALLOCATE( clo_mass(ids:ide,jds:jde) )
+        ALLOCATE( ho_mass(ids:ide,jds:jde) )
+        ALLOCATE( ho2_mass(ids:ide,jds:jde) )
+        ALLOCATE( no_mass(ids:ide,jds:jde) )
+        ALLOCATE( no2_mass(ids:ide,jds:jde) )
+        ALLOCATE( hno3_mass(ids:ide,jds:jde) )
         ALLOCATE( hg_mass(ids:ide,jds:jde) )
      endif
    ihour = start_hour
@@ -659,16 +678,16 @@ PROGRAM convert_emissions
        read(unit=dname2(9:10), FMT='(I2)')beg_hour
 !
 ! convert the date from the volc_d01 data file to Julian day
-	LEAP = .FALSE.
-	IF((MOD(beg_yr,4) .EQ. 0 .AND. MOD(beg_yr,100).NE.0 ).OR. MOD(beg_yr,400).EQ.0 ) THEN
+  LEAP = .FALSE.
+  IF((MOD(beg_yr,4) .EQ. 0 .AND. MOD(beg_yr,100).NE.0 ).OR. MOD(beg_yr,400).EQ.0 ) THEN
             LEAP = .TRUE.        
         ENDIF
-	IF (LEAP) THEN
-	  K = 1
-	ELSE
-  	  K = 2
-	END IF
-	beg_jul = ((275*beg_mon)/9) - K*((beg_mon+9)/12) + beg_day - 30
+  IF (LEAP) THEN
+    K = 1
+  ELSE
+      K = 2
+  END IF
+  beg_jul = ((275*beg_mon)/9) - K*((beg_mon+9)/12) + beg_day - 30
 
        write(0,*)' DNAME2 = ',dname2,beg_jul,beg_hour
 #ifdef DM_PARALLEL
@@ -882,19 +901,20 @@ PROGRAM convert_emissions
        read(unit=dname2(9:10), FMT='(I2)')beg_hour
 !
 ! convert the date from the volc_d01 data file to Julian day
-	LEAP = .FALSE.
-	IF((MOD(beg_yr,4) .EQ. 0 .AND. MOD(beg_yr,100).NE.0 ).OR. MOD(beg_yr,400).EQ.0 ) THEN
+  LEAP = .FALSE.
+  IF((MOD(beg_yr,4) .EQ. 0 .AND. MOD(beg_yr,100).NE.0 ).OR. MOD(beg_yr,400).EQ.0 ) THEN
             LEAP = .TRUE.        
         ENDIF
-	IF (LEAP) THEN
-	  K = 1
-	ELSE
-  	  K = 2
-	END IF
-	beg_jul = ((275*beg_mon)/9) - K*((beg_mon+9)/12) + beg_day - 30
+  IF (LEAP) THEN
+    K = 1
+  ELSE
+      K = 2
+  END IF
+  beg_jul = ((275*beg_mon)/9) - K*((beg_mon+9)/12) + beg_day - 30
 
        write(0,*)' DNAME2 = ',dname2,beg_jul,beg_hour
-!ash size dist not written in prepchem;.
+
+!ash size dist written in prepchem;.
 #ifdef DM_PARALLEL
         IF (wrf_dm_on_monitor()) THEN
             read(92)size_dist
@@ -906,28 +926,36 @@ PROGRAM convert_emissions
 #endif
 !       write(0,*)'size_dist = ',size_dist,ids,ide,jds,jde
 
-#ifdef DM_PARALLEL
-       IF (wrf_dm_on_monitor()) THEN
-           write(0,*)'now do so2 '
-           read(92)so2_mass(ids:ide  ,jds:jde  )
-           write(0,*) so2_mass
-       ENDIF
-       DM_BCAST_MACRO(so2_mass)
-!          write(0,*)maxval(so2_mass)
-#else
-!          write(0,*)'now do so2-s '
-       read(92)so2_mass(ids:ide  ,jds:jde  )
-#endif
-
+!ash
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
            write(0,*)'now do ash mass '
            read(92)ash_mass(ids:ide  ,jds:jde  )
-           write(0,*) ash_mass
        ENDIF
        DM_BCAST_MACRO(ash_mass)
 #else
        read(92)ash_mass(ids:ide  ,jds:jde  )
+#endif
+
+!so2
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do so2 '
+           read(92)so2_mass(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(so2_mass)
+#else
+       read(92)so2_mass(ids:ide  ,jds:jde  )
+#endif
+!sulf
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do sulf '
+           read(92)sulf_mass(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(sulf_mass)
+#else
+       read(92)sulf_mass(ids:ide  ,jds:jde  )
 #endif
 
 !Br
@@ -935,12 +963,9 @@ PROGRAM convert_emissions
        IF (wrf_dm_on_monitor()) THEN
            write(0,*)'now do br '
            read(92)br_mass(ids:ide  ,jds:jde  )
-           write(0,*) br_mass
        ENDIF
        DM_BCAST_MACRO(br_mass)
-!          write(0,*)maxval(br_mass)
 #else
-!          write(0,*)'now do br-s '
        read(92)br_mass(ids:ide  ,jds:jde  )
 #endif
 !HBr
@@ -948,27 +973,144 @@ PROGRAM convert_emissions
        IF (wrf_dm_on_monitor()) THEN
            write(0,*)'now do hbr '
            read(92)hbr_mass(ids:ide  ,jds:jde  )
-           write(0,*) hbr_mass
        ENDIF
        DM_BCAST_MACRO(hbr_mass)
-!          write(0,*)maxval(hbr_mass)
 #else
-!          write(0,*)'now do hbr-s '
+       read(92)hbr_mass(ids:ide  ,jds:jde  )
+#endif
+!HOBr
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do hobr '
+           read(92)hobr_mass(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(hobr_mass)
+#else
+       read(92)hobr_mass(ids:ide  ,jds:jde  )
+#endif
+!Br2
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do br2 '
+           read(92)br2_mass(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(br2_mass)
+#else
+       read(92)br2_mass(ids:ide  ,jds:jde  )
+#endif
+!BrO
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do bro '
+           read(92)bro_mass(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(bro_mass)
+#else
        read(92)hbr_mass(ids:ide  ,jds:jde  )
 #endif
 
-!HBr
+!cl
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do cl '
+           read(92)cl_mass(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(cl_mass)
+#else
+       read(92)cl_mass(ids:ide  ,jds:jde  )
+#endif
+!Hcl
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
            write(0,*)'now do hcl '
            read(92)hcl_mass(ids:ide  ,jds:jde  )
-           write(0,*) hcl_mass
        ENDIF
        DM_BCAST_MACRO(hcl_mass)
-!          write(0,*)maxval(hcl_mass)
 #else
-!          write(0,*)'now do hcl-s '
        read(92)hcl_mass(ids:ide  ,jds:jde  )
+#endif
+!HOcl
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do hocl '
+           read(92)hocl_mass(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(hocl_mass)
+#else
+       read(92)hocl_mass(ids:ide  ,jds:jde  )
+#endif
+!cl2
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do cl2 '
+           read(92)cl2_mass(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(cl2_mass)
+#else
+       read(92)cl2_mass(ids:ide  ,jds:jde  )
+#endif
+!clO
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do clo '
+           read(92)clo_mass(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(clo_mass)
+#else
+       read(92)hcl_mass(ids:ide  ,jds:jde  )
+#endif
+
+!ho
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do ho '
+           read(92)ho_mass(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(ho_mass)
+#else
+       read(92)ho_mass(ids:ide  ,jds:jde  )
+#endif
+!ho2
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do ho2 '
+           read(92)ho_mass(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(ho_mass)
+#else
+       read(92)ho_mass(ids:ide  ,jds:jde  )
+#endif
+
+
+!no
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do no '
+           read(92)no_mass(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(no_mass)
+#else
+       read(92)ho_mass(ids:ide  ,jds:jde  )
+#endif
+!no2
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do no2 '
+           read(92)no2_mass(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(no2_mass)
+#else
+       read(92)no2_mass(ids:ide  ,jds:jde  )
+#endif
+!hno3
+#ifdef DM_PARALLEL
+       IF (wrf_dm_on_monitor()) THEN
+           write(0,*)'now do hno3 '
+           read(92)hno3_mass(ids:ide  ,jds:jde  )
+       ENDIF
+       DM_BCAST_MACRO(hno3_mass)
+#else
+       read(92)hno3_mass(ids:ide  ,jds:jde  )
 #endif
 
 !Hg
@@ -976,20 +1118,17 @@ PROGRAM convert_emissions
        IF (wrf_dm_on_monitor()) THEN
            write(0,*)'now do hg '
            read(92)hg_mass(ids:ide  ,jds:jde  )
-           write(0,*) hg_mass
        ENDIF
        DM_BCAST_MACRO(hg_mass)
-!          write(0,*)maxval(hg_mass)
 #else
-!          write(0,*)'now do hg-s '
        read(92)hg_mass(ids:ide  ,jds:jde  )
 #endif
 
+!location stuff
 #ifdef DM_PARALLEL
        IF (wrf_dm_on_monitor()) THEN
-           write(0,*)'now do ash heigt '
+           write(0,*)'now do ash height '
            read(92)ash_height(ids:ide  ,jds:jde  )
-           write(0,*) ash_height
        ENDIF
        DM_BCAST_MACRO(ash_height)
 #else
@@ -1001,7 +1140,6 @@ PROGRAM convert_emissions
            read(92)volc_vent(ids:ide  ,jds:jde  )
        ENDIF
        DM_BCAST_MACRO(volc_vent)
-!          write(0,*)maxval(volc_vent)
 #else
        read(92)volc_vent(ids:ide  ,jds:jde  )
 #endif
@@ -1019,6 +1157,7 @@ PROGRAM convert_emissions
        do k=kps,kpe
        do i=ips,ipe
          zlevel(i,k,j) = (grid%phb(i,k,j)+grid%ph_2(i,k,j))/9.81
+         !This is bottom of the box
        enddo
        enddo
        enddo
@@ -1030,34 +1169,56 @@ PROGRAM convert_emissions
          if(ash_height(i,j).le.0.)CYCLE
 
          area = config_flags%dx * config_flags%dy 
+
+         !Ash bottom altitude = volc vent
+         print *, "volc_vent(i,j) mASL =",volc_vent(i,j)
+         !print *, kpe
+         !print *, kps
+         do k=kps,kpe-1
+
+           print *,"k=",k,", zlevel=",zlevel(i,j,k)
+           if(zlevel(i,k,j) > volc_vent(i,j))then
+             k_initial=k-1
+             print *,"volc_vent in mASL=",volc_vent(i,j)
+             print *,"k_initial=",k_initial
+             print *,"mASL z(k_initial)=",zlevel(i,k_initial,j)
+             exit
+           endif
+         enddo
+
+         
+         !Ash top altitude = ash_height + volc_vent
          ashz_above_vent=ash_height(i,j)+volc_vent(i,j) !zlevel(i,kps,j)
+
          do k=kpe-1,kps,-1
            if(zlevel(i,k,j) < ashz_above_vent)then
              k_final=k+1
+             print *,"ashz_above_vent at mASL ",ashz_above_vent
+             print *,"k_final=",k_final
+             print *,"z(k_final)=",zlevel(i,k_final,j)             
              exit
            endif
          enddo
+         
+        print *,"-------------"
 
-         do k=kpe-1,kps,-1
-
-           if(zlevel(i,k,j) < (1.-base_umbrel)*ashz_above_vent)then
-             k_initial=k
-             exit
-           endif
-          
-         enddo
-          
          !! VERTICAL MASS DISTRIBUTION TO BE ONLY ON ONE LEVEL - where 3000m occurs
 !        write(0,*)'k_init = ',k_initial
          vert_mass_dist=0.
          !vert_mass_dist(1)=1. !GROUND LEVEL
-
-         k_final=20.
-           do ko=1,k_final
-             if(zlevel(i,ko,j).gt. ashz_above_vent) then
-               vert_mass_dist(ko)=1.
-               exit
-             endif
+         
+           do ko=k_initial,k_final-1
+             vert_mass_dist(ko) = (zlevel(i,ko+1,j)-zlevel(i,ko,j))/&
+                            (zlevel(i,k_final,j)-zlevel(i,k_initial,j))
+             print *,"At k=",ko
+             print *,"vert_mass_dist=",vert_mass_dist(ko)
+             !if(zlevel(i,ko,j).gt. ashz_above_vent) then
+             !  vert_mass_dist(ko)=1.
+             !  print *, "ashz_above_vent =", ashz_above_vent
+             !  print *, "ALL VOLCANO EMMISSIONS AT THIS Z =",zlevel(i,ko,j)
+             !  print *, "k=",k
+             !  exit
+             !endif
            enddo
                
                do ko=1,k_final
@@ -1072,11 +1233,34 @@ PROGRAM convert_emissions
                  grid%emis_vol(i,ko,j,p_e_vash8)=size_dist(8)*vert_mass_dist(ko)*ash_mass(i,j)
                  grid%emis_vol(i,ko,j,p_e_vash9)=size_dist(9)*vert_mass_dist(ko)*ash_mass(i,j)
                  grid%emis_vol(i,ko,j,p_e_vash10)=size_dist(10)*vert_mass_dist(ko)*ash_mass(i,j)
+                 !S species
                  grid%emis_vol(i,ko,j,p_e_vso2)=vert_mass_dist(ko)*so2_mass(i,j)
-                 grid%emis_vol(i,ko,j,p_e_vbr)=vert_mass_dist(ko)*br_mass(i,j)
-                 grid%emis_vol(i,ko,j,p_e_vhbr)=vert_mass_dist(ko)*hbr_mass(i,j)
-                 grid%emis_vol(i,ko,j,p_e_vhcl)=vert_mass_dist(ko)*hcl_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vsulf)=vert_mass_dist(ko)*sulf_mass(i,j)
+                 !Br species
+                 grid%emis_vol(i,ko,j,p_e_vbr)   =vert_mass_dist(ko)*br_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vhbr)  =vert_mass_dist(ko)*hbr_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vhobr) =vert_mass_dist(ko)*hobr_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vbr2)  =vert_mass_dist(ko)*br2_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vbro)  =vert_mass_dist(ko)*bro_mass(i,j)
+                 !Cl species
+                 grid%emis_vol(i,ko,j,p_e_vcl)   =vert_mass_dist(ko)*cl_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vhcl)  =vert_mass_dist(ko)*hcl_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vhocl) =vert_mass_dist(ko)*hocl_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vcl2)  =vert_mass_dist(ko)*cl2_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vclo)  =vert_mass_dist(ko)*clo_mass(i,j)
+                 !HOx species
+                 grid%emis_vol(i,ko,j,p_e_vho)   =vert_mass_dist(ko)*ho_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vho2)  =vert_mass_dist(ko)*ho2_mass(i,j)
+                 !NOy species
+                 grid%emis_vol(i,ko,j,p_e_vno)   =vert_mass_dist(ko)*no_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vno2)  =vert_mass_dist(ko)*no2_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vhno3) =vert_mass_dist(ko)*hno3_mass(i,j)
+                 !Hg species
                  grid%emis_vol(i,ko,j,p_e_vhg)=vert_mass_dist(ko)*hg_mass(i,j)
+                 !tracers
+                 grid%emis_vol(i,ko,j,p_e_vtracer1)=vert_mass_dist(ko)*so2_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vtracer2)=vert_mass_dist(ko)*so2_mass(i,j)
+                 grid%emis_vol(i,ko,j,p_e_vtracer3)=vert_mass_dist(ko)*so2_mass(i,j)
                enddo
 ! Changes made to Julian day from the volc_d01 file
                grid%erup_beg(i,j)=float(beg_jul)*1000.+float(beg_hour)

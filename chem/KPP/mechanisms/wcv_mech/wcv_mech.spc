@@ -38,7 +38,6 @@
  tracer_1    = IGNORE ; {Tracer 1}
  tracer_2    = IGNORE ; {Tracer 2}
  tracer_3    = IGNORE ; {Tracer 3}
- tracer_4    = IGNORE ; {Tracer 4}
  tracer_5    = IGNORE ; {Tracer 5}
  tracer_6    = IGNORE ; {Tracer 6}
  tracer_8    = IGNORE ; {Tracer 8}
@@ -48,7 +47,6 @@
  tracprod_5  = IGNORE ; {Tracer Product 5}
  tracprod_6  = IGNORE ; {Tracer Product 6}
  tracprod_8  = IGNORE ; {Tracer Product 8}
- tracprod_9  = IGNORE ; {Tracer Product 9}
  CH4         = IGNORE ;
  CO          = IGNORE ; {carbon monoxide}
  SO2         = S ;      {sulfur dioxide}

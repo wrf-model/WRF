@@ -241,10 +241,9 @@
  {172:146} tracer_5  = tracprod_5                       : 1.0 ;
  {173:147} tracer_6  = tracprod_6                       : 1.0 ;
  {174:148} tracer_8  = tracprod_8                       : 1.0 ;
- {175:149} tracer_9  = tracprod_9                       : 1.0 ;
+ {175:149} tracer_9  = tracer_9                         : 1.0D-12 ;
  {???:???} OH = Br                                      : ORGBRPROD(2.35D-12,1300._dp,8.5D-12,TEMP,C_M,8.5_dp) ;
- {???:???} tracer_4  = SO2                              : 10.0 ;
- {???:???} tracer_1  = tracer_1                         : 1.0  ;
+ {???:???} tracer_1  = tracer_1                         : 1.0D-12  ;
  {179:???} CL + O3 = CLO                                : ARR3(2.8D-11, 250._dp,TEMP) ;
  {180:???} CL + HO2 = 0.8 HCL + 0.2 CLO + 0.2 OH        : 4.4D-11 ;
  {181:???} CL + H2O2 = HCL + HO2                        : ARR3(1.1D-11,980._dp,TEMP) ;

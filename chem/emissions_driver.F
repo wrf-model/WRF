@@ -47,7 +47,7 @@ CONTAINS
          soil_top_cat, ust_t, rough_cor, smois_cor,                        & 
          ebio_c5h8,ebio_apinene,ebio_bpinene,ebio_toluene,                 &
          ebio_ch3cho,ebio_ch3co2h,ebio_tbut2ene,ebio_c2h5cho,              &
-         ebio_nc4h10,							   &
+         ebio_nc4h10,                &
          ! stuff for MEGAN v2.04                                                 
          T2,swdown,                                                        &
          nmegan,EFmegan,                                                   &
@@ -706,12 +706,42 @@ if(config_flags%emiss_opt_vol == 5)then
                 chem(i,k,j,p_so4_a08)=chem(i,k,j,p_so4_a08)+(emis_vol(i,k,j,p_e_vash8)*conv1*0.3)
                 !gas phase chemistry species
                 conv = float(ivolcano)*4.828e-4/rho_phy(i,k,j)*dtstep/(dz8w(i,k,j)*60.)
-
-                chem(i,k,j,p_so2)  = chem(i,k,j,p_so2)+emis_vol(i,k,j,p_e_vso2)*conv
-                chem(i,k,j,p_br)   = chem(i,k,j,p_br)+emis_vol(i,k,j,p_e_vbr)*conv
-                chem(i,k,j,p_hbr)  = chem(i,k,j,p_hbr)+emis_vol(i,k,j,p_e_vhbr)*conv
-                chem(i,k,j,p_hcl)  = chem(i,k,j,p_hcl)+emis_vol(i,k,j,p_e_vhcl)*conv
-                chem(i,k,j,p_hg)   = chem(i,k,j,p_hg)+emis_vol(i,k,j,p_e_vhg)*conv
+                !sulfur species
+                chem(i,k,j,p_so2)  = chem(i,k,j,p_so2) +emis_vol(i,k,j,p_e_vso2) *conv
+                chem(i,k,j,p_sulf) = chem(i,k,j,p_sulf)+emis_vol(i,k,j,p_e_vsulf)*conv
+                !chem(i,k,j,p_h2s)  = chem(i,k,j,p_h2s)+emis_vol(i,k,j,p_e_vh2s)*conv
+                !bromine species 
+                chem(i,k,j,p_br)   = chem(i,k,j,p_br)  +emis_vol(i,k,j,p_e_vbr)  *conv
+                chem(i,k,j,p_hbr)  = chem(i,k,j,p_hbr) +emis_vol(i,k,j,p_e_vhbr) *conv
+                chem(i,k,j,p_hobr) = chem(i,k,j,p_hobr)+emis_vol(i,k,j,p_e_vhobr)*conv
+                chem(i,k,j,p_br2)  = chem(i,k,j,p_br2) +emis_vol(i,k,j,p_e_vbr2) *conv
+                chem(i,k,j,p_bro)  = chem(i,k,j,p_bro) +emis_vol(i,k,j,p_e_vbro) *conv
+                !chlorine species
+                chem(i,k,j,p_cl)   = chem(i,k,j,p_cl)  +emis_vol(i,k,j,p_e_vcl)  *conv
+                chem(i,k,j,p_hcl)  = chem(i,k,j,p_hcl) +emis_vol(i,k,j,p_e_vhcl) *conv
+                chem(i,k,j,p_hocl) = chem(i,k,j,p_hocl)+emis_vol(i,k,j,p_e_vhocl)*conv
+                chem(i,k,j,p_cl2)  = chem(i,k,j,p_cl2) +emis_vol(i,k,j,p_e_vcl2) *conv
+                chem(i,k,j,p_clo)  = chem(i,k,j,p_clo) +emis_vol(i,k,j,p_e_vclo) *conv
+                !HOx species
+                chem(i,k,j,p_ho)   = chem(i,k,j,p_ho)  +emis_vol(i,k,j,p_e_vho)  *conv
+                chem(i,k,j,p_ho2)  = chem(i,k,j,p_ho2) +emis_vol(i,k,j,p_e_vho2) *conv
+                !NOy species
+                chem(i,k,j,p_no)   = chem(i,k,j,p_no)  +emis_vol(i,k,j,p_e_vno)  *conv
+                chem(i,k,j,p_no2)  = chem(i,k,j,p_no2) +emis_vol(i,k,j,p_e_vno2) *conv
+                chem(i,k,j,p_hno3) = chem(i,k,j,p_hno3)+emis_vol(i,k,j,p_e_vhno3)*conv
+                !Hg species
+                chem(i,k,j,p_hg)   = chem(i,k,j,p_hg)  +emis_vol(i,k,j,p_e_vhg)  *conv
+                !tracers
+                chem(i,k,j,p_tracer_1) = chem(i,k,j,p_tracer_1)+&
+                   emis_vol(i,k,j,p_e_vtracer1)*conv
+                chem(i,k,j,p_tracer_2) = chem(i,k,j,p_tracer_2)+&
+                   emis_vol(i,k,j,p_e_vtracer2)*conv
+                chem(i,k,j,p_tracer_3) = chem(i,k,j,p_tracer_3)+&
+                   emis_vol(i,k,j,p_e_vtracer3)*conv
+                !plume height tracer
+                chem(i,k,j,p_tracer_9) = chem(i,k,j,p_tracer_9)+&
+                   emis_vol(i,k,j,p_e_vtracer1)*conv*&
+                   z(i,k,j)*1e-3
                enddo
       CASE DEFAULT
       END SELECT volc5_select

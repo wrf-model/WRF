@@ -279,7 +279,7 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
             Atmosphere(n)%level_pressure(k) = iv%instid(inst)%pf(k,n)
             Atmosphere(n)%temperature(k) = iv%instid(inst)%tm(k,n)
             Atmosphere(n)%absorber(k,1) = iv%instid(inst)%qm(k,n)
-            xb_q(k,n) = 0.001*iv%instid(inst)%qm(k,n)/(1.0+iv%instid(inst)%qm(k,n)) ! specific humidity
+            xb_q(k,n) = 0.001*iv%instid(inst)%qm(k,n)/(1.0+0.001*iv%instid(inst)%qm(k,n)) ! specific humidity
          end do
 
          if (crtm_cloud) then

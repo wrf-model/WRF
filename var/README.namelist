@@ -114,11 +114,9 @@ Description of WRFDA namelist variables, defined in Registry/registry.var
   top_km_gpsro            = 30.0     ; control the rejection of higher observations
   bot_km_gpsro            = 0.0      ; control the rejection of lower observations
   use_qscatobs            = .true.
-  use_radarobs            = .false.  ; .true.: Assimilate radar data; see User's Guide for more information
-  use_radar_rv            = .false.  ; Assimilate radar velocity observations
-  use_radar_rf            = .false.  ; Assimilate radar reflectivity using original reflectivity operator (total mixing ratio)
-  use_radar_rhv           = .false.  ; Assimilate retrieved hydrometeors (qr, qs, qg) from radar reflectivity
-  use_radar_rqv           = .false.  ; Assimilate estimated humidity (qv) from radar reflectivity
+  use_radarobs            = .false.  ; .true.: to read in radar rv/rf data from ob.radar.
+                                     ; Need to also set radar_rv_opt and radar_rf_opt as well as other options
+                                     ; in radar_da namelist section (see below).
   use_rainobs             = .false.  ; .true.: Assimilate precipitation data; see User's Guide for more information
   thin_rainobs            = .true.   ; perform thinning on preciptation data
   use_airsretobs          = .true.   ; Assimilate retrieved T/Q profiles from AIRS instrument
@@ -549,14 +547,25 @@ Description of WRFDA namelist variables, defined in Registry/registry.var
                                                         ; are within the specified time window.
 /
 &radar_da
-  ; tuning parameters for use_radar_rqv=.true. only
-  ; except that radar_non_precip_opt applies to both use_radar_rhv=.true. and use_radar_rqv=.true.
+  radar_rv_opt            = 0  ; 0: do not assimilate radar radial velocity
+                               ; 1: assimilate radar radial velocity
+  radar_rf_opt            = 0  ; 0: do not assimilate radar reflectivity
+                               ; 1: assimilate radar reflectivity using warm-rain reflectivity operator and qt control variable,
+                               ;    only works with cloud_cv_options=1.
+                               ; 2: assimilate hydrometeors (qr, qs, qg) retrieved from radar reflectivity,
+                               ;    only works with cloud_cv_options=2 or 3.
+                               ;    GEN_BE_V3 can be used to generate cloud BEs for cloud_cv_options=2.
+  radar_rqv_opt           = 0  ; 0: do not assimilate estimated humidity (qv) from radar reflectivity
+                               ; 1: assimilate estimated humidity (qv) from radar reflectivity,
+                               ;    also need to set the following tuning parameters
+  ; radar_non_precip_opt applies to radar_rf_opt=2 and radar_rqv_opt=1
   radar_non_precip_opt    = 0         ; 0: do not consider non-precipitating radar echo
                                       ; 1: KNU scheme for assimilating non-precipitating radar echo
   radar_non_precip_rf     = -999.99   ; reflectivity (dBZ) value used to indicate non-precip ob
+  ; the following options are tuning parameters for radar_rqv_opt=1 only
   radar_non_precip_rh_w   = 95.0      ; RH (%) wrt water for non_precip rqv
   radar_non_precip_rh_i   = 85.0      ; RH (%) wrt ice for non_precip rqv
-  cloudbase_calc_opt      = 1         ; how model LCL is calculated
+  cloudbase_calc_opt      = 1         ; how model LCL is calculated, only used when radar_rqv_opt=1
                                       ; 1: KNU scheme
                                       ; 2: NCAR scheme
   radar_saturated_rf      = 25.0      ; reflectivity (dBZ) value used to indicate saturated rqv
@@ -566,11 +575,13 @@ Description of WRFDA namelist variables, defined in Registry/registry.var
   radar_rqv_rh2           = 85.0      ; RH (%) for (radar_rqv_thresh1 < rf < radar_rqv_thresh2)
   radar_rqv_h_lbound      = -999.0    ; height (m) lower bound for rqv
   radar_rqv_h_ubound      = -999.0    ; height (m) upper bound for rqv
-  radar_rhv_err_opt       = 1         ;(default) 1: calculated (original), 2: from namelist
-  radar_rhv_rrn_err       = 0.15      ;(default) obs error of retrieved qrain in g/kg
-  radar_rhv_rsn_err       = 0.15      ;(default) obs error of retrieved qsnow in g/kg
-  radar_rhv_rgr_err       = 0.15      ;(default) obs error of retrieved qgraup in g/kg
-  write_oa_radar_ascii    = .true.    ;(default)
+  ; the following radar_rhv* optinos are for radar_rf_opt=2
+  radar_rhv_err_opt       = 1         ; 1: obs errors of retrieved hydrometeors are calculated in the code (da_get_innov_vector_radar.inc)
+                                      ; 2: obs errors are from namelist settings radar_rhv_rrn_err, radar_rhv_rsn_err, and radar_rhv_rgr_err
+  radar_rhv_rrn_err       = 0.15      ; (g/kg) obs error of retrieved qrain
+  radar_rhv_rsn_err       = 0.15      ; (g/kg) obs error of retrieved qsnow
+  radar_rhv_rgr_err       = 0.15      ; (g/kg) obs error of retrieved qgraup
+  write_oa_radar_ascii    = .true.    ; switch to turn on/off writing diagnostic output radar_omb_oma
 /
 &obs_opt
   gpsro_drift             = 1         ; horizontal drifting for GPSRO.  0=no drift, 1=drift

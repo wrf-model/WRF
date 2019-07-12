@@ -20,7 +20,7 @@ module da_vtox_transforms
 #ifdef A2C
    use da_control, only : trace_use, var4d, cos_xls, cos_xle, sin_xle, sin_xls, pi, global, &
       vertical_ip,alphacv_method,use_ssmitbobs,use_rainobs, &
-      use_radarobs,use_radar_rf,use_radar_rhv,use_radar_rqv, &
+      use_radarobs, radar_rf_opt, radar_rqv_opt, &
       use_ssmiretrievalobs, use_ssmt2obs, use_ssmt1obs, use_gpspwobs, use_gpsztdobs, &
       use_gpsrefobs,use_gpsephobs,sfc_assi_options, test_transforms, vert_corr, fg_format, &
       fg_format_kma_global, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &
@@ -33,7 +33,7 @@ module da_vtox_transforms
    use da_control, only : trace_use, var4d, ims,ime,jms,jme,kms,kme,jds,jde,kds,kde, &
       its,ite,jts,jte,kts,kte, cos_xls, cos_xle, sin_xle, sin_xls, pi, global, &
       vertical_ip,alphacv_method,use_ssmitbobs,use_rainobs, &
-      use_radarobs,use_radar_rf,use_radar_rhv,use_radar_rqv, &
+      use_radarobs, radar_rf_opt, radar_rqv_opt, &
       use_ssmiretrievalobs, use_ssmt2obs, use_ssmt1obs, use_gpspwobs, use_gpsztdobs, &
       use_gpsrefobs,use_gpsephobs,sfc_assi_options, test_transforms, vert_corr, fg_format, &
       fg_format_kma_global, fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional, &

@@ -189,23 +189,23 @@ subroutine da_allocate_y (iv, y)
          nlevels = iv%info(radar)%levels(n)
          allocate (y % radar(n)%rv(1:nlevels))
          allocate (y % radar(n)%rf(1:nlevels))
-         if ( use_radar_rhv ) then
+         if ( radar_rf_opt == 2 ) then
             allocate (y % radar(n)%rrn(1:nlevels))
             allocate (y % radar(n)%rsn(1:nlevels))
             allocate (y % radar(n)%rgr(1:nlevels))
          end if
-         if ( use_radar_rqv ) then
+         if ( radar_rqv_opt > 0 ) then
             allocate (y % radar(n)%rqv(1:nlevels))
          end if
 
          y % radar(n) % rv(1:nlevels)  = 0.0
          y % radar(n) % rf(1:nlevels)  = 0.0
-         if ( use_radar_rhv ) then
+         if ( radar_rf_opt == 2 ) then
             y % radar(n) % rrn(1:nlevels) = 0.0
             y % radar(n) % rsn(1:nlevels) = 0.0
             y % radar(n) % rgr(1:nlevels) = 0.0
          end if
-         if ( use_radar_rqv ) then
+         if ( radar_rqv_opt > 0 ) then
             y % radar(n) % rqv(1:nlevels) = 0.0
          end if
       end do

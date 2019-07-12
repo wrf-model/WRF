@@ -43,16 +43,19 @@ subroutine da_check_max_iv_radar(iv, it, irv, irf, irvf, irff)
          if (iv%radar(n)%height_qc(k) /= far_below_model_surface .and. &
               iv%radar(n)%height_qc(k) /= above_model_lid) then
             ! rv
-            if (use_radar_rv) then
+            if ( radar_rv_opt > 0 ) then
                call da_max_error_qc_radar(it, iv%info(radar), n, iv%radar(n)%rv(k), max_error_rv, irv, irvf, &
                   check_max_iv_unit, 'rv   ', failed, check_max_iv_print)
             end if
 
             ! rf
-            if (use_radar_rf) then
+            if ( radar_rf_opt == 1 ) then
                call da_max_error_qc_radar(it, iv%info(radar), n, iv%radar(n)%rf(k), max_error_rf, irf, irff, &
                   check_max_iv_unit, 'rf   ', failed, check_max_iv_print)
             end if
+
+            !hcl-todo for radar_rf_opt=2
+
          end if
       end do
    end do

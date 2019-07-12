@@ -953,8 +953,8 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
 
    deallocate (xbx % latc_mean)
 
-   ! calculate background/model LCL to be used by use_radar_rqv
-   if ( use_radarobs .and. use_radar_rqv .and. cloudbase_calc_opt == 2 ) then
+   ! calculate background/model LCL to be used by radar_rqv_opt=1
+   if ( use_radarobs .and. radar_rqv_opt == 1 .and. cloudbase_calc_opt == 2 ) then
       do j = jts, jte
          do i = its, ite
             zlcl(i,j) = 125.0*(grid%xb%t(i,j,1)-grid%xb%td(i,j,1))
@@ -979,7 +979,7 @@ subroutine da_transfer_wrftoxb(xbx, grid, config_flags)
          end do
       end do
       zlcl_mean = zlcl_mean/float(ij)
-   end if ! lcl for use_radar_rqv
+   end if ! lcl for radar_rqv_opt=1
 
    if ( use_gpsephobs ) then
       call da_gpseph_init(grid)

@@ -218,17 +218,17 @@
    end if
 
    if ( use_radarobs ) then
-      if ( use_radar_rf .and. use_radar_rhv ) then
-         write(unit=message(1),fmt='(A)') "Both 'use_radar_rf' and 'use_radar_rhv' are set to true"
-         write(unit=message(2),fmt='(A)') "You must only choose one of these options"
-         call da_error(__FILE__,__LINE__,message(1:2))
+      if ( radar_rv_opt == 0 .and. radar_rf_opt == 0 ) then
+         write(unit=message(1),fmt='(A)') &
+            'radar_da options: radar_rv_opt and radar_rf_opt are both zero.'
+         call da_warning(__FILE__,__LINE__,message(1:1))
       end if
-      if ( use_radar_rf .and. cloud_cv_options /= 1 ) then
-         write(unit=message(1),fmt='(A)') "Please set cloud_cv_options=1 for use_radar_rf"
+      if ( (radar_rf_opt == 1) .and. cloud_cv_options /= 1 ) then
+         write(unit=message(1),fmt='(A)') "Please set cloud_cv_options=1 for radar_rf_opt=1"
          call da_error(__FILE__,__LINE__,message(1:1))
       end if
-      if ( use_radar_rhv .and. cloud_cv_options == 1 ) then
-         write(unit=message(1),fmt='(A)') "Please set cloud_cv_options=3 or 2 (2 requires cloudy be.dat) for use_radar_rhv"
+      if ( (radar_rf_opt == 2) .and. cloud_cv_options == 1 ) then
+         write(unit=message(1),fmt='(A)') "Please set cloud_cv_options=3 or 2 (2 requires cloudy be.dat) for radar_rf_opt=2"
          call da_error(__FILE__,__LINE__,message(1:1))
       end if
    end if

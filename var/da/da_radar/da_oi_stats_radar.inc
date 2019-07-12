@@ -44,7 +44,7 @@ subroutine da_oi_stats_radar (stats_unit, iv)
    do n=1, iv%info(radar)%nlocal
       if (iv%info(radar)%proc_domain(1,n)) then
          do k=1, iv%info(radar)%levels(n)
-            if (use_radar_rv) then
+            if ( radar_rv_opt > 0 ) then
                call da_stats_calculate(iv%info(radar)%obs_global_index(n), &
                   k, iv%radar(n)%rv(k)%qc, &
                   iv%radar(n)%rv(k)%inv, nrv, &
@@ -52,33 +52,33 @@ subroutine da_oi_stats_radar (stats_unit, iv)
                   stats%average%rv, stats%rms_err%rv)
             end if
 
-            if (use_radar_rf) then
-               call da_stats_calculate(iv%info(radar)%obs_global_index(n), &
-                  k, iv%radar(n)%rf(k)%qc, &
-                  iv%radar(n)%rf(k)%inv, nrf, &
-                  stats%minimum%rf, stats%maximum%rf, &
-                  stats%average%rf, stats%rms_err%rf)
-            end if
+            if ( radar_rf_opt > 0 ) then
+               if ( radar_rf_opt == 1 ) then
+                  call da_stats_calculate(iv%info(radar)%obs_global_index(n), &
+                     k, iv%radar(n)%rf(k)%qc, &
+                     iv%radar(n)%rf(k)%inv, nrf, &
+                     stats%minimum%rf, stats%maximum%rf, &
+                     stats%average%rf, stats%rms_err%rf)
+               else if ( radar_rf_opt == 2 ) then
+                  call da_stats_calculate(iv%info(radar)%obs_global_index(n), &
+                     k, iv%radar(n)%rrn(k)%qc, &
+                     iv%radar(n)%rrn(k)%inv, nrrn, &
+                     stats%minimum%rrn, stats%maximum%rrn, &
+                     stats%average%rrn, stats%rms_err%rrn)
+                  call da_stats_calculate(iv%info(radar)%obs_global_index(n), &
+                     k, iv%radar(n)%rsn(k)%qc, &
+                     iv%radar(n)%rsn(k)%inv, nrsn, &
+                     stats%minimum%rsn, stats%maximum%rsn, &
+                     stats%average%rsn, stats%rms_err%rsn)
+                  call da_stats_calculate(iv%info(radar)%obs_global_index(n), &
+                     k, iv%radar(n)%rgr(k)%qc, &
+                     iv%radar(n)%rgr(k)%inv, nrgr, &
+                     stats%minimum%rgr, stats%maximum%rgr, &
+                     stats%average%rgr, stats%rms_err%rgr)
+               end if
+            end if ! radar_rf_opt>0
 
-            if (.not. use_radar_rf .and. use_radar_rhv) then
-               call da_stats_calculate(iv%info(radar)%obs_global_index(n), &
-                  k, iv%radar(n)%rrn(k)%qc, &
-                  iv%radar(n)%rrn(k)%inv, nrrn, &
-                  stats%minimum%rrn, stats%maximum%rrn, &
-                  stats%average%rrn, stats%rms_err%rrn)
-               call da_stats_calculate(iv%info(radar)%obs_global_index(n), &
-                  k, iv%radar(n)%rsn(k)%qc, &
-                  iv%radar(n)%rsn(k)%inv, nrsn, &
-                  stats%minimum%rsn, stats%maximum%rsn, &
-                  stats%average%rsn, stats%rms_err%rsn)
-               call da_stats_calculate(iv%info(radar)%obs_global_index(n), &
-                  k, iv%radar(n)%rgr(k)%qc, &
-                  iv%radar(n)%rgr(k)%inv, nrgr, &
-                  stats%minimum%rgr, stats%maximum%rgr, &
-                  stats%average%rgr, stats%rms_err%rgr)
-            end if
-
-            if (use_radar_rqv) then
+            if ( radar_rqv_opt > 0 ) then
                call da_stats_calculate(iv%info(radar)%obs_global_index(n), &
                   k, iv%radar(n)%rqv(k)%qc, &
                   iv%radar(n)%rqv(k)%inv, nrqv, &
@@ -92,41 +92,41 @@ subroutine da_oi_stats_radar (stats_unit, iv)
 
    ! Do inter-processor communication to gather statistics.
 
-   if (use_radar_rv) then
+   if ( radar_rv_opt > 0 ) then
       call da_proc_sum_int(nrv)
       call da_proc_stats_combine(stats%average%rv, stats%rms_err%rv, &
          stats%minimum%rv%value, stats%maximum%rv%value, &
          stats%minimum%rv%n, stats%maximum%rv%n, &
          stats%minimum%rv%l, stats%maximum%rv%l)
    end if
-   
-   if (use_radar_rf) then
-      call da_proc_sum_int(nrf)
-      call da_proc_stats_combine(stats%average%rf, stats%rms_err%rf, &
-         stats%minimum%rf%value, stats%maximum%rf%value, &
-         stats%minimum%rf%n, stats%maximum%rf%n, &
-         stats%minimum%rf%l, stats%maximum%rf%l)
-   end if
 
-   if (.not.use_radar_rf .and. use_radar_rhv) then
-      call da_proc_sum_int(nrrn)
-      call da_proc_stats_combine(stats%average%rrn, stats%rms_err%rrn, &
-         stats%minimum%rrn%value, stats%maximum%rrn%value, &
-         stats%minimum%rrn%n, stats%maximum%rrn%n, &
-         stats%minimum%rrn%l, stats%maximum%rrn%l)
-      call da_proc_sum_int(nrsn)
-      call da_proc_stats_combine(stats%average%rsn, stats%rms_err%rsn, &
-         stats%minimum%rsn%value, stats%maximum%rsn%value, &
-         stats%minimum%rsn%n, stats%maximum%rsn%n, &
-         stats%minimum%rsn%l, stats%maximum%rsn%l)
-      call da_proc_sum_int(nrgr)
-      call da_proc_stats_combine(stats%average%rgr, stats%rms_err%rgr, &
-         stats%minimum%rgr%value, stats%maximum%rgr%value, &
-         stats%minimum%rgr%n, stats%maximum%rgr%n, &
-         stats%minimum%rgr%l, stats%maximum%rgr%l)
-   end if
+   if ( radar_rf_opt > 0 ) then
+      if ( radar_rf_opt == 1 ) then
+         call da_proc_sum_int(nrf)
+         call da_proc_stats_combine(stats%average%rf, stats%rms_err%rf, &
+            stats%minimum%rf%value, stats%maximum%rf%value, &
+            stats%minimum%rf%n, stats%maximum%rf%n, &
+            stats%minimum%rf%l, stats%maximum%rf%l)
+      else if ( radar_rf_opt == 2 ) then
+         call da_proc_sum_int(nrrn)
+         call da_proc_stats_combine(stats%average%rrn, stats%rms_err%rrn, &
+            stats%minimum%rrn%value, stats%maximum%rrn%value, &
+            stats%minimum%rrn%n, stats%maximum%rrn%n, &
+            stats%minimum%rrn%l, stats%maximum%rrn%l)
+         call da_proc_sum_int(nrsn)
+         call da_proc_stats_combine(stats%average%rsn, stats%rms_err%rsn, &
+            stats%minimum%rsn%value, stats%maximum%rsn%value, &
+            stats%minimum%rsn%n, stats%maximum%rsn%n, &
+            stats%minimum%rsn%l, stats%maximum%rsn%l)
+         call da_proc_sum_int(nrgr)
+         call da_proc_stats_combine(stats%average%rgr, stats%rms_err%rgr, &
+            stats%minimum%rgr%value, stats%maximum%rgr%value, &
+            stats%minimum%rgr%n, stats%maximum%rgr%n, &
+            stats%minimum%rgr%l, stats%maximum%rgr%l)
+      end if
+   end if ! radar_rf_opt>0
 
-   if (use_radar_rqv) then
+   if ( radar_rqv_opt > 0 ) then
       call da_proc_sum_int(nrqv)
       call da_proc_stats_combine(stats%average%rqv, stats%rms_err%rqv, &
          stats%minimum%rqv%value, stats%maximum%rqv%value, &

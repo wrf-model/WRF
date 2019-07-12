@@ -35,8 +35,6 @@ subroutine da_update_firstguess(grid, out_filename)
 !---------------------------------------------------------------------------
 
   use module_domain, only : get_ijk_from_grid, program_name
-  use da_control,    only : use_radarobs, use_rad, crtm_cloud, &
-                            use_radar_rhv, use_radar_rqv
   use module_state_description, only : p_qv, p_qc, p_qr, p_qi, &
                                        p_qs, p_qg, &
                                        f_qc, f_qr, f_qi, f_qs, f_qg

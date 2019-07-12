@@ -157,7 +157,7 @@ subroutine da_check_vptox_adjoint(grid, ne, be, ep, vp, cv_size)
    adj_par_lhs = sum(grid%xa%u(its:ite,jts:jte,:)**2)/typical_u_rms**2
    adj_par_lhs = sum(grid%xa%v(its:ite,jts:jte,:)**2)/typical_v_rms**2 + adj_par_lhs
    adj_par_lhs = sum(grid%xa%t(its:ite,jts:jte,:)**2)/typical_t_rms**2 + adj_par_lhs
-   if ( (use_radar_rf .or. crtm_cloud) .and. (cloud_cv_options == 1) ) then
+   if ( ( radar_rf_opt == 1 .or. crtm_cloud) .and. (cloud_cv_options == 1) ) then
       adj_par_lhs = sum(grid%xa%qt(its:ite,jts:jte,:)**2)/typical_q_rms**2 + adj_par_lhs
    else
       adj_par_lhs = sum(grid%xa%q(its:ite,jts:jte,:)**2)/typical_q_rms**2 + adj_par_lhs
@@ -194,7 +194,7 @@ subroutine da_check_vptox_adjoint(grid, ne, be, ep, vp, cv_size)
            typical_qgr_rms**2 + adj_par_lhs
    end if
 
-   if (use_radar_rf .or. crtm_cloud) then
+   if ( radar_rf_opt == 1 .or. crtm_cloud) then
       if ( cloud_cv_options == 1 ) then
          adj_par_lhs = sum(grid%xa % qcw(its:ite,jts:jte,kts:kte)**2) / &
             typical_qcw_rms**2 + adj_par_lhs
@@ -210,7 +210,7 @@ subroutine da_check_vptox_adjoint(grid, ne, be, ep, vp, cv_size)
    grid%xa % u(:,:,:) = grid%xa % u(:,:,:) / typical_u_rms**2
    grid%xa % v(:,:,:) = grid%xa % v(:,:,:) / typical_v_rms**2
    grid%xa % t(:,:,:) = grid%xa % t(:,:,:) / typical_t_rms**2
-   if ( (use_radar_rf .or. crtm_cloud) .and. (cloud_cv_options == 1) ) then
+   if ( ( radar_rf_opt == 1 .or. crtm_cloud) .and. (cloud_cv_options == 1) ) then
       grid%xa % qt(:,:,:) = grid%xa % qt(:,:,:) / typical_q_rms**2
    else
       grid%xa % q(:,:,:) = grid%xa % q(:,:,:) / typical_q_rms**2
@@ -239,7 +239,7 @@ subroutine da_check_vptox_adjoint(grid, ne, be, ep, vp, cv_size)
       grid%xa % qgr(:,:,:) = grid%xa % qgr(:,:,:) / typical_qgr_rms**2
    end if
 
-   if (use_radar_rf .or. crtm_cloud) then
+   if ( radar_rf_opt == 1 .or. crtm_cloud) then
       if ( cloud_cv_options == 1 ) then
          grid%xa % qcw(:,:,:) = grid%xa % qcw(:,:,:) / typical_qcw_rms**2
          grid%xa % qrn(:,:,:) = grid%xa % qrn(:,:,:) / typical_qrn_rms**2

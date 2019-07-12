@@ -293,7 +293,7 @@ subroutine da_read_obs_radar (iv, filename, grid)
                   allocate (iv % radar (ilocal) % height_qc(1:iv%info(radar)%max_lev))
                   allocate (iv % radar (ilocal) % rv       (1:iv%info(radar)%max_lev))
                   allocate (iv % radar (ilocal) % rf       (1:iv%info(radar)%max_lev))
-                  if ( use_radar_rhv ) then
+                  if ( radar_rf_opt == 2 ) then
                      allocate (iv % radar (ilocal) % rrn      (1:iv%info(radar)%max_lev))
                      allocate (iv % radar (ilocal) % rsn      (1:iv%info(radar)%max_lev))
                      allocate (iv % radar (ilocal) % rgr      (1:iv%info(radar)%max_lev))
@@ -301,7 +301,7 @@ subroutine da_read_obs_radar (iv, filename, grid)
                      allocate (iv % radar (ilocal) % rsno     (1:iv%info(radar)%max_lev))
                      allocate (iv % radar (ilocal) % rgro     (1:iv%info(radar)%max_lev))
                   end if
-                  if ( use_radar_rqv ) then
+                  if ( radar_rqv_opt > 0 ) then
                      allocate (iv % radar (ilocal) % rqv      (1:iv%info(radar)%max_lev))
                      allocate (iv % radar (ilocal) % rqvo     (1:iv%info(radar)%max_lev))
                   end if
@@ -312,7 +312,7 @@ subroutine da_read_obs_radar (iv, filename, grid)
                   iv % radar (ilocal) % rv(i)        = platform % each(i) % rv
                   iv % radar (ilocal) % rf(i)        = platform % each(i) % rf
 
-                  if ( use_radar_rhv ) then
+                  if ( radar_rf_opt == 2 ) then
                      iv % radar (ilocal) % rrn(i) % inv   = missing_r
                      iv % radar (ilocal) % rrn(i) % qc    = missing_data
                      iv % radar (ilocal) % rrn(i) % error = missing_r
@@ -329,7 +329,7 @@ subroutine da_read_obs_radar (iv, filename, grid)
                      iv % radar (ilocal) % rgro(i)        = missing_r
                   end if
 
-                  if ( use_radar_rqv ) then
+                  if ( radar_rqv_opt > 0 ) then
                      iv % radar (ilocal) % rqv(i) % inv   = missing_r
                      iv % radar (ilocal) % rqv(i) % qc    = missing_data
                      iv % radar (ilocal) % rqv(i) % error = missing_r

@@ -21,7 +21,7 @@ module da_define_structures
       trace_use_dull,comm, num_pseudo
    use da_control, only : cloud_cv_options, use_cv_w
    use da_control, only : pseudo_uvtpq
-   use da_control, only : use_radar_rhv, use_radar_rqv
+   use da_control, only : radar_rf_opt, radar_rqv_opt
 
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_tools_serial, only : da_array_print

@@ -8,7 +8,7 @@ module da_radar
       max_error_p,max_error_q, check_max_iv_unit,check_max_iv,  &
       max_stheight_diff,missing_data,max_error_bq,max_error_slp, &
       max_error_bt, max_error_buv, radar,fails_error_max, &
-      use_radar_rv, use_radar_rf, use_radar_rhv, use_radar_rqv, &
+      radar_rv_opt, radar_rf_opt, radar_rqv_opt, &
       below_model_surface,mkz,above_model_lid,&
       fg_format,fg_format_wrf_arw_regional,fg_format_wrf_nmm_regional,fg_format_wrf_arw_global,&
       fg_format_kma_global,max_error_rv,max_error_rf, &

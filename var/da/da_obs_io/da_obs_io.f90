@@ -32,7 +32,7 @@ module da_obs_io
       thin_conv, thin_conv_ascii, lsac_nh_step, lsac_nv_step, lsac_nv_start, lsac_print_details, &
       lsac_use_u, lsac_use_v, lsac_use_t, lsac_use_q, lsac_u_error, lsac_v_error, lsac_t_error, lsac_q_error, &
       gpsro_drift, max_gpseph_input, use_gpsephobs, gpseph, gpseph_loadbalance, kds, kde, kts, kte, &
-      use_radar_rhv, use_radar_rqv
+      radar_rf_opt, radar_rqv_opt
 
    use da_wrf_interfaces, only : wrf_dm_bcast_integer, wrf_dm_bcast_real
    use da_define_structures, only : iv_type, multi_level_type, multi_level_type_BUFR, &

@@ -463,6 +463,9 @@ CONTAINS
      LOGICAL ::         use_eos_radobs, use_3dvar_phy
      NAMELIST /wrfvar4/ use_eos_radobs, use_3dvar_phy
 
+     logical ::         use_radar_rv, use_radar_rf, use_radar_rqv, use_radar_rhv
+     namelist /wrfvar4/ use_radar_rv, use_radar_rf, use_radar_rqv, use_radar_rhv
+
      LOGICAL             :: use_crtm_kmatrix_fast
      NAMELIST /wrfvar14/    use_crtm_kmatrix_fast
      CHARACTER (LEN=256) :: spccoeff_file, taucoeff_file, aerosolcoeff_file
@@ -541,9 +544,13 @@ CONTAINS
         READ   ( UNIT = nml_read_unit , NML = wrfvar4 , iostat=nml_error )
 
         IF ( nml_error .EQ. 0 ) then    ! Successul, rm variables must be problem
-           CALL wrf_debug(0, "-- Is use_3dvar_phy or use_eos_radobs still in your "// &
+           CALL wrf_debug(0, "-- are use_radar_rv, use_radar_rf, use_radar_rqv, use_radar_rhv, "//&
+                             "use_3dvar_phy or use_eos_radobs still in your "// &
                               TRIM(nml_name)//" namelist?")
-           CALL wrf_debug(0, "-- Remove use_3dvar_phy, use_eos_radobs as they are obsolete.")
+           CALL wrf_debug(0, "-- Remove use_radar_rv, use_radar_rf, use_radar_rqv, use_radar_rhv, "//&
+                             "use_3dvar_phy, use_eos_radobs as they are obsolete.")
+           CALL wrf_debug(0, "-- For radar DA, set proper radar_rv_opt, radar_rf_opt and radar_rqv_opt "//&
+                             "in namelist record &radar_da instead.")
         ENDIF
 
 !---------------------------------- wrfvar14 -----------------------------

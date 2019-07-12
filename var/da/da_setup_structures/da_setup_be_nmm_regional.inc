@@ -389,7 +389,7 @@ subroutine da_setup_be_nmm_regional(xb, be)
    deallocate (eval_loc)
 
 !
-   if(use_radarobs .and. use_radar_rf .or. use_rad .and. crtm_cloud) then  
+   if((use_radarobs .and. radar_rf_opt==1) .or. (use_rad .and. crtm_cloud)) then
       if ( cloud_cv_options == 1 ) be % v4 % name = 'qt   '
    end if
 

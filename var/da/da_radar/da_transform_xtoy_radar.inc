@@ -86,7 +86,7 @@ subroutine da_transform_xtoy_radar (grid, iv, y)
    call da_interp_lin_3d (grid%xa%q,   iv%info(radar), model_qv)
    call da_interp_lin_3d (grid%xa%t,   iv%info(radar), model_t)
 
-   if ( use_radar_rqv ) then
+   if ( radar_rqv_opt > 0 ) then
       !basic states
       allocate (model_tb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
       allocate (model_qvb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
@@ -104,7 +104,7 @@ subroutine da_transform_xtoy_radar (grid, iv, y)
       do k = 1, iv%info(radar)%levels(n)
          if (iv % radar(n) % height_qc(k) /= below_model_surface .and.  &
               iv % radar(n) % height_qc(k) /= above_model_lid) then
-            if (use_radar_rv) then
+            if ( radar_rv_opt > 0 ) then
                if (iv % radar(n) % rv(k) % qc >= obs_qc_pointer) then
                   zr=iv%radar(n)%height(k) - iv%radar(n)%stn_loc%elv
 
@@ -115,13 +115,13 @@ subroutine da_transform_xtoy_radar (grid, iv, y)
                end if
             end if
 
-            if (use_radar_rf .and. .not. use_radar_rhv) then
+            if ( radar_rf_opt == 1 ) then
                if (iv % radar(n) % rf(k) % qc >= obs_qc_pointer) then
                   y%radar(n)%rf(k) = leh2 * model_qrn(k,n) /(model_qrnb(k,n)*alog_10) 
                end if
             end if
 
-            if (.not.use_radar_rf .and. use_radar_rhv) then
+            if ( radar_rf_opt == 2 ) then
                if (iv % radar(n) % rrn(k) % qc >= obs_qc_pointer) then
                   y%radar(n)%rrn(k) = model_qrn(k,n) 
                end if
@@ -133,7 +133,7 @@ subroutine da_transform_xtoy_radar (grid, iv, y)
                end if
             end if
 
-            if (use_radar_rqv) then
+            if ( radar_rqv_opt > 0 ) then
                !dqv=qs*drh+(c2*c3*/(T+c3)**2.0-c4/T)*qv**dT
                !c2=17.67 is es_beta
                !c3=243.5 is es_gamma
@@ -162,7 +162,7 @@ subroutine da_transform_xtoy_radar (grid, iv, y)
    deallocate (model_qv)
    deallocate (model_t)
    deallocate (model_rho)
-   if ( use_radar_rqv ) then
+   if ( radar_rqv_opt > 0 ) then
       deallocate (model_tb)
       deallocate (model_qvb)
    end if

@@ -61,7 +61,7 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
    allocate (model_qv(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_t(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
 
-   if ( use_radar_rqv ) then
+   if ( radar_rqv_opt > 0 ) then
       !basic states
       allocate (model_qvb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
       allocate (model_tb(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
@@ -99,13 +99,13 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
          if (iv % radar(n) % height_qc(k) /= below_model_surface .and.  &
               iv % radar(n) % height_qc(k) /= above_model_lid) then
 
-            if (use_radar_rf .and. .not.use_radar_rhv) then
+            if ( radar_rf_opt == 1 ) then
                if (iv % radar(n) % rf(k) % qc >= obs_qc_pointer) then
                   model_qrn(k,n) = model_qrn(k,n) + leh2/(model_qrnb(k,n)*alog10) * jo_grad_y%radar(n)%rf(k)
                end if
             end if
 
-            if (.not.use_radar_rf .and. use_radar_rhv) then
+            if ( radar_rf_opt == 2 ) then
                if (iv % radar(n) % rrn(k) % qc >= obs_qc_pointer) then
                   model_qrn(k,n) = model_qrn(k,n) + jo_grad_y%radar(n)%rrn(k)
                end if
@@ -117,7 +117,7 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
                end if
             end if
 
-            if (use_radar_rqv) then
+            if ( radar_rqv_opt > 0 ) then
                if (iv % radar(n) % rqv(k) % qc >= obs_qc_pointer) then
                !TL  y%radar(n)%rqv(k) = y%radar(n)%rqv(k) +( es_beta*es_gamma/(model_tb(k,n)+es_gamma)**2.0 )*model_qvb(k,n)*model_t(k,n)
                   model_qv(k,n) = model_qv(k,n) + jo_grad_y%radar(n)%rqv(k)
@@ -126,7 +126,7 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
             end if
 
 
-            if (use_radar_rv) then
+            if ( radar_rv_opt > 0 ) then
                if (iv % radar(n) % rv(k) % qc >= obs_qc_pointer) then
                   zr=iv%radar(n)%height(k) - iv%radar(n)%stn_loc%elv
 
@@ -141,12 +141,12 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
       end do
       jo_grad_y%radar(n)%rv(:) = 0.0
       jo_grad_y%radar(n)%rf(:) = 0.0
-      if (use_radar_rhv) then
+      if ( radar_rf_opt == 2 ) then
          jo_grad_y%radar(n)%rrn(:)= 0.0
          jo_grad_y%radar(n)%rsn(:)= 0.0
          jo_grad_y%radar(n)%rgr(:)= 0.0
       end if
-      if (use_radar_rqv) then
+      if ( radar_rqv_opt > 0 ) then
          jo_grad_y%radar(n)%rqv(:)= 0.0
       end if
    end do ! n
@@ -183,7 +183,7 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
    deallocate (model_qsn)
    deallocate (model_qgr)
    deallocate (model_rho)
-   if ( use_radar_rqv ) then
+   if ( radar_rqv_opt > 0 ) then
       deallocate (model_qvb)
       deallocate (model_tb)
    end if

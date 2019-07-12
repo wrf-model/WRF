@@ -69,8 +69,6 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_rainobs          = .false.
       use_iasiobs          = .false.
       use_radarobs         = .false.
-      use_radar_rv         = .false.
-      use_radar_rf         = .false.
       ob_format = ob_format_ascii
    end if
 
@@ -149,8 +147,6 @@ subroutine da_setup_obs_structures( grid, ob, iv, j_cost)
       use_rainobs          = .false.
       use_iasiobs          = .false.	  
       use_radarobs         = .false.
-      use_radar_rv         = .false.
-      use_radar_rf         = .false.
    end if
 
    if ( use_pseudo_rad ) then

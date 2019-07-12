@@ -29,25 +29,25 @@ subroutine da_residual_radar(iv, y, re, np_missing, np_bad_data, np_obs_used, np
 
    do n=1, iv%info(radar)%nlocal
       do k=1, iv%info(radar)%levels(n)
-         if (use_radar_rv) then
+         if ( radar_rv_opt > 0 ) then
             np_available = np_available + 1
             re%radar(n)%rv(k) = da_residual(n, k, y%radar(n)%rv(k), iv%radar(n)%rv(k), n_obs_bad % rv)
          end if
 
-         if (use_radar_rf) then
-            np_available = np_available + 1
-            if (.not. use_radar_rhv) then
+         if ( radar_rf_opt > 0 ) then
+            if ( radar_rf_opt == 1 ) then
+               np_available = np_available + 1
                re%radar(n)%rf(k) = da_residual(n, k, y%radar(n)%rf(k), iv%radar(n)%rf(k), n_obs_bad % rf)
+            else if ( radar_rf_opt == 2 ) then
+               np_available = np_available + 3
+               re%radar(n)%rrn(k) = da_residual(n, k, y%radar(n)%rrn(k), iv%radar(n)%rrn(k), n_obs_bad % rrn)
+               re%radar(n)%rsn(k) = da_residual(n, k, y%radar(n)%rsn(k), iv%radar(n)%rsn(k), n_obs_bad % rsn)
+               re%radar(n)%rgr(k) = da_residual(n, k, y%radar(n)%rgr(k), iv%radar(n)%rgr(k), n_obs_bad % rgr)
             end if
          end if
 
-        if (.not.use_radar_rf .and. use_radar_rhv) then
-           re%radar(n)%rrn(k) = da_residual(n, k, y%radar(n)%rrn(k), iv%radar(n)%rrn(k), n_obs_bad % rrn)
-           re%radar(n)%rsn(k) = da_residual(n, k, y%radar(n)%rsn(k), iv%radar(n)%rsn(k), n_obs_bad % rsn)
-           re%radar(n)%rgr(k) = da_residual(n, k, y%radar(n)%rgr(k), iv%radar(n)%rgr(k), n_obs_bad % rgr)
-        end if
-
-        if (use_radar_rqv) then
+        if ( radar_rqv_opt > 0 ) then
+           np_available = np_available + 1
            re%radar(n)%rqv(k) = da_residual(n, k, y%radar(n)%rqv(k), iv%radar(n)%rqv(k), n_obs_bad % rqv)
         end if
       end do

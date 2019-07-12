@@ -75,23 +75,17 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
 
    irv = 0; irvf = 0; irf = 0; irff = 0
 
-
-   ! No point in going through and allocating all these variables if we're just going to quit anyway
-
-   if ( use_radar_rf .and. use_radar_rhv ) then
-      write(unit=message(1),fmt='(A)') "Both 'use_radar_rf' and 'use_radar_rhv' are set to true"
-      write(unit=message(2),fmt='(A)') "You must only choose one of these options"
-      call da_error(__FILE__,__LINE__,message(1:2))
+   if ( radar_rv_opt==0 .and. radar_rf_opt==0 .and. radar_rqv_opt==0 ) then
+      return
    end if
-
 
    allocate (model_p(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_u(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_v(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_w(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
 
-   if ( use_radar_rv ) allocate (model_rv(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
-   if ( use_radar_rf ) allocate (model_rf(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
+   if ( radar_rv_opt > 0 )  allocate (model_rv(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
+   if ( radar_rf_opt == 1 ) allocate (model_rf(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_ps(iv%info(radar)%n1:iv%info(radar)%n2))
 
    allocate (model_qv(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
@@ -103,7 +97,7 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    allocate (model_qsn(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
    allocate (model_qgr(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
 
-   if ( use_radar_rqv ) then
+   if ( radar_rqv_opt > 0 ) then
       allocate (model_lcl(iv%info(radar)%n1:iv%info(radar)%n2))
       allocate (model_qs_ice(iv%info(radar)%max_lev,iv%info(radar)%n1:iv%info(radar)%n2))
       model_qs_ice(:,:) = 0. !initialize
@@ -114,8 +108,8 @@ subroutine da_get_innov_vector_radar (it, grid, ob, iv)
    model_v(:,:)    = 0.
    model_w(:,:)    = 0.
 
-   if ( use_radar_rv ) model_rv(:,:)   = 0.
-   if ( use_radar_rf ) model_rf(:,:)   = 0.
+   if ( radar_rv_opt > 0 )  model_rv(:,:) = 0.
+   if ( radar_rf_opt == 1 ) model_rf(:,:) = 0.
    model_ps(:)     = 0.
 
    model_qv(:,:)   = 0.
@@ -188,7 +182,7 @@ END IF
 
    model_tc = model_tc - 273.15 ! degree K to degree C
 
-   if ( use_radar_rqv ) then
+   if ( radar_rqv_opt > 0 ) then
       do n=iv%info(radar)%n1,iv%info(radar)%n2
          do k=1,iv%info(radar)%levels(n)
             model_qs_ice(k,n) = model_qs(k,n)*exp((2.837E6 - 2.501E6)/461.5*(1./273.15 - 1./(model_tc(k,n)+273.15)))
@@ -196,18 +190,18 @@ END IF
       end do
    end if
 
-   ! calculate background/model LCL to be used by use_radar_rqv
-   if ( use_radar_rqv .and. cloudbase_calc_opt == 2 ) then
+   ! calculate background/model LCL to be used by radar_rqv_opt>0
+   if ( radar_rqv_opt > 0 .and. cloudbase_calc_opt == 2 ) then
       do j = jts, jte
          do i = its, ite
             zlcl(i,j) = 125.0*(grid%xb%t(i,j,1)-grid%xb%td(i,j,1))
          end do
       end do
-   end if ! lcl for use_radar_rqv
+   end if ! lcl for radar_rqv_opt>0
 
    do n=iv%info(radar)%n1,iv%info(radar)%n2
 
-      if ( use_radar_rf ) then
+      if ( radar_rf_opt == 1 ) then
          ! for Xiao's default scheme
          ! Test 5.0E-8 (kg/kg) as critical value. It can not be smaller.
          do k=1,iv%info(radar)%levels(n)
@@ -228,7 +222,7 @@ END IF
                  grid%xb % ptop
 
       ! calculate model LCL at ob locations
-      if ( use_radar_rqv ) then
+      if ( radar_rqv_opt > 0 ) then
          select case ( cloudbase_calc_opt )
          case ( 1 )  !KNU scheme
             ! get surface variable to calculate cloud base
@@ -262,7 +256,7 @@ END IF
             model_lcl(n) = 1500.0
 
          end select
-      end if ! lcl for use_radar_rqv
+      end if ! lcl for radar_rqv_opt>0
 
       iv%radar(n)%model_p(1:iv%info(radar)%levels(n))   = model_p(1:iv%info(radar)%levels(n),n)
       iv%radar(n)%model_rho(1:iv%info(radar)%levels(n)) = model_rho(1:iv%info(radar)%levels(n),n)
@@ -309,7 +303,7 @@ END IF
             echo_rf_good = (abs(ob % radar(n) % rf(k) - missing_r) > 1.0) &
                            .and. (iv % radar(n) % rf(k) % qc >= obs_qc_pointer)
 
-            if (use_radar_rv) then
+            if ( radar_rv_opt > 0 ) then
                !set qc to missing_data for rv of -999.99 (radar_non_precip_rf)
                if ( abs(ob%radar(n)%rv(k) - radar_non_precip_rf) < 0.1 ) then
                    iv % radar(n) % rv(k) % qc = missing_data
@@ -329,7 +323,7 @@ END IF
                end if
             end if
 
-            if (use_radar_rf) then
+            if ( radar_rf_opt == 1 ) then
                if ( echo_rf_good ) then
                   model_rf(k,n) = leh1 + leh2 * alog10(model_rho(k,n) * model_qrn(k,n) * 1.0e+3)
                   iv % radar(n) % rf(k) % inv = ob % radar(n) % rf(k) - model_rf(k,n)
@@ -337,7 +331,7 @@ END IF
             end if
 
             ! calculate background/model reflectivity
-            if (use_radar_rhv .or. use_radar_rqv) then
+            if ( radar_rf_opt == 2 .or. radar_rqv_opt > 0 ) then
                if ( echo_rf_good ) then
                   call da_radar_rf (model_qrn(k,n),model_qsn(k,n),model_qgr(k,n),model_tc(k,n),model_rho(k,n),bg_rze)
                   bg_rf = 10.0*log10(bg_rze)  ! Z to dBZ
@@ -346,7 +340,7 @@ END IF
 
             ! calculate retrieved hydrometeorological variables
             ! Jidong Gao JAS 2013
-            if (use_radar_rhv) then
+            if ( radar_rf_opt == 2 ) then
                if ( echo_rf_good ) then
 
                   ! compute retrieved hydrometeors rhv
@@ -456,7 +450,7 @@ END IF
             end if ! rhv
 
             ! retrieved water vapor
-            if (use_radar_rqv) then
+            if ( radar_rqv_opt > 0 ) then
                !iv%%rqv and iv%%rqvo were assigned to missing values in read_obs_radar_ascii.inc
                !iter=1, rqv is missing; for second loop, dont change rqv value
                if (it .eq. 1) then
@@ -534,7 +528,7 @@ END IF
                   end if ! echo_non_precip check
 
                end if  ! echo_rf_good check
-            end if  ! use_radar_rqv
+            end if  ! radar_rqv_opt>0
 
          end if  ! not surface or model lid
       end do level_loop
@@ -552,12 +546,12 @@ END IF
       write(unit = check_max_iv_unit, fmt ='(/,A,i5,A)')   &
          'For outer iteration ', it, ', Total Rejections for radar follows:'
 
-      if (use_radar_rv) then
+      if ( radar_rv_opt > 0 ) then
           write( unit = check_max_iv_unit, fmt = '(/,2(A,I6))') &
             'Number of failed rv observations:     ',irvf, ' on ',irv
       end if
 
-      if (use_radar_rf) then
+      if ( radar_rf_opt == 1 ) then
          write( unit = check_max_iv_unit, fmt = '(/,2(A,I6))') &
             'Number of failed rf observations:     ',irff, ' on ',irf
       end if
@@ -581,7 +575,7 @@ END IF
    deallocate (model_qsn)
    deallocate (model_qgr)
 
-   if ( use_radar_rqv ) then
+   if ( radar_rqv_opt > 0 ) then
       deallocate (model_lcl)
       deallocate (model_qs_ice)
    end if

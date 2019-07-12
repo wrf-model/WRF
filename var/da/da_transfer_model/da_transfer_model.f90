@@ -36,13 +36,13 @@ module da_transfer_model
       truelat2_3dv, periodic_x,write_increments,max_ext_its, gravity, &
       kappa, print_detail_xa,rd_over_rv,t0, print_detail_xa, check_rh, adj_sens,&
       print_detail_xb,test_dm_exact,base_lapse,base_temp,vertical_ip,ptop, &
-      use_gpsztdobs, use_ssmitbobs, use_radarobs, use_radar_rf, use_radar_rhv,&
+      use_gpsztdobs, use_ssmitbobs, use_radarobs, radar_rf_opt, &
       dt_cloud_model, cp, use_ssmiretrievalobs, var4d_detail_out, &
       vertical_ip_sqrt_delta_p, vertical_ip_delta_p,check_rh_simple, check_rh_tpw, &
       t_kelvin, num_fgat_time, num_pseudo, iso_temp, interval_seconds, trajectory_io, &
       ids,ide,jds,jde,kds,kde, ims,ime,jms,jme,kms,kme, num_fft_factors, &
       its,ite,jts,jte,kts,kte, ips,ipe,jps,jpe,kps,kpe, qlimit, &
-      update_sfcdiags, use_wrf_sfcinfo, use_radar_rqv, cloudbase_calc_opt, use_gpsephobs, &
+      update_sfcdiags, use_wrf_sfcinfo, radar_rqv_opt, cloudbase_calc_opt, use_gpsephobs, &
       cloud_cv_options
    use da_control, only: base_pres_strat, base_lapse_strat
    use da_control, only: c1f, c2f, c1h, c2h, c3f, c3h, c4f, c4h

@@ -33,7 +33,7 @@ subroutine da_setup_testfield(grid)
    call da_set_tst_trnsf_fld(grid, grid%xa%t, grid%xb%t, typical_t_rms)
    call da_set_tst_trnsf_fld(grid, grid%xa%p, grid%xb%p, typical_p_rms)
    call da_set_tst_trnsf_fld(grid, grid%xa%q, grid%xb%q, typical_q_rms)
-   if ( ( use_rad .and. crtm_cloud ) .or. use_radar_rf .or. use_radar_rhv ) then
+   if ( ( use_rad .and. crtm_cloud ) .or. radar_rf_opt > 0 ) then
       call da_set_tst_trnsf_fld(grid, grid%xa%qcw, grid%xb%qcw, typical_qcw_rms)
       call da_set_tst_trnsf_fld(grid, grid%xa%qrn, grid%xb%qrn, typical_qrn_rms)
       call da_set_tst_trnsf_fld(grid, grid%xa%qci, grid%xb%qci, typical_qci_rms)

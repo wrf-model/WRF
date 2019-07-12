@@ -463,7 +463,8 @@ Namelist variables for controlling the adaptive time step option:
  dfi_fwdstop_hour                    = 12       ! two-digit month of stop time for forward DFI integration
  dfi_fwdstop_minute                  = 00       ! two-digit month of stop time for forward DFI integration
  dfi_fwdstop_second                  = 00       ! two-digit month of stop time for forward DFI integration
- dfi_radar                           = 0        ! DFI radar da switch
+ dfi_savehydmeteors                  = 0        ! option for radar DA: 0: set hydrometeors to 0 before DFI and
+                                                  let them spin up in DFI; 1: keep them unchanged in DFI
 
  &physics
 
@@ -950,6 +951,8 @@ Namelist variables for controlling the adaptive time step option:
  shadlen                             = 25000.   ! max shadow length in meters for topo_shading=1
  sf_ocean_physics                    = 0        ! activate ocean model (0=no, 1=1d mixed layer; 2=3D PWP, no bathymetry)
  oml_hml0                            = 50       ! oml model can be initialized with a constant depth everywhere (m)
+                                                  < 0, oml is initialized with real-time ocean mixed depth
+                                                  = 0, oml is initialized with climatological ocean mixed depth
  oml_gamma                           = 0.14     ! oml deep water lapse rate (K m-1)
  oml_relaxation_time                 = 0.       ! Relaxation time (in second) of mixed layer ocean model back to original values 
                                                   (an example value is 259200 sec. (3 days)) (new in 3.8)

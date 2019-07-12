@@ -500,28 +500,24 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
          end if
       else !crtm_cloud
          ! calculate ca_mean
-         where (     tb_inv( :, n ) .gt. missing_r &
-               .and. tb_ob(  :, n ) .gt. 0. &
-               .and. tb_xb(  :, n ) .gt. 0. &
+         where (    tb_inv( :, n ) > missing_r &
+               .and. tb_ob( :, n ) > 0.        &
+               .and. tb_xb( :, n ) > 0.        &
+               .and. BTlim( : )    > 0.        & !Harnisch
                )
-!              .and. tb_xb_clr(:,n) .gt. 0. & !Okamoto or Guerrette
+!              .and. tb_xb_clr( :, n ) > 0.     & !Okamoto or Guerrette
 
 ! using ob with VarBC (tb_inv + tb_xb)
 ! -------------------------------
 !! Harnisch et al. (2016)
-               if ( BTlim(k) .gt. 0. ) then
-                  ca_mean(:,n) = &
-                                 0.5 * ( max( 0., BTlim(:) - tb_xb(:,n) ) + &
-                                         max( 0., BTlim(:) - (tb_inv(:,n) + tb_xb(:,n)) ) )
-               end if
+            ca_mean(:,n) = 0.5 * ( max( 0., BTlim(:) - tb_xb(:,n) ) + &
+                                   max( 0., BTlim(:) - (tb_inv(:,n) + tb_xb(:,n)) ) )
 !! Okamoto et al. (2013)
-!               ca_mean(:,n) = &
-!                              0.5 * ( abs(  tb_xb(:,n)                - tb_xb_clr(:,n) ) + &
-!                                      abs( (tb_inv(:,n) + tb_xb(:,n)) - tb_xb_clr(:,n) ) )
+!            ca_mean(:,n) = 0.5 * ( abs(  tb_xb(:,n)                - tb_xb_clr(:,n) ) + &
+!                                   abs( (tb_inv(:,n) + tb_xb(:,n)) - tb_xb_clr(:,n) ) )
 !!! J. Guerrette
-!               ca_mean(:,n) = &
-!                              0.5 * ( max( 0., tb_xb_clr(:,n) - tb_xb(:,n) ) + &
-!                                      max( 0., tb_xb_clr(:,n) - (tb_inv(:,n) + tb_xb(:,n)) ) )
+!            ca_mean(:,n) = 0.5 * ( max( 0., tb_xb_clr(:,n) - tb_xb(:,n) ) + &
+!                                   max( 0., tb_xb_clr(:,n) - (tb_inv(:,n) + tb_xb(:,n)) ) )
          endwhere
 !JJGDEBUG
          if (print_cld_debug) write(stdout,'(A,I8,*(2x,F16.8))') 'PIXEL_DEBUG93: ', n, &

@@ -41,8 +41,6 @@
       model_config_rec%auxinput9_interval_s   =       model_config_rec%sgfdda_interval_s
       model_config_rec%auxinput9_interval_y   =       model_config_rec%sgfdda_interval_y
       model_config_rec%io_form_auxinput9      =       model_config_rec%io_form_sgfdda
-      IF (model_config_rec%prec_acc_dt(1) .gt. 0.) model_config_rec%prec_acc_opt = 1
-      IF (model_config_rec%bucket_mm .gt. 0.) model_config_rec%bucketr_opt = 1
 #ifdef PLANET
 !***************** special conversion for timesteps *********************
 ! 2004-12-07 ADT Notes

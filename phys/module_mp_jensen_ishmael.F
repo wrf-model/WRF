@@ -20,7 +20,7 @@ module module_mp_jensen_ishmael
   ! See Jensen et al. 2017 (JAS), Jensen et al. 2018 (MWR), and Jensen et al. 2018 (JAS) for details.    !
   !                                                                                                      !
   ! Author:        Anders A. Jensen, NCAR-RAL, ajensen@ucar.edu, 303-497-8484                            ! 
-  ! Last modified: 29 March 2019                                                                         !
+  ! Last modified: 07 June 2019 (ISHMAEL version 0.1)                                                    !
   !------------------------------------------------------------------------------------------------------!
 
   use module_wrf_error   
@@ -201,6 +201,11 @@ contains
   !.. Call to build the aggregation lookup table (JYH)
     call mkcoltb(ndn,ncat,coltab,coltabn,ipair,gnu,tablo,tabhi,cfmas,pwmas,cfvt,pwvt)
     print*, 'Jensen_ISHMAEL aggregation lookup table built'
+
+  !.. Check that tables are allocated (Thanks to JYH and Shaofeng)
+    if(.not.allocated(itab)) allocate(itab(51,51,51,11,2))
+    if(.not.allocated(itabr)) allocate(itabr(51,51,51,11,6))
+    if(.not.allocated(gamma_tab)) allocate(gamma_tab(505001))
 
     itab = itab_o; itabr = itabr_o; gamma_tab = gamma_tab_o
 
@@ -858,7 +863,15 @@ contains
           kt    = 2.3823e-2 +7.1177e-5*(temp-T0)
           nsch  = mu*i_rhoair(k)/dv
           npr   = mu*i_rhoair(k)/kt
-          
+
+  !.. Inherent growth ratio data from Lamb and Scott 1972 and Chen and Lamb 1994
+  !.. Assumes planar particles at temperatures below -20C (see Bailey and Hallett)
+  !.. Function of temperature only (thanks to JHY and GHB for moving this fuction to where it belongs)        
+          igr = get_igr(igrdata, temp)
+          if((temp-T0).lt.-20.) then
+             igr=0.7
+          endif
+                
   !.. Assume constant cloud drop number concentration (200 cm^-3)
           nc(k) = 200.e6*i_rhoair(k)
        
@@ -898,12 +911,13 @@ contains
                 ai(cc,k) = ani(cc)**2*cni(cc)*ni(cc,k)
 
                 deltastr(cc)=(log(cni(cc))-log(ao))/(log(ani(cc))-log(ao)) 
-                dsold(cc) = deltastr(cc)
 
   !.. Check to keep ice properties in bounds
                 call var_check(NU, ao, fourthirdspi, gammnu, qi(cc,k), deltastr(cc),       &
                      ani(cc), cni(cc), rni(cc), rhobar(cc), ni(cc,k), ai(cc,k), ci(cc,k),  &
                      alphstr, alphv, betam)
+
+                dsold(cc) = deltastr(cc)
 
   !--------------------------------------------------------------------------------------------------------------!
   !--------------------------------------------------------------------------------------------------------------!
@@ -1115,13 +1129,6 @@ contains
   !.. Distribtuion-averaged capacitance (see Harrington et al. 2013)
                 capgam = capacitance_gamma(ani(cc), deltastr(cc), NU, alphstr, i_gammnu)
 
-  !.. Inherent growth ratio data from Lamb and Scott 1972 and Chen and Lamb 1994
-  !.. Assumes planar particles at temperatures below -20C (see Bailey and Hallett)
-                igr = get_igr(igrdata, temp)
-                if((temp-T0).lt.-20.) then
-                   igr=0.7
-                endif
-                
   !.. This subroutine first calculates the bulk fall speeds, then the ventilation, 
   !.. and finally the vapor growth (or sublimation) rate. (See Harrington et al. 2013)
                 call vaporgrow(dt, ani(cc), cni(cc), rni(cc), igr, nim3dum, temp, rimetotal(cc),         &
@@ -1489,49 +1496,49 @@ contains
              enddo
           endif
 
-  !.. Aggregation (currently only for T < T0
+  !.. Aggregation (currently only for T < T0)
           if(temp.le.T0) then
              
-             if(qi(ICE1,k).gt.1.e-8.or.qi(ICE2,k).gt.1.e-8.or.qi(ICE3,k).gt.1.e-8) then
-                do cc = 1, cat
-                   ni(cc,k) = max(ni(cc,k),QNSMALL)
-                   ai(cc,k) = max(ai(cc,k),QASMALL)
-                   ci(cc,k) = max(ci(cc,k),QASMALL)
-                enddo
+             do cc = 1, cat
+                ni(cc,k) = max(ni(cc,k),QNSMALL)
+                ai(cc,k) = max(ai(cc,k),QASMALL)
+                ci(cc,k) = max(ci(cc,k),QASMALL)
+             enddo
                 
   !.. Get characteristic diameters for aggregation
-                dn1      = 2.*((ai(ICE1,k)**2)/(ci(ICE1,k)*ni(ICE1,k)))**0.333333333333
-                dn2      = 2.*((ci(ICE2,k)**2)/(ai(ICE2,k)*ni(ICE2,k)))**0.333333333333
-                dn3      = 2.*((ai(ICE3,k)**2)/(ci(ICE3,k)*ni(ICE3,k)))**0.333333333333
+             dn1      = 2.*((ai(ICE1,k)**2)/(ci(ICE1,k)*ni(ICE1,k)))**0.333333333333
+             dn2      = 2.*((ci(ICE2,k)**2)/(ai(ICE2,k)*ni(ICE2,k)))**0.333333333333
+             dn3      = 2.*((ai(ICE3,k)**2)/(ci(ICE3,k)*ni(ICE3,k)))**0.333333333333
                   
-                dn1 = MIN(dn1,1.e-2)
-                dn2 = MIN(dn2,1.e-2)
-                dn3 = MIN(dn3,1.e-2)
+             dn1 = MIN(dn1,1.e-2)
+             dn2 = MIN(dn2,1.e-2)
+             dn3 = MIN(dn3,1.e-2)
                 
-                dn1 = MAX(dn1,1.e-6)
-                dn2 = MAX(dn2,1.e-6)
-                dn3 = MAX(dn3,1.e-6)
+             dn1 = MAX(dn1,1.e-6)
+             dn2 = MAX(dn2,1.e-6)
+             dn3 = MAX(dn3,1.e-6)
                 
   !.. Get ice-one and ice-two aspect ratios 
   !.. Spherical paritcles aggregate at a slower rate than less spherical ones
-                gamma_arg = NU-1.+deltastr(1)
-                gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
-                phiagg1=ci(1,k)/ai(1,k)*gamma_tab(gi)*i_gammnu
+             gamma_arg = NU-1.+deltastr(1)
+             gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
+             phiagg1=ci(1,k)/ai(1,k)*gamma_tab(gi)*i_gammnu
                 
-                gamma_arg = NU-1.+deltastr(2)
-                gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
-                phiagg2=ci(2,k)/ai(2,k)*gamma_tab(gi)*i_gammnu
+             gamma_arg = NU-1.+deltastr(2)
+             gi=MIN((MAX((NINT((gamma_arg*100000.)-355000+1)),1)),505001)
+             phiagg2=ci(2,k)/ai(2,k)*gamma_tab(gi)*i_gammnu
                 
-                phiagg1=MIN(phiagg1,100.)
-                phiagg1=MAX(phiagg1,0.01)
+             phiagg1=MIN(phiagg1,100.)
+             phiagg1=MAX(phiagg1,0.01)
                 
-                phiagg2=MIN(phiagg2,100.)
-                phiagg2=MAX(phiagg2,0.01)
+             phiagg2=MIN(phiagg2,100.)
+             phiagg2=MAX(phiagg2,0.01)
                 
   !.. Ice-1 and ice-2 mass and number loss to aggregates occurs inside of aggregation
   !.. After aggregation, ice-1 and ice-2 bulk distribution properties are adjusted 
   !.. assuming that aggregation did not cause the original shape and density of the
   !.. unaggregated particles to change
+             if(qi(ICE1,k).gt.1.e-8.or.qi(ICE2,k).gt.1.e-8.or.qi(ICE3,k).gt.1.e-8) then
                 call aggregation(dt,rhoair(k),temp,qi(ICE1,k),ni(ICE1,k),dn1,qi(ICE2,k),ni(ICE2,k),dn2,  &
                      qi(ICE3,k),ni(ICE3,k),dn3,rhobar(ICE1),rhobar(ICE2),phiagg1,phiagg2,coltab,         &
                      coltabn,qagg(ICE1),qagg(ICE2),qagg(ICE3),nagg(ICE1),nagg(ICE2),nagg(ICE3))
@@ -1915,6 +1922,8 @@ contains
                 call var_check(NU, ao, fourthirdspi, gammnu, qi(cc,k), deltastr(cc),       &
                      ani(cc), cni(cc), rni(cc), rhobar(cc), ni(cc,k), ai(cc,k), ci(cc,k),  &
                      alphstr, alphv, betam)
+
+                dsold(cc) = deltastr(cc)
              endif
           enddo
 
@@ -1962,14 +1971,14 @@ contains
                          deltastr(cc)=dsold(cc)
                       endif
                       if(deltastr(cc).gt.1.) then
-                         deltastr(cc)=dsold(cc)
+                         deltastr(cc)=1.
                       endif
                    else
                       if(deltastr(cc).gt.dsold(cc)) then
                          deltastr(cc)=dsold(cc)
                       endif
                       if(deltastr(cc).lt.1.) then
-                         deltastr(cc)=dsold(cc)
+                         deltastr(cc)=1.
                       endif
                    endif
                    cni(cc)=ao**(1.-deltastr(cc))*ani(cc)**deltastr(cc)
@@ -1979,7 +1988,8 @@ contains
                    call var_check(NU, ao, fourthirdspi, gammnu, qi(cc,k), deltastr(cc),       &
                         ani(cc), cni(cc), rni(cc), rhobar(cc), ni(cc,k), ai(cc,k), ci(cc,k),  &
                         alphstr, alphv, betam)
-                   
+
+                   dsold(cc) = deltastr(cc)
                 endif  !.. End if ice exists after melting
              enddo     !.. Loop over all ices species
           endif        !.. End temperature above melting
@@ -2123,9 +2133,8 @@ contains
                 ci(cc,k) = cni(cc)**2*ani(cc)*ni(cc,k)                                      
                 ai(cc,k) = ani(cc)**2*cni(cc)*ni(cc,k)
 
-                aniold(cc)      = ani(cc)
-                cniold(cc)      = cni(cc)
-                dsold(cc)=(log(cniold(cc))-log(ao))/(log(aniold(cc))-log(ao))
+                aniold(cc)  = ani(cc)
+                cniold(cc)  =ao**(1.-dsold(cc))*aniold(cc)**dsold(cc)
 
   !.. Get the size distribution properties of nucleated particles
                 if(nucfrac.gt.1.e-5.and.totalnucn(cc).gt.0.) then
@@ -2153,8 +2162,8 @@ contains
                    cmass = cmass*(1.-nucfrac) + anuc*nucfrac
                    
   !.. New ani and cni after nucleation
-                   ani(cc) = amass*gamma_tab(gi)/gamma_tab(gi2)
-                   cni(cc) = cmass*gamma_tab(gi)/gamma_tab(gi3)
+                   ani(cc) = max((amass*gamma_tab(gi)/gamma_tab(gi2)),2.e-6)
+                   cni(cc) = max((cmass*gamma_tab(gi)/gamma_tab(gi3)),2.e-6)
      
   !.. New delta* (shape) after nucleation
                    if(ani(cc).gt.(1.1*ao).and.cni(cc).gt.(1.1*ao)) then
@@ -2169,14 +2178,14 @@ contains
                          deltastr(cc)=dsold(cc)
                       endif
                       if(deltastr(cc).gt.1.) then
-                         deltastr(cc)=dsold(cc)
+                         deltastr(cc)=1.
                       endif
                    else
                       if(deltastr(cc).gt.dsold(cc)) then
                          deltastr(cc)=dsold(cc)
                       endif
                       if(deltastr(cc).lt.1.) then
-                         deltastr(cc)=dsold(cc)
+                         deltastr(cc)=1.
                       endif
                    endif
                 endif    !.. End nucleation update distribution properties
@@ -2222,8 +2231,10 @@ contains
                 call var_check(NU, ao, fourthirdspi, gammnu, qi(cc,k), deltastr(cc),       &
                      ani(cc), cni(cc), rni(cc), rhobar(cc), ni(cc,k), ai(cc,k), ci(cc,k),  &
                      alphstr, alphv, betam)
-                
-                ! Limit the fall speeds here to 25 m s^-1
+
+                dsold(cc) = deltastr(cc)
+
+  !.. Limit the fall speeds here to 25 m s^-1
                 vtrzi1(cc,k)=min(vtrzi1(cc,k),25.)
                 vtrmi1(cc,k)=min(vtrmi1(cc,k),25.)
                 vtrni1(cc,k)=min(vtrni1(cc,k),25.)
@@ -2253,6 +2264,7 @@ contains
   !.. with no change to density and delta*. 
   !.. Aggregation (see Jensen et al. 2017, 2018a, 2018b)
              do cc = 1, cat
+                dsold(cc) = deltastr(cc)
                 nibnuc(cc) = max(ni(cc,k),QNSMALL)
                 qi(cc,k) = qi(cc,k) + qagg(cc)
                 ni(cc,k) = ni(cc,k) + nagg(cc)
@@ -2294,10 +2306,9 @@ contains
                       ani(cc) =max((((ai(cc,k)**2)/(ci(cc,k)*nibnuc(cc)))**0.333333333333),2.e-6)
                       cni(cc) =max((((ci(cc,k)**2)/(ai(cc,k)*nibnuc(cc)))**0.333333333333),2.e-6)
 
-                      aniold(cc) = ani(cc)
-                      cniold(cc) = cni(cc)
-                      
-                      deltastr(cc)=(log(cni(cc))-log(ao))/(log(ani(cc))-log(ao))
+                      aniold(cc)  = ani(cc)
+                      cniold(cc)  = cni(cc)
+                      deltastr(cc)= dsold(cc)
                 
   !.. Update ice1 and ice2 sizes after aggregation from
   !.. updated mass and number mixiing ratios (transfer to aggregates) and an

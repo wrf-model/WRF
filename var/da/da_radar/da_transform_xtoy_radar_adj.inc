@@ -141,10 +141,14 @@ subroutine da_transform_xtoy_radar_adj(grid, iv, jo_grad_y, jo_grad_x)
       end do
       jo_grad_y%radar(n)%rv(:) = 0.0
       jo_grad_y%radar(n)%rf(:) = 0.0
-      jo_grad_y%radar(n)%rrn(:)= 0.0
-      jo_grad_y%radar(n)%rsn(:)= 0.0
-      jo_grad_y%radar(n)%rgr(:)= 0.0
-      jo_grad_y%radar(n)%rqv(:)= 0.0
+      if (use_radar_rhv) then
+         jo_grad_y%radar(n)%rrn(:)= 0.0
+         jo_grad_y%radar(n)%rsn(:)= 0.0
+         jo_grad_y%radar(n)%rgr(:)= 0.0
+      end if
+      if (use_radar_rqv) then
+         jo_grad_y%radar(n)%rqv(:)= 0.0
+      end if
    end do ! n
 
    ! [1.6] Interpolate horizontally from crs points:

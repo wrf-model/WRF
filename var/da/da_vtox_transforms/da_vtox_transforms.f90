@@ -12,6 +12,7 @@ module da_vtox_transforms
    use module_comm_dm, only : halo_psichi_uv_adj_sub,halo_ssmi_xa_sub,halo_sfc_xa_sub, &
       halo_radar_xa_w_sub, halo_xa_sub, halo_psichi_uv_sub, &
       halo_psichi_uv_sub, halo_xa_wpec_sub,halo_xb_wpec_sub
+   use da_par_util, only : true_mpi_real, mpi_sum, comm
 #endif
    use module_domain, only : xb_type, xpose_type, ep_type, vp_type, x_type, domain, get_ijk_from_grid
    use module_domain, only : x_subtype
@@ -62,7 +63,6 @@ module da_vtox_transforms
       da_transform_xtogpsref_adj, da_transform_xtowtq_adj, &
       da_transform_xtoztd_lin, da_transform_xtoztd_adj
    use da_par_util, only : da_vv_to_cv, da_cv_to_vv
-   use da_par_util, only : true_mpi_real, mpi_sum, comm
 
    use da_recursive_filter, only : da_transform_through_rf, &
       da_transform_through_rf_adj, da_apply_rf, da_apply_rf_adj, &

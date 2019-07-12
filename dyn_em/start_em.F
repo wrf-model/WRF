@@ -2065,7 +2065,7 @@ DEALLOCATE(z_at_q)
                U=grid%u_2                                           &
                ,V=grid%v_2                                          &
                ,W=grid%w_2                                          &
-               ,t=grid%t_2                                          &
+               ,t=grid%th_phy_m_t0                                  &
                ,qv=moist(:,:,:,P_QV)                                &
                ,zp=grid%ph_2                                        &
                ,zb=grid%phb                                         &

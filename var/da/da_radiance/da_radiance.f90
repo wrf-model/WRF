@@ -93,7 +93,7 @@ module da_radiance
       da_trace_int_sort
    use da_varbc, only : da_varbc_direct,da_varbc_coldstart,da_varbc_precond, &
       da_varbc_pred
-   use da_wrf_interfaces, only : wrf_dm_bcast_integer
+   use da_wrf_interfaces, only : wrf_dm_bcast_real
    use gsi_thinning, only : r999,r360,rlat_min,rlat_max,rlon_min,rlon_max, &
                             dlat_grid,dlon_grid,thinning_grid, &
                             makegrids,map2grids, &

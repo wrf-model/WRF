@@ -34,6 +34,7 @@ module da_obs_io
       gpsro_drift, max_gpseph_input, use_gpsephobs, gpseph, gpseph_loadbalance, kds, kde, kts, kte, &
       use_radar_rhv, use_radar_rqv
 
+   use da_wrf_interfaces, only : wrf_dm_bcast_integer, wrf_dm_bcast_real
    use da_define_structures, only : iv_type, multi_level_type, multi_level_type_BUFR, &
       radar_multi_level_type, y_type, field_type, each_level_type, &
       radar_each_level_type, info_type, model_loc_type,gpsref_type, rain_single_level_type, rain_each_type, &

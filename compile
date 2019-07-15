@@ -464,7 +464,7 @@ else
   echo " "
   echo "============================================================================================== "
   echo " "
-  cat inc/version_decl | cut -c 45-54
+  cat inc/version_decl | cut -d"'" -f2
   echo " "
   echo -n "Compiling: "
   if ( $WRF_DA_CORE ) echo -n "WRF_DA_CORE "

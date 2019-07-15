@@ -68,7 +68,7 @@ MODULE module_domain
      MODULE PROCEDURE get_ijk_from_grid1, get_ijk_from_grid2
    END INTERFACE
 
-   INTEGER, PARAMETER :: max_hst_mods = 200
+   INTEGER, PARAMETER :: max_hst_mods = 2000
 
 CONTAINS
 

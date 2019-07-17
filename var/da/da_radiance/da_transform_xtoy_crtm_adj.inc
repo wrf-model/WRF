@@ -279,7 +279,8 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
             Atmosphere(n)%level_pressure(k) = iv%instid(inst)%pf(k,n)
             Atmosphere(n)%temperature(k) = iv%instid(inst)%tm(k,n)
             Atmosphere(n)%absorber(k,1) = iv%instid(inst)%qm(k,n)
-            xb_q(k,n) = 0.001*iv%instid(inst)%qm(k,n)/(1.0+iv%instid(inst)%qm(k,n)) ! specific humidity
+            ! convert mixing ratio (g h2o / kg dry air) to specific humidity (kg h2o / kg moist air)
+            xb_q(k,n) = 0.001*iv%instid(inst)%qm(k,n)/(1.0+0.001*iv%instid(inst)%qm(k,n)) ! specific humidity
          end do
 
          if (crtm_cloud) then
@@ -498,9 +499,11 @@ subroutine da_transform_xtoy_crtm_adj ( cv_size, cv, iv, jo_grad_y, jo_grad_x )
          end if
 
          do k=kts,kte-1 ! from bottom to top.  Zero Jacobian for top level
+            ! compute specific_humidity gradient, dY/dq (kg moist air / kg h2o), 
+            ! from xb_q (kg h2o / kg moist air) and mixing ratio gradient, dY/dr ( kg dry air / g h2o)
             if (atmosphere(n)%pressure(kte-k+1) >= 75.0) &        ! Zero Jacobian for top level(s)
                q_ad(k,n) = Atmosphere_AD(n)%Absorber(kte-k+1,1) * 1000.0 /  &
-                           (1.0-xb_q(kte-k+1,n))**2               ! in g/kg
+                           (1.0-xb_q(kte-k+1,n))**2
                t_ad(k,n) = Atmosphere_AD(n)%Temperature(kte-k+1)
          end do
 

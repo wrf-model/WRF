@@ -1,4 +1,4 @@
-subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
+subroutine da_transform_vtoy_adj(it, cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
    grid, config_flags, jcdf_flag, vp6, vv6)
 
    !-------------------------------------------------------------------------
@@ -7,6 +7,7 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
 
    implicit none
 
+   integer,                    intent(in)    :: it     ! external iteration #.
    integer,                    intent(in)    :: cv_size ! Size of cv array.
    type(be_type),              intent(in)    :: be     ! background error structure.
    type(ep_type),              intent(in)    :: ep     ! ensemble perturbation structure.
@@ -139,7 +140,7 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
          call da_zero_x(grid%xa)
          grid%g_rainnc = 0.0
          grid%g_rainc = 0.0
-         call da_transform_xtoy_adj(cv_size, cv, grid, iv, y, grid%xa)
+         call da_transform_xtoy_adj(it, cv_size, cv, grid, iv, y, grid%xa)
          call da_transform_xtoxa_adj(grid)
          write(unit=filnam,fmt='(a2,i2.2)') 'af',nobwin
 
@@ -236,7 +237,7 @@ subroutine da_transform_vtoy_adj(cv_size, be, ep, cv, iv, vp, vv, xbx, y, &
             end if
          end if !4denvar
          call da_zero_x(grid%xa)
-         call da_transform_xtoy_adj(cv_size, cv_local, grid, iv, y, grid%xa)
+         call da_transform_xtoy_adj(it, cv_size, cv_local, grid, iv, y, grid%xa)
          call da_transform_xtoxa_adj(grid)
          call da_zero_vp_type (vp)
          call da_transform_vpatox_adj(grid, be, ep, vp, nobwin)

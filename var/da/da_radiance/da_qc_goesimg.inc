@@ -81,7 +81,7 @@ subroutine da_qc_goesimg(it, i, nchan, ob, iv)
 
       ! b. cloud detection
       !-----------------------------------------------------------
-      if (.not.crtm_cloud) then
+      if (.not.crtm_cloud(it)) then
          if (iv%instid(i)%clwp(n) >= 0.2) then
             iv%instid(i)%tb_qc(:,n) = qc_bad
             if (iv%instid(i)%info%proc_domain(1,n)) &
@@ -154,7 +154,7 @@ subroutine da_qc_goesimg(it, i, nchan, ob, iv)
 
          !  c.1. check absolute value of innovation
          !------------------------------------------------
-         if (.not.crtm_cloud) then
+         if (.not.crtm_cloud(it)) then
             inv_grosscheck = 15.0
             if (use_satcv(2)) inv_grosscheck = 100.0
             if (abs(iv%instid(i)%tb_inv(k,n)) > inv_grosscheck) then

@@ -50,7 +50,7 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
       if (iv%instid(i)%info%proc_domain(1,n)) &
             num_proc_domain = num_proc_domain + 1
 
-      if ( crtm_cloud ) then
+      if ( crtm_cloud(it) ) then
          ! calculate c37_mean
          c37_mean = 1.0-(ob%instid(i)%tb(11,n)-ob%instid(i)%tb(12,n)+  &
                     iv%instid(i)%tb_xb(11,n)-iv%instid(i)%tb_xb(12,n))/ &
@@ -91,7 +91,7 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
 
       !  4.0 check cloud
       !-----------------------------------------------------------------
-      if (.not. crtm_cloud ) then
+      if (.not. crtm_cloud(it) ) then
 
          do k = 1, nchan
 		 
@@ -128,7 +128,7 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
       end if
 
       ! assigning obs errors
-      if (.not. crtm_cloud ) then
+      if (.not. crtm_cloud(it) ) then
          do k = 1, nchan
             if (use_error_factor_rad) then
                iv%instid(i)%tb_error(k,n) = &
@@ -138,7 +138,7 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
             end if
          end do ! nchan
 
-      else !crtm_cloud
+      else !crtm_cloud(it)
          ! symmetric error model, Geer and Bauer (2011)
          do k = 1, nchan
             if (c37_mean.lt.0.05) then
@@ -155,7 +155,7 @@ subroutine da_qc_ahi (it, i, nchan, ob, iv)
 
       !  5.0 check innovation
       !-----------------------------------------------------------------
-      if (.not. crtm_cloud ) then
+      if (.not. crtm_cloud(it) ) then
          ! absolute departure check
          do k = 1, nchan
             inv_grosscheck = 8.0

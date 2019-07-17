@@ -1,11 +1,12 @@
-subroutine da_transform_xtoy(cv_size, cv, grid, iv, y)
+subroutine da_transform_xtoy(it, cv_size, cv, grid, iv, y)
 
    !-------------------------------------------------------------------------
    ! Purpose: TBD
    !-------------------------------------------------------------------------
 
    implicit none
-   
+
+   integer, intent(in)           :: it              ! external iteration #.
    integer, intent(in)           :: cv_size         ! Size of cv array.
    real, intent(in)              :: cv(1:cv_size)   ! control variables.
    type (domain),  intent(inout) :: grid
@@ -64,7 +65,7 @@ subroutine da_transform_xtoy(cv_size, cv, grid, iv, y)
          !else if (use_crtm_kmatrix_fast) then
          !   call da_transform_xtoy_crtmk_f (grid, iv, y)
          !else
-            call da_transform_xtoy_crtm (cv_size, cv, grid, iv, y)
+            call da_transform_xtoy_crtm (it, cv_size, cv, grid, iv, y)
          !end if
 #endif
        else

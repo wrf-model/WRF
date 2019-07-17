@@ -155,7 +155,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    n_absorbers = 2
    n_aerosols  = 0
    n_clouds    = 0
-   if ( crtm_cloud ) n_clouds = 6
+   if ( crtm_cloud(it) ) n_clouds = 6
 
    call CRTM_Atmosphere_Create ( Atmosphere(1), &
                                  n_layers,      &
@@ -172,7 +172,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
    Atmosphere(1)%Absorber_Units(1) = MASS_MIXING_RATIO_UNITS
    Atmosphere(1)%Absorber_Units(2) = VOLUME_MIXING_RATIO_UNITS
 
-   if (crtm_cloud) then
+   if (crtm_cloud(it)) then
       Atmosphere(1)%Cloud(1)%Type=WATER_CLOUD
       Atmosphere(1)%Cloud(2)%Type=ICE_CLOUD
       Atmosphere(1)%Cloud(3)%Type=RAIN_CLOUD
@@ -226,7 +226,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
       end if
 
       calc_tb_clr = .false.
-      if ( crtm_cloud .and. &
+      if ( crtm_cloud(it) .and. &
            trim( crtm_sensor_name(rtminit_sensor(inst))) == 'amsr2' ) then
          !Tb_clear_sky is only needed for symmetric obs error model
          !symmetric obs error model only implemented for amsr2 for now
@@ -372,7 +372,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 
             call da_interp_2d_partial (grid%xb%qcw(:,:,k), iv%instid(inst)%info,k,n,n, model_qcw(kte-k+1:kte-k+1))
             
-            if (crtm_cloud) then
+            if (crtm_cloud(it)) then
 
                call da_interp_2d_partial (grid%xb%qci(:,:,k), iv%instid(inst)%info,k,n,n,qci)
 
@@ -451,7 +451,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
          end do
 
          ! convert cloud content unit from kg/kg to kg/m^2        
-         if (crtm_cloud) then
+         if (crtm_cloud(it)) then
             do k=kts,kte
                do icld=1,Atmosphere(1)%n_Clouds
                   Atmosphere(1)%Cloud(icld)%Water_Content(k)= Atmosphere(1)%Cloud(icld)%Water_Content(k)* &
@@ -719,7 +719,7 @@ subroutine da_get_innov_vector_crtm ( it, grid, ob, iv )
 	    end if
          end do
 	       
-         if (crtm_cloud) then
+         if (crtm_cloud(it)) then
             do k=1,Atmosphere(1)%n_layers
                iv%instid(inst)%qcw(k,n) = Atmosphere(1)%cloud(1)%water_content(k)
                iv%instid(inst)%qci(k,n) = Atmosphere(1)%cloud(2)%water_content(k)

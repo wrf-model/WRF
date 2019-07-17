@@ -1,4 +1,4 @@
-subroutine da_transform_xtoy_adj(cv_size, cv, grid, iv, jo_grad_y, jo_grad_x)
+subroutine da_transform_xtoy_adj(it, cv_size, cv, grid, iv, jo_grad_y, jo_grad_x)
 
    !--------------------------------------------------------------------------
    ! Purpose: TBD
@@ -7,7 +7,8 @@ subroutine da_transform_xtoy_adj(cv_size, cv, grid, iv, jo_grad_y, jo_grad_x)
    !--------------------------------------------------------------------------
    
    implicit none
-   
+
+   integer, intent(in)           :: it              ! external iteration #.
    integer, intent(in)           :: cv_size         ! Size of cv array.
    real, intent(inout)           :: cv(1:cv_size)   ! control variables.
    type (domain),  intent(inout) :: grid
@@ -103,7 +104,7 @@ subroutine da_transform_xtoy_adj(cv_size, cv, grid, iv, jo_grad_y, jo_grad_x)
 #endif
       elseif (rtm_option == rtm_option_crtm) then
 #ifdef CRTM
-         call da_transform_xtoy_crtm_adj (cv_size, cv, iv, jo_grad_y, jo_grad_x)
+         call da_transform_xtoy_crtm_adj (it, cv_size, cv, iv, jo_grad_y, jo_grad_x)
 #endif
       else
          call da_warning(__FILE__,__LINE__,(/"Unknown radiative transfer model"/))

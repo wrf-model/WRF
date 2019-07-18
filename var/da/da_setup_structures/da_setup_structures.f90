@@ -67,7 +67,7 @@ module da_setup_structures
       chi_u_t_factor, chi_u_ps_factor,chi_u_rh_factor, t_u_rh_factor, ps_u_rh_factor, &
       interpolate_stats, be_eta, thin_rainobs, fgat_rain_flags, use_iasiobs, &
       use_seviriobs, jds_int, jde_int, anal_type_hybrid_dual_res, use_amsr2obs, nrange, use_4denvar, &
-      use_goesimgobs, use_ahiobs
+      use_goesimgobs, use_ahiobs, alpha_vertloc_opt
    use da_control, only: rden_bin, use_lsac
    use da_control, only: use_cv_w
    use da_control, only: pseudo_tpw, pseudo_ztd, pseudo_ref, pseudo_uvtpq, pseudo_elv, anal_type_qcobs
@@ -92,7 +92,7 @@ module da_setup_structures
    use da_ssmi, only : da_read_obs_ssmi,da_scan_obs_ssmi
    use da_tools_serial, only : da_get_unit, da_free_unit, da_array_print, da_find_fft_factors, &
       da_find_fft_trig_funcs
-   use da_tools, only: da_get_time_slots, da_1d_eigendecomposition
+   use da_tools, only: da_get_time_slots, da_1d_eigendecomposition, da_eof_decomposition
    use da_tracing, only : da_trace_entry, da_trace_exit
    use da_vtox_transforms, only : da_check_eof_decomposition
    use da_rfz_cv3, only : da_rfz0
@@ -151,5 +151,6 @@ contains
 #include "da_chg_be_Vres.inc"
 #include "da_gen_eigen.inc"
 #include "da_eigen_to_covmatrix.inc"
+#include "da_get_alpha_vertloc.inc"
 
 end module da_setup_structures

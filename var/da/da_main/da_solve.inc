@@ -241,6 +241,13 @@
       end if
    end if
 
+   if ( alpha_vertloc .and. alpha_vertloc_opt == 0 ) then
+      write(unit=message(1),fmt='(A)') "Please also set the new option &wrfvar16 alpha_vertloc_opt for alpha_vertloc"
+      write(unit=message(2),fmt='(A)') "alpha_vertloc_opt=1 : read in from be.vertloc.dat"
+      write(unit=message(3),fmt='(A)') "alpha_vertloc_opt=2 (recommended): let WRFDA calculate logP-based localization"
+      call da_error(__FILE__,__LINE__,message(1:3))
+   end if
+
    if ( use_gpsrefobs .and. use_gpsephobs ) then
       write(unit=message(1),fmt='(A,I3)') &
          'Both use_gpsrefobs and use_gpsephobs are true. Should choose either use_gpsrefobs or use_gpsephobs'

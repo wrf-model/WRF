@@ -1703,7 +1703,7 @@ subroutine da_setup_be_regional(xb, be, grid)
       allocate (alpha_val(1:nk)) ! Not using jy dimension yet.
       allocate (alpha_evec(1:nk,1:nk)) ! Not using jy dimension yet.
 
-      if ( alpha_vertloc ) then ! Use vertical localization:
+      if ( alpha_vertloc_opt > 0 ) then ! Use vertical localization:
          if ( rootproc ) then
             call da_get_alpha_vertloc(xb, alpha_val, alpha_evec)
          end if

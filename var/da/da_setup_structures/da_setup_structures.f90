@@ -31,7 +31,7 @@ module da_setup_structures
       use_ssmt1obs,use_ssmt2obs, use_shipsobs, use_satemobs, use_synopobs, &
       use_radar_rv,use_profilerobs, use_obsgts, use_geoamvobs, use_buoyobs, &
       jb_factor, je_factor, alphacv_method,its,ite,jts,jte,cv_size_domain_jb, cv_size_domain_jl, &
-      cv_size_domain_je, cv_size_domain,ensdim_alpha, alpha_vertloc, alpha_hydrometeors, &
+      cv_size_domain_je, cv_size_domain,ensdim_alpha, alpha_vertloc_opt, alpha_hydrometeors, &
       lat_stats_option,alpha_std_dev,sigma_alpha,alpha_corr_scale, &
       len_scaling1, len_scaling2, len_scaling3, len_scaling4, len_scaling5,&
       len_scaling6, len_scaling7, len_scaling8, len_scaling9, &
@@ -67,7 +67,7 @@ module da_setup_structures
       chi_u_t_factor, chi_u_ps_factor,chi_u_rh_factor, t_u_rh_factor, ps_u_rh_factor, &
       interpolate_stats, be_eta, thin_rainobs, fgat_rain_flags, use_iasiobs, &
       use_seviriobs, jds_int, jde_int, anal_type_hybrid_dual_res, use_amsr2obs, nrange, use_4denvar, &
-      use_goesimgobs, use_ahiobs, alpha_vertloc_opt
+      use_goesimgobs, use_ahiobs
    use da_control, only: rden_bin, use_lsac
    use da_control, only: use_cv_w
    use da_control, only: pseudo_tpw, pseudo_ztd, pseudo_ref, pseudo_uvtpq, pseudo_elv, anal_type_qcobs

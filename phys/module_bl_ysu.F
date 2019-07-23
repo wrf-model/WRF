@@ -270,7 +270,7 @@ contains
          rthblten(i,k,j) = rthblten(i,k,j)/pi3d(i,k,j)
          rqvblten(i,k,j) = rqvbl2dt(i,k)
          rqcblten(i,k,j) = rqvbl2dt(i,k+kte)
-         if(present(rqiblten)) rqiblten(i,k,j) = rqvbl2dt(i,k+kte+kte)
+         if(flag_qi) rqiblten(i,k,j) = rqvbl2dt(i,k+kte+kte)
        enddo
      enddo
 !

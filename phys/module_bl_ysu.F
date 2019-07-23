@@ -229,7 +229,7 @@ contains
         do i = its,ite
           qv2d(i,k) = qv3d(i,k,j)
           qv2d(i,k+kte) = qc3d(i,k,j)
-          if(present(rqiblten)) qv2d(i,k+kte+kte) = qi3d(i,k,j)
+          if(flag_qi) qv2d(i,k+kte+kte) = qi3d(i,k,j)
         enddo
       enddo
 !

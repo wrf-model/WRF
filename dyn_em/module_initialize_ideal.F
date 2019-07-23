@@ -631,8 +631,10 @@ CONTAINS
      DO k=1, kde
       grid%znw(k) = model_config_rec%eta_levels(k)
      ENDDO
- !Check the value of the first and last eta level for our domain,
- !then check that the vector of eta levels is only decreasing
+     
+ ! Check the value of the first and last eta level for our domain,
+ ! then check that the vector of eta levels is only decreasing
+ 
      IF (model_config_rec%eta_levels(1) .NE. 1.0) THEN
         CALL wrf_error_fatal("--- ERROR: the first specified eta_level is not 1.0")
      ENDIF

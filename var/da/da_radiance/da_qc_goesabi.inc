@@ -524,7 +524,7 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
             ca_mean(:,n)
 !JJGDEBUG
 
-         if (it == 1) then
+         if ( crtm_cloud(it) ) then
             if (use_rad_symm_err) then
                ! symmetric error model
                ! - Okamoto, McNally, & Bell (2013)

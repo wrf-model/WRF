@@ -42,7 +42,7 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
       allocate (iv%instid(i)%qm (kms:kme,iv%instid(i)%num_rad))
       allocate (iv%instid(i)%qrn(kms:kme,iv%instid(i)%num_rad))
       allocate (iv%instid(i)%qcw(kms:kme,iv%instid(i)%num_rad))
-      if ( crtm_cloud ) then
+      if ( any(crtm_cloud) ) then
          allocate (iv%instid(i)%qci(kms:kme,iv%instid(i)%num_rad))
          allocate (iv%instid(i)%qsn(kms:kme,iv%instid(i)%num_rad))
          allocate (iv%instid(i)%qgr(kms:kme,iv%instid(i)%num_rad))
@@ -88,7 +88,7 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
       end if
       allocate (iv%instid(i)%ps(iv%instid(i)%num_rad))
       allocate (iv%instid(i)%tb_xb(nchan,iv%instid(i)%num_rad))
-      if ( crtm_cloud ) then
+      if ( any(crtm_cloud) ) then
          allocate (iv%instid(i)%tb_xb_clr(nchan,iv%instid(i)%num_rad))
       end if
       allocate (iv%instid(i)%tb_qc(nchan,iv%instid(i)%num_rad))
@@ -132,7 +132,7 @@ subroutine da_allocate_rad_iv (i, nchan, iv)
          allocate(iv%instid(i)%ice_coverage(iv%instid(i)%num_rad))
          allocate(iv%instid(i)%snow_coverage(iv%instid(i)%num_rad))
          if (use_crtm_kmatrix) then
-            if ( crtm_cloud ) then
+            if ( any(crtm_cloud) ) then
                allocate(iv%instid(i)%water_jacobian(nchan,kte,iv%instid(i)%num_rad))
                allocate(iv%instid(i)%ice_jacobian(nchan,kte,iv%instid(i)%num_rad))
                allocate(iv%instid(i)%rain_jacobian(nchan,kte,iv%instid(i)%num_rad))

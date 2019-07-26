@@ -59,10 +59,10 @@ subroutine da_sensitivity(grid, config_flags, it, cv_size, xbx, be, iv, xhat, qh
 
     ! Apply observation operator H 
 #ifdef VAR4D
-      call da_transform_vtoy(cv_size, be, grid%ep, amat, iv, grid%vp, grid%vv, &
+      call da_transform_vtoy(it, cv_size, be, grid%ep, amat, iv, grid%vp, grid%vv, &
            xbx, ktr, grid, config_flags, grid%vp6, grid%vv6)
 #else
-      call da_transform_vtoy(cv_size, be, grid%ep, amat, iv, grid%vp, grid%vv, &
+      call da_transform_vtoy(it, cv_size, be, grid%ep, amat, iv, grid%vp, grid%vv, &
            xbx, ktr, grid, config_flags)
 #endif
 

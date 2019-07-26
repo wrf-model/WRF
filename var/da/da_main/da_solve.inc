@@ -461,7 +461,7 @@
          call da_calculate_grady(iv, re, jo_grad_y)
          call da_zero_x(grid%xa)
 
-         call da_transform_xtoy_adj(cv_size, xhat, grid, iv, jo_grad_y, grid%xa)
+         call da_transform_xtoy_adj(1, cv_size, xhat, grid, iv, jo_grad_y, grid%xa)
          call da_transform_xtoxa_adj(grid)
          call da_transfer_wrftltoxa_adj(grid, config_flags, 'fcst', timestr)
 

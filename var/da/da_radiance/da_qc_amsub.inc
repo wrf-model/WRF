@@ -48,7 +48,7 @@ subroutine da_qc_amsub (it, i, nchan, ob, iv)
          ! 0.0  initialise QC flags by assuming good obs
          !---------------------------------------------
          iv%instid(i)%tb_qc(:,n) = qc_good
-         if (crtm_cloud) go to 2508
+         if (crtm_cloud(it)) go to 2508
 
          ! a.  reject all channels over mixture surface type
          !------------------------------------------------------
@@ -129,7 +129,7 @@ subroutine da_qc_amsub (it, i, nchan, ob, iv)
          !-----------------------------------------------------------
          do k = 1, nchan
           ! absolute departure check
-          if (.not. crtm_cloud) then
+          if (.not. crtm_cloud(it)) then
             if (abs(iv%instid(i)%tb_inv(k,n)) > 15.0) then
                iv%instid(i)%tb_qc(k,n)  = qc_bad
                if (iv%instid(i)%info%proc_domain(1,n)) &
@@ -145,7 +145,7 @@ subroutine da_qc_amsub (it, i, nchan, ob, iv)
                  iv%instid(i)%tb_error(k,n) = satinfo(i)%error_std(k)
             end if
 
-          if (.not. crtm_cloud) then
+          if (.not. crtm_cloud(it)) then
             if (abs(iv%instid(i)%tb_inv(k,n)) > 3.0*iv%instid(i)%tb_error(k,n)) then
                iv%instid(i)%tb_qc(k,n)  = qc_bad
                if (iv%instid(i)%info%proc_domain(1,n)) &

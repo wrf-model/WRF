@@ -150,10 +150,10 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
    print_cld_debug = .false.
 
    inv_grosscheck = 15.0
-   if (crtm_cloud) inv_grosscheck = 80.0
-   if (use_satcv(2)) inv_grosscheck = 100.0
+   if ( crtm_cloud(it) ) inv_grosscheck = 80.0
+   if ( use_satcv(2) ) inv_grosscheck = 100.0
 
-   if ( crtm_cloud ) then
+   if ( crtm_cloud(it) ) then
       tb_xb_clr => iv%instid(isens)%tb_xb_clr
 
       !JJG: for Harnisch et al. BTlim using stats from CONUS 9km 2-hr WRF forecast from GSI analysis
@@ -216,7 +216,7 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
 
       !  3.0 check cloud
       !-----------------------------------------------------------------
-      if (.not. crtm_cloud ) then
+      if (.not. crtm_cloud(it) ) then
          if (iv%instid(isens)%clwp(n) >= 0.2) then
             tb_qc = qc_bad
             if (iv%instid(isens)%info%proc_domain(1,n)) &
@@ -265,7 +265,7 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
             tb_xb(:,n)
          if (print_cld_debug) write(stdout,'(A,I8,*(2x,F10.4:))') 'PIXEL_DEBUG3: ', n, &
             tb_ob(:,n)
-         if (crtm_cloud ) then
+         if (crtm_cloud(it) ) then
             if (print_cld_debug) write(stdout,'(A,I8,*(2x,F10.4:))') 'PIXEL_DEBUG4: ', n, &
                tb_xb_clr(:,n)
          end if
@@ -481,7 +481,7 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
                clddet_tests(itest) = 1
             end if
          end do
-         if (.not. crtm_cloud ) tb_qc = tb_qc_clddet
+         if (.not. crtm_cloud(it) ) tb_qc = tb_qc_clddet
          if (any(tb_qc_clddet.lt.0)) iv%instid(isens)%cloud_flag(:,n) = sum(clddet_tests) * qc_bad
 
 !JJGDEBUG
@@ -491,14 +491,14 @@ subroutine da_qc_goesabi (it, isens, nchan, ob, iv)
 
       ! ---------------------------
       ! 5.0 assigning obs errors
-      if (.not. crtm_cloud ) then
+      if (.not. crtm_cloud(it) ) then
          if (use_error_factor_rad) then
             iv%instid(isens)%tb_error(:,n) = &
                 satinfo(isens)%error_std(:) * satinfo(isens)%error_factor(:)
          else
             iv%instid(isens)%tb_error(:,n) = satinfo(isens)%error_std(:)
          end if
-      else !crtm_cloud
+      else !crtm_cloud(it)
          ! calculate ca_mean
          where (    tb_inv( :, n ) > missing_r &
                .and. tb_ob( :, n ) > 0.        &

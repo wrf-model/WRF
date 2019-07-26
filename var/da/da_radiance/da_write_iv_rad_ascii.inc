@@ -150,7 +150,7 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
             write(unit=innov_rad_unit,fmt='(10i11)') iv%instid(i)%tb_qc(:,n)
             write(unit=innov_rad_unit,fmt='(a)') 'CLOUD   : '
             write(unit=innov_rad_unit,fmt='(10i11)') iv%instid(i)%cloud_flag(:,n)
-            if ( abi .and. crtm_cloud ) then ! write out ca_mean, tb_xb_clr
+            if ( abi .and. crtm_cloud(it) ) then ! write out ca_mean, tb_xb_clr
                write(unit=innov_rad_unit,fmt='(a)') 'CA   : '
                write(unit=innov_rad_unit,fmt='(10f11.2)') iv%instid(i)%ca_mean(:,n)
                write(unit=innov_rad_unit,fmt='(a)') 'BGCLR: '
@@ -189,7 +189,7 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
 #ifdef CRTM
                   write(unit=innov_rad_unit,fmt='(a)') &
                      'level fullp(mb) halfp(mb) t(k) q(g/kg) water(mm) ice(mm) rain(mm) snow(mm) graupel(mm) hail(mm)'
-                  if (crtm_cloud) then
+                  if (crtm_cloud(it)) then
                      do k=1,iv%instid(i)%nlevels-1
                         write(unit=innov_rad_unit,fmt='(i3,2f10.2,f8.2,13f8.3)') &
                            k,  &
@@ -225,7 +225,7 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
                            0.0, &
                            0.0
                      end do ! end loop profile
-                  end if  ! end if crtm_cloud
+                  end if  ! end if crtm_cloud(it)
 #endif
                end if ! end if rtm_option_crtm
 
@@ -250,7 +250,7 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
 
                write(unit=innov_rad_unit,fmt='(a)') &
                   'channel level halfp(mb) t(k) q(g/kg) der_trans trans_jac trans lod_jac lod water(mm) ice(mm) rain(mm) snow(mm) graupel(mm) hail(mm)'
-               if (crtm_cloud) then
+               if (crtm_cloud(it)) then
                   do l=1,iv%instid(i)%nchan
                      do k=1,iv%instid(i)%nlevels-1
                         write(unit=innov_rad_unit,fmt='(i5,i3,f10.2,13f14.7,6f14.7)') &
@@ -304,7 +304,7 @@ subroutine da_write_iv_rad_ascii (it, ob, iv )
                            0.
                      end do ! end loop profile
                   end do ! end loop channels
-               end if  ! end if crtm_cloud
+               end if  ! end if crtm_cloud(it)
 #endif
             end if !  end if write_jacobian
 

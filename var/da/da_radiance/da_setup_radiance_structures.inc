@@ -324,7 +324,7 @@ subroutine da_setup_radiance_structures( grid, ob, iv )
 
 ! Calculate DT for Cloudy Radiance DA
 
-   if (use_rad .and. crtm_cloud .and. .not. DT_cloud_model) then
+   if (use_rad .and. any(crtm_cloud) .and. .not. DT_cloud_model) then
       its = grid%xp % its
       ite = grid%xp % ite
       jts = grid%xp % jts

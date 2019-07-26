@@ -139,7 +139,7 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
             write(unit=oma_rad_unit,fmt='(10i11)') iv%instid(i)%tb_qc(:,n)
             write(unit=oma_rad_unit,fmt='(a)') 'CLOUD   : '
             write(unit=oma_rad_unit,fmt='(10i11)') iv%instid(i)%cloud_flag(:,n)
-            if ( abi .and. crtm_cloud ) then ! write out ca_mean, tb_xb_clr
+            if ( abi .and. crtm_cloud(it) ) then ! write out ca_mean, tb_xb_clr
                write(unit=oma_rad_unit,fmt='(a)') 'CA   : '
                write(unit=oma_rad_unit,fmt='(10f11.2)') iv%instid(i)%ca_mean(:,n)
                write(unit=oma_rad_unit,fmt='(a)') 'BGCLR: '
@@ -178,7 +178,7 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
 #ifdef CRTM
                   write(unit=oma_rad_unit,fmt='(a)') &
                      'level fullp(mb) halfp(mb) t(k) q(g/kg) water(mm) ice(mm) rain(mm) snow(mm) graupel(mm) hail(mm)'
-                  if (crtm_cloud) then
+                  if (crtm_cloud(it)) then
                      do k=1,iv%instid(i)%nlevels-1
                         write(unit=oma_rad_unit,fmt='(i3,2f10.2,f8.2,13f8.3)') &
                            k,  &
@@ -214,7 +214,7 @@ subroutine da_write_oa_rad_ascii (it, ob, iv, re )
                            0.0, &
                            0.0
                      end do ! end loop profile
-                  end if ! end if crtm_cloud
+                  end if ! end if crtm_cloud(it)
 #endif
                end if  ! end if crtm_option
 

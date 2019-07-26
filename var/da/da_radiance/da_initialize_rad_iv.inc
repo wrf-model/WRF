@@ -38,7 +38,7 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
    iv%instid(i)%qm(:,n)         = 0.0
    iv%instid(i)%qrn(:,n)        = 0.0
    iv%instid(i)%qcw(:,n)        = 0.0
-   if ( crtm_cloud ) then
+   if ( any(crtm_cloud) ) then
       iv%instid(i)%qci(:,n)        = 0.0
       iv%instid(i)%qsn(:,n)        = 0.0
       iv%instid(i)%qgr(:,n)        = 0.0
@@ -78,7 +78,7 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
    iv%instid(i)%cloud_flag(:,n) = qc_good  ! no cloud   
    iv%instid(i)%ps(n)           = 0.0
    iv%instid(i)%tb_xb(:,n)      = 0.0
-   if ( crtm_cloud ) then
+   if ( any(crtm_cloud) ) then
       iv%instid(i)%tb_xb_clr(:,n) = 0.0
    end if
    iv%instid(i)%tb_inv(:,n)     = p%tb_inv(:)
@@ -141,7 +141,7 @@ subroutine da_initialize_rad_iv (i, n, iv, p)
       iv%instid(i)%ice_coverage(n)=0.0
       iv%instid(i)%snow_coverage(n)=0.0
       if (use_crtm_kmatrix) then
-         if ( crtm_cloud ) then
+         if ( any(crtm_cloud) ) then
             iv%instid(i)%water_jacobian(:,:,n)=0.0
             iv%instid(i)%ice_jacobian(:,:,n)=0.0
             iv%instid(i)%rain_jacobian(:,:,n)=0.0

@@ -64,7 +64,7 @@
             deallocate (iv%instid(i)%qm)
             deallocate (iv%instid(i)%qrn)
             deallocate (iv%instid(i)%qcw)
-            if ( crtm_cloud ) then
+            if ( any(crtm_cloud) ) then
                deallocate (iv%instid(i)%qci)
                deallocate (iv%instid(i)%qsn)
                deallocate (iv%instid(i)%qgr)
@@ -110,7 +110,7 @@
             end if
             deallocate (iv%instid(i)%ps)
             deallocate (iv%instid(i)%tb_xb)
-            if ( crtm_cloud ) then
+            if ( any(crtm_cloud) ) then
                deallocate (iv%instid(i)%tb_xb_clr)
             end if
             deallocate (iv%instid(i)%tb_qc)
@@ -168,7 +168,7 @@
                deallocate(iv%instid(i)%ice_coverage)
                deallocate(iv%instid(i)%snow_coverage)
                if (use_crtm_kmatrix) then
-                 if ( crtm_cloud ) then
+                 if ( any(crtm_cloud) ) then
                      deallocate(iv%instid(i)%water_jacobian)
                      deallocate(iv%instid(i)%ice_jacobian)
                      deallocate(iv%instid(i)%rain_jacobian)

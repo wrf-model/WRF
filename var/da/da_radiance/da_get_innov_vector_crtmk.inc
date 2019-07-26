@@ -77,7 +77,7 @@ subroutine da_get_innov_vector_crtmk ( it, grid, ob, iv )
    Atmosphere(1)%n_Absorbers=2
    Atmosphere(1)%n_Clouds=0
    Atmosphere(1)%n_Aerosols=0
-   if (crtm_cloud) Atmosphere(1)%n_Clouds=6
+   if (crtm_cloud(it)) Atmosphere(1)%n_Clouds=6
   
    Error_Status = CRTM_Allocate_Atmosphere( Atmosphere(1)%n_Layers, &
                                             Atmosphere(1)%n_Absorbers, &
@@ -92,7 +92,7 @@ subroutine da_get_innov_vector_crtmk ( it, grid, ob, iv )
    Atmosphere(1)%Absorber_ID(1)=H2O_ID
    Atmosphere(1)%Absorber_ID(2)=O3_ID
 
-   if (crtm_cloud) then
+   if (crtm_cloud(it)) then
       Atmosphere(1)%Cloud(1)%Type=WATER_CLOUD
       Atmosphere(1)%Cloud(2)%Type=ICE_CLOUD
       Atmosphere(1)%Cloud(3)%Type=RAIN_CLOUD
@@ -217,7 +217,7 @@ subroutine da_get_innov_vector_crtmk ( it, grid, ob, iv )
 
             call da_interp_lin_2d_partial (grid%xb%qcw(:,:,k), iv%instid(inst)%info,k,n,n, model_qcw(kte-k+1:kte-k+1))
             
-            if (crtm_cloud) then
+            if (crtm_cloud(it)) then
                Atmosphere(1)%Cloud(1)%Water_Content(kte-k+1) = model_qcw(kte-k+1)
 
                call da_interp_lin_2d_partial (grid%xb%qci(:,:,k), iv%instid(inst)%info,k,n,n, &
@@ -278,7 +278,7 @@ subroutine da_get_innov_vector_crtmk ( it, grid, ob, iv )
          end do
  
          ! convert cloud content unit from kg/kg to kg/m^2        
-         if (crtm_cloud) then
+         if (crtm_cloud(it)) then
             do k=kts,kte
                do icld=1,Atmosphere(1)%n_Clouds
                   Atmosphere(1)%Cloud(icld)%Water_Content(k)= Atmosphere(1)%Cloud(icld)%Water_Content(k)* &
@@ -437,7 +437,7 @@ subroutine da_get_innov_vector_crtmk ( it, grid, ob, iv )
                iv%instid(inst)%t_jacobian(l,k,n) = Atmosphere_k(l,1)%temperature(k)
                iv%instid(inst)%q_jacobian(l,k,n) = Atmosphere_k(l,1)%absorber(k,1)
             end do
-            if (crtm_cloud) then
+            if (crtm_cloud(it)) then
                iv%instid(inst)%qcw(k,n) = Atmosphere(1)%cloud(1)%water_content(k)
                iv%instid(inst)%qci(k,n) = Atmosphere(1)%cloud(2)%water_content(k)
                iv%instid(inst)%qrn(k,n) = Atmosphere(1)%cloud(3)%water_content(k)

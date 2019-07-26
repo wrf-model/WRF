@@ -315,7 +315,7 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
       !----------------------------------------------------------------------
       ! [2.0] Perform y = Hx transform:
       !----------------------------------------------------------------------
-      call da_transform_xtoy (cv_size, cv, grid, iv, y)
+      call da_transform_xtoy (1, cv_size, cv, grid, iv, y)
 
 #ifdef VAR4D
       if (iv%info(rain)%nlocal > 0 .and. var4d) &
@@ -372,7 +372,7 @@ print*,__FILE__,jte,' xa2_v.xa2_v for row= ',jte+1,sum(xa2_v(its:ite, jte+1, kts
       endif
 #endif
 
-      call da_transform_xtoy_adj (cv_size, cv, grid, iv, y, grid%xa)
+      call da_transform_xtoy_adj (1, cv_size, cv, grid, iv, y, grid%xa)
 
 #ifdef A2C
     if( ite == ide ) &    

@@ -1,4 +1,4 @@
-subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
+subroutine da_transform_xtoy_crtm (it, cv_size, cv, grid, iv, y )
 
    !---------------------------------------------------------------------------
    !  PURPOSE: transform from analysis increment to 
@@ -16,6 +16,7 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
 
    implicit none
 
+   integer, intent(in)            :: it              ! external iteration #.
    integer, intent(in)            :: cv_size         ! Size of cv array.
    real, intent(in)               :: cv(1:cv_size)   ! control variables.
    type (domain),  intent(in)     :: grid
@@ -150,7 +151,7 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
          n_absorbers = 2
          n_aerosols  = 0
          n_clouds    = 0
-         if ( crtm_cloud ) n_clouds = 6
+         if ( crtm_cloud(it) ) n_clouds = 6
 
          call CRTM_Atmosphere_Create( Atmosphere(n), &
                                       n_layers,      &
@@ -168,7 +169,7 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
          Atmosphere(n)%Absorber_Units(2) = VOLUME_MIXING_RATIO_UNITS
          Atmosphere(n)%Climatology=iv%instid(inst)%crtm_climat(n)
 
-         if (crtm_cloud) then
+         if (crtm_cloud(it)) then
             Atmosphere(n)%Cloud(1)%Type=WATER_CLOUD
             Atmosphere(n)%Cloud(2)%Type=ICE_CLOUD
             Atmosphere(n)%Cloud(3)%Type=RAIN_CLOUD
@@ -222,7 +223,7 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
       xb_q(:,:)        = 0.0
       psfc(:)          = 0.0
 
-      if (crtm_cloud) then
+      if (crtm_cloud(it)) then
 
          allocate (qcw(Atmosphere(iv%instid(inst)%info%n1)%n_layers, iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
          allocate (qci(Atmosphere(iv%instid(inst)%info%n1)%n_layers, iv%instid(inst)%info%n1:iv%instid(inst)%info%n2))
@@ -243,7 +244,7 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
          call da_interp_2d_partial (grid%xa%q(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
             absorber(kte-k+1,:))
 
-         if ( crtm_cloud .and. cloud_cv_options > 0 ) then
+         if ( crtm_cloud(it) .and. cloud_cv_options > 0 ) then
 
             call da_interp_2d_partial (grid%xa%qcw(:,:,k), iv%instid(inst)%info, k, iv%instid(inst)%info%n1, iv%instid(inst)%info%n2, &
                qcw(kte-k+1,:))
@@ -297,7 +298,7 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
             Atmosphere(n)%absorber(k,1)     = iv%instid(inst)%qm(k,n)
             xb_q(k,n) = 0.001*iv%instid(inst)%qm(k,n)/(1.0+iv%instid(inst)%qm(k,n)) ! specific humidity
          end do
-         if (crtm_cloud) then
+         if (crtm_cloud(it)) then
             do k=1,Atmosphere(n)%n_layers
               Atmosphere(n)%cloud(1)%water_content(k)=iv%instid(inst)%qcw(k,n)
               Atmosphere(n)%cloud(2)%water_content(k)=iv%instid(inst)%qci(k,n)
@@ -384,7 +385,7 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
         Atmosphere_TL(n)%Temperature(kts+1:kte) = temperature(kts+1:kte,n)       ! Zero Jacobian for top level
         Atmosphere_TL(n)%Level_Pressure(Atmosphere_TL(n)%n_Layers) = 0.01 * psfc(n)
 
-        if (crtm_cloud) then
+        if (crtm_cloud(it)) then
            Atmosphere_TL(n)%Cloud(1)%Water_Content(kts:kte)             = qcw(kts:kte,n)
            Atmosphere_TL(n)%Cloud(2)%Water_Content(kts:kte)             = qci(kts:kte,n)
            Atmosphere_TL(n)%Cloud(3)%Water_Content(kts:kte)             = qrn(kts:kte,n)
@@ -479,7 +480,7 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
                   RTSolution_TL(l,n)%brightness_temperature = RTSolution_TL(l,n)%brightness_temperature + &
                                        iv%instid(inst)%t_jacobian(l,k,n) * Atmosphere_TL(n)%Temperature(k) +  &
                                        iv%instid(inst)%q_jacobian(l,k,n) * Atmosphere_TL(n)%absorber(k,1)
-                  if (crtm_cloud) then
+                  if (crtm_cloud(it)) then
                      RTSolution_TL(l,n)%brightness_temperature = RTSolution_TL(l,n)%brightness_temperature + &
                         iv%instid(inst)%water_jacobian(l,k,n)   * Atmosphere_TL(n)%Cloud(1)%Water_Content(k) + &
                         iv%instid(inst)%ice_jacobian(l,k,n)     * Atmosphere_TL(n)%Cloud(2)%Water_Content(k) + &
@@ -522,7 +523,7 @@ subroutine da_transform_xtoy_crtm (cv_size, cv, grid, iv, y )
       deallocate (xb_q)
       deallocate (psfc)     
 
-      if (crtm_cloud) then
+      if (crtm_cloud(it)) then
          deallocate (qcw)
          deallocate (qci)
          deallocate (qrn)

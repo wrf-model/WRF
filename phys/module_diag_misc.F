@@ -814,7 +814,7 @@ CONTAINS
        DO i=i_start(ij),i_end(ij)
         DO k=kme-1, kms, -1
          if (temp_qg(i,k,j) .LT. 1.E-6) CYCLE
-         zans1 = (3.5 + 2./7. * (ALOG10(temp_qg(i,k,j))+7.))
+         zans1 = (2.5 + 2.5/7. * (ALOG10(temp_qg(i,k,j))+7.))
          zans1 = MAX(2., MIN(zans1, 7.))
          N0exp = 10.**zans1
          lam_exp = (N0exp*xam_g*cgg(1)/temp_qg(i,k,j))**(1./cge(1))

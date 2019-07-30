@@ -194,9 +194,9 @@
    endif
 
    if (anal_type_randomcv) then
-      ntmax = 0
-      write(unit=stdout,fmt='(a)') &
-         ' Resetting ntmax = 0 for analysis_type = randomcv' 
+      write_gts_omb_oma  = .false.
+      write_rej_obs_conv = .false.
+      write_unpert_obs   = .false.
    end if
 
    if ( cv_options == 3 ) then
@@ -596,6 +596,35 @@
 !        allocate (full_eignvec(cv_size))
 !      end if
 
+      !------------------------------------------------------
+      ! set CV to random noise ("RANDOMCV")
+      !------------------------------------------------------
+      if (anal_type_randomcv) then
+         it = 1
+         ! Initialize random number generator and scalars
+         call da_random_seed
+         do i= 1, n_randomcv
+            write(ci,'(i3.3)') i
+            write(unit=message(1),fmt='(a,a)') &
+               '  Setting randomcv for wrfvar_output_randomcv.e', trim(ci)
+            call da_message(message(1:1))
+            call da_set_randomcv    (cv_size, cvt)
+            call da_transform_vtox  (grid,cv_size,xbx,be,grid%ep,cvt,grid%vv,grid%vp)
+            call da_transform_xtoxa (grid)
+            call da_transfer_xatoanalysis (it, xbx, grid, config_flags)
+            call da_update_firstguess(grid,'wrfvar_output_randomcv.e'//trim(ci))
+            if ( i < n_randomcv ) then
+               ! restore the original grid info for the next realization of randomcv
+               call da_med_initialdata_input( grid , config_flags, 'fg')
+               call da_setup_firstguess(xbx, grid, config_flags, .false.)
+            end if
+         end do
+         ! Done with randomcv.
+         ! Set the following to skip some code to get to the deallocation part.
+         max_ext_its = 0
+         outer_loop_restart = .false.
+      end if  !anal_type_randomcv
+
       if ( outer_loop_restart ) then
          !call da_get_unit(cvt_unit)
          cvt_unit=600
@@ -846,11 +875,6 @@
         !call da_free_unit(cvt_unit)
       end if
       !------------------------------------------------------------------------
-
-      ! reset cv to random noise
-      if (anal_type_randomcv) then
-         call da_set_randomcv (cv_size, xhat)
-      end if
 
       ! [8.5] Update latest analysis solution:
 

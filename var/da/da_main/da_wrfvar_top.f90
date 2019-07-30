@@ -47,7 +47,7 @@ module da_wrfvar_top
    use da_define_structures, only : y_type, j_type, iv_type, be_type, &
       xbx_type,da_deallocate_background_errors,da_initialize_cv, &
       da_zero_vp_type,da_allocate_y,da_deallocate_observations, &
-      da_deallocate_y, da_zero_x
+      da_deallocate_y, da_zero_x, da_random_seed
    use da_minimisation, only : da_get_innov_vector,da_minimise_cg, &
       da_minimise_lz, da_write_diagnostics, da_calculate_residual, &
       da_calculate_grady, da_sensitivity, da_lanczos_io, da_calculate_j, &

@@ -188,6 +188,9 @@ END SUBROUTINE rk_step_prep
 
 SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                          ru_tend, rv_tend, rw_tend, ph_tend, t_tend,      &
+                         ru_tend_cor, ru_tend_adv, ru_tend_pgf, ru_tend_curv, ru_tend_hdiff,        & !added line for u (NM) 
+                         rv_tend_cor, rv_tend_adv, rv_tend_pgf, rv_tend_curv, rv_tend_hdiff,        & !added line for v (NM)
+                         t_tend_adv,                                      &     !added line for t (JSR)  
                          ru_tendf, rv_tendf, rw_tendf, ph_tendf, t_tendf, &
                          mu_tend, u_save, v_save, w_save, ph_save,        &
                          t_save, mu_save, RTHFTEN,                        &
@@ -261,6 +264,17 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                                                          rv_tend, &
                                                          rw_tend, &
                                                          t_tend,  &
+                                                         ru_tend_cor, & !added u
+                                                         ru_tend_adv, & !added u
+                                                         ru_tend_pgf, & !added u
+                                                         ru_tend_curv, & !added u
+                                                         ru_tend_hdiff, & !added u
+                                                         rv_tend_cor, & !added v
+                                                         rv_tend_adv, & !added v
+                                                         rv_tend_pgf, & !added v
+                                                         rv_tend_curv, & !added v
+                                                         rv_tend_hdiff, & !added v
+                                                         t_tend_adv,  & !added t				
                                                          ph_tend, &
                                                          RTHFTEN, &
                                                           u_save, &
@@ -333,6 +347,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
    REAL    :: kdift, khdq, kvdq, cfn, cfn1, cf1, cf2, cf3
    INTEGER :: i,j,k
    INTEGER :: time_step
+   REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) :: ru_tend_old, rv_tend_old, t_tend_old
 
 !<DESCRIPTION>
 !
@@ -431,7 +446,8 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                    its, ite, jts, jte, kts, kte )
 
      ELSE
-     
+
+     ru_tend_old = ru_tend                           !!NM: added line record current ru_tendency     
      CALL advect_u ( u, u , ru_tend, ru, rv, ww, &
                    c1h, c2h,                     &
                    mut, time_step, config_flags, &
@@ -441,6 +457,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                    ids, ide, jds, jde, kds, kde, &
                    ims, ime, jms, jme, kms, kme, &
                    its, ite, jts, jte, kts, kte )
+        ru_tend_adv = ru_tend - ru_tend_old             !!NM: added line for u_adv		   
       ENDIF
 
      IF( (rk_step == 3) .and. ( adv_opt == WENO_MOM ) ) THEN
@@ -456,7 +473,8 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                    its, ite, jts, jte, kts, kte )
 
     ELSE
-     
+
+     rv_tend_old = rv_tend                              !!NM: added line record current rv_tendency     
      CALL advect_v ( v, v , rv_tend, ru, rv, ww,  &
                    c1h, c2h,                     &
                    mut, time_step, config_flags, &
@@ -466,6 +484,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                    ids, ide, jds, jde, kds, kde, &
                    ims, ime, jms, jme, kms, kme, &
                    its, ite, jts, jte, kts, kte )
+     rv_tend_adv = rv_tend - rv_tend_old             !!NM: added line for v_adv		   
     ENDIF
 
 
@@ -524,7 +543,8 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                           rdx, rdy, rdnw,               &
                           ids, ide, jds, jde, kds, kde, &
                           ims, ime, jms, jme, kms, kme, &
-                          its, ite, jts, jte, kts, kte )
+                          its, ite, jts, jte, kts, kte ) 
+     t_tend_adv = t_tend - t_tend_old               !!JSR: added line for t_tend_adv
 
      ENDIF
      
@@ -556,6 +576,9 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                   ims, ime, jms, jme, kms, kme,      &
                   its, ite, jts, jte, kts, kte      )
 
+     ru_tend_old = ru_tend                              !!NM: added line record current ru_tenden
+     rv_tend_old = rv_tend                              !!NM: added line record current rv_tenden
+
      CALL horizontal_pressure_gradient( ru_tend,rv_tend,                 &
                                          ph,alt,p,pb,al,php,cqu,cqv,     &
                                          muu,muv,mu,c1h,c2h,fnm,fnp,rdnw,&
@@ -568,6 +591,9 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                                          ims, ime, jms, jme, kms, kme,   &
                                          its, ite, jts, jte, kts, kte   )
 
+     ru_tend_pgf = ru_tend - ru_tend_old               !added line ru pgf tendency
+     rv_tend_pgf = rv_tend - rv_tend_old               !added line rv pgf tendency
+					 
      IF (non_hydrostatic) THEN
           CALL pg_buoy_w( rw_tend, p, cqw, mu, mub,       &
                           c1f,c2f,                        &
@@ -600,6 +626,9 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                                        ims, ime, jms, jme, kms, kme, &
                                        its, ite, jts, jte, kts, kte )
      ELSE
+     
+     ru_tend_old = ru_tend                              !!NM: added line record current ru_tenden
+     rv_tend_old = rv_tend                              !!NM: added line record current rv_tenden     
           CALL coriolis ( ru, rv, rw,                   &
                           ru_tend,  rv_tend,  rw_tend,  &
                           config_flags,                 &
@@ -609,9 +638,13 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                           ids, ide, jds, jde, kds, kde, &
                           ims, ime, jms, jme, kms, kme, &
                           its, ite, jts, jte, kts, kte )
-
+     ru_tend_cor = ru_tend - ru_tend_old               !added line ru for coriolis tendency
+     rv_tend_cor = rv_tend - rv_tend_old               !added line rv for coriolis tendency
+			  
      END IF
 
+     ru_tend_old = ru_tend                              !!NM: added line record current ru_tenden
+     rv_tend_old = rv_tend                              !!NM: added line record current rv_tenden
      CALL curvature ( ru, rv, rw, u, v, w,            &
                        ru_tend,  rv_tend,  rw_tend,    &
                        config_flags,                   &
@@ -621,6 +654,9 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                        ids, ide, jds, jde, kds, kde,   &
                        ims, ime, jms, jme, kms, kme,   &
                        its, ite, jts, jte, kts, kte   )
+     ru_tend_curv = ru_tend - ru_tend_old               !added line ru for curvature tendency
+     rv_tend_curv = rv_tend - rv_tend_old               !added line rv for curvature tendency
+		       
 
 ! Damping option added for Held-Suarez test (also uses lw option HELDSUAREZ)
       IF (config_flags%ra_lw_physics == HELDSUAREZ) THEN
@@ -642,6 +678,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
 
     diff_opt1 : IF (config_flags%diff_opt .eq. 1) THEN
    
+        ru_tend_old = ru_tendf                          !!NM: added line record current ru_tenden
         CALL horizontal_diffusion ('u', u, ru_tendf, mut,               &
                                         c1h, c2h, config_flags,         &
                                         msfux, msfuy, msfvx, msfvx_inv, &
@@ -650,7 +687,9 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                                         ids, ide, jds, jde, kds, kde,   &
                                         ims, ime, jms, jme, kms, kme,   &
                                         its, ite, jts, jte, kts, kte   )
+        ru_tend_hdiff = ru_tendf - ru_tend_old               !added line ru for diffusion tendency
 
+        rv_tend_old = rv_tendf                          !!NM: added line record current rv_tenden
         CALL horizontal_diffusion ('v', v, rv_tendf, mut,               &
                                         c1h, c2h, config_flags,         &
                                         msfux, msfuy, msfvx, msfvx_inv, &
@@ -659,6 +698,7 @@ SUBROUTINE rk_tendency ( config_flags, rk_step,                           &
                                         ids, ide, jds, jde, kds, kde,   &
                                         ims, ime, jms, jme, kms, kme,   &
                                         its, ite, jts, jte, kts, kte   )
+        rv_tend_hdiff = rv_tendf - rv_tend_old               !added line rv for hdiff tendency
 
         CALL horizontal_diffusion ('w', w, rw_tendf, mut,               &
                                         c1f, c2f, config_flags,         &
@@ -799,6 +839,7 @@ END SUBROUTINE rk_tendency
 
 SUBROUTINE rk_addtend_dry ( ru_tend, rv_tend, rw_tend, ph_tend, t_tend,      &
                             ru_tendf, rv_tendf, rw_tendf, ph_tendf, t_tendf, &
+                            ru_tend_phys, rv_tend_phys,                      & !added line (NM)
                             u_save, v_save, w_save, ph_save, t_save,         &
                             mu_tend, mu_tendf, rk_step, c1, c2,              &
                             h_diabatic, mut, msftx, msfty, msfux, msfuy,     &
@@ -828,6 +869,10 @@ SUBROUTINE rk_addtend_dry ( ru_tend, rv_tend, rw_tend, ph_tend, t_tend,      &
                                                                       rw_tendf, &
                                                                       ph_tendf, &
                                                                       t_tendf
+
+  REAL , DIMENSION( ims:ime , kms:kme, jms:jme  ) , INTENT(OUT) :: ru_tend_phys, &
+
+  rv_tend_phys
 
    REAL , DIMENSION( ims:ime , jms:jme  ) , INTENT(INOUT) :: mu_tend, &
                                                              mu_tendf
@@ -885,6 +930,9 @@ SUBROUTINE rk_addtend_dry ( ru_tend, rv_tend, rw_tend, ph_tend, t_tend,      &
    ENDDO
    ENDDO
    ENDDO
+
+   ru_tend_phys = ru_tendf              !added line for exporting dynamics (NM)
+   rv_tend_phys = rv_tendf              !added line for exporting dynamics (NM)
 
    DO j = jts,jte
    DO k = kts,kte-1

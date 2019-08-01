@@ -1687,7 +1687,7 @@
       integer(kind=im) :: overlap                     ! 1 = random overlap, 2 = maximum-random,
                                                       ! 3 = maximum overlap, 4 = exponential,
                                                       ! 5 = exponential-random
-      real(kind=rb)                   :: Zo_inv(ncol) ! inverse of decorrelation length scale (m) 
+      real(kind=rb)                   :: Zo(ncol)     ! decorrelation length scale (m) 
       real(kind=rb), dimension(ncol,nlay) :: alpha    ! overlap parameter
 
 ! Constants (min value for cloud fraction and cloud water and ice)
@@ -1714,7 +1714,7 @@
 
 ! MJI - Pass input cloud overlap setting to local variable
       overlap = icld
-      Zo_inv(:) = 1._rb / decorr_len(:)
+      Zo(:) = decorr_len(:)
 
 ! Ensure that cloud fractions are in bounds 
       do ilev = 1, nlay
@@ -1849,7 +1849,7 @@
             do i = 1, ncol
                alpha(i, 1) = 0._rb
                do ilev = 2,nlay
-                  alpha(i, ilev) = exp( -(hgt(i,ilev) - hgt(i,ilev-1)) * Zo_inv(i))
+                  alpha(i, ilev) = exp( -(hgt(i,ilev) - hgt(i,ilev-1)) / Zo(i))
                enddo
             enddo
 
@@ -1896,7 +1896,7 @@
        do i = 1, ncol
           alpha(i, 1) = 0._rb
           do ilev = 2,nlay
-             alpha(i, ilev) = exp( -(hgt(i,ilev) - hgt(i,ilev-1) ) * Zo_inv(i))
+             alpha(i, ilev) = exp( -(hgt(i,ilev) - hgt(i,ilev-1) ) / Zo(i))
           ! Decorrelate layers when clear layer follows a cloudy layer to enforce
           ! random correlation between non-adjacent cloudy layers
              if (cldf(i,ilev) .eq. 0.0_rb .and. cldf(i,ilev-1) .gt. 0.0_rb) then 

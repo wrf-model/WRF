@@ -597,6 +597,10 @@ CONTAINS
 !  for LES, include Coriolis force
          grid%f(i,j)        = 1.e-4
 
+!JDM-MMC SWiFT SWiFT facility, latitude = 33.61054 N
+       grid%e(i,j)        = 0.00012146 !JDM-MMC
+       grid%f(i,j)        = 0.00008073 !JDM-MMC
+       
       END DO
    END DO
 
@@ -640,9 +644,10 @@ CONTAINS
        IF (model_config_rec%eta_levels(1) .EQ. -1) THEN !we do not have eta_levels from namelist
    IF (stretch_grid) THEN ! exponential stretch for eta (nearly constant dz)
      DO k=1, kde
-      grid%znw(k) = (exp(-(k-1)/float(kde-1)/z_scale) - exp(-1./z_scale))/ &
-                                (1.-exp(-1./z_scale))
-     ENDDO
+!JDM-MMC      grid%znw(k) = (exp(-(k-1)/float(kde-1)/z_scale) - exp(-1./z_scale))/ &
+!JDM-MMC                                (1.-exp(-1./z_scale))
+       grid%znw(k) = model_config_rec%eta_levels(k) !JDM-MMC
+   ENDDO
    ELSE
      DO k=1, kde
       grid%znw(k) = 1. - float(k-1)/float(kde-1)
@@ -1369,7 +1374,7 @@ CONTAINS
       call random_number (randx)
       randx = randx - 0.5
 !     DO K = 1, kte-1
-      DO K = 1, 4
+!JDM-MMC Comment removes initialization perturbations      DO K = 1, 4
 
 !  No bubbles for LES!
 !  put in preturbation theta (bubble) and recalc density.  note,
@@ -1390,7 +1395,7 @@ CONTAINS
                         (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
            grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
         ENDIF
-      ENDDO
+!JDM-MMC      ENDDO
 
 !  rebalance hydrostatically
 

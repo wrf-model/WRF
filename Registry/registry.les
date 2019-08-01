@@ -12,6 +12,8 @@ state   real    r13     ikjf    nba_rij		1       -       -       "r13"   	"13 co
 state   real    r23     ikjf    nba_rij		1       -       -       "r23"   	"23 component of rotation tensor"               "s-1"
 state   real    smnsmn  ikjf    nba_rij		1       -       -       "smnsmn"   	"Smn*Smn"               			"s-2"
 
+rconfig	real 	spec_hfx 	namelist,dynamics	1     		-999.9  -	"Constant surface heat flux (W/m^2) for use with sf_sfclay_physics=1. -999.9 ignores this option."
+
 rconfig	integer sfs_opt 	namelist,dynamics	max_domains     0       -	"1 or 2 to use NBA models"
 rconfig	integer m_opt    	namelist,dynamics       max_domains     0       -       "1 to output sgs stresses if not using NBA"
 

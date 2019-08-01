@@ -24,7 +24,9 @@ CONTAINS
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
-                     ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux           )
+                     spec_hfx,                                     & !JDM-MMC
+                     ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux )
+     
 !-------------------------------------------------------------------
       IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -134,8 +136,11 @@ CONTAINS
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                 INTENT(IN   )               ::             MAVAIL, &
                                                              PBLH, &
-                                                            XLAND, &
-                                                              TSK
+                                                            XLAND
+
+      REAL,     DIMENSION( ims:ime, jms:jme )                    , & !JDM-MMC
+                INTENT(INOUT )               ::               TSK
+            
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                 INTENT(OUT  )               ::                U10, &
                                                               V10, &
@@ -181,7 +186,9 @@ CONTAINS
                                                               QGH
                                     
       REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV,DX
- 
+
+      REAL,     INTENT(IN   )            ::   spec_hfx        !JDM-MMC
+      
       REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
                 INTENT(OUT)     ::                  ck,cka,cd,cda
 
@@ -190,6 +197,7 @@ CONTAINS
 
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX, IZ0TLND
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX
+
 ! LOCAL VARS
 
       REAL,     DIMENSION( its:ite ) ::                       U1D, &
@@ -237,9 +245,9 @@ CONTAINS
 #if ( EM_CORE == 1 )
                 ,isftcflx,iz0tlnd,scm_force_flux,                               &
                 USTM(ims,j),CK(ims,j),CKA(ims,j),                  &
-                CD(ims,j),CDA(ims,j)                               &
+                CD(ims,j),CDA(ims,j)                              &
 #endif
-                                                                   )
+                ,spec_hfx                                           ) !JDM-MMC
       ENDDO
 
 
@@ -260,7 +268,9 @@ CONTAINS
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
                      isftcflx, iz0tlnd,scm_force_flux,                            &
-                     ustm,ck,cka,cd,cda                            )
+                     ustm,ck,cka,cd,cda,                           &
+                     spec_hfx                                      & !JDM-MMC
+                                                                   )
 !-------------------------------------------------------------------
       IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -281,8 +291,11 @@ CONTAINS
       REAL,     DIMENSION( ims:ime )                             , &
                 INTENT(IN   )               ::             MAVAIL, &
                                                              PBLH, &
-                                                            XLAND, &
-                                                              TSK
+                                                            XLAND
+      
+      REAL,     DIMENSION( ims:ime )                             , &  !JDM-MMC
+                INTENT(INOUT )               ::               TSK
+      
 !
       REAL,     DIMENSION( ims:ime )                             , &
                 INTENT(IN   )               ::             PSFCPA
@@ -338,6 +351,9 @@ CONTAINS
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX, IZ0TLND
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX
 
+      REAL,     INTENT(IN   )            ::   spec_hfx        !JDM-MMC
+
+      
 ! LOCAL VARS
 
       REAL,     DIMENSION( its:ite )        ::                 ZA, &
@@ -1001,7 +1017,7 @@ CONTAINS
         ELSE
           ZL = 0.01
         ENDIF                                                                    
-        FLQC(I)=RHOX(I)*MAVAIL(I)*UST(I)*KARMAN/DENOMQ(I)
+        FLQC(I)=RHOX(I)*MAVAIL(I)*UST(I)*KARMAN/DENOMQ(I)        
 !       FLQC(I)=RHOX(I)*MAVAIL(I)*UST(I)*KARMAN/(   &
 !               ALOG(KARMAN*UST(I)*ZA(I)/XKA+ZA(I)/ZL)-PSIH(I))
         DTTHX=ABS(THX(I)-THGB(I))                                            
@@ -1011,7 +1027,8 @@ CONTAINS
  1001   format(f8.5,2x,f12.7,2x,f12.10,2x,f12.10,2x,f13.10,2x,f12.8,f12.8,2x,i3)
         ELSE                                                                     
           FLHC(I)=0.                                                             
-        ENDIF                                                                    
+        ENDIF
+       
   360 CONTINUE                                                                   
 
 !                                                                                
@@ -1043,9 +1060,31 @@ CONTAINS
 !         ENDIF 
         ELSEIF(XLAND(I)-1.5.LT.0.)THEN                                       
           HFX(I)=FLHC(I)*(THGB(I)-THX(I))                                
-          HFX(I)=AMAX1(HFX(I),-250.)                                       
-        ENDIF                                                                  
+          HFX(I)=AMAX1(HFX(I),-250.)
+          
+        ENDIF
+        
   400 CONTINUE                                                                 
+
+      IF( spec_hfx .NE. -999.9) THEN !JDM-MMC
+
+         !Specify heat flux from namelist, adjust TSK to be consistent with spec_hfx,
+         !and set the surface temperature to be consistent with spec_hfx
+
+         DO 403 I=its,ite   
+
+            HFX(I) = spec_hfx  
+            QFX(I) = 0.0
+            LH(I) = 0.0
+            FLQC(I) = 0.0
+              
+            THGB(I) = THX(I)
+
+            TSK(I) = THGB(I)/((100./PSFC(I))**ROVCP)
+
+  403    CONTINUE  
+  
+      ENDIF
 
   405 CONTINUE                                                                 
          

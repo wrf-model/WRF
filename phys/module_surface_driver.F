@@ -17,6 +17,7 @@ CONTAINS
      &          ,ifndalbsi, ifndicedepth, ifndsnowsi                  &
      &          ,isltyp,itimestep,julian_in,ivgtyp,lowlyr,mavail,rmol &
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,fm,fhh,psih   &
+     &          ,spec_hfx                                             & !JDM-MMC
 #if (NMM_CORE==1)
      &          ,psim,p_phy,q10,q2,qfx,taux,tauy,qsfc,qshltr,qz0      &
      &          ,zkmax,ribn,charn,msang,scurx,scury,icoef_sf,iwavecpl,lcurr_sf & !for gfdl-sf drag
@@ -1163,6 +1164,9 @@ CONTAINS
    REAL,OPTIONAL, INTENT(INOUT) :: hfx_force,lh_force,tsk_force
    REAL,OPTIONAL, INTENT(IN   ) :: hfx_force_tend,lh_force_tend,tsk_force_tend
 
+
+   REAL, INTENT(IN ) :: spec_hfx !Constant surface heat flux (W/m^2) for use with sf_sfclay_physics=1 
+   
 !  LOCAL  VAR
 
    REAL,       DIMENSION( ims:ime, kms:kme, jms:jme ) ::v_phytmp
@@ -1974,8 +1978,10 @@ CONTAINS
                  ids,ide, jds,jde, kds,kde,                          &
                  ims,ime, jms,jme, kms,kme,                          &
                  i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
+                 spec_hfx,                                           &   !JDM-MMC            
                  ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,                &
-                 sf_surface_physics  )
+                 sf_surface_physics                                 )
+                                                                     
          ELSE
          CALL SFCLAYREV(u_phytmp,v_phytmp,t_phy,qv_curr,&
                p_phy,dz8w,cp,g,rcp,r_d,xlv,psfc,chs,chs2,cqs2,cpm, &
@@ -1987,8 +1993,10 @@ CONTAINS
                P1000mb,                                            &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
-               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
+               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte, &
+               spec_hfx,                                              &   !JDM-MMC            
                ustm,ck,cka,cd,cda,isftcflx,iz0tlnd, scm_force_flux    )
+                                                                      
 #if ( EM_CORE==1)
            DO j = j_start(ij),j_end(ij)
            DO i = i_start(ij),i_end(ij)
@@ -5556,9 +5564,10 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
+                     spec_hfx,                                     &    !JDM-MMC
                      ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,          &
-                     sf_surface_physics                             )
-
+                     sf_surface_physics                            )
+     
      USE module_sf_sfclayrev
      implicit none
 
@@ -5582,8 +5591,11 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(IN   )               ::             MAVAIL, &
                                                             PBLH, &
-                                                           XLAND, &
-                                                             TSK
+                                                           XLAND
+
+     REAL,     DIMENSION( ims:ime, jms:jme )                    , &
+               INTENT(INOUT)               ::                 TSK
+
      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                INTENT(OUT  )               ::                U10, &
                                                              V10, &
@@ -5659,6 +5671,8 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                                                 QSFC_SEA,         &
                                                 ZNT_SEA
 
+     REAL,     INTENT(IN)               ::      spec_hfx          !JDM-MMC
+     
 !--------------------------------------------------------------------
 !    Local
 !--------------------------------------------------------------------
@@ -5800,11 +5814,13 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                  GZ1OZ0,WSPD,BR,ISFFLX,DX,                     &
                  SVP1,SVP2,SVP3,SVPT0,EP1,EP2,                 &
                  KARMAN,EOMEG,STBOLT,                          &
-                 P1000,                                      &
+                 P1000,                                        &
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    &
-                 ustm,ck,cka,cd,cda,isftcflx,iz0tlnd           )
+                 spec_hfx,                                     &   !JDM-MMC
+                 ustm,ck,cka,cd,cda,isftcflx,iz0tlnd          )
+     
 !
 !Restore land-point values calculated by SSiB (fds 12/2010)
      IF (itimestep .gt. 1 .and. sf_surface_physics .EQ. 8) then
@@ -5894,7 +5910,9 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                  ids,ide, jds,jde, kds,kde,                    &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    & ! 0
+                 spec_hfx,                                     &            !JDM-MMC
                  ustm_sea,ck_sea,cka_sea,cd_sea,cda_sea,isftcflx,iz0tlnd )
+    
 !
      DO j = JTS , JTE
         DO i = ITS, ITE

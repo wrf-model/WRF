@@ -596,14 +596,23 @@ CONTAINS
          grid%e(i,j)        = 0.
 !  for LES, include Coriolis force
          grid%f(i,j)        = 1.e-4
+      END DO
+   END DO
 
-!JDM-MMC SWiFT SWiFT facility, latitude = 33.61054 N
-       grid%e(i,j)        = 0.00012146 !JDM-MMC
-       grid%f(i,j)        = 0.00008073 !JDM-MMC
+!JDM-MMC Compute Coriolis terms from specified latitude.
+IF ( config_flags%spec_lat .NE. -999.9 ) THEN
+   
+    DO j = jts, jte
+      DO i = its, ite
+
+        grid%e(i,j)     = 2*EOMEG*COS(config_flags%spec_lat*degrad)
+        grid%f(i,j)     = 2*EOMEG*SIN(config_flags%spec_lat*degrad)
        
       END DO
    END DO
 
+ENDIF
+   
    END SELECT ideal_landmap
 
     DO j = jts, jte

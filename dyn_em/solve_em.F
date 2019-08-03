@@ -78,7 +78,7 @@ SUBROUTINE solve_em ( grid , config_flags  &
    USE module_llxy, ONLY : proj_cassini
    USE module_avgflx_em, ONLY : zero_avgflx, upd_avgflx
    USE module_cpl, ONLY : coupler_on, cpl_settime, cpl_store_input
-
+   USE module_tsout !JDM-MMC
    IMPLICIT NONE
 
    !  Input data.
@@ -4568,6 +4568,46 @@ BENCH_END(bc_2d_tim)
 
    END DO
    !$OMP END PARALLEL DO
+
+   ! JDM-MMC BEGIN--------------------------------------------------------
+   
+! calculate cell-centered variables for reduced output
+
+   IF ( config_flags%tsout_opt .EQ. 1 ) THEN
+
+    CALL wrf_debug ( 10 , ' call cell_centered_calc' )
+
+    !$OMP PARALLEL DO   &
+    !$OMP PRIVATE ( ij )
+    DO ij = 1 , grid%num_tiles
+       CALL cell_centered_calc(grid%uts, grid%vts, grid%wts,          &
+                               grid%tts, grid%pts, grid%tkets,        &
+                               grid%zts, grid%t11ts, grid%t22ts,      &
+                               grid%t33ts, grid%t12ts, grid%t13ts,    &
+                               grid%t23ts, grid%h3ts, grid%usts,      &
+                               grid%z0ts, grid%u_2, grid%v_2,         &
+                               grid%w_2, grid%t_2, grid%p,            &
+                               grid%pb, grid%tke_2,                   &
+                               grid%ph_2, grid%phb,                   &
+                               nba_mij(ims,kms,jms,P_m11),            &
+                               nba_mij(ims,kms,jms,P_m22),            &
+                               nba_mij(ims,kms,jms,P_m33),            &
+                               nba_mij(ims,kms,jms,P_m12),            &
+                               nba_mij(ims,kms,jms,P_m13),            &
+                               nba_mij(ims,kms,jms,P_m23),            &
+                               nba_mij(ims,kms,jms,P_mh3),            &
+                               grid%ustm, grid%znt,                   &
+                               ids, ide, jds, jde, kds, kde,          &
+                               ims, ime, jms, jme, kms, kme,          &
+                               grid%i_start(ij), grid%i_end(ij),      &
+                               grid%j_start(ij), grid%j_end(ij),      &
+                               k_start, k_end                          )
+     
+    END DO
+    !$OMP END PARALLEL DO
+
+    ENDIF
+!-----------------------------JDM-MMC END
 
 !-----------------------------------------------------------
 !  After all of the RK steps, after the microphysics, after p-rho-phi,

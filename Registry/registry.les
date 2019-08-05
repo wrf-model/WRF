@@ -5,6 +5,13 @@ state   real    m33     ikjf    nba_mij		1       -       h       "m33"   	"33 co
 state   real    m12     ikjf    nba_mij		1       -       h       "m12"   	"12 component of NBA subgrid stress tensor"     "m2 s-2"
 state   real    m13     ikjf    nba_mij		1       -       h       "m13"   	"13 component of NBA subgrid stress tensor"     "m2 s-2"
 state   real    m23     ikjf    nba_mij		1       -       h       "m23"  		"23 component of NBA subgrid stress tensor"     "m2 s-2"
+state   real    mh1     ikjf    nba_mij		1       -       h       "mh1"  		"zonal heat flux (not from NBA model)     "     "K m s-1"
+state   real    mh2     ikjf    nba_mij		1       -       h       "mh2"  		"meridional heat flux (not from NBA model)"     "K m s-1"
+state   real    mh3     ikjf    nba_mij		1       -       h       "mh3"  		"vertical heat flux (not from NBA model)  "     "K m s-1"
+state   real    mq1     ikjf    nba_mij		1       -       h       "mq1"  		"zonal vapor flux (not from NBA model)    "     "m s-1"
+state   real    mq2     ikjf    nba_mij		1       -       h       "mq2"  		"meridional vapor flux (not from NBA model)"    "m s-1"
+state   real    mq3     ikjf    nba_mij		1       -       h       "mq3"  		"vertical vapor flux (not from NBA model) "     "m s-1"
+
 
 state   real    -       ikjf    nba_rij		1       -       -       -	
 state   real    r12     ikjf    nba_rij		1       -       -       "r12"   	"12 component of rotation tensor"               "s-1"
@@ -12,14 +19,17 @@ state   real    r13     ikjf    nba_rij		1       -       -       "r13"   	"13 co
 state   real    r23     ikjf    nba_rij		1       -       -       "r23"   	"23 component of rotation tensor"               "s-1"
 state   real    smnsmn  ikjf    nba_rij		1       -       -       "smnsmn"   	"Smn*Smn"               			"s-2"
 
+rconfig	real 	spec_hfx 	namelist,dynamics	1     		-999.9  -	"Constant surface heat flux (W/m^2) for use with sf_sfclay_physics=1. -999.9 ignores this option."
+rconfig	real 	spec_lat 	namelist,dynamics	1     		-999.9  -	"Latitude to compute coriolis terms for idealized simulations. -999.9 ignores this option."
+
 rconfig	integer sfs_opt 	namelist,dynamics	max_domains     0       -	"1 or 2 to use NBA models"
 rconfig	integer m_opt    	namelist,dynamics       max_domains     0       -       "1 to output sgs stresses if not using NBA"
 
 package	nosfs	sfs_opt==0      	-       -
-package	nba1	sfs_opt==1      	-       nba_mij:m11,m22,m33,m12,m13,m23;nba_rij:r12,r13,r23,smnsmn
-package	nba2	sfs_opt==2      	-       nba_mij:m11,m22,m33,m12,m13,m23;nba_rij:r12,r13,r23,smnsmn
+package	nba1	sfs_opt==1      	-       nba_mij:m11,m22,m33,m12,m13,m23,mh1,mh2,mh3,mq1,mq2,mq3;nba_rij:r12,r13,r23,smnsmn
+package	nba2	sfs_opt==2      	-       nba_mij:m11,m22,m33,m12,m13,m23,mh1,mh2,mh3,mq1,mq2,mq3;nba_rij:r12,r13,r23,smnsmn
 
-package mout	m_opt==1		-	nba_mij:m11,m22,m33,m12,m13,m23
+package mout	m_opt==1		-	nba_mij:m11,m22,m33,m12,m13,m23,mh1,mh2,mh3,mq1,mq2,mq3
 
 halo      HALO_EM_NBA_MIJ	dyn_em 8:nba_mij
 period    PERIOD_EM_NBA_MIJ   	dyn_em 3:nba_mij

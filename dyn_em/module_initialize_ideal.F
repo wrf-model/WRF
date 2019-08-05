@@ -596,10 +596,23 @@ CONTAINS
          grid%e(i,j)        = 0.
 !  for LES, include Coriolis force
          grid%f(i,j)        = 1.e-4
-
       END DO
    END DO
 
+!JDM-MMC Compute Coriolis terms from specified latitude.
+IF ( config_flags%spec_lat .NE. -999.9 ) THEN
+   
+    DO j = jts, jte
+      DO i = its, ite
+
+        grid%e(i,j)     = 2*EOMEG*COS(config_flags%spec_lat*degrad)
+        grid%f(i,j)     = 2*EOMEG*SIN(config_flags%spec_lat*degrad)
+       
+      END DO
+   END DO
+
+ENDIF
+   
    END SELECT ideal_landmap
 
     DO j = jts, jte
@@ -640,9 +653,10 @@ CONTAINS
        IF (model_config_rec%eta_levels(1) .EQ. -1) THEN !we do not have eta_levels from namelist
    IF (stretch_grid) THEN ! exponential stretch for eta (nearly constant dz)
      DO k=1, kde
-      grid%znw(k) = (exp(-(k-1)/float(kde-1)/z_scale) - exp(-1./z_scale))/ &
-                                (1.-exp(-1./z_scale))
-     ENDDO
+!JDM-MMC      grid%znw(k) = (exp(-(k-1)/float(kde-1)/z_scale) - exp(-1./z_scale))/ &
+!JDM-MMC                                (1.-exp(-1./z_scale))
+       grid%znw(k) = model_config_rec%eta_levels(k) !JDM-MMC
+   ENDDO
    ELSE
      DO k=1, kde
       grid%znw(k) = 1. - float(k-1)/float(kde-1)
@@ -1369,7 +1383,7 @@ CONTAINS
       call random_number (randx)
       randx = randx - 0.5
 !     DO K = 1, kte-1
-      DO K = 1, 4
+!JDM-MMC Comment removes initialization perturbations      DO K = 1, 4
 
 !  No bubbles for LES!
 !  put in preturbation theta (bubble) and recalc density.  note,
@@ -1390,7 +1404,7 @@ CONTAINS
                         (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
            grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
         ENDIF
-      ENDDO
+!JDM-MMC      ENDDO
 
 !  rebalance hydrostatically
 

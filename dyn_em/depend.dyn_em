@@ -262,6 +262,7 @@ solve_em.o:     module_small_step_em.o \
                 module_after_all_rk_steps.o  \
                 module_avgflx_em.o              \
 		module_polarfft.o \
+                module_tsout.o   \
 		../frame/module_domain.o \
 		../frame/module_configure.o  \
 		../frame/module_driver_constants.o \
@@ -324,6 +325,10 @@ adapt_timestep_em.o: \
 		../frame/module_domain.o \
 		../frame/module_configure.o  \
 		../frame/module_dm.o
+
+module_tsout.o: \
+		../share/module_model_constants.o
+
 
 #		../chem/module_chem_utilities.o \
 # 		../chem/module_input_chem_data.o

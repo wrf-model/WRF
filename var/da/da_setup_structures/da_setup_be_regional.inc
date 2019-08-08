@@ -1703,17 +1703,13 @@ subroutine da_setup_be_regional(xb, be, grid)
       allocate (alpha_val(1:nk)) ! Not using jy dimension yet.
       allocate (alpha_evec(1:nk,1:nk)) ! Not using jy dimension yet.
 
-      if ( alpha_vertloc ) then ! Use vertical localization:
-         call da_get_unit(be_unit)
-         open(unit=be_unit,file='be.vertloc.dat', status='old', form='unformatted')
-
-         read (be_unit)nk
-         read (be_unit)alpha_val(1:nk)
-         read (be_unit)alpha_evec(1:nk,1:nk)
-         close(be_unit)
-         call da_free_unit(be_unit)
+      if ( alpha_vertloc_opt > 0 ) then ! Use vertical localization:
+         if ( rootproc ) then
+            call da_get_alpha_vertloc(xb, alpha_val, alpha_evec)
+         end if
+         call wrf_dm_bcast_real(alpha_val,  nk)
+         call wrf_dm_bcast_real(alpha_evec, nk*nk)
          be % alpha % mz = nk
-
          call da_get_vertical_truncation(max_vert_var_alpha, alpha_val, be % alpha)
       else
          be % alpha % mz = 1 ! No vertical localization.

@@ -466,7 +466,7 @@ rconfig   integer   alpha_truncation        namelist,wrfvar16  1  0        - "al
 rconfig   integer   alpha_corr_type         namelist,wrfvar16  1  3        - "alpha_corr_type"         ""  ""   
 rconfig   real      alpha_corr_scale        namelist,wrfvar16  1  200.0    - "alpha_corr_scale"        ""  "km" 
 rconfig   real      alpha_std_dev           namelist,wrfvar16  1  1.0      - "alpha_std_dev"           ""  ""
-rconfig   logical   alpha_vertloc           namelist,wrfvar16  1  .false.  - "alpha_vertloc"           ""  ""
+rconfig   integer   alpha_vertloc_opt       namelist,wrfvar16  1  2        - "alpha_vertloc_opt"       "option for vertical localization of alpha control variable"  "0: no vertical localization, 1:read vertloc function from be.vertloc.dat, 2:to calculate in WRFDA using log-P method"
 rconfig   logical   alpha_hydrometeors      namelist,wrfvar16  1  .false.  - "alpha_hydrometeors"      ""  ""
 rconfig   logical   hybrid_dual_res         namelist,wrfvar16  1  .false.  - "hybrid_dual_res"         ""  ""
 rconfig   integer   dual_res_upscale_opt    namelist,wrfvar16  1  3        - "dual_res_upscale_opt"    ""  ""

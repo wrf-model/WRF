@@ -498,7 +498,11 @@ Description of WRFDA namelist variables, defined in Registry/registry.var
   ep_para_read            = 0          ; how ensemble perturbations are read. 0: serial read; 1: parallel read
   rden_bin                = 1          ; number of bins/batches to read ensemble perturbations in parallel
   alpha_std_dev           = 1.0        ;
-  alpha_vertloc           = .false.    ; switch for vertical localization
+  alpha_vertloc_opt       = 2          ; new option since v4.2 (to replace previous alpha_vertloc)
+                                       ; for choosing the source of vertical localization for alpha control variable
+                                       ; 0: no vertical localization applied for alpha control variable.
+                                       ; 1: read in vertloc function from be.vertloc.dat. The same behavior as pre-v4.2.
+                                       ; 2: (default, recommended) let WRFDA calculate logP-based vertical localization. be.vertloc.dat will be written out.
   alpha_hydrometeors      = .false.    ; switch for cloud alpha control variables
   hybrid_dual_res         = .false.    ; swithc for dual-resolution hybrid
   dual_res_upscale_opt    = 3          ;

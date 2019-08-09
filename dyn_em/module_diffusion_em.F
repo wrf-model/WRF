@@ -5071,7 +5071,7 @@ END SUBROUTINE vertical_diffusion_s
                                   dx,dy,dt,ust,hfx,qfx,br,ep1,ep2,      &
                                   karman,u_phy,v_phy,th_phy,rho,moist,n_moist, &
                                   msftx,msfty,rdzw,                            &
-                                  u10,v10,znt,xland,tke,                       &
+                                  u10,v10,wspd,                                &
                                   ids, ide, jds, jde, kds, kde,     &
                                   ims, ime, jms, jme, kms, kme,     &
                                   its, ite, jts, jte, kts, kte      )
@@ -5106,11 +5106,11 @@ END SUBROUTINE vertical_diffusion_s
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, n_moist ), INTENT( INOUT ) :: &
    moist
 
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) :: rho,tke
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) :: rho
  
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)   :: hfx,qfx,br,ust
 
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   )   :: u10,v10,znt,xland
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   )   :: u10,v10,wspd
 
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   )   :: msftx,msfty
 
@@ -5123,22 +5123,19 @@ END SUBROUTINE vertical_diffusion_s
 ! Local variables.
   REAL, DIMENSION( its:ite, kts:kte,   jts:jte ) :: zq
   REAL, DIMENSION( its:ite, kts:kte-1, jts:jte ) :: za,thv
-  REAL, DIMENSION( its:ite, kts:kte,   jts:jte ) :: zfacmf,entfacmf,temp
-  REAL, DIMENSION( its:ite, jts:jte )            :: govrth,sflux,pblh,wstar3,wstar,rigs
+  REAL, DIMENSION( its:ite, kts:kte,   jts:jte ) :: zfacmf,entfacmf
+  REAL, DIMENSION( its:ite, jts:jte )            :: govrth,sflux,wstar3,wstar,rigs
   LOGICAL, DIMENSION( its:ite,jts:jte )          :: pblflg, sfcflg, stable
   REAL, DIMENSION( its:ite, jts:jte )            :: deltaoh,we,enlfrac2
   REAL, DIMENSION( its:ite, jts:jte )            :: hfxpbl,bfxpbl
-  REAL, DIMENSION( its:ite, jts:jte )            :: dthv,wm2,brup,brcr,brdn
+  REAL, DIMENSION( its:ite, jts:jte )            :: dthv,wm2
   REAL, DIMENSION( its:ite, jts:jte )            :: wscale,thermal
-  REAL, DIMENSION( its:ite, jts:jte )            :: hgamt,hgamq
-  REAL, DIMENSION( its:ite, kts:kte, jts:jte )   :: t_var,w_var
-  REAL, DIMENSION( its:ite, jts:jte )            :: tstar_w
-  REAL               :: tvcon,delb,cpm,wm3,bfx0,zzi,ust3
+  REAL               :: tvcon,delb,cpm,wm3,bfx0,ust3
   REAL               :: dtheta,du,dv,thsfc,brint
   INTEGER            :: i,j,k,i_start,i_end,j_start,j_end,ktf
   REAL               :: mlfrac,ezfrac,sfcfracn,sflux0,snlflux0
   REAL               :: amf1,amf2,amf3,bmf2,bmf3,pth1,delxy,pu1
-  REAL               :: wspd,heat_flux
+  REAL               :: heat_flux
   REAL,PARAMETER     :: phifac = 8.,sfcfrac = 0.1,d1 = 0.02, d2 = 0.05, zfmin = 1.e-8
   REAL,PARAMETER     :: h1 = 0.33333335, h2 = 0.6666667, tmin = 1.e-2
 ! tunable parameters
@@ -5150,6 +5147,7 @@ END SUBROUTINE vertical_diffusion_s
   REAL,PARAMETER     ::  cpent = -0.4, rigsmax = 100., rimin = -100.
   REAL,PARAMETER     ::  entfmin = 1.0, entfmax = 5.0, sm = 10.9
  
+
    ktf=MIN(kte,kde-1)
  
    i_start = its
@@ -5311,9 +5309,8 @@ END SUBROUTINE vertical_diffusion_s
       IF(sfcflg(i,j).and.sflux(i,j).GT.0.0)THEN
 !nonlocal momentum flux based on Brown and Grant (1997)
        brint = -sm*ust(i,j)*ust(i,j)*wstar3(i,j)/(hpbl(i,j)*wscale(i,j)**4)
-       wspd  = sqrt(u_phy(i,1,j)*u_phy(i,1,j) + v_phy(i,1,j)*v_phy(i,1,j))
-       gamu(i,j) = pu1 * brint*u_phy(i,1,j)/wspd
-       gamv(i,j) = pu1 * brint*v_phy(i,1,j)/wspd
+       gamu(i,j) = pu1 * brint*u_phy(i,1,j)/wspd(i,j)
+       gamv(i,j) = pu1 * brint*v_phy(i,1,j)/wspd(i,j)
       ELSE
        pblflg(i,j) = .false.
       ENDIF
@@ -7968,7 +7965,7 @@ ENDIF
 !LOCAL VARS
   REAL                     :: temp, beta, muu, rdz_w
   REAL, DIMENSION(kts:kte) :: a,b,c,d
-  REAL, DIMENSION(its:ite) :: muold, munew
+  REAL, DIMENSION(its:ite,          jts:jte  ) :: muold, munew
   REAL, DIMENSION(its:ite, kts:kte, jts:jte  ) :: advect_h_tend,advect_z_tend
   REAL, DIMENSION(its:ite, kts:kte, jts:jte  ) :: xkxavg
   INTEGER :: i_start_spc,i_end_spc,j_start_spc,j_end_spc,k_start_spc,k_end_spc
@@ -8024,8 +8021,8 @@ ENDIF
  
        DO  j = jts, min(jte,jde-1)
        DO  i = its, min(ite,ide-1)
-           muold(i) = mu_old(i,j) + mu_base(i,j)
-           munew(i) = mu_new(i,j) + mu_base(i,j)
+           muold(i,j) = mu_old(i,j) + mu_base(i,j)
+           munew(i,j) = mu_new(i,j) + mu_base(i,j)
        ENDDO
        ENDDO
 
@@ -8056,7 +8053,7 @@ ENDIF
        DO  j = jts, min(jte,jde-1)
        DO  i = its, min(ite,ide-1)
           DO  k = kts,ktf-1
-             muu = c1h(k)*muold(i) + c2h(k)
+             muu = c1h(k)*muold(i,j) + c2h(k)
              rdz_w = -g/(dnw(k)*muu) 
              temp = xkxavg(i,k,j)*dt*rdz_w
              beta = 1.5*sqrt(tke_old(i,k,j))/l_scale(i,k,j)
@@ -8083,7 +8080,7 @@ ENDIF
              CALL tridiag(nz,a,b,c,d)
  
           DO k=kts,ktf
-             tke(i,k,j) = d(k)/(c1h(k)*munew(i) + c2h(k))
+             tke(i,k,j) = d(k)/(c1h(k)*munew(i,j) + c2h(k))
           ENDDO
  
        ENDDO

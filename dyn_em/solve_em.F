@@ -780,7 +780,6 @@ BENCH_START(calc_p_rho_tim)
                              , dz8w , p8w , t8w                 &
                              , nba_mij, num_nba_mij             & !JDM 
                              , nba_rij, num_nba_rij             & !JDM 
-                             , grid%u_phy,grid%v_phy,grid%br    & !XZ  
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &

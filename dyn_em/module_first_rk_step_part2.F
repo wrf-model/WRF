@@ -24,7 +24,6 @@ CONTAINS
                              , dz8w , p8w , t8w                 &
                              , nba_mij, n_nba_mij               & !JDM
                              , nba_rij, n_nba_rij               & !JDM
-                             , u_phy, v_phy, br                 & ! XZ
                              , ids, ide, jds, jde, kds, kde     &
                              , ims, ime, jms, jme, kms, kme     &
                              , ips, ipe, jps, jpe, kps, kpe     &
@@ -99,8 +98,6 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: chklowq
     LOGICAL ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: cu_act_flag
     REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: hol
-!XZ
-    REAL    ,DIMENSION(ims:ime,jms:jme), INTENT(INOUT)         :: br
 
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: th_phy
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: pi_phy
@@ -109,8 +106,6 @@ CONTAINS
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: dz8w
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: p8w
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: t8w
-!XZ
-    REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: u_phy,v_phy
 
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: ru_tendf
     REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme), INTENT(INOUT) :: rv_tendf
@@ -517,10 +512,11 @@ BENCH_START(calc_tke_tim)
      IF( config_flags%diff_opt .eq. 2 .and. config_flags%km_opt .eq. 5 ) THEN
            CALL nonlocal_flux(config_flags,grid%nlflux,grid%gamu,grid%gamv,      &
                               grid%hpbl,grid%kpbl,grid%dx,grid%dy,grid%dt,       &
-                              grid%ustm,grid%hfx,grid%qfx,grid%br,ep_1,ep_2,     &
-                              karman,u_phy,v_phy,th_phy,grid%rho,moist,num_moist,&
+                              grid%ust,grid%hfx,grid%qfx,grid%br,ep_1,ep_2,      & !
+                              karman,grid%u_phy,grid%v_phy,th_phy,grid%rho,      & !
+                              moist,num_moist,                                   &
                               grid%msftx,grid%msfty,grid%rdzw,                   &
-                              grid%u10,grid%v10,grid%znt,grid%xland,grid%tke_2,  &
+                              grid%u10,grid%v10,grid%wspd,                       &
                               ids, ide, jds, jde, kds, kde,                      &
                               ims, ime, jms, jme, kms, kme,                      &
                               grid%i_start(ij), grid%i_end(ij),                  &

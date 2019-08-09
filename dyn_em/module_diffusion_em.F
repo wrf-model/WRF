@@ -4,7 +4,7 @@
     MODULE module_diffusion_em
 
     USE module_bc, only: set_physical_bc3d
-    USE module_state_description, only: p_m23, p_m13, p_m22, p_m33, p_r23, p_r13, p_r12, p_m12, p_m11
+    USE module_state_description, only: p_m23, p_m13, p_m22, p_m33, p_r23, p_r13, p_r12, p_m12, p_m11, p_mh1, p_mh2, p_mh3
     USE module_big_step_utilities_em, only: grid_config_rec_type, param_first_scalar, p_qv, p_qi, p_qc
     USE module_model_constants
 
@@ -2428,6 +2428,24 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                    ims, ime, jms, jme, kms, kme,           &
                                    its, ite, jts, jte, kts, kte           )
 
+! JDM-MMC
+    IF ( ( config_flags%sfs_opt .GT. 0 ) .OR. ( config_flags%m_opt .EQ. 1 ) ) THEN 
+
+       CALL horizontal_diffusion_s_get_flux  ( nba_mij(ims,kts,jms,P_mh1),             &
+                                               nba_mij(ims,kts,jms,P_mh2),             &
+                                               config_flags, thp,                      &  
+                                               msftx, msfty, msfux, msfuy,             &
+                                               msfvx, msfvy, xkhh, rdx, rdy,           &
+                                               fnm, fnp, cf1, cf2, cf3,                &
+                                               zx, zy, rdz, rdzw, dnw, dn, rho,        &
+                                               .false.,                                &
+                                               ids, ide, jds, jde, kds, kde,           &
+                                               ims, ime, jms, jme, kms, kme,           &
+                                               its, ite, jts, jte, kts, kte            )
+     
+    ENDIF
+
+    
     IF ( (km_opt .eq. 2) .and. (.not.config_flags%tke_mix2_off) )          &
     CALL horizontal_diffusion_s  ( tke_tendf(ims,kms,jms),                 &
                                    config_flags,                           &
@@ -3408,6 +3426,224 @@ SUBROUTINE horizontal_diffusion_s (tendency, config_flags, var,           &
 
 END SUBROUTINE horizontal_diffusion_s
 
+
+!=======================================================================
+
+SUBROUTINE horizontal_diffusion_s_get_flux (flux1,                                 &
+                                            flux2,                                 &
+                                            config_flags, var,                     &
+                                            msftx, msfty, msfux, msfuy,            &
+                                            msfvx, msfvy, xkhh, rdx, rdy,          &
+                                            fnm, fnp, cf1, cf2, cf3,               &
+                                            zx, zy, rdz, rdzw, dnw, dn, rho,       &
+                                            doing_tke,                             &
+                                            ids, ide, jds, jde, kds, kde,          &
+                                            ims, ime, jms, jme, kms, kme,          &
+                                            its, ite, jts, jte, kts, kte           )
+  
+!JDM-MMC Subroutine to return fluxes for output 
+!-----------------------------------------------------------------------
+! Begin declarations.
+
+   IMPLICIT NONE
+
+   TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
+
+   INTEGER ,        INTENT(IN   ) ::        ids, ide, jds, jde, kds, kde, &
+                                            ims, ime, jms, jme, kms, kme, &
+                                            its, ite, jts, jte, kts, kte
+
+   LOGICAL,         INTENT(IN   ) ::        doing_tke
+
+   REAL , INTENT(IN   )           ::        cf1, cf2, cf3
+
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) ::    fnm
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) ::    fnp
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) ::     dn
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) ::    dnw
+
+   REAL , DIMENSION( ims:ime, jms:jme) ,         INTENT(IN   ) ::   msfux
+   REAL , DIMENSION( ims:ime, jms:jme) ,         INTENT(IN   ) ::   msfuy
+   REAL , DIMENSION( ims:ime, jms:jme) ,         INTENT(IN   ) ::   msfvx
+   REAL , DIMENSION( ims:ime, jms:jme) ,         INTENT(IN   ) ::   msfvy
+   REAL , DIMENSION( ims:ime, jms:jme) ,         INTENT(IN   ) ::   msftx
+   REAL , DIMENSION( ims:ime, jms:jme) ,         INTENT(IN   ) ::   msfty
+
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(OUT  ) ::         &
+                                                                   flux1, &
+                                                                   flux2
+        
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(IN   ) ::         &
+                                                                    xkhh, &
+                                                                     rdz, &
+                                                                    rdzw, &
+                                                                     rho
+
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(IN   ) ::    var, &
+                                                                      zx, &
+                                                                      zy
+
+   REAL ,                                        INTENT(IN   ) ::    rdx, &
+                                                                     rdy
+
+! Local data
+
+   INTEGER :: i, j, k, ktf
+
+   INTEGER :: i_start, i_end, j_start, j_end
+
+   REAL , DIMENSION( its-1:ite+1, kts:kte, jts-1:jte+1)    ::     H1avg, &
+                                                                  H2avg, &
+                                                                 xkxavg
+
+   REAL    :: mrdx, mrdy, rcoup
+   REAL    :: tmpzx, tmpzy, tmpzeta_z, rdzu, rdzv
+   INTEGER :: ktes1,ktes2
+
+! End declarations.
+!-----------------------------------------------------------------------
+
+   ktf=MIN(kte,kde-1)
+
+!-----------------------------------------------------------------------
+! scalars:   t (.), u(|), v(+), w(-)
+!
+!       t  u  t  u                               t  v  t  v
+!
+! w     -     3     -      k+1             w     -     3     -      k+1
+!
+! t     .  1  O  1  .      k               t     .  2  O  2  .      k
+!
+! w     -     3     -      k               w     -     3     -      k
+!
+! t     .  |  .  |  .      k-1             t     .  +  .  +  .      k-1
+!
+! w     -     -     -      k-1             w     -     -     -      k-1
+!
+! t    i-1 i  i i+1                             j-1 j  j j+1
+!
+
+   ktes1=kte-1
+   ktes2=kte-2
+
+   i_start = its
+   i_end   = MIN(ite,ide-1)
+   j_start = jts
+   j_end   = MIN(jte,jde-1)
+
+   IF ( config_flags%open_xs .or. config_flags%specified .or. &
+        config_flags%nested) i_start = MAX(ids+1,its)
+   IF ( config_flags%open_xe .or. config_flags%specified .or. &
+        config_flags%nested) i_end   = MIN(ide-2,ite)
+   IF ( config_flags%open_ys .or. config_flags%specified .or. &
+        config_flags%nested) j_start = MAX(jds+1,jts)
+   IF ( config_flags%open_ye .or. config_flags%specified .or. &
+        config_flags%nested) j_end   = MIN(jde-2,jte)
+      IF ( config_flags%periodic_x ) i_start = its
+      IF ( config_flags%periodic_x ) i_end = MIN(ite,ide-1)
+
+
+! H1 = partial var over partial x
+
+   DO j = j_start, j_end
+   DO k = kts, ktf
+   DO i = i_start, i_end + 1
+      xkxavg(i,k,j)=0.5*(xkhh(i-1,k,j)+xkhh(i,k,j))*0.5*(rho(i-1,k,j)+rho(i,k,j))
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = j_start, j_end
+   DO k = kts+1, ktf
+   DO i = i_start, i_end + 1
+      H1avg(i,k,j)=0.5*(fnm(k)*(var(i-1,k  ,j)+var(i,k  ,j))+  &
+                        fnp(k)*(var(i-1,k-1,j)+var(i,k-1,j)))
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = j_start, j_end
+   DO i = i_start, i_end + 1
+      H1avg(i,kts  ,j)=0.5*(cf1*var(i  ,1,j)+cf2*var(i  ,2,j)+ &
+                            cf3*var(i  ,3,j)+cf1*var(i-1,1,j)+  &
+                            cf2*var(i-1,2,j)+cf3*var(i-1,3,j))
+      H1avg(i,ktf+1,j)=0.5*(var(i,ktes1,j)+(var(i,ktes1,j)- &
+                            var(i,ktes2,j))*0.5*dnw(ktes1)/dn(ktes1)+ &
+                            var(i-1,ktes1,j)+(var(i-1,ktes1,j)- &
+                            var(i-1,ktes2,j))*0.5*dnw(ktes1)/dn(ktes1))
+   ENDDO
+   ENDDO
+
+   DO j = j_start, j_end
+   DO k = kts, ktf
+   DO i = i_start, i_end + 1
+! new
+      tmpzx = 0.5*( zx(i,k,j)+ zx(i,k+1,j))
+      rdzu = 2./(1./rdzw(i,k,j) + 1./rdzw(i-1,k,j))
+      flux1(i,k,j)=-msfux(i,j)*xkxavg(i,k,j)*(                      &
+                 rdx*(var(i,k,j)-var(i-1,k,j)) - tmpzx*         &
+                     (H1avg(i,k+1,j)-H1avg(i,k,j))*rdzu )
+
+!      tmpzeta_z = 0.5*(zeta_z(i,j)+zeta_z(i-1,j))
+!      H1(i,k,j)=-msfuy(i,j)*xkxavg(i,k,j)*(                         &
+!                 rdx*(var(i,k,j)-var(i-1,k,j)) - tmpzx*tmpzeta_z*  &
+!                     (H1avg(i,k+1,j)-H1avg(i,k,j))/dnw(k))
+   ENDDO
+   ENDDO
+   ENDDO
+
+! H2 = partial var over partial y
+
+   DO j = j_start, j_end + 1
+   DO k = kts, ktf
+   DO i = i_start, i_end
+      xkxavg(i,k,j)=0.5*(xkhh(i,k,j-1)+xkhh(i,k,j))*0.5*(rho(i,k,j-1)+rho(i,k,j))
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = j_start, j_end + 1
+   DO k = kts+1,   ktf
+   DO i = i_start, i_end
+      H2avg(i,k,j)=0.5*(fnm(k)*(var(i,k  ,j-1)+var(i,k  ,j))+  &
+                        fnp(k)*(var(i,k-1,j-1)+var(i,k-1,j)))
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = j_start, j_end + 1
+   DO i = i_start, i_end
+      H2avg(i,kts  ,j)=0.5*(cf1*var(i,1,j  )+cf2*var(i  ,2,j)+ &
+                            cf3*var(i,3,j  )+cf1*var(i,1,j-1)+  &
+                            cf2*var(i,2,j-1)+cf3*var(i,3,j-1))
+      H2avg(i,ktf+1,j)=0.5*(var(i,ktes1,j)+(var(i,ktes1,j)- &
+                            var(i,ktes2,j))*0.5*dnw(ktes1)/dn(ktes1)+ &
+                            var(i,ktes1,j-1)+(var(i,ktes1,j-1)- &
+                            var(i,ktes2,j-1))*0.5*dnw(ktes1)/dn(ktes1))
+   ENDDO
+   ENDDO
+
+   DO j = j_start, j_end + 1
+   DO k = kts, ktf
+   DO i = i_start, i_end
+! new
+      tmpzy = 0.5*( zy(i,k,j)+ zy(i,k+1,j))
+      rdzv = 2./(1./rdzw(i,k,j) + 1./rdzw(i,k,j-1))
+      flux2(i,k,j)=-msfvy(i,j)*xkxavg(i,k,j)*(                       &
+                 rdy*(var(i,k,j)-var(i,k,j-1)) - tmpzy*          &
+                     (H2avg(i ,k+1,j)-H2avg(i,k,j))*rdzv)
+
+!      tmpzeta_z = 0.5*(zeta_z(i,j)+zeta_z(i,j-1))
+!      H2(i,k,j)=-msfvy(i,j)*xkxavg(i,k,j)*(                         &
+!                 rdy*(var(i,k,j)-var(i,k,j-1)) - tmpzy*tmpzeta_z*  &
+!                     (H2avg(i ,k+1,j)-H2avg(i,k,j))/dnw(k))
+   ENDDO
+   ENDDO
+   ENDDO
+
+END SUBROUTINE horizontal_diffusion_s_get_flux
+
+
 !=======================================================================
 !=======================================================================
 
@@ -3688,6 +3924,64 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
                               its, ite, jts, jte, kts, kte          )
 
 
+   IF ( ( config_flags%sfs_opt .GT. 0 ) .OR. ( config_flags%m_opt .EQ. 1 ) ) THEN 
+
+!JDM-MMC-------------------------------------------------------------------------
+!JDM-MMC
+!JDM-MMC  Subroutine *_diffusion_s (where * is either "vertical" or "horizontal")
+!JDM-MMC  is a generic subroutine that is called to calculate the tendency due to
+!JDM-MMC  turbulent diffusion for any scalar --heat, moisture, tke, any chemical
+!JDM-MMC  species or any explicit scalar. The tendency is computed via divergence
+!JDM-MMC  of the flux, with the fluxes computed within the subroutine.
+!JDM-MMC
+!JDM-MMC  In order to output the flux of the quantity in question, a variable
+!JDM-MMC  to retreive that flux must also be passed into the subroutine
+!JDM-MMC  However, we might want fluxes of only certain quantities, e.g. heat
+!JDM-MMC  and moisture, but not all scalars, chem species, etc. What to do?
+!JDM-MMC   
+!JDM-MMC  The following 4 options come to mind:
+!JDM-MMC   
+!JDM-MMC  --To continue to use the same subroutines for all scalars--, either
+!JDM-MMC
+!JDM-MMC  1) Pass in dummy variables as a placeholders for all the other scalars
+!JDM-MMC     for which we do not want fluxes, so the argument list is identical
+!JDM-MMC     for all calls.
+!JDM-MMC  2) Use optional variables.
+!JDM-MMC  3) A two-step process:
+!JDM-MMC     i) Call the exising subroutines to compute the tendencies as usual 
+!JDM-MMC     ii) Duplicate and rename the existing subroutines and modify those
+!JDM-MMC     to only return the desired fluxes, but not recompute the tendencies.
+!JDM-MMC     Call the new subroutines after the calls to the originals.
+!JDM-MMC
+!JDM-MMC  --Alternatively--,
+!JDM-MMC    
+!JDM-MMC  4) Duplicate, rename and modify the subroutines so that those can be
+!JDM-MMC     used to compute both the tendencies and output the fluxes for
+!JDM-MMC     the subset of scalars for which one wants the fluxes.
+!JDM-MMC     Use the existing unmodified subroutines for all the others.
+!JDM-MMC
+!JDM-MMC  Since I do not know how to use optional variables, and to keep the 
+!JDM-MMC  coding as disentangled as possible, I went with option 3. There is
+!JDM-MMC  some waste involved in computing the flux a second time just for
+!JDM-MMC  output, however the computations are pretty lightweight *no MPI). 
+!JDM-MMC
+!JDM-MMC  I made a copies of subroutines *_diffusion_s called 
+!JDM-MMC  *_diffusion_s_get_flux, which identically compute and also return 
+!JDM-MMC  the flux. So far this is only enabled for sensible heat flux, but
+!JDM-MMC  can be extended easily to other species.
+!JDM-MMC   
+!JDM-MMC-------------------------------------------------------------------------
+   
+      CALL vertical_diffusion_s_get_flux( nba_mij(ims,kms,jms,P_mh3),            &
+                                          config_flags, var_mix, xkhv,           &
+                                          dn, dnw, rdz, rdzw, fnm, fnp, rho,     &
+                                          .false.,                               &
+                                          ids, ide, jds, jde, kds, kde,          &
+                                          ims, ime, jms, jme, kms, kme,          &
+                                          its, ite, jts, jte, kts, kte          )
+ 
+   ENDIF
+   
 !*****************************************
 !*****************************************
 !MODIFICA al flusso di calore
@@ -3706,7 +4000,10 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
        if(config_flags%use_theta_m == 1)THEN
          rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
              -g*1.61*theta(i,kts,j)*qfx(i,j)/dnw(kts)
-       ENDIF
+      ENDIF
+      IF ( (config_flags%m_opt .EQ. 1) .OR. (config_flags%sfs_opt .GT. 0) ) THEN !JDM-MMC
+         nba_mij(i,kts,j,P_mh3) = heat_flux
+      ENDIF
     ENDDO
     ENDDO
 
@@ -3722,7 +4019,9 @@ SUBROUTINE vertical_diffusion_2   ( ru_tendf, rv_tendf, rw_tendf, rt_tendf,   &
          rt_tendf(i,kts,j)=rt_tendf(i,kts,j)  &
              -g*1.61*theta(i,kts,j)*qfx(i,j)/dnw(kts)
        ENDIF
-
+      IF ( (config_flags%m_opt .EQ. 1) .OR. (config_flags%sfs_opt .GT. 0) ) THEN !JDM-MMC
+         nba_mij(i,kts,j,P_mh3) = heat_flux
+      ENDIF
     ENDDO
     ENDDO
 
@@ -4311,6 +4610,98 @@ SUBROUTINE vertical_diffusion_s( tendency, config_flags, var, xkhv,       &
    ENDIF
 
 END SUBROUTINE vertical_diffusion_s
+
+
+!=======================================================================
+
+SUBROUTINE vertical_diffusion_s_get_flux( flux3,                               &
+                                          config_flags, var, xkhv,             &
+                                          dn, dnw, rdz, rdzw, fnm, fnp, rho,   &
+                                          doing_tke,                           &
+                                          ids, ide, jds, jde, kds, kde,        &
+                                          ims, ime, jms, jme, kms, kme,        &
+                                          its, ite, jts, jte, kts, kte         )
+  
+!JDM-MMC Subroutine to return fluxes for output 
+!-----------------------------------------------------------------------
+! Begin declarations.
+
+   IMPLICIT NONE
+
+   TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
+
+   INTEGER ,         INTENT(IN   ) ::       ids, ide, jds, jde, kds, kde, &
+                                            ims, ime, jms, jme, kms, kme, &
+                                            its, ite, jts, jte, kts, kte
+
+   LOGICAL,         INTENT(IN   ) ::        doing_tke
+
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) ::    fnm
+   REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   ) ::    fnp
+   REAL , DIMENSION( kms:kme ) ,            INTENT(IN   )      ::  dn
+   REAL , DIMENSION( kms:kme ) ,            INTENT(IN   )      :: dnw
+
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(OUT  ) :: flux3
+
+   REAL , DIMENSION( ims:ime , kms:kme, jms:jme ) , INTENT(IN) ::   xkhv
+
+   REAL , DIMENSION( ims:ime , kms:kme, jms:jme ) ,                       &
+                                            INTENT(IN   )      ::    var, &
+                                                                     rdz, &
+                                                                    rdzw, &
+                                                                     rho
+! LOCAL VARS
+
+   INTEGER :: i, j, k, ktf
+
+   INTEGER :: i_start, i_end, j_start, j_end
+
+   REAL , DIMENSION( its:ite, kts:kte, jts:jte)            ::    xkxavg, &
+                                                                  rravg
+
+! End declarations.
+!-----------------------------------------------------------------------
+
+   ktf=MIN(kte,kde-1)
+
+   i_start = its
+   i_end   = MIN(ite,ide-1)
+   j_start = jts
+   j_end   = MIN(jte,jde-1)
+
+   IF ( config_flags%open_xs .or. config_flags%specified .or. &
+        config_flags%nested) i_start = MAX(ids+1,its)
+   IF ( config_flags%open_xe .or. config_flags%specified .or. &
+        config_flags%nested) i_end   = MIN(ide-2,ite)
+   IF ( config_flags%open_ys .or. config_flags%specified .or. &
+        config_flags%nested) j_start = MAX(jds+1,jts)
+   IF ( config_flags%open_ye .or. config_flags%specified .or. &
+        config_flags%nested) j_end   = MIN(jde-2,jte)
+      IF ( config_flags%periodic_x ) i_start = its
+      IF ( config_flags%periodic_x ) i_end = MIN(ite,ide-1)
+
+! H3
+
+   xkxavg = 0.
+
+   DO j = j_start, j_end
+   DO k = kts+1,ktf
+   DO i = i_start, i_end
+      xkxavg(i,k,j)=fnm(k)*xkhv(i,k,j)+fnp(k)*xkhv(i,k-1,j)
+      xkxavg(i,k,j)=xkxavg(i,k,j)*(fnm(k)*rho(i,k,j)+fnp(k)*rho(i,k-1,j))
+      flux3(i,k,j)=-xkxavg(i,k,j)*(var(i,k,j)-var(i,k-1,j))*rdz(i,k,j)
+   ENDDO
+   ENDDO
+   ENDDO
+
+   DO j = j_start, j_end
+   DO i = i_start, i_end
+      flux3(i,kts,j)=0.
+      flux3(i,ktf+1,j)=0.
+   ENDDO
+   ENDDO
+
+END SUBROUTINE vertical_diffusion_s_get_flux
 
 !=======================================================================
 !=======================================================================

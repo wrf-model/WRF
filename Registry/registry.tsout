@@ -1,0 +1,22 @@
+# registry.tsout
+#
+state    real   uts      ikj    misc    1    -    h3    "uts"      "u (x) velocity at mass points"          "m s-1"
+state    real   vts      ikj    misc    1    -    h3    "vts"      "v (y) velocity at mass points"          "m s-1"
+state    real   wts      ikj    misc    1    -    h3    "wts"      "w (z) velocity at mass points"          "m s-1"
+state    real   tts      ikj    misc    1    -    h3    "tts"      "theta at mass points"                   "m s-1"
+state    real   pts      ikj    misc    1    -    h3    "pts"      "p at mass points"                       "Pa"
+state    real   tkets    ikj    misc    1    -    h3    "tkets"    "TKE at mass points"                     "m2 s-2"
+state    real   zts      ikj    misc    1    z    h3    "zts"      "z at eta points"                        "m" 
+
+state    real   t11ts    ikj    misc    1    -    h3    "t11ts"    "sgs uu momentum flux at mass points"    "m2 s-2"
+state    real   t22ts    ikj    misc    1    -    h3    "t22ts"    "sgs vv momentum flux at mass points"    "m2 s-2"
+state    real   t33ts    ikj    misc    1    -    h3    "t33ts"    "sgs ww momentum flux at mass points"    "m2 s-2"
+state    real   t12ts    ikj    misc    1    -    h3    "t12ts"    "sgs uv momentum flux at mass points"    "m2 s-2"
+state    real   t13ts    ikj    misc    1    z    h3    "t13ts"    "sgs uw momentum flux at eta points"     "m2 s-2"
+state    real   t23ts    ikj    misc    1    z    h3    "t23ts"    "sgs vw momentum flux at eta points"     "m2 s-2"
+state    real   h3ts     ikj    misc    1    z    h3    "h3ts"     "sgs wt heat flux at eta points"         "K m s-1"
+  
+state    real   usts     ij     misc    1    -    h3    "usts"     "surface u* at eta point"                "m2 s-2"
+state    real   z0ts     ij     misc    1    -    h3    "z0ts"     "z0 at eta point"                        "m"
+
+rconfig    integer   tsout_opt    namelist,dynamics    max_domains    0    h3    "tsout_opt"    "1 to enable timeseries output"    " "

@@ -4524,7 +4524,7 @@ contains
     
     if(x.lt.0.0.or.a.lt.0.0) then
        write(*,*) 'x or a is less than zero'
-       write(*,*), x, a
+       write(*,*) x, a
        return
     endif
     if(x.lt.(a + 1.0)) then

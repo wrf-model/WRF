@@ -2372,13 +2372,12 @@ BENCH_START(tke_adv_tim)
 !XZ
     IF(rk_step == rk_order.and.config_flags%km_opt .eq. 5 ) THEN
           CALL solve_tke_implicit( config_flags,grid%tke_1,              &
-                                   grid%tke_2,grid%ww_m,grid%xkhv,       &
+                                   grid%tke_2,grid%xkhv,                 &
                                    grid%rdz,grid%rdzw,grid%l_scale,      &
                                    grid%dnw,grid%rdnw,grid%c1h,grid%c2h, &
                                    h_tendency,z_tendency,                &
                                    grid%tke_production_tend,             &
                                    grid%tke_diffusion_h_tend,            &
-                                   grid%tke_diffusion_z_tend,            &
                                    grid%fnm,grid%fnp,                    &
                                    grid%msftx, grid%msfty,               &
                                    grid%mu_1, grid%mu_2, grid%mub,       &

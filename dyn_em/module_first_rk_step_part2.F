@@ -512,8 +512,8 @@ BENCH_START(calc_tke_tim)
      IF( config_flags%diff_opt .eq. 2 .and. config_flags%km_opt .eq. 5 ) THEN
            CALL nonlocal_flux(config_flags,grid%nlflux,grid%gamu,grid%gamv,      &
                               grid%hpbl,grid%kpbl,grid%dx,grid%dy,grid%dt,       &
-                              grid%ust,grid%hfx,grid%qfx,grid%br,ep_1,ep_2,      & !
-                              karman,grid%u_phy,grid%v_phy,th_phy,grid%rho,      & !
+                              grid%ust,grid%hfx,grid%qfx,grid%br,ep_1,ep_2,      & 
+                              karman,grid%u_phy,grid%v_phy,th_phy,grid%rho,      & 
                               moist,num_moist,                                   &
                               grid%msftx,grid%msfty,grid%rdzw,                   &
                               grid%u10,grid%v10,grid%wspd,                       &

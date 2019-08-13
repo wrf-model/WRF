@@ -3241,7 +3241,7 @@ SUBROUTINE horizontal_diffusion_u_2( tendency, config_flags,              &
 
    LOGICAL :: output_tend  ! XZ
    
-   output_tend = .true.    ! XZ
+   output_tend = .false.    ! XZ
 ! End declarations.
 !-----------------------------------------------------------------------
 
@@ -3466,7 +3466,7 @@ SUBROUTINE horizontal_diffusion_v_2( tendency, config_flags,              &
    REAL :: tmpdz
    REAL :: tmpzx, tmpzeta_z
    LOGICAL :: output_tend  ! XZ
-   output_tend = .true.    ! XZ
+   output_tend = .false.    ! XZ
 ! End declarations.
 !-----------------------------------------------------------------------
 
@@ -3688,7 +3688,7 @@ SUBROUTINE horizontal_diffusion_w_2( tendency, config_flags,              &
    REAL :: tmpzx, tmpzy, tmpzeta_z
 !XZ
    LOGICAL :: output_tend  
-   output_tend = .true.  
+   output_tend = .false.  
 ! 
 ! End declarations.
 !-----------------------------------------------------------------------
@@ -5146,7 +5146,6 @@ END SUBROUTINE vertical_diffusion_s
   REAL,PARAMETER     ::  ezfac = 1.5
   REAL,PARAMETER     ::  cpent = -0.4, rigsmax = 100., rimin = -100.
   REAL,PARAMETER     ::  entfmin = 1.0, entfmax = 5.0, sm = 10.9
- 
 
    ktf=MIN(kte,kde-1)
  
@@ -7898,12 +7897,11 @@ ENDIF
 !=======================================================================
 !=======================================================================
  SUBROUTINE solve_tke_implicit( config_flags,tke_old,               &
-                        tke,ww,xkhv,rdz,rdzw,l_scale,               &
+                        tke,xkhv,rdz,rdzw,l_scale,                  &
                         dnw, rdnw, c1h, c2h,                        & 
                         tke_adv_h_tend,tke_adv_z_tend,              &
                         tke_production_tend,                        &
                         tke_diffusion_h_tend,                       &
-                        tke_diffusion_z_tend,                       &
                         fnm,fnp,msftx, msfty,                       &
                         mu_old, mu_new, mu_base,                    &
                         rk_step, dt, spec_zone,                     &
@@ -7912,8 +7910,8 @@ ENDIF
                         ims, ime, jms, jme, kms, kme,               &
                         its, ite, jts, jte, kts, kte                )
 
-! TO solve the TKE equation using implicit method. The vertical TKE diffusion,
-! vertical TKE advection and dissipation are implicitly treated.
+! TO solve the TKE equation using implicit method. The vertical TKE diffusion
+! and dissipation are implicitly treated.
 
   IMPLICIT NONE
 
@@ -7945,11 +7943,9 @@ ENDIF
                                                      tke_production_tend
 
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN ) ::           &
-                                                    tke_diffusion_h_tend, &
-                                                    tke_diffusion_z_tend
+                                                    tke_diffusion_h_tend
 
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN ) ::           &
-                                                                 ww,      & 
                                                                  xkhv,    &
                                                                  rdz,     &
                                                                  rdzw,    &
@@ -8058,18 +8054,15 @@ ENDIF
              temp = xkxavg(i,k,j)*dt*rdz_w
              beta = 1.5*sqrt(tke_old(i,k,j))/l_scale(i,k,j)
  
-             a(k) = -2.0*temp*rdz(i,k,j)    &
-                    -0.5*dt*(ww(i,k,j)+ww(i,k+1,j))*fnp(k)*rdnw(k)/muu
-             b(k) = 1.0 + 2.0*dt*rdz_w*(rdz(i,k,j)*xkxavg(i,k,j)    &
-                   +rdz(i,k+1,j)*xkxavg(i,k+1,j))   &
-                   + 0.5*(ww(i,k,j)+ww(i,k+1,j))*rdnw(k)*(fnp(k+1)-fnm(k))*dt/muu         &
-                   + dt*beta
-             c(k) = -2.0*xkxavg(i,k+1,j)*dt*rdz(i,k+1,j)*rdz_w      &  
-                    +0.5*dt*(ww(i,k,j)+ww(i,k+1,j))*rdnw(k)*fnm(k+1)/muu
+             a(k) = - 2.0*temp*rdz(i,k,j)  
+             b(k) =   1.0 + 2.0*dt*rdz_w*(rdz(i,k,j)*xkxavg(i,k,j)    &
+                    + rdz(i,k+1,j)*xkxavg(i,k+1,j))                   &
+                    + dt*beta
+             c(k) = - 2.0*xkxavg(i,k+1,j)*dt*rdz(i,k+1,j)*rdz_w  
  
-             d(k) = (tke_diffusion_h_tend(i,k,j)+advect_h_tend(i,k,j)+tke_production_tend(i,k,j))*dt  &
-                   + muu*tke_old(i,k,j)                                          &
-                   + 0.5*dt*muu*tke_old(i,k,j)**1.5/l_scale(i,k,j)
+             d(k) =  (tke_diffusion_h_tend(i,k,j)+advect_h_tend(i,k,j)+tke_production_tend(i,k,j) + advect_z_tend(i,k,j))*dt  &
+                    + muu*tke_old(i,k,j)                              &
+                    + 0.5*dt*muu*tke_old(i,k,j)**1.5/l_scale(i,k,j)
           ENDDO
  
              a(ktf) = -1. 

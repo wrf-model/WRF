@@ -1508,6 +1508,8 @@ rconfig   integer ICLOUD                  namelist,physics	1             1      
 
 # cldovrlp for rrtmg: J. Henderson AER 20171112
 rconfig   integer cldovrlp                namelist,physics      1             2       irh    "cldovrlp"                      ""      ""
+# lat-varying cldovrlp for rrtmg: J. Henderson AER 20180712
+rconfig   integer idcor                   namelist,physics      1             0       irh    "idcor"                         ""      ""
 
 rconfig   real    swrad_scat              namelist,physics      1             1       irh    "SWRAD_SCAT" "SCATTERING FACTOR IN SWRAD"      ""
 rconfig   integer surface_input_source    namelist,physics	1             1       irh    "surface_input_source"          "1=static (fractional), 2=time dependent (dominant), 3=hybrid (not yet implemented)"      ""

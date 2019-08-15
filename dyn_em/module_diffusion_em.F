@@ -4,7 +4,8 @@
     MODULE module_diffusion_em
 
     USE module_bc, only: set_physical_bc3d, set_physical_bc2d ! XZ
-    USE module_state_description, only: p_m23, p_m13, p_m22, p_m33, p_r23, p_r13, p_r12, p_m12, p_m11
+    USE module_state_description, only: p_m23, p_m13, p_m22, p_m33, p_r23, p_r13, p_r12, p_m12, p_m11, &
+                                        P_QNS, P_QNR, P_QNG, P_QT, P_QNH, P_QVOLG ! XZ
     USE module_big_step_utilities_em, only: grid_config_rec_type, param_first_scalar, p_qv, p_qi, p_qc
     USE module_model_constants
 
@@ -8907,6 +8908,9 @@ SUBROUTINE vertical_diffusion_implicit(ru_tendf, rv_tendf, rw_tendf, rt_tendf,&
  
   IF (n_scalar .ge. PARAM_FIRST_SCALAR) THEN
      scalar_loop: do im = PARAM_FIRST_SCALAR, n_scalar
+! need to avoid mixing scalars associated with precipitating species (e.g. Nr)
+    IF(im.NE.P_QNS .AND. im.NE.P_QNR .AND. im.NE.P_QNG .AND. im.NE.P_QNH .AND. &
+       im.NE.P_QT .AND. im.NE.P_QVOLG) THEN
          DO j = jts, min(jte,jde-1)
          DO k = kts, kte-1
          DO i = its, min(ite,ide-1)
@@ -8944,17 +8948,22 @@ SUBROUTINE vertical_diffusion_implicit(ru_tendf, rv_tendf, rw_tendf, rt_tendf,&
           ENDDO
        ENDDO
        ENDDO
+      ENDIF
      ENDDO scalar_loop
    ENDIF
  
    DO im = PARAM_FIRST_SCALAR, n_scalar
-      DO j = j_start, j_end
-      DO k = kts, ktf
-      DO i = i_start, i_end
-         scalar_tendf(i,k,j,im) = scalar_tendf(i,k,j,im) + scalar_z_tend(i,k,j,im)
-      ENDDO
-      ENDDO
-      ENDDO
+! need to avoid mixing scalars associated with precipitating species (e.g. Nr)
+    IF(im.NE.P_QNS .AND. im.NE.P_QNR .AND. im.NE.P_QNG .AND. im.NE.P_QNH .AND. &
+       im.NE.P_QT .AND. im.NE.P_QVOLG) THEN
+       DO j = j_start, j_end
+       DO k = kts, ktf
+       DO i = i_start, i_end
+          scalar_tendf(i,k,j,im) = scalar_tendf(i,k,j,im) + scalar_z_tend(i,k,j,im)
+       ENDDO
+       ENDDO
+       ENDDO
+    ENDIF
    ENDDO
 
 !!============================================

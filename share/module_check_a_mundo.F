@@ -315,7 +315,7 @@
          count_fatal_error = count_fatal_error + 1
       END IF
 
-!XZ
+
 !-----------------------------------------------------------------------
 ! Check that SMS-3DTKE scheme (km_opt=5) Must work with diff_opt=2
 !-----------------------------------------------------------------------

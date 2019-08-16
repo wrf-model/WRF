@@ -1204,7 +1204,7 @@
                                 mix_upper_bound,                         &
                                 msftx, msfty,                            &
                                 zx, zy,                                  &
-                                kpbl,hpbl,dlk,xkmv_meso,xkmh_t,          & !XZ
+                                hpbl,dlk,xkmv_meso,xkmh_t,               & !XZ
                                 ids, ide, jds, jde, kds, kde,            &
                                 ims, ime, jms, jme, kms, kme,            &
                                 its, ite, jts, jte, kts, kte             )
@@ -1266,9 +1266,6 @@
     REAL, DIMENSION( ims:ime, jms:jme ), INTENT( INOUT )          &
     :: hpbl  
 
-    INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT( IN )          &
-    :: kpbl
-
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN )    & 
     :: dlk
 
@@ -1313,7 +1310,7 @@
                                xkhh, xkhv, BN2, tke, p8w, t8w, theta,   &
                                rdz, rdzw, dx, dy, dt, isotropic,        &
                                mix_upper_bound, msftx, msfty,           &
-                               kpbl,hpbl,dlk,xkmv_meso,                 & ! XZ
+                               hpbl,dlk,xkmv_meso,                      & ! XZ
                                defor11,defor22,defor12,zx,zy,xkmh_t,    & ! XZ
                                ids, ide, jds, jde, kds, kde,            &
                                ims, ime, jms, jme, kms, kme,            &
@@ -2053,7 +2050,7 @@ END SUBROUTINE smag2d_km
                        bn2, tke, p8w, t8w, theta,                    &
                        rdz, rdzw, dx,dy, dt, isotropic,              &
                        mix_upper_bound, msftx, msfty,                &
-                       kpbl,hpbl,dlk,xkmv_meso,                      &  ! XZ
+                       hpbl,dlk,xkmv_meso,                           &  ! XZ
                        defor11,defor22,defor12,zx,zy,xkmh_t,         &  ! XZ
                        ids, ide, jds, jde, kds, kde,                 &
                        ims, ime, jms, jme, kms, kme,                 &
@@ -2110,9 +2107,6 @@ END SUBROUTINE smag2d_km
  
    REAL, DIMENSION( ims:ime, jms:jme), INTENT( INOUT )            &
    :: hpbl 
-
-   INTEGER, DIMENSION( ims:ime, jms:jme), INTENT( IN )            &
-   :: kpbl
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN )     &
    :: dlk
@@ -2408,7 +2402,7 @@ END SUBROUTINE smag2d_km
 !=======================================================================
 !XZ
   SUBROUTINE meso_length_scale(config_flags,dx,dy,rdzw,rdz,tke,      &
-                               p8w,t8w,theta,dlk,hpbl,kpbl,elmin,    &
+                               p8w,t8w,theta,dlk,hpbl,elmin,         &
                                rmol,rho,hfx,qfx,moist,n_moist,       &
                                ids, ide, jds, jde, kds, kde,         &
                                ims, ime, jms, jme, kms, kme,         &
@@ -2446,9 +2440,6 @@ END SUBROUTINE smag2d_km
 
    REAL, DIMENSION( ims:ime, jms:jme ),                   INTENT( INOUT )  &
    ::  rmol,hfx,qfx,hpbl
-
-   INTEGER, DIMENSION( ims:ime, jms:jme ),                   INTENT( IN ) &
-   :: kpbl
 
 !Local variables.
    REAL, DIMENSION( its:ite, kts:kte, jts:jte )  :: zfull,za
@@ -5109,7 +5100,7 @@ END SUBROUTINE vertical_diffusion_s
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(IN) :: rho
  
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)   :: hfx,qfx,br,ust
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)   :: hfx,qfx,br,ust,hpbl
 
    REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   )   :: u10,v10,wspd
 
@@ -5117,9 +5108,9 @@ END SUBROUTINE vertical_diffusion_s
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(OUT) :: nlflux
 
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT   )  :: hpbl,gamu,gamv
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(OUT   )  :: gamu,gamv
 
-   INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(OUT   )  :: kpbl
+   INTEGER, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT   )  :: kpbl
 
 ! Local variables.
   REAL, DIMENSION( its:ite, kts:kte,   jts:jte ) :: zq
@@ -5168,7 +5159,7 @@ END SUBROUTINE vertical_diffusion_s
  
    DO j = j_start, j_end
    DO i = i_start, i_end
-       zq(i,1,j) = 0.
+       zq(i,1,j) = 0.0
    ENDDO
    ENDDO
 

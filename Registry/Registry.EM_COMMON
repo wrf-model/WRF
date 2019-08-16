@@ -338,7 +338,6 @@ state    real   tke            ikj     dyn_em      2         -       r        "t
 i1       real   tke_tend       ikj     dyn_em      1         -      
 
 # variables in 3DTKE scheme (km_opt=5, 07/27/2019, XZ)
-state    real  hpbl            ij      dyn_em        1         -      -      "HPBL"            "PBL HEIGHT FROM 3DTKE SCHEME"         "m"
 state    real  nlflux          ikj     dyn_em        1         Z      -      "NLFLUX"          "PRESCRIBED NONLOCAL HEAT FLUX IN 3DTKE SCHEME"         "K m s-1"
 state    real  gamu            ij      dyn_em        1         -      r      "GAMU"            "NONLOCAL U GAMMA TERM IN 3DTKE SCHEME"         "s-1"
 state    real  gamv            ij      dyn_em        1         -      r      "GAMV"            "NONLOCAL V GAMMA TERM IN 3DTKE SCHEME"         "s-1"
@@ -2914,6 +2913,9 @@ package   mrfscheme      bl_pbl_physics==99          -             -
 package   mynn_tkebudget bl_mynn_tkebudget==1        -             state:qSHEAR,qBUOY,qDISS,qWT,dqke
 package   mynn_dmp_edmf  bl_mynn_edmf==1            -              state:edmf_a,edmf_w,edmf_thl,edmf_qt,edmf_ent,edmf_qc,ktop_shallow,maxmf,nupdraft
 package   pbl_cloud      icloud_bl==1                -             state:cldfra_bl,qc_bl
+
+#SMS-3DTKE
+package   sms_3dtke      km_opt==5                   -             state:gamu,gamv,nlflux,dlk,l_scale,elmin,xkmv_meso,xkmh_t,u_h_tend,u_z_tend,v_h_tend,v_z_tend,w_h_tend,w_z_tend,th_h_tend,th_z_tend,tke_buoy_tend,tke_shear_tend,tke_production_tend,tke_diffusion_h_tend,tke_diffusion_z_tend
 
 # dfi
 package   mynnpblscheme2_dfi bl_pbl_physics_dfi==5   -             dfi_scalar:dfi_qke_adv

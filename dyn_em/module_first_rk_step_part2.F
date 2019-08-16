@@ -511,7 +511,7 @@ BENCH_START(calc_tke_tim)
 !XZ
      IF( config_flags%diff_opt .eq. 2 .and. config_flags%km_opt .eq. 5 ) THEN
            CALL nonlocal_flux(config_flags,grid%nlflux,grid%gamu,grid%gamv,      &
-                              grid%hpbl,grid%kpbl,grid%dx,grid%dy,grid%dt,       &
+                              grid%pblh,grid%kpbl,grid%dx,grid%dy,grid%dt,       &
                               grid%ust,grid%hfx,grid%qfx,grid%br,ep_1,ep_2,      & 
                               karman,grid%u_phy,grid%v_phy,th_phy,grid%rho,      & 
                               moist,num_moist,                                   &
@@ -534,7 +534,7 @@ BENCH_START(calc_tke_tim)
   
            CALL meso_length_scale(config_flags,grid%dx,grid%dy,grid%rdzw,           &
                                   grid%rdz,grid%tke_2,p8w,t8w,th_phy,               &
-                                  grid%dlk,grid%hpbl,grid%kpbl,grid%elmin,          &
+                                  grid%dlk,grid%pblh,grid%elmin,                    &
                                   grid%rmol,grid%rho,grid%hfx,grid%qfx,             &
                                   moist,num_moist,                                  &
                                   ids, ide, jds, jde, kds, kde,      &
@@ -560,7 +560,7 @@ ENDIF
                                  grid%mix_upper_bound,                                  &
                                  grid%msftx, grid%msfty,                                &
                                  grid%zx, grid%zy,                                      &
-                                 grid%kpbl, grid%hpbl, grid%dlk,                        & ! XZ
+                                 grid%pblh, grid%dlk,                                   & ! XZ
                                  grid%xkmv_meso, grid%xkmh_t,                           & ! XZ 
                                  ids,ide, jds,jde, kds,kde,                             &
                                  ims,ime, jms,jme, kms,kme,                             &
@@ -852,7 +852,7 @@ BENCH_START(tke_rhs_tim)
                          grid%ustm, grid%rho,                         &
                          grid%tke_production_tend,grid%tke_buoy_tend, & !XZ
                          grid%tke_shear_tend, grid%l_scale,           & !XZ
-                         grid%nlflux, grid%hpbl, grid%dlk,            & !XZ 
+                         grid%nlflux, grid%pblh, grid%dlk,            & !XZ 
                          grid%xkmh_t,                                 & !XZ
                          ids, ide, jds, jde, kds, kde,                &
                          ims, ime, jms, jme, kms, kme,                &

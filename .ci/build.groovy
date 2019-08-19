@@ -55,16 +55,15 @@ def terraformStage(stageName){
                     sudo -S chmod 777 -R $WORKSPACE/$BUILD_NUMBER 
                     sudo -S mkdir -p $WORKSPACE/$BUILD_NUMBER/WRF 
                     echo "Cloning repo into:   $WORKSPACE/$BUILD_NUMBER/WRF "
-                    sudo -S git clone git@github.com:hemuku90/NCAR.git $WORKSPACE/$BUILD_NUMBER/WRF
-                    #sudo -S cp -R /var/lib/jenkins/workspace/wrf_test_case/test/ $WORKSPACE/$BUILD_NUMBER/terraform
-                    sudo -S sed -i 's/default = "wrf-test"/default = "wrf-test-${BUILD_NUMBER}"/' $WORKSPACE/$BUILD_NUMBER/WRF/wrf-coop/terraform/vars.tf
-                    sudo -S sed -i "3i export GIT_URL="https://github.com/davegill/WRF.git"\\nexport GIT_BRANCH="release-v4.1.3"" $WORKSPACE/$BUILD_NUMBER/WRF/wrf-coop/terraform/wrf_testcase_1.sh
-                    sudo -S sed -i "3i export GIT_URL="https://github.com/davegill/WRF.git"\\nexport GIT_BRANCH="release-v4.1.3"" $WORKSPACE/$BUILD_NUMBER/WRF/wrf-coop/terraform/wrf_testcase_2.sh
-                    sudo -S sed -i "3i export GIT_URL="https://github.com/davegill/WRF.git"\\nexport GIT_BRANCH="release-v4.1.3"" $WORKSPACE/$BUILD_NUMBER/WRF/wrf-coop/terraform/wrf_testcase_3.sh
-                    sudo -S sed -i "12i cd /home/ubuntu/ && bash my_script.sh output_001 $BUILD_NUMBER" $WORKSPACE/$BUILD_NUMBER/WRF/wrf-coop/terraform/wrf_testcase_1.sh
-                    sudo -S sed  -i "12i cd /home/ubuntu/ && bash my_script.sh output_002 $BUILD_NUMBER" $WORKSPACE/$BUILD_NUMBER/WRF/wrf-coop/terraform/wrf_testcase_2.sh
-                    sudo -S sed -i "12i cd /home/ubuntu/ && bash my_script.sh output_003 $BUILD_NUMBER" $WORKSPACE/$BUILD_NUMBER/WRF/wrf-coop/terraform/wrf_testcase_3.sh
-                    cd $WORKSPACE/$BUILD_NUMBER/WRF/wrf-coop/terraform && sudo terraform init && sudo terraform plan && sudo terraform apply -auto-approve
+                    sudo -S git clone -b release-v4.1.3 --single-branch https://github.com/hemuku90/WRF.git $WORKSPACE/$BUILD_NUMBER/WRF
+                    sudo -S sed -i 's/default = "wrf-test"/default = "wrf-test-${BUILD_NUMBER}"/' $WORKSPACE/$BUILD_NUMBER/WRF/.ci/terraform/vars.tf
+                    sudo -S sed -i "3i export GIT_URL="https://github.com/davegill/WRF.git"\\nexport GIT_BRANCH="release-v4.1.3"" $WORKSPACE/$BUILD_NUMBER/WRF/.ci/terraform/wrf_testcase_1.sh
+                    sudo -S sed -i "3i export GIT_URL="https://github.com/davegill/WRF.git"\\nexport GIT_BRANCH="release-v4.1.3"" $WORKSPACE/$BUILD_NUMBER/WRF/.ci/terraform/wrf_testcase_2.sh
+                    sudo -S sed -i "3i export GIT_URL="https://github.com/davegill/WRF.git"\\nexport GIT_BRANCH="release-v4.1.3"" $WORKSPACE/$BUILD_NUMBER/WRF/.ci/terraform/wrf_testcase_3.sh
+                    sudo -S sed -i "12i cd /home/ubuntu/ && bash my_script.sh output_001 $BUILD_NUMBER" $WORKSPACE/$BUILD_NUMBER/WRF/.ci/terraform/wrf_testcase_1.sh
+                    sudo -S sed  -i "12i cd /home/ubuntu/ && bash my_script.sh output_002 $BUILD_NUMBER" $WORKSPACE/$BUILD_NUMBER/WRF/.ci/terraform/wrf_testcase_2.sh
+                    sudo -S sed -i "12i cd /home/ubuntu/ && bash my_script.sh output_003 $BUILD_NUMBER" $WORKSPACE/$BUILD_NUMBER/WRF/.ci/terraform/wrf_testcase_3.sh
+                    cd $WORKSPACE/$BUILD_NUMBER/WRF/.ci/terraform && sudo terraform init && sudo terraform plan && sudo terraform apply -auto-approve
                 """
               
           }

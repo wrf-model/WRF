@@ -3,7 +3,7 @@ provider "aws" {
    profile    = "${var.aws_profile}" #.aws/credentials
    }
 variable "instance_count" {
- default = 1
+ default = 2
 }
 variable "hostnames" {
 

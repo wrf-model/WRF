@@ -2301,9 +2301,9 @@ BENCH_START(tke_adv_tim)
            CALL wrf_debug ( 200 , ' call rk_scalar_tend for tke' )
            tenddec = .false.
 ! XZ
- IF( config_flags%diff_opt .eq. 2 .and. config_flags%km_opt .eq. 5 ) THEN
-          tenddec = .true.
- ENDIF
+         IF( config_flags%diff_opt .eq. 2 .and. config_flags%km_opt .eq. 5 ) THEN
+           tenddec = .true.
+         ENDIF
 !!
            CALL rk_scalar_tend ( 1, 1, config_flags, tenddec,                      & 
                             rk_step, dt_rk,                                        &
@@ -2338,7 +2338,7 @@ BENCH_START(tke_adv_tim)
          !$OMP PRIVATE ( ij, tenddec )
          tke_tile_loop_2: DO ij = 1 , grid%num_tiles
 
-   IF( config_flags%km_opt .eq. 2 ) THEN   !XZ
+         IF( config_flags%km_opt .eq. 2 ) THEN   !XZ
 
            CALL wrf_debug ( 200 , ' call rk_update_scalar' )
            tenddec = .false.
@@ -2367,10 +2367,10 @@ BENCH_START(tke_adv_tim)
                            grid%i_start(ij), grid%i_end(ij),    &
                            grid%j_start(ij), grid%j_end(ij),    &
                            k_start    , k_end                  )
-    ENDIF !XZ
+         ENDIF !XZ
 
 !XZ
-    IF(rk_step == rk_order.and.config_flags%km_opt .eq. 5 ) THEN
+         IF(rk_step == rk_order.and.config_flags%km_opt .eq. 5 ) THEN
           CALL solve_tke_implicit( config_flags,grid%tke_1,              &
                                    grid%tke_2,grid%xkhv,                 &
                                    grid%rdz,grid%rdzw,grid%l_scale,      &
@@ -2388,7 +2388,7 @@ BENCH_START(tke_adv_tim)
                                    grid%i_start(ij),grid%i_end(ij),      &
                                    grid%j_start(ij),grid%j_end(ij),      &
                                    k_start    , k_end                    )
-    ENDIF  !XZ
+         ENDIF  !XZ
 
            IF( config_flags%specified .or. config_flags%nested ) THEN
               CALL flow_dep_bdy (  grid%tke_2,                     &

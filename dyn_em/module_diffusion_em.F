@@ -7868,19 +7868,19 @@ END SUBROUTINE phy_bc
     END SUBROUTINE cal_helicity
 !=======================================================================
 !=======================================================================
-    SUBROUTINE solve_tke_implicit( config_flags,tke_old,               &
-                           tke,xkhv,rdz,rdzw,l_scale,                  &
-                           dnw, rdnw, c1h, c2h,                        & 
-                           tke_adv_h_tend,tke_adv_z_tend,              &
-                           tke_production_tend,                        &
-                           tke_diffusion_h_tend,                       &
-                           fnm,fnp,msftx, msfty,                       &
-                           mu_old, mu_new, mu_base,                    &
-                           rk_step, dt, spec_zone,                     &
-                           tke_upper_bound, rho,                       &
-                           ids, ide, jds, jde, kds, kde,               &
-                           ims, ime, jms, jme, kms, kme,               &
-                           its, ite, jts, jte, kts, kte                )
+    SUBROUTINE update_tke_implicit( config_flags,tke_old,               &
+                            tke,xkhv,rdz,rdzw,l_scale,                  &
+                            dnw, rdnw, c1h, c2h,                        & 
+                            tke_adv_h_tend,tke_adv_z_tend,              &
+                            tke_production_tend,                        &
+                            tke_diffusion_h_tend,                       &
+                            fnm,fnp,msftx, msfty,                       &
+                            mu_old, mu_new, mu_base,                    &
+                            rk_step, dt, spec_zone,                     &
+                            tke_upper_bound, rho,                       &
+                            ids, ide, jds, jde, kds, kde,               &
+                            ims, ime, jms, jme, kms, kme,               &
+                            its, ite, jts, jte, kts, kte                )
 
 ! TO solve the TKE equation using implicit method. The vertical TKE diffusion
 ! and dissipation are implicitly treated.
@@ -8058,7 +8058,7 @@ END SUBROUTINE phy_bc
        ENDDO
        ENDDO
        ENDDO
-    END SUBROUTINE solve_tke_implicit
+    END SUBROUTINE update_tke_implicit
 
     SUBROUTINE tridiag(n,a,b,c,d)
 !! to solve system of linear eqs on tridiagonal matrix n times n

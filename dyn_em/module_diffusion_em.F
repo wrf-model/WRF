@@ -1261,7 +1261,6 @@
 
     REAL, DIMENSION( ims:ime, jms:jme ), INTENT( IN )  &
     :: msftx, msfty
-
 !XZ
     REAL, DIMENSION( ims:ime, jms:jme ), INTENT( INOUT )          &
     :: hpbl  
@@ -2094,7 +2093,6 @@ END SUBROUTINE smag2d_km
 
    REAL , DIMENSION( ims:ime, jms:jme), INTENT(IN   ) ::     msftx, &
                                                              msfty
-
 !XZ
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN )     &
    :: zx,zy
@@ -2217,7 +2215,7 @@ END SUBROUTINE smag2d_km
       END DO
     ENDIF  !XZ    
 
-   IF ( config_flags%km_opt .eq.2.and.isotropic .NE. 0 ) THEN  ! XZ
+    IF ( config_flags%km_opt .eq.2.and.isotropic .NE. 0 ) THEN  ! XZ
       CALL calc_l_scale( config_flags, tke, BN2, l_scale,      &
                          i_start, i_end, ktf, j_start, j_end,  &
                          dx, dy, rdzw, msftx, msfty,           &
@@ -2240,7 +2238,6 @@ END SUBROUTINE smag2d_km
       END DO
       END DO
     END IF
-
 
 !!!XZ
     IF(config_flags%km_opt .eq.5 ) THEN  ! 3DTKE diffusivity
@@ -2275,11 +2272,11 @@ END SUBROUTINE smag2d_km
             tmpzy = (0.25*( abs(zy(i,k,j))+ abs(zy(i  ,k,j+1)) + abs(zy(i,k+1,j))+ abs(zy(i  ,k+1,j+1)))*rdzw(i,k,j)*dym)
             alpha = max(sqrt(tmpzx*tmpzx+tmpzy*tmpzy),1.0)
             def_limit = max(10./mlen_h,1.e-3)
-            if ( tmp .gt. def_limit ) then
+            IF ( tmp .GT. def_limit ) THEN
               xkmh_s(i,k,j)=xkmh_s(i,k,j)/(alpha*alpha)
-            else
+            ELSE
               xkmh_s(i,k,j)=xkmh_s(i,k,j)/(alpha)
-            endif
+            ENDIF
               xkhh_s(i,k,j)=xkmh_s(i,k,j)/pr
           ENDIF
        ENDDO
@@ -2401,12 +2398,12 @@ END SUBROUTINE smag2d_km
 !=======================================================================
 !=======================================================================
 !XZ
-  SUBROUTINE meso_length_scale(config_flags,dx,dy,rdzw,rdz,tke,      &
-                               p8w,t8w,theta,dlk,hpbl,elmin,         &
-                               rmol,rho,hfx,qfx,moist,n_moist,       &
-                               ids, ide, jds, jde, kds, kde,         &
-                               ims, ime, jms, jme, kms, kme,         &
-                               its, ite, jts, jte, kts, kte )
+    SUBROUTINE meso_length_scale(config_flags,dx,dy,rdzw,rdz,tke,      &
+                                 p8w,t8w,theta,dlk,hpbl,elmin,         &
+                                 rmol,rho,hfx,qfx,moist,n_moist,       &
+                                 ids, ide, jds, jde, kds, kde,         &
+                                 ims, ime, jms, jme, kms, kme,         &
+                                 its, ite, jts, jte, kts, kte )
 !
 ! The mesoscale length scale based on MYNN scheme modified by X. Zhang 
  
@@ -2568,100 +2565,100 @@ END SUBROUTINE smag2d_km
     ENDDO
     ENDDO
 
-  hflux: SELECT CASE( config_flags%isfflx )
-  CASE (0,2) ! with fixed surface heat flux given in the namelist
-    heat_flux = config_flags%tke_heat_flux  ! constant heat flux value
-    DO j = j_start, j_end
-    DO i = i_start, i_end
-       cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV))
-       hfx(i,j)= heat_flux*cpm*rho(i,1,j)
-    ENDDO
-    ENDDO
+    hflux: SELECT CASE( config_flags%isfflx )
+    CASE (0,2) ! with fixed surface heat flux given in the namelist
+     heat_flux = config_flags%tke_heat_flux  ! constant heat flux value
+     DO j = j_start, j_end
+     DO i = i_start, i_end
+        cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV))
+        hfx(i,j)= heat_flux*cpm*rho(i,1,j)
+     ENDDO
+     ENDDO
  
-  CASE (1) ! use surface heat flux computed from surface routine
-    DO j = j_start, j_end
-    DO i = i_start, i_end
-       cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV))
-       heat_flux = hfx(i,j)/cpm/rho(i,1,j)
-    ENDDO
-    ENDDO
+    CASE (1) ! use surface heat flux computed from surface routine
+     DO j = j_start, j_end
+     DO i = i_start, i_end
+        cpm = cp * (1. + 0.8 * moist(i,kts,j,P_QV))
+        heat_flux = hfx(i,j)/cpm/rho(i,1,j)
+     ENDDO
+     ENDDO
  
-  CASE DEFAULT
-    CALL wrf_error_fatal( 'isfflx value invalid for diff_opt=2' )
-  END SELECT hflux
+    CASE DEFAULT
+     CALL wrf_error_fatal( 'isfflx value invalid for diff_opt=2' )
+    END SELECT hflux
 
-   DO j = j_start,j_end
-   DO i = i_start,i_end
-      cpm        = cp  * (1. + 0.8*moist(i,1,j,P_QV))
-      sflux(i,j) = (hfx(i,j)/cpm)/rho(i,1,j)
-   ENDDO
-   ENDDO
+    DO j = j_start,j_end
+    DO i = i_start,i_end
+       cpm        = cp  * (1. + 0.8*moist(i,1,j,P_QV))
+       sflux(i,j) = (hfx(i,j)/cpm)/rho(i,1,j)
+    ENDDO
+    ENDDO
 
 !-------Length scale limited by bouyancy effect-----
-   gtr  = g/300.
-   DO j = j_start, j_end
-   DO k = kts, ktf
-   DO i = i_start, i_end
-      IF( dthrdn(i,k,j).GT.0.0 ) THEN
-       N2 = gtr*dthrdn(i,k,j)
-       qcv = (gtr*MAX(sflux(i,j),0.0)*elt(i,j))**(1.0/3.0)
-       elb(i,k,j) = qtke(i,k,j)/sqrt(N2)*(alp2 + alp3*sqrt(qcv/(elt(i,j)*sqrt(N2))))
-       elf(i,k,j) = alp2*qtke(i,k,j)/sqrt(N2)
-      ELSE
-       elb(i,k,j) = 1.0e10
-       elf(i,k,j) = elb(i,k,j)
-      ENDIF
-   ENDDO
-   ENDDO
-   ENDDO
+    gtr  = g/300.
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start, i_end
+       IF( dthrdn(i,k,j).GT.0.0 ) THEN
+        N2 = gtr*dthrdn(i,k,j)
+        qcv = (gtr*MAX(sflux(i,j),0.0)*elt(i,j))**(1.0/3.0)
+        elb(i,k,j) = qtke(i,k,j)/sqrt(N2)*(alp2 + alp3*sqrt(qcv/(elt(i,j)*sqrt(N2))))
+        elf(i,k,j) = alp2*qtke(i,k,j)/sqrt(N2)
+       ELSE
+        elb(i,k,j) = 1.0e10
+        elf(i,k,j) = elb(i,k,j)
+       ENDIF
+    ENDDO
+    ENDDO
+    ENDDO
  
 !------Length scale in the surface layer-------
-   DO j = j_start, j_end
-   DO k = kts, ktf
-   DO i = i_start,i_end
-      IF (rmol(i,j) .GT. 0.0) THEN
-        els(i,k,j) = karman*za(i,k,j)/(1.0+2.7*min(za(i,k,j)*rmol(i,j),1.0))
-      ELSE
-        coe = (1.0 - alp4*za(i,k,j)*rmol(i,j))**0.2
-        els(i,k,j) = 1.0*karman*za(i,k,j)*coe
-      ENDIF
-   ENDDO
-   ENDDO
-   ENDDO
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start,i_end
+       IF (rmol(i,j) .GT. 0.0) THEN
+         els(i,k,j) = karman*za(i,k,j)/(1.0+2.7*min(za(i,k,j)*rmol(i,j),1.0))
+       ELSE
+         coe = (1.0 - alp4*za(i,k,j)*rmol(i,j))**0.2
+         els(i,k,j) = 1.0*karman*za(i,k,j)*coe
+       ENDIF
+    ENDDO
+    ENDDO
+    ENDDO
 
 !----Harmonic averaging of mixing length scales-----
-   DO j = j_start, j_end
-   DO k = kts, ktf
-   DO i = i_start, i_end
-       dlk(i,k,j) = MIN(elb(i,k,j)/(elb(i,k,j)/elt(i,j)+elb(i,k,j)/els(i,k,j)+1.0),elf(i,k,j))
-   ENDDO
-   ENDDO
-   ENDDO
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start, i_end
+         dlk(i,k,j) = MIN(elb(i,k,j)/(elb(i,k,j)/elt(i,j)+elb(i,k,j)/els(i,k,j)+1.0),elf(i,k,j))
+    ENDDO
+    ENDDO
+    ENDDO
  
 !add blending to use BouLac mixing length in free atmos;
 !defined relative to the PBLH (zi) + transition layer (h1)
-   DO j = j_start, j_end
-   DO k = kts, ktf
-   DO i = i_start, i_end
-        zi2=MAX(hpbl(i,j),minzi)
-        h1=MAX(0.3*zi2,mindz)
-        h1=MIN(h1,maxdz)         ! 1/2 transition layer depth
-        h2=h1/2.0                ! 1/4 transition layer depth
+    DO j = j_start, j_end
+    DO k = kts, ktf
+    DO i = i_start, i_end
+         zi2=MAX(hpbl(i,j),minzi)
+         h1=MAX(0.3*zi2,mindz)
+         h1=MIN(h1,maxdz)         ! 1/2 transition layer depth
+         h2=h1/2.0                ! 1/4 transition layer depth
  
-        wt=.5*TANH((za(i,k,j) - (zi2+h1))/h2) + .5
-        dlk(i,k,j) = dlk(i,k,j)*(1.-wt) + 0.4*elmin(i,k,j)*wt  
-   ENDDO
-   ENDDO
-   ENDDO
+         wt=.5*TANH((za(i,k,j) - (zi2+h1))/h2) + .5
+         dlk(i,k,j) = dlk(i,k,j)*(1.-wt) + 0.4*elmin(i,k,j)*wt  
+    ENDDO
+    ENDDO
+    ENDDO
 
-END SUBROUTINE meso_length_scale
+    END SUBROUTINE meso_length_scale
 !=======================================================================
 !=======================================================================
-SUBROUTINE free_atmos_length(config_flags,dx,dy,rdzw,rdz,tke,p8w,t8w,theta,elmin,&
-                             rmol,rho,hfx,qfx,moist,n_moist,       &
-                             ids, ide, jds, jde, kds, kde,         &
-                             ims, ime, jms, jme, kms, kme,         &
-                             its, ite, jts, jte, kts, kte )
+    SUBROUTINE free_atmos_length(config_flags,dx,dy,rdzw,rdz,tke,theta,elmin,    &
+                                 hfx,qfx,moist,n_moist,                          &
+                                 ids, ide, jds, jde, kds, kde,                   &
+                                 ims, ime, jms, jme, kms, kme,                   &
+                                 its, ite, jts, jte, kts, kte )
 !
 ! NOTE: This subroutine was taken from the BouLac scheme to calculate mixing length
 !       in the free atmosphere and modified for integration into the 3DTKE scheme. 
@@ -2671,61 +2668,50 @@ SUBROUTINE free_atmos_length(config_flags,dx,dy,rdzw,rdz,tke,p8w,t8w,theta,elmin
 !        amount of TKE.
 !  dld = the distance a parcel can be displaced downwards given a
 !        finite amount of TKE.
- 
-!  lb1 = the minimum of the length up and length down
-!  lb2 = the average of the length up and length down 
   
 ! compute the length scales up and down
  
-  IMPLICIT NONE
+    IMPLICIT NONE
 
-  TYPE( grid_config_rec_type ), INTENT( IN )  &
-  ::  config_flags
+    TYPE( grid_config_rec_type ), INTENT( IN )  &
+    ::  config_flags
   
-  INTEGER,                      INTENT( IN )  &
-  ::  ids, ide, jds, jde, kds, kde,           &
-      ims, ime, jms, jme, kms, kme,           &
-      its, ite, jts, jte, kts, kte
+    INTEGER,                      INTENT( IN )  &
+    ::  ids, ide, jds, jde, kds, kde,           &
+        ims, ime, jms, jme, kms, kme,           &
+        its, ite, jts, jte, kts, kte
   
-  INTEGER,                      INTENT( IN )  &
-  ::  n_moist
+    INTEGER,                      INTENT( IN )  &
+    ::  n_moist
   
-  REAL,                         INTENT( IN )  &    
-  ::  dx,dy
+    REAL,                         INTENT( IN )  &    
+    ::  dx,dy
   
-  REAL, DIMENSION( ims:ime, kms:kme, jms:jme, n_moist ), INTENT( INOUT ) &
-  ::  moist
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme, n_moist ), INTENT( INOUT ) &
+    ::  moist
 
-  REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),          INTENT( IN )    &
-  ::  tke, rdzw, rdz, p8w, t8w
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),          INTENT( IN )    &
+    ::  tke, rdzw, rdz
 
-  REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),          INTENT( IN )    &
-  ::  theta,rho
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),          INTENT( IN )    &
+    ::  theta
     
-  REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),          INTENT( INOUT ) &
-  ::  elmin 
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),          INTENT( INOUT ) &
+    ::  elmin 
 
-  REAL, DIMENSION( ims:ime, jms:jme ),                   INTENT( INOUT ) &
-  ::  rmol,hfx,qfx
+    REAL, DIMENSION( ims:ime, jms:jme ),                   INTENT( INOUT ) &
+    ::  hfx,qfx
 
 !Local variables
-  REAL, DIMENSION( its:ite, kts:kte, jts:jte )  :: zfull,za
+    REAL, DIMENSION( its:ite, kts:kte, jts:jte )  :: zfull,za
  
-  REAL, DIMENSION( its:ite, kts:kte, jts:jte )  :: dlg,dlu,dld,lb2
+    REAL, DIMENSION( its:ite, kts:kte, jts:jte )  :: dlg,dlu,dld
 
-  REAL, DIMENSION( its:ite, kts:kte, jts:jte )  :: elb,qtke,els,elf
+    INTEGER   :: izz, found, i, k, j
 
-  REAL, DIMENSION( its:ite,          jts:jte )  :: sflux,elt,vsc
+    REAL      :: dzt,zup,beta,zup_inf,bbb,tl,zdo,zdo_sup,zzz
 
-  REAL, DIMENSION( its:ite, kts:kte, jts:jte )  :: dthrdn
-
-  INTEGER   :: izz, found, i, k, j
-
-  REAL      :: dzt,zup,beta,zup_inf,bbb,tl,zdo,zdo_sup,zzz,coe
-
-  INTEGER   :: i_start, i_end, ktf, j_start, j_end, mixing_length
-
-  REAL      :: cpm,qcv,N2,tmpdz,heat_flux,gtr,qdz
+    INTEGER   :: i_start, i_end, ktf, j_start, j_end
  
     ktf     = MIN( kte, kde-1 )
     i_start = its
@@ -2863,7 +2849,7 @@ SUBROUTINE free_atmos_length(config_flags,dx,dy,rdzw,rdz,tke,p8w,t8w,theta,elmin
     ENDDO
     ENDDO
 
-END SUBROUTINE free_atmos_length
+    END SUBROUTINE free_atmos_length
 !=======================================================================
 !=======================================================================
 
@@ -2928,7 +2914,6 @@ SUBROUTINE horizontal_diffusion_2 ( rt_tendf, ru_tendf, rv_tendf, rw_tendf,    &
                                                                   w_h_tend,&
                                                       tke_diffusion_h_tend
 !
-
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_moist),                 &
           INTENT(INOUT) ::                                    moist_tendf
 
@@ -3359,25 +3344,25 @@ SUBROUTINE horizontal_diffusion_u_2( tendency, config_flags,              &
    ENDDO
 
 ! XZ
-IF (output_tend) THEN
-   DO j = j_start, j_end
-   DO k = kts,ktf
-   DO i = i_start, i_end
+   IF (output_tend) THEN
+      DO j = j_start, j_end
+      DO k = kts,ktf
+      DO i = i_start, i_end
  
-      mrdx=msfux(i,j)*rdx
-      mrdy=msfuy(i,j)*rdy
+         mrdx=msfux(i,j)*rdx
+         mrdy=msfuy(i,j)*rdy
  
-      tmpdz = (1./rdzw(i,k,j)+1./rdzw(i-1,k,j))/2.
-      u_h_tend(i,k,j) =  g*tmpdz/dnw(k) *                             &
-           (mrdx*(titau1(i,k,j  ) - titau1(i-1,k,j)) +                &
-            mrdy*(titau2(i,k,j+1) - titau2(i  ,k,j)) -                &
-            msfux(i,j)*zx_at_u(i,k,j)*(titau1avg(i,k+1,j)-titau1avg(i,k,j)) /tmpdz - &
-            msfuy(i,j)*zy_at_u(i,k,j)*(titau2avg(i,k+1,j)-titau2avg(i,k,j)) /tmpdz   &
+         tmpdz = (1./rdzw(i,k,j)+1./rdzw(i-1,k,j))/2.
+         u_h_tend(i,k,j) =  g*tmpdz/dnw(k) *                                            &
+              (mrdx*(titau1(i,k,j  ) - titau1(i-1,k,j)) +                               &
+               mrdy*(titau2(i,k,j+1) - titau2(i  ,k,j)) -                               &
+               msfux(i,j)*zx_at_u(i,k,j)*(titau1avg(i,k+1,j)-titau1avg(i,k,j)) /tmpdz - &
+               msfuy(i,j)*zy_at_u(i,k,j)*(titau2avg(i,k+1,j)-titau2avg(i,k,j)) /tmpdz   &
                                                                   )
-   ENDDO
-   ENDDO
-   ENDDO
-ENDIF
+      ENDDO
+      ENDDO
+      ENDDO
+   ENDIF
 END SUBROUTINE horizontal_diffusion_u_2
 
 !=======================================================================
@@ -3579,25 +3564,25 @@ SUBROUTINE horizontal_diffusion_v_2( tendency, config_flags,              &
    ENDDO
 
 ! XZ
-IF (output_tend) THEN
-   DO j = j_start, j_end
-   DO k = kts,ktf
-   DO i = i_start, i_end
+   IF (output_tend) THEN
+      DO j = j_start, j_end
+      DO k = kts,ktf
+      DO i = i_start, i_end
  
-      mrdx=msfvx(i,j)*rdx
-      mrdy=msfvy(i,j)*rdy
-      tmpdz = (1./rdzw(i,k,j)+1./rdzw(i,k,j-1))/2.
-      v_h_tend(i,k,j) =               g*tmpdz/dnw(k) *                &
-           (mrdy*(titau2(i,k,j  ) - titau2(i,k,j-1)) +                &
-            mrdx*(titau1(i+1,k,j) - titau1(i  ,k,j)) -                &
-            msfvx(i,j)*zx_at_v(i,k,j)*(titau1avg(i,k+1,j)-titau1avg(i,k,j)) / tmpdz - &
-            msfvy(i,j)*zy_at_v(i,k,j)*(titau2avg(i,k+1,j)-titau2avg(i,k,j)) / tmpdz   &
+         mrdx=msfvx(i,j)*rdx
+         mrdy=msfvy(i,j)*rdy
+         tmpdz = (1./rdzw(i,k,j)+1./rdzw(i,k,j-1))/2.
+         v_h_tend(i,k,j) =               g*tmpdz/dnw(k) *                                &
+              (mrdy*(titau2(i,k,j  ) - titau2(i,k,j-1)) +                                &
+               mrdx*(titau1(i+1,k,j) - titau1(i  ,k,j)) -                                &
+               msfvx(i,j)*zx_at_v(i,k,j)*(titau1avg(i,k+1,j)-titau1avg(i,k,j)) / tmpdz - &
+               msfvy(i,j)*zy_at_v(i,k,j)*(titau2avg(i,k+1,j)-titau2avg(i,k,j)) / tmpdz   &
                                                                   )
  
-   ENDDO
-   ENDDO
-   ENDDO
-ENDIF
+      ENDDO
+      ENDDO
+      ENDDO
+   ENDIF
 !
 END SUBROUTINE horizontal_diffusion_v_2
 
@@ -3798,25 +3783,25 @@ SUBROUTINE horizontal_diffusion_w_2( tendency, config_flags,              &
    ENDDO
 
 ! XZ
-IF (output_tend) THEN
-   DO j = j_start, j_end
-   DO k = kts+1,ktf
-   DO i = i_start, i_end
+   IF (output_tend) THEN
+      DO j = j_start, j_end
+      DO k = kts+1,ktf
+      DO i = i_start, i_end
  
-      mrdx=msftx(i,j)*rdx
-      mrdy=msfty(i,j)*rdy
+          mrdx=msftx(i,j)*rdx
+          mrdy=msfty(i,j)*rdy
  
-      w_h_tend(i,k,j) =    g/(dn(k)*rdz(i,k,j)) *                       &
-           (mrdx*(titau1(i+1,k,j)-titau1(i,k,j))+                       &
-            mrdy*(titau2(i,k,j+1)-titau2(i,k,j))-                       &
-            msfty(i,j)*rdz(i,k,j)*(zx_at_w(i,k,j)*(titau1avg(i,k,j)-titau1avg(i,k-1,j))+ &
-                                   zy_at_w(i,k,j)*(titau2avg(i,k,j)-titau2avg(i,k-1,j))  &
-                                  )                                     &
-           )
-   ENDDO
-   ENDDO
-   ENDDO
-ENDIF
+          w_h_tend(i,k,j) =    g/(dn(k)*rdz(i,k,j)) *                                        &
+               (mrdx*(titau1(i+1,k,j)-titau1(i,k,j))+                                        &
+                mrdy*(titau2(i,k,j+1)-titau2(i,k,j))-                                        &
+                msfty(i,j)*rdz(i,k,j)*(zx_at_w(i,k,j)*(titau1avg(i,k,j)-titau1avg(i,k-1,j))+ &
+                                       zy_at_w(i,k,j)*(titau2avg(i,k,j)-titau2avg(i,k-1,j))  &
+                                      )                                                      &
+                )
+      ENDDO
+      ENDDO
+      ENDDO
+   ENDIF
 !
 END SUBROUTINE horizontal_diffusion_w_2
 
@@ -4107,24 +4092,24 @@ SUBROUTINE horizontal_diffusion_s (tendency, config_flags,                &
    ENDDO
 
 ! XZ
-IF (output_tend) THEN
-   DO j = j_start, j_end
-   DO k = kts,ktf
-   DO i = i_start, i_end
+   IF (output_tend) THEN
+      DO j = j_start, j_end
+      DO k = kts,ktf
+      DO i = i_start, i_end
  
-      mrdx=msftx(i,j)*rdx
-      mrdy=msfty(i,j)*rdy
+         mrdx=msftx(i,j)*rdx
+         mrdy=msfty(i,j)*rdy
  
-      tendency_s(i,k,j) =   g/(dnw(k)*rdzw(i,k,j)) *               &
-           (mrdx*(H1(i+1,k,j)-H1(i  ,k,j)) +                       &
-            mrdy*(H2(i,k,j+1)-H2(i,k,j  )) -                       &
-            msftx(i,j)*zx_at_m(i, k, j)*(H1avg(i,k+1,j)-H1avg(i,k,j))*rdzw(i,k,j) - &
-            msfty(i,j)*zy_at_m(i, k, j)*(H2avg(i,k+1,j)-H2avg(i,k,j))*rdzw(i,k,j)   &
-           )
-   ENDDO
-   ENDDO
-   ENDDO
-ENDIF
+         tendency_s(i,k,j) =   g/(dnw(k)*rdzw(i,k,j)) *                                &
+              (mrdx*(H1(i+1,k,j)-H1(i  ,k,j)) +                                        &
+               mrdy*(H2(i,k,j+1)-H2(i,k,j  )) -                                        &
+               msftx(i,j)*zx_at_m(i, k, j)*(H1avg(i,k+1,j)-H1avg(i,k,j))*rdzw(i,k,j) - &
+               msfty(i,j)*zy_at_m(i, k, j)*(H2avg(i,k+1,j)-H2avg(i,k,j))*rdzw(i,k,j)   &
+              )
+      ENDDO
+      ENDDO
+      ENDDO
+   ENDIF
 !
 
    IF ( doing_tke ) THEN
@@ -4141,13 +4126,13 @@ ENDIF
 ! XZ
    IF(output_tend) THEN
       IF ( doing_tke ) THEN
-      DO j = j_start, j_end
-      DO k = kts,ktf
-      DO i = i_start, i_end
-         tendency_s(i,k,j) = 2.0*tendency_s(i,k,j)
-      ENDDO
-      ENDDO
-      ENDDO
+       DO j = j_start, j_end
+       DO k = kts,ktf
+       DO i = i_start, i_end
+          tendency_s(i,k,j) = 2.0*tendency_s(i,k,j)
+       ENDDO
+       ENDDO
+       ENDDO
       ENDIF
    ENDIF
 !
@@ -6287,7 +6272,6 @@ END SUBROUTINE phy_bc
     :: hfx, ust, qfx
     REAL, DIMENSION ( ims:ime, kms:kme, jms:jme ), INTENT ( IN ) &
     :: qv, rho
-
 ! XZ
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT )  &
     :: tke_production_tend, tke_buoy_tend, tke_shear_tend
@@ -6428,7 +6412,6 @@ END SUBROUTINE phy_bc
     :: qv, rho
 
     REAL, DIMENSION(ims:ime, jms:jme ), INTENT ( IN ) :: hfx, qfx
-
 !XZ
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT )  &
     :: tke_buoy_tend
@@ -6473,24 +6456,24 @@ END SUBROUTINE phy_bc
       IF ( config_flags%periodic_x ) i_end = MIN( ite, ide-1 )
 
 !XZ
-IF(config_flags%km_opt.eq.5) THEN
-    DO j = j_start, j_end
-    DO k = kts+1, ktf
-    DO i = i_start, i_end
-           tke_buoy_tend(i,k,j) = - (c1(k)*mu(i,j)+c2(k)) * (xkhv(i,k,j) * BN2(i,k,j)   &
-                                  - 0.5*(nlflux(i,k+1,j)+nlflux(i,k,j))*g/theta(i,k,j))
-    END DO
-    END DO
-    END DO
-ELSE
-    DO j = j_start, j_end
-    DO k = kts+1, ktf
-    DO i = i_start, i_end
-      tendency(i,k,j) = tendency(i,k,j) - (c1(k)*mu(i,j)+c2(k)) * xkhv(i,k,j) * BN2(i,k,j)
-    END DO
-    END DO
-    END DO
-ENDIF
+    IF(config_flags%km_opt.eq.5) THEN
+       DO j = j_start, j_end
+       DO k = kts+1, ktf
+       DO i = i_start, i_end
+              tke_buoy_tend(i,k,j) = - (c1(k)*mu(i,j)+c2(k)) * (xkhv(i,k,j) * BN2(i,k,j)   &
+                                     - 0.5*(nlflux(i,k+1,j)+nlflux(i,k,j))*g/theta(i,k,j))
+       END DO
+       END DO
+       END DO
+    ELSE
+       DO j = j_start, j_end
+       DO k = kts+1, ktf
+       DO i = i_start, i_end
+              tendency(i,k,j) = tendency(i,k,j) - (c1(k)*mu(i,j)+c2(k)) * xkhv(i,k,j) * BN2(i,k,j)
+       END DO
+       END DO
+       END DO
+    ENDIF
 
 ! MARTA: change in the computation of the tke's tendency  at the surface.
 !  the buoyancy flux is the average of the surface heat flux (0.06) and the
@@ -6506,49 +6489,48 @@ ENDIF
    K=KTS
 
 !XZ
-IF(config_flags%km_opt.eq.5) THEN
-   DO j = j_start, j_end
-   DO i = i_start, i_end
-      heat_flux = heat_flux0
-      tke_buoy_tend(i,k,j) = - (c1(k)*mu(i,j)+c2(k))*((xkhv(i,k,j)*BN2(i,k,j))-(g/theta(i,k,j))*heat_flux)/2.
-   ENDDO
-   ENDDO
-ELSE
-   DO j = j_start, j_end
-   DO i = i_start, i_end
-      heat_flux = heat_flux0
-      tendency(i,k,j)= tendency(i,k,j) - &
-                   (c1(k)*mu(i,j)+c2(k))*((xkhv(i,k,j)*BN2(i,k,j))- (g/theta(i,k,j))*heat_flux)/2.
+   IF(config_flags%km_opt.eq.5) THEN
+      DO j = j_start, j_end
+      DO i = i_start, i_end
+         heat_flux = heat_flux0
+         tke_buoy_tend(i,k,j) = - (c1(k)*mu(i,j)+c2(k))*((xkhv(i,k,j)*BN2(i,k,j))-(g/theta(i,k,j))*heat_flux)/2.
+      ENDDO
+      ENDDO
+   ELSE
+      DO j = j_start, j_end
+      DO i = i_start, i_end
+         heat_flux = heat_flux0
+         tendency(i,k,j)= tendency(i,k,j) - &
+                    (c1(k)*mu(i,j)+c2(k))*((xkhv(i,k,j)*BN2(i,k,j))- (g/theta(i,k,j))*heat_flux)/2.
 
-   ENDDO
-   ENDDO
-ENDIF
+      ENDDO
+      ENDDO
+   ENDIF
 !
 
   CASE (1) ! use surface heat flux computed from surface routine
    K=KTS
 
 !XZ
-IF(config_flags%km_opt.eq.5) THEN
-   DO j = j_start, j_end
-   DO i = i_start, i_end
-      cpm = cp * (1. + 0.8*qv(i,k,j))
-      heat_flux = (hfx(i,j)/cpm)/rho(i,k,j)
-      tke_buoy_tend(i,k,j)= - (c1(k)*mu(i,j)+c2(k))*((xkhv(i,k,j)*BN2(i,k,j))-(g/theta(i,k,j))*heat_flux)/2.
-   ENDDO
-   ENDDO
-ELSE
-   DO j = j_start, j_end
-   DO i = i_start, i_end
-      cpm = cp * (1. + 0.8*qv(i,k,j))
-      heat_flux = (hfx(i,j)/cpm)/rho(i,k,j)
+   IF(config_flags%km_opt.eq.5) THEN
+      DO j = j_start, j_end
+      DO i = i_start, i_end
+         cpm = cp * (1. + 0.8*qv(i,k,j))
+         heat_flux = (hfx(i,j)/cpm)/rho(i,k,j)
+         tke_buoy_tend(i,k,j)= - (c1(k)*mu(i,j)+c2(k))*((xkhv(i,k,j)*BN2(i,k,j))-(g/theta(i,k,j))*heat_flux)/2.
+      ENDDO
+      ENDDO
+   ELSE
+      DO j = j_start, j_end
+      DO i = i_start, i_end
+         cpm = cp * (1. + 0.8*qv(i,k,j))
+         heat_flux = (hfx(i,j)/cpm)/rho(i,k,j)
 
-      tendency(i,k,j)= tendency(i,k,j) - &
+         tendency(i,k,j)= tendency(i,k,j) - &
                    (c1(k)*mu(i,j)+c2(k))*((xkhv(i,k,j)*BN2(i,k,j))- (g/theta(i,k,j))*heat_flux)/2.
-
-   ENDDO
-   ENDDO
-ENDIF 
+      ENDDO
+      ENDDO
+   ENDIF 
 !
   CASE DEFAULT
     CALL wrf_error_fatal( 'isfflx value invalid for diff_opt=2' )
@@ -6616,7 +6598,6 @@ ENDIF
 
     REAL, DIMENSION( ims:ime, jms:jme ), INTENT( IN )  &
     :: msftx, msfty
-
 ! XZ
     REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT) & 
     :: hpbl
@@ -6694,15 +6675,15 @@ ENDIF
         END IF
 
 ! XZ
-IF(config_flags%km_opt.eq.5) THEN 
-        delxy = SQRT(dx/msftx(i,j)*dy/msfty(i,j))
-        pu1 = pu(delxy,hpbl(i,j))
-        coefc_m = 0.285 
-        l_scale(i,k,j) = (1.0-pu1)*l_scale(i,k,j)/coefc + pu1*dlk(i,k,j)/coefc_m
-ELSE 
-        tendency(i,k,j) = tendency(i,k,j) - &
-                          (c1(k)*mu(i,j)+c2(k)) * coefc * tketmp**1.5 / l_scale(i,k,j)
-ENDIF !
+        IF(config_flags%km_opt.eq.5) THEN 
+          delxy = SQRT(dx/msftx(i,j)*dy/msfty(i,j))
+          pu1 = pu(delxy,hpbl(i,j))
+          coefc_m = 0.285 
+          l_scale(i,k,j) = (1.0-pu1)*l_scale(i,k,j)/coefc + pu1*dlk(i,k,j)/coefc_m
+        ELSE 
+          tendency(i,k,j) = tendency(i,k,j) - &
+                           (c1(k)*mu(i,j)+c2(k)) * coefc * tketmp**1.5 / l_scale(i,k,j)
+        ENDIF !
       END DO
       END DO
       END DO
@@ -6799,7 +6780,6 @@ ENDIF !
 
     REAL, DIMENSION( ims:ime, jms:jme ), INTENT( IN )  &
     :: ust
-
 !XZ
     REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT )  &
     :: tke_shear_tend
@@ -6868,66 +6848,66 @@ ENDIF !
 
 ! For defor11.
 
-IF(config_flags%km_opt.eq.5) THEN ! XZ
-    DO j = j_start, j_end
-    DO k = kts, ktf
-    DO i = i_start, i_end
-       tke_shear_tend(i,k,j) = 0.5 * (c1(k)*mu(i,j)+c2(k)) * xkmh(i,k,j) * ( ( defor11(i,k,j ) )**2 )
-    END DO
-    END DO
-    END DO
-ELSE
-    DO j = j_start, j_end
-    DO k = kts, ktf
-    DO i = i_start, i_end
-      tendency(i,k,j) = tendency(i,k,j) + 0.5 *  &
+    IF(config_flags%km_opt.eq.5) THEN ! XZ
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
+         tke_shear_tend(i,k,j) = 0.5 * (c1(k)*mu(i,j)+c2(k)) * xkmh(i,k,j) * ( ( defor11(i,k,j ) )**2 )
+      END DO
+      END DO
+      END DO
+    ELSE
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
+         tendency(i,k,j) = tendency(i,k,j) + 0.5 *  &
                         (c1(k)*mu(i,j)+c2(k)) * xkmh(i,k,j) * ( ( defor11(i,k,j) )**2 )
-    END DO
-    END DO
-    END DO
-ENDIF
+      END DO
+      END DO
+      END DO
+    ENDIF
 
 ! For defor22.
-IF(config_flags%km_opt.eq.5) THEN ! XZ
-    DO j = j_start, j_end
-    DO k = kts, ktf
-    DO i = i_start, i_end
-      tke_shear_tend(i,k,j) = tke_shear_tend(i,k,j) + 0.5 *  &
+    IF(config_flags%km_opt.eq.5) THEN ! XZ
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
+         tke_shear_tend(i,k,j) = tke_shear_tend(i,k,j) + 0.5 *  &
                              (c1(k)*mu(i,j)+c2(k)) * xkmh(i,k,j) * ( ( defor22(i,k,j) )**2 )
-    END DO
-    END DO
-    END DO
-ELSE
-    DO j = j_start, j_end
-    DO k = kts, ktf
-    DO i = i_start, i_end
-      tendency(i,k,j) = tendency(i,k,j) + 0.5 *  &
+      END DO
+      END DO
+      END DO
+    ELSE
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
+         tendency(i,k,j) = tendency(i,k,j) + 0.5 *  &
                         (c1(k)*mu(i,j)+c2(k)) * xkmh(i,k,j) * ( ( defor22(i,k,j) )**2 )
-    END DO
-    END DO
-    END DO
-ENDIF
+      END DO
+      END DO
+      END DO
+    ENDIF
 
 ! For defor33.
-IF(config_flags%km_opt.eq.5) THEN !XZ
-    DO j = j_start, j_end
-    DO k = kts, ktf
-    DO i = i_start, i_end
-      tke_shear_tend(i,k,j) = tke_shear_tend(i,k,j) + 0.5 *  &
+    IF(config_flags%km_opt.eq.5) THEN !XZ
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
+         tke_shear_tend(i,k,j) = tke_shear_tend(i,k,j) + 0.5 *  &
                         (c1(k)*mu(i,j)+c2(k)) * xkmv(i,k,j) * ( ( defor33(i,k,j) )**2 )
-    END DO
-    END DO
-    END DO
-ELSE
-    DO j = j_start, j_end
-    DO k = kts, ktf
-    DO i = i_start, i_end
-      tendency(i,k,j) = tendency(i,k,j) + 0.5 *  &
+      END DO
+      END DO
+      END DO
+    ELSE
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
+         tendency(i,k,j) = tendency(i,k,j) + 0.5 *  &
                         (c1(k)*mu(i,j)+c2(k)) * xkmv(i,k,j) * ( ( defor33(i,k,j) )**2 )
-    END DO
-    END DO
-    END DO
-ENDIF
+      END DO
+      END DO
+      END DO
+    ENDIF
 
 ! For defor12.
 
@@ -6941,23 +6921,23 @@ ENDIF
     END DO
     END DO
 
-IF(config_flags%km_opt.eq.5) THEN ! XZ
-    DO j = j_start, j_end
-    DO k = kts, ktf
-    DO i = i_start, i_end
-      tke_shear_tend(i,k,j) = tke_shear_tend(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmh(i,k,j) * avg(i,k,j)
-    END DO
-    END DO
-    END DO
-ELSE
-    DO j = j_start, j_end
-    DO k = kts, ktf
-    DO i = i_start, i_end
-      tendency(i,k,j) = tendency(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmh(i,k,j) * avg(i,k,j)
-    END DO
-    END DO
-    END DO
-ENDIF
+    IF(config_flags%km_opt.eq.5) THEN ! XZ
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
+         tke_shear_tend(i,k,j) = tke_shear_tend(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmh(i,k,j) * avg(i,k,j)
+      END DO
+      END DO
+      END DO
+    ELSE
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
+         tendency(i,k,j) = tendency(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmh(i,k,j) * avg(i,k,j)
+      END DO
+      END DO
+      END DO
+    ENDIF
 
 ! For defor13.
 
@@ -6986,23 +6966,23 @@ ENDIF
     END DO
     END DO
 
-IF(config_flags%km_opt.eq.5) THEN ! XZ
-    DO j = j_start, j_end
-    DO k = kts, ktf
-    DO i = i_start, i_end
-      tke_shear_tend(i,k,j) = tke_shear_tend(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmv(i,k,j) * avg(i,k,j)
-    END DO
-    END DO
-    END DO
-ELSE
-    DO j = j_start, j_end
-    DO k = kts, ktf
-    DO i = i_start, i_end
-      tendency(i,k,j) = tendency(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmv(i,k,j) * avg(i,k,j)
-    END DO
-    END DO
-    END DO
-ENDIF
+    IF(config_flags%km_opt.eq.5) THEN ! XZ
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
+         tke_shear_tend(i,k,j) = tke_shear_tend(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmv(i,k,j) * avg(i,k,j)
+      END DO
+      END DO
+      END DO
+    ELSE
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
+         tendency(i,k,j) = tendency(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmv(i,k,j) * avg(i,k,j)
+      END DO
+      END DO
+      END DO
+    ENDIF
 
 !MARTA: add the drag at the surface; WCS 040331
     K=KTS
@@ -7012,9 +6992,9 @@ ENDIF
 
     cd0 = config_flags%tke_drag_coefficient  ! drag coefficient set
                                              ! in namelist.input
-IF(config_flags%km_opt.eq.5) THEN ! XZ
-    DO j = j_start, j_end
-    DO i = i_start, i_end
+    IF(config_flags%km_opt.eq.5) THEN ! XZ
+      DO j = j_start, j_end
+      DO i = i_start, i_end
  
       absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)
       Cd = cd0
@@ -7022,11 +7002,11 @@ IF(config_flags%km_opt.eq.5) THEN ! XZ
            (c1(k)*mu(i,j)+c2(k))*( (u(i,k,j)+u(i+1,k,j))*0.5* &
                      Cd*absU*(defor13(i,kts+1,j)+defor13(i+1,kts+1,j))*0.5 )
  
-    END DO
-    END DO
-ELSE
-    DO j = j_start, j_end
-    DO i = i_start, i_end
+      END DO
+      END DO
+    ELSE
+      DO j = j_start, j_end
+      DO i = i_start, i_end
 
       absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)
       Cd = cd0
@@ -7034,15 +7014,15 @@ ELSE
            (c1(k)*mu(i,j)+c2(k))*( (u(i,k,j)+u(i+1,k,j))*0.5* &
                      Cd*absU*(defor13(i,kts+1,j)+defor13(i+1,kts+1,j))*0.5 )
 
-    END DO
-    END DO
-ENDIF
+      END DO
+      END DO
+    ENDIF
 
   CASE (1,2) ! ustar computed from surface routine
 
-IF(config_flags%km_opt.eq.5) THEN !XZ
-    DO j = j_start, j_end
-    DO i = i_start, i_end
+  IF(config_flags%km_opt.eq.5) THEN !XZ
+     DO j = j_start, j_end
+     DO i = i_start, i_end
  
       absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)+epsilon
       Cd = (ust(i,j)**2)/(absU**2)
@@ -7050,11 +7030,11 @@ IF(config_flags%km_opt.eq.5) THEN !XZ
            (c1(k)*mu(i,j)+c2(k))*( (u(i,k,j)+u(i+1,k,j))*0.5* &
                      Cd*absU*(defor13(i,kts+1,j)+defor13(i+1,kts+1,j))*0.5 )
  
-    END DO
-    END DO
-ELSE
-    DO j = j_start, j_end
-    DO i = i_start, i_end
+     END DO
+     END DO
+  ELSE
+     DO j = j_start, j_end
+     DO i = i_start, i_end
 
       absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)+epsilon
       Cd = (ust(i,j)**2)/(absU**2)
@@ -7062,9 +7042,9 @@ ELSE
            (c1(k)*mu(i,j)+c2(k))*( (u(i,k,j)+u(i+1,k,j))*0.5* &
                      Cd*absU*(defor13(i,kts+1,j)+defor13(i+1,kts+1,j))*0.5 )
 
-    END DO
-    END DO
-ENDIF
+     END DO
+     END DO
+  ENDIF
 
   CASE DEFAULT
     CALL wrf_error_fatal( 'isfflx value invalid for diff_opt=2' )
@@ -7098,23 +7078,23 @@ ENDIF
     END DO
     END DO
 
-IF(config_flags%km_opt.eq.5) THEN !XZ
-    DO j = j_start, j_end
-    DO k = kts, ktf
-    DO i = i_start, i_end
+    IF(config_flags%km_opt.eq.5) THEN !XZ
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
       tke_shear_tend(i,k,j) = tke_shear_tend(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmv(i,k,j) * avg(i,k,j)
-    END DO
-    END DO
-    END DO
-ELSE
-    DO j = j_start, j_end
-    DO k = kts, ktf
-    DO i = i_start, i_end
+      END DO
+      END DO
+      END DO
+    ELSE
+      DO j = j_start, j_end
+      DO k = kts, ktf
+      DO i = i_start, i_end
       tendency(i,k,j) = tendency(i,k,j) + (c1(k)*mu(i,j)+c2(k)) * xkmv(i,k,j) * avg(i,k,j)
-    END DO
-    END DO
-    END DO
-ENDIF
+      END DO
+      END DO
+      END DO
+    ENDIF
 
 !MARTA: add the drag at the surface; WCS 040331
     K=KTS
@@ -7124,9 +7104,9 @@ ENDIF
 
     cd0 = config_flags%tke_drag_coefficient   ! constant drag coefficient
                                               ! set in namelist.input
-IF(config_flags%km_opt.eq.5) THEN !XZ
-    DO j = j_start, j_end
-    DO i = i_start, i_end
+    IF(config_flags%km_opt.eq.5) THEN !XZ
+      DO j = j_start, j_end
+      DO i = i_start, i_end
  
       absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)
       Cd = cd0
@@ -7134,11 +7114,11 @@ IF(config_flags%km_opt.eq.5) THEN !XZ
            (c1(k)*mu(i,j)+c2(k))*( (v(i,k,j)+v(i,k,j+1))*0.5* &
                      Cd*absU*(defor23(i,kts+1,j)+defor23(i,kts+1,j+1))*0.5 )
  
-    END DO
-    END DO
-ELSE
-    DO j = j_start, j_end
-    DO i = i_start, i_end
+      END DO
+      END DO
+    ELSE
+      DO j = j_start, j_end
+      DO i = i_start, i_end
 
       absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)
       Cd = cd0
@@ -7146,15 +7126,15 @@ ELSE
            (c1(k)*mu(i,j)+c2(k))*( (v(i,k,j)+v(i,k,j+1))*0.5* &
                      Cd*absU*(defor23(i,kts+1,j)+defor23(i,kts+1,j+1))*0.5 )
 
-    END DO
-    END DO
-ENDIF
+      END DO
+      END DO
+    ENDIF
 
   CASE (1,2) ! ustar computed from surface routine
 
-IF(config_flags%km_opt.eq.5) THEN ! XZ
-    DO j = j_start, j_end
-    DO i = i_start, i_end
+   IF(config_flags%km_opt.eq.5) THEN ! XZ
+      DO j = j_start, j_end
+      DO i = i_start, i_end
  
       absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)+epsilon
       Cd = (ust(i,j)**2)/(absU**2)
@@ -7162,11 +7142,11 @@ IF(config_flags%km_opt.eq.5) THEN ! XZ
            (c1(k)*mu(i,j)+c2(k))*( (v(i,k,j)+v(i,k,j+1))*0.5* &
                      Cd*absU*(defor23(i,kts+1,j)+defor23(i,kts+1,j+1))*0.5 )
  
-    END DO
-    END DO
-ELSE
-    DO j = j_start, j_end
-    DO i = i_start, i_end
+      END DO
+      END DO
+   ELSE
+      DO j = j_start, j_end
+      DO i = i_start, i_end
 
       absU=0.5*sqrt((u(i,k,j)+u(i+1,k,j))**2+(v(i,k,j)+v(i,k,j+1))**2)+epsilon
       Cd = (ust(i,j)**2)/(absU**2)
@@ -7174,9 +7154,9 @@ ELSE
            (c1(k)*mu(i,j)+c2(k))*( (v(i,k,j)+v(i,k,j+1))*0.5* &
                      Cd*absU*(defor23(i,kts+1,j)+defor23(i,kts+1,j+1))*0.5 )
 
-    END DO
-    END DO
-ENDIF
+      END DO
+      END DO
+   ENDIF
 
   CASE DEFAULT
     CALL wrf_error_fatal( 'isfflx value invalid for diff_opt=2' )
@@ -7888,76 +7868,76 @@ ENDIF
     END SUBROUTINE cal_helicity
 !=======================================================================
 !=======================================================================
- SUBROUTINE solve_tke_implicit( config_flags,tke_old,               &
-                        tke,xkhv,rdz,rdzw,l_scale,                  &
-                        dnw, rdnw, c1h, c2h,                        & 
-                        tke_adv_h_tend,tke_adv_z_tend,              &
-                        tke_production_tend,                        &
-                        tke_diffusion_h_tend,                       &
-                        fnm,fnp,msftx, msfty,                       &
-                        mu_old, mu_new, mu_base,                    &
-                        rk_step, dt, spec_zone,                     &
-                        tke_upper_bound, rho,                       &
-                        ids, ide, jds, jde, kds, kde,               &
-                        ims, ime, jms, jme, kms, kme,               &
-                        its, ite, jts, jte, kts, kte                )
+    SUBROUTINE solve_tke_implicit( config_flags,tke_old,               &
+                           tke,xkhv,rdz,rdzw,l_scale,                  &
+                           dnw, rdnw, c1h, c2h,                        & 
+                           tke_adv_h_tend,tke_adv_z_tend,              &
+                           tke_production_tend,                        &
+                           tke_diffusion_h_tend,                       &
+                           fnm,fnp,msftx, msfty,                       &
+                           mu_old, mu_new, mu_base,                    &
+                           rk_step, dt, spec_zone,                     &
+                           tke_upper_bound, rho,                       &
+                           ids, ide, jds, jde, kds, kde,               &
+                           ims, ime, jms, jme, kms, kme,               &
+                           its, ite, jts, jte, kts, kte                )
 
 ! TO solve the TKE equation using implicit method. The vertical TKE diffusion
 ! and dissipation are implicitly treated.
 
-  IMPLICIT NONE
+    IMPLICIT NONE
 
-  TYPE( grid_config_rec_type ),                 INTENT( IN )    :: config_flags
+    TYPE( grid_config_rec_type ),                 INTENT( IN )    :: config_flags
 
-  INTEGER,                                      INTENT( IN )    ::           &
-                                              ids, ide, jds, jde, kds, kde,  &
-                                              ims, ime, jms, jme, kms, kme,  &
-                                              its, ite, jts, jte, kts, kte
+    INTEGER,                                      INTENT( IN )    ::           &
+                                                ids, ide, jds, jde, kds, kde,  &
+                                                ims, ime, jms, jme, kms, kme,  &
+                                                its, ite, jts, jte, kts, kte
 
-  INTEGER,                                      INTENT( IN )    :: rk_step, spec_zone
+    INTEGER,                                      INTENT( IN )    :: rk_step, spec_zone
 
-  REAL,                                         INTENT( IN )    :: dt
+    REAL,                                         INTENT( IN )    :: dt
 
-  REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   )   :: fnm,  &
-                                                                   fnp,  &
-                                                                   rdnw, &
-                                                                   dnw,  &
-                                                                   c1h,  &
-                                                                   c2h
+    REAL , DIMENSION( kms:kme ) ,                 INTENT(IN   )   :: fnm,  &
+                                                                     fnp,  &
+                                                                     rdnw, &
+                                                                     dnw,  &
+                                                                     c1h,  &
+                                                                     c2h
 
-  REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT ) :: tke, tke_old
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( INOUT ) :: tke, tke_old
 
-  REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN ) :: l_scale
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN ) :: l_scale
 
-  REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN ) ::           &
-                                                          tke_adv_h_tend, &
-                                                          tke_adv_z_tend, &
-                                                     tke_production_tend
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN ) ::           &
+                                                            tke_adv_h_tend, &
+                                                            tke_adv_z_tend, &
+                                                       tke_production_tend
 
-  REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN ) ::           &
-                                                    tke_diffusion_h_tend
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN ) ::           &
+                                                      tke_diffusion_h_tend
 
-  REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN ) ::           &
-                                                                 xkhv,    &
-                                                                 rdz,     &
-                                                                 rdzw,    &
-                                                                 rho
+    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT( IN ) ::           &
+                                                                   xkhv,    &
+                                                                   rdz,     &
+                                                                   rdzw,    &
+                                                                   rho
 
-  REAL, DIMENSION(ims:ime, jms:jme  ),          INTENT( IN ) ::  mu_old,  &
-                                                                 mu_new,  &
-                                                                 mu_base, &
-                                                                 msftx,   &
-                                                                 msfty
-  REAL, INTENT(   IN) :: tke_upper_bound
+    REAL, DIMENSION(ims:ime, jms:jme  ),          INTENT( IN ) ::  mu_old,  &
+                                                                   mu_new,  &
+                                                                   mu_base, &
+                                                                   msftx,   &
+                                                                   msfty
+    REAL, INTENT(   IN) :: tke_upper_bound
 
 !LOCAL VARS
-  REAL                     :: temp, beta, muu, rdz_w
-  REAL, DIMENSION(kts:kte) :: a,b,c,d
-  REAL, DIMENSION(its:ite,          jts:jte  ) :: muold, munew
-  REAL, DIMENSION(its:ite, kts:kte, jts:jte  ) :: advect_h_tend,advect_z_tend
-  REAL, DIMENSION(its:ite, kts:kte, jts:jte  ) :: xkxavg
-  INTEGER :: i_start_spc,i_end_spc,j_start_spc,j_end_spc,k_start_spc,k_end_spc
-  INTEGER :: i,j,k, nz, ktf, i_start, i_end, j_start, j_end, k_start, k_end
+    REAL                     :: temp, beta, muu, rdz_w
+    REAL, DIMENSION(kts:kte) :: a,b,c,d
+    REAL, DIMENSION(its:ite,          jts:jte  ) :: muold, munew
+    REAL, DIMENSION(its:ite, kts:kte, jts:jte  ) :: advect_h_tend,advect_z_tend
+    REAL, DIMENSION(its:ite, kts:kte, jts:jte  ) :: xkxavg
+    INTEGER :: i_start_spc,i_end_spc,j_start_spc,j_end_spc,k_start_spc,k_end_spc
+    INTEGER :: i,j,k, nz, ktf, i_start, i_end, j_start, j_end, k_start, k_end
  
       i_start = its
       i_end   = min(ite,ide-1)
@@ -8078,9 +8058,9 @@ ENDIF
        ENDDO
        ENDDO
        ENDDO
- END SUBROUTINE solve_tke_implicit
+    END SUBROUTINE solve_tke_implicit
 
- SUBROUTINE tridiag(n,a,b,c,d)
+    SUBROUTINE tridiag(n,a,b,c,d)
 !! to solve system of linear eqs on tridiagonal matrix n times n
 !! after Peaceman and Rachford, 1955
 !! a,b,c,d - are vectors of order n 
@@ -8110,30 +8090,28 @@ ENDIF
        d(i) = d(i) + q(i)*d(i+1)
     ENDDO
  
-  END SUBROUTINE tridiag
+    END SUBROUTINE tridiag
 !=======================================================================
 !=======================================================================
-SUBROUTINE vertical_diffusion_implicit(ru_tendf, rv_tendf, rw_tendf, rt_tendf,&
-                                    tke_tendf, moist_tendf, n_moist,          &
-                                    chem_tendf, n_chem,                       &
-                                    scalar_tendf, n_scalar,                   &
-                                    tracer_tendf, n_tracer,                   &
-                                    u_2, v_2, w_2, dt,                        &
-                                    thp,u_base,v_base,t_base,qv_base,mu,tke,  &
-                                    theta,                                    &
-                                    config_flags,defor13,defor23,defor33,     &
-                                    div,                                      &
-                                    moist,chem,scalar,tracer,                 &
-                                    xkmv,xkhv,xkmh,km_opt,                    &
-                                    fnm, fnp, dn, dnw, rdz, rdzw,             &
-                                    hfx, qfx, ust, rho,                       &
-                                    nlflux,gamu,gamv,xkmv_meso,               &
-                                    u_z_tend,v_z_tend,w_z_tend,th_z_tend,     &
-                                    tke_diffusion_z_tend,                     &
-                                    c1h, c2h, c1f, c2f,                       &
-                                    ids, ide, jds, jde, kds, kde,             &
-                                    ims, ime, jms, jme, kms, kme,             &
-                                    its, ite, jts, jte, kts, kte              )
+    SUBROUTINE vertical_diffusion_implicit(ru_tendf, rv_tendf, rw_tendf, rt_tendf,&
+                                        tke_tendf, moist_tendf, n_moist,          &
+                                        chem_tendf, n_chem,                       &
+                                        scalar_tendf, n_scalar,                   &
+                                        tracer_tendf, n_tracer,                   &
+                                        u_2, v_2, w_2, dt,                        &
+                                        thp,u_base,v_base,t_base,qv_base,mu,tke,  &
+                                        theta, config_flags,                      &
+                                        moist,chem,scalar,tracer,                 &
+                                        xkmv,xkhv,xkmh,km_opt,                    &
+                                        fnm, fnp, dn, dnw, rdz, rdzw,             &
+                                        hfx, qfx, ust, rho,                       &
+                                        nlflux,gamu,gamv,xkmv_meso,               &
+                                        u_z_tend,v_z_tend,w_z_tend,th_z_tend,     &
+                                        tke_diffusion_z_tend,                     &
+                                        c1h, c2h, c1f, c2f,                       &
+                                        ids, ide, jds, jde, kds, kde,             &
+                                        ims, ime, jms, jme, kms, kme,             &
+                                        its, ite, jts, jte, kts, kte              )
 !To solve the vertical diffusion equations for u,v,w,th,tke,moist,
 !chem,scalar,tracer using implicit method.
 !-----------------------------------------------------------------------
@@ -8175,7 +8153,7 @@ SUBROUTINE vertical_diffusion_implicit(ru_tendf, rv_tendf, rw_tendf, rt_tendf,&
                                                                  rv_tendf,&
                                                                  rw_tendf,&
                                                                 tke_tendf,&
-                                                                rt_tendf
+                                                                 rt_tendf
  
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::u_z_tend, &
                                                                  v_z_tend, &
@@ -8207,11 +8185,8 @@ SUBROUTINE vertical_diffusion_implicit(ru_tendf, rv_tendf, rw_tendf, rt_tendf,&
    REAL , DIMENSION( ims:ime, kms:kme, jms:jme, n_tracer) ,               &
           INTENT(IN   ) ::                                         tracer
 
-   REAL , DIMENSION( ims:ime, kms:kme, jms:jme), INTENT(IN   ) ::defor13, &
-                                                                 defor23, &
-                                                                 defor33, &
-                                                                     div, &
-                                                                    xkmv, &
+   REAL , DIMENSION( ims:ime, kms:kme, jms:jme),                          &
+          INTENT(IN   ) ::                                          xkmv, &
                                                                     xkhv, &
                                                                     xkmh, &
                                                                      tke, &
@@ -8800,56 +8775,24 @@ SUBROUTINE vertical_diffusion_implicit(ru_tendf, rv_tendf, rw_tendf, rt_tendf,&
  
     nz = ktf
 !!
- IF ( im == P_QV ) THEN
-       DO  j = j_start, j_end
-       DO  i = i_start, i_end
-            k = kts
-            rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
-            a(k) = 0.
-            b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j))*dt
-            c(k) =   -rdz_w* rdz(i,k+1,j)*xkxavg(i,k+1,j) *dt
-!            d(k) = var_mix(i,k,j) + dt*rdz_w*qfx(i,j)/(1.+moist(i,k,j,P_QV))   !??
-            d(k) = var_mix(i,k,j) + dt*rdz_w*qfx(i,j)           
- 
-          DO  k = kts+1,ktf-1
-            rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
-            a(k) = -rdz_w*rdz(i,k,j)*xkxavg(i,k,j)*dt
-            b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j)+rdz(i,k,j)*xkxavg(i,k,j))*dt
-            c(k) = -rdz_w*rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
-            d(k) = var_mix(i,k,j)
-          ENDDO
- 
-            a(ktf) = 0.
-            b(ktf) = 1.
-            c(ktf) = 0.
-            d(ktf) = var_mix(i,ktf,j)
- 
-          CALL tridiag(nz,a,b,c,d)
- 
-          DO k = kts, ktf
-            moist_z_tend(i,k,j,im) = (c1h(k)*mu(i,j)+c2h(k)) * (d(k)-var_mix(i,k,j))/dt
-          ENDDO
-       ENDDO
-       ENDDO
- ENDIF
-!!
-    IF ( im /= P_QV ) THEN
-       DO  j = j_start, j_end
-       DO  i = i_start, i_end
+    IF ( im == P_QV ) THEN
+         DO  j = j_start, j_end
+         DO  i = i_start, i_end
              k = kts
              rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
              a(k) = 0.
              b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j))*dt
-             c(k) =   -rdz_w* rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
-             d(k) = var_mix(i,k,j)
+             c(k) =   -rdz_w* rdz(i,k+1,j)*xkxavg(i,k+1,j) *dt
+!            d(k) = var_mix(i,k,j) + dt*rdz_w*qfx(i,j)/(1.+moist(i,k,j,P_QV))   !??
+             d(k) = var_mix(i,k,j) + dt*rdz_w*qfx(i,j)           
  
-          DO  k = kts+1,ktf-1
+           DO  k = kts+1,ktf-1
              rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
              a(k) = -rdz_w*rdz(i,k,j)*xkxavg(i,k,j)*dt
              b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j)+rdz(i,k,j)*xkxavg(i,k,j))*dt
              c(k) = -rdz_w*rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
              d(k) = var_mix(i,k,j)
-          ENDDO
+           ENDDO
  
              a(ktf) = 0.
              b(ktf) = 1.
@@ -8858,25 +8801,57 @@ SUBROUTINE vertical_diffusion_implicit(ru_tendf, rv_tendf, rw_tendf, rt_tendf,&
  
              CALL tridiag(nz,a,b,c,d)
  
-          DO k = kts, ktf
+           DO k = kts, ktf
              moist_z_tend(i,k,j,im) = (c1h(k)*mu(i,j)+c2h(k)) * (d(k)-var_mix(i,k,j))/dt
-          ENDDO
-        ENDDO
-        ENDDO
+           ENDDO
+         ENDDO
+         ENDDO
+    ENDIF
+!!
+    IF ( im /= P_QV ) THEN
+         DO  j = j_start, j_end
+         DO  i = i_start, i_end
+             k = kts
+             rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+             a(k) = 0.
+             b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j))*dt
+             c(k) =   -rdz_w* rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
+             d(k) = var_mix(i,k,j)
+ 
+           DO  k = kts+1,ktf-1
+             rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+             a(k) = -rdz_w*rdz(i,k,j)*xkxavg(i,k,j)*dt
+             b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j)+rdz(i,k,j)*xkxavg(i,k,j))*dt
+             c(k) = -rdz_w*rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
+             d(k) = var_mix(i,k,j)
+           ENDDO
+ 
+             a(ktf) = 0.
+             b(ktf) = 1.
+             c(ktf) = 0.
+             d(ktf) = var_mix(i,ktf,j)
+ 
+             CALL tridiag(nz,a,b,c,d)
+ 
+           DO k = kts, ktf
+             moist_z_tend(i,k,j,im) = (c1h(k)*mu(i,j)+c2h(k)) * (d(k)-var_mix(i,k,j))/dt
+           ENDDO
+         ENDDO
+         ENDDO
     ENDIF
  
      ENDDO moist_loop
    ENDIF
 
- DO im = PARAM_FIRST_SCALAR, n_moist
-      DO j = j_start, j_end
-      DO k = kts, ktf
-      DO i = i_start, i_end
-          moist_tendf(i,k,j,im) = moist_tendf(i,k,j,im) + moist_z_tend(i,k,j,im)
-      ENDDO
-      ENDDO
-      ENDDO
- ENDDO
+    DO im = PARAM_FIRST_SCALAR, n_moist
+       DO j = j_start, j_end
+       DO k = kts, ktf
+       DO i = i_start, i_end
+           moist_tendf(i,k,j,im) = moist_tendf(i,k,j,im) + moist_z_tend(i,k,j,im)
+       ENDDO
+       ENDDO
+       ENDDO
+    ENDDO
 
 !!============================================
 !! scalar
@@ -8897,7 +8872,7 @@ SUBROUTINE vertical_diffusion_implicit(ru_tendf, rv_tendf, rw_tendf, rt_tendf,&
     END DO
     END DO
  
-  IF (n_scalar .ge. PARAM_FIRST_SCALAR) THEN
+   IF (n_scalar .ge. PARAM_FIRST_SCALAR) THEN
      scalar_loop: do im = PARAM_FIRST_SCALAR, n_scalar
 ! need to avoid mixing scalars associated with precipitating species (e.g. Nr)
     IF(im.NE.P_QNS .AND. im.NE.P_QNR .AND. im.NE.P_QNG .AND. im.NE.P_QNH .AND. &
@@ -8934,12 +8909,12 @@ SUBROUTINE vertical_diffusion_implicit(ru_tendf, rv_tendf, rw_tendf, rt_tendf,&
  
              CALL tridiag(nz,a,b,c,d)
  
-          DO  k = kts, ktf
+           DO  k = kts, ktf
              scalar_z_tend(i,k,j,im) = (c1h(k)*mu(i,j)+c2h(k)) * (d(k)-var_mix(i,k,j))/dt
-          ENDDO
-       ENDDO
-       ENDDO
-      ENDIF
+           ENDDO
+        ENDDO
+        ENDDO
+     ENDIF
      ENDDO scalar_loop
    ENDIF
  
@@ -8960,7 +8935,7 @@ SUBROUTINE vertical_diffusion_implicit(ru_tendf, rv_tendf, rw_tendf, rt_tendf,&
 !!============================================
 !! tracer
 !!============================================
-  IF (n_tracer .ge. PARAM_FIRST_SCALAR) THEN
+   IF (n_tracer .ge. PARAM_FIRST_SCALAR) THEN
      tracer_loop: do im = PARAM_FIRST_SCALAR, n_tracer
          DO j = jts, min(jte,jde-1)
          DO k = kts, kte-1
@@ -8970,22 +8945,22 @@ SUBROUTINE vertical_diffusion_implicit(ru_tendf, rv_tendf, rw_tendf, rt_tendf,&
          ENDDO
          ENDDO
  
-       DO  j = j_start, j_end
-       DO  i = i_start, i_end
-            k = kts
-            rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
-            a(k) = 0.
-            b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j))*dt
-            c(k) =   -rdz_w* rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
-            d(k) = var_mix(i,kts,j)
+         DO  j = j_start, j_end
+         DO  i = i_start, i_end
+             k = kts
+             rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+             a(k) = 0.
+             b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j))*dt
+             c(k) =   -rdz_w* rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
+             d(k) = var_mix(i,kts,j)
  
-          DO  k = kts+1,ktf-1
-            rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
-            a(k) = -rdz_w*rdz(i,k,j)*xkxavg(i,k,j)*dt
-            b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j)+rdz(i,k,j)*xkxavg(i,k,j))*dt
-            c(k) = -rdz_w*rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
-            d(k) = var_mix(i,k,j)
-          ENDDO
+           DO  k = kts+1,ktf-1
+             rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
+             a(k) = -rdz_w*rdz(i,k,j)*xkxavg(i,k,j)*dt
+             b(k) = 1.+rdz_w*(rdz(i,k+1,j)*xkxavg(i,k+1,j)+rdz(i,k,j)*xkxavg(i,k,j))*dt
+             c(k) = -rdz_w*rdz(i,k+1,j)*xkxavg(i,k+1,j)*dt
+             d(k) = var_mix(i,k,j)
+           ENDDO
  
              a(ktf) = 0.
              b(ktf) = 1.
@@ -8994,13 +8969,13 @@ SUBROUTINE vertical_diffusion_implicit(ru_tendf, rv_tendf, rw_tendf, rt_tendf,&
  
              CALL tridiag(nz,a,b,c,d)
  
-          DO k = kts, ktf
+           DO k = kts, ktf
              tracer_z_tend(i,k,j,im) = (c1h(k)*mu(i,j)+c2h(k)) * (d(k) - var_mix(i,k,j))/dt
-          ENDDO
-        ENDDO
-        ENDDO
+           ENDDO
+         ENDDO
+         ENDDO
      ENDDO tracer_loop
-  ENDIF
+   ENDIF
  
    DO im = PARAM_FIRST_SCALAR, n_tracer
       DO j = j_start, j_end
@@ -9025,8 +9000,8 @@ SUBROUTINE vertical_diffusion_implicit(ru_tendf, rv_tendf, rw_tendf, rt_tendf,&
          ENDDO
          ENDDO
  
-       DO  j = j_start, j_end
-       DO  i = i_start, i_end
+        DO  j = j_start, j_end
+        DO  i = i_start, i_end
             k = kts
             rdz_w = -g/dnw(k)/(c1h(k)*mu(i,j)+c2h(k))
             a(k) = 0.
@@ -9042,12 +9017,12 @@ SUBROUTINE vertical_diffusion_implicit(ru_tendf, rv_tendf, rw_tendf, rt_tendf,&
             d(k) = var_mix(i,k,j)
           ENDDO
  
-             a(ktf) = 0.
-             b(ktf) = 1.
-             c(ktf) = 0.
-             d(ktf) = var_mix(i,ktf,j)
+            a(ktf) = 0.
+            b(ktf) = 1.
+            c(ktf) = 0.
+            d(ktf) = var_mix(i,ktf,j)
  
-             CALL tridiag(nz,a,b,c,d)
+            CALL tridiag(nz,a,b,c,d)
  
           DO k = kts, ktf
              chem_z_tend(i,k,j,im) = (c1h(k)*mu(i,j)+c2h(k)) * (d(k) - var_mix(i,k,j))/dt
@@ -9067,7 +9042,7 @@ SUBROUTINE vertical_diffusion_implicit(ru_tendf, rv_tendf, rw_tendf, rt_tendf,&
       ENDDO
    ENDDO
  
-END SUBROUTINE vertical_diffusion_implicit
+    END SUBROUTINE vertical_diffusion_implicit
 
 !=======================================================================
 !=======================================================================

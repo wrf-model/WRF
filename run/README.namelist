@@ -1418,6 +1418,9 @@ The following are for observation nudging:
                                                       Note: option 2 and 3 are not recommended for DX > 2 km
                                                   4 = horizontal Smagorinsky first order closure
                                                       (recommended for real-data cases)
+                                                  5 = SMS-3DTKE scale-adaptive LES/PBL scheme. It must be
+                                                      used with diff_opt = 2. PBL schemes must be turned off
+                                                      (bl_pbl_physics=0). It can work with sf_sfclay_physics = 1, 5, 91.
  damp_opt                            = 0,	! upper level damping flag 
                                                   0 = without damping
                                                   1 = with diffusive damping, maybe used for real-data cases 

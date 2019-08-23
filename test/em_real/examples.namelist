@@ -659,4 +659,17 @@ To overwrite the cu_physics option for a second nest, set
  dzstretch_s                         = 1.3
  dzstretch_u                         = 1.1
 
+** Using the scale-adaptive SMS-3DTKE subgrid turbulent mixing scheme: 
+ &physics
+   bl_pbl_physics = 0,
+   sf_sfclay_physics = 1(or 5, 91), 
+ /
+ &dynamics
+   diff_opt       = 2,
+   km_opt         = 5, 
+ /
+
+
+
+
 

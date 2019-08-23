@@ -514,6 +514,8 @@ Description of WRFDA namelist variables, defined in Registry/registry.var
                                        ; "VERIFY": verification mode.
                                        ;           WRFDA resets check_max_iv=.false. and ntmax=0
                                        ; "RANDOMCV": for creating ensemble perturbations
+  n_randomcv              = 1          ; number of realizations of randomcv
+                                       ; set to > 1 to get multiple perturbed output in one execution
   adj_sens	          = .false.    ; .true.: write out gradient of Jo for adjoint sensitivity
 /
 &wrfvar18   ; needs to set &wrfvar21 and &wrfvar22 as well if ob_format=1 and/or radiances are used.

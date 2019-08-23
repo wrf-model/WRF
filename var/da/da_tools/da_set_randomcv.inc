@@ -19,7 +19,8 @@ subroutine da_set_randomcv(cv_size, rcv)
 
    ! [1] Initialize random number generator and scalars:
 
-   call da_random_seed
+   !moved to da_solve.inc
+   !call da_random_seed
 
    sum_cv = 0.0
    sum_cv2 = 0.0
@@ -39,8 +40,8 @@ subroutine da_set_randomcv(cv_size, rcv)
 
    write(unit=stdout,fmt=*)
    write(unit=stdout,fmt='(a)')' Gaussian (Normal) noise statistics:'
-   write(unit=stdout,fmt='(a,f15.5)')' Mean = ',mean_cv
-   write(unit=stdout,fmt='(a,f15.5)')' RMS = ', rms_cv
+   write(unit=stdout,fmt='(a,f15.5)')' Mean    = ', mean_cv
+   write(unit=stdout,fmt='(a,f15.5)')' RMS     = ', rms_cv
    write(unit=stdout,fmt='(a,f15.5)')' STD DEV = ', std_dev_cv
 
    if (trace_use) call da_trace_exit("da_set_randomcv")

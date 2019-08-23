@@ -1906,7 +1906,7 @@
 !-----------------------------------------------------------------------
 !   Check that max_ts_level should be smaller than the number of half levels
 !-----------------------------------------------------------------------
-   IF ( model_config_rec % max_ts_locs .gt. model_config_rec %e_vert(1)-1 )  then
+   IF ( model_config_rec % max_ts_level .gt. model_config_rec %e_vert(1)-1 )  then
         wrf_err_message = ' max_ts_level must be <= number of znu half layers '
         CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
         count_fatal_error = count_fatal_error + 1

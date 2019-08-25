@@ -25,6 +25,9 @@ CONTAINS
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
                      spec_hfx,                                     & !JDM-MMC
+                     curr_secs,                                    & ! DME-MMC
+                     spec_z0,                                      & ! DME-MMC
+                     spec_ideal,                                   & ! DME-MMC
                      ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux )
      
 !-------------------------------------------------------------------
@@ -188,6 +191,12 @@ CONTAINS
       REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV,DX
 
       REAL,     INTENT(IN   )            ::   spec_hfx        !JDM-MMC
+
+      REAL,     OPTIONAL, INTENT(IN   )  ::   curr_secs       ! DME-MMC
+
+      REAL,     INTENT(IN   )            ::   spec_z0         ! DME-MMC
+
+      LOGICAL,  INTENT(IN   )            ::   spec_ideal      ! DME-MMC
       
       REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
                 INTENT(OUT)     ::                  ck,cka,cd,cda
@@ -209,6 +218,32 @@ CONTAINS
       REAL,     DIMENSION( its:ite ) ::                    dz8w1d
 
       INTEGER ::  I,J
+
+      REAL :: dth_i, thx_i ! DME-MMC
+
+! DME-MMC modifications to set z0 and properly calculate TSK from an imposed heat flux (spec_hfx, W m-2)
+      IF ( spec_ideal ) THEN
+        IF (curr_secs .eq. 0.) THEN ! set z0
+          DO J=jts,jte
+            DO I=its,ite
+              znt(i,j) = spec_z0
+            ENDDO
+          ENDDO
+        ELSE ! set tsk according to namelist specified feat flux
+          DO J=jts,jte
+            DO I=its,ite
+              IF (spec_hfx .eq. 0. .OR. flhc(i,j) .eq. 0. ) THEN
+                dth_i = 0.
+              ELSE
+                dth_i = spec_hfx/flhc(i,j)
+              ENDIF
+              thx_i = t3d(i,1,j)*(P1000mb/p3d(i,1,j))**rovcp
+              tsk(i,j) = (dth_i + thx_i)/(P1000mb/(psfc(i,j)))**rovcp
+            ENDDO
+          ENDDO
+        ENDIF
+      ENDIF
+! DME-MMC
 
       DO J=jts,jte
         DO i=its,ite
@@ -245,9 +280,9 @@ CONTAINS
 #if ( EM_CORE == 1 )
                 ,isftcflx,iz0tlnd,scm_force_flux,                               &
                 USTM(ims,j),CK(ims,j),CKA(ims,j),                  &
-                CD(ims,j),CDA(ims,j)                              &
+                CD(ims,j),CDA(ims,j)                               &
 #endif
-                ,spec_hfx                                           ) !JDM-MMC
+                                                                    )
       ENDDO
 
 
@@ -268,9 +303,7 @@ CONTAINS
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
                      isftcflx, iz0tlnd,scm_force_flux,                            &
-                     ustm,ck,cka,cd,cda,                           &
-                     spec_hfx                                      & !JDM-MMC
-                                                                   )
+                     ustm,ck,cka,cd,cda                            )
 !-------------------------------------------------------------------
       IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -291,11 +324,8 @@ CONTAINS
       REAL,     DIMENSION( ims:ime )                             , &
                 INTENT(IN   )               ::             MAVAIL, &
                                                              PBLH, &
-                                                            XLAND
-      
-      REAL,     DIMENSION( ims:ime )                             , &  !JDM-MMC
-                INTENT(INOUT )               ::               TSK
-      
+                                                            XLAND, &
+                                                              TSK
 !
       REAL,     DIMENSION( ims:ime )                             , &
                 INTENT(IN   )               ::             PSFCPA
@@ -351,9 +381,6 @@ CONTAINS
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX, IZ0TLND
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX
 
-      REAL,     INTENT(IN   )            ::   spec_hfx        !JDM-MMC
-
-      
 ! LOCAL VARS
 
       REAL,     DIMENSION( its:ite )        ::                 ZA, &
@@ -1065,26 +1092,6 @@ CONTAINS
         ENDIF
         
   400 CONTINUE                                                                 
-
-      IF( spec_hfx .NE. -999.9) THEN !JDM-MMC
-
-         !Specify heat flux from namelist, adjust TSK to be consistent with spec_hfx,
-         !and set the surface temperature to be consistent with spec_hfx
-
-         DO 403 I=its,ite   
-
-            HFX(I) = spec_hfx  
-            QFX(I) = 0.0
-            LH(I) = 0.0
-            FLQC(I) = 0.0
-              
-            THGB(I) = THX(I)
-
-            TSK(I) = THGB(I)/((100./PSFC(I))**ROVCP)
-
-  403    CONTINUE  
-  
-      ENDIF
 
   405 CONTINUE                                                                 
          

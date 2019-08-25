@@ -19,8 +19,10 @@ state   real    r13     ikjf    nba_rij		1       -       -       "r13"   	"13 co
 state   real    r23     ikjf    nba_rij		1       -       -       "r23"   	"23 component of rotation tensor"               "s-1"
 state   real    smnsmn  ikjf    nba_rij		1       -       -       "smnsmn"   	"Smn*Smn"               			"s-2"
 
-rconfig	real 	spec_hfx 	namelist,dynamics	1     		-999.9  -	"Constant surface heat flux (W/m^2) for use with sf_sfclay_physics=1. -999.9 ignores this option."
-rconfig	real 	spec_lat 	namelist,dynamics	1     		-999.9  -	"Latitude to compute coriolis terms for idealized simulations. -999.9 ignores this option."
+rconfig logical spec_ideal          namelist,dynamics   1           .false.  -  "flag to activate spec_hfx and spec_z0 in sf_sfclay_physics=1 and spec_lat in the initialization" # DME-MMC
+rconfig real    spec_hfx            namelist,dynamics   1               0.0  -  "Constant surface heat flux (W/m^2) for use with sf_sfclay_physics=1 in ideal conditions (spec_ideal=.true.)" # DME-MMC
+rconfig real    spec_z0         namelist,dynamics       1               0.1  -  "Homogeneous roughness length (m) for use with sf_sfclay_physics=1 in ideal conditions (spec_ideal=.true.)" # DME-MMC
+rconfig real    spec_lat        namelist,dynamics       1              33.6  -  "Latitude to compute coriolis terms for idealized simulations (spec_ideal=.true.)"
 
 rconfig	integer sfs_opt 	namelist,dynamics	max_domains     0       -	"1 or 2 to use NBA models"
 rconfig	integer m_opt    	namelist,dynamics       max_domains     0       -       "1 to output sgs stresses if not using NBA"

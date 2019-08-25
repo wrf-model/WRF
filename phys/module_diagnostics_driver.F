@@ -104,7 +104,7 @@ CONTAINS
       REAL , DIMENSION(ims:ime,kms:kme,jms:jme,num_moist ) , INTENT(IN) :: moist
       REAL , DIMENSION(ims:ime,kms:kme,jms:jme,num_chem  ) , INTENT(IN) :: chem
       REAL , DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer) , INTENT(IN) :: tracer
-      REAL , DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar) , INTENT(IN) :: scalar
+      REAL , DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar) , INTENT(INOUT) :: scalar
 
       !  A few handy 3d arrays computed for the physics scheme: pressure (Pa) and
       !  temperature (K), on both half (_phy) and full levels.
@@ -205,7 +205,7 @@ CONTAINS
             grid%t_phy, p_phy, grid%rho,                       &
             grid%u_phy, grid%v_phy, grid%w_2,                  &    
             th_phy,     pi_phy,dz8w,                           &  
-            grid%z, moist,                                     &
+            grid%z, moist,scalar,                              &
           ! Scheme specific prognostics
             grid%ktop_deep, grid%refl_10cm,                    &
             domain_get_current_time( grid ),                   &
@@ -224,6 +224,17 @@ CONTAINS
           ! Scheme specific namelist inputs
             config_flags%cellcount_method,                     &
             config_flags%cldtop_adjustment,                    &
+         ! Dynamic_Lightning inputs
+            config_flags%coul_pos,                     &
+            config_flags%coul_neg,                     &
+            config_flags%coul_neu,                     &
+            config_flags%j_pos,                     &
+            config_flags%j_neg,                     &
+            config_flags%j_neu,                     &
+         ! Dynamic_Lightning Outputs
+            grid%lpos, &
+            grid%lneg, &
+            grid%lneu, &
           ! Order dependent args for domain, mem, and tile dims 
             ids, ide, jds, jde, kds, kde,         &
             ims, ime, jms, jme, kms, kme,         &

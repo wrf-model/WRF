@@ -2417,6 +2417,15 @@ rconfig   integer tracer_pblmix           namelist,physics      max_domains  1  
 rconfig   logical use_aero_icbc           namelist,physics     	1              .false. rh    "use_aero_icbc"  "Use GOCART climo 3D aerosols IC/BC data in Thompson-MP-Aero"  "logical flag"
 rconfig   logical use_rap_aero_icbc       namelist,physics      1              .false. r     "use_rap_aero_icbc"  "Use GOCART climo 3D aerosols IC/BC data in Thompson-MP-Aero from RAP"  "logical flag"
 rconfig   integer use_mp_re               namelist,physics     	1              1       h     "use_mp_re"  "use effective radii computed in some mp schemes in RRTMG"  "flag"
+#dynamic lightning
+  rconfig   real     coul_pos            namelist,physics      max_domains  0.25E-4     rh       "Constant for Positive Charging of Clouds"  "Coulombs"      ""
+  rconfig   real     coul_neg            namelist,physics      max_domains  0.25E-4     rh       "Constant for Negative Charging of Clouds"  "Coulombs"      ""
+  rconfig   real     coul_neu            namelist,physics      max_domains  0.25E-4     rh       "Constant for Charging of Intracloud Lightning"  "Coulombs"      ""
+   rconfig   real     j_pos            namelist,physics      max_domains  5.E9     rh       "Threshold for Producing Positive Event"  "J"      ""
+   rconfig   real     j_neg            namelist,physics      max_domains  1.E9     rh       "Threshold for Producing Negative Event"  "J"      ""
+   rconfig   real     j_neu            namelist,physics      max_domains  1.E9     rh       "Threshold for Producing IC Event"  ""      "J"
+#  end dynamic lightning
+#
 
 # The following two options are hooked into various microphysics schemes to allow for ensemble perturbations of CCN and hail/graupel PSDs - GAC (AFWA)
 rconfig   real    ccn_conc                namelist,physics      1           1.0E8      h     "ccn_conc"                 "CCN concentration"                                                             "# m-3"
@@ -3055,6 +3064,18 @@ package	ltng_crm_PR92w      lightning_option==1            -       state:ic_flas
 package ltng_crm_PR92z      lightning_option==2            -       state:ic_flashcount,ic_flashrate,cg_flashcount,cg_flashrate
 package	ltng_cpm_PR92z      lightning_option==11           -       state:ic_flashcount,ic_flashrate,cg_flashcount,cg_flashrate
 package	ltng_lpi            lightning_option==3           -        state:lpi
+state   real    light_ne            ikjftb  scalar      1         -     \
+   i0rhusdf=(bdy_interp:dt)    "LIGHTNING_NE"       "LIGHTNING NEG TOTAL ENERGY " "J"
+state   real    light_pe            ikjftb  scalar      1         -     \
+     i0rhusdf=(bdy_interp:dt)    "LIGHTNING_PE"       "LIGHTNING POS TOTAL ENERGY" "J"
+state   real    light_neu            ikjftb  scalar      1         -     \
+       i0rhusdf=(bdy_interp:dt)    "LIGHTNING_NEU"       "LIGHTNING NEU TOTAL ENERGY" "J"
+state    real   LPOS            ij     misc        1         -     irh05du      "LPOS"                   "Positive Cloud to Ground Lightning Density"       "# time-l"
+state    real   LNEG            ij     misc        1         -     irh05du      "LNEG"                   "Negative Cloud to Ground Lightning Density"       "# time-1"
+state    real   LNEU            ij     misc        1         -     irh05du      "LNEU"                   "Intra-Cloud Lightning Density"  "# time-1"
+state    real  l_obs          i{lp}j      misc        1         -      irh5       "L_OBS"                  "Lightning OBS"      " "
+package ltng_dyn_lightning      lightning_option==4   -   scalar:light_pe,light_ne,light_neu;state:lneu,lneg,lpos,l_obs
+#
 # only need to specify these once; not for every io_form* variable
 package   io_intio    io_form_restart==1                     -             -
 package   io_netcdf   io_form_restart==2                     -             -

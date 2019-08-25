@@ -1022,6 +1022,9 @@ Namelist variables for lake module:
                                      = 2        ! PR92 based on 20 dBZ top, redistributes flashes within dBZ > 20 (for convection resolved runs; must also use 
 				     		  do_radar_ref = 1, and mp_physics = 2,4,6,7,8,10,14, or 16)
                                      = 3        ! Predicting the potential for lightning activity (based on Yair et al, 2010, J. Geophys. Res., 115, D04205, doi:10.1029/2008JD010868) 
+                                     = 4        !
+Lynn, B. H., Y. Yair, C. Price, G. Kelman, and A. J. Clark, 2012: Predicting cloud-to-ground and intracloud lightning in weather forecast models. Wea. Forecasting, 27, 1470–1488, doi:https://doi.org/10.1175/WAF-D-11-00144.1 -- note: Dynamic Lightning Scheme output of cloud to ground positive and negative events, and intra-cloud lightning, (LPOS, LNEG, AND LNEU, respectively) was verified against ENTLN event or stroke data in the US and Israel, and, is per grid-element. Adjust coul_pos, coul_neg, and coul_neu as required for different microphysics (must include Graupel). Suggested values: SBM 0.15 for each coul..., Thompson/NSSL 0.25, and WSM6 0.5. Must be called lightning_dt = 0.
+
                                      = 11       ! PR92 based on level of neutral buoyancy from convective parameterization (for scales
                                                   where a CPS is used, intended for use at 10 < dx < 50 km; must also use cu_physics = 5 or 93)
  lightning_dt  (max_dom)             = 0.       ! time interval (seconds) for calling lightning parameterization. Default uses model time step

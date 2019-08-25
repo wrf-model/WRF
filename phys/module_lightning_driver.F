@@ -141,6 +141,12 @@
         WRITE(message, * ) ' lightning_init: LPIM lightning option selected: ', lightning_option
         CALL wrf_debug ( 100 , message )
 #endif
+#if (EM_CORE==1)
+    CASE (ltng_dyn_lightning)
+
+        WRITE(message, * ) ' lightning_init: LPIM lightning option selected: ', lightning_option
+        CALL wrf_debug ( 100 , message )
+#endif
     ! Non-existing options
     CASE DEFAULT
         CALL wrf_error_fatal ( ' lightning_init: invalid lightning_option')
@@ -211,7 +217,7 @@
                             xlat, xlon, xland, ht,                &
                             t_phy, p_phy, rho, u, v, w,           &
                             th_phy, pi_phy,dz8w,                  &  
-                            z, moist,                             &
+                            z, moist,scalar,                      &
                           ! Scheme specific prognostics
                             ktop_deep,                            &
                             refl,                                 &
@@ -231,6 +237,15 @@
                           ! Scheme specific namelist inputs
                             cellcount_method,                     &
                             cldtop_adjustment,                    &
+                         ! Dynamic Lightning Input
+                            coul_pos, &
+                            coul_neg, &
+                            coul_neu, &
+                            j_pos, &
+                            j_neg, &
+                            j_neu, &
+                          ! Dynamic Lightning output
+                            lpos,lneu,lneg, &
                           ! Order dependent args for domain, mem, and tile dims
                             ids, ide, jds, jde, kds, kde,         &
                             ims, ime, jms, jme, kms, kme,         &
@@ -261,6 +276,11 @@
 #if (EM_CORE==1)
   USE module_ltng_lpi
 #endif
+! Dynamic Lightning
+#if (EM_CORE==1)
+  USE module_ltng_pe
+  USE module_ltng_strokes
+#endif
 
  IMPLICIT NONE
 !-----------------------------------------------------------------
@@ -274,6 +294,7 @@
  REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ),           INTENT(IN   ) :: th_phy, pi_phy, dz8w  
  REAL,    DIMENSION( ims:ime, kms:kme, jms:jme ),           INTENT(IN   ) :: u, v, w, z
  REAL,    DIMENSION( ims:ime, kms:kme, jms:jme, num_moist), INTENT(IN   ) :: moist
+ REAL,    DIMENSION( ims:ime, kms:kme, jms:jme, num_scalar), INTENT(INOUT   ) :: scalar
 
 ! Scheme specific prognostics
  INTEGER, DIMENSION( ims:ime,          jms:jme ),           INTENT(IN   ) :: ktop_deep     ! model LNB from cu_physics
@@ -281,6 +302,10 @@
  TYPE(WRFU_Time),                                           INTENT(IN   ) :: current_time  ! For use of IC:CG input
 
  REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT), OPTIONAL :: LPI
+ REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT), OPTIONAL :: LPOS
+ REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT), OPTIONAL :: LNEG
+ REAL, DIMENSION( ims:ime, jms:jme ), INTENT(INOUT), OPTIONAL :: LNEU
+!
 ! Mandatory namelist inputs
  INTEGER, INTENT(IN   )    ::       lightning_option
  REAL,    INTENT(IN   )    ::       lightning_dt, lightning_start_seconds, flashrate_factor
@@ -294,6 +319,13 @@
 ! Scheme specific namelist inputs
  INTEGER, INTENT(IN   )    ::       cellcount_method                    ! used in CRM
  REAL,    INTENT(IN   )    ::       cldtop_adjustment                   ! used in CPM
+! Dynamic LIghtning namelist settings
+ REAL,    INTENT(IN   )    ::       coul_pos
+ REAL,    INTENT(IN   )    ::       coul_neg
+ REAL,    INTENT(IN   )    ::       coul_neu
+ REAL,    INTENT(IN   )    ::       j_pos
+ REAL,    INTENT(IN   )    ::       j_neg
+ REAL,    INTENT(IN   )    ::       j_neu
 
 ! Order dependent args for domain, mem, and tile dims
  INTEGER, INTENT(IN   )    ::       ids,ide, jds,jde, kds,kde
@@ -437,6 +469,50 @@
         WRITE(wrf_err_message, * ) ' lightning_driver: LPI option needs Microphysics Option with Graupel '
         CALL wrf_error_fatal ( wrf_err_message )
         ENDIF
+#endif
+#if (EM_CORE==1)
+    CASE( ltng_dyn_lightning )
+        CALL wrf_debug ( 100, ' lightning_driver: calling Dynamic Lightning Scheme' )
+        IF(F_QG) THEN
+        CALL   calc_dyn_pe(dx=dx,dy=dy,                         &
+                     W=w,                              &
+                     PI_PHY=pi_phy, RHO_PHY=rho,             &
+                     TH_PHY=TH_PHY,P_PHY=p_phy,                  &
+                     DZ8w=dz8w,                          &
+                     QC=moist(ims,kms,jms,P_QV),         &   
+                     QR=moist(ims,kms,jms,P_QR),         &  
+                     QI=moist(ims,kms,jms,P_QI),         & 
+                     QS=moist(ims,kms,jms,P_QS),         &
+                     QG=moist(ims,kms,jms,P_QG),         &
+                     light_pe=scalar(ims,kms,jms,P_light_pe), &
+                     light_ne=scalar(ims,kms,jms,P_light_ne), &
+                     light_neu=scalar(ims,kms,jms,P_light_neu),&
+                     dt=dt &
+                 ,coul_pos=coul_pos &
+                 ,coul_neg=coul_neg &
+                 ,coul_neu=coul_neu &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
+        ELSE
+        WRITE(wrf_err_message, * ) ' lightning_driver: Dynamic Lightning option needs Microphysics Option with Graupel '
+        CALL wrf_error_fatal ( wrf_err_message )
+        END IF
+           CALL   calcstroke(dx=dx,dy=dy,                         &
+                     W=w,                              &
+                     PI_PHY=pi_phy, RHO_PHY=rho,             &
+                     TH_PHY=TH_PHY,P_PHY=p_phy,                  &
+                     DZ8w=dz8w,                          &
+                     light_pe=scalar(ims,kms,jms,P_light_pe), &
+                     light_ne=scalar(ims,kms,jms,P_light_ne), &
+                     light_neu=scalar(ims,kms,jms,P_light_neu),&
+                     lpos=lpos,lneg=lneg,lneu=lneu  &
+                 ,j_pos=j_pos &
+                 ,j_neg=j_neg &
+                 ,j_neu=j_neu &
+                 ,IDS=ids,IDE=ide, JDS=jds,JDE=jde, KDS=kds,KDE=kde &
+                 ,IMS=ims,IME=ime, JMS=jms,JME=jme, KMS=kms,KME=kme &
+                 ,ITS=its,ITE=ite, JTS=jts,JTE=jte, KTS=kts,KTE=kte)
 #endif
 !   CASE ( another_cpm_option)
 

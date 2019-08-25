@@ -79,12 +79,13 @@ CONTAINS
 
       TYPE ( grid_config_rec_type ), INTENT(IN) :: config_flags
 
-      !  The 4d arrays are input only, no mods to them.
+      !  The 4d arrays are input only, no mods to them -- except for scalar
+      !  which is is modified in the call to the dynamic lightning scheme.
 
       REAL , DIMENSION(ims:ime,kms:kme,jms:jme,num_moist ) , INTENT(IN) :: moist
       REAL , DIMENSION(ims:ime,kms:kme,jms:jme,num_chem  ) , INTENT(IN) :: chem
       REAL , DIMENSION(ims:ime,kms:kme,jms:jme,num_tracer) , INTENT(IN) :: tracer
-      REAL , DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar) , INTENT(IN) :: scalar
+      REAL , DIMENSION(ims:ime,kms:kme,jms:jme,num_scalar) , INTENT(INOUT) :: scalar
 
       !  A few handy 3d arrays computed for the physics scheme: pressure (Pa) and
       !  temperature (K), on both half (_phy) and full levels.

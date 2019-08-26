@@ -18,6 +18,8 @@ CONTAINS
      &          ,isltyp,itimestep,julian_in,ivgtyp,lowlyr,mavail,rmol &
      &          ,num_soil_layers,p8w,pblh,pi_phy,pshltr,fm,fhh,psih   &
      &          ,spec_hfx                                             & !JDM-MMC
+     &          ,spec_z0                                              & ! DME-MMC
+     &          ,spec_ideal                                           & ! DME-MMC
 #if (NMM_CORE==1)
      &          ,psim,p_phy,q10,q2,qfx,taux,tauy,qsfc,qshltr,qz0      &
      &          ,zkmax,ribn,charn,msang,scurx,scury,icoef_sf,iwavecpl,lcurr_sf & !for gfdl-sf drag
@@ -1165,7 +1167,9 @@ CONTAINS
    REAL,OPTIONAL, INTENT(IN   ) :: hfx_force_tend,lh_force_tend,tsk_force_tend
 
 
-   REAL, INTENT(IN ) :: spec_hfx !Constant surface heat flux (W/m^2) for use with sf_sfclay_physics=1 
+   LOGICAL, INTENT(IN ) :: spec_ideal ! Flag to activate idealized spec_hfx and spec_z0 ! DME-MMC
+   REAL,    INTENT(IN ) :: spec_hfx   ! Constant surface heat flux (W/m^2) for use with sf_sfclay_physics=1 and spec_ideal_sfclay=.true. !JDM-MMC
+   REAL,    INTENT(IN ) :: spec_z0    ! Constant roughness length (m) for use with sf_sfclay_physics=1 and spec_ideal_sfclay=.true. ! DME-MMC
    
 !  LOCAL  VAR
 
@@ -1979,6 +1983,9 @@ CONTAINS
                  ims,ime, jms,jme, kms,kme,                          &
                  i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
                  spec_hfx,                                           &   !JDM-MMC            
+                 curr_secs,                                          & ! DME-MMC
+                 spec_z0,                                            & ! DME-MMC
+                 spec_ideal,                                         & ! DME-MMC
                  ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,                &
                  sf_surface_physics                                 )
                                                                      
@@ -1995,6 +2002,9 @@ CONTAINS
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte, &
                spec_hfx,                                              &   !JDM-MMC            
+               curr_secs,                                          & ! DME-MMC
+               spec_z0,                                            & ! DME-MMC
+               spec_ideal,                                         & ! DME-MMC
                ustm,ck,cka,cd,cda,isftcflx,iz0tlnd, scm_force_flux    )
                                                                       
 #if ( EM_CORE==1)
@@ -5565,6 +5575,9 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
                      spec_hfx,                                     &    !JDM-MMC
+                     curr_secs,                                    & ! DME-MMC
+                     spec_z0,                                      & ! DME-MMC
+                     spec_ideal,                                   & ! DME-MMC
                      ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,          &
                      sf_surface_physics                            )
      
@@ -5672,6 +5685,10 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                                                 ZNT_SEA
 
      REAL,     INTENT(IN)               ::      spec_hfx          !JDM-MMC
+     REAL,     OPTIONAL, INTENT(IN)     ::      curr_secs         ! DME-MMC   
+     REAL,     INTENT(IN)               ::      spec_z0           ! DME-MMC
+     LOGICAL,  INTENT(IN)               ::      spec_ideal        ! DME-MMC
+
      
 !--------------------------------------------------------------------
 !    Local
@@ -5819,6 +5836,9 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    &
                  spec_hfx,                                     &   !JDM-MMC
+                 curr_secs,                                    & ! DME-MMC
+                 spec_z0,                                      & ! DME-MMC
+                 spec_ideal,                                   & ! DME-MMC
                  ustm,ck,cka,cd,cda,isftcflx,iz0tlnd          )
      
 !
@@ -5911,6 +5931,9 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    & ! 0
                  spec_hfx,                                     &            !JDM-MMC
+                 curr_secs,                                    & ! DME-MMC
+                 spec_z0,                                      & ! DME-MMC
+                 spec_ideal,                                   & ! DME-MMC
                  ustm_sea,ck_sea,cka_sea,cd_sea,cda_sea,isftcflx,iz0tlnd )
     
 !

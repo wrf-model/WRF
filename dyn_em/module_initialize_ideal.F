@@ -600,7 +600,9 @@ CONTAINS
    END DO
 
 !JDM-MMC Compute Coriolis terms from specified latitude.
-IF ( config_flags%spec_lat .NE. -999.9 ) THEN
+!IF ( config_flags%spec_lat .NE. -999.9 ) THEN
+! DME-MMC use the flag for ideal settings
+IF ( config_flags%spec_ideal ) THEN
    
     DO j = jts, jte
       DO i = its, ite
@@ -1374,14 +1376,15 @@ ENDIF
 ! For 2D test, call randx outside I-loop
 ! For 3D runs, call randx inside both I-J loops
 
-  DO J = jts, min(jde-1,jte)
+! DME-MMC removes initial perturbations and hydrostatic rebalancing
+!  DO J = jts, min(jde-1,jte)
 !   yrad = config_flags%dy*float(j-nyc)/10000.
-    yrad = 0.
-    DO I = its, min(ide-1,ite)
+!    yrad = 0.
+!    DO I = its, min(ide-1,ite)
 !     xrad = config_flags%dx*float(i-nxc)/10000.
-      xrad = 0.
-      call random_number (randx)
-      randx = randx - 0.5
+!      xrad = 0.
+!      call random_number (randx)
+!      randx = randx - 0.5
 !     DO K = 1, kte-1
 !JDM-MMC Comment removes initialization perturbations      DO K = 1, 4
 
@@ -1393,34 +1396,35 @@ ENDIF
 !       zrad = 0.5*(grid%ph_1(i,k,j)+grid%ph_1(i,k+1,j)  &
 !                  +grid%phb(i,k,j)+grid%phb(i,k+1,j))/g
 !       zrad = (zrad-1500.)/1500.
-        zrad = 0.
-        RAD=SQRT(xrad*xrad+yrad*yrad+zrad*zrad)
-        IF(RAD <= 1.) THEN
+!        zrad = 0.
+!        RAD=SQRT(xrad*xrad+yrad*yrad+zrad*zrad)
+!        IF(RAD <= 1.) THEN
 !          grid%t_1(i,k,j)=grid%t_1(i,k,j)+delt*COS(.5*PI*RAD)**2
-           grid%t_1(i,k,j)=grid%t_1(i,k,j)+ 0.1 *randx
-           grid%t_2(i,k,j)=grid%t_1(i,k,j)
-           qvf = 1. + rvovrd*moist(i,k,j,P_QV)
-           grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
-                        (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
-           grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
-        ENDIF
+!           grid%t_1(i,k,j)=grid%t_1(i,k,j)+ 0.1 *randx
+!           grid%t_2(i,k,j)=grid%t_1(i,k,j)
+!           qvf = 1. + rvovrd*moist(i,k,j,P_QV)
+!           grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
+!                        (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
+!           grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
+!        ENDIF
 !JDM-MMC      ENDDO
 
 !  rebalance hydrostatically
 
 
-      DO  kk  = 2,kte
-        k = kk - 1
-        grid%ph_1(i,kk,j) = grid%ph_1(i,kk-1,j) - (grid%dnw(kk-1))*(       &
-                     ((grid%c1h(k)*grid%mub(i,j)+grid%c2h(k))+(grid%c1h(k)*grid%mu_1(i,j)))*grid%al(i,kk-1,j)+ &
-                      (grid%c1h(k)*grid%mu_1(i,j))*grid%alb(i,kk-1,j)  )
-
-        grid%ph_2(i,kk,j) = grid%ph_1(i,kk,j)
-        grid%ph0(i,kk,j) = grid%ph_1(i,kk,j) + grid%phb(i,kk,j)
-      ENDDO
-
-    ENDDO
-  ENDDO
+!      DO  kk  = 2,kte
+!        k = kk - 1
+!        grid%ph_1(i,kk,j) = grid%ph_1(i,kk-1,j) - (grid%dnw(kk-1))*(       &
+!                     ((grid%c1h(k)*grid%mub(i,j)+grid%c2h(k))+(grid%c1h(k)*grid%mu_1(i,j)))*grid%al(i,kk-1,j)+ &
+!                      (grid%c1h(k)*grid%mu_1(i,j))*grid%alb(i,kk-1,j)  )
+!
+!        grid%ph_2(i,kk,j) = grid%ph_1(i,kk,j)
+!        grid%ph0(i,kk,j) = grid%ph_1(i,kk,j) + grid%phb(i,kk,j)
+!      ENDDO
+!
+!    ENDDO
+!  ENDDO
+! DME-MMC
 
   END SELECT ideal_pert
 

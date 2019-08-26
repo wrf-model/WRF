@@ -150,7 +150,7 @@ pipeline {
         
         //Github status for current build
         sh """
-           curl "https://api.GitHub.com/repos/davegill/WRF/statuses/$sha?access_token=70ade090659d2f6d64d0a76f59f16bd14c99a4b3" \
+           curl "https://api.GitHub.com/repos/davegill/WRF/statuses/$sha?access_token=$oath_token" \
            -H "Content-Type: application/json" \
            -X POST \
            -d '{"state": "pending","context": "WRF-BUILD/jenkins", "description": "WRF test build running", "target_url": "http://scala-jenkins-1810560854.us-east-1.elb.amazonaws.com/job/wrf_test_case/$BUILD_NUMBER/console"}'
@@ -288,7 +288,7 @@ pipeline {
     success {
         echo "Job is successfull. Now sending e-mail notification and cleaning workspace"
         sh """
-        curl "https://api.GitHub.com/repos/davegill/WRF/statuses/$sha?access_token=70ade090659d2f6d64d0a76f59f16bd14c99a4b3" \
+        curl "https://api.GitHub.com/repos/davegill/WRF/statuses/$sha?access_token=$oath_token" \
         -H "Content-Type: application/json" \
         -X POST \
         -d '{"state": "success","context": "WRF-BUILD/jenkins", "description": "WRF test build is successfull", "target_url": "http://scala-jenkins-1810560854.us-east-1.elb.amazonaws.com/job/wrf_test_case/$BUILD_NUMBER/console"}'
@@ -308,7 +308,7 @@ pipeline {
          echo "Job failed. Now sending e-mail notification and cleaning workspace"
          
         sh """
-        curl "https://api.GitHub.com/repos/davegill/WRF/statuses/$sha?access_token=70ade090659d2f6d64d0a76f59f16bd14c99a4b3" \
+        curl "https://api.GitHub.com/repos/davegill/WRF/statuses/$sha?access_token=$oath_token" \
         -H "Content-Type: application/json" \
         -X POST \
         -d '{"state": "failure","context": "WRF-BUILD/jenkins", "description": "WRF test build failed", "target_url": "http://scala-jenkins-1810560854.us-east-1.elb.amazonaws.com/job/wrf_test_case/$BUILD_NUMBER/console"}'

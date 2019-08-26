@@ -63,7 +63,7 @@ def terraformStage(stageName){
                     sudo -S sed -i "12i cd /home/ubuntu/ && bash my_script.sh output_001 $BUILD_NUMBER" $WORKSPACE/$BUILD_NUMBER/WRF/.ci/terraform/wrf_testcase_1.sh
                     sudo -S sed  -i "12i cd /home/ubuntu/ && bash my_script.sh output_002 $BUILD_NUMBER" $WORKSPACE/$BUILD_NUMBER/WRF/.ci/terraform/wrf_testcase_2.sh
                     sudo -S sed -i "12i cd /home/ubuntu/ && bash my_script.sh output_003 $BUILD_NUMBER" $WORKSPACE/$BUILD_NUMBER/WRF/.ci/terraform/wrf_testcase_3.sh
-                    #cd $WORKSPACE/$BUILD_NUMBER/WRF/.ci/terraform && sudo terraform init && sudo terraform plan && sudo terraform apply -auto-approve
+                    cd $WORKSPACE/$BUILD_NUMBER/WRF/.ci/terraform && sudo terraform init && sudo terraform plan && sudo terraform apply -auto-approve
                 """
               
           }
@@ -150,12 +150,11 @@ pipeline {
         
         //Github status for current build
         sh """
-           curl "https://api.GitHub.com/repos/hemuku90/Golang/statuses/$sha?access_token=629ecd0019a146cce2ccfbfafa3a7b4b803055f3" \
+           curl "https://api.GitHub.com/repos/davegill/WRF/statuses/$sha?access_token=70ade090659d2f6d64d0a76f59f16bd14c99a4b3" \
            -H "Content-Type: application/json" \
            -X POST \
            -d '{"state": "pending","context": "WRF-BUILD/jenkins", "description": "WRF test build running", "target_url": "http://scala-jenkins-1810560854.us-east-1.elb.amazonaws.com/job/wrf_test_case/$BUILD_NUMBER/console"}'
         """
-            
             
             def sh1="""
             cd $WORKSPACE/$BUILD_NUMBER && cat sample.json | jq .pull_request.id

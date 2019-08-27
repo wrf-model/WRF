@@ -1983,7 +1983,6 @@ CONTAINS
                  ims,ime, jms,jme, kms,kme,                          &
                  i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,    &
                  spec_hfx,                                           &   !JDM-MMC            
-                 curr_secs,                                          & ! DME-MMC
                  spec_z0,                                            & ! DME-MMC
                  spec_ideal,                                         & ! DME-MMC
                  ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,                &
@@ -2002,9 +2001,9 @@ CONTAINS
                ims,ime, jms,jme, kms,kme,                          &
                i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte, &
                spec_hfx,                                              &   !JDM-MMC            
-               curr_secs,                                          & ! DME-MMC
                spec_z0,                                            & ! DME-MMC
                spec_ideal,                                         & ! DME-MMC
+               itimestep,                                          & ! DME-MMC
                ustm,ck,cka,cd,cda,isftcflx,iz0tlnd, scm_force_flux    )
                                                                       
 #if ( EM_CORE==1)
@@ -5575,7 +5574,6 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
                      spec_hfx,                                     &    !JDM-MMC
-                     curr_secs,                                    & ! DME-MMC
                      spec_z0,                                      & ! DME-MMC
                      spec_ideal,                                   & ! DME-MMC
                      ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,          &
@@ -5685,7 +5683,6 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                                                 ZNT_SEA
 
      REAL,     INTENT(IN)               ::      spec_hfx          !JDM-MMC
-     REAL,     OPTIONAL, INTENT(IN)     ::      curr_secs         ! DME-MMC   
      REAL,     INTENT(IN)               ::      spec_z0           ! DME-MMC
      LOGICAL,  INTENT(IN)               ::      spec_ideal        ! DME-MMC
 
@@ -5836,9 +5833,9 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    &
                  spec_hfx,                                     &   !JDM-MMC
-                 curr_secs,                                    & ! DME-MMC
                  spec_z0,                                      & ! DME-MMC
                  spec_ideal,                                   & ! DME-MMC
+                 itimestep,                                    & ! DME-MMC
                  ustm,ck,cka,cd,cda,isftcflx,iz0tlnd          )
      
 !
@@ -5931,9 +5928,9 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                  ims,ime, jms,jme, kms,kme,                    &
                  its,ite, jts,jte, kts,kte,                    & ! 0
                  spec_hfx,                                     &            !JDM-MMC
-                 curr_secs,                                    & ! DME-MMC
                  spec_z0,                                      & ! DME-MMC
                  spec_ideal,                                   & ! DME-MMC
+                 itimestep,                                    & ! DME-MMC
                  ustm_sea,ck_sea,cka_sea,cd_sea,cda_sea,isftcflx,iz0tlnd )
     
 !

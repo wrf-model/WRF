@@ -25,9 +25,9 @@ CONTAINS
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
                      spec_hfx,                                     & !JDM-MMC
-                     curr_secs,                                    & ! DME-MMC
                      spec_z0,                                      & ! DME-MMC
                      spec_ideal,                                   & ! DME-MMC
+                     itimestep,                                    & ! DME-MMC
                      ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux )
      
 !-------------------------------------------------------------------
@@ -192,11 +192,11 @@ CONTAINS
 
       REAL,     INTENT(IN   )            ::   spec_hfx        !JDM-MMC
 
-      REAL,     OPTIONAL, INTENT(IN   )  ::   curr_secs       ! DME-MMC
-
       REAL,     INTENT(IN   )            ::   spec_z0         ! DME-MMC
 
       LOGICAL,  INTENT(IN   )            ::   spec_ideal      ! DME-MMC
+
+      INTEGER,  INTENT(IN   )            ::   itimestep       ! DME-MMC
       
       REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
                 INTENT(OUT)     ::                  ck,cka,cd,cda
@@ -223,7 +223,7 @@ CONTAINS
 
 ! DME-MMC modifications to set z0 and properly calculate TSK from an imposed heat flux (spec_hfx, W m-2)
       IF ( spec_ideal ) THEN
-        IF (curr_secs .eq. 0.) THEN ! set z0
+        IF (itimestep .eq. 1) THEN ! set z0
           DO J=jts,jte
             DO I=its,ite
               znt(i,j) = spec_z0

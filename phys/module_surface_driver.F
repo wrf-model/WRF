@@ -20,6 +20,8 @@ CONTAINS
      &          ,spec_hfx                                             & !JDM-MMC
      &          ,spec_z0                                              & ! DME-MMC
      &          ,spec_ideal                                           & ! DME-MMC
+     &          ,ustt                                                 & ! DME-MMC
+     &          ,molt                                                 & ! DME-MMC
 #if (NMM_CORE==1)
      &          ,psim,p_phy,q10,q2,qfx,taux,tauy,qsfc,qshltr,qz0      &
      &          ,zkmax,ribn,charn,msang,scurx,scury,icoef_sf,iwavecpl,lcurr_sf & !for gfdl-sf drag
@@ -1170,6 +1172,7 @@ CONTAINS
    LOGICAL, INTENT(IN ) :: spec_ideal ! Flag to activate idealized spec_hfx and spec_z0 ! DME-MMC
    REAL,    INTENT(IN ) :: spec_hfx   ! Constant surface heat flux (W/m^2) for use with sf_sfclay_physics=1 and spec_ideal_sfclay=.true. !JDM-MMC
    REAL,    INTENT(IN ) :: spec_z0    ! Constant roughness length (m) for use with sf_sfclay_physics=1 and spec_ideal_sfclay=.true. ! DME-MMC
+   REAL,    DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   USTT, MOLT ! DME-MMC
    
 !  LOCAL  VAR
 
@@ -1985,6 +1988,8 @@ CONTAINS
                  spec_hfx,                                           &   !JDM-MMC            
                  spec_z0,                                            & ! DME-MMC
                  spec_ideal,                                         & ! DME-MMC
+                 ustt,                                               & ! DME-MMC
+                 molt,                                               & ! DME-MMC
                  ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,                &
                  sf_surface_physics                                 )
                                                                      
@@ -2004,6 +2009,8 @@ CONTAINS
                spec_z0,                                            & ! DME-MMC
                spec_ideal,                                         & ! DME-MMC
                itimestep,                                          & ! DME-MMC
+               ustt,                                               & ! DME-MMC
+               molt,                                               & ! DME-MMC
                ustm,ck,cka,cd,cda,isftcflx,iz0tlnd, scm_force_flux    )
                                                                       
 #if ( EM_CORE==1)
@@ -5576,6 +5583,8 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                      spec_hfx,                                     &    !JDM-MMC
                      spec_z0,                                      & ! DME-MMC
                      spec_ideal,                                   & ! DME-MMC
+                     ustt,                                         & ! DME-MMC
+                     molt,                                         & ! DME-MMC
                      ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,          &
                      sf_surface_physics                            )
      
@@ -5685,6 +5694,7 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
      REAL,     INTENT(IN)               ::      spec_hfx          !JDM-MMC
      REAL,     INTENT(IN)               ::      spec_z0           ! DME-MMC
      LOGICAL,  INTENT(IN)               ::      spec_ideal        ! DME-MMC
+     REAL,    DIMENSION( ims:ime, jms:jme ) , INTENT(INOUT)::   ustt, molt ! DME-MMC
 
      
 !--------------------------------------------------------------------
@@ -5836,6 +5846,8 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                  spec_z0,                                      & ! DME-MMC
                  spec_ideal,                                   & ! DME-MMC
                  itimestep,                                    & ! DME-MMC
+                 ustt,                                         & ! DME-MMC
+                 molt,                                         & ! DME-MMC
                  ustm,ck,cka,cd,cda,isftcflx,iz0tlnd          )
      
 !
@@ -5931,6 +5943,8 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
                  spec_z0,                                      & ! DME-MMC
                  spec_ideal,                                   & ! DME-MMC
                  itimestep,                                    & ! DME-MMC
+                 ustt,                                         & ! DME-MMC
+                 molt,                                         & ! DME-MMC
                  ustm_sea,ck_sea,cka_sea,cd_sea,cda_sea,isftcflx,iz0tlnd )
     
 !

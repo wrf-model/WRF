@@ -28,6 +28,8 @@ CONTAINS
                      spec_z0,                                      & ! DME-MMC
                      spec_ideal,                                   & ! DME-MMC
                      itimestep,                                    & ! DME-MMC
+                     ustt,                                         & ! DME-MMC
+                     molt,                                         & ! DME-MMC
                      ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux )
      
 !-------------------------------------------------------------------
@@ -197,6 +199,8 @@ CONTAINS
       LOGICAL,  INTENT(IN   )            ::   spec_ideal      ! DME-MMC
 
       INTEGER,  INTENT(IN   )            ::   itimestep       ! DME-MMC
+
+      REAL,     DIMENSION( ims:ime, jms:jme ), INTENT(INOUT)   ::   ustt,molt ! DME-MMC
       
       REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
                 INTENT(OUT)     ::                  ck,cka,cd,cda
@@ -223,22 +227,27 @@ CONTAINS
 
 ! DME-MMC modifications to set z0 and properly calculate TSK from an imposed heat flux (spec_hfx, W m-2)
       IF ( spec_ideal ) THEN
-        IF (itimestep .eq. 1) THEN ! set z0
-          DO J=jts,jte
-            DO I=its,ite
-              znt(i,j) = spec_z0
-            ENDDO
+        DO J=jts,jte
+          DO I=its,ite
+            ust(i,j) = ustt(i,j)
+            mol(i,j) = molt(i,j)
+            znt(i,j) = spec_z0
           ENDDO
-        ELSE ! set tsk according to namelist specified feat flux
+        ENDDO
+        IF (itimestep .ne. 1) THEN ! set z0
           DO J=jts,jte
             DO I=its,ite
-              IF (spec_hfx .eq. 0. .OR. flhc(i,j) .eq. 0. ) THEN
+              IF (spec_hfx .eq. 0.) THEN
                 dth_i = 0.
-              ELSE
+                thx_i = t3d(i,1,j)*(P1000mb/p3d(i,1,j))**rovcp
+                tsk(i,j) = (dth_i + thx_i)/(P1000mb/(psfc(i,j)))**rovcp
+              ELSEIF (flhc(i,j) .ne. 0. ) THEN
                 dth_i = spec_hfx/flhc(i,j)
+                thx_i = t3d(i,1,j)*(P1000mb/p3d(i,1,j))**rovcp
+                tsk(i,j) = (dth_i + thx_i)/(P1000mb/(psfc(i,j)))**rovcp
+              ELSE
+                ! do nothing, flhc(i,j) = 0.0...
               ENDIF
-              thx_i = t3d(i,1,j)*(P1000mb/p3d(i,1,j))**rovcp
-              tsk(i,j) = (dth_i + thx_i)/(P1000mb/(psfc(i,j)))**rovcp
             ENDDO
           ENDDO
         ENDIF
@@ -284,6 +293,15 @@ CONTAINS
 #endif
                                                                     )
       ENDDO
+
+      IF ( spec_ideal ) THEN
+        DO J=jts,jte ! DME-MMC
+          DO I=its,ite
+            ustt(i,j) = ust(i,j)
+            molt(i,j) = mol(i,j)
+          ENDDO
+        ENDDO
+      ENDIF
 
 
    END SUBROUTINE SFCLAYREV

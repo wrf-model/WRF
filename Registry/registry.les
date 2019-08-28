@@ -23,6 +23,8 @@ rconfig logical spec_ideal          namelist,dynamics   1           .false.  -  
 rconfig real    spec_hfx            namelist,dynamics   1               0.0  -  "Constant surface heat flux (W/m^2) for use with sf_sfclay_physics=1 in ideal conditions (spec_ideal=.true.)" # DME-MMC
 rconfig real    spec_z0         namelist,dynamics       1               0.1  -  "Homogeneous roughness length (m) for use with sf_sfclay_physics=1 in ideal conditions (spec_ideal=.true.)" # DME-MMC
 rconfig real    spec_lat        namelist,dynamics       1              33.6  -  "Latitude to compute coriolis terms for idealized simulations (spec_ideal=.true.)"
+state   real    ustt              ij      misc          1                -  r  "ustt"  "temporary array for friction velocity" ! DME-MMC
+state   real    molt              ij      misc          1                -  r  "molt"  "temporary array for Obukhov length" ! DME-MMC
 
 rconfig	integer sfs_opt 	namelist,dynamics	max_domains     0       -	"1 or 2 to use NBA models"
 rconfig	integer m_opt    	namelist,dynamics       max_domains     0       -       "1 to output sgs stresses if not using NBA"

@@ -51,7 +51,9 @@ CONTAINS
     USE module_driver_constants
     USE module_diffusion_em, ONLY : phy_bc, cal_deform_and_div, compute_diff_metrics, &
                                     vertical_diffusion_2, horizontal_diffusion_2, calculate_km_kh, &
-                                    tke_rhs, cal_helicity
+                                    tke_rhs, cal_helicity, &
+                                    nonlocal_flux,meso_length_scale,free_atmos_length, &
+                                    vertical_diffusion_implicit !XZ 
     USE module_em, ONLY : calculate_phy_tend
     USE module_fddaobs_driver, ONLY : fddaobs_driver
     USE module_bc, ONLY : set_physical_bc3d, set_physical_bc2d
@@ -506,6 +508,43 @@ BENCH_START(calc_tke_tim)
          !$OMP PRIVATE ( ij )
          DO ij = 1 , grid%num_tiles
 
+!XZ
+         IF( config_flags%diff_opt .eq. 2 .and. config_flags%km_opt .eq. 5 ) THEN
+           CALL nonlocal_flux(config_flags,grid%nlflux,grid%gamu,grid%gamv,      &
+                              grid%pblh,grid%kpbl,grid%dx,grid%dy,grid%dt,       &
+                              grid%ust,grid%hfx,grid%qfx,grid%br,ep_1,ep_2,      & 
+                              karman,grid%u_phy,grid%v_phy,th_phy,grid%rho,      & 
+                              moist,num_moist,                                   &
+                              grid%msftx,grid%msfty,grid%rdzw,                   &
+                              grid%u10,grid%v10,grid%wspd,                       &
+                              ids, ide, jds, jde, kds, kde,                      &
+                              ims, ime, jms, jme, kms, kme,                      &
+                              grid%i_start(ij), grid%i_end(ij),                  &
+                              grid%j_start(ij), grid%j_end(ij),                  &
+                              k_start, k_end  )
+ 
+           CALL free_atmos_length(config_flags,grid%dx,grid%dy,grid%rdzw,        &
+                                  grid%rdz,grid%tke_2,th_phy,grid%elmin,         &
+                                  grid%hfx,grid%qfx,moist,num_moist,             &
+                                  ids, ide, jds, jde, kds, kde,                  &
+                                  ims, ime, jms, jme, kms, kme,                  &
+                                  grid%i_start(ij),grid%i_end(ij),               &
+                                  grid%j_start(ij), grid%j_end(ij),              &
+                                  k_start, k_end  )
+  
+           CALL meso_length_scale(config_flags,grid%dx,grid%dy,grid%rdzw,        &
+                                  grid%rdz,grid%tke_2,p8w,t8w,th_phy,            &
+                                  grid%dlk,grid%pblh,grid%elmin,                 &
+                                  grid%rmol,grid%rho,grid%hfx,grid%qfx,          &
+                                  moist,num_moist,                               &
+                                  ids, ide, jds, jde, kds, kde,                  &
+                                  ims, ime, jms, jme, kms, kme,                  &
+                                  grid%i_start(ij), grid%i_end(ij),              &
+                                  grid%j_start(ij), grid%j_end(ij),              &
+                                  k_start, k_end  ) 
+         ENDIF
+!!
+
            CALL wrf_debug ( 200 , ' call calculate_km_kh' )
            CALL calculate_km_kh( config_flags,grid%dt,grid%dampcoef,grid%zdamp,         &
                                  config_flags%damp_opt,                                 &
@@ -520,7 +559,9 @@ BENCH_START(calc_tke_tim)
                                  grid%cf1, grid%cf2, grid%cf3, grid%warm_rain,          &
                                  grid%mix_upper_bound,                                  &
                                  grid%msftx, grid%msfty,                                &
-                                 grid%zx, grid%zy,                                      & 
+                                 grid%zx, grid%zy,                                      &
+                                 grid%pblh, grid%dlk,                                   & ! XZ
+                                 grid%xkmv_meso, grid%xkmh_t,                           & ! XZ 
                                  ids,ide, jds,jde, kds,kde,                             &
                                  ims,ime, jms,jme, kms,kme,                             &
                                  grid%i_start(ij), grid%i_end(ij),                      &
@@ -558,6 +599,7 @@ BENCH_START(phy_bc_tim)
                       grid%rublten, grid%rvblten,                  &
                       grid%rucuten, grid%rvcuten,                  &
                       grid%rushten, grid%rvshten,                  &
+                      grid%gamu, grid%gamv, grid%xkmv_meso,        &  ! XZ
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
                       ips, ipe, jps, jpe, kps, kpe,                &
@@ -785,7 +827,8 @@ to see if perturbation of moist potential temperature is OK.
        END IF
 #endif
 
-       IF( config_flags%diff_opt .eq. 2 .and. config_flags%km_opt .eq. 2 ) THEN
+       IF( config_flags%diff_opt .eq. 2 .and. ( config_flags%km_opt .eq. 2 .or. &
+           config_flags%km_opt .eq. 5 ) ) THEN  ! XZ
 
 BENCH_START(tke_rhs_tim)
          !$OMP PARALLEL DO   &
@@ -807,6 +850,10 @@ BENCH_START(tke_rhs_tim)
                          grid%dnw,config_flags%mix_isotropic,         &
                          grid%hfx, grid%qfx, moist(ims,kms,jms,P_QV), &
                          grid%ustm, grid%rho,                         &
+                         grid%tke_production_tend,grid%tke_buoy_tend, & !XZ
+                         grid%tke_shear_tend, grid%l_scale,           & !XZ
+                         grid%nlflux, grid%pblh, grid%dlk,            & !XZ 
+                         grid%xkmh_t,                                 & !XZ
                          ids, ide, jds, jde, kds, kde,                &
                          ims, ime, jms, jme, kms, kme,                &
                          grid%i_start(ij), grid%i_end(ij),            &
@@ -905,6 +952,38 @@ BENCH_END(tke_rhs_tim)
 
          IF (config_flags%bl_pbl_physics .eq. 0) THEN
 
+!XZ    implicit solver for vertical tendency
+         IF( config_flags%km_opt .eq. 5 ) THEN
+              !$OMP PARALLEL DO   &
+              !$OMP PRIVATE ( ij )
+              DO ij = 1 , grid%num_tiles
+              CALL vertical_diffusion_implicit(ru_tendf, rv_tendf, rw_tendf,                              &
+                                               t_tendf, tke_tend,                                         &
+                                               moist_tend, num_moist,                                     &
+                                               chem_tend, num_chem,                                       &
+                                               scalar_tend, num_scalar,                                   &
+                                               tracer_tend, num_tracer,                                   &
+                                               grid%u_2, grid%v_2,grid%w_2,grid%dt,                       &
+                                               grid%t_2,grid%u_base,grid%v_base,grid%t_base,grid%qv_base, &
+                                               grid%mut,grid%tke_2,th_phy,config_flags,                   &
+                                               moist, chem, scalar, tracer,                               &
+                                               grid%xkmv, grid%xkhv, grid%xkmh, config_flags%km_opt,      &
+                                               grid%fnm, grid%fnp, grid%dn, grid%dnw, grid%rdz, grid%rdzw,&
+                                               grid%hfx, grid%qfx, grid%ustm, grid%rho,                   &
+                                               grid%nlflux,grid%gamu,grid%gamv,grid%xkmv_meso,            &
+                                               grid%u_z_tend,grid%v_z_tend,grid%w_z_tend,grid%th_z_tend,  &
+                                               grid%tke_diffusion_z_tend,                                 &
+                                               grid%c1h, grid%c2h, grid%c1f, grid%c2f,                    &
+                                               ids, ide, jds, jde, kds, kde,                              &
+                                               ims, ime, jms, jme, kms, kme,                              &
+                                               grid%i_start(ij), grid%i_end(ij),                          &
+                                               grid%j_start(ij), grid%j_end(ij),                          &
+                                               k_start, k_end      )
+              ENDDO
+              !$OMP END PARALLEL DO
+
+         ELSE  ! original explicit 
+
 BENCH_START(vert_diff_tim)
            !$OMP PARALLEL DO   &
            !$OMP PRIVATE ( ij )
@@ -937,6 +1016,7 @@ BENCH_START(vert_diff_tim)
 BENCH_END(vert_diff_tim)
 
          ENDIF
+        ENDIF
 !
 BENCH_START(hor_diff_tim)
          !$OMP PARALLEL DO   &
@@ -962,6 +1042,8 @@ BENCH_START(hor_diff_tim)
                                       grid%rdx, grid%rdy, grid%rdz, grid%rdzw,                   &
                                       grid%fnm, grid%fnp, grid%cf1, grid%cf2, grid%cf3,          &
                                       grid%zx, grid%zy, grid%dn, grid%dnw, grid%rho,             &
+                                      grid%u_h_tend, grid%v_h_tend, grid%w_h_tend,               & !XZ
+                                      grid%th_h_tend, grid%tke_diffusion_h_tend,                 & !XZ
                                       ids, ide, jds, jde, kds, kde,          &
                                       ims, ime, jms, jme, kms, kme,          &
                                       grid%i_start(ij), grid%i_end(ij),      &

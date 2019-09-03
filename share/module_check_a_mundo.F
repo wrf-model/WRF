@@ -315,6 +315,53 @@
          count_fatal_error = count_fatal_error + 1
       END IF
 
+
+!-----------------------------------------------------------------------
+! Check that SMS-3DTKE scheme (km_opt=5) Must work with diff_opt=2
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % km_opt(i) .EQ. 5 .AND. &
+              model_config_rec % diff_opt(i) .NE. 2  ) THEN
+            wrf_err_message = '--- ERROR: SMS-3DTKE scheme can only work with diff_opt=2 '
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- ERROR: Fix km_opt or diff_opt in namelist.input.'
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
+         END IF
+      ENDDO
+
+!-----------------------------------------------------------------------
+! Check that SMS-3DTKE scheme (km_opt=5) Must work with bl_pbl_physics=0
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % km_opt(i) .EQ. 5 .AND. &
+              model_config_rec % bl_pbl_physics(i) .NE. 0  ) THEN
+            wrf_err_message = '--- ERROR: SMS-3DTKE scheme can only work with bl_pbl_physics=0 '
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- ERROR: Fix km_opt or bl_pbl_physics in namelist.input.'
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
+         END IF
+      ENDDO
+
+!-----------------------------------------------------------------------
+! Check that SMS-3DTKE scheme Must work with Revised MM5 surface layer 
+! scheme (sf_sfclay_physics = 1), MYNN surface (sf_sfclay_physics = 5)
+! and old MM5 surface scheme (sf_sfclay_physics = 91)
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % km_opt(i) .EQ. 5 .AND. &
+              (model_config_rec % sf_sfclay_physics(i) .NE. sfclayscheme    .AND. &
+               model_config_rec % sf_sfclay_physics(i) .NE. sfclayrevscheme .AND. &
+               model_config_rec % sf_sfclay_physics(i) .NE. mynnsfcscheme  ) ) THEN
+            wrf_err_message = '--- ERROR: SMS-3DTKE scheme works with sf_sfclay_physics = 1,5,91 '
+            CALL wrf_message ( wrf_err_message )
+            wrf_err_message = '--- ERROR: Fix km_opt or sf_sfclay_physics in namelist.input.'
+            CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+            count_fatal_error = count_fatal_error + 1
+         END IF
+      ENDDO
+
 !-----------------------------------------------------------------------
 ! Assign the dimensions for the urban options to the values defined in 
 ! each of those respective modules.
@@ -706,6 +753,35 @@
       END DO
 
 #if (EM_CORE == 1)
+
+!-----------------------------------------------------------------------
+! Check if the bucket size for rain is > 0. If so, then we need to activate
+! a derived namelist variable: bucketr_opt.
+!-----------------------------------------------------------------------
+
+   IF ( model_config_rec%bucket_mm .GT. 0. ) THEN
+      model_config_rec%bucketr_opt = 1
+   END IF
+
+!-----------------------------------------------------------------------
+! Check if the bucket size for radiation is > 0. If so, then we need to activate
+! a derived namelist variable: bucketf_opt.
+!-----------------------------------------------------------------------
+
+   IF ( model_config_rec%bucket_J .GT. 0. ) THEN
+      model_config_rec%bucketf_opt = 1
+   END IF
+
+!-----------------------------------------------------------------------
+! Check if the precip bucket reset time interval > 0. If so, then we need to 
+! activate a derived namelist variable: prec_acc_opt
+!-----------------------------------------------------------------------
+
+   DO i = 1, model_config_rec % max_dom
+      IF ( model_config_rec%prec_acc_dt(i) .GT. 0. ) THEN
+         model_config_rec%prec_acc_opt = 1
+      END IF
+   END DO
 
 !-----------------------------------------------------------------------
 ! Check if any stochastic perturbation scheme is turned on in any domain,

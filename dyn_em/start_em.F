@@ -1010,7 +1010,8 @@ endif
 
    DO ij = 1, grid%num_tiles
 
-     CALL phy_init (  grid%id , config_flags, grid%DT, grid%RESTART, grid%znw, grid%znu,   &
+     CALL phy_init (  grid%irr_rand_field,config_flags%irr_ph,config_flags%irr_freq, &
+                      grid%id , config_flags, grid%DT, grid%RESTART, grid%znw, grid%znu,   &
                       grid%p_top, grid%tsk, grid%RADT,grid%BLDT,grid%CUDT, MPDT, &
                       grid%rucuten, grid%rvcuten, grid%rthcuten,             &
                       grid%rqvcuten, grid%rqrcuten, grid%rqccuten,           &

@@ -1531,6 +1531,7 @@ SUBROUTINE PEDOTRANSFER_SR2006(nsoil,sand,clay,orgm,parameters)
     character(len=240) :: err_message
     character(len=4)  :: MMINSL
     character(len=*), intent(in) :: MMINLU
+
     MMINSL='STAS'
 
     call read_mp_veg_parameters(trim(MMINLU))

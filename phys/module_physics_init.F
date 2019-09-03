@@ -24,7 +24,8 @@ CONTAINS
 
 
 !=================================================================
-   SUBROUTINE phy_init ( id, config_flags, DT, restart, zfull, zhalf,     &
+   SUBROUTINE phy_init ( irr_rand_field,irr_ph,irr_freq,id,      &        
+                         config_flags, DT, restart, zfull, zhalf,&
                          p_top, TSK,RADT,BLDT,CUDT,MPDT,         &
                          RUCUTEN, RVCUTEN,                       &
                          RTHCUTEN, RQVCUTEN, RQRCUTEN,           &
@@ -832,6 +833,9 @@ CONTAINS
 ! End of Noah-mosaic 
 !-------------------------------------------------  
    
+! IRRIGATION
+  INTEGER,OPTIONAL,INTENT(OUT), DIMENSION( ids:ide,jds:jde):: irr_rand_field 
+  INTEGER :: irr_ph,irr_freq 
 !-----------------------------------------------------------------
 
    aercu_opt=config_flags%aercu_opt !PSH/TWG 06/10/16
@@ -1258,7 +1262,8 @@ CONTAINS
                 its=its, ite=ite, jts=jts, jte=jte, kts=kts, kte=kte                    )
 
    CALL wrf_debug ( 200 , 'module_start: phy_init: Before call to bl_init' )
-   CALL bl_init(STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,        &
+   CALL bl_init(irr_rand_field,irr_ph,irr_freq,                 &
+                STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,        &
                 RQVBLTEN,RQCBLTEN,RQIBLTEN,TSK,TMN,             &
                 config_flags,restart,UST,LOWLYR,TSLB,ZS,DZS,    &
                 num_soil_layers,TKE_PBL,mfshconv,               &
@@ -2251,7 +2256,8 @@ CONTAINS
 
    END SUBROUTINE ra_init
 
-   SUBROUTINE bl_init(STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,  &
+   SUBROUTINE bl_init(irr_rand_field,irr_ph,irr_freq,                 &
+                STEPBL,BLDT,DT,RUBLTEN,RVBLTEN,RTHBLTEN,  &
                 RQVBLTEN,RQCBLTEN,RQIBLTEN,TSK,TMN,             &
                 config_flags,restart,UST,LOWLYR,TSLB,ZS,DZS,    &
                 num_soil_layers,TKE_PBL,mfshconv,               &
@@ -2809,7 +2815,9 @@ CONTAINS
 !-------------------------------------------------
 ! End of Noah-mosaic related variables 
 !-------------------------------------------------  
-
+! IRRIGATION
+  INTEGER,OPTIONAL,INTENT(OUT), DIMENSION( ids:ide,jds:jde):: irr_rand_field  
+  INTEGER :: irr_ph,irr_freq       
 #if ( EM_CORE == 1 )
 !local mynn 
    INTEGER :: mynn_closure_level
@@ -2990,7 +2998,9 @@ CONTAINS
                      allowed_to_read ,                         &
                      ids,ide, jds,jde, kds,kde,                &
                      ims,ime, jms,jme, kms,kme,                &
-                     its,ite, jts,jte, kts,kte                 )
+                     its,ite, jts,jte, kts,kte,                &
+                     irr_rand_field,irr_ph,irr_freq            &
+                     )
 
 
 !URBAN
@@ -3194,7 +3204,9 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      allowed_to_read ,                         &
                      ids,ide, jds,jde, kds,kde,                &
                      ims,ime, jms,jme, kms,kme,                &
-                     its,ite, jts,jte, kts,kte                 )
+                     its,ite, jts,jte, kts,kte,                &
+                     irr_rand_field,irr_ph,irr_freq            &
+                     )
 
 !--------------fds (06/2010)-----------------------------------
      CASE  (SSIBSCHEME)

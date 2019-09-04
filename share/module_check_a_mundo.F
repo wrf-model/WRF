@@ -402,6 +402,17 @@
       ENDDO
 
 !-----------------------------------------------------------------------
+! Check that channel irrigation is run with Noah
+!-----------------------------------------------------------------------
+      DO i = 1, model_config_rec % max_dom
+         IF ( model_config_rec % sf_surface_physics(i) .EQ. LSMSCHEME ) THEN
+              wrf_err_message = '--- ERROR: irrigation Opt 1 works only with Noah-LSM'
+              CALL wrf_message ( wrf_err_message )
+         count_fatal_error = count_fatal_error + 1
+         END IF
+      ENDDO
+
+!-----------------------------------------------------------------------
 ! Check that Deng Shallow Convection Must work with MYJ or MYNN PBL
 !-----------------------------------------------------------------------
       DO i = 1, model_config_rec % max_dom

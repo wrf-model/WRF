@@ -1,7 +1,7 @@
 #!/bin/csh
 
 #	Choose which scripts to manufacture
-
+echo "Starting WRF BUILD"
 set TEST_GEN = ALL
 set TEST_GEN = SOME
 

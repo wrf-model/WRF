@@ -3,7 +3,7 @@ FROM davegill/wrf-coop:fifthtry
 MAINTAINER Dave Gill <gill@ucar.edu>
 
 #RUN echo _HERE1_
-#RUN echo _HERE2_____
+#RUN echo _HERE2___
 #RUN git clone https://github.com/davegill/WRF.git davegill/WRF \
 #  && cd davegill/WRF \
 #  && git fetch origin +refs/pull/4/merge: \

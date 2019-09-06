@@ -9,14 +9,14 @@ def downloadOutput(stageName){
              dir(dirpath){
                 sh """
                 echo $dirpath
-                sudo -S rm -rf $WORKSPACE/wrf_output.zip 
+                sudo -S rm -rf $WORKSPACE/wrf_output.zip
                 """
-                sh """sudo -S rm -rf output_testcase""" 
+                sh """sudo -S rm -rf output_testcase"""
                 sh """sudo -S rm -rf wrf_output.zip"""
-                sh """sudo -S mkdir output_testcase""" 
+                sh """sudo -S mkdir output_testcase"""
                 sh """sudo -S aws s3 cp s3://wrf-testcase/output/$BUILD_NUMBER/ output_testcase/ --region us-east-1 --recursive"""
                  sh """sudo -S zip -r $WORKSPACE/wrf_output.zip output_testcase"""
-             }        
+             }
         }
     }
 }
@@ -27,7 +27,7 @@ def checkinstancerunningStatus(stageName) {
         stage("${stageName}") {
             echo "Running stage : ${stageName}"
             script{
-        
+
             while(Instanceflag()==true){
             def flag=Instanceflag()
             if(flag==true){
@@ -43,7 +43,7 @@ def checkinstancerunningStatus(stageName) {
         }
     }
 }
-    
+
 def terraformStage(stageName){
     return {
         stage("${stageName}"){
@@ -52,8 +52,8 @@ def terraformStage(stageName){
             echo "Appending ${BUILD_NUMBER} in vars.tf"
             echo "These are environment variables for branch and Github repo\n"
              sh """
-                    sudo -S chmod 777 -R $WORKSPACE/$BUILD_NUMBER 
-                    sudo -S mkdir -p $WORKSPACE/$BUILD_NUMBER/WRF 
+                    sudo -S chmod 777 -R $WORKSPACE/$BUILD_NUMBER
+                    sudo -S mkdir -p $WORKSPACE/$BUILD_NUMBER/WRF
                     echo "Cloning repo into:   $WORKSPACE/$BUILD_NUMBER/WRF "
                     sudo -S git clone -b release-v4.1.3 --single-branch https://github.com/hemuku90/WRF.git $WORKSPACE/$BUILD_NUMBER/WRF
                     sudo -S sed -i 's/default = "wrf-test"/default = "wrf-test-${BUILD_NUMBER}"/' $WORKSPACE/$BUILD_NUMBER/WRF/.ci/terraform/vars.tf
@@ -65,7 +65,7 @@ def terraformStage(stageName){
                     sudo -S sed -i "12i cd /home/ubuntu/ && bash my_script.sh output_003 $BUILD_NUMBER" $WORKSPACE/$BUILD_NUMBER/WRF/.ci/terraform/wrf_testcase_3.sh
                     cd $WORKSPACE/$BUILD_NUMBER/WRF/.ci/terraform && sudo terraform init && sudo terraform plan && sudo terraform apply -auto-approve
                 """
-              
+
           }
     }
 }
@@ -101,11 +101,11 @@ def killall_jobs() {
     rm=sh(script: rmi,returnStdout: true)
     echo "${jobname}"
     def job = Jenkins.instance.getItemByFullName(jobname)
-    println("Kill task because commits have been found in .md and .txt files for buildNumber")
+    println("Kill task because commits have been found in .md and .txt files for buildNumber or either action is other than reopened")
     println(job.builds.get(0))
     job.builds.get(0).doStop()
-    
-        
+
+
 }
 
 //Run any shell script with this function
@@ -117,9 +117,10 @@ def mysh(cmd) {
 def filterFiles(cmd){
     def list=[]
     list.add(sh(script: cmd, returnStdout: true).trim())
+    println("List of changed file are:")
     println(list)
     def bool=list.every { it =~ /(?i)\.(?:md|txt)$/ }
-    return bool // 
+    return bool //
 }
 
 pipeline {
@@ -142,56 +143,71 @@ pipeline {
             sudo -S echo $payload > $WORKSPACE/$BUILD_NUMBER/sample.json
             '''
         script {
+            //Baseowner
+            def sh18="""
+            cd $WORKSPACE/$BUILD_NUMBER && cat sample.json | jq '.pull_request.base.user.login'
+            """
+            env.baseowner=mysh(sh18)
+            //pull request number
+            def sh17="""
+            cd $WORKSPACE/$BUILD_NUMBER && cat sample.json | jq .number
+            """
+            env.pullnumber=mysh(sh17)
+            //action variable
+            def sh16="""
+             cd $WORKSPACE/$BUILD_NUMBER && cat sample.json | jq .action
+            """
+            env.action=mysh(sh16)
             //SHA ID
             def sh14="""
             cd $WORKSPACE/$BUILD_NUMBER && cat sample.json | jq .pull_request.head.sha
             """
             env.sha=mysh(sh14)
-        
+
         //Github status for current build
         sh """
-           curl "https://api.GitHub.com/repos/davegill/WRF/statuses/$sha?access_token=$oath_token" \
+           curl "https://api.GitHub.com/repos/davegill/WRF/statuses/$sha?access_token=$token" \
            -H "Content-Type: application/json" \
            -X POST \
            -d '{"state": "pending","context": "WRF-BUILD/jenkins", "description": "WRF test build running", "target_url": "http://scala-jenkins-1810560854.us-east-1.elb.amazonaws.com/job/wrf_test_case/$BUILD_NUMBER/console"}'
         """
-            
+
             def sh1="""
             cd $WORKSPACE/$BUILD_NUMBER && cat sample.json | jq .pull_request.id
             """
             pr_id=mysh(sh1)
             println(pr_id)
-            
+
             def sh2="""
             cd $WORKSPACE/$BUILD_NUMBER && cat sample.json | jq .pull_request.head.repo.name
             """
             repo_name=mysh(sh2)
             println(repo_name)
-            
+
             def sh3="""
             cd $WORKSPACE/$BUILD_NUMBER && cat sample.json | jq .pull_request.head.ref
             """
             fork_branchName=mysh(sh3)
             println(fork_branchName)
-            
+
             def sh4="""
             cd $WORKSPACE/$BUILD_NUMBER && cat sample.json | jq .pull_request.head.user.html_url
             """
             fork_url=mysh(sh4)
             println(fork_url)
-            
+
             def sh5="""
             cd $WORKSPACE/$BUILD_NUMBER && cat sample.json | jq .pull_request.base.ref
             """
             base_branchName=mysh(sh5)
             println(base_branchName)
-            
+
             def sh6="""
             cd $WORKSPACE/$BUILD_NUMBER && cat sample.json | jq .pull_request.base.user.html_url
             """
             base_url=mysh(sh6)
             println(base_url)
-            
+
             def sh7="""
             cd $WORKSPACE/$BUILD_NUMBER && cat sample.json | jq .pull_request.head.repo.clone_url
             """
@@ -206,28 +222,30 @@ pipeline {
             cd $WORKSPACE/$BUILD_NUMBER && cat sample.json | jq '.pull_request.user.login'
             """
             env.githubuserName=mysh(sh11)  // Github UserName
-            
+
             //Email ID of user submitting the pull request
             def sh12= """
-            curl https://api.github.com/users/$githubuserName/events/public| jq ".[].payload.commits[0].author"|grep "email"|awk '{print \$2}'|head -1|cut -d',' -f1
+            curl --progress-bar https://api.github.com/users/$githubuserName/events/public| jq ".[].payload.commits[0].author"|grep "email"|awk '{print \$2}'|head -1|cut -d',' -f1
             """
             env.eMailID=mysh(sh12)
-            
+
             def sh13="""
             cd $WORKSPACE/$BUILD_NUMBER && cat sample.json | jq '.pull_request.mergeable'
             """
             env.mergeable=mysh(sh13)
-            
+
             def sh15="""
             cd $WORKSPACE/$BUILD_NUMBER && cat sample.json | jq .pull_request.merged_at
             """
             env.merged_at=mysh(sh15)
             println("merged at")
             println(merged_at)
-            
+
             println("SHA is")
             println(sha)
-            
+            print("Action is")
+            println(action)
+
             println("Commit ID is")
             println(commitID)
             println("Check if branch is mergeable")
@@ -241,20 +259,24 @@ pipeline {
        }
     stage('Cloning Forked Repository'){
         steps('Setting up more environment variables'){
-            
+
             sh """
             git clone $repo_url $WORKSPACE/$BUILD_NUMBER/fork_repo_$BUILD_NUMBER
             """
             script{
             echo "$BUILD_NUMBER"
             echo "fork_repo_$BUILD_NUMBER"
-            
+            echo "Pull number is: $pullnumber"
+
             def sh9="""
-             cd $WORKSPACE/$BUILD_NUMBER/fork_repo_$BUILD_NUMBER && git show --pretty="" --name-only $commitID
+            curl --progress-bar https://patch-diff.githubusercontent.com/raw/davegill/WRF/pull/${pullnumber}.diff| grep "diff"| awk '{print \$3}'
             """
+            println("Executing curl script for file tests")
             bool=filterFiles(sh9)
             println(bool)
-            if(bool==true || merged_at != "null"){
+            println(action)
+            if(bool ==true || action == '"opened"'){
+                println("Entering if condition")
                 killall_jobs()
                 def sh10="""
                 echo "Cleaning : $WORKSPACE/$BUILD_NUMBER
@@ -264,22 +286,22 @@ pipeline {
             }
             else{
                 println("Proceeding to another stage because commits have not been found in .md/.txt files")
-                
+
                 //Running terraform deployment
                 println("Deploying terraform:")
                 terraformStage("Running Terraform").call()
                 println("Terraform deployment finished. Now checking the status of test cases running/finished:")
-                
-                //check test cases running status 
-                //checkinstancerunningStatus("Check Test cases running status").call()
+
+                //check test cases running status
+                checkinstancerunningStatus("Check Test cases running status").call()
                 println("Test Cases finished running. Now downloading the output of test cases from S3 on to Jenkins server")
-                
+
                 //Downloads output from S3 to Jenkins server
-                //downloadOutput("Download output of the current Test build").call()
+                downloadOutput("Download output of the current Test build").call()
                 println("Test cases downloaded successfully. Now sending e-mail to the stakeholders. Now ready to send e-mail notification")
-                
-                     }           
-                }    
+
+                     }
+                }
             }
         }
     }
@@ -288,42 +310,40 @@ pipeline {
     success {
         echo "Job is successfull. Now sending e-mail notification and cleaning workspace"
         sh """
-        curl "https://api.GitHub.com/repos/davegill/WRF/statuses/$sha?access_token=$oath_token" \
+        curl "https://api.GitHub.com/repos/davegill/WRF/statuses/$sha?access_token=$token" \
         -H "Content-Type: application/json" \
         -X POST \
         -d '{"state": "success","context": "WRF-BUILD/jenkins", "description": "WRF test build is successfull", "target_url": "http://scala-jenkins-1810560854.us-east-1.elb.amazonaws.com/job/wrf_test_case/$BUILD_NUMBER/console"}'
         """
-        emailext attachmentsPattern: 'wrf_output.zip', 
-        body: 'WRF build test ran successfully. Please find the attachment of the output for WRF BUILD '+ env.BUILD_NUMBER, 
-        subject: currentBuild.currentResult + " : " + env.JOB_NAME, 
+        emailext attachmentsPattern: 'wrf_output.zip',
+        body: 'WRF build test ran successfully. Please find the attachment of the output for WRF BUILD '+ env.BUILD_NUMBER,
+        subject: currentBuild.currentResult + " : " + env.JOB_NAME,
         to: """hkumar@scalacomputing.com,$eMailID"""
-       
+
         sh '''
-        #echo "Cleaning workspace"
-        #sudo -S rm -rf $WORKSPACE/$BUILD_NUMBER
-        #sudo -S rm -rf $WORKSPACE/wrf_output.zip
+        echo "Cleaning workspace"
+        sudo -S rm -rf $WORKSPACE/$BUILD_NUMBER
+        sudo -S rm -rf $WORKSPACE/wrf_output.zip
         '''
         }
     failure{
          echo "Job failed. Now sending e-mail notification and cleaning workspace"
-         
+
         sh """
-        curl "https://api.GitHub.com/repos/davegill/WRF/statuses/$sha?access_token=$oath_token" \
+        curl "https://api.GitHub.com/repos/davegill/WRF/statuses/$sha?access_token=$token" \
         -H "Content-Type: application/json" \
         -X POST \
         -d '{"state": "failure","context": "WRF-BUILD/jenkins", "description": "WRF test build failed", "target_url": "http://scala-jenkins-1810560854.us-east-1.elb.amazonaws.com/job/wrf_test_case/$BUILD_NUMBER/console"}'
         """
         emailext body: 'WRF Test Build failed in Jenkins: $PROJECT_NAME - #$BUILD_NUMBER',
-        subject: currentBuild.currentResult + " : " + env.JOB_NAME, 
+        subject: currentBuild.currentResult + " : " + env.JOB_NAME,
         to: """hkumar@scalacomputing.com,$eMailID"""
-        
+
         sh '''
-        #echo "Cleaning workspace"
-        #sudo -S rm -rf $WORKSPACE/$BUILD_NUMBER
-        #sudo -S rm -rf $WORKSPACE/wrf_output.zip
+        echo "Cleaning workspace"
+        sudo -S rm -rf $WORKSPACE/$BUILD_NUMBER
+        sudo -S rm -rf $WORKSPACE/wrf_output.zip
         '''
             }
         }
     }
-
-    

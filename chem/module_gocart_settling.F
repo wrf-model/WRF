@@ -353,8 +353,8 @@ SUBROUTINE gocart_settling_driver(dt,config_flags,t_phy,moist,      &
             transfer_to_below_level = (temp_tc*vd_wk1)*((delz(i,j,l2)*airden(i,j,l))/(delz(i,j,l2+1)*airden(i,j,l-1))) ! [ug/kg]
 
              IF (l==1) THEN
-                graset(i,j,k)=graset(i,j,k)+vd_cor(l)*(temp_tc*vd_wk1)/ndt_settl(k) ! [ug/kg][m/s]
-                grasetvel(i,j,k)=vd_cor(l)                                     ! [m/s]
+                graset(i,j,k)=graset(i,j,k)+vd_cor(l)*temp_tc/ndt_settl(k) ! [ug/kg][m/s]
+                grasetvel(i,j,k)=vd_cor(l)                                 ! [m/s]
              ENDIF
           ENDDO                 !l, height
         ENDDO                   !n, time

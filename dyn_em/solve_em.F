@@ -3624,9 +3624,10 @@ BENCH_START(micro_driver_tim)
 #endif
 
 
-     CALL microphysics_driver(DT=dtm             ,DX=grid%dx              ,DY=grid%dy   &
+     CALL microphysics_driver(                                            &
+      &         DT=dtm             ,DX=grid%dx              ,DY=grid%dy   &
       &        ,DZ8W=dz8w          ,F_ICE_PHY=grid%f_ice_phy              &
-      &        ,ITIMESTEP=grid%itimestep             ,LOWLYR=grid%lowlyr  &
+      &        ,ITIMESTEP=grid%itimestep                    ,LOWLYR=grid%lowlyr  &
       &        ,P8W=p8w            ,P=p_phy            ,PI_PHY=pi_phy     &
       &        ,RHO=grid%rho       ,SPEC_ZONE=grid%spec_zone              &
       &        ,SR=grid%sr              ,TH=th_phy                        &

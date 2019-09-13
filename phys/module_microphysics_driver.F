@@ -735,7 +735,6 @@ REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                        &
    INTEGER  :: end_hour,a,b,xt24,irr_day,timing
    REAL :: constants_irrigation,tloc,irr_start,phase
    INTEGER, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: irr_rand_field
-   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ) ::       dummy_qr
 
 !---------------------------------------------------------------------
 !  check for microphysics type.  We need a clean way to

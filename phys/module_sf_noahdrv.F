@@ -104,8 +104,9 @@ CONTAINS
                   b_t_bep,b_q_bep,b_e_bep,dlg_bep,              & !O multi-layer urban
                   dl_u_bep,sf_bep,vl_bep,sfcheadrt,INFXSRT, soldrain      &   !O multi-layer urban         
                  ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas     &   !fasdas
-                 ,RC2,XLAI2                                               &
-                 ,IRR_CHAN)
+                 ,RC2,XLAI2                                         &
+                 ,IRR_CHAN                                          &
+                 )
 
 !----------------------------------------------------------------
     IMPLICIT NONE
@@ -1711,10 +1712,10 @@ CONTAINS
                      SNOALB, FNDSOILW, FNDSNOWH, RDMAXALB,     &
                      num_soil_layers, restart,                 &
                      allowed_to_read ,                         &
+                     irr_rand_field,irr_ph,irr_freq,           &
                      ids,ide, jds,jde, kds,kde,                &
                      ims,ime, jms,jme, kms,kme,                &
-                     its,ite, jts,jte, kts,kte,                &                     
-                     irr_rand_field,irr_ph,irr_freq            &
+                     its,ite, jts,jte, kts,kte                 &                     
                     )
 
    INTEGER,  INTENT(IN   )   ::     ids,ide, jds,jde, kds,kde,  &

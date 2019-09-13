@@ -1503,9 +1503,21 @@ CONTAINS
          RAINBL(i,j) = MAX (RAINBL(i,j), 0.0)
          sf_surf_irr: SELECT CASE(sf_surf_irr_scheme)
             CASE(DRIP)
-               CALL drip_irrigation(julian_in,IRRIGATION(i,j),sf_surf_irr_scheme, irr_daily_amount,irr_start_hour,irr_num_hours,irr_start_julianday,irr_freq,irr_ph,i,j,RAINBL(i,j),IRRIGATION_CHANNEL(i,j),gmt,xtime,dt,irr_rand_field(i,j))
+               CALL drip_irrigation(                                     &
+                &  julian_in,IRRIGATION(i,j),sf_surf_irr_scheme,         &
+                &  irr_daily_amount,irr_start_hour,irr_num_hours,        &
+                &  irr_start_julianday,irr_freq,irr_ph,i,j,RAINBL(i,j),  &
+                &  IRRIGATION_CHANNEL(i,j),gmt,xtime,dt,                 &
+                &  irr_rand_field(i,j)                                   &
+                   )
             CASE(CHANNEL)
-               CALL channel_irrigation(julian_in,IRRIGATION(i,j),sf_surf_irr_scheme, irr_daily_amount,irr_start_hour,irr_num_hours,irr_start_julianday,irr_freq,irr_ph,i,j,RAINBL(i,j),IRRIGATION_CHANNEL(i,j),gmt,xtime,dt,irr_rand_field(i,j))
+               CALL channel_irrigation(                                  &
+                &  julian_in,IRRIGATION(i,j),sf_surf_irr_scheme,         &
+                &  irr_daily_amount,irr_start_hour,irr_num_hours,        &
+                &  irr_start_julianday,irr_freq,irr_ph,i,j,RAINBL(i,j),  &
+                &  IRRIGATION_CHANNEL(i,j),gmt,xtime,dt,                 &
+                &  irr_rand_field(i,j)                                   &
+                   )
            END SELECT sf_surf_irr
       ENDDO
       ENDDO
@@ -1522,10 +1534,23 @@ CONTAINS
          RAINBL(i,j) = MAX (RAINBL(i,j), 0.0)
 
           sf_surf_irr1: SELECT CASE(sf_surf_irr_scheme)
-               CASE(DRIP)
-               CALL drip_irrigation(julian_in,IRRIGATION(i,j),sf_surf_irr_scheme, irr_daily_amount,irr_start_hour,irr_num_hours,irr_start_julianday,irr_freq,irr_ph,i,j,RAINBL(i,j),IRRIGATION_CHANNEL(i,j),gmt,xtime,dt,irr_rand_field(i,j))
+             CASE(DRIP)
+               CALL drip_irrigation(                                     &
+                &  julian_in,IRRIGATION(i,j),sf_surf_irr_scheme,         &
+                &  irr_daily_amount,irr_start_hour,irr_num_hours,        &
+                &  irr_start_julianday,irr_freq,irr_ph,i,j,RAINBL(i,j),  &
+                &  IRRIGATION_CHANNEL(i,j),gmt,xtime,dt,                 &
+                &  irr_rand_field(i,j)                                   &
+                   )
+
             CASE(CHANNEL)
-               CALL channel_irrigation(julian_in,IRRIGATION(i,j),sf_surf_irr_scheme, irr_daily_amount,irr_start_hour,irr_num_hours,irr_start_julianday,irr_freq,irr_ph,i,j,RAINBL(i,j),IRRIGATION_CHANNEL(i,j),gmt,xtime,dt,irr_rand_field(i,j))
+               CALL channel_irrigation(                                  &
+                &  julian_in,IRRIGATION(i,j),sf_surf_irr_scheme,         &
+                &  irr_daily_amount,irr_start_hour,irr_num_hours,        &
+                &  irr_start_julianday,irr_freq,irr_ph,i,j,RAINBL(i,j),  &
+                &  IRRIGATION_CHANNEL(i,j),gmt,xtime,dt,                 &
+                &  irr_rand_field(i,j)                                   &
+                   )
         END SELECT sf_surf_irr1
 
       ENDDO

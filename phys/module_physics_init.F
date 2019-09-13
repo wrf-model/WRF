@@ -2996,10 +2996,10 @@ CONTAINS
                      SNOALB, FNDSOILW, FNDSNOWH, RDMAXALB,     &
                      num_soil_layers, restart,                 &
                      allowed_to_read ,                         &
+                     irr_rand_field,irr_ph,irr_freq,           &
                      ids,ide, jds,jde, kds,kde,                &
                      ims,ime, jms,jme, kms,kme,                &
-                     its,ite, jts,jte, kts,kte,                &
-                     irr_rand_field,irr_ph,irr_freq            &
+                     its,ite, jts,jte, kts,kte                 &
                      )
 
 
@@ -3202,10 +3202,10 @@ CALL lsm_mosaic_init(IVGTYP,config_flags%ISWATER,config_flags%ISURBAN,config_fla
                      SNOALB, FNDSOILW, FNDSNOWH, RDMAXALB,     &
                      num_soil_layers, restart,                 &
                      allowed_to_read ,                         &
+                     irr_rand_field,irr_ph,irr_freq,           &
                      ids,ide, jds,jde, kds,kde,                &
                      ims,ime, jms,jme, kms,kme,                &
-                     its,ite, jts,jte, kts,kte,                &
-                     irr_rand_field,irr_ph,irr_freq            &
+                     its,ite, jts,jte, kts,kte                 &
                      )
 
 !--------------fds (06/2010)-----------------------------------

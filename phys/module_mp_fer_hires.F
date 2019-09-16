@@ -116,6 +116,9 @@
 !      mass contents exceeding 5 g m^-3.  !jun16
 ! (53) Cosmetic changes only that do not affect the calculations. Removed old, unused 
 !      diagnostic arrays. Updated comments.
+! (54) Last-minute change before NAMv4 implementation, in which the saturation mixing
+!      ratio w/r/t water at 0C (QSW0) was modified to prevent a possible instability
+!      from developing if ice ever forms in the stratosphere, T>0C, and p<7 hPa.  !feb08
 !      
 !-----------------------------------------------------------------------------
 !
@@ -326,7 +329,8 @@ INTEGER, PARAMETER :: MAX_ITERATIONS=10
 !      The assumed effective collection efficiency of cloud water rimed onto
 !      ice is =0.5 below:
 !
-        CIACW=DT*0.25*PI_E*0.5*(1.E5)**C1
+        CIACW=0.5*DT*0.25*PI_E  !jul28 (16)
+!        CIACW=DT*0.25*PI_E*0.5*(1.E5)**C1
 !
 !--- CIACR is used in calculating freezing of rain colliding with large ice
 !      The assumed collection efficiency is 1.0
@@ -564,7 +568,8 @@ INTEGER, PARAMETER :: MAX_ITERATIONS=10
 !      The assumed effective collection efficiency of cloud water rimed onto
 !      ice is =0.5 below:
 !
-        CIACW=DT*0.25*PI_E*0.5*(1.E5)**C1
+!        CIACW=DT*0.25*PI_E*0.5*(1.E5)**C1
+         CIACW=0.5*DT*0.25*PI_E  !jul28 (16)
 !
 !--- CIACR is used in calculating freezing of rain colliding with large ice
 !      The assumed collection efficiency is 1.0
@@ -1876,6 +1881,7 @@ ENDIF
           ENDIF
 !
           QSW0=0.
+          DWV0=0.   !feb08 ; see (54)
           IF (TC.GT.0. .AND. TCC.GT.0. .AND. ICE_logical) THEN
    !
    !--- Calculate melting and evaporation/condensation
@@ -1891,14 +1897,16 @@ ENDIF
             ELSE
               DIEVP=1.-EXP(-AIEVP)
             ENDIF
-            QSW0=EPS*ESW0/(PP-ESW0)
-            DWV0=MIN(WV,QSW)-QSW0
             DUM=QW+PCOND
             IF (WV.LT.QSW .AND. DUM.LE.EPSQ) THEN
    !
    !--- Evaporation from melting snow (sink of snow) or shedding
    !    of water condensed onto melting snow (source of rain)
-   !
+   !feb08 change for the next 3 lines of execution; see (54)
+
+              DUM=MIN(ESW0, 0.99*PP)             !- Limit on ESW0 at low pressures
+              QSW0=MAX(EPSQ, EPS*DUM/(PP-DUM) )  !- Constrain QSW0 to be >=EPSQ
+              DWV0=MIN(WV,QSW)-QSW0
               DUM=DWV0*DIEVP
               PIEVP=MAX( MIN(0., DUM), PILOSS)
               PICND=MAX(0., DUM)

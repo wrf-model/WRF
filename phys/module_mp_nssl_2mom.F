@@ -77,7 +77,6 @@
 ! Updates:
 !  - Added code hints to use the "axtra2d" array to communicate rates from the microphysics routine into any 3d arrays that are passed in to the driver.
 !  - Graupel and hail drag coefficients are returned from fall speed subroutine to use in ventilation coeffs. for consistency (minor change)
-!  - Added (compile) option flag to turn on diagnosis of cloud droplet shape parameter based on number concentration
 !  - Added (compile) option flag icracr to turn off rain self-collection
 !  - Added compile options 'depfac' and 'meltfac' to adjust deposition/sublimation and melting (not freezing) rates of graupel/hail by a constant factor (for experimentation). Default value is 1.0
 !  - Put limit on snow volume (2 cm) in aggregation rate

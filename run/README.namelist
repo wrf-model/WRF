@@ -1562,6 +1562,7 @@ The following are for observation nudging:
                                      = .true. , ! use microphysics variables in bdy file
  have_bcs_scalar (max_dom)           = .false., ! model run after ndown only: do not use scalar variables in bdy file
                                      = .true. , ! use scalar variables in bdy file
+ multi_bdy_files                     = .false., ! F=default; T=model will run with split and individually named LBC files
 
  euler_adv                           = .false., ! conservative Eulerian passive advection (NMM only)
  idtadt                              = 1,       ! fundamental timesteps between calls to Euler advection, dynamics (NMM only)

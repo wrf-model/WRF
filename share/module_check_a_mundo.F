@@ -936,6 +936,18 @@
          model_config_rec%num_traj = 0
    END IF
 
+!-----------------------------------------------------------------------
+! Catch old method for using multi-file LBCs. Let folks know the 
+! new way to get the same functionality with run-time options.
+!-----------------------------------------------------------------------
+#if _MULTI_BDY_FILES_
+   wrf_err_message = '--- ERROR: Do not use the compile-time -D_MULTI_BDY_FILES_ option for multi-file LBCs.'
+   CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+   wrf_err_message = '--- ERROR: Use the run-time namelist option multi_bdy_files in nml record bdy_control.'
+   CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
+   count_fatal_error = count_fatal_error + 1
+#endif
+
 #elif( NMM_CORE == 1 )
 !----------------------------------------------------------------------------
 ! If NMM core and trajectories are on then halt.

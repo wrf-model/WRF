@@ -66,6 +66,7 @@
 !END FASDAS
 !
       INTEGER :: count_fatal_error
+      INTEGER :: len1, len2, len_loop
 
       !  These functions are located with in the Urban Physics files, but
       !  not within the confines of the modules. Since we are in the share
@@ -947,6 +948,37 @@
    CALL wrf_debug ( 0, TRIM( wrf_err_message ) )
    count_fatal_error = count_fatal_error + 1
 #endif
+
+!----------------------------------------------------------------------------
+! If using multi_bdy_files option or not, make the lateral bdy file root name
+! correct. For example, we want "wrfbdy_d01" for NON multi_bdy_files and we
+! want "wrfbdy_d01_SOME_DATE" when using the multi_bdy_files option.
+!----------------------------------------------------------------------------
+   IF      ( model_config_rec%multi_bdy_files ) THEN
+      IF ( INDEX ( TRIM(model_config_rec%bdy_inname) , "_<date>" ) .GT. 0 ) THEN
+         ! No op, all OK
+      ELSE
+         wrf_err_message = '--- ERROR: Need bdy_inname = "wrfbdy_d<domain>_<date>"'
+         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+         count_fatal_error = count_fatal_error + 1
+!        len1 = LEN_TRIM(model_config_rec%bdy_inname)
+!        len2 = "_<date>"
+!        model_config_rec%bdy_inname(1:len1+len2) = TRIM(model_config_rec%bdy_inname) // "_<date>"
+      END IF
+   ELSE IF ( .NOT. model_config_rec%multi_bdy_files ) THEN
+      IF ( INDEX ( TRIM(model_config_rec%bdy_inname) , "_<date>" ) .EQ. 0 ) THEN
+         ! No op, all OK
+      ELSE
+         wrf_err_message = '--- ERROR: Remove bdy_inname = "wrfbdy_d<domain>_<date>"'
+         CALL wrf_debug ( 0, TRIM(wrf_err_message) )
+         count_fatal_error = count_fatal_error + 1
+!        len1 = LEN_TRIM(model_config_rec%bdy_inname)
+!        len2 = "_<date>"
+!        DO len_loop len1-len2+1 , len1
+!           model_config_rec%bdy_inname(len_loop:len_loop) = " "
+!        END DO 
+      END IF
+   END IF
 
 #elif( NMM_CORE == 1 )
 !----------------------------------------------------------------------------

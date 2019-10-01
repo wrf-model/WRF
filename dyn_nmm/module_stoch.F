@@ -109,7 +109,7 @@ contains
     USE module_domain, ONLY : domain
 #ifdef DM_PARALLEL
     USE module_dm, ONLY : local_communicator, mytask, ntasks, ntasks_x, ntasks_y, local_communicator_periodic, &
-                          wrf_dm_maxval, wrf_err_message, local_communicator_x, local_communicator_y, data_order_xyz!data_order_xzy
+                          wrf_dm_maxval, wrf_err_message, local_communicator_x, local_communicator_y, data_order_xyz
 #endif
 
       IMPLICIT NONE
@@ -885,8 +885,8 @@ IF (grid%sppt_on==1) then
 SUBROUTINE perturb_mp_tend(isppt_mp,pattern_isppt_mp,                     &  
                            stddev_cutoff_isppt_mp,gridpt_stddev_isppt_mp, & 
                            t_new,    &    
-                           th_phy, h_diabatic, dt,    &    
-                           qv,qv_diabatic,            &    
+                           train_ins, nphs, dt,       &    
+                           qv, qv_ins,                &    
                            config_flags,              &    
                            ids,ide, jds,jde, kds,kde, &
                            ims,ime, jms,jme, kms,kme, &
@@ -904,84 +904,73 @@ SUBROUTINE perturb_mp_tend(isppt_mp,pattern_isppt_mp,                     &
    INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
    INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
    INTEGER,      INTENT(IN   )    :: kte_stoch,kme_stoch
+   INTEGER,      INTENT(IN   )    :: nphs
 
    REAL, DIMENSION( ims:ime , jms:jme, kms:kme ),        &    
-         INTENT(INOUT) ::                        t_new,qv     !xiaohzhao
-   REAL, DIMENSION( ims:ime , kms:kme, jms:jme ),        &    
-         INTENT(INOUT) ::                        th_phy, & 
-                                                 h_diabatic, &
-                                                 qv_diabatic !,qv
-
-   !REAL, DIMENSION( ims:ime , kms:kme_stoch, jms:jme ),        &                                                   
-
-   !      INTENT(INOUT) ::                      pattern_isppt_mp
+         INTENT(INOUT) ::            t_new,qv,train_ins,qv_ins     !xiaohzhao
    REAL, DIMENSION( ims:ime ,  jms:jme, kms:kme_stoch),        &                                                   
          INTENT(INOUT) ::                      pattern_isppt_mp !xiaohzhao
 
    REAL :: thresh, mpten, mptenmax, mptenmin, th_mp_inc
-
+   REAL :: dtphs !xiaohzhao
    REAL, INTENT(IN   ) :: dt,gridpt_stddev_isppt_mp,stddev_cutoff_isppt_mp
    INTEGER, INTENT(IN) :: isppt_mp
 
-   INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end
+   INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end, iendx
    INTEGER :: i, j, k, kh, imax, jmax, imin, jmin
+   LOGICAL :: E_BDY
     
 !--------------------------------------------------------------------
 !  set up loop bounds for this grid's boundary conditions
-
-     i_start = its
-     i_end   = MIN(ite,ide-1)
-     j_start = jts
-     j_end   = MIN(jte,jde-1)
-
-     ! Here the random process at each gridpoint is capped if it exceeds a value thresh
-     ! KL: capping code copied/adapted from phys/module_physics_addtendc.F
+   i_start = MAX(ids+1,its)
+   i_end   = MIN(ide-1,ite)
+   j_start = MAX(jds+2,jts)
+   j_end   = MIN(jde-2,jte)
+   ! Here the random process at each gridpoint is capped if it exceeds a value thresh
+   ! KL: capping code copied/adapted from phys/module_physics_addtendc.F
      thresh=stddev_cutoff_isppt_mp*gridpt_stddev_isppt_mp
-     DO j = jts,jte
-       DO k = kts,min(kte-1,kte_stoch-1)
-         DO i = its,ite
-           !pattern_isppt_mp(i,k,j)=MAX(MIN(pattern_isppt_mp(i,k,j),thresh),-1.*thresh)
-           pattern_isppt_mp(i,j,k)=MAX(MIN(pattern_isppt_mp(i,j,k),thresh),-1.*thresh)
-         ENDDO
-       ENDDO
-     ENDDO
+!$omp parallel do &
+!$omp& private(i,j,k)
+    DO j = j_start,j_end 
+    DO k = kts,MIN(kte-1,kte_stoch-1)
+    DO i = i_start,i_end 
+     pattern_isppt_mp(i,j,k)=MAX(MIN(pattern_isppt_mp(i,j,k),thresh),-1.*thresh)
+    ENDDO
+    ENDDO
+    ENDDO
 
-     mptenmax = 0.
-     mptenmin = 999.
-!    h_diabatic(i,k,j) =  mpten/dt is mp theta-tendency
-!    qv_diabatic(i,k,j) =  qvten/dt is mp qv-tendency
-     DO j = j_start, j_end
-     DO k = kts,kte-1
-       kh = min( k, kte_stoch-1 )
-       DO i = i_start, i_end
- 
-         mpten             = h_diabatic(i,k,j)*dt
-         !qv(i,k,j)        = qv(i,k,j)     + qv_diabatic(i,k,j)*pattern_isppt_mp(i,kh,j)*dt 
-         qv(i,j,k)         = qv(i,j,k)     + qv_diabatic(i,k,j)*pattern_isppt_mp(i,j,kh)*dt!xiaohzhao 
-         t_new(i,j,k)      = t_new(i,j,k)  + mpten*pattern_isppt_mp(i,j,kh)                !xiaohzhao 
-         !th_phy(i,k,j)     = th_phy(i,k,j) + mpten*pattern_isppt_mp(i,j,kh) ! probably not needed
-         !h_diabatic(i,k,j) = (1.0+pattern_isppt_mp(i,kh,j))    * h_diabatic(i,k,j)
-         !qv_diabatic(i,k,j)= (1.0+pattern_isppt_mp(i,kh,j))    * qv_diabatic(i,k,j)
-         !th_mp_inc         = (1.0+pattern_isppt_mp(i,kh,j))    * mpten ! total theta incremement including perturbation
-         th_phy(i,k,j)     = th_phy(i,k,j) + mpten*pattern_isppt_mp(i,j,kh) ! probably not needed
-         h_diabatic(i,k,j) = (1.0+pattern_isppt_mp(i,j,kh))    * h_diabatic(i,k,j)
-         qv_diabatic(i,k,j)= (1.0+pattern_isppt_mp(i,j,kh))    * qv_diabatic(i,k,j)
-         th_mp_inc         = (1.0+pattern_isppt_mp(i,j,kh))    * mpten ! total theta incremement including perturbation
-
+    dtphs=nphs*dt
+    mptenmax = 0.
+    mptenmin = 999.
+!    train_ins(i,k,j) =  mpten/dt is mp theta-tendency
+!    qv_ins(i,k,j) =  qvten/dt is mp qv-tendency
+    E_BDY=(ite>=ide)
+    DO j = j_start, j_end
+    DO k = kts,kte-1
+      kh = min( k, kte_stoch-1 )
+      iendx = i_end
+      IF(E_BDY.AND.MOD(j,2)==0)iendx=iendx-1
+    DO i = i_start, i_end
+      mpten = train_ins(i,j,k)*dtphs
+      qv(i,j,k) = qv(i,j,k)+qv_ins(i,j,k)*pattern_isppt_mp(i,j,kh)*dtphs
+      t_new(i,j,k) = t_new(i,j,k)+mpten*pattern_isppt_mp(i,j,kh)
+      train_ins(i,j,k) = (1.0+pattern_isppt_mp(i,j,kh))*train_ins(i,j,k)
+      qv_ins(i,j,k) = (1.0+pattern_isppt_mp(i,j,kh))*qv_ins(i,j,k)
+      th_mp_inc = (1.0+pattern_isppt_mp(i,j,kh))*mpten ! total theta incremement including perturbation
 !    JB: Check that water vapor does not become negative. If it does, add qv-sink to adjacent grid-box, 
 !    so that water vapor is conserved.
-         if (qv(i,j,k)<0.0) then 
-           if (i<i_end) then
+      if (qv(i,j,k)<0.0) then 
+        if (i<iendx) then
              qv(i+1,j,k) = qv(i+1,j,k) + qv(i,j,k)
-           else
+        else
              qv(i-1,j,k) = qv(i-1,j,k) + qv(i,j,k)
 !!              if (qv_diabatic(i-1,k,j) < 0 ) then 
 !!               print*,'JB: The qv-fixer in SPPT didnt work properly. We have sources of water now.'
 !!               stop
 !!              endif
-           endif
-           qv(i,j,k) =0.0
-         endif
+       endif
+       qv(i,j,k) =0.0
+     endif
 
 ! JB:  Limiter from module_big_step_utilities_em.F used to limit 
 ! Theta incremement due to MP. Need to be tested to see if/how this
@@ -1158,14 +1147,6 @@ SUBROUTINE perturb_mp_tend(isppt_mp,pattern_isppt_mp,                     &
 ! doing the "thin" 3d arrays (where the "k" dimension is unity).
 ! These are the original Z-transposed and X-transposed k-dimensions.
 
-        !gridsp32x=grid%sp32x
-        !gridep32x=grid%ep32x
-        !gridsm32x=grid%sm32x
-        !gridem32x=grid%em32x
-        !gridsp32 =grid%sp32
-        !gridep32 =grid%ep32
-        !gridsm32 =grid%sm32
-        !gridem32 =grid%em32
         gridsp33x=grid%sp33x
         gridep33x=grid%ep33x
         gridsm33x=grid%sm33x
@@ -1178,14 +1159,6 @@ SUBROUTINE perturb_mp_tend(isppt_mp,pattern_isppt_mp,                     &
 ! of vertical levels, or the number of levels to be transformed into 
 ! gridpoint space.
 
-        !grid%sp32x=min(kpsx,grid%num_stoch_levels)
-        !grid%ep32x=min(kpex,grid%num_stoch_levels)
-        !grid%sm32x=min(kmsx,grid%num_stoch_levels)
-        !grid%em32x=min(kmex,grid%num_stoch_levels)
-        !grid%sp32 =min(kps ,grid%num_stoch_levels)
-        !grid%ep32 =min(kpe ,grid%num_stoch_levels)
-        !grid%sm32 =min(kms ,grid%num_stoch_levels)
-        !grid%em32 =min(kme ,grid%num_stoch_levels)
         grid%sp33x=min(kpsx,grid%num_stoch_levels)
         grid%ep33x=min(kpex,grid%num_stoch_levels)
         grid%sm33x=min(kmsx,grid%num_stoch_levels)
@@ -1214,10 +1187,6 @@ SUBROUTINE perturb_mp_tend(isppt_mp,pattern_isppt_mp,                     &
 ! doing the "thin" 3d arrays (where the "k" dimension is unity).
 ! These are the original Y-transposed k-dimensions.
 
-        !gridsp32y=grid%sp32y
-        !gridsm32y=grid%sm32y
-        !gridep32y=grid%ep32y
-        !gridem32y=grid%em32y
         gridsp33y=grid%sp33y
         gridsm33y=grid%sm33y
         gridep33y=grid%ep33y
@@ -1227,10 +1196,6 @@ SUBROUTINE perturb_mp_tend(isppt_mp,pattern_isppt_mp,                     &
 ! Again, set number of vertical levels to the min of the number of levels and the
 ! number of stochastic levels.
 
-        !grid%sp32y=min(kpsy,grid%num_stoch_levels)
-        !grid%ep32y=min(kpey,grid%num_stoch_levels)
-        !grid%sm32y=min(kmsy,grid%num_stoch_levels)
-        !grid%em32y=min(kmey,grid%num_stoch_levels)
         grid%sp33y=min(kpsy,grid%num_stoch_levels)
         grid%ep33y=min(kpey,grid%num_stoch_levels)
         grid%sm33y=min(kmsy,grid%num_stoch_levels)
@@ -1247,19 +1212,6 @@ SUBROUTINE perturb_mp_tend(isppt_mp,pattern_isppt_mp,                     &
 #include "XPOSE_RAND_IMAG_y2z.inc"
 
 ! Put the original vertical "k" dimensions back.
-
-        !grid%sp32x=gridsp32x
-        !grid%sm32x=gridsm32x
-        !grid%ep32x=gridep32x
-        !grid%em32x=gridem32x
-        !grid%sp32y=gridsp32y
-        !grid%sm32y=gridsm32y
-        !grid%ep32y=gridep32y
-        !grid%em32y=gridem32y
-        !grid%sp32 =gridsp32
-        !grid%sm32 =gridsm32
-        !grid%ep32 =gridep32
-        !grid%em32 =gridem32
 
         grid%sp33x=gridsp33x
         grid%sm33x=gridsm33x
@@ -1293,20 +1245,12 @@ SUBROUTINE perturb_mp_tend(isppt_mp,pattern_isppt_mp,                     &
                DO k=kts,min(kte,grid%num_stoch_levels)
                  DO I=grid%i_start(ij), grid%i_end(ij)
                    DO j=grid%j_start(ij), grid%j_end(ij)
-                     !RAND_PERT(I,K,J)=grid%RAND_REAL(I,K,J) 
                      RAND_PERT(I,J,K)=grid%RAND_REAL(I,J,K) 
                    ENDDO
                  ENDDO
                 ENDDO
         ENDDO
 
-        !write(200,*)'grid%num_tiles',grid%num_tiles
-        !write(200,*)'grid%i_start(1)',grid%i_start(1)
-        !write(200,*)'grid%i_end(1)',grid%i_end(1)
-        !write(200,*)'grid%j_start(1)',grid%j_start(1)
-        !write(200,*)'grid%j_end(1)',grid%j_end(1)
-        !write(200,*)'kts',kts
-        !write(300,*)RAND_PERT(grid%i_start(1),grid%j_start(1),kts)!pattern_isppt_
        !$OMP END PARALLEL DO
 
        END SUBROUTINE RAND_PERT_UPDATE
@@ -1326,7 +1270,6 @@ SUBROUTINE perturb_mp_tend(isppt_mp,pattern_isppt_mp,                     &
                              ids,ide,jds,jde
 
   
-       !REAL, DIMENSION    (imsx:imex, kmsx:kmex, jmsx:jmex) :: fieldc,fields
        REAL, DIMENSION    (imsx:imex, jmsx:jmex, kmsx:kmex) :: fieldc,fields !xiaohzhao
 
        COMPLEX, DIMENSION (ipsx:ipex)            :: dummy_complex

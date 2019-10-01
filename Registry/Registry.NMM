@@ -590,9 +590,7 @@ rconfig   real    aer_ssa_val             namelist,physics      max_domains   0.
 rconfig   real    aer_asy_val             namelist,physics      max_domains   0.90    irh    "aer_asy_val"    "fixed value for aerosol asymmetry parameter. Valid when aer_asy_opt=1" ""
 
 # xiaohzhao
- state   real    th_mp           ikj      misc        1         -
- state   real    h_diabatic      ikj      misc        1         -      rhu=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)   "h_diabatic"    "MICROPHYSICS LATENT HEATING"         "K s-1"
- state   real    qv_diabatic    ikj      misc        1         -      rhu=(UpMassIKJ:@ECopy,0.0)d=(DownMassIKJ:@ECopy,0.0)   "qv_diabatic"   "MICROPHYSICS QV TENDENCY"            "g g-1 s-1"
+ state   real    qv_ins         ijk      dyn_nmm        1    -  rh023  "qv_ins"   "Instantaneous MICROPHYSICS QV TENDENCY"            "g g-1 s-1"
 # xiaohzhao
 
 

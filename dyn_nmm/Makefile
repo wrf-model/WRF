@@ -23,8 +23,8 @@ MODULES =                 		\
 	module_HIFREQ.o                 \
 	module_TERRAIN.o                \
 	module_SMOOTH_TERRAIN.o         \
-        module_PHYSICS_CALLS.o          \
         module_stoch.o                  \
+        module_PHYSICS_CALLS.o          \
         module_IGWAVE_ADJUST.o          \
 	module_membrane_mslp.o		\
 	module_swath.o			\

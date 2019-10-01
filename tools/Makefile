@@ -12,6 +12,7 @@ OBJ = registry.o my_strtok.o reg_parse.o data.o type.o misc.o \
 
 registry : $(OBJ) standard.exe
 	$(CC_TOOLS) -o registry $(DEBUG) $(LDFLAGS) $(OBJ)
+	if [ -x /usr/bin/peflags.exe ] ; then /usr/bin/peflags.exe --stack-reserve=33554432 registry; fi
 
 standard.exe : standard.o
 	$(CC_TOOLS) -o standard.exe $(DEBUG) $(LDFLAGS) standard.o

@@ -49,7 +49,7 @@
       USE MODULE_STATS_FOR_MOVE,        ONLY: STATS_FOR_MOVE
 #endif
       USE MODULE_DIAG_REFL
-      USE MODULE_STOCH, ONLY : PERTURB_MP_TEND, RAND_PERT_UPDATE  !xiaohzhao
+      USE MODULE_STOCH, ONLY : RAND_PERT_UPDATE  !xiaohzhao
 
 !-----------------------------------------------------------------------
 !
@@ -1273,7 +1273,6 @@
      DYKM=grid%dy*0.01745329*6371200.
 
       if ((grid%isppt_mp==1).and.(grid%id .EQ. 1 )) then
-          print*,"STARTING RAND_PERT_UPDATE isppt_mp in solve_nmm" !xiaohzhao
            CALL RAND_PERT_UPDATE(grid,'T',                             &
                            grid%SPFORCS_isppt_mp,grid%SPFORCC_isppt_mp,&
                            grid%SP_AMP_isppt_mp,grid%ALPH_isppt_mp,&
@@ -1308,7 +1307,7 @@
                            grid%num_stoch_levels,grid%num_stoch_levels,&
                            grid%num_stoch_levels,grid%num_stoch_levels,&
                            config_flags%restart,grid%iseedarr_isppt_pbl,&
-                           DXKM,DYKM,grid%vertstruc_isppt_mp,&
+                           DXKM,DYKM,grid%vertstruc_isppt_pbl,&
                            grid%pattern_isppt_pbl,&
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT)
          print*,"END of RAND_PERT_UPDATE isppt_pbl in solve_nmm"
@@ -1329,7 +1328,7 @@
                            grid%num_stoch_levels,grid%num_stoch_levels,&
                            grid%num_stoch_levels,grid%num_stoch_levels,&
                            config_flags%restart,grid%iseedarr_isppt_rad,&
-                           DXKM,DYKM,grid%vertstruc_isppt_mp,&
+                           DXKM,DYKM,grid%vertstruc_isppt_rad,&
                            grid%pattern_isppt_rad,&
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT)
       ENDIF !isppt_rad
@@ -1349,28 +1348,8 @@
                            grid%num_stoch_levels,grid%num_stoch_levels,&
                            grid%num_stoch_levels,grid%num_stoch_levels,&
                            config_flags%restart,grid%iseedarr_isppt_conv, &
-                           DXKM,DYKM,grid%vertstruc_isppt_mp,&
+                           DXKM,DYKM,grid%vertstruc_isppt_conv,&
                            grid%pattern_isppt_conv,&
-                           grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT)
-      ENDIF !isppt_conv
-      if ((grid%spp_mp==1).and.(grid%id .EQ. 1 )) then
-          print*,"STARTING RAND_PERT_UPDATE spp_mp in solve_nmm"
-           CALL RAND_PERT_UPDATE(grid,'T',&
-                           grid%SPFORCS_spp_mp,grid%SPFORCC_spp_mp,    &
-                           grid%SP_AMP_spp_mp,grid%ALPH_spp_mp,        &
-                           ips, ipe, jps, jpe, kps, kpe,&
-                           ids, ide, jds, jde, kds, kde,&
-                           ims, ime, jms, jme, kms, kme,&
-                           k_start, k_end,&
-                           imsx,imex,jmsx,jmex,kmsx,kmex,&
-                           ipsx,ipex,jpsx,jpex,kpsx,kpex,&
-                           imsy,imey,jmsy,jmey,kmsy,kmey,&
-                           ipsy,ipey,jpsy,jpey,kpsy,kpey,&
-                           grid%num_stoch_levels,grid%num_stoch_levels,&
-                           grid%num_stoch_levels,grid%num_stoch_levels,&
-                           config_flags%restart, grid%iseedarr_spp_mp,&
-                           DXKM,DYKM,grid%vertstruc_isppt_mp,&
-                           grid%pattern_spp_mp,&
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT)
       ENDIF !isppt_conv
 ! End of RAND_PERT_UPDATE--xiaohzhao
@@ -2165,7 +2144,7 @@
      &               ,GRID,CONFIG_FLAGS                                &
      &               ,grid%re_cloud,grid%re_ice,grid%re_snow           &  ! G. Thompson
      &               ,grid%has_reqc,grid%has_reqi,grid%has_reqs        &  ! G. Thompson
-     &               ,grid%h_diabatic,grid%qv_diabatic,grid%th_mp      &  ! xiaohzhao
+     &               ,grid%qv_ins, k_start, k_end                      &  ! xiaohzhao
      &               ,diag_flag                                        &  
      &               ,IDS,IDF,JDS,JDF,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
@@ -2176,20 +2155,6 @@
             its,ite,jts,jte,kts,kte)
 !
         gsmdrive_tim=gsmdrive_tim+now_time()-btimx
-! The start of perturb the mp-physics tendencies -- xiaohzhao
-     if (grid%isppt_mp==1) then
-        CALL perturb_mp_tend( grid%isppt_mp,grid%pattern_isppt_mp,                     &
-                              grid%stddev_cutoff_isppt_mp,grid%gridpt_stddev_isppt_mp, &
-                              grid%t,grid%th_mp,grid%h_diabatic,grid%dt,               &
-                              MOIST(ims,jms,kms,P_QV),grid%qv_diabatic,                &
-                              config_flags,                                            &
-                              ids, ide, jds, jde, kds, kde,                            &
-                              ims, ime, jms, jme, kms, kme,                            &
-                              its, ite, jts, jte, k_start, k_end,                      &
-                              grid%num_stoch_levels,grid%num_stoch_levels )
-     endif
-     !write(0,*)'grid%num_stoch_levels ',grid%num_stoch_levels !xiaohzhao
-! The end of perturbing the mp-physics tendencies -- xiaohzhao
 
 !
 !-----------------------------------------------------------------------

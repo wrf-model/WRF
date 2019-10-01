@@ -372,36 +372,11 @@
    END IF
 
    IF ((( grid%id == 1) .AND. (.NOT. grid%did_stoch)) .AND. &
-       (( grid%skebs_on== 1) .OR.( grid%sppt_on== 1) .OR. (grid%rand_perturb_on== 1) .OR. ( grid%spp_on== 1) .OR. &
-       ( grid%isppt_on== 1))) THEN
+       (( grid%isppt_on== 1))) THEN
 
      grid%did_stoch = .TRUE.
      DXKM=grid%dx*0.01745329*6371200. ! numbers from module_initialize_real.F
      DYKM=grid%dy*0.01745329*6371200.
-
-    IF (grid%sppt_on==1) then
-! Initialize SPPT (3)
-       if (.not.config_flags%restart) then ! set random number seed (else iseedarray is read in from restart files)
-         call rand_seed (config_flags, grid%ISEED_SPPT, grid%iseedarr_sppt, kms, kme)
-       endif
-     call SETUP_RAND_PERTURB('P',                                         &
-                       grid%sppt_vertstruc,config_flags%restart,          &
-                       grid%SPPT_AMP,                                     &
-                       grid%SPPTFORCC,grid%SPPTFORCS,grid%ALPH_SPPT,      &
-                       grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT,     &
-                       grid%KMINFORCT,grid%KMAXFORCT,                     &
-                       grid%LMINFORCT,grid%LMAXFORCT,                     &
-                       grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
-                       grid%time_step,DXKM,DYKM,                    &
-                       grid%gridpt_stddev_sppt,                           &
-                       grid%lengthscale_sppt,                             &
-                       grid%timescale_sppt,                               &
-                       grid%TOT_BACKSCAT_PSI,grid%ZTAU_PSI,               &
-                       grid%REXPONENT_PSI,                                &
-                       ids, ide, jds, jde, kds, kde,                      &
-                       ims, ime, jms, jme, kms, kme,                      &
-                       its, ite, jts, jte, kts, kte                       )
-    ENDIF
   ! Initialize independent Stochastic Parametrization Peturbations (iSPPT) to MP
   ! scheme
      IF (grid%isppt_mp==1) then
@@ -492,29 +467,6 @@
                        grid%gridpt_stddev_isppt_conv,                     &
                        grid%lengthscale_isppt_conv,                       &
                        grid%timescale_isppt_conv,                         &
-                       grid%TOT_BACKSCAT_PSI,grid%ZTAU_PSI,               &
-                       grid%REXPONENT_PSI,                                &
-                       ids, ide, jds, jde, kds, kde,                      &
-                       ims, ime, jms, jme, kms, kme,                      &
-                       its, ite, jts, jte, kts, kte                       )
-     ENDIF
-     ! Initialize Stochastic Parameter Peturbations (SPP) for MP scheme
-     IF (grid%spp_on==1) then
-     if (.not.config_flags%restart) then ! set random number seed (else  iseedarray is read in from restart files)
-         call rand_seed (config_flags, grid%iseed_spp_mp, grid%iseedarr_spp_mp , kms, kme)
-     endif
-     call SETUP_RAND_PERTURB('L',                                         &
-                       grid%vertstruc_spp_mp,config_flags%restart,    &
-                       grid%SP_AMP_spp_mp, grid%SPFORCC_spp_mp,   &
-                       grid%SPFORCS_spp_mp,grid%ALPH_spp_mp, &
-                       grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT,     &
-                       grid%KMINFORCT,grid%KMAXFORCT,                     &
-                       grid%LMINFORCT,grid%LMAXFORCT,                     &
-                       grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
-                       grid%time_step,DXKM,DYKM,                    &
-                       grid%gridpt_stddev_spp_mp,                     &
-                       grid%lengthscale_spp_mp,                       &
-                       grid%timescale_spp_mp,                         &
                        grid%TOT_BACKSCAT_PSI,grid%ZTAU_PSI,               &
                        grid%REXPONENT_PSI,                                &
                        ids, ide, jds, jde, kds, kde,                      &

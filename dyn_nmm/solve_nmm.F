@@ -1271,8 +1271,7 @@
 ! Start of RAND_PERT_UPDATE--xiaohzhao
      DXKM=grid%dx*0.01745329*6371200. ! numbers from module_initialize_real.F
      DYKM=grid%dy*0.01745329*6371200.
-
-      if ((grid%isppt_mp==1).and.(grid%id .EQ. 1 )) then
+      IF ((grid%isppt_mp==1).and.(grid%id .EQ. 1 )) THEN 
            CALL RAND_PERT_UPDATE(grid,'T',                             &
                            grid%SPFORCS_isppt_mp,grid%SPFORCC_isppt_mp,&
                            grid%SP_AMP_isppt_mp,grid%ALPH_isppt_mp,&
@@ -1291,8 +1290,7 @@
                            grid%pattern_isppt_mp,&
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT)
       ENDIF !isppt_mp
-      if ((grid%isppt_pbl==1).and.(grid%id .EQ. 1 )) then
-          print*,"STARTING RAND_PERT_UPDATE isppt_pbl in solve_nmm"
+      IF ((grid%isppt_pbl==1).and.(grid%id .EQ. 1 )) THEN 
           CALL RAND_PERT_UPDATE(grid,'T',                                &
                            grid%SPFORCS_isppt_pbl,grid%SPFORCC_isppt_pbl,&
                            grid%SP_AMP_isppt_pbl,grid%ALPH_isppt_pbl,&
@@ -1310,10 +1308,8 @@
                            DXKM,DYKM,grid%vertstruc_isppt_pbl,&
                            grid%pattern_isppt_pbl,&
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT)
-         print*,"END of RAND_PERT_UPDATE isppt_pbl in solve_nmm"
       ENDIF !isppt_pbl
-      if ((grid%isppt_rad==1).and.(grid%id .EQ. 1 )) then
-          print*,"STARTING RAND_PERT_UPDATE isppt_rad in solve_nmm"
+      IF ((grid%isppt_rad==1).and.(grid%id .EQ. 1 )) THEN 
           CALL RAND_PERT_UPDATE(grid,'T',                                &
                            grid%SPFORCS_isppt_rad,grid%SPFORCC_isppt_rad,&
                            grid%SP_AMP_isppt_rad,grid%ALPH_isppt_rad,&
@@ -1332,8 +1328,7 @@
                            grid%pattern_isppt_rad,&
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT)
       ENDIF !isppt_rad
-      if ((grid%isppt_conv==1).and.(grid%id .EQ. 1 )) then
-          print*,"STARTING RAND_PERT_UPDATE isppt_conv in solve_nmm"
+      IF ((grid%isppt_conv==1).and.(grid%id .EQ. 1 )) THEN 
            CALL RAND_PERT_UPDATE(grid,'T',&
                            grid%SPFORCS_isppt_conv,grid%SPFORCC_isppt_conv,&
                            grid%SP_AMP_isppt_conv,grid%ALPH_isppt_conv,&
@@ -1347,7 +1342,7 @@
                            ipsy,ipey,jpsy,jpey,kpsy,kpey,&
                            grid%num_stoch_levels,grid%num_stoch_levels,&
                            grid%num_stoch_levels,grid%num_stoch_levels,&
-                           config_flags%restart,grid%iseedarr_isppt_conv, &
+                           config_flags%restart,grid%iseedarr_isppt_conv,&
                            DXKM,DYKM,grid%vertstruc_isppt_conv,&
                            grid%pattern_isppt_conv,&
                            grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT)
@@ -2144,7 +2139,7 @@
      &               ,GRID,CONFIG_FLAGS                                &
      &               ,grid%re_cloud,grid%re_ice,grid%re_snow           &  ! G. Thompson
      &               ,grid%has_reqc,grid%has_reqi,grid%has_reqs        &  ! G. Thompson
-     &               ,grid%qv_ins, k_start, k_end                      &  ! xiaohzhao
+     &               ,grid%qv_ins,k_start,k_end                        &  ! xiaohzhao
      &               ,diag_flag                                        &  
      &               ,IDS,IDF,JDS,JDF,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &

@@ -364,10 +364,9 @@
    IF ( config_flags%restart .or. grid%moved .or. config_flags%cycling) THEN
        first_trip_for_this_domain = .TRUE.
    ENDIF
-
 !   --- SETUP AND INITIALIZE STOCHASTIC PERTURBATION SCHEMES ---
 
-  IF ( first_trip_for_this_domain ) THEN
+   IF ( first_trip_for_this_domain ) THEN
      grid%did_stoch = .FALSE.
    END IF
 
@@ -391,7 +390,7 @@
                        grid%KMINFORCT,grid%KMAXFORCT,                     &
                        grid%LMINFORCT,grid%LMAXFORCT,                     &
                        grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
-                       grid%time_step,DXKM,DYKM,                    &
+                       grid%time_step,DXKM,DYKM,                          &
                        grid%gridpt_stddev_isppt_mp,                       &
                        grid%lengthscale_isppt_mp,                         &
                        grid%timescale_isppt_mp,                           &
@@ -415,7 +414,7 @@
                        grid%KMINFORCT,grid%KMAXFORCT,                     &
                        grid%LMINFORCT,grid%LMAXFORCT,                     &
                        grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
-                       grid%time_step,DXKM,DYKM,                    &
+                       grid%time_step,DXKM,DYKM,                          &
                        grid%gridpt_stddev_isppt_pbl,                      &
                        grid%lengthscale_isppt_pbl,                        &
                        grid%timescale_isppt_pbl,                          &
@@ -434,12 +433,12 @@
      call SETUP_RAND_PERTURB('O',                                         &
                        grid%vertstruc_isppt_rad,config_flags%restart,     &
                        grid%SP_AMP_isppt_rad, grid%SPFORCC_isppt_rad,     &
-                       grid%SPFORCS_isppt_rad,grid%ALPH_isppt_rad,   &
+                       grid%SPFORCS_isppt_rad,grid%ALPH_isppt_rad,        &
                        grid%VERTSTRUCC,grid%VERTSTRUCS,grid%VERTAMPT,     &
                        grid%KMINFORCT,grid%KMAXFORCT,                     &
                        grid%LMINFORCT,grid%LMAXFORCT,                     &
                        grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
-                       grid%time_step,DXKM,DYKM,                    &
+                       grid%time_step,DXKM,DYKM,                          &
                        grid%gridpt_stddev_isppt_rad,                      &
                        grid%lengthscale_isppt_rad,                        &
                        grid%timescale_isppt_rad,                          &
@@ -451,7 +450,7 @@
      ENDIF
  ! Initialize independent Stochastic Parametrization Peturbations (iSPPT) to
  ! convection scheme
-    IF (grid%isppt_conv==1) then
+     IF (grid%isppt_conv==1) then
        if (.not.config_flags%restart) then ! set random number seed (else iseedarray is read in from restart files)
          call rand_seed (config_flags,grid%iseed_isppt_conv,grid%iseedarr_isppt_conv, kms, kme)
        endif
@@ -463,7 +462,7 @@
                        grid%KMINFORCT,grid%KMAXFORCT,                     &
                        grid%LMINFORCT,grid%LMAXFORCT,                     &
                        grid%KMAXFORCTH,grid%LMAXFORCTH,                   &
-                       grid%time_step,DXKM,DYKM,                    &
+                       grid%time_step,DXKM,DYKM,                          &
                        grid%gridpt_stddev_isppt_conv,                     &
                        grid%lengthscale_isppt_conv,                       &
                        grid%timescale_isppt_conv,                         &
@@ -473,7 +472,7 @@
                        ims, ime, jms, jme, kms, kme,                      &
                        its, ite, jts, jte, kts, kte                       )
      ENDIF
-  ENDIF ! End of sppt or rand_perturb
+  ENDIF 
 ! End of isppt -- xiaohzhao
 
       if(tempdx<1e-5 .or. tempdy<1e-5) then

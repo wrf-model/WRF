@@ -415,7 +415,7 @@
 !
       CALL SET_TILES(GRID,IDS+1,IDE-1,JDS+2,JDE-2,ITS,ITE,JTS,JTE)
     
-      DTHRADT_DIFF(:,:,:)= RTHRATEN(:,:,:) !xiaohzhao
+      DTHRADT_DIFF(:,:,:)=RTHRATEN(:,:,:) !xiaohzhao
 
       CALL RADIATION_DRIVER(                                            &
      &                  IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &
@@ -550,14 +550,14 @@
      ENDIF
      IF (config_flags%ra_lw_physics .GT. 0 .OR.                  &
          config_flags%ra_sw_physics .GT. 0) THEN 
-     IF (config_flags%isppt_rad .GT. 0 ) THEN  ! isppt perturbation of tendency
+     IF (config_flags%isppt_rad .GT. 0 ) THEN  
 !$omp parallel do                                             &
-!$omp& private(i,j,k)
+!$omp& private(i,j,k,kh)
        DO j = MYJS2,MYJE2 
        DO k = kts , MIN(kte,kde-1)
          kh = MIN( k, kte_stoch - 1 )
        DO i = MYIS1,MYIE1 
-         RTHRATEN(i,k,j)  = RTHRATEN(i,k,j)+pattern_isppt_rad(i,j,kh)*(RTHRATEN(i,k,j)-DTHRADT_DIFF(i,k,j))
+         RTHRATEN(i,k,j) = RTHRATEN(i,k,j)+pattern_isppt_rad(i,j,kh)*(RTHRATEN(i,k,j)-DTHRADT_DIFF(i,k,j))
        ENDDO
        ENDDO
        ENDDO
@@ -1877,42 +1877,42 @@
       ENDDO
       ENDDO
       ENDDO
-   ENDIF
-   IF (config_flags%bl_pbl_physics .GT. 0) THEN 
-   IF (config_flags%isppt_pbl .GT. 0 ) THEN  ! isppt perturbation of tendency
+    ENDIF
+    IF (config_flags%bl_pbl_physics .GT. 0) THEN 
+    IF (config_flags%isppt_pbl .GT. 0 ) THEN  
 !$omp parallel do                                                       &
 !$omp& private(i,j,k,kh)
-     DO j = MYJS,MYJE 
-     DO k = kts, MIN(kte,kde-1)
-       kh = MIN( k, kte_stoch - 1 )
-     DO i = MYIS,MYIE 
-       DUDT_PHY(i,k,j) = DUDT_PHY(i,k,j)+pattern_isppt_pbl(i,j,kh)*(DUDT_PHY(i,k,j)-DUBLDT_DIFF(i,k,j))
-    ENDDO
-    ENDDO
-    ENDDO
+      DO j = MYJS,MYJE 
+      DO k = kts, MIN(kte,kde-1)
+        kh = MIN( k, kte_stoch - 1 )
+      DO i = MYIS,MYIE 
+        DUDT_PHY(i,k,j) = DUDT_PHY(i,k,j)+pattern_isppt_pbl(i,j,kh)*(DUDT_PHY(i,k,j)-DUBLDT_DIFF(i,k,j))
+      ENDDO
+      ENDDO
+      ENDDO
 !$omp parallel do                                                       &
 !$omp& private(i,j,k,kh)
-    DO j = MYJS,MYJE 
-    DO k = kts, MIN(kte,kde-1)
-      kh = MIN( k, kte_stoch - 1 )
-    DO i = MYIS,MYIE 
-      DVDT_PHY(i,k,j) = DVDT_PHY(i,k,j)+pattern_isppt_pbl(i,j,kh)*(DVDT_PHY(i,k,j)-DVBLDT_DIFF(i,k,j))
-    ENDDO
-    ENDDO
-    ENDDO
+      DO j = MYJS,MYJE 
+      DO k = kts, MIN(kte,kde-1)
+        kh = MIN( k, kte_stoch - 1 )
+      DO i = MYIS,MYIE 
+        DVDT_PHY(i,k,j) = DVDT_PHY(i,k,j)+pattern_isppt_pbl(i,j,kh)*(DVDT_PHY(i,k,j)-DVBLDT_DIFF(i,k,j))
+      ENDDO
+      ENDDO
+      ENDDO
 !$omp parallel do                                                       &
 !$omp& private(i,j,k,kh)
-    DO j = MYJS,MYJE 
-    DO k = kts , MIN(kte,kde-1)
-      kh = MIN( k, kte_stoch - 1 )
-    DO i = MYIS,MYIE 
-      RTHBLTEN(i,k,j) = RTHBLTEN(i,k,j)+pattern_isppt_pbl(i,j,kh)*(RTHBLTEN(i,k,j)-DTHBLDT_DIFF(i,k,j))
-      RQVBLTEN(i,k,j) = RQVBLTEN(i,k,j)+pattern_isppt_pbl(i,j,kh)*(RQVBLTEN(i,k,j)-DQVBLDT_DIFF(i,k,j))
-    ENDDO
-    ENDDO
-    ENDDO
-  ENDIF 
-  ENDIF 
+      DO j = MYJS,MYJE 
+      DO k = kts , MIN(kte,kde-1)
+        kh = MIN( k, kte_stoch - 1 )
+      DO i = MYIS,MYIE 
+        RTHBLTEN(i,k,j) = RTHBLTEN(i,k,j)+pattern_isppt_pbl(i,j,kh)*(RTHBLTEN(i,k,j)-DTHBLDT_DIFF(i,k,j))
+        RQVBLTEN(i,k,j) = RQVBLTEN(i,k,j)+pattern_isppt_pbl(i,j,kh)*(RQVBLTEN(i,k,j)-DQVBLDT_DIFF(i,k,j))
+      ENDDO
+      ENDDO
+      ENDDO
+    ENDIF 
+    ENDIF 
 !End of isppt_pbl -- xiaohzhao
 !
 
@@ -2489,13 +2489,13 @@
 #if (NMM_CORE==1)    
      &                 ,TWBS,QWBS                                       &
      &                 ,DUCUDT, DVCUDT, MOMMIX, store_rand              &                  
-     &                 ,DTHCUDT,DQVCUDT,DQRCUDT,DQCCUDT,DQICUDT         &! added output CU tendency
-     &                 ,DQSCUDT                                         &! added output CU tendency
-     &                 ,kte_stoch,kme_stoch                             & !xiaohzhao
-     &                 ,isppt_conv,pattern_isppt_conv                   & !xiaohzhao
-     &                 ,stddev_cutoff_isppt_conv,gridpt_stddev_isppt_conv & !xiaohzhao
+     &                 ,DTHCUDT,DQVCUDT,DQRCUDT,DQCCUDT,DQICUDT         & ! added output CU tendency
+     &                 ,DQSCUDT                                         & ! added output CU tendency
+     &                 ,kte_stoch,kme_stoch                             & ! xiaohzhao
+     &                 ,isppt_conv,pattern_isppt_conv                   & ! xiaohzhao
+     &                 ,stddev_cutoff_isppt_conv,gridpt_stddev_isppt_conv &!xiaohzhao
 #endif
-     &                 ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon S&P
+     &                 ,HPBL2D,EVAP2D,HEAT2D                            & !Kwon S&P
      &                 ,DX2D,DYNMM                                      & ! Scale-aware sas
      &                 ,SCALEFUN, SCALEFUN1                             & !scale functions
      &                 ,SIGMU, SIGMU1                                   & !updraft fraction
@@ -3061,14 +3061,14 @@
            DQCCUDT(i,j,k)=0.0
            DQICUDT(i,j,k)=0.0
            DQSCUDT(i,j,k)=0.0
-           DUCUDT_DIFF(i,k,j) = DUCUDT(i,j,k)   !xiaohzhao
-           DVCUDT_DIFF(i,k,j) = DVCUDT(i,j,k)   !xiaohzhao 
+           DUCUDT_DIFF(i,k,j)=DUCUDT(i,j,k)   !xiaohzhao
+           DVCUDT_DIFF(i,k,j)=DVCUDT(i,j,k)   !xiaohzhao 
         ENDDO
         ENDDO
         ENDDO
 #endif
-           DTHCUDT_DIFF(:,:,:)= RTHCUTEN(:,:,:)  !xiaohzhao
-           DQVCUDT_DIFF(:,:,:)= RQVCUTEN(:,:,:)  !xiaohzhao
+           DTHCUDT_DIFF(:,:,:)=RTHCUTEN(:,:,:)  !xiaohzhao
+           DQVCUDT_DIFF(:,:,:)=RQVCUTEN(:,:,:)  !xiaohzhao
       CALL CUMULUS_DRIVER(GRID                                          &
      &                 ,IDS=IDS,IDE=IDE,JDS=JDS,JDE=JDE,KDS=KDS,KDE=KDE &
      &                 ,IMS=IMS,IME=IME,JMS=JMS,JME=JME,KMS=KMS,KME=KME &
@@ -3164,40 +3164,40 @@
       ENDDO
     ENDIF
     IF (config_flags%cu_physics .GT. 0) THEN 
-    IF (config_flags%isppt_conv .GT. 0 ) THEN  ! isppt perturbation of tendency
+    IF (config_flags%isppt_conv .GT. 0 ) THEN  
 !$omp parallel do                                                       &
 !$omp& private(i,j,k,kh)
-     DO j = MYJS1_P1,MYJE1_P1 
-     DO k = kts, MIN(kte,kde-1)
-       kh = MIN( k, kte_stoch - 1 )
-     DO i = MYIS_P1,MYIE_P1 
-       DUCUDT(i,j,k) = DUCUDT(i,j,k)+pattern_isppt_conv(i,j,kh)*(DUCUDT(i,j,k)-DUCUDT_DIFF(i,k,j))
-     ENDDO
-     ENDDO
-     ENDDO
+      DO j = MYJS1_P1,MYJE1_P1 
+      DO k = kts, MIN(kte,kde-1)
+        kh = MIN( k, kte_stoch - 1 )
+      DO i = MYIS_P1,MYIE_P1 
+        DUCUDT(i,j,k)=DUCUDT(i,j,k)+pattern_isppt_conv(i,j,kh)*(DUCUDT(i,j,k)-DUCUDT_DIFF(i,k,j))
+      ENDDO
+      ENDDO
+      ENDDO
 !$omp parallel do                                                       &
 !$omp& private(i,j,k,kh)
-     DO j = MYJS1_P1,MYJE1_P1 
-     DO k = kts, MIN(kte,kde-1)
-       kh = MIN( k, kte_stoch - 1 )
-     DO i = MYIS_P1,MYIE_P1 
-       DVCUDT(i,j,k) = DVCUDT(i,j,k)+pattern_isppt_conv(i,j,kh)*(DVCUDT(i,j,k)-DVCUDT_DIFF(i,k,j))
-     ENDDO
-     ENDDO
-     ENDDO
+      DO j = MYJS1_P1,MYJE1_P1 
+      DO k = kts, MIN(kte,kde-1)
+        kh = MIN( k, kte_stoch - 1 )
+      DO i = MYIS_P1,MYIE_P1 
+        DVCUDT(i,j,k)=DVCUDT(i,j,k)+pattern_isppt_conv(i,j,kh)*(DVCUDT(i,j,k)-DVCUDT_DIFF(i,k,j))
+      ENDDO
+      ENDDO
+      ENDDO
 !$omp parallel do                                                       &
 !$omp& private(i,j,k,kh)
-     DO j = MYJS2,MYJE2 
-     DO k = kts , min(kte,kde-1)
-       kh = min( k, kte_stoch - 1 )
-     DO i = MYIS1,MYIE1 
-       RTHCUTEN(i,k,j)  = RTHCUTEN(i,k,j)+pattern_isppt_conv(i,j,kh)*(RTHCUTEN(i,k,j)-DTHCUDT_DIFF(i,k,j))
-       RQVCUTEN(i,k,j) = RQVCUTEN(i,k,j)+pattern_isppt_conv(i,j,kh)*(RQVCUTEN(i,k,j)-DQVCUDT_DIFF(i,k,j))
-     ENDDO
-     ENDDO
-     ENDDO
-   ENDIF
-   ENDIF
+      DO j = MYJS2,MYJE2 
+      DO k = kts , min(kte,kde-1)
+        kh = min( k, kte_stoch - 1 )
+      DO i = MYIS1,MYIE1 
+        RTHCUTEN(i,k,j)=RTHCUTEN(i,k,j)+pattern_isppt_conv(i,j,kh)*(RTHCUTEN(i,k,j)-DTHCUDT_DIFF(i,k,j))
+        RQVCUTEN(i,k,j)=RQVCUTEN(i,k,j)+pattern_isppt_conv(i,j,kh)*(RQVCUTEN(i,k,j)-DQVCUDT_DIFF(i,k,j))
+      ENDDO
+      ENDDO
+      ENDDO
+    ENDIF
+    ENDIF
 !End of isppt_conv -- xiaohzhao
 
 
@@ -3430,7 +3430,7 @@
      &                   ,GRID,CONFIG_FLAGS                             &
      &                   ,re_cloud,re_ice,re_snow                       & ! G. Thompson
      &                   ,has_reqc,has_reqi,has_reqs                    & ! G. Thompson
-     &                   ,qv_ins,k_start, k_end                         & ! xiaohzhao
+     &                   ,qv_ins,k_start,k_end                          & ! xiaohzhao
      &                   ,diag_flag                                     & 
      &                   ,IDS,IDE,JDS,JDE,KDS,KDE                       &
      &                   ,IMS,IME,JMS,JME,KMS,KME                       &
@@ -3535,6 +3535,7 @@
 !
       LOGICAL                        :: diag_flag
       LOGICAL :: E_BDY,F_QT,QT_PRESENT,WARM_RAIN, have_tg_tp, have_swath
+
 
 !
 !-----------------------------------------------------------------------
@@ -3738,7 +3739,7 @@
 !***  UPDATE TEMPERATURE, SPECIFIC HUMIDITY, CLOUD WATER, AND HEATING.
 !-----------------------------------------------------------------------
 !$omp parallel do                                                       &
-!$omp& private(i,iendx,j,k,tnew)
+!$omp& private(i,iendx,j,k,tnew,qold)
       DO K=KTS,KTE
         DO J=MYJS2,MYJE2
           IENDX=MYIE1

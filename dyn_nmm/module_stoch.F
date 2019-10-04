@@ -884,7 +884,7 @@ IF (grid%sppt_on==1) then
 !--------------------------------------------------------------------
 SUBROUTINE perturb_mp_tend(isppt_mp,pattern_isppt_mp,                     &  
                            stddev_cutoff_isppt_mp,gridpt_stddev_isppt_mp, & 
-                           t_new,    &    
+                           t_new,                     &    
                            train_ins, nphs, dt,       &    
                            qv, qv_ins,                &    
                            config_flags,              &    
@@ -916,7 +916,7 @@ SUBROUTINE perturb_mp_tend(isppt_mp,pattern_isppt_mp,                     &
    REAL, INTENT(IN   ) :: dt,gridpt_stddev_isppt_mp,stddev_cutoff_isppt_mp
    INTEGER, INTENT(IN) :: isppt_mp
 
-   INTEGER :: i_start, i_end, j_start, j_end, k_start, k_end, iendx
+   INTEGER :: i_start, i_end, j_start, j_end, iendx
    INTEGER :: i, j, k, kh, imax, jmax, imin, jmin
    LOGICAL :: E_BDY
     
@@ -931,9 +931,9 @@ SUBROUTINE perturb_mp_tend(isppt_mp,pattern_isppt_mp,                     &
      thresh=stddev_cutoff_isppt_mp*gridpt_stddev_isppt_mp
 !$omp parallel do &
 !$omp& private(i,j,k)
-    DO j = j_start,j_end 
+    DO j = jts,jte!j_start,j_end 
     DO k = kts,MIN(kte-1,kte_stoch-1)
-    DO i = i_start,i_end 
+    DO i = its,ite!i_start,i_end 
      pattern_isppt_mp(i,j,k)=MAX(MIN(pattern_isppt_mp(i,j,k),thresh),-1.*thresh)
     ENDDO
     ENDDO
@@ -945,12 +945,14 @@ SUBROUTINE perturb_mp_tend(isppt_mp,pattern_isppt_mp,                     &
 !    train_ins(i,k,j) =  mpten/dt is mp theta-tendency
 !    qv_ins(i,k,j) =  qvten/dt is mp qv-tendency
     E_BDY=(ite>=ide)
+!$omp parallel do &
+!$omp& private(i,j,k,kh,iendx,mpten,th_mp_inc)
     DO j = j_start, j_end
     DO k = kts,kte-1
-      kh = min( k, kte_stoch-1 )
+      kh = MIN( k, kte_stoch-1 )
       iendx = i_end
       IF(E_BDY.AND.MOD(j,2)==0)iendx=iendx-1
-    DO i = i_start, i_end
+    DO i = i_start,iendx 
       mpten = train_ins(i,j,k)*dtphs
       qv(i,j,k) = qv(i,j,k)+qv_ins(i,j,k)*pattern_isppt_mp(i,j,kh)*dtphs
       t_new(i,j,k) = t_new(i,j,k)+mpten*pattern_isppt_mp(i,j,kh)
@@ -964,7 +966,7 @@ SUBROUTINE perturb_mp_tend(isppt_mp,pattern_isppt_mp,                     &
              qv(i+1,j,k) = qv(i+1,j,k) + qv(i,j,k)
         else
              qv(i-1,j,k) = qv(i-1,j,k) + qv(i,j,k)
-!!              if (qv_diabatic(i-1,k,j) < 0 ) then 
+!!              if (qv_ins(i-1,k,j) < 0 ) then 
 !!               print*,'JB: The qv-fixer in SPPT didnt work properly. We have sources of water now.'
 !!               stop
 !!              endif

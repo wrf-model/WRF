@@ -329,8 +329,11 @@ INTEGER, PARAMETER :: MAX_ITERATIONS=10
 !      The assumed effective collection efficiency of cloud water rimed onto
 !      ice is =0.5 below:
 !
-        CIACW=0.5*DT*0.25*PI_E  !jul28 (16)
 !        CIACW=DT*0.25*PI_E*0.5*(1.E5)**C1
+!        CIACW=0.5*DT*0.25*PI_E  !jul28 (16)
+!      Based on the tests with HWRF, increase the collection efficiency from 0.5
+!      to 1.0.
+        CIACW=1.0*DT*0.25*PI_E
 !
 !--- CIACR is used in calculating freezing of rain colliding with large ice
 !      The assumed collection efficiency is 1.0
@@ -569,7 +572,10 @@ INTEGER, PARAMETER :: MAX_ITERATIONS=10
 !      ice is =0.5 below:
 !
 !        CIACW=DT*0.25*PI_E*0.5*(1.E5)**C1
-         CIACW=0.5*DT*0.25*PI_E  !jul28 (16)
+!        CIACW=0.5*DT*0.25*PI_E  !jul28 (16)
+!      Based on the tests with HWRF, increase the collection efficiency from 0.5
+!      to 1.0.
+        CIACW=1.0*DT*0.25*PI_E
 !
 !--- CIACR is used in calculating freezing of rain colliding with large ice
 !      The assumed collection efficiency is 1.0
@@ -3024,7 +3030,10 @@ ENDIF
 !      The assumed effective collection efficiency of cloud water rimed onto
 !      ice is =0.5 below:
 !
-        CIACW=0.5*DTPH*0.25*PI_E  !jul28 (16)
+!        CIACW=0.5*DTPH*0.25*PI_E  !jul28 (16)
+!      Based on the tests with HWRF, increase the collection efficiency from 0.5
+!      to 1.0.
+        CIACW=1.0*DTPH*0.25*PI_E
 !
 !--- CIACR is used in calculating freezing of rain colliding with large ice
 !      The assumed collection efficiency is 1.0
